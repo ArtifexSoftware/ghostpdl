@@ -59,7 +59,7 @@ typedef struct px_pattern_s {
   rc_header rc;			/* counts refs from gstates, dicts */
 	/* Original parameters */
   px_bitmap_params_t params;
-  gs_const_string palette;	/* copy of palette if indexed color */
+  gs_string palette;		/* copy of palette if indexed color */
   byte *data;			/* raster data */
 	/* Internal values */
   gx_bitmap_id id;		/* PCL XL ID * #persistence + persistence */
@@ -142,9 +142,9 @@ typedef struct px_gstate_s {
     uint width;
     uint height;
     gs_point origin;
-    gs_const_string thresholds;
+    gs_string thresholds;
   } halftone;
-  gs_const_string dither_matrix;	/* dither matrix downloaded at this level */
+  gs_string dither_matrix;	/* dither matrix downloaded at this level */
   pxeFillMode_t fill_mode;
   bool dashed;
   gs_matrix dash_matrix;
@@ -191,7 +191,7 @@ void px_gstate_reset(px_gstate_t *);
 /* Set up the color space information for a bitmap image or pattern. */
 int px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
                          const px_bitmap_params_t *params,
-                         const gs_const_string *palette,
+                         const gs_string *palette,
                          const gs_state *pgs);
 
 /* Set the color in the graphics state to the pen or brush. */

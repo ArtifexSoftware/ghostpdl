@@ -34,7 +34,7 @@
 #include "gxdevice.h"
 #include "gxht.h"
 #include "gxstate.h"
-#include "pldraw.h"
+#include "plsrgb.h"
 #include "plht.h"
 
 /*
@@ -43,10 +43,6 @@
  * following #define.
  */
 #define SET_COLOR_SPACE_NO_SET_BLACK
-
-/* Forward references */
-private int px_set_default_screen(px_state_t *pxs, int method,
-                                  const gs_point *origin);
 
 /* ---------------- Utilities ---------------- */
 
@@ -130,20 +126,6 @@ static const byte order16x16[256] = {
 #  define source_phase_y 0
 #endif
 };
-private int
-px_set_default_screen(px_state_t *pxs, int method, const gs_point *origin)
-{	
-
-    gs_const_string thresh;
-    thresh.data = order16x16;
-    thresh.size = 256;
-    return pl_set_pcl_halftone(pxs->pgs, 
-                               /* set transfer */ identity_transfer,
-                               /* width */ 16, /*height */ 16,
-                               /* dither data */ thresh,
-                               /* x phase */ (int)origin->x,
-                               /* y phase */ (int)origin->y);
-}
 
 /* Set the size for a default halftone screen. */
 private void
@@ -163,8 +145,8 @@ px_set_halftone(px_state_t *pxs)
     if ( pxgs->halftone.set )
         return 0;
     if ( pxgs->halftone.method != eDownloaded ) {
-        gs_const_string thresh;
-        thresh.data = order16x16;
+        gs_string thresh;
+        thresh.data = (byte *)order16x16;
         thresh.size = 256;
         code = pl_set_pcl_halftone(pxs->pgs,
                                    /* set transfer */ identity_transfer,
@@ -200,7 +182,7 @@ px_set_halftone(px_state_t *pxs)
                            pxgs->halftone.thresholds.size,
                            "px_set_halftone(thresholds)");
         else { 
-            gs_free_string(pxs->memory, pxgs->dither_matrix.data,
+            gs_free_string(pxs->memory, (byte *)pxgs->dither_matrix.data,
                            pxgs->dither_matrix.size,
                            "px_set_halftone(dither_matrix)");
             pxgs->dither_matrix = pxgs->halftone.thresholds;
@@ -335,7 +317,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	template.XStep = full_width;
 	template.YStep = full_height;
 	template.PaintProc = px_paint_pattern;
-	template.client_data = pattern;
+	template.client_data = (void *)pattern;
 	{ gs_matrix mat;
 	  gs_point dsize;
 	  int code;
@@ -661,9 +643,9 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 		if ( pxgs->palette.data && !pxgs->palette_is_shared &&
 		   pxgs->palette.size != size
 		 )
-	        { gs_free_string(pxs->memory, pxgs->palette.data,
-				 pxgs->palette.size,
-				 "pxSetColorSpace(old palette)");
+                    { gs_free_string(pxs->memory, (byte *)pxgs->palette.data,
+                                     pxgs->palette.size,
+                                     "pxSetColorSpace(old palette)");
 		  pxgs->palette.data = 0;
 		  pxgs->palette.size = 0;
 		}
@@ -677,14 +659,14 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 		  pxgs->palette.data = pdata;
 		  pxgs->palette.size = size;
 		}
-	      memcpy(pxgs->palette.data, par->pv[7]->value.array.data, size);
+	      memcpy((void *)pxgs->palette.data, par->pv[7]->value.array.data, size);
 	    }
 	  }
 	else if ( par->pv[6] || par->pv[7] )
 	  return_error(pxs->memory, errorMissingAttribute);
 	else if ( pxgs->palette.data )
 	  { if ( !pxgs->palette_is_shared )
-	      gs_free_string(pxs->memory, pxgs->palette.data,
+                  gs_free_string(pxs->memory, (byte *)pxgs->palette.data,
 			     pxgs->palette.size,
 			     "pxSetColorSpace(old palette)");
 	    pxgs->palette.data = 0;

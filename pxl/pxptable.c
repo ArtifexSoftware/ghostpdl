@@ -86,9 +86,9 @@ checkGrayLevel(const gs_memory_t *mem, const px_value_t *pv)
 }
 
 private int
-checkPageAngle(const px_value_t *pv)
+checkPageAngle(const gs_memory_t *mem, const px_value_t *pv)
 {       
-    /* XL 1.0 generates an error for non-ortoganal page angles */
+    /* XL 1.0 generates an error for non-orthogonal page angles */
     return 0;
 }
 
@@ -245,7 +245,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
 /* 117 */  none,
 /* 118 */  none,
 /* 119 */  none,
-/* 120 */  en(pxeColorTreatment),
+/* 120 */  en(pxeColorTreatment_next),
 /* 121 */  none,
 /* 122 */  none,
 /* 123 */  none,

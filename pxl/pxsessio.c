@@ -33,6 +33,7 @@
 #include "gxdevice.h"
 #include "pjtop.h"
 #include "pllfont.h"
+#include "plsrgb.h"
 
 /* Imported operators */
 px_operator_proc(pxCloseDataSource);
@@ -175,7 +176,7 @@ px_end_page_cleanup(px_state_t *pxs)
 
 /* Purge all */
 private bool
-purge_all(cached_char *cc, void *dummy)
+purge_all(const gs_memory_t *mem, cached_char *cc, void *dummy)
 {	
     return true;
 }

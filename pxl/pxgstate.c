@@ -141,10 +141,10 @@ px_gstate_client_copy_for(void *to, void *from, gs_state_copy_reason_t reason)
 	 * halftone.thresholds is a different special case.  We need to
 	 * copy it for gsave and gstate, and free it on grestore.
 	 */
-	{ gs_const_string tmat;
-	  gs_const_string thtt;
+	{ gs_string tmat;
+	  gs_string thtt;
 	  pl_dict_t tdict;
-	  gs_const_string *phtt;
+	  gs_string *phtt;
 
 	  tmat = pxto->dither_matrix;
 	  thtt = pxto->halftone.thresholds;
@@ -312,7 +312,7 @@ px_initclip(px_state_t *pxs)
 /* Set up the color space information for a bitmap image or pattern. */
 int
 px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
-  const px_bitmap_params_t *params, const gs_const_string *palette,
+  const px_bitmap_params_t *params, const gs_string *palette,
   const gs_state *pgs)
 {	
 
@@ -336,7 +336,8 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
     if ( params->indexed ) { 
 	pcs->params.indexed.base_space.type = pcs->type;
 	pcs->params.indexed.hival = (1 << depth) - 1;
-	pcs->params.indexed.lookup.table = *palette;
+	pcs->params.indexed.lookup.table.data = palette->data;
+	pcs->params.indexed.lookup.table.size = palette->size;
 	pcs->params.indexed.use_proc = 0;
 	pcs->type = &gs_color_space_type_Indexed;
     }
@@ -383,7 +384,7 @@ pxPopGS(px_args_t *par, px_state_t *pxs)
 	if ( pxgs->stack_depth == 0 )
 	  return 0;
 	if ( pxgs->palette.data && !pxgs->palette_is_shared ) {
-	  gs_free_string(pxs->memory, pxgs->palette.data,
+            gs_free_string(pxs->memory, (byte *)pxgs->palette.data,
 			 pxgs->palette.size, "pxPopGS(palette)");
 	  pxgs->palette.data = 0;
 	}

@@ -1,4 +1,5 @@
 #include "stdio_.h"			/* std.h + NULL */
+#include "gsdevice.h"
 #include "pcommand.h"
 #include "pgmand.h"
 #include "pcstate.h"

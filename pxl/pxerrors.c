@@ -71,7 +71,7 @@ pxerrors_init(px_state_t *pxs)
 	    pxfont->font_type = plft_Unicode; /* as good as any */
 	    pxfont->data_are_permanent = true;
 	    code =
-	      px_define_font(pxfont, px_bitmap_font_header,
+                px_define_font(pxfont, (byte *)px_bitmap_font_header,
 			     px_bitmap_font_header_size,
 			     gs_next_ids(pxs->memory, 1),
 			     pxs);

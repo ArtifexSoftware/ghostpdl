@@ -48,7 +48,7 @@ typedef enum {
 /*
  * Define a font.  The caller must fill in pxfont->storage and ->font_type.
  */
-int px_define_font(px_font_t *pxfont, const byte *header, ulong size,
+int px_define_font(px_font_t *pxfont, byte *header, ulong size,
                    gs_id id, px_state_t *pxs);
 
 /*

@@ -127,7 +127,7 @@ struct px_state_s {
     byte *data;
     uint size;
   } download_bytes;		/* font/character/halftone data */
-    gs_const_string download_string;	/* ditto */
+  gs_string download_string;	/* ditto */
   struct sp_n {
     int x;
     double y0, y1;
@@ -145,23 +145,6 @@ struct px_state_s {
   /* ---------------- PCL state -------------------- */
   pl_interp_instance_t *pcls;
 };
-#define private_st_px_state()		/* in pxstate.c */\
-  gs_private_st_composite(st_px_state, px_state_t, "px_state",\
-    px_state_enum_ptrs, px_state_reloc_ptrs)
-/* Enumerate the various kinds of pointers in a px_state_t. */
-#define px_state_do_ptrs(m)\
-  m(0,client_data) m(1,stream_def.data)\
-  m(2,download_font) m(3,font_dir) m(4,error_page_font)\
-  m(5,error_page_show_enum) m(6,pgs) m(7,pxgs) m(8,image_enum)\
-  m(9,pattern_enum) m(10,download_bytes.data)
-#define px_state_num_ptrs 11
-#define px_state_do_string_ptrs(m)\
-  m(0,stream_name) m(1,download_string)
-#define px_state_num_string_ptrs 2
-#define px_state_do_dicts(m)\
-  m(0,session_pattern_dict) m(1,page_pattern_dict) m(2,stream_dict)\
-  m(4,font_dict)
-#define px_state_num_dicts 4
 
 /* Allocate a px_state_t. */
 px_state_t *px_state_alloc(gs_memory_t *);

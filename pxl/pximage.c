@@ -46,19 +46,6 @@
 #include "sdct.h"
 #include "sjpeg.h"
 
-/* GC descriptors */
-private_st_px_pattern();
-#define ppat ((px_pattern_t *)vptr)
-private ENUM_PTRS_BEGIN(px_pattern_enum_ptrs) return 0;
-	ENUM_CONST_STRING_PTR(0, px_pattern_t, palette);
-	ENUM_PTR(1, px_pattern_t, data);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(px_pattern_reloc_ptrs) {
-	RELOC_CONST_STRING_PTR(px_pattern_t, palette);
-	RELOC_PTR(px_pattern_t, data);
-} RELOC_PTRS_END
-#undef ppat
-
 /* Define the "freeing" procedure for patterns in a dictionary. */
 void
 px_free_pattern(gs_memory_t *mem, void *vptr, client_name_t cname)
@@ -586,7 +573,7 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	    code = gs_note_error(pxs->memory, errorInsufficientMemory);
 	  else 
 	    code = px_image_color_space(&pxenum->color_space, &pxenum->image,
-					&params, &pxgs->palette, pgs);
+					&params, (const gs_string *)&pxgs->palette, pgs);
 	}
 	if ( code < 0 )
 	  { gs_free_object(pxs->memory, pxenum->row, "pxReadImage(row)");
@@ -693,6 +680,8 @@ pxBeginRastPattern(px_args_t *par, px_state_t *pxs)
 	uint psize;
 	byte *pdata;
 	int code = begin_bitmap(&params, &benum, par, pxs);
+        private const gs_memory_struct_type_t st_px_pattern = 
+            {sizeof(px_pattern_t), "", 0, 0, 0, 0, 0};
 
 	if ( code < 0 )
 	  return code;

@@ -795,7 +795,7 @@ a:		      if ( attr >= px_attribute_next )
 			    &st->stack[st->attribute_indices[attr]];
 			  /* If the old value is on the heap, free it. */
 			  if ( old_sp->type & pxd_on_heap )
-			    gs_free_object(memory, old_sp->value.array.data,
+                              gs_free_object(memory, (void *)old_sp->value.array.data,
 					   "old value for duplicate attribute");
 			  *old_sp = *sp--;
 			}

@@ -78,17 +78,6 @@ set_symbol_map(px_state_t *pxs)
 	  }
 }
 
-/* Recompute the combined character matrix from character and font */
-/* parameters.  Note that this depends on the current font. */
-private double
-adjust_scale(double scale)
-{	double int_scale = floor(scale + 0.5);
-	double diff = scale - int_scale;
-
-	/* If the scale is very close to an integer, make it integral, */
-	/* so we won't have to scale the bitmap (or can scale it fast). */
-	return (diff < 0.001 && diff > -0.001 ? int_scale : scale);
-}
 private int
 px_set_char_matrix(px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
@@ -172,8 +161,7 @@ px_set_char_matrix(px_state_t *pxs)
 /* This procedure implements FontHeader loading; it is exported for */
 /* initializing the error page font. */
 int
-px_define_font(px_font_t *pxfont, const byte *header, ulong size, gs_id id,
-  px_state_t *pxs)
+px_define_font(px_font_t *pxfont, byte *header, ulong size, gs_id id, px_state_t *pxs)
 {	gs_memory_t *mem = pxs->memory;
 	uint num_chars;
 
@@ -820,7 +808,9 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	  }
 	/* We have the complete character. */
 	/* Do error checks before installing. */
-	{ const byte *header = pxs->download_font->header;
+	{ 
+            /* const byte *header = pxs->download_font->header;
+             see NB just below */
 	  const byte *data = pxs->download_bytes.data;
 	  int code = 0;
 
