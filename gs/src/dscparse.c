@@ -1052,7 +1052,7 @@ dsc_unknown(CDSC *dsc)
 }
 
 
-GSBOOL
+dsc_private GSBOOL
 dsc_is_section(char *line)
 {
     if ( !((line[0]=='%') && (line[1]=='%')) )
