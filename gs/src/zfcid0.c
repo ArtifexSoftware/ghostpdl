@@ -482,7 +482,7 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-#ifdef DEBUG
+#if defined(DEBUG) || defined(PROFILE)
 
 #include "gdevpsf.h"
 
@@ -518,7 +518,7 @@ const op_def zfcid0_op_defs[] =
 {
     {"2.buildfont9", zbuildfont9},
     {"2.type9mapcid", ztype9mapcid},
-#ifdef DEBUG
+#if defined(DEBUG) || defined(PROFILE)
     {"2.writefont9", zwritefont9},
 #endif
     op_def_end(0)
