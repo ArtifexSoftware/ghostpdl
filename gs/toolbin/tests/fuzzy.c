@@ -1,5 +1,5 @@
 /**
- * Fuzzy comparison utility. Copyright 2001 artofcode LLC.
+ * Fuzzy comparison utility. Copyright 2001-2003 artofcode LLC.
  **/
 
 #include <stdio.h>
@@ -129,11 +129,11 @@ create_pnm_image_struct(Image *templ, const char *path)
   ImagePnm *pnm = (ImagePnm *)malloc(sizeof(ImagePnm));
 
   if (pnm == NULL) {
-    printf("Insufficient RAM.\n");
+    printf ("Insufficient RAM.\n");
     return NULL;
   }
   if (f == NULL) {
-    printf("Can't create the file %s\n", path);
+    printf ("Can't create the file %s\n", path);
     return NULL;
   }
   pnm->f = f;
@@ -228,10 +228,15 @@ create_bmp_image(Image *templ, const char *path)
   {
     uchar *linebuf = malloc(raster);
     if (linebuf == NULL) {
-        printf("Couldn't allocate dummy bmp line buffer; diff image may be corrupt.\n");
+        printf ("Couldn't allocate dummy bmp line buffer; diff image may be corrupt.\n");
     } else {
+	int k;
+
         memset(linebuf, 0, raster);
-        fwrite(linebuf, raster, pnm->super.height, pnm->f);
+        
+	for (k = 0; k < pnm->super.height; k++)
+	    fwrite(linebuf, 1, raster, pnm->f);
+        
         free(linebuf);
     }
   }
@@ -426,7 +431,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
     {
       out_buf = malloc(out_buffer_size);
       if (out_buf == NULL) 
-        printf("Can't allocate output buffer.\n");
+        printf ("Can't allocate output buffer.\n");
     }
 
   /* Read rows ahead for half window : */
@@ -484,13 +489,13 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
       if (out_buf) {
         if (image_out->super.seek(&image_out->super, y))
 	  {
-	    printf("I/O Error seeking to the output image position.");
+	    printf ("I/O Error seeking to the output image position.");
 	    free(out_buf);
 	    out_buf = NULL;
 	  }
 	else if (fwrite(out_buf, 1, out_buffer_size, image_out->f) != out_buffer_size)
 	  {
-	    printf("I/O Error writing the output image.\n");
+	    printf ("I/O Error writing the output image.\n");
 	    free(out_buf);
 	    out_buf = NULL;
 	  }
@@ -523,7 +528,7 @@ get_arg (int argc, char **argv, int *pi, const char *arg)
 int
 usage (void)
 {
-  fprintf (stderr, "Usage: fuzzy [-w window_size] [-t tolerance] a.ppm b.ppm [diff.ppm | diff.bmp]\n");
+  printf ("Usage: fuzzy [-w window_size] [-t tolerance] a.ppm b.ppm [diff.ppm | diff.bmp]\n");
   return 1;
 }
 
@@ -553,7 +558,7 @@ main (int argc, char **argv)
 	      fparams.window_size = atoi (get_arg (argc, argv, &i, arg + 2));
 	      if ((fparams.window_size & 1) == 0)
 		{
-		  fprintf (stderr, "window size must be odd\n");
+		  printf ("window size must be odd\n");
 		  return 1;
 		}
 	      break;
@@ -576,7 +581,7 @@ main (int argc, char **argv)
   image1 = open_image_file (fn[0]);
   if (image1 == NULL)
     {
-      fprintf (stderr, "Error opening %s\n", fn[0]);
+      printf ("Error opening %s\n", fn[0]);
       return 1;
     }
 
@@ -584,7 +589,7 @@ main (int argc, char **argv)
   if (image2 == NULL)
     {
       image_close (image1);
-      fprintf (stderr, "Error opening %s\n", fn[1]);
+      printf ("Error opening %s\n", fn[1]);
       return 1;
     }
 
