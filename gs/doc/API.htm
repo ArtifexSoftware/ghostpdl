@@ -348,8 +348,8 @@ The <b><tt>gsapi_init_with_args</tt></b>, <b><tt>gsapi_run_*</tt></b> and
 	<td>&nbsp;
 	<td>"<b><tt>gs -h</tt></b>" has been executed. 
 	This is not an error.
-        The interpreter was not initialised and 
-	<b><tt>gsapi_exit()</tt></b> must NOT be called.
+        The interpreter was not initialised. It is safe to call
+	<b><tt>gsapi_exit()</tt></b>.
 <tr valign=top>	<td align=left>&lt; 0
 	<td>&nbsp;
 	<td>Error
