@@ -2,7 +2,7 @@ Version 0.7 (unreleased)
 
  * properly initialize page buffers
  * refinement region handling
- * successfully decodes ubc test streams 042_21 and 042_22
+ * successfully decodes ubc test streams 042_21, 042_22 and 042_23
  
 Version 0.6 (2003 December 31)
 

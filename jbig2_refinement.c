@@ -75,7 +75,8 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
       CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
       CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
       CONTEXT |= jbig2_image_get_pixel(image, x + 0, y - 1) << 2; 
-      CONTEXT |= jbig2_image_get_pixel(image, x - 1, y - 1) << 3; 
+      CONTEXT |= jbig2_image_get_pixel(image, x + params->grat[0], 
+	y + params->grat[1]) << 3; 
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy+1) << 4;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy+1) << 5;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy+1) << 6;
@@ -84,7 +85,8 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy+0) << 9;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+1, y-dy-1) << 10;
       CONTEXT |= jbig2_image_get_pixel(ref, x-dx+0, y-dy-1) << 11;
-      CONTEXT |= jbig2_image_get_pixel(ref, x-dx-1, y-dy-1) << 12;
+      CONTEXT |= jbig2_image_get_pixel(ref, x-dx+params->grat[2], 
+	y-dy+params->grat[3]) << 12;
       bit = jbig2_arith_decode(as, &GB_stats[CONTEXT]);
       jbig2_image_set_pixel(image, x, y, bit);
     }
