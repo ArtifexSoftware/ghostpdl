@@ -390,13 +390,12 @@ private int param_MediaSize(P4(gs_param_list *, gs_param_name,
 
 private int param_check_bool(P4(gs_param_list *, gs_param_name, bool, bool));
 private int param_check_long(P4(gs_param_list *, gs_param_name, long, bool));
-
-#define param_check_int(plist, pname, ival, defined)\
-  param_check_long(plist, pname, (long)(ival), defined)
-private int param_check_bytes(P5(gs_param_list *, gs_param_name, const byte *, uint, bool));
-
-#define param_check_string(plist, pname, str, defined)\
-  param_check_bytes(plist, pname, (const byte *)str, strlen(str), defined)
+#define param_check_int(plist, pname, ival, is_defined)\
+  param_check_long(plist, pname, (long)(ival), is_defined)
+private int param_check_bytes(P5(gs_param_list *, gs_param_name, const byte *,
+				 uint, bool));
+#define param_check_string(plist, pname, str, is_defined)\
+  param_check_bytes(plist, pname, (const byte *)(str), strlen(str), is_defined)
 
 /* Set the device parameters. */
 /* If the device was open and the put_params procedure closed it, */
@@ -790,14 +789,14 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
 /* its existing value. */
 private int
 param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
-		 bool defined)
+		 bool is_defined)
 {
     int code;
     bool new_value;
 
     switch (code = param_read_bool(plist, pname, &new_value)) {
 	case 0:
-	    if (defined && new_value == value)
+	    if (is_defined && new_value == value)
 		break;
 	    code = gs_note_error(gs_error_rangecheck);
 	    goto e;
@@ -812,14 +811,14 @@ param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
 }
 private int
 param_check_long(gs_param_list * plist, gs_param_name pname, long value,
-		 bool defined)
+		 bool is_defined)
 {
     int code;
     long new_value;
 
     switch (code = param_read_long(plist, pname, &new_value)) {
 	case 0:
-	    if (defined && new_value == value)
+	    if (is_defined && new_value == value)
 		break;
 	    code = gs_note_error(gs_error_rangecheck);
 	    goto e;
@@ -834,14 +833,14 @@ param_check_long(gs_param_list * plist, gs_param_name pname, long value,
 }
 private int
 param_check_bytes(gs_param_list * plist, gs_param_name pname, const byte * str,
-		  uint size, bool defined)
+		  uint size, bool is_defined)
 {
     int code;
     gs_param_string new_value;
 
     switch (code = param_read_string(plist, pname, &new_value)) {
 	case 0:
-	    if (defined && new_value.size == size &&
+	    if (is_defined && new_value.size == size &&
 		!memcmp((const char *)str, (const char *)new_value.data,
 			size)
 		)

@@ -163,8 +163,9 @@ e:	param_signal_error(plist, oname, code);\
 
 private int cdj_param_check_bytes(P5(gs_param_list *, gs_param_name, const byte *, uint, bool));
 private int cdj_param_check_float(P4(gs_param_list *, gs_param_name, floatp, bool));
-#define cdj_param_check_string(plist, pname, str, defined)\
-  cdj_param_check_bytes(plist, pname, (const byte *)str, strlen(str), defined)
+#define cdj_param_check_string(plist, pname, str, is_defined)\
+  cdj_param_check_bytes(plist, pname, (const byte *)(str), strlen(str),\
+			is_defined)
 
 /*
  * Drivers stuff.
@@ -3418,14 +3419,14 @@ get_param_string(gs_param_list* plist,
  */
 
 private int
-cdj_param_check_bytes(gs_param_list *plist, gs_param_name pname, const byte *str,
-  uint size, bool defined)
+cdj_param_check_bytes(gs_param_list *plist, gs_param_name pname,
+		      const byte *str, uint size, bool is_defined)
 {       int code;
         gs_param_string new_value;
         switch ( code = param_read_string(plist, pname, &new_value) )
           {
           case 0:
-                if ( defined && new_value.size == size &&
+                if ( is_defined && new_value.size == size &&
                      !memcmp((const char *)str, (const char *)new_value.data,
                              size)
                    )
@@ -3446,13 +3447,13 @@ e:              param_signal_error(plist, pname, code);
 
 private int
 cdj_param_check_float(gs_param_list *plist, gs_param_name pname, floatp fval,
-  bool defined)
+		      bool is_defined)
 {       int code;
         float new_value;
         switch ( code = param_read_float(plist, pname, &new_value) )
           {
           case 0:
-                if ( defined && new_value == fval)
+                if ( is_defined && new_value == fval)
                   break;
                 code = gs_note_error(gs_error_rangecheck);
                 goto e;
