@@ -49,7 +49,7 @@ private_st_ccolor_t();
  * Convert a color value specified as a three-element byte array, or an index
  * to a palette, into a gs_paint_color structure.
  */
-  private void
+private void
 convert_color_to_paint(
     const byte *        pcomp,
     gs_paint_color *    ppaint
@@ -61,7 +61,7 @@ convert_color_to_paint(
     ppaint->values[3] = 0.0;
 }
 
-  private void
+private void
 convert_index_to_paint(
     int                 indx,
     gs_paint_color *    ppaint
@@ -79,7 +79,7 @@ convert_index_to_paint(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 set_ht_crd_from_palette(
     pcl_state_t *       pcs
 )
@@ -105,7 +105,7 @@ set_ht_crd_from_palette(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 set_ht_crd_from_foreground(
     pcl_state_t *       pcs
 )
@@ -125,7 +125,7 @@ set_ht_crd_from_foreground(
 /*
  * Free a PCL client color structure.
  */
-  private void
+private void
 free_ccolor(
     gs_memory_t *   pmem,
     void *          pvccolor,
@@ -160,7 +160,7 @@ free_ccolor(
  *
  * Newly created colors are solid white.
  */
-  private int
+private int
 unshare_ccolor(
     pcl_state_t *   pcs,
     pcl_ccolor_t ** ppccolor,
@@ -221,7 +221,7 @@ unshare_ccolor(
  *
  * Exactly one of the pair of operands pbase and pindex shoud be non-null.
  */
-  private int
+private int
 set_unpatterned_color(
     pcl_state_t *           pcs,
     pcl_cs_indexed_t *      pindexed,
@@ -279,7 +279,7 @@ set_unpatterned_color(
  * Set a patterned color space. Note that this is a substantially different
  * operation from setting a solid (unpatterned) color.
  */
-  private int
+private int
 set_patterned_color(
     pcl_state_t *       pcs,
     pcl_ccolor_t *      pnew
@@ -333,7 +333,7 @@ set_patterned_color(
  * these fields are ignored for colored patterns, and for mask patterns changes
  * only require another call to gs_setpattern.
  */
-  private bool
+private bool
 check_pattern_rendering(
     pcl_state_t *           pcs,
     pcl_pattern_t *         pptrn,
@@ -403,7 +403,7 @@ check_pattern_rendering(
  * rendered.
  *
  */
-  private int
+private int
 render_pattern(
     pcl_state_t *           pcs,
     pcl_pattern_t *         pptrn,
@@ -520,7 +520,7 @@ render_pattern(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 set_frgrnd_pattern(
     pcl_state_t *       pcs,
     pcl_pattern_t *     pptrn,
@@ -589,7 +589,7 @@ set_frgrnd_pattern(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 set_uncolored_palette_pattern(
     pcl_state_t *       pcs,
     pcl_pattern_t *     pptrn,
@@ -640,7 +640,7 @@ set_uncolored_palette_pattern(
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
-  private int
+private int
 set_colored_pattern(
     pcl_state_t *       pcs,
     pcl_pattern_t *     pptrn
@@ -850,7 +850,7 @@ set_colored_pattern(
  * should be done only when necessary.
  */
 
-  private int
+private int
 pattern_set_white(
     pcl_state_t *   pcs,
     int             arg1,   /* ignored */
@@ -869,9 +869,11 @@ pattern_set_white(
         code = pcl_ht_build_default_ht(pcs, &pdflt_ht, pcs->memory);
 
     /* set the halftone and color space */
-    if (code >= 0)
+    if (code >= 0) {
         code = pcl_ht_set_halftone(pcs, &pdflt_ht, pcl_cspace_RGB, false);
-    pcl_ht_release(pdflt_ht);
+        pcl_ht_release(pdflt_ht); /* decrement reference to local ptr */
+    }
+
     if (code >= 0)
         code = set_unpatterned_color(pcs, NULL, pwhite_cs, &white_paint);
     pcl_cs_base_release(pwhite_cs);
@@ -1187,7 +1189,7 @@ pcl_pattern_get_proc_SV(
  *
  * Set the pattern id.
  */
-  private int
+private int
 set_pattern_id(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1222,7 +1224,7 @@ set_source_transparency_mode(
  *
  * Set pattern transparency mode.
  */
-  private int
+private int
 set_pattern_transparency_mode(
     pcl_args_t *    pargs,
     pcl_state_t *   pcs
@@ -1331,7 +1333,7 @@ set_driver_configuration(
 /*
  * Initialization and reset routines.
  */
-  private int
+private int
 pattern_do_registration(
     pcl_parser_state_t *pcl_parser_state,
     gs_memory_t *   pmem
