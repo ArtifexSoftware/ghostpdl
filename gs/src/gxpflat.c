@@ -629,12 +629,12 @@ gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this,
 /*  Initialize the iterator with a line. */
 bool
 gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this, 
-	    fixed x0, fixed y0, const line_segment *pc, segment_notes notes)
+	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes)
 {
     this->x0 = this->lx0 = this->lx1 = x0;
     this->y0 = this->ly0 = this->ly1 = y0;
-    this->x3 = pc->pt.x;
-    this->y3 = pc->pt.y;
+    this->x3 = x1;
+    this->y3 = y1;
     this->k = 0;
     this->i = 1;
 #   if CURVED_TRAPEZOID_FILL

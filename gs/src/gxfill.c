@@ -879,8 +879,9 @@ step_al(active_line *alp, bool move_iterator)
 private void
 init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat)
 {
+    const segment *ss = (alp->direction == DIR_UP ? s1 : s0);
     /* Warning : p0 may be equal to &alp->end. */
-    bool curve = ((alp->direction == DIR_UP ? s1 : s0)->type == s_curve);
+    bool curve = (ss != NULL && ss->type == s_curve);
 
 #if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
     alp->first_flattened = true;
@@ -934,22 +935,21 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 	}
     } else {
 	assert(gx_flattened_curve_iterator__init_line(&alp->fi, 
-		s0->pt.x, s0->pt.y, (line_segment *)s1, 0));
+		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y, 0));
 	step_al(alp, true);
     }
     alp->pseg = s1;
 }
 #endif
 
-
 /*
  * Internal routine to test a segment and add it to the pending list if
  * appropriate.
  */
 private int
-add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
+add_y_line_aux(const segment * prev_lp, const segment * lp, 
+	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll)
 {
-    gs_fixed_point this, prev;
     active_line *alp = ll->next_active;
     fixed y_start;
 
@@ -963,40 +963,36 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
 	INCR(fill_alloc);
     } else
 	ll->next_active++;
-    this.x = lp->pt.x;
-    this.y = lp->pt.y;
-    prev.x = prev_lp->pt.x;
-    prev.y = prev_lp->pt.y;
 #   if CURVED_TRAPEZOID_FILL
 	alp->more_flattened = false;
 #   endif
     switch ((alp->direction = dir)) {
 	case DIR_UP:
-	    y_start = prev.y;
+	    y_start = prev->y;
 #	    if CURVED_TRAPEZOID_FILL
 		if (ll->fill_by_trapezoids)
 		    init_al(alp, prev_lp, lp, ll->fixed_flat);
 		else
 #	    endif
-	    {	SET_AL_POINTS(alp, prev, this);
+	    {	SET_AL_POINTS(alp, *prev, *curr);
 		alp->pseg = lp;
 	    }
 	    break;
 	case DIR_DOWN:
-	    y_start = this.y;
+	    y_start = curr->y;
 #	    if CURVED_TRAPEZOID_FILL
 		if (ll->fill_by_trapezoids)
 		    init_al(alp, lp, prev_lp, ll->fixed_flat);
 		else
 #	    endif
-	    {	SET_AL_POINTS(alp, this, prev);
+	    {	SET_AL_POINTS(alp, *curr, *prev);
 		alp->pseg = prev_lp;
 	    }
 	    break;
 	case DIR_HORIZONTAL:
-	    y_start = this.y;	/* = prev.y */
-	    alp->start = prev;
-	    alp->end = this;
+	    y_start = curr->y;	/* = prev.y */
+	    alp->start = *prev;
+	    alp->end = *curr;
 	    /* Don't need to set dx or y_fast_max */
 	    alp->pseg = prev_lp;	/* may not need this either */
 	    break;
@@ -1042,6 +1038,12 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
     print_al("add ", alp);
     return 0;
 }
+private int
+add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
+{
+    return add_y_line_aux(prev_lp, lp, &lp->pt, &prev_lp->pt, dir, ll);
+}
+
 
 /* ---------------- Filling loop utilities ---------------- */
 
@@ -1332,6 +1334,30 @@ move_al_by_y(line_list *ll, fixed y1)
 	}
     }
 }
+
+#if CURVED_TRAPEZOID_FILL
+/* Process horizontal segment of curves. */
+private int
+process_h_segments(line_list *ll, fixed y)
+{
+    active_line *alp;
+    int code, inserted = 0;
+
+    for (alp = ll->x_list; alp != 0; alp = alp->next) {
+	if (alp->more_flattened/* HACK */ && alp->start.y == y && alp->end.y == y) {
+	    code = add_y_line_aux(NULL, NULL, &alp->start, &alp->end, DIR_HORIZONTAL, ll);
+	    if (code < 0)
+		return code;
+	    step_al(alp, true);
+	    inserted = 1;
+	}
+    }
+    for (alp = ll->x_list; alp != 0; alp = alp->next)
+	assert(alp->pseg != NULL);
+    return inserted;
+    /* After this should call move_al_by_y and step to the next band. */
+}
+#endif
 
 private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
@@ -1697,6 +1723,13 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	while (yll != 0 && yll->start.y == y) {
 	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
 
+#	    if CURVED_TRAPEZOID_FILL
+		ll->y_list = ynext;
+		if (ll->y_line == yll)
+		    ll->y_line = ynext;
+		if (ynext != NULL)
+		    ynext->prev = NULL;
+#	    endif
 	    if (yll->direction == DIR_HORIZONTAL) {
 		if (!pseudo_rasterization) {
 		    /*
@@ -1755,13 +1788,25 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	for (alp = ll->x_list; alp != 0; alp = alp->next)
 	    if (alp->end.y < y1)
 		y1 = alp->end.y;
-#ifdef DEBUG
-	if (gs_debug_c('F')) {
-	    dlprintf2("[F]before loop: y=%f y1=%f:\n",
-		      fixed2float(y), fixed2float(y1));
-	    print_line_list(ll->x_list);
+#	ifdef DEBUG
+	    if (gs_debug_c('F')) {
+		dlprintf2("[F]before loop: y=%f y1=%f:\n",
+			  fixed2float(y), fixed2float(y1));
+		print_line_list(ll->x_list);
+	    }
+#	endif
+#	if CURVED_TRAPEZOID_FILL
+	if (y == y1) {
+	    code = process_h_segments(ll, y);
+	    if (code < 0)
+		return code;
+	    if (code > 0) {
+		yll = ll->y_list; /* add_y_line_aux in process_h_segments changes it. */
+		continue;
+	    }
+
 	}
-#endif
+#	endif
 	/* Now look for line intersections before y1. */
 	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
 	if (!CURVED_TRAPEZOID_FILL || y != y1) {
@@ -1792,6 +1837,8 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		fixed xbot = alp->x_current;
 		fixed xtop = alp->x_current = alp->x_next;
 		int code;
+
+		assert(y >= alp->start.y);
 
 		print_al("step", alp);
 		INCR(band_step);
@@ -1876,10 +1923,8 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		return code;
 	}
 	move_al_by_y(ll, y1);
-	if (!CURVED_TRAPEZOID_FILL || y != y1) {
-	    ll->h_list1 = ll->h_list0;
-	    ll->h_list0 = 0;
-	}
+	ll->h_list1 = ll->h_list0;
+	ll->h_list0 = 0;
 	y = y1;
     }
     if (pseudo_rasterization) {

@@ -425,7 +425,7 @@ struct gx_flattened_curve_iterator_s {
 bool gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this, 
 	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes);
 bool gx_flattened_curve_iterator__init_line(gx_flattened_curve_iterator *this, 
-	    fixed x0, fixed y0, const line_segment *pc, segment_notes notes);
+	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes);
 bool gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this);
 #if CURVED_TRAPEZOID_FILL_SCANS_BACK
 bool gx_flattened_curve_iterator__prev(gx_flattened_curve_iterator *this);
