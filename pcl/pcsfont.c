@@ -591,6 +591,7 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
     if ( char_data == 0 ) { 
         char_data = gs_alloc_bytes(pcs->memory, font_data_size,
                                    "pcl_character_data");
+        memset(char_data, 0, font_data_size);
         if ( char_data == 0 )
             return_error(pcs->memory, e_Memory);
         /* if count > font_data_size extra data is ignored */
@@ -631,7 +632,7 @@ typedef enum resource_type_enum {
    on disk and add the macro to the macro dictionary */
 private void *
 pcl_find_resource(pcl_state_t *pcs,
-                  byte string_id[],
+                  const byte string_id[],
                   int string_id_size,
                   resource_type_t resource_type
                   )
