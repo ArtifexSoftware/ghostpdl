@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2001-2002 artofcode LLC.
+    Copyright (C) 2001-2003 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -51,12 +51,12 @@ jbig2_decode_mmr_init(Jbig2MmrCtx *mmr, int width, int height,
   mmr->height = height;
   mmr->data = data;
   mmr->size = size;
+
   mmr->data_index = 0;
   mmr->bit_index = 0;
   for (i = 0; i < size && i < 4; i++)
     word |= (data[i] << ((3 - i) << 3));
   mmr->word = word;
-
 }
 
 static void
@@ -73,9 +73,23 @@ jbig2_decode_mmr_consume(Jbig2MmrCtx *mmr, int n_bits)
     }
 }
 
+/*
+<raph> the first 2^(initialbits) entries map bit patterns to decodes
+<raph> let's say initial_bits is 8 for the sake of example
+<raph> and that the code is 1001
+<raph> that means that entries 0x90 .. 0x9f have the entry { val, 4 }
+<raph> because those are all the bytes that start with the code
+<raph> and the 4 is the length of the code
+... if (n_bits > initial_bits) ...
+<raph> anyway, in that case, it basically points to a mini table
+<raph> the n_bits is the maximum length of all codes beginning with that byte
+<raph> so 2^(n_bits - initial_bits) is the size of the mini-table
+<raph> peter came up with this, and it makes sense
+*/
+
 typedef struct {
-  int val;
-  int n_bits;
+  short val;
+  short n_bits;
 } mmr_table_node;
 
 /* white decode table (runlength huffman codes) */
@@ -710,6 +724,75 @@ const mmr_table_node jbig2_mmr_black_decode[] = {
 	{ 0, 3 }
 };
 
+#define getbit(buf, x) ( ( buf[x >> 3] >> ( 7 - (x & 7) ) ) & 1 )
+
+static int
+jbig2_find_changing_element(const byte *line, int x, int w)
+{
+  int a, b;
+
+  if (line == 0)
+    return w;
+
+  if (x == 0)
+    {
+      a = 0;
+    }
+  else
+    {
+      a = getbit(line, x);
+      x ++;
+    }
+
+  while (x < w)
+    {
+      b = getbit(line, x);
+      if (a != b)
+	break;
+      x++;
+    }
+
+  return x;
+}
+
+static int
+jbig2_find_changing_element_of_color(const byte *line, int x, int w, int color)
+{
+  if (line == 0)
+    return w;
+  x = jbig2_find_changing_element(line, x, w);
+  if (x < w && getbit(line, x) != color)
+    x = jbig2_find_changing_element(line, x, w);
+  return x;
+}
+
+static const byte lm[8] = { 0xFF, 0x7F, 0x3F, 0x1F, 0x0F, 0x07, 0x03, 0x01 };
+static const byte rm[8] = { 0x00, 0x80, 0xC0, 0xE0, 0xF0, 0xF8, 0xFC, 0xFE };
+
+static void
+jbig2_set_bits(byte *line, int x0, int x1)
+{
+  int a0, a1, b0, b1, a;
+
+  a0 = x0 >> 3;
+  a1 = x1 >> 3;
+
+  b0 = x0 & 7;
+  b1 = x1 & 7;
+
+  if (a0 == a1)
+    {
+      line[a0] |= lm[b0] & rm[b1];
+    }
+  else
+    {
+      line[a0] |= lm[b0];
+      for (a = a0 + 1; a < a1; a++)
+        line[a] = 0xFF;
+      line[a1] |= rm[b1];
+    }
+}
+
 static int
 jbig2_decode_get_code(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_bits)
 {
@@ -718,13 +801,14 @@ jbig2_decode_get_code(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial
   int val = table[table_ix].val;
   int n_bits = table[table_ix].n_bits;
 
-  if (n_bits > 8)
+  if (n_bits > initial_bits)
     {
       int mask = (1 << (32 - initial_bits)) - 1;
       table_ix = val + ((word & mask) >> (32 - n_bits));
       val = table[table_ix].val;
-      n_bits = 8 + table[table_ix].n_bits + 8;
+      n_bits = initial_bits + table[table_ix].n_bits;
     }
+
   jbig2_decode_mmr_consume(mmr, n_bits);
   return val;
 }
@@ -747,58 +831,119 @@ jbig2_decode_get_run(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_
 static void
 jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
 {
+  int a0, a1, a2, b1, b2;
+  int c;
+
+  a0 = 0;
+  c = 0; /* 0 is white, black is 1 */
+
   while (1)
     {
       uint32_t word = mmr->word;
-      /* printf ("%08x\n", word); */
+
+      if (a0 >= mmr->width)
+	break;
+
       if ((word >> (32 - 3)) == 1)
 	{
 	  int white_run, black_run;
 
 	  jbig2_decode_mmr_consume(mmr, 3);
-	  white_run = jbig2_decode_get_run(mmr, jbig2_mmr_white_decode, 8);
-	  black_run = jbig2_decode_get_run(mmr, jbig2_mmr_black_decode, 7);
-	  /* printf ("H %d %d\n", white_run, black_run); */
+
+	  if (c == 0)
+	    {
+	      white_run = jbig2_decode_get_run(mmr, jbig2_mmr_white_decode, 8);
+	      black_run = jbig2_decode_get_run(mmr, jbig2_mmr_black_decode, 7);
+	      a1 = a0 + white_run;
+	      a2 = a1 + black_run;
+	      jbig2_set_bits(dst, a1, a2);
+	      a0 = a2;
+	      /* printf ("H %d %d\n", white_run, black_run); */
+	    }
+	  else
+	    {
+	      black_run = jbig2_decode_get_run(mmr, jbig2_mmr_black_decode, 7);
+	      white_run = jbig2_decode_get_run(mmr, jbig2_mmr_white_decode, 8);
+	      a1 = a0 + black_run;
+	      a2 = a1 + white_run;
+	      jbig2_set_bits(dst, a0, a1);
+	      a0 = a2;
+	      /* printf ("H %d %d\n", black_run, white_run); */
+	    }
 	}
+
       else if ((word >> (32 - 4)) == 1)
 	{
 	  /* printf ("P\n"); */
-	  jbig2_decode_mmr_consume(mmr, 3);
+	  jbig2_decode_mmr_consume(mmr, 4);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  b2 = jbig2_find_changing_element(ref, b1, mmr->width);
+	  if (c) jbig2_set_bits(dst, a0, b2);
+	  a0 = b2;
 	}
+
       else if ((word >> (32 - 1)) == 1)
 	{
 	  /* printf ("V(0)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 1);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  if (c) jbig2_set_bits(dst, a0, b1);
+	  a0 = b1;
+	  c = !c;
 	}
       else if ((word >> (32 - 3)) == 3)
 	{
 	  /* printf ("VR(1)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 3);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  if (c) jbig2_set_bits(dst, a0, b1 + 1);
+	  a0 = b1 + 1;
+	  c = !c;
 	}
       else if ((word >> (32 - 6)) == 3)
 	{
 	  /* printf ("VR(2)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 6);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  if (c) jbig2_set_bits(dst, a0, b1 + 2);
+	  a0 = b1 + 2;
+	  c = !c;
 	}
       else if ((word >> (32 - 7)) == 3)
 	{
 	  /* printf ("VR(3)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 7);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  if (c) jbig2_set_bits(dst, a0, b1 + 3);
+	  a0 = b1 + 3;
+	  c = !c;
 	}
       else if ((word >> (32 - 3)) == 2)
 	{
 	  /* printf ("VL(1)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 3);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  if (c) jbig2_set_bits(dst, a0, b1 - 1);
+	  a0 = b1 - 1;
+	  c = !c;
 	}
       else if ((word >> (32 - 6)) == 2)
 	{
 	  /* printf ("VL(2)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 6);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  if (c) jbig2_set_bits(dst, a0, b1 - 2);
+	  a0 = b1 - 2;
+	  c = !c;
 	}
       else if ((word >> (32 - 7)) == 2)
 	{
 	  /* printf ("VL(3)\n"); */
 	  jbig2_decode_mmr_consume(mmr, 7);
+	  b1 = jbig2_find_changing_element_of_color(ref, a0, mmr->width, !c);
+	  if (c) jbig2_set_bits(dst, a0, b1 - 3);
+	  a0 = b1 - 3;
+	  c = !c;
 	}
       else
 	break;
@@ -814,15 +959,18 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx,
 {
   Jbig2MmrCtx mmr;
   const int rowstride = image->stride;
-  const byte *gbreg_line = (const byte *)image->data;
+  byte *dst = image->data;
+  byte *ref = NULL;
   int y;
 
   jbig2_decode_mmr_init(&mmr, image->width, image->height, data, size);
 
   for (y = 0; y < image->height; y++)
     {
-      jbig2_decode_mmr_line(&mmr, gbreg_line, NULL);
-      gbreg_line += rowstride;
+      memset(dst, 0, rowstride);
+      jbig2_decode_mmr_line(&mmr, ref, dst);
+      ref = dst;
+      dst += rowstride;
     }
     
   return 0;
