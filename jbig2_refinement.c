@@ -346,7 +346,7 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
   offset += 18;
 
   /* 7.4.7.3 */
-  if (params.GRTEMPLATE) {
+  if (!params.GRTEMPLATE) {
     if (segment->data_length < 22)
       return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                          "Segment too short");
