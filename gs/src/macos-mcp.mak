@@ -269,8 +269,8 @@ AK=
 
 CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
-# define CCAUX as the real cc compiler, we need to build the aux tools
-CCAUX=cc `cat $(AK)`
+# define CCAUX as the real cc compiler, we use this to build the code generation tools
+CCAUX=cc
 CC_LEAF=$(CC_) -fomit-frame-pointer
 # gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
