@@ -264,7 +264,7 @@ z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
     int code = pfcid->cidata.orig_procs.get_outline(pfont, glyph_index, pgstr);
 
     if (code >= 0) {
-	if (pgstr->size > skip)
+	if (pgstr->size <= skip)
 	    pgstr->data = 0, pgstr->size = 0;
 	else
 	    pgstr->data += skip, pgstr->size -= skip;
