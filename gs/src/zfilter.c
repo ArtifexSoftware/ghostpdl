@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,16 +16,16 @@
    all copies.
  */
 
-/* zfilter.c */
+/*Id: zfilter.c  */
 /* Filter creation */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "idparam.h"
+#include "ilevel.h"		/* SubFileDecode is different in LL3 */
 #include "stream.h"
 #include "strimpl.h"
 #include "sfilter.h"
@@ -34,11 +34,8 @@
 #include "ifilter.h"
 #include "files.h"		/* for filter_open, file_d'_buffer_size */
 
-/* Define whether we are including some non-standard filters for testing. */
-#define TEST
-
 /* <source> ASCIIHexEncode/filter <file> */
-/* <source> <dict_ignored> ASCIIHexEncode/filter <file> */
+/* <source> <dict> ASCIIHexEncode/filter <file> */
 private int
 zAXE(os_ptr op)
 {
@@ -46,7 +43,7 @@ zAXE(os_ptr op)
 }
 
 /* <target> ASCIIHexDecode/filter <file> */
-/* <target> <dict_ignored> ASCIIHexDecode/filter <file> */
+/* <target> <dict> ASCIIHexDecode/filter <file> */
 private int
 zAXD(os_ptr op)
 {
@@ -62,24 +59,20 @@ zNullE(os_ptr op)
 }
 
 /* <source> <bool> PFBDecode/filter <file> */
-/* <source> <bool> <dict_ignored> PFBDecode/filter <file> */
+/* <source> <dict> <bool> PFBDecode/filter <file> */
 private int
 zPFBD(os_ptr op)
 {
     stream_PFBD_state state;
     os_ptr sop = op;
-    int npop = 1;
 
-    if (r_has_type(op, t_dictionary))
-	++npop, --sop;
     check_type(*sop, t_boolean);
     state.binary_to_hex = sop->value.boolval;
-    return filter_read(op, npop, &s_PFBD_template, (stream_state *) & state,
-		       0);
+    return filter_read(op, 1, &s_PFBD_template, (stream_state *) & state, 0);
 }
 
 /* <target> PSStringEncode/filter <file> */
-/* <target> <dict_ignored> PSStringEncode/filter <file> */
+/* <target> <dict> PSStringEncode/filter <file> */
 private int
 zPSSE(os_ptr op)
 {
@@ -90,13 +83,13 @@ zPSSE(os_ptr op)
 
 /* Common setup for RLE and RLD filters. */
 private int
-rl_setup(os_ptr op, bool * eod)
+rl_setup(os_ptr dop, bool * eod)
 {
-    if (r_has_type(op, t_dictionary)) {
+    if (r_has_type(dop, t_dictionary)) {
 	int code;
 
-	check_dict_read(*op);
-	if ((code = dict_bool_param(op, "EndOfData", true, eod)) < 0)
+	check_dict_read(*dop);
+	if ((code = dict_bool_param(dop, "EndOfData", true, eod)) < 0)
 	    return code;
 	return 1;
     } else {
@@ -106,18 +99,20 @@ rl_setup(os_ptr op, bool * eod)
 }
 
 /* <target> <record_size> RunLengthEncode/filter <file> */
-/* <target> <record_size> <dict> RunLengthEncode/filter <file> */
+/* <target> <dict> <record_size> RunLengthEncode/filter <file> */
 private int
 zRLE(register os_ptr op)
 {
     stream_RLE_state state;
-    int code = rl_setup(op, &state.EndOfData);
+    int code;
 
+    check_op(2);
+    code = rl_setup(op - 1, &state.EndOfData);
     if (code < 0)
 	return code;
-    check_int_leu(op[-code], max_uint);
+    check_int_leu(*op, max_uint);
     state.record_size = op->value.intval;
-    return filter_write(op, 1 + code, &s_RLE_template, (stream_state *) & state, 0);
+    return filter_write(op, 1, &s_RLE_template, (stream_state *) & state, 0);
 }
 
 /* <source> RunLengthDecode/filter <file> */
@@ -130,75 +125,43 @@ zRLD(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_read(op, code, &s_RLD_template, (stream_state *) & state, 0);
+    return filter_read(op, 0, &s_RLD_template, (stream_state *) & state, 0);
 }
 
 /* <source> <EODcount> <EODstring> SubFileDecode/filter <file> */
-/* <source> <EODcount> <EODstring> <dict_ignored> SubFileDecode/filter <file> */
+/* <source> <dict> <EODcount> <EODstring> SubFileDecode/filter <file> */
+/* <source> <dict> SubFileDecode/filter <file> *//* (LL3 only) */
 private int
 zSFD(os_ptr op)
 {
     stream_SFD_state state;
-    os_ptr sop = op;
-    int npop = 2;
+    ref *sop = op;
+    int npop;
 
-    if (r_has_type(op, t_dictionary))
-	++npop, --sop;
-    check_type(sop[-1], t_integer);
+    if (LL3_ENABLED && r_has_type(op, t_dictionary)) {
+	int count;
+	int code;
+
+	check_dict_read(*op);
+	if ((code = dict_int_param(op, "EODCount", 0, max_int, -1, &count)) < 0)
+	    return code;
+	if (dict_find_string(op, "EODString", &sop) <= 0)
+	    return_error(e_rangecheck);
+	state.count = count;
+	npop = 0;
+    } else {
+	check_type(sop[-1], t_integer);
+	if (sop[-1].value.intval < 0)
+	    return_error(e_rangecheck);
+	state.count = sop[-1].value.intval;
+	npop = 2;
+    }
     check_read_type(*sop, t_string);
-    if (sop[-1].value.intval < 0)
-	return_error(e_rangecheck);
-    state.count = sop[-1].value.intval;
     state.eod.data = sop->value.const_bytes;
     state.eod.size = r_size(sop);
     return filter_read(op, npop, &s_SFD_template, (stream_state *) & state,
 		       r_space(sop));
 }
-
-#ifdef TEST
-
-#include "store.h"
-
-/* <size> BigStringEncode/filter <file> */
-private int BSE_close(P1(stream *));
-private int
-zBSE(os_ptr op)
-{
-    stream *s;
-    byte *data;
-    long len;
-
-    check_type(op[-0], t_integer);
-    len = op[-0].value.intval;
-    if (len < 0)
-	return_error(e_rangecheck);
-
-    data = ialloc_string(len, "BigStringEncode(string)");
-    if (!data)
-	return_error(e_VMerror);
-    s = file_alloc_stream(imemory, "BigStringEncode(stream)");
-    if (!s) {
-	ifree_string(data, len, "BigStringEncode(string)");
-	return_error(e_VMerror);
-    }
-    swrite_string(s, data, len);
-    s->is_temp = 0;
-    s->read_id = 0;
-    s->procs.close = BSE_close;
-    s->save_close = BSE_close;
-    make_file(op,
-	      ((a_write | a_execute) | icurrent_space),
-	      s->write_id,
-	      s);
-    return 0;
-}
-private int
-BSE_close(stream * s)
-{
-    return 0;
-}
-
-#endif /* TEST */
 
 /* ------ Utilities ------ */
 
@@ -206,29 +169,34 @@ BSE_close(stream * s)
 private int filter_ensure_buf(P3(stream **, uint, bool));
 
 /* Set up an input filter. */
-const stream_procs s_new_read_procs =
-{s_std_noavailable, s_std_noseek, s_std_read_reset,
- s_std_read_flush, s_filter_close
-};
 int
 filter_read(os_ptr op, int npop, const stream_template * template,
 	    stream_state * st, uint space)
 {
     uint min_size = template->min_out_size + max_min_left;
     uint save_space = ialloc_space(idmemory);
-    register os_ptr sop = op - npop;
+    os_ptr sop = op - npop;
     stream *s;
     stream *sstrm;
+    bool close = false;
     int code;
 
-    /* Check to make sure that the underlying data */
-    /* can function as a source for reading. */
+    /* Skip over an optional dictionary parameter. */
+    if (r_has_type(sop, t_dictionary)) {
+	check_dict_read(*sop);
+	if ((code = dict_bool_param(sop, "CloseSource", false, &close)) < 0)
+	    return code;
+	--sop;
+    }
+    /*
+     * Check to make sure that the underlying data
+     * can function as a source for reading.
+     */
     switch (r_type(sop)) {
 	case t_string:
 	    check_read(*sop);
 	    ialloc_set_space(idmemory, max(space, r_space(sop)));
-	    sstrm = file_alloc_stream(imemory,
-				      "filter_read(string stream)");
+	    sstrm = file_alloc_stream(imemory, "filter_read(string stream)");
 	    if (sstrm == 0) {
 		code = gs_note_error(e_VMerror);
 		goto out;
@@ -247,7 +215,8 @@ filter_read(os_ptr op, int npop, const stream_template * template,
 	    if (code < 0)
 		goto out;
 	    sstrm->is_temp = 2;
-	  ens:code = filter_ensure_buf(&sstrm,
+	  ens:
+	    code = filter_ensure_buf(&sstrm,
 				     template->min_in_size +
 				     sstrm->state->template->min_out_size,
 				     false);
@@ -258,27 +227,24 @@ filter_read(os_ptr op, int npop, const stream_template * template,
     if (min_size < 128)
 	min_size = file_default_buffer_size;
     code = filter_open("r", min_size, (ref *) sop,
-		       &s_new_read_procs, template, st);
+		       &s_filter_read_procs, template, st);
     if (code < 0)
 	goto out;
     s = fptr(sop);
     s->strm = sstrm;
-    pop(npop);
-  out:ialloc_set_space(idmemory, save_space);
+    s->close_strm = close;
+    pop(op - sop);
+out:
+    ialloc_set_space(idmemory, save_space);
     return code;
 }
 int
 filter_read_simple(os_ptr op, const stream_template * template)
 {
-    return filter_read(op, (r_has_type(op, t_dictionary) ? 1 : 0),
-		       template, NULL, 0);
+    return filter_read(op, 0, template, NULL, 0);
 }
 
 /* Set up an output filter. */
-const stream_procs s_new_write_procs =
-{s_std_noavailable, s_std_noseek, s_std_write_reset,
- s_std_write_flush, s_filter_close
-};
 int
 filter_write(os_ptr op, int npop, const stream_template * template,
 	     stream_state * st, uint space)
@@ -288,16 +254,25 @@ filter_write(os_ptr op, int npop, const stream_template * template,
     register os_ptr sop = op - npop;
     stream *s;
     stream *sstrm;
+    bool close = false;
     int code;
 
-    /* Check to make sure that the underlying data */
-    /* can function as a sink for writing. */
+    /* Skip over an optional dictionary parameter. */
+    if (r_has_type(sop, t_dictionary)) {
+	check_dict_read(*sop);
+	if ((code = dict_bool_param(sop, "CloseTarget", false, &close)) < 0)
+	    return code;
+	--sop;
+    }
+    /*
+     * Check to make sure that the underlying data
+     * can function as a sink for writing.
+     */
     switch (r_type(sop)) {
 	case t_string:
 	    check_write(*sop);
 	    ialloc_set_space(idmemory, max(space, r_space(sop)));
-	    sstrm = file_alloc_stream(imemory,
-				      "filter_write(string)");
+	    sstrm = file_alloc_stream(imemory, "filter_write(string)");
 	    if (sstrm == 0) {
 		code = gs_note_error(e_VMerror);
 		goto out;
@@ -316,7 +291,8 @@ filter_write(os_ptr op, int npop, const stream_template * template,
 	    if (code < 0)
 		goto out;
 	    sstrm->is_temp = 2;
-	  ens:code = filter_ensure_buf(&sstrm,
+	  ens:
+	    code = filter_ensure_buf(&sstrm,
 				     template->min_out_size +
 				     sstrm->state->template->min_in_size,
 				     true);
@@ -327,20 +303,21 @@ filter_write(os_ptr op, int npop, const stream_template * template,
     if (min_size < 128)
 	min_size = file_default_buffer_size;
     code = filter_open("w", min_size, (ref *) sop,
-		       &s_new_write_procs, template, st);
+		       &s_filter_write_procs, template, st);
     if (code < 0)
 	goto out;
     s = fptr(sop);
     s->strm = sstrm;
-    pop(npop);
-  out:ialloc_set_space(idmemory, save_space);
+    s->close_strm = close;
+    pop(op - sop);
+out:
+    ialloc_set_space(idmemory, save_space);
     return code;
 }
 int
 filter_write_simple(os_ptr op, const stream_template * template)
 {
-    return filter_write(op, (r_has_type(op, t_dictionary) ? 1 : 0),
-			template, NULL, 0);
+    return filter_write(op, 0, template, NULL, 0);
 }
 
 /* Define a byte-at-a-time NullDecode filter for intermediate buffers. */
@@ -357,7 +334,8 @@ s_Null1D_process(stream_state * st, stream_cursor_read * pr,
     return 1;
 }
 private const stream_template s_Null1D_template =
-{&st_stream_state, NULL, s_Null1D_process, 1, 1
+{
+    &st_stream_state, NULL, s_Null1D_process, 1, 1
 };
 
 /* Ensure a minimum buffer size for a filter. */
@@ -374,7 +352,8 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, bool writing)
     if (s->modes == 0 /* stream is closed */  || s->bsize >= min_size)
 	return 0;
     /* Otherwise, allocate an intermediate stream. */
-    if (s->cbuf == 0) {		/* This is a newly created procedure stream. */
+    if (s->cbuf == 0) {
+	/* This is a newly created procedure stream. */
 	/* Just allocate a buffer for it. */
 	uint len = max(min_size, 128);
 	byte *buf = ialloc_bytes(len, "filter_ensure_buf");
@@ -386,12 +365,13 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, bool writing)
 	s->swlimit = buf - 1 + len;
 	s->bsize = s->cbsize = len;
 	return 0;
-    } else {			/* Allocate an intermediate stream. */
+    } else {
+	/* Allocate an intermediate stream. */
 	if (writing)
-	    code = filter_open("w", min_size, &bsop, &s_new_write_procs,
+	    code = filter_open("w", min_size, &bsop, &s_filter_write_procs,
 			       &s_NullE_template, NULL);
 	else
-	    code = filter_open("r", min_size, &bsop, &s_new_read_procs,
+	    code = filter_open("r", min_size, &bsop, &s_filter_read_procs,
 			       &s_Null1D_template, NULL);
 	if (code < 0)
 	    return code;
@@ -418,7 +398,7 @@ const op_def zfilter_op_defs[] =
 		/* We enter PSStringEncode and SubFileDecode (only) */
 		/* as separate operators. */
     {"1.psstringencode", zPSSE},
-    {"3.subfiledecode", zSFD},
+    {"2.subfiledecode", zSFD},
     op_def_begin_filter(),
     {"1ASCIIHexEncode", zAXE},
     {"1ASCIIHexDecode", zAXD},
@@ -428,8 +408,5 @@ const op_def zfilter_op_defs[] =
     {"2RunLengthEncode", zRLE},
     {"1RunLengthDecode", zRLD},
     {"3SubFileDecode", zSFD},
-#ifdef TEST
-    {"1BigStringEncode", zBSE},
-#endif
     op_def_end(0)
 };

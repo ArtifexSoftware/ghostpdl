@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* slzwc.c */
+/*Id: slzwc.c  */
 /* Code common to LZW encoding and decoding streams */
 #include "std.h"
 #include "strimpl.h"
@@ -25,12 +25,12 @@
 /* Define the structure for the GC. */
 public_st_LZW_state();
 
-#define ss ((stream_LZW_state *)st)
-
 /* Set defaults */
 void
 s_LZW_set_defaults(stream_state * st)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
+
     s_LZW_set_defaults_inline(ss);
 }
 
@@ -38,7 +38,7 @@ s_LZW_set_defaults(stream_state * st)
 void
 s_LZW_release(stream_state * st)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
+
     gs_free_object(st->memory, ss->table.decode, "LZW(close)");
 }
-
-#undef ss

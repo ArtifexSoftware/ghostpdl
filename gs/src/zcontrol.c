@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,11 @@
    all copies.
  */
 
-/* zcontrol.c */
+/*Id: zcontrol.c  */
 /* Control operators */
 #include "string_.h"
 #include "ghost.h"
 #include "stream.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"
 #include "files.h"
@@ -34,8 +33,9 @@ extern void make_invalid_file(P1(ref *));	/* in zfile.c */
 
 /* Forward references */
 private int no_cleanup(P1(os_ptr));
-private uint count_exec_stack(P1(os_ptr));
+private uint count_exec_stack(P1(bool));
 private uint count_to_stopped(P1(long));
+private int unmatched_exit(P2(os_ptr, op_proc_p));
 
 /* See the comment in opdef.h for an invariant which allows */
 /* more efficient implementation of for, loop, and repeat. */
@@ -131,16 +131,13 @@ zexecn(register os_ptr op)
 	const ref *rp = ref_stack_index(&o_stack, (long)(i + 1));
 
 	/* Make sure this object is legal to execute. */
-	switch (r_type(rp)) {
-	      case_types_with_access:
-		if (!r_has_attr(rp, a_execute) &&
-		    r_has_attr(rp, a_executable)
-		    ) {
-		    esp = esp_orig;
-		    return_error(e_invalidaccess);
-		}
-	    default:
-		DO_NOTHING;
+	if (ref_type_uses_access(r_type(rp))) {
+	    if (!r_has_attr(rp, a_execute) &&
+		r_has_attr(rp, a_executable)
+		) {
+		esp = esp_orig;
+		return_error(e_invalidaccess);
+	    }
 	}
 	/* Executable nulls have a special meaning on the e-stack, */
 	/* so since they are no-ops, don't push them. */
@@ -405,12 +402,15 @@ loop_continue(register os_ptr op)
 private int
 zexit(register os_ptr op)
 {
+    ref_stack_enum_t rsenum;
     uint scanned = 0;
 
-    STACK_LOOP_BEGIN(&e_stack, ep, used) {
+    ref_stack_enum_begin(&rsenum, &e_stack);
+    do {
+	uint used = rsenum.size;
+	es_ptr ep = rsenum.ptr + used - 1;
 	uint count = used;
 
-	ep += used - 1;
 	for (; count; count--, ep--)
 	    if (r_is_estack_mark(ep))
 		switch (estack_mark_index(ep)) {
@@ -421,12 +421,10 @@ zexit(register os_ptr op)
 			return_error(e_invalidexit);	/* not a loop */
 		}
 	scanned += used;
-    }
-    STACK_LOOP_END(ep, used)
-    /* Return e_invalidexit if there is no mark at all. */
-    /* This is different from PostScript, which aborts. */
-    /* It shouldn't matter in practice. */
-	return_error(e_invalidexit);
+    } while (ref_stack_enum_next(&rsenum));
+    /* No mark, quit.  (per Adobe documentation) */
+    push(2);
+    return unmatched_exit(op, zexit);
 }
 
 /*
@@ -457,11 +455,12 @@ zstop(register os_ptr op)
 {
     uint count = count_to_stopped(1L);
 
-    if (count) {		/*
-				 * If there are any t_oparrays on the e-stack, they will pop
-				 * any new items from the o-stack.  Wait to push the 'true'
-				 * until we have run all the unwind procedures.
-				 */
+    if (count) {
+	/*
+	 * If there are any t_oparrays on the e-stack, they will pop
+	 * any new items from the o-stack.  Wait to push the 'true'
+	 * until we have run all the unwind procedures.
+	 */
 	check_ostack(2);
 	pop_estack(count);
 	op = osp;
@@ -469,10 +468,9 @@ zstop(register os_ptr op)
 	make_true(op);
 	return o_pop_estack;
     }
-    /* Return e_invalidexit if there is no mark at all. */
-    /* This is different from PostScript, which aborts. */
-    /* It shouldn't matter in practice. */
-    return_error(e_invalidexit);
+    /* No mark, quit.  (per Adobe documentation) */
+    push(2);
+    return unmatched_exit(op, zstop);
 }
 
 /* <result> <mask> .stop - */
@@ -483,11 +481,12 @@ zzstop(register os_ptr op)
 
     check_type(*op, t_integer);
     count = count_to_stopped(op->value.intval);
-    if (count) {		/*
-				 * If there are any t_oparrays on the e-stack, they will pop
-				 * any new items from the o-stack.  Wait to push the result
-				 * until we have run all the unwind procedures.
-				 */
+    if (count) {
+	/*
+	 * If there are any t_oparrays on the e-stack, they will pop
+	 * any new items from the o-stack.  Wait to push the result
+	 * until we have run all the unwind procedures.
+	 */
 	ref save_result;
 
 	check_op(2);
@@ -499,10 +498,8 @@ zzstop(register os_ptr op)
 	*op = save_result;
 	return o_pop_estack;
     }
-    /* Return e_invalidexit if there is no mark at all. */
-    /* This is different from PostScript, which aborts. */
-    /* It shouldn't matter in practice. */
-    return_error(e_invalidexit);
+    /* No mark, quit.  (per Adobe documentation) */
+    return unmatched_exit(op, zzstop);
 }
 
 /* <obj> stopped <stopped> */
@@ -566,22 +563,32 @@ zinstopped(register os_ptr op)
 }
 
 /* <include_marks> .countexecstack <int> */
+/* - countexecstack <int> */
+/* countexecstack is an operator solely for the sake of the Genoa tests. */
 private int
 zcountexecstack(register os_ptr op)
 {
+    push(1);
+    make_int(op, count_exec_stack(false));
+    return 0;
+}
+private int
+zcountexecstack1(register os_ptr op)
+{
     check_type(*op, t_boolean);
-    make_int(op, count_exec_stack(op));
+    make_int(op, count_exec_stack(op->value.boolval));
     return 0;
 }
 
 /* <array> <include_marks> .execstack <subarray> */
+/* <array> execstack <subarray> */
+/* execstack is an operator solely for the sake of the Genoa tests. */
 private int execstack_continue(P1(os_ptr));
+private int execstack2_continue(P1(os_ptr));
 private int
-zexecstack(register os_ptr op)
+push_execstack(os_ptr op1, bool include_marks, int (*cont)(P1(os_ptr)))
 {
-    os_ptr op1 = op - 1;
     uint size;
-
     /*
      * We can't do this directly, because the interpreter
      * might have cached some state.  To force the interpreter
@@ -591,10 +598,9 @@ zexecstack(register os_ptr op)
      */
     uint depth;
 
-    check_type(*op, t_boolean);
     check_write_type(*op1, t_array);
     size = r_size(op1);
-    depth = count_exec_stack(op);
+    depth = count_exec_stack(include_marks);
     if (depth > size)
 	return_error(e_rangecheck);
     {
@@ -605,15 +611,25 @@ zexecstack(register os_ptr op)
     }
     check_estack(1);
     r_set_size(op1, depth);
-    push_op_estack(execstack_continue);
+    push_op_estack(cont);
     return o_push_estack;
 }
-/* Continuation operator to do the actual transfer. */
-/* r_size(op - 1) was set just above. */
 private int
-execstack_continue(register os_ptr op)
+zexecstack(register os_ptr op)
 {
-    os_ptr op1 = op - 1;
+    return push_execstack(op, false, execstack_continue);
+}
+private int
+zexecstack2(register os_ptr op)
+{
+    check_type(*op, t_boolean);
+    return push_execstack(op - 1, op->value.boolval, execstack2_continue);
+}
+/* Continuation operator to do the actual transfer. */
+/* r_size(op1) was set just above. */
+private int
+do_execstack(os_ptr op, bool include_marks, os_ptr op1)
+{
     ref *arefs = op1->value.refs;
     uint asize = r_size(op1);
     uint i;
@@ -630,38 +646,44 @@ execstack_continue(register os_ptr op)
     for (i = 0, rq = arefs + asize; rq != arefs; ++i) {
 	const ref *rp = ref_stack_index(&e_stack, (long)i);
 
-	if (r_has_type_attrs(rp, t_null, a_executable) &&
-	    !op->value.boolval
-	    )
+	if (r_has_type_attrs(rp, t_null, a_executable) && !include_marks)
 	    continue;
 	--rq;
 	ref_assign_old(op1, rq, rp, "execstack");
 	switch (r_type(rq)) {
-	    case t_operator:
-		{
-		    uint opidx = op_index(rq);
+	    case t_operator: {
+		uint opidx = op_index(rq);
 
-		    if (opidx == 0 || op_def_is_internal(op_def_table[opidx]))
-			r_clear_attrs(rq, a_executable);
-		}
+		if (opidx == 0 || op_def_is_internal(op_def_table[opidx]))
+		    r_clear_attrs(rq, a_executable);
 		break;
+	    }
 	    case t_struct:
-	    case t_astruct:
-		{
-		    const char *tname =
+	    case t_astruct: {
+		const char *tname =
 		    gs_struct_type_name_string(
 				gs_object_type(imemory, rq->value.pstruct));
 
-		    make_const_string(rq, a_readonly | avm_foreign,
-				      strlen(tname), (const byte *)tname);
-		}
+		make_const_string(rq, a_readonly | avm_foreign,
+				  strlen(tname), (const byte *)tname);
 		break;
+	    }
 	    default:
 		;
 	}
     }
-    pop(1);
+    pop(op - op1);
     return 0;
+}
+private int
+execstack_continue(os_ptr op)
+{
+    return do_execstack(op, false, op);
+}
+private int
+execstack2_continue(os_ptr op)
+{
+    return do_execstack(op, op->value.boolval, op - 1);
 }
 
 /* - .needinput - */
@@ -677,7 +699,7 @@ zquit(register os_ptr op)
 {
     check_op(2);
     check_type(*op, t_integer);
-    return e_Quit;		/* Interpreter will do the exit */
+    return_error(e_Quit);	/* Interpreter will do the exit */
 }
 
 /* - currentfile <file> */
@@ -717,16 +739,18 @@ zcurrentfile(register os_ptr op)
 private ref *
 zget_current_file(void)
 {
-    STACK_LOOP_BEGIN(&e_stack, ep, used) {
-	uint count = used;
+    ref_stack_enum_t rsenum;
 
-	ep += used - 1;
+    ref_stack_enum_begin(&rsenum, &e_stack);
+    do {
+	uint count = rsenum.size;
+	es_ptr ep = rsenum.ptr + count - 1;
+
 	for (; count; count--, ep--)
 	    if (r_has_type_attrs(ep, t_file, a_executable))
 		return ep;
-    }
-    STACK_LOOP_END(ep, used)
-	return 0;
+    } while (ref_stack_enum_next(&rsenum));
+    return 0;
 }
 
 /* ------ Initialization procedure ------ */
@@ -734,11 +758,13 @@ zget_current_file(void)
 const op_def zcontrol_op_defs[] =
 {
     {"1.cond", zcond},
-    {"1.countexecstack", zcountexecstack},
+    {"0countexecstack", zcountexecstack},
+    {"1.countexecstack", zcountexecstack1},
     {"0currentfile", zcurrentfile},
     {"1exec", zexec},
     {"1.execn", zexecn},
-    {"2.execstack", zexecstack},
+    {"1execstack", zexecstack},
+    {"2.execstack", zexecstack2},
     {"0exit", zexit},
     {"2if", zif},
     {"3ifelse", zifelse},
@@ -754,7 +780,8 @@ const op_def zcontrol_op_defs[] =
     {"2.stopped", zzstopped},
 		/* Internal operators */
     {"1%cond_continue", cond_continue},
-    {"2%execstack_continue", execstack_continue},
+    {"1%execstack_continue", execstack_continue},
+    {"2%execstack2_continue", execstack2_continue},
     {"0%for_pos_int_continue", for_pos_int_continue},
     {"0%for_neg_int_continue", for_neg_int_continue},
     {"0%for_real_continue", for_real_continue},
@@ -763,8 +790,6 @@ const op_def zcontrol_op_defs[] =
     {"0%loop_continue", loop_continue},
     {"0%repeat_continue", repeat_continue},
     {"0%stopped_push", stopped_push},
-		/* Operators defined in internaldict */
-    op_def_begin_dict("internaldict"),
     {"1superexec", zsuperexec},
     op_def_end(0)
 };
@@ -783,11 +808,11 @@ no_cleanup(os_ptr op)
  * the normally invisible elements (*op is a Boolean that indicates this).
  */
 private uint
-count_exec_stack(os_ptr op)
+count_exec_stack(bool include_marks)
 {
     uint count = ref_stack_count(&e_stack);
 
-    if (!op->value.boolval) {
+    if (!include_marks) {
 	uint i;
 
 	for (i = count; i--;)
@@ -806,12 +831,15 @@ count_exec_stack(os_ptr op)
 private uint
 count_to_stopped(long mask)
 {
+    ref_stack_enum_t rsenum;
     uint scanned = 0;
 
-    STACK_LOOP_BEGIN(&e_stack, ep, used) {
+    ref_stack_enum_begin(&rsenum, &e_stack);
+    do {
+	uint used = rsenum.size;
+	es_ptr ep = rsenum.ptr + used - 1;
 	uint count = used;
 
-	ep += used - 1;
 	for (; count; count--, ep--)
 	    if (r_is_estack_mark(ep) &&
 		estack_mark_index(ep) == es_stopped &&
@@ -819,14 +847,15 @@ count_to_stopped(long mask)
 		)
 		return scanned + (used - count + 1);
 	scanned += used;
-    }
-    STACK_LOOP_END(ep, used)
-	return 0;
+    } while (ref_stack_enum_next(&rsenum));
+    return 0;
 }
 
-/* Pop the e-stack, executing cleanup procedures as needed. */
-/* We could make this more efficient using the STACK_LOOP macros, */
-/* but it isn't used enough to make this worthwhile. */
+/*
+ * Pop the e-stack, executing cleanup procedures as needed.
+ * We could make this more efficient using ref_stack_enum_*,
+ * but it isn't used enough to make this worthwhile.
+ */
 void
 pop_estack(uint count)
 {
@@ -844,4 +873,17 @@ pop_estack(uint count)
 	}
     }
     ref_stack_pop(&e_stack, count - popped);
+}
+
+/*
+ * Execute a quit in the case of an exit or stop with no appropriate
+ * enclosing control scope (loop or stopped).  The caller has already
+ * ensured two free slots on the top of the o-stack.
+ */
+private int
+unmatched_exit(os_ptr op, op_proc_p opproc)
+{
+    make_oper(op - 1, 0, opproc);
+    make_int(op, e_invalidexit);
+    return_error(e_Quit);
 }

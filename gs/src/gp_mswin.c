@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_mswin.c */
+/*Id: gp_mswin.c  */
 /*
  * Microsoft Windows 3.n platform support for Ghostscript.
  * Original version by Russell Lang and Maurice Castro with help from
@@ -102,7 +102,7 @@ DllEntryPoint(HINSTANCE hInst, DWORD fdwReason, LPVOID lpReserved)
 BOOL WINAPI _export
 DllMain(HINSTANCE hInst, DWORD fdwReason, LPVOID lpReserved)
 {
-    DllEntryPoint(hInst, fdwReason, lpReserved);
+    return DllEntryPoint(hInst, fdwReason, lpReserved);
 }
 
 
@@ -179,7 +179,7 @@ private int gp_printfile(P2(const char *, const char *));
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char *fname, int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     if (is_printer(fname)) {
 	FILE *pfile;
@@ -831,13 +831,14 @@ gp_printfile(const char *filename, const char *pmport)
 /* Write the actual file name at fname. */
 FILE *
 gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
-{
-    char *temp;
+{				/* The -7 is for XXXXXX plus a possible final \. */
+    int len = gp_file_name_sizeof - strlen(prefix) - 7;
 
-    if ((temp = getenv("TEMP")) == NULL)
+    if (gp_getenv("TEMP", fname, &len) != 0)
 	*fname = 0;
     else {
-	strcpy(fname, temp);
+	char *temp;
+
 	/* Prevent X's in path from being converted by mktemp. */
 	for (temp = fname; *temp; temp++)
 	    *temp = tolower(*temp);

@@ -1,22 +1,22 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* iref.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: iref.h  */
 /* Object structure and type definitions for Ghostscript */
 
 #ifndef iref_INCLUDED
@@ -28,6 +28,7 @@ typedef struct ref_s ref;
 /* The typedef for packed object references.  This is opaque here: */
 /* the details are in packed.h. */
 typedef ushort ref_packed;
+
 #define log2_sizeof_ref_packed arch_log2_sizeof_short
 #define sizeof_ref_packed (1 << log2_sizeof_ref_packed)
 
@@ -57,10 +58,10 @@ typedef enum {
  * program-visible data structure.
  */
 
-	t__invalid,		/*	(no value) */
-	t_boolean,		/*	value.boolval */
-	t_dictionary,		/* @ +  value.pdict */
-	t_file,			/* @!+# value.pfile, uses size for id */
+    t__invalid,			/*      (no value) */
+    t_boolean,			/*      value.boolval */
+    t_dictionary,		/* @ +  value.pdict */
+    t_file,			/* @!+# value.pfile, uses size for id */
 
 /*
  * The 4 array types must be kept together, and must start at
@@ -68,12 +69,12 @@ typedef enum {
  */
 
 #define _t_array_span 4
-	t_array,		/* @!+# value.refs */
-		/* The following are the two implementations of */
-		/* packed arrays. */
-	t_mixedarray,		/* @!+# value.packed */
-	t_shortarray,		/* @!+# value.packed */
-	  t_unused_array_,	/*	(an unused array type) */
+    t_array,			/* @!+# value.refs */
+    /* The following are the two implementations of */
+    /* packed arrays. */
+    t_mixedarray,		/* @!+# value.packed */
+    t_shortarray,		/* @!+# value.packed */
+    t_unused_array_,		/*      (an unused array type) */
 
 /*
  * t_[a]struct is an "umbrella" for other types that are represented by
@@ -84,54 +85,59 @@ typedef enum {
  * t_astruct objects use the size.
  *
  * t_struct is currently used for the following PostScript types:
- *	condition, lock.
+ *      condition, lock.
  * We could use it for fontIDs, except that they may have subclasses.
  * Eventually it will also be used for the new 'device' type.
  * t_astruct is currently used for the following PostScript types:
- *	gstate.
+ *      gstate.
  *
  * The 2 structure types must be kept together, and must start at
  * a multiple of 2, for the sake of r_has_stype (see below).
  */
 
 #define _t_struct_span 2
-	t_struct,		/* @	value.pstruct */
-	t_astruct,		/* @ +	value.pstruct */
+    t_struct,			/* @    value.pstruct */
+    t_astruct,			/* @ +  value.pstruct */
 
 /*
  * We now continue with individual types.
  */
-	t_fontID,		/* @    value.pstruct */
-	t_integer,		/*	value.intval */
-	t_mark,			/*        (no value) */
+    t_fontID,			/* @    value.pstruct */
+    t_integer,			/*      value.intval */
+    t_mark,			/*        (no value) */
 /*
  * Name objects use the a_space field because they really are composite
  * objects internally.
  */
-	t_name,			/* @! # value.pname, uses size for index */
-	t_null,			/*  ! # (value.opproc, uses size for mark */
-				/*        type, on e-stack only) */
+    t_name,			/* @! # value.pname, uses size for index */
+    t_null,			/*  ! # (value.opproc, uses size for mark */
+    /*        type, on e-stack only) */
 /*
  * Operator objects use the a_space field because they may actually be
  * disguised procedures.  (Real operators always have a_space = 0.)
  */
-	t_operator,		/* @! # value.opproc, uses size for index */
-	t_real,			/*	value.realval */
-	t_save,			/*      value.saveid, see isave.h for why */
-				/*        this isn't a t_struct */
-	t_string,		/* @!+# value.bytes */
+    t_operator,			/* @! # value.opproc, uses size for index */
+    t_real,			/*      value.realval */
+    t_save,			/*      value.saveid, see isave.h for why */
+    /*        this isn't a t_struct */
+    t_string,			/* @!+# value.bytes */
 /*
  * The following are extensions to the PostScript type set.
- * When adding new types, be sure to edit the table in gs_init.ps
- * (==only operator), the printing routine in idebug.c, the dispatches
- * in igc.c, igcref.c, and interp.c, obj_eq in iutil.c, restore_check_stack
- * in zvmem.c, and also type_name_strings and type_print_strings below.
+ * When adding new types, be sure to edit:
+ *      - type_name_strings, type_print_strings, and type_properties below;
+ *      - the table in gs_init.ps (==only operator);
+ *      - the printing routine in idebug.c;
+ *      - the dispatches in igc.c, igcref.c, and interp.c;
+ *      - obj_eq in iutil.c;
+ *      - restore_check_stack in zvmem.c.
  */
-	t_device,		/* @ +   value.pdevice */
-	t_oparray,		/* @! #  value.const_refs, uses size */
-				/*         for index */
-	t_next_index	/*** first available index ***/
+    t_device,			/* @ +   value.pdevice */
+    t_oparray,			/* @! #  value.const_refs, uses size */
+    /*         for index */
+    t_next_index
+/*** first available index ***/
 } ref_type;
+
 /*
  * The interpreter uses types starting at t_next_index for representing
  * a few high-frequency operators.
@@ -139,24 +145,62 @@ typedef enum {
  * there is no need for any operators to check specifically for these
  * types.  The r_btype macro takes care of the conversion when required.
  */
-/*extern const int tx_next_index;*/		/* in interp.c */
+						/*extern const int tx_next_index; *//* in interp.c */
 /*
- * Define the types that use the access attributes (w/r/x).
+ * Define a table giving properties of types, similar to the table used
+ * by the isxxx functions (macros) in <ctype.h>.
  */
-#define case_types_with_access\
-  case t_dictionary: case t_file:\
-  case t_array: case t_mixedarray: case t_shortarray:\
-  case t_astruct: case t_string: case t_device
-/*
- * Define the types that use the size field.
- * (The extended types used by the interpreter also use the size field.)
- * We don't include t_null here, because it only uses the size field
- * on the e-stack.
- */
-#define case_types_with_size\
-  case t_array: case t_mixedarray: case t_shortarray:\
-  case t_file: case t_name: case t_operator: case t_string:\
-  case t_oparray
+#define _rtype_uses_access 1	/* type uses w/r/x attributes */
+#define _rtype_uses_size 2
+#define _rtype_is_null 4
+#define _rtype_is_dictionary 8
+extern const byte ref_type_properties[1 << 6];	/* r_type_bits */
+
+#define ref_type_properties_data\
+  0,				/* t__invalid */\
+  0,				/* t_boolean */\
+  _rtype_uses_access | _rtype_is_dictionary, /* t_dictionary */\
+  _rtype_uses_access | _rtype_uses_size, /* t_file */\
+  _rtype_uses_access | _rtype_uses_size, /* t_array */\
+  _rtype_uses_access | _rtype_uses_size, /* t_mixedarray */\
+  _rtype_uses_access | _rtype_uses_size, /* t_shortarray */\
+  _rtype_uses_access | _rtype_uses_size, /* (unused array type) */\
+  0,				/* t_struct */\
+  _rtype_uses_access,		/* t_astruct */\
+  0,				/* t_fontID */\
+  0,				/* t_integer */\
+  0,				/* t_mark */\
+  _rtype_uses_size,		/* t_name */\
+  _rtype_is_null,		/* t_null, uses size only on e-stack */\
+  _rtype_uses_size,		/* t_operator */\
+  0,				/* t_real */\
+  0,				/* t_save */\
+  _rtype_uses_access | _rtype_uses_size, /* t_string */\
+  _rtype_uses_access,		/* t_device */\
+  _rtype_uses_access | _rtype_uses_size, /* t_oparray */\
+    /*\
+     * The remaining types are the extended pseudo-types used by the\
+     * interpreter for operators.  We need to fill up the table.\
+     */\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*24*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*28*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*32*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*36*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*40*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*44*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*48*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*52*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*56*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size, /*60*/\
+  _rtype_uses_size,_rtype_uses_size,_rtype_uses_size,_rtype_uses_size	/*64 */
+#define _rtype_has(rtype,props)\
+  ((ref_type_properties[rtype] & (props)) != 0)
+#define ref_type_uses_access(rtype)\
+ _rtype_has(rtype, _rtype_uses_access)
+#define ref_type_uses_size(rtype)\
+ _rtype_has(rtype, _rtype_uses_size)
+#define ref_type_uses_size_or_null(rtype)\
+ _rtype_has(rtype, _rtype_uses_size | _rtype_is_null)
 /*
  * Define the type names for debugging printout.
  * All names must be the same length, so that columns will line up.
@@ -182,13 +226,13 @@ typedef enum {
 /*
  * The following factors affect the encoding of attributes:
  *
- *	- The packed array format requires the high-order bits of the
- *	  type/attributes field to be 0.  (see packed.h)
+ *      - The packed array format requires the high-order bits of the
+ *        type/attributes field to be 0.  (see packed.h)
  *
- *	- The interpreter wants the type, executable bit, and execute
- *	  permission to be adjacent, and in that order from high to low.
+ *      - The interpreter wants the type, executable bit, and execute
+ *        permission to be adjacent, and in that order from high to low.
  *
- *	- Type testing is most efficient if the type is in a byte by itself.
+ *      - Type testing is most efficient if the type is in a byte by itself.
  *
  * The layout given below results in the most efficient code overall.
  */
@@ -196,8 +240,8 @@ typedef enum {
 /* Location attributes. */
 /* Note that these are associated with the *location*, not with the */
 /* ref that is *stored* in that location. */
-#define l_mark 1			/* mark for garbage collector */
-#define l_new 2				/* stored into since last save */
+#define l_mark 1		/* mark for garbage collector */
+#define l_new 2			/* stored into since last save */
 /* Attributes visible at the PostScript language level. */
 /* Reserve bits for VM space information (defined in ivmspace.h). */
 #define r_space_bits 2
@@ -214,10 +258,11 @@ typedef enum {
 /* Define the attribute names for debugging printout. */
 /* Each entry has the form <mask, value, character>. */
 typedef struct attr_print_mask_s {
-	ushort mask;
-	ushort value;
-	char print;
+    ushort mask;
+    ushort value;
+    char print;
 } attr_print_mask;
+
 #define attr_print_flag(m,c)\
   {m,m,c},{m,0,'-'}
 #define attr_print_space(v,c)\
@@ -235,26 +280,31 @@ typedef struct attr_print_mask_s {
   attr_print_flag(a_executable,'e'),\
   attr_print_flag(0x4000,'?'),\
   attr_print_flag(0x8000,'?')
-  
+
 /* Abstract types */
 typedef struct dict_s dict;
 typedef struct name_s name;
+
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
+
 #endif
 #ifndef gx_device_DEFINED
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
+
 #endif
 #ifndef obj_header_DEFINED
 #  define obj_header_DEFINED
 typedef struct obj_header_s obj_header_t;
+
 #endif
 /* We duplicate the definition of os_ptr (a.k.a. s_ptr) here */
 /* so that we can have an accurate typedef for op_proc */
 /* without having to drag in istack.h and ostack.h. */
-typedef int (*op_proc_p)(P1(ref _ds *));
+typedef int (*op_proc_p) (P1(ref *));
+
 /* real_opproc is a holdover.... */
 #define real_opproc(pref) ((pref)->value.opproc)
 
@@ -264,12 +314,12 @@ typedef int (*op_proc_p)(P1(ref _ds *));
  * the type_attrs member must be the first one in the ref structure.
  */
 struct tas_s {
-	ushort type_attrs;
-	ushort rsize;
+    ushort type_attrs;
+    ushort rsize;
 };
 struct ref_s {
 
-	struct tas_s tas;
+    struct tas_s tas;
 
 #define r_size(rp) ((rp)->tas.rsize)
 #define r_inc_size(rp,inc) ((rp)->tas.rsize += (inc))
@@ -285,7 +335,7 @@ struct ref_s {
 #  define r_has_type(rp,typ) (r_type(rp) == (typ))
 #else
 #  define r_type(rp) ((rp)->tas.type_attrs >> r_type_shift)
-#  define r_has_type(rp,typ) r_has_type_attrs(rp,typ,0)	/* see below */
+#  define r_has_type(rp,typ) r_has_type_attrs(rp,typ,0)		/* see below */
 #endif
 /* A special macro for testing arrayhood. */
 #define r_is_array(rp) _r_has_masked_type_attrs(rp,t_array,_t_array_span,0)
@@ -307,7 +357,7 @@ struct ref_s {
 #define r_type_xe(rp)\
   type_xe_(((const ushort *)(rp))[offset_of(ref, tas.type_attrs) / sizeof(ushort)])
 #define type_xe_value(t,xe) type_xe_(((t) << r_type_shift) + (xe))
-#define r_type_attrs(rp) ((rp)->tas.type_attrs)	/* reading only */
+#define r_type_attrs(rp) ((rp)->tas.type_attrs)		/* reading only */
 #define r_has_attrs(rp,mask) !(~r_type_attrs(rp) & (mask))
 #define r_has_masked_attrs(rp,attrs,mask)\
   ((r_type_attrs(rp) & (mask)) == (attrs))
@@ -338,26 +388,31 @@ struct ref_s {
 #define r_ptr(rp,typ) ((typ *)((rp)->value.pstruct))
 #define r_set_ptr(rp,ptr) ((rp)->value.pstruct = (obj_header_t *)(ptr))
 
-	union v {			/* name the union to keep gdb happy */
-		long intval;
-		ushort boolval;
-		float realval;
-		ulong saveid;
-		byte *bytes;
-		const byte *const_bytes;
-		ref *refs;
-		const ref *const_refs;
-		name *pname;
-		const name *const_pname;
-		dict *pdict;
-		const dict *const_pdict;
-		const ref_packed *packed;
-		op_proc_p opproc;
-		struct stream_s *pfile;
-		struct gx_device_s *pdevice;
-		obj_header_t *pstruct;
-	} value;
+    union v {			/* name the union to keep gdb happy */
+	long intval;
+	ushort boolval;
+	float realval;
+	ulong saveid;
+	byte *bytes;
+	const byte *const_bytes;
+	ref *refs;
+	const ref *const_refs;
+	name *pname;
+	const name *const_pname;
+	dict *pdict;
+	const dict *const_pdict;
+	const ref_packed *packed;
+	op_proc_p opproc;
+	struct stream_s *pfile;
+	struct gx_device_s *pdevice;
+	obj_header_t *pstruct;
+    } value;
 };
+
+/* Define data for initializing an empty array or string. */
+#define empty_ref_data(type, attrs)\
+  { /*tas*/ { /*type_attrs*/ ((type) << r_type_shift) | (attrs),\
+	      /*rsize*/ 0 } }
 
 /* Define the size of a ref. */
 #define arch_sizeof_ref sizeof(ref)
@@ -373,4 +428,4 @@ struct ref_s {
 #define max_array_size (max_ushort & (max_uint / (uint)arch_sizeof_ref))
 #define max_string_size max_ushort
 
-#endif					/* iref_INCLUDED */
+#endif /* iref_INCLUDED */

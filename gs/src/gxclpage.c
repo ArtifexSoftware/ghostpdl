@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxclpage.c */
+/*Id: gxclpage.c  */
 /* Page object management */
 #include "gdevprn.h"
 #include "gxcldev.h"

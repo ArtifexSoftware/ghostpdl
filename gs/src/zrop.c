@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zrop.c */
+/*Id: zrop.c  */
 /* RasterOp control operators */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsrop.h"
 #include "gsutil.h"
@@ -39,7 +38,7 @@ zsetrasterop(register os_ptr op)
 
     if (code < 0)
 	return code;
-    gs_setrasterop(igs, (gs_rop3_t) param);
+    gs_setrasterop(igs, (gs_rop3_t)param);
     pop(1);
     return 0;
 }
@@ -50,29 +49,6 @@ zcurrentrasterop(register os_ptr op)
 {
     push(1);
     make_int(op, (int)gs_currentrasterop(igs));
-    return 0;
-}
-
-/* <int> .setrenderalgorithm - */
-private int
-zsetrenderalgorithm(register os_ptr op)
-{
-    int param;
-    int code = int_param(op, render_algorithm_max, &param);
-
-    if (code < 0)
-	return code;
-    gs_setrenderalgorithm(igs, param);
-    pop(1);
-    return 0;
-}
-
-/* - .currentrenderalgorithm <int> */
-private int
-zcurrentrenderalgorithm(register os_ptr op)
-{
-    push(1);
-    make_int(op, gs_currentrenderalgorithm(igs));
     return 0;
 }
 
@@ -119,11 +95,9 @@ zcurrenttexturetransparent(register os_ptr op)
 const op_def zrop_op_defs[] =
 {
     {"0.currentrasterop", zcurrentrasterop},
-    {"0.currentrenderalgorithm", zcurrentrenderalgorithm},
     {"0.currentsourcetransparent", zcurrentsourcetransparent},
     {"0.currenttexturetransparent", zcurrenttexturetransparent},
     {"1.setrasterop", zsetrasterop},
-    {"1.setrenderalgorithm", zsetrenderalgorithm},
     {"1.setsourcetransparent", zsetsourcetransparent},
     {"1.settexturetransparent", zsettexturetransparent},
     op_def_end(0)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gstype42.c */
+/*Id: gstype42.c  */
 /* Type 42 (TrueType) font library routines */
 #include "memory_.h"
 #include "gx.h"
@@ -43,10 +43,10 @@ public_st_gs_font_type42();
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
 #define access(base, length, vptr)\
-  do {\
+  BEGIN\
     code = (*string_proc)(pfont, (ulong)(base), length, &vptr);\
     if ( code < 0 ) return code;\
-  } while (0)
+  END
 
 /* Get 2- or 4-byte quantities from a table. */
 #define u8(p) ((uint)((p)[0]))
@@ -70,14 +70,21 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
     uint glyph_length;
     int code;
 
+    /*
+     * We can't assume that consecutive loca entries are stored
+     * contiguously in memory: we have to access each entry
+     * individually.
+     */
     if (pfont->data.indexToLocFormat) {
-	access(pfont->data.loca + glyph_index * 4, 8, ploca);
+	access(pfont->data.loca + glyph_index * 4, 4, ploca);
 	glyph_start = u32(ploca);
-	glyph_length = u32(ploca + 4) - glyph_start;
+	access(pfont->data.loca + glyph_index * 4 + 4, 4, ploca);
+	glyph_length = u32(ploca) - glyph_start;
     } else {
 	access(pfont->data.loca + glyph_index * 2, 4, ploca);
 	glyph_start = (ulong) u16(ploca) << 1;
-	glyph_length = ((ulong) u16(ploca + 2) << 1) - glyph_start;
+	access(pfont->data.loca + glyph_index * 2 + 2, 4, ploca);
+	glyph_length = ((ulong) u16(ploca) << 1) - glyph_start;
     }
     pglyph->size = glyph_length;
     if (glyph_length == 0)
@@ -111,6 +118,8 @@ gs_type42_font_init(gs_font_type42 * pfont)
     }
     numTables = u16(OffsetTable + 4);
     access(12, numTables * 16, TableDirectory);
+    /* Clear optional entries. */
+    pfont->data.numLongMetrics = 0;
     for (i = 0; i < numTables; ++i) {
 	const byte *tab = TableDirectory + i * 16;
 	ulong offset = u32(tab + 8);
@@ -135,10 +144,16 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	else if (!memcmp(tab, "loca", 4))
 	    pfont->data.loca = offset;
     }
-    /* If the font doesn't have a valid FontBBox, */
-    /* compute one from the 'head' information. */
+    /*
+     * If the font doesn't have a valid FontBBox, compute one from the
+     * 'head' information.  Since the Adobe PostScript driver sometimes
+     * outputs garbage FontBBox values, we use a "reasonableness" check
+     * here.
+     */
     if (pfont->FontBBox.p.x >= pfont->FontBBox.q.x ||
-	pfont->FontBBox.p.y >= pfont->FontBBox.q.y
+	pfont->FontBBox.p.y >= pfont->FontBBox.q.y ||
+	pfont->FontBBox.p.x < -0.5 || pfont->FontBBox.p.x > 0.5 ||
+	pfont->FontBBox.p.y < -0.5 || pfont->FontBBox.p.y > 0.5
 	) {
 	float upem = pfont->data.unitsPerEm;
 
@@ -219,11 +234,15 @@ int
 gs_type42_append(uint glyph_index, gs_imager_state * pis,
     gx_path * ppath, const gs_log2_scale_point * pscale, bool charpath_flag,
 		 int paint_type, gs_font_type42 * pfont)
-{				/*
-				 * This is where we should do something about the l.s.b., but I
-				 * can't figure out from the TrueType documentation what it should
-				 * be.
-				 */
+{
+    float sbw[4];
+
+    gs_type42_get_metrics(pfont, glyph_index, sbw);
+    /*
+     * This is where we should do something about the l.s.b., but I
+     * can't figure out from the TrueType documentation what it should
+     * be.
+     */
     return append_outline(glyph_index, &pis->ctm, ppath, pfont);
 }
 
@@ -381,7 +400,7 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat, gx_path * ppath,
     code = (*pfont->data.get_outline) (pfont, glyph_index, &glyph_string);
     if (code < 0)
 	return code;
-    if (glyph == 0)		/* empty glyph */
+    if (glyph == 0 || glyph_string.size == 0)	/* empty glyph */
 	return 0;
     numContours = s16(glyph);
     if (numContours >= 0)

@@ -41,6 +41,7 @@ private dev_proc_fill_mask(clip_fill_mask);
 private dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
 private dev_proc_strip_copy_rop(clip_strip_copy_rop);
 private dev_proc_get_clipping_box(clip_get_clipping_box);
+private dev_proc_get_bits_rectangle(clip_get_bits_rectangle);
 
 /* The device descriptor. */
 private const gx_device_clip gs_clip_device =
@@ -82,7 +83,13 @@ private const gx_device_clip gs_clip_device =
   gx_default_end_image,
   clip_strip_tile_rectangle,
   clip_strip_copy_rop,
-  clip_get_clipping_box
+  clip_get_clipping_box,
+  gx_default_begin_typed_image,
+  clip_get_bits_rectangle,
+  gx_forward_map_color_rgb_alpha,
+  gx_no_create_compositor,
+  gx_forward_get_hardware_params,
+  gx_default_text_begin
  }
 };
 
@@ -91,7 +98,8 @@ void
 gx_make_clip_translate_device(gx_device_clip * dev, void *container,
 			      const gx_clip_list * list, int tx, int ty)
 {
-    *dev = gs_clip_device;
+    gx_device_init((gx_device *) dev, (gx_device *) & gs_clip_device,
+		   NULL, true);
     dev->list = *list;
     dev->translation.x = tx;
     dev->translation.y = ty;
@@ -537,4 +545,32 @@ clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
     if (tbox.q.y != max_fixed)
 	tbox.q.y -= ty;
     *pbox = tbox;
+}
+
+/* Get bits back from the device. */
+private int
+clip_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
+			gs_get_bits_params_t * params, gs_int_rect ** unread)
+{
+    gx_device_clip *rdev = (gx_device_clip *) dev;
+    gx_device *tdev = rdev->target;
+    int tx = rdev->translation.x, ty = rdev->translation.y;
+    gs_int_rect rect;
+    int code;
+
+    rect.p.x = prect->p.x - tx, rect.p.y = prect->p.y - ty;
+    rect.q.x = prect->q.x - tx, rect.q.y = prect->q.y - ty;
+    code = (*dev_proc(tdev, get_bits_rectangle))
+	(tdev, &rect, params, unread);
+    if (code > 0) {
+	/* Adjust unread rectangle coordinates */
+	gs_int_rect *list = *unread;
+	int i;
+
+	for (i = 0; i < code; ++list, ++i) {
+	    list->p.x += tx, list->p.y += ty;
+	    list->q.x += tx, list->q.y += ty;
+	}
+    }
+    return code;
 }

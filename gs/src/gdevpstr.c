@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpstr.c */
+/*Id: gdevpstr.c  */
 /* Stream output for PostScript- and PDF-writing drivers */
 #include "math_.h"		/* for fabs */
 #include "stdio_.h"		/* for stream.h */
@@ -85,6 +85,16 @@ pprintd2(stream * s, const char *format, int v1, int v2)
 {
     return pprintd1(s, pprintd1(s, format, v1), v2);
 }
+const char *
+pprintd3(stream * s, const char *format, int v1, int v2, int v3)
+{
+    return pprintd2(s, pprintd1(s, format, v1), v2, v3);
+}
+const char *
+pprintd4(stream * s, const char *format, int v1, int v2, int v3, int v4)
+{
+    return pprintd2(s, pprintd2(s, format, v1, v3), v3, v4);
+}
 
 /* Print (a) floating point number(s) using a format. */
 /* See gdevpdfx.h for why this is needed. */
@@ -99,7 +109,8 @@ pprintg1(stream * s, const char *format, floatp v)
 	lprintf1("Bad format in pprintg: %s\n", format);
 #endif
     sprintf(str, "%g", v);
-    if (strchr(str, 'e')) {	/* Bad news.  Try again using f-format. */
+    if (strchr(str, 'e')) {
+	/* Bad news.  Try again using f-format. */
 	sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
     }
     pputs(s, str);
@@ -111,10 +122,21 @@ pprintg2(stream * s, const char *format, floatp v1, floatp v2)
     return pprintg1(s, pprintg1(s, format, v1), v2);
 }
 const char *
+pprintg3(stream * s, const char *format, floatp v1, floatp v2, floatp v3)
+{
+    return pprintg2(s, pprintg1(s, format, v1), v2, v3);
+}
+const char *
 pprintg4(stream * s, const char *format, floatp v1, floatp v2, floatp v3,
 	 floatp v4)
 {
     return pprintg2(s, pprintg2(s, format, v1, v2), v3, v4);
+}
+const char *
+pprintg6(stream * s, const char *format, floatp v1, floatp v2, floatp v3,
+	 floatp v4, floatp v5, floatp v6)
+{
+    return pprintg3(s, pprintg3(s, format, v1, v2, v3), v4, v5, v6);
 }
 
 /* Print a long value using a format. */
@@ -131,6 +153,16 @@ pprintld1(stream * s, const char *format, long v)
     sprintf(str, "%ld", v);
     pputs(s, str);
     return pprintf_scan(s, fp + 3);
+}
+const char *
+pprintld2(stream * s, const char *format, long v1, long v2)
+{
+    return pprintld1(s, pprintld1(s, format, v1), v2);
+}
+const char *
+pprintld3(stream * s, const char *format, long v1, long v2, long v3)
+{
+    return pprintld2(s, pprintld1(s, format, v1), v2, v3);
 }
 
 /* Print (a) string(s) using a format. */
@@ -150,4 +182,10 @@ const char *
 pprints2(stream * s, const char *format, const char *str1, const char *str2)
 {
     return pprints1(s, pprints1(s, format, str1), str2);
+}
+const char *
+pprints3(stream * s, const char *format, const char *str1, const char *str2,
+	 const char *str3)
+{
+    return pprints2(s, pprints1(s, format, str1), str2, str3);
 }

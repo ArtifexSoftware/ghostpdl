@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zstack.c */
+/*Id: zstack.c  */
 /* Operand stack operators */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "ialloc.h"
 #include "istack.h"
 #include "oper.h"
@@ -65,7 +64,8 @@ zindex(register os_ptr op)
     register os_ptr opn;
 
     check_type(*op, t_integer);
-    if ((ulong) op->value.intval >= op - osbot) {	/* Might be in an older stack block. */
+    if ((ulong)op->value.intval >= op - osbot) {
+	/* Might be in an older stack block. */
 	ref *elt;
 
 	if (op->value.intval < 0)
@@ -93,12 +93,13 @@ zroll(register os_ptr op)
 
     check_type(*op1, t_integer);
     check_type(*op, t_integer);
-    if ((ulong) op1->value.intval > op1 - osbot) {	/*
-							 * The data might span multiple stack blocks.
-							 * There are efficient ways to handle this situation,
-							 * but they're more complicated than seems worth implementing;
-							 * for now, do something very simple and inefficient.
-							 */
+    if ((ulong) op1->value.intval > op1 - osbot) {
+	/*
+	 * The data might span multiple stack blocks.
+	 * There are efficient ways to handle this situation,
+	 * but they're more complicated than seems worth implementing;
+	 * for now, do something very simple and inefficient.
+	 */
 	int left, i;
 
 	if (op1->value.intval < 0 ||
@@ -188,7 +189,8 @@ zroll(register os_ptr op)
 	}
     } else if (mod >= count)
 	mod %= count;
-    if (mod <= count >> 1) {	/* Move everything up, then top elements down. */
+    if (mod <= count >> 1) {
+	/* Move everything up, then top elements down. */
 	if (mod >= ostop - op) {
 	    o_stack.requested = mod;
 	    return_error(e_stackoverflow);
@@ -198,7 +200,8 @@ zroll(register os_ptr op)
 	for (to = op + mod, from = op, n = count; n--; to--, from--)
 	    ref_assign(to, from);
 	memcpy((char *)(from + 1), (char *)(op + 1), mod * sizeof(ref));
-    } else {			/* Move bottom elements up, then everything down. */
+    } else {
+	/* Move bottom elements up, then everything down. */
 	mod = count - mod;
 	if (mod >= ostop - op) {
 	    o_stack.requested = mod;

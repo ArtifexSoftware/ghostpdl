@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpcfb.c */
+/*Id: gdevpcfb.c  */
 /* IBM PC frame buffer (EGA/VGA) drivers */
 #include "memory_.h"
 #include "gconfigv.h"		/* for USE_ASM */
@@ -72,14 +72,14 @@ private dev_proc_map_color_rgb(ega01_map_color_rgb);
 	NULL,			/* map_rgb_alpha_color */\
 	gx_page_device_get_page_device
 
-private gx_device_procs ega_procs =
+private const gx_device_procs ega_procs =
 {
     ega_std_procs(NULL, NULL)
 };
 
 private dev_proc_get_params(svga16_get_params);
 private dev_proc_put_params(svga16_put_params);
-private gx_device_procs svga16_procs =
+private const gx_device_procs svga16_procs =
 {
     ega_std_procs(svga16_get_params, svga16_put_params)
 };
@@ -136,7 +136,7 @@ ega_close(gx_device * dev)
 }
 
 /* Get/put the display mode parameter. */
-int
+private int
 svga16_get_params(gx_device * dev, gs_param_list * plist)
 {
     int code = gx_default_get_params(dev, plist);
@@ -145,13 +145,13 @@ svga16_get_params(gx_device * dev, gs_param_list * plist)
 	return code;
     return param_write_int(plist, "DisplayMode", &fb_dev->video_mode);
 }
-int
+private int
 svga16_put_params(gx_device * dev, gs_param_list * plist)
 {
     int ecode = 0;
     int code;
     int imode = fb_dev->video_mode;
-    const char _ds *param_name;
+    const char *param_name;
 
     switch (code = param_read_int(plist, (param_name = "DisplayMode"), &imode)) {
 	default:
@@ -804,7 +804,7 @@ ega_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
  v+0x00080000, v+0x08080000, v+0x80080000, v+0x88080000,\
  v+0x00800000, v+0x08800000, v+0x80800000, v+0x88800000,\
  v+0x00880000, v+0x08880000, v+0x80880000, v+0x88880000
-    static const bits32 far_data spread8[256] =
+    static const bits32 spread8[256] =
     {spread4(0x0000), spread4(0x0800),
      spread4(0x8000), spread4(0x8800),
      spread4(0x0008), spread4(0x0808),

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* icfontab.c */
+/*Id: icfontab.c  */
 /* Table of compiled fonts */
 #include "ccfont.h"
 

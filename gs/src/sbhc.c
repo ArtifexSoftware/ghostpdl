@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sbhc.c */
+/*Id: sbhc.c  */
 /* Bounded Huffman code filters */
 #include "memory_.h"
 #include "stdio_.h"
@@ -29,12 +29,12 @@
 
 private_st_BHCE_state();
 
-#define ss ((stream_BHCE_state *)st)
-
 /* Initialize BoundedHuffmanEncode filter. */
 private int
 s_BHCE_reinit(stream_state * st)
 {
+    stream_BHCE_state *const ss = (stream_BHCE_state *) st;
+
     ss->encode.count = ss->definition.num_values;
     s_bhce_init_inline(ss);
     return 0;
@@ -42,6 +42,7 @@ s_BHCE_reinit(stream_state * st)
 private int
 s_BHCE_init(register stream_state * st)
 {
+    stream_BHCE_state *const ss = (stream_BHCE_state *) st;
     hce_code *encode = ss->encode.codes =
     (hce_code *) gs_alloc_byte_array(st->memory,
 				     ss->definition.num_values,
@@ -58,6 +59,8 @@ s_BHCE_init(register stream_state * st)
 private void
 s_BHCE_release(stream_state * st)
 {
+    stream_BHCE_state *const ss = (stream_BHCE_state *) st;
+
     gs_free_object(st->memory, ss->encode.codes, "BHCE encode");
 }
 
@@ -66,6 +69,7 @@ private int
 s_BHCE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_BHCE_state *const ss = (stream_BHCE_state *) st;
     const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
     byte *q = pw->ptr;
@@ -149,8 +153,6 @@ s_BHCE_process(stream_state * st, stream_cursor_read * pr,
     return (p == rlimit ? 0 : 1);
 }
 
-#undef ss
-
 /* Stream template */
 const stream_template s_BHCE_template =
 {&st_BHCE_state, s_BHCE_init, s_BHCE_process,
@@ -161,14 +163,14 @@ const stream_template s_BHCE_template =
 
 private_st_BHCD_state();
 
-#define ss ((stream_BHCD_state *)st)
-
 #define hcd_initial_bits 7	/* arbitrary, >= 1 and <= 8 */
 
 /* Initialize BoundedHuffmanDecode filter. */
 private int
 s_BHCD_reinit(stream_state * st)
 {
+    stream_BHCD_state *const ss = (stream_BHCD_state *) st;
+
     ss->decode.count = ss->definition.num_values;
     s_bhcd_init_inline(ss);
     return 0;
@@ -176,6 +178,7 @@ s_BHCD_reinit(stream_state * st)
 private int
 s_BHCD_init(register stream_state * st)
 {
+    stream_BHCD_state *const ss = (stream_BHCD_state *) st;
     uint initial_bits = ss->decode.initial_bits =
     min(hcd_initial_bits, ss->definition.num_counts);
     uint dsize = hc_sizeof_decoding(&ss->definition, initial_bits);
@@ -194,6 +197,8 @@ s_BHCD_init(register stream_state * st)
 private void
 s_BHCD_release(stream_state * st)
 {
+    stream_BHCD_state *const ss = (stream_BHCD_state *) st;
+
     gs_free_object(st->memory, ss->decode.codes, "BHCD decode");
 }
 
@@ -202,6 +207,8 @@ private int
 s_BHCD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_BHCD_state *const ss = (stream_BHCD_state *) st;
+
     bhcd_declare_state;
     byte *q = pw->ptr;
     byte *wlimit = pw->limit;
@@ -270,8 +277,6 @@ s_BHCD_process(stream_state * st, stream_cursor_read * pr,
     pw->ptr = q;
     return status;
 }
-
-#undef ss
 
 /* Stream template */
 const stream_template s_BHCD_template =

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpng.c */
+/*Id: gdevpng.c  */
 /* PNG (Portable Network Graphics) Format.  Pronounced "ping". */
 /* lpd 1997-07-20: changed from using gs_malloc/png_xxx_int to png_create_xxx
  * for allocating structures, and from gs_free to png_write_destroy for
@@ -50,7 +50,7 @@ private dev_proc_print_page(png_print_page);
 
 /* Monochrome. */
 
-gx_device_printer far_data gs_pngmono_device =
+const gx_device_printer gs_pngmono_device =
 prn_device(prn_std_procs, "pngmono",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -59,10 +59,10 @@ prn_device(prn_std_procs, "pngmono",
 
 /* 4-bit planar (EGA/VGA-style) color. */
 
-private gx_device_procs png16_procs =
+private const gx_device_procs png16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-gx_device_printer far_data gs_png16_device =
+const gx_device_printer gs_png16_device =
 prn_device(png16_procs, "png16",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -72,10 +72,10 @@ prn_device(png16_procs, "png16",
 /* 8-bit (SuperVGA-style) color. */
 /* (Uses a fixed palette of 3,3,2 bits.) */
 
-private gx_device_procs png256_procs =
+private const gx_device_procs png256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-gx_device_printer far_data gs_png256_device =
+const gx_device_printer gs_png256_device =
 prn_device(png256_procs, "png256",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -84,10 +84,10 @@ prn_device(png256_procs, "png256",
 
 /* 8-bit gray */
 
-private gx_device_procs pnggray_procs =
+private const gx_device_procs pnggray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
-gx_device_printer far_data gs_pnggray_device =
+const gx_device_printer gs_pnggray_device =
 {prn_device_body(gx_device_printer, pnggray_procs, "pnggray",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -97,10 +97,10 @@ gx_device_printer far_data gs_pnggray_device =
 
 /* 24-bit color. */
 
-private gx_device_procs png16m_procs =
+private const gx_device_procs png16m_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-gx_device_printer far_data gs_png16m_device =
+const gx_device_printer gs_png16m_device =
 prn_device(png16m_procs, "png16m",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,17 +16,20 @@
    all copies.
  */
 
-/* gdevpbm.c */
+/*Id: gdevpbm.c  */
 /* Portable Bit/Gray/PixMap drivers */
 #include "gdevprn.h"
 #include "gscdefs.h"
 #include "gxlum.h"
 
-/* Thanks are due to Jos Vos (jos@bull.nl) for an earlier P*M driver, */
-/* on which this one is based. */
+/*
+ * Thanks are due to Jos Vos (jos@bull.nl) for an earlier P*M driver,
+ * on which this one is based, and Nigel Roles (ngr@cotswold.demon.co.uk),
+ * for the plan9bm changes.
+ */
 
 /*
- * There are 6 (pairs of) drivers here:
+ * There are 6 (pairs of) drivers here, plus one less related one:
  *      pbm[raw] - outputs PBM (black and white).
  *      pgm[raw] - outputs PGM (gray-scale).
  *      pgnm[raw] - outputs PBM if the page contains only black and white,
@@ -36,6 +39,7 @@
  *        otherwise PGM if the page contains only gray shades,
  *        otherwise PPM.
  *      pkm[raw] - computes internally in CMYK, outputs PPM (RGB).
+ *      plan9bm - outputs Plan 9 bitmap format.
  */
 
 /*
@@ -81,9 +85,9 @@ typedef struct gx_device_pbm_s gx_device_pbm;
 #define Y_DPI 72
 
 /* Macro for generating P*M device descriptors. */
-#define pbm_prn_device(procs, dev_name, magic, is_raw, num_comp, depth, max_gray, max_rgb, optimize, print_page)\
+#define pbm_prn_device(procs, dev_name, magic, is_raw, num_comp, depth, max_gray, max_rgb, optimize, x_dpi, y_dpi, print_page)\
 {	prn_device_body(gx_device_pbm, procs, dev_name,\
-	  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, X_DPI, Y_DPI,\
+	  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS, x_dpi, y_dpi,\
 	  0, 0, 0, 0,\
 	  num_comp, depth, max_gray, max_rgb, max_gray + 1, max_rgb + 1,\
 	  print_page),\
@@ -118,7 +122,7 @@ private dev_proc_print_page(pkm_print_page);
 
 /* The device procedures */
 
-private gx_device_procs pbm_procs =
+private const gx_device_procs pbm_procs =
 prn_procs(gdev_prn_open, ppm_output_page, gdev_prn_close);
 
 /* See gdevprn.h for the template for the following. */
@@ -130,50 +134,55 @@ prn_procs(gdev_prn_open, ppm_output_page, gdev_prn_close);
 	ppm_get_alpha_bits\
 }
 
-private gx_device_procs pgm_procs =
+private const gx_device_procs pgm_procs =
 pgpm_procs(pgm_map_rgb_color, pgm_map_color_rgb, NULL);
-private gx_device_procs ppm_procs =
+private const gx_device_procs ppm_procs =
 pgpm_procs(ppm_map_rgb_color, ppm_map_color_rgb, NULL);
-private gx_device_procs pkm_procs =
+private const gx_device_procs pkm_procs =
 pgpm_procs(NULL, pkm_map_color_rgb, pkm_map_cmyk_color);
 
 /* The device descriptors themselves */
-gx_device_pbm far_data gs_pbm_device =
+const gx_device_pbm gs_pbm_device =
 pbm_prn_device(pbm_procs, "pbm", '1', 0, 1, 1, 1, 0, 0,
-	       pbm_print_page);
-gx_device_pbm far_data gs_pbmraw_device =
+	       X_DPI, Y_DPI, pbm_print_page);
+const gx_device_pbm gs_pbmraw_device =
 pbm_prn_device(pbm_procs, "pbmraw", '4', 1, 1, 1, 1, 1, 0,
-	       pbm_print_page);
-gx_device_pbm far_data gs_pgm_device =
+	       X_DPI, Y_DPI, pbm_print_page);
+const gx_device_pbm gs_pgm_device =
 pbm_prn_device(pgm_procs, "pgm", '2', 0, 1, 8, 255, 0, 0,
-	       pgm_print_page);
-gx_device_pbm far_data gs_pgmraw_device =
+	       X_DPI, Y_DPI, pgm_print_page);
+const gx_device_pbm gs_pgmraw_device =
 pbm_prn_device(pgm_procs, "pgmraw", '5', 1, 1, 8, 255, 0, 0,
-	       pgm_print_page);
-gx_device_pbm far_data gs_pgnm_device =
+	       X_DPI, Y_DPI, pgm_print_page);
+const gx_device_pbm gs_pgnm_device =
 pbm_prn_device(pgm_procs, "pgnm", '2', 0, 1, 8, 255, 0, 1,
-	       pgm_print_page);
-gx_device_pbm far_data gs_pgnmraw_device =
+	       X_DPI, Y_DPI, pgm_print_page);
+const gx_device_pbm gs_pgnmraw_device =
 pbm_prn_device(pgm_procs, "pgnmraw", '5', 1, 1, 8, 255, 0, 1,
-	       pgm_print_page);
-gx_device_pbm far_data gs_ppm_device =
+	       X_DPI, Y_DPI, pgm_print_page);
+const gx_device_pbm gs_ppm_device =
 pbm_prn_device(ppm_procs, "ppm", '3', 0, 3, 24, 255, 255, 0,
-	       ppm_print_page);
-gx_device_pbm far_data gs_ppmraw_device =
+	       X_DPI, Y_DPI, ppm_print_page);
+const gx_device_pbm gs_ppmraw_device =
 pbm_prn_device(ppm_procs, "ppmraw", '6', 1, 3, 24, 255, 255, 0,
-	       ppm_print_page);
-gx_device_pbm far_data gs_pnm_device =
+	       X_DPI, Y_DPI, ppm_print_page);
+const gx_device_pbm gs_pnm_device =
 pbm_prn_device(ppm_procs, "pnm", '3', 0, 3, 24, 255, 255, 1,
-	       ppm_print_page);
-gx_device_pbm far_data gs_pnmraw_device =
+	       X_DPI, Y_DPI, ppm_print_page);
+const gx_device_pbm gs_pnmraw_device =
 pbm_prn_device(ppm_procs, "pnmraw", '6', 1, 3, 24, 255, 255, 1,
-	       ppm_print_page);
-gx_device_pbm far_data gs_pkm_device =
+	       X_DPI, Y_DPI, ppm_print_page);
+const gx_device_pbm gs_pkm_device =
 pbm_prn_device(pkm_procs, "pkm", '3', 0, 4, 4, 1, 1, 0,
-	       pkm_print_page);
-gx_device_pbm far_data gs_pkmraw_device =
+	       X_DPI, Y_DPI, pkm_print_page);
+const gx_device_pbm gs_pkmraw_device =
 pbm_prn_device(pkm_procs, "pkmraw", '6', 1, 4, 4, 1, 1, 0,
-	       pkm_print_page);
+	       X_DPI, Y_DPI, pkm_print_page);
+
+/* Plan 9 bitmaps default to 100 dpi. */
+const gx_device_pbm gs_plan9bm_device =
+pbm_prn_device(pbm_procs, "plan9bm", '9', 1, 1, 1, 1, 1, 1,
+	       100, 100, pbm_print_page);
 
 /* ------ Initialization ------ */
 
@@ -181,10 +190,10 @@ pbm_prn_device(pkm_procs, "pkmraw", '6', 1, 4, 4, 1, 1, 0,
 private void
 ppm_set_copy_alpha(gx_device * pdev)
 {
-    if (pdev->std_procs.copy_alpha != pnm_copy_alpha) {
-	bdev->save_copy_alpha = pdev->std_procs.copy_alpha;
+    if (dev_proc(pdev, copy_alpha) != pnm_copy_alpha) {
+	bdev->save_copy_alpha = dev_proc(pdev, copy_alpha);
 	if (pdev->color_info.depth > 4)
-	    pdev->std_procs.copy_alpha = pnm_copy_alpha;
+	    set_dev_proc(pdev, copy_alpha, pnm_copy_alpha);
     }
 }
 
@@ -285,42 +294,60 @@ ppm_map_color_rgb(gx_device * dev, gx_color_index color, ushort prgb[3])
 private gx_color_index
 pkm_map_cmyk_color(gx_device * pdev, ushort c, ushort m, ushort y, ushort k)
 {
-    uint bitspercolor = pdev->color_info.depth >> 2;
-    ulong max_value = pdev->color_info.max_color;
-    uint cc = c * max_value / gx_max_color_value;
-    uint mc = m * max_value / gx_max_color_value;
-    uint yc = y * max_value / gx_max_color_value;
-    uint kc = k * max_value / gx_max_color_value;
-    gx_color_index color =
-    ((((((ulong) cc << bitspercolor) + mc) << bitspercolor) + yc)
-     << bitspercolor) + kc;
+    uint bpc = pdev->color_info.depth >> 2;
 
-    return (color == gx_no_color_index ? color ^ 1 : color);
+    if (bpc == 1) {		/* also know max_value == 1 */
+	return
+	    ((c == gx_max_color_value) << 3) +
+	    ((m == gx_max_color_value) << 2) +
+	    ((y == gx_max_color_value) << 1) +
+	    (k == gx_max_color_value);
+    } else {
+	ulong max_value = pdev->color_info.max_color;
+	uint cc = c * max_value / gx_max_color_value;
+	uint mc = m * max_value / gx_max_color_value;
+	uint yc = y * max_value / gx_max_color_value;
+	uint kc = k * max_value / gx_max_color_value;
+	gx_color_index color =
+	((((((ulong) cc << bpc) + mc) << bpc) + yc) << bpc) + kc;
+
+	return (color == gx_no_color_index ? color ^ 1 : color);
+    }
 }
 
 /* Map a CMYK pixel value to RGB. */
 private int
 pkm_map_color_rgb(gx_device * dev, gx_color_index color, gx_color_value rgb[3])
 {
-    gx_color_index cshift = color;
     int bpc = dev->color_info.depth >> 2;
-    uint mask = (1 << bpc) - 1;
-    uint max_value = dev->color_info.max_color;
-    uint c, m, y, k;
 
-    k = cshift & mask;
-    cshift >>= bpc;
-    y = cshift & mask;
-    cshift >>= bpc;
-    m = cshift & mask;
-    c = cshift >> bpc;
+    if (bpc == 1) {
+	/* Standard 4-bit CMYK */
+	if (color & 1)
+	    rgb[0] = rgb[1] = rgb[2] = 0;
+	else {
+	    rgb[0] = (color & 8 ? 0 : gx_max_color_value);
+	    rgb[1] = (color & 4 ? 0 : gx_max_color_value);
+	    rgb[2] = (color & 2 ? 0 : gx_max_color_value);
+	}
+    } else {
+	gx_color_index cshift = color;
+	uint mask = (1 << bpc) - 1;
+	uint k = cshift & mask;
+	uint y = (cshift >>= bpc) & mask;
+	uint m = (cshift >>= bpc) & mask;
+	uint c = cshift >> bpc;
+	uint max_value = dev->color_info.max_color;
+	uint not_k = max_value - k;
+
 #define cvalue(c)\
-  ((gx_color_value)((ulong)(c) * gx_max_color_value / max_value))
-    /* We use our improved conversion rule.... */
-    rgb[0] = cvalue((max_value - c) * (max_value - k) / max_value);
-    rgb[1] = cvalue((max_value - m) * (max_value - k) / max_value);
-    rgb[2] = cvalue((max_value - y) * (max_value - k) / max_value);
+    ((gx_color_value)((ulong)(c) * gx_max_color_value / max_value))
+	/* We use our improved conversion rule.... */
+	rgb[0] = cvalue((max_value - c) * not_k / max_value);
+	rgb[1] = cvalue((max_value - m) * not_k / max_value);
+	rgb[2] = cvalue((max_value - y) * not_k / max_value);
 #undef cvalue
+    }
     return 0;
 }
 
@@ -363,7 +390,7 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
     int atext = bdev->alpha_text, agraphics = bdev->alpha_graphics;
     bool alpha_ok;
     long v;
-    const char _ds *vname;
+    const char *vname;
 
     save_info = pdev->color_info;
     if ((code = param_read_long(plist, (vname = "GrayValues"), &v)) != 1 ||
@@ -457,16 +484,23 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
 
     if (data == 0)
 	return_error(gs_error_VMerror);
-    fprintf(pstream, "P%c\n", magic);
-    if (bdev->comment[0])
-	fprintf(pstream, "# %s\n", bdev->comment);
-    else
-	fprintf(pstream, "# Image generated by %s (device=%s)\n",
-		gs_product, pdev->dname);
-    fprintf(pstream, "%d %d\n", pdev->width, pdev->height);
+    /* Hack.  This should be done in the callers.  */
+    if (magic == '9')
+	fprintf(pstream, "%11d %11d %11d %11d %11d ",
+		0, 0, 0, pdev->width, pdev->height);
+    else {
+	fprintf(pstream, "P%c\n", magic);
+	if (bdev->comment[0])
+	    fprintf(pstream, "# %s\n", bdev->comment);
+	else
+	    fprintf(pstream, "# Image generated by %s (device=%s)\n",
+		    gs_product, pdev->dname);
+	fprintf(pstream, "%d %d\n", pdev->width, pdev->height);
+    }
     switch (magic) {
 	case '1':		/* pbm */
 	case '4':		/* pbmraw */
+	case '9':		/* plan9bm */
 	    break;
 	default:
 	    fprintf(pstream, "%d\n", pdev->color_info.max_gray);
@@ -693,17 +727,55 @@ ppm_print_page(gx_device_printer * pdev, FILE * pstream)
 }
 
 /* Print a faux CMYK page. */
+/* Print a row where each pixel occupies 4 bits (depth == 4). */
+/* In this case, we also know pdev->color_info.max_color == 1. */
+private int
+pkm_print_row_4(gx_device_printer * pdev, byte * data, int depth,
+		FILE * pstream)
+{
+    byte *bp;
+    uint x;
+    int shift;
+    byte rv[16], gv[16], bv[16], i;
+
+    /* Precompute all the possible pixel values. */
+    for (i = 0; i < 16; ++i) {
+	gx_color_value rgb[3];
+
+	pkm_map_color_rgb((gx_device *) pdev, (gx_color_index) i, rgb);
+	rv[i] = rgb[0] / gx_max_color_value;
+	gv[i] = rgb[1] / gx_max_color_value;
+	bv[i] = rgb[2] / gx_max_color_value;
+    }
+    for (bp = data, x = 0, shift = 4; x < pdev->width;) {
+	int pixel = (*bp >> shift) & 0xf;
+	int r = rv[pixel], g = gv[pixel], b = bv[pixel];
+
+	shift ^= 4;
+	bp += shift >> 2;
+	++x;
+	if (bdev->is_raw) {
+	    putc(r, pstream);
+	    putc(g, pstream);
+	    putc(b, pstream);
+	} else {
+	    fprintf(pstream, "%d %d %d%c", r, g, b,
+		    (x == pdev->width || !(x & 7) ?
+		     '\n' : ' '));
+	}
+    }
+    return 0;
+}
+/* Print a row where each pixel occupies 1 or more bytes (depth >= 8). */
 private int
 pkm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	      FILE * pstream)
 {
     byte *bp;
     uint x;
-    int shift;
     ulong max_value = pdev->color_info.max_color;
-    uint mask = (depth >= 8 ? 0xff : (1 << depth) - 1);
 
-    for (bp = data, x = 0, shift = 8 - depth; x < pdev->width;) {
+    for (bp = data, x = 0; x < pdev->width;) {
 	bits32 pixel = 0;
 	gx_color_value rgb[3];
 	uint r, g, b;
@@ -724,12 +796,6 @@ pkm_print_row(gx_device_printer * pdev, byte * data, int depth,
 	    case 1:
 		pixel += *bp;
 		bp++;
-		break;
-	    case 0:		/* bpp == 4 */
-		pixel = (*bp >> shift) & mask;
-		if ((shift -= depth) < 0)
-		    bp++, shift += 8;
-		break;
 	}
 	++x;
 	pkm_map_color_rgb((gx_device *) pdev, pixel, rgb);
@@ -752,5 +818,7 @@ private int
 pkm_print_page(gx_device_printer * pdev, FILE * pstream)
 {
     return pbm_print_page_loop(pdev, bdev->magic, pstream,
-			       pkm_print_row);
+			       (pdev->color_info.depth < 8 ?
+				pkm_print_row_4 :
+				pkm_print_row));
 }

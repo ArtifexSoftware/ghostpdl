@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_dosfe.c */
+/*Id: gp_dosfe.c  */
 /* MS-DOS file enumeration. */
 #include "stdio_.h"
 #include <fcntl.h>

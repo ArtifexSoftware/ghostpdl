@@ -1,4 +1,4 @@
-   Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: language.txt 
 This file, language.txt, describes the relationship between the Ghostscript
 interpreter and the PostScript language.
 
@@ -723,6 +724,14 @@ For printers, the following are also defined:
 		  waiting until the first page is ready to
 		  print.
 
+	ReopenPerPage <boolean>
+		If true, close and reopen the output file after each page.
+		  This is only likely to be useful if the output file is
+		  a pipe or some other kind of spooler, in which case it
+		  allows the spooler to start printing the first page
+		  immediately rather than waiting for the entire file
+		  to be converted.
+
 	PageCount <integer> (read-only)
 		Counts the number of pages printed on the device.
 
@@ -749,7 +758,7 @@ the BufferSpace parameter, not BandBufferSpace.
 In addition, Ghostscript supports the following parameter for
 setpagedevice/currentpagedevice that is *not* a device parameter per se:
 
-	ViewerPreProcess	procedure
+	ViewerPreProcess <procedure>
 		Specifies a procedure to be applied to the page device
 		  dictionary before any other processing is done.  The
 		  procedure may not alter the dictionary, but it may return

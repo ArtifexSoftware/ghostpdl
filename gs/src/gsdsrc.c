@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsdsrc.c */
+/*Id: gsdsrc.c  */
 /* DataSource procedures */
 
 #include "memory_.h"
@@ -31,22 +31,22 @@ public_st_data_source();
 private 
 ENUM_PTRS_BEGIN(data_source_enum_ptrs)
 {
-    if (psrc->access == data_source_access_string)
+    if (psrc->type == data_source_type_string)
 	ENUM_RETURN_CONST_STRING_PTR(gs_data_source_t, data.str);
-    else if (psrc->access == data_source_access_bytes)
-	ENUM_RETURN_PTR(gs_data_source_t, data.str.data);
-    else			/*if ( psrc->access == data_source_access_stream ) */
+    else if (psrc->type == data_source_type_stream)
 	ENUM_RETURN_PTR(gs_data_source_t, data.strm);
+    else			/* bytes or floats */
+	ENUM_RETURN_PTR(gs_data_source_t, data.str.data);
 }
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(data_source_reloc_ptrs)
 {
-    if (psrc->access == data_source_access_string)
+    if (psrc->type == data_source_type_string)
 	RELOC_CONST_STRING_PTR(gs_data_source_t, data.str);
-    else if (psrc->access == data_source_access_bytes)
-	RELOC_PTR(gs_data_source_t, data.str.data);
-    else			/*if ( psrc->access == data_source_access_stream ) */
+    else if (psrc->type == data_source_type_stream)
 	RELOC_PTR(gs_data_source_t, data.strm);
+    else			/* bytes or floats */
+	RELOC_PTR(gs_data_source_t, data.str.data);
 }
 RELOC_PTRS_END
 #undef psrc

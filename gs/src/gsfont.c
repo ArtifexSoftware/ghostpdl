@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsfont.c */
+/*Id: gsfont.c  */
 /* Font operators for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"
@@ -119,8 +119,8 @@ private RELOC_PTRS_BEGIN(font_dir_reloc_ptrs);
 	if (cc != 0)
 	    cc_set_pair_only(cc,
 			     (cached_fm_pair *)
-			     gs_reloc_struct_ptr(cc_pair(cc) -
-						 cc->pair_index, gcst) +
+			     (*gc_proc(gcst, reloc_struct_ptr))
+			     (cc_pair(cc) - cc->pair_index, gcst) +
 			     cc->pair_index);
     }
 }
@@ -204,7 +204,7 @@ cc_no_mark_glyph(gs_glyph glyph, void *ignore_data)
     return false;
 }
 gs_font_dir *
-gs_font_dir_alloc(gs_memory_t * mem)
+gs_font_dir_alloc2(gs_memory_t * struct_mem, gs_memory_t * bits_mem)
 {
     gs_font_dir *pdir = 0;
 
@@ -214,15 +214,15 @@ gs_font_dir_alloc(gs_memory_t * mem)
 #  endif
     {				/* Try allocating a very large cache. */
 	/* If this fails, allocate a small one. */
-	pdir = gs_font_dir_alloc_limits(mem,
-					smax_LARGE, bmax_LARGE, mmax_LARGE,
-					cmax_LARGE, blimit_LARGE);
+	pdir = gs_font_dir_alloc2_limits(struct_mem, bits_mem,
+					 smax_LARGE, bmax_LARGE, mmax_LARGE,
+					 cmax_LARGE, blimit_LARGE);
     }
     if (pdir == 0)
 #endif
-	pdir = gs_font_dir_alloc_limits(mem,
-					smax_SMALL, bmax_SMALL, mmax_SMALL,
-					cmax_SMALL, blimit_SMALL);
+	pdir = gs_font_dir_alloc2_limits(struct_mem, bits_mem,
+					 smax_SMALL, bmax_SMALL, mmax_SMALL,
+					 cmax_SMALL, blimit_SMALL);
     if (pdir == 0)
 	return 0;
     pdir->ccache.mark_glyph = cc_no_mark_glyph;
@@ -230,19 +230,20 @@ gs_font_dir_alloc(gs_memory_t * mem)
     return pdir;
 }
 gs_font_dir *
-gs_font_dir_alloc_limits(gs_memory_t * mem,
+gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
 		     uint smax, uint bmax, uint mmax, uint cmax, uint upper)
 {
     register gs_font_dir *pdir =
-    gs_alloc_struct(mem, gs_font_dir, &st_font_dir,
+    gs_alloc_struct(struct_mem, gs_font_dir, &st_font_dir,
 		    "font_dir_alloc(dir)");
     int code;
 
     if (pdir == 0)
 	return 0;
-    code = gx_char_cache_alloc(mem, pdir, bmax, mmax, cmax, upper);
+    code = gx_char_cache_alloc(struct_mem, bits_mem, pdir,
+			       bmax, mmax, cmax, upper);
     if (code < 0) {
-	gs_free_object(mem, pdir, "font_dir_alloc(dir)");
+	gs_free_object(struct_mem, pdir, "font_dir_alloc(dir)");
 	return 0;
     }
     pdir->orig_fonts = 0;
@@ -317,13 +318,13 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 #ifdef DEBUG
     if (gs_debug_c('m')) {
 	if (pfont->FontType == ft_composite)
-	    dprintf("[m]composite");
+	    dlprintf("[m]composite");
 	else if (uid_is_UniqueID(&pbfont->UID))
-	    dprintf1("[m]UniqueID=%ld", pbfont->UID.id);
+	    dlprintf1("[m]UniqueID=%ld", pbfont->UID.id);
 	else if (uid_is_XUID(&pbfont->UID))
-	    dprintf1("[m]XUID(%u)", (uint) (-pbfont->UID.id));
+	    dlprintf1("[m]XUID(%u)", (uint) (-pbfont->UID.id));
 	else
-	    dprintf("[m]no UID");
+	    dlprintf("[m]no UID");
 	dprintf7(", FontType=%d,\n[m]  new FontMatrix=[%g %g %g %g %g %g]\n",
 		 pfont->FontType,
 		 pmat->xx, pmat->xy, pmat->yx, pmat->yy,

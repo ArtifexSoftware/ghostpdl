@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsdevice.c */
+/*Id: gsdevice.c  */
 /* Device operators for Ghostscript library */
 #include "ctype_.h"
 #include "memory_.h"		/* for memcpy */
@@ -60,15 +60,17 @@ private RELOC_PTRS_BEGIN(device_forward_reloc_ptrs)
 RELOC_PTRS_END
 #undef fdev
 
-/* Structure descriptors.  These must follow the procedures, because */
-/* we can't conveniently forward-declare the procedures. */
-/* (See gxdevice.h for details.) */
+/*
+ * Structure descriptors.  These must follow the procedures, because
+ * we can't conveniently forward-declare the procedures.
+ * (See gxdevice.h for details.)
+ */
 public_st_device();
 public_st_device_forward();
 public_st_device_null();
 /* A fake descriptor for devices whose descriptor we can't find. */
 gs_private_st_complex_only(st_device_unknown, byte, "gx_device(unknown)",
-			   0, 0, 0, gx_device_finalize);
+    0, gs_no_struct_enum_ptrs, gs_no_struct_reloc_ptrs, gx_device_finalize);
 
 /* GC utilities */
 /* Enumerate or relocate a device pointer for a client. */
@@ -84,7 +86,7 @@ gx_device_reloc_ptr(gx_device * dev, gc_state_t * gcst)
 {
     if (dev == 0 || dev->memory == 0)
 	return dev;
-    return gs_reloc_struct_ptr(dev, gcst);
+    return (*gc_proc(gcst, reloc_struct_ptr)) (dev, gcst);
 }
 
 /* Set up the device procedures in the device structure. */
@@ -93,17 +95,9 @@ void
 gx_device_set_procs(gx_device * dev)
 {
     if (dev->static_procs != 0) {	/* 0 if already populated */
-	dev->std_procs = *dev->static_procs;
+	dev->procs = *dev->static_procs;
 	dev->static_procs = 0;
     }
-}
-
-/* Initialize a device just after allocation. */
-int
-gdev_initialize(gx_device * dev)
-{
-    *dev = *(gx_device *) & gs_null_device;
-    return 0;
 }
 
 /* Flush buffered output to the device */
@@ -148,7 +142,8 @@ gs_copyscanlines(gx_device * dev, int start_y, byte * data, uint size,
     for (i = 0; i < count; i++, dest += line_size) {
 	int code = (*dev_proc(dev, get_bits)) (dev, start_y + i, dest, NULL);
 
-	if (code < 0) {		/* Might just be an overrun. */
+	if (code < 0) {
+	    /* Might just be an overrun. */
 	    if (start_y + i == dev->height)
 		break;
 	    return_error(code);
@@ -187,12 +182,41 @@ gs_deviceinitialmatrix(gx_device * dev, gs_matrix * pmat)
 const gx_device *
 gs_getdevice(int index)
 {
-    const gx_device **list;
+    const gx_device *const *list;
     int count = gs_lib_device_list(&list, NULL);
 
     if (index < 0 || index >= count)
 	return 0;		/* index out of range */
     return list[index];
+}
+
+/* Fill in the GC structure descriptor for a device. */
+/* This is only called during initialization. */
+void
+gx_device_make_struct_type(gs_memory_struct_type_t *st,
+			   const gx_device *dev)
+{
+    const gx_device_procs *procs = dev->static_procs;
+    bool forward = false;
+
+    /*
+     * Try to figure out whether this is a forwarding device.  All
+     * printer devices, and no other devices, have a null fill_rectangle
+     * procedure; for other devices, we look for a likely forwarding
+     * procedure in the vector.  The algorithm isn't foolproof, but it's
+     * the best we can come up with.
+     */
+    if (procs == 0)
+	procs = &dev->procs;
+    if (procs->fill_rectangle == 0 ||
+	procs->get_xfont_procs == gx_forward_get_xfont_procs
+	)
+	forward = true;
+    if (forward)
+	*st = st_device_forward;
+    else
+	*st = st_device;
+    st->ssize = dev->params_size;
 }
 
 /* Clone an existing device. */
@@ -206,56 +230,37 @@ gs_copydevice(gx_device ** pnew_dev, const gx_device * dev, gs_memory_t * mem)
      * Because command list devices have complicated internal pointer
      * structures, we allocate all device instances as immovable.
      */
-    if (std == 0) {		/*
-				 * This is the statically allocated prototype.  Find its
-				 * structure descriptor, and fill it in if this is the first
-				 * time we've needed it.  (Right now we always fill it in,
-				 * for simplicity.)
-				 */
-	const gx_device **list;
+    if (std == 0) {
+	/*
+	 * This is the statically allocated prototype.  Find its
+	 * structure descriptor.
+	 */
+	const gx_device *const *list;
 	gs_memory_struct_type_t *st;
 	int count = gs_lib_device_list(&list, &st);
 	int i;
-	bool forward = false;
-	const gx_device_procs *procs = dev->static_procs;
 
 	for (i = 0; list[i] != dev; ++i)
-	    if (i == count) {	/* We can't find a structure descriptor for */
-		/* this device.  Allocate it as bytes and */
-		/* hope for the best. */
+	    if (i == count) {
+		/*
+		 * We can't find a structure descriptor for this device.
+		 * Allocate it as bytes and hope for the best.
+		 */
 		std = &st_device_unknown;
-		new_dev = gs_alloc_struct_array_immovable(mem,
-					    dev->params_size, gx_device, st,
+		new_dev =
+		    gs_alloc_struct_array_immovable(mem, dev->params_size,
+						    gx_device, std,
 						  "gs_copydevice(unknown)");
 		goto out;
 	    }
-	st += i;
-	/*
-	 * Try to figure out if this is a forwarding device.
-	 * All printer devices, and no other devices, have
-	 * a null fill_rectangle procedure; for other devices,
-	 * we look for a likely forwarding procedure in the vector.
-	 * The algorithm isn't foolproof, but it's all we've got.
-	 */
-	if (procs == 0)
-	    procs = &dev->std_procs;
-	if (procs->fill_rectangle == 0 ||
-	    procs->get_xfont_procs == gx_forward_get_xfont_procs
-	    )
-	    forward = true;
-	if (forward)
-	    *st = st_device_forward;
-	else
-	    *st = st_device;
-	st->ssize = dev->params_size;
-	std = st;
+	std = st + i;
     }
     new_dev = gs_alloc_struct_immovable(mem, gx_device, std,
 					"gs_copydevice");
-  out:if (new_dev == 0)
+out:
+    if (new_dev == 0)
 	return_error(gs_error_VMerror);
-    memcpy(new_dev, dev, dev->params_size);
-    new_dev->memory = mem;
+    gx_device_init(new_dev, dev, mem, false);
     new_dev->stype = std;
     new_dev->is_open = false;
     *pnew_dev = new_dev;
@@ -281,46 +286,82 @@ gs_setdevice_no_erase(gs_state * pgs, gx_device * dev)
     /* Initialize the device */
     if (!was_open) {
 	gx_device_fill_in_procs(dev);
-	if (gs_device_is_memory(dev)) {		/* Set the target to the current device. */
+	if (gs_device_is_memory(dev)) {
+	    /* Set the target to the current device. */
 	    gx_device *odev = gs_currentdevice_inline(pgs);
 
 	    while (odev != 0 && gs_device_is_memory(odev))
-		odev = ((gx_device_memory *) odev)->target;
-	    ((gx_device_memory *) dev)->target = odev;
+		odev = ((gx_device_memory *)odev)->target;
+	    rc_assign(((gx_device_memory *)dev)->target, odev,
+		      "set memory device(target)");
 	}
 	code = (*dev_proc(dev, open_device)) (dev);
 	if (code < 0)
 	    return_error(code);
 	dev->is_open = true;
     }
-    pgs->device = dev;
-    gx_set_cmap_procs((gs_imager_state *) pgs, dev);
+    gs_setdevice_no_init(pgs, dev);
     pgs->ctm_default_set = false;
     if ((code = gs_initmatrix(pgs)) < 0 ||
 	(code = gs_initclip(pgs)) < 0
 	)
 	return code;
-    gx_unset_dev_color(pgs);
     /* If we were in a charpath or a setcachedevice, */
     /* we aren't any longer. */
     pgs->in_cachedevice = 0;
     pgs->in_charpath = (gs_char_path_mode) 0;
     return (was_open ? 0 : 1);
 }
+int
+gs_setdevice_no_init(gs_state * pgs, gx_device * dev)
+{
+    /*
+     * Just set the device, possibly changing color space but no other
+     * device parameters.
+     */
+    rc_assign(pgs->device, dev, "gs_setdevice_no_init");
+    gx_set_cmap_procs((gs_imager_state *) pgs, dev);
+    gx_unset_dev_color(pgs);
+    return 0;
+}
+
+/* Initialize a just-allocated device. */
+void
+gx_device_init(gx_device * dev, const gx_device * proto, gs_memory_t * mem,
+	       bool internal)
+{
+    memcpy(dev, proto, proto->params_size);
+    dev->memory = mem;
+    rc_init(dev, mem, (internal ? 0 : 1));
+}
 
 /* Make a null device. */
 void
 gs_make_null_device(gx_device_null * dev, gs_memory_t * mem)
 {
-    *dev = gs_null_device;
-    dev->memory = mem;
+    gx_device_init((gx_device *) dev, (const gx_device *)&gs_null_device,
+		   mem, true);
 }
 
-/* Select the null device.  This is just a convenience. */
-void
+/* Select a null device. */
+int
 gs_nulldevice(gs_state * pgs)
 {
-    gs_setdevice(pgs, (gx_device *) & gs_null_device);
+    if (pgs->device == 0 || !gx_device_is_null(pgs->device)) {
+	gx_device *ndev;
+	int code = gs_copydevice(&ndev, (gx_device *) & gs_null_device,
+				 pgs->memory);
+
+	if (code < 0)
+	    return code;
+	/*
+	 * Internal devices have a reference count of 0, not 1,
+	 * aside from references from graphics states.
+	 */
+	rc_init(ndev, pgs->memory, 0);
+	return gs_setdevice_no_erase(pgs, ndev);
+    }
+    return 0;
 }
 
 /* Close a device.  The client is responsible for ensuring that */
@@ -339,20 +380,14 @@ gs_closedevice(gx_device * dev)
     return code;
 }
 
-/* Install enough of a null device to suppress the page device check */
-/* during the execution of a restore/grestore/setgstate. */
-void
-gx_device_no_output(gs_state * pgs)
-{
-    pgs->device = (gx_device *) & gs_null_device;
-}
-
-/* Just set the device without reinitializing. */
-/* (For internal use only.) */
+/*
+ * Just set the device without any reinitializing.
+ * (For internal use only.)
+ */
 void
 gx_set_device_only(gs_state * pgs, gx_device * dev)
 {
-    pgs->device = dev;
+    rc_assign(pgs->device, dev, "gx_set_device_only");
 }
 
 /* Compute the size of one scan line for a device, */
@@ -437,7 +472,7 @@ int
 gx_device_open_output_file(const gx_device * dev, const char *fname,
 			   bool binary, bool positionable, FILE ** pfile)
 {
-    char pfname[128];
+    char pfname[gp_file_name_sizeof];
     char pfmt[10];
     const char *fsrc = fname;
     char *fdest = pfname;
@@ -445,7 +480,8 @@ gx_device_open_output_file(const gx_device * dev, const char *fname,
 
     if (!strcmp(fname, "-")) {
 	*pfile = stdout;
-	return 0;
+	/* Force stdout to binary. */
+	return gp_setmode_binary(*pfile, true);
     }
 /****** SHOULD RETURN rangecheck IF FILE NAME TOO LONG ******/
     for (; *fsrc; ++fsrc) {

@@ -42,17 +42,6 @@
 #include "gsimage.h"
 #include "gsiparm4.h"
 
-/*
- * This file must be usable with a (modified) 5.1x, which doesn't have
- * the 'equal' procedure in device colors.  We can't find a way to do
- * this that doesn't involve conditional compilation....
- */
-#ifdef dev_color_proc_equal
-#  define HAVE_COLOR_EQUAL 1
-#else
-#  define HAVE_COLOR_EQUAL 0
-#endif
-
 /* GC descriptors */
 private_st_pattern1_template();
 public_st_pattern_instance();
@@ -62,24 +51,25 @@ int gx_pattern_load(P4(gx_device_color *, const gs_imager_state *,
 		       gx_device *, gs_color_select_t));
 
 /* Define the Pattern color space. */
+gs_private_st_composite(st_color_space_Pattern, gs_paint_color_space,
+     "gs_color_space_Pattern", cs_Pattern_enum_ptrs, cs_Pattern_reloc_ptrs);
+private cs_proc_num_components(gx_num_components_Pattern);
+private cs_proc_base_space(gx_base_space_Pattern);
 extern cs_proc_remap_color(gx_remap_Pattern);
 private cs_proc_init_color(gx_init_Pattern);
 private cs_proc_restrict_color(gx_restrict_Pattern);
 private cs_proc_install_cspace(gx_install_Pattern);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Pattern);
 private cs_proc_adjust_color_count(gx_adjust_color_Pattern);
-private struct_proc_enum_ptrs(gx_enum_ptrs_Pattern);
-private struct_proc_reloc_ptrs(gx_reloc_ptrs_Pattern);
-const gs_color_space_type
-      gs_color_space_type_Pattern =
-{gs_color_space_index_Pattern, -1, false,
- gs_pattern_color_space_size,
- gx_init_Pattern, gx_restrict_Pattern,
- gx_no_concrete_space,
- gx_no_concretize_color, NULL,
- gx_remap_Pattern, gx_install_Pattern,
- gx_adjust_cspace_Pattern, gx_adjust_color_Pattern,
- gx_enum_ptrs_Pattern, gx_reloc_ptrs_Pattern
+const gs_color_space_type gs_color_space_type_Pattern = {
+    gs_color_space_index_Pattern, false, false,
+    &st_color_space_Pattern, gx_num_components_Pattern,
+    gx_base_space_Pattern,
+    gx_init_Pattern, gx_restrict_Pattern,
+    gx_no_concrete_space,
+    gx_no_concretize_color, NULL,
+    gx_remap_Pattern, gx_install_Pattern,
+    gx_adjust_cspace_Pattern, gx_adjust_color_Pattern
 };
 
 /*
@@ -556,87 +546,74 @@ gs_makebitmappattern_xform(
 
 /* ------ Color space implementation ------ */
 
-/* Pattern device color types. */
-/* We need a masked analogue of each of the non-pattern types, */
-/* to handle uncolored patterns. */
-/* We use 'masked_fill_rect' instead of 'masked_fill_rectangle' */
-/* in order to limit identifier lengths to 32 characters. */
+/*
+ * Defined the Pattern device color types.  We need a masked analogue of
+ * each of the non-pattern types, to handle uncolored patterns.  We use
+ * 'masked_fill_rect' instead of 'masked_fill_rectangle' in order to limit
+ * identifier lengths to 32 characters.
+ */
 private dev_color_proc_load(gx_dc_pattern_load);
-
-								 /*dev_color_proc_fill_rectangle(gx_dc_pattern_fill_rectangle); *//*gxp1fill.h */
-#if HAVE_COLOR_EQUAL
+/*dev_color_proc_fill_rectangle(gx_dc_pattern_fill_rectangle); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_pattern_equal);
-
-#endif
-private struct_proc_enum_ptrs(dc_pattern_enum_ptrs);
-private struct_proc_reloc_ptrs(dc_pattern_reloc_ptrs);
 private dev_color_proc_load(gx_dc_pure_masked_load);
 
-								/*dev_color_proc_fill_rectangle(gx_dc_pure_masked_fill_rect); *//*gxp1fill.h */
-#if HAVE_COLOR_EQUAL
+/*dev_color_proc_fill_rectangle(gx_dc_pure_masked_fill_rect); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_pure_masked_equal);
-
-#endif
-private struct_proc_enum_ptrs(dc_masked_enum_ptrs);
-private struct_proc_reloc_ptrs(dc_masked_reloc_ptrs);
 private dev_color_proc_load(gx_dc_binary_masked_load);
 
-								  /*dev_color_proc_fill_rectangle(gx_dc_binary_masked_fill_rect); *//*gxp1fill.h */
-#if HAVE_COLOR_EQUAL
+/*dev_color_proc_fill_rectangle(gx_dc_binary_masked_fill_rect); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_binary_masked_equal);
-
-#endif
-private struct_proc_enum_ptrs(dc_binary_masked_enum_ptrs);
-private struct_proc_reloc_ptrs(dc_binary_masked_reloc_ptrs);
 private dev_color_proc_load(gx_dc_colored_masked_load);
 
-								   /*dev_color_proc_fill_rectangle(gx_dc_colored_masked_fill_rect); *//*gxp1fill.h */
-#if HAVE_COLOR_EQUAL
+/*dev_color_proc_fill_rectangle(gx_dc_colored_masked_fill_rect); *//*gxp1fill.h */
 private dev_color_proc_equal(gx_dc_colored_masked_equal);
 
-#endif
 /* The device color types are exported for gxpcmap.c. */
-const gx_device_color_procs
-      gx_dc_pattern =
-{gx_dc_pattern_load, gx_dc_pattern_fill_rectangle,
- gx_dc_default_fill_masked,
-#if HAVE_COLOR_EQUAL
- gx_dc_pattern_equal,
-#endif
- dc_pattern_enum_ptrs, dc_pattern_reloc_ptrs
-},    gx_dc_pure_masked =
-{gx_dc_pure_masked_load, gx_dc_pure_masked_fill_rect,
- gx_dc_default_fill_masked,
-#if HAVE_COLOR_EQUAL
- gx_dc_pure_masked_equal,
-#endif
- dc_masked_enum_ptrs, dc_masked_reloc_ptrs
-},    gx_dc_binary_masked =
-{gx_dc_binary_masked_load, gx_dc_binary_masked_fill_rect,
- gx_dc_default_fill_masked,
-#if HAVE_COLOR_EQUAL
- gx_dc_binary_masked_equal,
-#endif
- dc_binary_masked_enum_ptrs, dc_binary_masked_reloc_ptrs
-},    gx_dc_colored_masked =
-{gx_dc_colored_masked_load, gx_dc_colored_masked_fill_rect,
- gx_dc_default_fill_masked,
-#if HAVE_COLOR_EQUAL
- gx_dc_colored_masked_equal,
-#endif
- dc_masked_enum_ptrs, dc_masked_reloc_ptrs
+gs_private_st_composite(st_dc_pattern, gx_device_color, "dc_pattern",
+			dc_pattern_enum_ptrs, dc_pattern_reloc_ptrs);
+const gx_device_color_type_t gx_dc_pattern = {
+    &st_dc_pattern,
+    gx_dc_pattern_load, gx_dc_pattern_fill_rectangle,
+    gx_dc_default_fill_masked, gx_dc_pattern_equal
+};
+
+extern_st(st_dc_ht_binary);
+gs_private_st_composite(st_dc_pure_masked, gx_device_color, "dc_pure_masked",
+			dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
+const gx_device_color_type_t gx_dc_pure_masked = {
+    &st_dc_pure_masked,
+    gx_dc_pure_masked_load, gx_dc_pure_masked_fill_rect,
+    gx_dc_default_fill_masked, gx_dc_pure_masked_equal
+};
+
+gs_private_st_composite(st_dc_binary_masked, gx_device_color,
+			"dc_binary_masked", dc_binary_masked_enum_ptrs,
+			dc_binary_masked_reloc_ptrs);
+const gx_device_color_type_t gx_dc_binary_masked = {
+    &st_dc_binary_masked,
+    gx_dc_binary_masked_load, gx_dc_binary_masked_fill_rect,
+    gx_dc_default_fill_masked, gx_dc_binary_masked_equal
+};
+
+gs_private_st_composite_only(st_dc_colored_masked, gx_device_color,
+			     "dc_colored_masked",
+			     dc_masked_enum_ptrs, dc_masked_reloc_ptrs);
+const gx_device_color_type_t gx_dc_colored_masked = {
+    &st_dc_colored_masked,
+    gx_dc_colored_masked_load, gx_dc_colored_masked_fill_rect,
+    gx_dc_default_fill_masked, gx_dc_colored_masked_equal
 };
 
 #undef gx_dc_type_pattern
-const gx_device_color_procs *const gx_dc_type_pattern = &gx_dc_pattern;
-
+const gx_device_color_type_t *const gx_dc_type_pattern = &gx_dc_pattern;
 #define gx_dc_type_pattern (&gx_dc_pattern)
+
 /* GC procedures */
 #define cptr ((gx_device_color *)vptr)
 private 
 ENUM_PTRS_BEGIN(dc_pattern_enum_ptrs)
 {
-    ENUM_RETURN_CALL(gx_dc_pure_masked.enum_ptrs, vptr, size, index - 1);
+    return ENUM_USING(st_dc_pure_masked, vptr, size, index - 1);
 }
 case 0:
 {
@@ -654,7 +631,7 @@ private RELOC_PTRS_BEGIN(dc_pattern_reloc_ptrs)
 
 	RELOC_TYPED_OFFSET_PTR(gx_device_color, colors.pattern.p_tile, index);
     }
-    dc_masked_reloc_ptrs(vptr, size, gcst);
+    RELOC_USING(st_dc_pure_masked, vptr, size);
 }
 RELOC_PTRS_END
 private ENUM_PTRS_BEGIN(dc_masked_enum_ptrs) ENUM_SUPER(gx_device_color, st_client_color, mask.ccolor, 1);
@@ -679,16 +656,16 @@ private RELOC_PTRS_BEGIN(dc_masked_reloc_ptrs)
 RELOC_PTRS_END
 private ENUM_PTRS_BEGIN(dc_binary_masked_enum_ptrs)
 {
-    ENUM_RETURN_CALL(gx_dc_procs_ht_binary.enum_ptrs, vptr, size, index - 2);
+    return ENUM_USING(st_dc_ht_binary, vptr, size, index - 2);
 }
 case 0:
 case 1:
-ENUM_RETURN_CALL(gx_dc_pure_masked.enum_ptrs, vptr, size, index);
+return ENUM_USING(st_dc_pure_masked, vptr, size, index);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(dc_binary_masked_reloc_ptrs)
 {
-    RELOC_CALL(gx_dc_pure_masked.reloc_ptrs, vptr, size);
-    RELOC_CALL(gx_dc_procs_ht_binary.reloc_ptrs, vptr, size);
+    RELOC_USING(st_dc_pure_masked, vptr, size);
+    RELOC_USING(st_dc_ht_binary, vptr, size);
 }
 RELOC_PTRS_END
 #undef cptr
@@ -715,7 +692,7 @@ private int
 gx_dc_pure_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 		       gx_device * dev, gs_color_select_t select)
 {
-    int code = (*gx_dc_procs_pure.load) (pdevc, pis, dev, select);
+    int code = (*gx_dc_type_data_pure.load) (pdevc, pis, dev, select);
 
     if (code < 0)
 	return code;
@@ -725,7 +702,7 @@ private int
 gx_dc_binary_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 			 gx_device * dev, gs_color_select_t select)
 {
-    int code = (*gx_dc_procs_ht_binary.load) (pdevc, pis, dev, select);
+    int code = (*gx_dc_type_data_ht_binary.load) (pdevc, pis, dev, select);
 
     if (code < 0)
 	return code;
@@ -735,7 +712,7 @@ private int
 gx_dc_colored_masked_load(gx_device_color * pdevc, const gs_imager_state * pis,
 			  gx_device * dev, gs_color_select_t select)
 {
-    int code = (*gx_dc_procs_ht_colored.load) (pdevc, pis, dev, select);
+    int code = (*gx_dc_type_data_ht_colored.load) (pdevc, pis, dev, select);
 
     if (code < 0)
 	return code;
@@ -783,8 +760,6 @@ gx_pattern_cache_lookup(gx_device_color * pdevc, const gs_imager_state * pis,
 
 #undef FINISH_PATTERN_LOAD
 
-#if HAVE_COLOR_EQUAL
-
 /* Compare two Pattern colors for equality. */
 private bool
 gx_dc_pattern_equal(const gx_device_color * pdevc1,
@@ -817,7 +792,30 @@ gx_dc_colored_masked_equal(const gx_device_color * pdevc1,
 	pdevc1->mask.id == pdevc2->mask.id;
 }
 
-#endif /* HAVE_COLOR_EQUAL */
+/*
+ * Get the number of components in a Pattern color.
+ * For backward compatibility, and to distinguish Pattern color spaces
+ * from all others, we negate the result.
+ */
+private int
+gx_num_components_Pattern(const gs_color_space * pcs)
+{
+    return
+	(pcs->params.pattern.has_base_space ?
+	 -1 - cs_num_components((const gs_color_space *)
+				&(pcs->params.pattern.base_space)) :
+	 -1 /* Pattern dictionary only */ );
+}
+
+/* Get the base space of a Pattern color space. */
+private const gs_color_space *
+gx_base_space_Pattern(const gs_color_space * pcs)
+{
+    return
+	(pcs->params.pattern.has_base_space ?
+	 (const gs_color_space *)&(pcs->params.pattern.base_space) :
+	 NULL);
+}
 
 /* Initialize a Pattern color. */
 private void
@@ -882,22 +880,22 @@ gx_adjust_color_Pattern(const gs_client_color * pcc, const gs_color_space * pcs,
 #define pcs ((gs_color_space *)vptr)
 
 private 
-ENUM_PTRS_BEGIN_PROC(gx_enum_ptrs_Pattern)
+ENUM_PTRS_BEGIN_PROC(cs_Pattern_enum_ptrs)
 {
     if (!pcs->params.pattern.has_base_space)
 	return 0;
-    ENUM_RETURN_CALL(pcs->params.pattern.base_space.type->enum_ptrs,
-		     &pcs->params.pattern.base_space,
-		     sizeof(pcs->params.pattern.base_space), index);
+    return ENUM_USING(*pcs->params.pattern.base_space.type->stype,
+		      &pcs->params.pattern.base_space,
+		      sizeof(pcs->params.pattern.base_space), index);
 }
 ENUM_PTRS_END_PROC
-private RELOC_PTRS_BEGIN(gx_reloc_ptrs_Pattern)
+private RELOC_PTRS_BEGIN(cs_Pattern_reloc_ptrs)
 {
     if (!pcs->params.pattern.has_base_space)
 	return;
-    RELOC_CALL(pcs->params.pattern.base_space.type->reloc_ptrs,
-	       &pcs->params.pattern.base_space,
-	       sizeof(gs_paint_color_space));
+    RELOC_USING(*pcs->params.pattern.base_space.type->stype,
+		&pcs->params.pattern.base_space,
+		sizeof(gs_paint_color_space));
 }
 RELOC_PTRS_END
 

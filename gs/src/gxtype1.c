@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxtype1.c */
+/*Id: gxtype1.c  */
 /* Adobe Type 1 font interpreter support */
 #include "math_.h"
 #include "gx.h"
@@ -114,7 +114,7 @@ private RELOC_PTRS_BEGIN(gs_type1_state_reloc_ptrs)
 	ip_state *ipsp = &pcis->ipstack[i];
 	int diff = ipsp->ip - ipsp->char_string.data;
 
-	gs_reloc_const_string(&ipsp->char_string, gcst);
+	RELOC_CONST_STRING_VAR(ipsp->char_string);
 	ipsp->ip = ipsp->char_string.data + diff;
     }
 } RELOC_PTRS_END
@@ -195,6 +195,9 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->init_done = -1;
     pcis->sb_set = false;
     pcis->width_set = false;
+    pcis->have_hintmask = false;
+    pcis->num_hints = 0;
+    pcis->seac_accent = -1;
 
     /* Set the sampling scale. */
     set_pixel_scale(&pcis->scale.x, plog2_scale->x);
@@ -220,7 +223,7 @@ gs_type1_set_width(gs_type1_state * pcis, const gs_point * pwpt)
 /* Finish initializing the interpreter if we are actually rasterizing */
 /* the character, as opposed to just computing the side bearing and width. */
 void
-gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state _ss * ps)
+gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
 {
     gs_imager_state *pis = pcis->pis;
 
@@ -238,8 +241,6 @@ gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state _ss * ps)
     }
 
     /* Initialize hint-related scalars. */
-    pcis->have_hintmask = false;
-    pcis->seac_base = -1;
     pcis->asb_diff = pcis->adxy.x = pcis->adxy.y = 0;
     pcis->flex_count = flex_max;	/* not in Flex */
     pcis->dotsection_flag = dotsection_out;
@@ -381,13 +382,81 @@ gs_type1_sbw(gs_type1_state * pcis, fixed lsbx, fixed lsby, fixed wx, fixed wy)
     return 0;
 }
 
-/* Handle the end of a character. */
+/*
+ * Handle a seac.  Do the base character now; when it finishes (detected
+ * in endchar), do the accent.  Note that we pass only 4 operands on the
+ * stack, and pass asb separately.
+ */
+int
+gs_type1_seac(gs_type1_state * pcis, const fixed * cstack, fixed asb,
+	      ip_state * ipsp)
+{
+    gs_font_type1 *pfont = pcis->pfont;
+    gs_const_string bcstr;
+    int code;
+
+    /* Save away all the operands. */
+    pcis->seac_accent = fixed2int_var(cstack[3]);
+    pcis->save_asb = asb - pcis->lsb.x;
+    pcis->save_adxy.x = cstack[0];
+    pcis->save_adxy.y = cstack[1];
+    pcis->os_count = 0;		/* clear */
+    /* Ask the caller to provide the base character's CharString. */
+    code = (*pfont->data.procs->seac_data)
+	(pfont, fixed2int_var(cstack[2]), &bcstr);
+    if (code != 0)
+	return code;
+    /* Continue with the supplied string. */
+    ipsp->char_string = bcstr;
+    return 0;
+}
+
+/*
+ * Handle the end of a character.  Return 0 if this is really the end of a
+ * character, or 1 if we still have to process the accent of a seac.
+ * In the latter case, the interpreter control stack has been set up to
+ * point to the start of the accent's CharString; the caller must
+ * also set ptx/y to pcis->position.x/y.
+ */
 int
 gs_type1_endchar(gs_type1_state * pcis)
 {
     gs_imager_state *pis = pcis->pis;
     gx_path *ppath = pcis->path;
 
+    if (pcis->seac_accent >= 0) {	/* We just finished the base character of a seac. */
+	/* Do the accent. */
+	gs_font_type1 *pfont = pcis->pfont;
+	gs_op1_state s;
+	gs_const_string astr;
+	int achar = pcis->seac_accent;
+	int code;
+
+	pcis->seac_accent = -1;
+	/* Reset the coordinate system origin */
+	sfc = pcis->fc;
+	ptx = pcis->origin.x, pty = pcis->origin.y;
+	pcis->asb_diff = pcis->save_asb;
+	pcis->adxy = pcis->save_adxy;
+	accum_xy(pcis->adxy.x + pcis->lsb.x,
+		 pcis->adxy.y + pcis->lsb.y);
+	ppath->position.x = pcis->position.x = ptx;
+	ppath->position.y = pcis->position.y = pty;
+	pcis->os_count = 0;	/* clear */
+	/* Clear the ipstack, in case the base character */
+	/* ended inside a subroutine. */
+	pcis->ips_count = 1;
+	/* Remove any base character hints. */
+	reset_stem_hints(pcis);
+	/* Ask the caller to provide the accent's CharString. */
+	code = (*pfont->data.procs->seac_data) (pfont, achar, &astr);
+	if (code < 0)
+	    return code;
+	/* Continue with the supplied string. */
+	pcis->ips_count = 1;
+	pcis->ipstack[0].char_string = astr;
+	return 1;
+    }
     if (pcis->hint_next != 0 || path_is_drawing(ppath))
 	apply_path_hints(pcis, true);
     /* Set the current point to the character origin */

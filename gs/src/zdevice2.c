@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,11 @@
    all copies.
  */
 
-/* zdevice2.c */
+/*Id: zdevice2.c  */
 /* Level 2 device operators */
 #include "math_.h"
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "dstack.h"		/* for dict_find_name */
 #include "estack.h"
@@ -33,20 +32,23 @@
 #include "gxdevice.h"
 #include "gsstate.h"
 
-/* Imported data */
-extern op_proc_p zcopy_procs[t_next_index];
-
 /* Forward references */
 private int z2copy_gstate(P1(os_ptr));
-private int near push_callout(P1(const char _ds *));
+private int push_callout(P1(const char *));
 
-/* Initialize by adding changing the `copy' operator for gstates. */
-/* This is a hack -- we know that gstates are the only */
+/* Extend the `copy' operator to deal with gstates. */
+/* This is done with a hack -- we know that gstates are the only */
 /* t_astruct subtype that implements copy. */
-private void
-zdevice2_init(void)
+private int
+z2copy(register os_ptr op)
 {
-    zcopy_procs[t_astruct] = z2copy_gstate;
+    int code = zcopy(op);
+
+    if (code >= 0)
+	return code;
+    if (!r_has_type(op, t_astruct))
+	return code;
+    return z2copy_gstate(op);
 }
 
 /* - .currentshowpagecount <count> true */
@@ -56,7 +58,7 @@ zcurrentshowpagecount(register os_ptr op)
 {
     gx_device *dev = gs_currentdevice(igs);
 
-    if ((*dev_proc(dev, get_page_device)) (dev) == 0) {
+    if ((*dev_proc(dev, get_page_device))(dev) == 0) {
 	push(1);
 	make_false(op);
     } else {
@@ -74,17 +76,17 @@ zcurrentpagedevice(register os_ptr op)
     gx_device *dev = gs_currentdevice(igs);
 
     push(2);
-    if ((*dev_proc(dev, get_page_device)) (dev) != 0) {
+    if ((*dev_proc(dev, get_page_device))(dev) != 0) {
 	op[-1] = istate->pagedevice;
 	make_true(op);
     } else {
-	op[-1] = i_null_pagedevice;
+	make_null(op - 1);
 	make_false(op);
     }
     return 0;
 }
 
-/* <dict> .setpagedevice - */
+/* <dict|null> .setpagedevice - */
 private int
 zsetpagedevice(register os_ptr op)
 {
@@ -94,12 +96,15 @@ zsetpagedevice(register os_ptr op)
 	if ( igs->in_cachedevice )
 	  return_error(e_undefined);
  ******/
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    /* Make the dictionary read-only. */
-    code = zreadonly(op);
-    if (code < 0)
-	return code;
+    if (r_has_type(op, t_dictionary)) {
+	check_dict_read(*op);
+	/* Make the dictionary read-only. */
+	code = zreadonly(op);
+	if (code < 0)
+	    return code;
+    } else {
+	check_type(*op, t_null);
+    }
     istate->pagedevice = *op;
     pop(1);
     return 0;
@@ -114,7 +119,7 @@ zcallinstall(os_ptr op)
 {
     gx_device *dev = gs_currentdevice(igs);
 
-    if ((dev = (*dev_proc(dev, get_page_device)) (dev)) != 0) {
+    if ((dev = (*dev_proc(dev, get_page_device))(dev)) != 0) {
 	int code = (*dev->page_procs.install) (dev, igs);
 
 	if (code < 0)
@@ -130,8 +135,8 @@ zcallbeginpage(os_ptr op)
     gx_device *dev = gs_currentdevice(igs);
 
     check_type(*op, t_integer);
-    if ((dev = (*dev_proc(dev, get_page_device)) (dev)) != 0) {
-	int code = (*dev->page_procs.begin_page) (dev, igs);
+    if ((dev = (*dev_proc(dev, get_page_device))(dev)) != 0) {
+	int code = (*dev->page_procs.begin_page)(dev, igs);
 
 	if (code < 0)
 	    return code;
@@ -149,8 +154,8 @@ zcallendpage(os_ptr op)
 
     check_type(op[-1], t_integer);
     check_type(*op, t_integer);
-    if ((dev = (*dev_proc(dev, get_page_device)) (dev)) != 0) {
-	code = (*dev->page_procs.end_page) (dev, (int)op->value.intval, igs);
+    if ((dev = (*dev_proc(dev, get_page_device))(dev)) != 0) {
+	code = (*dev->page_procs.end_page)(dev, (int)op->value.intval, igs);
 	if (code < 0)
 	    return code;
 	if (code > 1)
@@ -172,11 +177,13 @@ zcallendpage(os_ptr op)
 /* any way around it. */
 
 /* Check whether we need to call out to create the page device dictionary. */
-#define save_page_device(pgs)\
-  (gs_int_gstate(pgs)->pagedevice.value.pdict ==\
-     i_null_pagedevice.value.pdict &&\
-   (*dev_proc(gs_currentdevice(pgs), get_page_device))(gs_currentdevice(pgs))\
-     != 0)
+private bool
+save_page_device(gs_state *pgs)
+{
+    return 
+	(r_has_type(&gs_int_gstate(pgs)->pagedevice, t_null) &&
+	 (*dev_proc(gs_currentdevice(pgs), get_page_device))(gs_currentdevice(pgs)) != 0);
+}
 
 /* - gsave - */
 private int
@@ -214,7 +221,7 @@ z2copy_gstate(os_ptr op)
     return push_callout("%copygstatepagedevice");
 }
 
-/* <gstate1> <gstate2> currentgstate <gstate2> */
+/* <gstate> currentgstate <gstate> */
 private int
 z2currentgstate(os_ptr op)
 {
@@ -226,7 +233,7 @@ z2currentgstate(os_ptr op)
 /* ------ Wrappers for operators that reset the graphics state. ------ */
 
 /* Check whether we need to call out to restore the page device. */
-private bool near
+private bool
 restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
 {
     gx_device *dev_old = gs_currentdevice(pgs_old);
@@ -247,10 +254,12 @@ restore_page_device(const gs_state * pgs_old, const gs_state * pgs_new)
     /* parameters in the same device object, so we have to check */
     /* whether the page device dictionaries are the same. */
     {
-	const ref *pdict1 = &gs_int_gstate(pgs_old)->pagedevice;
-	const ref *pdict2 = &gs_int_gstate(pgs_new)->pagedevice;
+	const ref *ppd1 = &gs_int_gstate(pgs_old)->pagedevice;
+	const ref *ppd2 = &gs_int_gstate(pgs_new)->pagedevice;
 
-	return pdict1->value.pdict != pdict2->value.pdict;
+	return (r_type(ppd1) != r_type(ppd2) ||
+		(r_has_type(ppd1, t_dictionary) &&
+		 ppd1->value.pdict != ppd2->value.pdict));
     }
 }
 
@@ -315,6 +324,7 @@ const op_def zdevice2_l2_op_defs[] =
     {"1.setpagedevice", zsetpagedevice},
 		/* Note that the following replace prior definitions */
 		/* in the indicated files: */
+    {"1copy", z2copy},		/* zdps1.c */
     {"0gsave", z2gsave},	/* zgstate.c */
     {"0save", z2save},		/* zvmem.c */
     {"0gstate", z2gstate},	/* zdps1.c */
@@ -328,14 +338,14 @@ const op_def zdevice2_l2_op_defs[] =
     {"0.callinstall", zcallinstall},
     {"1.callbeginpage", zcallbeginpage},
     {"2.callendpage", zcallendpage},
-    op_def_end(zdevice2_init)
+    op_def_end(0)
 };
 
 /* ------ Internal routines ------ */
 
 /* Call out to a PostScript procedure. */
-private int near
-push_callout(const char _ds * callout_name)
+private int
+push_callout(const char *callout_name)
 {
     int code;
 

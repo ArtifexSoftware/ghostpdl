@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevwprn.c */
+/*Id: gdevwprn.c  */
 /*
  * Microsoft Windows 3.n printer driver for Ghostscript.
  * Original version by Russell Lang and
@@ -89,10 +89,10 @@ struct gx_device_win_prn_s {
 
     HDC hdcprn;
     HDC hdcmf;
-    char mfname[128];
+    char mfname[gp_file_name_sizeof];
     DLGPROC lpfnAbortProc;
 };
-private gx_device_procs win_prn_procs =
+private const gx_device_procs win_prn_procs =
 {
     win_prn_open,
     NULL,			/* get_initial_matrix */

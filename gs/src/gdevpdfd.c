@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,8 +16,8 @@
    all copies.
  */
 
-/* gdevpdfd.c */
-/* Driver drawing procedures for PDF-writing driver */
+/*Id: gdevpdfd.c  */
+/* Path drawing procedures for pdfwrite driver */
 #include "math_.h"
 #include "gx.h"
 #include "gxdevice.h"
@@ -56,6 +56,50 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 
 /* ------ Utilities ------ */
 
+/*
+ * Put a segment of an enumerated path on the output file.
+ * pe_op is assumed to be valid.
+ */
+private int
+pdf_put_path_segment(gx_device_pdf * pdev, int pe_op, gs_fixed_point vs[3],
+		     const gs_matrix * pmat)
+{
+    stream *s = pdev->strm;
+    const char *format;
+    gs_point vp[3];
+
+    switch (pe_op) {
+	case gs_pe_moveto:
+	    format = "%g %g m\n";
+	    goto do1;
+	case gs_pe_lineto:
+	    format = "%g %g l\n";
+	  do1:vp[0].x = fixed2float(vs[0].x), vp[0].y = fixed2float(vs[0].y);
+	    if (pmat)
+		gs_point_transform_inverse(vp[0].x, vp[0].y, pmat, &vp[0]);
+	    pprintg2(s, format, vp[0].x, vp[0].y);
+	    break;
+	case gs_pe_curveto:
+	    vp[0].x = fixed2float(vs[0].x), vp[0].y = fixed2float(vs[0].y);
+	    vp[1].x = fixed2float(vs[1].x), vp[1].y = fixed2float(vs[1].y);
+	    vp[2].x = fixed2float(vs[2].x), vp[2].y = fixed2float(vs[2].y);
+	    if (pmat) {
+		gs_point_transform_inverse(vp[0].x, vp[0].y, pmat, &vp[0]);
+		gs_point_transform_inverse(vp[1].x, vp[1].y, pmat, &vp[1]);
+		gs_point_transform_inverse(vp[2].x, vp[2].y, pmat, &vp[2]);
+	    }
+	    pprintg6(s, "%g %g %g %g %g %g c\n",
+		     vp[0].x, vp[0].y, vp[1].x, vp[1].y, vp[2].x, vp[2].y);
+	    break;
+	case gs_pe_closepath:
+	    pputs(s, "h\n");
+	    break;
+	default:		/* can't happen */
+	    return -1;
+    }
+    return 0;
+}
+
 /* Put a path on the output file.  If do_close is false and the last */
 /* path component is a closepath, omit it and return 1. */
 private int
@@ -64,13 +108,16 @@ pdf_put_path(gx_device_pdf * pdev, const gx_path * ppath, bool do_close,
 {
     stream *s = pdev->strm;
     gs_fixed_rect rbox;
-    const subpath *next;
+    gx_path_rectangular_type rtype = gx_path_is_rectangular(ppath, &rbox);
     gs_path_enum cenum;
 
-    /* If do_close is false, we recognize rectangles specially. */
-    if (!do_close && ppath->subpath_count == 1 &&
-	ppath->curve_count == 0 &&
-	gx_subpath_is_rectangle(ppath->first_subpath, &rbox, &next) &&
+    /*
+     * If do_close is false (fill), we recognize all rectangles;
+     * if do_close is true (stroke), we only recognize closed
+     * rectangles.
+     */
+    if (rtype != prt_none &&
+	!(do_close && rtype == prt_open) &&
 	(pmat == 0 || is_xxyy(pmat) || is_xyyx(pmat))
 	) {
 	gs_point p, q;
@@ -88,46 +135,23 @@ pdf_put_path(gx_device_pdf * pdev, const gx_path * ppath, bool do_close,
     gx_path_enum_init(&cenum, ppath);
     for (;;) {
 	gs_fixed_point vs[3];
-	gs_point vp[3];
-	const char *format;
 	int pe_op = gx_path_enum_next(&cenum, vs);
 
       sw:switch (pe_op) {
 	    case 0:		/* done */
 		return 0;
-	    case gs_pe_moveto:
-		format = "%g %g m\n";
-		goto do1;
-	    case gs_pe_lineto:
-		format = "%g %g l\n";
-	      do1:vp[0].x = fixed2float(vs[0].x), vp[0].y = fixed2float(vs[0].y);
-		if (pmat)
-		    gs_point_transform_inverse(vp[0].x, vp[0].y, pmat, &vp[0]);
-		pprintg2(s, format, vp[0].x, vp[0].y);
-		break;
-	    case gs_pe_curveto:
-		vp[0].x = fixed2float(vs[0].x), vp[0].y = fixed2float(vs[0].y);
-		vp[1].x = fixed2float(vs[1].x), vp[1].y = fixed2float(vs[1].y);
-		vp[2].x = fixed2float(vs[2].x), vp[2].y = fixed2float(vs[2].y);
-		if (pmat) {
-		    gs_point_transform_inverse(vp[0].x, vp[0].y, pmat, &vp[0]);
-		    gs_point_transform_inverse(vp[1].x, vp[1].y, pmat, &vp[1]);
-		    gs_point_transform_inverse(vp[2].x, vp[2].y, pmat, &vp[2]);
-		}
-		pprintg6(s, "%g %g %g %g %g %g c\n",
-		      vp[0].x, vp[0].y, vp[1].x, vp[1].y, vp[2].x, vp[2].y);
-		break;
 	    case gs_pe_closepath:
-		if (do_close) {
-		    pputs(s, "h\n");
-		    break;
+		if (!do_close) {
+		    pe_op = gx_path_enum_next(&cenum, vs);
+		    if (pe_op != 0) {
+			pputs(s, "h\n");
+			goto sw;
+		    }
+		    return 1;
 		}
-		pe_op = gx_path_enum_next(&cenum, vs);
-		if (pe_op != 0) {
-		    pputs(s, "h\n");
-		    goto sw;
-		}
-		return 1;
+		/* falls through */
+	    default:
+		pdf_put_path_segment(pdev, pe_op, vs, pmat);
 	}
     }
 }
@@ -171,22 +195,23 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    pputs(s, "Q\nq\n");
 	    pdev->clip_path_id = pdev->no_clip_path_id;
 	} else {
-	    pputs(s, "Q\nq\nW\n");
-	    if (pcpath->segments_valid)
-		pdf_put_path(pdev, &pcpath->path, true, NULL);
-	    else {		/* Write out the rectangles. */
-		const gx_clip_rect *prect = pcpath->list.head;
+	    gs_cpath_enum cenum;
+	    gs_fixed_point vs[3];
+	    int pe_op;
 
-		if (prect == 0)
-		    prect = &pcpath->list.single;
-		for (; prect != 0; prect = prect->next)
-		    if (prect->xmax > prect->xmin && prect->ymax > prect->ymin)
-			pprintg4(s, "%g %g %g %g re\n",
-				 prect->xmin, prect->ymin,
-				 prect->xmax - prect->xmin,
-				 prect->ymax - prect->ymin);
-	    }
+	    pputs(s, "Q\nq\nW\n");
+	    /*
+	     * We have to break 'const' here because the clip path
+	     * enumeration logic uses some internal mark bits.
+	     * This is very unfortunate, but until we can come up with
+	     * a better algorithm, it's necessary.
+	     */
+	    gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
+	    while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
+		pdf_put_path_segment(pdev, pe_op, vs, NULL);
 	    pputs(s, "n\n");
+	    if (pe_op < 0)
+		return pe_op;
 	    pdev->clip_path_id = pcpath->id;
 	}
     }
@@ -377,7 +402,7 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     }
     if (set_ctm)
 	pdf_put_matrix(pdev, "q ", &mat, "cm\n");
-    code = pdf_put_path(pdev, ppath, false, pmat);
+    code = pdf_put_path(pdev, ppath, true, pmat);
     if (code < 0)
 	return code;
     pputs(s, (code ? "s" : "S"));

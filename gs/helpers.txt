@@ -17,29 +17,20 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: helpers.txt 
 This file, helpers.txt, is a note of thanks to all the people who
 have helped in the development of Ghostscript.
 
 For an overview of Ghostscript and a list of the documentation files, see
 README.
 
-Major contributors
-------------------
+----------------------------------------------------------------
 
-Special thanks are due to Russell Lang, for the GSview for Windows program,
-for contributing most of the code for the Microsoft Windows and OS/2
-environments, and for the original version of the PNG driver; to Tim
-Theisen, for the Ghostview program for X Windows and for major contributions
-to the development and support of code for the X Windows environment; and to
-the Independent JPEG Group, for creating the JPEG DCT library that
-Ghostscript uses.
-
-Other contributors
-------------------
-
-Aladdin Enterprises would like to acknowledge and thank the following
-other people (in alphabetical order) who have contributed
-substantially to improving Ghostscript since its inception in 1986:
+Many people have contributed to the development of Ghostscript.  In the file
+new-user.txt, we give special thanks to a few major contributors; in this
+file, we wish to acknowledge and thank the following other people (in
+alphabetical order) who have contributed substantially to improving
+Ghostscript since its inception in 1986:
 
 	Hitoshi Aida (for help with the SunView driver),
 	Pierre Arnaud (for bug reports and fixes),
@@ -52,13 +43,15 @@ substantially to improving Ghostscript since its inception in 1986:
 	Jan Bottorff (for help with the Microsoft Windows driver),
 	Tom Brosnan (for the Desqview/X port),
 	Philip Brown (for the LaserJet IIID duplex additions),
+	Tobias Burnus (for many challenging bug reports),
 	George Cameron (for DeskJet 500C and 550C drivers),
 	Maurice Castro (a collaborator of Russell Lang's),
+	Jeff Chua (for the idea and first implementation of ReopenPerPage),
 	Phil Conrad (for originating the PPM utilities and the PCX and
 	  GIF drivers, and lots of bug reports),
 	Michel Dagenais (for major help with the DeskJet driver),
 	John Desrosiers (for the final work on the Microsoft Visual C++
-	  makefiles),
+	  makefiles, and for bug reports),
 	Jim Dunham (for the OpenVMS makefile),
 	Gershon Elber (for improvements to the BGI driver),
 	Fritz Elfert (for the Unix file enumeration routine),
@@ -165,6 +158,7 @@ bugs and/or fixes, or in other ways:
 	Frank Yellin,
 	Jamie Zawinski.
 
-If your name appears on the above list and I've forgotten a particular
-contribution you made, or if it doesn't appear at all, please forgive me:
-just remind me, and you will be properly acknowledged in the next release.
+If your name appears on the above list and we've omitted a particular
+contribution you made, or if we've accidentally overlooked you entirely,
+please forgive us: just let us know at <ghost@aladdin.com>, and you will be
+properly acknowledged in the next release.

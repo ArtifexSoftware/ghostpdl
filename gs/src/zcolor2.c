@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zcolor2.c */
+/*Id: zcolor2.c  */
 /* Level 2 color operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gscolor.h"
 #include "gsmatrix.h"
@@ -45,8 +44,10 @@
 gs_memory_type_ptr_t zcolor2_st_pattern_instance_p = 0;
 
 /* Forward references */
-private int store_color_params(P3(os_ptr, const gs_paint_color *, const gs_color_space *));
-private int load_color_params(P3(os_ptr, gs_paint_color *, const gs_color_space *));
+private int store_color_params(P3(os_ptr, const gs_paint_color *,
+				  const gs_color_space *));
+private int load_color_params(P3(os_ptr, gs_paint_color *,
+				 const gs_color_space *));
 
 /* - currentcolor <param1> ... <paramN> */
 private int
@@ -74,9 +75,11 @@ private int
 zcurrentcolorspace(register os_ptr op)
 {
     push(1);
-    if (r_has_type(&istate->colorspace.array, t_null)) {	/* Return the color space index. */
-	/* This is only possible if the color was set by */
-	/* setgray, sethsb/rgbcolor, or setcmykcolor. */
+    if (r_has_type(&istate->colorspace.array, t_null)) {
+	/*
+	 * Return the color space index.  This is only possible
+	 * for the parameterless color spaces.
+	 */
 	make_int(op, (int)(gs_currentcolorspace(igs)->type->index));
     } else
 	*op = istate->colorspace.array;
@@ -92,7 +95,8 @@ zsetcolor(register os_ptr op)
     int n, code;
     gs_pattern_instance *pinst = 0;
 
-    if (pcs->type->index == gs_color_space_index_Pattern) {	/* Make sure *op is a real Pattern. */
+    if (pcs->type->index == gs_color_space_index_Pattern) {
+	/* Make sure *op is a real Pattern. */
 	ref *pImpl;
 
 	check_type(*op, t_dictionary);
@@ -158,7 +162,7 @@ private int
 store_color_params(os_ptr op, const gs_paint_color * pc,
 		   const gs_color_space * pcs)
 {
-    int n = pcs->type->num_components;
+    int n = cs_num_components(pcs);
 
     if (pcs->type->index == gs_color_space_index_Indexed)
 	make_int(op + 1, (int)pc->values[0]);
@@ -170,10 +174,9 @@ store_color_params(os_ptr op, const gs_paint_color * pc,
 /* Load non-pattern color values from the operand stack. */
 /* Return the number of values stored. */
 private int
-load_color_params(os_ptr op, gs_paint_color * pc,
-		  const gs_color_space * pcs)
+load_color_params(os_ptr op, gs_paint_color * pc, const gs_color_space * pcs)
 {
-    int n = pcs->type->num_components;
+    int n = cs_num_components(pcs);
     int code = float_params(op, n, pc->values);
 
     if (code < 0)

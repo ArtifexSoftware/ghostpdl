@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_os2.c */
+/*Id: gp_os2.c  */
 /* Common platform-specific routines for OS/2 and MS-DOS */
 /* compiled with GCC/EMX */
 
@@ -29,6 +29,7 @@
 #define INCL_WIN
 #include <os2.h>
 
+#include "pipe_.h"
 #include "stdio_.h"
 #include "string_.h"
 #include <fcntl.h>
@@ -378,6 +379,7 @@ gp_init(void)
 #endif
     /* Set up the handler for numeric exceptions. */
     signal(SIGFPE, handle_FPE);
+
     gp_init_console();
 }
 
@@ -431,7 +433,7 @@ private int pm_spool(char *filename, const char *queue);
 /* This is not a standard gp procedure, */
 /* but all MS-DOS configurations need it. */
 void
-gp_set_printer_binary(int prnfno, int binary)
+gp_set_file_binary(int prnfno, int binary)
 {
 #ifndef __IBMC__
     union REGS regs;
@@ -464,7 +466,7 @@ gp_set_printer_binary(int prnfno, int binary)
  *   "port"            open port using fopen()
  */
 FILE *
-gp_open_printer(char *fname, int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     FILE *pfile;
 
@@ -487,7 +489,7 @@ gp_open_printer(char *fname, int binary_mode)
     if (pfile == (FILE *) NULL)
 	return (FILE *) NULL;
     if (!isos2)
-	gp_set_printer_binary(fileno(pfile), binary_mode);
+	gp_set_file_binary(fileno(pfile), binary_mode);
     return pfile;
 }
 
@@ -505,6 +507,16 @@ gp_close_printer(FILE * pfile, const char *fname)
 	pm_spool(pm_prntmp, fname);
 	unlink(pm_prntmp);
     }
+}
+
+/* ------ File accessing -------- */
+
+/* Set a file into binary or text mode. */
+int
+gp_setmode_binary(FILE * pfile, bool binary)
+{
+    gp_set_file_binary(fileno(pfile), binary);
+    return 0;
 }
 
 /* ------ Printer Spooling ------ */
@@ -714,27 +726,30 @@ pm_spool(char *filename, const char *queue)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+		     const char *mode)
 {
-    char *temp;
-
 #ifdef __IBMC__
+    char *temp = getenv("TEMP");
     char *tname;
 
     *fname = 0;
-    temp = getenv("TEMP");
     tname = _tempnam(temp, (char *)prefix);
     if (tname) {
+/****** SHOULD DO A LENGTH CHECK ******/
 	strcpy(fname, tname);
 	free(tname);
     }
 #else
-    if ((temp = getenv("TEMP")) == NULL)
+    /* The -7 is for XXXXXX plus a possible final \. */
+    int len = gp_file_name_sizeof - strlen(prefix) - 7;
+
+    if (gp_getenv("TEMP", fname, &len) != 0)
 	*fname = 0;
     else {
 	char last = '\\';
+	char *temp;
 
-	strcpy(fname, temp);
 	/* Prevent X's in path from being converted by mktemp. */
 	for (temp = fname; *temp; temp++)
 	    *temp = last = tolower(*temp);
@@ -783,7 +798,7 @@ private stream_proc_process(pm_std_write_process);
 /* Use a pseudo IODevice to get pm_stdio_init called at the right time. */
 /* This is bad architecture; we'll fix it later. */
 private iodev_proc_init(pm_stdio_init);
-gx_io_device gs_iodev_wstdio =
+const gx_io_device gs_iodev_wstdio =
 {
     "wstdio", "Special",
     {pm_stdio_init, iodev_no_open_device,

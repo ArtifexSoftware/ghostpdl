@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,28 +16,27 @@
    all copies.
  */
 
-/* szlibe.c */
+/*Id: szlibe.c  */
 /* zlib encoding (compression) filter stream */
 #include "std.h"
 #include "gsmemory.h"
+#include "gsmalloc.h"		/* for gs_memory_default */
 #include "strimpl.h"
 #include "szlibx.h"
-
-#define ss ((stream_zlib_state *)st)
-#define szs (&ss->zstate)
 
 /* Initialize the filter. */
 private int
 s_zlibE_init(stream_state * st)
 {
-    szs->zalloc = (alloc_func) s_zlib_alloc;
-    szs->zfree = (free_func) s_zlib_free;
-    szs->opaque = (voidpf) (st->memory ? st->memory : &gs_memory_default);
-    if (deflateInit2(szs, ss->level, ss->method,
+    stream_zlib_state *const ss = (stream_zlib_state *)st;
+    int code = s_zlib_alloc_dynamic_state(ss);
+
+    if (code < 0)
+	return ERRC;	/****** WRONG ******/
+    if (deflateInit2(&ss->dynamic->zstate, ss->level, ss->method,
 		     (ss->no_wrapper ? -ss->windowBits : ss->windowBits),
 		     ss->memLevel, ss->strategy) != Z_OK)
-	return ERRC;
-/****** WRONG ******/
+	return ERRC;	/****** WRONG ******/
     return 0;
 }
 
@@ -45,9 +44,10 @@ s_zlibE_init(stream_state * st)
 private int
 s_zlibE_reset(stream_state * st)
 {
-    if (deflateReset(szs) != Z_OK)
-	return ERRC;
-/****** WRONG ******/
+    stream_zlib_state *const ss = (stream_zlib_state *)st;
+
+    if (deflateReset(&ss->dynamic->zstate) != Z_OK)
+	return ERRC;	/****** WRONG ******/
     return 0;
 }
 
@@ -56,6 +56,8 @@ private int
 s_zlibE_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
+    stream_zlib_state *const ss = (stream_zlib_state *)st;
+    z_stream *zs = &ss->dynamic->zstate;
     const byte *p = pr->ptr;
     int status;
 
@@ -65,13 +67,13 @@ s_zlibE_process(stream_state * st, stream_cursor_read * pr,
 	return 1;
     if (p == pr->limit && !last)
 	return 0;
-    szs->next_in = (Bytef *) p + 1;
-    szs->avail_in = pr->limit - p;
-    szs->next_out = pw->ptr + 1;
-    szs->avail_out = pw->limit - pw->ptr;
-    status = deflate(szs, (last ? Z_FINISH : Z_NO_FLUSH));
-    pr->ptr = szs->next_in - 1;
-    pw->ptr = szs->next_out - 1;
+    zs->next_in = (Bytef *)p + 1;
+    zs->avail_in = pr->limit - p;
+    zs->next_out = pw->ptr + 1;
+    zs->avail_out = pw->limit - pw->ptr;
+    status = deflate(zs, (last ? Z_FINISH : Z_NO_FLUSH));
+    pr->ptr = zs->next_in - 1;
+    pw->ptr = zs->next_out - 1;
     switch (status) {
 	case Z_OK:
 	    return (pw->ptr == pw->limit ? 1 : pr->ptr > p && !last ? 0 : 1);
@@ -86,13 +88,14 @@ s_zlibE_process(stream_state * st, stream_cursor_read * pr,
 private void
 s_zlibE_release(stream_state * st)
 {
-    deflateEnd(szs);
+    stream_zlib_state *const ss = (stream_zlib_state *)st;
+
+    deflateEnd(&ss->dynamic->zstate);
+    s_zlib_free_dynamic_state(ss);
 }
 
 /* Stream template */
-const stream_template s_zlibE_template =
-{&st_zlib_state, s_zlibE_init, s_zlibE_process, 1, 1, s_zlibE_release,
- s_zlib_set_defaults, s_zlibE_reset
+const stream_template s_zlibE_template = {
+    &st_zlib_state, s_zlibE_init, s_zlibE_process, 1, 1, s_zlibE_release,
+    s_zlib_set_defaults, s_zlibE_reset
 };
-
-#undef ss

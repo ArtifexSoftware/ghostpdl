@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* spdiff.c */
+/*Id: spdiff.c  */
 /* Pixel differencing filters */
 #include "stdio_.h"		/* should be std.h, but needs NULL */
 #include "strimpl.h"
@@ -25,8 +25,6 @@
 /* ------ PixelDifferenceEncode/Decode ------ */
 
 private_st_PDiff_state();
-
-#define ss ((stream_PDiff_state *)st)
 
 /* Define values for case dispatch. */
 #define cBits1 0
@@ -40,6 +38,8 @@ private_st_PDiff_state();
 private void
 s_PDiff_set_defaults(stream_state * st)
 {
+    stream_PDiff_state *const ss = (stream_PDiff_state *) st;
+
     s_PDiff_set_defaults_inline(ss);
 }
 
@@ -47,6 +47,8 @@ s_PDiff_set_defaults(stream_state * st)
 private int
 s_PDiff_reinit(stream_state * st)
 {
+    stream_PDiff_state *const ss = (stream_PDiff_state *) st;
+
     ss->row_left = 0;
     return 0;
 }
@@ -55,6 +57,7 @@ s_PDiff_reinit(stream_state * st)
 private int
 s_PDiffE_init(stream_state * st)
 {
+    stream_PDiff_state *const ss = (stream_PDiff_state *) st;
     long bits_per_row =
     ss->Colors * ss->BitsPerComponent * (long)ss->Columns;
     static const byte cb_values[] =
@@ -71,6 +74,8 @@ s_PDiffE_init(stream_state * st)
 private int
 s_PDiffD_init(stream_state * st)
 {
+    stream_PDiff_state *const ss = (stream_PDiff_state *) st;
+
     s_PDiffE_init(st);
     ss->case_index += cDecode - cEncode;
     return 0;
@@ -81,6 +86,7 @@ private int
 s_PDiff_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
+    stream_PDiff_state *const ss = (stream_PDiff_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     int rcount, wcount;

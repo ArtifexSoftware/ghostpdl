@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevnfwd.c */
+/*Id: gdevnfwd.c  */
 /* Null and forwarding device implementation */
 #include "gx.h"
 #include "gserrors.h"
@@ -56,7 +56,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, get_alpha_bits, gx_forward_get_alpha_bits);
     /* NOT copy_alpha */
     fill_dev_proc(dev, get_band, gx_forward_get_band);
-    fill_dev_proc(dev, copy_rop, gx_forward_copy_rop_proc);
+    fill_dev_proc(dev, copy_rop, gx_forward_copy_rop);
     fill_dev_proc(dev, fill_path, gx_forward_fill_path);
     fill_dev_proc(dev, stroke_path, gx_forward_stroke_path);
     fill_dev_proc(dev, fill_mask, gx_forward_fill_mask);
@@ -65,17 +65,17 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, fill_triangle, gx_forward_fill_triangle);
     fill_dev_proc(dev, draw_thin_line, gx_forward_draw_thin_line);
     fill_dev_proc(dev, begin_image, gx_forward_begin_image);
-    {
-	extern dev_proc_image_data(gx_device_image_data);
-	extern dev_proc_end_image(gx_device_end_image);
-
-	set_dev_proc(dev, image_data, gx_device_image_data);	/* obsolete */
-	set_dev_proc(dev, end_image, gx_device_end_image);	/* obsolete */
-    }
+    /* NOT image_data (OBSOLETE) */
+    /* NOT end_image (OBSOLETE) */
     /* NOT strip_tile_rectangle */
-    fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop_proc);
+    fill_dev_proc(dev, strip_copy_rop, gx_forward_strip_copy_rop);
     fill_dev_proc(dev, get_clipping_box, gx_forward_get_clipping_box);
+    fill_dev_proc(dev, begin_typed_image, gx_forward_begin_typed_image);
+    fill_dev_proc(dev, get_bits_rectangle, gx_forward_get_bits_rectangle);
+    fill_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+    fill_dev_proc(dev, create_compositor, gx_no_create_compositor);
     fill_dev_proc(dev, get_hardware_params, gx_forward_get_hardware_params);
+    fill_dev_proc(dev, text_begin, gx_forward_text_begin);
     gx_device_fill_in_procs((gx_device *) dev);
 }
 
@@ -87,6 +87,7 @@ gx_device_forward_color_procs(gx_device_forward * dev)
     set_dev_proc(dev, map_color_rgb, gx_forward_map_color_rgb);
     set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
     set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
+    set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
 }
 
 void
@@ -227,7 +228,7 @@ gx_forward_map_cmyk_color(gx_device * dev, gx_color_value c, gx_color_value m,
 	    (*dev_proc(tdev, map_cmyk_color)) (tdev, c, m, y, k));
 }
 
-gx_xfont_procs *
+const gx_xfont_procs *
 gx_forward_get_xfont_procs(gx_device * dev)
 {
     gx_device *tdev = fdev->target;
@@ -286,6 +287,27 @@ gx_forward_get_band(gx_device * dev, int y, int *band_start)
     return (tdev == 0 ?
 	    gx_default_get_band(dev, y, band_start) :
 	    (*dev_proc(tdev, get_band)) (tdev, y, band_start));
+}
+
+int
+gx_forward_copy_rop(gx_device * dev,
+	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+		    const gx_color_index * scolors,
+	     const gx_tile_bitmap * texture, const gx_color_index * tcolors,
+		    int x, int y, int width, int height,
+		    int phase_x, int phase_y, gs_logical_operation_t lop)
+{
+    gx_device *tdev = ((gx_device_forward *) dev)->target;
+
+    dev_proc_copy_rop((*proc));
+
+    if (tdev == 0)
+	tdev = dev, proc = gx_default_copy_rop;
+    else
+	proc = dev_proc(tdev, copy_rop);
+    return (*proc) (tdev, sdata, sourcex, sraster, id, scolors,
+		    texture, tcolors, x, y, width, height,
+		    phase_x, phase_y, lop);
 }
 
 int
@@ -409,7 +431,7 @@ gx_forward_begin_image(gx_device * dev,
 		       const gs_imager_state * pis, const gs_image_t * pim,
 		       gs_image_format_t format, const gs_int_rect * prect,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		       gs_memory_t * memory, void **pinfo)
+		       gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
 {
     gx_device *tdev = fdev->target;
 
@@ -421,36 +443,6 @@ gx_forward_begin_image(gx_device * dev,
 	proc = dev_proc(tdev, begin_image);
     return (*proc) (tdev, pis, pim, format, prect, pdcolor, pcpath,
 		    memory, pinfo);
-}
-
-int
-gx_forward_image_data(gx_device * dev,
-      void *info, const byte ** planes, int data_x, uint raster, int height)
-{
-    gx_device *tdev = fdev->target;
-
-    dev_proc_image_data((*proc));
-
-    if (tdev == 0)
-	tdev = dev, proc = gx_default_image_data;
-    else
-	proc = dev_proc(tdev, image_data);
-    return (*proc) (tdev, info, planes, data_x, raster, height);
-}
-
-int
-gx_forward_end_image(gx_device * dev,
-		     void *info, bool draw_last)
-{
-    gx_device *tdev = fdev->target;
-
-    dev_proc_end_image((*proc));
-
-    if (tdev == 0)
-	tdev = dev, proc = gx_default_end_image;
-    else
-	proc = dev_proc(tdev, end_image);
-    return (*proc) (tdev, info, draw_last);
 }
 
 int
@@ -469,6 +461,27 @@ gx_forward_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     return (*proc) (tdev, tiles, x, y, w, h, color0, color1, px, py);
 }
 
+int
+gx_forward_strip_copy_rop(gx_device * dev,
+	     const byte * sdata, int sourcex, uint sraster, gx_bitmap_id id,
+			  const gx_color_index * scolors,
+	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
+			  int x, int y, int width, int height,
+		       int phase_x, int phase_y, gs_logical_operation_t lop)
+{
+    gx_device *tdev = ((gx_device_forward *) dev)->target;
+
+    dev_proc_strip_copy_rop((*proc));
+
+    if (tdev == 0)
+	tdev = dev, proc = gx_default_strip_copy_rop;
+    else
+	proc = dev_proc(tdev, strip_copy_rop);
+    return (*proc) (tdev, sdata, sourcex, sraster, id, scolors,
+		    textures, tcolors, x, y, width, height,
+		    phase_x, phase_y, lop);
+}
+
 void
 gx_forward_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 {
@@ -481,12 +494,74 @@ gx_forward_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
 }
 
 int
+gx_forward_begin_typed_image(gx_device * dev,
+			const gs_imager_state * pis, const gs_matrix * pmat,
+		   const gs_image_common_t * pim, const gs_int_rect * prect,
+	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		      gs_memory_t * memory, gx_image_enum_common_t ** pinfo)
+{
+    gx_device *tdev = fdev->target;
+
+    dev_proc_begin_typed_image((*proc));
+
+    if (tdev == 0)
+	tdev = dev, proc = gx_default_begin_typed_image;
+    else
+	proc = dev_proc(tdev, begin_typed_image);
+    return (*proc) (tdev, pis, pmat, pim, prect, pdcolor, pcpath,
+		    memory, pinfo);
+}
+
+int
+gx_forward_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
+		       gs_get_bits_params_t * params, gs_int_rect ** unread)
+{
+    gx_device *tdev = fdev->target;
+
+    dev_proc_get_bits_rectangle((*proc));
+
+    if (tdev == 0)
+	tdev = dev, proc = gx_default_get_bits_rectangle;
+    else
+	proc = dev_proc(tdev, get_bits_rectangle);
+    return (*proc) (tdev, prect, params, unread);
+}
+
+int
+gx_forward_map_color_rgb_alpha(gx_device * dev, gx_color_index color,
+			       gx_color_value prgba[4])
+{
+    gx_device *tdev = fdev->target;
+
+    return (tdev == 0 ? gx_default_map_color_rgb_alpha(dev, color, prgba) :
+	    (*dev_proc(tdev, map_color_rgb_alpha)) (tdev, color, prgba));
+}
+
+int
 gx_forward_get_hardware_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 ? gx_default_get_hardware_params(dev, plist) :
 	    (*dev_proc(tdev, get_hardware_params)) (tdev, plist));
+}
+
+int
+gx_forward_text_begin(gx_device * dev, gs_imager_state * pis,
+		      const gs_text_params_t * text, const gs_font * font,
+gx_path * path, const gx_device_color * pdcolor, const gx_clip_path * pcpath,
+		      gs_memory_t * memory, gs_text_enum_t ** ppenum)
+{
+    gx_device *tdev = fdev->target;
+
+    dev_proc_text_begin((*proc));
+
+    if (tdev == 0)
+	tdev = dev, proc = gx_default_text_begin;
+    else
+	proc = dev_proc(tdev, text_begin);
+    return (*proc) (tdev, pis, text, font, path, pdcolor, pcpath,
+		    memory, ppenum);
 }
 
 /* ---------------- The null device(s) ---------------- */
@@ -547,21 +622,26 @@ private dev_proc_strip_copy_rop(null_strip_copy_rop);
 	gx_default_strip_tile_rectangle,\
 	null_strip_copy_rop,\
 	gx_default_get_clipping_box,\
-	gx_forward_get_hardware_params\
+	gx_default_begin_typed_image,\
+	gx_default_get_bits_rectangle,\
+	gx_forward_map_color_rgb_alpha,\
+	gx_non_imaging_create_compositor,\
+	gx_forward_get_hardware_params,\
+	gx_default_text_begin\
 }
 
-gx_device_null far_data gs_null_device =
+const gx_device_null gs_null_device =
 {
-    std_device_std_body_open(gx_device_null, 0, "null",
-			     0, 0, 72, 72),
+    std_device_std_body_type_open(gx_device_null, 0, "null", &st_device_null,
+				  0, 0, 72, 72),
     null_procs(gx_default_get_page_device /* not a page device */ ),
     0				/* target */
 };
 
-gx_device_null far_data gs_nullpage_device =
+const gx_device_null gs_nullpage_device =
 {
-    std_device_std_body_open(gx_device_null, 0, "nullpage",
-			     0, 0, 72, 72),
+std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
+			      72 /*nominal */ , 72 /*nominal */ , 72, 72),
     null_procs(gx_page_device_get_page_device /* a page device */ ),
     0				/* target */
 };
@@ -588,15 +668,18 @@ null_copy_color(gx_device * dev, const byte * data,
 }
 private int
 null_put_params(gx_device * dev, gs_param_list * plist)
-{				/* We must defeat attempts to reset the size; */
-    /* otherwise this is equivalent to gx_forward_put_params. */
+{
+    /*
+     * If this is not a page device, we must defeat attempts to reset
+     * the size; otherwise this is equivalent to gx_forward_put_params.
+     */
     gx_device *tdev = fdev->target;
     int code;
 
     if (tdev != 0)
 	return (*dev_proc(tdev, put_params)) (tdev, plist);
     code = gx_default_put_params(dev, plist);
-    if (code < 0)
+    if (code < 0 || (*dev_proc(dev, get_page_device)) (dev) == dev)
 	return code;
     dev->width = dev->height = 0;
     return code;

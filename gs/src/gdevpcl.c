@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpcl.c */
+/*Id: gdevpcl.c  */
 /* Utilities for PCL printers */
 #include "gdevprn.h"
 #include "gdevpcl.h"

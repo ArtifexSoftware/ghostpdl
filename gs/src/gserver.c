@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gserver.c */
+/*Id: gserver.c  */
 /* Server front end for Ghostscript, replacing gs.c. */
 #include "memory_.h"
 #include "string_.h"

@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,32 +15,19 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: pdf_base.ps 
 % pdf_base.ps
 % Basic parser for PDF reader.
 
 % This handles basic parsing of the file (including the trailer
 % and cross-reference table), as well as objects, object references,
-% and streams; it doesn't include any facilities for making marks on
-% the page.
+% streams, and name/number trees; it doesn't include any facilities for
+% making marks on the page.
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
 /pdfdict where { pop } { /pdfdict 100 dict def } ifelse
 pdfdict begin
-
-% We rebind #, #?, #dsc, and #dscfile later if we're writing out PostScript.
-/#			% <arg1> ... <argN> <opname> <N> # -
- { pop cvx exec
- } bind def
-/#?
- { false
- } bind def
-/#dsc			% mark <obj1> ... #dsc -
- { cleartomark
- } bind def
-/#dscfile		% <filename> #dscfile -
- { pop
- } bind def
 
 % Define the name interpretation dictionary for reading values.
 /valueopdict mark
@@ -150,6 +137,13 @@ pdfdict begin
     { store { stop } if } aload pop .packtomark cvx
    /PDFsource 3 -1 roll store exec
  } bind def
+
+% Execute a file, like .pdfrun, for a marking context.
+% This temporarily rebinds LocalResources.
+/.pdfruncontext {		% <resdict> <file> <opdict> .pdfruncontext -
+  /.pdfrun load /LocalResources LocalResources /store load
+  /LocalResources 8 -1 roll store 4 .execn
+} bind def
 
 % ------ File reading ------ %
 
@@ -282,20 +276,23 @@ pdfdict begin
 % otherwise, Objects[N] is an executable integer giving the file offset
 % of the object's entry in the cross-reference table.
 % For free objects, Generations[N] is 0.
-/checkgeneration  % <object#> <generation#> checkgeneration <object#> <OK>
- { Generations 2 index lget 1 sub 1 index eq
-    { pop true
-    }
-    { (Warning: wrong generation: ) print 1 index =only ( ) print = false
-    }
-   ifelse
- } bind def
-/R		% <object#> <generation#> R <object>
- { 1 index unresolved?
+/checkgeneration {  % <object#> <generation#> checkgeneration <object#> <OK>
+  Generations 2 index lget 1 sub 1 index eq {
+    pop true
+  } {
+    Generations 2 index lget 0 eq {
+      (Warning: reference to free object: )
+    } {
+      (Warning: wrong generation: )
+    } ifelse print 1 index =only ( ) print =only ( R) = false
+  } ifelse
+} bind def
+/R {		% <object#> <generation#> R <object>
+  1 index unresolved?
     { /resolveR cvx 3 packedarray cvx }
     { checkgeneration { Objects exch lget } { pop null } ifelse }
    ifelse
- } bind def
+} bind def
 
 % If we encounter an object definition while reading sequentially,
 % we just store it away and keep going.
@@ -350,14 +347,15 @@ pdfdict begin
    ifelse
  } bind def      
 
-%================================ Streams ================================ %
+% ================================ Streams ================================ %
 
 % We represent a stream by an executable dictionary that contains,
 % in addition to the contents of the original stream dictionary:
-%	/File - the file or string where the stream contents are stored;
+%	/File - the file or string where the stream contents are stored,
+%	  if the stream is not an external one.
 %	/FilePosition - iff File is a file, the position in the file
 %	  where the contents start.
-%	/StreamKey - the key used to decrypt this stream if any
+%	/StreamKey - the key used to decrypt this stream, if any.
 % We do the real work of constructing the data stream only when the
 % contents are needed.
 
@@ -371,29 +369,54 @@ pdfdict begin
 % especially since the PDF 1.2 specification states flatly that the only
 % legal terminators following the 'stream' keyword are \n or \r\n, both of
 % which are properly skipped and discarded by the token operator.
-/stream
- { PDFsource PDFfile eq
-    { dup /File PDFfile put
+/stream {	% <dict> stream <modified_dict>
+  dup /F known dup PDFsource PDFfile eq or {
+    not {
+      dup /File PDFfile put
       dup /FilePosition PDFfile fileposition put
       DEBUG { (%FilePosition: ) print dup /FilePosition get == } if
-      PDFfile fileposition 1 index /Length oget add
-        PDFfile exch setfileposition
-    }
-    {	% We're already reading from a stream, which we can't reposition.
+    } if
+    PDFfile fileposition 1 index /Length oget add
+      PDFfile exch setfileposition
+  } {
+    pop
+	% We're already reading from a stream, which we can't reposition.
 	% Capture the sub-stream contents in a string.
-      dup /Length oget string PDFsource exch readstring
-      not
-       { (Unexpected EOF in stream!\n) print
-	 /stream cvx /rangecheck signalerror
-       }
-      if
-      1 index exch /File exch put
+    dup /Length oget string PDFsource exch readstring
+    not {
+      (Unexpected EOF in stream!\n) print
+      /stream cvx /rangecheck signalerror
+    } if
+    1 index exch /File exch put
+  } ifelse
+  PDFsource token pop
+    /endstream ne { /stream cvx /syntaxerror signalerror } if
+  cvx
+} bind def
+/endstream {
+  exit
+} bind def
+
+% Extract and apply filters.
+/filterparms {		% <dict> <DPkey> <Fkey> filterparms
+			%   <dict> <parms> <filternames>
+  exch 2 index exch .knownget not { null } if
+  exch 2 index exch .knownget not { { } } if
+  dup type /nametype eq {
+    1 array astore
+    1 index null ne { exch 1 array astore exch } if
+  } if
+} bind def
+/applyfilters {		% <parms> <source> <filternames> applyfilters <stream>
+  2 index null eq {
+    { filter }
+  } {
+    {		% Stack: parms stream filtername
+      2 index 0 get dup null eq { pop } { exch } ifelse filter
+      exch dup length 1 sub 1 exch getinterval exch
     }
-   ifelse
-   PDFsource token pop
-     /endstream ne { /stream cvx /syntaxerror signalerror } if
-   cvx
- } bind def
+  } ifelse forall exch pop
+} bind def
 
 % Resolve a stream dictionary to a PostScript stream.
 % Streams with no filters require special handling:
@@ -403,54 +426,98 @@ pdfdict begin
 %	  a SubFileDecode filter that reads just the requisite amount of data.
 % Note that, in general, resolving a stream repositions PDFfile.
 % Clients must save and restore the position of PDFfile themselves.
-/resolvestream		% <streamdict> <readdata?> resolvestream <stream>
- { exch dup /FilePosition .knownget
-    { 1 index /File get exch setfileposition }
-   if
-		% Stack: readdata? dict
-   dup /DecodeParms .knownget not { null } if
-   1 index /Filter .knownget not { {} } if
-   dup type /nametype eq
-    { 1 array astore
-      1 index null ne { exch 1 array astore exch } if
-    }
-   if
+/resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
+  1 index /F .knownget {
+		% This stream is stored on an external file.
+    (r) file exch
+    /FDecodeParms /FFilter filterparms
 		% Stack: readdata? dict parms filternames
-   2 index /File get exch
+    4 -1 roll exch
+    pdf_decrypt_stream
+    apply_filters
+  } {
+    exch dup /FilePosition .knownget {
+      1 index /File get exch setfileposition
+    } if
+		% Stack: readdata? dict
+    /DecodeParms /Filter filterparms
+		% Stack: readdata? dict parms filternames
+    2 index /File get exch
 		% Stack: readdata? dict parms file/string filternames
-   pdf_decrypt_stream		% add decryption if needed
-   dup length 0 eq
-    {		% All the PDF filters have EOD markers, but in this case
+    pdf_decrypt_stream		% add decryption if needed
+    dup length 0 eq {
+		% All the PDF filters have EOD markers, but in this case
 		% there is no specified filter.
       pop exch pop
 		% Stack: readdata? dict file/string
-      2 index
-       {	% We're going to read data; use a SubFileDecode filter.
-	 1 index /Length oget () /SubFileDecode filter
-       }
-       { dup type /filetype ne
-	  {	% Use a SubFileDecode filter to read from a string.
-	    0 () SubFileDecode filter
-	  }
-	 if
-       }
-      ifelse
-    }
-    { 2 index null eq
-       { { filter }
-       }
-       {	% Stack: readdata? dict parms file/string filtername
-         { 2 index 0 get dup null eq { pop } { exch } ifelse filter
-	   exch dup length 1 sub 1 exch getinterval exch
-	 }
-       }
-      ifelse forall exch pop
-    }
-   ifelse
+      2 index {
+		% We're going to read data; use a SubFileDecode filter.
+	1 index /Length oget () /SubFileDecode filter
+      } {
+	dup type /filetype ne {
+		% Use a SubFileDecode filter to read from a string.
+	  0 () SubFileDecode filter
+	} if
+      } ifelse
+    } {
+      applyfilters
+    } ifelse
+  } ifelse
 		% Stack: readdata? dict file
-   exch pop exch pop
- } bind def
-/endstream { exit } def
+  exch pop exch pop
+} bind def
+
+% ============================ Name/number trees ============================ %
+
+/nameoget {		% <nametree> <key> nameoget <obj|null>
+  exch /Names exch .treeget
+} bind def
+
+/numoget {		% <numtree> <key> numoget <obj|null>
+  exch /Nums exch .treeget
+} bind def
+
+/.treeget {		% <key> <leafkey> <tree> .treeget <obj|null>
+  dup /Kids knownoget {
+    exch pop .branchget
+  } {
+    exch get .leafget
+  } ifelse
+} bind def
+
+/.branchget {		%  <key> <leafkey> <kids> .branchget <obj|null>
+  dup length 0 eq {
+    pop pop pop null
+  } {
+    dup length -1 bitshift 2 copy oget
+			% Stack: key leafkey kids mid kids[mid]
+    dup /Limits oget aload pop
+			% Stack: key leafkey kids mid kids[mid] min max
+    6 index lt {
+      pop pop
+      1 add 1 index length 1 index sub getinterval .branchget
+    } {
+      5 index gt {
+	pop
+	0 exch getinterval .branchget
+      } {
+	exch pop exch pop .treeget
+      } ifelse
+    } ifelse
+  } ifelse
+} bind def
+
+/.leafget {		% <key> <pairs> .leafget <obj|null>
+  dup length 2 eq {
+    dup 0 get 2 index eq { 1 oget } { pop null } ifelse
+    exch pop
+  } {
+    dup length -1 bitshift -2 and 2 copy oget
+			% Stack: key pairs mid pairs[mid]
+    3 index gt { 0 exch } { 1 index length 1 index sub } ifelse
+    getinterval .leafget
+  } ifelse
+} bind def
 
 end			% pdfdict
 .setglobal

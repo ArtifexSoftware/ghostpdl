@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxclzlib.c */
+/*Id: gxclzlib.c  */
 /* zlib filter initialization for RAM-based band lists */
 /* Must be compiled with -I$(ZSRCDIR) */
 #include "std.h"

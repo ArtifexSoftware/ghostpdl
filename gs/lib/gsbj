@@ -1,2 +1,3 @@
 #!/bin/sh
+# Id: gsbj 
 exec gs -q -sDEVICE=bj10e -r180 -dNOPAUSE -sPROGNAME=$0 -- gslp.ps --heading-center "`date`" "$@"

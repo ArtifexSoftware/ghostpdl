@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* seexec.c */
+/*Id: seexec.c  */
 /* eexec filters */
 #include "stdio_.h"		/* includes std.h */
 #include "strimpl.h"
@@ -32,13 +32,12 @@
 
 private_st_exE_state();
 
-#define ss ((stream_exE_state *)st)
-
 /* Process a buffer */
 private int
 s_exE_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
+    stream_exE_state *const ss = (stream_exE_state *) st;
     const byte *p = pr->ptr;
     byte *q = pw->ptr;
     uint rcount = pr->limit - p;
@@ -56,8 +55,6 @@ s_exE_process(stream_state * st, stream_cursor_read * pr,
     return status;
 }
 
-#undef ss
-
 /* Stream template */
 const stream_template s_exE_template =
 {&st_exE_state, NULL, s_exE_process, 1, 2
@@ -67,12 +64,12 @@ const stream_template s_exE_template =
 
 private_st_exD_state();
 
-#define ss ((stream_exD_state *)st)
-
 /* Set defaults. */
 private void
 s_exD_set_defaults(stream_state * st)
 {
+    stream_exD_state *const ss = (stream_exD_state *) st;
+
     ss->lenIV = 4;
 }
 
@@ -81,6 +78,8 @@ s_exD_set_defaults(stream_state * st)
 private int
 s_exD_init(stream_state * st)
 {
+    stream_exD_state *const ss = (stream_exD_state *) st;
+
     ss->odd = -1;
     ss->binary = -1;		/* unknown */
     ss->record_left = max_long;
@@ -93,8 +92,9 @@ private int
 s_exD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
-    register const byte *p = pr->ptr;
-    register byte *q = pw->ptr;
+    stream_exD_state *const ss = (stream_exD_state *) st;
+    const byte *p = pr->ptr;
+    byte *q = pw->ptr;
     int skip = ss->skip;
     int rcount = pr->limit - p;
     int wcount = pw->limit - q;
@@ -103,7 +103,7 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 
     if (ss->binary < 0) {	/* This is the very first time we're filling the buffer. */
 	/* Determine whether this is ASCII or hex encoding. */
-	register const byte _ds *decoder = scan_char_decoder;
+	const byte *const decoder = scan_char_decoder;
 	int i;
 
 	if (rcount < 8)
@@ -159,8 +159,6 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
     pw->ptr = q + count;
     return status;
 }
-
-#undef ss
 
 /* Stream template */
 /*

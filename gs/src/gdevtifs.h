@@ -1,22 +1,22 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gdevtifs.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gdevtifs.h  */
 /* Definitions for writing TIFF file formats. */
 
 #ifndef gdevtifs_INCLUDED
@@ -32,30 +32,33 @@
  * we cannot use short, long, etc., but must use types of known sizes.
  */
 #if arch_sizeof_short == 2
-typedef short TIFF_short;			/* no plausible alternative */
+typedef short TIFF_short;	/* no plausible alternative */
 typedef unsigned short TIFF_ushort;
+
 #endif
 #if arch_sizeof_int == 4
 typedef int TIFF_long;
 typedef unsigned int TIFF_ulong;
+
 #else
 # if arch_sizeof_long == 4
 typedef long TIFF_long;
 typedef unsigned long TIFF_ulong;
+
 # endif
 #endif
 
 /*
  * Define the TIFF file header.
  */
-typedef	struct TIFF_header_s {
-	TIFF_ushort magic;		/* magic number (defines byte order) */
-	TIFF_ushort version;		/* TIFF version number */
-	TIFF_ulong diroff;		/* byte offset to first directory */
+typedef struct TIFF_header_s {
+    TIFF_ushort magic;		/* magic number (defines byte order) */
+    TIFF_ushort version;	/* TIFF version number */
+    TIFF_ulong diroff;		/* byte offset to first directory */
 } TIFF_header;
 
-#define	TIFF_magic_big_endian		0x4d4d		/* 'MM' */
-#define	TIFF_magic_little_endian	0x4949		/* 'II' */
+#define	TIFF_magic_big_endian		0x4d4d	/* 'MM' */
+#define	TIFF_magic_little_endian	0x4949	/* 'II' */
 
 #define	TIFF_version_value	42
 
@@ -68,36 +71,36 @@ typedef	struct TIFF_header_s {
  * Field data may appear anywhere in the file, so long as each data block is
  * aligned on a 32-bit boundary and is disjoint from all other data blocks.
  */
-typedef	struct TIFF_dir_entry_s {
-	TIFF_ushort tag;	/* TIFF_tag */
-	TIFF_ushort type;	/* TIFF_data_type */
-	TIFF_ulong count;	/* number of items (spec calls this 'length') */
-	TIFF_ulong value;	/* byte offset to field data, */
-				/* or actual value if <=4 bytes */
+typedef struct TIFF_dir_entry_s {
+    TIFF_ushort tag;		/* TIFF_tag */
+    TIFF_ushort type;		/* TIFF_data_type */
+    TIFF_ulong count;		/* number of items (spec calls this 'length') */
+    TIFF_ulong value;		/* byte offset to field data, */
+    /* or actual value if <=4 bytes */
 } TIFF_dir_entry;
 
 /*
  * Define the tag data type values.
  */
-typedef	enum {
-	TIFF_BYTE	= 1,	/* 8-bit unsigned integer */
-	TIFF_ASCII	= 2,	/* 8-bit bytes with last byte null */
-	TIFF_SHORT	= 3,	/* 16-bit unsigned integer */
-	TIFF_LONG	= 4,	/* 32-bit unsigned integer */
-	TIFF_RATIONAL	= 5,	/* 64-bit unsigned fraction */
-				/* (ratio of two 32-bit unsigned integers) */
-	TIFF_SBYTE	= 6,	/* 8-bit signed integer */
-	TIFF_UNDEFINED	= 7,	/* 8-bit untyped data */
-	TIFF_SSHORT	= 8,	/* 16-bit signed integer */
-	TIFF_SLONG	= 9,	/* 32-bit signed integer */
-	TIFF_SRATIONAL	= 10,	/* 64-bit signed fraction */
-				/* (ratio of two 32-bit signed integers) */
-	TIFF_FLOAT	= 11,	/* 32-bit IEEE floating point */
-	TIFF_DOUBLE	= 12,	/* 64-bit IEEE floating point */
-		/* A flag to indicate the value is indirect. */
-		/* This is only used internally; it is not part of the */
-		/* TIFF specification (although it should be!). */
-	TIFF_INDIRECT = 128
+typedef enum {
+    TIFF_BYTE = 1,		/* 8-bit unsigned integer */
+    TIFF_ASCII = 2,		/* 8-bit bytes with last byte null */
+    TIFF_SHORT = 3,		/* 16-bit unsigned integer */
+    TIFF_LONG = 4,		/* 32-bit unsigned integer */
+    TIFF_RATIONAL = 5,		/* 64-bit unsigned fraction */
+    /* (ratio of two 32-bit unsigned integers) */
+    TIFF_SBYTE = 6,		/* 8-bit signed integer */
+    TIFF_UNDEFINED = 7,		/* 8-bit untyped data */
+    TIFF_SSHORT = 8,		/* 16-bit signed integer */
+    TIFF_SLONG = 9,		/* 32-bit signed integer */
+    TIFF_SRATIONAL = 10,	/* 64-bit signed fraction */
+    /* (ratio of two 32-bit signed integers) */
+    TIFF_FLOAT = 11,		/* 32-bit IEEE floating point */
+    TIFF_DOUBLE = 12,		/* 64-bit IEEE floating point */
+    /* A flag to indicate the value is indirect. */
+    /* This is only used internally; it is not part of the */
+    /* TIFF specification (although it should be!). */
+    TIFF_INDIRECT = 128
 } TIFF_data_type;
 
 /*
@@ -106,14 +109,14 @@ typedef	enum {
  * as the need arises.
  */
 typedef enum {
-	TIFFTAG_SubFileType =		254,	/* subfile data descriptor */
+    TIFFTAG_SubFileType = 254,	/* subfile data descriptor */
 #define	    SubFileType_reduced_image	0x1	/* reduced resolution version */
 #define	    SubFileType_page		0x2	/* one page of many */
 #define	    SubFileType_mask		0x4	/* transparency mask */
-	TIFFTAG_ImageWidth =		256,	/* image width in pixels */
-	TIFFTAG_ImageLength =		257,	/* image height in pixels */
-	TIFFTAG_BitsPerSample =		258,	/* bits per channel (sample) */
-	TIFFTAG_Compression =		259,	/* data compression technique */
+    TIFFTAG_ImageWidth = 256,	/* image width in pixels */
+    TIFFTAG_ImageLength = 257,	/* image height in pixels */
+    TIFFTAG_BitsPerSample = 258,	/* bits per channel (sample) */
+    TIFFTAG_Compression = 259,	/* data compression technique */
 #define	    Compression_none		1	/* dump mode */
 #define	    Compression_CCITT_RLE	2	/* CCITT modified Huffman RLE */
 #define	    Compression_CCITT_T4	3	/* CCITT T.4 fax encoding */
@@ -124,7 +127,7 @@ typedef enum {
 #define	    Compression_CCITT_RLEW	32771	/* #1 w/ word alignment */
 #define	    Compression_PackBits	32773	/* Macintosh RLE */
 #define	    Compression_Thunderscan	32809	/* ThunderScan RLE */
-	TIFFTAG_Photometric =		262,	/* photometric interpretation */
+    TIFFTAG_Photometric = 262,	/* photometric interpretation */
 #define	    Photometric_min_is_white	0	/* min value is white */
 #define	    Photometric_min_is_black	1	/* min value is black */
 #define	    Photometric_RGB		2	/* RGB color model */
@@ -133,11 +136,11 @@ typedef enum {
 #define	    Photometric_separated	5	/* !color separations */
 #define	    Photometric_YCbCr		6	/* !CCIR 601 */
 #define	    Photometric_CIE_Lab		8	/* !1976 CIE L*a*b* */
-	TIFFTAG_FillOrder =		266,	/* data order within a byte */
+    TIFFTAG_FillOrder = 266,	/* data order within a byte */
 #define	    FillOrder_MSB2LSB		1	/* most significant -> least */
 #define	    FillOrder_LSB2MSB		2	/* least significant -> most */
-	TIFFTAG_StripOffsets =		273,	/* offsets to data strips */
-	TIFFTAG_Orientation =		274,	/* +image Orientation */
+    TIFFTAG_StripOffsets = 273,	/* offsets to data strips */
+    TIFFTAG_Orientation = 274,	/* +image Orientation */
 #define	    Orientation_top_left	1	/* row 0 top, col 0 lhs */
 #define	    Orientation_top_right	2	/* row 0 top, col 0 rhs */
 #define	    Orientation_bot_right	3	/* row 0 bottom, col 0 rhs */
@@ -146,28 +149,32 @@ typedef enum {
 #define	    Orientation_right_top	6	/* row 0 rhs, col 0 top */
 #define	    Orientation_right_bot	7	/* row 0 rhs, col 0 bottom */
 #define	    Orientation_left_bot	8	/* row 0 lhs, col 0 bottom */
-	TIFFTAG_SamplesPerPixel =	277,	/* samples per pixel */
-	TIFFTAG_RowsPerStrip =		278,	/* rows per strip of data */
-	TIFFTAG_StripByteCounts =	279,	/* bytes counts for strips */
-	TIFFTAG_XResolution =		282,	/* pixels/resolution in x */
-	TIFFTAG_YResolution =		283,	/* pixels/resolution in y */
-	TIFFTAG_PlanarConfig =		284,	/* storage organization */
+    TIFFTAG_SamplesPerPixel = 277,	/* samples per pixel */
+    TIFFTAG_RowsPerStrip = 278,	/* rows per strip of data */
+    TIFFTAG_StripByteCounts = 279,	/* bytes counts for strips */
+    TIFFTAG_XResolution = 282,	/* pixels/resolution in x */
+    TIFFTAG_YResolution = 283,	/* pixels/resolution in y */
+    TIFFTAG_PlanarConfig = 284,	/* storage organization */
 #define	    PlanarConfig_contig		1	/* single image plane */
 #define	    PlanarConfig_separate	2	/* separate planes of data */
-	TIFFTAG_T4Options =		292,	/* 32 flag bits */
+    TIFFTAG_T4Options = 292,	/* 32 flag bits */
 #define	    T4Options_2D_encoding	0x1	/* 2-dimensional coding */
 #define	    T4Options_uncompressed	0x2	/* data not compressed */
 #define	    T4Options_fill_bits		0x4	/* fill to byte boundary */
-	TIFFTAG_T6Options =		293,	/* 32 flag bits */
+    TIFFTAG_T6Options = 293,	/* 32 flag bits */
 #define	    T6Options_uncompressed	0x2	/* data not compressed */
-	TIFFTAG_ResolutionUnit =	296,	/* units of resolutions */
+    TIFFTAG_ResolutionUnit = 296,	/* units of resolutions */
 #define	    ResolutionUnit_none		1	/* no meaningful units */
 #define	    ResolutionUnit_inch		2	/* english */
 #define	    ResolutionUnit_centimeter	3	/* metric */
-	TIFFTAG_PageNumber =		297,	/* page number if multi-page */
-	TIFFTAG_Software =		305,	/* software name & release */
-	TIFFTAG_DateTime =		306,	/* creation date and time */
-	TIFFTAG_CleanFaxData =		327	/* regenerated line info */
+    TIFFTAG_PageNumber = 297,	/* page number if multi-page */
+    TIFFTAG_Software = 305,	/* software name & release */
+    TIFFTAG_DateTime = 306,	/* creation date and time */
+/*
+ * The CleanFaxData tag isn't in the TIFF 6 documentation, and many
+ * TIFF-reading applications don't recognize it.  Don't use it!
+ */
+    TIFFTAG_CleanFaxData = 327	/* regenerated line info */
 #define	    CleanFaxData_clean		0	/* no errors detected */
 #define	    CleanFaxData_regenerated	1	/* receiver regenerated lines */
 #define	    CleanFaxData_unclean	2	/* uncorrected errors exist */
@@ -179,12 +186,12 @@ typedef enum {
  * Define the added driver state for TIFF writing.
  */
 typedef struct gdev_tiff_state_s {
-	long prev_dir;		/* file offset of previous directory offset */
-	long dir_off;		/* file offset of next write */
-	int ntags;		/* # of tags in directory */
-	int vsize;		/* size of values following tags */
-		/* Record offsets of values */
-	int offset_StripByteCounts;
+    long prev_dir;		/* file offset of previous directory offset */
+    long dir_off;		/* file offset of next write */
+    int ntags;			/* # of tags in directory */
+    int vsize;			/* size of values following tags */
+    /* Record offsets of values */
+    int offset_StripByteCounts;
 } gdev_tiff_state;
 
 /*
@@ -192,15 +199,15 @@ typedef struct gdev_tiff_state_s {
  * tags; the client can provide additional tags (pre-sorted) and
  * indirect values.
  */
-int gdev_tiff_begin_page(P7(gx_device_printer *pdev, gdev_tiff_state *tifs,
-			    FILE *fp,
-			    const TIFF_dir_entry *entries, int entry_count,
-			    const byte *values, int value_size));
+int gdev_tiff_begin_page(P7(gx_device_printer * pdev, gdev_tiff_state * tifs,
+			    FILE * fp,
+			    const TIFF_dir_entry * entries, int entry_count,
+			    const byte * values, int value_size));
 
 /*
  * Finish writing a TIFF page.  All data written between begin and end
  * is considered to be a single strip.
  */
-int gdev_tiff_end_page(P2(gdev_tiff_state *tifs, FILE *fp));
+int gdev_tiff_end_page(P2(gdev_tiff_state * tifs, FILE * fp));
 
-#endif				/* gdevtifs_INCLUDED */
+#endif /* gdevtifs_INCLUDED */

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsfont0.c */
+/*Id: gsfont0.c  */
 /* Composite font operations for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"

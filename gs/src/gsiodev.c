@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,19 +16,31 @@
    all copies.
  */
 
-/* gsiodev.c */
+/*Id: gsiodev.c  */
 /* IODevice implementation for Ghostscript */
 #include "errno_.h"
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gp.h"
+#include "gscdefs.h"
 #include "gsparam.h"
+#include "gsstruct.h"
 #include "gxiodev.h"
 
-/* Import the IODevice table from gconfig.c. */
-extern gx_io_device *gx_io_device_table[];
-extern uint gx_io_device_table_count;
+/* Import the IODevice table from gconf.c. */
+extern_gx_io_device_table();
+
+/* Define a table of local copies of the IODevices, */
+/* allocated at startup.  This just postpones the day of reckoning.... */
+private gx_io_device **io_device_table;
+
+private_st_io_device();
+gs_private_st_ptr(st_io_device_ptr, gx_io_device *, "gx_io_device *",
+		  iodev_ptr_enum_ptrs, iodev_ptr_reloc_ptrs);
+gs_private_st_element(st_io_device_ptr_element, gx_io_device *,
+      "gx_io_device *[]", iodev_ptr_elt_enum_ptrs, iodev_ptr_elt_reloc_ptrs,
+		      st_io_device_ptr);
 
 /* Define the OS (%os%) device. */
 iodev_proc_fopen(iodev_os_fopen);
@@ -38,7 +50,7 @@ private iodev_proc_rename_file(os_rename);
 private iodev_proc_file_status(os_status);
 private iodev_proc_enumerate_files(os_enumerate);
 private iodev_proc_get_params(os_get_params);
-gx_io_device gs_iodev_os =
+const gx_io_device gs_iodev_os =
 {
     "%os%", "FileSystem",
     {iodev_no_init, iodev_no_open_device,
@@ -53,11 +65,24 @@ gx_io_device gs_iodev_os =
 
 void
 gs_iodev_init(gs_memory_t * mem)
-{				/* Run the one-time initialization of each IODevice. */
-    gx_io_device **piodev = &gx_io_device_table[0];
+{				/* Make writable copies of all IODevices. */
+    gx_io_device **table =
+	gs_alloc_struct_array(mem, gx_io_device_table_count,
+			      gx_io_device *, &st_io_device_ptr_element,
+			      "gsiodev_init(table)");
+    uint i;
 
-    for (; *piodev; piodev++)
-	((*piodev)->procs.init) (*piodev, mem);
+    for (i = 0; i < gx_io_device_table_count; ++i) {
+	table[i] = gs_alloc_struct(mem, gx_io_device, &st_io_device,
+				   "gsiodev_init");
+	memcpy(table[i], gx_io_device_table[i], sizeof(gx_io_device));
+    }
+    io_device_table = table;
+    gs_register_struct_root(mem, NULL, (void **)&io_device_table,
+			    "io_device_table");
+    /* Run the one-time initialization of each IODevice. */
+    for (i = 0; i < gx_io_device_table_count; ++i)
+	(table[i]->procs.init) (table[i], mem);
 }
 
 /* ------ Default (unimplemented) IODevice procedures ------ */
@@ -201,7 +226,15 @@ gs_getiodevice(int index)
 {
     if (index < 0 || index >= gx_io_device_table_count)
 	return 0;		/* index out of range */
-    return gx_io_device_table[index];
+    /*
+     * HACK: the default device may be referenced before the table
+     * of copies is created, for opening files referenced from the
+     * command line.  For this case only, return a pointer to the
+     * const prototype.
+     */
+    if (io_device_table == 0)
+	return (index == 0 ? (gx_io_device *) gx_io_device_table[0] : 0);
+    return io_device_table[index];
 }
 
 /* Look up an IODevice name. */
@@ -213,7 +246,7 @@ gs_findiodevice(const byte * str, uint len)
 
     if (len > 1 && str[len - 1] == '%')
 	len--;
-    for (pftab = gx_io_device_table; *pftab != NULL; pftab++) {
+    for (pftab = io_device_table; *pftab != NULL; pftab++) {
 	const char *dname = (*pftab)->dname;
 
 	if (strlen(dname) == len + 1 && !memcmp(str, dname, len))

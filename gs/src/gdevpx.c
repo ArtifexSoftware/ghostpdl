@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpx.c */
+/*Id: gdevpx.c  */
 /* H-P PCL XL driver */
 #include "math_.h"
 #include "memory_.h"
@@ -110,8 +110,6 @@ private dev_proc_fill_mask(pclxl_fill_mask);
 
 /*private dev_proc_draw_thin_line(pclxl_draw_thin_line); */
 private dev_proc_begin_image(pclxl_begin_image);
-private dev_proc_image_data(pclxl_image_data);
-private dev_proc_end_image(pclxl_end_image);
 private dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 
 #define pclxl_device_procs(map_rgb_color, map_color_rgb)\
@@ -147,19 +145,19 @@ private dev_proc_strip_copy_rop(pclxl_strip_copy_rop);
 		gdev_vector_fill_triangle,\
 		NULL /****** WRONG ******/,	/* draw_thin_line */\
 		pclxl_begin_image,\
-		pclxl_image_data,\
-		pclxl_end_image,\
+		NULL,			/* image_data */\
+		NULL,			/* end_image */\
 		NULL,			/* strip_tile_rectangle */\
 		pclxl_strip_copy_rop\
 	}
 
-gx_device_pclxl far_data gs_pxlmono_device =
+const gx_device_pclxl gs_pxlmono_device =
 {
     pclxl_device_body("pxlmono", 8),
     pclxl_device_procs(gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb)
 };
 
-gx_device_pclxl far_data gs_pxlcolor_device =
+const gx_device_pclxl gs_pxlcolor_device =
 {
     pclxl_device_body("pxlcolor", 24),
     pclxl_device_procs(gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb)
@@ -293,9 +291,9 @@ put_data_length(stream * s, uint num_bytes)
 }
 
 #define put_ac(s, a, op)\
-do { static const byte ac_[] = { da(a), op }; put_lit(s, ac_); } while ( 0 )
+BEGIN static const byte ac_[] = { da(a), op }; put_lit(s, ac_); END
 #define return_put_ac(s, a, op)\
-do { put_ac(s, a, op); return 0; } while ( 0 )
+BEGIN put_ac(s, a, op); return 0; END
 
 /* ---------------- Other utilities ---------------- */
 
@@ -569,6 +567,13 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 }
 
 /* ------ Images ------ */
+
+private image_enum_proc_plane_data(pclxl_image_plane_data);
+private image_enum_proc_end_image(pclxl_image_end_image);
+private const gx_image_enum_procs_t pclxl_image_enum_procs =
+{
+    pclxl_image_plane_data, pclxl_image_end_image
+};
 
 /* Begin an image. */
 private void
@@ -1093,7 +1098,7 @@ pclxl_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 
 private int
 pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
-	     bool first)
+	     gx_path_type_t type)
 {
     int code = pclxl_flush_points(xvdev);
 
@@ -1105,7 +1110,8 @@ pclxl_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 }
 
 private int
-pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y)
+pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+	     gx_path_type_t type)
 {
     if (xvdev->points.type != points_lines ||
 	xvdev->points.count >= num_points
@@ -1129,7 +1135,8 @@ pclxl_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y)
 
 private int
 pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
+	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+	      gx_path_type_t type)
 {
     if (xvdev->points.type != points_curves ||
 	xvdev->points.count >= num_points - 2
@@ -1156,7 +1163,7 @@ pclxl_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 
 private int
 pclxl_closepath(gx_device_vector * vdev, floatp x, floatp y,
-		floatp x_start, floatp y_start)
+		floatp x_start, floatp y_start, gx_path_type_t type)
 {
     stream *s = gdev_vector_stream(vdev);
     int code = pclxl_flush_points(xvdev);
@@ -1239,7 +1246,7 @@ private int
 pclxl_open_device(gx_device * dev)
 {
     int code;
-    static const char *file_header =
+    static const char *const file_header =
     "\033%-12345X@PJL ENTER LANGUAGE = PCLXL\n\
 ) HP-PCL XL;1;1;Comment Copyright Aladdin Enterprises 1996\000\n";
     static const byte stream_header[] =
@@ -1509,17 +1516,9 @@ pclxl_strip_copy_rop(gx_device * dev,
 
 /* ------ High-level images ------ */
 
-typedef struct pclxl_image_enum_s {
-    gs_memory_t *memory;
-    void *default_info;
-    uint bits_per_row;
-    int bits_per_pixel;
-    int y, h;
-} pclxl_image_enum_t;
+typedef gdev_vector_image_enum_t pclxl_image_enum_t;
 
-gs_private_st_ptrs1(st_pclxl_image_enum, pclxl_image_enum_t,
-		    "pclxl_image_enum_t", pclxl_image_enum_enum_ptrs,
-		    pclxl_image_enum_reloc_ptrs, default_info);
+#define st_pclxl_image_enum st_vector_image_enum
 
 /* Start processing an image. */
 private int
@@ -1527,25 +1526,25 @@ pclxl_begin_image(gx_device * dev,
 		  const gs_imager_state * pis, const gs_image_t * pim,
 		  gs_image_format_t format, const gs_int_rect * prect,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		  gs_memory_t * mem, void **pinfo)
+		  gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
     const gs_color_space *pcs = pim->ColorSpace;
     pclxl_image_enum_t *pie;
-    gs_matrix mat;
-    int num_components;
     int bits_per_pixel;
+    gs_matrix mat;
+    int code;
 
     pie = gs_alloc_struct(mem, pclxl_image_enum_t, &st_pclxl_image_enum,
 			  "pclxl_begin_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
-    pie->memory = mem;
-    *pinfo = pie;
-    if (pim->ImageMask)
-	bits_per_pixel = num_components = 1;
-    else
-	num_components = gs_color_space_num_components(pcs),
-	    bits_per_pixel = pim->BitsPerComponent * num_components;
+    code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
+				   pdcolor, pcpath, mem,
+				   &pclxl_image_enum_procs, pie);
+    if (code < 0)
+	return code;
+    bits_per_pixel = pie->bits_per_pixel;
+    *pinfo = (gx_image_enum_common_t *) pie;
     gs_matrix_invert(&pim->ImageMatrix, &mat);
     gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
     /* Currently we only handle portrait transformations. */
@@ -1565,25 +1564,20 @@ pclxl_begin_image(gx_device * dev,
 	if (code < 0)
 	    gs_free_object(mem, pie, "pclxl_begin_image");
 	return code;
-    }
-    pie->default_info = 0;
-    {
+    } {
 	stream *s = gdev_vector_stream(vxdev);
 	gs_logical_operation_t lop = pis->log_op;
 	int code = gdev_vector_update_log_op
 	(vdev, (pim->ImageMask || pim->CombineWithColor ? lop :
 		rop3_know_T_0(lop)));
 	int bpc = pim->BitsPerComponent;
+	int num_components = pie->plane_depths[0] * pie->num_planes / bpc;
 	int sample_max = (1 << bpc) - 1;
 	byte palette[256 * 3];
 	int i;
 
 	if (code < 0)
 	    return code;
-	pie->bits_per_pixel = bits_per_pixel;
-	pie->bits_per_row = bits_per_pixel * pim->Width;
-	pie->y = 0;
-	pie->h = pim->Height;
 	pclxl_set_cursor(xdev, (int)((mat.tx + 0.5) / xdev->scale.x),
 			 (int)((mat.ty + 0.5) / xdev->scale.y));
 	for (i = 0; i < 1 << bits_per_pixel; ++i) {
@@ -1636,33 +1630,37 @@ pclxl_begin_image(gx_device * dev,
 
 /* Process the next piece of an image. */
 private int
-pclxl_image_data(gx_device * dev,
-      void *info, const byte ** planes, int data_x, uint raster, int height)
+pclxl_image_plane_data(gx_device * dev,
+ gx_image_enum_common_t * info, const gx_image_plane_t * planes, int height)
 {
-    pclxl_image_enum_t *pie = info;
+    pclxl_image_enum_t *pie = (pclxl_image_enum_t *) info;
 
     if (pie->default_info)
-	return gx_default_image_data(dev, pie->default_info, planes, data_x,
-				     raster, height);
-    if (height > pie->h - pie->y)
-	height = pie->h - pie->y;
-    pclxl_write_image_data(xdev, planes[0], data_x * pie->bits_per_pixel,
-			   raster, pie->bits_per_row, pie->y, height);
-    return (pie->y += height) >= pie->h;
+	return gx_device_image_plane_data(dev, pie->default_info, planes,
+					  height);
+    if (height > pie->height - pie->y)
+	height = pie->height - pie->y;
+    pclxl_write_image_data(xdev, planes[0].data,
+			   planes[0].data_x * info->plane_depths[0],
+			   planes[0].raster,
+			   pie->width * info->plane_depths[0],
+			   pie->y, height);
+    return (pie->y += height) >= pie->height;
 }
 
 /* Clean up by releasing the buffers. */
 private int
-pclxl_end_image(gx_device * dev, void *info, bool draw_last)
+pclxl_image_end_image(gx_device * dev, gx_image_enum_common_t * info,
+		      bool draw_last)
 {
-    pclxl_image_enum_t *pie = info;
+    pclxl_image_enum_t *pie = (pclxl_image_enum_t *) info;
     int code = 0;
 
     if (pie->default_info)
 	code = gx_default_end_image(dev, pie->default_info, draw_last);
     else {			/* Fill out to the full image height. */
 /****** WRONG -- REST OF IMAGE SHOULD BE TRANSPARENT ******/
-	if (pie->h > pie->y) {
+	if (pie->height > pie->y) {
 	    uint bytes_per_row = (pie->bits_per_row + 7) >> 3;
 	    byte *row = gs_alloc_bytes(pie->memory, bytes_per_row,
 				       "pclxl_end_image(fill)");
@@ -1670,7 +1668,7 @@ pclxl_end_image(gx_device * dev, void *info, bool draw_last)
 	    if (row == 0)
 		return_error(gs_error_VMerror);
 	    memset(row, 0, bytes_per_row);
-	    for (; pie->y < pie->h; pie->y++)
+	    for (; pie->y < pie->height; pie->y++)
 		pclxl_write_image_data(xdev, row, 0, bytes_per_row,
 				       pie->bits_per_row, pie->y, 1);
 	    gs_free_object(pie->memory, row, "pclxl_end_image(fill)");

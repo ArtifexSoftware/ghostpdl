@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_res.ps 
 % Initialization file for Level 2 resource machinery.
 % When this is run, systemdict is still writable,
 % but (almost) everything defined here goes into level2dict.
@@ -44,7 +45,8 @@ level2dict begin
 % either, so we aren't going to worry about it for a while.
 
 currentglobal false setglobal systemdict begin
-  /localinstancedict 5 dict def
+  /localinstancedict 5 dict
+  .forcedef	% localinstancedict is local, systemdict is global
 end true setglobal
 /.emptydict 0 dict readonly def
 setglobal
@@ -91,16 +93,21 @@ setglobal
 % The dictionary we're about to create will become the Category
 % category definition dictionary.
 
-/.findcategory		% <name> .findcategory <category>
- { { /Category findresource } stopped { pop stop } if
- } bind def
+% .findcategory and .resourceexec are only called from within the
+% implementation of the resource 'operators', so they doesn't have to worry
+% about cleaning up the stack if they fail (the interpreter's stack
+% protection machinery for pseudo-operators takes care of this).
+/.findcategory {	% <name> .findcategory -
+			%   (pushes the category on the dstack)
+  /Category findresource begin
+} bind def
 
-/.resourceexec		% <key> /xxxResource .resourceexec -
- {			%   (also pops the category from the dstack)
-   load stopped { Category end stop } if end
- } bind def
+/.resourceexec {	% <key> /xxxResource .resourceexec -
+			%   (also pops the category from the dstack)
+  load exec end
+} bind def
 
-12 dict begin
+15 dict begin
 
 		% Standard entries
 
@@ -127,7 +134,7 @@ setglobal
 
 		% Additional entries
 
-/Instances 25 dict def
+/Instances 30 dict def
 Instances /Category [currentdict 0 -1] put
 
 /.LocalInstances 0 dict def
@@ -152,12 +159,14 @@ Instances end begin	% for the base case of findresource
 % odef to make sure the stacks are restored properly on an error.
 % This requires that the operators not pop anything from the stack until
 % they have executed their logic successfully.  We can't make this
-% work for resourceforall, but we can make it work for the others.
+% work for resourceforall, because the procedure it executes mustn't see
+% the operands of resourceforall on the stack, but we can make it work for
+% the others.
 
 mark
 /defineresource {	% <key> <instance> <category> defineresource <instance>
-	3 copy .findcategory dup begin
-	/InstanceType known {
+	3 copy .findcategory
+	currentdict /InstanceType known {
 	  dup type InstanceType ne {
 	    dup type /packedarraytype eq InstanceType /arraytype eq and
 	    not { /defineresource load /typecheck signalerror } if
@@ -168,20 +177,35 @@ mark
 }
 /findresource {		% <key> <category> findresource <instance>
 	2 copy dup /Category eq
-	  { pop //Category 0 get } { .findcategory } ifelse
-	begin
+	  { pop //Category 0 get begin } { .findcategory } ifelse
 	/FindResource .resourceexec exch pop exch pop
 }
 /resourceforall {	% <template> <proc> <scratch> <category> resourceforall -
-	.findcategory begin /ResourceForAll .resourceexec
+	dup /Category findresource begin
+	/ResourceForAll load
+		% Make sure we can recover the original operands.
+		% Stack: ...operands... proc
+	5 copy pop 4 packedarray count
+		% Stack: ...operands... proc saved count
+	4 -1 roll pop		% pop the category
+	/.internalstopped load 3 1 roll
+	3 .execn
+		% Stack: ... stopped saved count
+	3 -1 roll {
+		% The count is the original stack depth + 2.
+	  count exch 4 sub sub { exch pop } repeat
+	  aload pop stop
+	} {
+	  pop pop
+	} ifelse end
 }
 /resourcestatus {	% <key> <category> resourcestatus <status> <size> true
 			% <key> <category> resourcestatus false
-	2 copy .findcategory begin /ResourceStatus .resourceexec
+	2 copy .findcategory /ResourceStatus .resourceexec
 	 { 4 2 roll pop pop true } { pop pop false } ifelse
 }
 /undefineresource {	% <key> <category> undefineresource -
-	2 copy .findcategory begin /UndefineResource .resourceexec pop pop
+	2 copy .findcategory /UndefineResource .resourceexec pop pop
 }
 end		% Instances of Category
 counttomark 2 idiv { bind odef } repeat pop
@@ -189,12 +213,14 @@ counttomark 2 idiv { bind odef } repeat pop
 % Define the system parameters used for the Generic implementation of
 % ResourceFileName.
 systemdict begin
-currentdict /systemparams known not { /systemparams 10 dict readonly def } if
-systemparams
-  dup /FontResourceDir (/Resource/Font/) readonly .forceput
-  dup /GenericResourceDir (/Resource/) readonly .forceput
-  dup /GenericResourcePathSep (/) readonly .forceput
-pop
+currentdict /pssystemparams known not {
+  /pssystemparams 10 dict readonly def
+} if
+pssystemparams begin
+  /FontResourceDir (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
+  /GenericResourceDir (/Resource/) readonly .forcedef	% pssys'params is r-o
+  /GenericResourcePathSep (/) readonly .forcedef	% pssys'params is r-o
+end
 end
 
 % Define the generic algorithm for computing resource file names.
@@ -281,12 +307,11 @@ end
 	  ifelse
 	} bind
 /ResourceForAll
-	{ % **************** Doesn't present instance groups in
-	  % **************** the correct order yet.
-	  % We construct a new procedure so we don't have to use
-	  % static resources to hold the iteration state.
-	  % Make sure it is in local VM, to avoid an invalidaccess.
-	  3 copy .currentglobal 4 1 roll false .setglobal
+	{	% **************** Doesn't present instance groups in
+		% **************** the correct order yet.
+		% Construct a new procedure to hold the arguments.
+		% It must be in local VM to avoid a possible invalidaccess.
+	  .currentglobal 4 1 roll false .setglobal
 	  3 packedarray		% template, proc, scratch
 	  { exch pop	% stack contains: key, {template, proc, scratch}
 	    2 copy 0 get .stringmatch
@@ -301,20 +326,21 @@ end
 	     { pop pop
 	     }
 	    ifelse
-	  } /exec cvx 3 packedarray cvx
-	  % Stack: template proc scratch global? iterproc
-	  % We must pop the resource dictionary off the dict stack
-	  % when doing the actual iteration, and restore it afterwards.
-	  currentglobal .LocalInstances length 0 eq or not
-	   {		% We must do local instances, and do them first.
-	     /forall cvx 1 index currentdict 3 packedarray cvx
-	     .LocalInstances 3 1 roll end exec begin
-	   }
-	  if
-	  exch .setglobal
-	  Instances exch
-	  /forall cvx currentdict
-	  end 2 .execn begin pop pop pop
+	  } /exec cvx 3 packedarray
+		% Stack: global? iterproc
+		% We must pop the resource dictionary off the dict stack
+		% when doing the actual iteration, and restore it afterwards.
+	  exch {
+	    true .setglobal
+	  } {
+	    .LocalInstances length 0 ne {
+		% We must do local instances, and do them first.
+	      .LocalInstances exch cvx /forall cvx 1 index cvlit
+	      currentdict end 3 .execn begin
+	    } if
+	  } ifelse
+	  Instances exch cvx
+	  /forall cvx currentdict end 2 .execn begin
 	} bind
 /ResourceFileName
 	{ /GenericResourceDir getsystemparam 
@@ -392,7 +418,9 @@ end
 % Fill in the rest of the Category category.
 /Category /Category findresource dup
 /Generic /Category findresource begin
- { /FindResource /ResourceForAll /ResourceStatus /UndefineResource /.ResourceFile }
+ { /FindResource /ResourceForAll /ResourceStatus /UndefineResource
+   /ResourceFileName /.ResourceFile /.LoadResource /.DoLoadResource
+ }
  { dup load put dup } forall
 pop readonly pop end
 
@@ -401,7 +429,7 @@ pop readonly pop end
 % Define the fixed categories.
 
 mark
-	% Things other than types
+	% Non-Type categories with existing entries.
  /ColorSpaceFamily
    mark colorspacedict { pop } forall .packtomark
  /Emulator
@@ -416,23 +444,25 @@ mark
    pop pop pop .packtomark
    4 1 roll put
    .clearerror
-	% Types
- /setcolorrendering where
-  { pop /ColorRenderingType
-     {1}
-  } if
+	% Type categories listed in the Red Book.
+ /ColorRenderingType
+   { }	% These must be deferred, because optional features may add some.
  /FMapType
    { }	% These must be deferred, because optional features may add some.
  /FontType
    { }	% These must be deferred, because optional features may add some.
  /FormType
-   {1}
+   { }	% These must be deferred, because optional features may add some.
  /HalftoneType
    {1 2 3 4 5}
  /ImageType
-   {1}
+   { }	% Deferred, optional features may add some.
  /PatternType
-   {1}			% should check for Pattern color space
+   { }  % Deferred, optional features may add some.
+	% Type categories added since the Red Book.
+ /setsmoothness where {
+   pop /ShadingType { }	% Deferred, optional features may add some.
+ } if
 counttomark 2 idiv
  { mark
 
@@ -495,6 +525,15 @@ counttomark 2 idiv
 /Halftone mark /InstanceType /dicttype .definecategory
 /Pattern mark /InstanceType /dicttype .definecategory
 /ProcSet mark /InstanceType /dicttype .definecategory
+% Added since the Red Book:
+/ControlLanguage mark /InstanceType /dicttype .definecategory
+/HWOptions mark /InstanceType /dicttype .definecategory
+/Localization mark /InstanceType /dicttype .definecategory
+/OutputDevice mark /InstanceType /dicttype .definecategory
+/PDL mark /InstanceType /dicttype .definecategory
+% CIDFont, CIDMap, and CMap are defined in gs_cidfn.ps
+% FontSet is defined in gs_cff.ps
+% IdiomSet, InkParams, and TrapParams are defined in gs_ll3.ps
 
 (END MISC) VMDEBUG
 
@@ -636,25 +675,41 @@ end				% level2dict
      ifelse
    } forall
   /.findencoding { /Encoding findresource } bind def
-  /findencoding /.findencoding load odef
+  /findencoding /.findencoding load def		% must be a procedure
   /.defineencoding { /Encoding defineresource pop } bind def
 	% ColorRendering resources and ProcSet
   systemdict /ColorRendering .knownget {
     /ColorRendering exch /ProcSet defineresource pop
     systemdict /ColorRendering undef
-    /DefaultColorRendering currentcolorrendering /ColorRendering
-      defineresource pop
+    /Default currentcolorrendering /ColorRendering defineresource pop
+  } if
+	% ColorSpace resources
+  systemdict /CIEsRGB .knownget {
+    /sRGB exch /ColorSpace defineresource pop
+    systemdict /CIEsRGB undef
+  } if
 	% FontType and FMapType resources
   buildfontdict { pop dup /FontType defineresource pop } forall
   mark
     buildfontdict 0 known { 2 3 4 5 6 7 8 } if
     buildfontdict 9 known { 9 } if
   counttomark { dup /FMapType defineresource pop } repeat pop
-  } if
+	% FormType resources
+  .formtypes { pop dup /FormType defineresource pop } forall
+	% ColorRenderingType resources
+  .colorrenderingtypes {pop dup /ColorRenderingType defineresource pop} forall
+	% ImageType resources
+  .imagetypes { pop dup /ImageType defineresource pop } forall
+	% PatternType resources
+  .patterntypes { pop dup /PatternType defineresource pop } forall
 	% Make the fixed resource categories immutable.
-  { /ColorSpaceFamily /Emulator /Filter /IODevice /ColorRenderingType
+  /.shadingtypes where {
+    pop .shadingtypes { pop dup /ShadingType defineresource pop } forall
+  } if
+  [ /ColorSpaceFamily /Emulator /Filter /IODevice /ColorRenderingType
     /FMapType /FontType /FormType /HalftoneType /ImageType /PatternType
-  } {
+    /.shadingtypes where { pop /ShadingType } if
+  ] {
     /Category findresource
     dup /Instances get readonly pop
     .LocalInstances readonly pop

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,20 +16,19 @@
    all copies.
  */
 
-/* gxcpath.c */
-/* Implementation of clipping paths */
+/*Id: gxcpath.c  */
+/* Implementation of clipping paths, other than actual clipping */
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsutil.h"
+#include "gsline.h"
 #include "gxdevice.h"
 #include "gxfixed.h"
 #include "gscoord.h"		/* needs gsmatrix.h */
+#include "gxstate.h"
 #include "gzpath.h"
 #include "gzcpath.h"
-
-/* Define whether to look for vertical clipping regions. */
-#define CHECK_VERTICAL_CLIPPING
 
 /* Imported from gxacpath.c */
 extern int gx_cpath_intersect_slow(P4(gs_state *, gx_clip_path *,
@@ -37,31 +36,29 @@ extern int gx_cpath_intersect_slow(P4(gs_state *, gx_clip_path *,
 
 /* Forward references */
 private void gx_clip_list_from_rectangle(P2(gx_clip_list *, gs_fixed_rect *));
-private int gx_clip_list_add_to_path(P2(gx_clip_list *, gx_path *));
 
-/* Structure types */
+/* Other structure types */
 public_st_clip_rect();
 private_st_clip_list();
 public_st_clip_path();
+private_st_clip_rect_list();
 public_st_device_clip();
+private_st_cpath_enum();
 
 /* GC procedures for gx_clip_path */
 #define cptr ((gx_clip_path *)vptr)
-private ENUM_PTRS_BEGIN(clip_path_enum_ptrs);
+private 
+ENUM_PTRS_BEGIN(clip_path_enum_ptrs) return ENUM_USING(st_path, &cptr->path, sizeof(cptr->path), index - 1);
 
-if (index < st_clip_list_max_ptrs) {
-    gs_ptr_type_t ret = clip_list_enum_ptrs(&cptr->list, sizeof(cptr->list), index, pep);
-
-    if (ret == 0)		/* don't stop early */
-	ret = ptr_struct_type, *pep = 0;
-    return ret;
-}
-return (*st_path.enum_ptrs) (&cptr->path, sizeof(cptr->path), index - st_clip_list_max_ptrs, pep);
+case 0:
+ENUM_RETURN((cptr->rect_list == &cptr->local_list ? 0 :
+	     cptr->rect_list));
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(clip_path_reloc_ptrs)
 {
-    clip_list_reloc_ptrs(&cptr->list, sizeof(gx_clip_list), gcst);
-    (*st_path.reloc_ptrs) (&cptr->path, sizeof(gx_path), gcst);
+    if (cptr->rect_list != &cptr->local_list)
+	RELOC_VAR(cptr->rect_list);
+    RELOC_USING(st_path, &cptr->path, sizeof(gx_path));
 }
 RELOC_PTRS_END
 #undef cptr
@@ -71,10 +68,11 @@ RELOC_PTRS_END
 private ENUM_PTRS_BEGIN(device_clip_enum_ptrs)
 {
     if (index < st_clip_list_max_ptrs + 1)
-	return clip_list_enum_ptrs(&cptr->list, sizeof(gx_clip_list),
-				   index - 1, pep);
-    return (*st_device_forward.enum_ptrs) (vptr, sizeof(gx_device_forward),
-				  index - (st_clip_list_max_ptrs + 1), pep);
+	return ENUM_USING(st_clip_list, &cptr->list,
+			  sizeof(gx_clip_list), index - 1);
+    return ENUM_USING(st_device_forward, vptr,
+		      sizeof(gx_device_forward),
+		      index - (st_clip_list_max_ptrs + 1));
 }
 case 0:
 ENUM_RETURN((cptr->current == &cptr->list.single ? NULL :
@@ -84,11 +82,11 @@ private RELOC_PTRS_BEGIN(device_clip_reloc_ptrs)
 {
     if (cptr->current == &cptr->list.single)
 	cptr->current =
-	    &((gx_device_clip *) gs_reloc_struct_ptr(vptr, gcst))->list.single;
+	    &((gx_device_clip *) (*gc_proc(gcst, reloc_struct_ptr)) (vptr, gcst))->list.single;
     else
 	RELOC_PTR(gx_device_clip, current);
-    clip_list_reloc_ptrs(&cptr->list, sizeof(gx_clip_list), gcst);
-    (*st_device_forward.reloc_ptrs) (vptr, sizeof(gx_device_forward), gcst);
+    RELOC_USING(st_clip_list, &cptr->list, sizeof(gx_clip_list));
+    RELOC_USING(st_device_forward, vptr, sizeof(gx_device_forward));
 }
 RELOC_PTRS_END
 #undef cptr
@@ -133,23 +131,286 @@ clip_list_validate(const gx_clip_list * clp)
 }
 #endif
 
+/* ------ Clipping path memory management ------ */
+
+private rc_free_proc(rc_free_cpath_list);
+private rc_free_proc(rc_free_cpath_list_local);
+
+/* Initialize those parts of the contents of a clip path that aren't */
+/* part of the path. */
+private void
+cpath_init_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
+{
+    gx_clip_list_from_rectangle(&pcpath->rect_list->list, pbox);
+    pcpath->inner_box = *pbox;
+    pcpath->path_valid = false;
+    pcpath->path.bbox = *pbox;
+    gx_cpath_set_outer_box(pcpath);
+    pcpath->id = gs_next_ids(1);	/* path changed => change id */
+}
+private void
+cpath_init_own_contents(gx_clip_path * pcpath)
+{				/* We could make null_rect static, but then it couldn't be const. */
+    gs_fixed_rect null_rect;
+
+    null_rect.p.x = null_rect.p.y = null_rect.q.x = null_rect.q.y = 0;
+    cpath_init_rectangle(pcpath, &null_rect);
+}
+private void
+cpath_share_own_contents(gx_clip_path * pcpath, const gx_clip_path * shared)
+{
+    pcpath->inner_box = shared->inner_box;
+    pcpath->path_valid = shared->path_valid;
+    pcpath->outer_box = shared->outer_box;
+    pcpath->id = shared->id;
+}
+
+/* Allocate only the segments of a clipping path on the heap. */
+private int
+cpath_alloc_list(gx_clip_rect_list ** prlist, gs_memory_t * mem,
+		 client_name_t cname)
+{
+    rc_alloc_struct_1(*prlist, gx_clip_rect_list, &st_clip_rect_list, mem,
+		      return_error(gs_error_VMerror), cname);
+    (*prlist)->rc.free = rc_free_cpath_list;
+    return 0;
+}
+int
+gx_cpath_init_contained_shared(gx_clip_path * pcpath,
+	const gx_clip_path * shared, gs_memory_t * mem, client_name_t cname)
+{
+    if (shared) {
+	if (shared->path.segments == &shared->path.local_segments) {
+	    lprintf1("Attempt to share (local) segments of clip path 0x%lx!\n",
+		     (ulong) shared);
+	    return_error(gs_error_Fatal);
+	}
+	*pcpath = *shared;
+	pcpath->path.memory = mem;
+	pcpath->path.allocation = path_allocated_contained;
+	rc_increment(pcpath->path.segments);
+	rc_increment(pcpath->rect_list);
+    } else {
+	int code = cpath_alloc_list(&pcpath->rect_list, mem, cname);
+
+	if (code < 0)
+	    return code;
+	code = gx_path_alloc_contained(&pcpath->path, mem, cname);
+	if (code < 0) {
+	    gs_free_object(mem, pcpath->rect_list, cname);
+	    pcpath->rect_list = 0;
+	    return code;
+	}
+	cpath_init_own_contents(pcpath);
+    }
+    return 0;
+}
+#define gx_cpath_alloc_contents(pcpath, shared, mem, cname)\
+  gx_cpath_init_contained_shared(pcpath, shared, mem, cname)
+
+/* Allocate all of a clipping path on the heap. */
+gx_clip_path *
+gx_cpath_alloc_shared(const gx_clip_path * shared, gs_memory_t * mem,
+		      client_name_t cname)
+{
+    gx_clip_path *pcpath =
+    gs_alloc_struct(mem, gx_clip_path, &st_clip_path, cname);
+    int code;
+
+    if (pcpath == 0)
+	return 0;
+    code = gx_cpath_alloc_contents(pcpath, shared, mem, cname);
+    if (code < 0) {
+	gs_free_object(mem, pcpath, cname);
+	return 0;
+    }
+    pcpath->path.allocation = path_allocated_on_heap;
+    return pcpath;
+}
+
+/* Initialize a stack-allocated clipping path. */
+int
+gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
+			   gs_memory_t * mem)
+{
+    if (shared) {
+	if (shared->path.segments == &shared->path.local_segments) {
+	    lprintf1("Attempt to share (local) segments of clip path 0x%lx!\n",
+		     (ulong) shared);
+	    return_error(gs_error_Fatal);
+	}
+	pcpath->path = shared->path;
+	pcpath->path.allocation = path_allocated_on_stack;
+	rc_increment(pcpath->path.segments);
+	pcpath->rect_list = shared->rect_list;
+	rc_increment(pcpath->rect_list);
+	cpath_share_own_contents(pcpath, shared);
+    } else {
+	gx_path_init_local(&pcpath->path, mem);
+	rc_init_free(&pcpath->local_list, mem, 1, rc_free_cpath_list_local);
+	pcpath->rect_list = &pcpath->local_list;
+	cpath_init_own_contents(pcpath);
+    }
+    return 0;
+}
+
+/* Unshare a clipping path. */
+int
+gx_cpath_unshare(gx_clip_path * pcpath)
+{
+    int code = gx_path_unshare(&pcpath->path);
+    gx_clip_rect_list *rlist = pcpath->rect_list;
+
+    if (code < 0)
+	return code;
+    if (rlist->rc.ref_count > 1) {
+	int code = cpath_alloc_list(&pcpath->rect_list, pcpath->path.memory,
+				    "gx_cpath_unshare");
+
+	if (code < 0)
+	    return code;
+	/* Copy the rectangle list. */
+/**************** NYI ****************/
+	rc_decrement(rlist, "gx_cpath_unshare");
+    }
+    return code;
+}
+
+/* Free a clipping path. */
+void
+gx_cpath_free(gx_clip_path * pcpath, client_name_t cname)
+{
+    rc_decrement(pcpath->rect_list, cname);
+    /* Clean up pointers for GC. */
+    pcpath->rect_list = 0;
+    {
+	gx_path_allocation_t alloc = pcpath->path.allocation;
+
+	if (alloc == path_allocated_on_heap) {
+	    pcpath->path.allocation = path_allocated_contained;
+	    gx_path_free(&pcpath->path, cname);
+	    gs_free_object(pcpath->path.memory, pcpath, cname);
+	} else
+	    gx_path_free(&pcpath->path, cname);
+    }
+}
+
+/* Assign a clipping path, preserving the source. */
+int
+gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
+{
+    int code = gx_path_assign_preserve(&pcpto->path, &pcpfrom->path);
+    gx_clip_rect_list *fromlist = pcpfrom->rect_list;
+    gx_clip_rect_list *tolist = pcpto->rect_list;
+    gx_path path;
+
+    if (code < 0)
+	return 0;
+    if (fromlist == &pcpfrom->local_list) {
+	/* We can't use pcpfrom's list object. */
+	if (tolist == &pcpto->local_list || tolist->rc.ref_count > 1) {
+	    /* We can't use pcpto's list either.  Allocate a new one. */
+	    int code = cpath_alloc_list(&tolist, tolist->rc.memory,
+					"gx_cpath_assign");
+
+	    if (code < 0)
+		return code;
+	    rc_decrement(pcpto->rect_list, "gx_cpath_assign");
+	} else {
+	    /* Use pcpto's list object. */
+	    rc_free_cpath_list_local(tolist->rc.memory, tolist,
+				     "gx_cpath_assign");
+	}
+	tolist->list = fromlist->list;
+	pcpfrom->rect_list = tolist;
+	rc_increment(tolist);
+    } else {
+	/* We can use pcpfrom's list object. */
+	rc_increment(fromlist);
+	rc_decrement(pcpto->rect_list, "gx_cpath_assign");
+    }
+    path = pcpto->path, *pcpto = *pcpfrom, pcpto->path = path;
+    return 0;
+}
+
+/* Assign a clipping path, releasing the source. */
+int
+gx_cpath_assign_free(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
+{				/* For right now, just do assign + free. */
+    int code = gx_cpath_assign_preserve(pcpto, pcpfrom);
+
+    if (code < 0)
+	return 0;
+    gx_cpath_free(pcpfrom, "gx_cpath_assign_free");
+    return 0;
+}
+
+/* Free the clipping list when its reference count goes to zero. */
+private void
+rc_free_cpath_list_local(gs_memory_t * mem, void *vrlist,
+			 client_name_t cname)
+{
+    gx_clip_rect_list *rlist = (gx_clip_rect_list *) vrlist;
+
+    gx_clip_list_free(&rlist->list, mem);
+}
+private void
+rc_free_cpath_list(gs_memory_t * mem, void *vrlist, client_name_t cname)
+{
+    rc_free_cpath_list_local(mem, vrlist, cname);
+    gs_free_object(mem, vrlist, cname);
+}
+
 /* ------ Clipping path accessing ------ */
 
 /* Return the path of a clipping path. */
 int
-gx_cpath_path(gx_clip_path * pcpath, gx_path * ppath)
+gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 {
-    if (!pcpath->segments_valid) {
+    if (!pcpath->path_valid) {
+	/* Synthesize a path. */
+	gs_cpath_enum cenum;
+	gs_fixed_point pts[3];
+	gx_path rpath;
 	int code;
 
-	gx_path_reset(&pcpath->path);
-	code = gx_clip_list_add_to_path(&pcpath->list, &pcpath->path);
-	if (code < 0)
+	gx_path_init_local(&rpath, pcpath->path.memory);
+	gx_cpath_enum_init(&cenum, pcpath);
+	while ((code = gx_cpath_enum_next(&cenum, pts)) != 0) {
+	    switch (code) {
+		case gs_pe_moveto:
+		    code = gx_path_add_point(&rpath, pts[0].x, pts[0].y);
+		    break;
+		case gs_pe_lineto:
+		    code = gx_path_add_line_notes(&rpath, pts[0].x, pts[0].y,
+					       gx_cpath_enum_notes(&cenum));
+		    break;
+		case gs_pe_curveto:
+		    code = gx_path_add_curve_notes(&rpath, pts[0].x, pts[0].y,
+						   pts[1].x, pts[1].y,
+						   pts[2].x, pts[2].y,
+					       gx_cpath_enum_notes(&cenum));
+		    break;
+		case gs_pe_closepath:
+		    code = gx_path_close_subpath_notes(&rpath,
+					       gx_cpath_enum_notes(&cenum));
+		    break;
+		default:
+		    if (code >= 0)
+			code = gs_note_error(gs_error_unregistered);
+	    }
+	    if (code < 0)
+		break;
+	}
+	if (code >= 0)
+	    code = gx_path_assign_free(&pcpath->path, &rpath);
+	if (code < 0) {
+	    gx_path_free(&rpath, "gx_cpath_to_path error");
 	    return code;
-	pcpath->segments_valid = 1;
+	}
+	pcpath->path_valid = true;
     }
-    *ppath = pcpath->path;
-    return 0;
+    return gx_path_assign_preserve(ppath, &pcpath->path);
 }
 
 /* Return the inner and outer check rectangles for a clipping path. */
@@ -159,24 +420,24 @@ gx_cpath_path(gx_clip_path * pcpath, gx_path * ppath)
 bool
 gx_cpath_inner_box(const gx_clip_path * pcpath, gs_fixed_rect * pbox)
 {
-    if (pcpath->list.outside) {
+    if (gx_cpath_is_outside(pcpath)) {
 	pbox->p.x = pbox->p.y = pbox->q.x = pbox->q.y = 0;
 	return false;
     } else {
 	*pbox = pcpath->inner_box;
-	return clip_list_is_rectangle(&pcpath->list);
+	return clip_list_is_rectangle(gx_cpath_list(pcpath));
     }
 }
 bool
 gx_cpath_outer_box(const gx_clip_path * pcpath, gs_fixed_rect * pbox)
 {
-    if (pcpath->list.outside) {
+    if (gx_cpath_is_outside(pcpath)) {
 	pbox->p.x = pbox->p.y = min_fixed;
 	pbox->q.x = pbox->q.y = max_fixed;
 	return false;
     } else {
 	*pbox = pcpath->outer_box;
-	return clip_list_is_rectangle(&pcpath->list);
+	return clip_list_is_rectangle(gx_cpath_list(pcpath));
     }
 }
 
@@ -199,9 +460,9 @@ gx_cpath_includes_rectangle(register const gx_clip_path * pcpath,
 int
 gx_cpath_set_outside(gx_clip_path * pcpath, bool outside)
 {
-    if (outside != pcpath->list.outside) {
+    if (outside != gx_cpath_list(pcpath)->outside) {
 	pcpath->id = gs_next_ids(1);	/* path changed => change id */
-	pcpath->list.outside = outside;
+	gx_cpath_list(pcpath)->outside = outside;
     }
     return 0;
 }
@@ -210,24 +471,7 @@ gx_cpath_set_outside(gx_clip_path * pcpath, bool outside)
 bool
 gx_cpath_is_outside(const gx_clip_path * pcpath)
 {
-    return pcpath->list.outside;
-}
-
-/* Release a clipping path. */
-void
-gx_cpath_release(gx_clip_path * pcpath)
-{
-    if (!pcpath->shares_list)
-	gx_clip_list_free(&pcpath->list, pcpath->path.memory);
-    gx_path_release(&pcpath->path);
-}
-
-/* Share a clipping path. */
-void
-gx_cpath_share(gx_clip_path * pcpath)
-{
-    gx_path_share(&pcpath->path);
-    pcpath->shares_list = 1;
+    return gx_cpath_list(pcpath)->outside;
 }
 
 /* Set the outer clipping box to the path bounding box, */
@@ -243,64 +487,89 @@ gx_cpath_set_outer_box(gx_clip_path * pcpath)
 
 /* ------ Clipping path setting ------ */
 
-/* Initialize a clipping path. */
-int
-gx_cpath_init(gx_clip_path * pcpath, gs_memory_t * mem)
-{
-    static /*const */ gs_fixed_rect null_rect =
-    {
-	{0, 0},
-	{0, 0}};
-
-    return gx_cpath_from_rectangle(pcpath, &null_rect, mem);	/* does a gx_path_init */
-}
-
 /* Create a rectangular clipping path. */
 /* The supplied rectangle may not be oriented correctly, */
 /* but it will be oriented correctly upon return. */
-int
-gx_cpath_from_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox,
-			gs_memory_t * mem)
+private int
+cpath_set_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
 {
-    gx_clip_list_from_rectangle(&pcpath->list, pbox);
-    pcpath->inner_box = *pbox;
-    pcpath->segments_valid = 0;
-    pcpath->shares_list = 0;
-    gx_path_init(&pcpath->path, mem);
-    pcpath->path.bbox = *pbox;
-    gx_cpath_set_outer_box(pcpath);
-    pcpath->id = gs_next_ids(1);	/* path changed => change id */
+    gx_clip_rect_list *rlist = pcpath->rect_list;
+
+    if (rlist->rc.ref_count <= 1)
+	gx_clip_list_free(&rlist->list, rlist->rc.memory);
+    else {
+	int code = cpath_alloc_list(&pcpath->rect_list, pcpath->path.memory,
+				    "gx_cpath_from_rectangle");
+
+	if (code < 0)
+	    return code;
+	rc_decrement(rlist, "gx_cpath_from_rectangle");
+	rlist = pcpath->rect_list;
+    }
+    cpath_init_rectangle(pcpath, pbox);
     return 0;
+}
+int
+gx_cpath_from_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
+{
+    int code = gx_path_new(&pcpath->path);
+
+    if (code < 0)
+	return code;
+    return cpath_set_rectangle(pcpath, pbox);
+}
+int
+gx_cpath_reset(gx_clip_path * pcpath)
+{
+    gs_fixed_rect null_rect;
+
+    null_rect.p.x = null_rect.p.y = null_rect.q.x = null_rect.q.y = 0;
+    return gx_cpath_from_rectangle(pcpath, &null_rect);
 }
 
 /* Intersect a new clipping path with an old one. */
-/* Note that it may overwrite its path argument; return 1 in this case, */
-/* otherwise 0 for success, <0 for failure as usual. */
+/* Flatten the new path first (in a copy) if necessary. */
 int
-gx_cpath_intersect(gs_state * pgs, gx_clip_path * pcpath, gx_path * ppath,
-		   int rule)
+gx_cpath_clip(gs_state *pgs, gx_clip_path *pcpath, gx_path *ppath_orig,
+	      int rule)
 {
+    gx_path fpath;
+    gx_path *ppath = ppath_orig;
     gs_fixed_rect old_box, new_box;
     int code;
 
+    /* Flatten the path if necessary. */
+    if (gx_path_has_curves_inline(ppath)) {
+	gx_path_init_local(&fpath, gs_state_memory(pgs));
+	code = gx_path_add_flattened_accurate(ppath, &fpath,
+					      gs_currentflat(pgs),
+					      gs_currentaccuratecurves(pgs));
+	if (code < 0)
+	    return code;
+	ppath = &fpath;
+    }
+    /**************** SHOULD CHANGE THIS TO KEEP PATH ****************/
     if (gx_cpath_inner_box(pcpath, &old_box) &&
 	((code = gx_path_is_rectangle(ppath, &new_box)) ||
 	 gx_path_is_void(ppath))
 	) {
 	bool changed = false;
-	bool outside = pcpath->list.outside;
+	bool outside = gx_cpath_is_outside(pcpath);
 
-	if (!code) {		/* The new path is void. */
-	    if (gx_path_current_point(ppath, &new_box.p) < 0) {		/* Use the user space origin (arbitrarily). */
+	if (!code) {
+	    /* The new path is void. */
+	    if (gx_path_current_point(ppath, &new_box.p) < 0) {
+		/* Use the user space origin (arbitrarily). */
 		gs_point origin;
 
 		gs_transform(pgs, 0.0, 0.0, &origin);
 		new_box.p.x = float2fixed(origin.x);
 		new_box.p.y = float2fixed(origin.y);
-		gx_path_add_point(ppath, new_box.p.x, new_box.p.y);
+		changed = true;
 	    }
 	    new_box.q = new_box.p;
-	} else {		/* Intersect the two rectangles if necessary. */
+	} else {
+	    /* Intersect the two rectangles if necessary. */
 	    if (old_box.p.x > new_box.p.x)
 		new_box.p.x = old_box.p.x, changed = true;
 	    if (old_box.p.y > new_box.p.y)
@@ -314,39 +583,35 @@ gx_cpath_intersect(gs_state * pgs, gx_clip_path * pcpath, gx_path * ppath,
 		new_box.q.x = new_box.p.x;
 	    if (new_box.q.y < new_box.p.y)
 		new_box.q.y = new_box.p.y;
-	    if (changed) {	/* Store the new rectangle back into the new path. */
-		register segment *pseg =
-		(segment *) ppath->first_subpath;
-
-#define set_pt(pqx,pqy)\
-  pseg->pt.x = new_box.pqx.x, pseg->pt.y = new_box.pqy.y
-		set_pt(p, p);
-		pseg = pseg->next;
-		set_pt(q, p);
-		pseg = pseg->next;
-		set_pt(q, q);
-		pseg = pseg->next;
-		set_pt(p, q);
-		pseg = pseg->next;
-		if (pseg != 0)	/* might be an open rectangle */
-		    set_pt(p, p);
-#undef set_pt
-	    }
+	}
+	if (changed) {
+	    /* Defer constructing the path. */
+	    gx_path_new(&pcpath->path);
+	    pcpath->path_valid = false;
+	} else {
+	    gx_path_assign_preserve(&pcpath->path, ppath);
+	    pcpath->path_valid = true;
 	}
 	ppath->bbox = new_box;
-	gx_cpath_release(pcpath);
-	gx_clip_list_from_rectangle(&pcpath->list, &new_box);
-	pcpath->list.outside = outside;
-	pcpath->inner_box = new_box;
-	pcpath->path = *ppath;
-	gx_cpath_set_outer_box(pcpath);
-	pcpath->segments_valid = 1;
-	pcpath->shares_list = 0;
-	code = 1;
-	pcpath->id = gs_next_ids(1);	/* path changed => change id */
-    } else {			/* Not a rectangle.  Intersect the slow way. */
+	cpath_set_rectangle(pcpath, &new_box);
+	pcpath->rect_list->list.outside = outside;
+    } else {
+	/* Existing clip path is not a rectangle.  Intersect the slow way. */
+	bool path_valid =
+	    gx_cpath_inner_box(pcpath, &old_box) &&
+	    gx_path_bbox(ppath, &new_box) >= 0 &&
+	    gx_cpath_includes_rectangle(pcpath,
+					new_box.p.x, new_box.p.y,
+					new_box.q.x, new_box.q.y);
+
 	code = gx_cpath_intersect_slow(pgs, pcpath, ppath, rule);
+	if (code >= 0 && path_valid) {
+	    gx_path_assign_preserve(&pcpath->path, ppath_orig);
+	    pcpath->path_valid = true;
+	}
     }
+    if (ppath != ppath_orig)
+	gx_path_free(ppath, "gx_cpath_clip");
     return code;
 }
 
@@ -355,7 +620,8 @@ int
 gx_cpath_scale_exp2(gx_clip_path * pcpath, int log2_scale_x, int log2_scale_y)
 {
     int code =
-    gx_path_scale_exp2(&pcpath->path, log2_scale_x, log2_scale_y);
+	gx_path_scale_exp2(&pcpath->path, log2_scale_x, log2_scale_y);
+    gx_clip_list *list = gx_cpath_list(pcpath);
     gx_clip_rect *pr;
 
     if (code < 0)
@@ -364,11 +630,11 @@ gx_cpath_scale_exp2(gx_clip_path * pcpath, int log2_scale_x, int log2_scale_y)
     gx_rect_scale_exp2(&pcpath->inner_box, log2_scale_x, log2_scale_y);
     gx_rect_scale_exp2(&pcpath->outer_box, log2_scale_x, log2_scale_y);
     /* Scale the clipping list. */
-    pr = pcpath->list.head;
+    pr = list->head;
     if (pr == 0)
-	pr = &pcpath->list.single;
+	pr = &list->single;
     for (; pr != 0; pr = pr->next)
-	if (pr != pcpath->list.head && pr != pcpath->list.tail) {
+	if (pr != list->head && pr != list->tail) {
 #define scale_v(v, s)\
   if ( pr->v != min_int && pr->v != max_int )\
     pr->v = (s >= 0 ? pr->v << s : pr->v >> -s)
@@ -419,127 +685,215 @@ gx_clip_list_from_rectangle(register gx_clip_list * clp,
     clp->outside = false;
 }
 
-/* Add a clip list to a path. */
-/* In general, this produces a path made up of zillions of tiny lines. */
-private int
-gx_clip_list_add_to_path(gx_clip_list * clp, gx_path * ppath)
+/* Start enumerating a clipping path. */
+int
+gx_cpath_enum_init(gs_cpath_enum * penum, gx_clip_path * pcpath)
 {
-    gx_clip_rect *rp;
-    int code = -1;
-    gx_clip_rect *head = (clp->count <= 1 ? &clp->single : clp->head);
-    gx_clip_rect *visit;
-    gx_clip_rect *look;
-    enum {
-	visit_left = 1, visit_right = 2
-    } first_visit;
+    if ((penum->using_path = pcpath->path_valid)) {
+	gx_path_enum_init(&penum->path_enum, &pcpath->path);
+	penum->rp = penum->visit = 0;
+    } else {
+	gx_path empty_path;
+	gx_clip_list *clp = gx_cpath_list(pcpath);
+	gx_clip_rect *head = (clp->count <= 1 ? &clp->single : clp->head);
+	gx_clip_rect *rp;
 
-    for (rp = head; rp != 0; rp = rp->next)
-	if (rp->xmin < rp->xmax && rp->ymin < rp->ymax)
-	    rp->to_visit = visit_left | visit_right;
-    for (visit = head; visit != 0; visit = visit->next) {
-	if (!visit->to_visit)
-	    continue;
-	rp = visit;
-	if (visit->to_visit & visit_left) {
-	    code = gx_path_add_point(ppath, int2fixed(visit->xmin),
-				     int2fixed(visit->ymax));
-	    if (code < 0)
-		return code;
-	    first_visit = visit_left;
-	    goto left;
-	} else {
-	    code = gx_path_add_point(ppath, int2fixed(visit->xmax),
-				     int2fixed(visit->ymin));
-	    if (code < 0)
-		return code;
-	    first_visit = visit_right;
-	    goto right;
-	}
-#define trace_line(px, py)\
-  code = gx_path_add_line(ppath, int2fixed(px), int2fixed(py));\
-  if ( code < 0 ) return code
-      left:			/* Trace upward along a left edge. */
-	/* We're at the upper left corner of rp. */
-	rp->to_visit &= ~visit_left;
-	/* Look for an adjacent rectangle above rp. */
-	for (look = rp;
-	     (look = look->next) != 0 &&
-	     (look->ymin == rp->ymin ||
-	      (look->ymin == rp->ymax && look->xmax <= rp->xmin));
-	    );
-	/* Now we know look->ymin >= rp->ymax. */
-	if (look == 0 || look->ymin > rp->ymax || look->xmin >= rp->xmax) {	/* No adjacent rectangle, switch directions. */
-	    trace_line(rp->xmax, rp->ymax);
-	    if (rp == visit && first_visit == visit_right)
-		goto close;
-	    goto right1;
-	}
-	/* We found an adjacent rectangle. */
-	/* See if it also adjoins a rectangle to the left of rp. */
-	{
-	    gx_clip_rect *prev = rp->prev;
-
-	    if (prev->ymax == rp->ymax && look->xmin < prev->xmax) {	/* There's an adjoining rectangle as well. */
-		/* Switch directions. */
-		trace_line(prev->xmax, rp->ymax);
-		rp = prev;
-		if (rp == visit && first_visit == visit_right)
-		    goto close;
-		goto right1;
-	    }
-	}
-	trace_line(look->xmin, look->ymin);
-	rp = look;
-	if (rp == visit && first_visit == visit_left)
-	    goto close;
-      left1:trace_line(rp->xmin, rp->ymax);
-	goto left;
-      right:			/* Trace downward along a right edge. */
-	/* We're at the lower right corner of rp. */
-	rp->to_visit &= ~visit_right;
-	/* Look for an adjacent rectangle below rp. */
-	for (look = rp;
-	     (look = look->prev) != 0 &&
-	     (look->ymax == rp->ymax ||
-	      (look->ymax == rp->ymin && look->xmin >= rp->xmax));
-	    );
-	/* Now we know look->ymax <= rp->ymin. */
-	if (look == 0 || look->ymax < rp->ymin || look->xmax <= rp->xmin) {	/* No adjacent rectangle, switch directions. */
-	    trace_line(rp->xmin, rp->ymin);
-	    if (rp == visit && first_visit == visit_left)
-		goto close;
-	    goto left1;
-	}
-	/* We found an adjacent rectangle. */
-	/* See if it also adjoins a rectangle to the right of rp. */
-	{
-	    gx_clip_rect *next = rp->next;
-
-	    if (next->ymin == rp->ymin && look->xmax > next->xmin) {	/* There's an adjoining rectangle as well. */
-		/* Switch directions. */
-		trace_line(next->xmin, rp->ymin);
-		rp = next;
-		if (rp == visit && first_visit == visit_left)
-		    goto close;
-		goto left1;
-	    }
-	}
-	trace_line(look->xmax, look->ymax);
-	rp = look;
-	if (rp == visit && first_visit == visit_right)
-	    goto close;
-      right1:trace_line(rp->xmax, rp->ymin);
-	goto right;
-      close:			/* We've gone all the way around an edge. */
-	code = gx_path_close_subpath(ppath);
-	if (code < 0)
-	    return code;
+	/* Initialize the pointers in the path_enum properly. */
+	gx_path_init_local(&empty_path, pcpath->path.memory);
+	gx_path_enum_init(&penum->path_enum, &empty_path);
+	penum->visit = head;
+	for (rp = head; rp != 0; rp = rp->next)
+	    rp->to_visit =
+		(rp->xmin < rp->xmax && rp->ymin < rp->ymax ?
+		 visit_left | visit_right : 0);
+	penum->rp = 0;		/* scan will initialize */
+	penum->any_rectangles = false;
+	penum->state = cpe_scan;
+	penum->have_line = false;
     }
-#undef trace_line
-    if (code < 0) {		/* We didn't have any rectangles. */
-	code = gx_path_add_point(ppath, fixed_0, fixed_0);
+    return 0;
+}
+
+/* Enumerate the next segment of a clipping path. */
+/* In general, this produces a path made up of zillions of tiny lines. */
+int
+gx_cpath_enum_next(gs_cpath_enum * penum, gs_fixed_point pts[3])
+{
+    if (penum->using_path)
+	return gx_path_enum_next(&penum->path_enum, pts);
+#define set_pt(xi, yi)\
+  (pts[0].x = int2fixed(xi), pts[0].y = int2fixed(yi))
+#define set_line(xi, yi)\
+  (penum->line_end.x = (xi), penum->line_end.y = (yi), penum->have_line = true)
+    if (penum->have_line) {
+	set_pt(penum->line_end.x, penum->line_end.y);
+	penum->have_line = false;
+	return gs_pe_lineto;
+    } {
+	gx_clip_rect *visit = penum->visit;
+	gx_clip_rect *rp = penum->rp;
+	cpe_visit_t first_visit = penum->first_visit;
+	cpe_state_t state = penum->state;
+	gx_clip_rect *look;
+	int code;
+
+	switch (state) {
+
+	    case cpe_scan:
+		/* Look for the start of an edge to trace. */
+		for (; visit != 0; visit = visit->next) {
+		    if (visit->to_visit & visit_left) {
+			set_pt(visit->xmin, visit->ymin);
+			first_visit = visit_left;
+			state = cpe_left;
+		    } else if (visit->to_visit & visit_right) {
+			set_pt(visit->xmax, visit->ymax);
+			first_visit = visit_right;
+			state = cpe_right;
+		    } else
+			continue;
+		    rp = visit;
+		    code = gs_pe_moveto;
+		    penum->any_rectangles = true;
+		    goto out;
+		}
+		/* We've enumerated all the edges. */
+		state = cpe_done;
+		if (!penum->any_rectangles) {
+		    /* We didn't have any rectangles. */
+		    set_pt(fixed_0, fixed_0);
+		    code = gs_pe_moveto;
+		    break;
+		}
+		/* falls through */
+
+	    case cpe_done:
+		/* All done. */
+		code = 0;
+		break;
+
+/* We can't use the BEGIN ... END hack here: we need to be able to break. */
+#define return_line(px, py)\
+  set_pt(px, py); code = gs_pe_lineto; break
+
+	    case cpe_left:
+
+	      left:		/* Trace upward along a left edge. */
+		/* We're at the lower left corner of rp. */
+		rp->to_visit &= ~visit_left;
+		/* Look for an adjacent rectangle above rp. */
+		for (look = rp;
+		     (look = look->next) != 0 &&
+		     (look->ymin == rp->ymin ||
+		      (look->ymin == rp->ymax && look->xmax <= rp->xmin));
+		    );
+		/* Now we know look->ymin >= rp->ymax. */
+		if (look == 0 || look->ymin > rp->ymax ||
+		    look->xmin >= rp->xmax
+		    ) {		/* No adjacent rectangle, switch directions. */
+		    state =
+			(rp == visit && first_visit == visit_right ? cpe_close :
+			 (set_line(rp->xmax, rp->ymax), cpe_right));
+		    return_line(rp->xmin, rp->ymax);
+		}
+		/* We found an adjacent rectangle. */
+		/* See if it also adjoins a rectangle to the left of rp. */
+		{
+		    gx_clip_rect *prev = rp->prev;
+		    gx_clip_rect *cur = rp;
+
+		    if (prev != 0 && prev->ymax == rp->ymax &&
+			look->xmin < prev->xmax
+			) {	/* There's an adjoining rectangle as well. */
+			/* Switch directions. */
+			rp = prev;
+			state =
+			    (rp == visit && first_visit == visit_right ? cpe_close :
+			     (set_line(prev->xmax, prev->ymax), cpe_right));
+			return_line(cur->xmin, cur->ymax);
+		    }
+		    rp = look;
+		    if (rp == visit && first_visit == visit_left)
+			state = cpe_close;
+		    else if (rp->xmin == cur->xmin)
+			goto left;
+		    else
+			set_line(rp->xmin, rp->ymin);
+		    return_line(cur->xmin, cur->ymax);
+		}
+
+	    case cpe_right:
+
+	      right:		/* Trace downward along a right edge. */
+		/* We're at the upper right corner of rp. */
+		rp->to_visit &= ~visit_right;
+		/* Look for an adjacent rectangle below rp. */
+		for (look = rp;
+		     (look = look->prev) != 0 &&
+		     (look->ymax == rp->ymax ||
+		      (look->ymax == rp->ymin && look->xmin >= rp->xmax));
+		    );
+		/* Now we know look->ymax <= rp->ymin. */
+		if (look == 0 || look->ymax < rp->ymin ||
+		    look->xmax <= rp->xmin
+		    ) {		/* No adjacent rectangle, switch directions. */
+		    state =
+			(rp == visit && first_visit == visit_left ? cpe_close :
+			 (set_line(rp->xmin, rp->ymin), cpe_left));
+		    return_line(rp->xmax, rp->ymin);
+		}
+		/* We found an adjacent rectangle. */
+		/* See if it also adjoins a rectangle to the right of rp. */
+		{
+		    gx_clip_rect *next = rp->next;
+		    gx_clip_rect *cur = rp;
+
+		    if (next != 0 && next->ymin == rp->ymin &&
+			look->xmax > next->xmin
+			) {	/* There's an adjoining rectangle as well. */
+			/* Switch directions. */
+			rp = next;
+			state =
+			    (rp == visit && first_visit == visit_left ? cpe_close :
+			     (set_line(next->xmin, next->ymin), cpe_left));
+			return_line(cur->xmax, cur->ymin);
+		    }
+		    rp = look;
+		    if (rp == visit && first_visit == visit_right)
+			state = cpe_close;
+		    else if (rp->xmax == cur->xmax)
+			goto right;
+		    else
+			set_line(rp->xmax, rp->ymax);
+		    return_line(cur->xmax, cur->ymin);
+		}
+
+#undef return_line
+
+	    case cpe_close:
+		/* We've gone all the way around an edge. */
+		code = gs_pe_closepath;
+		state = cpe_scan;
+		break;
+
+	    default:
+		return_error(gs_error_unknownerror);
+	}
+
+      out:			/* Store the state before exiting. */
+	penum->visit = visit;
+	penum->rp = rp;
+	penum->first_visit = first_visit;
+	penum->state = state;
+	return code;
     }
-    return code;
+#undef set_pt
+#undef set_line
+}
+segment_notes
+gx_cpath_enum_notes(const gs_cpath_enum * penum)
+{
+    return sn_none;
 }
 
 /* Free a clip list. */
@@ -557,481 +911,6 @@ gx_clip_list_free(gx_clip_list * clp, gs_memory_t * mem)
     gx_clip_list_init(clp);
 }
 
-#if 0				/* superseded by gxclip.c */
-
-/* ------ Rectangle list clipper ------ */
-
-/* Device for clipping with a region. */
-/* We forward non-drawing operations, but we must be sure to intercept */
-/* all drawing operations. */
-private dev_proc_open_device(clip_open);
-private dev_proc_fill_rectangle(clip_fill_rectangle);
-private dev_proc_copy_mono(clip_copy_mono);
-private dev_proc_copy_color(clip_copy_color);
-private dev_proc_get_bits(clip_get_bits);
-private dev_proc_copy_alpha(clip_copy_alpha);
-private dev_proc_fill_mask(clip_fill_mask);
-private dev_proc_strip_tile_rectangle(clip_strip_tile_rectangle);
-private dev_proc_strip_copy_rop(clip_strip_copy_rop);
-private dev_proc_get_clipping_box(clip_get_clipping_box);
-
-/* The device descriptor. */
-private const gx_device_clip gs_clip_device =
-{std_device_std_body(gx_device_clip, 0, "clipper",
-		     0, 0, 1, 1),
- {clip_open,
-  gx_forward_get_initial_matrix,
-  gx_default_sync_output,
-  gx_default_output_page,
-  gx_default_close_device,
-  gx_forward_map_rgb_color,
-  gx_forward_map_color_rgb,
-  clip_fill_rectangle,
-  gx_default_tile_rectangle,
-  clip_copy_mono,
-  clip_copy_color,
-  gx_default_draw_line,
-  clip_get_bits,
-  gx_forward_get_params,
-  gx_forward_put_params,
-  gx_forward_map_cmyk_color,
-  gx_forward_get_xfont_procs,
-  gx_forward_get_xfont_device,
-  gx_forward_map_rgb_alpha_color,
-  gx_forward_get_page_device,
-  gx_forward_get_alpha_bits,
-  clip_copy_alpha,
-  gx_forward_get_band,
-  gx_default_copy_rop,
-  gx_default_fill_path,
-  gx_default_stroke_path,
-  clip_fill_mask,
-  gx_default_fill_trapezoid,
-  gx_default_fill_parallelogram,
-  gx_default_fill_triangle,
-  gx_default_draw_thin_line,
-  gx_default_begin_image,
-  gx_default_image_data,
-  gx_default_end_image,
-  clip_strip_tile_rectangle,
-  clip_strip_copy_rop,
-  clip_get_clipping_box,
-  gx_forward_get_hardware_params
- }
-};
-
-#define rdev ((gx_device_clip *)dev)
-
-/* Make a clipping device. */
-void
-gx_make_clip_translate_device(gx_device_clip * dev, void *container,
-			      const gx_clip_list * list, int tx, int ty)
-{
-    *dev = gs_clip_device;
-    dev->list = *list;
-    dev->translation.x = tx;
-    dev->translation.y = ty;
-}
-void
-gx_make_clip_path_device(gx_device_clip * dev, const gx_clip_path * pcpath)
-{
-    gx_make_clip_device(dev, NULL, &pcpath->list);
-}
-
-/* Declare and initialize the cursor variables. */
-#ifdef DEBUG
-private ulong clip_loops, clip_in, clip_down, clip_up, clip_x, clip_no_x;
-private uint clip_interval = 10000;
-
-# define inc(v) v++
-# define print_clip()\
-    if ( clip_loops % clip_interval == 0 )\
-      if_debug10('q', "[q]rect=(%d,%d),(%d,%d)\n     loops=%ld in=%ld down=%ld up=%ld x=%ld no_x=%ld\n",\
-		 x, y, x + w, y + h,\
-		 clip_loops, clip_in, clip_down, clip_up, clip_x, clip_no_x)
-#else
-# define inc(v) discard(0)
-# define print_clip() DO_NOTHING
-#endif
-#define DECLARE_CLIP\
-  register gx_clip_rect *rptr = rdev->current;\
-  gx_device *tdev = rdev->target;\
-  bool outside = rdev->list.outside;
-/* Translate the supplied coordinates. */
-#define TRANSLATE_CLIP\
-  x += rdev->translation.x;\
-  y += rdev->translation.y;
-/* Check whether the rectangle x,y,w,h falls within the current entry. */
-#define xywh_is_in_ryptr()\
-  (!outside &&\
-   y >= rptr->ymin && y + h <= rptr->ymax &&\
-   x >= rptr->xmin && x + w <= rptr->xmax)
-#ifdef DEBUG
-#  define xywh_in_ryptr() (xywh_is_in_ryptr() ? (inc(clip_in), 1) : 0)
-#else
-#  define xywh_in_ryptr() xywh_is_in_ryptr()
-#endif
-/*
- * Warp the cursor forward or backward to the first rectangle row that
- * could include a given y value.  Assumes rptr is set, and updates it.
- * Specifically, after warp_cursor, either rptr == 0 (if the y value is
- * greater than all y values in the list), or y < rptr->ymax and either
- * rptr->prev == 0 or y >= rptr->prev->ymax.  Note that y <= rptr->ymin
- * is possible.
- *
- * In the first case below, the while loop is safe because if there is
- * more than one rectangle, there is a 'stopper' at the end of the list.
- */
-#define warp_cursor(y)\
-  if ( (y) >= rptr->ymax )\
-   { if ( (rptr = rptr->next) != 0 )\
-       while ( inc(clip_up), (y) >= rptr->ymax ) rptr = rptr->next;\
-   }\
-  else while ( rptr->prev != 0 && (y) < rptr->prev->ymax )\
-   { inc(clip_down); rptr = rptr->prev; }
-/*
- * Enumerate the rectangles of the x,w,y,h argument that fall within
- * the clipping region.  Usage:
- *      DO_CLIP(adjust for yc > yp if necessary,
- *              process(xc, yc, xec, yec) [must be an expression])
- *
- * Note that we look ahead to detect unclipped vertical strips.
- * This is really only valuable for 90 degree rotated images or
- * (nearly-)vertical lines with convex clipping regions; if we ever
- * change images to use source buffering and destination-oriented
- * enumeration, we could probably take out the code here with no
- * adverse effects.
- */
-#ifdef CHECK_VERTICAL_CLIPPING
-#  define LOOK_AHEAD\
-				if ( xec - xc == w )	/* full width */\
-				  { /* Look ahead for a vertical swath. */\
-				    while ( (nptr = rptr->next) != 0 &&\
-					    nptr->ymin == yec &&\
-					    nptr->ymax <= ye &&\
-					    nptr->xmin <= x &&\
-					    nptr->xmax >= xe\
-					  )\
-				      yec = nptr->ymax, rptr = nptr;\
-				  }\
-				else\
-				  nptr = rptr->next
-#else
-#  define LOOK_AHEAD\
-				  nptr = rptr->next
-#endif
-#define DO_CLIP(adjust_for_y, process_rectangle)\
-	if ( w <= 0 || h <= 0 ) return 0;\
-	inc(clip_loops);\
-	print_clip();\
-   {	const int xe = x + w, ye = y + h;\
-	int xc, xec, yc, yec, yp, yep;\
-	int code;\
-\
-	warp_cursor(y);\
-	if ( rptr == 0 || (yc = rptr->ymin) >= ye )\
-	  { if ( rdev->list.count > 1 )\
-	      rdev->current =\
-		(rptr != 0 ? rptr :\
-		 y >= rdev->current->ymax ? rdev->list.tail :\
-		 rdev->list.head);\
-	    return (outside ? (xc = x, xec = xe, yc = y, yec = ye,\
-			       process_rectangle) : 0);\
-	  }\
-	rdev->current = rptr;\
-	if ( yc < y ) yc = y;\
-	yp = y;\
-	if ( outside )\
-	  { for ( yep = y; ; )\
-	      { const int ymax = rptr->ymax;\
-\
-		xc = x;\
-		if ( yc > yep )\
-		  { yec = yc, yc = yep;\
-		    adjust_for_y;\
-		    xec = xe;\
-		    code = process_rectangle;\
-		    if ( code < 0 ) return code;\
-		    yp = yep;\
-		    yc = yec;\
-		    adjust_for_y;\
-		  }\
-		yec = min(ymax, ye);\
-		do \
-		   {	xec = rptr->xmin;\
-			if ( xec > xc )\
-			   {	if ( xec > xe ) xec = xe;\
-				code = process_rectangle;\
-				if ( code < 0 ) return code;\
-				xc = rptr->xmax;\
-				if ( xc >= xe ) xc = max_int;\
-			   }\
-			else\
-			  { xec = rptr->xmax;\
-			    if ( xec > xc ) xc = xec;\
-			  }\
-		   }\
-		while ( (rptr = rptr->next) != 0 && rptr->ymax == ymax );\
-		if ( xc < xe )\
-		  { xec = xe;\
-		    code = process_rectangle;\
-		    if ( code < 0 ) return code;\
-		  }\
-		yp = yc;\
-		yep = yec;\
-		if ( rptr == 0 || (yc = rptr->ymin) >= ye ) break;\
-	      }\
-	    if ( yep < ye )\
-	      { xc = x, xec = xe, yc = yep, yec = ye;\
-		code = process_rectangle;\
-		if ( code < 0 ) return code;\
-	      }\
-	  }\
-	else \
-	  for ( ; ; )\
-	    {	const int ymax = rptr->ymax;\
-		gx_clip_rect *nptr;\
-\
-		yec = min(ymax, ye);\
-		if ( yc > yp ) adjust_for_y;\
-		if_debug2('Q', "[Q]yc=%d yec=%d\n", yc, yec);\
-		do \
-		   {	xc = rptr->xmin;\
-			xec = rptr->xmax;\
-			if ( xc < x ) xc = x;\
-			if ( xec > xe ) xec = xe;\
-			if ( xec > xc )\
-			   {	clip_rect_print('Q', "match", rptr);\
-				if_debug2('Q', "[Q]xc=%d xec=%d\n", xc, xec);\
-				inc(clip_x);\
-				LOOK_AHEAD;\
-				code = process_rectangle;\
-				if ( code < 0 ) return code;\
-			   }\
-			else\
-			  { inc(clip_no_x);\
-			    nptr = rptr->next;\
-			  }\
-		   }\
-		while ( (rptr = nptr) != 0 && rptr->ymax == ymax );\
-		if ( rptr == 0 || (yec = rptr->ymin) >= ye ) break;\
-		yp = yc;\
-		yc = yec;\
-	    }\
-   }
-
-/* Open a clipping device */
-private int
-clip_open(register gx_device * dev)
-{
-    gx_device *tdev = rdev->target;
-
-    /* Initialize the cursor. */
-    rdev->current =
-	(rdev->list.head == 0 ? &rdev->list.single : rdev->list.head);
-    rdev->color_info = tdev->color_info;
-    rdev->width = tdev->width;
-    rdev->height = tdev->height;
-    return 0;
-}
-
-/* Fill a rectangle */
-private int
-clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		    gx_color_index color)
-{
-    DECLARE_CLIP
-	dev_proc_fill_rectangle((*fill)) = dev_proc(tdev, fill_rectangle);
-
-    TRANSLATE_CLIP
-	if (xywh_in_ryptr())
-	return (*fill) (tdev, x, y, w, h, color);
-    DO_CLIP(DO_NOTHING,
-	    (*fill) (tdev, xc, yc, xec - xc, yec - yc, color))
-	return 0;
-}
-
-/* Copy a monochrome rectangle */
-private int
-clip_copy_mono(gx_device * dev,
-	       const byte * data, int sourcex, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h,
-	       gx_color_index color0, gx_color_index color1)
-{
-    DECLARE_CLIP
-	dev_proc_copy_mono((*copy)) = dev_proc(tdev, copy_mono);
-
-    TRANSLATE_CLIP
-	if (xywh_in_ryptr())
-	return (*copy) (tdev, data, sourcex, raster, id, x, y, w, h, color0, color1);
-    DO_CLIP(data += (yc - yp) * raster,
-	    (*copy) (tdev, data, sourcex + xc - x, raster, gx_no_bitmap_id,
-		     xc, yc, xec - xc, yec - yc, color0, color1))
-	return 0;
-}
-
-/* Copy a color rectangle */
-private int
-clip_copy_color(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		int x, int y, int w, int h)
-{
-    DECLARE_CLIP
-	dev_proc_copy_color((*copy)) = dev_proc(tdev, copy_color);
-
-    TRANSLATE_CLIP
-	if (xywh_in_ryptr())
-	return (*copy) (tdev, data, sourcex, raster, id, x, y, w, h);
-    DO_CLIP(data += (yc - yp) * raster,
-	    (*copy) (tdev, data, sourcex + xc - x, raster, gx_no_bitmap_id,
-		     xc, yc, xec - xc, yec - yc))
-	return 0;
-}
-
-/* Copy a rectangle with alpha */
-private int
-clip_copy_alpha(gx_device * dev,
-		const byte * data, int sourcex, int raster, gx_bitmap_id id,
-		int x, int y, int w, int h,
-		gx_color_index color, int depth)
-{
-    DECLARE_CLIP
-	dev_proc_copy_alpha((*copy)) = dev_proc(tdev, copy_alpha);
-
-    TRANSLATE_CLIP
-	if (xywh_in_ryptr())
-	return (*copy) (tdev, data, sourcex, raster, id, x, y, w, h, color, depth);
-    DO_CLIP(data += (yc - yp) * raster,
-	    (*copy) (tdev, data, sourcex + xc - x, raster, gx_no_bitmap_id,
-		     xc, yc, xec - xc, yec - yc, color, depth))
-	return 0;
-}
-
-/* Fill a region defined by a mask. */
-private int
-clip_fill_mask(gx_device * dev,
-	       const byte * data, int sourcex, int raster, gx_bitmap_id id,
-	       int x, int y, int w, int h,
-	       const gx_drawing_color * pdcolor, int depth,
-	       gs_logical_operation_t lop, const gx_clip_path * pcpath)
-{
-    DECLARE_CLIP
-	dev_proc_fill_mask((*fill)) = dev_proc(tdev, fill_mask);
-
-    if (pcpath != 0)
-	return gx_default_fill_mask(dev, data, sourcex, raster, id,
-				    x, y, w, h, pdcolor, depth, lop,
-				    pcpath);
-    TRANSLATE_CLIP
-	if (xywh_in_ryptr())
-	return (*fill) (tdev, data, sourcex, raster, id, x, y, w, h,
-			pdcolor, depth, lop, NULL);
-    DO_CLIP(data += (yc - yp) * raster,
-	    (*fill) (tdev, data, sourcex + xc - x, raster, gx_no_bitmap_id,
-		     xc, yc, xec - xc, yec - yc, pdcolor, depth, lop,
-		     NULL))
-	return 0;
-}
-
-/* Get bits back from the device. */
-private int
-clip_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
-{
-    gx_device *tdev = rdev->target;
-
-    return (*dev_proc(tdev, get_bits)) (tdev, y - rdev->translation.y,
-					data, actual_data);
-}
-
-/* Strip-tile a rectangle. */
-private int
-clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
-			  int x, int y, int w, int h,
-     gx_color_index color0, gx_color_index color1, int phase_x, int phase_y)
-{
-    DECLARE_CLIP
-	dev_proc_strip_tile_rectangle((*fill)) =
-	dev_proc(tdev, strip_tile_rectangle);
-
-    TRANSLATE_CLIP
-	if (xywh_in_ryptr())
-	return (*fill) (tdev, tiles, x, y, w, h, color0, color1, phase_x, phase_y);
-    DO_CLIP(DO_NOTHING,
-	    (*fill) (tdev, tiles, xc, yc, xec - xc, yec - yc,
-		     color0, color1, phase_x, phase_y))
-	return 0;
-}
-
-/* Copy a rectangle with RasterOp and strip texture. */
-private int
-clip_strip_copy_rop(gx_device * dev,
-	      const byte * sdata, int sourcex, uint raster, gx_bitmap_id id,
-		    const gx_color_index * scolors,
-	   const gx_strip_bitmap * textures, const gx_color_index * tcolors,
-		    int x, int y, int w, int h,
-		    int phase_x, int phase_y, gs_logical_operation_t lop)
-{
-    DECLARE_CLIP
-	dev_proc_strip_copy_rop((*copy)) = dev_proc(tdev, strip_copy_rop);
-
-    TRANSLATE_CLIP
-	if (xywh_in_ryptr())
-	return (*copy) (tdev, sdata, sourcex, raster, id, scolors,
-			textures, tcolors, x, y, w, h,
-			phase_x, phase_y, lop);
-    DO_CLIP(sdata += (yc - yp) * raster,
-	    (*copy) (tdev, sdata, sourcex + xc - x, raster,
-		     gx_no_bitmap_id, scolors, textures, tcolors,
-		     xc, yc, xec - xc, yec - yc,
-		     phase_x, phase_y, lop))
-	return 0;
-}
-
-/* Get the (outer) clipping box, in client coordinates. */
-private void
-clip_get_clipping_box(gx_device * dev, gs_fixed_rect * pbox)
-{
-    gx_device *tdev = rdev->target;
-    gs_fixed_rect tbox, cbox;
-    fixed tx = int2fixed(rdev->translation.x), ty = int2fixed(rdev->translation.y);
-
-    (*dev_proc(tdev, get_clipping_box)) (tdev, &tbox);
-    /*
-     * To get an accurate clipping box quickly in all cases, we should
-     * save the outer box from the clipping path.  However,
-     * this is not currently (or even always guaranteed to be)
-     * available.  Instead, we compromise: if there is more than one
-     * rectangle in the list, we return accurate Y values (which are
-     * easy to obtain, because the list is Y-sorted) but copy the
-     * X values from the target.
-     */
-    if (rdev->list.outside || rdev->list.count == 0) {
-	cbox = tbox;
-    } else if (rdev->list.count == 1) {
-	cbox.p.x = int2fixed(rdev->list.single.xmin);
-	cbox.p.y = int2fixed(rdev->list.single.ymin);
-	cbox.q.x = int2fixed(rdev->list.single.xmax);
-	cbox.q.y = int2fixed(rdev->list.single.ymax);
-    } else {			/* The head and tail elements are dummies.... */
-	cbox.p.x = tbox.p.x;
-	cbox.p.y = int2fixed(rdev->list.head->next->ymin);
-	cbox.q.x = tbox.q.x;
-	cbox.q.y = int2fixed(rdev->list.tail->prev->ymax);
-    }
-    rect_intersect(tbox, cbox);
-    if (tbox.p.x != min_fixed)
-	tbox.p.x -= tx;
-    if (tbox.p.y != min_fixed)
-	tbox.p.y -= ty;
-    if (tbox.q.x != max_fixed)
-	tbox.q.x -= tx;
-    if (tbox.q.y != max_fixed)
-	tbox.q.y -= ty;
-    *pbox = tbox;
-}
-
-#endif
-
 /* ------ Debugging printout ------ */
 
 #ifdef DEBUG
@@ -1041,37 +920,38 @@ void
 gx_cpath_print(const gx_clip_path * pcpath)
 {
     const gx_clip_rect *pr;
+    const gx_clip_list *list = gx_cpath_list(pcpath);
 
-    if (pcpath->segments_valid)
+    if (pcpath->path_valid)
 	gx_path_print(&pcpath->path);
     else
-	dputs("   (segments not valid)\n");
-    dprintf4("   inner_box=(%g,%g),(%g,%g)\n",
-	     fixed2float(pcpath->inner_box.p.x),
-	     fixed2float(pcpath->inner_box.p.y),
-	     fixed2float(pcpath->inner_box.q.x),
-	     fixed2float(pcpath->inner_box.q.y));
-    dprintf5("     outer_box=(%g,%g),(%g,%g) count=%d\n",
-	     fixed2float(pcpath->outer_box.p.x),
-	     fixed2float(pcpath->outer_box.p.y),
-	     fixed2float(pcpath->outer_box.q.x),
-	     fixed2float(pcpath->outer_box.q.y),
-	     pcpath->list.count);
-    dprintf2("     rule=%d outside=%d\n",
-	     pcpath->rule, pcpath->list.outside);
-    switch (pcpath->list.count) {
+	dlputs("   (path not valid)\n");
+    dlprintf4("   inner_box=(%g,%g),(%g,%g)\n",
+	      fixed2float(pcpath->inner_box.p.x),
+	      fixed2float(pcpath->inner_box.p.y),
+	      fixed2float(pcpath->inner_box.q.x),
+	      fixed2float(pcpath->inner_box.q.y));
+    dlprintf4("     outer_box=(%g,%g),(%g,%g)",
+	      fixed2float(pcpath->outer_box.p.x),
+	      fixed2float(pcpath->outer_box.p.y),
+	      fixed2float(pcpath->outer_box.q.x),
+	      fixed2float(pcpath->outer_box.q.y));
+    dprintf4("     rule=%d outside=%d count=%d list.refct=%ld\n",
+	     pcpath->rule, list->outside, list->count,
+	     pcpath->rect_list->rc.ref_count);
+    switch (list->count) {
 	case 0:
 	    pr = 0;
 	    break;
 	case 1:
-	    pr = &pcpath->list.single;
+	    pr = &list->single;
 	    break;
 	default:
-	    pr = pcpath->list.head;
+	    pr = list->head;
     }
     for (; pr != 0; pr = pr->next)
-	dprintf4("   rect: (%d,%d),(%d,%d)\n",
-		 pr->xmin, pr->ymin, pr->xmax, pr->ymax);
+	dlprintf4("   rect: (%d,%d),(%d,%d)\n",
+		  pr->xmin, pr->ymin, pr->xmax, pr->ymax);
 }
 
 #endif /* DEBUG */

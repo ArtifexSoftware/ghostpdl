@@ -1,24 +1,26 @@
 /* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gxdevmem.h */
-/* "Memory" device structure for Ghostscript library */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxdevmem.h  */
 /* Requires gxdevice.h */
+
+#ifndef gxdevmem_INCLUDED
+#  define gxdevmem_INCLUDED
 
 /*
  * A 'memory' device is essentially a stored bitmap.
@@ -41,41 +43,43 @@
 #ifndef gx_device_memory_DEFINED
 #  define gx_device_memory_DEFINED
 typedef struct gx_device_memory_s gx_device_memory;
+
 #endif
 
 struct gx_device_memory_s {
-	gx_device_forward_common;	/* (see gxdevice.h) */
-	gs_matrix initial_matrix;	/* the initial transformation */
-	uint raster;			/* bytes per scan line, */
-					/* filled in by 'open' */
-	bool foreign_bits;		/* if true, bits are not in */
-					/* GC-able space */
-	byte *base;
-	byte **line_ptrs;		/* scan line pointers */
+    gx_device_forward_common;	/* (see gxdevice.h) */
+    gs_matrix initial_matrix;	/* the initial transformation */
+    uint raster;		/* bytes per scan line, */
+    /* filled in by 'open' */
+    bool foreign_bits;		/* if true, bits are not in */
+    /* GC-able space */
+    byte *base;
+    byte **line_ptrs;		/* scan line pointers */
 #define scan_line_base(dev,y) ((dev)->line_ptrs[y])
-	/* If the bitmap_memory pointer is non-zero, it is used for */
-	/* allocating the bitmap when the device is opened, */
-	/* and freeing it when the device is closed. */
-	gs_memory_t *bitmap_memory;
-		/* Following is used for mapped color, */
-		/* including 1-bit devices (to specify polarity). */
-	gs_const_string palette;	/* RGB triples */
-		/* Following is only used for 24-bit color. */
-	struct _c24 {
-		gx_color_index rgb;	/* cache key */
-		bits32 rgbr, gbrg, brgb;	/* cache value */
-	} color24;
-		/* Following are only used for alpha buffers. */
-		/* The client initializes those marked with $; */
-		/* they don't change after initialization. */
-	gs_log2_scale_point log2_scale;	/* $ oversampling scale factors */
-	int log2_alpha_bits;	/* $ log2 of # of alpha bits being produced */
-	int mapped_x;		/* $ X value mapped to buffer X=0 */
-	int mapped_y;		/* lowest Y value mapped to buffer */
-	int mapped_height;	/* # of Y values mapped to buffer */
-	int mapped_start;	/* local Y value corresponding to mapped_y */
-	gx_color_index save_color;	/* last (only) color displayed */
+    /* If the bitmap_memory pointer is non-zero, it is used for */
+    /* allocating the bitmap when the device is opened, */
+    /* and freeing it when the device is closed. */
+    gs_memory_t *bitmap_memory;
+    /* Following is used for mapped color, */
+    /* including 1-bit devices (to specify polarity). */
+    gs_const_string palette;	/* RGB triples */
+    /* Following is only used for 24-bit color. */
+    struct _c24 {
+	gx_color_index rgb;	/* cache key */
+	bits32 rgbr, gbrg, brgb;	/* cache value */
+    } color24;
+    /* Following are only used for alpha buffers. */
+    /* The client initializes those marked with $; */
+    /* they don't change after initialization. */
+    gs_log2_scale_point log2_scale;	/* $ oversampling scale factors */
+    int log2_alpha_bits;	/* $ log2 of # of alpha bits being produced */
+    int mapped_x;		/* $ X value mapped to buffer X=0 */
+    int mapped_y;		/* lowest Y value mapped to buffer */
+    int mapped_height;		/* # of Y values mapped to buffer */
+    int mapped_start;		/* local Y value corresponding to mapped_y */
+    gx_color_index save_color;	/* last (only) color displayed */
 };
+
 extern_st(st_device_memory);
 #define public_st_device_memory() /* in gdevmem.c */\
   gs_public_st_composite(st_device_memory, gx_device_memory,\
@@ -101,6 +105,7 @@ extern_st(st_device_memory);
  * from the width and height.
  */
 ulong gdev_mem_data_size(P3(const gx_device_memory *, int, int));
+
 #define gdev_mem_bitmap_size(mdev)\
   gdev_mem_data_size(mdev, (mdev)->width, (mdev)->height)
 /*
@@ -108,6 +113,7 @@ ulong gdev_mem_data_size(P3(const gx_device_memory *, int, int));
  * compute the maximum height.
  */
 int gdev_mem_max_height(P3(const gx_device_memory *, int, ulong));
+
 /*
  * Compute the raster (data bytes per line) similarly.
  */
@@ -127,24 +133,26 @@ const gx_device_memory *gdev_mem_word_device_for_bits(P1(int));
 /* page_device is 1 if the device should be a page device, */
 /* 0 if it should propagate this property from its target, or */
 /* -1 if it should not be a page device. */
-void gs_make_mem_mono_device(P3(gx_device_memory *mdev, gs_memory_t *mem,
-				gx_device *target));
-void gs_make_mem_device(P5(gx_device_memory *mdev,
-			   const gx_device_memory *mdproto,
-			   gs_memory_t *mem, int page_device,
-			   gx_device *target));
-void gs_make_mem_abuf_device(P6(gx_device_memory *adev, gs_memory_t *mem,
-				gx_device *target,
-				const gs_log2_scale_point *pscale,
+void gs_make_mem_mono_device(P3(gx_device_memory * mdev, gs_memory_t * mem,
+				gx_device * target));
+void gs_make_mem_device(P5(gx_device_memory * mdev,
+			   const gx_device_memory * mdproto,
+			   gs_memory_t * mem, int page_device,
+			   gx_device * target));
+void gs_make_mem_abuf_device(P6(gx_device_memory * adev, gs_memory_t * mem,
+				gx_device * target,
+				const gs_log2_scale_point * pscale,
 				int alpha_bits, int mapped_x));
-void gs_make_mem_alpha_device(P4(gx_device_memory *adev, gs_memory_t *mem,
-				 gx_device *target, int alpha_bits));
+void gs_make_mem_alpha_device(P4(gx_device_memory * adev, gs_memory_t * mem,
+				 gx_device * target, int alpha_bits));
 
 /* Define whether a monobit memory device is inverted (black=1). */
-void gdev_mem_mono_set_inverted(P2(gx_device_memory *mdev, bool black_is_1));
+void gdev_mem_mono_set_inverted(P2(gx_device_memory * mdev, bool black_is_1));
 
 /* Test whether a device is a memory device. */
 bool gs_device_is_memory(P1(const gx_device *));
 
 /* Test whether a device is an alpha-buffering device. */
 bool gs_device_is_abuf(P1(const gx_device *));
+
+#endif /* gxdevmem_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,13 +16,13 @@
    all copies.
  */
 
-/* gsbitops.c */
+/*Id: gsbitops.c  */
 /* Bitmap filling, copying, and transforming operations */
 #include "stdio_.h"
 #include "memory_.h"
 #include "gdebug.h"
 #include "gstypes.h"
-#include "gsbitops.h"
+#include "gxbitops.h"
 
 /*
  * Define a compile-time option to reverse nibble order in alpha maps.
@@ -79,109 +79,115 @@ bits_fill_rectangle(byte * dest, int dest_bit, uint draster,
 {
     uint bit;
     chunk right_mask;
+    int line_count = height;
+    chunk *ptr;
+    int last_bit;
 
-#define write_loop(stat)\
- { int line_count = height;\
-   chunk *ptr = (chunk *)dest;\
-   do { stat; inc_ptr(ptr, draster); }\
-   while ( --line_count );\
- }
-
-#define write_partial(msk)\
-  switch ( (byte)pattern )\
-  { case 0: write_loop(*ptr &= ~msk); break;\
-    case 0xff: write_loop(*ptr |= msk); break;\
-    default: write_loop(*ptr = (*ptr & ~msk) | (pattern & msk));\
-  }
+#define FOR_EACH_LINE(stat)\
+	do { stat } while ( inc_ptr(ptr, draster), --line_count )
 
     dest += (dest_bit >> 3) & -chunk_align_bytes;
+    ptr = (chunk *) dest;
     bit = dest_bit & chunk_align_bit_mask;
+    last_bit = width_bits + bit - (chunk_bits + 1);
 
-#if 1				/* new code */
-
-#define write_span(lmsk, stat0, statx, stat1, n, rmsk)\
-  switch ( (byte)pattern )\
-  { case 0: write_loop((*ptr &= ~lmsk, stat0, ptr[n] &= ~rmsk)); break;\
-    case 0xff: write_loop((*ptr |= lmsk, stat1, ptr[n] |= rmsk)); break;\
-    default: write_loop((*ptr = (*ptr & ~lmsk) | (pattern & lmsk), statx,\
-			 ptr[n] = (ptr[n] & ~rmsk) | (pattern & rmsk)));\
-  }
-
-    {
-	int last_bit = width_bits + bit - (chunk_bits + 1);
-
-	if (last_bit < 0) {	/* <=1 chunk */
-	    set_mono_thin_mask(right_mask, width_bits, bit);
-	    write_partial(right_mask);
-	} else {
-	    chunk mask;
-	    int last = last_bit >> chunk_log2_bits;
-
-	    set_mono_left_mask(mask, bit);
-	    set_mono_right_mask(right_mask, (last_bit & chunk_bit_mask) + 1);
-	    switch (last) {
-		case 0:	/* 2 chunks */
-		    {
-			write_span(mask, 0, 0, 0, 1, right_mask);
-		    }
-		    break;
-		case 1:	/* 3 chunks */
-		    {
-			write_span(mask, ptr[1] = 0, ptr[1] = pattern,
-				   ptr[1] = ~(chunk) 0, 2, right_mask);
-		    }
-		    break;
-		default:	/* >3 chunks */
-		    {
-			uint byte_count = (last_bit >> 3) & -chunk_bytes;
-
-			write_span(mask, memset(ptr + 1, 0, byte_count),
-				memset(ptr + 1, (byte) pattern, byte_count),
-				   memset(ptr + 1, 0xff, byte_count),
-				   last + 1, right_mask);
-		    }
-		    break;
-	    }
-	}
-    }
-
-#else /* old code */
-
-    if (bit + width_bits <= chunk_bits) {	/* Only one word. */
+    if (last_bit < 0) {		/* <=1 chunk */
 	set_mono_thin_mask(right_mask, width_bits, bit);
-    } else {
-	int byte_count;
-
-	if (bit) {
-	    chunk mask;
-
-	    set_mono_left_mask(mask, bit);
-	    write_partial(mask);
-	    inc_ptr(dest, chunk_bytes);
-	    width_bits += bit - chunk_bits;
+	switch ((byte) pattern) {
+	    case 0:
+		FOR_EACH_LINE(*ptr &= ~right_mask;
+		    );
+		break;
+	    case 0xff:
+		FOR_EACH_LINE(*ptr |= right_mask;
+		    );
+		break;
+	    default:
+		FOR_EACH_LINE(
+		       *ptr = (*ptr & ~right_mask) | (pattern & right_mask);
+		    );
 	}
-	set_mono_right_mask(right_mask, width_bits & chunk_bit_mask);
-	if (width_bits >= chunk_bits)
-	    switch ((byte_count = (width_bits >> 3) & -chunk_bytes)) {
-		case chunk_bytes:
-		    write_loop(*ptr = pattern);
-		    inc_ptr(dest, chunk_bytes);
-		    break;
-		case chunk_bytes * 2:
-		    write_loop(ptr[1] = *ptr = pattern);
-		    inc_ptr(dest, chunk_bytes * 2);
-		    break;
-		default:
-		    write_loop(memset(ptr, (byte) pattern, byte_count));
-		    inc_ptr(dest, byte_count);
-		    break;
-	    }
+    } else {
+	chunk mask;
+	int last = last_bit >> chunk_log2_bits;
+
+	set_mono_left_mask(mask, bit);
+	set_mono_right_mask(right_mask, (last_bit & chunk_bit_mask) + 1);
+	switch (last) {
+	    case 0:		/* 2 chunks */
+		switch ((byte) pattern) {
+		    case 0:
+			FOR_EACH_LINE(*ptr &= ~mask;
+				      ptr[1] &= ~right_mask;
+			    );
+			break;
+		    case 0xff:
+			FOR_EACH_LINE(*ptr |= mask;
+				      ptr[1] |= right_mask;
+			    );
+			break;
+		    default:
+			FOR_EACH_LINE(
+				   *ptr = (*ptr & ~mask) | (pattern & mask);
+					 ptr[1] = (ptr[1] & ~right_mask) | (pattern & right_mask);
+			    );
+		}
+		break;
+	    case 1:		/* 3 chunks */
+		switch ((byte) pattern) {
+		    case 0:
+			FOR_EACH_LINE(
+					 *ptr &= ~mask;
+					 ptr[1] = 0;
+					 ptr[2] &= ~right_mask;
+			    );
+			break;
+		    case 0xff:
+			FOR_EACH_LINE(
+					 *ptr |= mask;
+					 ptr[1] = ~(chunk) 0;
+					 ptr[2] |= right_mask;
+			    );
+			break;
+		    default:
+			FOR_EACH_LINE(
+				   *ptr = (*ptr & ~mask) | (pattern & mask);
+					 ptr[1] = pattern;
+					 ptr[2] = (ptr[2] & ~right_mask) | (pattern & right_mask);
+			    );
+		}
+		break;
+	    default:{		/* >3 chunks */
+		    uint byte_count = (last_bit >> 3) & -chunk_bytes;
+
+		    switch ((byte) pattern) {
+			case 0:
+			    FOR_EACH_LINE(
+					     *ptr &= ~mask;
+					     memset(ptr + 1, 0, byte_count);
+					     ptr[last + 1] &= ~right_mask;
+				);
+			    break;
+			case 0xff:
+			    FOR_EACH_LINE(
+					     *ptr |= mask;
+					  memset(ptr + 1, 0xff, byte_count);
+					     ptr[last + 1] |= right_mask;
+				);
+			    break;
+			default:
+			    FOR_EACH_LINE(
+				   *ptr = (*ptr & ~mask) | (pattern & mask);
+				memset(ptr + 1, (byte) pattern, byte_count);
+					     ptr[last + 1] =
+					     (ptr[last + 1] & ~right_mask) |
+					     (pattern & right_mask);
+				);
+		    }
+		}
+	}
     }
-    if (right_mask)
-	write_partial(right_mask);
-
-#endif
-
+#undef FOR_EACH_LINE
 }
 
 /* Replicate a bitmap horizontally in place. */
@@ -409,7 +415,7 @@ static const byte compress_4_4[17] =
 {0, 1, 2, 3, 4, 5, 6, 7, 8, 8, 9, 10, 11, 12, 13, 14, 15};
 
 /* The table of tables is indexed by log2(N) and then by M-1. */
-static const byte _ds *compress_tables[4][4] =
+static const byte *const compress_tables[4][4] =
 {
     {compress_1_1, compress_2_1, compress_3_1, compress_4_1},
     {0, compress_2_2, compress_3_2, compress_4_2},
@@ -436,7 +442,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
     int out_bits = 1 << log2_out_bits;
     int input_byte_out_bits;
     byte input_byte_out_mask;
-    const byte _ds *table =
+    const byte *table =
     compress_tables[log2_out_bits][log2_x + log2_y - 1];
     uint sskip = sraster << log2_y;
     uint dwidth = (width >> log2_x) << log2_out_bits;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sfxfd.c */
+/*Id: sfxfd.c  */
 /* File stream implementation using direct OS calls */
 /******
  ****** NOTE: THIS FILE PROBABLY WILL NOT COMPILE ON NON-UNIX
@@ -209,8 +209,6 @@ s_fileno_write_close(register stream * s)
     return s_fileno_read_close(s);
 }
 
-#define ss ((stream *)st)
-
 /* Define the switch cases for System V interrupts. */
 #define case_again(errn) case errn: goto again;
 #ifdef EINTR
@@ -239,7 +237,8 @@ s_fileno_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 {
     int nread, status;
 
-  again:nread = read(sfileno(ss), pw->ptr + 1, (uint) (pw->limit - pw->ptr));
+  again:nread = read(sfileno((stream *) st), pw->ptr + 1,
+		 (uint) (pw->limit - pw->ptr));
     if (nread > 0) {
 	pw->ptr += nread;
 	status = 0;
@@ -271,7 +270,7 @@ s_fileno_write_process(stream_state * st, stream_cursor_read * pr,
 	process_interrupts();
 	return 0;
     }
-    nwrite = write(sfileno(ss), pr->ptr + 1, count);
+    nwrite = write(sfileno((stream *) st), pr->ptr + 1, count);
     if (nwrite >= 0) {
 	pr->ptr += nwrite;
 	status = 0;
@@ -284,8 +283,6 @@ s_fileno_write_process(stream_state * st, stream_cursor_read * pr,
     process_interrupts();
     return status;
 }
-
-#undef ss
 
 /* Switch a file stream to reading or writing. */
 private int

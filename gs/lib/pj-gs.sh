@@ -1,4 +1,5 @@
 #!/bin/sh
+# Id: pj-gs.sh 
 
 # PaintJet driver script for Ghostscript,
 # created by Philippe-Andre Prindeville <philipp@res.enst.fr>

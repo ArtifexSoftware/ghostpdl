@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,13 @@
    all copies.
  */
 
-/* gsmisc.c */
+/*Id: gsmisc.c  */
 /* Miscellaneous utilities for Ghostscript library */
+#include "ctype_.h"
 #include "malloc_.h"
 #include "math_.h"
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gpcheck.h"		/* for gs_return_check_interrupt */
 #include "gserrors.h"
@@ -37,24 +39,69 @@ FILE *gs_stdin, *gs_stdout, *gs_stderr;
 char gs_debug[128];
 FILE *gs_debug_out;
 
-/* Define eprintf_program_name and lprintf_file_and_line as procedures */
-/* so one can set breakpoints on them. */
+/* Test whether a given debugging option is selected. */
+/* Upper-case letters automatically include their lower-case counterpart. */
+bool
+gs_debug_c(int c)
+{
+    return
+	(c >= 'a' && c <= 'z' ? gs_debug[c] | gs_debug[c ^ 32] : gs_debug[c]);
+}
+
+/* Define the formats for debugging printout. */
+const char *const dprintf_file_and_line_format = "%10s(%4d): ";
+const char *const dprintf_file_only_format = "%10s(unkn): ";
+
+/*
+ * Define the trace printout procedures.  We always include these, in case
+ * other modules were compiled with DEBUG set.
+ */
+private const char *
+dprintf_file_tail(const char *file)
+{
+    const char *tail = file + strlen(file);
+
+    while (tail > file &&
+	   (isalnum(tail[-1]) || tail[-1] == '.' || tail[-1] == '_')
+	)
+	--tail;
+    return tail;
+}
+void
+dprintf_file_and_line(FILE * f, const char *file, int line)
+{
+    if (gs_debug['/'])
+	fprintf(f, dprintf_file_and_line_format,
+		dprintf_file_tail(file), line);
+}
+void
+dprintf_file(FILE * f, const char *file)
+{
+    if (gs_debug['/'])
+	fprintf(f, dprintf_file_only_format, dprintf_file_tail(file));
+}
 void
 eprintf_program_name(FILE * f, const char *program_name)
 {
-    fprintf(f, "%s: ", program_name);
+    if (program_name)
+	fprintf(f, "%s: ", program_name);
 }
 void
 lprintf_file_and_line(FILE * f, const char *file, int line)
 {
     fprintf(f, "%s(%d): ", file, line);
 }
+void
+lprintf_file_only(FILE * f, const char *file)
+{
+    fprintf(f, "%s(?): ", file);
+}
 
 /* Log an error return.  We always include this, in case other */
 /* modules were compiled with DEBUG set. */
 #undef gs_log_error		/* in case DEBUG isn't set */
 int
-gs_log_error(int err, const char _ds * file, int line)
+gs_log_error(int err, const char *file, int line)
 {
     if (gs_log_errors) {
 	if (file == NULL)
@@ -642,8 +689,7 @@ gs_sqrt(double x, const char *file, int line)
  * radians, and that are implemented efficiently on machines with slow
  * (or no) floating point.
  */
-/****** maybe should be <= 0 ? ******/
-#if USE_FPU < 0
+#if USE_FPU < 0			/****** maybe should be <= 0 ? ***** */
 
 #define sin0 0.00000000000000000
 #define sin1 0.01745240643728351
@@ -825,6 +871,8 @@ gs_sincos_degrees(double ang, gs_sincos_t * psincos)
 {
     psincos->sin = gs_sin_degrees(ang);
     psincos->cos = gs_cos_degrees(ang);
+    psincos->orthogonal =
+	(is_fzero(psincos->sin) || is_fzero(psincos->cos));
 }
 
 #else /* we have floating point */
@@ -838,9 +886,11 @@ gs_sin_degrees(double ang)
     double quot = ang / 90;
 
     if (floor(quot) == quot) {
-	int quads = (int)fmod(quot, 4) & 3;	/* & 3 because might be < 0 */
-
-	return isincos[quads];
+	/*
+	 * We need 4.0, rather than 4, here because of non-ANSI compilers.
+	 * The & 3 is because quot might be negative.
+	 */
+	return isincos[(int)fmod(quot, 4.0) & 3];
     }
     return sin(ang * (M_PI / 180));
 }
@@ -851,9 +901,8 @@ gs_cos_degrees(double ang)
     double quot = ang / 90;
 
     if (floor(quot) == quot) {
-	int quads = (int)fmod(quot, 4) & 3;	/* & 3 because might be < 0 */
-
-	return isincos[quads + 1];
+	/* See above re the following line. */
+	return isincos[((int)fmod(quot, 4.0) & 3) + 1];
     }
     return cos(ang * (M_PI / 180));
 }
@@ -864,15 +913,18 @@ gs_sincos_degrees(double ang, gs_sincos_t * psincos)
     double quot = ang / 90;
 
     if (floor(quot) == quot) {
-	int quads = (int)fmod(quot, 4) & 3;	/* & 3 because might be < 0 */
+	/* See above re the following line. */
+	int quads = (int)fmod(quot, 4.0) & 3;
 
 	psincos->sin = isincos[quads];
 	psincos->cos = isincos[quads + 1];
+	psincos->orthogonal = true;
     } else {
 	double arad = ang * (M_PI / 180);
 
 	psincos->sin = sin(arad);
 	psincos->cos = cos(arad);
+	psincos->orthogonal = false;
     }
 }
 

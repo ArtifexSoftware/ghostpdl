@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,14 +16,13 @@
    all copies.
  */
 
-/* iinit.c */
+/*Id: iinit.c  */
 /* Initialize internally known objects for Ghostscript interpreter */
 #include "string_.h"
 #include "ghost.h"
 #include "gscdefs.h"
 #include "gsexit.h"
 #include "gsstruct.h"
-#define INCLUDE_ERROR_NAMES	/* see errors.h */
 #include "errors.h"
 #include "ialloc.h"
 #include "idict.h"
@@ -39,31 +38,36 @@
 #include "store.h"
 
 /* Implementation parameters. */
+/*
+ * Define the (initial) sizes of the various system dictionaries.  We want
+ * the sizes to be prime numbers large enough to cover all the operators,
+ * plus everything in the init files, even if all the optional features are
+ * selected.  Note that these sizes must be large enough to get us through
+ * initialization, since we start up in Level 1 mode where dictionaries
+ * don't expand automatically.
+ */
 /* The size of systemdict can be set in the makefile. */
-/* We want the sizes to be prime numbers large enough to cover */
-/* all the operators, plus everything in the init files, */
-/* even if all the optional features are selected. */
 #ifndef SYSTEMDICT_SIZE
-#  define SYSTEMDICT_SIZE 563
+#  define SYSTEMDICT_SIZE 601
 #endif
 #ifndef SYSTEMDICT_LEVEL2_SIZE
-#  define SYSTEMDICT_LEVEL2_SIZE 809
+#  define SYSTEMDICT_LEVEL2_SIZE 941
 #endif
 /* The size of level2dict, if applicable, can be set in the makefile. */
 #ifndef LEVEL2DICT_SIZE
-#  define LEVEL2DICT_SIZE 191
+#  define LEVEL2DICT_SIZE 233
+#endif
+/* Ditto the size of ll3dict. */
+#ifndef LL3DICT_SIZE
+#  define LL3DICT_SIZE 43
 #endif
 /* Ditto the size of filterdict. */
 #ifndef FILTERDICT_SIZE
 #  define FILTERDICT_SIZE 43
 #endif
-/* Ditto the size of internaldict. */
-#ifndef INTERNALDICT_SIZE
-#  define INTERNALDICT_SIZE 3
-#endif
 /* Define an arbitrary size for the operator procedure tables. */
 #ifndef OP_ARRAY_TABLE_SIZE
-#  define OP_ARRAY_TABLE_SIZE 150
+#  define OP_ARRAY_TABLE_SIZE 180
 #endif
 #ifndef OP_ARRAY_TABLE_GLOBAL_SIZE
 #  define OP_ARRAY_TABLE_GLOBAL_SIZE OP_ARRAY_TABLE_SIZE
@@ -74,20 +78,16 @@
 #define OP_ARRAY_TABLE_TOTAL_SIZE\
   (OP_ARRAY_TABLE_GLOBAL_SIZE + OP_ARRAY_TABLE_LOCAL_SIZE)
 
-/* The operator tables */
-extern op_def_ptr(*(op_defs_all[])) (P0());	/* in iconfig.c */
+/* Define the list of error names. */
+const char *const gs_error_names[] =
+{
+    ERROR_NAMES
+};
 
-/* Because of a bug in Sun's SC1.0 compiler, */
-/* we have to spell out the typedef for op_def_ptr here: */
+/* The operator tables */
 const op_def **op_def_table;
 uint op_def_count;
 op_array_table op_array_table_global, op_array_table_local;	/* definitions of `operator' procedures */
-uint op_array_count;
-
-/* GC roots for the same */
-private gs_gc_root_t
-        op_def_root, op_array_root_global, op_array_root_local, op_array_nx_root_global,
-        op_array_nx_root_local;
 
 /* Enter a name and value into a dictionary. */
 void
@@ -142,6 +142,9 @@ const struct {
 	"level2dict", LEVEL2DICT_SIZE, false
     },
     {
+	"ll3dict", LL3DICT_SIZE, false
+    },
+    {
 	"globaldict", 0, false
     },
     {
@@ -150,13 +153,10 @@ const struct {
     {
 	"filterdict", FILTERDICT_SIZE, false
     },
-    {
-	"internaldict", INTERNALDICT_SIZE, true
-    }
 #endif
 };
 /* systemdict and globaldict are magically inserted at the bottom */
-const char *initial_dstack[] =
+const char *const initial_dstack[] =
 {
 #ifdef INITIAL_DSTACK
     INITIAL_DSTACK
@@ -169,17 +169,17 @@ const char *initial_dstack[] =
 
 
 /* Detect whether we have any Level 2 operators. */
-/* We export this for gs_init1 in gsmain.c. */
+/* We export this for gs_init1 in imain.c. */
 /* This is very slow, but we only call it a couple of times. */
 bool
 gs_have_level2(void)
 {
-    op_def_ptr(**tptr) (P0());
+    const op_def *const *tptr;
 
-    for (tptr = op_defs_all; *tptr != 0; tptr++) {
+    for (tptr = op_defs_all; *tptr != 0; ++tptr) {
 	const op_def *def;
 
-	for (def = (*tptr) (); def->oname != 0; def++)
+	for (def = *tptr; def->oname != 0; ++def)
 	    if (op_def_is_begin_dict(def) &&
 		!strcmp(def->oname, "level2dict")
 		)
@@ -196,7 +196,7 @@ make_initial_dict(const char *iname, ref idicts[])
 
     /* systemdict was created specially. */
     if (!strcmp(iname, "systemdict"))
-	return &ref_systemdict;
+	return systemdict;
     for (i = 0; i < countof(initial_dictionaries); i++) {
 	const char *dname = initial_dictionaries[i].name;
 	const int dsize = initial_dictionaries[i].size;
@@ -205,17 +205,11 @@ make_initial_dict(const char *iname, ref idicts[])
 	    ref *dref = &idicts[i];
 
 	    if (r_has_type(dref, t_null)) {
-		int code;
+		gs_ref_memory_t *mem =
+		(initial_dictionaries[i].local ?
+		 iimemory_local : iimemory_global);
+		int code = dict_alloc(mem, dsize, dref);
 
-		/* Perhaps dict_create should take */
-		/* the allocator as an argument.... */
-		uint space = ialloc_space(idmemory);
-
-		ialloc_set_space(idmemory,
-				 (initial_dictionaries[i].local ?
-				  avm_local : avm_global));
-		code = dict_create(dsize, dref);
-		ialloc_set_space(idmemory, space);
 		if (code < 0)
 		    return 0;	/* disaster */
 	    }
@@ -235,11 +229,18 @@ make_initial_dict(const char *iname, ref idicts[])
 void
 obj_init(void)
 {
-    uint space = ialloc_space(idmemory);
     bool level2 = gs_have_level2();
 
     /* Initialize the language level. */
     make_int(&ref_language_level, 1);
+
+    /*
+     * Create systemdict.  The context machinery requires that
+     * we do this before initializing the interpreter.
+     */
+    dict_alloc(iimemory_global,
+	       (level2 ? SYSTEMDICT_LEVEL2_SIZE : SYSTEMDICT_SIZE),
+	       systemdict);
 
     /* Initialize the interpreter. */
     gs_interp_init();
@@ -248,34 +249,30 @@ obj_init(void)
 #define icount countof(initial_dictionaries)
 	ref idicts[icount];
 	int i;
-
-	op_def_ptr(**tptr) (P0());
+	const op_def *const *tptr;
 
 	min_dstack_size = MIN_DSTACK_SIZE;
 
 	refset_null(idicts, icount);
 
-	/* Create systemdict. */
-	ialloc_set_space(idmemory, avm_global);
+	/* Put systemdict on the dictionary stack. */
 	if (level2) {
 	    dsp += 2;
-	    dict_create(SYSTEMDICT_LEVEL2_SIZE, dsp);
-	    /* For the moment, let globaldict be an alias */
-	    /* for systemdict. */
-	    dsp[-1] = *dsp;
+	    /*
+	     * For the moment, let globaldict be an alias for systemdict.
+	     */
+	    dsp[-1] = *systemdict;
 	    min_dstack_size++;
 	} else {
 	    ++dsp;
-	    dict_create(SYSTEMDICT_SIZE, dsp);
 	}
-	ref_systemdict = *dsp;
-	ialloc_set_space(idmemory, space);
+	*dsp = *systemdict;
 
 	/* Create dictionaries which are to be homes for operators. */
 	for (tptr = op_defs_all; *tptr != 0; tptr++) {
 	    const op_def *def;
 
-	    for (def = (*tptr) (); def->oname != 0; def++)
+	    for (def = *tptr; def->oname != 0; def++)
 		if (op_def_is_begin_dict(def))
 		    make_initial_dict(def->oname, idicts);
 	}
@@ -285,11 +282,13 @@ obj_init(void)
 	    const char *dname = initial_dstack[i];
 
 	    ++dsp;
+	    if (!strcmp(dname, "userdict"))
+		dstack_userdict_index = dsp - dsbot;
 	    ref_assign(dsp, make_initial_dict(dname, idicts));
 	}
 
 	/* Enter names of referenced initial dictionaries into systemdict. */
-	initial_enter_name("systemdict", &ref_systemdict);
+	initial_enter_name("systemdict", systemdict);
 	for (i = 0; i < icount; i++) {
 	    ref *idict = &idicts[i];
 
@@ -344,13 +343,14 @@ obj_init(void)
 void
 zop_init(void)
 {
-    op_def_ptr(**tptr) (P0());
+    const op_def *const *tptr;
+
     /* Because of a bug in Sun's SC1.0 compiler, */
     /* we have to spell out the typedef for op_def_ptr here: */
     const op_def *def;
 
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
-	for (def = (*tptr) (); def->oname != 0; def++)
+	for (def = *tptr; def->oname != 0; def++)
 	    DO_NOTHING;
 	if (def->proc != 0)
 	    ((void (*)(P0()))(def->proc)) ();
@@ -406,17 +406,14 @@ void
 op_init(void)
 {
     int count = 1;
-
-    op_def_ptr(**tptr) (P0());
-    /* Because of a bug in Sun's SC1.0 compiler, */
-    /* we have to spell out the typedef for op_def_ptr here: */
+    const op_def *const *tptr;
     const op_def *def;
-    const char _ds *nstr;
+    const char *nstr;
 
     /* Do a first pass just to count the operators. */
 
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
-	for (def = (*tptr) (); def->oname != 0; def++)
+	for (def = *tptr; def->oname != 0; def++)
 	    if (!op_def_is_begin_dict(def))
 		count++;
     }
@@ -427,8 +424,9 @@ op_init(void)
     /* Because of a bug in Sun's SC1.0 compiler, */
     /* we have to spell out the typedef for op_def_ptr here: */
     op_def_table =
-	(const op_def **)ialloc_byte_array(count, sizeof(op_def_ptr),
+	(const op_def **)ialloc_byte_array(count, sizeof(const op_def *),
 					   "op_init(op_def_table)");
+
     op_def_count = count;
     for (count = 0; count <= gs_interp_num_special_ops; count++)
 	op_def_table[count] = 0;
@@ -436,7 +434,7 @@ op_init(void)
     for (tptr = op_defs_all; *tptr != 0; tptr++) {
 	ref *pdict = systemdict;
 
-	for (def = (*tptr) (); (nstr = def->oname) != 0; def++)
+	for (def = *tptr; (nstr = def->oname) != 0; def++)
 	    if (op_def_is_begin_dict(def)) {
 		ref nref;
 		int code = name_ref((const byte *)nstr, strlen(nstr),
@@ -474,8 +472,8 @@ op_init(void)
     for (count = 1; count <= gs_interp_num_special_ops; count++)
 	if (op_def_table[count] == 0)
 	    gs_abort();
-    gs_register_struct_root(imemory, &op_def_root,
-			    (void **)&op_def_table, "op_def_table");
+    gs_register_struct_root(imemory, NULL, (void **)&op_def_table,
+			    "op_def_table");
 
     /* Allocate the tables for `operator' procedures. */
     /* Make one of them local so we can have local operators. */
@@ -484,10 +482,10 @@ op_init(void)
 			     avm_global, &op_array_table_global) < 0)
 	gs_abort();
     op_array_table_global.base_index = op_def_count;
-    gs_register_ref_root(imemory, &op_array_root_global,
+    gs_register_ref_root(imemory, NULL,
 			 (void **)&op_array_table_global.root_p,
 			 "op_array_table(global)");
-    gs_register_struct_root(imemory, &op_array_nx_root_global,
+    gs_register_struct_root(imemory, NULL,
 			    (void **)&op_array_table_global.nx_table,
 			    "op_array nx_table(global)");
 
@@ -497,10 +495,10 @@ op_init(void)
     op_array_table_local.base_index =
 	op_array_table_global.base_index +
 	r_size(&op_array_table_global.table);
-    gs_register_ref_root(imemory, &op_array_root_local,
+    gs_register_ref_root(imemory, NULL,
 			 (void **)&op_array_table_local.root_p,
 			 "op_array_table(local)");
-    gs_register_struct_root(imemory, &op_array_nx_root_local,
+    gs_register_struct_root(imemory, NULL,
 			    (void **)&op_array_table_local.nx_table,
 			    "op_array nx_table(local)");
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* genarch.c */
+/*Id: genarch.c  */
 /* Generate a header file (arch.h) with parameters */
 /* reflecting the machine architecture and compiler characteristics. */
 
@@ -26,13 +26,19 @@
 /* We should write the result on stdout, but the original Turbo C 'make' */
 /* can't handle output redirection (sigh). */
 
+private void
+section(FILE * f, char *str)
+{
+    fprintf(f, "\n\t /* ---------------- %s ---------------- */\n\n", str);
+}
+
+int
 main(int argc, char *argv[])
 {
     char *fname = argv[1];
     long one = 1;
-
-#define ffs_strlen 16
-    char *ffs = "ffffffffffffffff";
+    char *ffs = "ffffffffffffffff";	/* 8 bytes */
+    int ffs_strlen = strlen(ffs);
     struct {
 	char c;
 	short s;
@@ -82,42 +88,40 @@ main(int argc, char *argv[])
 	return exit_FAILED;
     }
     fprintf(f, "/* Parameters derived from machine and compiler architecture */\n");
-#define S(str) fprintf(f, "\n\t%s\n\n", str)
 
-    S("/* ---------------- Scalar alignments ---------------- */");
+    section(f, "Scalar alignments");
 
-#define offset(s, e) (int)((char *)&s.e - (char *)&s)
-    fprintf(f, "#define arch_align_short_mod %d\n", offset(ss, s));
-    fprintf(f, "#define arch_align_int_mod %d\n", offset(si, i));
-    fprintf(f, "#define arch_align_long_mod %d\n", offset(sl, l));
-    fprintf(f, "#define arch_align_ptr_mod %d\n", offset(sp, p));
-    fprintf(f, "#define arch_align_float_mod %d\n", offset(sf, f));
-    fprintf(f, "#define arch_align_double_mod %d\n", offset(sd, d));
-#undef offset
+#define OFFSET_IN(s, e) (int)((char *)&s.e - (char *)&s)
+    fprintf(f, "#define arch_align_short_mod %d\n", OFFSET_IN(ss, s));
+    fprintf(f, "#define arch_align_int_mod %d\n", OFFSET_IN(si, i));
+    fprintf(f, "#define arch_align_long_mod %d\n", OFFSET_IN(sl, l));
+    fprintf(f, "#define arch_align_ptr_mod %d\n", OFFSET_IN(sp, p));
+    fprintf(f, "#define arch_align_float_mod %d\n", OFFSET_IN(sf, f));
+    fprintf(f, "#define arch_align_double_mod %d\n", OFFSET_IN(sd, d));
+#undef OFFSET_IN
 
-    S("/* ---------------- Scalar sizes ---------------- */");
+    section(f, "Scalar sizes");
 
     fprintf(f, "#define arch_log2_sizeof_short %d\n", log2s[size_of(short)]);
     fprintf(f, "#define arch_log2_sizeof_int %d\n", log2s[size_of(int)]);
     fprintf(f, "#define arch_log2_sizeof_long %d\n", log2s[size_of(long)]);
-    fprintf(f, "#define arch_sizeof_ds_ptr %d\n", size_of(char _ds *));
     fprintf(f, "#define arch_sizeof_ptr %d\n", size_of(char *));
     fprintf(f, "#define arch_sizeof_float %d\n", size_of(float));
     fprintf(f, "#define arch_sizeof_double %d\n", size_of(double));
 
-    S("/* ---------------- Unsigned max values ---------------- */");
+    section(f, "Unsigned max values");
 
-#define pmax(str, typ, tstr, l)\
+#define PRINT_MAX(str, typ, tstr, l)\
   fprintf(f, "#define arch_max_%s ((%s)0x%s%s + (%s)0)\n",\
     str, tstr, ffs + ffs_strlen - size_of(typ) * 2, l, tstr)
-    pmax("uchar", unsigned char, "unsigned char", "");
-    pmax("ushort", unsigned short, "unsigned short", "");
-    pmax("uint", unsigned int, "unsigned int", "");
-    pmax("ulong", unsigned long, "unsigned long", "L");
+    PRINT_MAX("uchar", unsigned char, "unsigned char", "");
+    PRINT_MAX("ushort", unsigned short, "unsigned short", "");
+    PRINT_MAX("uint", unsigned int, "unsigned int", "");
+    PRINT_MAX("ulong", unsigned long, "unsigned long", "L");
 
-#undef pmax
+#undef PRINT_MAX
 
-    S("/* ---------------- Miscellaneous ---------------- */");
+    section(f, "Miscellaneous");
 
     fprintf(f, "#define arch_is_big_endian %d\n", 1 - *(char *)&one);
     pl0.l = 0;

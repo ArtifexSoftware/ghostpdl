@@ -1,4 +1,4 @@
-   Copyright (C) 1990, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: psfiles.txt 
 This file, psfiles.txt, describes the .ps files distributed with
 Ghostscript, other than fonts.
 
@@ -82,15 +83,8 @@ not included automatically in any configuration.
 PDF-specific system files
 -------------------------
 
-gs_pdf.ps - The ProcSet that provides runtime support for PDF files.
-pdf2ps copies this into its output.
-
 gs_l2img.ps - The ProcSet that emulates the PostScript Level 2 'image'
-operator on Level 1 systems.  pdf2ps copies this into its output if the
-PSLevel1 option was selected.
-
-pdf_2ps.ps - The additions to the PDF interpreter that allow it to convert
-PDF to PostScript.
+operator on Level 1 systems.
 
 pdf_base.ps - Utilities for interpreting PDF objects and streams.
 
@@ -99,6 +93,10 @@ pdf_draw.ps - The interpreter for drawing-related PDF operations.
 pdf_font.ps - Code for handling fonts in PDF files.
 
 pdf_main.ps - Document- and page-level control for interpreting PDF files.
+
+pdf_ops.ps - Definitions for most of the PDF operators.
+
+pdf_sec.ps - Stubs for the PDF security (encryption) code.
 
 Art
 ---
@@ -159,6 +157,9 @@ them rendered in landscape mode.
 level1.ps - a file that turns off any Level 2 features.
 
 packfile.ps - a utility for compressing fonts into a single file.
+
+* pf2afm.ps - a utility for producing AFM files from PFA/PFB and optionally
+PFM files.
 
 prfont.ps - a utility to print a font catalog.
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zfilter2.c */
+/*Id: zfilter2.c  */
 /* Additional filter creation */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "ialloc.h"
@@ -52,10 +51,10 @@ zCFE(os_ptr op)
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
-    code = zcf_setup(op, (stream_CF_state *) & cfs);
+    code = zcf_setup(op, (stream_CF_state *)&cfs);
     if (code < 0)
 	return code;
-    return filter_write(op, 1, &s_CFE_template, (stream_state *) & cfs, 0);
+    return filter_write(op, 0, &s_CFE_template, (stream_state *)&cfs, 0);
 }
 
 /* ------ Common setup for possibly pixel-oriented encoding filters ------ */
@@ -97,7 +96,8 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
 	predictor = 1;
     if (predictor == 1)
 	return filter_write(op, npop, template, st, 0);
-    {				/* We need to cascade filters. */
+    {
+	/* We need to cascade filters. */
 	ref rtarget, rdict, rfd;
 	int code;
 
@@ -114,7 +114,8 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
 	    (predictor == 2 ?
 	 filter_read(op, 0, &s_PDiffE_template, (stream_state *) & pds, 0) :
 	  filter_read(op, 0, &s_PNGPE_template, (stream_state *) & pps, 0));
-	if (code < 0) {		/* Restore the operands.  Don't bother trying to clean up */
+	if (code < 0) {
+	    /* Restore the operands.  Don't bother trying to clean up */
 	    /* the first stream. */
 	    osp = ++op;
 	    ref_assign(op - 1, &rtarget);
@@ -130,9 +131,11 @@ filter_write_predictor(os_ptr op, int npop, const stream_template * template,
 
 /* <target> LZWEncode/filter <file> */
 /* <target> <dict> LZWEncode/filter <file> */
-/* Note: the default implementation of this filter, in slzwce.c, */
-/* does not use any algorithms that could reasonably be claimed */
-/* to be subject to Unisys' Welch Patent. */
+/*
+ * Note: the default implementation of this filter, in slzwce.c,
+ * does not use any algorithms that could reasonably be claimed
+ * to be subject to Unisys' Welch Patent.
+ */
 private int
 zLZWE(os_ptr op)
 {
@@ -141,7 +144,7 @@ zLZWE(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_write_predictor(op, code, &s_LZWE_template,
+    return filter_write_predictor(op, 0, &s_LZWE_template,
 				  (stream_state *) & lzs);
 }
 

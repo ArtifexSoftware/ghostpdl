@@ -1,22 +1,22 @@
 /* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/*Id: gsiparam.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gsiparam.h  */
 /* Image parameter definition */
 
 #ifndef gsiparam_INCLUDED
@@ -44,6 +44,7 @@
 #ifndef gx_image_type_DEFINED
 #  define gx_image_type_DEFINED
 typedef struct gx_image_type_s gx_image_type_t;
+
 #endif
 #define gs_image_common\
 	const gx_image_type_t *type;\
@@ -52,8 +53,9 @@ typedef struct gx_image_type_s gx_image_type_t;
 		 */\
 	gs_matrix ImageMatrix
 typedef struct gs_image_common_s {
-  gs_image_common;
+    gs_image_common;
 } gs_image_common_t;
+
 #define public_st_gs_image_common() /* in gxiinit.c */\
   gs_public_st_simple(st_gs_image_common, gs_image_common_t,\
     "gs_image_common_t")
@@ -72,9 +74,9 @@ typedef struct gs_image_common_s {
  * closely the discussion on pp. 219-223 of the PostScript Language
  * Reference Manual, Second Edition, with the following exceptions:
  *
- *	DataSource and MultipleDataSources are not members of this
- *	structure, since the structure doesn't take a position on
- *	how the data are actually supplied.
+ *      DataSource and MultipleDataSources are not members of this
+ *      structure, since the structure doesn't take a position on
+ *      how the data are actually supplied.
  */
 #define gs_data_image_common\
 	gs_image_common;\
@@ -106,8 +108,9 @@ typedef struct gs_image_common_s {
 		 */\
 	bool Interpolate
 typedef struct gs_data_image_s {
-  gs_data_image_common;
+    gs_data_image_common;
 } gs_data_image_t;
+
 #define public_st_gs_data_image() /* in gxiinit.c */\
   gs_public_st_simple(st_gs_data_image, gs_data_image_t,\
     "gs_data_image_t")
@@ -118,29 +121,30 @@ typedef struct gs_data_image_s {
  * (as opposed to mask) data.  The following are added to the PostScript
  * image parameters:
  *
- *	format is not PostScript or PDF standard: it is normally derived
- *	from MultipleDataSources.
+ *      format is not PostScript or PDF standard: it is normally derived
+ *      from MultipleDataSources.
  *
- *	ColorSpace is added from PDF.
+ *      ColorSpace is added from PDF.
  *
- *	CombineWithColor is not PostScript or PDF standard: see the
- *	RasterOp section of language.doc for a discussion of
- *	CombineWithColor.
+ *      CombineWithColor is not PostScript or PDF standard: see the
+ *      RasterOp section of language.doc for a discussion of
+ *      CombineWithColor.
  */
 typedef enum {
-		/* Single plane, chunky pixels. */
-	gs_image_format_chunky = 0,
-		/* num_components planes, chunky components. */
-	gs_image_format_component_planar = 1,
-		/* BitsPerComponent * num_components planes, 1 bit per plane */
-		/****** NOT SUPPORTED YET, DO NOT USE ******/
-	gs_image_format_bit_planar = 2
+    /* Single plane, chunky pixels. */
+    gs_image_format_chunky = 0,
+    /* num_components planes, chunky components. */
+    gs_image_format_component_planar = 1,
+    /* BitsPerComponent * num_components planes, 1 bit per plane */
+/****** NOT SUPPORTED YET, DO NOT USE ******/
+    gs_image_format_bit_planar = 2
 } gs_image_format_t;
 
 /* Define an opaque type for a color space. */
 #ifndef gs_color_space_DEFINED
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
+
 #endif
 
 #define gs_pixel_image_common\
@@ -160,8 +164,9 @@ typedef struct gs_color_space_s gs_color_space;
 		 */\
 	bool CombineWithColor
 typedef struct gs_pixel_image_s {
-  gs_pixel_image_common;
+    gs_pixel_image_common;
 } gs_pixel_image_t;
+
 #define public_st_gs_pixel_image() /* in gxiinit.c */\
   gs_public_st_ptrs1(st_gs_pixel_image, gs_pixel_image_t,\
     "gs_data_image_t", pixel_image_enum_ptrs, pixel_image_reloc_ptrs,\
@@ -172,33 +177,34 @@ typedef struct gs_pixel_image_s {
  * adjust and Alpha are not PostScript or PDF standard.
  */
 typedef enum {
-		/* No alpha.  This must be 0 for true-false tests. */
-	gs_image_alpha_none = 0,
-		/* Alpha precedes color components. */
-	gs_image_alpha_first,
-		/* Alpha follows color components. */
-	gs_image_alpha_last
+    /* No alpha.  This must be 0 for true-false tests. */
+    gs_image_alpha_none = 0,
+    /* Alpha precedes color components. */
+    gs_image_alpha_first,
+    /* Alpha follows color components. */
+    gs_image_alpha_last
 } gs_image_alpha_t;
 
 typedef struct gs_image1_s {
-	gs_pixel_image_common;
-		/*
-		 * Define whether this is a mask or a solid image.
-		 * For masks, Alpha must be 'none'.
-		 */
-	bool ImageMask;
-		/*
-		 * Define whether to expand each destination pixel, to make
-		 * masked characters look better.  Only used for masks.
-		 */
-	bool adjust;
-		/*
-		 * Define whether there is an additional component providing
-		 * alpha information for each pixel, in addition to the
-		 * components implied by the color space.
-		 */
-	gs_image_alpha_t Alpha;
+    gs_pixel_image_common;
+    /*
+     * Define whether this is a mask or a solid image.
+     * For masks, Alpha must be 'none'.
+     */
+    bool ImageMask;
+    /*
+     * Define whether to expand each destination pixel, to make
+     * masked characters look better.  Only used for masks.
+     */
+    bool adjust;
+    /*
+     * Define whether there is an additional component providing
+     * alpha information for each pixel, in addition to the
+     * components implied by the color space.
+     */
+    gs_image_alpha_t Alpha;
 } gs_image1_t;
+
 /*
  * In standard PostScript Level 1 and 2, this is the only defined ImageType.
  */
@@ -215,33 +221,39 @@ void
   /*
    * Sets ImageMatrix to the identity matrix.
    */
-  gs_image_common_t_init(P1(gs_image_common_t *pic)),
-  /*
-   * Also sets Width = Height = 0, BitsPerComponent = 1,
-   * format = chunky, Interpolate = false.
-   * If num_components = N > 0, sets the first N elements of Decode to (0, 1);
-   * if num_components = N < 0, sets the first -N elements of Decode to (1, 0);
-   * if num_components = 0, doesn't set Decode.
-   */
-  gs_data_image_t_init(P2(gs_data_image_t *pim, int num_components)),
+     gs_image_common_t_init(P1(gs_image_common_t * pic)),	/*
+								 * Also sets Width = Height = 0, BitsPerComponent = 1,
+								 * format = chunky, Interpolate = false.
+								 * If num_components = N > 0, sets the first N elements of Decode to (0, 1);
+								 * if num_components = N < 0, sets the first -N elements of Decode to (1, 0);
+								 * if num_components = 0, doesn't set Decode.
+								 */
+     gs_data_image_t_init(P2(gs_data_image_t * pim, int num_components)),
   /*
    * Also sets CombineWithColor = false, ColorSpace = color_space, Alpha =
    * none.  num_components is obtained from ColorSpace; if ColorSpace =
    * NULL or ColorSpace is a Pattern space, num_components is taken as 0
    * (Decode is not initialized).
    */
-  gs_pixel_image_t_init(P2(gs_pixel_image_t *pim,
-			   const gs_color_space *color_space));
+    gs_pixel_image_t_init(P2(gs_pixel_image_t * pim,
+			     const gs_color_space * color_space));
+
 /*
  * Initialize an ImageType 1 image (or imagemask).  Also sets ImageMask,
  * adjust, and Alpha, and the image type.  For masks, write_1s = false
  * paints 0s, write_1s = true paints 1s.  This is consistent with the
  * "polarity" operand of the PostScript imagemask operator.
  */
-void
-  gs_image_t_init_gray(P1(gs_image_t *pim)),
-  gs_image_t_init_color(P1(gs_image_t *pim)),/* general color, initially RGB */
-  gs_image_t_init_mask(P2(gs_image_t *pim, bool write_1s));
+void gs_image_t_init(P2(gs_image_t * pim, const gs_color_space * pcs));
+void gs_image_t_init_mask(P2(gs_image_t * pim, bool write_1s));
+
+/* init_gray and init_color require a (const) imager state. */
+#define gs_image_t_init_gray(pim, pis)\
+  gs_image_t_init(pim, gs_cspace_DeviceGray(pis))
+#define gs_image_t_init_rgb(pim, pis)\
+  gs_image_t_init(pim, gs_cspace_DeviceRGB(pis))
+#define gs_image_t_init_cmyk(pim, pis)\
+  gs_image_t_init(pim, gs_cspace_DeviceCMYK(pis))
 
 /****** REMAINDER OF FILE UNDER CONSTRUCTION. PROCEED AT YOUR OWN RISK. ******/
 
@@ -250,22 +262,22 @@ void
 /* ---------------- Services ---------------- */
 
 /*
-In order to make the driver's life easier, we provide the following callback
-procedure:
-*/
+   In order to make the driver's life easier, we provide the following callback
+   procedure:
+ */
 
-int gx_map_image_color(P5(gx_device *dev,
-			  const gs_image_t *pim,
-			  const gx_color_rendering_info *pcri,
+int gx_map_image_color(P5(gx_device * dev,
+			  const gs_image_t * pim,
+			  const gx_color_rendering_info * pcri,
 			  const uint components[4],
-			  gx_drawing_color *pdcolor));
+			  gx_drawing_color * pdcolor));
 
 /*
-Map a source color to a drawing color.  The components are simply the pixel
-component values from the input data, i.e., 1 to 4 B-bit numbers from the
-source data.  Return 0 if the operation succeeded, or a negative error code.
-*/
+   Map a source color to a drawing color.  The components are simply the pixel
+   component values from the input data, i.e., 1 to 4 B-bit numbers from the
+   source data.  Return 0 if the operation succeeded, or a negative error code.
+ */
 
-#endif	/****************************************************************/
+#endif /*************************************************************** */
 
-#endif					/* gsiparam_INCLUDED */
+#endif /* gsiparam_INCLUDED */

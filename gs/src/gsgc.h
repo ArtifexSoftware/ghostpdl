@@ -1,22 +1,22 @@
 /* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gsgc.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gsgc.h  */
 /* Library-level interface to garbage collector */
 
 /*
@@ -38,17 +38,18 @@
  * refs (PostScript objects).
  */
 typedef enum {
-	i_vm_foreign = 0,	/* must be 0 */
-	i_vm_system,
-	i_vm_global,
-	i_vm_local,
-	i_vm_max = i_vm_local
+    i_vm_foreign = 0,		/* must be 0 */
+    i_vm_system,
+    i_vm_global,
+    i_vm_local,
+    i_vm_max = i_vm_local
 } i_vm_space;
 
 /* Define an array of allocators indexed by space. */
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
+
 #endif
 /*
  * r_space_bits is only defined in PostScript interpreters, but if it is
@@ -60,14 +61,15 @@ Error_r_space_bits_is_not_2;
 #  endif
 #endif
 typedef union vm_spaces_s {
-	gs_ref_memory_t *indexed[4 /*1 << r_space_bits*/];
-	struct _ssn {
-	  gs_ref_memory_t *foreign;
-	  gs_ref_memory_t *system;
-	  gs_ref_memory_t *global;
-	  gs_ref_memory_t *local;
-	} named;
+    gs_ref_memory_t *indexed[4 /*1 << r_space_bits */ ];
+    struct _ssn {
+	gs_ref_memory_t *foreign;
+	gs_ref_memory_t *system;
+	gs_ref_memory_t *global;
+	gs_ref_memory_t *local;
+    } named;
 } vm_spaces;
+
 /* By convention, the vm_spaces member of structures, and local variables */
 /* of type vm_spaces, are named spaces. */
 #define space_foreign spaces.named.foreign
@@ -78,6 +80,6 @@ typedef union vm_spaces_s {
 /*
  * Define the top-level entry to the garbage collector.
  */
-void gs_reclaim(P2(vm_spaces *pspaces, bool global));
+void gs_reclaim(P2(vm_spaces * pspaces, bool global));
 
-#endif					/* gsgc_INCLUDED */
+#endif /* gsgc_INCLUDED */

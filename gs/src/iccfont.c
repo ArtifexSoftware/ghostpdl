@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* iccfont.c */
+/*Id: iccfont.c  */
 /* Initialization support for compiled fonts */
 #include "string_.h"
 #include "ghost.h"
@@ -63,8 +63,8 @@ typedef struct {
 /* Get the next string from a string array. */
 /* Return 1 if it was a string, 0 if it was something else, */
 /* or an error code. */
-private int near
-cfont_next_string(str_enum _ss * pse)
+private int
+cfont_next_string(str_enum * pse)
 {
     const byte *str = pse->str_array;
     uint len = (str[0] << 8) + str[1];
@@ -91,8 +91,8 @@ cfont_next_string(str_enum _ss * pse)
 
 /* Put the next entry into a dictionary. */
 /* We know that more_keys(kp) is true. */
-private int near
-cfont_put_next(ref * pdict, key_enum _ss * kep, const ref * pvalue)
+private int
+cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 {
     ref kname;
     int code;
@@ -326,11 +326,8 @@ zgetccfont(register os_ptr op)
 
 /* Operator table initialization */
 
-BEGIN_OP_DEFS(ccfonts_op_defs)
+const op_def ccfonts_op_defs[] =
 {
-    {
-	"0.getccfont", zgetccfont
-    }
-    ,
-	END_OP_DEFS(0)
-}
+    {"0.getccfont", zgetccfont},
+    op_def_end(0)
+};

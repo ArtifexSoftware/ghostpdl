@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_vms.c */
+/*Id: gp_vms.c  */
 /* VAX/VMS specific routines for Ghostscript */
 #include "string_.h"
 #include "gx.h"
@@ -53,8 +53,11 @@ typedef struct dsc$descriptor_s descrip;
 
 struct file_enum_s {
     uint context, length;
-    descrip *pattern;
+    descrip pattern;
+    gs_memory_t *memory;
 };
+gs_private_st_ptrs1(st_file_enum, struct file_enum_s, "file_enum",
+	  file_enum_enum_ptrs, file_enum_reloc_ptrs, pattern.dsc$a_pointer);
 
 extern uint
        LIB$FIND_FILE(descrip *, descrip *, uint *, descrip *, descrip *,
@@ -158,7 +161,7 @@ gp_getenv_display(void)
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char *fname, int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     if (strlen(fname) == 0) {
 	strcpy(fname, gp_scratch_file_name_prefix);
@@ -211,7 +214,8 @@ const char gp_fmode_wb[] = "w";
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+		     const char *mode)
 {
     strcpy(fname, prefix);
     strcat(fname, "XXXXXX");
@@ -234,6 +238,13 @@ gp_fopen(const char *fname, const char *mode)
 	    return fopen(fname, mode, "rfm=stmlf", "ctx=stm");
 #endif
     return fopen(fname, mode);
+}
+
+/* Set a file into binary or text mode. */
+int
+gp_setmode_binary(FILE * pfile, bool binary)
+{
+    return 0;			/* Noop under VMS */
 }
 
 /*  Answer whether a file name contains a directory/device specification, i.e.,
@@ -317,12 +328,10 @@ gp_free_enumeration(file_enum * pfen)
 {
     if (pfen) {
 	LIB$FIND_FILE_END(&pfen->context);
-	gs_free(pfen->pattern->dsc$a_pointer, pfen->length, 1,
-		"GP_ENUM(pattern)");
-	gs_free((char *)pfen->pattern, sizeof(descrip), 1,
-		"GP_ENUM(descriptor)");
-	gs_free((char *)pfen, sizeof(file_enum), 1,
-		"GP_ENUM(file_enum)");
+	gs_free_object(pfen->memory, pfen->pattern.dsc$a_pointer,
+		       "GP_ENUM(pattern)");
+	gs_free_object(pfen->memory, pfen,
+		       "GP_ENUM(file_enum)");
     }
 }
 
@@ -336,12 +345,14 @@ gp_enumerate_files_init(const char *pat, uint patlen,
     uint i, len;
     char *c, *newpat;
 
-    pfen = (file_enum *) gs_malloc(sizeof(file_enum), 1,
-				   "GP_ENUM(file_enum)");
-    pfen->pattern = (descrip *) gs_malloc(sizeof(descrip), 1,
-					  "GP_ENUM(descriptor)");
-    newpat = (char *)gs_malloc(patlen, 1, "GP_ENUM(pattern)");
-
+    pfen = gs_alloc_struct(mem, file_enum, &st_file_enum,
+			   "GP_ENUM(file_enum)");
+    newpat = (char *)gs_alloc_bytes(mem, patlen, "GP_ENUM(pattern)");
+    if (pfen == 0 || newpat == 0) {
+	gs_free_object(mem, newpat, "GP_ENUM(pattern)");
+	gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
+	return (file_enum *) 0;
+    }
     /*  Copy the pattern removing backslash quoting characters and
      *  transforming unquoted question marks, '?', to percent signs, '%'.
      *  (VAX/VMS uses the wildcard '%' to represent exactly one character
@@ -367,18 +378,17 @@ gp_enumerate_files_init(const char *pat, uint patlen,
 
     /* Pattern may not exceed 255 characters */
     if (len > 255) {
-	gs_free(newpat, patlen, 1, "GP_ENUM(pattern)");
-	gs_free((char *)pfen->pattern, sizeof(descrip), 1,
-		"GP_ENUM(descriptor)");
-	gs_free((char *)pfen, sizeof(file_enum), 1, "GP_ENUM(file_enum)");
+	gs_free_object(mem, newpat, "GP_ENUM(pattern)");
+	gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
 	return (file_enum *) 0;
     }
     pfen->context = 0;
     pfen->length = patlen;
-    pfen->pattern->dsc$w_length = len;
-    pfen->pattern->dsc$b_dtype = DSC$K_DTYPE_T;
-    pfen->pattern->dsc$b_class = DSC$K_CLASS_S;
-    pfen->pattern->dsc$a_pointer = newpat;
+    pfen->pattern.dsc$w_length = len;
+    pfen->pattern.dsc$b_dtype = DSC$K_DTYPE_T;
+    pfen->pattern.dsc$b_class = DSC$K_CLASS_S;
+    pfen->pattern.dsc$a_pointer = newpat;
+    pfen->memory = mem;
 
     return pfen;
 }
@@ -400,7 +410,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     result.dsc$a_pointer = filnam;
 
     /* Find the next file which matches the pattern */
-    i = LIB$FIND_FILE(pfen->pattern, &result, &pfen->context,
+    i = LIB$FIND_FILE(&pfen->pattern, &result, &pfen->context,
 		      (descrip *) 0, (descrip *) 0, (uint *) 0, (uint *) 0);
 
     /* Check the return status */

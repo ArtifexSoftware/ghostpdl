@@ -1,22 +1,22 @@
-/* Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gxclist.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxclist.h  */
 /* Command list definitions for Ghostscript. */
 /* Requires gxdevice.h and gxdevmem.h */
 
@@ -24,10 +24,10 @@
 #  define gxclist_INCLUDED
 
 #include "gscspace.h"
+#include "gxband.h"
 #include "gxbcache.h"
 #include "gxclio.h"
 #include "gxistate.h"
-#include "gxband.h"
 
 /*
  * A command list is essentially a compressed list of driver calls.
@@ -49,8 +49,8 @@
  * synchronize the two, we maintain the following invariant for buffered
  * commands:
  *
- *	If there are any band-range commands in the buffer, they are the
- *	first commands in the buffer, before any specific-band commands.
+ *      If there are any band-range commands in the buffer, they are the
+ *      first commands in the buffer, before any specific-band commands.
  *
  * To maintain this invariant, whenever we are about to put an band-range
  * command in the buffer, we check to see if the buffer already has any
@@ -67,26 +67,26 @@
  * parameter of output_page.
  */
 typedef struct gx_saved_page_s {
-  gx_device device;
-  char dname[8+1];		/* device name for checking */
-  gx_band_page_info info;
-  int num_copies;
+    gx_device device;
+    char dname[8 + 1];		/* device name for checking */
+    gx_band_page_info info;
+    int num_copies;
 } gx_saved_page;
 
 /*
  * Define a saved page placed at a particular (X,Y) offset for rendering.
  */
 typedef struct gx_placed_page_s {
-  gx_saved_page *page;
-  gs_int_point offset;
+    gx_saved_page *page;
+    gs_int_point offset;
 } gx_placed_page;
-
+  
 /*
- * Define a procedure to cause some bandlist memory memory to be freed up,
+ * Define a procedure to cause some bandlist memory to be freed up,
  * probably by rendering current bandlist contents.
  */
 #define proc_free_up_bandlist_memory(proc)\
-  int proc(P2(gx_device *, bool))
+  int proc(P2(gx_device *dev, bool flush_current))
 
 /* ---------------- Internal structures ---------------- */
 
@@ -108,35 +108,35 @@ typedef struct gx_placed_page_s {
  * other rendering algorithms such as error diffusion in the second phase.
  */
 typedef struct {
-	ulong offset;		/* writing: offset from cdev->data, */
-				/*   0 means unused */
-				/* reading: offset from cdev->chunk.data */
+    ulong offset;		/* writing: offset from cdev->data, */
+    /*   0 means unused */
+    /* reading: offset from cdev->chunk.data */
 } tile_hash;
 typedef struct {
-	gx_cached_bits_common;
-	/* To save space, instead of storing rep_width and rep_height, */
-	/* we store width / rep_width and height / rep_height. */
-	byte x_reps, y_reps;
-	ushort rep_shift;
-	ushort index;		/* index in table (hash table when writing) */
-	ushort num_bands;	/* # of 1-bits in the band mask */
-	/* byte band_mask[]; */
+    gx_cached_bits_common;
+    /* To save space, instead of storing rep_width and rep_height, */
+    /* we store width / rep_width and height / rep_height. */
+    byte x_reps, y_reps;
+    ushort rep_shift;
+    ushort index;		/* index in table (hash table when writing) */
+    ushort num_bands;		/* # of 1-bits in the band mask */
+    /* byte band_mask[]; */
 #define ts_mask(pts) (byte *)((pts) + 1)
-	/* byte bits[]; */
+    /* byte bits[]; */
 #define ts_bits(cldev,pts) (ts_mask(pts) + (cldev)->tile_band_mask_size)
 } tile_slot;
 
 /* Define the prefix on each command run in the writing buffer. */
 typedef struct cmd_prefix_s cmd_prefix;
 struct cmd_prefix_s {
-	cmd_prefix *next;
-	uint size;
+    cmd_prefix *next;
+    uint size;
 };
 
 /* Define the pointers for managing a list of command runs in the buffer. */
 /* There is one of these for each band, plus one for band-range commands. */
 typedef struct cmd_list_s {
-	cmd_prefix *head, *tail;	/* list of commands for band */
+    cmd_prefix *head, *tail;	/* list of commands for band */
 } cmd_list;
 
 /*
@@ -153,6 +153,7 @@ extern const gs_imager_state clist_imager_state_initial;
  * and reading (second) phase.
  */
 typedef struct gx_clist_state_s gx_clist_state;
+
 #define gx_device_clist_common\
 	gx_device_forward_common;	/* (see gxdevice.h) */\
 		/* Following must be set before writing or reading. */\
@@ -164,7 +165,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 	byte *data;			/* buffer area */\
 	uint data_size;			/* size of buffer */\
 	gx_band_params band_params;	/* band buffering parameters */\
-	int do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
+	bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
 		/* Following are used for both writing and reading. */\
 	gx_bits_cache_chunk chunk;	/* the only chunk of bits */\
 	gx_bits_cache bits;\
@@ -177,7 +178,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 	int ymin, ymax;			/* current band, <0 when writing */\
 		/* Following are set when writing, read when reading. */\
 	gx_band_page_info page_info;	/* page information */\
-	int nbands			/* # of bands */
+	int nbands		/* # of bands */
 
 #define clist_band_height(cldev) ((cldev)->page_info.band_height)
 #define clist_cfname(cldev) ((cldev)->page_info.cfname)
@@ -191,36 +192,36 @@ typedef struct gx_clist_state_s gx_clist_state;
 
 /* Define the state of a band list when writing. */
 typedef struct gx_device_clist_writer_s {
-	gx_device_clist_common;		/* (must be first) */
-	int error_code;			/* error returned by cmd_put_op */
-	gx_clist_state *states;		/* current state of each band */
-	byte *cbuf;			/* start of command buffer */
-	byte *cnext;			/* next slot in command buffer */
-	byte *cend;			/* end of command buffer */
-	cmd_list *ccl;			/* &clist_state.list of last command */
-	cmd_list band_range_list;	/* list of band-range commands */
-	int band_range_min, band_range_max;	/* range for list */
-	uint tile_max_size;		/* max size of a single tile (bytes) */
-	uint tile_max_count;		/* max # of hash table entries */
-	gx_strip_bitmap tile_params;	/* current tile parameters */
-	int tile_depth;			/* current tile depth */
-	int tile_known_min, tile_known_max;
-					/* range of bands that knows the */
-					/* current tile parameters */
-	gs_imager_state imager_state;	/* current values of imager params */
-	float dash_pattern[cmd_max_dash]; /* current dash pattern */
-	const gx_clip_path *clip_path;	/* current clip path */
-	gs_id clip_path_id;		/* id of current clip path */
-	byte color_space;		/* current color space identifier */
-					/* (only used for images) */
-	gs_indexed_params indexed_params;  /* current indexed space parameters */
-					/* (ditto) */
-	gs_id transfer_ids[4];		/* ids of transfer maps */
-	gs_id black_generation_id;	/* id of black generation map */
-	gs_id undercolor_removal_id;	/* id of u.c.r. map */
-	gs_id device_halftone_id;	/* id of device halftone */
-	bool in_image;			/* true if we are inside an image */
-					/* that we are passing through */
+    gx_device_clist_common;	/* (must be first) */
+    int error_code;		/* error returned by cmd_put_op */
+    gx_clist_state *states;	/* current state of each band */
+    byte *cbuf;			/* start of command buffer */
+    byte *cnext;		/* next slot in command buffer */
+    byte *cend;			/* end of command buffer */
+    cmd_list *ccl;		/* &clist_state.list of last command */
+    cmd_list band_range_list;	/* list of band-range commands */
+    int band_range_min, band_range_max;		/* range for list */
+    uint tile_max_size;		/* max size of a single tile (bytes) */
+    uint tile_max_count;	/* max # of hash table entries */
+    gx_strip_bitmap tile_params;	/* current tile parameters */
+    int tile_depth;		/* current tile depth */
+    int tile_known_min, tile_known_max;
+    /* range of bands that knows the */
+    /* current tile parameters */
+    gs_imager_state imager_state;	/* current values of imager params */
+    float dash_pattern[cmd_max_dash];	/* current dash pattern */
+    const gx_clip_path *clip_path;	/* current clip path */
+    gs_id clip_path_id;		/* id of current clip path */
+    byte color_space;		/* current color space identifier */
+    /* (only used for images) */
+    gs_indexed_params indexed_params;	/* current indexed space parameters */
+    /* (ditto) */
+    gs_id transfer_ids[4];	/* ids of transfer maps */
+    gs_id black_generation_id;	/* id of black generation map */
+    gs_id undercolor_removal_id;	/* id of u.c.r. map */
+    gs_id device_halftone_id;	/* id of device halftone */
+    gs_id image_enum_id;	/* non-0 if we are inside an image */
+				/* that we are passing through */
 	int error_is_retryable;		/* Extra status used to distinguish hard VMerrors */
 	                           /* from warnings upgraded to VMerrors. */
 	                           /* T if err ret'd by cmd_put_op et al can be retried */
@@ -243,17 +244,17 @@ typedef struct gx_device_clist_writer_s {
 /* Define the state of a band list when reading. */
 /* For normal rasterizing, pages and num_pages are both 0. */
 typedef struct gx_device_clist_reader_s {
-	gx_device_clist_common;		/* (must be first) */
-	const gx_placed_page *pages;
-	int num_pages;
+    gx_device_clist_common;	/* (must be first) */
+    const gx_placed_page *pages;
+    int num_pages;
 } gx_device_clist_reader;
 
 typedef union gx_device_clist_s {
-	struct _clc {
-	  gx_device_clist_common;
-	} common;
-	gx_device_clist_reader reader;
-	gx_device_clist_writer writer;
+    struct _clc {
+	gx_device_clist_common;
+    } common;
+    gx_device_clist_reader reader;
+    gx_device_clist_writer writer;
 } gx_device_clist;
 
 /* setup before opening clist device */
@@ -268,34 +269,36 @@ typedef union gx_device_clist_s {
 	(xclist)->writer.free_up_bandlist_memory = (xfree_bandlist);\
 	(xclist)->writer.disable_mask = (xdisable)
 
-/* Determine if this clist device is able to recover VMerrors */
-#define clist_test_VMerror_recoverable(cldev) \
- ( (cldev)->free_up_bandlist_memory != 0 )
+/* Determine whether this clist device is able to recover VMerrors */
+#define clist_test_VMerror_recoverable(cldev)\
+  ((cldev)->free_up_bandlist_memory != 0)
 
 /* The device template itself is never used, only the procedures. */
-extern gx_device_procs gs_clist_device_procs;
+extern const gx_device_procs gs_clist_device_procs;
 
 /* Reset (or prepare to append to) the command list after printing a page. */
-int clist_finish_page(P2(gx_device *, bool));
+int clist_finish_page(P2(gx_device * dev, bool flush));
 
 /* Force bandfiles closed */
-int clist_close_output_file(P1(gx_device *));
+int clist_close_output_file(P1(gx_device *dev));
 
-#if !defined(gx_device_printer_defined)
- #define gx_device_printer_defined
 /* Define the abstract type for a printer device. */
+#ifndef gx_device_printer_DEFINED
+#  define gx_device_printer_DEFINED
 typedef struct gx_device_printer_s gx_device_printer;
-#endif /* !defined(gx_device_printer_defined) */
+#endif
 
-
-/* Set up the device's geometry to that in cmd list: for async rendering only */
-int clist_setup_params(P1(gx_device *dev));
+/* Set the device's geometry to that in cmd list: for async rendering only */
+/****** FORMERLY NAMED clist_setup_params ******/
+int clist_set_geometry(P1(gx_device *dev));
 
 /* Do more rendering to a client-supplied memory image, return results */
-int clist_get_overlay_bits(P4(gx_device_printer *, int, int, byte *));
+int clist_get_overlay_bits(P4(gx_device_printer *pdev, int y, int line_count,
+			      byte *data));
 
 /* Find out where the band buffer for a given line is going to fall on the */
 /* next call to get_bits. */
-int clist_locate_overlay_buffer(P3(gx_device_printer *, int, byte **));
+int clist_locate_overlay_buffer(P3(gx_device_printer *pdev, int y,
+				   byte **pdata));
 
-#endif					/* gxclist_INCLUDED */
+#endif /* gxclist_INCLUDED */

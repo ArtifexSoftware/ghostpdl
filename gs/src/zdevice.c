@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zdevice.c */
+/*Id: zdevice.c  */
 /* Device-related operators */
 #include "string_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "ialloc.h"
 #include "idict.h"
@@ -32,6 +31,7 @@
 #include "gsmatrix.h"
 #include "gsstate.h"
 #include "gxdevice.h"
+#include "gxgetbit.h"
 #include "store.h"
 
 /* <device> copydevice <newdevice> */
@@ -47,33 +47,6 @@ zcopydevice(register os_ptr op)
 	return code;
     new_dev->memory = imemory;
     make_tav(op, t_device, icurrent_space | a_all, pdevice, new_dev);
-    return 0;
-}
-
-/* <device> <y> <string> copyscanlines <substring> */
-private int
-zcopyscanlines(register os_ptr op)
-{
-    os_ptr op1 = op - 1;
-    os_ptr op2 = op - 2;
-    gx_device *dev;
-    int code;
-    uint bytes_copied;
-
-    check_read_type(*op2, t_device);
-    dev = op2->value.pdevice;
-    check_type(*op1, t_integer);
-    if (op1->value.intval < 0 || op1->value.intval > dev->height)
-	return_error(e_rangecheck);
-    check_write_type(*op, t_string);
-    code = gs_copyscanlines(dev, (int)op1->value.intval,
-			    op->value.bytes, r_size(op), NULL,
-			    &bytes_copied);
-    if (code < 0)
-	return_error(e_rangecheck);	/* not a memory device */
-    *op2 = *op;
-    r_set_size(op2, bytes_copied);
-    pop(2);
     return 0;
 }
 
@@ -123,6 +96,94 @@ zflushpage(register os_ptr op)
     return gs_flushpage(igs);
 }
 
+/* <device> <x> <y> <width> <max_height> <alpha?> <std_depth> <string> */
+/*   .getbitsrect <height> <substring> */
+private int
+zgetbitsrect(register os_ptr op)
+{	/*
+	 * alpha? is 0 for no alpha, -1 for alpha first, 1 for alpha last.
+	 * std_depth is null for native pixels, depth/component for
+	 * standard color space.
+	 */
+    gx_device *dev;
+    gs_int_rect rect;
+    gs_get_bits_params_t params;
+    int w, h;
+    gs_get_bits_options_t options =
+	GB_ALIGN_ANY | GB_RETURN_COPY | GB_OFFSET_0 | GB_RASTER_STANDARD |
+	GB_PACKING_CHUNKY;
+    int std_depth;
+    uint raster;
+    int num_rows;
+    int code;
+
+    check_read_type(op[-7], t_device);
+    dev = op[-7].value.pdevice;
+    check_int_leu(op[-6], dev->width);
+    rect.p.x = op[-6].value.intval;
+    check_int_leu(op[-5], dev->height);
+    rect.p.y = op[-5].value.intval;
+    check_int_leu(op[-4], dev->width);
+    w = op[-4].value.intval;
+    check_int_leu(op[-3], dev->height);
+    h = op[-3].value.intval;
+    check_type(op[-2], t_integer);
+    switch (op[-2].value.intval) {
+	case -1:
+	    options |= GB_ALPHA_FIRST;
+	    break;
+	case 0:
+	    options |= GB_ALPHA_NONE;
+	    break;
+	case 1:
+	    options |= GB_ALPHA_LAST;
+	    break;
+	default:
+	    return_error(e_rangecheck);
+    }
+    if (r_has_type(op - 1, t_null))
+	options |= GB_COLORS_NATIVE;
+    else {
+	static const gs_get_bits_options_t depths[17] = {
+	    0, GB_DEPTH_1, GB_DEPTH_2, 0, GB_DEPTH_4, 0, 0, 0, GB_DEPTH_8,
+	    0, 0, 0, GB_DEPTH_12, 0, 0, 0, GB_DEPTH_16
+	};
+	gs_get_bits_options_t depth_option;
+
+	check_int_leu(op[-1], 16);
+	std_depth = (int)op[-1].value.intval;
+	depth_option = depths[std_depth];
+	if (depth_option == 0)
+	    return_error(e_rangecheck);
+	options |= depth_option | gb_colors_for_device(dev);
+    }
+    check_write_type(*op, t_string);
+    {
+	int depth =
+	    (options & GB_COLORS_NATIVE ? dev->color_info.depth :
+	     (dev->color_info.num_components +
+	      (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth);
+
+	raster = (w * depth + 7) >> 3;
+    }
+    num_rows = r_size(op) / raster;
+    h = min(h, num_rows);
+    if (h == 0)
+	return_error(e_rangecheck);
+    rect.q.x = rect.p.x + w;
+    rect.q.y = rect.p.y + h;
+    params.options = options;
+    params.data[0] = op->value.bytes;
+    code = (*dev_proc(dev, get_bits_rectangle))(dev, &rect, &params, NULL);
+    if (code < 0)
+	return code;
+    make_int(op - 7, h);
+    op[-6] = *op;
+    r_set_size(op - 6, h * raster);
+    pop(6);
+    return 0;
+}
+
 /* <int> .getdevice <device> */
 private int
 zgetdevice(register os_ptr op)
@@ -144,7 +205,7 @@ zgetdevice(register os_ptr op)
 
 /* Common functionality of zgethardwareparms & zgetdeviceparams */
 private int
-get_device_params(os_ptr op, bool is_hardware)
+zget_device_params(os_ptr op, bool is_hardware)
 {
     ref rkeys;
     gx_device *dev;
@@ -157,9 +218,10 @@ get_device_params(os_ptr op, bool is_hardware)
     dev = op[-1].value.pdevice;
     pop(1);
     stack_param_list_write(&list, &o_stack, &rkeys);
-    code = gs_get_device_or_hardware_params
-	(dev, (gs_param_list *) & list, is_hardware);
-    if (code < 0) {		/* We have to put back the top argument. */
+    code = gs_get_device_or_hardware_params(dev, (gs_param_list *) & list,
+					    is_hardware);
+    if (code < 0) {
+	/* We have to put back the top argument. */
 	if (list.count > 0)
 	    ref_stack_pop(&o_stack, list.count * 2 - 1);
 	else
@@ -171,19 +233,17 @@ get_device_params(os_ptr op, bool is_hardware)
     make_mark(pmark);
     return 0;
 }
-
 /* <device> <key_dict|null> .getdeviceparams <mark> <name> <value> ... */
 private int
 zgetdeviceparams(os_ptr op)
 {
-    return get_device_params(op, false);
+    return zget_device_params(op, false);
 }
-
 /* <device> <key_dict|null> .gethardwareparams <mark> <name> <value> ... */
 private int
 zgethardwareparams(os_ptr op)
 {
-    return get_device_params(op, true);
+    return zget_device_params(op, true);
 }
 
 /* <matrix> <width> <height> <palette> <word?> makewordimagedevice <device> */
@@ -317,17 +377,18 @@ zputdeviceparams(os_ptr op)
 	ref_stack_pop(&o_stack, dest + 1);
 	return 0;
     }
-    if (code > 0 || (code == 0 && (dev->width != old_width || dev->height != old_height))) {	/* The device was open and is now closed, */
-	/* or its dimensions have changed. */
-	/* If it was the current device, */
-	/* call setdevice to reinstall it and erase the page. */
-/****** DOESN'T FIND ALL THE GSTATES THAT REFERENCE THE DEVICE. ******/
+    if (code > 0 || (code == 0 && (dev->width != old_width || dev->height != old_height))) {
+	/*
+	 * The device was open and is now closed, or its dimensions have
+	 * changed.  If it was the current device, call setdevice to
+	 * reinstall it and erase the page.
+	 */
+	/****** DOESN'T FIND ALL THE GSTATES THAT REFERENCE THE DEVICE. ******/
 	if (gs_currentdevice(igs) == dev) {
 	    bool was_open = dev->is_open;
 
 	    code = gs_setdevice_no_erase(igs, dev);
-	    /* If the device wasn't closed, */
-	    /* setdevice won't erase the page. */
+	    /* If the device wasn't closed, setdevice won't erase the page. */
 	    if (was_open && code >= 0)
 		code = 1;
 	}
@@ -361,11 +422,11 @@ zsetdevice(register os_ptr op)
 const op_def zdevice_op_defs[] =
 {
     {"1copydevice", zcopydevice},
-    {"3copyscanlines", zcopyscanlines},
     {"0currentdevice", zcurrentdevice},
     {"1.devicename", zdevicename},
     {"0.doneshowpage", zdoneshowpage},
     {"0flushpage", zflushpage},
+    {"7.getbitsrect", zgetbitsrect},
     {"1.getdevice", zgetdevice},
     {"2.getdeviceparams", zgetdeviceparams},
     {"2.gethardwareparams", zgethardwareparams},

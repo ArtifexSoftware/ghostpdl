@@ -32,16 +32,18 @@
 #include "gzstate.h"
 
 /* Forward references */
-private void cie_joint_caches_init(P3(gx_cie_joint_caches *,
-			     const gs_cie_common *, const gs_cie_render *));
+private int cie_joint_caches_init(P3(gx_cie_joint_caches *,
+				     const gs_cie_common *,
+				     gs_cie_render *));
 private void cie_joint_caches_complete(P3(gx_cie_joint_caches *,
 			     const gs_cie_common *, const gs_cie_render *));
-private void near cie_mult3(P3(const gs_vector3 *, const gs_matrix3 *,
-			       gs_vector3 *));
-private void near cie_matrix_mult3(P3(const gs_matrix3 *, const gs_matrix3 *,
-				      gs_matrix3 *));
-private void near cie_invert3(P2(const gs_matrix3 *, gs_matrix3 *));
-private void near cie_matrix_init(P1(gs_matrix3 *));
+private void cie_cache_restrict(P2(cie_cache_floats *, const gs_range *));
+private void cie_mult3(P3(const gs_vector3 *, const gs_matrix3 *,
+			  gs_vector3 *));
+private void cie_matrix_mult3(P3(const gs_matrix3 *, const gs_matrix3 *,
+				 gs_matrix3 *));
+private void cie_invert3(P2(const gs_matrix3 *, gs_matrix3 *));
+private void cie_matrix_init(P1(gs_matrix3 *));
 
 #define set_restrict_index(i, v, n)\
   if ( (uint)(i = (int)(v)) >= (n) )\
@@ -68,19 +70,20 @@ private void near cie_matrix_init(P1(gs_matrix3 *));
 /* Define the template for loading a cache. */
 /* If we had parameterized types, or a more flexible type system, */
 /* this could be done with a single procedure. */
-#define cie_cache_init3(pcache3, plp3, prange3, cname)\
-	gs_cie_cache_init(&(pcache3)->floats.params, &(plp3)[0], &(prange3)[0], cname);\
-	gs_cie_cache_init(&(pcache3)[1].floats.params, &(plp3)[1], &(prange3)[1], cname);\
-	gs_cie_cache_init(&(pcache3)[2].floats.params, &(plp3)[2], &(prange3)[2], cname)
-#define CIE_LOAD_CACHE3_BODY(pcache, domains, rprocs, pcie, cname)\
-{	int i, j;\
-	gs_for_loop_params lp[3];\
-	cie_cache_init3(pcache, lp, domains, cname);\
-	for ( i = 0; i < gx_cie_cache_size; i++ )\
-	  for ( j = 0; j < 3; lp[j].init += lp[j].step, j++ )\
-	    pcache[j].floats.values[i] =\
-	      (*(rprocs)->procs[j])(lp[j].init, pcie);\
-}
+#define CIE_LOAD_CACHE_BODY(pcache, domains, rprocs, pcie, cname)\
+  BEGIN\
+	int j;\
+\
+	for (j = 0; j < countof(pcache); j++) {\
+	  int i;\
+	  gs_for_loop_params lp;\
+\
+	  gs_cie_cache_init(&(pcache)[j].floats.params, &lp,\
+			    &(domains)[j], cname);\
+	  for (i = 0; i < gx_cie_cache_size; lp.init += lp.step, i++)\
+	    pcache[j].floats.values[i] = (*(rprocs)->procs[j])(lp.init, pcie);\
+	}\
+  END
 
 /* Allocator structure types */
 private_st_joint_caches();
@@ -114,155 +117,37 @@ common_identity(floatp in, const gs_cie_common * pcie)
 {
     return in;
 }
-private float
-render_identity(floatp in, const gs_cie_render * pcie)
-{
-    return in;
-}
-private float
-tpqr_identity(floatp in, const gs_cie_wbsd * pwbsd, const gs_cie_render * pcie)
-{
-    return in;
-}
-private frac
-render_table_identity(byte in, const gs_cie_render * pcie)
-{
-    return byte2frac(in);
-}
-
-/* Transformation procedures that just consult the cache. */
-#define clamp_index(index)\
-  index = (index < 0 ? 0 :\
-	   index >= gx_cie_cache_size ? gx_cie_cache_size - 1 : index)
-private float
-EncodeABC_cached(floatp in, const gs_cie_render * pcie, int i)
-{
-    const gx_cie_scalar_cache *pcache = &pcie->caches.EncodeABC[i];
-
-    if (pcie->RenderTable.lookup.table == 0) {
-	int index = (in - pcache->fracs.params.base) *
-	pcache->fracs.params.factor;
-
-	clamp_index(index);
-	return frac2float(pcache->fracs.values[index]);
-    } else {
-/****** WRONG IF INTERPOLATING ******/
-	int index = (in - pcache->ints.params.base) *
-	pcache->ints.params.factor;
-	const gs_range *prange = &pcie->RangeABC.ranges[i];
-	int m = pcie->RenderTable.lookup.m;
-	int k = (i == 0 ? 1 : i == 1 ?
-		 m * pcie->RenderTable.lookup.dims[2] : m);
-
-	clamp_index(index);
-	return (double)(pcache->ints.values[index]) / k *
-	    (prange->rmax - prange->rmin) / (gx_cie_cache_size - 1) +
-	    prange->rmin;
-    }
-}
-private float
-EncodeABC_cached_A(floatp in, const gs_cie_render * pcie)
-{
-    return EncodeABC_cached(in, pcie, 0);
-}
-private float
-EncodeABC_cached_B(floatp in, const gs_cie_render * pcie)
-{
-    return EncodeABC_cached(in, pcie, 1);
-}
-private float
-EncodeABC_cached_C(floatp in, const gs_cie_render * pcie)
-{
-    return EncodeABC_cached(in, pcie, 2);
-}
-private float
-EncodeLMN_cached(floatp in, const gs_cie_render * pcie, int i)
-{
-    const gx_cie_vector_cache *pcache = &pcie->caches.EncodeLMN[i];
-    int index = (in - pcache->floats.params.base) *
-    pcache->floats.params.factor;
-
-    clamp_index(index);
-    /* Pick any one of u, v, w.  We should probably pick the one */
-    /* with the largest coefficient.... */
-    return cie_cached2float(pcache->vecs.values[index].u) /
-	(i == 0 ? pcie->MatrixABCEncode.cu.u :
-	 i == 1 ? pcie->MatrixABCEncode.cv.u :
-	 pcie->MatrixABCEncode.cw.u);
-}
-private float
-EncodeLMN_cached_L(floatp in, const gs_cie_render * pcie)
-{
-    return EncodeLMN_cached(in, pcie, 0);
-}
-private float
-EncodeLMN_cached_M(floatp in, const gs_cie_render * pcie)
-{
-    return EncodeLMN_cached(in, pcie, 1);
-}
-private float
-EncodeLMN_cached_N(floatp in, const gs_cie_render * pcie)
-{
-    return EncodeLMN_cached(in, pcie, 2);
-}
-#undef clamp_index
 
 /* Default vectors and matrices. */
 
-const gs_range3 Range3_default =
-{
-    {
-	{0, 1},
-	{0, 1},
-	{0, 1}}};
-const gs_range4 Range4_default =
-{
-    {
-	{0, 1},
-	{0, 1},
-	{0, 1},
-	{0, 1}}};
-const gs_cie_defg_proc4 DecodeDEFG_default =
-{
-    {defg_identity, defg_identity, defg_identity, defg_identity}};
-const gs_cie_def_proc3 DecodeDEF_default =
-{
-    {def_identity, def_identity, def_identity}};
-const gs_cie_abc_proc3 DecodeABC_default =
-{
-    {abc_identity, abc_identity, abc_identity}};
-const gs_cie_common_proc3 DecodeLMN_default =
-{
-    {common_identity, common_identity, common_identity}};
-const gs_matrix3 Matrix3_default =
-{
+const gs_range3 Range3_default = {
+    { {0, 1}, {0, 1}, {0, 1} }
+};
+const gs_range4 Range4_default = {
+    { {0, 1}, {0, 1}, {0, 1}, {0, 1} }
+};
+const gs_cie_defg_proc4 DecodeDEFG_default = {
+    {defg_identity, defg_identity, defg_identity, defg_identity}
+};
+const gs_cie_def_proc3 DecodeDEF_default = {
+    {def_identity, def_identity, def_identity}
+};
+const gs_cie_abc_proc3 DecodeABC_default = {
+    {abc_identity, abc_identity, abc_identity}
+};
+const gs_cie_common_proc3 DecodeLMN_default = {
+    {common_identity, common_identity, common_identity}
+};
+const gs_matrix3 Matrix3_default = {
     {1, 0, 0},
     {0, 1, 0},
-    {0, 0, 1}, 1 /*true */ };
-const gs_range RangeA_default =
-{0, 1};
+    {0, 0, 1},
+    1 /*true */
+};
+const gs_range RangeA_default = {0, 1};
 const gs_cie_a_proc DecodeA_default = a_identity;
-const gs_vector3 MatrixA_default =
-{1, 1, 1};
-const gs_vector3 BlackPoint_default =
-{0, 0, 0};
-const gs_cie_render_proc3 Encode_default =
-{
-    {render_identity, render_identity, render_identity}};
-const gs_cie_render_proc3 EncodeLMN_from_cache =
-{
-    {EncodeLMN_cached_L, EncodeLMN_cached_M, EncodeLMN_cached_N}};
-const gs_cie_render_proc3 EncodeABC_from_cache =
-{
-    {EncodeABC_cached_A, EncodeABC_cached_B, EncodeABC_cached_C}};
-const gs_cie_transform_proc3 TransformPQR_default =
-{
-    {tpqr_identity, tpqr_identity, tpqr_identity}};
-const gs_cie_render_table_procs RenderTableT_default =
-{
-    {render_table_identity, render_table_identity, render_table_identity,
-     render_table_identity
-    }};
+const gs_vector3 MatrixA_default = {1, 1, 1};
+const gs_vector3 BlackPoint_default = {0, 0, 0};
 
 /* Initialize a CIE color. */
 /* This only happens on setcolorspace. */
@@ -271,54 +156,57 @@ gx_init_CIE(gs_client_color * pcc, const gs_color_space * pcs)
 {
     gx_init_paint_4(pcc, pcs);
     /* (0...) may not be within the range of allowable values. */
-    (*pcs->type->restrict_color) (pcc, pcs);
+    (*pcs->type->restrict_color)(pcc, pcs);
 }
 
 /* Restrict CIE colors. */
 
-#define force_value(i, range)\
+#define FORCE_VALUE(pcc, i, range)\
   if ( pcc->paint.values[i] <= range.rmin )\
     pcc->paint.values[i] = range.rmin;\
   else if ( pcc->paint.values[i] >= range.rmax )\
     pcc->paint.values[i] = range.rmax
-#define force_range(i, erange)\
-  force_value(i, pcie->erange.ranges[i])
+#define FORCE_RANGE(pcc, i, erange)\
+  FORCE_VALUE(pcc, i, pcie->erange.ranges[i])
 
 void
 gx_restrict_CIEDEFG(gs_client_color * pcc, const gs_color_space * pcs)
 {
     const gs_cie_defg *pcie = pcs->params.defg;
 
-    force_range(0, RangeDEFG);
-    force_range(1, RangeDEFG);
-    force_range(2, RangeDEFG);
-    force_range(3, RangeDEFG);
+    FORCE_RANGE(pcc, 0, RangeDEFG);
+    FORCE_RANGE(pcc, 1, RangeDEFG);
+    FORCE_RANGE(pcc, 2, RangeDEFG);
+    FORCE_RANGE(pcc, 3, RangeDEFG);
 }
 void
 gx_restrict_CIEDEF(gs_client_color * pcc, const gs_color_space * pcs)
 {
     const gs_cie_def *pcie = pcs->params.def;
 
-    force_range(0, RangeDEF);
-    force_range(1, RangeDEF);
-    force_range(2, RangeDEF);
+    FORCE_RANGE(pcc, 0, RangeDEF);
+    FORCE_RANGE(pcc, 1, RangeDEF);
+    FORCE_RANGE(pcc, 2, RangeDEF);
 }
 void
 gx_restrict_CIEABC(gs_client_color * pcc, const gs_color_space * pcs)
 {
     const gs_cie_abc *pcie = pcs->params.abc;
 
-    force_range(0, RangeABC);
-    force_range(1, RangeABC);
-    force_range(2, RangeABC);
+    FORCE_RANGE(pcc, 0, RangeABC);
+    FORCE_RANGE(pcc, 1, RangeABC);
+    FORCE_RANGE(pcc, 2, RangeABC);
 }
 void
 gx_restrict_CIEA(gs_client_color * pcc, const gs_color_space * pcs)
 {
     const gs_cie_a *pcie = pcs->params.a;
 
-    force_value(0, pcie->RangeA);
+    FORCE_VALUE(pcc, 0, pcie->RangeA);
 }
+
+#undef FORCE_VALUE
+#undef FORCE_RANGE
 
 /* ================ Table setup ================ */
 
@@ -326,35 +214,45 @@ gx_restrict_CIEA(gs_client_color * pcc, const gs_color_space * pcs)
 
 private int cie_load_common_cache(P3(gs_cie_common *, gs_state *,
 				     client_name_t));
-private void near cie_cache_mult(P3(gx_cie_vector_cache *, const gs_vector3 *,
-				    const cie_cache_floats *));
-private bool near cie_cache_mult3(P2(gx_cie_vector_cache *,
-				     const gs_matrix3 *));
+private void cie_cache_mult(P3(gx_cie_vector_cache *, const gs_vector3 *,
+			       const cie_cache_floats *));
+private bool cie_cache_mult3(P2(gx_cie_vector_cache *,
+				const gs_matrix3 *));
+
+private int
+gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
+{
+    cie_matrix_init(&pcie->MatrixABC);
+    CIE_LOAD_CACHE_BODY(pcie->caches.DecodeABC, pcie->RangeABC.ranges,
+			&pcie->DecodeABC, pcie, "DecodeABC");
+    gs_cie_abc_complete(pcie);
+    return cie_load_common_cache(&pcie->common, pgs, "gx_install_CIEABC");
+}
 
 int
 gx_install_CIEDEFG(gs_color_space * pcs, gs_state * pgs)
 {
-/****** NOT IMPLEMENTED YET ******/
-    return_error(gs_error_undefined);
+    gs_cie_defg *pcie = pcs->params.defg;
+
+    CIE_LOAD_CACHE_BODY(pcie->caches_defg.DecodeDEFG, pcie->RangeDEFG.ranges,
+			&pcie->DecodeDEFG, pcie, "DecodeDEFG");
+    return gx_install_cie_abc((gs_cie_abc *)pcie, pgs);
 }
 
 int
 gx_install_CIEDEF(gs_color_space * pcs, gs_state * pgs)
 {
-/****** NOT IMPLEMENTED YET ******/
-    return_error(gs_error_undefined);
+    gs_cie_def *pcie = pcs->params.def;
+
+    CIE_LOAD_CACHE_BODY(pcie->caches_def.DecodeDEF, pcie->RangeDEF.ranges,
+			&pcie->DecodeDEF, pcie, "DecodeDEF");
+    return gx_install_cie_abc((gs_cie_abc *)pcie, pgs);
 }
 
 int
 gx_install_CIEABC(gs_color_space * pcs, gs_state * pgs)
 {
-    gs_cie_abc *pcie = pcs->params.abc;
-
-    cie_matrix_init(&pcie->MatrixABC);
-    CIE_LOAD_CACHE3_BODY(pcie->caches.DecodeABC, pcie->RangeABC.ranges,
-			 &pcie->DecodeABC, pcie, "DecodeABC");
-    gs_cie_abc_complete(pcie);
-    return cie_load_common_cache(&pcie->common, pgs, "gx_install_CIEABC");
+    return gx_install_cie_abc(pcs->params.abc, pgs);
 }
 
 int
@@ -369,7 +267,7 @@ gx_install_CIEA(gs_color_space * pcs, gs_state * pgs)
 		      &pcie->RangeA, "DecodeA");
     for (i = 0, in = lp.init; i < gx_cie_cache_size; in += lp.step, i++)
 	pcie->caches.DecodeA.floats.values[i] =
-	    (*pcie->DecodeA) (in, pcie);
+	    (*pcie->DecodeA)(in, pcie);
     gs_cie_a_complete(pcie);
     return cie_load_common_cache(&pcie->common, pgs, "gx_install_CIEA");
 }
@@ -379,18 +277,64 @@ private int
 cie_load_common_cache(gs_cie_common * pcie, gs_state * pgs, client_name_t cname)
 {
     gx_cie_joint_caches *pjc;
+    int code;
 
     cie_matrix_init(&pcie->MatrixLMN);
-    CIE_LOAD_CACHE3_BODY(pcie->caches.DecodeLMN, pcie->RangeLMN.ranges,
-			 &pcie->DecodeLMN, pcie, "DecodeLMN")
-	if (pgs->cie_render == 0)
+    CIE_LOAD_CACHE_BODY(pcie->caches.DecodeLMN, pcie->RangeLMN.ranges,
+			&pcie->DecodeLMN, pcie, "DecodeLMN");
+    if (pgs->cie_render == 0)
 	return 0;
     pjc = gx_currentciecaches(pgs);
     if (pjc == 0)
 	return_error(gs_error_VMerror);
-    cie_joint_caches_init(pjc, pcie, pgs->cie_render);
+    code = cie_joint_caches_init(pjc, pcie, pgs->cie_render);
+    if (code < 0)
+	return code;
     cie_joint_caches_complete(pjc, pcie, pgs->cie_render);
     return 0;
+}
+
+/* Restrict and scale the DecodeDEF[G] cache according to RangeHIJ[K]. */
+private void
+gs_cie_defx_scale(float *values, const gs_range *range)
+{
+    double scale = 255.0 / (range->rmax - range->rmin);
+    int i;
+
+    for (i = 0; i < gx_cie_cache_size; ++i) {
+	float value = values[i];
+
+	values[i] =
+	    (value <= range->rmin ? 0 :
+	     value >= range->rmax ? 255 :
+	     (value - range->rmin) * scale);
+    }
+}
+
+/* Complete loading a CIEBasedDEFG color space. */
+/* This routine is not idempotent. */
+void
+gs_cie_defg_complete(gs_cie_defg * pcie)
+{
+    int j;
+
+    for (j = 0; j < 4; ++j)
+	gs_cie_defx_scale(pcie->caches_defg.DecodeDEFG[j].floats.values,
+			  &pcie->RangeHIJK.ranges[j]);
+    gs_cie_abc_complete((gs_cie_abc *)pcie);
+}
+
+/* Complete loading a CIEBasedDEF color space. */
+/* This routine is not idempotent. */
+void
+gs_cie_def_complete(gs_cie_def * pcie)
+{
+    int j;
+
+    for (j = 0; j < 3; ++j)
+	gs_cie_defx_scale(pcie->caches_def.DecodeDEF[j].floats.values,
+			  &pcie->RangeHIJ.ranges[j]);
+    gs_cie_abc_complete((gs_cie_abc *)pcie);
 }
 
 /* Complete loading a CIEBasedABC color space. */
@@ -413,7 +357,7 @@ gs_cie_a_complete(gs_cie_a * pcie)
 
 /* Convert a scalar cache to a vector cache by multiplying */
 /* the scalar values by a vector. */
-private void near
+private void
 cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
 	       const cie_cache_floats * pcf)
 {
@@ -438,9 +382,10 @@ cie_cache_mult(gx_cie_vector_cache * pcache, const gs_vector3 * pvec,
     }
     pcache->vecs.params = params;
 }
+
 /* Convert 3 scalar caches to vector caches by multiplying by a matrix. */
 /* Return true iff the resulting cache is an identity transformation. */
-private bool near
+private bool
 cie_cache_mult3(gx_cie_vector_cache * pc /*[3] */ , const gs_matrix3 * pmat)
 {
     cie_cache_mult(pc, &pmat->cu, &pc->floats);
@@ -454,37 +399,15 @@ cie_cache_mult3(gx_cie_vector_cache * pc /*[3] */ , const gs_matrix3 * pmat)
 
 /* setcolorrendering */
 int
-gs_setcolorrendering(gs_state * pgs, gs_cie_render * pcie)
+gs_setcolorrendering(gs_state * pgs, gs_cie_render * pcrd)
 {
-    int code = gs_cie_render_init(pcie);
+    int code = gs_cie_render_complete(pcrd);
 
     if (code < 0)
 	return code;
-    rc_assign(pgs->cie_render, pcie, "gs_setcolorrendering");
-    /* Load the caches. */
-    CIE_LOAD_CACHE3_BODY(pcie->caches.EncodeLMN, pcie->DomainLMN.ranges,
-			 &pcie->EncodeLMN, pcie, "EncodeLMN");
-    CIE_LOAD_CACHE3_BODY(pcie->caches.EncodeABC, pcie->DomainABC.ranges,
-			 &pcie->EncodeABC, pcie, "EncodeABC");
-    if (pcie->RenderTable.lookup.table != 0) {
-	int i, j, m = pcie->RenderTable.lookup.m;
-	gs_for_loop_params flp;
-
-	for (j = 0; j < m; j++)
-	    gs_cie_cache_init(&pcie->caches.RenderTableT[j].fracs.params,
-			      &flp, &Range3_default.ranges[0],
-			      "RenderTableT");
-/****** ASSUMES gx_cie_cache_size >= 256 ******/
-	for (i = 0; i < 256; i++)
-	    for (j = 0; j < m; j++)
-		pcie->caches.RenderTableT[j].fracs.values[i] =
-		    (*pcie->RenderTable.T.procs[j]) ((byte) i, pcie);
-    }
-    code = gs_cie_render_complete(pcie);
-    if (code < 0)
-	return code;
+    rc_assign(pgs->cie_render, pcrd, "gs_setcolorrendering");
     /* Initialize the joint caches if needed. */
-    gs_cie_cs_complete(pgs, true);
+    code = gs_cie_cs_complete(pgs, true);
     gx_unset_dev_color(pgs);
     return code;
 }
@@ -506,37 +429,36 @@ gx_currentciecaches(gs_state * pgs)
     return pgs->cie_joint_caches;
 }
 
-/* ------ Compute the parameters for loading a cache. ------ */
-/* Sets base and factor. */
-
+/* Compute the parameters for loading a cache, setting base and factor. */
+/* This procedure is idempotent. */
 void
 gs_cie_cache_init(cie_cache_params * pcache, gs_for_loop_params * pflp,
 		  const gs_range * domain, client_name_t cname)
-{				/*
-				 * We need to map the values in the range
-				 * [domain->rmin..domain->rmax].  However, if neither rmin
-				 * nor rmax is zero and the function is non-linear,
-				 * this can lead to anomalies at zero, which is the
-				 * default value for CIE colors.  The "correct" way to
-				 * approach this is to run the mapping functions on demand,
-				 * but we don't want to deal with the complexities of the
-				 * callbacks this would involve (especially in the middle of
-				 * rendering images); instead, we adjust the range so that zero
-				 * maps precisely to a cache slot.  Define:
-				 *      a = domain->rmin;
-				 *      b = domain->rmax;
-				 *      R = b - a;
-				 *      N = gx_cie_cache_size - 1;
-				 *      f(v) = N(v-a)/R;
-				 *      x = f(0).
-				 * If x is not an integer, we can either increase b or
-				 * decrease a to make it one.  In the former case, compute:
-				 *      Kb = floor(x); R'b = N(0-a)/Kb; b' = a + R'b.
-				 * In the latter case, compute:
-				 *      Ka = ceiling(x-N); R'a = N(0-b)/Ka; a' = b - R'a.
-				 * We choose whichever method stretches the range the least,
-				 * i.e., the one whose R' value (R'a or R'b) is smaller.
-				 */
+{	/*
+	 * We need to map the values in the range
+	 * [domain->rmin..domain->rmax].  However, if neither rmin
+	 * nor rmax is zero and the function is non-linear,
+	 * this can lead to anomalies at zero, which is the
+	 * default value for CIE colors.  The "correct" way to
+	 * approach this is to run the mapping functions on demand,
+	 * but we don't want to deal with the complexities of the
+	 * callbacks this would involve (especially in the middle of
+	 * rendering images); instead, we adjust the range so that zero
+	 * maps precisely to a cache slot.  Define:
+	 *      a = domain->rmin;
+	 *      b = domain->rmax;
+	 *      R = b - a;
+	 *      N = gx_cie_cache_size - 1;
+	 *      f(v) = N(v-a)/R;
+	 *      x = f(0).
+	 * If x is not an integer, we can either increase b or
+	 * decrease a to make it one.  In the former case, compute:
+	 *      Kb = floor(x); R'b = N(0-a)/Kb; b' = a + R'b.
+	 * In the latter case, compute:
+	 *      Ka = ceiling(x-N); R'a = N(0-b)/Ka; a' = b - R'a.
+	 * We choose whichever method stretches the range the least,
+	 * i.e., the one whose R' value (R'a or R'b) is smaller.
+	 */
     double a = domain->rmin, b = domain->rmax;
     double R = b - a;
 
@@ -571,32 +493,73 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_for_loop_params * pflp,
 
 /* ------ Complete a rendering structure ------ */
 
-/* Compute values derived from the rendering structure parameters */
-/* other than the cached procedure values.  This routine is idempotent. */
-private void near cie_transform_range3(P3(const gs_range3 *,
-					  const gs_matrix3 *, gs_range3 *));
+/*
+ * Compute the derived values in a CRD that don't involve the cached
+ * procedure values.  This procedure is idempotent.
+ */
+private void cie_transform_range3(P3(const gs_range3 *, const gs_matrix3 *,
+				     gs_range3 *));
 int
-gs_cie_render_init(gs_cie_render * pcie)
+gs_cie_render_init(gs_cie_render * pcrd)
 {
     gs_matrix3 PQR_inverse;
 
-    cie_matrix_init(&pcie->MatrixLMN);
-    cie_matrix_init(&pcie->MatrixABC);
-    cie_matrix_init(&pcie->MatrixPQR);
-    cie_invert3(&pcie->MatrixPQR, &PQR_inverse);
-    cie_matrix_mult3(&pcie->MatrixLMN, &PQR_inverse,
-		     &pcie->MatrixPQR_inverse_LMN);
-    cie_transform_range3(&pcie->RangePQR, &pcie->MatrixPQR_inverse_LMN,
-			 &pcie->DomainLMN);
-    cie_transform_range3(&pcie->RangeLMN, &pcie->MatrixABC,
-			 &pcie->DomainABC);
-    cie_mult3(&pcie->points.WhitePoint, &pcie->MatrixPQR, &pcie->wdpqr);
-    cie_mult3(&pcie->points.BlackPoint, &pcie->MatrixPQR, &pcie->bdpqr);
+    if (pcrd->status >= CIE_RENDER_STATUS_INITED)
+	return 0;		/* init already done */
+    cie_matrix_init(&pcrd->MatrixLMN);
+    cie_matrix_init(&pcrd->MatrixABC);
+    cie_matrix_init(&pcrd->MatrixPQR);
+    cie_invert3(&pcrd->MatrixPQR, &PQR_inverse);
+    cie_matrix_mult3(&pcrd->MatrixLMN, &PQR_inverse,
+		     &pcrd->MatrixPQR_inverse_LMN);
+    cie_transform_range3(&pcrd->RangePQR, &pcrd->MatrixPQR_inverse_LMN,
+			 &pcrd->DomainLMN);
+    cie_transform_range3(&pcrd->RangeLMN, &pcrd->MatrixABC,
+			 &pcrd->DomainABC);
+    cie_mult3(&pcrd->points.WhitePoint, &pcrd->MatrixPQR, &pcrd->wdpqr);
+    cie_mult3(&pcrd->points.BlackPoint, &pcrd->MatrixPQR, &pcrd->bdpqr);
+    pcrd->status = CIE_RENDER_STATUS_INITED;
+    return 0;
+}
+
+/*
+ * Sample the EncodeLMN, EncodeABC, and RenderTableT CRD procedures, and
+ * load the caches.  This procedure is idempotent.
+ */
+int
+gs_cie_render_sample(gs_cie_render * pcrd)
+{
+    int code;
+
+    if (pcrd->status >= CIE_RENDER_STATUS_SAMPLED)
+	return 0;		/* sampling already done */
+    code = gs_cie_render_init(pcrd);
+    if (code < 0)
+	return code;
+    CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeLMN, pcrd->DomainLMN.ranges,
+			&pcrd->EncodeLMN, pcrd, "EncodeLMN");
+    CIE_LOAD_CACHE_BODY(pcrd->caches.EncodeABC, pcrd->DomainABC.ranges,
+			&pcrd->EncodeABC, pcrd, "EncodeABC");
+    if (pcrd->RenderTable.lookup.table != 0) {
+	int i, j, m = pcrd->RenderTable.lookup.m;
+	gs_for_loop_params flp;
+
+	for (j = 0; j < m; j++)
+	    gs_cie_cache_init(&pcrd->caches.RenderTableT[j].fracs.params,
+			      &flp, &Range3_default.ranges[0],
+			      "RenderTableT");
+	/****** ASSUMES gx_cie_cache_size >= 256 ******/
+	for (i = 0; i < 256; i++)
+	    for (j = 0; j < m; j++)
+		pcrd->caches.RenderTableT[j].fracs.values[i] =
+		    (*pcrd->RenderTable.T.procs[j])((byte) i, pcrd);
+    }
+    pcrd->status = CIE_RENDER_STATUS_SAMPLED;
     return 0;
 }
 
 /* Transform a set of ranges. */
-private void near
+private void
 cie_transform_range(const gs_range3 * in, floatp mu, floatp mv, floatp mw,
 		    gs_range * out)
 {
@@ -605,19 +568,16 @@ cie_transform_range(const gs_range3 * in, floatp mu, floatp mv, floatp mw,
     float wmin = mw * in->ranges[2].rmin, wmax = mw * in->ranges[2].rmax;
     float temp;
 
-#define swap(x, y) temp = x, x = y, y = temp
-
     if (umin > umax)
-	swap(umin, umax);
+	temp = umin, umin = umax, umax = temp;
     if (vmin > vmax)
-	swap(vmin, vmax);
+	temp = vmin, vmin = vmax, vmax = temp;
     if (wmin > wmax)
-	swap(wmin, wmax);
+	temp = wmin, wmin = wmax, wmax = temp;
     out->rmin = umin + vmin + wmin;
     out->rmax = umax + vmax + wmax;
-#undef swap
 }
-private void near
+private void
 cie_transform_range3(const gs_range3 * in, const gs_matrix3 * mat,
 		     gs_range3 * out)
 {
@@ -629,58 +589,67 @@ cie_transform_range3(const gs_range3 * in, const gs_matrix3 * mat,
 			&out->ranges[2]);
 }
 
-/* Complete the loading of the rendering caches. */
-/* Note that this routine may make non-idempotent changes to */
-/* the values in the caches. */
-private void near cie_cache_restrict(P2(cie_cache_floats *, const gs_range *));
-
-#define cie_cache_restrict3(pcache3, pr3)\
-	cie_cache_restrict(&(pcache3)[0].floats, &(pr3)->ranges[0]);\
-	cie_cache_restrict(&(pcache3)[1].floats, &(pr3)->ranges[1]);\
-	cie_cache_restrict(&(pcache3)[2].floats, &(pr3)->ranges[2])
+/*
+ * Finish preparing a CRD for installation, by restricting and/or
+ * transforming the cached procedure values.  The actual work done by
+ * this procedure is not idempotent, but the CRD status prevents it
+ * from being done more than once.
+ */
 int
-gs_cie_render_complete(gs_cie_render * pcie)
-{				/* Since range restriction happens immediately after */
-    /* the cache lookup, we can save a step by restricting */
-    /* the values in the cache entries. */
-    cie_cache_restrict3(pcie->caches.EncodeLMN, &pcie->RangeLMN);
-    cie_cache_restrict3(pcie->caches.EncodeABC, &pcie->RangeABC);
-    /* If there is no lookup table, we want the final ABC values */
-    /* to be fracs; if there is a table, we want them to be */
-    /* appropriately scaled ints. */
-    pcie->MatrixABCEncode = pcie->MatrixABC;
+gs_cie_render_complete(gs_cie_render * pcrd)
+{
+    int code;
+
+    if (pcrd->status >= CIE_RENDER_STATUS_COMPLETED)
+	return 0;		/* completion already done */
+    code = gs_cie_render_sample(pcrd);
+    if (code < 0)
+	return code;
+    /*
+     * Since range restriction happens immediately after
+     * the cache lookup, we can save a step by restricting
+     * the values in the cache entries.
+     *
+     * If there is no lookup table, we want the final ABC values
+     * to be fracs; if there is a table, we want them to be
+     * appropriately scaled ints.
+     */
+    pcrd->MatrixABCEncode = pcrd->MatrixABC;
     {
 	int c;
 	double f;
 
 	for (c = 0; c < 3; c++) {
-	    gx_cie_scalar_cache *pcache =
-	    &pcie->caches.EncodeABC[c];
+	    gx_cie_scalar_cache *pcache = &pcrd->caches.EncodeABC[c];
 
-	    if (pcie->RenderTable.lookup.table == 0) {
+	    cie_cache_restrict(&pcrd->caches.EncodeLMN[c].floats,
+			       &pcrd->RangeLMN.ranges[c]);
+	    cie_cache_restrict(&pcrd->caches.EncodeABC[c].floats,
+			       &pcrd->RangeABC.ranges[c]);
+	    if (pcrd->RenderTable.lookup.table == 0) {
 		cie_cache_restrict(&pcache->floats,
 				   &Range3_default.ranges[0]);
 		gs_cie_cache_to_fracs(pcache);
 		pcache->fracs.params.is_identity = false;
 	    } else {
 		int i;
-		int n = pcie->RenderTable.lookup.dims[c];
+		int n = pcrd->RenderTable.lookup.dims[c];
 
 #ifdef CIE_RENDER_TABLE_INTERPOLATE
 #  define scale_index(f, n, itemp)\
      restrict_index(f * (1 << _cie_interpolate_bits),\
 		    (n) << _cie_interpolate_bits, itemp)
 #else
-		int m = pcie->RenderTable.lookup.m;
+		int m = pcrd->RenderTable.lookup.m;
 		int k =
 		(c == 0 ? 1 : c == 1 ?
-		 m * pcie->RenderTable.lookup.dims[2] : m);
+		 m * pcrd->RenderTable.lookup.dims[2] : m);
 
 #  define scale_index(f, n, itemp)\
      (restrict_index(f, n, itemp) * k)
 #endif
 		const gs_range *prange =
-		pcie->RangeABC.ranges + c;
+		pcrd->RangeABC.ranges + c;
 
 		/* Loop from top to bottom so that we don't */
 		/* overwrite elements before they're used. */
@@ -710,24 +679,25 @@ gs_cie_render_complete(gs_cie_render * pcie)
 	/* Fold the scaling of the EncodeABC cache index */
 	/* into MatrixABC. */
 #define mabc(i, t)\
-  f = pcie->caches.EncodeABC[i].floats.params.factor;\
-  pcie->MatrixABCEncode.cu.t *= f;\
-  pcie->MatrixABCEncode.cv.t *= f;\
-  pcie->MatrixABCEncode.cw.t *= f;\
-  pcie->EncodeABC_base[i] =\
-    float2cie_cached(pcie->caches.EncodeABC[i].floats.params.base * f)
+  f = pcrd->caches.EncodeABC[i].floats.params.factor;\
+  pcrd->MatrixABCEncode.cu.t *= f;\
+  pcrd->MatrixABCEncode.cv.t *= f;\
+  pcrd->MatrixABCEncode.cw.t *= f;\
+  pcrd->EncodeABC_base[i] =\
+    float2cie_cached(pcrd->caches.EncodeABC[i].floats.params.base * f)
 	mabc(0, u);
 	mabc(1, v);
 	mabc(2, w);
-	pcie->MatrixABCEncode.is_identity = 0;
+	pcrd->MatrixABCEncode.is_identity = 0;
     }
 #undef mabc
-    cie_cache_mult3(pcie->caches.EncodeLMN, &pcie->MatrixABCEncode);
+    cie_cache_mult3(pcrd->caches.EncodeLMN, &pcrd->MatrixABCEncode);
+    pcrd->status = CIE_RENDER_STATUS_COMPLETED;
     return 0;
 }
 
-/* Apply a range restriction to one cache or 3 caches. */
-private void near
+/* Apply a range restriction to a cache. */
+private void
 cie_cache_restrict(cie_cache_floats * pcache, const gs_range * prange)
 {
     int i;
@@ -777,94 +747,122 @@ gs_cie_cs_common(gs_state * pgs)
 	    pcs = gs_color_space_indexed_base_space(pcs);
 	    goto sw;
 	case gs_color_space_index_Pattern:
-/****** WHAT? ******/
+	    /****** WHAT? ******/
 	default:
 	    return 0;
     }
 }
 
 /* Finish loading the joint caches for the current color space. */
-void
+int
 gs_cie_cs_complete(gs_state * pgs, bool init)
 {
     const gs_cie_common *common = gs_cie_cs_common(pgs);
 
     if (common) {
-	if (init)
-	    cie_joint_caches_init(pgs->cie_joint_caches, common,
-				  pgs->cie_render);
+	if (init) {
+	    int code = cie_joint_caches_init(pgs->cie_joint_caches, common,
+					     pgs->cie_render);
+
+	    if (code < 0)
+		return code;
+	}
 	cie_joint_caches_complete(pgs->cie_joint_caches, common,
 				  pgs->cie_render);
     }
+    return 0;
+}
+
+/*
+ * Compute the source and destination WhitePoint and BlackPoint for
+ * the TransformPQR procedure.
+ */
+int 
+gs_cie_compute_wbsd(gs_cie_wbsd * pwbsd,
+	 const gs_vector3 * cs_WhitePoint, const gs_vector3 * cs_BlackPoint,
+		    const gs_cie_render * pcrd)
+{
+    pwbsd->ws.xyz = *cs_WhitePoint;
+    cie_mult3(&pwbsd->ws.xyz, &pcrd->MatrixPQR, &pwbsd->ws.pqr);
+    pwbsd->bs.xyz = *cs_BlackPoint;
+    cie_mult3(&pwbsd->bs.xyz, &pcrd->MatrixPQR, &pwbsd->bs.pqr);
+    pwbsd->wd.xyz = pcrd->points.WhitePoint;
+    pwbsd->wd.pqr = pcrd->wdpqr;
+    pwbsd->bd.xyz = pcrd->points.BlackPoint;
+    pwbsd->bd.pqr = pcrd->bdpqr;
+    return 0;
 }
 
 /* Compute values derived from the color space and rendering parameters */
 /* other than the cached procedure values.  This routine is idempotent. */
-private void
+private int
 cie_joint_caches_init(gx_cie_joint_caches * pjc,
-		    const gs_cie_common * pcie, const gs_cie_render * pcier)
+		      const gs_cie_common * pcie,
+		      gs_cie_render * pcrd)
 {
-    pjc->points_sd.ws.xyz = pcie->points.WhitePoint;
-    cie_mult3(&pjc->points_sd.ws.xyz, &pcier->MatrixPQR,
-	      &pjc->points_sd.ws.pqr);
-    pjc->points_sd.bs.xyz = pcie->points.BlackPoint;
-    cie_mult3(&pjc->points_sd.bs.xyz, &pcier->MatrixPQR,
-	      &pjc->points_sd.bs.pqr);
-    pjc->points_sd.wd.xyz = pcier->points.WhitePoint;
-    pjc->points_sd.wd.pqr = pcier->wdpqr;
-    pjc->points_sd.bd.xyz = pcier->points.BlackPoint;
-    pjc->points_sd.bd.pqr = pcier->bdpqr;
-    cie_matrix_mult3(&pcier->MatrixPQR, &pcie->MatrixLMN,
+    gs_cie_compute_wbsd(&pjc->points_sd, &pcie->points.WhitePoint,
+			&pcie->points.BlackPoint, pcrd);
+    cie_matrix_mult3(&pcrd->MatrixPQR, &pcie->MatrixLMN,
 		     &pjc->MatrixLMN_PQR);
     /* Load the TransformPQR caches. */
     {
-	int i, j;
-	gs_for_loop_params lp[3];
+	int j;
 
-	cie_cache_init3(pjc->TransformPQR, lp, pcier->RangePQR.ranges,
-			"TransformPQR");
-	for (i = 0; i < gx_cie_cache_size; i++)
-	    for (j = 0; j < 3; lp[j].init += lp[j].step, j++)
-		pjc->TransformPQR[j].floats.values[i] =
-		    (*pcier->TransformPQR.procs[j]) (lp[j].init, &pjc->points_sd, pcier);
+	for (j = 0; j < 3; j++) {
+	    int i;
+	    gs_for_loop_params lp;
+
+	    gs_cie_cache_init(&pjc->TransformPQR[j].floats.params, &lp,
+			      &pcrd->RangePQR.ranges[j], "TransformPQR");
+	    for (i = 0; i < gx_cie_cache_size; lp.init += lp.step, i++) {
+		float out;
+		int code =
+		    (*pcrd->TransformPQR.proc)(j, lp.init, &pjc->points_sd,
+					       pcrd, &out);
+
+		if (code < 0)
+		    return code;
+		pjc->TransformPQR[j].floats.values[i] = out;
+	    }
+	}
     }
+    return 0;
 }
 
-/* Complete the loading of the joint caches.  Note that this routine */
-/* may make non-idempotent changes to the values in the caches. */
+/* Complete the loading of the joint caches.  This routine is NOT */
+/* idempotent. */
 private void
 cie_joint_caches_complete(gx_cie_joint_caches * pjc,
-		    const gs_cie_common * pcie, const gs_cie_render * pcier)
+		    const gs_cie_common * pcie, const gs_cie_render * pcrd)
 {
     int j;
 
-    cie_cache_restrict3(pjc->TransformPQR, &pcier->RangePQR);
-    for (j = 0; j < 3; j++)
+    for (j = 0; j < 3; j++) {
+	cie_cache_restrict(&pjc->TransformPQR[j].floats,
+			   &pcrd->RangePQR.ranges[j]);
 	cie_cache_mult(&pjc->DecodeLMN[j],
 		       &pjc->MatrixLMN_PQR.cu + j,
 		       &pcie->caches.DecodeLMN[j].floats);
+    }
     pjc->skipLMN = pjc->MatrixLMN_PQR.is_identity &
 	pjc->DecodeLMN[0].vecs.params.is_identity &
 	pjc->DecodeLMN[1].vecs.params.is_identity &
 	pjc->DecodeLMN[2].vecs.params.is_identity;
     pjc->skipPQR =
-	cie_cache_mult3(pjc->TransformPQR, &pcier->MatrixPQR_inverse_LMN);
+	cie_cache_mult3(pjc->TransformPQR, &pcrd->MatrixPQR_inverse_LMN);
 }
 
 /* ================ Color rendering (using the caches) ================ */
 
-/* Allocator structure type */
-public_st_cie_render1();
-
-private int near cie_remap_finish(P3(const cie_cached_vector3 *,
-				     frac *, const gs_imager_state *));
-private void near cie_lookup_mult3(P2(cie_cached_vector3 *,
-				      const gx_cie_vector_cache *));
+private int cie_remap_finish(P3(const cie_cached_vector3 *,
+				frac *, const gs_imager_state *));
+private void cie_lookup_mult3(P2(cie_cached_vector3 *,
+				 const gx_cie_vector_cache *));
 
 #ifdef DEBUG
-private void near
+private void
 cie_lookup_map3(cie_cached_vector3 * pvec,
-	   const gx_cie_vector_cache * pc /*[3] */ , const char _ds * cname)
+		const gx_cie_vector_cache * pc /*[3] */ , const char *cname)
 {
     if_debug5('c', "[c]lookup %s 0x%lx [%g %g %g]\n",
 	      (const char *)cname, (ulong) pc,
@@ -884,8 +882,41 @@ int
 gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
 		      frac * pconc, const gs_imager_state * pis)
 {
-/****** NOT IMPLEMENTED YET ******/
-    return_error(gs_error_undefined);
+    const gs_cie_defg *pcie = pcs->params.defg;
+    int i;
+    fixed hijk[4];
+    frac abc[3];
+    cie_cached_vector3 vec3;
+
+    if_debug4('c', "[c]concretize DEFG [%g %g %g %g]\n",
+	      pc->paint.values[0], pc->paint.values[1],
+	      pc->paint.values[2], pc->paint.values[3]);
+    /* Apply DecodeDEFG (including restriction to RangeHIJK). */
+    for (i = 0; i < 4; ++i) {
+	int tmax = pcie->Table.dims[i] - 1;
+	float value = (pc->paint.values[i] - pcie->RangeDEFG.ranges[i].rmin) *
+	    tmax /
+	    (pcie->RangeDEFG.ranges[i].rmax - pcie->RangeDEFG.ranges[i].rmin);
+	int vi = (int)value;
+	float vf = value - vi;
+	float v = pcie->caches_defg.DecodeDEFG[i].floats.values[vi];
+
+	if (vf != 0 && vi < tmax)
+	    v += vf *
+		(pcie->caches_defg.DecodeDEFG[i].floats.values[vi + 1] - v);
+	hijk[i] = float2fixed(v);
+    }
+    /* Apply Table. */
+    gx_color_interpolate_linear(hijk, &pcie->Table, abc);
+    vec3.u = float2cie_cached(frac2float(abc[0]));
+    vec3.v = float2cie_cached(frac2float(abc[1]));
+    vec3.w = float2cie_cached(frac2float(abc[2]));
+    /* Apply DecodeABC and MatrixABC. */
+    if (!pcie->caches.skipABC)
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
+			"Decode/MatrixABC");
+    cie_remap_finish(&vec3, pconc, pis);
+    return 0;
 }
 
 /* Render a CIEBasedDEF color. */
@@ -893,8 +924,41 @@ int
 gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
 		     frac * pconc, const gs_imager_state * pis)
 {
-/****** NOT IMPLEMENTED YET ******/
-    return_error(gs_error_undefined);
+    const gs_cie_def *pcie = pcs->params.def;
+    int i;
+    fixed hij[3];
+    frac abc[3];
+    cie_cached_vector3 vec3;
+
+    if_debug3('c', "[c]concretize DEF [%g %g %g]\n",
+	      pc->paint.values[0], pc->paint.values[1],
+	      pc->paint.values[2]);
+    /* Apply DecodeDEF (including restriction to RangeHIJ). */
+    for (i = 0; i < 3; ++i) {
+	int tmax = pcie->Table.dims[i] - 1;
+	float value = (pc->paint.values[i] - pcie->RangeDEF.ranges[i].rmin) *
+	    tmax /
+	    (pcie->RangeDEF.ranges[i].rmax - pcie->RangeDEF.ranges[i].rmin);
+	int vi = (int)value;
+	float vf = value - vi;
+	float v = pcie->caches_def.DecodeDEF[i].floats.values[vi];
+
+	if (vf != 0 && vi < tmax)
+	    v += vf *
+		(pcie->caches_def.DecodeDEF[i].floats.values[vi + 1] - v);
+	hij[i] = float2fixed(v);
+    }
+    /* Apply Table. */
+    gx_color_interpolate_linear(hij, &pcie->Table, abc);
+    vec3.u = float2cie_cached(frac2float(abc[0]));
+    vec3.v = float2cie_cached(frac2float(abc[1]));
+    vec3.w = float2cie_cached(frac2float(abc[2]));
+    /* Apply DecodeABC and MatrixABC. */
+    if (!pcie->caches.skipABC)
+	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
+			"Decode/MatrixABC");
+    cie_remap_finish(&vec3, pconc, pis);
+    return 0;
 }
 
 /* Render a CIEBasedABC color. */
@@ -985,7 +1049,7 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 
 /* Common rendering code. */
 /* Return 3 if RGB, 4 if CMYK. */
-private int near
+private int
 cie_remap_finish(const cie_cached_vector3 * plmn, frac * pconc,
 		 const gs_imager_state * pis)
 {
@@ -1138,7 +1202,7 @@ cie_remap_finish(const cie_cached_vector3 * plmn, frac * pconc,
 
 /* Multiply a vector by a matrix. */
 /* Note that we are computing M * V where v is a column vector. */
-private void near
+private void
 cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
 	  gs_vector3 * out)
 {
@@ -1157,7 +1221,7 @@ cie_mult3(const gs_vector3 * in, register const gs_matrix3 * mat,
 /* Multiply two matrices.  We assume the result is not an alias for */
 /* either of the operands.  Note that the composition of the transformations */
 /* M1 followed by M2 is M2 * M1, not M1 * M2.  (See gscie.h for details.) */
-private void near
+private void
 cie_matrix_mult3(const gs_matrix3 * ma, const gs_matrix3 * mb, gs_matrix3 * mc)
 {
     if_debug_matrix3("[c]matrix_mult", ma);
@@ -1171,9 +1235,9 @@ cie_matrix_mult3(const gs_matrix3 * ma, const gs_matrix3 * mb, gs_matrix3 * mc)
 
 /* Invert a matrix. */
 /* The output must not be an alias for the input. */
-private void near
+private void
 cie_invert3(register const gs_matrix3 * in, register gs_matrix3 * out)
-{				/* This is a brute force algorithm; maybe there are better. */
+{	/* This is a brute force algorithm; maybe there are better. */
     /* We label the array elements */
     /*   [ A B C ]   */
     /*   [ D E F ]   */
@@ -1216,7 +1280,7 @@ cie_invert3(register const gs_matrix3 * in, register gs_matrix3 * out)
 }
 
 /* Look up 3 values in a cache, with cached post-multiplication. */
-private void near
+private void
 cie_lookup_mult3(cie_cached_vector3 * pvec, const gx_cie_vector_cache * pc /*[3] */ )
 {
 /****** Interpolating at intermediate stages doesn't seem to ******/
@@ -1283,7 +1347,7 @@ cie_lookup_mult3(cie_cached_vector3 * pvec, const gx_cie_vector_cache * pc /*[3]
 }
 
 /* Set the is_identity flag that accelerates multiplication. */
-private void near
+private void
 cie_matrix_init(register gs_matrix3 * mat)
 {
     mat->is_identity =

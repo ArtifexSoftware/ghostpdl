@@ -1,23 +1,26 @@
 /* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* opextern.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: opextern.h  */
 /* Externally accessible operator declarations */
+
+#ifndef opextern_INCLUDED
+#  define opextern_INCLUDED
 
 /*
  * Normally, the procedures that implement PostScript operators (named zX
@@ -25,8 +28,8 @@
  * file in which they are defined.  There are, however, a surprising
  * number of these procedures that are used from other files.
  * This file, opextern.h, declares all z* procedures that are
- *	- referenced from outside their defining file, and
- *	- present in *all* configurations of the interpreter.
+ *      - referenced from outside their defining file, and
+ *      - present in *all* configurations of the interpreter.
  * For z* procedures referenced from outside their file but not present
  * in all configurations (e.g., Level 2 operators), the file making the
  * reference must include a local extern.  Not pretty, but c'est la vie.
@@ -64,6 +67,7 @@ int zsetdevice(P1(os_ptr));
 int zsetgstate(P1(os_ptr));
 
 /* Operators exported for Level 2 "wrappers". */
+int zcopy(P1(os_ptr));
 int zimage(P1(os_ptr));
 int zimagemask(P1(os_ptr));
 int zwhere(P1(os_ptr));
@@ -101,3 +105,5 @@ int zcurrentdevice(P1(os_ptr));
 int ztoken(P1(os_ptr));
 int ztokenexec(P1(os_ptr));
 int zwrite(P1(os_ptr));
+
+#endif /* opextern_INCLUDED */

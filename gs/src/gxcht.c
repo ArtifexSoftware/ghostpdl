@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxcht.c */
+/*Id: gxcht.c  */
 /* Color halftone rendering for Ghostscript imaging library */
 #include "memory_.h"
 #include "gx.h"
@@ -39,38 +39,27 @@
 #else
 #  define tile_longs_allocated tile_longs_LARGE
 #  define tile_longs\
-     (gs_if_debug_c('.') ? tile_longs_SMALL : tile_longs_LARGE)
+     (gs_debug_c('.') ? tile_longs_SMALL : tile_longs_LARGE)
 #endif
 
 /* Define the colored halftone device color type. */
+gs_private_st_ptrs1(st_dc_ht_colored, gx_device_color, "dc_ht_colored",
+    dc_ht_colored_enum_ptrs, dc_ht_colored_reloc_ptrs, colors.colored.c_ht);
 private dev_color_proc_load(gx_dc_ht_colored_load);
 private dev_color_proc_fill_rectangle(gx_dc_ht_colored_fill_rectangle);
-private struct_proc_enum_ptrs(dc_ht_colored_enum_ptrs);
-private struct_proc_reloc_ptrs(dc_ht_colored_reloc_ptrs);
-const gx_device_color_procs
-      gx_dc_procs_ht_colored =
-{gx_dc_ht_colored_load, gx_dc_ht_colored_fill_rectangle,
- gx_dc_default_fill_masked,
- dc_ht_colored_enum_ptrs, dc_ht_colored_reloc_ptrs
+private dev_color_proc_equal(gx_dc_ht_colored_equal);
+const gx_device_color_type_t
+      gx_dc_type_data_ht_colored =
+{&st_dc_ht_colored,
+ gx_dc_ht_colored_load, gx_dc_ht_colored_fill_rectangle,
+ gx_dc_default_fill_masked, gx_dc_ht_colored_equal
 };
 
 #undef gx_dc_type_ht_colored
-const gx_device_color_procs _ds *gx_dc_type_ht_colored = &gx_dc_procs_ht_colored;
+const gx_device_color_type_t *const gx_dc_type_ht_colored =
+&gx_dc_type_data_ht_colored;
 
-#define gx_dc_type_ht_colored (&gx_dc_procs_ht_colored)
-/* GC procedures */
-#define cptr ((gx_device_color *)vptr)
-private 
-ENUM_PTRS_BEGIN(dc_ht_colored_enum_ptrs) return 0;
-
-ENUM_PTR(0, gx_device_color, colors.colored.c_ht);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(dc_ht_colored_reloc_ptrs)
-{
-    RELOC_PTR(gx_device_color, colors.colored.c_ht);
-}
-RELOC_PTRS_END
-#undef cptr
+#define gx_dc_type_ht_colored (&gx_dc_type_data_ht_colored)
 
 /* Forward references. */
 private void set_ht_colors(P6(gx_color_index[16], gx_strip_bitmap *[4],
@@ -79,7 +68,7 @@ private void set_color_ht(P9(gx_strip_bitmap *, int, int, int, int, int, int,
 		     const gx_color_index[16], const gx_strip_bitmap *[4]));
 
 /* Define a table for expanding 8x1 bits to 8x4. */
-private const bits32 far_data expand_8x1_to_8x4[256] =
+private const bits32 expand_8x1_to_8x4[256] =
 {
 #define x16(c)\
   c+0, c+1, c+0x10, c+0x11, c+0x100, c+0x101, c+0x110, c+0x111,\
@@ -265,6 +254,23 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
  * Each plane specifies halftoning for one component (R/G/B or C/M/Y/K).
  */
 
+private const ulong ht_no_bitmap_data[] = {
+    0, 0, 0, 0, 0, 0, 0, 0
+};
+private gx_strip_bitmap ht_no_bitmap;
+private const gx_strip_bitmap ht_no_bitmap_init = {
+    0, sizeof(ulong),
+    {sizeof(ulong) * 8, countof(ht_no_bitmap_data)},
+    gx_no_bitmap_id, 1, 1, 0, 0
+};
+
+void
+gs_gxcht_init(gs_memory_t *mem)
+{
+    ht_no_bitmap = ht_no_bitmap_init;
+    ht_no_bitmap.data = (byte *)ht_no_bitmap_data;	/* actually const */
+}
+
 /* Set up the colors and the individual plane halftone bitmaps. */
 private void
 set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
@@ -272,17 +278,9 @@ set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
 	      int nplanes)
 {
     gx_color_value v[2][4];
-    static const ulong no_bitmap_data[] =
-    {0, 0, 0, 0, 0, 0, 0, 0};
-    static gx_strip_bitmap no_bitmap =
-    {0, sizeof(ulong),
-     {sizeof(ulong) * 8, countof(no_bitmap_data)},
-     gx_no_bitmap_id, 1, 1, 0, 0
-    };
     gx_color_value max_color = dev->color_info.dither_colors - 1;
     int plane_mask = 0;
 
-    no_bitmap.data = (byte *) no_bitmap_data;	/* actually const */
 #define cb(i) pdc->colors.colored.c_base[i]
 #define cl(i) pdc->colors.colored.c_level[i]
 #define set_plane_color(i)\
@@ -290,7 +288,7 @@ set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
 	uint r = cl(i);\
 	v[0][i] = fractional_color(q, max_color);\
 	if ( r == 0 )\
-	  v[1][i] = v[0][i], sbits[i] = &no_bitmap;\
+	  v[1][i] = v[0][i], sbits[i] = &ht_no_bitmap;\
 	else\
 	  v[1][i] = fractional_color(q+1, max_color),\
 	  sbits[i] = &gx_render_ht(caches[i], r)->tiles,\
@@ -614,4 +612,28 @@ private void
 	    step_row(cursor[3], 3);
 #undef step_row
     }
+}
+
+/* Compare two colored halftones for equality. */
+private bool
+gx_dc_ht_colored_equal(const gx_device_color * pdevc1,
+		       const gx_device_color * pdevc2)
+{
+    uint num_comp;
+
+    if (pdevc2->type != pdevc1->type ||
+	pdevc1->colors.colored.c_ht != pdevc2->colors.colored.c_ht ||
+	pdevc1->colors.colored.alpha != pdevc2->colors.colored.alpha ||
+	pdevc1->phase.x != pdevc2->phase.x ||
+	pdevc1->phase.y != pdevc2->phase.y
+	)
+	return false;
+    num_comp = pdevc1->colors.colored.c_ht->num_comp;
+    return
+	!memcmp(pdevc1->colors.colored.c_base,
+		pdevc2->colors.colored.c_base,
+		num_comp * sizeof(pdevc1->colors.colored.c_base[0])) &&
+	!memcmp(pdevc1->colors.colored.c_level,
+		pdevc2->colors.colored.c_level,
+		num_comp * sizeof(pdevc1->colors.colored.c_level[0]));
 }

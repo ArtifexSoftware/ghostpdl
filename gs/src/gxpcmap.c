@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxpcmap.c */
+/*Id: gxpcmap.c  */
 /* Pattern color mapping for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"
@@ -47,7 +47,7 @@ gx_pat_cache_default_tiles(void)
 #if arch_small_memory
     return max_cached_patterns_SMALL;
 #else
-    return (gs_if_debug_c('.') ? max_cached_patterns_SMALL :
+    return (gs_debug_c('.') ? max_cached_patterns_SMALL :
 	    max_cached_patterns_LARGE);
 #endif
 }
@@ -57,7 +57,7 @@ gx_pat_cache_default_bits(void)
 #if arch_small_memory
     return max_pattern_bits_SMALL;
 #else
-    return (gs_if_debug_c('.') ? max_pattern_bits_SMALL :
+    return (gs_debug_c('.') ? max_pattern_bits_SMALL :
 	    max_pattern_bits_LARGE);
 #endif
 }
@@ -76,58 +76,66 @@ private dev_proc_close_device(pattern_accum_close);
 private dev_proc_fill_rectangle(pattern_accum_fill_rectangle);
 private dev_proc_copy_mono(pattern_accum_copy_mono);
 private dev_proc_copy_color(pattern_accum_copy_color);
+private dev_proc_get_bits_rectangle(pattern_accum_get_bits_rectangle);
 
 /* The device descriptor */
 private const gx_device_pattern_accum gs_pattern_accum_device =
 {std_device_std_body_open(gx_device_pattern_accum, 0,
 			  "pattern accumulator",
 			  0, 0, 72, 72),
- {pattern_accum_open,
-  NULL,
-  NULL,
-  NULL,
-  pattern_accum_close,
-  NULL,
-  NULL,
-  pattern_accum_fill_rectangle,
-  NULL,
-  pattern_accum_copy_mono,
-  pattern_accum_copy_color,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  NULL,
-  gx_default_fill_path,
-  gx_default_stroke_path,
-  NULL,
-  gx_default_fill_trapezoid,
-  gx_default_fill_parallelogram,
-  gx_default_fill_triangle,
-  gx_default_draw_thin_line,
-  gx_default_begin_image,
-  gx_default_image_data,
-  gx_default_end_image,
-  NULL,
-  NULL,
-  gx_get_largest_clipping_box,
-  NULL
+ {				/*
+				 * NOTE: all drawing procedures must be defaulted,
+				 * not forwarded.
+				 */
+     pattern_accum_open,
+     NULL,
+     NULL,
+     NULL,
+     pattern_accum_close,
+     NULL,
+     NULL,
+     pattern_accum_fill_rectangle,
+     gx_default_tile_rectangle,
+     pattern_accum_copy_mono,
+     pattern_accum_copy_color,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     NULL,
+     gx_default_copy_alpha,
+     NULL,
+     gx_default_copy_rop,
+     gx_default_fill_path,
+     gx_default_stroke_path,
+     gx_default_fill_mask,
+     gx_default_fill_trapezoid,
+     gx_default_fill_parallelogram,
+     gx_default_fill_triangle,
+     gx_default_draw_thin_line,
+     gx_default_begin_image,
+     gx_default_image_data,
+     gx_default_end_image,
+     gx_default_strip_tile_rectangle,
+     gx_default_strip_copy_rop,
+     gx_get_largest_clipping_box,
+     gx_default_begin_typed_image,
+     pattern_accum_get_bits_rectangle,
+     NULL,
+     NULL,
+     NULL,
+     gx_default_text_begin
  },
  0,				/* target */
  0, 0, 0, 0			/* bitmap_memory, bits, mask, instance */
 };
 
-#define padev ((gx_device_pattern_accum *)dev)
-
-/* Allocate a pattern accumulator. */
+/* Allocate a pattern accumulator, with an initial refct of 0. */
 gx_device_pattern_accum *
 gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
 {
@@ -137,8 +145,9 @@ gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
 
     if (adev == 0)
 	return 0;
-    *adev = gs_pattern_accum_device;
-    adev->memory = mem;
+    gx_device_init((gx_device *) adev,
+		   (const gx_device *)&gs_pattern_accum_device,
+		   mem, true);
     gx_device_forward_fill_in_procs((gx_device_forward *) adev);	/* (should only do once) */
     return adev;
 }
@@ -148,27 +157,35 @@ gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
 private int
 pattern_accum_open(gx_device * dev)
 {
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
     const gs_pattern_instance *pinst = padev->instance;
     gs_memory_t *mem = padev->bitmap_memory;
     gx_device_memory *mask =
     gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
 		    "pattern_accum_open(mask)");
     gx_device_memory *bits = 0;
-    gx_device *target = gs_currentdevice(pinst->saved);
+    /*
+     * The client should preset the target, because the device for which the
+     * pattern is being rendered may not (in general, will not) be the same
+     * as the one that was current when the pattern was instantiated.
+     */
+    gx_device *target =
+	(padev->target == 0 ? gs_currentdevice(pinst->saved) :
+	 padev->target);
     int width = pinst->size.x;
     int height = pinst->size.y;
     int code;
 
     if (mask == 0)
 	return_error(gs_error_VMerror);
-#define pdset(dev)\
+#define PDSET(dev)\
   (dev)->width = width, (dev)->height = height,\
   (dev)->x_pixels_per_inch = target->x_pixels_per_inch,\
   (dev)->y_pixels_per_inch = target->y_pixels_per_inch
-    pdset(padev);
+    PDSET(padev);
     padev->color_info = target->color_info;
     gs_make_mem_mono_device(mask, mem, 0);
-    pdset(mask);
+    PDSET(mask);
     mask->bitmap_memory = mem;
     mask->base = 0;
     code = (*dev_proc(mask, open_device)) ((gx_device *) mask);
@@ -185,9 +202,11 @@ pattern_accum_open(gx_device * dev)
 		if (bits == 0)
 		    return_error(gs_error_VMerror);
 		padev->target = (gx_device *) bits;
-		gs_make_mem_device(bits, gdev_mem_device_for_bits(target->color_info.depth), mem, -1, target);
-		pdset(bits);
-#undef pdset
+		gs_make_mem_device(bits,
+			 gdev_mem_device_for_bits(target->color_info.depth),
+				   mem, -1, target);
+		PDSET(bits);
+#undef PDSET
 		bits->color_info = target->color_info;
 		bits->bitmap_memory = mem;
 		code = (*dev_proc(bits, open_device)) ((gx_device *) bits);
@@ -209,6 +228,7 @@ pattern_accum_open(gx_device * dev)
 private int
 pattern_accum_close(gx_device * dev)
 {
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
     gs_memory_t *mem = padev->bitmap_memory;
 
     if (padev->bits != 0) {
@@ -227,11 +247,13 @@ private int
 pattern_accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			     gx_color_index color)
 {
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+
     if (padev->bits)
-	(*dev_proc(padev->target, fill_rectangle)) (padev->target,
-						    x, y, w, h, color);
-    return (*dev_proc(padev->mask, fill_rectangle)) ((gx_device *) padev->mask,
-					    x, y, w, h, (gx_color_index) 1);
+	(*dev_proc(padev->target, fill_rectangle))
+	    (padev->target, x, y, w, h, color);
+    return (*dev_proc(padev->mask, fill_rectangle))
+	((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
 }
 
 /* Copy a monochrome bitmap. */
@@ -240,19 +262,23 @@ pattern_accum_copy_mono(gx_device * dev, const byte * data, int data_x,
 		    int raster, gx_bitmap_id id, int x, int y, int w, int h,
 			gx_color_index color0, gx_color_index color1)
 {
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+
     if (padev->bits)
-	(*dev_proc(padev->target, copy_mono)) (padev->target,
-		      data, data_x, raster, id, x, y, w, h, color0, color1);
+	(*dev_proc(padev->target, copy_mono))
+	    (padev->target, data, data_x, raster, id, x, y, w, h,
+	     color0, color1);
     if (color0 != gx_no_color_index)
 	color0 = 1;
     if (color1 != gx_no_color_index)
 	color1 = 1;
     if (color0 == 1 && color1 == 1)
-	return (*dev_proc(padev->mask, fill_rectangle)) ((gx_device *) padev->mask,
-					    x, y, w, h, (gx_color_index) 1);
+	return (*dev_proc(padev->mask, fill_rectangle))
+	    ((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
     else
-	return (*dev_proc(padev->mask, copy_mono)) ((gx_device *) padev->mask,
-		      data, data_x, raster, id, x, y, w, h, color0, color1);
+	return (*dev_proc(padev->mask, copy_mono))
+	    ((gx_device *) padev->mask, data, data_x, raster, id, x, y, w, h,
+	     color0, color1);
 }
 
 /* Copy a color bitmap. */
@@ -260,14 +286,26 @@ private int
 pattern_accum_copy_color(gx_device * dev, const byte * data, int data_x,
 		    int raster, gx_bitmap_id id, int x, int y, int w, int h)
 {
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+
     if (padev->bits)
-	(*dev_proc(padev->target, copy_color)) (padev->target,
-				      data, data_x, raster, id, x, y, w, h);
-    return (*dev_proc(padev->mask, fill_rectangle)) ((gx_device *) padev->mask,
-					    x, y, w, h, (gx_color_index) 1);
+	(*dev_proc(padev->target, copy_color))
+	    (padev->target, data, data_x, raster, id, x, y, w, h);
+    return (*dev_proc(padev->mask, fill_rectangle))
+	((gx_device *) padev->mask, x, y, w, h, (gx_color_index) 1);
 }
 
-#undef padev
+/* Read back a rectangle of bits. */
+/****** SHOULD USE MASK TO DEFINE UNREAD AREA *****/
+private int
+pattern_accum_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
+		       gs_get_bits_params_t * params, gs_int_rect ** unread)
+{
+    gx_device_pattern_accum *const padev = (gx_device_pattern_accum *) dev;
+
+    return (*dev_proc(padev->target, get_bits_rectangle))
+	(padev->target, prect, params, unread);
+}
 
 /* ------ Color space implementation ------ */
 
@@ -503,46 +541,26 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
     code = ensure_pattern_cache((gs_imager_state *) pis);
     if (code < 0)
 	return code;
-    adev = gs_pattern_accum_device;
+    gx_device_init((gx_device *) & adev,
+		   (const gx_device *)&gs_pattern_accum_device,
+		   NULL, true);
     gx_device_forward_fill_in_procs((gx_device_forward *) & adev);	/* (should only do once) */
+    adev.target = dev;
     adev.instance = pinst;
     adev.bitmap_memory = mem;
     code = (*dev_proc(&adev, open_device)) ((gx_device *) & adev);
     if (code < 0)
 	return code;
-    /*
-     * We want the copying operation to mark paths in the copy as shared,
-     * but we don't want the share marks to persist in the original
-     * after we free the copy, because this prevents the paths from
-     * being freed (except by restore or GC).  This requires a bit of
-     * care....
-     */
-    {
-	gs_state *orig = pinst->saved;
-	gx_path *ppath = orig->path;
-	gx_clip_path *pcpath = orig->clip_path;
-	bool path_shared = ppath->shares_segments;
-	bool cpath_shared = pcpath->path.shares_segments;
-	bool list_shared = pcpath->shares_list;
-
-	/*
-	 * The call of gs_gstate will set all the sharing flags, but that
-	 * is OK, because orig points to an orphan gstate (no stack).
-	 */
-	saved = gs_gstate(pinst->saved);
-	if (saved == 0)
-	    return_error(gs_error_VMerror);
-	if (saved->pattern_cache == 0)
-	    saved->pattern_cache = pis->pattern_cache;
-	gx_set_device_only(saved, (gx_device *) & adev);
-	code = (*pinst->template.PaintProc) (&pdc->mask.ccolor, saved);
-	gs_state_free(saved);
-	ppath->shares_segments = path_shared;
-	pcpath->path.shares_segments = cpath_shared;
-	pcpath->shares_list = list_shared;
-    }
+    saved = gs_gstate(pinst->saved);
+    if (saved == 0)
+	return_error(gs_error_VMerror);
+    if (saved->pattern_cache == 0)
+	saved->pattern_cache = pis->pattern_cache;
+    gx_set_device_only(saved, (gx_device *) & adev);
+    code = (*pinst->template.PaintProc) (&pdc->mask.ccolor, saved);
     if (code < 0) {
 	(*dev_proc(&adev, close_device)) ((gx_device *) & adev);
+	gs_state_free(saved);
 	return code;
     }
     /* We REALLY don't like the following cast.... */
@@ -554,6 +572,9 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 	    code = gs_note_error(gs_error_Fatal);
 	}
     }
+    /* Free the bookkeeping structures, except for the bits and mask */
+    /* iff they are still needed. */
+    (*dev_proc(&adev, close_device)) ((gx_device *) & adev);
 #ifdef DEBUG
     if (gs_debug_c('B')) {
 	debug_dump_bitmap(adev.mask->base, adev.mask->raster,
@@ -564,9 +585,7 @@ gx_pattern_load(gx_device_color * pdc, const gs_imager_state * pis,
 			      adev.target->height, "[B]Pattern bits");
     }
 #endif
-    /* Free the bookkeeping structures, except for the bits and mask */
-    /* iff they are still needed. */
-    (*dev_proc(&adev, close_device)) ((gx_device *) & adev);
+    gs_state_free(saved);
     return code;
 }
 
@@ -581,25 +600,25 @@ gx_remap_Pattern(const gs_client_color * pc, const gs_color_space * pcs,
     int code;
 
     pdc->mask.ccolor = *pc;
-    if (pinst == 0) {		/* Null pattern */
+    if (pinst == 0) {
+	/* Null pattern */
 	color_set_null_pattern(pdc);
 	return 0;
     }
     if (pinst->template.PaintType == 2) {	/* uncolored */
 	code = (*pcs->params.pattern.base_space.type->remap_color)
-	    (pc, (const gs_color_space *)&pcs->params.pattern.base_space, pdc, pis, dev, select);
+	    (pc, (const gs_color_space *)&pcs->params.pattern.base_space,
+	     pdc, pis, dev, select);
 	if (code < 0)
 	    return code;
-#define replace_dc_type(t, pt)\
-  if ( pdc->type == t ) pdc->type = &pt
-	replace_dc_type(gx_dc_type_pure, gx_dc_pure_masked);
+	if (pdc->type == gx_dc_type_pure)
+	    pdc->type = &gx_dc_pure_masked;
+	else if (pdc->type == gx_dc_type_ht_binary)
+	    pdc->type = &gx_dc_binary_masked;
+	else if (pdc->type == gx_dc_type_ht_colored)
+	    pdc->type = &gx_dc_colored_masked;
 	else
-	replace_dc_type(gx_dc_type_ht_binary, gx_dc_binary_masked);
-	else
-	replace_dc_type(gx_dc_type_ht_colored, gx_dc_colored_masked);
-	else
-	return_error(gs_error_unregistered);
-#undef replace_dc_type
+	    return_error(gs_error_unregistered);
     } else
 	color_set_null_pattern(pdc);
     pdc->mask.id = pinst->id;

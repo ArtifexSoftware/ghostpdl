@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsparams.c */
+/*Id: gsparams.c  */
 /* Generic parameter list serializer & expander */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */
@@ -25,7 +25,6 @@
 #include "memory_.h"
 #include "gserrors.h"
 #include "gsparams.h"
-
 
 /* ----------- Local Type Decl's ------------ */
 typedef struct {
@@ -80,17 +79,18 @@ gs_param_list_serialize(
 {
     int code = 0;
     int temp_code;
-    gs_param_key_t key_enum;
+    gs_param_enumerator_t key_enum;
+    gs_param_key_t key;
     WriteBuffer write_buf;
 
     write_buf.buf = buf;
     write_buf.buf_end = buf + (buf ? buf_sizeof : 0);
     write_buf.total_sizeof = 0;
-    param_init_enumerator(&key_enum.enumerator);
+    param_init_enumerator(&key_enum);
 
     /* Each item is serialized as ("word" means compressed word):
      *  word: key sizeof + 1, or 0 if end of list/dict
-     *  word: data type(cpt_xxx)
+     *  word: data type(gs_param_type_xxx)
      *  byte[]: key, including trailing \0 
      *  (if simple type)
      *   byte[]: unpacked representation of data
@@ -113,58 +113,58 @@ gs_param_list_serialize(
      * as the direct source of data when expanding a gs_c_param_list
      */
     /* Enumerate all the keys; use keys to get their typed values */
-    while ((code = param_get_next_key(list, &key_enum)) == 0) {
+    while ((code = param_get_next_key(list, &key_enum, &key)) == 0) {
 	int value_top_sizeof;
 	int value_base_sizeof;
-	int array_index;
 
 	/* Get next datum & put its type & key to buffer */
 	gs_param_typed_value value;
 	char string_key[256];
 
-	if (sizeof(string_key) < key_enum.key_sizeof + 1) {
+	if (sizeof(string_key) < key.size + 1) {
 	    code = gs_note_error(gs_error_rangecheck);
 	    break;
 	}
-	memcpy(string_key, key_enum.key, key_enum.key_sizeof);
-	string_key[key_enum.key_sizeof] = 0;
+	memcpy(string_key, key.data, key.size);
+	string_key[key.size] = 0;
 	if ((code = param_read_typed(list, string_key, &value)) != 0) {
 	    code = code > 0 ? gs_note_error(gs_error_unknownerror) : code;
 	    break;
 	}
-	put_word((unsigned)key_enum.key_sizeof + 1, &write_buf);
+	put_word((unsigned)key.size + 1, &write_buf);
 	put_word((unsigned)value.type, &write_buf);
-	put_bytes((byte *) string_key, key_enum.key_sizeof + 1, &write_buf);
+	put_bytes((byte *) string_key, key.size + 1, &write_buf);
 
 	/* Put value & its size to buffer */
 	value_top_sizeof = gs_param_type_sizes[value.type];
-	value_base_sizeof = cpt_base_sizeof[value.type];
+	value_base_sizeof = gs_param_type_base_sizes[value.type];
 	switch (value.type) {
-	    case cpt_null:
-	    case cpt_bool:
-	    case cpt_int:
-	    case cpt_long:
-	    case cpt_float:
+	    case gs_param_type_null:
+	    case gs_param_type_bool:
+	    case gs_param_type_int:
+	    case gs_param_type_long:
+	    case gs_param_type_float:
 		put_bytes((byte *) & value.value, value_top_sizeof, &write_buf);
 		break;
 
-	    case cpt_string:
-	    case cpt_name:
-	    case cpt_int_array:
-	    case cpt_float_array:
+	    case gs_param_type_string:
+	    case gs_param_type_name:
+	    case gs_param_type_int_array:
+	    case gs_param_type_float_array:
 		put_bytes((byte *) & value.value, value_top_sizeof, &write_buf);
 		put_alignment(value_base_sizeof, &write_buf);
-		put_bytes(value.value.s.data,
-			value_base_sizeof * value.value.s.size, &write_buf);
+		value_base_sizeof *= value.value.s.size;
+		put_bytes(value.value.s.data, value_base_sizeof, &write_buf);
 		break;
 
-	    case cpt_string_array:
-	    case cpt_name_array:
-		put_bytes((byte *) & value.value, value_top_sizeof, &write_buf);
+	    case gs_param_type_string_array:
+	    case gs_param_type_name_array:
+		value_base_sizeof *= value.value.sa.size;
+		put_bytes((const byte *)&value.value, value_top_sizeof, &write_buf);
 		put_alignment(sizeof(void *), &write_buf);
 
-		put_bytes((byte *) value.value.sa.data,
-		       value_base_sizeof * value.value.sa.size, &write_buf);
+		put_bytes((const byte *)value.value.sa.data, value_base_sizeof,
+			  &write_buf);
 		{
 		    int str_count;
 		    const gs_param_string *sa;
@@ -175,24 +175,24 @@ gs_param_list_serialize(
 		}
 		break;
 
-	    case cpt_dict:
-	    case cpt_dict_int_keys:
+	    case gs_param_type_dict:
+	    case gs_param_type_dict_int_keys:
 		put_word(value.value.d.size, &write_buf);
 		put_alignment(sizeof(void *), &write_buf);
 
 		{
-		    int bytes_written = gs_param_list_serialize(value.value.d.list,
-							      write_buf.buf,
+		    int bytes_written =
+		    gs_param_list_serialize(value.value.d.list,
+					    write_buf.buf,
 		     write_buf.buf ? write_buf.buf_end - write_buf.buf : 0);
 
-		    temp_code
-			= param_end_read_dict(list, key_enum.key, &value.value.d);
+		    temp_code = param_end_read_dict(list, key.data, &value.value.d);
 		    if (bytes_written < 0)
 			code = bytes_written;
 		    else {
 			code = temp_code;
 			if (bytes_written)
-			    put_bytes(buf, bytes_written, &write_buf);
+			    put_bytes(write_buf.buf, bytes_written, &write_buf);
 		    }
 		}
 		break;
@@ -249,35 +249,35 @@ gs_param_list_unserialize(
 
 	/* Data values */
 	value_top_sizeof = gs_param_type_sizes[type];
-	value_base_sizeof = cpt_base_sizeof[type];
+	value_base_sizeof = gs_param_type_base_sizes[type];
 	typed.type = type;
-	if (type != cpt_dict && type != cpt_dict_int_keys) {
+	if (type != gs_param_type_dict && type != gs_param_type_dict_int_keys) {
 	    memcpy(&typed.value, buf, value_top_sizeof);
 	    buf += value_top_sizeof;
 	}
 	switch (type) {
-	    case cpt_null:
-	    case cpt_bool:
-	    case cpt_int:
-	    case cpt_long:
-	    case cpt_float:
+	    case gs_param_type_null:
+	    case gs_param_type_bool:
+	    case gs_param_type_int:
+	    case gs_param_type_long:
+	    case gs_param_type_float:
 		break;
 
-	    case cpt_string:
-	    case cpt_name:
-	    case cpt_int_array:
-	    case cpt_float_array:
+	    case gs_param_type_string:
+	    case gs_param_type_name:
+	    case gs_param_type_int_array:
+	    case gs_param_type_float_array:
 		align_to(&buf, value_base_sizeof);
 		typed.value.s.data = buf;
 		typed.value.s.persistent = false;
 		buf += typed.value.s.size * value_base_sizeof;
 		break;
 
-	    case cpt_string_array:
-	    case cpt_name_array:
+	    case gs_param_type_string_array:
+	    case gs_param_type_name_array:
 		align_to(&buf, sizeof(void *));
 
-		typed.value.sa.data = (gs_param_string *) buf;
+		typed.value.sa.data = (const gs_param_string *)buf;
 		typed.value.sa.persistent = false;
 		buf += typed.value.s.size * value_base_sizeof;
 		{
@@ -294,11 +294,11 @@ gs_param_list_unserialize(
 		}
 		break;
 
-	    case cpt_dict:
-	    case cpt_dict_int_keys:
+	    case gs_param_type_dict:
+	    case gs_param_type_dict_int_keys:
 		typed.value.d.size = get_word(&buf);
 		code = param_begin_write_dict
-		    (list, key, &typed.value.d, type == cpt_dict_int_keys);
+		    (list, key, &typed.value.d, type == gs_param_type_dict_int_keys);
 		if (code < 0)
 		    break;
 		align_to(&buf, sizeof(void *));
@@ -317,7 +317,7 @@ gs_param_list_unserialize(
 	}
 	if (code < 0)
 	    break;
-	if (typed.type != cpt_dict && typed.type != cpt_dict_int_keys)
+	if (typed.type != gs_param_type_dict && typed.type != gs_param_type_dict_int_keys)
 	    code = param_write_typed(list, key, &typed);
     }
     while (code >= 0);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,28 +16,33 @@
    all copies.
  */
 
-/* gsutil.c */
+/*Id: gsutil.c  */
 /* Utilities for Ghostscript library */
 #include "string_.h"
 #include "memory_.h"
 #include "gstypes.h"
 #include "gconfigv.h"		/* for USE_ASM */
+#include "gsmemory.h"		/* for init procedure */
+#include "gsrect.h"		/* for prototypes */
 #include "gsuid.h"
-#include "gsutil.h"		/* for prototype checking */
+#include "gsutil.h"		/* for prototypes */
 
 /* ------ Unique IDs ------ */
 
 /* Generate a block of unique IDs. */
-static ulong gs_next_id = 0;
+static ulong gs_next_id;
+
+void
+gs_gsutil_init(gs_memory_t *mem)
+{
+    gs_next_id = 1;
+}
 
 ulong
 gs_next_ids(uint count)
 {
-    ulong id;
+    ulong id = gs_next_id;
 
-    if (gs_next_id == 0)
-	gs_next_id++;
-    id = gs_next_id;
     gs_next_id += count;
     return id;
 }
@@ -229,4 +234,46 @@ uid_equal(register const gs_uid * puid1, register const gs_uid * puid2)
 	!memcmp((const char *)puid1->xvalues,
 		(const char *)puid2->xvalues,
 		(uint) - (puid1->id) * sizeof(long));
+}
+
+/* ------ Rectangle utilities ------ */
+
+/*
+ * Calculate the difference of two rectangles, a list of up to 4 rectangles.
+ * Return the number of rectangles in the list, and set the first rectangle
+ * to the intersection.
+ */
+int
+int_rect_difference(gs_int_rect * outer, const gs_int_rect * inner,
+		    gs_int_rect * diffs /*[4] */ )
+{
+    int x0 = outer->p.x, y0 = outer->p.y;
+    int x1 = outer->q.x, y1 = outer->q.y;
+    int count = 0;
+
+    if (y0 < inner->p.y) {
+	diffs[0].p.x = x0, diffs[0].p.y = y0;
+	diffs[0].q.x = x1, diffs[0].q.y = min(y1, inner->p.y);
+	outer->p.y = y0 = diffs[0].q.y;
+	++count;
+    }
+    if (y1 > inner->q.y) {
+	diffs[count].p.x = x0, diffs[count].p.y = max(y0, inner->q.y);
+	diffs[count].q.x = x1, diffs[count].q.y = y1;
+	outer->q.y = y1 = diffs[count].p.y;
+	++count;
+    }
+    if (x0 < inner->p.x) {
+	diffs[0].p.x = x0, diffs[0].p.y = y0;
+	diffs[0].q.x = min(x1, inner->p.x), diffs[0].q.y = y1;
+	outer->p.x = x0 = diffs[count].q.x;
+	++count;
+    }
+    if (x1 > inner->q.x) {
+	diffs[count].p.x = max(x0, inner->q.x), diffs[count].p.y = y0;
+	diffs[count].q.x = x1, diffs[count].q.y = y1;
+	outer->q.x = x1 = diffs[count].p.x;
+	++count;
+    }
+    return count;
 }

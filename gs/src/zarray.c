@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zarray.c */
+/*Id: zarray.c  */
 /* Array operators */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "ialloc.h"
 #include "ipacked.h"
 #include "oper.h"
@@ -38,7 +37,7 @@ zarray(register os_ptr op)
 
     check_int_leu(*op, max_array_size);
     size = op->value.intval;
-    code = ialloc_ref_array((ref *) op, a_all, size, "array");
+    code = ialloc_ref_array((ref *)op, a_all, size, "array");
     if (code < 0)
 	return code;
     refset_null(op->value.refs, size);
@@ -50,12 +49,13 @@ private int
 zaload(register os_ptr op)
 {
     ref aref;
+    uint asize;
 
     ref_assign(&aref, op);
     if (!r_is_array(&aref))
 	return_op_typecheck(op);
     check_read(aref);
-#define asize r_size(&aref)
+    asize = r_size(&aref);
     if (asize > ostop - op) {	/* Use the slow, general algorithm. */
 	int code = ref_stack_push(&o_stack, asize);
 	uint i;
@@ -69,19 +69,16 @@ zaload(register os_ptr op)
 	return 0;
     }
     if (r_has_type(&aref, t_array))
-	memcpy((char *)op, (const char *)aref.value.refs,
-	       asize * sizeof(ref));
+	memcpy(op, aref.value.refs, asize * sizeof(ref));
     else {
-	register ushort i;
+	uint i;
 	const ref_packed *packed = aref.value.packed;
 	os_ptr pdest = op;
 
-	for (i = 0; i < asize; i++, pdest++)
-	    packed_get(packed, pdest),
-		packed = packed_next(packed);
+	for (i = 0; i < asize; i++, pdest++, packed = packed_next(packed))
+	    packed_get(packed, pdest);
     }
     push(asize);
-#undef asize
     ref_assign(op, &aref);
     return 0;
 }

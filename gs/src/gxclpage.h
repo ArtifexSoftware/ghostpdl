@@ -1,24 +1,26 @@
 /* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gxclpage.h */
-/* Command list page object definitions */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxclpage.h  */
 /* Requires gdevprn.h, gxclist.h */
+
+#ifndef gxclpage_INCLUDED
+#  define gxclpage_INCLUDED
 
 #include "gxclio.h"
 
@@ -31,7 +33,7 @@
  * for later retrieval; in the latter case, the client should free the
  * in-memory structure.
  */
-int gdev_prn_save_page(P3(gx_device_printer *pdev, gx_saved_page *page,
+int gdev_prn_save_page(P3(gx_device_printer * pdev, gx_saved_page * page,
 			  int num_copies));
 
 /*
@@ -49,5 +51,7 @@ int gdev_prn_save_page(P3(gx_device_printer *pdev, gx_saved_page *page,
  * the same as the BandBufferSpace value of all the saved pages, and that
  * the device width is the same as the BandWidth value of the saved pages.
  */
-int gdev_prn_render_pages(P3(gx_device_printer *pdev,
-			     const gx_placed_page *ppages, int count));
+int gdev_prn_render_pages(P3(gx_device_printer * pdev,
+			     const gx_placed_page * ppages, int count));
+
+#endif /* gxclpage_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gschar.c */
+/*Id: gschar.c  */
 /* Character writing operators for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"
@@ -39,42 +39,40 @@
 
 /* Define whether or not to cache characters rotated by angles other than */
 /* multiples of 90 degrees. */
-#define CACHE_ROTATED_CHARS 1
+private bool CACHE_ROTATED_CHARS = true;
 
 /* Define whether or not to oversample characters at small sizes. */
-#define OVERSAMPLE 1
+private bool OVERSAMPLE = true;
 
 /* Define the maximum size of a full temporary bitmap when rasterizing, */
 /* in bits (not bytes). */
-#define MAX_TEMP_BITMAP_BITS 80000
+private uint MAX_TEMP_BITMAP_BITS = 80000;
 
 /* Structure descriptors */
 private_st_gs_show_enum();
+extern_st(st_gs_text_params);
 #define eptr ((gs_show_enum *)vptr)
 private 
 ENUM_PTRS_BEGIN(show_enum_enum_ptrs)
 {
-    if (index > eptr->fstack.depth + 6)
-	return 0;
-    ENUM_RETURN(eptr->fstack.items[index - 6].font);
+    index -= 5;
+    if (index <= eptr->fstack.depth)
+	ENUM_RETURN(eptr->fstack.items[index].font);
+    index -= eptr->fstack.depth + 1;
+    return ENUM_USING(st_gs_text_params, vptr, size, index);
 }
 ENUM_PTR(0, gs_show_enum, pgs);
-ENUM_CONST_STRING_PTR(1, gs_show_enum, str);
-ENUM_PTR(2, gs_show_enum, show_gstate);
-ENUM_PTR(3, gs_show_enum, dev_cache);
-ENUM_PTR(4, gs_show_enum, dev_cache2);
-ENUM_PTR(5, gs_show_enum, dev_null);
+ENUM_PTR(1, gs_show_enum, show_gstate);
+ENUM_PTR3(2, gs_show_enum, dev_cache, dev_cache2, dev_null);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(show_enum_reloc_ptrs)
 {
     int i;
 
+    RELOC_USING(st_gs_text_params, vptr, size);		/* superclass */
     RELOC_PTR(gs_show_enum, pgs);
-    RELOC_CONST_STRING_PTR(gs_show_enum, str);
     RELOC_PTR(gs_show_enum, show_gstate);
-    RELOC_PTR(gs_show_enum, dev_cache);
-    RELOC_PTR(gs_show_enum, dev_cache2);
-    RELOC_PTR(gs_show_enum, dev_null);
+    RELOC_PTR3(gs_show_enum, dev_cache, dev_cache2, dev_null);
     for (i = 0; i <= eptr->fstack.depth; i++)
 	RELOC_PTR(gs_show_enum, fstack.items[i].font);
 }
@@ -85,18 +83,36 @@ RELOC_PTRS_END
 private int continue_kshow(P1(gs_show_enum *));
 private int continue_show(P1(gs_show_enum *));
 private int continue_show_update(P1(gs_show_enum *));
-private int show_setup(P4(gs_show_enum *, gs_state *, const char *, bool));
+private int show_setup(P6(gs_show_enum *, gs_state *, const char *, uint,
+			  uint, bool));
 private void show_set_scale(P1(gs_show_enum *));
 private int show_cache_setup(P1(gs_show_enum *));
 private int show_state_setup(P1(gs_show_enum *));
 private int show_origin_setup(P4(gs_state *, fixed, fixed, gs_char_path_mode));
-private int stringwidth_setup(P3(gs_show_enum *, gs_state *, const char *));
+private int stringwidth_setup(P4(gs_show_enum *, gs_state *, const char *,
+				 uint));
 
 /* Print the ctm if debugging */
 #define print_ctm(s,pgs)\
-  dprintf7("[p]%sctm=[%g %g %g %g %g %g]\n", s,\
-	   pgs->ctm.xx, pgs->ctm.xy, pgs->ctm.yx, pgs->ctm.yy,\
-	   pgs->ctm.tx, pgs->ctm.ty)
+  dlprintf7("[p]%sctm=[%g %g %g %g %g %g]\n", s,\
+	    pgs->ctm.xx, pgs->ctm.xy, pgs->ctm.yx, pgs->ctm.yy,\
+	    pgs->ctm.tx, pgs->ctm.ty)
+
+/* ------ Driver procedure ------ */
+
+/*
+ * When actually implemented, this will be moved further down in the file
+ * and will replace other code that is there now....
+ */
+
+int
+gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
+		      const gs_text_params_t * text, const gs_font * font,
+gx_path * path, const gx_device_color * pdcolor, const gx_clip_path * pcpath,
+		      gs_memory_t * memory, gs_text_enum_t ** ppenum)
+{
+    return_error(gs_error_undefined);
+}
 
 /* ------ Font procedures ------ */
 
@@ -122,15 +138,14 @@ gs_no_encode_char(gs_show_enum * penum,
 gs_show_enum *
 gs_show_enum_alloc(gs_memory_t * mem, gs_state * pgs, client_name_t cname)
 {
-    gs_show_enum *penum =
-    gs_alloc_struct(mem, gs_show_enum, &st_gs_show_enum, cname);
+    gs_show_enum *penum;
 
-    if (penum == 0)
-	return 0;
+    rc_alloc_struct_1(penum, gs_show_enum, &st_gs_show_enum, mem,
+		      return 0, cname);
     /* Initialize pointers for GC */
+    penum->text.operation = 0;	/* no pointers relevant */
+    penum->dev = 0;
     penum->pgs = pgs;
-    penum->str.data = 0;
-    penum->str.size = 0;
     penum->dev_cache = 0;
     penum->dev_cache2 = 0;
     penum->dev_null = 0;
@@ -142,113 +157,80 @@ gs_show_enum_alloc(gs_memory_t * mem, gs_state * pgs, client_name_t cname)
 void
 gs_show_enum_release(gs_show_enum * penum, gs_memory_t * emem)
 {
-    gs_state *pgs = penum->pgs;
-    gs_memory_t *mem = pgs->memory;
-
     penum->cc = 0;
     if (penum->dev_cache2 != 0) {
-	gs_free_object(mem, penum->dev_cache2,
-		       "gs_show_enum_release(dev_cache2)");
+	rc_decrement_only(penum->dev_cache2,
+			  "gs_show_enum_release(dev_cache2)");
 	penum->dev_cache2 = 0;
     }
     if (penum->dev_cache != 0) {
-	gs_free_object(mem, penum->dev_cache,
-		       "gs_show_enum_release(dev_cache)");
+	rc_decrement_only(penum->dev_cache,
+			  "gs_show_enum_release(dev_cache)");
 	penum->dev_cache = 0;
     }
     if (penum->dev_null != 0) {
-	gs_free_object(mem, penum->dev_null,
-		       "gs_show_enum_release(dev_null)");
+	rc_decrement_only(penum->dev_null,
+			  "gs_show_enum_release(dev_null)");
 	penum->dev_null = 0;
     }
     if (emem != 0)
 	gs_free_object(emem, penum, "gs_show_enum_release(enum)");
 }
 
-/* Setup macros for show operators */
-#define setup_show_n()\
-  penum->str.size = size
-#define setup_a()\
-  penum->add = true, penum->ax = ax, penum->ay = ay,\
-  penum->slow_show = true
-#define setup_width()\
-  penum->wchr = chr, penum->wcx = cx, penum->wcy = cy,\
-  penum->slow_show = true
-
 /* show[_n] */
 int
-gs_show_n_init(register gs_show_enum * penum,
-	       gs_state * pgs, const char *str, uint size)
+gs_show_n_init(gs_show_enum * penum, gs_state * pgs,
+	       const char *str, uint size)
 {
-    setup_show_n();
-    penum->slow_show = false;
-    return show_setup(penum, pgs, str, true);
-}
-int
-gs_show_init(gs_show_enum * penum, gs_state * pgs, const char *str)
-{
-    return gs_show_n_init(penum, pgs, str, strlen(str));
+    return show_setup(penum, pgs, str, size,
+		      TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH,
+		      true);
 }
 
 /* ashow[_n] */
 int
-gs_ashow_n_init(register gs_show_enum * penum,
-	   gs_state * pgs, floatp ax, floatp ay, const char *str, uint size)
+gs_ashow_n_init(gs_show_enum * penum, gs_state * pgs,
+		floatp ax, floatp ay, const char *str, uint size)
 {
-    int code;
-
-    setup_show_n();
-    code = show_setup(penum, pgs, str, true);
-    setup_a();
-    return code;
-}
-int
-gs_ashow_init(gs_show_enum * penum,
-	      gs_state * pgs, floatp ax, floatp ay, const char *str)
-{
-    return gs_ashow_n_init(penum, pgs, ax, ay, str, strlen(str));
+    penum->text.delta_all.x = ax;
+    penum->text.delta_all.y = ay;
+    return show_setup(penum, pgs, str, size,
+		      TEXT_FROM_STRING | TEXT_ADD_TO_ALL_WIDTHS |
+		      TEXT_DO_DRAW | TEXT_RETURN_WIDTH,
+		      true);
 }
 
 /* widthshow[_n] */
 int
-gs_widthshow_n_init(register gs_show_enum * penum,
-		    gs_state * pgs, floatp cx, floatp cy, gs_char chr, const char *str, uint size)
+gs_widthshow_n_init(gs_show_enum * penum, gs_state * pgs,
+		    floatp cx, floatp cy, gs_char chr,
+		    const char *str, uint size)
 {
-    int code;
-
-    setup_show_n();
-    code = show_setup(penum, pgs, str, true);
-    setup_width();
-    return code;
-}
-int
-gs_widthshow_init(gs_show_enum * penum,
-	 gs_state * pgs, floatp cx, floatp cy, gs_char chr, const char *str)
-{
-    return gs_widthshow_n_init(penum, pgs, cx, cy, chr, str, strlen(str));
+    penum->text.delta_space.x = cx;
+    penum->text.delta_space.y = cy;
+    penum->text.space.s_char = chr;
+    return show_setup(penum, pgs, str, size,
+		      TEXT_FROM_STRING | TEXT_ADD_TO_SPACE_WIDTH |
+		      TEXT_DO_DRAW | TEXT_RETURN_WIDTH,
+		      true);
 }
 
 /* awidthshow[_n] */
 int
-gs_awidthshow_n_init(register gs_show_enum * penum,
-    gs_state * pgs, floatp cx, floatp cy, gs_char chr, floatp ax, floatp ay,
+gs_awidthshow_n_init(gs_show_enum * penum, gs_state * pgs,
+		     floatp cx, floatp cy, gs_char chr, floatp ax, floatp ay,
 		     const char *str, uint size)
 {
-    int code;
-
-    setup_show_n();
-    code = show_setup(penum, pgs, str, true);
-    setup_a();
-    setup_width();
-    return code;
-}
-int
-gs_awidthshow_init(gs_show_enum * penum,
-    gs_state * pgs, floatp cx, floatp cy, gs_char chr, floatp ax, floatp ay,
-		   const char *str)
-{
-    return gs_awidthshow_n_init(penum, pgs, cx, cy, chr, ax, ay,
-				str, strlen(str));
+    penum->text.delta_space.x = cx;
+    penum->text.delta_space.y = cy;
+    penum->text.space.s_char = chr;
+    penum->text.delta_all.x = ax;
+    penum->text.delta_all.y = ay;
+    return show_setup(penum, pgs, str, size,
+		      TEXT_FROM_STRING |
+		      TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
+		      TEXT_DO_DRAW | TEXT_RETURN_WIDTH,
+		      true);
 }
 
 /* kshow[_n] */
@@ -256,20 +238,12 @@ int
 gs_kshow_n_init(register gs_show_enum * penum,
 		gs_state * pgs, const char *str, uint size)
 {
-    int code;
-
     if (pgs->font->FontType == ft_composite)
 	return_error(gs_error_invalidfont);
-    setup_show_n();
-    code = show_setup(penum, pgs, str, true);
-    penum->do_kern = 1;
-    penum->slow_show = true;
-    return code;
-}
-int
-gs_kshow_init(gs_show_enum * penum, gs_state * pgs, const char *str)
-{
-    return gs_kshow_n_init(penum, pgs, str, strlen(str));
+    return show_setup(penum, pgs, str, size,
+		      TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_INTERVENE |
+		      TEXT_RETURN_WIDTH,
+		      true);
 }
 
 /* xyshow[_n] */
@@ -277,58 +251,52 @@ int
 gs_xyshow_n_init(register gs_show_enum * penum,
 		 gs_state * pgs, const char *str, uint size)
 {
-    int code;
-
-    setup_show_n();
-    code = show_setup(penum, pgs, str, true);
-    penum->do_kern = -1;
-    penum->slow_show = true;
-    return code;
-}
-int
-gs_xyshow_init(gs_show_enum * penum, gs_state * pgs, const char *str)
-{
-    return gs_xyshow_n_init(penum, pgs, str, strlen(str));
+    return show_setup(penum, pgs, str, size,
+		      TEXT_FROM_STRING |
+		      TEXT_REPLACE_X_WIDTHS | TEXT_REPLACE_Y_WIDTHS |
+		      TEXT_DO_DRAW | TEXT_INTERVENE | TEXT_RETURN_WIDTH,
+		      true);
 }
 
 /* glyphshow */
-private int
-    setup_glyph(P3(gs_show_enum *, gs_state *, gs_glyph));
+private int setup_glyph(P4(gs_show_enum *, gs_state *, gs_glyph, uint));
 private font_proc_encode_char(gs_glyphshow_encode_char);
 int
 gs_glyphshow_init(gs_show_enum * penum, gs_state * pgs, gs_glyph glyph)
 {
-    return setup_glyph(penum, pgs, glyph);
+    return setup_glyph(penum, pgs, glyph, TEXT_DO_DRAW);
 }
 int
 gs_glyphpath_init(gs_show_enum * penum, gs_state * pgs, gs_glyph glyph,
 		  bool stroke_path)
 {
-    int code = setup_glyph(penum, pgs, glyph);
+    int code = setup_glyph(penum, pgs, glyph,
+			   (stroke_path ? TEXT_DO_TRUE_CHARPATH :
+			    TEXT_DO_FALSE_CHARPATH));
 
-    penum->charpath_flag =
-	(stroke_path ? cpm_true_charpath : cpm_false_charpath);
     penum->can_cache = -1;
     if_debug1('k', "[k]glyphpath, can_cache=%d", penum->can_cache);
     return code;
 }
 private int
-setup_glyph(gs_show_enum * penum, gs_state * pgs, gs_glyph glyph)
+setup_glyph(gs_show_enum * penum, gs_state * pgs, gs_glyph glyph,
+	    uint operation)
 {
     int code;
 
     if (pgs->font->FontType == ft_composite)
 	return_error(gs_error_invalidfont);
-    penum->str.size = 1;
-    penum->slow_show = false;
-    code = show_setup(penum, pgs, "\000", true);	/* arbitrary char */
+    code = show_setup(penum, pgs, "\000" /* arbitrary char */ , 1,
+		      TEXT_FROM_GLYPHS | TEXT_RETURN_WIDTH | operation,
+		      true);
     penum->current_glyph = glyph;
     penum->encode_char = gs_glyphshow_encode_char;
     return code;
 }
 private gs_glyph
 gs_glyphshow_encode_char(gs_show_enum * penum, gs_font * pfont, gs_char * pchr)
-{				/* We just nil out the character, and return the pre-loaded glyph. */
+{
+    /* We just nil out the character, and return the pre-loaded glyph. */
     *pchr = gs_no_char;
     return penum->current_glyph;
 }
@@ -340,40 +308,27 @@ int
 gs_cshow_n_init(register gs_show_enum * penum,
 		gs_state * pgs, const char *str, uint size)
 {
-    int code;
-
-    setup_show_n();
-    code = show_setup(penum, pgs, str, false);
-    penum->do_kern = -1;
-    penum->stringwidth_flag = -1;
-    penum->slow_show = true;
-    return code;
-}
-int
-gs_cshow_init(gs_show_enum * penum, gs_state * pgs, const char *str)
-{
-    return gs_cshow_n_init(penum, pgs, str, strlen(str));
+    return show_setup(penum, pgs, str, size,
+		      TEXT_FROM_STRING | TEXT_DO_NONE | TEXT_INTERVENE,
+		      false);
 }
 
 /* stringwidth[_n] */
 int
-gs_stringwidth_n_init(gs_show_enum * penum, gs_state * pgs, const char *str, uint size)
+gs_stringwidth_n_init(gs_show_enum * penum, gs_state * pgs,
+		      const char *str, uint size)
 {
-    setup_show_n();
-    return stringwidth_setup(penum, pgs, str);
-}
-int
-gs_stringwidth_init(gs_show_enum * penum, gs_state * pgs, const char *str)
-{
-    return gs_stringwidth_n_init(penum, pgs, str, strlen(str));
+    return stringwidth_setup(penum, pgs, str, size);
 }
 
 /* Common code for stringwidth[_n] */
 private int
-stringwidth_setup(gs_show_enum * penum, gs_state * pgs, const char *str)
+stringwidth_setup(gs_show_enum * penum, gs_state * pgs, const char *str,
+		  uint size)
 {
-    int code =
-    (penum->slow_show = false, show_setup(penum, pgs, str, false));
+    int code = show_setup(penum, pgs, str, size,
+			TEXT_FROM_STRING | TEXT_DO_NONE | TEXT_RETURN_WIDTH,
+			  false);
     gs_memory_t *mem = pgs->memory;
     gx_device_null *dev_null;
 
@@ -383,7 +338,6 @@ stringwidth_setup(gs_show_enum * penum, gs_state * pgs, const char *str)
 			       "stringwidth_setup(dev_null)");
     if (dev_null == 0)
 	return_error(gs_error_VMerror);
-    penum->stringwidth_flag = 1;
     /* Do an extra gsave and suppress output */
     if ((code = gs_gsave(pgs)) < 0)
 	return code;
@@ -391,9 +345,11 @@ stringwidth_setup(gs_show_enum * penum, gs_state * pgs, const char *str)
     /* Set up a null device that forwards xfont requests properly. */
     gs_make_null_device(dev_null, mem);
     dev_null->target = gs_currentdevice_inline(pgs);
-    pgs->device = (gx_device *) dev_null;
     pgs->ctm_default_set = false;
     penum->dev_null = dev_null;
+    /* Account for the extra reference from the enumerator. */
+    rc_increment(dev_null);
+    gs_setdevice_no_init(pgs, (gx_device *) dev_null);
     /* Establish an arbitrary translation and current point. */
     gs_newpath(pgs);
     gx_translate_to_fixed(pgs, fixed_0, fixed_0);
@@ -405,21 +361,15 @@ int
 gs_charpath_n_init(gs_show_enum * penum, gs_state * pgs,
 		   const char *str, uint size, bool stroke_path)
 {
-    int code;
+    int code = show_setup(penum, pgs, str, size,
+			  TEXT_FROM_STRING |
+			  (stroke_path ? TEXT_DO_TRUE_CHARPATH :
+			   TEXT_DO_FALSE_CHARPATH),
+			  false);
 
-    setup_show_n();
-    code = show_setup(penum, pgs, str, false);
-    penum->charpath_flag =
-	(stroke_path ? cpm_true_charpath : cpm_false_charpath);
     penum->can_cache = -1;
     if_debug1('k', "[k]charpath, can_cache=%d", penum->can_cache);
     return code;
-}
-int
-gs_charpath_init(gs_show_enum * penum, gs_state * pgs,
-		 const char *str, bool stroke_path)
-{
-    return gs_charpath_n_init(penum, pgs, str, strlen(str), stroke_path);
 }
 
 /* charboxpath[_n] */
@@ -427,22 +377,15 @@ int
 gs_charboxpath_n_init(gs_show_enum * penum, gs_state * pgs,
 		      const char *str, uint size, bool use_boxes)
 {
-    int code;
+    int code = show_setup(penum, pgs, str, size,
+			  TEXT_FROM_STRING |
+			  (use_boxes ? TEXT_DO_TRUE_CHARBOXPATH :
+			   TEXT_DO_FALSE_CHARBOXPATH),
+			  false);
 
-    setup_show_n();
-    code = show_setup(penum, pgs, str, false);
-    penum->charpath_flag =
-	(use_boxes ? cpm_true_charboxpath : cpm_false_charboxpath);
     penum->can_cache = 0;	/* different from charpath! */
     if_debug1('k', "[k]charboxpath, can_cache=%d", penum->can_cache);
     return code;
-}
-int
-gs_charboxpath_init(gs_show_enum * penum, gs_state * pgs,
-		    const char *str, bool stroke_path)
-{
-    return gs_charboxpath_n_init(penum, pgs, str, strlen(str),
-				 stroke_path);
 }
 
 /* ------ Width/cache operators ------ */
@@ -489,9 +432,10 @@ gs_setcachedevice2_double(gs_show_enum * penum, gs_state * pgs,
 	cached_char *cc;
 
 	if ((code = gs_point_transform2fixed(&pgs->ctm, -vx, -vy, &pvxy)) < 0 ||
-	(code = gs_distance_transform2fixed(&pgs->ctm, vx, vy, &dvxy)) < 0 ||
-	    (code = gs_setcharwidth(penum, pgs, pw2[6], pw2[7])) < 0
+	  (code = gs_distance_transform2fixed(&pgs->ctm, vx, vy, &dvxy)) < 0
 	    )
+	    return 0;		/* don't cache */
+	if ((code = gs_setcharwidth(penum, pgs, pw2[6], pw2[7])) < 0)
 	    return code;
 	/* Adjust the origin by (vx, vy). */
 	gx_translate_to_fixed(pgs, pvxy.x, pvxy.y);
@@ -555,7 +499,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	static const fixed max_cdim[3] =
 	{
 #define max_cd(n)\
-  (fixed_1 << (arch_sizeof_short * 8 - n)) - (fixed_1 >> n) * 3
+	    (fixed_1 << (arch_sizeof_short * 8 - n)) - (fixed_1 >> n) * 3
 	    max_cd(0), max_cd(1), max_cd(2)
 #undef max_cd
 	};
@@ -576,12 +520,13 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	    (code = gs_distance_transform2fixed(&pgs->ctm, urx, lly, &cul)) < 0 ||
 	 (code = gs_distance_transform2fixed(&pgs->ctm, urx, ury, &cur)) < 0
 	    )
-	    return code;
+	    return 0;		/* don't cache */
 	{
 	    fixed ctemp;
 
 #define swap(a, b) ctemp = a, a = b, b = ctemp
 #define make_min(a, b) if ( (a) > (b) ) swap(a, b)
+
 	    make_min(cll.x, cur.x);
 	    make_min(cll.y, cur.y);
 	    make_min(clr.x, cul.x);
@@ -602,10 +547,10 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	log2_scale.y = penum->log2_suggested_scale.y;
 #ifdef DEBUG
 	if (gs_debug_c('k')) {
-	    dprintf6("[k]cbox=[%g %g %g %g] scale=%dx%d\n",
-		     fixed2float(cll.x), fixed2float(cll.y),
-		     fixed2float(cur.x), fixed2float(cur.y),
-		     1 << log2_scale.x, 1 << log2_scale.y);
+	    dlprintf6("[k]cbox=[%g %g %g %g] scale=%dx%d\n",
+		      fixed2float(cll.x), fixed2float(cll.y),
+		      fixed2float(cur.x), fixed2float(cur.y),
+		      1 << log2_scale.x, 1 << log2_scale.y);
 	    print_ctm("  ", pgs);
 	}
 #endif
@@ -628,11 +573,8 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 		    log2_scale.y += (more_bits + 1) >> 1;
 		}
 	    }
-	} else
-#if OVERSAMPLE
-	if (pfont->PaintType != 0)
-#endif
-	{			/* Don't oversample artificially stroked fonts. */
+	} else if (!OVERSAMPLE || pfont->PaintType != 0) {
+	    /* Don't oversample artificially stroked fonts. */
 	    log2_scale.x = log2_scale.y = 0;
 	}
 	if (cdim.x > max_cdim[log2_scale.x] ||
@@ -681,7 +623,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	cc->wmode = gs_rootfont(pgs)->WMode;
 	cc->wxy = penum->wxy;
 	/* Install the device */
-	pgs->device = (gx_device *) penum->dev_cache;
+	gx_set_device_only(pgs, (gx_device *) penum->dev_cache);
 	pgs->ctm_default_set = false;
 	/* Adjust the transformation in the graphics context */
 	/* so that the character lines up with the cache. */
@@ -730,7 +672,7 @@ gs_setcharwidth(register gs_show_enum * penum, gs_state * pgs,
     } else {
 	penum->width_status = sws_no_cache;
     }
-    return (penum->stringwidth_flag != 0 ? 1 : 0);
+    return !SHOW_IS_DRAWING(penum);
 }
 
 /* ------ Enumerator ------ */
@@ -809,7 +751,7 @@ show_update(register gs_show_enum * penum)
 	    gx_add_cached_char(pgs->font->dir, penum->dev_cache,
 			       cc, gx_lookup_fm_pair(pgs->font, pgs),
 			       &penum->log2_current_scale);
-	    if (penum->stringwidth_flag != 0 ||
+	    if (!SHOW_IS_DRAWING(penum) ||
 		penum->charpath_flag != cpm_show
 		)
 		break;
@@ -826,7 +768,8 @@ show_update(register gs_show_enum * penum)
 	case sws_no_cache:
 	    ;
     }
-    if (penum->charpath_flag != cpm_show) {	/* Move back to the character origin, so that */
+    if (penum->charpath_flag != cpm_show) {
+	/* Move back to the character origin, so that */
 	/* show_move will get us to the right place. */
 	code = gx_path_add_point(pgs->show_gstate->path,
 				 penum->origin.x, penum->origin.y);
@@ -852,17 +795,18 @@ show_move(register gs_show_enum * penum)
 {
     register gs_state *pgs = penum->pgs;
 
-    if (penum->do_kern < 0) {	/* xyshow or cshow */
+    if (SHOW_IS_XYCSHOW(penum)) {
 	penum->continue_proc = continue_show;
 	return gs_show_move;
     }
-    if (penum->add)
-	gs_rmoveto(pgs, penum->ax, penum->ay);
-    if (penum->wchr != gs_no_char) {
+    if (SHOW_IS_ADD_TO_ALL(penum))
+	gs_rmoveto(pgs, penum->text.delta_all.x, penum->text.delta_all.y);
+    if (SHOW_IS_ADD_TO_SPACE(penum)) {
 	gs_char chr = penum->current_char;
 	int fdepth = penum->fstack.depth;
 
-	if (fdepth > 0) {	/* Add in the shifted font number. */
+	if (fdepth > 0) {
+	    /* Add in the shifted font number. */
 	    uint fidx = penum->fstack.items[fdepth].index;
 
 	    switch (((gs_font_type0 *) (penum->fstack.items[fdepth - 1].font))->data.FMapType) {
@@ -874,8 +818,9 @@ show_move(register gs_show_enum * penum)
 		    chr += fidx << 8;
 	    }
 	}
-	if (chr == penum->wchr)
-	    gs_rmoveto(pgs, penum->wcx, penum->wcy);
+	if (chr == penum->text.space.s_char)
+	    gs_rmoveto(pgs, penum->text.delta_space.x,
+		       penum->text.delta_space.y);
     }
     /* wxy is in device coordinates */
     {
@@ -885,7 +830,7 @@ show_move(register gs_show_enum * penum)
 	    return code;
     }
     /* Check for kerning, but not on the last character. */
-    if (penum->do_kern && penum->index < penum->str.size) {
+    if (SHOW_IS_DO_KERN(penum) && penum->index < penum->text.size) {
 	penum->continue_proc = continue_kshow;
 	return gs_show_kern;
     }
@@ -905,8 +850,8 @@ show_proceed(register gs_show_enum * penum)
     font_proc_next_char((*next_char)) = rfont->procs.next_char;
     font_proc_next_glyph((*next_glyph)) = rfont->procs.next_glyph;
 #define next_char_glyph(penum, pchr, pglyph)\
-  (next_char == 0 ? (*next_glyph)(penum, pchr, pglyph) :\
-   (*(pglyph) = gs_no_glyph, (*next_char)(penum, pchr)))
+    (next_char == 0 ? (*next_glyph)(penum, pchr, pglyph) :\
+     (*(pglyph) = gs_no_glyph, (*next_char)(penum, pchr)))
     gs_char chr;
     gs_glyph glyph;
     int code;
@@ -914,7 +859,7 @@ show_proceed(register gs_show_enum * penum)
     gx_device *dev = gs_currentdevice_inline(pgs);
     int alpha_bits = (*dev_proc(dev, get_alpha_bits)) (dev, go_text);
 
-    if (penum->charpath_flag == cpm_show && !penum->stringwidth_flag) {
+    if (penum->charpath_flag == cpm_show && SHOW_IS_DRAWING(penum)) {
 	code = gs_state_color_load(pgs);
 	if (code < 0)
 	    return code;
@@ -924,7 +869,8 @@ show_proceed(register gs_show_enum * penum)
 	     penum->fstack.items[penum->fstack.depth].font);
     /* can_cache >= 0 allows us to use cached characters, */
     /* even if we can't make new cache entries. */
-    if (penum->can_cache >= 0) {	/* Loop with cache */
+    if (penum->can_cache >= 0) {
+	/* Loop with cache */
 	for (;;) {
 	    switch ((code = next_char_glyph(penum, &chr, &glyph))) {
 		default:	/* error */
@@ -957,7 +903,8 @@ show_proceed(register gs_show_enum * penum)
 			pair = gx_lookup_fm_pair(pfont, pgs);
 		    cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
 					       alpha_bits);
-		    if (cc == 0) {	/* Character is not in cache. */
+		    if (cc == 0) {
+			/* Character is not in cache. */
 			/* If possible, try for an xfont before */
 			/* rendering from the outline. */
 			if (pfont->ExactSize == fbit_use_outlines ||
@@ -970,7 +917,7 @@ show_proceed(register gs_show_enum * penum)
 			    if (cc == 0)
 				goto no_cache;
 			} else {
-			    if (penum->stringwidth_flag != 0 ||
+			    if (!SHOW_IS_DRAWING(penum) != 0 ||
 				penum->charpath_flag != cpm_show
 				)
 				goto no_cache;
@@ -989,7 +936,8 @@ show_proceed(register gs_show_enum * penum)
 		    /* Character is in cache. */
 		    /* We might be doing .charboxpath or stringwidth; */
 		    /* check for these now. */
-		    if (penum->charpath_flag != cpm_show) {	/* This is .charboxpath.  Get the bounding box */
+		    if (penum->charpath_flag != cpm_show) {
+			/* This is .charboxpath.  Get the bounding box */
 			/* and append it to a path. */
 			gx_path box_path;
 			gs_fixed_point pt;
@@ -1004,7 +952,7 @@ show_proceed(register gs_show_enum * penum)
 			    int2fixed(penum->fty);
 			urx = llx + int2fixed(cc->width),
 			    ury = lly + int2fixed(cc->height);
-			gx_path_init(&box_path, pgs->memory);
+			gx_path_init_local(&box_path, pgs->memory);
 			code =
 			    gx_path_add_rectangle(&box_path, llx, lly,
 						  urx, ury);
@@ -1015,10 +963,10 @@ show_proceed(register gs_show_enum * penum)
 						      penum->charpath_flag);
 			if (code >= 0)
 			    code = gx_path_add_point(pgs->path, pt.x, pt.y);
-			gx_path_release(&box_path);
+			gx_path_free(&box_path, "show_proceed(box path)");
 			if (code < 0)
 			    return code;
-		    } else if (!penum->stringwidth_flag) {
+		    } else if (SHOW_IS_DRAWING(penum)) {
 			code = gx_image_cached_char(penum, cc);
 			if (code < 0)
 			    return code;
@@ -1027,20 +975,23 @@ show_proceed(register gs_show_enum * penum)
 			    goto no_cache;
 			}
 		    }
-		    if (penum->slow_show) {	/* Split up the assignment so that the */
+		    if (SHOW_IS_SLOW(penum)) {
+			/* Split up the assignment so that the */
 			/* Watcom compiler won't reserve esi/edi. */
 			penum->wxy.x = cc->wxy.x;
 			penum->wxy.y = cc->wxy.y;
 			code = show_move(penum);
 		    } else
 			code = show_fast_move(pgs, &cc->wxy);
-		    if (code) {	/* Might be kshow, so store the state. */
+		    if (code) {
+			/* Might be kshow, so store the state. */
 			penum->current_glyph = glyph;
 			return code;
 		    }
 	    }
 	}
-    } else {			/* Can't use cache */
+    } else {
+	/* Can't use cache */
 	switch ((code = next_char_glyph(penum, &chr, &glyph))) {
 	    default:
 		return code;
@@ -1175,7 +1126,7 @@ show_finish(gs_show_enum * penum)
     int code, rcode;
 
     gs_show_enum_release(penum, NULL);
-    if (penum->stringwidth_flag <= 0)	/* could be cshow */
+    if (!SHOW_IS_STRINGWIDTH(penum))
 	return 0;
     /* Save the accumulated width before returning, */
     /* and undo the extra gsave. */
@@ -1218,7 +1169,7 @@ gs_kshow_previous_char(const gs_show_enum * penum)
 gs_char
 gs_kshow_next_char(const gs_show_enum * penum)
 {
-    return penum->str.data[penum->index];
+    return penum->text.data.bytes[penum->index];
 }
 
 /* ------ Miscellaneous accessors ------ */
@@ -1268,38 +1219,46 @@ gs_show_width(const gs_show_enum * penum, gs_point * ppt)
 /* Note that we can't do this if the procedure has done any extra [g]saves. */
 bool
 gs_show_width_only(const gs_show_enum * penum)
-{				/* penum->cc will be non-zero iff we are calculating */
+{
+    /* penum->cc will be non-zero iff we are calculating */
     /* the scalable width for an xfont character. */
-    return ((penum->stringwidth_flag != 0 || penum->cc != 0) &&
+    return ((!SHOW_IS_DRAWING(penum) || penum->cc != 0) &&
 	    penum->pgs->level == penum->level + 1);
 }
 
 /* ------ Internal routines ------ */
 
 /* Initialize a show enumerator. */
-/* Note that this does not set str.size. */
 private int
 show_setup(register gs_show_enum * penum, gs_state * pgs, const char *str,
-	   bool propagate_charpath)
+	   uint size, uint operation, bool propagate_charpath)
 {
     int code;
     gs_font *pfont;
 
+    /* Set rest of common members. */
+    penum->text.operation = operation;
+    penum->text.data.bytes = (const byte *)str;		/* avoid signed chars */
+    penum->text.size = size;
+    penum->index = 0;
+    /* Set other members. */
     gx_set_dev_color(pgs);
     pfont = pgs->font;
     penum->pgs = pgs;
     penum->level = pgs->level;
-    penum->str.data = (const byte *)str;	/* avoid signed chars */
-    penum->wchr = gs_no_char;
-    penum->add = false;
-    penum->do_kern = 0;
-    penum->charpath_flag =
-	(propagate_charpath ? pgs->in_charpath : cpm_show);
-    penum->stringwidth_flag = 0;
+    if (operation & TEXT_DO_ANY_CHARPATH)
+	penum->charpath_flag =
+	    (operation & TEXT_DO_FALSE_CHARPATH ? cpm_false_charpath :
+	     operation & TEXT_DO_TRUE_CHARPATH ? cpm_true_charpath :
+	     operation & TEXT_DO_FALSE_CHARBOXPATH ? cpm_false_charboxpath :
+	     operation & TEXT_DO_TRUE_CHARBOXPATH ? cpm_true_charboxpath :
+	     cpm_show /* can't happen */ );
+    else
+	penum->charpath_flag =
+	    (propagate_charpath ? pgs->in_charpath : cpm_show);
     penum->dev_cache = 0;
     penum->dev_cache2 = 0;
     penum->dev_null = 0;
-    penum->index = 0;
     penum->cc = 0;
     penum->continue_proc = continue_show;
     code = (*pfont->procs.init_fstack) (penum, pfont);
@@ -1323,12 +1282,14 @@ private int
 show_state_setup(gs_show_enum * penum)
 {
     gs_state *pgs = penum->pgs;
+    gx_clip_path *pcpath;
     const gs_font *pfont;
 
     if (penum->fstack.depth <= 0) {
 	pfont = pgs->font;
 	gs_currentcharmatrix(pgs, NULL, 1);	/* make char_tm valid */
-    } else {			/* We have to concatenate the parent's FontMatrix as well. */
+    } else {
+	/* We have to concatenate the parent's FontMatrix as well. */
 	gs_matrix mat;
 	const gx_font_stack_item *pfsi =
 	&penum->fstack.items[penum->fstack.depth];
@@ -1338,16 +1299,18 @@ show_state_setup(gs_show_enum * penum)
 			   &pfsi[-1].font->FontMatrix, &mat);
 	gs_setcharmatrix(pgs, &mat);
     }
-    if ((penum->can_cache >= 0
-#if !CACHE_ROTATED_CHARS
-	 &=			/* no skewing or non-rectangular rotation */
-	 (is_fzero2(pgs->char_tm.xy, pgs->char_tm.yx) ||
-	  is_fzero2(pgs->char_tm.xx, pgs->char_tm.yy))
-#endif
-	)) {
+    /* Skewing or non-rectangular rotation are not supported. */
+    if (!CACHE_ROTATED_CHARS &&
+	(is_fzero2(pgs->char_tm.xy, pgs->char_tm.yx) ||
+	 is_fzero2(pgs->char_tm.xx, pgs->char_tm.yy))
+	)
+	penum->can_cache = 0;
+    if (penum->can_cache >= 0 &&
+	gx_effective_clip_path(pgs, &pcpath) >= 0
+	) {
 	gs_fixed_rect cbox;
 
-	gx_cpath_inner_box(pgs->clip_path, &cbox);
+	gx_cpath_inner_box(pcpath, &cbox);
 	/* Since characters occupy an integral number of pixels, */
 	/* we can (and should) round the inner clipping box */
 	/* outward rather than inward. */
@@ -1355,7 +1318,7 @@ show_state_setup(gs_show_enum * penum)
 	penum->ibox.p.y = fixed2int_var(cbox.p.y);
 	penum->ibox.q.x = fixed2int_var_ceiling(cbox.q.x);
 	penum->ibox.q.y = fixed2int_var_ceiling(cbox.q.y);
-	gx_cpath_outer_box(pgs->clip_path, &cbox);
+	gx_cpath_outer_box(pcpath, &cbox);
 	penum->obox.p.x = fixed2int_var(cbox.p.x);
 	penum->obox.p.y = fixed2int_var(cbox.p.y);
 	penum->obox.q.x = fixed2int_var_ceiling(cbox.q.x);
@@ -1366,9 +1329,8 @@ show_state_setup(gs_show_enum * penum)
 					 pgs->ctm.tx_fixed);
 	    penum->fty = (int)fixed2long(pgs->char_tm.ty_fixed -
 					 pgs->ctm.ty_fixed);
-	} else
+	} else {
 #endif
-	{
 	    double fdx = pgs->char_tm.tx - pgs->ctm.tx;
 	    double fdy = pgs->char_tm.ty - pgs->ctm.ty;
 
@@ -1389,12 +1351,15 @@ show_state_setup(gs_show_enum * penum)
 /* Set the suggested oversampling scale for character rendering. */
 private void
 show_set_scale(gs_show_enum * penum)
-{				/* Decide whether to oversample. */
-    /* We have to decide this each time setcachedevice is called. */
+{
+    /*
+     * Decide whether to oversample.
+     * We have to decide this each time setcachedevice is called.
+     */
     const gs_state *pgs = penum->pgs;
 
     if (penum->charpath_flag == cpm_show &&
-	!penum->stringwidth_flag &&
+	SHOW_IS_DRAWING(penum) &&
 	gx_path_is_void_inline(pgs->path) &&
     /* Oversampling rotated characters doesn't work well. */
 	(is_fzero2(pgs->char_tm.xy, pgs->char_tm.yx) ||
@@ -1455,15 +1420,20 @@ show_cache_setup(gs_show_enum * penum)
 	gs_free_object(mem, dev, "show_cache_setup(dev_cache)");
 	return_error(gs_error_VMerror);
     }
-    /* We only initialize the device for the sake of the GC, */
-    /* (since we have to re-initialize it as either a mem_mono */
-    /* or a mem_abuf device before actually using it) and also */
-    /* to set its memory pointer. */
+    /*
+     * We only initialize the device for the sake of the GC,
+     * (since we have to re-initialize it as either a mem_mono
+     * or a mem_abuf device before actually using it) and also
+     * to set its memory pointer.
+     */
     gs_make_mem_mono_device(dev, mem, gs_currentdevice_inline(pgs));
     penum->dev_cache = dev;
     penum->dev_cache2 = dev2;
     /* Initialize dev2 for the sake of the GC. */
     *dev2 = *dev;
+    /* Account for the extra references from the enumerator. */
+    rc_increment(dev);
+    rc_increment(dev2);
     return 0;
 }
 
@@ -1474,7 +1444,8 @@ private int
 show_origin_setup(gs_state * pgs, fixed cpt_x, fixed cpt_y,
 		  gs_char_path_mode charpath_flag)
 {
-    if (charpath_flag == cpm_show) {	/* Round the translation in the graphics state. */
+    if (charpath_flag == cpm_show) {
+	/* Round the translation in the graphics state. */
 	/* This helps prevent rounding artifacts later. */
 	cpt_x = fixed_rounded(cpt_x);
 	cpt_y = fixed_rounded(cpt_y);
@@ -1507,9 +1478,9 @@ gs_default_next_char(gs_show_enum * penum, gs_char * pchr)
 int
 gs_default_next_glyph(gs_show_enum * penum, gs_char * pchr, gs_glyph * pglyph)
 {
-    if (penum->index == penum->str.size)
+    if (penum->index == penum->text.size)
 	return 2;
-    *pchr = penum->str.data[penum->index++];
+    *pchr = penum->text.data.bytes[penum->index++];
     *pglyph = gs_no_glyph;
     return 0;
 }

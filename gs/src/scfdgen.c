@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1994, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* scfdgen.c */
+/*Id: scfdgen.c  */
 /* Generate the CCITTFaxDecode tables */
 #include "stdio_.h"		/* includes std.h */
 #include "scf.h"
@@ -42,7 +42,7 @@ main()
     FILE *out = fopen("scfdtab.c", "w");
     cfd_node area[1 << max(cfd_white_initial_bits, cfd_black_initial_bits)];
 
-    fputs("/* Copyright (C) 1992, 1993 Aladdin Enterprises.  All rights reserved. */\n\n", out);
+    fputs("/* Copyright (C) 1992, 1993, 1998 Aladdin Enterprises.  All rights reserved. */\n\n", out);
     fputs("/* This file was generated automatically.  It is governed by the same terms */\n", out);
     fputs("/* as the files scfetab.c and scfdgen.c from which it was derived. */\n", out);
     fputs("/* Consult those files for the licensing terms and conditions. */\n\n", out);
@@ -52,19 +52,19 @@ main()
     fputs("#include \"scommon.h\"\t\t/* for scf.h */\n", out);
     fputs("#include \"scf.h\"\n\n", out);
     fputs("/* White decoding table. */\n", out);
-    fputs("const cfd_node far_data cf_white_decode[] = {\n", out);
+    fputs("const cfd_node cf_white_decode[] = {\n", out);
     cfd_build_tree(area, cfd_enumerate_white, cfd_white_initial_bits, out);
     fputs("\n};\n\n", out);
     fputs("/* Black decoding table. */\n", out);
-    fputs("const cfd_node far_data cf_black_decode[] = {\n", out);
+    fputs("const cfd_node cf_black_decode[] = {\n", out);
     cfd_build_tree(area, cfd_enumerate_black, cfd_black_initial_bits, out);
     fputs("\n};\n\n", out);
     fputs("/* 2-D decoding table. */\n", out);
-    fputs("const cfd_node far_data cf_2d_decode[] = {\n", out);
+    fputs("const cfd_node cf_2d_decode[] = {\n", out);
     cfd_build_tree(area, cfd_enumerate_2d, cfd_2d_initial_bits, out);
     fputs("\n};\n\n", out);
     fputs("/* Uncompresssed decoding table. */\n", out);
-    fputs("const cfd_node far_data cf_uncompressed_decode[] = {\n", out);
+    fputs("const cfd_node cf_uncompressed_decode[] = {\n", out);
     cfd_build_tree(area, cfd_enumerate_uncompressed, cfd_uncompressed_initial_bits, out);
     fputs("\n};\n\n", out);
     fputs("/* Dummy executable code to pacify compilers. */\n", out);
@@ -78,7 +78,8 @@ private void
 cfd_count_nodes(cfd_node * tree, cfd_node * ignore_extn,
 		uint code, int code_length, int run_length, int initial_bits)
 {
-    if (code_length <= initial_bits) {	/* Initialize one or more first-level leaves. */
+    if (code_length <= initial_bits) {
+	/* Initialize one or more first-level leaves. */
 	int sh = initial_bits - code_length;
 	cfd_node *np = &tree[code << sh];
 	int i;
@@ -86,7 +87,8 @@ cfd_count_nodes(cfd_node * tree, cfd_node * ignore_extn,
 	for (i = 1 << sh; i > 0; i--, np++)
 	    np->run_length = run_length,
 		np->code_length = code_length;
-    } else {			/* Note the need for a second level. */
+    } else {
+	/* Note the need for a second level. */
 	cfd_node *np = &tree[code >> (code_length - initial_bits)];
 
 	np->code_length = max(np->code_length, code_length);
@@ -127,22 +129,26 @@ cfd_enumerate_codes(cfd_node_proc proc, cfd_node * tree, cfd_node * extn,
 	(*proc) (tree, extn, ep->code, ep->code_length, i, initial_bits);
     for (i = 1, ep = mut + 1; i < 41; i++, ep++)
 	(*proc) (tree, extn, ep->code, ep->code_length, i << 6, initial_bits);
-    (*proc) (tree, extn, cf1_run_uncompressed.code, cf1_run_uncompressed.code_length, run_uncompressed, initial_bits);
-    (*proc) (tree, extn, 0, run_eol_code_length - 1, run_zeros, initial_bits);
+    (*proc) (tree, extn,
+	     cf1_run_uncompressed.code, cf1_run_uncompressed.code_length,
+	     run_uncompressed, initial_bits);
+    (*proc) (tree, extn,
+	     0, run_eol_code_length - 1,
+	     run_zeros, initial_bits);
 }
 private void
 cfd_enumerate_white(cfd_node_proc proc, cfd_node * tree, cfd_node * extn,
 		    int initial_bits)
 {
     cfd_enumerate_codes(proc, tree, extn, initial_bits,
-			cf_white_termination, cf_white_make_up);
+			cf_white_runs.termination, cf_white_runs.make_up);
 }
 private void
 cfd_enumerate_black(cfd_node_proc proc, cfd_node * tree, cfd_node * extn,
 		    int initial_bits)
 {
     cfd_enumerate_codes(proc, tree, extn, initial_bits,
-			cf_black_termination, cf_black_make_up);
+			cf_black_runs.termination, cf_black_runs.make_up);
 }
 
 /* Enumerate the 2-D codes. */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zcssepr.c */
+/*Id: zcssepr.c  */
 /* Separation color space support */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "gscolor.h"
@@ -49,11 +48,11 @@ private int separation_map1(P1(os_ptr));
 private int
 lookup_tint(const gs_separation_params * params, floatp tint, float *values)
 {
-    int m = params->alt_space.type->num_components;
+    int m = cs_num_components((const gs_color_space *)&params->alt_space);
     const gs_indexed_map *map = params->map;
     int value_index =
-    (tint < 0 ? 0 : tint > 1 ? map->num_values - m :
-     (int)(tint * separation_cache_size + 0.5) * m);
+	(tint < 0 ? 0 : tint > 1 ? map->num_values - m :
+	 (int)(tint * separation_cache_size + 0.5) * m);
     const float *pv = &map->values[value_index];
 
     switch (m) {
@@ -95,7 +94,7 @@ zsetseparationspace(register os_ptr op)
     }
     check_proc(pcsa[2]);
     cs = *gs_currentcolorspace(igs);
-    if (!cs.type->can_be_base_space)
+    if (!cs.type->can_be_alt_space)
 	return_error(e_rangecheck);
     code = zcs_begin_map(&map, &pcsa[2], separation_cache_size + 1,
 			 (const gs_base_color_space *)&cs,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sbwbs.c */
+/*Id: sbwbs.c  */
 /* Burrows/Wheeler block sorting compression filters */
 #include "stdio_.h"
 #include "memory_.h"
@@ -30,12 +30,12 @@
 
 private_st_buffered_state();
 
-#define ss ((stream_buffered_state *)st)
-
 /* Initialize */
 private int
 s_buffered_no_block_init(stream_state * st)
 {
+    stream_buffered_state *const ss = (stream_buffered_state *) st;
+
     ss->buffer = 0;
     ss->filling = true;
     ss->bpos = 0;
@@ -44,6 +44,8 @@ s_buffered_no_block_init(stream_state * st)
 private int
 s_buffered_block_init(stream_state * st)
 {
+    stream_buffered_state *const ss = (stream_buffered_state *) st;
+
     s_buffered_no_block_init(st);
     ss->buffer = gs_alloc_bytes(st->memory, ss->BlockSize, "buffer");
     if (ss->buffer == 0)
@@ -60,6 +62,7 @@ s_buffered_block_init(stream_state * st)
 private int
 s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
 {
+    stream_buffered_state *const ss = (stream_buffered_state *) st;
     register const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
     uint count = rlimit - p;
@@ -85,22 +88,21 @@ s_buffered_process(stream_state * st, stream_cursor_read * pr, bool last)
 private void
 s_buffered_release(stream_state * st)
 {
+    stream_buffered_state *const ss = (stream_buffered_state *) st;
+
     gs_free_object(st->memory, ss->buffer, "buffer");
 }
-
-#undef ss
 
 /* ------ Common code for Burrows/Wheeler block sorting filters ------ */
 
 private_st_BWBS_state();
 private void s_BWBS_release(P1(stream_state *));
 
-#define ss ((stream_BWBS_state *)st)
-
 /* Initialize */
 private int
 bwbs_init(stream_state * st, uint osize)
 {
+    stream_BWBS_state *const ss = (stream_BWBS_state *) st;
     int code;
 
     ss->bsize = ss->BlockSize;
@@ -122,6 +124,8 @@ bwbs_init(stream_state * st, uint osize)
 private void
 s_BWBS_release(stream_state * st)
 {
+    stream_BWBS_state *const ss = (stream_BWBS_state *) st;
+
     gs_free_object(st->memory, ss->offsets, "BWBlockSort offsets");
     s_buffered_release(st);
 }
@@ -132,6 +136,8 @@ s_BWBS_release(stream_state * st)
 private int
 s_BWBSE_init(stream_state * st)
 {
+    stream_BWBS_state *const ss = (stream_BWBS_state *) st;
+
     return bwbs_init(st, ss->BlockSize * sizeof(int));
 }
 
@@ -208,6 +214,7 @@ private int
 s_BWBSE_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
+    stream_BWBS_state *const ss = (stream_BWBS_state *) st;
     register byte *q = pw->ptr;
     byte *wlimit = pw->limit;
     uint wcount = wlimit - q;
@@ -326,6 +333,7 @@ typedef struct {
 private int
 s_BWBSD_init(stream_state * st)
 {
+    stream_BWBS_state *const ss = (stream_BWBS_state *) st;
     uint bsize = ss->BlockSize;
 
     return bwbs_init(st, offset_space(bsize));
@@ -431,6 +439,7 @@ private int
 s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
+    stream_BWBS_state *const ss = (stream_BWBS_state *) st;
     register const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
     uint count = rlimit - p;
@@ -447,6 +456,7 @@ s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
     int *po = ss->offsets;
 
 #endif /* (!)SHORT_OFFSETS */
+
     if (ss->I < 0) {		/* Read block parameters */
 	int I, N, j;
 	if (count < sizeof(int) * 2)
@@ -512,8 +522,6 @@ s_BWBSD_process(stream_state * st, stream_cursor_read * pr,
 	return 1;
     return 0;
 }
-
-#undef ss
 
 /* Stream template */
 const stream_template s_BWBSD_template =

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_win32.c */
+/*Id: gp_win32.c  */
 /* Common platform-specific routines for MS-Windows WIN32 */
 /* hacked from gp_msdos.c by Russell Lang */
 #include "stdio_.h"
@@ -50,8 +50,9 @@ gp_get_realtime(long *pdt)
 {
     SYSTEMTIME st;
     long idate;
-    static const int mstart[12] =
-    {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
+    static const int mstart[12] = {
+	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334
+    };
 
     /* This gets UTC, not local time */
     /* We have no way of knowing the time zone correction */
@@ -132,11 +133,13 @@ gp_semaphore_open(
 		     gp_semaphore * sema	/* create semaphore here */
 )
 {
-    win32_semaphore *const winSema = (win32_semaphore *) sema;
+    win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     if (winSema) {
 	winSema->handle = CreateSemaphore(NULL, 0, max_int, NULL);
-	return winSema->handle != NULL ? 0 : gs_note_error(gs_error_unknownerror);
+	return
+	    (winSema->handle != NULL ? 0 :
+	     gs_note_error(gs_error_unknownerror));
     } else
 	return 0;		/* Win32 semaphores handles may be moved */
 }
@@ -146,7 +149,7 @@ gp_semaphore_close(
 		      gp_semaphore * sema	/* semaphore to affect */
 )
 {
-    win32_semaphore *const winSema = (win32_semaphore *) sema;
+    win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     if (winSema->handle != NULL)
 	CloseHandle(winSema->handle);
@@ -158,10 +161,11 @@ gp_semaphore_wait(
 		     gp_semaphore * sema	/* semaphore to affect */
 )
 {
-    win32_semaphore *const winSema = (win32_semaphore *) sema;
+    win32_semaphore *const winSema = (win32_semaphore *)sema;
 
-    return WaitForSingleObject(winSema->handle, INFINITE) == WAIT_OBJECT_0
-	? 0 : gs_error_unknownerror;
+    return
+	(WaitForSingleObject(winSema->handle, INFINITE) == WAIT_OBJECT_0
+	 ? 0 : gs_error_unknownerror);
 }
 
 int				/* rets 0 ok, -ve error */
@@ -169,10 +173,11 @@ gp_semaphore_signal(
 		       gp_semaphore * sema	/* semaphore to affect */
 )
 {
-    win32_semaphore *const winSema = (win32_semaphore *) sema;
+    win32_semaphore *const winSema = (win32_semaphore *)sema;
 
     return
-	ReleaseSemaphore(winSema->handle, 1, NULL) ? 0 : gs_error_unknownerror;
+	(ReleaseSemaphore(winSema->handle, 1, NULL) ? 0 :
+	 gs_error_unknownerror);
 }
 
 
@@ -188,7 +193,7 @@ gp_monitor_open(
 		   gp_monitor * mon	/* create monitor here */
 )
 {
-    win32_monitor *const winMon = (win32_monitor *) mon;
+    win32_monitor *const winMon = (win32_monitor *)mon;
 
     if (mon) {
 	InitializeCriticalSection(&winMon->lock);	/* returns no status */
@@ -202,7 +207,7 @@ gp_monitor_close(
 		    gp_monitor * mon	/* monitor to affect */
 )
 {
-    win32_monitor *const winMon = (win32_monitor *) mon;
+    win32_monitor *const winMon = (win32_monitor *)mon;
 
     DeleteCriticalSection(&winMon->lock);	/* rets no status */
 }
@@ -212,7 +217,7 @@ gp_monitor_enter(
 		    gp_monitor * mon	/* monitor to affect */
 )
 {
-    win32_monitor *const winMon = (win32_monitor *) mon;
+    win32_monitor *const winMon = (win32_monitor *)mon;
 
     EnterCriticalSection(&winMon->lock);	/* rets no status */
     return 0;
@@ -223,7 +228,7 @@ gp_monitor_leave(
 		    gp_monitor * mon	/* monitor to affect */
 )
 {
-    win32_monitor *const winMon = (win32_monitor *) mon;
+    win32_monitor *const winMon = (win32_monitor *)mon;
 
     LeaveCriticalSection(&winMon->lock);	/* rets no status */
     return 0;
@@ -242,10 +247,11 @@ gp_thread_begin_wrapper(
 			   void *thread_data	/* gp_thread_creation_closure passed as magic data */
 )
 {
-    gp_thread_creation_closure closure = *(gp_thread_creation_closure *) thread_data;
+    gp_thread_creation_closure closure =
+	*(gp_thread_creation_closure *)thread_data;
 
     free(thread_data);
-    (*closure.function) (closure.data);
+    (*closure.function)(closure.data);
     return 0;
 }
 
@@ -259,8 +265,8 @@ gp_create_thread(
     DWORD threadID;
 
     /* Create the magic closure that thread_wrapper gets passed */
-    gp_thread_creation_closure *closure
-    = (gp_thread_creation_closure *) malloc(sizeof(*closure));
+    gp_thread_creation_closure *closure =
+	(gp_thread_creation_closure *)malloc(sizeof(*closure));
 
     if (!closure)
 	return gs_error_VMerror;
@@ -268,6 +274,7 @@ gp_create_thread(
     closure->data = data;
 
     /* Start thread_wrapper */
-    return CreateThread(NULL, 0, gp_thread_begin_wrapper, closure, 0, &threadID)
-	? 0 : gs_note_error(gs_error_unknownerror);
+    return
+	(CreateThread(NULL, 0, gp_thread_begin_wrapper, closure, 0, &threadID)
+	 ? 0 : gs_note_error(gs_error_unknownerror));
 }

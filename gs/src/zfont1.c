@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zfont1.c */
+/*Id: zfont1.c  */
 /* Type 1 and Type 4 font creation operator */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gxfixed.h"
 #include "gsmatrix.h"
@@ -33,15 +32,14 @@
 #include "idparam.h"
 #include "store.h"
 
+/*#define TEST*/
+
 /* Type 1 auxiliary procedures (defined in zchar1.c) */
-extern int z1_subr_proc(P4(gs_font_type1 *, int, bool, gs_const_string *));
-extern int z1_seac_proc(P3(gs_font_type1 *, int, gs_const_string *));
-extern int z1_push_proc(P3(gs_font_type1 *, const fixed *, int));
-extern int z1_pop_proc(P2(gs_font_type1 *, fixed *));
+extern const gs_type1_data_procs_t z1_data_procs;
 
 /* Default value of lenIV */
-#define default_lenIV_1 4
-#define default_lenIV_2 (-1)
+#define DEFAULT_LENIV_1 4
+#define DEFAULT_LENIV_2 (-1)
 
 /* Private utilities */
 private uint
@@ -51,6 +49,16 @@ subr_bias(const ref * psubrs)
 
     return (size < 1240 ? 107 : size < 33900 ? 1131 : 32768);
 }
+private void
+find_zone_height(float *pmax_height, int count, const float *values)
+{
+    int i;
+    float zone_height;
+
+    for (i = 0; i < count; i += 2)
+	if ((zone_height = values[i + 1] - values[i]) > *pmax_height)
+	    *pmax_height = zone_height;
+}
 
 /* Build a Type 1 or Type 4 font. */
 private int
@@ -58,7 +66,7 @@ buildfont1or4(os_ptr op, build_proc_refs * pbuild, font_type ftype,
 	      build_font_options_t options)
 {
     gs_type1_data data1;
-    static ref no_subrs;
+    ref no_subrs;
     ref *pothersubrs = &no_subrs;
     ref *psubrs = &no_subrs;
     ref *pglobalsubrs = &no_subrs;
@@ -116,11 +124,11 @@ buildfont1or4(os_ptr op, build_proc_refs * pbuild, font_type ftype,
 	    else
 		data1.initialRandomSeed = pirs->value.intval;
 	}
-	data1.lenIV = default_lenIV_2;
+	data1.lenIV = DEFAULT_LENIV_2;
     } else {
 	data1.subroutineNumberBias = 0;
 	data1.gsubrNumberBias = 0;
-	data1.lenIV = default_lenIV_1;
+	data1.lenIV = DEFAULT_LENIV_1;
     }
     /* Get the rest of the information from the Private dictionary. */
     if ((code = dict_int_param(pprivate, "lenIV", -1, 255, data1.lenIV,
@@ -134,40 +142,43 @@ buildfont1or4(os_ptr op, build_proc_refs * pbuild, font_type ftype,
 				 &data1.BlueScale)) < 0 ||
 	(code = dict_float_param(pprivate, "BlueShift", 7.0,
 				 &data1.BlueShift)) < 0 ||
-	(code = data1.BlueValues.count = dict_float_array_param(pprivate,
-					   "BlueValues", max_BlueValues * 2,
-				  &data1.BlueValues.values[0], NULL)) < 0 ||
+	(code = data1.BlueValues.count =
+	 dict_float_array_param(pprivate, "BlueValues", max_BlueValues * 2,
+				&data1.BlueValues.values[0], NULL)) < 0 ||
 	(code = dict_float_param(pprivate, "ExpansionFactor", 0.06,
 				 &data1.ExpansionFactor)) < 0 ||
-	(code = data1.FamilyBlues.count = dict_float_array_param(pprivate,
-					 "FamilyBlues", max_FamilyBlues * 2,
-				 &data1.FamilyBlues.values[0], NULL)) < 0 ||
-     (code = data1.FamilyOtherBlues.count = dict_float_array_param(pprivate,
-			       "FamilyOtherBlues", max_FamilyOtherBlues * 2,
+	(code = data1.FamilyBlues.count =
+	 dict_float_array_param(pprivate, "FamilyBlues", max_FamilyBlues * 2,
+				&data1.FamilyBlues.values[0], NULL)) < 0 ||
+	(code = data1.FamilyOtherBlues.count =
+	 dict_float_array_param(pprivate,
+				"FamilyOtherBlues", max_FamilyOtherBlues * 2,
 			    &data1.FamilyOtherBlues.values[0], NULL)) < 0 ||
 	(code = dict_bool_param(pprivate, "ForceBold", false,
 				&data1.ForceBold)) < 0 ||
 	(code = dict_int_param(pprivate, "LanguageGroup", 0, 1, 0,
 			       &data1.LanguageGroup)) < 0 ||
-	(code = data1.OtherBlues.count = dict_float_array_param(pprivate,
-					   "OtherBlues", max_OtherBlues * 2,
-				  &data1.OtherBlues.values[0], NULL)) < 0 ||
+	(code = data1.OtherBlues.count =
+	 dict_float_array_param(pprivate, "OtherBlues", max_OtherBlues * 2,
+				&data1.OtherBlues.values[0], NULL)) < 0 ||
 	(code = dict_bool_param(pprivate, "RndStemUp", true,
 				&data1.RndStemUp)) < 0 ||
-	(code = data1.StdHW.count = dict_float_array_param(pprivate,
-			   "StdHW", 1, &data1.StdHW.values[0], NULL)) < 0 ||
-	(code = data1.StdVW.count = dict_float_array_param(pprivate,
-			   "StdVW", 1, &data1.StdVW.values[0], NULL)) < 0 ||
-	(code = data1.StemSnapH.count = dict_float_array_param(pprivate,
-						  "StemSnapH", max_StemSnap,
-				   &data1.StemSnapH.values[0], NULL)) < 0 ||
-	(code = data1.StemSnapV.count = dict_float_array_param(pprivate,
-						  "StemSnapV", max_StemSnap,
-				   &data1.StemSnapV.values[0], NULL)) < 0 ||
+	(code = data1.StdHW.count =
+	 dict_float_array_param(pprivate, "StdHW", 1,
+				&data1.StdHW.values[0], NULL)) < 0 ||
+	(code = data1.StdVW.count =
+	 dict_float_array_param(pprivate, "StdVW", 1,
+				&data1.StdVW.values[0], NULL)) < 0 ||
+	(code = data1.StemSnapH.count =
+	 dict_float_array_param(pprivate, "StemSnapH", max_StemSnap,
+				&data1.StemSnapH.values[0], NULL)) < 0 ||
+	(code = data1.StemSnapV.count =
+	 dict_float_array_param(pprivate, "StemSnapV", max_StemSnap,
+				&data1.StemSnapV.values[0], NULL)) < 0 ||
     /* The WeightVector is in the font dictionary, not Private. */
-	(code = data1.WeightVector.count = dict_float_array_param(op,
-					   "WeightVector", max_WeightVector,
-				       data1.WeightVector.values, NULL)) < 0
+	(code = data1.WeightVector.count =
+	 dict_float_array_param(op, "WeightVector", max_WeightVector,
+				data1.WeightVector.values, NULL)) < 0
 	)
 	return code;
     /*
@@ -179,17 +190,17 @@ buildfont1or4(os_ptr op, build_proc_refs * pbuild, font_type ftype,
      */
     {
 	float max_zone_height = 1.0;
-	float zone_height;
-	int i;
 
-#define scan_zone(z)\
-  for ( i = 0; i < data1.z.count; i += 2 )\
-    if ( (zone_height = data1.z.values[i+1] - data1.z.values[i]) > max_zone_height )\
-      max_zone_height = zone_height
-	scan_zone(BlueValues);
-	scan_zone(OtherBlues);
-	scan_zone(FamilyBlues);
-	scan_zone(FamilyOtherBlues);
+#define SCAN_ZONE(z)\
+    find_zone_height(&max_zone_height, data1.z.count, data1.z.values);
+
+	SCAN_ZONE(BlueValues);
+	SCAN_ZONE(OtherBlues);
+	SCAN_ZONE(FamilyBlues);
+	SCAN_ZONE(FamilyOtherBlues);
+
+#undef SCAN_ZONE
+
 	if (data1.BlueScale * max_zone_height > 1.0)
 	    data1.BlueScale = 1.0 / max_zone_height;
     }
@@ -204,12 +215,9 @@ buildfont1or4(os_ptr op, build_proc_refs * pbuild, font_type ftype,
     ref_assign(&pdata->u.type1.OtherSubrs, pothersubrs);
     ref_assign(&pdata->u.type1.Subrs, psubrs);
     ref_assign(&pdata->u.type1.GlobalSubrs, pglobalsubrs);
-    pfont->data.subr_proc = z1_subr_proc;
-    pfont->data.seac_proc = z1_seac_proc;
-    pfont->data.push_proc = z1_push_proc;
-    pfont->data.pop_proc = z1_pop_proc;
+    pfont->data.procs = &z1_data_procs;
     pfont->data.proc_data = (char *)pdata;
-    return define_gs_font((gs_font *) pfont);
+    return define_gs_font((gs_font *)pfont);
 }
 
 /* <string|name> <font_dict> .buildfont1 <string|name> <font> */
@@ -218,9 +226,8 @@ private int
 zbuildfont1(os_ptr op)
 {
     build_proc_refs build;
-    int code =
-    build_proc_name_refs(&build,
-			 "%Type1BuildChar", "%Type1BuildGlyph");
+    int code = build_proc_name_refs(&build,
+				    "%Type1BuildChar", "%Type1BuildGlyph");
 
     if (code < 0)
 	return code;
@@ -240,11 +247,39 @@ zbuildfont4(os_ptr op)
     return buildfont1or4(op, &build, ft_disk_based, bf_options_none);
 }
 
+#ifdef TEST
+
+#include "igstate.h"
+#include "stream.h"
+#include "files.h"
+
+/* <file> .printfont1 - */
+private int
+zprintfont1(os_ptr op)
+{
+    const gs_font *pfont = gs_currentfont(igs);
+    stream *s;
+    int code;
+
+    if (pfont->FontType != ft_encrypted)
+	return_error(e_rangecheck);
+    check_write_file(s, op);
+    code = psdf_embed_type1_font(s, (gs_font_type1 *) pfont);
+    if (code >= 0)
+	pop(1);
+    return code;
+}
+
+#endif
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfont1_op_defs[] =
 {
     {"2.buildfont1", zbuildfont1},
     {"2.buildfont4", zbuildfont4},
+#ifdef TEST
+    {"2.printfont1", zprintfont1},
+#endif
     op_def_end(0)
 };

@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: wmin.mak 
 # Makefile for compiling the Wadalab free Kanji font into the executable.
 # This does not yet include rules for creating the wmin*.c files.
 

@@ -19,7 +19,6 @@
 /*Id: zht2.c  */
 /* Level 2 sethalftone operator */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "gxdevice.h"		/* for gzht.h */
@@ -55,8 +54,9 @@ zsethalftone5(register os_ptr op)
     int i, j;
     gs_halftone *pht;
     gx_device_halftone *pdht;
-    static const char *const color_names[] =
-    {gs_ht_separation_name_strings};
+    static const char *const color_names[] = {
+	gs_ht_separation_name_strings
+    };
     ref sprocs[countof(color_names)];
     ref tprocs[countof(color_names)];
     gs_memory_t *mem;
@@ -126,10 +126,13 @@ zsethalftone5(register os_ptr op)
 		pc++, j++;
 	    }
 	}
-    if (code >= 0) {		/* We think that Type 2 and Type 4 halftones, like */
-	/* screens set by setcolorscreen, adapt automatically to */
-	/* the device color space, so we need to mark them */
-	/* with a different internal halftone type. */
+    if (code >= 0) {
+	/*
+	 * We think that Type 2 and Type 4 halftones, like
+	 * screens set by setcolorscreen, adapt automatically to
+	 * the device color space, so we need to mark them
+	 * with a different internal halftone type.
+	 */
 	int type = 0;
 
 	dict_int_param(op - 1, "HalftoneType", 1, 5, 0, &type);
@@ -151,9 +154,12 @@ zsethalftone5(register os_ptr op)
 		    break;
 	    }
 	}
-    if (code >= 0) {		/* Schedule the sampling of any Type 1 screens, */
-	/* and any (Type 1 or Type 3) TransferFunctions. */
-	/* Save the stack depths in case we have to back out. */
+    if (code >= 0) {
+	/*
+	 * Schedule the sampling of any Type 1 screens,
+	 * and any (Type 1 or Type 3) TransferFunctions.
+	 * Save the stack depths in case we have to back out.
+	 */
 	uint edepth = ref_stack_count(&e_stack);
 	uint odepth = ref_stack_count(&o_stack);
 	ref odict, odict5;
@@ -182,8 +188,9 @@ zsethalftone5(register os_ptr op)
 			break;
 		    /* falls through */
 		case ht_type_threshold:
-		    if (!r_has_type(tprocs + j, t__invalid)) {	/* Schedule TransferFunction sampling. */
-/****** check_xstack IS WRONG ******/
+		    if (!r_has_type(tprocs + j, t__invalid)) {
+			/* Schedule TransferFunction sampling. */
+			/****** check_xstack IS WRONG ******/
 			check_ostack(zcolor_remap_one_ostack);
 			check_estack(zcolor_remap_one_estack);
 			code = zcolor_remap_one(tprocs + j,

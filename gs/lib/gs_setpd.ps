@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_setpd.ps 
 % The current implementation of setpagedevice has the following limitations:
 %	- It doesn't attempt to "interact with the user" for Policy = 2.
 
@@ -28,38 +29,36 @@ level2dict begin
 
 % We have to guard against the BeginPage procedure not popping its operand.
 % This is really stupid, but the Genoa CET does it.
-/.beginpage		% - .beginpage -
- { .currentshowpagecount
-    { .currentpagedevice pop /BeginPage .knownget
-       {	% Stack: ... pagecount proc
-	 count 2 .execn
+/.beginpage {		% - .beginpage -
+  .currentshowpagecount {
+    .currentpagedevice pop
+    dup null ne { /BeginPage .knownget } { pop false } ifelse {
+		% Stack: ... pagecount proc
+       count 2 .execn
 		% Stack: ... ..???.. oldcount
-	 count 1 add exch sub { pop } repeat
-       }
-       { pop
-       }
-      ifelse
-    }
-   if
- } bind odef
+       count 1 add exch sub { pop } repeat
+    } {
+      pop
+    } ifelse
+  } if
+} bind odef
 
 % Guard similarly against EndPage not popping its operand.
-/.endpage		% <reason> .endpage <print_bool>
- { .currentshowpagecount
-    { 1 index .currentpagedevice pop /EndPage .knownget
-       {	% Stack: ... reason pagecount reason proc
-	 count 2 .execn
+/.endpage {		% <reason> .endpage <print_bool>
+  .currentshowpagecount {
+    1 index .currentpagedevice pop
+    dup null ne { /EndPage .knownget } { pop false } ifelse {
+		% Stack: ... reason pagecount reason proc
+      count 2 .execn
 		% Stack: ... ..???.. print oldcount
-	 count 2 add exch sub { exch pop } repeat
-       }
-       { pop pop 2 ne
-       }
-      ifelse
-    }
-    { 2 ne
-    }
-   ifelse
- } bind odef
+      count 2 add exch sub { exch pop } repeat
+    } {
+      pop pop 2 ne
+    } ifelse
+  } {
+    2 ne
+  } ifelse
+} bind odef
 
 % Define interpreter callouts for handling gstate-saving operators,
 % to make sure that they create a page device dictionary for use by
@@ -107,7 +106,9 @@ level2dict begin
       /.installpagedevice cvx /rangecheck signalerror
     }
    ifelse pop pop
-   erasepage initgraphics .beginpage
+	% A careful reading of the Red Book reveals that an erasepage
+	% should occur, but *not* an initgraphics.
+   erasepage .beginpage
  } bind def
 
 /.uninstallpagedevice
@@ -144,6 +145,16 @@ level2dict begin
    ifelse
  } bind odef
 
+% Redefine .currentpagedevice and .setpagedevice so they convert between
+% null and a fixed empty directionary.
+/.nullpagedevice 0 dict readonly def
+/.currentpagedevice {
+  //.currentpagedevice exch dup null eq { pop //.nullpagedevice } if exch
+} bind odef
+/.setpagedevice {
+  dup //.nullpagedevice eq { pop null } if //.setpagedevice
+} bind odef
+
 % ---------------- Auxiliary definitions ---------------- %
 
 % Define the required attributes of all page devices, and their default values.
@@ -160,7 +171,9 @@ level2dict begin
 % dummy media type that handles pages of any size.
 % Devices that care will override this.
   /InputAttributes mark 0
-    mark /PageSize [0 dup 16#7ffff dup] .dicttomark readonly
+	% Since sizes match within 5 user units, we need to set the smallest
+	% PageSize to 6 units so that [0 0] will fail.
+    mark /PageSize [6 dup 16#7ffff dup] .dicttomark readonly
   .dicttomark readonly
   (%MediaSource) 0
   /OutputAttributes mark 0
@@ -473,7 +486,10 @@ DEBUG { (Result of putting.\n) print pstack flush } if
 							% affects scaling
    3 index /Orientation .knownget not { null } if
    4 index /RollFedMedia .knownget not { false } if
-   matrix .matchpagesize pop		% (can't fail)
+   matrix .matchpagesize not {
+		% This is a "can't happen" condition!
+     /setpagedevice load /rangecheck signalerror
+   } if
    2 array astore
  } bind def
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,19 +16,53 @@
    all copies.
  */
 
-/* zdpnext.c */
+/*Id: zdpnext.c  */
 /* NeXT Display PostScript extensions */
+#include "math_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
+#include "gscoord.h"
 #include "gscspace.h"		/* for iimage.h */
+#include "gsdpnext.h"
 #include "gsmatrix.h"
 #include "gsiparam.h"		/* for iimage.h */
+#include "gsiparm2.h"
+#include "gspath2.h"
 #include "gxcvalue.h"
+#include "gxdevice.h"
 #include "gxsample.h"
 #include "ialloc.h"
 #include "igstate.h"
 #include "iimage.h"
+#include "store.h"
+
+/* ------ alpha channel ------ */
+
+/* - currentalpha <alpha> */
+private int
+zcurrentalpha(register os_ptr op)
+{
+    push(1);
+    make_real(op, gs_currentalpha(igs));
+    return 0;
+}
+
+/* <alpha> setalpha - */
+private int
+zsetalpha(register os_ptr op)
+{
+    double alpha;
+    int code;
+
+    if (real_param(op, &alpha) < 0)
+	return_op_typecheck(op);
+    if ((code = gs_setalpha(igs, alpha)) < 0)
+	return code;
+    pop(1);
+    return 0;
+}
+
+/* ------ Imaging/compositing ------ */
 
 /*
  * Miscellaneous notes:
@@ -40,53 +74,26 @@
  *   (including halftoning if needed).
  */
 
-/*
- * Define the compositing operations.  Eventually this will be moved to
- * a header file in the library.  These values must match the ones in
- * dpsNeXT.h.
- */
-typedef enum {
-    NX_CLEAR = 0,
-    NX_COPY,
-    NX_SOVER,
-    NX_SIN,
-    NX_SOUT,
-    NX_SATOP,
-    NX_DOVER,
-    NX_DIN,
-    NX_DOUT,
-    NX_DATOP,
-    NX_XOR,
-    NX_PLUSD,
-    NX_HIGHLIGHT,		/* only for compositerect */
-    NX_PLUSL,
-#define NX_composite_last NX_PLUSL
-#define NX_compositerect_last NX_PLUSL
-    NX_DISSOLVE			/* fake value used internally for dissolve */
-} gs_composite_op_t;
-
-/*
- * Define the parameters for a compositing operation at the library level.
- * Of course this too belongs in the library.
- */
-typedef struct gs_composite_params_s {
-    gs_composite_op_t cop;
-    gx_color_value delta;	/* only for dissolve */
-    byte src_value[5 * 2];	/* only if src == 0 or !src_has_alpha */
-} gs_composite_params_t;
-
-/* Define a local structure for holding compositing operands. */
-typedef struct gs_composite_operands_s {
-    double src_rect[4];		/* x, y, width, height */
-    gs_state *src_gs;
-    double dest_pt[2];		/* x, y */
-} gs_composite_operands_t;
-
 /* Imported procedures */
 int zimage_multiple(P2(os_ptr op, bool has_alpha));	/* in zcolor1.c */
+int process_non_source_image(P2(const gs_image_common_t * pim,
+				client_name_t cname));	/* in zdps.c */
+
+/*
+ * Define the operand and bookeeping structure for a compositing operation.
+ */
+typedef struct alpha_composite_state_s {
+    /* Compositing parameters */
+    gs_composite_alpha_params_t params;
+    /* Temporary structures */
+    gs_composite_t *pcte;
+    gx_device *cdev;
+    gx_device *orig_dev;
+} alpha_composite_state_t;
 
 /* Forward references */
-private int composite_operands(P2(gs_composite_operands_t *, os_ptr));
+private int begin_composite(P1(alpha_composite_state_t *));
+private void end_composite(P1(alpha_composite_state_t *));
 private int rect_param(P2(os_ptr, double[4]));
 
 /* <width> <height> <bits/comp> <matrix> */
@@ -94,27 +101,9 @@ private int rect_param(P2(os_ptr, double[4]));
 /*      <datasrc> false <ncomp> alphaimage - */
 private int
 zalphaimage(register os_ptr op)
-{				/* Essentially the whole implementation is shared with colorimage. */
-    return zimage_multiple(op, true);
-}
-
-/* <srcx> <srcy> <width> <height> <srcgstate|null> <destx> <desty> <op> */
-/*   composite - */
-private int
-zcomposite(register os_ptr op)
 {
-    gs_composite_operands_t operands;
-    int code = composite_operands(&operands, op);
-    gs_composite_params_t params;
-
-    if (code < 0)
-	return code;
-    check_int_leu(*op, NX_composite_last);
-    params.cop = (gs_composite_op_t) op->value.intval;
-    if (params.cop == NX_HIGHLIGHT)
-	return_error(e_rangecheck);
-/****** NYI ******/
-    return_error(e_undefined);
+    /* Essentially the whole implementation is shared with colorimage. */
+    return zimage_multiple(op, true);
 }
 
 /* <destx> <desty> <width> <height> <op> compositerect - */
@@ -122,16 +111,88 @@ private int
 zcompositerect(register os_ptr op)
 {
     double dest_rect[4];
-    gs_composite_params_t params;
+    alpha_composite_state_t cstate;
     int code = rect_param(op - 1, dest_rect);
 
     if (code < 0)
 	return code;
-    check_int_leu(*op, NX_compositerect_last);
-    params.cop = (gs_composite_op_t) op->value.intval;
-/****** SET src_value ******/
-/****** NYI ******/
-    return_error(e_undefined);
+    check_int_leu(*op, compositerect_last);
+    cstate.params.op = (gs_composite_op_t) op->value.intval;
+    code = begin_composite(&cstate);
+    if (code < 0)
+	return code;
+    {
+	gs_rect rect;
+
+	rect.q.x = (rect.p.x = dest_rect[0]) + dest_rect[2];
+	rect.q.y = (rect.p.y = dest_rect[1]) + dest_rect[3];
+	code = gs_rectfill(igs, &rect, 1);
+    }
+    end_composite(&cstate);
+    if (code >= 0)
+	pop(5);
+    return code;
+}
+
+/* Common code for composite and dissolve. */
+private int
+composite_image(os_ptr op, const gs_composite_alpha_params_t * params)
+{
+    alpha_composite_state_t cstate;
+    gs_image2_t image;
+    double src_rect[4];
+    double dest_pt[2];
+    gs_matrix save_ctm;
+    int code = rect_param(op - 4, src_rect);
+
+    cstate.params = *params;
+    gs_image2_t_init(&image);
+    if (code < 0 ||
+	(code = num_params(op - 1, 2, dest_pt)) < 0
+	)
+	return code;
+    if (r_has_type(op - 3, t_null))
+	image.DataSource = igs;
+    else {
+	check_stype(op[-3], st_igstate_obj);
+	check_read(op[-3]);
+	image.DataSource = igstate_ptr(op - 3);
+    }
+    image.XOrigin = src_rect[0];
+    image.YOrigin = src_rect[1];
+    image.Width = src_rect[2];
+    image.Height = src_rect[3];
+    image.PixelCopy = true;
+    /* Compute appropriate transformations. */
+    gs_currentmatrix(igs, &save_ctm);
+    gs_translate(igs, dest_pt[0], dest_pt[1]);
+    gs_make_identity(&image.ImageMatrix);
+    if (image.DataSource == igs) {
+	image.XOrigin -= dest_pt[0];
+	image.YOrigin -= dest_pt[1];
+    }
+    code = begin_composite(&cstate);
+    if (code >= 0) {
+	code = process_non_source_image((const gs_image_common_t *)&image,
+					"composite_image");
+	end_composite(&cstate);
+	if (code >= 0)
+	    pop(8);
+    }
+    gs_setmatrix(igs, &save_ctm);
+    return code;
+}
+
+/* <srcx> <srcy> <width> <height> <srcgstate|null> <destx> <desty> <op> */
+/*   composite - */
+private int
+zcomposite(register os_ptr op)
+{
+    gs_composite_alpha_params_t params;
+
+    check_int_leu(*op, composite_last);
+    params.op = (gs_composite_op_t) op->value.intval;
+    return composite_image(op, &params);
 }
 
 /* <srcx> <srcy> <width> <height> <srcgstate|null> <destx> <desty> <delta> */
@@ -139,32 +200,141 @@ zcompositerect(register os_ptr op)
 private int
 zdissolve(register os_ptr op)
 {
-    gs_composite_operands_t operands;
-    int code = composite_operands(&operands, op);
-    gs_composite_params_t params;
+    gs_composite_alpha_params_t params;
     double delta;
+    int code = real_param(op, &delta);
 
-    if (code < 0)
-	return code;
-    code = real_param(op, &delta);
     if (code < 0)
 	return code;
     if (delta < 0 || delta > 1)
 	return_error(e_rangecheck);
-    params.cop = NX_DISSOLVE;
-    params.delta = (gx_color_value) (delta * gx_max_color_value);
-/****** NYI ******/
-    return_error(e_undefined);
+    params.op = composite_Dissolve;
+    params.delta = delta;
+    return composite_image(op, &params);
+}
+
+/* ------ Image reading ------ */
+
+private int device_is_true_color(P1(gx_device * dev));
+
+/* <x> <y> <width> <height> <matrix> .sizeimagebox */
+/*   <dev_x> <dev_y> <dev_width> <dev_height> <matrix> */
+private void box_confine(P3(int *pp, int *pq, int wh));
+private int
+zsizeimagebox(os_ptr op)
+{
+    const gx_device *dev = gs_currentdevice(igs);
+    gs_rect srect, drect;
+    gs_matrix mat;
+    gs_int_rect rect;
+    int w, h;
+    int code;
+
+    check_type(op[-4], t_integer);
+    check_type(op[-3], t_integer);
+    check_type(op[-2], t_integer);
+    check_type(op[-1], t_integer);
+    srect.p.x = op[-4].value.intval;
+    srect.p.y = op[-3].value.intval;
+    srect.q.x = srect.p.x + op[-2].value.intval;
+    srect.q.y = srect.p.y + op[-1].value.intval;
+    gs_currentmatrix(igs, &mat);
+    gs_bbox_transform(&srect, &mat, &drect);
+    /*
+     * We want the dimensions of the image as a source, not a
+     * destination, so we need to expand it rather than pixround.
+     */
+    rect.p.x = (int)floor(drect.p.x);
+    rect.p.y = (int)floor(drect.p.y);
+    rect.q.x = (int)ceil(drect.q.x);
+    rect.q.y = (int)ceil(drect.q.y);
+    /*
+     * Clip the rectangle to the device boundaries, since that's what
+     * the NeXT implementation does.
+     */
+    box_confine(&rect.p.x, &rect.q.x, dev->width);
+    box_confine(&rect.p.y, &rect.q.y, dev->height);
+    w = rect.q.x - rect.p.x;
+    h = rect.q.y - rect.p.y;
+    /*
+     * The NeXT documentation doesn't specify very clearly what is
+     * supposed to be in the matrix: the following produces results
+     * that match testing on an actual NeXT system.
+     */
+    mat.tx -= rect.p.x;
+    mat.ty -= rect.p.y;
+    code = write_matrix(op, &mat);
+    if (code < 0)
+	return code;
+    make_int(op - 4, rect.p.x);
+    make_int(op - 3, rect.p.y);
+    make_int(op - 2, w);
+    make_int(op - 1, h);
+    return 0;
+}
+private void
+box_confine(int *pp, int *pq, int wh)
+{
+    if ( *pq <= 0 )
+	*pp = *pq = 0;
+    else if ( *pp >= wh )
+	*pp = *pq = wh;
+    else {
+	if ( *pp < 0 )
+	    *pp = 0;
+	if ( *pq > wh )
+	    *pq = wh;
+    }
+}
+
+/* - .sizeimageparams <bits/sample> <multiproc> <ncolors> */
+private int
+zsizeimageparams(register os_ptr op)
+{
+    gx_device *dev = gs_currentdevice(igs);
+    int ncomp = dev->color_info.num_components;
+    int bps;
+
+    push(3);
+    if (device_is_true_color(dev))
+	bps = dev->color_info.depth / ncomp;
+    else {
+	/*
+	 * Set bps to the smallest allowable number of bits that is
+	 * sufficient to represent the number of different colors.
+	 */
+	gx_color_value max_value =
+	    (dev->color_info.num_components == 1 ?
+	     dev->color_info.max_gray :
+	     max(dev->color_info.max_gray, dev->color_info.max_color));
+	static const gx_color_value sizes[] = {
+	    1, 2, 4, 8, 12, sizeof(gx_max_color_value) * 8
+	};
+	int i;
+
+	for (i = 0;; ++i)
+	    if (max_value <= ((ulong) 1 << sizes[i]) - 1)
+		break;
+	bps = sizes[i];
+    }
+    make_int(op - 2, bps);
+    make_false(op - 1);
+    make_int(op, ncomp);
+    return 0;
 }
 
 /* ------ Initialization procedure ------ */
 
 const op_def zdpnext_op_defs[] =
 {
+    {"0currentalpha", zcurrentalpha},
+    {"1setalpha", zsetalpha},
     {"7alphaimage", zalphaimage},
     {"8composite", zcomposite},
     {"5compositerect", zcompositerect},
     {"8dissolve", zdissolve},
+    {"5.sizeimagebox", zsizeimagebox},
+    {"0.sizeimageparams", zsizeimageparams},
     op_def_end(0)
 };
 
@@ -185,265 +355,116 @@ rect_param(os_ptr op, double rect[4])
     return code;
 }
 
-/* Collect parameters for a compositing operation. */
+/* Begin a compositing operation. */
 private int
-composite_operands(gs_composite_operands_t * pco, os_ptr op)
+begin_composite(alpha_composite_state_t * pcp)
 {
-    int code = rect_param(op - 4, pco->src_rect);
+    gx_device *dev = gs_currentdevice(igs);
+    int code =
+    gs_create_composite_alpha(&pcp->pcte, &pcp->params, imemory);
 
-    if (code < 0 ||
-	(code = num_params(op - 1, 2, pco->dest_pt)) < 0
-	)
+    if (code < 0)
 	return code;
-    if (r_has_type(op - 3, t_null))
-	pco->src_gs = igs;
-    else {
-	check_stype(op[-3], st_igstate_obj);
-	check_read(op[-3]);
-	pco->src_gs = igstate_ptr(op - 3);
+    pcp->orig_dev = pcp->cdev = dev;	/* for end_composite */
+    code = (*dev_proc(dev, create_compositor))
+	(dev, &pcp->cdev, pcp->pcte, (const gs_imager_state *)igs,
+	 imemory);
+    if (code < 0) {
+	end_composite(pcp);
+	return code;
     }
+    gs_setdevice_no_init(igs, pcp->cdev);
     return 0;
 }
 
-/* ------ Library procedures ------ */
+/* End a compositing operation. */
+private void
+end_composite(alpha_composite_state_t * pcp)
+{
+    /* Close and free the compositor and the compositing object. */
+    if (pcp->cdev != pcp->orig_dev) {
+	gs_closedevice(pcp->cdev);	/* also frees the device */
+	gs_setdevice_no_init(igs, pcp->orig_dev);
+    }
+    ifree_object(pcp->pcte, "end_composite(gs_composite_t)");
+}
 
 /*
- * Composite two arrays of (premultiplied) pixel values.
- * Legal values of bits_per_value are 1, 2, 4, 8, and 16.
- * src_has_alpha indicates whether or not the source has alpha values;
- * if not, the alpha value is constant (in the parameter structure).
- * Legal values of values_per_pixel are 1-5, including alpha.
- * (The source has one fewer value per pixel if it doesn't have alpha.)
- * src_data = 0 is legal and indicates that the source value is constant,
- * specified in the parameter structure.
- *
- * The current implementation is simple but inefficient.  We'll speed it up
- * later if necessary.
+ * Determine whether a device has decomposed pixels with the components
+ * in the standard PostScript order, and a 1-for-1 color map
+ * (possibly inverted).  Return 0 if not true color, 1 if true color,
+ * -1 if inverted true color.
  */
 private int
-composite_values(byte * dest_data, int dest_x, const byte * src_data, int src_x,
-	       int bits_per_value, int values_per_pixel, bool src_has_alpha,
-      uint num_pixels, const gs_composite_params_t * pcp, gs_memory_t * mem)
+device_is_true_color(gx_device * dev)
 {
-    int src_vpp = values_per_pixel - (src_has_alpha ? 0 : 1);
-    int bytes_per_value = bits_per_value >> 3;
-    int dest_bpp, src_bpp;
-    uint highlight_value = (1 << bits_per_value) - 1;
-    byte *dbuf = 0;
-    byte *sbuf = 0;
-    int dx;
-    byte *dptr;
-    const byte *sptr;
+    int ncomp = dev->color_info.num_components;
+    int depth = dev->color_info.depth;
+    int i, max_v;
 
-    if (bytes_per_value == 0) {
-	/*
-	 * Unpack the operands now, and repack the results after the
-	 * operation.
-	 */
-	sample_unpack_proc((*unpack_proc));
-	static const bits16 lookup2x2[16] =
-	{
-#if arch_is_big_endian
-#  define map2(a,b) (a * 0x5500 + b * 0x0055)
-#else
-#  define map2(a,b) (a * 0x0055 + b * 0x5500)
-#endif
-#define map4x2(a) map2(a,0), map2(a,1), map2(a,2), map2(a,3)
-	    map4x2(0), map4x2(1), map4x2(2), map4x2(3)
-#undef map2
-#undef map4x2
-	};
-	static const byte lookup4[16] =
-	{
-	    0x00, 0x11, 0x22, 0x33, 0x44, 0x55, 0x66, 0x77,
-	    0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff
-	};
-	const sample_lookup_t *lookup;
-	int sx;
+#define CV(i) (gx_color_value)((ulong)gx_max_color_value * i / max_v)
+#define CV0 ((gx_color_value)0)
 
-	switch (bits_per_value) {
-	    case 1:
-		unpack_proc = sample_unpack_1;
-		lookup = sample_lookup_1_identity;
-		break;
-	    case 2:
-		unpack_proc = sample_unpack_2;
-		lookup = (const sample_lookup_t *)lookup2x2;
-		break;
-	    case 4:
-		unpack_proc = sample_unpack_4;
-		lookup = (const sample_lookup_t *)lookup4;
-		break;
-	    default:
-		return_error(e_rangecheck);
-	}
-	/*
-	 * Because of partial input bytes due to dest_/src_x,
-	 * we may need as many as 3 extra pixels in the buffers.
-	 */
-	dbuf = gs_alloc_bytes(mem, (num_pixels + 3) * values_per_pixel,
-			      "composite_values(dbuf)");
-	if (src_data)
-	    sbuf = gs_alloc_bytes(mem, (num_pixels + 3) * src_vpp,
-				  "composite_values(sbuf)");
-	if ((sbuf == 0 && src_data) || dbuf == 0) {
-	    gs_free_object(mem, sbuf, "composite_values(sbuf)");
-	    gs_free_object(mem, dbuf, "composite_values(dbuf)");
-	    return_error(e_VMerror);
-	}
-	dptr = (*unpack_proc) (dbuf, &dx, dest_data, dest_x,
-			       ((dest_x + num_pixels) * bits_per_value *
-				values_per_pixel + 7) >> 3,
-			       lookup, 1);
-	if (src_data)
-	    sptr = (*unpack_proc) (sbuf, &sx, src_data, src_x,
-				   ((src_x + num_pixels) * bits_per_value *
-				    src_vpp + 7) >> 3,
-				   lookup, 1);
-	src_vpp = bytes_per_value = 1;
-	dest_bpp = values_per_pixel;
-	src_bpp = src_vpp;
-	dptr += dx * dest_bpp;
-	sptr += sx * src_bpp;
-    } else {
-	dest_bpp = bytes_per_value * values_per_pixel;
-	src_bpp = bytes_per_value * src_vpp;
-	dptr = dest_data + dest_x * dest_bpp;
-	sptr = src_data + src_x * src_bpp;
-    }
-    {
-#define bits16_get(p) ( ((p)[0] << 8) + (p)[1] )
-#define bits16_put(p,v) ( (p)[0] = (byte)((v) >> 8), (p)[1] = (byte)(v) )
-	uint max_value = (1 << bits_per_value) - 1;
-	uint delta_v = pcp->delta * max_value / gx_max_color_value;
-	int src_no_alpha_j;
-	uint src_alpha;
-	uint x;
+    /****** DOESN'T HANDLE INVERSION YET ******/
+    switch (ncomp) {
+	case 1:		/* gray-scale */
+	    max_v = dev->color_info.max_gray;
+	    if (max_v != (1 << depth) - 1)
+		return 0;
+	    for (i = 0; i <= max_v; ++i) {
+		gx_color_value v = CV(i);
 
-	if (src_has_alpha)
-	    src_no_alpha_j = -1;
-	else {
-	    src_alpha =
-		(bytes_per_value == 1 ?
-		 pcp->src_value[values_per_pixel - 1] :
-		 bits16_get(&pcp->src_value[src_bpp - 2]));
-	    src_no_alpha_j = 0;
-	}
-	for (x = 0; x < num_pixels; ++x) {
-	    uint dest_alpha;
-	    int j;
-
-	    if (!src_data)
-		sptr = pcp->src_value;
-	    if (bytes_per_value == 1) {
-		dest_alpha = dptr[values_per_pixel - 1];
-		if (src_has_alpha)
-		    src_alpha = sptr[values_per_pixel - 1];
-	    } else {
-		dest_alpha =
-		    bits16_get(&dptr[dest_bpp - 2]);
-		if (src_has_alpha)
-		    src_alpha =
-			bits16_get(&sptr[src_bpp - 2]);
+		if ((*dev_proc(dev, map_rgb_color)) (dev, v, v, v) != i)
+		    return 0;
 	    }
-#define fr(v, a) ((v) * (a) / max_value)
-#define nfr(v, a) ((v) * (max_value - (a)) / max_value)
-	    for (j = values_per_pixel; --j != 0;) {
-		uint dest_v, src_v, result;
+	    return true;
+	case 3:		/* RGB */
+	    max_v = dev->color_info.max_color;
+	    if (depth % 3 != 0 || max_v != (1 << (depth / 3)) - 1)
+		return false;
+	    {
+		const int gs = depth / 3, rs = gs * 2;
 
-#define set_clamped(r, v) if ( (r = (v)) > max_value ) r = max_value
+		for (i = 0; i <= max_v; ++i) {
+		    gx_color_value v = CV(i);
 
-		if (bytes_per_value == 1) {
-		    dest_v = *dptr;
-		    src_v = (j == src_no_alpha_j ? src_alpha : *sptr++);
-		} else {
-		    dest_v = bits16_get(dptr);
-		    if (j == src_no_alpha_j)
-			src_v = src_alpha;
-		    else
-			src_v = bits16_get(sptr), sptr += 2;
+		    if ((*dev_proc(dev, map_rgb_color)) (dev, v, CV0, CV0) !=
+			i << rs ||
+			(*dev_proc(dev, map_rgb_color)) (dev, CV0, v, CV0) !=
+			i << gs ||
+			(*dev_proc(dev, map_rgb_color)) (dev, CV0, CV0, v) !=
+			i	/*<< bs */
+			)
+			return 0;
 		}
-		switch (pcp->cop) {
-		    case NX_CLEAR:
-			result = 0;
-			break;
-		    case NX_COPY:
-			result = src_v;
-			break;
-		    case NX_PLUSD:
-			/*
-			 * This is the only case where we have to worry about
-			 * clamping a possibly negative result.
-			 */
-			result = src_v + dest_v;
-			result = (result < max_value ? 0 : result - max_value);
-			break;
-		    case NX_PLUSL:
-			set_clamped(result, src_v + dest_v);
-			break;
-		    case NX_SOVER:
-			set_clamped(result, src_v + nfr(dest_v, src_alpha));
-			break;
-		    case NX_DOVER:
-			set_clamped(result, nfr(src_v, dest_alpha) + dest_v);
-			break;
-		    case NX_SIN:
-			result = fr(src_v, dest_alpha);
-			break;
-		    case NX_DIN:
-			result = fr(dest_v, src_alpha);
-			break;
-		    case NX_SOUT:
-			result = nfr(src_v, dest_alpha);
-			break;
-		    case NX_DOUT:
-			result = nfr(dest_v, src_alpha);
-			break;
-		    case NX_SATOP:
-			set_clamped(result, fr(src_v, dest_alpha) +
-				    nfr(dest_v, src_alpha));
-			break;
-		    case NX_DATOP:
-			set_clamped(result, nfr(src_v, dest_alpha) +
-				    fr(dest_v, src_alpha));
-			break;
-		    case NX_XOR:
-			set_clamped(result, nfr(src_v, dest_alpha) +
-				    nfr(dest_v, src_alpha));
-			break;
-		    case NX_HIGHLIGHT:
-			/*
-			 * Bizarre but true: this operation converts white and
-			 * light gray into each other, and leaves all other values
-			 * unchanged.  We only implement it properly for gray-scale
-			 * devices.
-			 */
-			if (j != 0 && !((src_v ^ highlight_value) & ~1))
-			    result = src_v ^ 1;
-			else
-			    result = src_v;
-			break;
-		    case NX_DISSOLVE:
-			result = fr(src_v, delta_v) + nfr(dest_v, delta_v);
-			break;
-		    default:
-			return_error(e_rangecheck);
-		}
-		if (bytes_per_value == 1)
-		    *dptr++ = (byte) result;
-		else
-		    bits16_put(dptr, result), dptr += 2;
 	    }
-	}
+	    return true;
+	case 4:		/* CMYK */
+	    max_v = dev->color_info.max_color;
+	    if ((depth & 3) != 0 || max_v != (1 << (depth / 4)) - 1)
+		return false;
+	    {
+		const int ys = depth / 4, ms = ys * 2, cs = ys * 3;
+
+		for (i = 0; i <= max_v; ++i) {
+		    gx_color_value v = CV(i);
+
+		    if ((*dev_proc(dev, map_cmyk_color)) (dev, v, CV0, CV0, CV0) !=
+			i << cs ||
+			(*dev_proc(dev, map_cmyk_color)) (dev, CV0, v, CV0, CV0) !=
+			i << ms ||
+			(*dev_proc(dev, map_cmyk_color)) (dev, CV0, CV0, v, CV0) !=
+			i << ys ||
+			(*dev_proc(dev, map_cmyk_color)) (dev, CV0, CV0, CV0, v) !=
+			i	/*<< ks */
+			)
+			return 0;
+		}
+	    }
+	    return 1;
+	default:
+	    return 0;		/* error?! */
     }
-    if (dbuf) {
-	/*
-	 * Pack pixels back into the destination.  This is modeled on
-	 * the line_accum macros in gxcindex.h.
-	 */
-/****** TBC ******/
-	gs_free_object(mem, sbuf, "composite_values(sbuf)");
-	gs_free_object(mem, dbuf, "composite_values(dbuf)");
-    }
-    return 0;
+#undef CV
+#undef CV0
 }

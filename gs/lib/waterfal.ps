@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: waterfal.ps 
 % waterfal.ps
 % This file produces a 'waterfall' printout of fonts at various sizes.
 
@@ -54,17 +55,20 @@ newpath 0 setgray
 
 Fonts
  { save exch
+   QUIET not { dup ==only flush } if
    findfont /basefont exch def
    basefont 20 scalefont setfont eol
    basefont /FontName get =string cvs show
    ( ) show dpi =string cvs show ( DPI) show
    Sizes
-    { dup /size exch def basefont exch scalefont setfont eol
+    { QUIET not { ( ) print dup =only flush } if
+      dup /size exch def basefont exch scalefont setfont eol
       size =string cvs show ( ) show
       (qwertyuiop-asdfghjkl_zxcvbnm ) show
       (QWERTYUIOP+ASDFGHJKL/ZXCVBNM ) show
       (1470258369 .,:;?!) show
     } forall
+   QUIET not { () = flush } if
    matrix currentmatrix aload pop
    7 -1 roll restore
    6 array astore setmatrix

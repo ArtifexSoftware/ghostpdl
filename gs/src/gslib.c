@@ -29,6 +29,7 @@ get_real(void)
 #include "math_.h"
 #include "gx.h"
 #include "gp.h"
+#include "gsalloc.h"
 #include "gscdefs.h"
 #include "gserrors.h"
 #include "gslib.h"
@@ -45,17 +46,16 @@ get_real(void)
 #include "gspaint.h"
 #include "gspath.h"
 #include "gspath2.h"
-#include "gsrefct.h"		/* needed for 5.1x, not 5.2x */
 #include "gsrop.h"
 #include "gsstruct.h"
 #include "gsutil.h"
 #include "gxalloc.h"
+#include "gxdcolor.h"		/* for gx_device_white/black */
 #include "gxdevice.h"
 #include "gxht.h"		/* for gs_halftone */
 #include "gdevbbox.h"
 #include "gdevcmap.h"
 #include "gshtx.h"
-#include "gxiparam.h"		/* needed for 5.1x, not 5.2x */
 
 /* Define whether we are processing captured data. */
 /*#define CAPTURE */
@@ -86,10 +86,6 @@ private int (*tests[]) (P2(gs_state *, gs_memory_t *)) =
 
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
-
-/* Other imported procedures */
-	/* from gsalloc.c */
-extern gs_ref_memory_t *ialloc_alloc_state(P2(gs_memory_t *, uint));
 
 /* Forward references */
 private float odsf(P2(floatp, floatp));
@@ -382,12 +378,8 @@ private int
 test3(gs_state * pgs, gs_memory_t * mem)
 {
     gx_device *dev = gs_currentdevice(pgs);
-    gx_color_index black =
-    (*dev_proc(dev, map_rgb_color)) (dev, 0, 0, 0);
-    gx_color_index white =
-    (*dev_proc(dev, map_rgb_color)) (dev, gx_max_color_value,
-				     gx_max_color_value,
-				     gx_max_color_value);
+    gx_color_index black = gx_device_black(dev);
+    gx_color_index white = gx_device_white(dev);
     gx_color_index black2[2];
     gx_color_index black_white[2];
     gx_color_index white_black[2];
@@ -538,7 +530,7 @@ test5(gs_state * pgs, gs_memory_t * mem)
 	gs_image1_t image1;
 	void *info1;
 
-	gs_image_t_init_gray(&image1);
+	gs_image_t_init_gray(&image1, (const gs_imager_state *)pgs);
 	/* image */
 	image1.ImageMatrix.xx = W;
 	image1.ImageMatrix.yy = -H;
@@ -739,6 +731,7 @@ test6(gs_state * pgs, gs_memory_t * mem)
 	{render_abc, render_abc, render_abc}
     };
     gx_device_cmap *cmdev;
+    int code;
 
     gs_scale(pgs, 150.0, 150.0);
     gs_translate(pgs, 0.5, 0.5);
@@ -747,13 +740,14 @@ test6(gs_state * pgs, gs_memory_t * mem)
     spectrum(pgs, 5);
     gs_translate(pgs, 1.2, 0.0);
     /* We must set the CRD before the color space. */
-    rc_alloc_struct_1(pcrd, gs_cie_render, &st_cie_render1, mem,
-		      return_error(gs_error_VMerror), "CRD");
-    gs_CIEABC_render1_initialize(pcrd, &white_point, NULL,
-				 NULL, NULL, NULL,
-				 NULL, NULL, NULL,
-				 NULL, &encode_abc, NULL,
-				 NULL);
+    code = gs_cie_render1_build(&pcrd, mem, "test6");
+    if (code < 0)
+	return code;
+    gs_cie_render1_initialize(pcrd, NULL, &white_point, NULL,
+			      NULL, NULL, NULL,
+			      NULL, NULL, NULL,
+			      NULL, &encode_abc, NULL,
+			      NULL);
     gs_setcolorrendering(pgs, pcrd);
     gs_cspace_build_CIEABC(&pcs, NULL, mem);
     /* There should be an API for initializing CIE color spaces too.... */

@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zstring.c */
+/*Id: zstring.c  */
 /* String operators */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "gsutil.h"
 #include "ialloc.h"
 #include "iname.h"
@@ -114,7 +113,8 @@ zsearch(register os_ptr op)
     /* No match */
     make_false(op);
     return 0;
-  found:op->tas.type_attrs = op1->tas.type_attrs;
+found:
+    op->tas.type_attrs = op1->tas.type_attrs;
     op->value.bytes = ptr;
     r_set_size(op, size);
     push(2);
@@ -140,7 +140,8 @@ zstringmatch(register os_ptr op)
 	    goto cmp;
 	case t_name:
 	    name_string_ref(op1, op1);	/* can't fail */
-	  cmp:result = string_match(op1->value.const_bytes, r_size(op1),
+cmp:
+	    result = string_match(op1->value.const_bytes, r_size(op1),
 				  op->value.const_bytes, r_size(op),
 				  NULL);
 	    break;

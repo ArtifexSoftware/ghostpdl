@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gstype2.c */
+/*Id: gstype2.c  */
 /* Adobe Type 2 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"
@@ -29,19 +29,18 @@
 #include "gxcoord.h"
 #include "gxistate.h"
 #include "gzpath.h"
-#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
 
 /* NOTE: The following are not yet implemented:
- *    Registry items other than 0
- *      Hint and counter masks (but they are parsed correctly)
- *      'random' operator
+ *	Registry items other than 0
+ *	Counter masks (but they are parsed correctly)
+ *	'random' operator
  */
 
 /* Define a pointer to the charstring interpreter stack. */
-typedef fixed _ss *cs_ptr;
+typedef fixed *cs_ptr;
 
 /* ------ Internal routines ------ */
 
@@ -52,13 +51,13 @@ typedef fixed _ss *cs_ptr;
  * re-execute the operator when control re-enters the interpreter.
  */
 #define check_first_operator(explicit_width)\
-  do {\
+  BEGIN\
     if ( pcis->init_done < 0 )\
       { ipsp->ip = cip, ipsp->dstate = state;\
 	return type2_sbw(pcis, csp, cstack, ipsp, explicit_width);\
       }\
-  } while (0)
-private int near
+  END
+private int
 type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state * ipsp,
 	  bool explicit_width)
 {
@@ -87,7 +86,7 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state * ipsp,
     }
     return type1_result_sbw;
 }
-private int near
+private int
 type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
 {
     fixed x = 0;
@@ -96,7 +95,24 @@ type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
     apply_path_hints(pcis, false);
     for (ap = cstack; ap + 1 <= csp; x += ap[1], ap += 2)
 	type1_vstem(pcis, x += ap[0], ap[1]);
+    pcis->num_hints += (csp + 1 - cstack) >> 1;
     return 0;
+}
+
+/* Enable only the hints selected by a mask. */
+private void
+enable_hints(stem_hint_table * psht, const byte * mask)
+{
+    stem_hint *table = &psht->data[0];
+    stem_hint *ph = table + psht->current;
+
+    for (ph = &table[psht->count]; --ph >= table;) {
+	ph->active = (mask[ph->index >> 3] & (0x80 >> (ph->index & 7))) != 0;
+	if_debug6('1', "[1]  %s %u: %g(%g),%g(%g)\n",
+		  (ph->active ? "enable" : "disable"), ph->index,
+		  fixed2float(ph->v0), fixed2float(ph->dv0),
+		  fixed2float(ph->v1), fixed2float(ph->dv1));
+    }
 }
 
 /* ------ Main interpreter ------ */
@@ -190,14 +206,14 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 	}
 #ifdef DEBUG
 	if (gs_debug['1']) {
-	    static const char *c2names[] =
+	    static const char *const c2names[] =
 	    {char2_command_names};
 
 	    if (c2names[c] == 0)
-		dprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+		dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 	    else
-		dprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
-			 c2names[c]);
+		dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+			  c2names[c]);
 	}
 #endif
 	switch ((char_command) c) {
@@ -212,7 +228,7 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
-		code = (*pdata->subr_proc)
+		code = (*pdata->procs->subr_data)
 		    (pfont, c, false, &ipsp[1].char_string);
 	      subr:if (code < 0)
 		    return_error(code);
@@ -270,7 +286,7 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		}
 		goto pp;
 	    case cx_rrcurveto:
-	      rrc:for (ap = cstack; ap + 5 <= csp; ap += 6) {
+rrc:		for (ap = cstack; ap + 5 <= csp; ap += 6) {
 		    code = gs_op1_rrcurveto(&s, ap[0], ap[1], ap[2],
 					    ap[3], ap[4], ap[5]);
 		    if (code < 0)
@@ -279,11 +295,35 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		goto pp;
 	    case cx_endchar:
 		/*
+		 * It is an undocumented (!) feature of Type 2 CharStrings
+		 * that if endchar is invoked with 4 or 5 operands, it is
+		 * equivalent to the Type 1 seac operator!  In this case,
+		 * the asb operand of seac is missing: we assume it is
+		 * the same as the l.s.b. of the accented character.
+		 */
+		if (csp >= cstack + 3) {
+		    check_first_operator(csp > cstack + 3);
+		    code = gs_type1_seac(pcis, cstack, pcis->lsb.x, ipsp);
+		    if (code < 0)
+			return code;
+		    clear;
+		    cip = ipsp->char_string.data;
+		    goto call;
+		}
+		/*
 		 * This might be the only operator in the charstring.
 		 * In this case, there might be a width on the stack.
 		 */
 		check_first_operator(csp >= cstack);
-		return gs_type1_endchar(pcis);
+		code = gs_type1_endchar(pcis);
+		if (code == 1) {
+		    /* do accent of seac */
+		    spt = pcis->position;
+		    ipsp = &pcis->ipstack[pcis->ips_count - 1];
+		    cip = ipsp->char_string.data;
+		    goto call;
+		}
+		return code;
 	    case cx_rmoveto:
 		check_first_operator(csp > cstack + 1);
 		accum_xy(csp[-1], *csp);
@@ -357,6 +397,7 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		    for (ap = cstack; ap + 1 <= csp; x += ap[1], ap += 2)
 			type1_hstem(pcis, x += ap[0], ap[1]);
 		}
+		pcis->num_hints += (csp + 1 - cstack) >> 1;
 		cnext;
 	    case c2_hintmask:
 		/*
@@ -374,20 +415,24 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		    byte mask[max_total_stem_hints / 8];
 		    int i;
 
-		    if_debug1('1', "[1]mask(%d)",
-			 pcis->vstem_hints.count + pcis->hstem_hints.count);
-		    for (i = 0;
-		      i < pcis->vstem_hints.count + pcis->hstem_hints.count;
-			 ++cip, i += 8
-			) {
+		    if_debug3('1', "[1]mask[%d:%dv,%dh]", pcis->num_hints,
+			  pcis->vstem_hints.count, pcis->hstem_hints.count);
+		    for (i = 0; i < pcis->num_hints; ++cip, i += 8) {
 			charstring_next(*cip, state, mask[i >> 3], encrypted);
 			if_debug1('1', " 0x%02x", mask[i >> 3]);
 		    }
 		    if_debug0('1', "\n");
 		    ipsp->ip = cip;
 		    ipsp->dstate = state;
-		}
+		    if (c == c2_cntrmask) {
 /****** NYI ******/
+		    } else {	/* hintmask or equivalent */
+			if_debug0('1', "[1]hstem hints:\n");
+			enable_hints(&pcis->hstem_hints, mask);
+			if_debug0('1', "[1]vstem hints:\n");
+			enable_hints(&pcis->vstem_hints, mask);
+		    }
+		}
 		break;
 	    case c2_vstemhm:
 		pcis->have_hintmask = true;
@@ -457,7 +502,7 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		goto pushed;
 	    case c2_callgsubr:
 		c = fixed2int_var(*csp) + pdata->gsubrNumberBias;
-		code = (*pdata->subr_proc)
+		code = (*pdata->procs->subr_data)
 		    (pfont, c, true, &ipsp[1].char_string);
 		goto subr;
 	    case cx_escape:
@@ -465,14 +510,14 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 		++cip;
 #ifdef DEBUG
 		if (gs_debug['1'] && c < char2_extended_command_count) {
-		    static const char *ce2names[] =
+		    static const char *const ce2names[] =
 		    {char2_extended_command_names};
 
 		    if (ce2names[c] == 0)
-			dprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+			dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 		    else
-			dprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
-				 ce2names[c]);
+			dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+				  ce2names[c]);
 		}
 #endif
 		switch ((char2_extended_command) c) {
@@ -554,7 +599,7 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 			break;
 		    case ce2_random:
 			++csp;
-/****** NYI ******/
+			/****** NYI ******/
 			break;
 		    case ce2_mul:
 			{
@@ -587,31 +632,32 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 			break;
 		    case ce2_roll:
 			{
-			    int j = fixed2int_var(*csp);
-			    int n = fixed2int_var(csp[-1]);
+			    int distance = fixed2int_var(*csp);
+			    int count = fixed2int_var(csp[-1]);
 			    cs_ptr bot;
 
 			    csp -= 2;
-			    if (n < 0 || n > csp + 1 - cstack)
+			    if (count < 0 || count > csp + 1 - cstack)
 				return_error(gs_error_invalidfont);
-			    if (n == 0)
+			    if (count == 0)
 				break;
-			    if (j < 0)
-				j = n - (-j % n);
-			    bot = csp + 1 - n;
-			    while (--j >= 0) {
-				fixed top = *bot;
+			    if (distance < 0)
+				distance = count - (-distance % count);
+			    bot = csp + 1 - count;
+			    while (--distance >= 0) {
+				fixed top = *csp;
 
-				memmove(bot, bot + 1, (n - 1) * sizeof(fixed));
-				*csp = top;
+				memmove(bot + 1, bot,
+					(count - 1) * sizeof(fixed));
+				*bot = top;
 			    }
 			}
 			break;
 		    case ce2_hflex:
 			csp[6] = fixed_half;	/* fd/100 */
-			csp[4] = 0, csp[5] = *csp;	/* dx6, dy6 */
-			csp[2] = 0, csp[3] = csp[-1];	/* dx5, dy5 */
-			*csp = 0, csp[1] = csp[-2];	/* dx4, dy4 */
+			csp[4] = *csp, csp[5] = 0;	/* dx6, dy6 */
+			csp[2] = csp[-1], csp[3] = -csp[-5];	/* dx5, dy5 */
+			*csp = csp[-2], csp[1] = 0;	/* dx4, dy4 */
 			csp[-2] = csp[-3], csp[-1] = 0;		/* dx3, dy3 */
 			csp[-3] = csp[-4], csp[-4] = csp[-5];	/* dx2, dy2 */
 			csp[-5] = 0;	/* dy1 */
@@ -619,37 +665,57 @@ gs_type2_charstring_interpret(gs_type1_state * pcis,
 			goto flex;
 		    case ce2_flex:
 			*csp /= 100;	/* fd/100 */
-		      flex:{
+flex:			{
 			    fixed x_join = csp[-12] + csp[-10] + csp[-8];
 			    fixed y_join = csp[-11] + csp[-9] + csp[-7];
 			    fixed x_end = x_join + csp[-6] + csp[-4] + csp[-2];
 			    fixed y_end = y_join + csp[-5] + csp[-3] + csp[-1];
 			    gs_point join, end;
+			    double flex_depth;
 
-			    if ((code = gs_distance_transform(fixed2float(x_join),
-							fixed2float(y_join),
+			    if ((code =
+				 gs_distance_transform(fixed2float(x_join),
+						       fixed2float(y_join),
 						       &ctm_only(pcis->pis),
-							      &join)) < 0 ||
-			    (code = gs_distance_transform(fixed2float(x_end),
-							  fixed2float(y_end),
+						       &join)) < 0 ||
+				(code =
+				 gs_distance_transform(fixed2float(x_end),
+						       fixed2float(y_end),
 						       &ctm_only(pcis->pis),
-							  &end)) < 0
+						       &end)) < 0
 				)
 				return code;
 			    /*
-			     * The distance from the point (U,V) from a line from
-			     * (0,0) to (C,D) is
-			     *    abs(C*V - D*U) / sqrt(C^2 + D^2)
-			     * In this case (U,V) is join, and (C,D) is end.
+			     * Use the X or Y distance depending on whether
+			     * the curve is more horizontal or more
+			     * vertical.
 			     */
-			    if (fabs(end.x * join.y - end.y * join.x) >=
-				hypot(end.x, end.y) * fixed2float(*csp)) {	/* Do flex as curve. */
-				--csp;
-				goto rrc;
+			    if (any_abs(end.y) > any_abs(end.x))
+				flex_depth = join.x;
+			    else
+				flex_depth = join.y;
+			    if (fabs(flex_depth) < fixed2float(*csp)) {
+				/* Do flex as line. */
+				accum_xy(x_end, y_end);
+				code = gx_path_add_line(sppath, ptx, pty);
+			    } else {
+				/*
+				 * Do flex as curve.  We can't jump to rrc,
+				 * because the flex operators don't clear
+				 * the stack (!).
+				 */
+				code = gs_op1_rrcurveto(&s,
+					csp[-12], csp[-11], csp[-10],
+					csp[-9], csp[-8], csp[-7]);
+				if (code < 0)
+				    return code;
+				code = gs_op1_rrcurveto(&s,
+					csp[-6], csp[-5], csp[-4],
+					csp[-3], csp[-2], csp[-1]);
 			    }
-			    /* Do flex as line. */
-			    accum_xy(x_end, y_end);
-			    code = gx_path_add_line(sppath, ptx, pty);
+			    if (code < 0)
+				return code;
+			    csp -= 13;
 			}
 			cnext;
 		    case ce2_hflex1:

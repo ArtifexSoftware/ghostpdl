@@ -1,22 +1,22 @@
 /* Copyright (C) 1992, 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* ivmspace.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: ivmspace.h  */
 /* Local/global space management */
 /* Requires iref.h */
 
@@ -35,12 +35,13 @@
  * The i_vm_xxx values are defined in gsgc.h.
  */
 typedef enum {
-	avm_foreign = (i_vm_foreign << r_space_shift),
-	avm_system = (i_vm_system << r_space_shift),
-	avm_global = (i_vm_global << r_space_shift),
-	avm_local = (i_vm_local << r_space_shift),
-	avm_max = avm_local
+    avm_foreign = (i_vm_foreign << r_space_shift),
+    avm_system = (i_vm_system << r_space_shift),
+    avm_global = (i_vm_global << r_space_shift),
+    avm_local = (i_vm_local << r_space_shift),
+    avm_max = avm_local
 } avm_space;
+
 #define r_space(rp) (avm_space)(r_type_attrs(rp) & a_space)
 #define r_space_index(rp) ((int)r_space(rp) >> r_space_shift)
 #define r_set_space(rp,space) r_store_attrs(rp, a_space, (uint)space)
@@ -71,19 +72,19 @@ typedef enum {
  *
  * We must check for local-into-global stores in three categories of places:
  *
- *	- The scanner, when it encounters a //name inside {}.
+ *      - The scanner, when it encounters a //name inside {}.
  *
- *	- All operators that allocate ref-containing objects and also
- *	store into them:
- *		packedarray  gstate  makepattern?
- *		makefont  scalefont  definefont  filter
+ *      - All operators that allocate ref-containing objects and also
+ *      store into them:
+ *              packedarray  gstate  makepattern?
+ *              makefont  scalefont  definefont  filter
  *
- *	- All operators that store refs into existing objects
- *	("operators" marked with * are actually PostScript procedures):
- *		put(array)  putinterval(array)  astore  copy(to array)
- *		def  store*  put(dict)  copy(dict)
- *		dictstack  execstack  .make(global)operator
- *		currentgstate  defineusername
+ *      - All operators that store refs into existing objects
+ *      ("operators" marked with * are actually PostScript procedures):
+ *              put(array)  putinterval(array)  astore  copy(to array)
+ *              def  store*  put(dict)  copy(dict)
+ *              dictstack  execstack  .make(global)operator
+ *              currentgstate  defineusername
  */
 
 /* Test whether an object is in local space, */
@@ -101,4 +102,4 @@ typedef enum {
 #define check_store_space(rdest,rnewcont)\
   store_check_dest(&(rdest),&(rnewcont))
 
-#endif					/* ivmspace_INCLUDED */
+#endif /* ivmspace_INCLUDED */

@@ -28,6 +28,7 @@
 #include "gxarith.h"		/* for igcd */
 #include "gxdevice.h"
 #include "gxiparam.h"
+#include "gxpath.h"		/* for gx_effective_clip_path */
 #include "gzstate.h"
 
 /* Define the enumeration state for this interface layer. */
@@ -90,12 +91,15 @@ gs_image_begin_typed(const gs_image_common_t * pic, gs_state * pgs,
 		     bool uses_color, gx_image_enum_common_t ** ppie)
 {
     gx_device *dev = gs_currentdevice(pgs);
+    gx_clip_path *pcpath;
+    int code = gx_effective_clip_path(pgs, &pcpath);
 
+    if (code < 0)
+	return code;
     if (uses_color)
 	gx_set_dev_color(pgs);
     return gx_device_begin_typed_image(dev, (const gs_imager_state *)pgs,
-				       NULL, pic, NULL,
-			 pgs->dev_color, pgs->clip_path, pgs->memory, ppie);
+		NULL, pic, NULL, pgs->dev_color, pcpath, pgs->memory, ppie);
 }
 
 /* Allocate an image enumerator. */
@@ -161,8 +165,10 @@ int
 gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
 	    const gs_data_image_t * pim, gs_memory_t * mem, gx_device * dev)
 {
-    if (pim->Width == 0 || pim->Height == 0)
+    if (pim->Width == 0 || pim->Height == 0) {
+	gx_device_end_image(dev, pie, false);
 	return 1;
+    }
     image_enum_init(penum);
     penum->memory = mem;
     penum->dev = dev;

@@ -1,22 +1,22 @@
 /* Copyright (C) 1993, 1995, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* strimpl.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: strimpl.h  */
 /* Definitions for stream implementors */
 /* Requires stdio.h */
 
@@ -34,12 +34,12 @@
  * (pw->ptr + 1 through pw->limit), updating pr->ptr and pw->ptr.
  *
  * The procedure return value must be one of:
- *	EOFC - an end-of-data pattern was detected in the input,
- *	  or no more input can be processed for some other reason (e.g.,
- *	  the stream was told only to read a certain amount of data).
- *	ERRC - a syntactic error was detected in the input.
- *	0 - more input data is needed.
- *	1 - more output space is needed.
+ *      EOFC - an end-of-data pattern was detected in the input,
+ *        or no more input can be processed for some other reason (e.g.,
+ *        the stream was told only to read a certain amount of data).
+ *      ERRC - a syntactic error was detected in the input.
+ *      0 - more input data is needed.
+ *      1 - more output space is needed.
  * If the procedure returns EOFC, it can assume it will never be called
  * again for that stream.
  *
@@ -48,14 +48,14 @@
  * buffer defined by *pr); the procedure should produce as much output
  * as possible, including an end-of-data marker if applicable.  In this
  * case:
- *	- If the procedure returns 1, it may be called again (also with
- *	  last = 1).
- *	- If the procedure returns any other value other than 1, the
- *	  procedure will never be called again for that stream.
- *	- If the procedure returns 0, this is taken as equivalent to
- *	  returning EOFC.
- *	- If the procedure returns EOFC (or 0), the stream's end_status
- *	  is set to EOFC, meaning no more writing is allowed.
+ *      - If the procedure returns 1, it may be called again (also with
+ *        last = 1).
+ *      - If the procedure returns any other value other than 1, the
+ *        procedure will never be called again for that stream.
+ *      - If the procedure returns 0, this is taken as equivalent to
+ *        returning EOFC.
+ *      - If the procedure returns EOFC (or 0), the stream's end_status
+ *        is set to EOFC, meaning no more writing is allowed.
  *
  * Note that these specifications do not distinguish input from output
  * streams.  This is deliberate: The processing procedures should work
@@ -109,39 +109,40 @@
  */
 struct stream_template_s {
 
-		/* Define the structure type for the stream state. */
-	gs_memory_type_ptr_t stype;
+    /* Define the structure type for the stream state. */
+    gs_memory_type_ptr_t stype;
 
-		/* Define an optional initialization procedure. */
-	stream_proc_init((*init));
+    /* Define an optional initialization procedure. */
+                         stream_proc_init((*init));
 
-		/* Define the processing procedure. */
-		/* (The init procedure can reset other procs if it wants.) */
-	stream_proc_process((*process));
+    /* Define the processing procedure. */
+    /* (The init procedure can reset other procs if it wants.) */
+                         stream_proc_process((*process));
 
-		/* Define the minimum buffer sizes. */
-	uint min_in_size;		/* minimum size for process input */
-	uint min_out_size;		/* minimum size for process output */
+    /* Define the minimum buffer sizes. */
+    uint min_in_size;		/* minimum size for process input */
+    uint min_out_size;		/* minimum size for process output */
 
-		/* Define an optional releasing procedure. */
-	stream_proc_release((*release));
+    /* Define an optional releasing procedure. */
+         stream_proc_release((*release));
 
-		/* Define an optional parameter defaulting procedure. */
-	stream_proc_set_defaults((*set_defaults));
+    /* Define an optional parameter defaulting procedure. */
+         stream_proc_set_defaults((*set_defaults));
 
-		/* Define an optional reinitialization procedure. */
-	stream_proc_reinit((*reinit));
+    /* Define an optional reinitialization procedure. */
+         stream_proc_reinit((*reinit));
 
 };
 
 /* Utility procedures */
-int stream_move(P2(stream_cursor_read *, stream_cursor_write *)); /* in stream.c */
+int stream_move(P2(stream_cursor_read *, stream_cursor_write *));	/* in stream.c */
+
 /* Hex decoding utility procedure */
 typedef enum {
-	hex_ignore_garbage = 0,
-	hex_ignore_whitespace = 1,
-	hex_ignore_leading_whitespace = 2
+    hex_ignore_garbage = 0,
+    hex_ignore_whitespace = 1,
+    hex_ignore_leading_whitespace = 2
 } hex_syntax;
-int s_hex_process(P4(stream_cursor_read *, stream_cursor_write *, int *, hex_syntax)); /* in sstring.c */
+int s_hex_process(P4(stream_cursor_read *, stream_cursor_write *, int *, hex_syntax));	/* in sstring.c */
 
-#endif					/* strimpl_INCLUDED */
+#endif /* strimpl_INCLUDED */

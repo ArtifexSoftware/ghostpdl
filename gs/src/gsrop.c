@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,21 +16,21 @@
    all copies.
  */
 
-/* gsrop.c */
-/* RasterOp / transparency / render algorithm accessing for library */
+/*Id: gsrop.c  */
+/* RasterOp / transparency accessing for library */
 #include "gx.h"
 #include "gserrors.h"
 #include "gzstate.h"
 #include "gsrop.h"
 
-#define set_log_op(pgs, lopv)\
-  (pgs)->log_op = (lopv)
-
 /* setrasterop */
-void
+int
 gs_setrasterop(gs_state * pgs, gs_rop3_t rop)
 {
-    set_log_op(pgs, (rop & rop3_1) | (pgs->log_op & ~rop3_1));
+    if (pgs->in_cachedevice)
+	return_error(gs_error_undefined);
+    pgs->log_op = (rop & rop3_1) | (pgs->log_op & ~rop3_1);
+    return 0;
 }
 
 /* currentrasterop */
@@ -41,12 +41,15 @@ gs_currentrasterop(const gs_state * pgs)
 }
 
 /* setsourcetransparent */
-void
+int
 gs_setsourcetransparent(gs_state * pgs, bool transparent)
 {
-    set_log_op(pgs,
-	       (transparent ? pgs->log_op | lop_S_transparent :
-		pgs->log_op & ~lop_S_transparent));
+    if (pgs->in_cachedevice)
+	return_error(gs_error_undefined);
+    pgs->log_op =
+	(transparent ? pgs->log_op | lop_S_transparent :
+	 pgs->log_op & ~lop_S_transparent);
+    return 0;
 }
 
 /* currentsourcetransparent */
@@ -57,12 +60,15 @@ gs_currentsourcetransparent(const gs_state * pgs)
 }
 
 /* settexturetransparent */
-void
+int
 gs_settexturetransparent(gs_state * pgs, bool transparent)
 {
-    set_log_op(pgs,
-	       (transparent ? pgs->log_op | lop_T_transparent :
-		pgs->log_op & ~lop_T_transparent));
+    if (pgs->in_cachedevice)
+	return_error(gs_error_undefined);
+    pgs->log_op =
+	(transparent ? pgs->log_op | lop_T_transparent :
+	 pgs->log_op & ~lop_T_transparent);
+    return 0;
 }
 
 /* currenttexturetransparent */
@@ -72,32 +78,12 @@ gs_currenttexturetransparent(const gs_state * pgs)
     return (pgs->log_op & lop_T_transparent) != 0;
 }
 
-/* setrenderalgorithm */
+/* Save/restore logical operation.  (For internal use only.) */
 int
-gs_setrenderalgorithm(gs_state * pgs, int render_algorithm)
-{
-    if (render_algorithm < render_algorithm_min ||
-	render_algorithm > render_algorithm_max
-	)
-	return_error(gs_error_rangecheck);
-    set_log_op(pgs,
-	       (render_algorithm << lop_ral_shift) |
-	       (pgs->log_op & ~(lop_ral_mask << lop_ral_shift)));
-    return 0;
-}
-
-/* currentrenderalgorithm */
-int
-gs_currentrenderalgorithm(const gs_state * pgs)
-{
-    return (pgs->log_op >> lop_ral_shift) & lop_ral_mask;
-}
-
-/* Save/restore logical operation. */
-void
 gs_set_logical_op(gs_state * pgs, gs_logical_operation_t lop)
 {
     pgs->log_op = lop;
+    return 0;
 }
 gs_logical_operation_t
 gs_current_logical_op(const gs_state * pgs)

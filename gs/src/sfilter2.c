@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sfilter2.c */
+/*Id: sfilter2.c  */
 /* Simple Level 2 filters */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -28,12 +28,14 @@
 /* ------ ASCII85Encode ------ */
 
 /* Process a buffer */
+#define LINE_LIMIT 65
 private int
 s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
+    byte *qn = q + LINE_LIMIT;
     const byte *rlimit = pr->limit;
     byte *wlimit = pw->limit;
     int status = 0;
@@ -56,7 +58,7 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	    uint v2 = v3 / 85;	/* max 85^2 */
 	    uint v1 = v2 / 85;	/* max 85 */
 
-	    if (wlimit - q < 6) {
+	  put:if (wlimit - q < 6) {
 		status = 1;
 		break;
 	    }
@@ -65,10 +67,61 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	    q[3] = (byte) ((uint) v3 - v2 * 85) + '!';
 	    q[4] = (byte) ((uint) v4 - (uint) v3 * 85) + '!';
 	    q[5] = (byte) ((uint) word - (uint) v4 * 85) + '!';
+	    /*
+	     * Two consecutive '%' characters at the beginning
+	     * of the line will confuse some document managers:
+	     * insert (an) EOL(s) if necessary to prevent this.
+	     */
+	    if (q[1] == '%') {
+		if (q == pw->ptr) {
+		    /*
+		     * The very first character written is a %.
+		     * Add an EOL before it in case the last
+		     * character of the previous batch was a %.
+		     */
+		    *++q = '\n';
+		    qn = q + LINE_LIMIT;
+		    goto put;
+		}
+		if (q[2] == '%' && *q == '\n') {
+		    /*
+		     * We may have to insert more than one EOL if
+		     * there are more than two %s in a row.
+		     */
+		    int extra =
+		    (q[3] != '%' ? 1 : q[4] != '%' ? 2 :
+		     q[5] != '%' ? 3 : 4);
+
+		    if (wlimit - q < 6 + extra) {
+			status = 1;
+			break;
+		    }
+		    switch (extra) {
+			case 4:
+			    q[9] = '%', q[8] = '\n';
+			    goto e3;
+			case 3:
+			    q[8] = q[5];
+			  e3:q[7] = '%', q[6] = '\n';
+			    goto e2;
+			case 2:
+			    q[7] = q[5], q[6] = q[4];
+			  e2:q[5] = '%', q[4] = '\n';
+			    goto e1;
+			case 1:
+			    q[6] = q[5], q[5] = q[4], q[4] = q[3];
+			  e1:q[3] = '%', q[2] = '\n';
+		    }
+		    q += extra;
+		    qn = q + (5 + LINE_LIMIT);
+		}
+	    }
 	    q += 5;
 	}
-	if (!(count & 60))
+	if (q >= qn) {
 	    *++q = '\n';
+	    qn = q + LINE_LIMIT;
+	}
     }
     /* Check for final partial word. */
     if (last && status == 0 && count < 4) {
@@ -103,6 +156,7 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
     pw->ptr = q;
     return status;
 }
+#undef LINE_LIMIT
 
 /* Stream template */
 const stream_template s_A85E_template =
@@ -113,12 +167,12 @@ const stream_template s_A85E_template =
 
 private_st_A85D_state();
 
-#define ss ((stream_A85D_state *)st)
-
 /* Initialize the state */
 private int
 s_A85D_init(stream_state * st)
 {
+    stream_A85D_state *const ss = (stream_A85D_state *) st;
+
     return s_A85D_init_inline(ss);
 }
 
@@ -128,6 +182,7 @@ private int
 s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_A85D_state *const ss = (stream_A85D_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     const byte *rlimit = pr->limit;
@@ -233,8 +288,6 @@ a85d_finish(int ccount, ulong word, stream_cursor_write * pw)
     return status;
 }
 
-#undef ss
-
 /* Stream template */
 const stream_template s_A85D_template =
 {&st_A85D_state, s_A85D_init, s_A85D_process, 2, 4
@@ -244,14 +297,12 @@ const stream_template s_A85D_template =
 
 private_st_BT_state();
 
-#define ss ((stream_BT_state *)st)
-
 /* Process a buffer.  Note that the same code serves for both streams. */
-
 private int
 s_BT_process(stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
+    stream_BT_state *const ss = (stream_BT_state *) st;
     const byte *p = pr->ptr;
     byte *q = pw->ptr;
     uint rcount = pr->limit - p;
@@ -271,8 +322,6 @@ s_BT_process(stream_state * st, stream_cursor_read * pr,
     pw->ptr = q;
     return status;
 }
-
-#undef ss
 
 /* Stream template */
 

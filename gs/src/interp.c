@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* interp.c */
+/*Id: interp.c  */
 /* Ghostscript language interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -27,7 +27,9 @@
 #include "estack.h"
 #include "ialloc.h"
 #include "iastruct.h"
+#include "icontext.h"
 #include "inamedef.h"
+#include "iname.h"		/* for the_name_table */
 #include "interp.h"
 #include "ipacked.h"
 #include "ostack.h"		/* must precede iscan.h */
@@ -99,8 +101,8 @@ int (*gs_interp_time_slice_proc) (P0()) = no_time_slice_proc;
 int gs_interp_time_slice_ticks = 0x7fff;
 
 /*
- * Apply an operator.  We route all operator calls through a procedure when
- * debugging.
+ * Apply an operator.  When debugging, we route all operator calls
+ * through a procedure.
  */
 #ifdef DEBUG
 private int
@@ -129,8 +131,7 @@ private int oparray_cleanup(P1(os_ptr));
 
 /*
  * Define the initial maximum size of the operand stack (MaxOpStack
- * user parameter).  Currently this is also the block size for extending
- * the operand stack, but this isn't guaranteed in the future.
+ * user parameter).
  */
 #ifndef MAX_OSTACK
 #  define MAX_OSTACK 800
@@ -143,8 +144,8 @@ private int oparray_cleanup(P1(os_ptr));
  *      (currently setcolortransfer, which calls zcolor_remap_one 4 times
  *      and therefore pushes 16 values).
  */
-#define min_block_ostack 16
-const int gs_interp_max_op_num_args = min_block_ostack;		/* for iinit.c */
+#define MIN_BLOCK_OSTACK 16
+const int gs_interp_max_op_num_args = MIN_BLOCK_OSTACK;		/* for iinit.c */
 
 /*
  * Define the initial maximum size of the execution stack (MaxExecStack
@@ -159,7 +160,7 @@ const int gs_interp_max_op_num_args = min_block_ostack;		/* for iinit.c */
  * At least, that's what the minimum value would be if we supported
  * multi-block estacks, which we currently don't.
  */
-#define min_block_estack MAX_ESTACK
+#define MIN_BLOCK_ESTACK MAX_ESTACK
 
 /*
  * Define the initial maximum size of the dictionary stack (MaxDictStack
@@ -173,11 +174,9 @@ const int gs_interp_max_op_num_args = min_block_ostack;		/* for iinit.c */
  * The minimum block size for extending the dictionary stack is the number
  * of permanent entries on the dictionary stack, currently 3.
  */
-#define min_block_dstack 3
-uint min_dstack_size;		/* set by iinit.c */
+#define MIN_BLOCK_DSTACK 3
 
 /* Interpreter state variables */
-ref ref_systemdict;		/* set by iinit.c */
 ref ref_language_level;		/* 1 or 2, set by iinit.c */
 
 /* See estack.h for a description of the execution stack. */
@@ -187,47 +186,27 @@ ref ref_language_level;		/* 1 or 2, set by iinit.c */
 /* information on the execution stack. */
 
 /* Stacks */
-/*
- * We must create the stacks as legitimate 'objects' for the memory
- * manager, so that the garbage collector can work with them.
- */
-#define os_guard_under 10
-#define os_guard_over 10
-#define os_refs_size(body_size)\
-  (stack_block_refs + os_guard_under + (body_size) + os_guard_over)
-ref_stack o_stack;
-
-#define es_guard_under 1
-#define es_guard_over 10
-#define es_refs_size(body_size)\
-  (stack_block_refs + es_guard_under + (body_size) + es_guard_over)
-ref_stack e_stack;
-
-#define ds_refs_size(body_size)\
-  (stack_block_refs + (body_size))
-ref_stack d_stack;
-
-/* Allocate the top blocks statically iff we are dealing with */
-/* a segmented architecture where this is important. */
-#if stacks_are_segmented
-private struct stk_ {
-    chunk_head_t head;
-    obj_header_t prefix;
-    ref bodies[os_refs_size(MAX_OSTACK) +
-	       es_refs_size(MAX_ESTACK) +
-	       ds_refs_size(MAX_DSTACK)];
-    ref padding;		/* for GC */
-} static_stacks;
-
-#endif
 extern_st(st_ref_stack);
-ref ref_static_stacks;		/* exported for GC */
-ref ref_ref_stacks[3];		/* exported for GC */
+#define OS_GUARD_UNDER 10
+#define OS_GUARD_OVER 10
+#define OS_REFS_SIZE(body_size)\
+  (stack_block_refs + OS_GUARD_UNDER + (body_size) + OS_GUARD_OVER)
+op_stack_t iop_stack;
 
-/* Stack pointers */
-ref *esfile;			/* cache pointer to currentfile */
+#define ES_GUARD_UNDER 1
+#define ES_GUARD_OVER 10
+#define ES_REFS_SIZE(body_size)\
+  (stack_block_refs + ES_GUARD_UNDER + (body_size) + ES_GUARD_OVER)
+exec_stack_t iexec_stack;
 
-/* Cached dstack values are in idict.c. */
+#define DS_REFS_SIZE(body_size)\
+  (stack_block_refs + (body_size))
+dict_stack_t idict_stack;
+
+					  /*#define d_stack (idict_stack.stack) *//* in dstack.h */
+
+/* Define a pointer to the current interpreter context state. */
+gs_context_state_t *gs_interp_context_state_current;
 
 /* Extended types.  The interpreter may replace the type of operators */
 /* in procedures with these, to speed up the interpretation loop. */
@@ -257,134 +236,64 @@ typedef enum {
 const int gs_interp_num_special_ops = num_special_ops;	/* for iinit.c */
 const int tx_next_index = tx_next_op;
 
-/* A null procedure. */
 #define make_null_proc(pref)\
   make_empty_const_array(pref, a_executable + a_readonly)
-static ref null_proc;
 
-/* Initialize the interpreter */
-#ifndef DPNEXT
+/* Initialize the interpreter. */
 void
 gs_interp_init(void)
-{				/* Initialize the stacks. */
-    gs_ref_memory_t *smem = iimemory_system;
-    ref stk;
-    ref euop;
-    ref *next_body;
-    uint refs_size_ostack, refs_size_estack, refs_size_dstack;
+{				/* Create and initialize a ocntext state. */
+    gs_context_state_t *pcst = 0;
+    int code = context_state_alloc(&pcst, &gs_imemory);
 
-    if (gs_debug_c('+'))
-	refs_size_ostack = os_refs_size(min_block_ostack),
-	    refs_size_estack = es_refs_size(min_block_estack),
-	    refs_size_dstack = ds_refs_size(min_block_dstack);
-    else
-	refs_size_ostack = os_refs_size(MAX_OSTACK),
-	    refs_size_estack = es_refs_size(MAX_ESTACK),
-	    refs_size_dstack = ds_refs_size(MAX_DSTACK);
-#if stacks_are_segmented
-    next_body = static_stacks.bodies;
-    make_array(&ref_static_stacks, avm_system,
-	       countof(static_stacks.bodies), next_body);
-    refset_null(next_body, countof(static_stacks.bodies));
-#else
-    make_empty_array(&ref_static_stacks, 0);
-    {
-	ref sdata;
-
-	gs_alloc_ref_array(smem, &sdata, 0,
-			   refs_size_ostack + refs_size_estack +
-			   refs_size_dstack, "interp_init");
-	next_body = sdata.value.refs;
+    if (code < 0 || (code = context_state_load(pcst)) < 0) {
+	lprintf1("Fatal error %d in gs_interp_init!", code);
+/****** ABORT ******/
     }
-#endif
-#define alloc_init_stack(stk, i, n)\
-  make_array(&stk, avm_system, n, next_body),\
-  next_body += (n),\
-  make_struct(&ref_ref_stacks[i], avm_system,\
-	      gs_alloc_struct((gs_memory_t *)smem, ref_stack, &st_ref_stack,\
-			      "alloc_init_stack"))
-
-    alloc_init_stack(stk, 0, refs_size_ostack);
-    ref_stack_init(&o_stack, &stk, os_guard_under, os_guard_over, NULL,
-		   smem);
-    o_stack.underflow_error = e_stackunderflow;
-    o_stack.overflow_error = e_stackoverflow;
-    ref_stack_set_max_count(&o_stack, MAX_OSTACK);
-
-    alloc_init_stack(stk, 1, refs_size_estack);
-    make_oper(&euop, 0, estack_underflow);
-    ref_stack_init(&e_stack, &stk, es_guard_under, es_guard_over, &euop,
-		   smem);
-    e_stack.underflow_error = e_ExecStackUnderflow;
-    e_stack.overflow_error = e_execstackoverflow;
-/**************** E-STACK EXPANSION IS NYI. ****************/
-    e_stack.allow_expansion = false;
-    esfile_clear_cache();
-    ref_stack_set_max_count(&e_stack, MAX_ESTACK);
-
-    alloc_init_stack(stk, 2, refs_size_dstack);
-    ref_stack_init(&d_stack, &stk, 0, 0, NULL, smem);
-    d_stack.underflow_error = e_dictstackunderflow;
-    d_stack.overflow_error = e_dictstackoverflow;
-    ref_stack_set_max_count(&d_stack, MAX_DSTACK);
+    gs_interp_context_state_current = pcst;
+    gs_register_struct_root(imemory_local, NULL,
+			    (void **)&gs_interp_context_state_current,
+			    "gs_interp_init(gs_icst_root)");
 }
-#else /* DPNEXT */
-void
-gs_interp_init(void)
-{				/* Initialize the stacks. */
-    gs_ref_memory_t *smem = iimemory_system;
-    int code =
-    gs_interp_create_stacks(smem, &ref_ref_stacks[0],
-			    &ref_ref_stacks[1], &ref_ref_stacks[2]);
-
-/****** FATAL ERROR IF code < 0 ******/
-
-    d_stack = *r_ptr(&ref_ref_stacks[0], ref_stack);
-    e_stack = *r_ptr(&ref_ref_stacks[1], ref_stack);
-    o_stack = *r_ptr(&ref_ref_stacks[2], ref_stack);
-    esfile_clear_cache();
-}
+/*
+ * Create initial stacks for the interpreter.
+ * We export this for creating new contexts.
+ */
 int
-gs_interp_create_stacks(gs_ref_memory_t * smem, ref * prds, ref * pres,
-			ref * pros)
+gs_interp_alloc_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
 {
-    ref sdata, stk;
+    ref stk;
 
-#define refs_size_ostack os_refs_size(MAX_OSTACK)
-#define refs_size_estack es_refs_size(MAX_ESTACK)
-#define refs_size_dstack ds_refs_size(MAX_DSTACK)
-    gs_alloc_ref_array(smem, &sdata, 0,
-		       refs_size_ostack + refs_size_estack +
-		       refs_size_dstack, "gs_interp_create_stacks");
+#define REFS_SIZE_OSTACK OS_REFS_SIZE(MAX_OSTACK)
+#define REFS_SIZE_ESTACK ES_REFS_SIZE(MAX_ESTACK)
+#define REFS_SIZE_DSTACK DS_REFS_SIZE(MAX_DSTACK)
+    gs_alloc_ref_array(smem, &stk, 0,
+		       REFS_SIZE_OSTACK + REFS_SIZE_ESTACK +
+		       REFS_SIZE_DSTACK, "gs_interp_alloc_stacks");
 
-
-    make_struct(pros, avm_system,
-		gs_alloc_struct((gs_memory_t *) smem, ref_stack,
-				&st_ref_stack,
-				"gs_interp_create_stacks(ostack)"));
-    make_array(&stk, avm_system, refs_size_ostack, sdata.value.refs);
     {
-	ref_stack *pos = r_ptr(pros, ref_stack);
+	ref_stack *pos = pcst->ostack =
+	gs_alloc_struct((gs_memory_t *) smem, ref_stack, &st_ref_stack,
+			"gs_interp_alloc_stacks(ostack)");
 
-	ref_stack_init(pos, &stk, os_guard_under, os_guard_over, NULL,
+	r_set_size(&stk, REFS_SIZE_OSTACK);
+	ref_stack_init(pos, &stk, OS_GUARD_UNDER, OS_GUARD_OVER, NULL,
 		       smem);
 	pos->underflow_error = e_stackunderflow;
 	pos->overflow_error = e_stackoverflow;
 	ref_stack_set_max_count(pos, MAX_OSTACK);
     }
 
-    make_struct(pres, avm_system,
-		gs_alloc_struct((gs_memory_t *) smem, ref_stack,
-				&st_ref_stack,
-				"gs_interp_create_stacks(estack)"));
-    stk.value.refs += refs_size_ostack;
-    r_set_size(&stk, refs_size_estack);
     {
-	ref_stack *pes = r_ptr(pres, ref_stack);
+	ref_stack *pes = pcst->estack =
+	gs_alloc_struct((gs_memory_t *) smem, ref_stack, &st_ref_stack,
+			"gs_interp_alloc_stacks(estack)");
 	ref euop;
 
+	stk.value.refs += REFS_SIZE_OSTACK;
+	r_set_size(&stk, REFS_SIZE_ESTACK);
 	make_oper(&euop, 0, estack_underflow);
-	ref_stack_init(pes, &stk, es_guard_under, es_guard_over, &euop,
+	ref_stack_init(pes, &stk, ES_GUARD_UNDER, ES_GUARD_OVER, &euop,
 		       smem);
 	pes->underflow_error = e_ExecStackUnderflow;
 	pes->overflow_error = e_execstackoverflow;
@@ -393,27 +302,38 @@ gs_interp_create_stacks(gs_ref_memory_t * smem, ref * prds, ref * pres,
 	ref_stack_set_max_count(pes, MAX_ESTACK);
     }
 
-    make_struct(prds, avm_system,
-		gs_alloc_struct((gs_memory_t *) smem, ref_stack,
-				&st_ref_stack,
-				"gs_interp_create_stacks(dstack)"));
-    stk.value.refs += refs_size_estack;
-    r_set_size(&stk, refs_size_dstack);
     {
-	ref_stack *pds = r_ptr(prds, ref_stack);
+	ref_stack *pds = pcst->dstack =
+	gs_alloc_struct((gs_memory_t *) smem, ref_stack, &st_ref_stack,
+			"gs_interp_alloc_stacks(dstack)");
 
+	stk.value.refs += REFS_SIZE_ESTACK;
+	r_set_size(&stk, REFS_SIZE_DSTACK);
 	ref_stack_init(pds, &stk, 0, 0, NULL, smem);
 	pds->underflow_error = e_dictstackunderflow;
 	pds->overflow_error = e_dictstackoverflow;
 	ref_stack_set_max_count(pds, MAX_DSTACK);
     }
 
-#undef refs_size_ostack
-#undef refs_size_estack
-#undef refs_size_dstack
+#undef REFS_SIZE_OSTACK
+#undef REFS_SIZE_ESTACK
+#undef REFS_SIZE_DSTACK
     return 0;
 }
-#endif
+/*
+ * Free the stacks when destroying a context.  This is the inverse of
+ * create_stacks.
+ */
+void
+gs_interp_free_stacks(gs_ref_memory_t * smem, gs_context_state_t * pcst)
+{				/* Free the stacks in inverse order of allocation. */
+    ref_stack_free(pcst->dstack, (gs_memory_t *) smem,
+		   "gs_interp_free_stacks(dstack)");
+    ref_stack_free(pcst->estack, (gs_memory_t *) smem,
+		   "gs_interp_free_stacks(estack)");
+    ref_stack_free(pcst->ostack, (gs_memory_t *) smem,
+		   "gs_interp_free_stacks(ostack)");
+}
 void
 gs_interp_reset(void)
 {				/* Reset the stacks. */
@@ -661,7 +581,6 @@ set_gc_signal(int *psignal, int value)
     }
 }
 
-
 /* Copy the contents of an overflowed stack into a (local) array. */
 private int
 copy_stack(const ref_stack * pstack, ref * arr)
@@ -750,7 +669,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
      * Get a pointer to the name table so that we can use the
      * inline version of name_index_ref.
      */
-    const name_table *int_nt = the_name_table();
+    const name_table *const int_nt = the_name_table();
 
 #define set_error(ecode)\
   { ierror.code = ecode; ierror.line = __LINE__; }
@@ -849,8 +768,8 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	    dputc('*');		/* indent */
 	for (; edepth > 0; --edepth)
 	    dputc('.');
-	dprintf3("0x%lx(%d)<%d>: ",
-		 (ulong) iref, icount, ref_stack_count(&o_stack));
+	dlprintf3("0x%lx(%d)<%d>: ",
+		  (ulong) iref, icount, ref_stack_count(&o_stack));
 	debug_print_ref(iref);
 	if (iosp >= osbot) {
 	    dputs(" // ");
@@ -1110,7 +1029,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 	case plain_exec(t_name):
 	    pvalue = iref->value.pname->pvalue;
 	    if (!pv_valid(pvalue)) {
-		uint nidx = name_index(iref);
+		uint nidx = names_index(int_nt, iref);
 		uint htemp;
 
 		if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0)
@@ -1371,9 +1290,15 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 			/* See the main plain_exec(t_operator) case */
 			/* for details of what happens here. */
 #if PACKED_SPECIAL_OPS
-			/* We arranged in iinit.c that the special ops */
-			/* have operator indices starting at 1. */
-#  define case_xop(xop) case xop - tx_op + 1
+			/*
+			 * We arranged in iinit.c that the special ops
+			 * have operator indices starting at 1.
+			 *
+			 * The (int) cast in the next line is required
+			 * because some compilers don't allow arithmetic
+			 * involving two different enumerated types.
+			 */
+#  define case_xop(xop) case xop - (int)tx_op + 1
 			switch (index) {
 			      case_xop(tx_op_add):goto x_add;
 			      case_xop(tx_op_def):goto x_def;
@@ -1449,7 +1374,7 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
 				uint htemp;
 
 				if ((pvalue = dict_find_name_by_index_inline(nidx, htemp)) == 0) {
-				    name_index_ref(nidx, &token);
+				    names_index_ref(int_nt, nidx, &token);
 				    return_with_error(e_undefined, &token);
 				}
 			    }
@@ -1511,22 +1436,27 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
     /* The interpreter state is in memory; iref is not current. */
     if (code < 0) {
 	set_error(code);
-	make_null_proc(&null_proc);
-	ierror.obj = iref = &null_proc;
+	/*
+	 * We need a real object to return as the error object.
+	 * (It only has to last long enough to store in
+	 * *perror_object.)
+	 */
+	make_null_proc(&ierror.full);
+	ierror.obj = iref = &ierror.full;
 	goto error_exit;
     }
     /* Reload state information from memory. */
     iosp = osp;
     iesp = esp;
     goto up;
-#if 0
+#if 0				/****** ****** ***** */
   sst:				/* Time-slice, but push the current object first. */
     store_state(iesp);
     if (iesp >= estop)
 	return_with_error_iref(e_execstackoverflow);
     iesp++;
     ref_assign_inline(iesp, iref);
-#endif
+#endif /****** ****** ***** */
   slice:			/* It's time to time-slice or garbage collect. */
     /* iref is not live, so we don't need to do a store_state. */
     osp = iosp;
@@ -1548,8 +1478,11 @@ interp(ref * pref /* object to interpret */ , ref * perror_object)
   rwe:
     if (!r_is_packed(iref))
 	store_state(iesp);
-    else {			/* We need a real object to return as the error object. */
-	/* (It only has to last long enough to store in *perror_object.) */
+    else {			/*
+				 * We need a real object to return as the error object.
+				 * (It only has to last long enough to store in
+				 * *perror_object.)
+				 */
 	packed_get((const ref_packed *)ierror.obj, &ierror.full);
 	store_state_short(iesp);
 	if (iref == ierror.obj)
@@ -1604,16 +1537,10 @@ oparray_cleanup(os_ptr op)
 
 /* ------ Initialization procedure ------ */
 
-BEGIN_OP_DEFS(interp_op_defs)
+const op_def interp_op_defs[] =
 {
     /* Internal operators */
-    {
-	"0%interp_exit", interp_exit
-    }
-    ,
-    {
-	"0%oparray_pop", oparray_pop
-    }
-    ,
-	END_OP_DEFS(0)
-}
+    {"0%interp_exit", interp_exit},
+    {"0%oparray_pop", oparray_pop},
+    op_def_end(0)
+};

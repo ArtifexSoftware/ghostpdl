@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* iutil2.c */
+/*Id: iutil2.c  */
 /* Level 2 utilities for Ghostscript interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -25,6 +25,7 @@
 #include "opcheck.h"
 #include "gsparam.h"
 #include "gsutil.h"		/* bytes_compare prototype */
+#include "idict.h"
 #include "imemory.h"		/* for iutil.h */
 #include "iutil.h"
 #include "iutil2.h"
@@ -34,7 +35,7 @@
 /* Read a password from a parameter list. */
 /* Return 0 if present, 1 if absent, or an error code. */
 int
-param_read_password(gs_param_list * plist, const char _ds * kstr, password * ppass)
+param_read_password(gs_param_list * plist, const char *kstr, password * ppass)
 {
     gs_param_string ps;
     long ipass;
@@ -67,7 +68,7 @@ param_read_password(gs_param_list * plist, const char _ds * kstr, password * ppa
 }
 /* Write a password to a parameter list. */
 int
-param_write_password(gs_param_list * plist, const char _ds * kstr, const password * ppass)
+param_write_password(gs_param_list * plist, const char *kstr, const password * ppass)
 {
     gs_param_string ps;
 
@@ -96,5 +97,51 @@ param_check_password(gs_param_list * plist, const password * ppass)
 	    )
 	    return 1;
     }
+    return 0;
+}
+
+/* Read a password from, or write a password into, a dictionary */
+/* (presumably systemdict). */
+private int
+dict_find_password(ref ** ppvalue, const ref * pdref, const char *kstr)
+{
+    ref *pvalue;
+
+    if (dict_find_string(pdref, kstr, &pvalue) <= 0)
+	return_error(e_undefined);
+    if (!r_has_type(pvalue, t_string) ||
+	r_has_attrs(pvalue, a_read) ||
+	pvalue->value.const_bytes[0] >= r_size(pvalue)
+	)
+	return_error(e_rangecheck);
+    *ppvalue = pvalue;
+    return 0;
+}
+int
+dict_read_password(password * ppass, const ref * pdref, const char *pkey)
+{
+    ref *pvalue;
+    int code = dict_find_password(&pvalue, pdref, pkey);
+
+    if (code < 0)
+	return code;
+    if (pvalue->value.const_bytes[0] > max_password)
+	return_error(e_rangecheck);	/* limitcheck? */
+    memcpy(ppass->data, pvalue->value.const_bytes + 1,
+	   (ppass->size = pvalue->value.const_bytes[0]));
+    return 0;
+}
+int
+dict_write_password(const password * ppass, ref * pdref, const char *pkey)
+{
+    ref *pvalue;
+    int code = dict_find_password(&pvalue, pdref, pkey);
+
+    if (code < 0)
+	return code;
+    if (ppass->size >= r_size(pvalue))
+	return_error(e_rangecheck);
+    memcpy(pvalue->value.bytes + 1, ppass->data,
+	   (pvalue->value.bytes[0] = ppass->size));
     return 0;
 }

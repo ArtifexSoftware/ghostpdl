@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1992, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1992, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsdps1.c */
+/*Id: gsdps1.c  */
 /* Display PostScript graphics additions for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -123,19 +123,19 @@ int
 gs_rectclip(gs_state * pgs, const gs_rect * pr, uint count)
 {
     int code;
-    gx_path old_path;
+    gx_path save;
 
-    old_path = *pgs->path;
-    gx_path_reset(pgs->path);
+    gx_path_init_local(&save, pgs->memory);
+    gx_path_assign_preserve(&save, pgs->path);
+    gs_newpath(pgs);
     if ((code = gs_rectappend(pgs, pr, count)) < 0 ||
 	(code = gs_clip(pgs)) < 0
 	) {
-	gx_path_release(pgs->path);
-	*pgs->path = old_path;
+	gx_path_assign_free(pgs->path, &save);
 	return code;
     }
+    gx_path_free(&save, "gs_rectclip");
     gs_newpath(pgs);
-    gx_path_release(&old_path);
     return 0;
 }
 
@@ -145,13 +145,15 @@ int
 gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 {
     const gs_rect *rlist = pr;
+    gx_clip_path *pcpath;
     uint rcount = count;
     int code;
 
     gx_set_dev_color(pgs);
     if ((is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||
 	 is_fzero2(pgs->ctm.xx, pgs->ctm.yy)) &&
-	clip_list_is_rectangle(&pgs->clip_path->list) &&
+	gx_effective_clip_path(pgs, &pcpath) >= 0 &&
+	clip_list_is_rectangle(gx_cpath_list(pcpath)) &&
 	gs_state_color_load(pgs) >= 0 &&
 	(*dev_proc(pgs->device, get_alpha_bits)) (pgs->device, go_graphics)
 	<= 1
@@ -159,7 +161,7 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	uint i;
 	gs_fixed_rect clip_rect;
 
-	gx_cpath_inner_box(pgs->clip_path, &clip_rect);
+	gx_cpath_inner_box(pcpath, &clip_rect);
 	for (i = 0; i < count; ++i) {
 	    gs_fixed_point p, q;
 	    gs_fixed_rect draw_rect;

@@ -1,22 +1,22 @@
 /* Copyright (C) 1993, 1994 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* imemory.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: imemory.h  */
 /* Ghostscript memory allocator extensions for interpreter level */
 
 #ifndef imemory_INCLUDED
@@ -31,34 +31,34 @@
  * between local, global, and system allocation.
  */
 
+#include "gsalloc.h"
+
 #ifndef gs_ref_memory_DEFINED
 #  define gs_ref_memory_DEFINED
 typedef struct gs_ref_memory_s gs_ref_memory_t;
 #endif
 
-#include "gsalloc.h"
-
 	/* Allocate a ref array. */
 
-int gs_alloc_ref_array(P5(gs_ref_memory_t *mem, ref *paref,
-  uint attrs, uint num_refs, client_name_t cname));
+int gs_alloc_ref_array(P5(gs_ref_memory_t * mem, ref * paref,
+			  uint attrs, uint num_refs, client_name_t cname));
 
 	/* Resize a ref array. */
 	/* Currently this is only implemented for shrinking, */
 	/* not growing. */
 
-int gs_resize_ref_array(P4(gs_ref_memory_t *mem, ref *paref,
-  uint new_num_refs, client_name_t cname));
+int gs_resize_ref_array(P4(gs_ref_memory_t * mem, ref * paref,
+			   uint new_num_refs, client_name_t cname));
 
 	/* Free a ref array. */
 
-void gs_free_ref_array(P3(gs_ref_memory_t *mem, ref *paref,
-  client_name_t cname));
+void gs_free_ref_array(P3(gs_ref_memory_t * mem, ref * paref,
+			  client_name_t cname));
 
 	/* Allocate a string ref. */
 
-int gs_alloc_string_ref(P5(gs_ref_memory_t *mem, ref *psref,
-  uint attrs, uint nbytes, client_name_t cname));
+int gs_alloc_string_ref(P5(gs_ref_memory_t * mem, ref * psref,
+			   uint attrs, uint nbytes, client_name_t cname));
 
 /*
  * Define the pointer type for refs.  Note that if a structure contains refs,
@@ -66,6 +66,7 @@ int gs_alloc_string_ref(P5(gs_ref_memory_t *mem, ref *psref,
  * since the GC will never see the refs during the unmarking sweep.
  */
 extern const gs_ptr_procs_t ptr_ref_procs;
+
 #define ptr_ref_type (&ptr_ref_procs)
 
 /* Register a ref root. */
@@ -85,16 +86,16 @@ extern const gs_ptr_procs_t ptr_ref_procs;
  */
 typedef struct gs_dual_memory_s gs_dual_memory_t;
 struct gs_dual_memory_s {
-	gs_ref_memory_t *current;	/* = ...global or ...local */
-	vm_spaces spaces;		/* system, global, local */
-	uint current_space;		/* = current->space */
-		/* Save/restore machinery */
-	int save_level;
-		/* Garbage collection hook */
-	int (*reclaim)(P2(gs_dual_memory_t *, int));
-		/* Masks for store checking, see isave.h. */
-	uint test_mask;
-	uint new_mask;
+    gs_ref_memory_t *current;	/* = ...global or ...local */
+    vm_spaces spaces;		/* system, global, local */
+    uint current_space;		/* = current->space */
+    /* Save/restore machinery */
+    int save_level;
+    /* Garbage collection hook */
+    int (*reclaim) (P2(gs_dual_memory_t *, int));
+    /* Masks for store checking, see isave.h. */
+    uint test_mask;
+    uint new_mask;
 };
 
-#endif					/* imemory_INCLUDED */
+#endif /* imemory_INCLUDED */

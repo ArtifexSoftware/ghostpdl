@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sjpegc.c */
+/*Id: sjpegc.c  */
 /* Interface routines for IJG code, common to encode/decode. */
 #include "stdio_.h"
 #include "string_.h"
@@ -220,28 +220,51 @@ gs_jpeg_destroy(stream_DCT_state * st)
  * Note we do not need these to be declared in any GS header file.
  */
 
+private gs_memory_t *
+gs_j_common_memory(j_common_ptr cinfo)
+{				/*
+				 * We use the offset of cinfo in jpeg_compress data here, but we
+				 * could equally well have used jpeg_decompress_data.
+				 */
+    const jpeg_stream_data *sd =
+    ((const jpeg_stream_data *)((const byte *)cinfo -
+				offset_of(jpeg_compress_data, cinfo)));
+
+    return sd->memory;
+}
+
 void *
 jpeg_get_small(j_common_ptr cinfo, size_t sizeofobject)
 {
-    return gs_malloc(1, sizeofobject, "JPEG small internal data allocation");
+    gs_memory_t *mem = gs_j_common_memory(cinfo);
+
+    return gs_alloc_bytes_immovable(mem, sizeofobject,
+				    "JPEG small internal data allocation");
 }
 
 void
 jpeg_free_small(j_common_ptr cinfo, void *object, size_t sizeofobject)
 {
-    gs_free(object, 1, sizeofobject, "Freeing JPEG small internal data");
+    gs_memory_t *mem = gs_j_common_memory(cinfo);
+
+    gs_free_object(mem, object, "Freeing JPEG small internal data");
 }
 
 void FAR *
 jpeg_get_large(j_common_ptr cinfo, size_t sizeofobject)
 {
-    return gs_malloc(1, sizeofobject, "JPEG large internal data allocation");
+    gs_memory_t *mem = gs_j_common_memory(cinfo);
+
+    return gs_alloc_bytes_immovable(mem, sizeofobject,
+				    "JPEG large internal data allocation");
 }
 
 void
 jpeg_free_large(j_common_ptr cinfo, void FAR * object, size_t sizeofobject)
 {
-    gs_free(object, 1, sizeofobject, "Freeing JPEG large internal data");
+    gs_memory_t *mem = gs_j_common_memory(cinfo);
+
+    gs_free_object(mem, object, "Freeing JPEG large internal data");
 }
 
 long

@@ -48,111 +48,79 @@ private_st_cie_defg();
 extern cs_proc_init_color(gx_init_CIE);
 private cs_proc_concrete_space(gx_concrete_space_CIE);
 private cs_proc_install_cspace(gx_install_CIE);
+
+/* CIEBasedDEFG */
+gs_private_st_ptrs1(st_color_space_CIEDEFG, gs_base_color_space,
+     "gs_color_space(CIEDEFG)", cs_CIEDEFG_enum_ptrs, cs_CIEDEFG_reloc_ptrs,
+		    params.defg);
 cs_declare_render_procs(extern, gx_concretize_CIEDEFG, gx_install_CIEDEFG);
-
-cs_declare_memory_procs(private, gx_adjust_cspace_CIEDEFG,
-			gx_enum_ptrs_CIEDEFG, gx_reloc_ptrs_CIEDEFG);
+cs_declare_memory_procs(private, gx_adjust_cspace_CIEDEFG);
 extern cs_proc_restrict_color(gx_restrict_CIEDEFG);
-cs_declare_render_procs(extern, gx_concretize_CIEDEF, gx_install_CIEDEF);
-
-cs_declare_memory_procs(private, gx_adjust_cspace_CIEDEF,
-			gx_enum_ptrs_CIEDEF, gx_reloc_ptrs_CIEDEF);
-extern cs_proc_restrict_color(gx_restrict_CIEDEF);
-cs_declare_render_procs(extern, gx_concretize_CIEABC, gx_install_CIEABC);
-
-cs_declare_memory_procs(private, gx_adjust_cspace_CIEABC,
-			gx_enum_ptrs_CIEABC, gx_reloc_ptrs_CIEABC);
-extern cs_proc_remap_color(gx_remap_CIEABC);
-extern cs_proc_restrict_color(gx_restrict_CIEABC);
-cs_declare_render_procs(extern, gx_concretize_CIEA, gx_install_CIEA);
-
-cs_declare_memory_procs(private, gx_adjust_cspace_CIEA,
-			gx_enum_ptrs_CIEA, gx_reloc_ptrs_CIEA);
-extern cs_proc_restrict_color(gx_restrict_CIEA);
-const gs_color_space_type
-      gs_color_space_type_CIEDEFG =
-{gs_color_space_index_CIEDEFG, 3, true,
- gs_base_color_space_size,
- gx_init_CIE, gx_restrict_CIEDEFG,
- gx_concrete_space_CIE,
- gx_concretize_CIEDEFG, NULL,
- gx_default_remap_color, gx_install_CIE,
- gx_adjust_cspace_CIEDEFG, gx_no_adjust_color_count,
- gx_enum_ptrs_CIEDEFG, gx_reloc_ptrs_CIEDEFG
-},    gs_color_space_type_CIEDEF =
-{gs_color_space_index_CIEDEF, 3, true,
- gs_base_color_space_size,
- gx_init_CIE, gx_restrict_CIEDEF,
- gx_concrete_space_CIE,
- gx_concretize_CIEDEF, NULL,
- gx_default_remap_color, gx_install_CIE,
- gx_adjust_cspace_CIEDEF, gx_no_adjust_color_count,
- gx_enum_ptrs_CIEDEF, gx_reloc_ptrs_CIEDEF
-},    gs_color_space_type_CIEABC =
-{gs_color_space_index_CIEABC, 3, true,
- gs_base_color_space_size,
- gx_init_CIE, gx_restrict_CIEABC,
- gx_concrete_space_CIE,
- gx_concretize_CIEABC, NULL,
- gx_remap_CIEABC, gx_install_CIE,
- gx_adjust_cspace_CIEABC, gx_no_adjust_color_count,
- gx_enum_ptrs_CIEABC, gx_reloc_ptrs_CIEABC
-},    gs_color_space_type_CIEA =
-{gs_color_space_index_CIEA, 1, true,
- gs_base_color_space_size,
- gx_init_CIE, gx_restrict_CIEA,
- gx_concrete_space_CIE,
- gx_concretize_CIEA, NULL,
- gx_default_remap_color, gx_install_CIE,
- gx_adjust_cspace_CIEA, gx_no_adjust_color_count,
- gx_enum_ptrs_CIEA, gx_reloc_ptrs_CIEA
+const gs_color_space_type gs_color_space_type_CIEDEFG = {
+    gs_color_space_index_CIEDEFG, true, true,
+    &st_color_space_CIEDEFG, gx_num_components_4,
+    gx_no_base_space,
+    gx_init_CIE, gx_restrict_CIEDEFG,
+    gx_concrete_space_CIE,
+    gx_concretize_CIEDEFG, NULL,
+    gx_default_remap_color, gx_install_CIE,
+    gx_adjust_cspace_CIEDEFG, gx_no_adjust_color_count
 };
 
-/* GC procedures for CIE color spaces. */
-/* These have to come after the cs_declare_procs because of */
-/* a bug in the VAX C compiler. */
+/* CIEBasedDEF */
+gs_private_st_ptrs1(st_color_space_CIEDEF, gs_base_color_space,
+	"gs_color_space(CIEDEF)", cs_CIEDEF_enum_ptrs, cs_CIEDEF_reloc_ptrs,
+		    params.def);
+cs_declare_render_procs(extern, gx_concretize_CIEDEF, gx_install_CIEDEF);
+cs_declare_memory_procs(private, gx_adjust_cspace_CIEDEF);
+extern cs_proc_restrict_color(gx_restrict_CIEDEF);
+const gs_color_space_type gs_color_space_type_CIEDEF = {
+    gs_color_space_index_CIEDEF, true, true,
+    &st_color_space_CIEDEF, gx_num_components_3,
+    gx_no_base_space,
+    gx_init_CIE, gx_restrict_CIEDEF,
+    gx_concrete_space_CIE,
+    gx_concretize_CIEDEF, NULL,
+    gx_default_remap_color, gx_install_CIE,
+    gx_adjust_cspace_CIEDEF, gx_no_adjust_color_count
+};
 
-#define pcs ((gs_color_space *)vptr)
+/* CIEBasedABC */
+gs_private_st_ptrs1(st_color_space_CIEABC, gs_base_color_space,
+	"gs_color_space(CIEABC)", cs_CIEABC_enum_ptrs, cs_CIEABC_reloc_ptrs,
+		    params.abc);
+cs_declare_render_procs(extern, gx_concretize_CIEABC, gx_install_CIEABC);
+cs_declare_memory_procs(private, gx_adjust_cspace_CIEABC);
+extern cs_proc_remap_color(gx_remap_CIEABC);
+extern cs_proc_restrict_color(gx_restrict_CIEABC);
+const gs_color_space_type gs_color_space_type_CIEABC = {
+    gs_color_space_index_CIEABC, true, true,
+    &st_color_space_CIEABC, gx_num_components_3,
+    gx_no_base_space,
+    gx_init_CIE, gx_restrict_CIEABC,
+    gx_concrete_space_CIE,
+    gx_concretize_CIEABC, NULL,
+    gx_remap_CIEABC, gx_install_CIE,
+    gx_adjust_cspace_CIEABC, gx_no_adjust_color_count
+};
 
-private 
-ENUM_PTRS_BEGIN(gx_enum_ptrs_CIEDEFG) return 0;
-
-ENUM_PTR(0, gs_color_space, params.defg);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gx_reloc_ptrs_CIEDEFG)
-{
-    RELOC_PTR(gs_color_space, params.defg);
-}
-RELOC_PTRS_END
-
-private ENUM_PTRS_BEGIN(gx_enum_ptrs_CIEDEF) return 0;
-ENUM_PTR(0, gs_color_space, params.def);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gx_reloc_ptrs_CIEDEF)
-{
-    RELOC_PTR(gs_color_space, params.def);
-}
-RELOC_PTRS_END
-
-private ENUM_PTRS_BEGIN(gx_enum_ptrs_CIEABC) return 0;
-ENUM_PTR(0, gs_color_space, params.abc);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gx_reloc_ptrs_CIEABC)
-{
-    RELOC_PTR(gs_color_space, params.abc);
-}
-RELOC_PTRS_END
-
-private ENUM_PTRS_BEGIN(gx_enum_ptrs_CIEA) return 0;
-ENUM_PTR(0, gs_color_space, params.a);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gx_reloc_ptrs_CIEA)
-{
-    RELOC_PTR(gs_color_space, params.a);
-}
-RELOC_PTRS_END
-
-#undef pcs
+/* CIEBasedA */
+gs_private_st_ptrs1(st_color_space_CIEA, gs_base_color_space,
+	      "gs_color_space(CIEA)", cs_CIEA_enum_ptrs, cs_CIEA_reloc_ptrs,
+		    params.a);
+cs_declare_render_procs(extern, gx_concretize_CIEA, gx_install_CIEA);
+cs_declare_memory_procs(private, gx_adjust_cspace_CIEA);
+extern cs_proc_restrict_color(gx_restrict_CIEA);
+const gs_color_space_type gs_color_space_type_CIEA = {
+    gs_color_space_index_CIEA, true, true,
+    &st_color_space_CIEA, gx_num_components_1,
+    gx_no_base_space,
+    gx_init_CIE, gx_restrict_CIEA,
+    gx_concrete_space_CIE,
+    gx_concretize_CIEA, NULL,
+    gx_default_remap_color, gx_install_CIE,
+    gx_adjust_cspace_CIEA, gx_no_adjust_color_count
+};
 
 /* Determine the concrete space underlying a CIEBased space. */
 private const gs_color_space *

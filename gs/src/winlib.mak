@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: winlib.mak 
 # Common makefile section for 32-bit MS Windows.
 
 # This makefile must be acceptable to Microsoft Visual C++, Watcom C++,
@@ -22,8 +23,9 @@
 # allowed are !if[n]def, !else, and !endif.
 
 
-# Note that built-in libpng and zlib aren't available.
+# Note that built-in third-party libraries aren't available.
 
+SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 
@@ -42,7 +44,11 @@ AK=ccf32.tr
 # Define the syntax for command, object, and executable files.
 
 CMD=.bat
-O=-o
+C_=-c
+I_=-I
+II=-I
+_I=
+# O_ is defined separately for each compiler.
 OBJ=obj
 XE=.exe
 XEAUX=.exe
@@ -66,70 +72,98 @@ PCFBASM=
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
+# ****** WRONG ****** NEED GLOBJ PREFIX ******
 BEGINFILES=gs*.res gs*.ico ccf32.tr\
    $(GSDLL).dll $(GSCONSOLE).exe\
    $(BEGINFILES2)
 
 # Include the generic makefiles.
-!include version.mak
-!include gs.mak
-!include lib.mak
-!include jpeg.mak
-!include libpng.mak
-!include zlib.mak
-!include devs.mak
+#!include $(COMMONDIR)/pcdefs.mak
+#!include $(COMMONDIR)/generic.mak
+!include $(GLSRCDIR)\version.mak
+!include $(GLSRCDIR)\gs.mak
+!include $(GLSRCDIR)\lib.mak
+!include $(GLSRCDIR)\jpeg.mak
+# zlib.mak must precede libpng.mak
+!include $(GLSRCDIR)\zlib.mak
+!include $(GLSRCDIR)\libpng.mak
+!include $(GLSRCDIR)\devs.mak
+!include $(GLSRCDIR)\contrib.mak
+
+# Define the compilation rule for Windows devices.
+# This requires GL*_ to be defined, so it has to come after lib.mak.
+GLCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(GLI_)$(_I) $(GLF_)
+
+!include $(GLSRCDIR)\pcwin.mak
+
+# Define abbreviations for the executable and DLL files.
+GS_OBJ=$(GLOBJ)$(GS)
+GSDLL_SRC=$(GLSRC)$(GSDLL)
+GSDLL_OBJ=$(GLOBJ)$(GSDLL)
 
 # -------------------------- Auxiliary programs --------------------------- #
 
-$(ECHOGS_XE): echogs.c
+$(ECHOGS_XE): $(GLSRC)echogs.c
 	$(CCAUX_SETUP)
-	$(CCAUX) echogs.c $(CCAUX_TAIL)
+	$(CCAUX) $(GLSRC)echogs.c $(CCAUX_TAIL)
 
 # $(GENARCH_XE) is in individual (compiler-specific) makefiles.
 
-$(GENCONF_XE): genconf.c $(stdpre_h)
+$(GENCONF_XE): $(GLSRC)genconf.c $(stdpre_h)
 	$(CCAUX_SETUP)
-	$(CCAUX) genconf.c $(CCAUX_TAIL)
+	$(CCAUX) $(GLSRC)genconf.c $(CCAUX_TAIL)
 
-$(GENINIT_XE): geninit.c $(stdio__h) $(string__h)
+$(GENDEV_XE): $(GLSRC)gendev.c $(stdpre_h)
 	$(CCAUX_SETUP)
-	$(CCAUX) geninit.c $(CCAUX_TAIL)
+	$(CCAUX) $(GLSRC)gendev.c $(CCAUX_TAIL)
+
+$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
+	$(CCAUX_SETUP)
+	$(CCAUX) $(PSSRC)geninit.c $(CCAUX_TAIL)
 
 # No special gconfig_.h is needed.
 # Assume `make' supports output redirection.
-gconfig_.h: $(MAKEFILE)
-	echo /* This file deliberately left blank. */ >gconfig_.h
+$(gconfig__h): $(MAKEFILE)
+	echo /* This file deliberately left blank. */ >$(gconfig__h)
 
-gconfigv.h: $(MAKEFILE) $(ECHOGS_XE)
-	$(EXP)echogs -w gconfigv.h -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
-	$(EXP)echogs -a gconfigv.h -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
-	$(EXP)echogs -a gconfigv.h -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
-
+$(gconfigv_h): $(MAKEFILE) $(ECHOGS_XE)
+	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
+	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
+	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
+	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define SYSTEM_CONSTANTS_ARE_WRITABLE 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)
 
 # -------------------------------- Library -------------------------------- #
 
 # The Windows Win32 platform
 
-mswin32__=gp_mswin.$(OBJ) gp_msio.$(OBJ) gp_win32.$(OBJ) gp_nofb.$(OBJ) gp_ntfs.$(OBJ)
+mswin32_1=$(GLOBJ)gp_mswin.$(OBJ) $(GLOBJ)gp_msio.$(OBJ) $(GLOBJ)gp_win32.$(OBJ)
+mswin32_2=$(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_ntfs.$(OBJ) $(GLOBJ)gp_wgetv.$(OBJ)
+mswin32__=$(mswin32_1) $(mswin32_2)
 mswin32_.dev: $(mswin32__)
-        $(SETMOD) mswin32_ $(mswin32__)
+        $(SETMOD) mswin32_ $(mswin32_1)
+	$(ADDMOD) mswin32_ -obj $(mswin32_2)
         $(ADDMOD) mswin32_ -iodev wstdio
 
-gp_mswin.$(OBJ): gp_mswin.c $(AK) gp_mswin.h \
+$(GLOBJ)gp_mswin.$(OBJ): $(GLSRC)gp_mswin.c $(AK) $(gp_mswin_h) \
  $(ctype__h) $(dos__h) $(malloc__h) $(memory__h) $(string__h) $(windows__h) \
  $(gx_h) $(gp_h) $(gpcheck_h) $(gserrors_h) $(gsexit_h)
-	$(CCCWIN) gp_mswin.c
+	$(GLCCWIN) $(GLO_)gp_mswin.$(OBJ) $(C_) $(GLSRC)gp_mswin.c
 
-gp_msio.$(OBJ): gp_msio.c $(AK) gp_mswin.h \
+$(GLOBJ)gp_msio.$(OBJ): $(GLSRC)gp_msio.c $(AK) $(gp_mswin_h) \
  $(gsdll_h) $(stdio__h) $(gxiodev_h) $(stream_h) $(gx_h) $(gp_h) $(windows__h)
-	$(CCCWIN) gp_msio.c
+	$(GLCCWIN) $(GLO_)gp_msio.$(OBJ) $(C_) $(GLSRC)gp_msio.c
 
-gp_win32.$(OBJ): gp_win32.c $(AK) $(stdio__h) $(dos__h) $(string__h) \
- $(gstypes_h) $(gsmemory_h) $(gp_h) $(gp_sync_h) $(gserror_h) $(gserrors_h)
-	$(CCCWIN) gp_win32.c
+$(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
+ $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
+ $(gp_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
+	$(GLCCWIN) $(GLO_)gp_ntfs.$(OBJ) $(C_) $(GLSRC)gp_ntfs.c
 
-gp_ntfs.$(OBJ): gp_ntfs.c $(AK) $(stdio__h) $(dos__h) $(string__h) $(gstypes_h) \
- $(gsmemory_h) $(gsstruct_h) $(gp_h) $(gsutil_h) $(windows__h)
-	$(CCCWIN) gp_ntfs.c
+$(GLOBJ)gp_win32.$(OBJ): $(GLSRC)gp_win32.c $(AK)\
+ $(dos__h) $(stdio__h) $(string__h) $(windows__h)\
+ $(gp_h) $(gsmemory_h) $(gstypes_h)
+	$(GLCCWIN) $(GLO_)gp_win32.$(OBJ) $(C_) $(GLSRC)gp_win32.c
+
+$(GLOBJ)gp_wgetv.$(OBJ): $(GLSRC)gp_wgetv.c $(AK) $(gscdefs_h)
+	$(GLCCWIN) $(GLO_)gp_wgetv.$(OBJ) $(C_) $(GLSRC)gp_wgetv.c
 
 # end of winlib.mak

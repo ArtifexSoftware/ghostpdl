@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,14 @@
    all copies.
  */
 
-/* gp_ntfs.c */
+/*Id: gp_ntfs.c  */
 /* file system stuff for MS-Windows WIN32 and MS-Windows NT */
 /* hacked from gp_dosfs.c by Russell Lang */
 
 #include "stdio_.h"
 #include <fcntl.h>
+#include <io.h>
+#include <stdio.h>
 #include "dos_.h"
 #include "memory_.h"
 #include "string_.h"
@@ -38,9 +40,26 @@
 /* This is not a standard gp procedure, */
 /* but all MS-DOS configurations need it. */
 void
-gp_set_printer_binary(int prnfno, int binary)
+gp_set_file_binary(int prnfno, int binary)
 {
     /* UNIMPLEMENTED */
+}
+
+/* ------ File accessing -------- */
+
+/* Set a file into binary or text mode. */
+int
+gp_setmode_binary(FILE * pfile, bool binary)
+{
+    /* Use non-standard setmode & fileno fn's that all NT compilers offer */
+#ifdef __STDC__
+    int code = _setmode(_fileno(pfile), binary == 0 ? _O_TEXT : _O_BINARY);
+
+#else
+    int code = setmode(fileno(pfile), binary == 0 ? O_TEXT : O_BINARY);
+
+#endif
+    return (code == -1 ? -1 : 0);
 }
 
 /* ------ File names ------ */

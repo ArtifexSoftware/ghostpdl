@@ -1,4 +1,4 @@
-/* Copyright (C) 1993 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevxxf.c */
+/*Id: gdevxxf.c  */
 /* External font (xfont) implementation for X11. */
 #include "math_.h"
 #include "memory_.h"
@@ -45,7 +45,7 @@ private xfont_proc_char_xglyph(x_char_xglyph);
 private xfont_proc_char_metrics(x_char_metrics);
 private xfont_proc_render_char(x_render_char);
 private xfont_proc_release(x_release);
-private gx_xfont_procs x_xfont_procs =
+private const gx_xfont_procs x_xfont_procs =
 {
     x_lookup_font,
     x_char_xglyph,
@@ -55,7 +55,7 @@ private gx_xfont_procs x_xfont_procs =
 };
 
 /* Return the xfont procedure record. */
-gx_xfont_procs *
+const gx_xfont_procs *
 x_get_xfont_procs(gx_device * dev)
 {
     return &x_xfont_procs;
@@ -404,11 +404,49 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	code = (*xf->common.procs->char_metrics) (xf, xg, 0, &wxy, &bbox);
 	if (code < 0)
 	    return code;
-	set_fill_style(FillSolid);
-	set_fore_color(color);
-	set_function(GXcopy);
-	set_font(xxf->font->fid);
-	XDrawString(xdev->dpy, xdev->dest, xdev->gc, xo, yo, &chr, 1);
+	/* Buffer text for more efficient X interaction. */
+	if (xdev->text.item_count == MAX_TEXT_ITEMS ||
+	    xdev->text.char_count == MAX_TEXT_CHARS ||
+	    (IN_TEXT(xdev) &&
+	     (yo != xdev->text.origin.y || color != xdev->fore_color ||
+	      xxf->font->fid != xdev->fid))
+	    ) {
+	    DRAW_TEXT(xdev);
+	    xdev->text.item_count = xdev->text.char_count = 0;
+	}
+	if (xdev->text.item_count == 0) {
+	    set_fill_style(FillSolid);
+	    set_fore_color(color);
+	    set_function(GXcopy);
+	    xdev->text.origin.x = xdev->text.x = xo;
+	    xdev->text.origin.y = yo;
+	    xdev->text.items[0].font = xdev->fid = xxf->font->fid;
+	}
+	/*
+	 * The following is wrong for rotated text, but it doesn't matter,
+	 * because the next call of x_render_char will have a different Y.
+	 */
+	{
+	    int index = xdev->text.item_count;
+	    XTextItem *item = &xdev->text.items[index];
+	    char *pchar = &xdev->text.chars[xdev->text.char_count++];
+	    int delta = xo - xdev->text.x;
+
+	    *pchar = chr;
+	    if (index > 0 && delta == 0) {
+		/* Continue the same item. */
+		item[-1].nchars++;
+	    } else {
+		/* Start a new item. */
+		item->chars = pchar;
+		item->nchars = 1;
+		item->delta = delta;
+		if (index > 0)
+		    item->font = None;
+		xdev->text.item_count++;
+	    }
+	    xdev->text.x = xo + wxy.x;
+	}
 	if (xdev->bpixmap != (Pixmap) 0) {
 	    x = xo + bbox.p.x;
 	    y = yo + bbox.p.y;

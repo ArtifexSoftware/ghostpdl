@@ -1,30 +1,30 @@
 /* Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* scommon.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: scommon.h  */
 /* Definitions common to stream clients and implementors */
 
 #ifndef scommon_DEFINED
 #  define scommon_DEFINED
 
 #include "gsmemory.h"
-#include "gstypes.h"			/* for gs_string */
-#include "gsstruct.h"			/* for extern_st */
+#include "gstypes.h"		/* for gs_string */
+#include "gsstruct.h"		/* for extern_st */
 
 /*
  * There are three major structures involved in the stream package.
@@ -37,12 +37,14 @@
 #ifndef stream_DEFINED
 #  define stream_DEFINED
 typedef struct stream_s stream;
+
 #endif
 /*
  * A stream_state records the state specific to a given variety of stream.
  * The buffer processing function of a stream maintains this state.
  */
 typedef struct stream_state_s stream_state;
+
 /*
  * A stream_template provides the information needed to create a stream.
  * The client must fill in any needed setup parameters in the appropriate
@@ -80,18 +82,18 @@ typedef struct stream_template_s stream_template;
  * the write pointer and the read limit.
  */
 typedef struct stream_cursor_read_s {
-	const byte *ptr;
-	const byte *limit;
-	byte *_skip;
+    const byte *ptr;
+    const byte *limit;
+    byte *_skip;
 } stream_cursor_read;
 typedef struct stream_cursor_write_s {
-	const byte *_skip;
-	byte *ptr;
-	byte *limit;
+    const byte *_skip;
+    byte *ptr;
+    byte *limit;
 } stream_cursor_write;
 typedef union stream_cursor_s {
-	stream_cursor_read r;
-	stream_cursor_write w;
+    stream_cursor_read r;
+    stream_cursor_write w;
 } stream_cursor;
 
 /*
@@ -129,6 +131,18 @@ typedef union stream_cursor_s {
 stream_proc_report_error(s_no_report_error);
 
 /*
+ * Some types of streams have the ability to read their parameters from
+ * a parameter list, and to write all (or only the non-default)
+ * parameters to a parameter list.  Since these are not virtual
+ * procedures for the stream (they operate on stream_state structures
+ * even if no actual stream has been created), we name them differently.
+ */
+#define stream_state_proc_get_params(proc, state_type)\
+  int proc(P3(gs_param_list *plist, const state_type *ss, bool all))
+#define stream_state_proc_put_params(proc, state_type)\
+  int proc(P2(gs_param_list *plist, state_type *ss))
+
+/*
  * Define a generic stream state.  If a processing procedure has no
  * state of its own, it can use stream_state; otherwise, it must
  * create a "subclass".  There is a hack in stream.h to allow the stream
@@ -143,10 +157,11 @@ stream_proc_report_error(s_no_report_error);
 	gs_memory_t *memory;\
 	stream_proc_report_error((*report_error))
 struct stream_state_s {
-	stream_state_common;
+    stream_state_common;
 };
+
 extern_st(st_stream_state);
 #define public_st_stream_state() /* in stream.c */\
   gs_public_st_simple(st_stream_state, stream_state, "stream_state")
 
-#endif					/* scommon_INCLUDED */
+#endif /* scommon_INCLUDED */

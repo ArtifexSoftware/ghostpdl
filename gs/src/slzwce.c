@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* slzwce.c */
+/*Id: slzwce.c  */
 /* Simple encoder compatible with LZW decoding filter */
 #include "stdio_.h"		/* includes std.h */
 #include "gdebug.h"
@@ -86,20 +86,23 @@ lzw_put_code(register stream_LZW_state * ss, byte * q, uint code)
     return q;
 }
 
-#define ss ((stream_LZW_state *)st)
-
 /* Initialize LZW-compatible encoding filter. */
 int
 s_LZWE_reset(stream_state * st)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
+
     ss->code_size = ss->InitialCodeLength + 1;
     ss->bits_left = 8;
-    ss->next_code = (1 << ss->InitialCodeLength) + code_0;
+    /* Force the first code emitted to be a reset. */
+    ss->next_code = (1 << ss->code_size) - 2;
     return 0;
 }
 private int
 s_LZWE_init(stream_state * st)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
+
     ss->InitialCodeLength = 8;
     ss->table.encode = 0;
     return s_LZWE_reset(st);
@@ -110,13 +113,14 @@ private int
 s_LZWE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
     register const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
     register byte *q = pw->ptr;
     byte *wlimit = pw->limit;
     int status = 0;
     int signal = 1 << (ss->code_size - 1);
-    uint limit_code = (1 << ss->code_size) - 1;
+    uint limit_code = (1 << ss->code_size) - 2;		/* reset 1 early */
     uint next_code = ss->next_code;
 
     while (p < rlimit) {
@@ -149,8 +153,6 @@ s_LZWE_process(stream_state * st, stream_cursor_read * pr,
     pw->ptr = q;
     return status;
 }
-
-#undef ss
 
 /* Stream template */
 const stream_template s_LZWE_template =

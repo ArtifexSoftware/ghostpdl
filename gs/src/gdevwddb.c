@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevwddb.c */
+/*Id: gdevwddb.c  */
 /*
  * Microsoft Windows 3.n driver for Ghostscript,
  * using device-dependent bitmap.
@@ -87,7 +87,7 @@ struct gx_device_win_ddb_s {
     HDC FAR hdcmono;
     gx_bitmap_id bm_id;
 };
-private gx_device_procs win_ddb_procs =
+private const gx_device_procs win_ddb_procs =
 {
     win_ddb_open,
     NULL,			/* get_initial_matrix */

@@ -1,4 +1,4 @@
-   Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: make.txt 
 This file, make.txt, describes how to build Ghostscript executables from
 source.
 
@@ -141,7 +142,9 @@ you can use
 	tar -zxf somefile.tar.gz
 
 To unpack a .zip archive in a Microsoft environment, you need the PKUNZIP
-program, which is normally delivered with the OS.  To unpack a .zip archive,
+program, which is often delivered with MS-DOS, or WinZip, which is often
+(but apparently not always) included with MS Windows.  To unpack a .zip
+archive,
 	PKUNZIP somefile.zip
 
 We won't say anything more here about unpacking the fonts, since that is not
@@ -163,14 +166,11 @@ before unpacking the archive.
 Third-party libraries
 ---------------------
 
-The file names in the IJG archives (jpegsrc.v##.tar.gz or jpegsr##.zip)
-include a subdirectory name jpeg-##/, so you should unpack them in the same
-way as just described for the Ghostscript sources, except that you should
-make the gs directory current first, and the subdirectory name will be
-jpeg-##.  (This will be a subdirectory of the gs directory, of course.)
+If you are using the .tar.gz archives, then:
 
-Unfortunately, the situation for the PNG and zlib libraries varies from
-release to release.  If you are using the .tar.gz archives, then:
+	- Before unpacking jpegsrc.v##.tar.gz, make the gs directory
+	current.  Unpacking will create a subdirectory named
+	jpeg-##.  Rename this subdirectory as jpeg.
 
 	- Before unpacking libpng-#.##.tar.gz, make the gs directory
 	current.  Unpacking will create a subdirectory named
@@ -183,6 +183,11 @@ release to release.  If you are using the .tar.gz archives, then:
 If you are using the .zip archives, and your version of PKUNZIP preserves
 directory information, follow the same steps as for the .tar.gz archives.
 If your version of PKUNZIP discards directory names:
+
+	- Before unpacking jpegsr##.zip, make the gs directory current, and
+	then
+		MKDIR jpeg
+		CD jpeg
 
 	- Before unpacking lpng###.zip, make the gs directory current, and
 	then
@@ -202,15 +207,15 @@ The Ghostscript makefiles are very large and complex.  Fortunately, the only
 makefiles you are likely to need to deal with are relatively small ones
 containing platform-specific information, as follows:
 
-	ansihead.mak - Unix with ANSI C compilers other than gcc
-	cc-head.mak - Unix with "traditional C" compilers
-	gcc-head.mak - Unix with gcc
+	unixansi.mak - Unix with ANSI C compilers other than gcc
+	unix-cc.mak - Unix with "traditional C" compilers
+	unix-gcc.mak - Unix with gcc
 	watc.mak - MS-DOS with Watcom compilers
 	bcwin32.mak - MS Windows with Borland compilers
 	msvc32.mak - MS Windows with Microsoft Visual C++ version 4.n or 5.n
 	watcw32.mak - MS Windows with Watcom compilers
 	openvms.mak - OpenVMS
-	dgc-head.mak - DesqView/X with gcc
+	dvx-gcc.mak - DesqView/X with gcc
 	os2.mak - OS/2 with the gcc/emx compiler
 
 Since the contents of these files change from one Ghostscript version to
@@ -231,7 +236,8 @@ For completeness, the platform-independent makefiles are:
 	jpeg.mak - the makefile for the IJG library
 	libpng.mak - the makefile for the PNG library
 	zlib.mak - the makefile for the zlib library
-	devs.mak - the makefile for the device drivers
+	devs.mak - the makefile for Aladdin's device drivers
+	contrib.mak - the makefile for contributed device drivers
 
 ********
 ******** Preparing the makefiles for your environment ********
@@ -254,18 +260,19 @@ any of the following:
 
 The platform-specific makefile will include comments describing all of these
 items except the DEVICE_DEVS options; the available DEVICE_DEVS options
-(device drivers) are described in devs.mak, even though the file that must
-be edited is the platform-specific makefile.  You should also check the
-JVERSION and PVERSION macros in the platform-specific makefile, and adjust
-them if they do not match the JPEG and PNG library versions you are using:
-see jpeg.mak and libpng.mak for more info.
+(device drivers) are described in devs.mak and contrib.mak, even though the
+file that must be edited is the platform-specific makefile.  You should also
+check the JVERSION and PVERSION macros in the platform-specific makefile,
+and adjust them if they do not match the JPEG and PNG library versions you
+are using: see jpeg.mak and libpng.mak for more info.
 
 There are also platform-specific options described below under the
 individual platforms.  See the "Options" section near the beginning of the
 relevant makefile for more information.
 
-If you are including a dot-matrix printer driver, you may wish to
-customize the default resolution parameters in devs.mak.
+If you are including a dot-matrix printer driver, you may wish to customize
+the default resolution parameters in whichever of devs.mak and contrib.mak
+defines the driver.
 
 Features and devices
 --------------------
@@ -273,8 +280,8 @@ Features and devices
 When compiling Ghostscript, you may configure it with any of a variety of
 features, and with any subset of the available device drivers.  You will
 find the complete list of features in a comment at the beginning of the file
-gs.mak, and the complete list of drivers in a comment at the beginning of
-devs.mak.
+gs.mak, and the complete list of drivers in comments at the beginning of
+devs.mak and contrib.mak.
 
 To find out what devices a particular makefile selects for inclusion in
 the executable, find the line in the makefile of the form
@@ -298,10 +305,10 @@ than this: see the Unix makefiles for the full list.)
 
 You may edit the FEATURE* lines to select any desired set of features (as
 listed near the beginning of gs.mak), and the DEVICE_DEVS* line(s) to select
-any desired set of device drivers (as listed near the beginning of
-devs.mak).  The first device listed in the definition of DEVICE_DEVS will be
-used as the default device (unless overridden from the command line with
--sDEVICE=xxx, of course.)  If you can't fit all the devices on a single
+any desired set of device drivers (as listed near the beginning of devs.mak
+and contrib.mak).  The first device listed in the definition of DEVICE_DEVS
+will be used as the default device (unless overridden from the command line
+with -sDEVICE=xxx, of course.)  If you can't fit all the devices on a single
 line, you may add lines defining
 	DEVICE_DEVS2=<dev21>.dev ... <dev2n>.dev
 	DEVICE_DEVS3=<dev31>.dev ... <dev3n>.dev
@@ -325,11 +332,12 @@ and changing them to
 
 If you do this, you are responsible for constructing or obtaining a file
 slzwe.c that implements LZW compression; such a file is not included in any
-current standard Ghostscript distribution, although you may be able to find
-one in distributions that predate Unisys' amnesty cutoff of January 1, 1995.
-You are also responsible for drawing your own conclusions about the
-applicability to LZW compression code of patents held by Unisys and/or IBM,
-and for obtaining any licenses you believe to be relevant.
+current standard Ghostscript distribution, although you may be able to adapt
+one that you may find in old Ghostscript distributions that predate Unisys'
+amnesty cutoff of January 1, 1995.  You are also responsible for drawing
+your own conclusions about the applicability to LZW compression code of
+patents held by Unisys and/or IBM, and for obtaining any licenses you
+believe to be relevant.
 
 Creating 'makefile'
 -------------------
@@ -344,9 +352,7 @@ if you are using gcc, or
 if you are using another ANSI C compiler, or
 	ln -s unix-cc.mak makefile
 if you are using a "traditional C" compiler.  If your Unix system doesn't
-support symbolic links, omit the -s switch.  Then, if you have edited any
-of the makefile components listed above, execute
-	tar_cat
+support symbolic links, omit the -s switch.
 
 On MS Windows with the Borland compiler, execute:
 	echo !include "bcwin32.mak" >makefile
@@ -511,6 +517,9 @@ switch, or the message
 	dwmain32.def: EXETYPE not supported for platform; ignored
 during linking.  Ignore them.
 
+The Microsoft VC++ 5.0 compiler locks up when compiling gxi12bit.c with /O2.
+Compile this file without /O2.
+
 Watcom environment
 ------------------
 
@@ -533,10 +542,10 @@ version of wmake).  If this is the version that you have, use wmake instead,
 i.e., edit wmakebat.bat to change wmakel to wmake.
 
 If you get an "Error(F01): Out of memory" with Watcom 8.5, you may wish to
-try reducing the total size of the makefiles by editing devs.mak to remove
-drivers that you don't ever intend to use.  If you still get this error,
-contact Watcom technical support; they will be able to send you the wmakel
-program, probably at no charge.
+try reducing the total size of the makefiles by editing devs.mak and/or
+contrib.mak to remove drivers that you don't ever intend to use.  If you
+still get this error, contact Watcom technical support; they will be able to
+send you the wmakel program, probably at no charge.
 
 DesqView/X and djgcc/djgpp environment
 --------------------------------------
@@ -670,34 +679,21 @@ for inclusion in the build:
 	  TIFF, PostScript images, PNG, distilled PDF, PostScript, and EPS,
 	  PCL XL ("PCL 6").
 
-The unix-*.mak files are actually generated mechanically from *head.mak,
-*tail.mak, unix-end.mak, and the platform-independent makefiles by a script
-called tar_cat.  If for some reason your copy of Ghostscript doesn't include
-the unix-*.mak files, run tar_cat to construct them.  If you wish to edit
-any part of the makefile,
-
-	DO NOT EDIT THE FILE NAMED makefile OR unix{ansi,-cc,-gcc}.mak.
-	EDIT THE ORIGINAL COMPONENT MAKEFILE (*head.mak, *tail.mak,
-	OR A PLATFORM-INDEPENDENT FILE) AND RUN tar_cat AGAIN.
-
-Consult tar_cat to find the names of the component files.
-
-The *head.mak files explicitly compile and link the libpng and zlib
-libraries into the executable.  If your Unix system already includes these
-libraries (probably in /usr/lib/libpng.{a,so} and libz.{a,so}) and you would
-rather use the system copies, change the definition of SHARE_LIBPNG and/or
-SHARE_ZLIB from 0 to 1 in the relevant *head.mak file, run tar_cat, and
-recompile.  Note that if you do this, you will get non-DEBUG versions of
-these libraries, even if you selected DEBUG in the Ghostscript makefile.
-
-The *head.mak files also compile and link the jpeg library into the
-executable.  Ghostscript doesn't offer a SHARE option for this library,
-because in order to be compatible with Adobe interpreters, Ghostscript has
-to compile the code with the non-standard definition
+The unix*.mak files explicitly compile and link the jpeg, libpng, and zlib
+libraries into the executable.  If your Unix system already includes the
+libpng and/or zlib libraries (probably in /usr/lib/libpng.{a,so} and
+libz.{a,so}) and you would rather use the system copies, change the
+definition of SHARE_LIBPNG and/or SHARE_ZLIB from 0 to 1 in the relevant
+unix*.mak file and recompile.  Note that if you do this, you will get
+non-DEBUG versions of these libraries, even if you selected DEBUG in the
+Ghostscript makefile.  At the insistence of some users, we have also
+provided the ability to do this with the jpeg library (SHARE_JPEG), but you
+should not use it: in order to be compatible with Adobe interpreters (which
+do not follow the JPEG standard exactly), Ghostscript has to compile the IJG
+code with the non-standard definition
 	#define D_MAX_BLOCKS_IN_MCU 64
-This is in contradiction to the JPEG standard, but at least some real
-PostScript files require this.  A shared system library would not be
-compiled this way.
+and since shared versions of this library will not have been compiled this
+way, you will get errors on some valid PostScript and PDF input files.
 
 If the X11 client header files are located in some directory which your
 compiler does not automatically search, you must change the XINCLUDE macro
@@ -862,9 +858,12 @@ Digital Unix
 ------------
 	Use the unixansi.mak file for all Digital Unix compilers.
 For versions of Digital Unix before 4.0, set
-		CFLAGS=-std -Olimit 1000 -g3 -O2 $(XCFLAGS)
+		CFLAGS=-std -migrate -Olimit 1000 -g3 -O2 $(XCFLAGS)
 		LDFLAGS=-lots $(XLDFLAGS)
-You may be able to omit the -g3.
+You may be able to omit the -g3.  For later versions of Digital Unix, users
+have reported that the proper flags are
+		CFLAGS=-std1 -Olimit 1000 -g3 -O2 $(XCFLAGS)
+again optionally omitting the -g3.
 	
 H-P RISC workstations
 ---------------------
@@ -943,7 +942,7 @@ XLIBS), or you will get a message when you start Ghostscript that the
 program or the shared library is in unrecognized format.  If this happens,
 you might try adding the switches
 	-b i486-linuxaout
-to both CFLAGS and LDFLAGS in gcc-head.mak, and rebuilding from scratch
+to both CFLAGS and LDFLAGS in unix-gcc.mak, and rebuilding from scratch
 ("make clean" and then "make").  If this doesn't help, or if other strange
 things happen, contact your Linux supplier or support resource.
 
@@ -964,20 +963,19 @@ NeXTSTEP
 	Current NeXTSTEP versions require changing the definition of INCLUDE
 in unixtail.mak (and ugcclib.mak, if you are using only the library) to
 		INCLUDE=/usr/include/bsd
-Don't forget to run tar_cat after you do this.
 
 For all NeXTSTEP systems, use unix-gcc.mak -- i.e., execute
 		ln -s unix-gcc.mak Makefile
 
 For NeXTSTEP versions before 3.2:
-	edit gcc-head.mak ->
+	edit unix-gcc.mak ->
 		change CC=gcc to CC=cc
 		add -D_NEXT_SOURCE to CFLAGS
 	change the two occurrences of sys/time.h to ansi/time.h, and
 	change <dirent.h> in gp_unifs.c to <sys/dirent.h>
 
 For NeXTSTEP 3.2 and later
-	edit gcc-head.mak ->
+	edit unix-gcc.mak ->
 		change CC=gcc to CC=cc
 		add -D_POSIX_SOURCE and remove -g in CFLAGS
 		remove -Wstrict-prototypes in GCFLAGS
@@ -1026,10 +1024,12 @@ XLIBDIRS=-L/usr/lpp/X11/lib.
 
 SCO Unix/Xenix
 --------------
+	The standard cc compiler on SCO OpenServer v5 has optimizer bugs.
+Compile without -O.
 	The SCO Unix C compiler apparently can't handle the Pn macros
 in std.h.  If you get strange compilation errors on SCO Unix, see if
 you can get a compiler fix from SCO.  Meanwhile, to use gcc with SCO
-ODT, see gcc-head.mak for the appropriate switch settings.  See also
+ODT, see unix-gcc.mak for the appropriate switch settings.  See also
 under "386 Unix" above.
 	gcc 2.3.3 produces code that causes a core dump on machines
 that don't have hardware floating point, because of a bug in SCO's
@@ -1039,11 +1039,11 @@ to the linker command (near the end of the unix-*.mak file) in order
 to get the date/time functions linked in.
 	If you want to use direct frame buffer addressing instead of X
 Windows, include the relevant frame buffer device(s) (ega.dev, vga.dev,
-etc.) and change gdevevga.c to gdevsco.c as indicated in devs.mak.  Note:
-this does not work with SuperVGA displays, except for 800x600x16 mode.
-Note also: If the display looks "smeared", try recompiling gdevpcfb.c with
--O0.  Note also: if Ghostscript crashes, use the -q switch and/or redirect
-console output to a file.
+etc.) and change gdevevga.c to gdevsco.c as indicated in contrib.mak.  Note:
+this does not work with SuperVGA displays, except for 800x600x16 mode.  Note
+also: If the display looks "smeared", try recompiling gdevpcfb.c with -O0.
+Note also: if Ghostscript crashes, use the -q switch and/or redirect console
+output to a file.
 	If your compiler accepts the -Xt and -Xa switches, use -Xt.
 Even though this causes the compiler to use incorrect rules for
 computing the result types of << and >>, -Xa enables "optimizations"
@@ -1104,6 +1104,10 @@ request the following patches:
     -------
 	Solaris 2.2 may require setting EXTRALIBS=-lsocket.
 	Solaris 2.3 and 2.4 seem to require EXTRALIBS=-lnsl -lsocket.
+	For Solaris 2.6 (and possibly some other versions), if you set
+SHARE_LIBPNG, SHARE_ZLIB, and/or SHARE_JPEG=1, you may need to set
+		XLDFLAGS=-R /usr/local/xxx/lib:/usr/local/lib
+using the full path names of the relevant directories.
 	Solaris 2.n uses /usr/openwin/share/include for the X11 libraries
 rather than /usr/local/X/include.
 	Solaris 2.n typically makes Type 1 fonts available in
@@ -1140,6 +1144,10 @@ and gettimeofday, change PLATFORM=unix_ in the makefile to
 PLATFORM=sysv_.
 	You will probably need to change the definition of INSTALL (near
 the beginning of the makefile) from install to /usr/ucb/install.
+
+Unixware
+--------
+	The standard cc compiler has optimizer bugs.  Compile without -O.
 
 VAX with Ultrix
 ---------------
@@ -1196,47 +1204,6 @@ and then specify the font names with the ccfonts1 symbol
 If the line gets too long, add another line of the same form, e.g.,
 	$ ccfonts1 = "Courier Courier_Oblique Courier_Bold Courier_BoldOblique"
 	$ ccfonts2 = "Times_Roman Times_Italic Times_Bold Times_BoldItalic"
-
-Using DCL command files
------------------------
-
-Up through Ghostscript version 5.0x, we have provided DCL command files for
-building Ghostscript.  We will no longer support this method in future
-versions, since we have found it almost impossible to keep the DCL scripts
-consistent with the makefiles that are used on all other platforms, and
-since using a 'make' program has other benefits such as recompiling only
-files that have changed.
-
-The files VMS-CC.MAK, VMS-GCC.MAK, and VMS-DECC.MAK are OpenVMS DCL command
-files which build Ghostscript from scratch using, respectively, the VAX C
-compiler, CC, the Free Software Foundation's GNU C compiler, GCC, or the DEC
-C compiler, CC.  Accordingly, you must have one of these compilers installed
-in order to build Ghostscript.  (Other C compilers may work: CC and GCC are
-the only two compilers tested to date.  DEC C V4.0 or later is required: the
-DEC C V1.3 run-time library has bugs that prevent Ghostscript from working.)
-These command files build and store the Ghostscript library in the object
-library GS.OLB.  If you have DECwindows (X11) installed on your system, the
-executable image GS.EXE will also be built.
-
-Some environments use the DWTLIBSHR library for providing the X Windows
-intrinsics, and some use the XTSHR library.  XTSHR is newer, and is part of
-the DECwindows/Motif product.  However, DEC is still distributing versions
-of VMS with DWTLIBSHR.  If your environment uses XTSHR, replace DWTLIBSHR in
-the list of link libraries with XTSHR.
-
-For OpenVMS VAX platforms with VAX C, issue the DCL command
-	$ @VMS-CC.MAK
-to build Ghostscript.  For OpenVMS platforms with GNU C (either AXP or
-VAX), issue the DCL command
-	$ @VMS-GCC.MAK
-to build Ghostscript.  For OpenVMS platforms with DEC C (either AXP or
-VAX), issue the DCL command
-	$ @VMS-DECC.MAK
-to build Ghostscript.
-
-The option "DEBUG" may be specified with either command file in order to
-build a debuggable Ghostscript configuration; e.g.,
-	$ @VMS-CC.MAK DEBUG
 
 Using GNU make
 --------------
@@ -1399,6 +1366,14 @@ $ SUMSLP VMSDIR.H/UPDATE=SYS$INPUT:
 ******** Other environments ********
 ********
 
+Plan 9
+------
+
+Use unix-gcc.mak, editing it to define
+	CC=cc
+	GCFLAGS=-D_BSD_EXTENSION -DPlan9
+You will also probably have to edit quite a few of the path names.
+
 QNX
 ---
 
@@ -1463,7 +1438,7 @@ function and more interestingly a FILE *tmpfile(void) function.
 If you ask I can fax you the manual pages.
 
 
-ANSIHEAD.MAK
+UNIXANSI.MAK
 
 Compiler options:
 -----------------
@@ -1480,61 +1455,3 @@ The -mf on CFLAGS and LDFLAGS is very necessary (32-bit flat memory
 model).
 The -3 and -O and -g and -w3 and -w4 are just fluff.
 The -fF option doesn't make sense to me.
-
-********
-******** A guide to the source code ********
-********
-
-General
--------
-
-There are very few machine dependencies in Ghostscript.  A few of the .c
-files are machine-specific.  These have names of the form
-	gp_<platform>.c
-specifically
-	gp_dosfb.c (MS-DOS)
-	gp_dosfs.c (MS-DOS and MS Windows)
-	gp_itbc.c (MS-DOS, Borland compilers)
-	gp_iwatc.c (MS-DOS, Watcom or Microsoft compiler)
-	gp_msdos.c (MS-DOS and MS Windows)
-	gp_ntfs.c (MS-Windows Win32s and Windows NT)
-	gp_os2.c (OS/2)
-	gp_os9.c (OS-9)
-	gp_unifs.c (Unix or OS-9)
-	gp_unix.c (Unix)
-	gp_sysv.c (System V Unix)
-	gp_vms.c (VMS)
-	gp_win32.c (MS-Windows Win32s and Windows NT)
-There are also some machine-specific conditionals in files with names
-<something>_.h.  If you are going to extend Ghostscript to new
-machines or operating systems, you should check the *_.h files for
-ifdef's on things other than DEBUG, and you should probably count on
-making a new makefile and a new gp_ file.
-
-Library
--------
-
-Files beginning with gs, gx, or gz (both .c and .h), other than gs.c and
-gserver.c, are the Ghostscript library.  Files beginning with gdev are
-device drivers or related code, also part of the library.  Other files
-beginning with g are library files that don't fall neatly into either the
-kernel or the driver category.
-
-Interpreter
------------
-
-gs.c is the main program for the interactive language interpreter; gserver.c
-is an alternative main program that is a rudimentary server.  If you
-configure Ghostscript as a server rather than an interactive program, you
-will use gserver.c instead of gs.c.
-
-Files named z*.c are Ghostscript operator files.  The names of the files
-generally follow the section headings of the operator summary in section
-6.2 of the PostScript manual.
-
-Files named i*.c, and *.h other than g*.h, are the rest of the
-interpreter.  See the makefile for a little more information on how the
-files are divided functionally.
-
-Files named s*.c are a flexible stream package, including the Level 2
-PostScript 'filters' supported by Ghostscript.

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,11 @@
    all copies.
  */
 
-/* gdevpdfi.c */
+/*Id: gdevpdfi.c  */
 /* Image handling for PDF-writing driver */
 #include "math_.h"
 #include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsflip.h"
@@ -28,96 +29,26 @@
 #include "gscolor2.h"		/* for gscie.h */
 #include "gscie.h"		/* requires gscspace.h */
 #include "gxistate.h"
+#include "jpeglib.h"		/* for sdct.h */
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
+#include "sdct.h"
+#include "slzwx.h"
+#include "spngpx.h"
 #include "srlx.h"
+#include "szlibx.h"
 
 /* We need color space types for constructing temporary color spaces. */
 extern const gs_color_space_type
       gs_color_space_type_DeviceGray, gs_color_space_type_DeviceRGB, gs_color_space_type_DeviceCMYK,
       gs_color_space_type_Indexed;
 
+/* Import procedures for writing filter parameters. */
+extern stream_state_proc_get_params(s_DCTE_get_params, stream_DCT_state);
+extern stream_state_proc_get_params(s_CF_get_params, stream_CF_state);
+
 /* ---------------- Utilities ---------------- */
-
-/* ------ Binary data ------ */
-
-/* Define the structure for the filters for writing binary data. */
-typedef struct pdf_binary_writer_s {
-    stream *strm;
-    stream es;			/* no state for A85E */
-    byte encode_buf[256];
-    stream cs;			/* client provides (initialized) state */
-    byte compress_buf[256];
-} pdf_binary_writer;
-
-private const stream_procs filter_write_procs =
-{s_std_noavailable, s_std_noseek, s_std_write_reset,
- s_std_write_flush, s_filter_close
-};
-
-/* Begin writing binary data. */
-/* If css is not NULL, it is the compressor stream state. */
-private int
-pdf_begin_binary(gx_device_pdf * pdev, pdf_binary_writer * pbw,
-		 stream_state * css)
-{
-    stream *s = pdev->strm;
-
-    /* If not binary, set up the encoding stream. */
-    if (!pdev->binary_ok) {
-	stream *es = &pbw->es;
-
-	s_std_init(es, pbw->encode_buf, sizeof(pbw->encode_buf),
-		   &filter_write_procs, s_mode_write);
-	es->template = &s_A85E_template;
-	es->procs.process = es->template->process;
-	es->strm = s;
-	s = es;
-    }
-    /* If compressing, set up the compression stream. */
-    if (css) {
-	stream *cs = (stream *) & pbw->cs;
-	const stream_template *template = css->template;
-
-	s_std_init(cs, pbw->compress_buf, sizeof(pbw->compress_buf),
-		   &filter_write_procs, s_mode_write);
-	css->memory = pdev->pdf_memory;
-	cs->state = css;
-	cs->procs.process = template->process;
-	if (template->init)
-	    (*template->init) (css);
-	cs->strm = s;
-	s = cs;
-    }
-    pbw->strm = s;
-    return 0;
-}
-
-/* Finish writing binary data. */
-private int
-pdf_end_binary(gx_device_pdf * pdev, pdf_binary_writer * pbw)
-{
-    stream *s = pbw->strm;
-
-    /* Close the filters in reverse order. */
-    /* Stop before we try to close the file stream. */
-    while (s != pdev->strm) {
-	stream *next = s->strm;
-
-	/* We have to open-code sclose, because we want to release */
-	/* the stream state but not try to free it. */
-	stream_state *st = s->state;
-
-	stream_proc_release((*release)) = st->template->release;
-	(*s->procs.close) (s);
-	if (release != 0)
-	    (*release) (st);
-	s = next;
-    }
-    sflush(s);			/* flush the file stream buffer */
-    return 0;
-}
 
 /* ------ Images ------ */
 
@@ -204,45 +135,56 @@ cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
 /* and other strings for images. */
 typedef struct pdf_image_names_s {
     const char *ASCII85Decode;
+    const char *ASCIIHexDecode;
     const char *BitsPerComponent;
     const char *CalCMYK;
     const char *CalGray;
     const char *CalRGB;
     const char *CCITTFaxDecode;
     const char *ColorSpace;
+    const char *DCTDecode;
     const char *Decode;
     const char *DecodeParms;
     const char *DeviceCMYK;
     const char *DeviceGray;
     const char *DeviceRGB;
     const char *Filter;
+    const char *FlateDecode;
     const char *Height;
     const char *ImageMask;
     const char *Indexed;
     const char *Interpolate;
+    const char *LZWDecode;
+    const char *RunLengthDecode;
     const char *Width;
 } pdf_image_names;
 private const pdf_image_names image_names_full =
 {
-    "/ASCII85Decode", "/BitsPerComponent",
+    "/ASCII85Decode", "/ASCIIHexDecode", "/BitsPerComponent",
     "/CalCMYK", "/CalGray", "/CalRGB", "/CCITTFaxDecode", "/ColorSpace",
-    "/Decode", "/DecodeParms", "/DeviceCMYK", "/DeviceGray", "/DeviceRGB",
-    "/Filter", "/Height", "/ImageMask", "/Indexed", "/Interpolate", "/Width",
+    "/DCTDecode", "/Decode", "/DecodeParms",
+    "/DeviceCMYK", "/DeviceGray", "/DeviceRGB",
+    "/Filter", "/FlateDecode", "/Height", "/ImageMask", "/Indexed",
+    "/Interpolate", "/LZWDecode", "/RunLengthDecode", "/Width"
 };
 private const pdf_image_names image_names_short =
 {
-    "/A85", "/BPC",
-	/* We need CalRGB to work around a bug in some Adobe products. */
-    "/CC", "/CG", /*"/CR" */ "/CalRGB", "/CCF", "/CS",
-    "/D", "/DP", "/CMYK", "/G", "/RGB",
-    "/F", "/H", "/IM", "/I", "/I", "/W",
+    "/A85", "/AHx", "/BPC",
+	/*
+	 * Based on Adobe's published PDF documentation, it appears that the
+	 * abbreviations for the calibrated color spaces were introduced in
+	 * PDF 1.1 (added to Table 7.3) and removed in PDF 1.2 (Table 8.1)!
+	 */
+"/CalCMYK" /*CC */ , "/CalGray" /*CG */ , "/CalRGB" /*CR */ , "/CCF", "/CS",
+    "/DCT", "/D", "/DP",
+    "/CMYK", "/G", "/RGB",
+    "/F", "/Fl", "/H", "/IM", "/I",
+    "/I", "/LZW", "/RL", "/W"
 };
 
-/* Write out image parameters for either an in-line image or image resource. */
-/* decode_parms, if supplied, must start with /, [, or <<. */
+/* Write out the values of image parameters other than filters. */
 private int
-pdf_write_image_params(gx_device_pdf * pdev, const gs_image_t * pim,
-		       const char *filter_name, const char *decode_parms,
+pdf_write_image_values(gx_device_pdf * pdev, const gs_image_t * pim,
 		       const pdf_image_names * pin)
 {
     stream *s = pdev->strm;
@@ -351,7 +293,7 @@ pdf_write_image_params(gx_device_pdf * pdev, const gs_image_t * pim,
 	    pprints1(s, " %s", cs_name);
 	num_components = gs_color_space_num_components(pbcs);
 	if (pip) {
-	    register const char _ds *hex_digits = "0123456789abcdef";
+	    register const char *const hex_digits = "0123456789abcdef";
 	    int i;
 
 	    pprintd1(s, " %d\n<", pip->hival);
@@ -393,19 +335,104 @@ pdf_write_image_params(gx_device_pdf * pdev, const gs_image_t * pim,
     }
     if (pim->Interpolate)
 	pprints1(s, "%s true", pin->Interpolate);
+    return 0;
+}
+
+/* Write out filters for an image. */
+/* Currently this only writes parameters for CCITTFaxDecode. */
+private int
+pdf_write_image_filters(gx_device_pdf * pdev, const psdf_binary_writer * pbw,
+			const pdf_image_names * pin)
+{
+    stream *s = pdev->strm;
+    const char *filter_name = 0;
+    bool binary_ok = true;
+    stream *fs = pbw->strm;
+    byte decode_parms[100];	/* must be large enough, see below */
+    stream s_parms;
+    gs_param_list *printer;
+
+    swrite_string(&s_parms, decode_parms, sizeof(decode_parms));
+    for (; fs != s; fs = fs->strm) {
+	const stream_state *st = fs->state;
+	const stream_template *template = st->template;
+
+	if (template == &s_A85E_template)
+	    binary_ok = false;
+	else if (template == &s_CFE_template) {
+	    param_printer_params_t ppp;
+	    stream_CF_state cfs;
+	    int code;
+
+	    ppp = param_printer_params_default;
+	    ppp.prefix = "<<";
+	    ppp.suffix = ">>";
+	    code = psdf_alloc_param_printer(&printer, &ppp, &s_parms,
+					    0 /*no strings */ ,
+					    pdev->pdf_memory);
+	    if (code < 0)
+		return code;
+	    /*
+	     * If EndOfBlock is true, we mustn't write out a Rows value.
+	     * This is a hack....
+	     */
+	    cfs = *(const stream_CF_state *)st;
+	    if (cfs.EndOfBlock)
+		cfs.Rows = 0;
+	    code = s_CF_get_params(printer, &cfs, false);
+	    psdf_free_param_printer(printer);
+	    if (code < 0)
+		return code;
+	    filter_name = pin->CCITTFaxDecode;
+	} else if (template == &s_DCTE_template)
+	    filter_name = pin->DCTDecode;
+	else if (template == &s_zlibE_template)
+	    filter_name = pin->FlateDecode;
+	else if (template == &s_LZWE_template)
+	    filter_name = pin->LZWDecode;
+	else if (template == &s_PNGPE_template) {
+	    /* This is a predictor for FlateDecode or LZWEncode. */
+	    const stream_PNGP_state *const ss =
+	    (const stream_PNGP_state *)st;
+
+	    pprintd1(&s_parms, "<</Predictor %d", ss->Predictor);
+	    pprintld1(&s_parms, "/Columns %ld", (long)ss->Columns);
+	    if (ss->Colors != 1)
+		pprintd1(&s_parms, "/Colors %d", ss->Colors);
+	    if (ss->BitsPerComponent != 8)
+		pprintd1(&s_parms, "/BitsPerComponent %d", ss->BitsPerComponent);
+	    pputs(&s_parms, ">>");
+	} else if (template == &s_RLE_template)
+	    filter_name = pin->RunLengthDecode;
+    }
+    spputc(&s_parms, 0);	/* null terminator */
+    sclose(&s_parms);
     if (filter_name) {
-	if (pdev->binary_ok)
+	if (binary_ok)
 	    pprints2(s, "%s%s", pin->Filter, filter_name);
 	else
 	    pprints3(s, "%s[%s%s]", pin->Filter, pin->ASCII85Decode,
 		     filter_name);
-	if (decode_parms)
+	if (decode_parms[0])
 	    pprints2(s,
-		     (pdev->binary_ok ? "%s%s" : "%s[null%s]"),
-		     pin->DecodeParms, decode_parms);
-    } else if (!pdev->binary_ok)
+		     (binary_ok ? "%s%s" : "%s[null%s]"),
+		     pin->DecodeParms, (const char *)decode_parms);
+    } else if (!binary_ok)
 	pprints2(s, "%s%s", pin->Filter, pin->ASCII85Decode);
     return 0;
+}
+
+/* Write out image parameters for an in-line image or an image resource. */
+/* decode_parms, if supplied, must start with /, [, or <<. */
+private int
+pdf_write_image_params(gx_device_pdf * pdev, const gs_image_t * pim,
+		const psdf_binary_writer * pbw, const pdf_image_names * pin)
+{
+    int code = pdf_write_image_values(pdev, pim, pin);
+
+    if (code < 0)
+	return code;
+    return pdf_write_image_filters(pdev, pbw, pin);
 }
 
 /* Fill in the image parameters for a device space bitmap. */
@@ -437,9 +464,19 @@ pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat)
 
 /* ------ Image writing ------ */
 
+/* Forward references */
+private image_enum_proc_plane_data(pdf_image_plane_data);
+private dev_proc_end_image(pdf_end_image);
+
+private const gx_image_enum_procs_t pdf_image_enum_procs =
+{
+    pdf_image_plane_data,
+    pdf_end_image
+};
+
 /* Define the structure for writing an image. */
 typedef struct pdf_image_writer_s {
-    pdf_binary_writer binary;
+    psdf_binary_writer binary;
     const pdf_image_names *pin;
     const char *begin_data;
     pdf_resource *pres;		/* XObject resource iff not in-line */
@@ -459,7 +496,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw, bool in_line
 	piw->pin = &image_names_short;
 	piw->begin_data = (pdev->binary_ok ? "ID " : "ID\n");
     } else {
-	int code = pdf_begin_resource(pdev, resourceXObject, gs_no_id,
+	int code = pdf_begin_resource(pdev, resourceImageXObject, gs_no_id,
 				      &piw->pres);
 	stream *s = pdev->strm;
 
@@ -477,11 +514,10 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw, bool in_line
 /* Begin writing the image data. */
 private int
 pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
-  const gs_image_t * pim, const char *filter_name, const char *decode_parms)
+		     const gs_image_t * pim)
 {
     stream *s = pdev->strm;
-    int code = pdf_write_image_params(pdev, pim, filter_name, decode_parms,
-				      piw->pin);
+    int code = pdf_write_image_params(pdev, pim, &piw->binary, piw->pin);
 
     if (code < 0)
 	return code;
@@ -614,12 +650,13 @@ gdev_pdf_copy_mono(gx_device * dev,
 	gs_image_t_init_mask(&image, false);
 	pdf_set_color(pdev, zero, &pdev->fill_color, "rg");
     } else if (zero == 0 && one == 0xffffff) {
-	gs_image_t_init_gray(&image);
+	cs.type = &gs_color_space_type_DeviceGray;
+	gs_image_t_init(&image, &cs);
     } else if (zero == 0xffffff && one == 0) {
-	gs_image_t_init_gray(&image);
+	cs.type = &gs_color_space_type_DeviceGray;
+	gs_image_t_init(&image, &cs);
 	invert = 0xff;
     } else {
-	gs_image_t_init_color(&image);
 	cs.type = &gs_color_space_type_Indexed;
 	cs.params.indexed.hival = 1;
 	palette[0] = (byte) (zero >> 16);
@@ -631,8 +668,8 @@ gdev_pdf_copy_mono(gx_device * dev,
 	cs.params.indexed.lookup.table.data = palette;
 	cs.params.indexed.lookup.table.size = 6;
 	cs.params.indexed.use_proc = false;
+	gs_image_t_init(&image, &cs);
 	image.BitsPerComponent = 1;
-	image.ColorSpace = &cs;
     }
     pdf_make_bitmap_image(&image, x, y, w, h);
     {
@@ -658,50 +695,40 @@ gdev_pdf_copy_mono(gx_device * dev,
 				 * simply because there would be an awful lot of parameters
 				 * that would need to be passed.
 				 */
-    {
-	char decode_parms[80];
-
-	sprintf(decode_parms,
-		"<</K -1/Columns %d%s>>",
-		w, (invert ? "" : "/BlackIs1 true"));
-	pdf_begin_image_data(pdev, &writer, &image,
-			     writer.pin->CCITTFaxDecode, decode_parms);
+    psdf_begin_binary((gx_device_psdf *) pdev, &writer.binary);
+    if (pres) {
+	/* Always use CCITTFax 2-D for character bitmaps. */
+	psdf_CFE_binary(&writer.binary, image.Width, image.Height, false);
+    } else {
+	/* Use the Distiller compression parameters. */
+	psdf_setup_image_filters((gx_device_psdf *) pdev, &writer.binary,
+				 &image, NULL, NULL);
     }
-    {
-	stream_CFE_state csstate;
+    pdf_begin_image_data(pdev, &writer, &image);
+    for (yi = 0; yi < h; ++yi) {
+	const byte *data = base + yi * raster + (sourcex >> 3);
+	int sbit = sourcex & 7;
 
-	csstate.template = &s_CFE_template;
-	(*csstate.template->set_defaults) ((stream_state *) & csstate);
-	csstate.K = -1;
-	csstate.Columns = w;
-	csstate.Rows = h;
-	csstate.BlackIs1 = invert == 0;
-	pdf_begin_binary(pdev, &writer.binary, (stream_state *) & csstate);
-	for (yi = 0; yi < h; ++yi) {
-	    const byte *data = base + yi * raster + (sourcex >> 3);
-	    int sbit = sourcex & 7;
+	if (sbit == 0) {
+	    int nbytes = (w + 7) >> 3;
+	    int i;
 
-	    if (sbit == 0) {
-		int nbytes = (w + 7) >> 3;
-		int i;
+	    for (i = 0; i < nbytes; ++data, ++i)
+		sputc(writer.binary.strm, *data ^ invert);
+	} else {
+	    int wleft = w;
+	    int rbit = 8 - sbit;
 
-		for (i = 0; i < nbytes; ++data, ++i)
-		    sputc(writer.binary.strm, *data ^ invert);
-	    } else {
-		int wleft = w;
-		int rbit = 8 - sbit;
-
-		for (; wleft + sbit > 8; ++data, wleft -= 8)
-		    sputc(writer.binary.strm,
-			  ((*data << sbit) + (data[1] >> rbit)) ^ invert);
-		if (wleft > 0)
-		    sputc(writer.binary.strm,
-			  ((*data << sbit) ^ invert) &
-			  (byte) (0xff00 >> wleft));
-	    }
+	    for (; wleft + sbit > 8; ++data, wleft -= 8)
+		sputc(writer.binary.strm,
+		      ((*data << sbit) + (data[1] >> rbit)) ^ invert);
+	    if (wleft > 0)
+		sputc(writer.binary.strm,
+		      ((*data << sbit) ^ invert) &
+		      (byte) (0xff00 >> wleft));
 	}
-	pdf_end_binary(pdev, &writer.binary);
     }
+    psdf_end_binary(&writer.binary);
     if (!pres) {
 	switch (pdf_end_write_image(pdev, &writer)) {
 	    default:		/* error */
@@ -750,23 +777,26 @@ gdev_pdf_copy_color(gx_device * dev,
 	return 0;
     /* Make sure we aren't being clipped. */
     pdf_put_clip_path(pdev, NULL);
-    gs_image_t_init_color(&image);
-    pdf_make_bitmap_image(&image, x, y, w, h);
-    image.BitsPerComponent = 8;
     cs.type = (bytes_per_pixel == 3 ? &gs_color_space_type_DeviceRGB :
 	       bytes_per_pixel == 4 ? &gs_color_space_type_DeviceCMYK :
 	       &gs_color_space_type_DeviceGray);
-    image.ColorSpace = &cs;
+    gs_image_t_init(&image, &cs);
+    pdf_make_bitmap_image(&image, x, y, w, h);
+    image.BitsPerComponent = 8;
     nbytes = (ulong) w *bytes_per_pixel * h;
 
     pdf_put_image_matrix(pdev, &image.ImageMatrix);
     code = pdf_begin_write_image(pdev, &writer, nbytes <= 4000);
     if (code < 0)
 	return code;
-    code = pdf_begin_image_data(pdev, &writer, &image, NULL, NULL);
+    psdf_begin_binary((gx_device_psdf *) pdev, &writer.binary);
+    code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+				    &writer.binary, &image, NULL, NULL);
     if (code < 0)
 	return code;
-    pdf_begin_binary(pdev, &writer.binary, NULL);
+    code = pdf_begin_image_data(pdev, &writer, &image);
+    if (code < 0)
+	return code;
     for (yi = 0; yi < h; ++yi) {
 	uint ignore;
 
@@ -774,7 +804,7 @@ gdev_pdf_copy_color(gx_device * dev,
 	      base + sourcex * bytes_per_pixel + yi * raster,
 	      w * bytes_per_pixel, &ignore);
     }
-    pdf_end_binary(pdev, &writer.binary);
+    psdf_end_binary(&writer.binary);
     code = pdf_end_write_image(pdev, &writer);
     switch (code) {
 	default:
@@ -819,10 +849,10 @@ gdev_pdf_fill_mask(gx_device * dev,
 
 /* Define the structure for keeping track of progress through an image. */
 typedef struct pdf_image_enum_s {
+    gx_image_enum_common;
     gs_memory_t *memory;
-    void *default_info;
+    gx_image_enum_common_t *default_info;
     int width;
-    int num_planes;
     int bits_per_pixel;		/* bits per pixel (per plane) */
     int rows_left;
     pdf_image_writer writer;
@@ -893,7 +923,7 @@ gdev_pdf_begin_image(gx_device * dev,
 		     const gs_imager_state * pis, const gs_image_t * pim,
 		     gs_image_format_t format, const gs_int_rect * prect,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		     gs_memory_t * mem, void **pinfo)
+		     gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     int code = pdf_open_page(pdev, pdf_in_stream);
@@ -902,6 +932,7 @@ gdev_pdf_begin_image(gx_device * dev,
     int num_components =
     (pim->ImageMask ? 1 : gs_color_space_num_components(pcs));
     gs_int_rect rect;
+    gs_image_t image;		/* we may change some components */
     ulong nbytes;
 
     if (code < 0)
@@ -912,18 +943,25 @@ gdev_pdf_begin_image(gx_device * dev,
 	rect.p.x = rect.p.y = 0;
 	rect.q.x = pim->Width, rect.q.y = pim->Height;
     }
+    image = *pim;
+#define pim (&image)
     /* See above for why we allocate the enumerator as immovable. */
     pie = gs_alloc_struct_immovable(mem, pdf_image_enum,
 				    &st_pdf_image_enum,
 				    "pdf_begin_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
+    *pinfo = (gx_image_enum_common_t *) pie;
+    gx_image_enum_common_init(*pinfo, (gs_image_common_t *) pim,
+			      &pdf_image_enum_procs, dev,
+			      pim->BitsPerComponent, num_components,
+			      format);
     pie->memory = mem;
-    *pinfo = pie;
+    pie->default_info = 0;
     if ((pim->ImageMask ?
 	 (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
 	 !pdf_can_handle_color_space(pim->ColorSpace)) ||
-	prect
+	prect != 0
 	) {
 	int code = gx_default_begin_image(dev, pis, pim, format, prect,
 					  pdcolor, pcpath, mem,
@@ -933,19 +971,7 @@ gdev_pdf_begin_image(gx_device * dev,
 	    gs_free_object(mem, pie, "pdf_begin_image");
 	return code;
     }
-    pie->default_info = 0;
     pie->width = rect.q.x - rect.p.x;
-    switch (format) {
-	case gs_image_format_chunky:
-	    pie->num_planes = 1;
-	    break;
-	case gs_image_format_component_planar:
-	    pie->num_planes = num_components;
-	    break;
-	case gs_image_format_bit_planar:
-	    pie->num_planes = num_components * pim->BitsPerComponent;
-	    break;
-    }
     pie->bits_per_pixel =
 	pim->BitsPerComponent * num_components / pie->num_planes;
     pie->rows_left = rect.q.y - rect.p.y;
@@ -975,21 +1001,28 @@ gdev_pdf_begin_image(gx_device * dev,
     code = pdf_begin_write_image(pdev, &pie->writer, nbytes <= 4000);
     if (code < 0)
 	return code;
-    code = pdf_begin_image_data(pdev, &pie->writer, pim, NULL, NULL);
+    psdf_begin_binary((gx_device_psdf *) pdev, &pie->writer.binary);
+/****** pctm IS WRONG ******/
+    code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+				    &pie->writer.binary, pim,
+				    &ctm_only(pis), pis);
     if (code < 0)
 	return code;
-    pdf_begin_binary(pdev, &pie->writer.binary, NULL);
+    code = pdf_begin_image_data(pdev, &pie->writer, pim);
+    if (code < 0)
+	return code;
     return 0;
+#undef pim
 }
 
 /* Process the next piece of an image. */
-int
-gdev_pdf_image_data(gx_device * dev,
-      void *info, const byte ** planes, int data_x, uint raster, int height)
+private int
+pdf_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
+		     const gx_image_plane_t * planes, int height)
 {
-    pdf_image_enum *pie = info;
+    pdf_image_enum *pie = (pdf_image_enum *) info;
     int h = height;
-    uint y_offset = 0;
+    int y;
     uint bcount;
     uint ignore;
     int nplanes = pie->num_planes;
@@ -998,47 +1031,53 @@ gdev_pdf_image_data(gx_device * dev,
     byte row[row_bytes];
 
     if (pie->default_info)
-	return gx_default_image_data(dev, pie->default_info, planes, data_x,
-				     raster, height);
+	return gx_device_image_plane_data(dev, pie->default_info, planes,
+					  height);
     if (h > pie->rows_left)
 	h = pie->rows_left;
     pie->rows_left -= h;
-    bcount = ((data_x + pie->width) * pie->bits_per_pixel + 7) >> 3;
-    for (; h > 0; y_offset += raster, --h) {
-	if (nplanes > 1) {	/* Flip the data in blocks before writing. */
-	    uint offset = y_offset;
+/****** DOESN'T HANDLE NON-ZERO data_x CORRECTLY ******/
+    bcount =
+	((planes[0].data_x + pie->width) * pie->plane_depths[0] + 7) >> 3;
+    for (y = 0; y < h; ++y) {
+	if (nplanes > 1) {
+	    /* Flip the data in blocks before writing. */
 	    uint count = bcount;
 
 	    while (count) {
 		uint flip_count = min(count, row_bytes / nplanes);
+		const byte *bit_planes[gs_image_max_components];
+		int pi;
 
-		image_flip_planes(row, planes, offset, flip_count, nplanes,
-				  pie->bits_per_pixel);
+		for (pi = 0; pi < nplanes; ++pi)
+		    bit_planes[pi] = planes[pi].data + planes[pi].raster * y;
+		image_flip_planes(row, bit_planes, 0, flip_count, nplanes,
+				  pie->plane_depths[0]);
 		sputs(pie->writer.binary.strm, row, flip_count * nplanes,
 		      &ignore);
 		count -= flip_count;
-		offset += flip_count;
 	    }
-	} else
-	    sputs(pie->writer.binary.strm, planes[0] + y_offset, bcount,
-		  &ignore);
+	} else {
+	    sputs(pie->writer.binary.strm,
+		  planes[0].data + planes[0].raster * y, bcount, &ignore);
+	}
     }
     return !pie->rows_left;
 #undef row_bytes
 }
 
 /* Clean up by releasing the buffers. */
-int
-gdev_pdf_end_image(gx_device * dev, void *info, bool draw_last)
+private int
+pdf_end_image(gx_device * dev, gx_image_enum_common_t * info, bool draw_last)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
-    pdf_image_enum *pie = info;
+    pdf_image_enum *pie = (pdf_image_enum *) info;
     int code;
 
     if (pie->default_info)
 	code = gx_default_end_image(dev, pie->default_info, draw_last);
     else {
-	code = pdf_end_binary(pdev, &pie->writer.binary);
+	code = psdf_end_binary(&pie->writer.binary);
 	if (code < 0)
 	    return code;
 	code = pdf_end_write_image(pdev, &pie->writer);

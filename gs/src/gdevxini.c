@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevxini.c */
+/*Id: gdevxini.c  */
 /* X Windows driver initialization for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"
@@ -463,7 +463,7 @@ gdev_x_open(register gx_device_X * xdev)
 	gx_default_get_initial_matrix(dev, &(xdev->initial_matrix));
 
 	if (xdev->pwin != (Window) None && xid_width != 0 && xid_height != 0) {
-#if 0
+#if 0				/*************** */
 
 	    /*
 	     * The user who originally implemented the WindowID feature
@@ -484,7 +484,7 @@ gdev_x_open(register gx_device_X * xdev)
 		= xdev->initial_matrix.yy *
 		(float)xid_height / (float)xdev->height;
 
-#endif
+#endif /*************** */
 	    xdev->width = xid_width;
 	    xdev->height = xid_height;
 	    xdev->initial_matrix.ty = xdev->height;
@@ -886,6 +886,20 @@ gdev_x_setup_colors(gx_device_X * xdev)
     } else {
 	eprintf1("Unknown palette: %s\n", xdev->palette);
 	return_error(gs_error_rangecheck);
+    }
+    {
+	int count = 1 << min(xdev->color_info.depth, 8);
+
+	xdev->color_to_rgb_size = count;
+	xdev->color_to_rgb =
+	    (x11_rgb_t *) gs_malloc(sizeof(x11_rgb_t), count, "gdevx color_to_rgb");
+	if (xdev->color_to_rgb) {
+	    int i;
+
+	    for (i = 0; i < count; ++i)
+		xdev->color_to_rgb[i].defined = false;
+	} else
+	    xdev->color_to_rgb_size = 0;
     }
     return 0;
 }

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevtifs.c */
+/*Id: gdevtifs.c  */
 /* TIFF-writing substructure */
 #include "stdio_.h"
 #include "time_.h"

@@ -1,22 +1,22 @@
 /* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+  
+  This file is part of Aladdin Ghostscript.
+  
+  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+  or distributor accepts any responsibility for the consequences of using it,
+  or for whether it serves any particular purpose or works at all, unless he
+  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+  License (the "License") for full details.
+  
+  Every copy of Aladdin Ghostscript must include a copy of the License,
+  normally in a plain ASCII text file named PUBLIC.  The License grants you
+  the right to copy, modify and redistribute Aladdin Ghostscript, but only
+  under certain conditions described in the License.  Among other things, the
+  License requires that the copyright notice and this notice be preserved on
+  all copies.
+*/
 
-   This file is part of Aladdin Ghostscript.
-
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
-
-   Every copy of Aladdin Ghostscript must include a copy of the License,
-   normally in a plain ASCII text file named PUBLIC.  The License grants you
-   the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
- */
-
-/* gdevstc4.c */
+/*Id: gdevstc4.c */
 /* Epson Stylus-Color Printer-Driver */
 
 /***
@@ -38,23 +38,16 @@
  * escp2c_pick best scans for best matching color 
  */
 private byte *
-escp2c_pick_best(byte * col)
+escp2c_pick_best(byte *col)
 {
-    static byte colour[8][3] =
-    {
-	{0, 0, 0},
-	{255, 0, 0},
-	{0, 255, 0},
-	{255, 255, 0},
-	{0, 0, 255},
-	{255, 0, 255},
-	{0, 255, 255},
-	{255, 255, 255}};
+    static byte colour[8][3] = {
+       {  0,  0,  0},{255,  0,  0},{  0,255,  0},{255,255,  0},
+       {  0,  0,255},{255,  0,255},{  0,255,255},{255,255,255}};
     register int x, y, z, dx, dy, dz, dz2, dx2, dx3, dx4;
     register byte *p;
     register long md, d;
 
-    md = 16777216;		/* plenty */
+    md = 16777216; /* plenty */
 
 /*
    Note that I don't use a simple distance algorithm. That can lead to a block
@@ -62,27 +55,27 @@ escp2c_pick_best(byte * col)
    it use black-white-red. This is very important, as a coloured block in
    the middle of a grey block can, via error diffusion, perturb the
    surrounding colours sufficiently for this to happen.
- */
+*/
 
 /*
    The next bit is equivalent to this, but faster.
 
-   x = col[0];
-   y = col[1];
-   z = col[2];
-   for(n=8; n--; )
-   {
-   dx = x - colour[n][0];
-   dy = y - colour[n][1];
-   dz = z - colour[n][2];
-   d = dx*(dx-(dy>>1)) + dy*(dy-(dz>>1)) + dz*(dz-(dx>>1));
-   if (d < md)
-   {
-   md = d;
-   p = n;
-   }
-   }
- */
+    x = col[0];
+    y = col[1];
+    z = col[2];
+    for(n=8; n--; )
+    {
+	dx = x - colour[n][0];
+	dy = y - colour[n][1];
+	dz = z - colour[n][2];
+	d = dx*(dx-(dy>>1)) + dy*(dy-(dz>>1)) + dz*(dz-(dx>>1));
+	if (d < md)
+	{
+	    md = d;
+	    p = n;
+	}
+    }
+*/
 
 /*
  * Test colours in gray code order to reduce number of recalculations.
@@ -92,64 +85,44 @@ escp2c_pick_best(byte * col)
     x = col[0];
     y = col[1];
     z = col[2];
-    dx = x * (x - (y >> 1));
-    dy = y * (y - (z >> 1));
-    dz = z * (z - (x >> 1));
+    dx = x*(x-(y>>1));
+    dy = y*(y-(z>>1));
+    dz = z*(z-(x>>1));
     md = dx + dy + dz;
     p = colour[0];
     x -= 255;
-    dx2 = x * (x - (y >> 1));
-    dz2 = z * (z - (x >> 1));
-    if ((d = dx2 + dy + dz2) < md) {
-	md = d;
-	p = colour[1];
-    }
+    dx2 = x*(x-(y>>1));
+    dz2 = z*(z-(x>>1));
+    if ((d = dx2 + dy + dz2) < md) {md = d; p = colour[1];}
     y -= 255;
-    dx3 = x * (x - (y >> 1));
-    dy = y * (y - (z >> 1));
-    if ((d = dx3 + dy + dz2) < md) {
-	md = d;
-	p = colour[3];
-    }
+    dx3 = x*(x-(y>>1));
+    dy = y*(y-(z>>1));
+    if ((d = dx3 + dy + dz2) < md) {md = d; p = colour[3];}
     x += 255;
-    dx4 = x * (x - (y >> 1));
-    if ((d = dx4 + dy + dz) < md) {
-	md = d;
-	p = colour[2];
-    }
+    dx4 = x*(x-(y>>1));
+    if ((d = dx4 + dy + dz) < md) {md = d; p = colour[2];}
     z -= 255;
-    dy = y * (y - (z >> 1));
-    dz = z * (z - (x >> 1));
-    if ((d = dx4 + dy + dz) < md) {
-	md = d;
-	p = colour[6];
-    }
+    dy = y*(y-(z>>1));
+    dz = z*(z-(x>>1));
+    if ((d = dx4 + dy + dz) < md) {md = d; p = colour[6];}
     x -= 255;
-    dz2 = z * (z - (x >> 1));
-    if ((d = dx3 + dy + dz2) < md) {
-	md = d;
-	p = colour[7];
-    }
+    dz2 = z*(z-(x>>1));
+    if ((d = dx3 + dy + dz2) < md) {md = d; p = colour[7];}
     y += 255;
-    dy = y * (y - (z >> 1));
-    if ((d = dx2 + dy + dz2) < md) {
-	md = d;
-	p = colour[5];
-    }
-    if ((d = dx + dy + dz) < md) {
-	p = colour[4];
-    }
-    return (p);
+    dy = y*(y-(z>>1));
+    if ((d = dx2 + dy + dz2) < md) {md = d; p = colour[5];}
+    if ((d = dx + dy + dz) < md) {p = colour[4];}
+    return(p);
 }
 
 /*
  * escp2c_conv_stc converts into the ouput format used by stcolor
  */
 private void
-escp2c_conv_stc(byte * p, byte * q, int i)
+escp2c_conv_stc(byte *p, byte *q, int i)
 {
-    for (; i; p += 3, i -= 3)
-	*q++ = (*p & RED) | (p[1] & GREEN) | (p[2] & BLUE);
+    for(; i; p+=3, i-=3)
+        *q++ = (*p & RED) | (p[1] & GREEN) | (p[2] & BLUE);
 }
 
 
@@ -162,152 +135,167 @@ escp2c_conv_stc(byte * p, byte * q, int i)
 /*
  * Main routine of the algorithm
  */
-int
-stc_fs2(stcolor_device * sd, int npixel, byte * in, byte * buf, byte * out)
+int 
+stc_fs2(stcolor_device *sd,int npixel,byte *in,byte *buf,byte *out)
 {
-    int fullcolor_line_size = npixel * 3;
+   int fullcolor_line_size = npixel*3;
 
 /* ============================================================= */
-    if (npixel > 0) {		/* npixel >  0 -> scanline-processing       */
+   if(npixel > 0) {  /* npixel >  0 -> scanline-processing       */
 /* ============================================================= */
 
 /*    -------------------------------------------------------------------- */
-	if (in == NULL) {	/* clear the error-buffer upon white-lines */
+      if(in == NULL) { /* clear the error-buffer upon white-lines */
 /*    -------------------------------------------------------------------- */
 
-	    memset(buf, 0, fullcolor_line_size);
+         memset(buf,0,fullcolor_line_size);
 
 /*    ------------------------------------------------------------------- */
-	} else {		/* do the actual dithering                 */
+      } else {                 /* do the actual dithering                 */
 /*    ------------------------------------------------------------------- */
-	    int i, j, k, e, l, i2, below[3][3], *fb, *b, *bb, *tb;
-	    byte *p, *q, *cp;
-	    static int dir = 1;
+    int i, j, k, e, l, i2, below[3][3], *fb, *b, *bb, *tb;
+    byte *p, *q, *cp;
+    static int dir = 1;
 
-	    p = buf;
-	    if (*p != 0 || memcmp((char *)p, (char *)p + 1, fullcolor_line_size - 1)) {
-		for (p = in, q = buf, i = fullcolor_line_size;
-		     i--; p++, q++) {
-		    j = *p + ((*q & 128) ? *q - 256 : *q);
-		    LIMIT(j);
-		    *p = j;
-		}
-	    }
-	    p = in;
+    p = buf;
+    if (*p != 0 || memcmp((char *) p, (char *) p + 1, fullcolor_line_size - 1))
+    {
+	for(p = in, q=buf, i=fullcolor_line_size;
+	    i--; p++, q++ )
+	{
+	    j = *p + ((*q & 128) ? *q - 256 : *q);
+	    LIMIT(j);
+	    *p = j;
+	}
+    }
 
-	    fb = below[2];
-	    b = below[1];
-	    bb = below[0];
-	    *b = b[1] = b[2] = *bb = bb[1] = bb[2] = 0;
+    p = in;
 
-	    if (dir) {
-		for (p = in, q = buf - 3,
-		     i = fullcolor_line_size; i; i -= 3) {
-		    cp = escp2c_pick_best(p);
-		    for (i2 = 3; i2--; p++, q++, fb++, b++, bb++) {
-			j = *p;
-			*p = *cp++;
-			j -= *p;
-			if (j != 0) {
-			    l = (e = (j >> 1)) - (*fb = (j >> 4));
-			    if (i > 2) {
-				k = p[3] + l;
-				LIMIT(k);
-				p[3] = k;
-			    }
-			    *b += e - (l = (j >> 2) - *fb);
-			    if (i < fullcolor_line_size) {
-				l += *bb;
-				LIMIT2(l);
-				*q = l;
-			    }
-			} else
-			    *fb = 0;
+	fb = below[2];
+	b = below[1];
+	bb = below[0];
+	*b = b[1] = b[2] = *bb = bb[1] = bb[2] = 0;
+
+	if (dir)
+	{
+	    for(p = in, q=buf-3,
+		i=fullcolor_line_size; i; i-=3)
+	    {
+		cp = escp2c_pick_best(p);
+		for(i2=3; i2--; p++, q++, fb++, b++, bb++)
+		{
+		    j = *p;
+		    *p = *cp++;
+		    j -= *p;
+		    if (j != 0)
+		    {
+			l = (e = (j>>1)) - (*fb = (j>>4));
+			if (i > 2)
+			{
+			    k = p[3] + l;
+			    LIMIT(k);
+			    p[3] = k;
+			}
+			*b += e - (l = (j>>2) - *fb);
+			if (i < fullcolor_line_size)
+			{
+			    l += *bb;
+			    LIMIT2(l);
+			    *q = l;
+			}
 		    }
-		    tb = bb - 3;
-		    bb = b - 3;
-		    b = fb - 3;
-		    fb = tb;
+		    else
+			*fb = 0;
 		}
-		*q = *bb;
-		q[1] = bb[1];
-		q[2] = bb[2];
-		dir = 0;
-	    } else {
-		for (p = in + fullcolor_line_size - 1,
-		 q = buf + fullcolor_line_size + 2, i = fullcolor_line_size;
-		     i; i -= 3) {
-		    cp = escp2c_pick_best(p - 2) + 2;
-		    for (i2 = 3; i2--; p--, q--, fb++, b++, bb++) {
-			j = *p;
-			*p = *cp--;
-			j -= *p;
-			if (j != 0) {
-			    l = (e = (j >> 1)) - (*fb = (j >> 4));
-			    if (i > 2) {
-				k = p[-3] + l;
-				LIMIT(k);
-				p[-3] = k;
-			    }
-			    *b += e - (l = (j >> 2) - *fb);
-			    if (i < fullcolor_line_size) {
-				l += *bb;
-				LIMIT2(l);
-				*q = l;
-			    }
-			} else
-			    *fb = 0;
-		    }
-		    tb = bb - 3;
-		    bb = b - 3;
-		    b = fb - 3;
-		    fb = tb;
-		}
-		*q = *bb;
-		q[1] = bb[1];
-		q[2] = bb[2];
-		dir = 1;
+		tb = bb-3;
+		bb = b-3;
+		b = fb-3;
+		fb = tb;
 	    }
-
-	    escp2c_conv_stc(in, out, fullcolor_line_size);
+	    *q = *bb;
+	    q[1] = bb[1];
+	    q[2] = bb[2];
+	    dir = 0;
+	}
+	else
+	{
+	    for(p = in+fullcolor_line_size-1,
+		q = buf+fullcolor_line_size+2, i=fullcolor_line_size; 
+                i; i-=3)
+	    {
+		cp = escp2c_pick_best(p-2) + 2;
+		for(i2=3; i2--; p--, q--, fb++, b++, bb++)
+		{
+		    j = *p;
+		    *p = *cp--;
+		    j -= *p;
+		    if (j != 0)
+		    {
+			l = (e = (j>>1)) - (*fb = (j>>4));
+			if (i > 2)
+			{
+			    k = p[-3] + l;
+			    LIMIT(k);
+			    p[-3] = k;
+			}
+			*b += e - (l = (j>>2) - *fb);
+			if (i < fullcolor_line_size)
+			{
+			    l += *bb;
+			    LIMIT2(l);
+			    *q = l;
+			}
+		    }
+		    else
+			*fb = 0;
+		}
+		tb = bb-3;
+		bb = b-3;
+		b = fb-3;
+		fb = tb;
+	    }
+	    *q = *bb;
+	    q[1] = bb[1];
+	    q[2] = bb[2];
+	    dir = 1;
+	}
+	
+    escp2c_conv_stc(in, out, fullcolor_line_size);
 
 /*    ------------------------------------------------------------------- */
-	}			/* buffer-reset | dithering                */
+      }                        /* buffer-reset | dithering                */
 /*    ------------------------------------------------------------------- */
 
 
 /* ============================================================= */
-    } else {			/* npixel <= 0 -> initialisation            */
+   } else {          /* npixel <= 0 -> initialisation            */
 /* ============================================================= */
 
 
 /*
  * check wether the number of components is valid
  */
-	if (sd->color_info.num_components != 3)
-	    return -1;
+      if(sd->color_info.num_components != 3)                       return -1;
 
 /*
  * check wether stcdither & TYPE are correct
  */
-	if ((sd->stc.dither == NULL) ||
-	    ((sd->stc.dither->flags & STC_TYPE) != STC_BYTE))
-	    return -2;
+      if(( sd->stc.dither                    == NULL) ||
+         ((sd->stc.dither->flags & STC_TYPE) != STC_BYTE))         return -2;
 
 /*
  * check wether the buffer-size is sufficiently large
  */
-	if ((sd->stc.dither->flags / STC_SCAN) < 1)
-	    return -3;
+      if((sd->stc.dither->flags/STC_SCAN) < 1)                     return -3;
 
 /*
  * finally clear the buffer
  */
-	memset(buf, 0, -fullcolor_line_size);
+      memset(buf,0,-fullcolor_line_size);
 
 /* ============================================================= */
-    }				/* scanline-processing or initialisation */
+   } /* scanline-processing or initialisation */
 /* ============================================================= */
 
-    return 0;
+   return 0;
 }

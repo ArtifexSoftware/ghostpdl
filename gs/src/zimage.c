@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zimage.c */
+/*Id: zimage.c  */
 /* Image operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"		/* for image[mask] */
 #include "gsstruct.h"
@@ -30,20 +29,14 @@
 #include "gscspace.h"
 #include "gsmatrix.h"
 #include "gsimage.h"
+#include "gxiparam.h"
 #include "stream.h"
 #include "ifilter.h"		/* for stream exception handling */
 #include "iimage.h"
 
-/* Define the maximum number of image components. */
-/* (We refer to this as M in a number of places below.) */
-#ifdef DPNEXT
-#  define max_components 5
-#else
-#  define max_components 4
-#endif
-
 /* Forward references */
-private int image_setup(P5(gs_image_t * pim, bool multi, os_ptr op, const gs_color_space * pcs, int npop));
+private int image_setup(P4(gs_image_t * pim, os_ptr op,
+			   const gs_color_space * pcs, int npop));
 private int image_proc_continue(P1(os_ptr));
 private int image_file_continue(P1(os_ptr));
 private int image_file_buffered_continue(P1(os_ptr));
@@ -54,11 +47,8 @@ private int image_cleanup(P1(os_ptr));
 int
 zimage(register os_ptr op)
 {
-    return zimage_opaque_setup(op, false,
-#ifdef DPNEXT
-			       false,
-#endif
-			       NULL, 5);
+    return zimage_opaque_setup(op, false, gs_image_alpha_none,
+		     gs_cspace_DeviceGray((const gs_imager_state *)igs), 5);
 }
 
 /* <width> <height> <paint_1s> <matrix> <datasrc> imagemask - */
@@ -69,43 +59,30 @@ zimagemask(register os_ptr op)
 
     check_type(op[-2], t_boolean);
     gs_image_t_init_mask(&image, op[-2].value.boolval);
-    return image_setup(&image, false, op, NULL, 5);
+    return image_setup(&image, op, NULL, 5);
 }
 
-/* Common setup for image, colorimage, and alphaimage. */
-/* Fills in MultipleDataSources, BitsPerComponent, HasAlpha. */
-#ifdef DPNEXT
+/* Common setup for [color|alpha]image. */
+/* Fills in format, BitsPerComponent, Alpha. */
 int
-zimage_opaque_setup(os_ptr op, bool multi, bool has_alpha,
+zimage_opaque_setup(os_ptr op, bool multi, gs_image_alpha_t alpha,
 		    const gs_color_space * pcs, int npop)
 {
     gs_image_t image;
 
     check_int_leu(op[-2], (level2_enabled ? 12 : 8));	/* bits/sample */
-    gs_image_t_init_color(&image);
+    gs_image_t_init(&image, pcs);
     image.BitsPerComponent = (int)op[-2].value.intval;
-    image.HasAlpha = has_alpha;
-    return image_setup(&image, multi, op, pcs, npop);
+    image.Alpha = alpha;
+    image.format =
+	(multi ? gs_image_format_component_planar : gs_image_format_chunky);
+    return image_setup(&image, op, pcs, npop);
 }
-#else
-int
-zimage_opaque_setup(os_ptr op, bool multi,
-		    const gs_color_space * pcs, int npop)
-{
-    gs_image_t image;
 
-    check_int_leu(op[-2], (level2_enabled ? 12 : 8));	/* bits/sample */
-    gs_image_t_init_color(&image);
-    image.BitsPerComponent = (int)op[-2].value.intval;
-    return image_setup(&image, multi, op, pcs, npop);
-}
-#endif
-
-/* Common setup for [color]image and imagemask. */
+/* Common setup for [color|alpha]image and imagemask. */
 /* Fills in Width, Height, ImageMatrix, ColorSpace. */
 private int
-image_setup(gs_image_t * pim, bool multi, os_ptr op,
-	    const gs_color_space * pcs, int npop)
+image_setup(gs_image_t * pim, os_ptr op, const gs_color_space * pcs, int npop)
 {
     int code;
 
@@ -118,38 +95,52 @@ image_setup(gs_image_t * pim, bool multi, os_ptr op,
     pim->ColorSpace = pcs;
     pim->Width = (int)op[-4].value.intval;
     pim->Height = (int)op[-3].value.intval;
-    return zimage_setup(pim, multi, op, npop);
+    return zimage_setup((gs_pixel_image_t *) pim, op,
+			pim->ImageMask | pim->CombineWithColor, npop);
 }
 
-/* Common setup for Level 1 image/imagemask/colorimage, alphaimage, and */
-/* the Level 2 dictionary form of image/imagemask. */
+/* Common setup for all Level 1 and 2 images, and ImageType 4 images. */
 int
-zimage_setup(const gs_image_t * pim, bool multi, const ref * sources, int npop)
+zimage_setup(const gs_pixel_image_t * pim, const ref * sources,
+	     bool uses_color, int npop)
 {
+    gx_image_enum_common_t *pie;
+    int code =
+    gs_image_begin_typed((const gs_image_common_t *)pim, igs,
+			 uses_color, &pie);
+
+    if (code < 0)
+	return code;
+    return zimage_data_setup((const gs_pixel_image_t *)pim, pie,
+			     sources, npop);
+}
+
+/* Common setup for all Level 1 and 2 images, and ImageType 3 and 4 images. */
+int
+zimage_data_setup(const gs_pixel_image_t * pim, gx_image_enum_common_t * pie,
+		  const ref * sources, int npop)
+{
+    int num_sources = pie->num_planes;
+
+#define NUM_PUSH(nsource) ((nsource) * 2 + 4)	/* see below */
+    int inumpush = NUM_PUSH(num_sources);
     int code;
     gs_image_enum *penum;
     int px;
     const ref *pp;
-    int num_sources =
-    (multi ? gs_color_space_num_components(pim->ColorSpace) : 1);
     bool must_buffer = false;
 
     /*
-     * We push the following on the estack.  "Optional" values are
-     * set to null if not used, so the offsets will be constant.
+     * We push the following on the estack.
      *      Control mark,
-     *      M data sources (1-M actually used),
-     *      M row buffers (only if must_buffer),
+     *      num_sources times (plane N-1 first, plane 0 last):
+     *          row buffers (only if must_buffer, otherwise null),
+     *          data sources,
      *      current plane index,
      *      current byte in row (only if must_buffer, otherwise 0),
      *      enumeration structure.
      */
-#define inumpush (max_components * 2 + 4)
     check_estack(inumpush + 2);	/* stuff above, + continuation + proc */
-#ifdef DPNEXT
-    if (pim->HasAlpha && multi)
-	++num_sources;
-#endif
     /*
      * Note that the data sources may be procedures, strings, or (Level
      * 2 only) files.  (The Level 1 reference manual says that Level 1
@@ -158,7 +149,9 @@ zimage_setup(const gs_image_t * pim, bool multi, const ref * sources, int npop)
      *
      * If the sources are files, and two or more are the same file,
      * we must buffer data for each row; otherwise, we can deliver the
-     * data directly out of the stream buffers.
+     * data directly out of the stream buffers.  This is OK even if
+     * some of the sources are filters on the same file, since they
+     * have separate buffers.
      */
     for (px = 0, pp = sources; px < num_sources; px++, pp++) {
 	switch (r_type(pp)) {
@@ -187,7 +180,8 @@ zimage_setup(const gs_image_t * pim, bool multi, const ref * sources, int npop)
     }
     if ((penum = gs_image_enum_alloc(imemory, "image_setup")) == 0)
 	return_error(e_VMerror);
-    code = gs_image_init(penum, pim, multi, igs);
+    code = gs_image_common_init(penum, pie, (const gs_data_image_t *)pim,
+				imemory, gs_currentdevice(igs));
     if (code != 0) {		/* error, or empty image */
 	ifree_object(penum, "image_setup");
 	if (code >= 0)		/* empty image */
@@ -196,23 +190,21 @@ zimage_setup(const gs_image_t * pim, bool multi, const ref * sources, int npop)
     }
     push_mark_estack(es_other, image_cleanup);
     ++esp;
-    for (px = 0, pp = sources; px < max_components; esp++, px++, pp++) {
-	if (px < num_sources)
-	    *esp = *pp;
-	else
-	    make_null(esp);
-	make_null(esp + max_components);	/* buffer */
+    for (px = 0, pp = sources + num_sources - 1;
+	 px < num_sources; esp += 2, ++px, --pp
+	) {
+	make_null(esp);		/* buffer */
+	esp[1] = *pp;
     }
-    esp += max_components + 2;
+    esp += 2;
     make_int(esp - 2, 0);	/* current plane */
     make_int(esp - 1, 0);	/* current byte in row */
     make_istruct(esp, 0, penum);
     switch (r_type(sources)) {
 	case t_file:
 	    if (must_buffer) {	/* Allocate a buffer for each row. */
-		uint size = gs_image_bytes_per_row(penum);
-
 		for (px = 0; px < num_sources; ++px) {
+		    uint size = gs_image_bytes_per_plane_row(penum, px);
 		    byte *sbody = ialloc_string(size, "image_setup");
 
 		    if (sbody == 0) {
@@ -220,7 +212,7 @@ zimage_setup(const gs_image_t * pim, bool multi, const ref * sources, int npop)
 			image_cleanup(osp);
 			return_error(e_VMerror);
 		    }
-		    make_string(esp - (max_components + 2) + px,
+		    make_string(esp - 4 - px * 2,
 				icurrent_space, size, sbody);
 		}
 		push_op_estack(image_file_buffered_continue);
@@ -239,6 +231,16 @@ zimage_setup(const gs_image_t * pim, bool multi, const ref * sources, int npop)
     pop(npop);
     return o_push_estack;
 }
+/* Pop all the control information off the e-stack. */
+private es_ptr
+zimage_pop_estack(es_ptr tep)
+{
+    es_ptr ep = tep - 3;
+
+    while (!r_is_estack_mark(ep))
+	ep -= 2;
+    return ep - 1;
+}
 /* Continuation for procedure data source. */
 private int
 image_proc_continue(register os_ptr op)
@@ -247,12 +249,12 @@ image_proc_continue(register os_ptr op)
     uint size, used;
     int code;
     int px;
-    const ref *pproc;
+    const ref *pp;
 
     if (!r_has_type_attrs(op, t_string, a_read)) {
 	check_op(1);
 	/* Procedure didn't return a (readable) string.  Quit. */
-	esp -= inumpush;
+	esp = zimage_pop_estack(esp);
 	image_cleanup(op);
 	return_error(!r_has_type(op, t_string) ? e_typecheck : e_invalidaccess);
     }
@@ -262,19 +264,20 @@ image_proc_continue(register os_ptr op)
     else
 	code = gs_image_next(penum, op->value.bytes, size, &used);
     if (code) {			/* Stop now. */
-	esp -= inumpush;
+	esp = zimage_pop_estack(esp);
 	pop(1);
 	op = osp;
 	image_cleanup(op);
 	return (code < 0 ? code : o_pop_estack);
     }
     pop(1);
-    px = (int)++(esp[-2].value.intval);
-    pproc = esp - (inumpush - 2);
-    if (px == max_components || r_has_type(pproc + px, t_null))
-	esp[-2].value.intval = px = 0;
+    px = (int)(esp[-2].value.intval) + 1;
+    pp = esp - 3 - px * 2;
+    if (r_is_estack_mark(pp))
+	px = 0, pp = esp - 3;
+    esp[-2].value.intval = px;
     push_op_estack(image_proc_continue);
-    *++esp = pproc[px];
+    *++esp = *pp;
     return o_push_estack;
 }
 /* Continue processing data from an image with file data sources */
@@ -283,7 +286,7 @@ private int
 image_file_continue(os_ptr op)
 {
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
-    const ref *pproc = esp - (inumpush - 2);
+    const ref *pproc = esp - 3;
 
     for (;;) {
 	uint size = max_uint;
@@ -297,9 +300,8 @@ image_file_continue(os_ptr op)
 	 * of the available amounts.
 	 */
 
-	for (pn = 0, pp = pproc;
-	     pn < max_components && !r_has_type(pp, t_null);
-	     ++pn, ++pp
+	for (pn = 0, pp = pproc; !r_is_estack_mark(pp);
+	     ++pn, pp -= 2
 	    ) {
 	    stream *s = pp->value.pfile;
 	    int min_left = sbuf_min_left(s);
@@ -348,16 +350,16 @@ image_file_continue(os_ptr op)
 	    uint used;		/* only set for the last plane */
 
 	    for (px = 0, pp = pproc, code = 0; px < pn && !code;
-		 ++px, ++pp
+		 ++px, pp -= 2
 		)
 		code = gs_image_next(penum, sbufptr(pp->value.pfile),
 				     size, &used);
 	    /* Now that used has been set, update the streams. */
-	    for (pi = 0, pp = pproc; pi < px; ++pi, ++pp)
+	    for (pi = 0, pp = pproc; pi < px; ++pi, pp -= 2)
 		sbufskip(pp->value.pfile, used);
 	}
 	if (code) {
-	    esp -= inumpush;
+	    esp = zimage_pop_estack(esp);
 	    image_cleanup(op);
 	    return (code < 0 ? code : o_pop_estack);
 	}
@@ -369,23 +371,23 @@ private int
 image_file_buffered_continue(os_ptr op)
 {
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
-    const ref *pproc = esp - (inumpush - 2);
+    const ref *pproc = esp - 3;
     int px = esp[-2].value.intval;
     int dpos = esp[-1].value.intval;
-    uint size = gs_image_bytes_per_row(penum);
     int code = 0;
 
     while (!code) {
 	const ref *pp;
+
+	/****** 0 IS BOGUS ******/
+	uint size = gs_image_bytes_per_plane_row(penum, 0);
 	uint avail = size;
 	uint used;
 	int pi;
 
 	/* Accumulate data until we have a full set of planes. */
-	while (px < max_components &&
-	       !r_has_type((pp = pproc + px), t_null)
-	    ) {
-	    const ref *pb = pp + max_components;
+	while (!r_is_estack_mark(pp = pproc - px * 2)) {
+	    const ref *pb = pp - 1;
 	    uint used;
 	    int status = sgets(pp->value.pfile, pb->value.bytes,
 			       size - dpos, &used);
@@ -416,15 +418,12 @@ image_file_buffered_continue(os_ptr op)
 	    code = 1;
 	    break;
 	}
-	for (pi = 0, pp = pproc + max_components;
-	     pi < px && !code;
-	     ++pi, ++pp
-	    )
+	for (pi = 0, pp = pproc; pi < px && !code; ++pi, pp -= 2)
 	    code = gs_image_next(penum, pp->value.bytes, avail, &used);
 	/* Reinitialize for the next row. */
 	px = dpos = 0;
     }
-    esp -= inumpush;
+    esp = zimage_pop_estack(esp);
     image_cleanup(op);
     return (code < 0 ? code : o_pop_estack);
 }
@@ -436,7 +435,7 @@ image_string_process(os_ptr op, gs_image_enum * penum, int num_sources)
     int px = 0;
 
     for (;;) {
-	const ref *psrc = esp - (inumpush - 2) + px;
+	const ref *psrc = esp - 3 - px * 2;
 	uint size = r_size(psrc);
 	uint used;
 	int code;
@@ -446,7 +445,7 @@ image_string_process(os_ptr op, gs_image_enum * penum, int num_sources)
 	else
 	    code = gs_image_next(penum, psrc->value.bytes, size, &used);
 	if (code) {		/* Stop now. */
-	    esp -= inumpush;
+	    esp -= NUM_PUSH(num_sources);
 	    image_cleanup(op);
 	    return (code < 0 ? code : o_pop_estack);
 	}
@@ -458,17 +457,15 @@ image_string_process(os_ptr op, gs_image_enum * penum, int num_sources)
 private int
 image_cleanup(os_ptr op)
 {
-    gs_image_enum *penum = r_ptr(esp + inumpush, gs_image_enum);
+    gs_image_enum *penum;
     const ref *pb;
 
     /* Free any row buffers, in LIFO order as usual. */
-    for (pb = esp + (max_components * 2 + 1);
-	 pb >= esp + (max_components + 2);
-	 --pb
-	)
+    for (pb = esp + 2; !r_has_type(pb, t_integer); pb += 2)
 	if (r_has_type(pb, t_string))
 	    gs_free_string(imemory, pb->value.bytes, r_size(pb),
 			   "image_cleanup");
+    penum = r_ptr(pb + 2, gs_image_enum);
     gs_image_cleanup(penum);
     ifree_object(penum, "image_cleanup");
     return 0;

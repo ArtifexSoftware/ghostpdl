@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* igcstr.c */
+/*Id: igcstr.c  */
 /* String GC routines for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"
@@ -130,7 +130,7 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     if (!(cp = gc_locate(ptr, gcst))) {		/* not in a chunk */
 #ifdef DEBUG
 	if (gs_debug_c('5')) {
-	    dprintf2("[5]0x%lx[%u]", (ulong) ptr, size);
+	    dlprintf2("[5]0x%lx[%u]", (ulong) ptr, size);
 	    dprintstr();
 	    dputs(" not in a chunk\n");
 	}
@@ -170,9 +170,9 @@ gc_string_mark(const byte * ptr, uint size, bool set, gc_state_t * gcst)
     marks = gc_mark_string(ptr, size, set, cp);
 #ifdef DEBUG
     if (gs_debug_c('5')) {
-	dprintf4("[5]%s%smarked 0x%lx[%u]",
-		 (marks ? "" : "already "), (set ? "" : "un"),
-		 (ulong) ptr, size);
+	dlprintf4("[5]%s%smarked 0x%lx[%u]",
+		  (marks ? "" : "already "), (set ? "" : "un"),
+		  (ulong) ptr, size);
 	dprintstr();
 	dputc('\n');
     }
@@ -246,7 +246,7 @@ gc_strings_set_reloc(chunk_t * cp)
 
 /* Relocate a string pointer. */
 void
-gs_reloc_string(gs_string * sptr, gc_state_t * gcst)
+igc_reloc_string(gs_string * sptr, gc_state_t * gcst)
 {
     byte *ptr;
     const chunk_t *cp;
@@ -292,10 +292,10 @@ gs_reloc_string(gs_string * sptr, gc_state_t * gcst)
     sptr->data = cp->sdest - reloc;
 }
 void
-gs_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
+igc_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
 {				/* We assume the representation of byte * and const byte * is */
     /* the same.... */
-    gs_reloc_string((gs_string *) sptr, gcst);
+    igc_reloc_string((gs_string *) sptr, gcst);
 }
 
 /* Compact the strings in a chunk. */
@@ -319,7 +319,7 @@ gc_strings_compact(chunk_t * cp)
 	    for (; i < n; i += R) {
 		uint j;
 
-		dprintf1("[4]0x%lx: ", (ulong) (base + i));
+		dlprintf1("[4]0x%lx: ", (ulong) (base + i));
 		for (j = i; j < i + R; j++) {
 		    byte ch = base[j];
 

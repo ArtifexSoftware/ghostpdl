@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,11 +15,27 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# (Platform-independent) makefile for language interpreters.
-# See the end of gs.mak for where this fits into the build process.
+# Id: int.mak 
+# (Platform-independent) makefile for PostScript and PDF language
+# interpreters.
+# Users of this makefile must define the following:
+#	GLSRCDIR - the graphics library source directory
+#	GLGENDIR - the directory for graphics library source files
+#		generated during building
+#	PSSRCDIR - the source directory
+#	PSOBJDIR - the object code directory
+
+PSSRC=$(PSSRCDIR)$(D)
+PSGEN=$(PSGENDIR)$(D)
+PSOBJ=$(PSOBJDIR)$(D)
+PSO_=$(O_)$(PSOBJ)
+PSI_=$(PSSRCDIR) $(II)$(PSGENDIR) $(II)$(GLI_)
+PSF_=
+PSCC=$(CC_) $(I_)$(PSI_)$(_I) $(PSF_)
+PSCCLEAF=$(CC_LEAF) $(I_)$(PSI_)$(_I) $(PSF_)
 
 # Define the name of this makefile.
-INT_MAK=int.mak
+INT_MAK=$(PSSRC)int.mak
 
 # ======================== Interpreter support ======================== #
 
@@ -27,347 +43,418 @@ INT_MAK=int.mak
 # It knows about the PostScript data types, but isn't supposed to
 # depend on anything outside itself.
 
-errors_h=errors.h
-idebug_h=idebug.h
-idict_h=idict.h
-igc_h=igc.h
-igcstr_h=igcstr.h
-iname_h=iname.h
-inamedef_h=inamedef.h $(gconfigv_h) $(iname_h)
-ipacked_h=ipacked.h
-iref_h=iref.h
-isave_h=isave.h
-isstate_h=isstate.h
-istruct_h=istruct.h $(gsstruct_h)
-iutil_h=iutil.h
-ivmspace_h=ivmspace.h $(gsgc_h)
-opdef_h=opdef.h
+errors_h=$(PSSRC)errors.h
+idebug_h=$(PSSRC)idebug.h
+idict_h=$(PSSRC)idict.h
+idictdef_h=$(PSSRC)idictdef.h
+igcstr_h=$(PSSRC)igcstr.h
+inames_h=$(PSSRC)inames.h
+iname_h=$(PSSRC)iname.h $(inames_h)
+inamedef_h=$(PSSRC)inamedef.h $(gconfigv_h) $(inames_h)
+ipacked_h=$(PSSRC)ipacked.h
+iref_h=$(PSSRC)iref.h
+isave_h=$(PSSRC)isave.h
+isstate_h=$(PSSRC)isstate.h
+istruct_h=$(PSSRC)istruct.h $(gsstruct_h)
+iutil_h=$(PSSRC)iutil.h
+ivmspace_h=$(PSSRC)ivmspace.h $(gsgc_h)
+opdef_h=$(PSSRC)opdef.h
 # Nested include files
-ghost_h=ghost.h $(gx_h) $(iref_h)
-imemory_h=imemory.h $(gsalloc_h) $(ivmspace_h)
-ialloc_h=ialloc.h $(imemory_h)
-iastruct_h=iastruct.h $(gxobj_h) $(ialloc_h)
-iastate_h=iastate.h $(gxalloc_h) $(ialloc_h) $(istruct_h)
-store_h=store.h $(ialloc_h)
+ghost_h=$(PSSRC)ghost.h $(gx_h) $(iref_h)
+igc_h=$(PSSRC)igc.h $(istruct_h)
+imemory_h=$(PSSRC)imemory.h $(gsalloc_h) $(ivmspace_h)
+ialloc_h=$(PSSRC)ialloc.h $(imemory_h)
+iastruct_h=$(PSSRC)iastruct.h $(gxobj_h) $(ialloc_h)
+iastate_h=$(PSSRC)iastate.h $(gxalloc_h) $(ialloc_h) $(istruct_h)
+store_h=$(PSSRC)store.h $(ialloc_h)
 
 GH=$(AK) $(ghost_h)
 
-isupport1_=ialloc.$(OBJ) igc.$(OBJ) igcref.$(OBJ) igcstr.$(OBJ)
-isupport2_=ilocate.$(OBJ) iname.$(OBJ) isave.$(OBJ)
+isupport1_=$(PSOBJ)ialloc.$(OBJ) $(PSOBJ)igc.$(OBJ) $(PSOBJ)igcref.$(OBJ) $(PSOBJ)igcstr.$(OBJ)
+isupport2_=$(PSOBJ)ilocate.$(OBJ) $(PSOBJ)iname.$(OBJ) $(PSOBJ)isave.$(OBJ)
 isupport_=$(isupport1_) $(isupport2_)
 isupport.dev: $(INT_MAK) $(ECHOGS_XE) $(isupport_)
 	$(SETMOD) isupport $(isupport1_)
 	$(ADDMOD) isupport -obj $(isupport2_)
-	$(ADDMOD) isupport -init igcref
 
-ialloc.$(OBJ): ialloc.c $(AK) $(memory__h) $(gx_h)\
+$(PSOBJ)ialloc.$(OBJ): $(PSSRC)ialloc.c $(AK) $(memory__h) $(gx_h)\
  $(errors_h) $(gsstruct_h) $(gxarith_h)\
- $(iastate_h) $(iref_h) $(ivmspace_h) $(store_h)
+ $(iastate_h) $(ipacked_h) $(iref_h) $(iutil_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)ialloc.$(OBJ) $(C_) $(PSSRC)ialloc.c
 
 # igc.c, igcref.c, and igcstr.c should really be in the dpsand2 list,
 # but since all the GC enumeration and relocation routines refer to them,
 # it's too hard to separate them out from the Level 1 base.
-igc.$(OBJ): igc.c $(GH) $(memory__h)\
-  $(errors_h) $(gsexit_h) $(gsmdebug_h) $(gsstruct_h) $(gsutil_h) \
-  $(iastate_h) $(idict_h) $(igc_h) $(igcstr_h) $(inamedef_h) \
-  $(ipacked_h) $(isave_h) $(isstate_h) $(istruct_h) $(opdef_h)
+$(PSOBJ)igc.$(OBJ): $(PSSRC)igc.c $(GH) $(memory__h)\
+ $(errors_h) $(gsexit_h) $(gsmdebug_h) $(gsstruct_h) $(gsutil_h)\
+ $(iastate_h) $(idict_h) $(igc_h) $(igcstr_h) $(inamedef_h)\
+ $(ipacked_h) $(isave_h) $(isstate_h) $(istruct_h) $(opdef_h)
+	$(PSCC) $(PSO_)igc.$(OBJ) $(C_) $(PSSRC)igc.c
 
-igcref.$(OBJ): igcref.c $(GH) $(memory__h)\
+$(PSOBJ)igcref.$(OBJ): $(PSSRC)igcref.c $(GH) $(memory__h)\
  $(gsexit_h) $(gsstruct_h)\
  $(iastate_h) $(idebug_h) $(igc_h) $(iname_h) $(ipacked_h) $(store_h)
+	$(PSCC) $(PSO_)igcref.$(OBJ) $(C_) $(PSSRC)igcref.c
 
-igcstr.$(OBJ): igcstr.c $(GH) $(memory__h)\
+$(PSOBJ)igcstr.$(OBJ): $(PSSRC)igcstr.c $(GH) $(memory__h)\
  $(gsmdebug_h) $(gsstruct_h) $(iastate_h) $(igcstr_h)
+	$(PSCC) $(PSO_)igcstr.$(OBJ) $(C_) $(PSSRC)igcstr.c
 
-ilocate.$(OBJ): ilocate.c $(GH) $(memory__h)\
+$(PSOBJ)ilocate.$(OBJ): $(PSSRC)ilocate.c $(GH) $(memory__h)\
  $(errors_h) $(gsexit_h) $(gsstruct_h)\
  $(iastate_h) $(idict_h) $(igc_h) $(igcstr_h) $(iname_h)\
  $(ipacked_h) $(isstate_h) $(iutil_h) $(ivmspace_h)\
  $(store_h)
+	$(PSCC) $(PSO_)ilocate.$(OBJ) $(C_) $(PSSRC)ilocate.c
 
-iname.$(OBJ): iname.c $(GH) $(memory__h) $(string__h)\
+$(PSOBJ)iname.$(OBJ): $(PSSRC)iname.c $(GH) $(memory__h) $(string__h)\
  $(gsstruct_h) $(gxobj_h)\
  $(errors_h) $(imemory_h) $(inamedef_h) $(isave_h) $(store_h)
+	$(PSCC) $(PSO_)iname.$(OBJ) $(C_) $(PSSRC)iname.c
 
-isave.$(OBJ): isave.c $(GH) $(memory__h)\
+$(PSOBJ)isave.$(OBJ): $(PSSRC)isave.c $(GH) $(memory__h)\
  $(errors_h) $(gsexit_h) $(gsstruct_h) $(gsutil_h)\
- $(iastate_h) $(inamedef_h) $(isave_h) $(isstate_h) $(ivmspace_h)\
- $(ipacked_h) $(store_h)
+ $(iastate_h) $(iname_h) $(inamedef_h) $(isave_h) $(isstate_h) $(ivmspace_h)\
+ $(ipacked_h) $(store_h) $(stream_h)
+	$(PSCC) $(PSO_)isave.$(OBJ) $(C_) $(PSSRC)isave.c
 
 ### Include files
 
-idparam_h=idparam.h
-ilevel_h=ilevel.h
-iparam_h=iparam.h $(gsparam_h)
-istack_h=istack.h
-iutil2_h=iutil2.h
-opcheck_h=opcheck.h
-opextern_h=opextern.h
+idparam_h=$(PSSRC)idparam.h
+ilevel_h=$(PSSRC)ilevel.h
+iparam_h=$(PSSRC)iparam.h $(gsparam_h)
+istack_h=$(PSSRC)istack.h
+iutil2_h=$(PSSRC)iutil2.h
+opcheck_h=$(PSSRC)opcheck.h
+opextern_h=$(PSSRC)opextern.h
 # Nested include files
-dstack_h=dstack.h $(istack_h)
-estack_h=estack.h $(istack_h)
-ostack_h=ostack.h $(istack_h)
-oper_h=oper.h $(iutil_h) $(opcheck_h) $(opdef_h) $(opextern_h) $(ostack_h)
+idstack_h=$(PSSRC)idstack.h $(istack_h)
+dstack_h=$(PSSRC)dstack.h $(idstack_h)
+iestack_h=$(PSSRC)iestack.h $(istack_h)
+estack_h=$(PSSRC)estack.h $(iestack_h)
+iostack_h=$(PSSRC)iostack.h $(istack_h)
+ostack_h=$(PSSRC)ostack.h $(iostack_h)
+oper_h=$(PSSRC)oper.h $(errors_h) $(iutil_h) $(opcheck_h) $(opdef_h) $(opextern_h) $(ostack_h)
 
-idebug.$(OBJ): idebug.c $(GH) $(string__h)\
+$(PSOBJ)idebug.$(OBJ): $(PSSRC)idebug.c $(GH) $(string__h)\
  $(ialloc_h) $(idebug_h) $(idict_h) $(iname_h) $(istack_h) $(iutil_h) $(ivmspace_h)\
- $(ostack_h) $(opdef_h) $(ipacked_h) $(store_h)
+ $(opdef_h) $(ipacked_h)
+	$(PSCC) $(PSO_)idebug.$(OBJ) $(C_) $(PSSRC)idebug.c
 
-idict.$(OBJ): idict.c $(GH) $(string__h) $(errors_h)\
- $(ialloc_h) $(idebug_h) $(ivmspace_h) $(inamedef_h) $(ipacked_h)\
- $(isave_h) $(store_h) $(iutil_h) $(idict_h) $(dstack_h)
+$(PSOBJ)idict.$(OBJ): $(PSSRC)idict.c $(GH) $(string__h) $(errors_h)\
+ $(idebug_h) $(idict_h) $(idictdef_h) $(idstack_h) $(imemory_h) $(iname_h)\
+ $(inamedef_h) $(ipacked_h) $(isave_h) $(iutil_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)idict.$(OBJ) $(C_) $(PSSRC)idict.c
 
-idparam.$(OBJ): idparam.c $(GH) $(memory__h) $(string__h) $(errors_h)\
+$(PSOBJ)idparam.$(OBJ): $(PSSRC)idparam.c $(GH) $(memory__h) $(string__h) $(errors_h)\
  $(gsmatrix_h) $(gsuid_h)\
  $(idict_h) $(idparam_h) $(ilevel_h) $(imemory_h) $(iname_h) $(iutil_h)\
  $(oper_h) $(store_h)
+	$(PSCC) $(PSO_)idparam.$(OBJ) $(C_) $(PSSRC)idparam.c
 
-iparam.$(OBJ): iparam.c $(GH) $(memory__h) $(string__h) $(errors_h)\
+$(PSOBJ)idstack.$(OBJ): $(PSSRC)idstack.c $(GH)\
+ $(idebug_h) $(idict_h) $(idictdef_h) $(idstack_h) $(iname_h) $(inamedef_h)\
+ $(ipacked_h) $(iutil_h) $(ivmspace_h)
+	$(PSCC) $(PSO_)idstack.$(OBJ) $(C_) $(PSSRC)idstack.c
+
+$(PSOBJ)iparam.$(OBJ): $(PSSRC)iparam.c $(GH)\
+ $(memory__h) $(string__h) $(errors_h)\
  $(ialloc_h) $(idict_h) $(iname_h) $(imemory_h) $(iparam_h) $(istack_h) $(iutil_h) $(ivmspace_h)\
- $(opcheck_h) $(store_h)
+ $(opcheck_h) $(oper_h) $(store_h)
+	$(PSCC) $(PSO_)iparam.$(OBJ) $(C_) $(PSSRC)iparam.c
 
-istack.$(OBJ): istack.c $(GH) $(memory__h) \
-  $(errors_h) $(gsstruct_h) $(gsutil_h) \
-  $(ialloc_h) $(istack_h) $(istruct_h) $(iutil_h) $(ivmspace_h) $(store_h)
+$(PSOBJ)istack.$(OBJ): $(PSSRC)istack.c $(GH) $(memory__h)\
+ $(errors_h) $(gsstruct_h) $(gsutil_h)\
+ $(ialloc_h) $(istack_h) $(istruct_h) $(iutil_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)istack.$(OBJ) $(C_) $(PSSRC)istack.c
 
-iutil.$(OBJ): iutil.c $(GH) $(math__h) $(memory__h) $(string__h)\
+$(PSOBJ)iutil.$(OBJ): $(PSSRC)iutil.c $(GH) $(math__h) $(memory__h) $(string__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsutil_h) $(gxfont_h)\
  $(errors_h) $(idict_h) $(imemory_h) $(iutil_h) $(ivmspace_h)\
  $(iname_h) $(ipacked_h) $(oper_h) $(store_h)
+	$(PSCC) $(PSO_)iutil.$(OBJ) $(C_) $(PSSRC)iutil.c
 
 # ======================== PostScript Level 1 ======================== #
 
 ###### Include files
 
-files_h=files.h
-fname_h=fname.h
-ichar_h=ichar.h
-icharout_h=icharout.h
-icolor_h=icolor.h
-icontext_h=icontext.h $(imemory_h) $(istack_h)
-icsmap_h=icsmap.h
-ifont_h=ifont.h $(gsccode_h) $(gsstruct_h)
-iht_h=iht.h
-iimage_h=iimage.h
-imain_h=imain.h $(gsexit_h)
-imainarg_h=imainarg.h
-iminst_h=iminst.h $(imain_h)
-interp_h=interp.h
-iparray_h=iparray.h
-iscannum_h=iscannum.h
-istream_h=istream.h
-main_h=main.h $(iminst_h)
-overlay_h=overlay.h
-sbwbs_h=sbwbs.h
-sfilter_h=sfilter.h $(gstypes_h)
-shcgen_h=shcgen.h
-smtf_h=smtf.h
+files_h=$(PSSRC)files.h
+fname_h=$(PSSRC)fname.h
+ichar_h=$(PSSRC)ichar.h
+icharout_h=$(PSSRC)icharout.h
+icolor_h=$(PSSRC)icolor.h
+icsmap_h=$(PSSRC)icsmap.h
+icstate_h=$(PSSRC)icstate.h $(imemory_h)
+ifont_h=$(PSSRC)ifont.h $(gsccode_h) $(gsstruct_h)
+iht_h=$(PSSRC)iht.h
+iimage_h=$(PSSRC)iimage.h
+imain_h=$(PSSRC)imain.h $(gsexit_h)
+imainarg_h=$(PSSRC)imainarg.h
+iminst_h=$(PSSRC)iminst.h
+interp_h=$(PSSRC)interp.h
+iparray_h=$(PSSRC)iparray.h
+iscannum_h=$(PSSRC)iscannum.h
+istream_h=$(PSSRC)istream.h
+main_h=$(PSSRC)main.h $(imain_h) $(iminst_h)
+sbwbs_h=$(PSSRC)sbwbs.h
+sfilter_h=$(PSSRC)sfilter.h $(gstypes_h)
+shcgen_h=$(PSSRC)shcgen.h
+smtf_h=$(PSSRC)smtf.h
 # Nested include files
-bfont_h=bfont.h $(ifont_h)
-ifilter_h=ifilter.h $(istream_h) $(ivmspace_h)
-igstate_h=igstate.h $(gsstate_h) $(gxstate_h) $(istruct_h)
-iscan_h=iscan.h $(sa85x_h) $(sstring_h)
-sbhc_h=sbhc.h $(shc_h)
+bfont_h=$(PSSRC)bfont.h $(ifont_h)
+icontext_h=$(PSSRC)icontext.h $(gsstruct_h) $(icstate_h)
+ifilter_h=$(PSSRC)ifilter.h $(istream_h) $(ivmspace_h)
+igstate_h=$(PSSRC)igstate.h $(gsstate_h) $(gxstate_h) $(istruct_h)
+iscan_h=$(PSSRC)iscan.h $(sa85x_h) $(sstring_h)
+sbhc_h=$(PSSRC)sbhc.h $(shc_h)
 # Include files for optional features
-ibnum_h=ibnum.h
+ibnum_h=$(PSSRC)ibnum.h
 
 ### Initialization and scanning
 
 iconfig=iconfig$(CONFIG)
-$(iconfig).$(OBJ): iconf.c $(stdio__h) \
-  $(gconfig_h) $(gscdefs_h) $(gsmemory_h) \
-  $(files_h) $(iminst_h) $(iref_h) $(ivmspace_h) $(opdef_h) $(stream_h)
-	$(RM_) gconfig.h
-	$(RM_) $(iconfig).c
-	$(CP_) $(gconfig_h) gconfig.h
-	$(CP_) iconf.c $(iconfig).c
-	$(CCC) $(iconfig).c
-	$(RM_) gconfig.h
-	$(RM_) $(iconfig).c
+$(PSOBJ)$(iconfig).$(OBJ): $(PSSRC)iconf.c $(stdio__h)\
+ $(gconf_h) $(gsmemory_h) $(gstypes_h)\
+ $(iminst_h) $(iref_h) $(ivmspace_h) $(opdef_h)
+	$(RM_) $(PSGEN)$(iconfig).c
+	$(CP_) $(gconfig_h) $(PSGEN)gconfig.h
+	$(CP_) $(PSSRC)iconf.c $(PSGEN)$(iconfig).c
+	$(PSCC) $(PSO_)$(iconfig).$(OBJ) $(C_) $(PSGEN)$(iconfig).c
 
-iinit.$(OBJ): iinit.c $(GH) $(string__h)\
+$(PSOBJ)iinit.$(OBJ): $(PSSRC)iinit.c $(GH) $(string__h)\
  $(gscdefs_h) $(gsexit_h) $(gsstruct_h)\
  $(ialloc_h) $(idict_h) $(dstack_h) $(errors_h)\
  $(ilevel_h) $(iname_h) $(interp_h) $(opdef_h)\
  $(ipacked_h) $(iparray_h) $(iutil_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)iinit.$(OBJ) $(C_) $(PSSRC)iinit.c
 
-iscan.$(OBJ): iscan.c $(GH) $(memory__h)\
+$(PSOBJ)iscan.$(OBJ): $(PSSRC)iscan.c $(GH) $(memory__h)\
  $(ialloc_h) $(idict_h) $(dstack_h) $(errors_h) $(files_h)\
  $(ilevel_h) $(iutil_h) $(iscan_h) $(iscannum_h) $(istruct_h) $(ivmspace_h)\
  $(iname_h) $(ipacked_h) $(iparray_h) $(istream_h) $(ostack_h) $(store_h)\
  $(stream_h) $(strimpl_h) $(sfilter_h) $(scanchar_h)
+	$(PSCC) $(PSO_)iscan.$(OBJ) $(C_) $(PSSRC)iscan.c
 
-iscannum.$(OBJ): iscannum.c $(GH) $(math__h)\
-  $(errors_h) $(iscannum_h) $(scanchar_h) $(scommon_h) $(store_h)
+$(PSOBJ)iscannum.$(OBJ): $(PSSRC)iscannum.c $(GH) $(math__h)\
+ $(errors_h) $(iscannum_h) $(scanchar_h) $(scommon_h) $(store_h)
+	$(PSCC) $(PSO_)iscannum.$(OBJ) $(C_) $(PSSRC)iscannum.c
 
 ### Streams
 
-sfilter1.$(OBJ): sfilter1.c $(AK) $(stdio__h) $(memory__h) \
-  $(sfilter_h) $(strimpl_h)
+$(PSOBJ)sfilter1.$(OBJ): $(PSSRC)sfilter1.c $(AK) $(stdio__h) $(memory__h)\
+ $(sfilter_h) $(strimpl_h)
+	$(PSCC) $(PSO_)sfilter1.$(OBJ) $(C_) $(PSSRC)sfilter1.c
 
 ###### Operators
 
-OP=$(GH) $(errors_h) $(oper_h)
+OP=$(GH) $(oper_h)
 
 ### Non-graphics operators
 
-zarith.$(OBJ): zarith.c $(OP) $(math__h) $(store_h)
+$(PSOBJ)zarith.$(OBJ): $(PSSRC)zarith.c $(OP) $(math__h) $(store_h)
+	$(PSCC) $(PSO_)zarith.$(OBJ) $(C_) $(PSSRC)zarith.c
 
-zarray.$(OBJ): zarray.c $(OP) $(memory__h) $(ialloc_h) $(ipacked_h) $(store_h)
+$(PSOBJ)zarray.$(OBJ): $(PSSRC)zarray.c $(OP) $(memory__h)\
+ $(ialloc_h) $(ipacked_h) $(store_h)
+	$(PSCC) $(PSO_)zarray.$(OBJ) $(C_) $(PSSRC)zarray.c
 
-zcontrol.$(OBJ): zcontrol.c $(OP) $(string__h)\
+$(PSOBJ)zcontrol.$(OBJ): $(PSSRC)zcontrol.c $(OP) $(string__h)\
  $(estack_h) $(files_h) $(ipacked_h) $(iutil_h) $(store_h) $(stream_h)
+	$(PSCC) $(PSO_)zcontrol.$(OBJ) $(C_) $(PSSRC)zcontrol.c
 
-zdict.$(OBJ): zdict.c $(OP) \
-  $(dstack_h) $(idict_h) $(ilevel_h) $(iname_h) $(ipacked_h) $(ivmspace_h) \
-  $(store_h)
+$(PSOBJ)zdict.$(OBJ): $(PSSRC)zdict.c $(OP)\
+ $(dstack_h) $(idict_h) $(ilevel_h) $(iname_h) $(ipacked_h) $(ivmspace_h)\
+ $(store_h)
+	$(PSCC) $(PSO_)zdict.$(OBJ) $(C_) $(PSSRC)zdict.c
 
-zfile.$(OBJ): zfile.c $(OP) $(memory__h) $(string__h) $(gp_h)\
- $(gsstruct_h) $(gxiodev_h) \
+$(PSOBJ)zfile.$(OBJ): $(PSSRC)zfile.c $(OP) $(memory__h) $(string__h) $(gp_h)\
+ $(gsstruct_h) $(gxalloc_h) $(gxiodev_h)\
  $(ialloc_h) $(estack_h) $(files_h) $(fname_h) $(ilevel_h) $(interp_h) $(iutil_h)\
  $(isave_h) $(main_h) $(sfilter_h) $(stream_h) $(strimpl_h) $(store_h)
+	$(PSCC) $(PSO_)zfile.$(OBJ) $(C_) $(PSSRC)zfile.c
 
-zfileio.$(OBJ): zfileio.c $(OP) $(gp_h) \
-  $(files_h) $(ifilter_h) $(store_h) $(stream_h) $(strimpl_h) \
-  $(gsmatrix_h) $(gxdevice_h) $(gxdevmem_h)
+$(PSOBJ)zfileio.$(OBJ): $(PSSRC)zfileio.c $(OP) $(gp_h)\
+ $(files_h) $(ifilter_h) $(store_h) $(stream_h) $(strimpl_h)\
+ $(gsmatrix_h) $(gxdevice_h) $(gxdevmem_h)
+	$(PSCC) $(PSO_)zfileio.$(OBJ) $(C_) $(PSSRC)zfileio.c
 
-zfilter.$(OBJ): zfilter.c $(OP) $(memory__h)\
- $(gsstruct_h) $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) \
- $(sfilter_h) $(srlx_h) $(sstring_h) $(store_h) $(stream_h) $(strimpl_h)
+$(PSOBJ)zfilter.$(OBJ): $(PSSRC)zfilter.c $(OP) $(memory__h)\
+ $(gsstruct_h)\
+ $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) $(ilevel_h)\
+ $(sfilter_h) $(srlx_h) $(sstring_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfilter.$(OBJ) $(C_) $(PSSRC)zfilter.c
 
-zfname.$(OBJ): zfname.c $(OP) $(memory__h)\
+$(PSOBJ)zfname.$(OBJ): $(PSSRC)zfname.c $(OP) $(memory__h)\
  $(fname_h) $(gxiodev_h) $(ialloc_h) $(stream_h)
+	$(PSCC) $(PSO_)zfname.$(OBJ) $(C_) $(PSSRC)zfname.c
 
-zfproc.$(OBJ): zfproc.c $(GH) $(memory__h)\
- $(errors_h) $(oper_h)\
+$(PSOBJ)zfproc.$(OBJ): $(PSSRC)zfproc.c $(GH) $(memory__h)\
+ $(oper_h)\
  $(estack_h) $(files_h) $(gsstruct_h) $(ialloc_h) $(ifilter_h) $(istruct_h)\
  $(store_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfproc.$(OBJ) $(C_) $(PSSRC)zfproc.c
 
-zgeneric.$(OBJ): zgeneric.c $(OP) $(memory__h)\
+$(PSOBJ)zgeneric.$(OBJ): $(PSSRC)zgeneric.c $(OP) $(memory__h)\
  $(idict_h) $(estack_h) $(ivmspace_h) $(iname_h) $(ipacked_h) $(store_h)
+	$(PSCC) $(PSO_)zgeneric.$(OBJ) $(C_) $(PSSRC)zgeneric.c
 
-ziodev.$(OBJ): ziodev.c $(OP) $(memory__h) $(stdio__h) $(string__h)\
+$(PSOBJ)ziodev.$(OBJ): $(PSSRC)ziodev.c $(OP)\
+ $(memory__h) $(stdio__h) $(string__h)\
  $(gp_h) $(gpcheck_h)\
  $(gsstruct_h) $(gxiodev_h)\
- $(files_h) $(ialloc_h) $(ivmspace_h) $(store_h) $(stream_h)
+ $(files_h) $(ialloc_h) $(iscan_h) $(ivmspace_h)\
+ $(scanchar_h) $(store_h) $(stream_h)
+	$(PSCC) $(PSO_)ziodev.$(OBJ) $(C_) $(PSSRC)ziodev.c
 
-zmath.$(OBJ): zmath.c $(OP) $(math__h) $(gxfarith_h) $(store_h)
+$(PSOBJ)zmath.$(OBJ): $(PSSRC)zmath.c $(OP) $(math__h) $(gxfarith_h) $(store_h)
+	$(PSCC) $(PSO_)zmath.$(OBJ) $(C_) $(PSSRC)zmath.c
 
-zmisc.$(OBJ): zmisc.c $(OP) $(gscdefs_h) $(gp_h) \
-  $(errno__h) $(memory__h) $(string__h) \
-  $(ialloc_h) $(idict_h) $(dstack_h) $(iname_h) $(ivmspace_h) $(ipacked_h) $(store_h)
+$(PSOBJ)zmisc.$(OBJ): $(PSSRC)zmisc.c $(OP) $(gscdefs_h) $(gp_h)\
+ $(errno__h) $(memory__h) $(string__h)\
+ $(ialloc_h) $(idict_h) $(dstack_h) $(iname_h) $(ivmspace_h) $(ipacked_h) $(store_h)
+	$(PSCC) $(PSO_)zmisc.$(OBJ) $(C_) $(PSSRC)zmisc.c
 
-zpacked.$(OBJ): zpacked.c $(OP) \
-  $(ialloc_h) $(idict_h) $(ivmspace_h) $(iname_h) $(ipacked_h) $(iparray_h) \
-  $(istack_h) $(store_h)
+$(PSOBJ)zpacked.$(OBJ): $(PSSRC)zpacked.c $(OP)\
+ $(ialloc_h) $(idict_h) $(ivmspace_h) $(iname_h) $(ipacked_h) $(iparray_h)\
+ $(istack_h) $(store_h)
+	$(PSCC) $(PSO_)zpacked.$(OBJ) $(C_) $(PSSRC)zpacked.c
 
-zrelbit.$(OBJ): zrelbit.c $(OP) $(gsutil_h) $(store_h) $(idict_h)
+$(PSOBJ)zrelbit.$(OBJ): $(PSSRC)zrelbit.c $(OP)\
+ $(gsutil_h) $(store_h) $(idict_h)
+	$(PSCC) $(PSO_)zrelbit.$(OBJ) $(C_) $(PSSRC)zrelbit.c
 
-zstack.$(OBJ): zstack.c $(OP) $(memory__h)\
+$(PSOBJ)zstack.$(OBJ): $(PSSRC)zstack.c $(OP) $(memory__h)\
  $(ialloc_h) $(istack_h) $(store_h)
+	$(PSCC) $(PSO_)zstack.$(OBJ) $(C_) $(PSSRC)zstack.c
 
-zstring.$(OBJ): zstring.c $(OP) $(memory__h)\
+$(PSOBJ)zstring.$(OBJ): $(PSSRC)zstring.c $(OP) $(memory__h)\
  $(gsutil_h)\
  $(ialloc_h) $(iname_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)zstring.$(OBJ) $(C_) $(PSSRC)zstring.c
 
-zsysvm.$(OBJ): zsysvm.c $(GH)\
+$(PSOBJ)zsysvm.$(OBJ): $(PSSRC)zsysvm.c $(GH)\
  $(ialloc_h) $(ivmspace_h) $(oper_h) $(store_h)
+	$(PSCC) $(PSO_)zsysvm.$(OBJ) $(C_) $(PSSRC)zsysvm.c
 
-ztoken.$(OBJ): ztoken.c $(OP) \
-  $(estack_h) $(files_h) $(gsstruct_h) $(iscan_h) \
-  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+$(PSOBJ)ztoken.$(OBJ): $(PSSRC)ztoken.c $(OP)\
+ $(estack_h) $(files_h) $(gsstruct_h) $(iscan_h)\
+ $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)ztoken.$(OBJ) $(C_) $(PSSRC)ztoken.c
 
-ztype.$(OBJ): ztype.c $(OP) $(math__h) $(memory__h) $(string__h)\
+$(PSOBJ)ztype.$(OBJ): $(PSSRC)ztype.c $(OP)\
+ $(math__h) $(memory__h) $(string__h)\
+ $(gsexit_h)\
  $(dstack_h) $(idict_h) $(imemory_h) $(iname_h)\
  $(iscan_h) $(iutil_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)ztype.$(OBJ) $(C_) $(PSSRC)ztype.c
 
-zvmem.$(OBJ): zvmem.c $(OP)\
+$(PSOBJ)zvmem.$(OBJ): $(PSSRC)zvmem.c $(OP)\
  $(dstack_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(isave_h) $(store_h) $(stream_h)\
- $(gsmatrix_h) $(gsstate_h) $(gsstruct_h)
+ $(gsmalloc_h) $(gsmatrix_h) $(gsstate_h) $(gsstruct_h)
+	$(PSCC) $(PSO_)zvmem.$(OBJ) $(C_) $(PSSRC)zvmem.c
 
 ### Graphics operators
 
-zchar.$(OBJ): zchar.c $(OP)\
+$(PSOBJ)zchar.$(OBJ): $(PSSRC)zchar.c $(OP)\
  $(gsstruct_h) $(gxarith_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxchar_h) $(gxdevice_h) $(gxfont_h) $(gzpath_h) $(gzstate_h)\
  $(dstack_h) $(estack_h) $(ialloc_h) $(ichar_h) $(idict_h) $(ifont_h)\
  $(ilevel_h) $(iname_h) $(igstate_h) $(ipacked_h) $(store_h)
+	$(PSCC) $(PSO_)zchar.$(OBJ) $(C_) $(PSSRC)zchar.c
 
 # zcharout is used for Type 1 and Type 42 fonts only.
-zcharout.$(OBJ): zcharout.c $(OP)\
+$(PSOBJ)zcharout.$(OBJ): $(PSSRC)zcharout.c $(OP)\
  $(gschar_h) $(gxdevice_h) $(gxfont_h)\
  $(dstack_h) $(estack_h) $(ichar_h) $(icharout_h)\
  $(idict_h) $(ifont_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zcharout.$(OBJ) $(C_) $(PSSRC)zcharout.c
 
-zcolor.$(OBJ): zcolor.c $(OP) \
-  $(gxfixed_h) $(gxmatrix_h) $(gzstate_h) $(gxdevice_h) $(gxcmap_h) \
-  $(ialloc_h) $(icolor_h) $(estack_h) $(iutil_h) $(igstate_h) $(store_h)
+$(PSOBJ)zcolor.$(OBJ): $(PSSRC)zcolor.c $(OP)\
+ $(gxfixed_h) $(gxmatrix_h) $(gzstate_h) $(gxdevice_h) $(gxcmap_h)\
+ $(ialloc_h) $(icolor_h) $(estack_h) $(iutil_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zcolor.$(OBJ) $(C_) $(PSSRC)zcolor.c
 
-zdevice.$(OBJ): zdevice.c $(OP) $(string__h)\
+$(PSOBJ)zdevice.$(OBJ): $(PSSRC)zdevice.c $(OP) $(string__h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(interp_h) $(iparam_h) $(ivmspace_h)\
- $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(store_h)
+ $(gsmatrix_h) $(gsstate_h) $(gxdevice_h) $(gxgetbit_h) $(store_h)
+	$(PSCC) $(PSO_)zdevice.$(OBJ) $(C_) $(PSSRC)zdevice.c
 
-zfont.$(OBJ): zfont.c $(OP)\
+$(PSOBJ)zfont.$(OBJ): $(PSSRC)zfont.c $(OP)\
  $(gschar_h) $(gsstruct_h) $(gxdevice_h) $(gxfont_h) $(gxfcache_h)\
  $(gzstate_h)\
  $(ialloc_h) $(idict_h) $(igstate_h) $(iname_h) $(isave_h) $(ivmspace_h)\
  $(bfont_h) $(store_h)
+	$(PSCC) $(PSO_)zfont.$(OBJ) $(C_) $(PSSRC)zfont.c
 
-zfont2.$(OBJ): zfont2.c $(OP) $(memory__h) $(string__h)\
+$(PSOBJ)zfont2.$(OBJ): $(PSSRC)zfont2.c $(OP) $(memory__h) $(string__h)\
  $(gsmatrix_h) $(gxdevice_h) $(gschar_h) $(gxfixed_h) $(gxfont_h)\
- $(ialloc_h) $(bfont_h) $(idict_h) $(idparam_h) $(ilevel_h) $(iname_h) $(istruct_h)\
- $(ipacked_h) $(store_h)
+ $(bfont_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ilevel_h)\
+ $(iname_h) $(interp_h) $(istruct_h) $(ipacked_h) $(store_h)
+	$(PSCC) $(PSO_)zfont2.$(OBJ) $(C_) $(PSSRC)zfont2.c
 
-zgstate.$(OBJ): zgstate.c $(OP) $(math__h)\
+$(PSOBJ)zgstate.$(OBJ): $(PSSRC)zgstate.c $(OP) $(math__h)\
  $(gsmatrix_h) $(ialloc_h) $(idict_h) $(igstate_h) $(istruct_h) $(store_h)
+	$(PSCC) $(PSO_)zgstate.$(OBJ) $(C_) $(PSSRC)zgstate.c
 
-zht.$(OBJ): zht.c $(OP) $(memory__h)\
- $(gsmatrix_h) $(gsstate_h) $(gsstruct_h) $(gxdevice_h) $(gzht_h) \
+$(PSOBJ)zht.$(OBJ): $(PSSRC)zht.c $(OP) $(memory__h)\
+ $(gsmatrix_h) $(gsstate_h) $(gsstruct_h) $(gxdevice_h) $(gzht_h)\
  $(ialloc_h) $(estack_h) $(igstate_h) $(iht_h) $(store_h)
+	$(PSCC) $(PSO_)zht.$(OBJ) $(C_) $(PSSRC)zht.c
 
-zimage.$(OBJ): zimage.c $(OP) \
-  $(estack_h) $(ialloc_h) $(ifilter_h) $(igstate_h) $(iimage_h) $(ilevel_h) \
-  $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h) \
-  $(store_h) $(stream_h)
+$(PSOBJ)zimage.$(OBJ): $(PSSRC)zimage.c $(OP)\
+ $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h) $(gxiparam_h)\
+ $(estack_h) $(ialloc_h) $(ifilter_h) $(igstate_h) $(iimage_h) $(ilevel_h)\
+ $(store_h) $(stream_h)
+	$(PSCC) $(PSO_)zimage.$(OBJ) $(C_) $(PSSRC)zimage.c
 
-zmatrix.$(OBJ): zmatrix.c $(OP)\
+$(PSOBJ)zmatrix.$(OBJ): $(PSSRC)zmatrix.c $(OP)\
  $(gsmatrix_h) $(igstate_h) $(gscoord_h) $(store_h)
+	$(PSCC) $(PSO_)zmatrix.$(OBJ) $(C_) $(PSSRC)zmatrix.c
 
-zpaint.$(OBJ): zpaint.c $(OP)\
+$(PSOBJ)zpaint.$(OBJ): $(PSSRC)zpaint.c $(OP)\
  $(gspaint_h) $(igstate_h)
+	$(PSCC) $(PSO_)zpaint.$(OBJ) $(C_) $(PSSRC)zpaint.c
 
-zpath.$(OBJ): zpath.c $(OP) $(math__h) \
-  $(gsmatrix_h) $(gspath_h) $(igstate_h) $(store_h)
+$(PSOBJ)zpath.$(OBJ): $(PSSRC)zpath.c $(OP) $(math__h)\
+ $(gsmatrix_h) $(gspath_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zpath.$(OBJ) $(C_) $(PSSRC)zpath.c
 
 # Define the base PostScript language interpreter.
 # This is the subset of PostScript Level 1 required by our PDF reader.
 
-INT1=idebug.$(OBJ) idict.$(OBJ) idparam.$(OBJ)
-INT2=iinit.$(OBJ) interp.$(OBJ) iparam.$(OBJ) ireclaim.$(OBJ)
-INT3=iscan.$(OBJ) iscannum.$(OBJ) istack.$(OBJ) iutil.$(OBJ)
-INT4=scantab.$(OBJ) sfilter1.$(OBJ) sstring.$(OBJ) stream.$(OBJ)
-Z1=zarith.$(OBJ) zarray.$(OBJ) zcontrol.$(OBJ) zdict.$(OBJ)
-Z1OPS=zarith zarray zcontrol zdict
-Z2=zfile.$(OBJ) zfileio.$(OBJ) zfilter.$(OBJ) zfname.$(OBJ) zfproc.$(OBJ)
-Z2OPS=zfile zfileio zfilter zfproc
-Z3=zgeneric.$(OBJ) ziodev.$(OBJ) zmath.$(OBJ) zmisc.$(OBJ) zpacked.$(OBJ)
-Z3OPS=zgeneric ziodev zmath zmisc zpacked
-Z4=zrelbit.$(OBJ) zstack.$(OBJ) zstring.$(OBJ) zsysvm.$(OBJ)
-Z4OPS=zrelbit zstack zstring zsysvm
-Z5=ztoken.$(OBJ) ztype.$(OBJ) zvmem.$(OBJ)
-Z5OPS=ztoken ztype zvmem
-Z6=zchar.$(OBJ) zcolor.$(OBJ) zdevice.$(OBJ) zfont.$(OBJ) zfont2.$(OBJ)
-Z6OPS=zchar zcolor zdevice zfont zfont2
-Z7=zgstate.$(OBJ) zht.$(OBJ) zimage.$(OBJ) zmatrix.$(OBJ) zpaint.$(OBJ) zpath.$(OBJ)
-Z7OPS=zgstate zht zimage zmatrix zpaint zpath
+INT1=$(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ) $(PSOBJ)idict.$(OBJ)
+INT2=$(PSOBJ)idparam.$(OBJ) $(PSOBJ)idstack.$(OBJ) $(PSOBJ)iinit.$(OBJ)
+INT3=$(PSOBJ)interp.$(OBJ)
+INT4=$(PSOBJ)iparam.$(OBJ) $(PSOBJ)ireclaim.$(OBJ)
+INT5=$(PSOBJ)iscan.$(OBJ) $(PSOBJ)iscannum.$(OBJ) $(PSOBJ)istack.$(OBJ)
+INT6=$(PSOBJ)iutil.$(OBJ) $(GLOBJ)scantab.$(OBJ) $(PSOBJ)sfilter1.$(OBJ)
+INT7=$(GLOBJ)sstring.$(OBJ) $(GLOBJ)stream.$(OBJ)
+Z1=$(PSOBJ)zarith.$(OBJ) $(PSOBJ)zarray.$(OBJ) $(PSOBJ)zcontrol.$(OBJ)
+Z2=$(PSOBJ)zdict.$(OBJ) $(PSOBJ)zfile.$(OBJ) $(PSOBJ)zfileio.$(OBJ)
+Z3=$(PSOBJ)zfilter.$(OBJ) $(PSOBJ)zfname.$(OBJ) $(PSOBJ)zfproc.$(OBJ)
+Z4=$(PSOBJ)zgeneric.$(OBJ) $(PSOBJ)ziodev.$(OBJ) $(PSOBJ)zmath.$(OBJ)
+Z5=$(PSOBJ)zmisc.$(OBJ) $(PSOBJ)zpacked.$(OBJ) $(PSOBJ)zrelbit.$(OBJ)
+Z6=$(PSOBJ)zstack.$(OBJ) $(PSOBJ)zstring.$(OBJ) $(PSOBJ)zsysvm.$(OBJ)
+Z7=$(PSOBJ)ztoken.$(OBJ) $(PSOBJ)ztype.$(OBJ) $(PSOBJ)zvmem.$(OBJ)
+Z8=$(PSOBJ)zchar.$(OBJ) $(PSOBJ)zcolor.$(OBJ) $(PSOBJ)zdevice.$(OBJ)
+Z9=$(PSOBJ)zfont.$(OBJ) $(PSOBJ)zfont2.$(OBJ) $(PSOBJ)zgstate.$(OBJ)
+Z10=$(PSOBJ)zht.$(OBJ) $(PSOBJ)zimage.$(OBJ) $(PSOBJ)zmatrix.$(OBJ)
+Z11=$(PSOBJ)zpaint.$(OBJ) $(PSOBJ)zpath.$(OBJ)
+Z1_2OPS=zarith zarray zcontrol zdict zfile zfileio
+Z3_4OPS=zfilter zfproc zgeneric ziodev zmath
+Z5_6OPS=zmisc zpacked zrelbit zstack zstring zsysvm
+Z7_8OPS=ztoken ztype zvmem zchar zcolor zdevice
+Z9_10OPS=zfont zfont2 zgstate zht zimage zmatrix
+Z11OPS=zpaint zpath
 # We have to be a little underhanded with *config.$(OBJ) so as to avoid
 # circular definitions.
-INT_OBJS=imainarg.$(OBJ) gsargs.$(OBJ) imain.$(OBJ) \
-  $(INT1) $(INT2) $(INT3) $(INT4) \
-  $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7)
-INT_CONFIG=$(gconfig).$(OBJ) $(gscdefs).$(OBJ) $(iconfig).$(OBJ) \
-  iccinit$(COMPILE_INITS).$(OBJ)
+INT_MAIN=$(PSOBJ)imain.$(OBJ) $(PSOBJ)imainarg.$(OBJ) $(GLOBJ)gsargs.$(OBJ)
+INT_OBJS=$(INT_MAIN)\
+ $(INT1) $(INT2) $(INT3) $(INT4) $(INT5) $(INT6) $(INT7)\
+ $(Z1) $(Z2) $(Z3) $(Z4) $(Z5) $(Z6) $(Z7) $(Z8) $(Z9) $(Z10) $(Z11)
+INT_CONFIG=$(GLOBJ)$(gconfig).$(OBJ) $(GLOBJ)$(gscdefs).$(OBJ)\
+ $(PSOBJ)$(iconfig).$(OBJ) $(PSOBJ)iccinit$(COMPILE_INITS).$(OBJ)
 INT_ALL=$(INT_OBJS) $(INT_CONFIG)
 # We omit libcore.dev, which should be included here, because problems
 # with the Unix linker require libcore to appear last in the link list
@@ -377,95 +464,111 @@ INT_ALL=$(INT_OBJS) $(INT_CONFIG)
 # zfilter.c shouldn't include the RLE and RLD filters, but we don't want to
 # change this now.
 psbase.dev: $(INT_MAK) $(ECHOGS_XE) $(INT_OBJS)\
- isupport.dev rld.dev rle.dev sfile.dev
-	$(SETMOD) psbase imainarg.$(OBJ) gsargs.$(OBJ) imain.$(OBJ)
+ isupport.dev nousparm.dev rld.dev rle.dev sfile.dev
+	$(SETMOD) psbase $(INT_MAIN)
 	$(ADDMOD) psbase -obj $(INT_CONFIG)
 	$(ADDMOD) psbase -obj $(INT1)
 	$(ADDMOD) psbase -obj $(INT2)
 	$(ADDMOD) psbase -obj $(INT3)
 	$(ADDMOD) psbase -obj $(INT4)
+	$(ADDMOD) psbase -obj $(INT5)
+	$(ADDMOD) psbase -obj $(INT6)
+	$(ADDMOD) psbase -obj $(INT7)
 	$(ADDMOD) psbase -obj $(Z1)
-	$(ADDMOD) psbase -oper $(Z1OPS)
 	$(ADDMOD) psbase -obj $(Z2)
-	$(ADDMOD) psbase -oper $(Z2OPS)
 	$(ADDMOD) psbase -obj $(Z3)
-	$(ADDMOD) psbase -oper $(Z3OPS)
 	$(ADDMOD) psbase -obj $(Z4)
-	$(ADDMOD) psbase -oper $(Z4OPS)
 	$(ADDMOD) psbase -obj $(Z5)
-	$(ADDMOD) psbase -oper $(Z5OPS)
 	$(ADDMOD) psbase -obj $(Z6)
-	$(ADDMOD) psbase -oper $(Z6OPS)
 	$(ADDMOD) psbase -obj $(Z7)
-	$(ADDMOD) psbase -oper $(Z7OPS)
+	$(ADDMOD) psbase -obj $(Z8)
+	$(ADDMOD) psbase -obj $(Z9)
+	$(ADDMOD) psbase -obj $(Z10)
+	$(ADDMOD) psbase -obj $(Z11)
+	$(ADDMOD) psbase -oper $(Z1_2OPS)
+	$(ADDMOD) psbase -oper $(Z3_4OPS)
+	$(ADDMOD) psbase -oper $(Z5_6OPS)
+	$(ADDMOD) psbase -oper $(Z7_8OPS)
+	$(ADDMOD) psbase -oper $(Z9_10OPS)
+	$(ADDMOD) psbase -oper $(Z11OPS)
 	$(ADDMOD) psbase -iodev stdin stdout stderr lineedit statementedit
-	$(ADDMOD) psbase -include isupport rld rle sfile
+	$(ADDMOD) psbase -include isupport nousparm rld rle sfile
 
 # -------------------------- Feature definitions -------------------------- #
 
 # ---------------- Full Level 1 interpreter ---------------- #
 
-level1.dev: $(INT_MAK) $(ECHOGS_XE) psbase.dev bcp.dev hsb.dev path1.dev type1.dev
-	$(SETMOD) level1 -include psbase bcp hsb path1 type1
-	$(ADDMOD) level1 -emulator PostScript PostScriptLevel1
+# We keep the old name for backward compatibility.
+level1.dev: psl1.dev
+	$(CP_) psl1.dev level1.dev
+
+psl1.dev: $(INT_MAK) $(ECHOGS_XE) psbase.dev bcp.dev hsb.dev path1.dev type1.dev
+	$(SETMOD) psl1 -include psbase bcp hsb path1 type1
+	$(ADDMOD) psl1 -emulator PostScript PostScriptLevel1
 
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
 color.dev: $(INT_MAK) $(ECHOGS_XE) cmyklib.dev colimlib.dev cmykread.dev
 	$(SETMOD) color -include cmyklib colimlib cmykread
 
-cmykread_=zcolor1.$(OBJ) zht1.$(OBJ)
+cmykread_=$(PSOBJ)zcolor1.$(OBJ) $(PSOBJ)zht1.$(OBJ)
 cmykread.dev: $(INT_MAK) $(ECHOGS_XE) $(cmykread_)
 	$(SETMOD) cmykread $(cmykread_)
 	$(ADDMOD) cmykread -oper zcolor1 zht1
 
-zcolor1.$(OBJ): zcolor1.c $(OP) \
-  $(gscolor1_h) \
-  $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) \
-  $(gzstate_h) \
-  $(ialloc_h) $(icolor_h) $(iimage_h) $(estack_h) $(iutil_h) $(igstate_h) $(store_h)
+$(PSOBJ)zcolor1.$(OBJ): $(PSSRC)zcolor1.c $(OP)\
+ $(gscolor1_h)\
+ $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gzstate_h)\
+ $(ialloc_h) $(icolor_h) $(iimage_h) $(estack_h) $(iutil_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zcolor1.$(OBJ) $(C_) $(PSSRC)zcolor1.c
 
-zht1.$(OBJ): zht1.c $(OP) $(memory__h)\
+$(PSOBJ)zht1.$(OBJ): $(PSSRC)zht1.c $(OP) $(memory__h)\
  $(gsmatrix_h) $(gsstate_h) $(gsstruct_h) $(gxdevice_h) $(gzht_h)\
  $(ialloc_h) $(estack_h) $(igstate_h) $(iht_h) $(store_h)
+	$(PSCC) $(PSO_)zht1.$(OBJ) $(C_) $(PSSRC)zht1.c
 
 # ---------------- HSB color ---------------- #
 
-hsb_=zhsb.$(OBJ)
+hsb_=$(PSOBJ)zhsb.$(OBJ)
 hsb.dev: $(INT_MAK) $(ECHOGS_XE) $(hsb_) hsblib.dev
 	$(SETMOD) hsb $(hsb_)
 	$(ADDMOD) hsb -include hsblib
 	$(ADDMOD) hsb -oper zhsb
 
-zhsb.$(OBJ): zhsb.c $(OP) \
-  $(gshsb_h) $(igstate_h) $(store_h)
+$(PSOBJ)zhsb.$(OBJ): $(PSSRC)zhsb.c $(OP)\
+ $(gshsb_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zhsb.$(OBJ) $(C_) $(PSSRC)zhsb.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
 
-path1_=zpath1.$(OBJ)
+path1_=$(PSOBJ)zpath1.$(OBJ)
 path1.dev: $(INT_MAK) $(ECHOGS_XE) $(path1_) path1lib.dev
 	$(SETMOD) path1 $(path1_)
 	$(ADDMOD) path1 -include path1lib
 	$(ADDMOD) path1 -oper zpath1
 
-zpath1.$(OBJ): zpath1.c $(OP) $(memory__h)\
+$(PSOBJ)zpath1.$(OBJ): $(PSSRC)zpath1.c $(OP) $(memory__h)\
  $(ialloc_h) $(estack_h) $(gspath_h) $(gsstruct_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zpath1.$(OBJ) $(C_) $(PSSRC)zpath1.c
 
 # ================ Level-independent PostScript options ================ #
 
 # ---------------- BCP filters ---------------- #
 
-bcp_=sbcp.$(OBJ) zfbcp.$(OBJ)
+bcp_=$(PSOBJ)sbcp.$(OBJ) $(PSOBJ)zfbcp.$(OBJ)
 bcp.dev: $(INT_MAK) $(ECHOGS_XE) $(bcp_)
 	$(SETMOD) bcp $(bcp_)
 	$(ADDMOD) bcp -oper zfbcp
 
-sbcp.$(OBJ): sbcp.c $(AK) $(stdio__h) \
-  $(sfilter_h) $(strimpl_h)
+$(PSOBJ)sbcp.$(OBJ): $(PSSRC)sbcp.c $(AK) $(stdio__h)\
+ $(sfilter_h) $(strimpl_h)
+	$(PSCC) $(PSO_)sbcp.$(OBJ) $(C_) $(PSSRC)sbcp.c
 
-zfbcp.$(OBJ): zfbcp.c $(OP) $(memory__h)\
+$(PSOBJ)zfbcp.$(OBJ): $(PSSRC)zfbcp.c $(OP) $(memory__h)\
  $(gsstruct_h) $(ialloc_h) $(ifilter_h)\
  $(sfilter_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfbcp.$(OBJ) $(C_) $(PSSRC)zfbcp.c
 
 # ---------------- Incremental font loading ---------------- #
 # (This only works for Type 1 fonts without eexec encryption.)
@@ -475,13 +578,15 @@ diskfont.dev: $(INT_MAK) $(ECHOGS_XE)
 
 # ---------------- Double-precision floats ---------------- #
 
-double_=zdouble.$(OBJ)
+double_=$(PSOBJ)zdouble.$(OBJ)
 double.dev: $(INT_MAK) $(ECHOGS_XE) $(double_)
 	$(SETMOD) double $(double_)
 	$(ADDMOD) double -oper zdouble
 
-zdouble.$(OBJ): zdouble.c $(OP) $(ctype__h) $(math__h) $(memory__h) $(string__h) \
-  $(gxfarith_h) $(store_h)
+$(PSOBJ)zdouble.$(OBJ): $(PSSRC)zdouble.c $(OP)\
+ $(ctype__h) $(math__h) $(memory__h) $(string__h)\
+ $(gxfarith_h) $(store_h)
+	$(PSCC) $(PSO_)zdouble.$(OBJ) $(C_) $(PSSRC)zdouble.c
 
 # ---------------- EPSF files with binary headers ---------------- #
 
@@ -494,53 +599,83 @@ epsf.dev: $(INT_MAK) $(ECHOGS_XE)
 rasterop.dev: $(INT_MAK) $(ECHOGS_XE) roplib.dev ropread.dev
 	$(SETMOD) rasterop -include roplib ropread
 
-ropread_=zrop.$(OBJ)
+ropread_=$(PSOBJ)zrop.$(OBJ)
 ropread.dev: $(INT_MAK) $(ECHOGS_XE) $(ropread_)
 	$(SETMOD) ropread $(ropread_)
 	$(ADDMOD) ropread -oper zrop
 
-zrop.$(OBJ): zrop.c $(OP) $(memory__h)\
+$(PSOBJ)zrop.$(OBJ): $(PSSRC)zrop.c $(OP) $(memory__h)\
  $(gsrop_h) $(gsutil_h) $(gxdevice_h)\
  $(idict_h) $(idparam_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zrop.$(OBJ) $(C_) $(PSSRC)zrop.c
 
 # ---------------- PostScript Type 1 (and Type 4) fonts ---------------- #
 
 type1.dev: $(INT_MAK) $(ECHOGS_XE) psf1lib.dev psf1read.dev
 	$(SETMOD) type1 -include psf1lib psf1read
 
-psf1read_=seexec.$(OBJ) zchar1.$(OBJ) zcharout.$(OBJ) zfont1.$(OBJ) zmisc1.$(OBJ)
+psf1read_1=$(PSOBJ)seexec.$(OBJ) $(PSOBJ)zchar1.$(OBJ) $(PSOBJ)zcharout.$(OBJ)
+psf1read_2=$(PSOBJ)zfont1.$(OBJ) $(PSOBJ)zmisc1.$(OBJ)
+psf1read_=$(psf1read_1) $(psf1read_2)
 psf1read.dev: $(INT_MAK) $(ECHOGS_XE) $(psf1read_)
-	$(SETMOD) psf1read $(psf1read_)
+	$(SETMOD) psf1read $(psf1read_1)
+	$(ADDMOD) psf1read -obj $(psf1read_2)
 	$(ADDMOD) psf1read -oper zchar1 zfont1 zmisc1
 	$(ADDMOD) psf1read -ps gs_type1
 
-seexec.$(OBJ): seexec.c $(AK) $(stdio__h) \
-  $(gscrypt1_h) $(scanchar_h) $(sfilter_h) $(strimpl_h)
+$(PSOBJ)seexec.$(OBJ): $(PSSRC)seexec.c $(AK) $(stdio__h)\
+ $(gscrypt1_h) $(scanchar_h) $(sfilter_h) $(strimpl_h)
+	$(PSCC) $(PSO_)seexec.$(OBJ) $(C_) $(PSSRC)seexec.c
 
-zchar1.$(OBJ): zchar1.c $(OP) \
-  $(gspaint_h) $(gspath_h) $(gsstruct_h) \
-  $(gxchar_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) \
-  $(gxfont_h) $(gxfont1_h) $(gxtype1_h) $(gzstate_h) \
-  $(estack_h) $(ialloc_h) $(ichar_h) $(icharout_h) \
-  $(idict_h) $(ifont_h) $(igstate_h) $(store_h)
+$(PSOBJ)zchar1.$(OBJ): $(PSSRC)zchar1.c $(OP)\
+ $(gspaint_h) $(gspath_h) $(gsstruct_h)\
+ $(gxchar_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gxfont_h) $(gxfont1_h) $(gxtype1_h) $(gzstate_h)\
+ $(estack_h) $(ialloc_h) $(ichar_h) $(icharout_h)\
+ $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zchar1.$(OBJ) $(C_) $(PSSRC)zchar1.c
 
-zfont1.$(OBJ): zfont1.c $(OP) \
-  $(gsmatrix_h) $(gxdevice_h) $(gschar_h) \
-  $(gxfixed_h) $(gxfont_h) $(gxfont1_h) \
-  $(bfont_h) $(ialloc_h) $(idict_h) $(idparam_h) $(store_h)
+# The last line of dependencies is only for a debugging operator.
+$(PSOBJ)zfont1.$(OBJ): $(PSSRC)zfont1.c $(OP)\
+ $(gsmatrix_h) $(gxdevice_h) $(gschar_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont1_h)\
+ $(bfont_h) $(ialloc_h) $(idict_h) $(idparam_h) $(store_h)\
+  $(files_h) $(igstate_h) $(stream_h)
+	$(PSCC) $(PSO_)zfont1.$(OBJ) $(C_) $(PSSRC)zfont1.c
 
-zmisc1.$(OBJ): zmisc1.c $(OP) $(memory__h)\
+$(PSOBJ)zmisc1.$(OBJ): $(PSSRC)zmisc1.c $(OP) $(memory__h)\
  $(gscrypt1_h)\
  $(idict_h) $(idparam_h) $(ifilter_h)\
  $(sfilter_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zmisc1.$(OBJ) $(C_) $(PSSRC)zmisc1.c
 
 # -------------- Compact Font Format and Type 2 charstrings ------------- #
 
-cff.dev: $(INT_MAK) $(ECHOGS_XE) gs_cff.ps psl2int.dev
+cff.dev: $(INT_MAK) $(ECHOGS_XE) $(PSSRC)gs_cff.ps psl2int.dev
 	$(SETMOD) cff -ps gs_cff
 
 type2.dev: $(INT_MAK) $(ECHOGS_XE) type1.dev psf2lib.dev
 	$(SETMOD) type2 -include psf2lib
+
+# ---------------- Type 32 (downloaded bitmap) fonts ---------------- #
+
+$(PSOBJ)zchar32.$(OBJ): $(PSSRC)zchar32.c $(OP)\
+ $(gsccode_h) $(gscoord_h) $(gsutil_h)\
+ $(gxchar_h) $(gxdevice_h) $(gxdevmem_h) $(gxfcache_h) $(gxfont_h)\
+ $(ifont_h) $(igstate_h)
+	$(PSCC) $(PSO_)zchar32.$(OBJ) $(C_) $(PSSRC)zchar32.c
+
+$(PSOBJ)zfont32.$(OBJ): $(PSSRC)zfont32.c $(OP)\
+ $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxchar_h) $(gxfixed_h) $(gxfont_h)\
+ $(bfont_h) $(store_h)
+	$(PSCC) $(PSO_)zfont32.$(OBJ) $(C_) $(PSSRC)zfont32.c
+
+type32_=$(PSOBJ)zchar32.$(OBJ) $(PSOBJ)zfont32.$(OBJ)
+type32.dev: $(INT_MAK) $(ECHOGS_XE) $(type32_)
+	$(SETMOD) type32 $(type32_)
+	$(ADDMOD) type32 -oper zchar32 zfont32
+	$(ADDMOD) type32 -ps gs_res gs_typ32
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
@@ -550,30 +685,32 @@ ttfont.dev: $(INT_MAK) $(ECHOGS_XE) type42.dev
 	$(ADDMOD) ttfont -ps gs_mro_e gs_wan_e gs_ttf
 
 # Type 42 (embedded TrueType) support
-type42read_=zchar42.$(OBJ) zcharout.$(OBJ) zfont42.$(OBJ)
+type42read_=$(PSOBJ)zchar42.$(OBJ) $(PSOBJ)zcharout.$(OBJ) $(PSOBJ)zfont42.$(OBJ)
 type42.dev: $(INT_MAK) $(ECHOGS_XE) $(type42read_) ttflib.dev
 	$(SETMOD) type42 $(type42read_)
 	$(ADDMOD) type42 -include ttflib	
 	$(ADDMOD) type42 -oper zchar42 zfont42
 	$(ADDMOD) type42 -ps gs_typ42
 
-zchar42.$(OBJ): zchar42.c $(OP) \
-  $(gsmatrix_h) $(gspaint_h) $(gspath_h) \
-  $(gxfixed_h) $(gxchar_h) $(gxfont_h) $(gxfont42_h) \
-  $(gxistate_h) $(gxpath_h) $(gzstate_h) \
-  $(dstack_h) $(estack_h) $(ichar_h) $(icharout_h) \
-  $(ifont_h) $(igstate_h) $(store_h)
+$(PSOBJ)zchar42.$(OBJ): $(PSSRC)zchar42.c $(OP)\
+ $(gsmatrix_h) $(gspaint_h) $(gspath_h)\
+ $(gxfixed_h) $(gxchar_h) $(gxfont_h) $(gxfont42_h)\
+ $(gxistate_h) $(gxpath_h) $(gzstate_h)\
+ $(dstack_h) $(estack_h) $(ichar_h) $(icharout_h)\
+ $(ifont_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zchar42.$(OBJ) $(C_) $(PSSRC)zchar42.c
 
-zfont42.$(OBJ): zfont42.c $(OP) \
-  $(gsccode_h) $(gsmatrix_h) $(gxfont_h) $(gxfont42_h) \
-  $(bfont_h) $(idict_h) $(idparam_h) $(store_h)
+$(PSOBJ)zfont42.$(OBJ): $(PSSRC)zfont42.c $(OP) $(memory__h)\
+ $(gsccode_h) $(gsmatrix_h) $(gxfont_h) $(gxfont42_h)\
+ $(bfont_h) $(idict_h) $(idparam_h) $(store_h)
+	$(PSCC) $(PSO_)zfont42.$(OBJ) $(C_) $(PSSRC)zfont42.c
 
 # ======================== Precompilation options ======================== #
 
 # ---------------- Precompiled fonts ---------------- #
 # See fonts.txt for more information.
 
-ccfont_h=ccfont.h $(std_h) $(gsmemory_h) $(iref_h) $(ivmspace_h) $(store_h)
+ccfont_h=$(PSSRC)ccfont.h $(std_h) $(gsmemory_h) $(iref_h) $(ivmspace_h) $(store_h)
 
 CCFONT=$(OP) $(ccfont_h)
 
@@ -639,7 +776,7 @@ ccfonts15=
 # exists during the execution of the following rule.
 # font2c has the prefix "gs" built into it, so we need to instruct
 # genconf to use the same one.
-$(gconfigf_h): $(MAKEFILE) $(INT_MAK) $(GENCONF_XE)
+$(gconfigf_h): $(MAKEFILE) $(INT_MAK) $(ECHOGS_XE) $(GENCONF_XE)
 	$(SETMOD) ccfonts_ -font $(ccfonts1)
 	$(ADDMOD) ccfonts_ -font $(ccfonts2)
 	$(ADDMOD) ccfonts_ -font $(ccfonts3)
@@ -655,7 +792,7 @@ $(gconfigf_h): $(MAKEFILE) $(INT_MAK) $(GENCONF_XE)
 	$(ADDMOD) ccfonts_ -font $(ccfonts13)
 	$(ADDMOD) ccfonts_ -font $(ccfonts14)
 	$(ADDMOD) ccfonts_ -font $(ccfonts15)
-	$(EXP)genconf ccfonts_.dev -n gs -f $(gconfigf_h)
+	$(GENCONF_XE) ccfonts_.dev -n gs -f $(gconfigf_h)
 
 # We separate icfontab.dev from ccfonts.dev so that a customer can put
 # compiled fonts into a separate shared library.
@@ -666,10 +803,10 @@ icfontab=icfontab$(CONFIG)
 # to select an alternate compiled font table.
 ccfont_table=$(icfontab)
 
-$(icfontab).dev: $(MAKEFILE) $(INT_MAK) $(ECHOGS_XE) $(icfontab).$(OBJ) \
-  $(ccfonts1_) $(ccfonts2_) $(ccfonts3_) $(ccfonts4_) $(ccfonts5_) \
-  $(ccfonts6_) $(ccfonts7_) $(ccfonts8_) $(ccfonts9_) $(ccfonts10_) \
-  $(ccfonts11_) $(ccfonts12_) $(ccfonts13_) $(ccfonts14_) $(ccfonts15_)
+$(icfontab).dev: $(MAKEFILE) $(INT_MAK) $(ECHOGS_XE) $(icfontab).$(OBJ)\
+ $(ccfonts1_) $(ccfonts2_) $(ccfonts3_) $(ccfonts4_) $(ccfonts5_)\
+ $(ccfonts6_) $(ccfonts7_) $(ccfonts8_) $(ccfonts9_) $(ccfonts10_)\
+ $(ccfonts11_) $(ccfonts12_) $(ccfonts13_) $(ccfonts14_) $(ccfonts15_)
 	$(SETMOD) $(icfontab) -obj $(icfontab).$(OBJ)
 	$(ADDMOD) $(icfontab) -obj $(ccfonts1_)
 	$(ADDMOD) $(icfontab) -obj $(ccfonts2_)
@@ -687,85 +824,112 @@ $(icfontab).dev: $(MAKEFILE) $(INT_MAK) $(ECHOGS_XE) $(icfontab).$(OBJ) \
 	$(ADDMOD) $(icfontab) -obj $(ccfonts14_)
 	$(ADDMOD) $(icfontab) -obj $(ccfonts15_)
 
-$(icfontab).$(OBJ): icfontab.c $(AK) $(ccfont_h) $(gconfigf_h)
+$(PSOBJ)$(icfontab).$(OBJ): $(PSSRC)icfontab.c $(AK) $(ccfont_h) $(gconfigf_h)
 	$(CP_) $(gconfigf_h) gconfigf.h
-	$(CCCF) icfontab.c
+	$(PSCC) $(PSO_)icfontab.$(OBJ) $(C_) $(PSSRC)icfontab.c
 
 # Strictly speaking, ccfonts shouldn't need to include type1,
 # since one could choose to precompile only Type 0 fonts,
 # but getting this exactly right would be too much work.
 ccfonts=ccfonts$(CONFIG)
-$(ccfonts).dev: $(MAKEFILE) $(INT_MAK) type1.dev iccfont.$(OBJ) \
-  $(ccfont_table).dev
+$(ccfonts).dev: $(MAKEFILE) $(INT_MAK) type1.dev iccfont.$(OBJ)\
+ $(ccfont_table).dev
 	$(SETMOD) $(ccfonts) -include type1
 	$(ADDMOD) $(ccfonts) -include $(ccfont_table)
 	$(ADDMOD) $(ccfonts) -obj iccfont.$(OBJ)
 	$(ADDMOD) $(ccfonts) -oper ccfonts
 	$(ADDMOD) $(ccfonts) -ps $(ccfonts_ps)
 
-iccfont.$(OBJ): iccfont.c $(GH) $(string__h)\
+$(PSOBJ)iccfont.$(OBJ): $(PSSRC)iccfont.c $(GH) $(string__h)\
  $(gsstruct_h) $(ccfont_h) $(errors_h)\
  $(ialloc_h) $(idict_h) $(ifont_h) $(iname_h) $(isave_h) $(iutil_h)\
  $(oper_h) $(ostack_h) $(store_h) $(stream_h) $(strimpl_h) $(sfilter_h) $(iscan_h)
-	$(CCCF) iccfont.c
+	$(PSCC) $(PSO_)iccfont.$(OBJ) $(C_) $(PSSRC)iccfont.c
 
 # ---------------- Compiled initialization code ---------------- #
 
 # We select either iccinit0 or iccinit1 depending on COMPILE_INITS.
 
-iccinit0.$(OBJ): iccinit0.c $(stdpre_h)
-	$(CCCF) iccinit0.c
+$(PSOBJ)iccinit0.$(OBJ): $(PSSRC)iccinit0.c $(stdpre_h)
+	$(PSCC) $(PSO_)iccinit0.$(OBJ) $(C_) $(PSSRC)iccinit0.c
 
-iccinit1.$(OBJ): gs_init.$(OBJ)
-	$(CP_) gs_init.$(OBJ) iccinit1.$(OBJ)
+$(PSOBJ)iccinit1.$(OBJ): $(PSOBJ)gs_init.$(OBJ)
+	$(CP_) $(PSOBJ)gs_init.$(OBJ) $(PSOBJ)iccinit1.$(OBJ)
 
 # All the gs_*.ps files should be prerequisites of gs_init.c,
 # but we don't have any convenient list of them.
-gs_init.c: $(GS_INIT) $(GENINIT_XE) $(gconfig_h)
-	$(EXP)geninit $(GS_INIT) $(gconfig_h) -c gs_init.c
+$(PSGEN)gs_init.c: $(GS_INIT) $(GENINIT_XE) $(gconfig_h)
+	$(GENINIT_XE) $(GS_INIT) $(gconfig_h) -c $(PSGEN)gs_init.c
 
-gs_init.$(OBJ): gs_init.c $(stdpre_h)
-	$(CCCF) gs_init.c
+$(PSOBJ)gs_init.$(OBJ): $(PSGEN)gs_init.c $(stdpre_h)
+	$(PSCC) $(PSO_)gs_init.$(OBJ) $(C_) $(PSGEN)gs_init.c
 
 # ======================== PostScript Level 2 ======================== #
 
-level2.dev: $(INT_MAK) $(ECHOGS_XE) \
- cidfont.dev cie.dev cmapread.dev compfont.dev dct.dev devctrl.dev dpsand2.dev\
- filter.dev level1.dev pattern.dev psl2lib.dev psl2read.dev sepr.dev\
- type42.dev xfilter.dev
-	$(SETMOD) level2 -include cidfont cie cmapread compfont
-	$(ADDMOD) level2 -include dct devctrl dpsand2 filter
-	$(ADDMOD) level2 -include level1 pattern psl2lib psl2read
-	$(ADDMOD) level2 -include sepr type42 xfilter
-	$(ADDMOD) level2 -emulator PostScript PostScriptLevel2
+# We keep the old name for backward compatibility.
+level2.dev: psl2.dev
+	$(CP_) psl2.dev level2.dev
+
+psl2.dev: $(INT_MAK) $(ECHOGS_XE)\
+ cidfont.dev cie.dev cmapread.dev compfont.dev dct.dev dpsand2.dev\
+ filter.dev iodevice.dev pagedev.dev pattern.dev\
+ psl1.dev psl2lib.dev psl2read.dev\
+ sepr.dev type32.dev type42.dev xfilter.dev
+	$(SETMOD) psl2 -include cidfont cie cmapread compfont
+	$(ADDMOD) psl2 -include dct dpsand2 filter iodevice
+	$(ADDMOD) psl2 -include pagedev pattern psl1 psl2lib psl2read
+	$(ADDMOD) psl2 -include sepr type32 type42 xfilter
+	$(ADDMOD) psl2 -emulator PostScript PostScriptLevel2
 
 # Define basic Level 2 language support.
 # This is the minimum required for CMap and CIDFont support.
 
-psl2int_=iutil2.$(OBJ) zmisc2.$(OBJ) zusparam.$(OBJ)
-psl2int.dev: $(INT_MAK) $(ECHOGS_XE) $(psl2int_) dps2int.dev
+psl2int_=$(PSOBJ)iutil2.$(OBJ) $(PSOBJ)zmisc2.$(OBJ)
+psl2int.dev: $(INT_MAK) $(ECHOGS_XE) $(psl2int_) dps2int.dev usparam.dev
 	$(SETMOD) psl2int $(psl2int_)
-	$(ADDMOD) psl2int -include dps2int
-	$(ADDMOD) psl2int -oper zmisc2 zusparam
+	$(ADDMOD) psl2int -include dps2int usparam
+	$(ADDMOD) psl2int -oper zmisc2
 	$(ADDMOD) psl2int -ps gs_lev2 gs_res
 
-iutil2.$(OBJ): iutil2.c $(GH) $(memory__h) $(string__h)\
+$(PSOBJ)iutil2.$(OBJ): $(PSSRC)iutil2.c $(GH) $(memory__h) $(string__h)\
  $(gsparam_h) $(gsutil_h)\
- $(errors_h) $(opcheck_h) $(imemory_h) $(iutil_h) $(iutil2_h)
+ $(errors_h) $(idict_h) $(imemory_h) $(iutil_h) $(iutil2_h) $(opcheck_h)
+	$(PSCC) $(PSO_)iutil2.$(OBJ) $(C_) $(PSSRC)iutil2.c
 
-zmisc2.$(OBJ): zmisc2.c $(OP) $(memory__h) $(string__h)\
+$(PSOBJ)zmisc2.$(OBJ): $(PSSRC)zmisc2.c $(OP) $(memory__h) $(string__h)\
  $(idict_h) $(idparam_h) $(iparam_h) $(dstack_h) $(estack_h)\
  $(ilevel_h) $(iname_h) $(iutil2_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)zmisc2.$(OBJ) $(C_) $(PSSRC)zmisc2.c
+
+# Define support for user and system parameters.
+# We make this a separate module only because it must have a default.
+
+nousparm_=$(PSOBJ)inouparm.$(OBJ)
+nousparm.dev: $(INT_MAK) $(ECHOGS_XE) $(nousparm_)
+	$(SETMOD) nousparm $(nousparm_)
+
+$(PSOBJ)inouparm.$(OBJ): $(PSSRC)inouparm.c\
+ $(ghost_h) $(icontext_h)
+	$(PSCC) $(PSO_)inouparm.$(OBJ) $(C_) $(PSSRC)inouparm.c
+
+usparam_=$(PSOBJ)zusparam.$(OBJ)
+usparam.dev: $(INT_MAK) $(ECHOGS_XE) $(usparam_)
+	$(SETMOD) usparam $(usparam_)
+	$(ADDMOD) usparam -oper zusparam -replace nousparm
 
 # Note that zusparam includes both Level 1 and Level 2 operators.
-zusparam.$(OBJ): zusparam.c $(OP) $(memory__h) $(string__h)\
+$(PSOBJ)zusparam.$(OBJ): $(PSSRC)zusparam.c $(OP) $(memory__h) $(string__h)\
  $(gscdefs_h) $(gsfont_h) $(gsstruct_h) $(gsutil_h) $(gxht_h)\
- $(ialloc_h) $(idict_h) $(idparam_h) $(iparam_h) $(dstack_h) $(estack_h)\
- $(iname_h) $(iutil2_h) $(store_h)
+ $(ialloc_h) $(icontext_h) $(idict_h) $(idparam_h) $(iparam_h)\
+ $(iname_h) $(iutil2_h)\
+ $(dstack_h) $(estack_h) $(store_h)
+	$(PSCC) $(PSO_)zusparam.$(OBJ) $(C_) $(PSSRC)zusparam.c
 
 # Define full Level 2 support.
 
-psl2read_=zcolor2.$(OBJ) zcsindex.$(OBJ) zht2.$(OBJ) zimage2.$(OBJ)
+iimage2_h=$(PSSRC)iimage2.h
+
+psl2read_=$(PSOBJ)zcolor2.$(OBJ) $(PSOBJ)zcsindex.$(OBJ) $(PSOBJ)zht2.$(OBJ) $(PSOBJ)zimage2.$(OBJ)
 # Note that zmisc2 includes both Level 1 and Level 2 operators.
 psl2read.dev: $(INT_MAK) $(ECHOGS_XE) $(psl2read_) psl2int.dev dps2read.dev
 	$(SETMOD) psl2read $(psl2read_)
@@ -773,212 +937,198 @@ psl2read.dev: $(INT_MAK) $(ECHOGS_XE) $(psl2read_) psl2int.dev dps2read.dev
 	$(ADDMOD) psl2read -oper zcolor2_l2 zcsindex_l2
 	$(ADDMOD) psl2read -oper zht2_l2 zimage2_l2
 
-zcolor2.$(OBJ): zcolor2.c $(OP)\
+$(PSOBJ)zcolor2.$(OBJ): $(PSSRC)zcolor2.c $(OP)\
  $(gscolor_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxpcolor_h)\
  $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h) $(igstate_h) $(istruct_h)\
  $(store_h)
+	$(PSCC) $(PSO_)zcolor2.$(OBJ) $(C_) $(PSSRC)zcolor2.c
 
-zcsindex.$(OBJ): zcsindex.c $(OP) $(memory__h) \
-  $(gscolor_h) $(gsstruct_h) $(gxfixed_h) $(gxcolor2_h) $(gxcspace_h) $(gsmatrix_h) \
-  $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(ivmspace_h) $(store_h)
+$(PSOBJ)zcsindex.$(OBJ): $(PSSRC)zcsindex.c $(OP) $(memory__h)\
+ $(gscolor_h) $(gsstruct_h) $(gxfixed_h) $(gxcolor2_h) $(gxcspace_h) $(gsmatrix_h)\
+ $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)zcsindex.$(OBJ) $(C_) $(PSSRC)zcsindex.c
 
-zht2.$(OBJ): zht2.c $(OP) \
-  $(gsstruct_h) $(gxdevice_h) $(gzht_h) \
-  $(estack_h) $(ialloc_h) $(icolor_h) $(idict_h) $(idparam_h) $(igstate_h) \
-  $(iht_h) $(store_h)
+$(PSOBJ)zht2.$(OBJ): $(PSSRC)zht2.c $(OP)\
+ $(gsstruct_h) $(gxdevice_h) $(gzht_h)\
+ $(estack_h) $(ialloc_h) $(icolor_h) $(idict_h) $(idparam_h) $(igstate_h)\
+ $(iht_h) $(store_h)
+	$(PSCC) $(PSO_)zht2.$(OBJ) $(C_) $(PSSRC)zht2.c
 
-zimage2.$(OBJ): zimage2.c $(OP) $(math__h) $(memory__h)\
+$(PSOBJ)zimage2.$(OBJ): $(PSSRC)zimage2.c $(OP) $(math__h) $(memory__h)\
  $(gscolor_h) $(gscolor2_h) $(gscspace_h) $(gsimage_h) $(gsmatrix_h)\
- $(idict_h) $(idparam_h) $(iimage_h) $(ilevel_h) $(igstate_h)
+ $(gxfixed_h)\
+ $(idict_h) $(idparam_h) $(iimage_h) $(iimage2_h) $(ilevel_h) $(igstate_h)
+	$(PSCC) $(PSO_)zimage2.$(OBJ) $(C_) $(PSSRC)zimage2.c
 
-# ---------------- Device control ---------------- #
-# This is a catch-all for setpagedevice and IODevices.
+# ---------------- setpagedevice ---------------- #
 
-devctrl_=zdevice2.$(OBJ) ziodev2.$(OBJ) zmedia2.$(OBJ) zdevcal.$(OBJ)
-devctrl.dev: $(INT_MAK) $(ECHOGS_XE) $(devctrl_)
-	$(SETMOD) devctrl $(devctrl_)
-	$(ADDMOD) devctrl -oper zdevice2_l2 ziodev2_l2 zmedia2_l2
-	$(ADDMOD) devctrl -iodev null ram calendar
-	$(ADDMOD) devctrl -ps gs_setpd
+pagedev_=$(PSOBJ)zdevice2.$(OBJ) $(PSOBJ)zmedia2.$(OBJ)
+pagedev.dev: $(INT_MAK) $(ECHOGS_XE) $(pagedev_) $(PSSRC)gs_setpd.ps
+	$(SETMOD) pagedev $(pagedev_)
+	$(ADDMOD) pagedev -oper zdevice2_l2 zmedia2_l2
+	$(ADDMOD) pagedev -ps gs_setpd
 
-zdevice2.$(OBJ): zdevice2.c $(OP) $(math__h) $(memory__h)\
+$(PSOBJ)zdevice2.$(OBJ): $(PSSRC)zdevice2.c $(OP) $(math__h) $(memory__h)\
  $(dstack_h) $(estack_h) $(idict_h) $(idparam_h) $(igstate_h) $(iname_h) $(store_h)\
  $(gxdevice_h) $(gsstate_h)
+	$(PSCC) $(PSO_)zdevice2.$(OBJ) $(C_) $(PSSRC)zdevice2.c
 
-ziodev2.$(OBJ): ziodev2.c $(OP) $(string__h) $(gp_h)\
- $(gxiodev_h) $(stream_h) $(files_h) $(iparam_h) $(iutil2_h) $(store_h)
+$(PSOBJ)zmedia2.$(OBJ): $(PSSRC)zmedia2.c $(OP) $(math__h) $(memory__h)\
+ $(gsmatrix_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zmedia2.$(OBJ) $(C_) $(PSSRC)zmedia2.c
 
-zmedia2.$(OBJ): zmedia2.c $(OP) $(math__h) $(memory__h) \
-  $(gsmatrix_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
+# ---------------- IODevices ---------------- #
 
-zdevcal.$(OBJ): zdevcal.c $(GH) $(time__h) \
-  $(gxiodev_h) $(iparam_h) $(istack_h)
+iodevice_=$(PSOBJ)ziodev2.$(OBJ) $(PSOBJ)zdevcal.$(OBJ)
+iodevice.dev: $(INT_MAK) $(ECHOGS_XE) $(iodevice_)
+	$(SETMOD) iodevice $(iodevice_)
+	$(ADDMOD) iodevice -oper ziodev2_l2
+	$(ADDMOD) iodevice -iodev null ram calendar
+
+$(PSOBJ)ziodev2.$(OBJ): $(PSSRC)ziodev2.c $(OP) $(string__h) $(gp_h)\
+ $(gxiodev_h) $(stream_h)\
+ $(dstack_h) $(files_h) $(iparam_h) $(iutil2_h) $(store_h)
+	$(PSCC) $(PSO_)ziodev2.$(OBJ) $(C_) $(PSSRC)ziodev2.c
+
+$(PSOBJ)zdevcal.$(OBJ): $(PSSRC)zdevcal.c $(GH) $(time__h)\
+ $(gxiodev_h) $(iparam_h) $(istack_h)
+	$(PSCC) $(PSO_)zdevcal.$(OBJ) $(C_) $(PSSRC)zdevcal.c
 
 # ---------------- Filters other than the ones in sfilter.c ---------------- #
 
 # Standard Level 2 decoding filters only.  The PDF configuration uses this.
-fdecode_=scantab.$(OBJ) sfilter2.$(OBJ) zfdecode.$(OBJ)
+fdecode_=$(GLOBJ)scantab.$(OBJ) $(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sfilter2.$(OBJ) $(PSOBJ)zfdecode.$(OBJ)
 fdecode.dev: $(INT_MAK) $(ECHOGS_XE) $(fdecode_) cfd.dev lzwd.dev pdiff.dev pngp.dev rld.dev
 	$(SETMOD) fdecode $(fdecode_)
 	$(ADDMOD) fdecode -include cfd lzwd pdiff pngp rld
 	$(ADDMOD) fdecode -oper zfdecode
 
-zfdecode.$(OBJ): zfdecode.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) \
- $(sa85x_h) $(scf_h) $(scfx_h) $(sfilter_h) $(slzwx_h) $(spdiffx_h) $(spngpx_h) \
+$(PSOBJ)zfdecode.$(OBJ): $(PSSRC)zfdecode.c $(OP) $(memory__h)\
+ $(gsparam_h) $(gsstruct_h)\
+ $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) $(ilevel_h) $(iparam_h)\
+ $(sa85x_h) $(scf_h) $(scfx_h) $(sfilter_h) $(slzwx_h) $(spdiffx_h) $(spngpx_h)\
  $(store_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfdecode.$(OBJ) $(C_) $(PSSRC)zfdecode.c
 
 # Complete Level 2 filter capability.
-filter_=zfilter2.$(OBJ)
+filter_=$(PSOBJ)zfilter2.$(OBJ)
 filter.dev: $(INT_MAK) $(ECHOGS_XE) fdecode.dev $(filter_) cfe.dev lzwe.dev rle.dev
 	$(SETMOD) filter -include fdecode
 	$(ADDMOD) filter -obj $(filter_)
 	$(ADDMOD) filter -include cfe lzwe rle
 	$(ADDMOD) filter -oper zfilter2
 
-zfilter2.$(OBJ): zfilter2.c $(OP) $(memory__h)\
-  $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) $(store_h) \
-  $(sfilter_h) $(scfx_h) $(slzwx_h) $(spdiffx_h) $(spngpx_h) $(strimpl_h)
+$(PSOBJ)zfilter2.$(OBJ): $(PSSRC)zfilter2.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) $(store_h)\
+ $(sfilter_h) $(scfx_h) $(slzwx_h) $(spdiffx_h) $(spngpx_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfilter2.$(OBJ) $(C_) $(PSSRC)zfilter2.c
 
 # Extensions beyond Level 2 standard.
-xfilter_=sbhc.$(OBJ) sbwbs.$(OBJ) shcgen.$(OBJ) smtf.$(OBJ) \
- zfilterx.$(OBJ)
+xfilter_=$(PSOBJ)sbhc.$(OBJ) $(PSOBJ)sbwbs.$(OBJ) $(PSOBJ)shcgen.$(OBJ)\
+ $(PSOBJ)smtf.$(OBJ) $(PSOBJ)zfilterx.$(OBJ)
 xfilter.dev: $(INT_MAK) $(ECHOGS_XE) $(xfilter_) pcxd.dev pngp.dev
 	$(SETMOD) xfilter $(xfilter_)
 	$(ADDMOD) xfilter -include pcxd
 	$(ADDMOD) xfilter -oper zfilterx
 
-sbhc.$(OBJ): sbhc.c $(AK) $(memory__h) $(stdio__h)\
+$(PSOBJ)sbhc.$(OBJ): $(PSSRC)sbhc.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(sbhc_h) $(shcgen_h) $(strimpl_h)
+	$(PSCC) $(PSO_)sbhc.$(OBJ) $(C_) $(PSSRC)sbhc.c
 
-sbwbs.$(OBJ): sbwbs.c $(AK) $(stdio__h) $(memory__h) \
-  $(gdebug_h) $(sbwbs_h) $(sfilter_h) $(strimpl_h)
+$(PSOBJ)sbwbs.$(OBJ): $(PSSRC)sbwbs.c $(AK) $(stdio__h) $(memory__h)\
+ $(gdebug_h) $(sbwbs_h) $(sfilter_h) $(strimpl_h)
+	$(PSCC) $(PSO_)sbwbs.$(OBJ) $(C_) $(PSSRC)sbwbs.c
 
-shcgen.$(OBJ): shcgen.c $(AK) $(memory__h) $(stdio__h)\
+$(PSOBJ)shcgen.$(OBJ): $(PSSRC)shcgen.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h) $(gserror_h) $(gserrors_h) $(gsmemory_h)\
  $(scommon_h) $(shc_h) $(shcgen_h)
+	$(PSCC) $(PSO_)shcgen.$(OBJ) $(C_) $(PSSRC)shcgen.c
 
-smtf.$(OBJ): smtf.c $(AK) $(stdio__h) \
-  $(smtf_h) $(strimpl_h)
+$(PSOBJ)smtf.$(OBJ): $(PSSRC)smtf.c $(AK) $(stdio__h)\
+ $(smtf_h) $(strimpl_h)
+	$(PSCC) $(PSO_)smtf.$(OBJ) $(C_) $(PSSRC)smtf.c
 
-zfilterx.$(OBJ): zfilterx.c $(OP) $(memory__h)\
+$(PSOBJ)zfilterx.$(OBJ): $(PSSRC)zfilterx.c $(OP) $(memory__h)\
  $(gsstruct_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h)\
  $(store_h) $(sfilter_h) $(sbhc_h) $(sbtx_h) $(sbwbs_h) $(shcgen_h)\
  $(smtf_h) $(spcxx_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfilterx.$(OBJ) $(C_) $(PSSRC)zfilterx.c
 
 # ---------------- Binary tokens ---------------- #
 
-btoken_=iscanbin.$(OBJ) zbseq.$(OBJ)
+btoken_=$(PSOBJ)iscanbin.$(OBJ) $(PSOBJ)zbseq.$(OBJ)
 btoken.dev: $(INT_MAK) $(ECHOGS_XE) $(btoken_)
 	$(SETMOD) btoken $(btoken_)
 	$(ADDMOD) btoken -oper zbseq_l2
 	$(ADDMOD) btoken -ps gs_btokn
 
-bseq_h=bseq.h
-btoken_h=btoken.h
+btoken_h=$(PSSRC)btoken.h
 
-iscanbin.$(OBJ): iscanbin.c $(GH) $(math__h) $(memory__h) $(errors_h)\
+$(PSOBJ)iscanbin.$(OBJ): $(PSSRC)iscanbin.c $(GH)\
+ $(math__h) $(memory__h) $(errors_h)\
  $(gsutil_h) $(ialloc_h) $(ibnum_h) $(idict_h) $(iname_h)\
  $(iscan_h) $(iutil_h) $(ivmspace_h)\
- $(bseq_h) $(btoken_h) $(dstack_h) $(ostack_h)\
+ $(btoken_h) $(dstack_h) $(ostack_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)iscanbin.$(OBJ) $(C_) $(PSSRC)iscanbin.c
 
-zbseq.$(OBJ): zbseq.c $(OP) $(memory__h)\
- $(ialloc_h) $(idict_h) $(isave_h)\
- $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)\
- $(iname_h) $(ibnum_h) $(btoken_h) $(bseq_h)
+$(PSOBJ)zbseq.$(OBJ): $(PSSRC)zbseq.c $(OP) $(memory__h)\
+ $(btoken_h) $(ialloc_h) $(store_h)
+	$(PSCC) $(PSO_)zbseq.$(OBJ) $(C_) $(PSSRC)zbseq.c
 
 # ---------------- User paths & insideness testing ---------------- #
 
-upath_=zupath.$(OBJ) ibnum.$(OBJ)
+upath_=$(PSOBJ)zupath.$(OBJ) $(PSOBJ)ibnum.$(OBJ) $(GLOBJ)gdevhit.$(OBJ)
 upath.dev: $(INT_MAK) $(ECHOGS_XE) $(upath_)
 	$(SETMOD) upath $(upath_)
 	$(ADDMOD) upath -oper zupath_l2
 
-zupath.$(OBJ): zupath.c $(OP) \
-  $(idict_h) $(dstack_h) $(iutil_h) $(igstate_h) $(store_h) $(stream_h) $(ibnum_h) \
-  $(gscoord_h) $(gsmatrix_h) $(gspaint_h) $(gspath_h) $(gsstate_h) \
-  $(gxfixed_h) $(gxdevice_h) $(gzpath_h) $(gzstate_h)
+$(PSOBJ)zupath.$(OBJ): $(PSSRC)zupath.c $(OP)\
+ $(dstack_h) $(store_h)\
+ $(ibnum_h) $(idict_h) $(igstate_h) $(iname_h) $(iutil_h) $(stream_h)\
+ $(gscoord_h) $(gsmatrix_h) $(gspaint_h) $(gspath_h) $(gsstate_h)\
+ $(gxfixed_h) $(gxdevice_h) $(gzpath_h) $(gzstate_h)
+	$(PSCC) $(PSO_)zupath.$(OBJ) $(C_) $(PSSRC)zupath.c
 
 # -------- Additions common to Display PostScript and Level 2 -------- #
 
 dpsand2.dev: $(INT_MAK) $(ECHOGS_XE) btoken.dev color.dev upath.dev dps2lib.dev dps2read.dev
 	$(SETMOD) dpsand2 -include btoken color upath dps2lib dps2read
 
-dps2int_=zvmem2.$(OBJ) zdps1.$(OBJ)
+dps2int_=$(PSOBJ)zvmem2.$(OBJ) $(PSOBJ)zdps1.$(OBJ)
 # Note that zvmem2 includes both Level 1 and Level 2 operators.
 dps2int.dev: $(INT_MAK) $(ECHOGS_XE) $(dps2int_)
 	$(SETMOD) dps2int $(dps2int_)
 	$(ADDMOD) dps2int -oper zvmem2 zdps1_l2
 	$(ADDMOD) dps2int -ps gs_dps1
 
-dps2read_=ibnum.$(OBJ) zchar2.$(OBJ)
+dps2read_=$(PSOBJ)ibnum.$(OBJ) $(PSOBJ)zchar2.$(OBJ)
 dps2read.dev: $(INT_MAK) $(ECHOGS_XE) $(dps2read_) dps2int.dev
 	$(SETMOD) dps2read $(dps2read_)
 	$(ADDMOD) dps2read -include dps2int
-	$(ADDMOD) dps2read -oper ireclaim_l2 zchar2_l2
+	$(ADDMOD) dps2read -oper ireclaim_l2 zchar2
 	$(ADDMOD) dps2read -ps gs_dps2
 
-ibnum.$(OBJ): ibnum.c $(GH) $(math__h) $(memory__h)\
+$(PSOBJ)ibnum.$(OBJ): $(PSSRC)ibnum.c $(GH) $(math__h) $(memory__h)\
  $(errors_h) $(stream_h) $(ibnum_h) $(imemory_h) $(iutil_h)
+	$(PSCC) $(PSO_)ibnum.$(OBJ) $(C_) $(PSSRC)ibnum.c
 
-zchar2.$(OBJ): zchar2.c $(OP)\
+$(PSOBJ)zchar2.$(OBJ): $(PSSRC)zchar2.c $(OP)\
  $(gschar_h) $(gsmatrix_h) $(gspath_h) $(gsstruct_h)\
  $(gxchar_h) $(gxfixed_h) $(gxfont_h)\
  $(ialloc_h) $(ichar_h) $(estack_h) $(ifont_h) $(iname_h) $(igstate_h)\
  $(store_h) $(stream_h) $(ibnum_h)
+	$(PSCC) $(PSO_)zchar2.$(OBJ) $(C_) $(PSSRC)zchar2.c
 
-zdps1.$(OBJ): zdps1.c $(OP) \
-  $(gsmatrix_h) $(gspath_h) $(gspath2_h) $(gsstate_h) \
-  $(ialloc_h) $(ivmspace_h) $(igstate_h) $(store_h) $(stream_h) $(ibnum_h)
+$(PSOBJ)zdps1.$(OBJ): $(PSSRC)zdps1.c $(OP)\
+ $(gsmatrix_h) $(gspath_h) $(gspath2_h) $(gsstate_h)\
+ $(ialloc_h) $(ivmspace_h) $(igstate_h) $(store_h) $(stream_h) $(ibnum_h)
+	$(PSCC) $(PSO_)zdps1.$(OBJ) $(C_) $(PSSRC)zdps1.c
 
-zvmem2.$(OBJ): zvmem2.c $(OP) \
-  $(estack_h) $(ialloc_h) $(ivmspace_h) $(store_h)
-
-# ---------------- Display PostScript ---------------- #
-
-dps_=zdps.$(OBJ) icontext.$(OBJ) zcontext.$(OBJ)
-dps.dev: $(INT_MAK) $(ECHOGS_XE) dpslib.dev level2.dev $(dps_)
-	$(SETMOD) dps -include dpslib level2
-	$(ADDMOD) dps -obj $(dps_)
-	$(ADDMOD) dps -oper zcontext zdps
-	$(ADDMOD) dps -ps gs_dps
-
-icontext.$(OBJ): icontext.c $(GH)\
- $(gsstruct_h) $(gxalloc_h)\
- $(dstack_h) $(errors_h) $(estack_h) $(ostack_h)\
- $(icontext_h) $(igstate_h) $(interp_h) $(store_h)
-
-zdps.$(OBJ): zdps.c $(OP)\
- $(gsdps_h) $(gsstate_h) $(igstate_h) $(iname_h) $(store_h)
-
-zcontext.$(OBJ): zcontext.c $(OP) $(gp_h) $(memory__h)\
- $(gsexit_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h)\
- $(icontext_h) $(idict_h) $(igstate_h) $(istruct_h)\
- $(dstack_h) $(estack_h) $(ostack_h) $(store_h)
-
-# The following #ifdef ... #endif are just a comment to mark a DPNEXT area.
-#ifdef DPNEXT
-
-# ---------------- NeXT Display PostScript ---------------- #
-#**************** NOT READY FOR USE YET ****************#
-
-# There should be a gsdpnext.c, but there isn't yet.
-#dpsnext_=zdpnext.$(OBJ) gsdpnext.$(OBJ)
-dpsnext_=zdpnext.$(OBJ)
-dpsnext.dev: $(INT_MAK) $(ECHOGS_XE) dps.dev $(dpsnext_) gs_dpnxt.ps
-	$(SETMOD) dpsnext -include dps
-	$(ADDMOD) dpsnext -obj $(dpsnext_)
-	$(ADDMOD) dpsnext -oper zdpnext
-	$(ADDMOD) dpsnext -ps gs_dpnxt
-
-zdpnext.$(OBJ): zdpnext.c $(OP)\
- $(gscspace_h) $(gsiparam_h) $(gsmatrix_h) $(gxcvalue_h) $(gxsample_h)\
- $(ialloc_h) $(igstate_h) $(iimage_h)
-
-# See above re the following.
-#endif				/* DPNEXT */
+$(PSOBJ)zvmem2.$(OBJ): $(PSSRC)zvmem2.c $(OP)\
+ $(estack_h) $(ialloc_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)zvmem2.$(OBJ) $(C_) $(PSSRC)zvmem2.c
 
 # -------- Composite (PostScript Type 0) font support -------- #
 
@@ -987,28 +1137,36 @@ compfont.dev: $(INT_MAK) $(ECHOGS_XE) psf0lib.dev psf0read.dev
 
 # We always include zfcmap.$(OBJ) because zfont0.c refers to it,
 # and it's not worth the trouble to exclude.
-psf0read_=zchar2.$(OBJ) zfcmap.$(OBJ) zfont0.$(OBJ)
+psf0read_=$(PSOBJ)zcfont.$(OBJ) $(PSOBJ)zfcmap.$(OBJ) $(PSOBJ)zfont0.$(OBJ)
 psf0read.dev: $(INT_MAK) $(ECHOGS_XE) $(psf0read_)
 	$(SETMOD) psf0read $(psf0read_)
-	$(ADDMOD) psf0read -oper zfont0 zchar2 zfcmap
+	$(ADDMOD) psf0read -oper zcfont zfcmap zfont0
 
-zfcmap.$(OBJ): zfcmap.c $(OP)\
+$(PSOBJ)zcfont.$(OBJ): $(PSSRC)zcfont.c $(OP)\
+ $(gschar_h) $(gsmatrix_h)\
+ $(gxchar_h) $(gxfixed_h) $(gxfont_h)\
+ $(ichar_h) $(estack_h) $(ifont_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zcfont.$(OBJ) $(C_) $(PSSRC)zcfont.c
+
+$(PSOBJ)zfcmap.$(OBJ): $(PSSRC)zfcmap.c $(OP)\
  $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
  $(gxfcmap_h) $(gxfont_h)\
  $(ialloc_h) $(idict_h) $(idparam_h) $(ifont_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zfcmap.$(OBJ) $(C_) $(PSSRC)zfcmap.c
 
-zfont0.$(OBJ): zfont0.c $(OP)\
+$(PSOBJ)zfont0.$(OBJ): $(PSSRC)zfont0.c $(OP)\
  $(gschar_h) $(gsstruct_h)\
  $(gxdevice_h) $(gxfcmap_h) $(gxfixed_h) $(gxfont_h) $(gxfont0_h) $(gxmatrix_h)\
  $(gzstate_h)\
  $(bfont_h) $(ialloc_h) $(idict_h) $(idparam_h) $(igstate_h) $(iname_h)\
  $(store_h)
+	$(PSCC) $(PSO_)zfont0.$(OBJ) $(C_) $(PSSRC)zfont0.c
 
 # ---------------- CMap support ---------------- #
 # Note that this requires at least minimal Level 2 support,
 # because it requires findresource.
 
-cmapread_=zfcmap.$(OBJ)
+cmapread_=$(PSOBJ)zfcmap.$(OBJ)
 cmapread.dev: $(INT_MAK) $(ECHOGS_XE) $(cmapread_) cmaplib.dev psl2int.dev
 	$(SETMOD) cmapread $(cmapread_)
 	$(ADDMOD) cmapread -include cmaplib psl2int
@@ -1019,7 +1177,7 @@ cmapread.dev: $(INT_MAK) $(ECHOGS_XE) $(cmapread_) cmaplib.dev psl2int.dev
 # Note that this requires at least minimal Level 2 support,
 # because it requires findresource.
 
-cidread_=zcid.$(OBJ)
+cidread_=$(PSOBJ)zcid.$(OBJ)
 cidfont.dev: $(INT_MAK) $(ECHOGS_XE) psf1read.dev psl2int.dev type42.dev\
  $(cidread_)
 	$(SETMOD) cidfont $(cidread_)
@@ -1027,79 +1185,86 @@ cidfont.dev: $(INT_MAK) $(ECHOGS_XE) psf1read.dev psl2int.dev type42.dev\
 	$(ADDMOD) cidfont -ps gs_cidfn
 	$(ADDMOD) cidfont -oper zcid
 
-zcid.$(OBJ): zcid.c $(OP)\
+$(PSOBJ)zcid.$(OBJ): $(PSSRC)zcid.c $(OP)\
  $(gsccode_h) $(gsmatrix_h) $(gxfont_h)\
  $(bfont_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zcid.$(OBJ) $(C_) $(PSSRC)zcid.c
 
 # ---------------- CIE color ---------------- #
 
-cieread_=zcie.$(OBJ) zcrd.$(OBJ)
+cieread_=$(PSOBJ)zcie.$(OBJ) $(PSOBJ)zcrd.$(OBJ)
 cie.dev: $(INT_MAK) $(ECHOGS_XE) $(cieread_) cielib.dev
 	$(SETMOD) cie $(cieread_)
 	$(ADDMOD) cie -oper zcie_l2 zcrd_l2
 	$(ADDMOD) cie -include cielib
 
-icie_h=icie.h
+icie_h=$(PSSRC)icie.h
 
-zcie.$(OBJ): zcie.c $(OP) $(math__h) $(memory__h) \
-  $(gscolor2_h) $(gscie_h) $(gsstruct_h) $(gxcspace_h) \
-  $(ialloc_h) $(icie_h) $(idict_h) $(idparam_h) $(estack_h) \
-  $(isave_h) $(igstate_h) $(ivmspace_h) $(store_h)
+$(PSOBJ)zcie.$(OBJ): $(PSSRC)zcie.c $(OP) $(math__h) $(memory__h)\
+ $(gscolor2_h) $(gscie_h) $(gsstruct_h) $(gxcspace_h)\
+ $(ialloc_h) $(icie_h) $(idict_h) $(idparam_h) $(estack_h)\
+ $(isave_h) $(igstate_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)zcie.$(OBJ) $(C_) $(PSSRC)zcie.c
 
-zcrd.$(OBJ): zcrd.c $(OP) $(math__h) \
-  $(gscspace_h) $(gscolor2_h) $(gscie_h) $(gsstruct_h) \
-  $(ialloc_h) $(icie_h) $(idict_h) $(idparam_h) $(estack_h) \
-  $(isave_h) $(igstate_h) $(ivmspace_h) $(store_h)
+$(PSOBJ)zcrd.$(OBJ): $(PSSRC)zcrd.c $(OP) $(math__h)\
+ $(gscrd_h) $(gscrdp_h) $(gscspace_h) $(gscolor2_h) $(gsstruct_h)\
+ $(estack_h) $(ialloc_h) $(icie_h) $(idict_h) $(idparam_h) $(igstate_h)\
+ $(iparam_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)zcrd.$(OBJ) $(C_) $(PSSRC)zcrd.c
 
 # ---------------- Pattern color ---------------- #
 
 pattern.dev: $(INT_MAK) $(ECHOGS_XE) patlib.dev patread.dev
 	$(SETMOD) pattern -include patlib patread
 
-patread_=zpcolor.$(OBJ)
+patread_=$(PSOBJ)zpcolor.$(OBJ)
 patread.dev: $(INT_MAK) $(ECHOGS_XE) $(patread_)
 	$(SETMOD) patread $(patread_)
 	$(ADDMOD) patread -oper zpcolor_l2
 
-zpcolor.$(OBJ): zpcolor.c $(OP)\
+$(PSOBJ)zpcolor.$(OBJ): $(PSSRC)zpcolor.c $(OP)\
  $(gscolor_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h)\
-   $(gxfixed_h) $(gxpcolor_h)\
+ $(gxfixed_h) $(gxpcolor_h)\
  $(estack_h) $(ialloc_h) $(idict_h) $(idparam_h) $(igstate_h) $(istruct_h)\
  $(store_h)
+	$(PSCC) $(PSO_)zpcolor.$(OBJ) $(C_) $(PSSRC)zpcolor.c
 
 # ---------------- Separation color ---------------- #
 
-seprread_=zcssepr.$(OBJ)
+seprread_=$(PSOBJ)zcssepr.$(OBJ)
 sepr.dev: $(INT_MAK) $(ECHOGS_XE) $(seprread_) seprlib.dev
 	$(SETMOD) sepr $(seprread_)
 	$(ADDMOD) sepr -oper zcssepr_l2
 	$(ADDMOD) sepr -include seprlib
 
-zcssepr.$(OBJ): zcssepr.c $(OP) \
-  $(gscolor_h) $(gscsepr_h) $(gsmatrix_h) $(gsstruct_h) \
-  $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) \
-  $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(ivmspace_h) $(store_h)
+$(PSOBJ)zcssepr.$(OBJ): $(PSSRC)zcssepr.c $(OP)\
+ $(gscolor_h) $(gscsepr_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h)\
+ $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(ivmspace_h) $(store_h)
+	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
 
 # ---------------- Functions ---------------- #
 
-ifunc_h=ifunc.h
+ifunc_h=$(PSSRC)ifunc.h
 
 # Generic support, and FunctionType 0.
-funcread_=zfunc.$(OBJ) zfunc0.$(OBJ)
+funcread_=$(PSOBJ)zfunc.$(OBJ) $(PSOBJ)zfunc0.$(OBJ)
 func.dev: $(INT_MAK) $(ECHOGS_XE) $(funcread_) funclib.dev
 	$(SETMOD) func $(funcread_)
 	$(ADDMOD) func -oper zfunc zfunc0
 	$(ADDMOD) func -include funclib
 
-zfunc.$(OBJ): zfunc.c $(OP) $(memory__h)\
+$(PSOBJ)zfunc.$(OBJ): $(PSSRC)zfunc.c $(OP) $(memory__h)\
  $(gsfunc_h) $(gsstruct_h)\
  $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(store_h)
+	$(PSCC) $(PSO_)zfunc.$(OBJ) $(C_) $(PSSRC)zfunc.c
 
-zfunc0.$(OBJ): zfunc0.c $(OP) $(memory__h)\
+$(PSOBJ)zfunc0.$(OBJ): $(PSSRC)zfunc0.c $(OP) $(memory__h)\
  $(gsdsrc_h) $(gsfunc_h) $(gsfunc0_h)\
  $(stream_h)\
  $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h)
+	$(PSCC) $(PSO_)zfunc0.$(OBJ) $(C_) $(PSSRC)zfunc0.c
 
 # ---------------- DCT filters ---------------- #
 # The definitions for jpeg*.dev are in jpeg.mak.
@@ -1107,51 +1272,155 @@ zfunc0.$(OBJ): zfunc0.c $(OP) $(memory__h)\
 dct.dev: $(INT_MAK) $(ECHOGS_XE) dcte.dev dctd.dev
 	$(SETMOD) dct -include dcte dctd
 
-# Common code
-
-dctc_=zfdctc.$(OBJ)
-
-zfdctc.$(OBJ): zfdctc.c $(GH) $(memory__h) $(stdio__h)\
- $(errors_h) $(opcheck_h)\
- $(idict_h) $(idparam_h) $(imemory_h) $(ipacked_h) $(iutil_h)\
- $(sdct_h) $(sjpeg_h) $(strimpl_h)\
- jpeglib.h
-
 # Encoding (compression)
 
-dcte_=$(dctc_) zfdcte.$(OBJ)
+dcte_=$(PSOBJ)zfdcte.$(OBJ) $(GLOBJ)sdeparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
 dcte.dev: $(INT_MAK) $(ECHOGS_XE) sdcte.dev $(dcte_)
 	$(SETMOD) dcte -include sdcte
 	$(ADDMOD) dcte -obj $(dcte_)
 	$(ADDMOD) dcte -oper zfdcte
 
-zfdcte.$(OBJ): zfdcte.c $(OP) $(memory__h) $(stdio__h)\
-  $(idict_h) $(idparam_h) $(ifilter_h) $(sdct_h) $(sjpeg_h) $(strimpl_h) \
-  jpeglib.h
+$(PSOBJ)zfdcte.$(OBJ): $(PSSRC)zfdcte.c $(OP)\
+ $(memory__h) $(stdio__h) $(jpeglib_h)\
+ $(gsmalloc_h)\
+ $(sdct_h) $(sjpeg_h) $(stream_h) $(strimpl_h)\
+ $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifilter_h) $(iparam_h)
+	$(PSCC) $(PSO_)zfdcte.$(OBJ) $(C_) $(PSSRC)zfdcte.c
 
 # Decoding (decompression)
 
-dctd_=$(dctc_) zfdctd.$(OBJ)
+dctd_=$(PSOBJ)zfdctd.$(OBJ) $(GLOBJ)sddparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ)
 dctd.dev: $(INT_MAK) $(ECHOGS_XE) sdctd.dev $(dctd_)
 	$(SETMOD) dctd -include sdctd
 	$(ADDMOD) dctd -obj $(dctd_)
 	$(ADDMOD) dctd -oper zfdctd
 
-zfdctd.$(OBJ): zfdctd.c $(OP) $(memory__h) $(stdio__h)\
- $(ifilter_h) $(sdct_h) $(sjpeg_h) $(strimpl_h) \
- jpeglib.h
+$(PSOBJ)zfdctd.$(OBJ): $(PSSRC)zfdctd.c $(OP)\
+ $(memory__h) $(stdio__h) $(jpeglib_h)\
+ $(gsmalloc_h)\
+ $(ialloc_h) $(ifilter_h) $(iparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfdctd.$(OBJ) $(C_) $(PSSRC)zfdctd.c
 
 # ---------------- zlib/Flate filters ---------------- #
 
-fzlib.dev: $(INT_MAK) $(ECHOGS_XE) zfzlib.$(OBJ) szlibe.dev szlibd.dev
+fzlib_=$(PSOBJ)zfzlib.$(OBJ)
+fzlib.dev: $(INT_MAK) $(ECHOGS_XE) $(fzlib_) szlibe.dev szlibd.dev
 	$(SETMOD) fzlib -include szlibe szlibd
-	$(ADDMOD) fzlib -obj zfzlib.$(OBJ)
+	$(ADDMOD) fzlib -obj $(fzlib_)
 	$(ADDMOD) fzlib -oper zfzlib
 
-zfzlib.$(OBJ): zfzlib.c $(OP) \
-  $(errors_h) $(idict_h) $(ifilter_h) \
-  $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(szlibx_h)
-	$(CCCZ) zfzlib.c
+$(PSOBJ)zfzlib.$(OBJ): $(PSSRC)zfzlib.c $(OP)\
+ $(idict_h) $(ifilter_h)\
+ $(spdiffx_h) $(spngpx_h) $(strimpl_h) $(szlibx_h)
+	$(CC_) $(I_)$(PSI_) $(II)$(ZSRCDIR)$(_I) $(PSF_) $(PSO_)zfzlib.$(OBJ) $(C_) $(PSSRC)zfzlib.c
+
+# ================ Display PostScript ================ #
+
+dps_=$(PSOBJ)zdps.$(OBJ) $(PSOBJ)zcontext.$(OBJ)
+dps.dev: $(INT_MAK) $(ECHOGS_XE) dpslib.dev psl2.dev $(dps_)
+	$(SETMOD) dps -include dpslib psl2
+	$(ADDMOD) dps -obj $(dps_)
+	$(ADDMOD) dps -oper zcontext zdps
+	$(ADDMOD) dps -ps gs_dps
+
+$(PSOBJ)zdps.$(OBJ): $(PSSRC)zdps.c $(OP)\
+ $(gsdps_h) $(gsimage_h) $(gsiparm2_h) $(gsstate_h)\
+ $(gxfixed_h) $(gxpath_h)\
+ $(btoken_h) $(idparam_h) $(idict_h) $(igstate_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zdps.$(OBJ) $(C_) $(PSSRC)zdps.c
+
+$(PSOBJ)zcontext.$(OBJ): $(PSSRC)zcontext.c $(OP) $(gp_h) $(memory__h)\
+ $(gsexit_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxstate_h)\
+ $(icontext_h) $(idict_h) $(igstate_h) $(interp_h) $(isave_h) $(istruct_h)\
+ $(dstack_h) $(estack_h) $(files_h) $(ostack_h) $(store_h) $(stream_h)
+	$(PSCC) $(PSO_)zcontext.$(OBJ) $(C_) $(PSSRC)zcontext.c
+
+# ---------------- NeXT Display PostScript ---------------- #
+
+dpsnext_=$(PSOBJ)zdpnext.$(OBJ)
+dpsnext.dev: $(INT_MAK) $(ECHOGS_XE) dps.dev dpnxtlib.dev $(dpsnext_)\
+ $(PSSRC)gs_dpnxt.ps
+	$(SETMOD) dpsnext -include dps dpnxtlib
+	$(ADDMOD) dpsnext -obj $(dpsnext_)
+	$(ADDMOD) dpsnext -oper zdpnext
+	$(ADDMOD) dpsnext -ps gs_dpnxt
+
+$(PSOBJ)zdpnext.$(OBJ): $(PSSRC)zdpnext.c $(math__h) $(OP)\
+ $(gscoord_h) $(gscspace_h) $(gsdpnext_h)\
+ $(gsiparam_h) $(gsiparm2_h) $(gsmatrix_h) $(gspath2_h)\
+ $(gxcvalue_h) $(gxdevice_h) $(gxsample_h)\
+ $(ialloc_h) $(igstate_h) $(iimage_h) $(store_h)
+	$(PSCC) $(PSO_)zdpnext.$(OBJ) $(C_) $(PSSRC)zdpnext.c
+
+# ==================== PostScript LanguageLevel 3 ===================== #
+
+# ---------------- DevicePixel color space ---------------- #
+
+cspixint_=$(PSOBJ)zcspixel.$(OBJ)
+cspixel.dev: $(INT_MAK) $(ECHOGS_XE) $(cspixint_) cspixlib.dev
+	$(SETMOD) cspixel $(cspixint_)
+	$(ADDMOD) cspixel -oper zcspixel
+	$(ADDMOD) cspixel -include cspixlib
+
+$(PSOBJ)zcspixel.$(OBJ): $(PSSRC)zcspixel.c $(OP)\
+ $(gscolor2_h) $(gscpixel_h) $(gscspace_h) $(gsmatrix_h)\
+ $(igstate_h)
+	$(PSCC) $(PSO_)zcspixel.$(OBJ) $(C_) $(PSSRC)zcspixel.c
+
+# ---------------- Rest of LanguageLevel 3 ---------------- #
+
+psl3.dev: $(INT_MAK) $(ECHOGS_XE)\
+ psl2.dev cspixel.dev func.dev psl3lib.dev psl3read.dev
+	$(SETMOD) psl3 -include psl2 cspixel func psl3lib psl3read
+
+$(PSOBJ)zcsdevn.$(OBJ): $(PSSRC)zcsdevn.c $(OP)\
+ $(gscolor2_h) $(gxcspace_h)\
+ $(ialloc_h) $(igstate_h) $(iname_h)
+	$(PSCC) $(PSO_)zcsdevn.$(OBJ) $(C_) $(PSSRC)zcsdevn.c
+
+$(PSOBJ)zfreuse.$(OBJ): $(PSSRC)zfreuse.c $(OP) $(memory__h)\
+ $(sfilter_h) $(stream_h) $(strimpl_h)\
+ $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zfreuse.$(OBJ) $(C_) $(PSSRC)zfreuse.c
+
+$(PSOBJ)zfunc3.$(OBJ): $(PSSRC)zfunc3.c $(memory__h) $(OP)\
+ $(gsfunc3_h) $(gsstruct_h)\
+ $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h)\
+ $(store_h) $(stream_h)
+	$(PSCC) $(PSO_)zfunc3.$(OBJ) $(C_) $(PSSRC)zfunc3.c
+
+$(PSOBJ)zimage3.$(OBJ): $(PSSRC)zimage3.c $(OP) $(memory__h)\
+ $(gscolor2_h) $(gsiparm3_h) $(gsiparm4_h) $(gscspace_h) $(gxiparam_h)\
+ $(idparam_h) $(idict_h) $(igstate_h) $(iimage_h) $(iimage2_h)
+	$(PSCC) $(PSO_)zimage3.$(OBJ) $(C_) $(PSSRC)zimage3.c
+
+$(PSOBJ)zmisc3.$(OBJ): $(PSSRC)zmisc3.c $(GH)\
+ $(oper_h) $(store_h)
+	$(PSCC) $(PSO_)zmisc3.$(OBJ) $(C_) $(PSSRC)zmisc3.c
+
+$(PSOBJ)zshade.$(OBJ): $(PSSRC)zshade.c $(memory__h) $(OP)\
+ $(gscolor2_h) $(gscolor3_h) $(gscspace_h) $(gsfunc3_h)\
+ $(gsshade_h) $(gsstruct_h) $(gsuid_h)\
+ $(stream_h)\
+ $(files_h) $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(igstate_h) $(store_h)
+	$(PSCC) $(PSO_)zshade.$(OBJ) $(C_) $(PSSRC)zshade.c
+
+$(PSOBJ)ztrap.$(OBJ): $(PSSRC)ztrap.c $(OP)\
+ $(gstrap_h)\
+ $(ialloc_h) $(iparam_h)
+	$(PSCC) $(PSO_)ztrap.$(OBJ) $(C_) $(PSSRC)ztrap.c
+
+psl3read_1=$(PSOBJ)zcsdevn.$(OBJ) $(PSOBJ)zfreuse.$(OBJ) $(PSOBJ)zfunc3.$(OBJ) $(PSOBJ)zimage3.$(OBJ)
+psl3read_2=$(PSOBJ)zmisc3.$(OBJ) $(PSOBJ)zshade.$(OBJ) $(PSOBJ)ztrap.$(OBJ)
+psl3read_=$(psl3read_1) $(psl3read_2)
+
+psl3read.dev: $(INT_MAK) $(ECHOGS_XE) $(psl3read_) fzlib.dev
+	$(SETMOD) psl3read $(psl3read_1)
+	$(ADDMOD) psl3read $(psl3read_2)
+	$(ADDMOD) psl3read -oper zcsdevn zfreuse zfunc3 zimage3
+	$(ADDMOD) psl3read -oper zmisc3 zshade ztrap
+	$(ADDMOD) psl3read -ps gs_ll3
+	$(ADDMOD) psl3read -include fzlib
 
 # ================================ PDF ================================ #
 
@@ -1163,61 +1432,76 @@ zfzlib.$(OBJ): zfzlib.c $(OP) \
 # On the other hand, the PDF .ps files must get loaded after
 # level2dict is defined.
 pdfmin.dev: $(INT_MAK) $(ECHOGS_XE)\
- psbase.dev color.dev dps2lib.dev dps2read.dev\
+ psbase.dev color.dev compfont.dev dps2lib.dev dps2read.dev\
  fdecode.dev type1.dev pdffonts.dev psl2lib.dev psl2read.dev pdfread.dev
-	$(SETMOD) pdfmin -include psbase color dps2lib dps2read
-	$(ADDMOD) pdfmin -include fdecode type1
+	$(SETMOD) pdfmin -include psbase color compfont
+	$(ADDMOD) pdfmin -include dps2lib dps2read fdecode type1
 	$(ADDMOD) pdfmin -include pdffonts psl2lib psl2read pdfread
 	$(ADDMOD) pdfmin -emulator PDF
 
 pdf.dev: $(INT_MAK) $(ECHOGS_XE)\
- pdfmin.dev cff.dev cidfont.dev cie.dev compfont.dev cmapread.dev dctd.dev\
+ pdfmin.dev cff.dev cidfont.dev cie.dev cmapread.dev dctd.dev\
  func.dev ttfont.dev type2.dev
-	$(SETMOD) pdf -include pdfmin cff cidfont cie cmapread compfont dctd
+	$(SETMOD) pdf -include pdfmin cff cidfont cie cmapread dctd
 	$(ADDMOD) pdf -include func ttfont type2
 
 # Reader only
 
-pdffonts.dev: $(INT_MAK) $(ECHOGS_XE) \
-  gs_mex_e.ps gs_mro_e.ps gs_pdf_e.ps gs_wan_e.ps
+pdffonts.dev: $(INT_MAK) $(ECHOGS_XE)\
+ $(PSSRC)gs_mex_e.ps $(PSSRC)gs_mro_e.ps $(PSSRC)gs_pdf_e.ps\
+ $(PSSRC)gs_wan_e.ps
 	$(SETMOD) pdffonts -ps gs_mex_e gs_mro_e gs_pdf_e gs_wan_e
 
-# pdf_2ps must be the last .ps file loaded.
 pdfread.dev: $(INT_MAK) $(ECHOGS_XE) fzlib.dev
 	$(SETMOD) pdfread -include fzlib
-	$(ADDMOD) pdfread -ps gs_pdf gs_l2img
+	$(ADDMOD) pdfread -ps pdf_ops gs_l2img
 	$(ADDMOD) pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
-	$(ADDMOD) pdfread -ps pdf_2ps
 
 # ============================= Main program ============================== #
 
-gs.$(OBJ): gs.c $(GH) \
-  $(imain_h) $(imainarg_h) $(iminst_h)
+$(PSOBJ)gs.$(OBJ): $(PSSRC)gs.c $(GH)\
+ $(imain_h) $(imainarg_h) $(iminst_h)
+	$(PSCC) $(PSO_)gs.$(OBJ) $(C_) $(PSSRC)gs.c
 
-imainarg.$(OBJ): imainarg.c $(GH) $(ctype__h) $(memory__h) $(string__h) \
-  $(gp_h) \
-  $(gsargs_h) $(gscdefs_h) $(gsdevice_h) $(gsmdebug_h) $(gxdevice_h) $(gxdevmem_h) \
-  $(errors_h) $(estack_h) $(files_h) \
-  $(ialloc_h) $(imain_h) $(imainarg_h) $(iminst_h) \
-  $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h) \
-  $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+$(PSOBJ)icontext.$(OBJ): $(PSSRC)icontext.c $(GH)\
+ $(gsstruct_h) $(gxalloc_h)\
+ $(dstack_h) $(errors_h) $(estack_h) $(files_h) $(ostack_h)\
+ $(icontext_h) $(idict_h) $(igstate_h) $(interp_h) $(isave_h) $(store_h)\
+ $(stream_h)
+	$(PSCC) $(PSO_)icontext.$(OBJ) $(C_) $(PSSRC)icontext.c
 
-imain.$(OBJ): imain.c $(GH) $(memory__h) $(string__h)\
+$(PSOBJ)imainarg.$(OBJ): $(PSSRC)imainarg.c $(GH)\
+ $(ctype__h) $(memory__h) $(string__h)\
+ $(gp_h)\
+ $(gsargs_h) $(gscdefs_h) $(gsdevice_h) $(gsmalloc_h) $(gsmdebug_h)\
+ $(gxdevice_h) $(gxdevmem_h)\
+ $(errors_h) $(estack_h) $(files_h)\
+ $(ialloc_h) $(imain_h) $(imainarg_h) $(iminst_h)\
+ $(iname_h) $(interp_h) $(iscan_h) $(iutil_h) $(ivmspace_h)\
+ $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)imainarg.$(OBJ) $(C_) $(PSSRC)imainarg.c
+
+$(PSOBJ)imain.$(OBJ): $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
  $(gp_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h) $(gxdevice_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(idebug_h) $(idict_h) $(iname_h) $(interp_h)\
  $(isave_h) $(iscan_h) $(ivmspace_h)\
  $(main_h) $(oper_h) $(ostack_h)\
  $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)imain.$(OBJ) $(C_) $(PSSRC)imain.c
 
-interp.$(OBJ): interp.c $(GH) $(memory__h) $(string__h)\
+#****** $(CCINT) interp.c
+$(PSOBJ)interp.$(OBJ): $(PSSRC)interp.c $(GH) $(memory__h) $(string__h)\
  $(gsstruct_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
- $(ialloc_h) $(iastruct_h) $(inamedef_h) $(idict_h) $(interp_h) $(ipacked_h)\
- $(iscan_h) $(isave_h) $(istack_h) $(iutil_h) $(ivmspace_h)\
+ $(ialloc_h) $(iastruct_h) $(icontext_h) $(idict_h) $(iname_h) $(inamedef_h)\
+ $(interp_h) $(ipacked_h) $(isave_h) $(iscan_h) $(istack_h)\
+ $(iutil_h) $(ivmspace_h)\
  $(oper_h) $(ostack_h) $(sfilter_h) $(store_h) $(stream_h) $(strimpl_h)
-	$(CCINT) interp.c
+	$(PSCC) $(PSO_)interp.$(OBJ) $(C_) $(PSSRC)interp.c
 
-ireclaim.$(OBJ): ireclaim.c $(GH) \
-  $(errors_h) $(gsstruct_h) $(iastate_h) $(opdef_h) $(store_h) \
-  $(dstack_h) $(estack_h) $(ostack_h)
+$(PSOBJ)ireclaim.$(OBJ): $(PSSRC)ireclaim.c $(GH)\
+ $(gsstruct_h)\
+ $(iastate_h) $(icontext_h) $(interp_h) $(isave_h) $(isstate_h)\
+ $(dstack_h) $(errors_h) $(estack_h) $(opdef_h) $(ostack_h) $(store_h)
+	$(PSCC) $(PSO_)ireclaim.$(OBJ) $(C_) $(PSSRC)ireclaim.c

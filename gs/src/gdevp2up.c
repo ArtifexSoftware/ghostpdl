@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevp2up.c */
+/*Id: gdevp2up.c  */
 /* A "2-up" PCX device for testing page objects. */
 #include "gdevprn.h"
 #include "gdevpccm.h"
@@ -119,8 +119,8 @@ pcx2up_print_page(gx_device_printer * pdev, FILE * file)
 	    return_error(gs_error_VMerror);
 	memcpy(prdev, prdev_template, prdev_size);
 	gx_device_fill_in_procs(rdev);
-	prdev->std_procs.open_device =
-	    gs_pcx256_device.std_procs.open_device;
+	set_dev_proc(prdev, open_device,
+		     dev_proc(&gs_pcx256_device, open_device));
 	prdev->printer_procs.print_page =
 	    gs_pcx256_device.printer_procs.print_page;
 	prdev->space_params.band =

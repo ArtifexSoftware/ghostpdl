@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* iscan.c */
+/*Id: iscan.c  */
 /* Token scanner for Ghostscript interpreter */
 #include "ghost.h"
 #include "memory_.h"
@@ -37,7 +37,7 @@
 #include "iscan.h"		/* defines interface */
 #include "iscannum.h"
 #include "istream.h"
-#include "istruct.h"		/* for gs_reloc_refs */
+#include "istruct.h"		/* for RELOC_REF_VAR */
 #include "iutil.h"
 #include "ivmspace.h"
 #include "store.h"
@@ -60,7 +60,7 @@ int (*scan_btoken_proc) (P3(stream *, ref *, scanner_state *)) = NULL;
 
 /* Stream template for scanning ASCII85 literals. */
 /* Set at initialization if Level 2 features are included. */
-const stream_template _ds *scan_ascii85_template = NULL;
+const stream_template *scan_ascii85_template = NULL;
 
 #ifdef DEBUG
 /* Dummy comment processing procedure for testing. */
@@ -111,7 +111,7 @@ dynamic_free(da_ptr pda)
 /* Resize a dynamic string. */
 /* If the allocation fails, return e_VMerror; otherwise, return 0. */
 private int
-dynamic_resize(register da_ptr pda, uint new_size)
+dynamic_resize(da_ptr pda, uint new_size)
 {
     uint old_size = da_size(pda);
     uint pos = pda->next - pda->base;
@@ -141,7 +141,7 @@ dynamic_resize(register da_ptr pda, uint new_size)
 /* Return 0 or an error code, updating pda->next to point to the first */
 /* available byte after growing. */
 private int
-dynamic_grow(register da_ptr pda, byte * next, uint max_size)
+dynamic_grow(da_ptr pda, byte * next, uint max_size)
 {
     uint old_size = da_size(pda);
     uint new_size = (old_size < 10 ? 20 :
@@ -211,8 +211,7 @@ ENUM_RETURN_STRING_PTR(scanner_state, s_da.str);
 case 1:
 if (ssptr->s_scan_type != scanning_binary)
     return 0;
-*pep = &ssarray;
-return ptr_ref_type;
+ENUM_RETURN_REF(&ssarray);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(scanner_reloc_ptrs)
 {
@@ -223,9 +222,7 @@ private RELOC_PTRS_BEGIN(scanner_reloc_ptrs)
 	ssptr->s_da.base = ssptr->s_da.str.data;
     }
     if (ssptr->s_scan_type == scanning_binary) {
-	gs_reloc_refs((ref_packed *) & ssarray,
-		      (ref_packed *) (&ssarray + 1),
-		      gcst);
+	RELOC_REF_VAR(ssarray);
 	r_clear_attrs(&ssarray, l_mark);
     }
 }
@@ -233,14 +230,6 @@ RELOC_PTRS_END
 #undef ssptr
 /* Structure type */
 public_st_scanner_state();
-
-/* Initialize the scanner. */
-void
-scan_init(void)
-{
-    make_false(&ref_array_packing);
-    make_int(&ref_binary_object_format, 0);
-}
 
 /* Handle a scan_Refill return from scan_token. */
 /* This may return o_push_estack, 0 (meaning just call scan_token again), */
@@ -316,7 +305,7 @@ scan_comment(const byte * base, const byte * end, bool saved)
     if (len > 1 && base[1] == '%' && scan_dsc_proc != NULL) {
 #ifdef DEBUG
 	if (gs_debug_c('%')) {
-	    dprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
+	    dlprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
 	    fwrite(base, 1, len, dstderr);
 	    dputs("\n");
 	}
@@ -326,7 +315,7 @@ scan_comment(const byte * base, const byte * end, bool saved)
     } else if (scan_comment_proc != NULL) {
 #ifdef DEBUG
 	if (gs_debug_c('%')) {
-	    dprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
+	    dlprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
 	    fwrite(base, 1, len, dstderr);
 	    dputs("\n");
 	}
@@ -380,11 +369,11 @@ scan_string_token(ref * pstr, ref * pref)
  * as well as for scan_Refill.
  */
 int
-scan_token(register stream * s, ref * pref, scanner_state * pstate)
+scan_token(stream * s, ref * pref, scanner_state * pstate)
 {
     ref *myref = pref;
     int retcode = 0;
-    register int c;
+    int c;
 
     s_declare_inline(s, sptr, endptr);
 #define scan_begin_inline() s_begin_inline(s, sptr, endptr)
@@ -419,9 +408,10 @@ scan_token(register stream * s, ref * pref, scanner_state * pstate)
   if ( sptr >= endptr ) { sptr -= nback; scan_type = styp; goto pause; }
 #define ensure2(styp) ensure2_back(styp, 1)
     byte s1[2];
-    register const byte _ds *decoder = scan_char_decoder;
+    const byte *const decoder = scan_char_decoder;
     int status;
     int sign;
+    const bool check_only = pstate->s_check_only;
     scanner_state sstate;
 
 #define pstack sstate.s_pstack
@@ -470,6 +460,7 @@ scan_token(register stream * s, ref * pref, scanner_state * pstate)
     /* scan_type == scanning_none. */
     pstack = pstate->s_pstack;
     pdepth = pstate->s_pdepth;
+    sstate.s_check_only = check_only;
     scan_begin_inline();
     /*
      * Loop invariants:
@@ -521,25 +512,33 @@ scan_token(register stream * s, ref * pref, scanner_state * pstate)
 		status = (*sstate.s_ss.st.template->process)
 		    (&sstate.s_ss.st, &s->cursor.r, &w,
 		     s->end_status == EOFC);
-		da.next = w.ptr + 1;
+		if (!check_only)
+		    da.next = w.ptr + 1;
 		switch (status) {
 		    case 0:
 			status = s->end_status;
 			if (status < 0) {
-			    if (status == EOFC)
-				sreturn(e_syntaxerror);
+			    if (status == EOFC) {
+				if (check_only) {
+				    retcode = scan_Refill;
+				    scan_type = scanning_string;
+				    goto suspend;
+				} else
+				    sreturn(e_syntaxerror);
+			    }
 			    break;
 			}
 			s_process_read_buf(s);
 			continue;
 		    case 1:
-			retcode = dynamic_grow(&da, da.next,
-					       max_string_size);
-			if (retcode == e_VMerror) {
-			    scan_type = scanning_string;
-			    goto suspend;
-			} else if (retcode < 0)
-			    sreturn(retcode);
+			if (!check_only) {
+			    retcode = dynamic_grow(&da, da.next, max_string_size);
+			    if (retcode == e_VMerror) {
+				scan_type = scanning_string;
+				goto suspend;
+			    } else if (retcode < 0)
+				sreturn(retcode);
+			}
 			continue;
 		}
 		break;
@@ -607,7 +606,10 @@ scan_token(register stream * s, ref * pref, scanner_state * pstate)
 			   ref_stack_index(&o_stack, size)->value.intval),
 			  size + pstack);
 		myref = (pstack == pdepth ? pref : &arr);
-		if (ref_array_packing.value.boolval) {
+		if (check_only) {
+		    make_empty_array(myref, 0);
+		    ref_stack_pop(&o_stack, size);
+		} else if (ref_array_packing.value.boolval) {
 		    retcode = make_packed_array(myref, &o_stack,
 						size, "scanner(packed)");
 		    if (retcode < 0) {	/* must be VMerror */
@@ -758,9 +760,12 @@ scan_token(register stream * s, ref * pref, scanner_state * pstate)
 #undef comment_line
 	    /*NOTREACHED */
 	case EOFC:
-	    if (pstack != 0)
-		sreturn(e_syntaxerror)
-		    retcode = scan_EOF;
+	    if (pstack != 0) {
+		if (check_only)
+		    goto pause;
+		sreturn(e_syntaxerror);
+	    }
+	    retcode = scan_EOF;
 	    break;
 	case ERRC:
 	    sreturn(e_ioerror);

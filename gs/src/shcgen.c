@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* shcgen.c */
+/*Id: shcgen.c  */
 /* Generate (bounded) Huffman code definitions from frequencies, */
 /* and tables from definitions. */
 #include "memory_.h"
@@ -51,20 +51,20 @@ print_nodes_proc(const count_node * nodes, int n, const char *tag, int lengths)
 {
     int i;
 
-    dprintf1("[w]---------------- %s ----------------\n", tag);
+    dlprintf1("[w]---------------- %s ----------------\n", tag);
     for (i = 0; i < n; ++i)
-	dprintf7("[w]node %d: f=%ld v=%d len=%d N=%d L=%d R=%d\n",
-		 i, nodes[i].freq, nodes[i].value, nodes[i].code_length,
-		 (nodes[i].next == 0 ? -1 : (int)(nodes[i].next - nodes)),
-		 (nodes[i].left == 0 ? -1 : (int)(nodes[i].left - nodes)),
-		 (nodes[i].right == 0 ? -1 : (int)(nodes[i].right - nodes)));
+	dlprintf7("[w]node %d: f=%ld v=%d len=%d N=%d L=%d R=%d\n",
+		  i, nodes[i].freq, nodes[i].value, nodes[i].code_length,
+		  (nodes[i].next == 0 ? -1 : (int)(nodes[i].next - nodes)),
+		  (nodes[i].left == 0 ? -1 : (int)(nodes[i].left - nodes)),
+		(nodes[i].right == 0 ? -1 : (int)(nodes[i].right - nodes)));
     for (i = lengths; i > 0;) {
 	int j = i;
 	int len = nodes[--j].code_length;
 
 	while (j > 0 && nodes[j - 1].code_length == len)
 	    --j;
-	dprintf2("[w]%d codes of length %d\n", i - j, len);
+	dlprintf2("[w]%d codes of length %d\n", i - j, len);
 	i = j;
     }
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zdict.c */
+/*Id: zdict.c  */
 /* Dictionary operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "idict.h"
 #include "dstack.h"
@@ -72,10 +71,12 @@ zbegin(register os_ptr op)
 int
 zend(register os_ptr op)
 {
-    if (ref_stack_count_inline(&d_stack) == min_dstack_size) {	/* We would underflow the d-stack. */
+    if (ref_stack_count_inline(&d_stack) == min_dstack_size) {
+	/* We would underflow the d-stack. */
 	return_error(e_dictstackunderflow);
     }
-    while (dsp == dsbot) {	/* We would underflow the current block. */
+    while (dsp == dsbot) {
+	/* We would underflow the current block. */
 	ref_stack_pop_block(&d_stack);
     }
     dsp--;
@@ -84,8 +85,10 @@ zend(register os_ptr op)
 }
 
 /* <key> <value> def - */
-/* We make this into a separate procedure because */
-/* the interpreter will almost always call it directly. */
+/*
+ * We make this into a separate procedure because
+ * the interpreter will almost always call it directly.
+ */
 int
 zop_def(register os_ptr op)
 {
@@ -94,89 +97,43 @@ zop_def(register os_ptr op)
 
     /* The following combines a check_op(2) with a type check. */
     switch (r_type(op1)) {
-	case t_name:
-	    {			/* We can use the fast single-probe lookup here. */
-		uint nidx = name_index(op1);
-		uint htemp;
+	case t_name: {
+	    /* We can use the fast single-probe lookup here. */
+	    uint nidx = name_index(op1);
+	    uint htemp;
 
-		if_dict_find_name_by_index_top(nidx, htemp, pvslot) {
-		    if (dtop_can_store(op))
-			goto ra;
-		}
-		break;		/* handle all slower cases */
+	    if_dict_find_name_by_index_top(nidx, htemp, pvslot) {
+		if (dtop_can_store(op))
+		    goto ra;
+	    }
+	    break;		/* handle all slower cases */
 	    }
 	case t_null:
 	    return_error(e_typecheck);
 	case t__invalid:
 	    return_error(e_stackunderflow);
     }
-    /* Combine the check for a writable top dictionary with */
-    /* the global/local store check.  See dstack.h for details. */
+    /*
+     * Combine the check for a writable top dictionary with
+     * the global/local store check.  See dstack.h for details.
+     */
     if (!dtop_can_store(op)) {
-	int code;
-
 	check_dict_write(*dsp);
 	/*
 	 * If the dictionary is writable, the problem must be
-	 * an invalid store.  We need a special check to allow
-	 * storing references to local objects in systemdict,
-	 * or in dictionaries known in systemdict,
-	 * during initialization (see ivmspace.h).
+	 * an invalid store.
 	 */
-	if (ialloc_is_in_save())
-	    return_error(e_invalidaccess);
-	if (dsp->value.pdict != systemdict->value.pdict) {	/* See if systemdict is still writable, */
-	    /* i.e., we are still doing initialization. */
-	    int index;
-	    ref elt[2];		/* key, value */
-
-	    check_dict_write(*systemdict);
-	    /* See if this dictionary is known in systemdict. */
-	    for (index = dict_first(systemdict);
-		 (index = dict_next(systemdict, index, &elt[0])) >= 0;
-		)
-		if (r_has_type(&elt[1], t_dictionary) &&
-		    elt[1].value.pdict == dsp->value.pdict
-		    )
-		    break;
-	    if (index < 0)
-		return_error(e_invalidaccess);
-	}
-	switch (code = dict_find(dsp, op1, &pvslot)) {
-	    case 1:		/* found */
-		goto ra;
-	    default:		/* some other error */
-		return code;
-		/*
-		 * If we have to grow the dictionary, do it now, so that
-		 * the allocator will allocate the copy in the correct space.
-		 */
-	    case e_dictfull:
-		if (!dict_auto_expand)
-		    return_error(e_dictfull);
-		code = dict_grow(dsp);
-		if (code < 0)
-		    return code;
-	    case 0:
-		;
-	}
-	/* Temporarily identify the dictionary as local, */
-	/* so the store check in dict_put won't fail. */
-	{
-	    uint space = r_space(dsp);
-
-	    r_set_space(dsp, avm_local);
-	    code = dict_put(dsp, op1, op);
-	    r_set_space(dsp, space);
-	    return code;
-	}
+	return_error(e_invalidaccess);
     }
-    /* Save a level of procedure call in the common (redefinition) */
-    /* case.  With the current interfaces, we pay a double lookup */
-    /* in the uncommon case. */
+    /*
+     * Save a level of procedure call in the common (redefinition)
+     * case.  With the current interfaces, we pay a double lookup
+     * in the uncommon case.
+     */
     if (dict_find(dsp, op1, &pvslot) <= 0)
 	return dict_put(dsp, op1, op);
-  ra:ref_assign_old_inline(&dsp->value.pdict->values, pvslot, op,
+ra:
+    ref_assign_old_inline(&dsp->value.pdict->values, pvslot, op,
 			  "dict_put(value)");
     return 0;
 }
@@ -208,8 +165,8 @@ zload(register os_ptr op)
 	    return_error(e_typecheck);
 	case t__invalid:
 	    return_error(e_stackunderflow);
-	default:
-	    {			/* Use an explicit loop. */
+	default: {
+		/* Use an explicit loop. */
 		uint size = ref_stack_count(&d_stack);
 		uint i;
 
@@ -262,9 +219,13 @@ zknown(register os_ptr op)
 int
 zwhere(register os_ptr op)
 {
+    ref_stack_enum_t rsenum;
+
     check_op(1);
-    STACK_LOOP_BEGIN(&d_stack, bot, size) {
-	const ref *pdref = bot + size;
+    ref_stack_enum_begin(&rsenum, &d_stack);
+    do {
+	const ref *const bot = rsenum.ptr;
+	const ref *pdref = bot + rsenum.size;
 	ref *pvalue;
 
 	while (pdref-- > bot) {
@@ -276,9 +237,8 @@ zwhere(register os_ptr op)
 		return 0;
 	    }
 	}
-    }
-    STACK_LOOP_END(bot, size)
-	make_false(op);
+    } while (ref_stack_enum_next(&rsenum));
+    make_false(op);
     return 0;
 }
 
@@ -413,10 +373,10 @@ zdicttomark(register os_ptr op)
 
 /* <dict> <key> <value> .forceput - */
 /*
- * This forces a "put" even if the dictionary is not writable, and (if
- * the dictionary is systemdict) even if the value is in local VM.
- * It is meant to be used only for replacing the value of FontDirectory
- * in systemdict when switching between local and global VM,
+ * This forces a "put" even if the dictionary is not writable, and (if the
+ * dictionary is systemdict or the save level is 0) even if the value is in
+ * local VM.  It is meant to be used only for replacing the value of
+ * FontDirectory in systemdict when switching between local and global VM,
  * and a few similar applications.  After initialization, this operator
  * should no longer be accessible by name.
  */
@@ -427,7 +387,9 @@ zforceput(register os_ptr op)
     int code;
 
     check_type(*odp, t_dictionary);
-    if (odp->value.pdict == systemdict->value.pdict) {
+    if (odp->value.pdict == systemdict->value.pdict ||
+	!ialloc_is_in_save()
+	) {
 	uint space = r_space(odp);
 
 	r_set_space(odp, avm_local);
@@ -438,6 +400,22 @@ zforceput(register os_ptr op)
     if (code < 0)
 	return code;
     pop(3);
+    return 0;
+}
+
+/* <dict> <key> .forceundef - */
+/*
+ * This forces an "undef" even if the dictionary is not writable.
+ * Like .forceput, it is meant to be used only in a few special situations,
+ * and should not be accessible by name after initialization.
+ */
+private int
+zforceundef(register os_ptr op)
+{
+    check_type(op[-1], t_dictionary);
+    /* Don't check_dict_write */
+    dict_undef(op - 1, op);	/* ignore undefined error */
+    pop(2);
     return 0;
 }
 
@@ -523,6 +501,7 @@ const op_def zdict_op_defs[] =
     {"2.dictcopynew", zdictcopynew},
     {"1.dicttomark", zdicttomark},
     {"3.forceput", zforceput},
+    {"2.forceundef", zforceundef},
     {"2.knownget", zknownget},
     {"1.knownundef", zknownundef},
     {"2.setmaxlength", zsetmaxlength},

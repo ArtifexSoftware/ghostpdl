@@ -1,22 +1,22 @@
 /* Copyright (C) 1992, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/*Id: gxfmap.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxfmap.h  */
 /* Fraction map representation for Ghostscript */
 
 #ifndef gxfmap_INCLUDED
@@ -39,15 +39,16 @@
 /* log2... must not be greater than frac_bits, and must be least 8. */
 #define log2_transfer_map_size 8
 #define transfer_map_size (1 << log2_transfer_map_size)
-/*typedef struct gx_transfer_map_s gx_transfer_map;*/	/* in gxtmap.h */
+							/*typedef struct gx_transfer_map_s gx_transfer_map; *//* in gxtmap.h */
 struct gx_transfer_map_s {
-	rc_header rc;
-	gs_mapping_proc proc;		/* typedef is in gxtmap.h */
-	gs_mapping_closure_t closure;	/* SEE ABOVE */
-		/* The id changes whenever the map or function changes. */
-	gs_id id;
-	frac values[transfer_map_size];
+    rc_header rc;
+    gs_mapping_proc proc;	/* typedef is in gxtmap.h */
+    gs_mapping_closure_t closure;	/* SEE ABOVE */
+    /* The id changes whenever the map or function changes. */
+    gs_id id;
+    frac values[transfer_map_size];
 };
+
 extern_st(st_transfer_map);
 #define public_st_transfer_map() /* in gscolor.c */\
   gs_public_st_composite(st_transfer_map, gx_transfer_map, "gx_transfer_map",\
@@ -60,17 +61,18 @@ extern_st(st_transfer_map);
 #define FRAC_MAP_INTERPOLATE (log2_transfer_map_size <= 8)
 #if FRAC_MAP_INTERPOLATE
 
-frac gx_color_frac_map(P2(frac, const frac *));	/* in gxcmap.c */
+frac gx_color_frac_map(P2(frac, const frac *));		/* in gxcmap.c */
+
 #  define gx_map_color_frac(pgs,cf,m)\
      gx_color_frac_map(cf, &pgs->m->values[0])
 
-#else	/* !FRAC_MAP_INTERPOLATE */
+#else /* !FRAC_MAP_INTERPOLATE */
 
 /* Do the lookup in-line. */
 #  define gx_map_color_frac(pgs,cf,m)\
      (pgs->m->values[frac2bits(cf, log2_transfer_map_size)])
 
-#endif	/* (!)FRAC_MAP_INTERPOLATE */
+#endif /* (!)FRAC_MAP_INTERPOLATE */
 
 /* Map a color fraction expressed as a byte through a transfer map. */
 /* (We don't use this anywhere right now.) */
@@ -94,4 +96,4 @@ frac gx_color_frac_map(P2(frac, const frac *));	/* in gxcmap.c */
 /* (It is equivalent to gx_map_color_float with the arguments swapped.) */
 float gs_mapped_transfer(P2(floatp, const gx_transfer_map *));
 
-#endif					/* gxfmap_INCLUDED */
+#endif /* gxfmap_INCLUDED */

@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,9 +15,10 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: watclib.mak 
 # makefile for MS-DOS / Watcom C/C++ library testing.
 
-libdefault: gslib.exe
+libdefault: $(GLOBJ)gslib.exe
 	%null
 
 GS_DOCDIR=c:/gs
@@ -30,17 +31,18 @@ TDEBUG=0
 NOPRIVATE=1
 
 GS=gslib
-JSRCDIR=jpeg-6a
+
+GLSRCDIR=.
+GLGENDIR=.
+GLOBJDIR=.
+
+JSRCDIR=jpeg
 JVERSION=6
 
 PSRCDIR=libpng
 PVERSION=96
-SHARE_LIBPNG=0
-LIBPNG_NAME=png
 
 ZSRCDIR=zlib
-SHARE_ZLIB=0
-ZLIB_NAME=z
 
 CONFIG=
 CFLAGS=
@@ -60,7 +62,7 @@ PLATFORM=watclib_
 MAKEFILE=watclib.mak
 PLATOPT=
 
-!include wccommon.mak
+!include $(GLSRCDIR)\wccommon.mak
 
 # Allow predefinition of selectable options
 # when using this makefile from inside another one.
@@ -83,27 +85,32 @@ BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
 !endif
 
-!include wctail.mak
-!include devs.mak
+!include $(GLSRCDIR)\wctail.mak
+!include $(GLSRCDIR)\devs.mak
+!include $(GLSRCDIR)\contrib.mak
 
-watclib__=gp_iwatc.$(OBJ) gp_msdos.$(OBJ) gp_nofb.$(OBJ) gp_dosfs.$(OBJ) gp_dosfe.$(OBJ)
+watclib_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
+watclib_2=$(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ)
+watclib__=$(watclib_1) $(watclib_2)
 watclib_.dev: $(watclib__)
-	$(SETMOD) watclib_ $(watclib__)
+	$(SETMOD) watclib_ $(watclib_1)
+	$(ADDMOD) watclib_ -obj $(watclib_2)
 
-gp_iwatc.$(OBJ): gp_iwatc.c $(stat__h) $(string__h) $(gx_h) $(gp_h)
+$(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
+ $(gx_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_iwatc.$(OBJ) $(C_) $(GLSRC)gp_iwatc.c
 
 BEGINFILES=*.err
-CCBEGIN=for %%f in (gs*.c gx*.c z*.c) do $(CCC) %%f
 
-LIB_ONLY=gslib.obj gsnogc.obj gconfig.obj gscdefs.obj
+LIB_ONLY=$(GLOBJ)gslib.obj $(GLOBJ)gsnogc.obj $(GLOBJ)gconfig.obj $(GLOBJ)gscdefs.obj
 ll_tr=ll$(CONFIG).tr
 $(ll_tr): $(MAKEFILE)
 	echo SYSTEM DOS4G >$(ll_tr)
 	echo OPTION STUB=$(STUB) >>$(ll_tr)
 	echo OPTION STACK=12k >>$(ll_tr)
-	echo FILE gsnogc.obj >>$(ll_tr)
-	echo FILE gconfig.obj >>$(ll_tr)
-	echo FILE gscdefs.obj >>$(ll_tr)
+	echo FILE $(GLOBJ)gsnogc.obj >>$(ll_tr)
+	echo FILE $(GLOBJ)gconfig.obj >>$(ll_tr)
+	echo FILE $(GLOBJ)gscdefs.obj >>$(ll_tr)
 
-gslib.exe: $(LIB_ALL) $(LIB_ONLY) $(ld_tr) $(ll_tr)
-	$(LINK) $(LCT) NAME gslib OPTION MAP=gslib FILE gslib @$(ld_tr) @$(ll_tr)
+$(GLOBJ)gslib.exe: $(LIB_ALL) $(LIB_ONLY) $(ld_tr) $(ll_tr)
+	$(LINK) $(LCT) NAME gslib OPTION MAP=gslib FILE $(GLOBJ)gslib @$(ld_tr) @$(ll_tr)

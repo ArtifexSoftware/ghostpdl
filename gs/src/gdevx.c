@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevx.c */
+/*Id: gdevx.c  */
 /* X Windows driver for Ghostscript library */
 /* The X include files include <sys/types.h>, which, on some machines */
 /* at least, define uint, ushort, and ulong, which std.h also defines. */
@@ -26,21 +26,33 @@
 #include "memory_.h"
 #include "x_.h"
 #include "gserrors.h"
+#include "gsmatrix.h"		/* for gscoord.h */
+#include "gscoord.h"		/* for gs_currentmatrix */
+#include "gsdevice.h"		/* for gs_currentdevice */
 #include "gsparam.h"
 #include "gxdevice.h"
+#include "gxpath.h"
+#include "gxgetbit.h"
+#include "gxiparam.h"
+#include "gsiparm2.h"
 #include "gdevx.h"
 
 /* Define whether to update after every write, for debugging. */
-bool always_update = false;
+bool X_ALWAYS_UPDATE = false;
 
 /* Define the maximum size of the temporary pixmap for copy_mono */
 /* that we are willing to leave lying around in the server */
 /* between uses.  (Assume 32-bit ints here!) */
-private int max_temp_pixmap = 20000;
+private int X_MAX_TEMP_PIXMAP = 20000;
+
+/* Define the maximum size of the temporary image created in memory */
+/* for get_bits_rectangle. */
+private int X_MAX_TEMP_IMAGE = 5000;
 
 /* Forward references */
 private int set_tile(P2(gx_device *, const gx_strip_bitmap *));
 private void free_cp(P1(gx_device *));
+private void x_send_event(P2(gx_device *, Atom));
 
 /* Screen updating machinery */
 #define update_init(dev)\
@@ -49,7 +61,10 @@ private void free_cp(P1(gx_device *));
 #define update_flush(dev)\
   if ( ((gx_device_X *)(dev))->up_area != 0 ) update_do_flush(dev)
 private void update_do_flush(P1(gx_device *));
-private void x_send_event(P2(gx_device *, Atom));
+
+#define flush_text(dev)\
+  if ( IN_TEXT((gx_device_X *)(dev)) ) do_flush_text(dev)
+private void do_flush_text(P1(gx_device *));
 
 /* Procedures */
 
@@ -64,15 +79,17 @@ private dev_proc_map_color_rgb(x_map_color_rgb);
 private dev_proc_fill_rectangle(x_fill_rectangle);
 private dev_proc_copy_mono(x_copy_mono);
 private dev_proc_copy_color(x_copy_color);
-private dev_proc_get_bits(x_get_bits);
+private dev_proc_get_params(x_get_params);
 private dev_proc_put_params(x_put_params);
 
 dev_proc_get_xfont_procs(x_get_xfont_procs);
 private dev_proc_get_page_device(x_get_page_device);
 private dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
+private dev_proc_begin_typed_image(x_begin_typed_image);
+private dev_proc_get_bits_rectangle(x_get_bits_rectangle);
 
 /* The device descriptor */
-private gx_device_procs x_procs =
+private const gx_device_procs x_procs =
 {
     x_open,
     x_get_initial_matrix,
@@ -86,8 +103,8 @@ private gx_device_procs x_procs =
     x_copy_mono,
     x_copy_color,
     NULL,			/* draw_line */
-    x_get_bits,
-    NULL,			/* get_params */
+    NULL,			/* get_bits */
+    x_get_params,
     x_put_params,
     NULL,			/* map_cmyk_color */
     x_get_xfont_procs,
@@ -108,11 +125,15 @@ private gx_device_procs x_procs =
     NULL,			/* begin_image */
     NULL,			/* image_data */
     NULL,			/* end_image */
-    x_strip_tile_rectangle
+    x_strip_tile_rectangle,
+    NULL,			/* strip_copy_rop */
+    NULL,			/* get_clipping_box */
+    x_begin_typed_image,
+    x_get_bits_rectangle
 };
 
 /* The instance is public. */
-gx_device_X far_data gs_x11_device =
+const gx_device_X gs_x11_device =
 {
     std_device_color_body(gx_device_X, &x_procs, "x11",
   FAKE_RES * DEFAULT_WIDTH_10THS / 10, FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
@@ -175,6 +196,7 @@ gx_device_X far_data gs_x11_device =
     0, 0,			/* color_mask, num_rgb */
     NULL, 0,			/* dynamic_colors, max_dynamic_colors */
     0, 0,			/* dynamic_size, dynamic_allocs */
+    NULL, 0,			/* color_to_rgb, color_to_rgb_size */
     0, 0,			/* borderColor, borderWidth */
     NULL,			/* geometry */
     128, 5,			/* maxGrayRamp, maxRGBRamp */
@@ -186,6 +208,15 @@ gx_device_X far_data gs_x11_device =
     0.0, 0.0,			/* xResolution, yResolution */
     1,				/* useBackingPixmap */
     1, 1,			/* useXPutImage, useXSetTile */
+    {				/* text */
+	0,			/* item_count */
+	0,			/* char_count */
+	{0, 0},			/* origin */
+	0,			/* x */
+	{
+	    {0}},		/* items */
+	{0}			/* chars */
+    }
 };
 
 /* If XPutImage doesn't work, do it ourselves. */
@@ -193,14 +224,16 @@ private int alt_put_image(P11(gx_device * dev, Display * dpy, Drawable win,
 GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h));
 
 #define put_image(dpy,win,gc,im,sx,sy,x,y,w,h)\
-  do {\
+  BEGIN\
     if ( xdev->useXPutImage ) {\
+      if (XInitImage(im) == 0)\
+	return_error(gs_error_unknownerror);\
       XPutImage(dpy,win,gc,im,sx,sy,x,y,w,h);\
     } else {\
       int code_ = alt_put_image(dev,dpy,win,gc,im,sx,sy,x,y,w,h);\
       if ( code_ < 0 ) return code_;\
     }\
-  } while (0)
+  END
 
 /* Open the device.  Most of the code is in gdevxini.c. */
 private int
@@ -254,6 +287,12 @@ x_close(gx_device * dev)
 	gs_free((char *)xdev->dynamic_colors, sizeof(x11color *),
 		xdev->dynamic_size, "x11_dynamic_colors");
 	xdev->dynamic_colors = NULL;
+    }
+    if (xdev->color_to_rgb) {
+	gs_free((char *)xdev->color_to_rgb, sizeof(x11_rgb_t),
+		xdev->color_to_rgb_size, "color_to_rgb");
+	xdev->color_to_rgb = NULL;
+	xdev->color_to_rgb_size = 0;
     }
     while (xdev->regular_fonts) {
 	x11fontmap *font = xdev->regular_fonts;
@@ -338,7 +377,7 @@ private const ushort cv_tab7[] =
 {
     nd(0, 7), nd(1, 7), nd(2, 7), nd(3, 7), nd(4, 7), nd(5, 7), nd(6, 7), nd(7, 7)
 };
-private const ushort _ds *cv_tables[] =
+private const ushort *const cv_tables[] =
 {
     0, cv_tab1, cv_tab2, cv_tab3, cv_tab4, cv_tab5, cv_tab6, cv_tab7
 };
@@ -355,14 +394,19 @@ x_map_rgb_color(register gx_device * dev,
     unsigned short dg = g & xdev->color_mask;	/* the X device can   */
     unsigned short db = b & xdev->color_mask;	/* represent          */
     unsigned short cv_max = X_max_color_value & xdev->color_mask;
-    int cv_denom = (gx_max_color_value + 1);
+
+#define cv_denom (gx_max_color_value + 1)
 
     /* Foreground and background get special treatment: */
     /* They may be mapped to other colors. */
     if ((dr | dg | db) == 0) {	/* i.e., all 0 */
+	if_debug4('C', "[cX]%u,%u,%u => foreground = %lu\n",
+		  r, g, b, (ulong) xdev->foreground);
 	return xdev->foreground;
     }
     if ((dr & dg & db) == cv_max) {	/* i.e., all max value */
+	if_debug4('C', "[cX]%u,%u,%u => background = %lu\n",
+		  r, g, b, (ulong) xdev->background);
 	return xdev->background;
     }
 #if HaveStdCMap
@@ -382,9 +426,16 @@ x_map_rgb_color(register gx_device * dev,
 	    cvb = X_max_color_value * cb / cmap->blue_max;
 	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0 &&
 		(abs((int)g - (int)cvg) & xdev->color_mask) == 0 &&
-		(abs((int)b - (int)cvb) & xdev->color_mask) == 0)
-		return cr * cmap->red_mult + cg * cmap->green_mult +
-		    cb * cmap->blue_mult + cmap->base_pixel;
+		(abs((int)b - (int)cvb) & xdev->color_mask) == 0) {
+		gx_color_index pixel =
+		cr * cmap->red_mult + cg * cmap->green_mult +
+		cb * cmap->blue_mult + cmap->base_pixel;
+
+		if_debug4('C', "[cX]%u,%u,%u (std cmap) => %lu\n",
+			  r, g, b, pixel);
+		return pixel;
+	    }
+	    if_debug3('C', "[cX]%u,%u,%u (std cmap fails)\n", r, g, b);
 	} else {
 	    unsigned short cr;
 	    unsigned short cvr;
@@ -392,8 +443,13 @@ x_map_rgb_color(register gx_device * dev,
 
 	    cr = r * dither_grays / cv_denom;
 	    cvr = X_max_color_value * cr / cmap->red_max;
-	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0)
-		return cr * cmap->red_mult + cmap->base_pixel;
+	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0) {
+		gx_color_index pixel = cr * cmap->red_mult + cmap->base_pixel;
+
+		if_debug2('C', "[cX]%u (std cmap) => %lu\n", r, pixel);
+		return pixel;
+	    }
+	    if_debug1('C', "[cX]%u (std cmap fails)\n", r);
 	}
     } else
 #endif
@@ -422,8 +478,14 @@ x_map_rgb_color(register gx_device * dev,
 	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0 &&
 		(abs((int)g - (int)cvg) & xdev->color_mask) == 0 &&
 		(abs((int)b - (int)cvb) & xdev->color_mask) == 0) {
-		return xdev->dither_colors[cube_index(cr, cg, cb)];
+		gx_color_index pixel =
+		xdev->dither_colors[cube_index(cr, cg, cb)];
+
+		if_debug4('C', "[cX]%u,%u,%u (dither cube) => %lu\n",
+			  r, g, b, pixel);
+		return pixel;
 	    }
+	    if_debug3('C', "[cX]%u,%u,%u (dither cube fails)\n", r, g, b);
 	} else {
 	    unsigned short cr;
 	    unsigned short cvr;
@@ -432,8 +494,13 @@ x_map_rgb_color(register gx_device * dev,
 
 	    cr = r * dither_grays / cv_denom;
 	    cvr = (X_max_color_value * cr / max_gray);
-	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0)
-		return xdev->dither_colors[cr];
+	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0) {
+		gx_color_index pixel = xdev->dither_colors[cr];
+
+		if_debug2('C', "[cX]%u (dither ramp) => %lu\n", r, pixel);
+		return pixel;
+	    }
+	    if_debug1('C', "[cX]%u (dither ramp fails)\n", r);
 	}
     }
     /* Finally look through the list of dynamic colors */
@@ -451,10 +518,15 @@ x_map_rgb_color(register gx_device * dev,
 		    xcp->next = (*xdev->dynamic_colors)[i];
 		    (*xdev->dynamic_colors)[i] = xcp;
 		}
-		if (xcp->color.pad)
+		if (xcp->color.pad) {
+		    if_debug4('C', "[cX]%u,%u,%u (dynamic) => %lu\n",
+			      r, g, b, (ulong) xcp->color.pixel);
 		    return xcp->color.pixel;
-		else
+		} else {
+		    if_debug3('C', "[cX]%u,%u,%u (dynamic) => missing\n",
+			      r, g, b);
 		    return gx_no_color_index;
+		}
 	    }
 	    last = xcp;
 	    xcp = xcp->next;
@@ -463,8 +535,10 @@ x_map_rgb_color(register gx_device * dev,
 	/* If not in our list of dynamic colors, */
 	/* ask the X server and add an entry. */
 	/* First check if dynamic table is exhausted */
-	if (xdev->dynamic_allocs > xdev->max_dynamic_colors)
+	if (xdev->dynamic_allocs > xdev->max_dynamic_colors) {
+	    if_debug3('C', "[cX]%u,%u,%u (dynamic) => full\n", r, g, b);
 	    return gx_no_color_index;
+	}
 	xcp = (x11color *) gs_malloc(sizeof(x11color), 1, "x11_dynamic_color");
 	if (!xcp)
 	    return gx_no_color_index;
@@ -477,40 +551,164 @@ x_map_rgb_color(register gx_device * dev,
 	if (XAllocColor(xdev->dpy, xdev->cmap, &xc)) {
 	    xcp->color.pixel = xc.pixel;
 	    xcp->color.pad = True;
+	    if_debug4('C', "[cX]%u,%u,%u (dynamic) => added %lu\n",
+		      r, g, b, (ulong) xc.pixel);
 	    return xc.pixel;
 	} else {
 	    xcp->color.pad = False;
+	    if_debug3('C', "[cX]%u,%u,%u (dynamic) => can't alloc\n", r, g, b);
 	    return gx_no_color_index;
 	}
     }
+    if_debug3('C', "[cX]%u,%u,%u fails\n", r, g, b);
     return gx_no_color_index;
 }
 
 
-/* Map a "device color" back to r-g-b. */
-/* This doesn't happen often, so we just ask the display */
-/* Foreground and background may be mapped to other colors, so */
-/* they are handled specially. */
+/*
+ * Map a "device color" back to r-g-b.  This happens surprisingly often, so
+ * we go to some trouble to make it efficient.  Foreground and background
+ * may be mapped to other colors, so they are handled specially.
+ */
 private int
 x_map_color_rgb(register gx_device * dev, gx_color_index color,
 		gx_color_value prgb[3])
 {
     gx_device_X *xdev = (gx_device_X *) dev;
 
-    if (color == xdev->foreground)
-	prgb[0] = prgb[1] = prgb[2] = 0;
-    else if (color == xdev->background)
-	prgb[0] = prgb[1] = prgb[2] = gx_max_color_value;
-    else {
-	XColor xc;
+#if HaveStdCMap
+    const XStandardColormap *cmap = xdev->std_cmap;
 
-	xc.pixel = color;
-	XQueryColor(xdev->dpy, xdev->cmap, &xc);
-	prgb[0] = xc.red;
-	prgb[1] = xc.green;
-	prgb[2] = xc.blue;
+#endif
+#define cv_denom (gx_max_color_value + 1)
+
+    if (color == xdev->foreground) {
+	prgb[0] = prgb[1] = prgb[2] = 0;
+	return 0;
+    }
+    if (color == xdev->background) {
+	prgb[0] = prgb[1] = prgb[2] = gx_max_color_value;
+	return 0;
+    }
+    if (color < xdev->color_to_rgb_size) {
+	x11_rgb_t *pxrgb = &xdev->color_to_rgb[color];
+
+	if (pxrgb->defined) {
+	    prgb[0] = pxrgb->rgb[0];
+	    prgb[1] = pxrgb->rgb[1];
+	    prgb[2] = pxrgb->rgb[2];
+	    return 0;
+	}
+    }
+#if HaveStdCMap
+    /* Check the standard colormap first. */
+    if (cmap) {
+	if (color >= cmap->base_pixel) {
+	    x_pixel value = color - cmap->base_pixel;
+	    unsigned long mult[3];
+	    unsigned long rgb[3];
+
+#define R 0
+#define G 1
+#define B 2
+	    mult[R] = cmap->red_mult;
+	    mult[G] = cmap->green_mult;
+	    mult[B] = cmap->blue_mult;
+	    /* Get the multipliers in the right order. */
+	    {
+		static const byte order[8][3] =
+		{
+		    {0, 0, 0},	/* not possible */
+		    {B, G, R},
+		    {G, R, B},
+		    {G, B, R},
+		    {R, B, G},
+		    {B, R, G},
+		    {R, G, B},
+		    {0, 0, 0}	/* not possible */
+		};
+		const byte *indices =
+		order[((mult[R] > mult[G]) << 2) + ((mult[G] > mult[B]) << 1) +
+		      (mult[B] > mult[R])];
+
+		rgb[indices[0]] = value / mult[indices[0]];
+		value %= mult[indices[0]];
+		rgb[indices[1]] = value / mult[indices[1]];
+		value %= mult[indices[1]];
+		rgb[indices[2]] = value / mult[indices[2]];
+		value %= mult[indices[2]];
+		if (value == 0 && rgb[R] <= cmap->red_max &&
+		    rgb[G] <= cmap->green_max && rgb[B] <= cmap->blue_max
+		    ) {
+		    /*
+		     * When mapping color buckets back to specific colors, we can
+		     * choose to map them to the darkest shades (e.g., 0, 1/3, 2/3),
+		     * to the lightest shades (e.g., 1/3-epsilon, 2/3-epsilon,
+		     * 1-epsilon), to the middle shades (e.g., 1/6, 1/2, 5/6),
+		     * or for maximum contrast (e.g., 0, 1/2, 1).  The last of these
+		     * matches the assumptions of the halftoning code, so that is
+		     * what we choose.
+		     */
+		    prgb[0] = rgb[R] * gx_max_color_value / cmap->red_max;
+		    prgb[1] = rgb[G] * gx_max_color_value / cmap->green_max;
+		    prgb[2] = rgb[B] * gx_max_color_value / cmap->blue_max;
+		    goto found;
+		}
+	    }
+#undef R
+#undef G
+#undef B
+	}
+    }
+#endif
+    /* Check the dither cube/ramp. */
+    if (xdev->dither_colors) {
+	int size = xdev->color_info.dither_colors;
+	int size3 = size * size * size;
+	int i;
+
+	for (i = 0; i < size3; ++i)
+	    if (xdev->dither_colors[i] == color) {
+		uint max_rgb = size - 1;
+		unsigned long
+		     r = i / (size * size), g = (i / size) % size, b = i % size;
+
+		/*
+		 * See above regarding the choice of color mapping algorithm.
+		 */
+		prgb[0] = r * gx_max_color_value / max_rgb;
+		prgb[1] = g * gx_max_color_value / max_rgb;
+		prgb[2] = b * gx_max_color_value / max_rgb;
+		goto found;
+	    }
+    }
+    /* Finally, search the list of dynamic colors. */
+    if (xdev->dynamic_colors) {
+	int i;
+	const x11color *xcp;
+
+	for (i = 1 << xdev->vinfo->bits_per_rgb; --i >= 0;)
+	    for (xcp = (*xdev->dynamic_colors)[i]; xcp; xcp = xcp->next)
+		if (xcp->color.pad && xcp->color.pixel == color) {
+		    prgb[0] = xcp->color.red;
+		    prgb[1] = xcp->color.green;
+		    prgb[2] = xcp->color.blue;
+		    goto found;
+		}
+    }
+    /* Not found -- not possible! */
+    return_error(gs_error_unknownerror);
+  found:
+    if (color < xdev->color_to_rgb_size) {
+	x11_rgb_t *pxrgb = &xdev->color_to_rgb[color];
+
+	pxrgb->rgb[0] = prgb[0];
+	pxrgb->rgb[1] = prgb[1];
+	pxrgb->rgb[2] = prgb[2];
+	pxrgb->defined = true;
     }
     return 0;
+#undef cv_denom
 }
 
 /* Get initial matrix for X device. */
@@ -592,6 +790,7 @@ x_fill_rectangle(register gx_device * dev,
     gx_device_X *xdev = (gx_device_X *) dev;
 
     fit_fill(dev, x, y, w, h);
+    flush_text(dev);
     set_fill_style(FillSolid);
     set_fore_color(color);
     set_function(GXcopy);
@@ -622,6 +821,8 @@ x_fill_rectangle(register gx_device * dev,
 		    (*xdev->dynamic_colors)[i] = NULL;
 		}
 		xdev->dynamic_allocs = 0;
+		for (i = 0; i < xdev->color_to_rgb_size; ++i)
+		    xdev->color_to_rgb[i].defined = false;
 	    }
 	}
 	xdev->colors_or = xdev->colors_and = color;
@@ -629,11 +830,8 @@ x_fill_rectangle(register gx_device * dev,
     if (xdev->bpixmap != (Pixmap) 0) {
 	x_update_add(dev, x, y, w, h);
     }
-#ifdef DEBUG
-    if (gs_debug['F'])
-	dprintf5("[F] fill (%d,%d):(%d,%d) %ld\n",
-		 x, y, w, h, (long)color);
-#endif
+    if_debug5('F', "[F] fill (%d,%d):(%d,%d) %ld\n",
+	      x, y, w, h, (long)color);
     return 0;
 }
 
@@ -673,6 +871,7 @@ x_copy_mono(register gx_device * dev,
 	fc = one;
 
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
+    flush_text(dev);
 
     xdev->image.width = sourcex + w;
     xdev->image.height = h;
@@ -774,7 +973,7 @@ x_copy_mono(register gx_device * dev,
 
     /* Tidy up.  Free the pixmap if it's big. */
     XSetClipMask(xdev->dpy, xdev->gc, None);
-    if (raster * h > max_temp_pixmap)
+    if (raster * h > X_MAX_TEMP_PIXMAP)
 	free_cp(dev);
 
   out:if (xdev->bpixmap != (Pixmap) 0) {
@@ -811,6 +1010,7 @@ x_copy_color(register gx_device * dev,
     int depth = dev->color_info.depth;
 
     fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
+    flush_text(dev);
     set_fill_style(FillSolid);
     set_function(GXcopy);
 
@@ -839,44 +1039,33 @@ x_copy_color(register gx_device * dev,
 	xdev->image.depth = depth;
 	xdev->image.bytes_per_line = raster;
 	xdev->image.bits_per_pixel = depth;
+	if (XInitImage(&xdev->image) == 0)
+	    return_error(gs_error_unknownerror);
 	XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
 		  sourcex, 0, x, y, w, h);
 	xdev->image.depth = xdev->image.bits_per_pixel = 1;
     }
     if (xdev->bpixmap != (Pixmap) 0)
 	x_update_add(dev, x, y, w, h);
-#ifdef DEBUG
-    if (gs_debug['F'])
-	dprintf4("[F] copy_color (%d,%d):(%d,%d)\n",
-		 x, y, w, h);
-#endif
+    if_debug4('F', "[F] copy_color (%d,%d):(%d,%d)\n",
+	      x, y, w, h);
     return 0;
 }
 
+/* Get the device parameters.  See below. */
 private int
-x_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
+x_get_params(gx_device * dev, gs_param_list * plist)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
-    int depth = dev->color_info.depth;
-    uint width_bytes = gx_device_raster(dev, false);
-    XImage *image;
+    int code = gx_default_get_params(dev, plist);
+    long id = (long)xdev->pwin;
 
-    /* Make sure the frame buffer is up to date. */
-    if (xdev->up_area != 0 &&
-	y >= xdev->update.yo && y < xdev->update.ye
+    if (code < 0 ||
+	(code = param_write_long(plist, "WindowID", &id)) < 0 ||
+	(code = param_write_bool(plist, ".IsPageDevice", &xdev->IsPageDevice)) < 0
 	)
-	update_do_flush(dev);
-    /*
-     * The X library doesn't provide any way to specify the desired
-     * bit or byte ordering for the result, so we just hope for the best
-     * (big-endian).
-     */
-    image = XGetImage(xdev->dpy, xdev->dest, 0, y, dev->width, 1,
-		      (1L << depth) - 1, ZPixmap);
-    memcpy(str, image->data, width_bytes);
-    XDestroyImage(image);
-    *actual_data = str;
-    return 0;
+	DO_NOTHING;
+    return code;
 }
 
 /* Set the device parameters.  We reimplement this so we can resize */
@@ -1008,6 +1197,7 @@ x_strip_tile_rectangle(register gx_device * dev, const gx_strip_bitmap * tiles,
 					       zero, one, px, py);
 
     fit_fill(dev, x, y, w, h);
+    flush_text(dev);
 
     /* Imaging with a halftone often gives rise to very small */
     /* tile_rectangle calls.  Check for this now. */
@@ -1017,19 +1207,18 @@ x_strip_tile_rectangle(register gx_device * dev, const gx_strip_bitmap * tiles,
 
 	set_fill_style(FillSolid);
 	set_function(GXcopy);
-	for (j = 0; j < h; j++) {
+	for (j = y + h; --j >= y;) {
 	    const byte *ptr =
-	    tiles->data + ((y + j) % tiles->rep_height) * tiles->raster;
+	    tiles->data + (j % tiles->rep_height) * tiles->raster;
 	    int i;
 
-	    for (i = 0; i < w; i++) {
-		uint tx = (x + i) % tiles->rep_width;
+	    for (i = x + w; --i >= x;) {
+		uint tx = i % tiles->rep_width;
 		byte mask = 0x80 >> (tx & 7);
 		x_pixel pixel = (ptr[tx >> 3] & mask ? one : zero);
 
 		set_fore_color(pixel);
-		XDrawPoint(xdev->dpy, xdev->dest, xdev->gc,
-			   x + i, y + j);
+		XDrawPoint(xdev->dpy, xdev->dest, xdev->gc, i, j);
 	    }
 	}
 	if (xdev->bpixmap != (Pixmap) 0) {
@@ -1061,12 +1250,212 @@ x_strip_tile_rectangle(register gx_device * dev, const gx_strip_bitmap * tiles,
     if (xdev->bpixmap != (Pixmap) 0) {
 	x_update_add(dev, x, y, w, h);
     }
-#ifdef DEBUG
-    if (gs_debug['F'])
-	dprintf6("[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
-		 x, y, w, h, (long)zero, (long)one);
-#endif
+    if_debug6('F', "[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
+	      x, y, w, h, (long)zero, (long)one);
     return 0;
+}
+
+/* Implement ImageType 2 using CopyArea if possible. */
+/* Note that since ImageType 2 images don't have any source data, */
+/* this procedure does all the work. */
+private int
+x_begin_typed_image(gx_device * dev,
+		    const gs_imager_state * pis, const gs_matrix * pmat,
+		    const gs_image_common_t * pic, const gs_int_rect * prect,
+	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		    gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+    const gs_image2_t *pim;
+    gs_state *pgs;
+    gx_device *sdev;
+    gs_matrix smat, dmat;
+
+    if (pic->type->index != 2)
+	goto punt;
+    pim = (const gs_image2_t *)pic;
+    if (!pim->PixelCopy)
+	goto punt;
+    pgs = pim->DataSource;
+    sdev = gs_currentdevice(pgs);
+    if (dev->dname != sdev->dname ||
+	memcmp(&dev->color_info, &sdev->color_info,
+	       sizeof(dev->color_info))
+	)
+	goto punt;
+    flush_text(dev);
+    gs_currentmatrix(pgs, &smat);
+    /*
+     * Figure 7.2 of the Adobe 3010 Supplement says that we should
+     * compute CTM x ImageMatrix here, but I'm almost certain it
+     * should be the other way around.  Also see gximage2.c.
+     */
+    gs_matrix_multiply(&pim->ImageMatrix, &smat, &smat);
+    if (pis == 0)
+	dmat = *pmat;
+    else
+	gs_currentmatrix((const gs_state *)pis, &dmat);
+    if (!((is_xxyy(&dmat) || is_xyyx(&dmat)) &&
+#define eqe(e) smat.e == dmat.e
+	  eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy))
+#undef eqe
+	)
+	goto punt;
+    {
+	gs_rect rect, src, dest;
+	gs_int_point size;
+	int srcx, srcy, destx, desty;
+
+	rect.p.x = rect.p.y = 0;
+	rect.q.x = pim->Width, rect.q.y = pim->Height;
+	gs_bbox_transform(&rect, &dmat, &dest);
+	if (pcpath != NULL &&
+	    !gx_cpath_includes_rectangle(pcpath,
+			       float2fixed(dest.p.x), float2fixed(dest.p.y),
+			       float2fixed(dest.q.x), float2fixed(dest.q.y))
+	    )
+	    goto punt;
+	rect.q.x += (rect.p.x = pim->XOrigin);
+	rect.q.y += (rect.p.y = pim->YOrigin);
+	gs_bbox_transform(&rect, &smat, &src);
+	(*pic->type->source_size) (pis, pic, &size);
+	set_fill_style(FillSolid);
+	set_function(GXcopy);
+	srcx = (int)(src.p.x + 0.5);
+	srcy = (int)(src.p.y + 0.5);
+	destx = (int)(dest.p.x + 0.5);
+	desty = (int)(dest.p.y + 0.5);
+	XCopyArea(xdev->dpy, xdev->bpixmap, xdev->bpixmap, xdev->gc,
+		  srcx, srcy, size.x, size.y, destx, desty);
+	x_update_add(dev, destx, desty, size.x, size.y);
+    }
+    return 0;
+  punt:return gx_default_begin_typed_image(dev, pis, pmat, pic, prect,
+					pdcolor, pcpath, mem, pinfo);
+}
+
+/* Read bits back from the screen. */
+private int
+x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
+		     gs_get_bits_params_t * params, gs_int_rect ** unread)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+    int depth = dev->color_info.depth;
+    int x0 = prect->p.x, y0 = prect->p.y, x1 = prect->q.x, y1 = prect->q.y;
+    uint width_bytes = ((x1 - x0) * depth + 7) >> 3;
+    uint band = X_MAX_TEMP_IMAGE / width_bytes;
+    uint default_raster = bitmap_raster((x1 - x0) * depth);
+    gs_get_bits_options_t options = params->options;
+    uint raster =
+    (options & GB_RASTER_SPECIFIED ? params->raster :
+     (params->raster = default_raster));
+    long plane_mask = (1L << depth) - 1;
+    int y, h;
+    XImage *image;
+    int code = 0;
+    XWindowAttributes attributes;
+
+    if (x0 < 0 || y0 < 0 || x1 > dev->width || y1 > dev->height)
+	return_error(gs_error_rangecheck);
+    /* XGetImage can only handle x_offset = 0. */
+    if ((options & GB_OFFSET_SPECIFIED) && params->x_offset == 0)
+	options = (options & ~GB_OFFSET_SPECIFIED) | GB_OFFSET_0;
+    if (~options &
+	(GB_RETURN_COPY | GB_OFFSET_0 | GB_PACKING_CHUNKY |
+	 GB_COLORS_NATIVE) ||
+	!(options & GB_ALIGN_ALL) ||
+	!(options & GB_RASTER_ALL)
+	)
+	return
+	    gx_default_get_bits_rectangle(dev, prect, params, unread);
+    params->options =
+	GB_COLORS_NATIVE | GB_ALPHA_NONE | GB_PACKING_CHUNKY |
+	GB_RETURN_COPY | GB_OFFSET_0 |
+	(options & GB_ALIGN_ALL) |
+	(options & GB_RASTER_SPECIFIED ? GB_RASTER_SPECIFIED :
+	 GB_RASTER_STANDARD);
+    if (x0 >= x1 || y0 >= y1)
+	return 0;
+    flush_text(dev);
+    /*
+     * If we want a list of unread rectangles, turn on graphics
+     * exposures, and accept exposure events.
+     */
+	/******
+	 ****** FOLLOWING IS WRONG.  XGetImage DOES NOT GENERATE
+	 ****** EXPOSURE EVENTS.
+	 ******/
+#if 0				/*************** */
+    if (unread) {
+	XSetGraphicsExposures(xdev->dpy, xdev->gc, True);
+	XGetWindowAttributes(xdev->dpy, xdev->win, &attributes);
+	XSelectInput(xdev->dpy, xdev->win,
+		     attributes.your_event_mask | ExposureMask);
+    }
+#endif /*************** */
+    /*
+     * The X library doesn't provide any way to specify the desired
+     * bit or byte ordering for the result, so we just hope for the best
+     * (big-endian).
+     */
+    if (band == 0)
+	band = 1;
+    for (y = y0; y < y1; y += h) {
+	h = min(band, y1 - y);
+	image = XGetImage(xdev->dpy, xdev->dest, x0, y, x1 - x0, h,
+			  plane_mask, ZPixmap);
+	{
+	    int cy;
+
+	    for (cy = y; cy < y + h; ++cy)
+		memcpy(params->data[0] + (cy - y0) * raster,
+		       image->data + (cy - y) * image->bytes_per_line,
+		       width_bytes);
+	}
+	XDestroyImage(image);
+    }
+    if (unread) {
+	XEvent event;
+
+	*unread = 0;
+#if 0				/*************** */
+	/* Read any exposure events. */
+	XWindowEvent(xdev->dpy, xdev->win, ExposureMask, &event);
+	if (event.type == GraphicsExpose) {
+	    gs_int_rect *rects = (gs_int_rect *)
+	    gs_alloc_bytes(dev->memory, sizeof(gs_int_rect),
+			   "x_get_bits_rectangle");
+	    int num_rects = 0;
+
+	    for (;;) {
+		if (rects == 0) {
+		    code = gs_note_error(gs_error_VMerror);
+		    break;
+		}
+#define xevent (*(XGraphicsExposeEvent *)&event)
+		rects[num_rects].q.x = xevent.width +
+		    (rects[num_rects].p.x = xevent.x);
+		rects[num_rects].q.y = xevent.height +
+		    (rects[num_rects].p.y = xevent.y);
+		++num_rects;
+		if (!xevent.count)
+		    break;
+#undef xevent
+		rects = gs_resize_object(dev->memory, rects,
+				      (num_rects + 1) * sizeof(gs_int_rect),
+					 "x_get_bits_rectangle");
+	    }
+	    if (code >= 0) {
+		*unread = rects;
+		code = num_rects;
+	    }
+	}
+	/* Restore the window state. */
+	XSetGraphicsExposures(xdev->dpy, xdev->gc, False);
+	XSelectInput(xdev->dpy, xdev->win, attributes.your_event_mask);
+#endif /*************** */
+    }
+    return code;
 }
 
 /* Set up with a specified tile. */
@@ -1109,8 +1498,9 @@ set_tile(register gx_device * dev, register const gx_strip_bitmap * tile)
     if (gs_debug['H']) {
 	int i;
 
-	dprintf4("[H] 0x%lx: width=%d height=%d raster=%d\n",
+	dlprintf4("[H] 0x%lx: width=%d height=%d raster=%d\n",
 	      (ulong) tile->data, tile->size.x, tile->size.y, tile->raster);
+	dlputs("");
 	for (i = 0; i < tile->raster * tile->size.y; i++)
 	    dprintf1(" %02x", tile->data[i]);
 	dputc('\n');
@@ -1133,13 +1523,17 @@ private void
 update_do_flush(register gx_device * dev)
 {
     gx_device_X *xdev = (gx_device_X *) dev;
-    int xo = xdev->update.xo, yo = xdev->update.yo;
 
-    set_function(GXcopy);
-    XCopyArea(xdev->dpy, xdev->bpixmap, xdev->win, xdev->gc,
-	      xo, yo, xdev->update.xe - xo, xdev->update.ye - yo,
-	      xo, yo);
-    update_init(dev);
+    flush_text(dev);
+    if (xdev->up_area != 0) {
+	int xo = xdev->update.xo, yo = xdev->update.yo;
+
+	set_function(GXcopy);
+	XCopyArea(xdev->dpy, xdev->bpixmap, xdev->win, xdev->gc,
+		  xo, yo, xdev->update.xe - xo, xdev->update.ye - yo,
+		  xo, yo);
+	update_init(dev);
+    }
 }
 
 /* Add a region to be updated. */
@@ -1151,7 +1545,7 @@ x_update_add(gx_device * dev, int xo, int yo, int w, int h)
     int xe = xo + w, ye = yo + h;
     long new_area;
 
-    if (always_update) {	/* Update the screen now. */
+    if (X_ALWAYS_UPDATE) {	/* Update the screen now. */
 	update_do_flush(dev);
 	new_area = (long)w *h;
     } else {			/* Only update the screen if it's worthwhile. */
@@ -1193,6 +1587,18 @@ x_update_add(gx_device * dev, int xo, int yo, int w, int h)
     xdev->update.xe = xe;
     xdev->update.ye = ye;
     xdev->up_area = new_area;
+}
+
+/* Flush buffered text to the screen. */
+private void
+do_flush_text(gx_device * dev)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+
+    if (!IN_TEXT(xdev))
+	return;
+    DRAW_TEXT(xdev);
+    xdev->text.item_count = xdev->text.char_count = 0;
 }
 
 /* ------ Internal procedures ------ */

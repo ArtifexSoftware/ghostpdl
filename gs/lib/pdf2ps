@@ -1,4 +1,5 @@
 #!/bin/sh
+# Id: pdf2ps 
 # Convert PDF to PostScript.
 
 OPTIONS=""
@@ -16,4 +17,5 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-exec gs -q -dNODISPLAY -sPSFile=$2 -dNOPAUSE $OPTIONS $1 -c quit
+# Doing an initial 'save' helps keep fonts from being flushed between pages.
+exec gs -q -dNOPAUSE -dBATCH -sDEVICE=pswrite -sOutputFile=$2 $OPTIONS -c save pop -f $1

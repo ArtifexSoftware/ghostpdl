@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_dps2.ps 
 % Initialization file for basic Display PostScript functions
 % that are also included in Level 2.
 
@@ -147,11 +148,8 @@ level2dict begin
     exch array exch setglobal
   } bind def
 } ifelse
-% The name UserObjects may be rebound, but we need to make sure these
-% operators always refer to the binding in userdict (which may also be
-% rebound!).
 /.UserObjects {
-  //systemdict /userdict get /UserObjects
+  .userdict /UserObjects
 } odef
 % In order to get proper error recovery behavior, we need to be careful
 % not to pop any operands from the stack until we're done.
@@ -162,7 +160,7 @@ level2dict begin
     length dup 3 index le {
 		% Stack: index value len
       2 index eq { 1 index 2 mul } { 1 index 1 add } ifelse
-      .localarray userdict /UserObjects get
+      .localarray .UserObjects get
       1 index copy pop
       .UserObjects 3 -1 roll put
     } {
@@ -180,24 +178,17 @@ level2dict begin
   .UserObjects get 1 index null put pop
 } odef
 
-% ------ User paths ------ %
-
-/upath {			% <bool> upath <array>
-	[ 1 index {/ucache cvx} if
-	true .pathbbox /setbbox cvx
-	 {/moveto cvx} {/lineto cvx} {/curveto cvx} {/closepath cvx}
-	pathforall ] cvx exch pop
-} odef
+% ------ Cache control ------ %
 
 % Dummy definitions for cache control operators
 
 /ucachestatus {			% - ucachestatus -mark- ? ? ? ? <size>
-	mark 0 0 0 0 userdict /.ucachesize .knownget not { 0 } if
+	mark 0 0 0 0 .userdict /.ucachesize .knownget not { 0 } if
 } odef
 /setucacheparams {		% -mark- ... <size> setucacheparams -
 		% Provoke an appropriate error if needed.
 	counttomark 1 lt { () 0 get } if
-	0 or userdict /.ucachesize 2 index 0 .max put cleartomark
+	0 or .userdict /.ucachesize 2 index 0 .max put cleartomark
 } odef
 
 end				% level2dict

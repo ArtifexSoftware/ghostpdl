@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_dosfs.c */
+/*Id: gp_dosfs.c  */
 /* Common routines for MS-DOS (any compiler) and DesqView/X, */
 /* which has a MS-DOS-like file system. */
 #include "dos_.h"
@@ -29,7 +29,7 @@
 /* This is not a standard gp procedure, */
 /* but all MS-DOS configurations need it. */
 void
-gp_set_printer_binary(int prnfno, int binary)
+gp_set_file_binary(int prnfno, bool binary)
 {
     union REGS regs;
 
@@ -47,6 +47,16 @@ gp_set_printer_binary(int prnfno, int binary)
     regs.h.ah = 0x44;		/* ioctl */
     regs.h.al = 1;		/* set device info */
     intdos(&regs, &regs);
+}
+
+/* ------ File accessing ------ */
+
+/* Set a file into binary or text mode. */
+int
+gp_setmode_binary(FILE * pfile, bool binary)
+{
+    gp_set_file_binary(fileno(pfile), binary);
+    return 0;			/* Fake out dos return status */
 }
 
 /* ------ File names ------ */

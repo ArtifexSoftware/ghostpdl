@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zchar42.c */
+/*Id: zchar42.c  */
 /* Type 42 character display operator */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsmatrix.h"
 #include "gspaint.h"		/* for gs_fill, gs_stroke */
@@ -41,8 +40,9 @@
 
 /* Imported procedures */
 int gs_type42_append(P7(uint glyph_index, gs_imager_state * pis,
-    gx_path * ppath, const gs_log2_scale_point * pscale, bool charpath_flag,
-			int paint_type, gs_font_type42 * pfont));
+			gx_path * ppath, const gs_log2_scale_point * pscale,
+			bool charpath_flag, int paint_type,
+			gs_font_type42 * pfont));
 int gs_type42_get_metrics(P3(gs_font_type42 * pfont, uint glyph_index,
 			     float psbw[4]));
 
@@ -53,23 +53,22 @@ private int
 ztype42execchar(register os_ptr op)
 {
     gs_font *pfont;
-
-#define pbfont ((gs_font_base *)pfont)
-#define pfont42 ((gs_font_type42 *)pfont)
     int code = font_param(op - 3, &pfont);
+    gs_font_base *const pbfont = (gs_font_base *) pfont;
     gs_show_enum *penum = op_show_find();
     int present;
     double sbw[4];
 
     if (code < 0)
 	return code;
-    if (penum == 0 || (pfont->FontType != ft_TrueType &&
-		       pfont->FontType != ft_CID_TrueType)
+    if (penum == 0 ||
+	(pfont->FontType != ft_TrueType &&
+	 pfont->FontType != ft_CID_TrueType)
 	)
 	return_error(e_undefined);
     /*
      * Any reasonable implementation would execute something like
-     *      1 setmiterlimit 0 setlinejoin 0 setlinecap
+     *  1 setmiterlimit 0 setlinejoin 0 setlinecap
      * here, but apparently the Adobe implementations aren't reasonable.
      *
      * If this is a stroked font, set the stroke width.
@@ -100,7 +99,8 @@ ztype42execchar(register os_ptr op)
 	float sbw42[4];
 	int i;
 
-	code = gs_type42_get_metrics(pfont42, (uint) op->value.intval, sbw42);
+	code = gs_type42_get_metrics((gs_font_type42 *) pfont,
+				     (uint) op->value.intval, sbw42);
 	if (code < 0)
 	    return code;
 	for (i = 0; i < 4; ++i)
@@ -111,8 +111,6 @@ ztype42execchar(register os_ptr op)
 			    sbw : NULL),
 			   sbw + 2, &pbfont->FontBBox,
 			   type42_fill, type42_stroke);
-#undef pfont42
-#undef pbfont
 }
 
 /* Continue after a CDevProc callout. */
@@ -133,8 +131,6 @@ private int
 type42_finish(os_ptr op, int (*cont) (P1(gs_state *)))
 {
     gs_font *pfont;
-
-#define pfont42 ((gs_font_type42 *)pfont)
     int code;
     gs_show_enum *penum = op_show_find();
     double sbxy[2];
@@ -165,12 +161,12 @@ type42_finish(os_ptr op, int (*cont) (P1(gs_state *)))
 			    penum->pgs->path,
 			    &penum->log2_current_scale,
 			    gs_show_in_charpath(penum) != cpm_show,
-			    pfont->PaintType, pfont42);
+			    pfont->PaintType,
+			    (gs_font_type42 *) pfont);
     if (code < 0)
 	return code;
     pop((psbpt == 0 ? 4 : 6));
-    return (*cont) (penum->pgs);
-#undef pfont42
+    return (*cont)(penum->pgs);
 }
 
 /* ------ Initialization procedure ------ */

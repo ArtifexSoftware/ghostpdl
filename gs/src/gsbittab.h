@@ -1,23 +1,26 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
-/* gsbittab.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gsbittab.h  */
 /* Interface to tables for bit operations */
+
+#ifndef gsbittab_INCLUDED
+#  define gsbittab_INCLUDED
 
 /*
  * Generate tables for transforming 2, 4, 6, or 8 bits.
@@ -60,14 +63,15 @@ extern const byte byte_count_bits[256];
  * the run length is increased by 8.
  */
 extern const byte
-  byte_bit_run_length_0[256], byte_bit_run_length_1[256],
-  byte_bit_run_length_2[256], byte_bit_run_length_3[256],
-  byte_bit_run_length_4[256], byte_bit_run_length_5[256],
-  byte_bit_run_length_6[256], byte_bit_run_length_7[256];
+      byte_bit_run_length_0[256], byte_bit_run_length_1[256], byte_bit_run_length_2[256],
+      byte_bit_run_length_3[256], byte_bit_run_length_4[256], byte_bit_run_length_5[256],
+      byte_bit_run_length_6[256], byte_bit_run_length_7[256];
 
 /*
  * byte_bit_run_length[N] points to byte_bit_run_length_N.
  * byte_bit_run_length_neg[N] = byte_bit_run_length[-N & 7].
  */
-extern const byte *byte_bit_run_length[8];
-extern const byte *byte_bit_run_length_neg[8];
+extern const byte *const byte_bit_run_length[8];
+extern const byte *const byte_bit_run_length_neg[8];
+
+#endif /* gsbittab_INCLUDED */

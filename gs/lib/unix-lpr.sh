@@ -1,4 +1,5 @@
 #!/bin/sh
+# Id: unix-lpr.sh 
 #
 # Unix lpr filter. The default setup sends output directly to a pipe,
 # which requires the Ghostscript process to fork, and thus may cause 
@@ -72,7 +73,7 @@ else
 fi
 
 bpp="`echo ${device} | sed 's/.*\.\([0-9][0-9]*\)$/\1/'`"
-if test "$bppspec" = "${device}"
+if test "$bpp" = "${device}"
 then
     bpp=1
 else

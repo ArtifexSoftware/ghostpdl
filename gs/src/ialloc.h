@@ -1,22 +1,22 @@
 /* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* ialloc.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: ialloc.h  */
 /* Interface to Ghostscript interpreter memory allocator */
 
 #ifndef ialloc_INCLUDED
@@ -28,6 +28,7 @@
  * Define the interpreter memory manager instance.
  */
 extern gs_dual_memory_t gs_imemory;
+
 #define idmemory (&gs_imemory)
 #define iimemory (gs_imemory.current)
 #define imemory ((gs_memory_t *)iimemory)
@@ -57,7 +58,7 @@ extern gs_dual_memory_t gs_imemory;
   gs_free_string(imemory, data, nbytes, cname)
 
 /* Initialize the interpreter's allocator. */
-void ialloc_init(P3(gs_memory_t *, uint, bool));
+void ialloc_init(P3(gs_raw_memory_t *, uint, bool));
 
 /* Resize a string. */
 #define iresize_string(data, oldn, newn, cname)\
@@ -70,6 +71,7 @@ void ialloc_reset_requested(P1(gs_dual_memory_t *));
 
 /* Validate the contents of memory. */
 void ialloc_validate_spaces(P1(const gs_dual_memory_t *));
+
 #define ivalidate_spaces() ialloc_validate_spaces(idmemory)
 
 /*
@@ -88,7 +90,7 @@ void ialloc_set_space(P2(gs_dual_memory_t *, uint));
  * Ref-related facilities.
  */
 
-#ifdef r_type				/* i.e., we know about refs */
+#ifdef r_type			/* i.e., we know about refs */
 
 /* Allocate and free ref arrays. */
 #define ialloc_ref_array(paref, attrs, nrefs, cname)\
@@ -112,6 +114,6 @@ void ialloc_set_space(P2(gs_dual_memory_t *, uint));
 #define make_iastruct_new(pref,attrs,ptr)\
   make_astruct_new(pref, (attrs) | icurrent_space, ptr)
 
-#endif					/* ifdef r_type */
+#endif /* ifdef r_type */
 
-#endif					/* ialloc_INCLUDED */
+#endif /* ialloc_INCLUDED */

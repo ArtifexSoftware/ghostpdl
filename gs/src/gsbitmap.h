@@ -1,28 +1,28 @@
 /* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gsbitmap.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gsbitmap.h  */
 /* Library "client" bitmap structures */
 
 #ifndef gsbitmap_INCLUDED
 #define gsbitmap_INCLUDED
 
-#include "gsstruct.h"       /* for extern_st */
+#include "gsstruct.h"		/* for extern_st */
 
 /*
  * The Ghostscript library stores all bitmaps bit-big-endian (i.e., the 0x80
@@ -65,17 +65,17 @@ typedef gs_id gs_bitmap_id;
  * it is possible to guess this by comparing size.x and raster, but of
  * course code should not rely on this.  See also gs_depth_bitmap below.
  * Requirements:
- *	size.x > 0, size.y > 0
- *	If size.y > 1,
- *	    raster >= (size.x * depth + 7) / 8
+ *      size.x > 0, size.y > 0
+ *      If size.y > 1,
+ *          raster >= (size.x * depth + 7) / 8
  */
 #define gs_bitmap_common                                                    \
     byte *          data;       /* pointer to the data */                   \
     int             raster;     /* increment between scanlines, bytes */    \
     gs_int_point    size;       /* width and height */                      \
-    gs_bitmap_id    id          /* usually unused */
+    gs_bitmap_id    id		/* usually unused */
 
-typedef struct  gs_bitmap_s {
+typedef struct gs_bitmap_s {
     gs_bitmap_common;
 } gs_bitmap;
 
@@ -83,8 +83,8 @@ typedef struct  gs_bitmap_s {
  * For bitmaps used as halftone tiles, we may replicate the tile in
  * X and/or Y, but it is still valuable to know the true tile dimensions
  * (i.e., the dimensions prior to replication).  Requirements:
- *	size.x % rep_width = 0
- *	size.y % rep_height = 0
+ *      size.x % rep_width = 0
+ *      size.y % rep_height = 0
  * Unaligned bitmaps are not very likely to be used as tiles (replicated),
  * since most of the library procedures that replicate tiles expect them
  * to be aligned.
@@ -118,7 +118,7 @@ typedef struct gs_tile_bitmap_s {
     byte     pix_depth;      /* bits per sample */                  \
     byte     num_comps      /* number of interleaved components */  \
 
-typedef struct  gs_depth_bitmap_s {
+typedef struct gs_depth_bitmap_s {
     gs_depth_bitmap_common;
 } gs_depth_bitmap;
 
@@ -127,7 +127,7 @@ typedef struct  gs_depth_bitmap_s {
     byte     pix_depth;     /* bits per sample */                   \
     byte     num_comps      /* number of interleaved components */  \
 
-typedef struct  gs_tile_depth_bitmap_s {
+typedef struct gs_tile_depth_bitmap_s {
     gs_tile_depth_bitmap_common;
 } gs_tile_depth_bitmap;
 
@@ -158,30 +158,30 @@ extern_st(st_gs_tile_depth_bitmap);
                         )
 
 #define public_st_gs_tile_bitmap()  /* in gspcolor.c */ \
-    gs_public_st_suffix_add0( st_gs_tile_bitmap,        \
-			      gs_tile_bitmap,           \
-			      "client tile bitmap",     \
-			      tile_bitmap_enum_ptrs,    \
-			      tile_bitmap_reloc_ptrs,   \
-			      st_gs_bitmap              \
-			      )
+    gs_public_st_suffix_add0_local( st_gs_tile_bitmap,        \
+				    gs_tile_bitmap,           \
+				    "client tile bitmap",     \
+				    bitmap_enum_ptrs,    \
+				    bitmap_reloc_ptrs,   \
+				    st_gs_bitmap              \
+				    )
 
 #define public_st_gs_depth_bitmap() /* in gspcolor.c */ \
-    gs_public_st_suffix_add0( st_gs_depth_bitmap,       \
-			      gs_depth_bitmap,          \
-			      "client depth bitmap",    \
-			      depth_bitmap_enum_ptrs,   \
-			      depth_bitmap_reloc_ptrs,  \
-			      st_gs_bitmap              \
-			      )
+    gs_public_st_suffix_add0_local( st_gs_depth_bitmap,       \
+				    gs_depth_bitmap,          \
+				    "client depth bitmap",    \
+				    bitmap_enum_ptrs,   \
+				    bitmap_reloc_ptrs,  \
+				    st_gs_bitmap              \
+				    )
 
 #define public_st_gs_tile_depth_bitmap()/* in gspcolor.c */ \
-    gs_public_st_suffix_add0( st_gs_tile_depth_bitmap,      \
-			      gs_tile_depth_bitmap,         \
-			      "client tile_depth bitmap",   \
-			      tile_depth_bitmap_enum_ptrs,  \
-			      tile_depth_bitmap_reloc_ptrs, \
-			      st_gs_tile_bitmap             \
-			      )
+    gs_public_st_suffix_add0_local( st_gs_tile_depth_bitmap,      \
+				    gs_tile_depth_bitmap,         \
+				    "client tile_depth bitmap",   \
+				    bitmap_enum_ptrs,  \
+				    bitmap_reloc_ptrs, \
+				    st_gs_tile_bitmap             \
+				    )
 
 #endif /* gsbitmap_INCLUDED */

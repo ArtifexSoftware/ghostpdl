@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsfcmap.c */
+/*Id: gsfcmap.c  */
 /* CMap character decoding */
 #include "gx.h"
 #include "gserrors.h"
@@ -58,20 +58,7 @@ RELOC_PTR(gx_code_map, cmap);
 RELOC_PTRS_END
 #undef pcmap
 /* CIDSystemInfo structure */
-gs_public_st_composite(st_cid_system_info, gs_cid_system_info,
-		 "gs_cid_system_info", cid_si_enum_ptrs, cid_si_reloc_ptrs);
-#define pcidsi ((gs_cid_system_info *)vptr)
-private 
-ENUM_PTRS_BEGIN(cid_si_enum_ptrs) return 0;
-
-ENUM_CONST_STRING_PTR(0, gs_cid_system_info, Registry);
-ENUM_CONST_STRING_PTR(1, gs_cid_system_info, Ordering);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(cid_si_reloc_ptrs);
-RELOC_CONST_STRING_PTR(gs_cid_system_info, Registry);
-RELOC_CONST_STRING_PTR(gs_cid_system_info, Ordering);
-RELOC_PTRS_END
-#undef pcidsi
+public_st_cid_system_info();
 
 /* ---------------- Procedures ---------------- */
 
@@ -83,7 +70,8 @@ RELOC_PTRS_END
  */
      private int
          code_map_decode_next(const gx_code_map * pcmap, const gs_const_string * str,
-			      uint * pindex, uint * pfidx, gs_glyph * pglyph)
+			      uint * pindex, uint * pfidx,
+			      gs_char * pchr, gs_glyph * pglyph)
 {
     const gx_code_map *map = pcmap;
     uint chr = 0;
@@ -100,6 +88,7 @@ RELOC_PTRS_END
 		if (map->add_offset)
 		    *pglyph += chr - map->first;
 		*pfidx = map->byte_data.font_index;
+		*pchr = chr & 0xff;
 		return result;
 	    case cmap_glyph:
 		*pglyph = map->data.glyph;
@@ -124,7 +113,8 @@ RELOC_PTRS_END
 		    map = &map[lo];
 		    continue;
 		}
-	      undef:*pglyph = gs_no_glyph;
+	      undef:*pchr = 0;
+		*pglyph = gs_no_glyph;
 		return 0;
 	    default:		/* (can't happen) */
 		return_error(gs_error_invalidfont);
@@ -138,11 +128,11 @@ RELOC_PTRS_END
  */
 int
 gs_cmap_decode_next(const gs_cmap * pcmap, const gs_const_string * str,
-		    uint * pindex, uint * pfidx, gs_glyph * pglyph)
+	     uint * pindex, uint * pfidx, gs_char * pchr, gs_glyph * pglyph)
 {
     uint save_index = *pindex;
     int code =
-    code_map_decode_next(&pcmap->def, str, pindex, pfidx, pglyph);
+    code_map_decode_next(&pcmap->def, str, pindex, pfidx, pchr, pglyph);
 
     if (code != 0 || *pglyph != gs_no_glyph)
 	return code;
@@ -152,7 +142,8 @@ gs_cmap_decode_next(const gs_cmap * pcmap, const gs_const_string * str,
 
 	*pindex = save_index;
 	code =
-	    code_map_decode_next(&pcmap->notdef, str, pindex, pfidx, pglyph);
+	    code_map_decode_next(&pcmap->notdef, str, pindex, pfidx,
+				 pchr, pglyph);
 	*pindex = next_index;
     }
     return code;

@@ -16,12 +16,11 @@
    all copies.
  */
 
-/* zdosio.c */
+/*Id: zdosio.c  */
 /* MS-DOS direct I/O operators. */
 /* These should NEVER be included in a released configuration! */
 #include "dos_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "store.h"
 

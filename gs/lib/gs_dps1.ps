@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_dps1.ps 
 % Initialization file for most of the Display PostScript functions
 % that are also included in Level 2.
 
@@ -35,10 +36,12 @@ systemdict begin
 
 /SharedFontDirectory .FontDirectory .gcheck
  { .currentglobal false .setglobal
-   /LocalFontDirectory .FontDirectory dup maxlength dict copy def
+   /LocalFontDirectory .FontDirectory dup maxlength dict copy
+   .forcedef	% LocalFontDirectory is local, systemdict is global
    .setglobal .FontDirectory
  }
- { /LocalFontDirectory .FontDirectory def
+ { /LocalFontDirectory .FontDirectory
+   .forcedef	% LocalFontDirectory is local, systemdict is global
    50 dict
  }
 ifelse def
@@ -53,12 +56,14 @@ level2dict begin
  { dup .setglobal
    //systemdict /FontDirectory .currentglobal
     { //SharedFontDirectory }
-    { //systemdict /LocalFontDirectory get }	% can't embed ref to local VM
-   ifelse .forceput pop
+    { /LocalFontDirectory .systemvar }	% can't embed ref to local VM
+   ifelse .forceput pop	% LocalFontDirectory is local, systemdict is global
  } .bind odef		% must bind .forceput and .setglobal
 			% even if NOBIND in effect
 /setshared /.setglobal load def
 .currentglobal setshared
+
+% See below for changes in save and restore.
 
 % ------ Fonts ------ %
 
@@ -97,7 +102,7 @@ level2dict begin
 % override fake local ones.  We handle this by brute force.
 /restore		% <save> restore -
  { dup //restore	% bind even if NOBIND
-   //systemdict /LocalFontDirectory get
+   /LocalFontDirectory .systemvar
    FAKEFONTS
     { mark
 		% We want to delete a fake font from the local directory

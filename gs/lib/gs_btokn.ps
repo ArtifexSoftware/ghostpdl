@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_btokn.ps 
 % Initialization file for binary tokens.
 % When this is run, systemdict is still writable,
 % but everything defined here goes into level2dict.
@@ -178,6 +179,27 @@ WRITEDICTS
 	/stringtype 1 index
 .dicttomark def
 
+/.bosheader {		% <top_length> <total_length> <string8> .bosheader
+			%   <string4|8>
+  dup 0 currentobjectformat 127 add put		% object format => BOS tag
+  2 index 255 le 2 index 65531 le and {
+	% Use the short header format: tag toplen(1) totlen(2)
+    exch 4 add exch
+    0 4 getinterval
+    dup 1 5 -1 roll put
+  } {
+	% Use the long header format: tag 0(1) toplen(2) totlen(4)
+    exch 8 add exch
+    0 0 4 2 roll .bosobject exch pop exch pop	% store with byte swapping
+  } ifelse		% Stack: shortlen str
+  exch dup -8 bitshift exch 255 and	% str hibyte lobyte
+  currentobjectformat 1 and 0 eq {	% lsb first
+    exch
+  } if
+  2 index 3 3 -1 roll put
+  1 index 2 3 -1 roll put
+} .bind def
+
 /.writeobjects		% <file> <tag> <array> .writeobjects -
  {
 	mark exch
@@ -265,7 +287,7 @@ currentdict /w2dict .undef
 
 % Implement binary error message output.
   /.printerror
-   { $error /binary get .languagelevel 2 eq and
+   { $error /binary get .languagelevel 2 ge and
       { currentobjectformat 0 ne
          { [ /Error $error /errorname get $error /command get false
 	   ] 250 printobject

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* scfd.c */
+/*Id: scfd.c  */
 /* CCITTFax decoding filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -29,12 +29,12 @@
 
 private_st_CFD_state();
 
-#define ss ((stream_CFD_state *)st)
-
 /* Set default parameter values. */
 private void
 s_CFD_set_defaults(register stream_state * st)
 {
+    stream_CFD_state *const ss = (stream_CFD_state *) st;
+
     s_CFD_set_defaults_inline(ss);
 }
 
@@ -42,6 +42,7 @@ s_CFD_set_defaults(register stream_state * st)
 private int
 s_CFD_init(stream_state * st)
 {
+    stream_CFD_state *const ss = (stream_CFD_state *) st;
     int raster = ss->raster =
     round_up((ss->Columns + 7) >> 3, ss->DecodedByteAlign);
     byte white = (ss->BlackIs1 ? 0 : 0xff);
@@ -81,6 +82,8 @@ s_CFD_init(stream_state * st)
 private void
 s_CFD_release(stream_state * st)
 {
+    stream_CFD_state *const ss = (stream_CFD_state *) st;
+
     gs_free_object(st->memory, ss->lprev, "CFD lprev(close)");
     gs_free_object(st->memory, ss->lbuf, "CFD lbuf(close)");
 }
@@ -110,13 +113,18 @@ s_CFD_release(stream_state * st)
 #define skip_bits(n) hcd_skip_bits(n)
 
 /* Get a run from the stream. */
+#ifdef DEBUG
+#  define IF_DEBUG(expr) expr
+#else
+#  define IF_DEBUG(expr) DO_NOTHING
+#endif
 #define get_run(decode, initial_bits, runlen, str, outl)\
 {	const cfd_node *np;\
 	int clen;\
 	ensure_bits(initial_bits, outl);\
 	np = &decode[peek_bits(initial_bits)];\
 	if ( (clen = np->code_length) > initial_bits )\
-	{	do_debug(uint init_bits = peek_bits(initial_bits));\
+	{	IF_DEBUG(uint init_bits = peek_bits(initial_bits));\
 		if ( !avail_bits(clen) ) goto outl;\
 		clen -= initial_bits;\
 		skip_bits(initial_bits);\
@@ -192,6 +200,7 @@ private int
 s_CFD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
+    stream_CFD_state *const ss = (stream_CFD_state *) st;
     int wstop = ss->raster - 1;
     int eol_count = ss->eol_count;
     int k_left = ss->k_left;
@@ -370,8 +379,6 @@ s_CFD_process(stream_state * st, stream_cursor_read * pr,
     ss->eol_count = eol_count;
     return status;
 }
-
-#undef ss
 
 /*
  * Decode a leading EOL, if any.
@@ -555,8 +562,8 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
 	int pcount = (endptr - q) * 8 + qbit;
 
 	if (pcount != count)
-	    dprintf2("[w2]Error: count=%d pcount=%d\n",
-		     count, pcount);
+	    dlprintf2("[w2]Error: count=%d pcount=%d\n",
+		      count, pcount);
     }
 #endif
     /* We could just use get_run here, but we can do better: */
@@ -728,15 +735,13 @@ cf_decode_2d(stream_CFD_state * ss, stream_cursor_read * pr)
     goto out0;
 }
 
-#if 1
-/****************/
+#if 1				/*************** */
 private int
 cf_decode_uncompressed(stream_CFD_state * ss, stream_cursor_read * pr)
 {
     return ERRC;
 }
-#else
-/****************/
+#else /*************** */
 
 /* Decode uncompressed data. */
 /* (Not tested: no sample data available!) */
@@ -787,8 +792,7 @@ cf_decode_uncompressed(stream * s)
     return rlen;
 }
 
-#endif
-/****************/
+#endif /*************** */
 
 /* Stream template */
 const stream_template s_CFD_template =

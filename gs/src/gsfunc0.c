@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,13 @@
    all copies.
  */
 
-/* gsfunc0.c */
+/*Id: gsfunc0.c  */
 /* Implementation of FunctionType 0 (Sampled) Functions */
 #include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc0.h"
+#include "gxfarith.h"
 #include "gxfunc.h"
 
 typedef struct gs_function_Sd_s {
@@ -37,83 +38,138 @@ private_st_function_Sd();
 #define max_Sd_n 16
 
 /* Get one set of sample values. */
-private int
-fn_get_samples(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
-{
-    int bps = pfn->params.BitsPerSample;
-    int n = pfn->params.n;
-    byte buf[max_Sd_n * 4];
-    const byte *p;
-    int i;
+#define SETUP_SAMPLES(bps, nbytes)\
+	int n = pfn->params.n;\
+	byte buf[max_Sd_n * ((bps + 7) >> 3)];\
+	const byte *p;\
+	int i;\
+\
+	data_source_access(&pfn->params.DataSource, offset >> 3,\
+			   nbytes, buf, &p)
 
-    data_source_access(&pfn->params.DataSource, offset >> 3,
-		       (bps * n + 7) >> 3, buf, &p);
-    switch (bps) {
-	case 1:
-	    for (i = 0; i < n; ++i) {
-		samples[i] = (*p >> (~offset & 7)) & 1;
-		if (!(++offset & 7))
-		    p++;
-	    }
-	    break;
-	case 2:
-	    for (i = 0; i < n; ++i) {
-		samples[i] = (*p >> (6 - (offset & 7))) & 3;
-		if (!((offset += 2) & 7))
-		    p++;
-	    }
-	    break;
-	case 4:
-	    for (i = 0; i < n; offset ^= 4, ++i)
-		samples[i] = (offset & 4 ? *p++ & 0xf : *p >> 4);
-	    break;
-	case 8:
-	    for (i = 0; i < n; ++i)
-		samples[i] = *p++;
-	    break;
-	case 12:
-	    for (i = 0; i < n; offset ^= 4, ++i)
-		if (offset & 4)
-		    samples[i] = ((*p & 0xf) << 8) + p[1], p += 2;
-		else
-		    samples[i] = (*p << 4) + (p[1] >> 4), p++;
-	    break;
-	case 16:
-	    for (i = 0; i < n; p += 2, ++i)
-		samples[i] = (*p << 8) + p[1];
-	    break;
-	case 24:
-	    for (i = 0; i < n; p += 3, ++i)
-		samples[i] = (*p << 16) + (p[1] << 8) + p[2];
-	    break;
-	case 32:
-	    for (i = 0; i < n; p += 4, ++i)
-		samples[i] = (*p << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
-	    break;
+private int
+fn_gets_1(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(1, ((offset & 7) + n + 7) >> 3);
+    for (i = 0; i < n; ++i) {
+	samples[i] = (*p >> (~offset & 7)) & 1;
+	if (!(++offset & 7))
+	    p++;
+    }
+    return 0;
+}
+private int
+fn_gets_2(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(2, (((offset & 7) >> 1) + n + 3) >> 2);
+    for (i = 0; i < n; ++i) {
+	samples[i] = (*p >> (6 - (offset & 7))) & 3;
+	if (!((offset += 2) & 7))
+	    p++;
+    }
+    return 0;
+}
+private int
+fn_gets_4(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(4, (((offset & 7) >> 2) + n + 1) >> 1);
+    for (i = 0; i < n; ++i) {
+	samples[i] = (offset & 4 ? *p++ & 0xf : *p >> 4);
+    }
+    return 0;
+}
+private int
+fn_gets_8(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(8, n);
+    for (i = 0; i < n; ++i) {
+	samples[i] = *p++;
+    }
+    return 0;
+}
+private int
+fn_gets_12(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(12, (((offset & 7) >> 2) + 3 * n + 1) >> 1);
+    for (i = 0; i < n; ++i) {
+	if (offset & 4)
+	    samples[i] = ((*p & 0xf) << 8) + p[1], p += 2;
+	else
+	    samples[i] = (*p << 4) + (p[1] >> 4), p++;
+	offset ^= 4;
+    }
+    return 0;
+}
+private int
+fn_gets_16(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(16, n * 2);
+    for (i = 0; i < n; ++i) {
+	samples[i] = (*p << 8) + p[1];
+	p += 2;
+    }
+    return 0;
+}
+private int
+fn_gets_24(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(24, n * 3);
+    for (i = 0; i < n; ++i) {
+	samples[i] = (*p << 16) + (p[1] << 8) + p[2];
+	p += 3;
+    }
+    return 0;
+}
+private int
+fn_gets_32(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
+{
+    SETUP_SAMPLES(32, n * 4);
+    for (i = 0; i < n; ++i) {
+	samples[i] = (*p << 24) + (p[1] << 16) + (p[2] << 8) + p[3];
+	p += 4;
     }
     return 0;
 }
 
+private int (*const fn_get_samples[]) (P3(const gs_function_Sd_t * pfn,
+					  ulong offset, uint * samples)) =
+{
+    0, fn_gets_1, fn_gets_2, 0, fn_gets_4, 0, 0, 0,
+	fn_gets_8, 0, 0, 0, fn_gets_12, 0, 0, 0,
+	fn_gets_16, 0, 0, 0, 0, 0, 0, 0,
+	fn_gets_24, 0, 0, 0, 0, 0, 0, 0,
+	fn_gets_32
+};
+
 /* Calculate a result by multilinear interpolation. */
 private void
-fn_interpolate_linear(const gs_function_Sd_t * pfn, const float *values,
-		 const ulong * factors, uint * samples, ulong offset, int i)
+fn_interpolate_linear(const gs_function_Sd_t *pfn, const float *fparts,
+		 const ulong *factors, float *samples, ulong offset, int m)
 {
-    if (i == pfn->params.m)
-	fn_get_samples(pfn, offset, samples);
-    else {
-	float fpart = values[i] - floor(values[i]);
+    int j;
 
-	fn_interpolate_linear(pfn, values, factors, samples, offset, i + 1);
-	if (fpart != 0) {
-	    int j;
-	    uint samples1[max_Sd_n];
+top:
+    if (m == 0) {
+	uint sdata[max_Sd_n];
 
-	    fn_interpolate_linear(pfn, values, factors, samples1,
-				  offset + factors[i], i + 1);
-	    for (j = 0; j < pfn->params.n; ++j)
-		samples[j] += (samples1[j] - samples[j]) * fpart;
+	(*fn_get_samples[pfn->params.BitsPerSample])(pfn, offset, sdata);
+	for (j = pfn->params.n - 1; j >= 0; --j)
+	    samples[j] = sdata[j];
+    } else {
+	float fpart = *fparts++;
+	float samples1[max_Sd_n];
+
+	if (is_fzero(fpart)) {
+	    ++factors;
+	    --m;
+	    goto top;
 	}
+	fn_interpolate_linear(pfn, fparts, factors + 1, samples,
+			      offset, m - 1);
+	fn_interpolate_linear(pfn, fparts, factors + 1, samples1,
+			      offset + *factors, m - 1);
+	for (j = pfn->params.n - 1; j >= 0; --j)
+	    samples[j] += (samples1[j] - samples[j]) * fpart;
     }
 }
 
@@ -127,12 +183,13 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
     int i;
     float encoded[max_Sd_m];
     ulong factors[max_Sd_m];
-    uint samples[max_Sd_n];
+    float samples[max_Sd_n];
 
     /* Encode the input values. */
 
     for (i = 0; i < pfn->params.m; ++i) {
-	float d0 = pfn->params.Domain[2 * i], d1 = pfn->params.Domain[2 * i + 1];
+	float d0 = pfn->params.Domain[2 * i],
+	    d1 = pfn->params.Domain[2 * i + 1];
 	float arg = in[i], enc;
 
 	if (arg < d0)
@@ -161,11 +218,16 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
     {
 	ulong factor = bps * pfn->params.n;
 
-	for (i = 0; i < pfn->params.m; factor *= pfn->params.Size[i++])
-	    offset += (factors[i] = factor) * (int)encoded[i];
+	for (i = 0; i < pfn->params.m; factor *= pfn->params.Size[i++]) {
+	    int ipart = (int)encoded[i];
+
+	    offset += (factors[i] = factor) * ipart;
+	    encoded[i] -= ipart;
+	}
     }
-/****** LINEAR INTERPOLATION ONLY ******/
-    fn_interpolate_linear(pfn, encoded, factors, samples, offset, 0);
+    /****** LINEAR INTERPOLATION ONLY ******/
+    fn_interpolate_linear(pfn, encoded, factors, samples, offset,
+			  pfn->params.m);
 
     /* Encode the output values. */
 
@@ -193,6 +255,18 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
     return 0;
 }
 
+/* Test whether a Sampled function is monotonic. */
+/* Since this can be very time-consuming, we only do it if necessary. */
+private int
+fn_Sd_is_monotonic(const gs_function_t * pfn_common,
+		   const float *lower, const float *upper, bool must_know)
+{
+    if (!must_know)
+	return gs_error_undefined;	/* don't know */
+/****** NYI ******/
+    return gs_error_undefined;
+}
+
 /* Free the parameters of a Sampled function. */
 void
 gs_function_Sd_free_params(gs_function_Sd_params_t * params, gs_memory_t * mem)
@@ -212,13 +286,18 @@ gs_function_Sd_init(gs_function_t ** ppfn,
     {
 	function_type_Sampled,
 	(fn_evaluate_proc_t) fn_Sd_evaluate,
+	(fn_is_monotonic_proc_t) fn_Sd_is_monotonic,
 	(fn_free_params_proc_t) gs_function_Sd_free_params,
 	fn_common_free
     };
+    int code;
     int i;
 
     *ppfn = 0;			/* in case of error */
-    fn_check_mnDR(params, params->m, params->n);
+    code = fn_check_mnDR((const gs_function_params_t *)params,
+			 params->m, params->n);
+    if (code < 0)
+	return code;
     if (params->m > max_Sd_m)
 	return_error(gs_error_limitcheck);
     switch (params->Order) {

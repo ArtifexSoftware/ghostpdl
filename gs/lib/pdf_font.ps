@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: pdf_font.ps 
 % pdf_font.ps
 % PDF font operations.
 
@@ -99,9 +100,17 @@ pdfdict begin
 		% Because of this, we can't deal with Width vectors that
 		% specify different widths for the same character name
 		% appearing multiple times in the Encoding.
-	 Metrics 2 index .knownget not { 0 } if 0 ne
-	  { pop pop }
-	  { Metrics 3 1 roll put }
+	 Metrics 2 index .knownget not { 0 } if 0 ne {
+	   pop pop
+	 } {
+		% Work around a bug in pdfTeX, which can generate Encoding
+		% vectors containing nulls.
+	   1 index null ne {
+	     Metrics 3 1 roll put
+	   } {
+	     pop pop
+	   } ifelse
+	 }
 	 ifelse pop
        }
       for pop
@@ -112,7 +121,12 @@ pdfdict begin
       /MissingWidth knownoget { 2 index mul } { 0 } ifelse exch
       Encoding
        {	% Stack: font font-res mscale missing-width metrics charname
-	 2 copy known not { 2 copy 4 index put } if pop
+		% Work around the abovementioned pdfTeX bug.
+	 dup null ne {
+	   2 copy known not { 2 copy 4 index put } if pop
+	 } {
+	   pop
+	 } ifelse
        }
       forall pop pop pop
       exch Encoding Metrics end
@@ -124,7 +138,12 @@ pdfdict begin
 
 % ---------------- Descriptors ---------------- %
 
-% Partial descriptors for the 14 built-in fonts.
+% Partial descriptors for the 14 built-in fonts.  Note that
+% from PDF 1.1 to PDF 1.2, the meaning of the Flag 6 in the FontDescriptor
+% object has undergone a subtle change in its meaning which has serious
+% consequences for searching with Acrobat:
+% In PDF 1.1, the flag meant: Font has StandardEncoding
+% In PDF 1.2, the flag means: Font has (subset of) StandardRomanCharacterSet
 /standardfontdescriptors mark
   /Courier mark /Flags 16#23 .dicttomark
   /Courier-Oblique 1 index
@@ -154,9 +173,30 @@ pdfdict begin
  } bdef
 
 % Find a font, and adjust its encoding if necessary.
-/pdffindfont		% <font-resource> <fontname> pdffindfont <font>
- { findfont adjustfont
- } bdef
+/pdffindfont {		% <font-resource> <fontname> pdffindfont <font>
+		% If the font isn't available, synthesize one based on
+		% its descriptor.
+  dup /Font resourcestatus {
+    pop pop findfont
+  } {
+    pop dup /FontDescriptor knownoget {
+		% Right now, all we look at are the Flags for fixed-width,
+		% serif, italic, and force-bold.
+      /Flags oget
+      dup 16#40 and -4 bitshift
+      1 index 16#40000 and -15 bitshift add
+      exch 3 and add {
+	Helvetica Courier Times-Roman Courier
+	Helvetica-Oblique Courier-Oblique Times-Italic Courier-Oblique
+	Helvetica-Bold Courier-Bold Times-Bold Courier-Bold
+	Helvetica-BoldOblique Courier-BoldOblique Times-BoldItalic Courier-BoldOblique
+      } exch get findfont
+    } {
+		% No descriptor available, use the default algorithm.
+      findfont
+    } ifelse
+  } ifelse adjustfont
+} bdef
 
 % ---------------- Type 1 fonts ---------------- %
 
@@ -318,9 +358,9 @@ readonly def
        false resolvestream
 		% Don't let setgcolor set the color inside the BuildGlyph
 		% procedure, because this causes an /undefined error.
-       q_ null /FillColor gput null /StrokeColor gput
+       q null /FillColor gput null /StrokeColor gput
        pdfopdict .pdfrun
-       Q_
+       Q
        PDFfile exch setfileposition
      } bdef
     FontName currentdict end definefont exch pop
@@ -355,7 +395,44 @@ readonly def
  } bdef
 
 % ---------------- Type 0 fonts ---------------- %
-%**************** NOT ACTUALLY SUPPORTED YET
+
+% Predefine the known CMaps, but only create them on demand.
+/knownCMaps mark
+  /Identity-H { /Identity-H 0 makeIdentityCMap }
+  /Identity-V { /Identity-V 1 makeIdentityCMap }
+.dicttomark def
+
+/makeIdentityCMap {		% <cmapname> <wmode> .makeIdentityCMap -
+  .currentglobal true .setglobal 3 1 roll
+  /CIDInit /ProcSet findresource begin
+  12 dict begin
+    /WMode exch def
+    /CMapName exch def
+    begincmap
+    /CIDSystemInfo 3 dict dup begin
+      /Registry (Adobe) def
+      /Ordering (Japan1) def
+      /Supplement 0 def
+    end def
+    %/CMapName ... def
+    /CMapVersion 1 def
+    /CMapType 1 def
+    %/WMode ... def
+    2 begincodespacerange
+      <0001> <00ff>
+      <0100> <ffff>
+    endcodespacerange
+    2 begincidrange
+      <0001> <00ff> 1
+      <0100> <ffff> 256
+    endcidrange
+    endcmap
+    CMapName currentdict /CMap defineresource
+    knownCMaps CMapName 2 index put
+  end		% CMap
+  end		% CIDInit ProcSet
+  exch .setglobal
+} bdef
 
 /buildType0		% <Type0-font-resource> buildType0 <font>
 { 10 dict begin
@@ -363,18 +440,73 @@ readonly def
   /FontMatrix 1 index /FontMatrix knownoget not { matrix } if def
   /FontName 1 index /BaseFont get def
   /FMapType 9 def
-  /Encoding [ 0 1 4 index /DescendantFonts oget length 1 sub { } for ] def
-  /FDepVector [ 2 index /DescendantFonts oget { exec } forall ] def
+  /Encoding [
+    0 1 4 index /DescendantFonts oget length 1 sub { } for
+  ] def
+  /FDepVector [
+    2 index /DescendantFonts oget { exec resourcefont } forall
+  ] def
   /CMap 1 index /Encoding oget
     dup type /nametype eq
-     { dup Page /CMap rget
-        { exch pop resolvestream } { /undefined signalerror } ifelse
+     { knownCMaps 1 index .knownget
+        { exch pop exec } { /undefined signalerror } ifelse
      }
      { resolvestream
      }
     ifelse
-  % FontName currentdict end definefont exch pop
-  end pop /Times-Roman findfont
+  def
+  FontName currentdict end definefont exch pop
+} bdef
+
+% ---------------- CIDFontType0/2 fonts ---------------- %
+
+% Insert metrics into a CIDFont, by saving the PDF W, W2, DW, and DW2
+% arrays and using a (currently very inefficient) CDevProc.
+/addCIDmetrics {	% <CIDFont-resource> addCIDmetrics <fontdict>
+  dup /BaseFont get /CIDFont findresource
+  dup length 5 add dict .copydict
+  dup /FID undef
+  dup /UniqueID undef
+  dup /XUID undef
+	% Insert the widths into the font.
+  {W W2 DW DW2} {
+	% Stack: pdfresource newfont key
+    2 index 1 index .knownget {
+      2 index 3 1 roll put
+    } {
+      pop
+    } ifelse
+  } forall
+  dup /CDevProc 1 index /CIDWProc load /exec load 3 packedarray cvx put
+  exch pop
+} bdef
+
+% Apply the [D]W[2] metrics to a character before displaying.
+/CIDWProc {		% <font> <w0x> <w0y> <llx> <lly> <urx> <ury>
+			%   <w1x> <w1y> <vx> <vy> <cid> CIDWproc
+			%   <w0x'> ... <vy'>
+  12 -1 roll begin
+	% Look up and apply [D]W
+  10 index
+  currentdict /DW .knownget { exch pop } if
+  currentdict /W .knownget {
+	% Search the W array for the CID.
+	% ****** NOT IMPLEMENTED YET ******
+  } if
+  0 13 2 roll 11 -2 roll pop pop
+	% Look up and apply [D]W2
+	% ****** NOT IMPLEMENTED YET ******
+  pop end
+} bdef
+
+/buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
+  addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
+} bdef
+
+/buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
+  addCIDmetrics
+	%****** Handle CIDToGIDMap ******
+  dup /BaseFont get exch /CIDFont defineresource
 } bdef
 
 % ---------------- Other embedded fonts ---------------- %
@@ -403,6 +535,8 @@ readonly def
   /MMType1 1 index
   /Type3 /buildType3 cvx
   /TrueType /buildTrueType cvx
+  /CIDFontType0 /buildCIDType0 cvx
+  /CIDFontType2 /buildCIDType2 cvx
 .dicttomark readonly def
 
 /resourcefont			% <font-resource> resourcefont <font>

@@ -18,6 +18,7 @@
 
 /*Id: gscspace.c  */
 /* Color space operators and support */
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -32,29 +33,30 @@ extern cs_proc_remap_concrete_color(gx_remap_concrete_DGray);
 extern cs_proc_remap_color(gx_remap_DeviceRGB);
 extern cs_proc_concretize_color(gx_concretize_DeviceRGB);
 extern cs_proc_remap_concrete_color(gx_remap_concrete_DRGB);
-const gs_color_space_type
-      gs_color_space_type_DeviceGray =
-{gs_color_space_index_DeviceGray, 1, true,
- gs_base_color_space_size,
- gx_init_paint_1, gx_restrict01_paint_1,
- gx_same_concrete_space,
- gx_concretize_DeviceGray, gx_remap_concrete_DGray,
- gx_remap_DeviceGray, gx_no_install_cspace,
- gx_no_adjust_cspace_count, gx_no_adjust_color_count,
- gx_no_cspace_enum_ptrs, gx_no_cspace_reloc_ptrs
-},    gs_color_space_type_DeviceRGB =
-{gs_color_space_index_DeviceRGB, 3, true,
- gs_base_color_space_size,
- gx_init_paint_3, gx_restrict01_paint_3,
- gx_same_concrete_space,
- gx_concretize_DeviceRGB, gx_remap_concrete_DRGB,
- gx_remap_DeviceRGB, gx_no_install_cspace,
- gx_no_adjust_cspace_count, gx_no_adjust_color_count,
- gx_no_cspace_enum_ptrs, gx_no_cspace_reloc_ptrs
+const gs_color_space_type gs_color_space_type_DeviceGray = {
+    gs_color_space_index_DeviceGray, true, true,
+    &st_base_color_space, gx_num_components_1,
+    gx_no_base_space,
+    gx_init_paint_1, gx_restrict01_paint_1,
+    gx_same_concrete_space,
+    gx_concretize_DeviceGray, gx_remap_concrete_DGray,
+    gx_remap_DeviceGray, gx_no_install_cspace,
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count
+};
+const gs_color_space_type gs_color_space_type_DeviceRGB = {
+    gs_color_space_index_DeviceRGB, true, true,
+    &st_base_color_space, gx_num_components_3,
+    gx_no_base_space,
+    gx_init_paint_3, gx_restrict01_paint_3,
+    gx_same_concrete_space,
+    gx_concretize_DeviceRGB, gx_remap_concrete_DRGB,
+    gx_remap_DeviceRGB, gx_no_install_cspace,
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
 
 /* Structure descriptors */
 public_st_color_space();
+public_st_base_color_space();
 
 /* Return the shared instances of the color spaces. */
 const gs_color_space *
@@ -106,7 +108,7 @@ gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)
  * actually legal.
  */
 #define cs_copy(pcsto, pcsfrom)\
-  memcpy(pcsto, pcsfrom, (pcsfrom)->type->struct_size)
+  memcpy(pcsto, pcsfrom, (pcsfrom)->type->stype->ssize)
 
 /* Copy a color space into one newly allocated by the caller. */
 void
@@ -149,7 +151,23 @@ gs_color_space_get_index(const gs_color_space * pcs)
 int
 gs_color_space_num_components(const gs_color_space * pcs)
 {
-    return pcs->type->num_components;
+    return cs_num_components(pcs);
+}
+
+int
+gx_num_components_1(const gs_color_space * pcs)
+{
+    return 1;
+}
+int
+gx_num_components_3(const gs_color_space * pcs)
+{
+    return 3;
+}
+int
+gx_num_components_4(const gs_color_space * pcs)
+{
+    return 4;
 }
 
 /*
@@ -159,27 +177,13 @@ gs_color_space_num_components(const gs_color_space * pcs)
 const gs_color_space *
 gs_cspace_base_space(const gs_color_space * pcspace)
 {
-    switch (gs_color_space_get_index(pcspace)) {
+    return cs_base_space(pcspace);
+}
 
-	case gs_color_space_index_DeviceN:
-	    return (const gs_color_space *)&(pcspace->params.device_n.alt_space);
-
-	case gs_color_space_index_Separation:
-	    return (const gs_color_space *)&(pcspace->params.separation.alt_space);
-
-	case gs_color_space_index_Indexed:
-	    return (const gs_color_space *)&(pcspace->params.indexed.base_space);
-
-	case gs_color_space_index_Pattern:
-	    if (pcspace->params.pattern.has_base_space)
-		return (const gs_color_space *)&(pcspace->params.pattern.base_space);
-	    break;
-
-	default:
-	    break;
-    }
-
-    return 0;
+const gs_color_space *
+gx_no_base_space(const gs_color_space * pcspace)
+{
+    return NULL;
 }
 
 /* ------ Other implementation procedures ------ */
@@ -204,12 +208,13 @@ gx_no_adjust_cspace_count(const gs_color_space * pcs, gs_memory_t * mem,
 private 
 ENUM_PTRS_BEGIN_PROC(color_space_enum_ptrs)
 {
-    ENUM_RETURN_CALL(pcs->type->enum_ptrs, pcs, size, index);
+    return ENUM_USING(*pcs->type->stype, vptr, size, index);
     ENUM_PTRS_END_PROC
 }
 private 
 RELOC_PTRS_BEGIN(color_space_reloc_ptrs)
 {
-    RELOC_CALL(pcs->type->reloc_ptrs, pcs, size);
-} RELOC_PTRS_END
+    RELOC_USING(*pcs->type->stype, vptr, size);
+}
+RELOC_PTRS_END
 #undef pcs

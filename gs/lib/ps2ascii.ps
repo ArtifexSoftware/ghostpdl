@@ -1,4 +1,4 @@
-%    Copyright (C) 1991, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1991, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: ps2ascii.ps 
 % Extract the ASCII text from a PostScript file.  Nothing is displayed.
 % Instead, ASCII information is written to stdout.  The idea is similar to
 % Glenn Reid's `distillery', only a lot more simple-minded, and less robust.
@@ -66,6 +67,58 @@
 %    Jerry Whelan <jerryw@abode.ccd.bnl.gov> for motivating other improvements;
 %    David M. Jones <dmjones@theory.lcs.mit.edu> for improvements noted below.
 
+%%  Additional modifications by David M. Jones
+%%  (dmjones@theory.lcs.mit.edu), December 23, 1997
+%%  
+%%  (a) Rewrote forall loop at the end of .show.write.  This fixes a
+%%      stack leakage problem, but the changes are more significant
+%%      than that.  
+%% 
+%%      .char.map includes the names of all characters in the
+%%      StandardEncoding, ISOLatin1Encoding, OT1Encoding and
+%%      T1Encoding vectors.  Thus, if the Encoding vector for the
+%%      current font contains a name that is not in .char.map, it's
+%%      redundant to check if the Encoding vector is equal to one of
+%%      the known vectors.  Previous versions of ps2ascii would give
+%%      up at this point, and substitute an asterisk (*) for the
+%%      character.  I've taken the liberty of instead using the
+%%      OT1Encoding vector to translate the character, on the grounds
+%%      that in the cases I'm most interested in, a font without a
+%%      useful Encoding vector was most likely created by a DVI to PS
+%%      converter such as dvips or DVILASER (and OT1Encoding is
+%%      largely compatible with StandardEncoding anyway).  [Note that
+%%      this does not make my earlier changes to support dvips (see
+%%      fix (a) under my 1996 changes) completely obsolete, since
+%%      there's additional useful information I can extract in that
+%%      case.]
+%%      
+%%      Overall, this should provide better support for some documents
+%%      (e.g, DVILASER documents will no longer be translated into a
+%%      series of *'s) without breaking any other documents any worse
+%%      than they already were broken.
+%% 
+%%  (b) Fixed two bugs in dvips.df-tail: (1) changed "dup 127" to "dup
+%%      128" to fix fencepost error, and (2) gave each font it's own
+%%      FontName rather than having all fonts share the same name.
+%%  
+%%  (c) Added one further refinement to the heuristic for detecting
+%%      paragraph breaks: do not ever start a new paragraph after a
+%%      line ending in a hyphen.
+%% 
+%%  (d) Added a bunch of missing letters from the T1Encoding,
+%%      OT1Encoding and ISOLatin1Encoding vectors to .letter.chars to
+%%      improve hyphen-elimination algorithm.  This still won't help
+%%      if there's no useful Encoding vector.
+%% 
+%%  NOTE: A better solution to the problem of missing Encoding vectors
+%%  might be to redefine definefont to check whether the Encoding
+%%  vector is sensible and, if not, replace it by a default.  This
+%%  would alleviate the need for constant tests in the .show.write
+%%  loop, as well as automatically solving the problem noted in fix
+%%  (d) above, and the similar problem with .break.chars.  This should
+%%  be investigated.  Also, the hyphen-elimination algorithm really
+%%  needs to be looked at carefully and rethought.
+
 %%* Modifications to ps2ascii.ps by David M. Jones
 %%* (dmjones@theory.lcs.mit.edu), June 25-July 8, 1996
 
@@ -90,7 +143,7 @@
 %%*     Search for "%%* BF" to find these modifications.
 %%*     
 %%* (c) Improved the heuristic for determining whether a line break
-%%*     has occured and whether a line break represents a paragraph
+%%*     has occurred and whether a line break represents a paragraph
 %%*     break.  Previously, any change in the vertical position caused
 %%*     a line break; now a line break is only registered if the
 %%*     change is larger than the height of the current font.  This
@@ -326,34 +379,34 @@ ifelse
 % lower left.  This isolates us from the peculiarities of individual devices.
 
 /.show.ident.matrix matrix def
-/.show.ident
-% { //.show.ident.matrix defaultmatrix
+/.show.ident {		% - .show.ident <scale> <matrix>
+%   //.show.ident.matrix defaultmatrix
 %               % Assume the original transformation is well-behaved.
 %   0.1 0 2 index dtransform abs exch abs .max /.show.scale exch def
 %   0.1 dup 3 -1 roll scale
- { gsave initmatrix
-                % Assume the original transformation is well-behaved.
-   0.1 0 dtransform abs exch abs .max /.show.scale exch def
-   0.1 dup scale .show.ident.matrix currentmatrix
-   grestore
- } bind def
+  gsave initmatrix
+		% Assume the original transformation is well-behaved.
+  0.1 0 dtransform abs exch abs .max
+  0.1 dup scale .show.ident.matrix currentmatrix
+  grestore
+} bind def
 
-/.coord
- { transform .show.ident itransform
-   exch round cvi exch round cvi
- } odef
+/.coord {		% <x> <y> .coord <x'> <y'>
+  transform .show.ident exch pop itransform
+  exch round cvi exch round cvi
+} odef
 
-/.dcoord
- {              % Transforming distances is trickier, because
-                % the coordinate system might be rotated.
-   .show.ident pop
+/.dcoord {		% <dx> <dy> .coord <dx'> <dy'>
+		% Transforming distances is trickier, because
+		% the coordinate system might be rotated.
+   .show.ident pop 3 1 roll
    exch 0 dtransform
     dup mul exch dup mul add sqrt
-     .show.scale div round cvi
+     2 index div round cvi
    exch 0 exch dtransform
     dup mul exch dup mul add sqrt
-     .show.scale div round cvi
- } odef
+     3 -1 roll div round cvi
+} odef
 
 % Remember the current X, Y, and height.
 /.show.x .inew def
@@ -466,6 +519,150 @@ mark
     counttomark
         { StandardEncoding exch get .letter.chars exch dup put }
     repeat
+pop
+
+%%* Add the rest of the letters from the [O]T1Encoding and
+%%* ISOLatin1Encoding vectors
+
+mark
+    /AE
+    /Aacute
+    /Abreve
+    /Acircumflex
+    /Adieresis
+    /Agrave
+    /Aogonek
+    /Aring
+    /Atilde
+    /Cacute
+    /Ccaron
+    /Ccedilla
+    /Dcaron
+    /Eacute
+    /Ecaron
+    /Ecircumflex
+    /Edieresis
+    /Egrave
+    /Eng
+    /Eogonek
+    /Eth
+    /Gbreve
+    /Germandbls 
+    /IJ
+    /Iacute
+    /Icircumflex
+    /Idieresis
+    /Idot
+    /Igrave
+    /Lacute
+    /Lcaron
+    /Lslash
+    /Nacute
+    /Ncaron
+    /Ntilde
+    /OE
+    /Oacute
+    /Ocircumflex
+    /Odieresis
+    /Ograve
+    /Ohungarumlaut
+    /Oslash
+    /Otilde
+    /Racute
+    /Rcaron
+    /Sacute
+    /Scaron
+    /Scedilla
+    /Tcaron
+    /Tcedilla
+    /Thorn
+    /Uacute
+    /Ucircumflex
+    /Udieresis
+    /Ugrave
+    /Uhungarumlaut
+    /Uring
+    /Yacute
+    /Ydieresis
+    /Zacute
+    /Zcaron
+    /Zdot
+    /aacute
+    /abreve
+    /acircumflex
+    /adieresis
+    /ae
+    /agrave
+    /aogonek
+    /aring
+    /atilde
+    /cacute
+    /ccaron
+    /ccedilla
+    /dbar
+    /dcaron
+    /dotlessi
+    /dotlessj
+    /eacute
+    /ecaron
+    /ecircumflex
+    /edieresis
+    /egrave
+    /eng
+    /eogonek
+    /eth
+    /exclamdown
+    /ff
+    /ffi
+    /ffl
+    /fi
+    /fl
+    /gbreve
+    /germandbls
+    /iacute
+    /icircumflex
+    /idieresis
+    /igrave
+    /ij
+    /lacute
+    /lcaron
+    /lslash
+    /nacute
+    /ncaron
+    /ntilde
+    /oacute
+    /ocircumflex
+    /odieresis
+    /oe
+    /ograve
+    /ohungarumlaut
+    /oslash
+    /otilde
+    /questiondown
+    /racute
+    /rcaron
+    /sacute
+    /scaron
+    /scedilla
+    /section
+    /sterling
+    /tcaron
+    /tcedilla
+    /thorn
+    /uacute
+    /ucircumflex
+    /udieresis
+    /ugrave
+    /uhungarumlaut
+    /uring
+    /yacute
+    /ydieresis
+    /zacute
+    /zcaron
+    /zdot
+counttomark
+    { .letter.chars exch dup put }
+repeat
 pop
 
 % Define a set of characters which, if they occur at the start of a line,
@@ -947,7 +1144,7 @@ mark
         %%  
         %%  Choose an encoding based on the highest position occupied.
         %%  
-        dup 127 gt { T1Encoding } { OT1Encoding } ifelse
+        dup 128 gt { T1Encoding } { OT1Encoding } ifelse
         /Encoding X
         /FontType 3 N
         %%
@@ -961,7 +1158,13 @@ mark
         %%
         %%  And let's throw in a FontName for good measure
         %%
-        dup (    ) cvs /FontName X
+        dup (    ) cvs
+        %%  
+        %%  Make sure each font gets it own private FontName.  -- dmj,
+        %%  12/23/97
+        %%  
+        dup length string copy
+        /FontName X
         /BuildChar {CharBuilder} N
     end
     dup { /foo setfont }
@@ -1071,31 +1274,15 @@ userdict /start-hook {
         }
     if                                          % string
     { % begin forall                            % c
-      dup currentfont /Encoding get exch get    % c enc
-      dup //.char.map exch .knownget            % c enc str bool
-        {                                       % c enc str
-          .show.stdout exch writestring pop pop
-        }
-        {                                       % c enc (c not in .char.map)
-          currentfont /Encoding get             %%* BF1: added missing "get"
-          dup OT1Encoding eq                    %%* added OT1Encoding
-          exch                      % c bool enc
-          dup T1Encoding eq                     %%* added T1Encoding
-          exch                      % c bool enc
-          dup StandardEncoding eq   % c bool enc bool
-          exch
-          ISOLatin1Encoding eq
-          or
-          or
-            { % Untranslated character in standard encoding ("normal" case)
-                pop .show.stdout exch write
-            }
-            { % Character in non-standard encoding, substitute
-                pop pop .show.stdout (*) writestring
-            }
-          ifelse
-        }
-      ifelse
+        dup                                     % c c
+        currentfont /Encoding get               % c c vec
+        exch get                                % c name
+        dup //.char.map exch known              % c name bool
+          { exch pop }
+          { pop OT1Encoding exch get }
+        ifelse                                  % name
+        //.char.map exch get                    % translation
+        .show.stdout exch writestring
     }
     forall
 } odef
@@ -1173,6 +1360,13 @@ userdict /start-hook {
             //.show.indent .iget
             gt
             or
+
+            %%* HOWEVER, if the line ends in a hyphen, we do NOT begin
+            %%* a new paragraph (cf. comment at end of BF2).  --dmj,
+            %%* 12/23/97
+
+            //.show.last 0 get .hyphen ne
+            and
 
             % newpar?
               { (\n\n) }        % Paragraph

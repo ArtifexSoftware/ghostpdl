@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsnogc.c */
+/*Id: gsnogc.c  */
 /* String freelist implementation and ersatz garbage collector */
 #include "gx.h"
 #include "gsgc.h"

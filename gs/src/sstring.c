@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sstring.c */
+/*Id: sstring.c  */
 /* String and hexstring streams (filters) */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -27,17 +27,30 @@
 
 /* ------ ASCIIHexEncode ------ */
 
+private_st_AXE_state();
+
+/* Initialize the state */
+private int
+s_AXE_init(stream_state * st)
+{
+    stream_AXE_state *const ss = (stream_AXE_state *) st;
+
+    return s_AXE_init_inline(ss);
+}
+
 /* Process a buffer */
 private int
 s_AXE_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
-    register const byte *p = pr->ptr;
-    register byte *q = pw->ptr;
+    stream_AXE_state *const ss = (stream_AXE_state *) st;
+    const byte *p = pr->ptr;
+    byte *q = pw->ptr;
     int rcount = pr->limit - p;
     int wcount = pw->limit - q;
-    register int count;
-    register const char _ds *hex_digits = "0123456789abcdef";
+    int count;
+    int pos = ss->count;
+    const char *hex_digits = "0123456789abcdef";
     int status = 0;
 
     if (last)
@@ -48,31 +61,32 @@ s_AXE_process(stream_state * st, stream_cursor_read * pr,
     while (--count >= 0) {
 	*++q = hex_digits[*++p >> 4];
 	*++q = hex_digits[*p & 0xf];
-	if (!(count & 31) && (count != 0 || !last))
+	if (!(++pos & 31) && (count != 0 || !last))
 	    *++q = '\n';
     }
     if (last && status == 0)
 	*++q = '>';
     pr->ptr = p;
     pw->ptr = q;
+    ss->count = pos & 31;
     return status;
 }
 
 /* Stream template */
 const stream_template s_AXE_template =
-{&st_stream_state, NULL, s_AXE_process, 1, 3
+{&st_AXE_state, s_AXE_init, s_AXE_process, 1, 3
 };
 
 /* ------ ASCIIHexDecode ------ */
 
 private_st_AXD_state();
 
-#define ss ((stream_AXD_state *)st)
-
 /* Initialize the state */
 private int
 s_AXD_init(stream_state * st)
 {
+    stream_AXD_state *const ss = (stream_AXD_state *) st;
+
     return s_AXD_init_inline(ss);
 }
 
@@ -81,6 +95,7 @@ private int
 s_AXD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
+    stream_AXD_state *const ss = (stream_AXD_state *) st;
     int code = s_hex_process(pr, pw, &ss->odd, hex_ignore_whitespace);
 
     switch (code) {
@@ -125,8 +140,6 @@ s_AXD_process(stream_state * st, stream_cursor_read * pr,
     return EOFC;
 }
 
-#undef ss
-
 /* Stream template */
 const stream_template s_AXD_template =
 {&st_AXD_state, s_AXD_init, s_AXD_process, 2, 1
@@ -139,19 +152,19 @@ private int
 s_PSSE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
-    register const byte *p = pr->ptr;
+    const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
-    register byte *q = pw->ptr;
+    byte *q = pw->ptr;
     byte *wlimit = pw->limit;
     int status = 0;
 
     /* This doesn't have to be very efficient. */
     while (p < rlimit) {
-	register int c = *++p;
+	int c = *++p;
 
 	if (c < 32 || c >= 127) {
 	    const char *pesc;
-	    const char *esc = "\n\r\t\b\f";
+	    const char *const esc = "\n\r\t\b\f";
 
 	    if (c < 32 && c != 0 && (pesc = strchr(esc, c)) != 0) {
 		if (wlimit - q < 2) {
@@ -210,12 +223,12 @@ const stream_template s_PSSE_template =
 
 private_st_PSSD_state();
 
-#define ss ((stream_PSSD_state *)st)
-
 /* Initialize the state */
 private int
 s_PSSD_init(stream_state * st)
 {
+    stream_PSSD_state *const ss = (stream_PSSD_state *) st;
+
     return s_PSSD_init_inline(ss);
 }
 
@@ -224,12 +237,13 @@ private int
 s_PSSD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
-    register const byte *p = pr->ptr;
+    stream_PSSD_state *const ss = (stream_PSSD_state *) st;
+    const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
-    register byte *q = pw->ptr;
+    byte *q = pw->ptr;
     byte *wlimit = pw->limit;
     int status = 0;
-    register int c;
+    int c;
 
 #define check_p(n)\
   if ( p == rlimit ) { p -= n; goto out; }
@@ -337,8 +351,6 @@ s_PSSD_process(stream_state * st, stream_cursor_read * pr,
     return status;
 }
 
-#undef ss
-
 /* Stream template */
 const stream_template s_PSSD_template =
 {&st_PSSD_state, s_PSSD_init, s_PSSD_process, 4, 1
@@ -367,7 +379,7 @@ s_hex_process(stream_cursor_read * pr, stream_cursor_write * pw,
     byte val2;
     uint rcount;
     byte *flimit;
-    register const byte _ds *decoder = scan_char_decoder;
+    const byte *const decoder = scan_char_decoder;
     int code = 0;
 
     if (q >= wlimit)

@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_cmap.ps 
 % ProcSet for implementing CMap resources.
 % When this is run, systemdict is still writable.
 
@@ -24,19 +25,26 @@
 
 % composefont doesn't appear in CMap files -- it's documented in
 % the "PostScript Language Reference Manual Supplement".
-/composefont		% <name> <cmap|cmapname> <fonts> composefont <font>
- { 10 dict begin
-     1 index dup type /dicttype ne { /CMap findresource } if
-        /CMap exch def
-     /Encoding [ 0 1 4 index length 1 sub { } for ] def
-     /FDepVector 1 index def
-     /FMapType 9 def
-     /FontMatrix matrix def
-     /FontName 3 index def
-     /CMap load /WMode .knownget { /WMode exch def } if
-     /FontType 0 def
-   pop pop currentdict end /Font defineresource
- } bind odef
+/composefont {		% <name> <cmap|cmapname> <fonts> composefont <font>
+  10 dict begin
+    /CMap 2 index dup type /dicttype ne { /CMap findresource } if def
+    /Encoding [ 0 1 4 index length 1 sub { } for ] def
+    /FDepVector [ 2 index {
+      dup type /dicttype ne {
+	dup /CIDFont resourcestatus {
+	  pop pop /CIDFont findresource
+	} {
+	  /Font findresource
+	} ifelse
+      } if
+    } forall ] readonly def
+    /FMapType 9 def
+    /FontMatrix matrix def
+    /FontName 3 index def
+    /CMap load /WMode .knownget { /WMode exch def } if
+    /FontType 0 def
+  pop pop currentdict end /Font defineresource
+} bind odef
 
 % ---------------- CMap operators ---------------- %
 

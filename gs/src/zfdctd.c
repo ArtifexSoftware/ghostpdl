@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,32 +16,32 @@
    all copies.
  */
 
-/* zfdctd.c */
+/*Id: zfdctd.c  */
 /* DCTDecode filter creation */
 #include "memory_.h"
 #include "stdio_.h"		/* for jpeglib.h */
 #include "jpeglib.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
+#include "gsmalloc.h"		/* for gs_memory_default */
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
+#include "ialloc.h"
 #include "ifilter.h"
+#include "iparam.h"
 
-/* Import the common setup routines from zfdctc.c */
-int zfdct_setup(P2(const ref * op, stream_DCT_state * pdct));
-int zfdct_setup_quantization_tables(P3(const ref * op, stream_DCT_state * pdct,
-				       bool is_encode));
-int zfdct_setup_huffman_tables(P3(const ref * op, stream_DCT_state * pdct,
-				  bool is_encode));
+/* Import the parameter processing procedure from sddparam.c */
+stream_state_proc_put_params(s_DCTD_put_params, stream_DCT_state);
 
 /* <source> <dict> DCTDecode/filter <file> */
 /* <source> DCTDecode/filter <file> */
 private int
 zDCTD(os_ptr op)
 {
+    gs_memory_t *mem = &gs_memory_default;
     stream_DCT_state state;
+    dict_param_list list;
     jpeg_decompress_data *jddp;
     int code;
     int npop;
@@ -49,42 +49,43 @@ zDCTD(os_ptr op)
     uint dspace;
 
     /* First allocate space for IJG parameters. */
-    jddp = gs_malloc(1, sizeof(*jddp), "zDCTD");
+    jddp = (jpeg_decompress_data *)
+	gs_alloc_bytes_immovable(mem, sizeof(*jddp), "zDCTD");
     if (jddp == 0)
 	return_error(e_VMerror);
+    if (s_DCTD_template.set_defaults)
+	(*s_DCTD_template.set_defaults) ((stream_state *) & state);
     state.data.decompress = jddp;
+    jddp->memory = state.jpeg_memory = mem;	/* set now for allocation */
     jddp->scanline_buffer = NULL;	/* set this early for safe error exit */
+    state.report_error = filter_report_error;	/* in case create fails */
     if ((code = gs_jpeg_create_decompress(&state)) < 0)
 	goto fail;		/* correct to do jpeg_destroy here */
     /* Read parameters from dictionary */
-    if ((code = zfdct_setup(op, &state)) < 0)
-	goto fail;
-    npop = code;
-    if (npop == 0)
-	dop = 0, dspace = 0;
+    if (r_has_type(op, t_dictionary))
+	npop = 1, dop = op, dspace = r_space(op);
     else
-	dop = op, dspace = r_space(op);
-    /* DCTDecode accepts quantization and huffman tables
-     * in case these tables have been omitted from the datastream.
-     */
-    if ((code = zfdct_setup_huffman_tables(dop, &state, false)) < 0 ||
-	(code = zfdct_setup_quantization_tables(dop, &state, false)) < 0
-	)
+	npop = 0, dop = 0, dspace = 0;
+    if ((code = dict_param_list_read(&list, dop, NULL, false)) < 0)
 	goto fail;
+    if ((code = s_DCTD_put_params((gs_param_list *) & list, &state)) < 0)
+	goto rel;
     /* Create the filter. */
     jddp->template = s_DCTD_template;
     code = filter_read(op, npop, &jddp->template,
 		       (stream_state *) & state, dspace);
     if (code >= 0)		/* Success! */
 	return code;
-    /* We assume that if filter_read fails, the stream has not been
+    /*
+     * We assume that if filter_read fails, the stream has not been
      * registered for closing, so s_DCTD_release will never be called.
      * Therefore we free the allocated memory before failing.
      */
-
-  fail:
+rel:
+    iparam_list_release(&list);
+fail:
     gs_jpeg_destroy(&state);
-    gs_free(jddp, 1, sizeof(*jddp), "zDCTD fail");
+    gs_free_object(mem, jddp, "zDCTD fail");
     return code;
 }
 

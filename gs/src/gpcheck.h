@@ -1,23 +1,26 @@
 /* Copyright (C) 1992, 1994 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gpcheck.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gpcheck.h  */
 /* Interrupt check interface */
+
+#ifndef gpcheck_INCLUDED
+#  define gpcheck_INCLUDED
 
 /*
  * On some platforms, the interpreter must check periodically for user-
@@ -36,6 +39,7 @@
 #ifdef CHECK_INTERRUPTS
 int gp_check_interrupts(P0());
 int gs_return_check_interrupt(P1(int code));
+
 #  define process_interrupts() discard(gp_check_interrupts())
 #  define return_if_interrupt()\
     { int icode_ = gp_check_interrupts();\
@@ -51,3 +55,5 @@ int gs_return_check_interrupt(P1(int code));
 #  define return_check_interrupt(code)\
     return (code)
 #endif
+
+#endif /* gpcheck_INCLUDED */

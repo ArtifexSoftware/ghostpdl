@@ -1,100 +1,65 @@
-.TH ps2epsi 1 "September 1, 1997"
+.\" Id: ps2epsi.1 
+.TH PS2EPSI 1 "23 June 1998" 5.24 "Ghostscript Tools" \" -*- nroff -*-
 .SH NAME
-ps2epsi \- generate conforming postscript
-
+ps2epsi \- generate conforming Encapsulated PostScript
 .SH SYNOPSIS
-.B ps2epsi 
-.I infile.ps
-[
-.I outfile.ps
-]    (Unix)
+\fBps2epsi\fR \fIinfile.ps\fR [ \fIoutfile.epsi\fR ] \fB(Unix)\fR
 .br
-.B ps2epsi
-.I infile.ps outfile.epi
-        (MS-DOS)
-
+\fBps2epsi\fR \fIinfile.ps\fR [ \fIoutfile.epi\fR ] \fB(MS-DOS)\fR
 .SH DESCRIPTION
-.B ps2epsi 
-is a utility, based on
-.I Ghostscript,
-which takes as input a postscript 
-file and generates a new output file which conforms to Adobe's
-.I Encapsulated  Postscript Interchange
-or EPSI format.  This is a
-special form of encapsulated  postscript (EPS) which adds a bitmap
-version of the final displayed page (in  the form of postscript
-comments) to the beginning of the file. This bitmap  can be used by
-programs which understand EPSI (usually word processors or  DTP
-programs) to give a preview version of the postscript on screen. The
-displayed quality is often not very good (eg. low resolution, no
-colours),  but the final printed version uses the real postscript,
-and thus has the normal postscript quality. 
-
-.SH OPTIONS
-None.
-
-.SH UNIX USAGE
-Using the supplied shell script, the command is:
+\fBps2epsi\fR uses \fBgs\fR(1) to process a \fBPostScript\fR(tm) file and
+generate as output a new file which conforms to Adobe's \fBEncapsulated
+PostScript Interchange\fR (EPSI) format.  EPSI is a special form of
+encapsulated PostScript (EPS) which adds to the beginning of the file in
+the form of PostScript comments a bitmapped version of the final displayed
+page.  Programs which understand EPSI (usually word processors or DTP
+programs) can use this bitmap to give a preview version on screen of the
+PostScript.  The displayed quality is often not very good (e.g., low
+resolution, no colours), but the final printed version uses the real
+PostScript, and thus has the normal PostScript quality.
+.SH USAGE
+On Unix systems invoke \fBps2epsi\fR like this:
+.PP
 .br
-	ps2epsi
-.I infile.ps
-[ 
-.I outfile.epsi
-]
+	\fBps2epsi\fR \fIinfile.ps\fR [ \fIoutfile.epsi\fR ]
+.PP
+where "infile.ps" is the input file and "outfile.epsi" is the
+resulting EPSI file.  If the output filename is omitted, it is generated
+from the input filename.  When a standard extension (".ps", ".cps",
+".eps" or "\.epsf") is used, it is replaced with the output
+extension "\.epsi".
+.PP
+On MS-DOS systems the command is:
+.PP
 .br
-where
-.I infile.ps
-is the input file and
-.I outfile.epsi
-is the output EPSI file. If the output filename is omitted, it will
-be generated from the input filename.
-If a standard extension (.ps, .cps, .eps or .epsf) is 
-used, it will be replaced with the output extension .epsi.
-
-.SH MSDOS USAGE
-Using the supplied batch file, the command is simply:
-.br
-	ps2epsi
-.I infile.ps outfile.epi
-.br
-where
-.I infile.ps
-is the original postscript file, and
-.I outfile.epi
+	\fBps2epsi\fR \fIinfile.ps outfile.epi\fR
+.PP
+where "infile.ps" is the original PostScript file, and "outfile.epi"
 is the name of the output file.
-
 .SH LIMITATIONS
-Successful encapsulation of arbitrary postscript files cannot be
-guaranteed, as there are certain restrictions in what is permitted in
-a postscript file for it to be properly encapsulated.
-.B ps2epsi
-does a little extra work to try to help encapsulation, and it automatically
-calculates the bounding box (required for all encapsulated postscript
-files), so, most of the time, it does a pretty good job. There are
-bound to be cases, however, where the encapsulation will not work,
-because of the content of the original postscript file.
-
-.SH FRAMEMAKER
-The
-.I Framemaker
-DTP system is one application which understands EPSI
-files, and
-.B ps2epsi
-has been tested on a number of postscript diagrams
-from a variety of sources, using Framemaker 3.0 on a Sun.
-.I Framemaker
-on other platforms should be able to use these files,
-although I have not been able to test this.
-
+Not every PostScript file can be encapsulated successfully, because there
+are restrictions on what PostScript constructs a correct encapsulated file
+may contain.  \fBps2epsi\fR does a little extra work to try to help
+encapsulation, and it automatically calculates the bounding box required
+for all encapsulated PostScript files, so most of the time it does a pretty
+good job. There are certain to be cases, however, where the encapsulation
+does not work because of the content of the original PostScript file.
+.SH COMPATIBILITY
+The \fBFramemaker\fR DTP system is one application which understands EPSI
+files, and \fBps2epsi\fR has been tested on a number of PostScript diagrams
+from a variety of sources, using Framemaker 3.0 on a Sun workstation.
+Framemaker on other platforms should be able to use these files, although I
+have not been able to test this.
 .SH FILES
-.nf
-ps2epsi.bat	- MSDOS batch file
-ps2epsi		- Unix shell script
-ps2epsi.ps	- the Ghostscript program which does the work
+.TS
+tab(>);
+l l.
+ps2epsi>Unix shell script
+ps2epsi.bat>DOS batch file
+ps2epsi.ps>the Ghostscript program which does the work
+.TE
 .fi
-
-.SH "SEE ALSO"
-gs(1)
-
+.SH SEE ALSO
+gs (1)
 .SH AUTHOR
-George Cameron <george@bio-medical-physics.aberdeen.ac.uk>
+George Cameron

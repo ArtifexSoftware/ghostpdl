@@ -1,4 +1,4 @@
-   Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: new-user.txt 
 This file, new-user.txt, provides background information for new users.
 
 For an overview of Ghostscript and a list of the documentation files, see
@@ -53,10 +54,16 @@ with this license by Internet FTP from
 or, if you run AFS, by direct reference to
 	/afs/cs.wisc.edu/public/ghost/aladdin/gsNNN/ghostscript*NNNN*
 where NNN is the version number without embedded dots (e.g., 503) and NNNN
-is the version number with dots (e.g., 5.03).  If you do not have convenient
-access to the Internet, you can order Aladdin Ghostscript on a CD-R disk,
-along with some useful related programs and documentation: for more
-information, see
+is the version number with dots (e.g., 5.03).  You may also find Aladdin
+Ghostscript at
+	http://www.leo.org/pub/comp/os/unix/gnu/ghostscript/aladdin/gsNNN/index.html
+The following AltaVista query may help you find other mirrors of Aladdin
+Ghostscript:
+	http://altavista.digital.com/cgi-bin/query?pg=q&text=yes&kl=XX&q=ghostscript-NNNN.tar.gz&act=search
+
+If you do not have convenient access to the Internet, you can order Aladdin
+Ghostscript on a CD-R disk, along with some useful related programs and
+documentation: for more information, see
 	http://www.cs.wisc.edu/~ghost/cd.html
 or send e-mail to Russell Lang (see the e-mail address under "Previewers"
 below).  Please note that this is not "commercial licensing"; you are still
@@ -73,13 +80,24 @@ from
 or, if you run AFS, by direct reference to
 	/afs/cs.wisc.edu/public/ghost/gnu/gsNNN/ghostscript*NNNN*
 or from any of the GNU distribution sites, such as ftp.uu.net:/systems/gnu
-or gatekeeper.dec.com:/pub/GNU; you can also get GNU Ghostscript on tape
-or CD-ROM from the Free Software Foundation.  For a more complete list of
-sites, including sites outside the U.S., send e-mail to
-gnu@prep.ai.mit.edu.
+or gatekeeper.dec.com:/pub/GNU; you can also get GNU Ghostscript on tape or
+CD-ROM from the Free Software Foundation.  For a more complete list of
+sites, including sites outside the U.S., send e-mail to gnu@gnu.org.
 
 	- Versions of Ghostscript are also available for commercial
 licensing.  See the next section for details.
+
+Both Aladdin and GNU versions are also available from sites in the CTAN
+network, in a tree based at support/ghostscript.  For information about CTAN
+sites, see <ftp://tug.ctan.org/tex-archive/CTAN.sites>.  As of 26 March
+1998, the principal CTAN distribution sites ("participating hosts") are:
+	ftp://ftp.dante.de/tex-archive  (Deutschland)
+	ftp://ftp.tex.ac.uk/tex-archive  (England)
+	ftp://ctan.tug.org/tex-archive  (Massachusetts, USA)
+These machines also have WWW access: see the CTAN.sites file for details.
+There are also over 50 CTAN mirror sites around the world, mostly in North
+America and Western Europe, but with a few sites in South America, Eastern
+Europe, Asia, and Australia: see the CTAN.sites file for the list.
 
 Aladdin Ghostscript and GNU Ghostscript come with NO WARRANTY and NO
 SUPPORT.  If you have a question or a bug to report, please see the
@@ -203,21 +221,38 @@ Ghostscript has also been ported to a number of platforms by users, who are
 willing to be contacted regarding problems on those specific platforms:
 
 	- For information and possibly precompiled binaries for NeXT
-	machines, contact Alan Barclay <escribe@wintermute.co.uk>,
+	machines, contact Alan Barclay <mailto:escribe@wintermute.co.uk>,
 	in the U.K. at +44-1224-591779 (voice & fax).
 
 	- For information on a port to the Amiga, contact Andreas Maschke
-	(epgbc@cluster6.urz.uni-halle.de).  This port includes drivers for
+	<mailto:epgbc@cluster6.urz.uni-halle.de.  This port includes
+	drivers for
 		IFF (file format)
 		RETINA (graphics board) and
 		INTUI (Amiga Window system)
-	by Andreas Heitmann (andreas@gotcha.swb.de).
+	by Andreas Heitmann <mailto:andreas@gotcha.swb.de>.
 
 	- For information on a port to the Atari ST, contact Tim
-	Gallivan (timg@landau.ph.utexas.edu).
+	Gallivan <mailto:timg@landau.ph.utexas.edu>.
 
 	- For information on a port to the Acorn Archimedes, contact
-	David Elworthy (David.Elworthy@cl.cam.ac.uk).
+	David Elworthy <mailto:David.Elworthy@cl.cam.ac.uk>.
+
+	- For information on a port to the SMS/QDOS operating system,
+	go to
+		<http://www.jrhudson.demon.co.uk>
+	or contact Jonathan R Hudson <mailto:jrh@jrhudson.demon.co.uk>,
+	voice/fax +44-1703-867843 (in the U.K.)  This port includes
+	includes drivers for:
+		pic	SMS/QDOS native graphics format (PIC, 1,2,4,8 colour
+			formats).
+		qfax	SMS/QDOS fax files (1D,2D normal and fine)
+	The Web site includes precompiled binaries.
+
+	- For source boddles and precompiled binaries for the operating
+	system Plan 9 from Bell Labs, contact Nigel Roles
+	(ngr@cotswold.demon.co.uk), or check the Web page
+	<http://www.cotswold.demon.co.uk/dist/gs/index.htm>.
 
 ********
 ******** Related work
@@ -249,15 +284,22 @@ Previewers
 The Ghostscript user interface is very primitive, so several people have
 contributed screen previewers with better user interfaces.
 
-We know of two freely available X Windows screen previewers based on
-Ghostscript: Ghostview and GSPreview.  For information on Ghostview, contact
-Tim Theisen (ghostview@cs.wisc.edu).  For information on GSPreview, contact
-Richard Hesketh (rlh@ukc.ac.uk).
+We know of three freely available X Windows screen previewers based on
+Ghostscript: gv (derived from Ghostview), Ghostview, and GSPreview.  Most
+users who have expressed an opinion prefer gv over Ghostview.
 
-There is a freely available previewer for OpenVMS (both VAX and AXP) called
-GhostView-VMS or gv-vms, derived from Tim Theisen's Ghostview 1.5 by
-Johannes Plass (PLASS@dipmza.physik.Uni-Mainz.DE).  Some places you can find
-it are:
+You can get gv from:
+	http://wwwthep.physik.uni-mainz.de/~plass/gv/
+	ftp://thep.physik.uni-mainz.de/pub/gv/unix/
+For more information on gv, contact Johannes Plass
+(PLASS@dipmza.physik.Uni-Mainz.DE).
+
+For information on Ghostview, contact Tim Theisen (ghostview@cs.wisc.edu).
+
+For information on GSPreview, contact Richard Hesketh (rlh@ukc.ac.uk).
+
+There is also a version of gv for OpenVMS (both VAX and AXP) called
+GhostView-VMS or gv-vms.  Some places you can find it are:
 	WWW:
 	  http://www.wku.edu/htbin/fileserv?X11KIT
 	FTP:
@@ -283,23 +325,24 @@ Users have created two packages that provide a set of GSview-like commands
 that MS-DOS users can enter through the keyboard.  One such package, created
 by GUST, the Polish TeX Users Group, is in the public domain.  It is
 available from
-	ftp.pg.gda.pl:/pub/TeX/GUST/contrib/PS/ps_view/*
+	ftp.pg.gda.pl:/pub/TeX/support/ps_view/*
 and from sites in the CTAN network such as
 	ftp.dante.de:/tex-archive/support/ps_view/*
 The authors describe the package as follows:
-       Fast and easy previewing of PS documents!
-       a PostScript preamble providing an interactive environement
-       for previewing PostScript documents. The current version
-       can drive the current version of the Ghostscript interpreter
-       and assumes conformance of the document to the Adobe PostScript
-       structuring conventions.
-       Batch files provided for MS DOS, however ps_view can be adapted
-       to any operating system.
-For more information, e-mail to Boguslaw Jackowski <jacko@ipipan.gda.pl>.
 
 The other keyboard-based viewing package is available from
 	puccini.ujf-grenoble.fr:pub/contrib-ps/DOS-PSV/*
 and appears to be redistributable with no restrictions.
+       Fast and easy previewing of PS documents!
+       a PostScript preamble providing an interactive environement
+       for previewing PostScript documents. The current version
+       can drive the current version of the Ghostscript interpreter;
+       enables scaling, rotating, restart, on-line help, printing the
+       screen, etc.
+       Batch files provided for MS DOS, however ps_view can be adapted
+       to any operating system.
+       Authors: Boguslaw Jackowski and Piotr Pianowski
+For more information, e-mail to <P.Pianowski@gust.org.pl>.
 
 Another user has created a Ghostscript-based bitmap previewing program for
 Linux that doesn't use X Windows, called BMV.
@@ -318,8 +361,14 @@ Linux that doesn't use X Windows, called BMV.
 BMV is available from
 	ftp://sunsite.unc.edu/pub/Linux/apps/graphics/viewers/bmv-1.1.tar.gz
 
-Other programs
---------------
+CJK fonts
+---------
+
+Free Chinese and Japanese fonts, copied from other sites, are available on
+	ftp://ftp.cs.wisc.edu/ghost/3rdparty/fonts/hanzi (Chinese)
+	ftp://ftp.cs.wisc.edu/ghost/3rdparty/fonts/kanji (Japanese)
+Please see fonts.txt, and also the README files on the above directories,
+for more detailed information.
 
 Mr. Norio Katayama (katayama@nacsis.ac.jp) has done some work on making
 Ghostscript work well with Kanji fonts.  Please contact him for more
@@ -328,6 +377,23 @@ information.
 An easy-to-install Kanji font for Ghostscript, with installation
 instructions, can be found at
 	http://www.cit.ics.saitama-u.ac.jp/~far/howto/gs-ttf.html
+
+A set of patches to make Ghostscript work with Japanese VF fonts is
+available, with documentation in both English and Japanese, at
+	http://www.cit.ics.saitama-u.ac.jp/~far/howto/gs-vflib.html
+
+The following are some other resources relating to VFlib and/or the use of
+Ghostscript with Japanese fonts (in Japanese):
+    author akr@jaist.ac.jp :
+	http://www.ldl.jaist.ac.jp/~akr/nonresearch/free-software/\
+	  ghostscript/index.ja.html
+    author kakugawa@rock.se.hiroshima-u.ac.jp :
+	http://www.se.hiroshima-u.ac.jp/~kakugawa/Hacks/Hacks-JIS.html
+    author matsuda@itohws01.ee.noda.sut.ac.jp :
+	http://itohws03.ee.noda.sut.ac.jp/~matsuda/VFlib-FT/
+
+Other programs
+--------------
 
 An extensive list of Unix systems and the fonts available on them is
 available on
@@ -395,7 +461,7 @@ or, if you run AFS, by direct reference to
 	/afs/cs.wisc.edu/public/ghost/gsfaq.txt
 and also available by HTTP (World Wide Web) from
 	http://www.cs.wisc.edu/~ghost/gsfaq.html
-It isn't updated very often, so it may be a little out of date.
+It isn't updated very often, so it may be somewhat out of date.
 
 In December 1995, CompuServe announced that the Graphics Support Forum
 offers Message Section and Library 21, "Ghostscript", for technical
@@ -413,7 +479,7 @@ suggest you post your question to one of the following Usenet newsgroups:
 	- If your question is about GNU Ghostscript (currently, versions
 3.33 and below), post it to the gnu.ghostscript.bug newsgroup.  If you have
 access to Internet mail, but not news, send e-mail to
-bug-ghostscript@prep.ai.mit.edu, which is equivalent to posting to the
+bug-gnu-ghostscript@gnu.org, which is equivalent to posting to the
 gnu.ghostscript.bug newsgroup.
 
 	- If your question is about Aladdin Ghostscript (currently, versions
@@ -425,11 +491,11 @@ for Aladdin Ghostscript in the future, since comp.lang.postscript was not
 intended for Ghostscript discussion per se.)
 
 There are hundreds of Ghostscript user sites all over the world, and often
-another user will be able to help you. If you are having trouble with
-a specific device driver, look in the file devs.mak and see if it is a
-user-maintained driver.  If so, please contact the person listed there
-directly; please do not contact Aladdin Enterprises regarding
-user-maintained drivers.
+another user will be able to help you. If you are having trouble with a
+specific device driver, look in the files devs.mak and contrib.mak and see
+in which file the driver is defined.  If the driver is defined in
+contrib.mak, please contact the person listed there directly; please do not
+contact Aladdin Enterprises regarding user-contributed drivers.
 
 Aladdin Enterprises does want Ghostscript to be of high quality, so if you
 have been running Ghostscript and encounter a problem, we encourage you to
@@ -448,20 +514,26 @@ criteria:
 	- You have installed Ghostscript successfully, and used it
 	successfully on other input data.
 
-	- Your problem is reproducible, and you can mail us the input
-	data that evokes it (by e-mail, anonymous FTP, or PC diskette).
-	(But please do not send anything unless we ask you for it.)
+	- Your problem is reproducible, and you can provide the input
+	data that evokes it, by e-mail, anonymous FTP, or HTTP.
+	(Please do not mail us anything larger than 100K bytes.)
+
+	- Your problem is reproducible with Ghostscript alone, without using
+	Ghostview or GSview.  (If the problem only shows up with Ghostview
+	or GSview, please contact ghostview@cs.wisc.edu or rjl@aladdin.com
+	respectively.)
 
 	- You created the bug report using the form in bug-form.txt,
-	completely filled out.
+	completely filled out.  (We really do mean "completely" --
+	fill in every item that applies to your situtation.)
 
 Bug reports that include suggested fixes are especially welcome.
 
 As time permits, Aladdin Enterprises may also respond to e-mail from the
 following classes of users:
 
-	- Beta testers who have actually given us at least one report on
-	some beta version supplied to them.
+	- Pre-release testers who have actually given us at least one report
+	on some pre-release fileset supplied to them.
 
 	- People developing drivers that are for, or applications that
 	are based on, Ghostscript and that will be made freely available.
@@ -482,10 +554,6 @@ software:
 	SPARCstation, SunOS 4.1, cc and gcc, X11R5 and SunView;
 	  both monochrome and color displays.
 
-	DECstation, Ultrix.
-
-	IBM RS/6000 and PowerPC, Unix (AIX 3.n).
-
 	DEC AXP (Alpha), OSF/1.
 
 If your problem turns out to be specific to some other hardware or
@@ -495,9 +563,9 @@ will have to rely on other users to help.
 Aladdin's contact information is as follows:
 
 		Aladdin Enterprises
-		P.O. box 60264
-		Palo Alto, CA 94306
-		phone +1-650-322-0103 (8:30 AM - noon, Pacific time)
+		203 Santa Margarita Ave.
+		Menlo Park, CA 94025
+		phone +1-650-322-0103 (9 AM - noon, Pacific time)
 		fax +1-650-322-1734
 		ghost@aladdin.com
 
@@ -526,35 +594,28 @@ consult the following URL:
 	http://www.leo.org/pub/comp/os/os2/leo/gnu/emx+gcc/index.html
 and then contact ghost@aladdin.com if you want to do the work.
 
-	- Someone is needed to take responsibility for texinfo and/or man
-page documentation for Ghostscript.  What this would involve is updating
-this documentation during the beta test period for each release, and
-sending it to Aladdin to be included in the final fileset.  (Aladdin would
-continue to supply the plain-text documentation as it currently exists.)
-
-	- Adobe has donated the specification of the Display PostScript C
-API to the X distribution, as well as the client-side implementation.
-Modifying Ghostscript to interface with this code as a substitute for a
-Display PostScript server might make Ghostscript a lot more useful, since
-it would then be "plug compatible" with Display PostScript in an important
-way.  Contact ghost@aladdin.com if you would like to help with this.
+	- We would like to provide (Adobe) PrintGear and (H-P) PPA output
+drivers for Ghostscript, but the specifications for these protocols are not
+published.  If anyone has access to them, and could provide them to us
+without violating any agreements, please contact ghost@aladdin.com.
 
 ********
 ******** Acknowledgements ********
 ********
 
 Ghostscript was originally created, and is primarily developed and
-maintained, by L. Peter Deutsch, President of Aladdin Enterprises.
+maintained, by L. Peter Deutsch, President of Aladdin Enterprises (not to be
+confused with Peter J. Deutsch, founder of Bunyip Information Systems Inc.).
 
 Special thanks are due to Russell Lang, for the GSview for Windows and PM
 GSview programs and for contributing most of the code for the Microsoft
 Windows and OS/2 environments; to Tim Theisen, for the Ghostview program for
 X Windows and for major contributions to, and ongoing assistance with
-support of, the code for the X Windows environment; to Martin Fong, for the
-original port of Ghostscript to the Macintosh, and Mark Lentczner, for the
-current Macintosh port; and to the Independent JPEG Group, to Group 42,
-Inc., and to Jean-loup Gailly and Mark Adler, for creating the freely
-available libraries that Ghostscript uses.
+support of, the code for the X Windows environment; to Martin Fong and Mark
+Lentczner, for the first Macintosh ports; to Pete Kaiser, for redoing all of
+the documentation; and to the Independent JPEG Group, to Group 42, Inc., and
+to Jean-loup Gailly and Mark Adler, for creating the freely available
+libraries that Ghostscript uses.
 
 Special thanks are due to URW++ Design and Development Incorporated, of
 Hamburg, Germany (http://www.urwpp.de), for making a commercial-quality set
@@ -562,9 +623,9 @@ of the 35 standard PostScript Type 1 fonts available for free distribution
 under the GNU and Aladdin licenses.
 
 Special thanks are due to Richard Stallman and the Free Software Foundation
-for originating the GNU License, for originally motivating the creation of
-Ghostscript, and for being the primary distributor of GNU Ghostscript on
-the Internet.
+for originating the GNU License, for originally motivating Aladdin's
+interest in creating free software, and for being the primary distributor of
+GNU Ghostscript on the Internet.
 
 The file helpers.txt contains a list of the many other people who have
 contributed significantly to improving Ghostscript.

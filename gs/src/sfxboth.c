@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sfxboth.c */
+/*Id: sfxboth.c  */
 /* File stream implementation using both stdio and direct OS calls */
 
 #include "sfxstdio.c"

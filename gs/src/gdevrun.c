@@ -1,4 +1,4 @@
-/* Copyright (C) 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevrun.c */
+/*Id: gdevrun.c  */
 /* Run-length encoded "device" */
 #include "memory_.h"
 #include "gx.h"
@@ -420,8 +420,8 @@ debug_print_run(const run * data, run_index index, const char *prefix)
 {
     const run *pr = data + index;
 
-    dprintf5("%s%5d: length = %3d, value = %3d, nix = %5u\n",
-	     prefix, index, pr->length, pr->value, pr->nix);
+    dlprintf5("%s%5d: length = %3d, value = %3d, nix = %5u\n",
+	      prefix, index, pr->length, pr->value, pr->nix);
 }
 
 void
@@ -429,10 +429,11 @@ debug_print_run_line(const run_line * line, const char *prefix)
 {
     const run *data = line->data;
 
-    dprintf5("%sruns at 0x%lx: zero = %d, free = %u, xcur = %u,\n",
-	     prefix, (ulong) data, line->zero, line->free, line->xcur);
-    dprintf4("%s  rpcur = {ptr = 0x%lx, index = %u, next = %u}\n",
-      prefix, (ulong) line->rpcur.ptr, line->rpcur.index, line->rpcur.next);
+    dlprintf5("%sruns at 0x%lx: zero = %d, free = %u, xcur = %u,\n",
+	      prefix, (ulong) data, line->zero, line->free, line->xcur);
+    dlprintf4("%s  rpcur = {ptr = 0x%lx, index = %u, next = %u}\n",
+	      prefix, (ulong) line->rpcur.ptr, line->rpcur.index,
+	      line->rpcur.next);
     {
 	const_run_ptr rpc;
 	uint itemp;

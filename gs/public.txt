@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: public.txt 
 This file, public.txt, provides additional information about Aladdin
 Ghostscript releases that is not relevant to GNU Ghostscript releases.
 

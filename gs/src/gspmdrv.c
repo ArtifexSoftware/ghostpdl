@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gspmdrv.c */
+/*Id: gspmdrv.c  */
 /* Presentation Manager driver for Ghostscript */
 /* Written by Russell Lang */
 

@@ -1,4 +1,5 @@
 #!/bin/sh
+# Id: sysvlp.sh 
 
 # System V 3.2 lp interface for parallel, postscript printer
 # with ghostscript 2.5.n.

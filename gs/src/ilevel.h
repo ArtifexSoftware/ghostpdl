@@ -1,24 +1,33 @@
-/* Copyright (C) 1992 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1992, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* ilevel.h */
-/* Interpreter language level interface for Ghostscript */
+   This file is part of Aladdin Ghostscript.
 
-/* The current interpreter language level (1 or 2) */
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: ilevel.h  */
+/* Interpreter language level interface */
+
+#ifndef ilevel_INCLUDED
+#  define ilevel_INCLUDED
+
+/* The current interpreter language level */
 extern ref ref_language_level;
-#define level2_enabled ((int)ref_language_level.value.intval == 2)
+
+#define LANGUAGE_LEVEL ((int)ref_language_level.value.intval)
+#define LL2_ENABLED (LANGUAGE_LEVEL >= 2)
+#define LL3_ENABLED (LANGUAGE_LEVEL >= 3)
+#define level2_enabled LL2_ENABLED	/* backward compatibility */
+
+#endif /* ilevel_INCLUDED */

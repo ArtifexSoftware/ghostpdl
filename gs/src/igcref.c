@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,12 @@
    all copies.
  */
 
-/* igcref.c */
+/*Id: igcref.c  */
 /* ref garbage collector for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"
 #include "gsexit.h"
-#include "gsstruct.h"		/* for gxalloc.h */
+#include "gsstruct.h"		/* for gxalloc.h included by iastate.h */
 #include "iname.h"
 #include "iastate.h"
 #include "idebug.h"
@@ -35,6 +35,10 @@
 #else
 #  define rputc(c) DO_NOTHING
 #endif
+
+/* Forward references */
+ptr_proc_reloc(igc_reloc_ref_ptr, ref_packed);
+refs_proc_reloc(igc_reloc_refs);
 
 /*
  * Define the 'structure' type descriptor for refs.
@@ -80,31 +84,9 @@ RELOC_PTRS_BEGIN(ref_struct_reloc_ptrs)
     ref *beg = vptr;
     ref *end = (ref *) ((char *)vptr + size);
 
-    gs_reloc_refs((ref_packed *) beg, (ref_packed *) end, gcst);
-    ref_struct_clear_marks(vptr, size);
+    igc_reloc_refs((ref_packed *) beg, (ref_packed *) end, gcst);
+    ref_struct_clear_marks(vptr, size, pstype);
 } RELOC_PTRS_END
-
-/* Define a fast lookup table for ref types that use the size field. */
-private byte types_using_size[1 << r_type_bits];
-
-/* ------ Initialization ------ */
-void
-gs_igcref_init(gs_memory_t * mem)
-{
-    int i;
-
-    for (i = 0; i < t_next_index; ++i)
-	switch (i) {
-	    default:
-		types_using_size[i] = 0;
-		break;
-	    case t_null:	/* see relocation planning phase below */
-	      case_types_with_size:
-		types_using_size[i] = 1;
-	}
-    memset(types_using_size + t_next_index, 1,
-	   countof(types_using_size) - t_next_index);
-}
 
 /* ------ Unmarking phase ------ */
 
@@ -120,7 +102,8 @@ ptr_ref_unmark(void *vptr, gc_state_t * ignored)
 
 /* Unmarking routine for ref objects. */
 private void
-refs_clear_marks(void /*obj_header_t */ *vptr, uint size)
+refs_clear_marks(void /*obj_header_t */ *vptr, uint size,
+		 const gs_memory_struct_type_t * pstype)
 {
     ref_packed *rp = (ref_packed *) vptr;
     ref_packed *end = (ref_packed *) ((byte *) vptr + size);
@@ -131,9 +114,9 @@ refs_clear_marks(void /*obj_header_t */ *vptr, uint size)
 	if (r_is_packed(rp)) {
 #ifdef DEBUG
 	    if (gs_debug_c('8')) {
-		dprintf1("  [8]unmark packed 0x%lx ", (ulong) rp);
+		dlprintf1("  [8]unmark packed 0x%lx ", (ulong) rp);
 		debug_print_ref((const ref *)rp);
-		dprintf("\n");
+		dputs("\n");
 	    }
 #endif
 	    r_clear_pmark(rp);
@@ -141,9 +124,9 @@ refs_clear_marks(void /*obj_header_t */ *vptr, uint size)
 	} else {		/* full-size ref */
 #ifdef DEBUG
 	    if (gs_debug_c('8')) {
-		dprintf1("  [8]unmark ref 0x%lx ", (ulong) rp);
+		dlprintf1("  [8]unmark ref 0x%lx ", (ulong) rp);
 		debug_print_ref((ref *) rp);
-		dprintf("\n");
+		dputs("\n");
 	    }
 #endif
 	    r_clear_attrs((ref *) rp, l_mark);
@@ -181,8 +164,6 @@ ptr_ref_mark(void *vptr, gc_state_t * ignored)
  * in their size fields, and the types above t_next_index, which are
  * actually operators in disguise and also use the size field.
  */
-#define case_types_using_size\
-  case t_null: case_types_with_size
 
 /* Clear the relocation for a ref object. */
 private void
@@ -195,7 +176,7 @@ refs_clear_reloc(obj_header_t * hdr, uint size)
 	if (r_is_packed(rp))
 	    rp++;
 	else {			/* full-size ref *//* Store the relocation here if possible. */
-	    if (!types_using_size[r_type((ref *) rp)]) {
+	    if (!ref_type_uses_size_or_null(r_type((ref *) rp))) {
 		if_debug1('8',
 			  "  [8]clearing reloc at 0x%lx\n",
 			  (ulong) rp);
@@ -316,7 +297,7 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 		if_debug1('8', "  [8]ref 0x%lx is marked\n",
 			  (ulong) pref);
 		/* Store the relocation here if possible. */
-		if (!types_using_size[r_type(pref)]) {
+		if (!ref_type_uses_size_or_null(r_type(pref))) {
 		    if_debug2('8', "  [8]storing reloc %u at 0x%lx\n",
 			      rel, (ulong) pref);
 		    r_set_size(pref, rel);
@@ -359,7 +340,7 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 		r_set_type_attrs(pref, t_mark, l_mark);
 		r_set_size(pref, reloc);
 	    } else {
-		if (!types_using_size[r_type(pref)])
+		if (!ref_type_uses_size_or_null(r_type(pref)))
 		    r_set_size(pref, reloc);
 	    }
 	    rp += packed_per_ref;
@@ -375,17 +356,18 @@ refs_set_reloc(obj_header_t * hdr, uint reloc, uint size)
 
 /* Relocate all the pointers in a block of refs. */
 private void
-refs_do_reloc(void /*obj_header_t */ *vptr, uint size, gc_state_t * gcst)
+refs_do_reloc(void /*obj_header_t */ *vptr, uint size,
+	      const gs_memory_struct_type_t * pstype, gc_state_t * gcst)
 {
-    gs_reloc_refs((ref_packed *) vptr,
-		  (ref_packed *) ((char *)vptr + size),
-		  gcst);
+    igc_reloc_refs((ref_packed *) vptr,
+		   (ref_packed *) ((char *)vptr + size),
+		   gcst);
 }
 /* Relocate the contents of a block of refs. */
 /* If gcst->relocating_untraced is true, we are relocating pointers from an */
 /* untraced space, so relocate all refs, not just marked ones. */
 void
-gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
+igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 {
     int min_trace = gcst->min_collect;
     ref_packed *rp = from;
@@ -409,29 +391,22 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 	    )
 	    switch (r_type(pref)) {
 		    /* Struct cases */
-#define ref_case(v, t)\
-  pref->value.v =\
-    (t *)gs_reloc_struct_ptr((obj_header_t *)pref->value.v, gcst)
 		case t_file:
-		    ref_case(pfile, struct stream_s);
-
+		    RELOC_VAR(pref->value.pfile);
 		    break;
 		case t_device:
-		    ref_case(pdevice, struct gx_device_s);
-
+		    RELOC_VAR(pref->value.pdevice);
 		    break;
 		case t_fontID:
 		case t_struct:
 		case t_astruct:
-		    ref_case(pstruct, void);
-
+		    RELOC_VAR(pref->value.pstruct);
 		    break;
-#undef ref_case
 		    /* Non-trivial non-struct cases */
 		case t_dictionary:
 		    rputc('d');
 		    pref->value.pdict =
-			(dict *) gs_reloc_ref_ptr((ref_packed *) pref->value.pdict, gcst);
+			(dict *) igc_reloc_ref_ptr((ref_packed *) pref->value.pdict, gcst);
 		    break;
 		case t_array:
 		    {
@@ -449,7 +424,7 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 			    if (size < max_size_st_refs / sizeof(ref)) {
 				rputc('a');
 				pref->value.refs =
-				    (ref *) gs_reloc_ref_ptr(
+				    (ref *) igc_reloc_ref_ptr(
 				     (ref_packed *) pref->value.refs, gcst);
 			    } else {
 				rputc('A');
@@ -459,9 +434,9 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 				 */
 				--size;
 				pref->value.refs =
-				    (ref *) gs_reloc_ref_ptr(
+				    (ref *) igc_reloc_ref_ptr(
 				   (ref_packed *) (pref->value.refs + size),
-								gcst) - size;
+							       gcst) - size;
 			    }
 			}
 		    }
@@ -470,7 +445,7 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 		    if (r_size(pref) != 0) {	/* value.refs might be NULL */
 			rputc('m');
 			pref->value.packed =
-			    gs_reloc_ref_ptr(pref->value.packed, gcst);
+			    igc_reloc_ref_ptr(pref->value.packed, gcst);
 		    }
 		    break;
 		case t_shortarray:
@@ -478,7 +453,7 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 			uint size = r_size(pref);
 
 			/*
-			 * Since we know that gs_reloc_ref_ptr works by
+			 * Since we know that igc_reloc_ref_ptr works by
 			 * scanning forward, and we know that all the
 			 * elements of this array itself are marked, we can
 			 * save some scanning time by relocating the pointer
@@ -488,7 +463,7 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 			if (size != 0) {	/* value.refs might be NULL */
 			    rputc('s');
 			    /*
-			     * gs_reloc_ref_ptr has to be able to determine
+			     * igc_reloc_ref_ptr has to be able to determine
 			     * whether the pointer points into a space that
 			     * isn't being collected.  It does this by
 			     * checking whether the referent of the pointer
@@ -498,15 +473,16 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 			     */
 			    --size;
 			    pref->value.packed =
-				gs_reloc_ref_ptr(pref->value.packed + size,
-						 gcst) - size;
+				igc_reloc_ref_ptr(pref->value.packed + size,
+						  gcst) - size;
 			}
 		    }
 		    break;
 		case t_name:
 		    {
 			void *psub = name_ref_sub_table(pref);
-			void *rsub = gs_reloc_struct_ptr(psub, gcst);
+			void *rsub =
+			(*gc_proc(gcst, reloc_struct_ptr)) (psub, gcst);
 
 			pref->value.pname = (name *)
 			    ((char *)rsub + ((char *)pref->value.pname - (char *)psub));
@@ -517,14 +493,15 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 
 			str.data = pref->value.bytes;
 			str.size = r_size(pref);
-			gs_reloc_string(&str, gcst);
+
+			RELOC_STRING_VAR(str);
 			pref->value.bytes = str.data;
 		    }
 		    break;
 		case t_oparray:
 		    rputc('o');
 		    pref->value.const_refs =
-			(const ref *)gs_reloc_ref_ptr((const ref_packed *)pref->value.const_refs, gcst);
+			(const ref *)igc_reloc_ref_ptr((const ref_packed *)pref->value.const_refs, gcst);
 		    break;
 	    }
 	rp += packed_per_ref;
@@ -534,7 +511,7 @@ gs_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 /* Relocate a pointer to a ref. */
 /* See gsmemory.h for why the argument is const and the result is not. */
 ref_packed *
-gs_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
+igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
 {				/*
 				 * Search forward for relocation.  This algorithm is intrinsically
 				 * very inefficient; we hope eventually to replace it with a better
@@ -584,7 +561,7 @@ gs_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
 		rp++;
 	    continue;
 	}
-	if (!types_using_size[r_type((const ref *)rp)]) {	/* reloc is in r_size */
+	if (!ref_type_uses_size_or_null(r_type((const ref *)rp))) {	/* reloc is in r_size */
 	    rputc('\n');
 	    return print_reloc(prp, "ref",
 			       (ref_packed *)

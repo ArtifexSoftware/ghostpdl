@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: install.txt 
 This file, install.txt, describes how to install the Ghostscript language
 interpreter.
 
@@ -142,6 +143,20 @@ This can be modified as follows.
 For Win32s, make sure that gs16spl.exe is in the same directory
 as gswin32.exe.
   
+If Ghostscript fails to find an environment variable, it will
+look for a registry value of the same name under the key 
+HKEY_CURRENT_USER\Software\Aladdin Ghostscript\N.NN
+or if that fails under the key
+HKEY_LOCAL_MACHINE\SOFTWARE\Aladdin Ghostscript\N.NN
+where N.NN is the Ghostscript version number.  
+This does not work under Win32s (which doesn't support named
+registry values).
+
+If the environment variable GS_DLL is defined, Ghostscript
+tries to load the Ghostscript DLL with the given name. 
+If this fails, Ghostscript tries to load gsdll32.dll from the
+current directory, the search path or the same directory as 
+the Ghostscript EXE.
 
 OS/2 2.x
 --------

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpcx.c */
+/*Id: gdevpcx.c  */
 /* PCX file format drivers */
 #include "gdevprn.h"
 #include "gdevpccm.h"
@@ -41,7 +41,7 @@ private dev_proc_print_page(pcxmono_print_page);
 private const gx_device_procs pcxmono_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_map_rgb_color, gx_default_map_color_rgb);
-gx_device_printer far_data gs_pcxmono_device =
+const gx_device_printer gs_pcxmono_device =
 prn_device(pcxmono_procs, "pcxmono",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -55,7 +55,7 @@ private dev_proc_print_page(pcx256_print_page);
 private const gx_device_procs pcxgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
-gx_device_printer far_data gs_pcxgray_device =
+const gx_device_printer gs_pcxgray_device =
 {prn_device_body(gx_device_printer, pcxgray_procs, "pcxgray",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -70,7 +70,7 @@ private dev_proc_print_page(pcx16_print_page);
 private const gx_device_procs pcx16_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_4bit_map_rgb_color, pc_4bit_map_color_rgb);
-gx_device_printer far_data gs_pcx16_device =
+const gx_device_printer gs_pcx16_device =
 {prn_device_body(gx_device_printer, pcx16_procs, "pcx16",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -84,7 +84,7 @@ gx_device_printer far_data gs_pcx16_device =
 private const gx_device_procs pcx256_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		pc_8bit_map_rgb_color, pc_8bit_map_color_rgb);
-gx_device_printer far_data gs_pcx256_device =
+const gx_device_printer gs_pcx256_device =
 {prn_device_body(gx_device_printer, pcx256_procs, "pcx256",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -99,7 +99,7 @@ private dev_proc_print_page(pcx24b_print_page);
 private const gx_device_procs pcx24b_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 		gx_default_rgb_map_rgb_color, gx_default_rgb_map_color_rgb);
-gx_device_printer far_data gs_pcx24b_device =
+const gx_device_printer gs_pcx24b_device =
 prn_device(pcx24b_procs, "pcx24b",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -154,7 +154,7 @@ private const gx_device_procs pcxcmyk_procs =
     NULL,			/* map_rgb_alpha_color */
     gx_page_device_get_page_device
 };
-gx_device_printer far_data gs_pcxcmyk_device =
+const gx_device_printer gs_pcxcmyk_device =
 {prn_device_body(gx_device_printer, pcxcmyk_procs, "pcxcmyk",
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
@@ -173,7 +173,11 @@ gx_device_printer far_data gs_pcxcmyk_device =
 
 typedef struct pcx_header_s {
     byte manuf;			/* always 0x0a */
-    byte version;		/* version info = 0,2,3,5 */
+    byte version;
+#define version_2_5			0
+#define version_2_8_with_palette	2
+#define version_2_8_without_palette	3
+#define version_3_0 /* with palette */	5
     byte encoding;		/* 1=RLE */
     byte bpp;			/* bits per pixel per plane */
     ushort x1;			/* X of upper left corner */
@@ -186,15 +190,17 @@ typedef struct pcx_header_s {
     byte reserved;
     byte nplanes;		/* number of color planes */
     ushort bpl;			/* number of bytes per line (uncompressed) */
-    ushort palinfo;		/* palette info 1=color, 2=grey */
+    ushort palinfo;
+#define palinfo_color	1
+#define palinfo_gray	2
     byte xtra[58];		/* fill out header to 128 bytes */
 } pcx_header;
 
 /* Define the prototype header. */
-private const pcx_header far_data pcx_header_prototype =
+private const pcx_header pcx_header_prototype =
 {
     10,				/* manuf */
-    5,				/* version */
+    0,				/* version (variable) */
     1,				/* encoding */
     0,				/* bpp (variable) */
     00, 00,			/* x1, y1 */
@@ -214,16 +220,6 @@ private const pcx_header far_data pcx_header_prototype =
      0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
 };
 
-/* 
-   ** version info for PCX is as follows 
-   **
-   ** 0 == 2.5
-   ** 2 == 2.8 w/palette info
-   ** 3 == 2.8 without palette info
-   ** 5 == 3.0 (includes palette)
-   **
- */
-
 /*
  * Define the DCX header.  We don't actually use this yet.
  * All quantities are stored little-endian!
@@ -238,7 +234,7 @@ private const pcx_header far_data pcx_header_prototype =
 
 /* Forward declarations */
 private void pcx_write_rle(P4(const byte *, const byte *, int, FILE *));
-private int pcx_write_page(P4(gx_device_printer *, FILE *, pcx_header _ss *, bool));
+private int pcx_write_page(P4(gx_device_printer *, FILE *, pcx_header *, bool));
 
 /* Write a monochrome PCX page. */
 private int
@@ -247,9 +243,10 @@ pcxmono_print_page(gx_device_printer * pdev, FILE * file)
     pcx_header header;
 
     header = pcx_header_prototype;
-    header.version = 2;
+    header.version = version_2_8_with_palette;
     header.bpp = 1;
     header.nplanes = 1;
+    assign_ushort(header.palinfo, palinfo_gray);
     /* Set the first two entries of the short palette. */
     memcpy((byte *) header.palette, "\000\000\000\377\377\377", 6);
     return pcx_write_page(pdev, file, &header, false);
@@ -269,7 +266,7 @@ pcx16_print_page(gx_device_printer * pdev, FILE * file)
     pcx_header header;
 
     header = pcx_header_prototype;
-    header.version = 2;
+    header.version = version_2_8_with_palette;
     header.bpp = 1;
     header.nplanes = 4;
     /* Fill the EGA palette appropriately. */
@@ -286,8 +283,12 @@ pcx256_print_page(gx_device_printer * pdev, FILE * file)
     int code;
 
     header = pcx_header_prototype;
+    header.version = version_3_0;
     header.bpp = 8;
     header.nplanes = 1;
+    assign_ushort(header.palinfo,
+		  (pdev->color_info.num_components > 1 ?
+		   palinfo_color : palinfo_gray));
     code = pcx_write_page(pdev, file, &header, false);
     if (code >= 0) {		/* Write out the palette. */
 	fputc(0x0c, file);
@@ -303,8 +304,10 @@ pcx24b_print_page(gx_device_printer * pdev, FILE * file)
     pcx_header header;
 
     header = pcx_header_prototype;
+    header.version = version_3_0;
     header.bpp = 8;
     header.nplanes = 3;
+    assign_ushort(header.palinfo, palinfo_color);
     return pcx_write_page(pdev, file, &header, true);
 }
 
@@ -335,7 +338,7 @@ pcxcmyk_print_page(gx_device_printer * pdev, FILE * file)
 /* This routine is used for all formats. */
 /* The caller has set header->bpp, nplanes, and palette. */
 private int
-pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header _ss * phdr,
+pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
 	       bool planar)
 {
     int raster = gdev_prn_raster(pdev);
@@ -351,7 +354,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header _ss * phdr,
     if (line == 0)		/* can't allocate line buffer */
 	return_error(gs_error_VMerror);
 
-    /* Fill in the variable entries in the header struct. */
+    /* Fill in the other variable entries in the header struct. */
 
     assign_ushort(phdr->x2, pdev->width - 1);
     assign_ushort(phdr->y2, height - 1);
@@ -359,7 +362,6 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header _ss * phdr,
     assign_ushort(phdr->vres, (int)pdev->y_pixels_per_inch);
     assign_ushort(phdr->bpl, (planar || depth == 1 ? rsize :
 			      raster + (raster & 1)));
-    assign_ushort(phdr->palinfo, (depth > 1 ? 1 : 2));
 
     /* Write the header. */
 
@@ -446,8 +448,13 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header _ss * phdr,
 /* Write one line in PCX run-length-encoded format. */
 private void
 pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
-{
-    int max_run = step * 63;
+{				/*
+				 * The PCX format theoretically allows encoding runs of 63
+				 * identical bytes, but some readers can't handle repetition
+				 * counts greater than 15.
+				 */
+#define MAX_RUN_COUNT 15
+    int max_run = step * MAX_RUN_COUNT;
 
     while (from < end) {
 	byte data = *from;
@@ -463,7 +470,7 @@ pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
 		from += step;
 	    /* Now (from - start) / step + 1 is the run length. */
 	    while (from - start >= max_run) {
-		putc(0xff, file);
+		putc(0xc0 + MAX_RUN_COUNT, file);
 		putc(data, file);
 		start += max_run;
 	    }
@@ -472,4 +479,5 @@ pcx_write_rle(const byte * from, const byte * end, int step, FILE * file)
 	}
 	putc(data, file);
     }
+#undef MAX_RUN_COUNT
 }

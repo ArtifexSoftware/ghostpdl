@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zfilterx.c */
+/*Id: zfilterx.c  */
 /* Extended (non-standard) filter creation */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "ialloc.h"
@@ -120,12 +119,11 @@ private int
 zBHCE(os_ptr op)
 {
     stream_BHCE_state bhcs;
-    int code;
+    int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
 
-    code = bhc_setup(op, (stream_BHC_state *) & bhcs);
     if (code < 0)
 	return code;
-    return filter_write(op, 1, &s_BHCE_template, (stream_state *) & bhcs, 0);
+    return filter_write(op, 0, &s_BHCE_template, (stream_state *)&bhcs, 0);
 }
 
 /* <source> <dict> BoundedHuffmanDecode/filter <file> */
@@ -133,12 +131,11 @@ private int
 zBHCD(os_ptr op)
 {
     stream_BHCD_state bhcs;
-    int code;
+    int code = bhc_setup(op, (stream_BHC_state *)&bhcs);
 
-    code = bhc_setup(op, (stream_BHC_state *) & bhcs);
     if (code < 0)
 	return code;
-    return filter_read(op, 1, &s_BHCD_template, (stream_state *) & bhcs, 0);
+    return filter_read(op, 0, &s_BHCD_template, (stream_state *)&bhcs, 0);
 }
 
 /* <array> <max_length> .computecodes <array> */
@@ -179,8 +176,7 @@ zcomputecodes(os_ptr op)
 	def.counts = data;
 	def.values = data + (def.num_counts + 1);
 	for (i = 0; i < def.num_values; i++) {
-	    const ref *pf =
-	    op1->value.const_refs + i + def.num_counts + 1;
+	    const ref *pf = op1->value.const_refs + i + def.num_counts + 1;
 
 	    if (!r_has_type(pf, t_integer)) {
 		code = gs_note_error(e_typecheck);
@@ -190,7 +186,8 @@ zcomputecodes(os_ptr op)
 	}
 	if (!code) {
 	    code = hc_compute(&def, freqs, imemory);
-	    if (code >= 0) {	/* Copy back results. */
+	    if (code >= 0) {
+		/* Copy back results. */
 		for (i = 0; i < asize; i++)
 		    make_int(op1->value.refs + i, data[i]);
 	    }
@@ -210,14 +207,12 @@ zcomputecodes(os_ptr op)
 private int
 bwbs_setup(os_ptr op, stream_BWBS_state * pbwbss)
 {
-    int code;
+    int code =
+	dict_int_param(op, "BlockSize", 1, max_int / sizeof(int) - 10, 16384,
+		       &pbwbss->BlockSize);
 
-    if ((code = dict_int_param(op, "BlockSize",
-			       1, max_int / sizeof(int) - 10, 16384,
-			       &pbwbss->BlockSize)) < 0
-    )
-	    return code;
-
+    if (code < 0)
+	return code;
     return 0;
 }
 
@@ -230,10 +225,10 @@ zBWBSE(os_ptr op)
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
-    code = bwbs_setup(op, (stream_BWBS_state *) & bwbss);
+    code = bwbs_setup(op, (stream_BWBS_state *)&bwbss);
     if (code < 0)
 	return code;
-    return filter_write(op, 1, &s_BWBSE_template, (stream_state *) & bwbss, 0);
+    return filter_write(op, 0, &s_BWBSE_template, (stream_state *)&bwbss, 0);
 }
 
 /* <source> <dict> BWBlockSortDecode/filter <file> */
@@ -241,12 +236,11 @@ private int
 zBWBSD(os_ptr op)
 {
     stream_BWBSD_state bwbss;
-    int code;
+    int code = bwbs_setup(op, (stream_BWBS_state *)&bwbss);
 
-    code = bwbs_setup(op, (stream_BWBS_state *) & bwbss);
     if (code < 0)
 	return code;
-    return filter_read(op, 1, &s_BWBSD_template, (stream_state *) & bwbss, 0);
+    return filter_read(op, 0, &s_BWBSD_template, (stream_state *)&bwbss, 0);
 }
 
 /* ------ Byte translation filters ------ */
@@ -255,19 +249,15 @@ zBWBSD(os_ptr op)
 private int
 bt_setup(os_ptr op, stream_BT_state * pbts)
 {
-    int npop = 1;
-
-    if (r_has_type(op, t_dictionary))
-	++npop, --op;
     check_read_type(*op, t_string);
     if (r_size(op) != 256)
 	return_error(e_rangecheck);
     memcpy(pbts->table, op->value.const_bytes, 256);
-    return npop;
+    return 0;
 }
 
 /* <target> <table> ByteTranslateEncode/filter <file> */
-/* <target> <table> <dict_ignored> ByteTranslateEncode/filter <file> */
+/* <target> <table> <dict> ByteTranslateEncode/filter <file> */
 private int
 zBTE(os_ptr op)
 {
@@ -276,12 +266,11 @@ zBTE(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_write(op, code, &s_BTE_template, (stream_state *) & bts,
-			0);
+    return filter_write(op, 0, &s_BTE_template, (stream_state *)&bts, 0);
 }
 
 /* <target> <table> ByteTranslateDecode/filter <file> */
-/* <target> <table> <dict_ignored> ByteTranslateDecode/filter <file> */
+/* <target> <table> <dict> ByteTranslateDecode/filter <file> */
 private int
 zBTD(os_ptr op)
 {
@@ -290,13 +279,13 @@ zBTD(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_read(op, code, &s_BTD_template, (stream_state *) & bts, 0);
+    return filter_read(op, 0, &s_BTD_template, (stream_state *)&bts, 0);
 }
 
 /* ------ Move-to-front filters ------ */
 
 /* <target> MoveToFrontEncode/filter <file> */
-/* <target> <dict_ignored> MoveToFrontEncode/filter <file> */
+/* <target> <dict> MoveToFrontEncode/filter <file> */
 private int
 zMTFE(os_ptr op)
 {
@@ -304,7 +293,7 @@ zMTFE(os_ptr op)
 }
 
 /* <source> MoveToFrontDecode/filter <file> */
-/* <source> <dict_ignored> MoveToFrontDecode/filter <file> */
+/* <source> <dict> MoveToFrontDecode/filter <file> */
 private int
 zMTFD(os_ptr op)
 {
@@ -314,7 +303,7 @@ zMTFD(os_ptr op)
 /* ------ PCX decoding filter ------ */
 
 /* <source> PCXDecode/filter <file> */
-/* <source> <dict_ignored> PCXDecode/filter <file> */
+/* <source> <dict> PCXDecode/filter <file> */
 private int
 zPCXD(os_ptr op)
 {

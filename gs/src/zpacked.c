@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zpacked.c */
+/*Id: zpacked.c  */
 /* Packed array operators */
 #include "ghost.h"
-#include "errors.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "iname.h"
@@ -79,15 +78,16 @@ zsetpacking(register os_ptr op)
 /* Make a packed array.  See the comment in packed.h about */
 /* ensuring that refs in mixed arrays are properly aligned. */
 int
-make_packed_array(ref * parr, ref_stack * pstack, uint size, client_name_t cname)
+make_packed_array(ref * parr, ref_stack * pstack, uint size,
+		  client_name_t cname)
 {
     uint i;
     const ref *pref;
     uint idest = 0, ishort = 0;
-    ref_packed *pbody, *pdest;
+    ref_packed *pbody;
+    ref_packed *pdest;
     ref_packed *pshort;		/* points to start of */
-
-    /* last run of short elements */
+				/* last run of short elements */
     uint space = ialloc_space(idmemory);
     int skip = 0, pad;
     ref rtemp;

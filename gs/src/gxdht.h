@@ -1,28 +1,29 @@
 /* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/*Id: gxdht.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxdht.h  */
 /* Definition of device halftones */
 
 #ifndef gxdht_INCLUDED
 #  define gxdht_INCLUDED
 
 #include "gsrefct.h"
+#include "gscsepnm.h"
 #include "gxarith.h"		/* for igcd */
 #include "gxhttype.h"
 
@@ -48,9 +49,9 @@
  * If the coefficients of the default device transformation matrix are xx,
  * xy, yx, and yy, then U and V are related to the frequency F and the angle
  * A by:
- *	P = 72 / F;
- *	U = P * (xx * cos(A) + yx * sin(A));
- *	V = P * (xy * cos(A) + yy * sin(A)).
+ *      P = 72 / F;
+ *      U = P * (xx * cos(A) + yx * sin(A));
+ *      V = P * (xy * cos(A) + yy * sin(A)).
  *
  * We can tile the plane with any rectangular super-cell that consists of
  * repetitions of the multi-cell and whose corners coincide with multi-cell
@@ -73,17 +74,18 @@
  * do the shifting at rendering time.
  */
 typedef struct gx_ht_cell_params_s {
-	/* Defining values.  M * M1 != 0 or N * N1 != 0; R > 0, R1 > 0. */
-	/* R and D are short rather than ushort so that we don't get */
-	/* unsigned results from arithmetic. */
-  short M, N, R;
-  short M1, N1, R1;
-	/* Derived values. */
-  ulong C;
-  short D, D1;
-  uint W, W1;
-  int S;
+    /* Defining values.  M * M1 != 0 or N * N1 != 0; R > 0, R1 > 0. */
+    /* R and D are short rather than ushort so that we don't get */
+    /* unsigned results from arithmetic. */
+    short M, N, R;
+    short M1, N1, R1;
+    /* Derived values. */
+    ulong C;
+    short D, D1;
+    uint W, W1;
+    int S;
 } gx_ht_cell_params_t;
+
 /* Compute the derived values from the defining values. */
 void gx_compute_cell_values(P1(gx_ht_cell_params_t *));
 
@@ -102,13 +104,16 @@ void gx_compute_cell_values(P1(gx_ht_cell_params_t *));
 /* The mask width must be at least as wide as uint, */
 /* and must not be wider than the width implied by align_bitmap_mod. */
 typedef uint ht_mask_t;
+
 #define ht_mask_bits (sizeof(ht_mask_t) * 8)
 typedef struct gx_ht_bit_s {
-	uint offset;
-	ht_mask_t mask;
+    uint offset;
+    ht_mask_t mask;
 } gx_ht_bit;
+
 /* During sampling, bits[i].mask is used to hold a normalized sample value. */
 typedef ht_mask_t ht_sample_t;
+
 /* The following awkward expression avoids integer overflow. */
 #define max_ht_sample (ht_sample_t)(((1 << (ht_mask_bits - 2)) - 1) * 2 + 1)
 
@@ -123,14 +128,14 @@ typedef ht_mask_t ht_sample_t;
  * shift.  In other words, full_height is a cached value, but it is an
  * important one, since it is the modulus used for computing the
  * tile-relative phase.  Requirements:
- *	width > 0, height > 0, multiple > 0
- *	raster >= bitmap_raster(width)
- *	0 <= shift < width
- *	num_bits = width * height
+ *      width > 0, height > 0, multiple > 0
+ *      raster >= bitmap_raster(width)
+ *      0 <= shift < width
+ *      num_bits = width * height
  * For complete orders:
- *	full_height = height
+ *      full_height = height
  * For strip orders:
- *	full_height = height * width / gcd(width, shift)
+ *      full_height = height * width / gcd(width, shift)
  * Note that during the sampling of a complete spot halftone, these
  * invariants may be violated; in particular, it is possible that shift != 0
  * and height < full_height, even though num_bits and num_levels reflect the
@@ -143,26 +148,29 @@ typedef ht_mask_t ht_sample_t;
  * See gxbitmap.h for more details about strip halftones.
  */
 typedef struct gx_ht_cache_s gx_ht_cache;
+
 #ifndef gx_ht_order_DEFINED
 #  define gx_ht_order_DEFINED
 typedef struct gx_ht_order_s gx_ht_order;
+
 #endif
 struct gx_ht_order_s {
-	gx_ht_cell_params_t params;	/* parameters defining the cells */
-	ushort width;
-	ushort height;
-	ushort raster;
-	ushort shift;
-	ushort orig_height;
-	ushort orig_shift;
-	uint full_height;
-	uint num_levels;		/* = levels size */
-	uint num_bits;			/* = bits size = width * height */
-	uint *levels;
-	gx_ht_bit *bits;
-	gx_ht_cache *cache;		/* cache to use */
-	gx_transfer_map *transfer;	/* TransferFunction or 0 */
+    gx_ht_cell_params_t params;	/* parameters defining the cells */
+    ushort width;
+    ushort height;
+    ushort raster;
+    ushort shift;
+    ushort orig_height;
+    ushort orig_shift;
+    uint full_height;
+    uint num_levels;		/* = levels size */
+    uint num_bits;		/* = bits size = width * height */
+    uint *levels;
+    gx_ht_bit *bits;
+    gx_ht_cache *cache;		/* cache to use */
+    gx_transfer_map *transfer;	/* TransferFunction or 0 */
 };
+
 #define ht_order_is_complete(porder)\
   ((porder)->shift == 0)
 #define ht_order_full_height(porder)\
@@ -196,9 +204,10 @@ extern_st(st_ht_order);
  * allocated with the same allocator as the device halftone itself.
  */
 typedef struct gx_ht_order_component_s {
-	gx_ht_order corder;
-	gs_ht_separation_name cname;
+    gx_ht_order corder;
+    gs_ht_separation_name cname;
 } gx_ht_order_component;
+
 #define private_st_ht_order_component()	/* in gsht.c */\
   gs_private_st_ptrs_add0(st_ht_order_component, gx_ht_order_component,\
     "gx_ht_order_component", ht_order_component_enum_ptrs,\
@@ -214,32 +223,34 @@ extern_st(st_ht_order_component_element);
 #ifndef gx_device_halftone_DEFINED
 #  define gx_device_halftone_DEFINED
 typedef struct gx_device_halftone_s gx_device_halftone;
+
 #endif
 
 /*
  * color_indices is a cache that gives the indices in components of
  * the screens for the 1, 3, or 4 primary color(s).  These indices are
  * always in the same order, namely:
- *	-,-,-,W(gray)
- *	R,G,B,-
- *	C,M,Y,K
+ *      -,-,-,W(gray)
+ *      R,G,B,-
+ *      C,M,Y,K
  */
 struct gx_device_halftone_s {
-	gx_ht_order order;		/* must be first, for subclassing */
-	rc_header rc;
-	gs_id id;		/* the id changes whenever the data change */
-	/*
-	 * We have to keep the halftone type so that we can pass it
-	 * through the band list for gx_imager_dev_ht_install.
-	 */
-	gs_halftone_type type;
-	gx_ht_order_component *components;
-	uint num_comp;
-		/* The following are computed from the above. */
-	uint color_indices[4];
-	int lcm_width, lcm_height;	/* LCM of primary color tile sizes, */
-					/* max_int if overflowed */
+    gx_ht_order order;		/* must be first, for subclassing */
+    rc_header rc;
+    gs_id id;			/* the id changes whenever the data change */
+    /*
+     * We have to keep the halftone type so that we can pass it
+     * through the band list for gx_imager_dev_ht_install.
+     */
+    gs_halftone_type type;
+    gx_ht_order_component *components;
+    uint num_comp;
+    /* The following are computed from the above. */
+    uint color_indices[4];
+    int lcm_width, lcm_height;	/* LCM of primary color tile sizes, */
+    /* max_int if overflowed */
 };
+
 extern_st(st_device_halftone);
 #define public_st_device_halftone() /* in gsht.c */\
   gs_public_st_ptrs_add1(st_device_halftone, gx_device_halftone,\
@@ -249,7 +260,7 @@ extern_st(st_device_halftone);
 
 /* Release a gx_device_halftone by freeing its components. */
 /* (Don't free the gx_device_halftone itself.) */
-void gx_device_halftone_release(P2(gx_device_halftone *pdht,
-				   gs_memory_t *mem));
+void gx_device_halftone_release(P2(gx_device_halftone * pdht,
+				   gs_memory_t * mem));
 
-#endif					/* gxdht_INCLUDED */
+#endif /* gxdht_INCLUDED */

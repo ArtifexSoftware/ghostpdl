@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,292 +16,278 @@
    all copies.
  */
 
-/* gximage4.c */
-/* 12-bit image procedures */
-#include "gx.h"
+/*Id: gximage4.c  */
+/* ImageType 4 image implementation */
 #include "memory_.h"
-#include "gpcheck.h"
+#include "gx.h"
 #include "gserrors.h"
-#include "gxfixed.h"
-#include "gxfrac.h"
-#include "gxarith.h"
-#include "gxmatrix.h"
-#include "gsccolor.h"
-#include "gspaint.h"
-#include "gxdevice.h"
-#include "gxcmap.h"
-#include "gxdcolor.h"
-#include "gxistate.h"
-#include "gzpath.h"
-#include "gxdevmem.h"
-#include "gxcpath.h"
-#include "gximage.h"
+#include "gscspace.h"
+#include "gsiparm3.h"
+#include "gsiparm4.h"
+#include "gxiparam.h"
 
-/* ---------------- Unpacking procedures ---------------- */
+/* Forward references */
+private dev_proc_begin_typed_image(gx_begin_image4);
+private image_enum_proc_plane_data(gx_image4_plane_data);
+private image_enum_proc_end_image(gx_image4_end_image);
 
-private const byte *
-sample_unpack_12(byte * bptr, int *pdata_x, const byte * data,
-		 int data_x, uint dsize, const sample_lookup_t * ignore_ptab,
-		 int spread)
-{
-    register frac *bufp = (frac *) bptr;
-    uint dskip = (data_x >> 1) * 3;
-    const byte *psrc = data + dskip;
+/* Define the image type for ImageType 4 images. */
+private const gx_image_type_t image4_type = {
+    image4_type_data
+};
+private const gx_image_enum_procs_t image4_enum_procs = {
+    image4_enum_procs_data
+};
 
-#define inc_bufp(bp, n) bp = (frac *)((byte *)(bp) + (n))
-    uint sample;
-    int left = dsize - dskip;
-    static const frac bits2frac_4[16] =
-    {
-#define frac15(n) ((frac_1 / 15) * (n))
-	frac15(0), frac15(1), frac15(2), frac15(3),
-	frac15(4), frac15(5), frac15(6), frac15(7),
-	frac15(8), frac15(9), frac15(10), frac15(11),
-	frac15(12), frac15(13), frac15(14), frac15(15)
-#undef frac15
-    };
-
-    if ((data_x & 1) && left > 0)
-	switch (left) {
-	    default:
-		sample = ((uint) (psrc[1] & 0xf) << 8) + psrc[2];
-		*bufp = bits2frac(sample, 12);
-		inc_bufp(bufp, spread);
-		psrc += 3;
-		left -= 3;
-		break;
-	    case 2:		/* xxxxxxxx xxxxdddd */
-		*bufp = bits2frac_4[psrc[1] & 0xf];
-	    case 1:		/* xxxxxxxx */
-		left = 0;
-	}
-    while (left >= 3) {
-	sample = ((uint) * psrc << 4) + (psrc[1] >> 4);
-	*bufp = bits2frac(sample, 12);
-	inc_bufp(bufp, spread);
-	sample = ((uint) (psrc[1] & 0xf) << 8) + psrc[2];
-	*bufp = bits2frac(sample, 12);
-	inc_bufp(bufp, spread);
-	psrc += 3;
-	left -= 3;
-    }
-    /* Handle trailing bytes. */
-    switch (left) {
-	case 2:		/* dddddddd ddddxxxx */
-	    sample = ((uint) * psrc << 4) + (psrc[1] >> 4);
-	    *bufp = bits2frac(sample, 12);
-	    inc_bufp(bufp, spread);
-	    *bufp = bits2frac_4[psrc[1] & 0xf];
-	    break;
-	case 1:		/* dddddddd */
-	    sample = (uint) * psrc << 4;
-	    *bufp = bits2frac(sample, 12);
-	    break;
-	case 0:		/* Nothing more to do. */
-	    ;
-    }
-    *pdata_x = 0;
-    return bptr;
-}
-
-/* ------ Strategy procedure ------ */
-
-/* Use special (slow) logic for 12-bit source values. */
-private irender_proc(image_render_frac);
-private irender_proc_t
-image_strategy_frac(gx_image_enum * penum)
-{
-    if (penum->bps > 8) {
-	if_debug0('b', "[b]render=frac\n");
-	return image_render_frac;
-    }
-    return 0;
-}
-
+/* Initialize an ImageType 4 image. */
 void
-gs_gximage4_init(gs_memory_t * mem)
+gs_image4_t_init(gs_image4_t * pim, const gs_color_space * color_space)
 {
-    image_strategies.fracs = image_strategy_frac;
-    sample_unpack_12_proc = sample_unpack_12;
+    gs_pixel_image_t_init((gs_pixel_image_t *) pim, color_space);
+    pim->type = &image4_type;
+    pim->MaskColor_is_range = false;
 }
 
-/* ---------------- Rendering procedures ---------------- */
+/*
+ * We implement ImageType 4 using ImageType 3 (or, if the image is known
+ * to be completely opaque, ImageType 1).
+ */
+typedef struct gx_image4_enum_s {
+    gx_image_enum_common;
+    int num_components;
+    int bpc;			/* BitsPerComponent */
+    uint values[gs_image_max_components * 2];
+    gs_memory_t *memory;
+    gx_image_enum_common_t *info;	/* info for image3 or image1 */
+    byte *mask;			/* one scan line of mask data, 0 if image1 */
+    uint mask_size;
+    int width;
+    int y;
+    int height;
+} gx_image4_enum_t;
 
-/* ------ Rendering for 12-bit samples ------ */
+gs_private_st_ptrs2(st_image4_enum, gx_image4_enum_t, "gx_image4_enum_t",
+		 image4_enum_enum_ptrs, image4_enum_reloc_ptrs, info, mask);
 
-/* Render an image with more than 8 bits per sample. */
-/* The samples have been expanded into fracs. */
-#define longs_per_4_fracs (arch_sizeof_frac * 4 / arch_sizeof_long)
-typedef union {
-    frac v[4];
-    long all[longs_per_4_fracs];	/* for fast comparison */
-} color_fracs;
-
-#if longs_per_4_fracs == 1
-#  define color_frac_eq(f1, f2)\
-     ((f1).all[0] == (f2).all[0])
-#else
-#if longs_per_4_fracs == 2
-#  define color_frac_eq(f1, f2)\
-     ((f1).all[0] == (f2).all[0] && (f1).all[1] == (f2).all[1])
-#endif
-#endif
+/* Begin an ImageType 4 image. */
 private int
-image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
-		  uint w, int h, gx_device * dev)
+gx_begin_image4(gx_device * dev,
+		const gs_imager_state * pis, const gs_matrix * pmat,
+		const gs_image_common_t * pic, const gs_int_rect * prect,
+	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
-    const gs_imager_state *pis = penum->pis;
-    gs_logical_operation_t lop = penum->log_op;
-    gx_dda_fixed_point pnext;
-    image_posture posture = penum->posture;
-    fixed xl, ytf;
-    fixed pdyx, pdyy;		/* edge of parallelogram */
-    int yt = penum->yci, iht = penum->hci;
-    const gs_color_space *pcs = penum->pcs;
-
-    cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
-    gs_client_color cc;
-    int device_color = penum->device_color;
-    const gx_color_map_procs *cmap_procs = gx_device_cmap_procs(dev);
-
-    cmap_proc_rgb((*map_rgb)) = cmap_procs->map_rgb;
-    cmap_proc_cmyk((*map_cmyk)) = cmap_procs->map_cmyk;
-    gx_device_color devc1, devc2;
-    gx_device_color _ss *spdevc = &devc1;
-    gx_device_color _ss *spdevc_next = &devc2;
-
-#define pdevc ((gx_device_color *)spdevc)
-#define pdevc_next ((gx_device_color *)spdevc_next)
-    int spp = penum->spp;
-    const frac *psrc = (const frac *)buffer + data_x * spp;
-    fixed xrun;			/* x at start of run */
-    int irun;			/* int xrun */
-    fixed yrun;			/* y ditto */
-    color_fracs run;		/* run value */
-    color_fracs next;		/* next sample value */
-    const frac *bufend = psrc + w;
+    const gs_image4_t *pim = (const gs_image4_t *)pic;
+    int num_components = gs_color_space_num_components(pim->ColorSpace);
+    bool opaque = false;
+    gx_image4_enum_t *penum;
+    uint mask_size = (pim->Width + 7) >> 3;
+    byte *mask = 0;
     int code;
 
-    if (h == 0)
-	return 0;
-    pnext = penum->dda.pixel0;
-    xrun = xl = dda_current(pnext.x);
-    irun = fixed2int_var_rounded(xrun);
-    yrun = ytf = dda_current(pnext.y);
-    pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
-    pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
-    if_debug4('b', "[b]y=%d w=%d xt=%f yt=%f\n",
-	      penum->y, w, fixed2float(xl), fixed2float(ytf));
-    run.v[0] = run.v[1] = run.v[2] = run.v[3] = 0;
-    next.v[0] = next.v[1] = next.v[2] = next.v[3] = 0;
-    cc.paint.values[0] = cc.paint.values[1] =
-	cc.paint.values[2] = cc.paint.values[3] = 0;
-    cc.pattern = 0;
-    (*remap_color) (&cc, pcs, pdevc, pis, dev, gs_color_select_source);
-    run.v[0] = ~psrc[0];	/* force remap */
+    penum = gs_alloc_struct(mem, gx_image4_enum_t, &st_image4_enum,
+			    "gx_begin_image4");
+    if (penum == 0)
+	return_error(gs_error_VMerror);
+    gx_image_enum_common_init((gx_image_enum_common_t *) penum,
+			      pic, &image4_enum_procs, dev,
+			      pim->BitsPerComponent,
+			      num_components, pim->format);
+    penum->memory = mem;
+    {
+	uint max_value = (1 << pim->BitsPerComponent) - 1;
+	int i;
 
-    while (psrc < bufend) {
-	next.v[0] = psrc[0];
-	switch (spp) {
-	    case 4:		/* cmyk */
-		next.v[1] = psrc[1];
-		next.v[2] = psrc[2];
-		next.v[3] = psrc[3];
-		psrc += 4;
-		if (color_frac_eq(next, run))
-		    goto inc;
-		if (device_color) {
-		    (*map_cmyk) (next.v[0], next.v[1],
-				 next.v[2], next.v[3],
-				 pdevc_next, pis, dev,
-				 gs_color_select_source);
-		    goto f;
-		}
-		decode_frac(next.v[0], cc, 0);
-		decode_frac(next.v[1], cc, 1);
-		decode_frac(next.v[2], cc, 2);
-		decode_frac(next.v[3], cc, 3);
-		if_debug4('B', "[B]cc[0..3]=%g,%g,%g,%g\n",
-			  cc.paint.values[0], cc.paint.values[1],
-			  cc.paint.values[2], cc.paint.values[3]);
-		if_debug1('B', "[B]cc[3]=%g\n",
-			  cc.paint.values[3]);
-		break;
-	    case 3:		/* rgb */
-		next.v[1] = psrc[1];
-		next.v[2] = psrc[2];
-		psrc += 3;
-		if (color_frac_eq(next, run))
-		    goto inc;
-		if (device_color) {
-		    (*map_rgb) (next.v[0], next.v[1],
-				next.v[2], pdevc_next, pis, dev,
-				gs_color_select_source);
-		    goto f;
-		}
-		decode_frac(next.v[0], cc, 0);
-		decode_frac(next.v[1], cc, 1);
-		decode_frac(next.v[2], cc, 2);
-		if_debug3('B', "[B]cc[0..2]=%g,%g,%g\n",
-			  cc.paint.values[0], cc.paint.values[1],
-			  cc.paint.values[2]);
-		break;
-	    case 1:		/* gray */
-		psrc++;
-		if (next.v[0] == run.v[0])
-		    goto inc;
-		if (device_color) {
-		    (*map_rgb) (next.v[0], next.v[0],
-				next.v[0], pdevc_next, pis, dev,
-				gs_color_select_source);
-		    goto f;
-		}
-		decode_frac(next.v[0], cc, 0);
-		if_debug1('B', "[B]cc[0]=%g\n",
-			  cc.paint.values[0]);
-		break;
-	}
-	(*remap_color) (&cc, pcs, pdevc_next, pis, dev,
-			gs_color_select_source);
-      f:if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
-		  next.v[0], next.v[1], next.v[2], next.v[3],
-		  pdevc_next->colors.binary.color[0],
-		  pdevc_next->colors.binary.color[1],
-		  (ulong) pdevc_next->type);
-	/* Even though the supplied colors don't match, */
-	/* the device colors might. */
-	if (!dev_color_eq(devc1, devc2)) {	/* Fill the region between */
-	    /* xrun/irun and xl */
-	    gx_device_color _ss *sptemp;
+	for (i = 0; i < num_components * 2; i += 2) {
+	    int c0, c1;
 
-	    if (posture != image_portrait) {	/* Parallelogram */
-		code = (*dev_proc(dev, fill_parallelogram))
-		    (dev, xrun, yrun,
-		     xl - xrun, ytf - yrun, pdyx, pdyy,
-		     pdevc, lop);
-	    } else {		/* Rectangle */
-		int xi = irun;
-		int wi = (irun = fixed2int_var_rounded(xl)) - xi;
+	    if (pim->MaskColor_is_range)
+		c0 = pim->MaskColor[i], c1 = pim->MaskColor[i + 1];
+	    else
+		c0 = c1 = pim->MaskColor[i >> 1];
 
-		if (wi < 0)
-		    xi += wi, wi = -wi;
-		code = gx_fill_rectangle_device_rop(xi, yt,
-						  wi, iht, pdevc, dev, lop);
+	    if (c0 < 0)
+		c0 = 0;
+	    if (c1 > max_value)
+		c1 = max_value;
+	    if (c0 > c1) {
+		opaque = true;
+		break;
 	    }
-	    if (code < 0)
-		return code;
-	    sptemp = spdevc;
-	    spdevc = spdevc_next;
-	    spdevc_next = sptemp;
-	    xrun = xl;
-	    yrun = ytf;
+	    penum->values[i] = c0;
+	    penum->values[i + 1] = c1;
 	}
-	run = next;
-      inc:xl = dda_next(pnext.x);
-	ytf = dda_next(pnext.y);
     }
-    /* Fill the final run. */
-    code = (*dev_proc(dev, fill_parallelogram))
-	(dev, xrun, yrun, xl - xrun, ytf - yrun, pdyx, pdyy, pdevc, lop);
-    return (code < 0 ? code : 1);
+    if (opaque) {
+	/*
+	 * This image doesn't need masking at all, since at least one of
+	 * the transparency keys can never be matched.  Process it as an
+	 * ImageType 1 image.
+	 */
+	const gx_image_type_t *type;
+	gs_image1_t image1;
+
+	gs_image_t_init(&image1, pim->ColorSpace);
+	type = image1.type;
+	*(gs_pixel_image_t *)&image1 =
+	    *(const gs_pixel_image_t *)pim;
+	image1.type = type;
+	penum->mask = 0;	/* indicates opaque image */
+	code = gx_device_begin_typed_image(dev, pis, pmat,
+					   (gs_image_common_t *)&image1,
+				 prect, pdcolor, pcpath, mem, &penum->info);
+    } else if ((mask = gs_alloc_bytes(mem, mask_size,
+				      "gx_begin_image4(mask)")) == 0
+	) {
+	code = gs_note_error(gs_error_VMerror);
+    } else {
+	gs_image3_t image3;
+
+	penum->num_components = num_components;
+	gs_image3_t_init(&image3, pim->ColorSpace, interleave_scan_lines);
+	{
+	    const gx_image_type_t *type = image3.type;
+
+	    *(gs_pixel_image_t *)&image3 =
+		*(const gs_pixel_image_t *)pim;
+	    image3.type = type;
+	}
+	*(gs_data_image_t *)&image3.MaskDict =
+	    *(const gs_data_image_t *)pim;
+	image3.MaskDict.BitsPerComponent = 1;
+	/*
+	 * The interpretation of Decode is backwards from the sensible
+	 * one, but it's an Adobe convention that is now too hard to
+	 * change in the code.
+	 */
+	image3.MaskDict.Decode[0] = 1;
+	image3.MaskDict.Decode[1] = 0;
+	image3.MaskDict.Interpolate = false;
+	penum->bpc = pim->BitsPerComponent;
+	penum->mask = mask;
+	penum->mask_size = mask_size;
+	if (prect)
+	    penum->width = prect->q.x - prect->p.x,
+		penum->y = prect->p.y, penum->height = prect->q.y - prect->p.y;
+	else
+	    penum->width = pim->Width,
+		penum->y = 0, penum->height = pim->Height;
+	code = gx_device_begin_typed_image(dev, pis, pmat,
+					 (const gs_image_common_t *)&image3,
+				 prect, pdcolor, pcpath, mem, &penum->info);
+    }
+    if (code < 0) {
+	gs_free_object(mem, mask, "gx_begin_image4(mask)");
+	gs_free_object(mem, penum, "gx_begin_image4");
+    } else
+	*pinfo = (gx_image_enum_common_t *) penum;
+    return code;
+}
+
+/* Process the next piece of an ImageType 4 image. */
+/* We disregard the depth in the image planes: BitsPerComponent prevails. */
+private int
+gx_image4_plane_data(gx_device * dev,
+ gx_image_enum_common_t * info, const gx_image_plane_t * planes, int height)
+{
+    gx_image4_enum_t *penum = (gx_image4_enum_t *) info;
+    int num_planes = penum->num_planes;
+    int bpc = penum->bpc;
+    int spp = (num_planes > 1 ? 1 : penum->num_components);
+    byte *mask = penum->mask;
+    uint mask_size = (penum->width + 7) >> 3;
+    gx_image_plane_t sources[gs_image_max_components];
+    int h = min(height, penum->height - penum->y);
+
+    if (penum->mask == 0)	/* opaque image */
+	return gx_device_image_plane_data(dev, penum->info, planes, height);
+    if (mask_size > penum->mask_size) {
+	mask = gs_resize_object(penum->memory, mask, mask_size,
+				"gx_image4_data(resize mask)");
+	if (mask == 0)
+	    return_error(gs_error_VMerror);
+	penum->mask = mask;
+	penum->mask_size = mask_size;
+    }
+    sources[0].data = mask;
+    sources[0].data_x = 0;
+    sources[0].raster = mask_size;
+    memcpy(sources + 1, planes, num_planes * sizeof(planes[0]));
+    for (; h > 0; ++(penum->y), --h) {
+	int pi;
+	int code;
+
+	memset(mask, 0, (penum->width + 7) >> 3);
+	for (pi = 0; pi < num_planes; ++pi) {
+	    byte *mptr = mask;
+	    byte mbit = 0x80;
+	    uint sx_bit = sources[pi + 1].data_x * bpc;
+	    const byte *sptr = sources[pi + 1].data + (sx_bit >> 3);
+	    uint sx_shift = sx_bit & 7;
+	    int ix;
+
+#define advance_sx()\
+  BEGIN\
+    if ( (sx_shift += bpc) >= 8 ) {\
+      sptr += sx_shift >> 3;\
+      sx_shift &= 7;\
+    }\
+  END
+
+	    for (ix = 0; ix < penum->width; ++ix) {
+		int ci;
+
+		for (ci = 0; ci < spp; ++ci) {
+		    /*
+		     * The following odd-looking computation is, in fact,
+		     * correct both for chunky (pi = 0) and planar (ci = 0)
+		     * data formats.
+		     */
+		    int vi = (ci + pi) * 2;
+		    uint sample;
+
+		    if (bpc <= 8) {
+			sample = (*sptr >> (8 - sx_shift - bpc)) &
+			    ((1 << bpc) - 1);
+		    } else {
+			/* bpc == 12 */
+			if (sx_shift /* == 4 */ )
+			    sample = ((*sptr & 0xf) << 8) + sptr[1];
+			else
+			    sample = (*sptr << 8) + (sptr[1] >> 4);
+		    }
+		    if (sample < penum->values[vi] ||
+			sample > penum->values[vi + 1]
+			)
+			*mptr |= mbit;
+		    advance_sx();
+		}
+		if ((mbit >>= 1) == 0)
+		    mbit = 0x80, ++mptr;
+	    }
+	}
+	code = gx_device_image_plane_data(dev, penum->info, sources, 1);
+	if (code < 0)
+	    return code;
+	for (pi = 1; pi <= num_planes; ++pi)
+	    sources[pi].data += sources[pi].raster;
+    }
+#undef advance_sx
+    return penum->y >= penum->height;
+}
+
+/* Clean up after processing an ImageType 4 image. */
+private int
+gx_image4_end_image(gx_device * dev, gx_image_enum_common_t * info,
+		    bool draw_last)
+{
+    gx_image4_enum_t *penum = (gx_image4_enum_t *) info;
+    gs_memory_t *mem = penum->memory;
+
+    /* Finish processing the ImageType 3 (or 1) image. */
+    int code = gx_device_end_image(dev, penum->info, draw_last);
+
+    gs_free_object(mem, penum->mask, "gx_image4_end_image(mask)");
+    gs_free_object(mem, penum, "gx_image4_end_image");
+    return code;
 }

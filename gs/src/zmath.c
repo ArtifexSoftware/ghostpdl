@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1992, 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,11 @@
    all copies.
  */
 
-/* zmath.c */
+/*Id: zmath.c  */
 /* Mathematical operators */
 #include "math_.h"
 #include "ghost.h"
 #include "gxfarith.h"
-#include "errors.h"
 #include "oper.h"
 #include "store.h"
 
@@ -42,11 +41,6 @@ void
 zrand_state_init(long *pstate)
 {
     *pstate = 1;
-}
-private void
-zmath_init(void)
-{
-    zrand_state_init(&zrand_state);
 }
 
 /****** NOTE: none of these operators currently ******/
@@ -199,13 +193,13 @@ zlog(register os_ptr op)
 /* - rand <int> */
 private int
 zrand(register os_ptr op)
-{				/*
-				 * We use an algorithm from CACM 31 no. 10, pp. 1192-1201,
-				 * October 1988.  According to a posting by Ed Taft on
-				 * comp.lang.postscript, Level 2 (Adobe) PostScript interpreters
-				 * use this algorithm too:
-				 *      x[n+1] = (16807 * x[n]) mod (2^31 - 1)
-				 */
+{	/*
+	 * We use an algorithm from CACM 31 no. 10, pp. 1192-1201,
+	 * October 1988.  According to a posting by Ed Taft on
+	 * comp.lang.postscript, Level 2 (Adobe) PostScript interpreters
+	 * use this algorithm too:
+	 *      x[n+1] = (16807 * x[n]) mod (2^31 - 1)
+	 */
 #define A 16807
 #define M 0x7fffffff
 #define Q 127773		/* M / A */
@@ -273,5 +267,5 @@ const op_def zmath_op_defs[] =
     {"1sin", zsin},
     {"1sqrt", zsqrt},
     {"1srand", zsrand},
-    op_def_end(zmath_init)
+    op_def_end(0)
 };

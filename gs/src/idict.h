@@ -1,23 +1,26 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* idict.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: idict.h  */
 /* Interfaces for Ghostscript dictionary package */
+
+#ifndef idict_INCLUDED
+#  define idict_INCLUDED
 
 /*
  * Contrary to our usual practice, we expose the (first-level)
@@ -27,11 +30,14 @@
  * the values ref.
  */
 struct dict_s {
-	ref values;		/* t_array, values */
-	ref keys;		/* t_shortarray or t_array, keys */
-	ref count;		/* t_integer, count of occupied entries */
-				/* (length) */
-	ref maxlength;		/* t_integer, maxlength as seen by client. */
+    ref values;			/* t_array, values */
+    ref keys;			/* t_shortarray or t_array, keys */
+    ref count;			/* t_integer, count of occupied entries */
+    /* (length) */
+    ref maxlength;		/* t_integer, maxlength as seen by client. */
+    ref memory;			/* foreign t_struct, the allocator that */
+    /* created this dictionary */
+#define dict_memory(pdict) r_ptr(&(pdict)->memory, gs_ref_memory_t)
 };
 
 /*
@@ -50,7 +56,15 @@ extern bool dict_auto_expand;
 /*
  * Create a dictionary.
  */
-int dict_create(P2(uint maxlength, ref *pdref));
+#ifndef gs_ref_memory_DEFINED
+#  define gs_ref_memory_DEFINED
+typedef struct gs_ref_memory_s gs_ref_memory_t;
+
+#endif
+int dict_alloc(P3(gs_ref_memory_t *, uint maxlength, ref * pdref));
+
+#define dict_create(maxlen, pdref)\
+  dict_alloc(iimemory, maxlen, pdref)
 
 /*
  * Return a pointer to a ref that holds the access attributes
@@ -70,20 +84,19 @@ int dict_create(P2(uint maxlength, ref *pdref));
  * The caller is responsible for checking that the dictionary is readable.
  * Return 1 if found, 0 if not and there is room for a new entry,
  * Failure returns:
- *	e_typecheck if the key is null;
- *	e_invalidaccess if the key is a string lacking read access;
- *	e_VMerror or e_limitcheck if the key is a string and the corresponding
- *	  error occurs from attempting to convert it to a name;
- *	e_dictfull if the dictionary is full and the key is missing.
+ *      e_typecheck if the key is null;
+ *      e_invalidaccess if the key is a string lacking read access;
+ *      e_VMerror or e_limitcheck if the key is a string and the corresponding
+ *        error occurs from attempting to convert it to a name;
+ *      e_dictfull if the dictionary is full and the key is missing.
  */
-int dict_find(P3(const ref *pdref, const ref *key, ref **ppvalue));
+int dict_find(P3(const ref * pdref, const ref * key, ref ** ppvalue));
 
 /*
  * Look up a (constant) C string in a dictionary.
  * Return 1 if found, <= 0 if not.
  */
-int dict_find_string(P3(const ref *pdref, const char _ds *kstr,
-			ref **ppvalue));
+int dict_find_string(P3(const ref * pdref, const char *kstr, ref ** ppvalue));
 
 /*
  * Enter a key-value pair in a dictionary.
@@ -91,39 +104,39 @@ int dict_find_string(P3(const ref *pdref, const char _ds *kstr,
  * Return 1 if this was a new entry, 0 if this replaced an existing entry.
  * Failure returns are as for dict_find, except that e_dictfull doesn't
  * occur if the dictionary is full but expandable, plus:
- *	e_invalidaccess for an attempt to store a younger key or value into
- *	  an older dictionary;
- *	e_VMerror if a VMerror occurred while trying to expand the
- *	  dictionary.
+ *      e_invalidaccess for an attempt to store a younger key or value into
+ *        an older dictionary;
+ *      e_VMerror if a VMerror occurred while trying to expand the
+ *        dictionary.
  */
-int dict_put(P3(ref *pdref, const ref *key, const ref *pvalue));
+int dict_put(P3(ref * pdref, const ref * key, const ref * pvalue));
 
 /*
  * Enter a key-value pair where the key is a (constant) C string.
  */
-int dict_put_string(P3(ref *pdref, const char *kstr, const ref *pvalue));
+int dict_put_string(P3(ref * pdref, const char *kstr, const ref * pvalue));
 
 /*
  * Remove a key-value pair from a dictionary.
  * Return 0 or e_undefined.
  */
-int dict_undef(P2(ref *pdref, const ref *key));
+int dict_undef(P2(ref * pdref, const ref * key));
 
 /*
  * Return the number of elements in a dictionary.
  */
-uint dict_length(P1(const ref *pdref));
+uint dict_length(P1(const ref * pdref));
 
 /*
  * Return the capacity of a dictionary.
  */
-uint dict_maxlength(P1(const ref *pdref));
+uint dict_maxlength(P1(const ref * pdref));
 
 /*
  * Return the maximum index of a slot within a dictionary.
  * Note that this may be greater than maxlength.
  */
-uint dict_max_index(P1(const ref *pdref));
+uint dict_max_index(P1(const ref * pdref));
 
 /*
  * Copy one dictionary into another.
@@ -131,7 +144,8 @@ uint dict_max_index(P1(const ref *pdref));
  * If new_only is true, only copy entries whose keys
  * aren't already present in the destination.
  */
-int dict_copy_entries(P3(const ref *dfrom, ref *dto, bool new_only));
+int dict_copy_entries(P3(const ref * dfrom, ref * dto, bool new_only));
+
 #define dict_copy(dfrom, dto) dict_copy_entries(dfrom, dto, false)
 #define dict_copy_new(dfrom, dto) dict_copy_entries(dfrom, dto, true)
 
@@ -139,25 +153,25 @@ int dict_copy_entries(P3(const ref *dfrom, ref *dto, bool new_only));
  * Grow or shrink a dictionary.
  * Return 0, e_dictfull, or e_VMerror.
  */
-int dict_resize(P2(ref *pdref, uint newmaxlength));
+int dict_resize(P2(ref * pdref, uint newmaxlength));
 
 /*
  * Grow a dictionary in the same way as dict_put does.
  * We export this for some special-case code in zop_def.
  */
-int dict_grow(P1(ref *pdref));
+int dict_grow(P1(ref * pdref));
 
 /*
  * Ensure that a dictionary uses the unpacked representation for keys.
  * (This is of no interest to ordinary clients.)
  */
-int dict_unpack(P1(ref *pdref));
+int dict_unpack(P1(ref * pdref));
 
 /*
  * Prepare to enumerate a dictionary.
  * Return an integer suitable for the first call to dict_next.
  */
-int dict_first(P1(const ref *pdref));
+int dict_first(P1(const ref * pdref));
 
 /*
  * Enumerate the next element of a dictionary.
@@ -166,7 +180,7 @@ int dict_first(P1(const ref *pdref));
  * and return an updated index, or return -1
  * to signal that there are no more elements in the dictionary.
  */
-int dict_next(P3(const ref *pdref, int index, ref *eltp));
+int dict_next(P3(const ref * pdref, int index, ref * eltp));
 
 /*
  * Given a value pointer return by dict_find, return an index that
@@ -174,14 +188,14 @@ int dict_next(P3(const ref *pdref, int index, ref *eltp));
  * be the same as the index returned by dict_next.)
  * The index is in the range [0..max_index-1].
  */
-int dict_value_index(P2(const ref *pdref, const ref *pvalue));
+int dict_value_index(P2(const ref * pdref, const ref * pvalue));
 
 /*
  * Given an index in [0..max_index-1], as returned by dict_value_index,
  * return the key and value, as returned by dict_next.
  * If the index designates an unoccupied entry, return e_undefined.
  */
-int dict_index_entry(P3(const ref *pdref, int index, ref *eltp));
+int dict_index_entry(P3(const ref * pdref, int index, ref * eltp));
 
 /*
  * The following are some internal details that are used in both the
@@ -196,13 +210,18 @@ int dict_index_entry(P3(const ref *pdref, int index, ref *eltp));
  * "huge" dictionaries (dictionaries whose size is larger than the largest
  * power of 2 less than dict_max_size) as a special case:
  *
- *	- If the top dictionary on the stack is huge, we set the dtop
- *	parameters so that the fast inline lookup will always fail.
+ *      - If the top dictionary on the stack is huge, we set the dtop
+ *      parameters so that the fast inline lookup will always fail.
  *
- *	- For general lookup, we use the slower hash_mod algorithm for
- *	huge dictionaries.
+ *      - For general lookup, we use the slower hash_mod algorithm for
+ *      huge dictionaries.
  */
 #define dict_max_non_huge ((uint)(max_array_size / 2 + 1))
+
+/* Define the hashing function for names. */
+/* We don't have to scramble the index, because */
+/* indices are assigned in a scattered order (see name_ref in iname.c). */
+#define dict_name_index_hash(nidx) (nidx)
 
 /* Hash an arbitrary non-negative or unsigned integer into a dictionary. */
 #define dict_hash_mod_rem(hash, size) ((hash) % (size))
@@ -216,6 +235,7 @@ int dict_index_entry(P3(const ref *pdref, int index, ref *eltp));
 /* Round up the requested size of a dictionary.  Return 0 if too big. */
 uint dict_round_size_small(P1(uint rsize));
 uint dict_round_size_large(P1(uint rsize));
+
 /* Choose the algorithms depending on the size of memory. */
 #if arch_small_memory
 #  define dict_hash_mod(h, s) dict_hash_mod_small(h, s)
@@ -238,3 +258,5 @@ uint dict_round_size_large(P1(uint rsize));
 #    define dict_round_size(s) dict_round_size_large(s)
 #  endif
 #endif
+
+#endif /* idict_INCLUDED */

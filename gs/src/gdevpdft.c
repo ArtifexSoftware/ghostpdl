@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpdft.c */
+/*Id: gdevpdft.c  */
 /* Text handling for PDF-writing driver. */
 #include "math_.h"
 #include "memory_.h"
@@ -58,14 +58,16 @@
 /*
  * The show pseudo-parameter is currently the way that the PostScript code
  * passes show operations to the PDF writer.  It is a hack!  Its "value"
- * is a dictionary with the following keys and values:
- *      /String (str)
- *      /Values [cx cy char ax ay px py]
- *      /FontName /fontname
- *      /Matrix [xx xy yx yy tx ty]
- *      /Encoding [e0 .. e255] (optional)
- *      /BaseEncoding [e0 ... e255] (optional)
- %      /CharStrings << charnames => anything >> (optional)
+ * is the string being shown.  The following other parameters must be "set"
+ * at the same time:
+ *      /showX px
+ *      /showY py
+ *      /showValues [{cx cy char} {ax ay}] (optional)
+ *      /showFontName /fontname
+ *      /showMatrix [xx xy yx yy tx ty]
+ *      /showEncoding [e0 .. e255] (optional)
+ *      /showBaseEncoding [e0 ... e255] (optional)
+ *      /showCharStrings << charnames => anything >> (optional)
  * Note that px/y and tx/y are floating point values in device space;
  * cx/y and ax/y are in text space.  The matrix is the concatenation of
  *      FontMatrix
@@ -79,7 +81,7 @@
  */
 
 /* Define the 14 standard built-in fonts. */
-private const char *standard_font_names[] =
+private const char *const standard_font_names[] =
 {
     "Courier", "Courier-Bold", "Courier-Oblique", "Courier-BoldOblique",
 "Helvetica", "Helvetica-Bold", "Helvetica-Oblique", "Helvetica-BoldOblique",
@@ -93,7 +95,7 @@ private const char *standard_font_names[] =
 private const char notdef_string[] = ".notdef";
 
 #define notdef notdef_string
-private const char *std_enc_strings[256] =
+private const char *const std_enc_strings[256] =
 {
   /* \00x */
     notdef, notdef, notdef, notdef, notdef, notdef, notdef, notdef,
@@ -160,25 +162,18 @@ private int pdf_set_text_matrix(P2(gx_device_pdf * pdev,
 private int pdf_append_chars(P3(gx_device_pdf * pdev, const byte * str,
 				uint size));
 private int pdf_check_encoding(P6(gx_device_pdf * pdev, gs_param_string * pstr,
-				  const gs_param_dict * ptd,
-				  byte * strbuf, int max_strbuf,
-				  pdf_font * ppf));
+				  gs_param_list * plist, byte * strbuf,
+				  int max_strbuf, pdf_font * ppf));
 
 /* Process a show operation. */
 int
-pdfshow_process(gx_device_pdf * pdev, const gs_param_dict * ptd)
+pdfshow_process(gx_device_pdf * pdev, gs_param_list * plist,
+		const gs_param_string * pts)
 {
-#define plist (ptd->list)
     gs_param_string str, fnstr;
     gs_param_float_array va;
-
-#define v_cx va.data[0]
-#define v_cy va.data[1]
-#define v_cch (int)va.data[2]
-#define v_ax va.data[3]
-#define v_ay va.data[4]
-#define v_px va.data[5]
-#define v_py va.data[6]
+    float v_cx = 0, v_cy = 0, v_ax = 0, v_ay = 0, v_px, v_py;
+    int v_cch = 32;
     gs_param_float_array ma;
     int code;
     pdf_font *ppf;
@@ -187,12 +182,11 @@ pdfshow_process(gx_device_pdf * pdev, const gs_param_dict * ptd)
     float size;
     byte strbuf[200];
 
-    if ((code = param_read_string(plist, "String", &str)))
-	return_error(gs_error_rangecheck);
+    str = *pts;
     if (str.size == 0)
 	return 0;		/* nothing to do */
     /* Find or create the font resource. */
-    if ((code = param_read_string(plist, "FontName", &fnstr)))
+    if ((code = param_read_string(plist, "showFontName", &fnstr)))
 	return_error(gs_error_rangecheck);
     {
 	int i;
@@ -213,7 +207,7 @@ pdfshow_process(gx_device_pdf * pdev, const gs_param_dict * ptd)
 	 * things in this order, we may wind up including some base
 	 * fonts that aren't actually needed, but it's unlikely.
 	 */
-	const char **ppfn;
+	const char *const *ppfn;
 
 	for (ppfn = standard_font_names; *ppfn; ++ppfn)
 	    if (strlen(*ppfn) == fnstr.size &&
@@ -240,18 +234,42 @@ pdfshow_process(gx_device_pdf * pdev, const gs_param_dict * ptd)
 	ppf->char_procs = 0;	/* for GC */
     }
     /* Check that all characters can be encoded. */
-    code = pdf_check_encoding(pdev, &str, ptd, strbuf, sizeof(strbuf), ppf);
+    code = pdf_check_encoding(pdev, &str, plist, strbuf, sizeof(strbuf), ppf);
     if (code < 0)
 	return code;
     /* Read and check the rest of the parameters now. */
-    if ((code = param_read_float_array(plist, "Values", &va)) ||
-	va.size != 7 ||
-	(code = param_read_float_array(plist, "Matrix", &ma)) ||
+    if ((code = param_read_float(plist, "showX", &v_px)) ||
+	(code = param_read_float(plist, "showY", &v_py)) ||
+	(code = param_read_float_array(plist, "showMatrix", &ma)) ||
 	ma.size != 6
 	)
 	return_error(gs_error_rangecheck);
-    if (v_cy != 0 || (v_cch != 32 && v_cx != 0) || v_ay != 0)
-	return_error(gs_error_undefined);
+    switch ((code = param_read_float_array(plist, "showValues", &va))) {
+	case 1:
+	    break;
+	default:
+	    return_error(code);
+	case 0:
+	    {
+		const float *vp = va.data;
+
+		switch (va.size) {
+		    case 3:
+			v_cx = vp[0], v_cy = vp[1], v_cch = (int)vp[2];
+			break;
+		    case 5:
+			v_cx = vp[0], v_cy = vp[1], v_cch = (int)vp[2];
+			vp += 3;
+		    case 2:
+		      a:v_ax = vp[0], v_ay = vp[1];
+			break;
+		    default:
+			return_error(gs_error_rangecheck);
+		}
+		if (v_cy != 0 || (v_cch != 32 && v_cx != 0) || v_ay != 0)
+		    return_error(gs_error_undefined);
+	    }
+    }
     /* Try to find a reasonable size value.  This isn't necessary, */
     /* but it's worth the effort. */
     size = fabs(ma.data[0]) / sx;
@@ -329,7 +347,7 @@ pdf_create_differences(gx_device_pdf * pdev, pdf_font * ppf)
  */
 private int
 pdf_check_encoding(gx_device_pdf * pdev, gs_param_string * pstr,
-   const gs_param_dict * ptd, byte * strbuf, int max_strbuf, pdf_font * ppf)
+       gs_param_list * plist, byte * strbuf, int max_strbuf, pdf_font * ppf)
 {
     gs_param_string_array ea, bea;
     int code;
@@ -337,7 +355,7 @@ pdf_check_encoding(gx_device_pdf * pdev, gs_param_string * pstr,
     uint i;
 
     ea.data = bea.data = 0;
-    switch ((code = param_read_name_array(ptd->list, "Encoding", &ea))) {
+    switch ((code = param_read_name_array(plist, "showEncoding", &ea))) {
 	default:
 	    return code;
 	case 0:
@@ -346,7 +364,7 @@ pdf_check_encoding(gx_device_pdf * pdev, gs_param_string * pstr,
 	case 1:
 	    DO_NOTHING;
     }
-    switch ((code = param_read_name_array(ptd->list, "BaseEncoding", &bea))) {
+    switch ((code = param_read_name_array(plist, "showBaseEncoding", &bea))) {
 	default:
 	    return code;
 	case 0:
@@ -385,7 +403,8 @@ pdf_check_encoding(gx_device_pdf * pdev, gs_param_string * pstr,
 
 	set_encoded(fedata, fesize, chr);
 	if (ea.data == 0)
-	    esize = strlen(edata = (const byte *)std_enc_strings[chr]);
+	    esize = strlen((const char *)
+			   (edata = (const byte *)std_enc_strings[chr]));
 	else
 	    edata = ea.data[chr].data, esize = ea.data[chr].size;
 	if (edata == fedata ||

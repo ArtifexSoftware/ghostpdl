@@ -1,29 +1,29 @@
-/* Copyright (C) 1992, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* shc.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: shc.h  */
 /* Common definitions for filters using Huffman coding */
-/* Requires scommon.h */
 
 #ifndef shc_INCLUDED
 #  define shc_INCLUDED
 
 #include "gsbittab.h"
+#include "scommon.h"
 
 /*
  * These definitions are valid for code lengths up to 16 bits
@@ -39,19 +39,19 @@
  * the code values in increasing lexicographic order (which will also
  * normally be decreasing code frequency).  Calling these two lists
  * L[1..M] and V[0..N-1] respectively, we have the following invariants:
- *	- 1 <= M <= max_hc_length, N >= 2.
- *	- L[0] = 0.
- *	- for i=1..M, L[i] >= 0.
- *	- sum(i=1..M: L[i]) = N.
- *	- sum(i=1..M: L[i] * 2^-i) = 1.
- *	- V[0..N-1] are a permutation of the integers 0..N-1.
+ *      - 1 <= M <= max_hc_length, N >= 2.
+ *      - L[0] = 0.
+ *      - for i=1..M, L[i] >= 0.
+ *      - sum(i=1..M: L[i]) = N.
+ *      - sum(i=1..M: L[i] * 2^-i) = 1.
+ *      - V[0..N-1] are a permutation of the integers 0..N-1.
  */
 #define max_hc_length 16
 typedef struct hc_definition_s {
-	ushort *counts;			/* [0..M] */
-	uint num_counts;		/* M */
-	ushort *values;			/* [0..N-1] */
-	uint num_values;		/* N */
+    ushort *counts;		/* [0..M] */
+    uint num_counts;		/* M */
+    ushort *values;		/* [0..N-1] */
+    uint num_values;		/* N */
 } hc_definition;
 
 /* ------ Common state ------ */
@@ -59,9 +59,9 @@ typedef struct hc_definition_s {
 /*
  * Define the common stream state for Huffman-coded filters.
  * Invariants when writing:
- *	0 <= bits_left <= hc_bits_size;
- *	Only the leftmost (hc_bits_size - bits_left) bits of bits
- *	  contain valid data.
+ *      0 <= bits_left <= hc_bits_size;
+ *      Only the leftmost (hc_bits_size - bits_left) bits of bits
+ *        contain valid data.
  */
 #define stream_hc_state_common\
 	stream_state_common;\
@@ -74,7 +74,7 @@ typedef struct hc_definition_s {
 				/* unused low bits (output) in above, */\
 				/* 0 <= bits_left <= 7 */
 typedef struct stream_hc_state_s {
-	stream_hc_state_common;
+    stream_hc_state_common;
 } stream_hc_state;
 
 #define hc_bits_size (arch_sizeof_int * 8)
@@ -87,14 +87,15 @@ typedef struct stream_hc_state_s {
 
 /* Define the structure for the encoding tables. */
 typedef struct hce_code_s {
-	ushort code;
-	ushort code_length;
+    ushort code;
+    ushort code_length;
 } hce_code;
+
 #define hce_entry(c, len) { c, len }
 
 typedef struct hce_table_s {
-	uint count;
-	hce_code *codes;
+    uint count;
+    hce_code *codes;
 } hce_table;
 
 #define hce_bits_available(n)\
@@ -110,11 +111,11 @@ typedef struct hce_table_s {
 #ifdef DEBUG
 #  define hc_print_value(code, clen)\
     (gs_debug_c('W') ?\
-     (dprintf2("[W]0x%x,%d\n", code, clen), 0) : 0)
-#  define hc_print_value_then(code, clen) hc_print_value(code, clen), 
+     (dlprintf2("[W]0x%x,%d\n", code, clen), 0) : 0)
+#  define hc_print_value_then(code, clen) hc_print_value(code, clen),
 #else
 #  define hc_print_value(code, clen) 0
-#  define hc_print_value_then(code, clen) /* */
+#  define hc_print_value_then(code, clen)	/* */
 #endif
 #define hc_print_code(rp) hc_print_value((rp)->code, (rp)->code_length)
 
@@ -135,6 +136,7 @@ typedef struct hce_table_s {
 
 /* Put a code on the stream. */
 void hc_put_code_proc(P3(bool, byte *, uint));
+
 #define hc_put_value(ss, q, code, clen)\
   (hc_print_value_then(code, clen)\
    ((bits_left -= (clen)) >= 0 ?\
@@ -151,6 +153,7 @@ void hc_put_code_proc(P3(bool, byte *, uint));
  * Note that this does a store_state, but not a load_state.
  */
 byte *hc_put_last_bits_proc(P4(stream_hc_state *, byte *, uint, int));
+
 #define hc_put_last_bits(ss, q)\
   hc_put_last_bits_proc(ss, q, bits, bits_left)
 
@@ -159,24 +162,24 @@ byte *hc_put_last_bits_proc(P4(stream_hc_state *, byte *, uint, int));
 /*
  * Define the structure for the decoding tables.
  * First-level nodes are either leaves, which have
- *	value = decoded value
- *	code_length <= initial_bits
+ *      value = decoded value
+ *      code_length <= initial_bits
  * or non-leaves, which have
- *	value = the index of a sub-table
- *	code_length = initial_bits + the number of additional dispatch bits
+ *      value = the index of a sub-table
+ *      code_length = initial_bits + the number of additional dispatch bits
  * Second-level nodes are always leaves, with
- *	code_length = the actual number of bits in the code - initial_bits.
+ *      code_length = the actual number of bits in the code - initial_bits.
  */
 
 typedef struct hcd_code_s {
-	short value;
-	ushort code_length;
+    short value;
+    ushort code_length;
 } hcd_code;
 
 typedef struct hcd_table_s {
-	uint count;
-	uint initial_bits;
-	hcd_code *codes;
+    uint count;
+    uint initial_bits;
+    hcd_code *codes;
 } hcd_table;
 
 /* Declare variables that hold the decoder state. */
@@ -222,7 +225,7 @@ typedef struct hcd_table_s {
   }
 #if hc_bits_size == 16
 #  define hcd_more_bits(outl) hcd_more_bits_1(outl)
-#else				/* hc_bits_size >= 32 */
+#else /* hc_bits_size >= 32 */
 #  define hcd_more_bits(outl)\
   { if ( rlimit - p < 3 ) hcd_more_bits_1(outl)\
     else\
@@ -242,4 +245,4 @@ typedef struct hcd_table_s {
 
 #define hcd_skip_bits(n) (bits_left -= (n))
 
-#endif					/* shc_INCLUDED */
+#endif /* shc_INCLUDED */

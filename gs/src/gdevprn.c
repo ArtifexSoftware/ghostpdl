@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevprn.c */
+/*Id: gdevprn.c  */
 /* Generic printer driver support */
 #include "ctype_.h"
 #include "gdevprn.h"
@@ -34,13 +34,13 @@
 #define pcrdev (&((gx_device_clist *)pdev)->reader)
 
 /* Define the standard printer procedure vector. */
-gx_device_procs prn_std_procs =
-prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
+const gx_device_procs prn_std_procs =
+    prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
 
-/* --------------- Forward decl's ------------------------- */
-int gdev_prn_reallocate_memory(P4(gx_device_printer *,
-				  gdev_prn_space_params *, int, int));
-
+/* Forward references */
+int gdev_prn_maybe_reallocate_memory(P4(gx_device_printer *pdev, 
+					gdev_prn_space_params *old_space,
+					int old_width, int old_height));
 
 /* ------ Open/close ------ */
 
@@ -52,8 +52,7 @@ gdev_prn_open(gx_device * pdev)
     int code;
 
     ppdev->file = NULL;
-    code
-	= gdev_prn_allocate_memory(pdev, gdev_prn_allocate_allocate, 0, 0, 0);
+    code = gdev_prn_allocate_memory(pdev, NULL, 0, 0);
     if (code < 0)
 	return code;
     if (ppdev->OpenOutputFile)
@@ -66,7 +65,7 @@ gdev_prn_open(gx_device * pdev)
 int
 gdev_prn_close(gx_device * pdev)
 {
-    gdev_prn_allocate_memory(pdev, gdev_prn_allocate_free, 0, 0, 0);
+    gdev_prn_free_memory(pdev);
     if (ppdev->file != NULL) {
 	if (ppdev->file != stdout)
 	    gp_close_printer(ppdev->file, ppdev->fname);
@@ -75,55 +74,57 @@ gdev_prn_close(gx_device * pdev)
     return 0;
 }
 
-private int			/* returns 0 ok, else -ve error cde */
-gdev_prn_setup_as_command_list(gx_device * pdev, gs_memory_t * buffer_memory,
-	     byte ** the_memory, const gdev_prn_space_params * space_params,
+private int		/* returns 0 ok, else -ve error cde */
+gdev_prn_setup_as_command_list(gx_device *pdev, gs_memory_t *buffer_memory,
+			       byte **the_memory,
+			       const gdev_prn_space_params *space_params,
 			       bool bufferSpace_is_exact)
 {
     uint space;
     int code;
-    gx_device_clist *const pclist_dev = (gx_device_clist *) pdev;
+    gx_device_clist *const pclist_dev = (gx_device_clist *)pdev;
     bool reallocate = *the_memory != 0;
     byte *base;
 
     /* Try to allocate based simply on param-requested buffer size */
-    for (space = space_params->BufferSpace;;) {
-	base = reallocate
-	    ? gs_resize_object(buffer_memory, *the_memory, space,
-			       "cmd list buffer")
-	    : gs_alloc_bytes(buffer_memory, space,
-			     "cmd list buffer");
+    for ( space = space_params->BufferSpace; ; ) {
+	base = (reallocate ?
+		gs_resize_object(buffer_memory, *the_memory, space,
+				 "cmd list buffer") :
+		gs_alloc_bytes(buffer_memory, space,
+			       "cmd list buffer"));
 	if (base != 0)
 	    break;
 	if (bufferSpace_is_exact || (space >>= 1) < PRN_MIN_BUFFER_SPACE)
 	    break;
     }
     if (base == 0)
-	return (gs_error_VMerror);
-    else
-	*the_memory = base;
+	return_error(gs_error_VMerror);
+    *the_memory = base;
 
     /* Try opening the command list, to see if we allocated */
     /* enough buffer space. */
-  open_c:
+open_c:
     ppdev->buf = base;
     ppdev->buffer_space = space;
-
     clist_init_params(pclist_dev, base, space, pdev,
 		      ppdev->printer_procs.make_buffer_device,
 		      space_params->band, ppdev->is_async_renderer,
-		      ppdev->bandlist_memory == 0 ? &gs_memory_default : ppdev->bandlist_memory,
-		 ppdev->free_up_bandlist_memory, ppdev->clist_disable_mask);
-    code = (*gs_clist_device_procs.open_device) ((gx_device *) pcldev);
-    if (code < 0) {		/* If there wasn't enough room, and we haven't */
+		      (ppdev->bandlist_memory == 0 ? &gs_memory_default :
+		       ppdev->bandlist_memory),
+		      ppdev->free_up_bandlist_memory,
+		      ppdev->clist_disable_mask);
+    code = (*gs_clist_device_procs.open_device)( (gx_device *)pcldev );
+    if (code < 0) {
+	/* If there wasn't enough room, and we haven't */
 	/* already shrunk the buffer, try enlarging it. */
-	if (code == gs_error_limitcheck &&
-	    space >= space_params->BufferSpace &&
-	    !bufferSpace_is_exact
-	    ) {
+	if ( code == gs_error_limitcheck &&
+	     space >= space_params->BufferSpace &&
+	     !bufferSpace_is_exact
+	     ) {
 	    space <<= 1;
 	    if (reallocate) {
-		base = gs_resize_object(buffer_memory,
+		base = gs_resize_object(buffer_memory, 
 					*the_memory, space,
 					"cmd list buf(retry open)");
 		if (base != 0)
@@ -131,9 +132,9 @@ gdev_prn_setup_as_command_list(gx_device * pdev, gs_memory_t * buffer_memory,
 	    } else {
 		gs_free_object(buffer_memory, base,
 			       "cmd list buf(retry open)");
-		*the_memory =
-		    base = gs_alloc_bytes(buffer_memory, space,
-					  "cmd list buf(retry open)");
+		*the_memory = base =
+		    gs_alloc_bytes(buffer_memory, space,
+				   "cmd list buf(retry open)");
 	    }
 	    ppdev->buf = *the_memory;
 	    if (base != 0)
@@ -149,18 +150,20 @@ gdev_prn_setup_as_command_list(gx_device * pdev, gs_memory_t * buffer_memory,
     return code;
 }
 
-private bool			/* ret true if device was cmd list, else false */
-gdev_prn_tear_down(gx_device * pdev, byte ** the_memory)
+private bool	/* ret true if device was cmd list, else false */
+gdev_prn_tear_down(gx_device *pdev, byte **the_memory)
 {
     bool is_command_list;
 
-    if (ppdev->buffer_space != 0) {	/* Close cmd list device & point to the storage */
-	(*gs_clist_device_procs.close_device) ((gx_device *) pcldev);
+    if (ppdev->buffer_space != 0) {
+	/* Close cmd list device & point to the storage */
+	(*gs_clist_device_procs.close_device)( (gx_device *)pcldev );
 	*the_memory = ppdev->buf;
 	ppdev->buf = 0;
 	ppdev->buffer_space = 0;
 	is_command_list = true;
-    } else {			/* point at the device bitmap, no need to close mem dev */
+    } else {
+	/* point at the device bitmap, no need to close mem dev */
 	*the_memory = pmemdev->base;
 	pmemdev->base = 0;
 	is_command_list = false;
@@ -168,16 +171,15 @@ gdev_prn_tear_down(gx_device * pdev, byte ** the_memory)
 
     /* Reset device proc vector to default */
     if (ppdev->orig_procs.open_device != 0)
-	pdev->std_procs = ppdev->orig_procs;
-    ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of std_procs */
+	pdev->procs = ppdev->orig_procs;
+    ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
 
     return is_command_list;
 }
 
-int				/* ret 0 ok, -ve error code */
-gdev_prn_allocate_memory(gx_device * pdev,
-  gdev_prn_allocate_action action, gdev_prn_space_params * new_space_params,
-			 int new_width, int new_height)
+private int
+gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
+		  int new_width, int new_height, bool reallocate)
 {
     byte *the_memory = 0;
     gdev_prn_space_params save_params;
@@ -186,28 +188,25 @@ gdev_prn_allocate_memory(gx_device * pdev,
     bool save_is_command_list;
     int ecode = 0;
     int pass;
-    int reallocate = (action == gdev_prn_allocate_reallocate);
-    gs_memory_t *buffer_memory
-    = ppdev->buffer_memory == 0 ? &gs_memory_default : ppdev->buffer_memory;
+    gs_memory_t *buffer_memory =
+	(ppdev->buffer_memory == 0 ? &gs_memory_default :
+	 ppdev->buffer_memory);
 
-    /* Free or reallocate: find allocated memory & tear down buffer device */
-    if (action == gdev_prn_allocate_free || action == gdev_prn_allocate_reallocate) {
+    /* If reallocate, find allocated memory & tear down buffer device */
+    if (reallocate)
 	save_is_command_list = gdev_prn_tear_down(pdev, &the_memory);
-	if (action == gdev_prn_allocate_free) {		/* Free allocated memory for good */
-	    gs_free_object(buffer_memory, the_memory, "print buffer(close)");
-	    return 0;
-	}
-    }
+
     /* Re/allocate memory */
-    ppdev->orig_procs = pdev->std_procs;
-    for (pass = 1; pass <= (reallocate ? 2 : 1); ++pass) {
+    ppdev->orig_procs = pdev->procs;
+    for ( pass = 1; pass <= (reallocate ? 2 : 1); ++pass ) {
 	ulong mem_space;
 	byte *base = 0;
 	int bufferSpace_is_default = false;
 	gdev_prn_space_params space_params = ppdev->space_params;
 
 	if (reallocate)
-	    switch (pass) {
+	    switch (pass)
+	        {
 		case 1:
 		    /* Setup device to get reallocated */
 		    save_params = ppdev->space_params;
@@ -223,7 +222,8 @@ gdev_prn_allocate_memory(gx_device * pdev,
 		    ppdev->width = save_width;
 		    ppdev->height = save_height;
 		    break;
-	    }
+	        }
+
 	/* Init clist/mem device-specific fields */
 	memset(ppdev->skip, 0, sizeof(ppdev->skip));
 	mem_space = gdev_mem_bitmap_size(pmemdev);
@@ -231,66 +231,71 @@ gdev_prn_allocate_memory(gx_device * pdev,
 	/* Compute desired space params: never use the space_params as-is. */
 	/* Rather, give the dev-specific driver a chance to adjust them. */
 	space_params.BufferSpace = 0;
-	(*ppdev->printer_procs.get_space_params) (ppdev, &space_params);
+	(*ppdev->printer_procs.get_space_params)(ppdev, &space_params);
 	if (ppdev->is_async_renderer && space_params.band.BandBufferSpace != 0)
 	    space_params.BufferSpace = space_params.band.BandBufferSpace;
-	else if (space_params.BufferSpace == 0)
+	else if (space_params.BufferSpace == 0) {
 	    if (space_params.band.BandBufferSpace > 0)
-		space_params.BufferSpace = space_params.band.BandBufferSpace;
+	        space_params.BufferSpace = space_params.band.BandBufferSpace;
 	    else {
 		space_params.BufferSpace = PRN_BUFFER_SPACE;
 		bufferSpace_is_default = true;
 	    }
+	}
+
 	/* Determine if we can use a full bitmap buffer, or have to use banding */
 	if (pass > 1)
 	    is_command_list = save_is_command_list;
 	else {
 	    is_command_list = space_params.banding_type == BandingAlways ||
 		mem_space >= space_params.MaxBitmap ||
-		mem_space != (uint) mem_space;	/* too big to allocate */
+		mem_space != (uint)mem_space;	    /* too big to allocate */
 	}
-	if (!is_command_list) {	/* Try to allocate memory for full memory buffer */
+	if (!is_command_list) {
+	    /* Try to allocate memory for full memory buffer */
 	    base = reallocate
-		? gs_resize_object(buffer_memory, the_memory,
-				   (uint) mem_space, "printer buffer")
-		: gs_alloc_bytes(buffer_memory, (uint) mem_space,
-				 "printer_buffer");
+		? gs_resize_object( buffer_memory, the_memory,
+				    (uint)mem_space, "printer buffer" )
+		: gs_alloc_bytes( buffer_memory, (uint)mem_space,
+				  "printer_buffer" );
 	    if (base == 0)
 		is_command_list = true;
 	    else
 		the_memory = base;
 	}
 	if (!is_command_list && pass == 1 && PRN_MIN_MEMORY_LEFT != 0
-	    && buffer_memory == &gs_memory_default) {	/* before using full memory buffer, ensure enough working mem left */
-	    byte *left = gs_alloc_bytes(buffer_memory,
-				   PRN_MIN_MEMORY_LEFT, "printer mem left");
-
+	    && buffer_memory == &gs_memory_default) {
+	    /* before using full memory buffer, ensure enough working mem left */
+	    byte * left = gs_alloc_bytes( buffer_memory,
+					  PRN_MIN_MEMORY_LEFT, "printer mem left");
 	    if (left == 0)
 		is_command_list = true;
 	    else
 		gs_free_object(buffer_memory, left, "printer mem left");
 	}
-	if (is_command_list) {	/* Buffer the image in a command list. */
+
+	if (is_command_list) {
+	    /* Buffer the image in a command list. */
 	    /* Release the buffer if we allocated it. */
 	    int code;
-
 	    if (!reallocate) {
 		gs_free_object(buffer_memory, the_memory,
 			       "printer buffer(open)");
 		the_memory = 0;
 	    }
 	    if (space_params.banding_type == BandingNever) {
-		ecode = gs_error_VMerror;
+		ecode = gs_note_error(gs_error_VMerror);
 		continue;
 	    }
 	    code = gdev_prn_setup_as_command_list(pdev, buffer_memory,
-		       &the_memory, &space_params, !bufferSpace_is_default);
+						  &the_memory, &space_params, !bufferSpace_is_default);
 	    if (ecode == 0)
 		ecode = code;
 
-	    if (code >= 0 || (reallocate && pass > 1))
-		ppdev->std_procs = gs_clist_device_procs;
-	} else {		/* Render entirely in memory. */
+	    if ( code >= 0 || (reallocate && pass > 1) )
+		ppdev->procs = gs_clist_device_procs;
+	} else {
+	    /* Render entirely in memory. */
 	    int code;
 
 	    ppdev->buffer_space = 0;
@@ -298,8 +303,8 @@ gdev_prn_allocate_memory(gx_device * pdev,
 		(pmemdev, pdev, buffer_memory, false);
 	    if (code < 0) {	/* Catastrophic. Shouldn't ever happen */
 		gs_free_object(buffer_memory, base, "printer buffer");
-		pdev->std_procs = ppdev->orig_procs;
-		ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of std_procs */
+		pdev->procs = ppdev->orig_procs;
+		ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
 		return_error(code);
 	    }
 	    pmemdev->base = base;
@@ -308,45 +313,77 @@ gdev_prn_allocate_memory(gx_device * pdev,
 	    break;
     }
 
-    if (ecode >= 0 || reallocate) {	/* even if realloc failed *//* Synthesize the procedure vector. */
+    if (ecode >= 0 || reallocate) {	/* even if realloc failed */
+	/* Synthesize the procedure vector. */
 	/* Rendering operations come from the memory or clist device, */
 	/* non-rendering come from the printer device. */
-#define copy_proc(p) set_dev_proc(ppdev, p, ppdev->orig_procs.p)
-	copy_proc(get_initial_matrix);
-	copy_proc(output_page);
-	copy_proc(close_device);
-	copy_proc(map_rgb_color);
-	copy_proc(map_color_rgb);
-	copy_proc(get_params);
-	copy_proc(put_params);
-	copy_proc(map_cmyk_color);
-	copy_proc(get_xfont_procs);
-	copy_proc(get_xfont_device);
-	copy_proc(map_rgb_alpha_color);
+#define COPY_PROC(p) set_dev_proc(ppdev, p, ppdev->orig_procs.p)
+	COPY_PROC(get_initial_matrix);
+	COPY_PROC(output_page);
+	COPY_PROC(close_device);
+	COPY_PROC(map_rgb_color);
+	COPY_PROC(map_color_rgb);
+	COPY_PROC(get_params);
+	COPY_PROC(put_params);
+	COPY_PROC(map_cmyk_color);
+	COPY_PROC(get_xfont_procs);
+	COPY_PROC(get_xfont_device);
+	COPY_PROC(map_rgb_alpha_color);
 	/* All printers are page devices, even if they didn't use the */
 	/* standard macros for generating their procedure vectors. */
 	set_dev_proc(ppdev, get_page_device, gx_page_device_get_page_device);
-	copy_proc(get_alpha_bits);
-	copy_proc(get_clipping_box);
-	copy_proc(get_hardware_params);
-#undef copy_proc
+	COPY_PROC(get_alpha_bits);
+	COPY_PROC(get_clipping_box);
+	COPY_PROC(map_color_rgb_alpha);
+	COPY_PROC(get_hardware_params);
+#undef COPY_PROC
 	/* If using a command list, already opened the device. */
 	if (is_command_list)
 	    return ecode;
 	else
-	    return (*dev_proc(pdev, open_device)) (pdev);
+	    return (*dev_proc(pdev, open_device))(pdev);
     } else {
-	pdev->std_procs = ppdev->orig_procs;
-	ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of std_procs */
+	pdev->procs = ppdev->orig_procs;
+	ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
 	return ecode;
     }
 }
 
+int
+gdev_prn_allocate_memory(gx_device *pdev,
+			 gdev_prn_space_params *new_space_params,
+			 int new_width, int new_height)
+{
+    return gdev_prn_allocate(pdev, new_space_params,
+			     new_width, new_height, false);
+}
 
+int
+gdev_prn_reallocate_memory(gx_device *pdev,
+			 gdev_prn_space_params *new_space_params,
+			 int new_width, int new_height)
+{
+    return gdev_prn_allocate(pdev, new_space_params,
+			     new_width, new_height, true);
+}
+
+int
+gdev_prn_free_memory(gx_device *pdev)
+{
+	byte *the_memory = 0;
+	gs_memory_t *buffer_memory =
+	    (ppdev->buffer_memory == 0 ? &gs_memory_default :
+	     ppdev->buffer_memory);
+
+	gdev_prn_tear_down(pdev, &the_memory);
+	gs_free_object(buffer_memory, the_memory, "gdev_prn_free_memory");
+	return 0;
+}
 
 /* ------------- Stubs related only to async rendering ------- */
-int				/* rets 0 ok, -ve error if couldn't start thread */
-gx_default_start_render_thread(gdev_prn_start_render_params * params)
+
+int	/* rets 0 ok, -ve error if couldn't start thread */
+gx_default_start_render_thread(gdev_prn_start_render_params *params)
 {
     return gs_error_unknownerror;
 }
@@ -354,16 +391,16 @@ gx_default_start_render_thread(gdev_prn_start_render_params * params)
 /* Open the renderer's copy of a device. */
 /* This is overriden in gdevprna.c */
 int
-gx_default_open_render_device(gx_device_printer * pdev)
+gx_default_open_render_device(gx_device_printer *pdev)
 {
     return gs_error_unknownerror;
 }
 
 /* Close the renderer's copy of a device. */
 int
-gx_default_close_render_device(gx_device_printer * pdev)
+gx_default_close_render_device(gx_device_printer *pdev)
 {
-    return gdev_prn_close((gx_device *) pdev);
+    return gdev_prn_close( (gx_device *)pdev );
 }
 
 /* ------ Get/put parameters ------ */
@@ -382,10 +419,8 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 	(code = param_write_int(plist, "BandWidth", &ppdev->space_params.band.BandWidth)) < 0 ||
 	(code = param_write_int(plist, "BandHeight", &ppdev->space_params.band.BandHeight)) < 0 ||
 	(code = param_write_long(plist, "BandBufferSpace", &ppdev->space_params.band.BandBufferSpace)) < 0 ||
-	(code = (ppdev->NumCopies_set ?
-		 param_write_int(plist, "NumCopies", &ppdev->NumCopies) :
-		 param_write_null(plist, "NumCopies"))) < 0 ||
 	(code = param_write_bool(plist, "OpenOutputFile", &ppdev->OpenOutputFile)) < 0 ||
+	(code = param_write_bool(plist, "ReopenPerPage", &ppdev->ReopenPerPage)) < 0 ||
 	(ppdev->Duplex_set >= 0 &&
 	 (code = (ppdev->Duplex_set ?
 		  param_write_bool(plist, "Duplex", &ppdev->Duplex) :
@@ -399,17 +434,68 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
     return param_write_string(plist, "OutputFile", &ofns);
 }
 
+/* Validate an OutputFile name by checking any %-formats. */
+private int
+validate_output_file(const gs_param_string * ofs)
+{
+    const byte *data = ofs->data;
+    uint size = ofs->size;
+    bool have_format = false;
+    uint i;
+
+    if (size >= prn_fname_sizeof)
+	return_error(gs_error_limitcheck);
+    for (i = 0; i < size; ++i)
+	if (data[i] == '%') {
+	    if (i + 1 < size && data[i + 1] == '%')
+		continue;
+	    if (have_format)	/* more than one % */
+		return_error(gs_error_rangecheck);
+	    have_format = true;
+	  sw:if (++i == size)
+		return_error(gs_error_rangecheck);
+	    switch (data[i]) {
+		case ' ':
+		case '#':
+		case '+':
+		case '-':
+		case '.':
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+		case 'l':
+		    goto sw;
+		case 'd':
+		case 'i':
+		case 'u':
+		case 'o':
+		case 'x':
+		case 'X':
+		    continue;
+		default:
+		    return_error(gs_error_rangecheck);
+	    }
+	}
+    return 0;
+}
+
 /* Put parameters. */
 int
 gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 {
     int ecode = 0;
     int code;
-    const char _ds *param_name;
+    const char *param_name;
     bool is_open = pdev->is_open;
-    int nci = ppdev->NumCopies;
-    bool ncset = ppdev->NumCopies_set;
     bool oof = ppdev->OpenOutputFile;
+    bool rpp = ppdev->ReopenPerPage;
     bool duplex;
     int duplex_set = -1;
     int width = pdev->width;
@@ -420,27 +506,17 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 
     sp = ppdev->space_params;
     save_sp = sp;
-    switch (code = param_read_int(plist, (param_name = "NumCopies"), &nci)) {
-	case 0:
-	    if (nci < 0)
-		ecode = gs_error_rangecheck;
-	    else {
-		ncset = true;
-		break;
-	    }
-	    goto nce;
+
+    switch (code = param_read_bool(plist, (param_name = "OpenOutputFile"), &oof)) {
 	default:
-	    if ((code = param_read_null(plist, param_name)) == 0) {
-		ncset = false;
-		break;
-	    }
-	    ecode = code;	/* can't be 1 */
-	  nce:param_signal_error(plist, param_name, ecode);
+	    ecode = code;
+	    param_signal_error(plist, param_name, ecode);
+	case 0:
 	case 1:
 	    break;
     }
 
-    switch (code = param_read_bool(plist, (param_name = "OpenOutputFile"), &oof)) {
+    switch (code = param_read_bool(plist, (param_name = "ReopenPerPage"), &rpp)) {
 	default:
 	    ecode = code;
 	    param_signal_error(plist, param_name, ecode);
@@ -465,95 +541,49 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
 	    case 1:
 		;
 	}
-#define CHECK_PARAM_CASES(bad, label)\
-    case 0: if ( bad ) ecode = gs_error_rangecheck; else break; goto label;\
-    default: ecode = code;\
-  label: param_signal_error(plist, param_name, ecode);\
-    case 1: break
+#define CHECK_PARAM_CASES(member, bad, label)\
+    case 0:\
+	if ((sp.params_are_read_only ? sp.member != save_sp.member : bad))\
+	    ecode = gs_error_rangecheck;\
+	else\
+	    break;\
+	goto label;\
+    default:\
+	ecode = code;\
+label:\
+	param_signal_error(plist, param_name, ecode);\
+    case 1:\
+	break
 
     switch (code = param_read_long(plist, (param_name = "MaxBitmap"), &sp.MaxBitmap)) {
-	    CHECK_PARAM_CASES((sp.params_are_read_only
-			       ? sp.MaxBitmap != save_sp.MaxBitmap : sp.MaxBitmap < 10000), mbe);
+	CHECK_PARAM_CASES(MaxBitmap, sp.MaxBitmap < 10000, mbe);
     }
 
     switch (code = param_read_long(plist, (param_name = "BufferSpace"), &sp.BufferSpace)) {
-	    CHECK_PARAM_CASES((sp.params_are_read_only
-			       ? sp.BufferSpace != save_sp.BufferSpace : sp.BufferSpace < 10000), bse);
+	CHECK_PARAM_CASES(BufferSpace, sp.BufferSpace < 10000, bse);
     }
 
     switch (code = param_read_int(plist, (param_name = "BandWidth"), &sp.band.BandWidth)) {
-	    CHECK_PARAM_CASES((sp.params_are_read_only
-			       ? sp.band.BandWidth != save_sp.band.BandWidth : sp.band.BandWidth < 0),
-			      bwe);
+	CHECK_PARAM_CASES(band.BandWidth, sp.band.BandWidth < 0, bwe);
     }
 
     switch (code = param_read_int(plist, (param_name = "BandHeight"), &sp.band.BandHeight)) {
-	    CHECK_PARAM_CASES((sp.params_are_read_only
-			       ? sp.band.BandHeight != save_sp.band.BandHeight : sp.band.BandHeight < 0),
-			      bhe);
+	CHECK_PARAM_CASES(band.BandHeight, sp.band.BandHeight < 0, bhe);
     }
 
     switch (code = param_read_long(plist, (param_name = "BandBufferSpace"), &sp.band.BandBufferSpace)) {
-	    CHECK_PARAM_CASES((sp.params_are_read_only
-		   ? sp.band.BandBufferSpace != save_sp.band.BandBufferSpace
-			       : sp.band.BandBufferSpace < 0), bbse);
+	CHECK_PARAM_CASES(band.BandBufferSpace, sp.band.BandBufferSpace < 0, bbse);
     }
-#undef CHECK_PARAM_CASES
 
     switch (code = param_read_string(plist, (param_name = "OutputFile"), &ofs)) {
 	case 0:
-	    if (ofs.size >= prn_fname_sizeof)
-		ecode = gs_error_limitcheck;
-	    else {		/* Check the validity of any % formats. */
-		uint i;
-		bool pagenum = false;
-
-		for (i = 0; i < ofs.size; ++i)
-		    if (ofs.data[i] == '%') {
-			if (i + 1 < ofs.size && ofs.data[i + 1] == '%')
-			    continue;
-			if (pagenum)	/* more than one %, */
-			    i = ofs.size - 1;	/* force error */
-			pagenum = true;
-		      sw:if (++i == ofs.size) {
-			    ecode = gs_error_rangecheck;
-			    goto ofe;
-			}
-			switch (ofs.data[i]) {
-			    case ' ':
-			    case '#':
-			    case '+':
-			    case '-':
-			    case '0':
-			    case '1':
-			    case '2':
-			    case '3':
-			    case '4':
-			    case '5':
-			    case '6':
-			    case '7':
-			    case '8':
-			    case '9':
-			    case 'l':
-				goto sw;
-			    case 'd':
-			    case 'i':
-			    case 'u':
-			    case 'o':
-			    case 'x':
-			    case 'X':
-				continue;
-			    default:
-				ecode = gs_error_rangecheck;
-				goto ofe;
-			}
-		    }
+	    code = validate_output_file(&ofs);
+	    if (code >= 0)
 		break;
-	    }
-	    goto ofe;
+	    /* falls through */
 	default:
 	    ecode = code;
-	  ofe:param_signal_error(plist, param_name, ecode);
+	    param_signal_error(plist, param_name, ecode);
 	case 1:
 	    ofs.data = 0;
 	    break;
@@ -586,9 +616,8 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     if (code < 0)
 	return code;
 
-    ppdev->NumCopies = nci;
-    ppdev->NumCopies_set = ncset;
     ppdev->OpenOutputFile = oof;
+    ppdev->ReopenPerPage = rpp;
     if (duplex_set >= 0) {
 	ppdev->Duplex = duplex;
 	ppdev->Duplex_set = duplex_set;
@@ -596,16 +625,17 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     ppdev->space_params = sp;
 
     /* If necessary, free and reallocate the printer memory. */
-    /* Will not reallocate if device is not open */
-    code = gdev_prn_reallocate_memory(ppdev, &save_sp, width, height);
+    /* Will not reallocate if device is not open. */
+    code = gdev_prn_maybe_reallocate_memory(ppdev, &save_sp, width, height);
     if (code < 0)
 	return code;
 
-    /* If filename changed, close file */
+    /* If filename changed, close file. */
     if (ofs.data != 0 &&
 	bytes_compare(ofs.data, ofs.size,
 		      (const byte *)ppdev->fname, strlen(ppdev->fname))
-	) {			/* Close the file if it's open. */
+	) {
+	/* Close the file if it's open. */
 	if (ppdev->file != NULL && ppdev->file != stdout)
 	    gp_close_printer(ppdev->file, ppdev->fname);
 	ppdev->file = NULL;
@@ -623,109 +653,21 @@ gdev_prn_put_params(gx_device * pdev, gs_param_list * plist)
     return 0;
 }
 
-/* Put InputAttributes and OutputAttributes. */
-int
-gdev_prn_input_page_size(int index, gs_param_dict * pdict,
-			 floatp width_points, floatp height_points)
-{
-    input_media media;
-
-    media.PageSize[0] = width_points;
-    media.PageSize[1] = height_points;
-    media.MediaColor = 0;
-    media.MediaWeight = 0;
-    media.MediaType = 0;
-    return gdev_prn_input_media(index, pdict, &media);
-}
-private int
-finish_media(gs_param_list * mlist, gs_param_name key, const char *media_type)
-{
-    int code = 0;
-
-    if (media_type != 0) {
-	gs_param_string as;
-
-	param_string_from_string(as, media_type);
-	code = param_write_string(mlist, key, &as);
-    }
-    return code;
-}
-int
-gdev_prn_input_media(int index, gs_param_dict * pdict, const input_media * pim)
-{
-    char key[25];
-    gs_param_dict mdict;
-    int code;
-    gs_param_string as;
-
-    sprintf(key, "%d", index);
-    mdict.size = 4;
-    code = param_begin_write_dict(pdict->list, key, &mdict, false);
-    if (code < 0)
-	return code;
-    if (pim->PageSize[0] != 0 && pim->PageSize[1] != 0) {
-	gs_param_float_array psa;
-
-	psa.data = pim->PageSize, psa.size = 2, psa.persistent = false;
-	code = param_write_float_array(mdict.list, "PageSize",
-				       &psa);
-	if (code < 0)
-	    return code;
-    }
-    if (pim->MediaColor != 0) {
-	param_string_from_string(as, pim->MediaColor);
-	code = param_write_string(mdict.list, "MediaColor",
-				  &as);
-	if (code < 0)
-	    return code;
-    }
-    if (pim->MediaWeight != 0) {	/* We do the following silly thing in order to avoid */
-	/* having to work around the 'const' in the arg list. */
-	float weight = pim->MediaWeight;
-
-	code = param_write_float(mdict.list, "MediaWeight",
-				 &weight);
-	if (code < 0)
-	    return code;
-    }
-    code = finish_media(mdict.list, "MediaType", pim->MediaType);
-    if (code < 0)
-	return code;
-    return param_end_write_dict(pdict->list, key, &mdict);
-}
-int
-gdev_prn_output_media(int index, gs_param_dict * pdict, const output_media * pom)
-{
-    char key[25];
-    gs_param_dict mdict;
-    int code;
-
-    sprintf(key, "%d", index);
-    mdict.size = 4;
-    code = param_begin_write_dict(pdict->list, key, &mdict, false);
-    if (code < 0)
-	return code;
-    code = finish_media(mdict.list, "OutputType", pom->OutputType);
-    if (code < 0)
-	return code;
-    return param_end_write_dict(pdict->list, key, &mdict);
-}
-
 /* ------ Others ------ */
 
-/* Default routines to override current space_params */
+/* Default routine to (not) override current space_params. */
 void
-gdev_prn_default_get_space_params(const gx_device_printer * printer_dev,
-				  gdev_prn_space_params * space_params)
+gdev_prn_default_get_space_params(const gx_device_printer *printer_dev,
+				  gdev_prn_space_params *space_params)
 {
     return;
 }
 
 /* Generic routine to send the page to the printer. */
-int				/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
+int	/* 0 ok, -ve error, or 1 if successfully upgraded to buffer_page */
 gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 {
-    int outcode = 0, closecode = 0, errcode = 0, endcode = 0;
+    int outcode = 0, closecode = 0, errcode = 0, endcode;
     bool upgraded_copypage = false;
 
     if (num_copies > 0 || !flush) {
@@ -735,15 +677,18 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 	    return code;
 
 	/* If copypage request, try to do it using buffer_page */
-	if (!flush && (*ppdev->printer_procs.buffer_page)
-	    (ppdev, ppdev->file, num_copies) >= 0) {
+	if ( !flush &&
+	     (*ppdev->printer_procs.buffer_page)
+	     (ppdev, ppdev->file, num_copies) >= 0
+	     ) {
 	    upgraded_copypage = true;
 	    flush = true;
-	} else if (num_copies > 0)
+	}
+	else if (num_copies > 0)
 	    /* Print the accumulated page description. */
 	    outcode =
-		(*ppdev->printer_procs.print_page_copies) (ppdev, ppdev->file,
-							   num_copies);
+		(*ppdev->printer_procs.print_page_copies)(ppdev, ppdev->file,
+							  num_copies);
 	fflush(ppdev->file);
 	errcode =
 	    (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
@@ -760,7 +705,7 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 	return closecode;
     if (endcode < 0)
 	return endcode;
-    return upgraded_copypage ? 0 : 1;
+    return (upgraded_copypage ? 1 : 0);
 }
 
 /* Print multiple copies of a page by calling print_page multiple times. */
@@ -776,11 +721,13 @@ gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
     return code;
 }
 
-/* Buffer a (partial) rasterized page & optionally print result multiple times. */
-/* Default implementation returns error, since the driver needs to override */
-/* this (in procedure vector) in configurations where this call may occur. */
+/*
+ * Buffer a (partial) rasterized page & optionally print result multiple times.
+ * The default implementation returns error, since the driver needs to override
+ * this (in procedure vector) in configurations where this call may occur.
+ */
 int
-gx_default_buffer_page(gx_device_printer * pdev, FILE * prn_stream,
+gx_default_buffer_page(gx_device_printer *pdev, FILE *prn_stream,
 		       int num_copies)
 {
     return gs_error_unknownerror;
@@ -813,26 +760,25 @@ gdev_prn_print_scan_lines(gx_device * pdev)
 
 /* Open the current page for printing. */
 int
-gdev_prn_open_printer_positionable(gx_device * pdev, bool binary_mode,
+gdev_prn_open_printer_positionable(gx_device *pdev, bool binary_mode,
 				   bool positionable)
 {
     if (ppdev->file != 0) {
 	ppdev->file_is_new = false;
 	return 0;
-    } {
+    }
+    {
 	int code = gx_device_open_output_file(pdev, ppdev->fname,
-				   binary_mode, positionable, &ppdev->file);
-
+					      binary_mode, positionable,
+					      &ppdev->file);
 	if (code < 0)
 	    return code;
     }
     ppdev->file_is_new = true;
     return 0;
 }
-
-/* Open the current page for printing. */
 int
-gdev_prn_open_printer(gx_device * pdev, bool binary_mode)
+gdev_prn_open_printer(gx_device *pdev, bool binary_mode)
 {
     return gdev_prn_open_printer_positionable(pdev, binary_mode, false);
 }
@@ -876,34 +822,39 @@ gdev_prn_copy_scan_lines(gx_device_printer * pdev, int y, byte * str, uint size)
 
 /* Like get_bits, but accepts initial raster contents */
 int
-gdev_prn_get_overlay_bits(gx_device_printer * pdev, int y, int lineCount, byte * data)
+gdev_prn_get_overlay_bits(gx_device_printer *pdev, int y, int lineCount,
+			  byte *data)
 {
-    if (pdev->buffer_space)
+    if (pdev->buffer_space) {
 	/* Command lists have built-in support for this function */
 	return clist_get_overlay_bits(pdev, y, lineCount, data);
-    else
+    } else {
 	/* Memory devices cannot support this function. */
-	return gs_error_unknownerror;
+	return_error(gs_error_unknownerror);
+    }
 }
 
 /* Find out where the band buffer for a given line is going to fall on the */
 /* next call to get_bits. */
-int				/* rets # lines from y till end of buffer, or -ve error code */
-gdev_prn_locate_overlay_buffer(gx_device_printer * pdev, int y, byte ** data)
+int	/* rets # lines from y till end of buffer, or -ve error code */
+gdev_prn_locate_overlay_buffer(gx_device_printer *pdev, int y, byte **data)
 {
-    if (ppdev->buffer_space)
-	/* Command lists have built-in support for this function */
-	return clist_locate_overlay_buffer(pdev, y, data);
-    else
+    if (ppdev->buffer_space) {
+	  /* Command lists have built-in support for this function */
+	  return clist_locate_overlay_buffer(pdev, y, data);
+    } else {
 	/* Memory devices cannot support this function. */
-	return gs_error_unknownerror;
+	return_error(gs_error_unknownerror);
+    }
 }
 
 /* Close the current page. */
 int
 gdev_prn_close_printer(gx_device * pdev)
 {
-    if (strchr(ppdev->fname, '%')) {	/* file per page */
+    if (strchr(ppdev->fname, '%') /* file per page */ ||
+	ppdev->ReopenPerPage	/* close and reopen for each page */
+	) {
 	gp_close_printer(ppdev->file, ppdev->fname);
 	ppdev->file = NULL;
     }
@@ -911,16 +862,17 @@ gdev_prn_close_printer(gx_device * pdev)
 }
 
 /* If necessary, free and reallocate the printer memory after changing params */
-int				/* rets 0 ok, else -ve error code */
-gdev_prn_reallocate_memory(gx_device_printer * prdev,
-	      gdev_prn_space_params * old_sp, int old_width, int old_height)
+int
+gdev_prn_maybe_reallocate_memory(gx_device_printer *prdev, 
+				 gdev_prn_space_params *old_sp,
+				 int old_width, int old_height)
 {
     int code = 0;
-    gx_device *const pdev = (gx_device *) prdev;
-
+    gx_device *const pdev = (gx_device *)prdev;
+	
     if (prdev->is_open &&
 	(memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
-	 prdev->width != old_width || prdev->height != old_height)
+	 prdev->width != old_width || prdev->height != old_height )
 	) {
 	int new_width = prdev->width;
 	int new_height = prdev->height;
@@ -929,10 +881,11 @@ gdev_prn_reallocate_memory(gx_device_printer * prdev,
 	prdev->width = old_width;
 	prdev->height = old_height;
 	prdev->space_params = *old_sp;
-	code = gdev_prn_allocate_memory(pdev,
-	      gdev_prn_allocate_reallocate, &new_sp, new_width, new_height);
+	code = gdev_prn_reallocate_memory(pdev, &new_sp,
+					  new_width, new_height);
 	/* If this fails, device should be usable w/old params, but */
 	/* band files may not be open. */
     }
     return code;
 }
+

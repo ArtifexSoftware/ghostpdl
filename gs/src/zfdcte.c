@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,216 +16,65 @@
    all copies.
  */
 
-/* zfdcte.c */
+/*Id: zfdcte.c  */
 /* DCTEncode filter creation */
 #include "memory_.h"
 #include "stdio_.h"		/* for jpeglib.h */
 #include "jpeglib.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
+#include "gsmalloc.h"		/* for gs_memory_default */
+#include "ialloc.h"
 #include "idict.h"
 #include "idparam.h"
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
 #include "ifilter.h"
+#include "iparam.h"
 
-/* Import the common setup routines from zfdctc.c */
-int zfdct_setup(P2(const ref * op, stream_DCT_state * pdct));
-int zfdct_setup_quantization_tables(P3(const ref * op, stream_DCT_state * pdct,
-				       bool is_encode));
-int zfdct_setup_huffman_tables(P3(const ref * op, stream_DCT_state * pdct,
-				  bool is_encode));
-int zfdct_byte_params(P4(const ref * op, int start, int count, UINT8 * pvals));
+#define TEST
 
-/* Collect encode-only parameters. */
-private int
-dct_setup_samples(const ref * op, const char _ds * kstr, int num_colors,
-		  jpeg_compress_data * jcdp, bool is_vert)
-{
-    int code;
-    int i;
-    ref *pdval;
-    jpeg_component_info *comp_info = jcdp->cinfo.comp_info;
-    UINT8 samples[4];
-
-    /* Adobe default is all sampling factors = 1,
-     * which is NOT the IJG default, so we must always assign values.
-     */
-    if (op != 0 && dict_find_string(op, kstr, &pdval) > 0) {
-	if (r_size(pdval) < num_colors)
-	    return_error(e_rangecheck);
-	if ((code = zfdct_byte_params(pdval, 0, num_colors, samples)) < 0)
-	    return code;
-    } else {
-	samples[0] = samples[1] = samples[2] = samples[3] = 1;
-    }
-    for (i = 0; i < num_colors; i++) {
-	if (samples[i] < 1 || samples[i] > 4)
-	    return_error(e_rangecheck);
-	if (is_vert)
-	    comp_info[i].v_samp_factor = samples[i];
-	else
-	    comp_info[i].h_samp_factor = samples[i];
-    }
-    return 0;
-}
-
-private int
-zfdcte_setup(const ref * op, stream_DCT_state * pdct)
-{
-    jpeg_compress_data *jcdp = pdct->data.compress;
-    uint Columns, Rows, Resync;
-    int num_colors;
-    int Blend;
-    ref *mstr;
-    int i;
-    int code;
-
-    /* Required parameters for DCTEncode.
-     * (DCTDecode gets the equivalent info from the SOF marker.)
-     */
-    if ((code = dict_uint_param(op, "Columns", 1, 0xffff, 0,
-				&Columns)) < 0 ||
-	(code = dict_uint_param(op, "Rows", 1, 0xffff, 0,
-				&Rows)) < 0 ||
-	(code = dict_int_param(op, "Colors", 1, 4, -1,
-			       &num_colors)) < 0
-	)
-	return code;
-    /* Set up minimal image description & call set_defaults */
-    jcdp->cinfo.image_width = Columns;
-    jcdp->cinfo.image_height = Rows;
-    jcdp->cinfo.input_components = num_colors;
-    switch (num_colors) {
-	case 1:
-	    jcdp->cinfo.in_color_space = JCS_GRAYSCALE;
-	    break;
-	case 3:
-	    jcdp->cinfo.in_color_space = JCS_RGB;
-	    break;
-	case 4:
-	    jcdp->cinfo.in_color_space = JCS_CMYK;
-	    break;
-	default:
-	    jcdp->cinfo.in_color_space = JCS_UNKNOWN;
-    }
-    if ((code = gs_jpeg_set_defaults(pdct)) < 0)
-	return code;
-    /* Change IJG colorspace defaults as needed;
-     * set ColorTransform to what will go in the Adobe marker.
-     */
-    switch (num_colors) {
-	case 3:
-	    if (pdct->ColorTransform < 0)
-		pdct->ColorTransform = 1;	/* default */
-	    if (pdct->ColorTransform == 0) {
-		if ((code = gs_jpeg_set_colorspace(pdct, JCS_RGB)) < 0)
-		    return code;
-	    } else
-		pdct->ColorTransform = 1;	/* flag YCC xform */
-	    break;
-	case 4:
-	    if (pdct->ColorTransform < 0)
-		pdct->ColorTransform = 0;	/* default */
-	    if (pdct->ColorTransform != 0) {
-		if ((code = gs_jpeg_set_colorspace(pdct, JCS_YCCK)) < 0)
-		    return code;
-		pdct->ColorTransform = 2;	/* flag YCCK xform */
-	    } else {
-		if ((code = gs_jpeg_set_colorspace(pdct, JCS_CMYK)) < 0)
-		    return code;
-	    }
-	    break;
-	default:
-	    pdct->ColorTransform = 0;	/* no transform otherwise */
-	    break;
-    }
-    /* Optional encoding-only parameters */
-    if (dict_find_string(op, "Markers", &mstr) > 0) {
-	check_read_type(*mstr, t_string);
-	pdct->Markers.data = mstr->value.const_bytes;
-	pdct->Markers.size = r_size(mstr);
-    }
-    if ((code = dict_bool_param(op, "NoMarker", false,
-				&pdct->NoMarker)) < 0 ||
-	(code = dict_uint_param(op, "Resync", 0, 0xffff, 0,
-				&Resync)) < 0 ||
-	(code = dict_int_param(op, "Blend", 0, 1, 0,
-			       &Blend)) < 0 ||
-	(code = dct_setup_samples(op, "HSamples", num_colors,
-				  jcdp, false)) < 0 ||
-	(code = dct_setup_samples(op, "VSamples", num_colors,
-				  jcdp, true)) < 0
-	)
-	return code;
-    jcdp->cinfo.write_JFIF_header = FALSE;
-    jcdp->cinfo.write_Adobe_marker = FALSE;	/* must do it myself */
-    jcdp->cinfo.restart_interval = Resync;
-    /* What to do with Blend ??? */
-    if (pdct->data.common->Relax == 0) {
-	jpeg_component_info *comp_info = jcdp->cinfo.comp_info;
-	int num_samples;
-
-	for (i = 0, num_samples = 0; i < num_colors; i++)
-	    num_samples += comp_info[i].h_samp_factor *
-		comp_info[i].v_samp_factor;
-	if (num_samples > 10)
-	    return_error(e_rangecheck);
-	/* Note: by default the IJG software does not allow
-	 * num_samples to exceed 10, Relax or no.  For full
-	 * compatibility with Adobe's non-JPEG-compliant
-	 * software, set MAX_BLOCKS_IN_MCU to 64 in jpeglib.h.
-	 */
-    }
-    return 0;
-}
+/* Import the parameter processing procedure from sdeparam.c */
+stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
+#ifdef TEST
+stream_state_proc_get_params(s_DCTE_get_params, stream_DCT_state);
+#endif
 
 /* <target> <dict> DCTEncode/filter <file> */
 private int
 zDCTE(os_ptr op)
 {
+    gs_memory_t *mem = &gs_memory_default;
     stream_DCT_state state;
+    dict_param_list list;
     jpeg_compress_data *jcdp;
     int code;
     int npop;
     const ref *dop;
     uint dspace;
-    ref *pdval;
 
     /* First allocate space for IJG parameters. */
-    jcdp = gs_malloc(1, sizeof(*jcdp), "zDCTE");
+    jcdp = (jpeg_compress_data *)
+	gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "zDCTE");
     if (jcdp == 0)
 	return_error(e_VMerror);
+    if (s_DCTE_template.set_defaults)
+	(*s_DCTE_template.set_defaults) ((stream_state *) & state);
     state.data.compress = jcdp;
+    jcdp->memory = state.jpeg_memory = mem;	/* set now for allocation */
+    state.report_error = filter_report_error;	/* in case create fails */
     if ((code = gs_jpeg_create_compress(&state)) < 0)
 	goto fail;		/* correct to do jpeg_destroy here */
     /* Read parameters from dictionary */
-    if ((code = zfdct_setup(op, &state)) < 0)
-	goto fail;
-    npop = code;
-    if (npop == 0)
-	dop = 0, dspace = 0;
+    if (r_has_type(op, t_dictionary))
+	npop = 1, dop = op, dspace = r_space(op);
     else
-	dop = op, dspace = r_space(op);
-    if ((code = zfdcte_setup(dop, &state)) < 0)
+	npop = 0, dop = 0, dspace = 0;
+    if ((code = dict_param_list_read(&list, dop, NULL, false)) < 0)
 	goto fail;
-    /* Check for QFactor without QuantTables. */
-    if (dop == 0 || dict_find_string(dop, "QuantTables", &pdval) <= 0) {	/* No QuantTables, but maybe a QFactor to apply to default. */
-	if (state.QFactor != 1.0) {
-	    code = gs_jpeg_set_linear_quality(&state,
-					      (int)(min(state.QFactor, 100.0)
-						    * 100.0 + 0.5),
-					      TRUE);
-	    if (code < 0)
-		return code;
-	}
-    }
-    if ((code = zfdct_setup_huffman_tables(dop, &state, true)) < 0 ||
-	(code = zfdct_setup_quantization_tables(dop, &state, true)) < 0
-	)
-	goto fail;
+    if ((code = s_DCTE_put_params((gs_param_list *) & list, &state)) < 0)
+	goto rel;
     /* Create the filter. */
     jcdp->template = s_DCTE_template;
     /* Make sure we get at least a full scan line of input. */
@@ -244,17 +93,51 @@ zDCTE(os_ptr op)
      * registered for closing, so s_DCTE_release will never be called.
      * Therefore we free the allocated memory before failing.
      */
-
-  fail:
+rel:
+    iparam_list_release(&list);
+fail:
     gs_jpeg_destroy(&state);
-    gs_free(jcdp, 1, sizeof(*jcdp), "zDCTE fail");
+    gs_free_object(mem, jcdp, "zDCTE fail");
     return code;
 }
+
+#ifdef TEST
+#include "stream.h"
+#include "files.h"
+/* <dict> <filter> <bool> .dcteparams <dict> */
+private int
+zdcteparams(os_ptr op)
+{
+    stream *s;
+    dict_param_list list;
+    int code;
+
+    check_type(*op, t_boolean);
+    check_write_file(s, op - 1);
+    check_type(op[-2], t_dictionary);
+    /* The DCT filters copy the template.... */
+    if (s->state->template->process != s_DCTE_template.process)
+	return_error(e_rangecheck);
+    code = dict_param_list_write(&list, op - 2, NULL);
+    if (code < 0)
+	return code;
+    code = s_DCTE_get_params((gs_param_list *) & list,
+			     (stream_DCT_state *) s->state,
+			     op->value.boolval);
+    iparam_list_release(&list);
+    if (code >= 0)
+	pop(2);
+    return code;
+}
+#endif
 
 /* ------ Initialization procedure ------ */
 
 const op_def zfdcte_op_defs[] =
 {
+#ifdef TEST
+    {"3.dcteparams", zdcteparams},
+#endif
     op_def_begin_filter(),
     {"2DCTEncode", zDCTE},
     op_def_end(0)

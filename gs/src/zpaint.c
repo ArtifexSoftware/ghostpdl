@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zpaint.c */
+/*Id: zpaint.c  */
 /* Painting operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gspaint.h"
 #include "igstate.h"

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,13 +16,13 @@
    all copies.
  */
 
-/* ztype.c */
+/*Id: ztype.c  */
 /* Type, attribute, and conversion operators */
 #include "math_.h"
 #include "memory_.h"
 #include "string_.h"
+#include "gsexit.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "imemory.h"		/* for register_ref_root */
 #include "idict.h"
@@ -36,7 +36,7 @@
 #include "store.h"
 
 /* Forward references */
-private int near access_check(P3(os_ptr, int, bool));
+private int access_check(P3(os_ptr, int, bool));
 private int convert_to_string(P2(os_ptr, os_ptr));
 
 /*
@@ -48,68 +48,69 @@ private int convert_to_string(P2(os_ptr, os_ptr));
  * constant expressions, so we can't use min_long and max_long.
  * What a nuisance!
  */
-#define alt_min_long (-1L << (arch_sizeof_long * 8 - 1))
-#define alt_max_long (~(alt_min_long))
-private const double min_int_real = (alt_min_long * 1.0 - 1);
-private const double max_int_real = (alt_max_long * 1.0 + 1);
+#define ALT_MIN_LONG (-1L << (arch_sizeof_long * 8 - 1))
+#define ALT_MAX_LONG (~(ALT_MIN_LONG))
+private const double min_int_real = (ALT_MIN_LONG * 1.0 - 1);
+private const double max_int_real = (ALT_MAX_LONG * 1.0 + 1);
 
-#define real_can_be_int(v)\
+#define REAL_CAN_BE_INT(v)\
   ((v) > min_int_real && (v) < max_int_real)
-#define zcvi_possible(v) real_can_be_int(v)
 
 /* Get the pointer to the access flags for a ref. */
-#define access_ref(opp)\
+#define ACCESS_REF(opp)\
   (r_has_type(opp, t_dictionary) ? dict_access_ref(opp) : opp)
 
 /* Initialize the table of type names. */
-/* We export the type names just in case they might be useful. */
-ref type_names;			/* t_array */
-private ref *type_names_p = &type_names;
-private gs_gc_root_t type_names_root;
 private void
 ztype_init(void)
 {
-    static const char _ds *tnames[] =
-    {type_name_strings};
+    static const char *const tnames[] = { type_name_strings };
+    ref type_names;
     int i;
 
     ialloc_ref_array(&type_names, a_readonly, t_next_index,
 		     "type names");
     for (i = 0; i < t_next_index; i++) {
-	if (tnames[i] == 0)
+	if (i >= countof(tnames) || tnames[i] == 0)
 	    make_null(&type_names.value.refs[i]);
 	else {
-	    name_enter_string(tnames[i],
-			      &type_names.value.refs[i]);
+	    name_enter_string(tnames[i], &type_names.value.refs[i]);
 	    r_set_attrs(&type_names.value.refs[i], a_executable);
 	}
     }
-    gs_register_ref_root(imemory, &type_names_root,
-			 (void **)&type_names_p, "type_names");
+    if (dict_put_string(systemdict, "typenames", &type_names) < 0) {
+	lprintf("Entering typenames in systemdict failed.\n");
+	gs_exit(1);
+    }
 }
 
-/* <obj> type <name> */
+/* <obj> <typenames> .type <name> */
 private int
 ztype(register os_ptr op)
 {
-    ref *ptref = &type_names.value.refs[r_btype(op)];
+    ref tnref;
+    int code = array_get(op, (long)r_btype(op - 1), &tnref);
 
-    if (!r_has_type(ptref, t_name)) {	/* Must be either a stack underflow or a t_[a]struct. */
-	check_op(1);
+    if (code < 0)
+	return code;
+    if (!r_has_type(&tnref, t_name)) {
+	/* Must be either a stack underflow or a t_[a]struct. */
+	check_op(2);
 	{			/* Get the type name from the structure. */
 	    const char *sname =
-	    gs_struct_type_name_string(gs_object_type(imemory,
-						      op->value.pstruct));
+		gs_struct_type_name_string(gs_object_type(imemory,
+							  op[-1].value.pstruct));
 	    int code = name_ref((const byte *)sname, strlen(sname),
-				(ref *) op, 0);
+				(ref *) (op - 1), 0);
 
 	    if (code < 0)
 		return code;
 	}
-	r_set_attrs(op, a_executable);
+	r_set_attrs(op - 1, a_executable);
     } else {
-	ref_assign(op, ptref);
+	ref_assign(op - 1, &tnref);
     }
+    pop(1);
     return 0;
 }
 
@@ -120,7 +121,7 @@ zcvlit(register os_ptr op)
     ref *aop;
 
     check_op(1);
-    aop = access_ref(op);
+    aop = ACCESS_REF(op);
     r_clear_attrs(aop, a_executable);
     return 0;
 }
@@ -142,7 +143,7 @@ zcvx(register os_ptr op)
 	 op_def_is_internal(op_def_table[opidx]))
 	)
 	return_error(e_rangecheck);
-    aop = access_ref(op);
+    aop = ACCESS_REF(op);
     r_set_attrs(aop, a_executable);
     return 0;
 }
@@ -152,7 +153,7 @@ private int
 zxcheck(register os_ptr op)
 {
     check_op(1);
-    make_bool(op, (r_has_attr(access_ref(op), a_executable) ? 1 : 0));
+    make_bool(op, (r_has_attr(ACCESS_REF(op), a_executable) ? 1 : 0));
     return 0;
 }
 
@@ -171,12 +172,13 @@ private int
 znoaccess(register os_ptr op)
 {
     check_op(1);
-    if (r_has_type(op, t_dictionary)) {		/*
-						 * Setting noaccess on a read-only dictionary is an attempt to
-						 * change its value, which is forbidden (this is a subtle
-						 * point confirmed with Adobe).  Also, don't allow removing
-						 * read access to permanent dictionaries.
-						 */
+    if (r_has_type(op, t_dictionary)) {
+	/*
+	 * Setting noaccess on a read-only dictionary is an attempt to
+	 * change its value, which is forbidden (this is a subtle
+	 * point confirmed with Adobe).  Also, don't allow removing
+	 * read access to permanent dictionaries.
+	 */
 	if (dict_is_permanent_on_dstack(op) ||
 	    !r_has_attr(dict_access_ref(op), a_write)
 	    )
@@ -256,8 +258,7 @@ zcvi(register os_ptr op)
 		}
 	    }
     }
-    /* Check if a real will fit into an integer value */
-    if (!zcvi_possible(fval))
+    if (!REAL_CAN_BE_INT(fval))
 	return_error(e_rangecheck);
     make_int(op, (long)fval);	/* truncates towards 0 */
     return 0;
@@ -352,7 +353,7 @@ zcvrs(register os_ptr op)
 		{
 		    float fval = op[-2].value.realval;
 
-		    if (!real_can_be_int(fval))
+		    if (!REAL_CAN_BE_INT(fval))
 			return_error(e_rangecheck);
 		    ival = (ulong) (long)fval;
 		} break;
@@ -405,7 +406,7 @@ const op_def ztype_op_defs[] =
     {"1noaccess", znoaccess},
     {"1rcheck", zrcheck},
     {"1readonly", zreadonly},
-    {"1type", ztype},
+    {"2.type", ztype},
     {"1wcheck", zwcheck},
     {"1xcheck", zxcheck},
     op_def_end(ztype_init)
@@ -419,11 +420,11 @@ const op_def ztype_op_defs[] =
 /* if the object had the access. */
 /* Return an error code if the object is not of appropriate type, */
 /* or if the object did not have the access already when modify=1. */
-private int near
+private int
 access_check(os_ptr op,
 	     int access,	/* mask for attrs */
-	     bool modify)
-{				/* if true, reduce access */
+	     bool modify)	/* if true, reduce access */
+{
     ref *aop;
 
     switch (r_type(op)) {
@@ -471,12 +472,15 @@ convert_to_string(os_ptr op1, os_ptr op)
     const byte *pstr = 0;
     int code = obj_cvs(op1, op->value.bytes, r_size(op), &len, &pstr);
 
-    if (code < 0) {		/* Some common downloaded error handlers assume that */
-	/* operator names don't exceed a certain fixed size. */
-	/* To work around this bit of bad design, we implement */
-	/* a special hack here: if we got a rangecheck, and */
-	/* the object is an operator whose name begins with */
-	/* %, ., or @, we just truncate the name. */
+    if (code < 0) {
+	/*
+	 * Some common downloaded error handlers assume that
+	 * operator names don't exceed a certain fixed size.
+	 * To work around this bit of bad design, we implement
+	 * a special hack here: if we got a rangecheck, and
+	 * the object is an operator whose name begins with
+	 * %, ., or @, we just truncate the name.
+	 */
 	if (code == e_rangecheck)
 	    switch (r_btype(op1)) {
 		case t_oparray:
@@ -493,7 +497,8 @@ convert_to_string(os_ptr op1, os_ptr op)
 	    }
 	return code;
     }
-  ok:*op1 = *op;
+ok:
+    *op1 = *op;
     r_set_size(op1, len);
     return 0;
 }

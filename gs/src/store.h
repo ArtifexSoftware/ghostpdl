@@ -1,24 +1,28 @@
 /* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* store.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: store.h  */
 /* Assignment-related macros */
-#include "ialloc.h"			/* for imemory masks & checks */
+
+#ifndef store_INCLUDED
+#  define store_INCLUDED
+
+#include "ialloc.h"		/* for imemory masks & checks */
 
 /*
  * Macros for storing a ref.  We use macros for storing into objects,
@@ -28,25 +32,25 @@
  * Turbo C generates pretty awful code for doing this.
  *
  * There are three cases that we need to distinguish:
- *	- Storing to a stack (no special action);
- *	- Storing into a newly created object (set l_new);
- *	- Storing into a slot of an existing object (check l_new in
- *	    old value, set in new value).
+ *      - Storing to a stack (no special action);
+ *      - Storing into a newly created object (set l_new);
+ *      - Storing into a slot of an existing object (check l_new in
+ *          old value, set in new value).
  * The macros are called
- *	<make/store><new_type><case>(place_to_store, new_value)
+ *      <make/store><new_type><case>(place_to_store, new_value)
  * where <case> is nothing for storing to the stack, _new for storing into
  * a new object, and _old for storing into an existing object.
  * (The _old macros also take a client name for tracing and debugging.)
  * <new_type> and new_value are chosen from the following alternatives:
- *	ref_assign	POINTER TO arbitrary ref
- *	make_t		type (only for null and mark)
- *	make_tv		type, value field name, value
- *			  (only for scalars, which don't have attributes)
- *	make_tav	type, attributes, value field name, value
- *	make_tasv	type, attributes, size, value field name, value
+ *      ref_assign      POINTER TO arbitrary ref
+ *      make_t          type (only for null and mark)
+ *      make_tv         type, value field name, value
+ *                        (only for scalars, which don't have attributes)
+ *      make_tav        type, attributes, value field name, value
+ *      make_tasv       type, attributes, size, value field name, value
  * There are also specialized make_ macros for specific types:
- *	make_array, make_int, make_real, make_bool, make_false, make_true,
- *	make_mark, make_null, make_oper, make_[const_]string, make_struct.
+ *      make_array, make_int, make_real, make_bool, make_false, make_true,
+ *      make_mark, make_null, make_oper, make_[const_]string, make_struct.
  * Not all of the specialized make_ macros have _new and _old variants.
  *
  * For _tav and _tasv, we must store the value first, because sometimes
@@ -89,8 +93,8 @@
 
 /****** NOTE: the following declarations are duplicated from isave.h. ******/
 
-int alloc_save_change(P4(gs_dual_memory_t *, const ref *pcont,
-			 ref_packed *ptr, client_name_t cname));
+int alloc_save_change(P4(gs_dual_memory_t *, const ref * pcont,
+			 ref_packed * ptr, client_name_t cname));
 int alloc_save_level(P1(const gs_dual_memory_t *));
 
 /****** END duplicated declarations. ******/
@@ -129,9 +133,9 @@ int alloc_save_level(P1(const gs_dual_memory_t *));
 #  define and_fill_sv(pref)\
     , (gs_debug['$'] ? (r_set_size(pref, 0xfeed),\
 			(pref)->value.intval = 0xdeadbeef) : 0)
-#else				/* !DEBUG */
-#  define and_fill_s(pref) /* */
-#  define and_fill_sv(pref) /* */
+#else /* !DEBUG */
+#  define and_fill_s(pref)	/* */
+#  define and_fill_sv(pref)	/* */
 #endif
 
 /* make_t must set the attributes to 0 to clear a_local! */
@@ -236,3 +240,5 @@ int alloc_save_level(P1(const gs_dual_memory_t *));
   make_tav(pref, t_astruct, attrs, pstruct, (obj_header_t *)(ptr))
 #define make_astruct_new(pref,attrs,ptr)\
   make_tav_new(pref, t_astruct, attrs, pstruct, (obj_header_t *)(ptr))
+
+#endif /* store_INCLUDED */

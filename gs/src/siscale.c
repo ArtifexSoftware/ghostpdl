@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* siscale.c */
+/*Id: siscale.c  */
 /* Image scaling filters */
 #include "math_.h"
 #include "memory_.h"
@@ -144,13 +144,24 @@ calculate_contrib(
 	int left = (int)ceil(center - WidthIn);
 	int right = (int)floor(center + WidthIn);
 
+	/*
+	 * In pathological cases, the limit may be much less
+	 * than the support.  We do need to deal with this.
+	 */
 #define clamp_pixel(j)\
-  (j < 0 ? -j : j >= limit ? (limit - j) + limit - 1 : j)
-	int lmin = (left < 0 ? 0 : left);
-	int lmax = (left < 0 ? -left : left);
+  (j < 0 ? (-j >= limit ? limit - 1 : -j) :\
+   j >= limit ? (j >> 1 >= limit ? 0 : (limit - j) + limit - 1) :\
+   j)
+	int lmin =
+	(left < 0 ? 0 : left);
+	int lmax =
+	(left < 0 ? (-left >= limit ? limit - 1 : -left) : left);
 	int rmin =
-	(right >= limit ? (limit - right) + limit - 1 : right);
-	int rmax = (right >= limit ? limit - 1 : right);
+	(right >= limit ?
+	 (right >> 1 >= limit ? 0 : (limit - right) + limit - 1) :
+	 right);
+	int rmax =
+	(right >= limit ? limit - 1 : right);
 	int first_pixel = min(lmin, rmin);
 	int last_pixel = max(lmax, rmax);
 	CONTRIB *p;
@@ -310,12 +321,11 @@ calculate_dst_contrib(stream_IScale_state * ss, int y)
     }
 }
 
-#define ss ((stream_IScale_state *)st)
-
 /* Initialize the filter. */
 private int
 s_IScale_init(stream_state * st)
 {
+    stream_IScale_state *const ss = (stream_IScale_state *) st;
     gs_memory_t *mem = ss->memory;
 
     ss->sizeofPixelIn = ss->BitsPerComponentIn / 8;
@@ -370,6 +380,8 @@ private int
 s_IScale_process(stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
+    stream_IScale_state *const ss = (stream_IScale_state *) st;
+
     /* Check whether we need to deliver any output. */
 
   top:while (ss->src_y > ss->dst_last_index) {	/* We have enough horizontally scaled temporary rows */
@@ -416,15 +428,15 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 
     /* Read input data and scale horizontally into tmp. */
 
-#ifdef DEBUG
-    assert(ss->src_y < ss->HeightIn);
-#endif
     {
 	uint rleft = pr->limit - pr->ptr;
 	uint rcount = ss->src_size - ss->src_offset;
 
 	if (rleft == 0)
 	    return 0;		/* need more input */
+#ifdef DEBUG
+	assert(ss->src_y < ss->HeightIn);
+#endif
 	if (rleft >= rcount) {	/* We're going to fill up a row. */
 	    const byte *row;
 
@@ -458,6 +470,7 @@ s_IScale_process(stream_state * st, stream_cursor_read * pr,
 private void
 s_IScale_release(stream_state * st)
 {
+    stream_IScale_state *const ss = (stream_IScale_state *) st;
     gs_memory_t *mem = ss->memory;
 
     gs_free_object(mem, (void *)ss->src, "image_scale src");	/* no longer const */
@@ -471,8 +484,6 @@ s_IScale_release(stream_state * st)
     gs_free_object(mem, ss->tmp, "image_scale tmp");
     ss->tmp = 0;
 }
-
-#undef ss
 
 /* Stream template */
 const stream_template s_IScale_template =

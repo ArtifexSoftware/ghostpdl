@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,12 @@
    all copies.
  */
 
-/* gxcmap.c */
+/*Id: gxcmap.c  */
 /* Color mapping for Ghostscript */
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccolor.h"
+#include "gxalpha.h"
 #include "gxcspace.h"
 #include "gxfarith.h"
 #include "gxfrac.h"
@@ -37,17 +38,12 @@ public_st_device_color();
 private 
 ENUM_PTRS_BEGIN(device_color_enum_ptrs)
 {
-    struct_proc_enum_ptrs((*proc)) = cptr->type->enum_ptrs;
-    if (proc == 0)
-	return 0;
-    return (*proc) (vptr, size, index, pep);
+    return ENUM_USING(*cptr->type->stype, vptr, size, index);
 }
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(device_color_reloc_ptrs)
 {
-    struct_proc_reloc_ptrs((*proc)) = cptr->type->reloc_ptrs;
-    if (proc != 0)
-	(*proc) (vptr, size, gcst);
+    RELOC_USING(*cptr->type->stype, vptr, size);
 }
 RELOC_PTRS_END
 #undef cptr
@@ -113,8 +109,6 @@ private cmap_proc_rgb(cmap_rgb_to_cmyk);
 private cmap_proc_cmyk(cmap_cmyk_direct);
 private cmap_proc_cmyk(cmap_cmyk_to_gray);
 private cmap_proc_cmyk(cmap_cmyk_to_rgb);
-
-#ifdef DPNEXT
 private cmap_proc_rgb_alpha(cmap_rgb_alpha_halftoned);
 private cmap_proc_rgb_alpha(cmap_rgb_alpha_direct);
 
@@ -123,49 +117,35 @@ private cmap_proc_rgb_alpha(cmap_rgb_alpha2gray_halftoned);
 private cmap_proc_rgb_alpha(cmap_rgb_alpha2gray_direct);
 private cmap_proc_rgb_alpha(cmap_rgb_alpha_to_cmyk);
 
-#endif
-
 private const gx_color_map_procs
       cmap_gray_few =
-{cmap_gray_halftoned, cmap_rgb_to_gray_halftoned, cmap_cmyk_to_gray
-#ifdef DPNEXT
- ,cmap_rgb_alpha2gray_halftoned
-#endif
+{cmap_gray_halftoned, cmap_rgb_to_gray_halftoned, cmap_cmyk_to_gray,
+ cmap_rgb_alpha2gray_halftoned
 },    cmap_gray_many =
-{cmap_gray_direct, cmap_rgb_to_gray_direct, cmap_cmyk_to_gray
-#ifdef DPNEXT
- ,cmap_rgb_alpha2gray_direct
-#endif
+{cmap_gray_direct, cmap_rgb_to_gray_direct, cmap_cmyk_to_gray,
+ cmap_rgb_alpha2gray_direct
 },    cmap_rgb_few =
-{cmap_gray_to_rgb_halftoned, cmap_rgb_halftoned, cmap_cmyk_to_rgb
-#ifdef DPNEXT
- ,cmap_rgb_alpha_halftoned
-#endif
+{cmap_gray_to_rgb_halftoned, cmap_rgb_halftoned, cmap_cmyk_to_rgb,
+ cmap_rgb_alpha_halftoned
 },    cmap_rgb_many =
-{cmap_gray_to_rgb_direct, cmap_rgb_direct, cmap_cmyk_to_rgb
-#ifdef DPNEXT
- ,cmap_rgb_alpha_direct
-#endif
+{cmap_gray_to_rgb_direct, cmap_rgb_direct, cmap_cmyk_to_rgb,
+ cmap_rgb_alpha_direct
 },    cmap_cmyk_few =
-{cmap_gray_to_cmyk_halftoned, cmap_rgb_to_cmyk, cmap_cmyk_halftoned
-#ifdef DPNEXT
- ,cmap_rgb_alpha_to_cmyk
-#endif
+{cmap_gray_to_cmyk_halftoned, cmap_rgb_to_cmyk, cmap_cmyk_halftoned,
+ cmap_rgb_alpha_to_cmyk
 },    cmap_cmyk_many =
-{cmap_gray_to_cmyk_direct, cmap_rgb_to_cmyk, cmap_cmyk_direct
-#ifdef DPNEXT
- ,cmap_rgb_alpha_to_cmyk
-#endif
+{cmap_gray_to_cmyk_direct, cmap_rgb_to_cmyk, cmap_cmyk_direct,
+ cmap_rgb_alpha_to_cmyk
 };
 
-const gx_color_map_procs *cmap_procs_default = &cmap_gray_many;
+const gx_color_map_procs *const cmap_procs_default = &cmap_gray_many;
 
-private const gx_color_map_procs _ds *cmap_few[] =
+private const gx_color_map_procs *const cmap_few[] =
 {
     0, &cmap_gray_few, 0, &cmap_rgb_few, &cmap_cmyk_few
 };
 
-private const gx_color_map_procs _ds *cmap_many[] =
+private const gx_color_map_procs *const cmap_many[] =
 {
     0, &cmap_gray_many, 0, &cmap_rgb_many, &cmap_cmyk_many
 };
@@ -174,8 +154,7 @@ private const gx_color_map_procs _ds *cmap_many[] =
 const gx_color_map_procs *
 gx_device_cmap_procs(const gx_device * dev)
 {
-    return ((gx_device_has_color(dev) ? dev->color_info.max_color :
-	     dev->color_info.max_gray) >= 31 ? cmap_many : cmap_few)
+    return (gx_device_must_halftone(dev) ? cmap_few : cmap_many)
 	[dev->color_info.num_components];
 }
 
@@ -262,8 +241,13 @@ gx_remap_concrete_DGray(const frac * pconc,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			gs_color_select_t select)
 {
-    (*pis->cmap_procs->map_gray)
-	(pconc[0], pdc, pis, dev, select);
+    if (pis->alpha == gx_max_color_value)
+	(*pis->cmap_procs->map_gray)
+	    (pconc[0], pdc, pis, dev, select);
+    else
+	(*pis->cmap_procs->map_rgb_alpha)
+	    (pconc[0], pconc[0], pconc[0], cv2frac(pis->alpha),
+	     pdc, pis, dev, select);
     return 0;
 }
 int
@@ -272,10 +256,14 @@ gx_remap_DeviceGray(const gs_client_color * pc, const gs_color_space * pcs,
 		    gs_color_select_t select)
 {
     float ftemp;
+    frac fgray = unit_frac(pc->paint.values[0], ftemp);
 
-    (*pis->cmap_procs->map_gray)
-	(unit_frac(pc->paint.values[0], ftemp),
-	 pdc, pis, dev, select);
+    if (pis->alpha == gx_max_color_value)
+	(*pis->cmap_procs->map_gray)
+	    (fgray, pdc, pis, dev, select);
+    else
+	(*pis->cmap_procs->map_rgb_alpha)
+	    (fgray, fgray, fgray, cv2frac(pis->alpha), pdc, pis, dev, select);
     return 0;
 }
 
@@ -296,8 +284,13 @@ gx_remap_concrete_DRGB(const frac * pconc,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
-    gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2], pdc, pis, dev,
-			  select);
+    if (pis->alpha == gx_max_color_value)
+	gx_remap_concrete_rgb(pconc[0], pconc[1], pconc[2],
+			      pdc, pis, dev, select);
+    else
+	gx_remap_concrete_rgb_alpha(pconc[0], pconc[1], pconc[2],
+				    cv2frac(pis->alpha),
+				    pdc, pis, dev, select);
     return 0;
 }
 int
@@ -305,12 +298,16 @@ gx_remap_DeviceRGB(const gs_client_color * pc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		   gs_color_select_t select)
 {
-    float ft0, ft1, ft2;
+    float ftemp;
+    frac fred = unit_frac(pc->paint.values[0], ftemp), fgreen = unit_frac(pc->paint.values[1], ftemp),
+         fblue = unit_frac(pc->paint.values[2], ftemp);
 
-    gx_remap_concrete_rgb(unit_frac(pc->paint.values[0], ft0),
-			  unit_frac(pc->paint.values[1], ft1),
-			  unit_frac(pc->paint.values[2], ft2),
-			  pdc, pis, dev, select);
+    if (pis->alpha == gx_max_color_value)
+	gx_remap_concrete_rgb(fred, fgreen, fblue,
+			      pdc, pis, dev, select);
+    else
+	gx_remap_concrete_rgb_alpha(fred, fgreen, fblue, cv2frac(pis->alpha),
+				    pdc, pis, dev, select);
     return 0;
 }
 
@@ -332,6 +329,7 @@ gx_remap_concrete_DCMYK(const frac * pconc,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			gs_color_select_t select)
 {
+/****** IGNORE alpha ******/
     gx_remap_concrete_cmyk(pconc[0], pconc[1], pconc[2], pconc[3], pdc,
 			   pis, dev, select);
     return 0;
@@ -341,6 +339,7 @@ gx_remap_DeviceCMYK(const gs_client_color * pc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		    gs_color_select_t select)
 {
+/****** IGNORE alpha ******/
     float ft0, ft1, ft2, ft3;
 
     gx_remap_concrete_cmyk(unit_frac(pc->paint.values[0], ft0),
@@ -529,7 +528,7 @@ cmap_cmyk_direct(frac c, frac m, frac y, frac k, gx_device_color * pdc,
 
     /* We make a test for direct vs. halftoned, rather than */
     /* duplicating most of the code of this procedure. */
-    if (dev->color_info.max_color >= 31) {
+    if (!gx_color_device_must_halftone(dev)) {
 	gx_color_index color =
 	gx_map_cmyk_color(dev,
 			  frac2cv(mcyan), frac2cv(mmagenta),
@@ -556,9 +555,14 @@ cmap_cmyk_to_rgb(frac c, frac m, frac y, frac k, gx_device_color * pdc,
     (*pis->cmap_procs->map_rgb) (rgb[0], rgb[1], rgb[2], pdc, pis, dev, select);
 }
 
-#ifdef DPNEXT
-
 /* ------ Render RGB+alpha color. ------ */
+
+#ifdef PREMULTIPLY_TOWARDS_WHITE
+#  define alpha_bias_value frac_1 - alpha
+#  define alpha_bias(v) ((v) + alpha_bias_value
+#else
+#  define alpha_bias(v) (v)
+#endif
 
 private void
 cmap_rgb_alpha2gray_halftoned(frac r, frac g, frac b, frac alpha,
@@ -567,6 +571,8 @@ cmap_rgb_alpha2gray_halftoned(frac r, frac g, frac b, frac alpha,
 {
     frac gray = color_rgb_to_gray(r, g, b, pis);
 
+    if (alpha != frac_1)	/* premultiply */
+	gray = alpha_bias((frac) ((long)gray * alpha / frac_1));
     if (gx_render_gray_alpha(gx_map_color_frac(pis, gray, effective_transfer.colored.gray), frac2cv(alpha), pdc, pis, dev, select) == 1)
 	gx_color_load_select(pdc, pis, dev, select);
 }
@@ -577,21 +583,25 @@ cmap_rgb_alpha2gray_direct(frac r, frac g, frac b, frac alpha,
 			   gs_color_select_t select)
 {
     frac gray = color_rgb_to_gray(r, g, b, pis);
-    frac mgray =
-    gx_map_color_frac(pis, gray, effective_transfer.colored.gray);
-    gx_color_value cv_gray = frac2cv(mgray);
-    gx_color_value cv_alpha = frac2cv(alpha);
-    gx_color_index color =
-    (cv_alpha == gx_max_color_value ?
-     gx_map_rgb_color(dev, cv_gray, cv_gray, cv_gray) :
-     gx_map_rgb_alpha_color(dev, cv_gray, cv_gray, cv_gray, cv_alpha));
 
-    if (color == gx_no_color_index) {
-	if (gx_render_gray_alpha(mgray, cv_alpha, pdc, pis, dev, select) == 1)
-	    gx_color_load_select(pdc, pis, dev, select);
-	return;
+    if (alpha != frac_1)	/* premultiply */
+	gray = alpha_bias((frac) ((long)gray * alpha / frac_1));
+    {
+	frac mgray =
+	gx_map_color_frac(pis, gray, effective_transfer.colored.gray);
+	gx_color_value cv_gray = frac2cv(mgray);
+	gx_color_index color =
+	(alpha == frac_1 ?
+	 gx_map_rgb_color(dev, cv_gray, cv_gray, cv_gray) :
+	 gx_map_rgb_alpha_color(dev, cv_gray, cv_gray, cv_gray, frac2cv(alpha)));
+
+	if (color == gx_no_color_index) {
+	    if (gx_render_gray_alpha(mgray, frac2cv(alpha), pdc, pis, dev, select) == 1)
+		gx_color_load_select(pdc, pis, dev, select);
+	    return;
+	}
+	color_set_pure(pdc, color);
     }
-    color_set_pure(pdc, color);
 }
 
 private void
@@ -599,40 +609,62 @@ cmap_rgb_alpha_halftoned(frac r, frac g, frac b, frac alpha,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			 gs_color_select_t select)
 {
-    frac mred = gx_map_color_frac(pis, r, effective_transfer.colored.red);
-    frac mgreen = gx_map_color_frac(pis, g, effective_transfer.colored.green);
-    frac mblue = gx_map_color_frac(pis, b, effective_transfer.colored.blue);
-    gx_color_value cv_alpha = frac2cv(alpha);
+    frac red = r, green = g, blue = b;
 
-    if ((mred == mgreen && mred == mblue ?	/* gray shade */
-	 gx_render_gray_alpha(mred, cv_alpha, pdc, pis, dev, select) :
-	 gx_render_rgb_alpha(mred, mgreen, mblue, cv_alpha, pdc, pis, dev, select)) == 1)
-	gx_color_load_select(pdc, pis, dev, select);
+    if (alpha != frac_1) {	/* premultiply */
+	red = alpha_bias((frac) ((long)red * alpha / frac_1));
+	green = alpha_bias((frac) ((long)green * alpha / frac_1));
+	blue = alpha_bias((frac) ((long)blue * alpha / frac_1));
+    } {
+	frac mred =
+	gx_map_color_frac(pis, red, effective_transfer.colored.red);
+	frac mgreen =
+	gx_map_color_frac(pis, green, effective_transfer.colored.green);
+	frac mblue =
+	gx_map_color_frac(pis, blue, effective_transfer.colored.blue);
+	gx_color_value cv_alpha = frac2cv(alpha);
+
+	if ((mred == mgreen && mred == mblue ?	/* gray shade */
+	     gx_render_gray_alpha(mred, cv_alpha, pdc, pis, dev, select) :
+	     gx_render_rgb_alpha(mred, mgreen, mblue, cv_alpha, pdc, pis, dev, select)) == 1)
+	    gx_color_load_select(pdc, pis, dev, select);
+    }
 }
 
 private void
 cmap_rgb_alpha_direct(frac r, frac g, frac b, frac alpha, gx_device_color * pdc,
      const gs_imager_state * pis, gx_device * dev, gs_color_select_t select)
 {
-    frac mred = gx_map_color_frac(pis, r, effective_transfer.colored.red);
-    frac mgreen = gx_map_color_frac(pis, g, effective_transfer.colored.green);
-    frac mblue = gx_map_color_frac(pis, b, effective_transfer.colored.blue);
-    gx_color_value cv_alpha = frac2cv(alpha);
-    gx_color_index color =
-    (cv_alpha == gx_max_color_value ?
-     gx_map_rgb_color(dev, frac2cv(mred), frac2cv(mgreen),
-		      frac2cv(mblue)) :
-     gx_map_rgb_alpha_color(dev, frac2cv(mred), frac2cv(mgreen),
-			    frac2cv(mblue), cv_alpha));
+    frac red = r, green = g, blue = b;
 
-    if (color != gx_no_color_index) {
-	color_set_pure(pdc, color);
-	return;
+    if (alpha != frac_1) {	/* premultiply */
+	red = alpha_bias((frac) ((long)red * alpha / frac_1));
+	green = alpha_bias((frac) ((long)green * alpha / frac_1));
+	blue = alpha_bias((frac) ((long)blue * alpha / frac_1));
+    } {
+	frac mred =
+	gx_map_color_frac(pis, red, effective_transfer.colored.red);
+	frac mgreen =
+	gx_map_color_frac(pis, green, effective_transfer.colored.green);
+	frac mblue =
+	gx_map_color_frac(pis, blue, effective_transfer.colored.blue);
+	gx_color_value cv_alpha = frac2cv(alpha);
+	gx_color_index color =
+	(cv_alpha == gx_max_color_value ?
+	 gx_map_rgb_color(dev, frac2cv(mred), frac2cv(mgreen),
+			  frac2cv(mblue)) :
+	 gx_map_rgb_alpha_color(dev, frac2cv(mred), frac2cv(mgreen),
+				frac2cv(mblue), cv_alpha));
+
+	if (color != gx_no_color_index) {
+	    color_set_pure(pdc, color);
+	    return;
+	}
+	if ((mred == mgreen && mred == mblue ?	/* gray shade */
+	     gx_render_gray_alpha(mred, cv_alpha, pdc, pis, dev, select) :
+	     gx_render_rgb_alpha(mred, mgreen, mblue, cv_alpha, pdc, pis, dev, select)) == 1)
+	    gx_color_load_select(pdc, pis, dev, select);
     }
-    if ((mred == mgreen && mred == mblue ?	/* gray shade */
-	 gx_render_gray_alpha(mred, cv_alpha, pdc, pis, dev, select) :
-	 gx_render_rgb_alpha(mred, mgreen, mblue, cv_alpha, pdc, pis, dev, select)) == 1)
-	gx_color_load_select(pdc, pis, dev, select);
 }
 
 /* Currently CMYK devices can't handle alpha. */
@@ -642,15 +674,20 @@ cmap_rgb_alpha_to_cmyk(frac r, frac g, frac b, frac alpha,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
 {
-    frac white = frac_1 - alpha;
+#ifdef PREMULTIPLY_TOWARDS_WHITE
+#  undef alpha_bias_value
+    frac alpha_bias_value = frac_1 - alpha;
 
-    cmap_rgb_to_cmyk((frac) ((long)r * alpha / frac_1) + white,
-		     (frac) ((long)g * alpha / frac_1) + white,
-		     (frac) ((long)b * alpha / frac_1) + white,
+#endif
+
+    cmap_rgb_to_cmyk(alpha_bias((frac) ((long)r * alpha / frac_1)),
+		     alpha_bias((frac) ((long)g * alpha / frac_1)),
+		     alpha_bias((frac) ((long)b * alpha / frac_1)),
 		     pdc, pis, dev, select);
 }
 
-#endif
+#undef alpha_bias
+#undef alpha_bias_value
 
 /* ------ Transfer function mapping ------ */
 
@@ -829,18 +866,19 @@ gx_default_cmyk_map_cmyk_color(gx_device * dev,
     return (color == gx_no_color_index ? color ^ 1 : color);
 }
 
-/* Default mapping from RGB+alpha to RGB. */
+/* Default mapping between RGB+alpha and RGB. */
 
 gx_color_index
 gx_default_map_rgb_alpha_color(gx_device * dev,
  gx_color_value r, gx_color_value g, gx_color_value b, gx_color_value alpha)
-{				/* Premultiply the values towards white. */
-    gx_color_value white = gx_max_color_value - alpha;
+{				/* Colors have been premultiplied: we don't need to do it here. */
+    return gx_map_rgb_color(dev, r, g, b);
+}
 
-    if (white == 0)
-	return gx_map_rgb_color(dev, r, g, b);
-    return gx_map_rgb_color(dev,
-	  (gx_color_value) ((ulong) r * alpha / gx_max_color_value) + white,
-	  (gx_color_value) ((ulong) g * alpha / gx_max_color_value) + white,
-	 (gx_color_value) ((ulong) b * alpha / gx_max_color_value) + white);
+int
+gx_default_map_color_rgb_alpha(gx_device * dev, gx_color_index color,
+			       gx_color_value prgba[4])
+{
+    prgba[3] = gx_max_color_value;	/* alpha = 1 */
+    return (*dev_proc(dev, map_color_rgb)) (dev, color, prgba);
 }

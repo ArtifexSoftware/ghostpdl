@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* iutil.c */
+/*Id: iutil.c  */
 /* Utilities for Ghostscript interpreter */
 #include "math_.h"		/* for fabs */
 #include "memory_.h"
@@ -37,6 +37,12 @@
 #include "gxfont.h"
 
 /* ------ Object utilities ------ */
+
+/* Define the table of ref type properties. */
+const byte ref_type_properties[] =
+{
+    ref_type_properties_data
+};
 
 /* Copy refs from one place to another. */
 int
@@ -311,8 +317,8 @@ ushort
 op_find_index(const ref * pref /* t_operator */ )
 {
     op_proc_p proc = real_opproc(pref);
-    register const op_def_ptr *opp = op_def_table;
-    register const op_def_ptr *opend = opp + op_def_count;
+    const op_def *const *opp = op_def_table;
+    const op_def *const *opend = opp + op_def_count;
 
     for (; ++opp < opend;) {
 	if ((*opp)->proc == proc)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevmsxf.c */
+/*Id: gdevmsxf.c  */
 /* External font (xfont) implementation for Microsoft Windows. */
 #include "ctype_.h"
 #include "math_.h"
@@ -28,7 +28,7 @@
 #include "gsstruct.h"
 
 /* Imported from gdevemap.c */
-extern const byte far_data gs_map_std_to_iso[256];
+extern const byte gs_map_std_to_iso[256];
 
 /* Declare the xfont procedures */
 private xfont_proc_lookup_font(win_lookup_font);
@@ -36,7 +36,7 @@ private xfont_proc_char_xglyph(win_char_xglyph);
 private xfont_proc_char_metrics(win_char_metrics);
 private xfont_proc_render_char(win_render_char);
 private xfont_proc_release(win_release);
-private gx_xfont_procs win_xfont_procs =
+private const gx_xfont_procs win_xfont_procs =
 {
     win_lookup_font,
     win_char_xglyph,
@@ -46,7 +46,7 @@ private gx_xfont_procs win_xfont_procs =
 };
 
 /* Return the xfont procedure record. */
-gx_xfont_procs *
+const gx_xfont_procs *
 win_get_xfont_procs(gx_device * dev)
 {
     return &win_xfont_procs;
@@ -121,8 +121,8 @@ private const byte far_data gs_map_iso_to_oem[256] =
 /* but that will have to wait till later. */
 
 typedef struct font_entry_s {
-    const char _ds *key;
-    const char _ds *value;
+    const char *key;
+    const char *value;
     uint pitchAndFamily;
 } font_entry;
 
@@ -145,7 +145,7 @@ win_lookup_font(gx_device * dev, const byte * fname, uint len,
     win_xfont f;
     win_xfont *wf;
     uint name_len = min(len, LF_FACESIZE - 1);
-    const font_entry _ds *pfe;
+    const font_entry *pfe;
     HDC hdc;
 
     /* Only handle simple cases for now. */

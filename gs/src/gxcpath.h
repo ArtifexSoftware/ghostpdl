@@ -1,24 +1,26 @@
 /* Copyright (C) 1991, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gxcpath.h */
-/* Interface to clipping devices */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxcpath.h  */
 /* Requires gxdevice.h */
+
+#ifndef gxcpath_INCLUDED
+#  define gxcpath_INCLUDED
 
 /* We expose the implementation of clipping lists so that clients */
 /* can allocate clipping lists or devices on the stack. */
@@ -43,11 +45,12 @@
  */
 typedef struct gx_clip_rect_s gx_clip_rect;
 struct gx_clip_rect_s {
-	gx_clip_rect *next, *prev;
-	int ymin, ymax;			/* ymax > ymin */
-	int xmin, xmax;			/* xmax > xmin */
-	byte to_visit;			/* bookkeeping for gs_clippath */
+    gx_clip_rect *next, *prev;
+    int ymin, ymax;		/* ymax > ymin */
+    int xmin, xmax;		/* xmax > xmin */
+    byte to_visit;		/* bookkeeping for gs_clippath */
 };
+
 /* The descriptor is public only for gxacpath.c. */
 extern_st(st_clip_rect);
 #define public_st_clip_rect()	/* in gxcpath.c */\
@@ -65,16 +68,18 @@ extern_st(st_clip_rect);
 #ifndef gx_clip_list_DEFINED
 #  define gx_clip_list_DEFINED
 typedef struct gx_clip_list_s gx_clip_list;
+
 #endif
 struct gx_clip_list_s {
-	gx_clip_rect single;		/* (has next = prev = 0) */
-	gx_clip_rect *head;
-	gx_clip_rect *tail;
-	int count;			/* # of rectangles not counting */
-					/* head or tail */
-	bool outside;			/* if true, clip to outside of list */
-					/* rather than inside */
+    gx_clip_rect single;	/* (has next = prev = 0) */
+    gx_clip_rect *head;
+    gx_clip_rect *tail;
+    int count;			/* # of rectangles not counting */
+    /* head or tail */
+    bool outside;		/* if true, clip to outside of list */
+    /* rather than inside */
 };
+
 #define private_st_clip_list()	/* in gxcpath.c */\
   gs_private_st_ptrs2(st_clip_list, gx_clip_list, "clip_list",\
     clip_list_enum_ptrs, clip_list_reloc_ptrs, head, tail)
@@ -88,17 +93,19 @@ struct gx_clip_list_s {
  * but we suspect it could be used more widely.
  */
 typedef struct gx_device_clip_s {
-	gx_device_forward_common;	/* target is set by client */
-	gx_clip_list list;		/* set by client */
-	gx_clip_rect *current;		/* cursor in list */
-	gs_int_point translation;
+    gx_device_forward_common;	/* target is set by client */
+    gx_clip_list list;		/* set by client */
+    gx_clip_rect *current;	/* cursor in list */
+    gs_int_point translation;
 } gx_device_clip;
+
 extern_st(st_device_clip);
 #define public_st_device_clip()	/* in gxcpath.c */\
   gs_public_st_composite(st_device_clip, gx_device_clip,\
     "gx_device_clip", device_clip_enum_ptrs, device_clip_reloc_ptrs)
-void gx_make_clip_translate_device(P5(gx_device_clip *dev, void *container,
-  const gx_clip_list *list, int tx, int ty));
+void gx_make_clip_translate_device(P5(gx_device_clip * dev, void *container,
+				const gx_clip_list * list, int tx, int ty));
+
 #define gx_make_clip_device(dev, container, list)\
   gx_make_clip_translate_device(dev, container, list, 0, 0)
 void gx_make_clip_path_device(P2(gx_device_clip *, const gx_clip_path *));
@@ -117,3 +124,5 @@ void gx_clip_list_free(P2(gx_clip_list *, gs_memory_t *));
 
 /* Set the outer box for a clipping path from its bounding box. */
 void gx_cpath_set_outer_box(P1(gx_clip_path *));
+
+#endif /* gxcpath_INCLUDED */

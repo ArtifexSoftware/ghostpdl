@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zmisc1.c */
+/*Id: zmisc1.c  */
 /* Miscellaneous Type 1 font operators */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gscrypt1.h"
 #include "stream.h"		/* for getting state of PFBD stream */
@@ -45,7 +44,8 @@ ztype1decrypt(os_ptr op)
     return type1crypt(op, gs_type1_decrypt);
 }
 private int
-type1crypt(register os_ptr op, int (*proc) (P4(byte *, const byte *, uint, ushort *)))
+type1crypt(register os_ptr op,
+	   int (*proc)(P4(byte *, const byte *, uint, ushort *)))
 {
     crypt_state state;
     uint ssize;
@@ -59,8 +59,8 @@ type1crypt(register os_ptr op, int (*proc) (P4(byte *, const byte *, uint, ushor
     ssize = r_size(op - 1);
     if (r_size(op) < ssize)
 	return_error(e_rangecheck);
-    discard((*proc) (op->value.bytes, op[-1].value.const_bytes, ssize,
-		     &state));	/* can't fail */
+    discard((*proc)(op->value.bytes, op[-1].value.const_bytes, ssize,
+		    &state));	/* can't fail */
     op[-2].value.intval = state;
     op[-1] = *op;
     r_set_size(op - 1, ssize);
@@ -94,8 +94,7 @@ zexE(register os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_write(op, code, &s_exE_template, (stream_state *) & state,
-			0);
+    return filter_write(op, code, &s_exE_template, (stream_state *)&state, 0);
 }
 
 /* <source> <seed> eexecDecode/filter <file> */
@@ -106,7 +105,7 @@ zexD(register os_ptr op)
     stream_exD_state state;
     int code;
 
-    (*s_exD_template.set_defaults) ((stream_state *) & state);
+    (*s_exD_template.set_defaults)((stream_state *)&state);
     if (r_has_type(op, t_dictionary)) {
 	uint cstate;
 
@@ -124,8 +123,10 @@ zexD(register os_ptr op)
     }
     if (code < 0)
 	return code;
-    /* If we're reading a .PFB file, let the filter know about it, */
-    /* so it can read recklessly to the end of the binary section. */
+    /*
+     * If we're reading a .PFB file, let the filter know about it,
+     * so it can read recklessly to the end of the binary section.
+     */
     state.pfb_state = 0;
     if (r_has_type(op - 1, t_file)) {
 	stream *s = (op - 1)->value.pfile;
@@ -134,8 +135,7 @@ zexD(register os_ptr op)
 	    state.pfb_state = (stream_PFBD_state *) s->state;
     }
     state.binary = -1;
-    return filter_read(op, code, &s_exD_template, (stream_state *) & state,
-		       0);
+    return filter_read(op, code, &s_exD_template, (stream_state *)&state, 0);
 }
 
 /* ------ Initialization procedure ------ */

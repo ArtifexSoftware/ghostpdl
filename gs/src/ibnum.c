@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* ibnum.c */
+/*Id: ibnum.c  */
 /* Level 2 encoded number reading utilities for Ghostscript */
 #include "math_.h"
 #include "memory_.h"
@@ -40,15 +40,16 @@ num_array_format(const ref * op)
 {
     switch (r_type(op)) {
 	case t_string:
-	    {			/* Check that this is a legitimate encoded number string. */
+	    {
+		/* Check that this is a legitimate encoded number string. */
 		const byte *bp = op->value.bytes;
-		int format = bp[1];
+		int format;
 
-		if (r_size(op) < 4 || bp[0] != bt_num_array_value ||
-		    !num_is_valid(format)
-		    )
+		if (r_size(op) < 4 || bp[0] != bt_num_array_value)
 		    return_error(e_rangecheck);
-		if (sdecodeshort(bp + 2, format) !=
+		format = bp[1];
+		if (!num_is_valid(format) ||
+		    sdecodeshort(bp + 2, format) !=
 		    (r_size(op) - 4) / encoded_number_bytes(format)
 		    )
 		    return_error(e_rangecheck);
@@ -153,24 +154,25 @@ sdecode_number(const byte * str, int format, ref * np)
 
 /* Decode encoded numbers from a string according to format. */
 
-/* Decode a (16-bit, signed) short. */
-short
-sdecodeshort(register const byte * p, int format)
+/* Decode a (16-bit, signed or unsigned) short. */
+uint
+sdecodeushort(const byte * p, int format)
 {
     int a = p[0], b = p[1];
-    short v = (num_is_lsb(format) ? (b << 8) + a : (a << 8) + b);
 
-#if arch_sizeof_short == 2
-    return v;
-#else
-    /* Sign-extend if sizeof(short) > 2. */
+    return (num_is_lsb(format) ? (b << 8) + a : (a << 8) + b);
+}
+int
+sdecodeshort(const byte * p, int format)
+{
+    int v = (int)sdecodeushort(p, format);
+
     return (v & 0x7fff) - (v & 0x8000);
-#endif
 }
 
 /* Decode a (32-bit, signed) long. */
 long
-sdecodelong(register const byte * p, int format)
+sdecodelong(const byte * p, int format)
 {
     int a = p[0], b = p[1], c = p[2], d = p[3];
     long v = (num_is_lsb(format) ?
@@ -185,17 +187,16 @@ sdecodelong(register const byte * p, int format)
 #endif
 }
 
-/* Decode a float.  We don't handle non-IEEE native representations yet. */
+/* Decode a float.  We assume that native floats occupy 32 bits. */
 float
-sdecodefloat(register const byte * p, int format)
+sdecodefloat(const byte * p, int format)
 {
+    bits32 lnum = (bits32) sdecodelong(p, format);
     float fnum;
 
-    if (format != num_float_native) {
-	bits32 lnum = (bits32) sdecodelong(p, format);
-
-	/* We know IEEE floats take 32 bits. */
 #if !arch_floats_are_IEEE
+    if (format != num_float_native) {
+	/* We know IEEE floats take 32 bits. */
 	/* Convert IEEE float to native float. */
 	int sign_expt = lnum >> 23;
 	int expt = sign_expt & 0xff;
@@ -209,11 +210,8 @@ sdecodefloat(register const byte * p, int format)
 	}
 	if (sign_expt & 0x100)
 	    fnum = -fnum;
-#else
-	fnum = *(float *)&lnum;
-#endif
     } else
-	memcpy(&fnum, p, sizeof(float));
-
+#endif
+	fnum = *(float *)&lnum;
     return fnum;
 }

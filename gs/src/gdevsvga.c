@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevsvga.c */
+/*Id: gdevsvga.c  */
 /* SuperVGA display drivers */
 #include "memory_.h"
 #include "gconfigv.h"		/* for USE_ASM */
@@ -54,7 +54,7 @@ private dc_entry dynamic_colors[dc_hash_size + 1];
 	svga_get_bits, NULL /*get_params*/, svga_put_params,\
 	NULL /*map_cmyk_color*/, NULL /*get_xfont_procs*/,\
 	NULL /*get_xfont_device*/, NULL /*map_rgb_alpha_color*/,\
-	NULL /*get_page_device*/, svga_get_alpha_bits, svga_copy_alpha\
+	gx_page_device_get_page_device, svga_get_alpha_bits, svga_copy_alpha\
 }
 
 /* Save the controller mode */
@@ -83,7 +83,7 @@ private int svga_save_mode = -1;
 /* Set the mode in the device structure and return 0, */
 /* or return an error code. */
 int
-svga_find_mode(gx_device * dev, const mode_info _ds * mip)
+svga_find_mode(gx_device * dev, const mode_info * mip)
 {
     for (;; mip++) {
 	if (mip->width >= fb_dev->width &&
@@ -209,7 +209,7 @@ svga_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
 	rgb = (r5 << 10) + (g5 << 5) + b5;
     }
     {
-	register dc_entry _ds *pdc;
+	register dc_entry *pdc;
 
 	for (pdc = &dynamic_colors[rgb % dc_hash_size];
 	     pdc->rgb != 0; pdc++
@@ -458,7 +458,7 @@ svga_put_params(gx_device * dev, gs_param_list * plist)
     int ecode = 0;
     int code;
     int atext = fb_dev->alpha_text, agraphics = fb_dev->alpha_graphics;
-    const char _ds *param_name;
+    const char *param_name;
 
     switch (code = param_read_int(plist, (param_name = "TextAlphaBits"), &fb_dev->alpha_text)) {
 	case 0:
@@ -606,7 +606,7 @@ svga_copy_alpha(gx_device * dev, const byte * base, int sourcex,
 /* ------ The VESA device ------ */
 
 private dev_proc_open_device(vesa_open);
-private gx_device_procs vesa_procs = svga_procs(vesa_open);
+private const gx_device_procs vesa_procs = svga_procs(vesa_open);
 int vesa_get_mode(P0());
 void vesa_set_mode(P1(int));
 private void vesa_set_page(P3(gx_device_svga *, int, int));
@@ -698,14 +698,14 @@ vesa_get_info(int mode, vesa_info _ss * info)
     int86x(0x10, &regs, &regs, &sregs);
 #ifdef DEBUG
     if (regs.h.ah == 0 && regs.h.al == 0x4f)
-	dprintf8("vesa_get_info(%x): ma=%x wa=%x/%x wg=%x ws=%x wseg=%x/%x\n",
-		 mode, info->mode_attributes,
-		 info->win_a_attributes, info->win_b_attributes,
-		 info->win_granularity, info->win_size,
-		 info->win_a_segment, info->win_b_segment);
+	dlprintf8("vesa_get_info(%x): ma=%x wa=%x/%x wg=%x ws=%x wseg=%x/%x\n",
+		  mode, info->mode_attributes,
+		  info->win_a_attributes, info->win_b_attributes,
+		  info->win_granularity, info->win_size,
+		  info->win_a_segment, info->win_b_segment);
     else
-	dprintf3("vesa_get_info(%x) failed: ah=%x al=%x\n",
-		 mode, regs.h.ah, regs.h.al);
+	dlprintf3("vesa_get_info(%x) failed: ah=%x al=%x\n",
+		  mode, regs.h.ah, regs.h.al);
 #endif
     return (regs.h.ah == 0 && regs.h.al == 0x4f ? 0 : -1);
 }
@@ -713,10 +713,10 @@ vesa_get_info(int mode, vesa_info _ss * info)
 /* Initialize the graphics mode. */
 /* Shared routine to look up a VESA-compatible BIOS mode. */
 private int
-vesa_find_mode(gx_device * dev, const mode_info _ds * mode_table)
+vesa_find_mode(gx_device * dev, const mode_info * mode_table)
 {				/* Select the proper video mode */
     vesa_info info;
-    const mode_info _ds *mip;
+    const mode_info *mip;
 
     for (mip = mode_table; mip->mode >= 0; mip++) {
 	if (mip->width >= fb_dev->width &&
@@ -809,7 +809,7 @@ vesa_set_page(gx_device_svga * dev, int pn, int wnum)
 /* ------ The ATI Wonder device ------ */
 
 private dev_proc_open_device(atiw_open);
-private gx_device_procs atiw_procs = svga_procs(atiw_open);
+private const gx_device_procs atiw_procs = svga_procs(atiw_open);
 private int atiw_get_mode(P0());
 private void atiw_set_mode(P1(int));
 private void atiw_set_page(P3(gx_device_svga *, int, int));
@@ -878,7 +878,7 @@ atiw_set_page(gx_device_svga * dev, int pn, int wnum)
 /* ------ The Trident device ------ */
 
 private dev_proc_open_device(tvga_open);
-private gx_device_procs tvga_procs = svga_procs(tvga_open);
+private const gx_device_procs tvga_procs = svga_procs(tvga_open);
 
 /* We can use the atiw_get/set_mode procedures. */
 private void tvga_set_page(P3(gx_device_svga *, int, int));
@@ -924,7 +924,7 @@ tvga_set_page(gx_device_svga * dev, int pn, int wnum)
 /* ------ The Tseng Labs ET3000/4000 devices ------ */
 
 private dev_proc_open_device(tseng_open);
-private gx_device_procs tseng_procs =
+private const gx_device_procs tseng_procs =
 svga_procs(tseng_open);
 
 /* We can use the atiw_get/set_mode procedures. */
@@ -983,13 +983,60 @@ tseng_set_page(gx_device_svga * dev, int pn, int wnum)
 	pn <<= shift, mask <<= shift;
     outportb(0x3cd, (inportb(0x3cd) & ~mask) + pn);
 }
+/* ------ The Cirrus device (CL-GD54XX) ------ */
+/* Written by Piotr Strzelczyk, BOP s.c., Gda\'nsk, Poland, */
+/* e-mail contact via B.Jackowski@GUST.org.pl */
+
+private dev_proc_open_device(cirr_open);
+private gx_device_procs cirr_procs = svga_procs(cirr_open);
+
+/* We can use the atiw_get/set_mode procedures. */
+private void cirr_set_page(P3(gx_device_svga *, int, int));
+gx_device_svga gs_cirr_device =
+svga_device(cirr_procs, "cirr", atiw_get_mode, atiw_set_mode, cirr_set_page);
+
+/* Initialize the graphics mode. */
+private int
+cirr_open(gx_device * dev)
+{
+    fb_dev->wnum_read = 1;
+    fb_dev->wnum_write = 0;
+    /* Select the proper video mode */
+    {
+	static const mode_info mode_table[] =
+	{
+	    {640, 400, 0x5e},
+	    {640, 480, 0x5f},
+	    {800, 600, 0x5c},
+	    {1024, 768, 0x60},
+	    {-1, -1, -1}
+	};
+	int code = svga_find_mode(dev, mode_table);
+
+	if (code < 0)
+	    return code;	/* mode not available */
+	outportb(0x3c4, 0x06);
+	outportb(0x3c5, 0x12);
+	outportb(0x3ce, 0x0b);
+	outportb(0x3cf, (inportb(0x3cf) & 0xde));
+	return svga_open(dev);
+    }
+}
+
+/* Set the current display page. */
+private void
+cirr_set_page(gx_device_svga * dev, int pn, int wnum)
+{
+    outportb(0x3ce, 0x09);
+    outportb(0x3cf, pn << 4);
+}
 
 /* ------ The Avance Logic device (mostly experimental) ------ */
 /* For questions about this device, please contact Stefan Freund */
 /* <freund@ikp.uni-koeln.de>. */
 
 private dev_proc_open_device(ali_open);
-private gx_device_procs ali_procs = svga_procs(ali_open);
+private const gx_device_procs ali_procs = svga_procs(ali_open);
 
 /* We can use the atiw_get/set_mode procedures. */
 private void ali_set_page(P3(gx_device_svga *, int, int));

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_iwatc.c */
+/*Id: gp_iwatc.c  */
 /* Intel processor, Watcom C-specific routines for Ghostscript */
 #include "dos_.h"
 #include <fcntl.h>
@@ -73,9 +73,9 @@ gp_do_exit(int exit_status)
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
-extern void gp_set_printer_binary(P2(int, int));
+extern void gp_set_file_binary(P2(int, int));
 FILE *
-gp_open_printer(char *fname, int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     FILE *pfile;
 
@@ -96,7 +96,7 @@ gp_open_printer(char *fname, int binary_mode)
 	if (pfile == NULL)
 	    return NULL;
     }
-    gp_set_printer_binary(fileno(pfile), binary_mode);
+    gp_set_file_binary(fileno(pfile), binary_mode);
     return pfile;
 }
 
@@ -115,19 +115,23 @@ gp_close_printer(FILE * pfile, const char *fname)
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+		     const char *mode)
 {				/* Unfortunately, Watcom C doesn't provide mktemp, */
     /* so we have to simulate it ourselves. */
     char *temp;
     struct stat fst;
     char *end;
 
-    if ((temp = getenv("TEMP")) == NULL)
+    /* The -7 is for AA.AAA plus a possible final \. */
+    int len = gp_file_name_sizeof - strlen(prefix) - 7;
+
+    if (gp_getenv("TEMP", fname, &len) != 0)
 	*fname = 0;
     else {
 	char last = '\\';
+	char *temp;
 
-	strcpy(fname, temp);
 	/* Prevent X's in path from being converted by mktemp. */
 	for (temp = fname; *temp; temp++)
 	    *temp = last = tolower(*temp);

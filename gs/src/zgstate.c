@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zgstate.c */
+/*Id: zgstate.c  */
 /* Graphics state operators */
 #include "math_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "ialloc.h"
 #include "idict.h"
@@ -30,7 +29,7 @@
 #include "store.h"
 
 /* Forward references */
-private int near num_param(P2(const_os_ptr, int (*)(P2(gs_state *, floatp))));
+private int num_param(P2(const_os_ptr, int (*)(P2(gs_state *, floatp))));
 
 /* Structure descriptors */
 private_st_int_gstate();
@@ -39,12 +38,6 @@ private_st_int_gstate();
 
 /* The current graphics state */
 gs_state *igs;
-private gs_gc_root_t igs_root;
-
-/* An empty dictionary for the pagedevice member of the int_gstate. */
-ref i_null_pagedevice;
-private ref *npd_p;
-private gs_gc_root_t npd_root;
 
 /* "Client" procedures */
 private void *gs_istate_alloc(P1(gs_memory_t * mem));
@@ -58,76 +51,39 @@ private const gs_state_client_procs istate_procs =
 };
 
 /* Initialize the graphics stack. */
-#ifdef DPNEXT
 void
 igs_init(void)
 {
-    dict_create(0, &i_null_pagedevice);
-    r_clear_attrs(&i_null_pagedevice, a_write);
-    npd_p = &i_null_pagedevice;
-    gs_register_ref_root(imemory, &npd_root, (void **)&npd_p, "igs(npd)");
-    gs_register_struct_root(imemory, &igs_root, (void **)&igs, "igs");
+    gs_register_struct_root(imemory, NULL, (void **)&igs, "igs");
     igs = int_gstate_alloc(iimemory);
 }
 gs_state *
 int_gstate_alloc(gs_ref_memory_t * mem)
 {
-#else
-void
-igs_init(void)
-{
-#endif
     int_gstate *iigs;
     ref proc0;
-
-#ifdef DPNEXT
     gs_state *pgs = gs_state_alloc((gs_memory_t *) mem);
 
     iigs = gs_alloc_struct((gs_memory_t *) mem, int_gstate, &st_int_gstate,
 			   "int_gstate_alloc(int_gstate)");
-#else
-    igs = gs_state_alloc(imemory);
-    iigs = gs_alloc_struct(imemory, int_gstate, &st_int_gstate,
-			   "igs_init");
-#endif
     int_gstate_map_refs(iigs, make_null);
     make_empty_array(&iigs->dash_pattern, a_all);
-#ifdef DPNEXT
     gs_alloc_ref_array(mem, &proc0, a_readonly + a_executable, 2,
 		       "int_gstate_alloc(proc0)");
-#else
-    ialloc_ref_array(&proc0, a_readonly + a_executable, 2,
-		     "igs_init");
-#endif
     make_oper(proc0.value.refs, 0, zpop);
     make_real(proc0.value.refs + 1, 0.0);
     iigs->black_generation = proc0;
     iigs->undercolor_removal = proc0;
-#ifndef DPNEXT
-    dict_create(0, &i_null_pagedevice);
-    r_clear_attrs(&i_null_pagedevice, a_write);
-#endif
-    iigs->pagedevice = i_null_pagedevice;
-#ifdef DPNEXT
+    clear_pagedevice(iigs);
     gs_state_set_client(pgs, iigs, &istate_procs);
     /* PostScript code wants limit clamping enabled. */
     gs_setlimitclamp(pgs, true);
-#else
-    npd_p = &i_null_pagedevice;
-    gs_register_ref_root(imemory, &npd_root, (void **)&npd_p, "igs(npd)");
-    gs_state_set_client(igs, iigs, &istate_procs);
-    gs_register_struct_root(imemory, &igs_root, (void **)&igs, "igs");
-    /* PostScript code wants limit clamping enabled. */
-    gs_setlimitclamp(igs, true);
-#endif
     /*
      * gsave and grestore only work properly
      * if there are always at least 2 entries on the stack.
      * We count on the PostScript initialization code to do a gsave.
      */
-#ifdef DPNEXT
     return pgs;
-#endif
 }
 
 /* - gsave - */
@@ -154,7 +110,8 @@ zgrestoreall(register os_ptr op)
 /* - initgraphics - */
 private int
 zinitgraphics(register os_ptr op)
-{				/* gs_initgraphics does a setgray; we must clear the interpreter's */
+{
+    /* gs_initgraphics does a setgray; we must clear the interpreter's */
     /* cached copy of the color space object. */
     int code = gs_initgraphics(igs);
 
@@ -168,11 +125,11 @@ zinitgraphics(register os_ptr op)
 /* <num> setlinewidth - */
 private int
 zsetlinewidth(register os_ptr op)
-{				/*
-				 * The Red Book doesn't say anything about this, but Adobe
-				 * interpreters return (or perhaps store) the absolute value
-				 * of the width.
-				 */
+{	/*
+	 * The Red Book doesn't say anything about this, but Adobe
+	 * interpreters return (or perhaps store) the absolute value
+	 * of the width.
+	 */
     double width;
     int code = real_param(op, &width);
 
@@ -472,15 +429,15 @@ gs_istate_free(void *old, gs_memory_t * mem)
 }
 
 /* Get a numeric parameter */
-private int near
-num_param(const_os_ptr op, int (*pproc) (P2(gs_state *, floatp)))
+private int
+num_param(const_os_ptr op, int (*pproc)(P2(gs_state *, floatp)))
 {
     double param;
     int code = real_param(op, &param);
 
     if (code < 0)
 	return_op_typecheck(op);
-    code = (*pproc) (igs, param);
+    code = (*pproc)(igs, param);
     if (!code)
 	pop(1);
     return code;

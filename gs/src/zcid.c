@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zcid.c */
+/*Id: zcid.c  */
 /* CID-keyed font operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsmatrix.h"
 #include "gsccode.h"
@@ -30,7 +29,7 @@
 
 /* Imported from zfont42.c */
 int build_gs_TrueType_font(P5(os_ptr op, font_type ftype,
-			      const char _ds * bcstr, const char _ds * bgstr,
+			      const char *bcstr, const char *bgstr,
 			      build_font_options_t options));
 
 /* <string|name> <font_dict> .buildfont9/10 <string|name> <font> */
@@ -78,7 +77,7 @@ zbuildfont10(os_ptr op)
 private int
 zbuildfont11(os_ptr op)
 {
-    return build_gs_TrueType_font(op, ft_CID_TrueType, (const char _ds *)0,
+    return build_gs_TrueType_font(op, ft_CID_TrueType, (const char *)0,
 				  "%Type11BuildGlyph",
 				  bf_Encoding_optional |
 				  bf_FontBBox_required |

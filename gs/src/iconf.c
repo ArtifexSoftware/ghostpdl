@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,17 +16,15 @@
    all copies.
  */
 
-/* iconf.c */
+/*Id: iconf.c  */
 /* Configuration-dependent tables and initialization for interpreter */
 #include "stdio_.h"		/* stdio for stream.h */
-#include "gsmemory.h"		/* for gscdefs.h */
-#include "gscdefs.h"
-#include "gconfig.h"
+#include "gstypes.h"
+#include "gsmemory.h"		/* for iminst.h */
+#include "gconf.h"
 #include "iref.h"
 #include "ivmspace.h"
 #include "opdef.h"
-#include "stream.h"		/* for files.h */
-#include "files.h"
 #include "iminst.h"
 
 /* Define the default values for an interpreter instance. */
@@ -36,43 +34,35 @@ const gs_main_instance gs_main_instance_init_values =
 /* Set up the .ps file name string array. */
 /* We fill in the lengths at initialization time. */
 #define ref_(t) struct { struct tas_s tas; t value; }
-#define string_(s)\
- { { (t_string<<r_type_shift) + a_readonly + avm_foreign, 0 }, s },
-#define psfile_(fns) string_(fns)
-ref_(const char *) 
-gs_init_file_array[] =
-{
-#include "gconfig.h"
-    string_(0)
+#define string_(s,len)\
+ { { (t_string<<r_type_shift) + a_readonly + avm_foreign, len }, s },
+#define psfile_(fns,len) string_(fns,len)
+const ref_(const char *) gs_init_file_array[] = {
+#include "gconf.h"
+    string_(0, 0)
 };
 #undef psfile_
 
 /* Set up the emulator name string array similarly. */
-#define emulator_(ems) string_(ems)
-ref_(const char *) 
-gs_emulator_name_array[] =
-{
-#include "gconfig.h"
-    string_(0)
+#define emulator_(ems,len) string_(ems,len)
+const ref_(const char *) gs_emulator_name_array[] = {
+#include "gconf.h"
+    string_(0, 0)
 };
 #undef emulator_
 
 /* Initialize the operators. */
-extern op_def_ptr
-	/* Initialization operators */
-#define oper_(defs) defs(P0()),
-#include "gconfig.h"
+	/* Declare the externs. */
+#define oper_(xx_op_defs) extern const op_def xx_op_defs[];
+#include "gconf.h"
+oper_(interp_op_defs)		/* Interpreter operators */
 #undef oper_
-	/* Interpreter operators */
-       interp_op_defs(P0());
-
-op_def_ptr(*(op_defs_all[]))(P0()) = {
-    /* Initialization operators */
+ 
+const op_def *const op_defs_all[] = {
+     /* Create the table. */
 #define oper_(defs) defs,
-#include "gconfig.h"
-#undef oper_
-    /* Interpreter operators */
-    interp_op_defs,
-    /* end marker */
-	0
+#include "gconf.h"
+    oper_(interp_op_defs)	/* Interpreter operators */
+#undef oper_ 
+	 0
 };

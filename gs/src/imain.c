@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* imain.c */
+/*Id: imain.c  */
 /* Common support for interpreter front ends */
 #include "memory_.h"
 #include "string_.h"
@@ -74,53 +74,56 @@ gs_main_instance_default(void)
 /* the program terminates with an error.  There must be a better way .... */
 int gs_exit_status;
 
+/* Define the interpreter's name table.  We'll move it somewhere better */
+/* eventually.... */
+name_table *the_gs_name_table;
+
 /* ------ Imported data ------ */
 
 /* Configuration information imported from gconfig.c and iinit.c. */
 extern const char *gs_init_file;
-extern const byte far_data gs_init_string[];
-extern const uint far_data gs_init_string_sizeof;
-extern ref gs_init_file_array[];
-extern ref gs_emulator_name_array[];
+extern const byte gs_init_string[];
+extern const uint gs_init_string_sizeof;
+extern const ref gs_init_file_array[];
+extern const ref gs_emulator_name_array[];
 
 /* ------ Forward references ------ */
 
 private int gs_run_init_file(P3(gs_main_instance *, int *, ref *));
-
-#ifdef DEBUG
-private void print_usage(P3(const gs_main_instance *, gs_dual_memory_t *,
-			    const char *));
-
-#endif
+private void print_resource_usage(P3(const gs_main_instance *,
+				     gs_dual_memory_t *,
+				     const char *));
 
 /* ------ Initialization ------ */
 
 /* A handy way to declare and execute an initialization procedure: */
 #define call_init(proc)\
-{ extern void proc(P0()); proc(); }
+BEGIN extern void proc(P0()); proc(); END
 
 /* Initialization to be done before anything else. */
 void
 gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	      int max_lib_paths)
-{				/* Set our versions of stdin/out/err. */
-    gs_stdin = in;
-    gs_stdout = out;
-    gs_stderr = err;
+{
+    gs_memory_t *heap;
+
+    /* Set our versions of stdin/out/err. */
+    gs_stdin = minst->fstdin = in;
+    gs_stdout = minst->fstdout = out;
+    gs_stderr = minst->fstderr = err;
     /* Do platform-dependent initialization. */
     /* We have to do this as the very first thing, */
     /* because it detects attempts to run 80N86 executables (N>0) */
     /* on incompatible processors. */
     gp_init();
-#ifdef DEBUG
     gp_get_usertime(minst->base_time);
-#endif
     /* Initialize the imager. */
-    gs_lib_init0(gs_stdout);
+    heap = gs_lib_init0(gs_stdout);
+    minst->heap = heap;
     /* Initialize the file search paths. */
     make_array(&minst->lib_path.container, avm_foreign, max_lib_paths,
-	       (ref *) gs_malloc(max_lib_paths, sizeof(ref),
-				 "lib_path array"));
+	       (ref *) gs_alloc_byte_array(heap, max_lib_paths, sizeof(ref),
+					   "lib_path array"));
     make_array(&minst->lib_path.list, avm_foreign | a_readonly, 0,
 	       minst->lib_path.container.value.refs);
     minst->lib_path.env = 0;
@@ -134,36 +137,43 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 void
 gs_main_init1(gs_main_instance * minst)
 {
-    if (minst->init_done < 1) { {
+    if (minst->init_done < 1) {
+	{
 	    extern bool gs_have_level2(P0());
 
-	    ialloc_init(&gs_memory_default,
+	    ialloc_init((gs_raw_memory_t *) & gs_memory_default,
 			minst->memory_chunk_size,
 			gs_have_level2());
 	    gs_lib_init1((gs_memory_t *) imemory_system);
 	    alloc_save_init(idmemory);
-    }
-    if (name_init(minst->name_table_size, imemory_system) == 0) {
-	puts("name_init failed");
-	gs_exit(1);
-    }
-	call_init(obj_init)	/* requires name_init */
-	    call_init(scan_init)	/* ditto */
-	    minst->init_done = 1;
+	}
+	{
+	    gs_memory_t *mem = imemory_system;
+	    name_table *nt = names_init(minst->name_table_size, mem);
+
+	    if (nt == 0) {
+		puts("name_init failed");
+		gs_exit(1);
+	    }
+	    the_gs_name_table = nt;
+	    gs_register_struct_root(mem, NULL, (void **)&the_gs_name_table,
+				    "the_gs_name_table");
+	}
+	call_init(obj_init);	/* requires name_init */
+	minst->init_done = 1;
     }
 }
 
 /* Initialization to be done before running any files. */
 private void
-init2_make_string_array(ref * srefs, const char *aname)
+init2_make_string_array(const ref * srefs, const char *aname)
 {
-    ref *ifp = srefs;
+    const ref *ifp = srefs;
     ref ifa;
 
-    for (; ifp->value.bytes != 0; ifp++)
-	r_set_size(ifp, strlen((const char *)ifp->value.bytes));
+    for (; ifp->value.bytes != 0; ifp++);
     make_tasv(&ifa, t_array, a_readonly | avm_foreign,
-	      ifp - srefs, refs, srefs);
+	      ifp - srefs, const_refs, srefs);
     initial_enter_name(aname, &ifa);
 }
 void
@@ -174,15 +184,17 @@ gs_main_init2(gs_main_instance * minst)
 	int code, exit_code;
 	ref error_object;
 
-	call_init(igs_init)
-	    call_init(zop_init) {
+	call_init(igs_init);
+	call_init(zop_init);
+	{
 	    extern void gs_iodev_init(P1(gs_memory_t *));
 
 	    gs_iodev_init(imemory);
 	}
-	call_init(op_init)	/* requires obj_init, scan_init */
+	call_init(op_init);	/* requires obj_init */
+
 	/* Set up the array of additional initialization files. */
-	    init2_make_string_array(gs_init_file_array, "INITFILES");
+	init2_make_string_array(gs_init_file_array, "INITFILES");
 	/* Set up the array of emulator names. */
 	init2_make_string_array(gs_emulator_name_array, "EMULATORS");
 	/* Pass the search path. */
@@ -197,10 +209,8 @@ gs_main_init2(gs_main_instance * minst)
 	}
 	minst->init_done = 2;
     }
-#ifdef DEBUG
     if (gs_debug_c(':'))
-	print_usage(minst, &gs_imemory, "Start");
-#endif
+	print_resource_usage(minst, &gs_imemory, "Start");
 }
 
 /* ------ Search paths ------ */
@@ -571,18 +581,16 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 /* Free all resources and exit. */
 void
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
-{				/*
-				 * Previous versions of this code closed the devices in the
-				 * device list here.  Since these devices are now prototypes,
-				 * they cannot be opened, so they do not need to be closed;
-				 * alloc_restore_all will close dynamically allocated devices.
-				 */
+{	/*
+	 * Previous versions of this code closed the devices in the
+	 * device list here.  Since these devices are now prototypes,
+	 * they cannot be opened, so they do not need to be closed;
+	 * alloc_restore_all will close dynamically allocated devices.
+	 */
     gs_exit_status = exit_status;	/* see above */
 
-#ifdef DEBUG
     if (gs_debug_c(':'))
-	print_usage(minst, &gs_imemory, "Final");
-#endif
+	print_resource_usage(minst, &gs_imemory, "Final");
     /* Do the equivalent of a restore "past the bottom". */
     /* This will release all memory, close all open files, etc. */
     if (minst->init_done >= 1)
@@ -603,11 +611,10 @@ gs_exit(int exit_status)
 
 /* ------ Debugging ------ */
 
-#ifdef DEBUG
-/* Print usage statistics. */
+/* Print resource usage statistics. */
 private void
-print_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
-	    const char *msg)
+print_resource_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
+		     const char *msg)
 {
     ulong allocated = 0, used = 0;
     long utime[2];
@@ -633,7 +640,6 @@ print_usage(const gs_main_instance * minst, gs_dual_memory_t * dmem,
 	     (utime[1] - minst->base_time[1]) / 1000000000.0,
 	     allocated, used);
 }
-#endif
 
 /* Dump the stacks after interpretation */
 void

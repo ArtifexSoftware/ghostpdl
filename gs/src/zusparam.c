@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,11 @@
    all copies.
  */
 
-/* zusparam.c */
+/*Id: zusparam.c  */
 /* User and system parameter operators */
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gscdefs.h"
 #include "gsstruct.h"		/* for gxht.h */
@@ -30,6 +29,7 @@
 #include "gsutil.h"
 #include "estack.h"
 #include "ialloc.h"		/* for imemory for status */
+#include "icontext.h"		/* for set_user_params prototype */
 #include "idict.h"
 #include "idparam.h"
 #include "iparam.h"
@@ -45,23 +45,19 @@ extern gs_font_dir *ifont_dir;	/* in zfont.c */
 extern int set_vm_reclaim(P1(long));
 extern int set_vm_threshold(P1(long));
 
-/* The system passwords. */
-private password StartJobPassword = NULL_PASSWORD;
-password SystemParamsPassword = NULL_PASSWORD;	/* exported for ziodev2.c. */
-
 /* Define an individual user or system parameter. */
 /* Eventually this will be made public. */
 #define param_def_common\
-	const char _ds *pname
+    const char *pname
 typedef struct param_def_s {
     param_def_common;
-} param_def;
+} param_def_t;
 typedef struct long_param_def_s {
     param_def_common;
     long min_value, max_value;
-    long (*current) (P0());
-    int (*set) (P1(long));
-} long_param_def;
+    long (*current)(P0());
+    int (*set)(P1(long));
+} long_param_def_t;
 
 #if arch_sizeof_long > arch_sizeof_int
 #  define max_uint_param max_uint
@@ -70,33 +66,31 @@ typedef struct long_param_def_s {
 #endif
 typedef struct bool_param_def_s {
     param_def_common;
-    bool(*current) (P0());
-    int (*set) (P1(bool));
-} bool_param_def;
+    bool (*current)(P0());
+    int (*set)(P1(bool));
+} bool_param_def_t;
 typedef struct string_param_def_s {
     param_def_common;
-    void (*current) (P1(gs_param_string *));
-    int (*set) (P1(gs_param_string *));
-} string_param_def;
+    void (*current)(P1(gs_param_string *));
+    int (*set)(P1(gs_param_string *));
+} string_param_def_t;
 
 /* Define a parameter set (user or system). */
 typedef struct param_set_s {
-    const long_param_def *long_defs;
+    const long_param_def_t *long_defs;
     uint long_count;
-    const bool_param_def *bool_defs;
+    const bool_param_def_t *bool_defs;
     uint bool_count;
-    const string_param_def *string_defs;
+    const string_param_def_t *string_defs;
     uint string_count;
 } param_set;
 
 /* Forward references */
-private int setparams(P2(gs_param_list *, const param_set _ds *));
-private int currentparams(P2(os_ptr, const param_set _ds *));
-private int currentparam1(P2(os_ptr, const param_set _ds *));
+private int setparams(P2(gs_param_list *, const param_set *));
+private int currentparams(P2(os_ptr, const param_set *));
+private int currentparam1(P2(os_ptr, const param_set *));
 
 /* ------ Passwords ------ */
-
-#define plist ((gs_param_list *)&list)
 
 /* <string|int> .checkpassword <0|1|2> */
 private int
@@ -104,23 +98,27 @@ zcheckpassword(register os_ptr op)
 {
     ref params[2];
     array_param_list list;
+    gs_param_list *const plist = (gs_param_list *)&list;
     int result = 0;
     int code = name_ref((const byte *)"Password", 8, &params[0], 0);
+    password pass;
 
     if (code < 0)
 	return code;
     params[1] = *op;
     array_param_list_read(&list, params, 2, NULL, false);
-    if (param_check_password(plist, &StartJobPassword) == 0)
+    if (dict_read_password(&pass, systemdict, "StartJobPassword") >= 0 &&
+	param_check_password(plist, &pass) == 0
+	)
 	result = 1;
-    if (param_check_password(plist, &SystemParamsPassword) == 0)
+    if (dict_read_password(&pass, systemdict, "SystemParamsPassword") >= 0 &&
+	param_check_password(plist, &pass) == 0
+	)
 	result = 2;
     iparam_list_release(&list);
     make_int(op, result);
     return 0;
 }
-
-#undef plist
 
 /* ------ System parameters ------ */
 
@@ -139,7 +137,7 @@ private int
 set_MaxFontCache(long val)
 {
     return gs_setcachesize(ifont_dir,
-			   (uint) (val < 0 ? 0 : val > max_uint ? max_uint :
+			   (uint)(val < 0 ? 0 : val > max_uint ? max_uint :
 				   val));
 }
 private long
@@ -173,14 +171,14 @@ current_Revision(void)
 {
     return gs_revision;
 }
-private const long_param_def system_long_params[] =
+private const long_param_def_t system_long_params[] =
 {
-    {"BuildTime", 0, max_uint_param, current_BuildTime, NULL},
+    {"BuildTime", min_long, max_long, current_BuildTime, NULL},
 {"MaxFontCache", 0, max_uint_param, current_MaxFontCache, set_MaxFontCache},
     {"CurFontCache", 0, max_uint_param, current_CurFontCache, NULL},
-    {"Revision", 0, max_uint_param, current_Revision, NULL},
-		/* Extensions */
-    {"MaxGlobalVM", 0, max_uint_param, current_MaxGlobalVM, set_MaxGlobalVM}
+    {"Revision", min_long, max_long, current_Revision, NULL},
+    /* Extensions */
+    {"MaxGlobalVM", 0, max_long, current_MaxGlobalVM, set_MaxGlobalVM}
 };
 
 /* Boolean values */
@@ -189,7 +187,7 @@ current_ByteOrder(void)
 {
     return !arch_is_big_endian;
 }
-private const bool_param_def system_bool_params[] =
+private const bool_param_def_t system_bool_params[] =
 {
     {"ByteOrder", current_ByteOrder, NULL}
 };
@@ -199,17 +197,18 @@ private void
 current_RealFormat(gs_param_string * pval)
 {
 #if arch_floats_are_IEEE
-    static const char *rfs = "IEEE";
+    static const char *const rfs = "IEEE";
 
 #else
-    static const char *rfs = "not IEEE";
+    static const char *const rfs = "not IEEE";
 
 #endif
+
     pval->data = (const byte *)rfs;
     pval->size = strlen(rfs);
     pval->persistent = true;
 }
-private const string_param_def system_string_params[] =
+private const string_param_def_t system_string_params[] =
 {
     {"RealFormat", current_RealFormat, NULL}
 };
@@ -222,20 +221,23 @@ private const param_set system_param_set =
     system_string_params, countof(system_string_params)
 };
 
-/* <dict> setsystemparams - */
+/* <dict> .setsystemparams - */
 private int
 zsetsystemparams(register os_ptr op)
 {
     int code;
     dict_param_list list;
+    gs_param_list *const plist = (gs_param_list *)&list;
     password pass;
 
     check_type(*op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false);
     if (code < 0)
 	return code;
-#define plist ((gs_param_list *)&list)
-    code = param_check_password(plist, &SystemParamsPassword);
+    code = dict_read_password(&pass, systemdict, "SystemParamsPassword");
+    if (code < 0)
+	return code;
+    code = param_check_password(plist, &pass);
     if (code != 0) {
 	if (code > 0)
 	    code = gs_note_error(e_invalidaccess);
@@ -248,7 +250,10 @@ zsetsystemparams(register os_ptr op)
 	case 1:		/* missing */
 	    break;
 	case 0:
-	    StartJobPassword = pass;
+	    code = dict_write_password(&pass, systemdict,
+				       "StartJobPassword");
+	    if (code < 0)
+		goto out;
     }
     code = param_read_password(plist, "SystemParamsPassword", &pass);
     switch (code) {
@@ -257,13 +262,16 @@ zsetsystemparams(register os_ptr op)
 	case 1:		/* missing */
 	    break;
 	case 0:
-	    SystemParamsPassword = pass;
+	    code = dict_write_password(&pass, systemdict,
+				       "SystemParamsPassword");
+	    if (code < 0)
+		goto out;
     }
     code = setparams(plist, &system_param_set);
-  out:iparam_list_release(&list);
+  out:
+    iparam_list_release(&list);
     if (code < 0)
 	return code;
-#undef plist
     pop(1);
     return 0;
 }
@@ -380,8 +388,16 @@ current_VMThreshold(void)
     gs_memory_gc_status(iimemory_local, &stat);
     return stat.vm_threshold;
 }
-#define current_WaitTimeout current_JobTimeout
-#define set_WaitTimeout set_JobTimeout
+private long
+current_WaitTimeout(void)
+{
+    return 0;
+}
+private int
+set_WaitTimeout(long val)
+{
+    return 0;
+}
 private long
 current_MinScreenLevels(void)
 {
@@ -393,7 +409,7 @@ set_MinScreenLevels(long val)
     gs_setminscreenlevels((uint) val);
     return 0;
 }
-private const long_param_def user_long_params[] =
+private const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, max_uint_param,
      current_JobTimeout, set_JobTimeout},
@@ -407,15 +423,15 @@ private const long_param_def user_long_params[] =
      current_MaxDictStack, set_MaxDictStack},
     {"MaxExecStack", 0, max_uint_param,
      current_MaxExecStack, set_MaxExecStack},
-    {"MaxLocalVM", 0, max_uint_param,
+    {"MaxLocalVM", 0, max_long,
      current_MaxLocalVM, set_MaxLocalVM},
     {"VMReclaim", -2, 0,
      current_VMReclaim, set_vm_reclaim},
-    {"VMThreshold", 0, max_uint_param,
+    {"VMThreshold", -1, max_long,
      current_VMThreshold, set_vm_threshold},
     {"WaitTimeout", 0, max_uint_param,
      current_WaitTimeout, set_WaitTimeout},
-		/* Extensions */
+    /* Extensions */
     {"MinScreenLevels", 0, max_uint_param,
      current_MinScreenLevels, set_MinScreenLevels}
 };
@@ -432,27 +448,9 @@ set_AccurateScreens(bool val)
     gs_setaccuratescreens(val);
     return 0;
 }
-private const bool_param_def user_bool_params[] =
+private const bool_param_def_t user_bool_params[] =
 {
     {"AccurateScreens", current_AccurateScreens, set_AccurateScreens}
-};
-
-/* String values */
-private void
-current_JobName(gs_param_string * pval)
-{
-    pval->data = 0;
-    pval->size = 0;
-    pval->persistent = true;
-}
-private int
-set_JobName(gs_param_string * val)
-{
-    return 0;
-}
-private const string_param_def user_string_params[] =
-{
-    {"JobName", current_JobName, set_JobName}
 };
 
 /* The user parameter set */
@@ -460,12 +458,13 @@ private const param_set user_param_set =
 {
     user_long_params, countof(user_long_params),
     user_bool_params, countof(user_bool_params),
-    user_string_params, countof(user_string_params)
+    0, 0
 };
 
-/* <dict> setuserparams - */
-private int
-zsetuserparams(register os_ptr op)
+/* <dict> .setuserparams - */
+/* We break this out for use when switching contexts. */
+int
+set_user_params(const ref * op)
 {
     dict_param_list list;
     int code;
@@ -474,12 +473,18 @@ zsetuserparams(register os_ptr op)
     code = dict_param_list_read(&list, op, NULL, false);
     if (code < 0)
 	return code;
-    code = setparams((gs_param_list *) & list, &user_param_set);
+    code = setparams((gs_param_list *)&list, &user_param_set);
     iparam_list_release(&list);
-    if (code < 0)
-	return code;
-    pop(1);
-    return 0;
+    return code;
+}
+private int
+zsetuserparams(register os_ptr op)
+{
+    int code = set_user_params(op);
+
+    if (code >= 0)
+	pop(1);
+    return code;
 }
 
 /* - .currentuserparams <name1> <value1> ... */
@@ -500,17 +505,17 @@ zgetuserparam(os_ptr op)
 
 const op_def zusparam_op_defs[] =
 {
-		/* User and system parameters are readable even in Level 1 */
-		/* (if this is a Level 2 system). */
+	/* User and system parameters are accessible even in Level 1 */
+	/* (if this is a Level 2 system). */
     {"0.currentsystemparams", zcurrentsystemparams},
     {"0.currentuserparams", zcurrentuserparams},
     {"1.getsystemparam", zgetsystemparam},
     {"1.getuserparam", zgetuserparam},
-		/* The rest of the operators are defined only in Level 2. */
+    {"1.setsystemparams", zsetsystemparams},
+    {"1.setuserparams", zsetuserparams},
+	/* The rest of the operators are defined only in Level 2. */
     op_def_begin_level2(),
     {"1.checkpassword", zcheckpassword},
-    {"1setsystemparams", zsetsystemparams},
-    {"1setuserparams", zsetuserparams},
     op_def_end(0)
 };
 
@@ -519,12 +524,12 @@ const op_def zusparam_op_defs[] =
 /* Set the values of a parameter set from a parameter list. */
 /* We don't attempt to back out if anything fails. */
 private int
-setparams(gs_param_list * plist, const param_set _ds * pset)
+setparams(gs_param_list * plist, const param_set * pset)
 {
     int i, code;
 
     for (i = 0; i < pset->long_count; i++) {
-	const long_param_def *pdef = &pset->long_defs[i];
+	const long_param_def_t *pdef = &pset->long_defs[i];
 	long val;
 
 	if (pdef->set == NULL)
@@ -538,20 +543,20 @@ setparams(gs_param_list * plist, const param_set _ds * pset)
 	    case 0:
 		if (val < pdef->min_value || val > pdef->max_value)
 		    return_error(e_rangecheck);
-		code = (*pdef->set) (val);
+		code = (*pdef->set)(val);
 		if (code < 0)
 		    return code;
 	}
     }
     for (i = 0; i < pset->bool_count; i++) {
-	const bool_param_def *pdef = &pset->bool_defs[i];
+	const bool_param_def_t *pdef = &pset->bool_defs[i];
 	bool val;
 
 	if (pdef->set == NULL)
 	    continue;
 	code = param_read_bool(plist, pdef->pname, &val);
 	if (code == 0)
-	    code = (*pdef->set) (val);
+	    code = (*pdef->set)(val);
 	if (code < 0)
 	    return code;
     }
@@ -560,24 +565,28 @@ setparams(gs_param_list * plist, const param_set _ds * pset)
 }
 
 /* Get the current values of a parameter set to the stack. */
+private bool
+pname_matches(const char *pname, const ref * psref)
+{
+    return
+	(psref == 0 ||
+	 !bytes_compare((const byte *)pname, strlen(pname),
+			psref->value.const_bytes, r_size(psref)));
+}
 private int
-current_param_list(os_ptr op, const param_set _ds * pset,
+current_param_list(os_ptr op, const param_set * pset,
 		   const ref * psref /*t_string */ )
 {
     stack_param_list list;
-
-#define plist ((gs_param_list *)&list)
+    gs_param_list *const plist = (gs_param_list *)&list;
     int i;
 
-#define pname_ok()\
-  (psref == 0 || !bytes_compare((const byte *)pname, strlen(pname),\
-				psref->value.const_bytes, r_size(psref)))
     stack_param_list_write(&list, &o_stack, NULL);
     for (i = 0; i < pset->long_count; i++) {
-	const char _ds *pname = pset->long_defs[i].pname;
+	const char *pname = pset->long_defs[i].pname;
 
-	if (pname_ok()) {
-	    long val = (*pset->long_defs[i].current) ();
+	if (pname_matches(pname, psref)) {
+	    long val = (*pset->long_defs[i].current)();
 	    int code = param_write_long(plist, pname, &val);
 
 	    if (code < 0)
@@ -585,10 +594,10 @@ current_param_list(os_ptr op, const param_set _ds * pset,
 	}
     }
     for (i = 0; i < pset->bool_count; i++) {
-	const char _ds *pname = pset->bool_defs[i].pname;
+	const char *pname = pset->bool_defs[i].pname;
 
-	if (pname_ok()) {
-	    bool val = (*pset->bool_defs[i].current) ();
+	if (pname_matches(pname, psref)) {
+	    bool val = (*pset->bool_defs[i].current)();
 	    int code = param_write_bool(plist, pname, &val);
 
 	    if (code < 0)
@@ -596,33 +605,31 @@ current_param_list(os_ptr op, const param_set _ds * pset,
 	}
     }
     for (i = 0; i < pset->string_count; i++) {
-	const char _ds *pname = pset->string_defs[i].pname;
+	const char *pname = pset->string_defs[i].pname;
 
-	if (pname_ok()) {
+	if (pname_matches(pname, psref)) {
 	    gs_param_string val;
 	    int code;
 
-	    (*pset->string_defs[i].current) (&val);
+	    (*pset->string_defs[i].current)(&val);
 	    code = param_write_string(plist, pname, &val);
 	    if (code < 0)
 		return code;
 	}
     }
-#undef pname_ok
-#undef plist
     return 0;
 }
 
 /* Get the current values of a parameter set to the stack. */
 private int
-currentparams(os_ptr op, const param_set _ds * pset)
+currentparams(os_ptr op, const param_set * pset)
 {
     return current_param_list(op, pset, NULL);
 }
 
 /* Get the value of a single parameter to the stack, or signal an error. */
 private int
-currentparam1(os_ptr op, const param_set _ds * pset)
+currentparam1(os_ptr op, const param_set * pset)
 {
     ref sref;
     int code;

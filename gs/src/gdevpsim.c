@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpsim.c */
+/*Id: gdevpsim.c  */
 /* PostScript image output device */
 #include "gdevprn.h"
 
@@ -43,7 +43,7 @@
 /* The device descriptor */
 private dev_proc_print_page(psmono_print_page);
 
-gx_device_printer far_data gs_psmono_device =
+const gx_device_printer gs_psmono_device =
 prn_device(prn_std_procs, "psmono",
 	   DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 	   X_DPI, Y_DPI,
@@ -54,7 +54,7 @@ private const gx_device_procs psgray_procs =
 prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
 	      gx_default_gray_map_rgb_color, gx_default_gray_map_color_rgb);
 
-gx_device_printer far_data gs_psgray_device =
+const gx_device_printer gs_psgray_device =
 {
     prn_device_body(gx_device_printer, psgray_procs, "psgray",
 		    DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
@@ -69,7 +69,7 @@ gx_device_printer far_data gs_psgray_device =
  * a limit of 512 characters in a single token, so we make a virtue out of
  * necessity and make each line a separate string.
  */
-private const char far_data *psmono_setup[] =
+private const char *const psmono_setup[] =
 {
     "%!PS",
     "  /maxrep 255 def		% max repeat count",
@@ -214,8 +214,8 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 private void
 write_data_run(const byte * data, int count, FILE * f, byte invert)
 {
-    register const byte *p = data;
-    register const char _ds *hex_digits = "0123456789abcdef";
+    const byte *p = data;
+    const char *const hex_digits = "0123456789abcdef";
     int left = count;
     char line[sizeof(count) * 2 + max_data_per_line * 2 + 3];
     char *q = line;

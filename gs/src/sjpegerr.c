@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sjpegerr.c */
+/*Id: sjpegerr.c  */
 /* IJG error message table for Ghostscript. */
 #include "stdio_.h"
 #include "jpeglib.h"
@@ -42,5 +42,41 @@
  * use the IJG message code names as variables rather than as enum constants.
  */
 
-#if JPEG_LIB_VERSION <= 50
-/**************** ****************/
+#if JPEG_LIB_VERSION <= 50	/**************** *************** */
+
+#include "jerror.h"		/* get error codes */
+#define JMAKE_MSG_TABLE
+#include "jerror.h"		/* create message string table */
+
+#define jpeg_std_message_table jpeg_message_table
+
+#else	/* JPEG_LIB_VERSION >= 51 */ /**************** *************** */
+
+/* Create a static const char[] variable for each message string. */
+
+#define JMESSAGE(code,string)	static const char code[] = string;
+
+#include "jerror.h"
+
+/* Now build an array of pointers to same. */
+
+#define JMESSAGE(code,string)	code ,
+
+static const char *const jpeg_std_message_table[] =
+{
+#include "jerror.h"
+    NULL
+};
+
+#endif	/* JPEG_LIB_VERSION */ /**************** *************** */
+
+/*
+ * Return a pointer to the message table.
+ * It is unsafe to do much more than this within the "huge" environment.
+ */
+
+const char *const *
+gs_jpeg_message_table(void)
+{
+    return jpeg_std_message_table;
+}

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,16 +16,18 @@
    all copies.
  */
 
-/* zfdecode.c */
+/*Id: zfdecode.c  */
 /* Additional decoding filter creation */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
+#include "gsparam.h"
 #include "gsstruct.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "idparam.h"
+#include "ilevel.h"		/* for LL3 test */
+#include "iparam.h"
 #include "store.h"
 #include "stream.h"		/* for setting is_temp */
 #include "strimpl.h"
@@ -39,7 +41,7 @@
 #include "ifilter.h"
 
 /* Import the Level 2 scanner extensions. */
-extern const stream_template _ds *scan_ascii85_template;
+extern const stream_template *scan_ascii85_template;
 
 /* Initialize the Level 2 scanner for ASCII85 strings. */
 private void
@@ -54,7 +56,7 @@ zfdecode_init(void)
 /* because it would be a nuisance to separate them. */
 
 /* <target> ASCII85Encode/filter <file> */
-/* <target> <dict_ignored> ASCII85Encode/filter <file> */
+/* <target> <dict> ASCII85Encode/filter <file> */
 private int
 zA85E(os_ptr op)
 {
@@ -62,7 +64,7 @@ zA85E(os_ptr op)
 }
 
 /* <source> ASCII85Decode/filter <file> */
-/* <source> <dict_ignored> ASCII85Decode/filter <file> */
+/* <source> <dict> ASCII85Decode/filter <file> */
 private int
 zA85D(os_ptr op)
 {
@@ -71,43 +73,20 @@ zA85D(os_ptr op)
 
 /* ------ CCITTFaxDecode filter ------ */
 
-/* Define a limit on the Rows parameter, close to max_int. */
-#define cf_max_height 32000
-
 /* Common setup for encoding and decoding filters. */
+extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
 int
 zcf_setup(os_ptr op, stream_CF_state * pcfs)
 {
-    int code;
+    dict_param_list list;
+    int code = dict_param_list_read(&list, op, NULL, false);
 
-    if ((code = dict_bool_param(op, "Uncompressed", false,
-				&pcfs->Uncompressed)) < 0 ||
-	(code = dict_int_param(op, "K", -cf_max_height, cf_max_height, 0,
-			       &pcfs->K)) < 0 ||
-	(code = dict_bool_param(op, "EndOfLine", false,
-				&pcfs->EndOfLine)) < 0 ||
-	(code = dict_bool_param(op, "EncodedByteAlign", false,
-				&pcfs->EncodedByteAlign)) < 0 ||
-	(code = dict_int_param(op, "Columns", 0, cfe_max_width, 1728,
-			       &pcfs->Columns)) < 0 ||
-	(code = dict_int_param(op, "Rows", 0, cf_max_height, 0,
-			       &pcfs->Rows)) < 0 ||
-	(code = dict_bool_param(op, "EndOfBlock", true,
-				&pcfs->EndOfBlock)) < 0 ||
-	(code = dict_bool_param(op, "BlackIs1", false,
-				&pcfs->BlackIs1)) < 0 ||
-	(code = dict_int_param(op, "DamagedRowsBeforeError", 0,
-			       cf_max_height, 0,
-			       &pcfs->DamagedRowsBeforeError)) < 0 ||
-	(code = dict_bool_param(op, "FirstBitLowOrder", false,
-				&pcfs->FirstBitLowOrder)) < 0 ||
-	(code = dict_int_param(op, "DecodedByteAlign", 1, 16, 1,
-			       &pcfs->DecodedByteAlign)) < 0
-	)
+    if (code < 0)
 	return code;
-    if (pcfs->DecodedByteAlign & (pcfs->DecodedByteAlign - 1))
-	return_error(e_rangecheck);	/* not a power of 2 */
-    return 0;
+    s_CF_set_defaults_inline(pcfs);
+    code = s_CF_put_params((gs_param_list *) & list, pcfs);
+    iparam_list_release(&list);
+    return code;
 }
 
 /* <source> <dict> CCITTFaxDecode/filter <file> */
@@ -116,19 +95,18 @@ private int
 zCFD(os_ptr op)
 {
     os_ptr dop;
-    int npop;
     stream_CFD_state cfs;
     int code;
 
     if (r_has_type(op, t_dictionary)) {
 	check_dict_read(*op);
-	dop = op, npop = 1;
+	dop = op;
     } else
-	dop = 0, npop = 0;
+	dop = 0;
     code = zcf_setup(dop, (stream_CF_state *) & cfs);
     if (code < 0)
 	return code;
-    return filter_read(op, npop, &s_CFD_template, (stream_state *) & cfs, 0);
+    return filter_read(op, 0, &s_CFD_template, (stream_state *) & cfs, 0);
 }
 
 /* ------ Common setup for possibly pixel-oriented decoding filters ------ */
@@ -174,7 +152,8 @@ filter_read_predictor(os_ptr op, int npop, const stream_template * template,
 	predictor = 1;
     if (predictor == 1)
 	return filter_read(op, npop, template, st, 0);
-    {				/* We need to cascade filters. */
+    {
+	/* We need to cascade filters. */
 	ref rsource, rdict, rfd;
 	int code;
 
@@ -191,7 +170,8 @@ filter_read_predictor(os_ptr op, int npop, const stream_template * template,
 	    (predictor == 2 ?
 	 filter_read(op, 0, &s_PDiffD_template, (stream_state *) & pds, 0) :
 	  filter_read(op, 0, &s_PNGPD_template, (stream_state *) & pps, 0));
-	if (code < 0) {		/* Restore the operands.  Don't bother trying to clean up */
+	if (code < 0) {
+	    /* Restore the operands.  Don't bother trying to clean up */
 	    /* the first stream. */
 	    osp = ++op;
 	    ref_assign(op - 1, &rsource);
@@ -211,16 +191,19 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
 {
     int code;
     const ref *dop;
-    int npop;
 
     if (r_has_type(op, t_dictionary)) {
 	check_dict_read(*op);
-	dop = op, npop = 1;
+	dop = op;
     } else
-	dop = 0, npop = 0;
-    if (			/* Following are not PostScript standard */
-	   (code = dict_int_param(dop, "EarlyChange", 0, 1, 1,
+	dop = 0;
+    if (   (code = dict_int_param(dop, "EarlyChange", 0, 1, 1,
 				  &plzs->EarlyChange)) < 0 ||
+	   /*
+	    * The following are not PostScript standard, although
+	    * LanguageLevel 3 provides the first two under different
+	    * names.
+	    */
 	   (code = dict_int_param(dop, "InitialCodeLength", 2, 11, 8,
 				  &plzs->InitialCodeLength)) < 0 ||
 	   (code = dict_bool_param(dop, "FirstBitLowOrder", false,
@@ -229,7 +212,7 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
 				   &plzs->BlockData)) < 0
 	)
 	return code;
-    return npop;
+    return 0;
 }
 
 /* <source> LZWDecode/filter <file> */
@@ -242,7 +225,19 @@ zLZWD(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_read_predictor(op, code, &s_LZWD_template,
+    if (LL3_ENABLED && r_has_type(op, t_dictionary)) {
+	int unit_size;
+
+	if ((code = dict_bool_param(op, "LowBitFirst", lzs.FirstBitLowOrder,
+				    &lzs.FirstBitLowOrder)) < 0 ||
+	    (code = dict_int_param(op, "UnitSize", 3, 8, 8,
+				   &unit_size)) < 0
+	    )
+	    return code;
+	if (code == 0 /* UnitSize specified */ )
+	    lzs.InitialCodeLength = unit_size + 1;
+    }
+    return filter_read_predictor(op, 0, &s_LZWD_template,
 				 (stream_state *) & lzs);
 }
 
@@ -281,7 +276,7 @@ zPDiffE(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_write(op, 1, &s_PDiffE_template, (stream_state *) & pds, 0);
+    return filter_write(op, 0, &s_PDiffE_template, (stream_state *) & pds, 0);
 }
 
 /* <source> <dict> PixelDifferenceDecode/filter <file> */
@@ -293,7 +288,7 @@ zPDiffD(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_read(op, 1, &s_PDiffD_template, (stream_state *) & pds, 0);
+    return filter_read(op, 0, &s_PDiffD_template, (stream_state *) & pds, 0);
 }
 
 /* ------ PNG pixel predictor filters ------ */
@@ -330,7 +325,7 @@ zPNGPE(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_write(op, 1, &s_PNGPE_template, (stream_state *) & pps, 0);
+    return filter_write(op, 0, &s_PNGPE_template, (stream_state *) & pps, 0);
 }
 
 /* <source> <dict> PNGPredictorDecode/filter <file> */
@@ -342,7 +337,7 @@ zPNGPD(os_ptr op)
 
     if (code < 0)
 	return code;
-    return filter_read(op, 1, &s_PNGPD_template, (stream_state *) & pps, 0);
+    return filter_read(op, 0, &s_PNGPD_template, (stream_state *) & pps, 0);
 }
 
 /* ---------------- Initialization procedure ---------------- */

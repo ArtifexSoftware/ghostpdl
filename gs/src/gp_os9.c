@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,19 +16,16 @@
    all copies.
  */
 
-/* gp_os9.c */
+/*Id: gp_os9.c  */
 /* OSK-specific routines for Ghostscript */
+#include "pipe_.h"
 #include "string_.h"
+#include "time_.h"
 #include "gx.h"
 #include "gp.h"
-#include "time_.h"
 #include <signal.h>
 #include <stdlib.h>		/* for exit */
 #include <sys/param.h>		/* for MAXPATHLEN */
-
-/* popen isn't POSIX-standard, so we declare it here. */
-extern FILE *popen();
-extern int pclose();
 
 int interrupted;
 
@@ -116,7 +113,7 @@ gp_get_usertime(long *pdt)
 /* "|command" opens an output pipe. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char *fname, int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     return
 	(strlen(fname) == 0 ?
@@ -143,4 +140,17 @@ gp_close_printer(FILE * pfile, const char *fname)
 	pclose(pfile);
     else
 	fclose(pfile);
+}
+
+/* ------ File accessing -------- */
+
+/* Set a file into binary or text mode. */
+int
+gp_setmode_binary(FILE * pfile, bool binary)
+{
+    if (binary)
+	file->_flag |= _RBF;
+    else
+	file->_flag &= ~_RBF;
+    return 0;
 }

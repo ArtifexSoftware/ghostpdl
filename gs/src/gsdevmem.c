@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsdevmem.c */
+/*Id: gsdevmem.c  */
 /* Memory device creation for Ghostscript library */
 #include "math_.h"		/* for fabs */
 #include "memory_.h"

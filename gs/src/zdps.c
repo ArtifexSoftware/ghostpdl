@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,19 +16,25 @@
    all copies.
  */
 
-/* zdps.c */
+/*Id: zdps.c  */
 /* Display PostScript extensions */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstate.h"
 #include "gsdps.h"
+#include "gsimage.h"
+#include "gsiparm2.h"
+#include "gxfixed.h"		/* for gxpath.h */
+#include "gxpath.h"
+#include "btoken.h"		/* for user_names_p */
+#include "idict.h"
+#include "idparam.h"
 #include "igstate.h"
 #include "iname.h"
 #include "store.h"
 
-/* Import the user name table. */
-extern ref user_names;
+/* Import the procedure for constructing user paths. */
+extern int make_upath(P4(ref *, const gs_state *, gx_path *, bool));
 
 /* ------ Graphics state ------ */
 
@@ -57,7 +63,7 @@ zsetscreenphase(register os_ptr op)
 }
 
 /* <screen_index> .currentscreenphase <x> <y> */
-private int near
+private int
 zcurrentscreenphase(register os_ptr op)
 {
     gs_int_point phase;
@@ -69,13 +75,94 @@ zcurrentscreenphase(register os_ptr op)
 	)
 	return_error(e_rangecheck);
     code = gs_currentscreenphase(igs, &phase,
-				 (gs_color_select_t) op->value.intval);
+				 (gs_color_select_t)op->value.intval);
     if (code < 0)
 	return code;
     push(1);
     make_int(op - 1, phase.x);
     make_int(op, phase.y);
     return 0;
+}
+
+/* ------ Device-source images ------ */
+
+/* Process an image that has no explicit source data. */
+/* We export this for composite images. */
+int
+process_non_source_image(const gs_image_common_t * pic, client_name_t cname)
+{
+    gx_image_enum_common_t *pie;
+    int code = gs_image_begin_typed(pic, igs, false /****** WRONG ******/ ,
+				    &pie);
+
+    /* We didn't pass any data, so there's nothing to clean up. */
+    return code;
+}
+
+/* <dict> .image2 - */
+private int
+zimage2(register os_ptr op)
+{
+    int code;
+
+    check_type(*op, t_dictionary);
+    check_dict_read(*op);
+    {
+	gs_image2_t image;
+	ref *pDataSource;
+
+	gs_image2_t_init(&image);
+	if ((code = dict_matrix_param(op, "ImageMatrix",
+				      &image.ImageMatrix)) < 0 ||
+	    (code = dict_find_string(op, "DataSource", &pDataSource)) < 0 ||
+	    (code = dict_float_param(op, "XOrigin", 0.0,
+				     &image.XOrigin)) != 0 ||
+	    (code = dict_float_param(op, "YOrigin", 0.0,
+				     &image.YOrigin)) != 0 ||
+	    (code = dict_float_param(op, "Width", 0.0,
+				     &image.Width)) != 0 ||
+	    image.Width <= 0 ||
+	    (code = dict_float_param(op, "Height", 0.0,
+				     &image.Height)) != 0 ||
+	    image.Height <= 0 ||
+	    (code = dict_bool_param(op, "PixelCopy", false,
+				    &image.PixelCopy)) < 0
+	    )
+	    return (code < 0 ? code : gs_note_error(e_rangecheck));
+	check_stype(*pDataSource, st_igstate_obj);
+	image.DataSource = igstate_ptr(pDataSource);
+	{
+	    ref *ignoref;
+
+	    if (dict_find_string(op, "UnpaintedPath", &ignoref) > 0) {
+		check_dict_write(*op);
+		image.UnpaintedPath = gx_path_alloc(imemory,
+						    ".image2 UnpaintedPath");
+		if (image.UnpaintedPath == 0)
+		    return_error(e_VMerror);
+	    } else
+		image.UnpaintedPath = 0;
+	}
+	code = process_non_source_image((const gs_image_common_t *)&image,
+					".image2");
+	if (image.UnpaintedPath) {
+	    ref rupath;
+
+	    if (code < 0)
+		return code;
+	    if (gx_path_is_null(image.UnpaintedPath))
+		make_null(&rupath);
+	    else
+		code = make_upath(&rupath, igs, image.UnpaintedPath, false);
+	    gx_path_free(image.UnpaintedPath, ".image2 UnpaintedPath");
+	    if (code < 0)
+		return code;
+	    code = dict_put_string(op, "UnpaintedPath", &rupath);
+	}
+    }
+    if (code >= 0)
+	pop(1);
+    return code;
 }
 
 /* ------ View clipping ------ */
@@ -118,7 +205,7 @@ zdefineusername(register os_ptr op)
 
     check_int_ltu(op[-1], max_array_size);
     check_type(*op, t_name);
-    if (array_get(&user_names, op[-1].value.intval, &uname) >= 0) {
+    if (array_get(user_names_p, op[-1].value.intval, &uname) >= 0) {
 	switch (r_type(&uname)) {
 	    case t_null:
 		break;
@@ -131,7 +218,7 @@ zdefineusername(register os_ptr op)
 	}
     } else {			/* Expand the array. */
 	ref new_array;
-	uint old_size = r_size(&user_names);
+	uint old_size = r_size(user_names_p);
 	uint new_size = (uint) op[-1].value.intval + 1;
 
 	if (new_size < 100)
@@ -156,16 +243,16 @@ zdefineusername(register os_ptr op)
 		ialloc_set_space(idmemory, save_space);
 		return code;
 	    }
-	    refcpy_to_new(new_array.value.refs, user_names.value.refs,
+	    refcpy_to_new(new_array.value.refs, user_names_p->value.refs,
 			  old_size);
 	    refset_null(new_array.value.refs + old_size,
 			new_size - old_size);
-	    ifree_ref_array(&user_names, "defineusername(old)");
+	    ifree_ref_array(user_names_p, "defineusername(old)");
 	    ialloc_set_space(idmemory, save_space);
 	}
-	user_names = new_array;
+	ref_assign(user_names_p, &new_array);
     }
-    ref_assign(user_names.value.refs + op[-1].value.intval, op);
+    ref_assign(user_names_p->value.refs + op[-1].value.intval, op);
   ret:pop(2);
     return 0;
 }
@@ -177,6 +264,8 @@ const op_def zdps_op_defs[] =
 		/* Graphics state */
     {"1.currentscreenphase", zcurrentscreenphase},
     {"3.setscreenphase", zsetscreenphase},
+		/* Device-source images */
+    {"1.image2", zimage2},
 		/* View clipping */
     {"0eoviewclip", zeoviewclip},
     {"0initviewclip", zinitviewclip},

@@ -1,24 +1,27 @@
 /* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* sbhc.h */
-/* BoundedHuffman filter state definition */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: sbhc.h  */
 /* Requires strimpl.h */
+
+#ifndef sbhc_INCLUDED
+#  define sbhc_INCLUDED
+
 #include "shc.h"
 
 /*
@@ -38,14 +41,15 @@
 		/* The following are updated dynamically. */\
 	int zeros		/* # of zeros scanned or left to output */
 typedef struct stream_BHC_state_s {
-	stream_BHC_state_common;
+    stream_BHC_state_common;
 } stream_BHC_state;
 
 /* BoundedHuffmanEncode */
 typedef struct stream_BHCE_state_s {
-	stream_BHC_state_common;
-	hce_table encode;
+    stream_BHC_state_common;
+    hce_table encode;
 } stream_BHCE_state;
+
 #define private_st_BHCE_state()	/* in sbhc.c */\
   gs_private_st_ptrs3(st_BHCE_state, stream_BHCE_state,\
     "BoundedHuffmanEncode state", bhce_enum_ptrs, bhce_reloc_ptrs,\
@@ -57,9 +61,10 @@ extern const stream_template s_BHCE_template;
 
 /* BoundedHuffmanDecode */
 typedef struct stream_BHCD_state_s {
-	stream_BHC_state_common;
-	hcd_table decode;
+    stream_BHC_state_common;
+    hcd_table decode;
 } stream_BHCD_state;
+
 #define private_st_BHCD_state()	/* in sbhc.c */\
   gs_private_st_ptrs3(st_BHCD_state, stream_BHCD_state,\
     "BoundedHuffmanDecode state", bhcd_enum_ptrs, bhcd_reloc_ptrs,\
@@ -83,3 +88,5 @@ extern const stream_template s_BHCD_template;
 /* Free variables: pr, ss, p, bits, bits_left, zeros. */
 #define bhcd_store_state()\
 	hcd_store_state(), ss->zeros = zeros
+
+#endif /* sbhc_INCLUDED */

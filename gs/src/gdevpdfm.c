@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpdfm.c */
+/*Id: gdevpdfm.c  */
 /* pdfmark processing for PDF-writing driver */
 #include "memory_.h"
 #include "string_.h"
@@ -40,13 +40,6 @@ private_st_pdf_named_dest();
 /*
  * Define the pdfmark types we know about.
  */
-#define pdfmark_proc(proc)\
-  int proc(P4(gx_device_pdf *pdev, const gs_param_string *pairs, uint count,\
-	      const gs_matrix *pctm))
-typedef struct pdfmark_name_s {
-    const char *mname;
-         pdfmark_proc((*proc));
-} pdfmark_name;
 private pdfmark_proc(pdfmark_ANN);
 private pdfmark_proc(pdfmark_LNK);
 private pdfmark_proc(pdfmark_OUT);
@@ -59,17 +52,22 @@ private pdfmark_proc(pdfmark_DOCINFO);
 private pdfmark_proc(pdfmark_DOCVIEW);
 private const pdfmark_name mark_names[] =
 {
-    {"ANN", pdfmark_ANN},
-    {"LNK", pdfmark_LNK},
-    {"OUT", pdfmark_OUT},
-    {"ARTICLE", pdfmark_ARTICLE},
-    {"DEST", pdfmark_DEST},
-    {"PS", pdfmark_PS},
-    {"PAGES", pdfmark_PAGES},
-    {"PAGE", pdfmark_PAGE},
-    {"DOCINFO", pdfmark_DOCINFO},
-    {"DOCVIEW", pdfmark_DOCVIEW},
+    {"ANN", pdfmark_ANN, pdfmark_nameable},
+    {"LNK", pdfmark_LNK, pdfmark_nameable},
+    {"OUT", pdfmark_OUT, 0},
+    {"ARTICLE", pdfmark_ARTICLE, 0},
+    {"DEST", pdfmark_DEST, pdfmark_nameable},
+    {"PS", pdfmark_PS, pdfmark_nameable},
+    {"PAGES", pdfmark_PAGES, 0},
+    {"PAGE", pdfmark_PAGE, 0},
+    {"DOCINFO", pdfmark_DOCINFO, 0},
+    {"DOCVIEW", pdfmark_DOCVIEW, 0},
     {0, 0}
+};
+private const pdfmark_name *const mark_name_tables[2] =
+{
+    mark_names,
+    pdfmark_names_named
 };
 
 /* ---------------- Public entry points ---------------- */
@@ -82,6 +80,23 @@ pdf_key_eq(const gs_param_string * pcs, const char *str)
 	    !strncmp(str, (const char *)pcs->data, pcs->size));
 }
 
+/* Scan an integer out of a parameter string. */
+int
+pdfmark_scan_int(const gs_param_string * pstr, int *pvalue)
+{
+#define max_int_str 20
+    uint size = pstr->size;
+    char str[max_int_str + 1];
+
+    if (size > max_int_str)
+	return_error(gs_error_limitcheck);
+    memcpy(str, pstr->data, size);
+    str[size] = 0;
+    return (sscanf(str, "%d", pvalue) == 1 ? 0 :
+	    gs_note_error(gs_error_rangecheck));
+#undef max_int_str
+}
+
 /* Process a pdfmark. */
 int
 pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
@@ -89,10 +104,12 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
     const gs_param_string *data = pma->data;
     uint size = pma->size;
     const gs_param_string *pts = &data[size - 1];
+    const gs_param_string *objname = 0;
     gs_matrix ctm;
-    int i;
+    int n;
+    int code = 0;
 
-    if ((size & 1) || size < 2 ||
+    if (size < 2 ||
 	sscanf((const char *)pts[-1].data, "[%g %g %g %g %g %g]",
 	       &ctm.xx, &ctm.xy, &ctm.yx, &ctm.yy, &ctm.tx, &ctm.ty) != 6
 	)
@@ -108,10 +125,62 @@ pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 	ctm.yx *= xscale, ctm.yy *= yscale;
 	ctm.tx *= xscale, ctm.ty *= yscale;
     }
-    for (i = 0; mark_names[i].mname != 0; ++i)
-	if (pdf_key_eq(pts, mark_names[i].mname))
-	    return (*mark_names[i].proc) (pdev, data, size - 2, &ctm);
-    return 0;
+    size -= 2;			/* remove CTM & pdfmark name */
+    for (n = 0; n < countof(mark_name_tables); ++n) {
+	const pdfmark_name *pmn;
+
+	for (pmn = mark_name_tables[n]; pmn->mname != 0; ++pmn)
+	    if (pdf_key_eq(pts, pmn->mname)) {
+		int odd_ok = (pmn->options & pdfmark_odd_ok) != 0;
+		int j;
+
+		if (size & !odd_ok)
+		    return_error(gs_error_rangecheck);
+		if (pmn->options & pdfmark_nameable) {
+		    /* Look for an object name. */
+		    for (j = 0; j < size; j += 2) {
+			if (pdf_key_eq(&data[j], "_objdef")) {
+			    objname = &data[j + 1];
+			    if (!pdfmark_objname_is_valid(objname->data,
+							  objname->size)
+				)
+				return_error(gs_error_rangecheck);
+			    break;
+			}
+		    }
+		}
+		/* Copy the pairs to a writable array. */
+		{
+		    uint count = (objname ? size - 2 : size);
+		    gs_memory_t *mem = pdev->pdf_memory;
+		    gs_param_string *pairs = (gs_param_string *)
+		    gs_alloc_byte_array(mem, count, sizeof(gs_param_string),
+					"pdfmark_process(pairs)");
+
+		    if (objname) {
+			memcpy(pairs, data, j * sizeof(*data));
+			memcpy(pairs + j, data + j + 2, (count - j) * sizeof(*data));
+			size -= 2;
+		    } else {
+			memcpy(pairs, data, count * sizeof(*data));
+		    }
+		    /* Substitute object references for names. */
+		    for (j = (pmn->options & pdfmark_keep_name ? 1 : 1 - odd_ok);
+			 j < size; j += 2 - odd_ok
+			) {
+			code = pdfmark_replace_names(pdev, &pairs[j], &pairs[j]);
+			if (code < 0) {
+			    gs_free_object(mem, pairs, "pdfmark_process(pairs)");
+			    goto out;
+			}
+		    }
+		    code = (*pmn->proc) (pdev, pairs, size, &ctm, objname);
+		    gs_free_object(mem, pairs, "pdfmark_process(pairs)");
+		}
+		goto out;
+	    }
+    }
+  out:return code;
 }
 
 /* ---------------- Utilities ---------------- */
@@ -131,23 +200,6 @@ pdfmark_find_key(const char *key, const gs_param_string * pairs, uint count,
     pstr->data = 0;
     pstr->size = 0;
     return false;
-}
-
-/* Scan an integer out of a parameter string. */
-private int
-pdfmark_scan_int(const gs_param_string * pstr, int *pvalue)
-{
-#define max_int_str 20
-    uint size = pstr->size;
-    char str[max_int_str + 1];
-
-    if (size > max_int_str)
-	return_error(gs_error_limitcheck);
-    memcpy(str, pstr->data, size);
-    str[size] = 0;
-    return (sscanf(str, "%d", pvalue) == 1 ? 0 :
-	    gs_note_error(gs_error_rangecheck));
-#undef max_int_str
 }
 
 /*
@@ -208,13 +260,96 @@ pdfmark_make_dest(char dstr[max_dest_string], gx_device_pdf * pdev,
 
 /* Write pairs for a dictionary. */
 private void
-pdfmark_write_pair(stream * s, const gs_param_string * pair)
+pdfmark_write_c_pair(const gx_device_pdf * pdev, const char *key,
+		     const gs_param_string * pvalue)
 {
+    stream *s = pdev->strm;
+
     pputc(s, '/');
-    pwrite(s, pair->data, pair->size);
-    pputc(s, ' ');
-    pwrite(s, pair[1].data, pair[1].size);
+    pputs(s, key);
+    switch (pvalue->data[0]) {
+	default:
+	    pputc(s, ' ');
+	case '/':
+	case '(':
+	case '[':
+	case '<':
+	    break;
+    }
+    pdf_put_value(pdev, pvalue->data, pvalue->size);
     pputc(s, '\n');
+}
+private void
+pdfmark_write_pair(const gx_device_pdf * pdev, const gs_param_string * pair)
+{
+    stream *s = pdev->strm;
+
+    pdf_put_name(pdev, pair->data, pair->size);
+    pputc(s, ' ');
+    pdf_put_value(pdev, pair[1].data, pair[1].size);
+    pputc(s, '\n');
+}
+private void
+pdfmark_write_pairs_except(const gx_device_pdf * pdev,
+    const gs_param_string * pairs, uint count, const char *const *skip_keys)
+{
+    uint i;
+    static const char *const no_skip_keys[] =
+    {0};
+
+    if (skip_keys == 0)
+	skip_keys = no_skip_keys;
+    for (i = 0; i < count; i += 2) {
+	const char *const *pkey;
+
+	for (pkey = skip_keys; *pkey != 0; ++pkey)
+	    if (pdf_key_eq(&pairs[i], *pkey))
+		break;
+	if (!*pkey)
+	    pdfmark_write_pair(pdev, &pairs[i]);
+    }
+}
+#define pdfmark_write_pairs(pdev, pairs, count)\
+  pdfmark_write_pairs_except(pdev, pairs, count, NULL)
+
+/* Append data to a saved string. */
+int
+pdfmark_save(gx_device_pdf * pdev, gs_string * pstr,
+	     int (*proc) (P2(const gx_device_pdf *, void *)), void *pdata,
+	     client_name_t cname)
+{
+    gs_memory_t *mem = pdev->pdf_memory;
+    stream *s;
+    int code = psdf_alloc_position_stream(&s, mem);
+    stream *save = pdev->strm;
+
+    if (code < 0)
+	return code;
+    pdev->strm = s;
+    code = (*proc) (pdev, pdata);
+    if (code >= 0) {
+	uint pos = stell(s);
+	uint size = pstr->size;
+	byte *str;
+
+	if (pstr->data == 0)
+	    size = 0,
+		str = gs_alloc_string(mem, pos, cname);
+	else
+	    str = gs_resize_string(mem, pstr->data, size, size + pos, cname);
+	if (str == 0)
+	    code = gs_note_error(gs_error_VMerror);
+	else {
+	    pstr->data = str;
+	    swrite_string(s, str + size, pos);
+	    code = (*proc) (pdev, pdata);
+	    if (code >= 0)
+		pstr->size = size + pos;
+	}
+    }
+    pdev->strm = save;
+    gs_free_object(mem, s, "pdfmark_save");
+    return code;
 }
 
 /* Scan a Rect value. */
@@ -246,83 +381,220 @@ pdfmark_scan_rect(gs_rect * prect, const gs_param_string * str,
 private void
 pdfmark_write_rect(stream * s, const char *key, const gs_rect * prect)
 {
-    pprints1(s, "/%s ", key);
+    pprints1(s, "/%s", key);
     pprintg4(s, "[%g %g %g %g]\n",
 	     prect->p.x, prect->p.y, prect->q.x, prect->q.y);
 }
 
-/* Copy an annotation dictionary. */
-private int
-pdfmark_annot(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	      const gs_matrix * pctm, const char *subtype)
-{
-    pdf_resource *pres;
-    int code = pdf_begin_aside(pdev, &pdev->annots, NULL, &pres);
-    stream *s = pdev->strm;
-    bool subtype_present = false;
-    bool add_dest = false;
-    bool dest_present = false;
-    uint i;
+/*
+ * Write the dictionary for an annotation or outline.  For some unfathomable
+ * reason, PDF requires the following key substitutions relative to
+ * pdfmarks:
+ *   In annotation and link dictionaries:
+ *     /Action => /A, /Color => /C, /Title => /T
+ *   In outline directionaries:
+ *     /Action => /A, but *not* /Color or /Title
+ *   In Action subdictionaries:
+ *     /Dest => /D, /File => /F, /Subtype => /S
+ * and also the following substitutions:
+ *     /Action /Launch /File xxx =>
+ *       /A << /S /Launch /F xxx >>
+ *     /Action /GoToR /File xxx /Dest yyy =>
+ *       /A << /S /GoToR /F xxx /D yyy' >>
+ *     /Action /Article /Dest yyy =>
+ *       /A << /S /Thread /D yyy' >>
+ * Also, \n in Contents strings must be replaced with \r.
+ */
 
-    if (code < 0)
-	return code;
-    pres->rid = pdev->next_page;
-    pputs(s, "<< /Type /Annot\n");
+typedef struct ao_params_s {
+    gx_device_pdf *pdev;	/* for pdfmark_make_dest */
+    const char *subtype;	/* default Subtype in top-level dictionary */
+    pdf_resource *pres;		/* resource for saving source page */
+} ao_params_t;
+private int
+pdfmark_write_ao_pairs(const gx_device_pdf * pdev,
+		       const gs_param_string * pairs, uint count,
+	     const gs_matrix * pctm, ao_params_t * params, bool for_outline)
+{
+    stream *s = pdev->strm;
+
+    const gs_param_string *Action = 0;
+    const gs_param_string *File = 0;
+    gs_param_string Dest;
+    gs_param_string Subtype;
+    uint i;
+    int code;
+    char dest[max_dest_string];
+
+    Dest.data = 0;
+    if (!for_outline) {
+	code = pdfmark_make_dest(dest, params->pdev, pairs, count);
+	if (code < 0)
+	    return code;
+	else if (code == 0)
+	    Dest.data = 0;
+	else
+	    param_string_from_string(Dest, dest);
+    }
+    if (params->subtype)
+	param_string_from_string(Subtype, params->subtype);
+    else
+	Subtype.data = 0;
     for (i = 0; i < count; i += 2) {
 	const gs_param_string *pair = &pairs[i];
 	long src_pg;
 
-	if (pdf_key_eq(pair, "SrcPg") &&
+	if (params->pres != 0 && pdf_key_eq(pair, "SrcPg") &&
 	    sscanf((const char *)pair[1].data, "%ld", &src_pg) == 1
 	    )
-	    pres->rid = src_pg - 1;
-	else if (pdf_key_eq(pair, "Page") || pdf_key_eq(pair, "View"))
-	    add_dest = true;
+	    params->pres->rid = src_pg - 1;
+	else if (!for_outline && pdf_key_eq(pair, "Color"))
+	    pdfmark_write_c_pair(pdev, "C", pair + 1);
+	else if (!for_outline && pdf_key_eq(pair, "Title"))
+	    pdfmark_write_c_pair(pdev, "T", pair + 1);
+	else if (pdf_key_eq(pair, "Action"))
+	    Action = pair;
+	else if (pdf_key_eq(pair, "File"))
+	    File = pair;
+	else if (pdf_key_eq(pair, "Dest"))
+	    Dest = pair[1];
+	else if (pdf_key_eq(pair, "Page") || pdf_key_eq(pair, "View")) {
+	    /* Make a destination even if this is for an outline. */
+	    if (Dest.data == 0) {
+		code = pdfmark_make_dest(dest, params->pdev, pairs, count);
+		if (code < 0)
+		    return code;
+		param_string_from_string(Dest, dest);
+	    }
+	} else if (pdf_key_eq(pair, "Subtype"))
+	    Subtype = pair[1];
 	/*
-	 * For some unfathomable reason, PDF requires /A instead of
-	 * /Action, and /S instead of /Subtype in the Action dictionary.
-	 * Handle this here.
+	 * We also have to replace all occurrences of \n in Contents
+	 * strings with \r.  Unfortunately, they probably have already
+	 * been converted to \012....
 	 */
-	else if (pdf_key_eq(pair, "Action")) {
+	else if (pdf_key_eq(pair, "Contents")) {
 	    const byte *astr = pair[1].data;
 	    const uint asize = pair[1].size;
 	    uint i;
 
-	    pputs(s, "/A ");
-	    /* Search for the next occurrence of /Subtype. */
+	    pputs(s, "/Contents ");
 	    for (i = 0; i < asize; ++i)
-		if (asize - i > 8 && !memcmp(astr + i, "/Subtype", 8) &&
-		    scan_char_decoder[astr[i + 8]] > ctype_name
+		if (asize - i >= 2 && !memcmp(astr + i, "\\n", 2) &&
+		    (i == 0 || astr[i - 1] != '\\')
 		    ) {
-		    pputs(s, "/S");
-		    i += 7;
+		    pputs(s, "\\r");
+		    ++i;
+		} else if (asize - i >= 4 && !memcmp(astr + i, "\\012", 4) &&
+			   (i == 0 || astr[i - 1] != '\\')
+		    ) {
+		    pputs(s, "\\r");
+		    i += 3;
 		} else
 		    pputc(s, astr[i]);
 	    pputc(s, '\n');
 	} else if (pdf_key_eq(pair, "Rect")) {
 	    gs_rect rect;
+	    int code = pdfmark_scan_rect(&rect, pair + 1, pctm);
 
-	    code = pdfmark_scan_rect(&rect, pair + 1, pctm);
 	    if (code < 0)
 		return code;
 	    pdfmark_write_rect(s, "Rect", &rect);
-	} else {
-	    pdfmark_write_pair(s, pair);
-	    if (pdf_key_eq(pair, "Dest"))
-		dest_present = true;
-	    else if (pdf_key_eq(pair, "Subtype"))
-		subtype_present = true;
-	}
+	} else if (for_outline && pdf_key_eq(pair, "Count"))
+	    DO_NOTHING;
+	else
+	    pdfmark_write_pair(pdev, pair);
     }
-    if (add_dest && !dest_present) {
-	char dest[max_dest_string];
-	int code = pdfmark_make_dest(dest, pdev, pairs, count);
+    if (!for_outline && pdf_key_eq(&Subtype, "Link")) {
+	if (Action)
+	    Dest.data = 0;
+    }
+    /* Now handle the deferred keys. */
+    if (Action) {
+	const byte *astr = Action[1].data;
+	const uint asize = Action[1].size;
 
-	if (code >= 0)
-	    pprints1(s, "/Dest %s\n", dest);
+	pputs(s, "/A ");
+	if ((File != 0 || Dest.data != 0) &&
+	    (pdf_key_eq(Action + 1, "/Launch") ||
+	     (pdf_key_eq(Action + 1, "/GoToR") && File) ||
+	     pdf_key_eq(Action + 1, "/Article"))
+	    ) {
+	    pputs(s, "<<");
+	    if (!for_outline) {
+		/* We aren't sure whether this is really needed.... */
+		pputs(s, "/Type/Action");
+	    }
+	    if (pdf_key_eq(Action + 1, "/Article"))
+		pputs(s, "/S/Thread");
+	    else
+		pdfmark_write_c_pair(pdev, "S", Action + 1);
+	    if (Dest.data) {
+		pdfmark_write_c_pair(pdev, "D", &Dest);
+		Dest.data = 0;	/* so we don't write it again */
+	    }
+	    if (File) {
+		pdfmark_write_c_pair(pdev, "F", File + 1);
+		File = 0;	/* so we don't write it again */
+	    }
+	    pputs(s, ">>");
+	} else {
+	    /* Replace occurrences of /Dest, /File, /Subtype. */
+	    uint i;
+
+#define key_is(key, len)\
+  (asize - i > len && !memcmp(astr + i, key, len) &&\
+   scan_char_decoder[astr[i + len]] > ctype_name)
+#define replace_key(old_len, new_key)\
+  BEGIN pputs(s, new_key); i += old_len - 1; END
+	    for (i = 0; i < asize; ++i) {
+		if (key_is("/Dest", 4))
+		    replace_key(4, "/D");
+		else if (key_is("/File", 4))
+		    replace_key(4, "/F");
+		else if (key_is("/Subtype", 8))
+		    replace_key(8, "/S");
+		else
+		    pputc(s, astr[i]);
+	    }
+	}
+#undef key_is
+#undef replace_key
+	pputc(s, '\n');
     }
-    if (!subtype_present)
-	pprints1(s, "/Subtype /%s ", subtype);
+    /*
+     * If we have /Dest or /File without the right kind of action,
+     * simply write it at the top level.  This doesn't seem right,
+     * but I'm not sure what else to do.
+     */
+    if (Dest.data)
+	pdfmark_write_c_pair(pdev, "Dest", &Dest);
+    if (File)
+	pdfmark_write_pair(pdev, File);
+    if (Subtype.data)
+	pdfmark_write_c_pair(pdev, "Subtype", &Subtype);
+    return 0;
+}
+
+/* Copy an annotation dictionary. */
+private int
+pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	      const gs_matrix * pctm, const char *subtype)
+{
+    ao_params_t params;
+    int code = pdf_begin_aside(pdev, &pdev->annots, NULL, &params.pres);
+    stream *s = pdev->strm;
+
+    if (code < 0)
+	return code;
+    params.pdev = pdev;
+    params.subtype = subtype;
+    params.pres->rid = pdev->next_page;
+    pputs(s, "<</Type/Annot\n");
+    code = pdfmark_write_ao_pairs(pdev, pairs, count, pctm, &params,
+				  false);
+    if (code < 0)
+	return code;
     pputs(s, ">>\n");
     pdf_end_aside(pdev);
     return 0;
@@ -330,83 +602,56 @@ pdfmark_annot(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 
 /* ANN pdfmark */
 private int
-pdfmark_ANN(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	    const gs_matrix * pctm)
+pdfmark_ANN(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	    const gs_matrix * pctm, const gs_param_string * objname)
 {
-    return pdfmark_annot(pdev, pairs, count, pctm, "Text");
+    return pdfmark_annot(pdev, pairs, count, pctm, "/Text");
 }
 
 /* LNK pdfmark (obsolescent) */
 private int
-pdfmark_LNK(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	    const gs_matrix * pctm)
+pdfmark_LNK(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	    const gs_matrix * pctm, const gs_param_string * objname)
 {
-    return pdfmark_annot(pdev, pairs, count, pctm, "Link");
+    return pdfmark_annot(pdev, pairs, count, pctm, "/Link");
 }
 
 /* Save pairs in a string. */
-private bool
-pdf_key_member(const gs_param_string * pcs, const char *const keys[])
-{
-    const char *const *pkey;
-
-    for (pkey = keys; *pkey != 0; ++pkey)
-	if (pdf_key_eq(pcs, *pkey))
-	    return true;
-    return false;
-}
-#define pdfmark_size_pair(pair)\
-  ((pair)[0].size + (pair)[1].size + 3)
-private byte *
-pdfmark_save_pair(byte * next, const gs_param_string * pair)
-{
-    uint len;
-
-    *next++ = '/';
-    memcpy(next, pair[0].data, len = pair[0].size);
-    next += len;
-    *next++ = ' ';
-    memcpy(next, pair[1].data, len = pair[1].size);
-    next += len;
-    *next++ = '\n';
-    return next;
-}
+typedef struct pairs_params_s {
+    const gs_param_string *pairs;
+    uint count;
+    const char *const *skip_keys;
+    const gs_param_string *add_pairs;
+    uint add_count;
+} pairs_params_t;
 private int
-pdfmark_save_edited_pairs(const gx_device_pdf * pdev,
-   const gs_param_string * pairs, uint count, const char *const skip_keys[],
-	const gs_param_string * add_pairs, uint add_count, gs_string * pstr)
+pairs_write(const gx_device_pdf * pdev, void *pdata)
 {
-    uint i, size;
-    byte *data;
-    byte *next;
+    const pairs_params_t *ppp = (const pairs_params_t *)pdata;
 
-    for (i = 0, size = 0; i < count; i += 2)
-	if (!pdf_key_member(&pairs[i], skip_keys))
-	    size += pdfmark_size_pair(&pairs[i]);
-    for (i = 0; i < add_count; i += 2)
-	size += pdfmark_size_pair(&add_pairs[i]);
-    if (pstr->data == 0)
-	data = gs_alloc_string(pdev->pdf_memory, size, "pdfmark_save_pairs");
-    else
-	data = gs_resize_string(pdev->pdf_memory, pstr->data, pstr->size,
-				size, "pdfmark_save_pairs");
-    if (data == 0)
-	return_error(gs_error_VMerror);
-    next = data;
-    for (i = 0; i < count; i += 2)
-	if (!pdf_key_member(&pairs[i], skip_keys))
-	    next = pdfmark_save_pair(next, &pairs[i]);
-    for (i = 0; i < add_count; i += 2)
-	next = pdfmark_save_pair(next, &add_pairs[i]);
-    pstr->data = data;
-    pstr->size = size;
+    pdfmark_write_pairs_except(pdev, ppp->pairs, ppp->count,
+			       ppp->skip_keys);
+    pdfmark_write_pairs(pdev, ppp->add_pairs, ppp->add_count);
     return 0;
 }
-static const char *const no_skip_pairs[] =
-{0};
+private int
+pdfmark_save_edited_pairs(gx_device_pdf * pdev,
+    const gs_param_string * pairs, uint count, const char *const *skip_keys,
+	const gs_param_string * add_pairs, uint add_count, gs_string * pstr)
+{
+    pairs_params_t params;
 
+    params.pairs = pairs;
+    params.count = count;
+    params.skip_keys = skip_keys;
+    params.add_pairs = add_pairs;
+    params.add_count = add_count;
+
+    return pdfmark_save(pdev, pstr, pairs_write, &params,
+			"pdfmark_save_edited_pairs");
+}
 #define pdfmark_save_pairs(pdev, pairs, count, pstr)\
-  pdfmark_save_edited_pairs(pdev, pairs, count, no_skip_pairs, NULL, 0, pstr)
+  pdfmark_save_edited_pairs(pdev, pairs, count, NULL, NULL, 0, pstr)
 
 /* Write out one node of the outline tree. */
 private int
@@ -472,15 +717,30 @@ pdfmark_close_outline(gx_device_pdf * pdev)
 }
 
 /* OUT pdfmark */
+typedef struct out_pairs_params_s {
+    const gs_param_string *pairs;
+    uint count;
+    const gs_matrix *pctm;
+    ao_params_t ao;
+} out_pairs_params_t;
 private int
-pdfmark_OUT(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	    const gs_matrix * pctm)
+pdfmark_OUT_write(const gx_device_pdf * pdev, void *pdata)
+{
+    out_pairs_params_t *popp = (out_pairs_params_t *) pdata;
+
+    return pdfmark_write_ao_pairs(pdev, popp->pairs, popp->count,
+				  popp->pctm, &popp->ao, true);
+}
+private int
+pdfmark_OUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	    const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     int depth = pdev->outline_depth;
     pdf_outline_level *plevel = &pdev->outline_levels[depth];
     int sub_count = 0;
     uint i;
     pdf_outline_node node;
+    out_pairs_params_t params;
     int code;
 
     for (i = 0; i < count; i += 2) {
@@ -492,26 +752,16 @@ pdfmark_OUT(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
     if (sub_count != 0 && depth == max_outline_depth - 1)
 	return_error(gs_error_limitcheck);
     node.action_string.data = 0;
-    {
-	static const char *const skip_out[] =
-	{"Page", "View", "Count", 0};
-	char dest[max_dest_string];
-
-	if (pdfmark_make_dest(dest, pdev, pairs, count)) {
-	    gs_param_string add_dest[2];
-
-	    param_string_from_string(add_dest[0], "Dest");
-	    param_string_from_string(add_dest[1], dest);
-	    code = pdfmark_save_edited_pairs(pdev, pairs, count, skip_out,
-					     add_dest, 2,
-					     &node.action_string);
-	} else {
-	    code = pdfmark_save_edited_pairs(pdev, pairs, count, skip_out + 2,
-					     NULL, 0, &node.action_string);
-	}
-	if (code < 0)
-	    return code;
-    }
+    params.pctm = pctm;
+    params.pairs = pairs;
+    params.count = count;
+    params.ao.pdev = pdev;
+    params.ao.subtype = 0;
+    params.ao.pres = 0;
+    code = pdfmark_save(pdev, &node.action_string, pdfmark_OUT_write,
+			&params, "pdfmark_OUT");
+    if (code < 0)
+	return code;
     if (pdev->outlines_id == 0)
 	pdev->outlines_id = pdf_obj_ref(pdev);
     node.id = pdf_obj_ref(pdev);
@@ -553,26 +803,56 @@ pdfmark_OUT(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 }
 
 /* Write an article bead. */
-int
-pdfmark_write_article(gx_device_pdf * pdev, const pdf_bead * pbead)
+private int
+pdfmark_write_bead(gx_device_pdf * pdev, const pdf_bead * pbead)
 {
     stream *s;
 
     pdf_open_separate(pdev, pbead->id);
     s = pdev->strm;
-    pprintld3(s,
-	      "<<\n/T %ld 0 R\n/V %ld 0 R\n/N %ld 0 R\n",
+    pprintld3(s, "<</T %ld 0 R/V %ld 0 R/N %ld 0 R",
 	      pbead->article_id, pbead->prev_id, pbead->next_id);
-    pprints1(s, "/Dest %s\n", pbead->dest);
+    if (pbead->page_id != 0)
+	pprintld1(s, "/P %ld 0 R", pbead->page_id);
     pdfmark_write_rect(s, "R", &pbead->rect);
     pputs(s, ">>\n");
     return pdf_end_separate(pdev);
 }
 
+/* Finish writing an article. */
+int
+pdfmark_write_article(gx_device_pdf * pdev, const pdf_article * part)
+{
+    pdf_article art;
+    stream *s;
+
+    art = *part;
+    if (art.last.id == 0) {
+	/* Only one bead in the article. */
+	art.first.prev_id = art.first.next_id = art.first.id;
+    } else {
+	/* More than one bead in the article. */
+	art.first.prev_id = art.last.id;
+	art.last.next_id = art.first.id;
+	pdfmark_write_bead(pdev, &art.last);
+    }
+    pdfmark_write_bead(pdev, &art.first);
+    pdf_open_separate(pdev, art.id);
+    s = pdev->strm;
+    pprintld1(s, "<</F %ld 0 R/I<</Title ", art.first.id);
+    pdf_put_value(pdev, art.title.data, art.title.size);
+    if (art.info.data != 0) {
+	pputs(s, "\n");
+	pdf_put_value(pdev, art.info.data, art.info.size);
+    }
+    pputs(s, ">> >>\n");
+    return pdf_end_separate(pdev);
+}
+
 /* ARTICLE pdfmark */
 private int
-pdfmark_ARTICLE(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-		const gs_matrix * pctm)
+pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+		const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     gs_param_string title;
     gs_param_string rectstr;
@@ -587,7 +867,6 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 	return_error(gs_error_rangecheck);
     if ((code = pdfmark_scan_rect(&rect, &rectstr, pctm)) < 0)
 	return code;
-/****** Should save other keys for Info dictionary ******/
 
     /* Find the article with this title, or create one. */
     bead_id = pdf_obj_ref(pdev);
@@ -609,26 +888,42 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 	memcpy(str, title.data, title.size);
 	part->title.data = str;
 	part->title.size = title.size;
-	part->id = pdf_begin_separate(pdev);
+	part->id = pdf_obj_ref(pdev);
 	part->first.id = part->last.id = 0;
-	pprintld1(pdev->strm, "<</F %ld 0 R>>\n", bead_id);
-	pdf_end_separate(pdev);
+	part->info.data = 0;
+	part->info.size = 0;
     }
-    /* Add the bead to the article. */
-    /* This is similar to what we do for outline nodes. */
+    /*
+     * Add the bead to the article.  This is similar to what we do for
+     * outline nodes, except that articles have only a page number and
+     * not View/Dest.
+     */
     if (part->last.id == 0) {
 	part->first.next_id = bead_id;
 	part->last.id = part->first.id;
     } else {
 	part->last.next_id = bead_id;
-	pdfmark_write_article(pdev, &part->last);
+	pdfmark_write_bead(pdev, &part->last);
     }
     part->last.prev_id = part->last.id;
     part->last.id = bead_id;
     part->last.article_id = part->id;
     part->last.next_id = 0;
     part->last.rect = rect;
-    pdfmark_make_dest(part->last.dest, pdev, pairs, count);
+    {
+	gs_param_string page_string;
+	int page = 0;
+	static const char *const skip_article[] =
+	{
+	    "Title", "Rect", "Page", 0
+	};
+
+	if (pdfmark_find_key("Page", pairs, count, &page_string))
+	    page = pdfmark_page_number(pdev, &page_string);
+	part->last.page_id = pdf_page_id(pdev, page);
+	pdfmark_save_edited_pairs(pdev, pairs, count, skip_article,
+				  NULL, 0, &part->info);
+    }
     if (part->first.id == 0) {	/* This is the first bead of the article. */
 	part->first = part->last;
 	part->last.id = 0;
@@ -638,8 +933,8 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 
 /* DEST pdfmark */
 private int
-pdfmark_DEST(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	     const gs_matrix * pctm)
+pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	     const gs_matrix * pctm, const gs_param_string * objname)
 {
     char dest[max_dest_string];
     gs_param_string key;
@@ -647,7 +942,7 @@ pdfmark_DEST(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
     byte *str;
 
     if (!pdfmark_find_key("Dest", pairs, count, &key) ||
-	!pdfmark_make_dest(dest, pdev, pairs, count)
+	!pdfmark_make_dest(dest, pdev, pairs, count) < 0
 	)
 	return_error(gs_error_rangecheck);
     pnd = gs_alloc_struct(pdev->pdf_memory, pdf_named_dest,
@@ -696,8 +991,8 @@ pdfmark_write_ps(gx_device_pdf * pdev, const gs_param_string * psource)
 
 /* PS pdfmark */
 private int
-pdfmark_PS(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	   const gs_matrix * pctm)
+pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	   const gs_matrix * pctm, const gs_param_string * objname)
 {
     stream *s;
     gs_param_string source;
@@ -707,7 +1002,7 @@ pdfmark_PS(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 	return_error(gs_error_rangecheck);
     pdfmark_find_key("Level1", pairs, count, &level1);
     if (level1.data == 0 && source.size <= 100 &&
-	pdev->CompatibilityLevel >= 1.2
+	pdev->CompatibilityLevel >= 1.2 && objname == 0
 	) {			/* Insert the PostScript code in-line */
 	int code = pdf_open_contents(pdev, pdf_in_stream);
 
@@ -718,17 +1013,19 @@ pdfmark_PS(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 	pputs(s, " PS\n");
     } else {			/* Put the PostScript code in a resource. */
 	pdf_resource *pres;
-	int code = pdf_begin_resource(pdev, resourceXObject, gs_no_id,
+
+/****** SHOULD BE A NamedObject ******/
+	int code = pdf_begin_resource(pdev, resourceImageXObject, gs_no_id,
 				      &pres);
 
 	if (code < 0)
 	    return code;
 	s = pdev->strm;
-	pputs(s, " /Subtype /PS");
+	pputs(s, "/Subtype/PS");
 	if (level1.data != 0) {
 	    long level1_id = pdf_obj_ref(pdev);
 
-	    pprintld1(s, " /Level1 %ld 0 R", level1_id);
+	    pprintld1(s, "/Level1 %ld 0 R", level1_id);
 	    pdfmark_write_ps(pdev, &source);
 	    pdf_open_separate(pdev, level1_id);
 	    pputs(pdev->strm, "<<");
@@ -745,24 +1042,24 @@ pdfmark_PS(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 
 /* PAGES pdfmark */
 private int
-pdfmark_PAGES(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	      const gs_matrix * pctm)
+pdfmark_PAGES(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	      const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     return pdfmark_save_pairs(pdev, pairs, count, &pdev->pages_string);
 }
 
 /* PAGE pdfmark */
 private int
-pdfmark_PAGE(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-	     const gs_matrix * pctm)
+pdfmark_PAGE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+	     const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     return pdfmark_save_pairs(pdev, pairs, count, &pdev->page_string);
 }
 
 /* DOCINFO pdfmark */
 private int
-pdfmark_DOCINFO(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-		const gs_matrix * pctm)
+pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+		const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     long info_id = pdf_begin_separate(pdev);
     stream *s = pdev->strm;
@@ -775,7 +1072,7 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 	if (!pdf_key_eq(&pairs[i], "CreationDate") &&
 	    !pdf_key_eq(&pairs[i], "Producer")
 	    )
-	    pdfmark_write_pair(s, &pairs[i]);
+	    pdfmark_write_pair(pdev, &pairs[i]);
     pdf_write_default_info(pdev);
     pputs(s, ">>\n");
     pdf_end_separate(pdev);
@@ -785,8 +1082,8 @@ pdfmark_DOCINFO(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
 
 /* DOCVIEW pdfmark */
 private int
-pdfmark_DOCVIEW(gx_device_pdf * pdev, const gs_param_string * pairs, uint count,
-		const gs_matrix * pctm)
+pdfmark_DOCVIEW(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
+		const gs_matrix * pctm, const gs_param_string * no_objname)
 {
     char dest[max_dest_string];
 

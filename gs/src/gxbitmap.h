@@ -1,22 +1,22 @@
 /* Copyright (C) 1989, 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gxbitmap.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxbitmap.h  */
 /* Definitions for stored bitmaps for Ghostscript */
 
 #ifndef gxbitmap_INCLUDED
@@ -53,13 +53,13 @@ typedef gs_bitmap_id gx_bitmap_id;
 /*
  * Define the gx analogue of the basic bitmap structure.  Note that since
  * all scan lines must be aligned, the requirement on raster is:
- *	If size.y > 1,
- *	    raster >= bitmap_raster(size.x * depth)
- *	    raster % align_bitmap_mod = 0
+ *      If size.y > 1,
+ *          raster >= bitmap_raster(size.x * depth)
+ *          raster % align_bitmap_mod = 0
  */
 #define gx_bitmap_common gs_bitmap_common
 typedef struct gx_bitmap_s {
-	gx_bitmap_common;
+    gx_bitmap_common;
 } gx_bitmap;
 
 /*
@@ -69,7 +69,7 @@ typedef struct gx_bitmap_s {
  */
 #define gx_tile_bitmap_common gs_tile_bitmap_common
 typedef struct gx_tile_bitmap_s {
-	gx_tile_bitmap_common;
+    gx_tile_bitmap_common;
 } gx_tile_bitmap;
 
 /*
@@ -84,12 +84,12 @@ typedef struct gx_tile_bitmap_s {
  *
  * As for non-shifted tiles, a strip bitmap may include multiple copies
  * in X or Y to reduce loop overhead.  In this case, we must distinguish:
- *	- The height of an individual strip, which is the same as
- *	the height of the bitmap being replicated (rep_height, H);
- *	- The height of the entire bitmap (size.y).
+ *      - The height of an individual strip, which is the same as
+ *      the height of the bitmap being replicated (rep_height, H);
+ *      - The height of the entire bitmap (size.y).
  * Similarly, we must distinguish:
- *	- The shift per strip (rep_shift, S);
- *	- The shift for the entire bitmap (shift).
+ *      - The shift per strip (rep_shift, S);
+ *      - The shift for the entire bitmap (shift).
  * Note that shift = (rep_shift * size.y / rep_height) mod rep_width,
  * so the shift member of the structure is only an accelerator.  It is,
  * however, an important one, since it indicates whether the overall
@@ -106,15 +106,15 @@ typedef struct gx_tile_bitmap_s {
  * gcd(S, W).  I.e., we don't allow strip bitmaps that are large enough to
  * include a complete tile but that don't include an integral number of
  * tiles.  Requirements:
- *	rep_shift < rep_width
- *	shift = (rep_shift * (size.y / rep_height)) % rep_width
+ *      rep_shift < rep_width
+ *      shift = (rep_shift * (size.y / rep_height)) % rep_width
  */
 #define gx_strip_bitmap_common\
 	gx_tile_bitmap_common;\
 	ushort rep_shift;\
 	ushort shift
 typedef struct gx_strip_bitmap_s {
-	gx_strip_bitmap_common;
+    gx_strip_bitmap_common;
 } gx_strip_bitmap;
 
-#endif					/* gxbitmap_INCLUDED */
+#endif /* gxbitmap_INCLUDED */

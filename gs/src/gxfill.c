@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxfill.c */
+/*Id: gxfill.c  */
 /* Lower-level path filling procedures */
 #include "math_.h"		/* for floor in fixed_mult_quo */
 #include "gx.h"
@@ -56,7 +56,7 @@ struct active_line_s {
   ((yv) == (alp)->end.y ? (alp)->end.x :\
    ((yv) <= (alp)->y_fast_max ?\
     ((yv) - (alp)->start.y) * al_dx(alp) / al_dy(alp) :\
-    (n_add1_expr(n_slow_x),\
+    (INCR_EXPR(slow_x),\
      fixed_mult_quo(al_dx(alp), (yv) - (alp)->start.y, al_dy(alp)))) +\
    (alp)->start.x)
     fixed x_current;		/* current x position */
@@ -97,15 +97,15 @@ gs_private_st_simple(st_active_line, active_line, "active_line");
 private void
 print_active_line(const char *label, const active_line * alp)
 {
-    dprintf5("[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
-	     label, (ulong) alp, alp->direction,
-	     fixed2float(alp->x_current), fixed2float(alp->x_next));
-    dprintf5("    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
-	     fixed2float(alp->start.x), fixed2float(alp->start.y),
-	     (ulong) alp->pseg,
-	     fixed2float(alp->end.x), fixed2float(alp->end.y));
-    dprintf2("    prev=0x%lx next=0x%lx\n",
-	     (ulong) alp->prev, (ulong) alp->next);
+    dlprintf5("[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
+	      label, (ulong) alp, alp->direction,
+	      fixed2float(alp->x_current), fixed2float(alp->x_next));
+    dlprintf5("    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
+	      fixed2float(alp->start.x), fixed2float(alp->start.y),
+	      (ulong) alp->pseg,
+	      fixed2float(alp->end.x), fixed2float(alp->end.y));
+    dlprintf2("    prev=0x%lx next=0x%lx\n",
+	      (ulong) alp->prev, (ulong) alp->next);
 }
 private void
 print_line_list(const active_line * flp)
@@ -115,9 +115,9 @@ print_line_list(const active_line * flp)
     for (lp = flp; lp != 0; lp = lp->next) {
 	fixed xc = lp->x_current, xn = lp->x_next;
 
-	dprintf3("[f]0x%lx(%d): x_current/next=%g",
-		 (ulong) lp, lp->direction,
-		 fixed2float(xc));
+	dlprintf3("[f]0x%lx(%d): x_current/next=%g",
+		  (ulong) lp, lp->direction,
+		  fixed2float(xc));
 	if (xn != xc)
 	    dprintf1("/%g", fixed2float(xn));
 	dputc('\n');
@@ -167,7 +167,7 @@ struct line_list_s {
     active_line local_active[max_local_active];
 };
 typedef struct line_list_s line_list;
-typedef line_list _ss *ll_ptr;
+typedef line_list *ll_ptr;
 
 /* Forward declarations */
 private void init_line_list(P2(ll_ptr, gs_memory_t *));
@@ -176,8 +176,8 @@ private void free_line_list(P1(ll_ptr));
 private int add_y_list(P5(gx_path *, ll_ptr, fixed, fixed,
 			  const gs_fixed_rect *));
 private int add_y_line(P4(const segment *, const segment *, int, ll_ptr));
-private void near insert_x_new(P2(active_line *, ll_ptr));
-private bool near end_x_line(P1(active_line *));
+private void insert_x_new(P2(active_line *, ll_ptr));
+private bool end_x_line(P1(active_line *));
 
 #define fill_loop_proc(proc)\
 int proc(P11(ll_ptr, gx_device *,\
@@ -188,30 +188,19 @@ private fill_loop_proc(fill_loop_by_trapezoids);
 
 /* Statistics */
 #ifdef DEBUG
-#  define n_add1(x) (x++)
-#  define n_add1_expr(x) n_add1(x)
-#  define n_add(x,n) (x += (n))
-private long n_fill;
-private long n_fill_alloc;
-private long n_y_up;
-private long n_y_down;
-private long n_horiz;
-private long n_x_step;
-private long n_slow_x;
-private long n_iter;
-private long n_find_y;
-private long n_band;
-private long n_band_step;
-private long n_band_fill;
-private long n_afill;
-private long n_slant;
-private long n_slant_shallow;
-private long n_sfill;
+struct stats_fill_s {
+    long
+         fill, fill_alloc, y_up, y_down, horiz, x_step, slow_x, iter, find_y,
+         band, band_step, band_fill, afill, slant, slant_shallow, sfill;
+} stats_fill;
 
+#  define INCR(x) (++(stats_fill.x))
+#  define INCR_EXPR(x) INCR(x)
+#  define INCR_BY(x,n) (stats_fill.x += (n))
 #else
-#  define n_add1(x) DO_NOTHING
-#  define n_add1_expr(x) discard(0)
-#  define n_add(x,n) DO_NOTHING
+#  define INCR(x) DO_NOTHING
+#  define INCR_EXPR(x) discard(0)
+#  define INCR_BY(x,n) DO_NOTHING
 #endif
 
 /*
@@ -330,7 +319,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	 */
 	if (pcpath) {
 	    dev = (gx_device *) & cdev;
-	    gx_make_clip_device(&cdev, &cdev, &pcpath->list);
+	    gx_make_clip_device(&cdev, &cdev, gx_cpath_list(pcpath));
 	    cdev.target = save_dev;
 	    cdev.max_fill_band = save_dev->max_fill_band;
 	    (*dev_proc(dev, open_device)) (dev);
@@ -380,7 +369,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 #ifdef FILL_SCAN_LINES
 #  ifdef FILL_TRAPEZOIDS
     fill_by_trapezoids =
-	((adjust_below | adjust_above) != 0 || ppath->curve_count == 0 ||
+	((adjust_below | adjust_above) != 0 || !gx_path_has_curves(ppath) ||
 	 params->flatness >= 1.0) && double_write_ok;
 #  else
     fill_by_trapezoids = false;
@@ -394,30 +383,34 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * flatten the path completely; when filling by scan lines, we only
      * need to monotonize it, unless FILL_CURVES is undefined.
      */
-    if (!ppath->curve_count)	/* don't need to flatten */
+    gx_path_init_local(&ffpath, ppath->memory);
+    if (!gx_path_has_curves(ppath))	/* don't need to flatten */
 	pfpath = ppath;
     else
 #ifdef FILL_CURVES
     if (fill_by_trapezoids) {
-	code = gx_path_flatten_accurate(ppath, &ffpath,
-					params->flatness,
-					pis->accurate_curves);
+	gx_path_init_local(&ffpath, ppath->memory);
+	code = gx_path_add_flattened_accurate(ppath, &ffpath,
+					      params->flatness,
+					      pis->accurate_curves);
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
     } else if (gx_path_is_monotonic(ppath))
 	pfpath = ppath;
     else {
-	code = gx_path_monotonize(ppath, &ffpath);
+	gx_path_init_local(&ffpath, ppath->memory);
+	code = gx_path_add_monotonized(ppath, &ffpath);
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
     }
 #else
     {
-	code = gx_path_flatten_accurate(ppath, &ffpath,
-					params->flatness,
-					pis->accurate_curves);
+	gx_path_init_local(&ffpath, ppath->memory);
+	code = gx_path_add_flattened_accurate(ppath, &ffpath,
+					      params->flatness,
+					      pis->accurate_curves);
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
@@ -442,19 +435,24 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	unclose_path(pfpath, lst.close_count);
     free_line_list(&lst);
     if (pfpath != ppath)	/* had to flatten */
-	gx_path_release(pfpath);
+	gx_path_free(pfpath, "gx_default_fill_path(flattened path)");
 #ifdef DEBUG
     if (gs_debug_c('f')) {
-	dputs("[f]  # alloc    up  down  horiz step slowx  iter  find  band bstep bfill\n");
-	dprintf5(" %5ld %5ld %5ld %5ld %5ld",
-		 n_fill, n_fill_alloc, n_y_up, n_y_down, n_horiz);
-	dprintf4(" %5ld %5ld %5ld %5ld",
-		 n_x_step, n_slow_x, n_iter, n_find_y);
-	dprintf3(" %5ld %5ld %5ld\n",
-		 n_band, n_band_step, n_band_fill);
-	dputs("[f]    afill slant shall sfill\n");
-	dprintf4("       %5ld %5ld %5ld %5ld\n",
-		 n_afill, n_slant, n_slant_shallow, n_sfill);
+	dlputs("[f]  # alloc    up  down  horiz step slowx  iter  find  band bstep bfill\n");
+	dlprintf5(" %5ld %5ld %5ld %5ld %5ld",
+		  stats_fill.fill, stats_fill.fill_alloc,
+		  stats_fill.y_up, stats_fill.y_down,
+		  stats_fill.horiz);
+	dlprintf4(" %5ld %5ld %5ld %5ld",
+		  stats_fill.x_step, stats_fill.slow_x,
+		  stats_fill.iter, stats_fill.find_y);
+	dlprintf3(" %5ld %5ld %5ld\n",
+		  stats_fill.band, stats_fill.band_step,
+		  stats_fill.band_fill);
+	dlputs("[f]    afill slant shall sfill\n");
+	dlprintf4("       %5ld %5ld %5ld %5ld\n",
+		  stats_fill.afill, stats_fill.slant,
+		  stats_fill.slant_shallow, stats_fill.sfill);
     }
 #endif
     return code;
@@ -471,7 +469,7 @@ init_line_list(ll_ptr ll, gs_memory_t * mem)
     ll->close_count = 0;
     ll->y_list = 0;
     ll->y_line = 0;
-    n_add1(n_fill);
+    INCR(fill);
 }
 
 /* Unlink any line_close segments added temporarily. */
@@ -581,7 +579,7 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 		if (fixed2int_pixround(iy - adjust_below) <
 		    fixed2int_pixround(iy + adjust_above)
 		    ) {
-		    n_add1(n_horiz);
+		    INCR(horiz);
 		    if ((code = add_y_line(prev, pseg,
 					   dir_horizontal, ll)) < 0
 			)
@@ -628,7 +626,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 	    return_error(gs_error_VMerror);
 	alp->alloc_next = ll->active_area;
 	ll->active_area = alp;
-	n_add1(n_fill_alloc);
+	INCR(fill_alloc);
     } else
 	ll->next_active++;
     this.x = lp->pt.x;
@@ -663,7 +661,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 	    alp->next = alp->prev = 0;
 	    ll->y_list = alp;
 	} else if (y_start >= yp->start.y) {	/* Insert the new line after y_line */
-	    while (n_add1_expr(n_y_up),
+	    while (INCR_EXPR(y_up),
 		   ((nyp = yp->next) != NULL &&
 		    y_start > nyp->start.y)
 		)
@@ -674,7 +672,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 	    if (nyp)
 		nyp->prev = alp;
 	} else {		/* Insert the new line before y_line */
-	    while (n_add1_expr(n_y_down),
+	    while (INCR_EXPR(y_down),
 		   ((nyp = yp->prev) != NULL &&
 		    y_start < nyp->start.y)
 		)
@@ -696,7 +694,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 /* ---------------- Filling loop utilities ---------------- */
 
 /* Insert a newly active line in the X ordering. */
-private void near
+private void
 insert_x_new(active_line * alp, ll_ptr ll)
 {
     register active_line *next;
@@ -704,7 +702,7 @@ insert_x_new(active_line * alp, ll_ptr ll)
     register fixed x = alp->start.x;
 
     alp->x_current = x;
-    while (n_add1_expr(n_x_step),
+    while (INCR_EXPR(x_step),
 	   (next = prev->next) != 0 && x_precedes(next, alp, x)
 	)
 	prev = next;
@@ -717,7 +715,7 @@ insert_x_new(active_line * alp, ll_ptr ll)
 
 /* Handle a line segment that just ended.  Return true iff this was */
 /* the end of a line sequence. */
-private bool near
+private bool
 end_x_line(active_line * alp)
 {
     const segment *pseg = alp->pseg;
@@ -822,7 +820,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 	fixed x;
 	fixed ya = y + look_height;
 
-	n_add1(n_iter);
+	INCR(iter);
 	/* Move newly active lines from y to x list. */
 	while (yll != 0 && yll->start.y < ya) {
 	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
@@ -890,7 +888,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 	    /* rule = 1 for even-odd rule, i.e. */
 	    /* we are inside if the winding number is odd. */
 #define inside_path_p() ((inside & rule) != 0)
-	    n_add1(n_band);
+	    INCR(band);
 	    for (alp = ll->x_list; alp != 0; alp = alp->next) {		/* We're outside a filled region. */
 		int x0 = fixed2int_pixround(alp->x_current -
 					    adjust_left);
@@ -914,7 +912,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 		}
 		for (;;) {	/* We're inside a filled region. */
 		    print_al("step", alp);
-		    n_add1(n_band_step);
+		    INCR(band_step);
 		    inside += alp->direction;
 		    if (!inside_path_p())
 			break;
@@ -1008,10 +1006,10 @@ set_scan_line_points(active_line * alp, fixed fixed_flat)
 /* ---------------- Trapezoid filling loop ---------------- */
 
 /* Forward references */
-private int near fill_slant_adjust(P12(fixed, fixed, fixed, fixed, fixed,
-				 fixed, fixed, fixed, const gs_fixed_rect *,
+private int fill_slant_adjust(P12(fixed, fixed, fixed, fixed, fixed,
+				  fixed, fixed, fixed, const gs_fixed_rect *,
 	     const gx_device_color *, gx_device *, gs_logical_operation_t));
-private void near resort_x_line(P1(active_line *));
+private void resort_x_line(P1(active_line *));
 
 /****** PATCH ******/
 #define loop_fill_trapezoid_fixed(fx0, fw0, fy0, fx1, fw1, fh)\
@@ -1098,7 +1096,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	fixed x;
 	int draw;
 
-	n_add1(n_iter);
+	INCR(iter);
 	/* Move newly active lines from y to x list. */
 	while (yll != 0 && yll->start.y == y) {
 	    active_line *ynext = yll->next;	/* insert smashes next/prev links */
@@ -1151,8 +1149,8 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		y1 = alp->end.y;
 #ifdef DEBUG
 	if (gs_debug_c('F')) {
-	    dprintf2("[F]before loop: y=%f y1=%f:\n",
-		     fixed2float(y), fixed2float(y1));
+	    dlprintf2("[F]before loop: y=%f y1=%f:\n",
+		      fixed2float(y), fixed2float(y1));
 	    print_line_list(ll->x_list);
 	}
 #endif
@@ -1168,7 +1166,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	 *        lp->x_next = al_x_at_y(lp, y1).
 	 */
 	for (alp = stopx = ll->x_list;
-	     n_add1_expr(n_find_y), alp != 0;
+	     INCR_EXPR(find_y), alp != 0;
 	     endp = alp, alp = alp->next
 	    ) {
 	    fixed nx = al_x_at_y(alp, y1);
@@ -1219,7 +1217,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    alp->x_next = al_x_at_y(alp, y1);
 #ifdef DEBUG
 	if (gs_debug_c('F')) {
-	    dprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
+	    dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
 	    print_line_list(ll->x_list);
 	}
 #endif
@@ -1236,7 +1234,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    int inside = 0;
 	    active_line *nlp;
 
-	    n_add1(n_band);
+	    INCR(band);
 	    for (x = min_fixed, alp = ll->x_list; alp != 0; alp = nlp) {
 		fixed xbot = alp->x_current;
 		fixed xtop = alp->x_current = alp->x_next;
@@ -1247,7 +1245,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		int code;
 
 		print_al("step", alp);
-		n_add1(n_band_step);
+		INCR(band_step);
 		nlp = alp->next;
 		/* Handle ended or out-of-order lines.  After this, */
 		/* the only member of alp we use is alp->direction. */
@@ -1276,7 +1274,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 #undef inside_path_p
 		/* We just went from inside to outside, so fill the region. */
 		wtop = xtop - xltop;
-		n_add1(n_band_fill);
+		INCR(band_fill);
 		/* If lines are temporarily out of */
 		/* order, wtop might be negative. */
 		/* Patch this up now. */
@@ -1321,7 +1319,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			    if (adjusted_y_spans_pixel(y1)) {
 				if (code < 0)
 				    return code;
-				n_add1(n_afill);
+				INCR(afill);
 				code = loop_fill_rectangle_direct(
 				 xli, fixed2int_pixround(y1 - adjust_below),
 				     fixed2int_var_pixround(xtop) - xli, 1);
@@ -1335,7 +1333,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		    } else {
 			if (xtop <= xbot) {	/* Bottom wider than top. */
 			    if (adjusted_y_spans_pixel(y)) {
-				n_add1(n_afill);
+				INCR(afill);
 				xli = fixed2int_var_pixround(xlbot);
 				code = loop_fill_rectangle_direct(
 				  xli, fixed2int_pixround(y - adjust_below),
@@ -1405,7 +1403,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
  * To do this exactly right requires filling a central trapezoid
  * (or rectangle) plus two horizontal almost-rectangles.
  */
-private int near
+private int
 fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
 		  fixed xltop, fixed xtop, fixed height, fixed adjust_below,
 		  fixed adjust_above, const gs_fixed_rect * pbox,
@@ -1427,7 +1425,7 @@ fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
     gs_fixed_edge vert_left, slant_left, vert_right, slant_right;
     int code;
 
-    n_add1(n_slant);
+    INCR(slant);
 
     /* Set up all the edges, even though we may not need them all. */
 
@@ -1465,7 +1463,7 @@ fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
 	int iy1b = fixed2int_var_pixround(y1b);
 	int iy1a = fixed2int_var_pixround(y1a);
 
-	n_add1(n_slant_shallow);
+	INCR(slant_shallow);
 	if (iy1b > iyb) {
 	    code = (*fill_trap) (dev, plbot, prbot,
 				 yb, y1b, false, pdevc, lop);
@@ -1514,7 +1512,7 @@ fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
 }
 
 /* Re-sort the x list by moving alp backward to its proper spot. */
-private void near
+private void
 resort_x_line(active_line * alp)
 {
     active_line *prev = alp->prev;

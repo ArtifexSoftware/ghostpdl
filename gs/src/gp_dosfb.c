@@ -1,4 +1,4 @@
-/* Copyright (C) 1992 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_dosfb.c */
+/*Id: gp_dosfb.c  */
 /* MS-DOS frame buffer swapping routines for Ghostscript */
 #include <conio.h>
 #include "malloc_.h"
@@ -39,13 +39,16 @@ typedef struct {
     text_line lines[cw_height];
 } ds_text_screen;
 
-private ds_text_screen *console;
+/* Allocate the console buffer statically. */
+private ds_text_screen gp_console;
 
-private int console_is_current;
+#define console (&gp_console)
+private bool console_initialized = false;
+private bool console_is_current;
 
 /* Buffer one scan line of graphics. */
 #define row_buf_size 1280
-private char graphics_file_name[] = "_temp_.gfb";
+private const char graphics_file_name[] = "_temp_.gfb";
 
 /* Forward references */
 private int save_graphics(P1(gx_device *));
@@ -55,13 +58,10 @@ private int restore_graphics(P1(gx_device *));
 void
 gp_init_console(void)
 {
-    console = (ds_text_screen *) gs_malloc(1, sizeof(ds_text_screen), "gp_init_console(dosfb)");
-    if (console != 0) {
-	memset(&console->lines, 0, sizeof(console->lines));
-	console->line = &console->lines[0];
-	console_is_current = 0;
-    } else
-	console_is_current = 1;
+    memset(&console->lines, 0, sizeof(console->lines));
+    console->line = &console->lines[0];
+    console_is_current = false;
+    console_initialized = true;
 }
 
 /* Write a string to the console. */
@@ -71,7 +71,7 @@ gp_console_puts(const char *str, uint size)
     register ds_text_screen *cop = console;
     register text_line *lip;
 
-    if (console == 0) {
+    if (!console_initialized) {
 	fwrite(str, 1, size, stdout);
 	return;
     }
@@ -105,7 +105,7 @@ gp_make_console_current(gx_device * dev)
 {
     int code = 0;
 
-    if (console == 0)
+    if (!console_initialized)
 	return 0;
     if (!console_is_current)
 	code = save_graphics(dev);
@@ -124,7 +124,7 @@ gp_make_console_current(gx_device * dev)
 	    cputs(lip->text);
 	}
     }
-    console_is_current = 1;
+    console_is_current = true;
     return code;
 }
 
@@ -132,14 +132,14 @@ gp_make_console_current(gx_device * dev)
 int
 gp_make_graphics_current(gx_device * dev)
 {
-    if (console == 0)
+    if (!console_initialized)
 	return 0;
     if (console_is_current) {
 	int code = restore_graphics(dev);
 
 	if (code < 0)
 	    return code;
-	console_is_current = 0;
+	console_is_current = false;
     }
     return 0;
 }
@@ -167,12 +167,12 @@ save_graphics(gx_device * dev)
     if (gfile == 0)
 	return gs_error_ioerror;
     for (y = 0; y < dev->height; y++) {
-	char _ss *row = row_buf;
+	char *row = row_buf;
 
 	(*dev_proc(dev, get_bits)) (dev, y, row, NULL);
 	{
 	    row_head head;
-	    char _ss *beg = row, *end = row + row_size - 1;
+	    char *beg = row, *end = row + row_size - 1;
 
 	    while (end > beg && *end == end[-1])
 		end--;
@@ -206,7 +206,7 @@ restore_graphics(gx_device * dev)
 	return gs_error_ioerror;
     for (y = 0; y < dev->height; y++) {
 	row_head head;
-	char _ss *beg, *end;
+	char *beg, *end;
 
 	fread((char *)&head, 1, sizeof(head), gfile);
 	beg = row_buf + head.pre;

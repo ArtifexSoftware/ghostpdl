@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* zsysvm.c */
+/*Id: zsysvm.c  */
 /* System VM and VM-specific operators */
 #include "ghost.h"
 #include "oper.h"
@@ -34,13 +34,13 @@
 
 /* Execute an operator with a specific VM selected as current VM. */
 private int
-specific_vm_op(os_ptr op, int (*opproc) (P1(os_ptr)), uint space)
+specific_vm_op(os_ptr op, int (*opproc)(P1(os_ptr)), uint space)
 {
     uint save_space = icurrent_space;
     int code;
 
     ialloc_set_space(idmemory, space);
-    code = (*opproc) (op);
+    code = (*opproc)(op);
     ialloc_set_space(idmemory, save_space);
     return code;
 }

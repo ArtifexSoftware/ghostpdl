@@ -7,8 +7,11 @@
  * the file image.h on SGI's file server; there is no copyright on that file.
  */
 
-/* gdevsgi.h */
+/*Id: gdevsgi.h */
 /* SGI raster file definitions */
+
+#ifndef gdevsgi_INCLUDED
+#  define gdevsgi_INCLUDED
 
 #define IMAGIC 	0732
 
@@ -64,3 +67,5 @@ typedef struct {
     unsigned long	*rowstart;	/* for rle images */
     long		*rowsize;	/* for rle images */
 } IMAGE;
+
+#endif				/* gdevsgi_INCLUDED */

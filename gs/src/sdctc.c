@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,22 +16,29 @@
    all copies.
  */
 
-/* sdctc.c */
+/*Id: sdctc.c  */
 /* Code common to DCT encoding and decoding streams */
 #include "stdio_.h"
+#include "gsmemory.h"
+#include "gsmalloc.h"
 #include "jpeglib.h"
 #include "strimpl.h"
 #include "sdct.h"
 
 public_st_DCT_state();
-/* GC procedures */
-private 
-ENUM_PTRS_BEGIN(dct_enum_ptrs) return 0;
 
-ENUM_CONST_STRING_PTR(0, stream_DCT_state, Markers);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(dct_reloc_ptrs)
+/* Set the defaults for the DCT filters. */
+void
+s_DCT_set_defaults(stream_state * st)
 {
-    RELOC_CONST_STRING_PTR(stream_DCT_state, Markers);
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
+
+    ss->jpeg_memory = &gs_memory_default;
+    ss->data.common = 0;
+	/****************
+	  ss->data.common->Picky = 0;
+	  ss->data.common->Relax = 0;
+	 ****************/
+    ss->ColorTransform = -1;
+    ss->QFactor = 1.0;
 }
-RELOC_PTRS_END

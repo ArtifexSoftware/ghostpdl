@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* slzwd.c */
+/*Id: slzwd.c  */
 /* LZW decoding filter */
 #include "stdio_.h"		/* includes std.h */
 #include "gdebug.h"
@@ -49,13 +49,12 @@ gs_private_st_simple(st_lzw_decode, lzw_decode, "lzw_decode");
 #define st_lzw_decode_element st_lzw_decode
 #define lzw_decode_max 4096	/* must be 4096 */
 
-#define ss ((stream_LZW_state *)st)
-
 /* Initialize LZWDecode filter */
 /* We separate out the reset function for some non-stream clients. */
 int
 s_LZWD_reset(stream_state * st)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
     register lzw_decode *dc = ss->table.decode;
     register int i;
     uint code_escape = 1 << ss->InitialCodeLength;
@@ -75,6 +74,7 @@ s_LZWD_reset(stream_state * st)
 private int
 s_LZWD_init(stream_state * st)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
     lzw_decode *dc =
     gs_alloc_struct_array(st->memory, lzw_decode_max + 1,
 			  lzw_decode, &st_lzw_decode_element,
@@ -92,6 +92,7 @@ private int
 s_LZWD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_LZW_state *const ss = (stream_LZW_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
 
@@ -357,8 +358,6 @@ s_LZWD_process(stream_state * st, stream_cursor_read * pr,
 	      (int)(q - q0), prev_code, next_code);
     return status;
 }
-
-#undef ss
 
 /* Stream template */
 const stream_template s_LZWD_template =

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* scantab.c */
+/*Id: scantab.c  */
 /* Scanner table for PostScript/PDF tokens */
 #include "stdpre.h"
 #include "scommon.h"

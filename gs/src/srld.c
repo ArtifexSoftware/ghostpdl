@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* srld.c */
+/*Id: srld.c  */
 /* RunLengthDecode filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -27,12 +27,12 @@
 
 private_st_RLD_state();
 
-#define ss ((stream_RLD_state *)st)
-
 /* Set defaults */
 private void
 s_RLD_set_defaults(stream_state * st)
 {
+    stream_RLD_state *const ss = (stream_RLD_state *) st;
+
     s_RLD_set_defaults_inline(ss);
 }
 
@@ -40,6 +40,8 @@ s_RLD_set_defaults(stream_state * st)
 private int
 s_RLD_init(stream_state * st)
 {
+    stream_RLD_state *const ss = (stream_RLD_state *) st;
+
     return s_RLD_init_inline(ss);
 }
 
@@ -48,6 +50,7 @@ private int
 s_RLD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
+    stream_RLD_state *const ss = (stream_RLD_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     const byte *rlimit = pr->limit;
@@ -112,8 +115,6 @@ s_RLD_process(stream_state * st, stream_cursor_read * pr,
     pw->ptr = q;
     return status;
 }
-
-#undef ss
 
 /* Stream template */
 const stream_template s_RLD_template =

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevvec.c */
+/*Id: gdevvec.c  */
 /* Utilities for "vector" devices */
 #include "math_.h"
 #include "memory_.h"
@@ -80,14 +80,14 @@ gdev_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 	    case gs_pe_moveto:
 		code = (*vdev_proc(vdev, moveto))
 		    (vdev, x_prev, y_prev, (x = fixed2float(vs[0]) / scale.x),
-		     (y = fixed2float(vs[1]) / scale.y), first);
+		     (y = fixed2float(vs[1]) / scale.y), type);
 		if (first)
 		    x_start = x, y_start = y, first = false;
 		break;
 	    case gs_pe_lineto:
 		code = (*vdev_proc(vdev, lineto))
 		    (vdev, x_prev, y_prev, (x = fixed2float(vs[0]) / scale.x),
-		     (y = fixed2float(vs[1]) / scale.y));
+		     (y = fixed2float(vs[1]) / scale.y), type);
 		break;
 	    case gs_pe_curveto:
 		code = (*vdev_proc(vdev, curveto))
@@ -97,19 +97,20 @@ gdev_vector_dopath(gx_device_vector * vdev, const gx_path * ppath,
 		     fixed2float(vs[2]) / scale.x,
 		     fixed2float(vs[3]) / scale.y,
 		     (x = fixed2float(vs[4]) / scale.x),
-		     (y = fixed2float(vs[5]) / scale.y));
+		     (y = fixed2float(vs[5]) / scale.y),
+		     type);
 		break;
 	    case gs_pe_closepath:
 		x = x_start, y = y_start;
 		if (do_close) {
 		    code = (*vdev_proc(vdev, closepath))
-			(vdev, x_prev, y_prev, x_start, y_start);
+			(vdev, x_prev, y_prev, x_start, y_start, type);
 		    break;
 		}
 		pe_op = gx_path_enum_next(&cenum, (gs_fixed_point *) vs);
 		if (pe_op != 0) {
 		    code = (*vdev_proc(vdev, closepath))
-			(vdev, x_prev, y_prev, x_start, y_start);
+			(vdev, x_prev, y_prev, x_start, y_start, type);
 		    if (code < 0)
 			return code;
 		    goto sw;
@@ -146,12 +147,8 @@ gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
 private void
 gdev_vector_load_cache(gx_device_vector * vdev)
 {
-    vdev->black =
-	(*dev_proc(vdev, map_rgb_color))
-	((gx_device *) vdev, (gx_color_value) 0, (gx_color_value) 0, (gx_color_value) 0);
-    vdev->white =
-	(*dev_proc(vdev, map_rgb_color))
-	((gx_device *) vdev, gx_max_color_value, gx_max_color_value, gx_max_color_value);
+    vdev->black = gx_device_black((gx_device *)vdev);
+    vdev->white = gx_device_white((gx_device *)vdev);
 }
 
 /* Initialize the state. */
@@ -436,18 +433,19 @@ gdev_vector_write_polygon(gx_device_vector * vdev, const gs_fixed_point * points
 	uint i;
 
 	code = (*vdev_proc(vdev, moveto))
-	    (vdev, 0.0, 0.0, x, y, true);
+	    (vdev, 0.0, 0.0, x, y, type);
 	if (code >= 0)
 	    for (i = 1; i < count && code >= 0; ++i) {
 		x_prev = x, y_prev = y;
 		code = (*vdev_proc(vdev, lineto))
 		    (vdev, x_prev, y_prev,
 		     (x = fixed2float(points[i].x) / vdev->scale.x),
-		     (y = fixed2float(points[i].y) / vdev->scale.y));
+		     (y = fixed2float(points[i].y) / vdev->scale.y),
+		     type);
 	    }
 	if (code >= 0 && close)
 	    code = (*vdev_proc(vdev, closepath))
-		(vdev, x, y, x_start, y_start);
+		(vdev, x, y, x_start, y_start, type);
     }
     return (code >= 0 && type != gx_path_type_none ?
 	    (*vdev_proc(vdev, endpath)) (vdev, type) : code);
@@ -488,13 +486,15 @@ gdev_vector_write_clip_path(gx_device_vector * vdev, const gx_clip_path * pcpath
 	page_rect.ymax = vdev->height;
 	page_rect.next = 0;
 	prect = &page_rect;
-    } else if (pcpath->segments_valid)
+    } else if (pcpath->path_valid)
 	return (*vdev_proc(vdev, dopath)) (vdev, &pcpath->path,
 					   gx_path_type_clip);
     else {
-	prect = pcpath->list.head;
+	const gx_clip_list *list = gx_cpath_list(pcpath);
+
+	prect = list->head;
 	if (prect == 0)
-	    prect = &pcpath->list.single;
+	    prect = &list->single;
     }
     /* Write out the rectangles. */
     code = (*vdev_proc(vdev, beginpath)) (vdev, gx_path_type_clip);
@@ -558,7 +558,8 @@ gdev_vector_begin_image(gx_device_vector * vdev,
 			const gs_imager_state * pis, const gs_image_t * pim,
 			gs_image_format_t format, const gs_int_rect * prect,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-			gs_memory_t * mem, gdev_vector_image_enum_t * pie)
+		    gs_memory_t * mem, const gx_image_enum_procs_t * pprocs,
+			gdev_vector_image_enum_t * pie)
 {
     const gs_color_space *pcs = pim->ColorSpace;
     int num_components;
@@ -570,18 +571,15 @@ gdev_vector_begin_image(gx_device_vector * vdev,
     else
 	num_components = gs_color_space_num_components(pcs),
 	    bits_per_pixel = pim->BitsPerComponent;
-    switch (format) {
-	case gs_image_format_chunky:
-	    pie->num_planes = 1;
-	    pie->bits_per_pixel = bits_per_pixel * num_components;
-	    break;
-	case gs_image_format_component_planar:
-	    pie->num_planes = num_components;
-	    pie->bits_per_pixel = bits_per_pixel;
-	    break;
-	default:
-	    return_error(gs_error_rangecheck);
-    }
+    code = gx_image_enum_common_init((gx_image_enum_common_t *) pie,
+				     (const gs_image_common_t *)pim,
+				     pprocs, (gx_device *) vdev,
+				     bits_per_pixel, num_components,
+				     format);
+    if (code < 0)
+	return code;
+    pie->bits_per_pixel = bits_per_pixel * num_components /
+	pie->num_planes;
     pie->default_info = 0;
     pie->bbox_info = 0;
     if ((code = gdev_vector_update_log_op(vdev, pis->log_op)) < 0 ||
@@ -590,9 +588,9 @@ gdev_vector_begin_image(gx_device_vector * vdev,
 	  (pim->CombineWithColor && rop3_uses_T(pis->log_op))) &&
 	 (code = gdev_vector_update_fill_color(vdev, pdcolor)) < 0) ||
 	(vdev->bbox_device &&
-	 (code = gx_device_begin_image((gx_device *) vdev->bbox_device,
-				       pis, pim, format, prect,
-				pdcolor, pcpath, mem, &pie->bbox_info)) < 0)
+	 (code = (*dev_proc(vdev->bbox_device, begin_image))
+	  ((gx_device *) vdev->bbox_device, pis, pim, format, prect,
+	   pdcolor, pcpath, mem, &pie->bbox_info)) < 0)
 	)
 	return code;
     pie->memory = mem;
@@ -630,22 +628,23 @@ gdev_vector_end_image(gx_device_vector * vdev,
 /****** FILL VALUE IS WRONG ******/
 	    memset(row, (byte) pad, bytes_per_row);
 	    for (; pie->y < pie->height; pie->y++)
-		(*dev_proc(vdev, image_data)) ((gx_device *) vdev, pie,
-					       (const byte **)&row, 0,
-					       bytes_per_row, 1);
+		gx_device_image_data((gx_device *) vdev,
+				     (gx_image_enum_common_t *) pie,
+				     (const byte **)&row, 0,
+				     bytes_per_row, 1);
 	    gs_free_object(pie->memory, row,
 			   "gdev_vector_end_image(fill)");
 	}
 	code = 1;
     }
     if (vdev->bbox_device) {
-	int bcode = (*dev_proc(vdev->bbox_device, end_image))
-	((gx_device *) vdev->bbox_device, pie->bbox_info, draw_last);
+	int bcode = gx_device_end_image((gx_device *) vdev->bbox_device,
+					pie->bbox_info, draw_last);
 
 	if (bcode < 0)
 	    code = bcode;
     }
-    gs_free_object(pie->memory, pie, "pclxl_end_image");
+    gs_free_object(pie->memory, pie, "gdev_vector_end_image");
     return code;
 }
 
@@ -817,8 +816,12 @@ gdev_vector_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 
 #define y0 ybot
 #define y1 ytop
+    int code = update_fill(vdev, pdevc, lop);
     gs_fixed_point points[4];
 
+    if (code < 0)
+	return gx_default_fill_trapezoid(dev, left, right, ybot, ytop,
+					 swap_axes, pdevc, lop);
     if (swap_axes)
 	points[0].y = x0l, points[1].y = x0r,
 	    points[0].x = points[1].x = y0,
@@ -853,7 +856,8 @@ gdev_vector_fill_parallelogram(gx_device * dev,
     gs_fixed_point points[4];
 
     if (code < 0)
-	return code;
+	return gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by,
+					     pdevc, lop);
     if (vdev->bbox_device) {
 	code = (*dev_proc(vdev->bbox_device, fill_parallelogram))
 	    ((gx_device *) vdev->bbox_device, px, py, ax, ay, bx, by,
@@ -878,7 +882,8 @@ gdev_vector_fill_triangle(gx_device * dev,
     gs_fixed_point points[3];
 
     if (code < 0)
-	return code;
+	return gx_default_fill_triangle(dev, px, py, ax, ay, bx, by,
+					pdevc, lop);
     if (vdev->bbox_device) {
 	code = (*dev_proc(vdev->bbox_device, fill_triangle))
 	    ((gx_device *) vdev->bbox_device, px, py, ax, ay, bx, by,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsdparam.c */
+/*Id: gsdparam.c  */
 /* Default device parameters for Ghostscript library */
 #include "memory_.h"		/* for memcpy */
 #include "string_.h"		/* for strlen */
@@ -35,6 +35,7 @@
 /* Forward references */
 private bool param_HWColorMap(P2(gx_device *, byte *));
 
+/* Get the device parameters. */
 int
 gs_get_device_or_hardware_params(gx_device * dev, gs_param_list * plist,
 				 bool is_hardware)
@@ -43,27 +44,13 @@ gs_get_device_or_hardware_params(gx_device * dev, gs_param_list * plist,
     fill_dev_proc(dev, get_params, gx_default_get_params);
     fill_dev_proc(dev, get_page_device, gx_default_get_page_device);
     fill_dev_proc(dev, get_alpha_bits, gx_default_get_alpha_bits);
-    return is_hardware
-	? (*dev_proc(dev, get_hardware_params)) (dev, plist)
-	: (*dev_proc(dev, get_params)) (dev, plist);
-}
-
-/* Get the device parameters. */
-int
-gs_getdeviceparams(gx_device * dev, gs_param_list * plist)
-{
-    return gs_get_device_or_hardware_params(dev, plist, false);
-}
-
-/* Get the hardware parameters. */
-int
-gs_gethardwareparams(gx_device * dev, gs_param_list * plist)
-{
-    return gs_get_device_or_hardware_params(dev, plist, true);
+    return (is_hardware ?
+	    (*dev_proc(dev, get_hardware_params)) (dev, plist) :
+	    (*dev_proc(dev, get_params)) (dev, plist));
 }
 
 /* Standard ProcessColorModel values. */
-static const char *pcmsa[] =
+static const char *const pcmsa[] =
 {
     "", "DeviceGray", "", "DeviceRGB", "DeviceCMYK"
 };
@@ -133,6 +120,11 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 		    param_write_float_array(plist, "ImagingBBox", &ibba) :
 		    param_write_null(plist, "ImagingBBox"))) < 0 ||
 	   (code = param_write_float_array(plist, "Margins", &ma)) < 0 ||
+	   (code = (dev->NumCopies_set < 0 ||
+		    (*dev_proc(dev, get_page_device))(dev) == 0 ? 0:
+		    dev->NumCopies_set ?
+		    param_write_int(plist, "NumCopies", &dev->NumCopies) :
+		    param_write_null(plist, "NumCopies"))) < 0 ||
 
     /* Non-standard parameters */
 
@@ -186,13 +178,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     return 0;
 }
 
-/* Get hardware-detected parameters. Default action is no hardware params. */
-int
-gx_default_get_hardware_params(gx_device * dev, gs_param_list * plist)
-{
-    return 0;
-}
-
 /* Get the color map for a device.  Return true if there is one. */
 private bool
 param_HWColorMap(gx_device * dev, byte * palette /* 3 << 8 */ )
@@ -219,16 +204,169 @@ param_HWColorMap(gx_device * dev, byte * palette /* 3 << 8 */ )
     return false;
 }
 
+/* Get hardware-detected parameters. Default action is no hardware params. */
+int
+gx_default_get_hardware_params(gx_device * dev, gs_param_list * plist)
+{
+    return 0;
+}
+
+/* ---------------- Input and output media ---------------- */
+
+/* Finish defining input or output media. */
+private int
+finish_media(gs_param_list * mlist, gs_param_name key, const char *media_type)
+{
+    int code = 0;
+
+    if (media_type != 0) {
+	gs_param_string as;
+
+	param_string_from_string(as, media_type);
+	code = param_write_string(mlist, key, &as);
+    }
+    return code;
+}
+
+/* Define input media. */
+
+const gdev_input_media_t gdev_input_media_default =
+{
+    gdev_input_media_default_values
+};
+
+int 
+gdev_begin_input_media(gs_param_list * mlist, gs_param_dict * pdict,
+		       int count)
+{
+    pdict->size = count;
+    return param_begin_write_dict(mlist, "InputAttributes", pdict, true);
+}
+
+int
+gdev_write_input_media(int index, gs_param_dict * pdict,
+		       const gdev_input_media_t * pim)
+{
+    char key[25];
+    gs_param_dict mdict;
+    int code;
+    gs_param_string as;
+
+    sprintf(key, "%d", index);
+    mdict.size = 4;
+    code = param_begin_write_dict(pdict->list, key, &mdict, false);
+    if (code < 0)
+	return code;
+    if ((pim->PageSize[0] != 0 && pim->PageSize[1] != 0) ||
+	(pim->PageSize[2] != 0 && pim->PageSize[3] != 0)
+	) {
+	gs_param_float_array psa;
+
+	psa.data = pim->PageSize;
+	psa.size =
+	    (pim->PageSize[0] == pim->PageSize[2] &&
+	     pim->PageSize[1] == pim->PageSize[3] ? 2 : 4);
+	psa.persistent = false;
+	code = param_write_float_array(mdict.list, "PageSize",
+				       &psa);
+	if (code < 0)
+	    return code;
+    }
+    if (pim->MediaColor != 0) {
+	param_string_from_string(as, pim->MediaColor);
+	code = param_write_string(mdict.list, "MediaColor",
+				  &as);
+	if (code < 0)
+	    return code;
+    }
+    if (pim->MediaWeight != 0) {
+	/*
+	 * We do the following silly thing in order to avoid
+	 * having to work around the 'const' in the arg list.
+	 */
+	float weight = pim->MediaWeight;
+
+	code = param_write_float(mdict.list, "MediaWeight",
+				 &weight);
+	if (code < 0)
+	    return code;
+    }
+    code = finish_media(mdict.list, "MediaType", pim->MediaType);
+    if (code < 0)
+	return code;
+    return param_end_write_dict(pdict->list, key, &mdict);
+}
+
+int
+gdev_write_input_page_size(int index, gs_param_dict * pdict,
+			   floatp width_points, floatp height_points)
+{
+    gdev_input_media_t media;
+
+    media.PageSize[0] = media.PageSize[2] = width_points;
+    media.PageSize[1] = media.PageSize[3] = height_points;
+    media.MediaColor = 0;
+    media.MediaWeight = 0;
+    media.MediaType = 0;
+    return gdev_write_input_media(index, pdict, &media);
+}
+
+int 
+gdev_end_input_media(gs_param_list * mlist, gs_param_dict * pdict)
+{
+    return param_end_write_dict(mlist, "InputAttributes", pdict);
+}
+
+/* Define output media. */
+
+const gdev_output_media_t gdev_output_media_default =
+{
+    gdev_output_media_default_values
+};
+
+int 
+gdev_begin_output_media(gs_param_list * mlist, gs_param_dict * pdict,
+			int count)
+{
+    pdict->size = count;
+    return param_begin_write_dict(mlist, "OutputAttributes", pdict, true);
+}
+
+int
+gdev_write_output_media(int index, gs_param_dict * pdict,
+			const gdev_output_media_t * pom)
+{
+    char key[25];
+    gs_param_dict mdict;
+    int code;
+
+    sprintf(key, "%d", index);
+    mdict.size = 4;
+    code = param_begin_write_dict(pdict->list, key, &mdict, false);
+    if (code < 0)
+	return code;
+    code = finish_media(mdict.list, "OutputType", pom->OutputType);
+    if (code < 0)
+	return code;
+    return param_end_write_dict(pdict->list, key, &mdict);
+}
+
+int 
+gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict)
+{
+    return param_end_write_dict(mlist, "OutputAttributes", pdict);
+}
+
 /* ================ Putting parameters ================ */
 
 /* Forward references */
 private int param_MediaSize(P4(gs_param_list *, gs_param_name,
 			       const float *, gs_param_float_array *));
 
-#if 0
+#if 0				/****** not used ***** */
 private int param_check_bool(P4(gs_param_list *, gs_param_name, bool, bool));
 
-#endif
+#endif /****** not used ***** */
 private int param_check_long(P4(gs_param_list *, gs_param_name, long, bool));
 
 #define param_check_int(plist, pname, ival, defined)\
@@ -271,6 +409,8 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     gs_param_float_array ma;
     gs_param_float_array hwma;
     gs_param_float_array mhwra;
+    int nci = dev->NumCopies;
+    int ncset = dev->NumCopies_set;
 
     bool ignc = dev->IgnoreNumCopies;
     gs_param_float_array ibba;
@@ -384,6 +524,31 @@ e:	param_signal_error(plist, param_name, ecode);\
 	case 1:
 	    break;
     }
+    if (dev->NumCopies_set >= 0 &&
+	(*dev_proc(dev, get_page_device))(dev) != 0
+	) {
+	switch (code = param_read_int(plist, (param_name = "NumCopies"), &nci)) {
+	case 0:
+	    if (nci < 0)
+		ecode = gs_error_rangecheck;
+	    else {
+		ncset = 1;
+		break;
+	    }
+	    goto nce;
+	default:
+	    if ((code = param_read_null(plist, param_name)) == 0) {
+		ncset = 0;
+		break;
+	    }
+	    ecode = code;	/* can't be 1 */
+nce:
+	    param_signal_error(plist, param_name, ecode);
+	case 1:
+	    break;
+    }
+    }
+
 
     /* Ignore parameters that only have meaning for printers. */
 #define IGNORE_INT_PARAM(pname)\
@@ -516,6 +681,8 @@ e:	param_signal_error(plist, param_name, ecode);\
 	dev->HWMargins[2] = hwma.data[2];
 	dev->HWMargins[3] = hwma.data[3];
     }
+    dev->NumCopies = nci;
+    dev->NumCopies_set = ncset;
     dev->IgnoreNumCopies = ignc;
     if (ibba.data != 0) {
 	dev->ImagingBBox[0] = ibba.data[0];
@@ -556,7 +723,7 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
 	return ecode;
 }
 
-#if 0
+#if 0				/****** not used ***** */
 /* Check that a nominally read-only parameter is being set to */
 /* its existing value. */
 private int
@@ -581,7 +748,7 @@ param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
     }
     return code;
 }
-#endif
+#endif /****** not used ***** */
 private int
 param_check_long(gs_param_list * plist, gs_param_name pname, long value,
 		 bool defined)

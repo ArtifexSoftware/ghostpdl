@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zfzlib.c */
+/*Id: zfzlib.c  */
 /* zlib and Flate filter creation */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "idict.h"
 #include "strimpl.h"
@@ -30,32 +29,32 @@
 
 /* Import the Predictor machinery from zfdecode.c and zfilter2.c. */
 int filter_read_predictor(P4(os_ptr op, int npop,
-		      const stream_template * template, stream_state * st));
+			     const stream_template * template,
+			     stream_state * st));
 int filter_write_predictor(P4(os_ptr op, int npop,
-		      const stream_template * template, stream_state * st));
+			      const stream_template * template,
+			      stream_state * st));
 
 /* <source> zlibEncode/filter <file> */
-/* <source> <dict_ignored> zlibEncode/filter <file> */
+/* <source> <dict> zlibEncode/filter <file> */
 private int
 zzlibE(os_ptr op)
 {
     stream_zlib_state zls;
 
-    (*s_zlibE_template.set_defaults) ((stream_state *) & zls);
-    return filter_write(op, (r_has_type(op, t_dictionary) ? 1 : 0),
-			&s_zlibE_template, (stream_state *) & zls, 0);
+    (*s_zlibE_template.set_defaults)((stream_state *)&zls);
+    return filter_write(op, 0, &s_zlibE_template, (stream_state *)&zls, 0);
 }
 
 /* <target> zlibDecode/filter <file> */
-/* <target> <dict_ignored> zlibDecode/filter <file> */
+/* <target> <dict> zlibDecode/filter <file> */
 private int
 zzlibD(os_ptr op)
 {
     stream_zlib_state zls;
 
-    (*s_zlibD_template.set_defaults) ((stream_state *) & zls);
-    return filter_read(op, (r_has_type(op, t_dictionary) ? 1 : 0),
-		       &s_zlibD_template, (stream_state *) & zls, 0);
+    (*s_zlibD_template.set_defaults)((stream_state *)&zls);
+    return filter_read(op, 0, &s_zlibD_template, (stream_state *)&zls, 0);
 }
 
 /* <source> FlateEncode/filter <file> */
@@ -64,16 +63,10 @@ private int
 zFlateE(os_ptr op)
 {
     stream_zlib_state zls;
-    int npop;
 
-    if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
-	npop = 1;
-    } else
-	npop = 0;
-    (*s_zlibE_template.set_defaults) ((stream_state *) & zls);
-    return filter_write_predictor(op, npop, &s_zlibE_template,
-				  (stream_state *) & zls);
+    (*s_zlibE_template.set_defaults)((stream_state *)&zls);
+    return filter_write_predictor(op, 0, &s_zlibE_template,
+				  (stream_state *)&zls);
 }
 
 /* <target> FlateDecode/filter <file> */
@@ -82,16 +75,10 @@ private int
 zFlateD(os_ptr op)
 {
     stream_zlib_state zls;
-    int npop;
 
-    if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
-	npop = 1;
-    } else
-	npop = 0;
-    (*s_zlibD_template.set_defaults) ((stream_state *) & zls);
-    return filter_read_predictor(op, npop, &s_zlibD_template,
-				 (stream_state *) & zls);
+    (*s_zlibD_template.set_defaults)((stream_state *)&zls);
+    return filter_read_predictor(op, 0, &s_zlibD_template,
+				 (stream_state *)&zls);
 }
 
 /* ------ Initialization procedure ------ */

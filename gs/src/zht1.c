@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zht1.c */
+/*Id: zht1.c  */
 /* setcolorscreen operator */
 #include "ghost.h"
 #include "memory_.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"
 #include "gsstruct.h"		/* must precede igstate.h, */
@@ -66,7 +65,7 @@ zsetcolorscreen(register os_ptr op)
 	sprocs[i] = *op1;
 	space = max(space, r_space_index(op1));
     }
-    mem = (gs_memory_t *) idmemory->spaces.indexed[space];
+    mem = (gs_memory_t *)idmemory->spaces.indexed[space];
     check_estack(8);		/* for sampling screens */
     rc_alloc_struct_0(pht, gs_halftone, &st_halftone,
 		      mem, pht = 0, "setcolorscreen(halftone)");
@@ -88,7 +87,8 @@ zsetcolorscreen(register os_ptr op)
 	make_istruct(esp - 2, 0, pht);
 	make_istruct(esp - 1, 0, pdht);
 	make_op_estack(esp, setcolorscreen_finish);
-	for (i = 0; i < 4; i++) {	/* Shuffle the indices to correspond to */
+	for (i = 0; i < 4; i++) {
+	    /* Shuffle the indices to correspond to */
 	    /* the component order. */
 	    code = zscreen_enum_init(op,
 				     &pdht->components[(i + 1) & 3].corder,

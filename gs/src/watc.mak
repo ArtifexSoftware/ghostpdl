@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: watc.mak 
 # makefile for MS-DOS/Watcom C386 platform.
 # We strongly recommend that you read the Watcom section of make.txt
 # before attempting to build Ghostscript with the Watcom compiler.
@@ -73,12 +74,22 @@ NOPRIVATE=0
 
 GS=gs386
 
+# Define the source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+GLSRCDIR=.
+GLGENDIR=.
+GLOBJDIR=.
+PSSRCDIR=.
+PSGENDIR=.
+PSOBJDIR=.
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=jpeg-6a
+JSRCDIR=jpeg
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -106,7 +117,7 @@ CFLAGS=
 # ------ Platform-specific options ------ #
 
 # Define which version of Watcom C we are using.
-# Possible values are 8.5, 9.0, 9.5, 10.0, or 10.5.
+# Possible values are 8.5, 9.0, 9.5, 10.0, 10.5, or 11.0.
 # Unfortunately, wmake can only test identity, not compare magnitudes,
 # so the version must be exactly one of those strings.
 WCVERSION=10.0
@@ -142,20 +153,20 @@ PLATFORM=watc_
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=watc.mak
+MAKEFILE=$(GLSRCDIR)\watc.mak
 
 # Define additional platform compilation flags.
 
 PLATOPT=
 
-!include wccommon.mak
+!include $(GLSRCDIR)\wccommon.mak
 
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Since we have a large address space, we include some optional features.
 
-FEATURE_DEVS=level2.dev pdf.dev
+FEATURE_DEVS=psl3.dev pdf.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -178,7 +189,8 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
-# Choose the device(s) to include.  See devs.mak for details.
+# Choose the device(s) to include.  See devs.mak for details,
+# devs.mak and contrib.mak for the list of available devices.
 
 DEVICE_DEVS=vga.dev ega.dev svga16.dev
 DEVICE_DEVS1=atiw.dev tseng.dev tvga.dev
@@ -193,32 +205,35 @@ DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
 DEVICE_DEVS14=jpeg.dev jpeggray.dev
 DEVICE_DEVS15=pdfwrite.dev
 
-!include wctail.mak
-!include devs.mak
-!include int.mak
+!include $(GLSRCDIR)\wctail.mak
+!include $(GLSRCDIR)\devs.mak
+!include $(GLSRCDIR)\contrib.mak
+!include $(PSSRCDIR)\int.mak
 
 # -------------------------------- Library -------------------------------- #
 
 # The Watcom C platform
 
-watc__=gp_iwatc.$(OBJ) gp_msdos.$(OBJ) gp_dosfb.$(OBJ) gp_dosfs.$(OBJ) gp_dosfe.$(OBJ)
+watc_1=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ)
+watc_2=$(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(GLOBJ)gp_dosfe.$(OBJ)
+watc__=$(watc_1) $(watc_2)
 watc_.dev: $(watc__)
-	$(SETMOD) watc_ $(watc__)
+	$(SETMOD) watc_ $(watc_1)
+	$(ADDMOD) watc_ -obj $(watc_2)
 
-gp_iwatc.$(OBJ): gp_iwatc.c $(stat__h) $(string__h) $(gx_h) $(gp_h)
+$(GLOBJ)gp_iwatc.$(OBJ): $(GLSRC)gp_iwatc.c $(stat__h) $(string__h)\
+ $(gx_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_iwatc.$(OBJ) $(C_) $(GLSRC)gp_iwatc.c
 
 # ----------------------------- Main program ------------------------------ #
 
 BEGINFILES=*.err
-# The Watcom compiler doesn't recognize wildcards;
-# we don't want any compilation to fail.
-CCBEGIN=for %%f in (gs*.c gx*.c z*.c) do $(CCC) %%f
 
-LIBDOS=$(LIB_ALL) gp_iwatc.$(OBJ) gp_msdos.$(OBJ) gp_dosfb.$(OBJ) gp_dosfs.$(OBJ) $(ld_tr)
+LIBDOS=$(LIB_ALL) $(GLOBJ)gp_iwatc.$(OBJ) $(GLOBJ)gp_msdos.$(OBJ) $(GLOBJ)gp_dosfb.$(OBJ) $(GLOBJ)gp_dosfs.$(OBJ) $(ld_tr)
 
 # Interpreter main program
 
-GS_ALL=gs.$(OBJ) $(INT_ALL) $(INTASM) $(LIBDOS)
+GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM) $(LIBDOS)
 
 ll_tr=ll$(CONFIG).tr
 $(ll_tr): $(MAKEFILE)
@@ -227,4 +242,4 @@ $(ll_tr): $(MAKEFILE)
 	echo OPTION STACK=16k >>$(ll_tr)
 
 $(GS_XE): $(GS_ALL) $(DEVS_ALL) $(ll_tr)
-	$(LINK) $(LCT) NAME $(GS) OPTION MAP=$(GS) FILE gs @$(ld_tr) @$(ll_tr)
+	$(LINK) $(LCT) NAME $(GS) OPTION MAP=$(GS) FILE $(GLOBJ)gs @$(ld_tr) @$(ll_tr)

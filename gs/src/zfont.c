@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zfont.c */
+/*Id: zfont.c  */
 /* Generic font operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"		/* for registering root */
 #include "gzstate.h"		/* must precede gxdevice */
@@ -42,7 +41,6 @@ private void make_uint_array(P3(os_ptr, const uint *, int));
 
 /* The (global) font directory */
 gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
-private gs_gc_root_t font_dir_root;
 
 /* Mark a glyph as a PostScript name (if it isn't a CID). */
 bool
@@ -56,10 +54,10 @@ zfont_mark_glyph_name(gs_glyph glyph, void *ignore_data)
 private void
 zfont_init(void)
 {
-    ifont_dir = gs_font_dir_alloc(imemory);
+    ifont_dir = gs_font_dir_alloc2(imemory, &gs_memory_default);
     ifont_dir->ccache.mark_glyph = zfont_mark_glyph_name;
-    gs_register_struct_root(imemory, &font_dir_root,
-			    (void **)&ifont_dir, "ifont_dir");
+    gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
+			    "ifont_dir");
 }
 
 /* <font> <scale> scalefont <new_font> */
@@ -195,12 +193,12 @@ const op_def zfont_op_defs[] =
 /* Validate a font parameter. */
 int
 font_param(const ref * pfdict, gs_font ** ppfont)
-{				/*
-				 * Check that pfdict is a read-only dictionary, that it has a FID
-				 * entry whose value is a fontID, and that the fontID points to a
-				 * gs_font structure whose associated PostScript dictionary is
-				 * pfdict.
-				 */
+{	/*
+	 * Check that pfdict is a read-only dictionary, that it has a FID
+	 * entry whose value is a fontID, and that the fontID points to a
+	 * gs_font structure whose associated PostScript dictionary is
+	 * pfdict.
+	 */
     ref *pid;
     gs_font *pfont;
     const font_data *pdata;
@@ -251,10 +249,11 @@ make_font(os_ptr op, const gs_matrix * pmat)
 	    !r_is_array(pencoding)
 	    )
 	    code = gs_note_error(e_invalidfont);
-	else {			/*
-				 * Temporarily substitute the new dictionary
-				 * for the old one, in case the Encoding changed.
-				 */
+	else {
+		/*
+		 * Temporarily substitute the new dictionary
+		 * for the old one, in case the Encoding changed.
+		 */
 	    ref olddict;
 
 	    olddict = *pfont_dict(oldfont);
@@ -290,8 +289,11 @@ make_font(os_ptr op, const gs_matrix * pmat)
 int
 zbase_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 		const gs_matrix * pmat, gs_font ** ppfont)
-{				/* We must call gs_base_make_font so that the XUID gets copied */
-    /* if necessary. */
+{
+    /*
+     * We must call gs_base_make_font so that the XUID gets copied
+     * if necessary.
+     */
     int code = gs_base_make_font(pdir, oldfont, pmat, ppfont);
 
     if (code < 0)
@@ -391,7 +393,8 @@ font_restore(const alloc_save_t * save)
     {
 	gs_font *pfont;
 
-      otop:for (pfont = pdir->orig_fonts; pfont != 0;
+otop:
+	for (pfont = pdir->orig_fonts; pfont != 0;
 	     pfont = pfont->next
 	    ) {
 	    if (alloc_is_since_save((char *)pfont, save)) {
@@ -406,7 +409,8 @@ font_restore(const alloc_save_t * save)
     {
 	gs_font *pfont;
 
-      top:for (pfont = pdir->scaled_fonts; pfont != 0;
+top:
+	for (pfont = pdir->scaled_fonts; pfont != 0;
 	     pfont = pfont->next
 	    ) {
 	    if (alloc_is_since_save((char *)pfont, save)) {

@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: history1.txt 
 This file, history1.txt, describes the changes in older releases of
 Ghostscript numbered 1.n.  For more recent changes, see the historyN.txt (N
 > 1) and NEWS files.

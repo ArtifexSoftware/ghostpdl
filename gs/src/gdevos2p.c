@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevos2p.c */
+/*Id: gdevos2p.c  */
 /*
  * OS/2 printer device
  * by Russell Lang.
@@ -48,9 +48,9 @@
 #include "gdevprn.h"
 #include "gdevpccm.h"
 #include "gp.h"
+#include "gscdefs.h"		/* for gs_product */
 
 extern HWND hwndtext;		/* in gp_os2.h */
-extern const char *gs_product;
 
 typedef struct tagOS2QL {
     PRQINFO3 *prq;		/* queue list */

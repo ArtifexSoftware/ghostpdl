@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zfileio.c */
+/*Id: zfileio.c  */
 /* File I/O operators */
 #include "ghost.h"
 #include "gp.h"
-#include "errors.h"
 #include "oper.h"
 #include "stream.h"
 #include "files.h"
@@ -52,11 +51,9 @@ zclosefile(register os_ptr op)
 
 	if (status != 0) {
 	    if (s_is_writing(s))
-		return handle_write_status(status, op, NULL,
-					   zclosefile);
+		return handle_write_status(status, op, NULL, zclosefile);
 	    else
-		return handle_read_status(status, op, NULL,
-					  zclosefile);
+		return handle_read_status(status, op, NULL, zclosefile);
 	}
     }
     pop(1);
@@ -194,19 +191,19 @@ zwritehexstring_at(register os_ptr op, uint odd)
     register stream *s;
     register byte ch;
     register const byte *p;
-    register const char _ds *hex_digits = "0123456789abcdef";
+    register const char *const hex_digits = "0123456789abcdef";
     register uint len;
     int status;
 
-#define max_hex 128
-    byte buf[max_hex];
+#define MAX_HEX 128
+    byte buf[MAX_HEX];
 
     check_write_file(s, op - 1);
     check_read_type(*op, t_string);
     p = op->value.bytes;
     len = r_size(op);
     while (len) {
-	uint len1 = min(len, max_hex / 2);
+	uint len1 = min(len, MAX_HEX / 2);
 	register byte *q = buf;
 	uint count = len1;
 	ref rbuf;
@@ -239,7 +236,7 @@ zwritehexstring_at(register os_ptr op, uint odd)
     }
     pop(2);
     return 0;
-#undef max_hex
+#undef MAX_HEX
 }
 private int
 zwritehexstring(os_ptr op)
@@ -429,11 +426,13 @@ zreadline_from(stream * s, byte * ptr, uint size, uint * pcount, bool * pin_eol)
 #  define LF '\n'
 #endif
 
-  top:if (*pin_eol) {		/*
-				 * We're in the middle of checking for a two-character
-				 * end-of-line sequence.  If we get an EOF here, stop, but
-				 * don't signal EOF now; wait till the next read.
-				 */
+top:
+    if (*pin_eol) {
+	/*
+	 * We're in the middle of checking for a two-character
+	 * end-of-line sequence.  If we get an EOF here, stop, but
+	 * don't signal EOF now; wait till the next read.
+	 */
 	int ch = spgetcc(s, false);
 
 	if (ch == EOFC) {
@@ -584,7 +583,7 @@ private int
 zecho(register os_ptr op)
 {
     check_type(*op, t_boolean);
-/****** NOT IMPLEMENTED YET ******/
+    /****** NOT IMPLEMENTED YET ******/
     pop(1);
     return 0;
 }
@@ -642,9 +641,8 @@ private int
 zwritecvp_at(register os_ptr op, uint start)
 {
     stream *s;
-
-#define max_cvs 128
-    byte str[max_cvs];
+#define MAX_CVS 128
+    byte str[MAX_CVS];
     ref rstr;
     const byte *pchars = str;
     uint len;
@@ -652,7 +650,7 @@ zwritecvp_at(register os_ptr op, uint start)
 
     check_write_file(s, op - 2);
     check_type(*op, t_boolean);
-    code = obj_cvp(op - 1, str, max_cvs, &len, &pchars, op->value.boolval);
+    code = obj_cvp(op - 1, str, MAX_CVS, &len, &pchars, op->value.boolval);
     if (code < 0) {
 	if (pchars == str)
 	    return code;
@@ -675,7 +673,7 @@ zwritecvp_at(register os_ptr op, uint start)
     }
     pop(3);
     return 0;
-#undef max_cvs
+#undef MAX_CVS
 }
 private int
 zwritecvp(os_ptr op)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* istack.c */
+/*Id: istack.c  */
 /* Ghostscript expandable stack manager */
 #include "memory_.h"
 #include "ghost.h"
@@ -25,7 +25,7 @@
 #include "errors.h"
 #include "ialloc.h"
 #include "istack.h"
-#include "istruct.h"		/* for gs_reloc_refs */
+#include "istruct.h"		/* for RELOC_REF_VAR */
 #include "iutil.h"
 #include "ivmspace.h"		/* for local/global test */
 #include "store.h"
@@ -45,15 +45,10 @@ private
 ENUM_PTRS_BEGIN(ref_stack_enum_ptrs) return 0;
 
 case 0:
-*pep = &sptr->current;
-return ptr_ref_type;
+ENUM_RETURN_REF(&sptr->current);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(ref_stack_reloc_ptrs)
 {
-#if stacks_are_segmented
-    /* In a segmented environment, the top block can't move, */
-    /* so we don't need to relocate pointers to it. */
-#else
     /* Note that the relocation must be a multiple of sizeof(ref_packed) */
     /* * align_packed_per_ref, but it need not be a multiple of */
     /* sizeof(ref).  Therefore, we must do the adjustments using */
@@ -61,26 +56,23 @@ private RELOC_PTRS_BEGIN(ref_stack_reloc_ptrs)
     ref_packed *bot = (ref_packed *) sptr->current.value.refs;
     long reloc;
 
-    gs_reloc_refs((ref_packed *) & sptr->current,
-		  (ref_packed *) (&sptr->current + 1),
-		  gcst);
+    RELOC_REF_VAR(sptr->current);
     r_clear_attrs(&sptr->current, l_mark);
     reloc = bot - (ref_packed *) sptr->current.value.refs;
-#define reloc_p(p)\
+#define RELOC_P(p)\
   sptr->p = (ref *)((ref_packed *)sptr->p - reloc);
-    reloc_p(p);
-    reloc_p(bot);
-    reloc_p(top);
-#undef reloc_p
-#endif
+    RELOC_P(p);
+    RELOC_P(bot);
+    RELOC_P(top);
+#undef RELOC_P
 } RELOC_PTRS_END
 /* Structure type for a ref_stack. */
 public_st_ref_stack();
 
 /* Initialize a stack. */
 void
-ref_stack_init(register ref_stack * pstack, ref * psb,
-	uint bot_guard, uint top_guard, ref * pguard, gs_ref_memory_t * mem)
+ref_stack_init(ref_stack * pstack, ref * psb, uint bot_guard, uint top_guard,
+	       ref * pguard, gs_ref_memory_t * mem)
 {
     uint size = r_size(psb);
     uint avail = size - (stack_block_refs + bot_guard + top_guard);
@@ -96,11 +88,13 @@ ref_stack_init(register ref_stack * pstack, ref * psb,
 
     make_int(&pstack->max_stack, avail);
     pstack->requested = 0;
+    pstack->margin = 0;
+    pstack->body_size = avail;
 
     pstack->bot_guard = bot_guard;
     pstack->top_guard = top_guard;
-    pstack->block_size = size - segmented_guard(bot_guard + top_guard);
-    pstack->body_size = avail;
+    pstack->block_size = size;
+    pstack->data_size = avail;
     if (pguard != 0)
 	pstack->guard_value = *pguard;
     else
@@ -118,7 +112,7 @@ ref_stack_init(register ref_stack * pstack, ref * psb,
 int
 ref_stack_set_max_count(ref_stack * pstack, long nmax)
 {
-    uint nmin = pstack->extension_size + (pstack->top - pstack->bot + 1);
+    uint nmin = ref_stack_count_inline(pstack);
 
     if (nmax < nmin)
 	nmax = nmin;
@@ -131,6 +125,31 @@ ref_stack_set_max_count(ref_stack * pstack, long nmax)
 	    nmax = ncur;
     }
     pstack->max_stack.value.intval = nmax;
+    return 0;
+}
+
+/* Set the margin between the limit and the top of the stack. */
+/* Note that this may require allocating a block. */
+int
+ref_stack_set_margin(ref_stack * pstack, uint margin)
+{
+    if (margin <= pstack->margin) {
+	refset_null(pstack->top + 1, pstack->margin - margin);
+    } else {
+	if (margin > pstack->data_size >> 1)
+	    return_error(e_rangecheck);
+	if (pstack->top - pstack->p < margin) {
+	    uint used = pstack->p + 1 - pstack->bot;
+	    uint keep = pstack->data_size - margin;
+	    int code = ref_stack_push_block(pstack, keep, used - keep);
+
+	    if (code < 0)
+		return code;
+	}
+    }
+    pstack->margin = margin;
+    pstack->body_size = pstack->data_size - margin;
+    pstack->top = pstack->bot + pstack->body_size - 1;
     return 0;
 }
 
@@ -160,8 +179,7 @@ ref_stack_index(const ref_stack * pstack, long idx)
 	    return NULL;
 	idx -= used;
 	used = r_size(&pblock->used);
-    }
-    while (idx >= used);
+    } while (idx >= used);
     return pblock->used.value.refs + (used - 1 - (uint) idx);
 }
 
@@ -171,18 +189,19 @@ uint
 ref_stack_counttomark(const ref_stack * pstack)
 {
     uint scanned = 0;
+    ref_stack_enum_t rsenum;
 
-    STACK_LOOP_BEGIN(pstack, p, used) {
-	uint count = used;
+    ref_stack_enum_begin(&rsenum, pstack);
+    do {
+	uint count = rsenum.size;
+	const ref *p = rsenum.ptr + count - 1;
 
-	p += used - 1;
 	for (; count; count--, p--)
 	    if (r_has_type(p, t_mark))
-		return scanned + (used - count + 1);
-	scanned += used;
-    }
-    STACK_LOOP_END(p, used)
-	return 0;
+		return scanned + (rsenum.size - count + 1);
+	scanned += rsenum.size;
+    } while (ref_stack_enum_next(&rsenum));
+    return 0;
 }
 
 /* Do the store check for storing elements of a stack into an array. */
@@ -195,26 +214,31 @@ ref_stack_store_check(const ref_stack * pstack, ref * parray, uint count,
 
     if (space != avm_local) {
 	uint left = count, pass = skip;
+	ref_stack_enum_t rsenum;
 
-	STACK_LOOP_BEGIN(pstack, ptr, size)
+	ref_stack_enum_begin(&rsenum, pstack);
+	do {
+	    ref *ptr = rsenum.ptr;
+	    uint size = rsenum.size;
+
 	    if (size <= pass)
-	    pass -= size;
-	else {
-	    int code;
+		pass -= size;
+	    else {
+		int code;
 
-	    if (pass != 0)
-		size -= pass, pass = 0;
-	    ptr += size;
-	    if (size > left)
-		size = left;
-	    left -= size;
-	    code = refs_check_space(ptr - size, size, space);
-	    if (code < 0)
-		return code;
-	    if (left == 0)
-		break;
-	}
-	STACK_LOOP_END(ptr, size)
+		if (pass != 0)
+		    size -= pass, pass = 0;
+		ptr += size;
+		if (size > left)
+		    size = left;
+		left -= size;
+		code = refs_check_space(ptr - size, size, space);
+		if (code < 0)
+		    return code;
+		if (left == 0)
+		    break;
+	    }
+	} while (ref_stack_enum_next(&rsenum));
     }
     return 0;
 }
@@ -228,6 +252,7 @@ ref_stack_store(const ref_stack * pstack, ref * parray, uint count, uint skip,
 {
     uint left, pass;
     ref *to;
+    ref_stack_enum_t rsenum;
 
     if (count > ref_stack_count(pstack) || count > r_size(parray))
 	return_error(e_rangecheck);
@@ -239,17 +264,21 @@ ref_stack_store(const ref_stack * pstack, ref * parray, uint count, uint skip,
     }
     to = parray->value.refs + count;
     left = count, pass = skip;
-    STACK_LOOP_BEGIN(pstack, from, size)
+    ref_stack_enum_begin(&rsenum, pstack);
+    do {
+	ref *from = rsenum.ptr;
+	uint size = rsenum.size;
+
 	if (size <= pass)
-	pass -= size;
-    else {
-	if (pass != 0)
-	    size -= pass, pass = 0;
-	from += size;
-	if (size > left)
-	    size = left;
-	left -= size;
-	switch (age) {
+	    pass -= size;
+	else {
+	    if (pass != 0)
+		size -= pass, pass = 0;
+	    from += size;
+	    if (size > left)
+		size = left;
+	    left -= size;
+	    switch (age) {
 	    case -1:		/* not an array */
 		while (size--) {
 		    from--, to--;
@@ -268,19 +297,19 @@ ref_stack_store(const ref_stack * pstack, ref * parray, uint count, uint skip,
 		    ref_assign_new(to, from);
 		}
 		break;
+	    }
+	    if (left == 0)
+		break;
 	}
-	if (left == 0)
-	    break;
-    }
-    STACK_LOOP_END(from, size)
-	r_set_size(parray, count);
+    } while (ref_stack_enum_next(&rsenum));
+    r_set_size(parray, count);
     return 0;
 }
 
 /* Pop a given number of elements off a stack. */
 /* The number must not exceed the number of elements in use. */
 void
-ref_stack_pop(register ref_stack * pstack, uint count)
+ref_stack_pop(ref_stack * pstack, uint count)
 {
     uint used;
 
@@ -294,13 +323,13 @@ ref_stack_pop(register ref_stack * pstack, uint count)
 
 /* Pop the top block off a stack. */
 int
-ref_stack_pop_block(register ref_stack * pstack)
+ref_stack_pop_block(ref_stack * pstack)
 {
     s_ptr bot = pstack->bot;
     uint count = pstack->p + 1 - bot;
     ref_stack_block *pcur =
     (ref_stack_block *) pstack->current.value.refs;
-    register ref_stack_block *pnext =
+    ref_stack_block *pnext =
     (ref_stack_block *) pcur->next.value.refs;
     uint used;
     ref *body;
@@ -309,20 +338,25 @@ ref_stack_pop_block(register ref_stack * pstack)
     if (pnext == 0)
 	return_error(pstack->underflow_error);
     used = r_size(&pnext->used);
-    body = (ref *) (pnext + 1) + flat_guard(pstack->bot_guard);
+    body = (ref *) (pnext + 1) + pstack->bot_guard;
     next = pcur->next;
     /*
-     * If we're on a segmented system, the top block does not move,
-     * so we move up the used part of the top block, copy the contents
-     * of the next block under it, and free the next block.
-     * We also do this on non-segmented systems if the contents of the
-     * two blocks won't fit in a single block; in this case we copy up
-     * as much as will fit.  On non-segmented systems where the contents
-     * of both blocks fit in a single block, we copy the used part
-     * of the top block to the top of the next block, and free
-     * the top block.
+       * If the contents of the two blocks won't fit in a single block, we
+       * move up the used part of the top block, and copy up as much of
+       * the contents of the next block under it as will fit.  If the
+       * contents of both blocks fit in a single block, we copy the used
+       * part of the top block to the top of the next block, and free the
+       * top block.
      */
-    if (used + count > pstack->body_size) {	/* Move as much into the top block as will fit. */
+    if (used + count > pstack->body_size) {
+	/*
+	 * The contents of the two blocks won't fit into a single block.
+	 * On the assumption that we're recovering from a local stack
+	 * underflow and need to increase the number of contiguous
+	 * elements available, move up the used part of the top block, and
+	 * copy up as much of the contents of the next block under it as
+	 * will fit.
+	 */
 	uint moved = pstack->body_size - count;
 	uint left;
 
@@ -336,20 +370,17 @@ ref_stack_pop_block(register ref_stack * pstack)
 	pstack->p = pstack->top;
 	pstack->extension_used -= moved;
     } else {
-#if stacks_are_segmented
-	/* We know there are no guard elements in the next block. */
-	memmove(bot + used, bot, count * sizeof(ref));
-	memcpy(bot, body, used * sizeof(ref));
-	pcur->next = pnext->next;
-	gs_free_ref_array(pstack->memory, &next, "ref_stack_pop_block");
-#else
+	/*
+	   * The contents of the two blocks will fit into a single block.
+	   * Copy the used part of the top block to the top of the next
+	   * block, and free the top block.
+	 */
 	memcpy(body + used, bot, count * sizeof(ref));
 	pstack->bot = bot = body;
 	pstack->top = bot + pstack->body_size - 1;
 	gs_free_ref_array(pstack->memory, &pstack->current,
 			  "ref_stack_pop_block");
 	pstack->current = next;
-#endif
 	pstack->p = bot + (used + count - 1);
 	pstack->extension_size -= pstack->body_size;
 	pstack->extension_used -= used;
@@ -365,9 +396,8 @@ ref_stack_extend(ref_stack * pstack, uint request)
     uint keep = (pstack->top - pstack->bot + 1) / 3;
     uint count = pstack->p - pstack->bot + 1;
 
-    if (pstack->p < pstack->bot) {	/* Adding another block can't help things. */
+    if (request > pstack->data_size)
 	return_error(pstack->overflow_error);
-    }
     if (keep + request > pstack->body_size)
 	keep = pstack->body_size - request;
     if (keep > count)
@@ -380,8 +410,9 @@ ref_stack_extend(ref_stack * pstack, uint request)
 /* (if max_stack would be exceeded, or the stack has no allocator) */
 /* or e_VMerror. */
 int
-ref_stack_push(register ref_stack * pstack, uint count)
-{				/* Don't bother to pre-check for overflow: we must be able to */
+ref_stack_push(ref_stack * pstack, uint count)
+{
+    /* Don't bother to pre-check for overflow: we must be able to */
     /* back out in the case of a VMerror anyway, and */
     /* ref_stack_push_block will make the check itself. */
     uint needed = count;
@@ -391,12 +422,12 @@ ref_stack_push(register ref_stack * pstack, uint count)
 	int code;
 
 	pstack->p = pstack->top;
-	code =
-	    ref_stack_push_block(pstack,
-				 (pstack->top - pstack->bot + 1) / 3,
-				 count);
-	if (code < 0) {		/* Back out. */
-	    ref_stack_pop(pstack, count - needed);
+	code = ref_stack_push_block(pstack,
+				    (pstack->top - pstack->bot + 1) / 3,
+				    added);
+	if (code < 0) {
+	    /* Back out. */
+	    ref_stack_pop(pstack, count - needed + added);
 	    pstack->requested = count;
 	    return code;
 	}
@@ -411,7 +442,7 @@ ref_stack_push(register ref_stack * pstack, uint count)
 /* May return overflow_error or e_VMerror. */
 /* Must have keep <= count. */
 int
-ref_stack_push_block(register ref_stack * pstack, uint keep, uint add)
+ref_stack_push_block(ref_stack * pstack, uint keep, uint add)
 {
     uint count = pstack->p - pstack->bot + 1;
     uint move = count - keep;
@@ -437,36 +468,13 @@ ref_stack_push_block(register ref_stack * pstack, uint keep, uint add)
 	return code;
     pnext = (ref_stack_block *) next.value.refs;
     body = (ref *) (pnext + 1);
-#if stacks_are_segmented
-    /* Copy all but the top keep elements into the new block, */
-    /* and move the top elements down. */
-    /* We know there are no guard elements in the new block. */
-    memcpy(body, pstack->bot, move * sizeof(ref));
-    /* Clear the elements above the top of the new block. */
-    refset_null(body + move, pstack->body_size - move);
-    if (keep <= move) {		/* No overlap, memcpy is safe. */
-	memcpy(pstack->bot, pstack->bot + move, keep * sizeof(ref));
-    } else {
-	uint i;
-	s_ptr bot = pstack->bot;
-	s_ptr up = bot + move;
-
-	for (i = 0; i < keep; i++)
-	    bot[i] = up[i];
-    }
-    pnext->next = pcur->next;
-    pnext->used = next;
-    pcur->next = next;
-    pnext->used.value.refs = body;
-    r_set_size(&pnext->used, move);
-#else
     /* Copy the top keep elements into the new block, */
     /* and make the new block the top block. */
     init_block(pstack, &next, keep);
     body += pstack->bot_guard;
     memcpy(body, pstack->bot + move, keep * sizeof(ref));
     /* Clear the elements above the top of the new block. */
-    refset_null(body + keep, pstack->body_size - keep);
+    refset_null(body + keep, pstack->data_size - keep);
     /* Clear the elements above the top of the old block. */
     refset_null(pstack->bot + move, keep);
     pnext->next = pstack->current;
@@ -475,11 +483,32 @@ ref_stack_push_block(register ref_stack * pstack, uint keep, uint add)
     pstack->current = next;
     pstack->bot = body;
     pstack->top = pstack->bot + pstack->body_size - 1;
-#endif
     pstack->p = pstack->bot + keep - 1;
     pstack->extension_size += pstack->body_size;
     pstack->extension_used += move;
     return 0;
+}
+
+/* Begin enumerating the blocks of a stack. */
+void
+ref_stack_enum_begin(ref_stack_enum_t *prse, const ref_stack *pstack)
+{
+    prse->block = (ref_stack_block *)pstack->current.value.refs;
+    prse->ptr = pstack->bot;
+    prse->size = pstack->p + 1 - pstack->bot;
+}
+
+bool
+ref_stack_enum_next(ref_stack_enum_t *prse)
+{
+    ref_stack_block *block =
+	prse->block = (ref_stack_block *)prse->block->next.value.refs;
+
+    if (block == 0)
+	return false;
+    prse->ptr = block->used.value.refs;
+    prse->size = r_size(&block->used);
+    return true;
 }
 
 /* Clean up a stack for garbage collection. */
@@ -495,19 +524,39 @@ ref_stack_cleanup(ref_stack * pstack)
     r_set_size(&pblock->used, pstack->p + 1 - pstack->bot);
 }
 
+/*
+ * Free the entire contents of a stack, including the bottom block.
+ * The client must free the ref_stack itself.  Note that after calling
+ * ref_stack_release, the stack is no longer usable.
+ */
+void
+ref_stack_release(ref_stack * pstack)
+{
+    ref_stack_clear(pstack);
+    /* Free the original (bottom) block. */
+    gs_free_ref_array(pstack->memory, &pstack->current,
+		      "ref_stack_release");
+}
+
+/*
+ * Release a stack and then free the ref_stack object.
+ */
+void
+ref_stack_free(ref_stack * pstack, gs_memory_t * mem, client_name_t cname)
+{
+    ref_stack_release(pstack);
+    gs_free_object(mem, pstack, cname);
+}
+
 /* ------ Internal routines ------ */
 
 /* Initialize the guards and body of a stack block. */
-/* Note that this always initializes the guards, so it should not be used */
-/* for extension blocks in a segmented environments. */
 private void
 init_block(ref_stack * pstack, ref * psb, uint used)
 {
     ref *brefs = psb->value.refs;
-
-#define pblock ((ref_stack_block *)brefs)
-    register uint i;
-    register ref *p;
+    uint i;
+    ref *p;
 
     for (i = pstack->bot_guard, p = brefs + stack_block_refs;
 	 i != 0; i--, p++
@@ -523,8 +572,11 @@ init_block(ref_stack * pstack, ref * psb, uint used)
 	int top_guard = pstack->top_guard;
 
 	refset_null(top - top_guard, top_guard);
+    } {
+	ref_stack_block *const pblock = (ref_stack_block *) brefs;
+
+	pblock->used = *psb;
+	pblock->used.value.refs = brefs + stack_block_refs + pstack->bot_guard;
+	r_set_size(&pblock->used, 0);
     }
-    pblock->used = *psb;
-    pblock->used.value.refs = brefs + stack_block_refs + pstack->bot_guard;
-    r_set_size(&pblock->used, 0);
 }

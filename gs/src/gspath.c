@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gspath.c */
+/*Id: gspath.c  */
 /* Basic path routines for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"
@@ -33,9 +33,7 @@
 int
 gs_newpath(gs_state * pgs)
 {
-    gx_path_release(pgs->path);
-    gx_path_init(pgs->path, pgs->memory);
-    return 0;
+    return gx_path_new(pgs->path);
 }
 
 int
@@ -281,31 +279,193 @@ gs_rcurveto(gs_state * pgs,
 
 /* Forward references */
 private int common_clip(P2(gs_state *, int));
-private int set_clip_path(P2(gs_state *, gx_clip_path *));
+
+/* Return the effective clipping path of a graphics state, */
+/* the intersection of the clip path and the view clip path. */
+int
+gx_effective_clip_path(gs_state * pgs, gx_clip_path ** ppcpath)
+{
+    gs_id view_clip_id =
+    (pgs->view_clip == 0 || pgs->view_clip->rule == 0 ? gs_no_id :
+     pgs->view_clip->id);
+
+    if (pgs->effective_clip_id == pgs->clip_path->id &&
+	pgs->effective_view_clip_id == view_clip_id
+	) {
+	*ppcpath = pgs->effective_clip_path;
+	return 0;
+    }
+    /* Update the cache. */
+    if (view_clip_id == gs_no_id) {
+	if (!pgs->effective_clip_shared)
+	    gx_cpath_free(pgs->effective_clip_path, "gx_effective_clip_path");
+	pgs->effective_clip_path = pgs->clip_path;
+	pgs->effective_clip_shared = true;
+    } else {
+	gs_fixed_rect cbox, vcbox;
+
+	gx_cpath_inner_box(pgs->clip_path, &cbox);
+	gx_cpath_outer_box(pgs->view_clip, &vcbox);
+	if (rect_within(vcbox, cbox)) {
+	    if (!pgs->effective_clip_shared)
+		gx_cpath_free(pgs->effective_clip_path,
+			      "gx_effective_clip_path");
+	    pgs->effective_clip_path = pgs->view_clip;
+	    pgs->effective_clip_shared = true;
+	} else {
+	    /* Construct the intersection of the two clip paths. */
+	    int code;
+	    gx_clip_path ipath;
+	    gx_path vpath;
+	    gx_clip_path *npath = pgs->effective_clip_path;
+
+	    if (pgs->effective_clip_shared) {
+		npath = gx_cpath_alloc(pgs->memory, "gx_effective_clip_path");
+		if (npath == 0)
+		    return_error(gs_error_VMerror);
+	    }
+	    gx_cpath_init_local(&ipath, pgs->memory);
+	    code = gx_cpath_assign_preserve(&ipath, pgs->clip_path);
+	    if (code < 0)
+		return code;
+	    gx_path_init_local(&vpath, pgs->memory);
+	    code = gx_cpath_to_path(pgs->view_clip, &vpath);
+	    if (code < 0 ||
+		(code = gx_cpath_clip(pgs, &ipath, &vpath,
+				      gx_rule_winding_number)) < 0 ||
+		(code = gx_cpath_assign_free(npath, &ipath)) < 0
+		)
+		DO_NOTHING;
+	    gx_path_free(&vpath, "gx_effective_clip_path");
+	    gx_cpath_free(&ipath, "gx_effective_clip_path");
+	    if (code < 0)
+		return code;
+	    pgs->effective_clip_path = npath;
+	    pgs->effective_clip_shared = false;
+	}
+    }
+    pgs->effective_clip_id = pgs->clip_path->id;
+    pgs->effective_view_clip_id = view_clip_id;
+    *ppcpath = pgs->effective_clip_path;
+    return 0;
+}
+
+#ifdef DEBUG
+/* Note that we just set the clipping path (internal). */
+private void
+note_set_clip_path(const gs_state * pgs)
+{
+    if (gs_debug_c('P')) {
+	extern void gx_cpath_print(P1(const gx_clip_path *));
+
+	dlprintf("[P]Clipping path:\n");
+	gx_cpath_print(pgs->clip_path);
+    }
+}
+#else
+#  define note_set_clip_path(pgs) DO_NOTHING
+#endif
 
 int
 gs_clippath(gs_state * pgs)
 {
-    gx_path path, cpath;
-    int code = gx_cpath_path(pgs->clip_path, &path);
+    gx_path cpath;
+    int code;
 
+    gx_path_init_local(&cpath, pgs->memory);
+    code = gx_cpath_to_path(pgs->clip_path, &cpath);
+    if (code >= 0)
+	code = gx_path_assign_free(pgs->path, &cpath);
     if (code < 0)
-	return code;
-    code = gx_path_copy(&path, &cpath, 1);
-    if (code < 0)
-	return code;
-    gx_path_release(pgs->path);
-    *pgs->path = cpath;
-    return 0;
+	gx_path_free(&cpath, "gs_clippath");
+    return code;
 }
 
 int
 gs_initclip(gs_state * pgs)
 {
+    gs_fixed_rect box;
+    int code = gx_default_clip_box(pgs, &box);
+
+    if (code < 0)
+	return code;
+    return gx_clip_to_rectangle(pgs, &box);
+}
+
+int
+gs_clip(gs_state * pgs)
+{
+    return common_clip(pgs, gx_rule_winding_number);
+}
+
+int
+gs_eoclip(gs_state * pgs)
+{
+    return common_clip(pgs, gx_rule_even_odd);
+}
+
+private int
+common_clip(gs_state * pgs, int rule)
+{
+    int code = gx_cpath_clip(pgs, pgs->clip_path, pgs->path, rule);
+    if (code < 0)
+	return code;
+    pgs->clip_path->rule = rule;
+    note_set_clip_path(pgs);
+    return 0;
+}
+
+int
+gs_setclipoutside(gs_state * pgs, bool outside)
+{
+    return gx_cpath_set_outside(pgs->clip_path, outside);
+}
+
+bool
+gs_currentclipoutside(const gs_state * pgs)
+{
+    return gx_cpath_is_outside(pgs->clip_path);
+}
+
+/* Establish a rectangle as the clipping path. */
+/* Used by initclip and by the character and Pattern cache logic. */
+int
+gx_clip_to_rectangle(gs_state * pgs, gs_fixed_rect * pbox)
+{
+    int code = gx_cpath_from_rectangle(pgs->clip_path, pbox);
+
+    if (code < 0)
+	return code;
+    pgs->clip_path->rule = gx_rule_winding_number;
+    note_set_clip_path(pgs);
+    return 0;
+}
+
+/* Set the clipping path to the current path, without intersecting. */
+/* This is very inefficient right now. */
+int
+gx_clip_to_path(gs_state * pgs)
+{
+    gs_fixed_rect bbox;
+    int code;
+
+    if ((code = gx_path_bbox(pgs->path, &bbox)) < 0 ||
+	(code = gx_clip_to_rectangle(pgs, &bbox)) < 0 ||
+	(code = gs_clip(pgs)) < 0
+	)
+	return code;
+    note_set_clip_path(pgs);
+    return 0;
+}
+
+/* Get the default clipping box. */
+int
+gx_default_clip_box(const gs_state * pgs, gs_fixed_rect * pbox)
+{
     register gx_device *dev = gs_currentdevice(pgs);
     gs_rect bbox;
-    gs_fixed_rect box;
     gs_matrix imat;
+    int code;
 
     if (dev->ImagingBBox_set) {	/* Use the ImagingBBox, relative to default user space. */
 	gs_defaultmatrix(pgs, &imat);
@@ -329,101 +489,13 @@ gs_initclip(gs_state * pgs)
 	bbox.q.x = dev->MediaSize[0] - dev->HWMargins[2];
 	bbox.q.y = dev->MediaSize[1] - dev->HWMargins[3];
     }
-    gs_bbox_transform(&bbox, &imat, &bbox);
+    code = gs_bbox_transform(&bbox, &imat, &bbox);
+    if (code < 0)
+	return code;
     /* Round the clipping box so that it doesn't get ceilinged. */
-    box.p.x = fixed_rounded(float2fixed(bbox.p.x));
-    box.p.y = fixed_rounded(float2fixed(bbox.p.y));
-    box.q.x = fixed_rounded(float2fixed(bbox.q.x));
-    box.q.y = fixed_rounded(float2fixed(bbox.q.y));
-    return gx_clip_to_rectangle(pgs, &box);
-}
-
-int
-gs_clip(gs_state * pgs)
-{
-    return common_clip(pgs, gx_rule_winding_number);
-}
-
-int
-gs_eoclip(gs_state * pgs)
-{
-    return common_clip(pgs, gx_rule_even_odd);
-}
-
-private int
-common_clip(gs_state * pgs, int rule)
-{
-    gx_path fpath;
-    int code = gx_path_flatten_accurate(pgs->path, &fpath, pgs->flatness,
-					pgs->accurate_curves);
-
-    if (code < 0)
-	return code;
-    code = gx_cpath_intersect(pgs, pgs->clip_path, &fpath, rule);
-    if (code != 1)
-	gx_path_release(&fpath);
-    if (code < 0)
-	return code;
-    pgs->clip_path->rule = rule;
-    return set_clip_path(pgs, pgs->clip_path);
-}
-
-int
-gs_setclipoutside(gs_state * pgs, bool outside)
-{
-    return gx_cpath_set_outside(pgs->clip_path, outside);
-}
-
-bool
-gs_currentclipoutside(const gs_state * pgs)
-{
-    return gx_cpath_is_outside(pgs->clip_path);
-}
-
-/* Establish a rectangle as the clipping path. */
-/* Used by initclip and by the character and Pattern cache logic. */
-int
-gx_clip_to_rectangle(gs_state * pgs, gs_fixed_rect * pbox)
-{
-    gx_clip_path cpath;
-    int code = gx_cpath_from_rectangle(&cpath, pbox, pgs->memory);
-
-    if (code < 0)
-	return code;
-    gx_cpath_release(pgs->clip_path);
-    cpath.rule = gx_rule_winding_number;
-    return set_clip_path(pgs, &cpath);
-}
-
-/* Set the clipping path to the current path, without intersecting. */
-/* Currently only used by the insideness testing operators, */
-/* but might be used by viewclip eventually. */
-/* The algorithm is very inefficient; we'll improve it later if needed. */
-int
-gx_clip_to_path(gs_state * pgs)
-{
-    gs_fixed_rect bbox;
-    int code;
-
-    if ((code = gx_path_bbox(pgs->path, &bbox)) < 0 ||
-	(code = gx_clip_to_rectangle(pgs, &bbox)) < 0
-	)
-	return code;
-    return gs_clip(pgs);
-}
-
-/* Set the clipping path (internal). */
-private int
-set_clip_path(gs_state * pgs, gx_clip_path * pcpath)
-{
-    *pgs->clip_path = *pcpath;
-#ifdef DEBUG
-    if (gs_debug_c('P')) {
-	extern void gx_cpath_print(P1(const gx_clip_path *));
-
-	dprintf("[P]Clipping path:\n"),
-	    gx_cpath_print(pcpath);
-    }
-#endif
+    pbox->p.x = fixed_rounded(float2fixed(bbox.p.x));
+    pbox->p.y = fixed_rounded(float2fixed(bbox.p.y));
+    pbox->q.x = fixed_rounded(float2fixed(bbox.q.x));
+    pbox->q.y = fixed_rounded(float2fixed(bbox.q.y));
     return 0;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* idebug.c */
+/*Id: idebug.c  */
 /* Debugging support for Ghostscript interpreter */
 /* This file must always be compiled with DEBUG set. */
 #undef DEBUG
@@ -31,12 +31,10 @@
 #include "istack.h"
 #include "iutil.h"
 #include "ivmspace.h"
-#include "ostack.h"		/* for opdef.h */
 #include "opdef.h"
-#include "store.h"		/* for make_oper for opdef.h */
 
 /* Table of type name strings */
-static const char *type_strings[] =
+static const char *const type_strings[] =
 {type_print_strings};
 
 /* First unassigned type index */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxclfile.c */
+/*Id: gxclfile.c  */
 /* File-based command list implementation */
 #include "stdio_.h"
 #include "string_.h"
@@ -32,8 +32,9 @@
 /* ------ Open/close/unlink ------ */
 
 int
-clist_fopen(char *fname, const char *fmode, clist_file_ptr * pcf,
-	    gs_memory_t * mem, gs_memory_t * data_mem, bool ok_to_compress)
+clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
+	    clist_file_ptr * pcf, gs_memory_t * mem, gs_memory_t *data_mem,
+	    bool ok_to_compress)
 {
     if (*fname == 0) {
 	if (fmode[0] == 'r')
@@ -115,9 +116,9 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
 /* ------ Position/status ------ */
 
 int
-clist_set_block_size(clist_file_ptr cf, int sizeofBlock)
+clist_set_memory_warning(clist_file_ptr cf, int bytes_left)
 {
-    return 0;			/* always successful */
+    return 0;			/* no-op */
 }
 
 int

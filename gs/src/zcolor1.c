@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zcolor1.c */
+/*Id: zcolor1.c  */
 /* Level 1 extended color operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"
 #include "ialloc.h"
@@ -181,21 +180,16 @@ zsetundercolorremoval(register os_ptr op)
 /* <width> <height> <bits/comp> <matrix> */
 /*      <datasrc_0> ... <datasrc_ncomp-1> true <ncomp> colorimage - */
 /*      <datasrc> false <ncomp> colorimage - */
-#ifdef DPNEXT
 int zimage_multiple(P2(os_ptr op, bool has_alpha));
-
-#endif
 private int
 zcolorimage(register os_ptr op)
 {
-#ifdef DPNEXT
     return zimage_multiple(op, false);
 }
 /* We export zimage_multiple for alphaimage. */
 int
 zimage_multiple(os_ptr op, bool has_alpha)
 {
-#endif
     int spp;			/* samples per pixel */
     int npop = 7;
     os_ptr procp = op - 2;
@@ -206,30 +200,27 @@ zimage_multiple(os_ptr op, bool has_alpha)
     check_type(op[-1], t_boolean);	/* multiproc */
     switch ((spp = (int)(op->value.intval))) {
 	case 1:
-	    pcs = gs_color_space_DeviceGray();
+	    pcs = gs_cspace_DeviceGray((const gs_imager_state *)igs);
 	    break;
 	case 3:
-	    pcs = gs_color_space_DeviceRGB();
+	    pcs = gs_cspace_DeviceRGB((const gs_imager_state *)igs);
 	    goto color;
 	case 4:
-	    pcs = gs_color_space_DeviceCMYK();
-	  color:if (op[-1].value.boolval) {	/* planar format */
-#ifdef DPNEXT
+	    pcs = gs_cspace_DeviceCMYK((const gs_imager_state *)igs);
+color:
+	    if (op[-1].value.boolval) {	/* planar format */
 		if (has_alpha)
 		    ++spp;
-#endif
 		npop += spp - 1;
-		procp -= spp - 1,
-		    multi = true;
+		procp -= spp - 1;
+		multi = true;
 	    }
 	    break;
 	default:
 	    return_error(e_rangecheck);
     }
     return zimage_opaque_setup(procp, multi,
-#ifdef DPNEXT
-			       has_alpha,
-#endif
+		    (has_alpha ? gs_image_alpha_last : gs_image_alpha_none),
 			       pcs, npop);
 }
 

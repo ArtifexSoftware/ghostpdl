@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,448 +16,297 @@
    all copies.
  */
 
-/* gximage2.c */
-/* General monochrome image rendering */
-#include "gx.h"
+/*Id: gximage2.c  */
+/* ImageType 2 image implementation */
+#include "math_.h"
 #include "memory_.h"
-#include "gpcheck.h"
+#include "gx.h"
 #include "gserrors.h"
-#include "gxfixed.h"
-#include "gxarith.h"
-#include "gxmatrix.h"
-#include "gsccolor.h"
-#include "gspaint.h"
-#include "gsutil.h"
-#include "gxdevice.h"
-#include "gxcmap.h"
-#include "gxdcolor.h"
-#include "gxistate.h"
-#include "gzpath.h"
-#include "gxdevmem.h"
-#include "gdevmem.h"		/* for mem_mono_device */
-#include "gxcpath.h"
-#include "gximage.h"
-#include "gzht.h"
+#include "gsmatrix.h"		/* for gscoord.h */
+#include "gscoord.h"
+#include "gscspace.h"
+#include "gscpixel.h"
+#include "gsdevice.h"
+#include "gsiparm2.h"
+#include "gxgetbit.h"
+#include "gxiparam.h"
+#include "gxpath.h"
 
-/* ------ Strategy procedure ------ */
+/* Forward references */
+private dev_proc_begin_typed_image(gx_begin_image2);
+private image_proc_source_size(gx_image2_source_size);
 
-/* We can bypass X clipping for portrait monochrome images. */
-private irender_proc(image_render_mono);
-private irender_proc_t
-image_strategy_mono(gx_image_enum * penum)
-{				/* Use slow loop for imagemask with a halftone, */
-    /* or for a non-default logical operation. */
-    penum->slow_loop =
-	(penum->masked && !color_is_pure(&penum->icolor1)) ||
-	penum->use_rop;
-    if (penum->spp == 1) {
-	if (!(penum->slow_loop || penum->posture != image_portrait))
-	    penum->clip_image &= ~(image_clip_xmin | image_clip_xmax);
-	if_debug0('b', "[b]render=mono\n");
-	/* Precompute values needed for rasterizing. */
-	penum->dxx =
-	    float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
-	return image_render_mono;
-    }
+/* Define the image type for ImageType 2 images. */
+private const gx_image_type_t image2_type =
+{image2_type_data};
+
+/* Initialize an ImageType 2 image. */
+void
+gs_image2_t_init(gs_image2_t * pim)
+{
+    pim->type = &image2_type;
+    pim->UnpaintedPath = 0;
+    pim->PixelCopy = false;
+}
+
+/*
+ * Compute the device space coordinates and source data size for an
+ * ImageType 2 image.  This procedure fills in
+ * image.{Width,Height,ImageMatrix}.
+ */
+typedef struct image2_data_s {
+    gs_point origin;
+    gs_int_rect bbox;
+    gs_image1_t image;
+} image2_data_t;
+private int
+image2_set_data(const gs_image2_t * pim, image2_data_t * pid)
+{
+    gs_state *pgs = pim->DataSource;
+    gs_matrix smat;
+    gs_rect sbox, dbox;
+
+    gs_transform(pgs, pim->XOrigin, pim->YOrigin, &pid->origin);
+    sbox.q.x = (sbox.p.x = pim->XOrigin) + pim->Width;
+    sbox.q.y = (sbox.p.y = pim->YOrigin) + pim->Height;
+    gs_currentmatrix(pgs, &smat);
+    gs_bbox_transform(&sbox, &smat, &dbox);
+    pid->bbox.p.x = (int)floor(dbox.p.x);
+    pid->bbox.p.y = (int)floor(dbox.p.y);
+    pid->bbox.q.x = (int)ceil(dbox.q.x);
+    pid->bbox.q.y = (int)ceil(dbox.q.y);
+    pid->image.Width = pid->bbox.q.x - pid->bbox.p.x;
+    pid->image.Height = pid->bbox.q.y - pid->bbox.p.y;
+    pid->image.ImageMatrix = pim->ImageMatrix;
     return 0;
 }
 
-void
-gs_gximage2_init(gs_memory_t * mem)
+/* Compute the source size of an ImageType 2 image. */
+int
+gx_image2_source_size(const gs_imager_state * pis, const gs_image_common_t * pim,
+		      gs_int_point * psize)
 {
-    image_strategies.mono = image_strategy_mono;
+    image2_data_t idata;
+
+    image2_set_data((const gs_image2_t *)pim, &idata);
+    psize->x = idata.image.Width;
+    psize->y = idata.image.Height;
+    return 0;
 }
 
-/* ------ Rendering procedure ------ */
-
-/* Rendering procedure for the general case of displaying a */
-/* monochrome image, dealing with multiple bit-per-sample images, */
-/* general transformations, and arbitrary single-component */
-/* color spaces (DeviceGray, CIEBasedA, Separation, Indexed). */
-/* This procedure handles a single scan line. */
+/* Begin an ImageType 2 image. */
+/* Note that since ImageType 2 images don't have any source data, */
+/* this procedure does all the work. */
 private int
-image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
-		  uint w, int h, gx_device * dev)
+gx_begin_image2(gx_device * dev,
+		const gs_imager_state * pis, const gs_matrix * pmat,
+		const gs_image_common_t * pic, const gs_int_rect * prect,
+	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
 {
-    const gs_imager_state *pis = penum->pis;
-    gs_logical_operation_t lop = penum->log_op;
-    const int masked = penum->masked;
-    const gs_color_space *pcs;	/* only set for non-masks */
+    const gs_image2_t *pim = (const gs_image2_t *)pic;
+    gs_state *pgs = pim->DataSource;
+    gx_device *sdev = gs_currentdevice(pgs);
+    int depth = sdev->color_info.depth;
 
-    cs_proc_remap_color((*remap_color));	/* ditto */
-    gs_client_color cc;
-    const gx_color_map_procs *cmap_procs = gx_device_cmap_procs(dev);
+/****** ONLY HANDLE depth <= 8 FOR PixelCopy ******/
+    bool pixel_copy = pim->PixelCopy && depth <= 8 &&
+    !memcmp(&dev->color_info, &sdev->color_info,
+	    sizeof(dev->color_info));
+    bool has_alpha;
+    bool direct_copy;
+    image2_data_t idata;
+    byte *row;
+    uint row_size, source_size;
+    gx_image_enum_common_t *info;
+    gs_matrix smat, dmat;
+    gs_color_space cs;
+    const gs_color_space *pcs;
+    int code;
 
-    cmap_proc_gray((*map_gray)) = cmap_procs->map_gray;
-    gx_device_color *pdevc = &penum->icolor1;	/* color for masking */
+    gs_image_t_init_rgb(&idata.image, pis);
+    /* Add Decode entries for K and alpha */
+    idata.image.Decode[6] = idata.image.Decode[8] = 0.0;
+    idata.image.Decode[7] = idata.image.Decode[9] = 1.0;
+    if (pmat == 0) {
+	gs_currentmatrix((const gs_state *)pis, &dmat);
+	pmat = &dmat;
+    } else
+	dmat = *pmat;
+    gs_currentmatrix(pgs, &smat);
+    code = image2_set_data(pim, &idata);
+    if (code < 0)
+	return code;
+/****** ONLY HANDLE SIMPLE CASES FOR NOW ******/
+    if (idata.bbox.p.x != floor(idata.origin.x))
+	return_error(gs_error_rangecheck);
+    if (!(idata.bbox.p.y == floor(idata.origin.y) ||
+	  idata.bbox.q.y == ceil(idata.origin.y))
+	)
+	return_error(gs_error_rangecheck);
+    source_size = (idata.image.Width * depth + 7) >> 3;
+    row_size = max(3 * idata.image.Width, source_size);
+    row = gs_alloc_bytes(mem, row_size, "gx_begin_image2");
+    if (row == 0)
+	return_error(gs_error_VMerror);
+    if (pixel_copy &&
+	(pcpath == NULL ||
+	 gx_cpath_includes_rectangle(pcpath,
+				     int2fixed(idata.bbox.p.x),
+				     int2fixed(idata.bbox.p.y),
+				     int2fixed(idata.bbox.q.x),
+				     int2fixed(idata.bbox.q.y)))
+	) {
+	gs_matrix mat;
 
-    /* Make sure the cache setup matches the graphics state. */
-    /* Also determine whether all tiles fit in the cache. */
-    int tiles_fit = gx_check_tile_cache(pis);
-
-#define image_set_gray(sample_value)\
-   { pdevc = &penum->clues[sample_value].dev_color;\
-     if ( !color_is_set(pdevc) )\
-      { if ( penum->device_color )\
-	  (*map_gray)(byte2frac(sample_value), pdevc, pis, dev, gs_color_select_source);\
-	else\
-	  { decode_sample(sample_value, cc, 0);\
-	    (*remap_color)(&cc, pcs, pdevc, pis, dev, gs_color_select_source);\
-	  }\
-      }\
-     else if ( !color_is_pure(pdevc) )\
-      { if ( !tiles_fit )\
-         { code = gx_color_load_select(pdevc, pis, dev, gs_color_select_source);\
-	   if ( code < 0 ) return code;\
-	 }\
-      }\
-   }
-    gx_dda_fixed_point next;	/* (y not used in fast loop) */
-    gx_dda_step_fixed dxx2, dxx3, dxx4;		/* (not used in all loops) */
-    register const byte *psrc = buffer + data_x;
-    const byte *endp = psrc + w;
-    const byte *stop = endp;
-    fixed xrun;			/* x at start of run */
-    register byte run;		/* run value */
-    int htrun =			/* halftone run value */
-    (masked ? 255 : -2);
-    int code = 0;
-
-    if (h == 0)
-	return 0;
-    next = penum->dda.pixel0;
-    xrun = dda_current(next.x);
-    if (!masked) {
-	pcs = penum->pcs;	/* (may not be set for masks) */
-	remap_color = pcs->type->remap_color;
-    }
-    run = *psrc;
-    /* Find the last transition in the input. */
-    {
-	byte last = stop[-1];
-
-	while (stop > psrc && stop[-1] == last)
-	    --stop;
-    }
-    if (penum->slow_loop || penum->posture != image_portrait) {		/* Skewed, rotated, or imagemask with a halftone. */
-	fixed yrun;
-	const fixed pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
-	const fixed pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
-
-	dev_proc_fill_parallelogram((*fill_pgram)) =
-	    dev_proc(dev, fill_parallelogram);
-
-#define xl dda_current(next.x)
-#define ytf dda_current(next.y)
-	yrun = ytf;
-	if (masked) {
-	    pdevc = &penum->icolor1;
-	    code = gx_color_load(pdevc, pis, dev);
-	    if (code < 0)
-		return code;
-	    if (stop <= psrc)
-		goto last;
-	    if (penum->posture == image_portrait) {	/* We don't have to worry about the Y DDA, */
-		/* and the fill regions are rectangles. */
-		/* Calculate multiples of the DDA step. */
-		dxx2 = next.x.step;
-		dda_step_add(dxx2, next.x.step);
-		dxx3 = dxx2;
-		dda_step_add(dxx3, next.x.step);
-		dxx4 = dxx3;
-		dda_step_add(dxx4, next.x.step);
-		for (;;) {	/* Skip a run of zeros. */
-		    while (!psrc[0])
-			if (!psrc[1]) {
-			    if (!psrc[2]) {
-				if (!psrc[3]) {
-				    psrc += 4;
-				    dda_state_next(next.x.state, dxx4);
-				    continue;
-				}
-				psrc += 3;
-				dda_state_next(next.x.state, dxx3);
-				break;
-			    }
-			    psrc += 2;
-			    dda_state_next(next.x.state, dxx2);
-			    break;
-			} else {
-			    ++psrc;
-			    dda_next(next.x);
-			    break;
-			}
-		    xrun = xl;
-		    if (psrc >= stop)
-			break;
-		    for (; *psrc; ++psrc)
-			dda_next(next.x);
-		    code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
-					  fixed_0, fixed_0, pdyy,
-					  pdevc, lop);
-		    if (code < 0)
-			return code;
-		    if (psrc >= stop)
-			break;
-		}
-	    } else
-		for (;;) {
-		    for (; !*psrc; ++psrc) {
-			dda_next(next.x);
-			dda_next(next.y);
-		    }
-		    yrun = ytf;
-		    xrun = xl;
-		    if (psrc >= stop)
-			break;
-		    for (; *psrc; ++psrc) {
-			dda_next(next.x);
-			dda_next(next.y);
-		    }
-		    code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
-					ytf - yrun, pdyx, pdyy, pdevc, lop);
-		    if (code < 0)
-			return code;
-		    if (psrc >= stop)
-			break;
-		}
-	} else if (penum->posture == image_portrait ||
-		   penum->posture == image_landscape
-	    ) {			/* Not masked, and we can fill runs quickly. */
-	    if (stop <= psrc)
-		goto last;
-	    for (;;) {
-		if (*psrc != run) {
-		    if (run != htrun) {
-			htrun = run;
-			image_set_gray(run);
-		    }
-		    code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
-					  ytf - yrun, pdyx, pdyy,
-					  pdevc, lop);
-		    if (code < 0)
-			return code;
-		    yrun = ytf;
-		    xrun = xl;
-		    if (psrc >= stop)
-			break;
-		    run = *psrc;
-		}
-		psrc++;
-		dda_next(next.x);
-		dda_next(next.y);
-	    }
-	} else {		/* not masked *//* Since we have to check for the end after every pixel */
-	    /* anyway, we may as well avoid the last-run code. */
-	    stop = endp;
-	    for (;;) {		/* We can't skip large constant regions quickly, */
-		/* because this leads to rounding errors. */
-		/* Just fill the region between xrun and xl. */
-		psrc++;
-		if (run != htrun) {
-		    htrun = run;
-		    image_set_gray(run);
-		}
-		code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
-				      ytf - yrun, pdyx, pdyy, pdevc, lop);
-		if (code < 0)
-		    return code;
-		yrun = ytf;
-		xrun = xl;
-		if (psrc > stop) {
-		    --psrc;
-		    break;
-		}
-		run = psrc[-1];
-		dda_next(next.x);
-		dda_next(next.y);	/* harmless if no skew */
-	    }
-	}
-	/* Fill the last run. */
-      last:if (stop < endp && (*stop || !masked)) {
-	    if (!masked) {
-		image_set_gray(*stop);
-	    }
-	    dda_advance(next.x, endp - stop);
-	    dda_advance(next.y, endp - stop);
-	    code = (*fill_pgram) (dev, xrun, yrun, xl - xrun,
-				  ytf - yrun, pdyx, pdyy, pdevc, lop);
-	}
-#undef xl
-#undef ytf
-    } else {			/* fast loop *//* No skew, and not imagemask with a halftone. */
-	const fixed adjust = penum->adjust;
-	const fixed dxx = penum->dxx;
-	fixed xa = (dxx >= 0 ? adjust : -adjust);
-	const int yt = penum->yci, iht = penum->hci;
-
-	dev_proc_fill_rectangle((*fill_proc)) =
-	    dev_proc(dev, fill_rectangle);
-	dev_proc_strip_tile_rectangle((*tile_proc)) =
-	    dev_proc(dev, strip_tile_rectangle);
-	dev_proc_copy_mono((*copy_mono_proc)) =
-	    dev_proc(dev, copy_mono);
+	idata.image.BitsPerComponent = depth;
+	gs_cs_init_DevicePixel(&cs, depth);
+	pcs = &cs;
 	/*
-	 * If each pixel is likely to fit in a single halftone tile,
-	 * determine that now (tile_offset = offset of row within tile).
-	 * Don't do this for band devices; they handle halftone fills
-	 * more efficiently than copy_mono.
+	 * Figure 7.2 of the Adobe 3010 Supplement says that we should
+	 * compute CTM x ImageMatrix here, but I'm almost certain it
+	 * should be the other way around.  Also see gdevx.c.
 	 */
-	int bstart;
-	int phase_x;
-	int tile_offset =
-	((*dev_proc(dev, get_band)) (dev, yt, &bstart) == 0 ?
-	 gx_check_tile_size(pis,
-			    fixed2int_ceiling(any_abs(dxx) + (xa << 1)),
-			    yt, iht, gs_color_select_source, &phase_x) :
-	 -1);
-	int xmin = fixed2int_pixround(penum->clip_outer.p.x);
-	int xmax = fixed2int_pixround(penum->clip_outer.q.x);
+	gs_matrix_multiply(&idata.image.ImageMatrix, &smat, &mat);
+	direct_copy =
+	    (is_xxyy(&dmat) || is_xyyx(&dmat)) &&
+#define eqe(e) mat.e == dmat.e
+	    eqe(xx) && eqe(xy) && eqe(yx) && eqe(yy);
+#undef eqe
+	has_alpha = false;	/* no separate alpha channel */
+    } else {
+	pixel_copy = false;
+	idata.image.BitsPerComponent = 8;
+	/* Always use RGB source color for now. */
+	pcs = gs_cspace_DeviceRGB(pis);
+	direct_copy = false;
+	/*
+	 * The source device has alpha if the same RGB values with
+	 * different alphas map to different pixel values.
+	 ****** THIS IS NOT GOOD ENOUGH: WE WANT TO SKIP TRANSFERRING
+	 ****** ALPHA IF THE SOURCE IS CAPABLE OF HAVING ALPHA BUT
+	 ****** DOESN'T CURRENTLY HAVE ANY ACTUAL ALPHA VALUES DIFFERENT
+	 ****** FROM 1.
+	 */
+	/*
+	 * Since the default implementation of map_rgb_alpha_color
+	 * premultiplies the color towards white, we can't just test
+	 * whether changing alpha has an effect on the color.
+	 */
+	{
+	    gx_color_index trans_black =
+	    (*dev_proc(sdev, map_rgb_alpha_color))
+	    (sdev, (gx_color_value) 0, (gx_color_value) 0,
+	     (gx_color_value) 0, (gx_color_value) 0);
 
-#define xl dda_current(next.x)
-	/* Fold the adjustment into xrun and xl, */
-	/* including the +0.5-epsilon for rounding. */
-	xrun = xrun - xa + (fixed_half - fixed_epsilon);
-	dda_translate(next.x, xa + (fixed_half - fixed_epsilon));
-	xa <<= 1;
-	/* Calculate multiples of the DDA step. */
-	dxx2 = next.x.step;
-	dda_step_add(dxx2, next.x.step);
-	dxx3 = dxx2;
-	dda_step_add(dxx3, next.x.step);
-	dxx4 = dxx3;
-	dda_step_add(dxx4, next.x.step);
-	if (stop > psrc)
-	    for (;;) {		/* Skip large constant regions quickly, */
-		/* but don't slow down transitions too much. */
-	      skf:if (psrc[0] == run) {
-		    if (psrc[1] == run) {
-			if (psrc[2] == run) {
-			    if (psrc[3] == run) {
-				psrc += 4;
-				dda_state_next(next.x.state, dxx4);
-				goto skf;
-			    } else {
-				psrc += 4;
-				dda_state_next(next.x.state, dxx3);
-			    }
-			} else {
-			    psrc += 3;
-			    dda_state_next(next.x.state, dxx2);
-			}
-		    } else {
-			psrc += 2;
-			dda_next(next.x);
-		    }
-		} else
-		    psrc++;
-		{		/* Now fill the region between xrun and xl. */
-		    int xi = fixed2int_var(xrun);
-		    int wi = fixed2int_var(xl) - xi;
-		    int xei, tsx;
-		    const gx_strip_bitmap *tile;
-
-		    if (wi <= 0) {
-			if (wi == 0)
-			    goto mt;
-			xi += wi, wi = -wi;
-		    }
-		    if ((xei = xi + wi) > xmax || xi < xmin) {	/* Do X clipping */
-			if (xi < xmin)
-			    wi -= xmin - xi, xi = xmin;
-			if (xei > xmax)
-			    wi -= xei - xmax;
-			if (wi <= 0)
-			    goto mt;
-		    }
-		    switch (run) {
-			case 0:
-			    if (masked)
-				goto mt;
-			    if (!color_is_pure(&penum->icolor0))
-				goto ht;
-			    code = (*fill_proc) (dev, xi, yt, wi, iht,
-						 penum->icolor0.colors.pure);
-			    break;
-			case 255:	/* just for speed */
-			    if (!color_is_pure(&penum->icolor1))
-				goto ht;
-			    code = (*fill_proc) (dev, xi, yt, wi, iht,
-						 penum->icolor1.colors.pure);
-			    break;
-			default:
-			  ht:	/* Use halftone if needed */
-			    if (run != htrun) {
-				image_set_gray(run);
-				htrun = run;
-			    }
-			    /* We open-code gx_fill_rectangle, */
-			    /* because we've done some of the work for */
-			    /* halftone tiles in advance. */
-			    if (color_is_pure(pdevc)) {
-				code = (*fill_proc) (dev, xi, yt, wi, iht,
-						     pdevc->colors.pure);
-			    } else if (!color_is_binary_halftone(pdevc)) {
-				code =
-				    gx_fill_rectangle_device_rop(xi, yt, wi, iht,
-							   pdevc, dev, lop);
-			    } else if (tile_offset >= 0 &&
-				(tile = &pdevc->colors.binary.b_tile->tiles,
-				 (tsx = (xi + phase_x) % tile->rep_width) + wi <= tile->size.x)
-				) {	/* The pixel(s) fit(s) in a single (binary) tile. */
-				byte *row = tile->data + tile_offset;
-
-				code = (*copy_mono_proc)
-				    (dev, row, tsx, tile->raster, gx_no_bitmap_id,
-				     xi, yt, wi, iht,
-				     pdevc->colors.binary.color[0],
-				     pdevc->colors.binary.color[1]);
-			    } else {
-				code = (*tile_proc) (dev,
-					&pdevc->colors.binary.b_tile->tiles,
-						     xi, yt, wi, iht,
-					      pdevc->colors.binary.color[0],
-					      pdevc->colors.binary.color[1],
-					    pdevc->phase.x, pdevc->phase.y);
-			    }
-		    }
-		    if (code < 0)
-			return code;
-		  mt:xrun = xl - xa;	/* original xa << 1 */
-		    if (psrc > stop) {
-			--psrc;
-			break;
-		    }
-		    run = psrc[-1];
-		}
-		dda_next(next.x);
-	    }
-	/* Fill the last run. */
-	if (*stop != 0 || !masked) {
-	    int xi = fixed2int_var(xrun);
-	    int wi, xei;
-
-	    dda_advance(next.x, endp - stop);
-	    wi = fixed2int_var(xl) - xi;
-	    if (wi <= 0) {
-		if (wi == 0)
-		    goto lmt;
-		xi += wi, wi = -wi;
-	    }
-	    if ((xei = xi + wi) > xmax || xi < xmin) {	/* Do X clipping */
-		if (xi < xmin)
-		    wi -= xmin - xi, xi = xmin;
-		if (xei > xmax)
-		    wi -= xei - xmax;
-		if (wi <= 0)
-		    goto lmt;
-	    }
-	    image_set_gray(*stop);
-	    code = gx_fill_rectangle_device_rop(xi, yt, wi, iht,
-						pdevc, dev, lop);
-	  lmt:;
+	    has_alpha =
+		trans_black != (*dev_proc(sdev, map_rgb_alpha_color))
+		(sdev, (gx_color_value) 0, (gx_color_value) 0,
+		 (gx_color_value) 0, gx_max_color_value) &&
+		trans_black != (*dev_proc(sdev, map_rgb_alpha_color))
+		(sdev, gx_max_color_value, gx_max_color_value,
+		 gx_max_color_value, gx_max_color_value);
 	}
     }
-#undef xl
-    return (code < 0 ? code : 1);
+    idata.image.ColorSpace = pcs;
+    idata.image.Alpha =
+	(has_alpha ? gs_image_alpha_last : gs_image_alpha_none);
+    if (smat.yy < 0) {
+	/*
+	 * The source Y axis is reflected.  Reflect the mapping from
+	 * user space to source data.
+	 */
+	idata.image.ImageMatrix.ty += idata.image.Height *
+	    idata.image.ImageMatrix.yy;
+	idata.image.ImageMatrix.xy = -idata.image.ImageMatrix.xy;
+	idata.image.ImageMatrix.yy = -idata.image.ImageMatrix.yy;
+    }
+    if (!direct_copy)
+	code = (*dev_proc(dev, begin_typed_image))
+	    (dev, pis, pmat, (const gs_image_common_t *)&idata.image, NULL,
+	     pdcolor, pcpath, mem, &info);
+    if (code >= 0) {
+	int y;
+	gs_int_rect rect;
+	gs_get_bits_params_t params;
+	const byte *data;
+	uint offset = row_size - source_size;
+
+	rect = idata.bbox;
+	for (y = 0; code >= 0 && y < idata.image.Height; ++y) {
+	    gs_int_rect *unread = 0;
+	    int num_unread;
+
+/****** y COMPUTATION IS ROUNDED -- WRONG ******/
+	    rect.q.y = rect.p.y + 1;
+	    /* Insist on x_offset = 0 to simplify the conversion loop. */
+	    params.options =
+		GB_ALIGN_ANY | (GB_RETURN_COPY | GB_RETURN_POINTER) |
+		GB_OFFSET_0 | (GB_RASTER_STANDARD | GB_RASTER_ANY) |
+		GB_PACKING_CHUNKY;
+	    if (pixel_copy) {
+		params.options |= GB_COLORS_NATIVE;
+		params.data[0] = row + offset;
+		code = (*dev_proc(sdev, get_bits_rectangle))
+		    (sdev, &rect, &params, &unread);
+		if (code < 0)
+		    break;
+		num_unread = code;
+		data = params.data[0];
+		if (direct_copy) {
+		    /*
+		     * Copy the pixels directly to the destination.
+		     * We know that the transformation is only a translation,
+		     * but we must handle an inverted destination Y axis.
+		     */
+		    code = (*dev_proc(dev, copy_color))
+			(dev, data, 0, row_size, gx_no_bitmap_id,
+			 (int)(dmat.tx - idata.image.ImageMatrix.tx),
+			 (int)(dmat.ty - idata.image.ImageMatrix.ty +
+			       (dmat.yy < 0 ? ~y : y)),
+			 idata.image.Width, 1);
+		    continue;
+		}
+	    } else {
+		/*
+		 * Convert the pixels to pure colors.  This may be very
+		 * slow and painful.  Eventually we will use indexed color for
+		 * narrow pixels.
+		 */
+		/* Always use RGB source color for now. */
+		params.options |=
+		    GB_COLORS_RGB | GB_DEPTH_8 |
+		    (has_alpha ? GB_ALPHA_LAST : GB_ALPHA_NONE);
+		params.data[0] = row;
+		code = (*dev_proc(sdev, get_bits_rectangle))
+		    (sdev, &rect, &params, &unread);
+		if (code < 0)
+		    break;
+		num_unread = code;
+		data = params.data[0];
+	    }
+	    if (num_unread > 0 && pim->UnpaintedPath) {
+		/* Add the rectangle(s) to the unpainted path. */
+		int i;
+
+		for (i = 0; code >= 0 && i < num_unread; ++i)
+		    code = gx_path_add_rectangle(pim->UnpaintedPath,
+						 int2fixed(unread[i].p.x),
+						 int2fixed(unread[i].p.y),
+						 int2fixed(unread[i].q.x),
+						 int2fixed(unread[i].q.y));
+		gs_free_object(dev->memory, unread, "UnpaintedPath unread");
+	    }
+	    code = gx_device_image_data(dev, info, &data, 0, row_size, 1);
+	    rect.p.y = rect.q.y;
+	}
+	if (!direct_copy) {
+	    if (code >= 0)
+		code = gx_device_end_image(dev, info, true);
+	    else
+		discard(gx_device_end_image(dev, info, false));
+	}
+    }
+    gs_free_object(mem, row, "gx_begin_image2");
+    return code;
 }

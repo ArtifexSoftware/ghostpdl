@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsstate.c */
+/*Id: gsstate.c  */
 /* Miscellaneous graphics state operators for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"
@@ -25,6 +25,7 @@
 #include "gsutil.h"		/* for gs_next_ids */
 #include "gzstate.h"
 #include "gxcspace.h"		/* here for gscolor2.h */
+#include "gsalpha.h"
 #include "gscolor2.h"
 #include "gscoord.h"		/* for gs_initmatrix */
 #include "gscie.h"
@@ -41,15 +42,14 @@
 /* The following should include a 'const', but for some reason */
 /* the Watcom compiler won't accept it, even though it happily accepts */
 /* the same construct everywhere else. */
-extern /*const */ gx_color_map_procs *cmap_procs_default;
+extern /*const */ gx_color_map_procs *const cmap_procs_default;
 
 /* Forward references */
-private gs_state *gstate_alloc(P2(gs_memory_t *, client_name_t));
-private void gstate_set_contents(P2(gs_state *, gs_state_contents *));
+private gs_state *gstate_alloc(P3(gs_memory_t *, client_name_t,
+				  const gs_state *));
 private gs_state *gstate_clone(P4(gs_state *, gs_memory_t *, client_name_t,
 				  gs_state_copy_reason_t));
 private void gstate_free_contents(P1(gs_state *));
-private void gstate_share_paths(P1(const gs_state *));
 private int gstate_copy(P4(gs_state *, const gs_state *,
 			   gs_state_copy_reason_t, client_name_t));
 
@@ -92,41 +92,21 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *              pattern_cache, which is associated with the entire
  *                stack, is allocated when first needed, and currently
  *                is never freed;
- */
-#ifdef DPNEXT
-/*
- *            view_clip, which is associated with the current
+ *              view_clip, which is associated with the current
  *                save level (effectively, with the gstate sub-stack
- *                back to the save) and is managed specially;
- *              saved_view_clip, which is only used in the gstate on the
- *                top of a stack saved by 'save'.
- */
-#endif
-/* (4) Objects that are referenced directly by exactly one gstate and that
- *    are not referenced (except transiently) from any other object.
- *      These fall into three groups:
+ *                back to the save) and is managed specially.
  *
- *   (4a) Objects lumped into a single gs_state_contents object in order
- *      to reduce the load on the allocator for gsave and grestore.  Each
- *      gs_gstate_contents is referenced by exactly one gstate, and nowhere
- *      else.  We reference the individual members through pointers, just as
- *      though they were allocated individually, so that we wouldn't have to
- *      keep remembering to put & in front of references to its components,
- *      which would otherwise have to be embedded in the gstate object.
- *      Again, we do not allow non-transient references to the objects
- *      embedded in this object, aside from a single pointer from the gstate
- *      object to each embedded component.  Currently these are:
- *              path, clip_path, ccolor, dev_color
+ * (4) Objects that are referenced directly by exactly one gstate and that
+ *      are not referenced (except transiently) from any other object.
+ *      These fall into two groups:
  *
- *   (4b) Objects allocated individually:
- *              line_params.dash.pattern, color_space
- *      color_space is a special case because it is referenced both
- *      directly and also indirectly from image enumerators.
- *      line_params.dash.pattern is also a special case, because it is
- *      variable-length.  Otherwise, we could include these elements in
- *      the contents object (4a).
+ *   (4b) Objects allocated individually, for the given reason:
+ *              line_params.dash.pattern (variable-length),
+ *              color_space, path, clip_path, effective_clip.path,
+ *              ccolor, dev_color
+ *                  (may be referenced from image enumerators or elsewhere)
  *
- *   (4c) The "client data" for a gstate.  For the interpreter, this is
+ *   (4b) The "client data" for a gstate.  For the interpreter, this is
  *      the refs associated with the gstate, such as the screen procedures.
  *      Client-supplied procedures manage client data.
  *
@@ -135,103 +115,88 @@ private int gstate_copy(P4(gs_state *, const gs_state *,
  *      The individual routines that manipulate these are responsible
  *      for doing the right kind of reference counting or whatever.
  *      Currently:
- *              path and clip_path require gx_path_share/release,
- *                which use a 1-bit reference count;
+ *              path, clip_path, and (if different from both clip_path
+ *                and view_clip) effective_clip.path require
+ *                gx_path_assign/free, which uses a reference count;
  *              color_space and ccolor require cs_adjust_color/cspace_count
- *                or cs_adjust_counts, which use a full reference count;
+ *                or cs_adjust_counts, which use a reference count;
  *              dev_color has no references to storage that it owns.
  *      We count on garbage collection or restore to deallocate
  *        sub-objects of halftone.
  *
- * This situation is unnecessarily complicated.  We should get rid of
- * the contents object and use reference counting to manage individually
- * the objects it currently contains.  We should use full reference
- * counting for paths, and use the freeing procedure to release the
- * individual path elements.  However, making these changes runs a large
- * risk of introducing hard-to-find bugs, so we don't plan to make them
- * in the foreseeable future.
- *
- * Note that when we do a gsave, the newly allocated gstate doesn't
- * necessarily reference the related objects that we allocate at the same
- * time; in particular, the old contents go with the new gstate object and
- * vice versa.  The same is true of grestore.  However, when we allocate
- * gstates off-stack, the newly allocated gstate does reference the newly
- * allocated component objects.  Note also that setgstate / currentgstate
- * may produce gstates in which different allocators own different
- * sub-objects; this is OK, because restore guarantees that there won't
- * be any dangling pointers (as long as we don't allow pointers from
+ * Note that when after a gsave, the existing gstate references the related
+ * objects that we allocate at the same time, and the newly allocated gstate
+ * references the old related objects.  Similarly, during a grestore, we
+ * free the related objects referenced by the current gstate, but after the
+ * grestore, we free the saved gstate, not the current one.  However, when
+ * we allocate gstates off-stack, the newly allocated gstate does reference
+ * the newly allocated component objects.  Note also that setgstate /
+ * currentgstate may produce gstates in which different allocators own
+ * different sub-objects; this is OK, because restore guarantees that there
+ * won't be any dangling pointers (as long as we don't allow pointers from
  * global gstates to local objects).
  */
 
-/* The structure for allocating (most of) the contents of a gstate */
-/* all at once.  The typedef is in gzstate.c. */
-struct gs_state_contents_s {
-    gx_path path;
-    gx_clip_path clip_path;
-    gs_client_color ccolor;
-    gx_device_color dev_color;
-};
+/*
+ * Enumerate the pointers in a graphics state, other than the ones in the
+ * imager state, and device, which must be handled specially.
+ */
+#define gs_state_do_ptrs(m)\
+  m(0,saved) m(1,path) m(2,clip_path) m(3,view_clip) m(4,effective_clip_path)\
+  m(5,color_space) m(6,ccolor) m(7,dev_color)\
+  m(8,font) m(9,root_font) m(10,show_gstate) /*m(---,device)*/\
+  m(11,client_data)
+#define gs_state_num_ptrs 12
 
-/* Enumerate the pointers in a graphics state, other than the ones */
-/* that point to the gs_state_contents and the ones in the imager state. */
-#ifdef DPNEXT
-#define gs_state_do_ptrs(m)\
-  m(0,saved) m(1,contents)\
-  /*m(---,path)*/ /*m(---,clip_path)*/\
-  m(2,color_space)\
-  /*m(---,client_color)*/ /*m(---,dev_color)*/\
-  m(3,font) m(4,root_font) m(5,show_gstate) /*m(---,device)*/\
-  m(6,client_data) m(7,view_clip) m(8,saved_view_clip)
-#define gs_state_num_ptrs 9
-#else
-#define gs_state_do_ptrs(m)\
-  m(0,saved) m(1,contents)\
-  /*m(---,path)*/ /*m(---,clip_path)*/\
-  m(2,color_space)\
-  /*m(---,client_color)*/ /*m(---,dev_color)*/\
-  m(3,font) m(4,root_font) m(5,show_gstate) /*m(---,device)*/\
-  m(6,client_data)
-#define gs_state_num_ptrs 7
-#endif
-/* Enumerate the pointers to the gs_state_contents. */
-#define gs_state_do_contents_ptrs(m)\
-  m(0,path) m(1,clip_path) m(2,ccolor) m(3,dev_color)
+/*
+ * Define these elements of the graphics state that are allocated
+ * individually for each state, except for line_params.dash.pattern.
+ * Note that effective_clip_shared is not on the list.
+ */
+typedef struct gs_state_parts_s {
+    gx_path *path;
+    gx_clip_path *clip_path;
+    gx_clip_path *effective_clip_path;
+    gs_color_space *color_space;
+    gs_client_color *ccolor;
+    gx_device_color *dev_color;
+} gs_state_parts;
+
+#define GSTATE_ASSIGN_PARTS(pto, pfrom)\
+  ((pto)->path = (pfrom)->path, (pto)->clip_path = (pfrom)->clip_path,\
+   (pto)->effective_clip_path = (pfrom)->effective_clip_path,\
+   (pto)->color_space = (pfrom)->color_space,\
+   (pto)->ccolor = (pfrom)->ccolor, (pto)->dev_color = (pfrom)->dev_color)
 
 /* GC descriptors */
 private_st_line_params();
 private_st_imager_state();
+private_st_imager_state_shared();
 private_st_gs_state();
-#ifdef DPNEXT
-private_st_gx_clip_state();
-#endif
 
 /* GC procedures for gs_imager_state */
 #define pis ((gs_imager_state *)vptr)
 private 
 ENUM_PTRS_BEGIN(imager_state_enum_ptrs) ENUM_SUPER(gs_imager_state, st_line_params, line_params, st_imager_state_num_ptrs - st_line_params_num_ptrs);
 
-#define e1(i,elt) ENUM_PTR(i,gs_imager_state,elt);
+ENUM_PTR(0, gs_imager_state, shared);
+#define e1(i,elt) ENUM_PTR(i+1,gs_imager_state,elt);
 gs_cr_state_do_ptrs(e1)
 #undef e1
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(imager_state_reloc_ptrs)
 {
     RELOC_SUPER(gs_imager_state, st_line_params, line_params);
+    RELOC_PTR(gs_imager_state, shared);
 #define r1(i,elt) RELOC_PTR(gs_imager_state,elt);
     gs_cr_state_do_ptrs(r1)
 #undef r1
 } RELOC_PTRS_END
 #undef pis
 
-/* Components of the graphics state */
-gs_private_st_composite(st_gs_state_contents, gs_state_contents,
-  "gs_state_contents", state_contents_enum_ptrs, state_contents_reloc_ptrs);
-
 /* GC procedures for gs_state */
 #define gsvptr ((gs_state *)vptr)
-private 
-ENUM_PTRS_BEGIN(gs_state_enum_ptrs) ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 1);
-
+private ENUM_PTRS_BEGIN(gs_state_enum_ptrs) ENUM_PREFIX(st_imager_state, gs_state_num_ptrs + 1);
 #define e1(i,elt) ENUM_PTR(i,gs_state,elt);
 gs_state_do_ptrs(e1)
 case gs_state_num_ptrs:	/* handle device specially */
@@ -241,63 +206,19 @@ ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(gs_state_reloc_ptrs)
 {
     RELOC_PREFIX(st_imager_state);
-    {				/* Save the contents pointer before relocation. */
-	byte *cont = (byte *) gsvptr->contents;
-	long reloc;
-
+    {
 #define r1(i,elt) RELOC_PTR(gs_state,elt);
 	gs_state_do_ptrs(r1)
 #undef r1
 	    gsvptr->device = gx_device_reloc_ptr(gsvptr->device, gcst);
-	/* Now relocate the pointers into the contents. */
-	reloc = cont - (byte *) gsvptr->contents;
-#define r1(i,elt)\
-  gsvptr->elt = (void *)((byte *)gsvptr->elt - reloc);
-	gs_state_do_contents_ptrs(r1)
-#undef r1
     }
-} RELOC_PTRS_END
-#undef gsvptr
-
-/* GC procedures for gs_state_contents */
-#define cptr ((gs_state_contents *)vptr)
-private ENUM_PTRS_BEGIN_PROC(state_contents_enum_ptrs)
-{
-    gs_ptr_type_t ret;
-
-#define next_comp(np, st, e)\
-  if ( index < np ) { ret = (*st.enum_ptrs)(&cptr->e, sizeof(cptr->e), index, pep); goto rx; }\
-  index -= np
-#define last_comp(np, st, e)\
-  return (*st.enum_ptrs)(&cptr->e, sizeof(cptr->e), index, pep)
-    next_comp(st_path_max_ptrs, st_path, path);
-    next_comp(st_clip_path_max_ptrs, st_clip_path, clip_path);
-    next_comp(st_client_color_max_ptrs, st_client_color, ccolor);
-    last_comp(st_device_color_max_ptrs, st_device_color, dev_color);
-#undef next_comp
-#undef last_comp
-  rx:if (ret == 0) {		/* A component ran out of pointers early. */
-	/* Just return a null so we can keep going. */
-	*pep = 0;
-	return ptr_struct_type;
-    }
-    return ret;
-    ENUM_PTRS_END_PROC
-}
-private 
-RELOC_PTRS_BEGIN(state_contents_reloc_ptrs)
-{
-    (*st_path.reloc_ptrs) (&cptr->path, sizeof(gx_path), gcst);
-    (*st_clip_path.reloc_ptrs) (&cptr->clip_path, sizeof(gx_clip_path), gcst);
-    (*st_client_color.reloc_ptrs) (&cptr->ccolor, sizeof(gs_client_color), gcst);
-    (*st_device_color.reloc_ptrs) (&cptr->dev_color, sizeof(gx_device_color), gcst);
 }
 RELOC_PTRS_END
-#undef cptr
+#undef gsvptr
 
 /* Copy client data, using the copy_for procedure if available, */
 /* the copy procedure otherwise. */
-private int near
+private int
 gstate_copy_client_data(gs_state * pgs, void *dto, void *dfrom,
 			gs_state_copy_reason_t reason)
 {
@@ -320,6 +241,22 @@ int
 gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 {
     pis->memory = mem;
+    /* Preallocate color spaces. */
+    {
+	int code;
+	gs_imager_state_shared_t *shared;
+
+	rc_alloc_struct_1(shared, gs_imager_state_shared_t,
+			  &st_imager_state_shared, mem,
+			  return_error(gs_error_VMerror),
+			  "gs_imager_state_init(shared)");
+	pis->shared = shared;
+	if ((code = gs_cspace_build_DeviceGray(&shared->cs_DeviceGray, mem)) < 0 ||
+	(code = gs_cspace_build_DeviceRGB(&shared->cs_DeviceRGB, mem)) < 0 ||
+	(code = gs_cspace_build_DeviceCMYK(&shared->cs_DeviceCMYK, mem)) < 0
+	    )
+	    return code;
+    }
     /* Skip halftone */
     {
 	int i;
@@ -355,45 +292,48 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 void
 gs_imager_state_release(gs_imager_state * pis)
 {
-    static const char cname[] = "gs_imager_state_release";
+    const char *const cname = "gs_imager_state_release";
 
-#define rcdecr(element)\
-  rc_decrement(pis->element, cname)
+#define RCDECR(element)\
+    rc_decrement(pis->element, cname)
 
-    rcdecr(cie_joint_caches);
-    rcdecr(set_transfer.colored.gray);
-    rcdecr(set_transfer.colored.blue);
-    rcdecr(set_transfer.colored.green);
-    rcdecr(set_transfer.colored.red);
-    rcdecr(undercolor_removal);
-    rcdecr(black_generation);
-    rcdecr(cie_render);
-#undef rcdecr
+    RCDECR(cie_joint_caches);
+    RCDECR(set_transfer.colored.gray);
+    RCDECR(set_transfer.colored.blue);
+    RCDECR(set_transfer.colored.green);
+    RCDECR(set_transfer.colored.red);
+    RCDECR(undercolor_removal);
+    RCDECR(black_generation);
+    RCDECR(cie_render);
+    RCDECR(shared);
+#undef RCDECR
 }
 
 /* Allocate and initialize a graphics state. */
 gs_state *
 gs_state_alloc(gs_memory_t * mem)
 {
-    gs_state *pgs = gstate_alloc(mem, "gs_state_alloc");
+    gs_state *pgs = gstate_alloc(mem, "gs_state_alloc", NULL);
 
     if (pgs == 0)
 	return 0;
     {
 	static const gs_imager_state gstate_initial =
-	{gs_imager_state_initial(1.0)};
+	{
+	    gs_imager_state_initial(1.0)
+	};
 
 	*(gs_imager_state *) pgs = gstate_initial;
     }
-    /* Just enough of the state is initialized at this point */
-    /* that it's OK to call gs_state_free if an allocation fails. */
+    /*
+     * Just enough of the state is initialized at this point
+     * that it's OK to call gs_state_free if an allocation fails.
+     */
     rc_alloc_struct_1(pgs->halftone, gs_halftone, &st_halftone, mem,
 		      goto fail, "gs_state_alloc(halftone)");
     pgs->saved = 0;
-    gstate_set_contents(pgs, pgs->contents);
 
-    /* Initialize the color rendering state, except for elements */
-    /* which are in the gs_state contents (halftone). */
+    /* Initialize the color rendering state. */
 
     pgs->halftone->type = ht_type_none;
     pgs->dev_ht = 0;
@@ -405,23 +345,19 @@ gs_state_alloc(gs_memory_t * mem)
 
     /* Initialize other things not covered by initgraphics */
 
-    gx_path_init(pgs->path, mem);
-    gx_cpath_init(pgs->clip_path, mem);
-#ifdef DPNEXT
-    rc_alloc_struct_1(pgs->view_clip, gx_clip_state, &st_gx_clip_state,
-		      mem, goto fail, "gs_state_alloc(view_clip)");
-    pgs->view_clip->path =
-	gs_alloc_struct(mem, gx_clip_path, &st_clip_path,
-			"gs_state_alloc(view_clip path)");
-    if (pgs->view_clip->path == 0)
-	goto fail;
-    gx_cpath_init(pgs->view_clip->path, mem);
-    pgs->saved_view_clip = 0;
-#endif
+    pgs->path = gx_path_alloc(mem, "gs_state_alloc(path)");
+    pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
+    pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
+    pgs->view_clip->rule = 0;	/* no clipping */
+    pgs->effective_clip_id = pgs->clip_path->id;
+    pgs->effective_view_clip_id = gs_no_id;
+    pgs->effective_clip_path = pgs->clip_path;
+    pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
     pgs->color_space->type = &gs_color_space_type_DeviceGray;
     gx_set_device_color_1(pgs);
     pgs->overprint = false;
+    pgs->device = 0;		/* setting device adjusts refcts */
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);
     gs_settransfer(pgs, null_transfer);
@@ -437,11 +373,13 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->show_gstate = 0;
     pgs->level = 0;
     pgs->client_data = 0;
-    if (gs_initgraphics(pgs) < 0) {	/* Something went very wrong */
+    if (gs_initgraphics(pgs) < 0) {
+	/* Something went very wrong */
 	return 0;
     }
     return pgs;
-  fail:gs_state_free(pgs);
+  fail:
+    gs_state_free(pgs);
     return 0;
 }
 
@@ -463,10 +401,7 @@ gs_state_client_data(const gs_state * pgs)
     return pgs->client_data;
 }
 
-/* Free a graphics state */
-#ifdef DPNEXT
-/* Note that we do not free the view clip path. */
-#endif
+/* Free a graphics state. */
 int
 gs_state_free(gs_state * pgs)
 {
@@ -484,8 +419,6 @@ gs_gsave(gs_state * pgs)
 
     if (pnew == 0)
 	return_error(gs_error_VMerror);
-    gx_path_share(pgs->path);
-    gx_cpath_share(pgs->clip_path);
     pgs->saved = pnew;
     if (pgs->show_gstate == pgs)
 	pgs->show_gstate = pnew->show_gstate = pnew;
@@ -497,37 +430,32 @@ gs_gsave(gs_state * pgs)
 
 /* Save the graphics state for a 'save'. */
 /* We cut the stack below the new gstate, and return the old one. */
-#ifdef DPNEXT
-/* In addition to an ordinary gsave, we un-share the view clip path. */
-#endif
+/* In addition to an ordinary gsave, we create a new view clip path. */
 int
 gs_gsave_for_save(gs_state * pgs, gs_state ** psaved)
 {
     int code;
+    gx_clip_path *old_cpath = pgs->view_clip;
+    gx_clip_path *new_cpath;
 
-#ifdef DPNEXT
-    gx_clip_path *new_cpath =
-    gs_alloc_struct(pgs->memory, gx_clip_path, &st_clip_path,
-		    "gs_gsave_for_save(view_clip path)");
-    gx_clip_path *old_cpath = pgs->view_clip->path;
-
-    if (new_cpath == 0)
-	return_error(gs_error_VMerror);
+    if (old_cpath) {
+	new_cpath =
+	    gx_cpath_alloc_shared(old_cpath, pgs->memory,
+				  "gs_gsave_for_save(view_clip)");
+	if (new_cpath == 0)
+	    return_error(gs_error_VMerror);
+    } else {
+	new_cpath = 0;
+    }
     code = gs_gsave(pgs);
     if (code < 0) {
-	gs_free_object(pgs->memory, new_cpath,
-		       "gs_gsave_for_save(view_clip path)");
+	if (new_cpath)
+	    gx_cpath_free(new_cpath, "gs_gsave_for_save(view_clip)");
 	return code;
     }
-    *new_cpath = *old_cpath;
-    gx_cpath_share(new_cpath);
-    pgs->saved->saved_view_clip = old_cpath;
-    pgs->view_clip->path = new_cpath;
-#else
-    code = gs_gsave(pgs);
-    if (code < 0)
-	return code;
-#endif
+    if (pgs->effective_clip_path == pgs->view_clip)
+	pgs->effective_clip_path = new_cpath;
+    pgs->view_clip = new_cpath;
     /* Cut the stack so we can't grestore past here. */
     *psaved = pgs->saved;
     pgs->saved = 0;
@@ -565,45 +493,34 @@ gs_grestore(gs_state * pgs)
 }
 
 /* Restore the graphics state for a 'restore', splicing the old stack */
-/* back on.  Note that we actually do 2 grestores. */
-#ifdef DPNEXT
-/* In addition to an ordinary grestore, we restore the view clip path. */
-#endif
+/* back on.  Note that we actually do a grestoreall + 2 grestores. */
 int
-gs_grestore2_for_restore(gs_state * pgs, gs_state * saved)
+gs_grestoreall_for_restore(gs_state * pgs, gs_state * saved)
 {
     int code;
 
-    /* Check that the caller has done a grestoreall. */
-    if (pgs->saved == 0 || pgs->saved->saved != 0)
-	return_error(gs_error_Fatal);
-#ifdef DPNEXT
-    {
-	gx_clip_path *cpath = pgs->view_clip->path;
-	gx_clip_path *saved_cpath = saved->saved_view_clip;
-
-	gx_cpath_release(cpath);
-	if (saved) {
-	    pgs->view_clip->path = saved_cpath;
-	    gs_free_object(pgs->memory, cpath,
-			   "grestore2_for_restore(view clip path)");
-	    saved->saved_view_clip = 0;
-	} else {
-	    gx_cpath_init(cpath, pgs->memory);
-	    cpath->rule = 0;
-	}
+    while (pgs->saved->saved) {
+	code = gs_grestore(pgs);
+	if (code < 0)
+	    return code;
     }
-#endif
+    /* Make sure we don't leave dangling pointers in the caches. */
+    gx_ht_clear_cache(pgs->ht_cache);
+    if (pgs->pattern_cache)
+	(*pgs->pattern_cache->free_all) (pgs->pattern_cache);
     pgs->saved->saved = saved;
     code = gs_grestore(pgs);
     if (code < 0)
 	return code;
+    if (pgs->view_clip) {
+	gx_cpath_free(pgs->view_clip, "gs_grestoreall_for_restore");
+	pgs->view_clip = 0;
+    }
     return gs_grestore(pgs);
 }
 
 
-/* Restore to the bottommost graphics state.  Also clear */
-/* the halftone caches, so stale pointers don't survive a restore. */
+/* Restore to the bottommost graphics state (at this save level). */
 int
 gs_grestoreall(gs_state * pgs)
 {
@@ -612,17 +529,13 @@ gs_grestoreall(gs_state * pgs)
     if (!pgs->saved)		/* shouldn't happen */
 	return gs_gsave(pgs);
     while (pgs->saved->saved) {
-	int code = gs_grestore(pgs);
-
+	code = gs_grestore(pgs);
 	if (code < 0)
 	    return code;
     }
     code = gs_grestore(pgs);
     if (code < 0)
 	return code;
-    gx_ht_clear_cache(pgs->ht_cache);
-    if (pgs->pattern_cache)
-	(*pgs->pattern_cache->free_all) (pgs->pattern_cache);
     return code;
 }
 
@@ -637,11 +550,12 @@ gs_state_copy(gs_state * pgs, gs_memory_t * mem)
 {
     gs_state *pnew;
 
-#if 0
-    if (mem == pgs->memory)
-#endif
-	gstate_share_paths(pgs);
+    /* Prevent 'capturing' the view clip path. */
+    gx_clip_path *view_clip = pgs->view_clip;
+
+    pgs->view_clip = 0;
     pnew = gstate_clone(pgs, mem, "gs_gstate", copy_for_gstate);
+    pgs->view_clip = view_clip;
     if (pnew == 0)
 	return 0;
     pnew->saved = 0;
@@ -667,25 +581,34 @@ gs_copygstate(gs_state * pto, const gs_state * pfrom)
 int
 gs_currentgstate(gs_state * pto, const gs_state * pgs)
 {
-    gstate_share_paths(pgs);
-    return gstate_copy(pto, pgs, copy_for_currentgstate, "gs_currentgstate");
+    int code =
+    gstate_copy(pto, pgs, copy_for_currentgstate, "gs_currentgstate");
+
+    if (code >= 0)
+	pto->view_clip = 0;
+    return code;
 }
 
 /* Restore the current graphics state from a previously allocated one. */
 int
 gs_setgstate(gs_state * pgs, const gs_state * pfrom)
-{				/*
-				 * The implementation is the same as currentgstate,
-				 * except we must preserve the saved pointer, the level,
-				 * and possibly the show_gstate.
-				 */
+{
+    /*
+     * The implementation is the same as currentgstate,
+     * except we must preserve the saved pointer, the level,
+     * the view clip, and possibly the show_gstate.
+     */
     gs_state *saved_show = pgs->show_gstate;
     int level = pgs->level;
-    int code = gstate_copy(pgs, pfrom, copy_for_setgstate, "gs_setgstate");
+    gx_clip_path *view_clip = pgs->view_clip;
+    int code;
 
+    pgs->view_clip = 0;		/* prevent refcount decrementing */
+    code = gstate_copy(pgs, pfrom, copy_for_setgstate, "gs_setgstate");
     if (code < 0)
 	return code;
     pgs->level = level;
+    pgs->view_clip = view_clip;
     pgs->show_gstate =
 	(pgs->show_gstate == pfrom ? pgs : saved_show);
     return 0;
@@ -759,13 +682,13 @@ gs_initgraphics(gs_state * pgs)
 int
 gs_setfilladjust(gs_state * pgs, floatp adjust_x, floatp adjust_y)
 {
-#define adjust_fill_adjust(v)\
-  if ( v < 0 ) v = 0; else if ( v > 0.5 ) v = 0.5
-    adjust_fill_adjust(adjust_x);
-    pgs->fill_adjust.x = float2fixed(adjust_x);
-    adjust_fill_adjust(adjust_y);
-    pgs->fill_adjust.y = float2fixed(adjust_y);
+#define CLAMP_TO_HALF(v)\
+    ((v) <= 0 ? fixed_0 : (v) >= 0.5 ? fixed_half : float2fixed(v));
+
+    pgs->fill_adjust.x = CLAMP_TO_HALF(adjust_x);
+    pgs->fill_adjust.y = CLAMP_TO_HALF(adjust_y);
     return 0;
+#undef CLAMP_TO_HALF
 }
 
 /* currentfilladjust */
@@ -793,41 +716,80 @@ gs_currentlimitclamp(const gs_state * pgs)
 
 /* ------ Internal routines ------ */
 
-/* Allocate a gstate and its contents. */
+/* Free the privately allocated parts of a gstate. */
+private void
+gstate_free_parts(const gs_state * parts, gs_memory_t * mem, client_name_t cname)
+{
+    gs_free_object(mem, parts->dev_color, cname);
+    gs_free_object(mem, parts->ccolor, cname);
+    gs_free_object(mem, parts->color_space, cname);
+    if (!parts->effective_clip_shared)
+	gx_cpath_free(parts->effective_clip_path, cname);
+    gx_cpath_free(parts->clip_path, cname);
+    gx_path_free(parts->path, cname);
+}
+
+/* Allocate the privately allocated parts of a gstate. */
+private int
+gstate_alloc_parts(gs_state * parts, const gs_state * shared,
+		   gs_memory_t * mem, client_name_t cname)
+{
+    parts->path =
+	(shared ?
+	 gx_path_alloc_shared(shared->path, mem,
+			      "gstate_alloc_parts(path)") :
+	 gx_path_alloc(mem, "gstate_alloc_parts(path)"));
+    parts->clip_path =
+	(shared ?
+	 gx_cpath_alloc_shared(shared->clip_path, mem,
+			       "gstate_alloc_parts(clip_path)") :
+	 gx_cpath_alloc(mem, "gstate_alloc_parts(clip_path)"));
+    if (!shared || shared->effective_clip_shared) {
+	parts->effective_clip_path = parts->clip_path;
+	parts->effective_clip_shared = true;
+    } else {
+	parts->effective_clip_path =
+	    gx_cpath_alloc_shared(shared->effective_clip_path, mem,
+				  "gstate_alloc_parts(effective_clip_path)");
+	parts->effective_clip_shared = false;
+    }
+    parts->color_space =
+	gs_alloc_struct(mem, gs_color_space, &st_color_space, cname);
+    parts->ccolor =
+	gs_alloc_struct(mem, gs_client_color, &st_client_color, cname);
+    parts->dev_color =
+	gs_alloc_struct(mem, gx_device_color, &st_device_color, cname);
+    if (parts->path == 0 || parts->clip_path == 0 ||
+	parts->effective_clip_path == 0 ||
+	parts->color_space == 0 || parts->ccolor == 0 ||
+	parts->dev_color == 0
+	) {
+	gstate_free_parts(parts, mem, cname);
+	return_error(gs_error_VMerror);
+    }
+    return 0;
+}
+
+/*
+ * Allocate a gstate and its contents.
+ * If pfrom is not NULL, the path, clip_path, and (if distinct from both
+ * clip_path and view_clip) effective_clip_path share the segments of
+ * pfrom's corresponding path(s).
+ */
 private gs_state *
-gstate_alloc(gs_memory_t * mem, client_name_t cname)
+gstate_alloc(gs_memory_t * mem, client_name_t cname, const gs_state * pfrom)
 {
     gs_state *pgs =
     gs_alloc_struct(mem, gs_state, &st_gs_state, cname);
-    gs_state_contents *cont =
-    gs_alloc_struct(mem, gs_state_contents, &st_gs_state_contents, cname);
-    gs_color_space *pcs =
-    gs_alloc_struct(mem, gs_color_space, &st_color_space, cname);
 
-    if (pgs == 0 || cont == 0 || pcs == 0) {
-	gs_free_object(mem, pcs, cname);
-	gs_free_object(mem, cont, cname);
+    if (pgs == 0)
+	return 0;
+    if (gstate_alloc_parts(pgs, pfrom, mem, cname) < 0) {
 	gs_free_object(mem, pgs, cname);
 	return 0;
     }
     pgs->memory = mem;
-    pgs->contents = cont;
-    pgs->color_space = pcs;
     return pgs;
-}
-
-/* Set the contents pointers of a gstate. */
-private void
-gstate_set_contents(gs_state * pgs, gs_state_contents * cont)
-{
-    pgs->contents = cont;
-#define gset(element)\
-  pgs->element = &cont->element;
-    gset(path);
-    gset(clip_path);
-    gset(ccolor);
-    gset(dev_color);
-#undef gset
 }
 
 /* Copy the dash pattern from one gstate to another. */
@@ -841,25 +803,18 @@ gstate_copy_dash(gs_state * pto, const gs_state * pfrom)
 
 /* Clone an existing graphics state. */
 /* Return 0 if the allocation fails. */
-/* The client is responsible for calling gx_[c]path_share on */
-/* whichever of the old and new paths is appropriate. */
 /* If reason is for_gsave, the clone refers to the old contents, */
 /* and we switch the old state to refer to the new contents. */
 private gs_state *
 gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	     gs_state_copy_reason_t reason)
 {
-    gs_state_contents *cfrom = pfrom->contents;
-    gs_color_space *csfrom = pfrom->color_space;
-    gs_state *pgs = gstate_alloc(mem, cname);
-    gs_state_contents *cont;
-    gs_color_space *pcs;
+    gs_state *pgs = gstate_alloc(mem, cname, pfrom);
+    gs_state_parts parts;
 
     if (pgs == 0)
 	return 0;
-    cont = pgs->contents;
-    pcs = pgs->color_space;
-    /* Increment references from gstate object. */
+    GSTATE_ASSIGN_PARTS(&parts, pgs);
     *pgs = *pfrom;
     /* Copy the dash pattern if necessary. */
     if (pgs->line_params.dash.pattern) {
@@ -871,8 +826,7 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
 	    goto fail;
     }
     if (pgs->client_data != 0) {
-	void *pdata = pgs->client_data =
-	(*pgs->client_procs.alloc) (mem);
+	void *pdata = pgs->client_data = (*pgs->client_procs.alloc) (mem);
 
 	if (pdata == 0 ||
 	 gstate_copy_client_data(pgs, pdata, pfrom->client_data, reason) < 0
@@ -889,30 +843,26 @@ gstate_clone(gs_state * pfrom, gs_memory_t * mem, client_name_t cname,
     rc_increment(pgs->black_generation);
     rc_increment(pgs->undercolor_removal);
     rc_increment(pgs->cie_joint_caches);
+    rc_increment(pgs->device);
+    *parts.color_space = *pfrom->color_space;
+    *parts.ccolor = *pfrom->ccolor;
+    *parts.dev_color = *pfrom->dev_color;
     if (reason == copy_for_gsave) {
 	float *dfrom = pfrom->line_params.dash.pattern;
 	float *dto = pgs->line_params.dash.pattern;
 
-	gstate_set_contents(pgs, cfrom);
-	pgs->color_space = csfrom;
+	GSTATE_ASSIGN_PARTS(pfrom, &parts);
 	pgs->line_params.dash.pattern = dfrom;
-	gstate_set_contents(pfrom, cont);
-	pfrom->color_space = pcs;
 	pfrom->line_params.dash.pattern = dto;
     } else {
-	gstate_set_contents(pgs, cont);
-	pgs->color_space = pcs;
+	GSTATE_ASSIGN_PARTS(pgs, &parts);
     }
-    *cont = *cfrom;
-    *pcs = *csfrom;
     cs_adjust_counts(pgs, 1);
-#ifdef DPNEXT
-    rc_increment(pgs->view_clip);
-#endif
     return pgs;
-  fail:gs_free_object(mem, pgs->line_params.dash.pattern, cname);
-    gs_free_object(mem, pcs, cname);
-    gs_free_object(mem, cont, cname);
+  fail:
+    gs_free_object(mem, pgs->line_params.dash.pattern, cname);
+    GSTATE_ASSIGN_PARTS(pgs, &parts);
+    gstate_free_parts(pgs, mem, cname);
     gs_free_object(mem, pgs, cname);
     return 0;
 }
@@ -923,23 +873,23 @@ private void
 gstate_free_contents(gs_state * pgs)
 {
     gs_memory_t *mem = pgs->memory;
-    static const char cname[] = "gstate_free_contents";
     gx_device_halftone *pdht = pgs->dev_ht;
+    const char *const cname = "gstate_free_contents";
 
-#define rcdecr(element)\
-  rc_decrement(pgs->element, cname)
+#define RCDECR(element)\
+    rc_decrement(pgs->element, cname)
 
-    gx_path_release(pgs->path);
-    gx_cpath_release(pgs->clip_path);
-    rcdecr(cie_joint_caches);
-    rcdecr(set_transfer.colored.gray);
-    rcdecr(set_transfer.colored.blue);
-    rcdecr(set_transfer.colored.green);
-    rcdecr(set_transfer.colored.red);
-    rcdecr(undercolor_removal);
-    rcdecr(black_generation);
-    rcdecr(cie_render);
-    if (pdht != 0 && pdht->rc.ref_count == 1) {		/* Make sure we don't leave dangling pointers in the cache. */
+    RCDECR(device);
+    RCDECR(cie_joint_caches);
+    RCDECR(set_transfer.colored.gray);
+    RCDECR(set_transfer.colored.blue);
+    RCDECR(set_transfer.colored.green);
+    RCDECR(set_transfer.colored.red);
+    RCDECR(undercolor_removal);
+    RCDECR(black_generation);
+    RCDECR(cie_render);
+    if (pdht != 0 && pdht->rc.ref_count == 1) {
+	/* Make sure we don't leave dangling pointers in the cache. */
 	gx_ht_cache *pcache = pgs->ht_cache;
 
 	if (pcache->order.bits == pdht->order.bits ||
@@ -948,88 +898,14 @@ gstate_free_contents(gs_state * pgs)
 	    gx_ht_clear_cache(pcache);
 	gx_device_halftone_release(pdht, pdht->rc.memory);
     }
-    rcdecr(dev_ht);
-    rcdecr(halftone);
-#ifdef DPNEXT
-    rcdecr(view_clip);
-#endif
+    RCDECR(dev_ht);
+    RCDECR(halftone);
     cs_adjust_counts(pgs, -1);
     if (pgs->client_data != 0)
 	(*pgs->client_procs.free) (pgs->client_data, mem);
     gs_free_object(mem, pgs->line_params.dash.pattern, cname);
-    gs_free_object(mem, pgs->color_space, cname);
-    gs_free_object(mem, pgs->contents, cname);
-#undef rcdecr
-}
-
-/*
- * Mark both the old and new paths as shared when copying a gstate off-stack.
- * If the old path was previously shared, we must search up
- * the graphics state stack so we can mark its original ancestor
- * as shared, because the off-stack copy defeats the one-bit
- * reference count.
- */
-private void
-gstate_share_paths(const gs_state * pgs)
-{
-    gx_path *ppath = pgs->path;
-    gx_clip_path *pcpath = pgs->clip_path;
-
-    if (ppath->shares_segments) {
-	const gs_state *pcur;
-	const gs_state *prev;
-	const subpath *first;
-
-	for (pcur = pgs, first = ppath->first_subpath;
-	     (prev = pcur->saved) != 0 &&
-	     prev->path->first_subpath == first;
-	     pcur = prev
-	    )
-	    if (!prev->path->shares_segments) {
-		gx_path_share(prev->path);
-		break;
-	    }
-    } else
-	gx_path_share(ppath);
-    /*
-     * If the clip path is a rectangle, free its path representation
-     * rather than copying it.
-     */
-    if (pcpath->list.count <= 1 && pcpath->segments_valid) {
-	gx_path_release(&pcpath->path);
-	pcpath->segments_valid = false;
-    }
-    if (pcpath->path.shares_segments) {
-	const gs_state *pcur;
-	const gs_state *prev;
-	const subpath *first;
-
-	for (pcur = pgs, first = pcpath->path.first_subpath;
-	     (prev = pcur->saved) != 0 &&
-	     prev->clip_path->path.first_subpath == first;
-	     pcur = prev
-	    )
-	    if (!prev->clip_path->path.shares_segments) {
-		gx_cpath_share(prev->clip_path);
-		break;
-	    }
-    }
-    if (pcpath->shares_list) {
-	const gs_state *pcur;
-	const gs_state *prev;
-	const gx_clip_rect *head;
-
-	for (pcur = pgs, head = pcpath->list.head;
-	     (prev = pcur->saved) != 0 &&
-	     prev->clip_path->list.head == head;
-	     pcur = prev
-	    )
-	    if (!prev->clip_path->shares_list) {
-		gx_cpath_share(prev->clip_path);
-		break;
-	    }
-    }
-    gx_cpath_share(pcpath);
+    gstate_free_parts(pgs, mem, cname);
+#undef RCDECR
 }
 
 /* Copy one gstate to another. */
@@ -1037,41 +913,58 @@ private int
 gstate_copy(gs_state * pto, const gs_state * pfrom,
 	    gs_state_copy_reason_t reason, client_name_t cname)
 {
-    gs_state_contents *cto = pto->contents;
-    gs_color_space *csto = pto->color_space;
+    gs_state_parts parts;
 
+    GSTATE_ASSIGN_PARTS(&parts, pto);
     /* Copy the dash pattern if necessary. */
     if (pfrom->line_params.dash.pattern || pto->line_params.dash.pattern) {
 	int code = gstate_copy_dash(pto, pfrom);
 
 	if (code < 0)
-	    return 0;
+	    return code;
     }
-    /* It's OK to decrement the counts before incrementing them, */
-    /* because anything that is going to survive has a count of */
-    /* at least 2 (pto and somewhere else) initially. */
-    /* Handle references from contents. */
+    /*
+     * It's OK to decrement the counts before incrementing them,
+     * because anything that is going to survive has a count of
+     * at least 2 (pto and somewhere else) initially.
+     * Handle references from contents.
+     */
     cs_adjust_counts(pto, -1);
-    gx_path_release(pto->path);
-    gx_cpath_release(pto->clip_path);
-    *cto = *pfrom->contents;
-    *csto = *pfrom->color_space;
+    gx_path_assign_preserve(pto->path, pfrom->path);
+    gx_cpath_assign_preserve(pto->clip_path, pfrom->clip_path);
+    /*
+     * effective_clip_shared will be copied, but we need to do the
+     * right thing with effective_clip_path.
+     */
+    if (pfrom->effective_clip_shared) {
+	/*
+	 * pfrom->effective_clip_path is either pfrom->view_clip or
+	 * pfrom->clip_path.
+	 */
+	parts.effective_clip_path =
+	    (pfrom->effective_clip_path == pfrom->view_clip ?
+	     pto->view_clip : parts.clip_path);
+    } else
+	gx_cpath_assign_preserve(pto->effective_clip_path,
+				 pfrom->effective_clip_path);
+    *parts.color_space = *pfrom->color_space;
+    *parts.ccolor = *pfrom->ccolor;
+    *parts.dev_color = *pfrom->dev_color;
     cs_adjust_counts(pto, 1);
-    gx_path_share(pto->path);
-    gx_cpath_share(pto->clip_path);
     /* Handle references from gstate object. */
-#define rccopy(element)\
-  rc_pre_assign(pto->element, pfrom->element, cname)
-    rccopy(cie_joint_caches);
-    rccopy(set_transfer.colored.gray);
-    rccopy(set_transfer.colored.blue);
-    rccopy(set_transfer.colored.green);
-    rccopy(set_transfer.colored.red);
-    rccopy(undercolor_removal);
-    rccopy(black_generation);
-    rccopy(cie_render);
-    rccopy(dev_ht);
-    rccopy(halftone);
+#define RCCOPY(element)\
+    rc_pre_assign(pto->element, pfrom->element, cname)
+    RCCOPY(device);
+    RCCOPY(cie_joint_caches);
+    RCCOPY(set_transfer.colored.gray);
+    RCCOPY(set_transfer.colored.blue);
+    RCCOPY(set_transfer.colored.green);
+    RCCOPY(set_transfer.colored.red);
+    RCCOPY(undercolor_removal);
+    RCCOPY(black_generation);
+    RCCOPY(cie_render);
+    RCCOPY(dev_ht);
+    RCCOPY(halftone);
     {
 	struct gx_pattern_cache_s *pcache = pto->pattern_cache;
 	void *pdata = pto->client_data;
@@ -1086,17 +979,14 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	pto->line_params.dash.pattern = pattern;
 	if (pto->pattern_cache == 0)
 	    pto->pattern_cache = pcache;
-	if (pfrom->client_data != 0) {	/* We need to break 'const' here. */
+	if (pfrom->client_data != 0) {
+	    /* We need to break 'const' here. */
 	    gstate_copy_client_data((gs_state *) pfrom, pdata,
 				    pfrom->client_data, reason);
 	}
     }
-    gstate_set_contents(pto, cto);
-    pto->color_space = csto;
-#ifdef DPNEXT
-    rccopy(view_clip);
-#endif
-#undef rccopy
+    GSTATE_ASSIGN_PARTS(pto, &parts);
+#undef RCCOPY
     pto->show_gstate =
 	(pfrom->show_gstate == pfrom ? pto : 0);
     return 0;

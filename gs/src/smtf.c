@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* smtf.c */
+/*Id: smtf.c  */
 /* MoveToFront filters */
 #include "stdio_.h"
 #include "strimpl.h"
@@ -26,12 +26,11 @@
 
 private_st_MTF_state();
 
-#define ss ((stream_MTF_state *)st)
-
 /* Initialize */
 private int
 s_MTF_init(stream_state * st)
 {
+    stream_MTF_state *const ss = (stream_MTF_state *) st;
     int i;
 
     for (i = 0; i < 256; i++)
@@ -44,6 +43,7 @@ private int
 s_MTFE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_MTF_state *const ss = (stream_MTF_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     const byte *rlimit = pr->limit;
@@ -78,6 +78,7 @@ private int
 s_MTFD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_MTF_state *const ss = (stream_MTF_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     const byte *rlimit = pr->limit;
@@ -89,6 +90,7 @@ s_MTFD_process(stream_state * st, stream_cursor_read * pr,
     byte
 	v0 = ss->prev.b[0], v1 = ss->prev.b[1],
 	v2 = ss->prev.b[2], v3 = ss->prev.b[3];
+
     while (p < rlimit) {
 	byte first;
 
@@ -175,5 +177,3 @@ const stream_template s_MTFD_template =
 {&st_MTF_state, s_MTF_init, s_MTFD_process, 1, 1,
  NULL, NULL, s_MTF_init
 };
-
-#undef ss

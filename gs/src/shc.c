@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* shc.c */
+/*Id: shc.c  */
 /* Support code for shc.h */
 #include "std.h"
 #include "scommon.h"

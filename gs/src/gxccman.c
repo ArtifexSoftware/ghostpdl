@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxccman.c */
+/*Id: gxccman.c  */
 /* Character cache management routines for Ghostscript library */
 #include "gx.h"
 #include "memory_.h"
@@ -55,7 +55,7 @@ private RELOC_PTRS_BEGIN(cc_ptr_reloc_ptrs)
 RELOC_PTRS_END
 
 /* Forward references */
-private gx_xfont * lookup_xfont_by_name(P6(gx_device *, gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *));
+private gx_xfont * lookup_xfont_by_name(P6(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *));
 private cached_char *alloc_char(P2(gs_font_dir *, ulong));
 private cached_char *alloc_char_in_chunk(P2(gs_font_dir *, ulong));
 private void hash_remove_cached_char(P2(gs_font_dir *, uint));
@@ -65,8 +65,8 @@ private void shorten_cached_char(P3(gs_font_dir *, cached_char *, uint));
 
 /* Allocate and initialize the character cache elements of a font directory. */
 int
-gx_char_cache_alloc(gs_memory_t * mem, register gs_font_dir * pdir,
-		    uint bmax, uint mmax, uint cmax, uint upper)
+gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
+	    gs_font_dir * pdir, uint bmax, uint mmax, uint cmax, uint upper)
 {				/* Since we use open hashing, we must increase cmax somewhat. */
     uint chsize = (cmax + (cmax >> 1)) | 31;
     cached_fm_pair *mdata;
@@ -76,20 +76,21 @@ gx_char_cache_alloc(gs_memory_t * mem, register gs_font_dir * pdir,
     while (chsize & (chsize + 1))
 	chsize |= chsize >> 1;
     chsize++;
-    mdata = gs_alloc_struct_array(mem, mmax, cached_fm_pair,
+    mdata = gs_alloc_struct_array(struct_mem, mmax, cached_fm_pair,
 				  &st_cached_fm_pair_element,
 				  "font_dir_alloc(mdata)");
-    chars = gs_alloc_struct_array(mem, chsize, cached_char *,
+    chars = gs_alloc_struct_array(struct_mem, chsize, cached_char *,
 				  &st_cached_char_ptr_element,
 				  "font_dir_alloc(chars)");
     if (mdata == 0 || chars == 0) {
-	gs_free_object(mem, chars, "font_dir_alloc(chars)");
-	gs_free_object(mem, mdata, "font_dir_alloc(mdata)");
+	gs_free_object(struct_mem, chars, "font_dir_alloc(chars)");
+	gs_free_object(struct_mem, mdata, "font_dir_alloc(mdata)");
 	return_error(gs_error_VMerror);
     }
     pdir->fmcache.mmax = mmax;
     pdir->fmcache.mdata = mdata;
-    pdir->ccache.memory = mem;
+    pdir->ccache.struct_memory = struct_mem;
+    pdir->ccache.bits_memory = bits_mem;
     pdir->ccache.bmax = bmax;
     pdir->ccache.cmax = cmax;
     pdir->ccache.lower = upper / 10;
@@ -106,9 +107,10 @@ gx_char_cache_init(register gs_font_dir * dir)
 {
     int i;
     cached_fm_pair *pair;
-    char_cache_chunk *cck =
-    (char_cache_chunk *) gs_malloc(1, sizeof(char_cache_chunk),
-				   "initial_chunk");
+    char_cache_chunk *cck = (char_cache_chunk *)
+    gs_alloc_bytes_immovable(dir->ccache.bits_memory,
+			     sizeof(char_cache_chunk),
+			     "initial_chunk");
 
     dir->fmcache.msize = 0;
     dir->fmcache.mnext = 0;
@@ -204,7 +206,7 @@ gx_lookup_xfont(const gs_state * pgs, cached_fm_pair * pair, int encoding_index)
     gx_device *dev = gs_currentdevice(pgs);
     gx_device *fdev = (*dev_proc(dev, get_xfont_device)) (dev);
     gs_font *font = pair->font;
-    gx_xfont_procs *procs = (*dev_proc(fdev, get_xfont_procs)) (fdev);
+    const gx_xfont_procs *procs = (*dev_proc(fdev, get_xfont_procs)) (fdev);
     gx_xfont *xf = 0;
 
     /* We mustn't attempt to use xfonts for stroked characters, */
@@ -307,7 +309,7 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 /* The caller must already have done get_xfont_device to get the proper */
 /* device to pass as the first argument to lookup_font. */
 private gx_xfont *
-lookup_xfont_by_name(gx_device * fdev, gx_xfont_procs * procs,
+lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
       gs_font_name * pfstr, int encoding_index, const cached_fm_pair * pair,
 		     const gs_matrix * pmat)
 {
@@ -374,19 +376,32 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	return 0;		/* too big */
     }
     /* Compute the actual bitmap size(s) and allocate the bits. */
-
-    if (dev2 == 0) {		/* Render to a full (possibly oversampled) bitmap; */
+    if (dev2 == 0) {
+	/* Render to a full (possibly oversampled) bitmap; */
 	/* compress (if needed) when done. */
+	rc_header rc;
+
+	/* Preserve the reference count, if any. */
+	rc = pdev->rc;
 	gs_make_mem_mono_device(pdev, pdev->memory, pdev->target);
+	pdev->rc = rc;
 	pdev->width = iwidth;
 	pdev->height = iheight;
 	isize = gdev_mem_bitmap_size(pdev);
-    } else {			/* Use an alpha-buffer device to compress as we go. */
+    } else {
+	/* Use an alpha-buffer device to compress as we go. */
+	rc_header rc;
+
+	/* Preserve the reference counts, if any. */
+	rc = dev2->rc;
 	gs_make_mem_alpha_device(dev2, dev2->memory, NULL, depth);
+	dev2->rc = rc;
 	dev2->width = iwidth >> log2_xscale;
 	dev2->height = iheight >> log2_yscale;
+	rc = dev->rc;
 	gs_make_mem_abuf_device(dev, dev->memory, (gx_device *) dev2,
 				pscale, depth, 0);
+	dev->rc = rc;
 	dev->width = iwidth;
 	dev->height = 2 << log2_yscale;
 	isize = gdev_mem_bitmap_size(dev) +
@@ -655,6 +670,7 @@ alloc_char(gs_font_dir * dir, ulong icdsize)
 
     if (cc == 0) {
 	if (dir->ccache.bspace < dir->ccache.bmax) {	/* Allocate another chunk. */
+	    gs_memory_t *mem = dir->ccache.bits_memory;
 	    char_cache_chunk *cck_prev = dir->ccache.chunks;
 	    char_cache_chunk *cck;
 	    uint cksize = dir->ccache.bmax / 5 + 1;
@@ -669,15 +685,16 @@ alloc_char(gs_font_dir * dir, ulong icdsize)
 			  cksize);
 		return 0;	/* wouldn't fit */
 	    }
-	    cck = (char_cache_chunk *) gs_malloc(1, sizeof(*cck),
-						 "char cache chunk");
+	    cck = (char_cache_chunk *)
+		gs_alloc_bytes_immovable(mem, sizeof(*cck),
+					 "char cache chunk");
 	    if (cck == 0)
 		return 0;
-	    cdata = (byte *) gs_malloc(cksize, 1,
-				       "char cache chunk");
+	    cdata =
+		gs_alloc_bytes_immovable(mem, cksize,
+					 "char cache chunk(data)");
 	    if (cdata == 0) {
-		gs_free((char *)cck, 1, sizeof(*cck),
-			"char cache chunk");
+		gs_free_object(mem, cck, "char cache chunk");
 		return 0;
 	    }
 	    gx_bits_cache_chunk_init(cck, cdata, cksize);

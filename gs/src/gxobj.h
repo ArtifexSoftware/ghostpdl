@@ -1,23 +1,27 @@
 /* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gxobj.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxobj.h  */
 /* Memory manager implementation structures for Ghostscript */
+
+#ifndef gxobj_INCLUDED
+#  define gxobj_INCLUDED
+
 #include "gxbitmap.h"
 
 /* ================ Objects ================ */
@@ -25,9 +29,9 @@
 /*
  * Object headers come in a number of different varieties.
  * All arise from the same basic form, which is
-	-l- -lmsize/mark/back-
-	-size-
-	-type/reloc-
+ -l- -lmsize/mark/back-
+ -size-
+ -type/reloc-
  * l (large) is a single bit.  The size of lmsize/mark/back, size, and type
  * varies according to the environment.  On machines with N:16 segmented
  * addressing, 16-bit ints, and no alignment requirement more severe than
@@ -41,10 +45,10 @@
  * garbage collection, and for a back pointer value during the compaction
  * phase.  Since we want to be able to collect local VM independently of
  * global VM, we need two different distinguished mark values:
- *	- For local objects that have not been traced and should be freed
- *	(compacted out), we use 1...11 in the mark field (o_unmarked).
- *	- For global objects that have not been traced but should be kept,
- *	we use 1...10 in the mark field (o_untraced).
+ *      - For local objects that have not been traced and should be freed
+ *      (compacted out), we use 1...11 in the mark field (o_unmarked).
+ *      - For global objects that have not been traced but should be kept,
+ *      we use 1...10 in the mark field (o_untraced).
  * Note that neither of these values is a possible real relocation value.
  *
  * The lmsize field of large objects overlaps mark and back, so we must
@@ -55,12 +59,12 @@
 /*
  * The back pointer's meaning depends on whether the object is
  * free (unmarked) or in use (marked):
- *	- In free objects, the back pointer is an offset from the object
+ *      - In free objects, the back pointer is an offset from the object
  * header back to a chunk_head_t structure that contains the location
  * to which all the data in this chunk will get moved; the reloc field
  * contains the amount by which the following run of useful objects
  * will be relocated downwards.
- *	- In useful objects, the back pointer is an offset from the object
+ *      - In useful objects, the back pointer is an offset from the object
  * back to the previous free object; the reloc field is not used (it
  * overlays the type field).
  * These two cases can be distinguished when scanning a chunk linearly,
@@ -96,17 +100,25 @@
 #define obj_back_shift obj_flag_bits
 #define obj_back_scale (1 << obj_back_shift)
 typedef struct obj_header_data_s {
-	union _f {
-	  struct _h { unsigned large : 1; } h;
-	  struct _l { unsigned _ : 1, lmark : 2, lsize : obj_ls_bits; } l;
-	  struct _m { unsigned _ : 1, smark : obj_mb_bits; } m;
-	  struct _b { unsigned _ : 1, back : obj_mb_bits; } b;
-	} f;
-	uint size;
-	union _t {
-	  gs_memory_type_ptr_t type;
-	  uint reloc;
-	} t;
+    union _f {
+	struct _h {
+	    unsigned large:1;
+	} h;
+	struct _l {
+	    unsigned _:1, lmark:2, lsize:obj_ls_bits;
+	} l;
+	struct _m {
+	    unsigned _:1, smark:obj_mb_bits;
+	} m;
+	struct _b {
+	    unsigned _:1, back:obj_mb_bits;
+	} b;
+    } f;
+    uint size;
+    union _t {
+	gs_memory_type_ptr_t type;
+	uint reloc;
+    } t;
 } obj_header_data_t;
 
 /*
@@ -138,11 +150,12 @@ typedef struct obj_header_data_s {
   obj_align_round((siz) + sizeof(obj_header_t))
 
 /* Define the real object header type, taking alignment into account. */
-struct obj_header_s {	/* must be a struct because of forward reference */
-	union _d {
-		obj_header_data_t o;
-		byte _pad[round_up(sizeof(obj_header_data_t), obj_align_mod)];
-	} d;
+struct obj_header_s {		/* must be a struct because of forward reference */
+    union _d {
+	obj_header_data_t o;
+	byte _pad[round_up(sizeof(obj_header_data_t), obj_align_mod)];
+    }
+    d;
 };
 
 /* Define some reasonable abbreviations for the fields. */
@@ -199,11 +212,13 @@ struct obj_header_s {	/* must be a struct because of forward reference */
  * Every chunk, including inner chunks, has one of these.
  */
 typedef struct chunk_head_s {
-	byte *dest;			/* destination for objects */
+    byte *dest;			/* destination for objects */
 #if obj_align_mod > arch_sizeof_ptr
-	byte *_pad[obj_align_mod / arch_sizeof_ptr - 1];
+    byte *_pad[obj_align_mod / arch_sizeof_ptr - 1];
 #endif
-	obj_header_t free;		/* header for a free object, */
-					/* in case the first real object */
-					/* is in use */
+    obj_header_t free;		/* header for a free object, */
+    /* in case the first real object */
+    /* is in use */
 } chunk_head_t;
+
+#endif /* gxobj_INCLUDED */

@@ -1,24 +1,26 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gdevsvga.h */
-/* SuperVGA display definitions */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gdevsvga.h  */
 /* Requires gdevpcfb.h */
+
+#ifndef gdevsvga_INCLUDED
+#  define gdevsvga_INCLUDED
 
 /* Common procedures */
 
@@ -38,37 +40,37 @@ dev_proc_copy_alpha(svga_copy_alpha);
 
 /* Table structure for looking up graphics modes. */
 typedef struct {
-	int width, height;		/* "key" */
-	int mode;			/* "value" */
+    int width, height;		/* "key" */
+    int mode;			/* "value" */
 } mode_info;
 
 /* The device descriptor structure */
 typedef struct gx_device_svga_s gx_device_svga;
 struct gx_device_svga_s {
-	gx_device_common;
-	int (*get_mode)(P0());
-	void (*set_mode)(P1(int));
-	void (*set_page)(P3(gx_device_svga *fbdev, int pnum, int wnum));
-	bool fixed_colors;		/* if true, used a fixed palette */
-	int alpha_text, alpha_graphics;	/* if >1, map alpha to saturation */
-	const mode_info _ds *mode;	/* BIOS display mode info */
-	uint raster;			/* frame buffer bytes per line */
-	int current_page;		/* current page */
-	int wnum_read, wnum_write;	/* window #s for read vs. write */
-	/* Following are device-specific. */
-	union {
-	  struct {
-		void (*bios_set_page)(P2(int, int));	/* set-page function */
-		int pn_shift;		/* log2(64K/granularity) */
-	  } vesa;
-	  struct {
-		int select_reg;			/* page-select register */
-	  } atiw;
-	  struct {
-		int et_model;			/* 4 for ET4000, */
-						/* 3 for ET3000 */
-	  } tseng;
-	} info;
+    gx_device_common;
+    int (*get_mode) (P0());
+    void (*set_mode) (P1(int));
+    void (*set_page) (P3(gx_device_svga * fbdev, int pnum, int wnum));
+    bool fixed_colors;		/* if true, used a fixed palette */
+    int alpha_text, alpha_graphics;	/* if >1, map alpha to saturation */
+    const mode_info *mode;	/* BIOS display mode info */
+    uint raster;		/* frame buffer bytes per line */
+    int current_page;		/* current page */
+    int wnum_read, wnum_write;	/* window #s for read vs. write */
+    /* Following are device-specific. */
+    union {
+	struct {
+	    void (*bios_set_page) (P2(int, int));	/* set-page function */
+	    int pn_shift;	/* log2(64K/granularity) */
+	} vesa;
+	struct {
+	    int select_reg;	/* page-select register */
+	} atiw;
+	struct {
+	    int et_model;	/* 4 for ET4000, */
+	    /* 3 for ET3000 */
+	} tseng;
+    } info;
 };
 
 /* The initial parameters map an appropriate fraction of */
@@ -87,6 +89,8 @@ struct gx_device_svga_s {
   svga_color_device(procs, name, 8, 31, 4, get_mode, set_mode, set_page)
 
 /* Utility procedures */
-void	svga_init_colors(P1(gx_device *));
-int	svga_find_mode(P2(gx_device *, const mode_info _ds *));
-int	svga_open(P1(gx_device *));
+void svga_init_colors(P1(gx_device *));
+int svga_find_mode(P2(gx_device *, const mode_info *));
+int svga_open(P1(gx_device *));
+
+#endif /* gdevsvga_INCLUDED */

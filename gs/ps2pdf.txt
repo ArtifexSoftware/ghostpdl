@@ -1,4 +1,4 @@
-   Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: ps2pdf.txt 
 This file, ps2pdf.txt, contains some information about Ghostscript's
 PostScript to PDF converter.
 
@@ -26,14 +27,14 @@ README.
 About ps2pdf
 ============
 
-ps2pdf is a work-alike for a large subset of Adobe's Acrobat Distiller (TM)
-product: it converts PostScript files to PDF files.
+ps2pdf is a work-alike for the functionality (but not the GUI) of Adobe's
+Acrobat Distiller(TM) product: it converts PostScript files to PDF files.
 
 ps2pdf is implemented as a very small shell script (batch file) that invokes
 Ghostscript selecting a special "output device" called pdfwrite.  In order
 to use ps2pdf, you must have included the pdfwrite device in the DEVICE_DEVS
 list at the time Ghostscript was built.  Currently, this device is included
-in the makefiles for all 32- and 64-bit platforms.
+in the makefiles for all platforms.
 
 The usage for ps2pdf is:
 	ps2pdf input.ps output.pdf
@@ -59,18 +60,45 @@ Limitations
 
 The most serious limitation of ps2pdf is that text in any font other than
 the 14 Adobe base fonts (Courier, Times, and Helvetica families, Symbol, and
-Zapf Dingbats) is converted to bitmaps.  ps2pdf also usually converts
-strings to bitmaps if the string is in one of the 14 base fonts but it
-contains a character that uses a non-standard encoding.
+Zapf Dingbats) is converted to bitmaps.  ps2pdf also may convert strings to
+bitmaps if the string is in one of the 14 base fonts but contains a
+character that uses a non-standard encoding.
 
-ps2pdf currently does not implement any of the image resampling or
-compression options of Distiller.  It does implement setdistillerparams, and
-recognizes all of the parameters documented in Adobe Technical Note #5151
-except for the ImageDict parameters, but the only ones that actually have
-any effect are ASCII85EncodePages, CompressPages, CompatibilityLevel, and
-UseFlateCompression.  It could implement LZWEncode, but doesn't do so
-because of Unisys' threats regarding the Welch patent: instead, it treats
-LZWEncode as calling for Flate compression.
+ps2pdf implements setdistillerparams, and recognizes all of the parameters
+documented in Adobe Technical Note #5151 except for the ImageDict
+parameters, but only a subset have an effect:
+
+General parameters:
+	Effective:
+		ASCII85EncodePages, CompatibilityLevel, CompressPages,
+		CoreDistVersion, LZWEncodePages (see below),
+		UseFlateCompression
+	Ignored:
+		AutoRotatePages, ImageMemory, PreserveHalftoneInfo,
+		PreserveOPIComments, PreserveOverprintSettings,
+		TransferFunctionInfo, UCRandBGInfo
+General image parameters:
+	Effective:
+		AutoFilterxxxImages (see below),
+		xxxImageDepth, xxxImageDownsampleType, xxxImageFilter,
+		xxxImageResolution, DownsamplexxxImages, EncodexxxImages,
+		MonoImageDict
+	Ignored:
+		AntiAliasxxxImages, xxxACSImageDict,
+		ColorImageDict, GrayImageDict
+Color image parameters:
+	Effective:
+		ConvertCMYKImagesToRGB
+	Ignored:
+		ColorConversionStrategy, ConvertImagesToIndexed
+
+Because of Unisys' threats regarding the Welch patent, ps2pdf cannot
+actually use LZW compression: instead, it treats all requests for LZW
+compression as calling for Flate compression if UseFlateCompression is true
+and CompatibilityLevel >= 1.2, and ignores them otherwise.
+
+AutoFilterxxxImages doesn't examine the image to decide between JPEG and
+LZW/Flate compression: it always uses LZW/Flate compression.
 
 Known problems
 ==============
@@ -82,12 +110,16 @@ error processing a page. A rasterizer error occurred."  This error has been
 observed using both Acrobat version 2.1 and the Alpha 2 release of Adobe
 Amber.  (Adobe may have fixed this problem by now.)
 
+ps2pdf does not yet process the new PDF 1.2 (Acrobat 3.x) BP, EP, SP, and
+OBJ and related pdfmarks.  If the application uses these pdfmark commands
+(and few applications do), some material may be lost from the output file.
+
 Benefits of using ps2pdf
 ========================
 
 Despite the limitations of ps2pdf, the class of "suitable" documents is a
-large one.  Many users report that the combination of of ps2pdf with Acrobat
-is be superior to using a generic PostScript viewer (psview or ghostview),
+large one.  Many users report that the combination of ps2pdf with Acrobat is
+superior to using a generic PostScript viewer (psview or ghostview),
 particularly for documents with many pages where the navigational support in
 PDF files reduces the overhead involved in navigating conventional
 PostScript documents.

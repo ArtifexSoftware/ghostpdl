@@ -1,7 +1,7 @@
 	NOTE: this file was contributed by a user: please contact
 	George Cameron <george@bio-medical-physics.aberdeen.ac.uk>
 	if you have questions.
-	  Please contact Yves Arrouye <Yves.Arrouye@imag.fr> if you
+	  Please contact Yves Arrouye <yves.arrouye@usa.net> if you
 	have problem with the number-of-colors part of the script.
 
 Help on setting up an lpr filter for Ghostscript

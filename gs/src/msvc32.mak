@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,13 +15,17 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# msvc32.mak
+# Id: msvc32.mak 
 # makefile for 32-bit Microsoft Visual C++, Windows NT or Windows 95 platform.
+#
+# All configurable options are surrounded by !ifndef/!endif to allow 
+# preconfiguration from within another makefile.
 #
 # Optimization /O2 seems OK with MSVC++ 4.1 & 5.0.
 # Created 1997-01-24 by Russell Lang from MSVC++ 2.0 makefile.
 # Enhanced 97-05-15 by JD
 # Common code factored out 1997-05-22 by L. Peter Deutsch.
+# Made pre-configurable by JD 6/4/98
 
 # ------------------------------- Options ------------------------------- #
 
@@ -31,7 +35,9 @@
 
 # Define the directory that will hold documentation at runtime.
 
-GS_DOCDIR=c:/gsAdobe/src
+!ifndef GS_DOCDIR
+GS_DOCDIR=c:/gs
+!endif
 
 # Define the default directory/ies for the runtime initialization and
 # font files.  Separate multiple directories with ';'.
@@ -39,7 +45,9 @@ GS_DOCDIR=c:/gsAdobe/src
 # MSVC will not allow \'s here because it sees '\;' CPP-style as an
 # illegal escape.
 
-GS_LIB_DEFAULT=.;c:/gsAdobe/src;c:/gsAdobe/fonts
+!ifndef GS_LIB_DEFAULT
+GS_LIB_DEFAULT=.;c:/gs;c:/gs/fonts
+!endif
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -48,12 +56,16 @@ GS_LIB_DEFAULT=.;c:/gsAdobe/src;c:/gsAdobe/fonts
 # see the "File searching" section of use.txt for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
+!ifndef SEARCH_HERE_FIRST
 SEARCH_HERE_FIRST=1
+!endif
 
 # Define the name of the interpreter initialization file.
 # (There is no reason to change this.)
 
+!ifndef GS_INIT
 GS_INIT=gs_init.ps
+!endif
 
 # Choose generic configuration options.
 
@@ -61,64 +73,101 @@ GS_INIT=gs_init.ps
 # Code runs substantially slower even if no debugging switches are set,
 # and also takes about another 25K of memory.
 
-DEBUG=1
+!ifndef DEBUG
+DEBUG=0
+!endif
 
 # Setting TDEBUG=1 includes symbol table information for the debugger,
 # and also enables stack checking.  Code is substantially slower and larger.
 
-TDEBUG=1
+!ifndef TDEBUG
+TDEBUG=0
+!endif
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables public,
 # so they are visible to the debugger and profiler.
 # No execution time or space penalty, just larger .OBJ and .EXE files.
 
+!ifndef NOPRIVATE
 NOPRIVATE=0
+!endif
 
 # Define the name of the executable file.
 
+!ifndef GS
 GS=gswin32
+!endif
+!ifndef GSCONSOLE
 GSCONSOLE=gswin32c
+!endif
+!ifndef GSDLL
 GSDLL=gsdll32
+!endif
 
 # To build two small executables and a large DLL use MAKEDLL=1
 # To build two large executables use MAKEDLL=0
 
+!ifndef MAKEDLL
 MAKEDLL=1
+!endif
+
+# Define the source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+# This is a bad joke.  This makefile won't work with any other values!
+GLSRCDIR=.
+GLGENDIR=.
+GLOBJDIR=.
+PSSRCDIR=.
+PSGENDIR=.
+PSOBJDIR=.
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=jpeg-6a
+!ifndef JSRCDIR
+JSRCDIR=jpeg
 JVERSION=6
+!endif
 
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
+!ifndef PSRCDIR
 PSRCDIR=libpng
 PVERSION=96
+!endif
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
+!ifndef ZSRCDIR
 ZSRCDIR=zlib
+!endif
 
 # Define the configuration ID.  Read gs.mak carefully before changing this.
 
+!ifndef CONFIG
 CONFIG=
+!endif
 
 # Define any other compilation flags.
 
+!ifndef CFLAGS
 CFLAGS=
+!endif
 
 # ------ Platform-specific options ------ #
 
 # Define which major version of MSVC is being used (currently, 4 & 5 supported)
 
+!ifndef MSVC_VERSION 
 MSVC_VERSION = 5
+!endif
 
 # Define the drive, directory, and compiler name for the Microsoft C files.
 # COMPDIR contains the compiler and linker (normally \msdev\bin).
@@ -133,11 +182,15 @@ MSVC_VERSION = 5
 #   so if you want to use the current directory, use an explicit '.'.
 
 !if $(MSVC_VERSION) == 4
-DEVSTUDIO=e:\msdev
+! ifndef DEVSTUDIO
+DEVSTUDIO=c:\msdev
+! endif
 COMPBASE=$(DEVSTUDIO)
 SHAREDBASE=$(DEVSTUDIO)
 !else
-DEVSTUDIO=f:\devstudio
+! ifndef DEVSTUDIO
+DEVSTUDIO=c:\devstudio
+! endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\SharedIDE
 !endif
@@ -154,17 +207,21 @@ LINK=$(LINKDIR)\link
 
 # Define the processor architecture. (i386, ppc, alpha)
 
+!ifndef CPU_FAMILY
 CPU_FAMILY=i386
 #CPU_FAMILY=ppc
 #CPU_FAMILY=alpha  # not supported yet - we need someone to tweak
+!endif
 
 # Define the processor (CPU) type. Allowable values depend on the family:
 #   i386: 386, 486, 586
 #   ppc: 601, 604, 620
 #   alpha: not currently used.
 
+!ifndef CPU_TYPE
 CPU_TYPE=486
 #CPU_TYPE=601
+!endif
 
 !if "$(CPU_FAMILY)"=="i386"
 
@@ -181,7 +238,9 @@ CPU_TYPE=486
 # of that type (or higher) is available: this is NOT currently checked
 # at runtime.
 
+! ifndef FPU_TYPE
 FPU_TYPE=0
+! endif
 
 !endif
 
@@ -189,57 +248,70 @@ FPU_TYPE=0
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=level2.dev pdf.dev ttfont.dev
+!ifndef FEATURE_DEVS
+FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev
+!endif
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
+!ifndef COMPILE_INITS
 COMPILE_INITS=0
+!endif
 
 # Choose whether to store band lists on files or in memory.
 # The choices are 'file' or 'memory'.
 
-BAND_LIST_STORAGE=memory
+!ifndef BAND_LIST_STORAGE
+BAND_LIST_STORAGE=file
+!endif
 
 # Choose which compression method to use when storing band lists in memory.
 # The choices are 'lzw' or 'zlib'.  lzw is not recommended, because the
 # LZW-compatible code in Ghostscript doesn't actually compress its input.
 
+!ifndef BAND_LIST_COMPRESSOR
 BAND_LIST_COMPRESSOR=zlib
+!endif
 
 # Choose the implementation of file I/O: 'stdio', 'fd', or 'both'.
 # See gs.mak and sfxfd.c for more details.
 
+!ifndef FILE_IMPLEMENTATION
 FILE_IMPLEMENTATION=stdio
+!endif
 
-# Choose the device(s) to include.  See devs.mak for details.
+# Choose the device(s) to include.  See devs.mak for details,
+# devs.mak and contrib.mak for the list of available devices.
 
+!ifndef DEVICE_DEVS
 DEVICE_DEVS=mswindll.dev mswinprn.dev mswinpr2.dev
-DEVICE_DEVS2=asynmono.dev
-DEVICE_DEVS3=bmpmono.dev
-DEVICE_DEVS4=
-DEVICE_DEVS5=
-DEVICE_DEVS6=
-DEVICE_DEVS7=
-DEVICE_DEVS8=
-DEVICE_DEVS9=
-DEVICE_DEVS10=
-DEVICE_DEVS11=
-DEVICE_DEVS12=
-DEVICE_DEVS13=
-DEVICE_DEVS14=
-DEVICE_DEVS15=
+DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
+DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
+DEVICE_DEVS4=cdeskjet.dev cdjcolor.dev cdjmono.dev cdj550.dev pj.dev pjxl.dev pjxl300.dev
+DEVICE_DEVS5=djet500c.dev declj250.dev lj250.dev jetp3852.dev r4081.dev lbp8.dev uniprint.dev
+DEVICE_DEVS6=st800.dev stcolor.dev bj10e.dev bj200.dev m8510.dev necp6.dev bjc600.dev bjc800.dev
+DEVICE_DEVS7=t4693d2.dev t4693d4.dev t4693d8.dev tek4696.dev
+DEVICE_DEVS8=pcxmono.dev pcxgray.dev pcx16.dev pcx256.dev pcx24b.dev pcxcmyk.dev
+DEVICE_DEVS9=pbm.dev pbmraw.dev pgm.dev pgmraw.dev pgnm.dev pgnmraw.dev pnm.dev pnmraw.dev ppm.dev ppmraw.dev
+DEVICE_DEVS10=tiffcrle.dev tiffg3.dev tiffg32d.dev tiffg4.dev tifflzw.dev tiffpack.dev
+DEVICE_DEVS11=bmpmono.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.dev
+DEVICE_DEVS12=psmono.dev bit.dev bitrgb.dev bitcmyk.dev
+DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
+DEVICE_DEVS14=jpeg.dev jpeggray.dev
+DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
+!endif
 
 # ---------------------------- End of options ---------------------------- #
 
 # Derive values for FPU_TYPE for non-Intel processors.
 
 !if "$(CPU_FAMILY)"=="ppc"
-!if $(CPU_TYPE)>601
+! if $(CPU_TYPE)>601
 FPU_TYPE=2
-!else
+! else
 FPU_TYPE=1
-!endif
+! endif
 !endif
 
 !if "$(CPU_FAMILY)"=="alpha"
@@ -249,8 +321,8 @@ FPU_TYPE=1
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=
-#msvc32.mak msvccom.mak winlib.mak winint.mak
+# The use of multiple file names here is garbage!
+MAKEFILE=msvc32.mak msvccmd.mak msvctail.mak winlib.mak winint.mak
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
@@ -261,7 +333,9 @@ BEGINFILES2=gsdll32.exp gsdll32.ilk gsdll32.pdb gsdll32.lib\
    gswin32c.exp gswin32c.ilk gswin32c.pdb gswin32c.lib
 
 
-!include msvccom.mak
+!include msvccmd.mak
+!include winlib.mak
+!include msvctail.mak
 !include winint.mak
 
 # ----------------------------- Main program ------------------------------ #
@@ -293,10 +367,10 @@ $(GSDLL).dll: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(GSDLL).res
 # The big graphical EXE
 $(GS_XE):   $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res dwmain32.def
 	copy $(ld_tr) gswin32.tr
-	echo dwnodll.obj >> gswin32.tr
-	echo dwimg.obj >> gswin32.tr
-	echo dwmain.obj >> gswin32.tr
-	echo dwtext.obj >> gswin32.tr
+	echo $(GLOBJ)dwnodll.obj >> gswin32.tr
+	echo $(GLOBJ)dwimg.obj >> gswin32.tr
+	echo $(GLOBJ)dwmain.obj >> gswin32.tr
+	echo $(GLOBJ)dwtext.obj >> gswin32.tr
 	echo /DEF:dwmain32.def /OUT:$(GS_XE) > gswin32.rsp
 	$(LINK_SETUP)
         $(LINK) $(LCT) @gswin32.rsp gsdll @gswin32.tr @$(LIBCTR) $(INTASM) @lib.tr $(GSDLL).res
@@ -306,8 +380,8 @@ $(GS_XE):   $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS)
 # The big console mode EXE
 $(GSCONSOLE).exe:  $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res dw32c.def
 	copy $(ld_tr) gswin32c.tr
-	echo dwnodllc.obj >> gswin32c.tr
-	echo dwmainc.obj >> gswin32c.tr
+	echo $(GLOBJ)dwnodllc.obj >> gswin32c.tr
+	echo $(GLOBJ)dwmainc.obj >> gswin32c.tr
 	echo  /SUBSYSTEM:CONSOLE > gswin32.rsp
 	echo  /DEF:dw32c.def /OUT:$(GSCONSOLE).exe  >> gswin32.rsp
 	$(LINK_SETUP)

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* ilocate.c */
+/*Id: ilocate.c  */
 /* Object locating and validating for Ghostscript memory manager */
 #include "ghost.h"
 #include "memory_.h"
@@ -149,6 +149,7 @@ ialloc_validate_spaces(const gs_dual_memory_t * dmem)
 	    if (pcc != 0)
 		*pcc = cc[i];
 	}
+#undef nspaces
 }
 void
 ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
@@ -195,9 +196,12 @@ ialloc_validate_memory(const gs_ref_memory_t * mem, gc_state_t * gcst)
 }
 
 /* Check the validity of an object's size. */
-#define object_size_valid(pre, size, cp)\
-((pre)->o_large ? (const byte *)(pre) == (cp)->cbase :\
-  (size) <= (cp)->ctop - (const byte *)((pre) + 1))
+inline private bool
+object_size_valid(const obj_header_t * pre, uint size, const chunk_t * cp)
+{
+    return (pre->o_large ? (const byte *)pre == cp->cbase :
+	    size <= cp->ctop - (const byte *)(pre + 1));
+}
 
 /* Validate all the objects in a chunk. */
 private void ialloc_validate_ref(P2(const ref *, gc_state_t *));
@@ -238,8 +242,8 @@ ialloc_validate_chunk(const chunk_t * cp, gc_state_t * gcst)
 	const void *ptr;
 	gs_ptr_type_t ptype;
 
-	if (proc != 0)
-	    for (; (ptype = (*proc) (pre + 1, size, index, &ptr)) != 0; ++index)
+	if (proc != gs_no_struct_enum_ptrs)
+	    for (; (ptype = (*proc) (pre + 1, size, index, &ptr, pre->o_type, NULL)) != 0; ++index)
 		if (ptr == 0)
 		    DO_NOTHING;
 		else if (ptype == ptr_struct_type)

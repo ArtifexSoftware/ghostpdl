@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsflip.c */
+/*Id: gsflip.c  */
 /* Routines for "flipping" image data */
 #include "gx.h"
 #include "gsbittab.h"
@@ -51,7 +51,7 @@ flip3x1(byte * buffer, const byte ** planes, uint offset, uint nbytes)
     const byte *in2 = planes[1] + offset;
     const byte *in3 = planes[2] + offset;
     uint n = nbytes;
-    static const far_data bits32 tab3x1[256] =
+    static const bits32 tab3x1[256] =
     {
 	vtab(0x800000, 0x100000, 0x20000, 0x4000, 0x800, 0x100, 0x20, 4)
     };
@@ -75,7 +75,7 @@ flip3x2(byte * buffer, const byte ** planes, uint offset, uint nbytes)
     const byte *in2 = planes[1] + offset;
     const byte *in3 = planes[2] + offset;
     uint n = nbytes;
-    static const far_data bits32 tab3x2[256] =
+    static const bits32 tab3x2[256] =
     {
 	vtab(0x800000, 0x400000, 0x20000, 0x10000, 0x800, 0x400, 0x20, 0x10)
     };
@@ -296,14 +296,13 @@ flip4x12(byte * buffer, const byte ** planes, uint offset, uint nbytes)
 }
 
 /* Flip data given number of planes and bits per pixel. */
-private void (*image_flip_procs[2][13]) (P4(byte *, const byte **, uint, uint)) = {
-    {
-	0, flip3x1, flip3x2, 0, flip3x4, 0, 0, 0, flip3x8, 0, 0, 0, flip3x12
-    },
-    {
-	0, flip4x1, flip4x2, 0, flip4x4, 0, 0, 0, flip4x8, 0, 0, 0, flip4x12
-    }
+typedef void (*image_flip_proc) (P4(byte *, const byte **, uint, uint));
+private const image_flip_proc image_flip_procs[2][13] =
+{
+    {0, flip3x1, flip3x2, 0, flip3x4, 0, 0, 0, flip3x8, 0, 0, 0, flip3x12},
+    {0, flip4x1, flip4x2, 0, flip4x4, 0, 0, 0, flip4x8, 0, 0, 0, flip4x12}
 };
+
 /* Here is the public interface to all of the above. */
 int
 image_flip_planes(byte * buffer, const byte ** planes, uint offset, uint nbytes,

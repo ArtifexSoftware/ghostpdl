@@ -17,7 +17,7 @@
 */
 
 
-/* gswin.rc */
+/*Id: gswin.rc */
 #include <windows.h>
 #include "dwmain.h"
 

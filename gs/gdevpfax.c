@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpfax.c */
+/*Id: gdevpfax.c  */
 /* Generic PostScript system compatible fax support */
 #include "gdevprn.h"
 #include "gsparam.h"
@@ -32,8 +32,7 @@
 /* ------ %Fax% implementation ------ */
 
 /* Define the structure for the Fax IODevice state. */
-typedef struct gx_io_device_fax_s {
-    gx_io_device_common;
+typedef struct gx_io_device_fax_state_s {
     bool ActivityReport;
     bool DefaultCaptionOn;
     bool DefaultConfirmOn;
@@ -51,28 +50,32 @@ typedef struct gx_io_device_fax_s {
     int Speaker;
     const char *StorageDevice;
     bool WaitForDialTone;
-} gx_io_device_fax;
+} gx_io_device_fax_state_t;
 
 private iodev_proc_get_params(fax_get_params);
 private iodev_proc_put_params(fax_put_params);
-const gx_io_device_fax gs_iodev_Fax =
-{"%Fax%", "Parameters",
- {iodev_no_init, iodev_no_open_device, iodev_no_open_file,
-  iodev_os_fopen, iodev_os_fclose,
-  iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
-  iodev_no_enumerate_files, NULL, NULL,
-  fax_get_params, fax_put_params
- },
- false,				/* A */
- true, true, true, 1, 0, 3, 1,	/* D */
- {
-     {0}, 0},			/* I */
- 350000,			/* M */
- {
-     {0}, 0},			/* P */
- true, 4 /* ? */ ,		/* R */
- 3, 1, "%ram%",			/* S */
- true				/* W */
+const gx_io_device gs_iodev_Fax =
+{
+    "%Fax%", "Parameters",
+    {iodev_no_init, iodev_no_open_device, iodev_no_open_file,
+     iodev_os_fopen, iodev_os_fclose,
+     iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
+     iodev_no_enumerate_files, NULL, NULL,
+     fax_get_params, fax_put_params
+    }
+};
+private const gx_io_device_fax_state_t gx_io_device_fax_state_default =
+{
+    false,			/* A */
+    true, true, true, 1, 0, 3, 1,	/* D */
+    {
+	{0}, 0},		/* I */
+    350000,			/* M */
+    {
+	{0}, 0},		/* P */
+    true, 4 /* ? */ ,		/* R */
+    3, 1, "%ram%",		/* S */
+    true			/* W */
 };
 
 /* The following code is shared between get and put parameters. */
@@ -80,42 +83,41 @@ typedef struct fax_strings_s {
     gs_param_string id, pwd, sd;
 } fax_strings;
 private int
-fax_xfer_params(register gx_io_device_fax * faxdev, gs_param_list * plist,
+fax_xfer_params(gx_io_device_fax_state_t * fds, gs_param_list * plist,
 		fax_strings * pfs)
 {
     int code;
 
-    pfs->id.data = faxdev->ID.data, pfs->id.size = faxdev->ID.size,
+    pfs->id.data = fds->ID.data, pfs->id.size = fds->ID.size,
 	pfs->id.persistent = false;
-    pfs->pwd.data = faxdev->PostScriptPassword.data,
-	pfs->pwd.size = faxdev->PostScriptPassword.size,
+    pfs->pwd.data = fds->PostScriptPassword.data,
+	pfs->pwd.size = fds->PostScriptPassword.size,
 	pfs->pwd.persistent = false;
-    pfs->sd.data = (const byte *)faxdev->StorageDevice,
+    pfs->sd.data = (const byte *)fds->StorageDevice,
 	pfs->sd.size = strlen(pfs->sd.data),
 	pfs->sd.persistent = true;
-    if ((code = param_bool_param(plist, "ActivityReport", &faxdev->ActivityReport)) < 0 ||
-	(code = param_bool_param(plist, "DefaultCaptionOn", &faxdev->DefaultCaptionOn)) < 0 ||
-	(code = param_bool_param(plist, "DefaultConfirmOn", &faxdev->DefaultConfirmOn)) < 0 ||
-	(code = param_bool_param(plist, "DefaultCoversOn", &faxdev->DefaultCoversOn)) < 0 ||
-	(code = param_int_param(plist, "DefaultResolution", &faxdev->DefaultResolution)) < 0 ||
-	(code = param_int_param(plist, "DefaultRetryCount", &faxdev->DefaultRetryCount)) < 0 ||
-	(code = param_int_param(plist, "DefaultRetryInterval", &faxdev->DefaultRetryInterval)) < 0 ||
-	(code = param_int_param(plist, "DialToneWaitPeriod", &faxdev->DialToneWaitPeriod)) < 0 ||
-	(code = param_string_param(plist, "ID", &pfs->id)) < 0 ||
-	(code = param_long_param(plist, "MaxFaxBuffer", &faxdev->MaxFaxBuffer)) < 0 ||
-	(code = param_string_param(plist, "PostScriptPassword", &pfs->pwd)) < 0 ||
-	(code = param_bool_param(plist, "ReceivePostScript", &faxdev->ReceivePostScript)) < 0 ||
-	(code = param_int_param(plist, "Rings", &faxdev->Rings)) < 0 ||
-	(code = param_int_param(plist, "ServiceEnable", &faxdev->ServiceEnable)) < 0 ||
-	(code = param_int_param(plist, "Speaker", &faxdev->Speaker)) < 0 ||
+    if (
+	   (code = param_bool_param(plist, "ActivityReport", &fds->ActivityReport)) < 0 ||
+	   (code = param_bool_param(plist, "DefaultCaptionOn", &fds->DefaultCaptionOn)) < 0 ||
+	   (code = param_bool_param(plist, "DefaultConfirmOn", &fds->DefaultConfirmOn)) < 0 ||
+	   (code = param_bool_param(plist, "DefaultCoversOn", &fds->DefaultCoversOn)) < 0 ||
+	   (code = param_int_param(plist, "DefaultResolution", &fds->DefaultResolution)) < 0 ||
+	   (code = param_int_param(plist, "DefaultRetryCount", &fds->DefaultRetryCount)) < 0 ||
+	   (code = param_int_param(plist, "DefaultRetryInterval", &fds->DefaultRetryInterval)) < 0 ||
+	   (code = param_int_param(plist, "DialToneWaitPeriod", &fds->DialToneWaitPeriod)) < 0 ||
+	   (code = param_string_param(plist, "ID", &pfs->id)) < 0 ||
+	   (code = param_long_param(plist, "MaxFaxBuffer", &fds->MaxFaxBuffer)) < 0 ||
+	   (code = param_string_param(plist, "PostScriptPassword", &pfs->pwd)) < 0 ||
+	   (code = param_bool_param(plist, "ReceivePostScript", &fds->ReceivePostScript)) < 0 ||
+	   (code = param_int_param(plist, "Rings", &fds->Rings)) < 0 ||
+	   (code = param_int_param(plist, "ServiceEnable", &fds->ServiceEnable)) < 0 ||
+	   (code = param_int_param(plist, "Speaker", &fds->Speaker)) < 0 ||
 	(code = param_string_param(plist, "StorageDevice", &pfs->sd)) < 0 ||
-	(code = param_bool_param(plist, "WaitForDialTone", &faxdev->WaitForDialTone))
+	   (code = param_bool_param(plist, "WaitForDialTone", &fds->WaitForDialTone))
 	)
 	return code;
     return 0;
 }
-
-#define faxdev ((gx_io_device_fax *)iodev)
 
 /* Get parameters from device. */
 private int
@@ -123,30 +125,32 @@ fax_get_params(gx_io_device * iodev, gs_param_list * plist)
 {
     fax_strings fs;
 
-    return fax_xfer_params(faxdev, plist, &fs);
+    return fax_xfer_params((gx_io_device_fax_state_t *) iodev->state,
+			   plist, &fs);
 }
 
 /* Put parameters to device. */
 private int
 fax_put_params(gx_io_device * iodev, gs_param_list * plist)
 {
-    gx_io_device_fax tdev;
+    gx_io_device_fax_state_t *const fds = iodev->state;
+    gx_io_device_fax_state_t new_state;
     fax_strings fs;
     int code;
     gx_io_device *sdev;
 
-    tdev = *faxdev;
-    code = fax_xfer_params(&tdev, plist, &fs);
+    new_state = *fds;
+    code = fax_xfer_params(&new_state, plist, &fs);
     if (code < 0)
 	return code;
-#define between(v, lo, hi) (tdev.v >= (lo) && tdev.v <= (hi))
+#define between(v, lo, hi) (new_state.v >= (lo) && new_state.v <= (hi))
     if (!(between(DefaultResolution, 0, 1) &&
 	  between(DefaultRetryCount, 0, 100) &&
 	  between(DefaultRetryInterval, 1, 60) &&
 	  between(DialToneWaitPeriod, 1, 10) &&
-	  fs.id.size > 20 ||
-	  tdev.MaxFaxBuffer >= 350000 &&
-	  fs.pwd.size > 32 ||
+	  fs.id.size <= 20 &&
+	  new_state.MaxFaxBuffer >= 350000 &&
+	  fs.pwd.size <= 32 &&
 	  between(Rings, 1, 30) &&
 	  between(ServiceEnable, 0, 3) &&
 	  between(Speaker, 0, 2) &&
@@ -155,27 +159,28 @@ fax_put_params(gx_io_device * iodev, gs_param_list * plist)
 	)
 	return_error(gs_error_rangecheck);
 #undef between
-    memcpy(tdev.ID.data, fs.id.data, fs.id.size);
-    tdev.ID.size = fs.id.size;
-    memcpy(tdev.PostScriptPassword.data, fs.pwd.data, fs.pwd.size);
-    tdev.PostScriptPassword.size = fs.pwd.size;
-    tdev.StorageDevice = sdev->dname;
-    *faxdev = tdev;
+    memcpy(new_state.ID.data, fs.id.data, fs.id.size);
+    new_state.ID.size = fs.id.size;
+    memcpy(new_state.PostScriptPassword.data, fs.pwd.data, fs.pwd.size);
+    new_state.PostScriptPassword.size = fs.pwd.size;
+    new_state.StorageDevice = sdev->dname;
+    *fds = new_state;
     return 0;
 }
 
 /* ------ FaxOptions decoding ------ */
 
-typedef struct fax_options_s fax_options;
-typedef struct fax_custom_params_s fax_custom_params;
-typedef int (*fax_custom_proc) (P2(const fax_options *, const fax_custom_params *));
+typedef struct fax_options_s fax_options_t;
+typedef struct fax_custom_params_s fax_custom_params_t;
+typedef int (*fax_custom_proc) (P2(const fax_options_t *,
+				   const fax_custom_params_t *));
 struct fax_options_s {
     gs_param_string CalleePhone;
                     limited_string(20) CallerID;
     gs_param_string CallerPhone;
     fax_custom_proc Confirmation;
     struct {
-	fax_options *options;
+	fax_options_t *options;
 	uint size;
     } Copies;
     /* CoverNote */

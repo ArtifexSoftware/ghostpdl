@@ -1,2 +1,3 @@
 #!/bin/sh
+# Id: gslp 
 exec gs -q -sDEVICE=epson -r180 -dNOPAUSE -sPROGNAME=$0 -- gslp.ps --heading-center "`date`" "$@"

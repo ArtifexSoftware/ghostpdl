@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sjpege.c */
+/*Id: sjpege.c  */
 /* Interface routines for IJG encoding code. */
 #include "stdio_.h"
 #include "string_.h"
@@ -42,6 +42,7 @@ gs_jpeg_create_compress(stream_DCT_state * st)
 	return_error(gs_jpeg_log_error(st));
 
     jpeg_create_compress(&st->data.compress->cinfo);
+    jpeg_stream_data_common_init(st->data.compress);
     return 0;
 }
 

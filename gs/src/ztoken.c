@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* ztoken.c */
+/*Id: ztoken.c  */
 /* Token reading operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"
 #include "gsstruct.h"		/* for iscan.h */
@@ -41,34 +40,32 @@ ztoken(register os_ptr op)
     switch (r_type(op)) {
 	default:
 	    return_op_typecheck(op);
-	case t_file:
-	    {
-		stream *s;
-		scanner_state state;
+	case t_file: {
+	    stream *s;
+	    scanner_state state;
 
-		check_read_file(s, op);
-		check_ostack(1);
-		scanner_state_init(&state, false);
-		return token_continue(op, s, &state, true);
-	    }
-	case t_string:
-	    {
-		ref token;
-		int code = scan_string_token(op, &token);
+	    check_read_file(s, op);
+	    check_ostack(1);
+	    scanner_state_init(&state, false);
+	    return token_continue(op, s, &state, true);
+	}
+	case t_string: {
+	    ref token;
+	    int code = scan_string_token(op, &token);
 
-		switch (code) {
-		    case scan_EOF:	/* no tokens */
-			make_false(op);
-			return 0;
-		    default:
-			if (code < 0)
-			    return code;
-		}
-		push(2);
-		op[-1] = token;
-		make_true(op);
+	    switch (code) {
+	    case scan_EOF:	/* no tokens */
+		make_false(op);
 		return 0;
+	    default:
+		if (code < 0)
+		    return code;
 	    }
+	    push(2);
+	    op[-1] = token;
+	    make_true(op);
+	    return 0;
+	}
     }
 }
 /* Continue reading a token after an interrupt or callout. */
@@ -98,7 +95,8 @@ token_continue(os_ptr op, stream * s, scanner_state * pstate, bool save)
     ref fref;
 
     ref_assign(&fref, op);
-  again:pop(1);
+again:
+    pop(1);
     code = scan_token(s, &token, pstate);
     op = osp;
     switch (code) {
@@ -183,7 +181,8 @@ tokenexec_continue(os_ptr op, stream * s, scanner_state * pstate, bool save)
 
     ref_assign(&fref, op);
     pop(1);
-  again:code = scan_token(s, (ref *) (esp + 1), pstate);
+again:
+    code = scan_token(s, (ref *) (esp + 1), pstate);
     op = osp;
     switch (code) {
 	case 0:

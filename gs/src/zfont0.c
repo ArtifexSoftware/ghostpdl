@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1992, 1993, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1992, 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zfont0.c */
+/*Id: zfont0.c  */
 /* Composite font creation operator */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 /*
@@ -58,16 +57,15 @@ int ztype0_get_cmap(P3(const gs_cmap ** ppcmap, const ref * pfdepvector,
 /* Forward references */
 private font_proc_define_font(ztype0_define_font);
 private font_proc_make_font(ztype0_make_font);
-private int ensure_char_entry(P4(os_ptr, const char _ds *, byte *, int));
+private int ensure_char_entry(P4(os_ptr, const char *, byte *, int));
 
 /* <string|name> <font_dict> .buildfont0 <string|name> <font> */
 /* Build a type 0 (composite) font. */
 private int
 zbuildfont0(os_ptr op)
 {
-    ref *pfmaptype;
     gs_type0_data data;
-    ref *pfdepvector;
+    ref fdepvector;
     ref *pprefenc;
     gs_font_type0 *pfont;
     font_data *pdata;
@@ -76,22 +74,32 @@ zbuildfont0(os_ptr op)
     int code = 0;
 
     check_type(*op, t_dictionary);
-    if (dict_find_string(op, "FMapType", &pfmaptype) <= 0 ||
-	!r_has_type(pfmaptype, t_integer) ||
-	pfmaptype->value.intval < (int)fmap_type_min ||
-	pfmaptype->value.intval > (int)fmap_type_max ||
-	dict_find_string(op, "FDepVector", &pfdepvector) <= 0 ||
-	!r_is_array(pfdepvector)
-	)
-	return_error(e_invalidfont);
-    data.FMapType = (fmap_type) pfmaptype->value.intval;
+    {
+	ref *pfmaptype;
+	ref *pfdepvector;
+
+	if (dict_find_string(op, "FMapType", &pfmaptype) <= 0 ||
+	    !r_has_type(pfmaptype, t_integer) ||
+	    pfmaptype->value.intval < (int)fmap_type_min ||
+	    pfmaptype->value.intval > (int)fmap_type_max ||
+	    dict_find_string(op, "FDepVector", &pfdepvector) <= 0 ||
+	    !r_is_array(pfdepvector)
+	    )
+	    return_error(e_invalidfont);
+	data.FMapType = (fmap_type) pfmaptype->value.intval;
+	/*
+	 * Adding elements below could cause the font dictionary to be
+	 * resized, which would invalidate pfdepvector.
+	 */
+	fdepvector = *pfdepvector;
+    }
     /* Check that every element of the FDepVector is a font. */
-    data.fdep_size = r_size(pfdepvector);
+    data.fdep_size = r_size(&fdepvector);
     for (i = 0; i < data.fdep_size; i++) {
 	ref fdep;
 	gs_font *psub;
 
-	array_get(pfdepvector, i, &fdep);
+	array_get(&fdepvector, i, &fdep);
 	if ((code = font_param(&fdep, &psub)) < 0)
 	    return code;
 	/*
@@ -102,7 +110,7 @@ zbuildfont0(os_ptr op)
 	 *        non_modal* non_composite
 	 */
 	if (psub->FontType == ft_composite) {
-#define psub0 ((gs_font_type0 *)psub)
+	    const gs_font_type0 *const psub0 = (const gs_font_type0 *)psub;
 	    fmap_type fmt = psub0->data.FMapType;
 
 	    if (fmt == fmap_double_escape ||
@@ -112,7 +120,6 @@ zbuildfont0(os_ptr op)
 		   data.FMapType == fmap_double_escape))
 		)
 		return_error(e_invalidfont);
-#undef psub0
 	}
     }
     switch (data.FMapType) {
@@ -142,7 +149,7 @@ zbuildfont0(os_ptr op)
 		data.SubsVector.size = svsize - 1;
 	    } break;
 	case fmap_CMap:	/* need CMap */
-	    code = ztype0_get_cmap(&data.CMap, (const ref *)pfdepvector,
+	    code = ztype0_get_cmap(&data.CMap, (const ref *)&fdepvector,
 				   (const ref *)op);
 	    break;
 	default:
@@ -227,7 +234,7 @@ zbuildfont0(os_ptr op)
 	ref fdep;
 	ref *pfid;
 
-	array_get(pfdepvector, i, &fdep);
+	array_get(&fdepvector, i, &fdep);
 	/* The lookup can't fail, because of the pre-check above. */
 	dict_find_string(&fdep, "FID", &pfid);
 	data.FDepVector[i] = r_ptr(pfid, gs_font);
@@ -236,7 +243,8 @@ zbuildfont0(os_ptr op)
     code = define_gs_font((gs_font *) pfont);
     if (code >= 0)
 	return code;
-  fail:			/* Undo the insertion of the FID entry in the dictionary. */
+fail:
+	/* Undo the insertion of the FID entry in the dictionary. */
     if (r_has_type(&save_FID, t_null)) {
 	ref rnfid;
 
@@ -274,20 +282,19 @@ ztype0_adjust_FDepVector(gs_font_type0 * pfont)
 private int
 ztype0_define_font(gs_font_dir * pdir, gs_font * pfont)
 {
-#define pfont0 ((gs_font_type0 *)pfont)
+    gs_font_type0 *const pfont0 = (gs_font_type0 *)pfont;
     gs_font **pdep = pfont0->data.FDepVector;
     int code = gs_type0_define_font(pdir, pfont);
 
     if (code < 0 || pfont0->data.FDepVector == pdep)
 	return code;
     return ztype0_adjust_FDepVector(pfont0);
-#undef pfont0
 }
 private int
 ztype0_make_font(gs_font_dir * pdir, const gs_font * pfont,
 		 const gs_matrix * pmat, gs_font ** ppfont)
 {
-#define ppfont0 ((gs_font_type0 **)ppfont)
+    gs_font_type0 **const ppfont0 = (gs_font_type0 **)ppfont;
     gs_font **pdep = (*ppfont0)->data.FDepVector;
     int code;
 
@@ -300,14 +307,13 @@ ztype0_make_font(gs_font_dir * pdir, const gs_font * pfont,
     if ((*ppfont0)->data.FDepVector == pdep)
 	return 0;
     return ztype0_adjust_FDepVector(*ppfont0);
-#undef ppfont0
 }
 
 /* ------ Internal routines ------ */
 
 /* Find or add a character entry in a font dictionary. */
 private int
-ensure_char_entry(os_ptr op, const char _ds * kstr,
+ensure_char_entry(os_ptr op, const char *kstr,
 		  byte * pvalue, int default_value)
 {
     ref *pentry;

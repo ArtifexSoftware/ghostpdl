@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zhsb.c */
+/*Id: zhsb.c  */
 /* HSB color operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "igstate.h"
 #include "store.h"

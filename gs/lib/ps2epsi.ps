@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,25 +15,30 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: ps2epsi.ps 
 % Convert an arbitrary PostScript file to an EPSI file.
 %
-% Original version contributed by
-%	George Cameron <george@bio-medical-physics.aberdeen.ac.uk>
-% Patched 7/26/95 by
-%	Greg P. Kochanski <gpk@bell-labs.com>
-%   to add many new DSC comments and make the comments conforming.
-% Bug fix 9/29/97 by lpd <ghost@aladdin.com>: if the page size wasn't an
-%   exact multiple of 8 bits, an incorrect bounding box (or a rangecheck
-%   error) could occur.
 % Please do not contact these users if you have questions.  They no longer
 % have the time, interest, or current expertise to keep this code working.
 % If you find bugs, please send proposed fixes to ghost@aladdin.com.
 %
+% Modified 3/17/98 by lpd to make it possible to run this file without
+%   running the ps2epsi script first, for debugging.
+% Bug fix 9/29/97 by lpd <ghost@aladdin.com>: if the page size wasn't an
+%   exact multiple of 8 bits, an incorrect bounding box (or a rangecheck
+%   error) could occur.
+% Patched 7/26/95 by
+%	Greg P. Kochanski <gpk@bell-labs.com>
+%   to add many new DSC comments and make the comments conforming.
+% Original version contributed by
+%	George Cameron <george@bio-medical-physics.aberdeen.ac.uk>
+%
 
 % Initialize, and redefine copypage and showpage.
 
-% ps2edict is defined in the pre-loaded code created by the ps2epsi script.
-% /ps2edict 25 dict def
+% ps2edict is normally defined in the pre-loaded code created by the
+% ps2epsi script.
+/ps2edict where { pop } { /ps2edict 25 dict def } ifelse
 ps2edict begin
 
 				% The main procedure
@@ -170,10 +175,10 @@ ps2edict begin
 
     % Write out the magic string and bounding box information
      epsifile (%!PS-Adobe-2.0 EPSF-1.2\n) writestring
-	 epsifile epsititle writestring
-	 epsifile epsicreator writestring
-	 epsifile epsicrdt writestring
-	 epsifile epsifor writestring
+	 /epsititle where { pop epsifile epsititle writestring } if
+	 /epsicreator where { pop epsifile epsicreator writestring } if
+	 /epsicrdt where { pop epsifile epsicrdt writestring } if
+	 /epsifor where { pop epsifile epsifor writestring } if
      epsifile flushfile
 
 	% Write out the page count:

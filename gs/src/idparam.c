@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* idparam.c */
+/*Id: idparam.c  */
 /* Utilities for getting parameters out of dictionaries. */
 #include "memory_.h"
 #include "string_.h"		/* for strlen */
@@ -36,7 +36,7 @@
 /* Get a Boolean parameter from a dictionary. */
 /* Return 0 if found, 1 if defaulted, <0 if wrong type. */
 int
-dict_bool_param(const ref * pdict, const char _ds * kstr,
+dict_bool_param(const ref * pdict, const char *kstr,
 		bool defaultval, bool * pvalue)
 {
     ref *pdval;
@@ -57,7 +57,7 @@ dict_bool_param(const ref * pdict, const char _ds * kstr,
 /* Note that the default value may be out of range, in which case */
 /* a missing value will return e_rangecheck rather than 1. */
 int
-dict_int_null_param(const ref * pdict, const char _ds * kstr, int minval,
+dict_int_null_param(const ref * pdict, const char *kstr, int minval,
 		    int maxval, int defaultval, int *pvalue)
 {
     ref *pdval;
@@ -98,7 +98,7 @@ dict_int_null_param(const ref * pdict, const char _ds * kstr, int minval,
 /* Get an integer parameter from a dictionary. */
 /* Return like dict_int_null_param, but return e_typecheck for null. */
 int
-dict_int_param(const ref * pdict, const char _ds * kstr, int minval, int maxval,
+dict_int_param(const ref * pdict, const char *kstr, int minval, int maxval,
 	       int defaultval, int *pvalue)
 {
     int code = dict_int_null_param(pdict, kstr, minval, maxval,
@@ -112,7 +112,7 @@ dict_int_param(const ref * pdict, const char _ds * kstr, int minval, int maxval,
 /* Note that the default value may be out of range, in which case */
 /* a missing value will return e_rangecheck rather than 1. */
 int
-dict_uint_param(const ref * pdict, const char _ds * kstr,
+dict_uint_param(const ref * pdict, const char *kstr,
 		uint minval, uint maxval, uint defaultval, uint * pvalue)
 {
     ref *pdval;
@@ -138,7 +138,7 @@ dict_uint_param(const ref * pdict, const char _ds * kstr,
 /* Get a float parameter from a dictionary. */
 /* Return 0 if found, 1 if defaulted, <0 if wrong type. */
 int
-dict_float_param(const ref * pdict, const char _ds * kstr,
+dict_float_param(const ref * pdict, const char *kstr,
 		 floatp defaultval, float *pvalue)
 {
     ref *pdval;
@@ -161,7 +161,7 @@ dict_float_param(const ref * pdict, const char _ds * kstr,
 /* Get an integer array from a dictionary. */
 /* Return the element count if OK, 0 if missing, <0 if invalid. */
 int
-dict_int_array_param(const ref * pdict, const char _ds * kstr,
+dict_int_array_param(const ref * pdict, const char *kstr,
 		     uint maxlen, int *ivec)
 {
     ref *pdval;
@@ -206,7 +206,7 @@ dict_int_array_param(const ref * pdict, const char _ds * kstr,
 /* if defaultvec is not NULL, copy it into fvec (maxlen elements) */
 /* and return maxlen. */
 int
-dict_float_array_param(const ref * pdict, const char _ds * kstr,
+dict_float_array_param(const ref * pdict, const char *kstr,
 		       uint maxlen, float *fvec, const float *defaultvec)
 {
     ref *pdval;
@@ -236,7 +236,7 @@ dict_float_array_param(const ref * pdict, const char _ds * kstr,
  * In either case, return 1.
  */
 int
-dict_proc_param(const ref * pdict, const char _ds * kstr, ref * pproc,
+dict_proc_param(const ref * pdict, const char *kstr, ref * pproc,
 		bool defaultval)
 {
     ref *pdval;
@@ -255,7 +255,7 @@ dict_proc_param(const ref * pdict, const char _ds * kstr, ref * pproc,
 
 /* Get a matrix from a dictionary. */
 int
-dict_matrix_param(const ref * pdict, const char _ds * kstr, gs_matrix * pmat)
+dict_matrix_param(const ref * pdict, const char *kstr, gs_matrix * pmat)
 {
     ref *pdval;
 

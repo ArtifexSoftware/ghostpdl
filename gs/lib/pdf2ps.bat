@@ -1,9 +1,10 @@
 @echo off 
+@rem Id: pdf2ps.bat 
 @rem Convert PDF to PostScript.
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
-echo -dNODISPLAY -dNOPAUSE >_.at
+echo -dNOPAUSE -dBATCH -sDEVICE#pswrite >_.at
 :cp
 if "%3"=="" goto doit
 echo %1 >>_.at
@@ -12,7 +13,7 @@ goto cp
 
 :doit
 rem Watcom C deletes = signs, so use # instead.
-gs -q -sPSFile#%2 @_.at %1 -c quit
+gs -q -sOutputFile#%2 @_.at %1
 goto end
 
 :usage

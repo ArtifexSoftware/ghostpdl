@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gshsb.c */
+/*Id: gshsb.c  */
 /* HSB color operators for Ghostscript library */
 #include "gx.h"
 #include "gscolor.h"
@@ -155,10 +155,10 @@ color_hsb_to_rgb(floatp hue, floatp saturation, floatp brightness, float rgb[3])
 	rgb[2] = frac2float(B);
 #ifdef DEBUG
 	if (gs_debug_c('c')) {
-	    dprintf7("[c]hsb(%g,%g,%g)->VSFI(%ld,%d,%ld,%d)->\n",
-		     hue, saturation, brightness, V, S, F, I);
-	    dprintf6("   RGB(%d,%d,%d)->rgb(%g,%g,%g)\n",
-		     R, G, B, rgb[0], rgb[1], rgb[2]);
+	    dlprintf7("[c]hsb(%g,%g,%g)->VSFI(%ld,%d,%ld,%d)->\n",
+		      hue, saturation, brightness, V, S, F, I);
+	    dlprintf6("   RGB(%d,%d,%d)->rgb(%g,%g,%g)\n",
+		      R, G, B, rgb[0], rgb[1], rgb[2]);
 	}
 #endif
     }

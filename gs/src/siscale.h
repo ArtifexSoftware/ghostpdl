@@ -1,24 +1,27 @@
 /* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* siscale.h */
-/* Image scaling filter state definition */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: siscale.h  */
 /* Requires strimpl.h */
+
+#ifndef siscale_INCLUDED
+#  define siscale_INCLUDED
+
 #include "gconfigv.h"
 
 /* Define whether to accumulate pixels in fixed or floating point. */
@@ -27,34 +30,39 @@
 	/* Accumulate pixels in fixed point. */
 
 typedef int PixelWeight;
+
 #  if arch_ints_are_short
 typedef long AccumTmp;
+
 #  else
 typedef int AccumTmp;
+
 #  endif
 #define num_weight_bits\
   ((sizeof(AccumTmp) - maxSizeofPixel) * 8 - (log2_max_support + 1))
 #define scale_PixelWeight(factor) ((int)((factor) * (1 << num_weight_bits)))
 #define unscale_AccumTmp(atemp) arith_rshift(atemp, num_weight_bits)
 
-#else		/* USE_FPU > 0 */
+#else /* USE_FPU > 0 */
 
 	/* Accumulate pixels in floating point. */
 
 typedef float PixelWeight;
 typedef double AccumTmp;
+
 #define scale_PixelWeight(factor) (factor)
 #define unscale_AccumTmp(atemp) ((int)(atemp))
 
-#endif		/* USE_FPU */
+#endif /* USE_FPU */
 
 /* Input values */
-/*typedef byte PixelIn;*/		/* see sizeofPixelIn below */
-/*#define MaxValueIn 255*/		/* see MaxValueIn below */
+					/*typedef byte PixelIn; *//* see sizeofPixelIn below */
+					/*#define MaxValueIn 255 *//* see MaxValueIn below */
 
 /* Temporary intermediate values */
 typedef byte PixelTmp;
-typedef int PixelTmp2;			/* extra width for clamping sum */
+typedef int PixelTmp2;		/* extra width for clamping sum */
+
 #define minPixelTmp 0
 #define maxPixelTmp 255
 #define unitPixelTmp 255
@@ -63,8 +71,8 @@ typedef int PixelTmp2;			/* extra width for clamping sum */
 #define maxSizeofPixel 2
 
 /* Output values */
-/*typedef byte PixelOut;*/		/* see sizeofPixelOut below */
-/*#define MaxValueOut 255*/		/* see MaxValueOut below */
+					/*typedef byte PixelOut; *//* see sizeofPixelOut below */
+					/*#define MaxValueOut 255 *//* see MaxValueOut below */
 
 /*
  * The 'support' S of the digital filter is the value such that the filter
@@ -82,46 +90,47 @@ typedef int PixelTmp2;			/* extra width for clamping sum */
 /* Auxiliary structures. */
 
 typedef struct {
-	PixelWeight	weight;		/* float or scaled fraction */
+    PixelWeight weight;		/* float or scaled fraction */
 } CONTRIB;
 
 typedef struct {
-	int	index;		/* index of first element in list of */
-				/* contributors */
-	int	n;		/* number of contributors */
-				/* (not multiplied by stride) */
-	int	first_pixel;	/* offset of first value in source data */
+    int index;			/* index of first element in list of */
+    /* contributors */
+    int n;			/* number of contributors */
+    /* (not multiplied by stride) */
+    int first_pixel;		/* offset of first value in source data */
 } CLIST;
 
 /* ImageScaleEncode / ImageScaleDecode */
 typedef struct stream_IScale_state_s {
-	stream_state_common;
-		/* The client sets the following before initialization. */
-	int Colors;			/* any number >= 1 */
-	int BitsPerComponentIn;		/* bits per input value, 8 or 16 */
-	uint MaxValueIn;		/* max value of input component */
-	int WidthIn, HeightIn;
-	int BitsPerComponentOut;	/* bits per output value, 8 or 16 */
-	uint MaxValueOut;		/* max value of output component */
-	int WidthOut, HeightOut;
-		/* The init procedure sets the following. */
-	int sizeofPixelIn;	/* bytes per input value, 1 or 2 */
-	int sizeofPixelOut;	/* bytes per output value, 1 or 2 */
-	double xscale, yscale;
-	void /*PixelIn*/ *src;
-	void /*PixelOut*/ *dst;
-	PixelTmp *tmp;
-	CLIST *contrib;
-	CONTRIB *items;
-		/* The following are updated dynamically. */
-	int src_y;
-	uint src_offset, src_size;
-	int dst_y;
-	uint dst_offset, dst_size;
-	CLIST dst_next_list;		/* for next output value */
-	int dst_last_index;		/* highest index used in list */
-	CONTRIB dst_items[max_support];	/* ditto */
+    stream_state_common;
+    /* The client sets the following before initialization. */
+    int Colors;			/* any number >= 1 */
+    int BitsPerComponentIn;	/* bits per input value, 8 or 16 */
+    uint MaxValueIn;		/* max value of input component */
+    int WidthIn, HeightIn;
+    int BitsPerComponentOut;	/* bits per output value, 8 or 16 */
+    uint MaxValueOut;		/* max value of output component */
+    int WidthOut, HeightOut;
+    /* The init procedure sets the following. */
+    int sizeofPixelIn;		/* bytes per input value, 1 or 2 */
+    int sizeofPixelOut;		/* bytes per output value, 1 or 2 */
+    double xscale, yscale;
+    void /*PixelIn */ *src;
+    void /*PixelOut */ *dst;
+    PixelTmp *tmp;
+    CLIST *contrib;
+    CONTRIB *items;
+    /* The following are updated dynamically. */
+    int src_y;
+    uint src_offset, src_size;
+    int dst_y;
+    uint dst_offset, dst_size;
+    CLIST dst_next_list;	/* for next output value */
+    int dst_last_index;		/* highest index used in list */
+    CONTRIB dst_items[max_support];	/* ditto */
 } stream_IScale_state;
+
 extern_st(st_IScale_state);	/* so clients can allocate */
 #define public_st_IScale_state()	/* in siscale.c */\
   gs_public_st_ptrs5(st_IScale_state, stream_IScale_state,\
@@ -129,3 +138,5 @@ extern_st(st_IScale_state);	/* so clients can allocate */
     iscale_state_enum_ptrs, iscale_state_reloc_ptrs,\
     dst, src, tmp, contrib, items)
 extern const stream_template s_IScale_template;
+
+#endif /* siscale_INCLUDED */

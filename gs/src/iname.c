@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* iname.c */
+/*Id: iname.c  */
 /* Name lookup for Ghostscript interpreter */
 #include "memory_.h"
 #include "string_.h"
@@ -38,7 +38,7 @@ const uint name_max_string = max_name_string;
 
 /* Define a pseudo-random permutation of the integers 0..255. */
 /* Pearson's article claims this permutation gave good results. */
-private const far_data byte hash_permutation[256] =
+private const byte hash_permutation[256] =
 {
     1, 87, 49, 12, 176, 178, 102, 166, 121, 193, 6, 84, 249, 230, 44, 163,
     14, 197, 213, 181, 161, 85, 218, 80, 64, 239, 24, 226, 236, 142, 38, 200,
@@ -66,7 +66,7 @@ private const far_data byte hash_permutation[256] =
  */
 #define nt_1char_size 128
 #define nt_1char_first 2
-private const far_data byte nt_1char_names[128] =
+private const byte nt_1char_names[128] =
 {
 #define q8(n) n,n+1,n+2,n+3,n+4,n+5,n+6,n+7
 #define q32(n) q8(n),q8(n+8),q8(n+16),q8(n+24)
@@ -80,10 +80,6 @@ gs_private_st_composite(st_name_sub_table, name_sub_table, "name_sub_table",
 gs_private_st_composite(st_name_table, name_table, "name_table",
 			name_table_enum_ptrs, name_table_reloc_ptrs);
 
-/* The one and only name table (for now). */
-private name_table *the_nt;
-private gs_gc_root_t the_nt_root;
-
 /* Forward references */
 private int name_alloc_sub(P1(name_table *));
 private void name_scan_sub(P3(name_table *, uint, bool));
@@ -95,7 +91,7 @@ name_print(const char *msg, name * pname, uint nidx, const int *pflag)
 {
     const byte *ptr = pname->string_bytes;
 
-    dprintf1("[n]%s", msg);
+    dlprintf1("[n]%s", msg);
     if (pflag)
 	dprintf1("(%d)", *pflag);
     dprintf2(" (0x%lx#%u)", (ulong) pname, nidx);
@@ -108,9 +104,9 @@ name_print(const char *msg, name * pname, uint nidx, const int *pflag)
 #  define if_debug_name(msg, pname, nidx, pflag) DO_NOTHING
 #endif
 
-/* Initialize the name table */
+/* Initialize a name table */
 name_table *
-name_init(ulong count, gs_memory_t * mem)
+names_init(ulong count, gs_memory_t * mem)
 {
     register int i;
     name_table *nt;
@@ -121,7 +117,6 @@ name_init(ulong count, gs_memory_t * mem)
 	return 0;
     nt =
 	gs_alloc_struct(mem, name_table, &st_name_table, "name_init(nt)");
-    the_nt = nt;
     memset(nt, 0, sizeof(name_table));
     nt->max_sub_count =
 	((count - 1) | nt_sub_index_mask) >> nt_log2_sub_size;
@@ -133,7 +128,7 @@ name_init(ulong count, gs_memory_t * mem)
     for (i = -1; i < nt_1char_size; i++) {
 	uint ncnt = nt_1char_first + i;
 	uint nidx = name_count_to_index(ncnt);
-	register name *pname = name_index_ptr_inline(nt, nidx);
+	register name *pname = names_index_ptr_inline(nt, nidx);
 
 	if (i < 0)
 	    pname->string_bytes = nt_1char_names,
@@ -147,25 +142,15 @@ name_init(ulong count, gs_memory_t * mem)
     }
     /* Reconstruct the free list. */
     nt->free = 0;
-    name_trace_finish(NULL);
-    /* Register the name table root. */
-    gs_register_struct_root(mem, &the_nt_root, (void **)&the_nt,
-			    "name table");
+    names_trace_finish(nt, NULL);
     return nt;
-}
-
-/* Return the one and only table. */
-const name_table *
-the_name_table(void)
-{
-    return the_nt;
 }
 
 /* Get the allocator for the name table. */
 gs_memory_t *
-name_memory(void)
+names_memory(const name_table * nt)
 {
-    return the_nt->memory;
+    return nt->memory;
 }
 
 /* Look up or enter a name in the table. */
@@ -173,9 +158,8 @@ name_memory(void)
 /* The return may overlap the characters of the string! */
 /* See iname.h for the meaning of enterflag. */
 int
-name_ref(const byte * ptr, uint size, ref * pref, int enterflag)
+names_ref(name_table * nt, const byte * ptr, uint size, ref * pref, int enterflag)
 {
-    name_table *nt = the_nt;
     register name *pname;
     uint nidx;
     uint *phash;
@@ -190,13 +174,13 @@ name_ref(const byte * ptr, uint size, ref * pref, int enterflag)
 	switch (size) {
 	    case 0:
 		nidx = name_count_to_index(1);
-		pname = name_index_ptr_inline(nt, nidx);
+		pname = names_index_ptr_inline(nt, nidx);
 		goto mkn;
 	    case 1:
 		if (*p < nt_1char_size) {
 		    hash = *p + nt_1char_first;
 		    nidx = name_count_to_index(hash);
-		    pname = name_index_ptr_inline(nt, nidx);
+		    pname = names_index_ptr_inline(nt, nidx);
 		    goto mkn;
 		}
 		/* falls through */
@@ -212,7 +196,7 @@ name_ref(const byte * ptr, uint size, ref * pref, int enterflag)
     for (nidx = *phash; nidx != 0;
 	 nidx = name_next_index(nidx, pname)
 	) {
-	pname = name_index_ptr_inline(nt, nidx);
+	pname = names_index_ptr_inline(nt, nidx);
 	if (pname->string_size == size &&
 	    !memcmp_inline(ptr, pname->string_bytes, size)
 	    )
@@ -234,7 +218,7 @@ name_ref(const byte * ptr, uint size, ref * pref, int enterflag)
     pname = name_index_ptr_inline(nt, nidx);
     if (enterflag == 1) {
 	byte *cptr = (byte *) gs_alloc_string(nt->memory, size,
-					      "name_ref(string)");
+					      "names_ref(string)");
 
 	if (cptr == 0)
 	    return_error(e_VMerror);
@@ -257,11 +241,10 @@ name_ref(const byte * ptr, uint size, ref * pref, int enterflag)
 
 /* Get the string for a name. */
 void
-name_string_ref(const ref * pnref /* t_name */ ,
-		ref * psref /* result, t_string */ )
+names_string_ref(const name_table * nt, const ref * pnref /* t_name */ ,
+		 ref * psref /* result, t_string */ )
 {
     name *pname = pnref->value.pname;
-    const name_table *nt = the_nt;
 
     make_const_string(psref,
 		      (pname->foreign_string ? avm_foreign :
@@ -274,10 +257,10 @@ name_string_ref(const ref * pnref /* t_name */ ,
 /* Convert a t_string object to a name. */
 /* Copy the executable attribute. */
 int
-name_from_string(const ref * psref, ref * pnref)
+names_from_string(name_table * nt, const ref * psref, ref * pnref)
 {
     int exec = r_has_attr(psref, a_executable);
-    int code = name_ref(psref->value.bytes, r_size(psref), pnref, 1);
+    int code = names_ref(nt, psref->value.bytes, r_size(psref), pnref, 1);
 
     if (code < 0)
 	return code;
@@ -288,43 +271,42 @@ name_from_string(const ref * psref, ref * pnref)
 
 /* Enter a (permanently allocated) C string as a name. */
 int
-name_enter_string(const char *str, ref * pref)
+names_enter_string(name_table * nt, const char *str, ref * pref)
 {
-    return name_ref((const byte *)str, strlen(str), pref, 0);
+    return names_ref(nt, (const byte *)str, strlen(str), pref, 0);
 }
 
 /* Invalidate the value cache for a name. */
 void
-name_invalidate_value_cache(const ref * pnref)
+names_invalidate_value_cache(name_table * nt, const ref * pnref)
 {
     pnref->value.pname->pvalue = pv_other;
 }
 
 /* Convert between names and indices. */
-#undef name_index
-uint
-name_index(const ref * pnref)
+#undef names_index
+name_index_t
+names_index(const name_table * nt, const ref * pnref)
 {
-    return name_index_inline(pnref);
+    return names_index_inline(nt, pnref);
 }
 void
-name_index_ref(uint index, ref * pnref)
+names_index_ref(const name_table * nt, name_index_t index, ref * pnref)
 {
-    name_index_ref_inline(the_nt, index, pnref);
+    names_index_ref_inline(nt, index, pnref);
 }
 name *
-name_index_ptr(uint index)
+names_index_ptr(const name_table * nt, name_index_t index)
 {
-    return name_index_ptr_inline(the_nt, index);
+    return names_index_ptr_inline(nt, index);
 }
 
 /* Get the index of the next valid name. */
 /* The argument is 0 or a valid index. */
 /* Return 0 if there are no more. */
-uint
-name_next_valid_index(uint nidx)
+name_index_t
+names_next_valid_index(name_table * nt, name_index_t nidx)
 {
-    name_table *nt = the_nt;
     name_sub_table *sub = nt->sub_tables[nidx >> nt_log2_sub_size];
     name *pname;
 
@@ -349,9 +331,8 @@ name_next_valid_index(uint nidx)
 /* Unmark all names, except for 1-character permanent names, */
 /* before a garbage collection. */
 void
-name_unmark_all(void)
+names_unmark_all(name_table * nt)
 {
-    name_table *nt = the_nt;
     uint si;
     name_sub_table *sub;
 
@@ -365,16 +346,16 @@ name_unmark_all(void)
 	uint ncnt;
 
 	for (ncnt = 1; ncnt <= nt_1char_size; ++ncnt)
-	    name_index_ptr(name_count_to_index(ncnt))->mark = 1;
+	    names_index_ptr(nt, name_count_to_index(ncnt))->mark = 1;
 	}
 }
 
 /* Mark a name.  Return true if new mark.  We export this so we can mark */
 /* character names in the character cache. */
 bool
-name_mark_index(uint nidx)
+names_mark_index(name_table * nt, name_index_t nidx)
 {
-    name *pname = name_index_ptr(nidx);
+    name *pname = names_index_ptr(nt, nidx);
 
     if (pname->mark)
 	return false;
@@ -385,15 +366,15 @@ name_mark_index(uint nidx)
 /* Get the object (sub-table) containing a name. */
 /* The garbage collector needs this so it can relocate pointers to names. */
 void /*obj_header_t */ *
-name_ref_sub_table(const ref * pnref)
+names_ref_sub_table(name_table * nt, const ref * pnref)
 {				/* When this procedure is called, the pointers from the name table */
     /* to the sub-tables may or may not have been relocated already, */
     /* so we can't use them.  Instead, we have to work backwards from */
     /* the name pointer itself. */
-    return pnref->value.pname - (name_index_inline(pnref) & nt_sub_index_mask);
+    return pnref->value.pname - (names_index_inline(nt, pnref) & nt_sub_index_mask);
 }
 void /*obj_header_t */ *
-name_index_ptr_sub_table(uint index, name * pname)
+names_index_ptr_sub_table(name_table * nt, name_index_t index, name * pname)
 {
     return pname - (index & nt_sub_index_mask);
 }
@@ -404,20 +385,19 @@ name_index_ptr_sub_table(uint index, name * pname)
  * we're doing this for initialization or restore rather than for a GC.
  */
 void
-name_trace_finish(gc_state_t * gcst)
+names_trace_finish(name_table * nt, gc_state_t * gcst)
 {
-    name_table *nt = the_nt;
     uint *phash = &nt->hash[0];
     uint i;
 
     for (i = 0; i < nt_hash_size; phash++, i++) {
-	uint prev = 0;
+	name_index_t prev = 0;
 	name *pnprev;
-	uint nidx = *phash;
+	name_index_t nidx = *phash;
 
 	while (nidx != 0) {
-	    name *pname = name_index_ptr_inline(nt, nidx);
-	    uint next = name_next_index(nidx, pname);
+	    name *pname = names_index_ptr_inline(nt, nidx);
+	    name_index_t next = name_next_index(nidx, pname);
 
 	    if (pname->mark) {
 		prev = nidx;
@@ -462,12 +442,9 @@ name_trace_finish(gc_state_t * gcst)
 /* would be called before doing the global part of a top-level restore. */
 /* Currently we don't make any attempt to optimize this. */
 void
-name_restore(alloc_save_t * save)
-{
-    name_table *nt = the_nt;
-
-    /* We simply mark all names older than the save, */
-    /* and let name_trace_finish sort everything out. */
+names_restore(name_table * nt, alloc_save_t * save)
+{				/* We simply mark all names older than the save, */
+    /* and let names_trace_finish sort everything out. */
     uint si;
 
     for (si = 0; si < nt->sub_count; ++si)
@@ -476,7 +453,7 @@ name_restore(alloc_save_t * save)
 
 	    for (i = 0; i < nt_sub_size; ++i) {
 		name *pname =
-		name_index_ptr_inline(nt, (si << nt_log2_sub_size) + i);
+		names_index_ptr_inline(nt, (si << nt_log2_sub_size) + i);
 
 		if (pname->string_bytes == 0)
 		    pname->mark = 0;
@@ -487,7 +464,7 @@ name_restore(alloc_save_t * save)
 			!alloc_is_since_save(pname->string_bytes, save);
 	    }
 	}
-    name_trace_finish(NULL);
+    names_trace_finish(nt, NULL);
 }
 
 /* ------ Internal procedures ------ */
@@ -533,7 +510,7 @@ name_alloc_sub(name_table * nt)
 	for (i0 = 0; i0 < nt_hash_size; i0 += 16) {
 	    int i;
 
-	    dprintf1("[n]chain %d:", i0);
+	    dlprintf1("[n]chain %d:", i0);
 	    for (i = i0; i < i0 + 16; i++) {
 		int n = 0;
 		uint nidx;
@@ -606,8 +583,7 @@ ENUM_PTRS_BEGIN_PROC(name_table_enum_ptrs)
 {
     if (index >= ntptr->sub_count)
 	return 0;
-    *pep = ntptr->sub_tables[index];
-    return ptr_struct_type;
+    ENUM_RETURN(ntptr->sub_tables[index]);
 }
 ENUM_PTRS_END_PROC
 private RELOC_PTRS_BEGIN(name_table_reloc_ptrs)
@@ -618,7 +594,7 @@ private RELOC_PTRS_BEGIN(name_table_reloc_ptrs)
 
     /* Now we can relocate the sub-table pointers. */
     for (i = 0; i < sub_count; i++, sub++)
-	*sub = gs_reloc_struct_ptr(*sub, gcst);
+	RELOC_VAR(*sub);
     /*
      * We also need to relocate the cached value pointers.
      * We don't do this here, but in a separate scan over the
@@ -644,7 +620,7 @@ private RELOC_PTRS_BEGIN(name_sub_reloc_ptrs)
 
 	    nstr.data = pname->string_bytes;
 	    nstr.size = pname->string_size;
-	    gs_reloc_const_string(&nstr, gcst);
+	    RELOC_CONST_STRING_VAR(nstr);
 	    pname->string_bytes = nstr.data;
 	}
     }

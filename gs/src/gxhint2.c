@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxhint2.c */
+/*Id: gxhint2.c  */
 /* Character level hints for Type 1 fonts. */
 #include "memory_.h"
 #include "gx.h"
@@ -24,7 +24,6 @@
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
-#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
@@ -35,9 +34,9 @@
 
 /* Forward references */
 
-private stem_hint *near type1_stem(P3(stem_hint_table *, fixed, fixed));
-private fixed near find_snap(P3(fixed, const stem_snap_table *, const pixel_scale *));
-private alignment_zone *near find_zone(P3(gs_type1_state *, fixed, fixed));
+private stem_hint *type1_stem(P4(const gs_type1_state *, stem_hint_table *, fixed, fixed));
+private fixed find_snap(P3(fixed, const stem_snap_table *, const pixel_scale *));
+private alignment_zone *find_zone(P3(gs_type1_state *, fixed, fixed));
 
 /* Reset the stem hints. */
 void
@@ -84,20 +83,12 @@ update_stem_hints(gs_type1_state * pcis)
 #undef c_fixed
 #define c_fixed(d, c) m_fixed(d, c, pcis->fc, max_coeff_bits)
 
-#ifdef DEBUG
-private void
-print_add_stem(const char *msg, const stem_hint_table * psht,
-	       const stem_hint * psh, fixed c, fixed dc, fixed v, fixed dv)
-{
-    if_debug10('y', "[y]%s %d/%d: %g,%g -> %g(%g)%g ; d = %g,%g\n",
-	       msg, (int)(psh - &psht->data[0]), psht->count,
-	       fixed2float(c), fixed2float(dc),
-	       fixed2float(v), fixed2float(dv), fixed2float(v + dv),
-	       fixed2float(psh->dv0), fixed2float(psh->dv1));
-}
-#else
-#  define print_add_stem(msg, psht, psh, c, dc, v, dv) DO_NOTHING
-#endif
+#define if_debug_print_add_stem(chr, msg, psht, psh, c, dc, v, dv)\
+	if_debug10(chr, "%s %d/%d: %g,%g -> %g(%g)%g ; d = %g,%g\n",\
+		   msg, (int)((psh) - &(psht)->data[0]), (psht)->count,\
+		   fixed2float(c), fixed2float(dc),\
+		   fixed2float(v), fixed2float(dv), fixed2float((v) + (dv)),\
+		   fixed2float((psh)->dv0), fixed2float((psh)->dv1))
 
 /* Compute and store the adjusted stem coordinates. */
 private void
@@ -188,7 +179,7 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy,
 	vbot = v, vtop = v + dv;
     if (dv < 0)
 	v += dv, dv = -dv;
-    psh = type1_stem(&pcis->hstem_hints, v, dv);
+    psh = type1_stem(pcis, &pcis->hstem_hints, v, dv);
     if (psh == 0)
 	return;
     adj_dv = find_snap(dv, &pcis->fh.snap_h, psp);
@@ -234,7 +225,8 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy,
     } else {			/* Align the stem so its edges fall on pixel boundaries. */
 	store_stem_deltas(&pcis->hstem_hints, psh, psp, v, dv, adj_dv);
     }
-    print_add_stem("hstem", &pcis->hstem_hints, psh, y, dy, v, dv);
+    if_debug_print_add_stem('y', "[y]hstem", &pcis->hstem_hints, psh,
+			    y, dy, v, dv);
 }
 
 /* Add a vertical stem hint. */
@@ -260,7 +252,7 @@ type1_do_vstem(gs_type1_state * pcis, fixed x, fixed dx,
     }
     if (dv < 0)
 	v += dv, dv = -dv;
-    psh = type1_stem(&pcis->vstem_hints, v, dv);
+    psh = type1_stem(pcis, &pcis->vstem_hints, v, dv);
     if (psh == 0)
 	return;
     adj_dv = find_snap(dv, &pcis->fh.snap_v, psp);
@@ -268,7 +260,8 @@ type1_do_vstem(gs_type1_state * pcis, fixed x, fixed dx,
 	adj_dv = psp->unit;
     /* Align the stem so its edges fall on pixel boundaries. */
     store_stem_deltas(&pcis->vstem_hints, psh, psp, v, dv, adj_dv);
-    print_add_stem("vstem", &pcis->vstem_hints, psh, x, dx, v, dv);
+    if_debug_print_add_stem('y', "[y]vstem", &pcis->vstem_hints, psh,
+			    x, dx, v, dv);
 }
 
 /* Adjust the character center for a vstem3. */
@@ -315,8 +308,9 @@ type1_do_center_vstem(gs_type1_state * pcis, fixed x0, fixed dx,
 /* Add a stem hint, keeping the table sorted. */
 /* We know that d >= 0. */
 /* Return the stem hint pointer, or 0 if the table is full. */
-private stem_hint *near
-type1_stem(stem_hint_table * psht, fixed v0, fixed d)
+private stem_hint *
+type1_stem(const gs_type1_state * pcis, stem_hint_table * psht,
+	   fixed v0, fixed d)
 {
     stem_hint *bot = &psht->data[0];
     stem_hint *top = bot + psht->count;
@@ -330,13 +324,15 @@ type1_stem(stem_hint_table * psht, fixed v0, fixed d)
     /* Add a little fuzz for insideness testing. */
     top->v0 = v0 - stem_tolerance;
     top->v1 = v0 + d + stem_tolerance;
+    top->index = pcis->hstem_hints.count + pcis->vstem_hints.count;
+    top->active = true;
     psht->count++;
     return top;
 }
 
 /* Compute the adjusted width of a stem. */
 /* The value returned is always a multiple of scale.unit. */
-private fixed near
+private fixed
 find_snap(fixed dv, const stem_snap_table * psst, const pixel_scale * pps)
 {				/* We aren't sure why a maximum difference of pps->half */
     /* works better than pps->unit, but it does. */
@@ -374,7 +370,7 @@ find_snap(fixed dv, const stem_snap_table * psst, const pixel_scale * pps)
 /* Find the applicable alignment zone for a stem, if any. */
 /* vbot and vtop are the bottom and top of the stem, */
 /* but without interchanging if the y axis is inverted. */
-private alignment_zone *near
+private alignment_zone *
 find_zone(gs_type1_state * pcis, fixed vbot, fixed vtop)
 {
     alignment_zone *pz;

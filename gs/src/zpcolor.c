@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zpcolor.c */
+/*Id: zpcolor.c  */
 /* Pattern color */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gscolor.h"
 #include "gsmatrix.h"
@@ -73,14 +72,13 @@ zpcolor_init(void)
     zcolor2_st_pattern_instance_p = &st_pattern_instance;
 }
 
-/* <pattern> <matrix> .buildpattern <pattern> <instance> */
+/* <pattern> <matrix> .buildpattern1 <pattern> <instance> */
 private int
-zbuildpattern(os_ptr op)
+zbuildpattern1(os_ptr op)
 {
     os_ptr op1 = op - 1;
     int code;
     gs_matrix mat;
-    int PatternType;
     float BBox[4];
     gs_client_pattern template;
     int_pattern *pdata;
@@ -89,9 +87,9 @@ zbuildpattern(os_ptr op)
 
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
+    gs_pattern1_init(&template);
     if ((code = read_matrix(op, &mat)) < 0 ||
 	(code = dict_uid_param(op1, &template.uid, 1, imemory)) != 1 ||
-    (code = dict_int_param(op1, "PatternType", 1, 1, 0, &PatternType)) < 0 ||
 	(code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
 	(code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
 	(code = dict_float_array_param(op1, "BBox", 4, BBox, NULL)) != 4 ||
@@ -139,7 +137,7 @@ zsetpatternspace(register os_ptr op)
 	    return_error(e_rangecheck);
 	case 2:
 	    cs = *gs_currentcolorspace(igs);
-	    if (cs.type->num_components < 0)	/* i.e., Pattern space */
+	    if (cs_num_components(&cs) < 0)	/* i.e., Pattern space */
 		return_error(e_rangecheck);
 	    /* We can't count on C compilers to recognize the aliasing */
 	    /* that would be involved in a direct assignment, so.... */
@@ -166,7 +164,7 @@ zsetpatternspace(register os_ptr op)
 const op_def zpcolor_l2_op_defs[] =
 {
     op_def_begin_level2(),
-    {"2.buildpattern", zbuildpattern},
+    {"2.buildpattern1", zbuildpattern1},
     {"1.setpatternspace", zsetpatternspace},
 		/* Internal operators */
     {"0%pattern_paint_prepare", pattern_paint_prepare},
@@ -178,13 +176,14 @@ const op_def zpcolor_l2_op_defs[] =
 
 /* Set up the pattern pointer in a client color for setcolor */
 /* with a Pattern space. */
-
+/****** ? WHAT WAS THIS FOR ? ******/
 
 /* Render the pattern by calling the PaintProc. */
 private int pattern_paint_cleanup(P1(os_ptr));
 private int
 zPaintProc(const gs_client_color * pcc, gs_state * pgs)
-{				/* Just schedule a call on the real PaintProc. */
+{
+    /* Just schedule a call on the real PaintProc. */
     check_estack(2);
     esp++;
     push_op_estack(pattern_paint_prepare);
@@ -236,7 +235,7 @@ pattern_paint_finish(os_ptr op)
 {
     gx_device_pattern_accum *pdev = r_ptr(esp, gx_device_pattern_accum);
     gx_color_tile *ctile;
-    int code = gx_pattern_cache_add_entry((gs_imager_state *) igs,
+    int code = gx_pattern_cache_add_entry((gs_imager_state *)igs,
 					  pdev, &ctile);
 
     if (code < 0)
@@ -250,10 +249,10 @@ pattern_paint_finish(os_ptr op)
 private int
 pattern_paint_cleanup(os_ptr op)
 {
-    gx_device_pattern_accum *pdev = r_ptr(esp + 2, gx_device_pattern_accum);
+    gx_device_pattern_accum *const pdev =
+	r_ptr(esp + 2, gx_device_pattern_accum);
 
-    gs_grestore(igs);
+    /* grestore will free the device, so close it first. */
     (*dev_proc(pdev, close_device)) ((gx_device *) pdev);
-    ifree_object(pdev, "pattern_paint_cleanup");
-    return 0;
+    return gs_grestore(igs);
 }

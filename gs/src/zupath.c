@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,14 +16,14 @@
    all copies.
  */
 
-/* zupath.c */
+/*Id: zupath.c  */
 /* Operators related to user paths */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "idict.h"
 #include "dstack.h"
 #include "igstate.h"
+#include "iname.h"
 #include "iutil.h"
 #include "store.h"
 #include "stream.h"
@@ -38,11 +38,15 @@
 #include "gzpath.h"		/* for saving path */
 #include "gzstate.h"		/* for accessing path */
 
+/* Imported data */
+extern const gx_device gs_hit_device;
+extern const int gs_hit_detected;
+
 /* Forward references */
 private int upath_append(P2(os_ptr, os_ptr));
 private int upath_stroke(P1(os_ptr));
 
-/* ------ Insideness testing ------ */
+/* ---------------- Insideness testing ---------------- */
 
 /* Forward references */
 private int in_test(P2(os_ptr, int (*)(P1(gs_state *))));
@@ -51,10 +55,6 @@ private int in_path_result(P3(os_ptr, int, int));
 private int in_utest(P2(os_ptr, int (*)(P1(gs_state *))));
 private int in_upath(P2(os_ptr, gx_device *));
 private int in_upath_result(P3(os_ptr, int, int));
-
-/* We use invalidexit, which the painting procedures cannot generate, */
-/* as an "error" to indicate that the hit detection device found a hit. */
-#define e_hit e_invalidexit
 
 /* <x> <y> ineofill <bool> */
 /* <userpath> ineofill <bool> */
@@ -100,7 +100,7 @@ zinufill(os_ptr op)
 /* <userpath1> <userpath2> inustroke <bool> */
 private int
 zinustroke(os_ptr op)
-{				/* This is different because of the optional matrix operand. */
+{	/* This is different because of the optional matrix operand. */
     int code = gs_gsave(igs);
     int spop, npop;
     gx_device hdev;
@@ -121,65 +121,9 @@ zinustroke(os_ptr op)
 
 /* ------ Internal routines ------ */
 
-/* Define a minimal device for insideness testing. */
-/* It returns e_hit whenever it is asked to actually paint any pixels. */
-private dev_proc_fill_rectangle(hit_fill_rectangle);
-private gx_device hit_device =
-{std_device_std_body(gx_device, 0, "hit detector",
-		     0, 0, 1, 1),
- {NULL,				/* open_device */
-  NULL,				/* get_initial_matrix */
-  NULL,				/* sync_output */
-  NULL,				/* output_page */
-  NULL,				/* close_device */
-  gx_default_map_rgb_color,
-  gx_default_map_color_rgb,
-  hit_fill_rectangle,
-  NULL,				/* tile_rectangle */
-  NULL,				/* copy_mono */
-  NULL,				/* copy_color */
-  gx_default_draw_line,
-  NULL,				/* get_bits */
-  NULL,				/* get_params */
-  NULL,				/* put_params */
-  gx_default_map_cmyk_color,
-  NULL,				/* get_xfont_procs */
-  NULL,				/* get_xfont_device */
-  gx_default_map_rgb_alpha_color,
-  gx_default_get_page_device,
-  gx_default_get_alpha_bits,
-  NULL,				/* copy_alpha */
-  gx_default_get_band,
-  NULL,				/* copy_rop */
-  gx_default_fill_path,
-  NULL,				/* stroke_path */
-  NULL,				/* fill_mask */
-  gx_default_fill_trapezoid,
-  gx_default_fill_parallelogram,
-  gx_default_fill_triangle,
-  gx_default_draw_thin_line,
-  gx_default_begin_image,
-  gx_default_image_data,
-  gx_default_end_image,
-  gx_default_strip_tile_rectangle,
-  gx_default_strip_copy_rop,
-  gx_get_largest_clipping_box,
-  NULL				/* get_hardware_params */
- }
-};
-
-/* Test for a hit when filling a rectangle. */
-private int
-hit_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
-		   gx_color_index color)
-{
-    fit_fill(dev, x, y, w, h);	/* returns 0 if empty rectangle */
-    return e_hit;
-}
-
 /* Do the work of the non-user-path insideness operators. */
 private int
-in_test(os_ptr op, int (*paintproc) (P1(gs_state *)))
+in_test(os_ptr op, int (*paintproc)(P1(gs_state *)))
 {
     gx_device hdev;
     int npop = in_path(op, op, &hdev);
@@ -187,7 +131,7 @@ in_test(os_ptr op, int (*paintproc) (P1(gs_state *)))
 
     if (npop < 0)
 	return npop;
-    code = (*paintproc) (igs);
+    code = (*paintproc)(igs);
     return in_path_result(op, npop, code);
 }
 
@@ -216,16 +160,16 @@ in_path(os_ptr oppath, os_ptr op, gx_device * phdev)
     } else {			/* Aperture is a user path. */
 	/* We have to set the clipping path without disturbing */
 	/* the current path. */
+	gx_path *ipath = igs->path;
 	gx_path save;
 
-	save = *igs->path;
-	gx_path_reset(igs->path);	/* prevent newpath from */
-	/* releasing path */
+	gx_path_init_local(&save, imemory);
+	gx_path_assign_preserve(&save, ipath);
+	gs_newpath(igs);
 	code = upath_append(oppath, op);
 	if (code >= 0)
 	    code = gx_clip_to_path(igs);
-	gs_newpath(igs);	/* release upath */
-	*igs->path = save;
+	gx_path_assign_free(igs->path, &save);
 	npop = 1;
     }
     if (code < 0) {
@@ -234,7 +178,8 @@ in_path(os_ptr oppath, os_ptr op, gx_device * phdev)
     }
     /* Install the hit detection device. */
     gx_set_device_color_1(igs);
-    *phdev = hit_device;
+    gx_device_init((gx_device *) phdev, (const gx_device *)&gs_hit_device,
+		   NULL, true);
     phdev->width = phdev->height = max_int;
     gx_device_fill_in_procs(phdev);
     gx_set_device_only(igs, phdev);
@@ -245,19 +190,15 @@ in_path(os_ptr oppath, os_ptr op, gx_device * phdev)
 private int
 in_path_result(os_ptr op, int npop, int code)
 {
-    int result;
+    bool result;
 
     gs_grestore(igs);		/* matches gsave in in_path */
-    switch (code) {
-	case e_hit:		/* found a hit */
-	    result = 1;
-	    break;
-	case 0:		/* completed painting without a hit */
-	    result = 0;
-	    break;
-	default:		/* error */
-	    return code;
-    }
+    if (code == gs_hit_detected)
+	result = true;
+    else if (code == 0)		/* completed painting without a hit */
+	result = false;
+    else			/* error */
+	return code;
     npop--;
     pop(npop);
     op -= npop;
@@ -268,7 +209,7 @@ in_path_result(os_ptr op, int npop, int code)
 
 /* Do the work of the user-path insideness operators. */
 private int
-in_utest(os_ptr op, int (*paintproc) (P1(gs_state *)))
+in_utest(os_ptr op, int (*paintproc)(P1(gs_state *)))
 {
     gx_device hdev;
     int npop = in_upath(op, &hdev);
@@ -276,7 +217,7 @@ in_utest(os_ptr op, int (*paintproc) (P1(gs_state *)))
 
     if (npop < 0)
 	return npop;
-    code = (*paintproc) (igs);
+    code = (*paintproc)(igs);
     return in_upath_result(op, npop, code);
 }
 
@@ -307,28 +248,29 @@ in_upath_result(os_ptr op, int npop, int code)
     return in_path_result(op, npop, code);
 }
 
-/* ------ User paths ------ */
+/* ---------------- User paths ---------------- */
 
 /* User path operator codes */
 typedef enum {
-    upath_setbbox = 0,
-    upath_moveto = 1,
-    upath_rmoveto = 2,
-    upath_lineto = 3,
-    upath_rlineto = 4,
-    upath_curveto = 5,
-    upath_rcurveto = 6,
-    upath_arc = 7,
-    upath_arcn = 8,
-    upath_arct = 9,
-    upath_closepath = 10,
-    upath_ucache = 11
+    upath_op_setbbox = 0,
+    upath_op_moveto = 1,
+    upath_op_rmoveto = 2,
+    upath_op_lineto = 3,
+    upath_op_rlineto = 4,
+    upath_op_curveto = 5,
+    upath_op_rcurveto = 6,
+    upath_op_arc = 7,
+    upath_op_arcn = 8,
+    upath_op_arct = 9,
+    upath_op_closepath = 10,
+    upath_op_ucache = 11
 } upath_op;
 
-#define upath_op_max 11
-#define upath_repeat 32
-static byte up_nargs[upath_op_max + 1] =
-{4, 2, 2, 2, 2, 6, 6, 5, 5, 5, 0, 0};
+#define UPATH_MAX_OP 11
+#define UPATH_REPEAT 32
+static const byte up_nargs[UPATH_MAX_OP + 1] = {
+    4, 2, 2, 2, 2, 6, 6, 5, 5, 5, 0, 0
+};
 
 /* Declare operator procedures not declared in opextern.h. */
 int zsetbbox(P1(os_ptr));
@@ -338,10 +280,10 @@ int zarct(P1(os_ptr));
 private int zucache(P1(os_ptr));
 
 #undef zp
-static op_proc_p up_ops[upath_op_max + 1] =
-{zsetbbox, zmoveto, zrmoveto, zlineto, zrlineto,
- zcurveto, zrcurveto, zarc, zarcn, zarct,
- zclosepath, zucache
+static const op_proc_p up_ops[UPATH_MAX_OP + 1] = {
+    zsetbbox, zmoveto, zrmoveto, zlineto, zrlineto,
+    zcurveto, zrcurveto, zarc, zarcn, zarct,
+    zclosepath, zucache
 };
 
 /* - ucache - */
@@ -430,21 +372,134 @@ zustrokepath(register os_ptr op)
     int code, npop;
 
     /* Save and reset the path. */
-    save = *igs->path;
-    gx_path_reset(igs->path);
+    gx_path_init_local(&save, imemory);
+    gx_path_assign_preserve(&save, igs->path);
     if ((code = npop = upath_stroke(op)) < 0 ||
 	(code = gs_strokepath(igs)) < 0
 	) {
-	gs_newpath(igs);	/* release partial path */
-	*igs->path = save;
+	gx_path_assign_free(igs->path, &save);
 	return code;
     }
-    gx_path_release(&save);
+    gx_path_free(&save, "ustrokepath");
     pop(npop);
     return 0;
 }
 
-/* --- Internal routines --- */
+/* <with_ucache> upath <userpath> */
+/* We do all the work in a procedure that is also used to construct */
+/* the UnpaintedPath user path for ImageType 2 images. */
+int make_upath(P4(ref * rupath, gs_state * pgs, gx_path * ppath,
+		  bool with_ucache));
+private int
+zupath(register os_ptr op)
+{
+    check_type(*op, t_boolean);
+    return make_upath(op, igs, igs->path, op->value.boolval);
+}
+int
+make_upath(ref * rupath, gs_state * pgs, gx_path * ppath, bool with_ucache)
+{
+    int size = (with_ucache ? 6 : 5);
+    gs_path_enum penum;
+    int op;
+    ref *next;
+    int code;
+
+    /* Compute the size of the user path array. */
+    {
+	gs_fixed_point pts[3];
+
+	gx_path_enum_init(&penum, ppath);
+	while ((op = gx_path_enum_next(&penum, pts)) != 0) {
+	    switch (op) {
+		case gs_pe_moveto:
+		case gs_pe_lineto:
+		    size += 3;
+		    continue;
+		case gs_pe_curveto:
+		    size += 7;
+		    continue;
+		case gs_pe_closepath:
+		    size += 1;
+		    continue;
+		default:
+		    return_error(e_unregistered);
+	    }
+	}
+    }
+    code = ialloc_ref_array(rupath, a_all | a_executable, size,
+			    "make_upath");
+    if (code < 0)
+	return code;
+    /* Construct the path. */
+    next = rupath->value.refs;
+    if (with_ucache) {
+	if ((code = name_enter_string("ucache", next)) < 0)
+	    return code;
+	r_set_attrs(next, a_executable | l_new);
+	++next;
+    } {
+	gs_rect bbox;
+
+	gs_upathbbox(pgs, &bbox, true);
+	make_real_new(next, bbox.p.x);
+	make_real_new(next + 1, bbox.p.y);
+	make_real_new(next + 2, bbox.q.x);
+	make_real_new(next + 3, bbox.q.y);
+	next += 4;
+	if ((code = name_enter_string("setbbox", next)) < 0)
+	    return code;
+	r_set_attrs(next, a_executable | l_new);
+	++next;
+    }
+    {
+	gs_point pts[3];
+
+	/* Patch the path in the gstate to set up the enumerator. */
+	gx_path *save_path = pgs->path;
+
+	pgs->path = ppath;
+	gs_path_enum_copy_init(&penum, pgs, false);
+	pgs->path = save_path;
+	while ((op = gs_path_enum_next(&penum, pts)) != 0) {
+	    const char *opstr;
+
+	    switch (op) {
+		case gs_pe_moveto:
+		    opstr = "moveto";
+		    goto ml;
+		case gs_pe_lineto:
+		    opstr = "lineto";
+		  ml:make_real_new(next, pts[0].x);
+		    make_real_new(next + 1, pts[0].y);
+		    next += 2;
+		    break;
+		case gs_pe_curveto:
+		    opstr = "curveto";
+		    make_real_new(next, pts[0].x);
+		    make_real_new(next + 1, pts[0].y);
+		    make_real_new(next + 2, pts[1].x);
+		    make_real_new(next + 3, pts[1].y);
+		    make_real_new(next + 4, pts[2].x);
+		    make_real_new(next + 5, pts[2].y);
+		    next += 6;
+		    break;
+		case gs_pe_closepath:
+		    opstr = "closepath";
+		    break;
+		default:
+		    return_error(e_unregistered);
+	    }
+	    if ((code = name_enter_string(opstr, next)) < 0)
+		return code;
+	    r_set_attrs(next, a_executable);
+	    ++next;
+	}
+    }
+    return 0;
+}
+
+/* ------ Internal routines ------ */
 
 /* Append a user path to the current path. */
 private int
@@ -471,9 +526,9 @@ upath_append(os_ptr oppath, os_ptr op)
 	while (ocount--) {
 	    byte opx = *opp++;
 
-	    if (opx > 32)
-		repcount = opx - 32;
-	    else if (opx > upath_op_max)
+	    if (opx > UPATH_REPEAT)
+		repcount = opx - UPATH_REPEAT;
+	    else if (opx > UPATH_MAX_OP)
 		return_error(e_rangecheck);
 	    else {		/* operator */
 		do {
@@ -493,7 +548,7 @@ upath_append(os_ptr oppath, os_ptr op)
 				return_error(e_typecheck);
 			}
 		    }
-		    code = (*up_ops[opx]) (op);
+		    code = (*up_ops[opx])(op);
 		    if (code < 0)
 			return code;
 		    op = osp;	/* resync */
@@ -507,7 +562,7 @@ upath_append(os_ptr oppath, os_ptr op)
 	uint ocount = r_size(oppath);
 	long index = 0;
 	int argcount = 0;
-	int (*oproc) (P1(os_ptr));
+	int (*oproc)(P1(os_ptr));
 	int opx, code;
 
 	for (; index < ocount; index++) {
@@ -535,12 +590,12 @@ upath_append(os_ptr oppath, os_ptr op)
 		  xop:if (!r_has_attr(defp, a_executable))
 			return_error(e_typecheck);
 		    oproc = real_opproc(defp);
-		    for (opx = 0; opx <= upath_op_max; opx++)
+		    for (opx = 0; opx <= UPATH_MAX_OP; opx++)
 			if (oproc == up_ops[opx])
 			    break;
-		    if (opx > upath_op_max || argcount != up_nargs[opx])
+		    if (opx > UPATH_MAX_OP || argcount != up_nargs[opx])
 			return_error(e_typecheck);
-		    code = (*oproc) (op);
+		    code = (*oproc)(op);
 		    if (code < 0)
 			return code;
 		    op = osp;	/* resync ostack pointer */
@@ -576,7 +631,7 @@ upath_stroke(register os_ptr op)
     return (code < 0 ? code : npop);
 }
 
-/* ------ Initialization procedure ------ */
+/* ---------------- Initialization procedure ---------------- */
 
 const op_def zupath_l2_op_defs[] =
 {
@@ -590,10 +645,11 @@ const op_def zupath_l2_op_defs[] =
     {"2inustroke", zinustroke},
 		/* User paths */
     {"1uappend", zuappend},
+    {"0ucache", zucache},
     {"1ueofill", zueofill},
     {"1ufill", zufill},
+    {"1upath", zupath},
     {"1ustroke", zustroke},
     {"1ustrokepath", zustrokepath},
-    {"0ucache", zucache},
     op_def_end(0)
 };

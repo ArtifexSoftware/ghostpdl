@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,18 +16,18 @@
    all copies.
  */
 
-/* sdctd.c */
+/*Id: sdctd.c  */
 /* DCT decoding filter stream */
 #include "memory_.h"
 #include "stdio_.h"
 #include "jpeglib.h"
 #include "jerror.h"
 #include "gdebug.h"
+#include "gsmemory.h"		/* for gsmalloc.h */
+#include "gsmalloc.h"		/* for gs_memory_default */
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
-
-#define ss ((stream_DCT_state *)st)
 
 /* ------ DCTDecode ------ */
 
@@ -79,10 +79,18 @@ dctd_term_source(j_decompress_ptr dinfo)
 {
 }
 
+/* Set the defaults for the DCTDecode filter. */
+private void
+s_DCTD_set_defaults(stream_state * st)
+{
+    s_DCT_set_defaults(st);
+}
+
 /* Initialize DCTDecode filter */
 private int
 s_DCTD_init(stream_state * st)
 {
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
     struct jpeg_source_mgr *src = &ss->data.decompress->source;
 
     src->init_source = dctd_init_source;
@@ -90,6 +98,7 @@ s_DCTD_init(stream_state * st)
     src->skip_input_data = dctd_skip_input_data;
     src->term_source = dctd_term_source;
     src->resync_to_restart = jpeg_resync_to_restart;	/* use default method */
+    ss->data.common->memory = ss->jpeg_memory;
     ss->data.decompress->dinfo.src = src;
     ss->data.decompress->skip = 0;
     ss->data.decompress->input_eod = false;
@@ -103,6 +112,7 @@ private int
 s_DCTD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
     jpeg_decompress_data *jddp = ss->data.decompress;
     struct jpeg_source_mgr *src = jddp->dinfo.src;
     int code;
@@ -185,9 +195,10 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
 		      ss->scan_line_size, jddp->template.min_out_size);
 	    if (ss->scan_line_size > (uint) jddp->template.min_out_size) {
 		/* Create a spare buffer for oversize scanline */
-		jddp->scanline_buffer = (byte *)
-		    gs_malloc(ss->scan_line_size, sizeof(byte),
-			      "s_DCTD_process(scanline_buffer)");
+		jddp->scanline_buffer =
+		    gs_alloc_bytes_immovable(jddp->memory,
+					     ss->scan_line_size,
+					 "s_DCTD_process(scanline_buffer)");
 		if (jddp->scanline_buffer == NULL)
 		    return ERRC;
 	    }
@@ -261,21 +272,21 @@ s_DCTD_process(stream_state * st, stream_cursor_read * pr,
 private void
 s_DCTD_release(stream_state * st)
 {
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
+
     gs_jpeg_destroy(ss);
-    if (ss->data.decompress->scanline_buffer != NULL) {
-	gs_free(ss->data.decompress->scanline_buffer,
-		ss->scan_line_size, sizeof(byte),
-		"s_DCTD_release(scanline_buffer)");
-    }
-    gs_free(ss->data.decompress, 1, sizeof(jpeg_decompress_data),
-	    "s_DCTD_release");
+    if (ss->data.decompress->scanline_buffer != NULL)
+	gs_free_object(ss->data.common->memory,
+		       ss->data.decompress->scanline_buffer,
+		       "s_DCTD_release(scanline_buffer)");
+    gs_free_object(ss->data.common->memory, ss->data.decompress,
+		   "s_DCTD_release");
     /* Switch the template pointer back in case we still need it. */
     st->template = &s_DCTD_template;
 }
 
 /* Stream template */
 const stream_template s_DCTD_template =
-{&st_DCT_state, s_DCTD_init, s_DCTD_process, 2000, 4000, s_DCTD_release
+{&st_DCT_state, s_DCTD_init, s_DCTD_process, 2000, 4000, s_DCTD_release,
+ s_DCTD_set_defaults
 };
-
-#undef ss

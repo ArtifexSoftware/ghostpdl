@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zfunc.c */
+/*Id: zfunc.c  */
 /* Generic PostScript language interface to Functions */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsfunc.h"
 #include "gsstruct.h"
@@ -31,12 +30,12 @@
 #include "store.h"
 
 /* Define the maximum depth of nesting of subsidiary functions. */
-#define max_depth 3
+#define MAX_SUB_FUNCTION_DEPTH 3
 
 /* Define the table of build procedures. */
 build_function_proc((*build_function_procs[5])) = {
     build_function_undefined, build_function_undefined, build_function_undefined,
-	build_function_undefined, build_function_undefined
+    build_function_undefined, build_function_undefined
 };
 
 int
@@ -83,16 +82,16 @@ zbuildfunction(os_ptr op)
 /* <in1> ... <function_struct> %execfunction <out1> ... */
 private int
 zexecfunction(os_ptr op)
-{				/*
-				 * Since this operator's name begins with %, the name is not defined
-				 * in systemdict.  The only place this operator can ever appear is
-				 * in the execute-only closure created by .buildfunction.
-				 * Therefore, in principle it is unnecessary to check the argument.
-				 * However, we do a little checking anyway just on general
-				 * principles.  Note that since the argument may be an instance of
-				 * any subclass of gs_function_t, we currently have no way to check
-				 * its type.
-				 */
+{	/*
+	 * Since this operator's name begins with %, the name is not defined
+	 * in systemdict.  The only place this operator can ever appear is
+	 * in the execute-only closure created by .buildfunction.
+	 * Therefore, in principle it is unnecessary to check the argument.
+	 * However, we do a little checking anyway just on general
+	 * principles.  Note that since the argument may be an instance of
+	 * any subclass of gs_function_t, we currently have no way to check
+	 * its type.
+	 */
     if (!r_is_struct(op) ||
 	r_has_masked_attrs(op, a_executable | a_execute, a_all)
 	)
@@ -142,7 +141,7 @@ fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth)
     int code, type;
     gs_function_params_t params;
 
-    if (depth > max_depth)
+    if (depth > MAX_SUB_FUNCTION_DEPTH)
 	return_error(e_limitcheck);
     check_type(*op, t_dictionary);
     code = dict_int_param(op, "FunctionType", 0,
@@ -163,7 +162,8 @@ fn_build_sub_function(const ref * op, gs_function_t ** ppfn, int depth)
     /* Finish building the function. */
     /* If this fails, it will free all the parameters. */
     return (*build_function_procs[type]) (op, &params, depth + 1, ppfn);
-  fail:ifree_object((void *)params.Range, "Range");	/* break const */
+fail:
+    ifree_object((void *)params.Range, "Range");	/* break const */
     ifree_object((void *)params.Domain, "Domain");	/* break const */
     return code;
 }
@@ -189,7 +189,7 @@ ialloc_function_array(uint count, gs_function_t *** pFunctions)
 /* If the key is missing, set *pparray = 0 and return 0; */
 /* otherwise set *pparray and return the number of elements. */
 int
-fn_build_float_array(const ref * op, const char _ds * kstr, bool required,
+fn_build_float_array(const ref * op, const char *kstr, bool required,
 		     bool even, const float **pparray)
 {
     ref *par;
@@ -213,7 +213,6 @@ fn_build_float_array(const ref * op, const char _ds * kstr, bool required,
 	}
 	*pparray = ptr;
     }
-#undef max_values
     return code;
 }
 

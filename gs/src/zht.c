@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zht.c */
+/*Id: zht.c  */
 /* Halftone definition operators */
 #include "ghost.h"
 #include "memory_.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"
 #include "gsstruct.h"		/* must precede igstate.h, */
@@ -121,7 +120,7 @@ zsetscreen(register os_ptr op)
 
     if (code < 0)
 	return code;
-    mem = (gs_memory_t *) idmemory->spaces.indexed[r_space_index(op)];
+    mem = (gs_memory_t *)idmemory->spaces.indexed[r_space_index(op)];
     /*
      * Allocate the halftone in the same VM space as the procedure.
      * This keeps the space relationships consistent.
@@ -138,7 +137,7 @@ zsetscreen(register os_ptr op)
 int
 zscreen_enum_init(os_ptr op, const gx_ht_order * porder,
 		  gs_screen_halftone * psp, ref * pproc, int npop,
-		  int (*finish_proc) (P1(os_ptr)), gs_memory_t * mem)
+		  int (*finish_proc)(P1(os_ptr)), gs_memory_t * mem)
 {
     gs_screen_enum *penum;
     int code;

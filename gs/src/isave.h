@@ -1,24 +1,26 @@
-/* Copyright (C) 1991, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1991, 1995, 1997 Aladdin Enterprises.  All rights reserved.
 
-/* isave.h */
-/* Interface to Ghostscript save/restore machinery */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: isave.h  */
 /* Requires imemory.h */
+
+#ifndef isave_INCLUDED
+#  define isave_INCLUDED
 
 /*
  * According to the PostScript language definition, save objects are simple,
@@ -31,8 +33,9 @@
  * and this approach means we don't have to do anything to invalidate
  * save objects when we do a restore.
  */
-#ifndef alloc_save_t_DEFINED		/* also in inamedef.h */
+#ifndef alloc_save_t_DEFINED	/* also in inamedef.h */
 typedef struct alloc_save_s alloc_save_t;
+
 #  define alloc_save_t_DEFINED
 #endif
 
@@ -53,8 +56,11 @@ void *alloc_save_client_data(P1(const alloc_save_t *));
 /* Return the current level of save nesting. */
 int alloc_save_level(P1(const gs_dual_memory_t *));
 
-/* Return the innermost externally visible save object. */
-alloc_save_t *alloc_save_current(P1(const gs_dual_memory_t *));
+/* Return (the id of) the innermost externally visible save object. */
+ulong alloc_save_current_id(P1(const gs_dual_memory_t *));
+
+#define alloc_save_current(dmem)\
+  alloc_find_save(dmem, alloc_save_current_id(dmem))
 
 /* Check whether a pointer refers to an object allocated since a given save. */
 bool alloc_is_since_save(P2(const void *, const alloc_save_t *));
@@ -94,13 +100,25 @@ void alloc_restore_all(P1(gs_dual_memory_t *));
  * We have to pass the pointer to the containing object to alloc_save_change
  * for two reasons:
  *
- *	- We need to know which VM the containing object is in, so we can
+ *      - We need to know which VM the containing object is in, so we can
  * know on which chain of saved changes to put the new change.
  *
- *	- We need to know whether the object is an array of refs (which
+ *      - We need to know whether the object is an array of refs (which
  * includes dictionaries) or a struct, so we can properly trace and
  * relocate the pointer to it from the change record during garbage
  * collection.
  */
-int alloc_save_change(P4(gs_dual_memory_t *, const ref *pcont,
-			 ref_packed *ptr, client_name_t cname));
+int alloc_save_change(P4(gs_dual_memory_t *, const ref * pcont,
+			 ref_packed * ptr, client_name_t cname));
+
+/* ------ Internals ------ */
+
+/* Record that we are in a save. */
+#define alloc_set_in_save(dmem)\
+  ((dmem)->test_mask = (dmem)->new_mask = l_new)
+
+/* Record that we are not in a save. */
+#define alloc_set_not_in_save(dmem)\
+  ((dmem)->test_mask = ~0, (dmem)->new_mask = 0)
+
+#endif /* isave_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sfxstdio.c */
+/*Id: sfxstdio.c  */
 /* File stream implementation using stdio */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -173,15 +173,13 @@ s_file_write_close(register stream * s)
     return s_file_read_close(s);
 }
 
-#define ss ((stream *)st)
-
 /* Process a buffer for a file reading stream. */
 /* This is the first stream in the pipeline, so pr is irrelevant. */
 private int
 s_file_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
-    FILE *file = ss->file;
+    FILE *file = ((stream *) st)->file;
     int count = fread(pw->ptr + 1, 1, (uint) (pw->limit - pw->ptr), file);
 
     if (count < 0)
@@ -201,7 +199,7 @@ s_file_write_process(stream_state * st, stream_cursor_read * pr,
     uint count = pr->limit - pr->ptr;
 
     if (count != 0) {
-	FILE *file = ss->file;
+	FILE *file = ((stream *) st)->file;
 	int written = fwrite(pr->ptr + 1, 1, count, file);
 
 	if (written < 0)
@@ -214,8 +212,6 @@ s_file_write_process(stream_state * st, stream_cursor_read * pr,
 	return 0;
     }
 }
-
-#undef ss
 
 /* Switch a file stream to reading or writing. */
 private int

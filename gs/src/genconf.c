@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* genconf.c */
+/*Id: genconf.c  */
 /* Generate configuration files */
 #include "stdpre.h"
 #include <assert.h>
@@ -59,12 +59,15 @@ mrealloc(void *old_ptr, size_t old_size, size_t new_size)
  *      &x, for any other character x, is an error.
  */
 
-/* DEFAULT_PREFIX should be DEFAULT_NAME_PREFIX. */
-#define DEFAULT_PREFIX "gs_"
+/* DEFAULT_NAME_PREFIX should be DEFAULT_NAME_PREFIX. */
+#define DEFAULT_NAME_PREFIX "gs_"
+
+#define MAX_STR 120
 
 /* Structures for accumulating information. */
 typedef struct string_item_s {
     const char *str;
+    int file_index;		/* index of file containing this item */
     int index;
 } string_item;
 
@@ -76,6 +79,7 @@ typedef enum {
 } uniq_mode;
 typedef struct string_list_s {
     /* The following are set at creation time. */
+    const char *list_name;	/* only for debugging */
     int max_count;
     uniq_mode mode;
     /* The following are updated dynamically. */
@@ -93,16 +97,31 @@ typedef struct config_s {
     int debug;
     const char *name_prefix;
     const char *file_prefix;
-    /* file_names and file_contents are special.... */
+    /* Special "resources" */
     string_list file_names;
     string_list file_contents;
-    string_list resources;
-    string_list devs;
-    string_list fonts;
-    string_list headers;
-    string_list libs;
-    string_list libpaths;
-    string_list objs;
+    string_list replaces;
+    /* Real resources */
+    union ru_ {
+	struct nu_ {
+	    string_list resources;
+#define c_resources lists.named.resources
+	    string_list devs;	/* also includes devs2 */
+#define c_devs lists.named.devs
+	    string_list fonts;
+#define c_fonts lists.named.fonts
+	    string_list headers;
+#define c_headers lists.named.headers
+	    string_list libs;
+#define c_libs lists.named.libs
+	    string_list libpaths;
+#define c_libpaths lists.named.libpaths
+	    string_list objs;
+#define c_objs lists.named.objs
+	} named;
+#define NUM_RESOURCE_LISTS 7
+	string_list indexed[NUM_RESOURCE_LISTS];
+    } lists;
     string_pattern lib_p;
     string_pattern libpath_p;
     string_pattern obj_p;
@@ -113,26 +132,31 @@ typedef struct config_s {
 static const config init_config =
 {
     0,				/* debug */
-    DEFAULT_PREFIX,		/* name_prefix */
+    DEFAULT_NAME_PREFIX,	/* name_prefix */
     "",				/* file_prefix */
-    {200},			/* file_names */
-    {200},			/* file_contents */
-    {100, uniq_first},		/* resources */
-    {100, uniq_first},		/* devs */
-    {50, uniq_first},		/* fonts */
-    {20, uniq_first},		/* headers */
-    {20, uniq_last},		/* libs */
-    {10, uniq_first},		/* libpaths */
-    {400, uniq_first}		/* objs */
+    {"file name", 200},		/* file_names */
+    {"file contents", 200},	/* file_contents */
+    {"-replace", 50}
+};
+static const string_list init_config_lists[] =
+{
+    {"resource", 100, uniq_first},
+    {"-dev", 100, uniq_first},
+    {"-dev2", 100, uniq_first},
+    {"-font", 50, uniq_first},
+    {"-header", 20, uniq_first},
+    {"-lib", 20, uniq_last},
+    {"-libpath", 10, uniq_first},
+    {"-obj", 500, uniq_first}
 };
 
 /* Forward definitions */
 int alloc_list(P1(string_list *));
-void parse_affix(P2(char *, const char *));
+int process_replaces(P1(config *));
 int read_dev(P2(config *, const char *));
 int read_token(P3(char *, int, const char **));
-int add_entry(P3(config *, char *, const char *));
-string_item *add_item(P2(string_list *, const char *));
+int add_entry(P4(config *, char *, const char *, int));
+string_item *add_item(P3(string_list *, const char *, int));
 void sort_uniq(P1(string_list *));
 void write_list(P3(FILE *, const string_list *, const char *));
 void write_list_pattern(P3(FILE *, const string_list *, const string_pattern *));
@@ -144,15 +168,13 @@ main(int argc, char *argv[])
 
     /* Allocate string lists. */
     conf = init_config;
+    memcpy(conf.lists.indexed, init_config_lists,
+	   sizeof(conf.lists.indexed));
     alloc_list(&conf.file_names);
     alloc_list(&conf.file_contents);
-    alloc_list(&conf.resources);
-    alloc_list(&conf.devs);
-    alloc_list(&conf.fonts);
-    alloc_list(&conf.headers);
-    alloc_list(&conf.libs);
-    alloc_list(&conf.libpaths);
-    alloc_list(&conf.objs);
+    alloc_list(&conf.replaces);
+    for (i = 0; i < NUM_RESOURCE_LISTS; ++i)
+	alloc_list(&conf.lists.indexed[i]);
 
     /* Initialize patterns. */
     conf.lib_p.upper_case = false;
@@ -239,7 +261,7 @@ main(int argc, char *argv[])
 			p[-1] = '\n';
 			*p = 0;
 		    }
-		    for (;;)
+		    for (;;) {
 			switch (*++arg) {
 			    case 'u':
 				pat->upper_case = true;
@@ -253,15 +275,16 @@ main(int argc, char *argv[])
 				fprintf(stderr, "Unknown switch %s.\n", arg);
 				exit(1);
 			}
+		    }
 		  pbreak:if (pat == &conf.obj_p) {
 			conf.lib_p = *pat;
 			conf.libpath_p = *pat;
 		    }
 		    continue;
-	    case 'Z':
-		    conf.debug = 1;
-		    continue;
 		}
+	    case 'Z':
+		conf.debug = 1;
+		continue;
 	}
 	/* Must be an output file. */
 	out = fopen(argv[++i], "w");
@@ -272,6 +295,7 @@ main(int argc, char *argv[])
 	}
 	switch (arg[1]) {
 	    case 'f':
+		process_replaces(&conf);
 		fputs("/* This file was generated automatically by genconf.c. */\n", out);
 		fputs("/* For documentation, see gsconfig.c. */\n", out);
 		{
@@ -280,21 +304,16 @@ main(int argc, char *argv[])
 		    sprintf(template,
 			    "font_(\"0.font_%%s\",%sf_%%s,zf_%%s)\n",
 			    conf.name_prefix);
-		    write_list(out, &conf.fonts, template);
+		    write_list(out, &conf.c_fonts, template);
 		}
 		break;
 	    case 'h':
+		process_replaces(&conf);
 		fputs("/* This file was generated automatically by genconf.c. */\n", out);
-		{
-		    char template[80];
-
-		    sprintf(template, "device_(%s%%s_device)\n",
-			    conf.name_prefix);
-		    write_list(out, &conf.devs, template);
-		}
-		sort_uniq(&conf.resources);
-		write_list(out, &conf.resources, "%s\n");
-		write_list(out, &conf.headers, "#include \"%s\"\n");
+		write_list(out, &conf.c_devs, "%s\n");
+		sort_uniq(&conf.c_resources);
+		write_list(out, &conf.c_resources, "%s\n");
+		write_list(out, &conf.c_headers, "#include \"%s\"\n");
 		break;
 	    case 'l':
 		lib = 1;
@@ -303,14 +322,15 @@ main(int argc, char *argv[])
 	    case 'o':
 		obj = 1;
 		lib = arg[2] == 'l';
-	      lo:if (obj) {
-		    sort_uniq(&conf.objs);
-		    write_list_pattern(out, &conf.objs, &conf.obj_p);
+	      lo:process_replaces(&conf);
+		if (obj) {
+		    sort_uniq(&conf.c_objs);
+		    write_list_pattern(out, &conf.c_objs, &conf.obj_p);
 		}
 		if (lib) {
-		    sort_uniq(&conf.libs);
-		    write_list_pattern(out, &conf.libpaths, &conf.libpath_p);
-		    write_list_pattern(out, &conf.libs, &conf.lib_p);
+		    sort_uniq(&conf.c_libs);
+		    write_list_pattern(out, &conf.c_libpaths, &conf.libpath_p);
+		    write_list_pattern(out, &conf.c_libs, &conf.lib_p);
 		}
 		break;
 	    default:
@@ -335,9 +355,65 @@ alloc_list(string_list * list)
     return 0;
 }
 
+/* Delete any files that are named as -replace "resources". */
+int
+process_replaces(config * pconf)
+{
+    char bufname[MAX_STR];
+    int i;
+
+    for (i = 0; i < pconf->replaces.count; ++i) {
+	int len;
+	int j;
+
+	strcpy(bufname, pconf->replaces.items[i].str);
+	/* See if the file being replaced was included. */
+	len = strlen(bufname);
+	if (len < 5 || strcmp(bufname + len - 4, ".dev"))
+	    strcat(bufname, ".dev");
+	for (j = 0; j < pconf->file_names.count; ++j) {
+	    const char *fname = pconf->file_names.items[j].str;
+
+	    if (!strcmp(fname, bufname)) {
+		if (pconf->debug)
+		    printf("Deleting file %s.\n", fname);
+		/* Delete all resources associated with this file. */
+		{
+		    int rn;
+
+		    for (rn = 0; rn < NUM_RESOURCE_LISTS; ++rn) {
+			string_item *items = pconf->lists.indexed[rn].items;
+			int count = pconf->lists.indexed[rn].count;
+			int tn;
+
+			for (tn = 0; tn < count; ++tn) {
+			    if (items[tn].file_index == j) {
+				/* Delete the item.  Since we haven't sorted the items */
+				/* yet, just replace this item with the last one. */
+				if (pconf->debug)
+				    printf("Deleting %s %s.\n",
+					 pconf->lists.indexed[rn].list_name,
+					   items[tn].str);
+				items[tn] = items[--count];
+			    }
+			}
+			pconf->lists.indexed[rn].count = count;
+		    }
+		}
+		pconf->file_names.items[j].str = "";
+		break;
+	    }
+	}
+    }
+    /* Don't process the replaces again. */
+    pconf->replaces.count = 0;
+    return 0;
+}
+
 /* Read an entire file into memory. */
 /* We use the 'index' of the file_contents string_item to record the union */
 /* of the uniq_modes of all (direct and indirect) items in the file. */
+/* Return the file_contents item for the file. */
 string_item *
 read_file(config * pconf, const char *fname)
 {
@@ -384,8 +460,8 @@ read_file(config * pconf, const char *fname)
     cont[nread] = 0;
     if (pconf->debug)
 	printf("File %s = %d bytes.\n", cname, nread);
-    add_item(&pconf->file_names, cname);
-    item = add_item(&pconf->file_contents, cont);
+    add_item(&pconf->file_names, cname, -1);
+    item = add_item(&pconf->file_contents, cont, -1);
     item->index = 0;		/* union of uniq_modes */
     return item;
 }
@@ -401,6 +477,7 @@ read_dev(config * pconf, const char *arg)
 #define max_token 256
     char *token = malloc(max_token + 1);
     char *category = malloc(max_token + 1);
+    int file_index;
     int len;
 
     if (pconf->debug)
@@ -412,9 +489,10 @@ read_dev(config * pconf, const char *arg)
 	return uniq_first;
     }
     in = item->str;
+    file_index = item - pconf->file_contents.items;
     strcpy(category, "obj");
     while ((len = read_token(token, max_token, &in)) > 0)
-	item->index |= add_entry(pconf, category, token);
+	item->index |= add_entry(pconf, category, token, file_index);
     free(category);
 #undef max_token
     if (len < 0) {
@@ -455,17 +533,16 @@ read_token(char *token, int max_len, const char **pin)
 /* Add an entry to a configuration. */
 /* Return its uniq_mode. */
 int
-add_entry(config * pconf, char *category, const char *item)
+add_entry(config * pconf, char *category, const char *item, int file_index)
 {
     if (item[0] == '-') {	/* set category */
 	strcpy(category, item + 1);
 	return 0;
     } else {			/* add to current category */
-#define max_str 120
-	char str[max_str];
+	char str[MAX_STR];
 	char template[80];
 	const char *pat = 0;
-	string_list *list = &pconf->resources;
+	string_list *list = &pconf->c_resources;
 
 	if (pconf->debug)
 	    printf("Adding %s %s;\n", category, item);
@@ -473,26 +550,33 @@ add_entry(config * pconf, char *category, const char *item)
 	switch (category[0]) {
 #define is_cat(str) !strcmp(category, str)
 	    case 'd':
-		if (is_cat("dev")) {
-		    list = &pconf->devs;
-		    break;
-		}
-		goto err;
+		if (is_cat("dev"))
+		    pat = "device_(%s%%s_device)";
+		else if (is_cat("dev2"))
+		    pat = "device2_(%s%%s_device)";
+		else
+		    goto err;
+		sprintf(template, pat, pconf->name_prefix);
+		pat = template;
+		list = &pconf->c_devs;
+		break;
 	    case 'e':
 		if (is_cat("emulator")) {
-		    pat = "emulator_(\"%s\")";
+		    sprintf(str, "emulator_(\"%s\",%d)",
+			    item, strlen(item));
+		    item = str;
 		    break;
 		}
 		goto err;
 	    case 'f':
 		if (is_cat("font")) {
-		    list = &pconf->fonts;
+		    list = &pconf->c_fonts;
 		    break;
 		}
 		goto err;
 	    case 'h':
 		if (is_cat("header")) {
-		    list = &pconf->headers;
+		    list = &pconf->c_headers;
 		    break;
 		}
 		goto err;
@@ -503,11 +587,6 @@ add_entry(config * pconf, char *category, const char *item)
 		    strcpy(str, item);
 		    if (len < 5 || strcmp(str + len - 4, ".dev"))
 			strcat(str, ".dev");
-		    return read_dev(pconf, str);
-		}
-		if (is_cat("includef")) {
-		    strcpy(str, item);
-		    strcat(str, ".dvc");
 		    return read_dev(pconf, str);
 		}
 		if (is_cat("init")) {
@@ -521,17 +600,17 @@ add_entry(config * pconf, char *category, const char *item)
 		break;
 	    case 'l':
 		if (is_cat("lib")) {
-		    list = &pconf->libs;
+		    list = &pconf->c_libs;
 		    break;
 		}
 		if (is_cat("libpath")) {
-		    list = &pconf->libpaths;
+		    list = &pconf->c_libpaths;
 		    break;
 		}
 		goto err;
 	    case 'o':
 		if (is_cat("obj")) {
-		    list = &pconf->objs;
+		    list = &pconf->c_objs;
 		    strcpy(template, pconf->file_prefix);
 		    strcat(template, "%s");
 		    pat = template;
@@ -544,7 +623,15 @@ add_entry(config * pconf, char *category, const char *item)
 		goto err;
 	    case 'p':
 		if (is_cat("ps")) {
-		    pat = "psfile_(\"%s.ps\")";
+		    sprintf(str, "psfile_(\"%s.ps\",%d)",
+			    item, strlen(item) + 3);
+		    item = str;
+		    break;
+		}
+		goto err;
+	    case 'r':
+		if (is_cat("replace")) {
+		    list = &pconf->replaces;
 		    break;
 		}
 		goto err;
@@ -555,17 +642,17 @@ add_entry(config * pconf, char *category, const char *item)
 	}
 	if (pat) {
 	    sprintf(str, pat, item);
-	    assert(strlen(str) < max_str);
-	    add_item(list, str);
+	    assert(strlen(str) < MAX_STR);
+	    add_item(list, str, file_index);
 	} else
-	    add_item(list, item);
+	    add_item(list, item, file_index);
 	return list->mode;
     }
 }
 
 /* Add an item to a list. */
 string_item *
-add_item(string_list * list, const char *str)
+add_item(string_list * list, const char *str, int file_index)
 {
     char *rstr = malloc(strlen(str) + 1);
     int count = list->count;
@@ -585,6 +672,7 @@ add_item(string_list * list, const char *str)
     item = &list->items[count];
     item->index = count;
     item->str = rstr;
+    item->file_index = file_index;
     list->count++;
     return item;
 }

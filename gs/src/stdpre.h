@@ -1,22 +1,22 @@
 /* Copyright (C) 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/*Id: stdpre.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: stdpre.h  */
 /* Standard definitions for Aladdin Enterprises code not needing arch.h */
 
 #ifndef stdpre_INCLUDED
@@ -24,11 +24,13 @@
 
 /*
  * Here we deal with the vagaries of various C compilers.  We assume that:
- *	ANSI-standard Unix compilers define __STDC__.
- *	Borland Turbo C and Turbo C++ define __MSDOS__ and __TURBOC__.
- *	Borland C++ defines __BORLANDC__, __MSDOS__, and __TURBOC__.
- *	Microsoft C/C++ defines _MSC_VER and _MSDOS.
- *	Watcom C defines __WATCOMC__ and MSDOS.
+ *      ANSI-standard Unix compilers define __STDC__.
+ *      gcc defines __GNUC__.
+ *      Borland Turbo C and Turbo C++ define __MSDOS__ and __TURBOC__.
+ *      Borland C++ defines __BORLANDC__, __MSDOS__, and __TURBOC__.
+ *      Microsoft C/C++ defines _MSC_VER and _MSDOS.
+ *      Watcom C defines __WATCOMC__ and MSDOS.
+ *      MetroWerks C defines __MWERKS__.
  *
  * We arrange to define __MSDOS__ on all the MS-DOS platforms.
  */
@@ -37,32 +39,32 @@
 #endif
 /*
  * Also, not used much here, but used in other header files, we assume:
- *	Unix System V environments define SYSV.
- *	The SCO ODT compiler defines M_SYSV and M_SYS3.
- *	VMS systems define VMS.
- *	OSF/1 compilers define __osf__ or __OSF__.
- *	  (The VMS and OSF/1 C compilers handle prototypes and const,
- *	  but do not define __STDC__.)
- *	bsd 4.2 or 4.3 systems define BSD4_2.
- *	POSIX-compliant environments define _POSIX_SOURCE.
- *	Motorola 88K BCS/OCS systems defined m88k.
+ *      Unix System V environments define SYSV.
+ *      The SCO ODT compiler defines M_SYSV and M_SYS3.
+ *      VMS systems define VMS.
+ *      OSF/1 compilers define __osf__ or __OSF__.
+ *        (The VMS and OSF/1 C compilers handle prototypes and const,
+ *        but do not define __STDC__.)
+ *      bsd 4.2 or 4.3 systems define BSD4_2.
+ *      POSIX-compliant environments define _POSIX_SOURCE.
+ *      Motorola 88K BCS/OCS systems defined m88k.
  *
  * We make fairly heroic efforts to confine all uses of these flags to
  * header files, and never to use them in code.
  */
 #if defined(__osf__) && !defined(__OSF__)
-#  define __OSF__ /* */
+#  define __OSF__		/* */
 #endif
 #if defined(M_SYSV) && !defined(SYSV)
-#  define SYSV /* */
+#  define SYSV			/* */
 #endif
 #if defined(M_SYS3) && !defined(__SVR3)
-#  define __SVR3 /* */
+#  define __SVR3		/* */
 #endif
 
 #if defined(__STDC__) || defined(__MSDOS__) || defined(__convex__) || defined(VMS) || defined(__OSF__) || defined(__WIN32__) || defined(__IBMC__) || defined(M_UNIX) || defined(__GNUC__) || defined(__BORLANDC__)
-# if !(defined(M_XENIX) && !defined(__GNUC__)) /* SCO Xenix cc is broken */
-#  define __PROTOTYPES__ /* */
+# if !(defined(M_XENIX) && !defined(__GNUC__))	/* SCO Xenix cc is broken */
+#  define __PROTOTYPES__	/* */
 # endif
 #endif
 
@@ -79,9 +81,19 @@
 /* Disable 'const' and 'volatile' if the compiler can't handle them. */
 #ifndef __PROTOTYPES__
 #  undef const
-#  define const	/* */
+#  define const			/* */
 #  undef volatile
-#  define volatile /* */
+#  define volatile		/* */
+#endif
+
+/* Disable 'inline' if the compiler can't handle it. */
+#ifdef __DECC
+#  undef inline
+#  define inline __inline
+#else
+#  if !(defined(__GNUC__) || defined(__MWERKS__) || defined(inline))
+#    define inline		/* */
+#  endif
 #endif
 
 /*
@@ -116,20 +128,20 @@
 #  ifdef __BORLANDC__
 #    define far_data far
 #  else
-#    define far_data /* */
+#    define far_data		/* */
 #  endif
 #else
 #  undef near
-#  define near /* */
+#  define near			/* */
 #  undef far
-#  define far /* */
-#  define far_data /* */
+#  define far			/* */
+#  define far_data		/* */
 #  undef huge
-#  define huge /* */
-#  define _cs /* */
-#  define _ds /* */
+#  define huge			/* */
+#  define _cs			/* */
+#  define _ds			/* */
 /* _es is never safe to use */
-#  define _ss /* */
+#  define _ss			/* */
 #endif
 
 /* Get the size of a statically declared array. */
@@ -196,8 +208,10 @@ typedef unsigned long ulong;
 #ifndef __cplusplus
 #ifdef __BEOS__
 typedef unsigned char bool;
+
 #else
 typedef int bool;
+
 #endif
 #endif
 /*
@@ -230,8 +244,10 @@ typedef int bool;
  */
 #if defined(__TURBOC__) || defined(_MSC_VER)
 typedef unsigned long ptr_ord_t;
+
 #else
 typedef const char *ptr_ord_t;
+
 #endif
 /* Define all the pointer comparison operations. */
 #define _ptr_cmp(p1, rel, p2)  ((ptr_ord_t)(p1) rel (ptr_ord_t)(p2))
@@ -277,9 +293,9 @@ typedef double floatp;
  * single statements.  Therefore, we define here a compound-statement
  * construct that *is* syntactically equivalent to a single statement.
  * Usage is
- *	BEGIN
- *	  ...statements...
- *	END
+ *      BEGIN
+ *        ...statements...
+ *      END
  */
 #define BEGIN	do {
 #define END	} while (0)
@@ -295,25 +311,26 @@ typedef double floatp;
 /*
  * For accountability, debugging, and error messages,
  * we pass a client identification string to alloc and free,
- * and possibly other places as well.
- * Define the type for these strings.  Note that because of the _ds,
- * we must coerce them explicitly when passing them to printf et al.
+ * and possibly other places as well. Define the type for these strings.
+ * The definition used to have a _ds modifier, so we had to coerce
+ * them when passing them to printf at all; this is no longer needed.
  */
-typedef const char _ds *client_name_t;
-#define client_name_string(cname) ((const char *)(cname))
+typedef const char *client_name_t;
+
+#define client_name_string(cname) (cname)
 
 /*
  * If we are debugging, make all static variables and procedures public
  * so they get passed through the linker.
  */
-#define public /* */
+#define public			/* */
 /*
  * We separate out the definition of private this way so that
  * we can temporarily #undef it to handle the X Windows headers,
  * which define a member named private.
  */
 #ifdef NOPRIVATE
-# define private_ /* */
+# define private_		/* */
 #else
 # define private_ static
 #endif
@@ -322,7 +339,7 @@ typedef const char _ds *client_name_t;
 /*
  * Macros for argument templates.  ANSI C has these, as does Turbo C,
  * but older pcc-derived (K&R) Unix compilers don't.  The syntax is
- *	resulttype func(Pn(arg1, ..., argn));
+ *      resulttype func(Pn(arg1, ..., argn));
  */
 
 #ifdef __PROTOTYPES__
@@ -342,23 +359,25 @@ typedef const char _ds *client_name_t;
 # define P13(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13) t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13
 # define P14(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14) t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14
 # define P15(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15) t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15
+# define P16(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16) t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16
 #else
-# define P0() /* */
-# define P1(t1)	/* */
-# define P2(t1,t2) /* */
-# define P3(t1,t2,t3) /* */
-# define P4(t1,t2,t3,t4) /* */
-# define P5(t1,t2,t3,t4,t5) /* */
-# define P6(t1,t2,t3,t4,t5,t6) /* */
-# define P7(t1,t2,t3,t4,t5,t6,t7) /* */
-# define P8(t1,t2,t3,t4,t5,t6,t7,t8) /* */
-# define P9(t1,t2,t3,t4,t5,t6,t7,t8,t9)	/* */
-# define P10(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10) /* */
-# define P11(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11) /* */
-# define P12(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12) /* */
-# define P13(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13) /* */
-# define P14(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14) /* */
-# define P15(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15) /* */
+# define P0()			/* */
+# define P1(t1)			/* */
+# define P2(t1,t2)		/* */
+# define P3(t1,t2,t3)		/* */
+# define P4(t1,t2,t3,t4)	/* */
+# define P5(t1,t2,t3,t4,t5)	/* */
+# define P6(t1,t2,t3,t4,t5,t6)	/* */
+# define P7(t1,t2,t3,t4,t5,t6,t7)	/* */
+# define P8(t1,t2,t3,t4,t5,t6,t7,t8)	/* */
+# define P9(t1,t2,t3,t4,t5,t6,t7,t8,t9)		/* */
+# define P10(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10)	/* */
+# define P11(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11)	/* */
+# define P12(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12)	/* */
+# define P13(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13)	/* */
+# define P14(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14)	/* */
+# define P15(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15)	/* */
+# define P16(t1,t2,t3,t4,t5,t6,t7,t8,t9,t10,t11,t12,t13,t14,t15,t16)	/* */
 #endif
 
 /* Define success and failure codes for 'exit'. */
@@ -385,4 +404,4 @@ typedef const char _ds *client_name_t;
 #  define gs_exit_INFO 0
 #endif
 
-#endif					/* stdpre_INCLUDED */
+#endif /* stdpre_INCLUDED */

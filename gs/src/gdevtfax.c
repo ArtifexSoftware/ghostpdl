@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevtfax.c */
+/*Id: gdevtfax.c  */
 /* TIFF and fax devices */
 #include "gdevprn.h"
 #include "gdevtifs.h"		/* for TIFF output only */
@@ -49,10 +49,10 @@ typedef struct gx_device_tfax_s gx_device_tfax;
 #define tfdev ((gx_device_tfax *)dev)
 
 /* Define procedures that adjust the paper size. */
-private gx_device_procs gdev_fax_std_procs =
+private const gx_device_procs gdev_fax_std_procs =
 prn_procs(gdev_fax_open, gdev_prn_output_page, gdev_prn_close);
 
-gx_device_tfax far_data gs_faxg3_device =
+const gx_device_tfax gs_faxg3_device =
 {prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "faxg3",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -60,7 +60,7 @@ gx_device_tfax far_data gs_faxg3_device =
 		     1, faxg3_print_page)
 };
 
-gx_device_tfax far_data gs_faxg32d_device =
+const gx_device_tfax gs_faxg32d_device =
 {prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "faxg32d",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -68,7 +68,7 @@ gx_device_tfax far_data gs_faxg32d_device =
 		     1, faxg32d_print_page)
 };
 
-gx_device_tfax far_data gs_faxg4_device =
+const gx_device_tfax gs_faxg4_device =
 {prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "faxg4",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -76,7 +76,7 @@ gx_device_tfax far_data gs_faxg4_device =
 		     1, faxg4_print_page)
 };
 
-gx_device_tfax far_data gs_tiffcrle_device =
+const gx_device_tfax gs_tiffcrle_device =
 {prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffcrle",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -84,7 +84,7 @@ gx_device_tfax far_data gs_tiffcrle_device =
 		     1, tiffcrle_print_page)
 };
 
-gx_device_tfax far_data gs_tiffg3_device =
+const gx_device_tfax gs_tiffg3_device =
 {prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffg3",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -92,7 +92,7 @@ gx_device_tfax far_data gs_tiffg3_device =
 		     1, tiffg3_print_page)
 };
 
-gx_device_tfax far_data gs_tiffg32d_device =
+const gx_device_tfax gs_tiffg32d_device =
 {prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffg32d",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -100,7 +100,7 @@ gx_device_tfax far_data gs_tiffg32d_device =
 		     1, tiffg32d_print_page)
 };
 
-gx_device_tfax far_data gs_tiffg4_device =
+const gx_device_tfax gs_tiffg4_device =
 {prn_device_std_body(gx_device_tfax, gdev_fax_std_procs, "tiffg4",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -135,7 +135,7 @@ gdev_fax_init_state(stream_CFE_state * ss, const gx_device_printer * pdev)
 /* Send the page to the printer. */
 int
 gdev_stream_print_page(gx_device_printer * pdev, FILE * prn_stream,
-		       const stream_template _ds * temp, stream_state * ss)
+		       const stream_template * temp, stream_state * ss)
 {
     gs_memory_t *mem = &gs_memory_default;
     int code;
@@ -271,7 +271,7 @@ faxg4_print_page(gx_device_printer * pdev, FILE * prn_stream)
 private dev_proc_print_page(tifflzw_print_page);
 private dev_proc_print_page(tiffpack_print_page);
 
-gx_device_tfax far_data gs_tifflzw_device =
+const gx_device_tfax gs_tifflzw_device =
 {prn_device_std_body(gx_device_tfax, prn_std_procs, "tifflzw",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -279,7 +279,7 @@ gx_device_tfax far_data gs_tifflzw_device =
 		     1, tifflzw_print_page)
 };
 
-gx_device_tfax far_data gs_tiffpack_device =
+const gx_device_tfax gs_tiffpack_device =
 {prn_device_std_body(gx_device_tfax, prn_std_procs, "tiffpack",
 		     DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		     X_DPI, Y_DPI,
@@ -296,9 +296,10 @@ typedef struct tiff_mono_directory_s {
     TIFF_dir_entry FillOrder;
     TIFF_dir_entry SamplesPerPixel;
     TIFF_dir_entry T4T6Options;
-    TIFF_dir_entry CleanFaxData;
+    /* Don't use CleanFaxData. */
+    /*  TIFF_dir_entry  CleanFaxData;   */
 } tiff_mono_directory;
-private const tiff_mono_directory far_data dir_mono_template =
+private const tiff_mono_directory dir_mono_template =
 {
     {TIFFTAG_BitsPerSample, TIFF_SHORT, 1, 1},
     {TIFFTAG_Compression, TIFF_SHORT, 1, Compression_CCITT_T4},
@@ -306,7 +307,7 @@ private const tiff_mono_directory far_data dir_mono_template =
     {TIFFTAG_FillOrder, TIFF_SHORT, 1, FillOrder_LSB2MSB},
     {TIFFTAG_SamplesPerPixel, TIFF_SHORT, 1, 1},
     {TIFFTAG_T4Options, TIFF_LONG, 1, 0},
-    {TIFFTAG_CleanFaxData, TIFF_SHORT, 1, CleanFaxData_clean},
+	/* { TIFFTAG_CleanFaxData,      TIFF_SHORT, 1, CleanFaxData_clean }, */
 };
 
 /* Forward references */

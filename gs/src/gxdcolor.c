@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,67 +16,176 @@
    all copies.
  */
 
-/* gxdcolor.c */
+/*Id: gxdcolor.c  */
 /* Pure and null device color implementation */
 #include "gx.h"
+#include "gserrors.h"
 #include "gsbittab.h"
 #include "gxdcolor.h"
 #include "gxdevice.h"
 
 /* Define the standard device color types. */
+
+/* 'none' means the color is not defined. */
 private dev_color_proc_load(gx_dc_no_load);
 private dev_color_proc_fill_rectangle(gx_dc_no_fill_rectangle);
 private dev_color_proc_fill_masked(gx_dc_no_fill_masked);
+private dev_color_proc_equal(gx_dc_no_equal);
+const gx_device_color_type_t gx_dc_type_data_none = {
+    &st_bytes,
+    gx_dc_no_load, gx_dc_no_fill_rectangle, gx_dc_no_fill_masked,
+    gx_dc_no_equal
+};
+#undef gx_dc_type_none
+const gx_device_color_type_t *const gx_dc_type_none = &gx_dc_type_data_none;
+#define gx_dc_type_none (&gx_dc_type_data_none)
+
+/* 'null' means the color has no effect when used for drawing. */
+private dev_color_proc_load(gx_dc_null_load);
+private dev_color_proc_fill_rectangle(gx_dc_null_fill_rectangle);
+private dev_color_proc_fill_masked(gx_dc_null_fill_masked);
+private dev_color_proc_equal(gx_dc_null_equal);
+const gx_device_color_type_t gx_dc_type_data_null = {
+    &st_bytes,
+    gx_dc_null_load, gx_dc_null_fill_rectangle, gx_dc_null_fill_masked,
+    gx_dc_null_equal
+};
+#undef gx_dc_type_null
+const gx_device_color_type_t *const gx_dc_type_null = &gx_dc_type_data_null;
+#define gx_dc_type_null (&gx_dc_type_data_null)
+
 private dev_color_proc_load(gx_dc_pure_load);
 private dev_color_proc_fill_rectangle(gx_dc_pure_fill_rectangle);
 private dev_color_proc_fill_masked(gx_dc_pure_fill_masked);
-const gx_device_color_procs
-      gx_dc_procs_none =
-{gx_dc_no_load, gx_dc_no_fill_rectangle, gx_dc_no_fill_masked, 0, 0},	/* null is different from none, but it has the same procedures. */
-      gx_dc_procs_null =
-{gx_dc_no_load, gx_dc_no_fill_rectangle, gx_dc_no_fill_masked, 0, 0}, gx_dc_procs_pure =
-{gx_dc_pure_load, gx_dc_pure_fill_rectangle, gx_dc_pure_fill_masked, 0, 0};
-
-#undef gx_dc_type_none
-const gx_device_color_procs _ds *gx_dc_type_none = &gx_dc_procs_none;
-
-#define gx_dc_type_none (&gx_dc_procs_none)
-#undef gx_dc_type_null
-const gx_device_color_procs _ds *gx_dc_type_null = &gx_dc_procs_null;
-
-#define gx_dc_type_null (&gx_dc_procs_null)
+private dev_color_proc_equal(gx_dc_pure_equal);
+const gx_device_color_type_t gx_dc_type_data_pure = {
+    &st_bytes,
+    gx_dc_pure_load, gx_dc_pure_fill_rectangle, gx_dc_pure_fill_masked,
+    gx_dc_pure_equal
+};
 #undef gx_dc_type_pure
-const gx_device_color_procs _ds *gx_dc_type_pure = &gx_dc_procs_pure;
+const gx_device_color_type_t *const gx_dc_type_pure = &gx_dc_type_data_pure;
+#define gx_dc_type_pure (&gx_dc_type_data_pure)
 
-#define gx_dc_type_pure (&gx_dc_procs_pure)
+/*
+ * Get the black and white pixel values of a device.  The documentation for
+ * the driver API says that map_rgb_color will do the right thing on CMYK
+ * devices.  Unfortunately, that isn't true at present, and fixing it is too
+ * much work.
+ */
+gx_color_index
+gx_device_black(gx_device *dev)
+{
+    return
+	(dev->color_info.num_components == 4 ?
+	 (*dev_proc(dev, map_cmyk_color))
+	  (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0,
+	   gx_max_color_value) :
+	 (*dev_proc(dev, map_rgb_color))
+	  (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0));
+}
+gx_color_index
+gx_device_white(gx_device *dev)
+{
+    return
+	(dev->color_info.num_components == 4 ?
+	 (*dev_proc(dev, map_cmyk_color))
+	  (dev, (gx_color_index)0, (gx_color_index)0, (gx_color_index)0,
+	   (gx_color_index)0) :
+	 (*dev_proc(dev, map_rgb_color))
+	  (dev, gx_max_color_value, gx_max_color_value, gx_max_color_value));
+}
 
-/* Define a null RasterOp source (for black = 0). */
-const gx_rop_source_t gx_rop_no_source_0 =
-{gx_rop_no_source_body(0)};
+/* Set a null RasterOp source. */
+private const gx_rop_source_t gx_rop_no_source_0 = {gx_rop_no_source_body(0)};
+void
+gx_set_rop_no_source(const gx_rop_source_t **psource,
+		     gx_rop_source_t *pno_source, gx_device *dev)
+{
+    gx_color_index black = gx_device_black(dev);
+
+    if ( black == 0 )
+	*psource = &gx_rop_no_source_0;
+    else {
+	*pno_source = gx_rop_no_source_0;
+        gx_rop_source_set_color(pno_source, black);
+	*psource = pno_source;
+    }
+}
+
+/* ------ Undefined color ------ */
+
+private int
+gx_dc_no_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
+	      gx_device *ignore_dev, gs_color_select_t ignore_select)
+{
+    return 0;
+}
+
+private int
+gx_dc_no_fill_rectangle(const gx_device_color *pdevc, int x, int y,
+			int w, int h, gx_device *dev,
+			gs_logical_operation_t lop,
+			const gx_rop_source_t *source)
+{
+    gx_device_color filler;
+
+    if (w <= 0 || h <= 0)
+	return 0;
+    if (lop_uses_T(lop));
+	return_error(gs_error_Fatal);
+    color_set_pure(&filler, 0);	 /* any valid value for dev will do */
+    return gx_dc_pure_fill_rectangle(&filler, x, y, w, h, dev, lop, source);
+}
+
+private int
+gx_dc_no_fill_masked(const gx_device_color *pdevc, const byte *data,
+		     int data_x, int raster, gx_bitmap_id id,
+		     int x, int y, int w, int h, gx_device *dev,
+		     gs_logical_operation_t lop, bool invert)
+{
+    if (w <= 0 || h <= 0)
+	return 0;
+    return_error(gs_error_Fatal);
+}
+
+private bool
+gx_dc_no_equal(const gx_device_color *pdevc1, const gx_device_color *pdevc2)
+{
+    return false;
+}
 
 /* ------ Null color ------ */
 
 private int
-gx_dc_no_load(gx_device_color * pdevc, const gs_imager_state * ignore_pis,
-	      gx_device * ignore_dev, gs_color_select_t ignore_select)
+gx_dc_null_load(gx_device_color *pdevc, const gs_imager_state *ignore_pis,
+		gx_device *ignore_dev, gs_color_select_t ignore_select)
 {
     return 0;
 }
 
 private int
-gx_dc_no_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-		  int w, int h, gx_device * dev, gs_logical_operation_t lop,
-			const gx_rop_source_t * source)
+gx_dc_null_fill_rectangle(const gx_device_color * pdevc, int x, int y,
+			  int w, int h, gx_device * dev,
+			  gs_logical_operation_t lop,
+			  const gx_rop_source_t * source)
 {
     return 0;
 }
 
 private int
-gx_dc_no_fill_masked(const gx_device_color * pdevc, const byte * data,
-	int data_x, int raster, gx_bitmap_id id, int x, int y, int w, int h,
-		   gx_device * dev, gs_logical_operation_t lop, bool invert)
+gx_dc_null_fill_masked(const gx_device_color * pdevc, const byte * data,
+		       int data_x, int raster, gx_bitmap_id id,
+		       int x, int y, int w, int h, gx_device * dev,
+		       gs_logical_operation_t lop, bool invert)
 {
     return 0;
+}
+
+private bool
+gx_dc_null_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
+{
+    return pdevc2->type == pdevc1->type;
 }
 
 /* ------ Pure color ------ */
@@ -132,16 +241,21 @@ gx_dc_pure_fill_masked(const gx_device_color * pdevc, const byte * data,
 	gx_color_index scolors[2];
 	gx_color_index tcolors[2];
 
-	scolors[0] = (*dev_proc(dev, map_rgb_color))
-	    (dev, (gx_color_value) 0, (gx_color_value) 0, (gx_color_value) 0);
-	scolors[1] = (*dev_proc(dev, map_rgb_color))
-	    (dev, gx_max_color_value, gx_max_color_value, gx_max_color_value);
+	scolors[0] = gx_device_black(dev);
+	scolors[1] = gx_device_white(dev);
 	tcolors[0] = tcolors[1] = pdevc->colors.pure;
 	return (*dev_proc(dev, strip_copy_rop))
 	    (dev, data, data_x, raster, id, scolors,
 	     NULL, tcolors, x, y, w, h, 0, 0,
 	     (invert ? rop3_invert_S(lop) : lop) | lop_S_transparent);
     }
+}
+
+private bool
+gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
+{
+    return pdevc2->type == pdevc1->type &&
+	gx_dc_pure_color(pdevc1) == gx_dc_pure_color(pdevc2);
 }
 
 /* ------ Default implementations ------ */

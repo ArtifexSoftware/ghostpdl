@@ -15,18 +15,19 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: version.mak 
 # Makefile fragment containing the current revision identification.
 
 # Define the name of this makefile.
-VERSION_MAK=version.mak
+VERSION_MAK=$(GLSRC)version.mak
 
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
 GS_VERSION_MAJOR=5
-GS_VERSION_MINOR=14
-GS_VERSION_MINOR0=14
+GS_VERSION_MINOR=29
+GS_VERSION_MINOR0=29
 # Revision date: year x 10000 + month x 100 + day.
-GS_REVISIONDATE=19980616
+GS_REVISIONDATE=19980806
 
 # Derived values
 GS_VERSION=$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR0)

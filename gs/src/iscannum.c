@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* iscannum.c */
+/*Id: iscannum.c  */
 /* Number scanner for Ghostscript interpreter */
 #include "math_.h"
 #include "ghost.h"
@@ -44,7 +44,7 @@
 /* Scan a number.  If the number consumes the entire string, return 0; */
 /* if not, set *psp to the first character beyond the number and return 1. */
 int
-scan_number(register const byte * sp, const byte * end, int sign,
+scan_number(const byte * sp, const byte * end, int sign,
 	    ref * pref, const byte ** psp)
 {				/* Powers of 10 up to 6 can be represented accurately as */
     /* a single-precision float. */
@@ -62,8 +62,8 @@ scan_number(register const byte * sp, const byte * end, int sign,
     double dval;
     int exp10;
     int code = 0;
-    register int c, d;
-    register const byte _ds *decoder = scan_char_decoder;
+    int c, d;
+    const byte *const decoder = scan_char_decoder;
 
     ngetc(c, sp, return_error(e_syntaxerror));
 #define would_overflow(val, d, maxv)\

@@ -1,23 +1,23 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gsropt.h */
-/* RasterOp / transparency / render algorithm type definitions */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gsropt.h  */
+/* RasterOp / transparency type definitions */
 
 #ifndef gsropt_INCLUDED
 #  define gsropt_INCLUDED
@@ -38,15 +38,15 @@
 
 /* 2-input RasterOp */
 typedef enum {
-	rop2_0 = 0,
-	rop2_S = 0xc,		/* source */
+    rop2_0 = 0,
+    rop2_S = 0xc,		/* source */
 #define rop2_S_shift 2
-	rop2_D = 0xa,		/* destination */
+    rop2_D = 0xa,		/* destination */
 #define rop2_D_shift 1
-	rop2_1 = 0xf,
+    rop2_1 = 0xf,
 #define rop2_operand(shift, d, s)\
   ((shift) == 2 ? (s) : (d))
-	rop2_default = rop2_S
+    rop2_default = rop2_S
 } gs_rop2_t;
 
 /*
@@ -57,15 +57,15 @@ typedef enum {
 
 /* 3-input RasterOp */
 typedef enum {
-	rop3_0 = 0,
-	rop3_T = 0xf0,		/* texture */
+    rop3_0 = 0,
+    rop3_T = 0xf0,		/* texture */
 #define rop3_T_shift 4
-	rop3_S = 0xcc,		/* source */
+    rop3_S = 0xcc,		/* source */
 #define rop3_S_shift 2
-	rop3_D = 0xaa,		/* destination */
+    rop3_D = 0xaa,		/* destination */
 #define rop3_D_shift 1
-	rop3_1 = 0xff,
-	rop3_default = rop3_T | rop3_S
+    rop3_1 = 0xff,
+    rop3_default = rop3_T | rop3_S
 } gs_rop3_t;
 
 /* All the transformations on rop3s are designed so that */
@@ -139,29 +139,29 @@ typedef enum {
 #define source_transparent_default false
 #define pattern_transparent_default false
 
-/* Render algorithm */
-#define render_algorithm_default 0
-#define render_algorithm_min 0
-#define render_algorithm_max 14
-
 /*
  * We define a logical operation as a RasterOp, transparency flags,
  * and render algorithm all packed into a single integer.
  * In principle, we should use a structure, but most C implementations
  * implement structure values very inefficiently.
  */
-#define lop_rop(lop) ((gs_rop3_t)((lop) & 0xff))  /* must be low-order bits */
+#define lop_rop(lop) ((gs_rop3_t)((lop) & 0xff))	/* must be low-order bits */
 #define lop_S_transparent 0x100
 #define lop_T_transparent 0x200
 #define lop_ral_shift 10
 #define lop_ral_mask 0xf
 typedef uint gs_logical_operation_t;
+
 #define lop_default\
   (rop3_default |\
    (source_transparent_default ? lop_S_transparent : 0) |\
-   (pattern_transparent_default ? lop_T_transparent : 0) |\
-   (render_algorithm_default << lop_ral_shift))
+   (pattern_transparent_default ? lop_T_transparent : 0))
 
+     /* Test whether a logical operation uses S or T. */
+#define lop_uses_S(lop)\
+  (rop3_uses_S(lop) || ((lop) & lop_S_transparent))
+#define lop_uses_T(lop)\
+  (rop3_uses_T(lop) || ((lop) & lop_T_transparent))
 /* Test whether a logical operation just sets D = x if y = 0. */
 #define lop_no_T_is_S(lop)\
   (((lop) & (lop_S_transparent | (rop3_1 - rop3_T))) == (rop3_S & ~rop3_T))
@@ -172,18 +172,18 @@ typedef uint gs_logical_operation_t;
 
 /* Define the interface to the table of 256 RasterOp procedures. */
 typedef unsigned rop_operand;
-typedef rop_operand (*rop_proc)(P3(rop_operand D, rop_operand S, rop_operand T));
+typedef rop_operand(*rop_proc) (P3(rop_operand D, rop_operand S, rop_operand T));
 
 /* Define the table of operand usage by the 256 RasterOp operations. */
 typedef enum {
-  rop_usage_none = 0,
-  rop_usage_D = 1,
-  rop_usage_S = 2,
-  rop_usage_DS = 3,
-  rop_usage_T = 4,
-  rop_usage_DT = 5,
-  rop_usage_ST = 6,
-  rop_usage_DST = 7
+    rop_usage_none = 0,
+    rop_usage_D = 1,
+    rop_usage_S = 2,
+    rop_usage_DS = 3,
+    rop_usage_T = 4,
+    rop_usage_DT = 5,
+    rop_usage_ST = 6,
+    rop_usage_DST = 7
 } rop_usage_t;
 
-#endif					/* gsropt_INCLUDED */
+#endif /* gsropt_INCLUDED */

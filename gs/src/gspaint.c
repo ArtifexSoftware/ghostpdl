@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gspaint.c */
+/*Id: gspaint.c  */
 /* Painting procedures for Ghostscript library */
 #include "math_.h"		/* for fabs */
 #include "gx.h"
@@ -41,19 +41,23 @@
 #  define abuf_nominal abuf_nominal_SMALL
 #else
 #  define abuf_nominal\
-     (gs_if_debug_c('.') ? abuf_nominal_SMALL : abuf_nominal_LARGE)
+     (gs_debug_c('.') ? abuf_nominal_SMALL : abuf_nominal_LARGE)
 #endif
 
 /* Erase the page */
 int
 gs_erasepage(gs_state * pgs)
-{				/* We can't just fill with device white; we must take the */
-    /* transfer function into account. */
+{
+    /*
+     * We can't just fill with device white; we must take the
+     * transfer function into account.
+     */
     int code;
 
     if ((code = gs_gsave(pgs)) < 0)
 	return code;
-    if ((code = gs_setgray(pgs, 1.0)) >= 0) {	/* Fill the page directly, ignoring clipping. */
+    if ((code = gs_setgray(pgs, 1.0)) >= 0) {
+	/* Fill the page directly, ignoring clipping. */
 	code = gs_fillpage(pgs);
     }
     gs_grestore(pgs);
@@ -86,7 +90,7 @@ gs_fillpage(gs_state * pgs)
  * Determine the number of bits of alpha buffer for a stroke or fill.
  * We should do alpha buffering iff this value is >1.
  */
-private int near
+private int
 alpha_buffer_bits(gs_state * pgs)
 {
     gx_device *dev;
@@ -94,7 +98,8 @@ alpha_buffer_bits(gs_state * pgs)
     if (!color_is_pure(pgs->dev_color))
 	return 0;
     dev = gs_currentdevice_inline(pgs);
-    if (gs_device_is_abuf(dev)) {	/* We're already writing into an alpha buffer. */
+    if (gs_device_is_abuf(dev)) {
+	/* We're already writing into an alpha buffer. */
 	return 0;
     }
     return (*dev_proc(dev, get_alpha_bits)) (dev, go_graphics);
@@ -110,7 +115,35 @@ alpha_buffer_bits(gs_state * pgs)
  * alpha buffering.  Either of these is a little inconvenient, but
  * the former is less inconvenient.
  */
-private int near
+private int
+scale_paths(gs_state * pgs, int log2_scale_x, int log2_scale_y, bool do_path)
+{
+    if (do_path)
+	gx_path_scale_exp2(pgs->path, log2_scale_x, log2_scale_y);
+    gx_cpath_scale_exp2(pgs->clip_path, log2_scale_x, log2_scale_y);
+    if (pgs->view_clip != 0)
+	gx_cpath_scale_exp2(pgs->view_clip, log2_scale_x, log2_scale_y);
+    if (pgs->effective_clip_path != pgs->clip_path &&
+	pgs->effective_clip_path != pgs->view_clip
+	)
+	gx_cpath_scale_exp2(pgs->effective_clip_path,
+			    log2_scale_x, log2_scale_y);
+    return 0;
+}
+private void
+scale_dash_pattern(gs_state * pgs, floatp scale)
+{
+    int i;
+
+    for (i = 0; i < pgs->line_params.dash.pattern_size; ++i)
+	pgs->line_params.dash.pattern[i] *= scale;
+    pgs->line_params.dash.offset *= scale;
+    pgs->line_params.dash.pattern_length *= scale;
+    pgs->line_params.dash.init_dist_left *= scale;
+    if (pgs->line_params.dot_length_absolute)
+	pgs->line_params.dot_length *= scale;
+}
+private int
 alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
@@ -146,36 +179,32 @@ alpha_buffer_init(gs_state * pgs, fixed extra_x, fixed extra_y, int alpha_bits)
     mdev->width = width;
     mdev->height = height;
     mdev->bitmap_memory = mem;
-    if ((*dev_proc(mdev, open_device)) ((gx_device *) mdev) < 0) {	/* No room for bits, punt. */
+    if ((*dev_proc(mdev, open_device)) ((gx_device *) mdev) < 0) {
+	/* No room for bits, punt. */
 	gs_free_object(mem, mdev, "alpha_buffer_init");
 	return 0;
     }
     gx_set_device_only(pgs, (gx_device *) mdev);
-    gx_path_scale_exp2(pgs->path, log2_scale.x, log2_scale.y);
-    gx_cpath_scale_exp2(pgs->clip_path, log2_scale.x, log2_scale.y);
+    scale_paths(pgs, log2_scale.x, log2_scale.y, true);
     return 1;
 }
 
 /* Release an alpha buffer. */
-private void near
+private void
 alpha_buffer_release(gs_state * pgs, bool newpath)
 {
     gx_device_memory *mdev =
     (gx_device_memory *) gs_currentdevice_inline(pgs);
-    gx_device *target = mdev->target;
 
     (*dev_proc(mdev, close_device)) ((gx_device *) mdev);
-    gs_free_object(mdev->memory, mdev, "alpha_buffer_release");
-    gx_set_device_only(pgs, target);
-    gx_cpath_scale_exp2(pgs->clip_path,
-			-mdev->log2_scale.x, -mdev->log2_scale.y);
-    if (!(newpath && !pgs->path->shares_segments))
-	gx_path_scale_exp2(pgs->path,
-			   -mdev->log2_scale.x, -mdev->log2_scale.y);
+    scale_paths(pgs, -mdev->log2_scale.x, -mdev->log2_scale.y,
+		!(newpath && !gx_path_is_shared(pgs->path)));
+    /* Reference counting will free mdev. */
+    gx_set_device_only(pgs, mdev->target);
 }
 
 /* Fill the current path using a specified rule. */
-private int near
+private int
 fill_with_rule(gs_state * pgs, int rule)
 {
     int code;
@@ -229,11 +258,16 @@ gs_stroke(gs_state * pgs)
 {
     int code;
 
-    /* If we're inside a charpath, just merge the current path */
-    /* into the parent's path. */
+    /*
+     * If we're inside a charpath, just merge the current path
+     * into the parent's path.
+     */
     if (pgs->in_charpath) {
-	if (pgs->in_charpath == cpm_true_charpath) {	/* A stroke inside a true charpath should do the */
-	    /* equivalent of strokepath. */
+	if (pgs->in_charpath == cpm_true_charpath) {
+	    /*
+	     * A stroke inside a true charpath should do the
+	     * equivalent of strokepath.
+	     */
 	    code = gs_strokepath(pgs);
 	    if (code < 0)
 		return code;
@@ -249,19 +283,22 @@ gs_stroke(gs_state * pgs)
 	if (code < 0)
 	    return code;
 	abits = alpha_buffer_bits(pgs);
-	if (abits > 1) {	/* Expand the bounding box by the line width. */
-	    /* This is expensive to compute, so we only do it */
-	    /* if we know we're going to buffer. */
+	if (abits > 1) {
+	    /*
+	     * Expand the bounding box by the line width.
+	     * This is expensive to compute, so we only do it
+	     * if we know we're going to buffer.
+	     */
 	    float xxyy = fabs(pgs->ctm.xx) + fabs(pgs->ctm.yy);
 	    float xyyx = fabs(pgs->ctm.xy) + fabs(pgs->ctm.yx);
+	    float scale = 1 << (abits / 2);
 	    float new_width =
-	    (orig_width = gs_currentlinewidth(pgs)) *
-	    (1 << (abits / 2));
+	    (orig_width = gs_currentlinewidth(pgs)) * scale;
 	    fixed extra_adjust =
 	    float2fixed(max(xxyy, xyyx) * new_width / 2);
 	    gx_path spath;
 
-	    /* Scale up the line width. */
+	    /* Scale up the line width and dash pattern. */
 	    if (extra_adjust < fixed_1)
 		extra_adjust = fixed_1;
 	    acode = alpha_buffer_init(pgs,
@@ -271,24 +308,25 @@ gs_stroke(gs_state * pgs)
 	    if (acode < 0)
 		return acode;
 	    gs_setlinewidth(pgs, new_width);
+	    scale_dash_pattern(pgs, scale);
 	    /*
 	     * The alpha-buffer device requires that we fill the
 	     * entire path as a single unit.
 	     */
-	    gx_path_init(&spath, pgs->memory);
+	    gx_path_init_local(&spath, pgs->memory);
 	    code = gx_stroke_add(pgs->path, &spath, pgs);
 	    gs_setlinewidth(pgs, orig_width);
+	    scale_dash_pattern(pgs, 1.0 / scale);
 	    if (code >= 0)
 		code = gx_fill_path(&spath, pgs->dev_color, pgs,
 				    gx_rule_winding_number,
 				    pgs->fill_adjust.x,
 				    pgs->fill_adjust.y);
-	    gx_path_release(&spath);
+	    gx_path_free(&spath, "gs_stroke");
 	    if (acode > 0)
 		alpha_buffer_release(pgs, code >= 0);
-	} else {
+	} else
 	    code = gx_stroke_fill(pgs->path, pgs);
-	}
 	if (code >= 0)
 	    gs_newpath(pgs);
     }
@@ -302,11 +340,11 @@ gs_strokepath(gs_state * pgs)
     gx_path spath;
     int code;
 
-    gx_path_init(&spath, pgs->memory);
+    gx_path_init_local(&spath, pgs->memory);
     code = gx_stroke_add(pgs->path, &spath, pgs);
-    if (code < 0)
+    if (code < 0) {
+	gx_path_free(&spath, "gs_strokepath");
 	return code;
-    gx_path_release(pgs->path);
-    *pgs->path = spath;
-    return 0;
+    }
+    return gx_path_assign_free(pgs->path, &spath);
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,18 +16,18 @@
    all copies.
  */
 
-/* sdcte.c */
+/*Id: sdcte.c  */
 /* DCT encoding filter stream */
 #include "memory_.h"
 #include "stdio_.h"
 #include "jpeglib.h"
 #include "jerror.h"
 #include "gdebug.h"
+#include "gsmemory.h"		/* for gsmalloc.h */
+#include "gsmalloc.h"		/* for gs_memory_default */
 #include "strimpl.h"
 #include "sdct.h"
 #include "sjpeg.h"
-
-#define ss ((stream_DCT_state *)st)
 
 /* ------ DCTEncode ------ */
 
@@ -46,15 +46,31 @@ dcte_term_destination(j_compress_ptr cinfo)
 {
 }
 
+/* Set the defaults for the DCTEncode filter. */
+private void
+s_DCTE_set_defaults(stream_state * st)
+{
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
+
+    s_DCT_set_defaults(st);
+    ss->QFactor = 1.0;
+    ss->ColorTransform = 0;
+    ss->Markers.data = 0;
+    ss->Markers.size = 0;
+    ss->NoMarker = true;
+}
+
 /* Initialize DCTEncode filter */
 private int
 s_DCTE_init(stream_state * st)
 {
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
     struct jpeg_destination_mgr *dest = &ss->data.compress->destination;
 
     dest->init_destination = dcte_init_destination;
     dest->empty_output_buffer = dcte_empty_output_buffer;
     dest->term_destination = dcte_term_destination;
+    ss->data.common->memory = ss->jpeg_memory;
     ss->data.compress->cinfo.dest = dest;
     ss->phase = 0;
     return 0;
@@ -65,6 +81,7 @@ private int
 s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
     jpeg_compress_data *jcdp = ss->data.compress;
     struct jpeg_destination_mgr *dest = jcdp->cinfo.dest;
 
@@ -159,16 +176,17 @@ s_DCTE_process(stream_state * st, stream_cursor_read * pr,
 private void
 s_DCTE_release(stream_state * st)
 {
+    stream_DCT_state *const ss = (stream_DCT_state *) st;
+
     gs_jpeg_destroy(ss);
-    gs_free(ss->data.compress, 1, sizeof(jpeg_compress_data),
-	    "s_DCTE_release");
+    gs_free_object(ss->data.common->memory, ss->data.compress,
+		   "s_DCTE_release");
     /* Switch the template pointer back in case we still need it. */
     st->template = &s_DCTE_template;
 }
 
 /* Stream template */
 const stream_template s_DCTE_template =
-{&st_DCT_state, s_DCTE_init, s_DCTE_process, 1000, 4000, s_DCTE_release
+{&st_DCT_state, s_DCTE_init, s_DCTE_process, 1000, 4000, s_DCTE_release,
+ s_DCTE_set_defaults
 };
-
-#undef ss

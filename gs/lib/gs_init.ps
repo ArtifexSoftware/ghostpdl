@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_init.ps 
 % Initialization file for the interpreter.
 % When this is run, systemdict is still writable.
 
@@ -30,7 +31,7 @@
 
 % Check the interpreter revision.  NOTE: the interpreter code requires
 % that the first non-comment token in this file be an integer.
-514
+529
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
@@ -43,22 +44,21 @@ if pop
  { pop userdict maxlength 0 eq }
  { true }
 ifelse
+systemdict exch
  {		% userdict wasn't already set up by iinit.c.
-   /userdict
+   dup /userdict
    currentdict dup 200 .setmaxlength		% userdict
-   systemdict begin def		% can't use 'put', userdict is local
+   .forceput			% userdict is local, systemdict is global
  }
- { systemdict begin
- }
-ifelse
+if begin
 
 % Define dummy local/global operators if needed.
 systemdict /.setglobal known
  { true .setglobal
  }
- { /.setglobal { pop } bind def
-   /.currentglobal { false } bind def
-   /.gcheck { pop false } bind def
+ { /.setglobal { pop } .bind def
+   /.currentglobal { false } .bind def
+   /.gcheck { pop false } .bind def
  }
 ifelse
 
@@ -92,7 +92,7 @@ currentdict /DEBUG known   /DEBUG exch def
 	    repeat pop
 	    ( ) print systemdict length (    ) cvs print
 	    ( ) print countdictstack (  ) cvs print
-	    ( <) print count (  ) cvs print (>\n) print flush
+	    ( <) print count (    ) cvs print (>\n) print flush
 	  }}
 	  {{pop
 	  }}
@@ -116,6 +116,8 @@ currentdict /NODISPLAY known   not /DISPLAYING exch def
 currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
 currentdict /NOGC known   /NOGC exch def
+currentdict /NOINTERPOLATE known   /NOINTERPOLATE exch def
+currentdict /NOPAGEPROMPT known   /NOPAGEPROMPT exch def
 currentdict /NOPAUSE known   /NOPAUSE exch def
 currentdict /NOPLATFONTS known   /NOPLATFONTS exch def
 currentdict /NOPROMPT known   /NOPROMPT exch def
@@ -129,6 +131,7 @@ currentdict /OUTPUTFILE known	% obsolete
 currentdict /QUIET known   /QUIET exch def
 currentdict /SAFER known   /SAFER exch def
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
+currentdict /STRICT known   /STRICT exch def
 currentdict /WRITESYSTEMDICT known   /WRITESYSTEMDICT exch def
 
 % Acquire environment variables.
@@ -142,38 +145,34 @@ currentdict /DEVICE known not
 (%stdout) (w) file pop
 (%stderr) (w) file pop
 
+/.currentuserparams where {
+  pop mark
+	% The Adobe implementations appear to have very large maximum
+	% stack sizes.  This turns out to actually make a difference,
+	% since some badly-behaved files include extremely long procedures,
+	% or construct huge arrays on the operand stack.
+	% We reset the stack sizes now so that we don't have to worry
+	% about overflowing the (rather small) built-in stack sizes
+	% during initialization.
+  /MaxDictStack 500
+  /MaxExecStack 5000
+  /MaxOpStack 50000
+  .dicttomark .setuserparams
+} if
+
 % Define a procedure for skipping over an unneeded section of code.
 % This avoids allocating space for the skipped procedures.
 % We can't use readline, because that imposes a line length limit.
 /.skipeof	% <string> .skipeof -
  { currentfile exch 1 exch .subfiledecode flushfile
- } bind def
-
-% If we're delaying binding, remember everything that needs to be bound later.
-DELAYBIND NOBIND not and
- { .currentglobal false .setglobal
-   userdict /.delaybind 1500 array put
-   .setglobal
-   userdict /.delaycount 0 put
-	% When we've done the delayed bind, we want to stop saving.
-	% Detect this by the disappearance of .delaybind.
-   /bind
-    { userdict /.delaybind .knownget
-       { .delaycount 2 index put
-         userdict /.delaycount .delaycount 1 add put
-       }
-       { .bind
-       }
-      ifelse
-    } bind def
- } if
+ } .bind def
 
 % Define procedures to assist users who don't read the documentation.
 userdict begin
 /help
  { (Enter PostScript commands.  '(filename) run' runs a file, 'quit' exits.\n)
    print flush
- } bind def
+ } .bind def
 /? /help load def
 end
 
@@ -204,16 +203,63 @@ userdict /=string 256 string put
    counttomark
     { (%stdout) (w) file exch false .writecvp
     } repeat pop
- } bind def
+ } .bind def
 
 QUIET not { printgreeting flush } if
 
 % Define a special version of def for making operator procedures.
-/odef		% <name> <proc> odef -
- { 1 index exch .makeoperator def
- } .bind def
+/obind {	% <name> <proc> obind <name> <oper>
+  1 index exch .makeoperator
+} .bind def
+/odef {		% <name> <proc> odef -
+  1 index exch .makeoperator def
+} .bind def
+
+% Define a special version of def for storing local objects into global
+% dictionaries.  Like .forceput, this exists only during initialization.
+/.forcedef {		% <key> <value> .forcedef -
+  currentdict 3 1 roll .forceput
+} .bind odef
+
+% Define procedures for accessing variables in systemdict and userdict
+% regardless of the contents of the dictionary stack.
+/.systemvar {		% <name> .systemvar <value>
+  //systemdict exch get
+} .bind odef
+/.userdict {		% - .userdict <dict>
+  /userdict .systemvar
+} .bind odef
+/.uservar {		% <name> .uservar <value>
+  .userdict exch get
+} .bind odef
+
+% If we're delaying binding, remember everything that needs to be bound later.
+DELAYBIND NOBIND not and
+ { .currentglobal false .setglobal
+   systemdict /.delaybind 1500 array .forceput
+   .setglobal
+   userdict /.delaycount 0 put
+	% When we've done the delayed bind, we want to stop saving.
+	% Detect this by the disappearance of .delaybind.
+   /bind
+    { /.delaybind .systemvar dup length 0 ne
+       { .delaycount 2 index put
+         .userdict /.delaycount .delaycount 1 add put
+       }
+       { pop .bind
+       }
+      ifelse
+    } .bind def
+ } if
 
 %**************** BACKWARD COMPATIBILITY
+/hwsizedict mark /HWSize null .dicttomark readonly def
+/copyscanlines {		% <device> <y> <string> copyscanlines <substr>
+  0 3 1 roll 3 index //hwsizedict .getdeviceparams
+  exch pop exch pop aload pop 3 2 roll
+  0 exch null exch .getbitsrect exch pop
+} bind odef
+currentdict /hwsizedict .undef
 /getdeviceprops
  { null .getdeviceparams
  } bind odef
@@ -244,14 +290,18 @@ userdict /#copies 1 put
 /abs	{dup 0 lt {neg} if} odef
 % .beginpage is redefined if setpagedevice is present.
 /.beginpage { } odef
-/copypage
-	{ 1 .endpage
-	   { .currentnumcopies false .outputpage
-	     (>>copypage, press <return> to continue<<\n) .confirm
-	   }
-	  if .beginpage
-	} odef
-/countexecstack { false .countexecstack } odef
+% In LanguageLevel 3, copypage erases the page.
+/copypage {
+	.languagelevel 3 ge
+	1 .endpage {
+	  .currentnumcopies 1 index .outputpage
+	  (>>copypage, press <return> to continue<<\n) .confirm
+	  dup { erasepage } if
+	} if pop .beginpage
+} odef
+/currentmatrix {
+	.currentmatrix 6 index astore pop
+} odef
 % .currentnumcopies is redefined in Level 2.
 /.currentnumcopies { #copies } odef
 /setcolorscreen where { pop		% not in all Level 1 configurations
@@ -296,9 +346,9 @@ userdict /.echo.mode true put
 	   }
 	  ifelse 1 setgray .fillpage exec
 	} odef
-/execstack { false .execstack } odef
+% To satisfy the Genoa FTS, executive must be a procedure, not an operator.
 /executive
-	{ { prompt
+	{ { NOPROMPT not { prompt } if
 	     { (%statementedit) (r) file } stopped
 	     { pop pop $error /errorname get /undefinedfilename eq
 		{ .clearerror exit } if		% EOF
@@ -307,7 +357,7 @@ userdict /.echo.mode true put
 	    if
 	    cvx { .runexec } execute
 	  } loop
-	} odef
+	} bind def
 /filter
 	{ //filterdict 1 index .knownget
 	   { exch pop exec }
@@ -315,7 +365,7 @@ userdict /.echo.mode true put
 	  ifelse
 	} odef
 /handleerror
-	{ //systemdict /errordict get /handleerror get exec } bind def
+	{ /errordict .systemvar /handleerror get exec } bind def
 /identmatrix [1.0 0.0 0.0 1.0 0.0 0.0] readonly def
 /identmatrix
 	{ dup 0 //identmatrix putinterval } odef
@@ -381,14 +431,16 @@ userdict /.echo.mode true put
 	dup 2 gt { /setlinejoin load /rangecheck signalerror } if
 	.setlinejoin
 } odef
-/showpage
-	{ 0 .endpage .doneshowpage
-	   { .currentnumcopies true .outputpage
-	     (>>showpage, press <return> to continue<<\n) .confirm
-	     erasepage
-	   }
-	  if initgraphics .beginpage
-	} odef
+/setmatrix {
+	dup aload pop .setmatrix pop
+} odef
+/showpage {
+	0 .endpage .doneshowpage {
+	  .currentnumcopies true .outputpage
+	  (>>showpage, press <return> to continue<<\n) .confirm
+	  erasepage
+	} if initgraphics .beginpage
+} odef
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!
 /stack	{ 0 1 count 3 sub { index = } for } bind def
@@ -396,25 +448,36 @@ userdict /.echo.mode true put
 % Internal uses of stopped that aren't going to do a stop if an error occurs
 % should use .internalstopped to avoid setting newerror et al.
 /.internalstopped { null 1 .stopped null ne } bind def
-/store	{	% Don't alter operands before completing.
-	  1 index where { 2 index 2 index put pop pop } { def } ifelse
-	} odef
+/store {	% Don't alter operands before completing.
+	1 index where { 2 index 2 index put pop pop } { def } ifelse
+} odef
+% NOTE: the name typenames is known to (initialized by) the interpreter.
+/type {
+	//typenames .type
+} odef
 % When running in Level 1 mode, this interpreter is supposed to be
 % compatible with PostScript "version" 54.0 (I think).
-/version (54.0) def
+/version (54.0) readonly def
 
 % internaldict is defined in systemdict, but is allocated in local VM.
-systemdict /internaldict .knownget not { 0 } if type /operatortype ne
- { .currentglobal false .setglobal
-   //systemdict /internaldict known not { /internaldict 5 dict def } if
-   /internaldict
-    [ /dup load 1183615869 /eq load
-       [ /pop load internaldict ] cvx
-       [ /internaldict /cvx load /invalidaccess /signalerror cvx ] cvx
-      /ifelse load
-    ] cvx bind odef
-   .setglobal
- } if
+% We make a procedure for creating it, since we must create a new one
+% for each context with private local VM.
+/.makeinternaldict {
+  .currentglobal false .setglobal
+    [ /dup .systemvar 1183615869 /eq .systemvar
+	[ /pop .systemvar 10 dict ] cvx
+	[ /internaldict /cvx .systemvar /invalidaccess /signalerror cvx ] cvx
+      /ifelse .systemvar
+    ] cvx executeonly
+  exch .setglobal
+} odef
+systemdict /internaldict dup .makeinternaldict .makeoperator
+.forceput		% proc is local, systemdict is global
+% Move superexec to internaldict if superexec is defined.
+currentdict /superexec .knownget {
+  1183615869 internaldict /superexec 3 -1 roll put
+  currentdict /superexec .undef
+} if
 
 % Define some additional built-in procedures (beyond the ones defined by
 % the PostScript Language Reference Manual).
@@ -433,7 +496,7 @@ systemdict /internaldict .knownget not { 0 } if type /operatortype ne
 /copystring
 	{ dup length string copy } bind def
 /finddevice
-	{ //systemdict /devicedict get exch get
+	{ /devicedict .systemvar exch get
 	  dup 1 get null eq
 	   {		% This is the first request for this type of device.
 			% Create a default instance now.
@@ -464,14 +527,14 @@ systemdict /internaldict .knownget not { 0 } if type /operatortype ne
 	{		% We don't want to bind 'run' into this procedure,
 			% since run may get redefined.
 	  findlibfile
-	   { exch pop //systemdict /run get exec }
+	   { exch pop /run .systemvar exec }
 	   { /undefinedfilename signalerror }
 	  ifelse
 	} bind def
 /selectdevice
 	{ finddevice setdevice .setdefaultscreen } bind def
 /signalerror		% <object> <errorname> signalerror -
-	{ //systemdict /errordict get exch get exec } bind def
+	{ /errordict .systemvar exch get exec } bind def
 
 % Define the =[only] procedures.  Also define =print,
 % which is used by some PostScript programs even though
@@ -516,10 +579,10 @@ systemdict /internaldict .knownget not { 0 } if type /operatortype ne
 	} bind def
 /.confirm
 	{ DISPLAYING NOPAUSE not and
-	   {	% Print a message (unless NOPROMPT is true)
+	   {	% Print a message (unless NOPAGEPROMPT or NOPROMPT is true)
 		% and wait for the user to type something.
 		% If the user just types a newline, flush it.
-	     NOPROMPT { pop } { print flush } ifelse
+	     NOPAGEPROMPT NOPROMPT or { pop } { print flush } ifelse
 	     .echo.mode false echo
 	     (%stdin) (r) file dup read
 	      { dup (\n) 0 get eq { pop pop } { unread } ifelse }
@@ -702,15 +765,18 @@ systemdict /internaldict .knownget not { 0 } if type /operatortype ne
 	       dup type /dicttype eq
 	       {
 		 (--dict:) print
-		 dup rcheck
-		  { dup length =only (/) print maxlength =only }
-		  { pop }
-		 ifelse
-		 (--) print
+		 dup rcheck {
+		   dup length =only (/) print dup maxlength =only
+		 } if
+		 /gcheck where {
+		   pop gcheck { ((G)) } { ((L)) } ifelse print
+		 } {
+		   pop
+		 } ifelse (--) print
 	       }
 	       {
 		 dup type /stringtype eq 2 index or
-		 { ===only } { =only } ifelse
+		 { ==only } { =only } ifelse
 	       } ifelse
 	     } forall
 	     pop
@@ -766,10 +832,11 @@ systemdict /internaldict .knownget not { 0 } if type /operatortype ne
 
 % Define $error.  This must be in local VM.
 .currentglobal false .setglobal
-/$error 40 dict def		% newerror, errorname, command, errorinfo,
-				% ostack, estack, dstack, recordstacks,
-				% binary, globalmode,
-				% .inerror, .nosetlocal, position,
+/$error 40 dict .forcedef	% $error is local, systemdict is global
+		% newerror, errorname, command, errorinfo,
+		% ostack, estack, dstack, recordstacks,
+		% binary, globalmode,
+		% .inerror, .nosetlocal, position,
 		% plus extra space for badly designed error handers.
 $error begin
   /newerror false def
@@ -782,7 +849,8 @@ $error begin
 end
 % Define errordict similarly.  It has one entry per error name,
 %   plus handleerror.
-/errordict ErrorNames length 1 add dict def
+/errordict ErrorNames length 1 add dict
+.forcedef		% errordict is local, systemdict is global
 .setglobal		% contents of errordict are global
 errordict begin
   ErrorNames
@@ -794,7 +862,7 @@ errordict begin
    { mark 1 index dup systemdict /.errorhandler get /exec load .packtomark cvx def
    } forall
 /handleerror
- { //systemdict /.printerror get exec
+ { /.printerror .systemvar exec
  } bind def
 end
 
@@ -917,7 +985,8 @@ end
 (END PROCS) VMDEBUG
 
 % Define the font directory.
-/FontDirectory false .setglobal 100 dict true .setglobal def
+/FontDirectory false .setglobal 100 dict true .setglobal
+.forcedef		% FontDirectory is local, systemdict is global
 
 % Define the encoding dictionary.
 /EncodingDirectory 10 dict def	% enough for Level 2 + PDF standard encodings
@@ -930,7 +999,22 @@ end
  { //EncodingDirectory 3 1 roll put
  } bind def
 % If we've got the composite font extensions, define findencoding.
-/rootfont where { pop /findencoding { .findencoding } odef } if
+% To satisfy the Genoa FTS, findencoding must be a procedure, not an operator.
+/rootfont where { pop /findencoding { .findencoding } def } if
+
+% Define .registerencoding.
+% NOTE: the name registeredencodings is known to (initialized by and shared
+% with) the interpreter.
+/.registerencoding {	% <index> <array> .registerencoding -
+	% Check that the array is indexable.
+	% (It might still be a string, but then the .namestring will fail.)
+  dup 0 0 getinterval pop
+	% Check that all the elements of the array are names.
+  dup { .namestring pop } forall
+	% Do the store.
+  //registeredencodings 2 index 2 index readonly put pop pop
+} bind odef
+systemdict /registeredencodings .undef
 
 % Load StandardEncoding.
 %% Replace 1 (gs_std_e.ps)
@@ -1021,12 +1105,15 @@ systemdict /INITFILES known
  }
 if
 
-% If Level 2 functionality is implemented, enable it now.
-/.setlanguagelevel where
- { pop 2 .setlanguagelevel
+% If Level 2 (or higher) functionality is implemented, enable it now.
+/.setlanguagelevel where {
+  pop 2 .setlanguagelevel
 	% If the resource machinery is loaded, fix up some things now.
-   /.fixresources where { pop .fixresources } if
- } if
+  /.fixresources where { pop .fixresources } if
+} if
+/ll3dict where {
+  pop 3 .setlanguagelevel
+} if
 
 (END INITFILES) VMDEBUG
 
@@ -1050,7 +1137,11 @@ end
 .loadinitialfonts
 
 % Remove NullFont from FontDirectory, so it can't be accessed by mistake.
-FontDirectory /NullFont .undef
+/undefinefont where {
+  pop /NullFont undefinefont
+} {
+  FontDirectory /NullFont .undef
+} ifelse
 
 (END FONTS) VMDEBUG
 
@@ -1078,7 +1169,11 @@ NOBIND DELAYBIND or not { .bindoperators } if
 % Establish a default environment.
 
 defaultdevice
-DISPLAYING not { setdevice (%END DISPLAYING) .skipeof } if
+% The following line used to skip setting of page size and resolution if
+% NODISPLAY was selected.  We think this was only to save time and memory,
+% and it is a bad idea because it prevents setting the resolution in this
+% situation, which pstoedit (among other programs) relies on.
+%DISPLAYING not { setdevice (%END DISPLAYING) .skipeof } if
 systemdict /DEVICEWIDTH known
 systemdict /DEVICEHEIGHT known or
 systemdict /DEVICEWIDTHPOINTS known or
@@ -1414,44 +1509,111 @@ SAFER not { (%END SAFER) .skipeof } if
 %END SAFER
 
 % If we delayed binding, make it possible to do it later.
-/.bindnow
- { //systemdict begin .bindoperators end
-   % Temporarily disable the typecheck error.
-   errordict /typecheck 2 copy get
-   errordict /typecheck { pop } put	% pop the command
-   0 1 .delaycount 1 sub { .delaybind exch get .bind pop } for
-   userdict /.delaybind .undef		% reclaim the space
-   userdict /.delaycount .undef
-   put
- } .bind def
+/.bindnow {
+  //systemdict begin .bindoperators end
+  % Temporarily disable the typecheck error.
+  errordict /typecheck 2 copy get
+  errordict /typecheck { pop } put	% pop the command
+  0 1 .delaycount 1 sub { .delaybind exch get .bind pop } for
+  //systemdict /.delaybind {} .forceput	% reclaim the space
+  //systemdict /.bindnow .forceundef	% ditto
+  put
+  //systemdict /.forcedef .forceundef		% remove temptation
+  //systemdict /.forceput .forceundef		% ditto
+  //systemdict /.forceundef .forceundef		% ditto
+} .bind odef
 
 % Turn off array packing, since some PostScript code assumes that
 % procedures are writable.
 false setpacking
 
-% Close up systemdict.
-currentdict /.forceput .undef		% remove temptation
-currentdict /filterdict .undef		% bound in where needed
-end
-WRITESYSTEMDICT not { systemdict readonly pop } if
-
 (END INIT) VMDEBUG
 
-% Since some badly-behaved files include extremely long procedures,
-% or construct huge arrays on the operand stack, increase the operand
-% stack size here.
-/setuserparams where
- { pop mark /MaxOpStack 20000 .dicttomark setuserparams
- } if
+/.currentuserparams where {
+  pop
+	% Remove real user params from psuserparams.
+  mark .currentuserparams counttomark 2 idiv {
+    pop psuserparams exch undef
+  } repeat pop
+	% Update the copy of the user parameters.
+  mark .currentuserparams counttomark 2 idiv {
+    userparams 3 1 roll .forceput	% userparams is read-only
+  } repeat pop
+	% Turn on idiom recognition, if available.
+  currentuserparams /IdiomRecognition known {
+    /IdiomRecognition true .definepsuserparam
+  } if
+  psuserparams readonly pop
+  systemdict /.definepsuserparam undef
+	% Save a copy of userparams for use with save/restore
+	% (and, if implemented, context switching).
+  .currentglobal false .setglobal
+     mark .currentuserparams psuserparams { } forall .dicttomark readonly
+     /userparams exch .forcedef		% systemdict is read-only
+  .setglobal
+} if
+/.currentsystemparams where {
+  pop
+	% Remove real system params from pssystemparams.
+  mark .currentsystemparams counttomark 2 idiv {
+    pop pssystemparams exch .forceundef
+  } repeat pop
+} if
+
+% Conditionally turn off image interpolation.
+NOINTERPOLATE not { (%END NOINTERPOLATE) .skipeof } if
+/.nointerpolate {
+  dup type /dicttype eq {
+    dup /Interpolate .knownget not { false } if {
+      dup gcheck .currentglobal exch .setglobal
+      exch dup length dict copy
+      dup /Interpolate .undef
+      exch .setglobal
+    } if
+  } if
+} bind odef
+/image { .nointerpolate image } bind odef
+/imagemask { .nointerpolate imagemask } bind odef
+%END NOINTERPOLATE
 
 % Establish local VM as the default.
 false /setglobal where { pop setglobal } { .setglobal } ifelse
 $error /.nosetlocal false put
 
+(END GLOBAL) VMDEBUG
+
+/.savelocalstate where {
+	% If we might create new contexts, save away copies of all dictionaries
+	% referenced from systemdict that are stored in local VM,
+	% and also save a copy of the initial gstate.
+  pop .savelocalstate
+} {
+	% If we're *not* running in a multi-context system and FAKEFONTS is
+	% defined, add the fake fonts to LocalFontDirectory.
+  .definefakefonts	% current VM is local
+} ifelse
+
+% Close up systemdict.
+currentdict /filterdict .undef		% bound in where needed
+currentdict /.cidfonttypes .undef	% ditto
+currentdict /.colorrenderingtypes .undef	% ditto
+currentdict /.formtypes .undef		% ditto
+currentdict /.imagetypes .undef		% ditto
+currentdict /.imagemasktypes .undef	% ditto
+currentdict /.patterntypes .undef	% ditto
+currentdict /.shadingtypes .undef	% ditto
+end
+
 % Clean up VM, and enable GC.
 /vmreclaim where
  { pop NOGC not { 2 vmreclaim 0 vmreclaim } if
  } if
+DELAYBIND not {
+  systemdict /.forcedef .undef		% remove temptation
+  systemdict /.forceput .undef		% ditto
+  systemdict /.forceundef .undef	% ditto
+} if
+WRITESYSTEMDICT not { systemdict readonly pop } if
 
 (END GC) VMDEBUG
 

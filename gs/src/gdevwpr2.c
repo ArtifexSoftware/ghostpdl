@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevwpr2.c */
+/*Id: gdevwpr2.c  */
 /*
  * Microsoft Windows 3.n printer driver for Ghostscript.
  * Original version by Russell Lang and
@@ -77,7 +77,7 @@ private dev_proc_put_params(win_pr2_put_params);
 
 private void win_pr2_set_bpp(gx_device * dev, int depth);
 
-private gx_device_procs win_pr2_procs =
+private const gx_device_procs win_pr2_procs =
 prn_color_params_procs(win_pr2_open, gdev_prn_output_page, win_pr2_close,
 		       win_pr2_map_rgb_color, win_pr2_map_color_rgb,
 		       win_pr2_get_params, win_pr2_put_params);

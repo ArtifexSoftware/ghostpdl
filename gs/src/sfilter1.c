@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sfilter1.c */
+/*Id: sfilter1.c  */
 /* Filters included in Level 1 systems: NullEncode/Decode, PFBDecode, */
 /*   SubFileDecode. */
 #include "stdio_.h"		/* includes std.h */
@@ -43,12 +43,12 @@ const stream_template s_Null_template =
 
 private_st_PFBD_state();
 
-#define ss ((stream_PFBD_state *)st)
-
 /* Initialize the state */
 private int
 s_PFBD_init(stream_state * st)
 {
+    stream_PFBD_state *const ss = (stream_PFBD_state *) st;
+
     ss->record_type = -1;
     return 0;
 }
@@ -58,6 +58,7 @@ private int
 s_PFBD_process(stream_state * st, stream_cursor_read * pr,
 	       stream_cursor_write * pw, bool last)
 {
+    stream_PFBD_state *const ss = (stream_PFBD_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     int rcount, wcount;
@@ -111,8 +112,7 @@ s_PFBD_process(stream_state * st, stream_cursor_read * pr,
 	case 2:		/* binary data */
 	    if (ss->binary_to_hex) {	/* Translate binary to hex. */
 		int count;
-		register const char _ds *hex_digits =
-		"0123456789abcdef";
+		const char *const hex_digits = "0123456789abcdef";
 
 		wcount >>= 1;	/* 2 chars per input byte */
 		count = (wcount < rcount ? (status = 1, wcount) : rcount);
@@ -151,8 +151,6 @@ s_PFBD_process(stream_state * st, stream_cursor_read * pr,
     return ERRC;
 }
 
-#undef ss
-
 /* Stream template */
 const stream_template s_PFBD_template =
 {&st_PFBD_state, s_PFBD_init, s_PFBD_process, 6, 2
@@ -161,22 +159,13 @@ const stream_template s_PFBD_template =
 /* ------ SubFileDecode ------ */
 
 private_st_SFD_state();
-/* GC procedures */
-private 
-ENUM_PTRS_BEGIN(sfd_enum_ptrs) return 0;
-
-ENUM_CONST_STRING_PTR(0, stream_SFD_state, eod);
-ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(sfd_reloc_ptrs);
-RELOC_CONST_STRING_PTR(stream_SFD_state, eod);
-RELOC_PTRS_END
-
-#define ss ((stream_SFD_state *)st)
 
 /* Initialize the stream */
-     private int
-         s_SFD_init(stream_state * st)
+private int
+s_SFD_init(stream_state * st)
 {
+    stream_SFD_state *const ss = (stream_SFD_state *) st;
+
     ss->match = 0;
     ss->copy_count = 0;
     return 0;
@@ -187,6 +176,7 @@ private int
 s_SFD_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
+    stream_SFD_state *const ss = (stream_SFD_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     const byte *rlimit = pr->limit;
@@ -286,8 +276,6 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
     }
     return status;
 }
-
-#undef ss
 
 /* Stream template */
 const stream_template s_SFD_template =

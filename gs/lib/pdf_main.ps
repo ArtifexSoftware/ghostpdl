@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: pdf_main.ps 
 % pdf_main.ps
 % PDF file- and page-level operations.
 
@@ -38,6 +39,7 @@ pdfdict begin
 	% PDF 1.1 operators
   /BX { /BXlevel BXlevel 1 add store } bind
   /EX { /BXlevel BXlevel 1 sub store } bind
+  /PS { cvx exec } bind
 	% PDF 1.2 operators
   /BMC { pop } bind
   /BDC { pop pop } bind
@@ -88,7 +90,6 @@ systemdict begin
  } bind odef
 /runpdf			% <file> runpdf -
  { userdict begin
-   /PSFile where { pop PSFile (w) file /PSout exch def } if
    /Page# null def
    /Page null def
    /DSCPageCount 0 def
@@ -194,8 +195,8 @@ pdfdict begin
 % Open a PDF file and read the trailer and cross-reference.
 /pdfopen		% <file> pdfopen <dict>
  { pdfdict readonly pop		% can't do it any earlier than this
-   /PSout where { pop /pdf2psdict where { pop pdf2psdict begin } if } if
-   10 dict begin
+   15 dict begin
+   /LocalResources 0 dict def
    /PSLevel1 where { pop } { /PSLevel1 false def } ifelse
    cvlit /PDFfile exch def
    /PDFsource PDFfile def
@@ -208,9 +209,18 @@ pdfdict begin
 	% (nulls, ^Zs, EOLs).
     { 1 sub 2 copy setfileposition 1 index read pop
       32 ge {exit} if
-    } loop 1 sub setfileposition
-   prevline (%%EOF) linene { /pdfopen cvx /syntaxerror signalerror } if
-   PDFfile exch setfileposition
+    } loop
+	% Stack: PDFfile endpos
+	% The top of the stack is now the file position of the last
+	% non-garbage character.
+	% We can't use prevline to check for the %%EOF, because if the
+	% %%EOF isn't followed by an EOL, prevline will read past the
+	% end of the file, and the file will get closed.
+   5 sub 2 copy setfileposition
+   1 index (xxxxxx) readstring pop
+   dup (\015%%EOF) eq exch (\012%%EOF) eq or not   
+    { /pdfopen cvx /syntaxerror signalerror } if
+   1 add setfileposition
    prevline cvi		% xref start position
    exch PDFfile exch setfileposition
    prevline (startxref) linene { /pdfopen cvx /syntaxerror signalerror } if
@@ -230,26 +240,12 @@ pdfdict begin
    /PageCount pdfpagecount def
    /PageNumbers PageCount dict def
    /PageIndex PageCount array def
-	% Write the DSC header if appropriate.
-   [ (%!PS-Adobe-1.0) #dsc
-   [ (%%Pages: (atend)) #dsc
-   [ (%%EndComments) #dsc
-   [ (%%BeginProlog) #dsc
-   [ (% This copyright applies to everything between here and the %%EndProlog:) #dsc
-   [ (% ) copyright #dsc
-   (gs_pdf.ps) #dscfile
-   PSLevel1 { (gs_l2img.ps) #dscfile } if
-   [ (%%EndProlog) #dsc
 	% Copy bookmarks (outline) to the output.
-   #?
-    { Trailer /Root oget /Outlines knownoget
-       { /First knownoget
-	  { { dup writeoutline /Next knownoget not { exit } if } loop }
-	 if
-       }
-      if
+   Trailer /Root oget /Outlines knownoget
+    { /First knownoget
+      { { dup writeoutline /Next knownoget not { exit } if } loop } if
     }
-   if   
+   if
    currentdict end
  } bind def
 
@@ -275,16 +271,8 @@ pdfdict begin
 % Close a PDF file.
 /pdfclose		% <dict> pdfclose -
  { begin
-   /PSout where
-    { pop
-      [ (%%Trailer) #dsc
-      [ (%%Pages: ) DSCPageCount #dsc
-      PSout closefile
-    }
-   if
    PDFfile closefile
    end
-   pdf2psdict where { pop currentdict pdf2psdict eq { end } if } if
  } bind def
 
 % ======================== Page accessing ======================== %
@@ -304,17 +292,21 @@ pdfdict begin
  } bind def
 
 % Get the value of a resource on a given page.
-/rget			% <resname> <pagedict> <restype> rget <value> -true-
+/rget {			% <resname> <pagedict> <restype> rget <value> -true-
 			% <resname> <pagedict> <restype> rget -false-
-{ exch /Resources pget
-   { exch knownoget
-      { exch knownoget }
-      { pop false }
-     ifelse
-   }
-   { pop pop false
-   }
-  ifelse
+  LocalResources 1 index knownoget {
+     3 index knownoget
+  } {
+    false
+  } ifelse {
+    exch pop exch pop exch pop true
+  } {
+    exch /Resources pget {
+      exch knownoget { exch knownoget } { pop false } ifelse
+    } {
+      pop pop false
+    } ifelse
+  } ifelse
 } bind def
 
 % Get the total number of pages in the document.
@@ -435,9 +427,7 @@ end def
 
 /pdfshowpage_init 	% <pagedict> pdfshowpage_init <pagedict>
  { gsave
-   [ (%%Page: ) Page# ( ) 
-     DSCPageCount 1 add /DSCPageCount 1 index store #dsc
-   [ (GS_PDF_ProcSet begin) #dsc
+   /DSCPageCount DSCPageCount 1 add store
  } bind def
 
 /pdfshowpage_setpage	% <pagedict> pdfshowpage_setpage <pagedict>
@@ -447,7 +437,6 @@ end def
 	% We want to look at Rotate for displays, but not for printers.
 	% The following is a hack, but we don't know a better way to do this.
    currentpagedevice /OutputFile known
-   /PSout where dup { exch pop } if or not
     { dup /Orientation 3 index /Rotate pget not { 0 } if 90 idiv
 	% Rotate specifies *clockwise* rotation!
       neg 3 and put
@@ -468,7 +457,7 @@ end def
     }
    if
 	% Stack: pagedict setpagedict
-   /setpagedevice 1 #
+   setpagedevice
  } bind def
 
 /pdfshowpage_finish	% <pagedict> pdfshowpage_finish -
@@ -493,14 +482,13 @@ end def
 	% Display the actual page contents.
    2 dict begin
    /BXlevel 0 def
-   matrix currentmatrix /beginpage 0 # setmatrix
+   matrix currentmatrix beginpage setmatrix
    /Contents knownoget not { 0 array } if
    dup type /arraytype ne { 1 array astore } if
     { oforce false resolvestream pdfopdict .pdfrun } forall
-   /endpage 0 #
+   endpage
    end			% scratch dict
    grestore
-   [ (end) #dsc
  } bind def
 
 end			% pdfdict

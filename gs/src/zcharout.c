@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zcharout.c */
+/*Id: zcharout.c  */
 /* Common code for outline (Type 1 / 4 / 42) fonts */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gschar.h"
 #include "gxdevice.h"		/* for gxfont.h */
@@ -44,11 +43,11 @@ int zsetcachedevice2(P1(os_ptr));	/* zchar.c */
  */
 int
 zchar_exec_char_proc(os_ptr op)
-{				/*
-				 * The definition is a PostScript procedure.  Execute
-				 *      <code|name> proc
-				 * within a systemdict begin/end and a font begin/end.
-				 */
+{	/*
+	 * The definition is a PostScript procedure.  Execute
+	 *      <code|name> proc
+	 * within a systemdict begin/end and a font begin/end.
+	 */
     es_ptr ep;
 
     check_estack(5);
@@ -75,7 +74,7 @@ zchar_exec_char_proc(os_ptr op)
  * font.  If present, store the l.s.b. in psbw[0,1] and the width in
  * psbw[2,3].
  */
-int				/*metrics_present */
+int				/*metrics_present*/
 zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
 		  double psbw[4])
 {
@@ -126,7 +125,7 @@ zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
 int
 zchar_set_cache(os_ptr op, const gs_font_base * pbfont, const ref * pcnref,
 	 const double psb[2], const double pwidth[2], const gs_rect * pbbox,
-	     int (*cont_fill) (P1(os_ptr)), int (*cont_stroke) (P1(os_ptr)))
+	     int (*cont_fill)(P1(os_ptr)), int (*cont_stroke)(P1(os_ptr)))
 {
     const ref *pfdict = &pfont_data(pbfont)->dict;
     ref *pmdict;

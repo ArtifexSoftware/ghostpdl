@@ -38,7 +38,7 @@
  * according to a comment in the NEWS for release 5.02, it does work, and if
  * we do take the phase into account, we get incorrect output.
  */
-/*#define DISREGARD_PHASE */
+#define DISREGARD_PHASE
 #ifdef DISREGARD_PHASE
 #  define PHASE_VALUE(v) 0
 #else
@@ -267,7 +267,7 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 		(state.pcdev, bits, x, y, w, h,
 		 gx_no_color_index, gx_no_color_index, px, py);
 	else
-	    code = (*dev_proc(dev, strip_copy_rop))
+	    code = (*dev_proc(state.pcdev, strip_copy_rop))
 		(state.pcdev,
 		 rop_source->sdata, rop_source->sourcex,
 		 rop_source->sraster, rop_source->id,
@@ -323,12 +323,12 @@ gx_dc_pure_masked_fill_rect(const gx_device_color * pdevc,
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
-	return (*gx_dc_procs_pure.fill_rectangle)
+	return (*gx_dc_type_data_pure.fill_rectangle)
 	    (pdevc, x, y, w, h, state.pcdev, lop, source);
     else {
 	state.lop = lop;
 	state.source = source;
-	state.fill_rectangle = gx_dc_procs_pure.fill_rectangle;
+	state.fill_rectangle = gx_dc_type_data_pure.fill_rectangle;
 	return tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
 			     tile_masked_fill);
     }
@@ -347,12 +347,12 @@ gx_dc_binary_masked_fill_rect(const gx_device_color * pdevc,
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
-	return (*gx_dc_procs_ht_binary.fill_rectangle)
+	return (*gx_dc_type_data_ht_binary.fill_rectangle)
 	    (pdevc, x, y, w, h, state.pcdev, lop, source);
     else {
 	state.lop = lop;
 	state.source = source;
-	state.fill_rectangle = gx_dc_procs_ht_binary.fill_rectangle;
+	state.fill_rectangle = gx_dc_type_data_ht_binary.fill_rectangle;
 	return tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
 			     tile_masked_fill);
     }
@@ -371,12 +371,12 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
-	return (*gx_dc_procs_ht_colored.fill_rectangle)
+	return (*gx_dc_type_data_ht_colored.fill_rectangle)
 	    (pdevc, x, y, w, h, state.pcdev, lop, source);
     else {
 	state.lop = lop;
 	state.source = source;
-	state.fill_rectangle = gx_dc_procs_ht_colored.fill_rectangle;
+	state.fill_rectangle = gx_dc_type_data_ht_colored.fill_rectangle;
 	return tile_by_steps(&state, x, y, w, h, ptile, &ptile->tmask,
 			     tile_masked_fill);
     }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,25 +16,24 @@
    all copies.
  */
 
-/* ireclaim.c */
+/*Id: ireclaim.c  */
 /* Interpreter's interface to garbage collector */
 #include "ghost.h"
 #include "errors.h"
 #include "gsstruct.h"
 #include "iastate.h"
+#include "icontext.h"
+#include "interp.h"
+#include "isave.h"		/* for isstate.h */
+#include "isstate.h"		/* for mem->saved->state */
 #include "dstack.h"		/* for dsbot, dsp, dict_set_top */
 #include "estack.h"		/* for esbot, esp */
 #include "ostack.h"		/* for osbot, osp */
 #include "opdef.h"		/* for defining init procedure */
 #include "store.h"		/* for make_array */
 
-/* Import the static interpreter refs from interp.c. */
-extern ref ref_static_stacks;
-extern ref ref_ref_stacks[3];
-
 /* Import preparation and cleanup routines. */
-extern void file_gc_prepare(P0());
-extern void dstack_gc_cleanup(P0());
+extern void ialloc_gc_prepare(P1(gs_ref_memory_t *));
 
 /* Forward references */
 private void gs_vmreclaim(P2(gs_dual_memory_t *, bool));
@@ -85,87 +84,54 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 }
 
 /* Interpreter entry to garbage collector. */
-/* This registers the stacks before calling the main GC. */
-private void near set_ref_chunk(P4(chunk_t *, ref *, ref *, gs_ref_memory_t *));
 private void
 gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
-{				/*
-				 * Create pseudo-chunks to hold the interpreter roots:
-				 * copies of the ref_stacks, and, if necessary,
-				 * the statically allocated stack bodies.
-				 */
+{
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
     gs_ref_memory_t *smem = dmem->space_system;
-    struct ir_ {
-	chunk_head_t head;
-	obj_header_t prefix;
-	ref refs[5 + 1];	/* +1 for extra relocation ref */
-    } iroot_refs;
-    chunk_t cir, css;
-    void *piroot = &iroot_refs.refs[0];
-    gs_gc_root_t iroot;
+    int code = context_state_store(gs_interp_context_state_current);
 
+/****** ABORT IF code < 0 ******/
     alloc_close_chunk(lmem);
     if (gmem != lmem)
 	alloc_close_chunk(gmem);
     alloc_close_chunk(smem);
 
-    /*
-     * Copy the ref_stacks into the heap, so we can trace and
-     * relocate them.  Note that they are allocated in system VM.
-     */
-#define stkmem smem
-#define get_stack(i, stk)\
-  ref_stack_cleanup(&stk);\
-  iroot_refs.refs[i+2] = ref_ref_stacks[i],\
-  *r_ptr(&iroot_refs.refs[i+2], ref_stack) = stk
-    get_stack(0, d_stack);
-    get_stack(1, e_stack);
-    get_stack(2, o_stack);
-#undef get_stack
-
-    /* Make the root chunk. */
-    iroot_refs.refs[1] = ref_static_stacks;
-    make_array(&iroot_refs.refs[0], avm_system, 4, &iroot_refs.refs[1]);
-    set_ref_chunk(&cir, &iroot_refs.refs[0], &iroot_refs.refs[5], stkmem);
-    gs_register_ref_root((gs_memory_t *) stkmem, &iroot, &piroot,
-			 "gs_gc_main");
-
-    /* If necessary, make the static stack chunk. */
-#define css_array iroot_refs.refs[1]
-#define css_base css_array.value.refs
-    if (css_base != NULL)
-	set_ref_chunk(&css, css_base, css_base + r_size(&css_array), stkmem);
-
     /* Prune the file list so it won't retain potentially collectible */
     /* files. */
-    file_gc_prepare();
+
+    {
+	int i;
+
+	for (i = (global ? i_vm_system : i_vm_local);
+	     i < countof(dmem->spaces.indexed);
+	     ++i
+	    ) {
+	    gs_ref_memory_t *mem = dmem->spaces.indexed[i];
+
+	    if (mem == 0 || (i > 0 && mem == dmem->spaces.indexed[i - 1]))
+		continue;
+	    for (;; mem = &mem->saved->state) {
+		ialloc_gc_prepare(mem);
+		if (mem->saved == 0)
+		    break;
+	    }
+	}
+    }
 
     /* Do the actual collection. */
+
     gs_reclaim(&dmem->spaces, global);
 
-    /* Remove the temporary chunks. */
-    if (css_base != NULL)
-	alloc_unlink_chunk(&css, stkmem);
-    gs_unregister_root((gs_memory_t *) stkmem, &iroot, "gs_gc_main");
-    alloc_unlink_chunk(&cir, stkmem);
-#undef css_array
-#undef css_base
+    /* Reload the context state. */
 
-    /* Update the static copies of the ref_stacks. */
-#define put_stack(i, stk)\
-  ref_ref_stacks[i].value.pstruct = iroot_refs.refs[i+2].value.pstruct,\
-  stk = *r_ptr(&iroot_refs.refs[i+2], ref_stack)
-    put_stack(0, d_stack);
-    put_stack(1, e_stack);
-    put_stack(2, o_stack);
-#undef put_stack
-#undef stkmem
+    code = context_state_load(gs_interp_context_state_current);
+/****** ABORT IF code < 0 ******/
 
     /* Update the cached value pointers in names. */
 
-    dstack_gc_cleanup();
+    dicts_gc_cleanup();
 
     /* Reopen the active chunks. */
 
@@ -174,35 +140,18 @@ gs_vmreclaim(gs_dual_memory_t * dmem, bool global)
 	alloc_open_chunk(gmem);
     alloc_open_chunk(lmem);
 
-    /* Update caches */
+    /* Update caches not handled by context_state_load. */
 
     {
 	uint dcount = ref_stack_count(&d_stack);
 
-	ref_systemdict = *ref_stack_index(&d_stack, dcount - 1);
+	*systemdict = *ref_stack_index(&d_stack, dcount - 1);
     }
-    dict_set_top();
-}
-private void near
-set_ref_chunk(chunk_t * cp, ref * bot, ref * top, gs_ref_memory_t * mem)
-{
-    obj_header_t *pre = (obj_header_t *) bot - 1;
-    chunk_head_t *head = (chunk_head_t *) pre - 1;
-
-    pre->o_large = 1;		/* not relocatable */
-    pre->o_lsize = 0;
-    pre->o_lmark = o_l_unmarked;
-    pre->o_size = (byte *) (top + 1) - (byte *) bot;
-    pre->o_type = &st_refs;
-    alloc_init_chunk(cp, (byte *) head, (byte *) (top + 1), false, NULL);	/* +1 for extra reloc ref */
-    cp->cbot = cp->ctop;
-    alloc_link_chunk(cp, mem);
-    make_int(top, 0);		/* relocation ref */
 }
 
 /* ------ Initialization procedure ------ */
 
-BEGIN_OP_DEFS(ireclaim_l2_op_defs)
+const op_def ireclaim_l2_op_defs[] =
 {
-    END_OP_DEFS(ireclaim_init)
-}
+    op_def_end(ireclaim_init)
+};

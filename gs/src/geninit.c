@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,12 @@
    all copies.
  */
 
-/* geninit.c */
+/*Id: geninit.c  */
 /* Utility for merging all the Ghostscript initialization files */
 /* (gs_*.ps) into a single file, optionally converting them to C data. */
-#include "stdio_.h"
-#include "string_.h"
+#include "stdpre.h"
+#include <stdio.h>
+#include <string.h>
 
 /* Usage:
  *    geninit <init-file.ps> <gconfig.h> <merged-init-file.ps>
@@ -28,10 +29,12 @@
  */
 
 /* Forward references */
-private void merge_to_c();
-private void merge_to_ps();
+private void merge_to_c(P4(const char *inname, FILE * in, FILE * config,
+			   FILE * out));
+private void merge_to_ps(P4(const char *inname, FILE * in, FILE * config,
+			    FILE * out));
 
-#define line_size 128
+#define LINE_SIZE 128
 
 int
 main(int argc, char *argv[])
@@ -51,7 +54,7 @@ main(int argc, char *argv[])
     else {
 	fprintf(stderr, "\
 Usage: geninit gs_init.ps gconfig.h gs_xinit.ps\n\
- or    geninit gs_init.ps gconfig.h -c gs_init.c\n");
+or     geninit gs_init.ps gconfig.h -c gs_init.c\n");
 	exit(1);
     }
     in = fopen(fin, "r");
@@ -92,38 +95,46 @@ rl(FILE * in, char *str, int len)
 
 /* Write a line on the output. */
 private void
+wlc(FILE * out, const char *str)
+{
+    int n = 0;
+    const char *p = str;
+
+    for (; *p; ++p) {
+	char c = *p;
+	const char *format = "%d,";
+
+	if (c >= 32 && c < 127)
+	    format = (c == '\'' || c == '\\' ? "'\\%c'," : "'%c',");
+	fprintf(out, format, c);
+	if (++n == 15) {
+	    fputs("\n", out);
+	    n = 0;
+	}
+    }
+    fputs("10,\n", out);
+}
+private void
 wl(FILE * out, const char *str, bool to_c)
 {
-    if (to_c) {
-	int n = 0;
-	const char *p = str;
-
-	for (; *p; ++p) {
-	    char c = *p;
-	    const char *format = "%d,";
-
-	    if (c >= 32 && c < 127)
-		format = (c == '\'' || c == '\\' ? "'\\%c'," : "'%c',");
-	    fprintf(out, format, c);
-	    if (++n == 15) {
-		fputs("\n", out);
-		n = 0;
-	    }
-	}
-	fputs("10,\n", out);
-    } else {
+    if (to_c)
+	wlc(out, str);
+    else
 	fprintf(out, "%s\n", str);
-    }
 }
 
-/* Strip whitespace and comments from a string if possible. */
-/* Return a pointer to any string that remains, or NULL if none. */
-/* Note that this may store into the string. */
+/*
+ * Strip whitespace and comments from a line of PostScript code as possible.
+ * Return a pointer to any string that remains, or NULL if none.
+ * Note that this may store into the string.
+ */
 private char *
 doit(char *line)
 {
     char *str = line;
-    char *p1;
+    char *from;
+    char *to;
+    int in_string = 0;
 
     while (*str == ' ' || *str == '\t')		/* strip leading whitespace */
 	++str;
@@ -133,31 +144,83 @@ doit(char *line)
 	return str;
     if (str[0] == '%')		/* comment line */
 	return NULL;
-    if ((p1 = strchr(str, '%')) == NULL)	/* no internal comment */
-	return str;
-    if (strchr(p1, ')') != NULL)	/* might be a % inside a string */
-	return str;
-    while (p1[-1] == ' ' || p1[-1] == '\t')
-	--p1;
-    *p1 = 0;			/* remove comment */
+    /*
+     * Copy the string over itself removing:
+     *  - All comments not within string literals;
+     *  - Whitespace adjacent to []{};
+     *  - Whitespace before /(;
+     *  - Whitespace after ).
+     */
+    for (to = from = str; (*to = *from) != 0; ++from, ++to) {
+	switch (*from) {
+	    case '%':
+		if (!in_string)
+		    break;
+		continue;
+	    case ' ':
+	    case '\t':
+		if (to > str && !in_string && strchr(" \t[]{})", to[-1]))
+		    --to;
+		continue;
+	    case '(':
+		if (to > str && !in_string && strchr(" \t", to[-1]))
+		    *--to = *from;
+		++in_string;
+		continue;
+	    case ')':
+		--in_string;
+		continue;
+	    case '/':
+	    case '[':
+	    case ']':
+	    case '{':
+	    case '}':
+		if (to > str && !in_string && strchr(" \t", to[-1]))
+		    *--to = *from;
+		continue;
+	    case '\\':
+		if (from[1] == '\\' || from[1] == '(' || from[1] == ')')
+		    *++to = *++from;
+		continue;
+	    default:
+		continue;
+	}
+	break;
+    }
+    /* Strip trailing whitespace. */
+    while (to > str && (to[-1] == ' ' || to[-1] == '\t'))
+	--to;
+    *to = 0;
     return str;
 }
 
 /* Merge a file from input to output. */
 private void
+flush_buf(FILE * out, char *buf, bool to_c)
+{
+    if (buf[0] != 0) {
+	wl(out, buf, to_c);
+	buf[0] = 0;
+    }
+}
+private void
 mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
 {
-    char line[line_size + 1];
+    char line[LINE_SIZE + 1];
+    char buf[LINE_SIZE + 1];
+    char *str;
 
-    while (rl(in, line, line_size)) {
-	char psname[line_size + 1];
+    buf[0] = 0;
+    while (rl(in, line, LINE_SIZE)) {
+	char psname[LINE_SIZE + 1];
 	int nlines;
 
 	if (!strncmp(line, "%% Replace ", 11) &&
 	    sscanf(line + 11, "%d %s", &nlines, psname) == 2
 	    ) {
+	    flush_buf(out, buf, to_c);
 	    while (nlines-- > 0)
-		rl(in, line, line_size);
+		rl(in, line, LINE_SIZE);
 	    if (psname[0] == '(') {
 		FILE *ps;
 
@@ -168,16 +231,18 @@ mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
 		    exit(1);
 		}
 		mergefile(psname + 1, ps, config, out, to_c);
-	    } else if (!strcmp(psname, "INITFILES")) {	/*
-							 * We don't want to bind config.h into geninit, so
-							 * we parse it ourselves at execution time instead.
-							 */
+	    } else if (!strcmp(psname, "INITFILES")) {
+		/*
+		 * We don't want to bind config.h into geninit, so
+		 * we parse it ourselves at execution time instead.
+		 */
 		rewind(config);
-		while (rl(config, psname, line_size))
+		while (rl(config, psname, LINE_SIZE))
 		    if (!strncmp(psname, "psfile_(\"", 9)) {
 			FILE *ps;
+			char *quote = strchr(psname + 9, '"');
 
-			psname[strlen(psname) - 2] = 0;
+			*quote = 0;
 			ps = fopen(psname + 9, "r");
 			if (ps == 0) {
 			    fprintf(stderr, "Cannot open %s for reading.\n", psname + 9);
@@ -190,15 +255,26 @@ mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
 			nlines, psname);
 		exit(1);
 	    }
-	} else if (!strcmp(line, "currentfile closefile")) {	/* The rest of the file is debugging code, stop here. */
+	} else if (!strcmp(line, "currentfile closefile")) {
+	    /* The rest of the file is debugging code, stop here. */
 	    break;
 	} else {
-	    char *str = doit(line);
-
-	    if (str != 0)
-		wl(out, str, to_c);
+	    str = doit(line);
+	    if (str == 0)
+		continue;
+	    if (buf[0] != '%' &&	/* special retained comment */
+		strlen(buf) + strlen(str) < LINE_SIZE &&
+		(strchr("(/[]{}", str[0]) ||
+		 (buf[0] != 0 && strchr(")[]{}", buf[strlen(buf) - 1])))
+		)
+		strcat(buf, str);
+	    else {
+		flush_buf(out, buf, to_c);
+		strcpy(buf, str);
+	    }
 	}
     }
+    flush_buf(out, buf, to_c);
     fprintf(stderr, "%s: %ld bytes, output pos = %ld\n",
 	    inname, ftell(in), ftell(out));
     fclose(in);
@@ -208,29 +284,28 @@ mergefile(const char *inname, FILE * in, FILE * config, FILE * out, bool to_c)
 private void
 merge_to_c(const char *inname, FILE * in, FILE * config, FILE * out)
 {
-    char line[line_size + 1];
+    char line[LINE_SIZE + 1];
 
     fputs("/*\n", out);
-    while ((rl(in, line, line_size), line[0]))
+    while ((rl(in, line, LINE_SIZE), line[0]))
 	fprintf(out, "%s\n", line);
     fputs("*/\n", out);
     fputs("\n", out);
     fputs("/* Pre-compiled interpreter initialization string. */\n", out);
-    fputs("#include \"stdpre.h\"\n", out);
     fputs("\n", out);
-    fputs("const byte gs_init_string[] = {\n", out);
+    fputs("const unsigned char gs_init_string[] = {\n", out);
     mergefile(inname, in, config, out, true);
     fputs("10};\n", out);
-    fputs("const uint gs_init_string_sizeof = sizeof(gs_init_string);\n", out);
+    fputs("const unsigned int gs_init_string_sizeof = sizeof(gs_init_string);\n", out);
 }
 
 /* Merge and produce a PostScript file. */
 private void
 merge_to_ps(const char *inname, FILE * in, FILE * config, FILE * out)
 {
-    char line[line_size + 1];
+    char line[LINE_SIZE + 1];
 
-    while ((rl(in, line, line_size), line[0]))
+    while ((rl(in, line, LINE_SIZE), line[0]))
 	fprintf(out, "%s\n", line);
     mergefile(inname, in, config, out, false);
 }

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gs.c */
+/*Id: gs.c  */
 /* 'main' program for Ghostscript */
 #include "ghost.h"
 #include "imain.h"

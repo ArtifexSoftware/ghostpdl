@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxclbits.c */
+/*Id: gxclbits.c  */
 /* Halftone and bitmap writing for command lists */
 #include "memory_.h"
 #include "gx.h"
@@ -129,8 +129,7 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     clist_bitmap_bytes(width_bits, height, compression_mask,
 		       &uncompressed_raster, &full_raster);
     uint max_size = cbuf_size - op_size;
-    gs_memory_t *memory_allocator
-    = cldev->memory ? cldev->memory : &gs_memory_default;
+    gs_memory_t *mem = (cldev->memory ? cldev->memory : &gs_memory_default);
     byte *dp;
     int compress = 0;
 
@@ -150,31 +149,29 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    stream_CFE_state cf;
 	    stream_RLE_state rl;
 	} sstate;
+	int code;
 
 	*psize = op_size + uncompressed_size;
-	if (pcls != 0) {
-	    int code = set_cmd_put_op(dp, cldev, pcls, 0, *psize);
-
-	    if (code < 0)
-		return code;
-	} else {
-	    int code = set_cmd_put_all_op(dp, cldev, 0, *psize);
-
-	    if (code < 0)
-		return code;
-	}
+	code = (pcls != 0 ?
+		set_cmd_put_op(dp, cldev, pcls, 0, *psize) :
+		set_cmd_put_all_op(dp, cldev, 0, *psize));
+	if (code < 0)
+	    return code;
 	cmd_uncount_op(0, *psize);
 	/*
 	 * Note that we currently keep all the padding if we are
 	 * compressing.  This is ridiculous, but it's too hard to
 	 * change right now.
 	 */
-	if (compression_mask & (1 << cmd_compress_cfe)) {	/* Try CCITTFax compression. */
+	if (compression_mask & (1 << cmd_compress_cfe)) {
+	    /* Try CCITTFax compression. */
 	    clist_cfe_init(&sstate.cf,
-	       uncompressed_raster << 3 /*width_bits */ , memory_allocator);
+			   uncompressed_raster << 3 /*width_bits*/,
+			   mem);
 	    sstate.ss.template = &s_CFE_template;
 	    compress = cmd_compress_cfe;
-	} else if (compression_mask & (1 << cmd_compress_rle)) {	/* Try RLE compression. */
+	} else if (compression_mask & (1 << cmd_compress_rle)) {
+	    /* Try RLE compression. */
 	    clist_rle_init(&sstate.rl);
 	    sstate.ss.template = &s_RLE_template;
 	    compress = cmd_compress_rle;
@@ -222,23 +219,20 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     } else if (uncompressed_size > max_size)
 	return_error(gs_error_limitcheck);
     else {
+	int code;
+
 	*psize = op_size + short_size;
-	if (pcls != 0) {
-	    int code = set_cmd_put_op(dp, cldev, pcls, 0, *psize);
-
-	    if (code < 0)
-		return code;
-	} else {
-	    int code = set_cmd_put_all_op(dp, cldev, 0, *psize);
-
-	    if (code < 0)
-		return code;
-	}
+	code = (pcls != 0 ?
+		set_cmd_put_op(dp, cldev, pcls, 0, *psize) :
+		set_cmd_put_all_op(dp, cldev, 0, *psize));
+	if (code < 0)
+	    return code;
 	cmd_uncount_op(0, *psize);
     }
     bytes_copy_rectangle(dp + op_size, short_raster, data, raster,
 			 short_raster, height);
-  out:*pdp = dp;
+out:
+    *pdp = dp;
     return compress;
 }
 
@@ -279,28 +273,31 @@ cmd_store_tile_params(byte * dp, const gx_strip_bitmap * tile, int depth,
 }
 
 /* Add a command to set the tile index. */
-/* This is a relatively high-frequency operation, so we make it a macro. */
-/* Note that it may do a 'return' with an error code. */
-/* Some compilers try to substitute macro args in string literals! */
-/* NB that we cannot emit 'delta' style tile indices if VM error recovery */
-/* is in effect, since reader & writer's tile indices may get out of phase */
-/* as a consequence of error recoverly occurring. */
-#define cmd_put_tile_index_inline(cldev, pcls, indx)\
- { int idelta = (indx) - (pcls)->tile_index + 8; byte *dp;\
-   if ( !(idelta & ~15) && clist_test_VMerror_recoverable(cldev) )\
-     { int code = set_cmd_put_op(dp, cldev, pcls, cmd_op_delta_tile_index + idelta, 1);\
-       if (code < 0)\
-         return code;\
-     }\
-   else\
-     { int code = set_cmd_put_op(dp, cldev, pcls, cmd_op_set_tile_index + ((indx) >> 8), 2);\
-       if (code < 0)\
-         return code;\
-       dp[1] = (indx) & 0xff;\
-       if_debug2('L', "[L]writing index=%u, offset=%lu\n",\
-		 indx, cldev->tile_table[indx].offset);\
-     }\
- }
+/* This is a relatively high-frequency operation, so we declare it `inline'. */
+inline private int
+cmd_put_tile_index(gx_device_clist_writer *cldev, gx_clist_state *pcls,
+		   uint indx)
+{
+    int idelta = indx - pcls->tile_index + 8;
+    byte *dp;
+    int code;
+
+    if (!(idelta & ~15)) {
+	code = set_cmd_put_op(dp, cldev, pcls,
+			      cmd_op_delta_tile_index + idelta, 1);
+	if (code < 0)
+	    return code;
+    } else {
+	code = set_cmd_put_op(dp, cldev, pcls,
+			      cmd_op_set_tile_index + (indx >> 8), 2);
+	if (code < 0)
+	    return code;
+	dp[1] = indx & 0xff;
+    }
+    if_debug2('L', "[L]writing index=%u, offset=%lu\n",
+	      indx, cldev->tile_table[indx].offset);
+    return 0;
+}
 
 /* If necessary, write out data for a single color map. */
 int
@@ -312,7 +309,7 @@ cmd_put_color_map(gx_device_clist_writer * cldev, cmd_map_index map_index,
 
     if (map == 0) {
 	if (pid && *pid == gs_no_id)
-	    return 0;		/* no need to write */
+	    return 0;	/* no need to write */
 	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc, 2);
 	if (code < 0)
 	    return code;
@@ -321,7 +318,7 @@ cmd_put_color_map(gx_device_clist_writer * cldev, cmd_map_index map_index,
 	    *pid = gs_no_id;
     } else {
 	if (pid && map->id == *pid)
-	    return 0;		/* no need to write */
+	    return 0;	/* no need to write */
 	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc,
 				  2 + sizeof(map->values));
 	if (code < 0)
@@ -338,6 +335,9 @@ cmd_put_color_map(gx_device_clist_writer * cldev, cmd_map_index map_index,
 
 /* We want consecutive ids to map to consecutive hash slots if possible, */
 /* so we can use a delta representation when setting the index. */
+/* NB that we cannot emit 'delta' style tile indices if VM error recovery */
+/* is in effect, since reader & writer's tile indices may get out of phase */
+/* as a consequence of error recovery occurring. */
 #define tile_id_hash(id) (id)
 #define tile_hash_next(index) ((index) + 413)	/* arbitrary large odd # */
 typedef struct tile_loc_s {
@@ -564,7 +564,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	if (*bptr & bmask) {	/* Already known.  Just set the index. */
 	    if (pcls->tile_index == loc.index)
 		return 0;
-	    cmd_put_tile_index_inline(cldev, pcls, loc.index);
+	    cmd_put_tile_index(cldev, pcls, loc.index);
 	} else {
 	    uint extra = 0;
 
@@ -606,10 +606,9 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 				 */
 		ulong offset = (byte *) loc.tile - cldev->chunk.data;
 		uint rsize =
-		extra + 1 + cmd_size_w(loc.index) + cmd_size_w(offset);
+		    extra + 1 + cmd_size_w(loc.index) + cmd_size_w(offset);
 		byte *dp;
 		uint csize;
-		uint compress;
 		int code =
 		cmd_put_bits(cldev, pcls, ts_bits(cldev, loc.tile),
 			     tiles->rep_width * depth, tiles->rep_height,
@@ -621,7 +620,6 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 		if (code < 0)
 		    return code;
-		compress = (uint) code;
 		if (extra) {	/* Write the tile parameters before writing the bits. */
 		    cmd_store_tile_params(dp, &cldev->tile_params, depth,
 					  extra);
@@ -684,7 +682,7 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	if (*bptr & bmask) {	/* Already known.  Just set the index. */
 	    if (pcls->tile_index == loc.index)
 		return 0;
-	    cmd_put_tile_index_inline(cldev, pcls, loc.index);
+	    cmd_put_tile_index(cldev, pcls, loc.index);
 	} else {		/* Not known yet.  Output the bits. */
 	    /* Note that the offset we write is the one used by */
 	    /* the reading phase, not the writing phase. */
@@ -694,7 +692,6 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    cmd_size_w(offset);
 	    byte *dp;
 	    uint csize;
-	    uint compress;
 	    gx_clist_state *bit_pcls = pcls;
 	    int code;
 
@@ -709,9 +706,8 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 	    if (code < 0)
 		return code;
-	    compress = (uint) code;
 	    *dp = cmd_count_op(cmd_opv_set_bits, csize);
-	    dp[1] = (depth << 2) + compress;
+	    dp[1] = (depth << 2) + code;
 	    dp += 2;
 	    dp = cmd_put_w(loc.tile->width, dp);
 	    dp = cmd_put_w(loc.tile->height, dp);

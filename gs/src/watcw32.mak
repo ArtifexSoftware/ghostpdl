@@ -1,4 +1,4 @@
-#    Copyright (C) 1991-1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991-1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: watcw32.mak 
 # watcw32.mak
 # makefile for Watcom C++ v??, Windows NT or Windows 95 platform.
 #   Does NOT build gs16spl.exe, which is 16-bit and is used under Win32s.
@@ -84,12 +85,22 @@ GSDLL=gsdll32
 
 MAKEDLL=1
 
+# Define the source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+GLSRCDIR=.
+GLGENDIR=.
+GLOBJDIR=.
+PSSRCDIR=.
+PSGENDIR=.
+PSOBJDIR=.
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=jpeg-6a
+JSRCDIR=jpeg
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -162,7 +173,7 @@ FPU_TYPE=0
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=level2.dev pdf.dev ttfont.dev
+FEATURE_DEVS=psl3.dev pdf.dev ttfont.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -185,7 +196,8 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
-# Choose the device(s) to include.  See devs.mak for details.
+# Choose the device(s) to include.  See devs.mak for details,
+# devs.mak and contrib.mak for the list of available devices.
 
 DEVICE_DEVS=mswindll.dev mswinprn.dev mswinpr2.dev
 DEVICE_DEVS2=epson.dev eps9high.dev eps9mid.dev epsonc.dev ibmpro.dev
@@ -207,7 +219,8 @@ DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=watcw32.mak winlib.mak winint.mak
+# The use of multiple file names here is garbage!
+MAKEFILE=$(GLSRCDIR)\watcw32.mak winlib.mak winint.mak
 
 # Define the current directory prefix and shell invocations.
 
@@ -220,7 +233,8 @@ SHP=command /c
 
 # Define the arguments for genconf.
 
-CONFILES=-p %%s, -o $(ld_tr) -l lib.tr
+CONFILES=-p %%s, -l lib.tr
+CONFLDTR=-o
 
 # Define the generic compilation flags.
 
@@ -297,10 +311,6 @@ CS=
 CS=-s
 !endif
 
-
-# Specify output object name
-CCOBJNAME=-Fo
-
 # Specify function prolog type
 COMPILE_FOR_DLL=/LD
 COMPILE_FOR_EXE=
@@ -316,27 +326,18 @@ WX=$(COMPILE_FOR_DLL)
 !else
 WX=$(COMPILE_FOR_EXE)
 !endif
-CCC=$(CC) $(WX) $(COMPILE_FULL_OPTIMIZED)
-CCD=$(CC) $(WX) $(COMPILE_WITH_FRAMES)
-CCINT=$(CC)
-CCCF=$(CCC)
-CCLEAF=$(CCC) $(COMPILE_WITHOUT_FRAMES)
+CC_WX=$(CC) $(WX)
+CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED)
+CC_D=$(CC_WX) $(COMPILE_WITH_FRAMES)
+CC_INT=$(CC)
+CC_LEAF=$(CC_) $(COMPILE_WITHOUT_FRAMES)
+
+# No additional flags are needed for Windows compilation.
+CCWINFLAGS=
 
 # Compiler for auxiliary programs
 
 CCAUX=$(COMPAUX) -I$(INCDIR) -O
-
-# Rule for compiling Windows programs
-
-CCCWIN=$(CCC)
-
-# Define the generic compilation rules.
-
-.c.obj:
-	$(CCC) $<
-
-.cpp.obj:
-	$(CPP) $<
 
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
@@ -346,17 +347,17 @@ BEGINFILES2=gsdll32.rex gswin32.rex gswin32c.rex
 
 # Include the generic makefiles.
 
-!include winlib.mak
-!include winint.mak
+!include $(GLSRCDIR)\winlib.mak
+!include $(GLSRCDIR)\winint.mak
 
 # -------------------------- Auxiliary programs --------------------------- #
 
 ccf32.tr: $(MAKEFILE) makefile
 	echo $(GENOPT) -I$(INCDIR) -DCHECK_INTERRUPTS -D_Windows -D__WIN32__ -D_WATCOM_ > ccf32.tr
 
-$(GENARCH_XE): genarch.c $(stdpre_h) $(iref_h) ccf32.tr
+$(GENARCH_XE): $(GLSRC)genarch.c $(stdpre_h) $(iref_h) ccf32.tr
 	$(CCAUX_SETUP)
-	$(CCAUX) @ccf32.tr genarch.c $(CCAUX_TAIL)
+	$(CCAUX) @ccf32.tr $(GLSRC)genarch.c $(CCAUX_TAIL)
 
 # -------------------------------- Library -------------------------------- #
 
@@ -372,9 +373,9 @@ LIBCTR=
 #        echogs -w $(LIBCTR) $(LIBDIR)\shell32.lib
 #        echogs -a $(LIBCTR) $(LIBDIR)\comdlg32.lib
 
-DWOBJLINK=dwdll.obj, dwimg.obj, dwmain.obj, dwtext.obj, gscdefs.obj
+DWOBJLINK=dwdll.obj, dwimg.obj, dwmain.obj, dwtext.obj, gscdefs.obj, gp_wgetv.obj
 DWOBJNOLINK= dwnodll.obj, dwimg.obj, dwmain.obj, dwtext.obj
-OBJCLINK=dwmainc.obj, dwdllc.obj, gscdefs.obj
+OBJCLINK=dwmainc.obj, dwdllc.obj, gscdefs.obj, gp_wgetv.obj
 OBJCNOLINK=dwmainc.obj, dwnodllc.obj
 
 !ifneq MAKEDLL 0

@@ -1,4 +1,4 @@
-%    Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 %
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_pdfwr.ps 
 % gs_pdfwr.ps
 % PDF writer additions to systemdict.
 
@@ -57,20 +58,43 @@
     }
    ifelse
  } bind def
-/.pdfputparams		% <paramarray> <paramname> .pdfputparams <result...>
- { currentdevice null false mark 6 -2 roll exch
+/.pdfputparams		% -mark- <key1> <value1> ... .pdfputparams <result...>
+ { currentdevice null false counttomark 1 add 3 roll
 		% Don't allow the page device to get cleared....
-     {.putdeviceparams} 0 get .currentpagedevice pop {.setpagedevice} 0 get
-   3 array astore cvx exec
+   {.putdeviceparams} .currentpagedevice pop {.setpagedevice} 3 .execn
  } bind def
+% The procedures in the following dictionary are called with the entire
+% pdfmark operand list (including the pdfmark name) on the stack;
+% they may modify this ad lib.  They should return true if all operands
+% should be converted with .pdfcvs, false if the operands are key/value
+% pairs and only the even-numbered ones should be converted.
+/.pdfmarkparams mark
+  /SP { true }
+  /CLOSE { true }
+	% Unpack a dictionary for PUT.
+	% Eventually we should do this for streams too.
+  /PUT {
+    counttomark 3 eq {
+      1 index type /dicttype eq { pop { } forall /.PUTDICT } if
+    } if true
+  } bind
+	% Unpack the array for PUTINTERVAL.
+  /PUTINTERVAL {
+    pop aload pop /.PUTINTERVAL true
+  } bind
+.dicttomark readonly def
 /pdfmark		% -mark- <key> <value> ... <markname> pdfmark -
  { counttomark 1 add copy
-   matrix currentmatrix .pdfcvs exch ]
-   1 2 2 index length 3 sub { 2 copy 2 copy get .pdfcvs put pop } for
-   /pdfmark .pdfputparams
+   //.pdfmarkparams 1 index .knownget { exec } { false } ifelse
+   matrix currentmatrix .pdfcvs 3 1 roll
+   counttomark 1 add 1 roll ] exch
+    { 0 1 } { 1 2 } ifelse
+   2 index length 3 sub { 2 copy 2 copy get .pdfcvs put pop } for
+   mark /pdfmark 3 -1 roll .pdfputparams
    type /booleantype ne { cleartomark } if cleartomark
  } odef
 userdict /pdfmark .undef
+currentdict /.pdfmarkparams .undef
 
 % Define setdistillerparams / currentdistillerparams.
 % Distiller parameters are currently treated as device parameters.
@@ -81,7 +105,6 @@ userdict /pdfmark .undef
   /CompatibilityLevel { }
   /CompressPages { }
   /CoreDistVersion { }
-  /DoThumbnails { }
   /ImageMemory { }
   /LZWEncodePages { }
   /PreserveHalftoneInfo { }
@@ -160,15 +183,9 @@ userdict /pdfmark .undef
  } odef
 
 % Patch the 'show' operators to pass the data to the device.
-% We use a pseudo-parameter named /show whose value is a dictionary:
-%	/String (str)
-%	/Values [cx cy char ax ay px py]
-%	/FontName /fontname
-%	/Matrix [xx xy yx yy tx ty]
-%	/Encoding [e0 .. e255]
-%	  (optional, omitted if Encoding = BaseEncoding = StandardEncoding)
-%	/BaseEncoding [e0 ... e255] (optional, ditto)
-%	/CharStrings << charnames => anything >> (optional)
+% We use pseudo-parameters named /show and /showxxx to pass the data,
+% as documented in gdevpdft.c.  THIS IS A HACK.
+%
 % Note that the cx/y and ax/y values are in text space, not user space.
 % We also fill an empty path in order to get the clipping region and
 % current color set properly.  THIS IS A BIG HACK.
@@ -189,7 +206,7 @@ userdict /pdfmark .undef
   /ZapfDingbats {DingbatsEncoding}
 .dicttomark readonly def
 .currentglobal false .setglobal
-/.pdfknownids 50 dict def
+/.pdfknownids 50 dict .forcedef	% .pdfknownids is local, systemdict is global
 .setglobal
 /.findorigfont {	% <font> .findorigfont <origfont>
 			% Check for a known font with the same name,
@@ -236,52 +253,63 @@ userdict /pdfmark .undef
     { dup /OrigFont .knownget not { exit } if exch pop } loop
   } ifelse
 } .bind def
-/setvmthreshold where { pop 1000000 setvmthreshold } if
-/.pdfdoshow		% <string> <cxd> <cyd> <char> <axd> <ayd> .pdfdoshow
-			%   <bool>
- { mark /String 8 2 roll
+/.pdfdoshow {		% <string> -mark- {<cxd> <cyd> <char>} {<axd> <ayd>}
+			%   .pdfdoshow <bool>
 %vmstatus pop =only pop (, ) print
-   currentpoint transform 7 array astore /Values exch
+   ] /showValues exch
+%vmstatus pop =only pop (, ) print
+   mark /showX currentpoint transform /showY exch /show 9 -3 roll
    currentfont .findorigfont
 		% Pass the original font name.
    dup /FontName get
-   /FontName exch 3 -1 roll
+   /showFontName exch 3 -1 roll
 		% Concatenate the "quotient" of the current FontMatrix
 		% and the FontMatrix of the original font.
 		% Be sure to include any translation.
-   /Matrix
+   /showMatrix
      exch /FontMatrix get matrix invertmatrix
-     currentfont /FontMatrix get 1 index concatmatrix
+     currentfont /FontMatrix get
+     1 index concatmatrix
 	% The matrix on the stack is now the font scaling matrix.
 	% Use it to inverse-transform cx/y and ax/y, so they will be in
 	% text space.
-	% Stack: mark /String <string> /Values <values> /FontName <fontname>
-	%   /Matrix <matrix>
-     4 index aload
-	%   ... cx cy char ax ay px py values
-     8 -2 roll 8 index idtransform 8 2 roll
-     5 -2 roll 8 index idtransform 5 2 roll
-     astore pop
+	% Stack: -mark- /showX <px> /showY <py> /show <string>
+	%   /showValues <values> /showFontName <fontname> /showMatrix <matrix>
+   4 index aload	%   ... {cx cy char} {ax ay} values
+   dup length {
+	{pop 6 -2 roll pop pop}
+	1?
+	{3 -2 roll 3 index idtransform 3 2 roll astore pop}
+	{4 -2 roll 4 index idtransform 4 2 roll astore pop}
+	4?
+	{6 -2 roll 6 index idtransform 6 2 roll
+	 3 -2 roll 6 index idtransform 3 2 roll astore pop}
+   } exch get exec
+%vmstatus pop =only pop (, ) print
 	% Now construct the combined matrix.
-     matrix currentmatrix dup 4 0 put dup 5 0 put dup concatmatrix
+	% This is equivalent to:
+	%	matrix currentmatrix dup 4 0 put dup 5 0 put dup concatmatrix
+	% but avoids allocating another matrix.
+   aload 7 1 roll
+   dtransform 7 2 roll dtransform 7 2 roll dtransform 7 2 roll
+   astore
 	% Omit either encoding that is StandardEncoding.
-   /Encoding currentfont /Encoding .knownget not { [] } if
+   /showEncoding currentfont /Encoding .knownget not { [] } if
      dup StandardEncoding eq { pop pop } if
 	% Make a reasonable guess at the base encoding.
-   /BaseEncoding .pdfknownfonts 6 index	% FontName
+   /showBaseEncoding .pdfknownfonts 6 index	% FontName
      .knownget { exec } { StandardEncoding } ifelse
    dup StandardEncoding eq {
      pop pop
    } {
-     currentfont /CharStrings .knownget { /CharStrings exch } if
+     currentfont /CharStrings .knownget { /showCharStrings exch } if
    } ifelse
 %vmstatus pop =only pop (, ) print
-   .dicttomark
 		% Set the clipping region and color in the output.
 		% This is another hack!
    gsave newpath fill grestore
 %vmstatus pop =only pop (, ) print
-   /show .pdfputparams
+   .pdfputparams
 %vmstatus pop =only pop () = flush
    dup type /booleantype eq
     { pop pop true }
@@ -307,27 +335,27 @@ userdict /pdfmark .undef
  } .bind def
 % .pdfshow isn't an operator per se, but it still needs to be careful with
 % the stack so that the operators will have stack protection.
-/.pdfshow		% <string> <cx> <cy> <char> <ax> <ay> <showproc>
-			%   .pdfshow -
- { 7 1 roll .pdfwrite?
+/.pdfshow		% <string> -mark- {<cx> <cy> <char>} {<ax> <ay>}
+			%   <showproc> .pdfshow -
+ { counttomark 2 add 1 roll .pdfwrite?
     { .pdfdoshow }
-    { 6 { pop } repeat false }
+    { cleartomark pop false }
    ifelse
     { .pdfexecshow }
     { exec }
    ifelse
  } .bind def
 /show
- { dup 0 0 32 0 0 { show } .pdfshow
+ { dup mark { show } .pdfshow
  } .bind odef
 /ashow
- { dup 0 0 32 6 index 6 index { ashow } .pdfshow
+ { dup mark 4 index 4 index { ashow } .pdfshow
  } .bind odef
 /widthshow
- { 4 copy 4 1 roll 0 0 { widthshow } .pdfshow
+ { 4 copy mark 5 2 roll { widthshow } .pdfshow
  } .bind odef
 /awidthshow
- { 6 copy 6 1 roll { awidthshow } .pdfshow
+ { 6 copy mark 7 2 roll { awidthshow } .pdfshow
  } .bind odef
 /glyphshow where { pop } { (%END) .skipeof } ifelse
 /glyphshow

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxsync.c */
+/*Id: gxsync.c  */
 /* Interface to platform-based synchronization primitives */
 
 /* Initial version 2/1/98 by John Desrosiers (soho@crl.com) */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,78 +16,42 @@
    all copies.
  */
 
-/* idict.c */
-/* Dictionaries for Ghostscript */
+/*Id: idict.c  */
+/* Dictionary implementation */
 #include "string_.h"		/* for strlen */
 #include "ghost.h"
 #include "errors.h"
-#include "ialloc.h"
+#include "imemory.h"
 #include "idebug.h"		/* for debug_print_name */
 #include "inamedef.h"
+#include "iname.h"
 #include "ipacked.h"
 #include "isave.h"		/* for value cache in names */
 #include "store.h"
 #include "idict.h"		/* interface definition */
-#include "dstack.h"		/* interface & some implementation */
+#include "idictdef.h"
 #include "iutil.h"
 #include "ivmspace.h"		/* for store check */
 
 /*
- * A dictionary of capacity M is a structure of four elements (refs):
- *
- *      keys - a t_shortarray or t_array of M+1 elements, containing
- *      the keys.
- *
- *      values - a t_array of M+1 elements, containing the values.
- *
- *      count - a t_integer whose value tells how many entries are
- *      occupied (N).
- *
- *      maxlength - a t_integer whose value gives the client's view of
- *      the capacity (C).  C may be less than M (see below).
- *
- * C < M is possible because on large-memory systems, we usually round up M
- * so that M is a power of 2 (see idict.h for details); this allows us to
- * use masking rather than division for computing the initial hash probe.
- * However, C is always the maxlength specified by the client, so clients
- * get a consistent story.
- *
- * As noted above, the keys may be either in packed or unpacked form.
- * The markers for unused and deleted entries are different in the two forms.
- * In the packed form:
- *      unused entries contain packed_key_empty;
- *      deleted entries contain packed_key_deleted.
- * In the unpacked form:
- *      unused entries contain a literal null;
- *      deleted entries contain an executable null.
- *
- * The first entry is always marked deleted, to reduce the cost of the
- * wrap-around check.
- *
- * Note that if the keys slot in the dictionary is new,
- * all the key slots are new (more recent than the last save).
- * We use this fact to avoid saving stores into packed keys
- * for newly created dictionaries.
- *
- * Note that name keys with indices above packed_name_max_index require using
- * the unpacked form.  */
-#define dict_is_packed(dct) r_has_type(&(dct)->keys, t_shortarray)
-#define packed_key_empty (pt_tag(pt_integer) + 0)
-#define packed_key_deleted (pt_tag(pt_integer) + 1)
-#define packed_key_impossible pt_tag(pt_full_ref)	/* never matches */
-#define packed_name_key(nidx)\
-  ((nidx) <= packed_name_max_index ? pt_tag(pt_literal_name) + (nidx) :\
-   packed_key_impossible)
-/*
- * Using a special mark for deleted entries causes lookup time to degrade
- * as entries are inserted and deleted.  This is not a problem, because
- * entries are almost never deleted.
+ * Dictionaries per se aren't supposed to know anything about the
+ * dictionary stack, let alone the interpreter's dictionary stack.
+ * Unfortunately, there is are two design couplings between them:
+ * dictionary stacks cache some of the elements of their top dictionary
+ * (requiring updating when that dictionary grows or is unpacked),
+ * and names may cache a pointer to their definition (requiring a
+ * check whether a dictionary appears on the dictionary stack).
+ * Therefore, we patch in a few relevant definitions here.
+ ****** WE'D REALLY LIKE TO FIX THIS, BUT WE DON'T SEE HOW. ******
  */
-#define d_maxlength(dct) ((uint)((dct)->maxlength.value.intval))
-#define d_set_maxlength(dct,siz) ((dct)->maxlength.value.intval = (siz))
-#define nslots(dct) r_size(&(dct)->values)
-#define npairs(dct) (nslots(dct) - 1)
-#define d_length(dct) ((uint)((dct)->count.value.intval))
+#include "idstack.h"
+/* The following are copied from dstack.h. */
+extern dict_stack_t idict_stack;
+
+#define systemdict (&idict_stack.system_dict)
+#define dict_set_top() dstack_set_top(&idict_stack);
+#define dict_is_permanent_on_dstack(pdict)\
+  dstack_dict_is_permanent(&idict_stack, pdict)
 
 /*
  * Define the size of the largest valid dictionary.
@@ -104,13 +68,6 @@ bool dict_auto_expand = false;
 /* Define whether dictionaries are packed by default. */
 bool dict_default_pack = true;
 
-/* Cached values from the top element of the dictionary stack. */
-/* See dstack.h for details. */
-int dsspace;			/* see dstack.h */
-const ref_packed *dtop_keys;
-uint dtop_npairs;
-ref *dtop_values;
-
 /* Forward references */
 private int dict_create_contents(P3(uint size, const ref * pdref, bool pack));
 
@@ -120,7 +77,7 @@ long dn_lookups;		/* total lookups */
 long dn_1probe;			/* successful lookups on only 1 probe */
 long dn_2probe;			/* successful lookups on 2 probes */
 
-/* Wrappers for dict_find and dict_find_name_by_index */
+/* Wrapper for dict_find */
 int real_dict_find(P3(const ref * pdref, const ref * key, ref ** ppvalue));
 int
 dict_find(const ref * pdref, const ref * pkey, ref ** ppvalue)
@@ -145,39 +102,11 @@ dict_find(const ref * pdref, const ref * pkey, ref ** ppvalue)
     }
     /* Do the cheap flag test before the expensive remainder test. */
     if (gs_debug_c('d') && !(dn_lookups % 1000))
-	dprintf3("[d]lookups=%ld 1probe=%ld 2probe=%ld\n",
-		 dn_lookups, dn_1probe, dn_2probe);
+	dlprintf3("[d]lookups=%ld 1probe=%ld 2probe=%ld\n",
+		  dn_lookups, dn_1probe, dn_2probe);
     return code;
 }
 #define dict_find real_dict_find
-ref *real_dict_find_name_by_index(P1(uint nidx));
-ref *
-dict_find_name_by_index(uint nidx)
-{
-    ref *pvalue = real_dict_find_name_by_index(nidx);
-    dict *pdict = dsp->value.pdict;
-
-    dn_lookups++;
-    if (dict_is_packed(pdict)) {
-	uint hash =
-	dict_hash_mod(dict_name_index_hash(nidx), npairs(pdict)) + 1;
-
-	if (pdict->keys.value.packed[hash] ==
-	    pt_tag(pt_literal_name) + nidx
-	    )
-	    dn_1probe++;
-	else if (pdict->keys.value.packed[hash - 1] ==
-		 pt_tag(pt_literal_name) + nidx
-	    )
-	    dn_2probe++;
-    }
-    /* Do the cheap flag test before the expensive remainder test. */
-    if (gs_debug_c('d') && !(dn_lookups % 1000))
-	dprintf3("[d]lookups=%ld 1probe=%ld 2probe=%ld\n",
-		 dn_lookups, dn_1probe, dn_2probe);
-    return pvalue;
-}
-#define dict_find_name_by_index real_dict_find_name_by_index
 #endif
 
 /* Round up the size of a dictionary.  Return 0 if too large. */
@@ -198,36 +127,42 @@ dict_round_size_large(uint rsize)
     return (rsize <= dict_max_size ? rsize : dict_max_non_huge);
 }
 
-/* Create a dictionary in the current VM space. */
+/* Create a dictionary using the given allocator. */
 int
-dict_create(uint size, ref * pdref)
+dict_alloc(gs_ref_memory_t * mem, uint size, ref * pdref)
 {
     ref arr;
-    int code = ialloc_ref_array(&arr, a_all, sizeof(dict) / sizeof(ref),
-				"dict_create");
+    int code =
+    gs_alloc_ref_array(mem, &arr, a_all, sizeof(dict) / sizeof(ref),
+		       "dict_alloc");
+    dict *pdict;
     ref dref;
 
     if (code < 0)
 	return code;
+    pdict = (dict *) arr.value.refs;
     make_tav_new(&dref, t_dictionary, r_space(&arr) | a_all,
-		 pdict, (dict *) arr.value.refs);
+		 pdict, pdict);
+    make_struct(&pdict->memory, avm_foreign, mem);
     code = dict_create_contents(size, &dref, dict_default_pack);
-    if (code < 0)
+    if (code < 0) {
+	gs_free_ref_array(mem, &arr, "dict_alloc");
 	return code;
+    }
     *pdref = dref;
     return 0;
 }
 /* Create unpacked keys for a dictionary. */
-/* The keys are allocated in the same VM space as the dictionary. */
+/* The keys are allocated using the same allocator as the dictionary. */
 private int
 dict_create_unpacked_keys(uint asize, const ref * pdref)
 {
     dict *pdict = pdref->value.pdict;
-    uint space = ialloc_space(idmemory);
+    gs_ref_memory_t *mem = dict_memory(pdict);
     int code;
 
-    ialloc_set_space(idmemory, r_space(pdref));
-    code = ialloc_ref_array(&pdict->keys, a_all, asize, "dict create unpacked keys");
+    code = gs_alloc_ref_array(mem, &pdict->keys, a_all, asize,
+			      "dict_create_unpacked_keys");
     if (code >= 0) {
 	ref *kp = pdict->keys.value.refs;
 
@@ -235,7 +170,6 @@ dict_create_unpacked_keys(uint asize, const ref * pdref)
 	refset_null(kp, asize);
 	r_set_attrs(kp, a_executable);	/* wraparound entry */
     }
-    ialloc_set_space(idmemory, space);
     return code;
 }
 /* Create the contents (keys and values) of a newly allocated dictionary. */
@@ -245,6 +179,7 @@ private int
 dict_create_contents(uint size, const ref * pdref, bool pack)
 {
     dict *pdict = pdref->value.pdict;
+    gs_ref_memory_t *mem = dict_memory(pdict);
     uint asize = dict_round_size((size == 0 ? 1 : size));
     int code;
     register uint i;
@@ -252,8 +187,8 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
     if (asize == 0 || asize > max_array_size - 1)	/* too large */
 	return_error(e_limitcheck);
     asize++;			/* allow room for wraparound entry */
-    code = ialloc_ref_array(&pdict->values, a_all, asize,
-			    "dict_create(values)");
+    code = gs_alloc_ref_array(mem, &pdict->values, a_all, asize,
+			      "dict_create_contents(values)");
     if (code < 0)
 	return code;
     ref_mark_new(&pdict->values);
@@ -264,8 +199,8 @@ dict_create_contents(uint size, const ref * pdref, bool pack)
 	ref_packed *pkp;
 	ref_packed *pzp;
 
-	code = ialloc_ref_array(&arr, a_all, ksize,
-				"dict_create(packed keys)");
+	code = gs_alloc_ref_array(mem, &arr, a_all, ksize,
+				  "dict_create_contents(packed keys)");
 	if (code < 0)
 	    return code;
 	pkp = (ref_packed *) arr.value.refs;
@@ -317,46 +252,12 @@ dict_unpack(ref * pdref)
 	    } else if (*okp == packed_key_deleted)
 		r_set_attrs(nkp, a_executable);
 	if (!ref_must_save(&old_keys))
-	    ifree_ref_array(&old_keys, "dict_unpack(old keys)");
+	    gs_free_ref_array(dict_memory(pdict), &old_keys,
+			      "dict_unpack(old keys)");
 	dict_set_top();		/* just in case */
     }
     return 0;
 }
-
-/*
- * Define a macro for searching a packed dictionary.  Free variables:
- *      ref_packed kpack - holds the packed key.
- *      uint hash - holds the hash of the name.
- *      dict *pdict - points to the dictionary.
- *      uint size - holds npairs(pdict).
- * Note that the macro is *not* enclosed in {}, so that we can access
- * the values of kbot and kp after leaving the loop.
- *
- * We break the macro into two to avoid overflowing some preprocessors.
- */
-/* packed_search_body also uses kp and kbot as free variables. */
-#define packed_search_value_pointer (pdict->values.value.refs + (kp - kbot))
-#define packed_search_body(found1,found2,del,miss)\
-    { if_debug2('D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);\
-      if ( *kp == kpack )\
-       { found1;\
-	 found2;\
-       }\
-      else if ( !r_packed_is_name(kp) )\
-       { /* Empty, deleted, or wraparound. Figure out which. */\
-	 if ( *kp == packed_key_empty ) miss;\
-	 if ( kp == kbot ) break;	/* wrap */\
-	 else { del; }\
-       }\
-    }
-#define packed_search_1(found1,found2,del,miss)\
-   const ref_packed *kbot = pdict->keys.value.packed;\
-   register const ref_packed *kp;\
-   for ( kp = kbot + dict_hash_mod(hash, size) + 1; ; kp-- )\
-     packed_search_body(found1,found2,del,miss)
-#define packed_search_2(found1,found2,del,miss)\
-   for ( kp += size; ; kp-- )\
-     packed_search_body(found1,found2,del,miss)
 
 /*
  * Look up a key in a dictionary.  Store a pointer to the value slot
@@ -486,7 +387,7 @@ dict_find(const ref * pdref, const ref * pkey,
  * Return 1 if found, <= 0 if not.
  */
 int
-dict_find_string(const ref * pdref, const char _ds * kstr, ref ** ppvalue)
+dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue)
 {
     int code;
     ref kname;
@@ -494,114 +395,6 @@ dict_find_string(const ref * pdref, const char _ds * kstr, ref ** ppvalue)
     if ((code = name_ref((const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
 	return code;
     return dict_find(pdref, &kname, ppvalue);
-}
-
-/* Check whether a dictionary is one of the permanent ones on the d-stack. */
-bool
-dict_is_permanent_on_dstack(const ref * pdref)
-{
-    dict *pdict = pdref->value.pdict;
-    int i;
-
-    if (d_stack.extension_size == 0) {	/* Only one block of d-stack. */
-	for (i = 0; i < min_dstack_size; ++i)
-	    if (dsbot[i].value.pdict == pdict)
-		return true;
-    } else {			/* More than one block of d-stack. */
-	uint count = ref_stack_count(&d_stack);
-
-	for (i = count - min_dstack_size; i < count; ++i)
-	    if (ref_stack_index(&d_stack, i)->value.pdict == pdict)
-		return true;
-    }
-    return false;
-}
-
-/*
- * Look up a name on the dictionary stack.
- * Return the pointer to the value if found, 0 if not.
- */
-ref *
-dict_find_name_by_index(uint nidx)
-{
-    ds_ptr pdref = dsp;
-
-/* Since we know the hash function is the identity function, */
-/* there's no point in allocating a separate variable for it. */
-#define hash dict_name_index_hash(nidx)
-    ref_packed kpack = packed_name_key(nidx);
-
-    do {
-	dict *pdict = pdref->value.pdict;
-	uint size = npairs(pdict);
-
-#ifdef DEBUG
-	if (gs_debug_c('D')) {
-	    ref dnref;
-
-	    name_index_ref(nidx, &dnref);
-	    dputs("[D]lookup ");
-	    debug_print_name(&dnref);
-	    dprintf3(" in 0x%lx(%u/%u)\n",
-		     (ulong) pdict, dict_length(pdref),
-		     dict_maxlength(pdref));
-	}
-#endif
-	if (dict_is_packed(pdict)) {
-	    packed_search_1(DO_NOTHING,
-			    return packed_search_value_pointer,
-			    DO_NOTHING, goto miss);
-	    packed_search_2(DO_NOTHING,
-			    return packed_search_value_pointer,
-			    DO_NOTHING, break);
-	  miss:;
-	} else {
-	    ref *kbot = pdict->keys.value.refs;
-	    register ref *kp;
-	    int wrap = 0;
-
-	    /* Search the dictionary */
-	    for (kp = kbot + dict_hash_mod(hash, size) + 2;;) {
-		--kp;
-		if (r_has_type(kp, t_name)) {
-		    if (name_index(kp) == nidx)
-			return pdict->values.value.refs +
-			    (kp - kbot);
-		} else if (r_has_type(kp, t_null)) {	/* Empty, deleted, or wraparound. */
-		    /* Figure out which. */
-		    if (!r_has_attr(kp, a_executable))
-			break;
-		    if (kp == kbot) {	/* wrap */
-			if (wrap++)
-			    break;	/* 2 wraps */
-			kp += size + 1;
-		    }
-		}
-	    }
-	}
-    }
-    while (pdref-- > dsbot);
-    /* The name isn't in the top dictionary block. */
-    /* If there are other blocks, search them now (more slowly). */
-    if (!d_stack.extension_size)	/* no more blocks */
-	return (ref *) 0;
-    {				/* We could use the STACK_LOOP macros, but for now, */
-	/* we'll do things the simplest way. */
-	ref key;
-	uint i = dsp + 1 - dsbot;
-	uint size = ref_stack_count(&d_stack);
-	ref *pvalue;
-
-	name_index_ref(nidx, &key);
-	for (; i < size; i++) {
-	    if (dict_find(ref_stack_index(&d_stack, i),
-			  &key, &pvalue) > 0
-		)
-		return pvalue;
-	}
-    }
-    return (ref *) 0;
-#undef hash
 }
 
 /*
@@ -839,56 +632,26 @@ dict_copy_entries(const ref * pdrfrom /* t_dictionary */ ,
     return 0;
 }
 
-/* Set the cached values computed from the top entry on the dstack. */
-/* See dstack.h for details. */
-private const ref_packed no_packed_keys[2] =
-{packed_key_deleted, packed_key_empty};
-void
-dict_set_top(void)
-{
-    dict *pdict = dsp->value.pdict;
-
-    if_debug3('d', "[d]dsp = 0x%lx -> 0x%lx, key array type = %d\n",
-	      (ulong) dsp, (ulong) pdict, r_type(&pdict->keys));
-    if (dict_is_packed(pdict) &&
-	r_has_attr(dict_access_ref(dsp), a_read)
-	) {
-	dtop_keys = pdict->keys.value.packed;
-	dtop_npairs = npairs(pdict);
-	dtop_values = pdict->values.value.refs;
-    } else {
-	dtop_keys = no_packed_keys;
-	dtop_npairs = 1;
-    }
-    if (!r_has_attr(dict_access_ref(dsp), a_write))
-	dsspace = -1;
-    else
-	dsspace = r_space(dsp);
-}
-
 /* Resize a dictionary. */
 int
 dict_resize(ref * pdref, uint new_size)
 {
     dict *pdict = pdref->value.pdict;
+    gs_ref_memory_t *mem = dict_memory(pdict);
     dict dnew;
     ref drto;
     int code;
-    uint space;
 
     if (new_size < d_length(pdict)) {
 	if (!dict_auto_expand)
 	    return_error(e_dictfull);
 	new_size = d_length(pdict);
     }
-    space = ialloc_space(idmemory);
-    ialloc_set_space(idmemory, r_space(pdref));
     make_tav_new(&drto, t_dictionary, r_space(pdref) | a_all,
 		 pdict, &dnew);
-    if ((code = dict_create_contents(new_size, &drto, dict_is_packed(pdict))) < 0) {
-	ialloc_set_space(idmemory, space);
+    dnew.memory = pdict->memory;
+    if ((code = dict_create_contents(new_size, &drto, dict_is_packed(pdict))) < 0)
 	return code;
-    }
     /* We must suppress the store check, in case we are expanding */
     /* systemdict or another global dictionary that is allowed */
     /* to reference local objects. */
@@ -898,16 +661,15 @@ dict_resize(ref * pdref, uint new_size)
     if (ref_must_save(&pdict->values))
 	ref_do_save(pdref, &pdict->values, "dict_resize(values)");
     else
-	ifree_ref_array(&pdict->values, "dict_resize(old values)");
+	gs_free_ref_array(mem, &pdict->values, "dict_resize(old values)");
     if (ref_must_save(&pdict->keys))
 	ref_do_save(pdref, &pdict->keys, "dict_resize(keys)");
     else
-	ifree_ref_array(&pdict->keys, "dict_resize(old keys)");
+	gs_free_ref_array(mem, &pdict->keys, "dict_resize(old keys)");
     ref_assign(&pdict->keys, &dnew.keys);
     ref_assign(&pdict->values, &dnew.values);
     ref_save(pdref, &pdict->maxlength, "dict_resize(maxlength)");
     d_set_maxlength(pdict, new_size);
-    ialloc_set_space(idmemory, space);
     dict_set_top();		/* just in case this is the top dict */
     return 0;
 }
@@ -1002,44 +764,4 @@ dict_index_entry(const ref * pdref, int index, ref * eltp /* ref eltp[2] */ )
 	return 0;
     }
     return e_undefined;
-}
-
-/* After a garbage collection, scan the permanent dictionaries and */
-/* update the cached value pointers in names. */
-void
-dstack_gc_cleanup(void)
-{
-    uint count = ref_stack_count(&d_stack);
-    uint dsi;
-
-    for (dsi = min_dstack_size; dsi > 0; --dsi) {
-	const dict *pdict =
-	ref_stack_index(&d_stack, count - dsi)->value.pdict;
-	uint size = nslots(pdict);
-	ref *pvalue = pdict->values.value.refs;
-	uint i;
-
-	for (i = 0; i < size; ++i, ++pvalue) {
-	    ref key;
-	    ref *old_pvalue;
-
-	    array_get(&pdict->keys, (long)i, &key);
-	    if (r_has_type(&key, t_name) &&
-		pv_valid(old_pvalue = key.value.pname->pvalue)
-		) {		/*
-				 * The name only has a single definition,
-				 * so it must be this one.  Check to see if
-				 * no relocation is actually needed; if so,
-				 * we can skip the entire dictionary.
-				 */
-		if (old_pvalue == pvalue) {
-		    if_debug1('d', "[d]skipping dstack entry %d\n",
-			      dsi - 1);
-		    break;
-		}
-		/* Update the value pointer. */
-		key.value.pname->pvalue = pvalue;
-	    }
-	}
-    }
 }

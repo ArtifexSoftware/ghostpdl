@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gstype1.c */
+/*Id: gstype1.c  */
 /* Adobe Type 1 charstring interpreter */
 #include "math_.h"
 #include "memory_.h"
@@ -29,7 +29,6 @@
 #include "gxcoord.h"
 #include "gxistate.h"
 #include "gzpath.h"
-#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
@@ -46,7 +45,7 @@
 /* ------ Main interpreter ------ */
 
 /* Define a pointer to the charstring interpreter stack. */
-typedef fixed _ss *cs_ptr;
+typedef fixed *cs_ptr;
 
 /*
  * Continue interpreting a Type 1 charstring.  If str != 0, it is taken as
@@ -143,14 +142,14 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 	}
 #ifdef DEBUG
 	if (gs_debug['1']) {
-	    static const char *c1names[] =
+	    static const char *const c1names[] =
 	    {char1_command_names};
 
 	    if (c1names[c] == 0)
-		dprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+		dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 	    else
-		dprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
-			 c1names[c]);
+		dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+			  c1names[c]);
 	}
 #endif
 	switch ((char_command) c) {
@@ -166,7 +165,7 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 		return_error(gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
-		code = (*pdata->subr_proc)
+		code = (*pdata->procs->subr_data)
 		    (pfont, c, false, &ipsp[1].char_string);
 		if (code < 0)
 		    return_error(code);
@@ -226,38 +225,15 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 		code = gs_op1_rrcurveto(&s, cs0, cs1, cs2, cs3, cs4, cs5);
 		goto cc;
 	    case cx_endchar:
-		if (pcis->seac_base >= 0) {	/* We just finished the accent of a seac. */
-		    /* Do the base character. */
-		    gs_const_string bstr;
-		    int bchar = pcis->seac_base;
-
-		    pcis->seac_base = -1;
-		    /* Restore the coordinate system origin */
-		    pcis->asb_diff = pcis->adxy.x = pcis->adxy.y = 0;
-		    sppath->position.x = pcis->position.x = ftx;
-		    sppath->position.y = pcis->position.y = fty;
-		    pcis->os_count = 0;		/* clear */
-		    /* Clear the ipstack, in case the accent ended */
-		    /* inside a subroutine. */
-		    pcis->ips_count = 1;
-		    /* Remove any accent hints. */
-		    reset_stem_hints(pcis);
-		    /* Ask the caller to provide a new string. */
-		    code = (*pdata->seac_proc) (pfont, bchar, &bstr);
-		    if (code != 0) {
-			*pindex = bchar;
-			return code;
-		    }
-		    /* Continue with the supplied string. */
-		    clear;
-		    ptx = ftx, pty = fty;
-		    ipsp = &pcis->ipstack[0];
-		    ipsp->char_string = bstr;
-		    cip = bstr.data;
+		code = gs_type1_endchar(pcis);
+		if (code == 1) {
+		    /* do accent of seac */
+		    spt = pcis->position;
+		    ipsp = &pcis->ipstack[pcis->ips_count - 1];
+		    cip = ipsp->char_string.data;
 		    goto call;
 		}
-		/* This is a real endchar.  Handle it below. */
-		return gs_type1_endchar(pcis);
+		return code;
 	    case cx_rmoveto:
 		accum_xy(cs0, cs1);
 		goto move;
@@ -322,14 +298,14 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 		++cip;
 #ifdef DEBUG
 		if (gs_debug['1'] && c < char1_extended_command_count) {
-		    static const char *ce1names[] =
+		    static const char *const ce1names[] =
 		    {char1_extended_command_names};
 
 		    if (ce1names[c] == 0)
-			dprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+			dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 		    else
-			dprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
-				 ce1names[c]);
+			dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+				  ce1names[c]);
 		}
 #endif
 		switch ((char1_extended_command) c) {
@@ -358,34 +334,15 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 			type1_hstem(pcis, cs4, cs5);
 			cnext;
 		    case ce1_seac:
-			{
-			    gs_const_string acstr;
-
-			    /* Do the accent now.  When it finishes */
-			    /* (detected in endchar), do the base character. */
-			    pcis->seac_base = ics3;
-			    /* Adjust the origin of the coordinate system */
-			    /* for the accent (endchar puts it back). */
-			    ptx = ftx, pty = fty;
-			    pcis->asb_diff = cs0 - pcis->lsb.x;
-			    pcis->adxy.x = cs1;
-			    pcis->adxy.y = cs2;
-			    accum_xy(cs1, cs2);
-			    sppath->position.x = pcis->position.x = ptx;
-			    sppath->position.y = pcis->position.y = pty;
-			    pcis->os_count = 0;		/* clear */
-			    /* Ask the caller to provide a new string. */
-			    code = (*pdata->seac_proc) (pfont, ics4, &acstr);
-			    if (code != 0) {
-				*pindex = ics4;
-				return code;
-			    }
-			    /* Continue with the supplied string. */
-			    clear;
-			    ipsp->char_string = acstr;
-			    cip = acstr.data;
-			    goto call;
+			code = gs_type1_seac(pcis, cstack + 1, cstack[0],
+					     ipsp);
+			if (code != 0) {
+			    *pindex = ics3;
+			    return code;
 			}
+			clear;
+			cip = ipsp->char_string.data;
+			goto call;
 		    case ce1_sbw:
 			gs_type1_sbw(pcis, cs0, cs1, cs2, cs3);
 			goto rsbw;
@@ -540,7 +497,7 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 				)
 				return_error(gs_error_invalidfont);
 			    n = fixed2int_var(csp[-1]);
-			    code = (*pdata->push_proc) (pfont, csp - (n + 1), n);
+			    code = (*pdata->procs->push) (pfont, csp - (n + 1), n);
 			    if (code < 0)
 				return_error(code);
 			    scount -= n + 1;
@@ -563,7 +520,7 @@ gs_type1_charstring_interpret(gs_type1_state * pcis,
 			    inext;
 			}
 			++csp;
-			code = (*pdata->pop_proc) (pfont, csp);
+			code = (*pdata->procs->pop) (pfont, csp);
 			if (code < 0)
 			    return_error(code);
 			goto pushed;

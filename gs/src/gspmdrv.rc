@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* gspmdrv.rc */
+/*Id: gspmdrv.rc */
 /* Resources for gspmdrv.exe, the PM display driver for Ghostscript */
 
 #include <os2.h>

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_msio.c */
+/*Id: gp_msio.c  */
 /*
  * Streams for Windows text window
  * Original version by Russell Lang and Maurice Castro with help from
@@ -58,7 +58,7 @@ private stream_proc_process(win_std_write_process);
 /* Use a pseudo IODevice to get win_stdio_init called at the right time. */
 /* This is bad architecture; we'll fix it later. */
 private iodev_proc_init(win_stdio_init);
-gx_io_device gs_iodev_wstdio =
+const gx_io_device gs_iodev_wstdio =
 {
     "wstdio", "Special",
     {win_stdio_init, iodev_no_open_device,

@@ -74,7 +74,13 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_default_end_image,
   gx_default_strip_tile_rectangle,
   mask_clip_strip_copy_rop,
-  mask_clip_get_clipping_box
+  mask_clip_get_clipping_box,
+  gx_default_begin_typed_image,
+  gx_forward_get_bits_rectangle,
+  gx_forward_map_color_rgb_alpha,
+  gx_no_create_compositor,
+  gx_forward_get_hardware_params,
+  gx_default_text_begin
  }
 };
 

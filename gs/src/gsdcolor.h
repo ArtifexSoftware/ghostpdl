@@ -1,22 +1,22 @@
 /* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gsdcolor.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gsdcolor.h  */
 /* Device color representation for drivers */
 
 #ifndef gsdcolor_INCLUDED
@@ -31,6 +31,7 @@
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
+
 #endif
 
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
@@ -159,16 +160,19 @@ typedef struct gx_device_color_s gx_device_color;
 #ifndef gx_ht_tile_DEFINED
 #  define gx_ht_tile_DEFINED
 typedef struct gx_ht_tile_s gx_ht_tile;
+
 #endif
 
 #ifndef gx_device_halftone_DEFINED
 #  define gx_device_halftone_DEFINED
 typedef struct gx_device_halftone_s gx_device_halftone;
+
 #endif
 
 #ifndef gx_color_tile_DEFINED
 #  define gx_color_tile_DEFINED
 typedef struct gx_color_tile_s gx_color_tile;
+
 #endif
 
 /*
@@ -183,96 +187,100 @@ typedef struct gx_color_tile_s gx_color_tile;
  *
  * Base colors are represented as follows:
  *
- *	Pure color (gx_dc_pure):
- *		colors.pure = the color;
- *	Binary halftone (gx_dc_ht_binary):
- *		colors.binary.b_ht = the device halftone;
- *		colors.binary.color[0] = the color for 0s (darker);
- *		colors.binary.color[1] = the color for 1s (lighter);
- *		colors.binary.b_level = the number of pixels to lighten,
- *		  0 < halftone_level < P, the number of pixels in the tile;
- *	@	colors.binary.b_tile points to an entry in the binary
- *		  tile cache.
- *	Colored halftone (gx_dc_ht_colored):
- *		colors.colored.c_ht = the device halftone;
- *		colors.colored.c_level[0..N-1] = the halftone levels,
- *		  like b_level;
- *		colors.colored.c_base[0..N-1] = the base colors;
- *		  N=3 for RGB devices, 4 for CMYK devices;
- *		  0 <= c_level[i] < P;
- *		  0 <= c_base[i] <= dither_rgb;
- *		colors.colored.alpha = the opacity.
- *	Colored pattern (gx_dc_pattern):
- *		(id and mask are also set, see below)
- *	@	colors.pattern.p_tile points to a gx_color_tile in
- *		  the pattern cache, or is NULL for a null pattern.
+ *      Pure color (gx_dc_pure):
+ *              colors.pure = the color;
+ *      Binary halftone (gx_dc_ht_binary):
+ *              colors.binary.b_ht = the device halftone;
+ *              colors.binary.color[0] = the color for 0s (darker);
+ *              colors.binary.color[1] = the color for 1s (lighter);
+ *              colors.binary.b_level = the number of pixels to lighten,
+ *                0 < halftone_level < P, the number of pixels in the tile;
+ *      @       colors.binary.b_tile points to an entry in the binary
+ *                tile cache.
+ *      Colored halftone (gx_dc_ht_colored):
+ *              colors.colored.c_ht = the device halftone;
+ *              colors.colored.c_level[0..N-1] = the halftone levels,
+ *                like b_level;
+ *              colors.colored.c_base[0..N-1] = the base colors;
+ *                N=3 for RGB devices, 4 for CMYK devices;
+ *                0 <= c_level[i] < P;
+ *                0 <= c_base[i] <= dither_rgb;
+ *              colors.colored.alpha = the opacity.
+ *      Colored pattern (gx_dc_pattern):
+ *              (mask is also set, see below)
+ *      @       colors.pattern.p_tile points to a gx_color_tile in
+ *                the pattern cache, or is NULL for a null pattern.
  *
- * The phase element is used for all colors except pure ones.  It holds
- * the negative of the graphics state halftone phase, modulo the halftone
- * tile size.
+ * The phase element is used for all colors except pure ones.  It holds the
+ * negative of the graphics state halftone phase, modulo the halftone tile
+ * size.
  *
  * The mask elements of a device color are only used for patterns:
- *	Non-pattern:
- *		mask is unused.
- *	Pattern:
- *		mask.ccolor gives the original Pattern color (needed for
- *		  reloading the pattern cache);
- *		mask.id gives the ID of the pattern (and its mask);
- *		mask.m_phase holds the negative of the graphics state
- *		  halftone phase;
- *	@	mask.m_tile points to a gx_color_tile in the pattern cache,
- *		  or is NULL for a pattern that doesn't require a mask.
- *		  (The 'bits' of the tile are not accessed.)
- *		  For colored patterns requiring a mask, p_tile and
- *		  mask.m_tile point to the same cache entry.
+ *      Non-pattern:
+ *              mask is unused.
+ *      Pattern:
+ *              mask.ccolor gives the original Pattern color (needed for
+ *                reloading the pattern cache);
+ *              mask.id gives the ID of the pattern (and its mask);
+ *              mask.m_phase holds the negative of the graphics state
+ *                halftone phase;
+ *      @       mask.m_tile points to a gx_color_tile in the pattern cache,
+ *                or is NULL for a pattern that doesn't require a mask.
+ *                (The 'bits' of the tile are not accessed.)
+ *                For colored patterns requiring a mask, p_tile and
+ *                mask.m_tile point to the same cache entry.
  * For masked colors, gx_set_dev_color replaces the type with a different
  * type that applies the mask when painting.  These types are not defined
  * here, because they are only used in Level 2.
  */
 
-/* A device color type is just a pointer to the procedures. */
-typedef struct gx_device_color_procs_s gx_device_color_procs;
-typedef const gx_device_color_procs _ds *gx_device_color_type;
+/* Define the (opaque) type for device color types. */
+/* The name is an unfortunate anachronism. */
+typedef struct gx_device_color_type_s gx_device_color_type_t;
+typedef const gx_device_color_type_t *gx_device_color_type;
 
 struct gx_device_color_s {
-	/*
-	 * Since some compilers don't allow static initialization of a
-	 * union, we put the type first.
-	 */
-	gx_device_color_type type;
-	/*
-	 * See the comment above for descriptions of the members.  We use
-	 * b_, c_, and p_ member names because some old compilers don't
-	 * allow the same name to be used for two different structure
-	 * members even when it's unambiguous.
-	 */
-	union _c {
-		gx_color_index pure;
-		struct _bin {
-			const gx_device_halftone *b_ht;
-			gx_color_index color[2];
-			uint b_level;
-			gx_ht_tile *b_tile;
-		} binary;
-		struct _col {
-			const gx_device_halftone *c_ht;
-			byte c_base[4];
-			uint c_level[4];
-			ushort /*gx_color_value*/ alpha;
-		} colored;
-		struct _pat {
-			gx_color_tile *p_tile;
-		} /*(colored)*/ pattern;
-	} colors;
-	gs_int_point phase;
-	struct _mask {
-	  gs_client_color ccolor;	/* needed for remapping pattern */
-	  struct mp_ { short x, y; } m_phase;
-	  gx_bitmap_id id;
-	  gx_color_tile *m_tile;
-	} mask;
+    /*
+     * Since some compilers don't allow static initialization of a
+     * union, we put the type first.
+     */
+    gx_device_color_type type;
+    /*
+     * See the comment above for descriptions of the members.  We use
+     * b_, c_, and p_ member names because some old compilers don't
+     * allow the same name to be used for two different structure
+     * members even when it's unambiguous.
+     */
+    union _c {
+	gx_color_index pure;
+	struct _bin {
+	    const gx_device_halftone *b_ht;
+	    gx_color_index color[2];
+	    uint b_level;
+	    gx_ht_tile *b_tile;
+	} binary;
+	struct _col {
+	    const gx_device_halftone *c_ht;
+	    byte c_base[4];
+	    uint c_level[4];
+	         ushort /*gx_color_value */ alpha;
+	} colored;
+	struct _pat {
+	    gx_color_tile *p_tile;
+	} /*(colored) */ pattern;
+    } colors;
+    gs_int_point phase;
+    struct _mask {
+	gs_client_color ccolor;	/* needed for remapping pattern */
+	struct mp_ {
+	    short x, y;
+	} m_phase;
+	gx_bitmap_id id;
+	gx_color_tile *m_tile;
+    } mask;
 };
-/*extern_st(st_device_color);*/		/* in gxdcolor.h */
+
+/*extern_st(st_device_color); *//* in gxdcolor.h */
 #define public_st_device_color() /* in gxcmap.c */\
   gs_public_st_composite(st_device_color, gx_device_color, "gx_device_color",\
     device_color_enum_ptrs, device_color_reloc_ptrs)
@@ -288,26 +296,31 @@ struct gx_device_color_s {
  * C compilers can't handle the typedef correctly.
  */
 #ifndef gx_dc_type_none
-extern const gx_device_color_procs _ds *gx_dc_type_none;  /* gxdcolor.c */
+extern const gx_device_color_type_t *const gx_dc_type_none;	/* gxdcolor.c */
+
 #endif
 #ifndef gx_dc_type_null
-extern const gx_device_color_procs _ds *gx_dc_type_null;  /* gxdcolor.c */
+extern const gx_device_color_type_t *const gx_dc_type_null;	/* gxdcolor.c */
+
 #endif
 #ifndef gx_dc_type_pure
-extern const gx_device_color_procs _ds *gx_dc_type_pure;  /* gxdcolor.c */
+extern const gx_device_color_type_t *const gx_dc_type_pure;	/* gxdcolor.c */
+
 #endif
 		/*
 		 * We don't declare gx_dc_pattern here, so as not to create
 		 * a spurious external reference in Level 1 systems.
 		 */
 #ifndef gx_dc_type_pattern
-/*extern const gx_device_color_procs _ds *gx_dc_type_pattern;*/  /* gspcolor.c */
+								    /*extern const gx_device_color_type_t * const gx_dc_type_pattern; *//* gspcolor.c */
 #endif
 #ifndef gx_dc_type_ht_binary
-extern const gx_device_color_procs _ds *gx_dc_type_ht_binary;  /* gxht.c */
+extern const gx_device_color_type_t *const gx_dc_type_ht_binary;	/* gxht.c */
+
 #endif
 #ifndef gx_dc_type_ht_colored
-extern const gx_device_color_procs _ds *gx_dc_type_ht_colored;  /* gxcht.c */
+extern const gx_device_color_type_t *const gx_dc_type_ht_colored;	/* gxcht.c */
+
 #endif
 
-#endif					/* gsdcolor_INCLUDED */
+#endif /* gsdcolor_INCLUDED */

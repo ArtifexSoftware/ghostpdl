@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zcsindex.c */
+/*Id: zcsindex.c  */
 /* Indexed color space support */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "gscolor.h"
@@ -44,12 +43,12 @@ private int indexed_map1(P1(os_ptr));
 /* Free the map when freeing the gs_indexed_map structure. */
 private void
 rc_free_indexed_map(gs_memory_t * mem, void *data, client_name_t cname)
-{				/*
-				 * A bug in the SGI Irix 4.05 compiler requires the following:
-				 */
+{	/*
+	 * A bug in the SGI Irix 4.05 compiler requires the following:
+	 */
     char *cdata = (char *)data;
 
-    gs_free_object(mem, ((gs_indexed_map *) cdata)->values, cname);
+    gs_free_object(mem, ((gs_indexed_map *)cdata)->values, cname);
     gs_free_object(mem, cdata, cname);
 }
 
@@ -57,7 +56,7 @@ rc_free_indexed_map(gs_memory_t * mem, void *data, client_name_t cname)
 private int
 lookup_indexed(const gs_indexed_params * params, int index, float *values)
 {
-    int m = params->base_space.type->num_components;
+    int m = cs_num_components((const gs_color_space *)&params->base_space);
     const float *pv = &params->lookup.map->values[index * m];
 
     switch (m) {
@@ -82,7 +81,7 @@ zsetindexedspace(register os_ptr op)
     ref *pproc = &istate->colorspace.procs.special.index_proc;
     const ref *pcsa;
     gs_color_space cs;
-    gs_base_color_space cs_base;
+    gs_direct_color_space cs_base;
     ref_colorspace cspace_old;
     uint edepth = ref_stack_count(&e_stack);
     int num_entries;
@@ -104,16 +103,16 @@ zsetindexedspace(register os_ptr op)
      * We can't count on C compilers to recognize the aliasing
      * that would be involved in a direct assignment.
      * Formerly, we used the following code:
-     cs_base = *(gs_base_color_space *)&cs;
-     cs.params.indexed.base_space = cs_base;
+	 cs_base = *(gs_direct_color_space *)&cs;
+	 cs.params.indexed.base_space = cs_base;
      * But the Watcom C 10.0 compiler is too smart: it turns this into
      * a direct assignment (and compiles incorrect code for it),
      * defeating our purpose.  Instead, we have to do it by brute force:
      */
-    memcpy(&cs_base, &cs, sizeof(gs_base_color_space));
+    memcpy(&cs_base, &cs, sizeof(cs_base));
     cs.params.indexed.base_space = cs_base;
     if (r_has_type(&pcsa[2], t_string)) {
-	int num_values = num_entries * cs.type->num_components;
+	int num_values = num_entries * cs_num_components(&cs);
 
 	check_read(pcsa[2]);
 	if (r_size(&pcsa[2]) != num_values)
@@ -197,7 +196,8 @@ zcs_begin_map(gs_indexed_map ** pmap, const ref * pproc, int num_entries,
 	   const gs_base_color_space * base_space, int (*map1) (P1(os_ptr)))
 {
     gs_memory_t *mem = gs_state_memory(igs);
-    int num_components = base_space->type->num_components;
+    int num_components =
+    cs_num_components((const gs_color_space *)base_space);
     int num_values = num_entries * num_components;
     gs_indexed_map *map;
     es_ptr ep;

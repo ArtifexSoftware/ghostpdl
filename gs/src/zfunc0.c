@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zfunc0.c */
+/*Id: zfunc0.c  */
 /* PostScript language interface to FunctionType 0 (Sampled) Functions */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsdsrc.h"
 #include "gsfunc.h"
@@ -67,17 +66,16 @@ build_function_0(const_os_ptr op, const gs_function_params_t * mnDR, int depth,
 				     pDataSource->value.const_bytes,
 				     r_size(pDataSource));
 	    break;
-	case t_file:
-	    {
-		stream *s;
+	case t_file: {
+	    stream *s;
 
-		check_read_known_file_else(s, pDataSource, return_error,
-					 return_error(e_invalidfileaccess));
-		if (!(s->modes & s_mode_seek))
-		    return_error(e_ioerror);
-		data_source_init_stream(&params.DataSource, s);
-	    }
+	    check_read_known_file_else(s, pDataSource, return_error,
+				       return_error(e_invalidfileaccess));
+	    if (!(s->modes & s_mode_seek))
+		return_error(e_ioerror);
+	    data_source_init_stream(&params.DataSource, s);
 	    break;
+	}
 	default:
 	    return_error(e_rangecheck);
     }
@@ -103,6 +101,7 @@ build_function_0(const_os_ptr op, const gs_function_params_t * mnDR, int depth,
     code = gs_function_Sd_init(ppfn, &params, imemory);
     if (code >= 0)
 	return 0;
-  fail:gs_function_Sd_free_params(&params, imemory);
+fail:
+    gs_function_Sd_free_params(&params, imemory);
     return (code < 0 ? code : gs_note_error(e_rangecheck));
 }

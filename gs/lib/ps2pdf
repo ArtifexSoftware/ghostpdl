@@ -1,4 +1,5 @@
 #!/bin/sh
+# Id: ps2pdf 
 # Convert PostScript to PDF.
 
 OPTIONS=""

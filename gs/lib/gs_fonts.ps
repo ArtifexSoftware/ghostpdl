@@ -1,4 +1,4 @@
-%    Copyright (C) 1990, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_fonts.ps 
 % Font initialization and management code.
 
 % Define the default font.
@@ -30,8 +31,8 @@
 
 % Define a reliable way of accessing FontDirectory in systemdict.
 /.FontDirectory
-{ //systemdict /FontDirectory get
-} bind odef
+{ /FontDirectory .systemvar
+} .bind odef
 
 % If DISKFONTS is true, we load individual CharStrings as they are needed.
 % (This is intended primarily for machines with very small memories.)
@@ -205,6 +206,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
   /c true
   /cmd true
   /com true
+  /dir true
   /dll true
   /doc true
   /drv true
@@ -273,7 +275,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 		{ pop pop
 		}
 		{ exch copystring exch
-		  DEBUG { ( ) print dup =only } if
+		  DEBUG { ( ) print dup =only flush } if
 		  1 index .definefontmap
 		  .splitfilename pop true .scanfontdict 3 1 roll .growput
 			% Increment fontcount.
@@ -341,15 +343,33 @@ buildfontdict 3 /.buildfont3 cvx put
 		% Symbol or Dingbats encoding, load those now (for the
 		% benefit of platform font matching) just in case
 		% the font didn't actually reference them.
-	 dup /Encoding get length 65 ge
-	  { dup /Encoding get 64 get
-	    dup /congruent eq { SymbolEncoding pop } if
-	    /a9 eq { DingbatsEncoding pop } if
-	  }
-	 if
+		% Note that some types of font don't have an Encoding.
+	 dup /Encoding .knownget {
+	   dup length 65 ge {
+	     64 get
+	     dup /congruent eq { SymbolEncoding pop } if
+	     /a9 eq { DingbatsEncoding pop } if
+	   } {
+	     pop
+	   } ifelse
+	 } if
        }
       ifelse
-      dup /FontType get //buildfontdict exch get exec
+      true exch
+      dup /FontType known not {
+	% This might be a CIDFont.
+	dup /CIDFontType known {
+	  /.buildcidfont where {
+	    pop exch pop false exch
+	  } if
+	} if
+      } if
+      exch {
+	dup /FontType get //buildfontdict exch get exec
+      } {
+	.buildcidfont
+      } ifelse
+
       DISKFONTS
        { FontFileDirectory 2 index known
 	  { dup /FontFile FontFileDirectory 4 index get .growput
@@ -374,13 +394,8 @@ buildfontdict 3 /.buildfont3 cvx put
  } odef
 
 % Define a procedure for defining aliased fonts.
-% We can't just copy the font (or even use the same font unchanged),
-% because a significant number of PostScript files assume that
-% the FontName of a font is the same as the font resource name or
-% the key in [Shared]FontDirectory; on the other hand, some Adobe files
-% rely on the FontName of a substituted font *not* being the same as
-% the requested resource name.  We address this issue heuristically:
-% we substitute the new name iff the font name doesn't have MM in it.
+% We use this only for explicitly aliased fonts, not substituted fonts:
+% we think this matches the observed behavior of Adobe interpreters.
 /.aliasfont		% <name> <font> .aliasfont <newFont>
  { .currentglobal 3 1 roll dup .gcheck .setglobal
    dup length 2 add dict
@@ -395,14 +410,9 @@ buildfontdict 3 /.buildfont3 cvx put
 		% garbage value to findfont.  In this case, just don't
 		% call definefont at all.
    2 index dup type /stringtype eq exch .gcheck or 1 index .gcheck not or
-    { 2 index .fonttempstring cvs (MM) search
-       { pop pop pop pop
-       }
-       { /FontName exch dup type /stringtype eq { cvn } if put
-       }
-      ifelse
+    { /FontName 3 index dup type /stringtype eq { cvn } if put
 		% Don't bind in definefont, since Level 2 redefines it.
-      //systemdict /definefont get exec
+      /definefont .systemvar exec
     }
     { .completefont pop exch pop
     }
@@ -411,7 +421,13 @@ buildfontdict 3 /.buildfont3 cvx put
 
 % Define .loadfontfile for loading a font.  If we recognize Type 1 and/or
 % TrueType fonts, gs_type1.ps and/or gs_ttf.ps will redefine this.
-/.loadfontfile { cvx exec } bind def
+/.loadfontfile {
+		% According to Ed Taft, Adobe interpreters push userdict
+		% before loading a font, and pop it afterwards.
+  userdict begin
+    cvx exec
+  end
+} bind def
 /.loadfont
  {		% Some buggy fonts leave extra junk on the stack,
 		% so we have to make a closure that records the stack depth
@@ -435,6 +451,7 @@ buildfontdict 3 /.buildfont3 cvx put
   [(Bookman) /Bookman]
   [(Century) /NewCenturySchlbk]
   [(Cour) /Courier]
+  [(Frut) /Helvetica]
   [(Geneva) /Helvetica]
   [(Helv) /Helvetica]
   [(NewYork) /Times]
@@ -628,8 +645,7 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 	 if /findfont cvx /invalidfont signalerror
        }
       if
-			% Substitute for the font.
-			% If SUBSTFONT is defined, don't alias.
+			% Substitute for the font.  Don't alias.
       /SUBSTFONT where {
 	pop QUIET not {
 	  (Substituting for font ) print dup =only
@@ -644,6 +660,8 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 	  (Substituting font ) print dup =only ( for ) print
 	  1 index =only (.\n) print flush
 	} if
+			% Remove all the accumulated aliases.
+	counttomark 1 add 1 roll cleartomark mark exch
       } ifelse
     }
    loop
@@ -745,11 +763,11 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 		% GlobalFontDirectory if appropriate.  However, we mustn't
 		% allow the current version of .setglobal to be bound in,
 		% because it's different depending on language level.
-	   .currentglobal exch /.setglobal load exec
+	   .currentglobal exch /.setglobal .systemvar exec
 		% Remove the fake definition, if any.
 	   .FontDirectory 3 index .undef
 	   1 index (r) file .loadfont .FontDirectory exch
-	   /.setglobal load exec
+	   /.setglobal .systemvar exec
 	 }
 	 { .loadfont .FontDirectory
 	 }
@@ -810,31 +828,29 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 
 % If requested, load all the fonts defined in the Fontmap into FontDirectory
 % as "fake" fonts i.e., font dicts with only FontName and FontType defined.
-% (We define FontType only to for the sake of some questionable code in the
-% Apple Printer Utility 2.0 font inquiry code.) We must ensure that this
-% happens in both global and local directories.
+% (We define FontType only for the sake of some questionable code in the
+% Apple Printer Utility 2.0 font inquiry code.)
+%
+% Note that this procedure only creates fake fonts in the FontDirectory
+% associated with the current VM.  This is because in multi-context systems,
+% creating the fake fonts in local VM leads to undesirable complications.
 /.definefakefonts
     {
     }
-    { (gs_fonts FAKEFONTS) VMDEBUG
-      2
-	{ .currentglobal not .setglobal
-	  Fontmap
-	   { pop dup type /stringtype eq { cvn } if
-	     .FontDirectory 1 index known not
-	      { 2 dict dup /FontName 3 index put
-		dup /FontType 1 put
-	        .FontDirectory 3 1 roll put
-	      }
-	      { pop
-	      }
-	     ifelse
-	   }
-	  forall
-       }
-      repeat
+    {
+      (gs_fonts FAKEFONTS) VMDEBUG
+      Fontmap {
+	pop dup type /stringtype eq { cvn } if
+	.FontDirectory 1 index known not {
+	  2 dict dup /FontName 3 index put
+	  dup /FontType 1 put
+	  .FontDirectory 3 1 roll put
+	} {
+	  pop
+	} ifelse
+      } forall
     }
-FAKEFONTS { exch } if pop def		% don't bind, .current/setglobal get redefined
+FAKEFONTS { exch } if pop def	% don't bind, .current/setglobal get redefined
 
 % Install initial fonts from Fontmap.
 /.loadinitialfonts
@@ -857,7 +873,7 @@ FAKEFONTS { exch } if pop def		% don't bind, .current/setglobal get redefined
 	 ifelse forall
     }
    if
-   .definefakefonts
+   .definefakefonts	% current VM is global
  } def			% don't bind, .current/setglobal get redefined
 
 % ---------------- Synthetic font support ---------------- %

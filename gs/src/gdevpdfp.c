@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpdfp.c */
+/*Id: gdevpdfp.c  */
 /* Get/put parameters for PDF-writing driver */
 #include "gx.h"
 #include "gserrors.h"
@@ -25,8 +25,8 @@
 /*
  * The pdfwrite device supports the following "real" parameters:
  *      OutputFile <string>
- *      (all the Distiller parameters except *ImageDict)
- * Currently, very few Distiller parameters actually have any effect.
+ *      all the Distiller parameters -- see gdevpsdp.c
+ * Only some of the Distiller parameters actually have any effect.
  *
  * The device also supports the following write-only pseudo-parameters that
  * serve only to communicate other information from the PostScript file.
@@ -52,9 +52,6 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
 				  &pdev->CompatibilityLevel)) < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion",
 				(int *)&CoreDistVersion)) < 0 ||
-    /* ****** DoThumbnails is OBSOLETE ****** */
-	(code = param_write_bool(plist, "DoThumbnails",
-				 &pdev->DoThumbnails)) < 0 ||
 	(code = param_write_bool(plist, "ReAssignCharacters",
 				 &pdev->ReAssignCharacters)) < 0 ||
 	(code = param_write_bool(plist, "ReEncodeCharacters",
@@ -75,11 +72,54 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
     int ecode = 0;
     int code;
     float cl = pdev->CompatibilityLevel;
-    bool dt = pdev->DoThumbnails;
     bool rac = pdev->ReAssignCharacters;
     bool rec = pdev->ReEncodeCharacters;
     long fon = pdev->FirstObjectNumber;
     gs_param_name param_name;
+    psdf_version save_version = pdev->version;
+
+    /*
+     * If this is one of the pseudo-parameters (show or pdfmark),
+     * don't bother checking for any real ones.
+     */
+
+    {
+	gs_param_string pps;
+
+	code = param_read_string(plist, (param_name = "show"), &pps);
+	switch (code) {
+	    case 0:
+		pdf_open_document(pdev);
+		code = pdfshow_process(pdev, plist, &pps);
+		if (code >= 0)
+		    return code;
+		/* falls through for errors */
+	    default:
+		ecode = code;
+		param_signal_error(plist, param_name, ecode);
+	    case 1:
+		break;
+	}
+    }
+
+    {
+	gs_param_string_array ppa;
+
+	code = param_read_string_array(plist, (param_name = "pdfmark"), &ppa);
+	switch (code) {
+	    case 0:
+		pdf_open_document(pdev);
+		code = pdfmark_process(pdev, &ppa);
+		if (code >= 0)
+		    return code;
+		/* falls through for errors */
+	    default:
+		ecode = code;
+		param_signal_error(plist, param_name, ecode);
+	    case 1:
+		break;
+	}
+    }
 
     /* General parameters. */
 
@@ -99,8 +139,6 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	if (cdv != CoreDistVersion)
 	    param_signal_error(plist, param_name, ecode = gs_error_rangecheck);
     }
-    /* ****** DoThumbnails is OBSOLETE ****** */
-    ecode = psdf_put_bool_param(plist, "DoThumbnails", &dt, ecode);
 
     ecode = psdf_put_bool_param(plist, "ReAssignCharacters", &rac, ecode);
     ecode = psdf_put_bool_param(plist, "ReEncodeCharacters", &rec, ecode);
@@ -128,57 +166,21 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    break;
     }
 
-    /* Handle pseudo-parameters. */
-
-    {
-	gs_param_string_array ppa;
-
-	switch (code = param_read_string_array(plist,
-					       (param_name = "pdfmark"),
-					       &ppa)) {
-	    case 0:
-		pdf_open_document(pdev);
-		code = pdfmark_process(pdev, &ppa);
-		if (code >= 0)
-		    break;
-		/* falls through for errors */
-	    default:
-		ecode = code;
-		param_signal_error(plist, param_name, ecode);
-	    case 1:
-		break;
-	}
-    }
-
-    {
-	gs_param_dict ppd;
-
-	switch (code = param_begin_read_dict(plist,
-					     (param_name = "show"),
-					     &ppd, false)) {
-	    case 0:
-		pdf_open_document(pdev);
-		code = pdfshow_process(pdev, &ppd);
-		param_end_read_dict(plist, param_name, &ppd);
-		if (code >= 0)
-		    break;
-		/* falls through for errors */
-	    default:
-		ecode = code;
-		param_signal_error(plist, param_name, ecode);
-	    case 1:
-		break;
-	}
-    }
-
     if (ecode < 0)
 	return ecode;
+    /*
+     * We have to set version to the new value, because the set of
+     * legal parameter values for psdf_put_params varies according to
+     * the version.
+     */
+    pdev->version =
+	(cl < 1.2 ? psdf_version_level2 : psdf_version_ll3);
     code = gdev_psdf_put_params(dev, plist);
-    if (code < 0)
+    if (code < 0) {
+	pdev->version = save_version;
 	return code;
-
+    }
     pdev->CompatibilityLevel = cl;
-    pdev->DoThumbnails = dt;
     pdev->ReAssignCharacters = rac;
     pdev->ReEncodeCharacters = rec;
     if (fon != pdev->FirstObjectNumber) {

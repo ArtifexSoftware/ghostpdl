@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zcolor.c */
+/*Id: zcolor.c  */
 /* Color operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"
 #include "ialloc.h"
@@ -43,15 +42,6 @@ void gx_set_effective_transfer(P1(gs_state *));
 /* Define the number of stack slots needed for zcolor_remap_one. */
 const int zcolor_remap_one_ostack = 4;
 const int zcolor_remap_one_estack = 3;
-
-/* - currentalpha <alpha> */
-private int
-zcurrentalpha(register os_ptr op)
-{
-    push(1);
-    make_real(op, gs_currentalpha(igs));
-    return 0;
-}
 
 /* - currentgray <gray> */
 private int
@@ -91,21 +81,6 @@ zprocesscolors(register os_ptr op)
 {
     push(1);
     make_int(op, gs_currentdevice(igs)->color_info.num_components);
-    return 0;
-}
-
-/* <alpha> setalpha - */
-private int
-zsetalpha(register os_ptr op)
-{
-    double alpha;
-    int code;
-
-    if (real_param(op, &alpha) < 0)
-	return_op_typecheck(op);
-    if ((code = gs_setalpha(igs, alpha)) < 0)
-	return code;
-    pop(1);
     return 0;
 }
 
@@ -173,7 +148,7 @@ zsettransfer(register os_ptr op)
 /* The caller must have done the necessary check_ostack and check_estack. */
 int
 zcolor_remap_one(const ref * pproc, register os_ptr op, gx_transfer_map * pmap,
-		 const gs_state * pgs, int (*finish_proc) (P1(os_ptr)))
+		 const gs_state * pgs, int (*finish_proc)(P1(os_ptr)))
 {
     osp = op += 4;
     make_int(op - 3, 0);
@@ -200,9 +175,8 @@ zcolor_remap_one_store(os_ptr op, floatp min_value)
     for (i = 0; i < transfer_map_size; i++) {
 	double v;
 	int code =
-	real_param(ref_stack_index(&o_stack,
-				   transfer_map_size - 1 - i),
-		   &v);
+	    real_param(ref_stack_index(&o_stack, transfer_map_size - 1 - i),
+		       &v);
 
 	if (code < 0)
 	    return code;
@@ -245,12 +219,10 @@ zcolor_remap_color(os_ptr op)
 
 const op_def zcolor_op_defs[] =
 {
-    {"0currentalpha", zcurrentalpha},
     {"0currentgray", zcurrentgray},
     {"0currentrgbcolor", zcurrentrgbcolor},
     {"0currenttransfer", zcurrenttransfer},
     {"0processcolors", zprocesscolors},
-    {"1setalpha", zsetalpha},
     {"1setgray", zsetgray},
     {"3setrgbcolor", zsetrgbcolor},
     {"1settransfer", zsettransfer},

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxdcconv.c */
+/*Id: gxdcconv.c  */
 /* Conversion between device color spaces for Ghostscript */
 #include "gx.h"
 #include "gsdcolor.h"		/* for gxcmap.h */

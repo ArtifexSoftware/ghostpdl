@@ -1,4 +1,4 @@
-   Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+   Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: use.txt 
 This file, use.txt, describes how to use the Ghostscript language
 interpreter.
 
@@ -84,7 +85,34 @@ or
 	gs -?
 This message also lists the available devices.  For a little more
 information about available devices, a one-line description of each device
-appears near the beginning of the file devs.mak.
+appears near the beginning of the file devs.mak (for Aladdin's own drivers)
+and contrib.mak (for user-contributed drivers).
+
+How to specify input
+--------------------
+
+As noted above, one normally specifies input by just putting a file name or
+names on the command line.  However, one can also 'pipe' input into
+Ghostscript by using the special file name '-', e.g.,
+
+	some-program-producing-PS | gs ...other options... -
+
+There are two respects in which '-' differs from an ordinary file name:
+
+	- When Ghostscript finishes reading from the pipe, Ghostscript
+	exits rather than going into interactive mode.  Because of this,
+	'-' is really only useful as the last argument on the command
+	line.
+
+	- Because PDF requires the ability to seek within the input file,
+	'-' can't be used with PDF input, unless the input is actually
+	coming from a file, i.e.,
+
+		gs ...options... - <somefile.pdf
+
+	and not
+
+		some-program-producing-PDF | gs ...options... -
 
 Choosing the output device
 --------------------------
@@ -320,11 +348,14 @@ GS_LIB_DEFAULT) and the font path (-sFONTPATH=, GS_FONTPATH) are:
 	- Font name -> file name mapping is implicit -- the
 	FontName in the file is used.  Aliases are not possible.
 
-	- Every Type 1 font file in each directory is available.
+	- Every Type 1 font file in each directory is available;
+	if TrueType fonts are supported (ttfont.dev "feature"
+	included when compiling), they are also available.
 
-If you are using one of the following types of computer, you
-may wish to set GS_FONTPATH to the indicated value so that Ghostscript will
-automatically acquire all the installed Type 1 fonts:
+If you are using one of the following types of computer, you may wish to set
+GS_FONTPATH to the indicated value so that Ghostscript will automatically
+acquire all the installed Type 1 (and, if supported, TrueType) fonts (but
+see below for notes on systems marked with *):
 
 	System type		GS_FONTPATH
 	-----------		-----------
@@ -337,16 +368,16 @@ automatically acquire all the installed Type 1 fonts:
 	NeXT			/NextLibrary/Fonts/outline
 	SGI IRIX		/usr/lib/DPS/outline/base
 	  "			/usr/lib/X11/fonts/Type1
-	Sun SunOS 4.x		/usr/openwin/lib/X11/fonts/Type1/outline
+*	Sun SunOS 4.x		/usr/openwin/lib/X11/fonts/Type1/outline
 	  " (NeWSprint only)
    newsprint_2.5/SUNWsteNP/reloc/$BASEDIR/NeWSprint/small_openwin/lib/fonts
-	Sun Solaris 2		/usr/openwin/lib/X11/fonts/Type1/outline
+*	Sun Solaris 2.x		/usr/openwin/lib/X11/fonts/Type1/outline
 	VMS			SYS$COMMON:[SYSFONT.XDPS.OUTLINE]
 
-These paths may not be exactly right for your installation; if the
-indicated directory doesn't contain files whose names are familiar font
-names like Courier and Helvetica, you may wish to ask your system
-administrator where to find these fonts.
+These paths may not be exactly right for your installation; if the indicated
+directory doesn't contain files whose names are familiar font names like
+Courier and Helvetica, you may wish to ask your system administrator where
+to find these fonts.
 
 Adobe Acrobat comes with a set of 14 Type 1 fonts, typically in a directory
 called some_path_name_or_other/Acrobat3/Fonts.  There is no particular
@@ -354,10 +385,19 @@ reason to use these instead of the corresponding fonts in the Ghostscript
 distribution, aside from saving about 1 Mb of disk space, but if you want to
 do this, see install.txt.
 
-NOTE: On Solaris systems simply setting GS_FONTPATH may not work, because
-for some reason some versions of Ghostscript can't seem to find any of the
-Type1 fonts in /usr/openwin/lib/X11/fonts/Type1/outline.  It says: "15
-files, 15 scanned, 0 new fonts".  See Fontmap.Sol instead.
+* On Solaris systems simply setting GS_FONTPATH may not work, because for
+some reason some versions of Ghostscript can't seem to find any of the Type1
+fonts in /usr/openwin/lib/X11/fonts/Type1/outline.  It says: "15 files, 15
+scanned, 0 new fonts".  See Fontmap.Sol instead.  Also, on Solaris 2.x it's
+probably not worth your while to add Sun's fonts to your font path and
+Fontmap.  The fonts Sun distributes on Solaris 2.x in the directories
+
+	/usr/openwin/lib/X11/fonts/Type1
+	/usr/openwin/lib/X11/fonts/Type1/outline
+
+are already represented among the ones distributed as part of Ghostscript;
+and on some test files, Sun's fonts have been shown to cause incorrect
+displays with Ghostscript.
 
 Temporary files
 ---------------
@@ -399,7 +439,7 @@ TEMP
 	Defines a directory name for temporary files.  Described above.
 
 ********
-******** Using Ghostscript and Ghostview with PDF files
+******** Using Ghostscript with PDF files
 ********
 
 Ghostscript is normally configured (except on 16-bit MS-DOS platforms) so
@@ -433,25 +473,6 @@ Added switches for PDF files
 	-sPSFile=filename
 		Writes the PostScript equivalent of the PDF input on the
 		given file.
-
-Ghostview and PDF files
------------------------
-
-Since Ghostview pipes PostScript files to Ghostscript, you cannot view PDF
-files with Ghostview just by saying
-		ghostview file.pdf
-Instead there are two options:
-
-   1. Tanmoy Bhattacharya has written some patches for Ghostview 1.5
-   that allow it to read and display PDF files.  These are available
-   from:
-       ftp://gita.lanl.gov/people/tanmoy/hypertex/gv1.5gs3.33hack.tar.gz
-
-   2. Start Ghostview as follows:
-          ghostview -arguments file.pdf quit.ps
-   This will allow you to display a PDF file, but you won't be able
-   to jump to particular pages.  Use Tanmoy's code if you want that
-   facility.
 
 ********
 ******** Notes on specific platforms ********
@@ -589,33 +610,6 @@ The ones marked * are the default (they all use the same value.)  If your
 card's chipset doesn't appear on this list, or if you try the value here
 and it doesn't work, please e-mail the chipset and correct display mode to
 ghost@aladdin.com for inclusion in future releases.
-
-NOTE: The remainder of the MS-DOS section is currently not relevant, because
-the Borland compilers do not support 32-bit MS-DOS executables, and
-Ghostscript no longer supports the 16-bit MS-DOS environment.  We have
-retained this section on the off-chance that Borland will support 32-bit
-MS-DOS compilation at some future time.
-
-If you are running Ghostscript on a MS-DOS machine with a display that is
-not EGA/VGA compatible, you must use the Borland compiler.  You must build
-Ghostscript with the BGI driver as the default, and you will need the
-appropriate .BGI file from the Borland Turbo C library.  (Ghostscript
-includes the EGA/VGA driver in the executable.)
-
-If you are using the BGI driver, two additional environment variables
-become relevant:
-
-	BGIPATH - defines the directory where Ghostscript will look for
-the appropriate BGI driver.  If BGIPATH is not defined, Ghostscript will
-look in the directory defined as BGIDIR in the makefile.  In either case,
-if no driver is found in the designated directory, Ghostscript will look
-in the current directory.
-
-	BGIUSER - a string of the form nn.dname, where nn is a hexadecimal
-number giving a display mode and dname is the name of a file containing a
-user-supplied BGI driver.  If BGIUSER is defined and the BGI device is
-selected, Ghostscript will supply nn as the display mode and will obtain
-the driver from the file named dname.
 
 X Windows
 ---------
@@ -877,16 +871,6 @@ Normal switches
 		Does the same thing as -- and -+, but expands @filename
 		arguments.
 
-	-
-		This is not really a switch.  It indicates to Ghostscript
-		that the standard input is coming from a file or a pipe.
-		Ghostscript reads from stdin until reaching end-of-file,
-		executing it like any other file, and then continues
-		processing the command line.  At the end of the command
-		line, Ghostscript exits rather than going into its
-		interactive mode.  NOTE: this switch works only for
-		PostScript, not for PDF.
-
 	-c tokens ...
 		Interprets arguments, up to the next argument that begins
 		with - followed by a non-digit or with @, as PostScript
@@ -898,11 +882,16 @@ Normal switches
 		Each argument must be exactly one token, as defined by
 		the `token' operator.
 
+	-f
+		Interprets following non-switch arguments as file names
+		to be executed using the normal `run' command.  Since this
+		is the default behavior, -f is useful only for terminating
+		the list of tokens for the -c switch.
+
 	-ffilename
 		Execute the given file, even if its name begins with a -
-		or an @.  -f alone does nothing, but it provides a
-		convenient way to terminate the list of tokens for the -c
-		switch.
+		or an @.
+
 
     File searching
     --------------
@@ -1069,6 +1058,16 @@ debugging.
 in Level 2 systems.  (The vmreclaim operator is not disabled.)  Only useful
 for debugging.
 
+-dNOINTERPOLATE
+	turns off image interpolation, improving performance on interpolated
+images at the expense of image quality.
+
+-dNOPAGEPROMPT
+	disables only the prompt, but not the pause, at the end of each
+page.  This may be useful on PC displays that get confused if a program
+attempts to write text to the console while the display is in a graphics
+mode.
+
 -dNOPAUSE
 	disables the prompt and pause at the end of each page.  Normally one
 should use this (along with -dBATCH) when producing output on a printer or
@@ -1081,10 +1080,11 @@ is 'driving' Ghostscript.
 fonts look undesirably different from the scalable fonts.
 
 -dNOPROMPT
-	disables only the prompt, but not the pause, at the end of each
-page.  This may be useful on PC displays that get confused if a program
-attempts to write text to the console while the display is in a graphics
-mode.
+	disables the prompt printed by the executive when it expects
+interactive input, as well as the end-of-page prompt (-dNOPAGEPROMPT); also
+disables the implicit flushpage that normally occurs each time the executive
+asks for more input.  This allows piping input directly into Ghostscript, as
+long as the data doesn't reference currentfile.
 
 -dORIENT1=true
 -dORIENT1=false
@@ -1109,6 +1109,11 @@ desirable for spoolers or other sensitive environments.
 
 -dSHORTERRORS
 	makes certain error and information messages more Adobe-compatible.
+
+-dSTRICT
+	disables as many Ghostscript extensions as feasible, to be more
+helpful in debugging applications that produce output for Adobe and other
+RIPs.
 
 -dWRITESYSTEMDICT
 	leaves systemdict writable.  This is necessary when running
@@ -1150,9 +1155,20 @@ time).
 		for debugging.  Equivalent to -Z@.
 	-A-	Turn off -A, equivalent to -Z-@.
 
+	-Bsize	Run all subsequent files named on the command line
+		(except for -F) through the run_string interface, using
+		a buffer of size bytes.
+	-B-	Turn off -B: run subsequent files (except for -F)
+		directly in the normal way.
+
 	-E	Turn on tracing of error returns from operators.
 		Equivalent to -Z#.
 	-E-	Turn off -E, equivalent to -Z-#.
+
+	-Ffile	Execute the file with -B1 temporarily in effect.
+
+	-Kn	Limit the allocator to acquiring a maximum of nK of
+		memory.  The default is "infinite".
 
 	-Mn	Force the interpreter's allocator to acquire additional
 		memory in units of nK, rather than the default (currently
@@ -1219,9 +1235,15 @@ time).
 			z = trapezoid fill
 			# = operator error returns
 			% = externally processed comments
-			* = image parameters
+			* = image and RasterOp parameters
 			: = command list & allocator/time summary
 			~ = math functions
+			' = contexts, create/destroy
+			  " = contexts, every operation
+			| = (reserved for experimental code)
+		The following switches affect printout, but do not select
+		specific items for printing.
+			/ = include file name & line # on all trace output
 		The following switches select debugging options other than
 		printout.
 			$ = set unused parts of object references to

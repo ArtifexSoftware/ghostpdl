@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zfcmap.c */
+/*Id: zfcmap.c  */
 /* CMap creation operator */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsmatrix.h"		/* for gxfont.h */
 #include "gsstruct.h"
@@ -48,25 +47,21 @@ free_code_map(gx_code_map * pcmap, gs_memory_t * mem)
     }
 }
 
-/* Convert a single code map to internal form. */
-/* This needs to be completely rewritten for space efficiency! */
+/* Convert a code map to internal form. */
 private int
 acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 		 gs_cmap * root, gs_memory_t * mem)
 {
-    if (depth >= 4)
-	return_error(e_limitcheck);
     pcmap->add_offset = 0;
     pcmap->cmap = root;
+    pcmap->byte_data.font_index = 0;
     switch (r_type(pref)) {
 	case t_null:
 	    pcmap->type = cmap_glyph;
-	    pcmap->byte_data.font_index = 0;
 	    pcmap->data.glyph = gs_no_glyph;
 	    return 0;
 	case t_name:
 	    pcmap->type = cmap_glyph;
-	    pcmap->byte_data.font_index = 0;
 	    pcmap->data.glyph = name_index(pref);
 	    return 0;
 	case t_integer:
@@ -82,7 +77,6 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 		break;
 	    pcmap->type = cmap_char_code;
 	    pcmap->num_bytes1 = r_size(pref) - 1;
-	    pcmap->byte_data.font_index = 0;
 	    {
 		int i;
 		gs_char chr = 0;
@@ -95,10 +89,12 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 	default:
 	    if (!r_is_array(pref) || r_size(pref) < 1 || r_size(pref) > 256)
 		break;
+	    if (depth >= 4)
+		return_error(e_limitcheck);
 	    {
 		uint size = r_size(pref);
 		uint count = 0;
-		ref_type rtype = t_null;
+		ref_type rtype;
 		long prev_value;
 		long diff;
 		uint run_length;
@@ -120,17 +116,18 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 			    if (prev_type == t_integer) {
 				if (run_length == 1) {
 				    diff = rsub.value.intval - prev_value;
-				    if (diff & ~1L)
-					goto noseq;
-				    run_length = 2;
-				    continue;
+				    if (!(diff & ~1L)) {
+					prev_value = rsub.value.intval;
+					run_length = 2;
+					continue;
+				    }
 				} else if (rsub.value.intval - prev_value == diff) {
 				    prev_value = rsub.value.intval;
 				    ++run_length;
 				    continue;
 				}
 			    }
-			  noseq:prev_value = rsub.value.intval;
+			    prev_value = rsub.value.intval;
 			    run_length = 1;
 			    /* falls through */
 			default:
@@ -138,7 +135,7 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 		    }
 		}
 
-		if (count == 0)
+		if (count == 0)		/* all nulls */
 		    count = 1;
 		subtree =
 		    gs_alloc_struct_array(mem, count, gx_code_map,
@@ -171,18 +168,19 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 			    if (prev_type == t_integer) {
 				if (submap[-1].first == submap[-1].last) {
 				    diff = rsub.value.intval - prev_value;
-				    if (diff & ~1L)
-					goto nseq;
-				    submap[-1].add_offset = (uint) diff;
-				    submap[-1].last++;
-				    continue;
+				    if (!(diff & ~1L)) {
+					prev_value = rsub.value.intval;
+					submap[-1].add_offset = (uint)diff;
+					submap[-1].last++;
+					continue;
+				    }
 				} else if (rsub.value.intval - prev_value == diff) {
 				    prev_value = rsub.value.intval;
 				    submap[-1].last++;
 				    continue;
 				}
 			    }
-			  nseq:prev_value = rsub.value.intval;
+			    prev_value = rsub.value.intval;
 			    /* falls through */
 			default:
 			    code = acquire_code_map(submap, &rsub, depth + 1,
@@ -192,7 +190,7 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
 				free_code_map(pcmap, mem);
 				return code;
 			    }
-			    submap->first = submap->last = (byte) i;
+			    submap->first = submap->last = (byte)i;
 			    ++j;
 		    }
 		}
@@ -203,7 +201,8 @@ acquire_code_map(gx_code_map * pcmap, const ref * pref, int depth,
     return_error(e_rangecheck);
 }
 
-/* Acquire CIDSystemInfo. */
+/* Acquire CIDSystemInfo.  If missing, set Registry and Ordering to */
+/* empty strings and Supplement to 0, and return 1. */
 /* Note that this currently does not handle the array format. */
 private int
 acquire_cid_system_info(gs_cid_system_info * pcidsi, const ref * op)
@@ -212,8 +211,12 @@ acquire_cid_system_info(gs_cid_system_info * pcidsi, const ref * op)
     ref *pregistry;
     ref *pordering;
 
-    if (dict_find_string(op, "CIDSystemInfo", &prcidsi) <= 0)
-	return_error(e_rangecheck);
+    if (dict_find_string(op, "CIDSystemInfo", &prcidsi) <= 0) {
+	pcidsi->Registry.data = 0, pcidsi->Registry.size = 0;
+	pcidsi->Ordering.data = 0, pcidsi->Ordering.size = 0;
+	pcidsi->Supplement = 0;
+	return 1;
+    }
     if (!r_has_type(prcidsi, t_dictionary))
 	return_error(e_typecheck);
     if (dict_find_string(prcidsi, "Registry", &pregistry) <= 0 ||
@@ -232,14 +235,17 @@ acquire_cid_system_info(gs_cid_system_info * pcidsi, const ref * op)
 
 /* Check compatibility of CIDSystemInfo. */
 private bool
+bytes_eq(const gs_const_string *pcs1, const gs_const_string *pcs2)
+{
+    return !bytes_compare(pcs1->data, pcs1->size,
+			  pcs2->data, pcs2->size);
+}
+private bool
 cid_system_info_compatible(const gs_cid_system_info * psi1,
 			   const gs_cid_system_info * psi2)
 {
-#define si_eq(part)\
-  !bytes_compare(psi1->part.data, psi1->part.size,\
-		 psi2->part.data, psi2->part.size)
-    return si_eq(Registry) && si_eq(Ordering);
-#undef si_eq
+    return bytes_eq(&psi1->Registry, &psi2->Registry) &&
+	bytes_eq(&psi1->Ordering, &psi2->Ordering);
 }
 
 /* ---------------- (Semi-)public procedures ---------------- */
@@ -270,7 +276,9 @@ ztype0_get_cmap(const gs_cmap ** ppcmap, const ref * pfdepvector, const ref * op
     code = acquire_cid_system_info(&cidsi, &rfdep);
     if (code < 0)
 	return code;
-    if (!cid_system_info_compatible(&cidsi, &pcmap->CIDSystemInfo))
+    if (code == 0 &&
+	!cid_system_info_compatible(&cidsi, &pcmap->CIDSystemInfo)
+	)
 	return_error(e_rangecheck);
     *ppcmap = pcmap;
     return 0;
@@ -327,7 +335,8 @@ zbuildcmap(os_ptr op)
     if (code < 0)
 	goto fail;
     return zreadonly(op);
-  fail:ifree_object(pcmap, "zbuildcmap(cmap)");
+fail:
+    ifree_object(pcmap, "zbuildcmap(cmap)");
     return code;
 }
 

@@ -15,30 +15,42 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: ugcclib.mak 
 # makefile for Unix / gcc library testing.
 
-include version.mak
+GLSRCDIR=.
+GLGENDIR=./debugobj
+GLOBJDIR=./debugobj
+
+#include $(COMMONDIR)/gccdefs.mak
+#include $(COMMONDIR)/unixdefs.mak
+#include $(COMMONDIR)/generic.mak
+include $(GLSRCDIR)/version.mak
 
 gsdir = /usr/local/share/ghostscript
 gsdatadir = $(gsdir)/$(GS_DOT_VERSION)
-GS_DOCDIR=$(gsatadir)/doc
+GS_DOCDIR=$(gsdatadir)/doc
 GS_LIB_DEFAULT=$(gsdatadir):$(gsdir)/fonts
 SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
-GENOPT=-DDEBUG
+#GENOPT=-DDEBUG
+GENOPT=
 GS=gslib
 
-JSRCDIR=jpeg-6a
+JSRCDIR=jpeg
 JVERSION=6
+# DON'T SET THIS TO 1!
+SHARE_JPEG=0
+JPEG_NAME=jpeg
 
 PSRCDIR=libpng
 PVERSION=96
-SHARE_LIBPNG=0
+SHARE_LIBPNG=1
 LIBPNG_NAME=png
 
 ZSRCDIR=zlib
-SHARE_ZLIB=0
+SHARE_ZLIB=1
 ZLIB_NAME=z
 
 CONFIG=
@@ -46,9 +58,9 @@ CONFIG=
 CC=gcc
 CCLD=$(CC)
 
-#GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
-GCFLAGS=-Dconst= -Wall -Wpointer-arith -Wstrict-prototypes
-CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
+GCFLAGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -fno-common
+XCFLAGS=
+CFLAGS=-g -O $(GCFLAGS) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
 EXTRALIBS=
 XINCLUDE=-I/usr/local/X/include
@@ -58,14 +70,12 @@ XLIBS=Xt Xext X11
 
 FPU_TYPE=1
 
-FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev patlib.dev
+FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.dev roplib.dev devcmap.dev
 COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
-DEVICE_DEVS=x11cmyk.dev x11.dev x11alpha.dev x11mono.dev\
- djet500.dev\
- pbmraw.dev pgmraw.dev ppmraw.dev
+DEVICE_DEVS=x11cmyk.dev x11mono.dev x11.dev x11alpha.dev djet500.dev pbmraw.dev pgmraw.dev ppmraw.dev bbox.dev
 DEVICE_DEVS1=
 DEVICE_DEVS2=
 DEVICE_DEVS3=
@@ -82,77 +92,80 @@ DEVICE_DEVS13=
 DEVICE_DEVS14=
 DEVICE_DEVS15=
 
-MAKEFILE=ugcclib.mak
+MAKEFILE=$(GLSRCDIR)/ugcclib.mak
 
 AK=
+CCFLAGS=$(GENOPT) $(CFLAGS)
+CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
-CCC=$(CC) $(CCFLAGS) -c
-CCLEAF=$(CCC)
+CC_LEAF=$(CC_)
 # When using gcc, CCA2K isn't needed....
 CCA2K=$(CC)
 
-include unixhead.mak
+include $(GLSRCDIR)/unixhead.mak
 
-include gs.mak
-include lib.mak
-include jpeg.mak
-include libpng.mak
-include zlib.mak
-include devs.mak
+include $(GLSRCDIR)/gs.mak
+include $(GLSRCDIR)/lib.mak
+include $(GLSRCDIR)/jpeg.mak
+# zlib.mak must precede libpng.mak
+include $(GLSRCDIR)/zlib.mak
+include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/devs.mak
+include $(GLSRCDIR)/contrib.mak
 
 # Following is from unixtail.mak, we have a different link step.
-unix__=gp_nofb.o gp_unix.o gp_unifs.o gp_unifn.o
+unix__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ)
 unix_.dev: $(unix__)
 	$(SETMOD) unix_ $(unix__)
 
-gp_unix.o: gp_unix.c $(AK) $(string__h) $(gx_h) $(gsexit_h) $(gp_h) \
-  $(time__h)
+$(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
+ $(pipe__h) $(string__h) $(time__h)\
+ $(gx_h) $(gsexit_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
-sysv__=gp_nofb.o gp_unix.o gp_unifs.o gp_unifn.o gp_sysv.o
+sysv__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_unix.$(OBJ) $(GLOBJ)gp_unifs.$(OBJ) $(GLOBJ)gp_unifn.$(OBJ) $(GLOBJ)gp_sysv.$(OBJ)
 sysv_.dev: $(sysv__)
 	$(SETMOD) sysv_ $(sysv__)
 
-gp_sysv.o: gp_sysv.c $(time__h) $(AK)
+$(GLOBJ)gp_sysv.$(OBJ): $(GLSRC)gp_sysv.c $(time__h) $(AK)
+	$(GLCC) $(GLO_)gp_sysv.$(OBJ) $(C_) $(GLSRC)gp_sysv.c
 
-ansi2knr: ansi2knr.c $(stdio__h) $(string__h) $(malloc__h)
-	$(CCA2K) $(O)ansi2knr ansi2knr.c
+# Auxiliary programs
 
-echogs: echogs.c
-	$(CCAUX) $(O)echogs echogs.c
+$(ANSI2KNR_XE): $(GLSRC)ansi2knr.c
+	$(CCA2K) $(O_)$(ANSI2KNR_XE) $(GLSRC)ansi2knr.c
 
-genarch: genarch.c $(stdpre_h)
-	$(CCAUX) $(O)genarch genarch.c
+$(ECHOGS_XE): $(GLSRC)echogs.c $(AK)
+	$(CCAUX) $(O_)$(ECHOGS_XE) $(GLSRC)echogs.c
 
-genconf: genconf.c $(stdpre_h)
-	$(CCAUX) $(O)genconf genconf.c
+# On the RS/6000 (at least), compiling genarch.c with gcc with -O
+# produces a buggy executable.
+$(GENARCH_XE): $(GLSRC)genarch.c $(AK) $(stdpre_h)
+	$(CCAUX) $(O_)$(GENARCH_XE) $(GLSRC)genarch.c
 
-geninit: geninit.c $(stdio__h) $(string__h)
-	$(CCAUX) $(O)geninit geninit.c
+$(GENCONF_XE): $(GLSRC)genconf.c $(AK) $(stdpre_h)
+	$(CCAUX) $(O_)$(GENCONF_XE) $(GLSRC)genconf.c
+
+$(GENDEV_XE): $(GLSRC)gendev.c $(AK) $(stdpre_h)
+	$(CCAUX) $(O_)$(GENDEV_XE) $(GLSRC)gendev.c
 
 INCLUDE=/usr/include
-gconfig_.h: unixtail.mak echogs
-	./echogs -w gconfig_.h -x 2f2a -s This file was generated automatically. -s -x 2a2f
-	sh -c 'if ( test -f $(INCLUDE)/dirent.h ); then ./echogs -a gconfig_.h -x 23 define HAVE_DIRENT_H; fi'
-	sh -c 'if ( test -f $(INCLUDE)/ndir.h ); then ./echogs -a gconfig_.h -x 23 define HAVE_NDIR_H; fi'
-	sh -c 'if ( test -f $(INCLUDE)/sys/dir.h ); then ./echogs -a gconfig_.h -x 23 define HAVE_SYS_DIR_H; fi'
-	sh -c 'if ( test -f $(INCLUDE)/sys/ndir.h ); then ./echogs -a gconfig_.h -x 23 define HAVE_SYS_NDIR_H; fi'
-	sh -c 'if ( test -f $(INCLUDE)/sys/time.h ); then ./echogs -a gconfig_.h -x 23 define HAVE_SYS_TIME_H; fi'
-	sh -c 'if ( test -f $(INCLUDE)/sys/times.h ); then ./echogs -a gconfig_.h -x 23 define HAVE_SYS_TIMES_H; fi'
+$(gconfig__h): $(MAKEFILE) $(ECHOGS_XE)
+	$(ECHOGS_XE) -w $(gconfig__h) -x 2f2a -s This file was generated automatically. -s -x 2a2f
+	if ( test -f $(INCLUDE)/dirent.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_DIRENT_H; else true; fi
+	if ( test -f $(INCLUDE)/ndir.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_NDIR_H; else true; fi
+	if ( test -f $(INCLUDE)/sys/dir.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_DIR_H; else true; fi
+	if ( test -f $(INCLUDE)/sys/ndir.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_NDIR_H; else true; fi
+	if ( test -f $(INCLUDE)/sys/time.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_TIME_H; else true; fi
+	if ( test -f $(INCLUDE)/sys/times.h ); then $(ECHOGS_XE) -a $(gconfig__h) -x 23 define HAVE_SYS_TIMES_H; else true; fi
 
-LIB_ONLY=gslib.o gsnogc.o gconfig.o gscdefs.o
-$(GS): $(ld_tr) echogs $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
-	./echogs -w ldt.tr -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GS)
-	./echogs -a ldt.tr -n -s $(LIB_ONLY) -s
-	cat $(ld_tr) >>ldt.tr
-	./echogs -a ldt.tr -s - $(EXTRALIBS) -lm
-	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; $(SH) <ldt.tr
+LIB_ONLY=$(GLOBJ)gslib.$(OBJ) $(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
+ldt_tr=$(GLOBJ)ldt.tr
+$(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
+	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) $(XLIBDIRS) -o $(GS_XE)
+	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(LIB_ONLY) -s
+	cat $(ld_tr) >>$(ldt_tr)
+	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) -lm
+	LD_RUN_PATH=$(XLIBDIR); export LD_RUN_PATH; $(SH) <$(ldt_tr)
 
-# Following is from unix-end.mak, we omit the install and tar_cat rules.
-pg:
-	make GENOPT='' CFLAGS='-pg -O $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11' CCLEAF='$(CCC)'
-
-gconfigv.h: $(MAKEFILE) echogs
-	$(EXP)echogs -w gconfigv.h -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
-	$(EXP)echogs -a gconfigv.h -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
-	$(EXP)echogs -a gconfigv.h -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
-
+include $(GLSRCDIR)/unix-end.mak

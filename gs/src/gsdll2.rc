@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* gsdll2.rc */
+/*Id: gsdll2.rc */
 /* Resources for gsdll2.dll, Ghostscript DLL for OS/2 */
 
 ICON 1 gsos2.ico

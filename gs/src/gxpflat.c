@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxpflat.c */
+/*Id: gxpflat.c  */
 /* Path flattening algorithms */
 #include "gx.h"
 #include "gxarith.h"
@@ -207,7 +207,7 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
     uint rmask;			/* M-1 */
     fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
     uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
-    gs_fixed_point _ss *ppt;
+    gs_fixed_point *ppt;
 
 #define max_points 50		/* arbitrary */
     gs_fixed_point points[max_points + 1];
@@ -215,13 +215,14 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
   top:x0 = ppath->position.x;
     y0 = ppath->position.y;
 #ifdef DEBUG
-    if (gs_debug_c('3'))
-	dprintf4("[3]x0=%f y0=%f x1=%f y1=%f\n",
-		 fixed2float(x0), fixed2float(y0),
-		 fixed2float(x1), fixed2float(y1)),
-	    dprintf5("   x2=%f y2=%f x3=%f y3=%f  k=%d\n",
-		     fixed2float(x2), fixed2float(y2),
-		     fixed2float(x3), fixed2float(y3), k);
+    if (gs_debug_c('3')) {
+	dlprintf4("[3]x0=%f y0=%f x1=%f y1=%f\n",
+		  fixed2float(x0), fixed2float(y0),
+		  fixed2float(x1), fixed2float(y1));
+	dlprintf5("   x2=%f y2=%f x3=%f y3=%f  k=%d\n",
+		  fixed2float(x2), fixed2float(y2),
+		  fixed2float(x3), fixed2float(y3), k);
+    }
 #endif
     {
 	fixed x01, x12, y01, y12;
@@ -332,16 +333,17 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 	int code;
 
 #ifdef DEBUG
-	if (gs_debug_c('3'))
-	    dprintf4("[3]dx=%f+%d, dy=%f+%d\n",
-		     fixed2float(idx), rdx,
-		     fixed2float(idy), rdy),
-		dprintf4("   d2x=%f+%d, d2y=%f+%d\n",
-			 fixed2float(id2x), rd2x,
-			 fixed2float(id2y), rd2y),
-		dprintf4("   d3x=%f+%d, d3y=%f+%d\n",
-			 fixed2float(id3x), rd3x,
-			 fixed2float(id3y), rd3y);
+	if (gs_debug_c('3')) {
+	    dlprintf4("[3]dx=%f+%d, dy=%f+%d\n",
+		      fixed2float(idx), rdx,
+		      fixed2float(idy), rdy);
+	    dlprintf4("   d2x=%f+%d, d2y=%f+%d\n",
+		      fixed2float(id2x), rd2x,
+		      fixed2float(id2y), rd2y);
+	    dlprintf4("   d3x=%f+%d, d3y=%f+%d\n",
+		      fixed2float(id3x), rd3x,
+		      fixed2float(id3y), rd3y);
+	}
 #endif
 #define accum(i, r, di, dr)\
   if ( (r += dr) > rmask ) r &= rmask, i += di + 1;\
@@ -421,7 +423,7 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 	      fixed2float(x3), fixed2float(y3));
     if (ppt > points) {
 	int count = ppt + 1 - points;
-	gs_fixed_point _ss *pts = points;
+	gs_fixed_point *pts = points;
 
 	if (!(notes & sn_not_first)) {
 	    int code = gx_path_add_line_notes(ppath,

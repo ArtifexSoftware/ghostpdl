@@ -18,6 +18,7 @@
 
 /*Id: gscolor2.c  */
 /* Level 2 color operators for Ghostscript library */
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gxarith.h"
@@ -127,24 +128,26 @@ alloc_indexed_map(gs_indexed_map ** ppmap, int nvals, gs_memory_t * pmem,
 
 /* ---------------- Indexed color spaces ---------------- */
 
+gs_private_st_composite(st_color_space_Indexed, gs_paint_color_space,
+     "gs_color_space_Indexed", cs_Indexed_enum_ptrs, cs_Indexed_reloc_ptrs);
+
 /* ------ Color space ------ */
 
 /* Define the Indexed color space type. */
 cs_declare_procs(private, gx_concretize_Indexed, gx_install_Indexed,
-		 gx_adjust_cspace_Indexed,
-		 gx_enum_ptrs_Indexed, gx_reloc_ptrs_Indexed);
+		 gx_adjust_cspace_Indexed);
+private cs_proc_base_space(gx_base_space_Indexed);
 private cs_proc_restrict_color(gx_restrict_Indexed);
 private cs_proc_concrete_space(gx_concrete_space_Indexed);
-const gs_color_space_type
-      gs_color_space_type_Indexed =
-{gs_color_space_index_Indexed, 1, false,
- gs_paint_color_space_size,
- gx_init_paint_1, gx_restrict_Indexed,
- gx_concrete_space_Indexed,
- gx_concretize_Indexed, NULL,
- gx_default_remap_color, gx_install_Indexed,
- gx_adjust_cspace_Indexed, gx_no_adjust_color_count,
- gx_enum_ptrs_Indexed, gx_reloc_ptrs_Indexed
+const gs_color_space_type gs_color_space_type_Indexed = {
+    gs_color_space_index_Indexed, false, false,
+    &st_color_space_Indexed, gx_num_components_1,
+    gx_base_space_Indexed,
+    gx_init_paint_1, gx_restrict_Indexed,
+    gx_concrete_space_Indexed,
+    gx_concretize_Indexed, NULL,
+    gx_default_remap_color, gx_install_Indexed,
+    gx_adjust_cspace_Indexed, gx_no_adjust_color_count
 };
 
 /* GC procedures. */
@@ -152,11 +155,11 @@ const gs_color_space_type
 #define pcs ((gs_color_space *)vptr)
 
 private 
-ENUM_PTRS_BEGIN(gx_enum_ptrs_Indexed)
+ENUM_PTRS_BEGIN(cs_Indexed_enum_ptrs)
 {
-    ENUM_RETURN_CALL(pcs->params.indexed.base_space.type->enum_ptrs,
-		     &pcs->params.indexed.base_space,
-		     sizeof(pcs->params.indexed.base_space), index - 1);
+    return ENUM_USING(*pcs->params.indexed.base_space.type->stype,
+		      &pcs->params.indexed.base_space,
+		      sizeof(pcs->params.indexed.base_space), index - 1);
 }
 case 0:
 if (pcs->params.indexed.use_proc)
@@ -164,16 +167,17 @@ if (pcs->params.indexed.use_proc)
 else {
     pcs->params.indexed.lookup.table.size =
 	(pcs->params.indexed.hival + 1) *
-	pcs->params.indexed.base_space.type->num_components;
+	cs_num_components((const gs_color_space *)
+			  &pcs->params.indexed.base_space);
     ENUM_RETURN_CONST_STRING_PTR(gs_color_space,
 				 params.indexed.lookup.table);
 }
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gx_reloc_ptrs_Indexed)
+private RELOC_PTRS_BEGIN(cs_Indexed_reloc_ptrs)
 {
-    RELOC_CALL(pcs->params.indexed.base_space.type->reloc_ptrs,
-	       &pcs->params.indexed.base_space,
-	       sizeof(gs_base_color_space));
+    RELOC_USING(*pcs->params.indexed.base_space.type->stype,
+		&pcs->params.indexed.base_space,
+		sizeof(gs_base_color_space));
     if (pcs->params.indexed.use_proc)
 	RELOC_PTR(gs_color_space, params.indexed.lookup.map);
     else
@@ -182,6 +186,13 @@ private RELOC_PTRS_BEGIN(gx_reloc_ptrs_Indexed)
 RELOC_PTRS_END
 
 #undef pcs
+
+/* Return the base space of an Indexed color space. */
+private const gs_color_space *
+gx_base_space_Indexed(const gs_color_space * pcs)
+{
+    return (const gs_color_space *)&(pcs->params.indexed.base_space);
+}
 
 /* Color space installation ditto. */
 
@@ -247,7 +258,7 @@ map_palette_entry_4(const gs_indexed_params * params, int indx, float *values)
 private int
 map_palette_entry_n(const gs_indexed_params * params, int indx, float *values)
 {
-    int m = params->base_space.type->num_components;
+    int m = cs_num_components((const gs_color_space *)&params->base_space);
 
     memcpy((void *)values,
 	   (const void *)(params->lookup.map->values + indx * m),
@@ -416,7 +427,8 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 	if (code < 0)
 	    return code;
     } else {
-	int m = pcs->params.indexed.base_space.type->num_components;
+	int m = cs_num_components((const gs_color_space *)
+				  &pcs->params.indexed.base_space);
 	const byte *pcomp =
 	pcs->params.indexed.lookup.table.data + m * index;
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsargs.c */
+/*Id: gsargs.c  */
 /* Command line argument list management */
 #include "ctype_.h"
 #include "stdio_.h"
@@ -41,7 +41,7 @@ arg_init(arg_list * pal, const char **argv, int argc,
 
 /* Push a string onto an arg list. */
 void
-arg_push_string(arg_list * pal, const char *str)
+arg_push_memory_string(arg_list * pal, const char *str, gs_memory_t * mem)
 {
     arg_source *pas;
 
@@ -51,7 +51,9 @@ arg_push_string(arg_list * pal, const char *str)
     }
     pas = &pal->sources[pal->depth];
     pas->is_file = false;
-    pas->u.str = str;
+    pas->u.s.chars = str;
+    pas->u.s.memory = mem;
+    pas->u.s.str = str;
     pal->depth++;
 }
 
@@ -59,9 +61,14 @@ arg_push_string(arg_list * pal, const char *str)
 void
 arg_finit(arg_list * pal)
 {
-    while (pal->depth)
-	if (pal->sources[--(pal->depth)].is_file)
-	    fclose(pal->sources[pal->depth].u.file);
+    while (pal->depth) {
+	arg_source *pas = &pal->sources[--(pal->depth)];
+
+	if (pas->is_file)
+	    fclose(pas->u.file);
+	else if (pas->u.s.memory)
+	    gs_free_object(pas->u.s.memory, (void *)pas->u.s.chars, "arg_finit");
+    }
 }
 
 /* Get the next arg from a list. */
@@ -75,9 +82,8 @@ arg_next(arg_list * pal)
     char *cstr;
     const char *result;
     int endc;
-    register int c;
-    register int i;
-    bool in_quote;
+    int c, i;
+    bool in_quote, eol;
 
   top:pas = &pal->sources[pal->depth - 1];
     if (pal->depth == 0) {
@@ -90,18 +96,77 @@ arg_next(arg_list * pal)
     if (pas->is_file)
 	f = pas->u.file, endc = EOF;
     else
-	astr = pas->u.str, f = NULL, endc = 0;
+	astr = pas->u.s.str, f = NULL, endc = 0;
     result = cstr = pal->cstr;
 #define cfsgetc() (f == NULL ? (*astr ? *astr++ : 0) : fgetc(f))
-    while (isspace(c = cfsgetc()));
-    if (c == endc) {
-	if (f != NULL)
-	    fclose(f);
-	pal->depth--;
-	goto top;
-    }
+#define is_eol(c) (c == '\r' || c == '\n')
+    i = 0;
     in_quote = false;
+    eol = true;
+    c = cfsgetc();
     for (i = 0;;) {
+	if (c == endc) {
+	    if (in_quote) {
+		cstr[i] = 0;
+		fprintf(stdout, "Unterminated quote in @-file: %s\n", cstr);
+		gs_exit(1);
+	    }
+	    if (i == 0) {
+		/* EOF before any argument characters. */
+		if (f != NULL)
+		    fclose(f);
+		else if (pas->u.s.memory)
+		    gs_free_object(pas->u.s.memory, (void *)pas->u.s.chars,
+				   "arg_next");
+		pal->depth--;
+		goto top;
+	    }
+	    break;
+	}
+	/* c != endc */
+	if (isspace(c)) {
+	    if (i == 0) {
+		c = cfsgetc();
+		continue;
+	    }
+	    if (!in_quote)
+		break;
+	}
+	/* c isn't leading or terminating whitespace. */
+	if (c == '#' && eol) {
+	    /* Skip a comment. */
+	    do {
+		c = cfsgetc();
+	    } while (!(c == endc || is_eol(c)));
+	    if (c == '\r')
+		c = cfsgetc();
+	    if (c == '\n')
+		c = cfsgetc();
+	    continue;
+	}
+	if (c == '\\') {
+	    /* Check for \ followed by newline. */
+	    c = cfsgetc();
+	    if (is_eol(c)) {
+		if (c == '\r')
+		    c = cfsgetc();
+		if (c == '\n')
+		    c = cfsgetc();
+		eol = true;
+		continue;
+	    }
+	    /* \ anywhere else is treated as a printing character. */
+	    /* This is different from the Unix shells. */
+	    if (i == arg_str_max - 1) {
+		cstr[i] = 0;
+		fprintf(stdout, "Command too long: %s\n", cstr);
+		gs_exit(1);
+	    }
+	    cstr[i++] = '\\';
+	    eol = false;
+	    continue;
+	}
+	/* c will become part of the argument */
 	if (i == arg_str_max - 1) {
 	    cstr[i] = 0;
 	    fprintf(stdout, "Command too long: %s\n", cstr);
@@ -113,23 +178,12 @@ arg_next(arg_list * pal)
 	    in_quote = !in_quote;
 	else
 	    cstr[i++] = c;
+	eol = is_eol(c);
 	c = cfsgetc();
-	if (c == endc) {
-	    if (in_quote) {
-		cstr[i] = 0;
-		fprintf(stdout,
-			"Unterminated quote in @-file: %s\n",
-			cstr);
-		gs_exit(1);
-	    }
-	    break;
-	}
-	if (isspace(c) && !in_quote)
-	    break;
     }
     cstr[i] = 0;
     if (f == NULL)
-	pas->u.str = astr;
+	pas->u.s.str = astr;
   at:if (pal->expand_ats && result[0] == '@') {
 	if (pal->depth == arg_depth_max) {
 	    lprintf("Too much nesting of @-files.\n");

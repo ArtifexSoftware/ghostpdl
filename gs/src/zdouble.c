@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* zdouble.c */
+/*Id: zdouble.c  */
 /* Double-precision floating point arithmetic operators */
 #include "math_.h"
 #include "memory_.h"
@@ -24,7 +24,6 @@
 #include "ctype_.h"
 #include "ghost.h"
 #include "gxfarith.h"
-#include "errors.h"
 #include "oper.h"
 #include "store.h"
 
@@ -38,25 +37,23 @@
  * They also accept ints and reals as arguments.
  */
 
-/******
- ****** Time expended: 2.75 hours.
- ******/
-
 /* Forward references */
-private int near double_params_result(P3(os_ptr, int, double *));
-private int near double_params(P3(os_ptr, int, double *));
-private int near double_result(P3(os_ptr, int, double));
-private int near double_unary(P2(os_ptr, double (*)(P1(double))));
+private int double_params_result(P3(os_ptr, int, double *));
+private int double_params(P3(os_ptr, int, double *));
+private int double_result(P3(os_ptr, int, double));
+private int double_unary(P2(os_ptr, double (*)(P1(double))));
 
 #define dbegin_unary()\
 	double num;\
 	int code = double_params_result(op, 1, &num);\
+\
 	if ( code < 0 )\
 	  return code
 
 #define dbegin_binary()\
 	double num[2];\
 	int code = double_params_result(op, 2, num);\
+\
 	if ( code < 0 )\
 	  return code
 
@@ -155,11 +152,11 @@ zdtruncate(os_ptr op)
 
 /* ------ Transcendental functions ------ */
 
-private int near
-darc(os_ptr op, double (*afunc) (P1(double)))
+private int
+darc(os_ptr op, double (*afunc)(P1(double)))
 {
     dbegin_unary();
-    return double_result(op, 1, (*afunc) (num) * radians_to_degrees);
+    return double_result(op, 1, (*afunc)(num) * radians_to_degrees);
 }
 /* <dnum> <dresult> .darccos <dresult> */
 private int
@@ -214,13 +211,13 @@ zdexp(os_ptr op)
     return double_result(op, 2, pow(num[0], num[1]));
 }
 
-private int near
-dlog(os_ptr op, double (*lfunc) (P1(double)))
+private int
+dlog(os_ptr op, double (*lfunc)(P1(double)))
 {
     dbegin_unary();
     if (num <= 0.0)
 	return_error(e_rangecheck);
-    return double_result(op, 1, (*lfunc) (num));
+    return double_result(op, 1, (*lfunc)(num));
 }
 /* <dposnum> <dresult> .dln <dresult> */
 private int
@@ -244,7 +241,7 @@ zdsin(os_ptr op)
 
 /* ------ Comparison ------ */
 
-private int near
+private int
 dcompare(os_ptr op, int mask)
 {
     double num[2];
@@ -298,7 +295,7 @@ zdne(os_ptr op)
 /* ------ Conversion ------ */
 
 /* Take the easy way out.... */
-#define max_chars 50
+#define MAX_CHARS 50
 
 /* <dnum> <dresult> .cvd <dresult> */
 private int
@@ -314,7 +311,7 @@ zcvsd(os_ptr op)
 {
     int code = double_params_result(op, 0, NULL);
     double num;
-    char buf[max_chars + 2];
+    char buf[MAX_CHARS + 2];
     char *str = buf;
     uint len;
     char end;
@@ -323,7 +320,7 @@ zcvsd(os_ptr op)
 	return code;
     check_read_type(op[-1], t_string);
     len = r_size(op - 1);
-    if (len > max_chars)
+    if (len > MAX_CHARS)
 	return_error(e_limitcheck);
     memcpy(str, op[-1].value.bytes, len);
     /*
@@ -373,7 +370,6 @@ zdcvr(os_ptr op)
 #define max_mag (0xffffff * b30 * b30 * b30 * 0x4000)
     static const float min_real = -max_mag;
     static const float max_real = max_mag;
-
 #undef b30
 #undef max_mag
     double num;
@@ -393,7 +389,7 @@ zdcvs(os_ptr op)
 {
     double num;
     int code = double_params(op - 1, 1, &num);
-    char str[max_chars + 1];
+    char str[MAX_CHARS + 1];
     int len;
 
     if (code < 0)
@@ -471,7 +467,7 @@ const op_def zdouble_op_defs[] =
 /* ------ Internal procedures ------ */
 
 /* Get some double arguments. */
-private int near
+private int
 double_params(os_ptr op, int count, double *pval)
 {
     pval += count;
@@ -488,10 +484,8 @@ double_params(os_ptr op, int count, double *pval)
 		    r_size(op) != sizeof(double)
 		)
 		           return_error(e_typecheck);
-
 		--pval;
 		memcpy(pval, op->value.bytes, sizeof(double));
-
 		break;
 	    case t__invalid:
 		return_error(e_stackunderflow);
@@ -504,33 +498,31 @@ double_params(os_ptr op, int count, double *pval)
 }
 
 /* Get some double arguments, and check for a double result. */
-private int near
+private int
 double_params_result(os_ptr op, int count, double *pval)
 {
     check_write_type(*op, t_string);
     if (r_size(op) != sizeof(double))
 	       return_error(e_typecheck);
-
     return double_params(op - 1, count, pval);
 }
 
 /* Return a double result. */
-private int near
+private int
 double_result(os_ptr op, int count, double result)
 {
     os_ptr op1 = op - count;
 
     ref_assign_inline(op1, op);
     memcpy(op1->value.bytes, &result, sizeof(double));
-
     pop(count);
     return 0;
 }
 
 /* Apply a unary function to a double operand. */
-private int near
-double_unary(os_ptr op, double (*func) (P1(double)))
+private int
+double_unary(os_ptr op, double (*func)(P1(double)))
 {
     dbegin_unary();
-    return double_result(op, 1, (*func) (num));
+    return double_result(op, 1, (*func)(num));
 }

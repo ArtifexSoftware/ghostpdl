@@ -1,3 +1,4 @@
+@rem Id: rm.bat 
 @echo off
 :next
 if '%1'=='' goto exit

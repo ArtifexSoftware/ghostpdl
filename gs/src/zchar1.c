@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zchar1.c */
+/*Id: zchar1.c  */
 /* Type 1 character display operator */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "gxfixed.h"
@@ -41,6 +40,7 @@
 #include "idict.h"
 #include "ifont.h"
 #include "igstate.h"
+#include "iname.h"
 #include "store.h"
 
 /* Test whether a font is Type 1 compatible. */
@@ -88,20 +88,19 @@ private int bbox_stroke(P1(os_ptr));
 private int nobbox_finish(P2(os_ptr, gs_type1exec_state *));
 private int nobbox_fill(P1(os_ptr));
 private int nobbox_stroke(P1(os_ptr));
-private int
+
 /* <font> <code|name> <name> <charstring> .type1execchar - */
+private int
 ztype1execchar(register os_ptr op)
 {
     gs_font *pfont;
-
-#define pbfont ((gs_font_base *)pfont)
-#define pfont1 ((gs_font_type1 *)pfont)
-    const gs_type1_data *pdata;
     int code = font_param(op - 3, &pfont);
+    gs_font_base *const pbfont = (gs_font_base *) pfont;
+    gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
+    const gs_type1_data *pdata;
     gs_show_enum *penum = op_show_find();
     gs_type1exec_state cxs;
-
-#define pcis (&cxs.cis)
+    gs_type1_state *const pcis = &cxs.cis;
 
     if (code < 0)
 	return code;
@@ -110,7 +109,7 @@ ztype1execchar(register os_ptr op)
     pdata = &pfont1->data;
     /*
      * Any reasonable implementation would execute something like
-     *      1 setmiterlimit 0 setlinejoin 0 setlinecap
+     *  1 setmiterlimit 0 setlinejoin 0 setlinecap
      * here, but apparently the Adobe implementations aren't reasonable.
      *
      * If this is a stroked font, set the stroke width.
@@ -152,17 +151,19 @@ ztype1execchar(register os_ptr op)
 	return code;
     if (pfont1->FontBBox.q.x > pfont1->FontBBox.p.x &&
 	pfont1->FontBBox.q.y > pfont1->FontBBox.p.y
-	) {			/* The FontBBox is valid. */
+	) {
+	/* The FontBBox is valid. */
 	cxs.char_bbox = pfont1->FontBBox;
 	return type1exec_bbox(op, &cxs, pfont);
-    } else {			/*
-				 * The FontBBox is not valid.  In this case,
-				 * we create the path first, then do the setcachedevice.
-				 * If we are oversampling (in this case, only for anti-
-				 * aliasing, not just to improve quality), we have to
-				 * create the path twice, since we can't know the
-				 * oversampling factor until after setcachedevice.
-				 */
+    } else {
+	/*
+	 * The FontBBox is not valid.  In this case,
+	 * we create the path first, then do the setcachedevice.
+	 * If we are oversampling (in this case, only for anti-
+	 * aliasing, not just to improve quality), we have to
+	 * create the path twice, since we can't know the
+	 * oversampling factor until after setcachedevice.
+	 */
 	const ref *opstr = op;
 	ref other_subr;
 
@@ -173,7 +174,8 @@ ztype1execchar(register os_ptr op)
 	    gs_type1_set_lsb(pcis, &sbpt);
 	}
 	/* Continue interpreting. */
-      icont:code = type1_continue_dispatch(pcis, opstr, &other_subr);
+      icont:
+	code = type1_continue_dispatch(pcis, opstr, &other_subr);
 	switch (code) {
 	    case 0:		/* all done */
 		return nobbox_finish(op, &cxs);
@@ -189,23 +191,22 @@ ztype1execchar(register os_ptr op)
 		goto icont;
 	}
     }
-#undef pcis
-#undef pfont1
-#undef pbfont
 }
 /* Do all the work for the case where we have a bounding box. */
 private int
 type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 {
-#define pcis (&pcxs->cis)
-#define pbfont ((gs_font_base *)pfont)
+    gs_type1_state *const pcis = &pcxs->cis;
+    gs_font_base *const pbfont = (gs_font_base *) pfont;
+
     /*
      * We have a valid bounding box.  If we don't have Metrics
      * for this character, start interpreting the CharString;
      * do the setcachedevice as soon as we know the
      * (side bearing and) width.
      */
-    if (pcxs->present == metricsNone) {		/* Get the width from the CharString, */
+    if (pcxs->present == metricsNone) {
+	/* Get the width from the CharString, */
 	/* then set the cache device. */
 	ref cnref;
 	ref other_subr;
@@ -231,7 +232,8 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 			       NULL, pcxs->sbw + 2,
 			       &pcxs->char_bbox,
 			       bbox_fill, bbox_stroke);
-    } else {			/* We have the width and bounding box: */
+    } else {
+	/* We have the width and bounding box: */
 	/* set up the cache device now. */
 	return zchar_set_cache(op, pbfont, op - 1,
 			       (pcxs->present ==
@@ -241,8 +243,6 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 			       &pcxs->char_bbox,
 			       bbox_fill, bbox_stroke);
     }
-#undef pcis
-#undef pbfont
 }
 
 
@@ -265,15 +265,15 @@ type1_continue_dispatch(gs_type1_state * pcis, const ref * pcref, ref * pos)
     }
     code = gs_type1_interpret(pcis, pchars, &value);
     switch (code) {
-	case type1_result_callothersubr:
-	    {			/* The Type 1 interpreter handles all known OtherSubrs, */
+	case type1_result_callothersubr: {
+		/* The Type 1 interpreter handles all known OtherSubrs, */
 		/* so this must be an unknown one. */
 		const font_data *pfdata = pfont_data(gs_currentfont(igs));
 
 		code = array_get(&pfdata->u.type1.OtherSubrs,
 				 (long)value, pos);
 		return (code < 0 ? code : type1_result_callothersubr);
-	    }
+	}
     }
     return code;
 }
@@ -283,7 +283,8 @@ type1_continue_dispatch(gs_type1_state * pcis, const ref * pcref, ref * pos)
 private int
 type1_call_OtherSubr(const gs_type1exec_state * pcxs, int (*cont) (P1(os_ptr)),
 		     const ref * pos)
-{				/* Move the Type 1 interpreter state to the heap. */
+{
+    /* Move the Type 1 interpreter state to the heap. */
     gs_type1exec_state *hpcxs = ialloc_struct(gs_type1exec_state,
 					      &st_gs_type1exec_state,
 					      "type1_call_OtherSubr");
@@ -306,8 +307,7 @@ bbox_getsbw_continue(os_ptr op)
 {
     ref other_subr;
     gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
-
-#define pcis (&pcxs->cis)
+    gs_type1_state *const pcis = &pcxs->cis;
     int code;
 
     code = type1_continue_dispatch(pcis, NULL, &other_subr);
@@ -321,22 +321,20 @@ bbox_getsbw_continue(os_ptr op)
 	    ++esp;
 	    *esp = other_subr;
 	    return o_push_estack;
-	case type1_result_sbw:	/* [h]sbw, done */
-	    {
-		double sbw[4];
-		const gs_font_base *pbfont =
+	case type1_result_sbw: {	/* [h]sbw, done */
+	    double sbw[4];
+	    const gs_font_base *const pbfont =
 		(const gs_font_base *)pcis->pfont;
-		gs_rect bbox;
+	    gs_rect bbox;
 
-		/* Get the metrics before freeing the state. */
-		type1_cis_get_metrics(pcis, sbw);
-		bbox = pcxs->char_bbox;
-		op_type1_free(op);
-		return zchar_set_cache(op, pbfont, op, sbw, sbw + 2, &bbox,
-				       bbox_fill, bbox_stroke);
-	    }
+	    /* Get the metrics before freeing the state. */
+	    type1_cis_get_metrics(pcis, sbw);
+	    bbox = pcxs->char_bbox;
+	    op_type1_free(op);
+	    return zchar_set_cache(op, pbfont, op, sbw, sbw + 2, &bbox,
+				   bbox_fill, bbox_stroke);
+	}
     }
-#undef pcis
 }
 
 /* <font> <code|name> <name> <charstring> <sbx> <sby> %bbox_{fill|stroke} - */
@@ -356,13 +354,10 @@ private int
 bbox_finish(os_ptr op, int (*cont) (P1(os_ptr)))
 {
     gs_font *pfont;
-
-#define pfont1 ((gs_font_type1 *)pfont)
     int code;
     gs_show_enum *penum = op_show_find();
     gs_type1exec_state cxs;	/* stack allocate to avoid sandbars */
-
-#define pcis (&cxs.cis)
+    gs_type1_state *const pcis = &cxs.cis;
     double sbxy[2];
     gs_point sbpt;
     gs_point *psbpt = 0;
@@ -387,37 +382,36 @@ bbox_finish(os_ptr op, int (*cont) (P1(os_ptr)))
     if (penum == 0 || !font_is_type1_compatible(pfont))
 	return_error(e_undefined);
     {
+	gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
 	int lenIV = pfont1->data.lenIV;
 
 	if (lenIV > 0 && r_size(opc) <= lenIV)
 	    return_error(e_invalidfont);
+	check_estack(5);	/* in case we need to do a callout */
+	code = gs_type1_init(pcis, penum, psbpt,
+			     gs_show_in_charpath(penum) != cpm_show,
+			     pfont1->PaintType, pfont1);
+	if (code < 0)
+	    return code;
     }
-    check_estack(5);		/* in case we need to do a callout */
-    code = gs_type1_init(pcis, penum, psbpt,
-			 gs_show_in_charpath(penum) != cpm_show,
-			 pfont1->PaintType, pfont1);
-    if (code < 0)
-	return code;
     opstr = opc;
-  icont:code = type1_continue_dispatch(pcis, opstr, &other_subr);
+  icont:
+    code = type1_continue_dispatch(pcis, opstr, &other_subr);
     switch (code) {
 	case 0:		/* all done */
 	    /* Call the continuation now. */
 	    if (psbpt)
 		pop(2);
-	    return (*cont) (osp);
+	    return (*cont)(osp);
 	case type1_result_callothersubr:	/* unknown OtherSubr */
 	    push_op_estack(cont);	/* call later */
-	    return type1_call_OtherSubr(&cxs, bbox_continue,
-					&other_subr);
+	    return type1_call_OtherSubr(&cxs, bbox_continue, &other_subr);
 	case type1_result_sbw:	/* [h]sbw, just continue */
 	    opstr = 0;
 	    goto icont;
 	default:		/* code < 0, error */
 	    return code;
     }
-#undef pfont1
-#undef pcis
 }
 
 /* Continue from an OtherSubr callout while building the path. */
@@ -426,11 +420,11 @@ type1_callout_dispatch(os_ptr op, int (*cont) (P1(os_ptr)))
 {
     ref other_subr;
     gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
-
-#define pcis (&pcxs->cis)
+    gs_type1_state *const pcis = &pcxs->cis;
     int code;
 
-  icont:code = type1_continue_dispatch(pcis, NULL, &other_subr);
+  icont:
+    code = type1_continue_dispatch(pcis, NULL, &other_subr);
     op = osp;			/* in case z1_push/pop_proc was called */
     switch (code) {
 	case 0:		/* callout done, cont is on e-stack */
@@ -453,7 +447,8 @@ bbox_continue(os_ptr op)
 {
     int code = type1_callout_dispatch(op, bbox_continue);
 
-    if (code == 0) {		/* Assume the OtherSubr(s) didn't mess with the o-stack.... */
+    if (code == 0) {
+	/* Assume the OtherSubr(s) didn't mess with the o-stack.... */
 	int npop = (r_has_type(op, t_string) ? 4 : 6);
 
 	pop(npop);
@@ -484,14 +479,12 @@ private int
 op_type1_cleanup(os_ptr op)
 {
     ifree_object(r_ptr(esp + 2, void), "op_type1_cleanup");
-
     return 0;
 }
 private void
 op_type1_free(os_ptr op)
 {
     ifree_object(r_ptr(esp, void), "op_type1_free");
-
     /*
      * In order to avoid popping from the e-stack and then pushing onto
      * it, which would violate an interpreter invariant, we simply
@@ -512,43 +505,43 @@ nobbox_finish(os_ptr op, gs_type1exec_state * pcxs)
     gs_show_enum *penum = op_show_find();
     gs_font *pfont;
 
-#define pbfont ((gs_font_base *)pfont)
-#define pfont1 ((gs_font_type1 *)pfont)
-
     if ((code = gs_pathbbox(igs, &pcxs->char_bbox)) < 0 ||
 	(code = font_param(op - 3, &pfont)) < 0
 	)
 	return code;
     if (penum == 0 || !font_is_type1_compatible(pfont))
 	return_error(e_undefined);
-    if (pcxs->present == metricsNone) {
-	gs_point endpt;
+    {
+	gs_font_base *const pbfont = (gs_font_base *) pfont;
+	gs_font_type1 *const pfont1 = (gs_font_type1 *) pfont;
 
-	if ((code = gs_currentpoint(igs, &endpt)) < 0)
-	    return code;
-	pcxs->sbw[2] = endpt.x, pcxs->sbw[3] = endpt.y;
-	pcxs->present = metricsSideBearingAndWidth;
+	if (pcxs->present == metricsNone) {
+	    gs_point endpt;
+
+	    if ((code = gs_currentpoint(igs, &endpt)) < 0)
+		return code;
+	    pcxs->sbw[2] = endpt.x, pcxs->sbw[3] = endpt.y;
+	    pcxs->present = metricsSideBearingAndWidth;
+	}
+	/*
+	 * We only need to rebuild the path from scratch if we might
+	 * oversample for anti-aliasing.
+	 */
+	if ((*dev_proc(igs->device, get_alpha_bits))(igs->device, go_text) > 1
+	    ) {
+	    gs_newpath(igs);
+	    gs_moveto(igs, 0.0, 0.0);
+	    code = gs_type1_init(&pcxs->cis, penum, NULL,
+				 gs_show_in_charpath(penum) != cpm_show,
+				 pfont1->PaintType, pfont1);
+	    if (code < 0)
+		return code;
+	    return type1exec_bbox(op, pcxs, pfont);
+	}
+	return zchar_set_cache(op, pbfont, op, NULL, pcxs->sbw + 2,
+			       &pcxs->char_bbox,
+			       nobbox_fill, nobbox_stroke);
     }
-    /*
-     * We only need to rebuild the path from scratch if we might
-     * oversample for anti-aliasing.
-     */
-    if ((*dev_proc(igs->device, get_alpha_bits))
-	(igs->device, go_text) > 1
-	) {
-	gs_newpath(igs);
-	gs_moveto(igs, 0.0, 0.0);
-	code = gs_type1_init(&pcxs->cis, penum, NULL,
-			     gs_show_in_charpath(penum) != cpm_show,
-			     pfont1->PaintType, pfont1);
-	if (code < 0)
-	    return code;
-	return type1exec_bbox(op, pcxs, pfont);
-    }
-    return zchar_set_cache(op, pbfont, op, NULL, pcxs->sbw + 2,
-			   &pcxs->char_bbox,
-			   nobbox_fill, nobbox_stroke);
-#undef pbfont
 }
 /* Finish by popping the operands and filling or stroking. */
 private int
@@ -601,10 +594,35 @@ const op_def zchar1_op_defs[] =
 
 /* ------ Auxiliary procedures for type 1 fonts ------ */
 
-/* These are exported for zfont1.c. */
+private int
+z1_charstring_data(gs_font_type1 * pfont, const ref * pgref,
+		   gs_const_string * pstr)
+{
+    ref *pcstr;
 
-int
-z1_subr_proc(gs_font_type1 * pfont, int index, bool global,
+    if (dict_find(&pfont_data(pfont)->CharStrings, pgref, &pcstr) <= 0)
+	return_error(e_undefined);
+    check_type_only(*pcstr, t_string);
+    pstr->data = pcstr->value.const_bytes;
+    pstr->size = r_size(pcstr);
+    return 0;
+
+}
+
+private int
+z1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_const_string * pstr)
+{
+    ref gref;
+
+    if (glyph < gs_min_cid_glyph)
+	name_index_ref(glyph, &gref);
+    else
+	make_int(&gref, glyph - gs_min_cid_glyph);
+    return z1_charstring_data(pfont, &gref, pstr);
+}
+
+private int
+z1_subr_data(gs_font_type1 * pfont, int index, bool global,
 	     gs_const_string * pstr)
 {
     const font_data *pfdata = pfont_data(pfont);
@@ -622,26 +640,46 @@ z1_subr_proc(gs_font_type1 * pfont, int index, bool global,
     return 0;
 }
 
-int
-z1_seac_proc(gs_font_type1 * pfont, int index, gs_const_string * pstr)
+private int
+z1_seac_data(gs_font_type1 * pfont, int index, gs_const_string * pstr)
 {
-    const font_data *pfdata = pfont_data(pfont);
-    ref *pcstr;
     ref enc_entry;
     int code = array_get(&StandardEncoding, (long)index, &enc_entry);
 
     if (code < 0)
 	return code;
-    if (dict_find(&pfdata->CharStrings, &enc_entry, &pcstr) <= 0)
-	return_error(e_undefined);
-    check_type_only(*pcstr, t_string);
-    pstr->data = pcstr->value.const_bytes;
-    pstr->size = r_size(pcstr);
+    return z1_charstring_data(pfont, &enc_entry, pstr);
+}
+
+private int
+z1_next_glyph(gs_font_type1 * pfont, int *pindex, gs_glyph * pglyph)
+{
+    ref *pcsdict = &pfont_data(pfont)->CharStrings;
+    int index = *pindex - 1;
+    ref elt[2];
+
+    if (index < 0)
+	index = dict_first(pcsdict);
+next:
+    index = dict_next(pcsdict, index, elt);
+    *pindex = index + 1;
+    if (index >= 0) {
+	switch (r_type(elt)) {
+	    case t_integer:
+		*pglyph = gs_min_cid_glyph + elt[0].value.intval;
+		break;
+	    case t_name:
+		*pglyph = name_index(elt);
+		break;
+	    default:		/* can't handle it */
+		goto next;
+	}
+    }
     return 0;
 }
 
-int
-z1_push_proc(gs_font_type1 * ignore, const fixed * pf, int count)
+private int
+z1_push(gs_font_type1 * ignore, const fixed * pf, int count)
 {
     const fixed *p = pf + count - 1;
     int i;
@@ -654,8 +692,8 @@ z1_push_proc(gs_font_type1 * ignore, const fixed * pf, int count)
     return 0;
 }
 
-int
-z1_pop_proc(gs_font_type1 * ignore, fixed * pf)
+private int
+z1_pop(gs_font_type1 * ignore, fixed * pf)
 {
     double val;
     int code = real_param(osp, &val);
@@ -666,3 +704,10 @@ z1_pop_proc(gs_font_type1 * ignore, fixed * pf)
     osp--;
     return 0;
 }
+
+/* Define the Type 1 procedure vector. */
+const gs_type1_data_procs_t z1_data_procs =
+{
+    z1_glyph_data, z1_subr_data, z1_seac_data, z1_next_glyph,
+    z1_push, z1_pop
+};

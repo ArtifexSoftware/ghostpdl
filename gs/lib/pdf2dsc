@@ -1,4 +1,5 @@
 #! /bin/sh
+# Id: pdf2dsc 
 
 # psf2dsc: generates an index of a PDF file.
 #

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxpdash.c */
+/*Id: gxpdash.c  */
 /* Dash expansion for paths */
 #include "math_.h"
 #include "gx.h"
@@ -33,22 +33,19 @@ private int subpath_expand_dashes(P4(const subpath *, gx_path *,
 				     const gs_imager_state *,
 				     const gx_dash_params *));
 int
-gx_path_expand_dashes(const gx_path * ppath_old, gx_path * ppath,
-		      const gs_imager_state * pis)
+gx_path_add_dash_expansion(const gx_path * ppath_old, gx_path * ppath,
+			   const gs_imager_state * pis)
 {
     const subpath *psub;
     const gx_dash_params *dash = &gs_currentlineparams(pis)->dash;
     int code = 0;
 
     if (dash->pattern_size == 0)
-	return gx_path_copy(ppath_old, ppath, true);
-    gx_path_init(ppath, ppath_old->memory);
+	return gx_path_copy(ppath_old, ppath);
     for (psub = ppath_old->first_subpath; psub != 0 && code >= 0;
 	 psub = (const subpath *)psub->last->next
 	)
 	code = subpath_expand_dashes(psub, ppath, pis, dash);
-    if (code < 0)
-	gx_path_release(ppath);
     return code;
 }
 

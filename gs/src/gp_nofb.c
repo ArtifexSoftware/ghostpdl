@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_nofb.c */
+/*Id: gp_nofb.c  */
 /* Dummy routines for Ghostscript platforms with no frame buffer management */
 #include "gx.h"
 #include "gp.h"

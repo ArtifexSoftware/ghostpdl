@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* sbcp.c */
+/*Id: sbcp.c  */
 /* BCP and TBCP filters */
 #include "stdio_.h"
 #include "strimpl.h"
@@ -40,7 +40,7 @@
 /* Process a buffer */
 private int
 s_xBCPE_process(stream_state * st, stream_cursor_read * pr,
-	      stream_cursor_write * pw, bool last, const byte _ds * escaped)
+		stream_cursor_write * pw, bool last, const byte * escaped)
 {
     const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
@@ -107,12 +107,12 @@ const stream_template s_TBCPE_template =
 
 private_st_BCPD_state();
 
-#define ss ((stream_BCPD_state *)st)
-
 /* Initialize the state */
 private int
 s_BCPD_init(stream_state * st)
 {
+    stream_BCPD_state *const ss = (stream_BCPD_state *) st;
+
     ss->escaped = 0;
     ss->matched = ss->copy_count = 0;
     return 0;
@@ -123,6 +123,7 @@ private int
 s_xBCPD_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last, bool tagged)
 {
+    stream_BCPD_state *const ss = (stream_BCPD_state *) st;
     const byte *p = pr->ptr;
     const byte *rlimit = pr->limit;
     byte *q = pw->ptr;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* srle.c */
+/*Id: srle.c  */
 /* RunLengthEncode filter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -27,12 +27,12 @@
 
 private_st_RLE_state();
 
-#define ss ((stream_RLE_state *)st)
-
 /* Set defaults */
 private void
 s_RLE_set_defaults(stream_state * st)
 {
+    stream_RLE_state *const ss = (stream_RLE_state *) st;
+
     s_RLE_set_defaults_inline(ss);
 }
 
@@ -40,6 +40,8 @@ s_RLE_set_defaults(stream_state * st)
 private int
 s_RLE_init(stream_state * st)
 {
+    stream_RLE_state *const ss = (stream_RLE_state *) st;
+
     return s_RLE_init_inline(ss);
 }
 
@@ -48,6 +50,7 @@ private int
 s_RLE_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
+    stream_RLE_state *const ss = (stream_RLE_state *) st;
     register const byte *p = pr->ptr;
     register byte *q = pw->ptr;
     const byte *rlimit = pr->limit;
@@ -186,10 +189,8 @@ s_RLE_process(stream_state * st, stream_cursor_read * pr,
     return status;
 }
 
-#undef ss
-
 /* Stream template */
 const stream_template s_RLE_template =
-{&st_RLE_state, s_RLE_init, s_RLE_process, 128, 2, NULL,
+{&st_RLE_state, s_RLE_init, s_RLE_process, 129, 2, NULL,
  s_RLE_set_defaults, s_RLE_init
 };

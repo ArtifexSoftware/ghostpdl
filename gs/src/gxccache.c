@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxccache.c */
+/*Id: gxccache.c  */
 /* Fast case character cache routines for Ghostscript library */
 #include "gx.h"
 #include "gpcheck.h"
@@ -235,12 +235,12 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 			      "[K]bits");
 	else
 	    dputs("[K]no bits\n");
-	dprintf3("[K]copying 0x%lx, offset=(%g,%g)\n", (ulong) cc,
-		 fixed2float(-cc->offset.x),
-		 fixed2float(-cc->offset.y));
-	dprintf6("   at (%g,%g)+(%d,%d)->(%d,%d)\n",
-		 fixed2float(pt.x), fixed2float(pt.y),
-		 penum->ftx, penum->fty, x, y);
+	dlprintf3("[K]copying 0x%lx, offset=(%g,%g)\n", (ulong) cc,
+		  fixed2float(-cc->offset.x),
+		  fixed2float(-cc->offset.y));
+	dlprintf6("   at (%g,%g)+(%d,%d)->(%d,%d)\n",
+		  fixed2float(pt.x), fixed2float(pt.y),
+		  penum->ftx, penum->fty, x, y);
     }
 #endif
     if ((x < penum->ibox.p.x || x + w > penum->ibox.q.x ||
@@ -248,11 +248,16 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	dev != (gx_device *) & cdev	/* might be 2nd time around */
 	) {			/* Check for the character falling entirely outside */
 	/* the clipping region. */
+	gx_clip_path *pcpath;
+
 	if (x >= penum->obox.q.x || x + w <= penum->obox.p.x ||
 	    y >= penum->obox.q.y || y + h <= penum->obox.p.y
 	    )
 	    return 0;		/* nothing to do */
-	gx_make_clip_device(&cdev, &cdev, &pgs->clip_path->list);
+	code = gx_effective_clip_path(pgs, &pcpath);
+	if (code < 0)
+	    return code;
+	gx_make_clip_device(&cdev, &cdev, gx_cpath_list(pcpath));
 	cdev.target = dev;
 	dev = (gx_device *) & cdev;
 	(*dev_proc(dev, open_device)) (dev);
@@ -312,14 +317,19 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
      */
     bits = cc_bits(cc);
     depth = cc_depth(cc);
-    if (orig_dev->std_procs.fill_mask != gx_default_fill_mask ||
+    if (dev_proc(orig_dev, fill_mask) != gx_default_fill_mask ||
 	!lop_no_S_is_T(pgs->log_op)
 	) {
-	code = (*dev_proc(orig_dev, fill_mask))
-	    (orig_dev, bits, 0, cc_raster(cc), cc->id,
-	     x, y, w, h, pdevc, depth, pgs->log_op, pgs->clip_path);
-	if (code >= 0)
-	    goto done;
+	gx_clip_path *pcpath;
+
+	code = gx_effective_clip_path(pgs, &pcpath);
+	if (code >= 0) {
+	    code = (*dev_proc(orig_dev, fill_mask))
+		(orig_dev, bits, 0, cc_raster(cc), cc->id,
+		 x, y, w, h, pdevc, depth, pgs->log_op, pcpath);
+	    if (code >= 0)
+		goto done;
+	}
     } else if (gs_color_writes_pure(pgs)) {
 	gx_color_index color = pdevc->colors.pure;
 
@@ -346,8 +356,9 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	    return 1;		/* VMerror, but recoverable */
 
     } {				/* Use imagemask to render the character. */
-	gs_image_enum *pie = gs_image_enum_alloc(&gs_memory_default,
-						 "image_char(image_enum)");
+	gs_memory_t *mem = &gs_memory_default;
+	gs_image_enum *pie =
+	    gs_image_enum_alloc(mem, "image_char(image_enum)");
 	gs_image_t image;
 	int iy;
 	uint used;
@@ -380,8 +391,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 					 (w + 7) >> 3, &used);
 		gs_image_cleanup(pie);
 	}
-	gs_free_object(&gs_memory_default, pie,
-		       "image_char(image_enum)");
+	gs_free_object(mem, pie, "image_char(image_enum)");
     }
   done:if (bits != cc_bits(cc))
 	gs_free_object(&gs_memory_default, bits, "compress_alpha_bits");

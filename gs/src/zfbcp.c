@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zfbcp.c */
+/*Id: zfbcp.c  */
 /* (T)BCP filter creation */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "ialloc.h"
@@ -42,7 +41,7 @@ no_bcp_request_status(stream_state * st)
 }
 
 /* <source> BCPEncode/filter <file> */
-/* <source> <dict_ignored> BCPEncode/filter <file> */
+/* <source> <dict> BCPEncode/filter <file> */
 private int
 zBCPE(os_ptr op)
 {
@@ -50,7 +49,7 @@ zBCPE(os_ptr op)
 }
 
 /* <target> BCPDecode/filter <file> */
-/* <target> <dict_ignored> BCPDecode/filter <file> */
+/* <target> <dict> BCPDecode/filter <file> */
 private int
 zBCPD(os_ptr op)
 {
@@ -58,12 +57,11 @@ zBCPD(os_ptr op)
 
     state.signal_interrupt = no_bcp_signal_interrupt;
     state.request_status = no_bcp_request_status;
-    return filter_read(op, (r_has_type(op, t_dictionary) ? 1 : 0),
-		       &s_BCPD_template, (stream_state *) & state, 0);
+    return filter_read(op, 0, &s_BCPD_template, (stream_state *) & state, 0);
 }
 
 /* <source> TBCPEncode/filter <file> */
-/* <source> <dict_ignored> TBCPEncode/filter <file> */
+/* <source> <dict> TBCPEncode/filter <file> */
 private int
 zTBCPE(os_ptr op)
 {
@@ -71,7 +69,7 @@ zTBCPE(os_ptr op)
 }
 
 /* <target> TBCPDecode/filter <file> */
-/* <target> <dict_ignored> TBCPDecode/filter <file> */
+/* <target> <dict> TBCPDecode/filter <file> */
 private int
 zTBCPD(os_ptr op)
 {
@@ -79,8 +77,7 @@ zTBCPD(os_ptr op)
 
     state.signal_interrupt = no_bcp_signal_interrupt;
     state.request_status = no_bcp_request_status;
-    return filter_read(op, (r_has_type(op, t_dictionary) ? 1 : 0),
-		       &s_TBCPD_template, (stream_state *) & state, 0);
+    return filter_read(op, 0, &s_TBCPD_template, (stream_state *)&state, 0);
 }
 
 /* ------ Initialization procedure ------ */

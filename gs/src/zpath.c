@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zpath.c */
+/*Id: zpath.c  */
 /* Basic path operators */
 #include "math_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "igstate.h"
 #include "gsmatrix.h"
@@ -28,9 +27,9 @@
 #include "store.h"
 
 /* Forward references */
-private int near common_to(P2(os_ptr,
-			      int (*)(P3(gs_state *, floatp, floatp))));
-private int near common_curve(P2(os_ptr,
+private int common_to(P2(os_ptr,
+			 int (*)(P3(gs_state *, floatp, floatp))));
+private int common_curve(P2(os_ptr,
   int (*)(P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp))));
 
 /* - newpath - */
@@ -84,14 +83,14 @@ zrlineto(os_ptr op)
 }
 
 /* Common code for [r](move/line)to */
-private int near
-common_to(os_ptr op, int (*add_proc) (P3(gs_state *, floatp, floatp)))
+private int
+common_to(os_ptr op, int (*add_proc)(P3(gs_state *, floatp, floatp)))
 {
     double opxy[2];
     int code;
 
     if ((code = num_params(op, 2, opxy)) < 0 ||
-	(code = (*add_proc) (igs, opxy[0], opxy[1])) < 0
+	(code = (*add_proc)(igs, opxy[0], opxy[1])) < 0
 	)
 	return code;
     pop(2);
@@ -113,16 +112,16 @@ zrcurveto(register os_ptr op)
 }
 
 /* Common code for [r]curveto */
-private int near
+private int
 common_curve(os_ptr op,
-	     int (*add_proc) (P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp)))
+	     int (*add_proc)(P7(gs_state *, floatp, floatp, floatp, floatp, floatp, floatp)))
 {
     double opxy[6];
     int code;
 
     if ((code = num_params(op, 6, opxy)) < 0)
 	return code;
-    code = (*add_proc) (igs, opxy[0], opxy[1], opxy[2], opxy[3], opxy[4], opxy[5]);
+    code = (*add_proc)(igs, opxy[0], opxy[1], opxy[2], opxy[3], opxy[4], opxy[5]);
     if (code >= 0)
 	pop(6);
     return code;

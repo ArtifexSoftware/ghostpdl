@@ -1,72 +1,74 @@
-'\" t
-.\"- -*- nroff -*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-.\"
-.\"This file describes version 5.14 of Aladdin Ghostscript.
-.\"
-.\"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+.\" Id: gs.1 
+.TH GS 1 "18 July 1998" 5.27 Ghostscript \" -*- nroff -*-
+.SH NAME
+gs \- Ghostscript (PostScript and PDF language interpreter and previewer)
+.SH SYNOPSIS
+\fBgs\fR [ \fIoptions\fR ] [ \fIfiles\fR ] ... \fB(Unix, VMS)\fR
+.br
+\fBgswin32\fR [ \fIoptions\fR ] [ \fIfiles\fR ] ... \fB(MS Windows)\fR
+.br
+\fBgswin32c\fR [ \fIoptions\fR ] [ \fIfiles\fR ] ... \fB(MS Windows)\fR
+.br
+\fBgs386\fR [ \fIoptions\fR ] [ \fIfiles\fR ] ... \fB(DOS for PC)\fR
+.br
+\fBgsos2\fR [ \fIoptions\fR ] [ \fIfiles\fR ] ... \fB(OS/2)\fR
 .de TQ
 .br
 .ns
 .TP \\$1
 ..
-.TH GS 1 "16 June 1998"
-.SH NAME 
-gs \- Aladdin Ghostscript interpreter/previewer
-.SH SYNOPSIS
-.B gs
-[
-.I options
-] [
-.I files
-] ...
-.br
 .SH DESCRIPTION
-Ghostscript is an implementation of Adobe Systems'
-PostScript (tm) and Portable Document Format (PDF) languages.
-.I Gs
-reads
-.I files
-in sequence and executes them as Ghostscript programs.
-After doing this, it reads further input from the standard input stream
-(normally the keyboard).  Each line is interpreted separately.
-To exit from the interpreter, enter the `quit' command.
-The interpreter also exits gracefully if it encounters end-of-file.
-Typing the interrupt character (e.g. Control-C) is also safe.
+The \fBgs\fR (\fBgswin32\fR, \fBgswin32c\fR, \fBgs386\fR, \fBgsos2\fR)
+command invokes \fBGhostscript\fR, an interpreter of Adobe Systems'
+\fBPostScript\fR(tm) and \fBPortable Document Format\fR (PDF) languages.
+This document describes version 5.27 of Ghostscript.  \fBgs\fR reads "files"
+in sequence and executes them as Ghostscript programs.  After doing this, it
+reads further input from the standard input stream (normally the keyboard),
+interpreting each line separately.  The interpreter quits gracefully when it
+encounters the "quit" command (either in a file or from the keyboard), at
+end-of-file, or at an interrupt signal (such as Control-C at the keyboard).
 .PP
-The interpreter recognizes several switches described below, which may appear
-anywhere in the command line and apply to all files thereafter.
+The interpreter recognizes several switches described below, which may
+appear anywhere in the command line and apply to all files thereafter.
+Invoking Ghostscript with the \fB\-h\fR or \fB\-?\fR switch produces a
+message which shows several useful switches, all the devices known to
+that executable, and the search path for fonts; on Unix it also shows the
+location of detailed documentation.
 .PP
-You can get a help message by invoking Ghostscript with the
-.B \-h
-or
-.B \-?
-option.  This message also lists the available devices.
+Ghostscript may be built able to use many different output devices; to see
+which devices your executable can use, run "\fBgs -h\fR".  Ghostscript
+normally opens the first one and directs output to it.  To specify device
+"abcxyz" as the initial output device, include the switch
 .PP
-Ghostscript may be built with multiple output devices.  Ghostscript
-normally opens the first one and directs output to it.  To use device xyz
-as the initial output device, include the switch
 .nf
-	\-sDEVICE=xyz
+	\-sDEVICE=abcxyz
 .fi
-in the command line.  Note that this switch must precede the first .ps
-file, and only its first invocation has any effect.  For example, for
-printer output in a normal configuration that includes an Epson printer
-driver, you might use the shell command
+.PP
+in the command line.  Note that this switch must precede the first mention
+of a ".ps" file, and only its first use has any effect.  For example,
+for output to an Epson printer driver, you might use the command
+.PP
 .nf
 	gs \-sDEVICE=epson myfile.ps
 .fi
+.PP
 instead of just
+.PP
 .nf
 	gs myfile.ps
 .fi
+.PP
 Alternatively, you can type
+.PP
 .nf
 	(epson) selectdevice
 	(myfile.ps) run
 .fi
+.PP
 All output then goes to the printer instead of the display until further
-notice.  You can switch devices at any time by using the selectdevice
-procedure, e.g.,
+notice.  You can switch devices at any time by using the "selectdevice"
+procedure in the PostScript program stream, e.g.,
+.PP
 .nf
 	(vga) selectdevice
 .fi
@@ -74,9 +76,12 @@ or
 .nf
 	(epson) selectdevice
 .fi
-As yet a third alternative, you can define an environment variable
-GS_DEVICE as the desired default device name.  The order of precedence for
-these alternatives, highest to lowest, is:
+.PP
+Finally, you can specify a default device in the environment variable
+\fBGS_DEVICE\fR.  The order of precedence for these alternatives from
+highest to lowest (Ghostscript uses the device defined highest in the list)
+is:
+.PP
 .nf
 	selectdevice
 	(command line)
@@ -85,135 +90,151 @@ these alternatives, highest to lowest, is:
 .fi
 .PP
 To select the density on a printer, use
+.PP
 .nf
 	gs \-sDEVICE=<device> \-r<xres>x<yres>
 .fi
+.PP
 For example, on a 9-pin Epson-compatible printer, you can get the
 lowest-density (fastest) mode with
+.PP
 .nf
 	gs \-sDEVICE=epson \-r60x72
 .fi
+.PP
 and the highest-density mode with
+.PP
 .nf
 	gs \-sDEVICE=epson \-r240x72.
 .fi
 .PP
 If you select a printer as the output device, Ghostscript also allows you
-to control where the device sends its output.  Normally, output goes
-directly to a scratch file on Unix systems.
-To send the output to a series of files foo1.xyz,
-foo2.xyz, ..., use the switch
+to control where the device sends its output \-\- on Unix systems, usually
+directly to a temporary file.  To send the output to a series
+of files "foo1.xyz, foo2.xyz, ...", use the switch
+.PP
 .nf
 	\-sOutputFile=foo%d.xyz
 .fi
-The %d is a printf format specification; you can use
-other formats like %02d.  Each file will receive one page of output.
-Alternatively, to send the output to a single file foo.xyz, with all
-the pages concatenated, use the switch
+.PP
+The "%d" is a printf format specification; you can use other formats
+like "%02d".  Each file receives one page of output, and the files are
+numbered in sequence.  Alternatively, to send the output to a single file
+"foo.xyz" with all the pages concatenated, use the switch
+.PP
 .nf
 	\-sOutputFile=foo.xyz
 .fi
 .PP
-On Unix systems, you can send the output directly to a pipe.  For
-example, to pipe the output to the command `lpr' (which, on many Unix
-systems, is the command that spools output for a printer), use the
-switch
+On Unix systems you can send the output directly to a pipe.  For example,
+to pipe the output to the "\fBlpr\fR" command (which, on many Unix systems,
+sends output to a printer), use the switch
+.PP
 .nf
 	\-sOutputFile=\\|lpr
 .fi
-You can also send output to stdout for piping with the switch
+.PP
+You can also send output to standard output for piping with the switch
+.PP
 .nf
 	\-sOutputFile=\-
 .fi
-In this case you must also use the \-q switch, to prevent Ghostscript from
+.PP
+In this case you must also use the \fB\-q\fR switch, to prevent Ghostscript from
 writing messages to stdout.
 .PP
-To find out what devices are available, type
+To find what devices are available, invoke Ghostscript and type
+.PP
 .nf
 	devicenames ==
 .fi
-after starting up Ghostscript.
-Alternatively, you can use the \-h or \-? switch in the command line;
-the help message also lists the available devices.
+.PP
+at the command line.  Alternatively, you can invoke Ghostscript with the
+\fB\-h\fR or \fB\-?\fR switch on the command line; see above for the help
+available that way.
 .PP
 To select a different paper size, use the command line switch
+.PP
 .nf
-        -sPAPERSIZE=a_known_paper_size
+	-sPAPERSIZE=a_known_paper_size
 .fi
 e.g.,
 .nf
-        -sPAPERSIZE=a4
+	-sPAPERSIZE=a4
 .fi
 or
 .nf
-        -sPAPERSIZE=legal
+	-sPAPERSIZE=legal
 .fi
-As of this printing, the known paper sizes, defined in gs_statd.ps, are:
+.PP
+As of this printing, the known paper sizes, defined in "gs_statd.ps", are:
 .TS
 tab(>);
 l l l l l.
 .sp
-PAPERSIZE>X">Y">X cm>Y cm
+PAPERSIZE>X inches>Y inches>X cm>Y cm
 _
-11x17>11">17">27.94>43.18
-a0>33.0556">46.7778">83.9611>118.816
-a10>1.02778">1.45833">2.61056>3.70417
-a1>23.3889">33.0556">59.4078>83.9611
-a2>16.5278">23.3889">41.9806>59.4078
-a3>11.6944">16.5278">29.7039>41.9806
-a4>8.26389">11.6944">20.9903>29.7039
-a5>5.84722">8.26389">14.8519>20.9903
-a6>4.125">5.84722">10.4775>14.8519
-a7>2.91667">4.125">7.40833>10.4775
-a8>2.05556">2.91667">5.22111>7.40833
-a9>1.45833">2.05556">3.70417>5.22111
-archA>9">12">22.86>30.48
-archB>12">18">30.48>45.72
-archC>18">24">45.72>60.96
-archD>24">36">60.96>91.44
-archE>36">48">91.44>121.92
-b0>39.3889">55.6667">100.048>141.393
-b1>27.8333">39.3889">70.6967>100.048
-b2>19.6944">27.8333">50.0239>70.6967
-b3>13.9167">19.6944">35.3483>50.0239
-b4>9.84722">13.9167">25.0119>35.3483
-b5>6.95833">9.84722">17.6742>25.0119
-flsa>8.5">13">21.59>33.02
-flse>8.5">13">21.59>33.02
-halfletter>5.5">8.5">13.97>21.59
-ledger>17">11">43.18>27.94
-legal>8.5">14">21.59>35.56
-letter>8.5">11">21.59>27.94
-note>7.5">10">19.05>25.4
+a0>33.0556>46.7778>83.9611>118.816
+a1>23.3889>33.0556>59.4078>83.9611
+a2>16.5278>23.3889>41.9806>59.4078
+a3>11.6944>16.5278>29.7039>41.9806
+a4>8.26389>11.6944>20.9903>29.7039
+a5>5.84722>8.26389>14.8519>20.9903
+a6>4.125>5.84722>10.4775>14.8519
+a7>2.91667>4.125>7.40833>10.4775
+a8>2.05556>2.91667>5.22111>7.40833
+a9>1.45833>2.05556>3.70417>5.22111
+a10>1.02778>1.45833>2.61056>3.70417
+b0>39.3889>55.6667>100.048>141.393
+b1>27.8333>39.3889>70.6967>100.048
+b2>19.6944>27.8333>50.0239>70.6967
+b3>13.9167>19.6944>35.3483>50.0239
+b4>9.84722>13.9167>25.0119>35.3483
+b5>6.95833>9.84722>17.6742>25.0119
+archA>9>12>22.86>30.48
+archB>12>18>30.48>45.72
+archC>18>24>45.72>60.96
+archD>24>36>60.96>91.44
+archE>36>48>91.44>121.92
+flsa>8.5>13>21.59>33.02
+flse>8.5>13>21.59>33.02
+halfletter>5.5>8.5>13.97>21.59
+note>7.5>10>19.05>25.4
+letter>8.5>11>21.59>27.94
+legal>8.5>14>21.59>35.56
+11x17>11>17>27.94>43.18
+ledger>17>11>43.18>27.94
 .TE
 .SH "INITIALIZATION FILES"
-When looking for the initialization files (gs_*.ps), the files related
-to fonts, or the file for the `run' operator, Ghostscript first tries
-opening the file with the name as given (i.e., using the current
-working directory if none is specified).  If this fails, and the file
-name doesn't specify an explicit directory or drive (i.e., doesn't
-begin with `/' on Unix systems), Ghostscript will try directories in the
-following order:
+When looking for the initialization files "gs_*.ps", the files
+related to fonts, or the file for the "run" operator, Ghostscript
+first tries to open the file with the name as given, using the current
+working directory if no directory is specified.  If this fails, and the
+file name doesn't specify an explicit directory or drive (i.e., doesn't
+contain "/" on Unix systems or "\\" on DOS systems), Ghostscript tries
+directories in this order:
 .TP
 1.
-The directory/ies specified by the \-I switch(es) in the command
+the directories specified by the \fB\-I\fR switches in the command
 line (see below), if any;
 .TP
 2.
-The directory/ies specified by the GS_LIB environment variable,
+the directories specified by the \fBGS_LIB\fR environment variable,
 if any;
 .TP
 3.
-The directory/ies specified by the GS_LIB_DEFAULT macro in the
-Ghostscript makefile (which has been set to
-"/usr/local/share/ghostscript/M.N:/usr/local/share/ghostscript/fonts"
-where M.N is the Ghostscript version number).
+the directories specified by the \fBGS_LIB_DEFAULT\fR macro in the
+Ghostscript makefile when the executable was built.  When \fBgs\fR is built
+on Unix, \fBGS_LIB_DEFAULT\fR is usually
+"/usr/local/share/ghostscript/#.##:/usr/local/share/ghostscript/fonts"
+where "#.##" represents the Ghostscript version number.
 .PP
-Each of these (GS_LIB_DEFAULT, GS_LIB, and \-I parameter) may be either
-a single directory, or a list of directories separated by a `:'.
+Each of these (\fBGS_LIB_DEFAULT\fR, \fBGS_LIB\fR, and \fB\-I\fR parameter)
+may be either a single directory or a list of directories separated by
+":".
 .SH X RESOURCES
 Ghostscript looks for the following resources under the program name
-`Ghostscript':
+"Ghostscript":
 .TP
 .B borderWidth
 The border width in pixels (default = 1).
@@ -221,26 +242,25 @@ The border width in pixels (default = 1).
 .B borderColor
 The name of the border color (default = black).
 .TP
-.B geometry 
+.B geometry
 The window size and placement, WxH+X+Y (default is NULL).
 .TP
-.B xResolution 
-The number of x pixels per inch (default is computed from WidthOfScreen
-and WidthMMOfScreen).
+.B xResolution
+The number of x pixels per inch (default is computed from \fBWidthOfScreen\fR
+and \fBWidthMMOfScreen\fR).
 .TP
 .B yResolution
 The number of y pixels per inch (default is computed from
-HeightOfScreen and HeightMMOfScreen).
+\fBHeightOfScreen\fR and \fBHeightMMOfScreen\fR).
 .TP
 .B useBackingPixmap
 Determines whether backing store is to be used for saving display window
 (default = true).
 .PP
-See the file `use.txt' for a more complete list of resources.
-.PP
-To set these resources, put them in a file (such as ~/.Xresources) in the
+See the usage document for a more complete list of resources.
+To set these resources, put them in a file such as "~/.Xresources" in the
 following form:
-.sp
+.PP
 .nf
 	Ghostscript*geometry:	612x792\-0+0
 	Ghostscript*xResolution: 72
@@ -248,85 +268,78 @@ following form:
 .fi
 .PP
 Then load the defaults into the X server:
-.sp
+.PP
 .nf
 	% xrdb \-merge ~/.Xresources
 .fi
 .SH OPTIONS
 .TP
 .BI \-\- " filename arg1 ..."
-Takes the next argument as a file name as usual, but takes all
-remaining arguments (even if they have the syntactic form of switches)
-and defines the name ARGUMENTS in userdict (not systemdict) as an
-array of those strings, 
-.I before
-running the file.  When Ghostscript
+Takes the next argument as a file name as usual, but takes all remaining
+arguments (even if they have the syntactic form of switches) and defines
+the name "ARGUMENTS" in "userdict" (not "systemdict") as an
+array of those strings, \fBbefore\fR running the file.  When Ghostscript
 finishes executing the file, it exits back to the shell.
 .TP
 .BI \-D name = token
 .TQ
 .BI \-d name = token
-Define a name in systemdict with the given definition.  The token must
-be exactly one token (as defined by the `token' operator) and must not
+Define a name in "systemdict" with the given definition.  The token must
+be exactly one token (as defined by the "token" operator) and must not
 contain any whitespace.
 .TP
 .BI \-D name
 .TQ
-.BI \-d name 
-Define a name in systemdict with value=null.
+.BI \-d name
+Define a name in "systemdict" with value=null.
 .TP
 .BI \-S name = string
 .TQ
 .BI \-s name = string
-Define a name in systemdict with a given string as value.  This is
-different from \-d.  For example, \-dname=35 is equivalent to the
+Define a name in "systemdict" with a given string as value.  This is
+different from \fB\-d\fR.  For example, \fB\-dname=35\fR is equivalent to the
 program fragment
 .br
-			/name 35 def 
+	/name 35 def
 .br
-whereas 
-\-s name=35 is equivalent to
+whereas \fB\-sname=35\fR is equivalent to
 .br
-			/name (35) def
+	/name (35) def
 .TP
 .B \-q
-Quiet startup \- suppress normal startup messages, and also do the
-equivalent of \-dQUIET.
+Quiet startup: suppress normal startup messages, and also do the
+equivalent of \fB\-dQUIET\fR.
 .TP
 .BI \-g number1 x number2
-Equivalent to
-.BI \-dDEVICEWIDTH= number1 
-and
-.BI \-dDEVICEHEIGHT= number2 .
-This is for the benefit of devices (such as X11 windows)
-that require (or allow) width and height to be specified.
+Equivalent to \fB\-dDEVICEWIDTH=\fR\fInumber1\fR and
+\fB\-dDEVICEHEIGHT=\fR\fInumber2\fR.  This is for the benefit of devices
+(such as X11 windows) that require (or allow) width and height to be
+specified.
 .TP
 .BI \-r number
 .TQ
 .BI \-r number1 x number2
-Equivalent to
-.BI \-dDEVICEXRESOLUTION= number1 
-and
-.BI \-dDEVICEYRESOLUTION= number2 .
-This is for the benefit of devices (such as printers)
-that support multiple X and Y resolutions.
-(If only one number is given, it is used for both X and Y resolutions.)
+Equivalent to \fB\-dDEVICEXRESOLUTION=\fR\fInumber1\fR and
+\fB\-dDEVICEYRESOLUTION=\fR\fInumber2\fR.  This is for the benefit of
+devices such as printers that support multiple X and Y resolutions.  If
+only one number is given, it is used for both X and Y resolutions.
 .TP
 .BI \-I directories
 Adds the designated list of directories at the head of the
 search path for library files.
 .TP
 .B \-
-This is not really a switch.  It indicates to Ghostscript that the
-standard input is coming from a file or a pipe.  Ghostscript reads
-from stdin until reaching end-of-file, executing it like any other
-file, and then continues processing the command line.  At the end of
-the command line, Ghostscript exits rather than going into its
-interactive mode.
+This is not really a switch, but indicates to Ghostscript that standard
+input is coming from a file or a pipe and not interactively from the
+command line.  Ghostscript reads from stdin until it reaches end-of-file,
+executing it like any other file, and then continues with processing the
+command line.  When the command line has been entirely processed,
+Ghostscript exits rather than going into its interactive mode.
 .PP
-Note that gs_init.ps makes systemdict read-only, so the values of names
-defined with \-D/d/S/s cannot be changed (although, of course, they can be
-superseded by definitions in userdict or other dictionaries.)
+Note that "gs_init.ps" makes "systemdict" read-only, so the values
+of names defined with \fB\-D\fR, \fB\-d\fR, \fB\-S\fR, or \fB\-s\fR cannot
+be changed (although, of course, they can be superseded by definitions in
+"userdict" or other dictionaries.)
 .SH "SPECIAL NAMES"
 .TP
 .B \-dDISKFONTS
@@ -339,16 +352,15 @@ fonts into RAM, at the expense of slower rendering.
 Disables character caching.  Only useful for debugging.
 .TP
 .B \-dNOBIND
-Disables the `bind' operator.  Only useful for debugging.
+Disables the "bind" operator.  Only useful for debugging.
 .TP
 .B \-dNODISPLAY
 Suppresses the normal initialization of the output device.
 This may be useful when debugging.
 .TP
 .B \-dNOPAUSE
-Disables the prompt and pause at the end of each page.
-This may be desirable for applications where another program is
-`driving' Ghostscript.
+Disables the prompt and pause at the end of each page.  This may be
+desirable for applications where another program is driving Ghostscript.
 .TP
 .B \-dNOPLATFONTS
 Disables the use of fonts supplied by the underlying platform
@@ -356,13 +368,13 @@ Disables the use of fonts supplied by the underlying platform
 fonts look undesirably different from the scalable fonts.
 .TP
 .B \-dSAFER
-Disables the deletefile and renamefile operators, and the
+Disables the "deletefile" and "renamefile" operators, and the
 ability to open files in any mode other than read-only.  This may be
 desirable for spoolers or other sensitive environments.
 .TP
 .B \-dWRITESYSTEMDICT
-Leaves systemdict writable.  This is necessary when running
-special utility programs such as font2c and pcharstr, which must bypass
+Leaves "systemdict" writable.  This is necessary when running special
+utility programs such as \fBfont2c\fR and \fBpcharstr\fR, which must bypass
 normal PostScript access protection.
 .TP
 .BI \-sDEVICE= device
@@ -372,18 +384,26 @@ Selects an alternate initial output device, as described above.
 Selects an alternate output file (or pipe) for the initial output
 device, as described above.
 .SH FILES
-.TP 
-.B /usr/local/share/ghostscript/M.N/*
-Startup-files, utilities, and basic font definitions.
-.TP 
+.PP
+The locations of many Ghostscript run-time files are compiled into the
+executable when it is built.  On Unix these are typically based in
+"/usr/local", but this may be different on your system.  Under DOS they
+are typically based in \fBC:\\GS\fR, but may be elsewhere, especially if
+you install Ghostscript with \fBGSview\fR.  Run "\fBgs -h\fR" to find the
+location of Ghostscript documentation on your system, from which you can
+get more details.
+.TP
+.B /usr/local/share/ghostscript/#.##/*
+Startup files, utilities, and basic font definitions.
+.TP
 .B /usr/local/share/ghostscript/fonts/*
-Additional font definitions.
+More font definitions.
 .TP
-.B /usr/local/share/ghostscript/M.N/examples/*
-Demo Ghostscript files.
+.B /usr/local/share/ghostscript/#.##/examples/*
+Ghostscript demonstration files.
 .TP
-.B /usr/local/share/ghostscript/M.N/doc/*
-Assorted document files.
+.B /usr/local/share/ghostscript/#.##/doc/*
+Diverse document files.
 .SH ENVIRONMENT
 .TP
 .B GS_OPTIONS
@@ -400,7 +420,11 @@ Path names for initialization files and fonts
 .TP
 .B  TEMP
 Where temporary files are made
-.SH "SEE ALSO"
+.SH SEE ALSO
 The various Ghostscript document files (above).
 .SH BUGS
-See the network news group `comp.lang.postscript'.
+See the Usenet news group comp.lang.postscript.
+.SH AUTHOR
+L. Peter Deutsch <ghost@aladdin.com> is the principal author of Ghostscript.
+Russell J. Lang <rjl@aladdin.com> is the author of most of the MS Windows
+code in Ghostscript.

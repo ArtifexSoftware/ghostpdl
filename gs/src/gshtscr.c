@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gshtscr.c */
+/*Id: gshtscr.c  */
 /* Screen (Type 1) halftone processing for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -29,7 +29,7 @@
 
 /* Define whether to force all halftones to be strip halftones, */
 /* for debugging. */
-#define FORCE_STRIP_HALFTONES 1
+#define FORCE_STRIP_HALFTONES 0
 
 /* Structure descriptors */
 private_st_gs_screen_enum();
@@ -40,14 +40,17 @@ private_st_gs_screen_enum();
 private 
 ENUM_PTRS_BEGIN(screen_enum_enum_ptrs)
 {
-    if (index < 2 + st_ht_order_max_ptrs) {
-	gs_ptr_type_t ret = (*st_ht_order.enum_ptrs) (&eptr->order, sizeof(eptr->order), index - 2, pep);
+    if (index < 1 + st_ht_order_max_ptrs) {
+	gs_ptr_type_t ret =
+	    ENUM_USING(st_ht_order, &eptr->order, sizeof(eptr->order),
+		       index - 1);
 
 	if (ret == 0)		/* don't stop early */
-	    ret = ptr_struct_type, *pep = 0;
+	    ENUM_RETURN(0);
 	return ret;
     }
-    return (*st_halftone.enum_ptrs) (&eptr->halftone, sizeof(eptr->halftone), index - (2 + st_ht_order_max_ptrs), pep);
+    return ENUM_USING(st_halftone, &eptr->halftone, sizeof(eptr->halftone),
+		      index - (1 + st_ht_order_max_ptrs));
 }
 ENUM_PTR(0, gs_screen_enum, pgs);
 ENUM_PTRS_END
@@ -55,8 +58,8 @@ ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(screen_enum_reloc_ptrs)
 {
     RELOC_PTR(gs_screen_enum, pgs);
-    (*st_halftone.reloc_ptrs) (&eptr->halftone, sizeof(gs_halftone), gcst);
-    (*st_ht_order.reloc_ptrs) (&eptr->order, sizeof(gx_ht_order), gcst);
+    RELOC_USING(st_halftone, &eptr->halftone, sizeof(gs_halftone));
+    RELOC_USING(st_ht_order, &eptr->order, sizeof(gx_ht_order));
 }
 RELOC_PTRS_END
 
@@ -64,7 +67,7 @@ RELOC_PTRS_END
 
 /* Define the default value of AccurateScreens that affects */
 /* setscreen and setcolorscreen. */
-private bool screen_accurate_screens = false;
+private bool screen_accurate_screens;
 
 /* Default AccurateScreens control */
 void
@@ -79,7 +82,7 @@ gs_currentaccuratescreens(void)
 }
 
 /* Define the MinScreenLevels user parameter similarly. */
-private uint screen_min_screen_levels = 1;
+private uint screen_min_screen_levels;
 
 void
 gs_setminscreenlevels(uint levels)
@@ -90,6 +93,14 @@ uint
 gs_currentminscreenlevels(void)
 {
     return screen_min_screen_levels;
+}
+
+/* Initialize the screen control statics at startup. */
+void
+gs_gshtscr_init(gs_memory_t *mem)
+{
+    gs_setaccuratescreens(false);
+    gs_setminscreenlevels(1);
 }
 
 /*
@@ -213,12 +224,13 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
 	return code;
     gx_compute_cell_values(&porder->params);
 #if !FORCE_STRIP_HALFTONES
-    if (porder->params.W1 <= max_size / bitmap_raster(porder->params.W)) {	/*
-										 * Allocate an order for the entire tile, but only sample one
-										 * strip.  Note that this causes the order parameters to be
-										 * self-inconsistent until gx_ht_construct_spot_order fixes them
-										 * up: see gxdht.h for more information.
-										 */
+    if (porder->params.W1 <= max_size / bitmap_raster(porder->params.W)) {
+	/*
+	 * Allocate an order for the entire tile, but only sample one
+	 * strip.  Note that this causes the order parameters to be
+	 * self-inconsistent until gx_ht_construct_spot_order fixes them
+	 * up: see gxdht.h for more information.
+	 */
 	code = gx_ht_alloc_order(porder, porder->params.W,
 				 porder->params.W1, 0,
 				 porder->params.W * porder->params.D,
@@ -342,8 +354,8 @@ pick_cell_size(gs_screen_halftone * ph, const gs_matrix * pmat, ulong max_size,
 		long raster, wt, wt_size;
 		double fr, ar, ft, at, f_diff, a_diff, f_err, a_err;
 
-		p.M1 = (int)(p.M / T + 0.5);
-		p.N1 = (int)(p.N * T + 0.5);
+		p.M1 = (int)floor(p.M / T + 0.5);
+		p.N1 = (int)floor(p.N * T + 0.5);
 		gx_compute_cell_values(&p);
 		if_debug3('h', "[h]trying m=%d, n=%d, r=%d\n", p.M, p.N, rt);
 		wt = p.W;
@@ -531,8 +543,8 @@ gs_screen_next(gs_screen_enum * penum, floatp value)
 	gs_point pt;
 
 	gs_screen_currentpoint(penum, &pt);
-	dprintf6("[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
-		 penum->x, penum->y, pt.x, pt.y, value, sample);
+	dlprintf6("[H]sample x=%d y=%d (%f,%f): %f -> %u\n",
+		  penum->x, penum->y, pt.x, pt.y, value, sample);
     }
 #endif
     penum->order.bits[penum->y * width + penum->x].mask = sample;

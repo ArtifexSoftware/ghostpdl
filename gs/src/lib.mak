@@ -15,11 +15,28 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
-# (Platform-independent) makefile for graphics library and other support code.
-# See the end of gs.mak for where this fits into the build process.
+# Id: lib.mak 
+# (Platform-independent) makefile for Ghostscript graphics library
+# and other support code.
+# Users of this makefile must define the following:
+#	GLSRCDIR - the source directory
+#	GLGENDIR - the directory for source files generated during building
+#	GLOBJDIR - the object code directory
+
+GLSRC=$(GLSRCDIR)$(D)
+GLGEN=$(GLGENDIR)$(D)
+GLOBJ=$(GLOBJDIR)$(D)
+GLO_=$(O_)$(GLOBJ)
+GLI_=$(GLSRCDIR) $(II)$(GLGENDIR)
+GLF_=
+GLCC=$(CC_) $(I_)$(GLI_)$(_I) $(GLF_)
+GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(GLF_)
+GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(GLF_)
+GLJZCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_) $(II)$(ZI_)$(_I) $(GLF_)
+GLCCLEAF=$(CC_LEAF) $(I_)$(GLI_)$(_I) $(GLF_)
 
 # Define the name of this makefile.
-LIB_MAK=lib.mak
+LIB_MAK=$(GLSRC)lib.mak
 
 # Define the inter-dependencies of the .h files.
 # Since not all versions of `make' defer expansion of macros,
@@ -27,22 +44,27 @@ LIB_MAK=lib.mak
 
 # Generic files
 
-arch_h=arch.h
-stdpre_h=stdpre.h
-std_h=std.h $(arch_h) $(stdpre_h)
+arch_h=$(GLGEN)arch.h
+stdpre_h=$(GLSRC)stdpre.h
+std_h=$(GLSRC)std.h $(arch_h) $(stdpre_h)
+
+$(GLGEN)arch.h: $(GENARCH_XE)
+	$(GENARCH_XE) $(GLGEN)arch.h
 
 # Platform interfaces
 
-gp_h=gp.h
-gpcheck_h=gpcheck.h
-gpsync_h=gpsync.h
+gpgetenv_h=$(GLSRC)gpgetenv.h
+gp_h=$(GLSRC)gp.h $(gpgetenv_h)
+gpcheck_h=$(GLSRC)gpcheck.h
+gpsync_h=$(GLSRC)gpsync.h
 
 # Configuration definitions
 
+gconf_h=$(GLSRC)gconf.h $(gconfig_h)
 # gconfig*.h are generated dynamically.
-gconfig__h=gconfig_.h
-gconfigv_h=gconfigv.h
-gscdefs_h=gscdefs.h
+gconfig__h=$(GLGEN)gconfig_.h
+gconfigv_h=$(GLGEN)gconfigv.h
+gscdefs_h=$(GLSRC)gscdefs.h $(gconfigv_h)
 
 # C library interfaces
 
@@ -50,38 +72,51 @@ gscdefs_h=gscdefs.h
 # because we must include std.h before any file that includes sys/types.h,
 # we define local include files named *_.h to substitute for <*.h>.
 
-vmsmath_h=vmsmath.h
+vmsmath_h=$(GLSRC)vmsmath.h
 
-dos__h=dos_.h
-ctype__h=ctype_.h $(std_h)
-dirent__h=dirent_.h $(std_h) $(gconfig__h)
-errno__h=errno_.h $(std_h)
-malloc__h=malloc_.h $(std_h)
-math__h=math_.h $(std_h) $(vmsmath_h)
-memory__h=memory_.h $(std_h)
-stat__h=stat_.h $(std_h)
-stdio__h=stdio_.h $(std_h)
-string__h=string_.h $(std_h)
-time__h=time_.h $(std_h) $(gconfig__h)
-windows__h=windows_.h
+dos__h=$(GLSRC)dos_.h
+ctype__h=$(GLSRC)ctype_.h $(std_h)
+dirent__h=$(GLSRC)dirent_.h $(std_h) $(gconfig__h)
+errno__h=$(GLSRC)errno_.h $(std_h)
+malloc__h=$(GLSRC)malloc_.h $(std_h)
+math__h=$(GLSRC)math_.h $(std_h) $(vmsmath_h)
+memory__h=$(GLSRC)memory_.h $(std_h)
+stat__h=$(GLSRC)stat_.h $(std_h)
+stdio__h=$(GLSRC)stdio_.h $(std_h)
+string__h=$(GLSRC)string_.h $(std_h)
+time__h=$(GLSRC)time_.h $(std_h) $(gconfig__h)
+windows__h=$(GLSRC)windows_.h
+# Out of order
+pipe__h=$(GLSRC)pipe_.h $(stdio__h)
+
+# Third-party library interfaces
+
+jerror_h=$(JSRCDIR)$(D)jerror.h
+jpeglib_h=$(GLGEN)jpeglib.h
 
 # Miscellaneous
 
-gdebug_h=gdebug.h
-gsalloc_h=gsalloc.h
-gsargs_h=gsargs.h
-gserror_h=gserror.h
-gserrors_h=gserrors.h
-gsexit_h=gsexit.h
-gsgc_h=gsgc.h
-gsio_h=gsio.h
-gsmdebug_h=gsmdebug.h
-gsmemraw_h=gsmemraw.h
-gsmemory_h=gsmemory.h $(gsmemraw_h)
-gsrefct_h=gsrefct.h
-gsstruct_h=gsstruct.h
-gstypes_h=gstypes.h
-gx_h=gx.h $(stdio__h) $(gdebug_h) $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
+gdebug_h=$(GLSRC)gdebug.h
+gsalloc_h=$(GLSRC)gsalloc.h
+gsargs_h=$(GLSRC)gsargs.h
+gserror_h=$(GLSRC)gserror.h
+gserrors_h=$(GLSRC)gserrors.h
+gsexit_h=$(GLSRC)gsexit.h
+gsgc_h=$(GLSRC)gsgc.h
+gsio_h=$(GLSRC)gsio.h
+gsmalloc_h=$(GLSRC)gsmalloc.h
+gsmdebug_h=$(GLSRC)gsmdebug.h
+gsmemraw_h=$(GLSRC)gsmemraw.h
+gsmemory_h=$(GLSRC)gsmemory.h $(gsmemraw_h)
+gsrefct_h=$(GLSRC)gsrefct.h
+gsstruct_h=$(GLSRC)gsstruct.h
+gstypes_h=$(GLSRC)gstypes.h
+gx_h=$(GLSRC)gx.h $(stdio__h) $(gdebug_h)\
+ $(gserror_h) $(gsio_h) $(gsmemory_h) $(gstypes_h)
+gxsync_h=$(GLSRC)gxsync.h $(gpsync_h) $(gsmemory_h)
+# Out of order
+gsmemlok_h=$(GLSRC)gsmemlok.h $(gsmemory_h) $(gxsync_h)
+gsstrtab_h=$(GLSRC)gsstrtab.h $(gsstruct_h)
 
 GX=$(AK) $(gx_h)
 GXERR=$(GX) $(gserrors_h)
@@ -90,183 +125,250 @@ GXERR=$(GX) $(gserrors_h)
 
 ### Include files
 
-gsbitmap_h=gsbitmap.h $(gsstruct_h)
-gsbitops_h=gsbitops.h
-gsbittab_h=gsbittab.h
-gsflip_h=gsflip.h
-gsuid_h=gsuid.h
-gsutil_h=gsutil.h
-gxarith_h=gxarith.h
-gxbitmap_h=gxbitmap.h $(gsbitmap_h) $(gstypes_h)
-gxfarith_h=gxfarith.h $(gconfigv_h) $(gxarith_h)
-gxfixed_h=gxfixed.h
-gxobj_h=gxobj.h $(gxbitmap_h)
+gsbitmap_h=$(GLSRC)gsbitmap.h $(gsstruct_h)
+gsbitops_h=$(GLSRC)gsbitops.h
+gsbittab_h=$(GLSRC)gsbittab.h
+gsflip_h=$(GLSRC)gsflip.h
+gsrect_h=$(GLSRC)gsrect.h
+gsuid_h=$(GLSRC)gsuid.h
+gsutil_h=$(GLSRC)gsutil.h
+gxarith_h=$(GLSRC)gxarith.h
+gxbitmap_h=$(GLSRC)gxbitmap.h $(gsbitmap_h) $(gstypes_h)
+gxbitops_h=$(GLSRC)gxbitops.h $(gsbitops_h)
+gxfarith_h=$(GLSRC)gxfarith.h $(gconfigv_h) $(gxarith_h)
+gxfixed_h=$(GLSRC)gxfixed.h
+gxobj_h=$(GLSRC)gxobj.h $(gxbitmap_h)
 # Out of order
-gxalloc_h=gxalloc.h $(gsalloc_h) $(gxobj_h)
+gxalloc_h=$(GLSRC)gxalloc.h $(gsalloc_h) $(gxobj_h)
 
-### Executable code
+# Streams
+scommon_h=$(GLSRC)scommon.h $(gsmemory_h) $(gstypes_h) $(gsstruct_h)
+stream_h=$(GLSRC)stream.h $(scommon_h)
 
-gsalloc.$(OBJ): gsalloc.c $(GX) $(memory__h) $(string__h) \
-  $(gsmdebug_h) $(gsstruct_h) $(gxalloc_h)
+### Memory manager
 
-gsargs.$(OBJ): gsargs.c $(ctype__h) $(stdio__h) $(string__h)\
- $(gsargs_h) $(gsexit_h) $(gsmemory_h)
+$(GLOBJ)gsalloc.$(OBJ): $(GLSRC)gsalloc.c $(GX) $(memory__h) $(string__h)\
+ $(gsmdebug_h) $(gsstruct_h) $(gxalloc_h)\
+ $(stream_h)
+	$(GLCC) $(GLO_)gsalloc.$(OBJ) $(C_) $(GLSRC)gsalloc.c
 
-gsbitops.$(OBJ): gsbitops.c $(AK) $(memory__h) $(stdio__h)\
- $(gdebug_h) $(gsbitops_h) $(gstypes_h)
+### Bitmap processing
 
-gsbittab.$(OBJ): gsbittab.c $(AK) $(stdpre_h) $(gsbittab_h)
+$(GLOBJ)gsbitops.$(OBJ): $(GLSRC)gsbitops.c $(AK) $(memory__h) $(stdio__h)\
+ $(gdebug_h) $(gstypes_h) $(gxbitops_h)
+	$(GLCC) $(GLO_)gsbitops.$(OBJ) $(C_) $(GLSRC)gsbitops.c
 
-# gsfemu is only used in FPU-less configurations, and currently only with gcc.
-# We thought using CCLEAF would produce smaller code, but it actually
-# produces larger code!
-gsfemu.$(OBJ): gsfemu.c $(AK) $(std_h)
+$(GLOBJ)gsbittab.$(OBJ): $(GLSRC)gsbittab.c $(AK) $(stdpre_h) $(gsbittab_h)
+	$(GLCC) $(GLO_)gsbittab.$(OBJ) $(C_) $(GLSRC)gsbittab.c
 
 # gsflip is not part of the standard configuration: it's rather large,
 # and no standard facility requires it.
-gsflip.$(OBJ): gsflip.c $(GX) $(gsbittab_h) $(gsflip_h)
-	$(CCLEAF) gsflip.c
+#**************** $(CCLEAF) gsflip.c
+$(GLOBJ)gsflip.$(OBJ): $(GLSRC)gsflip.c $(GX) $(gsbittab_h) $(gsflip_h)
+	$(GLCC) $(GLO_)gsflip.$(OBJ) $(C_) $(GLSRC)gsflip.c
 
-gsmemory.$(OBJ): gsmemory.c $(GX) $(malloc__h) $(memory__h) \
-  $(gsmdebug_h) $(gsrefct_h) $(gsstruct_h) $(gsmemraw_h)
+$(GLOBJ)gsmalloc.$(OBJ): $(GLSRC)gsmalloc.c $(malloc__h)\
+ $(gdebug_h)\
+ $(gsmalloc_h) $(gsmdebug_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)
+	$(GLCC) $(GLO_)gsmalloc.$(OBJ) $(C_) $(GLSRC)gsmalloc.c
 
-gsmisc.$(OBJ): gsmisc.c $(GXERR) $(gconfigv_h) \
-  $(malloc__h) $(math__h) $(memory__h) $(gpcheck_h) $(gxfarith_h) $(gxfixed_h)
+$(GLOBJ)gsmemory.$(OBJ): $(GLSRC)gsmemory.c $(memory__h)\
+ $(gsmdebug_h) $(gsmemory_h) $(gsrefct_h) $(gsstruct_h) $(gstypes_h)
+	$(GLCC) $(GLO_)gsmemory.$(OBJ) $(C_) $(GLSRC)gsmemory.c
 
 # gsnogc currently is only used in library-only configurations.
-gsnogc.$(OBJ): gsnogc.c $(GX)\
+$(GLOBJ)gsnogc.$(OBJ): $(GLSRC)gsnogc.c $(GX)\
  $(gsgc_h) $(gsmdebug_h) $(gsstruct_h) $(gxalloc_h)
+	$(GLCC) $(GLO_)gsnogc.$(OBJ) $(C_) $(GLSRC)gsnogc.c
 
-gsutil.$(OBJ): gsutil.c $(AK) $(memory__h) $(string__h) $(gconfigv_h)\
- $(gstypes_h) $(gsuid_h) $(gsutil_h)
+### Multi-threading
+
+# None of this is included in any standard configuration at the moment.
+
+$(GLOBJ)gsmemlok.$(OBJ): $(GLSRC)gsmemlok.c $(GXERR) $(gsmemlok_h)
+	$(GLCC) $(GLO_)gsmemlok.$(OBJ) $(C_) $(GLSRC)gsmemlok.c
+
+$(GLOBJ)gxsync.$(OBJ): $(GLSRC)gxsync.c $(GXERR) $(memory__h)\
+ $(gsmemory_h) $(gxsync_h)
+	$(GLCC) $(GLO_)gxsync.$(OBJ) $(C_) $(GLSRC)gxsync.c
+
+### Miscellaneous
+
+# Command line argument list management
+$(GLOBJ)gsargs.$(OBJ): $(GLSRC)gsargs.c $(ctype__h) $(stdio__h) $(string__h)\
+ $(gsargs_h) $(gsexit_h) $(gsmemory_h)
+	$(GLCC) $(GLO_)gsargs.$(OBJ) $(C_) $(GLSRC)gsargs.c
+
+# FPU emulation
+# gsfemu is only used in FPU-less configurations, and currently only with gcc.
+# We thought using CCLEAF would produce smaller code, but it actually
+# produces larger code!
+$(GLOBJ)gsfemu.$(OBJ): $(GLSRC)gsfemu.c $(AK) $(std_h)
+	$(GLCC) $(GLO_)gsfemu.$(OBJ) $(C_) $(GLSRC)gsfemu.c
+
+$(GLOBJ)gsmisc.$(OBJ): $(GLSRC)gsmisc.c $(GXERR) $(gconfigv_h)\
+ $(ctype__h) $(malloc__h) $(math__h) $(memory__h) $(string__h)\
+ $(gpcheck_h) $(gxfarith_h) $(gxfixed_h)
+	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
+
+$(GLOBJ)gsutil.$(OBJ): $(GLSRC)gsutil.c $(AK) $(memory__h) $(string__h)\
+ $(gconfigv_h)\
+ $(gsmemory_h) $(gsrect_h) $(gstypes_h) $(gsuid_h) $(gsutil_h)
+	$(GLCC) $(GLO_)gsutil.$(OBJ) $(C_) $(GLSRC)gsutil.c
 
 ###### Low-level facilities and utilities
 
 ### Include files
 
-gdevbbox_h=gdevbbox.h
-gdevmem_h=gdevmem.h $(gsbitops_h)
-gdevmrop_h=gdevmrop.h
+gdevbbox_h=$(GLSRC)gdevbbox.h
+gdevmem_h=$(GLSRC)gdevmem.h $(gxbitops_h)
+gdevmrop_h=$(GLSRC)gdevmrop.h
 
-gsccode_h=gsccode.h
-gsccolor_h=gsccolor.h $(gsstruct_h)
-gscsel_h=gscsel.h
-gscolor1_h=gscolor1.h
-gscoord_h=gscoord.h
-gscpm_h=gscpm.h
-gsdevice_h=gsdevice.h
-gsfcmap_h=gsfcmap.h $(gsccode_h)
-gsfont_h=gsfont.h
-gshsb_h=gshsb.h
-gsht_h=gsht.h
-gsht1_h=gsht1.h $(gsht_h)
-gsiparam_h=gsiparam.h
-gsjconf_h=gsjconf.h $(std_h)
-gslib_h=gslib.h
-gslparam_h=gslparam.h
-gsmatrix_h=gsmatrix.h
-gspaint_h=gspaint.h
-gsparam_h=gsparam.h
-gsparams_h=gsparams.h $(gsparam_h)
-gspath2_h=gspath2.h
-gspenum_h=gspenum.h
-gsropt_h=gsropt.h
-gsxfont_h=gsxfont.h
+gsalpha_h=$(GLSRC)gsalpha.h
+gsccode_h=$(GLSRC)gsccode.h
+gsccolor_h=$(GLSRC)gsccolor.h $(gsstruct_h)
+gscsel_h=$(GLSRC)gscsel.h
+gscolor1_h=$(GLSRC)gscolor1.h
+gscompt_h=$(GLSRC)gscompt.h
+gscoord_h=$(GLSRC)gscoord.h
+gscpm_h=$(GLSRC)gscpm.h
+gscsepnm_h=$(GLSRC)gscsepnm.h
+gsdevice_h=$(GLSRC)gsdevice.h
+gsfcmap_h=$(GLSRC)gsfcmap.h $(gsccode_h)
+gsfont_h=$(GLSRC)gsfont.h
+gshsb_h=$(GLSRC)gshsb.h
+gsht_h=$(GLSRC)gsht.h
+gsht1_h=$(GLSRC)gsht1.h $(gsht_h)
+gsjconf_h=$(GLSRC)gsjconf.h $(arch_h)
+gslib_h=$(GLSRC)gslib.h
+gslparam_h=$(GLSRC)gslparam.h
+gsmatrix_h=$(GLSRC)gsmatrix.h
+gspaint_h=$(GLSRC)gspaint.h
+gsparam_h=$(GLSRC)gsparam.h
+gsparams_h=$(GLSRC)gsparams.h $(gsparam_h)
+gspath2_h=$(GLSRC)gspath2.h
+gspcolor_h=$(GLSRC)gspcolor.h $(gsccolor_h) $(gsuid_h)
+gspenum_h=$(GLSRC)gspenum.h
+gsptype1_h=$(GLSRC)gsptype1.h $(gspcolor_h) $(gxbitmap_h)
+gsropt_h=$(GLSRC)gsropt.h
+gstext_h=$(GLSRC)gstext.h $(gsccode_h) $(gsrefct_h)
+gsxfont_h=$(GLSRC)gsxfont.h
 # Out of order
-gschar_h=gschar.h $(gsccode_h) $(gscpm_h)
-gscolor2_h=gscolor2.h $(gsccolor_h) $(gsuid_h) $(gxbitmap_h)
-gsimage_h=gsimage.h $(gsiparam_h)
-gsline_h=gsline.h $(gslparam_h)
-gspath_h=gspath.h $(gspenum_h)
-gsrop_h=gsrop.h $(gsropt_h)
+gschar_h=$(GLSRC)gschar.h $(gsccode_h) $(gscpm_h)
+gscolor2_h=$(GLSRC)gscolor2.h $(gsptype1_h)
+gsiparam_h=$(GLSRC)gsiparam.h $(gsmatrix_h)
+gsimage_h=$(GLSRC)gsimage.h $(gsiparam_h)
+gsline_h=$(GLSRC)gsline.h $(gslparam_h)
+gspath_h=$(GLSRC)gspath.h $(gspenum_h)
+gsrop_h=$(GLSRC)gsrop.h $(gsropt_h)
 
-gxbcache_h=gxbcache.h $(gxbitmap_h)
-gxchar_h=gxchar.h $(gschar_h)
-gxcindex_h=gxcindex.h
-gxcvalue_h=gxcvalue.h
-gxclio_h=gxclio.h
-gxclip2_h=gxclip2.h
-gxcolor2_h=gxcolor2.h $(gscolor2_h) $(gsrefct_h) $(gxbitmap_h)
-gxcoord_h=gxcoord.h $(gscoord_h)
-gxcpath_h=gxcpath.h
-gxdda_h=gxdda.h
-gxdevrop_h=gxdevrop.h
-gxdevmem_h=gxdevmem.h
-gxdither_h=gxdither.h
-gxfcmap_h=gxfcmap.h $(gsfcmap_h) $(gsuid_h)
-gxfont0_h=gxfont0.h
-gxfrac_h=gxfrac.h
-gxftype_h=gxftype.h
-gxhttile_h=gxhttile.h
-gxhttype_h=gxhttype.h
-gxiodev_h=gxiodev.h $(stat__h)
-gxline_h=gxline.h $(gslparam_h)
-gxlum_h=gxlum.h
-gxmatrix_h=gxmatrix.h $(gsmatrix_h)
-gxpaint_h=gxpaint.h
-gxpath_h=gxpath.h $(gscpm_h) $(gslparam_h) $(gspenum_h)
-gxpcache_h=gxpcache.h
-gxpcolor_h=gxpcolor.h $(gxpcache_h)
-gxsample_h=gxsample.h
-gxstate_h=gxstate.h
-gxtmap_h=gxtmap.h
-gxxfont_h=gxxfont.h $(gsccode_h) $(gsmatrix_h) $(gsuid_h) $(gsxfont_h)
+gxalpha_h=$(GLSRC)gxalpha.h
+gxbcache_h=$(GLSRC)gxbcache.h $(gxbitmap_h)
+gxbitfmt_h=$(GLSRC)gxbitfmt.h
+gxcindex_h=$(GLSRC)gxcindex.h $(gsbitops_h)
+gxcvalue_h=$(GLSRC)gxcvalue.h
+gxclio_h=$(GLSRC)gxclio.h $(gp_h)
+gxclip_h=$(GLSRC)gxclip.h
+gxcolor2_h=$(GLSRC)gxcolor2.h $(gscolor2_h) $(gsrefct_h) $(gxbitmap_h)
+gxcomp_h=$(GLSRC)gxcomp.h $(gscompt_h) $(gsrefct_h) $(gxbitfmt_h)
+gxcoord_h=$(GLSRC)gxcoord.h $(gscoord_h)
+gxcpath_h=$(GLSRC)gxcpath.h
+gxdda_h=$(GLSRC)gxdda.h
+gxdevrop_h=$(GLSRC)gxdevrop.h
+gxdevmem_h=$(GLSRC)gxdevmem.h
+gxdither_h=$(GLSRC)gxdither.h
+gxfcmap_h=$(GLSRC)gxfcmap.h $(gsfcmap_h) $(gsuid_h)
+gxfont0_h=$(GLSRC)gxfont0.h
+gxfrac_h=$(GLSRC)gxfrac.h
+gxftype_h=$(GLSRC)gxftype.h
+gxgetbit_h=$(GLSRC)gxgetbit.h $(gxbitfmt_h)
+gxhttile_h=$(GLSRC)gxhttile.h
+gxhttype_h=$(GLSRC)gxhttype.h
+gxiodev_h=$(GLSRC)gxiodev.h $(stat__h)
+gxline_h=$(GLSRC)gxline.h $(gslparam_h)
+gxlum_h=$(GLSRC)gxlum.h
+gxmatrix_h=$(GLSRC)gxmatrix.h $(gsmatrix_h)
+gxmclip_h=$(GLSRC)gxmclip.h $(gxclip_h)
+gxp1fill_h=$(GLSRC)gxp1fill.h
+gxpaint_h=$(GLSRC)gxpaint.h
+gxpath_h=$(GLSRC)gxpath.h $(gscpm_h) $(gslparam_h) $(gspenum_h) $(gsrect_h)
+gxpcache_h=$(GLSRC)gxpcache.h
+gxpcolor_h=$(GLSRC)gxpcolor.h $(gxpcache_h)
+gxsample_h=$(GLSRC)gxsample.h
+gxstate_h=$(GLSRC)gxstate.h
+gxtext_h=$(GLSRC)gxtext.h $(gstext_h)
+gxtmap_h=$(GLSRC)gxtmap.h
+gxxfont_h=$(GLSRC)gxxfont.h $(gsccode_h) $(gsmatrix_h) $(gsuid_h) $(gsxfont_h)
 # The following are out of order because they include other files.
-gsdcolor_h=gsdcolor.h $(gsccolor_h) $(gxarith_h) $(gxbitmap_h) $(gxcindex_h) $(gxhttile_h)
-gxdcolor_h=gxdcolor.h $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h)
-gxdevice_h=gxdevice.h $(stdio__h) $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h) \
-  $(gsropt_h) $(gsstruct_h) $(gsxfont_h) \
-  $(gxbitmap_h) $(gxcindex_h) $(gxcvalue_h) $(gxfixed_h)
-gxdht_h=gxdht.h $(gsrefct_h) $(gxarith_h) $(gxhttype_h)
-gxctable_h=gxctable.h $(gxfixed_h) $(gxfrac_h)
-gxfcache_h=gxfcache.h $(gsuid_h) $(gsxfont_h) $(gxbcache_h) $(gxftype_h)
-gxfont_h=gxfont.h $(gsfont_h) $(gsuid_h) $(gsstruct_h) $(gxftype_h)
-gscie_h=gscie.h $(gsrefct_h) $(gxctable_h)
-gscsepr_h=gscsepr.h
-gscspace_h=gscspace.h
-gxdcconv_h=gxdcconv.h $(gxfrac_h)
-gxfmap_h=gxfmap.h $(gsrefct_h) $(gxfrac_h) $(gxtmap_h)
-gxistate_h=gxistate.h $(gscsel_h) $(gsropt_h) $(gxcvalue_h) $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h)
-gxband_h=gxband.h $(gxclio_h)
-gxclist_h=gxclist.h $(gscspace_h) $(gxbcache_h) $(gxclio_h) $(gxistate_h) $(gxband_h)
-gxcmap_h=gxcmap.h $(gscsel_h) $(gxcvalue_h) $(gxfmap_h)
-gxcspace_h=gxcspace.h $(gscspace_h) $(gsccolor_h) $(gscsel_h) $(gsstruct_h) $(gxfrac_h)
-gxht_h=gxht.h $(gsht1_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h)
-gscolor_h=gscolor.h $(gxtmap_h)
-gsstate_h=gsstate.h $(gscolor_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
+gxband_h=$(GLSRC)gxband.h $(gxclio_h)
+gxchar_h=$(GLSRC)gxchar.h $(gschar_h) $(gxtext_h)
+gsdcolor_h=$(GLSRC)gsdcolor.h $(gsccolor_h)\
+ $(gxarith_h) $(gxbitmap_h) $(gxcindex_h) $(gxhttile_h)
+gxdcolor_h=$(GLSRC)gxdcolor.h\
+ $(gscsel_h) $(gsdcolor_h) $(gsropt_h) $(gsstruct_h)
+gxdevcli_h=$(GLSRC)gxdevcli.h $(std_h)\
+ $(gscompt_h) $(gsdcolor_h) $(gsiparam_h) $(gsmatrix_h)\
+ $(gsrefct_h) $(gsropt_h) $(gsstruct_h) $(gsxfont_h)\
+ $(gxbitmap_h) $(gxcindex_h) $(gxcvalue_h) $(gxtext_h) $(gxfixed_h)
+gxdevice_h=$(GLSRC)gxdevice.h $(stdio__h)\
+ $(gsmalloc_h) $(gsparam_h) $(gxdevcli_h)
+gxdht_h=$(GLSRC)gxdht.h $(gscsepnm_h) $(gsrefct_h) $(gxarith_h) $(gxhttype_h)
+gxclip2_h=$(GLSRC)gxclip2.h $(gxmclip_h)
+gxclipm_h=$(GLSRC)gxclipm.h $(gxmclip_h)
+gxctable_h=$(GLSRC)gxctable.h $(gxfixed_h) $(gxfrac_h)
+gxfcache_h=$(GLSRC)gxfcache.h $(gsuid_h) $(gsxfont_h)\
+ $(gxbcache_h) $(gxftype_h)
+gxfont_h=$(GLSRC)gxfont.h\
+ $(gsccode_h) $(gsfont_h) $(gsuid_h) $(gsstruct_h) $(gxftype_h)
+gxiparam_h=$(GLSRC)gxiparam.h $(gxdevcli_h)
+gscie_h=$(GLSRC)gscie.h $(gsrefct_h) $(gsstruct_h) $(gxctable_h)
+gscrd_h=$(GLSRC)gscrd.h $(gscie_h)
+gscrdp_h=$(GLSRC)gscrdp.h $(gscie_h) $(gsparam_h)
+gscspace_h=$(GLSRC)gscspace.h $(gsmemory_h)
+gscsepr_h=$(GLSRC)gscsepr.h $(gscspace_h)
+gxdcconv_h=$(GLSRC)gxdcconv.h $(gxfrac_h)
+gxfmap_h=$(GLSRC)gxfmap.h $(gsrefct_h) $(gxfrac_h) $(gxtmap_h)
+gxistate_h=$(GLSRC)gxistate.h $(gscsel_h) $(gsrefct_h) $(gsropt_h)\
+ $(gxcvalue_h) $(gxfixed_h) $(gxline_h) $(gxmatrix_h) $(gxtmap_h)
+gxclist_h=$(GLSRC)gxclist.h $(gscspace_h)\
+ $(gxband_h) $(gxbcache_h) $(gxclio_h) $(gxistate_h)
+gxcmap_h=$(GLSRC)gxcmap.h $(gscsel_h) $(gxcvalue_h) $(gxfmap_h)
+gxcspace_h=$(GLSRC)gxcspace.h\
+ $(gscspace_h) $(gsccolor_h) $(gscsel_h) $(gxfrac_h)
+gxht_h=$(GLSRC)gxht.h $(gsht1_h) $(gscsepnm_h) $(gsrefct_h) $(gxhttype_h) $(gxtmap_h)
+gscolor_h=$(GLSRC)gscolor.h $(gxtmap_h)
+gsstate_h=$(GLSRC)gsstate.h\
+ $(gscolor_h) $(gscsel_h) $(gsdevice_h) $(gsht_h) $(gsline_h)
 
-gzacpath_h=gzacpath.h
-gzcpath_h=gzcpath.h $(gxcpath_h)
-gzht_h=gzht.h $(gscsel_h) $(gxdht_h) $(gxfmap_h) $(gxht_h) $(gxhttile_h)
-gzline_h=gzline.h $(gxline_h)
-gzpath_h=gzpath.h $(gsstruct_h) $(gxpath_h)
-gzstate_h=gzstate.h $(gscpm_h) $(gsrefct_h) $(gsstate_h)\
+gzacpath_h=$(GLSRC)gzacpath.h
+gzcpath_h=$(GLSRC)gzcpath.h $(gxcpath_h)
+gzht_h=$(GLSRC)gzht.h $(gscsel_h)\
+ $(gxdht_h) $(gxfmap_h) $(gxht_h) $(gxhttile_h)
+gzline_h=$(GLSRC)gzline.h $(gxline_h)
+gzpath_h=$(GLSRC)gzpath.h $(gsmatrix_h) $(gsrefct_h) $(gsstruct_h) $(gxpath_h)
+gzstate_h=$(GLSRC)gzstate.h $(gscpm_h) $(gsrefct_h) $(gsstate_h)\
  $(gxdcolor_h) $(gxistate_h) $(gxstate_h)
 
-gdevprn_h=gdevprn.h $(memory__h) $(string__h) $(gx_h) \
-  $(gserrors_h) $(gsmatrix_h) $(gsparam_h) $(gsutil_h) \
-  $(gxdevice_h) $(gxdevmem_h) $(gxclist_h)
-
-sa85x_h=sa85x.h
-sbtx_h=sbtx.h
-scanchar_h=scanchar.h
-scommon_h=scommon.h $(gsmemory_h) $(gstypes_h) $(gsstruct_h)
-sdct_h=sdct.h
-shc_h=shc.h $(gsbittab_h)
-siscale_h=siscale.h $(gconfigv_h)
-sjpeg_h=sjpeg.h
-slzwx_h=slzwx.h
-spcxx_h=spcxx.h
-spdiffx_h=spdiffx.h
-spngpx_h=spngpx.h
-srlx_h=srlx.h
-sstring_h=sstring.h
-strimpl_h=strimpl.h $(scommon_h) $(gstypes_h) $(gsstruct_h)
-szlibx_h=szlibx.h
+sa85x_h=$(GLSRC)sa85x.h
+sbtx_h=$(GLSRC)sbtx.h
+scanchar_h=$(GLSRC)scanchar.h
+sdct_h=$(GLSRC)sdct.h
+shc_h=$(GLSRC)shc.h $(gsbittab_h) $(scommon_h)
+siscale_h=$(GLSRC)siscale.h $(gconfigv_h)
+sjpeg_h=$(GLSRC)sjpeg.h
+slzwx_h=$(GLSRC)slzwx.h
+spcxx_h=$(GLSRC)spcxx.h
+spdiffx_h=$(GLSRC)spdiffx.h
+spngpx_h=$(GLSRC)spngpx.h
+srlx_h=$(GLSRC)srlx.h
+sstring_h=$(GLSRC)sstring.h
+strimpl_h=$(GLSRC)strimpl.h $(scommon_h) $(gstypes_h) $(gsstruct_h)
+szlibx_h=$(GLSRC)szlibx.h
 # Out of order
-scf_h=scf.h $(shc_h)
-scfx_h=scfx.h $(shc_h)
-gximage_h=gximage.h $(gsiparam_h) $(gxcspace_h) $(gxdda_h) $(gxsample_h)\
+scf_h=$(GLSRC)scf.h $(shc_h)
+scfx_h=$(GLSRC)scfx.h $(shc_h)
+gximage_h=$(GLSRC)gximage.h $(gsiparam_h)\
+ $(gxcspace_h) $(gxdda_h) $(gxiparam_h) $(gxsample_h)\
  $(siscale_h) $(strimpl_h)
 
 ### Executable code
@@ -274,418 +376,601 @@ gximage_h=gximage.h $(gsiparam_h) $(gxcspace_h) $(gxdda_h) $(gxsample_h)\
 # gconfig and gscdefs are handled specially.  Currently they go in psbase
 # rather than in libcore, which is clearly wrong.
 gconfig=gconfig$(CONFIG)
-$(gconfig).$(OBJ): gconf.c $(GX) \
-  $(gscdefs_h) $(gconfig_h) $(gxdevice_h) $(gxiodev_h) $(MAKEFILE)
-	$(RM_) gconfig.h
-	$(RM_) $(gconfig).c
-	$(CP_) $(gconfig_h) gconfig.h
-	$(CP_) gconf.c $(gconfig).c
-	$(CCC) $(gconfig).c
-	$(RM_) gconfig.h
-	$(RM_) $(gconfig).c
+$(GLOBJ)$(gconfig).$(OBJ): $(GLSRC)gconf.c $(GX)\
+ $(gscdefs_h) $(gconf_h) $(gxdevice_h) $(gxiodev_h) $(MAKEFILE)
+	$(RM_) $(GLGEN)$(gconfig).c
+	$(CP_) $(gconfig_h) $(GLGEN)gconfig.h
+	$(CP_) $(GLSRC)gconf.c $(GLGEN)$(gconfig).c
+	$(GLCC) $(GLO_)$(gconfig).$(OBJ) $(C_) $(GLGEN)$(gconfig).c
 
 gscdefs=gscdefs$(CONFIG)
-$(gscdefs).$(OBJ): gscdef.c $(stdpre_h) $(gscdefs_h) $(gconfig_h) $(MAKEFILE)
-	$(RM_) gconfig.h
-	$(RM_) $(gscdefs).c
-	$(CP_) $(gconfig_h) gconfig.h
-	$(CP_) gscdef.c $(gscdefs).c
-	$(CCC) $(gscdefs).c
-	$(RM_) gconfig.h
-	$(RM_) $(gscdefs).c
+$(GLOBJ)$(gscdefs).$(OBJ): $(GLSRC)gscdef.c\
+ $(stdpre_h) $(gscdefs_h) $(gconf_h) $(MAKEFILE)
+	$(RM_) $(GLGEN)$(gscdefs).c
+	$(CP_) $(gconfig_h) $(GLGEN)gconfig.h
+	$(CP_) $(GLSRC)gscdef.c $(GLGEN)$(gscdefs).c
+	$(GLCC) $(GLO_)$(gscdefs).$(OBJ) $(C_) $(GLGEN)$(gscdefs).c
 
-gxacpath.$(OBJ): gxacpath.c $(GXERR) \
-  $(gsdcolor_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h) \
-  $(gxdevice_h) $(gxfixed_h) $(gxpaint_h) \
-  $(gzacpath_h) $(gzcpath_h) $(gzpath_h)
+$(GLOBJ)gxacpath.$(OBJ): $(GLSRC)gxacpath.c $(GXERR)\
+ $(gsdcolor_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxdevice_h) $(gxfixed_h) $(gxpaint_h)\
+ $(gzacpath_h) $(gzcpath_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxacpath.$(OBJ) $(C_) $(GLSRC)gxacpath.c
 
-gxbcache.$(OBJ): gxbcache.c $(GX) $(memory__h) \
-  $(gsmdebug_h) $(gxbcache_h)
+$(GLOBJ)gxbcache.$(OBJ): $(GLSRC)gxbcache.c $(GX) $(memory__h)\
+ $(gsmdebug_h) $(gxbcache_h)
+	$(GLCC) $(GLO_)gxbcache.$(OBJ) $(C_) $(GLSRC)gxbcache.c
 
-gxccache.$(OBJ): gxccache.c $(GXERR) $(gpcheck_h) \
-  $(gscspace_h) $(gsimage_h) $(gsstruct_h) \
-  $(gxchar_h) $(gxdevice_h) $(gxdevmem_h) $(gxfcache_h) \
-  $(gxfixed_h) $(gxfont_h) $(gxhttile_h) $(gxmatrix_h) $(gxxfont_h) \
-  $(gzstate_h) $(gzpath_h) $(gzcpath_h) 
+$(GLOBJ)gxccache.$(OBJ): $(GLSRC)gxccache.c $(GXERR) $(gpcheck_h)\
+ $(gscspace_h) $(gsimage_h) $(gsstruct_h)\
+ $(gxchar_h) $(gxdevice_h) $(gxdevmem_h) $(gxfcache_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxhttile_h) $(gxmatrix_h) $(gxxfont_h)\
+ $(gzstate_h) $(gzpath_h) $(gzcpath_h)
+	$(GLCC) $(GLO_)gxccache.$(OBJ) $(C_) $(GLSRC)gxccache.c
 
-gxccman.$(OBJ): gxccman.c $(GXERR) $(memory__h) $(gpcheck_h)\
+$(GLOBJ)gxccman.$(OBJ): $(GLSRC)gxccman.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gsbitops_h) $(gsstruct_h) $(gsutil_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfont_h) $(gxfcache_h) $(gxchar_h)\
  $(gxxfont_h) $(gzstate_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxccman.$(OBJ) $(C_) $(GLSRC)gxccman.c
 
-gxcht.$(OBJ): gxcht.c $(GXERR) $(memory__h)\
+$(GLOBJ)gxcht.$(OBJ): $(GLSRC)gxcht.c $(GXERR) $(memory__h)\
  $(gsutil_h)\
  $(gxcmap_h) $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h)\
  $(gxmatrix_h) $(gzht_h)
+	$(GLCC) $(GLO_)gxcht.$(OBJ) $(C_) $(GLSRC)gxcht.c
 
-gxcmap.$(OBJ): gxcmap.c $(GXERR) \
-  $(gsccolor_h) \
-  $(gxcmap_h) $(gxcspace_h) $(gxdcconv_h) $(gxdevice_h) $(gxdither_h) \
-  $(gxfarith_h) $(gxfrac_h) $(gxlum_h) $(gzstate_h)
+$(GLOBJ)gxclip.$(OBJ): $(GLSRC)gxclip.c $(GX)\
+ $(gxclip_h) $(gxdevice_h) $(gzpath_h) $(gzcpath_h)
+	$(GLCC) $(GLO_)gxclip.$(OBJ) $(C_) $(GLSRC)gxclip.c
 
-gxcpath.$(OBJ): gxcpath.c $(GXERR)\
- $(gscoord_h) $(gsstruct_h) $(gsutil_h)\
- $(gxdevice_h) $(gxfixed_h) $(gzpath_h) $(gzcpath_h)
+$(GLOBJ)gxcmap.$(OBJ): $(GLSRC)gxcmap.c $(GXERR)\
+ $(gsccolor_h)\
+ $(gxalpha_h) $(gxcmap_h) $(gxcspace_h) $(gxdcconv_h) $(gxdevice_h)\
+ $(gxdither_h) $(gxfarith_h) $(gxfrac_h) $(gxlum_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gxcmap.$(OBJ) $(C_) $(GLSRC)gxcmap.c
 
-gxdcconv.$(OBJ): gxdcconv.c $(GX) \
-  $(gsdcolor_h) $(gxcmap_h) $(gxdcconv_h) $(gxdevice_h) \
-  $(gxfarith_h) $(gxistate_h) $(gxlum_h)
+$(GLOBJ)gxcpath.$(OBJ): $(GLSRC)gxcpath.c $(GXERR)\
+ $(gscoord_h) $(gsline_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxdevice_h) $(gxfixed_h) $(gxstate_h) $(gzpath_h) $(gzcpath_h)
+	$(GLCC) $(GLO_)gxcpath.$(OBJ) $(C_) $(GLSRC)gxcpath.c
 
-gxdcolor.$(OBJ): gxdcolor.c $(GX) \
-  $(gsbittab_h) $(gxdcolor_h) $(gxdevice_h)
+$(GLOBJ)gxdcconv.$(OBJ): $(GLSRC)gxdcconv.c $(GX)\
+ $(gsdcolor_h) $(gxcmap_h) $(gxdcconv_h) $(gxdevice_h)\
+ $(gxfarith_h) $(gxistate_h) $(gxlum_h)
+	$(GLCC) $(GLO_)gxdcconv.$(OBJ) $(C_) $(GLSRC)gxdcconv.c
 
-gxdither.$(OBJ): gxdither.c $(GX) \
-  $(gsstruct_h) $(gsdcolor_h) \
-  $(gxcmap_h) $(gxdevice_h) $(gxdither_h) $(gxlum_h) $(gzht_h)
+$(GLOBJ)gxdcolor.$(OBJ): $(GLSRC)gxdcolor.c $(GX)\
+ $(gsbittab_h) $(gxdcolor_h) $(gxdevice_h)
+	$(GLCC) $(GLO_)gxdcolor.$(OBJ) $(C_) $(GLSRC)gxdcolor.c
 
-gxfill.$(OBJ): gxfill.c $(GXERR) $(math__h) \
-  $(gsstruct_h) \
-  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h) \
-  $(gxistate_h) $(gxpaint_h) \
-  $(gzcpath_h) $(gzpath_h)
+$(GLOBJ)gxdither.$(OBJ): $(GLSRC)gxdither.c $(GX)\
+ $(gsstruct_h) $(gsdcolor_h)\
+ $(gxcmap_h) $(gxdevice_h) $(gxdither_h) $(gxlum_h) $(gzht_h)
+	$(GLCC) $(GLO_)gxdither.$(OBJ) $(C_) $(GLSRC)gxdither.c
 
-gxht.$(OBJ): gxht.c $(GXERR) $(memory__h)\
+$(GLOBJ)gxfill.$(OBJ): $(GLSRC)gxfill.c $(GXERR) $(math__h)\
+ $(gsstruct_h)\
+ $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
+ $(gxistate_h) $(gxpaint_h)\
+ $(gzcpath_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxfill.$(OBJ) $(C_) $(GLSRC)gxfill.c
+
+$(GLOBJ)gxht.$(OBJ): $(GLSRC)gxht.c $(GXERR) $(memory__h)\
  $(gsbitops_h) $(gsstruct_h) $(gsutil_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gzht_h)
+	$(GLCC) $(GLO_)gxht.$(OBJ) $(C_) $(GLSRC)gxht.c
 
-gximage.$(OBJ): gximage.c $(GXERR) $(math__h) $(memory__h) $(gpcheck_h)\
- $(gsccolor_h) $(gspaint_h) $(gsstruct_h)\
- $(gxfixed_h) $(gxfrac_h) $(gxarith_h) $(gxmatrix_h)\
+$(GLOBJ)gxiinit.$(OBJ): $(GLSRC)gxiinit.c $(GXERR) $(math__h) $(memory__h)\
+ $(gpcheck_h)\
+ $(gsccolor_h) $(gspaint_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxfixed_h) $(gxfrac_h) $(gxarith_h) $(gxiparam_h) $(gxmatrix_h)\
  $(gxdevice_h) $(gzpath_h) $(gzstate_h)\
  $(gzcpath_h) $(gxdevmem_h) $(gximage_h) $(gdevmrop_h)
+	$(GLCC) $(GLO_)gxiinit.$(OBJ) $(C_) $(GLSRC)gxiinit.c
 
-gximage0.$(OBJ): gximage0.c $(GXERR) $(memory__h)\
+$(GLOBJ)gxidata.$(OBJ): $(GLSRC)gxidata.c $(GXERR) $(memory__h)\
  $(gxcpath_h) $(gxdevice_h) $(gximage_h)
+	$(GLCC) $(GLO_)gxidata.$(OBJ) $(C_) $(GLSRC)gxidata.c
 
-gximage1.$(OBJ): gximage1.c $(GXERR) $(memory__h) $(gpcheck_h)\
+$(GLOBJ)gxifast.$(OBJ): $(GLSRC)gxifast.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gdevmem_h) $(gsbittab_h) $(gsccolor_h) $(gspaint_h) $(gsutil_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
  $(gzht_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxifast.$(OBJ) $(C_) $(GLSRC)gxifast.c
 
-gximage2.$(OBJ): gximage2.c $(GXERR) $(memory__h) $(gpcheck_h)\
+$(GLOBJ)gximono.$(OBJ): $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gdevmem_h) $(gsccolor_h) $(gspaint_h) $(gsutil_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
  $(gzht_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
 
-gxpaint.$(OBJ): gxpaint.c $(GX) \
-  $(gxdevice_h) $(gxhttile_h) $(gxpaint_h) $(gxpath_h) $(gzstate_h)
+# gxmclip is used for Patterns and ImageType 3 images:
+# it isn't included in the base library.
+$(GLOBJ)gxmclip.$(OBJ): $(GLSRC)gxmclip.c $(GX)\
+ $(gxdevice_h) $(gxdevmem_h) $(gxmclip_h)
+	$(GLCC) $(GLO_)gxmclip.$(OBJ) $(C_) $(GLSRC)gxmclip.c
 
-gxpath.$(OBJ): gxpath.c $(GXERR) \
-  $(gsstruct_h) $(gxfixed_h) $(gzpath_h)
+$(GLOBJ)gxpaint.$(OBJ): $(GLSRC)gxpaint.c $(GX)\
+ $(gxdevice_h) $(gxhttile_h) $(gxpaint_h) $(gxpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gxpaint.$(OBJ) $(C_) $(GLSRC)gxpaint.c
 
-gxpath2.$(OBJ): gxpath2.c $(GXERR) $(math__h) \
-  $(gxfixed_h) $(gxarith_h) $(gzpath_h)
+$(GLOBJ)gxpath.$(OBJ): $(GLSRC)gxpath.c $(GXERR)\
+ $(gsstruct_h) $(gxfixed_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxpath.$(OBJ) $(C_) $(GLSRC)gxpath.c
 
-gxpcopy.$(OBJ): gxpcopy.c $(GXERR) $(math__h) $(gconfigv_h) \
-  $(gxfarith_h) $(gxfixed_h) $(gzpath_h)
+$(GLOBJ)gxpath2.$(OBJ): $(GLSRC)gxpath2.c $(GXERR) $(math__h)\
+ $(gxfixed_h) $(gxarith_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxpath2.$(OBJ) $(C_) $(GLSRC)gxpath2.c
 
-gxpdash.$(OBJ): gxpdash.c $(GX) $(math__h) \
-  $(gscoord_h) $(gsline_h) $(gsmatrix_h) \
-  $(gxfixed_h) $(gzline_h) $(gzpath_h)
+$(GLOBJ)gxpcopy.$(OBJ): $(GLSRC)gxpcopy.c $(GXERR) $(math__h) $(gconfigv_h)\
+ $(gxfarith_h) $(gxfixed_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxpcopy.$(OBJ) $(C_) $(GLSRC)gxpcopy.c
 
-gxpflat.$(OBJ): gxpflat.c $(GX)\
+$(GLOBJ)gxpdash.$(OBJ): $(GLSRC)gxpdash.c $(GX) $(math__h)\
+ $(gscoord_h) $(gsline_h) $(gsmatrix_h)\
+ $(gxfixed_h) $(gzline_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxpdash.$(OBJ) $(C_) $(GLSRC)gxpdash.c
+
+$(GLOBJ)gxpflat.$(OBJ): $(GLSRC)gxpflat.c $(GX)\
  $(gxarith_h) $(gxfixed_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxpflat.$(OBJ) $(C_) $(GLSRC)gxpflat.c
 
-gxsample.$(OBJ): gxsample.c $(GX)\
+$(GLOBJ)gxsample.$(OBJ): $(GLSRC)gxsample.c $(GX)\
  $(gxsample_h)
+	$(GLCC) $(GLO_)gxsample.$(OBJ) $(C_) $(GLSRC)gxsample.c
 
-gxstroke.$(OBJ): gxstroke.c $(GXERR) $(math__h) $(gpcheck_h) \
-  $(gscoord_h) $(gsdcolor_h) $(gsdevice_h) \
-  $(gxdevice_h) $(gxfarith_h) $(gxfixed_h) \
-  $(gxhttile_h) $(gxistate_h) $(gxmatrix_h) $(gxpaint_h) \
-  $(gzcpath_h) $(gzline_h) $(gzpath_h)
+$(GLOBJ)gxstroke.$(OBJ): $(GLSRC)gxstroke.c $(GXERR) $(math__h) $(gpcheck_h)\
+ $(gscoord_h) $(gsdcolor_h) $(gsdevice_h)\
+ $(gxdevice_h) $(gxfarith_h) $(gxfixed_h)\
+ $(gxhttile_h) $(gxistate_h) $(gxmatrix_h) $(gxpaint_h)\
+ $(gzcpath_h) $(gzline_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxstroke.$(OBJ) $(C_) $(GLSRC)gxstroke.c
 
 ###### Higher-level facilities
 
-gschar.$(OBJ): gschar.c $(GXERR) $(memory__h) $(string__h)\
- $(gspath_h) $(gsstruct_h) \
- $(gxfixed_h) $(gxarith_h) $(gxmatrix_h) $(gxcoord_h) $(gxdevice_h) $(gxdevmem_h) \
+$(GLOBJ)gsalpha.$(OBJ): $(GLSRC)gsalpha.c $(GX)\
+ $(gsalpha_h) $(gxdcolor_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsalpha.$(OBJ) $(C_) $(GLSRC)gsalpha.c
+
+$(GLOBJ)gschar.$(OBJ): $(GLSRC)gschar.c $(GXERR) $(memory__h) $(string__h)\
+ $(gspath_h) $(gsstruct_h)\
+ $(gxfixed_h) $(gxarith_h) $(gxmatrix_h) $(gxcoord_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfont_h) $(gxfont0_h) $(gxchar_h) $(gxfcache_h) $(gzpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gschar.$(OBJ) $(C_) $(GLSRC)gschar.c
 
-gscolor.$(OBJ): gscolor.c $(GXERR) \
-  $(gsccolor_h) $(gsstruct_h) $(gsutil_h) \
-  $(gxcmap_h) $(gxcspace_h) $(gxdcconv_h) $(gxdevice_h) $(gzstate_h)
+$(GLOBJ)gscolor.$(OBJ): $(GLSRC)gscolor.c $(GXERR)\
+ $(gsccolor_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxcmap_h) $(gxcspace_h) $(gxdcconv_h) $(gxdevice_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gscolor.$(OBJ) $(C_) $(GLSRC)gscolor.c
 
-gscoord.$(OBJ): gscoord.c $(GXERR) $(math__h) \
-  $(gsccode_h) $(gxcoord_h) $(gxdevice_h) $(gxfarith_h) $(gxfixed_h) $(gxfont_h) \
-  $(gxmatrix_h) $(gxpath_h) $(gzstate_h)
+$(GLOBJ)gscoord.$(OBJ): $(GLSRC)gscoord.c $(GXERR) $(math__h)\
+ $(gsccode_h) $(gxcoord_h) $(gxdevice_h) $(gxfarith_h) $(gxfixed_h) $(gxfont_h)\
+ $(gxmatrix_h) $(gxpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gscoord.$(OBJ) $(C_) $(GLSRC)gscoord.c
 
-gsdevice.$(OBJ): gsdevice.c $(GXERR) $(ctype__h) $(memory__h) $(string__h) $(gp_h)\
+$(GLOBJ)gscparam.$(OBJ): $(GLSRC)gscparam.c $(GXERR) $(memory__h) $(string__h)\
+ $(gsparam_h) $(gsstruct_h)
+	$(GLCC) $(GLO_)gscparam.$(OBJ) $(C_) $(GLSRC)gscparam.c
+
+$(GLOBJ)gscspace.$(OBJ): $(GLSRC)gscspace.c $(GXERR) $(memory__h)\
+ $(gsccolor_h) $(gsstruct_h) $(gxcspace_h) $(gxistate_h)
+	$(GLCC) $(GLO_)gscspace.$(OBJ) $(C_) $(GLSRC)gscspace.c
+
+$(GLOBJ)gsdevice.$(OBJ): $(GLSRC)gsdevice.c $(GXERR)\
+ $(ctype__h) $(memory__h) $(string__h) $(gp_h)\
  $(gscdefs_h) $(gscoord_h) $(gsmatrix_h) $(gspaint_h) $(gspath_h) $(gsstruct_h)\
  $(gxcmap_h) $(gxdevice_h) $(gxdevmem_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsdevice.$(OBJ) $(C_) $(GLSRC)gsdevice.c
 
-gsdevmem.$(OBJ): gsdevmem.c $(GXERR) $(math__h) $(memory__h) \
-  $(gxarith_h) $(gxdevice_h) $(gxdevmem_h)
+$(GLOBJ)gsdevmem.$(OBJ): $(GLSRC)gsdevmem.c $(GXERR) $(math__h) $(memory__h)\
+ $(gxarith_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gsdevmem.$(OBJ) $(C_) $(GLSRC)gsdevmem.c
 
-gsdparam.$(OBJ): gsdparam.c $(GXERR) $(memory__h) $(string__h) \
-  $(gsparam_h) $(gxdevice_h) $(gxfixed_h)
+$(GLOBJ)gsdparam.$(OBJ): $(GLSRC)gsdparam.c $(GXERR) $(memory__h) $(string__h)\
+ $(gsparam_h) $(gxdevice_h) $(gxfixed_h)
+	$(GLCC) $(GLO_)gsdparam.$(OBJ) $(C_) $(GLSRC)gsdparam.c
 
-gsfont.$(OBJ): gsfont.c $(GXERR) $(memory__h)\
- $(gschar_h) $(gsstruct_h) \
+$(GLOBJ)gsfont.$(OBJ): $(GLSRC)gsfont.c $(GXERR) $(memory__h)\
+ $(gschar_h) $(gsstruct_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gxfont_h) $(gxfcache_h)\
  $(gzstate_h)
+	$(GLCC) $(GLO_)gsfont.$(OBJ) $(C_) $(GLSRC)gsfont.c
 
-gsht.$(OBJ): gsht.c $(GXERR) $(memory__h)\
+$(GLOBJ)gsht.$(OBJ): $(GLSRC)gsht.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gsutil_h) $(gxarith_h) $(gxdevice_h) $(gzht_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsht.$(OBJ) $(C_) $(GLSRC)gsht.c
 
-gshtscr.$(OBJ): gshtscr.c $(GXERR) $(math__h) \
-  $(gsstruct_h) $(gxarith_h) $(gxdevice_h) $(gzht_h) $(gzstate_h)
+$(GLOBJ)gshtscr.$(OBJ): $(GLSRC)gshtscr.c $(GXERR) $(math__h)\
+ $(gsstruct_h) $(gxarith_h) $(gxdevice_h) $(gzht_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gshtscr.$(OBJ) $(C_) $(GLSRC)gshtscr.c
 
-gsimage.$(OBJ): gsimage.c $(GXERR) $(memory__h)\
-  $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h) \
-  $(gxarith_h) $(gxdevice_h) $(gzstate_h)
+$(GLOBJ)gsimage.$(OBJ): $(GLSRC)gsimage.c $(GXERR) $(memory__h)\
+ $(gscspace_h) $(gsimage_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gxarith_h) $(gxdevice_h) $(gxiparam_h) $(gxpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsimage.$(OBJ) $(C_) $(GLSRC)gsimage.c
 
-gsimpath.$(OBJ): gsimpath.c $(GXERR) \
-  $(gsmatrix_h) $(gsstate_h) $(gspath_h)
+$(GLOBJ)gsimpath.$(OBJ): $(GLSRC)gsimpath.c $(GXERR)\
+ $(gsmatrix_h) $(gsstate_h) $(gspath_h)
+	$(GLCC) $(GLO_)gsimpath.$(OBJ) $(C_) $(GLSRC)gsimpath.c
 
-gsinit.$(OBJ): gsinit.c $(memory__h) $(stdio__h) \
-  $(gdebug_h) $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmemory_h)
+$(GLOBJ)gsinit.$(OBJ): $(GLSRC)gsinit.c $(memory__h) $(stdio__h)\
+ $(gdebug_h) $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmalloc_h) $(gsmemory_h)
+	$(GLCC) $(GLO_)gsinit.$(OBJ) $(C_) $(GLSRC)gsinit.c
 
-gsiodev.$(OBJ): gsiodev.c $(GXERR) $(errno__h) $(string__h) \
-  $(gp_h) $(gsparam_h) $(gxiodev_h)
+$(GLOBJ)gsiodev.$(OBJ): $(GLSRC)gsiodev.c $(GXERR) $(errno__h) $(string__h)\
+ $(gp_h) $(gscdefs_h) $(gsparam_h) $(gsstruct_h) $(gxiodev_h)
+	$(GLCC) $(GLO_)gsiodev.$(OBJ) $(C_) $(GLSRC)gsiodev.c
 
-gsline.$(OBJ): gsline.c $(GXERR) $(math__h) $(memory__h)\
+$(GLOBJ)gsline.$(OBJ): $(GLSRC)gsline.c $(GXERR) $(math__h) $(memory__h)\
  $(gsline_h) $(gxfixed_h) $(gxmatrix_h) $(gzstate_h) $(gzline_h)
+	$(GLCC) $(GLO_)gsline.$(OBJ) $(C_) $(GLSRC)gsline.c
 
-gsmatrix.$(OBJ): gsmatrix.c $(GXERR) $(math__h) \
-  $(gxfarith_h) $(gxfixed_h) $(gxmatrix_h)
+$(GLOBJ)gsmatrix.$(OBJ): $(GLSRC)gsmatrix.c $(GXERR) $(math__h)\
+ $(gxfarith_h) $(gxfixed_h) $(gxmatrix_h)
+	$(GLCC) $(GLO_)gsmatrix.$(OBJ) $(C_) $(GLSRC)gsmatrix.c
 
-gspaint.$(OBJ): gspaint.c $(GXERR) $(math__h) $(gpcheck_h)\
+$(GLOBJ)gspaint.$(OBJ): $(GLSRC)gspaint.c $(GXERR) $(math__h) $(gpcheck_h)\
  $(gspaint_h) $(gspath_h) $(gsropt_h)\
  $(gxcpath_h) $(gxdevmem_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gxpaint_h)\
  $(gzpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gspaint.$(OBJ) $(C_) $(GLSRC)gspaint.c
 
-gsparam.$(OBJ): gsparam.c $(GXERR) $(memory__h) $(string__h)\
+$(GLOBJ)gsparam.$(OBJ): $(GLSRC)gsparam.c $(GXERR) $(memory__h) $(string__h)\
  $(gsparam_h) $(gsstruct_h)
+	$(GLCC) $(GLO_)gsparam.$(OBJ) $(C_) $(GLSRC)gsparam.c
 
-gsparams.$(OBJ): gsparams.c $(gx_h) $(memory__h) $(gserrors_h) $(gsparam_h)
+$(GLOBJ)gsparams.$(OBJ): $(GLSRC)gsparams.c $(GXERR) $(memory__h)\
+ $(gsparams_h)
+	$(GLCC) $(GLO_)gsparams.$(OBJ) $(C_) $(GLSRC)gsparams.c
 
-gspath.$(OBJ): gspath.c $(GXERR) \
-  $(gscoord_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) \
-  $(gzcpath_h) $(gzpath_h) $(gzstate_h)
+$(GLOBJ)gspath.$(OBJ): $(GLSRC)gspath.c $(GXERR)\
+ $(gscoord_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gzcpath_h) $(gzpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gspath.$(OBJ) $(C_) $(GLSRC)gspath.c
 
-gsstate.$(OBJ): gsstate.c $(GXERR) $(memory__h)\
- $(gscie_h) $(gscolor2_h) $(gscoord_h) $(gspath_h) $(gsstruct_h) $(gsutil_h) \
- $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxpcache_h) \
+$(GLOBJ)gsstate.$(OBJ): $(GLSRC)gsstate.c $(GXERR) $(memory__h)\
+ $(gsalpha_h) $(gscie_h) $(gscolor2_h) $(gscoord_h)\
+ $(gspath_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gxpcache_h)\
  $(gzstate_h) $(gzht_h) $(gzline_h) $(gzpath_h) $(gzcpath_h)
+	$(GLCC) $(GLO_)gsstate.$(OBJ) $(C_) $(GLSRC)gsstate.c
 
-###### The internal devices
+$(GLOBJ)gstext.$(OBJ): $(GLSRC)gstext.c $(std_h) $(gdebug_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h)\
+ $(gxdevcli_h) $(gxpath_h) $(gxtext_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gstext.$(OBJ) $(C_) $(GLSRC)gstext.c
 
-### The built-in device implementations:
+###### Internal devices
 
-# The bounding box device is not normally a free-standing device.
-# To configure it as one for testing, change SETMOD to SETDEV, and also
-# define TEST in gdevbbox.c.
-bbox.dev: $(LIB_MAK) $(ECHOGS_XE) gdevbbox.$(OBJ)
-	$(SETMOD) bbox gdevbbox.$(OBJ)
+### Memory devices
 
-gdevbbox.$(OBJ): gdevbbox.c $(GXERR) $(math__h) $(memory__h) \
-  $(gdevbbox_h) $(gsdevice_h) $(gsparam_h) \
-  $(gxcpath_h) $(gxdevice_h) $(gxistate_h) $(gxpaint_h) $(gxpath_h)
+$(GLOBJ)gdevmem.$(OBJ): $(GLSRC)gdevmem.c $(GXERR) $(memory__h)\
+ $(gsrect_h) $(gsstruct_h)\
+ $(gxarith_h) $(gxgetbit_h) $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevmem.$(OBJ) $(C_) $(GLSRC)gdevmem.c
 
-gdevddrw.$(OBJ): gdevddrw.c $(GXERR) $(math__h) $(gpcheck_h) \
-  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)
+$(GLOBJ)gdevm1.$(OBJ): $(GLSRC)gdevm1.c $(GX) $(memory__h) $(gsrop_h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevm1.$(OBJ) $(C_) $(GLSRC)gdevm1.c
 
-gdevdflt.$(OBJ): gdevdflt.c $(GXERR) $(gpcheck_h)\
- $(gsbittab_h) $(gsropt_h)\
+$(GLOBJ)gdevm2.$(OBJ): $(GLSRC)gdevm2.c $(GX) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevm2.$(OBJ) $(C_) $(GLSRC)gdevm2.c
+
+$(GLOBJ)gdevm4.$(OBJ): $(GLSRC)gdevm4.c $(GX) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevm4.$(OBJ) $(C_) $(GLSRC)gdevm4.c
+
+$(GLOBJ)gdevm8.$(OBJ): $(GLSRC)gdevm8.c $(GX) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevm8.$(OBJ) $(C_) $(GLSRC)gdevm8.c
+
+$(GLOBJ)gdevm16.$(OBJ): $(GLSRC)gdevm16.c $(GX) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevm16.$(OBJ) $(C_) $(GLSRC)gdevm16.c
+
+$(GLOBJ)gdevm24.$(OBJ): $(GLSRC)gdevm24.c $(GX) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevm24.$(OBJ) $(C_) $(GLSRC)gdevm24.c
+
+$(GLOBJ)gdevm32.$(OBJ): $(GLSRC)gdevm32.c $(GX) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevm32.$(OBJ) $(C_) $(GLSRC)gdevm32.c
+
+$(GLOBJ)gdevmpla.$(OBJ): $(GLSRC)gdevmpla.c $(GX) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevmpla.$(OBJ) $(C_) $(GLSRC)gdevmpla.c
+
+### Alpha-channel devices
+
+$(GLOBJ)gdevabuf.$(OBJ): $(GLSRC)gdevabuf.c $(GXERR) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+	$(GLCC) $(GLO_)gdevabuf.$(OBJ) $(C_) $(GLSRC)gdevabuf.c
+
+$(GLOBJ)gdevalph.$(OBJ): $(GLSRC)gdevalph.c $(GXERR) $(memory__h)\
+ $(gsdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h)
+	$(GLCC) $(GLO_)gdevalph.$(OBJ) $(C_) $(GLSRC)gdevalph.c
+
+### Other built-in devices
+
+bbox.dev: $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gdevbbox.$(OBJ)
+	$(SETDEV2) bbox $(GLOBJ)gdevbbox.$(OBJ)
+
+$(GLOBJ)gdevbbox.$(OBJ): $(GLSRC)gdevbbox.c $(GXERR) $(math__h) $(memory__h)\
+ $(gdevbbox_h) $(gsdevice_h) $(gsparam_h)\
+ $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h) $(gxiparam_h) $(gxistate_h)\
+ $(gxpaint_h) $(gxpath_h)
+	$(GLCC) $(GLO_)gdevbbox.$(OBJ) $(C_) $(GLSRC)gdevbbox.c
+
+$(GLOBJ)gdevhit.$(OBJ): $(GLSRC)gdevhit.c $(std_h)\
+  $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gstypes_h) $(gxdevice_h)
+	$(GLCC) $(GLO_)gdevhit.$(OBJ) $(C_) $(GLSRC)gdevhit.c
+
+# Define a device that implements the PCL 5 special color mapping
+# algorithms.  This is not included in any PostScript or PDF system.
+
+devcmap.dev: $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gdevcmap.$(OBJ)
+	$(SETMOD) devcmap $(GLOBJ)gdevcmap.$(OBJ)
+
+gdevcmap_h=$(GLSRC)gdevcmap.h
+
+$(GLOBJ)gdevcmap.$(OBJ): $(GLSRC)gdevcmap.c $(GXERR)\
+ $(gxdevice_h) $(gxlum_h) $(gdevcmap_h)
+	$(GLCC) $(GLO_)gdevcmap.$(OBJ) $(C_) $(GLSRC)gdevcmap.c
+
+# A device that stores its data using run-length encoding.
+# This is just a sketch, not usable yet.
+
+$(GLOBJ)gdevrun.$(OBJ): $(GLSRC)gdevrun.c $(GXERR) $(memory__h)\
+ $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gdevrun.$(OBJ) $(C_) $(GLSRC)gdevrun.c
+
+### Default driver procedure implementations
+
+$(GLOBJ)gdevdbit.$(OBJ): $(GLSRC)gdevdbit.c $(GXERR) $(gpcheck_h)\
+ $(gdevmem_h) $(gsbittab_h) $(gsrect_h) $(gsropt_h)\
  $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gdevdbit.$(OBJ) $(C_) $(GLSRC)gdevdbit.c
 
-gdevnfwd.$(OBJ): gdevnfwd.c $(GX) \
-  $(gxdevice_h)
+$(GLOBJ)gdevddrw.$(OBJ): $(GLSRC)gdevddrw.c $(GXERR) $(math__h) $(memory__h)\
+ $(gpcheck_h)\
+ $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxiparam_h) $(gxistate_h) $(gxmatrix_h)
+	$(GLCC) $(GLO_)gdevddrw.$(OBJ) $(C_) $(GLSRC)gdevddrw.c
 
-# The render/RGB device is only here as an example, but we can configure
-# it as a real device for testing.
-rrgb.dev: $(LIB_MAK) $(ECHOGS_XE) gdevrrgb.$(OBJ) page.dev
-	$(SETPDEV) rrgb gdevrrgb.$(OBJ)
+$(GLOBJ)gdevdflt.$(OBJ): $(GLSRC)gdevdflt.c $(GXERR)\
+ $(gsropt_h) $(gxcomp_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gdevdflt.$(OBJ) $(C_) $(GLSRC)gdevdflt.c
 
-gdevrrgb.$(OBJ): gdevrrgb.c $(AK)\
- $(gdevprn_h)
+$(GLOBJ)gdevdgbr.$(OBJ): $(GLSRC)gdevdgbr.c $(GXERR)\
+ $(gdevmem_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gxlum_h)
+	$(GLCC) $(GLO_)gdevdgbr.$(OBJ) $(C_) $(GLSRC)gdevdgbr.c
 
-### The memory devices:
+$(GLOBJ)gdevnfwd.$(OBJ): $(GLSRC)gdevnfwd.c $(GXERR)\
+ $(gxdevice_h)
+	$(GLCC) $(GLO_)gdevnfwd.$(OBJ) $(C_) $(GLSRC)gdevnfwd.c
 
-gdevabuf.$(OBJ): gdevabuf.c $(GXERR) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+### Other device support
 
-gdevmem.$(OBJ): gdevmem.c $(GXERR) $(memory__h)\
- $(gsstruct_h) $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+# Provide a mapping between StandardEncoding and ISOLatin1Encoding.
+$(GLOBJ)gdevemap.$(OBJ): $(GLSRC)gdevemap.c $(AK) $(std_h)
+	$(GLCC) $(GLO_)gdevemap.$(OBJ) $(C_) $(GLSRC)gdevemap.c
 
-gdevm1.$(OBJ): gdevm1.c $(GX) $(memory__h) $(gsrop_h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
+###### Create a pseudo-"feature" for the entire graphics library.
 
-gdevm2.$(OBJ): gdevm2.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
-
-gdevm4.$(OBJ): gdevm4.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
-
-gdevm8.$(OBJ): gdevm8.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
-
-gdevm16.$(OBJ): gdevm16.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
-
-gdevm24.$(OBJ): gdevm24.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
-
-gdevm32.$(OBJ): gdevm32.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
-
-gdevmpla.$(OBJ): gdevmpla.c $(GX) $(memory__h)\
- $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
-
-# Create a pseudo-"feature" for the entire graphics library.
-
-LIB1s=gsalloc.$(OBJ) gsbitops.$(OBJ) gsbittab.$(OBJ)
-LIB2s=gschar.$(OBJ) gscolor.$(OBJ) gscoord.$(OBJ) gsdevice.$(OBJ) gsdevmem.$(OBJ)
-LIB3s=gsdparam.$(OBJ) gsfont.$(OBJ) gsht.$(OBJ) gshtscr.$(OBJ)
-LIB4s=gsimage.$(OBJ) gsimpath.$(OBJ) gsinit.$(OBJ) gsiodev.$(OBJ)
-LIB5s=gsline.$(OBJ) gsmatrix.$(OBJ) gsmemory.$(OBJ) gsmisc.$(OBJ)
-LIB6s=gspaint.$(OBJ) gsparam.$(OBJ) gsparams.$(OBJ) gspath.$(OBJ) gsstate.$(OBJ) gsutil.$(OBJ)
-LIB1x=gxacpath.$(OBJ) gxbcache.$(OBJ)
-LIB2x=gxccache.$(OBJ) gxccman.$(OBJ) gxcht.$(OBJ) gxcmap.$(OBJ) gxcpath.$(OBJ)
-LIB3x=gxdcconv.$(OBJ) gxdcolor.$(OBJ) gxdither.$(OBJ) gxfill.$(OBJ) gxht.$(OBJ)
-LIB4x=gximage.$(OBJ) gximage0.$(OBJ) gximage1.$(OBJ) gximage2.$(OBJ)
-LIB5x=gxpaint.$(OBJ) gxpath.$(OBJ) gxpath2.$(OBJ) gxpcopy.$(OBJ)
-LIB6x=gxpdash.$(OBJ) gxpflat.$(OBJ) gxsample.$(OBJ) gxstroke.$(OBJ)
-LIB1d=gdevabuf.$(OBJ) gdevddrw.$(OBJ) gdevdflt.$(OBJ) gdevnfwd.$(OBJ)
-LIB2d=gdevmem.$(OBJ) gdevm1.$(OBJ) gdevm2.$(OBJ) gdevm4.$(OBJ) gdevm8.$(OBJ)
-LIB3d=gdevm16.$(OBJ) gdevm24.$(OBJ) gdevm32.$(OBJ) gdevmpla.$(OBJ)
-LIBs=$(LIB1s) $(LIB2s) $(LIB3s) $(LIB4s) $(LIB5s) $(LIB6s)
-LIBx=$(LIB1x) $(LIB2x) $(LIB3x) $(LIB4x) $(LIB5x) $(LIB6x)
-LIBd=$(LIB1d) $(LIB2d) $(LIB3d)
+LIB1s=$(GLOBJ)gsalloc.$(OBJ) $(GLOBJ)gsalpha.$(OBJ)
+LIB2s=$(GLOBJ)gsbitops.$(OBJ) $(GLOBJ)gsbittab.$(OBJ)
+LIB3s=$(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ)
+LIB4s=$(GLOBJ)gscoord.$(OBJ) $(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ)
+LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ)
+LIB6s=$(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ)
+LIB7s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
+LIB8s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsline.$(OBJ) $(GLOBJ)gsmalloc.$(OBJ)
+LIB9s=$(GLOBJ)gsmatrix.$(OBJ) $(GLOBJ)gsmemory.$(OBJ) $(GLOBJ)gsmisc.$(OBJ)
+LIB10s=$(GLOBJ)gspaint.$(OBJ) $(GLOBJ)gsparam.$(OBJ) $(GLOBJ)gspath.$(OBJ)
+LIB11s=$(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ) $(GLOBJ)gsutil.$(OBJ)
+LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ) $(GLOBJ)gxccman.$(OBJ)
+LIB2x=$(GLOBJ)gxcht.$(OBJ) $(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
+LIB3x=$(GLOBJ)gxdcconv.$(OBJ) $(GLOBJ)gxdcolor.$(OBJ) $(GLOBJ)gxdither.$(OBJ)
+LIB4x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxht.$(OBJ)
+LIB5x=$(GLOBJ)gxiinit.$(OBJ) $(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximono.$(OBJ)
+LIB6x=$(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ) $(GLOBJ)gxpcopy.$(OBJ)
+LIB7x=$(GLOBJ)gxpdash.$(OBJ) $(GLOBJ)gxpflat.$(OBJ) $(GLOBJ)gxsample.$(OBJ) $(GLOBJ)gxstroke.$(OBJ)
+LIB1d=$(GLOBJ)gdevabuf.$(OBJ) $(GLOBJ)gdevdbit.$(OBJ) $(GLOBJ)gdevddrw.$(OBJ)
+LIB2d=$(GLOBJ)gdevdflt.$(OBJ) $(GLOBJ)gdevdgbr.$(OBJ) $(GLOBJ)gdevnfwd.$(OBJ) $(GLOBJ)gdevmem.$(OBJ)
+LIB3d=$(GLOBJ)gdevm1.$(OBJ) $(GLOBJ)gdevm2.$(OBJ) $(GLOBJ)gdevm4.$(OBJ) $(GLOBJ)gdevm8.$(OBJ)
+LIB4d=$(GLOBJ)gdevm16.$(OBJ) $(GLOBJ)gdevm24.$(OBJ) $(GLOBJ)gdevm32.$(OBJ) $(GLOBJ)gdevmpla.$(OBJ)
+LIBs=$(LIB1s) $(LIB2s) $(LIB3s) $(LIB4s) $(LIB5s) $(LIB6s) $(LIB7s) $(LIB8s)\
+ $(LIB9s) $(LIB10s) $(LIB11s)
+LIBx=$(LIB1x) $(LIB2x) $(LIB3x) $(LIB4x) $(LIB5x) $(LIB6x) $(LIB7x)
+LIBd=$(LIB1d) $(LIB2d) $(LIB3d) $(LIB4d)
 LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 libs.dev: $(LIB_MAK) $(ECHOGS_XE) $(LIBs)
-	$(EXP)echogs -w libs.dev $(LIB1s)
-	$(EXP)echogs -a libs.dev $(LIB2s)
-	$(EXP)echogs -a libs.dev $(LIB3s)
-	$(EXP)echogs -a libs.dev $(LIB4s)
-	$(EXP)echogs -a libs.dev $(LIB5s)
-	$(EXP)echogs -a libs.dev $(LIB6s)
-	$(ADDMOD) libs -init gscolor
+	$(ECHOGS_XE) -w libs.dev $(LIB1s)
+	$(ECHOGS_XE) -a libs.dev $(LIB2s)
+	$(ECHOGS_XE) -a libs.dev $(LIB3s)
+	$(ECHOGS_XE) -a libs.dev $(LIB4s)
+	$(ECHOGS_XE) -a libs.dev $(LIB5s)
+	$(ECHOGS_XE) -a libs.dev $(LIB6s)
+	$(ECHOGS_XE) -a libs.dev $(LIB7s)
+	$(ECHOGS_XE) -a libs.dev $(LIB8s)
+	$(ECHOGS_XE) -a libs.dev $(LIB9s)
+	$(ECHOGS_XE) -a libs.dev $(LIB10s)
+	$(ECHOGS_XE) -a libs.dev $(LIB11s)
+	$(ADDMOD) libs -init gshtscr gsutil
 
 libx.dev: $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
-	$(EXP)echogs -w libx.dev $(LIB1x)
-	$(EXP)echogs -a libx.dev $(LIB2x)
-	$(EXP)echogs -a libx.dev $(LIB3x)
-	$(EXP)echogs -a libx.dev $(LIB4x)
-	$(EXP)echogs -a libx.dev $(LIB5x)
-	$(EXP)echogs -a libx.dev $(LIB6x)
-	$(ADDMOD) libx -init gximage1 gximage2
+	$(ECHOGS_XE) -w libx.dev $(LIB1x)
+	$(ECHOGS_XE) -a libx.dev $(LIB2x)
+	$(ECHOGS_XE) -a libx.dev $(LIB3x)
+	$(ECHOGS_XE) -a libx.dev $(LIB4x)
+	$(ECHOGS_XE) -a libx.dev $(LIB5x)
+	$(ECHOGS_XE) -a libx.dev $(LIB6x)
+	$(ECHOGS_XE) -a libx.dev $(LIB7x)
+	$(ADDMOD) libx -init gxcht gxifast gximono
 
 libd.dev: $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
-	$(EXP)echogs -w libd.dev $(LIB1d)
-	$(EXP)echogs -a libd.dev $(LIB2d)
-	$(EXP)echogs -a libd.dev $(LIB3d)
+	$(ECHOGS_XE) -w libd.dev $(LIB1d)
+	$(ECHOGS_XE) -a libd.dev $(LIB2d)
+	$(ECHOGS_XE) -a libd.dev $(LIB3d)
+	$(ECHOGS_XE) -a libd.dev $(LIB4d)
 
-include 51x.mak
-# roplib and 51xlib shouldn't be required....
-libcore.dev: $(LIB_MAK) $(ECHOGS_XE) 51x.mak \
-  libs.dev libx.dev libd.dev iscale.dev roplib.dev 51xlib.dev
+libcore.dev: $(LIB_MAK) $(ECHOGS_XE)\
+ libs.dev libx.dev libd.dev iscale.dev noroplib.dev
 	$(SETMOD) libcore
-	$(ADDMOD) libcore -dev nullpage
-	$(ADDMOD) libcore -include libs libx libd iscale roplib 51xlib
+	$(ADDMOD) libcore -dev2 nullpage
+	$(ADDMOD) libcore -include libs libx libd iscale noroplib
 
 # ---------------- Stream support ---------------- #
 # Currently the only things in the library that use this are clists
 # and file streams.
 
-stream_h=stream.h $(scommon_h)
-
-stream.$(OBJ): stream.c $(AK) $(stdio__h) $(memory__h) \
-  $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
+$(GLOBJ)stream.$(OBJ): $(GLSRC)stream.c $(AK) $(stdio__h) $(memory__h)\
+ $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
+	$(GLCC) $(GLO_)stream.$(OBJ) $(C_) $(GLSRC)stream.c
 
 # ---------------- File streams ---------------- #
 # Currently only the high-level drivers use these, but more drivers will
 # probably use them eventually.
 
-sfile_=sfx$(FILE_IMPLEMENTATION).$(OBJ) stream.$(OBJ)
+sfile_=$(GLOBJ)sfx$(FILE_IMPLEMENTATION).$(OBJ) $(GLOBJ)stream.$(OBJ)
 sfile.dev: $(LIB_MAK) $(ECHOGS_XE) $(sfile_)
 	$(SETMOD) sfile $(sfile_)
 
-sfxstdio.$(OBJ): sfxstdio.c $(AK) $(stdio__h) $(memory__h) \
-  $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
+$(GLOBJ)sfxstdio.$(OBJ): $(GLSRC)sfxstdio.c $(AK) $(stdio__h) $(memory__h)\
+ $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sfxstdio.$(OBJ) $(C_) $(GLSRC)sfxstdio.c
 
-sfxfd.$(OBJ): sfxfd.c $(AK) $(stdio__h) $(errno__h) $(memory__h) \
-  $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
+$(GLOBJ)sfxfd.$(OBJ): $(GLSRC)sfxfd.c $(AK) $(stdio__h) $(errno__h) $(memory__h)\
+ $(gdebug_h) $(gpcheck_h) $(stream_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sfxfd.$(OBJ) $(C_) $(GLSRC)sfxfd.c
 
-sfxboth.$(OBJ): sfxboth.c sfxstdio.c sfxfd.c
+$(GLOBJ)sfxboth.$(OBJ): $(GLSRC)sfxboth.c $(GLSRC)sfxstdio.c $(GLSRC)sfxfd.c
+	$(GLCC) $(GLO_)sfxboth.$(OBJ) $(C_) $(GLSRC)sfxboth.c
 
 # ---------------- CCITTFax filters ---------------- #
 # These are used by clists, some drivers, and Level 2 in general.
 
-cfe_=scfe.$(OBJ) scfetab.$(OBJ) shc.$(OBJ)
+cfe_=$(GLOBJ)scfe.$(OBJ) $(GLOBJ)scfetab.$(OBJ) $(GLOBJ)shc.$(OBJ)
 cfe.dev: $(LIB_MAK) $(ECHOGS_XE) $(cfe_)
 	$(SETMOD) cfe $(cfe_)
 
-scfe.$(OBJ): scfe.c $(AK) $(memory__h) $(stdio__h) $(gdebug_h)\
-  $(scf_h) $(strimpl_h) $(scfx_h)
+$(GLOBJ)scfe.$(OBJ): $(GLSRC)scfe.c $(AK) $(memory__h) $(stdio__h) $(gdebug_h)\
+ $(scf_h) $(strimpl_h) $(scfx_h)
+	$(GLCC) $(GLO_)scfe.$(OBJ) $(C_) $(GLSRC)scfe.c
 
-scfetab.$(OBJ): scfetab.c $(AK) $(std_h) $(scommon_h) $(scf_h)
+$(GLOBJ)scfetab.$(OBJ): $(GLSRC)scfetab.c $(AK) $(std_h) $(scommon_h) $(scf_h)
+	$(GLCC) $(GLO_)scfetab.$(OBJ) $(C_) $(GLSRC)scfetab.c
 
-shc.$(OBJ): shc.c $(AK) $(std_h) $(scommon_h) $(shc_h)
+$(GLOBJ)shc.$(OBJ): $(GLSRC)shc.c $(AK) $(std_h) $(scommon_h) $(shc_h)
+	$(GLCC) $(GLO_)shc.$(OBJ) $(C_) $(GLSRC)shc.c
 
-cfd_=scfd.$(OBJ) scfdtab.$(OBJ)
+cfd_=$(GLOBJ)scfd.$(OBJ) $(GLOBJ)scfdtab.$(OBJ)
 cfd.dev: $(LIB_MAK) $(ECHOGS_XE) $(cfd_)
 	$(SETMOD) cfd $(cfd_)
 
-scfd.$(OBJ): scfd.c $(AK) $(memory__h) $(stdio__h) $(gdebug_h)\
-  $(scf_h) $(strimpl_h) $(scfx_h)
+$(GLOBJ)scfd.$(OBJ): $(GLSRC)scfd.c $(AK) $(memory__h) $(stdio__h) $(gdebug_h)\
+ $(scf_h) $(strimpl_h) $(scfx_h)
+	$(GLCC) $(GLO_)scfd.$(OBJ) $(C_) $(GLSRC)scfd.c
 
-scfdtab.$(OBJ): scfdtab.c $(AK) $(std_h) $(scommon_h) $(scf_h)
+$(GLOBJ)scfdtab.$(OBJ): $(GLSRC)scfdtab.c $(AK) $(std_h) $(scommon_h) $(scf_h)
+	$(GLCC) $(GLO_)scfdtab.$(OBJ) $(C_) $(GLSRC)scfdtab.c
+
+# scfparam is used by the filter operator and the PS/PDF writer.
+# It is not included automatically in cfe or cfd.
+$(GLOBJ)scfparam.$(OBJ): $(GLSRC)scfparam.c $(AK) $(std_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(scommon_h) $(scf_h) $(scfx_h)
+	$(GLCC) $(GLO_)scfparam.$(OBJ) $(C_) $(GLSRC)scfparam.c
 
 # ---------------- DCT (JPEG) filters ---------------- #
 # These are used by Level 2, and by the JPEG-writing driver.
 
 # Common code
 
-sdctc_=sdctc.$(OBJ) sjpegc.$(OBJ)
+sdcparam_h=$(GLSRC)sdcparam.h
 
-sdctc.$(OBJ): sdctc.c $(AK) $(stdio__h)\
- $(sdct_h) $(strimpl_h)\
- jpeglib.h
+sdctc_=$(GLOBJ)sdctc.$(OBJ) $(GLOBJ)sjpegc.$(OBJ)
 
-sjpegc.$(OBJ): sjpegc.c $(AK) $(stdio__h) $(string__h) $(gx_h)\
- $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h) \
- jerror.h jpeglib.h
+$(GLOBJ)sdctc.$(OBJ): $(GLSRC)sdctc.c $(AK) $(stdio__h) $(jpeglib_h)\
+ $(gsmalloc_h) $(gsmemory_h) $(sdct_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sdctc.$(OBJ) $(C_) $(GLSRC)sdctc.c
+
+$(GLOBJ)sjpegc.$(OBJ): $(GLSRC)sjpegc.c $(AK) $(stdio__h) $(string__h) $(gx_h)\
+ $(jerror_h) $(jpeglib_h)\
+ $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h)
+	$(GLJCC) $(GLO_)sjpegc.$(OBJ) $(C_) $(GLSRC)sjpegc.c
+
+# sdcparam is used by the filter operator and the PS/PDF writer.
+# It is not included automatically in sdcte/d.
+$(GLOBJ)sdcparam.$(OBJ): $(GLSRC)sdcparam.c $(AK) $(memory__h)\
+ $(jpeglib_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(sdcparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sdcparam.$(OBJ) $(C_) $(GLSRC)sdcparam.c
 
 # Encoding (compression)
 
-sdcte_=$(sdctc_) sdcte.$(OBJ) sjpege.$(OBJ)
-sdcte.dev: $(LIB_MAK) $(ECHOGS_XE) $(sdcte_) jpege.dev
+sdcte_=$(sdctc_) $(GLOBJ)sdcte.$(OBJ) $(GLOBJ)sjpege.$(OBJ)
+sdcte.dev: $(LIB_MAK) $(ECHOGS_XE) $(sdcte_) $(JGENDIR)$(D)jpege.dev
 	$(SETMOD) sdcte $(sdcte_)
-	$(ADDMOD) sdcte -include jpege
+	$(ADDMOD) sdcte -include $(JGENDIR)$(D)jpege
 
-sdcte.$(OBJ): sdcte.c $(AK) $(memory__h) $(stdio__h) $(gdebug_h)\
-  $(sdct_h) $(sjpeg_h) $(strimpl_h) \
-  jerror.h jpeglib.h
+$(GLOBJ)sdcte.$(OBJ): $(GLSRC)sdcte.c $(AK)\
+ $(memory__h) $(stdio__h) $(gdebug_h) $(gsmalloc_h) $(gsmemory_h)\
+ $(jerror_h) $(jpeglib_h)\
+ $(sdct_h) $(sjpeg_h) $(strimpl_h)
+	$(GLJCC) $(GLO_)sdcte.$(OBJ) $(C_) $(GLSRC)sdcte.c
 
-sjpege.$(OBJ): sjpege.c $(AK) $(stdio__h) $(string__h) $(gx_h)\
- $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h) \
- jerror.h jpeglib.h
+$(GLOBJ)sjpege.$(OBJ): $(GLSRC)sjpege.c $(AK)\
+ $(stdio__h) $(string__h) $(gx_h)\
+ $(jerror_h) $(jpeglib_h)\
+ $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h)
+	$(GLJCC) $(GLO_)sjpege.$(OBJ) $(C_) $(GLSRC)sjpege.c
+
+# sdeparam is used by the filter operator and the PS/PDF writer.
+# It is not included automatically in sdcte.
+$(GLOBJ)sdeparam.$(OBJ): $(GLSRC)sdeparam.c $(AK) $(memory__h)\
+ $(jpeglib_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(sdcparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sdeparam.$(OBJ) $(C_) $(GLSRC)sdeparam.c
 
 # Decoding (decompression)
 
-sdctd_=$(sdctc_) sdctd.$(OBJ) sjpegd.$(OBJ)
-sdctd.dev: $(LIB_MAK) $(ECHOGS_XE) $(sdctd_) jpegd.dev
+sdctd_=$(sdctc_) $(GLOBJ)sdctd.$(OBJ) $(GLOBJ)sjpegd.$(OBJ)
+sdctd.dev: $(LIB_MAK) $(ECHOGS_XE) $(sdctd_) $(JGENDIR)$(D)jpegd.dev
 	$(SETMOD) sdctd $(sdctd_)
-	$(ADDMOD) sdctd -include jpegd
+	$(ADDMOD) sdctd -include $(JGENDIR)$(D)jpegd
 
-sdctd.$(OBJ): sdctd.c $(AK) $(memory__h) $(stdio__h) $(gdebug_h)\
-  $(sdct_h) $(sjpeg_h) $(strimpl_h) \
-  jerror.h jpeglib.h
+$(GLOBJ)sdctd.$(OBJ): $(GLSRC)sdctd.c $(AK)\
+ $(memory__h) $(stdio__h) $(gdebug_h) $(gsmalloc_h) $(gsmemory_h)\
+ $(jerror_h) $(jpeglib_h)\
+ $(sdct_h) $(sjpeg_h) $(strimpl_h)
+	$(GLJCC) $(GLO_)sdctd.$(OBJ) $(C_) $(GLSRC)sdctd.c
 
-sjpegd.$(OBJ): sjpegd.c $(AK) $(stdio__h) $(string__h) $(gx_h)\
- $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h)\
- jerror.h jpeglib.h
+$(GLOBJ)sjpegd.$(OBJ): $(GLSRC)sjpegd.c $(AK)\
+ $(stdio__h) $(string__h) $(gx_h)\
+ $(jerror_h) $(jpeglib_h)\
+ $(gserrors_h) $(sjpeg_h) $(sdct_h) $(strimpl_h)
+	$(GLJCC) $(GLO_)sjpegd.$(OBJ) $(C_) $(GLSRC)sjpegd.c
+
+# sddparam is used by the filter operator.
+# It is not included automatically in sdctd.
+$(GLOBJ)sddparam.$(OBJ): $(GLSRC)sddparam.c $(AK) $(std_h)\
+ $(jpeglib_h)\
+ $(gserror_h) $(gserrors_h) $(gsmemory_h) $(gsparam_h) $(gstypes_h)\
+ $(sdcparam_h) $(sdct_h) $(sjpeg_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sddparam.$(OBJ) $(C_) $(GLSRC)sddparam.c
 
 # ---------------- LZW filters ---------------- #
 # These are used by Level 2 in general.
 
 slzwe_=slzwce
 #slzwe_=slzwe
-lzwe_=$(slzwe_).$(OBJ) slzwc.$(OBJ)
+lzwe_=$(GLOBJ)$(slzwe_).$(OBJ) $(GLOBJ)slzwc.$(OBJ)
 lzwe.dev: $(LIB_MAK) $(ECHOGS_XE) $(lzwe_)
 	$(SETMOD) lzwe $(lzwe_)
 
@@ -693,16 +978,19 @@ lzwe.dev: $(LIB_MAK) $(ECHOGS_XE) $(lzwe_)
 slzwe.dev: lzwe.dev
 	$(CP_) lzwe.dev slzwe.dev
 
-slzwce.$(OBJ): slzwce.c $(AK) $(stdio__h) $(gdebug_h)\
-  $(slzwx_h) $(strimpl_h)
+$(GLOBJ)slzwce.$(OBJ): $(GLSRC)slzwce.c $(AK) $(stdio__h) $(gdebug_h)\
+ $(slzwx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)slzwce.$(OBJ) $(C_) $(GLSRC)slzwce.c
 
-slzwe.$(OBJ): slzwe.c $(AK) $(stdio__h) $(gdebug_h)\
-  $(slzwx_h) $(strimpl_h)
+$(GLOBJ)slzwe.$(OBJ): $(GLSRC)slzwe.c $(AK) $(stdio__h) $(gdebug_h)\
+ $(slzwx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)slzwe.$(OBJ) $(C_) $(GLSRC)slzwe.c
 
-slzwc.$(OBJ): slzwc.c $(AK) $(std_h)\
-  $(slzwx_h) $(strimpl_h)
+$(GLOBJ)slzwc.$(OBJ): $(GLSRC)slzwc.c $(AK) $(std_h)\
+ $(slzwx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)slzwc.$(OBJ) $(C_) $(GLSRC)slzwc.c
 
-lzwd_=slzwd.$(OBJ) slzwc.$(OBJ)
+lzwd_=$(GLOBJ)slzwd.$(OBJ) $(GLOBJ)slzwc.$(OBJ)
 lzwd.dev: $(LIB_MAK) $(ECHOGS_XE) $(lzwd_)
 	$(SETMOD) lzwd $(lzwd_)
 
@@ -710,570 +998,868 @@ lzwd.dev: $(LIB_MAK) $(ECHOGS_XE) $(lzwd_)
 slzwd.dev: lzwd.dev
 	$(CP_) lzwd.dev slzwd.dev
 
-slzwd.$(OBJ): slzwd.c $(AK) $(stdio__h) $(gdebug_h)\
-  $(slzwx_h) $(strimpl_h)
+$(GLOBJ)slzwd.$(OBJ): $(GLSRC)slzwd.c $(AK) $(stdio__h) $(gdebug_h)\
+ $(slzwx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)slzwd.$(OBJ) $(C_) $(GLSRC)slzwd.c
 
 # ---------------- PCX decoding filter ---------------- #
 # This is an adhoc filter not used by anything in the standard configuration.
 
-pcxd_=spcxd.$(OBJ)
+pcxd_=$(GLOBJ)spcxd.$(OBJ)
 pcxd.dev: $(LIB_MAK) $(ECHOGS_XE) $(pcxd_)
 	$(SETMOD) pcxd $(pcxd_)
 
-spcxd.$(OBJ): spcxd.c $(AK) $(stdio__h) $(memory__h) \
-  $(spcxx_h) $(strimpl_h)
+$(GLOBJ)spcxd.$(OBJ): $(GLSRC)spcxd.c $(AK) $(stdio__h) $(memory__h)\
+ $(spcxx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)spcxd.$(OBJ) $(C_) $(GLSRC)spcxd.c
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.
 
-pdiff_=spdiff.$(OBJ)
+pdiff_=$(GLOBJ)spdiff.$(OBJ)
 pdiff.dev: $(LIB_MAK) $(ECHOGS_XE) $(pdiff_)
 	$(SETMOD) pdiff $(pdiff_)
 
-spdiff.$(OBJ): spdiff.c $(AK) $(stdio__h)\
+$(GLOBJ)spdiff.$(OBJ): $(GLSRC)spdiff.c $(AK) $(stdio__h)\
  $(spdiffx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)spdiff.$(OBJ) $(C_) $(GLSRC)spdiff.c
 
 # ---------------- PNG pixel prediction filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.
 
-pngp_=spngp.$(OBJ)
+pngp_=$(GLOBJ)spngp.$(OBJ)
 pngp.dev: $(LIB_MAK) $(ECHOGS_XE) $(pngp_)
 	$(SETMOD) pngp $(pngp_)
 
-spngp.$(OBJ): spngp.c $(AK) $(memory__h)\
-  $(spngpx_h) $(strimpl_h)
+$(GLOBJ)spngp.$(OBJ): $(GLSRC)spngp.c $(AK) $(memory__h)\
+ $(spngpx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)spngp.$(OBJ) $(C_) $(GLSRC)spngp.c
 
 # ---------------- RunLength filters ---------------- #
 # These are used by clists and also by Level 2 in general.
 
-rle_=srle.$(OBJ)
+rle_=$(GLOBJ)srle.$(OBJ)
 rle.dev: $(LIB_MAK) $(ECHOGS_XE) $(rle_)
 	$(SETMOD) rle $(rle_)
 
-srle.$(OBJ): srle.c $(AK) $(stdio__h) $(memory__h) \
-  $(srlx_h) $(strimpl_h)
+$(GLOBJ)srle.$(OBJ): $(GLSRC)srle.c $(AK) $(stdio__h) $(memory__h)\
+ $(srlx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)srle.$(OBJ) $(C_) $(GLSRC)srle.c
 
-rld_=srld.$(OBJ)
+rld_=$(GLOBJ)srld.$(OBJ)
 rld.dev: $(LIB_MAK) $(ECHOGS_XE) $(rld_)
 	$(SETMOD) rld $(rld_)
 
-srld.$(OBJ): srld.c $(AK) $(stdio__h) $(memory__h) \
-  $(srlx_h) $(strimpl_h)
+$(GLOBJ)srld.$(OBJ): $(GLSRC)srld.c $(AK) $(stdio__h) $(memory__h)\
+ $(srlx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)srld.$(OBJ) $(C_) $(GLSRC)srld.c
 
 # ---------------- String encoding/decoding filters ---------------- #
 # These are used by the PostScript and PDF writers, and also by the
 # PostScript interpreter.
 
-scantab.$(OBJ): scantab.c $(AK) $(stdpre_h)\
+$(GLOBJ)scantab.$(OBJ): $(GLSRC)scantab.c $(AK) $(stdpre_h)\
  $(scanchar_h) $(scommon_h)
+	$(GLCC) $(GLO_)scantab.$(OBJ) $(C_) $(GLSRC)scantab.c
 
-sfilter2.$(OBJ): sfilter2.c $(AK) $(memory__h) $(stdio__h)\
+$(GLOBJ)sfilter2.$(OBJ): $(GLSRC)sfilter2.c $(AK) $(memory__h) $(stdio__h)\
  $(sa85x_h) $(scanchar_h) $(sbtx_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sfilter2.$(OBJ) $(C_) $(GLSRC)sfilter2.c
 
-sstring.$(OBJ): sstring.c $(AK) $(stdio__h) $(memory__h) $(string__h)\
+$(GLOBJ)sstring.$(OBJ): $(GLSRC)sstring.c $(AK)\
+ $(stdio__h) $(memory__h) $(string__h)\
  $(scanchar_h) $(sstring_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sstring.$(OBJ) $(C_) $(GLSRC)sstring.c
 
 # ---------------- zlib filters ---------------- #
 # These are used by clists and are also available as filters.
 
-szlibc_=szlibc.$(OBJ)
+szlibc_=$(GLOBJ)szlibc.$(OBJ)
 
-szlibc.$(OBJ): szlibc.c $(AK) $(std_h) \
-  $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(strimpl_h) $(szlibx_h)
-	$(CCCZ) szlibc.c
+$(GLOBJ)szlibc.$(OBJ): $(GLSRC)szlibc.c $(AK) $(std_h)\
+ $(gserror_h) $(gserrors_h) $(gsmalloc_h) $(gsmemory_h)\
+ $(gsstruct_h) $(gstypes_h)\
+ $(strimpl_h) $(szlibx_h)
+	$(GLZCC) $(GLO_)szlibc.$(OBJ) $(C_) $(GLSRC)szlibc.c
 
-szlibe_=$(szlibc_) szlibe.$(OBJ)
-szlibe.dev: $(LIB_MAK) $(ECHOGS_XE) zlibe.dev $(szlibe_)
+szlibe_=$(szlibc_) $(GLOBJ)szlibe.$(OBJ)
+szlibe.dev: $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibe.dev $(szlibe_)
 	$(SETMOD) szlibe $(szlibe_)
-	$(ADDMOD) szlibe -include zlibe
+	$(ADDMOD) szlibe -include $(ZGENDIR)$(D)zlibe
 
-szlibe.$(OBJ): szlibe.c $(AK) $(std_h) \
-  $(gsmemory_h) $(strimpl_h) $(szlibx_h)
-	$(CCCZ) szlibe.c
+$(GLOBJ)szlibe.$(OBJ): $(GLSRC)szlibe.c $(AK) $(std_h)\
+ $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibx_h)
+	$(GLZCC) $(GLO_)szlibe.$(OBJ) $(C_) $(GLSRC)szlibe.c
 
-szlibd_=$(szlibc_) szlibd.$(OBJ)
-szlibd.dev: $(LIB_MAK) $(ECHOGS_XE) zlibd.dev $(szlibd_)
+szlibd_=$(szlibc_) $(GLOBJ)szlibd.$(OBJ)
+szlibd.dev: $(LIB_MAK) $(ECHOGS_XE) $(ZGENDIR)$(D)zlibd.dev $(szlibd_)
 	$(SETMOD) szlibd $(szlibd_)
-	$(ADDMOD) szlibd -include zlibd
+	$(ADDMOD) szlibd -include $(ZGENDIR)$(D)zlibd
 
-szlibd.$(OBJ): szlibd.c $(AK) $(std_h) \
-  $(gsmemory_h) $(strimpl_h) $(szlibx_h)
-	$(CCCZ) szlibd.c
-
-# ---------------- Command lists ---------------- #
-
-gxcldev_h=gxcldev.h $(gxclist_h) $(gsropt_h) $(gxht_h) $(gxtmap_h) $(gxdht_h)\
-  $(strimpl_h) $(scfx_h) $(srlx_h)
-gxclpage_h=gxclpage.h $(gxclio_h)
-gxclpath_h=gxclpath.h $(gxfixed_h)
-
-# Command list package.  Currently the higher-level facilities are required,
-# but eventually they will be optional.
-clist.dev: $(LIB_MAK) $(ECHOGS_XE) clbase.dev clpath.dev
-	$(SETMOD) clist -include clbase clpath
-
-# Base command list facility.
-clbase1_=gxclist.$(OBJ) gxclbits.$(OBJ) gxclpage.$(OBJ)
-clbase2_=gxclread.$(OBJ) gxclrect.$(OBJ) stream.$(OBJ)
-clbase_=$(clbase1_) $(clbase2_)
-clbase.dev: $(LIB_MAK) $(ECHOGS_XE) $(clbase_) cl$(BAND_LIST_STORAGE).dev \
-  cfe.dev cfd.dev rle.dev rld.dev
-	$(SETMOD) clbase $(clbase1_)
-	$(ADDMOD) clbase -obj $(clbase2_)
-	$(ADDMOD) clbase -include cl$(BAND_LIST_STORAGE) cfe cfd rle rld
-
-gdevht_h=gdevht.h $(gzht_h)
-
-gdevht.$(OBJ): gdevht.c $(GXERR) \
-  $(gdevht_h) $(gxdcconv_h) $(gxdcolor_h) $(gxdevice_h) $(gxdither_h)
-
-gxclist.$(OBJ): gxclist.c $(GXERR) $(memory__h) $(string__h)\
- $(gp_h) $(gpcheck_h)\
- $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h) $(gsparams_h)
-
-gxclbits.$(OBJ): gxclbits.c $(GXERR) $(memory__h) $(gpcheck_h)\
- $(gsbitops_h) $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxfmap_h)
-
-gxclpage.$(OBJ): gxclpage.c $(AK)\
- $(gdevprn_h) $(gxcldev_h) $(gxclpage_h)
-
-# (gxclread shouldn't need gxclpath.h)
-gxclread.$(OBJ): gxclread.c $(GXERR) $(memory__h) $(gp_h) $(gpcheck_h)\
- $(gdevht_h)\
- $(gsbitops_h) $(gscoord_h) $(gsdevice_h) $(gsstate_h)\
- $(gxcldev_h) $(gxclpath_h) $(gxcmap_h) $(gxcspace_h) $(gxdcolor_h)\
- $(gxdevice_h) $(gxdevmem_h) $(gsparams_h)\
- $(gxhttile_h) $(gxpaint_h) $(gzacpath_h) $(gzcpath_h) $(gzpath_h)\
- $(stream_h) $(strimpl_h)
-
-gxclrect.$(OBJ): gxclrect.c $(GXERR)\
- $(gsutil_h) $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h)
-
-# Higher-level command list facilities.
-clpath_=gxclimag.$(OBJ) gxclpath.$(OBJ)
-clpath.dev: $(LIB_MAK) $(ECHOGS_XE) $(clpath_) psl2cs.dev
-	$(SETMOD) clpath $(clpath_)
-	$(ADDMOD) clpath -include psl2cs
-	$(ADDMOD) clpath -init climag clpath
-
-gxclimag.$(OBJ): gxclimag.c $(GXERR) $(math__h) $(memory__h)\
- $(gscspace_h)\
- $(gxarith_h) $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h)\
- $(gxpath_h) $(gxfmap_h)\
- $(siscale_h) $(strimpl_h)
-
-gxclpath.$(OBJ): gxclpath.c $(GXERR) $(math__h) $(memory__h) $(gpcheck_h)\
- $(gxcldev_h) $(gxclpath_h) $(gxcolor2_h) $(gxdevice_h) $(gxdevmem_h)\
- $(gxpaint_h) \
- $(gzcpath_h) $(gzpath_h)
-
-# Implement band lists on files.
-
-clfile_=gxclfile.$(OBJ)
-clfile.dev: $(LIB_MAK) $(ECHOGS_XE) $(clfile_)
-	$(SETMOD) clfile $(clfile_)
-
-gxclfile.$(OBJ): gxclfile.c $(stdio__h) $(string__h) \
-  $(gp_h) $(gsmemory_h) $(gserror_h) $(gserrors_h) $(gxclio_h)
-
-# Implement band lists in memory (RAM).
-
-clmemory_=gxclmem.$(OBJ) gxcl$(BAND_LIST_COMPRESSOR).$(OBJ)
-clmemory.dev: $(LIB_MAK) $(ECHOGS_XE) $(clmemory_) s$(BAND_LIST_COMPRESSOR)e.dev s$(BAND_LIST_COMPRESSOR)d.dev
-	$(SETMOD) clmemory $(clmemory_)
-	$(ADDMOD) clmemory -include s$(BAND_LIST_COMPRESSOR)e s$(BAND_LIST_COMPRESSOR)d
-	$(ADDMOD) clmemory -init cl_$(BAND_LIST_COMPRESSOR)
-
-gxclmem_h=gxclmem.h $(gxclio_h) $(strimpl_h)
-
-gxclmem.$(OBJ): gxclmem.c $(GXERR) $(LIB_MAK) $(memory__h) \
-  $(gxclmem_h)
-
-# Implement the compression method for RAM-based band lists.
-
-gxcllzw.$(OBJ): gxcllzw.c $(std_h)\
- $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(slzwx_h)
-
-gxclzlib.$(OBJ): gxclzlib.c $(std_h)\
- $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(szlibx_h)
-	$(CCCZ) gxclzlib.c
+$(GLOBJ)szlibd.$(OBJ): $(GLSRC)szlibd.c $(AK) $(std_h)\
+ $(gsmalloc_h) $(gsmemory_h) $(strimpl_h) $(szlibx_h)
+	$(GLZCC) $(GLO_)szlibd.$(OBJ) $(C_) $(GLSRC)szlibd.c
 
 # ---------------- Page devices ---------------- #
 # We include this here, rather than in devs.mak, because it is more like
 # a feature than a simple device.
 
-page_=gdevprn.$(OBJ)
+gdevprn_h=$(GLSRC)gdevprn.h $(memory__h) $(string__h) $(gp_h) $(gx_h)\
+ $(gserrors_h) $(gsmatrix_h) $(gsparam_h) $(gsutil_h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gxclist_h)
+
+page_=$(GLOBJ)gdevprn.$(OBJ)
 page.dev: $(LIB_MAK) $(ECHOGS_XE) $(page_) clist.dev
 	$(SETMOD) page $(page_)
 	$(ADDMOD) page -include clist
 
-gdevprn.$(OBJ): gdevprn.c $(ctype__h) \
-  $(gdevprn_h) $(gp_h) $(gsparam_h) $(gxclio_h)
+$(GLOBJ)gdevprn.$(OBJ): $(GLSRC)gdevprn.c $(ctype__h)\
+ $(gdevprn_h) $(gp_h) $(gsparam_h) $(gxclio_h)
+	$(GLCC) $(GLO_)gdevprn.$(OBJ) $(C_) $(GLSRC)gdevprn.c
+
+# ---------------- Banded ("command list") devices ---------------- #
+
+gdevht_h=$(GLSRC)gdevht.h $(gzht_h)
+gxcldev_h=$(GLSRC)gxcldev.h $(gxclist_h) $(gsropt_h) $(gxht_h) $(gxtmap_h) $(gxdht_h)\
+ $(strimpl_h) $(scfx_h) $(srlx_h)
+gxclpage_h=$(GLSRC)gxclpage.h $(gxclio_h)
+gxclpath_h=$(GLSRC)gxclpath.h $(gxfixed_h)
+
+clbase1_=$(GLOBJ)gxclist.$(OBJ) $(GLOBJ)gxclbits.$(OBJ) $(GLOBJ)gxclpage.$(OBJ)
+clbase2_=$(GLOBJ)gxclrast.$(OBJ) $(GLOBJ)gxclread.$(OBJ) $(GLOBJ)gxclrect.$(OBJ)
+clbase3_=$(GLOBJ)gxclutil.$(OBJ) $(GLOBJ)gsparams.$(OBJ) $(GLOBJ)stream.$(OBJ)
+clpath_=$(GLOBJ)gxclimag.$(OBJ) $(GLOBJ)gxclpath.$(OBJ)
+clist_=$(clbase1_) $(clbase2_) $(clbase3_) $(clpath_)
+clist.dev: $(LIB_MAK) $(ECHOGS_XE) $(clist_) cl$(BAND_LIST_STORAGE).dev\
+ cfe.dev cfd.dev rle.dev rld.dev psl2cs.dev
+	$(SETMOD) clist $(clbase1_)
+	$(ADDMOD) clist -obj $(clbase2_)
+	$(ADDMOD) clist -obj $(clbase3_)
+	$(ADDMOD) clist -obj $(clpath_)
+	$(ADDMOD) clist -include cl$(BAND_LIST_STORAGE) cfe cfd rle rld psl2cs
+
+$(GLOBJ)gdevht.$(OBJ): $(GLSRC)gdevht.c $(GXERR)\
+ $(gdevht_h) $(gxdcconv_h) $(gxdcolor_h) $(gxdevice_h) $(gxdither_h)
+	$(GLCC) $(GLO_)gdevht.$(OBJ) $(C_) $(GLSRC)gdevht.c
+
+$(GLOBJ)gxclist.$(OBJ): $(GLSRC)gxclist.c $(GXERR) $(memory__h) $(string__h)\
+ $(gp_h) $(gpcheck_h) $(gsparams_h)\
+ $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gxclist.$(OBJ) $(C_) $(GLSRC)gxclist.c
+
+$(GLOBJ)gxclbits.$(OBJ): $(GLSRC)gxclbits.c $(GXERR) $(memory__h) $(gpcheck_h)\
+ $(gsbitops_h) $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxfmap_h)
+	$(GLCC) $(GLO_)gxclbits.$(OBJ) $(C_) $(GLSRC)gxclbits.c
+
+$(GLOBJ)gxclpage.$(OBJ): $(GLSRC)gxclpage.c $(AK)\
+ $(gdevprn_h) $(gxcldev_h) $(gxclpage_h)
+	$(GLCC) $(GLO_)gxclpage.$(OBJ) $(C_) $(GLSRC)gxclpage.c
+
+$(GLOBJ)gxclrast.$(OBJ): $(GLSRC)gxclrast.c $(GXERR)\
+ $(memory__h) $(gp_h) $(gpcheck_h)\
+ $(gdevht_h)\
+ $(gsbitops_h) $(gscoord_h) $(gsdevice_h) $(gsparams_h) $(gsstate_h)\
+ $(gxcldev_h) $(gxclpath_h) $(gxcmap_h) $(gxcspace_h) $(gxdcolor_h)\
+ $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h)\
+ $(gxhttile_h) $(gxpaint_h) $(gzacpath_h) $(gzcpath_h) $(gzpath_h)\
+ $(stream_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gxclrast.$(OBJ) $(C_) $(GLSRC)gxclrast.c
+
+$(GLOBJ)gxclread.$(OBJ): $(GLSRC)gxclread.c $(GXERR)\
+ $(memory__h) $(gp_h) $(gpcheck_h)\
+ $(gdevht_h)\
+ $(gscoord_h) $(gsdevice_h)\
+ $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h) $(gxhttile_h)\
+ $(stream_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gxclread.$(OBJ) $(C_) $(GLSRC)gxclread.c
+
+$(GLOBJ)gxclrect.$(OBJ): $(GLSRC)gxclrect.c $(GXERR)\
+ $(gsutil_h) $(gxcldev_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gxclrect.$(OBJ) $(C_) $(GLSRC)gxclrect.c
+
+$(GLOBJ)gxclimag.$(OBJ): $(GLSRC)gxclimag.c $(GXERR) $(math__h) $(memory__h)\
+ $(gscspace_h)\
+ $(gxarith_h) $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h)\
+ $(gxfmap_h) $(gxiparam_h)\
+ $(siscale_h) $(strimpl_h)
+	$(GLCC) $(GLO_)gxclimag.$(OBJ) $(C_) $(GLSRC)gxclimag.c
+
+$(GLOBJ)gxclpath.$(OBJ): $(GLSRC)gxclpath.c $(GXERR)\
+ $(math__h) $(memory__h) $(gpcheck_h)\
+ $(gxcldev_h) $(gxclpath_h) $(gxcolor2_h) $(gxdevice_h) $(gxdevmem_h)\
+ $(gxpaint_h)\
+ $(gzcpath_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gxclpath.$(OBJ) $(C_) $(GLSRC)gxclpath.c
+
+$(GLOBJ)gxclutil.$(OBJ): $(GLSRC)gxclutil.c $(GXERR) $(memory__h) $(string__h)\
+ $(gp_h) $(gpcheck_h)\
+ $(gsparams_h)\
+ $(gxcldev_h) $(gxclpath_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gxclutil.$(OBJ) $(C_) $(GLSRC)gxclutil.c
+
+# Implement band lists on files.
+
+clfile_=$(GLOBJ)gxclfile.$(OBJ)
+clfile.dev: $(LIB_MAK) $(ECHOGS_XE) $(clfile_)
+	$(SETMOD) clfile $(clfile_)
+
+$(GLOBJ)gxclfile.$(OBJ): $(GLSRC)gxclfile.c $(stdio__h) $(string__h)\
+ $(gp_h) $(gsmemory_h) $(gserror_h) $(gserrors_h) $(gxclio_h)
+	$(GLCC) $(GLO_)gxclfile.$(OBJ) $(C_) $(GLSRC)gxclfile.c
+
+# Implement band lists in memory (RAM).
+
+clmemory_=$(GLOBJ)gxclmem.$(OBJ) $(GLOBJ)gxcl$(BAND_LIST_COMPRESSOR).$(OBJ)
+clmemory.dev: $(LIB_MAK) $(ECHOGS_XE) $(clmemory_) s$(BAND_LIST_COMPRESSOR)e.dev s$(BAND_LIST_COMPRESSOR)d.dev
+	$(SETMOD) clmemory $(clmemory_)
+	$(ADDMOD) clmemory -include s$(BAND_LIST_COMPRESSOR)e s$(BAND_LIST_COMPRESSOR)d
+	$(ADDMOD) clmemory -init cl_$(BAND_LIST_COMPRESSOR)
+
+gxclmem_h=$(GLSRC)gxclmem.h $(gxclio_h) $(strimpl_h)
+
+$(GLOBJ)gxclmem.$(OBJ): $(GLSRC)gxclmem.c $(GXERR) $(LIB_MAK) $(memory__h)\
+ $(gsmalloc_h) $(gxclmem_h)
+	$(GLCC) $(GLO_)gxclmem.$(OBJ) $(C_) $(GLSRC)gxclmem.c
+
+# Implement the compression method for RAM-based band lists.
+
+$(GLOBJ)gxcllzw.$(OBJ): $(GLSRC)gxcllzw.c $(std_h)\
+ $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(slzwx_h)
+	$(GLCC) $(GLO_)gxcllzw.$(OBJ) $(C_) $(GLSRC)gxcllzw.c
+
+$(GLOBJ)gxclzlib.$(OBJ): $(GLSRC)gxclzlib.c $(std_h)\
+ $(gsmemory_h) $(gstypes_h) $(gxclmem_h) $(szlibx_h)
+	$(GLZCC) $(GLO_)gxclzlib.$(OBJ) $(C_) $(GLSRC)gxclzlib.c
 
 # ---------------- Vector devices ---------------- #
 # We include this here for the same reasons as page.dev.
 
-gdevvec_h=gdevvec.h $(gdevbbox_h) $(gsropt_h) $(gxdevice_h) $(gxistate_h) $(stream_h)
+gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h)\
+ $(gsropt_h) $(gxdevice_h) $(gxiparam_h) $(gxistate_h) $(stream_h)
 
-vector_=gdevvec.$(OBJ)
+vector_=$(GLOBJ)gdevvec.$(OBJ)
 vector.dev: $(LIB_MAK) $(ECHOGS_XE) $(vector_) bbox.dev sfile.dev
 	$(SETMOD) vector $(vector_)
 	$(ADDMOD) vector -include bbox sfile
 
-gdevvec.$(OBJ): gdevvec.c $(GXERR) $(math__h) $(memory__h) $(string__h)\
+$(GLOBJ)gdevvec.$(OBJ): $(GLSRC)gdevvec.c $(GXERR)\
+ $(math__h) $(memory__h) $(string__h)\
  $(gdevvec_h) $(gp_h) $(gscspace_h) $(gsparam_h) $(gsutil_h)\
  $(gxdcolor_h) $(gxfixed_h) $(gxpaint_h)\
  $(gzcpath_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gdevvec.$(OBJ) $(C_) $(GLSRC)gdevvec.c
 
 # ---------------- Image scaling filter ---------------- #
 
-iscale_=siscale.$(OBJ)
+iscale_=$(GLOBJ)siscale.$(OBJ)
 iscale.dev: $(LIB_MAK) $(ECHOGS_XE) $(iscale_)
 	$(SETMOD) iscale $(iscale_)
 
-siscale.$(OBJ): siscale.c $(AK) $(math__h) $(memory__h) $(stdio__h) \
-  $(siscale_h) $(strimpl_h)
+$(GLOBJ)siscale.$(OBJ): $(GLSRC)siscale.c $(AK)\
+ $(math__h) $(memory__h) $(stdio__h)\
+ $(siscale_h) $(strimpl_h)
+	$(GLCC) $(GLO_)siscale.$(OBJ) $(C_) $(GLSRC)siscale.c
+
+# ---------------- Extended halftone support ---------------- #
+# This is only used by one non-PostScript-based project.
+
+gshtx_h=$(GLSRC)gshtx.h $(gscsepnm_h) $(gsht1_h) $(gsmemory_h) $(gxtmap_h)
+
+htxlib_=$(GLOBJ)gshtx.$(OBJ)
+htxlib.dev: $(LIB_MAK) $(ECHOGS_XE) $(htxlib_)
+	$(SETMOD) htxlib $(htxlib_)
+
+$(GLOBJ)gshtx.$(OBJ): $(GLSRC)gshtx.c $(GXERR) $(memory__h)\
+ $(gsstruct_h) $(gsutil_h)\
+ $(gxfmap_h) $(gshtx_h) $(gzht_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gshtx.$(OBJ) $(C_) $(GLSRC)gshtx.c
 
 # ---------------- RasterOp et al ---------------- #
-# Currently this module is required, but it should be optional.
+# Note that noroplib is a default, roplib replaces it.
 
-roplib_=gdevmrop.$(OBJ) gsrop.$(OBJ) gsroptab.$(OBJ)
+gsropc_h=$(GLSRC)gsropc.h $(gscompt_h) $(gsropt_h)
+gxropc_h=$(GLSRC)gxropc.h $(gsropc_h) $(gxcomp_h)
+
+noroplib_=$(GLOBJ)gsnorop.$(OBJ)
+noroplib.dev: $(LIB_MAK) $(ECHOGS_XE) $(noroplib_)
+	$(SETMOD) noroplib $(noroplib_)
+
+$(GLOBJ)gsnorop.$(OBJ): $(GLSRC)gsnorop.c $(GXERR)\
+ $(gdevmrop_h) $(gsrop_h) $(gxdevcli_h)
+	$(GLCC) $(GLO_)gsnorop.$(OBJ) $(C_) $(GLSRC)gsnorop.c
+
+roplib1_=$(GLOBJ)gdevdrop.$(OBJ) $(GLOBJ)gdevmrop.$(OBJ) $(GLOBJ)gdevrops.$(OBJ)
+roplib2_=$(GLOBJ)gsrop.$(OBJ) $(GLOBJ)gsroptab.$(OBJ)
+roplib_=$(roplib1_) $(roplib2_)
 roplib.dev: $(LIB_MAK) $(ECHOGS_XE) $(roplib_)
-	$(SETMOD) roplib $(roplib_)
-	$(ADDMOD) roplib -init roplib
+	$(SETMOD) roplib $(roplib1_)
+	$(ADDMOD) roplib $(roplib2_)
+	$(ADDMOD) roplib -replace noroplib
 
-gdevrun.$(OBJ): gdevrun.c $(GXERR) $(memory__h) \
-  $(gxdevice_h) $(gxdevmem_h)
+$(GLOBJ)gdevdrop.$(OBJ): $(GLSRC)gdevdrop.c $(GXERR) $(memory__h)\
+ $(gsbittab_h) $(gsropt_h)\
+ $(gxcindex_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h)\
+ $(gxgetbit_h)\
+ $(gdevmrop_h)
+	$(GLCC) $(GLO_)gdevdrop.$(OBJ) $(C_) $(GLSRC)gdevdrop.c
 
-gdevmrop.$(OBJ): gdevmrop.c $(GXERR) $(memory__h) \
-  $(gsbittab_h) $(gsropt_h) \
-  $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h) \
-  $(gdevmrop_h)
+$(GLOBJ)gdevmrop.$(OBJ): $(GLSRC)gdevmrop.c $(GXERR) $(memory__h)\
+ $(gsbittab_h) $(gsropt_h)\
+ $(gxcindex_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxdevrop_h)\
+ $(gdevmrop_h)
+	$(GLCC) $(GLO_)gdevmrop.$(OBJ) $(C_) $(GLSRC)gdevmrop.c
 
-gsrop.$(OBJ): gsrop.c $(GXERR) \
-  $(gsrop_h) $(gzstate_h)
+$(GLOBJ)gdevrops.$(OBJ): $(GLSRC)gdevrops.c $(GXERR)\
+ $(gxdcolor_h) $(gxdevice_h) $(gdevmrop_h)
+	$(GLCC) $(GLO_)gdevrops.$(OBJ) $(C_) $(GLSRC)gdevrops.c
 
-gsroptab.$(OBJ): gsroptab.c $(stdpre_h) $(gsropt_h)
-	$(CCLEAF) gsroptab.c
+$(GLOBJ)gsrop.$(OBJ): $(GLSRC)gsrop.c $(GXERR)\
+ $(gsrop_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsrop.$(OBJ) $(C_) $(GLSRC)gsrop.c
+
+#**************** $(CC_LEAF) $(GLSRC)gsroptab.c $(GLO_)gsroptab.$(OBJ)
+$(GLOBJ)gsroptab.$(OBJ): $(GLSRC)gsroptab.c $(stdpre_h) $(gsropt_h)
+	$(GLCC) $(GLO_)gsroptab.$(OBJ) $(C_) $(GLSRC)gsroptab.c
+
+# The following is not used yet.
+$(GLOBJ)gsropc.$(OBJ): $(GLSRC)gsropc.c $(GXERR)\
+ $(gsutil_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxropc_h)
+	$(GLCC) $(GLO_)gsropc.$(OBJ) $(C_) $(GLSRC)gsropc.c
 
 # ---------------- Async rendering ---------------- #
 
-gsmemfix_h=gsmemfix.h $(gsmemraw_h)
-gxsync_h=gxsync.h $(gpsync_h) $(gsmemory_h)
-gxpageq_h=gxpageq.h $(gsmemory_h) $(gxband_h) $(gxsync_h)
-gsmemlok_h=gsmemlok.h $(gsmemory_h) $(gxsync_h)
-gdevprna_h=gdevprna.h $(gdevprn_h) $(gxsync_h)
+gsmemfix_h=$(GLSRC)gsmemfix.h $(gsmemraw_h)
+gxpageq_h=$(GLSRC)gxpageq.h $(gsmemory_h) $(gxband_h) $(gxsync_h)
+gdevprna_h=$(GLSRC)gdevprna.h $(gdevprn_h) $(gxsync_h)
 
-async_=gdevprna.$(OBJ) gxsync.$(OBJ) gxpageq.$(OBJ) gsmemlok.$(OBJ)\
- gsmemfix.$(OBJ)
-async.dev: $(INT_MAK) $(ECHOGS_XE) $(async_) clist.dev
-	$(SETMOD) async $(async_)
+async1_=$(GLOBJ)gdevprna.$(OBJ) $(GLOBJ)gxpageq.$(OBJ)
+async2_=$(GLOBJ)gsmemfix.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ) $(GLOBJ)gxsync.$(OBJ)
+async_=$(async1_) $(async2_)
+async.dev: $(LIB_MAK) $(ECHOGS_XE) $(async_) clist.dev
+	$(SETMOD) async $(async1_)
+	$(ADDMOD) async $(async2_)
+	$(ADDMOD) async -include clist
 
-gdevprna.$(OBJ): gdevprna.c $(AK) $(ctype__h) $(gdevprna_h) $(gsparam_h)\
+$(GLOBJ)gdevprna.$(OBJ): $(GLSRC)gdevprna.c $(AK) $(ctype__h)\
+ $(gdevprna_h) $(gsparam_h)\
  $(gsdevice_h) $(gxcldev_h) $(gxclpath_h) $(gxpageq_h) $(gsmemory_h)\
  $(gsmemlok_h) $(gsmemfix_h)
+	$(GLCC) $(GLO_)gdevprna.$(OBJ) $(C_) $(GLSRC)gdevprna.c
 
-gsmemfix.$(OBJ): gsmemfix.c $(AK) $(memory__h) $(gsmemraw_h) $(gsmemfix_h)
+$(GLOBJ)gsmemfix.$(OBJ): $(GLSRC)gsmemfix.c $(AK) $(memory__h)\
+ $(gsmemraw_h) $(gsmemfix_h)
+	$(GLCC) $(GLO_)gsmemfix.$(OBJ) $(C_) $(GLSRC)gsmemfix.c
 
-gxsync.$(OBJ): gxsync.c $(AK) $(gxsync_h) $(memory__h) $(gx_h) $(gserrors_h)\
- $(gsmemory_h)
-
-gxpageq.$(OBJ): gxpageq.c $(GXERR) $(gxdevice_h) $(gxclist_h)\
- $(gxpageq_h) $(gserrors_h)
-
-gsmemlok.$(OBJ): gsmemlok.c $(GXERR) $(gsmemlok_h) $(gserrors_h)
+$(GLOBJ)gxpageq.$(OBJ): $(GLSRC)gxpageq.c $(GXERR)\
+ $(gxdevice_h) $(gxclist_h) $(gxpageq_h)
+	$(GLCC) $(GLO_)gxpageq.$(OBJ) $(C_) $(GLSRC)gxpageq.c
 
 # -------- Composite (PostScript Type 0) font support -------- #
 
-cmaplib_=gsfcmap.$(OBJ)
+cmaplib_=$(GLOBJ)gsfcmap.$(OBJ)
 cmaplib.dev: $(LIB_MAK) $(ECHOGS_XE) $(cmaplib_)
 	$(SETMOD) cmaplib $(cmaplib_)
 
-gsfcmap.$(OBJ): gsfcmap.c $(GXERR)\
+$(GLOBJ)gsfcmap.$(OBJ): $(GLSRC)gsfcmap.c $(GXERR)\
  $(gsstruct_h) $(gxfcmap_h)
+	$(GLCC) $(GLO_)gsfcmap.$(OBJ) $(C_) $(GLSRC)gsfcmap.c
 
-psf0lib_=gschar0.$(OBJ) gsfont0.$(OBJ)
+psf0lib_=$(GLOBJ)gschar0.$(OBJ) $(GLOBJ)gsfont0.$(OBJ)
 psf0lib.dev: $(LIB_MAK) $(ECHOGS_XE) cmaplib.dev $(psf0lib_)
 	$(SETMOD) psf0lib $(psf0lib_)
 	$(ADDMOD) psf0lib -include cmaplib
 
-gschar0.$(OBJ): gschar0.c $(GXERR) $(memory__h)\
+$(GLOBJ)gschar0.$(OBJ): $(GLSRC)gschar0.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gxfixed_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gsfcmap_h) $(gxfont_h) $(gxfont0_h) $(gxchar_h)
+	$(GLCC) $(GLO_)gschar0.$(OBJ) $(C_) $(GLSRC)gschar0.c
 
-gsfont0.$(OBJ): gsfont0.c $(GXERR) $(memory__h)\
+$(GLOBJ)gsfont0.$(OBJ): $(GLSRC)gsfont0.c $(GXERR) $(memory__h)\
  $(gsmatrix_h) $(gsstruct_h) $(gxfixed_h) $(gxdevmem_h) $(gxfcache_h)\
  $(gxfont_h) $(gxfont0_h) $(gxchar_h) $(gxdevice_h)
+	$(GLCC) $(GLO_)gsfont0.$(OBJ) $(C_) $(GLSRC)gsfont0.c
+
+# ---------------- Masked images ---------------- #
+# This feature is out of level order beause Patterns require it
+# (which they shouldn't).
+
+gsiparm3_h=$(GLSRC)gsiparm3.h $(gsiparam_h)
+gsiparm4_h=$(GLSRC)gsiparm4.h $(gsiparam_h)
+
+$(GLOBJ)gxclipm.$(OBJ): $(GLSRC)gxclipm.c $(GX) $(memory__h)\
+ $(gxclipm_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gxclipm.$(OBJ) $(C_) $(GLSRC)gxclipm.c
+
+$(GLOBJ)gximage3.$(OBJ): $(GLSRC)gximage3.c $(GXERR) $(math__h) $(memory__h)\
+ $(gsbitops_h) $(gscspace_h) $(gsiparm3_h) $(gsstruct_h)\
+ $(gxclipm_h) $(gxdevice_h) $(gxdevmem_h) $(gxiparam_h) $(gxistate_h)
+	$(GLCC) $(GLO_)gximage3.$(OBJ) $(C_) $(GLSRC)gximage3.c
+
+$(GLOBJ)gximage4.$(OBJ): $(GLSRC)gximage4.c $(memory__h) $(GXERR)\
+ $(gscspace_h) $(gsiparm3_h) $(gsiparm4_h) $(gxiparam_h)
+	$(GLCC) $(GLO_)gximage4.$(OBJ) $(C_) $(GLSRC)gximage4.c
+
+imasklib_=$(GLOBJ)gxclipm.$(OBJ) $(GLOBJ)gximage3.$(OBJ) $(GLOBJ)gximage4.$(OBJ) $(GLOBJ)gxmclip.$(OBJ)
+imasklib.dev: $(LIB_MAK) $(ECHOGS_XE) $(imasklib_)
+	$(SETMOD) imasklib $(imasklib_)
 
 # ---------------- Pattern color ---------------- #
 
-patlib_=gspcolor.$(OBJ) gxclip2.$(OBJ) gxpcmap.$(OBJ)
-patlib.dev: $(LIB_MAK) $(ECHOGS_XE) cmyklib.dev psl2cs.dev $(patlib_)
-	$(SETMOD) patlib -include cmyklib psl2cs
-	$(ADDMOD) patlib -obj $(patlib_)
+patlib_1=$(GLOBJ)gspcolor.$(OBJ) $(GLOBJ)gxclip2.$(OBJ) $(GLOBJ)gxmclip.$(OBJ)
+patlib_2=$(GLOBJ)gxp1fill.$(OBJ) $(GLOBJ)gxpcmap.$(OBJ)
+patlib_=$(patlib_1) $(patlib_2)
+# Currently this feature requires masked images, but it shouldn't.
+patlib.dev: $(LIB_MAK) $(ECHOGS_XE) cmyklib.dev imasklib.dev psl2cs.dev $(patlib_)
+	$(SETMOD) patlib -include cmyklib imasklib psl2cs
+	$(ADDMOD) patlib -obj $(patlib_1)
+	$(ADDMOD) patlib -obj $(patlib_2)
 
-gspcolor.$(OBJ): gspcolor.c $(GXERR) $(math__h) \
-  $(gsimage_h) $(gspath_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h) \
-  $(gxarith_h) $(gxcolor2_h) $(gxcoord_h) $(gxclip2_h) $(gxcspace_h) \
-  $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) \
-  $(gxfixed_h) $(gxmatrix_h) $(gxpath_h) $(gxpcolor_h) $(gzstate_h)
+$(GLOBJ)gspcolor.$(OBJ): $(GLSRC)gspcolor.c $(GXERR) $(math__h)\
+ $(gsimage_h) $(gsiparm4_h) $(gspath_h) $(gsrop_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxarith_h) $(gxcolor2_h) $(gxcoord_h) $(gxclip2_h) $(gxcspace_h)\
+ $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gxp1fill_h) $(gxpath_h) $(gxpcolor_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gspcolor.$(OBJ) $(C_) $(GLSRC)gspcolor.c
 
-gxclip2.$(OBJ): gxclip2.c $(GXERR) $(memory__h) \
-  $(gsstruct_h) $(gxclip2_h) $(gxdevice_h) $(gxdevmem_h)
+$(GLOBJ)gxclip2.$(OBJ): $(GLSRC)gxclip2.c $(GXERR) $(memory__h)\
+ $(gsstruct_h) $(gxclip2_h) $(gxdevice_h) $(gxdevmem_h)
+	$(GLCC) $(GLO_)gxclip2.$(OBJ) $(C_) $(GLSRC)gxclip2.c
 
-gxpcmap.$(OBJ): gxpcmap.c $(GXERR) $(math__h) $(memory__h)\
+$(GLOBJ)gxp1fill.$(OBJ): $(GLSRC)gxp1fill.c $(GXERR) $(math__h)\
+ $(gsrop_h) $(gsmatrix_h)\
+ $(gxcolor2_h) $(gxclip2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevcli_h)\
+ $(gxdevmem_h) $(gxp1fill_h) $(gxpcolor_h)
+	$(GLCC) $(GLO_)gxp1fill.$(OBJ) $(C_) $(GLSRC)gxp1fill.c
+
+$(GLOBJ)gxpcmap.$(OBJ): $(GLSRC)gxpcmap.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gsutil_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h)\
  $(gxfixed_h) $(gxmatrix_h) $(gxpcolor_h)\
  $(gzcpath_h) $(gzpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gxpcmap.$(OBJ) $(C_) $(GLSRC)gxpcmap.c
 
 # ---------------- PostScript Type 1 (and Type 4) fonts ---------------- #
 
-type1lib_=gxtype1.$(OBJ) gxhint1.$(OBJ) gxhint2.$(OBJ) gxhint3.$(OBJ)
+type1lib_=$(GLOBJ)gxtype1.$(OBJ) $(GLOBJ)gxhint1.$(OBJ) $(GLOBJ)gxhint2.$(OBJ) $(GLOBJ)gxhint3.$(OBJ)
 
-gscrypt1_h=gscrypt1.h
-gstype1_h=gstype1.h
-gxfont1_h=gxfont1.h
-gxop1_h=gxop1.h
-gxtype1_h=gxtype1.h $(gscrypt1_h) $(gstype1_h) $(gxop1_h)
+gscrypt1_h=$(GLSRC)gscrypt1.h
+gstype1_h=$(GLSRC)gstype1.h
+gxfont1_h=$(GLSRC)gxfont1.h
+gxop1_h=$(GLSRC)gxop1.h
+gxtype1_h=$(GLSRC)gxtype1.h $(gscrypt1_h) $(gstype1_h) $(gxop1_h)
 
-gxtype1.$(OBJ): gxtype1.c $(GXERR) $(math__h)\
+$(GLOBJ)gxtype1.$(OBJ): $(GLSRC)gxtype1.c $(GXERR) $(math__h)\
  $(gsccode_h) $(gsline_h) $(gsstruct_h)\
  $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxistate_h) $(gxtype1_h)\
  $(gzpath_h)
+	$(GLCC) $(GLO_)gxtype1.$(OBJ) $(C_) $(GLSRC)gxtype1.c
 
-gxhint1.$(OBJ): gxhint1.c $(GXERR)\
- $(gxarith_h) $(gxfixed_h) $(gxmatrix_h) $(gxchar_h)\
+$(GLOBJ)gxhint1.$(OBJ): $(GLSRC)gxhint1.c $(GXERR)\
+ $(gxarith_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h)
+	$(GLCC) $(GLO_)gxhint1.$(OBJ) $(C_) $(GLSRC)gxhint1.c
 
-gxhint2.$(OBJ): gxhint2.c $(GXERR) $(memory__h)\
- $(gxarith_h) $(gxfixed_h) $(gxmatrix_h) $(gxchar_h)\
+$(GLOBJ)gxhint2.$(OBJ): $(GLSRC)gxhint2.c $(GXERR) $(memory__h)\
+ $(gxarith_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h)
+	$(GLCC) $(GLO_)gxhint2.$(OBJ) $(C_) $(GLSRC)gxhint2.c
 
-gxhint3.$(OBJ): gxhint3.c $(GXERR) $(math__h)\
- $(gxarith_h) $(gxfixed_h) $(gxmatrix_h) $(gxchar_h)\
+$(GLOBJ)gxhint3.$(OBJ): $(GLSRC)gxhint3.c $(GXERR) $(math__h)\
+ $(gxarith_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h)\
  $(gzpath_h)
+	$(GLCC) $(GLO_)gxhint3.$(OBJ) $(C_) $(GLSRC)gxhint3.c
 
 # Type 1 charstrings
 
-psf1lib_=gstype1.$(OBJ)
+psf1lib_=$(GLOBJ)gstype1.$(OBJ)
 psf1lib.dev: $(LIB_MAK) $(ECHOGS_XE) $(psf1lib_) $(type1lib_)
 	$(SETMOD) psf1lib $(psf1lib_)
 	$(ADDMOD) psf1lib $(type1lib_)
 	$(ADDMOD) psf1lib -init gstype1
 
-gstype1.$(OBJ): gstype1.c $(GXERR) $(math__h) $(memory__h)\
+$(GLOBJ)gstype1.$(OBJ): $(GLSRC)gstype1.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h)\
- $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h) $(gxchar_h)\
+ $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxistate_h) $(gxtype1_h)\
  $(gzpath_h)
+	$(GLCC) $(GLO_)gstype1.$(OBJ) $(C_) $(GLSRC)gstype1.c
 
 # Type 2 charstrings
 
-psf2lib_=gstype2.$(OBJ)
+psf2lib_=$(GLOBJ)gstype2.$(OBJ)
 psf2lib.dev: $(LIB_MAK) $(ECHOGS_XE) $(psf2lib_) $(type1lib_)
 	$(SETMOD) psf2lib $(psf2lib_)
 	$(ADDMOD) psf2lib $(type1lib_)
 	$(ADDMOD) psf2lib -init gstype2
 
-gstype2.$(OBJ): gstype2.c $(GXERR) $(math__h) $(memory__h)\
+$(GLOBJ)gstype2.$(OBJ): $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h)\
- $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h) $(gxchar_h)\
+ $(gxarith_h) $(gxcoord_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxistate_h) $(gxtype1_h)\
  $(gzpath_h)
+	$(GLCC) $(GLO_)gstype2.$(OBJ) $(C_) $(GLSRC)gstype2.c
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
-ttflib_=gstype42.$(OBJ)
+ttflib_=$(GLOBJ)gstype42.$(OBJ)
 ttflib.dev: $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) ttflib $(ttflib_)
 
-gxfont42_h=gxfont42.h
+gxfont42_h=$(GLSRC)gxfont42.h
 
-gstype42.$(OBJ): gstype42.c $(GXERR) $(memory__h) \
-  $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) \
-  $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h) $(gxpath_h)
+$(GLOBJ)gstype42.$(OBJ): $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h) $(gxpath_h)
+	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
 
 # -------- Level 1 color extensions (CMYK color and colorimage) -------- #
 
-cmyklib_=gscolor1.$(OBJ) gsht1.$(OBJ)
+cmyklib_=$(GLOBJ)gscolor1.$(OBJ) $(GLOBJ)gsht1.$(OBJ)
 cmyklib.dev: $(LIB_MAK) $(ECHOGS_XE) $(cmyklib_)
 	$(SETMOD) cmyklib $(cmyklib_)
-	$(ADDMOD) cmyklib -init gscolor1
 
-gscolor1.$(OBJ): gscolor1.c $(GXERR) \
-  $(gsccolor_h) $(gscolor1_h) $(gsstruct_h) $(gsutil_h) \
-  $(gxcmap_h) $(gxcspace_h) $(gxdcconv_h) $(gxdevice_h) \
-  $(gzstate_h)
+$(GLOBJ)gscolor1.$(OBJ): $(GLSRC)gscolor1.c $(GXERR)\
+ $(gsccolor_h) $(gscolor1_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxcmap_h) $(gxcspace_h) $(gxdcconv_h) $(gxdevice_h)\
+ $(gzstate_h)
+	$(GLCC) $(GLO_)gscolor1.$(OBJ) $(C_) $(GLSRC)gscolor1.c
 
-gsht1.$(OBJ): gsht1.c $(GXERR) $(memory__h)\
+$(GLOBJ)gsht1.$(OBJ): $(GLSRC)gsht1.c $(GXERR) $(memory__h)\
  $(gsstruct_h) $(gsutil_h) $(gxdevice_h) $(gzht_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsht1.$(OBJ) $(C_) $(GLSRC)gsht1.c
 
-colimlib_=gximage3.$(OBJ)
+colimlib_=$(GLOBJ)gxicolor.$(OBJ)
 colimlib.dev: $(LIB_MAK) $(ECHOGS_XE) $(colimlib_)
 	$(SETMOD) colimlib $(colimlib_)
-	$(ADDMOD) colimlib -init gximage3
+	$(ADDMOD) colimlib -init gxicolor
 
-gximage3.$(OBJ): gximage3.c $(GXERR) $(memory__h) $(gpcheck_h)\
+$(GLOBJ)gxicolor.$(OBJ): $(GLSRC)gxicolor.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gsccolor_h) $(gspaint_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcconv_h) $(gxdcolor_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h)\
  $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
  $(gzpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gxicolor.$(OBJ) $(C_) $(GLSRC)gxicolor.c
 
 # ---------------- HSB color ---------------- #
 
-hsblib_=gshsb.$(OBJ)
+hsblib_=$(GLOBJ)gshsb.$(OBJ)
 hsblib.dev: $(LIB_MAK) $(ECHOGS_XE) $(hsblib_)
 	$(SETMOD) hsblib $(hsblib_)
 
-gshsb.$(OBJ): gshsb.c $(GX) \
-  $(gscolor_h) $(gshsb_h) $(gxfrac_h)
+$(GLOBJ)gshsb.$(OBJ): $(GLSRC)gshsb.c $(GX)\
+ $(gscolor_h) $(gshsb_h) $(gxfrac_h)
+	$(GLCC) $(GLO_)gshsb.$(OBJ) $(C_) $(GLSRC)gshsb.c
 
 # ---- Level 1 path miscellany (arcs, pathbbox, path enumeration) ---- #
 
-path1lib_=gspath1.$(OBJ)
+path1lib_=$(GLOBJ)gspath1.$(OBJ)
 path1lib.dev: $(LIB_MAK) $(ECHOGS_XE) $(path1lib_)
 	$(SETMOD) path1lib $(path1lib_)
 
-gspath1.$(OBJ): gspath1.c $(GXERR) $(math__h) \
-  $(gscoord_h) $(gspath_h) $(gsstruct_h) \
-  $(gxfarith_h) $(gxfixed_h) $(gxmatrix_h) \
-  $(gzstate_h) $(gzpath_h)
+$(GLOBJ)gspath1.$(OBJ): $(GLSRC)gspath1.c $(GXERR) $(math__h)\
+ $(gscoord_h) $(gspath_h) $(gsstruct_h)\
+ $(gxfarith_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gzstate_h) $(gzpath_h)
+	$(GLCC) $(GLO_)gspath1.$(OBJ) $(C_) $(GLSRC)gspath1.c
 
 # --------------- Level 2 color space and color image support --------------- #
 
-psl2cs_=gscolor2.$(OBJ)
+psl2cs_=$(GLOBJ)gscolor2.$(OBJ)
 psl2cs.dev: $(LIB_MAK) $(ECHOGS_XE) $(psl2cs_)
 	$(SETMOD) psl2cs $(psl2cs_)
 
-gscolor2.$(OBJ): gscolor2.c $(GXERR) \
-  $(gxarith_h) $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gxmatrix_h) \
-  $(gzstate_h)
+$(GLOBJ)gscolor2.$(OBJ): $(GLSRC)gscolor2.c $(GXERR) $(memory__h)\
+ $(gxarith_h) $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gzstate_h)
+	$(GLCC) $(GLO_)gscolor2.$(OBJ) $(C_) $(GLSRC)gscolor2.c
 
-psl2lib_=gximage4.$(OBJ) gximage5.$(OBJ)
+psl2lib_=$(GLOBJ)gxi12bit.$(OBJ) $(GLOBJ)gxiscale.$(OBJ)
 psl2lib.dev: $(LIB_MAK) $(ECHOGS_XE) $(psl2lib_) colimlib.dev psl2cs.dev
 	$(SETMOD) psl2lib $(psl2lib_)
-	$(ADDMOD) psl2lib -init gximage4 gximage5
+	$(ADDMOD) psl2lib -init gxi12bit gxiscale
 	$(ADDMOD) psl2lib -include colimlib psl2cs
 
-gximage4.$(OBJ): gximage4.c $(GXERR) $(memory__h) $(gpcheck_h)\
+$(GLOBJ)gxi12bit.$(OBJ): $(GLSRC)gxi12bit.c $(GXERR)\
+ $(memory__h) $(gpcheck_h)\
  $(gsccolor_h) $(gspaint_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h)\
  $(gzpath_h)
+	$(GLCC) $(GLO_)gxi12bit.$(OBJ) $(C_) $(GLSRC)gxi12bit.c
 
-gximage5.$(OBJ): gximage5.c $(GXERR) $(math__h) $(memory__h) $(gpcheck_h)\
+$(GLOBJ)gxiscale.$(OBJ): $(GLSRC)gxiscale.c $(GXERR)\
+ $(math__h) $(memory__h) $(gpcheck_h)\
  $(gsccolor_h) $(gspaint_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gxfrac_h) $(gximage_h) $(gxistate_h)\
  $(gxmatrix_h)\
  $(gzpath_h)
+	$(GLCC) $(GLO_)gxiscale.$(OBJ) $(C_) $(GLSRC)gxiscale.c
 
 # ---------------- Display Postscript / Level 2 support ---------------- #
 
-dps2lib_=gsdps1.$(OBJ)
+dps2lib_=$(GLOBJ)gsdps1.$(OBJ)
 dps2lib.dev: $(LIB_MAK) $(ECHOGS_XE) $(dps2lib_)
 	$(SETMOD) dps2lib $(dps2lib_)
 
-gsdps1.$(OBJ): gsdps1.c $(GXERR) $(math__h)\
+$(GLOBJ)gsdps1.$(OBJ): $(GLSRC)gsdps1.c $(GXERR) $(math__h)\
  $(gscoord_h) $(gsmatrix_h) $(gspaint_h) $(gspath_h) $(gspath2_h)\
  $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h) $(gzcpath_h) $(gzpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsdps1.$(OBJ) $(C_) $(GLSRC)gsdps1.c
 
-# ---------------- Display Postscript extensions ---------------- #
+# ---------------- DevicePixel color space ---------------- #
 
-gsdps_h=gsdps.h
+gscpixel_h=$(GLSRC)gscpixel.h
 
-dpslib_=gsdps.$(OBJ)
-dpslib.dev: $(LIB_MAK) $(ECHOGS_XE) $(dpslib_)
-	$(SETMOD) dpslib $(dpslib_)
+cspixlib_=$(GLOBJ)gscpixel.$(OBJ)
+cspixlib.dev: $(LIB_MAK) $(ECHOGS_XE) $(cspixlib_)
+	$(SETMOD) cspixlib $(cspixlib_)
 
-gsdps.$(OBJ): gsdps.c $(GX) $(gsdps_h)\
- $(gsdps_h) $(gspath_h) $(gxdevice_h) $(gzcpath_h) $(gzpath_h) $(gzstate_h)
+$(GLOBJ)gscpixel.$(OBJ): $(GLSRC)gscpixel.c $(GXERR)\
+ $(gsrefct_h) $(gscpixel_h) $(gxcspace_h) $(gxdevice_h)
+	$(GLCC) $(GLO_)gscpixel.$(OBJ) $(C_) $(GLSRC)gscpixel.c
 
 # ---------------- CIE color ---------------- #
 
-cielib_=gscie.$(OBJ) gxctable.$(OBJ)
+cielib1_=$(GLOBJ)gscie.$(OBJ) $(GLOBJ)gscscie.$(OBJ) $(GLOBJ)gxctable.$(OBJ)
+cielib2_=$(GLOBJ)gscrd.$(OBJ) $(GLOBJ)gscrdp.$(OBJ)
+cielib_=$(cielib1_) $(cielib2_)
 cielib.dev: $(LIB_MAK) $(ECHOGS_XE) $(cielib_)
-	$(SETMOD) cielib $(cielib_)
+	$(SETMOD) cielib $(cielib1_)
+	$(ADDMOD) cielib $(cielib2_)
 
-gscie.$(OBJ): gscie.c $(GXERR) $(math__h) \
-  $(gscie_h) $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h) \
-  $(gxarith_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)
+$(GLOBJ)gscie.$(OBJ): $(GLSRC)gscie.c $(GXERR) $(math__h)\
+ $(gscie_h) $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gxarith_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gscie.$(OBJ) $(C_) $(GLSRC)gscie.c
 
-gxctable.$(OBJ): gxctable.c $(GX) \
-  $(gxfixed_h) $(gxfrac_h) $(gxctable_h)
+$(GLOBJ)gscrd.$(OBJ): $(GLSRC)gscrd.c $(GXERR) $(math__h) $(memory__h) $(string__h)\
+ $(gscdefs_h) $(gscolor2_h) $(gscrd_h) $(gsdevice_h)\
+ $(gsmatrix_h) $(gsparam_h) $(gxcspace_h)
+	$(GLCC) $(GLO_)gscrd.$(OBJ) $(C_) $(GLSRC)gscrd.c
+
+$(GLOBJ)gscrdp.$(OBJ): $(GLSRC)gscrdp.c $(GXERR) $(math__h) $(memory__h)\
+ $(gscolor2_h) $(gscrdp_h) $(gsdevice_h) $(gsmatrix_h)\
+ $(gxarith_h) $(gxcspace_h)
+	$(GLCC) $(GLO_)gscrdp.$(OBJ) $(C_) $(GLSRC)gscrdp.c
+
+$(GLOBJ)gscscie.$(OBJ): $(GLSRC)gscscie.c $(GXERR) $(math__h)\
+ $(gscie_h) $(gscolor2_h) $(gsmatrix_h) $(gsstruct_h)\
+ $(gxarith_h) $(gxcmap_h) $(gxcspace_h) $(gxdevice_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gscscie.$(OBJ) $(C_) $(GLSRC)gscscie.c
+
+$(GLOBJ)gxctable.$(OBJ): $(GLSRC)gxctable.c $(GX)\
+ $(gxfixed_h) $(gxfrac_h) $(gxctable_h)
+	$(GLCC) $(GLO_)gxctable.$(OBJ) $(C_) $(GLSRC)gxctable.c
 
 # ---------------- Separation colors ---------------- #
 
-seprlib_=gscsepr.$(OBJ)
+seprlib_=$(GLOBJ)gscsepr.$(OBJ)
 seprlib.dev: $(LIB_MAK) $(ECHOGS_XE) $(seprlib_)
 	$(SETMOD) seprlib $(seprlib_)
 
-gscsepr.$(OBJ): gscsepr.c $(GXERR)\
+$(GLOBJ)gscsepr.$(OBJ): $(GLSRC)gscsepr.c $(GXERR)\
  $(gscsepr_h) $(gsmatrix_h) $(gsrefct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
+
+# ================ PDF support ================ #
 
 # ---------------- Functions ---------------- #
+# These are also used by LanguageLevel 3.
 
-gsdsrc_h=gsdsrc.h $(gsstruct_h)
-gsfunc_h=gsfunc.h
-gsfunc0_h=gsfunc0.h $(gsdsrc_h) $(gsfunc_h)
-gxfunc_h=gxfunc.h $(gsfunc_h) $(gsstruct_h)
+gsdsrc_h=$(GLSRC)gsdsrc.h $(gsstruct_h)
+gsfunc_h=$(GLSRC)gsfunc.h
+gsfunc0_h=$(GLSRC)gsfunc0.h $(gsdsrc_h) $(gsfunc_h)
+gxfunc_h=$(GLSRC)gxfunc.h $(gsfunc_h) $(gsstruct_h)
 
 # Generic support, and FunctionType 0.
-funclib_=gsdsrc.$(OBJ) gsfunc.$(OBJ) gsfunc0.$(OBJ)
+funclib_=$(GLOBJ)gsdsrc.$(OBJ) $(GLOBJ)gsfunc.$(OBJ) $(GLOBJ)gsfunc0.$(OBJ)
 funclib.dev: $(LIB_MAK) $(ECHOGS_XE) $(funclib_)
 	$(SETMOD) funclib $(funclib_)
 
-gsdsrc.$(OBJ): gsdsrc.c $(GX) $(memory__h)\
+$(GLOBJ)gsdsrc.$(OBJ): $(GLSRC)gsdsrc.c $(GX) $(memory__h)\
  $(gsdsrc_h) $(gserrors_h) $(stream_h)
+	$(GLCC) $(GLO_)gsdsrc.$(OBJ) $(C_) $(GLSRC)gsdsrc.c
 
-gsfunc.$(OBJ): gsfunc.c $(GX)\
+$(GLOBJ)gsfunc.$(OBJ): $(GLSRC)gsfunc.c $(GX)\
  $(gserrors_h) $(gxfunc_h)
+	$(GLCC) $(GLO_)gsfunc.$(OBJ) $(C_) $(GLSRC)gsfunc.c
 
-gsfunc0.$(OBJ): gsfunc0.c $(GX) $(math__h)\
- $(gserrors_h) $(gsfunc0_h) $(gxfunc_h)
+$(GLOBJ)gsfunc0.$(OBJ): $(GLSRC)gsfunc0.c $(GX) $(math__h)\
+ $(gserrors_h) $(gsfunc0_h) $(gxfarith_h) $(gxfunc_h)
+	$(GLCC) $(GLO_)gsfunc0.$(OBJ) $(C_) $(GLSRC)gsfunc0.c
 
-# ----------------------- Platform-specific modules ----------------------- #
+# ================ Display Postscript extensions ================ #
+
+gsiparm2_h=$(GLSRC)gsiparm2.h $(gsiparam_h)
+gsdps_h=$(GLSRC)gsdps.h $(gsiparm2_h)
+
+# Display PostScript needs the DevicePixel color space to implement
+# the PixelCopy option of ImageType 2 images.
+dpslib_=$(GLOBJ)gsdps.$(OBJ) $(GLOBJ)gximage2.$(OBJ)
+dpslib.dev: $(LIB_MAK) $(ECHOGS_XE) $(dpslib_) cspixlib.dev
+	$(SETMOD) dpslib $(dpslib_)
+	$(ADDMOD) dpslib -include cspixlib
+
+$(GLOBJ)gsdps.$(OBJ): $(GLSRC)gsdps.c $(GX)\
+ $(gsdps_h) $(gserrors_h) $(gspath_h)\
+ $(gxdevice_h) $(gzcpath_h) $(gzpath_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gsdps.$(OBJ) $(C_) $(GLSRC)gsdps.c
+
+$(GLOBJ)gximage2.$(OBJ): $(GLSRC)gximage2.c $(math__h) $(memory__h) $(GXERR)\
+ $(gscpixel_h) $(gscoord_h) $(gscspace_h) $(gsdevice_h) $(gsiparm2_h)\
+ $(gsmatrix_h) $(gxgetbit_h) $(gxiparam_h) $(gxpath_h)
+	$(GLCC) $(GLO_)gximage2.$(OBJ) $(C_) $(GLSRC)gximage2.c
+
+# ---------------- NeXT Display PostScript ---------------- #
+
+gsalphac_h=$(GLSRC)gsalphac.h $(gscompt_h)
+gsdpnext_h=$(GLSRC)gsdpnext.h $(gsalpha_h) $(gsalphac_h)
+
+$(GLOBJ)gsalphac.$(OBJ): $(GLSRC)gsalphac.c $(GXERR) $(memory__h)\
+ $(gsalphac_h) $(gsiparam_h) $(gsutil_h)\
+ $(gxalpha_h) $(gxcomp_h) $(gxdevice_h) $(gxgetbit_h) $(gxlum_h)
+	$(GLCC) $(GLO_)gsalphac.$(OBJ) $(C_) $(GLSRC)gsalphac.c
+
+$(GLOBJ)gximagec.$(OBJ): $(GLSRC)gximagec.c $(GXERR)\
+ $(gsdpnext_h) $(gxiparam_h)
+	$(GLCC) $(GLO_)gximagec.$(OBJ) $(C_) $(GLSRC)gximagec.c
+
+dpnxtlib_=$(GLOBJ)gsalphac.$(OBJ)
+dpnxtlib.dev: $(LIB_MAK) $(ECHOGS_XE) $(dpnxtlib_)
+	$(SETMOD) dpnxtlib $(dpnxtlib_)
+
+# ================ PostScript LanguageLevel 3 support ================ #
+
+gstrap_h=$(GLSRC)gstrap.h $(gsparam_h)
+
+$(GLOBJ)gscdevn.$(OBJ): $(GLSRC)gscdevn.c $(GXERR)\
+ $(gsmatrix_h) $(gsrefct_h) $(gxcspace_h)
+	$(GLCC) $(GLO_)gscdevn.$(OBJ) $(C_) $(GLSRC)gscdevn.c
+
+$(GLOBJ)gstrap.$(OBJ): $(GLSRC)gstrap.c $(string__h) $(GXERR)\
+ $(gstrap_h)
+	$(GLCC) $(GLO_)gstrap.$(OBJ) $(C_) $(GLSRC)gstrap.c
+
+psl3lib_=$(GLOBJ)gscdevn.$(OBJ) $(GLOBJ)gstrap.$(OBJ)
+psl3lib.dev: $(LIB_MAK) $(ECHOGS_XE) $(psl3lib_) imasklib.dev shadelib.dev
+	$(SETMOD) psl3lib $(psl3lib_)
+	$(ADDMOD) psl3lib -include imasklib shadelib
+
+# ---------------- Smooth shading ---------------- #
+
+gscolor3_h=$(GLSRC)gscolor3.h
+gsfunc3_h=$(GLSRC)gsfunc3.h $(gsdsrc_h) $(gsfunc_h)
+gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h)
+gsshade_h=$(GLSRC)gsshade.h\
+ $(gsccolor_h) $(gscspace_h) $(gsdsrc_h) $(gsfunc_h) $(gsmatrix_h)
+gxshade_h=$(GLSRC)gxshade.h $(gsshade_h) $(gxfixed_h) $(gxmatrix_h) $(stream_h)
+gxshade4_h=$(GLSRC)gxshade4.h
+
+$(GLOBJ)gscolor3.$(OBJ): $(GLSRC)gscolor3.c $(GXERR)\
+ $(gscolor2_h) $(gscolor3_h) $(gscspace_h) $(gsmatrix_h) $(gspath_h)\
+ $(gxshade_h) $(gzstate_h)
+	$(GLCC) $(GLO_)gscolor3.$(OBJ) $(C_) $(GLSRC)gscolor3.c
+
+$(GLOBJ)gsfunc3.$(OBJ): $(GLSRC)gsfunc3.c $(math__h) $(GXERR)\
+ $(gsfunc3_h) $(gxfunc_h)
+	$(GLCC) $(GLO_)gsfunc3.$(OBJ) $(C_) $(GLSRC)gsfunc3.c
+
+$(GLOBJ)gsshade.$(OBJ): $(GLSRC)gsshade.c $(GXERR)\
+ $(gscspace_h) $(gsstruct_h) $(gxshade_h)
+	$(GLCC) $(GLO_)gsshade.$(OBJ) $(C_) $(GLSRC)gsshade.c
+
+$(GLOBJ)gxshade.$(OBJ): $(GLSRC)gxshade.c $(GXERR) $(math__h)\
+ $(gsrect_h)\
+ $(gxcspace_h) $(gxdevcli_h) $(gxdht_h) $(gxistate_h) $(gxpaint_h) $(gxshade_h)
+	$(GLCC) $(GLO_)gxshade.$(OBJ) $(C_) $(GLSRC)gxshade.c
+
+$(GLOBJ)gxshade1.$(OBJ): $(GLSRC)gxshade1.c $(GXERR) $(math__h)\
+ $(gscoord_h) $(gsmatrix_h) $(gspath_h)\
+ $(gxcspace_h) $(gxdcolor_h) $(gxfarith_h) $(gxfixed_h) $(gxistate_h)\
+ $(gxpath_h) $(gxshade_h)
+	$(GLCC) $(GLO_)gxshade1.$(OBJ) $(C_) $(GLSRC)gxshade1.c
+
+$(GLOBJ)gxshade4.$(OBJ): $(GLSRC)gxshade4.c $(GXERR) $(memory__h)\
+ $(gscoord_h) $(gsmatrix_h)\
+ $(gxcspace_h) $(gxdcolor_h) $(gxdevcli_h) $(gxistate_h) $(gxpath_h)\
+ $(gxshade_h) $(gxshade4_h)
+	$(GLCC) $(GLO_)gxshade4.$(OBJ) $(C_) $(GLSRC)gxshade4.c
+
+$(GLOBJ)gxshade6.$(OBJ): $(GLSRC)gxshade6.c $(GXERR) $(memory__h)\
+ $(gscoord_h) $(gsmatrix_h)\
+ $(gxcspace_h) $(gxdcolor_h) $(gxistate_h) $(gxshade_h) $(gxshade4_h)\
+ $(gzpath_h)
+	$(GLCC) $(GLO_)gxshade6.$(OBJ) $(C_) $(GLSRC)gxshade6.c
+
+shadelib_1=$(GLOBJ)gscolor3.$(OBJ) $(GLOBJ)gsfunc3.$(OBJ) $(GLOBJ)gsshade.$(OBJ) $(GLOBJ)gxshade.$(OBJ)
+shadelib_2=$(GLOBJ)gxshade1.$(OBJ) $(GLOBJ)gxshade4.$(OBJ) $(GLOBJ)gxshade6.$(OBJ)
+shadelib_=$(shadelib_1) $(shadelib_2)
+shadelib.dev: $(LIB_MAK) $(ECHOGS_XE) $(shadelib_) funclib.dev patlib.dev
+	$(SETMOD) shadelib $(shadelib_1)
+	$(ADDMOD) shadelib -obj $(shadelib_2)
+	$(ADDMOD) shadelib -include funclib patlib
+
+# ================ Platform-specific modules ================ #
 # Platform-specific code doesn't really belong here: this is code that is
 # shared among multiple platforms.
 
+# Standard implementation of gp_getenv.
+$(GLOBJ)gp_getnv.$(OBJ): $(GLSRC)gp_getnv.c $(AK) $(stdio__h) $(string__h)\
+ $(gp_h) $(gsmemory_h) $(gstypes_h)
+	$(GLCC) $(GLO_)gp_getnv.$(OBJ) $(C_) $(GLSRC)gp_getnv.c
+
 # Frame buffer implementations.
 
-gp_nofb.$(OBJ): gp_nofb.c $(GX) \
-  $(gp_h) $(gxdevice_h)
+$(GLOBJ)gp_nofb.$(OBJ): $(GLSRC)gp_nofb.c $(GX)\
+ $(gp_h) $(gxdevice_h)
+	$(GLCC) $(GLO_)gp_nofb.$(OBJ) $(C_) $(GLSRC)gp_nofb.c
 
-gp_dosfb.$(OBJ): gp_dosfb.c $(AK) $(malloc__h) $(memory__h)\
+$(GLOBJ)gp_dosfb.$(OBJ): $(GLSRC)gp_dosfb.c $(AK) $(malloc__h) $(memory__h)\
  $(gx_h) $(gp_h) $(gserrors_h) $(gxdevice_h)
+	$(GLCC) $(GLO_)gp_dosfb.$(OBJ) $(C_) $(GLSRC)gp_dosfb.c
 
 # MS-DOS file system, also used by Desqview/X.
-gp_dosfs.$(OBJ): gp_dosfs.c $(AK) $(dos__h) $(gp_h) $(gx_h)
+$(GLOBJ)gp_dosfs.$(OBJ): $(GLSRC)gp_dosfs.c $(AK) $(dos__h) $(gp_h) $(gx_h)
+	$(GLCC) $(GLO_)gp_dosfs.$(OBJ) $(C_) $(GLSRC)gp_dosfs.c
 
 # MS-DOS file enumeration, *not* used by Desqview/X.
-gp_dosfe.$(OBJ): gp_dosfe.c $(AK) $(stdio__h) $(memory__h) $(string__h) \
-  $(dos__h) $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(gp_h) $(gsutil_h)
+$(GLOBJ)gp_dosfe.$(OBJ): $(GLSRC)gp_dosfe.c $(AK)\
+ $(dos__h) $(memory__h) $(stdio__h) $(string__h)\
+ $(gstypes_h) $(gsmemory_h) $(gsstruct_h) $(gp_h) $(gsutil_h)
+	$(GLCC) $(GLO_)gp_dosfe.$(OBJ) $(C_) $(GLSRC)gp_dosfe.c
 
 # Other MS-DOS facilities.
-gp_msdos.$(OBJ): gp_msdos.c $(AK) $(dos__h) $(stdio__h) $(string__h)\
+$(GLOBJ)gp_msdos.$(OBJ): $(GLSRC)gp_msdos.c $(AK)\
+ $(dos__h) $(stdio__h) $(string__h)\
  $(gsmemory_h) $(gstypes_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_msdos.$(OBJ) $(C_) $(GLSRC)gp_msdos.c
 
 # Unix(-like) file system, also used by Desqview/X.
-gp_unifs.$(OBJ): gp_unifs.c $(AK) $(memory__h) $(string__h) $(gx_h) $(gp_h) \
-  $(gsstruct_h) $(gsutil_h) $(stat__h) $(dirent__h)
+$(GLOBJ)gp_unifs.$(OBJ): $(GLSRC)gp_unifs.c $(AK)\
+ $(memory__h) $(string__h) $(gx_h) $(gp_h)\
+ $(gsstruct_h) $(gsutil_h) $(stat__h) $(dirent__h)
+	$(GLCC) $(GLO_)gp_unifs.$(OBJ) $(C_) $(GLSRC)gp_unifs.c
 
 # Unix(-like) file name syntax, *not* used by Desqview/X.
-gp_unifn.$(OBJ): gp_unifn.c $(AK) $(gx_h) $(gp_h)
+$(GLOBJ)gp_unifn.$(OBJ): $(GLSRC)gp_unifn.c $(AK) $(gx_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_unifn.$(OBJ) $(C_) $(GLSRC)gp_unifn.c
 
 # ----------------------------- Main program ------------------------------ #
 
 # Main program for library testing
 
-gslib.$(OBJ): gslib.c $(AK) $(math__h) \
-  $(gx_h) $(gp_h) $(gserrors_h) $(gsmatrix_h) $(gsstate_h) $(gscspace_h) \
-  $(gscdefs_h) $(gscolor2_h) $(gscoord_h) $(gslib_h) $(gsparam_h) \
-  $(gspaint_h) $(gspath_h) $(gsstruct_h) $(gsutil_h) \
-  $(gxalloc_h) $(gxdevice_h)
+$(GLOBJ)gslib.$(OBJ): $(GLSRC)gslib.c $(AK) $(math__h) $(stdio__h)\
+ $(gx_h) $(gp_h)\
+ $(gsalloc_h) $(gserrors_h) $(gsmatrix_h) $(gsrop_h) $(gsstate_h) $(gscspace_h)\
+ $(gscdefs_h) $(gscie_h) $(gscolor2_h) $(gscoord_h) $(gscrd_h)\
+ $(gshtx_h) $(gsiparm3_h) $(gsiparm4_h) $(gslib_h) $(gsparam_h)\
+ $(gspaint_h) $(gspath_h) $(gspath2_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxalloc_h) $(gxdcolor_h) $(gxdevice_h) $(gxht_h)\
+ $(gdevbbox_h) $(gdevcmap_h)
+	$(GLCC) $(GLO_)gslib.$(OBJ) $(C_) $(GLSRC)gslib.c

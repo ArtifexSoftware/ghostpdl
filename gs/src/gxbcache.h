@@ -1,23 +1,27 @@
 /* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gxbcache.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxbcache.h  */
 /* Bitmap cache structures */
+
+#ifndef gxbcache_INCLUDED
+#  define gxbcache_INCLUDED
+
 #include "gxbitmap.h"
 
 /*
@@ -33,9 +37,10 @@
  * All blocks have a common header; free blocks have ONLY the header.
  */
 typedef struct gx_cached_bits_head_s {
-	uint size;			/* total block size in bytes */
-	uint depth;			/* bits per pixel, free block if 0 */
+    uint size;			/* total block size in bytes */
+    uint depth;			/* bits per pixel, free block if 0 */
 } gx_cached_bits_head;
+
 #define cb_head_is_free(cbh) ((cbh)->depth == 0)
 #define cb_head_set_free(cbh) ((cbh)->depth = 0)
 #define gx_cached_bits_common\
@@ -50,8 +55,9 @@ typedef struct gx_cached_bits_head_s {
 /* Define aliases for common members formerly in the head. */
 #define cb_raster raster
 typedef struct gx_cached_bits_s {
-	gx_cached_bits_common;
+    gx_cached_bits_common;
 } gx_cached_bits;
+
 #define cb_is_free(cb) cb_head_is_free(&(cb)->head)
 /*
  * Define the alignment of the gx_cached_bits structure.  We must ensure
@@ -68,10 +74,10 @@ typedef struct gx_cached_bits_s {
  */
 typedef struct gx_bits_cache_chunk_s gx_bits_cache_chunk;
 struct gx_bits_cache_chunk_s {
-	gx_bits_cache_chunk *next;
-	byte *data;		/* gx_cached_bits_head * */
-	uint size;
-	uint allocated;		/* amount of allocated data */
+    gx_bits_cache_chunk *next;
+    byte *data;			/* gx_cached_bits_head * */
+    uint size;
+    uint allocated;		/* amount of allocated data */
 };
 
 /* ---------------- Bitmap cache ---------------- */
@@ -81,9 +87,9 @@ struct gx_bits_cache_chunk_s {
 	uint cnext;			/* rover for allocating entries */\
 					/* in current chunk */\
 	uint bsize;			/* total # of bytes for all entries */\
-	uint csize			/* # of entries */
+	uint csize		/* # of entries */
 typedef struct gx_bits_cache_s {
-	gx_bits_cache_common;
+    gx_bits_cache_common;
 } gx_bits_cache;
 
 /* ---------------- Procedural interface ---------------- */
@@ -114,3 +120,5 @@ void gx_bits_cache_shorten(P4(gx_bits_cache *, gx_cached_bits_head *,
 /* from any other structures (like a hash table). */
 void gx_bits_cache_free(P3(gx_bits_cache *, gx_cached_bits_head *,
 			   gx_bits_cache_chunk *));
+
+#endif /* gxbcache_INCLUDED */

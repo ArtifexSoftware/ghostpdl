@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,15 +16,15 @@
    all copies.
  */
 
-/* ziodev2.c */
+/*Id: ziodev2.c  */
 /* (Level 2) IODevice operators */
 #include "string_.h"
 #include "ghost.h"
 #include "gp.h"
-#include "errors.h"
 #include "oper.h"
 #include "stream.h"
 #include "gxiodev.h"
+#include "dstack.h"		/* for systemdict */
 #include "files.h"		/* for file_open_stream */
 #include "iparam.h"
 #include "iutil2.h"
@@ -34,14 +34,15 @@
 
 /* This represents the null output file. */
 private iodev_proc_open_device(null_open);
-gx_io_device gs_iodev_null =
-{"%null%", "FileSystem",
- {iodev_no_init, null_open, iodev_no_open_file,
-  iodev_os_fopen, iodev_os_fclose,
-  iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
-  iodev_no_enumerate_files, NULL, NULL,
-  iodev_no_get_params, iodev_no_put_params
- }
+const gx_io_device gs_iodev_null = {
+    "%null%", "FileSystem",
+    {
+	iodev_no_init, null_open, iodev_no_open_file,
+	iodev_os_fopen, iodev_os_fclose,
+	iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
+	iodev_no_enumerate_files, NULL, NULL,
+	iodev_no_get_params, iodev_no_put_params
+    }
 };
 
 private int
@@ -59,14 +60,15 @@ null_open(gx_io_device * iodev, const char *access, stream ** ps,
 /* ------ %ram% ------ */
 
 /* This is an IODevice with no interesting parameters for the moment. */
-gx_io_device gs_iodev_ram =
-{"%ram%", "Special",
- {iodev_no_init, iodev_no_open_device, iodev_no_open_file,
-  iodev_no_fopen, iodev_no_fclose,
-  iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
-  iodev_no_enumerate_files, NULL, NULL,
-  iodev_no_get_params, iodev_no_put_params
- }
+const gx_io_device gs_iodev_ram = {
+    "%ram%", "Special",
+    {
+	iodev_no_init, iodev_no_open_device, iodev_no_open_file,
+	iodev_no_fopen, iodev_no_fclose,
+	iodev_no_delete_file, iodev_no_rename_file, iodev_no_file_status,
+	iodev_no_enumerate_files, NULL, NULL,
+	iodev_no_get_params, iodev_no_put_params
+    }
 };
 
 /* ------ Operators ------ */
@@ -77,6 +79,7 @@ zgetdevparams(os_ptr op)
 {
     gx_io_device *iodev;
     stack_param_list list;
+    gs_param_list *const plist = (gs_param_list *) & list;
     int code;
     ref *pmark;
 
@@ -85,14 +88,10 @@ zgetdevparams(os_ptr op)
     if (iodev == 0)
 	return_error(e_undefinedfilename);
     stack_param_list_write(&list, &o_stack, NULL);
-#define plist ((gs_param_list *)&list)
-
-    code = gs_getdevparams(iodev, plist);
-    if (code < 0) {
+    if ((code = gs_getdevparams(iodev, plist)) < 0) {
 	ref_stack_pop(&o_stack, list.count * 2);
 	return code;
     }
-#undef plist
     pmark = ref_stack_index(&o_stack, list.count * 2);
     make_mark(pmark);
     return 0;
@@ -104,7 +103,9 @@ zputdevparams(os_ptr op)
 {
     gx_io_device *iodev;
     stack_param_list list;
+    gs_param_list *const plist = (gs_param_list *) & list;
     int code;
+    password system_params_password;
 
     check_read_type(*op, t_string);
     iodev = gs_findiodevice(op->value.bytes, r_size(op));
@@ -113,8 +114,11 @@ zputdevparams(os_ptr op)
     code = stack_param_list_read(&list, &o_stack, 1, NULL, false);
     if (code < 0)
 	return code;
-#define plist ((gs_param_list *)&list)
-    code = param_check_password(plist, &SystemParamsPassword);
+    code = dict_read_password(&system_params_password, systemdict,
+			      "SystemParamsPassword");
+    if (code < 0)
+	return code;
+    code = param_check_password(plist, &system_params_password);
     if (code != 0) {
 	iparam_list_release(&list);
 	return_error(code < 0 ? code : e_invalidaccess);
@@ -123,7 +127,6 @@ zputdevparams(os_ptr op)
     iparam_list_release(&list);
     if (code < 0)
 	return code;
-#undef plist
     ref_stack_pop(&o_stack, list.count * 2 + 2);
     return 0;
 }

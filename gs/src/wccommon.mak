@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: wccommon.mak 
 # wccommon.mak
 # Section of Watcom C/C++ makefile common to MS-DOS and MS Windows.
 # We strongly recommend that you read the Watcom section of make.txt
@@ -46,13 +47,17 @@ AK=
 
 # Note that built-in libpng and zlib aren't available.
 
+SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 
 # Define the extensions for command, object, and executable files.
 
 CMD=.bat
-O=-fo=
+I_=-i=
+II=-i=
+_I=
+O_=-fo=
 OBJ=obj
 XE=.exe
 XEAUX=.exe
@@ -74,11 +79,19 @@ RMN_=call rm.bat
 
 # Define the arguments for genconf.
 
-CONFILES=-p FILE&s&ps -ol $(ld_tr)
+CONFILES=-p FILE&s&ps
+CONFLDTR=-ol
 
 # Define the names of the Watcom C files.
 # See the comments in watc.mak and watcwin.mak regarding WCVERSION.
 
+!ifeq WCVERSION 11.0
+# 11.0 is currently the same as 10.5.
+COMP=$(%WATCOM)\binw\wcc386
+LINK=$(%WATCOM)\binw\wlink
+STUB=$(%WATCOM)\binw\wstub.exe
+WRC=$(%WATCOM)\binw\wrc.exe
+!else
 !ifeq WCVERSION 10.5
 COMP=$(%WATCOM)\binw\wcc386
 LINK=$(%WATCOM)\binw\wlink
@@ -101,6 +114,7 @@ COMP=$(%WATCOM)\bin\wcc386p
 LINK=$(%WATCOM)\bin\wlinkp
 STUB=$(%WATCOM)\binb\wstub.exe
 WRC=$(%WATCOM)\binb\rc.exe
+!endif
 !endif
 !endif
 !endif
@@ -181,11 +195,7 @@ GENOPT=$(CP) $(CD) $(CT) $(CS)
 CCFLAGS=$(GENOPT) $(PLATOPT) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) -oi -i=$(INCDIR) $(CCFLAGS) -zq
 CCAUX=$(COMP) -oi -i=$(INCDIR) $(FPFLAGS) -zq
-CCC=$(CC)
-CCD=$(CC)
-CCCF=$(CC)
-CCINT=$(COMP) -oit -i=$(INCDIR) $(CCFLAGS)
-CCLEAF=$(CCC) -s
-
-.c.obj:
-	$(CCC) $<
+CC_=$(CC)
+CC_D=$(CC)
+CC_INT=$(COMP) -oit -i=$(INCDIR) $(CCFLAGS)
+CC_LEAF=$(CC_) -s

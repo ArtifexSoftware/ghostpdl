@@ -1,2 +1,3 @@
 #!/bin/sh
+# Id: gsdj 
 exec gs -q -sDEVICE=deskjet -r300 -dNOPAUSE -sPROGNAME=$0 -- gslp.ps --heading-center "`date`" "$@"

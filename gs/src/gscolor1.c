@@ -37,22 +37,21 @@ void load_transfer_map(P3(gs_state *, gx_transfer_map *, floatp));
 void gx_set_effective_transfer(P1(gs_state *));
 
 /* Force a parameter into the range [0.0..1.0]. */
-#define force_unit(p) (p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p)
+#define FORCE_UNIT(p) (p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p)
 
 /* Define the CMYK color space type. */
 extern cs_proc_remap_color(gx_remap_DeviceCMYK);
 extern cs_proc_concretize_color(gx_concretize_DeviceCMYK);
 extern cs_proc_remap_concrete_color(gx_remap_concrete_DCMYK);
-const gs_color_space_type
-      gs_color_space_type_DeviceCMYK =
-{gs_color_space_index_DeviceCMYK, 4, true,
- gs_base_color_space_size,
- gx_init_paint_4, gx_restrict01_paint_4,
- gx_same_concrete_space,
- gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
- gx_remap_DeviceCMYK, gx_no_install_cspace,
- gx_no_adjust_cspace_count, gx_no_adjust_color_count,
- gx_no_cspace_enum_ptrs, gx_no_cspace_reloc_ptrs
+const gs_color_space_type gs_color_space_type_DeviceCMYK = {
+    gs_color_space_index_DeviceCMYK, true, true,
+    &st_base_color_space, gx_num_components_4,
+    gx_no_base_space,
+    gx_init_paint_4, gx_restrict01_paint_4,
+    gx_same_concrete_space,
+    gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
+    gx_remap_DeviceCMYK, gx_no_install_cspace,
+    gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
 
 /* setcmykcolor */
@@ -64,10 +63,10 @@ gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
     cs_adjust_counts(pgs, -1);
-    pcc->paint.values[0] = force_unit(c);
-    pcc->paint.values[1] = force_unit(m);
-    pcc->paint.values[2] = force_unit(y);
-    pcc->paint.values[3] = force_unit(k);
+    pcc->paint.values[0] = FORCE_UNIT(c);
+    pcc->paint.values[1] = FORCE_UNIT(m);
+    pcc->paint.values[2] = FORCE_UNIT(y);
+    pcc->paint.values[3] = FORCE_UNIT(k);
     pcc->pattern = 0;		/* for GC */
     pgs->color_space->type = &gs_color_space_type_DeviceCMYK;
     gx_unset_dev_color(pgs);
@@ -79,36 +78,61 @@ int
 gs_currentcmykcolor(const gs_state * pgs, float pr4[4])
 {
     const gs_client_color *pcc = pgs->ccolor;
+    const gs_color_space *pcs = pgs->color_space;
+    const gs_color_space *pbcs = pcs;
+    const gs_imager_state *const pis = (const gs_imager_state *)pgs;
+    frac fcc[4];
+    gs_client_color cc;
 
-    switch (pgs->color_space->type->index) {
+  sw:switch (pbcs->type->index) {
 	case gs_color_space_index_DeviceGray:
 	    pr4[0] = pr4[1] = pr4[2] = 0.0;
 	    pr4[3] = 1.0 - pcc->paint.values[0];
-	    break;
+	    return 0;
 	case gs_color_space_index_DeviceRGB:
-	    {
-		frac fcmyk[4];
-
-		color_rgb_to_cmyk(
-				     float2frac(pcc->paint.values[0]),
-				     float2frac(pcc->paint.values[1]),
-				     float2frac(pcc->paint.values[2]),
-				     (const gs_imager_state *)pgs, fcmyk);
-		pr4[0] = frac2float(fcmyk[0]);
-		pr4[1] = frac2float(fcmyk[1]);
-		pr4[2] = frac2float(fcmyk[2]);
-		pr4[3] = frac2float(fcmyk[3]);
-	    } break;
+	    color_rgb_to_cmyk(float2frac(pcc->paint.values[0]),
+			      float2frac(pcc->paint.values[1]),
+			      float2frac(pcc->paint.values[2]),
+			      pis, fcc);
+	    pr4[0] = frac2float(fcc[0]);
+	    pr4[1] = frac2float(fcc[1]);
+	    pr4[2] = frac2float(fcc[2]);
+	    pr4[3] = frac2float(fcc[3]);
+	    return 0;
 	case gs_color_space_index_DeviceCMYK:
 	    pr4[0] = pcc->paint.values[0];
 	    pr4[1] = pcc->paint.values[1];
 	    pr4[2] = pcc->paint.values[2];
 	    pr4[3] = pcc->paint.values[3];
-	    break;
+	    return 0;
+	case gs_color_space_index_DeviceN:
+	case gs_color_space_index_Separation:
+	  ds:if (cs_concrete_space(pbcs, pis) == pbcs)
+		break;		/* not using alternative space */
+	    /* (falls through) */
+	case gs_color_space_index_Indexed:
+	    pbcs = gs_cspace_base_space(pbcs);
+	    switch (pbcs->type->index) {
+		case gs_color_space_index_DeviceN:
+		case gs_color_space_index_Separation:
+		    goto ds;
+		default:	/* outer switch will catch undefined cases */
+		    break;
+	    }
+	    if (cs_concretize_color(pcc, pcs, fcc, pis) < 0)
+		break;
+	    cc.paint.values[0] = frac2float(fcc[0]);
+	    cc.paint.values[1] = frac2float(fcc[1]);
+	    cc.paint.values[2] = frac2float(fcc[2]);
+	    cc.paint.values[3] = frac2float(fcc[3]);
+	    pcc = &cc;
+	    pcs = pbcs;
+	    goto sw;
 	default:
-	    pr4[0] = pr4[1] = pr4[2] = 0.0;
-	    pr4[3] = 1.0;
+	    break;
     }
+    pr4[0] = pr4[1] = pr4[2] = 0.0;
+    pr4[3] = 1.0;
     return 0;
 }
 
@@ -176,7 +200,8 @@ gs_currentundercolorremoval(const gs_state * pgs)
 /* Remap=0 is used by the interpreter. */
 int
 gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
-		      gs_mapping_proc green_proc, gs_mapping_proc blue_proc,
+			  gs_mapping_proc green_proc,
+			  gs_mapping_proc blue_proc,
 			  gs_mapping_proc gray_proc, bool remap)
 {
     gx_transfer_colored *ptran = &pgs->set_transfer.colored;
@@ -209,10 +234,14 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
 	gx_unset_dev_color(pgs);
     }
     return 0;
-  fblue:rc_assign(ptran->green, old.green, "setcolortransfer");
-  fgreen:rc_assign(ptran->red, old.red, "setcolortransfer");
-  fred:rc_assign(ptran->gray, old.gray, "setcolortransfer");
-  fgray:return_error(gs_error_VMerror);
+  fblue:
+    rc_assign(ptran->green, old.green, "setcolortransfer");
+  fgreen:
+    rc_assign(ptran->red, old.red, "setcolortransfer");
+  fred:
+    rc_assign(ptran->gray, old.gray, "setcolortransfer");
+  fgray:
+    return_error(gs_error_VMerror);
 }
 int
 gs_setcolortransfer(gs_state * pgs, gs_mapping_proc red_proc,

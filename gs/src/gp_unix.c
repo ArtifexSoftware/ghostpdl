@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,20 +16,14 @@
    all copies.
  */
 
-/* gp_unix.c */
+/*Id: gp_unix.c  */
 /* Unix-specific routines for Ghostscript */
+#include "pipe_.h"
 #include "string_.h"
 #include "time_.h"
 #include "gx.h"
 #include "gsexit.h"
 #include "gp.h"
-
-/*
- * Because of inconsistent (and sometimes incorrect) header files,
- * we must omit the argument list for popen.
- */
-extern FILE *popen( /* P2(const char *, const char *) */ );
-extern int pclose(P1(FILE *));
 
 /*
  * This is the only place in Ghostscript that calls 'exit'.  Including
@@ -125,11 +119,7 @@ gp_get_usertime(long *pdt)
 #if use_times_for_usertime
     struct tms tms;
     long ticks;
-
-    static long ticks_per_sec = 0;
-
-    if (!ticks_per_sec)		/* not initialized yet */
-	ticks_per_sec = CLK_TCK;
+    const long ticks_per_sec = CLK_TCK;
 
     times(&tms);
     ticks = tms.tms_utime + tms.tms_stime + tms.tms_cutime + tms.tms_cstime;
@@ -156,7 +146,7 @@ gp_getenv_display(void)
 /* "|command" opens an output pipe. */
 /* Return NULL if the connection could not be opened. */
 FILE *
-gp_open_printer(char *fname, int binary_mode)
+gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     return
 	(strlen(fname) == 0 ?

@@ -1,22 +1,22 @@
 /* Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/*Id: gscspace.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gscspace.h  */
 /* Client interface to color spaces */
 
 #ifndef gscspace_INCLUDED
@@ -47,27 +47,31 @@
  * impossible.  Therefore, we defined a generality hierarchy for color
  * spaces:
  *
- *	- Base spaces (DeviceGray/RGB/CMYK/Pixel and CIEBased),
- *	whose parameters (if any) don't include other color spaces.
+ *      - Base spaces (DeviceGray/RGB/CMYK/Pixel and CIEBased),
+ *      whose parameters (if any) don't include other color spaces.
  *
- *	- Paint spaces (base spaces + Indexed, Separation, and DeviceN),
- *	which may have a base space as the alternate or underlying space.
+ *	- Direct spaces (base spaces + Separation and DeviceN), which
+ *	may have a base space as an alternative space.
  *
- *	- General spaces (paint spaces + Pattern), which may have a
- *	paint space as the underlying space.
+ *      - Paint spaces (direct spaces + Indexed), which may have a
+ *      direct space as the underlying space.
+ *
+ *      - General spaces (paint spaces + Pattern), which may have a
+ *      paint space as the underlying space.
  *
  * With this approach, a general space can include a paint space stored
- * in-line, and a paint space (either in its own right or as the underlying
- * space of a Pattern space) can include a base space in-line.
+ * in-line; a paint space (either in its own right or as the underlying
+ * space of a Pattern space) can include a direct space in-line; and a
+ * direct space can include a base space in-line.
  *
- * Note that because general, paint, and base spaces are (necessarily) of
- * different sizes, assigning (copying the top object of) color spaces must
- * take into account the actual size of the color space being assigned.  In
- * principle, this also requires checking that the source object will
- * actually fit into the destination.  Currently we rely on the caller to
- * ensure that this is the case; in fact, the current API (gs_cspace_init
- * and gs_cspace_assign) doesn't even provide enough information to make the
- * check.
+ * Note that because general, paint, direct, and base spaces are
+ * (necessarily) of different sizes, assigning (copying the top object of)
+ * color spaces must take into account the actual size of the color space
+ * being assigned.  In principle, this also requires checking that the
+ * source object will actually fit into the destination.  Currently we rely
+ * on the caller to ensure that this is the case; in fact, the current API
+ * (gs_cspace_init and gs_cspace_assign) doesn't even provide enough
+ * information to make the check.
  *
  * In retrospect, we might have gotten a simpler design without significant
  * performance loss by always referencing underlying and alternate spaces
@@ -78,52 +82,58 @@
  * the color space objects themselves, and managing the non-scalar
  * parameters that they reference (if any).
  *
- *	- Color space objects per se have no special management properties:
- *	they can be allocated on the stack or on the heap, and freed by
- *	scope exit, explicit deallocation, or garbage collection.
+ *      - Color space objects per se have no special management properties:
+ *      they can be allocated on the stack or on the heap, and freed by
+ *      scope exit, explicit deallocation, or garbage collection.
  *
- *	- Separately allocated (non-scalar) color space parameters are
- *	managed by reference counting.  Currently we do this for the
- *	CIEBased spaces, and for the first-level parameters of Indexed and
- *	Separation spaces: clients must deal with deallocating the other
- *	parameter structures mentioned above, including the Indexed lookup
- *	table if any. This is clearly not a good situation, but we don't
- *	envision fixing it any time soon.
+ *      - Separately allocated (non-scalar) color space parameters are
+ *      managed by reference counting.  Currently we do this for the
+ *      CIEBased spaces, and for the first-level parameters of Indexed and
+ *      Separation spaces: clients must deal with deallocating the other
+ *      parameter structures mentioned above, including the Indexed lookup
+ *      table if any. This is clearly not a good situation, but we don't
+ *      envision fixing it any time soon.
  *
  * Here is the information associated with the various color space
  * structures.  Note that DevicePixel, DeviceN, and the ability to use
  * Separation or DeviceN spaces as the base space of an Indexed space
- * are LanguageLevel 3 additions.
+ * are LanguageLevel 3 additions.  Unfortunately, the terminology for the
+ * different levels of generality is confusing and inconsistent for
+ * historical reasons.
  *
  * For base spaces:
  *
- * Space	Space parameters		Color parameters
- * -----	----------------		----------------
- * DeviceGray	(none)				1 real [0-1]
- * DeviceRGB	(none)				3 reals [0-1]
- * DeviceCMYK	(none)				4 reals [0-1]
- * DevicePixel	depth				1 int [up to depth bits]
- * CIEBasedDEFG	dictionary			4 reals
- * CIEBasedDEF	dictionary			3 reals
- * CIEBasedABC	dictionary			3 reals
- * CIEBasedA	dictionary			1 real
+ * Space        Space parameters                Color parameters
+ * -----        ----------------                ----------------
+ * DeviceGray   (none)                          1 real [0-1]
+ * DeviceRGB    (none)                          3 reals [0-1]
+ * DeviceCMYK   (none)                          4 reals [0-1]
+ * DevicePixel  depth                           1 int [up to depth bits]
+ * CIEBasedDEFG dictionary                      4 reals
+ * CIEBasedDEF  dictionary                      3 reals
+ * CIEBasedABC  dictionary                      3 reals
+ * CIEBasedA    dictionary                      1 real
  *
- * For non-base paint spaces (alt_space and base_space are base spaces):
+ * For non-base direct spaces:
  *
- * Space	Space parameters		Color parameters
- * -----	----------------		----------------
- * Indexed	base_space, hival, lookup	1 int [0-hival]
- * Separation	name, alt_space, tint_xform	1 real [0-1]
- * DeviceN	names, alt_space, tint_xform	N reals
+ * Space        Space parameters                Color parameters
+ * -----        ----------------                ----------------
  *
- * For non-paint spaces (base_space is a paint space -- should be named
- * paint_space!):
+ * Separation   name, alt_space, tint_xform     1 real [0-1]
+ * DeviceN      names, alt_space, tint_xform    N reals
  *
- * Space	Space parameters		Color parameters
- * -----	----------------		----------------
- * Pattern	colored: (none)			dictionary
- *		uncolored: base_space dictionary + base space params
- */
+ * For non-direct paint spaces:
+ *
+ * Space        Space parameters                Color parameters
+ * -----        ----------------                ----------------
+ * Indexed      base_space, hival, lookup       1 int [0-hival]
+ *
+ * For non-paint spaces:
+ *
+ * Space        Space parameters                Color parameters
+ * -----        ----------------                ----------------
+ * Pattern      colored: (none)                 dictionary
+ *              uncolored: base_space dictionary + base space params */
 
 /* Color space type indices */
 typedef enum {
@@ -151,7 +161,7 @@ typedef enum {
 } gs_color_space_index;
 
 /* Define an abstract type for color space types (method structures). */
-typedef struct gs_color_space_type_s    gs_color_space_type;
+typedef struct gs_color_space_type_s gs_color_space_type;
 
 /*
  * The common part of all color spaces. This structure now includes a memory
@@ -175,12 +185,12 @@ typedef struct gs_color_space_type_s    gs_color_space_type;
  * definitions for CIE space parameters.
  */
 typedef struct gs_device_pixel_params_s {
-	int depth;
+    int depth;
 } gs_device_pixel_params;
-typedef struct gs_cie_a_s       gs_cie_a;
-typedef struct gs_cie_abc_s     gs_cie_abc;
-typedef struct gs_cie_def_s     gs_cie_def;
-typedef struct gs_cie_defg_s    gs_cie_defg;
+typedef struct gs_cie_a_s gs_cie_a;
+typedef struct gs_cie_abc_s gs_cie_abc;
+typedef struct gs_cie_def_s gs_cie_def;
+typedef struct gs_cie_defg_s gs_cie_defg;
 
 #define gs_base_cspace_params           \
     gs_device_pixel_params   pixel;     \
@@ -192,56 +202,70 @@ typedef struct gs_cie_defg_s    gs_cie_defg;
 typedef struct gs_base_color_space_s {
     gs_cspace_common(gs_base_cspace_params);
 } gs_base_color_space;
+
 #define gs_base_color_space_size sizeof(gs_base_color_space)
 
 /*
- * Non-base "paint" color spaces: Index, Separation, and DeviceN
- * spaces. These include a base color space (known as the alternative color
- * space in the case of Separation and DeviceN spaces).
+ * Non-base direct color spaces: Separation and DeviceN spaces.
+ * These include a base alternative color space.
+ */
+typedef ulong gs_separation_name;	/* BOGUS */
+typedef struct gs_indexed_map_s gs_indexed_map;
+
+typedef struct gs_separation_params_s {
+    gs_separation_name sname;
+    gs_base_color_space alt_space;
+    gs_indexed_map *map;
+} gs_separation_params;
+
+typedef struct gs_device_n_params_s gs_device_n_params;
+struct gs_device_n_params_s {
+    gs_separation_name *names;
+    uint num_components;
+    gs_base_color_space alt_space;
+    int (*tint_transform)
+        (P4(const gs_device_n_params * params, const float *in, float *out,
+	    void *data));
+    void *tint_transform_data;
+};
+
+#define gs_direct_cspace_params         \
+    gs_base_cspace_params;              \
+    gs_separation_params separation;    \
+    gs_device_n_params device_n
+
+typedef struct gs_direct_color_space_s {
+    gs_cspace_common(gs_direct_cspace_params);
+} gs_direct_color_space;
+
+#define gs_direct_color_space_size sizeof(gs_direct_color_space)
+
+/*
+ * Non-direct paint space: Indexed space.
  *
  * Note that for indexed color spaces, hival is the highest support index,
  * which is one less than the number of entries in the palette (as defined
  * in PostScript).
  */
-typedef ulong                   gs_separation_name;	/* BOGUS */
-typedef struct gs_indexed_map_s gs_indexed_map;
 
 typedef struct gs_indexed_params_s {
-    gs_base_color_space base_space;
-    int                 hival;      /* num_entries - 1 */
+    gs_direct_color_space base_space;
+    int hival;			/* num_entries - 1 */
     union {
-	gs_const_string     table;  /* size is implicit */
-	gs_indexed_map *    map; 
-    }                   lookup;
-    bool                use_proc;   /* 0 = use table, 1 = use proc & map */
+	gs_const_string table;	/* size is implicit */
+	gs_indexed_map *map;
+    } lookup;
+    bool use_proc;		/* 0 = use table, 1 = use proc & map */
 } gs_indexed_params;
 
-typedef struct gs_separation_params_s {
-    gs_separation_name  sname;
-    gs_base_color_space alt_space;
-    gs_indexed_map *    map;
-} gs_separation_params;
-
-typedef struct gs_device_n_params_s gs_device_n_params;
-struct gs_device_n_params_s {
-    gs_separation_name *  names;
-    uint                  num_components;
-    gs_base_color_space   alt_space;
-    int (*                tint_transform)
-       (P4(const gs_device_n_params *params, const float *in, float *out,
-	   void *data));
-    void *                tint_transform_data;
-};
-
 #define gs_paint_cspace_params          \
-    gs_base_cspace_params;              \
-    gs_indexed_params       indexed;    \
-    gs_separation_params    separation; \
-    gs_device_n_params      device_n
+    gs_direct_cspace_params;            \
+    gs_indexed_params indexed
 
 typedef struct gs_paint_color_space_s {
     gs_cspace_common(gs_paint_cspace_params);
 } gs_paint_color_space;
+
 #define gs_paint_color_space_size sizeof(gs_paint_color_space)
 
 /*
@@ -249,8 +273,8 @@ typedef struct gs_paint_color_space_s {
  * color space. The boolean indicates if this is the case.
  */
 typedef struct gs_pattern_params_s {
-    bool                    has_base_space;
-    gs_paint_color_space    base_space;
+    bool has_base_space;
+    gs_paint_color_space base_space;
 } gs_pattern_params;
 
 /*
@@ -258,10 +282,11 @@ typedef struct gs_pattern_params_s {
  */
 struct gs_color_space_s {
     gs_cspace_common(
-        gs_paint_cspace_params;
-        gs_pattern_params       pattern
+	gs_paint_cspace_params;
+	gs_pattern_params pattern
     );
 };
+
 #define gs_pattern_color_space_size sizeof(gs_color_space)
 
 /*
@@ -270,9 +295,10 @@ struct gs_color_space_s {
 #ifndef gs_color_space_DEFINED
 #  define gs_color_space_DEFINED
 typedef struct gs_color_space_s gs_color_space;
+
 #endif
 
-/*extern_st(st_color_space);*/		/* in gxcspace.h */
+					/*extern_st(st_color_space); *//* in gxcspace.h */
 #define public_st_color_space()	/* in gscspace.c */  \
     gs_public_st_composite( st_color_space,         \
                             gs_color_space,         \
@@ -281,7 +307,7 @@ typedef struct gs_color_space_s gs_color_space;
                             color_space_reloc_ptrs  \
                             )
 
-#define st_color_space_max_ptrs 2 /* 1 base + 1 indexed */
+#define st_color_space_max_ptrs 2	/* 1 base + 1 indexed */
 
 /* ---------------- Procedures ---------------- */
 
@@ -315,9 +341,9 @@ typedef struct gs_color_space_s gs_color_space;
  */
 
 extern int
-  gs_cspace_build_DeviceGray(P2(gs_color_space **ppcspace, gs_memory_t *pmem)),
-  gs_cspace_build_DeviceRGB(P2(gs_color_space **ppcspace, gs_memory_t *pmem)),
-  gs_cspace_build_DeviceCMYK(P2(gs_color_space **ppcspace, gs_memory_t *pmem));
+    gs_cspace_build_DeviceGray(P2(gs_color_space ** ppcspace, gs_memory_t * pmem)),
+    gs_cspace_build_DeviceRGB(P2(gs_color_space ** ppcspace, gs_memory_t * pmem)),
+    gs_cspace_build_DeviceCMYK(P2(gs_color_space ** ppcspace, gs_memory_t * pmem));
 
 /*
  * We preallocate instances of the 3 device color spaces, and provide
@@ -328,44 +354,38 @@ extern int
 #  define gs_imager_state_DEFINED
 typedef struct gs_imager_state_s gs_imager_state;
 #endif
-extern  const gs_color_space *
-  gs_cspace_DeviceGray(P1(const gs_imager_state *pis));
-extern  const gs_color_space *
-  gs_cspace_DeviceRGB(P1(const gs_imager_state *pis));
-extern  const gs_color_space *
-  gs_cspace_DeviceCMYK(P1(const gs_imager_state *pis));
+
+const gs_color_space * gs_cspace_DeviceGray(P1(const gs_imager_state * pis));
+const gs_color_space * gs_cspace_DeviceRGB(P1(const gs_imager_state * pis));
+const gs_color_space * gs_cspace_DeviceCMYK(P1(const gs_imager_state * pis));
 
 /* Copy a color space into one newly allocated by the caller. */
-void gs_cspace_init_from(P2(gs_color_space *pcsto,
-			    const gs_color_space *pcsfrom));
+void gs_cspace_init_from(P2(gs_color_space * pcsto,
+			    const gs_color_space * pcsfrom));
 
 /* Assign a color space into a previously initialized one. */
-void cs_cspace_assign(P2(gs_color_space *pdest, const gs_color_space *psrc));
+void cs_cspace_assign(P2(gs_color_space * pdest, const gs_color_space * psrc));
 
 /* Prepare to free a color space. */
-void gs_cspace_release(P1(gs_color_space *pcs));
+void gs_cspace_release(P1(gs_color_space * pcs));
 
 /* ------ Accessors ------ */
 
 /* Get the index of a color space. */
-extern  gs_color_space_index    gs_color_space_get_index(P1(
-    const gs_color_space *
-));
+gs_color_space_index gs_color_space_get_index(P1(const gs_color_space *));
 
 /* Get the number of components in a color space. */
-extern  int     gs_color_space_num_components(P1( const gs_color_space * ));
+int gs_color_space_num_components(P1(const gs_color_space *));
 
 /*
  * Get the base space of an Indexed or uncolored Pattern color space, or the
  * alternate space of a Separation or DeviceN space.  Return NULL if the
  * color space does not have a base/alternative color space.
  */
-extern  const gs_color_space *  gs_cspace_base_space(
-    const gs_color_space * pcspace
-);
+const gs_color_space *gs_cspace_base_space(P1(const gs_color_space * pcspace));
 
 /* backwards compatibility */
 #define gs_color_space_indexed_base_space(pcspace)\
     gs_cspace_base_space(pcspace)
 
-#endif					/* gscspace_INCLUDED */
+#endif /* gscspace_INCLUDED */

@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: os2.mak 
 # makefile for MS-DOS or OS/2 GCC/EMX platform.
 # Uses Borland (MSDOS) MAKER or 
 # Uses IBM NMAKE.EXE Version 2.000.000 Mar 27 1992
@@ -81,12 +82,24 @@ IBMCPP=0
 GS=gsos2
 GSDLL=gsdll2
 
+# Define the source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+# This makefile has never been tested with any other values than these,
+# and almost certainly won't work with other values.
+GLSRCDIR=.
+GLGENDIR=.
+GLOBJDIR=.
+PSSRCDIR=.
+PSGENDIR=.
+PSOBJDIR=.
+
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
-JSRCDIR=jpeg-6a
+JSRCDIR=jpeg
 JVERSION=6
 
 # Define the directory where the PNG library sources are stored,
@@ -168,6 +181,7 @@ FPU_TYPE=0
 
 # Note that built-in libpng and zlib aren't available.
 
+SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 
@@ -184,7 +198,7 @@ PLATFORM=os2_
 
 MAKEFILE=os2.mak
 
-# Define the files to be deleted by 'make begin' and 'make clean'.
+# Define the files to be deleted by 'make clean'.
 
 BEGINFILES=gspmdrv.exe gs*.res gs*.ico $(GSDLL).dll
 
@@ -213,7 +227,14 @@ dosdefault: default gspmdrv.exe
 # Define the extensions for command, object, and executable files.
 
 CMD=.cmd
-O=-o ./
+I_=-I
+II=-I
+_I=
+# There should be a <space> at the end of the definition of O_,
+# but we have to work around the fact that some `make' programs
+# drop trailing spaces in macro definitions.
+NULL=
+O_=-o $(NULL)
 !if $(MAKEDLL)
 OBJ=obj
 !else
@@ -244,10 +265,11 @@ RMN_=rm.cmd
 # Define the arguments for genconf.
 
 !if $(MAKEDLL)
-CONFILES=-p %%s+ -o $(ld_tr) -l lib.tr
+CONFILES=-p %%s+ -l lib.tr
 !else
-CONFILES=-o $(ld_tr) -l lib.tr
+CONFILES=-l lib.tr
 !endif
+CONFLDTR=-o
 
 # Define the generic compilation flags.
 
@@ -284,16 +306,17 @@ ASMFLAGS=$(ASMCPU) $(ASMFPU) $(ASMDEBUG)
 
 # ---------------------- MS-DOS I/O debugging option ---------------------- #
 
-dosio_=zdosio.$(OBJ)
+dosio_=$(GLOBJ)zdosio.$(OBJ)
 dosio.dev: $(dosio_)
 	$(SETMOD) dosio $(dosio_)
 	$(ADDMOD) dosio -oper zdosio
 
-zdosio.$(OBJ): zdosio.c $(OP) $(store_h)
+$(PSOBJ)zdosio.$(OBJ): $(PSSRC)zdosio.c $(OP) $(store_h)
+	$(PSCC) $(PSO_)zdosio.$(OBJ) $(C_) $(PSSRC)zdosio.c
 
 # ----------------------------- Assembly code ----------------------------- #
 
-iutilasm.$(OBJ): iutilasm.asm
+$(PSOBJ)iutilasm.$(OBJ): $(PSSRC)iutilasm.asm
 
 #################  END
 
@@ -338,26 +361,17 @@ GENOPT=$(CP) $(CD) $(CGDB) $(CDLL) $(CO)
 CCFLAGS0=$(GENOPT) $(PLATOPT)
 CCFLAGS=$(CCFLAGS0) 
 CC=$(COMPDIR)\$(COMP) $(CCFLAGS0)
-CCC=$(CC) -c
-CCD=$(CC) $(CO) -c
-CCCF=$(COMPDIR)\$(COMP) $(CO) $(CCFLAGS0) -c
-CCINT=$(CC) -c
-CCLEAF=$(CCC)
-
-.c.o:
-#	$(CCC) { $<}
-	$(CCC) $<
-
-.c.obj:
-	$(CCC) $<
-
+CC_=$(CC)
+CC_D=$(CC) $(CO)
+CC_INT=$(CC)
+CC_LEAF=$(CC_)
 
 # ------ Devices and features ------ #
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 # Since we have a large address space, we include some optional features.
 
-FEATURE_DEVS=level2.dev pdf.dev
+FEATURE_DEVS=psl3.dev pdf.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -380,7 +394,8 @@ BAND_LIST_COMPRESSOR=zlib
 
 FILE_IMPLEMENTATION=stdio
 
-# Choose the device(s) to include.  See devs.mak for details.
+# Choose the device(s) to include.  See devs.mak for details,
+# devs.mak and contrib.mak for the list of available devices.
 
 !if $(MAKEDLL)
 DEVICE_DEVS=os2pm.dev os2dll.dev os2prn.dev
@@ -408,16 +423,18 @@ DEVICE_DEVS15=pdfwrite.dev
 !include "gs.mak"
 !include "lib.mak"
 !include "jpeg.mak"
-!include "libpng.mak"
+# zlib.mak must precede libpng.mak
 !include "zlib.mak"
+!include "libpng.mak"
 !include "devs.mak"
+!include "contrib.mak"
 !include "int.mak"
 
 # -------------------------------- Library -------------------------------- #
 
 # The GCC/EMX platform
 
-os2__=gp_nofb.$(OBJ) gp_os2.$(OBJ)
+os2__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ) $(GLOBJ)gp_os2.$(OBJ)
 os2_.dev: $(os2__)
 	$(SETMOD) os2_ $(os2__)
 !if $(MAKEDLL)
@@ -429,8 +446,10 @@ os2_.dev: $(os2__)
 !endif
   
 
-gp_os2.$(OBJ): gp_os2.c $(dos__h) $(string__h) $(time__h) $(gsdll_h) \
-  $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h)
+$(GLOBJ)gp_os2.$(OBJ): $(GSLRC)gp_os2.c\
+ $(dos__h) $(pipe__h) $(string__h) $(time__h)\
+ $(gsdll_h) $(gx_h) $(gsexit_h) $(gsutil_h) $(gp_h)
+	$(GLCC) $(GLO_)gp_os2.$(OBJ) $(C_) $(GLSRC)gp_os2.c
 
 # -------------------------- Auxiliary programs --------------------------- #
 
@@ -438,56 +457,65 @@ CCAUX=$(COMPDIR)\$(COMP) $(CO)
 
 $(ECHOGS_XE): echogs.c
 !if $(EMX)
-	$(CCAUX) -o echogs echogs.c
-	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe echogs echogs.exe
-	del echogs
+	$(CCAUX) -o $(AUXGEN)echogs echogs.c
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)echogs $(ECHOGS_XE)
+	del $(AUXGEN)echogs
 !endif
 !if $(IBMCPP)
-	$(CCAUX) /Feechogs.exe echogs.c
+	$(CCAUX) /Fe$(ECHOGS_XE) echogs.c
 !endif
 
 $(GENARCH_XE): genarch.c $(stdpre_h)
 !if $(EMX)
-	$(CCAUX) -o genarch genarch.c
-	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe genarch genarch.exe
-	del genarch
+	$(CCAUX) -o $(AUXGEN)genarch genarch.c
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genarch $(GENARCH_XE)
+	del $(AUXGEN)genarch
 !endif
 !if $(IBMCPP)
-	$(CCAUX) /Fegenarch genarch.c
+	$(CCAUX) /Fe$(GENARCH_XE) genarch.c
 !endif
 
 $(GENCONF_XE): genconf.c $(stdpre_h)
 !if $(EMX)
-	$(CCAUX) -o genconf genconf.c
-	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe genconf genconf.exe
-	del genconf
+	$(CCAUX) -o $(AUXGEN)genconf genconf.c
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genconf $(GENCONF_XE)
+	del $(AUXGEN)genconf
 !endif
 !if $(IBMCPP)
-	$(CCAUX) /Fegenconf genconf.c
+	$(CCAUX) /Fe$(GENCONF_XE) genconf.c
 !endif
 
-$(GENINIT_XE): geninit.c $(stdio__h) $(string__h)
+$(GENDEV_XE): gendev.c $(stdpre_h)
 !if $(EMX)
-	$(CCAUX) -o geninit geninit.c
-	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe geninit geninit.exe
-	del geninit
+	$(CCAUX) -o $(AUXGEN)gendev gendev.c
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)gendev $(GENDEV_XE)
+	del $(AUXGEN)gendev
 !endif
 !if $(IBMCPP)
-	$(CCAUX) /Fegeninit geninit.c
+	$(CCAUX) /Fe$(GENDEV_XE) gendev.c
+!endif
+
+$(GENINIT_XE): $(PSSRC)geninit.c $(stdio__h) $(string__h)
+!if $(EMX)
+	$(CCAUX) -o $(AUXGEN)geninit $(PSSRC)geninit.c
+	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)geninit $(GENINIT_XE)
+	del $(AUXGEN)geninit
+!endif
+!if $(IBMCPP)
+	$(CCAUX) /Fe$(GENINIT_XE) geninit.c
 !endif
 
 # No special gconfig_.h is needed.
-gconfig_.h: os2.mak $(ECHOGS_XE)
-	echogs -w gconfig_.h /* This file deliberately left blank. */
+$(gconfig__h): $(MAKEFILE) $(ECHOGS_XE)
+	$(ECHOGS_XE) -w $(gconfig__h) /* This file deliberately left blank. */
 
-gconfigv.h: os2.mak $(MAKEFILE) $(ECHOGS_XE)
-	$(EXP)echogs -w gconfigv.h -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
-	$(EXP)echogs -a gconfigv.h -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
-	$(EXP)echogs -a gconfigv.h -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
+$(gconfigv_h): os2.mak $(MAKEFILE) $(ECHOGS_XE)
+	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
+	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define USE_FPU -x 2028 -q $(FPU_TYPE)-0 -x 29
+	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define EXTEND_NAMES 0$(EXTEND_NAMES)
+	$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define SYSTEM_CONSTANTS_ARE_WRITABLE 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)
 
 # ----------------------------- Main program ------------------------------ #
-
-CCBEGIN=$(CCC) *.c
 
 # Interpreter main program
 
@@ -495,10 +523,10 @@ ICONS=gsos2.ico gspmdrv.ico
 
 !if $(MAKEDLL)
 #making a DLL
-GS_ALL=gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
+GS_ALL=$(GLOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) lib.tr $(GS).res $(ICONS)
 
-$(GS_XE): $(GSDLL).dll dpmainc.c gsdll.h gsos2.rc gscdefs.$(OBJ)
+$(GS_XE): $(GSDLL).dll dpmainc.c $(gsdll_h) gsos2.rc gscdefs.$(OBJ)
 !if $(EMX)
 	$(COMPDIR)\gcc $(CGDB) $(CO) -Zomf -o$(GS_XE) dpmainc.c gscdefs.$(OBJ) gsos2.def
 !endif
@@ -507,23 +535,24 @@ $(GS_XE): $(GSDLL).dll dpmainc.c gsdll.h gsos2.rc gscdefs.$(OBJ)
 !endif
 	rc gsos2.res $(GS_XE)
 
-gsdll.$(OBJ): gsdll.c gsdll.h $(ghost_h)
+$(GLOBJ)gsdll.$(OBJ): $(GLSRC)gsdll.c $(gsdll_h) $(ghost_h)
+	$(PSCC) $(GLO_)gsdll.$(OBJ) $(C_) $(GLSRC)gsdll.c
 
-$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) gsdll.$(OBJ)
+$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(GLOBJ)gsdll.$(OBJ)
 !if $(EMX)
-	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) gsdll.obj, $(GSDLL).dll, ,$(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, gsdll2.def
+	LINK386 /DEBUG $(COMPBASE)\lib\dll0.obj $(COMPBASE)\lib\end.lib @$(ld_tr) $(GLOBJ)gsdll.obj, $(GSDLL).dll, ,$(COMPBASE)\lib\gcc.lib $(COMPBASE)\lib\st\c.lib $(COMPBASE)\lib\st\c_dllso.lib $(COMPBASE)\lib\st\sys.lib $(COMPBASE)\lib\c_alias.lib $(COMPBASE)\lib\os2.lib, gsdll2.def
 !endif
 !if $(IBMCPP)
-	LINK386 /NOE /DEBUG @$(ld_tr) gsdll.obj, $(GSDLL).dll, , , gsdll2.def
+	LINK386 /NOE /DEBUG @$(ld_tr) $(GLOBJ)gsdll.obj, $(GSDLL).dll, , , gsdll2.def
 !endif
 
 !else
 #making an EXE
-GS_ALL=gs.$(OBJ) $(INT_ALL) $(INTASM)\
+GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(ld_tr) lib.tr $(GS).res $(ICONS)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
-	$(COMPDIR)\gcc $(CGDB) -o $(GS) gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
+	$(COMPDIR)\gcc $(CGDB) -o $(GS) $(GLOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm
 	$(COMPDIR)\emxbind -r$*.res $(COMPDIR)\emxl.exe $(GS) $(GS_XE) -ac
 	del $(GS)
 !endif
@@ -531,20 +560,20 @@ $(GS_XE): $(GS_ALL) $(ALL_DEVS)
 # Make the icons from their text form.
 
 gsos2.ico: gsos2.icx $(ECHOGS_XE)
-	echogs -wb gsos2.ico -n -X -r gsos2.icx
+	$(ECHOGS_XE) -wb gsos2.ico -n -X -r gsos2.icx
 
 gspmdrv.ico: gspmdrv.icx $(ECHOGS_XE)
-	echogs -wb gspmdrv.ico -n -X -r gspmdrv.icx
+	$(ECHOGS_XE) -wb gspmdrv.ico -n -X -r gspmdrv.icx
 
 $(GS).res: $(GS).rc gsos2.ico
 	rc -i $(COMPBASE)\include -r $*.rc
 
 # PM driver program
 
-gspmdrv.o: gspmdrv.c gspmdrv.h
+gspmdrv.o: gspmdrv.c $(GLSRC)gspmdrv.h
 	$(COMPDIR)\gcc $(CGDB) $(CO) -c $*.c
 
-gspmdrv.res: gspmdrv.rc gspmdrv.h gspmdrv.ico
+gspmdrv.res: gspmdrv.rc $(GLSRC)gspmdrv.h gspmdrv.ico
 	rc -i $(COMPBASE)\include -r $*.rc
 
 gspmdrv.exe: gspmdrv.o gspmdrv.res gspmdrv.def

@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevxalt.c */
+/*Id: gdevxalt.c  */
 /* Alternative X Windows drivers for help in driver debugging */
 #include "gx.h"			/* for gx_bitmap; includes std.h */
 #include "math_.h"
@@ -45,11 +45,7 @@ typedef struct {
 private int get_dev_target(P2(gx_device **, gx_device *));
 
 #define set_dev_target(tdev, dev)\
-  do {\
-    int code_ = get_dev_target(&tdev, dev);\
-    if ( code_ < 0 )\
-      return code_;\
-  } while (0)
+  return_if_error(get_dev_target(&tdev, dev))
 private int get_target_info(P1(gx_device *));
 private gx_color_index x_alt_map_color(P2(gx_device *, gx_color_index));
 
@@ -462,7 +458,7 @@ private dev_proc_map_rgb_color(x_cmyk_map_rgb_color);
 private dev_proc_map_cmyk_color(x_cmyk_map_cmyk_color);
 
 /* The device descriptor */
-private gx_device_procs x_cmyk_procs =
+private const gx_device_procs x_cmyk_procs =
 {
     x_wrap_open,
     gx_forward_get_initial_matrix,
@@ -489,7 +485,7 @@ private gx_device_procs x_cmyk_procs =
 };
 
 /* The instance is public. */
-gx_device_X_wrapper far_data gs_x11cmyk_device =
+const gx_device_X_wrapper gs_x11cmyk_device =
 {
     std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk",
 			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
@@ -532,7 +528,7 @@ x_cmyk_map_cmyk_color(gx_device * dev,
 /* ---------------- Black-and-white procedures ---------------- */
 
 /* The device descriptor */
-private gx_device_procs x_mono_procs =
+private const gx_device_procs x_mono_procs =
 {
     x_wrap_open,
     gx_forward_get_initial_matrix,
@@ -559,7 +555,7 @@ private gx_device_procs x_mono_procs =
 };
 
 /* The instance is public. */
-gx_device_X_wrapper far_data gs_x11mono_device =
+const gx_device_X_wrapper gs_x11mono_device =
 {
     std_device_dci_body(gx_device_X_wrapper, &x_mono_procs, "x11mono",
 			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
@@ -572,7 +568,7 @@ gx_device_X_wrapper far_data gs_x11mono_device =
 /* ---------------- 2-bit gray-scale procedures ---------------- */
 
 /* The device descriptor */
-private gx_device_procs x_gray2_procs =
+private const gx_device_procs x_gray2_procs =
 {
     x_wrap_open,
     gx_forward_get_initial_matrix,
@@ -599,7 +595,7 @@ private gx_device_procs x_gray2_procs =
 };
 
 /* The instance is public. */
-gx_device_X_wrapper far_data gs_x11gray2_device =
+const gx_device_X_wrapper gs_x11gray2_device =
 {
     std_device_dci_body(gx_device_X_wrapper, &x_gray2_procs, "x11gray2",
 			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
@@ -618,7 +614,7 @@ private dev_proc_get_alpha_bits(x_alpha_get_alpha_bits);
 private dev_proc_copy_alpha(x_alpha_copy_alpha);
 
 /* The device descriptor */
-private gx_device_procs x_alpha_procs =
+private const gx_device_procs x_alpha_procs =
 {
     x_wrap_open,
     gx_forward_get_initial_matrix,
@@ -645,7 +641,7 @@ private gx_device_procs x_alpha_procs =
 };
 
 /* The instance is public. */
-gx_device_X_wrapper far_data gs_x11alpha_device =
+const gx_device_X_wrapper gs_x11alpha_device =
 {
     std_device_dci_body(gx_device_X_wrapper, &x_alpha_procs, "x11alpha",
 			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */

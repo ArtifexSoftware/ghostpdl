@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -18,14 +18,12 @@
 /* Portions Copyright (C) 1994, 1995, 1996, Russell Lang.  All rights reserved. */
 
 
-/* gsdll.c */
+/*Id: gsdll.c  */
 /* Dynamic Link Library interface for OS/2 and MS-Windows Ghostscript */
 /* front end to gs.c */
 
 /* HOW MANY OF THESE INCLUDES ARE REALLY NEEDED? */
 
-/* Define PROGRAM_NAME before we include std.h */
-#define PROGRAM_NAME gs_product
 #include "ctype_.h"
 #include "memory_.h"
 #include <stdarg.h>

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* spngp.c */
+/*Id: spngp.c  */
 /* PNG pixel prediction filters */
 #include "memory_.h"
 #include "strimpl.h"
@@ -25,9 +25,6 @@
 /* ------ PNGPredictorEncode/Decode ------ */
 
 private_st_PNGP_state();
-
-#define ss ((stream_PNGP_state *)st)
-#define ss_const ((const stream_PNGP_state *)st_const)
 
 /* Define values for case dispatch. */
 #define cNone 10
@@ -45,6 +42,8 @@ private const byte pngp_case_needs_prev[] =
 private void
 s_PNGP_set_defaults(stream_state * st)
 {
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
+
     s_PNGP_set_defaults_inline(ss);
 }
 
@@ -52,6 +51,8 @@ s_PNGP_set_defaults(stream_state * st)
 private int
 s_PNGP_reinit(stream_state * st)
 {
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
+
     if (ss->prev_row != 0)
 	memset(ss->prev_row + ss->bpp, 0, ss->row_count);
     ss->row_left = 0;
@@ -62,6 +63,7 @@ s_PNGP_reinit(stream_state * st)
 private int
 s_pngp_init(stream_state * st, bool need_prev)
 {
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
     int bits_per_pixel = ss->Colors * ss->BitsPerComponent;
     long bits_per_row = (long)bits_per_pixel * ss->Columns;
     byte *prev_row = 0;
@@ -91,6 +93,8 @@ s_pngp_init(stream_state * st, bool need_prev)
 private int
 s_PNGPE_init(stream_state * st)
 {
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
+
     return s_pngp_init(st, pngp_case_needs_prev[ss->Predictor - cNone]);
 }
 
@@ -124,6 +128,7 @@ s_pngp_process(stream_state * st, stream_cursor_write * pw,
 	       const byte * dprev, stream_cursor_read * pr,
 	       const byte * upprev, const byte * up, uint count)
 {
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
     byte *q = pw->ptr + 1;
     const byte *p = pr->ptr + 1;
 
@@ -172,10 +177,12 @@ s_pngp_process(stream_state * st, stream_cursor_write * pw,
 
 /* Calculate the number of bytes for the next processing step, */
 /* the min of (input data, output data, remaining row length). */
-private uint near
+private uint
 s_pngp_count(const stream_state * st_const, const stream_cursor_read * pr,
 	     const stream_cursor_write * pw)
 {
+    const stream_PNGP_state *const ss_const =
+    (const stream_PNGP_state *)st_const;
     uint rcount = pr->limit - pr->ptr;
     uint wcount = pw->limit - pw->ptr;
     uint row_left = ss_const->row_left;
@@ -207,6 +214,7 @@ private int
 s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
     int bpp = ss->bpp;
     int code = 0;
 
@@ -282,6 +290,7 @@ private int
 s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
+    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
     int bpp = ss->bpp;
     int code = 0;
 

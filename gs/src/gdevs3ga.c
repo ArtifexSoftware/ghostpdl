@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevs3ga.c */
+/*Id: gdevs3ga.c  */
 /* S3 86C911 driver */
 #include "gx.h"
 #include "gserrors.h"
@@ -36,7 +36,7 @@ extern void vesa_set_mode(P1(int));
 private dev_proc_open_device(s3_open);
 private dev_proc_fill_rectangle(s3_fill_rectangle);
 private dev_proc_copy_mono(s3_copy_mono);
-private gx_device_procs s3_procs =
+private const gx_device_procs s3_procs =
 {
     s3_open,
     NULL,			/* get_initial_matrix */

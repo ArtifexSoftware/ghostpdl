@@ -1,10 +1,10 @@
-/* Copyright (C) 1992, 1993 Aladdin Enterprises.  All rights reserved. */
+/* Copyright (C) 1992, 1993, 1998 Aladdin Enterprises.  All rights reserved. */
 
 /* This file was generated automatically.  It is governed by the same terms */
 /* as the files scftab.c and scfdgen.c from which it was derived. */
 /* Consult those files for the licensing terms and conditions. */
 
-/* scfdtab.c */
+/*Id: scfdtab.c  */
 /* Tables for CCITTFaxDecode filter. */
 
 #include "std.h"
@@ -12,7 +12,7 @@
 #include "scf.h"
 
 /* White decoding table. */
-const cfd_node far_data cf_white_decode[] =
+const cfd_node cf_white_decode[] =
 {
     {256, 12},
     {272, 12},
@@ -321,7 +321,7 @@ const cfd_node far_data cf_white_decode[] =
 };
 
 /* Black decoding table. */
-const cfd_node far_data cf_black_decode[] =
+const cfd_node cf_black_decode[] =
 {
     {128, 12},
     {160, 13},
@@ -646,7 +646,7 @@ const cfd_node far_data cf_black_decode[] =
 };
 
 /* 2-D decoding table. */
-const cfd_node far_data cf_2d_decode[] =
+const cfd_node cf_2d_decode[] =
 {
     {128, 11},
     {144, 10},
@@ -803,7 +803,7 @@ const cfd_node far_data cf_2d_decode[] =
 };
 
 /* Uncompresssed decoding table. */
-const cfd_node far_data cf_uncompressed_decode[] =
+const cfd_node cf_uncompressed_decode[] =
 {
     {64, 12},
     {5, 6},

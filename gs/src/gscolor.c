@@ -68,31 +68,32 @@ gx_init_paint_3(gs_client_color * pcc, const gs_color_space * pcs)
 }
 void
 gx_init_paint_4(gs_client_color * pcc, const gs_color_space * pcs)
-{				/* DeviceCMYK and CIEBasedDEFG spaces initialize to 0,0,0,1. */
+{
+    /* DeviceCMYK and CIEBasedDEFG spaces initialize to 0,0,0,1. */
     pcc->paint.values[3] = 1.0;
     gx_init_paint_3(pcc, pcs);
 }
 
 /* Force a value into the range [0.0..1.0]. */
-#define force_unit(p) (p <= 0.0 ? 0.0 : p >= 1.0 ? 1.0 : p)
+#define FORCE_UNIT(p) (p <= 0.0 ? 0.0 : p >= 1.0 ? 1.0 : p)
 
 /* Restrict colors with 1, 3, or 4 components to the range (0,1). */
 void
 gx_restrict01_paint_1(gs_client_color * pcc, const gs_color_space * pcs)
 {
-    pcc->paint.values[0] = force_unit(pcc->paint.values[0]);
+    pcc->paint.values[0] = FORCE_UNIT(pcc->paint.values[0]);
 }
 void
 gx_restrict01_paint_3(gs_client_color * pcc, const gs_color_space * pcs)
 {
-    pcc->paint.values[2] = force_unit(pcc->paint.values[2]);
-    pcc->paint.values[1] = force_unit(pcc->paint.values[1]);
-    pcc->paint.values[0] = force_unit(pcc->paint.values[0]);
+    pcc->paint.values[2] = FORCE_UNIT(pcc->paint.values[2]);
+    pcc->paint.values[1] = FORCE_UNIT(pcc->paint.values[1]);
+    pcc->paint.values[0] = FORCE_UNIT(pcc->paint.values[0]);
 }
 void
 gx_restrict01_paint_4(gs_client_color * pcc, const gs_color_space * pcs)
 {
-    pcc->paint.values[3] = force_unit(pcc->paint.values[3]);
+    pcc->paint.values[3] = FORCE_UNIT(pcc->paint.values[3]);
     gx_restrict01_paint_3(pcc, pcs);
 }
 
@@ -112,7 +113,7 @@ gs_setgray(gs_state * pgs, floatp gray)
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
     cs_adjust_counts(pgs, -1);
-    pgs->ccolor->paint.values[0] = force_unit(gray);
+    pgs->ccolor->paint.values[0] = FORCE_UNIT(gray);
     pgs->color_space->type = &gs_color_space_type_DeviceGray;
     gx_unset_dev_color(pgs);
     return 0;
@@ -123,25 +124,40 @@ float
 gs_currentgray(const gs_state * pgs)
 {
     const gs_client_color *pcc = pgs->ccolor;
+    const gs_imager_state *const pis = (const gs_imager_state *)pgs;
 
     switch (pgs->color_space->type->index) {
 	case gs_color_space_index_DeviceGray:
 	    return pcc->paint.values[0];
 	case gs_color_space_index_DeviceRGB:
-	    return frac2float(color_rgb_to_gray(
+	    return frac2float(
+				 color_rgb_to_gray(
 					   float2frac(pcc->paint.values[0]),
 					   float2frac(pcc->paint.values[1]),
 					   float2frac(pcc->paint.values[2]),
-					     (const gs_imager_state *)pgs));
+						      pis));
 	case gs_color_space_index_DeviceCMYK:
-	    return frac2float(color_cmyk_to_gray(
+	    return frac2float(
+				 color_cmyk_to_gray(
 					   float2frac(pcc->paint.values[0]),
 					   float2frac(pcc->paint.values[1]),
 					   float2frac(pcc->paint.values[2]),
 					   float2frac(pcc->paint.values[3]),
-					     (const gs_imager_state *)pgs));
+						       pis));
 	default:
-	    return 0.0;
+	    /*
+	     * Might be another convertible color space, but this is rare,
+	     * so we don't care about speed or (to some extent) accuracy.
+	     */
+	    {
+		float rgb[3];
+
+		gs_currentrgbcolor(pgs, rgb);
+		return frac2float(
+				     color_rgb_to_gray(
+		 float2frac(rgb[0]), float2frac(rgb[1]), float2frac(rgb[2]),
+							  pis));
+	    }
     }
 }
 
@@ -154,9 +170,9 @@ gs_setrgbcolor(gs_state * pgs, floatp r, floatp g, floatp b)
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
     cs_adjust_counts(pgs, -1);
-    pcc->paint.values[0] = force_unit(r);
-    pcc->paint.values[1] = force_unit(g);
-    pcc->paint.values[2] = force_unit(b);
+    pcc->paint.values[0] = FORCE_UNIT(r);
+    pcc->paint.values[1] = FORCE_UNIT(g);
+    pcc->paint.values[2] = FORCE_UNIT(b);
     pcc->pattern = 0;		/* for GC */
     pgs->color_space->type = &gs_color_space_type_DeviceRGB;
     gx_unset_dev_color(pgs);
@@ -168,33 +184,59 @@ int
 gs_currentrgbcolor(const gs_state * pgs, float pr3[3])
 {
     const gs_client_color *pcc = pgs->ccolor;
+    const gs_color_space *pcs = pgs->color_space;
+    const gs_color_space *pbcs = pcs;
+    const gs_imager_state *const pis = (const gs_imager_state *)pgs;
+    frac fcc[4];
+    gs_client_color cc;
 
-    switch (pgs->color_space->type->index) {
+  sw:switch (pbcs->type->index) {
 	case gs_color_space_index_DeviceGray:
 	    pr3[0] = pr3[1] = pr3[2] = pcc->paint.values[0];
-	    break;
+	    return 0;
 	case gs_color_space_index_DeviceRGB:
 	    pr3[0] = pcc->paint.values[0];
 	    pr3[1] = pcc->paint.values[1];
 	    pr3[2] = pcc->paint.values[2];
-	    break;
+	    return 0;
 	case gs_color_space_index_DeviceCMYK:
-	    {
-		frac frgb[3];
-
-		color_cmyk_to_rgb(
-				     float2frac(pcc->paint.values[0]),
-				     float2frac(pcc->paint.values[1]),
-				     float2frac(pcc->paint.values[2]),
-				     float2frac(pcc->paint.values[3]),
-				     (const gs_imager_state *)pgs, frgb);
-		pr3[0] = frac2float(frgb[0]);
-		pr3[1] = frac2float(frgb[1]);
-		pr3[2] = frac2float(frgb[2]);
-	    } break;
+	    color_cmyk_to_rgb(
+				 float2frac(pcc->paint.values[0]),
+				 float2frac(pcc->paint.values[1]),
+				 float2frac(pcc->paint.values[2]),
+				 float2frac(pcc->paint.values[3]),
+				 pis, fcc);
+	    pr3[0] = frac2float(fcc[0]);
+	    pr3[1] = frac2float(fcc[1]);
+	    pr3[2] = frac2float(fcc[2]);
+	    return 0;
+	case gs_color_space_index_DeviceN:
+	case gs_color_space_index_Separation:
+	  ds:if (cs_concrete_space(pbcs, pis) == pbcs)
+		break;		/* not using alternative space */
+	    /* (falls through) */
+	case gs_color_space_index_Indexed:
+	    pbcs = gs_cspace_base_space(pbcs);
+	    switch (pbcs->type->index) {
+		case gs_color_space_index_DeviceN:
+		case gs_color_space_index_Separation:
+		    goto ds;
+		default:	/* outer switch will catch undefined cases */
+		    break;
+	    }
+	    if (cs_concretize_color(pcc, pcs, fcc, pis) < 0)
+		break;
+	    cc.paint.values[0] = frac2float(fcc[0]);
+	    cc.paint.values[1] = frac2float(fcc[1]);
+	    cc.paint.values[2] = frac2float(fcc[2]);
+	    cc.paint.values[3] = frac2float(fcc[3]);
+	    pcc = &cc;
+	    pcs = pbcs;
+	    goto sw;
 	default:
-	    pr3[0] = pr3[1] = pr3[2] = 0.0;
+	    break;
     }
+    pr3[0] = pr3[1] = pr3[2] = 0.0;
     return 0;
 }
 
@@ -221,9 +263,11 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
 {
     gx_transfer_colored *ptran = &pgs->set_transfer.colored;
 
-    /* We can safely decrement the reference counts */
-    /* of the non-gray transfer maps, because */
-    /* if any of them get freed, the rc_unshare can't fail. */
+    /*
+     * We can safely decrement the reference counts
+     * of the non-gray transfer maps, because
+     * if any of them get freed, the rc_unshare can't fail.
+     */
     rc_decrement(ptran->red, "gs_settransfer");
     rc_decrement(ptran->green, "gs_settransfer");
     rc_decrement(ptran->blue, "gs_settransfer");
@@ -241,7 +285,8 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
 	gx_unset_dev_color(pgs);
     }
     return 0;
-  fail:rc_increment(ptran->red);
+  fail:
+    rc_increment(ptran->red);
     rc_increment(ptran->green);
     rc_increment(ptran->blue);
     return_error(gs_error_VMerror);

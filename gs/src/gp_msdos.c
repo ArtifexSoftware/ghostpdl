@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_msdos.c */
+/*Id: gp_msdos.c  */
 /* Common platform-specific routines for MS-DOS (any compiler) */
 #include "stdio_.h"
 #include "string_.h"		/* for strerror */

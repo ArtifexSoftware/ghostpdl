@@ -1,24 +1,27 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gximage.h */
-/* Internal definitions for image rendering */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gximage.h  */
 /* Requires gxcpath.h, gxdevmem.h, gxdcolor.h, gzpath.h */
+
+#ifndef gximage_INCLUDED
+#  define gximage_INCLUDED
+
 #include "gsiparam.h"
 #include "gxcspace.h"
 #include "strimpl.h"		/* for siscale.h */
@@ -33,46 +36,46 @@ typedef struct gx_image_enum_s gx_image_enum;
 /*
  * Incoming samples may go through two different transformations:
  *
- *	- For N-bit input samples with N <= 8, N-to-8-bit expansion
- *	may involve a lookup map.  Currently this map is either an
- *	identity function or a subtraction from 1 (inversion).
+ *      - For N-bit input samples with N <= 8, N-to-8-bit expansion
+ *      may involve a lookup map.  Currently this map is either an
+ *      identity function or a subtraction from 1 (inversion).
  *
- *	- The 8-bit or frac expanded sample may undergo decoding (a linear
- *	transformation) before being handed off to the color mapping
- *	machinery.
+ *      - The 8-bit or frac expanded sample may undergo decoding (a linear
+ *      transformation) before being handed off to the color mapping
+ *      machinery.
  *
  * If the decoding function's range is [0..1], we fold it into the
  * expansion lookup; otherwise we must compute it separately.
  * For speed, we distinguish 3 different cases of the decoding step:
  */
 typedef enum {
-	sd_none,		/* decoded during expansion */
-	sd_lookup,		/* use lookup_decode table */
-	sd_compute		/* compute using base and factor */
+    sd_none,			/* decoded during expansion */
+    sd_lookup,			/* use lookup_decode table */
+    sd_compute			/* compute using base and factor */
 } sample_decoding;
 typedef struct sample_map_s {
 
-	sample_lookup_t table;
+    sample_lookup_t table;
 
-	/* If an 8-bit fraction doesn't represent the decoded value */
-	/* accurately enough, but the samples have 4 bits or fewer, */
-	/* we precompute the decoded values into a table. */
-	/* Different entries are used depending on bits/sample: */
-	/*	1,8,12 bits/sample: 0,15	*/
-	/*	2 bits/sample: 0,5,10,15	*/
-	/*	4 bits/sample: all	*/
+    /* If an 8-bit fraction doesn't represent the decoded value */
+    /* accurately enough, but the samples have 4 bits or fewer, */
+    /* we precompute the decoded values into a table. */
+    /* Different entries are used depending on bits/sample: */
+    /*      1,8,12 bits/sample: 0,15        */
+    /*      2 bits/sample: 0,5,10,15        */
+    /*      4 bits/sample: all      */
 
-	float decode_lookup[16];
+    float decode_lookup[16];
 #define decode_base decode_lookup[0]
 #define decode_max decode_lookup[15]
 
-	/* In the worst case, we have to do the decoding on the fly. */
-	/* The value is base + sample * factor, where the sample is */
-	/* an 8-bit (unsigned) integer or a frac. */
+    /* In the worst case, we have to do the decoding on the fly. */
+    /* The value is base + sample * factor, where the sample is */
+    /* an 8-bit (unsigned) integer or a frac. */
 
-	double decode_factor;
+    double decode_factor;
 
-	sample_decoding decoding;
+    sample_decoding decoding;
 
 } sample_map;
 
@@ -108,6 +111,13 @@ extern sample_unpack_proc((*sample_unpack_12_proc));
  * Define the interface for routines used to render a (source) scan line.
  * If the buffer is the original client's input data, it may be unaligned;
  * otherwise, it will always be aligned.
+ *
+ * The image_render procedures work on fully expanded, complete rows.  These
+ * take a height argument, which is an integer >= 0; they return a negative
+ * code, or the number of rows actually processed (which may be less than
+ * the height).  height = 0 is a special call to indicate that there is no
+ * more input data; this is necessary because the last scan lines of the
+ * source data may not produce any output.
  */
 #define irender_proc(proc)\
   int proc(P6(gx_image_enum *penum, const byte *buffer, int data_x,\
@@ -128,20 +138,20 @@ typedef irender_proc((*irender_proc_t));
   irender_proc_t proc(P1(gx_image_enum *penum))
 typedef image_strategy_proc((*image_strategy_proc_t));
 typedef struct gx_image_strategies_s {
-  image_strategy_proc_t interpolate;
-  image_strategy_proc_t simple;
-  image_strategy_proc_t fracs;
-  image_strategy_proc_t mono;
-  image_strategy_proc_t color;
+    image_strategy_proc_t interpolate;
+    image_strategy_proc_t simple;
+    image_strategy_proc_t fracs;
+    image_strategy_proc_t mono;
+    image_strategy_proc_t color;
 } gx_image_strategies_t;
 extern gx_image_strategies_t image_strategies;
 
 /* Define the distinct postures of an image. */
 /* Each posture includes its reflected variant. */
 typedef enum {
-  image_portrait = 0,			/* 0 or 180 degrees */
-  image_landscape,			/* 90 or 270 degrees */
-  image_skewed				/* any other transformation */
+    image_portrait = 0,		/* 0 or 180 degrees */
+    image_landscape,		/* 90 or 270 degrees */
+    image_skewed		/* any other transformation */
 } image_posture;
 
 /* Define an entry in the image color table.  For single-source-plane */
@@ -150,8 +160,8 @@ typedef enum {
 /* which is the concatenation of the source pixel components. */
 /* "Clue" = Color LookUp Entry (by analogy with CLUT). */
 typedef struct gx_image_clue_s {
-	gx_device_color dev_color;
-	bits32 key;
+    gx_device_color dev_color;
+    bits32 key;
 } gx_image_clue;
 
 /* Main state structure */
@@ -159,99 +169,97 @@ typedef struct gx_image_clue_s {
 #ifndef gx_device_rop_texture_DEFINED
 #  define gx_device_rop_texture_DEFINED
 typedef struct gx_device_rop_texture_s gx_device_rop_texture;
+
 #endif
 
 struct gx_image_enum_s {
-	gx_image_enum_common;
-	/* We really want the map structure to be long-aligned, */
-	/* so we choose shorter types for some flags. */
-		/* Following are set at structure initialization */
-	byte bps;			/* bits per sample: 1, 2, 4, 8, 12 */
-	byte unpack_bps;		/* bps for computing unpack proc, */
-					/* set to 8 if no unpacking */
-	byte log2_xbytes;		/* log2(bytes per expanded sample): */
-					/* 0 if bps <= 8, log2(sizeof(frac)) */
-					/* if bps > 8 */
-	byte spp;			/* samples per pixel: 1, 3, or 4 */
-#ifdef DPNEXT
-				/* (1, 2, 3, 4, or 5 if alpha is allowed) */
-	bool has_alpha;			/* true if HasAlpha */
-#endif
-	byte spread;			/* num_planes << log2_xbytes */
-	byte masked;			/* 0 = [color]image, 1 = imagemask */
-	byte interpolate;		/* true if Interpolate requested */
-	gs_matrix matrix;		/* image space -> device space */
-	struct r_ {
-	  int x, y, w, h;		/* subrectangle being rendered */
-	} rect;
-	gs_fixed_point x_extent, y_extent;  /* extent of one row of rect */
-	sample_unpack_proc((*unpack));
-	irender_proc((*render));
-	const gs_imager_state *pis;
-	const gs_color_space *pcs;	/* color space of image */
-	gs_memory_t *memory;
-	byte *buffer;			/* for expanding samples to a */
-					/* byte or frac */
-	uint buffer_size;
-	byte *line;			/* buffer for an output scan line */
-	uint line_size;
-	uint line_width;		/* width of line in device pixels */
-	image_posture posture;
-	byte use_rop;			/* true if CombineWithColor requested */
-	byte clip_image;		/* mask, see below */
-		/* Either we are clipping to a rectangle, in which case */
-		/* the individual x/y flags may be set, or we are clipping */
-		/* to a general region, in which case only clip_region */
-		/* is set. */
+    gx_image_enum_common;
+    /* We really want the map structure to be long-aligned, */
+    /* so we choose shorter types for some flags. */
+    /* Following are set at structure initialization */
+    byte bps;			/* bits per sample: 1, 2, 4, 8, 12 */
+    byte unpack_bps;		/* bps for computing unpack proc, */
+    /* set to 8 if no unpacking */
+    byte log2_xbytes;		/* log2(bytes per expanded sample): */
+    /* 0 if bps <= 8, log2(sizeof(frac)) */
+    /* if bps > 8 */
+    byte spp;			/* samples per pixel: 1, 3, or 4 */
+    /* (1, 2, 3, 4, or 5 if alpha is allowed) */
+    gs_image_alpha_t alpha;	/* Alpha from image structure */
+    /*byte num_planes; *//* spp if colors are separated, */
+    /* 1 otherwise (in common part) */
+    byte spread;		/* num_planes << log2_xbytes */
+    byte masked;		/* 0 = [color]image, 1 = imagemask */
+    byte interpolate;		/* true if Interpolate requested */
+    gs_matrix matrix;		/* image space -> device space */
+    struct r_ {
+	int x, y, w, h;		/* subrectangle being rendered */
+    } rect;
+    gs_fixed_point x_extent, y_extent;	/* extent of one row of rect */
+                   sample_unpack_proc((*unpack));
+                   irender_proc((*render));
+    const gs_imager_state *pis;
+    const gs_color_space *pcs;	/* color space of image */
+    gs_memory_t *memory;
+    byte *buffer;		/* for expanding samples to a */
+    /* byte or frac */
+    uint buffer_size;
+    byte *line;			/* buffer for an output scan line */
+    uint line_size;
+    uint line_width;		/* width of line in device pixels */
+    image_posture posture;
+    byte use_rop;		/* true if CombineWithColor requested */
+    byte clip_image;		/* mask, see below */
+    /* Either we are clipping to a rectangle, in which case */
+    /* the individual x/y flags may be set, or we are clipping */
+    /* to a general region, in which case only clip_region */
+    /* is set. */
 #define image_clip_xmin 1
 #define image_clip_xmax 2
 #define image_clip_ymin 4
 #define image_clip_ymax 8
 #define image_clip_region 0x10
-	byte slow_loop;			/* true if must use slower loop */
-					/* (if needed) */
-	byte device_color;		/* true if device color space and */
-					/* standard decoding */
-	gs_fixed_rect clip_outer;	/* outer box of clip path */
-	gs_fixed_rect clip_inner;	/* inner box of clip path */
-	gs_logical_operation_t log_op;	/* logical operation */
-	fixed adjust;			/* adjustment when rendering */
-					/* characters */
-	fixed dxx, dxy;			/* fixed versions of matrix */
-					/* components (as needed) */
-	gx_device_clip *clip_dev;	/* clipping device (if needed) */
-	gx_device_rop_texture *rop_dev;	/* RasterOp device (if needed) */
-	stream_IScale_state *scaler;	/* scale state for */
-					/* Interpolate (if needed) */
-		/* Following are updated dynamically */
-	int y;				/* next source y */
-	gs_fixed_point cur, prev;	/* device x, y of current & */
-					/* previous row */
-	struct dd_ {
-	  gx_dda_fixed_point row;	/* DDA for row origin, has been */
-					/* advanced when render proc called */
-	  gx_dda_fixed_point pixel0;	/* DDA for first pixel of row */
-	} dda;
-	int line_xy;			/* x or y value at start of buffered line */
-	int xi_next;			/* expected xci of next row */
-					/* (landscape only) */
-	gs_int_point xyi;		/* integer origin of row */
-					/* (Interpolate only) */
-	int yci, hci;			/* integer y & h of row (portrait) */
-	int xci, wci;			/* integer x & w of row (landscape) */
-	/* The maps are set at initialization.  We put them here */
-	/* so that the scalars will have smaller offsets. */
-#ifdef DPNEXT
-	sample_map map[5];		/* 4 colors + alpha */
-#else
-	sample_map map[4];
-#endif
-	/* Entries 0 and 255 of the following are set at initialization */
-	/* for monochrome images; other entries are updated dynamically. */
-	gx_image_clue clues[256];
+    byte slow_loop;		/* true if must use slower loop */
+    /* (if needed) */
+    byte device_color;		/* true if device color space and */
+    /* standard decoding */
+    gs_fixed_rect clip_outer;	/* outer box of clip path */
+    gs_fixed_rect clip_inner;	/* inner box of clip path */
+    gs_logical_operation_t log_op;	/* logical operation */
+    fixed adjust;		/* adjustment when rendering */
+    /* characters */
+    fixed dxx, dxy;		/* fixed versions of matrix */
+    /* components (as needed) */
+    gx_device_clip *clip_dev;	/* clipping device (if needed) */
+    gx_device_rop_texture *rop_dev;	/* RasterOp device (if needed) */
+    stream_IScale_state *scaler;	/* scale state for */
+    /* Interpolate (if needed) */
+    /* Following are updated dynamically */
+    int y;			/* next source y */
+    gs_fixed_point cur, prev;	/* device x, y of current & */
+    /* previous row */
+    struct dd_ {
+	gx_dda_fixed_point row;	/* DDA for row origin, has been */
+	/* advanced when render proc called */
+	gx_dda_fixed_point pixel0;	/* DDA for first pixel of row */
+    } dda;
+    int line_xy;		/* x or y value at start of buffered line */
+    int xi_next;		/* expected xci of next row */
+    /* (landscape only) */
+    gs_int_point xyi;		/* integer origin of row */
+    /* (Interpolate only) */
+    int yci, hci;		/* integer y & h of row (portrait) */
+    int xci, wci;		/* integer x & w of row (landscape) */
+    /* The maps are set at initialization.  We put them here */
+    /* so that the scalars will have smaller offsets. */
+    sample_map map[5];		/* 4 colors + alpha */
+    /* Entries 0 and 255 of the following are set at initialization */
+    /* for monochrome images; other entries are updated dynamically. */
+    gx_image_clue clues[256];
 #define icolor0 clues[0].dev_color
 #define icolor1 clues[255].dev_color
 };
+
 /* Enumerate the pointers in an image enumerator. */
 #define gx_image_enum_do_ptrs(m)\
   m(0,pis) m(1,pcs) m(2,dev) m(3,buffer) m(4,line)\
@@ -262,13 +270,8 @@ struct gx_image_enum_s {
     image_enum_enum_ptrs, image_enum_reloc_ptrs)
 
 /* Compare two device colors for equality. */
+/* We can special-case this for speed later if we care. */
 #define dev_color_eq(devc1, devc2)\
-  (gx_dc_is_pure(&(devc1)) ?\
-   gx_dc_is_pure(&(devc2)) &&\
-   gx_dc_pure_color(&(devc1)) == gx_dc_pure_color(&(devc2)) :\
-   gx_dc_is_binary_halftone(&(devc1)) ?\
-   gx_dc_is_binary_halftone(&(devc2)) &&\
-   gx_dc_binary_color0(&(devc1)) == gx_dc_binary_color0(&(devc2)) &&\
-   gx_dc_binary_color1(&(devc1)) == gx_dc_binary_color1(&(devc2)) &&\
-   (devc1).colors.binary.b_level == (devc2).colors.binary.b_level :\
-   false)
+  gx_device_color_equal(&(devc1), &(devc2))
+
+#endif /* gximage_INCLUDED */

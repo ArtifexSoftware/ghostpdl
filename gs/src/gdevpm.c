@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpm.c */
+/*Id: gdevpm.c  */
 /*
  * OS/2 Presentation manager driver
  * By Russell Lang (based on gdevmswn.c and gdevwdib.c)

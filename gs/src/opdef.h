@@ -1,23 +1,26 @@
-/* Copyright (C) 1991, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1991, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* opdef.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: opdef.h  */
 /* Operator definition interface for Ghostscript */
+
+#ifndef opdef_INCLUDED
+#  define opdef_INCLUDED
 
 /*
  * Operator procedures take the pointer to the top of the o-stack
@@ -25,51 +28,68 @@
  * for an error, or a positive code for some uncommon situations (see below).
  */
 
-/* Structure for initializing the operator table. */
 /*
- * Each operator file declares an array of these, of the following kind:
+ * Define the structure for initializing the operator table.  Each operator
+ * file zxxx.c declares an array of these as follows:
 
-BEGIN_OP_DEFS(my_defs) {
-	{"1name", zname},
-	    ...
-END_OP_DEFS(iproc) }
+ const op_def * const zxxx_op_defs[] =
+ {
+ {"1name", zname},
+ ...
+ op_def_end(iproc)
+ };
 
- * where iproc is an initialization procedure for the file, or 0.
- * This definition always appears at the END of the file,
- * to avoid the need for forward declarations for all the
- * operator procedures.
- *
+ * where iproc is an initialization procedure for the file, or 0.  This
+ * definition always appears at the END of the file, to avoid the need for
+ * forward declarations for all the operator procedures.  For backward
+ * compatibility with an older convention, we also allow (deprecated)
+
+ BEGIN_OP_DEFS(my_defs) {
+ {"1name", zname},
+ ...
+ END_OP_DEFS(iproc) }
+
  * Operators may be stored in dictionaries other than systemdict.
  * We support this with op_def entries of a special form:
 
-	op_def_begin_dict("dictname"),
+ op_def_begin_dict("dictname"),
 
  */
 typedef struct {
-	const char _ds *oname;
-	op_proc_p proc;
+    const char *oname;
+    op_proc_p proc;
 } op_def;
-typedef const op_def *op_def_ptr;
+
 #define op_def_begin_dict(dname) {dname, 0}
 #define op_def_begin_filter() op_def_begin_dict("filterdict")
 #define op_def_begin_level2() op_def_begin_dict("level2dict")
+#define op_def_begin_ll3() op_def_begin_dict("ll3dict")
 #define op_def_is_begin_dict(def) ((def)->proc == 0)
-#define op_def_end(iproc) {(char _ds *)0, (op_proc_p)iproc}
+#define op_def_end(iproc) {0, (op_proc_p)iproc}
 
 /*
- * We need to define each op_defs table as a procedure that returns
- * the actual table, because of cross-segment linking restrictions
- * in the Borland C compiler for MS Windows.
+ * Define the table of pointers to all operator definition tables.
+ */
+extern const op_def *const op_defs_all[];
+
+/*
+ * Formerly, we needed to define each op_defs table as a procedure that
+ * returns the actual table, because of cross-segment linking restrictions
+ * in the 16-bit Borland C compiler for MS Windows.  This is no longer
+ * relevant, but for backward compatibility, we need to retain
+ * BEGIN/END_OP_DEFS with the same syntax.  This involves a kludge to create
+ * a dummy procedure to match up with a closing brace, and another kludge to
+ * prevent a "defined but not used" warning.
  */
 
 #define BEGIN_OP_DEFS(xx_op_defs)\
-const op_def *xx_op_defs(P0())\
-{	static const far_data op_def op_defs_[] =
+const op_def xx_op_defs[] =
 
 #define END_OP_DEFS(iproc)\
-		op_def_end(iproc)\
-	};\
-	return op_defs_;
+    op_def_end(iproc)\
+};\
+static int op_defs_dummy(void)\
+{	return 1 || op_defs_dummy();	/* generates the least wasted code */
 
 /*
  * Internal operators whose names begin with %, such as continuation
@@ -91,6 +111,7 @@ const op_def *xx_op_defs(P0())\
  * must be found by searching the table for their procedure address.
  */
 ushort op_find_index(P1(const ref *));
+
 #define op_index(opref)\
   (r_size(opref) == 0 ? op_find_index(opref) : r_size(opref))
 /*
@@ -99,33 +120,30 @@ ushort op_find_index(P1(const ref *));
  * is op_def_table, and their index is in the range [1..op_def_count-1].
  */
 #define op_index_is_operator(index) ((index) < op_def_count)
-/*
- * Because of a bug in Sun's SC1.0 compiler,
- * we have to spell out the typedef for op_def_ptr here:
- */
 extern const op_def **op_def_table;
 extern uint op_def_count;
+
 #define op_num_args(opref) (op_def_table[op_index(opref)]->oname[0] - '0')
 #define op_index_proc(index) (op_def_table[index]->proc)
 /*
  * There are two catalogs for t_oparrays, one global and one local.
  * Operator indices for the global table are in the range
- *	[op_def_count..op_def_count+op_array_global.count-1]
+ *      [op_def_count..op_def_count+op_array_global.count-1]
  * Operator indices for the local table are in the range
- *	[op_def_count+r_size(&op_array_global.table)..
- *	  op_def_count+r_size(&op_array_global.table)+op_array_local.count-1]
+ *      [op_def_count+r_size(&op_array_global.table)..
+ *        op_def_count+r_size(&op_array_global.table)+op_array_local.count-1]
  */
 typedef struct op_array_table_s {
-	ref table;			/* t_array */
-	ushort *nx_table;		/* name indices */
-	uint count;			/* # of occupied entries */
-	uint base_index;		/* operator index of first entry */
-	uint attrs;			/* ref attrs of ops in this table */
-	ref *root_p;			/* self-pointer for GC root */
+    ref table;			/* t_array */
+    ushort *nx_table;		/* name indices */
+    uint count;			/* # of occupied entries */
+    uint base_index;		/* operator index of first entry */
+    uint attrs;			/* ref attrs of ops in this table */
+    ref *root_p;		/* self-pointer for GC root */
 } op_array_table;
 extern op_array_table
-  op_array_table_global,
-  op_array_table_local;
+       op_array_table_global, op_array_table_local;
+
 #define op_index_op_array_table(index)\
   ((index) < op_array_table_local.base_index ?\
    &op_array_table_global : &op_array_table_local)
@@ -136,3 +154,5 @@ extern op_array_table
  * so it doesn't have to be very fast.
  */
 void op_index_ref(P2(uint, ref *));
+
+#endif /* opdef_INCLUDED */

@@ -1,4 +1,4 @@
-%    Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_cidfn.ps 
 % ProcSet for implementing CIDFont and CIDMap resources.
 % When this is run, systemdict is still writable.
 
@@ -23,40 +24,50 @@
 % Define a CIDFont resource.  This is the defineresource implementation for
 % the CIDFont resource category.
 
-/.definecidfont [
+/.cidfonttypes where { pop } { /.cidfonttypes 6 dict def } ifelse
+.cidfonttypes begin
 
-% CIDFontType 0
-{ dup /FontMatrix known not
-   { dup /FontMatrix [0.001 0 0 0.001 0 0] put
-     dup /FDArray get
-      { /FontMatrix get [1000 0 0 1000 0 0] 1 index concatmatrix pop }
-     forall
-   }
-  if
-  dup /FDArray get mark exch
-   {		% Add pro forma entries
+% The key in .cidfonttypes is the CIDFontType value;
+% the value is a procedure that takes a font name and the CIDFont dictionary
+% and replaces the latter with a real font.
+
+0 {	% CIDFontType 0 = FontType 9
+  currentglobal 3 1 roll dup gcheck setglobal
+  dup /FontType 9 put
+  dup /FontMatrix known not {
+    dup /FontMatrix [0.001 0 0 0.001 0 0] put
+    dup /FDArray get {
+      /FontMatrix get [1000 0 0 1000 0 0] 1 index concatmatrix pop
+    } forall
+  } if
+  dup /FDArray get mark exch {
+		% Add pro forma entries
+     currentglobal exch dup gcheck setglobal
      dup /FontType 1 put
-     dup /CharStrings 10 dict put
+     dup /CharStrings mark /.notdef () .dicttomark put
      dup /Encoding [] put
 		% Create a dummy Subrs array now.
-     dup /Private get dup /SubrCount .knownget
-      { array 1 index /Subrs 3 -1 roll put }
-     if pop
+     dup /Private get dup /SubrCount .knownget {
+       array 1 index /Subrs 3 -1 roll put
+     } if pop
+     exch setglobal
      dup /FontName .knownget not { () } if exch .buildfont1 exch pop
-   }
-  forall ] 1 index /FDepVector 3 -1 roll put
+  } forall ] 1 index /FDepVector 3 -1 roll put
+  3 -1 roll setglobal
   1 index exch .buildfont9 exch pop
-} bind
+} bind def
 
-% CIDFontType 1
-{ 1 index exch .buildfont10 exch pop
-} bind
+1 {	% CIDFontType 1 = FontType 10
+  dup /FontType 10 put
+  1 index exch .buildfont10 exch pop
+} bind def
 
-% CIDFontType 2
-{ 1 index exch .buildfont11 exch pop
-} bind
+2 {	% CIDFontType 2 = FontType 11
+  dup /FontType 11 put
+  1 index exch .buildfont11 exch pop
+} bind def
 
-] def
+end		% .cidfonttypes
 
 % ---------------- Reading CIDFontType 0 files ---------------- %
 
@@ -235,35 +246,36 @@ currentdict end
 
 % Read the glyph data for a given CID.
 % The CIDFont is currentdict.
-/.readglyphdata		% <cid> .readglyphdata <subfont> <string|null>
-{ currentdict /GlyphDirectory .knownget
-   { dup type /arraytype eq
-      { 1 index exch get }
-      { 1 index exch .knownget not { null } if }
-     ifelse
-     dup null eq
-      { FDepVector 0 get exch }
-      { FDBytes 0 eq
-	 { FDepVector 0 get exch }
-	 {		% Note: FDBytes > 1 is not supported.
-	   dup 0 get FDepVector exch get
-	   exch dup length 1 sub 1 exch getinterval
-	 }
-	ifelse
-      }
-     ifelse
-   }
-   { FDBytes GDBytes add mul CIDMapOffset add
-     dup FDBytes .readint exch
-     FDBytes add dup GDBytes .readint
-     exch GDBytes add FDBytes add GDBytes .readint
+/.readglyphdata {	% <cid> .readglyphdata <subfont> <string|null>
+  currentdict /GlyphDirectory .knownget {
+    dup type /arraytype eq {
+      1 index exch get
+    } {
+      1 index exch .knownget not { null } if
+    } ifelse
+    dup null eq {
+      FDepVector 0 get exch
+    } {
+      FDBytes 0 eq {
+	FDepVector 0 get exch
+      } {
+			% Note: FDBytes > 1 is not supported.
+	dup 0 get FDepVector exch get
+	exch dup length 1 sub 1 exch getinterval
+      }	ifelse
+    } ifelse
+  } {
+    FDBytes GDBytes add mul CIDMapOffset add
+    dup FDBytes .readint exch
+    FDBytes add dup GDBytes .readint
+    exch GDBytes add FDBytes add GDBytes .readint
 			% Stack: fd pos nextpos
-     1 index sub dup 0 eq
-      { pop pop pop FDepVector 0 get null }
-      { string ReadString exch FDepVector exch get exch }
-     ifelse  
-   }
-  ifelse
+    1 index sub dup 0 eq {
+      pop pop pop FDepVector 0 get null
+    } {
+      string ReadString exch FDepVector exch get exch
+    } ifelse  
+  } ifelse
 } bind def
 
 % ------ CIDFontType 0 ------ %
@@ -271,51 +283,47 @@ currentdict end
 % Read some Subrs for the current Type 1 subfont.
 % The subfont's Private dict is currentdict; the CIDFont itself is the
 % next dictionary on the stack.
-/.readsubrs	% <Subrs> <start> .readsubrs <Subrs>
-{ 1 SubrCount 1 sub
-   { dup SDBytes mul SubrMapOffset add
-     dup SDBytes .readint exch SDBytes add SDBytes .readint
-     1 index sub string ReadString 2 index 3 1 roll put
-   }
-  for
+/.readsubrs {		% <Subrs> <start> .readsubrs <Subrs>
+  1 SubrCount 1 sub {
+    dup SDBytes mul SubrMapOffset add
+    dup SDBytes .readint exch SDBytes add SDBytes .readint
+    1 index sub string ReadString 2 index 3 1 roll put
+  } for
 } bind def
 
 % Ensure that all the Subrs for the current Type 1 subfont are loaded.
 % The subfont's Private dict is currentdict; the CIDFont itself is the
 % next dictionary on the stack.
-/.loadsubrs
-{ currentdict /SubrMapOffset .knownget
-   { Subrs 0 get null ne
-      { pop		% We've already loaded the Subrs.
-      }
-      { SubrCache 1 index .knownget
-	 {		% We've already loaded some Subrs at this offset.
+/.loadsubrs {
+  currentdict /SubrMapOffset .knownget {
+    Subrs 0 get null ne {
+      pop		% We've already loaded the Subrs.
+    } {
+      currentglobal exch currentdict gcheck setglobal
+      SubrCache 1 index .knownget {
+			% We've already loaded some Subrs at this offset.
 			% Make sure we've got as many as we need.
-	   dup length SubrCount lt
-	    {		% We need to load more.
-	      SubrCount array exch 1 index copy length .readsubrs
-	      SubrCache 3 -1 roll 2 index put
-	    }
-	   if
-	 }
-	 {		% We haven't loaded any Subrs at this offset yet.
-	   SubrCount array 0 .readsubrs
-	   SubrCache 3 -1 roll 2 index put
-	 }
-	ifelse
-	Subrs copy pop
-      }
-     ifelse
-   }
-  if
+	dup length SubrCount lt {
+			% We need to load more.
+	  SubrCount array exch 1 index copy length .readsubrs
+	  SubrCache 3 -1 roll 2 index put
+	} if
+      } {
+			% We haven't loaded any Subrs at this offset yet.
+	SubrCount array 0 .readsubrs
+	SubrCache 3 -1 roll 2 index put
+      } ifelse
+      Subrs copy pop setglobal
+    } ifelse
+  } if
 } bind def
 
 % BuildGlyph procedure for CIDFontType 0.
 % ****** WHY NOT USE .type1execchar FOR THIS? ******
 % The name %Type9BuildGlyph is known to the interpreter.
 /.cid0buildstring 10 string def
-(%Type9BuildGlyph) cvn		% <cidfont> <cid> %Type9BuildGlyph -
-{ .currentglobal 3 1 roll 1 index gcheck .setglobal
+(%Type9BuildGlyph) cvn {	% <cidfont> <cid> %Type9BuildGlyph -
+  .currentglobal 3 1 roll 1 index gcheck .setglobal
   1 index begin
   dup .readglyphdata dup null eq
    { %**** HANDLE NOTDEF ****
@@ -340,8 +348,8 @@ dup null eq { pop pop pop pop } {	%**** WRONG ****
 % BuildGlyph procedure for CIDFontType 2.
 % ****** ADD THE OUTLINE STRING AS AN ARGUMENT TO .type42execchar. ******
 % The name %Type11BuildGlyph is known to the interpreter.
-(%Type11BuildGlyph) cvn		% <cidfont> <cid> %Type11BuildGlyph -
-{ .currentglobal 3 1 roll 1 index gcheck .setglobal
+(%Type11BuildGlyph) cvn {	% <cidfont> <cid> %Type11BuildGlyph -
+  .currentglobal 3 1 roll 1 index gcheck .setglobal
   1 index begin
   dup GDBytes mul GDBytes string CIDMap .stringsreadstring .cvbsi
 			% Stack: cidfont cid glyphindex
@@ -384,17 +392,21 @@ languagelevel exch 2 .setlanguagelevel
 } ifelse exch defineresource pop
 
 % Define the CIDFont resource category.
+% We break out .buildcidfont because it appears that at least for
+% Type 32 (CIDFontType 4) fonts, the font can be registered in the Font
+% category with only a CIDFontType and no FontType.
+/.buildcidfont {		% <name> <fontdict> .buildcidfont
+				%   <name> <cidfont>
+  dup /CIDFontType get //.cidfonttypes exch get exec
+} odef
 
 /CIDFont /Generic /Category findresource dup length dict .copydict
 dup /InstanceType /dicttype put
 dup /DefineResource {
-  dup /CIDFontType get dup 9 add /FontType exch 3 index 3 1 roll put
-  //.definecidfont exch get exec
+  .buildcidfont
   /Generic /Category findresource /DefineResource get exec
 } put
 /Category defineresource pop
-
-currentdict /.definecidfont undef
 
 % Add the new FontType resources.
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsfunc.c */
+/*Id: gsfunc.c  */
 /* Generic Function support */
 #include "gx.h"
 #include "gserrors.h"
@@ -55,7 +55,7 @@ fn_free_functions(gs_function_t ** Functions, int count, gs_memory_t * mem)
 
 /* Check the values of m, n, Domain, and (if supplied) Range. */
 int
-fn_check_mnDR_proc(const gs_function_params_t * params, int m, int n)
+fn_check_mnDR(const gs_function_params_t * params, int m, int n)
 {
     int i;
 

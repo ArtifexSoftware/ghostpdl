@@ -1,4 +1,4 @@
-#    Copyright (C) 1997 Aladdin Enterprises. All rights reserved.
+#    Copyright (C) 1997, 1998 Aladdin Enterprises. All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: openvms.mak 
 # makefile for OpenVMS VAX and Alpha
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
@@ -25,6 +26,16 @@
 
 # on the make command line specify:
 #	make -fopenvms.mak "OPENVMS={VAX,ALPHA}" "DECWINDOWS={1.2,<blank>}"
+
+# Define the source, generated intermediate file, and object directories
+# for the graphics library (GL) and the PostScript/PDF interpreter (PS).
+
+GLSRCDIR=[]
+GLGENDIR=[]
+GLOBJDIR=[]
+PSSRCDIR=[]
+PSGENDIR=[]
+PSOBJDIR=[]
 
 # ------ Generic options ------ #
 
@@ -94,8 +105,9 @@ PVERSION=96
 
 ZSRCDIR=[.zlib-1_0_4]
 
-# Note that built-in libpng and zlib aren't available.
+# Note that built-in third-party libraries aren't available.
 
+SHARE_JPEG=0
 SHARE_LIBPNG=0
 SHARE_ZLIB=0
 
@@ -149,7 +161,8 @@ LIBDIR=
 
 # ------ Devices and features ------ #
 
-# Choose the device(s) to include.  See devs.mak for details.
+# Choose the device(s) to include.  See devs.mak for details,
+# devs.mak and contrib.mak for the list of available devices.
 
 DEVICE_DEVS=x11.dev x11alpha.dev x11cmyk.dev x11mono.dev
 DEVICE_DEVS3=deskjet.dev djet500.dev laserjet.dev ljetplus.dev ljet2p.dev ljet3.dev ljet4.dev
@@ -168,7 +181,7 @@ DEVICE_DEVS15=pdfwrite.dev
 
 # Choose the language feature(s) to include.  See gs.mak for details.
 
-FEATURE_DEVS=level2.dev pdf.dev
+FEATURE_DEVS=psl3.dev pdf.dev
 
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
@@ -195,13 +208,17 @@ FILE_IMPLEMENTATION=stdio
 
 EXTEND_NAMES=0
 
+# Define whether the system constants are writable.
+
+SYSTEM_CONSTANTS_ARE_WRITABLE=0
+
 # Define the platform name.
 
 PLATFORM=openvms_
 
 # Define the name of the makefile -- used in dependencies.
 
-MAKEFILE=openvms.mak
+MAKEFILE=$(GLSRCDIR)openvms.mak
 
 # Define the platform options
 
@@ -210,7 +227,6 @@ PLATOPT=
 # Patch a couple of PC-specific things that aren't relevant to OpenVMS builds,
 # but that cause `make' to produce warnings.
 
-BGIDIR=***UNUSED***
 PCFBASM=
 
 # It is very unlikely that anyone would want to edit the remaining
@@ -225,9 +241,17 @@ CMD=
 
 D=
 
+# Define the syntax of search paths for the C compiler.
+# The OpenVMS compilers uses /INCLUDE=(dir1, dir2, ...dirn),
+# and only a single /INCLUDE switch is allowed in the command line.
+
+I_=/INCLUDE=(
+II=,
+_I=)
+
 # Define the string for specifying the output file from the C compiler.
 
-O=/OBJECT=
+O_=/OBJECT=
 
 # Define the extension for executable files (e.g., null or .exe).
 
@@ -238,7 +262,7 @@ XE=.exe
 
 XEAUX=.exe
 
-# Define the list of files that `make begin' and `make clean' remove.
+# Define the list of files that `make clean' removes.
 
 BEGINFILES=OPENVMS.OPT OPENVMS.COM
 
@@ -250,10 +274,6 @@ CCA2K=
 # We don't need to define this separately.
 
 CCAUX=
-
-# Define the compilation command for `make begin'.  We don't use this.
-
-CCBEGIN=
 
 # Define the C invocation for normal compilation.
 
@@ -295,14 +315,12 @@ RMN_=$$ @RM_ALL
 
 # Define the arguments for genconf.
 
-CONFILES=-p %s -o $(ld_tr)
+CONFILES=-p %s
+CONFLDTR=-o
 
 # Define the generic compilation rules.
 
 .suffixes: .c .obj .exe
-
-.c.obj:
-	$(CC)
 
 .obj.exe:
 	$(LINK)
@@ -312,24 +330,29 @@ CONFILES=-p %s -o $(ld_tr)
 
 # ------------------- Include the generic makefiles ---------------------- #
 
-include version.mak
-include gs.mak
-include lib.mak
-include jpeg.mak
-include libpng.mak
-include zlib.mak
-include devs.mak
-include int.mak
+#include $(COMMONDIR)/ansidefs.mak
+#include $(COMMONDIR)/vmsdefs.mak
+#include $(COMMONDIR)/generic.mak
+include $(GLSRCDIR)version.mak
+include $(GLSRCDIR)gs.mak
+include $(GLSRCDIR)lib.mak
+include $(PSSRCDIR)int.mak
+include $(GLSRCDIR)jpeg.mak
+# zlib.mak must precede libpng.mak
+include $(GLSRCDIR)zlib.mak
+include $(GLSRCDIR)libpng.mak
+include $(GLSRCDIR)devs.mak
+include $(GLSRCDIR)contrib.mak
 
 # Define various incantations of the 'c' compiler.
 
-CCC=$(COMP)/OBJECT=$@ 
-CCCF=$(CCC)
-CCCJ=$(CCC)/INCLUDE=($(JSRCDIR))
-CCCZ=$(CCC)/INCLUDE=($(ZSRCDIR))
-CCCP=$(CCC)/INCLUDE=($(ZSRCDIR),$(PSRCDIR))
-CCINT=$(CCC)
-CCLEAF=$(CCC)
+CC_=$(COMP)
+CC_INT=$(CC_)
+CC_LEAF=$(CC_)
+
+JI_=/INCLUDE=($(JSRCDIR))
+PI_=/INCLUDE=($(ZSRCDIR),$(PSRCDIR))
+ZI_=/INCLUDE=($(ZSRCDIR))
 
 # ----------------------------- Main program ------------------------------ #
 
@@ -338,7 +361,7 @@ $(GS_XE): openvms gs.$(OBJ) $(INT_ALL) $(LIB_ALL)
 
 # OpenVMS.dev
 
-openvms__=gp_vms.$(OBJ) gp_nofb.$(OBJ)
+openvms__=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_vms.$(OBJ) $(GLOBJ)gp_nofb.$(OBJ)
 openvms_.dev: $(openvms__)
 	$(SETMOD) openvms_ $(openvms__)
 
@@ -347,6 +370,7 @@ openvms_.dev: $(openvms__)
 $(ECHOGS_XE):  echogs.$(OBJ) 
 $(GENARCH_XE): genarch.$(OBJ)
 $(GENCONF_XE): genconf.$(OBJ)
+$(GENDEV_XE): gendev.$(OBJ)
 $(GENINIT_XE): geninit.$(OBJ)
 
 # Preliminary definitions
@@ -393,10 +417,11 @@ endif
 #	    and configuration-specific features derived from definitions
 #	    in the platform-specific makefile.
 
-gconfig_.h: $(MAKEFILE) $(ECHOGS_XE)
-	$(EXP)echogs -w gconfig_.h -x 23 define "HAVE_SYS_TIME_H"
+$(gconfig__h): $(MAKEFILE) $(ECHOGS_XE)
+	$(EXP)$(ECHOGS_XE) -w $(gconfig__h) -x 23 define "HAVE_SYS_TIME_H"
 
-gconfigv.h: $(MAKEFILE) $(ECHOGS_XE)
-	$(EXP)echogs -w gconfigv.h -x 23 define "USE_ASM" 0
-	$(EXP)echogs -a gconfigv.h -x 23 define "USE_FPU" 1
-	$(EXP)echogs -a gconfigv.h -x 23 define "EXTEND_NAMES" 0$(EXTEND_NAME)
+$(gconfigv_h): $(MAKEFILE) $(ECHOGS_XE)
+	$(EXP)$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define "USE_ASM" 0
+	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "USE_FPU" 1
+	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "EXTEND_NAMES" 0$(EXTEND_NAMES)
+	$(EXP)$(ECHOGS_XE) -a $(gconfigv_h) -x 23 define "SYSTEM_CONSTANTS_ARE_WRITABLE" 0$(SYSTEM_CONSTANTS_ARE_WRITABLE)

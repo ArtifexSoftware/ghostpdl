@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxacpath.c */
+/*Id: gxacpath.c  */
 /* Accumulator for clipping paths */
 #include "gx.h"
 #include "gserrors.h"
@@ -83,7 +83,12 @@ private const gx_device_cpath_accum gs_cpath_accum_device =
   NULL,
   NULL,
   gx_get_largest_clipping_box,
-  NULL
+  gx_default_begin_typed_image,
+  NULL,
+  NULL,
+  NULL,
+  NULL,
+  gx_default_text_begin
  }
 };
 
@@ -91,7 +96,8 @@ private const gx_device_cpath_accum gs_cpath_accum_device =
 void
 gx_cpath_accum_begin(gx_device_cpath_accum * padev, gs_memory_t * mem)
 {
-    *padev = gs_cpath_accum_device;
+    gx_device_init((gx_device *) padev, (gx_device *) & gs_cpath_accum_device,
+		   NULL /* allocated on stack */ , true);
     padev->list_memory = mem;
     (*dev_proc(padev, open_device)) ((gx_device *) padev);
 }
@@ -111,33 +117,36 @@ int
 gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
 {
     int code = (*dev_proc(padev, close_device)) ((gx_device *) padev);
+    /* Make an entire clipping path so we can use cpath_assign. */
+    gx_clip_path apath;
 
     if (code < 0)
 	return code;
-    gx_cpath_release(pcpath);
-    pcpath->list = padev->list;
-    pcpath->path.bbox.p.x = int2fixed(padev->bbox.p.x);
-    pcpath->path.bbox.p.y = int2fixed(padev->bbox.p.y);
-    pcpath->path.bbox.q.x = int2fixed(padev->bbox.q.x);
-    pcpath->path.bbox.q.y = int2fixed(padev->bbox.q.y);
+    gx_cpath_init_local(&apath, padev->list_memory);
+    apath.rect_list->list = padev->list;
+    apath.path.bbox.p.x = int2fixed(padev->bbox.p.x);
+    apath.path.bbox.p.y = int2fixed(padev->bbox.p.y);
+    apath.path.bbox.q.x = int2fixed(padev->bbox.q.x);
+    apath.path.bbox.q.y = int2fixed(padev->bbox.q.y);
     /* Using the setbbox flag here is slightly bogus, */
     /* but it's as good a way as any to indicate that */
     /* the bbox is accurate. */
-    pcpath->path.bbox_set = 1;
+    apath.path.bbox_set = 1;
     /* Note that the result of the intersection might be */
     /* a single rectangle.  This will cause clip_path_is_rect.. */
     /* to return true.  This, in turn, requires that */
-    /* we set pcpath->inner_box correctly. */
+    /* we set apath.inner_box correctly. */
     if (clip_list_is_rectangle(&padev->list))
-	pcpath->inner_box = pcpath->path.bbox;
-    else {			/* The quick check must fail. */
-	pcpath->inner_box.p.x = pcpath->inner_box.p.y = 0;
-	pcpath->inner_box.q.x = pcpath->inner_box.q.y = 0;
+	apath.inner_box = apath.path.bbox;
+    else {
+	/* The quick check must fail. */
+	apath.inner_box.p.x = apath.inner_box.p.y = 0;
+	apath.inner_box.q.x = apath.inner_box.q.y = 0;
     }
-    gx_cpath_set_outer_box(pcpath);
-    pcpath->segments_valid = 0;
-    pcpath->shares_list = 0;
-    pcpath->id = gs_next_ids(1);	/* path changed => change id */
+    gx_cpath_set_outer_box(&apath);
+    apath.path_valid = false;
+    apath.id = gs_next_ids(1);	/* path changed => change id */
+    gx_cpath_assign_free(pcpath, &apath);
     return 0;
 }
 
@@ -153,7 +162,7 @@ int
 gx_cpath_intersect_slow(gs_state * pgs, gx_clip_path * pcpath, gx_path * ppath,
 			int rule)
 {
-    bool outside = pcpath->list.outside;
+    bool outside = gx_cpath_is_outside(pcpath);
     gs_logical_operation_t save_lop = gs_current_logical_op(pgs);
     gx_device_cpath_accum adev;
     gx_device_color devc;
@@ -172,7 +181,7 @@ gx_cpath_intersect_slow(gs_state * pgs, gx_clip_path * pcpath, gx_path * ppath,
 			     &params, &devc, pcpath);
     if (code < 0 || (code = gx_cpath_accum_end(&adev, pcpath)) < 0)
 	gx_cpath_accum_discard(&adev);
-    pcpath->list.outside = outside;
+    gx_cpath_set_outside(pcpath, outside);
     gs_set_logical_op(pgs, save_lop);
     return code;
 }
@@ -202,9 +211,9 @@ accum_close(gx_device * dev)
 	gx_clip_rect *rp =
 	(adev->list.count <= 1 ? &adev->list.single : adev->list.head);
 
-	dprintf4("[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx:\n",
-		 (ulong) & adev->list, adev->list.count,
-		 (ulong) adev->list.head, (ulong) adev->list.tail);
+	dlprintf4("[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx:\n",
+		  (ulong) & adev->list, adev->list.count,
+		  (ulong) adev->list.head, (ulong) adev->list.tail);
 	while (rp != 0) {
 	    clip_rect_print('q', "   ", rp);
 	    rp = rp->next;
@@ -347,6 +356,7 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (adev->list.count == 1)	/* check for Y merging */
        
     {
+	rptr = &adev->list.single;
 	if (x == rptr->xmin && xe == rptr->xmax &&
 	    y <= rptr->ymax && y >= rptr->ymin
 	    ) {
@@ -355,7 +365,6 @@ accum_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 	    return 0;
 	}
     }
-#undef rptr
     accum_alloc("accum", nr, x, y, xe, ye);
     rptr = adev->list.tail->prev;
     if (y >= rptr->ymax ||

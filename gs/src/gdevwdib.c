@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevwdib.c */
+/*Id: gdevwdib.c  */
 /* MS Windows 3.n driver for Ghostscript using a DIB for buffering. */
 #include "gdevmswn.h"
 #include "gxdevmem.h"
@@ -74,7 +74,7 @@ struct gx_device_win_dib_s {
     int lock_count;
     gx_device_memory mdev;
 };
-private gx_device_procs win_dib_procs =
+private const gx_device_procs win_dib_procs =
 {
     win_dib_open,
     win_dib_get_initial_matrix,

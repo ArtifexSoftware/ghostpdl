@@ -1,35 +1,31 @@
-.\"- -*- nroff -*- - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-.\"
-.\"This file describes version 4.0 of Aladdin ps2pdf.
-.\"
-.\"- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-.de TQ
-.br
-.ns
-.TP \\$1
-..
-.TH ps2pdf 1 "19 June 1996"
-.SH NAME 
-ps2pdf \- Aladdin Ghostscript PostScript to PDF translator
+.\" Id: ps2pdf.1 
+.TH PS2PDF 1 "23 June 1998" 5.24 "Ghostscript Tools" \" -*- nroff -*-
+.SH NAME
+ps2pdf \- Ghostscript PostScript to PDF translator
 .SH SYNOPSIS
-.B ps2pdf input.ps output.pdf
-.br
+\fBps2pdf\fR [ \fIoptions\fR ] \fIinput.ps output.pdf\fR
 .SH DESCRIPTION
-
-ps2pdf converts the PostScript file input.ps to the Adobe Portable
-Document Format (PDF) in output.pdf.  ps2pdf uses gs(1).  See
-/usr/local/lib/ghostscript/M.N/doc/use.doc for more details,
-where M.N is the Ghostscript version number.
-
-Currently ps2pdf does a reasonable job on filled/stroked graphics, on bitmap
-images, and on text in the 14 built-in PDF fonts in the intersection of
-Windows and ISO Latin-1 encodings.  It converts all other text in the
-PostScript file to bitmaps in the PDF file (although it does only write the
-bitmap for each character once per page, and only on pages where the
-character is actually used).  It does not compress the output at all, except
-for character bitmaps: it can't use LZW because of Unisys' patent claims,
-and it doesn't yet use other compression methods for images.
-
-.SH AUTHOR OF DOCUMENTATION
-
-.B L. Peter Deutsch <ghost@aladdin.com>
+\fBps2pdf\fR uses \fBgs\fR(1) to convert the \fBPostScript\fR(tm) file
+"input.ps" to the Adobe \fBPortable Document Format\fR (PDF) in
+"output.pdf."
+.PP
+With one exception, \fBps2pdf\fR is a pretty good workalike for Adobe
+\fBAcrobat\fR(tm) \fBDistiller\fR(tm) 3.0.  It implements
+"setdistillerparams" and nearly all of Distiller's compression and image
+downsampling options, except for LZW compression (thanks to Unisys).  By
+default it produces PDF 1.2 output compatible with Acrobat 3.x, compressed
+with "deflate" (also known as "zip" or "gzip") compression;
+to produce PDF 1.1 output compatible with Acrobat 2.x, use the
+\fB-dCompatibilityLevel=1.1\fR option.
+.PP
+The one current great shortcoming of \fBps2pdf\fR is that except for the
+fourteen built-in PDF fonts, it converts all fonts in the PostScript file
+to bitmap fonts in the PDF file, and scrambles the character codes so that
+the output is not searchable.  (Normally it produces 720dpi bitmaps, but
+you can change this using Ghostscript's \fB\-r\fR option.)  We intend to
+mostly fix this sometime in 1998.
+.SH FILES
+Run "\fBgs -h\fR" to find the location of Ghostscript documentation on your
+system, from which you can get more details.
+.SH AUTHOR
+L. Peter Deutsch <ghost@aladdin.com>

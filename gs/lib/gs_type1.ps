@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,6 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gs_type1.ps 
 % Type 1 font support code.
 
 % The standard representation for PostScript compatible fonts is described
@@ -56,23 +57,25 @@
  { /.loadfontdict 0 dict readonly def }
 ifelse
 /.loadfontfile		% <file> .loadfontfile -
- { mark exch //systemdict begin
+ { mark exch
    DISKFONTS { .loadfontdict begin } if
+	% In order to load fonts reliably, we should push systemdict
+	% here.  However, Ed Taft says that Adobe implementations
+	% push userdict and nothing else!
 	% We really would just like systemdict on the stack,
 	% but fonts produced by Fontographer require a writable dictionary.
 	% However, we can't use any of the other well-known dictionaries
 	% (such as userdict), since the whole point of pushing systemdict
 	% is to make sure that nothing important has been redefined.
-   5 dict begin
+   userdict begin
 	% We can't just use `run', because we want to check for .PFB files.
    currentpacking
     { false setpacking .loadfont1 true setpacking }
     { .loadfont1 }
-   ifelse
+   ifelse end
     { stop } if
-   end
    DISKFONTS { end } if
-   end cleartomark
+   cleartomark
  } bind def
 /.loadfont1		% <file> .loadfont1 <errorflag>
  {	% We would like to use `false /PFBDecode filter',
@@ -86,7 +89,7 @@ ifelse
     { dup read not { -1 } if
       2 copy unread 16#80 eq
        { [ exch dup true /PFBDecode filter cvx exch cvlit
-         //systemdict /closefile get ]
+         /closefile .systemvar ]
        }
       if cvx exec
     } stopped

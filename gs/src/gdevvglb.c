@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,9 +16,8 @@
    all copies.
  */
 
+/*Id: gdevvglb.c  */
 /*
- * gdevvglb.c
- *
  * This is a driver for 386 PCs using VGALIB for graphics on the console
  * display.
  *
@@ -72,7 +71,7 @@ private dev_proc_get_bits(vgalib_get_bits);
 private dev_proc_get_params(vgalib_get_params);
 private dev_proc_put_params(vgalib_put_params);
 
-gx_device_vgalib far_data gs_vgalib_device =
+const gx_device_vgalib gs_vgalib_device =
 {
     std_device_std_body(gx_device_vgalib, 0, "vgalib",
 			0, 0, 1, 1),

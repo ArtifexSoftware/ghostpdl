@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsmatrix.c */
+/*Id: gsmatrix.c  */
 /* Matrix operators for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -26,7 +26,7 @@
 #include "gxmatrix.h"
 
 /* The identity matrix */
-private gs_matrix gs_identity_matrix =
+private const gs_matrix gs_identity_matrix =
 {identity_matrix_body};
 
 /* ------ Matrix creation ------ */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,22 +16,19 @@
    all copies.
  */
 
-/* gsinit.c */
+/*Id: gsinit.c  */
 /* Initialization for the imager */
 #include "stdio_.h"
 #include "memory_.h"
 #include "gdebug.h"
 #include "gscdefs.h"
 #include "gsmemory.h"
+#include "gsmalloc.h"
 #include "gp.h"
 #include "gslib.h"		/* interface definition */
 
 /* Imported from gsmisc.c */
 extern FILE *gs_debug_out;
-
-/* Imported from gsmemory.c */
-void gs_malloc_init(P0());
-void gs_malloc_release(P0());
 
 /* Configuration information from gconfig.c. */
 extern_gx_init_table();
@@ -40,23 +37,25 @@ extern_gx_init_table();
 void
 gs_lib_init(FILE * debug_out)
 {
-    gs_lib_init0(debug_out);
-    gs_lib_init1(&gs_memory_default);
+    gs_lib_init1(gs_lib_init0(debug_out));
 }
-void
+gs_memory_t *
 gs_lib_init0(FILE * debug_out)
 {
+    gs_memory_t *mem;
+
     gs_debug_out = debug_out;
-    gs_malloc_init();
+    mem = (gs_memory_t *) gs_malloc_init();
     /* Reset debugging flags */
     memset(gs_debug, 0, 128);
     gs_log_errors = 0;
+    return mem;
 }
 void
 gs_lib_init1(gs_memory_t * mem)
 {				/* Run configuration-specific initialization procedures. */
     {
-	void (**ipp) (P1(gs_memory_t *));
+	void (*const *ipp) (P1(gs_memory_t *));
 
 	for (ipp = gx_init_table; *ipp != 0; ++ipp)
 	    (**ipp) (mem);

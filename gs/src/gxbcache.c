@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxbcache.c */
+/*Id: gxbcache.c  */
 /* Bitmap cache implementation */
 #include "memory_.h"
 #include "gx.h"

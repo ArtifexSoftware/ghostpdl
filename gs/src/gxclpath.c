@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxclpath.c */
+/*Id: gxclpath.c  */
 /* Higher-level path operations for band lists */
 #include "math_.h"
 #include "memory_.h"
@@ -36,48 +36,13 @@
 
 /* Statistics */
 #ifdef DEBUG
-ulong cmd_diffs[5];
-
+ulong stats_cmd_diffs[5];
 #endif
 
 /* Forward declarations */
 private int cmd_put_path(P8(gx_device_clist_writer * cldev,
 			    gx_clist_state * pcls, const gx_path * ppath, fixed ymin, fixed ymax, byte op,
 			    bool implicit_close, segment_notes keep_notes));
-
-/* Driver procedures */
-private dev_proc_fill_path(clist_fill_path);
-private dev_proc_stroke_path(clist_stroke_path);
-
-/* ------ Define the extensions to the command set ------ */
-
-#ifdef DEBUG
-private const char *cmd_misc2_op_names[16] =
-{cmd_misc2_op_name_strings};
-private const char *cmd_segment_op_names[16] =
-{cmd_segment_op_name_strings};
-private const char *cmd_path_op_names[16] =
-{cmd_path_op_name_strings};
-
-#endif
-
-/* Initialize the extensions to the command name table. */
-void
-gs_clpath_init(gs_memory_t * mem)
-{
-#ifdef DEBUG
-    cmd_op_names[cmd_op_misc2 >> 4] = "(misc2)";
-    cmd_sub_op_names[cmd_op_misc2 >> 4] = cmd_misc2_op_names;
-    cmd_op_names[cmd_op_segment >> 4] = "(segment)";
-    cmd_sub_op_names[cmd_op_segment >> 4] = cmd_segment_op_names;
-    cmd_op_names[cmd_op_path >> 4] = "(path)";
-    cmd_sub_op_names[cmd_op_path >> 4] = cmd_path_op_names;
-#endif
-    gs_clist_device_procs.fill_path = clist_fill_path;
-    gs_clist_device_procs.stroke_path = clist_stroke_path;
-    cmd_opvar_disable_clip = cmd_opv_disable_clip;
-    cmd_opvar_enable_clip = cmd_opv_enable_clip;
-}
 
 /* ------ Utilities ------ */
 
@@ -101,13 +66,8 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    if (code < 0)
 		return code;
 	}
-#ifdef FUTURE
 	return cmd_dc_type_pure;
-#else
-	return 0;
-#endif
     }
-#ifdef FUTURE
     /* Any non-pure color will require the phase. */
     {
 	int px = pdcolor->phase.x, py = pdcolor->phase.y;
@@ -119,7 +79,6 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		return code;
 	}
     }
-#endif
     if (gx_dc_is_binary_halftone(pdcolor)) {
 	tile = gx_dc_binary_tile(pdcolor);
 	color0 = gx_dc_binary_color0(pdcolor);
@@ -144,12 +103,8 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    if (code < 0)
 		return code;
 	}
-#ifdef FUTURE
 	return cmd_dc_type_ht;
-#endif
-    }
-#ifdef FUTURE
-    else if (gx_dc_is_colored_halftone(pdcolor)) {
+    } else if (gx_dc_is_colored_halftone(pdcolor)) {
 	const gx_device_halftone *pdht = pdcolor->colors.colored.c_ht;
 	int num_comp = pdht->num_comp;
 	byte buf[4 + 4 * cmd_max_intsize(sizeof(pdcolor->colors.colored.c_level[0]))];
@@ -160,7 +115,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	byte *dp;
 	int code;
 
-/****** HOW TO TELL IF COLOR IS ALREADY SET? ******/
+	/****** HOW TO TELL IF COLOR IS ALREADY SET? ******/
 	if (pdht->id != cldev->device_halftone_id) {
 	    int code = cmd_put_halftone(cldev, pdht, pdht->type);
 
@@ -185,30 +140,14 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	}
 	for (i = 0; i < num_comp; ++i)
 	    bp = cmd_put_w((uint) pdcolor->colors.colored.c_level[i], bp);
-/****** IGNORE alpha ******/
-	code =
-	    set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color, bp - buf + 1);
+	/****** IGNORE alpha ******/
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color, bp - buf + 1);
 	if (code < 0)
 	    return code;
 	memcpy(dp + 1, buf, bp - buf);
 	return cmd_dc_type_color;
-    }
-#endif
-    else
+    } else
 	return_error(-1);
-#ifndef FUTURE
-    {
-	int px = pdcolor->phase.x, py = pdcolor->phase.y;
-
-	if (px != pcls->tile_phase.x || py != pcls->tile_phase.y) {
-	    int code = cmd_set_tile_phase(cldev, pcls, px, py);
-
-	    if (code < 0)
-		return code;
-	}
-    }
-#endif
-    return 0;
 }
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
@@ -293,24 +232,19 @@ int
 cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		  uint must_know)
 {
-    int code;
     ushort unknown = ~pcls->known & must_know;
+    byte *dp;
+    int code;
 
     if (unknown & flatness_known) {
-	byte *dp;
-
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_flatness,
 			      1 + sizeof(float));
-
 	if (code < 0)
 	    return code;
 	memcpy(dp + 1, &cldev->imager_state.flatness, sizeof(float));
-
 	pcls->known |= flatness_known;
     }
     if (unknown & fill_adjust_known) {
-	byte *dp;
-
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_fill_adjust,
 			      1 + sizeof(fixed) * 2);
 	if (code < 0)
@@ -322,10 +256,8 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     if (unknown & ctm_known) {
 	byte cbuf[1 + 6 * sizeof(float)];
 	uint len =
-	cmd_for_matrix(cbuf,
-		       (const gs_matrix *)&cldev->imager_state.ctm) -
-	cbuf;
-	byte *dp;
+	    cmd_for_matrix(cbuf,
+			   (const gs_matrix *)&cldev->imager_state.ctm) - cbuf;
 
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_ctm, len + 1);
 	if (code < 0)
@@ -334,9 +266,8 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	pcls->known |= ctm_known;
     }
     if (unknown & line_width_known) {
-	byte *dp;
 	float width =
-	gx_current_line_width(&cldev->imager_state.line_params);
+	    gx_current_line_width(&cldev->imager_state.line_params);
 
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_line_width,
 			      1 + sizeof(width));
@@ -346,20 +277,15 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	pcls->known |= line_width_known;
     }
     if (unknown & miter_limit_known) {
-	byte *dp;
-
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_miter_limit,
 			      1 + sizeof(float));
-
 	if (code < 0)
 	    return code;
-	memcpy(dp + 1, &cldev->imager_state.line_params.miter_limit, sizeof(float));
-
+	memcpy(dp + 1, &cldev->imager_state.line_params.miter_limit,
+	       sizeof(float));
 	pcls->known |= miter_limit_known;
     }
     if (unknown & misc0_known) {
-	byte *dp;
-
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2, 2);
 	if (code < 0)
 	    return code;
@@ -369,8 +295,6 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	pcls->known |= misc0_known;
     }
     if (unknown & misc1_known) {
-	byte *dp;
-
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2, 2);
 	if (code < 0)
 	    return code;
@@ -381,12 +305,10 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	pcls->known |= misc1_known;
     }
     if (unknown & dash_known) {
-	byte *dp;
 	int n = cldev->imager_state.line_params.dash.pattern_size;
 
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_dash,
 			      2 + (n + 2) * sizeof(float));
-
 	if (code < 0)
 	    return code;
 	dp[1] = n + (cldev->imager_state.line_params.dash.adapt ? 0x80 : 0) +
@@ -396,56 +318,69 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	memcpy(dp + 2 + sizeof(float),
 	       &cldev->imager_state.line_params.dash.offset,
 	       sizeof(float));
-
 	if (n != 0)
 	    memcpy(dp + 2 + sizeof(float) * 2,
 		   cldev->imager_state.line_params.dash.pattern,
 		   n * sizeof(float));
-
 	pcls->known |= dash_known;
     }
-    if (unknown & clip_path_known) {	/* We can write out the clipping path either as rectangles */
-	/* or as a real (filled) path. */
+    if (unknown & alpha_known) {
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2,
+			      2 + sizeof(cldev->imager_state.alpha));
+	if (code < 0)
+	    return code;
+	dp[1] = cmd_set_misc2_alpha;
+	memcpy(dp + 2, &cldev->imager_state.alpha,
+	       sizeof(cldev->imager_state.alpha));
+	pcls->known |= alpha_known;
+    }
+    if (unknown & clip_path_known) {
+	/*
+	 * We can write out the clipping path either as rectangles
+	 * or as a real (filled) path.
+	 */
 	const gx_clip_path *pcpath = cldev->clip_path;
 	int band_height = cldev->page_band_height;
 	int ymin = (pcls - cldev->states) * band_height;
 	int ymax = min(ymin + band_height, cldev->height);
 	gs_fixed_rect box;
-	int punt_to_outer_box = 0;
-	byte *dp;
+	bool punt_to_outer_box = false;
 	int code;
-	int end_code;
 
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_begin_clip, 1);
 	if (code < 0)
 	    return code;
-	if (pcpath->segments_valid) {
+	if (pcpath->path_valid) {
 	    if (gx_path_is_rectangle(&pcpath->path, &box) &&
 		fixed_is_int(box.p.x | box.p.y | box.q.x | box.q.y)
-		) {		/* Write the path as a rectangle. */
+		) {
+		/* Write the path as a rectangle. */
 		code = cmd_write_rect_cmd(cldev, pcls, cmd_op_fill_rect,
 					  fixed2int_var(box.p.x),
 					  fixed2int_var(box.p.y),
 					  fixed2int(box.q.x - box.p.x),
 					  fixed2int(box.q.y - box.p.y));
-	    } else if (!(cldev->disable_mask & clist_disable_complex_clip)) {	/* Write the path. */
+	    } else if ( !(cldev->disable_mask & clist_disable_complex_clip) ) {
+		/* Write the path. */
 		code = cmd_put_path(cldev, pcls, &pcpath->path,
 				    int2fixed(ymin - 1),
 				    int2fixed(ymax + 1),
 				    (pcpath->rule == gx_rule_even_odd ?
 				     cmd_opv_eofill : cmd_opv_fill),
 				    true, sn_not_first);
-	    } else
-		/* Complex paths disabled: write outer box as clip */
-		punt_to_outer_box = 1;
+	    } else {
+		  /* Complex paths disabled: write outer box as clip */
+		  punt_to_outer_box = true;
+	    }
 	} else {		/* Write out the rectangles. */
-	    const gx_clip_rect *prect = pcpath->list.head;
+	    const gx_clip_list *list = gx_cpath_list(pcpath);
+	    const gx_clip_rect *prect = list->head;
 
 	    if (prect == 0)
-		prect = &pcpath->list.single;
+		prect = &list->single;
 	    else if (cldev->disable_mask & clist_disable_complex_clip)
-		punt_to_outer_box = 1;
-	    if (!punt_to_outer_box)
+		punt_to_outer_box = true;
+	    if (!punt_to_outer_box) {
 		for (; prect != 0 && code >= 0; prect = prect->next)
 		    if (prect->xmax > prect->xmin &&
 			prect->ymin < ymax && prect->ymax > ymin
@@ -454,10 +389,12 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			    cmd_write_rect_cmd(cldev, pcls, cmd_op_fill_rect,
 					       prect->xmin, prect->ymin,
 					       prect->xmax - prect->xmin,
-					       prect->ymax - prect->ymin);
+				       prect->ymax - prect->ymin);
 		    }
+	    }
 	}
-	if (punt_to_outer_box) {	/* Clip is complex, but disabled. Write out the outer box */
+	if (punt_to_outer_box) {
+	    /* Clip is complex, but disabled. Write out the outer box */
 	    gs_fixed_rect box;
 
 	    gx_cpath_outer_box(pcpath, &box);
@@ -469,19 +406,26 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 				      fixed2int_ceiling(box.q.x - box.p.x),
 				      fixed2int_ceiling(box.q.y - box.p.y));
 	}
-	end_code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 2);
-	if (code >= 0)
-	    code = end_code;	/* take the first failure seen */
-	if (end_code < 0 && cldev->error_is_retryable) {	/* end_clip has to work despite lo-mem to maintain consistency. */
-	    /* This isn't error recovery, but just to prevent dangling */
-	    /* cmd_opv_begin_clip's */
-	    ++cldev->ignore_lo_mem_warnings;
-	    end_code
-		= set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 2);
-	    --cldev->ignore_lo_mem_warnings;
+	{
+	    int end_code =
+		set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 2);
+
+	    if (code >= 0)
+		code = end_code;	/* take the first failure seen */
+	    if (end_code < 0 && cldev->error_is_retryable) {
+		/*
+		 * end_clip has to work despite lo-mem to maintain consistency.
+		 * This isn't error recovery, but just to prevent dangling
+		 * cmd_opv_begin_clip's.
+		 */
+	        ++cldev->ignore_lo_mem_warnings;
+	        end_code =
+		    set_cmd_put_op(dp, cldev, pcls, cmd_opv_end_clip, 2);
+	        --cldev->ignore_lo_mem_warnings;
+	    }
+	    if (end_code >= 0)
+		dp[1] = (gx_cpath_is_outside(pcpath) ? 1 : 0);
 	}
-	if (end_code >= 0)
-	    dp[1] = (gx_cpath_is_outside(pcpath) ? 1 : 0);
 	if (code < 0)
 	    return code;
 	pcls->clip_enabled = 1;
@@ -513,8 +457,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    memcpy(cmd_put_w(cldev->indexed_params.hival, dp + 2),
 		   map_data, map_size);
 	} else {
-	    code =
-		set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space, 2);
+	    code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_color_space, 2);
 	    if (code < 0)
 		return code;
 	}
@@ -526,7 +469,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 /* ------ Driver procedures ------ */
 
-private int
+int
 clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    const gx_fill_params * params, const gx_drawing_color * pdcolor,
 		const gx_clip_path * pcpath)
@@ -535,21 +478,17 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     int y, height, y0, y1;
     gs_logical_operation_t lop = pis->log_op;
     byte op = (byte)
-    (params->rule == gx_rule_even_odd ?
-#ifdef FUTURE
-     cmd_opv_eofill : cmd_opv_fill
-#else
-     (gx_dc_is_pure(pdcolor) ? cmd_opv_eofill : cmd_opv_hteofill):
-     (gx_dc_is_pure(pdcolor) ? cmd_opv_fill : cmd_opv_htfill)
-#endif
-    );
+	(params->rule == gx_rule_even_odd ?
+	 cmd_opv_eofill : cmd_opv_fill);
     gs_fixed_point adjust;
 
-    if ((cdev->disable_mask & clist_disable_fill_path)
-	|| gs_debug_c(',')	/* disable path-based banding */
-	)
+    if ( (cdev->disable_mask & clist_disable_fill_path) ||
+	 gs_debug_c(',')
+	 ) {
+	/* Disable path-based banding. */
 	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
 				    pcpath);
+    }
     adjust = params->adjust;
     {
 	gs_fixed_rect bbox;
@@ -557,7 +496,8 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	gx_path_bbox(ppath, &bbox);
 	y = fixed2int(bbox.p.y) - 1;
 	height = fixed2int_ceiling(bbox.q.y) - y + 1;
-	fit_fill_yh(dev, y, height);
+	fit_fill_y(dev, y, height);
+	fit_fill_h(dev, y, height);
 	if (height <= 0)
 	    return 0;
     }
@@ -573,53 +513,43 @@ clist_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	unknown |= fill_adjust_known;
 	cdev->imager_state.fill_adjust = adjust;
     }
+    if (cdev->imager_state.alpha != pis->alpha) {
+	unknown |= alpha_known;
+	state_update(alpha);
+    }
     if (cmd_check_clip_path(cdev, pcpath))
 	unknown |= clip_path_known;
     if (unknown)
 	cmd_clear_known(cdev, unknown);
-    BEGIN_RECT
+    FOR_RECTS {
+	int code =
+	    cmd_do_write_unknown(cdev, pcls,
+				 flatness_known | fill_adjust_known |
+				 alpha_known | clip_path_known);
 
-	int code = cmd_do_write_unknown(cdev, pcls,
-					flatness_known | fill_adjust_known |
-					clip_path_known);
-
-    if (code < 0)
-	return code;
-    if ((code = cmd_do_enable_clip(cdev, pcls, pcpath != NULL)) < 0)
-	return code;
-    if (lop == lop_default) {
-	if ((code = cmd_disable_lop(cdev, pcls)) < 0)
+	if (code < 0)
 	    return code;
-    } else {
-	if (lop != pcls->lop) {
-	    code = cmd_set_lop(cdev, pcls, lop);
-	    if (code < 0)
-		return code;
+	if ((code = cmd_do_enable_clip(cdev, pcls, pcpath != NULL)) < 0 ||
+	    (code = cmd_update_lop(cdev, pcls, lop)) < 0
+	    )
+	    return code;
+	code = cmd_put_drawing_color(cdev, pcls, pdcolor);
+	if (code < 0) {		/* Something went wrong, use the default implementation. */
+	    return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
+					pcpath);
 	}
-	if ((code = cmd_enable_lop(cdev, pcls)) < 0)
+	code = cmd_put_path(cdev, pcls, ppath,
+			    int2fixed(max(y - 1, y0)),
+			    int2fixed(min(y + height + 1, y1)),
+			    op + code,	/* cmd_dc_type */
+			    true, sn_none /* fill doesn't need the notes */ );
+	if (code < 0)
 	    return code;
-    }
-    code = cmd_put_drawing_color(cdev, pcls, pdcolor);
-    if (code < 0) {		/* Something went wrong, use the default implementation. */
-	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
-				    pcpath);
-    }
-    code = cmd_put_path(cdev, pcls, ppath,
-			int2fixed(max(y - 1, y0)),
-			int2fixed(min(y + height + 1, y1)),
-#ifdef FUTURE
-			op + code,	/* cmd_dc_type */
-#else
-			op,
-#endif
-			true, sn_none /* fill doesn't need the notes */ );
-    if (code < 0)
-	return code;
-    END_RECT
-	return 0;
+    } END_RECTS;
+    return 0;
 }
 
-private int
+int
 clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		  const gx_stroke_params * params,
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
@@ -632,21 +562,18 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     int y, height, y0, y1;
     gs_logical_operation_t lop = pis->log_op;
 
-#ifndef FUTURE
-    byte op = (byte)
-    (gx_dc_is_pure(pdcolor) ? cmd_opv_stroke : cmd_opv_htstroke);
-
-#endif
-
-    if ((cdev->disable_mask & clist_disable_stroke_path)
-	|| gs_debug_c(',')	/* disable path-based banding */
-	)
+    if ((cdev->disable_mask & clist_disable_stroke_path) ||
+	gs_debug_c(',')
+	) {
+	/* Disable path-based banding. */
 	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
 				      pcpath);
+    }
     gx_path_bbox(ppath, &bbox);
     /* We must use the supplied imager state, not our saved one, */
     /* for computing the stroke expansion. */
-    if (gx_stroke_path_expansion(pis, ppath, &expansion) < 0) {		/* Expansion is too large: use the entire page. */
+    if (gx_stroke_path_expansion(pis, ppath, &expansion) < 0) {
+	/* Expansion is too large: use the entire page. */
 	adjust_y = 0;
 	y = 0;
 	height = dev->height;
@@ -654,7 +581,8 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	adjust_y = fixed2int_ceiling(expansion.y) + 1;
 	y = fixed2int(bbox.p.y) - adjust_y;
 	height = fixed2int_ceiling(bbox.q.y) - y + adjust_y;
-	fit_fill_yh(dev, y, height);
+	fit_fill_y(dev, y, height);
+	fit_fill_h(dev, y, height);
 	if (height <= 0)
 	    return 0;
     }
@@ -669,13 +597,13 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 		pis->line_params.dash.pattern,
 		pattern_size * sizeof(float))) ||
 	cdev->imager_state.line_params.dash.offset !=
-	pis->line_params.dash.offset ||
+	  pis->line_params.dash.offset ||
 	cdev->imager_state.line_params.dash.adapt !=
-	pis->line_params.dash.adapt ||
+	  pis->line_params.dash.adapt ||
 	cdev->imager_state.line_params.dot_length !=
-	pis->line_params.dot_length ||
+	  pis->line_params.dot_length ||
 	cdev->imager_state.line_params.dot_length_absolute !=
-	pis->line_params.dot_length_absolute
+	  pis->line_params.dot_length_absolute
     ) {				/* Bail out if the dash pattern is too long. */
 	if (pattern_size > cmd_max_dash)
 	    return gx_default_stroke_path(dev, pis, ppath, params,
@@ -730,58 +658,50 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	state_update(overprint);
 	state_update(stroke_adjust);
     }
+    if (cdev->imager_state.alpha != pis->alpha) {
+	unknown |= alpha_known;
+	state_update(alpha);
+    }
     if (cmd_check_clip_path(cdev, pcpath))
 	unknown |= clip_path_known;
     if (unknown)
 	cmd_clear_known(cdev, unknown);
-    BEGIN_RECT
+    FOR_RECTS {
+	int code;
 
-	int code = cmd_do_write_unknown(cdev, pcls, stroke_all_known);
-
-    if (code < 0)
-	return code;
-    if ((code = cmd_do_enable_clip(cdev, pcls, pcpath != NULL)) < 0)
-	return code;
-    if (lop == lop_default) {
-	if ((code = cmd_disable_lop(cdev, pcls)) < 0)
+	if ((code = cmd_do_write_unknown(cdev, pcls, stroke_all_known)) < 0 ||
+	    (code = cmd_do_enable_clip(cdev, pcls, pcpath != NULL)) < 0 ||
+	    (code = cmd_update_lop(cdev, pcls, lop)) < 0
+	    )
 	    return code;
-    } else {
-	if (lop != pcls->lop) {
-	    code = cmd_set_lop(cdev, pcls, lop);
+	code = cmd_put_drawing_color(cdev, pcls, pdcolor);
+	if (code < 0) {
+	    /* Something went wrong, use the default implementation. */
+	    return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
+					  pcpath);
+	}
+	{
+	    fixed ymin, ymax;
+
+	    /*
+	     * If a dash pattern is active, we can't skip segments
+	     * outside the clipping region, because that would throw off
+	     * the pattern.
+	     */
+	    if (pattern_size == 0)
+		ymin = int2fixed(max(y - adjust_y, y0)),
+		    ymax = int2fixed(min(y + height + adjust_y, y1));
+	    else
+		ymin = min_fixed,
+		    ymax = max_fixed;
+	    code = cmd_put_path(cdev, pcls, ppath, ymin, ymax,
+				cmd_opv_stroke + code,	/* cmd_dc_type */
+				false, (segment_notes) ~ 0);
 	    if (code < 0)
 		return code;
 	}
-	if ((code = cmd_enable_lop(cdev, pcls)) < 0)
-	    return code;
-    }
-    code = cmd_put_drawing_color(cdev, pcls, pdcolor);
-    if (code < 0) {		/* Something went wrong, use the default implementation. */
-	return gx_default_stroke_path(dev, pis, ppath, params, pdcolor,
-				      pcpath);
-    } {
-	fixed ymin, ymax;
-
-	/* If a dash pattern is active, we can't skip segments */
-	/* outside the clipping region, because that would throw off */
-	/* the pattern. */
-	if (pattern_size == 0)
-	    ymin = int2fixed(max(y - adjust_y, y0)),
-		ymax = int2fixed(min(y + height + adjust_y, y1));
-	else
-	    ymin = min_fixed,
-		ymax = max_fixed;
-	code = cmd_put_path(cdev, pcls, ppath, ymin, ymax,
-#ifdef FUTURE
-			    cmd_opv_stroke + code,	/* cmd_dc_type */
-#else
-			    op,
-#endif
-			    false, (segment_notes) ~ 0);
-	if (code < 0)
-	    return code;
-    }
-    END_RECT
-	return 0;
+    } END_RECTS;
+    return 0;
 }
 
 /* ------ Path utilities ------ */
@@ -801,11 +721,11 @@ typedef struct cmd_segment_writer_s {
 cmd_segment_writer;
 
 /* Put out a path segment command. */
-private int near
-cmd_put_segment(cmd_segment_writer _ss * psw, byte op,
-		const fixed _ss * operands, segment_notes notes)
+private int
+cmd_put_segment(cmd_segment_writer * psw, byte op,
+		const fixed * operands, segment_notes notes)
 {
-    const fixed _ss *optr = operands;
+    const fixed *optr = operands;
 
     /* Fetch num_operands before possible command merging. */
     int i = clist_segment_op_num_operands[op & 0xf];
@@ -815,8 +735,8 @@ cmd_put_segment(cmd_segment_writer _ss * psw, byte op,
     if (gs_debug_c('L')) {
 	int j;
 
-	dprintf2("[L]  %s:%d:", cmd_segment_op_names[op & 0xf],
-		 (int)notes);
+	dlprintf2("[L]  %s:%d:", cmd_sub_op_names[op >> 4][op & 0xf],
+		  (int)notes);
 	for (j = 0; j < i; ++j)
 	    dprintf1(" %g", fixed2float(operands[j]));
 	dputs("\n");
@@ -865,11 +785,11 @@ cmd_put_segment(cmd_segment_writer _ss * psw, byte op,
 	if (is_bits(d, _fixed_shift + 11) &&
 	    !(d & (float2fixed(0.25) - 1))
 	    ) {
-	    cmd_count_add1(cmd_diffs[3]);
+	    cmd_count_add1(stats_cmd_diffs[3]);
 	    d = ((d >> (_fixed_shift - 2)) & 0x1fff) + 0xc000;
 	    q += 2;
 	} else if (is_bits(d, 19) && i > 0 && is_bits(d2 = optr[1], 19)) {
-	    cmd_count_add1(cmd_diffs[0]);
+	    cmd_count_add1(stats_cmd_diffs[0]);
 	    q[1] = (byte) ((d >> 13) & 0x3f);
 	    q[2] = (byte) (d >> 5);
 	    q[3] = (byte) ((d << 3) + ((d2 >> 16) & 7));
@@ -879,18 +799,18 @@ cmd_put_segment(cmd_segment_writer _ss * psw, byte op,
 	    --i, ++optr;
 	    continue;
 	} else if (is_bits(d, 22)) {
-	    cmd_count_add1(cmd_diffs[1]);
+	    cmd_count_add1(stats_cmd_diffs[1]);
 	    q[1] = (byte) (((d >> 16) & 0x3f) + 0x40);
 	    q += 3;
 	} else if (is_bits(d, 30)) {
-	    cmd_count_add1(cmd_diffs[2]);
+	    cmd_count_add1(stats_cmd_diffs[2]);
 	    q[1] = (byte) (((d >> 24) & 0x3f) + 0x80);
 	    q[2] = (byte) (d >> 16);
 	    q += 4;
 	} else {
 	    int b;
 
-	    cmd_count_add1(cmd_diffs[4]);
+	    cmd_count_add1(stats_cmd_diffs[4]);
 	    *++q = 0xe0;
 	    for (b = sizeof(fixed) - 1; b > 1; --b)
 		*++q = (byte) (d >> (b * 8));
@@ -901,9 +821,8 @@ cmd_put_segment(cmd_segment_writer _ss * psw, byte op,
     }
     if (notes != psw->notes) {
 	byte *dp;
-
 	int code =
-	set_cmd_put_op(dp, psw->cldev, psw->pcls, cmd_opv_set_misc2, 2);
+	    set_cmd_put_op(dp, psw->cldev, psw->pcls, cmd_opv_set_misc2, 2);
 
 	if (code < 0)
 	    return code;
@@ -912,9 +831,7 @@ cmd_put_segment(cmd_segment_writer _ss * psw, byte op,
     } {
 	int len = q + 2 - psw->cmd;
 	byte *dp;
-
-	int code =
-	set_cmd_put_op(dp, psw->cldev, psw->pcls, op, len);
+	int code = set_cmd_put_op(dp, psw->cldev, psw->pcls, op, len);
 
 	if (code < 0)
 	    return code;
@@ -941,8 +858,13 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 {
     gs_path_enum cenum;
     cmd_segment_writer writer;
-    static byte initial_op =
-    {cmd_opv_end_run};
+
+    /*
+     * initial_op is logically const, so we declare it as such, 
+     * since some systems really dislike non-const statics.
+     * This entails an otherwise pointless cast in set_first_point().
+     */
+    static const byte initial_op = cmd_opv_end_run;
 
     /*
      * We define the 'side' of a point according to its Y value as
@@ -1007,7 +929,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     writer.cldev = cldev;
     writer.pcls = pcls;
     writer.notes = sn_none;
-#define set_first_point() (writer.dp = &initial_op)
+#define set_first_point() (writer.dp = (byte *)&initial_op)
 #define first_point() (writer.dp == &initial_op)
     set_first_point();
     for (;;) {
@@ -1217,7 +1139,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		    }
 		    {
 			fixed nx = E, ny = F;
-			const fixed _ss *optr = vs;
+			const fixed *optr = vs;
 			byte op;
 
 			if_debug7('p', "[p]curveto (%g,%g; %g,%g; %g,%g) side %d\n",

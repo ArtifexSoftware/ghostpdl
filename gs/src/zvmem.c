@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zvmem.c */
+/*Id: zvmem.c  */
 /* "Virtual memory" operators */
 #include "ghost.h"
 #include "gsstruct.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"		/* for checking in restore */
 #include "ialloc.h"
@@ -31,17 +30,16 @@
 #include "stream.h"		/* for files.h */
 #include "files.h"		/* for e-stack processing */
 #include "store.h"
+#include "gsmalloc.h"		/* for gs_memory_default */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsstate.h"
 
-#ifdef DEBUG
 /* Define whether we validate memory before/after save/restore. */
-/* Note that we only do this if DEBUG is set and -Z? is selected. */
-#define VALIDATE_BEFORE_SAVE
-#define VALIDATE_AFTER_SAVE
-#define VALIDATE_BEFORE_RESTORE
-#define VALIDATE_AFTER_RESTORE
-#endif
+/* Note that we only actually do this if DEBUG is set and -Z? is selected. */
+private bool I_VALIDATE_BEFORE_SAVE = true;
+private bool I_VALIDATE_AFTER_SAVE = true;
+private bool I_VALIDATE_BEFORE_RESTORE = true;
+private bool I_VALIDATE_AFTER_RESTORE = true;
 
 /* Make an invalid file object. */
 extern void make_invalid_file(P1(ref *));	/* in zfile.c */
@@ -56,7 +54,6 @@ gs_private_st_ptrs1(st_vm_save, vm_save_t, "savetype",
 		    vm_save_enum_ptrs, vm_save_reloc_ptrs, gsave);
 
 /* Clean up the stacks and validate storage. */
-#if defined(VALIDATE_BEFORE_SAVE) || defined(VALIDATE_AFTER_SAVE) || defined(VALIDATE_BEFORE_RESTORE) || defined(VALIDATE_AFTER_RESTORE)
 private void
 ivalidate_clean_spaces(void)
 {
@@ -67,7 +64,6 @@ ivalidate_clean_spaces(void)
 	ivalidate_spaces();
     }
 }
-#endif
 
 /* - save <save> */
 int
@@ -79,9 +75,8 @@ zsave(register os_ptr op)
     int code;
     gs_state *prev;
 
-#ifdef VALIDATE_BEFORE_SAVE
-    ivalidate_clean_spaces();
-#endif
+    if (I_VALIDATE_BEFORE_SAVE)
+	ivalidate_clean_spaces();
     ialloc_set_space(idmemory, avm_local);
     vmsave = ialloc_struct(vm_save_t, &st_vm_save, "zsave");
     ialloc_set_space(idmemory, space);
@@ -103,9 +98,8 @@ zsave(register os_ptr op)
     vmsave->gsave = prev;
     push(1);
     make_tav(op, t_save, 0, saveid, sid);
-#ifdef VALIDATE_AFTER_SAVE
-    ivalidate_clean_spaces();
-#endif
+    if (I_VALIDATE_AFTER_SAVE)
+	ivalidate_clean_spaces();
     return 0;
 }
 
@@ -126,9 +120,8 @@ zrestore(register os_ptr op)
     if_debug2('u', "[u]vmrestore 0x%lx, id = %lu\n",
 	      (ulong) alloc_save_client_data(asave),
 	      (ulong) op->value.saveid);
-#ifdef VALIDATE_BEFORE_RESTORE
-    ivalidate_clean_spaces();
-#endif
+    if (I_VALIDATE_BEFORE_RESTORE)
+	ivalidate_clean_spaces();
     /* Check the contents of the stacks. */
     osp--;
     {
@@ -152,8 +145,7 @@ zrestore(register os_ptr op)
     do {
 	vmsave = alloc_save_client_data(alloc_save_current(idmemory));
 	/* Restore the graphics state. */
-	gs_grestoreall(igs);
-	gs_grestore2_for_restore(igs, vmsave->gsave);
+	gs_grestoreall_for_restore(igs, vmsave->gsave);
 	/*
 	 * If alloc_save_space decided to do a second save, the vmsave
 	 * object was allocated one save level less deep than the
@@ -175,9 +167,8 @@ zrestore(register os_ptr op)
 	ialloc_set_space(idmemory, space);
     }
     dict_set_top();		/* reload dict stack cache */
-#ifdef VALIDATE_AFTER_RESTORE
-    ivalidate_clean_spaces();
-#endif
+    if (I_VALIDATE_AFTER_RESTORE)
+	ivalidate_clean_spaces();
     return 0;
 }
 /* Check the operand of a restore. */
@@ -204,10 +195,14 @@ private int
 restore_check_stack(const ref_stack * pstack, const alloc_save_t * asave,
 		    bool is_estack)
 {
-    STACK_LOOP_BEGIN(pstack, bot, size) {
-	const ref *stkp;
+    ref_stack_enum_t rsenum;
 
-	for (stkp = bot; size; stkp++, size--) {
+    ref_stack_enum_begin(&rsenum, pstack);
+    do {
+	const ref *stkp = rsenum.ptr;
+	uint size = rsenum.size;
+
+	for (; size; stkp++, size--) {
 	    const void *ptr;
 
 	    switch (r_type(stkp)) {
@@ -225,7 +220,7 @@ restore_check_stack(const ref_stack * pstack, const alloc_save_t * asave,
 
 			if (is_estack &&
 			    (r_has_attr(stkp, a_executable) ||
-			     !file_is_valid(s, stkp))
+			     file_is_invalid(s, stkp))
 			    )
 			    continue;
 		    }
@@ -263,9 +258,8 @@ restore_check_stack(const ref_stack * pstack, const alloc_save_t * asave,
 	    if (alloc_is_since_save(ptr, asave))
 		return_error(e_invalidrestore);
 	}
-    }
-    STACK_LOOP_END(bot, size)
-	return 0;		/* OK */
+    } while (ref_stack_enum_next(&rsenum));
+    return 0;		/* OK */
 }
 /*
  * If the new save level is zero, fix up the contents of a stack
@@ -281,10 +275,14 @@ private void
 restore_fix_stack(ref_stack * pstack, const alloc_save_t * asave,
 		  bool is_estack)
 {
-    STACK_LOOP_BEGIN(pstack, bot, size) {
-	ref *stkp;
+    ref_stack_enum_t rsenum;
 
-	for (stkp = bot; size; stkp++, size--) {
+    ref_stack_enum_begin(&rsenum, pstack);
+    do {
+	ref *stkp = rsenum.ptr;
+	uint size = rsenum.size;
+
+	for (; size; stkp++, size--) {
 	    r_clear_attrs(stkp, l_new);		/* always do it, no harm */
 	    if (is_estack) {
 		ref ofile;
@@ -316,8 +314,7 @@ restore_fix_stack(ref_stack * pstack, const alloc_save_t * asave,
 			     &ofile);
 	    }
 	}
-    }
-    STACK_LOOP_END(bot, size)
+    } while (ref_stack_enum_next(&rsenum));
 }
 
 /* - vmstatus <save_level> <vm_used> <vm_maximum> */
@@ -359,9 +356,11 @@ zforgetsave(register os_ptr op)
     restore_fix_stack(&o_stack, asave, false);
     restore_fix_stack(&e_stack, asave, false);
     restore_fix_stack(&d_stack, asave, false);
-    /* Forget the gsaves, by deleting the bottom gstate on */
-    /* the current stack and the top one on the saved stack and then */
-    /* concatenating the stacks together. */
+    /*
+     * Forget the gsaves, by deleting the bottom gstate on
+     * the current stack and the top one on the saved stack and then
+     * concatenating the stacks together.
+     */
     {
 	gs_state *pgs = igs;
 	gs_state *last;

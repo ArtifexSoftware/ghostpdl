@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxht.c */
+/*Id: gxht.c  */
 /* Halftone rendering routines for Ghostscript imaging library */
 #include "memory_.h"
 #include "gx.h"
@@ -39,21 +39,24 @@
 #define max_ht_bits_SMALL 1000
 
 /* Define the binary halftone device color type. */
+/* The type descriptor must be public for Pattern types. */
+gs_public_st_composite(st_dc_ht_binary, gx_device_color, "dc_ht_binary",
+		       dc_ht_binary_enum_ptrs, dc_ht_binary_reloc_ptrs);
 private dev_color_proc_load(gx_dc_ht_binary_load);
 private dev_color_proc_fill_rectangle(gx_dc_ht_binary_fill_rectangle);
-private struct_proc_enum_ptrs(dc_ht_binary_enum_ptrs);
-private struct_proc_reloc_ptrs(dc_ht_binary_reloc_ptrs);
-const gx_device_color_procs
-      gx_dc_procs_ht_binary =
-{gx_dc_ht_binary_load, gx_dc_ht_binary_fill_rectangle,
- gx_dc_default_fill_masked,
- dc_ht_binary_enum_ptrs, dc_ht_binary_reloc_ptrs
+private dev_color_proc_equal(gx_dc_ht_binary_equal);
+const gx_device_color_type_t
+      gx_dc_type_data_ht_binary =
+{&st_dc_ht_binary,
+ gx_dc_ht_binary_load, gx_dc_ht_binary_fill_rectangle,
+ gx_dc_default_fill_masked, gx_dc_ht_binary_equal
 };
 
 #undef gx_dc_type_ht_binary
-const gx_device_color_procs _ds *gx_dc_type_ht_binary = &gx_dc_procs_ht_binary;
+const gx_device_color_type_t *const gx_dc_type_ht_binary =
+&gx_dc_type_data_ht_binary;
 
-#define gx_dc_type_ht_binary (&gx_dc_procs_ht_binary)
+#define gx_dc_type_ht_binary (&gx_dc_type_data_ht_binary)
 /* GC procedures */
 #define cptr ((gx_device_color *)vptr)
 private 
@@ -95,7 +98,7 @@ private RELOC_PTRS_BEGIN(ht_tiles_reloc_ptrs)
 
     if (bits == 0)
 	return;
-    bits = gs_reloc_struct_ptr(bits, gcst);
+    RELOC_VAR(bits);
     if (size == size_of(gx_ht_tile)) {	/* only 1 tile */
 	ht_tiles->tiles.data = bits;
 	return;
@@ -115,7 +118,7 @@ gx_ht_cache_default_tiles(void)
 #if arch_small_memory
     return max_cached_tiles_SMALL;
 #else
-    return (gs_if_debug_c('.') ? max_cached_tiles_SMALL :
+    return (gs_debug_c('.') ? max_cached_tiles_SMALL :
 	    max_cached_tiles_LARGE);
 #endif
 }
@@ -125,7 +128,7 @@ gx_ht_cache_default_bits(void)
 #if arch_small_memory
     return max_ht_bits_SMALL;
 #else
-    return (gs_if_debug_c('.') ? max_ht_bits_SMALL :
+    return (gs_debug_c('.') ? max_ht_bits_SMALL :
 	    max_ht_bits_LARGE);
 #endif
 }
@@ -296,6 +299,19 @@ gx_dc_ht_binary_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 					     pdevc->colors.binary.color,
 				 x, y, w, h, pdevc->phase.x, pdevc->phase.y,
 					     lop);
+}
+
+/* Compare two binary halftones for equality. */
+private bool
+gx_dc_ht_binary_equal(const gx_device_color * pdevc1,
+		      const gx_device_color * pdevc2)
+{
+    return pdevc2->type == pdevc1->type &&
+	pdevc1->phase.x == pdevc2->phase.x &&
+	pdevc1->phase.y == pdevc2->phase.y &&
+	gx_dc_binary_color0(pdevc1) == gx_dc_binary_color0(pdevc2) &&
+	gx_dc_binary_color1(pdevc1) == gx_dc_binary_color1(pdevc2) &&
+	pdevc1->colors.binary.b_level == pdevc2->colors.binary.b_level;
 }
 
 /* Initialize the tile cache for a given screen. */

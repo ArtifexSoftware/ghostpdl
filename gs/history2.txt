@@ -17,6 +17,7 @@
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
+Id: history2.txt 
 This file, history2.txt, describes the changes in older releases of
 Ghostscript numbered 2.n.  For more recent changes, see the historyN.txt (N
 > 2) and NEWS files.

@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* iccinit0.c */
+/*Id: iccinit0.c  */
 /* Initialization string for non-compiled initialization */
 #include "stdpre.h"
 

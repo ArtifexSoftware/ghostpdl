@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gsline.c */
+/*Id: gsline.c  */
 /* Line parameter operators for Ghostscript library */
 #include "math_.h"
 #include "memory_.h"

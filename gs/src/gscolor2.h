@@ -1,22 +1,22 @@
 /* Copyright (C) 1992, 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/*Id: gscolor2.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gscolor2.h  */
 /* Client interface to Level 2 color facilities */
 /* (requires gscspace.h, gsmatrix.h) */
 
@@ -25,10 +25,13 @@
 
 #include "gsptype1.h"
 
-/* Note: clients should use rc_alloc_struct_0 (in gsrefct.h) to allocate */
-/* CIE color spaces or rendering structures. */
-
 /* ---------------- Graphics state ---------------- */
+
+/*
+ * Note that setcolorspace and setcolor copy the (top level of) their
+ * structure argument, so if the client allocated it on the heap, the
+ * client should free it after setting it in the graphics state.
+ */
 
 /* General color routines */
 const gs_color_space *gs_currentcolorspace(P1(const gs_state *));
@@ -69,29 +72,29 @@ int gs_setcolorrendering(P2(gs_state *, gs_cie_render *));
  * procedures provided by the client are fairly efficient, and there are
  * few instances in which the client would need to replace them.
  */
-extern  int     gs_cspace_build_Indexed(
-    gs_color_space **       ppcspace,
-    const gs_color_space *  pbase_cspace,
-    uint                    num_entries,
-    const gs_const_string * ptbl,
-    gs_memory_t *           pmem
+extern int gs_cspace_build_Indexed(
+				      gs_color_space ** ppcspace,
+				      const gs_color_space * pbase_cspace,
+				      uint num_entries,
+				      const gs_const_string * ptbl,
+				      gs_memory_t * pmem
 );
 
 /* Return the number of entries in the palette of an indexed color space. */
 extern int gs_cspace_indexed_num_entries(P1(
-    const gs_color_space *  pcspace
-));
+					       const gs_color_space * pcspace
+					 ));
 
 /* In the case of a procedure-based indexed color space, get a pointer to */
 /* the array of cached values. */
-extern float * gs_cspace_indexed_value_array(P1(
-    const gs_color_space *  pcspace
-));
+extern float *gs_cspace_indexed_value_array(P1(
+					      const gs_color_space * pcspace
+					    ));
 
 /* Set the lookup procedure to be used for an Indexed color space. */
 extern int gs_cspace_indexed_set_proc(P2(
-    gs_color_space *    pcspace,
-    int                 (*proc)(P3( const gs_indexed_params *, int, float * ))
-));
+					    gs_color_space * pcspace,
+		   int (*proc) (P3(const gs_indexed_params *, int, float *))
+				      ));
 
-#endif					/* gscolor2_INCLUDED */
+#endif /* gscolor2_INCLUDED */

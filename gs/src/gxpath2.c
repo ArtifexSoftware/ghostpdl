@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxpath2.c */
+/*Id: gxpath2.c  */
 /* Path tracing procedures for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -26,14 +26,7 @@
 #include "gzpath.h"
 
 /* Define the enumeration structure. */
-private_st_path_enum();
-
-/* Assign a path. */
-void
-gx_path_assign(gx_path * pto, const gx_path * pfrom)
-{
-    *pto = *pfrom;
-}
+public_st_path_enum();
 
 /* Read the current point of a path. */
 int
@@ -76,10 +69,10 @@ gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
 	*pbox = ppath->bbox;
     } else {
 	gs_fixed_rect box;
-	register segment *pseg = ppath->box_last;
+	const segment *pseg = ppath->box_last;
 
 	if (pseg == 0) {	/* box is uninitialized */
-	    pseg = (segment *) ppath->first_subpath;
+	    pseg = (const segment *)ppath->first_subpath;
 	    box.p.x = box.q.x = pseg->pt.x;
 	    box.p.y = box.q.y = pseg->pt.y;
 	} else {
@@ -95,7 +88,7 @@ gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
 	while (pseg) {
 	    switch (pseg->type) {
 		case s_curve:
-#define pcurve ((curve_segment *)pseg)
+#define pcurve ((const curve_segment *)pseg)
 		    adjust_bbox(pcurve->p1);
 		    adjust_bbox(pcurve->p2);
 #undef pcurve
@@ -114,29 +107,35 @@ gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
 }
 
 /* Test if a path has any curves. */
+#undef gx_path_has_curves
 bool
 gx_path_has_curves(const gx_path * ppath)
 {
-    return ppath->curve_count != 0;
+    return gx_path_has_curves_inline(ppath);
 }
+#define gx_path_has_curves(ppath)\
+  gx_path_has_curves_inline(ppath)
 
 /* Test if a path has no segments. */
+#undef gx_path_is_void
 bool
 gx_path_is_void(const gx_path * ppath)
 {
-    return ppath->first_subpath == 0;
+    return gx_path_is_void_inline(ppath);
 }
+#define gx_path_is_void(ppath)\
+  gx_path_is_void_inline(ppath)
 
 /* Test if a path has no elements at all. */
 bool
 gx_path_is_null(const gx_path * ppath)
 {
-    return ppath->first_subpath == 0 && !path_position_valid(ppath);
+    return gx_path_is_null_inline(ppath);
 }
 
 /*
- * Test if a subpath to be filled is a rectangle; if so, return its
- * bounding box and the start of the next subpath.
+ * Test if a subpath is a rectangle; if so, return its bounding box
+ * and the start of the next subpath.
  * Note that this must recognize:
  *      ordinary closed rectangles (M, L, L, L, C);
  *      open rectangles (M, L, L, L);
@@ -144,53 +143,68 @@ gx_path_is_null(const gx_path * ppath)
  *      rectangles closed with *both* lineto and closepath (bad PostScript,
  *        but unfortunately not rare) (Mo, L, L, L, Lo, C).
  */
-bool
-gx_subpath_is_rectangle(const subpath * pseg0, gs_fixed_rect * pbox,
-			const subpath ** ppnext)
+gx_path_rectangular_type
+gx_subpath_is_rectangular(const subpath * pseg0, gs_fixed_rect * pbox,
+			  const subpath ** ppnext)
 {
     const segment *pseg1, *pseg2, *pseg3, *pseg4;
+    gx_path_rectangular_type type;
 
     if (pseg0->curve_count == 0 &&
 	(pseg1 = pseg0->next) != 0 &&
 	(pseg2 = pseg1->next) != 0 &&
-	(pseg3 = pseg2->next) != 0 &&
-	((pseg4 = pseg3->next) == 0 || pseg4->type != s_line ||
-	 (pseg4->pt.x == pseg0->pt.x &&
-	  pseg4->pt.y == pseg0->pt.y &&
-	  (pseg4->next == 0 || pseg4->next->type != s_line)))
+	(pseg3 = pseg2->next) != 0
 	) {
-	fixed x0 = pseg0->pt.x, y0 = pseg0->pt.y;
-	fixed x2 = pseg2->pt.x, y2 = pseg2->pt.y;
+	if ((pseg4 = pseg3->next) == 0 || pseg4->type == s_start)
+	    type = prt_open;	/* M, L, L, L */
+	else if (pseg4->type != s_line)		/* must be s_line_close */
+	    type = prt_closed;	/* M, L, L, L, C */
+	else if (pseg4->pt.x != pseg0->pt.x ||
+		 pseg4->pt.y != pseg0->pt.y
+	    )
+	    return prt_none;
+	else if (pseg4->next == 0 || pseg4->next->type == s_start)
+	    type = prt_fake_closed;	/* Mo, L, L, L, Lo */
+	else if (pseg4->next->type != s_line)	/* must be s_line_close */
+	    type = prt_closed;	/* Mo, L, L, L, Lo, C */
+	else
+	    return prt_none;
+	{
+	    fixed x0 = pseg0->pt.x, y0 = pseg0->pt.y;
+	    fixed x2 = pseg2->pt.x, y2 = pseg2->pt.y;
 
-	if ((x0 == pseg1->pt.x && pseg1->pt.y == y2 &&
-	     x2 == pseg3->pt.x && pseg3->pt.y == y0) ||
-	    (x0 == pseg3->pt.x && pseg3->pt.y == y2 &&
-	     x2 == pseg1->pt.x && pseg1->pt.y == y0)
-	    ) {			/* Path is a rectangle.  Return the bounding box. */
-	    if (x0 < x2)
-		pbox->p.x = x0, pbox->q.x = x2;
-	    else
-		pbox->p.x = x2, pbox->q.x = x0;
-	    if (y0 < y2)
-		pbox->p.y = y0, pbox->q.y = y2;
-	    else
-		pbox->p.y = y2, pbox->q.y = y0;
-	    while (pseg4 != 0 && pseg4->type != s_start)
-		pseg4 = pseg4->next;
-	    *ppnext = (const subpath *)pseg4;
-	    return true;
+	    if ((x0 == pseg1->pt.x && pseg1->pt.y == y2 &&
+		 x2 == pseg3->pt.x && pseg3->pt.y == y0) ||
+		(x0 == pseg3->pt.x && pseg3->pt.y == y2 &&
+		 x2 == pseg1->pt.x && pseg1->pt.y == y0)
+		) {		/* Path is a rectangle.  Return the bounding box. */
+		if (x0 < x2)
+		    pbox->p.x = x0, pbox->q.x = x2;
+		else
+		    pbox->p.x = x2, pbox->q.x = x0;
+		if (y0 < y2)
+		    pbox->p.y = y0, pbox->q.y = y2;
+		else
+		    pbox->p.y = y2, pbox->q.y = y0;
+		while (pseg4 != 0 && pseg4->type != s_start)
+		    pseg4 = pseg4->next;
+		*ppnext = (const subpath *)pseg4;
+		return type;
+	    }
 	}
     }
-    return false;
+    return prt_none;
 }
 /* Test if an entire path to be filled is a rectangle. */
-bool
-gx_path_is_rectangle(const gx_path * ppath, gs_fixed_rect * pbox)
+gx_path_rectangular_type
+gx_path_is_rectangular(const gx_path * ppath, gs_fixed_rect * pbox)
 {
     const subpath *pnext;
 
-    return (ppath->subpath_count == 1 &&
-	    gx_subpath_is_rectangle(ppath->first_subpath, pbox, &pnext));
+    return
+	(gx_path_subpath_count(ppath) == 1 ?
+	 gx_subpath_is_rectangular(ppath->first_subpath, pbox, &pnext) :
+	 prt_none);
 }
 
 /* Translate an already-constructed path (in device space). */
@@ -276,7 +290,7 @@ gx_path_scale_exp2(gx_path * ppath, int log2_scale_x, int log2_scale_y)
  * quite counter-intuitive results.
  */
 int
-gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath, bool init)
+gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 {
     const subpath *psub = ppath_old->first_subpath;
     int code;
@@ -285,8 +299,6 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath, bool init)
     if (gs_debug_c('P'))
 	gx_dump_path(ppath_old, "before reversepath");
 #endif
-    if (init)
-	gx_path_init(ppath, ppath_old->memory);
   nsp:while (psub) {
 	const segment *pseg = psub->last;
 	const segment *prev;
@@ -298,7 +310,7 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath, bool init)
 	if (!psub->is_closed) {
 	    code = gx_path_add_point(ppath, pseg->pt.x, pseg->pt.y);
 	    if (code < 0)
-		goto fx;
+		return code;
 	}
 	for (;; pseg = prev, prev_notes = notes) {
 	    prev = pseg->prev;
@@ -313,7 +325,7 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath, bool init)
 			    gx_path_close_subpath_notes(ppath,
 							prev_notes);
 			if (code < 0)
-			    goto fx;
+			    return code;
 		    }
 		    psub = (const subpath *)psub->last->next;
 		    goto nsp;
@@ -339,7 +351,7 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath, bool init)
 		    break;
 	    }
 	    if (code < 0)
-		goto fx;
+		return code;
 	}
 	/* not reached */
     }
@@ -350,15 +362,13 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath, bool init)
 	code = gx_path_add_point(ppath, ppath_old->position.x,
 				 ppath_old->position.y);
 	if (code < 0)
-	    goto fx;
+	    return code;
     }
 #ifdef DEBUG
     if (gs_debug_c('P'))
 	gx_dump_path(ppath, "after reversepath");
 #endif
     return 0;
-  fx:gx_path_release(ppath);
-    return code;
 }
 
 /* ------ Path enumeration ------ */
@@ -367,16 +377,16 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath, bool init)
 gs_path_enum *
 gs_path_enum_alloc(gs_memory_t * mem, client_name_t cname)
 {
-    return gs_alloc_struct(mem, gs_path_enum, &st_gs_path_enum, cname);
+    return gs_alloc_struct(mem, gs_path_enum, &st_path_enum, cname);
 }
 
 /* Start enumerating a path. */
 int
 gx_path_enum_init(gs_path_enum * penum, const gx_path * ppath)
 {
+    penum->memory = 0;		/* path not copied */
     penum->path = ppath;
     penum->copied_path = 0;	/* not copied */
-    penum->pgs = 0;
     penum->pseg = (const segment *)ppath->first_subpath;
     penum->moveto_done = false;
     penum->notes = sn_none;

@@ -1,22 +1,22 @@
 /* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gxfcmap.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxfcmap.h  */
 /* Internal CMap data definition */
 
 /* This file should be called gxcmap.h, except that name is already used. */
@@ -32,37 +32,38 @@
  * characters, one for notdefs.  Each code map is a multi-level tree,
  * one level per byte decoded from the input string.  Each node of
  * the tree may be:
- *	a character code (1-4 bytes)
- *	a character name (gs_glyph)
- *	a CID (gs_glyph)
- *	a subtree
+ *      a character code (1-4 bytes)
+ *      a character name (gs_glyph)
+ *      a CID (gs_glyph)
+ *      a subtree
  */
 typedef enum {
-  cmap_char_code,
-  cmap_glyph,			/* character name or CID */
-  cmap_subtree
+    cmap_char_code,
+    cmap_glyph,			/* character name or CID */
+    cmap_subtree
 } gx_code_map_type;
 typedef struct gx_code_map_s gx_code_map;
 struct gx_code_map_s {
-  byte first;			/* first char code covered by this node */
-  byte last;			/* last char code ditto */
-  uint /*gx_code_map_type*/ type : 2;
-  uint num_bytes1 : 2;		/* # of bytes -1 for char_code */
-  uint /*bool*/ add_offset : 1;  /* if set, add char - first to ccode / glyph */
-  /* We would like to combine the two unions into a union of structs, */
-  /* but no compiler seems to do the right thing about packing. */
-  union bd_ {
-    byte font_index;		/* for leaf, font index */
-				/* (only non-zero if rearranged font) */
-    byte count1;		/* for subtree, # of entries -1 */
-  } byte_data;
-  union d_ {
-    gs_char ccode;		/* num_bytes bytes */
-    gs_glyph glyph;
-    gx_code_map *subtree;	/* [count] */
-  } data;
-  gs_cmap *cmap;		/* point back to CMap for GC mark proc */
+    byte first;			/* first char code covered by this node */
+    byte last;			/* last char code ditto */
+         uint /*gx_code_map_type */ type:2;
+    uint num_bytes1:2;		/* # of bytes -1 for char_code */
+         uint /*bool */ add_offset:1;	/* if set, add char - first to ccode / glyph */
+    /* We would like to combine the two unions into a union of structs, */
+    /* but no compiler seems to do the right thing about packing. */
+    union bd_ {
+	byte font_index;	/* for leaf, font index */
+	/* (only non-zero if rearranged font) */
+	byte count1;		/* for subtree, # of entries -1 */
+    } byte_data;
+    union d_ {
+	gs_char ccode;		/* num_bytes bytes */
+	gs_glyph glyph;
+	gx_code_map *subtree;	/* [count] */
+    } data;
+    gs_cmap *cmap;		/* point back to CMap for GC mark proc */
 };
+
 /* The GC information for a gx_code_map is complex, because names must be */
 /* traced. */
 extern_st(st_code_map);
@@ -76,18 +77,19 @@ extern_st(st_code_map_element);
 
 /* A CMap proper is relatively simple. */
 struct gs_cmap_s {
-  gs_cid_system_info CIDSystemInfo; /* must be first */
-  gs_uid uid;
-  int WMode;
-  gx_code_map def;		/* defined characters (cmap_subtree) */
-  gx_code_map notdef;		/* notdef characters (cmap_subtree) */
-  gs_glyph_mark_proc_t mark_glyph;	/* glyph marking procedure for GC */
-  void *mark_glyph_data;		/* closure data */
+    gs_cid_system_info CIDSystemInfo;	/* must be first */
+    gs_uid uid;
+    int WMode;
+    gx_code_map def;		/* defined characters (cmap_subtree) */
+    gx_code_map notdef;		/* notdef characters (cmap_subtree) */
+    gs_glyph_mark_proc_t mark_glyph;	/* glyph marking procedure for GC */
+    void *mark_glyph_data;	/* closure data */
 };
-/*extern_st(st_cmap);*/
+
+/*extern_st(st_cmap); */
 #define public_st_cmap()	/* in gsfcmap.c */\
   gs_public_st_suffix_add4(st_cmap, gs_cmap, "gs_cmap",\
     cmap_enum_ptrs, cmap_reloc_ptrs, st_cid_system_info,\
     uid.xvalues, def.data.subtree, notdef.data.subtree, mark_glyph_data)
 
-#endif				/* gxfcmap_INCLUDED */
+#endif /* gxfcmap_INCLUDED */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gp_unifs.c */
+/*Id: gp_unifs.c  */
 /* "Unix-like" file system platform routines for Ghostscript */
 #include "memory_.h"
 #include "string_.h"
@@ -37,7 +37,6 @@
 #endif
 
 /* Library routines not declared in a standard header */
-extern char *getenv(P1(const char *));
 extern char *mktemp(P1(char *));
 
 /* ------ File naming and accessing ------ */
@@ -54,14 +53,14 @@ const char gp_current_directory_name[] = ".";
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
-{
-    char *temp;
+gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+		     const char *mode)
+{				/* The -8 is for XXXXXX plus a possible final / and -. */
+    int len = gp_file_name_sizeof - strlen(prefix) - 8;
 
-    if ((temp = getenv("TEMP")) == NULL)
+    if (gp_getenv("TEMP", fname, &len) != 0)
 	strcpy(fname, "/tmp/");
     else {
-	strcpy(fname, temp);
 	if (strlen(fname) != 0 && fname[strlen(fname) - 1] != '/')
 	    strcat(fname, "/");
     }
@@ -79,6 +78,13 @@ FILE *
 gp_fopen(const char *fname, const char *mode)
 {
     return fopen(fname, mode);
+}
+
+/* Set a file into binary or text mode. */
+int
+gp_setmode_binary(FILE * pfile, bool mode)
+{
+    return 0;			/* Noop under Unix */
 }
 
 /* ------ File enumeration ------ */
@@ -122,7 +128,7 @@ wmatch(const byte * str, uint len, const byte * pstr, uint plen,
     bool match = string_match(str, len, pstr, plen, psmp);
 
     if (gs_debug_c('e')) {
-	dputs("[e]string_match(\"");
+	dlputs("[e]string_match(\"");
 	fwrite(str, 1, len, dstderr);
 	dputs("\", \"");
 	fwrite(pstr, 1, plen, dstderr);

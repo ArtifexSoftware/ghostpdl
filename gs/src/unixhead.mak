@@ -1,4 +1,4 @@
-#    Copyright (C) 1990, 1993, 1996 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1990, 1993, 1996, 1997 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,10 +15,11 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: unixhead.mak 
 # Partial makefile common to all Unix configurations.
 
 # This part of the makefile gets inserted after the compiler-specific part
-# (xxx-head.mak) and before gs.mak and devs.mak.
+# (xxx-head.mak) and before gs.mak, devs.mak, and contrib.mak.
 
 # ----------------------------- Generic stuff ----------------------------- #
 
@@ -30,7 +31,15 @@ PLATFORM=unix_
 # Define the syntax for command, object, and executable files.
 
 CMD=
-O=-o ./
+C_=-c
+I_=-I
+II=-I
+_I=
+# There should be a <space> at the end of the definition of O_,
+# but we have to work around the fact that some `make' programs
+# drop trailing spaces in macro definitions.
+NULL=
+O_=-o $(NULL)
 OBJ=o
 XE=
 XEAUX=
@@ -53,24 +62,27 @@ RMN_=rm -f
 
 # Define the arguments for genconf.
 
-CONFILES=-p "%s&s&&" -pl "&-l%s&s&&" -pL "&-L%s&s&&" -ol $(ld_tr)
+CONFILES=-p "%s&s&&" -pl "&-l%s&s&&" -pL "&-L%s&s&&"
+CONFLDTR=-ol
 
 # Define the compilation rules and flags.
 
-CCFLAGS=$(GENOPT) $(CFLAGS)
-
-.c.o: $(AK)
-	$(CCC) $*.c
-
-CCCF=$(CCC)
-CCD=$(CCC)
-CCINT=$(CCC)
+CC_D=$(CC_)
+CC_INT=$(CC_)
 
 BEGINFILES=
-CCBEGIN=$(CCC) *.c
 
 # Patch a couple of PC-specific things that aren't relevant to Unix builds,
 # but that cause `make' to produce warnings.
 
-BGIDIR=***UNUSED***
 PCFBASM=
+
+# Define the default build rule, so the object directories get created
+# automatically.  std must precede std.dev so it will be the default target.
+
+std: STDDIRS std.dev default
+	echo Done.
+
+std.dev:
+	$(RMN_) *.dev
+	echo Empty file. > std.dev

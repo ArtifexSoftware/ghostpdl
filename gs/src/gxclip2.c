@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxclip2.c */
+/*Id: gxclip2.c  */
 /* Mask clipping for patterns */
 #include "memory_.h"
 #include "gx.h"
@@ -51,7 +51,7 @@ private const gx_device_tile_clip gs_tile_clip_device =
   tile_clip_copy_mono,
   tile_clip_copy_color,
   gx_default_draw_line,
-  gx_default_get_bits,
+  gx_forward_get_bits,
   gx_forward_get_params,
   gx_forward_put_params,
   gx_forward_map_cmyk_color,
@@ -76,45 +76,30 @@ private const gx_device_tile_clip gs_tile_clip_device =
   gx_default_strip_tile_rectangle,
   tile_clip_strip_copy_rop,
   gx_forward_get_clipping_box,
-  gx_forward_get_hardware_params
+  gx_default_begin_typed_image,
+  gx_forward_get_bits_rectangle,
+  gx_forward_map_color_rgb_alpha,
+  gx_no_create_compositor,
+  gx_forward_get_hardware_params,
+  gx_default_text_begin
  }
 };
 
 /* Initialize a tile clipping device from a mask. */
 int
 tile_clip_initialize(gx_device_tile_clip * cdev, const gx_strip_bitmap * tiles,
-		     gx_device * idev, int px, int py)
+		     gx_device * tdev, int px, int py)
 {
-    int buffer_width = tiles->size.x;
-    int buffer_height =
-    tile_clip_buffer_size / (tiles->raster + sizeof(byte *));
+    int code =
+    gx_mask_clip_initialize(cdev, &gs_tile_clip_device,
+			    (const gx_bitmap *)tiles,
+			    tdev, 0, 0);	/* phase will be reset */
 
-    *cdev = gs_tile_clip_device;
-    cdev->width = idev->width;
-    cdev->height = idev->height;
-    cdev->color_info = idev->color_info;
-    cdev->target = idev;
-    cdev->tiles = *tiles;
-    tile_clip_set_phase(cdev, px, py);
-    if (buffer_height > tiles->size.y)
-	buffer_height = tiles->size.y;
-    gs_make_mem_mono_device(&cdev->mdev, 0, 0);
-    for (;;) {
-	if (buffer_height <= 0) {	/*
-					 * The tile is too wide to buffer even one scan line.
-					 * We could do copy_mono in chunks, but for now, we punt.
-					 */
-	    cdev->mdev.base = 0;
-	    return 0;
-	}
-	cdev->mdev.width = buffer_width;
-	cdev->mdev.height = buffer_height;
-	if (gdev_mem_bitmap_size(&cdev->mdev) <= tile_clip_buffer_size)
-	    break;
-	buffer_height--;
+    if (code >= 0) {
+	cdev->tiles = *tiles;
+	tile_clip_set_phase(cdev, px, py);
     }
-    cdev->mdev.base = cdev->buffer.bytes;
-    return (*dev_proc(&cdev->mdev, open_device)) ((gx_device *) & cdev->mdev);
+    return code;
 }
 
 /* Set the phase of the tile. */
@@ -125,13 +110,12 @@ tile_clip_set_phase(gx_device_tile_clip * cdev, int px, int py)
     cdev->phase.y = py;
 }
 
-#define cdev ((gx_device_tile_clip *)dev)
-
 /* Fill a rectangle by tiling with the mask. */
 private int
 tile_clip_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 			 gx_color_index color)
 {
+    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
     gx_device *tdev = cdev->target;
 
     return (*dev_proc(tdev, strip_tile_rectangle)) (tdev, &cdev->tiles,
@@ -154,31 +138,12 @@ tile_clip_copy_mono(gx_device * dev,
 		    int x, int y, int w, int h,
 		    gx_color_index color0, gx_color_index color1)
 {
+    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
     gx_color_index color, mcolor0, mcolor1;
     int ty, ny;
     int code;
 
-    if (cdev->mdev.base == 0) {	/*
-				 * The tile was too large for us to buffer even one scan line.
-				 * Punt to the very, very slow default implementation of
-				 * copy_mono.
-				 */
-	return gx_default_copy_mono(dev, data, sourcex, raster, id,
-				    x, y, w, h, color0, color1);
-    }
-    if (color1 != gx_no_color_index) {
-	if (color0 != gx_no_color_index) {	/* Pre-fill with color0. */
-	    code = tile_clip_fill_rectangle(dev, x, y, w, h, color0);
-	    if (code < 0)
-		return code;
-	}
-	color = color1;
-	mcolor0 = 0, mcolor1 = gx_no_color_index;
-    } else if (color0 != gx_no_color_index) {
-	color = color0;
-	mcolor0 = gx_no_color_index, mcolor1 = 0;
-    } else
-	return 0;
+    setup_mask_copy_mono(cdev, color, mcolor0, mcolor1);
     for (ty = y; ty < y + h; ty += ny) {
 	int tx, nx;
 	int cy = (ty + cdev->phase.y) % cdev->tiles.rep_height;
@@ -214,60 +179,76 @@ tile_clip_copy_mono(gx_device * dev,
     return 0;
 }
 
-/* Copy a color rectangle.  We can't use the BitBlt tricks; we have to */
-/* scan for runs of 1s.  There are many obvious ways to speed this up; */
-/* we'll implement some if we need to. */
+/*
+ * Define the skeleton for the other copying operations.  We can't use the
+ * BitBlt tricks: we have to scan for runs of 1s.  There are many obvious
+ * ways to speed this up; we'll implement some if we need to.  The schema
+ * is:
+ *      FOR_RUNS(data_row, tx1, tx, ty) {
+ *        ... process the run ([tx1,tx),ty) ...
+ *      } END_FOR_RUNS();
+ * Free variables: cdev, data, sourcex, raster, x, y, w, h.
+ */
+#define t_next(tx)\
+  BEGIN {\
+    if ( ++cx == cdev->tiles.size.x )\
+      cx = 0, tp = tile_row, tbit = 0x80;\
+    else if ( (tbit >>= 1) == 0 )\
+      tp++, tbit = 0x80;\
+    tx++;\
+  } END
+#define FOR_RUNS(data_row, tx1, tx, ty)\
+	const byte *data_row = data;\
+	int cy = (y + cdev->phase.y) % cdev->tiles.rep_height;\
+	const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
+	int ty;\
+\
+	for ( ty = y; ty < y + h; ty++, data_row += raster ) {\
+	  int cx = (x + x_offset(ty, cdev)) % cdev->tiles.rep_width;\
+	  const byte *tp = tile_row + (cx >> 3);\
+	  byte tbit = 0x80 >> (cx & 7);\
+	  int tx;\
+\
+	  for ( tx = x; tx < x + w; ) {\
+	    int tx1;\
+\
+	    /* Skip a run of 0s. */\
+	    while ( tx < x + w && (*tp & tbit) == 0 )\
+	      t_next(tx);\
+	    if ( tx == x + w )\
+	      break;\
+	    /* Scan a run of 1s. */\
+	    tx1 = tx;\
+	    do {\
+	      t_next(tx);\
+	    } while ( tx < x + w && (*tp & tbit) != 0 );
+/* (body goes here) */
+#define END_FOR_RUNS()\
+	  }\
+	  if ( ++cy == cdev->tiles.size.y )\
+	    cy = 0, tile_row = cdev->tiles.data;\
+	  else\
+	    tile_row += cdev->tiles.raster;\
+	}
+
+/* Copy a color rectangle. */
 private int
 tile_clip_copy_color(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		     int x, int y, int w, int h)
 {
-    const byte *data_row = data;
-    int cy = (y + cdev->phase.y) % cdev->tiles.rep_height;
-    const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;
-    int ty;
+    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    for (ty = y; ty < y + h; ty++, data_row += raster) {
-	int cx = (x + x_offset(ty, cdev)) % cdev->tiles.rep_width;
-	const byte *tp = tile_row + (cx >> 3);
-	byte tbit = 0x80 >> (cx & 7);
-	int tx;
-	int code;
+    FOR_RUNS(data_row, txrun, tx, ty) {
+	/* Copy the run. */
+	int code = (*dev_proc(cdev->target, copy_color))
+	(cdev->target, data_row, sourcex + txrun - x, raster,
+	 gx_no_bitmap_id, txrun, ty, tx - txrun, 1);
 
-	for (tx = x; tx < x + w;) {
-	    int tx1;
-
-#define t_next()\
-  if ( ++cx == cdev->tiles.size.x )\
-    cx = 0, tp = tile_row, tbit = 0x80;\
-  else if ( (tbit >>= 1) == 0 )\
-    tp++, tbit = 0x80;\
-  tx++
-	    /* Skip a run of 0s. */
-	    while (tx < x + w && (*tp & tbit) == 0) {
-		t_next();
-	    }
-	    if (tx == x + w)
-		break;
-	    /* Scan a run of 1s. */
-	    tx1 = tx;
-	    do {
-		t_next();
-	    }
-	    while (tx < x + w && (*tp & tbit) != 0);
-	    /* Copy the run. */
-	    code = (*dev_proc(cdev->target, copy_color)) (cdev->target,
-					data_row, sourcex + tx1 - x, raster,
-				     gx_no_bitmap_id, tx1, ty, tx - tx1, 1);
-	    if (code < 0)
-		return code;
-	}
-	if (++cy == cdev->tiles.size.y)
-	    cy = 0, tile_row = cdev->tiles.data;
-	else
-	    tile_row += cdev->tiles.raster;
+	if (code < 0)
+	    return code;
     }
-
+    END_FOR_RUNS();
     return 0;
 }
 
@@ -277,50 +258,18 @@ tile_clip_copy_alpha(gx_device * dev,
 		const byte * data, int sourcex, int raster, gx_bitmap_id id,
 		int x, int y, int w, int h, gx_color_index color, int depth)
 {
-    const byte *data_row = data;
-    int ty;
+    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    for (ty = y; ty < y + h; ty++, data_row += raster) {
-	const byte *tile_row = cdev->tiles.data +
-	((ty + cdev->phase.y) % cdev->tiles.rep_height) *
-	cdev->tiles.raster;
-	int cx = (x + x_offset(ty, cdev)) % cdev->tiles.rep_width;
-	const byte *tp = tile_row + (cx >> 3);
-	byte tbit = 0x80 >> (cx & 7);
-	int tx;
-	int code;
+    FOR_RUNS(data_row, txrun, tx, ty) {
+	/* Copy the run. */
+	int code = (*dev_proc(cdev->target, copy_alpha))
+	(cdev->target, data_row, sourcex + txrun - x, raster,
+	 gx_no_bitmap_id, txrun, ty, tx - txrun, 1, color, depth);
 
-	for (tx = x; tx < x + w;) {
-	    int tx1;
-
-#define t_next()\
-  if ( ++cx == cdev->tiles.size.x )\
-    cx = 0, tp = tile_row, tbit = 0x80;\
-  else if ( (tbit >>= 1) == 0 )\
-    tp++, tbit = 0x80;\
-  tx++
-	    /* Skip a run of 0s. */
-	    while (tx < x + w && (*tp & tbit) == 0) {
-		t_next();
-	    }
-	    if (tx == x + w)
-		break;
-	    /* Scan a run of 1s. */
-	    tx1 = tx;
-	    do {
-		t_next();
-	    }
-	    while (tx < x + w && (*tp & tbit) != 0);
-	    /* Copy the run. */
-	    code = (*dev_proc(cdev->target, copy_alpha)) (cdev->target,
-					data_row, sourcex + tx1 - x, raster,
-				      gx_no_bitmap_id, tx1, ty, tx - tx1, 1,
-							  color, depth);
-	    if (code < 0)
-		return code;
-	}
+	if (code < 0)
+	    return code;
     }
-
+    END_FOR_RUNS();
     return 0;
 }
 
@@ -333,50 +282,18 @@ tile_clip_strip_copy_rop(gx_device * dev,
 			 int x, int y, int w, int h,
 		       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    const byte *data_row = data;
-    int ty;
+    gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    for (ty = y; ty < y + h; ty++, data_row += raster) {
-	const byte *tile_row = cdev->tiles.data +
-	((ty + cdev->phase.y) % cdev->tiles.rep_height) *
-	cdev->tiles.raster;
-	int cx = (x + x_offset(ty, cdev)) % cdev->tiles.rep_width;
-	const byte *tp = tile_row + (cx >> 3);
-	byte tbit = 0x80 >> (cx & 7);
-	int tx;
-	int code;
+    FOR_RUNS(data_row, txrun, tx, ty) {
+	/* Copy the run. */
+	int code = (*dev_proc(cdev->target, strip_copy_rop))
+	(cdev->target, data_row, sourcex + txrun - x, raster,
+	 gx_no_bitmap_id, scolors, textures, tcolors,
+	 txrun, ty, tx - txrun, 1, phase_x, phase_y, lop);
 
-	for (tx = x; tx < x + w;) {
-	    int tx1;
-
-#define t_next()\
-  if ( ++cx == cdev->tiles.size.x )\
-    cx = 0, tp = tile_row, tbit = 0x80;\
-  else if ( (tbit >>= 1) == 0 )\
-    tp++, tbit = 0x80;\
-  tx++
-	    /* Skip a run of 0s. */
-	    while (tx < x + w && (*tp & tbit) == 0) {
-		t_next();
-	    }
-	    if (tx == x + w)
-		break;
-	    /* Scan a run of 1s. */
-	    tx1 = tx;
-	    do {
-		t_next();
-	    }
-	    while (tx < x + w && (*tp & tbit) != 0);
-	    /* Copy the run. */
-	    code = (*dev_proc(cdev->target, strip_copy_rop))
-		(cdev->target,
-		 data_row, sourcex + tx1 - x, raster,
-		 gx_no_bitmap_id, scolors, textures, tcolors,
-		 tx1, ty, tx - tx1, 1, phase_x, phase_y, lop);
-	    if (code < 0)
-		return code;
-	}
+	if (code < 0)
+	    return code;
     }
-
+    END_FOR_RUNS();
     return 0;
 }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* zmisc.c */
+/*Id: zmisc.c  */
 /* Miscellaneous operators */
 #include "errno_.h"
 #include "memory_.h"
@@ -24,7 +24,6 @@
 #include "ghost.h"
 #include "gscdefs.h"		/* for gs_serialnumber */
 #include "gp.h"
-#include "errors.h"
 #include "oper.h"
 #include "ialloc.h"
 #include "idict.h"
@@ -33,9 +32,6 @@
 #include "ipacked.h"
 #include "ivmspace.h"
 #include "store.h"
-
-/* Import the C getenv function. */
-extern char *getenv(P1(const char *));
 
 /* <proc> bind <proc> */
 private int
@@ -76,7 +72,8 @@ zbind(os_ptr op)
 	    ref *tp = bsp->value.refs;
 
 	    r_dec_size(bsp, 1);
-	    if (r_is_packed(tp)) {	/* Check for a packed executable name */
+	    if (r_is_packed(tp)) {
+		/* Check for a packed executable name */
 		ushort elt = *(ushort *) tp;
 
 		if (r_packed_is_exec_name(&elt)) {
@@ -111,9 +108,11 @@ zbind(os_ptr op)
 			    break;
 		    case t_mixedarray:
 		    case t_shortarray:
-			if (r_has_attr(tp, a_executable)) {	/* Make reference read-only */
+			if (r_has_attr(tp, a_executable)) {
+			    /* Make reference read-only */
 			    r_clear_attrs(tp, a_write);
-			    if (bsp >= ostop) {		/* Push a new stack block. */
+			    if (bsp >= ostop) {
+				/* Push a new stack block. */
 				ref temp;
 				int code;
 
@@ -184,24 +183,33 @@ zusertime(register os_ptr op)
 private int
 zgetenv(register os_ptr op)
 {
-    char *str, *value;
+    char *str;
+    byte *value;
     int code;
+    int len = 0;
 
     check_read_type(*op, t_string);
-    str = ref_to_string(op, imemory, "getenv name");
+    str = ref_to_string(op, imemory, "getenv key");
     if (str == 0)
 	return_error(e_VMerror);
-    value = getenv(str);
-    ifree_string((byte *) str, r_size(op) + 1, "getenv name");
-    if (value == 0) {		/* not found */
-	make_bool(op, 0);
+    if (gp_getenv(str, (char *)0, &len) > 0) {	/* key missing */
+	ifree_string((byte *) str, r_size(op) + 1, "getenv key");
+	make_false(op);
 	return 0;
     }
-    code = string_to_ref(value, op, iimemory, "getenv value");
-    if (code < 0)
-	return code;
+    value = ialloc_string(len, "getenv value");
+    if (value == 0) {
+	ifree_string((byte *) str, r_size(op) + 1, "getenv key");
+	return_error(e_VMerror);
+    }
+    code = gp_getenv(str, (char *)value, &len);		/* can't fail */
+    ifree_string((byte *) str, r_size(op) + 1, "getenv key");
+    /* Delete the stupid C string terminator. */
+    value = iresize_string(value, len, len - 1,
+			   "getenv value");	/* can't fail */
     push(1);
-    make_bool(op, 1);
+    make_string(op - 1, a_all | icurrent_space, len - 1, value);
+    make_true(op);
     return 0;
 }
 

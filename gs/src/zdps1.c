@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zdps1.c */
+/*Id: zdps1.c  */
 /* Level 2 / Display PostScript graphics extensions */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsmatrix.h"
 #include "gspath.h"
@@ -32,24 +31,25 @@
 #include "stream.h"
 #include "ibnum.h"
 
-/* Imported data */
-extern op_proc_p zcopy_procs[t_next_index];
-
 /* Forward references */
 private int gstate_unshare(P1(os_ptr));
 
 /* Structure descriptors */
 public_st_igstate_obj();
 
-/* Initialize by adding an entry for gstates to the `copy' operator. */
+/* Extend the `copy' operator to deal with gstates. */
 /* This is done with a hack -- we know that gstates are the only */
 /* t_astruct subtype that implements copy. */
-private void
-zdps1_init(void)
-{				/* zdevice2_init might have already initialized this. */
-    /* A hack on top of a hack! */
-    if (zcopy_procs[t_astruct] == zcopy_procs[t_struct])
-	zcopy_procs[t_astruct] = zcopy_gstate;
+private int
+z1copy(register os_ptr op)
+{
+    int code = zcopy(op);
+
+    if (code >= 0)
+	return code;
+    if (!r_has_type(op, t_astruct))
+	return code;
+    return zcopy_gstate(op);
 }
 
 /* ------ Graphics state ------ */
@@ -110,10 +110,9 @@ zgstate(register os_ptr op)
     int_gstate_map_refs(isp, ref_mark_new);
     push(1);
     /*
-     * Since igstate_obj isn't a ref, but only contains a ref,
-     * save won't clear its l_new bit automatically, and
-     * restore won't set it automatically; we have to make sure
-     * this ref is on the changes chain.
+     * Since igstate_obj isn't a ref, but only contains a ref, save won't
+     * clear its l_new bit automatically, and restore won't set it
+     * automatically; we have to make sure this ref is on the changes chain.
      */
     make_iastruct(op, a_all, pigo);
     make_null(&pigo->gstate);
@@ -207,25 +206,27 @@ zsetgstate(register os_ptr op)
 
 /* ------ Rectangles ------- */
 
-/* We preallocate a short list for rectangles, because */
-/* the rectangle operators usually will involve very few rectangles. */
-#define max_local_rect 5
+/*
+ * We preallocate a short list for rectangles, because
+ * the rectangle operators usually will involve very few rectangles.
+ */
+#define MAX_LOCAL_RECTS 5
 typedef struct local_rects_s {
     gs_rect *pr;
     uint count;
-    gs_rect rl[max_local_rect];
-} local_rects;
+    gs_rect rl[MAX_LOCAL_RECTS];
+} local_rects_t;
 
 /* Forward references */
-private int rect_get(P2(local_rects *, os_ptr));
-private void rect_release(P1(local_rects *));
+private int rect_get(P2(local_rects_t *, os_ptr));
+private void rect_release(P1(local_rects_t *));
 
 /* <x> <y> <width> <height> .rectappend - */
 /* <numarray|numstring> .rectappend - */
 private int
 zrectappend(os_ptr op)
 {
-    local_rects lr;
+    local_rects_t lr;
     int npop = rect_get(&lr, op);
     int code;
 
@@ -244,7 +245,7 @@ zrectappend(os_ptr op)
 private int
 zrectclip(os_ptr op)
 {
-    local_rects lr;
+    local_rects_t lr;
     int npop = rect_get(&lr, op);
     int code;
 
@@ -263,7 +264,7 @@ zrectclip(os_ptr op)
 private int
 zrectfill(os_ptr op)
 {
-    local_rects lr;
+    local_rects_t lr;
     int npop = rect_get(&lr, op);
     int code;
 
@@ -283,17 +284,18 @@ private int
 zrectstroke(os_ptr op)
 {
     gs_matrix mat;
-    local_rects lr;
+    local_rects_t lr;
     int npop, code;
 
-    if (read_matrix(op, &mat) >= 0) {	/* Concatenate the matrix to the CTM just before */
-	/* stroking the path. */
+    if (read_matrix(op, &mat) >= 0) {
+	/* Concatenate the matrix to the CTM just before stroking the path. */
 	npop = rect_get(&lr, op - 1);
 	if (npop < 0)
 	    return npop;
 	code = gs_rectstroke(igs, lr.pr, lr.count, &mat);
 	npop++;
-    } else {			/* No matrix. */
+    } else {
+	/* No matrix. */
 	npop = rect_get(&lr, op);
 	if (npop < 0)
 	    return npop;
@@ -311,7 +313,7 @@ zrectstroke(os_ptr op)
 /* Get rectangles from the stack. */
 /* Return the number of elements to pop (>0) if OK, <0 if error. */
 private int
-rect_get(local_rects * plr, os_ptr op)
+rect_get(local_rects_t * plr, os_ptr op)
 {
     int format, code;
     uint n, count;
@@ -343,7 +345,7 @@ rect_get(local_rects * plr, os_ptr op)
 	    return 4;
     }
     plr->count = count;
-    if (count <= max_local_rect)
+    if (count <= MAX_LOCAL_RECTS)
 	pr = plr->rl;
     else {
 	pr = (gs_rect *) ialloc_byte_array(count, sizeof(gs_rect),
@@ -378,7 +380,7 @@ rect_get(local_rects * plr, os_ptr op)
 
 /* Release the rectangle list if needed. */
 private void
-rect_release(local_rects * plr)
+rect_release(local_rects_t * plr)
 {
     if (plr->pr != plr->rl)
 	ifree_object(plr->pr, "rect_release");
@@ -411,6 +413,7 @@ const op_def zdps1_l2_op_defs[] =
     {"0currentstrokeadjust", zcurrentstrokeadjust},
     {"1setstrokeadjust", zsetstrokeadjust},
 		/* Graphics state objects */
+    {"1copy", z1copy},
     {"1currentgstate", zcurrentgstate},
     {"0gstate", zgstate},
     {"1setgstate", zsetgstate},
@@ -421,7 +424,7 @@ const op_def zdps1_l2_op_defs[] =
     {"1rectstroke", zrectstroke},
 		/* Graphics state components */
     {"4setbbox", zsetbbox},
-    op_def_end(zdps1_init)
+    op_def_end(0)
 };
 
 /* ------ Internal routines ------ */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* igc.c */
+/*Id: igc.c  */
 /* Garbage collector for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"
@@ -37,10 +37,13 @@
 #include "opdef.h"		/* for marking oparray names */
 
 /* Define whether to force all garbage collections to be global. */
-private bool force_global_gc = false;
+private bool I_FORCE_GLOBAL_GC = false;
 
 /* Define whether to bypass the collector entirely. */
-private bool bypass_gc = false;
+private bool I_BYPASS_GC = false;
+
+/* Avoid including all of iname.h. */
+extern name_table *the_gs_name_table;
 
 /* Define an entry on the mark stack. */
 typedef struct {
@@ -57,21 +60,21 @@ struct gc_mark_stack_s {
     gc_mark_stack *prev;
     gc_mark_stack *next;
     uint count;
-    bool on_heap;		/* if true, allocated with gs_malloc */
+    bool on_heap;		/* if true, allocated during GC */
     ms_entry entries[1];
 };
 
 /* Define the mark stack sizing parameters. */
 #define ms_size_default 100	/* default, allocated on C stack */
 /* This should probably be defined as a parameter somewhere.... */
-#define ms_size_desired		/* for gs_malloc */\
+#define ms_size_desired		/* for additional allocation */\
  ((max_ushort - sizeof(gc_mark_stack)) / sizeof(ms_entry) - 10)
 #define ms_size_min 50		/* min size for segment in free block */
 
 /* Forward references */
 private void gc_init_mark_stack(P2(gc_mark_stack *, uint));
 private void gc_objects_clear_marks(P1(chunk_t *));
-private void gc_unmark_names(P0());
+private void gc_unmark_names(P1(name_table *));
 private int gc_trace(P3(gs_gc_root_t *, gc_state_t *, gc_mark_stack *));
 private int gc_rescan_chunk(P3(chunk_t *, gc_state_t *, gc_mark_stack *));
 private int gc_trace_chunk(P3(chunk_t *, gc_state_t *, gc_mark_stack *));
@@ -90,8 +93,19 @@ private ptr_proc_mark(ptr_string_mark);
 
 					/*ptr_proc_unmark(ptr_ref_unmark); *//* in igc.h */
 					/*ptr_proc_mark(ptr_ref_mark); *//* in igc.h */
-						/*ptr_proc_reloc(gs_reloc_struct_ptr, void); *//* in gsstruct.h */
-							/*ptr_proc_reloc(gs_reloc_ref_ptr, ref_packed); *//* in istruct.h */
+private ptr_proc_reloc(igc_reloc_struct_ptr, void);
+
+string_proc_reloc(igc_reloc_string);	/* in igcstr.c */
+const_string_proc_reloc(igc_reloc_const_string);	/* in igcstr.c */
+ptr_proc_reloc(igc_reloc_ref_ptr, ref_packed);	/* in igcref.c */
+refs_proc_reloc(igc_reloc_refs);	/* in igcref.c */
+
+/* Define this GC's procedure vector. */
+private const gc_procs_with_refs_t igc_procs =
+{
+    igc_reloc_struct_ptr, igc_reloc_string, igc_reloc_const_string,
+    igc_reloc_ref_ptr, igc_reloc_refs
+};
 
 /* Pointer type descriptors. */
 /* Note that the trace/mark routine has special knowledge of ptr_ref_type */
@@ -100,7 +114,7 @@ private ptr_proc_mark(ptr_string_mark);
 /* pointers are never called. */
 typedef ptr_proc_reloc((*ptr_proc_reloc_t), void);
 const gs_ptr_procs_t ptr_struct_procs =
-{ptr_struct_unmark, ptr_struct_mark, (ptr_proc_reloc_t) gs_reloc_struct_ptr};
+{ptr_struct_unmark, ptr_struct_mark, (ptr_proc_reloc_t) igc_reloc_struct_ptr};
 const gs_ptr_procs_t ptr_string_procs =
 {ptr_string_unmark, ptr_string_mark, NULL};
 const gs_ptr_procs_t ptr_const_string_procs =
@@ -113,17 +127,17 @@ const gs_ptr_procs_t ptr_ref_procs =
 /* Top level of garbage collector. */
 #ifdef DEBUG
 private void
-end_phase(const char _ds * str)
+end_phase(const char *str)
 {
     if (gs_debug_c('6')) {
-	dprintf1("[6]---------------- end %s ----------------\n",
-		 (const char *)str);
+	dlprintf1("[6]---------------- end %s ----------------\n",
+		  (const char *)str);
 	fflush(dstderr);
     }
 }
-static const char *depth_dots_string = "..........";
+static const char *const depth_dots_string = "..........";
 private const char *
-depth_dots_proc(const ms_entry * sp, const gc_mark_stack * pms)
+depth_dots(const ms_entry * sp, const gc_mark_stack * pms)
 {
     int depth = sp - pms->entries - 1;
     const gc_mark_stack *pss = pms;
@@ -156,7 +170,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
     gc_mark_stack *mark_stack = &ms_default.stack;
 
     /* Optionally force global GC for debugging. */
-    if (force_global_gc)
+    if (I_FORCE_GLOBAL_GC)
 	global = true;
 
     /* Determine which spaces we are collecting. */
@@ -186,12 +200,15 @@ gs_reclaim(vm_spaces * pspaces, bool global)
     for ( mem = spaces.indexed[ispace], rp = mem->roots; rp != 0; rp = rp->next )
 
     /* Initialize the state. */
+    state.procs = &igc_procs;
     state.loc.memory = spaces.named.global;	/* any one will do */
 
     state.loc.cp = 0;
     state.spaces = spaces;
     state.min_collect = min_collect << r_space_shift;
     state.relocating_untraced = false;
+    state.heap = state.loc.memory->parent;
+    state.ntable = the_gs_name_table;
 
     /* Register the allocators themselves as roots, */
     /* so we mark and relocate the change and save lists properly. */
@@ -215,7 +232,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 
 #endif
 
-    if (bypass_gc) {		/* Don't collect at all. */
+    if (I_BYPASS_GC) {		/* Don't collect at all. */
 	goto no_collect;
     }
     /* Clear marks in spaces to be collected. */
@@ -241,7 +258,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
     end_phase("clear root marks");
 
     if (global)
-	gc_unmark_names();
+	gc_unmark_names(state.ntable);
 
     /* Initialize the (default) mark stack. */
 
@@ -320,7 +337,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	    uint size = sizeof(*pms) + sizeof(ms_entry) * pms->count;
 
 	    if (pms->on_heap)
-		gs_free(pms, 1, size, "gc mark stack");
+		gs_free_object(state.heap, pms, "gc mark stack");
 	    else
 		gs_alloc_fill(pms, gs_alloc_fill_free, size);
 	    pms = prev;
@@ -331,7 +348,7 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 
     if (global) {
 	gc_trace_finish(&state);
-	name_trace_finish(&state);
+	names_trace_finish(state.ntable, &state);
 
 	end_phase("finish trace");
     }
@@ -397,9 +414,9 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	if (rp->ptype == ptr_ref_type) {
 	    ref *pref = (ref *) * rp->p;
 
-	    gs_reloc_refs((ref_packed *) pref,
-			  (ref_packed *) (pref + 1),
-			  &state);
+	    igc_reloc_refs((ref_packed *) pref,
+			   (ref_packed *) (pref + 1),
+			   &state);
 	} else
 	    *rp->p = (*rp->ptype->reloc) (*rp->p, &state);
 	if_debug3('6', "[6]relocated root 0x%lx: 0x%lx -> 0x%lx\n",
@@ -550,27 +567,27 @@ gc_objects_clear_marks(chunk_t * cp)
 	      (ulong) size, (ulong) pre);
     o_set_unmarked(pre);
     if (proc != 0)
-	(*proc) (pre + 1, size);
+	(*proc) (pre + 1, size, pre->o_type);
     END_OBJECTS_SCAN
 }
 
 /* Mark 0- and 1-character names, and those referenced from the */
 /* op_array_nx_table, and unmark all the rest. */
 private void
-gc_unmark_names(void)
+gc_unmark_names(name_table * nt)
 {
     register uint i;
 
-    name_unmark_all();
+    names_unmark_all(nt);
     for (i = 0; i < op_array_table_global.count; i++) {
-	uint nidx = op_array_table_global.nx_table[i];
+	name_index_t nidx = op_array_table_global.nx_table[i];
 
-	name_index_ptr(nidx)->mark = 1;
+	names_index_ptr(nt, nidx)->mark = 1;
     }
     for (i = 0; i < op_array_table_local.count; i++) {
-	uint nidx = op_array_table_local.nx_table[i];
+	name_index_t nidx = op_array_table_local.nx_table[i];
 
-	name_index_ptr(nidx)->mark = 1;
+	names_index_ptr(nt, nidx)->mark = 1;
     }
 }
 
@@ -643,7 +660,7 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 	    if (!o_is_untraced(pre))
 		o_set_unmarked(pre);
 	    if (proc != 0)
-		(*proc) (comp, size);
+		(*proc) (comp, size, pre->o_type);
 	    more |= gc_trace(&root, pstate, pmstack);
 	}
     }
@@ -697,7 +714,7 @@ gc_trace_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		root.ptype = ptr_struct_type;
 		comp = pre + 1;
 		if (proc != 0)
-		    (*proc) (comp, size);
+		    (*proc) (comp, size, pre->o_type);
 		more |= gc_trace(&root, pstate, pmstack);
 	    }
 	}
@@ -721,12 +738,9 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
     /* We stop the mark stack 1 entry early, because we store into */
     /* the entry beyond the top. */
     ms_entry *stop = sp + pms->count - 2;
-
-#ifdef DEBUG
-#  define depth_dots depth_dots_proc(sp, pms)
-#endif
     int new = 0;
     void *nptr = *rp->p;
+    name_table *nt = pstate->ntable;
 
 #define mark_name(nidx, pname)\
   { if ( !pname->mark )\
@@ -776,17 +790,18 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 	    }
 	    debug_check_object(ptr - 1, NULL, NULL);
 	  ts:if_debug4('7', " [7]%smarking %s 0x%lx[%u]",
-		      depth_dots,
+		      depth_dots(sp, pms),
 		      struct_type_name_string(ptr[-1].o_type),
 		      (ulong) ptr, sp->index);
 	    mproc = ptr[-1].o_type->enum_ptrs;
 	    /* The cast in the following statement is the one */
 	    /* place we need to break 'const' to make the */
 	    /* template for pointer enumeration work. */
-	    if (mproc == 0 ||
+	    if (mproc == gs_no_struct_enum_ptrs ||
 		(ptp = (*mproc)
 		 (ptr, pre_obj_contents_size(ptr - 1),
-		  sp->index, (const void **)&nptr)) == 0
+		  sp->index, (const void **)&nptr,
+		  ptr[-1].o_type, pstate)) == 0
 		) {
 		if_debug0('7', " - done\n");
 		sp--;
@@ -826,6 +841,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
       do_refs:
 	{
 	    ref_packed *pptr = sp->ptr;
+	    ref *rptr;
 
 	  tr:if (!sp->index) {
 		--sp;
@@ -833,15 +849,14 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 	    }
 	    --(sp->index);
 	    if_debug3('8', "  [8]%smarking refs 0x%lx[%u]\n",
-		      depth_dots, (ulong) pptr, sp->index);
-#define rptr ((ref *)pptr)
-	    if (r_is_packed(rptr)) {
+		      depth_dots(sp, pms), (ulong) pptr, sp->index);
+	    if (r_is_packed((ref *) pptr)) {
 		if (!r_has_pmark(pptr)) {
 		    r_set_pmark(pptr);
 		    new |= 1;
 		    if (r_packed_is_name(pptr)) {
-			uint nidx = packed_name_index(pptr);
-			name *pname = name_index_ptr(nidx);
+			name_index_t nidx = packed_name_index(pptr);
+			name *pname = names_index_ptr(nt, nidx);
 
 			mark_name(nidx, pname);
 		    }
@@ -849,10 +864,11 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		++pptr;
 		goto tr;
 	    }
-	    if (r_has_attr(rptr, l_mark)) {
-		pptr = (ref_packed *) (rptr + 1);
+	    if (r_has_attr((ref *) pptr, l_mark)) {
+		pptr = (ref_packed *) ((ref *) pptr + 1);
 		goto tr;
 	    }
+	    rptr = (ref *) pptr;	/* * const beyond here */
 	    r_set_attrs(rptr, l_mark);
 	    new |= 1;
 	    if (r_space(rptr) < min_trace) {	/* Note that this always picks up all scalars. */
@@ -907,7 +923,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		    nptr = (void *)rptr->value.packed;	/* discard const */
 		    goto rr;
 		case t_name:
-		    mark_name(name_index(rptr), rptr->value.pname);
+		    mark_name(names_index(nt, rptr), rptr->value.pname);
 		  nr:pptr = (ref_packed *) (rptr + 1);
 		    goto tr;
 		case t_string:
@@ -921,7 +937,6 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		default:
 		    goto nr;
 	    }
-#undef rptr
 	}
 
 	/* ---------------- Recursion ---------------- */
@@ -958,10 +973,11 @@ gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 	uint count;
 
 	for (count = ms_size_desired; count >= ms_size_min; count >>= 1) {
-	    pms->next =
-		gs_malloc(1, sizeof(gc_mark_stack) +
-			  sizeof(ms_entry) * count,
-			  "gc mark stack");
+	    pms->next = (gc_mark_stack *)
+		gs_alloc_bytes_immovable(pstate->heap,
+					 sizeof(gc_mark_stack) +
+					 sizeof(ms_entry) * count,
+					 "gc mark stack");
 	    if (pms->next != 0)
 		break;
 	}
@@ -1018,16 +1034,22 @@ ptr_string_mark(void *vptr, gc_state_t * gcst)
 private bool
 gc_trace_finish(gc_state_t * pstate)
 {
-    uint nidx = 0;
+    name_table *nt = pstate->ntable;
+    name_index_t nidx = 0;
     bool marked = false;
 
-    while ((nidx = name_next_valid_index(nidx)) != 0) {
-	name *pname = name_index_ptr(nidx);
+    while ((nidx = names_next_valid_index(nt, nidx)) != 0) {
+	name *pname = names_index_ptr(nt, nidx);
 
 	if (pname->mark) {
-	    if (!pname->foreign_string && gc_string_mark(pname->string_bytes, pname->string_size, true, pstate))
+	    if (!pname->foreign_string &&
+		gc_string_mark(pname->string_bytes, pname->string_size,
+			       true, pstate)
+		)
 		marked = true;
-	    marked |= ptr_struct_mark(name_index_ptr_sub_table(nidx, pname), pstate);
+	    marked |=
+		ptr_struct_mark(names_index_ptr_sub_table(nt, nidx, pname),
+				pstate);
 	}
     }
     return marked;
@@ -1057,7 +1079,7 @@ gc_clear_reloc(chunk_t * cp)
     gc_init_reloc(cp);
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
-	const struct_shared_procs_t _ds *procs =
+	const struct_shared_procs_t *procs =
     pre->o_type->shared;
 
     if (procs != 0)
@@ -1084,7 +1106,7 @@ gc_objects_set_reloc(chunk_t * cp)
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
 	struct_proc_finalize((*finalize));
-    const struct_shared_procs_t _ds *procs =
+    const struct_shared_procs_t *procs =
     pre->o_type->shared;
 
     if ((procs == 0 ? o_is_unmarked(pre) :
@@ -1149,12 +1171,13 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 	) {
 	struct_proc_reloc_ptrs((*proc)) =
 	    pre->o_type->reloc_ptrs;
+
 	if_debug3('7',
 		  " [7]relocating ptrs in %s(%lu) 0x%lx\n",
 		  struct_type_name_string(pre->o_type),
 		  (ulong) size, (ulong) pre);
 	if (proc != 0)
-	    (*proc) (pre + 1, size, pstate);
+	    (*proc) (pre + 1, size, pre->o_type, pstate);
     }
     END_OBJECTS_SCAN
 }
@@ -1172,14 +1195,14 @@ print_reloc_proc(const void *obj, const char *cname, void *robj)
 
 /* Relocate a pointer to an (aligned) object. */
 /* See gsmemory.h for why the argument is const and the result is not. */
-void /*obj_header_t */ *
-gs_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
+private void /*obj_header_t */ *
+igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 {
+    const obj_header_t *const optr = (const obj_header_t *)obj;
     const void *robj;
 
     if (obj == 0)
 	return print_reloc(obj, "NULL", 0);
-#define optr ((const obj_header_t *)obj)
     debug_check_object(optr - 1, NULL, gcst);
     /* The following should be a conditional expression, */
     /* but Sun's cc compiler can't handle it. */
@@ -1216,7 +1239,6 @@ gs_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
     return print_reloc(obj,
 		       struct_type_name_string(optr[-1].o_type),
 		       (void *)robj);	/* discard const */
-#undef optr
 }
 
 /* ------ Compaction phase ------ */
@@ -1237,7 +1259,7 @@ gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
 	     pre->o_back << obj_back_shift !=
 	     (byte *) pre - (byte *) chead)
 	) {
-	const struct_shared_procs_t _ds *procs =
+	const struct_shared_procs_t *procs =
 	pre->o_type->shared;
 
 	debug_check_object(pre, cp, gcst);

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,11 @@
    all copies.
  */
 
-/* zfont2.c */
+/*Id: zfont2.c  */
 /* Font creation utilities */
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gxfixed.h"
 #include "gsmatrix.h"
@@ -34,14 +33,14 @@
 #include "idparam.h"
 #include "ilevel.h"
 #include "iname.h"
+#include "interp.h"		/* for initial_enter_name */
 #include "ipacked.h"
 #include "istruct.h"
 #include "store.h"
 
 /* Registered encodings.  See ifont.h for documentation. */
 ref registered_Encodings;
-private ref *registered_Encodings_p = &registered_Encodings;
-private gs_gc_root_t registered_Encodings_root;
+private ref *const registered_Encodings_p = &registered_Encodings;
 
 /* Structure descriptor */
 public_st_font_data();
@@ -50,17 +49,15 @@ public_st_font_data();
 private void
 zfont2_init(void)
 {				/* Initialize the registered Encodings. */
-    {
-	int i;
+    int i;
 
-	ialloc_ref_array(&registered_Encodings, a_readonly,
-			 registered_Encodings_countof,
-			 "registered_Encodings");
-	for (i = 0; i < registered_Encodings_countof; i++)
-	    make_empty_array(&registered_Encoding(i), 0);
-    }
-    gs_register_ref_root(imemory, &registered_Encodings_root,
-			 (void **)&registered_Encodings_p,
+    ialloc_ref_array(&registered_Encodings, a_all,
+		     registered_Encodings_countof,
+		     "registered_Encodings");
+    for (i = 0; i < registered_Encodings_countof; i++)
+	make_empty_array(&registered_Encoding(i), 0);
+    initial_enter_name("registeredencodings", &registered_Encodings);
+    gs_register_ref_root(imemory, NULL, (void **)&registered_Encodings_p,
 			 "registered_Encodings");
 }
 
@@ -82,33 +79,6 @@ zbuildfont3(os_ptr op)
     if (code < 0)
 	return code;
     return define_gs_font((gs_font *) pfont);
-}
-
-/* <int> <array|shortarray> .registerencoding - */
-private int
-zregisterencoding(register os_ptr op)
-{
-    long i;
-
-    if (!r_is_array(op))
-	return_op_typecheck(op);
-    check_read(*op);
-    check_type(op[-1], t_integer);
-    for (i = r_size(op); i > 0;) {
-	ref cname;
-
-	array_get(op, --i, &cname);
-	check_type_only(cname, t_name);
-    }
-    i = op[-1].value.intval;
-    if (i >= 0 && i < registered_Encodings_countof) {
-	ref *penc = &registered_Encoding(i);
-
-	ref_assign_old(&registered_Encodings, penc, op,
-		       ".registerencoding");
-    }
-    pop(2);
-    return 0;
 }
 
 /* Encode a character. */
@@ -172,7 +142,6 @@ zfont_glyph_name(gs_glyph index, uint * plen)
 const op_def zfont2_op_defs[] =
 {
     {"2.buildfont3", zbuildfont3},
-    {"2.registerencoding", zregisterencoding},
     op_def_end(zfont2_init)
 };
 
@@ -181,7 +150,7 @@ const op_def zfont2_op_defs[] =
 /* Convert strings to executable names for build_proc_refs. */
 int
 build_proc_name_refs(build_proc_refs * pbuild,
-		     const char _ds * bcstr, const char _ds * bgstr)
+		     const char *bcstr, const char *bgstr)
 {
     int code;
 
@@ -235,7 +204,8 @@ build_gs_font_procs(os_ptr op, build_proc_refs * pbuild)
 /* The caller guarantees that *op is a dictionary. */
 int
 build_gs_primitive_font(os_ptr op, gs_font_base ** ppfont, font_type ftype,
-		gs_memory_type_ptr_t pstype, const build_proc_refs * pbuild,
+			gs_memory_type_ptr_t pstype,
+			const build_proc_refs * pbuild,
 			build_font_options_t options)
 {
     int painttype;
@@ -288,7 +258,8 @@ build_gs_primitive_font(os_ptr op, gs_font_base ** ppfont, font_type ftype,
 /* The caller guarantees that *op is a dictionary. */
 int
 build_gs_simple_font(os_ptr op, gs_font_base ** ppfont, font_type ftype,
-		gs_memory_type_ptr_t pstype, const build_proc_refs * pbuild,
+		     gs_memory_type_ptr_t pstype,
+		     const build_proc_refs * pbuild,
 		     build_font_options_t options)
 {
     double bbox[4];
@@ -428,7 +399,7 @@ build_gs_font(os_ptr op, gs_font ** ppfont, font_type ftype,
     else
 	make_empty_string(&fname, a_readonly);
     if ((code = dict_int_param(op, "WMode", 0, 1, 0, &wmode)) < 0 ||
-    (code = dict_bool_param(op, "BitmapWidths", false, &bitmapwidths)) < 0 ||
+	(code = dict_bool_param(op, "BitmapWidths", false, &bitmapwidths)) < 0 ||
 	(code = dict_int_param(op, "ExactSize", 0, 2, fbit_use_bitmaps, &exactsize)) < 0 ||
 	(code = dict_int_param(op, "InBetweenSize", 0, 2, fbit_use_outlines, &inbetweensize)) < 0 ||
 	(code = dict_int_param(op, "TransformedChar", 0, 2, fbit_use_outlines, &transformedchar)) < 0
@@ -470,11 +441,19 @@ build_gs_font(os_ptr op, gs_font ** ppfont, font_type ftype,
 	return_error(e_invalidaccess);
     {
 	font_data *pdata;
-
-	/* Make sure that we allocate the font data */
-	/* in the same VM as the font dictionary. */
+	ref encoding;
+	/*
+	 * Make sure that we allocate the font data
+	 * in the same VM as the font dictionary.
+	 */
 	uint space = ialloc_space(idmemory);
 
+	/*
+	 * Since add_FID may resize the dictionary and cause
+	 * pencoding to become invalid, save the Encoding.
+	 */
+	if (pencoding)
+	    encoding = *pencoding;
 	ialloc_set_space(idmemory, r_space(op));
 	pfont = ialloc_struct(gs_font, pstype,
 			      "buildfont(font)");
@@ -495,7 +474,7 @@ build_gs_font(os_ptr op, gs_font ** ppfont, font_type ftype,
 	ref_assign_new(&pdata->BuildChar, &pbuild->BuildChar);
 	ref_assign_new(&pdata->BuildGlyph, &pbuild->BuildGlyph);
 	if (pencoding)
-	    ref_assign_new(&pdata->Encoding, pencoding);
+	    ref_assign_new(&pdata->Encoding, &encoding);
 	/* Clear the chain pointers so as not to confuse the memory */
 	/* manager if we bail out after returning from here. */
 	pfont->next = pfont->prev = 0;
@@ -519,7 +498,7 @@ build_gs_font(os_ptr op, gs_font ** ppfont, font_type ftype,
 	ialloc_set_space(idmemory, space);
     }
     code = 0;
-  set_name:
+set_name:
     copy_font_name(&pfont->key_name, &kname);
     copy_font_name(&pfont->font_name, &fname);
     *ppfont = pfont;

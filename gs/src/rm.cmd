@@ -1,4 +1,5 @@
 @echo off
+@rem Id: rm.cmd 
 :next
 if '%1'=='' goto exit
 if '%1'=='-f' goto sh

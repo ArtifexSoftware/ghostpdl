@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,12 +16,11 @@
    all copies.
  */
 
-/* zpath1.c */
+/*Id: zpath1.c  */
 /* PostScript Level 1 additional path operators */
 #include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
-#include "errors.h"
 #include "estack.h"		/* for pathforall */
 #include "ialloc.h"
 #include "igstate.h"
@@ -30,9 +29,9 @@
 #include "store.h"
 
 /* Forward references */
-private int near common_arc(P2(os_ptr,
+private int common_arc(P2(os_ptr,
 	  int (*)(P6(gs_state *, floatp, floatp, floatp, floatp, floatp))));
-private int near common_arct(P2(os_ptr, float *));
+private int common_arct(P2(os_ptr, float *));
 
 /* <x> <y> <r> <ang1> <ang2> arc - */
 int
@@ -49,16 +48,16 @@ zarcn(os_ptr op)
 }
 
 /* Common code for arc[n] */
-private int near
+private int
 common_arc(os_ptr op,
-      int (*aproc) (P6(gs_state *, floatp, floatp, floatp, floatp, floatp)))
+      int (*aproc)(P6(gs_state *, floatp, floatp, floatp, floatp, floatp)))
 {
     double xyra[5];		/* x, y, r, ang1, ang2 */
-    int code;
+    int code = num_params(op, 5, xyra);
 
-    if ((code = num_params(op, 5, xyra)) < 0)
+    if (code < 0)
 	return code;
-    code = (*aproc) (igs, xyra[0], xyra[1], xyra[2], xyra[3], xyra[4]);
+    code = (*aproc)(igs, xyra[0], xyra[1], xyra[2], xyra[3], xyra[4]);
     if (code >= 0)
 	pop(5);
     return code;
@@ -94,13 +93,13 @@ zarcto(register os_ptr op)
 }
 
 /* Common code for arct[o] */
-private int near
+private int
 common_arct(os_ptr op, float *tanxy)
 {
     double args[5];		/* x1, y1, x2, y2, r */
-    int code;
+    int code = num_params(op, 5, args);
 
-    if ((code = num_params(op, 5, args)) < 0)
+    if (code < 0)
 	return code;
     return gs_arcto(igs, args[0], args[1], args[2], args[3], args[4], tanxy);
 }
@@ -205,11 +204,9 @@ path_continue(register os_ptr op)
     code = gs_path_enum_next(penum, ppts);
     switch (code) {
 	case 0:		/* all done */
-	    {
-		esp -= 6;
-		path_cleanup(op);
-		return o_pop_estack;
-	    }
+	    esp -= 6;
+	    path_cleanup(op);
+	    return o_pop_estack;
 	default:		/* error */
 	    return code;
 	case gs_pe_moveto:

@@ -16,11 +16,10 @@
    all copies.
  */
 
-/* zfname.c */
+/*Id: zfname.c  */
 /* File name utilities */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "ialloc.h"
 #include "stream.h"

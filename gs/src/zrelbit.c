@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zrelbit.c */
+/*Id: zrelbit.c  */
 /* Relational, boolean, and bit operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsutil.h"
 #include "idict.h"
@@ -27,23 +26,26 @@
 
 /* ------ Standard operators ------ */
 
+/* Define the type test for eq and its relatives. */
+#define EQ_CHECK_READ(opp, dflt)\
+    switch ( r_type(opp) ) {\
+	case t_string:\
+	    check_read(*(opp));\
+	    break;\
+	default:\
+	    dflt;\
+  }
+
 /* Forward references */
-private int near obj_le(P2(os_ptr, os_ptr));
+private int obj_le(P2(os_ptr, os_ptr));
 
 /* <obj1> <obj2> eq <bool> */
 private int
 zeq(register os_ptr op)
 {
-    register os_ptr op1 = op - 1;
-
-#define eq_check_read(opp, dflt)\
-  switch ( r_type(opp) )\
-   {	case t_string: check_read(*opp); break;\
-	default: dflt; break;\
-   }
-    eq_check_read(op1, check_op(2));
-    eq_check_read(op, DO_NOTHING);
-    make_bool(op1, (obj_eq(op1, op) ? 1 : 0));
+    EQ_CHECK_READ(op - 1, check_op(2));
+    EQ_CHECK_READ(op, DO_NOTHING);
+    make_bool(op - 1, (obj_eq(op - 1, op) ? 1 : 0));
     pop(1);
     return 0;
 }
@@ -51,7 +53,7 @@ zeq(register os_ptr op)
 /* <obj1> <obj2> ne <bool> */
 private int
 zne(register os_ptr op)
-{				/* We'll just be lazy and use eq. */
+{	/* We'll just be lazy and use eq. */
     int code = zeq(op);
 
     if (!code)
@@ -236,12 +238,12 @@ zbitshift(register os_ptr op)
 
     check_type(*op, t_integer);
     check_type(op[-1], t_integer);
-#define max_shift (arch_sizeof_long * 8 - 1)
-    if (op->value.intval < -max_shift || op->value.intval > max_shift)
+#define MAX_SHIFT (arch_sizeof_long * 8 - 1)
+    if (op->value.intval < -MAX_SHIFT || op->value.intval > MAX_SHIFT)
 	op[-1].value.intval = 0;
-#undef max_shift
+#undef MAX_SHIFT
     else if ((shift = op->value.intval) < 0)
-	op[-1].value.intval = ((ulong) (op[-1].value.intval)) >> -shift;
+	op[-1].value.intval = ((ulong)(op[-1].value.intval)) >> -shift;
     else
 	op[-1].value.intval <<= shift;
     pop(1);
@@ -254,11 +256,9 @@ zbitshift(register os_ptr op)
 private int
 zidenteq(register os_ptr op)
 {
-    register os_ptr op1 = op - 1;
-
-    eq_check_read(op1, check_op(2));
-    eq_check_read(op, DO_NOTHING);
-    make_bool(op1, (obj_ident_eq(op1, op) ? 1 : 0));
+    EQ_CHECK_READ(op - 1, check_op(2));
+    EQ_CHECK_READ(op, DO_NOTHING);
+    make_bool(op - 1, (obj_ident_eq(op - 1, op) ? 1 : 0));
     pop(1);
     return 0;
 
@@ -267,7 +267,7 @@ zidenteq(register os_ptr op)
 /* <obj1> <obj2> .identne <bool> */
 private int
 zidentne(register os_ptr op)
-{				/* We'll just be lazy and use .identeq. */
+{	/* We'll just be lazy and use .identeq. */
     int code = zidenteq(op);
 
     if (!code)
@@ -303,36 +303,34 @@ const op_def zrelbit_op_defs[] =
 /* Compare two operands (both numeric, or both strings). */
 /* Return 1 if op[-1] <= op[0], 0 if op[-1] > op[0], */
 /* or a (negative) error code. */
-#define bval(v) ((v) ? 1 : 0)
-private int near
+private int
 obj_le(register os_ptr op1, register os_ptr op)
 {
     switch (r_type(op1)) {
 	case t_integer:
 	    switch (r_type(op)) {
 		case t_integer:
-		    return bval(op1->value.intval <= op->value.intval);
+		    return (op1->value.intval <= op->value.intval);
 		case t_real:
-		    return bval((double)op1->value.intval <= op->value.realval);
+		    return ((double)op1->value.intval <= op->value.realval);
 		default:
 		    return_op_typecheck(op);
 	    }
 	case t_real:
 	    switch (r_type(op)) {
 		case t_real:
-		    return bval(op1->value.realval <= op->value.realval);
+		    return (op1->value.realval <= op->value.realval);
 		case t_integer:
-		    return bval(op1->value.realval <= (double)op->value.intval);
+		    return (op1->value.realval <= (double)op->value.intval);
 		default:
 		    return_op_typecheck(op);
 	    }
 	case t_string:
 	    check_read(*op1);
 	    check_read_type(*op, t_string);
-	    return bval(bytes_compare(op1->value.bytes, r_size(op1),
-				      op->value.bytes, r_size(op)) <= 0);
+	    return (bytes_compare(op1->value.bytes, r_size(op1),
+				  op->value.bytes, r_size(op)) <= 0);
 	default:
 	    return_op_typecheck(op1);
     }
 }
-#undef bval

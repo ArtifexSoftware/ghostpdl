@@ -1,35 +1,40 @@
 /* Copyright (C) 1989, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gdevpcfb.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gdevpcfb.h  */
 /* IBM PC frame buffer definitions */
+
+#ifndef gdevpcfb_INCLUDED
+#  define gdevpcfb_INCLUDED
+
 #ifdef __MSDOS__
 #  include "dos_.h"
 typedef union REGS registers;
+
 #endif
 
 /* For testing, the 16-color display may be defined as a monochrome, */
 /* 8-color, or 16-color device. */
-#define ega_bits_of_color 2		/* 0, 1, or 2 */
+#define ega_bits_of_color 2	/* 0, 1, or 2 */
 #define rgb_max ega_bits_of_color
 
 /* Define the short (integer) version of "transparent" color. */
-/* ****** Depends on gx_no_color_index being all 1's. ******/
+/* ****** Depends on gx_no_color_index being all 1's. ***** */
 #define no_color ((int)gx_no_color_index)
 
 /* Procedures */
@@ -46,20 +51,20 @@ dev_proc_get_bits(ega_get_bits);
 
 /* Structure for saving state of BIOS variables. */
 typedef struct pcfb_bios_state_s {
-	int display_mode;	/* must be first, see pcfb_save_state */
-				/* in gdevpcfb.c */
-	byte text_page;
-	uint text_cursor_mode;
-	uint text_font;
-	byte text_attribute;
-	byte border_color;
+    int display_mode;		/* must be first, see pcfb_save_state */
+    /* in gdevpcfb.c */
+    byte text_page;
+    uint text_cursor_mode;
+    uint text_font;
+    byte text_attribute;
+    byte border_color;
 } pcfb_bios_state;
 
 /* Procedures used by gdevpcfb.c */
-void	pcfb_set_signals(P1(gx_device *));
-void	pcfb_get_state(P1(pcfb_bios_state *));
-void	pcfb_set_mode(P1(int));
-void	pcfb_set_state(P1(const pcfb_bios_state *));
+void pcfb_set_signals(P1(gx_device *));
+void pcfb_get_state(P1(pcfb_bios_state *));
+void pcfb_set_mode(P1(int));
+void pcfb_set_state(P1(const pcfb_bios_state *));
 
 /* Types for frame buffer pointers. */
 typedef byte *fb_ptr;
@@ -75,17 +80,17 @@ typedef volatile byte *volatile_fb_ptr;
 /* The device descriptor */
 typedef struct gx_device_ega_s gx_device_ega;
 struct gx_device_ega_s {
-	gx_device_common;
-	int raster;			/* frame buffer bytes per line */
-	int fb_seg_mult;		/* multiplier for segment part */
-					/* of frame buffer pointer */
-	int fb_byte_mult;		/* multiplier for word part ditto */
+    gx_device_common;
+    int raster;			/* frame buffer bytes per line */
+    int fb_seg_mult;		/* multiplier for segment part */
+    /* of frame buffer pointer */
+    int fb_byte_mult;		/* multiplier for word part ditto */
 #define mk_fb_ptr(x, y)\
   (fb_dev->fb_byte_mult == 0 ?\
    (fb_ptr)MK_PTR(regen + (y) * (fb_dev->fb_seg_mult), (x) >> 3) :\
    (fb_ptr)MK_PTR(regen + ((y) >> 4) * (fb_dev->fb_seg_mult),\
 		 (((y) & 15) * fb_dev->fb_byte_mult) + ((x) >> 3)))
-	int video_mode;
+    int video_mode;
 };
 
 /* Macro for creating instances */
@@ -116,9 +121,9 @@ struct gx_device_ega_s {
 #define s_map 2
 #define set_s_map(mask) outport2(seq_addr, s_map, mask)
 #define graph_addr 0x3ce
-#define g_const 0			/* set/reset */
+#define g_const 0		/* set/reset */
 #define set_g_const(color) outport2(graph_addr, g_const, color)
-#define g_const_map 1			/* enable set/reset */
+#define g_const_map 1		/* enable set/reset */
 #define set_g_const_map(map) outport2(graph_addr, g_const_map, map)
 #define g_function 3
 #  define gf_WRITE 0
@@ -150,29 +155,33 @@ struct gx_device_ega_s {
 #if defined(__GNUC__)
 	/* Inline assembly version for gcc */
 	/* Under SCO, requires installing the gnu assembler as "as" */
-static inline void outportb(int port, int data)
+static inline void 
+outportb(int port, int data)
 {
-	__asm__ volatile ("outb %0,%1" : :
-	"a" ((unsigned char) data),
-	"d" ((unsigned short) port));
+    __asm__ volatile ("outb %0,%1"::
+		      "a"      ((unsigned char)data),
+		      "d"      ((unsigned short)port));
 }
-static inline void outport2(int port, int index, int data)
+static inline void 
+outport2(int port, int index, int data)
 {
-	__asm__ volatile ("movb %0,%%ah; movb %1,%%al; outw %%ax,%2" : :
-	"qmi" ((unsigned char) data),
-	"qmi" ((unsigned char) index),
-	"d" ((unsigned short) port) :
-	"eax");
+    __asm__ volatile ("movb %0,%%ah; movb %1,%%al; outw %%ax,%2"::
+		      "qmi"    ((unsigned char)data),
+		      "qmi"    ((unsigned char)index),
+		      "d"      ((unsigned short)port):
+		      "eax");
 }
 #else
-void	outportb(P2(uint, byte));
-void	outport2(P3(uint, byte, byte));
+void outportb(P2(uint, byte));
+void outport2(P3(uint, byte, byte));
+
 #endif
 
 /* Redefine mk_fb_ptr -- no segmented addressing. */
 
 #undef mk_fb_ptr
 extern fb_ptr fb_addr;
+
 #define mk_fb_ptr(x, y)	(fb_addr + (y) * (fb_dev->raster) + ((x) >> 3))
 
 #else
@@ -188,4 +197,7 @@ extern fb_ptr fb_addr;
 /* Fetch and discard a byte.  Prevent the compiler from */
 /* optimizing this away. */
 static unsigned char byte_discard_;
+
 #define byte_discard(expr) byte_discard_ = (expr)
+
+#endif /* gdevpcfb_INCLUDED */

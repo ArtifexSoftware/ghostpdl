@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxpaint.c */
+/*Id: gxpaint.c  */
 /* Graphics-state-aware fill and stroke procedures */
 #include "gx.h"
 #include "gzstate.h"
@@ -31,16 +31,19 @@ gx_fill_path(gx_path * ppath, gx_device_color * pdevc, gs_state * pgs,
 	     int rule, fixed adjust_x, fixed adjust_y)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
+    gx_clip_path *pcpath;
+    int code = gx_effective_clip_path(pgs, &pcpath);
     gx_fill_params params;
 
+    if (code < 0)
+	return code;
     params.rule = rule;
     params.adjust.x = adjust_x;
     params.adjust.y = adjust_y;
     params.flatness = (pgs->in_cachedevice > 1 ? 0.0 : pgs->flatness);
     params.fill_zero_width = (adjust_x | adjust_y) != 0;
     return (*dev_proc(dev, fill_path))
-	(dev, (const gs_imager_state *)pgs, ppath, &params, pdevc,
-	 pgs->clip_path);
+	(dev, (const gs_imager_state *)pgs, ppath, &params, pdevc, pcpath);
 }
 
 /* Stroke a path for drawing or saving. */
@@ -48,12 +51,16 @@ int
 gx_stroke_fill(gx_path * ppath, gs_state * pgs)
 {
     gx_device *dev = gs_currentdevice_inline(pgs);
+    gx_clip_path *pcpath;
+    int code = gx_effective_clip_path(pgs, &pcpath);
     gx_stroke_params params;
 
+    if (code < 0)
+	return code;
     params.flatness = (pgs->in_cachedevice > 1 ? 0.0 : pgs->flatness);
     return (*dev_proc(dev, stroke_path))
 	(dev, (const gs_imager_state *)pgs, ppath, &params,
-	 pgs->dev_color, pgs->clip_path);
+	 pgs->dev_color, pcpath);
 }
 
 int

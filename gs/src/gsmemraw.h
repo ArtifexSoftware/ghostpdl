@@ -1,73 +1,155 @@
 /* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
 
-/* gsmemraw.h Abstract raw-memory allocator */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gsmemraw.h  */
+/* Client interface for "raw memory" allocator */
 
 /* Initial version 02/03/1998 by John Desrosiers (soho@crl.com) */
+/* Completely rewritten 6/26/1998 by L. Peter Deutsch <ghost@aladdin.com> */
 
-#if !defined(gsmemraw__INCLUDED)
- #define gsmemraw__INCLUDED
-
-typedef struct gs_memraw_s gs_memraw;
-
-/* Procedure vector for accessing raw memory allocator */
-typedef struct gs_memraw_procs_s {
-	/* There is no constructor here. Constructors for subclasses must */
-	/* be called statically: each constructor must *first* call its */
-	/* superclass' constructor, then do its own init. */
-
-	/* Destuctor: subclasses destruct their own stuff first, then call */
-	/* superclass' destructor. */
-#define mem_proc_destructor(proc)\
-  void proc(P1(gs_memraw *))
-	mem_proc_destructor((*destructor));
-
-	/* Query freespace */
-#define mem_proc_query_freespace(proc)\
-  long proc (P1(gs_memraw *))
-	mem_proc_query_freespace((*query_freespace));
-
-	/* malloc */
-#define mem_proc_malloc(proc)\
-  void *proc (P2(gs_memraw *, unsigned int))
-	mem_proc_malloc((*malloc));
-
-	/* realloc */
-#define mem_proc_realloc(proc)\
-  void *proc (P3(gs_memraw *, void *, unsigned int))
-	mem_proc_realloc((*realloc));
-
-	/* free */
-#define mem_proc_free(proc)\
-  void proc(P2(gs_memraw *, void*))
-	mem_proc_free((*free));
-} gs_memraw_procs;
-
+#ifndef gsmemraw_INCLUDED
+#  define gsmemraw_INCLUDED
 
 /*
- * An abstract raw-memory allocator instance.  Subclasses may have state as well.
+ * This interface provides minimal memory allocation and freeing capability.
+ * It is meant to be used for "wholesale" allocation of blocks -- typically,
+ * but not only, via malloc -- which are then divided up into "retail"
+ * objects.  However, since it is a subset (superclass) of the "retail"
+ * interface defined in gsmemory.h, retail allocators can implement it as
+ * well, and in fact the malloc interface defined in gsmalloc.h is used for
+ * both wholesale and retail allocation.
  */
-#define gs_memraw_common\
-	gs_memraw_procs procs
 
-struct gs_memraw_s {
-	gs_memraw_common;
+/*
+ * Define the structure for reporting memory manager statistics.
+ */
+typedef struct gs_memory_status_s {
+    /*
+     * "Allocated" space is the total amount of space acquired from
+     * the parent of the memory manager.  It includes space used for
+     * allocated data, space available for allocation, and overhead.
+     */
+    ulong allocated;
+    /*
+     * "Used" space is the amount of space used by allocated data
+     * plus overhead.
+     */
+    ulong used;
+} gs_memory_status_t;
+
+/* Define the abstract type for the memory manager. */
+typedef struct gs_raw_memory_s gs_raw_memory_t;
+
+/* Define the procedures for raw memory management.  Memory managers have no
+ * standard constructor: each implementation defines its own, and is
+ * responsible for calling its superclass' initialization code first.
+ * Similarly, each implementation's destructor (free_all) must first take
+ * care of its own cleanup and then call the superclass' free_all.
+ *
+ * Note that calling free_all does *not* imply calling free_all for the
+ * allocator from which this allocator obtains its underlying memory (if the
+ * concept is even meaningful, which for some allocators it is not): this is
+ * an ordinary reference relationship, not a subclass/superclass one.
+ */
+
+		/*
+		 * Allocate bytes.  The bytes are always aligned maximally
+		 * if the processor requires alignment.
+		 *
+		 * Note that the object memory level can allocate bytes as
+		 * either movable or immovable: raw memory blocks are
+		 * always immovable.
+		 */
+
+#define gs_memory_t_proc_alloc_bytes(proc, mem_t)\
+  byte *proc(P3(mem_t *mem, uint nbytes, client_name_t cname))
+
+#define gs_alloc_bytes_immovable(mem, nbytes, cname)\
+  (*(mem)->procs.alloc_bytes_immovable)(mem, nbytes, cname)
+
+		/*
+		 * Resize an object to a new number of elements.  At the raw
+		 * memory level, the "element" is a byte; for object memory
+		 * (gsmemory.h), the object may be an an array of either
+		 * bytes or structures.  The new size may be either larger
+		 * or smaller than the old.
+		 */
+
+#define gs_memory_t_proc_resize_object(proc, mem_t)\
+  void *proc(P4(mem_t *mem, void *obj, uint new_num_elements,\
+		client_name_t cname))
+
+#define gs_resize_object(mem, obj, newn, cname)\
+  (*(mem)->procs.resize_object)(mem, obj, newn, cname)
+
+		/*
+		 * Free an object (at the object memory level, this includes
+		 * everything except strings).  Note: data == 0 must be
+		 * allowed, and must be a no-op.
+		 */
+
+#define gs_memory_t_proc_free_object(proc, mem_t)\
+  void proc(P3(mem_t *mem, void *data, client_name_t cname))
+
+#define gs_free_object(mem, data, cname)\
+  (*(mem)->procs.free_object)(mem, data, cname)
+
+		/*
+		 * Report status (assigned, used).
+		 */
+
+#define gs_memory_t_proc_status(proc, mem_t)\
+  void proc(P2(mem_t *mem, gs_memory_status_t *status))
+
+#define gs_memory_status(mem, pst)\
+  (*(mem)->procs.status)(mem, pst)
+
+		/*
+		 * Free all memory owned by the allocator.  Note that
+		 * this requires allocators to keep track of all the memory
+		 * they have ever acquired, and where they acquired it.
+		 */
+
+#define gs_memory_t_proc_free_all(proc, mem_t)\
+  void proc(P1(mem_t *mem))
+
+#define gs_free_all(mem)\
+  (*(mem)->procs.free_all)(mem)
+
+/* Define the members of the procedure structure. */
+#define gs_raw_memory_procs(mem_t)\
+    gs_memory_t_proc_alloc_bytes((*alloc_bytes_immovable), mem_t);\
+    gs_memory_t_proc_resize_object((*resize_object), mem_t);\
+    gs_memory_t_proc_free_object((*free_object), mem_t);\
+    gs_memory_t_proc_status((*status), mem_t);\
+    gs_memory_t_proc_free_all((*free_all), mem_t)
+
+/* Procedure vector for accessing raw memory allocator */
+typedef struct gs_raw_memory_procs_s {
+    gs_raw_memory_procs(gs_raw_memory_t);
+} gs_raw_memory_procs_t;
+
+/*
+ * Define an abstract raw-memory allocator instance.
+ * Subclasses may have state as well.
+ */
+struct gs_raw_memory_s {
+    gs_raw_memory_procs_t procs;
 };
 
-#endif /*!defined(gsmemraw__INCLUDED)*/
-
+#endif /* gsmemraw_INCLUDED */

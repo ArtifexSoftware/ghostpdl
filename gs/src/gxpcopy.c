@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gxpcopy.c */
+/*Id: gxpcopy.c  */
 /* Path copying and flattening */
 #include "math_.h"
 #include "gx.h"
@@ -37,18 +37,21 @@ int
 gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath,
 		      fixed fixed_flatness, gx_path_copy_options options)
 {
-    gx_path old;
     const segment *pseg;
-    int code;
 
+    /*
+     * Since we're going to be adding to the path, unshare it
+     * before we start.
+     */
+    int code = gx_path_unshare(ppath);
+
+    if (code < 0)
+	return code;
 #ifdef DEBUG
     if (gs_debug_c('P'))
 	gx_dump_path(ppath_old, "before reducing");
 #endif
-    old = *ppath_old;
-    if (options & pco_init)
-	gx_path_init(ppath, ppath_old->memory);
-    pseg = (const segment *)(old.first_subpath);
+    pseg = (const segment *)(ppath_old->first_subpath);
     while (pseg) {
 	switch (pseg->type) {
 	    case s_start:
@@ -118,15 +121,14 @@ gx_path_copy_reducing(const gx_path * ppath_old, gx_path * ppath,
 		code = gs_note_error(gs_error_unregistered);
 	}
 	if (code < 0) {
-	    gx_path_release(ppath);
-	    if (ppath == ppath_old)
-		*ppath = old;
+	    gx_path_new(ppath);
 	    return code;
 	}
 	pseg = pseg->next;
     }
-    if (path_last_is_moveto(&old))
-	gx_path_add_point(ppath, old.position.x, old.position.y);
+    if (path_last_is_moveto(ppath_old))
+	gx_path_add_point(ppath, ppath_old->position.x,
+			  ppath_old->position.y);
 #ifdef DEBUG
     if (gs_debug_c('P'))
 	gx_dump_path(ppath, "after reducing");
@@ -203,11 +205,11 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 private void
 dprint_curve(const char *str, fixed x0, fixed y0, const curve_segment * pc)
 {
-    dprintf9("%s p0=(%g,%g) p1=(%g,%g) p2=(%g,%g) p3=(%g,%g)\n",
-	     str, fixed2float(x0), fixed2float(y0),
-	     fixed2float(pc->p1.x), fixed2float(pc->p1.y),
-	     fixed2float(pc->p2.x), fixed2float(pc->p2.y),
-	     fixed2float(pc->pt.x), fixed2float(pc->pt.y));
+    dlprintf9("%s p0=(%g,%g) p1=(%g,%g) p2=(%g,%g) p3=(%g,%g)\n",
+	      str, fixed2float(x0), fixed2float(y0),
+	      fixed2float(pc->p1.x), fixed2float(pc->p1.y),
+	      fixed2float(pc->p2.x), fixed2float(pc->p2.y),
+	      fixed2float(pc->pt.x), fixed2float(pc->pt.y));
 }
 #endif
 
@@ -403,11 +405,11 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 		    if (any_abs(xlf - xl) > fixed_epsilon ||
 			any_abs(xdf - xd) > fixed_epsilon
 			)
-			dprintf9("Curve points differ: k=%d t=%d a,b,c=%g,%g,%g\n   xl,xd fixed=%g,%g floating=%g,%g\n",
-				 k, t,
+			dlprintf9("Curve points differ: k=%d t=%d a,b,c=%g,%g,%g\n   xl,xd fixed=%g,%g floating=%g,%g\n",
+				  k, t,
 			     fixed2float(a), fixed2float(b), fixed2float(c),
-				 fixed2float(xl), fixed2float(xd),
-				 fixed2float(xlf), fixed2float(xdf));
+				  fixed2float(xl), fixed2float(xd),
+				  fixed2float(xlf), fixed2float(xdf));
 /*xl = xlf, xd = xdf; */
 		}
 #endif
@@ -597,7 +599,7 @@ monotonize_internal(gx_path * ppath, const curve_segment * pc)
 	if (nseg == 1)
 	    dprint_curve("[2]No split", pp0.x, pp0.y, pc);
 	else {
-	    dprintf1("[2]Split into %d segments:\n", nseg);
+	    dlprintf1("[2]Split into %d segments:\n", nseg);
 	    dprint_curve("[2]Original", pp0.x, pp0.y, pc);
 	    for (pi = 0; pi < nseg; ++pi) {
 		dprint_curve("[2] =>", pp0.x, pp0.y, cs + pi);

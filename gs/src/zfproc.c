@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,16 +16,15 @@
    all copies.
  */
 
-/* zfproc.c */
+/*Id: zfproc.c  */
 /* Procedure-based filter stream support */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"		/* for ifilter.h */
 #include "estack.h"
 #include "gsstruct.h"
 #include "ialloc.h"
-#include "istruct.h"		/* for gs_reloc_refs */
+#include "istruct.h"		/* for RELOC_REF_VAR */
 #include "stream.h"
 #include "strimpl.h"
 #include "ifilter.h"
@@ -46,45 +45,38 @@ private
 ENUM_PTRS_BEGIN(sproc_enum_ptrs) return 0;
 
 case 0:
-*pep = &pptr->proc;
-return ptr_ref_type;
+ENUM_RETURN_REF(&pptr->proc);
 case 1:
-*pep = &pptr->data;
-return ptr_ref_type;
+ENUM_RETURN_REF(&pptr->data);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(sproc_reloc_ptrs);
-gs_reloc_refs((ref_packed *) & pptr->proc,
-	      (ref_packed *) (&pptr->proc + 1), gcst);
+RELOC_REF_VAR(pptr->proc);
 r_clear_attrs(&pptr->proc, l_mark);
-gs_reloc_refs((ref_packed *) & pptr->data,
-	      (ref_packed *) (&pptr->data + 1), gcst);
+RELOC_REF_VAR(pptr->data);
 r_clear_attrs(&pptr->data, l_mark);
 RELOC_PTRS_END
 #undef pptr
+
 /* Structure type for procedure-based streams. */
 private_st_stream_proc_state();
 
 /* Allocate and open a procedure-based filter. */
 /* The caller must have checked that *sop is a procedure. */
-     private int
-         s_proc_init(ref * sop, stream ** psstrm, uint mode, const stream_template * temp)
+private int
+s_proc_init(ref * sop, stream ** psstrm, uint mode,
+	    const stream_template * temp, const stream_procs * procs)
 {
-    stream *sstrm;
-    stream_proc_state *state;
-    static const stream_procs procs =
-    {s_std_noavailable, s_std_noseek, s_std_read_reset,
-     s_std_read_flush, s_std_null, NULL
-    };
+    stream *sstrm = file_alloc_stream(imemory, "s_proc_init(stream)");
+    stream_proc_state *state =
+    (stream_proc_state *) s_alloc_state(imemory, &st_sproc_state,
+					"s_proc_init(state)");
 
-    sstrm = file_alloc_stream(imemory, "s_proc_init(stream)");
-    state = (stream_proc_state *) s_alloc_state(imemory, &st_sproc_state,
-						"s_proc_init(state)");
     if (sstrm == 0 || state == 0) {
 	ifree_object(state, "s_proc_init(state)");
 	/*ifree_object(sstrm, "s_proc_init(stream)"); *//* just leave it on the file list */
 	return_error(e_VMerror);
     }
-    s_std_init(sstrm, NULL, 0, &procs, mode);
+    s_std_init(sstrm, NULL, 0, procs, mode);
     sstrm->procs.process = temp->process;
     state->template = temp;
     state->memory = imemory;
@@ -131,8 +123,12 @@ private stream_proc_process(s_proc_read_process);
 private int s_proc_read_continue(P1(os_ptr));
 
 /* Stream templates */
-private const stream_template s_proc_read_template =
-{&st_sproc_state, NULL, s_proc_read_process, 1, 1, NULL
+private const stream_template s_proc_read_template = {
+    &st_sproc_state, NULL, s_proc_read_process, 1, 1, NULL
+};
+private const stream_procs s_proc_read_procs = {
+    s_std_noavailable, s_std_noseek, s_std_read_reset,
+    s_std_read_flush, s_std_null, NULL
 };
 
 /* Allocate and open a procedure-based read stream. */
@@ -141,7 +137,8 @@ int
 sread_proc(ref * sop, stream ** psstrm)
 {
     int code =
-    s_proc_init(sop, psstrm, s_mode_read, &s_proc_read_template);
+	s_proc_init(sop, psstrm, s_mode_read, &s_proc_read_template,
+		    &s_proc_read_procs);
 
     if (code < 0)
 	return code;
@@ -150,12 +147,13 @@ sread_proc(ref * sop, stream ** psstrm)
 }
 
 /* Handle an input request. */
-#define ss ((stream_proc_state *)st)
 private int
 s_proc_read_process(stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
-{				/* Move data from the string returned by the procedure */
+{
+    /* Move data from the string returned by the procedure */
     /* into the stream buffer, or ask for a callback. */
+    stream_proc_state *const ss = (stream_proc_state *) st;
     uint count = r_size(&ss->data) - ss->index;
 
     if (count > 0) {
@@ -170,7 +168,6 @@ s_proc_read_process(stream_state * st, stream_cursor_read * ignore_pr,
     }
     return (ss->eof ? EOFC : CALLC);
 }
-#undef ss
 
 /* Handle an exception (INTC or CALLC) from a read stream */
 /* whose buffer is empty. */
@@ -192,7 +189,6 @@ s_handle_read_exception(int status, const ref * fop, const ref * pstate,
     /* Find the stream whose buffer needs refilling. */
     for (ps = fptr(fop); ps->strm != 0;)
 	ps = ps->strm;
-#define psst ((stream_proc_state *)ps->state)
     check_estack(npush);
     if (nstate)
 	memcpy(esp + 2, pstate, nstate * sizeof(ref));
@@ -201,8 +197,7 @@ s_handle_read_exception(int status, const ref * fop, const ref * pstate,
     make_op_estack(esp - 2, s_proc_read_continue);
     esp[-1] = *fop;
     r_clear_attrs(esp - 1, a_executable);
-    *esp = psst->proc;
-#undef psst
+    *esp = ((stream_proc_state *) ps->state)->proc;
     return o_push_estack;
 }
 /* Continue a read operation after returning from a procedure callout. */
@@ -236,8 +231,12 @@ private stream_proc_process(s_proc_write_process);
 private int s_proc_write_continue(P1(os_ptr));
 
 /* Stream templates */
-private const stream_template s_proc_write_template =
-{&st_sproc_state, NULL, s_proc_write_process, 1, 1, NULL
+private const stream_template s_proc_write_template = {
+    &st_sproc_state, NULL, s_proc_write_process, 1, 1, NULL
+};
+private const stream_procs s_proc_write_procs = {
+    s_std_noavailable, s_std_noseek, s_std_write_reset,
+    s_std_write_flush, s_std_null, NULL
 };
 
 /* Allocate and open a procedure-based write stream. */
@@ -245,16 +244,18 @@ private const stream_template s_proc_write_template =
 int
 swrite_proc(ref * sop, stream ** psstrm)
 {
-    return s_proc_init(sop, psstrm, s_mode_write, &s_proc_write_template);
+    return s_proc_init(sop, psstrm, s_mode_write, &s_proc_write_template,
+		       &s_proc_write_procs);
 }
 
 /* Handle an output request. */
-#define ss ((stream_proc_state *)st)
 private int
 s_proc_write_process(stream_state * st, stream_cursor_read * pr,
 		     stream_cursor_write * ignore_pw, bool last)
-{				/* Move data from the stream buffer to the string */
+{
+    /* Move data from the stream buffer to the string */
     /* returned by the procedure, or ask for a callback. */
+    stream_proc_state *const ss = (stream_proc_state *) st;
     uint rcount = pr->limit - pr->ptr;
 
     if (rcount > 0) {
@@ -274,7 +275,6 @@ s_proc_write_process(stream_state * st, stream_cursor_read * pr,
     }
     return ((ss->eof = last) ? EOFC : 0);
 }
-#undef ss
 
 /* Handle an exception (INTC or CALLC) from a write stream */
 /* whose buffer is full. */
@@ -283,6 +283,7 @@ s_handle_write_exception(int status, const ref * fop, const ref * pstate,
 			 int nstate, int (*cont) (P1(os_ptr)))
 {
     stream *ps;
+    stream_proc_state *psst;
 
     switch (status) {
 	case INTC:
@@ -295,14 +296,15 @@ s_handle_write_exception(int status, const ref * fop, const ref * pstate,
     /* Find the stream whose buffer needs emptying. */
     for (ps = fptr(fop); ps->strm != 0;)
 	ps = ps->strm;
-#define psst ((stream_proc_state *)ps->state)
-    if (psst->eof) {		/* This is the final call from closing the stream. */
+    psst = (stream_proc_state *) ps->state;
+    if (psst->eof) {
+	/* This is the final call from closing the stream. */
 	/* Don't run the continuation. */
 	check_estack(5);
 	esp += 5;
 	make_op_estack(esp - 4, zpop);	/* pop the file */
 	make_op_estack(esp - 3, zpop);	/* pop the string returned */
-	/* by the procedure */
+					/* by the procedure */
 	make_false(esp - 1);
     } else {
 	int npush = nstate + 6;
@@ -320,7 +322,6 @@ s_handle_write_exception(int status, const ref * fop, const ref * pstate,
     esp[-2] = psst->proc;
     *esp = psst->data;
     r_set_size(esp, psst->index);
-#undef psst
     return o_push_estack;
 }
 /* Continue a write operation after returning from a procedure callout. */

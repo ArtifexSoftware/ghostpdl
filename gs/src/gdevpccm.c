@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* gdevpccm.c */
+/*Id: gdevpccm.c  */
 /* Support routines for PC color mapping */
 #include "gx.h"
 #include "gsmatrix.h"		/* for gxdevice.h */
@@ -58,16 +58,16 @@ pc_4bit_map_rgb_color(gx_device * dev, gx_color_value r, gx_color_value g,
     static const byte g0r0[4] = tab3(v_black, v_blue, v_lblue);
     static const byte g0r1[4] = tab3(v_red, v_magenta, v_lmagenta);
     static const byte g0r2[4] = tab3(v_lred, v_lmagenta, v_lmagenta);
-    static const byte _ds *g0[4] = tab3(g0r0, g0r1, g0r2);
+    static const byte *const g0[4] = tab3(g0r0, g0r1, g0r2);
     static const byte g1r0[4] = tab3(v_green, v_cyan, v_lcyan);
     static const byte g1r1[4] = tab3(v_brown, v_white, v_lcyan);
     static const byte g1r2[4] = tab3(v_yellow, v_lred, v_lmagenta);
-    static const byte _ds *g1[4] = tab3(g1r0, g1r1, g1r2);
+    static const byte *const g1[4] = tab3(g1r0, g1r1, g1r2);
     static const byte g2r0[4] = tab3(v_lgreen, v_lgreen, v_lcyan);
     static const byte g2r1[4] = tab3(v_lgreen, v_lgreen, v_lcyan);
     static const byte g2r2[4] = tab3(v_yellow, v_yellow, v_bwhite);
-    static const byte _ds *g2[4] = tab3(g2r0, g2r1, g2r2);
-    static const byte _ds *_ds * ga[4] = tab3(g0, g1, g2);
+    static const byte *const g2[4] = tab3(g2r0, g2r1, g2r2);
+    static const byte *const *const ga[4] = tab3(g0, g1, g2);
 
 #undef tab3
 #define q4mask (-1 << (Nb - 2))

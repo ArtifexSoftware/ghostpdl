@@ -1,4 +1,4 @@
-#    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,6 +15,7 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: winint.mak 
 # Common interpreter makefile section for 32-bit MS Windows.
 
 # This makefile must be acceptable to Microsoft Visual C++, Watcom C++,
@@ -23,74 +24,88 @@
 
 
 # Include the generic makefile.
-!include int.mak
+!include $(PSSRCDIR)\int.mak
+
+# Define the C++ compiler invocation for library modules.
+GLCPP=$(CPP) $(CO) $(I_)$(GLI_)$(_I)
+
+# Define the compilation rule for Windows interpreter code.
+# This requires PS*_ to be defined, so it has to come after int.mak.
+PSCCWIN=$(CC_WX) $(CCWINFLAGS) $(I_)$(PSI_)$(_I) $(PSF_)
 
 # ----------------------------- Main program ------------------------------ #
 
-CCBEGIN=$(CCC) *.c
+# We would like to put the icons into GLGENDIR, but that would require
+# fiddling with the .rc files in ways I don't understand.
 
 ICONS=gsgraph.ico gstext.ico
 
 GS_ALL=$(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) lib.tr $(ld_tr) $(GSDLL).res $(GSDLL).def $(ICONS)
+  $(LIB_ALL) $(LIBCTR) lib.tr $(ld_tr) $(GSDLL_OBJ).res $(GSDLL).def $(ICONS)
+
+dwdll_h=$(GLSRC)dwdll.h
+dwimg_h=$(GLSRC)dwimg.h
+dwmain_h=$(GLSRC)dwmain.h
+dwtext_h=$(GLSRC)dwtext.h
 
 # Make the icons from their text form.
 
-gsgraph.ico: gsgraph.icx echogs$(XE)
-        echogs -wb gsgraph.ico -n -X -r gsgraph.icx
+gsgraph.ico: $(GLSRC)gsgraph.icx $(ECHOGS_XE)
+	$(ECHOGS_XE) -wb gsgraph.ico -n -X -r $(GLSRC)gsgraph.icx
 
-gstext.ico: gstext.icx echogs$(XE)
-        echogs -wb gstext.ico -n -X -r gstext.icx
+gstext.ico: $(GLSRC)gstext.icx $(ECHOGS_XE)
+	$(ECHOGS_XE) -wb gstext.ico -n -X -r $(GLSRC)gstext.icx
 
 # resources for short EXE loader (no dialogs)
-$(GS).res: dwmain.rc dwmain.h $(ICONS)
-	$(RCOMP) -i$(INCDIR) -r -fo$(GS).res dwmain.rc
+$(GS_OBJ).res: $(GLSRC)dwmain.rc $(dwmain_h) $(ICONS)
+	$(RCOMP) -i$(INCDIR) -r -fo$(GS_OBJ).res $(GLSRC)dwmain.rc
 
 # resources for main program (includes dialogs)
-$(GSDLL).res: gsdll32.rc gp_mswin.h $(ICONS)
-	$(RCOMP) -i$(INCDIR) -r -fo$(GSDLL).res gsdll32.rc
+$(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS)
+	$(RCOMP) -i$(INCDIR) -r -fo$(GSDLL_OBJ).res $(GLSRC)gsdll32.rc
 
 
 # Modules for small EXE loader.
 
-DWOBJ=dwdll.obj dwimg.obj dwmain.obj dwtext.obj gscdefs.obj
+DWOBJ=$(GLOBJ)dwdll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
 
-dwdll.obj: dwdll.cpp $(AK) dwdll.h gsdll.h
-	$(CPP) $(COMPILE_FOR_EXE) -c dwdll.cpp
+$(GLOBJ)dwdll.obj: $(GLSRC)dwdll.cpp $(AK) $(dwdll_h) $(gsdll_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwdll.obj -c $(GLSRC)dwdll.cpp
 
-dwimg.obj: dwimg.cpp $(AK) dwmain.h dwdll.h dwtext.h dwimg.h gscdefs.h gsdll.h
-	$(CPP) $(COMPILE_FOR_EXE) -c dwimg.cpp
+$(GLOBJ)dwimg.obj: dwimg.cpp $(AK) $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h)\
+ $(gscdefs_h) $(gsdll_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwimg.obj -c $(GLSRC)dwimg.cpp
 
-dwmain.obj: dwmain.cpp $(AK) dwdll.h gscdefs.h gsdll.h
-	$(CPP) $(COMPILE_FOR_EXE) -c dwmain.cpp
+$(GLOBJ)dwmain.obj: dwmain.cpp $(AK) $(dwdll_h) $(gscdefs_h) $(gsdll_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwmain.obj -c $(GLSRC)dwmain.cpp
 
-dwtext.obj: dwtext.cpp $(AK) dwtext.h
-	$(CPP) $(COMPILE_FOR_EXE) -c dwtext.cpp
+$(GLOBJ)dwtext.obj: dwtext.cpp $(AK) $(dwtext_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtext.obj -c $(GLSRC)dwtext.cpp
 
 # Modules for big EXE
 
-DWOBJNO = dwnodll.obj dwimg.obj dwmain.obj dwtext.obj
+DWOBJNO = $(GLOBJ)dwnodll.obj $(GLOBJ)dwimg.obj $(GLOBJ)dwmain.obj $(GLOBJ)dwtext.obj
 
-dwnodll.obj: dwnodll.cpp $(AK) dwdll.h gsdll.h
-	$(CPP) $(COMPILE_FOR_EXE) -c dwnodll.cpp
+$(GLOBJ)dwnodll.obj: $(GLSRC)dwnodll.cpp $(AK) $(dwdll_h) $(gsdll_h)
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwnodll.obj -c $(GLSRC)dwnodll.cpp
 
 # Compile gsdll.c, the main program of the DLL.
 
-gsdll.obj: gsdll.c $(AK) gsdll.h $(ghost_h)
-	$(CCCWIN) gsdll.c
+$(GLOBJ)gsdll.obj: $(GLSRC)gsdll.c $(AK) $(gsdll_h) $(ghost_h)
+	$(PSCCWIN) $(COMPILE_FOR_DLL) $(GLO_)gsdll.$(OBJ) -c $(GLSRC)gsdll.c
 
 # Modules for console mode EXEs
 
-OBJC=dwmainc.obj dwdllc.obj gscdefs.obj
-OBJCNO=dwmainc.obj dwnodllc.obj
+OBJC=$(GLOBJ)dwmainc.obj $(GLOBJ)dwdllc.obj $(GLOBJ)gscdefs.obj $(GLOBJ)gp_wgetv.obj
+OBJCNO=$(GLOBJ)dwmainc.obj $(GLOBJ)dwnodllc.obj
 
-dwmainc.obj: dwmainc.cpp $(AK) dwmain.h dwdll.h gscdefs.h gsdll.h
-	$(CPP) $(COMPILE_FOR_CONSOLE_EXE) -c dwmainc.cpp
+$(GLOBJ)dwmainc.obj: $(GLSRC)dwmainc.cpp $(AK) $(dwmain_h) $(dwdll_h) $(gscdefs_h) $(gsdll_h)
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwmainc.obj -c $(GLSRC)dwmainc.cpp
 
-dwdllc.obj: dwdll.cpp $(AK) dwdll.h gsdll.h
-	$(CPP) $(COMPILE_FOR_CONSOLE_EXE) -c $(CCOBJNAME)dwdllc.obj dwdll.cpp
+$(GLOBJ)dwdllc.obj: $(GLSRC)dwdll.cpp $(AK) $(dwdll_h) $(gsdll_h)
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwdllc.obj -c $(GLSRC)dwdll.cpp
 
-dwnodllc.obj: dwnodll.cpp $(AK) dwdll.h gsdll.h
-	$(CPP) $(COMPILE_FOR_CONSOLE_EXE) -c $(CCOBJNAME)dwnodllc.obj dwnodll.cpp
+$(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.cpp $(AK) $(dwdll_h) $(gsdll_h)
+	$(GLCPP) $(COMPILE_FOR_CONSOLE_EXE) $(GLO_)dwnodllc.obj -c $(GLSRC)dwnodll.cpp
 
 # end of winint.mak

@@ -1,22 +1,22 @@
-/* Copyright (C) 1994 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* istruct.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: istruct.h  */
 /* Interpreter-level extension of gsstruct.h */
 
 #ifndef istruct_INCLUDED
@@ -30,21 +30,40 @@
 /* This is defined in igc.c and exported for isave.c. */
 extern_st(st_refs);
 
-/* Relocate a pointer to a ref[_packed]. */
-ptr_proc_reloc(gs_reloc_ref_ptr, ref_packed);
+/*
+ * Extend the GC procedure vector to include refs.
+ */
+#define refs_proc_reloc(proc)\
+  void proc(P3(ref_packed *from, ref_packed *to, gc_state_t *gcst))
+typedef struct gc_procs_with_refs_s {
+    gc_procs_common;
+    /* Relocate a pointer to a ref[_packed]. */
+    ptr_proc_reloc((*reloc_ref_ptr), ref_packed);
+    /* Relocate a block of ref[_packed]s. */
+    refs_proc_reloc((*reloc_refs));
+} gc_procs_with_refs_t;
 
-/* Relocate a block of ref[_packed]s. */
-void gs_reloc_refs(P3(ref_packed *from, ref_packed *to, gc_state_t *gcst));
+#undef gc_proc
+#define gc_proc(gcst, proc) ((*(const gc_procs_with_refs_t **)(gcst))->proc)
 
-#ifdef DPNEXT
-#define ENUM_RETURN_REF(typ, elt)\
-  do { *pep = (const void *)&((typ *)vptr)->elt; return ptr_ref_type; } while (0)
-#define ENUM_REF(i, typ, elt)\
-  case i: ENUM_RETURN_REF(typ, elt)
-#define RELOC_REF(typ, elt)\
-  gs_reloc_refs( (ref_packed *)&((typ *)vptr)->elt,\
-		 (ref_packed *)(&((typ *)vptr)->elt + 1), gcst)
-#endif
+/*
+ * Define enumeration and relocation macros analogous to those for
+ * structures and strings.  (We should go back and change the names of
+ * those macros to be consistent which these, which are better, but it's
+ * not worth the trouble.)
+ */
+#define ENUM_RETURN_REF(ptr)\
+  BEGIN *pep = (const void *)(ptr); return ptr_ref_type; END
+#define ENUM_RETURN_REF_MEMBER(typ, memb)\
+  ENUM_RETURN_REF(&((typ *)vptr)->memb)
+#define RELOC_REF_PTR_VAR(ptrvar)\
+  ptrvar = (*gc_proc(gcst, reloc_ref_ptr))((const void *)(ptrvar), gcst)
+#define RELOC_REF_PTR_MEMBER(typ, memb)\
+  RELOC_REF_PTR_VAR(((typ *)vptr)->memb)
+#define RELOC_REFS(from, upto)\
+  (*gc_proc(gcst, reloc_refs))((ref_packed *)(from), (ref_packed *)(upto), gcst)
+#define RELOC_REF_VAR(refvar)\
+  RELOC_REFS(&(refvar), &(refvar) + 1)
 
 /*
  * Define an object allocated as a struct, but actually containing refs.
@@ -62,4 +81,4 @@ struct_proc_reloc_ptrs(ref_struct_reloc_ptrs);
 #define gs_private_st_ref_struct(stname, stype, sname)\
   gs__st_ref_struct(private_st, stname, stype, sname)
 
-#endif					/* istruct_INCLUDED */
+#endif /* istruct_INCLUDED */

@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,18 +15,15 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: pdf_draw.ps 
 % pdf_draw.ps
 % PDF drawing operations (graphics, text, and images).
 
-% We don't handle the following PDF elements yet (identified by
-% page number in the reference manual):
-%	style strings (63-64), except in a few known fonts
-%	font descriptor resources (71-75), except for MissingWidth
-%	text clipping modes (104)
+% We don't handle the following PDF 1.0/1.1 elements yet: (identified by
+%	style strings, except in a few known fonts
+%	font descriptor resources, except for MissingWidth
+%	text clipping modes
 %		What do these mean??
-
-% We handle the following PDF 1.2 constructs:
-%	gs operator (but not functions)
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
@@ -42,15 +39,20 @@ pdfdict begin
 
 % ---------------- Functions ---------------- %
 
-/resolvefunction {	% <fndict> resolvefunction <function>
+/fnrdict mark
+  0 { .resolvefn0 }
+  2 { }
+  3 { .resolvefn3 }
+.dicttomark readonly def
+
+/.resolvefn0 {
 		% Don't lose our place in PDFfile.
   PDFfile fileposition exch
   dup true resolvestream
 		% The stream isn't positionable, so read all the data now.
-		% Note that we only support FunctionType 0.
 		% Stack: filepos fndict stream
-  1 index /Range get length 2 idiv 2 index /BitsPerSample get mul
-  2 index /Size get { mul } forall
+  1 index /Range oget length 2 idiv 2 index /BitsPerSample oget mul
+  2 index /Size oget { mul } forall
   7 add 8 idiv string
   1 index exch readstring pop exch closefile
 		% Stack: filepos fndict data
@@ -60,100 +62,244 @@ pdfdict begin
   exch PDFfile exch setfileposition
 } bdef
 
+/.resolvefn3 {
+  dup /Functions oget mark exch dup { resolvefunction } forall
+  counttomark -1 roll astore cleartomark
+} bdef
+
+/resolvefunction {	% <fndict> resolvefunction <function>
+  dup /FunctionType oget //fnrdict exch get exec
+} bdef
+
+/resolveidfunction {
+  dup /Identity eq { { } } { resolvefunction } ifelse
+} bdef
+
+% ---------------- Halftones ---------------- %
+
+/spotfunctions mark
+  /Round {
+    abs exch abs 2 copy add 1 le {
+      dup mul exch dup mul add 1 exch sub 
+    } {
+      1 sub dup mul exch 1 sub dup mul add 1 sub
+    } ifelse
+  }
+  /Diamond {
+    abs exch abs 2 copy add .75 le {
+      dup mul exch dup mul add 1 exch sub
+    } {
+      2 copy add 1.23 le {
+	.85 mul add 1 exch sub
+      } {
+	1 sub dup mul exch 1 sub dup mul add 1 sub
+      } ifelse
+    } ifelse
+  }
+  /Ellipse {
+    abs exch abs 2 copy 3 mul exch 4 mul add 3 sub dup 0 lt {
+      pop dup mul exch .75 div dup mul add 4 div 1 exch sub
+    } {
+      dup 1 gt {
+	pop 1 exch sub dup mul exch 1 exch sub
+	.75 div dup mul add 4 div 1 sub
+      } {
+	.5 exch sub exch pop exch pop
+      } ifelse
+    } ifelse
+  }
+  /EllipseA { dup mul .9 mul exch dup mul add 1 exch sub }
+  /InvertedEllipseA { dup mul .9 mul exch dup mul add 1 sub }
+  /EllipseB { dup 5 mul 8 div mul exch dup mul exch add sqrt 1 exch sub }
+  /EllipseC { dup mul .9 mul exch dup mul add 1 exch sub }
+  /InvertedEllipseC { dup mul .9 mul exch dup mul add 1 sub }
+  /Line { exch pop abs neg }
+  /LineX { pop }
+  /LineY { exch pop }
+  /Square { abs exch abs 2 copy lt { exch } if pop neg }
+  /Cross { abs exch abs 2 copy gt { exch } if pop neg }
+  /Rhomboid { abs exch abs 0.9 mul add 2 div }
+  /DoubleDot { 2 {360 mul sin 2 div exch } repeat add }
+  /InvertedDoubleDot { 2 {360 mul sin 2 div exch } repeat add neg }
+  /SimpleDot { dup mul exch dup mul add 1 exch sub }
+  /InvertedSimpleDot { dup mul exch dup mul add 1 sub }
+  /CosineDot { 180 mul cos exch 180 mul cos add 2 div }
+  /Double { exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add }
+  /InvertedDouble {
+    exch 2 div exch 2 { 360 mul sin 2 div exch } repeat add neg
+  }
+.dicttomark readonly def
+
+/htrdict mark
+  1 { .resolveht1 }
+  5 { .resolveht5 }
+	% We don't support types 6, 10, or 16 yet.
+.dicttomark readonly def
+
+/.resolveht1 {
+  mark exch {
+    oforce
+    1 index /SpotFunction eq {
+      dup type /nametype eq
+	{ //spotfunctions exch get } { resolvefunction }
+      ifelse
+    } {
+      1 index /TransferFunction eq {
+	resolveidfunction
+      } if
+    } ifelse
+  } forall .dicttomark
+} bdef
+
+/.resolveht5 {
+  mark exch {
+    oforce dup type /dicttype eq { resolvehalftone } if
+  } forall .dicttomark
+} bdef
+
+/resolvehalftone {	% <dict> resolvehalftone <halftone>
+  dup /HalftoneType get //htrdict exch get exec
+} bdef
+
 % ---------------- Graphics state management ---------------- %
 
+/cmmatrix matrix def
 drawopdict begin
 			% Graphics state stack
   /q { q } def
   /Q { Q } def
 			% Graphics state setting
-  /cm { cm } def
-  /i { i } def
-  /J { J } def
-  /d { d } def
-  /j { j } def
-  /w { w } def
-  /M { M } def
+  /cm { //cmmatrix astore concat } def
+  /i /setflat load def
+  /J /setlinecap load def
+  /d /setdash load def
+  /j /setlinejoin load def
+  /w /setlinewidth load def
+  /M /setmiterlimit load def
   /gs { gs } def
 end
 
 /gsparamdict mark
   /Type { pop }
-  /SA { /setstrokeadjust 1 # }
-  /OP { /setoverprint 1 # }
-  /BG
-   { dup /Identity eq
-      { pop { } /setblackgeneration 1 #
-      }
-      {		%****** DUMMY ******
-	pop
-      }
-     ifelse
-   }
-  /UCR
-   { dup /Identity eq
-      { pop { } /setundercolorremoval 1 #
-      }
-      {		%****** DUMMY ******
-	pop
-      }
-     ifelse
-   }
-  /TR
-   { dup /Identity eq
-      { pop { } /settransfer 1 #
-      }
-      {		%****** DUMMY ******
-	pop
-      }
-     ifelse
-   }
-  /HT
-   { dup /Default eq
-      { pop /.setdefaultscreen 0 #
-      }
-      {		%****** DUMMY ******
-	pop
-      }
-     ifelse
-   }
-  /HTP { oget aload pop /sethalftonephase 2 # }
+  /SA { setstrokeadjust }
+  /OP { setoverprint }
+  /BG { resolveidfunction setblackgeneration }
+  /UCR { resolveidfunction setundercolorremoval }
+  /TR { resolveidfunction settransfer }
+  /HT {
+    dup /Default eq {
+      pop .setdefaultscreen
+    } {
+	%****** NOT FINISHED ******
+      resolvehalftone sethalftone
+    } ifelse
+  }
+  /HTP { aload pop sethalftonephase }
+  /SM { setsmoothness }
+  /Font { aload pop Tf }
+  /LW { setlinewidth }
+  /LC { setlinecap }
+  /LJ { setlinejoin }
+  /ML { setmiterlimit }
+  /D { aload pop setdash }
+  /FL { setflat }
+  /RI { ri }
 .dicttomark readonly def
-/gs			% <gsres> gs -
- { Page /ExtGState rget
-    {  { oforce exch gsparamdict exch .knownget { exec } { pop } ifelse }
-      forall
-    }
-   if
- } bdef
+/gs {			% <gsres> gs -
+  Page /ExtGState rget {
+    { oforce exch gsparamdict exch .knownget { exec } { pop } ifelse }
+    forall
+  } if
+} bdef
 
 % ---------------- Color setting ---------------- %
 
+% The keys here are resolved (PostScript, not PDF) color space names.
 /csncompdict mark
-  /DeviceGray 1
-  /CalGray 1
-  /DeviceRGB 3
-  /CalRGB 3
-  /Lab 3
-  /DeviceCMYK 4
-  /CalCMYK 4
-  /Separation 1
+  /DeviceGray { pop 1 }
+  /DeviceRGB { pop 3 }
+  /DeviceCMYK { pop 4 }
+  /CIEBasedA { pop 1 }
+  /CIEBasedABC { pop 3 }
+  /Separation { pop 1 }
+  /DeviceN { 2 oget length }
+.dicttomark readonly def
+
+% Perhaps some of the values in the following need to be modified
+% depending on the WhitePoint value....
+/cslabinit mark
+  /DecodeABC [{16 add 116 div} bind {500 div} bind {200 div} bind]
+  /MatrixABC [1 1 1 1 0 0 0 0 -1]
+  /DecodeLMN [
+    {dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse
+     0.9505 mul} bind
+    {dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse
+     } bind
+    {dup 6 29 div ge {dup dup mul mul} {4 29 div sub 108 841 div mul} ifelse
+     1.0890 mul} bind
+  ]
 .dicttomark readonly def
 
 /csrdict mark
   /DeviceGray {
-    /DefaultGray Page /ColorSpace rget { exch pop } if
+    /DefaultGray Page /ColorSpace rget { exch pop resolvecolorspace } if
   }
-  /CalGray { }
   /DeviceRGB {
-    /DefaultRGB Page /ColorSpace rget { exch pop } if
+    /DefaultRGB Page /ColorSpace rget { exch pop resolvecolorspace } if
   }
-  /CalRGB { }
-  /Lab { }
   /DeviceCMYK { }
-  /CalCMYK { }
-  /Indexed	%****** SHOULD RESOLVE BASE SPACE *****
-   { dup 3 oget dup type /stringtype eq
+  /CalGray {
+    1 oget dup /Gamma knownoget {
+      exch dup length 1 add dict .copydict
+      dup /DecodeA 4 -1 roll /exp load 2 packedarray cvx put
+    } if
+    /CIEBasedA exch 2 array astore
+  }
+  /CalRGB {
+    1 oget dup /Gamma known 1 index /Matrix known or {
+      dup length 2 add dict .copydict
+      dup /Matrix knownoget { 1 index /MatrixABC 3 -1 roll put } if
+      dup /Gamma knownoget {
+        [ exch { /exp load 2 packedarray cvx } forall
+        ] 1 index /DecodeABC 3 -1 roll put
+      } if
+    }
+    if /CIEBasedABC exch 2 array astore 
+  }
+  /CalCMYK {
+    pop /DeviceCMYK		% not defined by Adobe
+  }
+  /Lab {
+    1 oget dup length 3 add dict .copydict
+    dup /Range knownoget not { [-100 100 -100 100] } if
+    [-100 0 null null null null] dup 2 4 -1 roll putinterval
+    1 index /RangeABC 3 -1 roll put
+    //cslabinit exch copy
+    /CIEBasedABC exch 2 array astore
+  }
+  /ICCBased {
+		% Since the PostScript interpreter doesn't support these yet,
+		% always substitute an alternate space.
+    dup /Alternate knownoget {
+      exch pop
+    } {
+      /N get { null /DeviceGray null /DeviceRGB /DeviceCMYK } exch get
+    } ifelse resolvecolorspace
+  }
+  /Separation {
+    dup 2 2 copy oget resolvecolorspace put
+    dup 3 oget resolvefunction
+    1 index 3 3 -1 roll put
+  }
+  /DeviceN {
+    dup 1 oget pop		% just force it
+    dup 2 2 copy oget resolvecolorspace put
+    dup 3 oget resolvefunction
+    1 index 3 3 -1 roll put
+  }
+  /Indexed
+   { dup 1 2 copy oget resolvecolorspace put
+     dup 3 oget dup type /stringtype eq
       { pop
       }
       {		% The color lookup table is a stream.
@@ -161,10 +307,12 @@ end
 	PDFfile fileposition 3 1 roll
 	true resolvestream
 	1 index 2 get 1 add
-	csncompdict 3 index 1 get
-	  dup type /arraytype eq { 0 get } if get mul
+		% Stack: filepos cspace lookupstream len
+	2 index 1 get	% basespace
+	  dup dup type /arraytype eq { 0 get } if
+	  //csncompdict exch get exec mul
 	string readstring pop
-		% Stack: cspace filepos table
+		% Stack: filepos cspace table
 	1 index 3 3 -1 roll put
 	exch PDFfile exch setfileposition
       }
@@ -180,26 +328,14 @@ end
       }
      if
    }
-  /Separation	%****** SHOULD RESOLVE ALTERNATIVE SPACE ******
-   {		% Resolve the tintTransform function.
-     dup 3 oget resolvefunction
-     1 index 3 3 -1 roll put
-   }
 .dicttomark readonly def
 
-/csgray			% <op> <csop> csgray -
- { /DeviceGray resolvecolorspace
-   dup /DeviceGray eq { pop } { exch 3 -1 roll } ifelse
-   pop cvx exec
- } bdef
-/csrgb			% <op> <csop> csrgb -
- { /DeviceRGB resolvecolorspace
-   dup /DeviceRGB eq { pop } { exch 3 -1 roll } ifelse
-   pop cvx exec
- } bdef
-/cscmyk			% <op> <csop> cscmyk -
- { pop cvx exec
- } bdef
+/cssubst {		% <csname> cssubst <cspace'> true
+			% <csname> cssubst false
+  dup resolvecolorspace
+  dup 1 index ne { exch pop true } { pop pop false } ifelse
+} bdef
+
 /csresolve		% <csresourcename> csresolve <cspace>
  { dup Page /ColorSpace rget
     { exch pop resolvecolorspace }
@@ -215,16 +351,16 @@ end
   } ifelse
 } bdef
 
-/cset		% <c0> ... [- <sc1> <sc2> <sc3> <sc4> <sc5>] cset -
+/scresolve	% <c0> ... scresolve <multi>
  {		% We can't really make sc[n] and SC[N] work, because
 		% the color space information isn't available at
 		% conversion time; so we hack it by assuming that
 		% all the operands on the stack are used, and that
 		% if the top operand is a name, it's a Pattern resource.
-   1 index type /nametype eq
-    { exch Page /Pattern rget { resolvepattern } { null } ifelse exch }
+   dup type /nametype eq
+    { Page /Pattern rget { resolvepattern } { null } ifelse }
    if
-   count 1 sub get exec
+   count 1 gt
  } bdef
 /resolvepattern		% <patternstreamdict> resolvepattern <patterndict>
  {		% Don't do the resolvestream now: just capture the data
@@ -248,17 +384,17 @@ end
  } bdef
 
 drawopdict begin
-  /g { /g { cs sc1 } csgray } bdef
-  /rg { /rg { cs sc3 } csrgb } bdef
-  /k { /k { cs sc4 } cscmyk } bdef
+  /g { /DeviceGray cssubst { cs sc1 } { g } ifelse } bdef
+  /rg { /DeviceRGB cssubst { cs sc* } { rg } ifelse } bdef
+  /k { k } bdef
   /cs { csresolve cs } bdef
-  /sc { { null sc1 sc2 sc3 sc4 sc5 } cset } bdef
+  /sc { scresolve { sc* } { sc1 } ifelse } bdef
   /scn /sc load def
-  /G { /G { CS SC1 } csgray } bdef
-  /RG { /RG { CS SC3 } csrgb } bdef
-  /K { /K { CS SC4 } cscmyk } bdef
+  /G { /DeviceGray cssubst { CS SC1 } { G } ifelse } bdef
+  /RG { /DeviceRGB cssubst { CS SC* } { RG } ifelse } bdef
+  /K { K } bdef
   /CS { csresolve CS } bdef
-  /SC { { null SC1 SC2 SC3 SC4 SC5 } cset } bdef
+  /SC { scresolve { SC* } { SC1 } ifelse } bdef
   /SCN /SC load def
 end
 
@@ -266,13 +402,16 @@ end
 
 drawopdict begin
 			% Path construction
-  /m { m } def
-  /l { l } def
-  /c { c } def
-  /v { v } def
-  /y { y } def
-  /re { re } def
-  /h { h } def
+  /m /moveto load def
+  /l /lineto load def
+  /c /curveto load def
+  /v { currentpoint 6 2 roll curveto } def
+  /y { 2 copy curveto } def
+  /re {
+   4 2 roll moveto  exch dup 0 rlineto  0 3 -1 roll rlineto  neg 0 rlineto
+   closepath
+  } def
+  /h /closepath load def
 			% Path painting and clipping
   /n { n } def
   /S { S } def
@@ -292,23 +431,27 @@ end
 /xobjectprocs mark		% <dict> -proc- -
   /Image { DoImage }
   /Form { DoForm }
+  /PS { DoPS }
 .dicttomark readonly def
 
+% Note that the keys in defaultdecodedict are resolved (PostScript, not PDF)
+% color space names.
+/01_1 [0 1] readonly def
+/01_3 [0 1 0 1 0 1] readonly def
+/01_4 [0 1 0 1 0 1 0 1] readonly def
 /defaultdecodedict mark
-  /DeviceGray [0 1] readonly
-  /CalGray 1 index
-  /DeviceRGB [0 1 0 1 0 1] readonly
-  /CalRGB 1 index
-  /Lab
-   { 0 100 2 index 1 get /Range .knownget not { {-100 100 -100 100} } if
-     aload pop 6 array astore readonly
-   } bind
-  /DeviceCMYK [0 1 0 1 0 1 0 1] readonly
-  /CalCMYK 1 index
-  /Separation [0 1] readonly
+  /DeviceGray { pop //01_1 }
+  /DeviceRGB { pop //01_3 }
+  /DeviceCMYK { pop //01_4 }
+  /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if }
+  /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if }
+  /Separation { pop //01_1 }
+  /DeviceN {
+    dup 1 oget length [ exch {0 1} repeat ] readonly
+  }
 .dicttomark readonly def
 
-/DoImage
+/makeimagedict
  { dup length dict
    1 index /ColorSpace knownoget
     { resolvecolorspace
@@ -332,7 +475,7 @@ end
        }
        { ColorSpace dup type /arraytype eq { 0 get } if dup /Indexed eq
 	  { pop [ 0 1 BitsPerComponent bitshift 1 sub ] }
-	  { defaultdecodedict exch get exec }
+	  { defaultdecodedict exch get ColorSpace exch exec }
 	 ifelse
        }
       ifelse
@@ -340,32 +483,48 @@ end
    if def
    /Interpolate 2 copy knownoget { def } { pop } ifelse
    /ImageMatrix Width 0 0 Height neg 0 Height 6 array astore def
-		% Define DataSource as the width of the row buffer,
-		% which is what is needed if we're writing PostScript.
-   /DataSource 
-     Width BitsPerComponent mul
-     ImageMask not { Decode length 2 idiv mul } if
-     7 add 8 idiv
-   def
 		% Even though we're going to read data,
 		% pass false to resolvestream so that
 		% it doesn't try to use Length (which may not be present).
-   false resolvestream /Is_stream exch store
-   currentdict end ID
- } bdef
-% Redefine Is, which constructs the data source for the image,
-% to retrieve the stream.  (pdf_2ps.ps redefines Is to copy the data too.)
-userdict /Is_stream null put
-/Is		% <imagedict> Is <imagedict> <datasource>
- { Is_stream
- } bdef
+   false resolvestream
+     /DataSource exch def
+  currentdict end
+} bdef
 
-/DoForm
- { dup [ /pop load 2 index
-    { false resolvestream pdfopdict .pdfrun }
-   aload pop ] cvx /PaintProc exch put
-   execform
- } bdef
+/DoImage {
+  makeimagedict
+  dup /Mask knownoget {
+    dup type /arraytype eq {
+      1 index /ImageType 4 put
+      1 index /MaskColor 3 -1 roll put
+    } {
+		% Mask is a stream, another Image XObject.
+      makeimagedict
+      4 dict begin
+      /ImageType 3 def
+      /InterleaveType 3 def
+      /MaskDict exch def
+      /DataDict exch def
+      currentdict end
+    } ifelse
+  } if
+  dup /ImageMask get
+   { setfillcolor imagemask }
+   { dup /ColorSpace get csset setcolorspace pop image }
+  ifelse
+} bdef
+
+/DoForm {
+  dup [ /pop load 2 index /Resources knownoget { oforce } { 0 dict } ifelse
+  3 index false /resolvestream cvx
+  pdfopdict /.pdfruncontext cvx
+  ] cvx /PaintProc exch put
+  execform
+} bdef
+
+/DoPS {
+  true resolvestream cvx exec
+} bdef
 
 drawopdict begin
   /Do
@@ -388,7 +547,8 @@ end
 	% Values
   /AHx /ASCIIHexDecode  /A85 /ASCII85Decode  /CC /CalCMYK
   /CCF /CCITTFaxDecode  /CG /CalGray  /CR /CalRGB
-  /DCT /DCTDecode  /CMYK /DeviceCMYK  /G /DeviceGray  /RGB /DeviceRGB
+  /DCT /DCTDecode  /CMYK /DeviceCMYK  /Fl /FlateDecode
+  /G /DeviceGray  /RGB /DeviceRGB
   /I /Indexed  /LZW /LZWDecode  /RL /RunLengthDecode
 .dicttomark readonly def
 /unabbrev		% <obj> unabbrev <obj'>
@@ -441,7 +601,7 @@ drawopdict begin
   /Tj { Tj } def
   /' { ' } def
   /" { " } def
-  /TJ { mark exch aload pop TJ } def
+  /TJ { TJ } def
 end
 
 end			% pdfdict

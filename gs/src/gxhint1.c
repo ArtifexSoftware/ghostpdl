@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1992, 1993, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1992, 1993, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,14 +16,13 @@
    all copies.
  */
 
-/* gxhint1.c */
+/*Id: gxhint1.c  */
 /* Font level hints for Type 1 fonts */
 #include "gx.h"
 #include "gserrors.h"
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
-#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfont1.h"
 #include "gxtype1.h"
@@ -37,13 +36,13 @@
 typedef 
 zone_table(1) a_zone_table;
      typedef stem_table(1) a_stem_table;
-     private void near
+     private void
           compute_snaps(P6(const gs_matrix_fixed *, const a_stem_table *,
 			   stem_snap_table *, int, int, const char *));
-     private alignment_zone *near
+     private alignment_zone *
                     compute_zones(P6(const gs_matrix_fixed *, const font_hints *,
 	const a_zone_table *, const a_zone_table *, alignment_zone *, int));
-     private int near
+     private int
          transform_zone(P4(const gs_matrix_fixed *, const font_hints *,
 			   const float *, alignment_zone *));
 
@@ -172,7 +171,7 @@ compute_font_hints(font_hints * pfh, const gs_matrix_fixed * pmat,
 }
 
 /* Transform one set of stem snap widths. */
-private void near
+private void
 compute_snaps(const gs_matrix_fixed * pmat, const a_stem_table * pst,
 	    stem_snap_table * psst, int from_y, int to_y, const char *tname)
 {
@@ -200,7 +199,7 @@ compute_snaps(const gs_matrix_fixed * pmat, const a_stem_table * pst,
 }
 
 /* Compute the alignment zones for one set of 'blue' values. */
-private alignment_zone *near
+private alignment_zone *
 compute_zones(const gs_matrix_fixed * pmat, const font_hints * pfh,
 	      const a_zone_table * blues, const a_zone_table * family_blues,
 	      alignment_zone * zp, int bottom_count)
@@ -247,7 +246,7 @@ compute_zones(const gs_matrix_fixed * pmat, const font_hints * pfh,
 
 /* Transform a single alignment zone to device coordinates, */
 /* taking axis swapping into account. */
-private int near
+private int
 transform_zone(const gs_matrix_fixed * pmat, const font_hints * pfh,
 	       const float *vp, alignment_zone * zp)
 {

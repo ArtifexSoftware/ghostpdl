@@ -1,4 +1,4 @@
-%    Copyright (C) 1991, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1991, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -15,25 +15,35 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
+% Id: gslp.ps 
 % gslp.ps - format and print text
 
 % This utility provides functionality approximately equivalent to the Unix
 % `enscript' program.  It prints plain text files using a single font.
 % It currently handles tabs and formfeeds, but not backspaces.
-% It only works with fixed-pitch fonts.
-% Standard flags implemented:
+% It will line-wrap when using fixed-pitch fonts.
+% It will also do kerning and width adjustment.
+% Standard switches implemented:
 %	-12BclqRr -b<header> -f<font> -F<hfont> -L<lines> -p<outfile>
-% Sun flags implemented:
+% Sun switches implemented:
 %	-T<n>	set tab width
-% Flags ignored:
+% Switches ignored:
 %	-GghKkmow -# -C -d -J -n -P -S -s -t -v
-% Flags added:
+% Switches added:
+%	--add-to-space <units>
+%		add the given number of 1/72" units to the width of each
+%		space (may be negative)
+%	--add-to-width <units>
+%		add the given number of 1/72" units to the width of each
+%		character (may be negative)
 %	--columns <n>
 %		print in <n> columns
 %	--detect
 %		treat the file as PostScript if it starts with %!
 %	--first-page <n>
 %		start printing at page <n>
+%	--kern <file.afm>
+%		kern using information from the given .AFM file
 %	--last-page <n>
 %		stop printing after page <n>
 %	--(heading|footing)-(left|center|right) <string>
@@ -65,6 +75,8 @@ lpdict begin
 
 % Define the initial values of the printing parameters.
 
+/AddToSpace 0 def
+/AddToWidth 0 def
 /BodyFont null def		% use default
   /defaultBodyFont
     { /Courier find-latin-font Landscape { 7 } { 10 } ifelse scalefont } def
@@ -83,6 +95,7 @@ lpdict begin
 /HeadingFont null def		% use default
   /defaultHeadingFont
     { /Courier-Bold find-latin-font 10 scalefont } def
+/Kern 0 dict def		% no kerning
 /Landscape false def
 /MarginBottom 36 def		% 1/2"
 /MarginLeft 36 def		% 1/2"
@@ -102,6 +115,12 @@ lpdict begin
 % some commands should be executed regardless.
 % lpexec provides for all this.
 
+/lpdef {	% <name> <value> lpdef -
+  OutFile null ne {
+    1 index wosp dup wosp OutFile ( def\n) writestring
+  } if def
+} def
+
 /lpexec		% <arg1> ... <argn> </op> <n> <do_always> lpexec -
  { OutFile null eq
     { pop 1 add true
@@ -117,21 +136,41 @@ lpdict begin
    ifelse
  } def
 
-/lpmoveto
- { /moveto 2 true lpexec
- } def
-/lpshow
- { dup length 0 ne { /show 1 true lpexec } { pop } ifelse
- } def
-/lpsetmyfont
- { dup load setfont
+/lpmoveto {
+  /moveto 2 true lpexec
+} def
+/lpshow {
+  dup length 0 ne {
+    addspace 0 ne {
+      addspace 0 32 
+      addwidth 0 ne {
+	addwidth 0 6 -1 roll /awidthshow 6
+      } {
+	4 -1 roll /widthshow 4
+      } ifelse
+    } {
+      addwidth 0 ne {
+	addwidth 0 3 -1 roll /ashow 3
+      } {
+	/show 1
+      } ifelse
+    } ifelse
+    true lpexec
+  } {
+    pop
+  } ifelse
+} def
+/lpsetmyfont {
+  dup load setfont
    OutFile null ne { cvx /setfont 1 false lpexec } { pop } ifelse
- } def
+} def
 
 % Define some utility procedures.
 
 /banner		% ypos left center right
  { /HFont lpsetmyfont
+   /addspace 0 def /addwidth 0 def
+   /pairkern 0 dict def
    3 -1 roll bannerstring pop 0 4 index pwidth showline2 pop
    exch bannerstring pwidth exch sub 2 div 3 index pwidth showline2 pop
    bannerstring
@@ -160,6 +199,8 @@ lpdict begin
       HeadingLeft HeadingCenter HeadingRight banner
     } if
    /BFont lpsetmyfont
+   /addspace AddToSpace lpdef /addwidth AddToWidth lpdef
+   /pairkern Kern def
  } def
 
 /endpage
@@ -187,9 +228,17 @@ lpdict begin
    grestore exch 1.25 mul exch 1.25 mul
  } def
 
-/wosp
- { OutFile ( ) writestring OutFile exch write==only
- } def
+/wdict {
+  dup length wosp ( dict\n) ws
+  { (dup) ws exch wosp wosp ( put\n) ws } forall
+} def
+/wosp {
+  ( ) ws
+  dup type /dicttype eq { wdict } { OutFile exch write==only } ifelse
+} def
+/ws {
+  OutFile exch writestring
+} def
 
 /outfont		% name font ->
  { OutFile null ne
@@ -253,9 +302,30 @@ lpdict begin
 	% look for \f or \t
    StringFF search { exch pop exch pop } if
    StringTAB search { exch pop exch pop } if
-   dup lpshow
+   dup pairkern length 0 eq {
+     lpshow
+   } {
+     { kproc } exch /kshow 2 true lpexec
+   } ifelse
    length dup 2 index length exch sub getinterval
  } def
+
+/kproc {	% <char1> <char2> kproc -
+  pairkern currentfont /Encoding get 3 index get
+  2 copy known {
+    get currentfont /Encoding get 2 index get
+    2 copy known {
+      get currentfont /FontMatrix get 0 get mul
+    } {
+      pop pop 0
+    } ifelse
+  } {
+    pop pop 0
+  } ifelse
+  addwidth add 2 index 32 eq { addspace add } if
+  dup 0 eq { pop } { 0 rmoveto } ifelse
+  pop pop
+} def
 
 /skip1
  { dup length 1 sub 1 exch getinterval
@@ -267,6 +337,37 @@ lpdict begin
 
 /eprint {	% <string> eprint - -- print a string to stderr
   (%stderr) (w) file dup 3 -1 roll writestring flushfile
+} def
+
+% Read kerning information from a .AFM file.
+
+/readkern {	% <afmfile> readkern <pairkerndict>
+  /mfilename 1 index def
+  (r) file /mfile exch def
+  mfile =string readline pop
+  (StartFontMetrics ) anchorsearch {
+    pop pop
+    /kdict 256 dict def
+    { mfile =string readline pop
+      (EndFontMetrics) anchorsearch { pop pop exit } if
+      (KPX ) anchorsearch {
+	pop token pop cvlit /char1 exch def
+	token pop cvlit /char2 exch def
+	token pop /kern exch def pop
+	kdict char1 .knownget not {
+	  5 dict kdict char1 2 index .growput
+	} if
+	char2 kern .growput
+      } {
+	pop
+      } ifelse
+    } loop kdict
+  } {
+    pop
+    mfilename eprint ( does not begin with StartFontMetrics.\n) eprint
+    0 dict
+  } ifelse
+  mfile closefile
 } def
 
 % The main printing procedure
@@ -321,6 +422,12 @@ lpdict begin
     { (Page height = ) eprint llength e==
       (.\n) eprint flush
     } if
+
+% Write the kerning table, if relevant.
+   OutFile null ne Kern length 0 ne and {
+     (/kproc) ws /kproc load wosp ( def\n) ws
+     (/pairkern) ws Kern wosp ( def\n) ws
+   } if
 
 % Disable stack recording so we can use stopped with readline.
    $error /recordstacks false put
@@ -406,6 +513,8 @@ lpdict begin
        { (Unknown switch: ) eprint eprint (\n) eprint }
       ifelse
     } def
+/--add-to-space { cvr /AddToSpace exch def } def
+/--add-to-width { cvr /AddToWidth exch def } def
 /--columns { cvi 1 max /Columns exch def } def
 /--detect { /DetectFileType true def } def
 /--first-page { cvi /PageFirst exch def } def
@@ -415,6 +524,7 @@ lpdict begin
 /--heading-center { /HeadingCenter exch def   /Headers true def } def
 /--heading-left { /HeadingLeft exch def   /Headers true def } def
 /--heading-right { /HeadingRight exch def   /Headers true def } def
+/--kern { readkern /Kern exch def } def
 /--last-page { cvi /PageLast exch def } def
 /--margin-bottom { cvr 72.0 mul /MarginBottom exch def } def
 /--margin-left { cvr 72.0 mul /MarginLeft exch def } def
@@ -524,10 +634,11 @@ end
       [ (Usage: )
 	/PROGNAME where { pop PROGNAME } { (gslp) } ifelse
 	( [-12BclqRr] [-b<header>] [-f<font>] [-F<hfont>]\n)
-	(        [-L<lines>] [-p<outfile>] [-T<tabwidth>] [--columns <n>]\n)
+	(        [-L<lines>] [-p<outfile>] [-T<tabwidth>]\n)
+	(        [--add-to-(space|width) <units>] [--columns <n>]\n)
 	(        [--detect] [--first-page <page#>] [--last-page <page#>]\n)
 	(        [--(heading|footing)-(left|right|center) <string>]\n)
-	(        [--margin-(top|bottom|left|right) <inches>]\n)
+	(        [--kern <afmfile>] [--margin-(top|bottom|left|right) <inches>]\n)
 	(        [--no-eject-(file|formfeed)] [--spacing <n>] file1 ... filen\n)
       ] { 2 copy writestring pop } forall dup flushfile closefile
     }

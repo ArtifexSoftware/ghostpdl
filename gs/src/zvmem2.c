@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zvmem2.c */
+/*Id: zvmem2.c  */
 /* Level 2 "Virtual memory" operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "estack.h"
 #include "ialloc.h"		/* for ivmspace.h */
@@ -27,17 +26,10 @@
 #include "store.h"
 
 /* Garbage collector control parameters. */
-#define default_vm_threshold_SMALL 20000
-#define default_vm_threshold_LARGE 250000
-#if arch_small_memory
-#  define default_vm_threshold default_vm_threshold_SMALL
-#else
-#  define default_vm_threshold\
-     (gs_if_debug_c('.') ? default_vm_threshold_SMALL :\
-      default_vm_threshold_LARGE)
-#endif
-#define min_vm_threshold 1
-#define max_vm_threshold max_long
+#define DEFAULT_VM_THRESHOLD_SMALL 20000
+#define DEFAULT_VM_THRESHOLD_LARGE 250000
+#define MIN_VM_THRESHOLD 1
+#define MAX_VM_THRESHOLD max_long
 
 /* ------ Local/global VM control ------ */
 
@@ -74,7 +66,11 @@ zgcheck(register os_ptr op)
 
 /* These routines are exported for setuserparams. */
 
-/* <int> setvmthreshold - */
+/*
+ * <int> setvmthreshold -
+ *
+ * This is implemented as a PostScript procedure that calls setuserparams.
+ */
 int
 set_vm_threshold(long val)
 {
@@ -83,11 +79,12 @@ set_vm_threshold(long val)
     if (val < -1)
 	return_error(e_rangecheck);
     else if (val == -1)
-	val = default_vm_threshold;
-    else if (val < min_vm_threshold)
-	val = min_vm_threshold;
-    else if (val > max_vm_threshold)
-	val = max_vm_threshold;
+	val = (gs_debug_c('.') ? DEFAULT_VM_THRESHOLD_SMALL :
+	       DEFAULT_VM_THRESHOLD_LARGE);
+    else if (val < MIN_VM_THRESHOLD)
+	val = MIN_VM_THRESHOLD;
+    else if (val > MAX_VM_THRESHOLD)
+	val = MAX_VM_THRESHOLD;
     gs_memory_gc_status(idmemory->space_global, &stat);
     stat.vm_threshold = val;
     gs_memory_set_gc_status(idmemory->space_global, &stat);
@@ -96,19 +93,13 @@ set_vm_threshold(long val)
     gs_memory_set_gc_status(idmemory->space_local, &stat);
     return 0;
 }
-private int
-zsetvmthreshold(register os_ptr op)
-{
-    int code;
 
-    check_type(*op, t_integer);
-    code = set_vm_threshold(op->value.intval);
-    if (code >= 0)
-	pop(1);
-    return code;
-}
-
-/* <int> vmreclaim - */
+/*
+ * <int> .vmreclaim -
+ *
+ * This implements only immediate garbage collection: enabling and
+ * disabling GC is implemented by calling setuserparams.
+ */
 int
 set_vm_reclaim(long val)
 {
@@ -132,16 +123,12 @@ private int
 zvmreclaim(register os_ptr op)
 {
     check_type(*op, t_integer);
-    if (op->value.intval == 1 || op->value.intval == 2) {	/* Force the interpreter to store its state and exit. */
+    if (op->value.intval == 1 || op->value.intval == 2) {
+	/* Force the interpreter to store its state and exit. */
 	/* The interpreter's caller will do the actual GC. */
 	return_error(e_VMreclaim);
-    } else {
-	int code = set_vm_reclaim(op->value.intval);
-
-	if (code >= 0)
-	    pop(1);
-	return code;
     }
+    return_error(e_rangecheck);
 }
 
 /* ------ Initialization procedure ------ */
@@ -155,7 +142,6 @@ const op_def zvmem2_op_defs[] =
     {"1.setglobal", zsetglobal},
 		/* The rest of the operators are defined only in Level 2. */
     op_def_begin_level2(),
-    {"1setvmthreshold", zsetvmthreshold},
-    {"1vmreclaim", zvmreclaim},
+    {"1.vmreclaim", zvmreclaim},
     op_def_end(0)
 };

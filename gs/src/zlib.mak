@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -15,148 +15,125 @@
 # License requires that the copyright notice and this notice be preserved on
 # all copies.
 
+# Id: zlib.mak 
 # makefile for zlib library code.
+# Users of this makefile must define the following:
+#	GSSRCDIR - the GS library source directory
+#	ZSRCDIR - the source directory
+#	ZGENDIR - the generated intermediate file directory
+#	ZOBJDIR - the object directory
+#	SHARE_ZLIB - 0 to compile zlib, 1 to share
+#	ZLIB_NAME - if SHARE_ZLIB=1, the name of the shared library
 
 # This partial makefile compiles the zlib library for use in Ghostscript.
 # You can get the source code for this library from:
-#   ftp://ftp.uu.net/pub/archiving/zip/zlib/zlib104.zip   (zlib 1.0.4)
-#		or zlib-1.0.4.tar.gz
+#   http://www.cdrom.com/infozip/zlib/
+#   ftp://ftp.cdrom.com/pub/infozip/zlib/
+#	zlib-1.1.1.tar.gz or zlib111.zip (zlib 1.1.1)
 # Please see Ghostscript's `make.txt' file for instructions about how to
 # unpack these archives.
 
-# Define the name of this makefile.
-ZLIB_MAK=zlib.mak
-
-# ZSRCDIR is defined in the platform-specific makefile, not here,
-# as the directory where the zlib sources are stored.
-#ZSRCDIR=zlib
 ZSRC=$(ZSRCDIR)$(D)
-# We would like to define
-#CCCZ=$(CCC) -I$(ZSRCDIR) -Dverbose=-1
-# but the Watcom C compiler has strange undocumented restrictions on what can
-# follow a -D=, and it doesn't allow negative numbers.  Instead, we define
-# (in gs.mak):
-#CCCZ=$(CCC) -I. -I$(ZSRCDIR)
-# and handle the definition of verbose in a different, more awkward way.
+ZGEN=$(ZGENDIR)$(D)
+ZOBJ=$(ZOBJDIR)$(D)
+ZO_=$(O_)$(ZOBJ)
 
-# We keep all of the zlib code in a separate directory so as not to
-# inadvertently mix it up with Aladdin Enterprises' own code.
+# Because the Watcom C runtime (and compiler) substitute space for = in
+# command lines (!), we can't have a -D whose argument begins with -,
+# since this will cause the argument to be interpreted as a switch (!!).
+# ZI_ and ZF_ are defined in gs.mak.
+ZCC=$(CC_) $(I_)$(ZI_)$(_I) $(ZF_) -Dverbose=0-1
+
+# Define the name of this makefile.
+ZLIB_MAK=$(GLSRC)zlib.mak
+
+z.clean: z.config-clean z.clean-not-config-clean
+
+### WRONG.  MUST DELETE OBJ AND GEN FILES SELECTIVELY.
+z.clean-not-config-clean:
+	$(RM_) $(ZOBJ)*.$(OBJ)
+
+z.config-clean:
+	$(RMN_) $(ZGEN)zlib*.dev $(ZGEN)crc32*.dev
+
 ZDEP=$(AK)
-
-# Contrary to what some portability bigots assert as fact, C compilers are
-# not consistent about where they start searching for #included files:
-# some always start by looking in the same directory as the .c file being
-# compiled, before using the search path specified with -I on the command
-# line, while others do not do this.  For this reason, we must explicitly
-# copy and then delete all the .c files, because they need to obtain our
-# modified version of zutil.h.  We must also copy all header files that
-# reference zutil.h directly or indirectly.
 
 # Code common to compression and decompression.
 
-zlibc_=zutil.$(OBJ)
-zlibc.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(zlibc_)
-	$(SETMOD) zlibc $(zlibc_)
+zlibc_=$(ZOBJ)zutil.$(OBJ)
+$(ZGEN)zlibc.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(zlibc_)
+	$(SETMOD) $(ZGEN)zlibc $(zlibc_)
 
-zutil.h: $(ZSRC)zutil.h $(ECHOGS_XE)
-	$(EXP)echogs -w zutil.h -x 23 define verbose -s - -1
-	$(EXP)echogs -a zutil.h -+R $(ZSRC)zutil.h
-
-zutil.$(OBJ): $(ZSRC)zutil.c $(ZDEP) zutil.h
-	$(CP_) $(ZSRC)zutil.c .
-	$(CCCZ) zutil.c
-	$(RM_) zutil.c
+$(ZOBJ)zutil.$(OBJ): $(ZSRC)zutil.c $(ZDEP)
+	$(ZCC) $(ZO_)zutil.$(OBJ) $(C_) $(ZSRC)zutil.c
 
 # Encoding (compression) code.
 
-deflate.h: $(ZSRC)deflate.h zutil.h
-	$(CP_) $(ZSRC)deflate.h .
+$(ZGEN)zlibe.dev: $(MAKEFILE) $(ZGEN)zlibe_$(SHARE_ZLIB).dev
+	$(CP_) $(ZGEN)zlibe_$(SHARE_ZLIB).dev $(ZGEN)zlibe.dev
 
-zlibe.dev: $(MAKEFILE) zlibe_$(SHARE_ZLIB).dev
-	$(CP_) zlibe_$(SHARE_ZLIB).dev zlibe.dev
+$(ZGEN)zlibe_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(ZGEN)zlibe_1 -lib $(ZLIB_NAME)
 
-zlibe_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
-	$(SETMOD) zlibe_1 -lib $(ZLIB_NAME)
+zlibe_=$(ZOBJ)adler32.$(OBJ) $(ZOBJ)deflate.$(OBJ) $(ZOBJ)trees.$(OBJ)
+$(ZGEN)zlibe_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibe_)
+	$(SETMOD) $(ZGEN)zlibe_0 $(zlibe_)
+	$(ADDMOD) $(ZGEN)zlibe_0 -include $(ZGEN)zlibc
 
-zlibe_=adler32.$(OBJ) deflate.$(OBJ) trees.$(OBJ)
-zlibe_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) zlibc.dev $(zlibe_)
-	$(SETMOD) zlibe_0 $(zlibe_)
-	$(ADDMOD) zlibe_0 -include zlibc
+$(ZOBJ)adler32.$(OBJ): $(ZSRC)adler32.c $(ZDEP)
+	$(ZCC) $(ZO_)adler32.$(OBJ) $(C_) $(ZSRC)adler32.c
 
-adler32.$(OBJ): $(ZSRC)adler32.c $(ZDEP)
-	$(CP_) $(ZSRC)adler32.c .
-	$(CCCZ) adler32.c
-	$(RM_) adler32.c
+$(ZOBJ)deflate.$(OBJ): $(ZSRC)deflate.c $(ZDEP)
+	$(ZCC) $(ZO_)deflate.$(OBJ) $(C_) $(ZSRC)deflate.c
 
-deflate.$(OBJ): $(ZSRC)deflate.c $(ZDEP) deflate.h
-	$(CP_) $(ZSRC)deflate.c .
-	$(CCCZ) deflate.c
-	$(RM_) deflate.c
-
-trees.$(OBJ): $(ZSRC)trees.c $(ZDEP) deflate.h
-	$(CP_) $(ZSRC)trees.c .
-	$(CCCZ) trees.c
-	$(RM_) trees.c
+$(ZOBJ)trees.$(OBJ): $(ZSRC)trees.c $(ZDEP)
+	$(ZCC) $(ZO_)trees.$(OBJ) $(C_) $(ZSRC)trees.c
 
 # The zlib filters per se don't need crc32, but libpng versions starting
 # with 0.90 do.
 
-crc32.dev: $(MAKEFILE) crc32_$(SHARE_ZLIB).dev
-	$(CP_) crc32_$(SHARE_ZLIB).dev crc32.dev
+$(ZGEN)crc32.dev: $(MAKEFILE) $(ZGEN)crc32_$(SHARE_ZLIB).dev
+	$(CP_) $(ZGEN)crc32_$(SHARE_ZLIB).dev $(ZGEN)crc32.dev
 
-crc32_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
-	$(SETMOD) crc32_1 -lib $(ZLIB_NAME)
+$(ZGEN)crc32_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(ZGEN)crc32_1 -lib $(ZLIB_NAME)
 
-crc32_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) crc32.$(OBJ)
-	$(SETMOD) crc32_0 crc32.$(OBJ)
+$(ZGEN)crc32_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(ZOBJ)crc32.$(OBJ)
+	$(SETMOD) $(ZGEN)crc32_0 $(ZOBJ)crc32.$(OBJ)
 
-crc32.$(OBJ): $(ZSRC)crc32.c $(ZDEP) deflate.h
-	$(CP_) $(ZSRC)crc32.c .
-	$(CCCZ) crc32.c
-	$(RM_) crc32.c
+$(ZOBJ)crc32.$(OBJ): $(ZSRC)crc32.c $(ZDEP)
+	$(ZCC) $(ZO_)crc32.$(OBJ) $(C_) $(ZSRC)crc32.c
 
 # Decoding (decompression) code.
 
-zlibd.dev: $(MAKEFILE) zlibd_$(SHARE_ZLIB).dev
-	$(CP_) zlibd_$(SHARE_ZLIB).dev zlibd.dev
+$(ZGEN)zlibd.dev: $(MAKEFILE) $(ZGEN)zlibd_$(SHARE_ZLIB).dev
+	$(CP_) $(ZGEN)zlibd_$(SHARE_ZLIB).dev $(ZGEN)zlibd.dev
 
-zlibd_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
-	$(SETMOD) zlibd_1 -lib $(ZLIB_NAME)
+$(ZGEN)zlibd_1.dev: $(MAKEFILE) $(ZLIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(ZGEN)zlibd_1 -lib $(ZLIB_NAME)
 
-zlibd1_=infblock.$(OBJ) infcodes.$(OBJ) inffast.$(OBJ)
-zlibd2_=inflate.$(OBJ) inftrees.$(OBJ) infutil.$(OBJ)
+zlibd1_=$(ZOBJ)infblock.$(OBJ) $(ZOBJ)infcodes.$(OBJ) $(ZOBJ)inffast.$(OBJ)
+zlibd2_=$(ZOBJ)inflate.$(OBJ) $(ZOBJ)inftrees.$(OBJ) $(ZOBJ)infutil.$(OBJ)
 zlibd_ = $(zlibd1_) $(zlibd2_)
-zlibd_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) zlibc.dev $(zlibd_)
-	$(SETMOD) zlibd_0 $(zlibd1_)
-	$(ADDMOD) zlibd_0 -obj $(zlibd2_)
-	$(ADDMOD) zlibd_0 -include zlibc
+$(ZGEN)zlibd_0.dev: $(ZLIB_MAK) $(ECHOGS_XE) $(ZGEN)zlibc.dev $(zlibd_)
+	$(SETMOD) $(ZGEN)zlibd_0 $(zlibd1_)
+	$(ADDMOD) $(ZGEN)zlibd_0 -obj $(zlibd2_)
+	$(ADDMOD) $(ZGEN)zlibd_0 -include $(ZGEN)zlibc
 
-infblock.$(OBJ): $(ZSRC)infblock.c $(ZDEP) zutil.h
-	$(CP_) $(ZSRC)infblock.c .
-	$(CCCZ) infblock.c
-	$(RM_) infblock.c
+$(ZOBJ)infblock.$(OBJ): $(ZSRC)infblock.c $(ZDEP)
+	$(ZCC) $(ZO_)infblock.$(OBJ) $(C_) $(ZSRC)infblock.c
 
-infcodes.$(OBJ): $(ZSRC)infcodes.c $(ZDEP) zutil.h
-	$(CP_) $(ZSRC)infcodes.c .
-	$(CCCZ) infcodes.c
-	$(RM_) infcodes.c
+$(ZOBJ)infcodes.$(OBJ): $(ZSRC)infcodes.c $(ZDEP)
+	$(ZCC) $(ZO_)infcodes.$(OBJ) $(C_) $(ZSRC)infcodes.c
 
-inffast.$(OBJ): $(ZSRC)inffast.c $(ZDEP) zutil.h
-	$(CP_) $(ZSRC)inffast.c .
-	$(CCCZ) inffast.c
-	$(RM_) inffast.c
+$(ZOBJ)inffast.$(OBJ): $(ZSRC)inffast.c $(ZDEP)
+	$(ZCC) $(ZO_)inffast.$(OBJ) $(C_) $(ZSRC)inffast.c
 
-inflate.$(OBJ): $(ZSRC)inflate.c $(ZDEP) zutil.h
-	$(CP_) $(ZSRC)inflate.c .
-	$(CCCZ) inflate.c
-	$(RM_) inflate.c
+$(ZOBJ)inflate.$(OBJ): $(ZSRC)inflate.c $(ZDEP)
+	$(ZCC) $(ZO_)inflate.$(OBJ) $(C_) $(ZSRC)inflate.c
 
-inftrees.$(OBJ): $(ZSRC)inftrees.c $(ZDEP) zutil.h
-	$(CP_) $(ZSRC)inftrees.c .
-	$(CCCZ) inftrees.c
-	$(RM_) inftrees.c
+$(ZOBJ)inftrees.$(OBJ): $(ZSRC)inftrees.c $(ZDEP)
+	$(ZCC) $(ZO_)inftrees.$(OBJ) $(C_) $(ZSRC)inftrees.c
 
-infutil.$(OBJ): $(ZSRC)infutil.c $(ZDEP) zutil.h
-	$(CP_) $(ZSRC)infutil.c .
-	$(CCCZ) infutil.c
-	$(RM_) infutil.c
+$(ZOBJ)infutil.$(OBJ): $(ZSRC)infutil.c $(ZDEP)
+	$(ZCC) $(ZO_)infutil.$(OBJ) $(C_) $(ZSRC)infutil.c

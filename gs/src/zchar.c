@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,10 +16,9 @@
    all copies.
  */
 
-/* zchar.c */
+/*Id: zchar.c  */
 /* Character operators */
 #include "ghost.h"
-#include "errors.h"
 #include "oper.h"
 #include "gsstruct.h"
 #include "gxarith.h"
@@ -200,7 +199,7 @@ finish_stringwidth(register os_ptr op)
 /* Common code for charpath and .charboxpath. */
 private int
 zchar_path(register os_ptr op,
-     int (*init) (P5(gs_show_enum *, gs_state *, const char *, uint, bool)))
+     int (*init)(P5(gs_show_enum *, gs_state *, const char *, uint, bool)))
 {
     gs_show_enum *penum;
     int code;
@@ -209,7 +208,7 @@ zchar_path(register os_ptr op,
     code = op_show_setup(op - 1, &penum);
     if (code != 0)
 	return code;
-    if ((code = (*init) (penum, igs, (char *)op[-1].value.bytes, r_size(op - 1), op->value.boolval)) < 0) {
+    if ((code = (*init)(penum, igs, (char *)op[-1].value.bytes, r_size(op - 1), op->value.boolval)) < 0) {
 	ifree_object(penum, "op_show_enum_setup");
 	return code;
     }
@@ -234,7 +233,6 @@ int
 zsetcachedevice(register os_ptr op)
 {
     double wbox[6];
-
     gs_show_enum *penum = op_show_find();
     int code = num_params(op, 6, wbox);
 
@@ -370,13 +368,8 @@ op_show_setup(os_ptr op, gs_show_enum ** ppenum)
 }
 int
 op_show_enum_setup(os_ptr op, gs_show_enum ** ppenum)
-{				/* Provide a special "hook" for an unusual application */
-    /* that needs to be able to intervene before any operator */
-    /* that renders or measures characters. */
-#ifdef OP_SHOW_ENUM_SETUP_HOOK
-    OP_SHOW_ENUM_SETUP_HOOK
-#endif
-	check_estack(snumpush + 2);
+{
+    check_estack(snumpush + 2);
     if ((*ppenum = gs_show_enum_alloc((gs_memory_t *) imemory, igs, "op_show_enum_setup")) == 0)
 	return_error(e_VMerror);
     return 0;
@@ -409,106 +402,114 @@ op_show_continue(os_ptr op)
 {
     return op_show_continue_dispatch(op, gs_show_next(senum));
 }
-/* Note that this sets osp = op explicitly iff the dispatch succeeds. */
-/* This is so that the show operators don't pop anything from the o-stack */
-/* if they don't succeed. */
-/* Note also that if it returns an error, it has freed the enumerator. */
+/*
+ * Note that op_show_continue_dispatch sets osp = op explicitly iff the
+ * dispatch succeeds.  This is so that the show operators don't pop anything
+ * from the o-stack if they don't succeed.  Note also that if it returns an
+ * error, it has freed the enumerator.
+ */
 int
 op_show_continue_dispatch(register os_ptr op, int code)
 {
     gs_show_enum *penum = senum;
 
     switch (code) {
-	case 0:		/* all done */
-	    {
-		os_ptr save_osp = osp;
+	case 0: {		/* all done */
+	    os_ptr save_osp = osp;
 
-		osp = op;
-		code = (*real_opproc(&seproc)) (op);
-		op_show_free(code);
-		if (code < 0) {
-		    osp = save_osp;
-		    return code;
-		}
-		return o_pop_estack;
+	    osp = op;
+	    code = (*real_opproc(&seproc)) (op);
+	    op_show_free(code);
+	    if (code < 0) {
+		osp = save_osp;
+		return code;
 	    }
-	case gs_show_kern:
-	    {
-		ref *pslot = &sslot;
+	    return o_pop_estack;
+	}
+	case gs_show_kern: {
+	    ref *pslot = &sslot;
 
-		push(2);
-		make_int(op - 1, gs_kshow_previous_char(penum));
-		make_int(op, gs_kshow_next_char(penum));
-		push_op_estack(op_show_continue);	/* continue after kerning */
-		*++esp = *pslot;	/* kerning procedure */
-	    }
+	    push(2);
+	    make_int(op - 1, gs_kshow_previous_char(penum));
+	    make_int(op, gs_kshow_next_char(penum));
+	    push_op_estack(op_show_continue);	/* continue after kerning */
+	    *++esp = *pslot;	/* kerning procedure */
 	    return o_push_estack;
-	case gs_show_render:
-	    {
-		gs_font *pfont = gs_currentfont(igs);
-		font_data *pfdata = pfont_data(pfont);
-		gs_char chr = gs_show_current_char(penum);
-		gs_glyph glyph = gs_show_current_glyph(penum);
+	}
+	case gs_show_render: {
+	    gs_font *pfont = gs_currentfont(igs);
+	    font_data *pfdata = pfont_data(pfont);
+	    gs_char chr = gs_show_current_char(penum);
+	    gs_glyph glyph = gs_show_current_glyph(penum);
 
-		push(2);
-		op[-1] = pfdata->dict;	/* push the font */
-		 * For a Type 1 or Type 4 font, prefer BuildChar: we know
-		 * For Type 1 and Type 4 fonts, prefer BuildChar to
-		 * BuildGlyph, so that PostScript procedures appearing in the
-		 * CharStrings dictionary will receive the character code
-		 * rather than the character name; for Type 3 fonts,
-		 * prefer BuildGlyph to BuildChar.
-		if (chr != gs_no_char && !r_has_type(&pfdata->BuildChar, t_null)) {
-		if (pfont->FontType == ft_user_defined) {	/* Type 3 font, prefer BuildGlyph. */
-		    if (level2_enabled &&
-			!r_has_type(&pfdata->BuildGlyph, t_null) &&
-			glyph != gs_no_glyph
-			) {
-			glyph_ref(glyph, op);
-			esp[2] = pfdata->BuildGlyph;
-		    } else if (r_has_type(&pfdata->BuildChar, t_null))
-			goto err;
-		    else if (chr == gs_no_char) {	/* glyphshow, reverse map the character */
-			/* through the Encoding */
-			ref gref;
-			const ref *pencoding = &pfdata->Encoding;
+	    push(2);
+	    op[-1] = pfdata->dict;	/* push the font */
+	    /*
+	     * For Type 1 and Type 4 fonts, prefer BuildChar to
+	     * BuildGlyph, so that PostScript procedures appearing in the
+	     * CharStrings dictionary will receive the character code
+	     * rather than the character name; for Type 3 fonts,
+	     * prefer BuildGlyph to BuildChar.  For other font types
+	     * (such as CID fonts), only BuildGlyph will be present.
+	     */
+	    if (pfont->FontType == ft_user_defined) {	/* Type 3 font, prefer BuildGlyph. */
+		if (level2_enabled &&
+		    !r_has_type(&pfdata->BuildGlyph, t_null) &&
+		    glyph != gs_no_glyph
+		    ) {
+		    glyph_ref(glyph, op);
+		    esp[2] = pfdata->BuildGlyph;
+		} else if (r_has_type(&pfdata->BuildChar, t_null))
+		    goto err;
+		else if (chr == gs_no_char) {	/* glyphshow, reverse map the character */
+		    /* through the Encoding */
+		    ref gref;
+		    const ref *pencoding = &pfdata->Encoding;
 
-			glyph_ref(glyph, &gref);
-			if (!map_glyph_to_char(&gref, pencoding,
+		    glyph_ref(glyph, &gref);
+		    if (!map_glyph_to_char(&gref, pencoding,
+					   (ref *) op)
+			) {	/* Not found, try .notdef */
+			name_enter_string(".notdef", &gref);
+			if (!map_glyph_to_char(&gref,
+					       pencoding,
 					       (ref *) op)
-			    ) {	/* Not found, try .notdef */
-			    name_enter_string(".notdef", &gref);
-			    if (!map_glyph_to_char(&gref,
-						   pencoding,
-						   (ref *) op)
-				)
-				goto err;
-			}
-			esp[2] = pfdata->BuildChar;
-		    } else {
-			make_int(op, chr);
-			esp[2] = pfdata->BuildChar;
+			    )
+			    goto err;
 		    }
-		} else {	/* Type 1 or Type 4 font, prefer BuildChar. */
-		    /* We know that both BuildChar and BuildGlyph */
-		    /* are present. */
-		    if (chr != gs_no_char) {
-			make_int(op, chr);
-			esp[2] = pfdata->BuildChar;
-		    } else {
-			glyph_ref(glyph, op);
-			esp[2] = pfdata->BuildGlyph;
-		    }
+		    esp[2] = pfdata->BuildChar;
+		} else {
+		    make_int(op, chr);
+		    esp[2] = pfdata->BuildChar;
 		}
-		/* Save the stack depths in case we bail out. */
-		sodepth.value.intval = ref_stack_count(&o_stack) - 2;
-		sddepth.value.intval = ref_stack_count(&d_stack);
-		push_op_estack(op_show_continue);
-		++esp;		/* skip BuildChar or BuildGlyph proc */
+	    } else {
+		/*
+		 * For a Type 1 or Type 4 font, prefer BuildChar: we know
+		 * that both BuildChar and BuildGlyph are present.  For
+		 * other font types, only BuildGlyph is available.
+		 */
+		if (chr != gs_no_char && !r_has_type(&pfdata->BuildChar, t_null)) {
+		    make_int(op, chr);
+		    esp[2] = pfdata->BuildChar;
+		} else {
+		    /* We might not have a glyph: substitute 0. **HACK** */
+		    if (glyph == gs_no_glyph)
+			make_int(op, 0);
+		    else
+			glyph_ref(glyph, op);
+		    esp[2] = pfdata->BuildGlyph;
+		}
 	    }
+	    /* Save the stack depths in case we bail out. */
+	    sodepth.value.intval = ref_stack_count(&o_stack) - 2;
+	    sddepth.value.intval = ref_stack_count(&d_stack);
+	    push_op_estack(op_show_continue);
+	    ++esp;		/* skip BuildChar or BuildGlyph proc */
 	    return o_push_estack;
+	}
 	default:		/* error */
-	  err:if (code >= 0)
+err:
+	    if (code >= 0)
 		code = gs_note_error(e_invalidfont);
 	    return op_show_free(code);
     }
@@ -536,14 +537,19 @@ uint
 op_show_find_index(void)
 {
 {
+    ref_stack_enum_t rsenum;
     uint count = 0;
 
-    STACK_LOOP_BEGIN(&e_stack, ep, size)
+    ref_stack_enum_begin(&rsenum, &e_stack);
+    do {
+	es_ptr ep = rsenum.ptr;
+	uint size = rsenum.size;
+
 	for (ep += size - 1; size != 0; size--, ep--, count++)
-	if (r_is_estack_mark(ep) && estack_mark_index(ep) == es_show)
-	    return count;
-    STACK_LOOP_END(ep, size)
-	return 0;		/* no mark */
+	    if (r_is_estack_mark(ep) && estack_mark_index(ep) == es_show)
+		return count;
+    } while (ref_stack_enum_next(&rsenum));
+    return 0;		/* no mark */
 
 /* Find the current show enumerator on the e-stack. */
 gs_show_enum *
@@ -612,7 +618,7 @@ op_show_restore(bool for_error)
 	if (count > saved_count)	/* if <, we're in trouble */
 	    ref_stack_pop(&o_stack, count - saved_count);
     }
-    if (penum->stringwidth_flag == 1) {		/* stringwidth does an extra gsave */
+    if (SHOW_IS_STRINGWIDTH(penum)) {	/* stringwidth does an extra gsave */
 	--saved_level;
     }
     /*
@@ -624,10 +630,11 @@ op_show_restore(bool for_error)
     if (penum->fstack.depth >= 0)
 	gs_set_currentfont(igs, penum->fstack.items[0].font);
     while (igs->level > saved_level && code >= 0) {
-	if (igs->saved == 0 || igs->saved->saved == 0) {	/*
-								 * Bad news: we got an error inside a save inside a
-								 * BuildChar or BuildGlyph.  Don't attempt to recover.
-								 */
+	if (igs->saved == 0 || igs->saved->saved == 0) {
+	    /*
+	     * Bad news: we got an error inside a save inside a BuildChar or
+	     * BuildGlyph.  Don't attempt to recover.
+	     */
 	    code = gs_note_error(e_Fatal);
 	} else
 	    code = gs_grestore(igs);

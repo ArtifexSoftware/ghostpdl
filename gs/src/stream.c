@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-/* stream.c */
+/*Id: stream.c  */
 /* Stream package for Ghostscript interpreter */
 #include "stdio_.h"		/* includes std.h */
 #include "memory_.h"
@@ -113,6 +113,7 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
     s->memory = mem;
     s->report_error = s_no_report_error;
     s->prev = s->next = 0;	/* clean for GC */
+    s->close_strm = false;	/* default */
     return s;
 }
 
@@ -288,6 +289,20 @@ s_no_report_error(stream_state * st, const char *str)
 {
     return 0;
 }
+
+/* Generic procedure structures for filters. */
+
+const stream_procs s_filter_read_procs =
+{
+    s_std_noavailable, s_std_noseek, s_std_read_reset,
+    s_std_read_flush, s_filter_close
+};
+
+const stream_procs s_filter_write_procs =
+{
+    s_std_noavailable, s_std_noseek, s_std_write_reset,
+    s_std_write_flush, s_filter_close
+};
 
 /* ------ Implementation-independent procedures ------ */
 

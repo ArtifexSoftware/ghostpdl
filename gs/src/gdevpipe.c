@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,9 +16,10 @@
    all copies.
  */
 
-/* gdevpipe.c */
+/*Id: gdevpipe.c  */
 /* %pipe% IODevice */
 #include "errno_.h"
+#include "pipe_.h"
 #include "stdio_.h"
 #include "string_.h"
 #include "gserror.h"
@@ -27,16 +28,10 @@
 #include "stream.h"
 #include "gxiodev.h"
 
-/* popen isn't POSIX-standard, so we declare it here. */
-/* Because of inconsistent (and sometimes incorrect) header files, */
-/* we must omit the argument list. */
-extern FILE *popen( /* P2(const char *, const char *) */ );
-extern int pclose(P1(FILE *));
-
 /* The pipe IODevice */
 private iodev_proc_fopen(pipe_fopen);
 private iodev_proc_fclose(pipe_fclose);
-gx_io_device gs_iodev_pipe =
+const gx_io_device gs_iodev_pipe =
 {
     "%pipe%", "FileSystem",
     {iodev_no_init, iodev_no_open_device,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,509 +16,21 @@
    all copies.
  */
 
-/* gdevpsdf.c */
-/* Common output syntax and parameters for PostScript and PDF writers */
-#include "stdio_.h"
+/*Id: gdevpsdf.c  */
+/* Common utilities for PostScript and PDF writers */
 #include "string_.h"
-#include "gserror.h"
+#include "gx.h"
 #include "gserrors.h"
-#include "gsmemory.h"
-#include "gstypes.h"
-#include "gsparam.h"
-#include "gxdevice.h"
 #include "gdevpsdf.h"
 #include "gdevpstr.h"
-#include "strimpl.h"		/* for short-sighted compilers */
+#include "scanchar.h"
+#include "strimpl.h"
+#include "sa85x.h"
 #include "scfx.h"
-#include "slzwx.h"
-#include "srlx.h"
+#include "sstring.h"
 
 /* Structure descriptor */
 public_st_device_psdf();
-
-/* ---------------- Get/put Distiller parameters ---------------- */
-
-typedef struct psdf_image_filter_name_s {
-    const char *pname;
-    const stream_template *template;
-} psdf_image_filter_name;
-typedef struct psdf_image_param_names_s {
-    const char *ACSDict;	/* not used for mono */
-    const char *AntiAlias;
-    const char *AutoFilter;	/* not used for mono */
-    const char *Depth;
-    const char *Dict;
-    const char *Downsample;
-    const char *DownsampleType;
-    const char *Encode;
-    const char *Filter;
-    const char *Resolution;
-} psdf_image_param_names;
-private const psdf_image_param_names Color_names =
-{
-    "ColorACSImageDict", "AntiAliasColorImages", "AutoFilterColorImages",
-    "ColorImageDepth", "ColorImageDict",
-    "DownsampleColorImages", "ColorImageDownsampleType", "EncodeColorImages",
-    "ColorImageFilter", "ColorImageResolution"
-};
-private const psdf_image_filter_name Poly_filters[] =
-{
-  /*{"DCTEncode", &s_DCTE_template}, */
-    {"LZWEncode", &s_LZWE_template},
-    {0, 0}
-};
-private const psdf_image_param_names Gray_names =
-{
-    "GrayACSImageDict", "AntiAliasGrayImages", "AutoFilterGrayImages",
-    "GrayImageDepth", "GrayImageDict",
-    "DownsampleGrayImages", "GrayImageDownsampleType", "EncodeGrayImages",
-    "GrayImageFilter", "GrayImageResolution"
-};
-private const psdf_image_param_names Mono_names =
-{
-    0, "AntiAliasMonoImages", 0,
-    "MonoImageDepth", "MonoImageDict",
-    "DownsampleMonoImages", "MonoImageDownsampleType", "EncodeMonoImages",
-    "MonoImageFilter", "MonoImageResolution"
-};
-private const psdf_image_filter_name Mono_filters[] =
-{
-    {"CCITTFaxEncode", &s_CFE_template},
-    {"LZWEncode", &s_LZWE_template},
-    {"RunLengthEncode", &s_RLE_template},
-    {0, 0}
-};
-private const char *AutoRotatePages_names[] =
-{
-    "None", "All", "PageByPage", 0
-};
-private const char *ColorConversionStrategy_names[] =
-{
-    "LeaveColorUnchanged", "UseDeviceDependentColor",
-    "UseDeviceIndependentColor", 0
-};
-private const char *DownsampleType_names[] =
-{
-    "Average", "Subsample", 0
-};
-private const char *TransferFunctionInfo_names[] =
-{
-    "Preserve", "Apply", "Remove", 0
-};
-private const char *UCRandBGInfo_names[] =
-{
-    "Preserve", "Remove", 0
-};
-
-/* -------- Get parameters -------- */
-
-/* Get a set of image-related parameters. */
-private int
-psdf_get_image_params(gs_param_list * plist,
-	  const psdf_image_param_names * pnames, psdf_image_params * params)
-{
-    int code;
-    gs_param_string dsts, fs;
-
-    param_string_from_string(dsts,
-			     DownsampleType_names[params->DownsampleType]);
-    if (
-    /* ACSDict */
-	   (code = param_write_bool(plist, pnames->AntiAlias,
-				    &params->AntiAlias)) < 0 ||
-	   (pnames->AutoFilter != 0 &&
-	    (code = param_write_bool(plist, pnames->AutoFilter,
-				     &params->AutoFilter)) < 0) ||
-	   (code = param_write_int(plist, pnames->Depth,
-				   &params->Depth)) < 0 ||
-    /* Dict */
-	   (code = param_write_bool(plist, pnames->Downsample,
-				    &params->Downsample)) < 0 ||
-	   (code = param_write_name(plist, pnames->DownsampleType,
-				    &dsts)) < 0 ||
-	   (code = param_write_bool(plist, pnames->Encode,
-				    &params->Encode)) < 0 ||
-	   (code = (params->Filter == 0 ? 0 :
-		    (param_string_from_string(fs, params->Filter),
-		     param_write_name(plist, pnames->Filter, &fs)))) < 0 ||
-	   (code = param_write_int(plist, pnames->Resolution,
-				   &params->Resolution)) < 0
-	);
-    return code;
-}
-
-/* Get parameters. */
-int
-gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
-{
-    gx_device_psdf *pdev = (gx_device_psdf *) dev;
-    int code = gdev_vector_get_params(dev, plist);
-    gs_param_string arps, ccss, tfis, ucrbgis;
-
-    if (code < 0)
-	return code;
-    param_string_from_string(arps,
-		  AutoRotatePages_names[(int)pdev->params.AutoRotatePages]);
-    param_string_from_string(ccss,
-			     ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy]);
-    param_string_from_string(tfis,
-	TransferFunctionInfo_names[(int)pdev->params.TransferFunctionInfo]);
-    param_string_from_string(ucrbgis,
-			UCRandBGInfo_names[(int)pdev->params.UCRandBGInfo]);
-    if (
-    /* General parameters */
-
-	   (code = param_write_bool(plist, "ASCII85EncodePages",
-				    &pdev->params.ASCII85EncodePages)) < 0 ||
-	   (code = param_write_name(plist, "AutoRotatePages",
-				    &arps)) < 0 ||
-	   (code = param_write_bool(plist, "CompressPages",
-				    &pdev->params.CompressPages)) < 0 ||
-	   (code = param_write_long(plist, "ImageMemory",
-				    &pdev->params.ImageMemory)) < 0 ||
-	   (code = param_write_bool(plist, "LZWEncodePages",
-				    &pdev->params.LZWEncodePages)) < 0 ||
-	   (code = param_write_bool(plist, "PreserveHalftoneInfo",
-				 &pdev->params.PreserveHalftoneInfo)) < 0 ||
-	   (code = param_write_bool(plist, "PreserveOPIComments",
-				  &pdev->params.PreserveOPIComments)) < 0 ||
-	   (code = param_write_bool(plist, "PreserveOverprintSettings",
-			    &pdev->params.PreserveOverprintSettings)) < 0 ||
-      (code = param_write_name(plist, "TransferFunctionInfo", &tfis)) < 0 ||
-	   (code = param_write_name(plist, "UCRandBGInfo", &ucrbgis)) < 0 ||
-	   (code = param_write_bool(plist, "UseFlateCompression",
-				  &pdev->params.UseFlateCompression)) < 0 ||
-
-    /* Color sampled image parameters */
-
-	   (code = psdf_get_image_params(plist, &Color_names, &pdev->params.ColorImage)) < 0 ||
-	   (code = param_write_name(plist, "ColorConversionStrategy",
-				    &ccss)) < 0 ||
-	   (code = param_write_bool(plist, "ConvertCMYKImagesToRGB",
-			       &pdev->params.ConvertCMYKImagesToRGB)) < 0 ||
-	   (code = param_write_bool(plist, "ConvertImagesToIndexed",
-			       &pdev->params.ConvertImagesToIndexed)) < 0 ||
-
-    /* Gray sampled image parameters */
-
-	   (code = psdf_get_image_params(plist, &Gray_names, &pdev->params.GrayImage)) < 0 ||
-
-    /* Mono sampled image parameters */
-
-	   (code = psdf_get_image_params(plist, &Mono_names, &pdev->params.MonoImage)) < 0 ||
-
-    /* Font embedding parameters */
-
-	   (code = param_write_name_array(plist, "AlwaysEmbed", &pdev->params.AlwaysEmbed)) < 0 ||
-	   (code = param_write_name_array(plist, "NeverEmbed", &pdev->params.NeverEmbed)) < 0 ||
-	   (code = param_write_bool(plist, "EmbedAllFonts", &pdev->params.EmbedAllFonts)) < 0 ||
-	   (code = param_write_bool(plist, "SubsetFonts", &pdev->params.SubsetFonts)) < 0 ||
-	   (code = param_write_int(plist, "MaxSubsetPct", &pdev->params.MaxSubsetPct)) < 0
-	);
-    return code;
-}
-
-/* -------- Put parameters -------- */
-
-/* Compare a C string and a gs_param_string. */
-bool
-psdf_key_eq(const gs_param_string * pcs, const char *str)
-{
-    return (strlen(str) == pcs->size &&
-	    !strncmp(str, (const char *)pcs->data, pcs->size));
-}
-
-/* Get an enumerated value. */
-private int
-psdf_put_enum_param(gs_param_list * plist, gs_param_name param_name, int *pvalue,
-		    const char **pnames, int ecode)
-{
-    gs_param_string ens;
-    int code = param_read_name(plist, param_name, &ens);
-
-    switch (code) {
-	case 1:
-	    return ecode;
-	case 0:
-	    {
-		int i;
-
-		for (i = 0; pnames[i] != 0; ++i)
-		    if (psdf_key_eq(&ens, pnames[i])) {
-			*pvalue = i;
-			return 0;
-		    }
-	    }
-	    code = gs_error_rangecheck;
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, code);
-    }
-    return code;
-}
-
-/* Put a Boolean or integer parameter. */
-int
-psdf_put_bool_param(gs_param_list * plist, gs_param_name param_name,
-		    bool * pval, int ecode)
-{
-    int code;
-
-    switch (code = param_read_bool(plist, param_name, pval)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    return ecode;
-}
-int
-psdf_put_int_param(gs_param_list * plist, gs_param_name param_name,
-		   int *pval, int ecode)
-{
-    int code;
-
-    switch (code = param_read_int(plist, param_name, pval)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    return ecode;
-}
-
-/* Put [~](Always|Never)Embed parameters. */
-private int
-psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
-		     gs_param_string_array * psa, int ecode)
-{
-    gs_param_name pname = notpname + 1;
-    int code;
-    gs_param_string_array nsa;
-
-/***** Storage management is incomplete ******/
-/***** Doesn't do incremental add/delete ******/
-    switch (code = param_read_name_array(plist, pname, psa)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, pname, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    switch (code = param_read_name_array(plist, notpname, &nsa)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, notpname, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    return ecode;
-}
-
-/* Put a set of image-related parameters. */
-private int
-psdf_put_image_params(gs_param_list * plist, const psdf_image_param_names * pnames,
- const psdf_image_filter_name * pifn, psdf_image_params * params, int ecode)
-{
-    gs_param_string fs;
-    int dsti = params->DownsampleType;
-    int code;
-
-    if (pnames->ACSDict) {	/* ACSDict */
-    }
-    ecode = psdf_put_bool_param(plist, pnames->AntiAlias,
-				&params->AntiAlias, ecode);
-    if (pnames->AutoFilter)
-	ecode = psdf_put_bool_param(plist, pnames->AutoFilter,
-				    &params->AutoFilter, ecode);
-    ecode = psdf_put_int_param(plist, pnames->Depth,
-			       &params->Depth, ecode);
-    /* Dict */
-    ecode = psdf_put_bool_param(plist, pnames->Downsample,
-				&params->Downsample, ecode);
-    if ((ecode = psdf_put_enum_param(plist, pnames->DownsampleType,
-				     &dsti, DownsampleType_names,
-				     ecode)) >= 0
-	)
-	params->DownsampleType = (enum psdf_downsample_type)dsti;
-    ecode = psdf_put_bool_param(plist, pnames->Encode,
-				&params->Encode, ecode);
-    switch (code = param_read_string(plist, pnames->Filter, &fs)) {
-	case 0:
-	    {
-		const psdf_image_filter_name *pn = pifn;
-
-		while (pn->pname != 0 && !psdf_key_eq(&fs, pn->pname))
-		    pn++;
-		if (pn->pname == 0) {
-		    ecode = gs_error_rangecheck;
-		    goto ipe;
-		}
-		params->Filter = pn->pname;
-		params->filter_template = pn->template;
-		break;
-	    }
-	default:
-	    ecode = code;
-	  ipe:param_signal_error(plist, pnames->Filter, ecode);
-	case 1:
-	    break;
-    }
-    ecode = psdf_put_int_param(plist, pnames->Resolution,
-			       &params->Resolution, ecode);
-    if (ecode >= 0) {		/* Force parameters to acceptable values. */
-	if (params->Resolution < 1)
-	    params->Resolution = 1;
-	switch (params->Depth) {
-	    default:
-		params->Depth = -1;
-	    case 1:
-	    case 2:
-	    case 4:
-	    case 8:
-	    case -1:
-		break;
-	}
-    }
-    return ecode;
-}
-
-/* Put parameters. */
-int
-gdev_psdf_put_params(gx_device * dev, gs_param_list * plist)
-{
-    gx_device_psdf *pdev = (gx_device_psdf *) dev;
-    int ecode = 0;
-    int code;
-    gs_param_name param_name;
-    psdf_distiller_params params;
-
-    /* General parameters. */
-
-    params = pdev->params;
-
-    ecode = psdf_put_bool_param(plist, "ASCII85EncodePages",
-				&params.ASCII85EncodePages, ecode);
-    {
-	int arpi = params.AutoRotatePages;
-
-	ecode = psdf_put_enum_param(plist, "AutoRotatePages", &arpi,
-				    AutoRotatePages_names, ecode);
-	params.AutoRotatePages = (enum psdf_auto_rotate_pages)arpi;
-    }
-    ecode = psdf_put_bool_param(plist, "CompressPages",
-				&params.CompressPages, ecode);
-    switch (code = param_read_long(plist, (param_name = "ImageMemory"), &params.ImageMemory)) {
-	default:
-	    ecode = code;
-	    param_signal_error(plist, param_name, ecode);
-	case 0:
-	case 1:
-	    break;
-    }
-    ecode = psdf_put_bool_param(plist, "LZWEncodePages",
-				&params.LZWEncodePages, ecode);
-    ecode = psdf_put_bool_param(plist, "PreserveHalftoneInfo",
-				&params.PreserveHalftoneInfo, ecode);
-    ecode = psdf_put_bool_param(plist, "PreserveOPIComments",
-				&params.PreserveOPIComments, ecode);
-    ecode = psdf_put_bool_param(plist, "PreserveOverprintSettings",
-				&params.PreserveOverprintSettings, ecode);
-    {
-	int tfii = params.TransferFunctionInfo;
-
-	ecode = psdf_put_enum_param(plist, "TransferFunctionInfo", &tfii,
-				    TransferFunctionInfo_names, ecode);
-	params.TransferFunctionInfo = (enum psdf_transfer_function_info)tfii;
-    }
-    {
-	int ucrbgi = params.UCRandBGInfo;
-
-	ecode = psdf_put_enum_param(plist, "UCRandBGInfo", &ucrbgi,
-				    UCRandBGInfo_names, ecode);
-	params.UCRandBGInfo = (enum psdf_ucr_and_bg_info)ucrbgi;
-    }
-    ecode = psdf_put_bool_param(plist, "UseFlateCompression",
-				&params.UseFlateCompression, ecode);
-
-    /* Color sampled image parameters */
-
-    ecode = psdf_put_image_params(plist, &Color_names, Poly_filters,
-				  &params.ColorImage, ecode);
-    {
-	int ccsi = params.ColorConversionStrategy;
-
-	ecode = psdf_put_enum_param(plist, "ColorConversionStrategy", &ccsi,
-				    ColorConversionStrategy_names, ecode);
-	params.ColorConversionStrategy =
-	    (enum psdf_color_conversion_strategy)ccsi;
-    }
-    ecode = psdf_put_bool_param(plist, "ConvertCMYKImagesToRGB",
-				&params.ConvertCMYKImagesToRGB, ecode);
-    ecode = psdf_put_bool_param(plist, "ConvertImagesToIndexed",
-				&params.ConvertImagesToIndexed, ecode);
-
-    /* Gray sampled image parameters */
-
-    ecode = psdf_put_image_params(plist, &Gray_names, Poly_filters,
-				  &params.GrayImage, ecode);
-
-    /* Mono sampled image parameters */
-
-    ecode = psdf_put_image_params(plist, &Mono_names, Mono_filters,
-				  &params.MonoImage, ecode);
-
-    /* Font embedding parameters */
-
-    ecode = psdf_put_embed_param(plist, "~AlwaysEmbed",
-				 &params.AlwaysEmbed, ecode);
-    ecode = psdf_put_embed_param(plist, "~NeverEmbed",
-				 &params.NeverEmbed, ecode);
-    ecode = psdf_put_bool_param(plist, "EmbedAllFonts",
-				&params.EmbedAllFonts, ecode);
-    ecode = psdf_put_bool_param(plist, "SubsetFonts",
-				&params.SubsetFonts, ecode);
-    ecode = psdf_put_int_param(plist, "MaxSubsetPct",
-			       &params.MaxSubsetPct, ecode);
-
-    if (ecode < 0)
-	return ecode;
-    code = gdev_vector_put_params(dev, plist);
-    if (code < 0)
-	return code;
-
-    pdev->params = params;	/* OK to update now */
-    return 0;
-}
-
-/* ---------------- Utilities ---------------- */
-
-int
-psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
-	       const char *rgs)
-{
-    if (!gx_dc_is_pure(pdc))
-	return_error(gs_error_rangecheck);
-    {
-	stream *s = gdev_vector_stream(vdev);
-	gx_color_index color = gx_dc_pure_color(pdc);
-	float r = (color >> 16) / 255.0;
-	float g = ((color >> 8) & 0xff) / 255.0;
-	float b = (color & 0xff) / 255.0;
-
-	if (r == g && g == b)
-	    pprintg1(s, "%g", r), pprints1(s, " %s\n", rgs + 1);
-	else
-	    pprintg3(s, "%g %g %g", r, g, b), pprints1(s, " %s\n", rgs);
-    }
-    return 0;
-}
 
 /* ---------------- Vector implementation procedures ---------------- */
 
@@ -613,14 +125,15 @@ psdf_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 
 int
 psdf_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
-	    bool first)
+	    bool first, gx_path_type_t type)
 {
     pprintg2(gdev_vector_stream(vdev), "%g %g m\n", x, y);
     return 0;
 }
 
 int
-psdf_lineto(gx_device_vector * vdev, floatp xy, floatp y0, floatp x, floatp y)
+psdf_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
+	    gx_path_type_t type)
 {
     pprintg2(gdev_vector_stream(vdev), "%g %g l\n", x, y);
     return 0;
@@ -628,7 +141,8 @@ psdf_lineto(gx_device_vector * vdev, floatp xy, floatp y0, floatp x, floatp y)
 
 int
 psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
-	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
+	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3,
+	     gx_path_type_t type)
 {
     if (x1 == x0 && y1 == y0)
 	pprintg4(gdev_vector_stream(vdev), "%g %g %g %g v\n",
@@ -644,10 +158,360 @@ psdf_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
 
 int
 psdf_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
-	       floatp x_start, floatp y_start)
+	       floatp x_start, floatp y_start, gx_path_type_t type)
 {
     pputs(gdev_vector_stream(vdev), "h\n");
     return 0;
 }
 
 /* endpath is deliberately omitted. */
+
+/* ---------------- Utilities ---------------- */
+
+int
+psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
+	       const char *rgs)
+{
+    if (!gx_dc_is_pure(pdc))
+	return_error(gs_error_rangecheck);
+    {
+	stream *s = gdev_vector_stream(vdev);
+	gx_color_index color = gx_dc_pure_color(pdc);
+	float r = (color >> 16) / 255.0;
+	float g = ((color >> 8) & 0xff) / 255.0;
+	float b = (color & 0xff) / 255.0;
+
+	if (r == g && g == b)
+	    pprintg1(s, "%g", r), pprints1(s, " %s\n", rgs + 1);
+	else
+	    pprintg3(s, "%g %g %g", r, g, b), pprints1(s, " %s\n", rgs);
+    }
+    return 0;
+}
+
+/* ---------------- Binary data writing ---------------- */
+
+/* Begin writing binary data. */
+int
+psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
+{
+    pbw->strm = pdev->strm;
+    pbw->dev = pdev;
+    /* If not binary, set up the encoding stream. */
+    if (!pdev->binary_ok)
+	psdf_encode_binary(pbw, &s_A85E_template, NULL);
+    return 0;
+}
+
+/* Add an encoding filter.  The client must have allocated the stream state, */
+/* if any, using pdev->v_memory. */
+int
+psdf_encode_binary(psdf_binary_writer * pbw, const stream_template * template,
+		   stream_state * ss)
+{
+    gx_device_psdf *pdev = pbw->dev;
+    gs_memory_t *mem = pdev->v_memory;
+    stream *es = s_alloc(mem, "psdf_encode_binary(stream)");
+    stream_state *ess = (ss == 0 ? (stream_state *) es : ss);
+    uint bsize = max(template->min_out_size, 256);	/* arbitrary */
+    byte *buf = gs_alloc_bytes(mem, bsize, "psdf_encode_binary(buf)");
+
+    if (es == 0 || buf == 0) {
+	gs_free_object(mem, buf, "psdf_encode_binary(buf)");
+	gs_free_object(mem, es, "psdf_encode_binary(stream)");
+	return_error(gs_error_VMerror);
+    }
+    if (ess == 0)
+	ess = (stream_state *) es;
+    s_std_init(es, buf, bsize, &s_filter_write_procs, s_mode_write);
+    ess->template = template;
+    ess->memory = mem;
+    es->procs.process = template->process;
+    es->memory = mem;
+    es->state = ess;
+    if (template->init)
+	(*template->init) (ess);
+    es->strm = pbw->strm;
+    pbw->strm = es;
+    return 0;
+}
+
+/* Add a 2-D CCITTFax encoding filter. */
+int
+psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
+{
+    gx_device_psdf *pdev = pbw->dev;
+    gs_memory_t *mem = pdev->v_memory;
+    const stream_template *template = &s_CFE_template;
+    stream_CFE_state *st =
+    gs_alloc_struct(mem, stream_CFE_state, template->stype,
+		    "psdf_CFE_binary");
+    int code;
+
+    if (st == 0)
+	return_error(gs_error_VMerror);
+    (*template->set_defaults) ((stream_state *) st);
+    st->K = -1;
+    st->Columns = w;
+    st->Rows = h;
+    st->BlackIs1 = !invert;
+    code = psdf_encode_binary(pbw, template, (stream_state *) st);
+    if (code < 0)
+	gs_free_object(mem, st, "psdf_CFE_binary");
+    return code;
+}
+
+/* Finish writing binary data. */
+int
+psdf_end_binary(psdf_binary_writer * pbw)
+{
+    gx_device_psdf *pdev = pbw->dev;
+
+    /* Close the filters in reverse order. */
+    /* Stop before we try to close the file stream. */
+    while (pbw->strm != pdev->strm) {
+	stream *next = pbw->strm->strm;
+
+	sclose(pbw->strm);
+	pbw->strm = next;
+    }
+    return 0;
+}
+
+/*
+ * Write a string in its shortest form ( () or <> ).  Note that
+ * this form is different depending on whether binary data are allowed.
+ * Currently we don't support ASCII85 strings ( <~ ~> ).
+ */
+void
+psdf_write_string(stream * s, const byte * str, uint size, int print_ok)
+{
+    uint added = 0;
+    uint i;
+    const stream_template *template;
+    stream_AXE_state state;
+    stream_state *st = NULL;
+
+    if (print_ok & print_binary_ok) {	/* Only need to escape (, ), \, CR, EOL. */
+	pputc(s, '(');
+	for (i = 0; i < size; ++i) {
+	    byte ch = str[i];
+
+	    switch (ch) {
+		case char_CR:
+		    pputs(s, "\\r");
+		    continue;
+		case char_EOL:
+		    pputs(s, "\\n");
+		    continue;
+		case '(':
+		case ')':
+		case '\\':
+		    pputc(s, '\\');
+	    }
+	    pputc(s, ch);
+	}
+	pputc(s, ')');
+	return;
+    }
+    for (i = 0; i < size; ++i) {
+	byte ch = str[i];
+
+	if (ch == 0 || ch >= 127)
+	    added += 3;
+	else if (strchr("()\\\n\r\t\b\f", ch) != 0)
+	    ++added;
+	else if (ch < 32)
+	    added += 3;
+    }
+
+    if (added < size) {		/* More efficient to represent as PostScript string. */
+	template = &s_PSSE_template;
+	pputc(s, '(');
+    } else {			/* More efficient to represent as hex string. */
+	template = &s_AXE_template;
+	st = (stream_state *) & state;
+	s_AXE_init_inline(&state);
+	pputc(s, '<');
+    }
+
+    {
+	byte buf[100];		/* size is arbitrary */
+	stream_cursor_read r;
+	stream_cursor_write w;
+	int status;
+
+	r.ptr = str - 1;
+	r.limit = r.ptr + size;
+	w.limit = buf + sizeof(buf) - 1;
+	do {
+	    w.ptr = buf - 1;
+	    status = (*template->process) (st, &r, &w, true);
+	    pwrite(s, buf, (uint) (w.ptr + 1 - buf));
+	}
+	while (status == 1);
+    }
+}
+
+/* Set up a write stream that just keeps track of the position. */
+private int
+s_write_position_process(stream_state * st, stream_cursor_read * pr,
+			 stream_cursor_write * ignore_pw, bool last)
+{
+    pr->ptr = pr->limit;	/* discard input */
+    return 0;
+}
+int
+psdf_alloc_position_stream(stream ** ps, gs_memory_t * mem)
+{
+    stream *s = *ps = s_alloc(mem, "psdf_alloc_position_stream");
+    static byte buf[50];	/* arbitrary */
+
+    if (s == 0)
+	return_error(gs_error_VMerror);
+    swrite_string(s, buf, sizeof(buf));
+    s->procs.process = s_write_position_process;
+    return 0;
+}
+
+/* ---------------- Parameter printing ---------------- */
+
+typedef struct printer_param_list_s {
+    gs_param_list_common;
+    stream *strm;
+    param_printer_params_t params;
+    int print_ok;
+    bool any;
+} printer_param_list_t;
+
+gs_private_st_ptrs1(st_printer_param_list, printer_param_list_t,
+  "printer_param_list_t", printer_plist_enum_ptrs, printer_plist_reloc_ptrs,
+		    strm);
+const param_printer_params_t param_printer_params_default =
+{
+    param_printer_params_default_values
+};
+
+/* We'll implement the other printers later if we have to. */
+private param_proc_xmit_typed(param_print_typed);
+/*private param_proc_begin_xmit_collection(param_print_begin_collection); */
+/*private param_proc_end_xmit_collection(param_print_end_collection); */
+private const gs_param_list_procs printer_param_list_procs = {
+    param_print_typed,
+    NULL /* begin_collection */ ,
+    NULL /* end_collection */ ,
+    NULL /* get_next_key */ ,
+    gs_param_request_default,
+    gs_param_requested_default
+};
+
+int
+psdf_alloc_param_printer(gs_param_list ** pplist,
+			 const param_printer_params_t * ppp, stream * s,
+			 int print_ok, gs_memory_t * mem)
+{
+    printer_param_list_t *prlist =
+    gs_alloc_struct(mem, printer_param_list_t, &st_printer_param_list,
+		    "psdf_alloc_param_printer");
+
+    *pplist = (gs_param_list *) prlist;
+    if (prlist == 0)
+	return_error(gs_error_VMerror);
+    prlist->procs = &printer_param_list_procs;
+    prlist->memory = mem;
+    prlist->strm = s;
+    prlist->params = *ppp;
+    prlist->print_ok = print_ok;
+    prlist->any = false;
+    return 0;
+}
+
+void
+psdf_free_param_printer(gs_param_list * plist)
+{
+    if (plist) {
+	printer_param_list_t *prlist = (printer_param_list_t *) plist;
+
+	if (prlist->any && prlist->params.suffix)
+	    pputs(prlist->strm, prlist->params.suffix);
+	gs_free_object(prlist->memory, plist, "psdf_free_param_printer");
+    }
+}
+
+#define prlist ((printer_param_list_t *)plist)
+private int
+param_print_typed(gs_param_list * plist, gs_param_name pkey,
+		  gs_param_typed_value * pvalue)
+{
+    stream *s = prlist->strm;
+
+    if (!prlist->any) {
+	if (prlist->params.prefix)
+	    pputs(s, prlist->params.prefix);
+	prlist->any = true;
+    }
+    if (prlist->params.item_prefix)
+	pputs(s, prlist->params.item_prefix);
+    pprints1(s, "/%s", pkey);
+    switch (pvalue->type) {
+	case gs_param_type_null:
+	    pputs(s, " null");
+	    break;
+	case gs_param_type_bool:
+	    pputs(s, (pvalue->value.b ? " true" : " false"));
+	    break;
+	case gs_param_type_int:
+	    pprintd1(s, " %d", pvalue->value.i);
+	    break;
+	case gs_param_type_long:
+	    pprintld1(s, " %l", pvalue->value.l);
+	    break;
+	case gs_param_type_float:
+	    pprintg1(s, " %g", pvalue->value.f);
+	    break;
+	case gs_param_type_string:
+	    psdf_write_string(s, pvalue->value.s.data, pvalue->value.s.size,
+			      prlist->print_ok);
+	    break;
+	case gs_param_type_name:
+/****** SHOULD USE #-ESCAPES FOR PDF ******/
+	    pputc(s, '/');
+	    pwrite(s, pvalue->value.n.data, pvalue->value.n.size);
+	    break;
+	case gs_param_type_int_array:
+	    {
+		uint i;
+		char sepr = (pvalue->value.ia.size <= 10 ? ' ' : '\n');
+
+		pputc(s, '[');
+		for (i = 0; i < pvalue->value.ia.size; ++i) {
+		    pprintd1(s, "%d", pvalue->value.ia.data[i]);
+		    pputc(s, sepr);
+		}
+		pputc(s, ']');
+	    }
+	    break;
+	case gs_param_type_float_array:
+	    {
+		uint i;
+		char sepr = (pvalue->value.fa.size <= 10 ? ' ' : '\n');
+
+		pputc(s, '[');
+		for (i = 0; i < pvalue->value.fa.size; ++i) {
+		    pprintg1(s, "%g", pvalue->value.fa.data[i]);
+		    pputc(s, sepr);
+		}
+		pputc(s, ']');
+	    }
+	    break;
+	    /*case gs_param_type_string_array: */
+	    /*case gs_param_type_name_array: */
+	default:
+	    return_error(gs_error_typecheck);
+    }
+    if (prlist->params.item_suffix)
+	pputs(s, prlist->params.item_suffix);
+    return 0;
+}
+
+#undef prlist

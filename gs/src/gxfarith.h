@@ -1,23 +1,27 @@
-/* Copyright (C) 1993, 1995 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+/* Copyright (C) 1993, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
-/* gxfarith.h */
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
+
+/*Id: gxfarith.h  */
 /* Floating point arithmetic macros for Ghostscript library */
+
+#ifndef gxfarith_INCLUDED
+#  define gxfarith_INCLUDED
+
 #include "gconfigv.h"		/* for USE_FPU */
 #include "gxarith.h"
 
@@ -35,9 +39,11 @@
 #  if arch_sizeof_float == arch_sizeof_int
 typedef int _f_int_t;
 typedef uint _f_uint_t;
-#  else		/* arch_sizeof_float == arch_sizeof_long */
+
+#  else				/* arch_sizeof_float == arch_sizeof_long */
 typedef long _f_int_t;
 typedef ulong _f_uint_t;
+
 #  endif
 #  define _f_as_int(f) *(_f_int_t *)(&(f))
 #  define _f_as_uint(f) *(_f_uint_t *)(&(f))
@@ -97,7 +103,7 @@ typedef ulong _f_uint_t;
        (sizeof(f) == sizeof(float) ?\
 	(_f_as_int(f)) >= IEEE_f1 :\
 	(f) >= 1.0)
-#  else			/* arch_sizeof_float == arch_sizeof_long */
+#  else				/* arch_sizeof_float == arch_sizeof_long */
 #    define is_fge1(f)\
        (sizeof(f) == sizeof(float) ?\
 	(int)(_f_as_int(f) >> 16) >= (IEEE_f1 >> 16) :\
@@ -114,7 +120,7 @@ typedef ulong _f_uint_t;
 	_ftest(f, (_f_as_uint(f) & IEEE_expt) < IEEE_f1 + ((_f_uint_t)((n)-1) << 23),\
 	  (f) >= -_f_bits((n)-1) && (f) < _f_bits((n)-1))
 
-# endif					/* USE_FPU <= 0 & ... */
+# endif				/* USE_FPU <= 0 & ... */
 
 /*
  * Define sine and cosine functions that take angles in degrees rather than
@@ -124,6 +130,9 @@ typedef ulong _f_uint_t;
 double gs_sin_degrees(P1(double angle));
 double gs_cos_degrees(P1(double angle));
 typedef struct gs_sincos_s {
-  double sin, cos;
+    double sin, cos;
+    bool orthogonal;		/* angle is multiple of 90 degrees */
 } gs_sincos_t;
-void gs_sincos_degrees(P2(double angle, gs_sincos_t *psincos));
+void gs_sincos_degrees(P2(double angle, gs_sincos_t * psincos));
+
+#endif /* gxfarith_INCLUDED */

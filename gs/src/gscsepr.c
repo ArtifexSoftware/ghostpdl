@@ -30,23 +30,26 @@
 
 /* ---------------- Color space ---------------- */
 
+gs_private_st_composite(st_color_space_Separation, gs_paint_color_space,
+			"gs_color_space_Separation",
+			cs_Separation_enum_ptrs, cs_Separation_reloc_ptrs);
+
 /* Define the Separation color space type. */
 cs_declare_procs(private, gx_concretize_Separation, gx_install_Separation,
-		 gx_adjust_cspace_Separation,
-		 gx_enum_ptrs_Separation, gx_reloc_ptrs_Separation);
+		 gx_adjust_cspace_Separation);
+private cs_proc_base_space(gx_alt_space_Separation);
 private cs_proc_concrete_space(gx_concrete_space_Separation);
 private cs_proc_remap_concrete_color(gx_remap_concrete_Separation);
 private cs_proc_init_color(gx_init_Separation);
-const gs_color_space_type
-      gs_color_space_type_Separation =
-{gs_color_space_index_Separation, 1, false,
- gs_paint_color_space_size,
- gx_init_Separation, gx_restrict01_paint_1,
- gx_concrete_space_Separation,
- gx_concretize_Separation, gx_remap_concrete_Separation,
- gx_default_remap_color, gx_install_Separation,
- gx_adjust_cspace_Separation, gx_no_adjust_color_count,
- gx_enum_ptrs_Separation, gx_reloc_ptrs_Separation
+const gs_color_space_type gs_color_space_type_Separation = {
+    gs_color_space_index_Separation, true, false,
+    &st_color_space_Separation, gx_num_components_1,
+    gx_alt_space_Separation,
+    gx_init_Separation, gx_restrict01_paint_1,
+    gx_concrete_space_Separation,
+    gx_concretize_Separation, gx_remap_concrete_Separation,
+    gx_default_remap_color, gx_install_Separation,
+    gx_adjust_cspace_Separation, gx_no_adjust_color_count
 };
 
 /* GC procedures */
@@ -54,24 +57,31 @@ const gs_color_space_type
 #define pcs ((gs_color_space *)vptr)
 
 private 
-ENUM_PTRS_BEGIN(gx_enum_ptrs_Separation)
+ENUM_PTRS_BEGIN(cs_Separation_enum_ptrs)
 {
-    ENUM_RETURN_CALL(pcs->params.separation.alt_space.type->enum_ptrs,
-		     &pcs->params.separation.alt_space,
-		     sizeof(pcs->params.separation.alt_space), index - 1);
+    return ENUM_USING(*pcs->params.separation.alt_space.type->stype,
+		      &pcs->params.separation.alt_space,
+		      sizeof(pcs->params.separation.alt_space), index - 1);
 }
 ENUM_PTR(0, gs_color_space, params.separation.map);
 ENUM_PTRS_END
-private RELOC_PTRS_BEGIN(gx_reloc_ptrs_Separation)
+private RELOC_PTRS_BEGIN(cs_Separation_reloc_ptrs)
 {
     RELOC_PTR(gs_color_space, params.separation.map);
-    RELOC_CALL(pcs->params.separation.alt_space.type->reloc_ptrs,
-	       &pcs->params.separation.alt_space,
-	       sizeof(gs_base_color_space));
+    RELOC_USING(*pcs->params.separation.alt_space.type->stype,
+		&pcs->params.separation.alt_space,
+		sizeof(gs_base_color_space));
 }
 RELOC_PTRS_END
 
 #undef pcs
+
+/* Get the alternate space for a Separation space. */
+private const gs_color_space *
+gx_alt_space_Separation(const gs_color_space * pcs)
+{
+    return (const gs_color_space *)&(pcs->params.separation.alt_space);
+}
 
 /* Get the concrete space for a Separation space. */
 /* (We don't support concrete Separation spaces yet.) */
@@ -119,7 +129,8 @@ private int
 map_tint_value(const gs_separation_params * pcssepr, floatp in_val,
 	       float *out_vals)
 {
-    int ncomps = pcssepr->alt_space.type->num_components;
+    int ncomps =
+    cs_num_components((const gs_color_space *)&pcssepr->alt_space);
     int nentries = pcssepr->map->num_values / ncomps;
     int indx;
     const float *pv = pcssepr->map->values;
@@ -198,7 +209,7 @@ gs_cspace_build_Separation(
     gs_color_space *pcspace = 0;
     gs_separation_params *pcssepr = 0;
 
-    if (palt_cspace == 0 || !palt_cspace->type->can_be_base_space)
+    if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
 	return_error(gs_error_rangecheck);
 
     cs_alloc(pcspace, &gs_color_space_type_Separation, pmem);
