@@ -182,7 +182,18 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	goto fail;
     memset(pbfont, 0, sizeof(*pbfont));
     {
-	/* hack : AR 4,5 ignores FontMatrix.ty */
+	/* 
+	 * Adobe Technical Note # 5012 "The Type 42 Font Format Specification" says :
+	 *
+	 * There is a known bug in the TrueType rasterizer included in versions of the
+	 * PostScript interpreter previous to version 2013. The problem is that the
+	 * translation components of the FontMatrix, as used as an argument to the
+	 * definefont or makefont operators, are ignored. Translation of user space is
+	 * not affected by this bug.
+	 *
+	 * Besides that, we found that Adobe Acrobat Reader 4 and 5 ignore 
+	 * FontMatrix.ty .
+	 */
 	copied->FontMatrix.tx = copied->FontMatrix.ty = 0;
     }
     switch (font->FontType) {
