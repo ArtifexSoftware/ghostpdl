@@ -410,7 +410,7 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_call(hpgl_set_ctm(pgls));
 	    hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
 	    hpgl_call(hpgl_set_current_position(pgls, &point));
-	    pgls->g.carriage_return_pos = pgls->g.pos;	
+	    hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	  }
 	return 0;
 }
@@ -495,7 +495,7 @@ pxy:		scale_params.pmin.x = xy[0];
 	hpgl_call(hpgl_set_current_position(pgls, &point));
 	/* PCLTRM 23-7 (commands the update cr position) does not list
            SC but PCL updates the position */
-	pgls->g.carriage_return_pos = pgls->g.pos;
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	return 0;
 }
 

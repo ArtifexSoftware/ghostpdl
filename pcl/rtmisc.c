@@ -98,6 +98,7 @@ rtl_enter_hpgl_mode(
 	pcl_pt.x = (hpgl_real_t)pcl_cap.x;
 	pcl_pt.y = (hpgl_real_t)pcl_cap.y;
         hpgl_add_pcl_point_to_path(pcls, &pcl_pt);
+	hpgl_update_carriage_return_pos(pcls);
     }
     return 0;
 }

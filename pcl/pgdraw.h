@@ -32,6 +32,10 @@ int hpgl_set_drawing_color(P2(hpgl_state_t *pgls, hpgl_rendering_mode_t render_m
 /* function to get the current hpgl/2 state position */
 int hpgl_get_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
 
+/* update the carriage return position to the current gl/2 positiion */
+ int
+hpgl_update_carriage_return_pos(P1(hpgl_state_t *pgls));
+
 /* function to set the current hpgl/2 state position */
 int hpgl_set_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
 

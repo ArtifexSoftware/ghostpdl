@@ -362,9 +362,11 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 /* Execute a CR for CP or LB. */
 private int
 hpgl_do_CR(hpgl_state_t *pgls)
-{	return hpgl_add_point_to_path(pgls, pgls->g.carriage_return_pos.x,
-				      pgls->g.carriage_return_pos.y,
-				      hpgl_plot_move_absolute, true);
+{	
+    return hpgl_add_point_to_path(pgls, pgls->g.carriage_return_pos.x,
+				  pgls->g.carriage_return_pos.y,
+				  hpgl_plot_move_absolute,
+				  true);
 }
 
 /* CP [spaces,lines]; */

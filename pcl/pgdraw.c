@@ -868,6 +868,13 @@ hpgl_get_current_position(
 }
 
  int
+hpgl_update_carriage_return_pos(hpgl_state_t *pgls)
+{
+    pgls->g.carriage_return_pos = pgls->g.pos;
+    return 0;
+}
+
+ int
 hpgl_set_current_position(
     hpgl_state_t *  pgls,
     gs_point *      pt

@@ -53,7 +53,7 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 				       -chord_angle : chord_angle, false,
 				       pgls->g.move_or_draw, true));
 	
-	pgls->g.carriage_return_pos = pgls->g.pos;
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	return 0;
 }
 
@@ -87,7 +87,7 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 					      x_inter, y_inter,
 					      x_end, y_end, chord_angle,
 					      pgls->g.move_or_draw));
-	pgls->g.carriage_return_pos = pgls->g.pos;
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	return 0;
 }
 
@@ -110,7 +110,7 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	    switch ( i )
 	      {
 	      case 0:		/* done */
-		pgls->g.carriage_return_pos = pgls->g.pos;
+		hpgl_call(hpgl_update_carriage_return_pos(pgls));
 		/* draw the path */
 		if ( !pgls->g.polygon_mode ) {
 		    /* NB - needs documentation */
@@ -188,7 +188,7 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	  }
 	if ( pgls->g.symbol_mode != 0 )
 	  hpgl_call(hpgl_print_symbol_mode_char(pgls));
-	pgls->g.carriage_return_pos = pgls->g.pos;
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	return 0;
 }
 
@@ -311,7 +311,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  switch ( ch & 127 /* per spec */ )
 	    {
 	    case ';':
-	      pgls->g.carriage_return_pos = pgls->g.pos;
+	      hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	      return 0;
 	    case ':':
 	      if_debug0('I', "\n  :");
@@ -367,7 +367,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		 */
 		if ( ch == ESC ) /* (might be ESC+128) */
 		  { pargs->source.ptr = p - 1; /* rescan ESC */
-		    pgls->g.carriage_return_pos = pgls->g.pos;
+		    hpgl_call(hpgl_update_carriage_return_pos(pgls));
 		    return 0;
 		  }
 		/* falls through */

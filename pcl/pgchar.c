@@ -130,7 +130,7 @@ hpgl_label_direction(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	pgls->g.character.direction.x = run;
 	pgls->g.character.direction.y = rise;
 	pgls->g.character.direction_relative = relative;
-	pgls->g.carriage_return_pos = pgls->g.pos;
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	return 0;
 }
 
@@ -297,7 +297,7 @@ hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  return e_Range;
 	pgls->g.character.text_path = path;
 	pgls->g.character.line_feed_direction = (line ? -1 : 1);
-	pgls->g.carriage_return_pos = pgls->g.pos;
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	return 0;
 }
 
@@ -362,7 +362,7 @@ hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( origin < 1 || origin == 10 || origin == 20 || origin > 21 )
 	  return e_Range;
 	pgls->g.label.origin = origin;
-	pgls->g.carriage_return_pos = pgls->g.pos;
+	hpgl_call(hpgl_update_carriage_return_pos(pgls));
 	return 0;
 }
 
