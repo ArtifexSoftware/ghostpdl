@@ -18,6 +18,15 @@ typedef struct hpgl_line_type_s {
   hpgl_real_t gap[20];
 } hpgl_line_type_t;
 
+/* Define the current rendering mode - character, polygon, or vector.
+   This will affect the line attributes chosen see
+   hpgl_set_graphics_line_attribute_state */
+typedef enum {
+	vector_mode,
+	character_mode,
+	polygon_mode
+} hpgl_rendering_mode_t;
+
 typedef struct pcl_hpgl_state_s {
 
 		/* Chapter 18 (pgframe.c) */
@@ -161,5 +170,7 @@ typedef struct pcl_hpgl_state_s {
 	struct { hpgl_real_t rgb[3]; } pen_color[2];
 	uint number_of_pens;
 	struct { hpgl_real_t cmin, cmax; } color_range[3];
+
+	hpgl_rendering_mode_t render_mode;
 
 } pcl_hpgl_state_t;

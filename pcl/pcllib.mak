@@ -15,8 +15,8 @@ PCLLIB_MAK=pcllib.mak
 
 pjparse_h=pjparse.h
 
-pjparse.$(OBJ): pjparse.c $(std_h)\
-  $(pjparse_h)
+pjparse.$(OBJ): pjparse.c $(memory__h)\
+ $(scommon_h) $(pjparse_h)
 
 PJL=pjparse.$(OBJ)
 
@@ -26,18 +26,21 @@ pjl.dev: $(PCLLIB_MAK) $(ECHOGS_XE) $(PJL)
 ################ Shared libraries ################
 
 pldict_h=pldict.h
-plfont_h=plfont.h $(gsccode_h)
 plmain_h=plmain.h
 plsymbol_h=plsymbol.h
 plvalue_h=plvalue.h
 plvocab_h=plvocab.h
 unicode1_h=unicode1.h
+# Out of order because of inclusion
+plfont_h=plfont.h $(gsccode_h) $(plsymbol_h)
 
-plchar.$(OBJ): plchar.c $(AK) $(memory__h) $(stdio__h)\
+plchar.$(OBJ): plchar.c $(AK) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
- $(gschar_h) $(gserror_h) $(gserrors_h) $(gsimage_h) $(gsmatrix_h) $(gsmemory_h)\
- $(gspaint_h) $(gspath_h) $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
- $(gxchar_h) $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gzstate_h)\
+ $(gschar_h) $(gscoord_h) $(gserror_h) $(gserrors_h) $(gsimage_h)\
+ $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
+ $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
+ $(gxarith_h) $(gxchar_h) $(gxfcache_h) $(gxdevice_h) $(gxdevmem_h)\
+ $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxpath_h) $(gzstate_h)\
  $(plfont_h) $(plvalue_h)
 
 pldict.$(OBJ): pldict.c $(AK) $(memory__h)\
@@ -48,7 +51,7 @@ plfont.$(OBJ): plfont.c $(AK) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
  $(gschar_h) $(gserror_h) $(gserrors_h) $(gsmatrix_h) $(gsmemory_h)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
- $(gxchar_h) $(gxfcache_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gzstate_h)\
+ $(gxfont_h) $(gxfont42_h)\
  $(plfont_h) $(plvalue_h)
 
 plmain.$(OBJ): plmain.c $(AK) $(stdio__h) $(string__h)\

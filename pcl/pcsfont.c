@@ -213,9 +213,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
 	    { static const pl_font_offset_errors_t errors = {
-	        gs_error_invalidfont, gs_error_invalidfont,
-	        gs_error_invalidfont, gs_error_invalidfont,
-		0
+	        gs_error_invalidfont, 0
 	      };
 	      code =
 		pl_font_scan_segments(plfont, 70, desc_size, (ulong)count - 2,

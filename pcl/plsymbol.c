@@ -53,8 +53,6 @@ main(int argc, char *argv[])
 }
 #endif				/* MAIN */
 
-/* Define common symbol set elements. */
-
 /***************************************
  * ASCII and national variant mappings *
  ***************************************/

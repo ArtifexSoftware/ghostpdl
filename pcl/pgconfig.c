@@ -20,6 +20,7 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 
+	hpgl_poly_ignore(pgls);	
 	while ( p < rlimit )
 	  if ( !pargs->phase )
 	    { /* Scanning for opening " */
@@ -90,7 +91,10 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_args_setup(&args);
 	hpgl_PA(&args, pgls);
 
-	hpgl_args_setup(&args);
+	hpgl_args_set_int(&args,0);
+	hpgl_PM(&args, pgls);
+
+	hpgl_args_set_int(&args,2);
 	hpgl_PM(&args, pgls);
 
 	/*	hpgl_args_setup(&args);
@@ -216,6 +220,7 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
         int32 ptxy[4];
 	int i;
 
+	hpgl_poly_ignore(pgls);	
 	/* get the default picture frame coordinates */
 	hpgl_picture_frame_coords(pgls, pic_coords);
 
@@ -268,6 +273,7 @@ hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t rptxy[4];
 	int i, j;
 	hpgl_args_t args;
+	hpgl_poly_ignore(pgls);	
 	for ( i = 0; i < 4 && hpgl_arg_c_real(pargs, &rptxy[i]); ++i )
 	  ;
 	if ( i & 1 )
@@ -303,6 +309,8 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t wxy[4];
 	int i;
 
+	hpgl_poly_ignore(pgls);	
+
 	/* get the default picture frame coordinates */
 	hpgl_picture_frame_coords(pgls, wxy);
 
@@ -323,7 +331,9 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* PG; */
 int
 hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	return e_Unimplemented;
+{	
+	hpgl_poly_ignore(pgls);	
+	return e_Unimplemented;
 }
 
 /* RO angle; */
@@ -332,6 +342,7 @@ int
 hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int angle;
 
+	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &angle) )
 	  switch ( angle )
 	    {
@@ -347,7 +358,9 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* RP; */
 int
 hpgl_RP(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	return e_Unimplemented;
+{	
+	hpgl_poly_ignore(pgls);	
+	return e_Unimplemented;
 }
 
 /* SC xmin,xmax,ymin,ymax[,type=0]; */
@@ -360,6 +373,7 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	int i;
 	int type;
 
+	hpgl_poly_ignore(pgls);	
 	for ( i = 0; i < 4 && hpgl_arg_real(pargs, &xy[i]); ++i )
 	  ;
 	switch ( i )
@@ -416,7 +430,9 @@ private int
 pgconfig_do_init(gs_memory_t *mem)
 {		/* Register commands */
 	DEFINE_HPGL_COMMANDS
-	  HPGL_COMMAND('C', 'O', hpgl_CO),
+	  /* CO has special argument parsing, so it must handle skipping */
+	  /* in polygon mode itself. */
+	  HPGL_POLY_COMMAND('C', 'O', hpgl_CO),
 	  HPGL_COMMAND('D', 'F', hpgl_DF),
 	  HPGL_COMMAND('I', 'N', hpgl_IN),
 	  HPGL_COMMAND('I', 'P', hpgl_IP),

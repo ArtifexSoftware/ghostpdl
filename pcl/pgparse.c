@@ -145,6 +145,20 @@ call:	if ( pst->command )
 		  pst->phase = 0;
 		  pst->done = false;
 		  hpgl_args_init(pst);
+		  /*
+		   * Only a few commands should be executed while we're in
+		   * polygon mode: check for this here.  Note that we rely
+		   * on the garbage-skipping property of the parser to skip
+		   * over any following arguments.  This doesn't work for
+		   * the few commands with special syntax that should be
+		   * ignored in polygon mode (CO, DT, LB, SM); they must be
+		   * flagged as executable even in polygon mode, and check
+		   * the render_mode themselves.
+		   */
+		  if ( pgls->g.render_mode == polygon_mode &&
+		       !(pst->command->flags & hpgl_cdf_polygon)
+		     )
+		    pst->command = 0;
 		  goto call;
 		}
 	  }

@@ -6,6 +6,104 @@
 This file, NEWS-5, describes the changes in the most recent releases of
 Aladdin's PCL 5 code, in reverse chronological order.
 
+Fileset of 12/24/96
+===================
+
+PCL
+---
+
+(LPD) Adds a pl_font_includes_char procedure for determining whether a given
+character is defined in a given font and symbol set, and a
+pl_font_char_width procedure for getting the character escapement of a given
+character in a given font and symbol set.  MOST OF THE FUNCTIONALITY IS NOT
+IMPLEMENTED YET, AND THE API IS SUBJECT TO CHANGE.  (plfont.h, plsymbol.h,
+plchar.c)
+
+HP-GL/2
+-------
+
+(LPD) Moves responsibility for ignoring non-polygon commands in polygon mode
+into the parser:
+
+	- Adds a 'polygon' flag to the command definition structure;
+	removes the obsolete even_in_macro flag.  (pgmand.h)
+
+	- Adds a HPGL_POLY_COMMAND macro, like HPGL_COMMAND except it defines
+	a command that *is* allowed in polygon mode; removes the obsolete
+	HPGL_SPECIAL_COMMAND macro.  (pgmand.h)
+
+	- Changes the definition of all commands legal in polygon mode,
+	and all commands with special argument parsing that must handle
+	skipping in polygon mode themselves (CO, DT, LB, SM), from
+	HPGL_COMMAND to HPGL_POLY_COMMAND.  (pgchar.c, pgconfig.c,
+	pglfill.c, pgpoly.c, pgvector.c)
+
+	- Changes the parser so that commands without the polygon flag are
+	ignored in polygon mode.  (pgparse.c)
+
+(LPD) Fixes a typo (mneumonics => mnemonics).  (pgmand.h)
+
+(HAS):
+
+Mon Dec 23 00:04:54 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgdraw.c (hpgl_draw_current_path): added call to gs_fill for
+ 	polygon mode.
+
+	* allfiles.c: added ignore macro to commands that are ignored in
+	polygon mode, using the PCLTRM table on 21-41 "Polygon mode
+	allowable commands".  Arguably this could be handled in the parser
+	but it is more convenient to have the definition available when
+	looking at the function that implements the mneumonic.
+	
+	* pgmand.h (hpgl_poly_ignore): macro to implement succesful return
+	for commands that should be ignored in polygon mode.
+
+Sun Dec 22 21:29:23 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgconfig.c (hpgl_DF): fixed bug due to HP documentation --
+	uncovered by polygon implementation.  The DF command does the
+	equivalent of PM0;PM2 clear the polygon buffer and exits polygon
+	mode, not just PM as PCLTRM DF documentation states.
+
+	* pgpoly.c (hpgl_PM): implemented.
+
+	* pgdraw.c (hpgl_clear_current_path): implemented.
+	(hpgl_close_current_path): implemented.
+
+	* pgdraw.h: added hpgl_clear_current_path() and
+	hpgl_close_current_path to the drawing interface.  These destroy
+	and close paths respectively.  Used by PM.
+
+	* pgdraw.c (hpgl_set_graphics_line_attribute_state): added warning
+	message and fallback to vector if mode was not set to a know value.
+
+Sat Dec 21 19:50:43 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgdraw.c (hpgl_set_graphics_line_attribute_state): changes to
+	set line attributes depending on what is being rendered -
+	characters, lines, or polygons.
+	
+
+	* pgstate.h: added rendering mode of vector, polygon or
+	character.  This affect line attributes see
+	hpgl_set_graphics_line_attribute_state in pgdraw.c.
+
+	* pgdraw.c (hpgl_set_clipping_region): set up clipping rectangle
+	with gx_set_clip_to_rectangle();
+
+Wed Dec 18 14:55:16 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgmand.h: removed hpgl_ok, we will use "return 0" for successful
+	function termination.
+
+	* pgvector.c (hpgl_CI): implemented circle.  (has bugs).
+
+Sat Dec 14 13:45:27 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pginit.c (hpgl_do_reset): change to initialize picture frame and
+	plot size before IN call.
+
 Fileset of 12/13/96
 ===================
 

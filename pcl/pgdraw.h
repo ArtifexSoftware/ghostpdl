@@ -37,6 +37,12 @@ int hpgl_draw_line(P5(hpgl_state_t *pgls, floatp x1, floatp y1,
 int hpgl_draw_dot(P3(hpgl_state_t *pgls, floatp x1, floatp y1));
 
 
+/* destroys the current path */
+int hpgl_clear_current_path(P1(hpgl_state_t *pgls));
+
+/* closes the current path, making the first point and last point coincident */
+int hpgl_close_current_path(P1(hpgl_state_t *pgls));
+
 /* initialize the path machinery */
 #define hpgl_init_path(state) ((state)->g.have_path = false)
 

@@ -46,8 +46,10 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	gs_free_object(mem, (void *)plfont->char_glyphs.table, cname);
 	gs_free_object(mem, (void *)plfont->glyphs.table, cname);
 	gs_free_object(mem, (void *)plfont->header, cname);
-	gs_purge_font(plfont->pfont);
-	gs_free_object(mem, plfont->pfont, cname);
+	if ( plfont->pfont )	/* might be only partially constructed */
+	  { gs_purge_font(plfont->pfont);
+	    gs_free_object(mem, plfont->pfont, cname);
+	  }
 	gs_free_object(mem, plf, cname);
 }
 
@@ -174,21 +176,24 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 	const byte *null_segment = end - (2 + wsize);
 	bool found = false;
 	ulong seg_size;
+	int illegal_font_data = pfoe->illegal_font_data;
+#define return_scan_error(err)\
+  return_error((err) ? (err) : illegal_font_data);
 
 	if ( memcmp(null_segment, "\377\377", 2) /* NULL segment header */ )
-	  return_error(pfoe->missing_required_segment);
+	  return_scan_error(pfoe->missing_required_segment);
 	if ( memcmp(null_segment + 2, "\0\0\0\0", wsize) /* NULL segment size */ )
-	  return_error(pfoe->illegal_null_segment_size);
+	  return_scan_error(pfoe->illegal_null_segment_size);
 	switch ( fst )
 	  {
 	  case plfst_bitmap:
 	  case plfst_TrueType:
 	    break;
 	  default:
-	    return_error(pfoe->illegal_font_header_fields);
+	    return_scan_error(pfoe->illegal_font_header_fields);
 	  }
 	if ( header[fst_offset + 1] ) /* variety, must be 0 */
-	  return_error(pfoe->illegal_font_header_fields);
+	  return_scan_error(pfoe->illegal_font_header_fields);
 	/* Scan the segments. */
 	for ( ; end - segment >= 2 + wsize; segment += 2 + wsize + seg_size )
 	    { uint seg_id = u16(segment);
@@ -197,19 +202,19 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 
 	      seg_size = (large_sizes ? u32(segment + 2) : u16(segment + 2));
 	      if ( seg_size + 2 + wsize > end - segment )
-		return_error(pfoe->illegal_font_data);
+		return_error(illegal_font_data);
 	      /* Handle segments common to all fonts. */
 	      switch ( seg_id )
 		{
 		case 0xffff:		/* NULL segment ID */
 		  if ( segment != null_segment )
-		    return_error(pfoe->illegal_font_data);
+		    return_error(illegal_font_data);
 		  continue;
 		case id2('V','I'):
 		  continue;
 		case id2('C', 'C'):
 		  if ( seg_size != 8 )
-		    return_error(pfoe->illegal_font_data);
+		    return_error(illegal_font_data);
 		  memcpy(plfont->character_complement, sdata, 8);
 		  continue;
 		default:
@@ -221,9 +226,14 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 		  {
 		  case id2('B','R'):
 		    if ( seg_size != 4 )
-		      return_error(pfoe->illegal_font_data);
-		    plfont->resolution.x = pl_get_uint16(sdata);
-		    plfont->resolution.y = pl_get_uint16(sdata + 2);
+		      return_scan_error(pfoe->illegal_BR_segment);
+		    { uint xres = pl_get_uint16(sdata);
+		      uint yres = pl_get_uint16(sdata + 2);
+		      if ( xres == 0 || yres == 0 )
+			return_scan_error(pfoe->illegal_BR_segment);
+		      plfont->resolution.x = xres;
+		      plfont->resolution.y = yres;
+		    }
 		    found = true;
 		    break;
 		  default:
@@ -234,15 +244,39 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 		switch ( seg_id )
 		  {
 		  case id2('G','T'):
+		    /*
+		     * We don't do much checking here, but we do check that
+		     * the segment starts with a table directory that
+		     * includes at least 5 elements (gdir, head, hhea, hmtx,
+		     * maxp -- but we don't check the actual names).
+		     */
+		    if ( seg_size < 12 + 5 * 16 ||
+			 memcmp(sdata, "\000\001\000\000", 4) ||
+			 u16(sdata + 4) < 5
+		       )
+		      return_scan_error(pfoe->illegal_GT_segment);
 		    plfont->offsets.GT = segment - header;
 		    found = true;
 		    break;
 		  case id2('G','C'):
-		    /****** DO MORE CHECKING HERE ******/
+		    if ( seg_size < 6 || u16(sdata) != 0 ||
+			 seg_size != u16(sdata + 4) * 6 + 6
+		       )
+		      return_scan_error(pfoe->illegal_GC_segment);
 		    plfont->offsets.GC = segment - header;
 		    break;
 		  case id2('V','T'):
-		    /****** DO MORE CHECKING HERE ******/
+		    /* Check for end of table mark */
+		    if ( (seg_size & 3) != 0 || seg_size < 4 ||
+			 u16(sdata + seg_size - 4) != 0xffff
+		       )
+		      return_scan_error(pfoe->illegal_VT_segment);
+		    /* Check for table sorted by horizontal glyph ID */
+		    { uint i;
+		      for ( i = 0; i < seg_size - 4; i += 4 )
+			if ( u16(sdata + i) >= u16(sdata + i + 4) )
+			  return_scan_error(pfoe->illegal_VT_segment);
+		    }
 		    plfont->offsets.VT = segment - header;
 		    break;
 		  default:
@@ -252,12 +286,13 @@ pl_font_scan_segments(pl_font_t *plfont, int fst_offset, int start_offset,
 #undef id2
 	    }
 	  if ( !found )
-	    return_error(pfoe->missing_required_segment);
+	    return_scan_error(pfoe->missing_required_segment);
 	  if ( segment != end )
-	    return_error(pfoe->illegal_font_data);
+	    return_error(illegal_font_data);
 	  plfont->large_sizes = large_sizes;
 	  plfont->scaling_technology = fst;
 	  return 0;
+#undef return_scan_error
 }
 
 /* Load a built-in (TrueType) font from external storage. */

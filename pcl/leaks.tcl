@@ -3,8 +3,8 @@
 # This tool helps detect memory leaks in a -ZA trace from Ghostscript.
 # It reads a memory trace from stdin and prints unmatched allocations on
 # stdout.  Currently it is slightly specialized for our PCL5 environment,
-# in that it looks for the word "allocated" in the trace to mark the
-# beginning and end of the interesting region.
+# in that it looks for the string "memory allocated" in the trace to mark
+# the beginning and end of the interesting region.
 
 # We keep track of the trace in the following global arrays:
 #	alloc(<addr>) holds a string of the form line#:line of the last
@@ -45,7 +45,7 @@ proc add1-0 {il addr} {
 proc add0+0 {il addr} {
     if [regexp {Final|allocated} $il] {
 	uplevel {set lines($n) $l}
-	if [regexp allocated $il] {uplevel {set go 0}}
+	if [regexp "Final time" $il] {uplevel {set go 0}}
     }
 }
 proc add0+1 {il addr} [info body add0+0]
@@ -63,7 +63,7 @@ proc read_trace {{fname %stdin}} {
 	# Skip to the first "allocated" line
     while 1 {
 	gets $in l
-	if [regexp allocated $l] break
+	if [regexp "memory allocated" $l] break
 	incr n
     }
     set lines($n) $l

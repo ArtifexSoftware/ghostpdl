@@ -17,6 +17,7 @@ int
 hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0, opcode;
 
+	hpgl_poly_ignore(pgls);
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	opcode = (mode ? 168 : 255);
@@ -33,6 +34,7 @@ hpgl_PC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int32 pen;
 	hpgl_real_t primary[3];
 
+	hpgl_poly_ignore(pgls);
 	if ( hpgl_arg_int(pargs, &pen) )
 	  { if ( pen < 0 || pen >= pgls->g.number_of_pens )
 	      return e_Range;
@@ -67,6 +69,7 @@ int
 hpgl_NP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int32 n = 8;
 
+	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_int(pargs, &n) && (n < 2 || n > 32768) )
 	  return e_Range;
 	/* Round up to a power of 2. */
@@ -83,6 +86,7 @@ hpgl_CR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t range[6];
 	int i;
 
+	hpgl_poly_ignore(pgls);
 	range[0] = range[2] = range[4] = 0;
 	range[1] = range[3] = range[5] = 255;
 	for ( i = 0; i < 6 && hpgl_arg_c_real(pargs, &range[i]); ++i )
@@ -105,6 +109,7 @@ hpgl_PP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 	float adjust;
 
+	hpgl_poly_ignore(pgls);	
 	if ( !hpgl_arg_c_int(pargs, &mode) || (mode & ~1) )
 	  return e_Range;
 	pgls->grid_centered = mode;

@@ -15,6 +15,8 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "gspaint.h"
+#include "gxfixed.h"
+#include "gxpath.h"
 #include "pgmand.h"
 #include "pgdraw.h"
 #include "pggeom.h"
@@ -48,7 +50,6 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	float pattern[20];
 	int i;
 
-
 	gs_setdashadapt(pgls->pgs, adaptive);
 	
 	if ( entry == 0 )
@@ -57,7 +58,7 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
                user space */
 	    hpgl_call(gs_setdotlength(pgls->pgs, (0.00098), 
 				      true));
-	    return hpgl_ok;
+	    return 0;
 	  }
 	/* HAS not correct as user space may not be PU */
 	
@@ -70,7 +71,7 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	   not clear where the calculation should take place */
 	hpgl_call(gs_setdash(pgls->pgs, pattern, pat->count, 0));
 	
-	return hpgl_ok;
+	return 0;
 }
 
 /* set up joins, caps, miter limit, and line width */
@@ -94,19 +95,61 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls)
 					   gs_join_bevel,    /* 5 bevel join */
 					   gs_join_none};    /* 6 no join */
 
-	  hpgl_call(gs_setlinejoin(pgls->pgs, cap_map[pgls->g.line.cap]));
-	  hpgl_call(gs_setlinecap(pgls->pgs, join_map[pgls->g.line.join]));
-	  
+	  switch( pgls->g.render_mode )
+	    {
+	    case character_mode: 
+	    case polygon_mode:
+	      hpgl_call(gs_setlinejoin(pgls->pgs, gs_cap_round));
+	      hpgl_call(gs_setlinecap(pgls->pgs, gs_join_round));
+	      break;
+	    case vector_mode:
+vector:	      hpgl_call(gs_setlinejoin(pgls->pgs, cap_map[pgls->g.line.cap]));
+	      hpgl_call(gs_setlinecap(pgls->pgs, join_map[pgls->g.line.join]));
+	      break;
+	    default:
+	      /* shouldn't happen as we must have a mode to properly
+                 parse an hpgl file. */
+	      dprintf("warning no hpgl rendering mode set using vector mode\n");
+	      goto vector;
+	    }
+
 	  /* HAS -- yuck need symbolic names for GL join types.  Set
-             miter limit !very large! if there is not bevel */
-	  
-	  hpgl_call(gs_setmiterlimit(pgls->pgs, ( pgls->g.line.join == 1 ) ?
+	     miter limit !very large! if there is not bevel.  Miter is
+	     also sensitive to render mode but I have not figured it
+	     out completely. */
+	  hpgl_call(gs_setmiterlimit(pgls->pgs, 
+				     ( pgls->g.line.join == 1 ) ?
 				     5000.0 :
 				     pgls->g.miter_limit));
+	  
 	  hpgl_call(gs_setlinewidth(pgls->pgs, 
 				    pgls->g.pen_width[pgls->g.pen]));
+	  
+	  return 0;
+}
 
-	  return(hpgl_ok);
+/* set up an hpgl clipping region wrt last IW command */
+private int
+hpgl_set_clipping_region(hpgl_state_t *pgls)
+{
+	gs_fixed_rect fixed_box;
+	gs_rect float_box;
+	gs_matrix mat;
+
+	hpgl_call(gs_currentmatrix(pgls->pgs, &mat));
+
+	hpgl_call(gs_bbox_transform(&pgls->g.window, 
+				    &mat,
+				    &float_box));
+
+	/* HAS maybe a routine that does this?? */
+	fixed_box.p.x = float2fixed(float_box.p.x);
+	fixed_box.p.y = float2fixed(float_box.p.y);
+	fixed_box.q.x = float2fixed(float_box.q.x);
+	fixed_box.q.y = float2fixed(float_box.q.y);
+	
+	hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
+	return 0;
 }
 
 private int
@@ -119,9 +162,10 @@ hpgl_set_graphics_state(hpgl_state_t *pgls)
 	/* joins, caps, and line width */
 	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls));
 	
-	return hpgl_ok;
-}
+	hpgl_call(hpgl_set_clipping_region(pgls));
 
+	return 0;
+}
 /* change pcl's transformation.  HAS hpgl's coordinate system rotates
    with pcl's orientation but not pcl's current print direction. */
 private int
@@ -150,7 +194,7 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 			   (pgls->g.picture_frame.width /
 			    pgls->g.plot_width)));
 		     
-	return hpgl_ok;
+	return 0;
 }
 int
 hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y, 
@@ -175,7 +219,24 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 	/* update hpgl's state position */
 	pgls->g.pos.x = x;
 	pgls->g.pos.y = y;
-	return hpgl_ok;
+	return 0;
+}
+
+/* destroys the current path.  HAS probably don't need to create a new
+   one also. */
+int 
+hpgl_clear_current_path(hpgl_state_t *pgls)
+{
+	hpgl_call(gs_newpath(pgls->pgs));
+	return 0;
+}
+
+/* closes the current path, making the first point and last point coincident */
+int 
+hpgl_close_current_path(hpgl_state_t *pgls)
+{
+	hpgl_call(gs_closepath(pgls->pgs));
+	return 0;
 }
 
 int
@@ -208,7 +269,7 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 					     ((pgls->g.pen_down) ? 
 					      gs_lineto : gs_moveto)));
 	  }
-	return hpgl_ok;
+	return 0;
 }
 
 int
@@ -219,7 +280,7 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, x2, gs_moveto));
 	/* HAS we may need to flatten this here */
 	hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
-	return hpgl_ok;
+	return 0;
 }
 
 
@@ -235,7 +296,7 @@ hpgl_draw_current_path(hpgl_state_t *pgls)
 
 	gs_point pt;
 
-	if ( !pgls->g.have_path ) return hpgl_ok;
+	if ( !pgls->g.have_path ) return 0;
 
 	hpgl_call(gs_currentpoint(pgls->pgs, &pt)); 
 
@@ -250,12 +311,18 @@ hpgl_draw_current_path(hpgl_state_t *pgls)
 
 	hpgl_call(hpgl_set_graphics_state(pgls));
 
-	/* HAS - need to do something here for polygon mode. Like fill */
-	hpgl_call(gs_stroke(pgls->pgs));
+	/* HAS - yes they are exclusive but the hpgl_call macro is
+           kooky about "else" right now */
+	if ( pgls->g.render_mode == polygon_mode ) 
+	  hpgl_call(gs_fill(pgls->pgs));
+
+	if ( pgls->g.render_mode == vector_mode )
+	  hpgl_call(gs_stroke(pgls->pgs));
+
 	pgls->g.have_path = false;
 	/* the page has been marked */
 	pgls->have_page = true;
-	return hpgl_ok;
+	return 0;
 }
 
 int
@@ -269,7 +336,7 @@ hpgl_draw_line(hpgl_state_t *pgls, floatp x1, floatp y1, floatp x2, floatp y2)
 					  gs_lineto : gs_moveto)));
 	hpgl_call(hpgl_draw_current_path(pgls));
 	
-	return hpgl_ok;
+	return 0;
 }
 
 int
@@ -280,5 +347,5 @@ hpgl_draw_dot(hpgl_state_t *pgls, floatp x1, floatp y1)
 					  gs_lineto : gs_moveto)));
 	hpgl_call(hpgl_draw_current_path(pgls));
 
-	return hpgl_ok;
+	return 0;
 }

@@ -9,6 +9,7 @@
 #  define plfont_INCLUDED
 
 #include "gsccode.h"
+#include "plsymbol.h"
 
 /* ---------------- PCL-specified definitions ---------------- */
 
@@ -53,30 +54,38 @@ typedef struct pl_font_params_s {
 /* ---------------- Internal structures ---------------- */
 
 /*
- * Define an element of the hash table for mapping glyphs to character data.
- */
-typedef struct pl_font_glyph_s {
-  gs_glyph glyph;
-  const byte *data;
-} pl_font_glyph_t;
-
-/*
- * Define an element of the hash table for mapping character codes to
- * TrueType glyph indices.
- */
-typedef struct pl_tt_char_glyph_s {
-  gs_char chr;
-  gs_glyph glyph;
-} pl_tt_char_glyph_t;
-
-/*
  * Define the size values for hash tables.
  * We require used <= limit < size.
  */
 #define pl_table_sizes\
   uint used;			/* # of entries in use */\
   uint limit;			/* max # of entries in use */\
-  uint size			/* allocated size of table */
+  uint size;			/* allocated size of table */\
+  uint skip			/* rehashing interval */
+
+/*
+ * Define the hash table for mapping glyphs to character data.
+ */
+typedef struct pl_font_glyph_s {
+  gs_glyph glyph;
+  const byte *data;
+} pl_font_glyph_t;
+typedef struct pl_glyph_table_s {
+  pl_font_glyph_t *table;
+  pl_table_sizes;
+} pl_glyph_table_t;
+
+/*
+ * Define the hash table for mapping character codes to TrueType glyph indices.
+ */
+typedef struct pl_tt_char_glyph_s {
+  gs_char chr;
+  gs_glyph glyph;
+} pl_tt_char_glyph_t;
+typedef struct pl_tt_char_glyph_table_s {
+  pl_tt_char_glyph_t *table;
+  pl_table_sizes;
+} pl_tt_char_glyph_table_t;
 
 /* Define an abstract type for library fonts. */
 #ifndef gs_font_DEFINED
@@ -103,6 +112,10 @@ struct pl_font_s {
 	/* Information extracted from the font or supplied by the client. */
   pl_font_scaling_technology_t scaling_technology;
   pl_font_type_t font_type;
+  /* Implementation of pl_font_char_width, see below */
+  int (*char_width)(P4(const pl_font_t *plfont,
+		       const pl_symbol_map_collection_t *maps,
+		       uint char_code, gs_point *pwidth));
   bool large_sizes;	/* segment sizes are 32 bits if true, 16 if false */
 			/* (for segmented fonts only) */
   struct { uint x, y; } resolution;	/* resolution (for bitmap fonts) */
@@ -114,15 +127,9 @@ struct pl_font_s {
     long VT;		/* VerTical substitution (optional) */
   } offsets;		/* segment offsets, -1 if segment missing */
 	/* Glyph table for downloaded fonts. */
-  struct g_ {
-    pl_font_glyph_t *table;
-    pl_table_sizes;
-  } glyphs;
+  pl_glyph_table_t glyphs;
 	/* Character to glyph map for downloaded TrueType fonts. */
-  struct cg_ {
-    pl_tt_char_glyph_t *table;
-    pl_table_sizes;
-  } char_glyphs;
+  pl_tt_char_glyph_table_t char_glyphs;
 };
 #define private_st_pl_font()	/* in plfont.c */\
   gs_private_st_ptrs4(st_pl_font, pl_font_t, "pl_font_t",\
@@ -183,11 +190,16 @@ void pl_tt_finish_init(P2(gs_font_type42 *pfont, bool downloaded));
  * large_sizes = false indicates 2-byte segment sizes, true indicates 4-byte.
  */
 typedef struct pl_font_offset_errors_s {
-  int missing_required_segment;
-  int illegal_null_segment_size;
-  int illegal_font_header_fields;
   int illegal_font_data;
   int illegal_font_segment;	/* 0 means ignore unknown segments */
+  /* 0 in any of the remaining values means return illegal_font_data */
+  int illegal_font_header_fields;
+  int illegal_null_segment_size;
+  int missing_required_segment;
+  int illegal_GT_segment;
+  int illegal_GC_segment;
+  int illegal_VT_segment;
+  int illegal_BR_segment;
 } pl_font_offset_errors_t;
 int pl_font_scan_segments(P6(pl_font_t *plfont, int fst_offset,
 			     int start_offset, long end_offset,
@@ -203,6 +215,18 @@ int pl_load_tt_font(P5(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 
 /* Add a glyph to a font.  Return -1 if the table is full. */
 int pl_font_add_glyph(P3(pl_font_t *plfont, gs_glyph glyph, const byte *data));
+
+/* Determine the escapement of a character in a font / symbol set. */
+/* If the font is bound, the symbol set is ignored. */
+/* If the character is undefined, set the escapement to (0,0) and return 1. */
+/* If pwidth is NULL, don't store the escapement. */
+#define pl_font_char_width(plfont, maps, char_code, pwidth)\
+  (*(plfont)->char_width)(plfont, maps, char_code, pwidth)
+
+/* Determine whether a font, with a given symbol set, includes a given */
+/* character.  If the font is bound, the symbol set is ignored. */
+#define pl_font_includes_char(plfont, maps, char_code)\
+  (pl_font_char_width(plfont, maps, char_code, NULL) == 0)
 
 /* Free a font.  This is the freeing procedure in the font dictionary. */
 void pl_free_font(P3(gs_memory_t *mem, void *plf, client_name_t cname));

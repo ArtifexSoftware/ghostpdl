@@ -314,6 +314,7 @@ pginit_h=pginit.h
 
 pgdraw.$(OBJ): pgdraw.c $(math__h) $(stdio__h)\
  $(gdebug_h) $(gscoord_h) $(gspaint_h) $(gspath_h)\
+ $(gxfixed_h) $(gxpath_h)\
  $(pcdraw_h)\
  $(pgdraw_h) $(pggeom_h) $(pgmand_h)
 
@@ -350,7 +351,7 @@ pgconfig.$(OBJ): pgconfig.c $(std_h)\
 pgvector.$(OBJ): pgvector.c $(stdio__h) $(gdebug_h) $(pgmand_h)
 
 # Chapter 21
-pgpoly.$(OBJ): pgpoly.c $(std_h) $(pgmand_h)
+pgpoly.$(OBJ): pgpoly.c $(std_h) $(pgdraw_h) $(pgmand_h)
 
 # Chapter 22
 pglfill.$(OBJ): pglfill.c $(memory__h)\

@@ -4,7 +4,7 @@
 
 /* plchar.c */
 /* PCL font handling library -- operations on individual characters */
-# include "math_.h"
+#include "math_.h"
 #include "memory_.h"
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
@@ -19,15 +19,16 @@
 #include "gsimage.h"
 #include "gspaint.h"
 #include "gspath.h"
+#include "gxarith.h"		/* for igcd */
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "plfont.h"
 #include "plvalue.h"
-# include "gscoord.h"
-# include "gsstate.h"
-# include "gxdevice.h"
-# include "gxdevmem.h"
-# include "gxpath.h"
+#include "gscoord.h"
+#include "gsstate.h"
+#include "gxdevice.h"
+#include "gxdevmem.h"
+#include "gxpath.h"
 /* We really shouldn't need the following, but currently they are needed */
 /* for pgs->path and penum->log2_current_scale in pl_tt_build_char. */
 #include "gxfixed.h"
@@ -64,7 +65,7 @@ gs_private_st_element(st_pl_font_glyph_element, pl_font_glyph_t,
 private pl_font_glyph_t *
 pl_font_lookup_glyph(const pl_font_t *plfont, gs_glyph glyph)
 {	uint size = plfont->glyphs.size;
-	uint skip = (size * 2 / 3) | 1;
+	uint skip = plfont->glyphs.skip;
 	uint index = glyph % size;
 	pl_font_glyph_t *pfg;
 
@@ -77,10 +78,40 @@ pl_font_lookup_glyph(const pl_font_t *plfont, gs_glyph glyph)
 
 /* ---------------- Bitmap font support ---------------- */
 
-/* Encode a character for a bitmap font.  This is simple. */
+/* Encode a character for a bitmap font.  This is simple, because */
+/* bitmap fonts are always bound. */
 private gs_glyph
 pl_bitmap_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
 {	return (gs_glyph)*pchr;
+}
+
+/* Get character existence and escapement for a bitmap font. */
+/* This is simple for the same reason. */
+private int
+pl_bitmap_char_width(const pl_font_t *plfont,
+  const pl_symbol_map_collection_t *maps, uint char_code, gs_point *pwidth)
+{	const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+
+	if ( !pwidth )
+	  return (cdata == 0 ? 1 : 0);
+	if ( cdata == 0 )
+	  { pwidth->x = pwidth->y = 0;
+	    return 1;
+	  }
+	/****** WHAT UNITS FOR THE WIDTH? ******/
+	if ( cdata[0] == 0 )
+	  { /* PCL XL characters don't have an escapement. */
+	    pwidth->x = 0;
+	  }
+	else
+	  { const byte *params = cdata + 6;
+	    pwidth->x =
+	      (plfont->header[13] ? /* variable pitch */
+	       s16(params + 8) * 0.25 :
+	       s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+	  }
+	pwidth->y = 0;
+	return 0;
 }
 
 /* "Smear" a bitmap horizontally and vertically by ORing together */
@@ -270,7 +301,7 @@ out:	  gs_free_object(pgs->memory, bold_line,
 private pl_tt_char_glyph_t *
 pl_tt_lookup_char(const pl_font_t *plfont, gs_glyph glyph)
 {	uint size = plfont->char_glyphs.size;
-	uint skip = (size * 2 / 3) | 1;
+	uint skip = plfont->char_glyphs.skip;
 	uint index = glyph % size;
 	pl_tt_char_glyph_t *ptcg;
 
@@ -479,7 +510,8 @@ pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
 /* Encode a character for a TrueType font. */
 /* What we actually return is the TT glyph index. */
 gs_glyph
-pl_tt_encode_char(gs_show_enum *penum, gs_font *pfont_generic, gs_char *pchr)
+pl_tt_encode_char(gs_show_enum *ignore_penum, gs_font *pfont_generic,
+  gs_char *pchr)
 {	gs_char chr = *pchr;
 	gs_font_type42 *pfont = (gs_font_type42 *)pfont_generic;
 	uint cmap_len;
@@ -534,6 +566,40 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
 	  if ( glyph == u16(vtseg + i) )
 	    return u16(vtseg + i + 2);
 	return gs_no_glyph;
+}
+
+/* Get character existence and escapement for a TrueType font. */
+private int
+pl_tt_char_width(const pl_font_t *plfont,
+  const pl_symbol_map_collection_t *maps, uint char_code, gs_point *pwidth)
+{	gs_font *pfont = plfont->pfont;
+	gs_char chr = char_code;
+	/****** DOESN'T HANDLE SYMBOL SETS PROPERLY ******/
+	gs_glyph glyph = pl_tt_encode_char(NULL, pfont, &chr);
+	int code;
+	float sbw[4];
+
+	/* Check for a vertical substitute. */
+	if ( pfont->WMode & 1 )
+	  { gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
+
+	    if ( vertical != gs_no_glyph )
+	      glyph = vertical;
+	  }
+	if ( glyph == 0xffff || glyph == gs_no_glyph )
+	  { if ( pwidth )
+	      pwidth->x = pwidth->y = 0;
+	    return 1;
+	  }
+	/****** WHAT UNITS FOR WIDTH? ******/
+	code = gs_type42_get_metrics((gs_font_type42 *)pfont, glyph, sbw);
+	if ( code < 0 )
+	  return code;
+	if ( pwidth )
+	  { pwidth->x = sbw[2];
+	    pwidth->y = sbw[3];
+	  }
+	return 0;
 }
 
 /* Render a TrueType character. */
@@ -699,19 +765,25 @@ out:	  gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
 
 /* ---------------- Internal initialization ---------------- */
 
-/* Initialize the callback procedures for a bitmap font. */
+/* Initialize the procedures for a bitmap font. */
 void
 pl_bitmap_init_procs(gs_font_base *pfont)
 {	pfont->procs.encode_char = pl_bitmap_encode_char;
 	pfont->procs.build_char = pl_bitmap_build_char;
+#define plfont ((pl_font_t *)pfont->client_data)
+	plfont->char_width = pl_bitmap_char_width;
+#undef plfont
 }
 
-/* Initialize the callback procedures for a TrueType font. */
+/* Initialize the procedures for a TrueType font. */
 void
 pl_tt_init_procs(gs_font_type42 *pfont)
 {	pfont->procs.encode_char = pl_tt_encode_char;
 	pfont->procs.build_char = pl_tt_build_char;
 	pfont->data.string_proc = pl_tt_string_proc;
+#define plfont ((pl_font_t *)pfont->client_data)
+	plfont->char_width = pl_tt_char_width;
+#undef plfont
 }
 
 /* Finish initializing a TrueType font. */
@@ -770,6 +842,30 @@ pl_font_alloc_glyph_table(pl_font_t *plfont, uint num_glyphs, gs_memory_t *mem,
 	plfont->glyphs.used = 0;
 	plfont->glyphs.limit = num_glyphs;
 	plfont->glyphs.size = size;
+	plfont->glyphs.skip = size * 2 / 3;
+	while ( igcd(plfont->glyphs.skip, size) > 1 )
+	  plfont->glyphs.skip++;
+	return 0;
+}
+
+/* Expand the glyph table. */
+private int
+expand_glyph_table(pl_font_t *plfont, gs_memory_t *mem)
+{	pl_glyph_table_t old_table;
+	int code;
+	uint i;
+
+	old_table = plfont->glyphs;
+	code = pl_font_alloc_glyph_table(plfont, old_table.size, mem,
+					 "expand_glyph_table(new table)");
+	if ( code < 0 )
+	  return code;
+	for ( i = 0; i < old_table.size; ++i )
+	  if ( old_table.table[i].data )
+	    *pl_font_lookup_glyph(plfont, old_table.table[i].glyph) =
+	      old_table.table[i];
+	gs_free_object(mem, old_table.table, "expand_glyph_table(old table)");
+	plfont->glyphs.used = old_table.used;
 	return 0;
 }
 
@@ -792,6 +888,30 @@ pl_tt_alloc_char_glyphs(pl_font_t *plfont, uint num_chars, gs_memory_t *mem,
 	plfont->char_glyphs.used = 0;
 	plfont->char_glyphs.limit = num_chars;
 	plfont->char_glyphs.size = size;
+	plfont->char_glyphs.skip = size * 2 / 3;
+	while ( igcd(plfont->char_glyphs.skip, size) > 1 )
+	  plfont->char_glyphs.skip++;
+	return 0;
+}
+
+/* Expand the character to glyph index map. */
+private int
+expand_char_glyph_table(pl_font_t *plfont, gs_memory_t *mem)
+{	pl_tt_char_glyph_table_t old_table;
+	int code;
+	uint i;
+
+	old_table = plfont->char_glyphs;
+	code = pl_tt_alloc_char_glyphs(plfont, old_table.size, mem,
+				       "expand_char_glyphs(new table)");
+	if ( code < 0 )
+	  return code;
+	for ( i = 0; i < old_table.size; ++i )
+	  if ( old_table.table[i].chr != gs_no_char )
+	    *pl_tt_lookup_char(plfont, old_table.table[i].glyph) =
+	      old_table.table[i];
+	gs_free_object(mem, old_table.table, "expand_char_glyphs(old table)");
+	plfont->char_glyphs.used = old_table.used;
 	return 0;
 }
 
@@ -807,7 +927,8 @@ match_font_glyph(cached_char *cc, void *vpfg)
 }
 int
 pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *cdata)
-{	gs_glyph key = glyph;
+{	gs_font *pfont = plfont->pfont;
+	gs_glyph key = glyph;
 	pl_tt_char_glyph_t *ptcg = 0;
 	pl_font_glyph_t *pfg;
 
@@ -817,18 +938,22 @@ pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *cdata)
 	 * character header.  In this case, the character data must be either
 	 * a PCL5 format 15 or a PCL XL format 1 downloaded character.
 	 */
-	if ( plfont->char_glyphs.table )
+tcg:	if ( plfont->char_glyphs.table )
 	  { ptcg = pl_tt_lookup_char(plfont, key);
 	    if ( ptcg->chr == gs_no_char &&
 		 plfont->char_glyphs.used >= plfont->char_glyphs.limit
 	       )
-	      return -1;	/* table is full */
+	      { /* Table is full, try to expand it. */
+		int code = expand_char_glyph_table(plfont, pfont->memory);
+		if ( code < 0 )
+		  return code;
+		goto tcg;
+	      }
 	    key = pl_get_uint16(cdata + (cdata[0] == 15 ? cdata[2] + 4 : 4));
 	  }
-	pfg = pl_font_lookup_glyph(plfont, key);
+fg:	pfg = pl_font_lookup_glyph(plfont, key);
 	if ( pfg->data != 0 )
 	  { /* Remove the glyph from the character cache. */
-	    gs_font *pfont = plfont->pfont;
 	    font_glyph_t match_fg;
 
 	    match_fg.font = pfont;
@@ -840,7 +965,12 @@ pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *cdata)
 	  }
 	else
 	  { if ( plfont->glyphs.used >= plfont->glyphs.limit )
-	      return -1;		/* no more room */
+	      { /* Table is full, try to expand it. */
+		int code = expand_glyph_table(plfont, pfont->memory);
+		if ( code < 0 )
+		  return code;
+		goto fg;
+	      }
 	    plfont->glyphs.used++;
 	  }
 	if ( ptcg )
@@ -853,3 +983,29 @@ pl_font_add_glyph(pl_font_t *plfont, gs_glyph glyph, const byte *cdata)
 	pfg->data = cdata;
 	return 0;
 }
+
+/*
+ * Code to map a character through a symbol set.
+ ****** Not used yet. ******
+ */
+#if 0
+	  { /* Use the symbol maps to obtain a character index. */
+	    const pl_symbol_map_t *map = 0;
+	    uint first_code, last_code;
+
+	    switch ( plfont->font_type )
+	      {
+	      case plft_MSL: map = maps[plgv_MSL]; break;
+	      case plft_Unicode: map = maps[plgv_Unicode]; break;
+	      }
+	    if ( map == 0 )
+	      { /* No mapping available, can't process the character. */
+		return -1;
+	      }
+	    first_code = pl_get_uint16(map->first_code);
+	    last_code = pl_get_uint16(map->last_code);
+	    if ( char_code < first_code || char_code > last_code )
+	      goto undef;
+	    char_index = map->codes[char_code];
+	  }
+#endif

@@ -2,39 +2,57 @@
 
 # Run some or all of a Genoa test suite, optionally checking for memory leaks.
 # Command line syntax:
-#	suite (--[no-]check | --[no-]together | -<switch> |
+#	suite (--[no-]check | --[no-]print | --[no-]together | -<switch> |
 #	   <dirname>[,<filename>] | <filename>)*
 
-set pcl_args [list -Z@? -sDEVICE=pbmraw -r600 -sOutputFile=/dev/null -dNOPAUSE]
+proc pcl_args {print} {
+    if $print {
+	return [list -Z@? -sDEVICE=ljet4 -r600 -sOutputFile=t.%03d.lj -dNOPAUSE -dMaxBitmap=500000 -dBufferSpace=500000]
+    } else {
+	return [list -Z:@? -sDEVICE=pbmraw -r600 -sOutputFile=/dev/null -dNOPAUSE]
+    }
+}
+
 proc pcl_xe {file} {
     if {[string first xl/ $file] >= 0} {return pclxl} else {return pcl5}
 }
 
+proc catch_exec {command} {
+    puts $command; flush stdout
+    if [catch [concat exec $command] msg] {
+	puts "Non-zero exit code from command:"
+	puts $command
+	puts $msg
+    }
+}
+
 set __check 0
+set __print 0
 set __together 0
 proc suite {files switches} {
-    global pcl_args __check __together
+    global __check __print __together
+    set pcl_args [pcl_args $__print]
     if {!$__check && $__together} {
 	set max_files 240
 	set max_files1 [expr $max_files - 1]
 	set pcl_xe [pcl_xe [lindex $files 0]]
 	while {[llength $files] > $max_files} {
-	    eval exec $pcl_xe $pcl_args $switches [lrange $files 0 $max_files1] >&@stdout
+	    catch_exec [concat time $pcl_xe $pcl_args $switches [lrange $files 0 $max_files1] >&@stdout]
 	    set files [lreplace $files 0 $max_files1]
 	}
-	eval exec $pcl_xe $pcl_args $switches $files >&@stdout
+	catch_exec [concat time $pcl_xe $pcl_args $switches $files >&@stdout]
     } else {
 	foreach f $files {
 	    set pcl_xe [pcl_xe $f]
 	    if $__check {
 		puts $f
 		flush stdout
-		eval exec $pcl_xe -ZA $pcl_args $switches $f >t
+		catch_exec [concat $pcl_xe -ZA $pcl_args $switches $f >t]
 		set output $f.leak
 		regsub -all / $output - output
 		exec leaks <t >$output
 	    } else {
-		eval exec $pcl_xe $pcl_args $switches $f >&@stdout
+		catch_exec [concat time $pcl_xe $pcl_args $switches $f >&@stdout]
 	    }
 	}
     }

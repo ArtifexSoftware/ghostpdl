@@ -67,9 +67,6 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    /* HAS should not have a path now ??? */
 	    hpgl_init_path(pcls);
 
-	    hpgl_args_setup(&hpgl_args);
-	    hpgl_IN(&hpgl_args, pcls);
-
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_horiz_pic_frame_size_decipoints(&pcl_args, pcls);
 
@@ -85,6 +82,9 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    arg_set_float(&pcl_args, 0, 0);
 	    pcl_hpgl_plot_vert_size(&pcl_args, pcls);
 	    
+	    hpgl_args_setup(&hpgl_args);
+	    hpgl_IN(&hpgl_args, pcls);
+
 	    /* HAS reset pcl's logical page orientation should be done
                in PCL */
 	  }   

@@ -261,7 +261,24 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( !hpgl_arg_units(pargs, &radius) )
 	  return e_Range;
 	hpgl_arg_c_real(pargs, &chord);
-	return e_Unimplemented;
+	{
+	  hpgl_args_t args;
+	  bool down = pgls->g.pen_down;
+	  /* implicit pen down */
+	  hpgl_args_setup(&args); hpgl_PD(&args, pgls);
+	  /* draw the arc/circle */
+	  hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
+			       radius, 0.0, 360.0, chord);
+	  /* restore pen state */
+	  hpgl_args_setup(&args); 
+	  if (down) 
+	    hpgl_PD(&args, pgls);
+	  else
+	    hpgl_PU(&args, pgls);
+	}
+
+	hpgl_draw_current_path(pgls);
+	return 0;
 }
 
 /* PA x,y...; */
@@ -458,20 +475,20 @@ pgvector_do_init(gs_memory_t *mem)
 {	
 	/* Register commands */
 	DEFINE_HPGL_COMMANDS
-		HPGL_COMMAND('A', 'A', hpgl_AA),
-		HPGL_COMMAND('A', 'R', hpgl_AR),
-		HPGL_COMMAND('A', 'T', hpgl_AT),
-		HPGL_COMMAND('B', 'R', hpgl_BR),		/* argument pattern can repeat */
-		HPGL_COMMAND('B', 'Z', hpgl_BZ),		/* argument pattern can repeat */
-		HPGL_COMMAND('C', 'I', hpgl_CI),
-		HPGL_COMMAND('P', 'A', hpgl_PA),		/* argument pattern can repeat */
-		HPGL_COMMAND('P', 'D', hpgl_PD),		/* argument pattern can repeat */
-		HPGL_COMMAND('P', 'E', hpgl_PE),
-		HPGL_COMMAND('P', 'R', hpgl_PR),		/* argument pattern can repeat */
-		HPGL_COMMAND('P', 'U', hpgl_PU),		/* argument pattern can repeat */
-		HPGL_COMMAND('R', 'T', hpgl_RT),
-		END_HPGL_COMMANDS
-		return 0;
+		HPGL_POLY_COMMAND('A', 'A', hpgl_AA),
+		HPGL_POLY_COMMAND('A', 'R', hpgl_AR),
+		HPGL_POLY_COMMAND('A', 'T', hpgl_AT),
+		HPGL_POLY_COMMAND('B', 'R', hpgl_BR),	/* argument pattern can repeat */
+		HPGL_POLY_COMMAND('B', 'Z', hpgl_BZ),	/* argument pattern can repeat */
+		HPGL_POLY_COMMAND('C', 'I', hpgl_CI),
+		HPGL_POLY_COMMAND('P', 'A', hpgl_PA),	/* argument pattern can repeat */
+		HPGL_POLY_COMMAND('P', 'D', hpgl_PD),	/* argument pattern can repeat */
+		HPGL_POLY_COMMAND('P', 'E', hpgl_PE),
+		HPGL_POLY_COMMAND('P', 'R', hpgl_PR),	/* argument pattern can repeat */
+		HPGL_POLY_COMMAND('P', 'U', hpgl_PU),	/* argument pattern can repeat */
+		HPGL_POLY_COMMAND('R', 'T', hpgl_RT),
+	END_HPGL_COMMANDS
+	return 0;
 }
 const pcl_init_t pgvector_init = {
 	pgvector_do_init, 0

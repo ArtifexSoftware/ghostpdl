@@ -74,9 +74,13 @@ pg-fp:
 pg-nofp:
 	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-pg -O -msoft-float $(GCFLAGS) -I$(GSDIR) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11' FPU_TYPE=-1 CCLEAF='$(CCC)' XOBJS='$(GD)gsfemu.o'
 
-# Configure for debugging with optimization but no FPU
+# Configure for debugging and no FPU (crude timing configuration)
 nofp:
-	make GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O -msoft-float $(GCFLAGS) -I$(GSDIR) $(XCFLAGS)' FPU_TYPE=-1 XOBJS='$(GD)gsfemu.o'
+	make GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) -I$(GSDIR) $(XCFLAGS)' XLIBS='Xt SM ICE Xext X11' FPU_TYPE=-1 CCLEAF='$(CCC)' XOBJS='$(GD)gsfemu.o'
+
+# Configure for optimization and no FPU (product configuration)
+product:
+	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-O -msoft-float $(GCFLAGS) -I$(GSDIR) $(XCFLAGS)' XLIBS='Xt SM ICE Xext X11' FPU_TYPE=-1 CCLEAF='$(CCC)' XOBJS='$(GD)gsfemu.o'
 
 # Build the required files in the GS directory.
 # It's simplest always to build the floating point emulator,
@@ -85,7 +89,10 @@ ld$(LANGUAGE).tr: $(MAKEFILE) $(LANGUAGE).mak
 	make -C $(GD) \
 	  GCFLAGS='$(GCFLAGS)' FPU_TYPE='$(FPU_TYPE)'\
 	  CONFIG='$(CONFIG)' FEATURE_DEVS='$(FEATURE_DEVS)' \
-	  DEVICE_DEVS='$(DEVICE_DEVS)' -f ugcclib.mak \
+	  DEVICE_DEVS='$(DEVICE_DEVS)' \
+	  cl_impl=clmem \
+	  cl_filter_devs=zlib cl_filter_name=zlib \
+	  -f ugcclib.mak \
 	  ld$(CONFIG).tr gsfemu.o gsnogc.o gconfig$(CONFIG).o gscdefs$(CONFIG).o
 	cp $(GD)ld$(CONFIG).tr ld$(LANGUAGE).tr
 

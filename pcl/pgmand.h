@@ -55,8 +55,8 @@ typedef hpgl_command_proc((*hpgl_command_proc_t));
  */
 typedef struct hpgl_command_s {
   hpgl_command_proc_t proc;
-  bool even_in_macro;		/* iff true, execute the command even */
-				/* when defining a macro */
+  byte flags;
+#define hpgl_cdf_polygon 1	/* execute command even in polygon mode */
 } hpgl_command_definition_t;
 
 /* Define a HP-GL/2 command argument value. */
@@ -106,9 +106,9 @@ void hpgl_define_commands(P1(const hpgl_named_command_t *));
 #define DEFINE_HPGL_COMMANDS \
 { static const hpgl_named_command_t defs_[] = {
 #define HPGL_COMMAND(c1, c2, proc)\
-  {c1, c2, {proc, 0 /*false*/}}
-#define HPGL_SPECIAL_COMMAND(c1, c2, proc)\
-  {c1, c2, {proc, 1 /*true*/}}
+  {c1, c2, {proc, 0}}
+#define HPGL_POLY_COMMAND(c1, c2, proc)\
+  {c1, c2, {proc, hpgl_cdf_polygon}}
 #define END_HPGL_COMMANDS\
     {0, 0}\
   };\
@@ -214,8 +214,15 @@ bool hpgl_arg_units(P2(hpgl_args_t *pargs, hpgl_real_t *pu));
 }
 #endif
 
+#define hpgl_poly_ignore(pgls)                  \
+{						\
+  if ( pgls->g.render_mode ) 			\
+    {						\
+      return 0;					\
+    }						\
+}
 /*
- * HPGL mneumonics
+ * HPGL mnemonics
  */
 
 /* commands from pgchar.c -- HP-GL/2 character commands */
@@ -304,10 +311,5 @@ int pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls);
 int pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls);
 int pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls);
 int pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls);
-
-/* hpgl error codes.  An error condition is an integer less than 0 as
-   in the gs graphics lib. */
-
-#define hpgl_ok 1
 
 #endif                                         /* pgmand_INCLUDED */

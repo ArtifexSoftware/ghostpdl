@@ -72,7 +72,7 @@ pconf$(CONFIG).h ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GSDIR)\genconf$(XE)
 ldt.tr: $(MAKEFILE) ld$(LANGUAGE).tr ldconf$(CONFIG).tr
 	echo SYSTEM DOS4G >ldt.tr
 	echo OPTION STUB=$(STUB) >>ldt.tr
-	echo OPTION STACK=12k >>ldt.tr
+	echo OPTION STACK=16k >>ldt.tr
 	echo PATH $(GSDIR) >>ldt.tr
 	$(CP_) ldt.tr+ld$(LANGUAGE).tr
 	echo FILE gsnogc.$(OBJ) >>ldt.tr
