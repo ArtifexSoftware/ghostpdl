@@ -1198,7 +1198,8 @@ pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 	return code;
     /* Update overprint. */
     if (pdev->params.PreserveOverprintSettings &&
-	pdev->fill_overprint != pis->overprint
+	pdev->fill_overprint != pis->overprint &&
+	!pdev->skip_colors
 	) {
 	code = pdf_open_gstate(pdev, &pres);
 	if (code < 0)
@@ -1241,7 +1242,8 @@ pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 	return code;
     /* Update overprint, stroke adjustment. */
     if (pdev->params.PreserveOverprintSettings &&
-	pdev->stroke_overprint != pis->overprint
+	pdev->stroke_overprint != pis->overprint &&
+	!pdev->skip_colors
 	) {
 	code = pdf_open_gstate(pdev, &pres);
 	if (code < 0)
