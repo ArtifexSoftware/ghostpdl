@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.11 2002/06/22 21:20:38 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.12 2002/06/24 15:51:57 giles Exp $
     
     symbol dictionary segment decode and support
 */
@@ -290,7 +290,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 				  segment->data_length - offset,
 				  GB_stats);
 #ifdef HAVE_LIBPNG
-  jbig2_dump_symbol_dict(segment->result);
+//  jbig2_dump_symbol_dict(segment->result);
 #endif
 
   return 0;

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.6 2002/06/21 19:10:02 giles Exp $
+    $Id: jbig2_image.c,v 1.7 2002/06/24 15:51:57 giles Exp $
 */
 
 #include <stdio.h>
@@ -58,8 +58,8 @@ void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 }
 
 /* composite one jbig2_image onto another */
-// FIXME: need to add a drawing mode argument
-int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y)
+int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, 
+			int x, int y, Jbig2ComposeOp op)
 {
     /* special case complete replacement */
     if ((x == 0) && (y == 0) && (src->width == dst->width) && (src->height == dst->height)) {

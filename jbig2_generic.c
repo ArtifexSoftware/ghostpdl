@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.8 2002/06/22 16:05:45 giles Exp $
+    $Id: jbig2_generic.c,v 1.9 2002/06/24 15:51:57 giles Exp $
 */
 
 /**
@@ -437,7 +437,8 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
   /* todo: free ws, as */
   
-  jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image, image, rsi.x, rsi.y);
+  jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image, image,
+			rsi.x, rsi.y, JBIG2_COMPOSE_OR);
   jbig2_image_free(ctx, image);
   
   jbig2_free(ctx->allocator, GB_stats);
