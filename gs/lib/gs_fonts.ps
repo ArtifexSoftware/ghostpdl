@@ -15,7 +15,7 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-
+% $Id$
 % Font initialization and management code.
 
 % Define the default font.
@@ -460,15 +460,12 @@ buildfontdict 3 /.buildfont3 cvx put
   [(Schlbk) /NewCenturySchlbk]
   [(Serif) /Times]
   [(Swiss) /Helvetica]
+  [(Symbol) /Symbol]
   [(Times) /Times]
   [(Univers) /Helvetica]
 	% Substitute for Adobe Multiple Master fonts.
   [(Minion) /Times]
   [(Myriad) /Helvetica]
-  [(MyriadPkg) /Helvetica-Narrow]
-	% Condensed or narrow fonts map to the only narrow family we have.
-  [(Cond) /Helvetica-Narrow]
-  [(Narrow) /Helvetica-Narrow]
 	% If the font wants to be monospace, use Courier.
   [(Monospace) /Courier]
   [(Typewriter) /Courier]
@@ -476,7 +473,18 @@ buildfontdict 3 /.buildfont3 cvx put
 /.substituteproperties [
   [(It) 1] [(Oblique) 1]
   [(Bd) 2] [(Bold) 2] [(bold) 2] [(Demi) 2] [(Heavy) 2] [(Sb) 2]
+  [(Cn) 4] [(Cond) 4] [(Narrow) 4] [(Pkg) 4]
 ] readonly def
+/.fontnameproperties {		% <string|name> .fontnameproperties <int>
+  .fontnamestring
+  0 exch .substituteproperties {
+    2 copy 0 get search {
+      pop pop pop 1 get 3 -1 roll or exch
+    } {
+      pop pop
+    } ifelse
+  } forall pop
+} bind def
 /.substitutefamilies mark
   /AvantGarde
     {/AvantGarde-Book /AvantGarde-BookOblique
@@ -486,28 +494,38 @@ buildfontdict 3 /.buildfont3 cvx put
   /Courier
     {/Courier /Courier-Oblique /Courier-Bold /Courier-BoldOblique}
   /Helvetica
-    {/Helvetica /Helvetica-Oblique /Helvetica-Bold /Helvetica-BoldOblique}
-  /Helvetica-Narrow
-    {/Helvetica-Narrow /Helvetica-Narrow-Oblique
+    {/Helvetica /Helvetica-Oblique /Helvetica-Bold /Helvetica-BoldOblique
+     /Helvetica-Narrow /Helvetica-Narrow-Oblique
      /Helvetica-Narrow-Bold /Helvetica-Narrow-BoldOblique}
   /NewCenturySchlbk
     {/NewCenturySchlbk-Roman /NewCenturySchlbk-Italic
      /NewCenturySchlbk-Bold /NewCenturySchlbk-BoldItalic}
   /Palatino
     {/Palatino-Roman /Palatino-Italic /Palatino-Bold /Palatino-BoldItalic}
+  /Symbol
+    {/Symbol /Symbol /Symbol /Symbol}
   /Times
     {/Times-Roman /Times-Italic /Times-Bold /Times-BoldItalic}
 .dicttomark readonly def
-/.substitutefont		% <fontname> .substitutefont <altname>
- {	% Look for properties and/or a face name in the font name.
+/.fontnamestring {		% <fontname> .fontnamestring <string|name>
+  dup type dup /nametype eq {
+    pop .namestring
+  } {
+    /stringtype ne { pop () } if
+  } ifelse
+} bind def
+/.substitutefontname {		% <fontname> <properties> .substitutefontname
+				%   <altname|null>
+	% Look for properties and/or a face name in the font name.
 	% If we find any, use Helvetica as the base font;
 	% otherwise, use the default font.
 	% Note that the "substituted" font name may be the same as
 	% the requested one; the caller must check this.
-   dup type dup /stringtype eq exch /nametype eq or
-    { dup length string cvs } { () } ifelse
-    {defaultfontname /Helvetica-Oblique /Helvetica-Bold /Helvetica-BoldOblique}
-   exch 0 exch	% stack: fontname facelist properties fontname
+   exch .fontnamestring
+    {defaultfontname /Helvetica-Oblique /Helvetica-Bold /Helvetica-BoldOblique
+     /Helvetica-Narrow /Helvetica-Narrow-Oblique
+     /Helvetica-Narrow-Bold /Helvetica-Narrow-BoldOblique}
+   exch 3 -1 roll exch	% stack: facelist properties fontname
 	% Look for a face name.
    .substitutefaces
     { 2 copy 0 get search
@@ -518,17 +536,14 @@ buildfontdict 3 /.buildfont3 cvx put
        }
       ifelse
     }
-   forall
-   .substituteproperties
-    { 2 copy 0 get search
-       { pop pop pop 1 get 3 -1 roll or exch }
-       { pop pop }
-      ifelse
-    }
-   forall pop get exec
+   forall pop
+   1 index length mod get exec
+} bind def
+/.substitutefont {		% <fontname> .substitutefont <altname>
+  dup .fontnameproperties .substitutefontname
 	% Only accept fonts known in the Fontmap.
    Fontmap 1 index known not { pop defaultfontname } if
- } bind def
+} bind def
 
 % If requested, make (and recognize) fake entries in FontDirectory for fonts
 % present in Fontmap but not actually loaded.  Thanks to Ray Johnston for
@@ -616,41 +631,16 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
     }
    ifelse
  } bind def
-% Do the work of findfont, including substitution, defaulting, and
-% scanning of FONTPATH.
-/.dofindfont		% <fontname> .dofindfont <font>
- {  { .tryfindfont { exit } if
-			% We didn't find the font.  If we haven't scanned
-			% all the directories in FONTPATH, scan the next one now,
-			% and look for the font again.
-      null 0 1 FONTPATH length 1 sub
-       { FONTPATH 1 index get null ne { exch pop exit } if pop
-       }
-      for dup null ne
-       { dup 0 eq { .scanfontbegin } if
-	 FONTPATH 1 index get .scanfontdir
-	 FONTPATH exch null put
-			% Start over with an empty alias list.
-	 counttomark 1 sub { pop } repeat
-	 .dofindfont exit
-       }
-      if pop
-			% No luck.  Make sure we're not already
-			% looking for the default font.
-      dup defaultfontname eq
-       { QUIET not
-	  { (Unable to load default font ) print
-	    dup =only (!  Giving up.\n) print flush
-	  }
-	 if /findfont cvx /invalidfont signalerror
-       }
-      if
-			% Substitute for the font.  Don't alias.
+% This is the standard procedure for handling font substitution.
+% Its location is per an Adobe newsgroup posting.
+% It is called with the font name on the stack, standing in for findfont.
+/.stdsubstfont {	% mark <alias1> ... <fontname> .stdsubstfont <font>
       /SUBSTFONT where {
 	pop QUIET not {
 	  (Substituting for font ) print dup =only
 	  (.\n) print flush
 	} if
+			% No aliasing.
 	cleartomark mark defaultfontname
       } {
 	dup .substitutefont
@@ -663,9 +653,41 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 			% Remove all the accumulated aliases.
 	counttomark 1 add 1 roll cleartomark mark exch
       } ifelse
-    }
-   loop
- } bind def
+  .dofindfont
+} bind def
+$error /SubstituteFont { .stdsubstfont } put
+% Do the work of findfont, including substitution, defaulting, and
+% scanning of FONTPATH.
+/.dofindfont {		% <fontname> .dofindfont <font>
+  .tryfindfont not {
+			% We didn't find the font.  If we haven't scanned
+			% all the directories in FONTPATH, scan the next one
+			% now and look for the font again.
+    null 0 1 FONTPATH length 1 sub {
+      FONTPATH 1 index get null ne { exch pop exit } if pop
+    } for dup null ne {
+      dup 0 eq { .scanfontbegin } if
+      FONTPATH 1 index get .scanfontdir
+      FONTPATH exch null put
+			% Start over with an empty alias list.
+      counttomark 1 sub { pop } repeat
+      .dofindfont
+    } {
+      pop
+			% No luck.  Make sure we're not already
+			% looking for the default font.
+      dup defaultfontname eq {
+	QUIET not {
+	  (Unable to load default font ) print
+	  dup =only (!  Giving up.\n) print flush
+	} if
+	/findfont cvx /invalidfont signalerror
+      } if
+			% Substitute for the font.  Don't alias.
+      $error /SubstituteFont get exec
+    } ifelse
+  } if
+} bind def
 % Try to find a font using only the present contents of Fontmap.
 /.tryfindfont		% <fontname> .tryfindfont <font> true
 			% <fontname> .tryfindfont false
