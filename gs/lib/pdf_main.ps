@@ -364,12 +364,12 @@ pdfdict begin
   PDFfilelen exch length sub 4 sub PDFoffset .max exch 1 index setfileposition
 	% Stack: eofpos
 	% Check for whether this is, in fact, a valid PDF file.
-  dup PDFfilelen exch sub dup dup 7 gt exch 6 lt or {
+  dup PDFfilelen exch sub dup dup 7 gt exch 5 lt or {
     pop true
   } {
     string PDFfile exch readstring pop
     dup (%%EOF\n) eq exch dup (%%EOF\r) eq
-    exch (%%EOF\r\n) eq or or not
+    exch dup (%%EOF\r\n) eq exch (%%EOF) eq or or or not
   } ifelse {
     (   **** Warning: File has a corrupted %%EOF marker, or garbage after %%EOF.\n)
     pdfformaterror
