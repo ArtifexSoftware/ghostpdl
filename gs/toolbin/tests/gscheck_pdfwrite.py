@@ -33,7 +33,7 @@ import gsconf, gstestgs, gsparamsets, gssum
 
 class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
     def shortDescription(self):
-        file = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
+        file = "%s.pdf.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
 	rasterfilename = gsconf.rasterdbdir + file + ".gz"
 	if not os.access(rasterfilename, os.F_OK):
 		os.system(gsconf.codedir + "update_pdfbaseline " + os.path.basename(self.file))	
