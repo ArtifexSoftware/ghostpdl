@@ -22,9 +22,9 @@ typedef struct hpgl_line_type_s {
    This will affect the line attributes chosen see
    hpgl_set_graphics_line_attribute_state */
 typedef enum {
-	vector_mode,
-	character_mode,
-	polygon_mode
+	hpgl_rm_vector,
+	hpgl_rm_character,
+	hpgl_rm_polygon
 } hpgl_rendering_mode_t;
 
 typedef struct pcl_hpgl_state_s {
@@ -57,9 +57,10 @@ typedef struct pcl_hpgl_state_s {
 		/* Chapter 20 (pgvector.c) */
 
 	bool pen_down;
+	bool last_pen_down;      /* previous state of pen */
 	bool relative;		/* true if relative coordinates */
         gs_point pos;
-
+	gs_point last_pos;
         /* used to track the line drawing state in hpgl */
         gs_point first_point;
         bool have_path;
@@ -171,6 +172,25 @@ typedef struct pcl_hpgl_state_s {
 	uint number_of_pens;
 	struct { hpgl_real_t cmin, cmax; } color_range[3];
 
-	hpgl_rendering_mode_t render_mode;
-
 } pcl_hpgl_state_t;
+
+
+#define hpgl_save_pen_status(pgls) \
+  ((pgls)->g.last_pen_down = (pgls)->g.pen_down)
+
+/* HAS requires structure copy on assingment */
+#define hpgl_restore_pen_status(pgls) \
+  ((pgls)->g.pen_down = (pgls)->g.last_pen_down)
+
+#define hpgl_save_pen_position(pgls) \
+  ((pgls)->g.last_pos = (pgls)->g.pos)
+
+#define hpgl_restore_pen_position(pgls) \
+  ((pgls)->g.pos = (pgls)->g.last_pos)
+
+#define hpgl_save_pen_state(pgls) \
+  hpgl_save_pen_status(pgls), hpgl_save_pen_position(pgls)
+
+#define hpgl_restore_pen_state(pgls) \
+  hpgl_restore_pen_status(pgls), hpgl_restore_pen_position(pgls)
+

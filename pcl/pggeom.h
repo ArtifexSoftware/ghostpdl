@@ -37,6 +37,12 @@ void hpgl_compute_arc_coords(P6(floatp radius, floatp center_x,
 				floatp center_y, floatp angle, 
 				floatp *x, floatp *y));
 
+/* given a start point, angle (degrees) and magnitude of a vector compute its
+   endpoints */
+
+void hpgl_compute_vector_endpoints(P6(floatp magnitude, floatp x, floatp y, 
+				     floatp angle, floatp *endx, floatp *endy));
+
 /* calculate the distance between 2 points */
 #define hpgl_compute_distance(x1, y1, x2, y2) \
       sqrt((((x1)-(x2))*((x1)-(x2)))+(((y1)-(y2))*((y1)-(y2))))
@@ -50,8 +56,8 @@ void hpgl_compute_arc_coords(P6(floatp radius, floatp center_x,
 
 /* points are on the same line */
 #define hpgl_3_colinear_points(x1, y1, x2, y2, x3, y3) \
-      ((((x1) - (x3)) * ((x1) - (x2))) == \
-       (((x1) - (x2)) * ((x1) - (x3))))
+      ((((y1) - (y3)) * ((x1) - (x2))) == \
+       (((y1) - (y2)) * ((x1) - (x3))))
 
 /* intermediate is the same as first point or last */
 #define hpgl_3_no_intermediate(x1, y1, x2, y2, x3, y3) \

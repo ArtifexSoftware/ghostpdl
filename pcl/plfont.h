@@ -93,6 +93,12 @@ typedef struct pl_tt_char_glyph_table_s {
 typedef struct gs_font_s gs_font;
 #endif
 
+/* Define an abstract type for transformation matrices. */
+#ifndef gs_matrix_DEFINED
+#  define gs_matrix_DEFINED
+typedef struct gs_matrix_s gs_matrix;
+#endif
+
 /*
  * We 'wrap' gs_fonts in our own structure.
  *
@@ -113,9 +119,9 @@ struct pl_font_s {
   pl_font_scaling_technology_t scaling_technology;
   pl_font_type_t font_type;
   /* Implementation of pl_font_char_width, see below */
-  int (*char_width)(P4(const pl_font_t *plfont,
-		       const pl_symbol_map_collection_t *maps,
-		       uint char_code, gs_point *pwidth));
+  int (*char_width)(P5(const pl_font_t *plfont, const pl_symbol_map_t *map,
+		       const gs_matrix *pmat, uint char_code,
+		       gs_point *pwidth));
   bool large_sizes;	/* segment sizes are 32 bits if true, 16 if false */
 			/* (for segmented fonts only) */
   struct { uint x, y; } resolution;	/* resolution (for bitmap fonts) */

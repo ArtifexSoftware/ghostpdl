@@ -76,7 +76,8 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 
 /* set up joins, caps, miter limit, and line width */
 private int
-hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls)
+hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls,
+				       hpgl_rendering_mode_t render_mode)
 {
 
 	  /* HAS *** We use a miter join instead of miter/beveled as I
@@ -95,14 +96,14 @@ hpgl_set_graphics_line_attribute_state(hpgl_state_t *pgls)
 					   gs_join_bevel,    /* 5 bevel join */
 					   gs_join_none};    /* 6 no join */
 
-	  switch( pgls->g.render_mode )
+	  switch( render_mode )
 	    {
-	    case character_mode: 
-	    case polygon_mode:
+	    case hpgl_rm_character:
+	    case hpgl_rm_polygon:
 	      hpgl_call(gs_setlinejoin(pgls->pgs, gs_cap_round));
 	      hpgl_call(gs_setlinecap(pgls->pgs, gs_join_round));
 	      break;
-	    case vector_mode:
+	    case hpgl_rm_vector:
 vector:	      hpgl_call(gs_setlinejoin(pgls->pgs, cap_map[pgls->g.line.cap]));
 	      hpgl_call(gs_setlinecap(pgls->pgs, join_map[pgls->g.line.join]));
 	      break;
@@ -153,14 +154,14 @@ hpgl_set_clipping_region(hpgl_state_t *pgls)
 }
 
 private int
-hpgl_set_graphics_state(hpgl_state_t *pgls)
+hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	/* do dash stuff */
 	if ( !pgls->g.line.is_solid ) 
 	  hpgl_call(hpgl_set_graphics_dash_state(pgls));
 
 	/* joins, caps, and line width */
-	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls));
+	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
 	
 	hpgl_call(hpgl_set_clipping_region(pgls));
 
@@ -245,7 +246,8 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 		     floatp chord_angle)
 {
 	int num_chords=
-	  hpgl_compute_number_of_chords(sweep_angle, chord_angle);
+	  hpgl_compute_number_of_chords(sweep_angle * (180.0 / M_PI),
+					chord_angle);
 	floatp start_angle_radians = start_angle * (M_PI/180.0);
 	floatp chord_angle_radians = chord_angle * (M_PI/180.0);
 	int i;
@@ -289,7 +291,7 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 
 /* Stroke the current path */
 int
-hpgl_draw_current_path(hpgl_state_t *pgls)
+hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	/* get the last point in the current subpath, if there is no
 	   current point than we have nothing to do. */
@@ -309,14 +311,14 @@ hpgl_draw_current_path(hpgl_state_t *pgls)
 	    hpgl_call(gs_closepath(pgls->pgs));
 	  }
 
-	hpgl_call(hpgl_set_graphics_state(pgls));
+	hpgl_call(hpgl_set_graphics_state(pgls, render_mode));
 
 	/* HAS - yes they are exclusive but the hpgl_call macro is
            kooky about "else" right now */
-	if ( pgls->g.render_mode == polygon_mode ) 
+	if ( render_mode == hpgl_rm_polygon ) 
 	  hpgl_call(gs_fill(pgls->pgs));
 
-	if ( pgls->g.render_mode == vector_mode )
+	if ( render_mode == hpgl_rm_vector )
 	  hpgl_call(gs_stroke(pgls->pgs));
 
 	pgls->g.have_path = false;
@@ -334,7 +336,7 @@ hpgl_draw_line(hpgl_state_t *pgls, floatp x1, floatp y1, floatp x2, floatp y2)
 	hpgl_call(hpgl_add_point_to_path(pgls, x2, y2, 
 					 ((pgls->g.pen_down) ? 
 					  gs_lineto : gs_moveto)));
-	hpgl_call(hpgl_draw_current_path(pgls));
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	
 	return 0;
 }
@@ -345,7 +347,7 @@ hpgl_draw_dot(hpgl_state_t *pgls, floatp x1, floatp y1)
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
 					 ((pgls->g.pen_down) ? 
 					  gs_lineto : gs_moveto)));
-	hpgl_call(hpgl_draw_current_path(pgls));
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	return 0;
 }

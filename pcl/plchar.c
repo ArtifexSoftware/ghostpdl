@@ -19,6 +19,7 @@
 #include "gsimage.h"
 #include "gspaint.h"
 #include "gspath.h"
+# include "gsbittab.h"
 #include "gxarith.h"		/* for igcd */
 #include "gxfont.h"
 #include "gxfont42.h"
@@ -88,8 +89,8 @@ pl_bitmap_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
 /* Get character existence and escapement for a bitmap font. */
 /* This is simple for the same reason. */
 private int
-pl_bitmap_char_width(const pl_font_t *plfont,
-  const pl_symbol_map_collection_t *maps, uint char_code, gs_point *pwidth)
+pl_bitmap_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
+  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
 {	const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
 	if ( !pwidth )
@@ -98,109 +99,189 @@ pl_bitmap_char_width(const pl_font_t *plfont,
 	  { pwidth->x = pwidth->y = 0;
 	    return 1;
 	  }
-	/****** WHAT UNITS FOR THE WIDTH? ******/
 	if ( cdata[0] == 0 )
 	  { /* PCL XL characters don't have an escapement. */
-	    pwidth->x = 0;
+	    pwidth->x = pwidth->y = 0;
+	    return 0;
 	  }
-	else
-	  { const byte *params = cdata + 6;
-	    pwidth->x =
-	      (plfont->header[13] ? /* variable pitch */
-	       s16(params + 8) * 0.25 :
-	       s16(params) /*lsb*/ + u16(params + 4) /*width*/);
-	  }
-	pwidth->y = 0;
-	return 0;
+	{ const byte *params = cdata + 6;
+	  floatp wx =
+	    (plfont->header[13] ? /* variable pitch */
+	     s16(params + 8) * 0.25 :
+	     s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+
+	  return gs_distance_transform(wx, 0.0, pmat, pwidth);
+	}
 }
 
-/* "Smear" a bitmap horizontally and vertically by ORing together */
-/* a rectangle of bits below and to the left of each output bit. */
-/* This procedure computes a single output scan line. Note that */
-/* the output is wider than the input. */
+/*
+ * For pseudo-bolding, we have to "smear" a bitmap horizontally and
+ * vertically by ORing together a rectangle of bits below and to the left of
+ * each output bit.  We do this separately for horizontal and vertical
+ * smearing.  Eventually, we will replace the current procedure, which takes
+ * time proportional to W * H * (N + log2(N)), with one that is only
+ * proportional to N (but takes W * N additional buffer space).
+ */
+
+/* Allocate the line buffer for bolding.  We need 1 + N scan lines. */
+private byte *
+alloc_bold_lines(gs_memory_t *mem, uint width, int bold, client_name_t cname)
+{	return gs_alloc_byte_array(mem, 1 + bold, bitmap_raster(width + bold),
+				   cname);
+}
+
+/* Merge one (aligned) scan line into another, for vertical smearing. */
 private void
-bits_smear(byte *dest, const byte *src, uint width, uint sraster,
-  uint smear_width, uint smear_height)
-{	uint src_bytes = (width + 7) >> 3;
-	uint dest_bytes = (width + smear_width + 7) >> 3;
+bits_merge(byte *dest, const byte *src, uint nbytes)
+{	long *dp = (long *)dest;
+	const long *sp = (const long *)src;
+	uint n = (nbytes + sizeof(long) - 1) >> arch_log2_sizeof_long;
 
-	/* OR vertically. */
-	{ uint y;
-	  const byte *sp;
+	for ( ; n; ++sp, ++dp, --n )
+	  *dp |= *sp;
+}
 
-	  memcpy(dest, src, src_bytes);
-	  for ( y = 1, sp = src + sraster; y < smear_height;
-		++y, sp += sraster
-	      )
-	    { uint xb;
-	      for ( xb = 0; xb < src_bytes; ++xb )
-		dest[xb] |= sp[xb];
-	    }
+/* Smear a scan line horizontally.  Note that the output is wider than */
+/* the input by the amount of bolding (smear_width). */
+private void
+bits_smear_horizontally(byte *dest, const byte *src, uint width,
+  uint smear_width)
+{	uint bits_on = 0;
+	const byte *sp = src;
+	uint sbyte = *sp;
+	byte *dp = dest;
+	uint dbyte = sbyte;
+	uint sdmask = 0x80;
+	const byte *zp = src;
+	uint zmask = 0x80;
+	uint i = 0;
+
+	/* Process the first smear_width bits. */
+	{ uint stop = min(smear_width, width);
+
+	  for ( ; i < stop; ++i ) {
+	    if ( sbyte & sdmask )
+	      bits_on++;
+	    else if ( bits_on )
+	      dbyte |= sdmask;
+	    if ( (sdmask >>= 1) == 0 )
+	      sdmask = 0x80, *dp++ = dbyte, dbyte = sbyte = *++sp;
+	  }
 	}
-	/* Clear trailing bits and bytes. */
-	if ( width & 7 )
-	  dest[src_bytes - 1] &= (byte)(0xff00 >> (width & 7));
-	if ( dest_bytes > src_bytes )
-	  memset(dest + src_bytes, 0, dest_bytes - src_bytes);
-	if ( width == 0 )
-	  return;		/* avoid edge tests below */
-	/* OR horizontally. */
-	{ uint left = smear_width;
-	  uint step = 1;
-
-	  /* Do this in steps of powers of 2, except for the last step. */
-	  for ( ; left; left -= step, step <<= 1 )
-	    { int skew;
-	      uint skip, xb;
-
-	      if ( step > left )
-		step = left;
-	      skew = step & 7;
-	      skip = step >> 3;
-	      /* We must work from right to left, so that we get */
-	      /* unaffected input data at each step. */
-	      for ( xb = dest_bytes - 1; xb > skip; --xb )
-		dest[xb] |=
-		  (skew == 0 ? dest[xb - skip] :
-		   (dest[xb - skip] >> skew) |
-		   (dest[xb - skip - 1] << (8 - skew)));
-	      /* The last byte is special. */
-	      dest[skip] |= dest[0] >> skew;
+	        
+	/* Process all but the last smear_width bits. */
+	{ for ( ; i < width; ++i ) {
+	    if ( sbyte & sdmask )
+	      bits_on++;
+	    else if ( bits_on )
+	      dbyte |= sdmask;
+	    if ( *zp & zmask )
+	      --bits_on;
+	    if ( (sdmask >>= 1) == 0 ) {
+	      sdmask = 0x80;
+	      *dp++ = dbyte;
+on:	      switch ( (dbyte = sbyte = *++sp) ) {
+		case 0xff:
+		  if ( width - i <= 8 )
+		    break;
+		  *dp++ = 0xff;
+		  bits_on += 8 -
+		    byte_count_bits[(*zp & (zmask - 1)) + (zp[1] & -zmask)];
+		  ++zp;
+		  i += 8;
+		  goto on;
+		case 0:
+		  if ( bits_on || width - i <= 8 )
+		    break;
+		  *dp++ = 0;
+		  /* We know there can't be any bits to be zeroed, */
+		  /* because bits_on can't go negative. */
+		  ++zp;
+		  i += 8;
+		  goto on;
+		default:
+		  ;
+	      }
 	    }
+	    if ( (zmask >>= 1) == 0 )
+	      zmask = 0x80, ++zp;
+	  }
 	}
+
+	/* Process the last smear_width bits. */
+	/****** WRONG IF width < smear_width ******/
+	{ uint stop = width + smear_width;
+
+	  for ( ; i < stop; ++i ) {
+	    if ( bits_on )
+	      dbyte |= sdmask;
+	    if ( (sdmask >>= 1) == 0 )
+	      sdmask = 0x80, *dp++ = dbyte, dbyte = 0;
+	    if ( *zp & zmask )
+	      --bits_on;
+	    if ( (zmask >>= 1) == 0 )
+	      zmask = 0x80, ++zp;
+	  }
+	}
+
+	if ( sdmask != 0x80 )
+	  *dp = dbyte;
 }
 
 /* Image a bitmap character, with or without bolding. */
 private int
 image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
-  const byte *bitmap_data, uint sraster, uint bold, byte *bold_line,
+  const byte *bitmap_data, uint sraster, int bold, byte *bold_lines,
   gs_state *pgs)
-{	int code = gs_image_init(ienum, pim, false, pgs);
-	if ( code )
+{	uint dest_bytes = (pim->Width + 7) >> 3;
+	gx_device *dev = pgs->device;
+	void *iinfo;
+	const byte *planes[1];
+	int code;
+
+	gx_set_dev_color(pgs);
+	code = (*dev_proc(dev, begin_image))
+	  (dev, (const gs_imager_state *)pgs, pim, gs_image_format_chunky,
+	   NULL, pgs->dev_color, pgs->clip_path, pgs->memory, &iinfo);
+	if ( code < 0 )
 	  return code;
 	if ( bold )
 	  { /* Pass individual smeared lines. */
-	    uint y;
+	    uint src_width = pim->Width - bold;
+	    uint src_height = pim->Height - bold;
+	    uint dest_raster = bitmap_raster(pim->Width);
+	    int y;
+
+	    planes[0] = bold_lines;
 	    for ( y = 0; y < pim->Height; ++y )
-	      { uint used;
-	        bits_smear(bold_line,
-			   bitmap_data + (y <= bold ? 0 : (y - bold) * sraster),
-			   pim->Width - bold, sraster,
-			   bold + 1, min(bold + 1, pim->Height - y));
-		code = gs_image_next(ienum, bold_line,
-				     (pim->Width + 7) >> 3, &used);
+	      { uint y0 = (y < bold ? 0 : y - bold);
+	        uint y1 = min(y + 1, src_height);
+		uint iy;
+
+		if ( y < src_height )
+		  bits_smear_horizontally(bold_lines +
+					    (y % bold + 1) * dest_raster,
+					  bitmap_data + y * sraster,
+					  src_width, bold);
+		memcpy(bold_lines, bold_lines + (y0 % bold + 1) * dest_raster,
+		       dest_bytes);
+		for ( iy = y0 + 1; iy < y1; ++iy )
+		  bits_merge(bold_lines,
+			     bold_lines + (iy % bold + 1) * dest_raster,
+			     dest_bytes);
+		code = (*dev_proc(dev, image_data))
+		  (dev, iinfo, planes, 0, dest_bytes, 1);
 		if ( code != 0 )
 		  break;
 	      }
 	  }
 	else
 	  { /* Pass the entire image at once. */
-	    uint used;
-	    code = gs_image_next(ienum, bitmap_data,
-				 ((pim->Width + 7) >> 3) * pim->Height,
-				 &used);
+	    planes[0] = bitmap_data;
+	    code = (*dev_proc(dev, image_data))
+	      (dev, iinfo, planes, 0, dest_bytes, pim->Height);
 	  }
-	gs_image_cleanup(ienum);
+	(*dev_proc(dev, end_image))(dev, iinfo, code >= 0);
 	return code;
 }
 
@@ -222,7 +303,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  gs_image_enum *ienum;
 	  int code;
 	  uint bold;
-	  byte *bold_line = 0;
+	  byte *bold_lines = 0;
 
 	  if ( cdata[0] == 0 )
 	    { /* PCL XL format */
@@ -251,16 +332,15 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  if ( pfont->WMode >> 1 )
 	    { float bold_fraction = (pfont->WMode >> 1) / 127.0;
 	      bold = (uint)(image.Height * bold_fraction + 0.5);
-	      image.Width += bold;
-	      image.Height += bold;
-	      ascent += bold;
-	      bold_line = gs_alloc_bytes(pgs->memory,
-					 bitmap_raster(image.Width),
-					 "pl_bitmap_build_char(bold_line)");
-	      if ( bold_line == 0 )
+	      bold_lines = alloc_bold_lines(pgs->memory, image.Width, bold,
+					    "pl_bitmap_build_char(bold_line)");
+	      if ( bold_lines == 0 )
 		{ code = gs_note_error(gs_error_VMerror);
 		  goto out;
 		}
+	      image.Width += bold;
+	      image.Height += bold;
+	      ascent += bold;
 	    }
 	  else
 	    bold = 0;
@@ -285,9 +365,9 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	    return code;
 	  code = image_bitmap_char(ienum, &image, bitmap_data,
 				   (image.Width - bold + 7) >> 3, bold,
-				   bold_line, pgs);
-out:	  gs_free_object(pgs->memory, bold_line,
-			 "pl_bitmap_build_char(bold_line)");
+				   bold_lines, pgs);
+out:	  gs_free_object(pgs->memory, bold_lines,
+			 "pl_bitmap_build_char(bold_lines)");
 	  gs_free_object(pgs->memory, ienum, "pl_bitmap_build_char");
 	  return (code < 0 ? code : 0);
 	}
@@ -570,8 +650,8 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
 
 /* Get character existence and escapement for a TrueType font. */
 private int
-pl_tt_char_width(const pl_font_t *plfont,
-  const pl_symbol_map_collection_t *maps, uint char_code, gs_point *pwidth)
+pl_tt_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
+  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
 {	gs_font *pfont = plfont->pfont;
 	gs_char chr = char_code;
 	/****** DOESN'T HANDLE SYMBOL SETS PROPERLY ******/
@@ -596,9 +676,7 @@ pl_tt_char_width(const pl_font_t *plfont,
 	if ( code < 0 )
 	  return code;
 	if ( pwidth )
-	  { pwidth->x = sbw[2];
-	    pwidth->y = sbw[3];
-	  }
+	  return gs_distance_transform(sbw[2], sbw[3], pmat, pwidth);
 	return 0;
 }
 
@@ -733,10 +811,13 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	/* Now smear the bitmap and copy it to the destination. */
 
 	{ gs_image_t image;
-	  gs_image_enum *ienum;
+	  gs_image_enum *ienum =
+	    gs_image_enum_alloc(pgs->memory, "pl_tt_build_char");
+	  byte *bold_lines =
+	    alloc_bold_lines(pgs->memory, mdev.width - bold_added, bold_added,
+			     "pl_tt_build_char(bold_lines)");
 
-	  ienum = gs_image_enum_alloc(pgs->memory, "pl_tt_build_char");
-	  if ( ienum == 0 )
+	  if ( ienum == 0 || bold_lines == 0 )
 	    { code = gs_note_error(gs_error_VMerror);
 	      goto out;
 	    }
@@ -750,13 +831,12 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  code = tt_set_cache(penum, pgs, w2);
 	  if ( code < 0 )
 	    goto out;
-	  /* Yes, it's really safe to use the first raster line as the */
-	  /* line for the smeared output. */
 	  code = image_bitmap_char(ienum, &image, mdev.base,
 				   bitmap_raster(mdev.width), bold_added,
-				   mdev.base, pgs);
+				   bold_lines, pgs);
+out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
 	  gs_free_object(pgs->memory, ienum, "pl_tt_build_char(image enum)");
-out:	  gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
+	  gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
 	}
 	return (code < 0 ? code : 0);
 #undef pfont42

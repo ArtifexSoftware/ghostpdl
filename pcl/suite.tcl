@@ -2,24 +2,25 @@
 
 # Run some or all of a Genoa test suite, optionally checking for memory leaks.
 # Command line syntax:
-#	suite (--[no-]check | --[no-]print | --[no-]together | -<switch> |
+#	suite (--[no-]check | --[no-]debug | --[no-]print | --[no-]together | -<switch> |
 #	   <dirname>[,<filename>] | <filename>)*
 
 proc pcl_args {print} {
     if $print {
-	return [list -Z@? -sDEVICE=ljet4 -r600 -sOutputFile=t.%03d.lj -dNOPAUSE -dMaxBitmap=500000 -dBufferSpace=500000]
+	return [list -Z@:? -sDEVICE=ljet4 -r600 -sOutputFile=t.%03d.lj -dNOPAUSE -dMaxBitmap=500000 -dBufferSpace=500000]
     } else {
-	return [list -Z:@? -sDEVICE=pbmraw -r600 -sOutputFile=/dev/null -dNOPAUSE]
+	return [list -Z@:? -sDEVICE=pbmraw -r600 -sOutputFile=/dev/null -dNOPAUSE]
     }
 }
 
 proc pcl_xe {file} {
-    if {[string first xl/ $file] >= 0} {return pclxl} else {return pcl5}
+    if {[string first xl $file] >= 0} {return pclxl} else {return pcl5}
 }
 
 proc catch_exec {command} {
+    global __debug
     puts $command; flush stdout
-    if [catch [concat exec $command] msg] {
+    if {!$__debug && [catch [concat exec $command] msg]} {
 	puts "Non-zero exit code from command:"
 	puts $command
 	puts $msg
@@ -27,6 +28,7 @@ proc catch_exec {command} {
 }
 
 set __check 0
+set __debug 0
 set __print 0
 set __together 0
 proc suite {files switches} {

@@ -45,16 +45,6 @@ typedef struct pl_symbol_map_s {
   ((pl_glyph_vocabulary_t)((map)->character_requirements[7] & 7))
 
 /*
- * Define a symbol set from this library's point of view.  This consists of
- * one symbol map per glyph vocabulary.  We call it a "symbol map
- * collection" to avoid confusion with the language interpreters' idea of a
- * symbol set, which may be either a structure or a numeric identifier.
- */
-typedef struct pl_symbol_map_collection_s {
-  pl_symbol_map_t *maps[plgv_next];
-} pl_symbol_map_collection_t;
-
-/*
  * Define the built-in symbol set mappings.  The list is terminated by
  * a NULL.
  */

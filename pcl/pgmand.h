@@ -214,13 +214,6 @@ bool hpgl_arg_units(P2(hpgl_args_t *pargs, hpgl_real_t *pu));
 }
 #endif
 
-#define hpgl_poly_ignore(pgls)                  \
-{						\
-  if ( pgls->g.render_mode ) 			\
-    {						\
-      return 0;					\
-    }						\
-}
 /*
  * HPGL mnemonics
  */

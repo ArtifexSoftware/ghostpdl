@@ -137,7 +137,6 @@ hpgl_character_size(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
  int
 hpgl_AD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_font_definition(pargs, pgls, 1);
 }
 
@@ -146,7 +145,6 @@ hpgl_AD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 	int32 pen = 0;
-	hpgl_poly_ignore(pgls);
 	if ( hpgl_arg_c_int(pargs, &mode) )
 	  { if ( mode & ~3 )
 	      return e_Range;
@@ -163,7 +161,6 @@ hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t spaces, lines;
-	hpgl_poly_ignore(pgls);
 	if ( hpgl_arg_c_real(pargs, &spaces) )
 	  { if ( !hpgl_arg_c_real(pargs, &lines) )
 	      return e_Range;
@@ -175,7 +172,6 @@ hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_DI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_label_direction(pargs, pgls, false);
 }
 
@@ -183,7 +179,6 @@ hpgl_DI(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_DR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_label_direction(pargs, pgls, true);
 }
 
@@ -194,8 +189,6 @@ hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	const byte *rlimit = pargs->source.limit;
 	byte ch = (byte)pargs->phase;
 	int mode = 1;
-
-	hpgl_poly_ignore(pgls);
 
 	/* We use phase to remember the terminator character */
 	/* in case we had to restart execution. */
@@ -231,7 +224,6 @@ hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int path = 0, line = 0;
 
-	hpgl_poly_ignore(pgls);
 	hpgl_arg_c_int(pargs, &path);
 	hpgl_arg_c_int(pargs, &line);
 	if ( (path & ~3) | (line & ~1) )
@@ -246,7 +238,6 @@ hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_ES(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t width = 0, height = 0;
 
-	hpgl_poly_ignore(pgls);
 	hpgl_arg_c_real(pargs, &width);
 	hpgl_arg_c_real(pargs, &height);
 	pgls->g.character.extra_space.x = width;
@@ -258,7 +249,6 @@ hpgl_ES(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_FI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_select_font(pargs, pgls, 0);
 }
 
@@ -266,7 +256,6 @@ hpgl_FI(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_select_font(pargs, pgls, 0);
 }
 
@@ -276,7 +265,6 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 
-	hpgl_poly_ignore(pgls);
 	while ( p < rlimit )
 	  { byte ch = *++p;
 	    if_debug1('I',
@@ -301,7 +289,6 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int origin = 1;
 
-	hpgl_poly_ignore(pgls);
 	hpgl_arg_c_int(pargs, &origin);
 	if ( origin < 1 || origin == 10 || origin == 20 || origin > 21 )
 	  return e_Range;
@@ -313,7 +300,6 @@ hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_SA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	pgls->g.font_selected = 1;
 	pgls->g.font = 0;	/* recompute from params */
 	return 0;
@@ -324,7 +310,6 @@ hpgl_SA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 
-	hpgl_poly_ignore(pgls);
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.bitmap_fonts_allowed = mode;
@@ -336,7 +321,6 @@ hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_SD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_font_definition(pargs, pgls, 0);
 }
 
@@ -344,7 +328,6 @@ hpgl_SD(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_character_size(pargs, pgls, false);
 }
 
@@ -353,7 +336,6 @@ hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t slant = 0;
 
-	hpgl_poly_ignore(pgls);
 	hpgl_arg_c_real(pargs, &slant);
 	pgls->g.character.slant = slant;
 	return 0;
@@ -363,7 +345,6 @@ hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_SR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	return hpgl_character_size(pargs, pgls, true);
 }
 
@@ -371,7 +352,6 @@ hpgl_SR(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_SS(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);
 	pgls->g.font_selected = 0;
 	pgls->g.font = 0;	/* recompute from params */
 	return 0;
@@ -382,7 +362,6 @@ hpgl_SS(hpgl_args_t *pargs, hpgl_state_t *pgls)
 hpgl_TD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 
-	hpgl_poly_ignore(pgls);
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.transparent_data = mode;

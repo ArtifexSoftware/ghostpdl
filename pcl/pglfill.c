@@ -20,14 +20,13 @@ int
 hpgl_AC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t x, y;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_units(pargs, &x) )
 	  { if ( !hpgl_arg_units(pargs, &y) )
 	      return e_Range;
 	  }
 
 	/* draw the current path */
-	hpgl_draw_current_path(pgls);
+	hpgl_draw_current_path(pgls, hpgl_rm_vector);
 
 	pgls->g.anchor_corner.x = x;
 	pgls->g.anchor_corner.y = y;
@@ -47,7 +46,6 @@ int
 hpgl_FT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int type = hpgl_fill_solid;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_int(pargs, &type) )
 	  switch ( type )
 	  {
@@ -128,7 +126,6 @@ hpgl_LA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	bool no_args=true;
 	int kind;
 
-	hpgl_poly_ignore(pgls);	
 	while ( hpgl_arg_c_int(pargs, &kind) )
 	  {
 	    no_args=false;
@@ -204,7 +201,6 @@ int
 hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int type = 0;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &type) )
 	  { if ( type == 99 )
 	      ;
@@ -245,8 +241,6 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t width;
 	int pmin = 0, pmax = pgls->g.number_of_pens - 1;
 
-	hpgl_poly_ignore(pgls);	
-
 	/* we maintain the line widths in plotter units, irrespective
            of current units (WU) */
 	if ( hpgl_arg_c_real(pargs, &width) )
@@ -277,8 +271,6 @@ int
 hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int index, width, height;
 	uint raster;
-
-	hpgl_poly_ignore(pgls);	
 
 	if ( pargs->phase == 0 )
 	  { if ( !hpgl_arg_c_int(pargs, &index) )
@@ -340,7 +332,6 @@ hpgl_SM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 
-	hpgl_poly_ignore(pgls);	
 	for ( ; ; )
 	  { if ( p >= rlimit )
 	      { pargs->source.ptr = p;
@@ -373,7 +364,6 @@ int
 hpgl_SP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int pen = 0;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &pen) &&
 	     (pen < 0 || pen >= pgls->g.number_of_pens)
 	   )
@@ -387,7 +377,6 @@ int
 hpgl_SV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int type = hpgl_screen_none;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &type) )
 	  switch ( type )
 	    {
@@ -441,7 +430,6 @@ int
 hpgl_TR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 1;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.source_transparent = mode;
@@ -452,7 +440,6 @@ hpgl_TR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_UL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int index;
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &index) )
 	  { hpgl_real_t gap[20];
 	    double total = 0;
@@ -492,7 +479,6 @@ int
 hpgl_WU(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int mode = 0;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
 	pgls->g.pen_width_relative = mode;

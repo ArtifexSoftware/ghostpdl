@@ -155,7 +155,7 @@ call:	if ( pst->command )
 		   * flagged as executable even in polygon mode, and check
 		   * the render_mode themselves.
 		   */
-		  if ( pgls->g.render_mode == polygon_mode &&
+		  if (( pgls->g.polygon_mode ) &&
 		       !(pst->command->flags & hpgl_cdf_polygon)
 		     )
 		    pst->command = 0;

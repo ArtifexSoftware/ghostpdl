@@ -9,6 +9,8 @@
 #include "math_.h"
 #include "pggeom.h"
 
+/* HAS most of these computations require more error checking */
+
  int
 hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2, 
 			floatp x3, floatp y3, floatp *cx, floatp *cy)
@@ -116,5 +118,15 @@ hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y,
 			floatp angle, floatp *x, floatp *y)
 {
 	*x = radius * cos(angle) + center_x;
-	*y = radius * cos(angle) + center_y;
+	*y = radius * sin(angle) + center_y;
+}
+
+ void
+hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y, 
+			      floatp angle, floatp *endx, floatp *endy)
+
+{
+	hpgl_compute_arc_coords(magnitude, x, y, (angle * (M_PI/180.0)),
+				endx, endy);
+	return;
 }

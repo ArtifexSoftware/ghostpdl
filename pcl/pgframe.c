@@ -141,7 +141,7 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* ESC % <enum> A */ 
 pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
-	hpgl_call(hpgl_draw_current_path(pcls));
+	hpgl_call(hpgl_draw_current_path(pcls, hpgl_rm_vector));
 	return rtl_enter_pcl_mode(pargs, pcls);
 }
 

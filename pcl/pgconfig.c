@@ -20,7 +20,6 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
 
-	hpgl_poly_ignore(pgls);	
 	while ( p < rlimit )
 	  if ( !pargs->phase )
 	    { /* Scanning for opening " */
@@ -220,7 +219,6 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
         int32 ptxy[4];
 	int i;
 
-	hpgl_poly_ignore(pgls);	
 	/* get the default picture frame coordinates */
 	hpgl_picture_frame_coords(pgls, pic_coords);
 
@@ -273,7 +271,6 @@ hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t rptxy[4];
 	int i, j;
 	hpgl_args_t args;
-	hpgl_poly_ignore(pgls);	
 	for ( i = 0; i < 4 && hpgl_arg_c_real(pargs, &rptxy[i]); ++i )
 	  ;
 	if ( i & 1 )
@@ -309,8 +306,6 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t wxy[4];
 	int i;
 
-	hpgl_poly_ignore(pgls);	
-
 	/* get the default picture frame coordinates */
 	hpgl_picture_frame_coords(pgls, wxy);
 
@@ -332,7 +327,6 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);	
 	return e_Unimplemented;
 }
 
@@ -342,7 +336,6 @@ int
 hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int angle;
 
-	hpgl_poly_ignore(pgls);	
 	if ( hpgl_arg_c_int(pargs, &angle) )
 	  switch ( angle )
 	    {
@@ -359,7 +352,6 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_RP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	hpgl_poly_ignore(pgls);	
 	return e_Unimplemented;
 }
 
@@ -373,7 +365,6 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	int i;
 	int type;
 
-	hpgl_poly_ignore(pgls);	
 	for ( i = 0; i < 4 && hpgl_arg_real(pargs, &xy[i]); ++i )
 	  ;
 	switch ( i )

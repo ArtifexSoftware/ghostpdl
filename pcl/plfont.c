@@ -40,7 +40,10 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	if ( plfont->glyphs.table )
 	  { uint i;
 	    for ( i = plfont->glyphs.size; i > 0; )
-	      gs_free_object(mem, (void *)plfont->glyphs.table[--i].data, cname);
+	      { void *data = plfont->glyphs.table[--i].data;
+	        if ( data )
+		  gs_free_object(mem, data, cname);
+	      }
 	  }
 	/* Free the font data itself. */
 	gs_free_object(mem, (void *)plfont->char_glyphs.table, cname);

@@ -47,9 +47,10 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	hpgl_add_arc_to_path(pgls, x_center, y_center, 
 			     radius, start_angle, sweep, chord_angle);
 
-	hpgl_draw_current_path(pgls);
+	/* HAS check this */
+	/* hpgl_draw_current_path(pgls, hpgl_rm_vector); */
 
-	return e_Unimplemented;
+	return 0;
 }
 
 
@@ -84,7 +85,8 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	x_start = pgls->g.pos.x;
 	y_start = pgls->g.pos.y;
 
-	hpgl_draw_current_path(pgls);
+	/* HAS check this */
+	/* hpgl_draw_current_path(pgls, hpgl_rm_vector); */
 
 	if ( hpgl_3_same_points(x_start, y_start, x_inter, 
 				y_inter, x_end, y_end) ) 
@@ -140,8 +142,7 @@ hpgl_arc_3_point(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 				  (start_angle - end_angle)), 
 				 chord_angle);
 	  }
-	hpgl_draw_current_path(pgls);
-	return( 1 );
+	return 0;
 }
 
 /* Draw a Bezier (BR, BZ). */
@@ -218,7 +219,7 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
 	    /* Prepare for the next set of points. */
 	    hpgl_args_init(pargs);
 	  }
-	return e_Unimplemented;
+	return 0;
 }
 
 /* ------ Commands ------ */
@@ -277,7 +278,8 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    hpgl_PU(&args, pgls);
 	}
 
-	hpgl_draw_current_path(pgls);
+	/* HAS check this */
+	/* hpgl_draw_current_path(pgls, hpgl_rm_vector); */
 	return 0;
 }
 
@@ -332,7 +334,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		{ pargs->source.ptr = p - 1;
 		break;
 		}
-	      /**** SELECT PEN ****/
+	      pgls->g.pen = pen;
 	      }
 	      p = pargs->source.ptr;
 	      continue;
@@ -383,8 +385,21 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      { int32 xy[2];
 	      if ( !pe_args(pargs, xy, 2) )
 		break;
-	      /**** SCALE COORDINATES ****/
-	      /**** MOVE OR DRAW ****/
+	      /* HAS - I would prefer that this be handled with the
+                 parsing macros and hpgl_P[ARUD], but that would mess
+                 up the state of the parser.  The following is
+                 UNTESTED other than compilation */
+
+	      hpgl_add_point_to_path(pgls, (floatp)xy[0], (floatp)xy[1],
+				     ((pargs->phase & pe_absolute) ?
+				      ((pargs->phase & pe_pen_up) ?
+				       gs_moveto :
+				       gs_lineto) :
+				      (pargs->phase & pe_pen_up) ?
+				      gs_rmoveto :
+				      gs_rlineto));
+
+					 
 	      }
 	      pargs->phase &= ~(pe_pen_up | pe_absolute);
 	      p = pargs->source.ptr;

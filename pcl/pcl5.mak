@@ -351,7 +351,7 @@ pgconfig.$(OBJ): pgconfig.c $(std_h)\
 pgvector.$(OBJ): pgvector.c $(stdio__h) $(gdebug_h) $(pgmand_h)
 
 # Chapter 21
-pgpoly.$(OBJ): pgpoly.c $(std_h) $(pgdraw_h) $(pgmand_h)
+pgpoly.$(OBJ): pgpoly.c $(std_h) $(pgdraw_h) $(pggeom_h) $(pgmand_h)
 
 # Chapter 22
 pglfill.$(OBJ): pglfill.c $(memory__h)\

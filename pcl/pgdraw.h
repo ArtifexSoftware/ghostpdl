@@ -27,7 +27,8 @@ int hpgl_add_bezier_to_path(P9(hpgl_state_t *pgls, floatp x1,
 				floatp y4));
 
 /* clears the current path with stroke or fill */
-int hpgl_draw_current_path(P1(hpgl_state_t *pgls));
+int hpgl_draw_current_path(P2(hpgl_state_t *pgls, 
+			      hpgl_rendering_mode_t render_mode));
 
 /* utility routine to add a 2 points and stroke/fill */
 int hpgl_draw_line(P5(hpgl_state_t *pgls, floatp x1, floatp y1, 
