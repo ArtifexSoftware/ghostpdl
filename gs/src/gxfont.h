@@ -152,6 +152,7 @@ typedef struct gs_glyph_info_s {
 #define GLYPH_INFO_OUTLINE_WIDTHS 32 /* return unmodified widths, see above */
 #define GLYPH_INFO_VVECTOR0 64	
 #define GLYPH_INFO_VVECTOR1 128	/* must be VVECTOR0 << 1 */
+#define GLYPH_INFO_CDEVPROC 256	/* Allow CDevProc callout. */
 } gs_glyph_info_t;
 
 /* Define the "object" procedures of fonts. */

@@ -301,9 +301,11 @@ private int
 scan_cmap_text(pdf_text_enum_t *pte)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
-    gs_font_type0 *const font = (gs_font_type0 *)pte->current_font; /* Type 0, fmap_CMap */
+    /* gs_font_type0 *const font = (gs_font_type0 *)pte->current_font;*/ /* Type 0, fmap_CMap */
+    gs_font_type0 *const font = (gs_font_type0 *)pte->orig_font; /* Type 0, fmap_CMap */
+    /* Not sure. Changed for CDevProc callout. Was pte->current_font */
     gs_text_enum_t scan = *(gs_text_enum_t *)pte;
-    int wmode = font->WMode, code;
+    int wmode = font->WMode, code, rcode = 0;
     pdf_font_resource_t *pdsubf0 = NULL;
     gs_font *subfont0 = NULL;
     uint index = scan.index, xy_index = scan.xy_index, font_index0;
@@ -410,9 +412,16 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
 		pdf_glyph_widths_t widths;
 
-		code = pdf_glyph_widths(pdsubf, wmode, glyph, (gs_font *)subfont, &widths);
+		code = pdf_glyph_widths(pdsubf, wmode, glyph, (gs_font *)subfont, &widths,
+				pte->cdevproc_callout ? pte->cdevproc_result : NULL);
 		if (code < 0)
 		    return code;
+		if (code == TEXT_PROCESS_CDEVPROC) {
+		    pte->returned.current_glyph = glyph;
+		    pte->current_font = subfont;
+		    rcode = TEXT_PROCESS_CDEVPROC;
+		    break;
+		}
 		if (code == 0) { /* OK to cache */
 		    if (cid > pdsubf->count)
 			return_error(gs_error_unregistered); /* Must not happen. */
@@ -431,6 +440,14 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		}
 	    }
 	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
+	    if (pte->cdevproc_callout) {
+		 /* Only handle a single character because its width is stored 
+		    into pte->cdevproc_result, and process_text_modify_width neds it. 
+		    fixme: next time take from w, v, real_widths. */
+		break_index = scan.index;
+		break_xy_index = scan.xy_index;
+		break;
+	    }
 	} while (!font_change);
 	if (break_index > index) {
 	    pdf_font_resource_t *pdfont;
@@ -490,6 +507,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 		pte->text.y_widths -= xy_index * xy_index_step;
 	    pte->text.data.bytes = save_text.data;
 	    pte->text.size = save_text.size;
+	    pte->cdevproc_callout = false;
 	    if (code < 0) {
 		pte->index = index;
 		pte->xy_index = xy_index;
@@ -506,7 +524,7 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	} 
 	index = break_index;
 	xy_index = break_xy_index;
-	if (done)
+	if (done || rcode != 0)
 	    break;
 	pdsubf0 = pdsubf;
 	font_index0 = font_index;
@@ -514,12 +532,15 @@ scan_cmap_text(pdf_text_enum_t *pte)
     }
     pte->index = index;
     pte->xy_index = xy_index;
-    return 0;
+    return rcode;
 }
 
 int
-process_cmap_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
+process_cmap_text(gs_text_enum_t *penum, void *vbuf, uint bsize)
 {
+    int code;
+    pdf_text_enum_t *pte = (pdf_text_enum_t *)penum;
+
     if (pte->text.operation &
 	(TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
 	)
@@ -528,7 +549,12 @@ process_cmap_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	/* Not implemented.  (PostScript doesn't allow TEXT_INTERVENE.) */
 	return_error(gs_error_rangecheck);
     }
-    return scan_cmap_text((pdf_text_enum_t *)pte);
+    code = scan_cmap_text((pdf_text_enum_t *)pte);
+    if (code == TEXT_PROCESS_CDEVPROC)
+	pte->cdevproc_callout = true;
+    else
+	pte->cdevproc_callout = false;
+    return code;
 }
 
 /* ---------------- CIDFont ---------------- */

@@ -267,6 +267,14 @@ int gs_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom);
 	 */
 #define TEXT_PROCESS_INTERVENE 2
 
+	/*
+	 * The device has asked to execute CDevProc.
+	 * Obtain the current codes from gs_text_current_char/glyph,
+	 * do whatever is necessary and put CDevProc results to pte->cdevproc_result, 
+	 * and then call gs_text_process again with pte->cdevproc_result_valid=true.
+	 */
+#define TEXT_PROCESS_CDEVPROC 3
+
 /* Process text after 'begin'. */
 int gs_text_process(gs_text_enum_t *pte);
 

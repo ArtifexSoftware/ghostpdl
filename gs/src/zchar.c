@@ -25,6 +25,7 @@
 #include "gxmatrix.h"		/* for ifont.h */
 #include "gxdevice.h"		/* for gxfont.h */
 #include "gxfont.h"
+#include "gxfont42.h"
 #include "gzstate.h"
 #include "dstack.h"		/* for stack depth */
 #include "estack.h"
@@ -37,6 +38,7 @@
 #include "iname.h"
 #include "ipacked.h"
 #include "store.h"
+#include "zchar42.h"
 
 /* Forward references */
 private bool map_glyph_to_char(const ref *, const ref *, ref *);
@@ -573,6 +575,28 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 	    ++esp;		/* skip BuildChar or BuildGlyph proc */
 	    return o_push_estack;
 	}
+	case TEXT_PROCESS_CDEVPROC:
+	    {   gs_font *pfont = penum->current_font;
+		ref cnref;
+		op_proc_t cont = op_show_continue, exec_cont = 0;
+		gs_glyph glyph = penum->returned.current_glyph;
+		int code;
+    
+		pop(npop);
+		op = osp;
+		glyph_ref(glyph, &cnref);
+		if (pfont->FontType == ft_CID_TrueType) {
+		    gs_font_type42 *pfont42 = (gs_font_type42 *)pfont;
+		    uint glyph_index = pfont42->data.get_glyph_index(pfont42, glyph);
+
+		    code = zchar42_set_cache(i_ctx_p, (gs_font_base *)pfont42, 
+				    &cnref, glyph_index, cont, &exec_cont, false);
+		} else
+		    return_error(e_unregistered); /* Unimplemented. */
+		if (exec_cont != 0)
+		    return_error(e_unregistered); /* Must not happen. */
+		return code;
+	    }
 	default:		/* error */
 err:
 	    if (code >= 0)

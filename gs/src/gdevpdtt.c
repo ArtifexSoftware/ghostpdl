@@ -101,6 +101,10 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	 */
 	pdev->char_width.x = pw[0];
 	pdev->char_width.y = pw[1];
+	if (penum->cdevproc_callout) {
+	    memcpy(penum->cdevproc_result, pw, sizeof(penum->cdevproc_result));
+	    return 0;
+	}
 	break;
     default:
 	return_error(gs_error_rangecheck);
@@ -309,6 +313,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     penum->rc.free = rc_free_text_enum;
     penum->pte_default = 0; 
     penum->charproc_accum = false;
+    penum->cdevproc_callout = false;
     penum->returned.total_width.x = penum->returned.total_width.y = 0;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
 			     dev, pis, text, font, path, pdcolor, pcpath, mem);
@@ -1503,10 +1508,13 @@ get_missing_width(gs_font_base *cfont, int wmode, double scale_c,
  * Get the widths (unmodified from the copied font,
  * and possibly modified from the original font) of a given glyph.
  * Return 1 if the width was defaulted to MissingWidth.
+ * Return TEXT_PROCESS_CDEVPROC if a CDevProc callout is needed.
+ * cdevproc_result != NULL if we restart after a CDevProc callout.
  */
 int
 pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
-		 gs_font *orig_font, pdf_glyph_widths_t *pwidths)
+		 gs_font *orig_font, pdf_glyph_widths_t *pwidths, 
+		 const double cdevproc_result[10])
 {
     gs_font_base *cfont = pdf_font_resource_font(pdfont, false);
     gs_font *ofont = orig_font;
@@ -1518,6 +1526,8 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     double scale_c, scale_o;
     int code, rcode = 0;
     gs_point v;
+    int allow_cdevproc_callout = (orig_font->FontType == ft_CID_TrueType 
+		? GLYPH_INFO_CDEVPROC : 0); /* fixme : allow more font types. */
 
     if (ofont->FontType == ft_composite)
 	return_error(gs_error_unregistered); /* Must not happen. */
@@ -1560,10 +1570,30 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
     pwidths->Width.v = v;
     if (code > 0)
 	pwidths->Width.xy.x = pwidths->Width.xy.y = pwidths->Width.w = 0;
-    code = ofont->procs.glyph_info(ofont, glyph, NULL,
-					(GLYPH_INFO_WIDTH0 << wmode) |
-					(GLYPH_INFO_VVECTOR0 << wmode),
-					&info);
+    if (cdevproc_result == NULL) {
+	code = ofont->procs.glyph_info(ofont, glyph, NULL,
+					    (GLYPH_INFO_WIDTH0 << wmode) |
+					    (GLYPH_INFO_VVECTOR0 << wmode) | 
+					    allow_cdevproc_callout,
+					    &info);
+	/* fixme : Move this call before cfont->procs.glyph_info. */
+	if (info.members & GLYPH_INFO_CDEVPROC) {
+	    if (allow_cdevproc_callout)
+		return TEXT_PROCESS_CDEVPROC;
+	    else
+		return_error(gs_error_rangecheck);
+	}
+    } else {
+	info.width[0].x = cdevproc_result[0];
+	info.width[0].y = cdevproc_result[1];
+	info.width[1].x = cdevproc_result[6];
+	info.width[1].y = cdevproc_result[7];
+	info.v.x = (wmode ? cdevproc_result[8] : 0);
+	info.v.y = (wmode ? cdevproc_result[9] : 0);
+	info.members = (GLYPH_INFO_WIDTH0 << wmode) | 
+		       (wmode ? GLYPH_INFO_VVECTOR1 : 0);
+	code = 0;
+    }
     if (code == gs_error_undefined || !(info.members & (GLYPH_INFO_WIDTH0 << wmode)))
 	pwidths->real_width = pwidths->Width;
     else if (code < 0)
@@ -1665,7 +1695,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	return 0;
     }
     {
-	gs_font *font = pte->current_font;
+	gs_font *font = pte->orig_font; /* Not sure. Changed for CDevProc callout. Was pte->current_font */
 
 	switch (font->FontType) {
 	case ft_CID_encrypted:
@@ -1752,4 +1782,12 @@ pdf_text_process(gs_text_enum_t *pte)
      * the "callouted" glyph AT SECOND TIME. We can't do without the second pass
      * becauase in the first pass the glyph widths is unknown.
      */
+     /*
+      * Another unobvious thing is a CDevProc callout.
+      * If 'process' returns with TEXT_PROCESS_CDEVPROC,
+      * an interpreter callout will happen, and the function will be called again
+      * with pte->cdevproc_result_valid = true. Then it restatrs with taking
+      * glyph metrics from pte->cdevproc_result instead obtaining them with
+      * font->procs.glyph_info .
+      */
 }

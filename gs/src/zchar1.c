@@ -1125,12 +1125,22 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     int outline_widths = members & GLYPH_INFO_OUTLINE_WIDTHS;
     bool modified_widths = false;
     int default_members = members & ~(width_members + outline_widths + 
-                                      GLYPH_INFO_VVECTOR0 + GLYPH_INFO_VVECTOR1);
+                                      GLYPH_INFO_VVECTOR0 + GLYPH_INFO_VVECTOR1 + 
+				      GLYPH_INFO_CDEVPROC);
     int done_members = 0;
     int code;
 
     if (!width_members)
 	return (*proc)(font, glyph, pmat, members, info);
+    if (!outline_widths && dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0) {
+	done_members |= GLYPH_INFO_CDEVPROC;
+	if (members & GLYPH_INFO_CDEVPROC) {
+	    info->members = done_members;
+	    return_error(e_rangecheck);
+	} else {
+	    /* Ignore CDevProc. Used to compure MissingWidth.*/
+	}
+    }
     glyph_ref(glyph, &gref);
     if (width_members == GLYPH_INFO_WIDTH1) {
 	double wv[4];
@@ -1170,13 +1180,6 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    /* Discard the modified widths, but indicate they exist. */
 	    width_members |= done_members;
 	    done_members = outline_widths;
-	}
-    } else {
-	if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0) {
-	    /* We can't handle CDevProc. 
-	       We ignore it for CIDFontType 2 as a temporary workaround for #686947. */
-	    if (font->FontType != ft_CID_TrueType)
-		return_error(e_rangecheck);
 	}
     }
     default_members |= width_members;

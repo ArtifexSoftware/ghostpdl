@@ -517,7 +517,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	/* Might be an unused char, or just not cached. */
 	gs_glyph glyph = pdfont->u.simple.Encoding[ch].glyph;
 
-	code = pdf_glyph_widths(pdfont, font->WMode, glyph, (gs_font *)font, pwidths);
+	code = pdf_glyph_widths(pdfont, font->WMode, glyph, (gs_font *)font, pwidths, NULL);
 	if (code < 0)
 	    return code;
 	if (font->WMode != 0 && code > 0 && !pwidths->replaced_v) {
@@ -528,7 +528,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	     * which is required by PDF spec.
 	     * Take it from WMode==0.
 	     */
-	    code = pdf_glyph_widths(pdfont, 0, glyph, (gs_font *)font, pwidths);
+	    code = pdf_glyph_widths(pdfont, 0, glyph, (gs_font *)font, pwidths, NULL);
 	}
 	if (pwidths->replaced_v) {
 	    pdfont->u.simple.v[ch].x = pwidths->real_width.v.x - pwidths->Width.v.x;
@@ -724,12 +724,13 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    pdf_font_resource_t *pdsubf = ppts->values.pdfont->u.type0.DescendantFont;
 
 	    FontType = pdsubf->FontType;
-	    code = pdf_glyph_widths(pdsubf, font->WMode, glyph, subfont, &cw);
+	    code = pdf_glyph_widths(pdsubf, font->WMode, glyph, subfont, &cw, 
+		pte->cdevproc_callout ? pte->cdevproc_result : NULL);
 	} else {/* must be a base font */
 	    FontType = font->FontType;
 	    if (chr == GS_NO_CHAR && glyph != GS_NO_GLYPH) {
 		/* glyphshow, we have no char code. Bug 686988.*/
-		code = pdf_glyph_widths(ppts->values.pdfont, font->WMode, glyph, font, &cw);
+		code = pdf_glyph_widths(ppts->values.pdfont, font->WMode, glyph, font, &cw, NULL);
 	    } else 
 		code = pdf_char_widths((gx_device_pdf *)pte->dev,
 				       ppts->values.pdfont, chr, (gs_font_base *)font,

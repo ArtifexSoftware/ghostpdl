@@ -89,6 +89,8 @@ typedef struct pdf_text_enum_s {
     gs_text_enum_t *pte_default;
     gs_fixed_point origin;
     bool charproc_accum;
+    bool cdevproc_callout;
+    double cdevproc_result[10];
 } pdf_text_enum_t;
 #define private_st_pdf_text_enum()\
   extern_st(st_gs_text_enum);\
@@ -205,9 +207,12 @@ int pdf_set_text_process_state(gx_device_pdf *pdev,
  * font.  If the width is cachable (implying that the w values area valid),
  * return 0; if only the xy values are valid, or the width is not cachable
  * for some other reason, return 1.
+ * Return TEXT_PROCESS_CDEVPROC if a CDevProc callout is needed.
+ * cdevproc_result != NULL if we restart after a CDevProc callout.
  */
 int pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
-		     gs_font *font, pdf_glyph_widths_t *pwidths);
+		     gs_font *font, pdf_glyph_widths_t *pwidths,
+		     const double cdevproc_result[10]);
 
 /*
  * Fall back to the default text processing code when needed.
