@@ -37,9 +37,6 @@
 /* Structure descriptors */
 private_st_pl_font();
 
-/* Imported procedures */
-int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index, float psbw[4]);
-
 /* Define accessors for unaligned, big-endian quantities. */
 #define u16(bptr) pl_get_uint16(bptr)
 #define s16(bptr) pl_get_int16(bptr)
@@ -184,131 +181,107 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	    plfont->character_complement[i] = src->character_complement[i];
     }
     plfont->offsets = src->offsets;
-    if (src->header_size > 0)
-        {
-            plfont->header = gs_alloc_bytes(mem, src->header_size, cname);
-            if ( plfont->header == 0 )
-                return 0;
-            memcpy(plfont->header, src->header, src->header_size);
-        }
-    else
+    if (src->header_size > 0) {
+        plfont->header = gs_alloc_bytes(mem, src->header_size, cname);
+        if ( plfont->header == 0 )
+            return 0;
+        memcpy(plfont->header, src->header, src->header_size);
+    } else
         plfont->header = 0;
 
     /* technology specific setup */
-    switch ( plfont->scaling_technology )
+    switch ( plfont->scaling_technology ) {
+    case plfst_bitmap:
         {
-        case plfst_bitmap:
-	    {
-                gs_font_base *pfont =
-                    gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
-                if ( pfont == 0 )
-                    return 0;
-                pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
-                pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
-                break;
-	    }
-        case plfst_Intellifont:
-	    {
-                gs_font_base *pfont =
-                    gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
-                if ( pfont == 0 )
-                    return 0;
-                pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
-                pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
-                break;
-	    }
-        case plfst_TrueType:
-	    {
-                {
-                    gs_font_type42 *pfont =
-                        gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42, cname);
-                    if ( pfont == 0 )
-                        return 0;
-                    pl_fill_in_font((gs_font *)pfont,
-                                    plfont, src->pfont->dir,
-                                    mem, "illegal font");
-                    pl_fill_in_tt_font(pfont, NULL, gs_next_ids(mem, 1));
-                }
-                break;
-	    }
-        case plfst_MicroType:
-	    {
-                gs_font_base *pfont =
-                    gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
-                if ( pfont == 0 )
-                    return 0;
-                pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
-                pl_fill_in_mt_font(pfont, 0, 0);
-                pfont->UID = ((gs_font_base *)(src->pfont))->UID; /*** HACK ***/
-                break;
-            }
-        }
-    if ( src->char_glyphs.table != 0 )
-        {
-	    /* HAS may gs_alloc_struct_array() here but this is
-	       consistant with pl_tt_alloc_char_glyphs() */
-	    pl_tt_char_glyph_t *char_glyphs =
-                (pl_tt_char_glyph_t *) gs_alloc_byte_array(mem,
-                                                           src->char_glyphs.size,
-                                                           sizeof(pl_tt_char_glyph_t), cname);
-	    int i;
-	    if ( char_glyphs == 0 )
+            gs_font_base *pfont =
+                gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
+            if ( pfont == 0 )
                 return 0;
-	    for ( i = 0; i < src->char_glyphs.size; i++ )
-                char_glyphs[i] = src->char_glyphs.table[i];
-	    /* once again a copy struct shortcut and then are restore
-               of the char_glyphs.table pointer */
-	    plfont->char_glyphs = src->char_glyphs;
-	    plfont->char_glyphs.table = char_glyphs;
+            pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
+            pl_fill_in_bitmap_font(pfont, gs_next_ids(mem, 1));
+            break;
         }
+    case plfst_Intellifont:
+        {
+            gs_font_base *pfont =
+                gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
+            if ( pfont == 0 )
+                return 0;
+            pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
+            pl_fill_in_intelli_font(pfont, gs_next_ids(mem, 1));
+            break;
+        }
+    case plfst_TrueType:
+        {
+            {
+                gs_font_type42 *pfont =
+                    gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42, cname);
+                if ( pfont == 0 )
+                    return 0;
+                pl_fill_in_font((gs_font *)pfont,
+                                plfont, src->pfont->dir,
+                                mem, "illegal font");
+                pl_fill_in_tt_font(pfont, NULL, gs_next_ids(mem, 1));
+            }
+            break;
+        }
+    case plfst_MicroType:
+        {
+            gs_font_base *pfont =
+                gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
+            if ( pfont == 0 )
+                return 0;
+            pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "illegal font");
+            pl_fill_in_mt_font(pfont, 0, 0);
+            pfont->UID = ((gs_font_base *)(src->pfont))->UID; /*** HACK ***/
+            break;
+        }
+    }
+    if ( src->char_glyphs.table != 0 ) {
+        /* HAS may gs_alloc_struct_array() here but this is
+           consistant with pl_tt_alloc_char_glyphs() */
+        pl_tt_char_glyph_t *char_glyphs =
+            (pl_tt_char_glyph_t *) gs_alloc_byte_array(mem,
+                                                       src->char_glyphs.size,
+                                                       sizeof(pl_tt_char_glyph_t), cname);
+        int i;
+        if ( char_glyphs == 0 )
+            return 0;
+        for ( i = 0; i < src->char_glyphs.size; i++ )
+            char_glyphs[i] = src->char_glyphs.table[i];
+        /* once again a copy struct shortcut and then are restore
+           of the char_glyphs.table pointer */
+        plfont->char_glyphs = src->char_glyphs;
+        plfont->char_glyphs.table = char_glyphs;
+    }
     else /* no character glyph table data */
         plfont->char_glyphs = src->char_glyphs;
 
-    if ( src->glyphs.table != 0 )
-        {
-	    int i;
-	    plfont->glyphs.table = 
-                gs_alloc_struct_array(mem, src->glyphs.size, pl_font_glyph_t,
-                                      &st_pl_font_glyph_element_f, cname);
-	    plfont->glyphs.used = src->glyphs.used;
-	    plfont->glyphs.limit = src->glyphs.limit;
-	    plfont->glyphs.size = src->glyphs.size;
-	    plfont->glyphs.skip = src->glyphs.skip;
-	    for ( i = 0; i < src->glyphs.size; i++ )
-                {
-                    byte *data = src->glyphs.table[i].data;
-                    byte *char_data;
-                    plfont->glyphs.table[i].glyph =
-                        src->glyphs.table[i].glyph;
-                    plfont->glyphs.table[i].data = 0;
-                    if ( data )
-                        { /* ARGH --- */
-                            uint size;
-                            if ( plfont->scaling_technology == plfst_bitmap )
-                                {
-                                    size = 16 +
-                                        ((pl_get_uint16(data + 10) + 7) >> 3) *
-                                        pl_get_uint16(data + 12);
-                                }
-                            else if ( plfont->scaling_technology == plfst_Intellifont ) {
-                                /* non compound characters */
-                                if ( data[3] == 3 )
-                                    size = 6 + pl_get_uint16(data + 4);
-                                else /* assume data[3] == 4 (compound) */
-                                    size = 8 + data[6] * 6 + 2;
-                            }
-                            else /* truetype */
-                                size = 2 + 2 + data[2] +
-                                    pl_get_uint16(data + 2 + data[2]);
-                            char_data = gs_alloc_bytes(mem, size, cname);
-                            if ( char_data == 0 )
-                                return 0;
-                            memcpy(char_data, data, size);
-                            plfont->glyphs.table[i].data = char_data;
-                        }
-
-                }
+    if ( src->glyphs.table != 0 ) {
+        int i;
+        plfont->glyphs.table = 
+            gs_alloc_struct_array(mem, src->glyphs.size, pl_font_glyph_t,
+                                  &st_pl_font_glyph_element_f, cname);
+        plfont->glyphs.used = src->glyphs.used;
+        plfont->glyphs.limit = src->glyphs.limit;
+        plfont->glyphs.size = src->glyphs.size;
+        plfont->glyphs.skip = src->glyphs.skip;
+        for ( i = 0; i < src->glyphs.size; i++ ) {
+            byte *data = src->glyphs.table[i].data;
+            byte *char_data;
+            plfont->glyphs.table[i].glyph =
+                src->glyphs.table[i].glyph;
+            plfont->glyphs.table[i].data = 0;
+            if ( data ) {
+                uint size = gs_object_size(mem, data);
+                char_data = gs_alloc_bytes(mem, size, cname);
+                if ( char_data == 0 )
+                    return 0;
+                memcpy(char_data, data, size);
+                plfont->glyphs.table[i].data = char_data;
+            }
         }
+    }
     else /* no glyph table */
         plfont->glyphs = src->glyphs;
     return plfont;
@@ -587,84 +560,6 @@ pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, u
     fread(*pptt_font_data + 6, 1, len, in);
     fclose(in);
     return 0;
-}
-
-/* Load a built-in (TrueType) font from external storage. */
-int
-pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
-  long unique_id, pl_font_t **pplfont, char *font_name)
-{	ulong len = (fseek(in, 0L, SEEK_END), ftell(in));
-	ulong size = 6 + len;	/* leave room for segment header */
-	byte *data;
-
-	if ( size != (uint)size )
-	  { /*
-	     * The font is too big to load in a single piece -- punt.
-	     * The error message is bogus, but there isn't any more
-	     * appropriate one.
-	     */
-	    fclose(in);
-	    return_error(mem, gs_error_VMerror);
-	  }
-	rewind(in);
-	data = gs_alloc_bytes(mem, size, "pl_tt_load_font data");
-	if ( data == 0 )
-	  { fclose(in);
-	    return_error(mem, gs_error_VMerror);
-	  }
-	fread(data + 6, 1, len, in);
-	fclose(in);
-	/* Make a Type 42 font out of the TrueType data. */
-	{ gs_font_type42 *pfont =
-	    gs_alloc_struct(mem, gs_font_type42, &st_gs_font_type42,
-			    "pl_tt_load_font(gs_font_type42)");
-	  pl_font_t *plfont = pl_alloc_font(mem, "pl_tt_load_font(pl_font_t)");
-	  int code;
-
-	  if ( pfont == 0 || plfont == 0 )
-	    code = gs_note_error(mem, gs_error_VMerror);
-	  else
-	    { /* Initialize general font boilerplate. */
-	      code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, "illegal font");
-	      if ( code >= 0 )
-		{ /* Initialize TrueType font boilerplate. */
-		  plfont->header = data;
-		  plfont->header_size = size;
-		  plfont->scaling_technology = plfst_TrueType;
-		  plfont->font_type = plft_Unicode;
-		  plfont->large_sizes = true;
-		  plfont->offsets.GT = 0;
-		  pl_fill_in_tt_font(pfont, data, unique_id);
-		  code = gs_definefont(pdir, (gs_font *)pfont);
-		  if ( code >= 0 )
-		    { /*
-		       * Set the nominal design width to the width of a
-		       * small 'x' character.  If there isn't one, set the
-		       * design width arbitrarily at 0.6 em.
-		       */
-		      gs_char space = ' ';
-		      float sbw[4];
-		      uint glyph_index =
-			(*pfont->procs.encode_char)
-			  ((gs_font *)pfont, space, gs_no_glyph);
-
-		      if (glyph_index == gs_no_glyph || glyph_index == 0xffff)
-			glyph_index = 0;
-		      if ( gs_type42_get_metrics(pfont, glyph_index, sbw) < 0 )
-			sbw[2] = 0.6;
-		      pl_fp_set_pitch_cp(&plfont->params, sbw[2] * 100);
-		    }
-		}
-	    }
-	  if ( code < 0 )
-	    { gs_free_object(mem, plfont, "pl_tt_load_font(pl_font_t)");
-	      gs_free_object(mem, pfont, "pl_tt_load_font(gs_font_type42)");
-	      gs_free_object(mem, data, "pl_tt_load_font data");
-	      return code;
-	    }
-	  *pplfont = plfont;
-	}
-	return 0;
 }
 
 /* Fill in AGFA MicroType font boilerplate. */
