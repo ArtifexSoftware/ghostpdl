@@ -175,12 +175,13 @@ purge_all(cached_char *cc, void *dummy)
     return true;
 }
 
+/* clears the entire cache */
 /* Clean up at the end of a session. */
 private void
 px_end_session_cleanup(px_state_t *pxs)
 {	if ( pxs->data_source_open )
 	  pxCloseDataSource(NULL, pxs);
-	gx_purge_selected_cached_chars(pxs->font_dir, purge_all, pxs);
+	px_purge_character_cache(pxs);
 	px_dict_release(&pxs->session_pattern_dict);
 	px_purge_pattern_cache(pxs, eSessionPattern);
 	/* We believe that streams do *not* persist across sessions.... */
@@ -190,8 +191,7 @@ px_end_session_cleanup(px_state_t *pxs)
 /* ---------------- Non-operator procedures ---------------- */
 
 /* Clean up after an error or UEL. */
-void
-px_state_cleanup(px_state_t *pxs)
+void px_state_cleanup(px_state_t *pxs)
 {	px_end_page_cleanup(pxs);
 	px_end_session_cleanup(pxs);
 	pxs->have_page = false;
@@ -199,9 +199,15 @@ px_state_cleanup(px_state_t *pxs)
 
 void px_font_cleanup(px_state_t *pxs)
 {
-    gx_purge_selected_cached_chars(pxs->font_dir, purge_all, pxs);
+    px_purge_character_cache(pxs);
     px_dict_release(&pxs->font_dict);
 }    
+
+void px_purge_character_cache(px_state_t *pxs)
+{
+    gx_purge_selected_cached_chars(pxs->font_dir, purge_all, pxs);
+    return 0;
+}
 
 /* ---------------- Operators ---------------- */
 

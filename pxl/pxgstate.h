@@ -71,6 +71,9 @@ typedef struct px_pattern_s {
 void px_free_pattern(P3(gs_memory_t *, void *, client_name_t));
 /* Purge the pattern cache up to a given persistence level. */
 void px_purge_pattern_cache(P2(px_state_t *, pxePatternPersistence_t));
+/* purge font cache - all characters */
+void px_purge_character_cache(px_state_t *pxs);
+
 
 /* Define a structure for a brush or pen.  These only exist */
 /* within a px_gstate_t; they are never allocated separately. */
