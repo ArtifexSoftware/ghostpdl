@@ -22,78 +22,69 @@
 #
 # gscheck_pdfwrite.py
 #
-# does a fuzzy compare against the output of ps->raster and ps->pdf->raster
-# to make sure that the pdfwrite device is functioning as expected
+# compares Ghostscript against a baseline made from file->pdf->raster->md5sum.
+# this test tries to detect Ghostscript changes that affect the pdfwrite driver.
 
 import os
 import string
 import gstestutils
-import gsconf, gstestgs, gsparamsets
+import gsconf, gstestgs, gsparamsets, gssum
 
 
-def fuzzy_compare(file1, file2, tolerance=2, windowsize=5):
-	cmd = gsconf.fuzzy + ' -w%d -t%d %s %s > /dev/null 2> /dev/null' % (windowsize, tolerance, file1, file2)
-
-	ret = os.system(cmd)
-	if ret == 0:
-		return 1
-	else:
-		return 0
-		
-class GSFuzzyCompareTestCase(gstestgs.GhostscriptTestCase):
+class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 	def shortDescription(self):
-		return "Doing pdfwrite fuzzy test of %s (%s/%d/%d)" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
+		if self.band:
+			return "Checking pdfwrite of %s (%s/%ddpi/banded) against baseline" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi)
+		else:
+			return "Checking pdfwrite of %s (%s/%ddpi/noband) against baseline" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi)
 	
 	def runTest(self):
-		file1 = '%s.%s.%d.%d' % (self.file, self.device, self.dpi, self.band)
-		file2 = '%s.%s.%d.%d.pdf' % (self.file, 'pdfwrite', self.dpi, self.band)
-		file3 = '%s.pdfwrite.%s.%d.%d' % (self.file, self.device, self.dpi, self.band)
+		file1 = '%s.%s.%d.%d.pdf' % (self.file[string.rindex(self.file, '/') + 1:], 'pdf', self.dpi, self.band)
+		file2 = '%s.pdf.%s.%d.%d' % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
 
 		gs = gstestgs.Ghostscript()
 		gs.command = self.gs
 		gs.dpi = self.dpi
 		gs.band = self.band
 		gs.infile = self.file
-		gs.device = self.device
+		gs.gsoptions = self.gsoptions
+		if self.log_stdout:
+			gs.log_stdout = self.log_stdout
+		if self.log_stderr:
+			gs.log_stderr = self.log_stderr
 
-		# do PostScript->device (pbmraw, pgmraw, ppmraw, pkmraw)
+		# do file->PDF conversion
 
-		gs.outfile = file1
-		gs.process()
-
-		# do PostScript->pdfwrite
-		
 		gs.device = 'pdfwrite'
-		gs.outfile = file2
+		gs.outfile = file1
 		gs.process()
 
 		# do PDF->device (pbmraw, pgmraw, ppmraw, pkmraw)
 		
 		gs.device = self.device
-		gs.infile = file2
-		gs.outfile = file3
+		gs.infile = file1
+		gs.outfile = file2
 		gs.process()
 
-		# fuzzy compare PostScript->device with PostScript->PDF->device
+		# compare baseline
 		
-		ret = fuzzy_compare(file1, file3)
+		sum = gssum.make_sum(file2)
 		os.unlink(file1)
 		os.unlink(file2)
-		os.unlink(file3)
-		self.assert_(ret, "fuzzy match failed")
+
+		self.assertEqual(sum, gssum.get_sum(file2), "md5sum did not match baseline (" + file2 + ") for file: " + self.file)
 
 # Add the tests defined in this file to a suite
 
 def add_compare_test(suite, f, device, dpi, band):
-        suite.addTest(GSFuzzyCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device=device, dpi=dpi, band=band))
+        suite.addTest(GSPDFWriteCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device=device, dpi=dpi, band=band))
 
 def addTests(suite, gsroot, **args):
 	# get a list of test files
 	comparefiles = os.listdir(gsconf.comparefiledir)
 
-
 	for f in comparefiles:
-		if f[-3:] == '.ps':
+		if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
 			for params in gsparamsets.testparamsets:
 				add_compare_test(suite, f, params.device, params.resolution, params.banding)
 

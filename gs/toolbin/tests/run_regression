@@ -26,6 +26,7 @@ import os
 import gstestutils
 import gsconf, gstestgs, gsparamsets
 import check_all
+import gscheck_all
 
 # get a list of test files
 comparefiles = os.listdir(gsconf.comparefiledir)
@@ -43,6 +44,9 @@ for f in comparefiles:
     if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
 	for params in gsparamsets.testparamsets:
             add_compare_test(suite, f, params.device, params.resolution, params.banding)
+
+# Add other tests based on running Ghostscript.
+gscheck_all.addTests(suite, gsroot=gsconf.gsroot)
 
 # Add tests not based on actually running Ghostscript.
 check_all.addTests(suite, gsroot=gsconf.gsroot)

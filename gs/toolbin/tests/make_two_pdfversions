@@ -1,0 +1,80 @@
+#!/usr/bin/env python2.1
+
+#    Copyright (C) 2001 Artifex Software Inc.
+# 
+# This software is provided AS-IS with no warranty, either express or
+# implied.
+# 
+# This software is distributed under license and may not be copied,
+# modified or distributed except as expressly authorized under the terms
+# of the license contained in the file LICENSE in this distribution.
+# 
+# For more information about licensing, please refer to
+# http://www.ghostscript.com/licensing/. For information on
+# commercial licensing, go to http://www.artifex.com/licensing/ or
+# contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+# San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+# $Id$
+
+#
+# make_two_versions <filename> [<device> [<res>]]
+#
+# this script creates two versions of the file specified
+# one from baseline, and one from head
+# these are appropriate for a visual diff
+
+import gstestgs
+import gsconf
+import os, sys
+import string
+
+def make_version(ifile, ofile, device, dpi, baseline=0):
+    gs = gstestgs.Ghostscript()
+    gs.log_stdout = gsconf.log_stdout
+    gs.log_stderr = gsconf.log_stderr
+
+    if baseline:
+	    gs.gsoptions = gsconf.baselineoptions
+	    gs.command = gsconf.baselinegs
+    else:
+	    gs.gsoptions = gsconf.compareoptions
+	    gs.command = gsconf.comparegs
+
+    gs.infile = gsconf.comparefiledir + ifile
+    gs.dpi = dpi
+
+    # make file->PDF
+
+    tfile = ofile + ".pdf"
+    gs.outfile = tfile
+    gs.device = 'pdfwrite'
+
+    if not gs.process():
+        print "error."
+        return
+
+    gs.infile = tfile
+    gs.outfile = ofile
+    gs.device = device
+
+    gs.process()
+    os.unlink(tfile)
+
+file = sys.argv[1]
+if len(sys.argv) > 2:
+	device = sys.argv[2]
+else:
+	device = 'ppmraw'
+if len(sys.argv) > 3:
+	res = int(sys.argv[3])
+else:
+	res = 72
+
+ofile = "%s.pdf.%s.baseline.pnm" % (file, device)
+
+make_version(file, ofile, device, res, baseline=1)
+
+ofile = "%s.%s.compare.pnm" % (file, device)
+
+make_version(file, ofile, device, res, baseline=0)
