@@ -319,7 +319,7 @@ jbig2_region_find_referred(Jbig2Ctx *ctx,Jbig2Segment *segment)
 }
 
 /** 
- * Handler for immediate generic region segments
+ * Handler for generic refinement region segments
  */
 int
 jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,

@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (c) 2002-2003 artofcode LLC.
+    Copyright (c) 2002-2005 artofcode LLC.
     
     This software is provided AS-IS with no warranty,
     either express or implied.
@@ -353,7 +353,7 @@ jbig2_ctx_free (Jbig2Ctx *ctx)
 
   jbig2_free(ca, ctx->buf);
   if (ctx->segments != NULL) {
-    for (i = ctx->segment_index; i < ctx->n_segments; i++)
+    for (i = 0; i < ctx->n_segments; i++)
       jbig2_free_segment(ctx, ctx->segments[i]);
     jbig2_free(ca, ctx->segments);
   }
