@@ -230,12 +230,14 @@ def
 /sid		% - <sid> sid
   /card16 load
 def
-/Index {	% - Index <array>
+/Index {	% <name> Index <name> <array>
+  DEBUG { (% reading Index: ) print dup = } if
   mark card16 dup 0 ne {
     1 exch next offsetproc dup exec pop exch {
       dup exec dup 4 -1 roll sub 3 1 roll exch
     } repeat pop
   } if pop .packtomark
+  DEBUG { (% Index lengths = ) print dup === } if
   [ exch { nextstring } forall ] readonly
 } bind def
 /tokens {	% - tokens <num1> ... <op#> (op# = 12 means EOF)
@@ -323,17 +325,23 @@ def
   [ queued aload pop counttomark 2 add -1 roll ]
   /queued exch store
 } bind def
+/printvk {	% <value> <key> printvk <value> <key>
+  DEBUG { (\t% ) print dup =only ( = ) print 1 index === } if
+} bind def
 /xxput {	% <value> <key> <dict> xxput -
   3 1 roll exch put
 } bind def
 /putfi {	% <value> <key> putfi -
-  FontInfo xxput
+  printvk FontInfo xxput
 } bind def
 /xdef {		% <value> <key> xdef -
   exch def
 } bind def
+/pxdef {	% <value> <key> pxdef -
+  printvk xdef
+} bind def
 /topdictops mark
-  12 { exit }
+  12 { DEBUG { (\t% EOD) = } if exit }
   0 { idstring /version putfi }
   1 { idstring /Notice putfi }
   32 { idstring /Copyright putfi }
@@ -344,14 +352,15 @@ def
   34 { /ItalicAngle putfi }
   35 { /UnderlinePosition putfi }
   36 { /UnderlineThickness putfi }
-  37 { /PaintType xdef }
-  38 { /FontType xdef }		% actually CharstringType
-  39 { counttomark array astore /FontMatrix xdef }
-  13 { /UniqueID xdef }
-  5 { counttomark array astore /FontBBox xdef }
-  40 { /StrokeWidth xdef }
-  14 { counttomark array astore /XUID xdef }
+  37 { /PaintType pxdef }
+  38 { /FontType pxdef }		% actually CharstringType
+  39 { counttomark array astore /FontMatrix pxdef }
+  13 { /UniqueID pxdef }
+  5 { counttomark array astore /FontBBox pxdef }
+  40 { /StrokeWidth pxdef }
+  14 { counttomark array astore /XUID pxdef }
   15 {
+    /charset printvk pop
     dup StandardCharsets length lt {
       StandardCharsets exch get /charset xdef
     } {
@@ -359,6 +368,7 @@ def
     } ifelse
   }
   16 {
+    /Encoding printvk pop
     dup StandardEncodings length lt {
       /Encoding xdef
     } {
@@ -377,20 +387,20 @@ def
     /CIDFontType 0 def
     /CIDCount 8720 def % Default value defined in CFF spec.
     3 dict begin
-    /Supplement xdef
-    idstring /Ordering xdef
-    idstring /Registry xdef
+    /Supplement pxdef
+    idstring /Ordering pxdef
+    idstring /Registry pxdef
     /CIDSystemInfo currentdict end def
   }
-  63 { /CIDFontVersion xdef }
-  64 { /CIDFontRevision xdef }
-  65 { /CIDFontType xdef }
-  66 { /CIDCount xdef }
-  67 { /UIDBase xdef }
+  63 { /CIDFontVersion pxdef }
+  64 { /CIDFontRevision pxdef }
+  65 { /CIDFontType pxdef }
+  66 { /CIDCount pxdef }
+  67 { /UIDBase pxdef }
   68 { { readFDArray } offput }
   69 { { readFDSelect } offput }
 	% This operator only appears in a FDArray element.
-  70 { idstring /FontName exch def }
+  70 { idstring /FontName pxdef }
 .dicttomark readonly def
 
 % readcharset and readFDSelect may require the length of CharStringArray,
@@ -472,7 +482,7 @@ def
 % ------ FDArray and FDSelect ------ %
 
 /readFDArray {		% <font> readFDArray -
-  Index exch
+  /FDarray Index exch pop exch
   2 dict begin /f null def begin
   [ exch {
     dup length subfilefilter /f exch store
@@ -513,31 +523,31 @@ dup
 } bind def
 
 /privatedictops mark
-  12 { exit }
-  6 { deltarray /BlueValues xdef }
-  7 { deltarray /OtherBlues xdef }
-  8 { deltarray /FamilyBlues xdef }
-  9 { deltarray /FamilyOtherBlues xdef }
-  41 { /BlueScale xdef }
-  42 { /BlueShift xdef }
-  43 { /BlueFuzz xdef }
-  10 { 1 array astore /StdHW xdef }
-  11 { 1 array astore /StdVW xdef }
-  44 { deltarray /StemSnapH xdef }
-  45 { deltarray /StemSnapV xdef }
-  46 { 0 ne /ForceBold xdef }
-  47 { /ForceBoldThreshold xdef }
-  48 { /lenIV xdef }
-  49 { /LanguageGroup xdef }
-  50 { /ExpansionFactor xdef }
-  51 { /initialRandomSeed xdef }
+  12 { DEBUG { (\t% EOD) = } if exit }
+  6 { deltarray /BlueValues pxdef }
+  7 { deltarray /OtherBlues pxdef }
+  8 { deltarray /FamilyBlues pxdef }
+  9 { deltarray /FamilyOtherBlues pxdef }
+  41 { /BlueScale pxdef }
+  42 { /BlueShift pxdef }
+  43 { /BlueFuzz pxdef }
+  10 { 1 array astore /StdHW pxdef }
+  11 { 1 array astore /StdVW pxdef }
+  44 { deltarray /StemSnapH pxdef }
+  45 { deltarray /StemSnapV pxdef }
+  46 { 0 ne /ForceBold pxdef }
+  47 { /ForceBoldThreshold pxdef }
+  48 { /lenIV pxdef }
+  49 { /LanguageGroup pxdef }
+  50 { /ExpansionFactor pxdef }
+  51 { /initialRandomSeed pxdef }
   19 { PrivateStart add { readSubrs } offput }
-  20 { /defaultWidthX xdef }
-  21 { /nominalWidthX xdef }
+  20 { /defaultWidthX pxdef }
+  21 { /nominalWidthX pxdef }
 	% Multiple Master fonts only
-  59 { /NDV xdef }
-  60 { /CDV xdef }
-  61 { /lenBuildCharArray xdef }
+  59 { /NDV pxdef }
+  60 { /CDV pxdef }
+  61 { /lenBuildCharArray pxdef }
 .dicttomark readonly def
 
 /readPrivate {		% <font> <size> readPrivate -
