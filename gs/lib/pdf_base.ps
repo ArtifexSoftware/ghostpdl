@@ -512,7 +512,7 @@ pdfdict begin
 /filterparms {		% <dict> <DPkey> <Fkey> filterparms
 			%   <dict> <parms> <filternames>
   2 index exch knownoget {
-    exch 2 index exch .knownget {
+    exch 2 index exch knownoget {
 		% Both filters and parameters.
       exch dup type /nametype eq {
 	1 array astore exch 1 array astore exch
@@ -550,7 +550,7 @@ pdfdict begin
 % Note that, in general, resolving a stream repositions PDFfile.
 % Clients must save and restore the position of PDFfile themselves.
 /resolvestream {	% <streamdict> <readdata?> resolvestream <stream>
-  1 index /F .knownget {
+  1 index /F knownoget {
 		% This stream is stored on an external file.
     (r) file 3 -1 roll
     /FDecodeParms /FFilter filterparms

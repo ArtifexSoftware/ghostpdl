@@ -269,7 +269,7 @@ pdfdict begin
     }
    if
 	% Read any previous cross-reference tables.
-   Trailer { /Prev .knownget not { exit } if readxref } loop
+   Trailer { /Prev knownoget not { exit } if readxref } loop
    currentdict end
  } bind def
 

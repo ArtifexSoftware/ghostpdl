@@ -91,7 +91,7 @@ pdfdict begin
 /getfontencoding {	% <font-resource> <font> getfontencoding
 			%   <font-resource> <font> <Encoding|null>
   1 index /Encoding known {
-    dup /Encoding .knownget { 2 index getencoding } { null } ifelse
+    dup /Encoding knownoget { 2 index getencoding } { null } ifelse
   } {
     null
   } ifelse
@@ -581,7 +581,7 @@ readonly def
 .dicttomark readonly def
 
 /buildTrueType {	% <TrueType-font-resource> buildTrueType <font>
-  dup /BaseFont get
+  dup /BaseFont oget
   dup TTfonts exch .knownget {
     exch pop
 		% Hack required by the PDF specification: if the
@@ -734,8 +734,8 @@ readonly def
   begin
 	% Look up and apply [D]W
   10 index
-  currentdict /DW .knownget { 1000 div exch pop } if
-  currentdict /W .knownget {
+  currentdict /DW knownoget { 1000 div exch pop } if
+  currentdict /W knownoget {
 	% Search the W array for the CID.
 	% ****** NOT IMPLEMENTED YET ******
 	pop
@@ -903,7 +903,7 @@ readonly def
 
 /resourcefont			% <font-resource> resourcefont <font>
 { dup /PSFont .knownget
-  { /FID .knownget { type /fonttype eq } { false } ifelse }
+  { /FID knownoget { type /fonttype eq } { false } ifelse }
   { false }
   ifelse
   { /PSFont get }

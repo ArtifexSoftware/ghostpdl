@@ -418,7 +418,7 @@ end
   /ImageType 103 def
   /DataDict exch def
   dup /InterleaveType 3 put
-  DataDict /Matte .knownget {
+  DataDict /Matte knownoget {
     /Matte exch def
   } if
   AlphaIsShape { /ShapeMaskDict } { /OpacityMaskDict } ifelse exch def
@@ -612,7 +612,7 @@ end
   dup type /dicttype eq {
 		% Check the PaintType, if any (shading patterns don't
 		% have one).
-    dup /PaintType .knownget { 2 eq } { false } ifelse
+    dup /PaintType knownoget { 2 eq } { false } ifelse
   } {
     .pdfcount 1 gt
   } ifelse
@@ -719,10 +719,10 @@ end
   /DeviceGray { pop //01_1 } bind
   /DeviceRGB { pop //01_3 } bind
   /DeviceCMYK { pop //01_4 } bind
-  /CIEBasedA { 1 get /RangeA .knownget not { //01_1 } if } bind
-  /CIEBasedABC { 1 get /RangeABC .knownget not { //01_3 } if } bind
+  /CIEBasedA { 1 get /RangeA knownoget not { //01_1 } if } bind
+  /CIEBasedABC { 1 get /RangeABC knownoget not { //01_3 } if } bind
   /ICCBased {
-     1 oget dup /Range .knownget {
+     1 oget dup /Range knownoget {
        exch pop
      }{
        /N get [ exch {0 1} repeat ] readonly
