@@ -28,7 +28,11 @@
 <li><a href="#JFIF">JPEG file format (JFIF)</a>
 <li><a href="#TIFF">TIFF file formats</a>
 </ul>
-<li><a href="#HP_ijs">HP Deskjet official drivers
+<li><a href="#Display_devices">Display devices</a>
+<ul>
+<li><a href="#x11_devices">X Window System</a>
+</ul>
+<li><a href="#HP_ijs">HP Deskjet official drivers</a>
 <li><a href="#HP8_color_inkjet">H-P 8xx, 1100, and 1600 color inkjet printers</a>
 <ul>
 <li><a href="#HP8_gdevcd8">Drivers contained in <b><tt>gdevcd8.c</tt></b></a>
@@ -428,6 +432,7 @@ the long side of the paper as the reference):
 <p>
 </p>
 
+
 <hr>
 
 <h2><a name="File_formats"></a>File formats</h2>
@@ -567,6 +572,56 @@ which must start over for each strip.
 <p>
 If the value of MaxStripSize is 0 (the default), then the entire image will
 be a single strip.
+
+
+<hr>
+
+<h2><a name="Display_devices"></a>Display Devices</h2>
+
+<p>
+Ghostscript is often used for screen display of postscript and pdf documents.
+In many cases, a client or 'viewer' application calls the ghostscript engine
+to do the rasterization and handles the display of the resulting image itself,
+but it is also possible to invoke ghostscript directly and select an output
+device which directly handles displaying the image on screen.
+
+<p>
+This section describes the various display-oriented devices that are available
+in ghostscript.
+
+<h3><a name="x11_devices"></a>X Window System</h3>
+
+<p>
+Perhaps the most common use of of a display device is with the X Window System
+on unix-like systems. It is the default device on the command line client on
+such systems, and is used more creatively by the gv client application.
+
+<p>
+The available devices are:
+
+<dl>
+<dt><b>x11</b>
+<dd>This is the default device, handling display on X11R6.
+
+<dt><b>x11alpha</b>
+<dd>This is the x11 device, but with antialiasing. It is equivalent to
+invoking the x11 device with the options <tt>-dGraphicsAlphaBits=4 
+-dTextAlphaBits=4 -dMaxBitmap=50000000</tt>.
+
+<dt><b>x11cmyk</b>
+<dd>This device rasterizes the image in the CMKY color space, then flattens
+it to RGB for display. It's intended for testing only.
+
+<dt><b>x11mono</b>
+<dd>This is a strict black-and-white device for 1-bit monochrome displays.
+
+<dt><b>x11gray2</b>
+<dd>This is a device for 2 bpp (4-level) monochrome displays.
+
+<dt><b>x11gray4</b>
+<dd>This is a device for 4 bpp (16-level) monochrome displays.
+</dl>
+
 
 <hr>
 
