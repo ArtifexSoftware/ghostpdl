@@ -89,7 +89,7 @@ typedef struct gs_composite_type_procs_s {
      * not changed.
      */
 #define composite_write_proc(proc)\
-  int proc(const gs_composite_t *pcte, byte *data, uint *psize)
+  int proc(const gs_memory_t *mem, const gs_composite_t *pcte, byte *data, uint *psize)
     composite_write_proc((*write));
 
     /*

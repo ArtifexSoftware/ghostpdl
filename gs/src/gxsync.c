@@ -41,7 +41,7 @@ gx_semaphore_alloc(
     unsigned semaSizeof
     = sizeof(*sema) - sizeof(sema->native) + gp_semaphore_sizeof();
 
-    if (gp_semaphore_open(0) == 0)	/* see if gp_semaphores are movable */
+    if (gp_semaphore_open(memory, 0) == 0)	/* see if gp_semaphores are movable */
 	/* movable */
 	sema = (gx_semaphore_t *) gs_alloc_bytes(memory, semaSizeof,
 						 "gx_semaphore (create)");
@@ -55,7 +55,7 @@ gx_semaphore_alloc(
     /* Make sema remember which allocator was used to allocate it */
     sema->memory = memory;
 
-    if (gp_semaphore_open(&sema->native) < 0) {
+    if (gp_semaphore_open(memory, &sema->native) < 0) {
 	gs_free_object(memory, sema, "gx_semaphore (alloc)");
 	return 0;
     }
@@ -69,14 +69,14 @@ gx_semaphore_free(
 )
 {
     if (sema) {
-	gp_semaphore_close(&sema->native);
+	gp_semaphore_close(sema->memory, &sema->native);
 	gs_free_object(sema->memory, sema, "gx_semaphore (free)");
     }
 }
 
 /* Macros defined in gxsync.h, but redefined here so compiler chex consistency */
-#define gx_semaphore_wait(sema)  gp_semaphore_wait(&(sema)->native)
-#define gx_semaphore_signal(sema)  gp_semaphore_signal(&(sema)->native)
+#define gx_semaphore_wait(mem, sema)  gp_semaphore_wait(mem, &(sema)->native)
+#define gx_semaphore_signal(mem, sema)  gp_semaphore_signal(mem, &(sema)->native)
 
 
 /* ----- Monitor interface ----- */
@@ -95,7 +95,7 @@ gx_monitor_alloc(
     unsigned monSizeof
     = sizeof(*mon) - sizeof(mon->native) + gp_monitor_sizeof();
 
-    if (gp_monitor_open(0) == 0)	/* see if gp_monitors are movable */
+    if (gp_monitor_open(memory, 0) == 0)	/* see if gp_monitors are movable */
 	/* movable */
 	mon = (gx_monitor_t *) gs_alloc_bytes(memory, monSizeof,
 					      "gx_monitor (create)");
@@ -109,7 +109,7 @@ gx_monitor_alloc(
     /* Make monitor remember which allocator was used to allocate it */
     mon->memory = memory;
 
-    if (gp_monitor_open(&mon->native) < 0) {
+    if (gp_monitor_open(memory, &mon->native) < 0) {
 	gs_free_object(memory, mon, "gx_monitor (alloc)");
 	return 0;
     }
@@ -123,11 +123,11 @@ gx_monitor_free(
 )
 {
     if (mon) {
-	gp_monitor_close(&mon->native);
+	gp_monitor_close(mon->memory, &mon->native);
 	gs_free_object(mon->memory, mon, "gx_monitor (free)");
     }
 }
 
 /* Macros defined in gxsync.h, but redefined here so compiler chex consistency */
-#define gx_monitor_enter(sema)  gp_monitor_enter(&(sema)->native)
-#define gx_monitor_leave(sema)  gp_monitor_leave(&(sema)->native)
+#define gx_monitor_enter(mem, sema)  gp_monitor_enter(mem, &(sema)->native)
+#define gx_monitor_leave(mem, sema)  gp_monitor_leave(mem, &(sema)->native)

@@ -35,11 +35,11 @@ glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
 	case ft_CID_user_defined:
 	case ft_CID_TrueType:
 	case ft_CID_bitmap:
-	    check_int_leu(*op, gs_max_glyph - gs_min_cid_glyph);
+	    check_int_leu(imemory, *op, gs_max_glyph - gs_min_cid_glyph);
 	    *pglyph = (gs_glyph) op->value.intval + gs_min_cid_glyph;
 	    break;
 	default:
-	    check_type(*op, t_name);
+	    check_type(imemory, *op, t_name);
 	    *pglyph = name_index(op);
     }
     return op_show_enum_setup(i_ctx_p);
@@ -96,23 +96,23 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
 
     if (code != 0)
 	return code;
-    format = num_array_format(op);
+    format = num_array_format(imemory, op);
     if (format < 0)
 	return format;
     size = num_array_size(op, format);
     values = (float *)ialloc_byte_array(size, sizeof(float), "moveshow");
     if (values == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     for (i = 0; i < size; ++i) {
 	ref value;
 
-	switch (code = num_array_get(op, format, i, &value)) {
+	switch (code = num_array_get(imemory, op, format, i, &value)) {
 	case t_integer:
 	    values[i] = (float)value.value.intval; break;
 	case t_real:
 	    values[i] = value.value.realval; break;
 	case t_null:
-	    code = gs_note_error(e_rangecheck);
+	    code = gs_note_error(imemory, e_rangecheck);
 	    /* falls through */
 	default:
 	    ifree_object(values, "moveshow");

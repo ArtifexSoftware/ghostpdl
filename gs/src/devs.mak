@@ -735,11 +735,14 @@ pdfwrite_=$(pdfwrite1_) $(pdfwrite2_) $(pdfwrite3_) $(pdfwrite4_)\
  $(pdfwrite5_) $(pdfwrite6_) $(pdfwrite7_) $(pdfwrite8_) $(pdfwrite9_)\
  $(pdfwrite10_) $(pdfwrite11_)
 # Including the DSC parser here is clearly wrong: it requires a PostScript
-# interpreter.  We aren't sure what to do about this yet.
+# interpreter.  We aren't sure what to do about this yet. 
+# $(PSD)dscparse.dev\
+#	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse
+
 $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
  $(GLD)cmyklib.dev $(GLD)cfe.dev $(GLD)lzwe.dev\
  $(GLD)rle.dev $(GLD)sdcte.dev $(GLD)sdeparam.dev $(GLD)smd5.dev\
- $(GLD)szlibe.dev $(GLD)psdf.dev $(PSD)dscparse.dev\
+ $(GLD)szlibe.dev $(GLD)psdf.dev \
  $(DD)pdtext.dev
 	$(SETDEV2) $(DD)pdfwrite $(pdfwrite1_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite2_)
@@ -757,7 +760,6 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)smd5 $(GLD)szlibe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)psdf
-	$(ADDMOD) $(DD)pdfwrite -include $(PSD)dscparse
 	$(ADDMOD) $(DD)pdfwrite -include $(DD)pdtext
 
 gdevpdfc_h=$(GLSRC)gdevpdfc.h

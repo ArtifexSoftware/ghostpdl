@@ -47,23 +47,23 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     int code;
 
     /* Verify that we have an array as our input parameter */
-    check_read_type(*op, t_array);
+    check_read_type(imemory, *op, t_array);
     if (r_size(op) != 4)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 
     /* pcsa is a pointer to the color names array (element 1 in input array) */
     pcsa = op->value.const_refs + 1;
     if (!r_is_array(pcsa))
-	return_error(e_typecheck);
+	return_error(imemory, e_typecheck);
     num_components = r_size(pcsa);
     if (num_components == 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     if (num_components > GS_CLIENT_COLOR_MAX_COMPONENTS)
-	return_error(e_limitcheck);
+	return_error(imemory, e_limitcheck);
 
     /* Check tint transform procedure.  Note: Cheap trick to get pointer to it.
        The tint transform procedure is element 3 in the input array */
-    check_proc(pcsa[2]);
+    check_proc(imemory, pcsa[2]);
     
     /* The alternate color space has been selected as the current color space */
     pacs = gs_currentcolorspace(igs);
@@ -85,7 +85,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 	ref sname;
 
 	for (i = 0; i < num_components; ++i) {
-	    array_get(pcsa, (long)i, &sname);
+	    array_get(imemory, pcsa, (long)i, &sname);
 	    switch (r_type(&sname)) {
 		case t_string:
 		    code = name_from_string(&sname, &sname);
@@ -101,7 +101,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 		default:
 		    ifree_object(names, ".setdevicenspace(names)");
 		    ifree_object(pmap, ".setdevicenspace(map)");
-		    return_error(e_typecheck);
+		    return_error(imemory, e_typecheck);
 	    }
 	}
     }
@@ -118,7 +118,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     istate->colorspace.procs.special.device_n.tint_transform = pcsa[2];    
     pfn = ref_function(pcsa + 2);	/* See comment above */
     if (!pfn)
-	code = gs_note_error(e_rangecheck);
+	code = gs_note_error(imemory, e_rangecheck);
 
     if (code < 0) {
 	istate->colorspace = cspace_old;
@@ -126,13 +126,14 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 	ifree_object(pmap, ".setdevicenspace(map)");
 	return code;
     }
-    gs_cspace_set_devn_function(&cs, pfn);
+    gs_cspace_set_devn_function(imemory, &cs, pfn);
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	istate->colorspace = cspace_old;
 	return code;
     }
-    rc_decrement(pmap, ".setdevicenspace(map)");  /* build sets rc = 1 */
+    rc_decrement(imemory, 
+		 pmap, ".setdevicenspace(map)");  /* build sets rc = 1 */
     pop(1);
     return 0;
 }

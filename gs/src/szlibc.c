@@ -56,7 +56,7 @@ s_zlib_alloc_dynamic_state(stream_zlib_state *ss)
 
     ss->dynamic = zds;
     if (zds == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     zds->blocks = 0;
     zds->memory = mem;
     zds->zstate.zalloc = (alloc_func)s_zlib_alloc;
@@ -109,7 +109,7 @@ s_zlib_free(void *zmem, void *data)
     gs_free_object(mem, data, "s_zlib_free(data)");
     for (; ; block = block->next) {
 	if (block == 0) {
-	    lprintf1("Freeing unrecorded data 0x%lx!\n", (ulong)data);
+	    lprintf1(mem, "Freeing unrecorded data 0x%lx!\n", (ulong)data);
 	    return;
 	}
 	if (block->data == data)

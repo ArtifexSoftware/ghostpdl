@@ -203,7 +203,7 @@ obj_ident_eq(const ref * pref1, const ref * pref2)
  * If the object is a string without read access, return e_invalidaccess.
  */
 int
-obj_string_data(const ref *op, const byte **pchars, uint *plen)
+obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint *plen)
 {
     switch (r_type(op)) {
     case t_name: {
@@ -215,12 +215,12 @@ obj_string_data(const ref *op, const byte **pchars, uint *plen)
 	return 0;
     }
     case t_string:
-	check_read(*op);
+	check_read(mem, *op);
 	*pchars = op->value.bytes;
 	*plen = r_size(op);
 	return 0;
     default:
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     }
 }
 
@@ -294,7 +294,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	    goto nl;
 	case t_name:	 
 	    if (r_has_attr(op, a_executable)) {
-		code = obj_string_data(op, &data, &size);
+		code = obj_string_data(mem, op, &data, &size);
 		if (code < 0)
 		    return code;
 		goto nl;
@@ -302,7 +302,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	    if (start_pos > 0)
 		return obj_cvp(op, str, len, prlen, 0, start_pos - 1, mem);
 	    if (len < 1)
-		return_error(e_rangecheck);
+		return_error(mem, e_rangecheck);
 	    code = obj_cvp(op, str + 1, len - 1, prlen, 0, 0, mem);
 	    if (code < 0)
 		return code;
@@ -327,7 +327,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 
 		if (start_pos == 0) {
 		    if (len < 1)
-			return_error(e_rangecheck);
+			return_error(mem, e_rangecheck);
 		    str[0] = '(';
 		    skip = 0;
 		    wstr = str + 1;
@@ -361,7 +361,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 		if (status == 0) {
 #ifdef DEBUG
 		    if (skip > (truncate ? 4 : 1)) {
-			return_error(e_Fatal);
+			return_error(mem, e_Fatal);
 		    }
 #endif
 		}
@@ -404,7 +404,7 @@ obj_cvp(const ref * op, byte * str, uint len, uint * prlen,
 	    if (size > 4 && !memcmp(data + size - 4, "type", 4))
 		size -= 4;
 	    if (size > sizeof(buf) - 2)
-		return_error(e_rangecheck);
+		return_error(mem, e_rangecheck);
 	    buf[0] = '-';
 	    memcpy(buf + 1, data, size);
 	    buf[size + 1] = '-';
@@ -417,10 +417,10 @@ other:
 		int rtype = r_btype(op);
 
 		if (rtype > countof(type_strings))
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 		data = (const byte *)type_strings[rtype];
 		if (data == 0)
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 	    }
 	    goto rs;
 	}
@@ -434,10 +434,10 @@ other:
 	sprintf(buf, "%ld", op->value.intval);
 	break;
     case t_string:
-	check_read(*op);
+	check_read(mem, *op);
 	/* falls through */
     case t_name:
-	code = obj_string_data(op, &data, &size);
+	code = obj_string_data(mem, op, &data, &size);
 	if (code < 0)
 	    return code;
 	goto nl;
@@ -447,7 +447,7 @@ other:
 
 	name_index_ref(opt->nx_table[index - opt->base_index], &nref);
 	name_string_ref(&nref, &nref);
-	code = obj_string_data(&nref, &data, &size);
+	code = obj_string_data(mem, &nref, &data, &size);
 	if (code < 0)
 	    return code;
 	goto nl;
@@ -478,7 +478,7 @@ other:
     }
 rs: size = strlen((const char *)data);
 nl: if (size < start_pos)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     size -= start_pos;
     *prlen = min(size, len);
     memmove(str, data + start_pos, *prlen);
@@ -516,7 +516,7 @@ ensure_dot(char *buf)
  * str.  In any case, store the length in *prlen.
  */
 int
-obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
+obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
 	const byte ** pchars)
 {
     int code = obj_cvp(op, str, len, prlen, 0, 0, NULL);
@@ -525,8 +525,8 @@ obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
 	*pchars = str;
 	return code;
     }
-    obj_string_data(op, pchars, prlen);
-    return gs_note_error(e_rangecheck);
+    obj_string_data(mem, op, pchars, prlen);
+    return gs_note_error(mem, e_rangecheck);
 }
 
 /* Find the index of an operator that doesn't have one stored in it. */
@@ -572,10 +572,10 @@ op_index_ref(uint index, ref * pref)
 /* This is also used to index into Encoding vectors, */
 /* the error name vector, etc. */
 int
-array_get(const ref * aref, long index_long, ref * pref)
+array_get(const gs_memory_t *mem, const ref * aref, long index_long, ref * pref)
 {
     if ((ulong)index_long >= r_size(aref))
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     switch (r_type(aref)) {
 	case t_array:
 	    {
@@ -602,7 +602,7 @@ array_get(const ref * aref, long index_long, ref * pref)
 	    }
 	    break;
 	default:
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
     }
     return 0;
 }
@@ -692,7 +692,7 @@ ref_to_string(const ref * pref, gs_memory_t * mem, client_name_t cname)
 /* The stack underflow check (check for t__invalid) is harmless */
 /* if the operands come from somewhere other than the stack. */
 int
-num_params(const ref * op, int count, double *pval)
+num_params(const gs_memory_t *mem, const ref * op, int count, double *pval)
 {
     int mask = 0;
 
@@ -708,9 +708,9 @@ num_params(const ref * op, int count, double *pval)
 		mask++;
 		break;
 	    case t__invalid:
-		return_error(e_stackunderflow);
+		return_error(mem, e_stackunderflow);
 	    default:
-		return_error(e_typecheck);
+		return_error(mem, e_typecheck);
 	}
 	op--;
     }
@@ -720,7 +720,7 @@ num_params(const ref * op, int count, double *pval)
 }
 /* float_params doesn't bother to keep track of the mask. */
 int
-float_params(const ref * op, int count, float *pval)
+float_params(const gs_memory_t *mem, const ref * op, int count, float *pval)
 {
     for (pval += count; --count >= 0; --op)
 	switch (r_type(op)) {
@@ -731,22 +731,22 @@ float_params(const ref * op, int count, float *pval)
 		*--pval = (float)op->value.intval;
 		break;
 	    case t__invalid:
-		return_error(e_stackunderflow);
+		return_error(mem, e_stackunderflow);
 	    default:
-		return_error(e_typecheck);
+		return_error(mem, e_typecheck);
 	}
     return 0;
 }
 
 /* Get N numeric parameters (as floating point numbers) from an array */
 int
-process_float_array(const ref * parray, int count, float * pval)
+process_float_array(const gs_memory_t *mem, const ref * parray, int count, float * pval)
 {
     int         code = 0, indx0 = 0;
 
     /* we assume parray is an array of some type, of adequate length */
     if (r_has_type(parray, t_array))
-        return float_params(parray->value.refs + count - 1, count, pval);
+        return float_params(mem, parray->value.refs + count - 1, count, pval);
 
     /* short/mixed array; convert the entries to refs */
     while (count > 0 && code >= 0) {
@@ -755,9 +755,9 @@ process_float_array(const ref * parray, int count, float * pval)
 
         subcount = (count > countof(ref_buff) ? countof(ref_buff) : count);
         for (i = 0; i < subcount && code >= 0; i++)
-            code = array_get(parray, (long)(i + indx0), &ref_buff[i]);
+            code = array_get(mem, parray, (long)(i + indx0), &ref_buff[i]);
         if (code >= 0)
-            code = float_params(ref_buff + subcount - 1, subcount, pval);
+            code = float_params(mem, ref_buff + subcount - 1, subcount, pval);
         count -= subcount;
         pval += subcount;
         indx0 += subcount;
@@ -770,7 +770,7 @@ process_float_array(const ref * parray, int count, float * pval)
 /* The only possible error is e_typecheck. */
 /* If an error is returned, the return value is not updated. */
 int
-real_param(const ref * op, double *pparam)
+real_param(const gs_memory_t *mem, const ref * op, double *pparam)
 {
     switch (r_type(op)) {
 	case t_integer:
@@ -780,15 +780,15 @@ real_param(const ref * op, double *pparam)
 	    *pparam = op->value.realval;
 	    break;
 	default:
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
     }
     return 0;
 }
 int
-float_param(const ref * op, float *pparam)
+float_param(const gs_memory_t *mem, const ref * op, float *pparam)
 {
     double dval;
-    int code = real_param(op, &dval);
+    int code = real_param(mem, op, &dval);
 
     if (code >= 0)
 	*pparam = (float)dval;	/* can't overflow */
@@ -797,9 +797,9 @@ float_param(const ref * op, float *pparam)
 
 /* Get an integer parameter in a given range. */
 int
-int_param(const ref * op, int max_value, int *pparam)
+int_param(const gs_memory_t *mem, const ref * op, int max_value, int *pparam)
 {
-    check_int_leu(*op, max_value);
+    check_int_leu(mem, *op, max_value);
     *pparam = (int)op->value.intval;
     return 0;
 }
@@ -847,7 +847,7 @@ check_type_failed(const ref * op)
 /* Read a matrix operand. */
 /* Return 0 if OK, error code if not. */
 int
-read_matrix(const ref * op, gs_matrix * pmat)
+read_matrix(const gs_memory_t *mem, const ref * op, gs_matrix * pmat)
 {
     int code;
     ref values[6];
@@ -859,16 +859,16 @@ read_matrix(const ref * op, gs_matrix * pmat)
 	int i;
 
 	for (i = 0; i < 6; ++i) {
-	    code = array_get(op, (long)i, &values[i]);
+	    code = array_get(mem, op, (long)i, &values[i]);
 	    if (code < 0)
 		return code;
 	}
 	pvalues = values;
     }
-    check_read(*op);
+    check_read(mem, *op);
     if (r_size(op) != 6)
-	return_error(e_rangecheck);
-    code = float_params(pvalues + 5, 6, (float *)pmat);
+	return_error(mem, e_rangecheck);
+    code = float_params(mem, pvalues + 5, 6, (float *)pmat);
     return (code < 0 ? code : 0);
 }
 
@@ -882,9 +882,9 @@ write_matrix_in(ref * op, const gs_matrix * pmat, gs_dual_memory_t *idmemory,
     const float *pel;
     int i;
 
-    check_write_type(*op, t_array);
+    check_write_type((const gs_memory_t *)imem, *op, t_array);
     if (r_size(op) != 6)
-	return_error(e_rangecheck);
+	return_error((const gs_memory_t *)imem, e_rangecheck);
     aptr = op->value.refs;
     pel = (const float *)pmat;
     for (i = 5; i >= 0; i--, aptr++, pel++) {

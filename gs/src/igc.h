@@ -28,7 +28,7 @@ struct struct_shared_procs_s {
     /* Clear the relocation information in an object. */
 
 #define gc_proc_clear_reloc(proc)\
-  void proc(obj_header_t *pre, uint size)
+  void proc(const gs_memory_t *cmem, obj_header_t *pre, uint size)
     gc_proc_clear_reloc((*clear_reloc));
 
     /* Compute any internal relocation for a marked object. */
@@ -37,13 +37,13 @@ struct struct_shared_procs_s {
     /* but we need it for ref objects. */
 
 #define gc_proc_set_reloc(proc)\
-  bool proc(obj_header_t *pre, uint reloc, uint size)
+  bool proc(const gs_memory_t *cmem, obj_header_t *pre, uint reloc, uint size)
     gc_proc_set_reloc((*set_reloc));
 
     /* Compact an object. */
 
 #define gc_proc_compact(proc)\
-  void proc(obj_header_t *pre, obj_header_t *dpre, uint size)
+  void proc(const gs_memory_t *cmem, obj_header_t *pre, obj_header_t *dpre, uint size)
     gc_proc_compact((*compact));
 
 };
@@ -61,7 +61,7 @@ struct gc_state_s {
     int min_collect;		/* avm_space */
     bool relocating_untraced;	/* if true, we're relocating */
     /* pointers from untraced spaces */
-    gs_raw_memory_t *heap;	/* for extending mark stack */
+    gs_memory_t *heap;	/* for extending mark stack */
     name_table *ntable;		/* (implicitly referenced by names) */
 };
 
@@ -73,17 +73,18 @@ ptr_proc_mark(ptr_ref_mark);
 /* Exported by ilocate.c for igc.c */
 void ialloc_validate_memory(const gs_ref_memory_t *, gc_state_t *);
 void ialloc_validate_chunk(const chunk_t *, gc_state_t *);
-void ialloc_validate_object(const obj_header_t *, const chunk_t *,
+void ialloc_validate_object(const gs_ref_memory_t *, const obj_header_t *, const chunk_t *,
 			    gc_state_t *);
 
 /* Macro for returning a relocated pointer */
-const void *print_reloc_proc(const void *obj, const char *cname,
+const void *print_reloc_proc(const gs_memory_t *mem, 
+			     const void *obj, const char *cname,
 			     const void *robj);
 #ifdef DEBUG
-#  define print_reloc(obj, cname, nobj)\
-	(gs_debug_c('9') ? print_reloc_proc(obj, cname, nobj) : nobj)
+#  define print_reloc(mem, obj, cname, nobj)\
+	(gs_debug_c('9') ? print_reloc_proc(mem, obj, cname, nobj) : nobj)
 #else
-#  define print_reloc(obj, cname, nobj) (nobj)
+#  define print_reloc(mem, obj, cname, nobj) (nobj)
 #endif
 
 #endif /* igc_INCLUDED */

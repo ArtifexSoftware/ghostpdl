@@ -253,7 +253,7 @@ gx_concretize_CIEICC(
 
     /* verify and update the stream pointer */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
-        return_error(gs_error_ioerror);
+        return_error(pis->memory, gs_error_ioerror);
     ((icmFileGs *)picc->fp)->strp = instrp;
 
     /* translate the input components */
@@ -268,7 +268,7 @@ gx_concretize_CIEICC(
      * should not occur in practice.
      */
     if (picc_info->plu->lookup(picc_info->plu, outv, inv) > 1)
-        return_error(gs_error_unregistered);
+        return_error(pis->memory, gs_error_unregistered);
 
     /* if the output is in the CIE L*a*b* space, convert to XYZ */
     if (picc_info->pcs_is_cielab) {
@@ -318,11 +318,11 @@ gx_concretize_CIEICC(
 private void
 gx_adjust_cspace_CIEICC(const gs_color_space * pcs, int delta)
 {
-    const gs_icc_params *   picc_params = &pcs->params.icc;
+    const gs_icc_params *picc_params = &pcs->params.icc;
 
-    rc_adjust_const(picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
+    rc_adjust_const(pcs->pmem, picc_params->picc_info, delta, "gx_adjust_cspace_CIEICC");
     picc_params->alt_space.type->adjust_cspace_count(
-                (const gs_color_space *)&picc_params->alt_space, delta );
+            (const gs_color_space *)&picc_params->alt_space, delta );
 }
 
 /*
@@ -411,7 +411,7 @@ gx_wrap_icc_stream(stream *strp)
 }
 
 int
-gx_load_icc_profile(gs_cie_icc *picc_info)
+gx_load_icc_profile(const gs_memory_t *mem, gs_cie_icc *picc_info)
 {
     stream *        instrp = picc_info->instrp;
     icc *           picc;
@@ -420,7 +420,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	
     /* verify that the file is legitimate */
     if (picc_info->file_id != (instrp->read_id | instrp->write_id))
-	return_error(gs_error_ioerror);
+	return_error(mem, gs_error_ioerror);
     /*
      * Load the top-level ICC profile.
      *
@@ -436,7 +436,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
      * are stored in "foreign" memory.
      */
     if ((picc = new_icc()) == NULL)
-	return_error(gs_error_limitcheck);
+	return_error(mem, gs_error_limitcheck);
     {
 	icProfileClassSignature profile_class;
 	icColorSpaceSignature   cspace_type;
@@ -562,7 +562,7 @@ gx_load_icc_profile(gs_cie_icc *picc_info)
 	picc->del(picc);
     if (pfile != NULL)
 	pfile->del(pfile);
-    return_error(gs_error_rangecheck);
+    return_error(mem, gs_error_rangecheck);
 }
 
 /*
@@ -579,7 +579,7 @@ gx_install_CIEICC(const gs_color_space * pcs, gs_state * pgs)
 
     /* update the stub information used by the joint caches */
     gx_cie_load_common_cache(&picc_info->common, pgs);
-    gx_cie_common_complete(&picc_info->common);
+    gx_cie_common_complete(pgs->memory, &picc_info->common);
     return gs_cie_cs_complete(pgs, true);
 }
 
@@ -611,7 +611,7 @@ gs_cspace_build_CIEICC(
                                     pmem );
 
     if (picc_info == NULL)
-        return_error(gs_error_VMerror);
+        return_error(pmem, gs_error_VMerror);
 
     gx_set_common_cie_defaults(&picc_info->common, client_data);
     /*

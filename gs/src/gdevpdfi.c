@@ -364,7 +364,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * color space, which pdf_color_space() can't handle.  Patch it
 	 * to DeviceGray here.
 	 */
-	gs_cspace_init_DeviceGray(&cs_gray_temp);
+	gs_cspace_init_DeviceGray(pdev->memory, &cs_gray_temp);
 	pcs = &cs_gray_temp;
     } else if (is_mask)
 	code = pdf_prepare_imagemask(pdev, pis, pdcolor);
@@ -384,7 +384,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pie = gs_alloc_struct(mem, pdf_image_enum, &st_pdf_image_enum,
 			  "pdf_begin_image");
     if (pie == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
     *pinfo = (gx_image_enum_common_t *) pie;
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
@@ -420,7 +420,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 
 	pdf_make_bitmap_matrix(&bmat, -rect.p.x, -rect.p.y,
 			       pim->Width, pim->Height, height);
-	if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
+	if ((code = gs_matrix_invert(mem, &pim->ImageMatrix, &mat)) < 0 ||
 	    (code = gs_matrix_multiply(&bmat, &mat, &mat)) < 0 ||
 	    (code = gs_matrix_multiply(&mat, pmat, &pie->mat)) < 0
 	    ) {
@@ -599,7 +599,7 @@ pdf_image_plane_data_alt(gx_image_enum_common_t * info,
     }
     *rows_used = h;
     if (status < 0)
-	return_error(gs_error_ioerror);
+	return_error(pie->memory, gs_error_ioerror);
     return !pie->rows_left;
 #undef ROW_BYTES
 }
@@ -729,7 +729,7 @@ pdf_mid_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     if ((*pinfo)->procs != &pdf_image_object_enum_procs) {
 	/* We couldn't handle the mask image.  Bail out. */
 	/* (This is never supposed to happen.) */
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     }
     return code;
 }
@@ -762,7 +762,7 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	/* We couldn't handle the image.  Bail out. */
 	gx_image_end(*pinfo, false);
 	gs_free_object(mem, *pmcdev, "pdf_image3_make_mcde");
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     }
     pmie = (pdf_image_enum *)pminfo;
     pmce = (pdf_image_enum *)(*pinfo);
@@ -808,12 +808,12 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 
     if (midev[0]) {
 	if (midev[1])
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
 	i = 0, pixm = &pim->Opacity;
     } else if (midev[1])
 	i = 1, pixm = &pim->Shape;
     else
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     code = pdf_make_mxd(pmcdev, midev[i], mem);
     if (code < 0)
 	return code;
@@ -826,7 +826,7 @@ pdf_image3x_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	/* We couldn't handle the image.  Bail out. */
 	gx_image_end(*pinfo, false);
 	gs_free_object(mem, *pmcdev, "pdf_image3x_make_mcde");
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     }
     pmie = (pdf_image_enum *)pminfo[i];
     pmce = (pdf_image_enum *)(*pinfo);

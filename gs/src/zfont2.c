@@ -23,6 +23,7 @@
 #include "idparam.h"
 #include "ifont1.h"
 #include "ifont2.h"
+#include "ialloc.h"
 
 /* Private utilities */
 private uint
@@ -39,7 +40,7 @@ subr_bias(const ref * psubrs)
  * fonts.
  */
 int
-type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
+type2_font_params(const gs_memory_t *mem, const_os_ptr op, charstring_font_refs_t *pfr,
 		  gs_type1_data *pdata1)
 {
     int code;
@@ -52,16 +53,16 @@ type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
     /* Get information specific to Type 2 fonts. */
     if (dict_find_string(pfr->Private, "GlobalSubrs", &temp) > 0) {
 	if (!r_is_array(temp))
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
         pfr->GlobalSubrs = temp;
     }
     pdata1->gsubrNumberBias = subr_bias(pfr->GlobalSubrs);
-    if ((code = dict_uint_param(pfr->Private, "gsubrNumberBias",
+    if ((code = dict_uint_param(mem, pfr->Private, "gsubrNumberBias",
 				0, max_uint, pdata1->gsubrNumberBias,
 				&pdata1->gsubrNumberBias)) < 0 ||
-	(code = dict_float_param(pfr->Private, "defaultWidthX", 0.0,
+	(code = dict_float_param(mem, pfr->Private, "defaultWidthX", 0.0,
 				 &dwx)) < 0 ||
-	(code = dict_float_param(pfr->Private, "nominalWidthX", 0.0,
+	(code = dict_float_param(mem, pfr->Private, "nominalWidthX", 0.0,
 				 &nwx)) < 0
 	)
 	return code;
@@ -73,7 +74,7 @@ type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 	if (dict_find_string(pfr->Private, "initialRandomSeed", &pirs) <= 0)
 	    pdata1->initialRandomSeed = 0;
 	else if (!r_has_type(pirs, t_integer))
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
 	else
 	    pdata1->initialRandomSeed = pirs->value.intval;
     }
@@ -94,10 +95,10 @@ zbuildfont2(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    code = charstring_font_get_refs(op, &refs);
+    code = charstring_font_get_refs(imemory, op, &refs);
     if (code < 0)
 	return code;
-    code = type2_font_params(op, &refs, &data1);
+    code = type2_font_params(imemory, op, &refs, &data1);
     if (code < 0)
 	return code;
     return build_charstring_font(i_ctx_p, op, &build, ft_encrypted2, &refs,

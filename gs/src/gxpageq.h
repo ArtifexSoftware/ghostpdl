@@ -164,7 +164,7 @@ void gx_page_queue_entry_free(
  * pageq entry itself (via gx_page_queue_entry_free), or you will leak
  * memory (lots).
  */
-void gx_page_queue_entry_free_page_info(
+void gx_page_queue_entry_free_page_info( 
     gx_page_queue_entry_t * entry	/* entry to free up */
     );
 

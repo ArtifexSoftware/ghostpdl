@@ -58,7 +58,7 @@ gs_clipsave(gs_state *pgs)
     if (copy == 0 || stack == 0) {
 	gs_free_object(mem, stack, "gs_clipsave(stack)");
 	gs_free_object(mem, copy, "gs_clipsave(clip_path)");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     rc_init_free(stack, mem, 1, rc_free_clip_stack);
     stack->clip_path = copy;

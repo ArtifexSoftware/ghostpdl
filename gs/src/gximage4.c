@@ -87,7 +87,7 @@ gx_begin_image4(gx_device * dev,
 		c0 = c1 = pim->MaskColor[i >> 1];
 
 	    if ((c0 | c1) > max_value)
-		return_error(gs_error_rangecheck);
+		return_error(penum->memory, gs_error_rangecheck);
 	    if (c0 > c1) {
 		opaque = true;	/* pixel can never match mask color */
 		break;

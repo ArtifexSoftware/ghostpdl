@@ -182,11 +182,11 @@ gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
     for (lnum = row_first; ;) {
 	int status;
 
-	if_debug7('w', "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
+	if_debug7(mem, 'w', "[w]lnum=%d r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", lnum,
 		  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
 		  (ulong)out, (ulong)w.ptr, (ulong)w.limit);
 	status = temp->process(ss, &r, &w, lnum == row_end);
-	if_debug7('w', "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
+	if_debug7(mem, 'w', "...%d, r=0x%lx,0x%lx,0x%lx w=0x%lx,0x%lx,0x%lx\n", status,
 		  (ulong)in, (ulong)r.ptr, (ulong)r.limit,
 		  (ulong)out, (ulong)w.ptr, (ulong)w.limit);
 	switch (status) {

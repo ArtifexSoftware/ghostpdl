@@ -25,25 +25,25 @@
 
 /* Get the CIDSystemInfo of a CIDFont. */
 int
-cid_font_system_info_param(gs_cid_system_info_t *pcidsi, const ref *prfont)
+cid_font_system_info_param(const gs_memory_t *mem, gs_cid_system_info_t *pcidsi, const ref *prfont)
 {
     ref *prcidsi;
 
     if (dict_find_string(prfont, "CIDSystemInfo", &prcidsi) <= 0)
-	return_error(e_rangecheck);
-    return cid_system_info_param(pcidsi, prcidsi);
+	return_error(mem, e_rangecheck);
+    return cid_system_info_param(mem, pcidsi, prcidsi);
 }
 
 /* Get the additional information for a CIDFontType 0 or 2 CIDFont. */
 int
-cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
+cid_font_data_param(const gs_memory_t *mem, os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 {
     int code;
     ref *pgdir;
 
-    check_type(*op, t_dictionary);
-    if ((code = cid_font_system_info_param(&pdata->CIDSystemInfo, op)) < 0 ||
-	(code = dict_int_param(op, "CIDCount", 0, max_int, -1,
+    check_type(mem, *op, t_dictionary);
+    if ((code = cid_font_system_info_param(mem, &pdata->CIDSystemInfo, op)) < 0 ||
+	(code = dict_int_param(mem, op, "CIDCount", 0, max_int, -1,
 			       &pdata->CIDCount)) < 0
 	)
 	return code;
@@ -55,13 +55,13 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
     if (dict_find_string(op, "GlyphDirectory", &pgdir) <= 0) {
 	/* Standard CIDFont, require GDBytes. */
 	make_null(pGlyphDirectory);
-	return dict_int_param(op, "GDBytes", 1, MAX_GDBytes, 0,
+	return dict_int_param(mem, op, "GDBytes", 1, MAX_GDBytes, 0,
 			      &pdata->GDBytes);
     }
     if (r_has_type(pgdir, t_dictionary) || r_is_array(pgdir)) {
 	/* GlyphDirectory, GDBytes is optional. */
 	*pGlyphDirectory = *pgdir;
-	code = dict_int_param(op, "GDBytes", 1, MAX_GDBytes, 1,
+	code = dict_int_param(mem, op, "GDBytes", 1, MAX_GDBytes, 1,
 			      &pdata->GDBytes);
 	if (code == 1) {
 	    pdata->GDBytes = 0;
@@ -69,6 +69,6 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 	}
 	return code;
     } else {
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     }
 }

@@ -84,14 +84,14 @@ gs_cspace_build_Pattern1(gs_color_space ** ppcspace,
 
     if (pbase_cspace != 0) {
 	if (gs_color_space_num_components(pcspace) < 0)		/* Pattern space */
-	    return_error(gs_error_rangecheck);
+	    return_error(pmem, gs_error_rangecheck);
     }
     code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Pattern, pmem);
     if (code < 0)
 	return code;
     if (pbase_cspace != 0) {
 	pcspace->params.pattern.has_base_space = true;
-	gs_cspace_init_from((gs_color_space *) & (pcspace->params.pattern.base_space),
+	gs_cspace_init_from(pmem, (gs_color_space *) & (pcspace->params.pattern.base_space),
 			    pbase_cspace
 	    );
     } else
@@ -148,7 +148,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	    gx_set_device_color_1(saved);
 	    break;
 	default:
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(mem, gs_error_rangecheck);
 	    goto fsaved;
     }
     inst.template = *pcp;
@@ -156,9 +156,9 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     if (code < 0)
 	goto fsaved;
 #define mat inst.step_matrix
-    if_debug6('t', "[t]step_matrix=[%g %g %g %g %g %g]\n",
+    if_debug6(pgs->memory, 't', "[t]step_matrix=[%g %g %g %g %g %g]\n",
 	      mat.xx, mat.xy, mat.yx, mat.yy, mat.tx, mat.ty);
-    if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
+    if_debug4(pgs->memory, 't', "[t]bbox=(%g,%g),(%g,%g)\n",
 	      bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     {
 	float bbw = bbox.q.x - bbox.p.x;
@@ -178,7 +178,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 	} else {
 	    /* Check for singular stepping matrix. */
 	    if (fabs(mat.xx * mat.yy - mat.xy * mat.yx) < 1.0e-6) {
-		code = gs_note_error(gs_error_rangecheck);
+		code = gs_note_error(pgs->memory, gs_error_rangecheck);
 		goto fsaved;
 	    }
 	    if (mat.xy == 0 && mat.yx == 0 &&
@@ -190,21 +190,21 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
 		code = compute_inst_matrix(&inst, saved, &bbox);
 		if (code < 0)
 		    goto fsaved;
-		if_debug2('t',
+		if_debug2(pgs->memory, 't',
 			  "[t]adjusted XStep & YStep to size=(%d,%d)\n",
 			  inst.size.x, inst.size.y);
-		if_debug4('t', "[t]bbox=(%g,%g),(%g,%g)\n",
+		if_debug4(pgs->memory, 't', "[t]bbox=(%g,%g),(%g,%g)\n",
 			  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
 	    }
 	}
     }
-    if ((code = gs_bbox_transform_inverse(&bbox, &mat, &inst.bbox)) < 0)
+    if ((code = gs_bbox_transform_inverse(pgs->memory, &bbox, &mat, &inst.bbox)) < 0)
 	goto fsaved;
-    if_debug4('t', "[t]ibbox=(%g,%g),(%g,%g)\n",
+    if_debug4(pgs->memory, 't', "[t]ibbox=(%g,%g),(%g,%g)\n",
 	      inst.bbox.p.x, inst.bbox.p.y, inst.bbox.q.x, inst.bbox.q.y);
     inst.is_simple = (fabs(mat.xx) == inst.size.x && mat.xy == 0 &&
 		      mat.yx == 0 && fabs(mat.yy) == inst.size.y);
-    if_debug6('t',
+    if_debug6(pgs->memory, 't',
 	      "[t]is_simple? xstep=(%g,%g) ystep=(%g,%g) size=(%d,%d)\n",
 	      inst.step_matrix.xx, inst.step_matrix.xy,
 	      inst.step_matrix.yx, inst.step_matrix.yy,
@@ -223,7 +223,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     code = gx_clip_to_rectangle(saved, &cbox);
     if (code < 0)
 	goto fsaved;
-    inst.id = gs_next_ids(1);
+    inst.id = gs_next_ids(mem, 1);
     *pinst = inst;
     return 0;
 #undef mat
@@ -260,7 +260,7 @@ compute_inst_matrix(gs_pattern1_instance_t * pinst, const gs_state * saved,
     pinst->step_matrix.yy = yy;
     pinst->step_matrix.tx = saved->ctm.tx;
     pinst->step_matrix.ty = saved->ctm.ty;
-    return gs_bbox_transform(&pinst->template.BBox, &ctm_only(saved),
+    return gs_bbox_transform(saved->memory, &pinst->template.BBox, &ctm_only(saved),
 			     pbbox);
 }
 
@@ -429,7 +429,7 @@ mask_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     gs_image1_t mask;
 
     if (pen == 0)
-	return_error(gs_error_VMerror);
+	return_error(pgs->memory, gs_error_VMerror);
     gs_image_t_init_mask(&mask, true);
     mask.Width = pbitmap->size.x;
     mask.Height = pbitmap->size.y;
@@ -466,10 +466,10 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
     int code;
 
     if (pen == 0)
-	return_error(gs_error_VMerror);
+	return_error(pgs->memory, gs_error_VMerror);
 
     if (ppmap->pcspace == 0) {
-        gs_cspace_init_DeviceGray(&cs);
+        gs_cspace_init_DeviceGray(pgs->memory, &cs);
         pcspace = &cs;
     } else
         pcspace = ppmap->pcspace;
@@ -560,12 +560,12 @@ gs_makepixmappattern(
     /* check that the data is legitimate */
     if ((mask) || (pcspace == 0)) {
 	if (pbitmap->pix_depth != 1)
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
 	pcspace = 0;
     } else if (gs_color_space_get_index(pcspace) != gs_color_space_index_Indexed)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (pbitmap->num_comps != 1)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
 
     /* allocate and initialize a pixmap_info structure for the paint proc */
     if (mem == 0)
@@ -576,14 +576,14 @@ gs_makepixmappattern(
 			    "makepximappattern"
 	);
     if (ppmap == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     ppmap->bitmap = *pbitmap;
     ppmap->pcspace = pcspace;
     ppmap->white_index = white_index;
 
     /* set up the client pattern structure */
     gs_pattern1_init(&pat);
-    uid_set_UniqueID(&pat.uid, (id == no_UniqueID) ? gs_next_ids(1) : id);
+    uid_set_UniqueID(&pat.uid, (id == no_UniqueID) ? gs_next_ids(mem, 1) : id);
     pat.PaintType = (mask ? 2 : 1);
     pat.TilingType = 1;
     pat.BBox.p.x = 0;
@@ -1018,7 +1018,7 @@ gx_dc_pattern_write(
     byte *                          data,
     uint *                          psize )
 {
-    return_error(gs_error_unknownerror);
+    return_error(dev->memory, gs_error_unknownerror);
 }
 
 int
@@ -1031,5 +1031,5 @@ gx_dc_pattern_read(
     uint                    size,
     gs_memory_t *           mem )
 {
-    return_error(gs_error_unknownerror);
+    return_error(dev->memory, gs_error_unknownerror);
 }

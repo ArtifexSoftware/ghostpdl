@@ -110,7 +110,7 @@ gx_ht_read_tf(
 
     /* read the type byte */
     if (--size < 0)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
     tf_type = (gx_ht_tf_type_t)*data++;
 
     /* if no transfer function, exit now */
@@ -124,10 +124,10 @@ gx_ht_read_tf(
                        gx_transfer_map,
                        &st_transfer_map,
                        mem,
-                       return_error(gs_error_VMerror),
+                       return_error(mem, gs_error_VMerror),
                        "gx_ht_read_tf" );
 
-    pmap->id = gs_next_ids(1);
+    pmap->id = gs_next_ids(mem, 1);
     pmap->closure.proc = 0;
     pmap->closure.data = 0;
     if (tf_type == gx_ht_tf_identity) {
@@ -139,8 +139,8 @@ gx_ht_read_tf(
         *ppmap = pmap;
         return 1 + sizeof(pmap->values);
     } else {
-        rc_decrement(pmap, "gx_ht_read_tf");
-        return_error(gs_error_rangecheck);
+        rc_decrement(mem, pmap, "gx_ht_read_tf");
+        return_error(mem, gs_error_rangecheck);
     }
 }
 
@@ -161,10 +161,10 @@ gx_ht_read_tf(
  *        error other than lack of space
  */
 private int
-gx_ht_write_component(
-    const gx_ht_order_component *   pcomp,
-    byte *                          data,
-    uint *                          psize )
+gx_ht_write_component( const gs_memory_t *mem, 
+		       const gx_ht_order_component *   pcomp,
+		       byte *                          data,
+		       uint *                          psize )
 {
     const gx_ht_order *             porder = &pcomp->corder;
     byte *                          data0 = data;
@@ -187,7 +187,7 @@ gx_ht_write_component(
      * is not yet implemented.
      */
     if (porder->wts != 0)
-       return_error(gs_error_unknownerror);     /* not yet supported */
+       return_error(mem, gs_error_unknownerror);     /* not yet supported */
 
     /*
      * The following order fields are not transmitted:
@@ -292,12 +292,12 @@ gx_ht_read_component(
 
     /* check the order type */
     if (--size < 0)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
     order_type = (gx_ht_order_type_t)*data++;
 
     /* currently only the traditional halftone order are supported */
     if (order_type != gx_ht_traditional)
-       return_error(gs_error_unknownerror);
+       return_error(mem, gs_error_unknownerror);
 
     /*
      * For performance reasons, the number encoding macros do not
@@ -309,14 +309,14 @@ gx_ht_read_component(
      * that the data provided holds the entire halftone.
      */
     if (size < 7)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
     enc_u_getw(new_order.width, data);
     enc_u_getw(new_order.height, data);
     enc_u_getw(new_order.shift, data);
     enc_u_getw(new_order.num_levels, data);
     enc_u_getw(new_order.num_bits, data);
     if (data >= data_lim)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
     new_order.procs = &ht_order_procs_table[*data++];
 
     /* calculate the space required for levels and bit data */
@@ -325,7 +325,7 @@ gx_ht_read_component(
 
     /* + 1 below is for the minimal transfer function */
     if (data + bits_size + levels_size + 1 > data_lim)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
 
     /*
      * Allocate the levels and bit data structures. The gx_ht_alloc_ht_order
@@ -508,7 +508,8 @@ gx_ht_write(
         /* sanity check */
         assert(i == pdht->components[i].comp_number);
 
-        code = gx_ht_write_component( &pdht->components[i],
+        code = gx_ht_write_component( dev->memory, 
+				      &pdht->components[i],
                                       data,
                                       &tmp_size );
         req_size += tmp_size;
@@ -528,7 +529,8 @@ gx_ht_write(
     for (i = 0, code = 0; i < num_comps && code == 0; i++) {
         uint    tmp_size = req_size - used_size;
 
-        code = gx_ht_write_component( &pdht->components[i],
+        code = gx_ht_write_component( dev->memory,
+				      &pdht->components[i],
                                       data,
                                       &tmp_size );
         used_size += tmp_size;
@@ -586,7 +588,7 @@ gx_ht_read_and_install(
 
     /* get the halftone type */
     if (size-- < 1)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
     dht.type = (gs_halftone_type)(*data++);
 
     /* process the component orders */

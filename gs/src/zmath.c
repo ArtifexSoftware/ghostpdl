@@ -47,12 +47,12 @@ zsqrt(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num;
-    int code = real_param(op, &num);
+    int code = real_param(imemory,op, &num);
 
     if (code < 0)
 	return code;
     if (num < 0.0)
-	return_error(e_rangecheck);
+	return_error(imemory,e_rangecheck);
     make_real(op, sqrt(num));
     return 0;
 }
@@ -63,7 +63,7 @@ zarccos(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num, result;
-    int code = real_param(op, &num);
+    int code = real_param(imemory,op, &num);
 
     if (code < 0)
 	return code;
@@ -78,7 +78,7 @@ zarcsin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num, result;
-    int code = real_param(op, &num);
+    int code = real_param(imemory,op, &num);
 
     if (code < 0)
 	return code;
@@ -94,11 +94,11 @@ zatan(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double args[2];
     double result;
-    int code = num_params(op, 2, args);
+    int code = num_params(imemory,op, 2, args);
 
     if (code < 0)
 	return code;
-    code = gs_atan2_degrees(args[0], args[1], &result);
+    code = gs_atan2_degrees(imemory, args[0], args[1], &result);
     if (code < 0)
 	return code;
     make_real(op - 1, result);
@@ -112,7 +112,7 @@ zcos(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double angle;
-    int code = real_param(op, &angle);
+    int code = real_param(imemory,op, &angle);
 
     if (code < 0)
 	return code;
@@ -126,7 +126,7 @@ zsin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double angle;
-    int code = real_param(op, &angle);
+    int code = real_param(imemory,op, &angle);
 
     if (code < 0)
 	return code;
@@ -142,14 +142,14 @@ zexp(i_ctx_t *i_ctx_p)
     double args[2];
     double result;
     double ipart;
-    int code = num_params(op, 2, args);
+    int code = num_params(imemory,op, 2, args);
 
     if (code < 0)
 	return code;
     if (args[0] == 0.0 && args[1] == 0.0)
-	return_error(e_undefinedresult);
+	return_error(imemory,e_undefinedresult);
     if (args[0] < 0.0 && modf(args[1], &ipart) != 0.0)
-	return_error(e_undefinedresult);
+	return_error(imemory,e_undefinedresult);
     result = pow(args[0], args[1]);
     make_real(op - 1, result);
     pop(1);
@@ -162,12 +162,12 @@ zln(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num;
-    int code = real_param(op, &num);
+    int code = real_param(imemory,op, &num);
 
     if (code < 0)
 	return code;
     if (num <= 0.0)
-	return_error(e_rangecheck);
+	return_error(imemory,e_rangecheck);
     make_real(op, log(num));
     return 0;
 }
@@ -178,12 +178,12 @@ zlog(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double num;
-    int code = real_param(op, &num);
+    int code = real_param(imemory,op, &num);
 
     if (code < 0)
 	return code;
     if (num <= 0.0)
-	return_error(e_rangecheck);
+	return_error(imemory,e_rangecheck);
     make_real(op, log10(num));
     return 0;
 }
@@ -213,7 +213,7 @@ zrand(i_ctx_t *i_ctx_p)
 #undef M
 #undef Q
 #undef R
-    push(1);
+    push(imemory,1);
     make_int(op, zrand_state);
     return 0;
 }
@@ -225,7 +225,7 @@ zsrand(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     long state;
 
-    check_type(*op, t_integer);
+    check_type(imemory,*op, t_integer);
     state = op->value.intval;
 #if arch_sizeof_long > 4
     /* Trim the state back to 32 bits. */
@@ -250,7 +250,7 @@ zrrand(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory,1);
     make_int(op, zrand_state);
     return 0;
 }

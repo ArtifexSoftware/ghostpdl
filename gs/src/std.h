@@ -157,6 +157,18 @@ typedef ulong bits32;
  */
 #include <stdio.h>
 
+/*
+ * a very good place to define this, but we can't find a better one.
+ */
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
+#endif
+
+#define init_proc(proc)\
+  int proc(gs_memory_t *)
+
+
 /* dpf and epf may be redefined */
 #define dpf errprintf
 #define epf errprintf
@@ -164,158 +176,144 @@ typedef ulong bits32;
 /* To allow stdout and stderr to be redirected, all stdout goes 
  * though outwrite and all stderr goes through errwrite.
  */
-int outwrite(const char *str, int len);
-int errwrite(const char *str, int len);
-void outflush(void);
-void errflush(void);
+int outwrite(const gs_memory_t *mem, const char *str, int len);
+int errwrite(const gs_memory_t *mem, const char *str, int len);
+void outflush(const gs_memory_t *mem);
+void errflush(const gs_memory_t *mem);
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
  */
-#ifdef __PROTOTYPES__
-int outprintf(const char *fmt, ...);
-int errprintf(const char *fmt, ...);
-#else
-int outprintf();
-int errprintf();
-#endif
+int outprintf(const gs_memory_t *mem, const char *fmt, ...);
+int errprintf(const gs_memory_t *mem, const char *fmt, ...);
+
 
 /* Print the program line # for debugging. */
 #if __LINE__			/* compiler provides it */
-void dprintf_file_and_line(const char *, int);
-#  define _dpl dprintf_file_and_line(__FILE__, __LINE__),
+void dprintf_file_and_line(const gs_memory_t *mem, const char *, int);
+#  define _dpl(mem) dprintf_file_and_line(mem, __FILE__, __LINE__),
 #else
-void dprintf_file_only(const char *);
-#  define _dpl dprintf_file_only(__FILE__),
+void dprintf_file_only(const gs_memory_t *mem, const char *);
+#  define _dpl(mem) dprintf_file_only(mem, __FILE__),
 #endif
 
-void dflush(void);		/* flush stderr */
-#define dputc(chr) dprintf1("%c", chr)
-#define dlputc(chr) dlprintf1("%c", chr)
-#define dputs(str) dprintf1("%s", str)
-#define dlputs(str) dlprintf1("%s", str)
-#define dprintf(str)\
-  dpf(str)
-#define dlprintf(str)\
-  (_dpl dpf(str))
-#define dprintf1(str,arg1)\
-  dpf(str, arg1)
-#define dlprintf1(str,arg1)\
-  (_dpl dprintf1(str, arg1))
-#define dprintf2(str,arg1,arg2)\
-  dpf(str, arg1, arg2)
-#define dlprintf2(str,arg1,arg2)\
-  (_dpl dprintf2(str, arg1, arg2))
-#define dprintf3(str,arg1,arg2,arg3)\
-  dpf(str, arg1, arg2, arg3)
-#define dlprintf3(str,arg1,arg2,arg3)\
-  (_dpl dprintf3(str, arg1, arg2, arg3))
-#define dprintf4(str,arg1,arg2,arg3,arg4)\
-  dpf(str, arg1, arg2, arg3, arg4)
-#define dlprintf4(str,arg1,arg2,arg3,arg4)\
-  (_dpl dprintf4(str, arg1, arg2, arg3, arg4))
-#define dprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5)
-#define dlprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  (_dpl dprintf5(str, arg1, arg2, arg3, arg4, arg5))
-#define dprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5, arg6)
-#define dlprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  (_dpl dprintf6(str, arg1, arg2, arg3, arg4, arg5, arg6))
-#define dprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
-#define dlprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  (_dpl dprintf7(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
-#define dprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
-#define dlprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  (_dpl dprintf8(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
-#define dprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
-#define dlprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  (_dpl dprintf9(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
-#define dprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
-#define dlprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  (_dpl dprintf10(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
-#define dprintf11(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11)
-#define dlprintf11(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
-  (_dpl dprintf11(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11))
-#define dprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
-  dpf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
-#define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
-  (_dpl dprintf12(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
+void dflush(const gs_memory_t *mem);		/* flush stderr */
+#define dputc(mem, chr) dprintf1(mem, "%c", chr)
+#define dlputc(mem, chr) dlprintf1(mem, "%c", chr)
+#define dputs(mem, str) dprintf1(mem, "%s", str)
+#define dlputs(mem, str) dlprintf1(mem, "%s", str)
+#define dprintf(mem, str)\
+  dpf(mem, str)
+#define dlprintf(mem, str)\
+  (_dpl(mem) dpf(mem, str))
+#define dprintf1(mem, str, arg1)\
+  dpf(mem, str, arg1)
+#define dlprintf1(mem, str,arg1)\
+  (_dpl(mem) dprintf1(mem, str, arg1))
+#define dprintf2(mem, str,arg1,arg2)\
+  dpf(mem, str, arg1, arg2)
+#define dlprintf2(mem, str,arg1,arg2)\
+  (_dpl(mem) dprintf2(mem, str, arg1, arg2))
+#define dprintf3(mem, str,arg1,arg2,arg3)\
+  dpf(mem, str, arg1, arg2, arg3)
+#define dlprintf3(mem, str,arg1,arg2,arg3)\
+  (_dpl(mem) dprintf3(mem, str, arg1, arg2, arg3))
+#define dprintf4(mem, str,arg1,arg2,arg3,arg4)\
+  dpf(mem, str, arg1, arg2, arg3, arg4)
+#define dlprintf4(mem, str,arg1,arg2,arg3,arg4)\
+  (_dpl(mem) dprintf4(mem, str, arg1, arg2, arg3, arg4))
+#define dprintf5(mem, str,arg1,arg2,arg3,arg4,arg5)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5)
+#define dlprintf5(mem, str,arg1,arg2,arg3,arg4,arg5)\
+  (_dpl(mem) dprintf5(mem, str, arg1, arg2, arg3, arg4, arg5))
+#define dprintf6(mem, str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6)
+#define dlprintf6(mem, str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  (_dpl(mem) dprintf6(mem, str, arg1, arg2, arg3, arg4, arg5, arg6))
+#define dprintf7(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7)
+#define dlprintf7(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  (_dpl(mem) dprintf7(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
+#define dprintf8(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8)
+#define dlprintf8(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  (_dpl(mem) dprintf8(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
+#define dprintf9(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9)
+#define dlprintf9(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  (_dpl(mem) dprintf9(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
+#define dprintf10(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10)
+#define dlprintf10(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  (_dpl(mem) dprintf10(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+#define dprintf11(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11)
+#define dlprintf11(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11)\
+  (_dpl(mem) dprintf11(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11))
+#define dprintf12(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
+  dpf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12)
+#define dlprintf12(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
+  (_dpl(mem) dprintf12(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
 
-void printf_program_ident(const char *program_name, long revision_number);
-void eprintf_program_ident(const char *program_name, long revision_number);
+void printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number);
+void eprintf_program_ident(const gs_memory_t *mem,const char *program_name, long revision_number);
 const char *gs_program_name(void);
 long gs_revision_number(void);
 
-#define _epi eprintf_program_ident(gs_program_name(), gs_revision_number()),
+#define _epi(mem) eprintf_program_ident(mem, gs_program_name(), gs_revision_number()),
 
-#define eprintf(str)\
-  (_epi epf(str))
-#define eprintf1(str,arg1)\
-  (_epi epf(str, arg1))
-#define eprintf2(str,arg1,arg2)\
-  (_epi epf(str, arg1, arg2))
-#define eprintf3(str,arg1,arg2,arg3)\
-  (_epi epf(str, arg1, arg2, arg3))
-#define eprintf4(str,arg1,arg2,arg3,arg4)\
-  (_epi epf(str, arg1, arg2, arg3, arg4))
-#define eprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  (_epi epf(str, arg1, arg2, arg3, arg4, arg5))
-#define eprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6))
-#define eprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
-#define eprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
-#define eprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
-#define eprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  (_epi epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+#define eprintf(mem, str)\
+  (_epi(mem) epf(mem, str))
+#define eprintf1(mem, str,arg1)\
+  (_epi(mem) epf(mem, str, arg1))
+#define eprintf2(mem, str,arg1,arg2)\
+  (_epi(mem) epf(mem, str, arg1, arg2))
+#define eprintf3(mem, str,arg1,arg2,arg3)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3))
+#define eprintf4(mem, str,arg1,arg2,arg3,arg4)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3, arg4))
+#define eprintf5(mem, str,arg1,arg2,arg3,arg4,arg5)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5))
+#define eprintf6(mem, str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6))
+#define eprintf7(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
+#define eprintf8(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
+#define eprintf9(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
+#define eprintf10(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  (_epi(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
 #if __LINE__			/* compiler provides it */
-void lprintf_file_and_line(const char *, int);
-#  define _epl _epi lprintf_file_and_line(__FILE__, __LINE__),
+void lprintf_file_and_line(const gs_memory_t *mem, const char *, int);
+#  define _epl(mem) _epi(mem) lprintf_file_and_line(mem, __FILE__, __LINE__),
 #else
-void lprintf_file_only(const char *);
-#  define _epl _epi lprintf_file_only(__FILE__)
+void lprintf_file_only(const gs_memory_t *mem, const char *);
+#  define _epl(mem) _epi(mem) lprintf_file_only(mem, __FILE__)
 #endif
 
-#define lprintf(str)\
-  (_epl epf(str))
-#define lprintf1(str,arg1)\
-  (_epl epf(str, arg1))
-#define lprintf2(str,arg1,arg2)\
-  (_epl epf(str, arg1, arg2))
-#define lprintf3(str,arg1,arg2,arg3)\
-  (_epl epf(str, arg1, arg2, arg3))
-#define lprintf4(str,arg1,arg2,arg3,arg4)\
-  (_epl epf(str, arg1, arg2, arg3, arg4))
-#define lprintf5(str,arg1,arg2,arg3,arg4,arg5)\
-  (_epl epf(str, arg1, arg2, arg3, arg4, arg5))
-#define lprintf6(str,arg1,arg2,arg3,arg4,arg5,arg6)\
-  (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6))
-#define lprintf7(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
-  (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
-#define lprintf8(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
-  (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
-#define lprintf9(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
-  (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
-#define lprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
-  (_epl epf(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
+#define lprintf(mem, str)\
+  (_epl(mem) epf(mem, str))
+#define lprintf1(mem, str,arg1)\
+  (_epl(mem) epf(mem, str, arg1))
+#define lprintf2(mem, str,arg1,arg2)\
+  (_epl(mem) epf(mem, str, arg1, arg2))
+#define lprintf3(mem, str,arg1,arg2,arg3)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3))
+#define lprintf4(mem, str,arg1,arg2,arg3,arg4)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3, arg4))
+#define lprintf5(mem, str,arg1,arg2,arg3,arg4,arg5)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5))
+#define lprintf6(mem, str,arg1,arg2,arg3,arg4,arg5,arg6)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6))
+#define lprintf7(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7))
+#define lprintf8(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8))
+#define lprintf9(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9))
+#define lprintf10(mem, str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
+  (_epl(mem) epf(mem, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
-/*
- * Define the prototype for module initialization procedures.  This is not
- * a very good place to define this, but we can't find a better one.
- */
-#ifndef gs_memory_DEFINED
-#  define gs_memory_DEFINED
-typedef struct gs_memory_s gs_memory_t;
-#endif
-#define init_proc(proc)\
-  int proc(gs_memory_t *)
 
 #endif /* std_INCLUDED */

@@ -510,7 +510,7 @@ psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
     icc *icco;
     icmLuBase *luo;
 
-    dlprintf1("psd_open_profile %s\n", profile_fn);
+    dlprintf1(xdev->memory, "psd_open_profile %s\n", profile_fn);
     fp = new_icmFileStd_name(profile_fn, (char *)"rb");
     if (fp == NULL)
 	return_error(gs_error_undefinedfilename);

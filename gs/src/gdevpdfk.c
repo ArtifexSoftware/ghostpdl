@@ -32,7 +32,7 @@ pdf_cie_add_ranges(cos_dict_t *pcd, const gs_range *prange, int n, bool clamp)
     int code = 0, i;
 
     if (pca == 0)
-	return_error(gs_error_VMerror);
+	return_error(pcd->pdev->memory, gs_error_VMerror);
     for (i = 0; i < n; ++i) {
 	floatp rmin = prange[i].rmin, rmax = prange[i].rmax;
 
@@ -170,10 +170,10 @@ pdf_convert_cie_to_lab(gx_device_pdf *pdev, cos_array_t *pca,
     int code;
 
     /****** NOT IMPLEMENTED YET, REQUIRES TRANSFORMING VALUES ******/
-    if (1) return_error(gs_error_rangecheck);
+    if (1) return_error(pdev->memory, gs_error_rangecheck);
     pcd = cos_dict_alloc(pdev, "pdf_convert_cie_to_lab(dict)");
     if (pcd == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     if ((code = lab_range(ranges, pcs, pciec, prange, pdev->pdf_memory)) < 0 ||
 	(code = pdf_put_lab_color_space(pca, pcd, ranges)) < 0 ||
 	(code = pdf_finish_cie_space(pca, pcd, pciec)) < 0
@@ -213,7 +213,7 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 	if (rmin < 0.0 || rmax > 1.0) {
 	    /* We'll have to scale the inputs.  :-( */
 	    if (pprange == 0)
-		return_error(gs_error_rangecheck); /* scaling not allowed */
+		return_error(pdev->memory, gs_error_rangecheck); /* scaling not allowed */
 	    *pprange = prange;
 	    scale_inputs = true;
 	}
@@ -227,7 +227,7 @@ pdf_make_iccbased(gx_device_pdf *pdev, cos_array_t *pca, int ncomps,
 
     /* Create a stream for the output. */
     if ((pcstrm = cos_stream_alloc(pdev, "pdf_make_iccbased(stream)")) == 0) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(pdev->memory, gs_error_VMerror);
 	goto fail;
     }
 
@@ -604,7 +604,7 @@ pdf_convert_cie_to_iccbased(gx_device_pdf *pdev, cos_array_t *pca,
     profile_table_t tables[MAX_NUM_TABLES];
     profile_table_t *next_table = tables;
 
-    pdf_cspace_init_Device(&alt_space, ncomps);	/* can't fail */
+    pdf_cspace_init_Device(pdev->memory, &alt_space, ncomps);	/* can't fail */
     code = pdf_make_iccbased(pdev, pca, ncomps, prange, &alt_space,
 			     &pcstrm, pprange);
     if (code < 0)

@@ -35,12 +35,12 @@ clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	if (fmode[0] == 'r')
 	    return_error(gs_error_invalidfileaccess);
 	*pcf =
-	    (clist_file_ptr) gp_open_scratch_file(gp_scratch_file_name_prefix,
+	    (clist_file_ptr) gp_open_scratch_file(mem, gp_scratch_file_name_prefix,
 						  fname, fmode);
     } else
 	*pcf = gp_fopen(fname, fmode);
     if (*pcf == NULL) {
-	eprintf1("Could not open the scratch file %s.\n", fname);
+	eprintf1(mem, "Could not open the scratch file %s.\n", fname);
 	return_error(gs_error_invalidfileaccess);
     }
     return 0;
@@ -111,7 +111,7 @@ clist_fread_chars(void *data, uint len, clist_file_ptr cf)
 /* ------ Position/status ------ */
 
 int
-clist_set_memory_warning(clist_file_ptr cf, int bytes_left)
+clist_set_memory_warning(const gs_memory_t *mem, clist_file_ptr cf, int bytes_left)
 {
     return 0;			/* no-op */
 }

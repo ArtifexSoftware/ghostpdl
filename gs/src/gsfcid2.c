@@ -27,7 +27,7 @@ identity_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
     ulong cid = glyph - gs_min_cid_glyph;
 
     if (cid >= pfont->cidata.common.CIDCount)
-	return_error(gs_error_rangecheck);
+	return_error(pfont->memory, gs_error_rangecheck);
     return (int)cid;
 }
 int
@@ -39,7 +39,7 @@ gs_font_cid2_from_type42(gs_font_cid2 **ppfcid, gs_font_type42 *pfont42,
 			"gs_font_cid2_from_type42");
 
     if (pfcid == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
 
     /* CIDFontType 2 is a subclass (extension) of FontType 42. */
     memcpy(pfcid, pfont42, sizeof(*pfont42));
@@ -47,7 +47,7 @@ gs_font_cid2_from_type42(gs_font_cid2 **ppfcid, gs_font_type42 *pfont42,
     pfcid->next = pfcid->prev = 0; /* probably not necessary */
     pfcid->is_resource = 0;
     gs_font_notify_init((gs_font *)pfcid);
-    pfcid->id = gs_next_ids(1);
+    pfcid->id = gs_next_ids(mem, 1);
     pfcid->base = (gs_font *)pfcid;
     pfcid->FontType = ft_CID_TrueType;
     /* Fill in the rest of the CIDFont data. */
@@ -263,7 +263,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
     uint segCount2;
 
     if (origin == 0)
-	return_error(gs_error_invalidfont);
+	return_error(mem, gs_error_invalidfont);
 
     /*
      * Find the desired cmap sub-table, if any.
@@ -287,7 +287,7 @@ gs_cmap_from_type42_cmap(gs_cmap_t **ppcmap, gs_font_type42 *pfont,
 	    break;
 	}
 	if (i >= cmap_count)	/* not found */
-	    return_error(gs_error_invalidfont);
+	    return_error(mem, gs_error_invalidfont);
 	ACCESS(offset + 6, 2, ttdata);
 	segCount2 = U16(ttdata);
     }

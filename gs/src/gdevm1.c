@@ -183,7 +183,7 @@ private const copy_mode copy_modes[16] = {
 
 /* Handle the funny cases that aren't supposed to happen. */
 #define FUNNY_CASE()\
-  (invert ? gs_note_error(-1) :\
+  (invert ? gs_note_error(dev->memory, -1) :\
    mem_mono_fill_rectangle(dev, x, y, w, h, color0))
 
 private int

@@ -52,7 +52,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
 
     for (i = 0; i < 4; i++) {
 	os_ptr op1 = op - 9 + i * 3;
-	int code = zscreen_params(op1, &cscreen.screens.indexed[i]);
+	int code = zscreen_params(imemory, op1, &cscreen.screens.indexed[i]);
 
 	if (code < 0)
 	    return code;
@@ -67,7 +67,7 @@ zsetcolorscreen(i_ctx_t *i_ctx_p)
     rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
 		      mem, pdht = 0, "setcolorscreen(device halftone)");
     if (pht == 0 || pdht == 0)
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(mem, e_VMerror);
     else {
 	pht->type = ht_type_colorscreen;
 	pht->params.colorscreen = cscreen;

@@ -103,7 +103,7 @@ gs_moveto(gs_state * pgs, floatp x, floatp y)
     gs_fixed_point pt;
     int code;
 
-    if ((code = gs_point_transform2fixed(&pgs->ctm, x, y, &pt)) < 0) {
+    if ((code = gs_point_transform2fixed(pgs->memory, &pgs->ctm, x, y, &pt)) < 0) {
 	if (pgs->clamp_coordinates) {	/* Handle out-of-range coordinates. */
 	    gs_point opt;
 
@@ -130,7 +130,7 @@ gs_rmoveto(gs_state * pgs, floatp x, floatp y)
     gs_fixed_point dpt;
     int code;
 
-    if ((code = gs_distance_transform2fixed(&pgs->ctm, x, y, &dpt)) < 0 ||
+    if ((code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, x, y, &dpt)) < 0 ||
 	(code = gx_path_add_relative_point(pgs->path, dpt.x, dpt.y)) < 0
 	) {			/* Handle all exceptional conditions here. */
 	gs_point upt;
@@ -149,7 +149,7 @@ gs_lineto(gs_state * pgs, floatp x, floatp y)
     int code;
     gs_fixed_point pt;
 
-    if ((code = gs_point_transform2fixed(&pgs->ctm, x, y, &pt)) < 0) {
+    if ((code = gs_point_transform2fixed(pgs->memory, &pgs->ctm, x, y, &pt)) < 0) {
 	if (pgs->clamp_coordinates) {	/* Handle out-of-range coordinates. */
 	    gs_point opt;
 
@@ -177,7 +177,7 @@ gs_rlineto(gs_state * pgs, floatp x, floatp y)
     int code;
 
     if (!path_position_in_range(ppath) ||
-	(code = gs_distance_transform2fixed(&pgs->ctm, x, y, &dpt)) < 0 ||
+	(code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, x, y, &dpt)) < 0 ||
     /* Check for overflow in addition. */
 	(((nx = ppath->position.x + dpt.x) ^ dpt.x) < 0 &&
 	 (ppath->position.x ^ dpt.x) >= 0) ||
@@ -201,9 +201,9 @@ gs_curveto(gs_state * pgs,
 	   floatp x1, floatp y1, floatp x2, floatp y2, floatp x3, floatp y3)
 {
     gs_fixed_point p1, p2, p3;
-    int code1 = gs_point_transform2fixed(&pgs->ctm, x1, y1, &p1);
-    int code2 = gs_point_transform2fixed(&pgs->ctm, x2, y2, &p2);
-    int code3 = gs_point_transform2fixed(&pgs->ctm, x3, y3, &p3);
+    int code1 = gs_point_transform2fixed(pgs->memory, &pgs->ctm, x1, y1, &p1);
+    int code2 = gs_point_transform2fixed(pgs->memory, &pgs->ctm, x2, y2, &p2);
+    int code3 = gs_point_transform2fixed(pgs->memory, &pgs->ctm, x3, y3, &p3);
     gx_path *ppath = pgs->path;
 
     if ((code1 | code2 | code3) < 0) {
@@ -250,9 +250,9 @@ gs_rcurveto(gs_state * pgs,
 
 /****** SHOULD CHECK FOR OVERFLOW IN ADDITION ******/
     if (!path_position_in_range(ppath) ||
-	(code = gs_distance_transform2fixed(&pgs->ctm, dx1, dy1, &p1)) < 0 ||
-	(code = gs_distance_transform2fixed(&pgs->ctm, dx2, dy2, &p2)) < 0 ||
-	(code = gs_distance_transform2fixed(&pgs->ctm, dx3, dy3, &p3)) < 0 ||
+	(code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, dx1, dy1, &p1)) < 0 ||
+	(code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, dx2, dy2, &p2)) < 0 ||
+	(code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, dx3, dy3, &p3)) < 0 ||
 	(ptx = ppath->position.x, pty = ppath->position.y,
 	 code = gx_path_add_curve(ppath, ptx + p1.x, pty + p1.y,
 				  ptx + p2.x, pty + p2.y,
@@ -326,7 +326,7 @@ gx_effective_clip_path(gs_state * pgs, gx_clip_path ** ppcpath)
 	    if (pgs->effective_clip_shared) {
 		npath = gx_cpath_alloc(pgs->memory, "gx_effective_clip_path");
 		if (npath == 0)
-		    return_error(gs_error_VMerror);
+		    return_error(pgs->memory, gs_error_VMerror);
 	    }
 	    gx_cpath_init_local(&ipath, pgs->memory);
 	    code = gx_cpath_assign_preserve(&ipath, pgs->clip_path);
@@ -362,7 +362,7 @@ note_set_clip_path(const gs_state * pgs)
     if (gs_debug_c('P')) {
 	extern void gx_cpath_print(const gx_clip_path *);
 
-	dlprintf("[P]Clipping path:\n");
+	dlprintf(pgs->memory, "[P]Clipping path:\n");
 	gx_cpath_print(pgs->clip_path);
     }
 }
@@ -481,7 +481,7 @@ gx_default_clip_box(const gs_state * pgs, gs_fixed_rect * pbox)
 	bbox.q.x = dev->MediaSize[0] - dev->HWMargins[2];
 	bbox.q.y = dev->MediaSize[1] - dev->HWMargins[3];
     }
-    code = gs_bbox_transform(&bbox, &imat, &bbox);
+    code = gs_bbox_transform(dev->memory, &bbox, &imat, &bbox);
     if (code < 0)
 	return code;
     /* Round the clipping box so that it doesn't get ceilinged. */

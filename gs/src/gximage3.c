@@ -101,7 +101,7 @@ make_mid_default(gx_device **pmidev, gx_device *dev, int width, int height,
     int code;
 
     if (midev == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     gs_make_mem_mono_device(midev, mem, NULL);
     midev->bitmap_memory = mem;
     midev->width = width;
@@ -137,7 +137,7 @@ make_mcde_default(gx_device *dev, const gs_imager_state *pis,
     int code;
 
     if (mcdev == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     bits.data = mdev->base;
     bits.raster = mdev->raster;
     bits.size.x = mdev->width;
@@ -201,27 +201,27 @@ gx_begin_image3_generic(gx_device * dev,
 
     /* Validate the parameters. */
     if (pim->Height <= 0 || pim->MaskDict.Height <= 0)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     switch (pim->InterleaveType) {
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
 	case interleave_chunky:
 	    if (pim->MaskDict.Width != pim->Width ||
 		pim->MaskDict.Height != pim->Height ||
 		pim->MaskDict.BitsPerComponent != pim->BitsPerComponent ||
 		pim->format != gs_image_format_chunky
 		)
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	    break;
 	case interleave_scan_lines:
 	    if (pim->MaskDict.Height % pim->Height != 0 &&
 		pim->Height % pim->MaskDict.Height != 0
 		)
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	    /* falls through */
 	case interleave_separate_source:
 	    if (pim->MaskDict.BitsPerComponent != 1)
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
     }
     if (!check_image3_extent(pim->ImageMatrix.xx,
 			     pim->MaskDict.ImageMatrix.xx) ||
@@ -232,32 +232,32 @@ gx_begin_image3_generic(gx_device * dev,
 	!check_image3_extent(pim->ImageMatrix.yy,
 			     pim->MaskDict.ImageMatrix.yy)
 	)
-	return_error(gs_error_rangecheck);
-    if ((code = gs_matrix_invert(&pim->ImageMatrix, &mi_pixel)) < 0 ||
-	(code = gs_matrix_invert(&pim->MaskDict.ImageMatrix, &mi_mask)) < 0
+	return_error(mem, gs_error_rangecheck);
+    if ((code = gs_matrix_invert(mem, &pim->ImageMatrix, &mi_pixel)) < 0 ||
+	(code = gs_matrix_invert(mem, &pim->MaskDict.ImageMatrix, &mi_mask)) < 0
 	)
 	return code;
     if (fabs(mi_pixel.tx - mi_mask.tx) >= 0.5 ||
 	fabs(mi_pixel.ty - mi_mask.ty) >= 0.5
 	)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     {
 	gs_point ep, em;
 
-	if ((code = gs_point_transform(pim->Width, pim->Height, &mi_pixel,
+	if ((code = gs_point_transform(mem, pim->Width, pim->Height, &mi_pixel,
 				       &ep)) < 0 ||
-	    (code = gs_point_transform(pim->MaskDict.Width,
+	    (code = gs_point_transform(mem, pim->MaskDict.Width,
 				       pim->MaskDict.Height, &mi_mask,
 				       &em)) < 0
 	    )
 	    return code;
 	if (fabs(ep.x - em.x) >= 0.5 || fabs(ep.y - em.y) >= 0.5)
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     }
     penum = gs_alloc_struct(mem, gx_image3_enum_t, &st_image3_enum,
 			    "gx_begin_image3");
     if (penum == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     penum->num_components =
 	gs_color_space_num_components(pim->ColorSpace);
     gx_image_enum_common_init((gx_image_enum_common_t *) penum,
@@ -308,7 +308,7 @@ gx_begin_image3_generic(gx_device * dev,
 	    gs_alloc_bytes(mem, (penum->mask_width + 7) >> 3,
 			   "gx_begin_image3(mask_data)");
 	if (penum->pixel_data == 0 || penum->mask_data == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto out1;
 	}
     }
@@ -321,7 +321,7 @@ gx_begin_image3_generic(gx_device * dev,
     if (pmat == 0)
 	pmat = &ctm_only(pis);
     if ((code = gs_matrix_multiply(&mi_mask, pmat, &mat)) < 0 ||
-	(code = gs_bbox_transform(&mrect, &mat, &mrect)) < 0
+	(code = gs_bbox_transform(mem, &mrect, &mat, &mrect)) < 0
 	)
 	return code;
     origin.x = (int)floor(mrect.p.x);
@@ -463,7 +463,7 @@ planes_next(const gx_image3_enum_t *penum)
 
 #ifdef DEBUG
     if (current > 0)
-	lprintf4("planes_next invariant fails: %d/%d > %d/%d\n",
+	lprintf4(penum->memory, "planes_next invariant fails: %d/%d > %d/%d\n",
 		 penum->pixel_y, penum->pixel_full_height,
 		 penum->mask_y, penum->mask_full_height);
 #endif
@@ -572,7 +572,7 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 	    pixel_planes = planes + 1;
 	    break;
 	default:		/* not possible */
-	    return_error(gs_error_rangecheck);
+	    return_error(penum->memory, gs_error_rangecheck);
     }
     /*
      * Process the mask data first, so it will set up the mask
@@ -638,7 +638,7 @@ gx_image3_plane_data(gx_image_enum_common_t * info,
 	    }
 	}
     }
-    if_debug5('b', "[b]image3 h=%d %smask_y=%d %spixel_y=%d\n",
+    if_debug5(penum->memory, 'b', "[b]image3 h=%d %smask_y=%d %spixel_y=%d\n",
 	      h, (mask_plane.data ? "+" : ""), penum->mask_y,
 	      (pixel_planes[0].data ? "+" : ""), penum->pixel_y);
     if (penum->mask_y >= penum->mask_height &&

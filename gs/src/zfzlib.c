@@ -23,6 +23,7 @@
 #include "ifilter.h"
 #include "ifrpred.h"
 #include "ifwpred.h"
+#include "ialloc.h"
 
 /* Common setup for zlib (Flate) filter */
 private int
@@ -33,7 +34,7 @@ filter_zlib(i_ctx_t *i_ctx_p, stream_zlib_state *pzls)
 
     (*s_zlibE_template.set_defaults)((stream_state *)pzls);
     if (r_has_type(op, t_dictionary))
-	code = dict_int_param(op, "Effort", -1, 9, -1, &pzls->level);
+	code = dict_int_param(imemory, op, "Effort", -1, 9, -1, &pzls->level);
     return code;
 }
 

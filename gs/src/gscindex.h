@@ -61,7 +61,7 @@ extern float *gs_cspace_indexed_value_array(
 					    );
 
 /* Set the lookup procedure to be used for an Indexed color space. */
-extern int gs_cspace_indexed_set_proc(
+extern int gs_cspace_indexed_set_proc(const gs_memory_t *mem,
 				      gs_color_space * pcspace,
 				      int (*proc) (const gs_indexed_params *, int, float *)
 				      );

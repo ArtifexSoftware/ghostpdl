@@ -107,16 +107,16 @@ gdev_x_open(gx_device_X * xdev)
     if (!(xdev->dpy = XOpenDisplay((char *)NULL))) {
 	char *dispname = getenv("DISPLAY");
 
-	eprintf1("Cannot open X display `%s'.\n",
+	eprintf1(xdev->memory, "Cannot open X display `%s'.\n",
 		 (dispname == NULL ? "(null)" : dispname));
-	return_error(gs_error_ioerror);
+	return_error(xdev->memory, gs_error_ioerror);
     }
     xdev->dest = 0;
     if ((window_id = getenv("GHOSTVIEW"))) {
 	if (!(xdev->ghostview = sscanf(window_id, "%ld %ld",
 				       &(xdev->win), &(xdev->dest)))) {
-	    eprintf("Cannot get Window ID from ghostview.\n");
-	    return_error(gs_error_ioerror);
+	    eprintf(xdev->memory, "Cannot get Window ID from ghostview.\n");
+	    return_error(xdev->memory, gs_error_ioerror);
 	}
     }
     if (xdev->pwin != (Window) None) {	/* pick up the destination window parameters if specified */
@@ -175,12 +175,12 @@ gdev_x_open(gx_device_X * xdev)
 			    &left_margin, &bottom_margin,
 			    &right_margin, &top_margin);
 	    if (!(nitems == 8 || nitems == 12)) {
-		eprintf("Cannot get ghostview property.\n");
-		return_error(gs_error_ioerror);
+		eprintf(xdev->memory, "Cannot get ghostview property.\n");
+		return_error(xdev->memory, gs_error_ioerror);
 	    }
 	    if (xdev->dest && xdev->bpixmap) {
-		eprintf("Both destination and backing pixmap specified.\n");
-		return_error(gs_error_rangecheck);
+		eprintf(xdev->memory, "Both destination and backing pixmap specified.\n");
+		return_error(xdev->memory, gs_error_rangecheck);
 	    }
 	    if (xdev->dest) {
 		Window root;
@@ -243,8 +243,8 @@ gdev_x_open(gx_device_X * xdev)
 	    xdev->ImagingBBox_set = true;
 
 	} else if (xdev->pwin == (Window) None) {
-	    eprintf("Cannot get ghostview property.\n");
-	    return_error(gs_error_ioerror);
+	    eprintf(xdev->memory, "Cannot get ghostview property.\n");
+	    return_error(xdev->memory, gs_error_ioerror);
 	}
     } else {
 	Screen *scr = DefaultScreenOfDisplay(xdev->dpy);
@@ -267,8 +267,8 @@ gdev_x_open(gx_device_X * xdev)
     xvinfo.visualid = XVisualIDFromVisual(xvinfo.visual);
     xdev->vinfo = XGetVisualInfo(xdev->dpy, VisualIDMask, &xvinfo, &nitems);
     if (xdev->vinfo == NULL) {
-	eprintf("Cannot get XVisualInfo.\n");
-	return_error(gs_error_ioerror);
+	eprintf(xdev->memory, "Cannot get XVisualInfo.\n");
+	return_error(xdev->memory, gs_error_ioerror);
     }
     /* Buggy X servers may cause a Bad Access on XFreeColors. */
     x_error_handler.orighandler = XSetErrorHandler(x_catch_free_colors);
@@ -628,7 +628,7 @@ gdev_x_clear_window(gx_device_X * xdev)
 		if (x_error_handler.alloc_error) {
 		    xdev->useBackingPixmap = False;
 #ifdef DEBUG
-		    eprintf("Warning: Failed to allocated backing pixmap.\n");
+		    eprintf(xdev->memory, "Warning: Failed to allocated backing pixmap.\n");
 #endif
 		    if (xdev->bpixmap) {
 			XFreePixmap(xdev->dpy, xdev->bpixmap);

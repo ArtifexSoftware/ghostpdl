@@ -388,7 +388,7 @@ include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
-include $(GLSRCDIR)/ijs.mak
+# include $(GLSRCDIR)/ijs.mak # NB this needs to be an optional include
 include $(GLSRCDIR)/devs.mak
 include $(GLSRCDIR)/contrib.mak
 include $(GLSRCDIR)/unix-aux.mak

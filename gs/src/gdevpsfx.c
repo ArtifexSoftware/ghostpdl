@@ -87,7 +87,7 @@ type1_callsubr(gs_type1_state *pcis, int index)
 					   &ipsp1->cs_data);
 
     if (code < 0)
-	return_error(code);
+	return_error(pfont->memory, code);
     pcis->ips_count++;
     skip_iv(pcis);
     return code;
@@ -104,7 +104,7 @@ type1_stem1(gs_type1_state *pcis, stem_hint_table *psht, const fixed *pv,
     stem_hint *top = orig_top;
 
     if (psht->count >= max_stems)
-	return_error(gs_error_limitcheck);
+	return_error(pcis->pfont->memory, gs_error_limitcheck);
     while (top > bot &&
 	   (v0 < top[-1].v0 || (v0 == top[-1].v0 && v1 < top[-1].v1))
 	   ) {
@@ -160,17 +160,17 @@ type1_next(gs_type1_state *pcis)
 	if (c >= c_num1) {
 	    /* This is a number, decode it and push it on the stack. */
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, pcis->ostack, c);
+		decode_push_num1(pcis->pfont->memory, csp, pcis->ostack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, pcis->ostack, c, cip, state, encrypted);
+		decode_push_num2(pcis->pfont->memory, csp, pcis->ostack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
-		CS_CHECK_PUSH(csp, pcis->ostack);
+		CS_CHECK_PUSH(pcis->pfont->memory, csp, pcis->ostack);
 		*++csp = int2fixed(lw);
 	    } else		/* not possible */
-		return_error(gs_error_invalidfont);
+		return_error(pcis->pfont->memory, gs_error_invalidfont);
 	    continue;
 	}
 #ifdef DEBUG
@@ -178,15 +178,15 @@ type1_next(gs_type1_state *pcis)
 	    const fixed *p;
 
 	    for (p = pcis->ostack; p <= csp; ++p)
-		dprintf1(" %g", fixed2float(*p));
+		dprintf1(pcis->pfont->memory, " %g", fixed2float(*p));
 	    if (c == cx_escape) {
 		crypt_state cstate = state;
 		int cn;
 
 		charstring_next(*cip, cstate, cn, encrypted);
-		dprintf1(" [*%d]\n", cn);
+		dprintf1(pcis->pfont->memory, " [*%d]\n", cn);
 	    } else
-		dprintf1(" [%d]\n", c);
+		dprintf1(pcis->pfont->memory, " [%d]\n", c);
 	}
 #endif
 	switch ((char_command) c) {
@@ -195,12 +195,12 @@ type1_next(gs_type1_state *pcis)
 	case c_undef0:
 	case c_undef2:
 	case c_undef17:
-	    return_error(gs_error_invalidfont);
+	    return_error(pcis->pfont->memory, gs_error_invalidfont);
 	case c_callsubr:
 	    code = type1_callsubr(pcis, fixed2int_var(*csp) +
 				  pcis->pfont->data.subroutineNumberBias);
 	    if (code < 0)
-		return_error(code);
+		return_error(pcis->pfont->memory, code);
 	    ipsp->ip = cip, ipsp->dstate = state;
 	    --csp;
 	    ++ipsp;
@@ -247,7 +247,7 @@ type1_next(gs_type1_state *pcis)
 		case 18:
 		    num_results = 6;
 		blend:
-		    code = gs_type1_blend(pcis, csp, num_results);
+		    code = gs_type1_blend(pcis->pfont->memory, pcis, csp, num_results);
 		    if (code < 0)
 			return code;
 		    csp -= code;
@@ -261,7 +261,7 @@ type1_next(gs_type1_state *pcis)
 		    pcis->ignore_pops--;
 		    continue;
 		}
-		return_error(gs_error_rangecheck);
+		return_error(pcis->pfont->memory, gs_error_rangecheck);
 	    }
 	    break;
 	}
@@ -517,7 +517,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    if (c < 0)
 		return c;
 	    if (c >= CE_OFFSET)
-		return_error(gs_error_rangecheck);
+		return_error(s->memory, gs_error_rangecheck);
 	    /* The Type 1 use of all other operators is the same in Type 2. */
 	copy:
 	    CHECK_OP();
@@ -578,10 +578,10 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    if (cis.flex_count != flex_max) {
 		/* We're accumulating points for a flex. */
 		if (type1_next(&cis) != ce1_callothersubr)
-		    return_error(gs_error_rangecheck);
+		    return_error(s->memory, gs_error_rangecheck);
 		csp = &cis.ostack[cis.os_count - 1];
 		if (*csp != int2fixed(2) || csp[-1] != fixed_0)
-		    return_error(gs_error_rangecheck);
+		    return_error(s->memory, gs_error_rangecheck);
 		cis.flex_count++;
 		csp[-1] = mx, *csp = my;
 		continue;
@@ -657,7 +657,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    CHECK_OP();
 	    switch (fixed2int_var(*csp)) {
 	    default:
-		return_error(gs_error_rangecheck);
+		return_error(s->memory, gs_error_rangecheck);
 	    case 0:
 		/*
 		 * The operand stack contains: delta to reference point,

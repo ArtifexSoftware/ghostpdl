@@ -92,7 +92,7 @@ static const byte *const compress_tables[4][4] = {
  * same is true for srcx.
  */
 void
-bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
+bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint width, uint height,
 		     uint sraster, byte * dest, uint draster,
 		     const gs_log2_scale_point *plog2_scale, int log2_out_bits)
 {
@@ -201,7 +201,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 		    uint shifted_mask = mask << in_shift;
 		    byte in;
 
-		    if_debug3('B', "[B]count(%d,%d)=%d\n",
+		    if_debug3(mem, 'B', "[B]count(%d,%d)=%d\n",
 			      (width - w) / xscale,
 			      (height - h) / yscale, count);
 		    if (yscale > 1) {	/* Look at the next "lower" cell. */
@@ -213,7 +213,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 				 (in &= s[index]) != 0;
 				)
 				lower += half_byte_1s[in >> in_shift];
-			    if_debug1('B', "[B]  lower adds %d\n",
+			    if_debug1(mem, 'B', "[B]  lower adds %d\n",
 				      lower);
 			    if (lower <= orig_count)
 				count += lower;
@@ -228,7 +228,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 				 index += sraster
 				)
 				upper += half_byte_1s[in >> in_shift];
-			    if_debug1('B', "[B]  upper adds %d\n",
+			    if_debug1(mem, 'B', "[B]  upper adds %d\n",
 				      upper);
 			    if (upper < orig_count)
 				count += upper;
@@ -251,7 +251,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 
 				left += bits5_trailing_1s[bits & mask1];
 			    }
-			    if_debug1('B', "[B]  left adds %d\n",
+			    if_debug1(mem, 'B', "[B]  left adds %d\n",
 				      left);
 			    if (left < orig_count)
 				count += left;
@@ -270,7 +270,7 @@ bits_compress_scaled(const byte * src, int srcx, uint width, uint height,
 
 				right += bits5_leading_1s[(bits & mask1) << (4 - xscale)];
 			    }
-			    if_debug1('B', "[B]  right adds %d\n",
+			    if_debug1(mem, 'B', "[B]  right adds %d\n",
 				      right);
 			    if (right <= orig_count)
 				count += right;

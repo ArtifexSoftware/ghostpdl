@@ -339,7 +339,7 @@ begin_tiling(tiling_state_t *pts, gx_device_plane_extract *edev,
 	pts->buffer.data =
 	    gs_alloc_bytes(edev->memory, full_size, "begin_tiling");
 	if (!pts->buffer.data)
-	    return_error(gs_error_VMerror);
+	    return_error(edev->memory, gs_error_VMerror);
 	pts->buffer.size = full_size;
 	pts->buffer.raster = width_raster;
 	pts->buffer.on_heap = true;
@@ -387,7 +387,7 @@ plane_device_init(gx_device_plane_extract *edev, gx_device *target,
 {
     /* Check for compatibility of the plane specification. */
     if (render_plane->depth > plane_dev->color_info.depth)
-	return_error(gs_error_rangecheck);
+	return_error(edev->memory, gs_error_rangecheck);
     gx_device_init((gx_device *)edev,
 		   (const gx_device *)&gs_plane_extract_device,
 		   edev->memory, true);
@@ -973,7 +973,7 @@ plane_begin_typed_image(gx_device * dev,
     *((gx_image_enum_common_t *)info) = *info->info;
     info->procs = &plane_image_enum_procs;
     info->dev = (gx_device *)edev;
-    info->id = gs_next_ids(1);
+    info->id = gs_next_ids(memory, 1);
     info->memory = memory;
     info->pis = pis;
     info->pis_image = pis_image;

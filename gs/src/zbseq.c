@@ -40,7 +40,7 @@ create_names_array(ref **ppnames, gs_memory_t *mem, client_name_t cname)
 			&st_names_array_ref, cname);
 
     if (pnames == 0)
-	return_error(e_VMerror);
+	return_error(mem, e_VMerror);
     make_empty_array(pnames, a_readonly);
     *ppnames = pnames;
     return 0;
@@ -69,8 +69,8 @@ zinstallsystemnames(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     if (r_space(op) != avm_global || imemory_save_level(iimemory_global) != 0)
-	return_error(e_invalidaccess);
-    check_read_type(*op, t_shortarray);
+	return_error(imemory, e_invalidaccess);
+    check_read_type(imemory, *op, t_shortarray);
     ref_assign_old(NULL, system_names_p, op, ".installsystemnames");
     pop(1);
     return 0;
@@ -82,7 +82,7 @@ zcurrentobjectformat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     *op = ref_binary_object_format;
     return 0;
 }
@@ -94,9 +94,9 @@ zsetobjectformat(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref cont;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     if (op->value.intval < 0 || op->value.intval > 4)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     make_struct(&cont, avm_local, ref_binary_object_format_container);
     ref_assign_old(&cont, &ref_binary_object_format, op, "setobjectformat");
     pop(1);
@@ -119,11 +119,11 @@ zbosobject(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(op[-3], t_integer);
-    check_type(op[-2], t_integer);
-    check_write_type(*op, t_string);
+    check_type(imemory, op[-3], t_integer);
+    check_type(imemory, op[-2], t_integer);
+    check_write_type(imemory, *op, t_string);
     if (r_size(op) < 8)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     code = encode_binary_token(i_ctx_p, op - 1, &op[-3].value.intval,
 			       &op[-2].value.intval, op->value.bytes);
     if (code < 0)

@@ -41,13 +41,13 @@ typedef struct enum_ptr_s {
 		/* Clear the marks of a structure. */
 
 #define struct_proc_clear_marks(proc)\
-  void proc(void /*obj_header_t*/ *pre, uint size,\
+  void proc(const gs_memory_t *cmem, void /*obj_header_t*/ *pre, uint size,\
     const gs_memory_struct_type_t *pstype)
 
 		/* Enumerate the pointers in a structure. */
 
 #define struct_proc_enum_ptrs(proc)\
-  gs_ptr_type_t proc(EV_CONST void /*obj_header_t*/ *ptr, uint size,\
+  gs_ptr_type_t proc(const gs_memory_t *mem, EV_CONST void /*obj_header_t*/ *ptr, uint size,\
     int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype,\
     gc_state_t *gcst)
 

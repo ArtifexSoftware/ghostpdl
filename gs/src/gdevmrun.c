@@ -620,29 +620,29 @@ run_fill_rectangle(gx_device *dev, int x, int y, int w, int h,
 #ifdef DEBUG
 
 void
-debug_print_run(const run *data, run_index index, const char *prefix)
+debug_print_run(const gs_memory_t *mem, const run *data, run_index index, const char *prefix)
 {
     const run *pr = data + index;
 
-    dlprintf6("%s%5d: length = %3d, value = 0x%lx, prev = %5u, next = %5u\n",
+    dlprintf6(mem, "%s%5d: length = %3d, value = 0x%lx, prev = %5u, next = %5u\n",
 	      prefix, index, pr->length, (ulong)pr->value, pr->prev, pr->next);
 }
 
 void
-debug_print_run_line(const run_line *line, const char *prefix)
+debug_print_run_line(const gs_memory_t *mem, const run_line *line, const char *prefix)
 {
     const run *data = CONST_RL_DATA(line);
 
-    dlprintf5("%sruns at 0x%lx: zero = 0x%lx, free = %u, xcur = %u,\n",
+    dlprintf5(mem, "%sruns at 0x%lx: zero = 0x%lx, free = %u, xcur = %u,\n",
 	      prefix, (ulong)data, (ulong)line->zero, line->free, line->xcur);
-    dlprintf3("%s  rpcur = {ptr = 0x%lx, index = %u}\n",
+    dlprintf3(mem, "%s  rpcur = {ptr = 0x%lx, index = %u}\n",
 	      prefix, (ulong)line->rpcur.ptr, line->rpcur.index);
     {
 	const_run_ptr rpc;
 
 	RP_TO_START(rpc, data);
 	while (!RP_AT_END(rpc)) {
-	    debug_print_run(data, rpc.index, prefix);
+	    debug_print_run(mem, data, rpc.index, prefix);
 	    RP_TO_NEXT(rpc, data, rpc);
 	}
     }

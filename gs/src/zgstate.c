@@ -36,10 +36,10 @@ zset_real(i_ctx_t *i_ctx_p, int (*set_proc)(gs_state *, floatp))
 {
     os_ptr op = osp;
     double param;
-    int code = real_param(op, &param);
+    int code = real_param(imemory, op, &param);
 
     if (code < 0)
-	return_op_typecheck(op);
+	return_op_typecheck(imemory, op);
     code = set_proc(igs, param);
     if (!code)
 	pop(1);
@@ -51,7 +51,7 @@ zset_bool(i_ctx_t *i_ctx_p, void (*set_proc)(gs_state *, bool))
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     set_proc(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -62,7 +62,7 @@ zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_state *))
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, current_proc(igs));
     return 0;
 }
@@ -168,10 +168,10 @@ zsetlinewidth(i_ctx_t *i_ctx_p)
 	 * of the width.
 	 */
     double width;
-    int code = real_param(op, &width);
+    int code = real_param(imemory, op, &width);
 
     if (code < 0)
-	return_op_typecheck(op);
+	return_op_typecheck(imemory, op);
     code = gs_setlinewidth(igs, fabs(width));
     if (code >= 0)
 	pop(1);
@@ -184,7 +184,7 @@ zcurrentlinewidth(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_real(op, gs_currentlinewidth(igs));
     return 0;
 }
@@ -195,7 +195,7 @@ zsetlinecap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code = int_param(imemory, op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinecap(igs, (gs_line_cap) param)) < 0)
 	return code;
@@ -209,7 +209,7 @@ zcurrentlinecap(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, (int)gs_currentlinecap(igs));
     return 0;
 }
@@ -220,7 +220,7 @@ zsetlinejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code = int_param(imemory, op, max_int, &param);
 
     if (code < 0 || (code = gs_setlinejoin(igs, (gs_line_join) param)) < 0)
 	return code;
@@ -234,7 +234,7 @@ zcurrentlinejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, (int)gs_currentlinejoin(igs));
     return 0;
 }
@@ -252,7 +252,7 @@ zcurrentmiterlimit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_real(op, gs_currentmiterlimit(igs));
     return 0;
 }
@@ -264,15 +264,15 @@ zsetdash(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     os_ptr op1 = op - 1;
     double offset;
-    int code = real_param(op, &offset);
+    int code = real_param(imemory, op, &offset);
     uint i, n;
     gs_memory_t *mem = imemory;
     float *pattern;
 
     if (code < 0)
-	return_op_typecheck(op);
+	return_op_typecheck(imemory, op);
     if (!r_is_array(op1))
-	return_op_typecheck(op1);
+	return_op_typecheck(imemory, op1);
     /* Adobe interpreters apparently don't check the array for */
     /* read access, so we won't either. */
     /*check_read(*op1); */
@@ -282,12 +282,12 @@ zsetdash(i_ctx_t *i_ctx_p)
 	(float *)gs_alloc_byte_array(mem, n, sizeof(float), "setdash");
 
     if (pattern == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     for (i = 0, code = 0; i < n && code >= 0; ++i) {
 	ref element;
 
-	array_get(op1, (long)i, &element);
-	code = float_param(&element, &pattern[i]);
+	array_get(imemory, op1, (long)i, &element);
+	code = float_param(imemory, &element, &pattern[i]);
     }
     if (code >= 0)
 	code = gs_setdash(igs, pattern, n, offset);
@@ -305,7 +305,7 @@ zcurrentdash(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(2);
+    push(imemory, 2);
     ref_assign(op - 1, &istate->dash_pattern);
     make_real(op, gs_currentdash_offset(igs));
     return 0;
@@ -324,7 +324,7 @@ zcurrentflat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_real(op, gs_currentflat(igs));
     return 0;
 }
@@ -352,9 +352,9 @@ zsetcurvejoin(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     if (op->value.intval < -1 || op->value.intval > max_int)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     code = gs_setcurvejoin(igs, (int)op->value.intval);
     if (code < 0)
 	return code;
@@ -368,7 +368,7 @@ zcurrentcurvejoin(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, gs_currentcurvejoin(igs));
     return 0;
 }
@@ -379,7 +379,7 @@ zsetfilladjust2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double adjust[2];
-    int code = num_params(op, 2, adjust);
+    int code = num_params(imemory, op, 2, adjust);
 
     if (code < 0)
 	return code;
@@ -397,7 +397,7 @@ zcurrentfilladjust2(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_point adjust;
 
-    push(2);
+    push(imemory, 2);
     gs_currentfilladjust(igs, &adjust);
     make_real(op - 1, adjust.x);
     make_real(op, adjust.y);
@@ -424,11 +424,11 @@ zsetdotlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double length;
-    int code = real_param(op - 1, &length);
+    int code = real_param(imemory, op - 1, &length);
 
     if (code < 0)
 	return code;
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     code = gs_setdotlength(igs, length, op->value.boolval);
     if (code < 0)
 	return code;
@@ -442,7 +442,7 @@ zcurrentdotlength(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(2);
+    push(imemory, 2);
     make_real(op - 1, gs_currentdotlength(igs));
     make_bool(op, gs_currentdotlength_absolute(igs));
     return 0;

@@ -59,8 +59,8 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
     dfs = gs_alloc_struct(mem, gs_device_filter_stack_t,
 			  &st_gs_device_filter_stack, "gs_push_device_filter");
     if (dfs == NULL)
-	return_error(gs_error_VMerror);
-    rc_increment(pgs->device);
+	return_error(mem, gs_error_VMerror);
+    rc_increment(pgs->memory, pgs->device);
     dfs->next_device = pgs->device;
     code = df->push(df, mem, pgs, &new_dev, pgs->device);
     if (code < 0) {
@@ -71,7 +71,7 @@ gs_push_device_filter(gs_memory_t *mem, gs_state *pgs, gs_device_filter_t *df)
     pgs->dfilter_stack = dfs;
     dfs->df = df;
     gs_setdevice_no_init(pgs, new_dev);
-    rc_decrement_only(new_dev, "gs_push_device_filter");
+    rc_decrement_only(pgs->memory, new_dev, "gs_push_device_filter");
     return code;
 }
 
@@ -84,16 +84,16 @@ gs_pop_device_filter(gs_memory_t *mem, gs_state *pgs)
     int code;
 
     if (dfs_tos == NULL)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     df = dfs_tos->df;
     pgs->dfilter_stack = dfs_tos->next;
     code = df->prepop(df, mem, pgs, tos_device);
-    rc_increment(tos_device);
+    rc_increment(mem, tos_device);
     gs_setdevice_no_init(pgs, dfs_tos->next_device);
-    rc_decrement_only(dfs_tos->next_device, "gs_pop_device_filter");
+    rc_decrement_only(mem, dfs_tos->next_device, "gs_pop_device_filter");
     gs_free_object(mem, dfs_tos, "gs_pop_device_filter");
     code = df->postpop(df, mem, pgs, tos_device);
-    rc_decrement_only(tos_device, "gs_pop_device_filter");
+    rc_decrement_only(mem, tos_device, "gs_pop_device_filter");
     return code;
 }
 

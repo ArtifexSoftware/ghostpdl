@@ -32,11 +32,11 @@ zbytestring(i_ctx_t *i_ctx_p)
     byte *sbody;
     uint size;
 
-    check_int_leu(*op, max_int);
+    check_int_leu(imemory, *op, max_int);
     size = (uint)op->value.intval;
     sbody = ialloc_bytes(size, ".bytestring");
     if (sbody == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     make_astruct(op, a_all | icurrent_space, sbody);
     memset(sbody, 0, size);
     return 0;
@@ -50,11 +50,11 @@ zstring(i_ctx_t *i_ctx_p)
     byte *sbody;
     uint size;
 
-    check_int_leu(*op, max_string_size);
+    check_int_leu(imemory, *op, max_string_size);
     size = op->value.intval;
     sbody = ialloc_string(size, "string");
     if (sbody == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     make_string(op, a_all | icurrent_space, size, sbody);
     memset(sbody, 0, size);
     return 0;
@@ -66,7 +66,7 @@ znamestring(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_name);
+    check_type(imemory, *op, t_name);
     name_string_ref(op, op);
     return 0;
 }
@@ -80,12 +80,12 @@ zanchorsearch(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     uint size = r_size(op);
 
-    check_read_type(*op1, t_string);
-    check_read_type(*op, t_string);
+    check_read_type(imemory, *op1, t_string);
+    check_read_type(imemory, *op, t_string);
     if (size <= r_size(op1) && !memcmp(op1->value.bytes, op->value.bytes, size)) {
 	os_ptr op0 = op;
 
-	push(1);
+	push(imemory, 1);
 	*op0 = *op1;
 	r_set_size(op0, size);
 	op1->value.bytes += size;
@@ -109,8 +109,8 @@ zsearch(i_ctx_t *i_ctx_p)
     byte *ptr;
     byte ch;
 
-    check_read_type(*op1, t_string);
-    check_read_type(*op, t_string);
+    check_read_type(imemory, *op1, t_string);
+    check_read_type(imemory, *op, t_string);
     if (size > r_size(op1)) {	/* can't match */
 	make_false(op);
 	return 0;
@@ -134,7 +134,7 @@ found:
     op->tas.type_attrs = op1->tas.type_attrs;
     op->value.bytes = ptr;
     r_set_size(op, size);
-    push(2);
+    push(imemory, 2);
     op[-1] = *op1;
     r_set_size(op - 1, ptr - op[-1].value.bytes);
     op1->value.bytes = ptr + size;
@@ -150,8 +150,8 @@ zstringbreak(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint i, j;
 
-    check_read_type(op[-1], t_string);
-    check_read_type(*op, t_string);
+    check_read_type(imemory, op[-1], t_string);
+    check_read_type(imemory, *op, t_string);
     /* We can't use strpbrk here, because C doesn't allow nulls in strings. */
     for (i = 0; i < r_size(op - 1); ++i)
 	for (j = 0; j < r_size(op); ++j)
@@ -173,10 +173,10 @@ zstringmatch(i_ctx_t *i_ctx_p)
     os_ptr op1 = op - 1;
     bool result;
 
-    check_read_type(*op, t_string);
+    check_read_type(imemory, *op, t_string);
     switch (r_type(op1)) {
 	case t_string:
-	    check_read(*op1);
+	    check_read(imemory, *op1);
 	    goto cmp;
 	case t_name:
 	    name_string_ref(op1, op1);	/* can't fail */

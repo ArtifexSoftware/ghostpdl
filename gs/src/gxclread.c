@@ -66,7 +66,7 @@ s_band_read_init(stream_state * st)
 }
 
 private int
-s_band_read_process(stream_state * st, stream_cursor_read * ignore_pr,
+s_band_read_process(const gs_memory_t *mem, stream_state * st, stream_cursor_read * ignore_pr,
 		    stream_cursor_write * pw, bool last)
 {
     stream_band_read_state *const ss = (stream_band_read_state *) st;
@@ -112,7 +112,7 @@ rb:
 		goto rb;
 	    clist_fseek(cfile, pos, SEEK_SET, ss->page_cfname);
 	    left = (uint) (ss->b_this.pos - pos);
-	    if_debug5('l', "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
+	    if_debug5(mem, 'l', "[l]reading for bands (%d,%d) at bfile %ld, cfile %ld, length %u\n",
 		      bmin, bmax,
 		      clist_ftell(bfile) - 2 * sizeof(ss->b_this),
 		      pos, left);
@@ -223,7 +223,7 @@ clist_get_bits_rectangle(gx_device *dev, const gs_int_rect * prect,
     if (prect->p.x < 0 || prect->q.x > dev->width ||
 	y < 0 || end_y > dev->height
 	)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     if (line_count <= 0 || prect->p.x >= prect->q.x)
 	return 0;
 
@@ -351,7 +351,7 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count,
 	band_num_lines = band_end_line - band_begin_line;
 
 	if (y < 0 || y > dev->height)
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
 	code = crdev->buf_procs.setup_buf_device
 	    (bdev, mdata, raster, NULL, 0, band_num_lines, band_num_lines);
 	band_rect.p.x = 0;
@@ -428,7 +428,7 @@ clist_render_rectangle(gx_device_clist *cdev, const gs_int_rect *prect,
 	crdev->yplane = *render_plane;
     else
 	crdev->yplane.index = -1;
-    if_debug2('l', "[l]rendering bands (%d,%d)\n", band_first, band_last);
+    if_debug2(bdev->memory, 'l', "[l]rendering bands (%d,%d)\n", band_first, band_last);
     if (clear)
 	dev_proc(bdev, fill_rectangle)
 	    (bdev, 0, 0, bdev->width, bdev->height, gx_device_white(bdev));
@@ -512,9 +512,9 @@ clist_playback_file_bands(clist_playback_action action,
 
     /* Close the files if we just opened them. */
     if (opened_bfile && rs.page_bfile != 0)
-	clist_fclose(rs.page_bfile, rs.page_bfname, false);
+	clist_fclose(cdev->memory, rs.page_bfile, rs.page_bfname, false);
     if (opened_cfile && rs.page_cfile != 0)
-	clist_fclose(rs.page_cfile, rs.page_cfname, false);
+	clist_fclose(cdev->memory, rs.page_cfile, rs.page_cfname, false);
 
     return code;
 }

@@ -115,7 +115,7 @@ extern  void    gx_set_common_cie_defaults( gs_cie_common *,
 extern  void    gx_cie_load_common_cache(gs_cie_common *, gs_state *);
 
 /* Complete loading of the common caches */
-extern  void    gx_cie_common_complete(gs_cie_common *);
+extern  void    gx_cie_common_complete(const gs_memory_t *mem, gs_cie_common *);
 
 /* "indirect" color space installation procedure */
 cs_proc_install_cspace(gx_install_CIE);

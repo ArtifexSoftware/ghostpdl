@@ -92,7 +92,7 @@ quant_param_string(gs_param_string * pstr, int count, const UINT16 * pvals,
 
     data = gs_alloc_string(mem, count, "quant_param_string");
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     for (i = 0; i < count; ++i) {
 	floatp val = pvals[jpeg_inverse_order(i)] / QFactor;
 
@@ -116,7 +116,7 @@ quant_param_array(gs_param_float_array * pfa, int count, const UINT16 * pvals,
 					"quant_param_array");
 
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     for (i = 0; i < count; ++i)
 	data[i] = pvals[jpeg_inverse_order(i)] / QFactor;
     pfa->data = data;
@@ -242,7 +242,7 @@ pack_huff_table(gs_param_string * pstr, const JHUFF_TBL * table,
 	total += table->bits[i];
     data = gs_alloc_string(mem, 16 + total, "pack_huff_table");
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     memcpy(data, table->bits + 1, 16);
     memcpy(data + 16, table->huffval, total);
     pstr->data = data;
@@ -285,7 +285,7 @@ s_DCT_get_huffman_tables(gs_param_list * plist,
 	gs_alloc_byte_array(mem, num_in_tables, sizeof(gs_param_string),
 			    "get huffman tables");
     if (huff_data == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     for (i = 0; i < num_in_tables; i += 2) {
 	if ((code = pack_huff_table(huff_data + i, ac_table_ptrs[i >> 1], mem)) < 0 ||
 	    (code = pack_huff_table(huff_data + i + 1, dc_table_ptrs[i >> 1], mem))
@@ -326,7 +326,8 @@ stream_state_proc_put_params(s_DCT_put_params, stream_DCT_state);	/* check */
  * Used for HuffTables, HSamples, VSamples.
  */
 int
-s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
+s_DCT_byte_params(const gs_memory_t *mem, 
+		  gs_param_list * plist, gs_param_name key, int start,
 		  int count, UINT8 * pvals)
 {
     int i;
@@ -337,7 +338,7 @@ s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
     switch (code) {
 	case 0:
 	    if (bytes.size < start + count) {
-		code = gs_note_error(gs_error_rangecheck);
+		code = gs_note_error(mem, gs_error_rangecheck);
 		break;
 	    }
 	    for (i = 0; i < count; ++i)
@@ -347,14 +348,14 @@ s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
 	    code = param_read_float_array(plist, key, &floats);
 	    if (!code) {
 		if (floats.size < start + count) {
-		    code = gs_note_error(gs_error_rangecheck);
+		    code = gs_note_error(mem, gs_error_rangecheck);
 		    break;
 		}
 		for (i = 0; i < count; ++i) {
 		    float v = floats.data[start + i];
 
 		    if (v < 0 || v > 255) {
-			code = gs_note_error(gs_error_rangecheck);
+			code = gs_note_error(mem, gs_error_rangecheck);
 			break;
 		    }
 		    pvals[i] = (UINT8) (v + 0.5);
@@ -368,7 +369,7 @@ s_DCT_byte_params(gs_param_list * plist, gs_param_name key, int start,
 
 /* Get N quantization values from an array or a string. */
 private int
-quant_params(gs_param_list * plist, gs_param_name key, int count,
+quant_params(const gs_memory_t *mem, gs_param_list * plist, gs_param_name key, int count,
 	     UINT16 * pvals, floatp QFactor)
 {
     int i;
@@ -379,7 +380,7 @@ quant_params(gs_param_list * plist, gs_param_name key, int count,
     switch (code) {
 	case 0:
 	    if (bytes.size != count) {
-		code = gs_note_error(gs_error_rangecheck);
+		code = gs_note_error(mem, gs_error_rangecheck);
 		break;
 	    }
 	    for (i = 0; i < count; ++i) {
@@ -393,7 +394,7 @@ quant_params(gs_param_list * plist, gs_param_name key, int count,
 	    code = param_read_float_array(plist, key, &floats);
 	    if (!code) {
 		if (floats.size != count) {
-		    code = gs_note_error(gs_error_rangecheck);
+		    code = gs_note_error(mem, gs_error_rangecheck);
 		    break;
 		}
 		for (i = 0; i < count; ++i) {
@@ -429,7 +430,7 @@ s_DCT_put_params(gs_param_list * plist, stream_DCT_state * pdct)
 	pdct->ColorTransform < -1 || pdct->ColorTransform > 2 ||
 	pdct->QFactor < 0.0 || pdct->QFactor > 1000000.0
 	)
-	return_error(gs_error_rangecheck);
+	return_error(pdct->memory, gs_error_rangecheck);
     return 0;
 }
 
@@ -460,7 +461,7 @@ s_DCT_put_quantization_tables(gs_param_list * plist, stream_DCT_state * pdct,
     if (is_encode) {
 	num_in_tables = pdct->data.compress->cinfo.num_components;
 	if (quant_tables.size < num_in_tables)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdct->memory, gs_error_rangecheck);
 	comp_info = pdct->data.compress->cinfo.comp_info;
 	table_ptrs = pdct->data.compress->cinfo.quant_tbl_ptrs;
     } else {
@@ -474,7 +475,7 @@ s_DCT_put_quantization_tables(gs_param_list * plist, stream_DCT_state * pdct,
 	UINT16 values[DCTSIZE2];
 
 	sprintf(istr, "%d", i);
-	code = quant_params(quant_tables.list, istr, DCTSIZE2, values,
+	code = quant_params(pdct->memory, quant_tables.list, istr, DCTSIZE2, values,
 			    pdct->QFactor);
 	if (code < 0)
 	    return code;
@@ -488,12 +489,12 @@ s_DCT_put_quantization_tables(gs_param_list * plist, stream_DCT_state * pdct,
 	if (j < num_out_tables)	/* found a duplicate */
 	    continue;
 	if (++num_out_tables > NUM_QUANT_TBLS)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdct->memory, gs_error_rangecheck);
 	this_table = table_ptrs[j];
 	if (this_table == NULL) {
 	    this_table = gs_jpeg_alloc_quant_table(pdct);
 	    if (this_table == NULL)
-		return_error(gs_error_VMerror);
+		return_error(pdct->memory, gs_error_VMerror);
 	    table_ptrs[j] = this_table;
 	}
 	memcpy(this_table->quantval, values, sizeof(values));
@@ -545,7 +546,7 @@ s_DCT_put_huffman_tables(gs_param_list * plist, stream_DCT_state * pdct,
     if (is_encode) {
 	num_in_tables = pdct->data.compress->cinfo.input_components * 2;
 	if (huff_tables.size < num_in_tables)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdct->memory, gs_error_rangecheck);
 	comp_info = pdct->data.compress->cinfo.comp_info;
 	dc_table_ptrs = pdct->data.compress->cinfo.dc_huff_tbl_ptrs;
 	ac_table_ptrs = pdct->data.compress->cinfo.ac_huff_tbl_ptrs;
@@ -566,14 +567,14 @@ s_DCT_put_huffman_tables(gs_param_list * plist, stream_DCT_state * pdct,
 
 	/* Collect the Huffman parameters. */
 	sprintf(istr, "%d", i);
-	code = s_DCT_byte_params(huff_tables.list, istr, 0, 16, counts);
+	code = s_DCT_byte_params(pdct->memory, huff_tables.list, istr, 0, 16, counts);
 	if (code < 0)
 	    return code;
 	for (codes_size = 0, j = 0; j < 16; j++)
 	    codes_size += counts[j];
 	if (codes_size > 256 /*|| r_size(pa) != codes_size+16 */ )
-	    return_error(gs_error_rangecheck);
-	code = s_DCT_byte_params(huff_tables.list, istr, 16, codes_size,
+	    return_error(pdct->memory, gs_error_rangecheck);
+	code = s_DCT_byte_params(pdct->memory, huff_tables.list, istr, 16, codes_size,
 				 values);
 	if (code < 0)
 	    return code;
@@ -585,7 +586,7 @@ s_DCT_put_huffman_tables(gs_param_list * plist, stream_DCT_state * pdct,
 	    if (j < nac)
 		continue;
 	    if (++nac > NUM_HUFF_TBLS)
-		return_error(gs_error_rangecheck);
+		return_error(pdct->memory, gs_error_rangecheck);
 	    this_table_ptr = ac_table_ptrs + j;
 	} else {
 	    j = find_huff_values(dc_table_ptrs, ndc, counts, values,
@@ -595,20 +596,20 @@ s_DCT_put_huffman_tables(gs_param_list * plist, stream_DCT_state * pdct,
 	    if (j < ndc)
 		continue;
 	    if (++ndc > NUM_HUFF_TBLS)
-		return_error(gs_error_rangecheck);
+		return_error(pdct->memory, gs_error_rangecheck);
 	    this_table_ptr = dc_table_ptrs + j;
 	}
 	this_table = *this_table_ptr;
 	if (this_table == NULL) {
 	    this_table = gs_jpeg_alloc_huff_table(pdct);
 	    if (this_table == NULL)
-		return_error(gs_error_VMerror);
+		return_error(pdct->memory, gs_error_VMerror);
 	    *this_table_ptr = this_table;
 	}
 	memcpy(this_table->bits, counts, sizeof(counts));
 	memcpy(this_table->huffval, values, codes_size * sizeof(values[0]));
     }
     if (nac > max_tables || ndc > max_tables)
-	return_error(gs_error_rangecheck);
+	return_error(pdct->memory, gs_error_rangecheck);
     return 0;
 }

@@ -49,7 +49,7 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
     int prev = ss->last_char;
     int count;
 
-    if_debug3('w', "[w85]initial ss->count = %d, rcount = %d, wcount = %d\n",
+    if_debug3(ss->memory, 'w', "[w85]initial ss->count = %d, rcount = %d, wcount = %d\n",
 	      ss->count, (int)(rlimit - p), (int)(wlimit - q));
     for (; (count = rlimit - p) >= 4; p += 4) {
 	ulong word =
@@ -64,7 +64,7 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
 		}
 		*++q = prev = '\n';
 		qn = q + LINE_LIMIT;
-		if_debug1('w', "[w85]EOL at %d bytes written\n",
+		if_debug1(ss->memory, 'w', "[w85]EOL at %d bytes written\n",
 			  (int)(q - pw->ptr));
 	    } else {
 		if (q >= wlimit) {
@@ -86,7 +86,7 @@ put:	    if (q + 5 > qn) {
 		}
 		*++q = prev = '\n';
 		qn = q + LINE_LIMIT;
-		if_debug1('w', "[w85]EOL at %d bytes written\n",
+		if_debug1(ss->memory, 'w', "[w85]EOL at %d bytes written\n",
 			  (int)(q - pw->ptr));
 		goto put;
 	    }
@@ -110,7 +110,7 @@ put:	    if (q + 5 > qn) {
 			/* A line would begin with %%. */
 			*++q = prev = '\n';
 			qn = q + LINE_LIMIT;
-			if_debug1('w',
+			if_debug1(ss->memory, 'w',
 				  "[w85]EOL for %%%% at %d bytes written\n",
 				  (int)(q - pw->ptr));
 			goto put;
@@ -133,7 +133,7 @@ put:	    if (q + 5 > qn) {
 			status = 1;
 			break;
 		    }
-		    if_debug6('w', "[w]%c%c%c%c%c extra = %d\n",
+		    if_debug6(ss->memory, 'w', "[w]%c%c%c%c%c extra = %d\n",
 			      q[1], q[2], q[3], q[4], q[5], extra);
 		    switch (extra) {
 			case 4:
@@ -151,7 +151,7 @@ put:	    if (q + 5 > qn) {
 			    q[6] = q[5], q[5] = q[4], q[4] = q[3];
 			  e1:q[3] = q[2], q[2] = '\n';
 		    }
-		    if_debug1('w', "[w85]EOL at %d bytes written\n",
+		    if_debug1(ss->memory, 'w', "[w85]EOL at %d bytes written\n",
 			      (int)(q + 2 * extra - pw->ptr));
 		    qn = q + 2 * extra + LINE_LIMIT;
 		    q += extra;
@@ -162,7 +162,7 @@ put:	    if (q + 5 > qn) {
 		/* A line would begin with %!. */
 		*++q = prev = '\n';
 		qn = q + LINE_LIMIT;
-		if_debug1('w', "[w85]EOL for %%! at %d bytes written\n",
+		if_debug1(ss->memory, 'w', "[w85]EOL for %%! at %d bytes written\n",
 			  (int)(q - pw->ptr));
 		goto put;
 	    }
@@ -207,7 +207,7 @@ put:	    if (q + 5 > qn) {
 	    *++q = '>';
 	}
     }
-    if_debug3('w', "[w85]final ss->count = %d, %d bytes read, %d written\n",
+    if_debug3(ss->memory, 'w', "[w85]final ss->count = %d, %d bytes read, %d written\n",
 	      ss->count, (int)(p - pr->ptr), (int)(q - pw->ptr));
     pr->ptr = p;
     if (q > pw->ptr)

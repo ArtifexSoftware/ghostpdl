@@ -31,7 +31,7 @@ const byte enc_num_bytes[] = {
 /* Set up to read from an encoded number array/string. */
 /* Return <0 for error, or a number format. */
 int
-num_array_format(const ref * op)
+num_array_format(const gs_memory_t *mem, const ref * op)
 {
     switch (r_type(op)) {
 	case t_string:
@@ -41,13 +41,13 @@ num_array_format(const ref * op)
 		int format;
 
 		if (r_size(op) < 4 || bp[0] != bt_num_array_value)
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 		format = bp[1];
 		if (!num_is_valid(format) ||
 		    sdecodeshort(bp + 2, format) !=
 		    (r_size(op) - 4) / encoded_number_bytes(format)
 		    )
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 		return format;
 	    }
 	case t_array:
@@ -55,7 +55,7 @@ num_array_format(const ref * op)
 	case t_shortarray:
 	    return num_array;
 	default:
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
     }
 }
 
@@ -72,10 +72,10 @@ num_array_size(const ref * op, int format)
 /* Return t_int if integer, t_real if real, t_null if end of stream, */
 /* or an error if the format is invalid. */
 int
-num_array_get(const ref * op, int format, uint index, ref * np)
+num_array_get(const gs_memory_t *mem, const ref * op, int format, uint index, ref * np)
 {
     if (format == num_array) {
-	int code = array_get(op, (long)index, np);
+	int code = array_get(mem, op, (long)index, np);
 
 	if (code < 0)
 	    return t_null;
@@ -85,14 +85,14 @@ num_array_get(const ref * op, int format, uint index, ref * np)
 	    case t_real:
 		return t_real;
 	    default:
-		return_error(e_rangecheck);
+		return_error(mem, e_rangecheck);
 	}
     } else {
 	uint nbytes = encoded_number_bytes(format);
 
 	if (index >= (r_size(op) - 4) / nbytes)
 	    return t_null;
-	return sdecode_number(op->value.bytes + 4 + index * nbytes,
+	return sdecode_number(mem, op->value.bytes + 4 + index * nbytes,
 			      format, np);
     }
 }
@@ -112,7 +112,7 @@ static const double binary_scale[32] = {
 #undef EXPN2
 };
 int
-sdecode_number(const byte * str, int format, ref * np)
+sdecode_number(const gs_memory_t *mem, const byte * str, int format, ref * np)
 {
     switch (format & 0x170) {
 	case num_int32:
@@ -140,7 +140,7 @@ sdecode_number(const byte * str, int format, ref * np)
 	    np->value.realval = sdecodefloat(str, format);
 	    return t_real;
 	default:
-	    return_error(e_syntaxerror);	/* invalid format?? */
+	    return_error(mem, e_syntaxerror);	/* invalid format?? */
     }
 }
 

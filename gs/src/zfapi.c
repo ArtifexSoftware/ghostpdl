@@ -706,7 +706,7 @@ private int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
 private int renderer_retcode(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_retcode rc)
 {   if (rc == 0)
 	return 0;
-    eprintf2("Error: Font Renderer Plugin ( %s ) return code = %d\n", I->ig.d->subtype, rc);
+    eprintf2(imemory, "Error: Font Renderer Plugin ( %s ) return code = %d\n", I->ig.d->subtype, rc);
     return rc < 0 ? rc : e_invalidfont;
 }
 

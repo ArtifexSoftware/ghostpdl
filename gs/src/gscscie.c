@@ -116,10 +116,10 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
     if (pcie == 0 || pcie->RenderTable.lookup.table == 0 ||
 	pcie->RenderTable.lookup.m == 3
 	) {
-	gs_cspace_init_DeviceRGB(&rgb_cs);  /* idempotent initialization */
+	gs_cspace_init_DeviceRGB(pis->memory, &rgb_cs);  /* idempotent initialization */
         return &rgb_cs;
     } else {			/* pcie->RenderTable.lookup.m == 4 */
-	gs_cspace_init_DeviceCMYK(&cmyk_cs); /* idempotent initialization */
+	gs_cspace_init_DeviceCMYK(pis->memory, &cmyk_cs); /* idempotent initialization */
 	return &cmyk_cs;
     }
 }
@@ -138,25 +138,25 @@ gx_install_CIE(const gs_color_space * pcs, gs_state * pgs)
 private void
 gx_adjust_cspace_CIEDEFG(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->params.defg, delta, "gx_adjust_cspace_CIEDEFG");
+    rc_adjust_const(pcs->pmem, pcs->params.defg, delta, "gx_adjust_cspace_CIEDEFG");
 }
 
 private void
 gx_adjust_cspace_CIEDEF(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->params.def, delta, "gx_adjust_cspace_CIEDEF");
+    rc_adjust_const(pcs->pmem, pcs->params.def, delta, "gx_adjust_cspace_CIEDEF");
 }
 
 private void
 gx_adjust_cspace_CIEABC(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->params.abc, delta, "gx_adjust_cspace_CIEABC");
+    rc_adjust_const(pcs->pmem, pcs->params.abc, delta, "gx_adjust_cspace_CIEABC");
 }
 
 private void
 gx_adjust_cspace_CIEA(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->params.a, delta, "gx_adjust_cspace_CIEA");
+    rc_adjust_const(pcs->pmem, pcs->params.a, delta, "gx_adjust_cspace_CIEA");
 }
 
 /* ---------------- Procedures ---------------- */
@@ -253,7 +253,7 @@ gs_cspace_build_CIEA(gs_color_space ** ppcspace, void *client_data,
     gx_build_cie_space(ppcspace, &gs_color_space_type_CIEA, &st_cie_a, pmem);
 
     if (pciea == 0)
-	return_error(gs_error_VMerror);
+	return_error(pmem, gs_error_VMerror);
 
     gx_set_common_cie_defaults(&pciea->common, client_data);
     pciea->common.install_cspace = gx_install_CIEA;
@@ -274,7 +274,7 @@ gs_cspace_build_CIEABC(gs_color_space ** ppcspace, void *client_data,
 		       pmem);
 
     if (pabc == 0)
-	return_error(gs_error_VMerror);
+	return_error(pmem, gs_error_VMerror);
 
     set_cie_abc_defaults(pabc, client_data);
     pabc->common.install_cspace = gx_install_CIEABC;
@@ -292,7 +292,7 @@ gs_cspace_build_CIEDEF(gs_color_space ** ppcspace, void *client_data,
 		       pmem);
 
     if (pdef == 0)
-	return_error(gs_error_VMerror);
+	return_error(pmem, gs_error_VMerror);
 
     set_cie_abc_defaults((gs_cie_abc *) pdef, client_data);
     pdef->common.install_cspace = gx_install_CIEDEF;
@@ -314,7 +314,7 @@ gs_cspace_build_CIEDEFG(gs_color_space ** ppcspace, void *client_data,
 		       pmem);
 
     if (pdefg == 0)
-	return_error(gs_error_VMerror);
+	return_error(pmem, gs_error_VMerror);
 
     set_cie_abc_defaults((gs_cie_abc *) pdefg, client_data);
     pdefg->common.install_cspace = gx_install_CIEDEFG;
@@ -330,7 +330,7 @@ gs_cspace_build_CIEDEFG(gs_color_space ** ppcspace, void *client_data,
 /* ------ Accessors ------ */
 
 int
-gs_cie_defx_set_lookup_table(gs_color_space * pcspace, int *pdims,
+gs_cie_defx_set_lookup_table(const gs_memory_t *mem, gs_color_space * pcspace, int *pdims,
 			     const gs_const_string * ptable)
 {
     gx_color_lookup_table *plktblp;
@@ -344,7 +344,7 @@ gs_cie_defx_set_lookup_table(gs_color_space * pcspace, int *pdims,
 	    plktblp->dims[3] = pdims[3];
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     }
 
     plktblp->dims[0] = pdims[0];

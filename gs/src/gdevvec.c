@@ -78,9 +78,9 @@ gdev_vector_dopath(gx_device_vector *vdev, const gx_path * ppath,
 	) {
 	gs_point p, q;
 
-	gs_point_transform_inverse((floatp)rbox.p.x, (floatp)rbox.p.y,
+	gs_point_transform_inverse(vdev->memory, (floatp)rbox.p.x, (floatp)rbox.p.y,
 				   &state.scale_mat, &p);
-	gs_point_transform_inverse((floatp)rbox.q.x, (floatp)rbox.q.y,
+	gs_point_transform_inverse(vdev->memory, (floatp)rbox.q.x, (floatp)rbox.q.y,
 				   &state.scale_mat, &q);
 	code = vdev_proc(vdev, dorect)(vdev, (fixed)p.x, (fixed)p.y,
 				       (fixed)q.x, (fixed)q.y, type);
@@ -251,7 +251,7 @@ gdev_vector_reset(gx_device_vector * vdev)
     color_unset(&vdev->saved_fill_color);
     color_unset(&vdev->saved_stroke_color);
     vdev->clip_path_id =
-	vdev->no_clip_path_id = gs_next_ids(1);
+	vdev->no_clip_path_id = gs_next_ids(vdev->memory, 1);
 }
 
 /* Open the output file and stream. */
@@ -301,7 +301,7 @@ gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
 	vdev->strmbuf = 0;
 	fclose(vdev->file);
 	vdev->file = 0;
-	return_error(gs_error_VMerror);
+	return_error(vdev->v_memory, gs_error_VMerror);
     }
     vdev->strmbuf_size = strmbuf_size;
     swrite_file(vdev->strm, vdev->file, vdev->strmbuf, strmbuf_size);
@@ -424,7 +424,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 	float half_width = pis->line_params.half_width * scale;
 
 	if (pattern_size > max_dash)
-	    return_error(gs_error_limitcheck);
+	    return_error(vdev->v_memory, gs_error_limitcheck);
 	if (dash_offset != vdev->state.line_params.dash.offset ||
 	    pattern_size != vdev->state.line_params.dash.pattern_size ||
 	    (pattern_size != 0 &&
@@ -459,7 +459,7 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 
 	    if (code < 0)
 		return code;
-	    gx_set_miter_limit(&vdev->state.line_params,
+	    gx_set_miter_limit(vdev->memory, &vdev->state.line_params,
 			       pis->line_params.miter_limit);
 	}
 	if (pis->line_params.cap != vdev->state.line_params.cap) {
@@ -603,7 +603,8 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
 
     switch (pe_op) {
 	case gs_pe_moveto:
-	    gs_point_transform_inverse(fixed2float(vs[0].x),
+	    gs_point_transform_inverse(vdev->memory, 
+				       fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
 	    if (state->first)
 		state->start = vp[0], state->first = false;
@@ -613,7 +614,7 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
 	    state->prev = vp[0];
 	    break;
 	case gs_pe_lineto:
-	    gs_point_transform_inverse(fixed2float(vs[0].x),
+	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
 	    code = vdev_proc(vdev, lineto)
 		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
@@ -621,11 +622,11 @@ gdev_vector_dopath_segment(gdev_vector_dopath_state_t *state, int pe_op,
 	    state->prev = vp[0];
 	    break;
 	case gs_pe_curveto:
-	    gs_point_transform_inverse(fixed2float(vs[0].x),
+	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[0].x),
 				       fixed2float(vs[0].y), pmat, &vp[0]);
-	    gs_point_transform_inverse(fixed2float(vs[1].x),
+	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[1].x),
 				       fixed2float(vs[1].y), pmat, &vp[1]);
-	    gs_point_transform_inverse(fixed2float(vs[2].x),
+	    gs_point_transform_inverse(vdev->memory, fixed2float(vs[2].x),
 				       fixed2float(vs[2].y), pmat, &vp[2]);
 	    code = vdev_proc(vdev, curveto)
 		(vdev, state->prev.x, state->prev.y, vp[0].x, vp[0].y,
@@ -788,7 +789,7 @@ gdev_vector_close_file(gx_device_vector * vdev)
     err = ferror(f);
     /* We prevented sclose from closing the file. */
     if (fclose(f) != 0 || err != 0)
-	return_error(gs_error_ioerror);
+	return_error(vdev->v_memory, gs_error_ioerror);
     return 0;
 }
 
@@ -865,7 +866,7 @@ gdev_vector_end_image(gx_device_vector * vdev,
 				       "gdev_vector_end_image(fill)");
 
 	    if (row == 0)
-		return_error(gs_error_VMerror);
+		return_error(vdev->v_memory, gs_error_VMerror);
 /****** FILL VALUE IS WRONG ******/
 	    memset(row, (byte) pad, bytes_per_row);
 	    for (; pie->y < pie->height; pie->y++)

@@ -30,7 +30,7 @@
 /* Get a Boolean parameter from a dictionary. */
 /* Return 0 if found, 1 if defaulted, <0 if wrong type. */
 int
-dict_bool_param(const ref * pdict, const char *kstr,
+dict_bool_param(const gs_memory_t *mem, const ref * pdict, const char *kstr,
 		bool defaultval, bool * pvalue)
 {
     ref *pdval;
@@ -40,7 +40,7 @@ dict_bool_param(const ref * pdict, const char *kstr,
 	return 1;
     }
     if (!r_has_type(pdval, t_boolean))
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     *pvalue = pdval->value.boolval;
     return 0;
 }
@@ -51,7 +51,8 @@ dict_bool_param(const ref * pdict, const char *kstr,
 /* Note that the default value may be out of range, in which case */
 /* a missing value will return e_rangecheck rather than 1. */
 int
-dict_int_null_param(const ref * pdict, const char *kstr, int minval,
+dict_int_null_param(const gs_memory_t *mem, 
+		    const ref * pdict, const char *kstr, int minval,
 		    int maxval, int defaultval, int *pvalue)
 {
     ref *pdval;
@@ -72,33 +73,34 @@ dict_int_null_param(const ref * pdict, const char *kstr, int minval,
 		/* as well) sometimes generates output that */
 		/* needs this. */
 		if (pdval->value.realval < minval || pdval->value.realval > maxval)
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 		ival = (long)pdval->value.realval;
 		if (ival != pdval->value.realval)
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 		break;
 	    case t_null:
 		return 2;
 	    default:
-		return_error(e_typecheck);
+		return_error(mem, e_typecheck);
 	}
 	code = 0;
     }
     if (ival < minval || ival > maxval)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     *pvalue = (int)ival;
     return code;
 }
 /* Get an integer parameter from a dictionary. */
 /* Return like dict_int_null_param, but return e_typecheck for null. */
 int
-dict_int_param(const ref * pdict, const char *kstr, int minval, int maxval,
+dict_int_param(const gs_memory_t *mem, 
+	       const ref * pdict, const char *kstr, int minval, int maxval,
 	       int defaultval, int *pvalue)
 {
-    int code = dict_int_null_param(pdict, kstr, minval, maxval,
+    int code = dict_int_null_param(mem, pdict, kstr, minval, maxval,
 				   defaultval, pvalue);
 
-    return (code == 2 ? gs_note_error(e_typecheck) : code);
+    return (code == 2 ? gs_note_error(mem, e_typecheck) : code);
 }
 
 /* Get an unsigned integer parameter from a dictionary. */
@@ -106,7 +108,8 @@ dict_int_param(const ref * pdict, const char *kstr, int minval, int maxval,
 /* Note that the default value may be out of range, in which case */
 /* a missing value will return e_rangecheck rather than 1. */
 int
-dict_uint_param(const ref * pdict, const char *kstr,
+dict_uint_param(const gs_memory_t *mem, 
+		const ref * pdict, const char *kstr,
 		uint minval, uint maxval, uint defaultval, uint * pvalue)
 {
     ref *pdval;
@@ -117,14 +120,14 @@ dict_uint_param(const ref * pdict, const char *kstr,
 	ival = defaultval;
 	code = 1;
     } else {
-	check_type_only(*pdval, t_integer);
+	check_type_only(mem, *pdval, t_integer);
 	if (pdval->value.intval != (uint) pdval->value.intval)
-	    return_error(e_rangecheck);
+	    return_error(mem, e_rangecheck);
 	ival = (uint) pdval->value.intval;
 	code = 0;
     }
     if (ival < minval || ival > maxval)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     *pvalue = ival;
     return code;
 }
@@ -132,7 +135,8 @@ dict_uint_param(const ref * pdict, const char *kstr,
 /* Get a float parameter from a dictionary. */
 /* Return 0 if found, 1 if defaulted, <0 if wrong type. */
 int
-dict_float_param(const ref * pdict, const char *kstr,
+dict_float_param(const gs_memory_t *mem, 
+		 const ref * pdict, const char *kstr,
 		 floatp defaultval, float *pvalue)
 {
     ref *pdval;
@@ -149,13 +153,14 @@ dict_float_param(const ref * pdict, const char *kstr,
 	    *pvalue = pdval->value.realval;
 	    return 0;
     }
-    return_error(e_typecheck);
+    return_error(mem, e_typecheck);
 }
 
 /* Get an integer array from a dictionary. */
 /* See idparam.h for specification. */
 int
-dict_int_array_check_param(const ref * pdict, const char *kstr, uint len,
+dict_int_array_check_param(const gs_memory_t *mem, 
+			   const ref * pdict, const char *kstr, uint len,
 			   int *ivec, int under_error, int over_error)
 {
     ref *pdval;
@@ -167,17 +172,17 @@ dict_int_array_check_param(const ref * pdict, const char *kstr, uint len,
     if (pdict == 0 || dict_find_string(pdict, kstr, &pdval) <= 0)
 	return 0;
     if (!r_has_type(pdval, t_array))
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     size = r_size(pdval);
     if (size > len)
-	return_error(over_error);
+	return_error(mem, over_error);
     pa = pdval->value.const_refs;
     for (i = 0; i < size; i++, pa++, pi++) {
 	/* See dict_int_param above for why we allow reals here. */
 	switch (r_type(pa)) {
 	    case t_integer:
 		if (pa->value.intval != (int)pa->value.intval)
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 		*pi = (int)pa->value.intval;
 		break;
 	    case t_real:
@@ -185,28 +190,28 @@ dict_int_array_check_param(const ref * pdict, const char *kstr, uint len,
 		    pa->value.realval > max_int ||
 		    pa->value.realval != (int)pa->value.realval
 		    )
-		    return_error(e_rangecheck);
+		    return_error(mem, e_rangecheck);
 		*pi = (int)pa->value.realval;
 		break;
 	    default:
-		return_error(e_typecheck);
+		return_error(mem, e_typecheck);
 	}
     }
     return (size == len || under_error >= 0 ? size :
-	    gs_note_error(under_error));
+	    gs_note_error(mem, under_error));
 }
 int
-dict_int_array_param(const ref * pdict, const char *kstr,
+dict_int_array_param(const gs_memory_t *mem, const ref * pdict, const char *kstr,
 		     uint maxlen, int *ivec)
 {
-    return dict_int_array_check_param(pdict, kstr, maxlen, ivec,
+    return dict_int_array_check_param(mem, pdict, kstr, maxlen, ivec,
 				      0, e_limitcheck);
 }
 int
-dict_ints_param(const ref * pdict, const char *kstr,
+dict_ints_param(const gs_memory_t *mem, const ref * pdict, const char *kstr,
 		uint len, int *ivec)
 {
-    return dict_int_array_check_param(pdict, kstr, len, ivec,
+    return dict_int_array_check_param(mem, pdict, kstr, len, ivec,
 				      e_rangecheck, e_rangecheck);
 }
 
@@ -216,7 +221,8 @@ dict_ints_param(const ref * pdict, const char *kstr,
 /* if defaultvec is not NULL, copy it into fvec (maxlen elements) */
 /* and return maxlen. */
 int
-dict_float_array_check_param(const ref * pdict, const char *kstr,
+dict_float_array_check_param(const gs_memory_t *mem, 
+			     const ref * pdict, const char *kstr,
 			     uint len, float *fvec, const float *defaultvec,
 			     int under_error, int over_error)
 {
@@ -232,27 +238,27 @@ dict_float_array_check_param(const ref * pdict, const char *kstr,
 	return len;
     }
     if (!r_is_array(pdval))
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     size = r_size(pdval);
     if (size > len)
-	return_error(over_error);
-    code = process_float_array(pdval, size, fvec);
+	return_error(mem, over_error);
+    code = process_float_array(mem, pdval, size, fvec);
     return (code < 0 ? code :
 	    size == len || under_error >= 0 ? size :
-	    gs_note_error(under_error));
+	    gs_note_error(mem, under_error));
 }
 int
-dict_float_array_param(const ref * pdict, const char *kstr,
+dict_float_array_param(const gs_memory_t *mem, const ref * pdict, const char *kstr,
 		       uint maxlen, float *fvec, const float *defaultvec)
 {
-    return dict_float_array_check_param(pdict, kstr, maxlen, fvec,
+    return dict_float_array_check_param(mem, pdict, kstr, maxlen, fvec,
 					defaultvec, 0, e_limitcheck);
 }
 int
-dict_floats_param(const ref * pdict, const char *kstr,
+dict_floats_param(const gs_memory_t *mem, const ref * pdict, const char *kstr,
 		  uint maxlen, float *fvec, const float *defaultvec)
 {
-    return dict_float_array_check_param(pdict, kstr, maxlen, fvec, defaultvec,
+    return dict_float_array_check_param(mem, pdict, kstr, maxlen, fvec, defaultvec,
 					e_rangecheck, e_rangecheck);
 }
 
@@ -263,7 +269,7 @@ dict_floats_param(const ref * pdict, const char *kstr,
  * In either case, return 1.
  */
 int
-dict_proc_param(const ref * pdict, const char *kstr, ref * pproc,
+dict_proc_param(const gs_memory_t *mem, const ref * pdict, const char *kstr, ref * pproc,
 		bool defaultval)
 {
     ref *pdval;
@@ -275,20 +281,20 @@ dict_proc_param(const ref * pdict, const char *kstr, ref * pproc,
 	    make_t(pproc, t__invalid);
 	return 1;
     }
-    check_proc(*pdval);
+    check_proc(mem, *pdval);
     *pproc = *pdval;
     return 0;
 }
 
 /* Get a matrix from a dictionary. */
 int
-dict_matrix_param(const ref * pdict, const char *kstr, gs_matrix * pmat)
+dict_matrix_param(const gs_memory_t *mem, const ref * pdict, const char *kstr, gs_matrix * pmat)
 {
     ref *pdval;
 
     if (pdict == 0 || dict_find_string(pdict, kstr, &pdval) <= 0)
-	return_error(e_typecheck);
-    return read_matrix(pdval, pmat);
+	return_error(mem, e_typecheck);
+    return read_matrix(mem, pdval, pmat);
 }
 
 /* Get a UniqueID or XUID from a dictionary. */
@@ -312,22 +318,22 @@ dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
 	uint size, i;
 
 	if (!r_has_type(puniqueid, t_array))
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
 	size = r_size(puniqueid);
 	if (size == 0)
-	    return_error(e_rangecheck);
+	    return_error(mem, e_rangecheck);
 	xvalues = (long *)gs_alloc_byte_array(mem, size, sizeof(long),
 					      "get XUID");
 
 	if (xvalues == 0)
-	    return_error(e_VMerror);
+	    return_error(mem, e_VMerror);
 	/* Get the values from the XUID array. */
 	for (i = 0; i < size; i++) {
 	    const ref *pvalue = puniqueid->value.const_refs + i;
 
 	    if (!r_has_type(pvalue, t_integer)) {
 		gs_free_object(mem, xvalues, "get XUID");
-		return_error(e_typecheck);
+		return_error(mem, e_typecheck);
 	    }
 	    xvalues[i] = pvalue->value.intval;
 	}
@@ -345,7 +351,7 @@ dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
 	    puniqueid->value.intval < 0 ||
 	    puniqueid->value.intval > 0xffffffL
 	    )
-	    return_error(e_rangecheck);
+	    return_error(mem, e_rangecheck);
 	/* Apparently fonts created by Fontographer often have */
 	/* a UniqueID of 0, contrary to Adobe's specifications. */
 	/* Treat 0 as equivalent to -1 (no UniqueID). */

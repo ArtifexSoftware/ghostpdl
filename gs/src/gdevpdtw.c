@@ -55,7 +55,8 @@ strings_equal(const gs_const_string *str0, const gs_const_string *str1)
 
 /* Check if an encoding element differs from a standard one. */
 private int
-pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int encoding_index)
+pdf_different_encoding_element(const gs_memory_t *mem,
+			       const pdf_font_resource_t *pdfont, int ch, int encoding_index)
 {
     if (pdfont->u.simple.Encoding[ch].is_difference)
 	return 1;
@@ -63,7 +64,7 @@ pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int en
 	gs_glyph glyph0 = gs_c_known_encode(ch, encoding_index);
 	gs_glyph glyph1 = pdfont->u.simple.Encoding[ch].glyph;
 	gs_const_string str;
-	int code = gs_c_glyph_name(glyph0, &str);
+	int code = gs_c_glyph_name(mem, glyph0, &str);
 
 	if (code < 0)
 	    return code; /* Must not happen */
@@ -76,13 +77,13 @@ pdf_different_encoding_element(const pdf_font_resource_t *pdfont, int ch, int en
 
 /* Find an index of a different encoding element. */
 int
-pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
+pdf_different_encoding_index(const gs_memory_t *mem, const pdf_font_resource_t *pdfont, int ch0)
 {
     gs_encoding_index_t base_encoding = pdfont->u.simple.BaseEncoding;
     int ch, code;
 
     for (ch = ch0; ch < 256; ++ch) {
-	code = pdf_different_encoding_element(pdfont, ch, base_encoding);
+	code = pdf_different_encoding_element(mem, pdfont, ch, base_encoding);
 	if (code < 0)
 	    return code; /* Must not happen */
 	if (code)
@@ -106,7 +107,7 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
 	pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
     stream_puts(s, "/Differences[");
     for (; ch < 256; ++ch) {
-	code = pdf_different_encoding_element(pdfont, ch, base_encoding);
+	code = pdf_different_encoding_element(pdev->memory, pdfont, ch, base_encoding);
 	if (code < 0)
 	    return code; /* Must not happen */
 	if (code == 0 && pdfont->FontType == ft_user_defined) {
@@ -157,7 +158,7 @@ pdf_write_simple_contents(gx_device_pdf *pdev,
     int ch = (pdfont->u.simple.Encoding ? 0 : 256);
     int code = 0;
 
-    ch = pdf_different_encoding_index(pdfont, ch);
+    ch = pdf_different_encoding_index(pdev->memory, pdfont, ch);
     if (ch < 256)
 	diff_id = pdf_obj_ref(pdev);
     code = pdf_write_encoding_ref(pdev, pdfont, diff_id);

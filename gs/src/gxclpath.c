@@ -680,7 +680,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	cdev->imager_state.line_params.dash.pattern = 0;
 	gx_set_dash_adapt(&cdev->imager_state.line_params.dash,
 			  pis->line_params.dash.adapt);
-	gx_set_dot_length(&cdev->imager_state.line_params,
+	gx_set_dot_length(cdev->memory, &cdev->imager_state.line_params,
 			  pis->line_params.dot_length,
 			  pis->line_params.dot_length_absolute);
     }
@@ -697,7 +697,7 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     }
     if (state_neq(line_params.miter_limit)) {
 	unknown |= miter_limit_known;
-	gx_set_miter_limit(&cdev->imager_state.line_params,
+	gx_set_miter_limit(cdev->memory, &cdev->imager_state.line_params,
 			   pis->line_params.miter_limit);
     }
     if (state_neq(ctm.xx) || state_neq(ctm.xy) ||
@@ -886,11 +886,11 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
     if (gs_debug_c('L')) {
 	int j;
 
-	dlprintf2("[L]  %s:%d:", cmd_sub_op_names[op >> 4][op & 0xf],
+	dlprintf2(psw->cldev->memory, "[L]  %s:%d:", cmd_sub_op_names[op >> 4][op & 0xf],
 		  (int)notes);
 	for (j = 0; j < i; ++j)
-	    dprintf1(" %g", fixed2float(operands[j]));
-	dputs("\n");
+	    dprintf1(psw->cldev->memory, " %g", fixed2float(operands[j]));
+	dputs(psw->cldev->memory, "\n");
     }
 #endif
 
@@ -922,7 +922,7 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
 			operands[1] == -psw->delta_first.y
 			) {
 			cmd_uncount_op(cmd_opv_rm2lineto, psw->len);
-			*psw->dp = cmd_count_op(cmd_opv_rm3lineto, psw->len);
+			*psw->dp = cmd_count_op(psw->cldev->memory, cmd_opv_rm3lineto, psw->len);
 			return 0;
 		    }
 		    break;
@@ -1076,7 +1076,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     /* 0 if newpath/closepath */
 
 
-    if_debug4('p', "[p]initial (%g,%g), clip [%g..%g)\n",
+    if_debug4(cldev->memory, 'p', "[p]initial (%g,%g), clip [%g..%g)\n",
 	      fixed2float(px), fixed2float(py),
 	      fixed2float(ymin), fixed2float(ymax));
     gx_path_enum_init(&cenum, ppath);
@@ -1109,7 +1109,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		/* All done. */
 		pcls->rect.x = fixed2int_var(px);
 		pcls->rect.y = fixed2int_var(py);
-		if_debug2('p', "[p]final (%d,%d)\n",
+		if_debug2(cldev->memory, 'p', "[p]final (%d,%d)\n",
 			  pcls->rect.x, pcls->rect.y);
 		return set_cmd_put_op(dp, cldev, pcls, path_op, 1);
 	    case gs_pe_moveto:
@@ -1124,7 +1124,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		start_skip = false;
 		if ((start_side = side = which_side(B)) != 0) {
 		    out.x = A, out.y = B;
-		    if_debug3('p', "[p]skip moveto (%g,%g) side %d\n",
+		    if_debug3(cldev->memory, 'p', "[p]skip moveto (%g,%g) side %d\n",
 			      fixed2float(out.x), fixed2float(out.y),
 			      side);
 		    continue;
@@ -1132,7 +1132,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		C = A - px, D = B - py;
 		first.x = px = A, first.y = py = B;
 		code = cmd_put_rmoveto(&writer, &C);
-		if_debug2('p', "[p]moveto (%g,%g)\n",
+		if_debug2(cldev->memory, 'p', "[p]moveto (%g,%g)\n",
 			  fixed2float(px), fixed2float(py));
 		break;
 	    case gs_pe_lineto:
@@ -1146,7 +1146,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			    start_skip = true;
 			out.x = A, out.y = B;
 			out_notes = notes;
-			if_debug3('p', "[p]skip lineto (%g,%g) side %d\n",
+			if_debug3(cldev->memory, 'p', "[p]skip lineto (%g,%g) side %d\n",
 				  fixed2float(out.x), fixed2float(out.y),
 				  side);
 			continue;
@@ -1162,7 +1162,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			if (code < 0)
 			    return code;
 			px = out.x, py = out.y;
-			if_debug3('p', "[p]catchup %s (%g,%g) for line\n",
+			if_debug3(cldev->memory, 'p', "[p]catchup %s (%g,%g) for line\n",
 				  (open < 0 ? "moveto" : "lineto"),
 				  fixed2float(px), fixed2float(py));
 		    }
@@ -1174,7 +1174,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		    open = 1;
 		    code = cmd_put_rlineto(&writer, &C, notes);
 		}
-		if_debug3('p', "[p]lineto (%g,%g) side %d\n",
+		if_debug3(cldev->memory, 'p', "[p]lineto (%g,%g) side %d\n",
 			  fixed2float(px), fixed2float(py), side);
 		break;
 	    case gs_pe_closepath:
@@ -1190,7 +1190,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			case gs_pe_moveto:
 			    break;
 			default:
-			    lprintf1("closepath followed by %d, not end/moveto!\n",
+			    lprintf1(cldev->memory, "closepath followed by %d, not end/moveto!\n",
 				     op);
 		    }
 		}
@@ -1204,7 +1204,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			if (code < 0)
 			    return code;
 			px = out.x, py = out.y;
-			if_debug2('p', "[p]catchup line (%g,%g) for close\n",
+			if_debug2(cldev->memory, 'p', "[p]catchup line (%g,%g) for close\n",
 				  fixed2float(px), fixed2float(py));
 		    }
 		    if (open > 0 && start_skip) {	/* Draw the closing line back to the start. */
@@ -1213,7 +1213,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			if (code < 0)
 			    return code;
 			px = start.x, py = start.y;
-			if_debug2('p', "[p]draw close to (%g,%g)\n",
+			if_debug2(cldev->memory, 'p', "[p]draw close to (%g,%g)\n",
 				  fixed2float(px), fixed2float(py));
 		    }
 		}
@@ -1238,7 +1238,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		open = 0;
 		px = first.x, py = first.y;
 		code = cmd_put_segment(&writer, cmd_opv_closepath, &A, sn_none);
-		if_debug0('p', "[p]close\n");
+		if_debug0(cldev->memory, 'p', "[p]close\n");
 		break;
 	    case gs_pe_curveto:
 		{
@@ -1265,7 +1265,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 				    start_skip = true;
 				out.x = E, out.y = F;
 				out_notes = notes;
-				if_debug3('p', "[p]skip curveto (%g,%g) side %d\n",
+				if_debug3(cldev->memory, 'p', "[p]skip curveto (%g,%g) side %d\n",
 				     fixed2float(out.x), fixed2float(out.y),
 					  side);
 				continue;
@@ -1286,7 +1286,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			    if (code < 0)
 				return code;
 			    px = out.x, py = out.y;
-			    if_debug3('p', "[p]catchup %s (%g,%g) for curve\n",
+			    if_debug3(cldev->memory, 'p', "[p]catchup %s (%g,%g) for curve\n",
 				      (open < 0 ? "moveto" : "lineto"),
 				      fixed2float(px), fixed2float(py));
 			}
@@ -1299,7 +1299,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 			const fixed *optr = vs;
 			byte op;
 
-			if_debug7('p', "[p]curveto (%g,%g; %g,%g; %g,%g) side %d\n",
+			if_debug7(cldev->memory, 'p', "[p]curveto (%g,%g; %g,%g; %g,%g) side %d\n",
 				  fixed2float(A), fixed2float(B),
 				  fixed2float(C), fixed2float(D),
 				  fixed2float(E), fixed2float(F), side);
@@ -1344,7 +1344,7 @@ cmd_put_path(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		}
 		break;
 	    default:
-		return_error(gs_error_rangecheck);
+		return_error(cldev->memory, gs_error_rangecheck);
 	}
 	if (code < 0)
 	    return code;

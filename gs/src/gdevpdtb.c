@@ -115,7 +115,7 @@ pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, byte *used, in
     int i;
 
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     /* Hash the 'used' array. */
     for (i = 0; i < len; i += sizeof(ulong))
 	v = hash(v, i, *(ulong *)(used + i));
@@ -183,7 +183,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     int code;
 
     if (pbfont == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     code = gs_copy_font((gs_font *)font, mem, &copied);
     if (code < 0)
 	goto fail;
@@ -227,13 +227,13 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	    gs_alloc_bytes(mem, (pbfont->num_glyphs + 7) / 8,
 			   "pdf_base_font_alloc(CIDSet)");
 	if (pbfont->CIDSet == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto fail;
 	}
 	memset(pbfont->CIDSet, 0, (pbfont->num_glyphs + 7) / 8);
 	break;
     default:
-	code = gs_note_error(gs_error_rangecheck);
+	code = gs_note_error(mem, gs_error_rangecheck);
 	goto fail;
     }
     if (pbfont->do_subset != DO_SUBSET_YES) {
@@ -460,7 +460,7 @@ pdf_adjust_font_name(gx_device_pdf *pdev, long id, pdf_base_font_t *pbfont)
 				  size + suffix_size,
 				  "pdf_adjust_font_name");
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     memcpy(data + size, (const byte *)suffix, suffix_size);
     pbfont->font_name.data = data;
     pbfont->font_name.size = size + suffix_size;
@@ -583,7 +583,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	break;
 
     default:
-	code = gs_note_error(gs_error_rangecheck);
+	code = gs_note_error(pdev->memory, gs_error_rangecheck);
     }
 
     pbfont->written = true;

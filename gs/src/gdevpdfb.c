@@ -173,10 +173,10 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	pdf_set_pure_color(pdev, zero, &pdev->saved_fill_color,
 			   &psdf_set_fill_color_commands);
     } else if (zero == pdev->black && one == pdev->white) {
-	gs_cspace_init_DeviceGray(&cs);
+	gs_cspace_init_DeviceGray(pdev->memory, &cs);
 	gs_image_t_init(&image, &cs);
     } else if (zero == pdev->white && one == pdev->black) {
-	gs_cspace_init_DeviceGray(&cs);
+	gs_cspace_init_DeviceGray(pdev->memory, &cs);
 	gs_image_t_init(&image, &cs);
 	invert = 0xff;
     } else {
@@ -192,7 +192,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	int ncomp = pdev->color_info.num_components;
 	byte *p;
 
-	code = pdf_cspace_init_Device(&cs_base, ncomp);
+	code = pdf_cspace_init_Device(pdev->memory, &cs_base, ncomp);
 	if (code < 0)
 	    return code;
 	c[0] = psdf_adjust_color_index((gx_device_vector *)pdev, zero);
@@ -287,7 +287,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     default:		/* error */
 	return code;
     case 0:			/* not possible */
-	return_error(gs_error_Fatal);
+	return_error(pdev->memory, gs_error_Fatal);
     case 1:
 	break;
     }
@@ -332,7 +332,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     gs_color_space cs;
     cos_value_t cs_value;
     ulong nbytes;
-    int code = pdf_cspace_init_Device(&cs, bytes_per_pixel);
+    int code = pdf_cspace_init_Device(pdev->memory, &cs, bytes_per_pixel);
     const byte *row_base;
     int row_step;
     bool in_line;
@@ -549,7 +549,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    case 1:
 		break;
 	    case 0:			/* not possible */
-		return_error(gs_error_Fatal);
+		return_error(pdev->memory, gs_error_Fatal);
 	    }
 	    end = pdf_stell(pdev);
 	    stream_puts(s, "\nendstream\n");

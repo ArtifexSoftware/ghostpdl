@@ -95,7 +95,7 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	    int b = sgetc(cs->s);
 
 	    if (b < 0)
-		return_error(gs_error_rangecheck);
+		return_error(cs->s->memory, gs_error_rangecheck);
 	    value = (value << 8) + b;
 	}
 	if (needed == 0) {
@@ -105,7 +105,7 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	    int b = sgetc(cs->s);
 
 	    if (b < 0)
-		return_error(gs_error_rangecheck);
+		return_error(cs->s->memory, gs_error_rangecheck);
 	    cs->bits = b;
 	    cs->left = left = 8 - needed;
 	    *pvalue = (value << needed) + (b >> left);
@@ -130,7 +130,7 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	 value >= (1 << num_bits)) ||
 	value != (uint)value
 	)
-	return_error(gs_error_rangecheck);
+	return_error(cs->s->memory, gs_error_rangecheck);
     *pvalue = (uint) value;
     return 0;
 }
@@ -168,7 +168,7 @@ cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
     if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
 	read != sizeof(float)
     )
-	return_error(gs_error_rangecheck);
+	return_error(cs->s->memory, gs_error_rangecheck);
     *pvalue = value;
     return 0;
 }
@@ -201,7 +201,7 @@ shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
 
 	if ((code = cs->get_decoded(cs, num_bits, decode, &x)) < 0 ||
 	    (code = cs->get_decoded(cs, num_bits, decode + 2, &y)) < 0 ||
-	    (code = gs_point_transform2fixed(cs->pctm, x, y, &ppt[i])) < 0
+	    (code = gs_point_transform2fixed(cs->s->memory, cs->pctm, x, y, &ppt[i])) < 0
 	    )
 	    break;
     }
@@ -227,7 +227,7 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 	if (code < 0)
 	    return code;
 	if (ci >= gs_cspace_indexed_num_entries(pcs))
-	    return_error(gs_error_rangecheck);
+	    return_error(cs->s->memory, gs_error_rangecheck);
 	code = gs_cspace_indexed_lookup(&pcs->params.indexed, (int)ci, &cc);
 	if (code < 0)
 	    return code;
@@ -328,7 +328,7 @@ shade_bbox_transform2fixed(const gs_rect * rect, const gs_imager_state * pis,
 			   gs_fixed_rect * rfixed)
 {
     gs_rect dev_rect;
-    int code = gs_bbox_transform(rect, &ctm_only(pis), &dev_rect);
+    int code = gs_bbox_transform(pis->memory, rect, &ctm_only(pis), &dev_rect);
 
     if (code >= 0) {
 	rfixed->p.x = float2fixed(dev_rect.p.x);

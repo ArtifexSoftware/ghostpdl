@@ -36,7 +36,7 @@ void fn_common_free_params(gs_function_params_t * params, gs_memory_t * mem);
 void fn_common_free(gs_function_t * pfn, bool free_params, gs_memory_t * mem);
 
 /* Check the values of m, n, Domain, and (if supplied) Range. */
-int fn_check_mnDR(const gs_function_params_t * params, int m, int n);
+int fn_check_mnDR(const gs_memory_t *mem, const gs_function_params_t * params, int m, int n);
 
 /* Get the monotonicity of a function over its Domain. */
 int fn_domain_is_monotonic(const gs_function_t *pfn,

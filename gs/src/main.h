@@ -26,12 +26,16 @@
  * the interpreter.
  */
 
+// comment out the entire file
+#if 0 
+
+
 /* ================ Data elements ================ */
 
 /* Clients should never access these directly. */
 
-#define gs_user_errors (gs_main_instance_default()->user_errors)
-#define gs_lib_path (gs_main_instance_default()->lib_path)
+#define gs_user_errors(minst) (minst->user_errors)
+/* #define gs_lib_path(minst) (minst->lib_path) */
 /* gs_lib_paths removed in release 3.65 */
 /* gs_lib_env_path removed in release 3.65 */
 
@@ -98,5 +102,7 @@ void gs_debug_dump_stack(int code, ref * perror_object);
 
 #define gs_finit(status, code)\
   gs_main_finit(gs_main_instance_default(), status, code)
+
+#endif // disable file
 
 #endif /* main_INCLUDED */

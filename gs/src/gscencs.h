@@ -46,7 +46,7 @@ gs_glyph gs_c_known_encode(gs_char chr, int encoding_index);
 /*
  * Convert a glyph number returned by gs_c_known_encode to a string.
  */
-int gs_c_glyph_name(gs_glyph glyph, gs_const_string *pstr);
+int gs_c_glyph_name(const gs_memory_t *mem, gs_glyph glyph, gs_const_string *pstr);
 
 /*
  * Test whether a string is one that was returned by gs_c_glyph_name.

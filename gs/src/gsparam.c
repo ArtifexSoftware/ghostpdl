@@ -119,7 +119,7 @@ gs_param_read_items(gs_param_list * plist, void *obj,
 		break;
 	    case 0:
 		if (typed.type != pi->type)	/* shouldn't happen! */
-		    ecode = gs_note_error(gs_error_typecheck);
+		    ecode = gs_note_error(plist->memory, gs_error_typecheck);
 		else
 		    memcpy(pvalue, &typed.value, xfer_item_sizes[pi->type]);
 	}
@@ -218,7 +218,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 						"int array => float array");
 
 			if (fv == 0)
-			    return_error(gs_error_VMerror);
+			    return_error(mem, gs_error_VMerror);
 			for (i = 0; i < size; ++i)
 			    fv[i] = (float)pvalue->value.ia.data[i];
 			pvalue->value.fa.data = fv;
@@ -249,7 +249,7 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 	default:
 	    break;
     }
-    return_error(gs_error_typecheck);
+    return_error(mem, gs_error_typecheck);
   ok:pvalue->type = req_type;
     return 0;
 }

@@ -202,7 +202,7 @@ tile_clip_copy_mono(gx_device * dev,
       tp++, tbit = 0x80;\
     tx++;\
   } END
-#define FOR_RUNS(data_row, tx1, tx, ty)\
+#define FOR_RUNS(mem, data_row, tx1, tx, ty)\
 	const byte *data_row = data;\
 	int cy = (y + cdev->phase.y) % cdev->tiles.rep_height;\
 	const byte *tile_row = cdev->tiles.data + cy * cdev->tiles.raster;\
@@ -227,7 +227,7 @@ tile_clip_copy_mono(gx_device * dev,
 	    do {\
 	      t_next(tx);\
 	    } while ( tx < x + w && (*tp & tbit) != 0 );\
-	    if_debug3('T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
+	    if_debug3(mem, 'T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
 /* (body goes here) */
 #define END_FOR_RUNS()\
 	  }\
@@ -245,7 +245,7 @@ tile_clip_copy_color(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(data_row, txrun, tx, ty) {
+    FOR_RUNS(dev->memory, data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, copy_color))
 	(cdev->target, data_row, sourcex + txrun - x, raster,
@@ -266,7 +266,7 @@ tile_clip_copy_alpha(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(data_row, txrun, tx, ty) {
+    FOR_RUNS(dev->memory, data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, copy_alpha))
 	(cdev->target, data_row, sourcex + txrun - x, raster,
@@ -290,7 +290,7 @@ tile_clip_strip_copy_rop(gx_device * dev,
 {
     gx_device_tile_clip *cdev = (gx_device_tile_clip *) dev;
 
-    FOR_RUNS(data_row, txrun, tx, ty) {
+    FOR_RUNS(dev->memory, data_row, txrun, tx, ty) {
 	/* Copy the run. */
 	int code = (*dev_proc(cdev->target, strip_copy_rop))
 	(cdev->target, data_row, sourcex + txrun - x, raster,

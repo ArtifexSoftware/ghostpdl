@@ -249,7 +249,8 @@ psdf_write_string_param(gs_param_list *plist, const char *key,
  * dictionary if the parameter has never been set.
  */
 private int
-psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
+psdf_get_image_dict_param(const gs_memory_t *mem, 
+			  gs_param_list * plist, const gs_param_name pname,
 			  gs_c_param_list *plvalue)
 {
     gs_param_dict dict;
@@ -262,7 +263,7 @@ psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 	return code;
     if (plvalue != 0) {
 	gs_c_param_list_read(plvalue);
-	code = param_list_copy(dict.list, (gs_param_list *)plvalue);
+	code = param_list_copy(mem, dict.list, (gs_param_list *)plvalue);
     }
     param_end_write_dict(plist, pname, &dict);
     return code;
@@ -270,7 +271,7 @@ psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 
 /* Get a set of image-related parameters. */
 private int
-psdf_get_image_params(gs_param_list * plist,
+psdf_get_image_params(const gs_memory_t *mem, gs_param_list * plist,
 	  const psdf_image_param_names_t * pnames, psdf_image_params * params)
 {
     /* Skip AutoFilter for mono images. */
@@ -285,12 +286,12 @@ psdf_get_image_params(gs_param_list * plist,
      */
     if (
 	   (code = gs_param_write_items(plist, params, NULL, items)) < 0 ||
-	   (code = psdf_get_image_dict_param(plist, pnames->ACSDict,
+	   (code = psdf_get_image_dict_param(mem, plist, pnames->ACSDict,
 					     params->ACSDict)) < 0 ||
 	   /* (AntiAlias) */
 	   /* (AutoFilter) */
 	   /* (Depth) */
-	   (code = psdf_get_image_dict_param(plist, pnames->Dict,
+	   (code = psdf_get_image_dict_param(mem, plist, pnames->Dict,
 					     params->Dict)) < 0 ||
 	   /* (Downsample) */
 	   (code = psdf_write_name(plist, pnames->DownsampleType,
@@ -345,7 +346,8 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Color sampled image parameters */
 
-	(code = psdf_get_image_params(plist, &Color_names, &pdev->params.ColorImage)) < 0 ||
+	(code = psdf_get_image_params(pdev->memory, 
+				      plist, &Color_names, &pdev->params.ColorImage)) < 0 ||
 	(code = psdf_write_name(plist, "ColorConversionStrategy",
 		ColorConversionStrategy_names[(int)pdev->params.ColorConversionStrategy])) < 0 ||
 	(code = psdf_write_string_param(plist, "CalCMYKProfile",
@@ -359,11 +361,13 @@ gdev_psdf_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Gray sampled image parameters */
 
-	(code = psdf_get_image_params(plist, &Gray_names, &pdev->params.GrayImage)) < 0 ||
+	(code = psdf_get_image_params(pdev->memory, 
+				      plist, &Gray_names, &pdev->params.GrayImage)) < 0 ||
 
     /* Mono sampled image parameters */
 
-	(code = psdf_get_image_params(plist, &Mono_names, &pdev->params.MonoImage)) < 0 ||
+	(code = psdf_get_image_params(pdev->memory, 
+				      plist, &Mono_names, &pdev->params.MonoImage)) < 0 ||
 
     /* Font embedding parameters */
 
@@ -395,7 +399,7 @@ psdf_read_string_param(gs_param_list *plist, const char *key,
 	byte *data = gs_alloc_string(mem, size, "psdf_read_string_param");
 
 	if (data == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	memcpy(data, ps.data, size);
 	pstr->data = data;
 	pstr->size = size;
@@ -482,7 +486,7 @@ add_embed(gs_param_string_array *prsa, const gs_param_string_array *psa,
 	    byte *data = gs_alloc_string(mem, size, "add_embed");
 
 	    if (data == 0)
-		return_error(gs_error_VMerror);
+		return_error(mem, gs_error_VMerror);
 	    memcpy(data, psa->data[i].data, size);
 	    rdata[count].data = data;
 	    rdata[count].size = size;
@@ -563,7 +567,7 @@ psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
 				      &st_param_string_element,
 				      "psdf_put_embed_param(replace)");
 	if (rdata == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	rsa.data = rdata;
 	rsa.size = 0;
 	if ((code = add_embed(&rsa, &asa, mem)) < 0) {
@@ -578,7 +582,7 @@ psdf_put_embed_param(gs_param_list * plist, gs_param_name notpname,
 				      &st_param_string_element,
 				      "psdf_put_embed_param(update)");
 	if (rdata == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	memcpy(rdata, psa->data, psa->size * sizeof(*psa->data));
 	rsa.data = rdata;
 	rsa.size = psa->size;
@@ -623,7 +627,7 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 	    stream_state *ss = s_alloc_state(mem, template->stype, pname);
 
 	    if (ss == 0)
-		return_error(gs_error_VMerror);
+		return_error(mem, gs_error_VMerror);
 	    ss->template = template;
 	    if (template->set_defaults)
 		template->set_defaults(ss);
@@ -636,9 +640,9 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 	    } else {
 		plvalue = gs_c_param_list_alloc(mem, pname);
 		if (plvalue == 0)
-		    return_error(gs_error_VMerror);
+		    return_error(mem, gs_error_VMerror);
 		gs_c_param_list_write(plvalue, mem);
-		code = param_list_copy((gs_param_list *)plvalue,
+		code = param_list_copy(mem, (gs_param_list *)plvalue,
 				       dict.list);
 		if (code < 0) {
 		    gs_c_param_list_release(plvalue);

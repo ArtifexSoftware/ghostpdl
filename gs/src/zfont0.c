@@ -61,7 +61,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     int i;
     int code = 0;
 
-    check_type(*op, t_dictionary);
+    check_type(imemory, *op, t_dictionary);
     {
 	ref *pfmaptype;
 	ref *pfdepvector;
@@ -73,7 +73,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	    dict_find_string(op, "FDepVector", &pfdepvector) <= 0 ||
 	    !r_is_array(pfdepvector)
 	    )
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
 	data.FMapType = (fmap_type) pfmaptype->value.intval;
 	/*
 	 * Adding elements below could cause the font dictionary to be
@@ -87,8 +87,8 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	ref fdep;
 	gs_font *psub;
 
-	array_get(&fdepvector, i, &fdep);
-	if ((code = font_param(&fdep, &psub)) < 0)
+	array_get(imemory, &fdepvector, i, &fdep);
+	if ((code = font_param(imemory, &fdep, &psub)) < 0)
 	    return code;
 	/*
 	 * Check the inheritance rules.  Allowed configurations
@@ -107,7 +107,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 		 !(data.FMapType == fmap_escape ||
 		   data.FMapType == fmap_double_escape))
 		)
-		return_error(e_invalidfont);
+		return_error(imemory, e_invalidfont);
 	}
     }
     switch (data.FMapType) {
@@ -131,7 +131,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 		(data.subs_width = (int)*psubsvector->value.bytes + 1) > 4 ||
 		    (svsize - 1) % data.subs_width != 0
 		    )
-		    return_error(e_invalidfont);
+		    return_error(imemory, e_invalidfont);
 		data.subs_size = (svsize - 1) / data.subs_width;
 		data.SubsVector.data = psubsvector->value.bytes + 1;
 		data.SubsVector.size = svsize - 1;
@@ -190,7 +190,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 	(uint *) ialloc_byte_array(data.encoding_size, sizeof(uint),
 				   "buildfont0(Encoding)");
     if (data.Encoding == 0) {
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(imemory, e_VMerror);
 	goto fail;
     }
     /* Fill in the encoding vector, checking to make sure that */
@@ -198,13 +198,13 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     for (i = 0; i < data.encoding_size; i++) {
 	ref enc;
 
-	array_get(&pdata->Encoding, i, &enc);
+	array_get(imemory, &pdata->Encoding, i, &enc);
 	if (!r_has_type(&enc, t_integer)) {
-	    code = gs_note_error(e_typecheck);
+	    code = gs_note_error(imemory, e_typecheck);
 	    goto fail;
 	}
 	if ((ulong) enc.value.intval >= data.fdep_size) {
-	    code = gs_note_error(e_rangecheck);
+	    code = gs_note_error(imemory, e_rangecheck);
 	    goto fail;
 	}
 	data.Encoding[i] = (uint) enc.value.intval;
@@ -214,14 +214,14 @@ zbuildfont0(i_ctx_t *i_ctx_p)
 			    &st_gs_font_ptr_element,
 			    "buildfont0(FDepVector)");
     if (data.FDepVector == 0) {
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(imemory, e_VMerror);
 	goto fail;
     }
     for (i = 0; i < data.fdep_size; i++) {
 	ref fdep;
 	ref *pfid;
 
-	array_get(&fdepvector, i, &fdep);
+	array_get(imemory, &fdepvector, i, &fdep);
 	/* The lookup can't fail, because of the pre-check above. */
 	dict_find_string(&fdep, "FID", &pfid);
 	data.FDepVector[i] = r_ptr(pfid, gs_font);
@@ -320,7 +320,7 @@ ensure_char_entry(i_ctx_t *i_ctx_p, os_ptr op, const char *kstr,
 	*pvalue = (byte) default_value;
 	return idict_put_string(op, kstr, &ent);
     } else {
-	check_int_leu_only(*pentry, 255);
+	check_int_leu_only(imemory, *pentry, 255);
 	*pvalue = (byte) pentry->value.intval;
 	return 0;
     }

@@ -83,7 +83,7 @@ gs_cspace_init(gs_color_space *pcs, const gs_color_space_type * pcstype,
 {
     pcs->type = pcstype;
     pcs->pmem = mem;
-    pcs->id = gs_next_ids(1);
+    pcs->id = gs_next_ids(mem, 1);
 }
 
 int
@@ -96,7 +96,7 @@ gs_cspace_alloc(gs_color_space ** ppcspace,
 			"gs_cspace_alloc");
 
     if (pcspace == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     if (pcstype != 0)
         gs_cspace_init(pcspace, pcstype, mem);
     *ppcspace = pcspace;
@@ -104,7 +104,7 @@ gs_cspace_alloc(gs_color_space ** ppcspace,
 }
 
 int
-gs_cspace_init_DeviceGray(gs_color_space *pcs)
+gs_cspace_init_DeviceGray(const gs_memory_t *mem, gs_color_space *pcs)
 {
     /* parameterless color space; no re-entrancy problems */
     static gs_color_space  dev_gray_proto;
@@ -112,7 +112,7 @@ gs_cspace_init_DeviceGray(gs_color_space *pcs)
     if (dev_gray_proto.id == 0)
         gs_cspace_init( &dev_gray_proto,
                         &gs_color_space_type_DeviceGray,
-                        NULL );
+                        mem );
     *pcs = dev_gray_proto;
     return 0;
 }
@@ -122,12 +122,12 @@ gs_cspace_build_DeviceGray(gs_color_space ** ppcspace, gs_memory_t * pmem)
     int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
 
     if (code >= 0)
-        code = gs_cspace_init_DeviceGray(*ppcspace);
+        code = gs_cspace_init_DeviceGray(pmem, *ppcspace);
     return code;
 }
 
 int
-gs_cspace_init_DeviceRGB(gs_color_space *pcs)
+gs_cspace_init_DeviceRGB(const gs_memory_t *mem, gs_color_space *pcs)
 {
     /* parameterless color space; no re-entrancy problems */
     static gs_color_space  dev_rgb_proto;
@@ -135,7 +135,7 @@ gs_cspace_init_DeviceRGB(gs_color_space *pcs)
     if (dev_rgb_proto.id == 0)
         gs_cspace_init( &dev_rgb_proto,
                         &gs_color_space_type_DeviceRGB,
-                        NULL );
+                        mem );
     *pcs = dev_rgb_proto;
     return 0;
 }
@@ -145,12 +145,12 @@ gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace, gs_memory_t * pmem)
     int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
 
     if (code >= 0)
-        code = gs_cspace_init_DeviceRGB(*ppcspace);
+        code = gs_cspace_init_DeviceRGB(pmem, *ppcspace);
     return code;
 }
 
 int
-gs_cspace_init_DeviceCMYK(gs_color_space *pcs)
+gs_cspace_init_DeviceCMYK(const gs_memory_t *mem, gs_color_space *pcs)
 {
     /* parameterless color space; no re-entrancy problems */
     static gs_color_space  dev_cmyk_proto;
@@ -158,7 +158,7 @@ gs_cspace_init_DeviceCMYK(gs_color_space *pcs)
     if (dev_cmyk_proto.id == 0)
         gs_cspace_init( &dev_cmyk_proto,
                         &gs_color_space_type_DeviceCMYK,
-                        NULL );
+                        mem );
     *pcs = dev_cmyk_proto;
     return 0;
 }
@@ -168,7 +168,7 @@ gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)
     int     code = gs_cspace_alloc(ppcspace, NULL, pmem);
 
     if (code >= 0)
-        code = gs_cspace_init_DeviceCMYK(*ppcspace);
+        code = gs_cspace_init_DeviceCMYK(pmem, *ppcspace);
     return code;
 }
 
@@ -186,7 +186,7 @@ cs_copy(gs_color_space *pcsto, const gs_color_space *pcsfrom)
 
 /* Copy a color space into one newly allocated by the caller. */
 void
-gs_cspace_init_from(gs_color_space * pcsto, const gs_color_space * pcsfrom)
+gs_cspace_init_from(const gs_memory_t *mem, gs_color_space * pcsto, const gs_color_space * pcsfrom)
 {
     cs_copy(pcsto, pcsfrom);
     (*pcsto->type->adjust_cspace_count)(pcsto, 1);
@@ -194,7 +194,7 @@ gs_cspace_init_from(gs_color_space * pcsto, const gs_color_space * pcsfrom)
 
 /* Assign a color space into a previously initialized one. */
 void
-gs_cspace_assign(gs_color_space * pdest, const gs_color_space * psrc)
+gs_cspace_assign(const gs_memory_t *mem, gs_color_space * pdest, const gs_color_space * psrc)
 {
     /* check for a = a */
     if (pdest == psrc)
@@ -207,7 +207,7 @@ gs_cspace_assign(gs_color_space * pdest, const gs_color_space * psrc)
 
 /* Prepare to free a color space. */
 void
-gs_cspace_release(gs_color_space * pcs)
+gs_cspace_release(const gs_memory_t *mem, gs_color_space * pcs)
 {
     (*pcs->type->adjust_cspace_count)(pcs, -1);
 }

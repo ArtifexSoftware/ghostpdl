@@ -57,7 +57,8 @@
  * This is probably too conservative, but it produces good results.
  */
 int
-gx_curve_log2_samples(fixed x0, fixed y0, const curve_segment * pc,
+gx_curve_log2_samples(const gs_memory_t *mem, 
+		      fixed x0, fixed y0, const curve_segment * pc,
 		      fixed fixed_flat)
 {
     fixed
@@ -91,16 +92,16 @@ gx_curve_log2_samples(fixed x0, fixed y0, const curve_segment * pc,
 	uint qtmp = d - (d >> 2) /* 3/4 * D */ +fixed_flat - 1;
 	uint q = qtmp / fixed_flat;
 
-	if_debug6('2', "[2]d01=%g,%g d12=%g,%g d23=%g,%g\n",
+	if_debug6(mem, '2', "[2]d01=%g,%g d12=%g,%g d23=%g,%g\n",
 		  fixed2float(x1 - x0), fixed2float(y1 - y0),
 		  fixed2float(-x12), fixed2float(-y12),
 		  fixed2float(x3 - x2), fixed2float(y3 - y2));
-	if_debug2('2', "     D=%f, flat=%f,",
+	if_debug2(mem, '2', "     D=%f, flat=%f,",
 		  fixed2float(d), fixed2float(fixed_flat));
 	/* Now we want to set k = ceiling(log2(q) / 2). */
 	for (k = 0; q > 1;)
 	    k++, q = (q + 3) >> 2;
-	if_debug1('2', " k=%d\n", k);
+	if_debug1(mem, '2', " k=%d\n", k);
     }
     return k;
 }
@@ -215,10 +216,10 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
     y0 = ppath->position.y;
 #ifdef DEBUG
     if (gs_debug_c('3')) {
-	dlprintf4("[3]x0=%f y0=%f x1=%f y1=%f\n",
+	dlprintf4(ppath->memory, "[3]x0=%f y0=%f x1=%f y1=%f\n",
 		  fixed2float(x0), fixed2float(y0),
 		  fixed2float(x1), fixed2float(y1));
-	dlprintf5("   x2=%f y2=%f x3=%f y3=%f  k=%d\n",
+	dlprintf5(ppath->memory, "   x2=%f y2=%f x3=%f y3=%f  k=%d\n",
 		  fixed2float(x2), fixed2float(y2),
 		  fixed2float(x3), fixed2float(y3), k);
     }
@@ -232,7 +233,7 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 				     y01, y12);
     }
 
-    if_debug6('3', "[3]ax=%f bx=%f cx=%f\n   ay=%f by=%f cy=%f\n",
+    if_debug6(ppath->memory, '3', "[3]ax=%f bx=%f cx=%f\n   ay=%f by=%f cy=%f\n",
 	      fixed2float(ax), fixed2float(bx), fixed2float(cx),
 	      fixed2float(ay), fixed2float(by), fixed2float(cy));
 #define max_fast (max_fixed / 6)
@@ -259,9 +260,9 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 	    x += poly2(ax, bx, cx);
 	    y += poly2(ay, by, cy);
 #undef poly2
-	    if_debug2('3', "[3]dx=%f, dy=%f\n",
+	    if_debug2(ppath->memory, '3', "[3]dx=%f, dy=%f\n",
 		      fixed2float(x - x0), fixed2float(y - y0));
-	    if_debug3('3', "[3]%s x=%g, y=%g\n",
+	    if_debug3(ppath->memory, '3', "[3]%s x=%g, y=%g\n",
 		      (((x ^ x0) | (y ^ y0)) & float2fixed(-0.5) ?
 		       "add" : "skip"),
 		      fixed2float(x), fixed2float(y));
@@ -327,20 +328,20 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 	notes |= sn_not_first;
 	goto top;
     }
-    if_debug1('2', "[2]sampling k=%d\n", k);
+    if_debug1(ppath->memory, '2', "[2]sampling k=%d\n", k);
     ptx = x0, pty = y0;
     for (i = (1 << k) - 1;;) {
 	int code;
 
 #ifdef DEBUG
 	if (gs_debug_c('3')) {
-	    dlprintf4("[3]dx=%f+%d, dy=%f+%d\n",
+	    dlprintf4(ppath->memory, "[3]dx=%f+%d, dy=%f+%d\n",
 		      fixed2float(idx), rdx,
 		      fixed2float(idy), rdy);
-	    dlprintf4("   d2x=%f+%d, d2y=%f+%d\n",
+	    dlprintf4(ppath->memory, "   d2x=%f+%d, d2y=%f+%d\n",
 		      fixed2float(id2x), rd2x,
 		      fixed2float(id2y), rd2y);
-	    dlprintf4("   d3x=%f+%d, d3y=%f+%d\n",
+	    dlprintf4(ppath->memory, "   d3x=%f+%d, d3y=%f+%d\n",
 		      fixed2float(id3x), rd3x,
 		      fixed2float(id3y), rd3y);
 	}
@@ -350,7 +351,7 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
   else i += di
 	accum(x, rx, idx, rdx);
 	accum(y, ry, idy, rdy);
-	if_debug3('3', "[3]%s x=%g, y=%g\n",
+	if_debug3(ppath->memory, '3', "[3]%s x=%g, y=%g\n",
 		  (((x ^ ptx) | (y ^ pty)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y));
@@ -422,7 +423,7 @@ gx_flatten_sample(gx_path * ppath, int k, curve_segment * pc,
 	accum(id2y, rd2y, id3y, rd3y);
 #undef accum
     }
-  last:if_debug2('3', "[3]last x=%g, y=%g\n",
+  last:if_debug2(ppath->memory, '3', "[3]last x=%g, y=%g\n",
 	      fixed2float(x3), fixed2float(y3));
     if (ppt > points) {
 	int count = ppt + 1 - points;

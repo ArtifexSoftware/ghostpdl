@@ -40,7 +40,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(op - 3, &pfont);
+    int code = font_param(imemory, op - 3, &pfont);
     gs_font_base *const pbfont = (gs_font_base *) pfont;
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
     int present;
@@ -54,7 +54,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 	(pfont->FontType != ft_TrueType &&
 	 pfont->FontType != ft_CID_TrueType)
 	)
-	return_error(e_undefined);
+	return_error(pfont->memory, e_undefined);
     /*
      * Any reasonable implementation would execute something like
      *  1 setmiterlimit 0 setlinejoin 0 setlinecap
@@ -74,8 +74,8 @@ ztype42execchar(i_ctx_t *i_ctx_p)
      * The definition must be a Type 42 glyph index.
      * Note that we do not require read access: this is deliberate.
      */
-    check_type(*op, t_integer);
-    check_ostack(3);		/* for lsb values */
+    check_type(pfont->memory, *op, t_integer);
+    check_ostack(pfont->memory, 3);		/* for lsb values */
     present = zchar_get_metrics(pbfont, op - 1, sbw);
     if (present < 0)
 	return present;
@@ -170,8 +170,8 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
     os_ptr opc = op;
 
     if (!r_has_type(op - 3, t_dictionary)) {
-	check_op(6);
-	code = num_params(op, 2, sbxy);
+	check_op(pfont->memory, 6);
+	code = num_params(pfont->memory, op, 2, sbxy);
 	if (code < 0)
 	    return code;
 	sbpt.x = sbxy[0];
@@ -179,14 +179,14 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 	psbpt = &sbpt;
 	opc -= 2;
     }
-    check_type(*opc, t_integer);
-    code = font_param(opc - 3, &pfont);
+    check_type(pfont->memory, *opc, t_integer);
+    code = font_param(pfont->memory, opc - 3, &pfont);
     if (code < 0)
 	return code;
     if (penum == 0 || (pfont->FontType != ft_TrueType &&
 		       pfont->FontType != ft_CID_TrueType)
 	)
-	return_error(e_undefined);
+	return_error(pfont->memory, e_undefined);
     /*
      * We have to disregard penum->pis and penum->path, and render to
      * the current gstate and path.  This is a design bug that we will

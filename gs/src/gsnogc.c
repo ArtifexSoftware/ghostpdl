@@ -69,7 +69,7 @@ sf_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 		imem->cc.sfree = next;
 	    else
 		put_uu32(prev + NB, next);
-	    if_debug4('A', "[a%d:+>F]%s(%u) = 0x%lx\n", imem->space,
+	    if_debug4(mem, 'A', "[a%d:+>F]%s(%u) = 0x%lx\n", imem->space,
 		      client_name_string(cname), nbytes, (ulong) ptr);
 	    gs_alloc_fill(ptr, gs_alloc_fill_alloc, nbytes);
 	    imem->lost.strings -= nbytes;
@@ -88,13 +88,13 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
     uint str_offset;
 
     if (str == imem->cc.ctop) {
-	if_debug4('A', "[a%d:-> ]%s(%u) 0x%lx\n", imem->space,
+	if_debug4(mem, 'A', "[a%d:-> ]%s(%u) 0x%lx\n", imem->space,
 		  client_name_string(cname), size, (ulong) str);
 	imem->cc.ctop += size;
 	gs_alloc_fill(str, gs_alloc_fill_free, size);
 	return;
     }
-    if_debug4('A', "[a%d:->#]%s(%u) 0x%lx\n", imem->space,
+    if_debug4(mem, 'A', "[a%d:->#]%s(%u) 0x%lx\n", imem->space,
 	      client_name_string(cname), size, (ulong) str);
     imem->lost.strings += size;
     if (ptr_is_in_chunk(str, &imem->cc)) {
@@ -130,7 +130,7 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 #ifdef DEBUG
 	if (gs_debug_c('?')) {
 	    if (prev < str + size && prev + get_uu32(prev) > str) {
-		lprintf4("freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
+		lprintf4(mem, "freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
 			 (ulong) str, size, (ulong) prev, get_uu32(prev));
 		return;
 	    }
@@ -143,7 +143,7 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 		byte *pnext = csbase(cp) + next;
 
 		if (pnext < str + size && pnext + get_uu32(pnext) > str) {
-		    lprintf4("freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
+		    lprintf4(mem, "freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
 			     (ulong) str, size, (ulong) pnext, get_uu32(pnext));
 		    return;
 		}

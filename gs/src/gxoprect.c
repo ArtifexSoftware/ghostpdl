@@ -238,7 +238,7 @@ gx_overprint_generic_fill_rectangle(
                                       w * sizeof(gx_color_index),
                                       "overprint generic fill rectangle" );
     if (pcolor_buff == 0)
-        return gs_note_error(gs_error_VMerror);
+        return gs_note_error(mem, gs_error_VMerror);
 
     /* allocate a buffer for the returned data */
     raster = bitmap_raster(end_x - start_x);
@@ -247,7 +247,7 @@ gx_overprint_generic_fill_rectangle(
         gs_free_object( mem,
                         pcolor_buff,
                         "overprint generic fill rectangle" );
-        return gs_note_error(gs_error_VMerror);
+        return gs_note_error(mem, gs_error_VMerror);
     }
 
     /*
@@ -477,7 +477,7 @@ gx_overprint_sep_fill_rectangle_1(
     raster = bitmap_raster(w * depth);
     gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 1");
     if (gb_buff == 0)
-        return gs_note_error(gs_error_VMerror);
+        return gs_note_error(mem, gs_error_VMerror);
 
     /*
      * Initialize the get_bits parameters. The selection of options is
@@ -565,7 +565,7 @@ gx_overprint_sep_fill_rectangle_2(
     raster = bitmap_raster(w * (byte_depth << 3));
     gb_buff = gs_alloc_bytes(mem, raster, "overprint sep fill rectangle 2");
     if (gb_buff == 0)
-        return gs_note_error(gs_error_VMerror);
+        return gs_note_error(mem, gs_error_VMerror);
 
     /*
      * Initialize the get_bits parameters. The selection of options is

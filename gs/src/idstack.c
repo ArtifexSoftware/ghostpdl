@@ -60,7 +60,8 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	    INCR(probes[1]);
     }
     if (gs_debug_c('d') && !(stats_dstack.lookups % 1000))
-	dlprintf3("[d]lookups=%ld probe1=%ld probe2=%ld\n",
+	dlprintf3(dict_mem(pdict), 
+		  "[d]lookups=%ld probe1=%ld probe2=%ld\n",
 		  stats_dstack.lookups, stats_dstack.probes[0],
 		  stats_dstack.probes[1]);
     return pvalue;
@@ -106,15 +107,15 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
     do {
 	dict *pdict = pdref->value.pdict;
 	uint size = npairs(pdict);
-
+	const gs_memory_t *mem = dict_mem(pdict);
 #ifdef DEBUG
 	if (gs_debug_c('D')) {
 	    ref dnref;
 
 	    name_index_ref(nidx, &dnref);
-	    dlputs("[D]lookup ");
-	    debug_print_name(&dnref);
-	    dprintf3(" in 0x%lx(%u/%u)\n",
+	    dlputs(mem, "[D]lookup ");
+	    debug_print_name(mem, &dnref);
+	    dprintf3(mem, " in 0x%lx(%u/%u)\n",
 		     (ulong) pdict, dict_length(pdref),
 		     dict_maxlength(pdref));
 	}
@@ -122,10 +123,12 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 #define INCR_DEPTH(pdref)\
   INCR(depth[min(MAX_STATS_DEPTH, pds->stack.p - pdref)])
 	if (dict_is_packed(pdict)) {
-	    packed_search_1(INCR_DEPTH(pdref),
+	    packed_search_1(mem, 
+			    INCR_DEPTH(pdref),
 			    return packed_search_value_pointer,
 			    DO_NOTHING, goto miss);
-	    packed_search_2(INCR_DEPTH(pdref),
+	    packed_search_2(mem, 
+			    INCR_DEPTH(pdref),
 			    return packed_search_value_pointer,
 			    DO_NOTHING, break);
 	  miss:;
@@ -192,7 +195,8 @@ dstack_set_top(dict_stack_t * pds)
     ds_ptr dsp = pds->stack.p;
     dict *pdict = dsp->value.pdict;
 
-    if_debug3('d', "[d]dsp = 0x%lx -> 0x%lx, key array type = %d\n",
+    if_debug3(dict_mem(pdict), 
+	      'd', "[d]dsp = 0x%lx -> 0x%lx, key array type = %d\n",
 	      (ulong) dsp, (ulong) pdict, r_type(&pdict->keys));
     if (dict_is_packed(pdict) &&
 	r_has_attr(dict_access_ref(dsp), a_read)
@@ -229,7 +233,7 @@ dstack_gc_cleanup(dict_stack_t * pds)
 	    ref key;
 	    ref *old_pvalue;
 
-	    array_get(&pdict->keys, (long)i, &key);
+	    array_get(dict_mem(pdict), &pdict->keys, (long)i, &key);
 	    if (r_has_type(&key, t_name) &&
 		pv_valid(old_pvalue = key.value.pname->pvalue)
 		) {		/*
@@ -239,7 +243,7 @@ dstack_gc_cleanup(dict_stack_t * pds)
 				 * we can skip the entire dictionary.
 				 */
 		if (old_pvalue == pvalue) {
-		    if_debug1('d', "[d]skipping dstack entry %d\n",
+		    if_debug1(dict_mem(pdict),'d', "[d]skipping dstack entry %d\n",
 			      dsi - 1);
 		    break;
 		}

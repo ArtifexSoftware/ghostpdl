@@ -28,15 +28,15 @@ gs_setblendmode(gs_state *pgs, gs_blend_mode_t mode)
     if (gs_debug_c('v')) {
 	static const char *const bm_names[] = { GS_BLEND_MODE_NAMES };
 
-	dlprintf1("[v](0x%lx)blend_mode = ", (ulong)pgs);
+	dlprintf1(pgs->memory, "[v](0x%lx)blend_mode = ", (ulong)pgs);
 	if (mode >= 0 && mode < countof(bm_names))
-	    dprintf1("%s\n", bm_names[mode]);
+	    dprintf1(pgs->memory, "%s\n", bm_names[mode]);
 	else
-	    dprintf1("%d??\n", (int)mode);
+	    dprintf1(pgs->memory, "%d??\n", (int)mode);
     }
 #endif
     if (mode < 0 || mode > MAX_BLEND_MODE)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     pgs->blend_mode = mode;
     return 0;
 }
@@ -50,7 +50,7 @@ gs_currentblendmode(const gs_state *pgs)
 int
 gs_setopacityalpha(gs_state *pgs, floatp alpha)
 {
-    if_debug2('v', "[v](0x%lx)opacity.alpha = %g\n", (ulong)pgs, alpha);
+    if_debug2(pgs->memory, 'v', "[v](0x%lx)opacity.alpha = %g\n", (ulong)pgs, alpha);
     pgs->opacity.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
     return 0;
 }
@@ -64,7 +64,7 @@ gs_currentopacityalpha(const gs_state *pgs)
 int
 gs_setshapealpha(gs_state *pgs, floatp alpha)
 {
-    if_debug2('v', "[v](0x%lx)shape.alpha = %g\n", (ulong)pgs, alpha);
+    if_debug2(pgs->memory, 'v', "[v](0x%lx)shape.alpha = %g\n", (ulong)pgs, alpha);
     pgs->shape.alpha = (alpha < 0.0 ? 0.0 : alpha > 1.0 ? 1.0 : alpha);
     return 0;
 }
@@ -78,7 +78,7 @@ gs_currentshapealpha(const gs_state *pgs)
 int
 gs_settextknockout(gs_state *pgs, bool knockout)
 {
-    if_debug2('v', "[v](0x%lx)text_knockout = %s\n", (ulong)pgs,
+    if_debug2(pgs->memory, 'v', "[v](0x%lx)text_knockout = %s\n", (ulong)pgs,
 	      (knockout ? "true" : "false"));
     pgs->text_knockout = knockout;
     return 0;
@@ -188,7 +188,7 @@ push_transparency_stack(gs_state *pgs, gs_transparency_state_type_t type,
 			&st_transparency_state, cname);
 
     if (pts == 0)
-	return_error(gs_error_VMerror);
+	return_error(pgs->memory, gs_error_VMerror);
     pts->saved = pgs->transparency_stack;
     pts->type = type;
     pgs->transparency_stack = pts;
@@ -225,14 +225,14 @@ gs_begin_transparency_group(gs_state *pgs,
 	    GS_COLOR_SPACE_TYPE_NAMES
 	};
 
-	dlprintf5("[v](0x%lx)begin_transparency_group [%g %g %g %g]\n",
+	dlprintf5(pgs->memory, "[v](0x%lx)begin_transparency_group [%g %g %g %g]\n",
 		  (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y);
 	if (ptgp->ColorSpace)
-	    dprintf1("     CS = %s",
+	    dprintf1(pgs->memory, "     CS = %s",
 		cs_names[(int)gs_color_space_get_index(ptgp->ColorSpace)]);
 	else
-	    dputs("     (no CS)");
-	dprintf2("  Isolated = %d  Knockout = %d\n",
+	    dputs(pgs->memory, "     (no CS)");
+	dprintf2(pgs->memory, "  Isolated = %d  Knockout = %d\n",
 		 ptgp->Isolated, ptgp->Knockout);
     }
 #endif
@@ -254,7 +254,7 @@ gs_end_transparency_group(gs_state *pgs)
 #if 0
     gs_transparency_state_t *pts = pgs->transparency_stack;
 
-    if_debug1('v', "[v](0x%lx)end_transparency_group\n", (ulong)pgs);
+    if_debug1(pgs->memory, 'v', "[v](0x%lx)end_transparency_group\n", (ulong)pgs);
     if (!pts || pts->type != TRANSPARENCY_STATE_Group)
 	return_error(gs_error_rangecheck);
     pop_transparency_stack(pgs, "gs_end_transparency_group");
@@ -284,7 +284,7 @@ gs_begin_transparency_mask(gs_state *pgs,
 			   const gs_rect *pbbox)
 {
     /****** NYI, DUMMY ******/
-    if_debug8('v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
+    if_debug8(pgs->memory, 'v', "[v](0x%lx)begin_transparency_mask [%g %g %g %g]\n\
       subtype = %d  has_Background = %d  %s\n",
 	      (ulong)pgs, pbbox->p.x, pbbox->p.y, pbbox->q.x, pbbox->q.y,
 	      (int)ptmp->subtype, ptmp->has_Background,
@@ -301,10 +301,10 @@ gs_end_transparency_mask(gs_state *pgs,
     /****** NYI, DUMMY ******/
     gs_transparency_state_t *pts = pgs->transparency_stack;
 
-    if_debug2('v', "[v](0x%lx)end_transparency_mask(%d)\n", (ulong)pgs,
+    if_debug2(pgs->memory, 'v', "[v](0x%lx)end_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
     if (!pts || pts->type != TRANSPARENCY_STATE_Mask)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     pop_transparency_stack(pgs, "gs_end_transparency_mask");
     return 0;
 }
@@ -315,9 +315,9 @@ gs_discard_transparency_layer(gs_state *pgs)
     /****** NYI, DUMMY ******/
     gs_transparency_state_t *pts = pgs->transparency_stack;
 
-    if_debug1('v', "[v](0x%lx)discard_transparency_layer\n", (ulong)pgs);
+    if_debug1(pgs->memory, 'v', "[v](0x%lx)discard_transparency_layer\n", (ulong)pgs);
     if (!pts)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     pop_transparency_stack(pgs, "gs_discard_transparency_layer");
     return 0;
 }
@@ -329,14 +329,14 @@ gs_init_transparency_mask(gs_state *pgs,
     /****** NYI, DUMMY ******/
     gs_transparency_source_t *ptm;
 
-    if_debug2('v', "[v](0x%lx)init_transparency_mask(%d)\n", (ulong)pgs,
+    if_debug2(pgs->memory, 'v', "[v](0x%lx)init_transparency_mask(%d)\n", (ulong)pgs,
 	      (int)csel);
     switch (csel) {
     case TRANSPARENCY_CHANNEL_Opacity: ptm = &pgs->opacity; break;
     case TRANSPARENCY_CHANNEL_Shape: ptm = &pgs->shape; break;
-    default: return_error(gs_error_rangecheck);
+    default: return_error(pgs->memory, gs_error_rangecheck);
     }
-    rc_decrement_only(ptm->mask, "gs_init_transparency_mask");
+    rc_decrement_only(pgs->memory, ptm->mask, "gs_init_transparency_mask");
     ptm->mask = 0;
     return 0;
 }

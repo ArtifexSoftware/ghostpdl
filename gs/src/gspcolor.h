@@ -113,6 +113,6 @@ const gs_pattern_template_t *gs_get_pattern(const gs_client_color *);
  * applications, they need some way to release or retain the instances as
  * needed.
  */
-void gs_pattern_reference(gs_client_color * pcc, int delta);
+void gs_pattern_reference(const gs_memory_t *mem, gs_client_color * pcc, int delta);
 
 #endif /* gspcolor_INCLUDED */

@@ -42,7 +42,7 @@ cljc_print_page(gx_device_printer * pdev, FILE * prn_stream)
     if (((data = gs_alloc_bytes(mem, raster, "cljc_print_page(data)")) == 0) ||
 	((cdata = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(cdata)")) == 0) ||
 	((prow = gs_alloc_bytes(mem, worst_case_comp_size, "cljc_print_page(prow)")) == 0)) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto out;
     }
     /* send a reset and the the paper definition */

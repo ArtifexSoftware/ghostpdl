@@ -298,7 +298,7 @@ x_wrap_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
     dsize = (width * sdepth + 7) / 8;
     row = gs_alloc_bytes(mem, dsize, "x_wrap_get_bits");
     if (row == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     code = (*dev_proc(tdev, get_bits)) (tdev, y, row, &base);
     if (code < 0)
 	goto gx;

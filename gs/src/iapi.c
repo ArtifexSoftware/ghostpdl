@@ -22,7 +22,9 @@
 #include "iminst.h"
 #include "imain.h"
 #include "imainarg.h"
-
+#include "gsmemory.h"
+#include "gsmalloc.h"
+#include "pl_stdio.h"
 
 /*
  * GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING
@@ -58,18 +60,23 @@ GSDLLEXPORT int GSDLLAPI
 gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
 {
     gs_main_instance *minst;
+    gs_memory_t *mem;
     if (gsapi_instance_counter != 0) {
 	*pinstance = NULL;
 	return e_Fatal;
     }
     gsapi_instance_counter++;
-    minst = gs_main_instance_default();
-    minst->caller_handle = caller_handle;
-    minst->stdin_fn = NULL;
-    minst->stdout_fn = NULL;
-    minst->stderr_fn = NULL;
-    minst->poll_fn = NULL;
-    minst->display = NULL;
+    
+    mem = gs_malloc_init(NULL);
+    minst = gs_main_alloc_instance(mem);
+    
+    mem->pl_stdio->caller_handle = caller_handle;
+    mem->pl_stdio->stdin_fn = NULL;
+    mem->pl_stdio->stdout_fn = NULL;
+    mem->pl_stdio->stderr_fn = NULL;
+
+    // hack 
+    // minst->poll_fn = NULL;
     minst->i_ctx_p = NULL;
     *pinstance = minst;
     return 0;
@@ -83,11 +90,11 @@ GSDLLEXPORT void GSDLLAPI
 gsapi_delete_instance(gs_main_instance *minst)
 {
     if ((gsapi_instance_counter > 0) && (minst != NULL)) {
-	minst->caller_handle = NULL;
-	minst->stdin_fn = NULL;
-	minst->stdout_fn = NULL;
-	minst->stderr_fn = NULL;
-	minst->poll_fn = NULL;
+	minst->heap->pl_stdio->caller_handle = NULL;
+	minst->heap->pl_stdio->stdin_fn = NULL;
+	minst->heap->pl_stdio->stdout_fn = NULL;
+	minst->heap->pl_stdio->stderr_fn = NULL;
+	minst->heap->pl_stdio->poll_fn = NULL;
 	minst->display = NULL;
 	gsapi_instance_counter--;
     }
@@ -102,9 +109,9 @@ gsapi_set_stdio(gs_main_instance *minst,
 {
     if (minst == NULL)
 	return e_Fatal;
-    minst->stdin_fn = stdin_fn;
-    minst->stdout_fn = stdout_fn;
-    minst->stderr_fn = stderr_fn;
+    minst->heap->pl_stdio->stdin_fn = stdin_fn;
+    minst->heap->pl_stdio->stdout_fn = stdout_fn;
+    minst->heap->pl_stdio->stderr_fn = stderr_fn;
     return 0;
 }
 
@@ -115,7 +122,7 @@ gsapi_set_poll(gs_main_instance *minst,
 {
     if (minst == NULL)
 	return e_Fatal;
-    minst->poll_fn = poll_fn;
+    minst->heap->pl_stdio->poll_fn = poll_fn;
     return 0;
 }
 

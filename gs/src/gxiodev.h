@@ -92,24 +92,24 @@ struct gx_io_device_procs_s {
     /* and again in 3.20 to return the real fname separately */
 
 #define iodev_proc_fopen(proc)\
-  int proc(gx_io_device *iodev, const char *fname, const char *access,\
+  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *fname, const char *access,\
 	   FILE **pfile, char *rfname, uint rnamelen)
     iodev_proc_fopen((*fopen));
 
 #define iodev_proc_fclose(proc)\
-  int proc(gx_io_device *iodev, FILE *file)
+  int proc(const gs_memory_t *mem, gx_io_device *iodev, FILE *file)
     iodev_proc_fclose((*fclose));
 
 #define iodev_proc_delete_file(proc)\
-  int proc(gx_io_device *iodev, const char *fname)
+  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *fname)
     iodev_proc_delete_file((*delete_file));
 
 #define iodev_proc_rename_file(proc)\
-  int proc(gx_io_device *iodev, const char *from, const char *to)
+  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *from, const char *to)
     iodev_proc_rename_file((*rename_file));
 
 #define iodev_proc_file_status(proc)\
-  int proc(gx_io_device *iodev, const char *fname, struct stat *pstat)
+  int proc(const gs_memory_t *mem, gx_io_device *iodev, const char *fname, struct stat *pstat)
     iodev_proc_file_status((*file_status));
 
 #define iodev_proc_enumerate_files(proc)\
@@ -118,7 +118,7 @@ struct gx_io_device_procs_s {
     iodev_proc_enumerate_files((*enumerate_files));
 
 #define iodev_proc_enumerate_next(proc)\
-  uint proc(file_enum *pfen, char *ptr, uint maxlen)
+  uint proc(const gs_memory_t *mem, file_enum *pfen, char *ptr, uint maxlen)
     iodev_proc_enumerate_next((*enumerate_next));
 
 #define iodev_proc_enumerate_close(proc)\
@@ -172,7 +172,7 @@ int gs_putdevparams(gx_io_device *, gs_param_list *);
 
 /* Convert an OS error number to a PostScript error */
 /* if opening a file fails. */
-int gs_fopen_errno_to_code(int);
+int gs_fopen_errno_to_code(const gs_memory_t *mem, int);
 
 /* Test whether a string is equal to a character. */
 /* (This is used for access testing in file_open procedures.) */

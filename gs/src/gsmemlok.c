@@ -90,10 +90,11 @@ gs_memory_locked_init(
     lmem->procs = locked_procs;
 
     lmem->target = target;
+    lmem->pl_stdio = target->pl_stdio;
 
     /* Allocate a monitor to serialize access to structures within */
     lmem->monitor = gx_monitor_alloc(target);
-    return (lmem->monitor ? 0 : gs_note_error(gs_error_VMerror));
+    return (lmem->monitor ? 0 : gs_note_error(target, gs_error_VMerror));
 }
 
 /* Release a locked memory manager. */
@@ -124,17 +125,17 @@ gs_memory_locked_target(const gs_memory_locked_t *lmem)
 #define DO_MONITORED(call_target)\
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
 \
-	gx_monitor_enter(lmem->monitor);\
+	gx_monitor_enter(mem, lmem->monitor);\
 	call_target;\
-	gx_monitor_leave(lmem->monitor)
+	gx_monitor_leave(mem, lmem->monitor)
 
 #define RETURN_MONITORED(result_type, call_target)\
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;\
 	result_type temp;\
 \
-	gx_monitor_enter(lmem->monitor);\
+	gx_monitor_enter(mem, lmem->monitor);\
 	temp = call_target;\
-	gx_monitor_leave(lmem->monitor);\
+	gx_monitor_leave(mem, lmem->monitor);\
 	return temp
 
 /* Procedures */
@@ -351,7 +352,7 @@ gs_locked_stable(gs_memory_t * mem)
 	gs_memory_locked_t * const lmem = (gs_memory_locked_t *)mem;
 	gs_memory_t *stable;
 
-	gx_monitor_enter(lmem->monitor);
+	gx_monitor_enter(mem, lmem->monitor);
 	stable = gs_memory_stable(lmem->target);
 	if (stable == lmem->target)
 	    mem->stable_memory = mem;
@@ -368,7 +369,7 @@ gs_locked_stable(gs_memory_t * mem)
 		    mem->stable_memory = (gs_memory_t *)locked_stable;
 	    }
 	}
-	gx_monitor_leave(lmem->monitor);
+	gx_monitor_leave(mem, lmem->monitor);
     }
     return mem->stable_memory;
 }

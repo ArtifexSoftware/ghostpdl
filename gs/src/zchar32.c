@@ -39,7 +39,7 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
     int code;
     byte *str;
 
-    check_array(op[-4]);
+    check_array(imemory, op[-4]);
     msize = r_size(op - 4);
     switch (msize) {
 	case 10:
@@ -49,14 +49,14 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
 	    long_form = false;
 	    break;
 	default:
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
     }
-    code = num_params(op[-4].value.refs + msize - 1, msize, metrics);
+    code = num_params(imemory, op[-4].value.refs + msize - 1, msize, metrics);
     if (code < 0)
 	return code;
     if (~code & 0x3c)		/* check llx .. ury for integers */
-	return_error(e_typecheck);
-    check_read_type(op[-3], t_string);
+	return_error(imemory, e_typecheck);
+    check_read_type(imemory, op[-3], t_string);
     llx = (int)metrics[2];
     lly = (int)metrics[3];
     urx = (int)metrics[4];
@@ -65,16 +65,16 @@ zmakeglyph32(i_ctx_t *i_ctx_p)
     height = ury - lly;
     raster = (width + 7) >> 3;
     if (width < 0 || height < 0 || r_size(op - 3) != raster * height)
-	return_error(e_rangecheck);
-    check_int_leu(op[-2], 65535);
-    code = font_param(op - 1, &pfont);
+	return_error(imemory, e_rangecheck);
+    check_int_leu(imemory, op[-2], 65535);
+    code = font_param(imemory, op - 1, &pfont);
     if (code < 0)
 	return code;
     if (pfont->FontType != ft_CID_bitmap)
-	return_error(e_invalidfont);
-    check_write_type(*op, t_string);
+	return_error(imemory, e_invalidfont);
+    check_write_type(imemory, *op, t_string);
     if (r_size(op) < 22)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     str = op->value.bytes;
     if (long_form || metrics[0] != (wx = (int)metrics[0]) ||
 	metrics[1] != 0 || height == 0 ||
@@ -125,13 +125,13 @@ zremoveglyphs(i_ctx_t *i_ctx_p)
     int code;
     font_cid_range_t range;
 
-    check_int_leu(op[-2], 65535);
-    check_int_leu(op[-1], 65535);
-    code = font_param(op, &range.font);
+    check_int_leu(imemory, op[-2], 65535);
+    check_int_leu(imemory, op[-1], 65535);
+    code = font_param(imemory, op, &range.font);
     if (code < 0)
 	return code;
     if (range.font->FontType != ft_CID_bitmap)
-	return_error(e_invalidfont);
+	return_error(imemory, e_invalidfont);
     range.cid_min = gs_min_cid_glyph + op[-2].value.intval;
     range.cid_max = gs_min_cid_glyph + op[-1].value.intval;
     gx_purge_selected_cached_chars(range.font->dir, select_cid_range,
@@ -151,18 +151,18 @@ zgetmetrics32(i_ctx_t *i_ctx_p)
     int i, n = 6;
     os_ptr wop;
 
-    check_read_type(*op, t_string);
+    check_read_type(imemory, *op, t_string);
     data = op->value.const_bytes;
     size = r_size(op);
     if (size < 5)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     if (data[0]) {
 	/* Short form. */
 	int llx = (int)data[3] - 128, lly = (int)data[4] - 128;
 
 	n = 6;
 	size = 5;
-	push(8);
+	push(imemory, 8);
 	make_int(op - 6, data[2]); /* wx */
 	make_int(op - 5, 0);	/* wy */
 	make_int(op - 4, llx);
@@ -173,17 +173,17 @@ zgetmetrics32(i_ctx_t *i_ctx_p)
 	if (data[1]) {
 	    /* Long form, both WModes. */
 	    if (size < 22)
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	    n = 10;
 	    size = 22;
 	} else {
 	    /* Long form, WMode = 0 only. */
 	    if (size < 14)
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	    n = 6;
 	    size = 14;
 	}
-	push(2 + n);
+	push(imemory, 2 + n);
 	for (i = 0; i < n; ++i)
 	    make_int(op - n + i,
 		     ((int)((data[2 * i + 2] << 8) + data[2 * i + 3]) ^ 0x8000)

@@ -46,8 +46,8 @@ zbuildfont3(i_ctx_t *i_ctx_p)
     build_proc_refs build;
     gs_font_base *pfont;
 
-    check_type(*op, t_dictionary);
-    code = build_gs_font_procs(op, &build);
+    check_type(imemory, *op, t_dictionary);
+    code = build_gs_font_procs(imemory, op, &build);
     if (code < 0)
 	return code;
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_user_defined,
@@ -64,7 +64,7 @@ zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored)
     const ref *pencoding = &pfont_data(pfont)->Encoding;
     ulong index = chr;	/* work around VAX widening bug */
     ref cname;
-    int code = array_get(pencoding, (long)index, &cname);
+    int code = array_get(pfont->memory, pencoding, (long)index, &cname);
 
     if (code < 0 || !r_has_type(&cname, t_name))
 	return gs_no_glyph;
@@ -176,27 +176,27 @@ build_proc_name_refs(build_proc_refs * pbuild,
 
 /* Get the BuildChar and/or BuildGlyph routines from a (base) font. */
 int
-build_gs_font_procs(os_ptr op, build_proc_refs * pbuild)
+build_gs_font_procs(const gs_memory_t *mem, os_ptr op, build_proc_refs * pbuild)
 {
     int ccode, gcode;
     ref *pBuildChar;
     ref *pBuildGlyph;
 
-    check_type(*op, t_dictionary);
+    check_type(mem, *op, t_dictionary);
     ccode = dict_find_string(op, "BuildChar", &pBuildChar);
     gcode = dict_find_string(op, "BuildGlyph", &pBuildGlyph);
     if (ccode <= 0) {
 	if (gcode <= 0)
-	    return_error(e_invalidfont);
+	    return_error(mem, e_invalidfont);
 	make_null(&pbuild->BuildChar);
     } else {
-	check_proc(*pBuildChar);
+	check_proc(mem, *pBuildChar);
 	pbuild->BuildChar = *pBuildChar;
     }
     if (gcode <= 0)
 	make_null(&pbuild->BuildGlyph);
     else {
-	check_proc(*pBuildGlyph);
+	check_proc(mem, *pBuildGlyph);
 	pbuild->BuildGlyph = *pBuildGlyph;
     }
     return 0;
@@ -219,16 +219,16 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 
     if (dict_find_string(op, "CharStrings", &pcharstrings) <= 0) {
 	if (!(options & bf_CharStrings_optional))
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
     } else {
 	ref *ignore;
 
 	if (!r_has_type(pcharstrings, t_dictionary))
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
 	if ((options & bf_notdef_required) != 0 &&
 	    dict_find_string(pcharstrings, ".notdef", &ignore) <= 0
 	    )
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
 	/*
 	 * Since build_gs_simple_font may resize the dictionary and cause
 	 * pointers to become invalid, save CharStrings.
@@ -315,11 +315,11 @@ build_gs_outline_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     int painttype;
     float strokewidth;
     gs_font_base *pfont;
-    int code = dict_int_param(op, "PaintType", 0, 3, 0, &painttype);
+    int code = dict_int_param(imemory, op, "PaintType", 0, 3, 0, &painttype);
 
     if (code < 0)
 	return code;
-    code = dict_float_param(op, "StrokeWidth", 0.0, &strokewidth);
+    code = dict_float_param(imemory, op, "StrokeWidth", 0.0, &strokewidth);
     if (code < 0)
 	return code;
     code = build_base_font(i_ctx_p, op, ppfont, ftype, pstype, pbuild,
@@ -351,7 +351,7 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	    dict_find_string(pfontinfo, "GlyphNames2Unicode", &g2u) <= 0 ||
 	    !r_has_type(pfontinfo, t_dictionary))
 	g2u = NULL;
-    code = font_bbox_param(op, bbox);
+    code = font_bbox_param(imemory, op, bbox);
     if (code < 0)
 	return code;
     code = dict_uid_param(op, &uid, 0, imemory, i_ctx_p);
@@ -413,7 +413,7 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 	for (i = 0; i < esize; ++i) {
 	    ref fchar;
 
-	    if (array_get(pfe, (long)i, &fchar) < 0 ||
+	    if (array_get(pfont->memory, pfe, (long)i, &fchar) < 0 ||
 		!r_has_type(&fchar, t_name)
 		)
 		fstrs[i].data = 0, fstrs[i].size = 0;
@@ -432,7 +432,7 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 	    for (i = esize; --i >= 0;) {
 		gs_const_string rstr;
 
-		gs_c_glyph_name(gs_c_known_encode((gs_char)i, index), &rstr);
+		gs_c_glyph_name(pfont->memory, gs_c_known_encode((gs_char)i, index), &rstr);
 		if (rstr.size == fstrs[i].size &&
 		    !memcmp(rstr.data, fstrs[i].data, rstr.size)
 		    )
@@ -457,15 +457,15 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 
 /* Get FontMatrix and FontName parameters. */
 private int
-sub_font_params(const ref *op, gs_matrix *pmat, ref *pfname)
+sub_font_params(const gs_memory_t *mem, const ref *op, gs_matrix *pmat, ref *pfname)
 {
     ref *pmatrix;
     ref *pfontname;
 
     if (dict_find_string(op, "FontMatrix", &pmatrix) <= 0 ||
-	read_matrix(pmatrix, pmat) < 0
+	read_matrix(mem, pmatrix, pmat) < 0
 	)
-	return_error(e_invalidfont);
+	return_error(mem, e_invalidfont);
     if (dict_find_string(op, "FontName", &pfontname) > 0)
 	get_font_name(pfname, pfontname);
     else
@@ -500,25 +500,25 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	!r_has_type(pftype, t_integer) ||
 	pftype->value.intval != (int)ftype
 	)
-	return_error(e_invalidfont);
+	return_error(imemory, e_invalidfont);
     if (dict_find_string(op, "Encoding", &pencoding) <= 0) {
 	if (!(options & bf_Encoding_optional))
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
     } else {
 	if (!r_is_array(pencoding))
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
     }
-    if ((code = dict_int_param(op, "WMode", 0, 1, 0, &wmode)) < 0 ||
-	(code = dict_bool_param(op, "BitmapWidths", false, &bitmapwidths)) < 0 ||
-	(code = dict_int_param(op, "ExactSize", 0, 2, fbit_use_bitmaps, &exactsize)) < 0 ||
-	(code = dict_int_param(op, "InBetweenSize", 0, 2, fbit_use_outlines, &inbetweensize)) < 0 ||
-	(code = dict_int_param(op, "TransformedChar", 0, 2, fbit_use_outlines, &transformedchar)) < 0
+    if ((code = dict_int_param(imemory, op, "WMode", 0, 1, 0, &wmode)) < 0 ||
+	(code = dict_bool_param(imemory, op, "BitmapWidths", false, &bitmapwidths)) < 0 ||
+	(code = dict_int_param(imemory, op, "ExactSize", 0, 2, fbit_use_bitmaps, &exactsize)) < 0 ||
+	(code = dict_int_param(imemory, op, "InBetweenSize", 0, 2, fbit_use_outlines, &inbetweensize)) < 0 ||
+	(code = dict_int_param(imemory, op, "TransformedChar", 0, 2, fbit_use_outlines, &transformedchar)) < 0
 	)
 	return code;
     code = dict_find_string(op, "FID", &pfid);
     if (code > 0) {
 	if (!r_has_type(pfid, t_fontID))
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
 	/*
 	 * If this font has a FID entry already, it might be a scaled font
 	 * made by makefont or scalefont; in a Level 2 environment, it might
@@ -529,7 +529,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	pfont = r_ptr(pfid, gs_font);
 	if (pfont->base == pfont) {	/* original font */
 	    if (!level2_enabled)
-		return_error(e_invalidfont);
+		return_error(imemory, e_invalidfont);
 	    if (obj_eq(pfont_dict(pfont), op)) {
 		*ppfont = pfont;
 		return 1;
@@ -544,7 +544,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
 	    gs_matrix mat;
 	    ref fname;			/* t_string */
 
-	    code = sub_font_params(op, &mat, &fname);
+	    code = sub_font_params(imemory, op, &mat, &fname);
 	    if (code < 0)
 		return code;
 	    code = 1;
@@ -554,7 +554,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
     }
     /* This is a new font. */
     if (!r_has_attr(aop, a_write))
-	return_error(e_invalidaccess);
+	return_error(imemory, e_invalidaccess);
     {
 	ref encoding;
 
@@ -603,7 +603,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
      * in the same VM as the font dictionary.
      */
     uint space = ialloc_space(idmemory);
-    int code = sub_font_params(op, &mat, &fname);
+    int code = sub_font_params(imemory, op, &mat, &fname);
 
     if (code < 0)
 	return code;
@@ -613,7 +613,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
     pdata = ialloc_struct(font_data, &st_font_data,
 			  "buildfont(data)");
     if (pfont == 0 || pdata == 0)
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(imemory, e_VMerror);
     else if (fid_op)
 	code = add_FID(i_ctx_p, fid_op, pfont, iimemory);
     if (code < 0) {

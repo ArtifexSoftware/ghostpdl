@@ -108,7 +108,7 @@ gs_image_class_2_fracs(gx_image_enum * penum)
 		penum->mask_color.values[i] =
 		    bits2frac(penum->mask_color.values[i], 12);
 	}
-	if_debug0('b', "[b]render=frac\n");
+	if_debug0(penum->memory, 'b', "[b]render=frac\n");
 	return &image_render_frac;
     }
     return 0;
@@ -196,7 +196,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     yrun = ytf = dda_current(pnext.y);
     pdyx = dda_current(penum->dda.row.x) - penum->cur.x;
     pdyy = dda_current(penum->dda.row.y) - penum->cur.y;
-    if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+    if_debug5(penum->memory, 'b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
 	      penum->y, data_x, w, fixed2float(xl), fixed2float(ytf));
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
@@ -230,10 +230,10 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		decode_frac(next.v[1], cc, 1);
 		decode_frac(next.v[2], cc, 2);
 		decode_frac(next.v[3], cc, 3);
-		if_debug4('B', "[B]cc[0..3]=%g,%g,%g,%g\n",
+		if_debug4(penum->memory, 'B', "[B]cc[0..3]=%g,%g,%g,%g\n",
 			  cc.paint.values[0], cc.paint.values[1],
 			  cc.paint.values[2], cc.paint.values[3]);
-		if_debug1('B', "[B]cc[3]=%g\n",
+		if_debug1(penum->memory, 'B', "[B]cc[3]=%g\n",
 			  cc.paint.values[3]);
 		break;
 	    case 3:		/* may be RGB */
@@ -255,7 +255,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		decode_frac(next.v[0], cc, 0);
 		decode_frac(next.v[1], cc, 1);
 		decode_frac(next.v[2], cc, 2);
-		if_debug3('B', "[B]cc[0..2]=%g,%g,%g\n",
+		if_debug3(penum->memory, 'B', "[B]cc[0..2]=%g,%g,%g\n",
 			  cc.paint.values[0], cc.paint.values[1],
 			  cc.paint.values[2]);
 		break;
@@ -274,7 +274,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		    goto f;
 		}
 		decode_frac(next.v[0], cc, 0);
-		if_debug1('B', "[B]cc[0]=%g\n",
+		if_debug1(penum->memory, 'B', "[B]cc[0]=%g\n",
 			  cc.paint.values[0]);
 		break;
 	    default:		/* DeviceN */
@@ -296,11 +296,11 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 			decode_frac(next.v[i], cc, i);
 #ifdef DEBUG
 		    if (gs_debug_c('B')) {
-			dprintf2("[B]cc[0..%d]=%g", spp - 1,
+			dprintf2(penum->memory, "[B]cc[0..%d]=%g", spp - 1,
 				 cc.paint.values[0]);
 			for (i = 1; i < spp; ++i)
-			    dprintf1(",%g", cc.paint.values[i]);
-			dputs("\n");
+			    dprintf1(penum->memory, ",%g", cc.paint.values[i]);
+			dputs(penum->memory, "\n");
 		    }
 #endif
 		}
@@ -311,7 +311,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 	if (mcode < 0)
 	    goto fill;
 f:
-	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
+	if_debug7(penum->memory, 'B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 		  next.v[0], next.v[1], next.v[2], next.v[3],
 		  pdevc_next->colors.binary.color[0],
 		  pdevc_next->colors.binary.color[1],

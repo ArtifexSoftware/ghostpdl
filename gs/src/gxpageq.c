@@ -54,9 +54,8 @@ private_st_gx_page_queue();
 
 /* ------------ Forward Decl's --------------------------- */
 private gx_page_queue_entry_t *	/* removed entry, 0 if none avail */
-    gx_page_queue_remove_first(
-			       gx_page_queue_t * queue	/* page queue to retrieve from */
-			       );
+gx_page_queue_remove_first( gx_page_queue_t * queue /* page queue to retrieve from */
+			    );
 
 
 /* --------------------Procedures------------------------- */
@@ -100,10 +99,10 @@ gx_page_queue_entry_free(
 /* Free the clist resources held by a gx_page_queue_entry_t */
 void
 gx_page_queue_entry_free_page_info(
-			    gx_page_queue_entry_t * entry	/* entry to free up */
+				    gx_page_queue_entry_t * entry	/* entry to free up */
 )
 {
-    clist_close_page_info( &entry->page_info );
+    clist_close_page_info( entry->queue->memory, &entry->page_info );
 }
 
 /* -------- page_queue init/dnit ---------- */
@@ -171,14 +170,14 @@ gx_page_queue_dnit(
 
 /* Retrieve & remove firstin queue entry */
 private gx_page_queue_entry_t *	/* removed entry, 0 if none avail */
-gx_page_queue_remove_first(
-			      gx_page_queue_t * queue	/* page queue to retrieve from */
+gx_page_queue_remove_first(			    
+			   gx_page_queue_t *queue	/* page queue to retrieve from */
 )
 {
     gx_page_queue_entry_t *entry = 0;	/* assume failure */
 
     /* Enter monitor */
-    gx_monitor_enter(queue->monitor);
+    gx_monitor_enter(queue->memory, queue->monitor);
 
     /* Get the goods */
     if (queue->entry_count) {
@@ -189,21 +188,20 @@ gx_page_queue_remove_first(
 	--queue->entry_count;
     }
     /* exit monitor */
-    gx_monitor_leave(queue->monitor);
+    gx_monitor_leave(queue->memory, queue->monitor);
 
     return entry;
 }
 
 /* Add entry to queue at end */
 private void
-gx_page_queue_add_last(
-			  gx_page_queue_entry_t * entry	/* entry to add */
+gx_page_queue_add_last( gx_page_queue_entry_t * entry	/* entry to add */
 )
 {
     gx_page_queue_t *queue = entry->queue;
 
     /* Enter monitor */
-    gx_monitor_enter(queue->monitor);
+    gx_monitor_enter(queue->memory, queue->monitor);
 
     /* Add the goods */
     entry->next = 0;
@@ -215,7 +213,7 @@ gx_page_queue_add_last(
     ++queue->entry_count;
 
     /* exit monitor */
-    gx_monitor_leave(queue->monitor);
+    gx_monitor_leave(queue->memory, queue->monitor);
 }
 
 /* --------- low-level synchronization ---------- */
@@ -228,17 +226,17 @@ gx_page_queue_wait_one_page(
 {
     int code;
 
-    gx_monitor_enter(queue->monitor);
+    gx_monitor_enter(queue->memory, queue->monitor);
     if (!queue->entry_count && !queue->dequeue_in_progress) {
 	code = 0;
-	gx_monitor_leave(queue->monitor);
+	gx_monitor_leave(queue->memory, queue->monitor);
     } else {
 	/* request acknowledgement on render done */
 	queue->enable_render_done_signal = true;
 
 	/* exit monitor & wait for acknowlegement */
-	gx_monitor_leave(queue->monitor);
-	gx_semaphore_wait(queue->render_done_sema);
+	gx_monitor_leave(queue->memory, queue->monitor);
+	gx_semaphore_wait(queue->memory, queue->render_done_sema);
 	code = 1;
     }
     return code;
@@ -265,7 +263,7 @@ gx_page_queue_enqueue(
 
     /* Add the goods to queue, & signal it */
     gx_page_queue_add_last(entry);
-    gx_semaphore_signal(queue->render_req_sema);
+    gx_semaphore_signal(queue->memory, queue->render_req_sema);
 }
 
 /* Add page to a page queue */
@@ -286,10 +284,10 @@ gx_page_queue_add_page(
 
     if (!entry) {
 	/* Use reserve page queue entry */
-	gx_monitor_enter(queue->monitor);	/* not strictly necessary */
+	gx_monitor_enter(queue->memory, queue->monitor);	/* not strictly necessary */
 	entry = queue->reserve_entry;
 	queue->reserve_entry = 0;
-	gx_monitor_leave(queue->monitor);
+	gx_monitor_leave(queue->memory, queue->monitor);
     }
     /* Fill in page queue entry with info from device */
     entry->action = action;
@@ -307,7 +305,7 @@ gx_page_queue_add_page(
 	queue->reserve_entry = gx_page_queue_entry_alloc(queue);
 	if (!queue->reserve_entry && !gx_page_queue_wait_one_page(queue)) {
 	    /* Should never happen: all pages rendered & still can't get memory: give up! */
-	    code = gs_note_error(gs_error_Fatal);
+	    code = gs_note_error(queue->memory, gs_error_Fatal);
 	    break;
 	}
     }
@@ -320,7 +318,7 @@ gx_page_queue_start_dequeue(
 			       gx_page_queue_t * queue	/* page queue to retrieve from */
 )
 {
-    gx_semaphore_wait(queue->render_req_sema);
+    gx_semaphore_wait(queue->memory, queue->render_req_sema);
     queue->dequeue_in_progress = true;
     return gx_page_queue_remove_first(queue);
 }
@@ -333,10 +331,10 @@ gx_page_queue_finish_dequeue(
 {
     gx_page_queue_t *queue = entry->queue;
 
-    gx_monitor_enter(queue->monitor);
+    gx_monitor_enter(queue->memory, queue->monitor);
     if (queue->enable_render_done_signal) {
 	queue->enable_render_done_signal = false;
-	gx_semaphore_signal(queue->render_done_sema);
+	gx_semaphore_signal(queue->memory, queue->render_done_sema);
     }
     queue->dequeue_in_progress = false;
 
@@ -351,5 +349,5 @@ gx_page_queue_finish_dequeue(
     gx_page_queue_entry_free_page_info(entry);
     gx_page_queue_entry_free(entry);
 
-    gx_monitor_leave(queue->monitor);
+    gx_monitor_leave(queue->memory, queue->monitor);
 }

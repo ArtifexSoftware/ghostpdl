@@ -40,13 +40,13 @@ ztoken(i_ctx_t *i_ctx_p)
 
     switch (r_type(op)) {
 	default:
-	    return_op_typecheck(op);
+	    return_op_typecheck(imemory, op);
 	case t_file: {
 	    stream *s;
 	    scanner_state state;
 
-	    check_read_file(s, op);
-	    check_ostack(1);
+	    check_read_file(imemory, s, op);
+	    check_ostack(imemory, 1);
 	    scanner_state_init(&state, false);
 	    return token_continue(i_ctx_p, s, &state, true);
 	}
@@ -62,7 +62,7 @@ ztoken(i_ctx_t *i_ctx_p)
 		if (code < 0)
 		    return code;
 	    }
-	    push(2);
+	    push(imemory, 2);
 	    op[-1] = token;
 	    make_true(op);
 	    return 0;
@@ -78,8 +78,8 @@ ztoken_continue(i_ctx_t *i_ctx_p)
     stream *s;
     scanner_state *pstate;
 
-    check_read_file(s, op - 1);
-    check_stype(*op, st_scanner_state);
+    check_read_file(imemory, s, op - 1);
+    check_stype(imemory, *op, st_scanner_state);
     pstate = r_ptr(op, scanner_state);
     pop(1);
     return token_continue(i_ctx_p, s, pstate, false);
@@ -106,24 +106,24 @@ again:
     switch (code) {
 	default:		/* error */
 	    if (code > 0)	/* comment, not possible */
-		code = gs_note_error(e_syntaxerror);
-	    push(1);
+		code = gs_note_error(imemory, e_syntaxerror);
+	    push(imemory, 1);
 	    ref_assign(op, &fref);
 	    break;
 	case scan_BOS:
 	    code = 0;
 	case 0:		/* read a token */
-	    push(2);
+	    push(imemory, 2);
 	    ref_assign(op - 1, &token);
 	    make_true(op);
 	    break;
 	case scan_EOF:		/* no tokens */
-	    push(1);
+	    push(imemory, 1);
 	    make_false(op);
 	    code = 0;
 	    break;
 	case scan_Refill:	/* need more data */
-	    push(1);
+	    push(imemory, 1);
 	    ref_assign(op, &fref);
 	    code = scan_handle_refill(i_ctx_p, op, pstate, save, false,
 				      ztoken_continue);
@@ -154,7 +154,7 @@ ztokenexec(i_ctx_t *i_ctx_p)
     stream *s;
     scanner_state state;
 
-    check_read_file(s, op);
+    check_read_file(imemory, s, op);
     check_estack(1);
     scanner_state_init(&state, false);
     return tokenexec_continue(i_ctx_p, s, &state, true);
@@ -170,8 +170,8 @@ ztokenexec_continue(i_ctx_t *i_ctx_p)
     stream *s;
     scanner_state *pstate;
 
-    check_read_file(s, op - 1);
-    check_stype(*op, st_scanner_state);
+    check_read_file(imemory, s, op - 1);
+    check_stype(imemory, *op, st_scanner_state);
     pstate = r_ptr(op, scanner_state);
     pop(1);
     return tokenexec_continue(i_ctx_p, s, pstate, false);
@@ -197,7 +197,7 @@ again:
     switch (code) {
 	case 0:
 	    if (r_is_proc(esp + 1)) {	/* Treat procedure as a literal. */
-		push(1);
+		push(imemory, 1);
 		ref_assign(op, esp + 1);
 		code = 0;
 		break;
@@ -228,7 +228,7 @@ again:
 	    break;
     }
     if (code < 0) {		/* Push the operand back on the stack. */
-	push(1);
+	push(imemory, 1);
 	ref_assign(op, &fref);
     }
     if (!save) {		/* Deallocate the scanner state record. */
@@ -261,7 +261,7 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
 	proc_name = "%ProcessDSCComment";
 	break;
     default:
-	return_error(e_Fatal);	/* can't happen */
+	return_error(imemory, e_Fatal);	/* can't happen */
     }
     /*
      * We can't use check_ostack here, because it returns on overflow.
@@ -280,7 +280,7 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
 	pstate = ialloc_struct(scanner_state, &st_scanner_state,
 			       "ztoken_handle_comment");
 	if (pstate == 0)
-	    return_error(e_VMerror);
+	    return_error(imemory, e_VMerror);
 	*pstate = *sstate;
     } else
 	pstate = sstate;

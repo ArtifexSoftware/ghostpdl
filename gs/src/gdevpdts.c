@@ -133,9 +133,10 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
  * Set *pdist to the distance (dx,dy), in the space defined by *pmat.
  */
 private int
-set_text_distance(gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
+set_text_distance(const gs_memory_t *mem, 
+		  gs_point *pdist, floatp dx, floatp dy, const gs_matrix *pmat)
 {
-    int code = gs_distance_transform_inverse(dx, dy, pmat, pdist);
+    int code = gs_distance_transform_inverse(mem, dx, dy, pmat, pdist);
     double rounded;
 
     if (code < 0)
@@ -174,7 +175,7 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	double dw, dnotw, tdw;
 	int code;
 
-	code = set_text_distance(&dist, dx, dy, pmat);
+	code = set_text_distance(pdev->memory, &dist, dx, dy, pmat);
 	if (code < 0)
 	    return code;
 	if (pts->wmode)
@@ -222,7 +223,7 @@ pdf_set_text_matrix(gx_device_pdf * pdev)
 	gs_point dist;
 	int code;
 
-	code = set_text_distance(&dist, pts->start.x - pts->line_start.x,
+	code = set_text_distance(pdev->memory, &dist, pts->start.x - pts->line_start.x,
 			  pts->start.y - pts->line_start.y, &pts->in.matrix);
 	if (code < 0)
 	    return code;
@@ -528,10 +529,12 @@ pdf_set_text_state_values(gx_device_pdf *pdev,
  * scaling implied by the font size) to device space.
  */
 int
-pdf_text_distance_transform(floatp wx, floatp wy, const pdf_text_state_t *pts,
+pdf_text_distance_transform(const gs_memory_t *mem, 
+			    floatp wx, floatp wy, 
+			    const pdf_text_state_t *pts,
 			    gs_point *ppt)
 {
-    return gs_distance_transform(wx, wy, &pts->in.matrix, ppt);
+    return gs_distance_transform(mem, wx, wy, &pts->in.matrix, ppt);
 }
 
 /*

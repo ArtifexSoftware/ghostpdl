@@ -67,8 +67,9 @@ int gs_cspace_set_sepr_proc(gs_color_space * pcspace,
 /*
  * Set the Separation tint transformation procedure to a Function.
  */
-int gs_cspace_set_sepr_function(const gs_color_space *pcspace,
-				    gs_function_t *pfn);
+int gs_cspace_set_sepr_function(const gs_memory_t *mem, 
+				const gs_color_space *pcspace,
+				gs_function_t *pfn);
 /*
  * If the Separation tint transformation procedure is a Function,
  * return the function object, otherwise return 0.

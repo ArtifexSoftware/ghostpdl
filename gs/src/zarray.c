@@ -30,7 +30,7 @@ zarray(i_ctx_t *i_ctx_p)
     uint size;
     int code;
 
-    check_int_leu(*op, max_array_size);
+    check_int_leu(imemory, *op, max_array_size);
     size = op->value.intval;
     code = ialloc_ref_array((ref *)op, a_all, size, "array");
     if (code < 0)
@@ -49,8 +49,8 @@ zaload(i_ctx_t *i_ctx_p)
 
     ref_assign(&aref, op);
     if (!r_is_array(&aref))
-	return_op_typecheck(op);
-    check_read(aref);
+	return_op_typecheck(imemory, op);
+    check_read(imemory, aref);
     asize = r_size(&aref);
     if (asize > ostop - op) {	/* Use the slow, general algorithm. */
 	int code = ref_stack_push(&o_stack, asize);
@@ -74,7 +74,7 @@ zaload(i_ctx_t *i_ctx_p)
 	for (i = 0; i < asize; i++, pdest++, packed = packed_next(packed))
 	    packed_get(packed, pdest);
     }
-    push(asize);
+    push(imemory, asize);
     ref_assign(op, &aref);
     return 0;
 }
@@ -87,14 +87,14 @@ zastore(i_ctx_t *i_ctx_p)
     uint size;
     int code;
 
-    check_write_type(*op, t_array);
+    check_write_type(imemory, *op, t_array);
     size = r_size(op);
     if (size > op - osbot) {
 	/* The store operation might involve other stack segments. */
 	ref arr;
 
 	if (size >= ref_stack_count(&o_stack))
-	    return_error(e_stackunderflow);
+	    return_error(imemory, e_stackunderflow);
 	arr = *op;
 	code = ref_stack_store(&o_stack, &arr, size, 1, 0, true, idmemory,
 			       "astore");

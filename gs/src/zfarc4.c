@@ -34,10 +34,10 @@ z_arcfour_d(i_ctx_t * i_ctx_p)
     stream_arcfour_state state;
 
     /* extract the key from the parameter dictionary */
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
+    check_type(imemory, *op, t_dictionary);
+    check_dict_read(imemory, *op);
     if (dict_find_string(op, "Key", &sop) <= 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 
     s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
 
@@ -58,10 +58,10 @@ z_arcfour_e(i_ctx_t * i_ctx_p)
     stream_arcfour_state state;
 
     /* extract the key from the parameter dictionary */
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
+    check_type(imemory, *op, t_dictionary);
+    check_dict_read(imemory, *op);
     if (dict_find_string(op, "Key", &sop) <= 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 
     s_arcfour_set_key(&state, sop->value.const_bytes, r_size(sop));
 

@@ -70,7 +70,7 @@ lzw_put_code(register stream_LZW_state * ss, byte * q, uint code)
     byte cb = (ss->bits << ss->bits_left) +
 	(code >> (size - ss->bits_left));
 
-    if_debug2('W', "[w]writing 0x%x,%d\n", code, ss->code_size);
+    if_debug2(ss->memory, 'W', "[w]writing 0x%x,%d\n", code, ss->code_size);
     *++q = cb;
     if ((ss->bits_left += 8 - size) <= 0) {
 	*++q = code >> -ss->bits_left;

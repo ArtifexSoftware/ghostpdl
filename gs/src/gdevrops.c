@@ -112,7 +112,7 @@ gx_alloc_rop_texture_device(gx_device_rop_texture ** prsdev, gs_memory_t * mem,
 {
     *prsdev = gs_alloc_struct(mem, gx_device_rop_texture,
 			      &st_device_rop_texture, cname);
-    return (*prsdev == 0 ? gs_note_error(gs_error_VMerror) : 0);
+    return (*prsdev == 0 ? gs_note_error(mem, gs_error_VMerror) : 0);
 }
 
 /* Initialize a RasterOp source device. */

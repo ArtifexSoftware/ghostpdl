@@ -165,7 +165,7 @@ extern  int     gs_cspace_build_CIEICC( gs_color_space **   ppcspace,
 					gs_memory_t *       pmem );
 
 int
-gx_load_icc_profile(gs_cie_icc *picc_info);
+gx_load_icc_profile(const gs_memory_t *mem, gs_cie_icc *picc_info);
 
 /*
  * Increment color space reference counts.

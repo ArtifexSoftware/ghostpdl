@@ -422,25 +422,29 @@ typedef struct gs_color_space_s gs_color_space;
  */
 
 extern int
-    gs_cspace_init_DeviceGray(gs_color_space *pcs),
+    gs_cspace_init_DeviceGray(const gs_memory_t *mem, gs_color_space *pcs),
     gs_cspace_build_DeviceGray(gs_color_space ** ppcspace,
 				  gs_memory_t * pmem),
-    gs_cspace_init_DeviceRGB(gs_color_space *pcs),
+    gs_cspace_init_DeviceRGB(const gs_memory_t *mem, gs_color_space *pcs),
     gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace,
                               gs_memory_t * pmem),
-    gs_cspace_init_DeviceCMYK(gs_color_space *pcs),
+    gs_cspace_init_DeviceCMYK(const gs_memory_t *mem, gs_color_space *pcs),
     gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace,
                                gs_memory_t * pmem);
 
 /* Copy a color space into one newly allocated by the caller. */
-void gs_cspace_init_from(gs_color_space * pcsto,
+void gs_cspace_init_from(const gs_memory_t *mem, 
+			 gs_color_space * pcsto,
 			 const gs_color_space * pcsfrom);
 
 /* Assign a color space into a previously initialized one. */
-void gs_cspace_assign(gs_color_space * pdest, const gs_color_space * psrc);
+void gs_cspace_assign(const gs_memory_t *mem, 
+		      gs_color_space * pdest, 
+		      const gs_color_space * psrc);
 
 /* Prepare to free a color space. */
-void gs_cspace_release(gs_color_space * pcs);
+void gs_cspace_release(const gs_memory_t *mem, 
+		       gs_color_space * pcs);
 
 /* ------ Accessors ------ */
 

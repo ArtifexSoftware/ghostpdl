@@ -29,7 +29,7 @@ zcurrentpacking(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     ref_assign(op, &ref_array_packing);
     return 0;
 }
@@ -42,12 +42,12 @@ zpackedarray(i_ctx_t *i_ctx_p)
     int code;
     ref parr;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     if (op->value.intval < 0 ||
 	(op->value.intval > op - osbot &&
 	 op->value.intval >= ref_stack_count(&o_stack))
 	)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     osp--;
     code = make_packed_array(&parr, &o_stack, (uint) op->value.intval,
 			     idmemory, "packedarray");
@@ -64,7 +64,7 @@ zsetpacking(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref cont;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     make_struct(&cont, avm_local, ref_array_packing_container);
     ref_assign_old(&cont, &ref_array_packing, op, "setpacking");
     pop(1);

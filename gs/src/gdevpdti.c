@@ -297,7 +297,7 @@ pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
     long length = end_pos - start_pos;
 
     if (length > 999999)
-	return_error(gs_error_limitcheck);
+	return_error(pdev->memory, gs_error_limitcheck);
     sseek(s, start_pos - 15);
     pprintd1(s, "%d", length);
     sseek(s, end_pos);
@@ -384,7 +384,7 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 	gs_glyph glyph0 = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
 
 	if (ch >= char_cache_size || ch >= width_cache_size)
-	    return_error(gs_error_unregistered);
+	    return_error(pdev->memory, gs_error_unregistered);
 	real_widths[ch * 2    ] = pdfont->Widths[ch] = pw[font->WMode ? 6 : 0];
 	real_widths[ch * 2 + 1] = pw[font->WMode ? 7 : 1];
 	glyph_usage[ch / 8] |= 0x80 >> (ch & 7);
@@ -406,7 +406,7 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 	    }
 	}
     }
-    code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres);
+    code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(pdev->memory, 1), &pres);
     if (code < 0)
 	return code;
     pcp = (pdf_char_proc_t *) pres;
@@ -441,7 +441,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     };
 
     if (pdev->sbstack_depth >= pdev->sbstack_size)
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
     code = pdf_alloc_aside(pdev, PDF_RESOURCE_CHAIN(pdev, rtype, id),
 		pdf_resource_type_structs[rtype], &pres, 0);
     if (code < 0)
@@ -449,11 +449,11 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     cos_become(pres->object, cos_type_stream);
     s = cos_write_stream_alloc((cos_stream_t *)pres->object, pdev, "pdf_enter_substream");
     if (s == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     if (pdev->sbstack[sbstack_ptr].text_state == 0) {
 	pdev->sbstack[sbstack_ptr].text_state = pdf_text_state_alloc(pdev->pdf_memory);
 	if (pdev->sbstack[sbstack_ptr].text_state == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
     }
     pdev->strm = s;
     code = pdf_begin_data_stream(pdev, &writer,
@@ -505,7 +505,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdf_procset_t procsets;
 
     if (pdev->sbstack_depth <= 0)
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
     sbstack_ptr = pdev->sbstack_depth - 1;
     while (pdev->vgstack_depth > pdev->vgstack_bottom) {
 	code1 = pdf_restore_viewer_state(pdev, s);
@@ -522,7 +522,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
 
 
 	if (status < 0 && code >=0)
-	     code = gs_note_error(gs_error_ioerror);
+	     code = gs_note_error(pdev->memory, gs_error_ioerror);
 	pcs->is_open = false;
     }
     sclose(s);
@@ -587,14 +587,14 @@ pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_reso
 	if (v != NULL) {
 	    if (v->value_type != COS_VALUE_OBJECT && 
 		v->value_type != COS_VALUE_RESOURCE)
-		return_error(gs_error_unregistered); /* Must not happen. */
+		return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
 	    list = (cos_dict_t *)v->contents.object;	
 	    if (list->cos_procs != &cos_dict_procs)
-		return_error(gs_error_unregistered); /* Must not happen. */
+		return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
 	} else {
 	    list = cos_dict_alloc(pdev, "pdf_add_resource");
 	    if (list == NULL)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    code = cos_dict_put_c_key_object((cos_dict_t *)pcd, key, (cos_object_t *)list);
 	    if (code < 0)
 		return code;

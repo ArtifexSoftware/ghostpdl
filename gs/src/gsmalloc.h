@@ -48,7 +48,7 @@ extern gs_memory_t *gs_memory_t_default;  /* may be locked */
  * The following procedures are historical artifacts that we hope to
  * get rid of someday.
  */
-gs_memory_t * gs_malloc_init(void);
+gs_memory_t * gs_malloc_init(const gs_memory_t *parent);
 void gs_malloc_release(void);
 #define gs_malloc(nelts, esize, cname)\
   (void *)gs_alloc_byte_array(&gs_memory_default, nelts, esize, cname)

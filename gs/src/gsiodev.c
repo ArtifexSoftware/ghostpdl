@@ -70,7 +70,7 @@ gs_iodev_init(gs_memory_t * mem)
     int code = 0;
 
     if (table == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     for (i = 0; i < gx_io_device_table_count; ++i) {
 	gx_io_device *iodev =
 	    gs_alloc_struct(mem, gx_io_device, &st_io_device,
@@ -99,7 +99,7 @@ gs_iodev_init(gs_memory_t * mem)
 	gs_free_object(mem, table[i - 1], "gs_iodev_init(iodev)");
     gs_free_object(mem, table, "gs_iodev_init(table)");
     io_device_table = 0;
-    return (code < 0 ? code : gs_note_error(gs_error_VMerror));
+    return (code < 0 ? code : gs_note_error(mem, gs_error_VMerror));
 }
 
 /* ------ Default (unimplemented) IODevice procedures ------ */
@@ -114,45 +114,46 @@ int
 iodev_no_open_device(gx_io_device * iodev, const char *access, stream ** ps,
 		     gs_memory_t * mem)
 {
-    return_error(gs_error_invalidfileaccess);
+    return_error(mem, gs_error_invalidfileaccess);
 }
 
 int
 iodev_no_open_file(gx_io_device * iodev, const char *fname, uint namelen,
 		   const char *access, stream ** ps, gs_memory_t * mem)
 {
-    return_error(gs_error_invalidfileaccess);
+    return_error(mem, gs_error_invalidfileaccess);
 }
 
 int
-iodev_no_fopen(gx_io_device * iodev, const char *fname, const char *access,
+iodev_no_fopen(const gs_memory_t *mem,
+	       gx_io_device * iodev, const char *fname, const char *access,
 	       FILE ** pfile, char *rfname, uint rnamelen)
 {
-    return_error(gs_error_invalidfileaccess);
+    return_error(mem, gs_error_invalidfileaccess);
 }
 
 int
-iodev_no_fclose(gx_io_device * iodev, FILE * file)
+iodev_no_fclose(const gs_memory_t *mem, gx_io_device * iodev, FILE * file)
 {
-    return_error(gs_error_ioerror);
+    return_error(mem, gs_error_ioerror);
 }
 
 int
-iodev_no_delete_file(gx_io_device * iodev, const char *fname)
+iodev_no_delete_file(const gs_memory_t *mem, gx_io_device * iodev, const char *fname)
 {
-    return_error(gs_error_invalidfileaccess);
+    return_error(mem, gs_error_invalidfileaccess);
 }
 
 int
-iodev_no_rename_file(gx_io_device * iodev, const char *from, const char *to)
+iodev_no_rename_file(const gs_memory_t *mem, gx_io_device * iodev, const char *from, const char *to)
 {
-    return_error(gs_error_invalidfileaccess);
+    return_error(mem, gs_error_invalidfileaccess);
 }
 
 int
-iodev_no_file_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
+iodev_no_file_status(const gs_memory_t *mem, gx_io_device * iodev, const char *fname, struct stat *pstat)
 {
-    return_error(gs_error_undefinedfilename);
+    return_error(mem, gs_error_undefinedfilename);
 }
 
 file_enum *
@@ -178,13 +179,14 @@ iodev_no_put_params(gx_io_device * iodev, gs_param_list * plist)
 
 /* The fopen routine is exported for %null. */
 int
-iodev_os_fopen(gx_io_device * iodev, const char *fname, const char *access,
+iodev_os_fopen(const gs_memory_t *mem, 
+	       gx_io_device * iodev, const char *fname, const char *access,
 	       FILE ** pfile, char *rfname, uint rnamelen)
 {
     errno = 0;
     *pfile = gp_fopen(fname, access);
     if (*pfile == NULL)
-	return_error(gs_fopen_errno_to_code(errno));
+	return_error(mem, gs_fopen_errno_to_code(mem, errno));
     if (rfname != NULL)
 	strcpy(rfname, fname);
     return 0;
@@ -192,26 +194,30 @@ iodev_os_fopen(gx_io_device * iodev, const char *fname, const char *access,
 
 /* The fclose routine is exported for %null. */
 int
-iodev_os_fclose(gx_io_device * iodev, FILE * file)
+iodev_os_fclose(const gs_memory_t *mem, 
+		gx_io_device * iodev, FILE * file)
 {
     fclose(file);
     return 0;
 }
 
 private int
-os_delete(gx_io_device * iodev, const char *fname)
+os_delete(const gs_memory_t *mem, 
+	  gx_io_device * iodev, const char *fname)
 {
     return (unlink(fname) == 0 ? 0 : gs_error_ioerror);
 }
 
 private int
-os_rename(gx_io_device * iodev, const char *from, const char *to)
+os_rename(const gs_memory_t *mem, 
+	  gx_io_device * iodev, const char *from, const char *to)
 {
     return (rename(from, to) == 0 ? 0 : gs_error_ioerror);
 }
 
 private int
-os_status(gx_io_device * iodev, const char *fname, struct stat *pstat)
+os_status(const gs_memory_t *mem,
+	  gx_io_device * iodev, const char *fname, struct stat *pstat)
 {				/* The RS/6000 prototype for stat doesn't include const, */
     /* so we have to explicitly remove the const modifier. */
     return (stat((char *)fname, pstat) < 0 ? gs_error_undefinedfilename : 0);
@@ -313,13 +319,13 @@ gs_putdevparams(gx_io_device * iodev, gs_param_list * plist)
 /* Convert an OS error number to a PostScript error */
 /* if opening a file fails. */
 int
-gs_fopen_errno_to_code(int eno)
+gs_fopen_errno_to_code(const gs_memory_t *mem, int eno)
 {				/* Different OSs vary widely in their error codes. */
     /* We try to cover as many variations as we know about. */
     switch (eno) {
 #ifdef ENOENT
 	case ENOENT:
-	    return_error(gs_error_undefinedfilename);
+	    return_error(mem, gs_error_undefinedfilename);
 #endif
 #ifdef ENOFILE
 #  ifndef ENOENT
@@ -327,26 +333,26 @@ gs_fopen_errno_to_code(int eno)
 #  endif
 #  if ENOFILE != ENOENT
 	case ENOFILE:
-	    return_error(gs_error_undefinedfilename);
+	    return_error(mem, gs_error_undefinedfilename);
 #  endif
 #endif
 #ifdef ENAMETOOLONG
 	case ENAMETOOLONG:
-	    return_error(gs_error_undefinedfilename);
+	    return_error(mem, gs_error_undefinedfilename);
 #endif
 #ifdef EACCES
 	case EACCES:
-	    return_error(gs_error_invalidfileaccess);
+	    return_error(mem, gs_error_invalidfileaccess);
 #endif
 #ifdef EMFILE
 	case EMFILE:
-	    return_error(gs_error_limitcheck);
+	    return_error(mem, gs_error_limitcheck);
 #endif
 #ifdef ENFILE
 	case ENFILE:
-	    return_error(gs_error_limitcheck);
+	    return_error(mem, gs_error_limitcheck);
 #endif
 	default:
-	    return_error(gs_error_ioerror);
+	    return_error(mem, gs_error_ioerror);
     }
 }

@@ -67,16 +67,16 @@ struct gc_mark_stack_s {
 
 /* Forward references */
 private void gc_init_mark_stack(gc_mark_stack *, uint);
-private void gc_objects_clear_marks(chunk_t *);
+private void gc_objects_clear_marks(const gs_memory_t *mem, chunk_t *);
 private void gc_unmark_names(name_table *);
-private int gc_trace(gs_gc_root_t *, gc_state_t *, gc_mark_stack *);
-private int gc_rescan_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
-private int gc_trace_chunk(chunk_t *, gc_state_t *, gc_mark_stack *);
+private int gc_trace(const gs_memory_t *mem, gs_gc_root_t *, gc_state_t *, gc_mark_stack *);
+private int gc_rescan_chunk(const gs_memory_t *mem, chunk_t *, gc_state_t *, gc_mark_stack *);
+private int gc_trace_chunk(const gs_memory_t *mem, chunk_t *, gc_state_t *, gc_mark_stack *);
 private bool gc_trace_finish(gc_state_t *);
-private void gc_clear_reloc(chunk_t *);
-private void gc_objects_set_reloc(chunk_t *);
+private void gc_clear_reloc(const gs_memory_t *cmem, chunk_t *);
+private void gc_objects_set_reloc(const gs_memory_t *mem, chunk_t *);
 private void gc_do_reloc(chunk_t *, gs_ref_memory_t *, gc_state_t *);
-private void gc_objects_compact(chunk_t *, gc_state_t *);
+private void gc_objects_compact(const gs_memory_t *mem, chunk_t *, gc_state_t *);
 private void gc_free_empty_chunks(gs_ref_memory_t *);
 
 /* Forward references for pointer types */
@@ -117,12 +117,12 @@ const gs_ptr_procs_t ptr_ref_procs =
 /* Top level of garbage collector. */
 #ifdef DEBUG
 private void
-end_phase(const char *str)
+end_phase(const gs_memory_t *mem, const char *str)
 {
     if (gs_debug_c('6')) {
-	dlprintf1("[6]---------------- end %s ----------------\n",
+	dlprintf1(mem, "[6]---------------- end %s ----------------\n",
 		  (const char *)str);
-	dflush();
+	dflush(mem);
     }
 }
 static const char *const depth_dots_string = "..........";
@@ -170,6 +170,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	ms_entry body[ms_size_default];
     } ms_default;
     gc_mark_stack *mark_stack = &ms_default.stack;
+    const gs_memory_t *cmem;
 
     /* Optionally force global GC for debugging. */
 
@@ -179,6 +180,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* Determine which spaces we are tracing and collecting. */
 
     spaces = *pspaces;
+    cmem = space_system->stable_memory;
     space_memories[1] = space_system;
     space_memories[2] = space_global;
     min_collect = max_trace = 2;
@@ -236,7 +238,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 				(void **)&space_memories[ispace],
 				"gc_top_level");
 
-    end_phase("register space roots");
+    end_phase(cmem, "register space roots");
 
 #ifdef DEBUG
 
@@ -244,7 +246,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     gc_validate_spaces(space_memories, max_trace, &state);
 
-    end_phase("pre-validate pointers");
+    end_phase(cmem, "pre-validate pointers");
 
 #endif
 
@@ -256,11 +258,11 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     for_collected_spaces(ispace)
 	for_space_chunks(ispace, mem, cp) {
-	gc_objects_clear_marks(cp);
-	gc_strings_set_marks(cp, false);
+	gc_objects_clear_marks(cmem, cp);
+	gc_strings_set_marks(cmem, cp, false);
     }
 
-    end_phase("clear chunk marks");
+    end_phase(cmem, "clear chunk marks");
 
     /* Clear the marks of roots.  We must do this explicitly, */
     /* since some roots are not in any chunk. */
@@ -269,11 +271,11 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	enum_ptr_t eptr;
 
 	eptr.ptr = *rp->p;
-	if_debug_root('6', "[6]unmarking root", rp);
+	if_debug_root(cmem, '6', "[6]unmarking root", rp);
 	(*rp->ptype->unmark)(&eptr, &state);
     }
 
-    end_phase("clear root marks");
+    end_phase((const gs_memory_t *)mem, "clear root marks");
 
     if (global)
 	gc_unmark_names(state.ntable);
@@ -304,7 +306,8 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 		end->next = pms;
 		pms->prev = end;
 		pms->on_heap = false;
-		if_debug2('6', "[6]adding free 0x%lx(%u) to mark stack\n",
+		if_debug2(cmem, 
+			  '6', "[6]adding free 0x%lx(%u) to mark stack\n",
 			  (ulong) pms, pms->count);
 	    }
 	    cp->rescan_bot = cp->cend;
@@ -320,27 +323,27 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	/* Mark from roots. */
 
 	for_roots(max_trace, mem, rp) {
-	    if_debug_root('6', "[6]marking root", rp);
-	    more |= gc_trace(rp, &state, mark_stack);
+	    if_debug_root(cmem, '6', "[6]marking root", rp);
+	    more |= gc_trace(cmem, rp, &state, mark_stack);
 	}
 
-	end_phase("mark");
+	end_phase((const gs_memory_t *)mem, "mark");
 
 	/* If this is a local GC, mark from non-local chunks. */
 
 	if (!global)
 	    for_chunks(min_collect - 1, mem, cp)
-		more |= gc_trace_chunk(cp, &state, mark_stack);
+		more |= gc_trace_chunk((const gs_memory_t *)mem, cp, &state, mark_stack);
 
 	/* Handle mark stack overflow. */
 
 	while (more < 0) {	/* stack overflowed */
 	    more = 0;
 	    for_chunks(max_trace, mem, cp)
-		more |= gc_rescan_chunk(cp, &state, mark_stack);
+		more |= gc_rescan_chunk((const gs_memory_t *)mem, cp, &state, mark_stack);
 	}
 
-	end_phase("mark overflow");
+	end_phase(cmem, "mark overflow");
     }
 
     /* Free the mark stack. */
@@ -362,27 +365,27 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	}
     }
 
-    end_phase("free mark stack");
+    end_phase(cmem, "free mark stack");
 
     if (global) {
 	gc_trace_finish(&state);
 	names_trace_finish(state.ntable, &state);
 
-	end_phase("finish trace");
+	end_phase(cmem, "finish trace");
     }
     /* Clear marks and relocation in spaces that are only being traced. */
     /* We have to clear the marks first, because we want the */
     /* relocation to wind up as o_untraced, not o_unmarked. */
 
     for_chunks(min_collect - 1, mem, cp)
-	gc_objects_clear_marks(cp);
+	gc_objects_clear_marks(cmem, cp);
 
-    end_phase("post-clear marks");
+    end_phase(cmem, "post-clear marks");
 
     for_chunks(min_collect - 1, mem, cp)
-	gc_clear_reloc(cp);
+	gc_clear_reloc(cmem, cp);
 
-    end_phase("clear reloc");
+    end_phase(cmem, "clear reloc");
 
     /* Set the relocation of roots outside any chunk to o_untraced, */
     /* so we won't try to relocate pointers to them. */
@@ -401,7 +404,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     /* we are going to compact.  Also finalize freed objects. */
 
     for_collected_chunks(mem, cp) {
-	gc_objects_set_reloc(cp);
+	gc_objects_set_reloc(cmem, cp);
 	gc_strings_set_reloc(cp);
     }
 
@@ -413,7 +416,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	    gs_enable_free((gs_memory_t *)space_memories[i], true);
     }
 
-    end_phase("set reloc");
+    end_phase((const gs_memory_t *)mem, "set reloc");
 
     /* Relocate pointers. */
 
@@ -424,10 +427,10 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     for_collected_chunks(mem, cp)
 	gc_do_reloc(cp, mem, &state);
 
-    end_phase("relocate chunks");
+    end_phase((const gs_memory_t *)mem, "relocate chunks");
 
     for_roots(max_trace, mem, rp) {
-	if_debug3('6', "[6]relocating root 0x%lx: 0x%lx -> 0x%lx\n",
+	if_debug3((const gs_memory_t *)mem, '6', "[6]relocating root 0x%lx: 0x%lx -> 0x%lx\n",
 		  (ulong) rp, (ulong) rp->p, (ulong) * rp->p);
 	if (rp->ptype == ptr_ref_type) {
 	    ref *pref = (ref *) * rp->p;
@@ -437,21 +440,22 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 			   &state);
 	} else
 	    *rp->p = (*rp->ptype->reloc) (*rp->p, &state);
-	if_debug3('6', "[6]relocated root 0x%lx: 0x%lx -> 0x%lx\n",
+	if_debug3((const gs_memory_t *)mem, 
+		  '6', "[6]relocated root 0x%lx: 0x%lx -> 0x%lx\n",
 		  (ulong) rp, (ulong) rp->p, (ulong) * rp->p);
     }
 
-    end_phase("relocate roots");
+    end_phase((const gs_memory_t *)mem, "relocate roots");
 
     /* Compact data.  We only do this for spaces we are collecting. */
 
     for_collected_spaces(ispace) {
 	for_space_mems(ispace, mem) {
 	    for_mem_chunks(mem, cp) {
-		if_debug_chunk('6', "[6]compacting chunk", cp);
-		gc_objects_compact(cp, &state);
-		gc_strings_compact(cp);
-		if_debug_chunk('6', "[6]after compaction:", cp);
+		if_debug_chunk(cmem, '6', "[6]compacting chunk", cp);
+		gc_objects_compact(cmem, cp, &state);
+		gc_strings_compact(cmem, cp);
+		if_debug_chunk(cmem, '6', "[6]after compaction:", cp);
 		if (mem->pcc == cp)
 		    mem->cc = *cp;
 	    }
@@ -460,7 +464,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	}
     }
 
-    end_phase("compact");
+    end_phase((const gs_memory_t *)mem, "compact");
 
     /* Free empty chunks. */
 
@@ -470,7 +474,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
         }
     }
 
-    end_phase("free empty chunks");
+    end_phase((const gs_memory_t *)mem, "free empty chunks");
 
     /*
      * Update previous_status to reflect any freed chunks,
@@ -502,7 +506,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	    next = mem->saved;
 	    mem->saved = prev;
 	    mem->previous_status = total;
-	    if_debug3('6',
+	    if_debug3((const gs_memory_t *)mem, '6',
 		      "[6]0x%lx previous allocated=%lu, used=%lu\n",
 		      (ulong) mem, total.allocated, total.used);
 	    gs_memory_status((gs_memory_t *) mem, &total);
@@ -512,11 +516,11 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	mem = space_memories[ispace];
 	mem->previous_status = total;
 	mem->gc_allocated = mem->allocated + total.allocated;
-	if_debug3('6', "[6]0x%lx previous allocated=%lu, used=%lu\n",
+	if_debug3((const gs_memory_t *)mem, '6', "[6]0x%lx previous allocated=%lu, used=%lu\n",
 		  (ulong) mem, total.allocated, total.used);
     }
 
-    end_phase("update stats");
+    end_phase((const gs_memory_t *)mem, "update stats");
 
   no_collect:
 
@@ -526,7 +530,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 	gs_unregister_root((gs_memory_t *)space_memories[ispace],
 			   &space_roots[ispace], "gc_top_level");
 
-    end_phase("unregister space roots");
+    end_phase((const gs_memory_t *)mem, "unregister space roots");
 
 #ifdef DEBUG
 
@@ -534,7 +538,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
     gc_validate_spaces(space_memories, max_trace, &state);
 
-    end_phase("validate pointers");
+    end_phase((const gs_memory_t *)mem, "validate pointers");
 
 #endif
 }
@@ -543,10 +547,10 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
 
 /* Validate a pointer to an object header. */
 #ifdef DEBUG
-#  define debug_check_object(pre, cp, gcst)\
-     ialloc_validate_object((pre) + 1, cp, gcst)
+#  define debug_check_object(mem, pre, cp, gcst)\
+     ialloc_validate_object(mem, (pre) + 1, cp, gcst)
 #else
-#  define debug_check_object(pre, cp, gcst) DO_NOTHING
+#  define debug_check_object(mem, pre, cp, gcst) DO_NOTHING
 #endif
 
 /* ------ Unmarking phase ------ */
@@ -565,28 +569,30 @@ ptr_struct_unmark(enum_ptr_t *pep, gc_state_t * ignored)
 private void
 ptr_string_unmark(enum_ptr_t *pep, gc_state_t * gcst)
 {
-    discard(gc_string_mark(pep->ptr, pep->size, false, gcst));
+    const gs_memory_t *cmem = gcst->spaces.memories.named.system->stable_memory;
+    
+    discard(gc_string_mark(cmem, pep->ptr, pep->size, false, gcst));
 }
 
 /* Unmark the objects in a chunk. */
 private void
-gc_objects_clear_marks(chunk_t * cp)
+gc_objects_clear_marks(const gs_memory_t *mem, chunk_t * cp)
 {
-    if_debug_chunk('6', "[6]unmarking chunk", cp);
+    if_debug_chunk(mem, '6', "[6]unmarking chunk", cp);
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
 	struct_proc_clear_marks((*proc)) =
 	pre->o_type->clear_marks;
 #ifdef DEBUG
     if (pre->o_type != &st_free)
-	debug_check_object(pre, cp, NULL);
+	debug_check_object(mem, pre, cp, NULL);
 #endif
-    if_debug3('7', " [7](un)marking %s(%lu) 0x%lx\n",
+    if_debug3(mem, '7', " [7](un)marking %s(%lu) 0x%lx\n",
 	      struct_type_name_string(pre->o_type),
 	      (ulong) size, (ulong) pre);
     o_set_unmarked(pre);
     if (proc != 0)
-	(*proc) (pre + 1, size, pre->o_type);
+	(*proc) (mem, pre + 1, size, pre->o_type);
     END_OBJECTS_SCAN
 }
 
@@ -626,7 +632,7 @@ gc_init_mark_stack(gc_mark_stack * pms, uint count)
 /* Mark starting from all marked objects in the interval of a chunk */
 /* needing rescanning. */
 private int
-gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
+gc_rescan_chunk(const gs_memory_t *mem, chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     byte *sbot = cp->rescan_bot;
     byte *stop = cp->rescan_top;
@@ -637,7 +643,7 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
     if (sbot > stop)
 	return 0;
     root.p = &comp;
-    if_debug_chunk('6', "[6]rescanning chunk", cp);
+    if_debug_chunk(mem, '6', "[6]rescanning chunk", cp);
     cp->rescan_bot = cp->cend;
     cp->rescan_top = cp->cbase;
     SCAN_CHUNK_OBJECTS(cp)
@@ -646,7 +652,7 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
     else if ((byte *) (pre + 1) > stop)
 	return more;		/* 'break' won't work here */
     else {
-	if_debug2('7', " [7]scanning/marking 0x%lx(%lu)\n",
+	if_debug2(mem, '7', " [7]scanning/marking 0x%lx(%lu)\n",
 		  (ulong) pre, (ulong) size);
 	if (pre->o_type == &st_refs) {
 	    ref_packed *rp = (ref_packed *) (pre + 1);
@@ -658,7 +664,7 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		if (r_is_packed(rp)) {
 		    if (r_has_pmark(rp)) {
 			r_clear_pmark(rp);
-			more |= gc_trace(&root, pstate,
+			more |= gc_trace(mem, &root, pstate,
 					 pmstack);
 		    }
 		    rp++;
@@ -667,7 +673,7 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 
 		    if (r_has_attr(pref, l_mark)) {
 			r_clear_attrs(pref, l_mark);
-			more |= gc_trace(&root, pstate, pmstack);
+			more |= gc_trace(mem, &root, pstate, pmstack);
 		    }
 		    rp += packed_per_ref;
 		}
@@ -680,8 +686,8 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 	    if (!o_is_untraced(pre))
 		o_set_unmarked(pre);
 	    if (proc != 0)
-		(*proc) (comp, size, pre->o_type);
-	    more |= gc_trace(&root, pstate, pmstack);
+		(*proc) (mem, comp, size, pre->o_type);
+	    more |= gc_trace(mem, &root, pstate, pmstack);
 	}
     }
     END_OBJECTS_SCAN
@@ -692,7 +698,7 @@ gc_rescan_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 /* We assume that pstate->min_collect > avm_system, */
 /* so we don't have to trace names. */
 private int
-gc_trace_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
+gc_trace_chunk(const gs_memory_t *mem, chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     gs_gc_root_t root;
     void *comp;
@@ -700,11 +706,11 @@ gc_trace_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
     int min_trace = pstate->min_collect;
 
     root.p = &comp;
-    if_debug_chunk('6', "[6]marking from chunk", cp);
+    if_debug_chunk(mem, '6', "[6]marking from chunk", cp);
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
     {
-	if_debug2('7', " [7]scanning/marking 0x%lx(%lu)\n",
+	if_debug2(mem, '7', " [7]scanning/marking 0x%lx(%lu)\n",
 		  (ulong) pre, (ulong) size);
 	if (pre->o_type == &st_refs) {
 	    ref_packed *rp = (ref_packed *) (pre + 1);
@@ -720,7 +726,7 @@ gc_trace_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 
 		    if (r_space(pref) >= min_trace) {
 			r_clear_attrs(pref, l_mark);
-			more |= gc_trace(&root, pstate, pmstack);
+			more |= gc_trace(mem, &root, pstate, pmstack);
 		    }
 		    rp += packed_per_ref;
 		}
@@ -735,8 +741,8 @@ gc_trace_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		root.ptype = ptr_struct_type;
 		comp = pre + 1;
 		if (proc != 0)
-		    (*proc) (comp, size, pre->o_type);
-		more |= gc_trace(&root, pstate, pmstack);
+		    (*proc) (mem, comp, size, pre->o_type);
+		more |= gc_trace(mem, &root, pstate, pmstack);
 	    }
 	}
     }
@@ -748,9 +754,10 @@ gc_trace_chunk(chunk_t * cp, gc_state_t * pstate, gc_mark_stack * pmstack)
 /* Return -1 if we overflowed the mark stack, */
 /* 0 if we completed successfully without marking any new objects, */
 /* 1 if we completed and marked some new objects. */
-private int gc_extend_stack(gc_mark_stack *, gc_state_t *);
+private int gc_extend_stack(const gs_memory_t *mem, gc_mark_stack *, gc_state_t *);
 private int
-gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
+gc_trace(const gs_memory_t *mem, 
+	 gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 {
     int min_trace = pstate->min_collect;
     gc_mark_stack *pms = pmstack;
@@ -768,7 +775,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
   BEGIN\
     if (names_mark_index(nt, nidx)) {\
 	new |= 1;\
-	if_debug2('8', "  [8]marked name 0x%lx(%u)\n",\
+	if_debug2(mem, '8', "  [8]marked name 0x%lx(%u)\n",\
 		  (ulong)names_index_ptr(nt, nidx), nidx);\
     }\
   END
@@ -813,18 +820,18 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		sp = stop;
 		continue;
 	    }
-	    debug_check_object(ptr - 1, NULL, NULL);
-	  ts:if_debug4('7', " [7]%smarking %s 0x%lx[%u]",
+	    debug_check_object(mem, ptr - 1, NULL, NULL);
+	  ts:if_debug4(mem, '7', " [7]%smarking %s 0x%lx[%u]",
 		      depth_dots(sp, pms),
 		      struct_type_name_string(ptr[-1].o_type),
 		      (ulong) ptr, sp->index);
 	    mproc = ptr[-1].o_type->enum_ptrs;
 	    if (mproc == gs_no_struct_enum_ptrs ||
 		(ptp = (*mproc)
-		 (ptr, pre_obj_contents_size(ptr - 1),
+		 (mem, ptr, pre_obj_contents_size(ptr - 1),
 		  sp->index, &nep, ptr[-1].o_type, pstate)) == 0
 		) {
-		if_debug0('7', " - done\n");
+		if_debug0(mem, '7', " - done\n");
 		sp--;
 		continue;
 	    }
@@ -833,7 +840,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 	    /* template for pointer enumeration work. */
 	    nptr = (void *)nep.ptr;
 	    sp->index++;
-	    if_debug1('7', " = 0x%lx\n", (ulong) nptr);
+	    if_debug1(mem, '7', " = 0x%lx\n", (ulong) nptr);
 	    /* Descend into nep.ptr, whose pointer type is ptp. */
 	    if (ptp == ptr_struct_type) {
 		sp[1].index = 0;
@@ -873,7 +880,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		continue;
 	    }
 	    --(sp->index);
-	    if_debug3('8', "  [8]%smarking refs 0x%lx[%u]\n",
+	    if_debug3(mem, '8', "  [8]%smarking refs 0x%lx[%u]\n",
 		      depth_dots(sp, pms), (ulong) pptr, sp->index);
 	    if (r_is_packed(pptr)) {
 		if (!r_has_pmark(pptr)) {
@@ -961,7 +968,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 		  nr:pptr = (ref_packed *) (rptr + 1);
 		    goto tr;
 		case t_string:
-		    if (gc_string_mark(rptr->value.bytes, r_size(rptr), true, pstate))
+		    if (gc_string_mark(mem, rptr->value.bytes, r_size(rptr), true, pstate))
 			new |= 1;
 		    goto nr;
 		case t_oparray:
@@ -977,7 +984,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 
       push:
 	if (sp == stop) {	/* The current segment is full. */
-	    int new_added = gc_extend_stack(pms, pstate);
+	    int new_added = gc_extend_stack(mem, pms, pstate);
 
 	    if (new_added) {
 		new |= new_added;
@@ -1002,7 +1009,7 @@ gc_trace(gs_gc_root_t * rp, gc_state_t * pstate, gc_mark_stack * pmstack)
 /* Link to, attempting to allocate if necessary, */
 /* another chunk of mark stack. */
 private int
-gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
+gc_extend_stack(const gs_memory_t *mem, gc_mark_stack * pms, gc_state_t * pstate)
 {
     if (pms->next == 0) {	/* Try to allocate another segment. */
 	uint count;
@@ -1024,7 +1031,8 @@ gc_extend_stack(gc_mark_stack * pms, gc_state_t * pstate)
 
 	    if (cp == 0) {	/* We were tracing outside collectible */
 		/* storage.  This can't happen. */
-		lprintf1("mark stack overflowed while outside collectible space at 0x%lx!\n",
+		lprintf1(mem, 
+			 "mark stack overflowed while outside collectible space at 0x%lx!\n",
 			 (ulong) cptr);
 		gs_abort();
 	    }
@@ -1058,9 +1066,10 @@ ptr_struct_mark(enum_ptr_t *pep, gc_state_t * ignored)
 
 /* Mark a string.  Return true if new mark. */
 private bool
-ptr_string_mark(enum_ptr_t *pep, gc_state_t * gcst)
+ptr_string_mark(enum_ptr_t *pep, gc_state_t *gcst)
 {
-    return gc_string_mark(pep->ptr, pep->size, true, gcst);
+    return gc_string_mark(gcst->spaces.memories.named.system->stable_memory,
+			  pep->ptr, pep->size, true, gcst);
 }
 
 /* Finish tracing by marking names. */
@@ -1078,7 +1087,8 @@ gc_trace_finish(gc_state_t * pstate)
 	    enum_ptr_t enst, ensst;
 
 	    if (!pnstr->foreign_string &&
-		gc_string_mark(pnstr->string_bytes, pnstr->string_size,
+		gc_string_mark(pstate->spaces.memories.named.system->stable_memory,
+			       pnstr->string_bytes, pnstr->string_size,
 			       true, pstate)
 		)
 		marked = true;
@@ -1109,7 +1119,7 @@ gc_init_reloc(chunk_t * cp)
 
 /* Set marks and clear relocation for chunks that won't be compacted. */
 private void
-gc_clear_reloc(chunk_t * cp)
+gc_clear_reloc(const gs_memory_t *cmem, chunk_t * cp)
 {
     byte *pfree = (byte *) & cp->chead->free;
 
@@ -1120,24 +1130,24 @@ gc_clear_reloc(chunk_t * cp)
     pre->o_type->shared;
 
     if (procs != 0)
-	(*procs->clear_reloc) (pre, size);
+	(*procs->clear_reloc) (cmem, pre, size);
     o_set_untraced(pre);
     pre->o_back = ((byte *) pre - pfree) >> obj_back_shift;
     END_OBJECTS_SCAN
-	gc_strings_set_marks(cp, true);
-    gc_strings_clear_reloc(cp);
+	gc_strings_set_marks(cmem, cp, true);
+    gc_strings_clear_reloc(cmem, cp);
 }
 
 /* Set the relocation for the objects in a chunk. */
 /* This will never be called for a chunk with any o_untraced objects. */
 private void
-gc_objects_set_reloc(chunk_t * cp)
+gc_objects_set_reloc(const gs_memory_t *mem, chunk_t * cp)
 {
     uint reloc = 0;
     chunk_head_t *chead = cp->chead;
     byte *pfree = (byte *) & chead->free;	/* most recent free object */
 
-    if_debug_chunk('6', "[6]setting reloc for chunk", cp);
+    if_debug_chunk(mem, '6', "[6]setting reloc for chunk", cp);
     gc_init_reloc(cp);
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
@@ -1146,11 +1156,11 @@ gc_objects_set_reloc(chunk_t * cp)
     pre->o_type->shared;
 
     if ((procs == 0 ? o_is_unmarked(pre) :
-	 !(*procs->set_reloc) (pre, reloc, size))
+	 !(*procs->set_reloc) (mem, pre, reloc, size))
 	) {			/* Free object */
 	reloc += sizeof(obj_header_t) + obj_align_round(size);
 	if ((finalize = pre->o_type->finalize) != 0) {
-	    if_debug2('u', "[u]GC finalizing %s 0x%lx\n",
+	    if_debug2(mem, 'u', "[u]GC finalizing %s 0x%lx\n",
 		      struct_type_name_string(pre->o_type),
 		      (ulong) (pre + 1));
 	    (*finalize) (pre + 1);
@@ -1158,17 +1168,17 @@ gc_objects_set_reloc(chunk_t * cp)
 	pfree = (byte *) pre;
 	pre->o_back = (pfree - (byte *) chead) >> obj_back_shift;
 	pre->o_nreloc = reloc;
-	if_debug3('7', " [7]at 0x%lx, unmarked %lu, new reloc = %u\n",
+	if_debug3(mem, '7', " [7]at 0x%lx, unmarked %lu, new reloc = %u\n",
 		  (ulong) pre, (ulong) size, reloc);
     } else {			/* Useful object */
-	debug_check_object(pre, cp, NULL);
+	debug_check_object(mem, pre, cp, NULL);
 	pre->o_back = ((byte *) pre - pfree) >> obj_back_shift;
     }
     END_OBJECTS_SCAN
 #ifdef DEBUG
 	if (reloc != 0) {
-	if_debug1('6', "[6]freed %u", reloc);
-	if_debug_chunk('6', " in", cp);
+	if_debug1(mem, '6', "[6]freed %u", reloc);
+	if_debug_chunk(mem, '6', " in", cp);
     }
 #endif
 }
@@ -1181,7 +1191,7 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 {
     chunk_head_t *chead = cp->chead;
 
-    if_debug_chunk('6', "[6]relocating in chunk", cp);
+    if_debug_chunk((const gs_memory_t *)mem, '6', "[6]relocating in chunk", cp);
     SCAN_CHUNK_OBJECTS(cp)
 	DO_ALL
     /* We need to relocate the pointers in an object iff */
@@ -1194,7 +1204,7 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 	    struct_proc_reloc_ptrs((*proc)) =
 		pre->o_type->reloc_ptrs;
 
-	    if_debug3('7',
+	    if_debug3((const gs_memory_t *)mem, '7',
 		      " [7]relocating ptrs in %s(%lu) 0x%lx\n",
 		      struct_type_name_string(pre->o_type),
 		      (ulong) size, (ulong) pre);
@@ -1208,9 +1218,9 @@ gc_do_reloc(chunk_t * cp, gs_ref_memory_t * mem, gc_state_t * pstate)
 /* We have to provide this procedure even if DEBUG is not defined, */
 /* in case one of the other GC modules was compiled with DEBUG. */
 const void *
-print_reloc_proc(const void *obj, const char *cname, const void *robj)
+print_reloc_proc(const gs_memory_t *mem, const void *obj, const char *cname, const void *robj)
 {
-    if_debug3('9', "  [9]relocate %s * 0x%lx to 0x%lx\n",
+    if_debug3(mem, '9', "  [9]relocate %s * 0x%lx to 0x%lx\n",
 	      cname, (ulong)obj, (ulong)robj);
     return robj;
 }
@@ -1222,12 +1232,13 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 {
     const obj_header_t *const optr = (const obj_header_t *)obj;
     const void *robj;
+    const gs_memory_t *cmem = gcst->space_system->stable_memory;
 
     if (obj == 0) {
-	discard(print_reloc(obj, "NULL", 0));
+	discard(print_reloc(cmem, obj, "NULL", 0));
 	return 0;
     }
-    debug_check_object(optr - 1, NULL, gcst);
+    debug_check_object(cmem, optr - 1, NULL, gcst);
     {
 	uint back = optr[-1].o_back;
 
@@ -1237,7 +1248,7 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 #ifdef DEBUG
 	    /* Do some sanity checking. */
 	    if (back > gcst->space_local->chunk_size >> obj_back_shift) {
-		lprintf2("Invalid back pointer %u at 0x%lx!\n",
+		lprintf2(cmem, "Invalid back pointer %u at 0x%lx!\n",
 			 back, (ulong) obj);
 		gs_abort();
 	    }
@@ -1260,7 +1271,7 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
     {
 	union { const void *r; void *w; } u;
 
-	u.r = print_reloc(obj, struct_type_name_string(optr[-1].o_type), robj);
+	u.r = print_reloc(cmem, obj, struct_type_name_string(optr[-1].o_type), robj);
 	return u.w;
     }
 }
@@ -1270,7 +1281,7 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 /* Compact the objects in a chunk. */
 /* This will never be called for a chunk with any o_untraced objects. */
 private void
-gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
+gc_objects_compact(const gs_memory_t *mem, chunk_t * cp, gc_state_t * gcst)
 {
     chunk_head_t *chead = cp->chead;
     obj_header_t *dpre = (obj_header_t *) chead->dest;
@@ -1282,8 +1293,8 @@ gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
 	if (pre->o_back << obj_back_shift != (byte *) pre - (byte *) chead) {
 	const struct_shared_procs_t *procs = pre->o_type->shared;
 
-	debug_check_object(pre, cp, gcst);
-	if_debug4('7',
+	debug_check_object(mem, pre, cp, gcst);
+	if_debug4(mem, '7',
 		  " [7]compacting %s 0x%lx(%lu) to 0x%lx\n",
 		  struct_type_name_string(pre->o_type),
 		  (ulong) pre, (ulong) size, (ulong) dpre);
@@ -1292,7 +1303,7 @@ gc_objects_compact(chunk_t * cp, gc_state_t * gcst)
 		memmove(dpre, pre,
 			sizeof(obj_header_t) + size);
 	} else
-	    (*procs->compact) (pre, dpre, size);
+	    (*procs->compact) (mem, pre, dpre, size);
 	dpre = (obj_header_t *)
 	    ((byte *) dpre + obj_size_round(size));
     }
@@ -1327,4 +1338,11 @@ gc_free_empty_chunks(gs_ref_memory_t * mem)
 		mem->pcc = 0;
 	}
     }
+}
+
+const gs_memory_t * gcst_get_const_memory_t_ptr(gc_state_t *gcst)
+{
+    vm_spaces spaces = gcst->spaces;
+    const gs_memory_t *cmem = space_system->stable_memory;	
+    return cmem;
 }

@@ -49,8 +49,8 @@ zcshow(i_ctx_t *i_ctx_p)
 	proc_op = op;
 	str_op = op - 1;
     } else {
-	check_op(2);
-	return_error(e_typecheck);
+	check_op(imemory, 2);
+	return_error(imemory, e_typecheck);
     }
     if ((code = op_show_setup(i_ctx_p, str_op)) != 0 ||
 	(code = gs_cshow_begin(igs, str_op->value.bytes, r_size(str_op),
@@ -123,7 +123,7 @@ cshow_continue(i_ctx_t *i_ctx_p)
 	    if (code < 0)
 		return code;
 	}
-	push(3);
+	push(imemory, 3);
 	make_int(op - 2, gs_text_current_char(penum) & 0xff);
 	make_real(op - 1, wpt.x);
 	make_real(op, wpt.y);
@@ -151,7 +151,7 @@ zrootfont(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     *op = *pfont_dict(gs_rootfont(igs));
     return 0;
 }

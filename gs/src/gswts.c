@@ -345,10 +345,10 @@ wts_qart(double r, double rbase, double p, double pbase)
 
 #ifdef VERBOSE
 private void
-wts_print_j_jump(const gx_wts_cell_params_j_t *wcpj, const char *name,
+wts_print_j_jump(const gs_memory_t *mem, const gx_wts_cell_params_j_t *wcpj, const char *name,
 		 double pa, int xa, int ya)
 {
-    dlprintf6("jump %s: (%d, %d) %f, actual (%f, %f)\n",
+    dlprintf6(mem, "jump %s: (%d, %d) %f, actual (%f, %f)\n",
 	      name, xa, ya, pa,
 	      wcpj->ufast_a * xa + wcpj->uslow_a * ya,
 	      wcpj->vfast_a * xa + wcpj->vslow_a * ya);
@@ -367,17 +367,17 @@ wts_j_add_jump(const gx_wts_cell_params_j_t *wcpj, double *pu, double *pv,
 }
 
 private void
-wts_print_j(const gx_wts_cell_params_j_t *wcpj)
+wts_print_j(const gs_memory_t *mem, const gx_wts_cell_params_j_t *wcpj)
 {
     double uf, vf;
     double us, vs;
 
-    dlprintf3("cell = %d x %d, shift = %d\n",
+    dlprintf3(mem, "cell = %d x %d, shift = %d\n",
 	      wcpj->base.width, wcpj->base.height, wcpj->shift);
-    wts_print_j_jump(wcpj, "a", wcpj->pa, wcpj->xa, wcpj->ya);
-    wts_print_j_jump(wcpj, "b", wcpj->pb, wcpj->xb, wcpj->yb);
-    wts_print_j_jump(wcpj, "c", wcpj->pc, wcpj->xc, wcpj->yc);
-    wts_print_j_jump(wcpj, "d", wcpj->pd, wcpj->xd, wcpj->yd);
+    wts_print_j_jump(mem, wcpj, "a", wcpj->pa, wcpj->xa, wcpj->ya);
+    wts_print_j_jump(mem, wcpj, "b", wcpj->pb, wcpj->xb, wcpj->yb);
+    wts_print_j_jump(mem, wcpj, "c", wcpj->pc, wcpj->xc, wcpj->yc);
+    wts_print_j_jump(mem, wcpj, "d", wcpj->pd, wcpj->xd, wcpj->yd);
     uf = wcpj->ufast_a;
     vf = wcpj->vfast_a;
     us = wcpj->uslow_a;
@@ -386,11 +386,11 @@ wts_print_j(const gx_wts_cell_params_j_t *wcpj)
     wts_j_add_jump(wcpj, &uf, &vf, wcpj->pb, wcpj->xb, wcpj->yb);
     wts_j_add_jump(wcpj, &us, &vs, wcpj->pc, wcpj->xc, wcpj->yc);
     wts_j_add_jump(wcpj, &us, &vs, wcpj->pd, wcpj->xd, wcpj->yd);
-    dlprintf6("d: %f, %f; a: %f, %f; err: %g, %g\n",
+    dlprintf6(mem, "d: %f, %f; a: %f, %f; err: %g, %g\n",
 	    wcpj->base.ufast, wcpj->base.vfast,
 	    wcpj->ufast_a, wcpj->vfast_a,
 	    wcpj->base.ufast - uf, wcpj->base.vfast - vf);
-    dlprintf6("d: %f, %f; a: %f, %f; err: %g, %g\n",
+    dlprintf6(mem, "d: %f, %f; a: %f, %f; err: %g, %g\n",
 	    wcpj->base.uslow, wcpj->base.vslow,
 	    wcpj->uslow_a, wcpj->vslow_a,
 	    wcpj->base.uslow - us, wcpj->base.vslow - vs);
@@ -412,7 +412,7 @@ wts_print_j(const gx_wts_cell_params_j_t *wcpj)
  * Return value: Quality score for parameters chosen.
  **/
 private double
-wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
+wts_set_scr_jxi_try(const gs_memory_t *mem, gx_wts_cell_params_j_t *wcpj, int m, double qb,
 		    double jmem)
 {
     const double uf = wcpj->base.ufast;
@@ -554,7 +554,7 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 	q = qm + qw + qx + qy;
 	if (q < qbi && jumpok) {
 #ifdef VERBOSE
-	    dlprintf7("m = %d, n = %d, q = %d, qx = %d, qy = %d, qm = %d, qw = %d\n",
+	    dlprintf7(mem, "m = %d, n = %d, q = %d, qx = %d, qy = %d, qm = %d, qw = %d\n",
 		      m, i, (int)(q * 1e6), (int)(qx * 1e6), (int)(qy * 1e6), (int)(qm * 1e6), (int)(qw * 1e6));
 #endif
 	    qbi = q;
@@ -578,7 +578,7 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 	    wcpj->pc = pc;
 	    wcpj->pd = pd;
 #ifdef VERBOSE
-	    wts_print_j(wcpj);
+	    wts_print_j(mem, wcpj);
 #endif
 	}
 
@@ -620,7 +620,7 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 	    q2 = qm + qw2 + qx2 + qy;
 	    if (q2 < qbi) {
 #ifdef VERBOSE
-		dlprintf7("m = %d, n = %d, q = %d, qx2 = %d, qy = %d, qm = %d, qw2 = %d\n",
+		dlprintf7(mem, "m = %d, n = %d, q = %d, qx2 = %d, qy = %d, qm = %d, qw2 = %d\n",
 			  m, i, (int)(q * 1e6), (int)(qx * 1e6), (int)(qy * 1e6), (int)(qm * 1e6), (int)(qw2 * 1e6));
 #endif
 		if (qxl > qw2 + qx2)
@@ -646,7 +646,7 @@ wts_set_scr_jxi_try(gx_wts_cell_params_j_t *wcpj, int m, double qb,
 		wcpj->pc = pc;
 		wcpj->pd = pd;
 #ifdef VERBOSE
-		wts_print_j(wcpj);
+		wts_print_j(mem, wcpj);
 #endif
 	    }
 	} /* if (i > 1) */
@@ -678,7 +678,7 @@ wts_double_to_int_cap(double d)
  * Return value: Quality score for parameters chosen.
  **/
 private double
-wts_set_scr_jxi(gx_wts_cell_params_j_t *wcpj, double jmem)
+wts_set_scr_jxi(const gs_memory_t *mem, gx_wts_cell_params_j_t *wcpj, double jmem)
 {
     int i, imax;
     double q, qb;
@@ -696,7 +696,7 @@ wts_set_scr_jxi(gx_wts_cell_params_j_t *wcpj, double jmem)
     imax = wts_double_to_int_cap(qb / jmem);
     for (i = 1; i <= imax; i++) {
 	if (i > 1) {
-	    q = wts_set_scr_jxi_try(wcpj, i, qb, jmem);
+	    q = wts_set_scr_jxi_try(mem, wcpj, i, qb, jmem);
 	    if (q < qb) {
 		qb = q;
 		imax = wts_double_to_int_cap(q / jmem);
@@ -713,7 +713,7 @@ wts_set_scr_jxi(gx_wts_cell_params_j_t *wcpj, double jmem)
 
 /* Implementation for Screen J. This is optimized for general angles. */
 private gx_wts_cell_params_t *
-wts_pick_cell_size_j(double sratiox, double sratioy, double sangledeg,
+wts_pick_cell_size_j(const gs_memory_t *mem, double sratiox, double sratioy, double sangledeg,
 		     double memw)
 {
     gx_wts_cell_params_j_t *wcpj;
@@ -726,7 +726,7 @@ wts_pick_cell_size_j(double sratiox, double sratioy, double sangledeg,
     wcpj->base.t = WTS_SCREEN_J;
     wts_set_mat(&wcpj->base, sratiox, sratioy, sangledeg);
 
-    code = wts_set_scr_jxi(wcpj, pow(0.1, memw));
+    code = wts_set_scr_jxi(mem, wcpj, pow(0.1, memw));
     if (code < 0) {
 	free(wcpj);
 	return NULL;
@@ -743,7 +743,7 @@ wts_pick_cell_size_j(double sratiox, double sratioy, double sangledeg,
  * Return value: The WTS cell parameters, or NULL on error.
  **/
 gx_wts_cell_params_t *
-wts_pick_cell_size(gs_screen_halftone *ph, const gs_matrix *pmat)
+wts_pick_cell_size(const gs_memory_t *mem, gs_screen_halftone *ph, const gs_matrix *pmat)
 {
     gx_wts_cell_params_t *result;
 
@@ -760,7 +760,7 @@ wts_pick_cell_size(gs_screen_halftone *ph, const gs_matrix *pmat)
     if (fabs(octangle) < 1e-4)
 	result = wts_pick_cell_size_h(sratiox, sratioy, sangledeg, memw);
     else
-	result = wts_pick_cell_size_j(sratiox, sratioy, sangledeg, memw);
+	result = wts_pick_cell_size_j(mem, sratiox, sratioy, sangledeg, memw);
 
     if (result != NULL) {
 	ph->actual_frequency = ph->frequency;
@@ -930,12 +930,12 @@ gs_wts_screen_enum_currentpoint(gs_wts_screen_enum_t *wse, gs_point *ppt)
 }
 
 int
-gs_wts_screen_enum_next(gs_wts_screen_enum_t *wse, floatp value)
+gs_wts_screen_enum_next(const gs_memory_t *mem, gs_wts_screen_enum_t *wse, floatp value)
 {
     bits32 sample;
 
     if (value < -1.0 || value > 1.0)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     sample = (bits32) ((value + 1) * 0x7fffffff);
     wse->cell[wse->idx] = sample;
     wse->idx++;
@@ -1068,7 +1068,7 @@ wts_blue_bump(gs_wts_screen_enum_t *wse)
  * wts_sort_blue: Sort cell using BlueDot.
  **/
 int
-wts_sort_blue(gs_wts_screen_enum_t *wse)
+wts_sort_blue(const gs_memory_t *mem, gs_wts_screen_enum_t *wse)
 {
     bits32 *cell = wse->cell;
     int width = wse->width;
@@ -1159,7 +1159,7 @@ wts_sort_blue(gs_wts_screen_enum_t *wse)
 		}
 	    }
 #ifdef VERBOSE
-	    if_debug1('h', "[h]gmin = %d\n", gmin);
+	    if_debug1(mem, 'h', "[h]gmin = %d\n", gmin);
 #endif
 	    for (j = i + 1; j < size; j++)
 		*pcell[j] -= gmin;

@@ -144,7 +144,7 @@ gx_no_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	   int raster, gx_bitmap_id id, int x, int y, int width, int height,
 		 gx_color_index color, int depth)
 {
-    return_error(gs_error_unknownerror);
+    return_error(dev->memory, gs_error_unknownerror);
 }
 
 int
@@ -179,7 +179,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	lin = gs_alloc_bytes(mem, in_size, "copy_alpha(lin)");
 	lout = gs_alloc_bytes(mem, out_size, "copy_alpha(lout)");
 	if (lin == 0 || lout == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto out;
 	}
 	(*dev_proc(dev, decode_color)) (dev, color, color_cv);
@@ -288,7 +288,7 @@ gx_no_copy_rop(gx_device * dev,
 	       int x, int y, int width, int height,
 	       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_unknownerror);	/* not implemented */
+    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
 }
 
 int
@@ -339,17 +339,17 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	int ptx, pty;
 	const byte *ptp = tiles->data;
 
-	dlprintf4("[t]tile %dx%d raster=%d id=%lu;",
+	dlprintf4(dev->memory, "[t]tile %dx%d raster=%d id=%lu;",
 		  tiles->size.x, tiles->size.y, tiles->raster, tiles->id);
-	dlprintf6(" x,y=%d,%d w,h=%d,%d p=%d,%d\n",
+	dlprintf6(dev->memory, " x,y=%d,%d w,h=%d,%d p=%d,%d\n",
 		  x, y, w, h, px, py);
-	dlputs("");
+	dlputs(dev->memory, "");
 	for (pty = 0; pty < tiles->size.y; pty++) {
-	    dprintf("   ");
+	    dprintf(dev->memory, "   ");
 	    for (ptx = 0; ptx < tiles->raster; ptx++)
-		dprintf1("%3x", *ptp++);
+		dprintf1(dev->memory, "%3x", *ptp++);
 	}
-	dputc('\n');
+	dputc(dev->memory, '\n');
     }
 #endif
 
@@ -404,11 +404,11 @@ gx_default_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     (proc_color != 0 ?\
      (*proc_color)(dev, row, srcx, raster, id, tx, ty, tw, th) :\
      (*proc_mono)(dev, row, srcx, raster, id, tx, ty, tw, th, color0, color1));\
-  if (code < 0) return_error(code);\
+  if (code < 0) return_error(dev->memory, code);\
   return_if_interrupt()
 #ifdef DEBUG
 #define copy_tile(srcx, tx, ty, tw, th, tid)\
-  if_debug6('t', "   copy id=%lu sx=%d => x=%d y=%d w=%d h=%d\n",\
+  if_debug6(dev->memory, 't', "   copy id=%lu sx=%d => x=%d y=%d w=%d h=%d\n",\
 	    tid, srcx, tx, ty, tw, th);\
   real_copy_tile(srcx, tx, ty, tw, th, tid)
 #else
@@ -499,7 +499,7 @@ gx_no_strip_copy_rop(gx_device * dev,
 		     int x, int y, int width, int height,
 		     int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_unknownerror);	/* not implemented */
+    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
 }
 
 /* ---------------- Unaligned copy operations ---------------- */

@@ -74,7 +74,7 @@ extern_st(st_font_data);
  * Get the FontBBox from a font dictionary, if any; if none, or if invalid,
  * return 4 zeros.
  */
-int font_bbox_param(const ref * pfdict, double bbox[4]);
+int font_bbox_param(const gs_memory_t *mem, const ref * pfdict, double bbox[4]);
 
 /* ---------------- Exported by zfont.c ---------------- */
 
@@ -87,7 +87,7 @@ typedef struct gs_font_s gs_font;
  * Check a parameter that should be a valid font dictionary, and return
  * the gs_font stored in its FID entry.
  */
-int font_param(const ref * pfdict, gs_font ** ppfont);
+int font_param(const gs_memory_t *mem, const ref * pfdict, gs_font ** ppfont);
 
 /*
  * Mark a glyph as a PostScript name (if it isn't a CID) for the garbage

@@ -54,7 +54,7 @@ FILE *gs_stdio[3];
 #include <stdarg.h>
 #define PRINTF_BUF_LENGTH 1024
 
-int outprintf(const char *fmt, ...)
+int outprintf(const gs_memory_t *mem, const char *fmt, ...)
 {
     int count;
     char buf[PRINTF_BUF_LENGTH];
@@ -63,18 +63,18 @@ int outprintf(const char *fmt, ...)
     va_start(args, fmt);
 
     count = vsprintf(buf, fmt, args);
-    outwrite(buf, count);
+    outwrite(mem, buf, count);
     if (count >= PRINTF_BUF_LENGTH) {
 	count = sprintf(buf, 
 	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
 	    PRINTF_BUF_LENGTH);
-	outwrite(buf, count);
+	outwrite(mem, buf, count);
     }
     va_end(args);
     return count;
 }
 
-int errprintf(const char *fmt, ...)
+int errprintf(const gs_memory_t *mem, const char *fmt, ...)
 {
     int count;
     char buf[PRINTF_BUF_LENGTH];
@@ -83,12 +83,12 @@ int errprintf(const char *fmt, ...)
     va_start(args, fmt);
 
     count = vsprintf(buf, fmt, args);
-    errwrite(buf, count);
+    errwrite(mem, buf, count);
     if (count >= PRINTF_BUF_LENGTH) {
 	count = sprintf(buf, 
 	    "PANIC: printf exceeded %d bytes.  Stack has been corrupted.\n", 
 	    PRINTF_BUF_LENGTH);
-	errwrite(buf, count);
+	errwrite(mem, buf, count);
     }
     va_end(args);
     return count;
@@ -96,11 +96,9 @@ int errprintf(const char *fmt, ...)
 
 /* ------ Debugging ------ */
 
-/* Ghostscript writes debugging output to gs_debug_out. */
-/* We define gs_debug and gs_debug_out even if DEBUG isn't defined, */
+/* We define gs_debug even if DEBUG isn't defined, */
 /* so that we can compile individual modules with DEBUG set. */
 char gs_debug[128];
-FILE *gs_debug_out;
 
 /* Test whether a given debugging option is selected. */
 /* Upper-case letters automatically include their lower-case counterpart. */
@@ -122,9 +120,9 @@ const char *const dprintf_file_only_format = "%10s(unkn): ";
  * stdout/stderr are implemented on DLL/shared library builds.
  */
 void
-dflush(void)
+dflush(const gs_memory_t *mem)
 {
-    errflush();
+    errflush(mem);
 }
 private const char *
 dprintf_file_tail(const char *file)
@@ -139,56 +137,57 @@ dprintf_file_tail(const char *file)
 }
 #if __LINE__			/* compiler provides it */
 void
-dprintf_file_and_line(const char *file, int line)
+dprintf_file_and_line(const gs_memory_t *mem, const char *file, int line)
 {
     if (gs_debug['/'])
-	dpf(dprintf_file_and_line_format,
+	dpf(mem, dprintf_file_and_line_format,
 		dprintf_file_tail(file), line);
 }
 #else
 void
-dprintf_file_only(const char *file)
+dprintf_file_only(const gs_memory_t *mem, const char *file)
 {
     if (gs_debug['/'])
-	dpf(dprintf_file_only_format, dprintf_file_tail(file));
+	dpf(mem, dprintf_file_only_format, dprintf_file_tail(file));
 }
 #endif
 void
-printf_program_ident(const char *program_name, long revision_number)
+printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number)
 {
     if (program_name)
-	outprintf((revision_number ? "%s " : "%s"), program_name);
+	outprintf(mem, (revision_number ? "%s " : "%s"), program_name);
     if (revision_number) {
 	int fpart = revision_number % 100;
 
-	outprintf("%d.%02d", (int)(revision_number / 100), fpart);
+	outprintf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
     }
 }
 void
-eprintf_program_ident(const char *program_name,
+eprintf_program_ident(const gs_memory_t *mem, 
+		      const char *program_name,
 		      long revision_number)
 {
     if (program_name) {
-	epf((revision_number ? "%s " : "%s"), program_name);
+	epf(mem, (revision_number ? "%s " : "%s"), program_name);
 	if (revision_number) {
 	    int fpart = revision_number % 100;
 
-	    epf("%d.%02d", (int)(revision_number / 100), fpart);
+	    epf(mem, "%d.%02d", (int)(revision_number / 100), fpart);
 	}
-	epf(": ");
+	epf(mem, ": ");
     }
 }
 #if __LINE__			/* compiler provides it */
 void
-lprintf_file_and_line(const char *file, int line)
+lprintf_file_and_line(const gs_memory_t *mem, const char *file, int line)
 {
-    epf("%s(%d): ", file, line);
+    epf(mem, "%s(%d): ", file, line);
 }
 #else
 void
-lprintf_file_only(FILE * f, const char *file)
+lprintf_file_only(const gs_memory_t *mem, FILE * f, const char *file)
 {
-    epf("%s(?): ", file);
+    epf(mem, "%s(?): ", file);
 }
 #endif
 
@@ -196,13 +195,13 @@ lprintf_file_only(FILE * f, const char *file)
 /* modules were compiled with DEBUG set. */
 #undef gs_log_error		/* in case DEBUG isn't set */
 int
-gs_log_error(int err, const char *file, int line)
+gs_log_error(const gs_memory_t *mem, int err, const char *file, int line)
 {
     if (gs_log_errors) {
 	if (file == NULL)
-	    dprintf1("Returning error %d.\n", err);
+	    dprintf1(mem, "Returning error %d.\n", err);
 	else
-	    dprintf3("%s(%d): Returning error %d.\n",
+	    dprintf3(mem, "%s(%d): Returning error %d.\n",
 		     (const char *)file, line, err);
     }
     return err;
@@ -210,7 +209,7 @@ gs_log_error(int err, const char *file, int line)
 
 /* Check for interrupts before a return. */
 int
-gs_return_check_interrupt(int code)
+gs_return_check_interrupt(const gs_memory_t *mem, int code)
 {
     if (code < 0)
 	return code;
@@ -218,7 +217,7 @@ gs_return_check_interrupt(int code)
 	int icode = gp_check_interrupts();
 
 	return (icode == 0 ? code :
-		gs_note_error((icode > 0 ? gs_error_interrupt : icode)));
+		gs_note_error(mem, (icode > 0 ? gs_error_interrupt : icode)));
     }
 }
 
@@ -396,53 +395,54 @@ gs_realloc(void *old_ptr, size_t old_size, size_t new_size)
 
 /* Dump a region of memory. */
 void
-debug_dump_bytes(const byte * from, const byte * to, const char *msg)
+debug_dump_bytes(const gs_memory_t *mem, const byte * from, const byte * to, const char *msg)
 {
     const byte *p = from;
 
     if (from < to && msg)
-	dprintf1("%s:\n", msg);
+	dprintf1(mem, "%s:\n", msg);
     while (p != to) {
 	const byte *q = min(p + 16, to);
 
-	dprintf1("0x%lx:", (ulong) p);
+	dprintf1(mem, "0x%lx:", (ulong) p);
 	while (p != q)
-	    dprintf1(" %02x", *p++);
-	dputc('\n');
+	    dprintf1(mem, " %02x", *p++);
+	dputc(mem, '\n');
     }
 }
 
 /* Dump a bitmap. */
 void
-debug_dump_bitmap(const byte * bits, uint raster, uint height, const char *msg)
+debug_dump_bitmap(const gs_memory_t *mem, 
+		  const byte * bits, uint raster, uint height, const char *msg)
 {
     uint y;
     const byte *data = bits;
 
     for (y = 0; y < height; ++y, data += raster)
-	debug_dump_bytes(data, data + raster, (y == 0 ? msg : NULL));
+	debug_dump_bytes(mem, data, data + raster, (y == 0 ? msg : NULL));
 }
 
 /* Print a string. */
 void
-debug_print_string(const byte * chrs, uint len)
+debug_print_string(const gs_memory_t *mem, const byte * chrs, uint len)
 {
     uint i;
 
     for (i = 0; i < len; i++)
-	dputc(chrs[i]);
-    dflush();
+	dputc(mem, chrs[i]);
+    dflush(mem);
 }
 
 /* Print a string in hexdump format. */
 void
-debug_print_string_hex(const byte * chrs, uint len)
+debug_print_string_hex(const gs_memory_t *mem, const byte * chrs, uint len)
 {
     uint i;
 
     for (i = 0; i < len; i++)
-        dprintf1("%02x", chrs[i]);
-    dflush();
+        dprintf1(mem, "%02x", chrs[i]);
+    dflush(mem);
 }
 
 /*
@@ -930,17 +930,22 @@ fixed_mult_quo(fixed signed_A, fixed B, fixed C)
 #undef half_bits
 #undef half_mask
 
+#if 0
+/* NB changing the prototypes of c libary functions isn't a good idea
+ * hence forth sqrt will no longer be tracable.
+ */
+
 /* Trace calls on sqrt when debugging. */
 double
 gs_sqrt(double x, const char *file, int line)
 {
     if (gs_debug_c('~')) {
-	dprintf3("[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
-	dflush();
+	dprintf3(mem, "[~]sqrt(%g) at %s:%d\n", x, (const char *)file, line);
+	dflush(mem);
     }
     return orig_sqrt(x);
 }
-
+#endif 
 /*
  * Define sine and cosine functions that take angles in degrees rather than
  * radians, and that are implemented efficiently on machines with slow
@@ -1193,11 +1198,11 @@ gs_sincos_degrees(double ang, gs_sincos_t * psincos)
  * gs_error_undefinedresult.
  */
 int
-gs_atan2_degrees(double y, double x, double *pangle)
+gs_atan2_degrees(const gs_memory_t *mem, double y, double x, double *pangle)
 {
     if (y == 0) {	/* on X-axis, special case */
 	if (x == 0)
-	    return_error(gs_error_undefinedresult);
+	    return_error(mem, gs_error_undefinedresult);
 	*pangle = (x < 0 ? 180 : 0);
     } else {
 	double result = atan2(y, x) * radians_to_degrees;

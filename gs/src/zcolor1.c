@@ -35,7 +35,7 @@ zcurrentblackgeneration(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     *op = istate->black_generation;
     return 0;
 }
@@ -46,7 +46,7 @@ zcurrentcolortransfer(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(4);
+    push(imemory, 4);
     op[-3] = istate->transfer_procs.red;
     op[-2] = istate->transfer_procs.green;
     op[-1] = istate->transfer_procs.blue;
@@ -60,7 +60,7 @@ zcurrentundercolorremoval(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     *op = istate->undercolor_removal;
     return 0;
 }
@@ -72,8 +72,8 @@ zsetblackgeneration(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_proc(*op);
-    check_ostack(zcolor_remap_one_ostack - 1);
+    check_proc(imemory, *op);
+    check_ostack(imemory, zcolor_remap_one_ostack - 1);
     check_estack(1 + zcolor_remap_one_estack);
     code = gs_setblackgeneration_remap(igs, gs_mapped_transfer, false);
     if (code < 0)
@@ -93,11 +93,11 @@ zsetcolortransfer(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_proc(op[-3]);
-    check_proc(op[-2]);
-    check_proc(op[-1]);
-    check_proc(*op);
-    check_ostack(zcolor_remap_one_ostack * 4 - 4);
+    check_proc(imemory, op[-3]);
+    check_proc(imemory, op[-2]);
+    check_proc(imemory, op[-1]);
+    check_proc(imemory, *op);
+    check_ostack(imemory, zcolor_remap_one_ostack * 4 - 4);
     check_estack(1 + zcolor_remap_one_estack * 4);
     istate->transfer_procs.red = op[-3];
     istate->transfer_procs.green = op[-2];
@@ -139,8 +139,8 @@ zsetundercolorremoval(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_proc(*op);
-    check_ostack(zcolor_remap_one_ostack - 1);
+    check_proc(imemory, *op);
+    check_ostack(imemory, zcolor_remap_one_ostack - 1);
     check_estack(1 + zcolor_remap_one_estack);
     code = gs_setundercolorremoval_remap(igs, gs_mapped_transfer, false);
     if (code < 0)

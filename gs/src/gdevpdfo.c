@@ -190,7 +190,7 @@ int
 cos_become(cos_object_t *pco, cos_type_t cotype)
 {
     if (cos_type(pco) != cos_type_generic)
-	return_error(gs_error_typecheck);
+	return_error(pco->pdev->memory, gs_error_typecheck);
     cos_type(pco) = cotype;
     return 0;
 }
@@ -226,7 +226,7 @@ cos_write_object(cos_object_t *pco, gx_device_pdf *pdev)
     int code;
 
     if (pco->id == 0 || pco->written)
-	return_error(gs_error_Fatal);
+	return_error(pco->pdev->memory, gs_error_Fatal);
     pdf_open_separate(pdev, pco->id);
     code = cos_write(pco, pdev);
     pdf_end_separate(pdev);
@@ -335,7 +335,7 @@ cos_value_write_spaced(const cos_value_t *pcv, gx_device_pdf *pdev,
 	break;
     }
     default:			/* can't happen */
-	return_error(gs_error_Fatal);
+	return_error(s->memory, gs_error_Fatal);
     }
     return 0;
 }
@@ -356,7 +356,7 @@ cos_copy_element_value(cos_value_t *pcv, gs_memory_t *mem,
 					   "cos_copy_element_value");
 
 	if (value_data == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	memcpy(value_data, pvalue->contents.chars.data,
 	       pvalue->contents.chars.size);
 	pcv->contents.chars.data = value_data;
@@ -403,7 +403,7 @@ cos_generic_release(cos_object_t *pco, client_name_t cname)
 private int
 cos_generic_write(const cos_object_t *pco, gx_device_pdf *pdev)
 {
-    return_error(gs_error_Fatal);
+    return_error(pdev->memory, gs_error_Fatal);
 }
 
 /* ------ Arrays ------ */
@@ -520,7 +520,7 @@ cos_array_put_no_copy(cos_array_t *pca, long index, const cos_value_t *pvalue)
 	pcae = gs_alloc_struct(mem, cos_array_element_t, &st_cos_array_element,
 			       "cos_array_put(element)");
 	if (pcae == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	pcae->index = index;
 	pcae->next = next;
 	*ppcae = pcae;
@@ -591,7 +591,7 @@ cos_array_unadd(cos_array_t *pca, cos_value_t *pvalue)
     if (pcae == 0 ||
 	pcae->index != (pcae->next == 0 ? 0 : pcae->next->index + 1)
 	)
-	return_error(gs_error_rangecheck);
+	return_error(pca->pdev->memory, gs_error_rangecheck);
     *pvalue = pcae->value;
     pca->elements = pcae->next;
     gs_free_object(COS_OBJECT_MEMORY(pca), pcae, "cos_array_unadd");
@@ -784,7 +784,7 @@ cos_dict_put_copy(cos_dict_t *pcd, const byte *key_data, uint key_size,
 	    copied_key_data = gs_alloc_string(mem, key_size,
 					      "cos_dict_put(key)");
 	    if (copied_key_data == 0)
-		return_error(gs_error_VMerror);
+		return_error(mem, gs_error_VMerror);
 	    memcpy(copied_key_data, key_data, key_size);
 	} else
 	    copied_key_data = (byte *)key_data;	/* OK to break const */
@@ -800,7 +800,7 @@ cos_dict_put_copy(cos_dict_t *pcd, const byte *key_data, uint key_size,
 	    if (flags & DICT_COPY_KEY)
 		gs_free_string(mem, copied_key_data, key_size,
 			       "cos_dict_put(key)");
-	    return (code < 0 ? code : gs_note_error(gs_error_VMerror));
+	    return (code < 0 ? code : gs_note_error(mem, gs_error_VMerror));
 	}
 	pcde->key.data = copied_key_data;
 	pcde->key.size = key_size;
@@ -866,7 +866,7 @@ cos_dict_put_c_key_floats(cos_dict_t *pcd, const char *key, const float *pf,
     int code;
 
     if (pca == 0)
-	return_error(gs_error_VMerror);
+	return_error(pcd->pdev->memory, gs_error_VMerror);
     code = cos_dict_put_c_key_object(pcd, key, COS_OBJECT(pca));
     if (code < 0)
 	COS_FREE(pca, "cos_dict_put_c_key_floats");
@@ -965,7 +965,7 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
     int code;
 
     if (key_len > sizeof(key_chars) - 1)
-	return_error(gs_error_limitcheck);
+	return_error(mem, gs_error_limitcheck);
     switch (pvalue->type) {
     default: {
 	param_printer_params_t ppp;
@@ -983,7 +983,7 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 	len = stell(&s);
 	str = gs_alloc_string(mem, len, "cos_param_put(string)");
 	if (str == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	swrite_string(&s, str, len);
 	param_write_typed((gs_param_list *)&pplist, "", pvalue);
 	/*
@@ -1002,7 +1002,7 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 
 	pca = cos_array_alloc(pdev, "cos_param_put(array)");
 	if (pca == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	for (i = 0; i < pvalue->value.ia.size; ++i)
 	    CHECK(cos_array_add_int(pca, pvalue->value.ia.data[i]));
     }
@@ -1014,7 +1014,7 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
 
 	pca = cos_array_alloc(pdev, "cos_param_put(array)");
 	if (pca == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	for (i = 0; i < pvalue->value.ia.size; ++i)
 	    CHECK(cos_array_add_real(pca, pvalue->value.fa.data[i]));
     }
@@ -1022,7 +1022,7 @@ cos_param_put_typed(gs_param_list * plist, gs_param_name pkey,
     case gs_param_type_string_array:
     case gs_param_type_name_array:
 	/****** NYI ******/
-	return_error(gs_error_typecheck);
+	return_error(mem, gs_error_typecheck);
     }
     memcpy(key_chars + 1, pkey, key_len);
     key_chars[0] = '/';
@@ -1132,7 +1132,7 @@ cos_stream_write(const cos_object_t *pco, gx_device_pdf *pdev)
 	int status = s_close_filters(&s, NULL);
 
 	if (status < 0)
-	    return_error(gs_error_ioerror);
+	    return_error(pdev->memory, gs_error_ioerror);
 	/* We have to break const here to clear the input_strm. */
 	((cos_object_t *)pco)->input_strm = 0;
     }
@@ -1172,7 +1172,7 @@ cos_stream_add(cos_stream_t *pcs, uint size)
 			    "cos_stream_add");
 
 	if (pcsp == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	pcsp->position = position - size;
 	pcsp->size = size;
 	pcsp->next = pcs->pieces;
@@ -1204,7 +1204,7 @@ cos_stream_add_stream_contents(cos_stream_t *pcs, stream *s)
 	if (cnt == 0) {
 	    if (status == EOFC)
 		break;
-	    return_error(gs_error_ioerror);
+	    return_error(s->memory, gs_error_ioerror);
 	}
     } while ((code = cos_stream_add_bytes(pcs, sbuff, cnt)) >= 0);
     return code;

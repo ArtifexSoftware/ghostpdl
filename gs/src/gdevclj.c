@@ -247,7 +247,7 @@ clj_get_params(gx_device *pdev, gs_param_list *plist)
  * on error.
  */
 private int
-clj_media_size(float mediasize[2], gs_param_list *plist)
+clj_media_size(const gs_memory_t *mem, float mediasize[2], gs_param_list *plist)
 {
     gs_param_float_array fres;
     gs_param_float_array fsize;
@@ -256,7 +256,7 @@ clj_media_size(float mediasize[2], gs_param_list *plist)
 
     if ( (param_read_float_array(plist, "HWResolution", &fres) == 0) &&
           !is_supported_resolution(fres.data) ) 
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
 
     if ( (param_read_float_array(plist, "PageSize", &fsize) == 0) ||
          (param_read_float_array(plist, ".MediaSize", &fsize) == 0) ) {
@@ -286,13 +286,13 @@ clj_put_params(
 {
     float		    mediasize[2];
     bool                    rotate = false;
-    int                     have_pagesize = clj_media_size(mediasize, plist);
+    int                     have_pagesize = clj_media_size(pdev->memory, mediasize, plist);
 
     if (have_pagesize < 0)
 	return have_pagesize;
     if (have_pagesize) {
 	if (get_paper_size(mediasize, &rotate) == 0 || rotate)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
     }
     return gdev_prn_put_params(pdev, plist);
 }
@@ -422,14 +422,14 @@ clj_print_page(
 
     /* no paper size at this point is a serious error */
     if (psize == 0)
-        return_error(gs_error_unregistered);
+        return_error(mem, gs_error_unregistered);
 
     /* allocate memory for the raw and compressed data */
     if ((data = gs_alloc_bytes(mem, lsize, "clj_print_page(data)")) == 0)
-        return_error(gs_error_VMerror);
+        return_error(mem, gs_error_VMerror);
     if ((cdata[0] = gs_alloc_bytes(mem, 3 * clsize, "clj_print_page(cdata)")) == 0) {
         gs_free_object(mem, data, "clj_print_page(data)");
-        return_error(gs_error_VMerror);
+        return_error(mem, gs_error_VMerror);
     }
     cdata[1] = cdata[0] + clsize;
     cdata[2] = cdata[1] + clsize;
@@ -623,13 +623,13 @@ clj_pr_put_params(
     float		    mediasize[2];
     int                     code = 0;
     bool                    rotate = false;
-    int                     have_pagesize = clj_media_size(mediasize, plist);
+    int                     have_pagesize = clj_media_size(pdev->memory, mediasize, plist);
 
     if (have_pagesize < 0)
 	return have_pagesize;
     if (have_pagesize) {
 	if (get_paper_size(mediasize, &rotate) == 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	if (rotate) {
 	    /* We need to rotate the requested page size, so synthesize a new	*/
 	    /* parameter list in front of the requestor's list to force the	*/

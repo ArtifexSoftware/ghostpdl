@@ -183,16 +183,16 @@ fixed fixed_mult_quo(fixed A, fixed B, fixed C);
 #if USE_FPU_FIXED && arch_sizeof_short == 2
 #define NEED_SET_FMUL2FIXED
 int set_fmul2fixed_(fixed *, long, long);
-#define CHECK_FMUL2FIXED_VARS(vr, vfa, vfb, dtemp)\
+#define CHECK_FMUL2FIXED_VARS(mem, vr, vfa, vfb, dtemp)\
   set_fmul2fixed_(&vr, *(const long *)&vfa, *(const long *)&vfb)
 #define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
   DO_NOTHING
 int set_dfmul2fixed_(fixed *, ulong, long, long);
 #  if arch_is_big_endian
-#  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
+#  define CHECK_DFMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, ((const ulong *)&vda)[1], *(const long *)&vfb, *(const long *)&vda)
 #  else
-#  define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
+#  define CHECK_DFMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)\
      set_dfmul2fixed_(&vr, *(const ulong *)&vda, *(const long *)&vfb, ((const long *)&vda)[1])
 #  endif
 #define FINISH_DFMUL2FIXED_VARS(vr, dtemp)\
@@ -201,14 +201,14 @@ int set_dfmul2fixed_(fixed *, ulong, long, long);
 #else /* don't bother */
 
 #undef NEED_SET_FMUL2FIXED
-#define CHECK_FMUL2FIXED_VARS(vr, vfa, vfb, dtemp)\
+#define CHECK_FMUL2FIXED_VARS(mem, vr, vfa, vfb, dtemp)\
   (dtemp = (vfa) * (vfb),\
    (f_fits_in_bits(dtemp, fixed_int_bits) ? 0 :\
-    gs_note_error(gs_error_limitcheck)))
+    gs_note_error(mem, gs_error_limitcheck)))
 #define FINISH_FMUL2FIXED_VARS(vr, dtemp)\
   vr = float2fixed(dtemp)
-#define CHECK_DFMUL2FIXED_VARS(vr, vda, vfb, dtemp)\
-  CHECK_FMUL2FIXED_VARS(vr, vda, vfb, dtemp)
+#define CHECK_DFMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)\
+  CHECK_FMUL2FIXED_VARS(mem, vr, vda, vfb, dtemp)
 #define FINISH_DFMUL2FIXED_VARS(vr, dtemp)\
   FINISH_FMUL2FIXED_VARS(vr, dtemp)
 
@@ -227,9 +227,9 @@ int set_dfmul2fixed_(fixed *, ulong, long, long);
 int set_float2fixed_(fixed *, long, int);
 int set_double2fixed_(fixed *, ulong, long, int);
 
-# define set_float2fixed_vars(vr,vf)\
+# define set_float2fixed_vars(mem, vr,vf)\
     (sizeof(vf) == sizeof(float) ?\
-     set_float2fixed_(&vr, *(const long *)&vf, fixed_fraction_bits) :\
+     set_float2fixed_(mem, &vr, *(const long *)&vf, fixed_fraction_bits) :\
      set_double2fixed_(&vr, ((const ulong *)&vf)[arch_is_big_endian],\
 		       ((const long *)&vf)[1 - arch_is_big_endian],\
 		       fixed_fraction_bits))
@@ -247,9 +247,9 @@ void set_fixed2double_(double *, fixed, int);
 #define set_ldexp_fixed2double(vd, x, exp)\
   set_fixed2double_(&vd, x, -(exp))
 #else
-# define set_float2fixed_vars(vr,vf)\
+# define set_float2fixed_vars(mem, vr,vf)\
     (f_fits_in_bits(vf, fixed_int_bits) ? (vr = float2fixed(vf), 0) :\
-     gs_note_error(gs_error_limitcheck))
+     gs_note_error(mem, gs_error_limitcheck))
 # define set_fixed2float_var(vf,x)\
     (vf = fixed2float(x), 0)
 # define set_ldexp_fixed2double(vd, x, exp)\

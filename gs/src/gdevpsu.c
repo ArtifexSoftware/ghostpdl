@@ -28,12 +28,12 @@
 
 /* Write a 0-terminated array of strings as lines. */
 int
-psw_print_lines(FILE *f, const char *const lines[])
+psw_print_lines(const gs_memory_t *mem, FILE *f, const char *const lines[])
 {
     int i;
     for (i = 0; lines[i] != 0; ++i) {
 	if (fprintf(f, "%s\n", lines[i]) < 0)
-            return_error(gs_error_ioerror);
+            return_error(mem, gs_error_ioerror);
     }
     return 0;
 }
@@ -163,7 +163,7 @@ int
 psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
 		      gx_device_pswrite_common_t *pdpc, bool ascii)
 {
-    psw_print_lines(f, (pdpc->ProduceEPS ? psw_eps_header : psw_ps_header));
+    psw_print_lines(dev->memory, f, (pdpc->ProduceEPS ? psw_eps_header : psw_ps_header));
     if (pbbox) {
 	psw_print_bbox(f, pbbox);
 	pdpc->bbox_position = 0;
@@ -194,7 +194,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
 	fprintf(f, "%%%%LanguageLevel: %d\n", (int)pdpc->LanguageLevel);
     else if (pdpc->LanguageLevel == 1.5)
 	fputs("%%Extensions: CMYK\n", f);
-    psw_print_lines(f, psw_begin_prolog);
+    psw_print_lines(dev->memory, f, psw_begin_prolog);
     fprintf(f, "%% %s\n", gs_copyright);
     fputs("%%BeginResource: procset ", f);
     fflush(f);
@@ -203,10 +203,10 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     fflush(f);
     psw_print_procset_name(f, dev, pdpc);
     fputs(" 80 dict dup begin\n", f);
-    psw_print_lines(f, psw_ps_procset);
+    psw_print_lines(dev->memory, f, psw_ps_procset);
     fflush(f);
     if (ferror(f))
-        return_error(gs_error_ioerror);
+        return_error(dev->memory, gs_error_ioerror);
     return 0;
 }
 
@@ -214,9 +214,9 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
  * End the file header.
  */
 int
-psw_end_file_header(FILE *f)
+psw_end_file_header(const gs_memory_t *mem, FILE *f)
 {
-    return psw_print_lines(f, psw_end_prolog);
+    return psw_print_lines(mem, f, psw_end_prolog);
 }
 
 /*
@@ -231,7 +231,7 @@ psw_end_file(FILE *f, const gx_device *dev,
         return 0;	/* clients should be more careful */
     fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", (long)page_count);
     if (ferror(f))
-        return_error(gs_error_ioerror);
+        return_error(dev->memory, gs_error_ioerror);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
 	if (pdpc->bbox_position >= 0) {
 	    long save_pos = ftell(f);
@@ -240,7 +240,7 @@ psw_end_file(FILE *f, const gx_device *dev,
 	    psw_print_bbox(f, pbbox);
             fputc('%', f);
             if (ferror(f))
-                return_error(gs_error_ioerror);
+                return_error(dev->memory, gs_error_ioerror);
             fseek(f, save_pos, SEEK_SET);
 	} else
 	    psw_print_bbox(f, pbbox);
@@ -248,7 +248,7 @@ psw_end_file(FILE *f, const gx_device *dev,
     if (!pdpc->ProduceEPS)
 	fputs("%%EOF\n", f);
     if (ferror(f))
-        return_error(gs_error_ioerror);
+        return_error(dev->memory, gs_error_ioerror);
     return 0;
 }
 
@@ -307,7 +307,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
 		 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);
     stream_puts(s, "%%EndPageSetup\ngsave mark\n");
     if (s->end_status == ERRC)
-        return_error(gs_error_ioerror);
+        return_error(dev->memory, gs_error_ioerror);
     return 0;
 }
 
@@ -316,7 +316,7 @@ psw_write_page_header(stream *s, const gx_device *dev,
  * the stream, because we may have to do it during finalization.
  */
 int
-psw_write_page_trailer(FILE *f, int num_copies, int flush)
+psw_write_page_trailer(const gs_memory_t *mem, FILE *f, int num_copies, int flush)
 {
     if (num_copies != 1)
 	fprintf(f, "userdict /#copies %d put\n", num_copies);
@@ -324,6 +324,6 @@ psw_write_page_trailer(FILE *f, int num_copies, int flush)
 	    (flush ? "showpage" : "copypage"));
     fflush(f);
     if (ferror(f))
-        return_error(gs_error_ioerror);
+        return_error(mem, gs_error_ioerror);
     return 0;
 }

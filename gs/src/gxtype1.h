@@ -250,18 +250,18 @@ typedef fixed *cs_ptr;
     }\
   END
 
-#define CS_CHECK_PUSH(csp, cstack)\
+#define CS_CHECK_PUSH(mem, csp, cstack)\
   BEGIN\
     if (csp >= &cstack[countof(cstack)-1])\
-      return_error(gs_error_invalidfont);\
+      return_error(mem, gs_error_invalidfont);\
   END
 
 /* Decode a 1-byte number. */
 #define decode_num1(var, c)\
   (var = c_value_num1(c))
-#define decode_push_num1(csp, cstack, c)\
+#define decode_push_num1(mem, csp, cstack, c)\
   BEGIN\
-    CS_CHECK_PUSH(csp, cstack);\
+    CS_CHECK_PUSH(mem, csp, cstack);\
     *++csp = int2fixed(c_value_num1(c));\
   END
 
@@ -275,19 +275,19 @@ typedef fixed *cs_ptr;
 	   c_value_neg2(c, 0) - cn);\
     charstring_skip_next(c2, state, encrypted);\
   END
-#define decode_push_num2(csp, cstack, c, cip, state, encrypted)\
+#define decode_push_num2(mem, csp, cstack, c, cip, state, encrypted)\
   BEGIN\
     uint c2 = *cip++;\
     int cn;\
 \
-    CS_CHECK_PUSH(csp, cstack);\
+    CS_CHECK_PUSH(mem, csp, cstack);\
     cn = charstring_this(c2, state, encrypted);\
     if ( c < c_neg2_0 )\
-      { if_debug2('1', "[1] (%d)+%d\n", c_value_pos2(c, 0), cn);\
+      { if_debug2(mem, '1', "[1] (%d)+%d\n", c_value_pos2(c, 0), cn);\
         *++csp = int2fixed(c_value_pos2(c, 0) + (int)cn);\
       }\
     else\
-      { if_debug2('1', "[1] (%d)-%d\n", c_value_neg2(c, 0), cn);\
+      { if_debug2(mem, '1', "[1] (%d)-%d\n", c_value_neg2(c, 0), cn);\
         *++csp = int2fixed(c_value_neg2(c, 0) - (int)cn);\
       }\
     charstring_skip_next(c2, state, encrypted);\
@@ -323,7 +323,7 @@ int gs_type1_sbw(gs_type1_state * pcis, fixed sbx, fixed sby,
 		 fixed wx, fixed wy);
 
 /* blend returns the number of values to pop. */
-int gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results);
+int gs_type1_blend(const gs_memory_t *mem, gs_type1_state *pcis, fixed *csp, int num_results);
 
 int gs_type1_seac(gs_type1_state * pcis, const fixed * cstack,
 		  fixed asb_diff, ip_state_t * ipsp);
@@ -334,7 +334,7 @@ int gs_type1_endchar(gs_type1_state * pcis);
 
 /* Font level hints */
 void reset_font_hints(font_hints *, const gs_log2_scale_point *);
-void compute_font_hints(font_hints *, const gs_matrix_fixed *,
+void compute_font_hints(const gs_memory_t *mem, font_hints *, const gs_matrix_fixed *,
 			const gs_log2_scale_point *,
 			const gs_type1_data *);
 
@@ -348,7 +348,8 @@ void
 		   const gs_matrix_fixed *),
     type1_do_vstem(gs_type1_state *, fixed, fixed, bool,
 		   const gs_matrix_fixed *),
-    type1_do_center_vstem(gs_type1_state *, fixed, fixed,
+    type1_do_center_vstem(const gs_memory_t *mem, 
+			  gs_type1_state *, fixed, fixed,
 			  const gs_matrix_fixed *);
 
 #define replace_stem_hints(pcis)\
@@ -360,7 +361,7 @@ void
   type1_do_hstem(pcis, y, dy, add_lsb, &(pcis)->pis->ctm)
 #define type1_vstem(pcis, x, dx, add_lsb)\
   type1_do_vstem(pcis, x, dx, add_lsb, &(pcis)->pis->ctm)
-#define type1_center_vstem(pcis, x0, dx)\
-  type1_do_center_vstem(pcis, x0, dx, &(pcis)->pis->ctm)
+#define type1_center_vstem(mem, pcis, x0, dx)\
+  type1_do_center_vstem(mem, pcis, x0, dx, &(pcis)->pis->ctm)
 
 #endif /* gxtype1_INCLUDED */

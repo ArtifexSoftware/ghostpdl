@@ -80,14 +80,14 @@ gp_read_macresource(byte *buf, const char *filename,
 /* Read the current time (in seconds since Jan. 1, 1970) */
 /* and fraction (in nanoseconds). */
 void
-gp_get_realtime(long *pdt)
+gp_get_realtime(const gs_memory_t *mem, long *pdt)
 {
     struct timeval tp;
 
 #if gettimeofday_no_timezone	/* older versions of SVR4 */
     {
 	if (gettimeofday(&tp) == -1) {
-	    lprintf("Ghostscript: gettimeofday failed!\n");
+	    lprintf(mem, "Ghostscript: gettimeofday failed!\n");
 	    tp.tv_sec = tp.tv_usec = 0;
 	}
     }
@@ -96,7 +96,7 @@ gp_get_realtime(long *pdt)
 	struct timezone tzp;
 
 	if (gettimeofday(&tp, &tzp) == -1) {
-	    lprintf("Ghostscript: gettimeofday failed!\n");
+	    lprintf(mem, "Ghostscript: gettimeofday failed!\n");
 	    tp.tv_sec = tp.tv_usec = 0;
 	}
     }
@@ -118,7 +118,7 @@ gp_get_realtime(long *pdt)
 /* Read the current user CPU time (in seconds) */
 /* and fraction (in nanoseconds).  */
 void
-gp_get_usertime(long *pdt)
+gp_get_usertime(const gs_memory_t *mem, long *pdt)
 {
 #if use_times_for_usertime
     struct tms tms;
@@ -130,7 +130,7 @@ gp_get_usertime(long *pdt)
     pdt[0] = ticks / ticks_per_sec;
     pdt[1] = (ticks % ticks_per_sec) * (1000000000 / ticks_per_sec);
 #else
-    gp_get_realtime(pdt);	/* Use an approximation on other hosts.  */
+    gp_get_realtime(mem, pdt);	/* Use an approximation on other hosts.  */
 #endif
 }
 

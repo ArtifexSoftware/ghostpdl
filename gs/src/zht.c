@@ -44,14 +44,14 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
     gs_currenthalftone(igs, &ht);
     switch (ht.type) {
 	case ht_type_screen:
-	    push(4);
+	    push(imemory, 4);
 	    make_real(op - 3, ht.params.screen.frequency);
 	    make_real(op - 2, ht.params.screen.angle);
 	    op[-1] = istate->screen_procs.gray;
 	    make_int(op, 1);
 	    break;
 	case ht_type_colorscreen:
-	    push(13);
+	    push(imemory, 13);
 	    {
 		os_ptr opc = op - 12;
 		gs_screen_halftone *pht = 
@@ -82,7 +82,7 @@ zcurrenthalftone(i_ctx_t *i_ctx_p)
 	    make_int(op, 2);
 	    break;
 	default:		/* Screen was set by sethalftone. */
-	    push(2);
+	    push(imemory, 2);
 	    op[-1] = istate->halftone;
 	    make_int(op, 0);
 	    break;
@@ -96,7 +96,7 @@ zcurrentscreenlevels(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, gs_currentscreenlevels(igs));
     return 0;
 }
@@ -125,7 +125,7 @@ zsetscreen(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_screen_halftone screen;
     gx_ht_order order;
-    int code = zscreen_params(op, &screen);
+    int code = zscreen_params(imemory, op, &screen);
     gs_memory_t *mem;
 
     if (code < 0)
@@ -155,7 +155,7 @@ zscreen_enum_init(i_ctx_t *i_ctx_p, const gx_ht_order * porder,
     check_estack(snumpush + 1);
     penum = gs_screen_enum_alloc(imemory, "setscreen");
     if (penum == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     make_istruct(esp + snumpush, 0, penum);	/* do early for screen_cleanup in case of error */
     code = gs_screen_enum_init_memory(penum, porder, igs, psp, mem);
     if (code < 0) {
@@ -178,7 +178,7 @@ screen_sample(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_screen_enum *penum = senum;
     gs_point pt;
-    int code = gs_screen_currentpoint(penum, &pt);
+    int code = gs_screen_currentpoint(imemory, penum, &pt);
     ref proc;
 
     switch (code) {
@@ -194,7 +194,7 @@ screen_sample(i_ctx_t *i_ctx_p)
 	case 0:
 	    ;
     }
-    push(2);
+    push(imemory, 2);
     make_real(op - 1, pt.x);
     make_real(op, pt.y);
     proc = sproc;
@@ -208,11 +208,11 @@ set_screen_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     double value;
-    int code = real_param(op, &value);
+    int code = real_param(imemory, op, &value);
 
     if (code < 0)
 	return code;
-    code = gs_screen_next(senum, value);
+    code = gs_screen_next(imemory, senum, value);
     if (code < 0)
 	return code;
     pop(1);
@@ -242,14 +242,14 @@ screen_cleanup(i_ctx_t *i_ctx_p)
 
 /* Get parameters for a single screen. */
 int
-zscreen_params(os_ptr op, gs_screen_halftone * phs)
+zscreen_params(const gs_memory_t *mem, os_ptr op, gs_screen_halftone * phs)
 {
     double fa[2];
-    int code = num_params(op - 1, 2, fa);
+    int code = num_params(mem, op - 1, 2, fa);
 
     if (code < 0)
 	return code;
-    check_proc(*op);
+    check_proc(mem, *op);
     phs->frequency = fa[0];
     phs->angle = fa[1];
     return 0;

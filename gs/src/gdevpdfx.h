@@ -865,7 +865,7 @@ int pdf_write_font_bbox(gx_device_pdf *pdev, const gs_int_rect *pbox);
 bool pdf_key_eq(const gs_param_string * pcs, const char *str);
 
 /* Scan an integer out of a parameter string. */
-int pdfmark_scan_int(const gs_param_string * pstr, int *pvalue);
+int pdfmark_scan_int(const gs_memory_t *mem, const gs_param_string * pstr, int *pvalue);
 
 /* Process a pdfmark (called from pdf_put_params). */
 int pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma);
@@ -947,13 +947,15 @@ int pdf_pop_namespace(gx_device_pdf *pdev);
  * or an error.  On a successful return, the token extends from *ptoken up
  * to but not including *pscan.
  */
-int pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken);
+int pdf_scan_token(const gs_memory_t *mem, 
+		   const byte **pscan, const byte * end, const byte **ptoken);
 
 /*
  * Scan a possibly composite token: arrays and dictionaries are treated as
  * single tokens.
  */
-int pdf_scan_token_composite(const byte **pscan, const byte * end,
+int pdf_scan_token_composite(const gs_memory_t *mem, 
+			     const byte **pscan, const byte * end,
 			     const byte **ptoken);
 
 /* Replace object names with object references in a (parameter) string. */

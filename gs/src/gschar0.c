@@ -37,12 +37,12 @@ gs_stack_modal_fonts(gs_text_enum_t *pte)
 	if (!fmap_type_is_modal(cmfont->data.FMapType))
 	    break;
 	if (fdepth == MAX_FONT_STACK)
-	    return_error(gs_error_invalidfont);
+	    return_error(pte->memory, gs_error_invalidfont);
 	fdepth++;
 	cfont = cmfont->data.FDepVector[cmfont->data.Encoding[0]];
 	pte->fstack.items[fdepth].font = cfont;
 	pte->fstack.items[fdepth].index = 0;
-	if_debug2('j', "[j]stacking depth=%d font=0x%lx\n",
+	if_debug2(pte->memory, 'j', "[j]stacking depth=%d font=0x%lx\n",
 		  fdepth, (ulong) cfont);
     }
     pte->fstack.depth = fdepth;
@@ -54,8 +54,8 @@ int
 gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
 {
     if (!(pte->text.operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)))
-	return_error(gs_error_invalidfont);
-    if_debug1('j', "[j]stacking depth=0 font=0x%lx\n",
+	return_error(pte->memory, gs_error_invalidfont);
+    if_debug1(pte->memory, 'j', "[j]stacking depth=0 font=0x%lx\n",
 	      (ulong) pfont);
     pte->fstack.depth = 0;
     pte->fstack.items[0].font = pfont;
@@ -68,9 +68,9 @@ gs_type0_init_fstack(gs_text_enum_t *pte, gs_font * pfont)
 /* Uses pdata, uses & updates fdepth, sets pfont. */
 #define select_descendant(pfont, pdata, fidx, fdepth)\
   if (fidx >= pdata->encoding_size)\
-    return_error(gs_error_rangecheck);\
+    return_error(pfont->memory, gs_error_rangecheck);\
   if (fdepth == MAX_FONT_STACK)\
-    return_error(gs_error_invalidfont);\
+    return_error(pfont->memory, gs_error_invalidfont);\
   pfont = pdata->FDepVector[pdata->Encoding[fidx]];\
   if (++fdepth > orig_depth || pfont != pte->fstack.items[fdepth].font ||\
       orig_index != fidx)\
@@ -110,8 +110,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 
     pte->FontBBox_as_Metrics2.x = pte->FontBBox_as_Metrics2.y = 0;
 
-#define need_left(n)\
-  if ( end - p < n ) return_error(gs_error_rangecheck)
+#define need_left(mem, n)\
+  if ( end - p < n ) return_error(mem, gs_error_rangecheck)
 
     /*
      * Although the Adobe documentation doesn't say anything about this,
@@ -136,25 +136,25 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		case fmap_escape:
 		    if (chr != root_esc_char(pte))
 			break;
-		    need_left(2);
+		    need_left(pte->memory, 2);
 		    fidx = p[1];
 		    p += 2;
-		    if_debug1('j', "[j]from root: escape %d\n", fidx);
+		    if_debug1(pte->memory, 'j', "[j]from root: escape %d\n", fidx);
 		  rdown:select_descendant(pfont, pdata, fidx, idepth);
-		    if_debug2('j', "[j]... new depth=%d, new font=0x%lx\n",
+		    if_debug2(pte->memory, 'j', "[j]... new depth=%d, new font=0x%lx\n",
 			      idepth, (ulong) pfont);
 		    continue;
 		case fmap_double_escape:
 		    if (chr != root_esc_char(pte))
 			break;
-		    need_left(2);
+		    need_left(pte->memory, 2);
 		    fidx = p[1];
 		    p += 2;
 		    if (fidx == chr) {
-			need_left(1);
+			need_left(pte->memory, 1);
 			fidx = *p++ + 256;
 		    }
-		    if_debug1('j', "[j]from root: double escape %d\n", fidx);
+		    if_debug1(pte->memory, 'j', "[j]from root: double escape %d\n", fidx);
 		    goto rdown;
 		case fmap_shift:
 		    if (chr == pdata->ShiftIn)
@@ -164,7 +164,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		    else
 			break;
 		    p++;
-		    if_debug1('j', "[j]from root: shift %d\n", fidx);
+		    if_debug1(pte->memory, 'j', "[j]from root: shift %d\n", fidx);
 		    goto rdown;
 		default:
 		    break;
@@ -201,9 +201,9 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 	    case fmap_escape:
 		if (chr != root_esc_char(pte))
 		    break;
-		need_left(2);
+		need_left(pte->memory, 2);
 		fidx = *++p;
-		if_debug1('j', "[j]next: escape %d\n", fidx);
+		if_debug1(pte->memory, 'j', "[j]next: escape %d\n", fidx);
 		/* Per Adobe, if we get an escape at the root, */
 		/* treat it as an ordinary character (font index). */
 		if (fidx == chr && fdepth > 1) {
@@ -216,7 +216,8 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		fdepth--;
 		do {
 		    select_descendant(pfont, pdata, fidx, fdepth);
-		    if_debug3('j', "[j]down from modal: new depth=%d, index=%d, new font=0x%lx\n",
+		    if_debug3(pte->memory, 
+			      'j', "[j]down from modal: new depth=%d, index=%d, new font=0x%lx\n",
 			      fdepth, fidx, (ulong) pfont);
 		    if (pfont->FontType != ft_composite)
 			break;
@@ -229,13 +230,13 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 	    case fmap_double_escape:
 		if (chr != root_esc_char(pte))
 		    break;
-		need_left(2);
+		need_left(pte->memory, 2);
 		fidx = *++p;
 		if (fidx == chr) {
-		    need_left(2);
+		    need_left(pte->memory, 2);
 		    fidx = *++p + 256;
 		}
-		if_debug1('j', "[j]next: double escape %d\n", fidx);
+		if_debug1(pte->memory, 'j', "[j]next: double escape %d\n", fidx);
 		goto down;
 
 	    case fmap_shift:
@@ -245,7 +246,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		    fidx = 1;
 		else
 		    break;
-		if_debug1('j', "[j]next: shift %d\n", fidx);
+		if_debug1(pte->memory, 'j', "[j]next: shift %d\n", fidx);
 		goto down;
 	}
 	break;
@@ -267,28 +268,28 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 	pdata = &pfont0->data;
 	switch (pdata->FMapType) {
 	    default:		/* can't happen */
-		return_error(gs_error_invalidfont);
+		return_error(pte->memory, gs_error_invalidfont);
 
 	    case fmap_8_8:
-		need_left(1);
+		need_left(pte->memory, 1);
 		fidx = chr;
 		chr = *p++;
-		if_debug2('J', "[J]8/8 index=%d, char=%ld\n",
+		if_debug2(pte->memory, 'J', "[J]8/8 index=%d, char=%ld\n",
 			  fidx, chr);
 		break;
 
 	    case fmap_1_7:
 		fidx = chr >> 7;
 		chr &= 0x7f;
-		if_debug2('J', "[J]1/7 index=%d, char=%ld\n",
+		if_debug2(pte->memory, 'J', "[J]1/7 index=%d, char=%ld\n",
 			  fidx, chr);
 		break;
 
 	    case fmap_9_7:
-		need_left(1);
+		need_left(pte->memory, 1);
 		fidx = ((uint) chr << 1) + (*p >> 7);
 		chr = *p & 0x7f;
-		if_debug2('J', "[J]9/7 index=%d, char=%ld\n",
+		if_debug2(pte->memory, 'J', "[J]9/7 index=%d, char=%ld\n",
 			  fidx, chr);
 		p++;
 		break;
@@ -306,7 +307,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 
 		    switch (width) {
 			default:	/* can't happen */
-			    return_error(gs_error_invalidfont);
+			    return_error(pte->memory, gs_error_invalidfont);
 			case 1:
 			    {
 				byte tchr = (byte) chr, schr;
@@ -314,7 +315,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 				subs_loop(*psv, 1);
 			    }
 			case 2:
-			    need_left(1);
+			    need_left(pte->memory, 1);
 #define w2(p) (((ushort)*p << 8) + p[1])
 			    {
 				ushort tchr = ((ushort) chr << 8) + *p,
@@ -323,7 +324,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 				subs_loop(w2(psv), 2);
 			    }
 			case 3:
-			    need_left(2);
+			    need_left(pte->memory, 2);
 #define w3(p) (((ulong)*p << 16) + ((uint)p[1] << 8) + p[2])
 			    {
 				ulong tchr = ((ulong) chr << 16) + w2(p),
@@ -332,7 +333,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 				subs_loop(w3(psv), 3);
 			    }
 			case 4:
-			    need_left(3);
+			    need_left(pte->memory, 3);
 #define w4(p) (((ulong)*p << 24) + ((ulong)p[1] << 16) + ((uint)p[2] << 8) + p[3])
 			    {
 				ulong tchr = ((ulong) chr << 24) + w3(p),
@@ -346,7 +347,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 #undef subs_loop
 		    }
 		    fidx = pdata->subs_size - subs_count;
-		    if_debug2('J', "[J]SubsVector index=%d, char=%ld\n",
+		    if_debug2(pte->memory, 'J', "[J]SubsVector index=%d, char=%ld\n",
 			      fidx, chr);
 		    break;
 		}
@@ -368,19 +369,20 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 		    if (*(p - 1) != chr) {
 			byte substr[MAX_CMAP_CODE_SIZE];
 			int submindex = 0;
-			if_debug2('j', "[j] *(p-1) 0x%02x != chr 0x%02x, modified str should be passed\n",
-				*(p-1), (byte)chr);
+			if_debug2(pte->memory, 
+				  'j', "[j] *(p-1) 0x%02x != chr 0x%02x, modified str should be passed\n",
+				  *(p-1), (byte)chr);
 			memcpy(substr, p - 1,
 				min(MAX_CMAP_CODE_SIZE, end - p + 1));
 			substr[0] = chr;
 			cstr.data = substr;
 			cstr.size = min(MAX_CMAP_CODE_SIZE, end - p + 1);
 			if (gs_debug_c('j')) {
-			    dlprintf("[j] original str(");
-			    debug_print_string_hex(str, end - str);
-			    dlprintf(") -> modified substr(");
-			    debug_print_string_hex(cstr.data, cstr.size);
-			    dlprintf(")\n");
+			    dlprintf(pte->memory, "[j] original str(");
+			    debug_print_string_hex(pte->memory, str, end - str);
+			    dlprintf(pte->memory, ") -> modified substr(");
+			    debug_print_string_hex(pte->memory, cstr.data, cstr.size);
+			    dlprintf(pte->memory, ")\n");
 			}
 			code = gs_cmap_decode_next(pdata->CMap, &cstr,
 					(uint*) &submindex, &fidx, &chr, &glyph);
@@ -395,12 +397,12 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 			return code;
 		    pte->cmap_code = code; /* hack for widthshow */
 		    p = str + mindex;
-		    if_debug3('J', "[J]CMap returns %d, chr=0x%lx, glyph=0x%lx\n",
+		    if_debug3(pte->memory, 'J', "[J]CMap returns %d, chr=0x%lx, glyph=0x%lx\n",
 			      code, (ulong) chr, (ulong) glyph);
 		    if (code == 0) {
 			if (glyph == gs_no_glyph) {
 			    glyph = gs_min_cid_glyph;
-			    if_debug0('J', "... undefined\n");
+			    if_debug0(pte->memory, 'J', "... undefined\n");
 			    goto done;
 			}
 		    } else
@@ -411,7 +413,7 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 	}
 
 	select_descendant(pfont, pdata, fidx, fdepth);
-	if_debug2('J', "... new depth=%d, new font=0x%lx\n",
+	if_debug2(pte->memory, 'J', "... new depth=%d, new font=0x%lx\n",
 		  fdepth, (ulong) pfont);
 	/* FontBBox may be used as metrics2 with WMode=1 :
 	*/
@@ -431,7 +433,7 @@ done:
     if (str == pte->text.data.bytes)
 	pte->index = p - str;
     pte->fstack.depth = fdepth;
-    if_debug4('J', "[J]depth=%d font=0x%lx index=%d changed=%d\n",
+    if_debug4(pte->memory, 'J', "[J]depth=%d font=0x%lx index=%d changed=%d\n",
 	      fdepth, (ulong) pte->fstack.items[fdepth].font,
 	      pte->fstack.items[fdepth].index, changed);
     return changed;

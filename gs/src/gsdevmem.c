@@ -78,13 +78,13 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	    palette_count = 0;
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     }
     proto_dev = (word_oriented ?
 		 gdev_mem_word_device_for_bits(bits_per_pixel) :
 		 gdev_mem_device_for_bits(bits_per_pixel));
     if (proto_dev == 0)		/* no suitable device */
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     pcount = palette_count * 3;
     /* Check to make sure the palette contains white and black, */
     /* and, if it has any colors, the six primaries. */
@@ -121,11 +121,11 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	switch (primary_mask) {
 	    case 129:		/* just black and white */
 		if (has_color)	/* color but no primaries */
-		    return_error(gs_error_rangecheck);
+		    return_error(mem, gs_error_rangecheck);
 	    case 255:		/* full color */
 		break;
 	    default:
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	}
     } else
 	has_color = true;
@@ -148,7 +148,7 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
     else if (is_fzero2(pmat->xx, pmat->yy))
 	x_pixels_per_unit = pmat->yx, y_pixels_per_unit = pmat->xy;
     else
-	return_error(gs_error_undefinedresult);
+	return_error(mem, gs_error_undefinedresult);
     /* All checks done, initialize the device. */
     if (bits_per_pixel == 1) {
 	/* Determine the polarity from the palette. */
@@ -163,7 +163,7 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 					    "gs_makeimagedevice(palette)");
 
 	if (dev_palette == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	gs_make_mem_device(new_dev, proto_dev, mem,
 			   (page_device ? 1 : -1), 0);
 	new_dev->palette.size = pcount;
@@ -189,7 +189,7 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	bbox.p.y = 0;
 	bbox.q.x = width;
 	bbox.q.y = height;
-	gs_bbox_transform_inverse(&bbox, pmat, &bbox);
+	gs_bbox_transform_inverse(mem, &bbox, pmat, &bbox);
 	new_dev->ImagingBBox[0] = bbox.p.x;
 	new_dev->ImagingBBox[1] = bbox.p.y;
 	new_dev->ImagingBBox[2] = bbox.q.x;
@@ -213,7 +213,7 @@ gs_makewordimagedevice(gx_device ** pnew_dev, const gs_matrix * pmat,
 		    "gs_makeimagedevice(device)");
 
     if (pnew == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     code = gs_initialize_wordimagedevice(pnew, pmat, width, height,
 					 colors, num_colors, word_oriented,
 					 page_device, mem);

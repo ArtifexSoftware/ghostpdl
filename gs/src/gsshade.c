@@ -38,7 +38,7 @@ private_st_shading_mesh();
 /* Check ColorSpace, BBox, and Function (if present). */
 /* Free variables: params. */
 private int
-check_CBFD(const gs_shading_params_t * params,
+check_CBFD(const gs_memory_t *mem, const gs_shading_params_t * params,
 	   const gs_function_t * function, const float *domain, int m)
 {
     int ncomp = gs_color_space_num_components(params->ColorSpace);
@@ -48,10 +48,10 @@ check_CBFD(const gs_shading_params_t * params,
 	 (params->BBox.p.x > params->BBox.q.x ||
 	  params->BBox.p.y > params->BBox.q.y))
 	)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (function != 0) {
 	if (function->params.m != m || function->params.n != ncomp)
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
 	/*
 	 * The Adobe documentation says that the function's domain must
 	 * be a superset of the domain defined in the shading dictionary.
@@ -64,7 +64,7 @@ check_CBFD(const gs_shading_params_t * params,
 
 /* Check parameters for a mesh shading. */
 private int
-check_mesh(const gs_shading_mesh_params_t * params)
+check_mesh(const gs_memory_t *mem, const gs_shading_mesh_params_t * params)
 {
     const float *domain;
 
@@ -77,23 +77,23 @@ check_mesh(const gs_shading_mesh_params_t * params)
 	    case 12: case 16: case 24: case 32:
 		break;
 	    default:
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	}
 	switch (params->BitsPerComponent) {
 	    case  1: case  2: case  4: case  8:
 	    case 12: case 16:
 		break;
 	    default:
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	}
     }
-    return check_CBFD((const gs_shading_params_t *)params,
+    return check_CBFD(mem, (const gs_shading_params_t *)params,
 		      params->Function, domain, 1);
 }
 
 /* Check the BitsPerFlag value.  Return the value or an error code. */
 private int
-check_BPF(const gs_data_source_t *pds, int bpf)
+check_BPF(const gs_memory_t *mem, const gs_data_source_t *pds, int bpf)
 {
     if (data_source_is_array(*pds))
 	return 2;
@@ -101,7 +101,7 @@ check_BPF(const gs_data_source_t *pds, int bpf)
     case 2: case 4: case 8:
 	return bpf;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     }
 }
 
@@ -133,7 +133,7 @@ mesh_shading_params_init(gs_shading_mesh_params_t *params)
   BEGIN\
     psh = gs_alloc_struct(mem, void, sttype, cname);\
     if ( psh == 0 )\
-      return_error(gs_error_VMerror);\
+      return_error(mem, gs_error_VMerror);\
     psh->head.type = stype;\
     psh->head.procs = sprocs;\
     psh->params = *params;\
@@ -165,11 +165,11 @@ gs_shading_Fb_init(gs_shading_t ** ppsh,
 {
     gs_shading_Fb_t *psh;
     gs_matrix imat;
-    int code = check_CBFD((const gs_shading_params_t *)params,
+    int code = check_CBFD(mem, (const gs_shading_params_t *)params,
 			  params->Function, params->Domain, 2);
 
     if (code < 0 ||
-	(code = gs_matrix_invert(&params->Matrix, &imat)) < 0
+	(code = gs_matrix_invert(mem, &params->Matrix, &imat)) < 0
 	)
 	return code;
     ALLOC_SHADING(&st_shading_Fb, shading_type_Function_based,
@@ -202,7 +202,7 @@ gs_shading_A_init(gs_shading_t ** ppsh,
 		  const gs_shading_A_params_t * params, gs_memory_t * mem)
 {
     gs_shading_A_t *psh;
-    int code = check_CBFD((const gs_shading_params_t *)params,
+    int code = check_CBFD(mem, (const gs_shading_params_t *)params,
 			  params->Function, params->Domain, 1);
 
     if (code < 0)
@@ -237,7 +237,7 @@ gs_shading_R_init(gs_shading_t ** ppsh,
 		  const gs_shading_R_params_t * params, gs_memory_t * mem)
 {
     gs_shading_R_t *psh;
-    int code = check_CBFD((const gs_shading_params_t *)params,
+    int code = check_CBFD(mem, (const gs_shading_params_t *)params,
 			  params->Function, params->Domain, 1);
 
     if (code < 0)
@@ -245,7 +245,7 @@ gs_shading_R_init(gs_shading_t ** ppsh,
     if ((params->Domain != 0 && params->Domain[0] == params->Domain[1]) ||
 	params->Coords[2] < 0 || params->Coords[5] < 0
 	)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     ALLOC_SHADING(&st_shading_R, shading_type_Radial,
 		  shading_R_procs, "gs_shading_R_init");
     return 0;
@@ -273,15 +273,15 @@ gs_shading_FfGt_init(gs_shading_t ** ppsh,
 		     gs_memory_t * mem)
 {
     gs_shading_FfGt_t *psh;
-    int code = check_mesh((const gs_shading_mesh_params_t *)params);
-    int bpf = check_BPF(&params->DataSource, params->BitsPerFlag);
+    int code = check_mesh(mem, (const gs_shading_mesh_params_t *)params);
+    int bpf = check_BPF(mem, &params->DataSource, params->BitsPerFlag);
 
     if (code < 0)
 	return code;
     if (bpf < 0)
 	return bpf;
     if (params->Decode != 0 && params->Decode[0] == params->Decode[1])
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     ALLOC_SHADING(&st_shading_FfGt, shading_type_Free_form_Gouraud_triangle,
 		  shading_FfGt_procs, "gs_shading_FfGt_init");
     psh->params.BitsPerFlag = bpf;
@@ -309,12 +309,12 @@ gs_shading_LfGt_init(gs_shading_t ** ppsh,
 		 const gs_shading_LfGt_params_t * params, gs_memory_t * mem)
 {
     gs_shading_LfGt_t *psh;
-    int code = check_mesh((const gs_shading_mesh_params_t *)params);
+    int code = check_mesh(mem, (const gs_shading_mesh_params_t *)params);
 
     if (code < 0)
 	return code;
     if (params->VerticesPerRow < 2)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     ALLOC_SHADING(&st_shading_LfGt, shading_type_Lattice_form_Gouraud_triangle,
 		  shading_LfGt_procs, "gs_shading_LfGt_init");
     return 0;
@@ -341,8 +341,8 @@ gs_shading_Cp_init(gs_shading_t ** ppsh,
 		   const gs_shading_Cp_params_t * params, gs_memory_t * mem)
 {
     gs_shading_Cp_t *psh;
-    int code = check_mesh((const gs_shading_mesh_params_t *)params);
-    int bpf = check_BPF(&params->DataSource, params->BitsPerFlag);
+    int code = check_mesh(mem, (const gs_shading_mesh_params_t *)params);
+    int bpf = check_BPF(mem, &params->DataSource, params->BitsPerFlag);
 
     if (code < 0)
 	return code;
@@ -375,8 +375,8 @@ gs_shading_Tpp_init(gs_shading_t ** ppsh,
 		  const gs_shading_Tpp_params_t * params, gs_memory_t * mem)
 {
     gs_shading_Tpp_t *psh;
-    int code = check_mesh((const gs_shading_mesh_params_t *)params);
-    int bpf = check_BPF(&params->DataSource, params->BitsPerFlag);
+    int code = check_mesh(mem, (const gs_shading_mesh_params_t *)params);
+    int bpf = check_BPF(mem, &params->DataSource, params->BitsPerFlag);
 
     if (code < 0)
 	return code;
@@ -399,14 +399,14 @@ shading_path_add_box(gx_path *ppath, const gs_rect *pbox,
     gs_fixed_point pts[3];
     int code;
 
-    if ((code = gs_point_transform2fixed(pmat, pbox->p.x, pbox->p.y,
+    if ((code = gs_point_transform2fixed(ppath->memory, pmat, pbox->p.x, pbox->p.y,
 					 &pt)) < 0 ||
 	(code = gx_path_add_point(ppath, pt.x, pt.y)) < 0 ||
-	(code = gs_point_transform2fixed(pmat, pbox->q.x, pbox->p.y,
+	(code = gs_point_transform2fixed(ppath->memory, pmat, pbox->q.x, pbox->p.y,
 					 &pts[0])) < 0 ||
-	(code = gs_point_transform2fixed(pmat, pbox->q.x, pbox->q.y,
+	(code = gs_point_transform2fixed(ppath->memory, pmat, pbox->q.x, pbox->q.y,
 					 &pts[1])) < 0 ||
-	(code = gs_point_transform2fixed(pmat, pbox->p.x, pbox->q.y,
+	(code = gs_point_transform2fixed(ppath->memory, pmat, pbox->p.x, pbox->q.y,
 					 &pts[2])) < 0 ||
 	(code = gx_path_add_lines(ppath, pts, 3)) < 0
 	)
@@ -432,7 +432,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 
     path_clip = gx_cpath_alloc(mem, "shading_fill_path(path_clip)");
     if (path_clip == 0) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto out;
     }
     dev_proc(dev, get_clipping_box)(dev, &path_box);
@@ -455,7 +455,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 		goto out;		/* empty rectangle */
 	    box_path = gx_path_alloc(mem, "shading_fill_path(box_path)");
 	    if (box_path == 0) {
-		code = gs_note_error(gs_error_VMerror);
+		code = gs_note_error(mem, gs_error_VMerror);
 		goto out;
 	    }
 	    if ((code = gx_cpath_from_rectangle(path_clip, &path_box)) < 0 ||
@@ -515,7 +515,7 @@ gs_shading_fill_path(const gs_shading_t *psh, /*const*/ gx_path *ppath,
 	path_rect.p.y = fixed2float(path_box.p.y);
 	path_rect.q.x = fixed2float(path_box.q.x);
 	path_rect.q.y = fixed2float(path_box.q.y);
-	gs_bbox_transform_inverse(&path_rect, (const gs_matrix *)pmat, &rect);
+	gs_bbox_transform_inverse(pis->memory, &path_rect, (const gs_matrix *)pmat, &rect);
     }
     code = gs_shading_fill_rectangle(psh, &rect, dev, pis);
 out:

@@ -22,7 +22,7 @@
 /* Forward references */
 private int common_transform(i_ctx_t *,
 		int (*)(gs_state *, floatp, floatp, gs_point *),
-		int (*)(floatp, floatp, const gs_matrix *, gs_point *));
+		int (*)(const gs_memory_t *mem, floatp, floatp, const gs_matrix *, gs_point *));
 
 /* - initmatrix - */
 private int
@@ -52,7 +52,7 @@ zcurrentmatrix(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    push(6);
+    push(imemory, 6);
     code = make_floats(op - 5, &mat.xx, 6);
     if (code < 0)
 	pop(6);
@@ -65,7 +65,7 @@ zsetmatrix(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
-    int code = float_params(op, 6, &mat.xx);
+    int code = float_params(imemory, op, 6, &mat.xx);
 
     if (code < 0)
 	return code;
@@ -87,7 +87,7 @@ zsetdefaultmatrix(i_ctx_t *i_ctx_p)
     else {
 	gs_matrix mat;
 
-	code = read_matrix(op, &mat);
+	code = read_matrix(imemory, op, &mat);
 	if (code < 0)
 	    return code;
 	code = gs_setdefaultmatrix(igs, &mat);
@@ -107,7 +107,7 @@ ztranslate(i_ctx_t *i_ctx_p)
     int code;
     double trans[2];
 
-    if ((code = num_params(op, 2, trans)) >= 0) {
+    if ((code = num_params(imemory, op, 2, trans)) >= 0) {
 	code = gs_translate(igs, trans[0], trans[1]);
 	if (code < 0)
 	    return code;
@@ -115,12 +115,12 @@ ztranslate(i_ctx_t *i_ctx_p)
 	gs_matrix mat;
 
 	/* The num_params failure might be a stack underflow. */
-	check_op(2);
-	if ((code = num_params(op - 1, 2, trans)) < 0 ||
+	check_op(imemory, 2);
+	if ((code = num_params(imemory, op - 1, 2, trans)) < 0 ||
 	    (code = gs_make_translation(trans[0], trans[1], &mat)) < 0 ||
 	    (code = write_matrix(op, &mat)) < 0
 	    ) {			/* Might be a stack underflow. */
-	    check_op(3);
+	    check_op(imemory, 3);
 	    return code;
 	}
 	op[-2] = *op;
@@ -138,7 +138,7 @@ zscale(i_ctx_t *i_ctx_p)
     int code;
     double scale[2];
 
-    if ((code = num_params(op, 2, scale)) >= 0) {
+    if ((code = num_params(imemory, op, 2, scale)) >= 0) {
 	code = gs_scale(igs, scale[0], scale[1]);
 	if (code < 0)
 	    return code;
@@ -146,12 +146,12 @@ zscale(i_ctx_t *i_ctx_p)
 	gs_matrix mat;
 
 	/* The num_params failure might be a stack underflow. */
-	check_op(2);
-	if ((code = num_params(op - 1, 2, scale)) < 0 ||
+	check_op(imemory, 2);
+	if ((code = num_params(imemory, op - 1, 2, scale)) < 0 ||
 	    (code = gs_make_scaling(scale[0], scale[1], &mat)) < 0 ||
 	    (code = write_matrix(op, &mat)) < 0
 	    ) {			/* Might be a stack underflow. */
-	    check_op(3);
+	    check_op(imemory, 3);
 	    return code;
 	}
 	op[-2] = *op;
@@ -169,7 +169,7 @@ zrotate(i_ctx_t *i_ctx_p)
     int code;
     double ang;
 
-    if ((code = real_param(op, &ang)) >= 0) {
+    if ((code = real_param(imemory, op, &ang)) >= 0) {
 	code = gs_rotate(igs, ang);
 	if (code < 0)
 	    return code;
@@ -177,12 +177,12 @@ zrotate(i_ctx_t *i_ctx_p)
 	gs_matrix mat;
 
 	/* The num_params failure might be a stack underflow. */
-	check_op(1);
-	if ((code = num_params(op - 1, 1, &ang)) < 0 ||
+	check_op(imemory, 1);
+	if ((code = num_params(imemory, op - 1, 1, &ang)) < 0 ||
 	    (code = gs_make_rotation(ang, &mat)) < 0 ||
 	    (code = write_matrix(op, &mat)) < 0
 	    ) {			/* Might be a stack underflow. */
-	    check_op(2);
+	    check_op(imemory, 2);
 	    return code;
 	}
 	op[-1] = *op;
@@ -197,7 +197,7 @@ zconcat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
-    int code = read_matrix(op, &mat);
+    int code = read_matrix(imemory, op, &mat);
 
     if (code < 0)
 	return code;
@@ -216,8 +216,8 @@ zconcatmatrix(i_ctx_t *i_ctx_p)
     gs_matrix m1, m2, mp;
     int code;
 
-    if ((code = read_matrix(op - 2, &m1)) < 0 ||
-	(code = read_matrix(op - 1, &m2)) < 0 ||
+    if ((code = read_matrix(imemory, op - 2, &m1)) < 0 ||
+	(code = read_matrix(imemory, op - 1, &m2)) < 0 ||
 	(code = gs_matrix_multiply(&m1, &m2, &mp)) < 0 ||
 	(code = write_matrix(op, &mp)) < 0
 	)
@@ -263,7 +263,7 @@ zidtransform(i_ctx_t *i_ctx_p)
 private int
 common_transform(i_ctx_t *i_ctx_p,
 	int (*ptproc)(gs_state *, floatp, floatp, gs_point *),
-	int (*matproc)(floatp, floatp, const gs_matrix *, gs_point *))
+	int (*matproc)(const gs_memory_t *, floatp, floatp, const gs_matrix *, gs_point *))
 {
     os_ptr op = osp;
     double opxy[2];
@@ -284,11 +284,11 @@ common_transform(i_ctx_t *i_ctx_p,
 	    gs_matrix mat;
 	    gs_matrix *pmat = &mat;
 
-	    if ((code = read_matrix(op, pmat)) < 0 ||
-		(code = num_params(op - 1, 2, opxy)) < 0 ||
-		(code = (*matproc) (opxy[0], opxy[1], pmat, &pt)) < 0
+	    if ((code = read_matrix(imemory, op, pmat)) < 0 ||
+		(code = num_params(imemory, op - 1, 2, opxy)) < 0 ||
+		(code = (*matproc) (imemory, opxy[0], opxy[1], pmat, &pt)) < 0
 		) {		/* Might be a stack underflow. */
-		check_op(3);
+		check_op(imemory, 3);
 		return code;
 	    }
 	    op--;
@@ -296,7 +296,7 @@ common_transform(i_ctx_t *i_ctx_p,
 	    goto out;
 	}
 	default:
-	    return_op_typecheck(op);
+	    return_op_typecheck(imemory, op);
     }
     switch (r_type(op - 1)) {
 	case t_real:
@@ -306,7 +306,7 @@ common_transform(i_ctx_t *i_ctx_p,
 	    opxy[0] = (op - 1)->value.intval;
 	    break;
 	default:
-	    return_op_typecheck(op - 1);
+	    return_op_typecheck(imemory, op - 1);
     }
     if ((code = (*ptproc) (igs, opxy[0], opxy[1], &pt)) < 0)
 	return code;
@@ -324,8 +324,8 @@ zinvertmatrix(i_ctx_t *i_ctx_p)
     gs_matrix m;
     int code;
 
-    if ((code = read_matrix(op - 1, &m)) < 0 ||
-	(code = gs_matrix_invert(&m, &m)) < 0 ||
+    if ((code = read_matrix(imemory, op - 1, &m)) < 0 ||
+	(code = gs_matrix_invert(imemory, &m, &m)) < 0 ||
 	(code = write_matrix(op, &m)) < 0
 	)
 	return code;

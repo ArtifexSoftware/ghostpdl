@@ -619,7 +619,7 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
     int x = ss->x, y = ss->y;
     int status = 0;
 
-    if_debug4('w', "[w]subsample: x=%d, y=%d, rcount=%ld, wcount=%ld\n",
+    if_debug4(ss->memory, 'w', "[w]subsample: x=%d, y=%d, rcount=%ld, wcount=%ld\n",
 	      x, y, (long)(rlimit - p), (long)(wlimit - q));
     for (; rlimit - p >= spp; p += spp) {
 	if (((y % yf == yf2 && y < ylimit) || y == ylast) &&
@@ -635,7 +635,7 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
 	if (++x == width)
 	    x = 0, ++y;
     }
-    if_debug5('w',
+    if_debug5(ss->memory, 'w',
 	      "[w]subsample: x'=%d, y'=%d, read %ld, wrote %ld, status = %d\n",
 	      x, y, (long)(p - pr->ptr), (long)(q - pw->ptr), status);
     pr->ptr = p;
@@ -784,7 +784,7 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * ss, int width,
     ss->bits_per_sample = bits_per_sample;
     ss->sample = gs_alloc_bytes(ss->memory, width * depth, "s_compr_chooser_set_dimensions");
     if (ss->sample == 0)
-	return_error(gs_error_VMerror);
+	return_error(ss->memory, gs_error_VMerror);
     return 0;
 }
 

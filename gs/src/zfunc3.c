@@ -40,7 +40,7 @@ gs_build_function_2(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     *(gs_function_params_t *)&params = *mnDR;
     params.C0 = 0;
     params.C1 = 0;
-    if ((code = dict_float_param(op, "N", 0.0, &params.N)) != 0 ||
+    if ((code = dict_float_param(imemory, op, "N", 0.0, &params.N)) != 0 ||
 	(code = n0 = fn_build_float_array_forced(op, "C0", false, &params.C0, mem)) < 0 ||
 	(code = n1 = fn_build_float_array_forced(op, "C1", false, &params.C1, mem)) < 0
 	)
@@ -58,7 +58,7 @@ gs_build_function_2(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	return 0;
 fail:
     gs_function_ElIn_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(imemory, e_rangecheck));
 }
 
 /* Finish building a FunctionType 3 (1-Input Stitching) function. */
@@ -79,8 +79,8 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	int i;
 
 	if ((code = dict_find_string(op, "Functions", &pFunctions)) <= 0)
-	    return (code < 0 ? code : gs_note_error(e_rangecheck));
-	check_array_only(*pFunctions);
+	    return (code < 0 ? code : gs_note_error(imemory, e_rangecheck));
+	check_array_only(imemory, *pFunctions);
 	params.k = r_size(pFunctions);
 	code = alloc_function_array(params.k, &ptr, mem);
 	if (code < 0)
@@ -89,7 +89,7 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	for (i = 0; i < params.k; ++i) {
 	    ref subfn;
 
-	    array_get(pFunctions, (long)i, &subfn);
+	    array_get(imemory, pFunctions, (long)i, &subfn);
 	    code = fn_build_sub_function(i_ctx_p, &subfn, &ptr[i], depth, mem);
 	    if (code < 0)
 		goto fail;
@@ -106,5 +106,5 @@ gs_build_function_3(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	return 0;
 fail:
     gs_function_1ItSg_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(imemory, e_rangecheck));
 }

@@ -25,7 +25,7 @@ zpop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(1);
+    check_op(imemory, 1);
     pop(1);
     return 0;
 }
@@ -37,7 +37,7 @@ zexch(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref next;
 
-    check_op(2);
+    check_op(imemory, 2);
     ref_assign_inline(&next, op - 1);
     ref_assign_inline(op - 1, op);
     ref_assign_inline(op, &next);
@@ -50,8 +50,8 @@ zdup(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(1);
-    push(1);
+    check_op(imemory, 1);
+    push(imemory, 1);
     ref_assign_inline(op, op - 1);
     return 0;
 }
@@ -63,16 +63,16 @@ zindex(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     register os_ptr opn;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     if ((ulong)op->value.intval >= op - osbot) {
 	/* Might be in an older stack block. */
 	ref *elt;
 
 	if (op->value.intval < 0)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	elt = ref_stack_index(&o_stack, op->value.intval + 1);
 	if (elt == 0)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	ref_assign(op, elt);
 	return 0;
     }
@@ -92,8 +92,8 @@ zroll(i_ctx_t *i_ctx_p)
     register os_ptr from, to;
     register int n;
 
-    check_type(*op1, t_integer);
-    check_type(*op, t_integer);
+    check_type(imemory, *op1, t_integer);
+    check_type(imemory, *op, t_integer);
     if ((ulong) op1->value.intval > op1 - osbot) {
 	/*
 	 * The data might span multiple stack blocks.
@@ -106,7 +106,7 @@ zroll(i_ctx_t *i_ctx_p)
 	if (op1->value.intval < 0 ||
 	    op1->value.intval + 2 > ref_stack_count(&o_stack)
 	    )
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	count = op1->value.intval;
 	if (count <= 1) {
 	    pop(2);
@@ -194,7 +194,7 @@ zroll(i_ctx_t *i_ctx_p)
 	/* Move everything up, then top elements down. */
 	if (mod >= ostop - op) {
 	    o_stack.requested = mod;
-	    return_error(e_stackoverflow);
+	    return_error(imemory, e_stackoverflow);
 	}
 	pop(2);
 	op -= 2;
@@ -206,7 +206,7 @@ zroll(i_ctx_t *i_ctx_p)
 	mod = count - mod;
 	if (mod >= ostop - op) {
 	    o_stack.requested = mod;
-	    return_error(e_stackoverflow);
+	    return_error(imemory, e_stackoverflow);
 	}
 	pop(2);
 	op -= 2;
@@ -234,7 +234,7 @@ zcount(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, ref_stack_count(&o_stack) - 1);
     return 0;
 }
@@ -245,7 +245,7 @@ zmark(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_mark(op);
     return 0;
 }
@@ -257,7 +257,7 @@ zcleartomark(i_ctx_t *i_ctx_p)
     uint count = ref_stack_counttomark(&o_stack);
 
     if (count == 0)
-	return_error(e_unmatchedmark);
+	return_error(imemory, e_unmatchedmark);
     ref_stack_pop(&o_stack, count);
     return 0;
 }
@@ -271,8 +271,8 @@ zcounttomark(i_ctx_t *i_ctx_p)
     uint count = ref_stack_counttomark(&o_stack);
 
     if (count == 0)
-	return_error(e_unmatchedmark);
-    push(1);
+	return_error(imemory, e_unmatchedmark);
+    push(imemory, 1);
     make_int(op, count - 1);
     return 0;
 }

@@ -164,7 +164,7 @@ gs_currentscreen(const gs_state * pgs, gs_screen_halftone * phsp)
 	    *phsp = pgs->halftone->params.colorscreen.screens.colored.gray;
 	    return 0;
 	default:
-	    return_error(gs_error_undefined);
+	    return_error(pgs->memory, gs_error_undefined);
     }
 }
 
@@ -194,7 +194,7 @@ gx_imager_setscreenphase(gs_imager_state * pis, int x, int y,
 	    gx_imager_setscreenphase(pis, x, y, (gs_color_select_t) i);
 	return 0;
     } else if (select < 0 || select >= gs_color_select_count)
-	return_error(gs_error_rangecheck);
+	return_error(pis->memory, gs_error_rangecheck);
     pis->screen_phase[select].x = x;
     pis->screen_phase[select].y = y;
     return 0;
@@ -223,7 +223,7 @@ gs_currentscreenphase(const gs_state * pgs, gs_int_point * pphase,
 		      gs_color_select_t select)
 {
     if (select < 0 || select >= gs_color_select_count)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     *pphase = pgs->screen_phase[select];
     return 0;
 }
@@ -248,8 +248,8 @@ gx_ht_process_screen_memory(gs_screen_enum * penum, gs_state * pgs,
 
     if (code < 0)
 	return code;
-    while ((code = gs_screen_currentpoint(penum, &pt)) == 0)
-	if ((code = gs_screen_next(penum, (*phsp->spot_function) (pt.x, pt.y))) < 0)
+    while ((code = gs_screen_currentpoint(mem, penum, &pt)) == 0)
+	if ((code = gs_screen_next(mem, penum, (*phsp->spot_function) (pt.x, pt.y))) < 0)
 	    return code;
     return 0;
 }
@@ -286,7 +286,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
 	    (uint *)gs_alloc_byte_array(mem, porder->num_levels, sizeof(uint),
 				        "alloc_ht_order_data(levels)");
 	if (porder->levels == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
     } else
 	porder->levels = 0;
 
@@ -298,7 +298,7 @@ gx_ht_alloc_ht_order(gx_ht_order * porder, uint width, uint height,
 	if (porder->bit_data == 0) {
 	    gs_free_object(mem, porder->levels, "alloc_ht_order_data(levels)");
 	    porder->levels = 0;
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	}
     } else
 	porder->bit_data = 0;
@@ -330,7 +330,7 @@ gx_ht_copy_ht_order(gx_ht_order * pdest, gx_ht_order * psrc, gs_memory_t * mem)
 		psrc->num_bits * psrc->procs->bit_data_elt_size);
     pdest->wse = psrc->wse;
     pdest->transfer = psrc->transfer;
-    rc_increment(pdest->transfer);
+    rc_increment(mem, pdest->transfer);
     return 0;
 }
 
@@ -374,7 +374,7 @@ gx_ht_alloc_order(gx_ht_order * porder, uint width, uint height,
     int code;
 
     order = *porder;
-    gx_compute_cell_values(&order.params);
+    gx_compute_cell_values(mem, &order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
 				width * height, strip_shift,
 				&ht_order_procs_default, mem);
@@ -400,7 +400,7 @@ gx_ht_alloc_threshold_order(gx_ht_order * porder, uint width, uint height,
     int code;
 
     order = *porder;
-    gx_compute_cell_values(&order.params);
+    gx_compute_cell_values(mem, &order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
 				width * height, 0, procs, mem);
     if (code < 0)
@@ -422,7 +422,7 @@ gx_ht_alloc_client_order(gx_ht_order * porder, uint width, uint height,
     order.params.R = 1;
     order.params.M1 = height, order.params.N1 = 0;
     order.params.R1 = 1;
-    gx_compute_cell_values(&order.params);
+    gx_compute_cell_values(mem, &order.params);
     code = gx_ht_alloc_ht_order(&order, width, height, num_levels,
 				num_bits, 0, &ht_order_procs_default, mem);
     if (code < 0)
@@ -442,7 +442,7 @@ compare_samples(const void *p1, const void *p2)
 }
 /* Sort the halftone order by sample value. */
 void
-gx_sort_ht_order(gx_ht_bit * recs, uint N)
+gx_sort_ht_order(const gs_memory_t *mem, gx_ht_bit * recs, uint N)
 {
     int i;
 
@@ -454,9 +454,9 @@ gx_sort_ht_order(gx_ht_bit * recs, uint N)
     if (gs_debug_c('H')) {
 	uint i;
 
-	dlputs("[H]Sorted samples:\n");
+	dlputs(mem, "[H]Sorted samples:\n");
 	for (i = 0; i < N; i++)
-	    dlprintf3("%5u: %5u: %u\n",
+	    dlprintf3(mem, "%5u: %5u: %u\n",
 		      i, recs[i].offset, recs[i].mask);
     }
 #endif
@@ -469,7 +469,7 @@ gx_sort_ht_order(gx_ht_bit * recs, uint N)
  * the invariants that must be restored.
  */
 void
-gx_ht_construct_spot_order(gx_ht_order * porder)
+gx_ht_construct_spot_order(const gs_memory_t *mem, gx_ht_order * porder)
 {
     uint width = porder->width;
     uint num_levels = porder->num_levels;	/* = width x strip */
@@ -483,8 +483,8 @@ gx_ht_construct_spot_order(gx_ht_order * porder)
     gx_ht_bit *bp = bits + num_bits - 1;
     uint i;
 
-    gx_sort_ht_order(bits, num_levels);
-    if_debug5('h',
+    gx_sort_ht_order(mem, bits, num_levels);
+    if_debug5(mem, 'h',
 	      "[h]spot order: num_levels=%u w=%u h=%u strip=%u shift=%u\n",
 	      num_levels, width, porder->orig_height, strip, shift);
     /* Fill in the levels array, replicating the bits vertically */
@@ -506,7 +506,7 @@ gx_ht_construct_spot_order(gx_ht_order * porder)
 	porder->height = full_height;
 	porder->shift = 0;
     }
-    gx_ht_construct_bits(porder);
+    gx_ht_construct_bits(mem, porder);
 }
 
 /* Construct a single offset/mask. */
@@ -538,7 +538,7 @@ gx_ht_construct_bit(gx_ht_bit * bit, int width, int bit_num)
 /* porder->bits[i].offset contains the index of the bit position */
 /* that is i'th in the whitening order. */
 void
-gx_ht_construct_bits(gx_ht_order * porder)
+gx_ht_construct_bits(const gs_memory_t *mem, gx_ht_order * porder)
 {
     uint i;
     gx_ht_bit *phb;
@@ -549,11 +549,11 @@ gx_ht_construct_bits(gx_ht_order * porder)
 	gx_ht_construct_bit(phb, porder->width, phb->offset);
 #ifdef DEBUG
     if (gs_debug_c('H')) {
-	dlprintf1("[H]Halftone order bits 0x%lx:\n", (ulong)porder->bit_data);
+	dlprintf1(mem, "[H]Halftone order bits 0x%lx:\n", (ulong)porder->bit_data);
 	for (i = 0, phb = (gx_ht_bit *)porder->bit_data;
 	     i < porder->num_bits;
 	     i++, phb++)
-	    dlprintf3("%4d: %u:0x%lx\n", i, phb->offset,
+	    dlprintf3(mem, "%4d: %u:0x%lx\n", i, phb->offset,
 		      (ulong) phb->mask);
     }
 #endif
@@ -575,7 +575,7 @@ gx_ht_order_release(gx_ht_order * porder, gs_memory_t * mem, bool free_cache)
     if (porder->wts != 0 && porder->width != ht_wts_suppress_release)
         gs_wts_free_screen(porder->wts);
     porder->wts = 0;
-    rc_decrement(porder->transfer, "gx_ht_order_release(transfer)");
+    rc_decrement(mem, porder->transfer, "gx_ht_order_release(transfer)");
     porder->transfer = 0;
     if (porder->data_memory != 0) {
 	gs_free_object(porder->data_memory, porder->bit_data,
@@ -936,7 +936,7 @@ gx_imager_dev_ht_install(
     /* construct the new device halftone structure */
     memset(&dht.order, 0, sizeof(dht.order));
     /* the rc field is filled in later */
-    dht.id = gs_next_ids(1);
+    dht.id = gs_next_ids(pis->memory, 1);
     dht.type = type;
     dht.components =  gs_alloc_struct_array(
                           pis->memory,
@@ -945,7 +945,7 @@ gx_imager_dev_ht_install(
                           &st_ht_order_component_element,
                           "gx_imager_dev_ht_install(components)" );
     if (dht.components == NULL)
-	return_error(gs_error_VMerror);
+	return_error(pis->memory, gs_error_VMerror);
     dht.num_comp = num_comps;
     /* lcm_width, lcm_height are filled in later */
 
@@ -1078,7 +1078,7 @@ gx_imager_dev_ht_install(
                     code = gs_error_VMerror;
                 else {
                     porder->cache = pcache;
-                    gx_ht_init_cache(pcache, porder);
+                    gx_ht_init_cache(pis->memory, pcache, porder);
                 }
             }
         }
@@ -1203,7 +1203,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
 	new_ht = old_ht;
     else
 	rc_alloc_struct_1(new_ht, gs_halftone, &st_halftone,
-			  mem, return_error(gs_error_VMerror),
+			  mem, return_error(mem, gs_error_VMerror),
 			  "gx_ht_install(new halftone)");
     code = gx_imager_dev_ht_install((gs_imager_state *) pgs,
 			     pdht, pht->type, gs_currentdevice_inline(pgs));
@@ -1220,7 +1220,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
     gx_device_halftone_release(pdht, pdht->rc.memory);
 
     if (new_ht != old_ht)
-	rc_decrement(old_ht, "gx_ht_install(old halftone)");
+	rc_decrement(mem, old_ht, "gx_ht_install(old halftone)");
     {
 	rc_header rc;
 

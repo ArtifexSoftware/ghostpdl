@@ -42,6 +42,7 @@
 #include "idisp.h"
 #include "gdevdsp.h"
 #include "gdevdsp2.h"
+#include "ialloc.h"
 
 int
 display_set_callback(gs_main_instance *minst, display_callback *callback)
@@ -67,21 +68,21 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
        return code;
 
     op = osp;
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     if (op->value.boolval) {
 	/* display device was included in Ghostscript so we need
 	 * to set the callback structure pointer within it.
 	 * If the device is already open, close it before
 	 * setting callback, then reopen it.
 	 */
-	check_read_type(op[-1], t_device);
+	check_read_type(imemory, op[-1], t_device);
 	dev = op[-1].value.pdevice;
 	
 	was_open = dev->is_open;
 	if (was_open) {
 	    code = gs_closedevice(dev);
 	    if (code < 0)
-		return_error(code);
+		return_error(imemory, code);
 	}
 
 	ddev = (gx_device_display *) dev;
@@ -90,8 +91,8 @@ display_set_callback(gs_main_instance *minst, display_callback *callback)
 	if (was_open) {
 	    code = gs_opendevice(dev);
 	    if (code < 0) {
-		dprintf("**** Unable to open the display device, quitting.\n");
-		return_error(code);
+		dprintf(minst->heap, "**** Unable to open the display device, quitting.\n");
+		return_error(imemory, code);
 	    }
 	}
 	pop(1);	/* device */

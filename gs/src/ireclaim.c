@@ -66,7 +66,8 @@ ireclaim(gs_dual_memory_t * dmem, int space)
     } else {
 	mem = dmem->spaces_indexed[space >> r_space_shift];
     }
-    if_debug3('0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
+    if_debug3((const gs_memory_t *)mem->stable_memory, 
+	      '0', "[0]GC called, space=%d, requestor=%d, requested=%ld\n",
 	      space, mem->space, (long)mem->gc_status.requested);
     global = mem->space != avm_local;
     /* Since dmem may move, reset the request now. */
@@ -87,7 +88,7 @@ ireclaim(gs_dual_memory_t * dmem, int space)
 	}
 	if (allocated >= mem->gc_status.max_vm) {
 	    /* We can't satisfy this request within max_vm. */
-	    return_error(e_VMerror);
+	    return_error((const gs_memory_t *)mem->stable_memory,e_VMerror);
 	}
     }
     return 0;

@@ -265,7 +265,7 @@ mem_open(gx_device * dev)
 
     /* Check that we aren't trying to open a planar device as chunky. */
     if (mdev->num_planes)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     return gdev_mem_open_scan_lines(mdev, dev->height);
 }
 int
@@ -274,17 +274,17 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
     bool line_pointers_adjacent = true;
 
     if (setup_height < 0 || setup_height > mdev->height)
-	return_error(gs_error_rangecheck);
+	return_error(mdev->memory, gs_error_rangecheck);
     if (mdev->bitmap_memory != 0) {
 	/* Allocate the data now. */
 	ulong size = gdev_mem_bitmap_size(mdev);
 
 	if ((uint) size != size)
-	    return_error(gs_error_limitcheck);
+	    return_error(mdev->memory, gs_error_limitcheck);
 	mdev->base = gs_alloc_bytes(mdev->bitmap_memory, (uint)size,
 				    "mem_open");
 	if (mdev->base == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mdev->memory, gs_error_VMerror);
 	mdev->foreign_bits = false;
     } else if (mdev->line_pointer_memory != 0) {
 	/* Allocate the line pointers now. */
@@ -294,7 +294,7 @@ gdev_mem_open_scan_lines(gx_device_memory *mdev, int setup_height)
 				sizeof(byte *) * max(mdev->num_planes, 1),
 				"gdev_mem_open_scan_lines");
 	if (mdev->line_ptrs == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mdev->memory, gs_error_VMerror);
 	mdev->foreign_line_pointers = false;
 	line_pointers_adjacent = false;
     }
@@ -326,7 +326,7 @@ gdev_mem_set_line_ptrs(gx_device_memory * mdev, byte * base, int raster,
 
     if (num_planes) {
 	if (base && !mdev->plane_depth)
-	    return_error(gs_error_rangecheck);
+	    return_error(mdev->memory, gs_error_rangecheck);
 	planes = mdev->planes;
     } else {
 	planes = &plane1;
@@ -404,17 +404,17 @@ mem_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	    (GB_OFFSET_0 | GB_OFFSET_SPECIFIED | GB_OFFSET_ANY) |
 	    (GB_RASTER_STANDARD | GB_RASTER_SPECIFIED | GB_RASTER_ANY) |
 	    GB_PACKING_CHUNKY | GB_COLORS_NATIVE | GB_ALPHA_NONE;
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     }
     if ((w <= 0) | (h <= 0)) {
 	if ((w | h) < 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
 	return 0;
     }
     if (x < 0 || w > dev->width - x ||
 	y < 0 || h > dev->height - y
 	)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     {
 	gs_get_bits_params_t copy_params;
 	byte *base = scan_line_base(mdev, y);

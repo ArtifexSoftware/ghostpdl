@@ -306,7 +306,7 @@ int clist_close_output_file(gx_device *dev);
  * Close and delete the contents of the band files associated with a
  * page_info structure (a page that has been separated from the device).
  */
-int clist_close_page_info(gx_band_page_info_t *ppi);
+int clist_close_page_info(const gs_memory_t *mem, gx_band_page_info_t *ppi);
 
 /*
  * Compute the colors-used information in the page_info structure from the

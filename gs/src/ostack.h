@@ -28,17 +28,17 @@
 #define ostop (o_stack.top)
 
 /* Macro to ensure enough room on the operand stack */
-#define check_ostack(n)\
+#define check_ostack(mem, n)\
   if ( ostop - osp < (n) )\
-    { o_stack.requested = (n); return_error(e_stackoverflow); }
+    { o_stack.requested = (n); return_error(mem, e_stackoverflow); }
 
 /* Operand stack manipulation. */
 
 /* Note that push sets osp to (the new value of) op. */
-#define push(n)\
+#define push(mem, n)\
   BEGIN\
     if ( (op += (n)) > ostop )\
-      { o_stack.requested = (n); return_error(e_stackoverflow); }\
+      { o_stack.requested = (n); return_error(mem, e_stackoverflow); }\
     else osp = op;\
   END
 
@@ -64,8 +64,8 @@
  * is really a stackunderflow when the stack has fewer than the
  * operator's declared minimum number of entries.)
  */
-#define check_op(nargs)\
-  if ( op < osbot + ((nargs) - 1) ) return_error(e_stackunderflow)
+#define check_op(mem, nargs)\
+  if ( op < osbot + ((nargs) - 1) ) return_error(mem, e_stackunderflow)
 /*
  * Similarly, in order to simplify some overflow checks, we allocate
  * a few guard entries just above the top of the o-stack.

@@ -116,10 +116,10 @@ typedef struct MEMFILE {
 
 #define memfile_fopen(fname, fmode, pcf, mem, data_mem, compress)\
   clist_fopen(fname, fmode, pcf, mem, data_mem, compress)
-#define memfile_fclose(cf, fname, delete)\
-  clist_fclose(cf, fname, delete)
-#define memfile_unlink(fname)\
-  clist_unlink(fname)
+#define memfile_fclose(mem, cf, fname, delete)\
+  clist_fclose(mem, cf, fname, delete)
+#define memfile_unlink(mem, fname)\
+  clist_unlink(mem, fname)
 
 #define memfile_space_available(req)\
   clist_space_available(req)
@@ -129,7 +129,7 @@ typedef struct MEMFILE {
 #define memfile_fread_chars(data, len, cf)\
   clist_fread_chars(data, len, cf)
 
-#define memfile_set_memory_warning(cf, nbytes) clist_set_memory_warning(cf, nbytes)
+#define memfile_set_memory_warning(mem, cf, nbytes) clist_set_memory_warning(mem, cf, nbytes)
 #define memfile_ferror_code(cf) clist_ferror_code(cf)
 #define memfile_ftell(cf) clist_ftell(cf)
 #define memfile_rewind(cf, discard, fname) clist_rewind(cf, discard, fname)

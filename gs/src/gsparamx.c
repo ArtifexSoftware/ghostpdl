@@ -113,7 +113,7 @@ param_put_long(gs_param_list * plist, gs_param_name param_name,
 
 /* Copy one parameter list to another, recursively if necessary. */
 int
-param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
+param_list_copy(const gs_memory_t *mem, gs_param_list *plto, gs_param_list *plfrom)
 {
     gs_param_enumerator_t key_enum;
     gs_param_key_t key;
@@ -132,13 +132,13 @@ param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
 	gs_param_typed_value copy;
 
 	if (key.size > sizeof(string_key) - 1) {
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(mem, gs_error_rangecheck);
 	    break;
 	}
 	memcpy(string_key, key.data, key.size);
 	string_key[key.size] = 0;
 	if ((code = param_read_typed(plfrom, string_key, &value)) != 0) {
-	    code = (code > 0 ? gs_note_error(gs_error_unknownerror) : code);
+	    code = (code > 0 ? gs_note_error(mem, gs_error_unknownerror) : code);
 	    break;
 	}
 	gs_param_list_set_persistent_keys(plto, key.persistent);
@@ -156,7 +156,7 @@ param_list_copy(gs_param_list *plto, gs_param_list *plfrom)
 	    if ((code = param_begin_write_collection(plto, string_key,
 						     &copy.value.d,
 						     coll_type)) < 0 ||
-		(code = param_list_copy(copy.value.d.list,
+		(code = param_list_copy(mem, copy.value.d.list,
 					value.value.d.list)) < 0 ||
 		(code = param_end_write_collection(plto, string_key,
 						   &copy.value.d)) < 0)

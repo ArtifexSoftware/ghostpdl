@@ -90,7 +90,7 @@ dljet_mono_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 	(ulong *)gs_alloc_byte_array(pdev->memory, storage_size_words, W,
 				     "hpjet_print_page");
     if (storage == 0)		/* can't allocate working area */
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     data_words = storage;
     out_row_words = data_words + (line_size_words * 2);
     out_row_alt_words = out_row_words + (line_size_words * 2);

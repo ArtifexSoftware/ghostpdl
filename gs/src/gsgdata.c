@@ -34,10 +34,11 @@ gs_public_st_composite(st_glyph_data, gs_glyph_data_t, "gs_glyph_data_t",
 
 /* Replace glyph data by a substring. */
 int
-gs_glyph_data_substring(gs_glyph_data_t *pgd, uint offset, uint size)
+gs_glyph_data_substring(const gs_memory_t *mem,
+			gs_glyph_data_t *pgd, uint offset, uint size)
 {
     if (offset > pgd->bits.size || size > pgd->bits.size - offset)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     return pgd->procs->substring(pgd, offset, size);
 }
 

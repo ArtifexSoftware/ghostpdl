@@ -141,11 +141,11 @@ not_exact:
     {
 	float exx = expand * cx;
 	float exy = expand * cy;
-	int code = set_float2fixed_vars(ppt->x, exx);
+	int code = set_float2fixed_vars(pis->memory, ppt->x, exx);
 
 	if (code < 0)
 	    return code;
-	code = set_float2fixed_vars(ppt->y, exy);
+	code = set_float2fixed_vars(pis->memory, ppt->y, exy);
 	if (code < 0)
 	    return code;
     }
@@ -206,15 +206,17 @@ typedef partial_line *pl_ptr;
 /* Other forward declarations */
 private bool width_is_thin(pl_ptr);
 private void adjust_stroke(pl_ptr, const gs_imager_state *, bool);
-private int line_join_points(const gx_line_params * pgs_lp,
+private int line_join_points(const gs_memory_t *mem,
+			     const gx_line_params * pgs_lp,
 			     pl_ptr plp, pl_ptr nplp,
 			     gs_fixed_point * join_points,
 			     const gs_matrix * pmat, gs_line_join join);
-private void compute_caps(pl_ptr);
+private void compute_caps(const gs_memory_t *mem, pl_ptr);
 private int add_points(gx_path *, const gs_fixed_point *,
 		       int, bool);
 private int add_round_cap(gx_path *, const_ep_ptr);
-private int cap_points(gs_line_cap, const_ep_ptr,
+private int cap_points(const gs_memory_t *mem, 
+		       gs_line_cap, const_ep_ptr,
 		       gs_fixed_point * /*[3] */ );
 
 /* Define the default implementation of the device stroke_path procedure. */
@@ -343,15 +345,16 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 	int count = pgs_lp->dash.pattern_size;
 	int i;
 
-	dlprintf3("[o]half_width=%f, cap=%d, join=%d,\n",
+	dlprintf3(pis->memory, "[o]half_width=%f, cap=%d, join=%d,\n",
 		  pgs_lp->half_width, (int)pgs_lp->cap, (int)pgs_lp->join);
-	dlprintf2("   miter_limit=%f, miter_check=%f,\n",
+	dlprintf2(pis->memory, "   miter_limit=%f, miter_check=%f,\n",
 		  pgs_lp->miter_limit, pgs_lp->miter_check);
-	dlprintf1("   dash pattern=%d", count);
+	dlprintf1(pis->memory, "   dash pattern=%d", count);
 	for (i = 0; i < count; i++)
-	    dprintf1(",%f", pgs_lp->dash.pattern[i]);
-	dputs(",\n");
-	dlprintf4("\toffset=%f, init(ink_on=%d, index=%d, dist_left=%f)\n",
+	    dprintf1(pis->memory, ",%f", pgs_lp->dash.pattern[i]);
+	dputs(pis->memory, ",\n");
+	dlprintf4(pis->memory, 
+		  "\toffset=%f, init(ink_on=%d, index=%d, dist_left=%f)\n",
 		  pgs_lp->dash.offset, pgs_lp->dash.init_ink_on,
 		  pgs_lp->dash.init_index, pgs_lp->dash.init_dist_left);
     }
@@ -399,7 +402,8 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 
 	if (pcpath) {
 	    gx_cpath_outer_box(pcpath, &bbox);
-	    if_debug4('f', "   outer_box=(%g,%g),(%g,%g)\n",
+	    if_debug4(pis->memory, 
+		      'f', "   outer_box=(%g,%g),(%g,%g)\n",
 		      fixed2float(bbox.p.x), fixed2float(bbox.p.y),
 		      fixed2float(bbox.q.x), fixed2float(bbox.q.y));
 	    rect_intersect(ibox, bbox);
@@ -473,7 +477,8 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		}
 	}
     }
-    if_debug7('o', "[o]ctm=(%g,%g,%g,%g,%g,%g) thin=%d\n",
+    if_debug7(pis->memory, 
+	      'o', "[o]ctm=(%g,%g,%g,%g,%g,%g) thin=%d\n",
 	      xx, xy, yx, yy, pis->ctm.tx, pis->ctm.ty, always_thin);
     if (device_dot_length != 0) {
 	/*
@@ -676,7 +681,7 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		}
 		if (!pl.thin) {
 		    adjust_stroke(&pl, pis, false);
-		    compute_caps(&pl);
+		    compute_caps(pis->memory, &pl);
 		}
 	    }
 	    if (index++) {
@@ -836,7 +841,7 @@ adjust_stroke(pl_ptr plp, const gs_imager_state * pis, bool thin)
 /* otherwise, return 0 if the intersection is beyond *pp1 and *pp2 in */
 /* the direction determined by *pd1 and *pd2, and 1 otherwise. */
 private int
-line_intersect(
+line_intersect( const gs_memory_t *mem, 
 		  p_ptr pp1,	/* point on 1st line */
 		  p_ptr pd1,	/* slope of 1st line (dx,dy) */
 		  p_ptr pp2,	/* point on 2nd line */
@@ -854,13 +859,13 @@ line_intersect(
 
 #ifdef DEBUG
     if (gs_debug_c('O')) {
-	dlprintf4("[o]Intersect %f,%f(%f/%f)",
+	dlprintf4(mem, "[o]Intersect %f,%f(%f/%f)",
 		  fixed2float(pp1->x), fixed2float(pp1->y),
 		  fixed2float(pd1->x), fixed2float(pd1->y));
-	dlprintf4(" & %f,%f(%f/%f),\n",
+	dlprintf4(mem, " & %f,%f(%f/%f),\n",
 		  fixed2float(pp2->x), fixed2float(pp2->y),
 		  fixed2float(pd2->x), fixed2float(pd2->y));
-	dlprintf3("\txdiff=%f ydiff=%f denom=%f ->\n",
+	dlprintf3(mem, "\txdiff=%f ydiff=%f denom=%f ->\n",
 		  xdiff, ydiff, denom);
     }
 #endif
@@ -868,13 +873,13 @@ line_intersect(
     if (any_abs(xdiff) >= max_result || any_abs(ydiff) >= max_result) {
 	/* The lines are nearly parallel, */
 	/* or one of them has zero length.  Punt. */
-	if_debug0('O', "\tdegenerate!\n");
+	if_debug0(mem, 'O', "\tdegenerate!\n");
 	return -1;
     }
     f1 = (v2 * xdiff - u2 * ydiff) / denom;
     pi->x = pp1->x + (fixed) (f1 * u1);
     pi->y = pp1->y + (fixed) (f1 * v1);
-    if_debug2('O', "\t%f,%f\n",
+    if_debug2(mem, 'O', "\t%f,%f\n",
 	      fixed2float(pi->x), fixed2float(pi->y));
     return (f1 >= 0 && (v1 * xdiff >= u1 * ydiff ? denom >= 0 : denom < 0) ? 0 : 1);
 }
@@ -932,12 +937,13 @@ stroke_fill(gx_path * ppath, int first, register pl_ptr plp, pl_ptr nplp,
 	    int npoints, code;
 	    fixed ax, ay, bx, by;
 
-	    npoints = cap_points((first == 0 ? cap : gs_cap_butt),
+	    npoints = cap_points(ppath->memory, (first == 0 ? cap : gs_cap_butt),
 				 &plp->o, points);
 	    if (nplp == 0)
-		code = cap_points(cap, &plp->e, points + npoints);
+		code = cap_points(ppath->memory, cap, &plp->e, points + npoints);
 	    else
-		code = line_join_points(pgs_lp, plp, nplp, points + npoints,
+		code = line_join_points(ppath->memory, 
+					pgs_lp, plp, nplp, points + npoints,
 					(uniform ? (gs_matrix *) 0 :
 					 &ctm_only(pis)), join);
 	    if (code < 0)
@@ -1015,7 +1021,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	/* because the line was thin.  Do it now. */
 	set_thin_widths(plp);
 	adjust_stroke(plp, pis, true);
-	compute_caps(plp);
+	compute_caps(ppath->memory, plp);
     }
     /* Create an initial cap if desired. */
     if (first == 0 && pgs_lp->cap == gs_cap_round) {
@@ -1026,7 +1032,9 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	npoints = 0;
 	moveto_first = false;
     } else {
-	if ((npoints = cap_points((first == 0 ? pgs_lp->cap : gs_cap_butt), &plp->o, points)) < 0)
+	if ((npoints = cap_points(ppath->memory, 
+				  (first == 0 ? pgs_lp->cap : gs_cap_butt), 
+				  &plp->o, points)) < 0)
 	    return npoints;
     }
     if (nplp == 0) {
@@ -1039,7 +1047,7 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	    code = add_round_cap(ppath, &plp->e);
 	    goto done;
 	}
-	code = cap_points(pgs_lp->cap, &plp->e, points + npoints);
+	code = cap_points(ppath->memory, pgs_lp->cap, &plp->e, points + npoints);
     } else if (join == gs_join_round) {
 	ASSIGN_POINT(&points[npoints], plp->e.co);
 	++npoints;
@@ -1048,9 +1056,9 @@ stroke_add(gx_path * ppath, int first, pl_ptr plp, pl_ptr nplp,
 	code = add_round_cap(ppath, &plp->e);
 	goto done;
     } else if (nplp->thin)	/* no join */
-	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
+	code = cap_points(ppath->memory, gs_cap_butt, &plp->e, points + npoints);
     else			/* non-round join */
-	code = line_join_points(pgs_lp, plp, nplp, points + npoints,
+	code = line_join_points(ppath->memory, pgs_lp, plp, nplp, points + npoints,
 				(uniform ? (gs_matrix *) 0 : &ctm_only(pis)),
 				join);
     if (code < 0)
@@ -1084,7 +1092,8 @@ add_points(gx_path * ppath, const gs_fixed_point * points, int npoints,
 /* If pmat != 0, we must inverse-transform the distances for */
 /* the miter check. */
 private int
-line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
+line_join_points(const gs_memory_t *mem,
+		 const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 		 gs_fixed_point * join_points, const gs_matrix * pmat,
 		 gs_line_join join)
 {
@@ -1145,7 +1154,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	ASSIGN_POINT(&np2, nplp->o.p);
 	np = &np1;
     }
-    if_debug1('O', "[o]use %s\n", (ccw ? "co (ccw)" : "ce (cw)"));
+    if_debug1(mem, 'O', "[o]use %s\n", (ccw ? "co (ccw)" : "ce (cw)"));
 
     /* Handle triangular joins now. */
     if (join == gs_join_triangle) {
@@ -1196,11 +1205,11 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	if (pmat) {
 	    gs_point pt;
 
-	    code = gs_distance_transform_inverse(v1, u1, pmat, &pt);
+	    code = gs_distance_transform_inverse(mem, v1, u1, pmat, &pt);
 	    if (code < 0)
 		return code;
 	    v1 = pt.x, u1 = pt.y;
-	    code = gs_distance_transform_inverse(v2, u2, pmat, &pt);
+	    code = gs_distance_transform_inverse(mem, v2, u2, pmat, &pt);
 	    if (code < 0)
 		return code;
 	    v2 = pt.x, u2 = pt.y;
@@ -1223,7 +1232,8 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 		else if (dif >= 2 * M_PI)
 		    dif -= 2 * M_PI;
 		if (dif != 0 && (dif < M_PI) != ccw)
-		    lprintf8("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=%d\n",
+		    lprintf8(mem, 
+			     "ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=%d\n",
 			     a1, u1, v1, a2, u2, v2, dif, ccw);
 	    }
 #endif
@@ -1239,9 +1249,9 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	    num = -num;
 #ifdef DEBUG
 	if (gs_debug_c('O')) {
-	    dlprintf4("[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
+	    dlprintf4(mem, "[o]Miter check: u1/v1=%f/%f, u2/v2=%f/%f,\n",
 		      u1, v1, u2, v2);
-	    dlprintf3("        num=%f, denom=%f, check=%f\n",
+	    dlprintf3(mem, "        num=%f, denom=%f, check=%f\n",
 		      num, denom, check);
 	}
 #endif
@@ -1270,10 +1280,10 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 	    /* OK to use a miter join. */
 	    gs_fixed_point mpt;
 
-	    if_debug0('O', "	... passes.\n");
+	    if_debug0(mem, 'O', "	... passes.\n");
 	    /* Compute the intersection of */
 	    /* the extended edge lines. */
-	    if (line_intersect(outp, &plp->e.cdelta, np,
+	    if (line_intersect(mem, outp, &plp->e.cdelta, np,
 			       &nplp->o.cdelta, &mpt) == 0
 		)
 		ASSIGN_POINT(outp, mpt);
@@ -1286,7 +1296,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 /* Compute the endpoints of the two caps of a segment. */
 /* Only o.p, e.p, width, and cdelta have been set. */
 private void
-compute_caps(pl_ptr plp)
+compute_caps(const gs_memory_t *mem, pl_ptr plp)
 {
     fixed wx2 = plp->width.x;
     fixed wy2 = plp->width.y;
@@ -1299,10 +1309,10 @@ compute_caps(pl_ptr plp)
     plp->e.ce.x = plp->e.p.x + wx2, plp->e.ce.y = plp->e.p.y + wy2;
 #ifdef DEBUG
     if (gs_debug_c('O')) {
-	dlprintf4("[o]Stroke o=(%f,%f) e=(%f,%f)\n",
+	dlprintf4(mem, "[o]Stroke o=(%f,%f) e=(%f,%f)\n",
 		  fixed2float(plp->o.p.x), fixed2float(plp->o.p.y),
 		  fixed2float(plp->e.p.x), fixed2float(plp->e.p.y));
-	dlprintf4("\twxy=(%f,%f) lxy=(%f,%f)\n",
+	dlprintf4(mem, "\twxy=(%f,%f) lxy=(%f,%f)\n",
 		  fixed2float(wx2), fixed2float(wy2),
 		  fixed2float(plp->e.cdelta.x),
 		  fixed2float(plp->e.cdelta.y));
@@ -1350,7 +1360,8 @@ add_round_cap(gx_path * ppath, const_ep_ptr endp)
 /* Compute the points for a non-round cap. */
 /* Return the number of points. */
 private int
-cap_points(gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
+cap_points(const gs_memory_t *mem,
+	   gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
 {
 #define PUT_POINT(i, px, py)\
   pts[i].x = (px), pts[i].y = (py)
@@ -1369,7 +1380,7 @@ cap_points(gs_line_cap type, const_ep_ptr endp, gs_fixed_point *pts /*[3]*/)
 	    PUT_POINT(2, xe, ye);
 	    return 3;
 	default:		/* can't happen */
-	    return_error(gs_error_unregistered);
+	    return_error(mem, gs_error_unregistered);
     }
 #undef PUT_POINT
 }

@@ -42,7 +42,7 @@ private const gs_color_space_type gs_color_space_type_DevicePixel = {
 
 /* Initialize a DevicePixel color space. */
 int
-gs_cspace_init_DevicePixel(gs_color_space * pcs, int depth)
+gs_cspace_init_DevicePixel(const gs_memory_t *mem, gs_color_space * pcs, int depth)
 {
     switch (depth) {
 	case 1:
@@ -54,7 +54,7 @@ gs_cspace_init_DevicePixel(gs_color_space * pcs, int depth)
 	case 32:
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     }
     gs_cspace_init(pcs, &gs_color_space_type_DevicePixel, NULL);
     pcs->params.pixel.depth = depth;

@@ -90,6 +90,7 @@ gs_memory_retrying_init(
     rmem->stable_memory = 0;
     rmem->procs = retrying_procs;
     rmem->target = target;
+    rmem->pl_stdio = target->pl_stdio;
     gs_memory_retrying_set_recover(rmem, no_recover_proc, NULL);
     return 0;
 }

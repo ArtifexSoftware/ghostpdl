@@ -38,13 +38,13 @@ zbuildfont10(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     build_proc_refs build;
-    int code = build_gs_font_procs(op, &build);
+    int code = build_gs_font_procs(imemory, op, &build);
     gs_cid_system_info_t cidsi;
     gs_font_base *pfont;
 
     if (code < 0)
 	return code;
-    code = cid_font_system_info_param(&cidsi, op);
+    code = cid_font_system_info_param(imemory, &cidsi, op);
     if (code < 0)
 	return code;
     make_null(&build.BuildChar);	/* only BuildGlyph */
@@ -78,7 +78,7 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
     switch (r_type(pcidmap)) {
     case t_string:
 	if (cid >= r_size(pcidmap) / gdbytes)
-	    return_error(e_rangecheck);
+	    return_error(pfont->memory, e_rangecheck);
 	data = pcidmap->value.const_bytes + cid * gdbytes;
 	break;
     case t_integer:
@@ -87,18 +87,19 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 	make_int(&rcid, cid);
 	code = dict_find(pcidmap, &rcid, &prgnum);
 	if (code <= 0)
-	    return (code < 0 ? code : gs_note_error(e_undefined));
+	    return (code < 0 ? code : gs_note_error(pfont->memory, e_undefined));
 	if (!r_has_type(prgnum, t_integer))
-	    return_error(e_typecheck);
+	    return_error(pfont->memory, e_typecheck);
 	return prgnum->value.intval;
     default:			/* array type */
-	code = string_array_access_proc(pcidmap, 1, cid * gdbytes,
+	code = string_array_access_proc(pfont->memory, 
+					pcidmap, 1, cid * gdbytes,
 					gdbytes, &data);
 
 	if (code < 0)
 	    return code;
 	if ( code > 0 ) 
-	    return_error(e_invalidfont);
+	    return_error(pfont->memory, e_invalidfont);
     }
     for (i = 0; i < gdbytes; ++i)
 	gnum = (gnum << 8) + data[i];
@@ -121,7 +122,7 @@ z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
 	    gs_glyph_data_free(pgd, "z11_get_outline");
 	    gs_glyph_data_from_null(pgd);
 	} else {
-	    gs_glyph_data_substring(pgd, skip, size - skip);
+	    gs_glyph_data_substring(pfont->memory, pgd, skip, size - skip);
 	}
     }
     return code;
@@ -178,15 +179,15 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     int MetricsCount;
     ref rcidmap, ignore_gdir, *file, cfnstr, *CIDFontName;
     ulong loca_glyph_pos[2][2];
-    int code = cid_font_data_param(op, &common, &ignore_gdir);
+    int code = cid_font_data_param(imemory, op, &common, &ignore_gdir);
 
     if (code < 0 ||
 	(code = dict_find_string(op, "CIDFontName", &CIDFontName)) <= 0 ||
-	(code = dict_int_param(op, "MetricsCount", 0, 4, 0, &MetricsCount)) < 0
+	(code = dict_int_param(imemory, op, "MetricsCount", 0, 4, 0, &MetricsCount)) < 0
 	)
 	return code;
     if (MetricsCount & 1)	/* only allowable values are 0, 2, 4 */
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     code = dict_find_string(op, "File", &file);
     if (code < 0)
 	return code;
@@ -195,31 +196,31 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	const char *name[2] = {"loca", "glyf"};
 	int i, j;
 	
-        check_read_type(*file, t_file);
+        check_read_type(imemory, *file, t_file);
 	code = dict_find_string(op, "file_table_pos", &file_table_pos);
 	if (code <= 0 || r_type(file_table_pos) != t_dictionary)
-	    return_error(e_invalidfont);
+	    return_error(imemory, e_invalidfont);
 	for (i = 0; i < 2; i++) {
 	    code = dict_find_string(file_table_pos, name[i], &a);
 	    if (code <= 0 || r_type(a) != t_array)
-		return_error(e_invalidfont);
+		return_error(imemory, e_invalidfont);
 	    for (j = 0; j < 2; j++) {
-		code = array_get(a, j, &v); 
+		code = array_get(imemory, a, j, &v); 
 		if (code < 0 || r_type(&v) != t_integer)
-		    return_error(e_invalidfont);
+		    return_error(imemory, e_invalidfont);
 		loca_glyph_pos[i][j] = v.value.intval;
 	    }
 	}
 
     } else
 	file = NULL;
-    code = font_string_array_param(op, "CIDMap", &rcidmap);
+    code = font_string_array_param(imemory, op, "CIDMap", &rcidmap);
     switch (code) {
     case 0:			/* in PLRM3 */
     gdb:
 	/* GDBytes is required for indexing a string or string array. */
 	if (common.GDBytes == 0)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	break;
     default:
 	return code;
@@ -263,7 +264,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	 */
 	stream *s;
 
-	check_read_file(s, file);
+	check_read_file(pfont->memory, s, file);
 	pfont->data.loca = loca_glyph_pos[0][0];
 	pfont->data.glyf = loca_glyph_pos[1][0];
 	pfont->data.get_outline = gs_get_glyph_data_cached;
@@ -278,11 +279,11 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_font *pfont;
-    int code = font_param(op - 1, &pfont);
+    int code = font_param(imemory, op - 1, &pfont);
 
     if (code < 0)
 	return code;
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
 #if defined(TEST)
     /* Allow a Type 42 font here, for testing .wrapfont. */
     if (pfont->FontType == ft_TrueType) {
@@ -290,13 +291,13 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
 	if (op->value.intval < 0 ||
 	    op->value.intval >= ((gs_font_type42 *)pfont)->data.numGlyphs
 	    )
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	code = (int)op->value.intval;
     } else
 #endif
     {
 	if (pfont->FontType != ft_CID_TrueType)
-	    return_error(e_invalidfont);
+	    return_error(pfont->memory, e_invalidfont);
 	code = z11_CIDMap_proc((gs_font_cid2 *)pfont,
 			(gs_glyph)(gs_min_cid_glyph + op->value.intval));
     }
@@ -316,12 +317,12 @@ zfillCIDMap(i_ctx_t *i_ctx_p)
         *GDBytes = op - 1, *CIDMap = op;
     int code;
 
-    check_type(*Decoding, t_dictionary);
-    check_type(*TT_cmap, t_array);
-    check_type(*SubstNWP, t_array);
-    check_type(*GDBytes, t_integer);
-    check_type(*CIDMap, t_array);
-    code = cid_fill_CIDMap(Decoding, TT_cmap, SubstNWP, GDBytes->value.intval, CIDMap);
+    check_type(imemory, *Decoding, t_dictionary);
+    check_type(imemory, *TT_cmap, t_array);
+    check_type(imemory, *SubstNWP, t_array);
+    check_type(imemory, *GDBytes, t_integer);
+    check_type(imemory, *CIDMap, t_array);
+    code = cid_fill_CIDMap(imemory, Decoding, TT_cmap, SubstNWP, GDBytes->value.intval, CIDMap);
     pop(5);
     return code;
 }

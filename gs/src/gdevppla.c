@@ -76,7 +76,7 @@ gdev_prn_set_planar(gx_device_memory *mdev, const gx_device *tdev)
     int depth = tdev->color_info.depth / num_comp;
 
     if (num_comp < 3 || num_comp > 4)
-	return_error(gs_error_rangecheck);
+	return_error(mdev->memory, gs_error_rangecheck);
     /* Round up the depth per plane to a power of 2. */
     while (depth & (depth - 1))
 	--depth, depth = (depth | (depth >> 1)) + 1;

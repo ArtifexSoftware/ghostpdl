@@ -54,13 +54,13 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     code = build_proc_name_refs(&build, bcstr, bgstr);
     if (code < 0)
 	return code;
-    check_type(*op, t_dictionary);
+    check_type(imemory, *op, t_dictionary);
     /*
      * Since build_gs_primitive_font may resize the dictionary and cause
      * pointers to become invalid, we save sfnts and GlyphDirectory.
      */
-    if ((code = font_string_array_param(op, "sfnts", &sfnts)) < 0 ||
-	(code = font_GlyphDirectory_param(op, &GlyphDirectory)) < 0
+    if ((code = font_string_array_param(imemory, op, "sfnts", &sfnts)) < 0 ||
+	(code = font_GlyphDirectory_param(imemory, op, &GlyphDirectory)) < 0
 	)
 	return code;
     code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)ppfont,
@@ -116,23 +116,23 @@ zbuildfont42(i_ctx_t *i_ctx_p)
  * value even if it is of the wrong type.
  */
 int
-font_string_array_param(os_ptr op, const char *kstr, ref *psa)
+font_string_array_param(const gs_memory_t *mem, os_ptr op, const char *kstr, ref *psa)
 {
     ref *pvsa;
     ref rstr0;
     int code;
 
     if (dict_find_string(op, kstr, &pvsa) <= 0)
-	return_error(e_invalidfont);
+	return_error(mem, e_invalidfont);
     *psa = *pvsa;
     /*
      * We only check the first element of the array now, as a sanity test;
      * elements are checked as needed by string_array_access_proc.
      */
-    if ((code = array_get(pvsa, 0L, &rstr0)) < 0)
+    if ((code = array_get(mem, pvsa, 0L, &rstr0)) < 0)
 	return code;
     if (!r_has_type(&rstr0, t_string))
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     return 0;
 }
 
@@ -141,14 +141,14 @@ font_string_array_param(os_ptr op, const char *kstr, ref *psa)
  * or an error code.
  */
 int
-font_GlyphDirectory_param(os_ptr op, ref *pGlyphDirectory)
+font_GlyphDirectory_param(const gs_memory_t *mem, os_ptr op, ref *pGlyphDirectory)
 {
     ref *pgdir;
 
     if (dict_find_string(op, "GlyphDirectory", &pgdir) <= 0)
 	make_null(pGlyphDirectory);
     else if (!r_has_type(pgdir, t_dictionary) && !r_is_array(pgdir))
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     else
 	*pGlyphDirectory = *pgdir;
     return 0;
@@ -162,7 +162,8 @@ font_GlyphDirectory_param(os_ptr op, ref *pGlyphDirectory)
  *               >0 - number of accessible bytes (client must cycle).
  */
 int
-string_array_access_proc(const ref *psa, int modulus, ulong offset,
+string_array_access_proc(const gs_memory_t *mem, 
+			 const ref *psa, int modulus, ulong offset,
 			 uint length, const byte **pdata)
 {
     ulong left = offset;
@@ -170,13 +171,13 @@ string_array_access_proc(const ref *psa, int modulus, ulong offset,
 
     for (;; ++index) {
 	ref rstr;
-	int code = array_get(psa, index, &rstr);
+	int code = array_get(mem, psa, index, &rstr);
 	uint size;
 
 	if (code < 0)
 	    return code;
 	if (!r_has_type(&rstr, t_string))
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
 	/*
 	 * NOTE: According to the Adobe documentation, each sfnts
 	 * string should have even length.  If the length is odd,
@@ -232,7 +233,8 @@ z42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
  * the glyph is missing or out of range.
  */
 int
-font_gdir_get_outline(const ref *pgdir, long glyph_index,
+font_gdir_get_outline(const gs_memory_t *mem, 
+		      const ref *pgdir, long glyph_index,
 		      gs_glyph_data_t *pgd)
 {
     ref iglyph;
@@ -244,13 +246,13 @@ font_gdir_get_outline(const ref *pgdir, long glyph_index,
 	make_int(&iglyph, glyph_index);
 	code = dict_find(pgdir, &iglyph, &pgdef) - 1; /* 0 => not found */
     } else {
-	code = array_get(pgdir, glyph_index, &gdef);
+	code = array_get(mem, pgdir, glyph_index, &gdef);
 	pgdef = &gdef;
     }
     if (code < 0) {
 	gs_glyph_data_from_null(pgd);
     } else if (!r_has_type(pgdef, t_string)) {
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     } else {
 	gs_glyph_data_from_string(pgd, pgdef->value.const_bytes, r_size(pgdef),
 				  NULL);
@@ -264,7 +266,7 @@ z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
     const font_data *pfdata = pfont_data(pfont);
     const ref *pgdir = &pfdata->u.type42.GlyphDirectory;
 
-    return font_gdir_get_outline(pgdir, (long)glyph_index, pgd);
+    return font_gdir_get_outline(pfont->memory, pgdir, (long)glyph_index, pgd);
 }
 
 /* Enumerate glyphs from CharStrings or loca / glyf. */
@@ -294,7 +296,7 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
 	    ref gdef;
 
 	    for (;; (*pindex)++) {
-		if (array_get(pgdict, (long)*pindex, &gdef) < 0) {
+		if (array_get(font->memory, pgdict, (long)*pindex, &gdef) < 0) {
 		    *pindex = 0;
 		    return 0;
 		}
@@ -344,6 +346,7 @@ private int
 z42_string_proc(gs_font_type42 * pfont, ulong offset, uint length,
 		const byte ** pdata)
 {
-    return string_array_access_proc(&pfont_data(pfont)->u.type42.sfnts, 2,
+    return string_array_access_proc(pfont->memory,
+				    &pfont_data(pfont)->u.type42.sfnts, 2,
 				    offset, length, pdata);
 }

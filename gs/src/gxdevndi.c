@@ -210,13 +210,13 @@ gx_render_device_DeviceN(frac * pcolor,
 
 #ifdef DEBUG
     if (gs_debug_c('c')) {
-	dlprintf1("[c]ncomp=%d ", num_colors);
+	dlprintf1(dev->memory, "[c]ncomp=%d ", num_colors);
 	for (i = 0; i < num_colors; i++)
-	    dlprintf1("0x%x, ", pcolor[i]);
-	dlprintf("-->\n   ");
+	    dlprintf1(dev->memory, "0x%x, ", pcolor[i]);
+	dlprintf(dev->memory, "-->\n   ");
 	for (i = 0; i < num_colors; i++)
-	    dlprintf2("%x+0x%x, ", int_color[i], rem_color[i]);
-	dlprintf("-->\n");
+	    dlprintf2(dev->memory, "%x+0x%x, ", int_color[i], rem_color[i]);
+	dlprintf(dev->memory, "-->\n");
     }
 #endif
 

@@ -83,7 +83,7 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
     piec->image_type = pic->type;
     piec->procs = piep;
     piec->dev = dev;
-    piec->id = gs_next_ids(1);
+    piec->id = gs_next_ids(dev->memory, 1);
     switch (format) {
 	case gs_image_format_chunky:
 	    piec->num_planes = 1;
@@ -100,7 +100,7 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
 		piec->plane_depths[i] = 1;
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
     }
     for (i = 0; i < piec->num_planes; ++i)
 	piec->plane_widths[i] = pic->Width;
@@ -126,7 +126,7 @@ gx_no_plane_data(gx_image_enum_common_t * info,
 		 const gx_image_plane_t * planes, int height,
 		 int *height_used)
 {
-    return_error(gs_error_Fatal);
+    return_error(info->dev->memory, gs_error_Fatal);
 }
 
 /* Clean up after processing an image with no source data. */
@@ -149,9 +149,9 @@ gx_image_data(gx_image_enum_common_t * info, const byte ** plane_data,
 
 #ifdef DEBUG
     if (num_planes > gs_image_max_planes) {
-	lprintf2("num_planes=%d > gs_image_max_planes=%d!\n",
+	lprintf2(info->dev->memory, "num_planes=%d > gs_image_max_planes=%d!\n",
 		 num_planes, gs_image_max_planes);
-	return_error(gs_error_Fatal);
+	return_error(info->dev->memory, gs_error_Fatal);
     }
 #endif
     for (i = 0; i < num_planes; ++i) {
@@ -218,14 +218,14 @@ int
 gx_image_no_sput(const gs_image_common_t *pic, stream *s,
 		 const gs_color_space **ppcs)
 {
-    return_error(gs_error_rangecheck);
+    return_error(s->memory, gs_error_rangecheck);
 }
 
 int
 gx_image_no_sget(gs_image_common_t *pic, stream *s,
 		 const gs_color_space *pcs)
 {
-    return_error(gs_error_rangecheck);
+    return_error(s->memory, gs_error_rangecheck);
 }
 
 void
@@ -236,28 +236,29 @@ gx_image_default_release(gs_image_common_t *pic, gs_memory_t *mem)
 
 #ifdef DEBUG
 private void
-debug_b_print_matrix(const gs_pixel_image_t *pim)
+debug_b_print_matrix(const gs_memory_t *mem, const gs_pixel_image_t *pim)
 {
-    if_debug6('b', "      ImageMatrix=[%g %g %g %g %g %g]\n",
+    if_debug6(mem, 
+	      'b', "      ImageMatrix=[%g %g %g %g %g %g]\n",
 	      pim->ImageMatrix.xx, pim->ImageMatrix.xy,
 	      pim->ImageMatrix.yx, pim->ImageMatrix.yy,
 	      pim->ImageMatrix.tx, pim->ImageMatrix.ty);
 }
 private void
-debug_b_print_decode(const gs_pixel_image_t *pim, int num_decode)
+debug_b_print_decode(const gs_memory_t *mem, const gs_pixel_image_t *pim, int num_decode)
 {
     if (gs_debug_c('b')) {
 	const char *str = "      Decode=[";
 	int i;
 
 	for (i = 0; i < num_decode; str = " ", ++i)
-	    dprintf2("%s%g", str, pim->Decode[i]);
-	dputs("]\n");
+	    dprintf2(mem, "%s%g", str, pim->Decode[i]);
+	dputs(mem, "]\n");
     }
 }
 #else
-#  define debug_b_print_matrix(pim) DO_NOTHING
-#  define debug_b_print_decode(pim, num_decode) DO_NOTHING
+#  define debug_b_print_matrix(mem, pim) DO_NOTHING
+#  define debug_b_print_decode(mem, pim, num_decode) DO_NOTHING
 #endif
 
 /* Test whether an image has a default ImageMatrix. */
@@ -333,12 +334,12 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
     case gs_image_format_component_planar:
 	switch (bpc) {
 	case 1: case 2: case 4: case 8: case 12: break;
-	default: return_error(gs_error_rangecheck);
+	default: return_error(s->memory, gs_error_rangecheck);
 	}
 	break;
     case gs_image_format_bit_planar:
 	if (bpc < 1 || bpc > 8)
-	    return_error(gs_error_rangecheck);
+	    return_error(s->memory, gs_error_rangecheck);
     }
     control |= (bpc - 1) << PI_BPC_SHIFT;
     control |= pim->format << PI_FORMAT_SHIFT;
@@ -357,13 +358,13 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
 
     /* Write the encoding on the stream. */
 
-    if_debug3('b', "[b]put control=0x%x, Width=%d, Height=%d\n",
+    if_debug3(s->memory, 'b', "[b]put control=0x%x, Width=%d, Height=%d\n",
 	      control, pim->Width, pim->Height);
     sput_variable_uint(s, control);
     sput_variable_uint(s, (uint)pim->Width);
     sput_variable_uint(s, (uint)pim->Height);
     if (control & PI_ImageMatrix) {
-	debug_b_print_matrix(pim);
+	debug_b_print_matrix(s->memory, pim);
 	sput_matrix(s, &pim->ImageMatrix);
     }
     if (control & PI_Decode) {
@@ -372,7 +373,7 @@ gx_pixel_image_sput(const gs_pixel_image_t *pim, stream *s,
 	float decode[8];
 	int di = 0;
 
-	debug_b_print_decode(pim, num_decode);
+	debug_b_print_decode(s->memory, pim, num_decode);
 	for (i = 0; i < num_decode; i += 2) {
 	    float u = pim->Decode[i], v = pim->Decode[i + 1];
 	    float dv = DECODE_DEFAULT(i + 1, decode_default_1);
@@ -427,7 +428,7 @@ sget_variable_uint(stream *s, uint *pw)
     for (; (ch = sgetc(s)) >= 0x80; shift += 7)
 	w += (ch & 0x7f) << shift;
     if (ch < 0)
-	return_error(gs_error_ioerror);
+	return_error(s->memory, gs_error_ioerror);
     *pw = w + (ch << shift);
     return 0;
 }
@@ -451,12 +452,12 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
 	(code = sget_variable_uint(s, (uint *)&pim->Height)) < 0
 	)
 	return code;
-    if_debug3('b', "[b]get control=0x%x, Width=%d, Height=%d\n",
+    if_debug3(s->memory, 'b', "[b]get control=0x%x, Width=%d, Height=%d\n",
 	      control, pim->Width, pim->Height);
     if (control & PI_ImageMatrix) {
 	if ((code = sget_matrix(s, &pim->ImageMatrix)) < 0)
 	    return code;
-	debug_b_print_matrix(pim);
+	debug_b_print_matrix(s->memory, pim);
     } else
 	gx_image_matrix_set_default((gs_data_image_t *)pim);
     pim->BitsPerComponent = ((control >> PI_BPC_SHIFT) & PI_BPC_MASK) + 1;
@@ -474,7 +475,7 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
 	    if (dflags >= 0x10000) {
 		dflags = sgetc(s) + 0x100;
 		if (dflags < 0x100)
-		    return_error(gs_error_ioerror);
+		    return_error(s->memory, gs_error_ioerror);
 	    }
 	    switch (dflags & 0xc0) {
 	    case 0x00:
@@ -486,15 +487,15 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
 	    case 0x80:
 		dp[0] = 0;
 		if (sgets(s, (byte *)(dp + 1), sizeof(float), &ignore) < 0)
-		    return_error(gs_error_ioerror);
+		    return_error(s->memory, gs_error_ioerror);
 		break;
 	    case 0xc0:
 		if (sgets(s, (byte *)dp, sizeof(float) * 2, &ignore) < 0)
-		    return_error(gs_error_ioerror);
+		    return_error(s->memory, gs_error_ioerror);
 		break;
 	    }
 	}
-	debug_b_print_decode(pim, num_decode);
+	debug_b_print_decode(s->memory, pim, num_decode);
     } else {
         for (i = 0; i < num_decode; ++i)
 	    pim->Decode[i] = DECODE_DEFAULT(i, decode_default_1);

@@ -131,14 +131,14 @@ zexecfunction(i_ctx_t *i_ctx_p)
     if (!r_is_struct(op) ||
 	!r_has_masked_attrs(op, a_executable | a_execute, a_executable | a_all)
 	)
-	return_error(e_typecheck);
+	return_error(imemory, e_typecheck);
     {
 	gs_function_t *pfn = (gs_function_t *) op->value.pstruct;
 	int m = pfn->params.m, n = pfn->params.n;
 	int diff = n - (m + 1);
 
 	if (diff > 0)
-	    check_ostack(diff);
+	    check_ostack(imemory, diff);
 	{
 	    float params[20];	/* arbitrary size, just to avoid allocs */
 	    float *in;
@@ -151,17 +151,17 @@ zexecfunction(i_ctx_t *i_ctx_p)
 		in = (float *)ialloc_byte_array(m + n, sizeof(float),
 						"%execfunction(in/out)");
 		if (in == 0)
-		    code = gs_note_error(e_VMerror);
+		    code = gs_note_error(imemory, e_VMerror);
 	    }
 	    out = in + m;
 	    if (code < 0 ||
-		(code = float_params(op - 1, m, in)) < 0 ||
-		(code = gs_function_evaluate(pfn, in, out)) < 0
+		(code = float_params(imemory, op - 1, m, in)) < 0 ||
+		(code = gs_function_evaluate(imemory, pfn, in, out)) < 0
 		)
 		DO_NOTHING;
 	    else {
 		if (diff > 0)
-		    push(diff);	/* can't fail */
+		    push(imemory, diff);	/* can't fail */
 		else if (diff < 0) {
 		    pop(-diff);
 		    op = osp;
@@ -189,7 +189,7 @@ zisencapfunction(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_function_t *pfn;
 
-    check_proc(*op);
+    check_proc(imemory, *op);
     pfn = ref_function(op);
     make_bool(op, pfn != NULL);
     return 0;
@@ -211,16 +211,16 @@ fn_build_sub_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
     gs_function_params_t params;
 
     if (depth > MAX_SUB_FUNCTION_DEPTH)
-	return_error(e_limitcheck);
-    check_type(*op, t_dictionary);
-    code = dict_int_param(op, "FunctionType", 0, max_int, -1, &type);
+	return_error(imemory, e_limitcheck);
+    check_type(imemory, *op, t_dictionary);
+    code = dict_int_param(imemory, op, "FunctionType", 0, max_int, -1, &type);
     if (code < 0)
 	return code;
     for (i = 0; i < build_function_type_table_count; ++i)
 	if (build_function_type_table[i].type == type)
 	    break;
     if (i == build_function_type_table_count)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     /* Collect parameters common to all function types. */
     params.Domain = 0;
     params.Range = 0;
@@ -257,21 +257,21 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 
     *pparray = 0;
     if (dict_find_string(op, kstr, &par) <= 0)
-	return (required ? gs_note_error(e_rangecheck) : 0);
+	return (required ? gs_note_error(mem, e_rangecheck) : 0);
     if (!r_is_array(par))
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     {
 	uint size = r_size(par);
 	float *ptr = (float *)
 	    gs_alloc_byte_array(mem, size, sizeof(float), kstr);
 
 	if (ptr == 0)
-	    return_error(e_VMerror);
-	code = dict_float_array_check_param(op, kstr, size, ptr, NULL,
+	    return_error(mem, e_VMerror);
+	code = dict_float_array_check_param(mem, op, kstr, size, ptr, NULL,
 					    0, e_rangecheck);
 	if (code < 0 || (even && (code & 1) != 0)) {
 	    gs_free_object(mem, ptr, kstr);
-	    return(code < 0 ? code : gs_note_error(e_rangecheck));
+	    return(code < 0 ? code : gs_note_error(mem, e_rangecheck));
 	}
 	*pparray = ptr;
     }
@@ -294,23 +294,23 @@ fn_build_float_array_forced(const ref * op, const char *kstr, bool required,
 
     *pparray = 0;
     if (dict_find_string(op, kstr, &par) <= 0)
-	return (required ? gs_note_error(e_rangecheck) : 0);
+	return (required ? gs_note_error(mem, e_rangecheck) : 0);
 
     if( r_is_array(par) )
 	size = r_size(par);
     else if(r_type(par) == t_integer || r_type(par) == t_real)
         size = 1;
     else
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     ptr = (float *)gs_alloc_byte_array(mem, size, sizeof(float), kstr);
 
     if (ptr == 0)
-        return_error(e_VMerror);
+        return_error(mem, e_VMerror);
     if(r_is_array(par) )    
-        code = dict_float_array_check_param(op, kstr, size, ptr, NULL,
+        code = dict_float_array_check_param(mem, op, kstr, size, ptr, NULL,
 					    0, e_rangecheck);
     else {
-        code = dict_float_param(op, kstr, 0., ptr); /* defailt cannot happen */
+        code = dict_float_param(mem, op, kstr, 0., ptr); /* defailt cannot happen */
         if( code == 0 )
             code = 1;
     }

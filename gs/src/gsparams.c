@@ -66,11 +66,11 @@ int				/* ret -ve err, else # bytes needed to represent param list, whether */
 /* or not it actually fit into buffer. List was successully */
 
 /* serialized only if if this # is <= supplied buf size. */
-gs_param_list_serialize(
-			   gs_param_list * list,	/* root of list to serialize */
-					/* list MUST BE IN READ MODE */
-			   byte * buf,	/* destination buffer (can be 0) */
-			   int buf_sizeof	/* # bytes available in buf (can be 0) */
+gs_param_list_serialize( const gs_memory_t *mem,
+			 gs_param_list * list,	/* root of list to serialize */
+			 /* list MUST BE IN READ MODE */
+			 byte * buf,	/* destination buffer (can be 0) */
+			 int buf_sizeof	/* # bytes available in buf (can be 0) */
 )
 {
     int code = 0;
@@ -118,13 +118,13 @@ gs_param_list_serialize(
 	char string_key[256];
 
 	if (sizeof(string_key) < key.size + 1) {
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(mem, gs_error_rangecheck);
 	    break;
 	}
 	memcpy(string_key, key.data, key.size);
 	string_key[key.size] = 0;
 	if ((code = param_read_typed(list, string_key, &value)) != 0) {
-	    code = code > 0 ? gs_note_error(gs_error_unknownerror) : code;
+	    code = code > 0 ? gs_note_error(mem, gs_error_unknownerror) : code;
 	    break;
 	}
 	wb_put_word((unsigned)key.size + 1, &write_buf);
@@ -178,7 +178,7 @@ gs_param_list_serialize(
 
 		{
 		    int bytes_written =
-		    gs_param_list_serialize(value.value.d.list,
+		    gs_param_list_serialize(mem, value.value.d.list,
 					    write_buf.buf,
 		     write_buf.buf ? write_buf.buf_end - write_buf.buf : 0);
 
@@ -196,7 +196,7 @@ gs_param_list_serialize(
 		break;
 
 	    default:
-		code = gs_note_error(gs_error_unknownerror);
+		code = gs_note_error(mem, gs_error_unknownerror);
 		break;
 	}
 	if (code < 0)
@@ -215,10 +215,10 @@ gs_param_list_serialize(
 /* ------------ Expander --------------- */
 /* Expand a buffer into a gs_param_list (including sub-dicts) */
 int				/* ret -ve err, +ve # of chars read from buffer */
-gs_param_list_unserialize(
-			     gs_param_list * list,	/* root of list to expand to */
-					/* list MUST BE IN WRITE MODE */
-			     const byte * buf	/* source buffer */
+gs_param_list_unserialize( const gs_memory_t *mem,
+			   gs_param_list * list,	/* root of list to expand to */
+			   /* list MUST BE IN WRITE MODE */
+			   const byte * buf	/* source buffer */
 )
 {
     int code = 0;
@@ -301,7 +301,7 @@ gs_param_list_unserialize(
 		    break;
 		ptr_align_to(&buf, sizeof(void *));
 
-		code = gs_param_list_unserialize(typed.value.d.list, buf);
+		code = gs_param_list_unserialize(mem, typed.value.d.list, buf);
 		temp_code = param_end_write_dict(list, key, &typed.value.d);
 		if (code >= 0) {
 		    buf += code;
@@ -310,7 +310,7 @@ gs_param_list_unserialize(
 		break;
 
 	    default:
-		code = gs_note_error(gs_error_unknownerror);
+		code = gs_note_error(mem, gs_error_unknownerror);
 		break;
 	}
 	if (code < 0)

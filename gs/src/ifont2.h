@@ -27,7 +27,8 @@ extern charstring_interpret_proc(gs_type2_interpret);
  * entry in a CIDFontType 0 font), beyond those common to Type 1 and Type 2
  * fonts.
  */
-int type2_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
+int type2_font_params(const gs_memory_t *mem, 
+		      const_os_ptr op, charstring_font_refs_t *pfr,
 		      gs_type1_data *pdata1);
 
 #endif /* ifont2_INCLUDED */

@@ -33,7 +33,7 @@
  */
 
 #define sample_end_\
-  default: return_error(gs_error_rangecheck);\
+  default: return(gs_error_rangecheck);\
   } END
 
 /* Declare variables for loading. */
@@ -287,7 +287,7 @@ void bits_bounding_box(const byte * data, uint height, uint raster,
 /* Compress an oversampled image, possibly in place. */
 /* The width and height must be multiples of the respective scale factors. */
 /* The source must be an aligned bitmap, as usual. */
-void bits_compress_scaled(const byte * src, int srcx, uint width,
+void bits_compress_scaled(const gs_memory_t *mem, const byte * src, int srcx, uint width,
     uint height, uint sraster, byte * dest, uint draster,
     const gs_log2_scale_point * plog2_scale, int log2_out_bits);
 

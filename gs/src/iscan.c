@@ -106,11 +106,11 @@ dynamic_resize(da_ptr pda, uint new_size)
 	base = gs_resize_string(mem, pda->base, old_size,
 				new_size, "scanner");
 	if (base == 0)
-	    return_error(e_VMerror);
+	    return_error(mem, e_VMerror);
     } else {			/* switching from static to dynamic */
 	base = gs_alloc_string(mem, new_size, "scanner");
 	if (base == 0)
-	    return_error(e_VMerror);
+	    return_error(mem, e_VMerror);
 	memcpy(base, pda->base, min(old_size, new_size));
 	pda->is_dynamic = true;
     }
@@ -135,7 +135,7 @@ dynamic_grow(da_ptr pda, byte * next, uint max_size)
 
     pda->next = next;
     if (old_size == max_size)
-	return_error(e_limitcheck);
+	return_error(pda->memory, e_limitcheck);
     while ((code = dynamic_resize(pda, new_size)) < 0 &&
 	   new_size > old_size
 	) {			/* Try trimming down the requested new size. */
@@ -238,7 +238,7 @@ scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
 
     if (s->end_status == EOFC) {
 	/* More data needed, but none available, so this is a syntax error. */
-	return_error(e_syntaxerror);
+	return_error(imemory, e_syntaxerror);
     }
     status = s_process_read_buf(s);
     if (sbufavailable(s) > avail)
@@ -251,7 +251,7 @@ scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
 	    /* Let the caller find this out. */
 	    return 0;
 	case ERRC:
-	    return_error(e_ioerror);
+	    return_error(s->memory, e_ioerror);
 	case INTC:
 	case CALLC:
 	    {
@@ -264,7 +264,7 @@ scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
 			ialloc_struct(scanner_state, &st_scanner_state,
 				      "scan_handle_refill");
 		    if (pstate == 0)
-			return_error(e_VMerror);
+			return_error(s->memory, e_VMerror);
 		    *pstate = *sstate;
 		} else
 		    pstate = sstate;
@@ -281,8 +281,8 @@ scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop, scanner_state * sstate,
 	    }
     }
     /* No more data available, but no exception.  How can this be? */
-    lprintf("Can't refill scanner input buffer!");
-    return_error(e_Fatal);
+    lprintf(s->memory, "Can't refill scanner input buffer!");
+    return_error(s->memory, e_Fatal);
 }
 
 /*
@@ -303,9 +303,11 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 	/* Process as a DSC comment if requested. */
 #ifdef DEBUG
 	if (gs_debug_c('%')) {
-	    dlprintf2("[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
-	    debug_print_string(base, len);
-	    dputs("\n");
+	    dlprintf2(imemory, 
+		      "[%%%%%s%c]", sstr, (len >= 3 ? '+' : '-'));
+	    debug_print_string(imemory, 
+			       base, len);
+	    dputs(imemory, "\n");
 	}
 #endif
 	if (scan_dsc_proc != NULL) {
@@ -321,9 +323,10 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 #ifdef DEBUG
     else {
 	if (gs_debug_c('%')) {
-	    dlprintf2("[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
-	    debug_print_string(base, len);
-	    dputs("\n");
+	    dlprintf2(imemory, 
+		      "[%% %s%c]", sstr, (len >= 2 ? '+' : '-'));
+	    debug_print_string(imemory, base, len);
+	    dputs(imemory, "\n");
 	}
     }
 #endif
@@ -341,7 +344,7 @@ scan_comment(i_ctx_t *i_ctx_p, ref *pref, scanner_state *pstate,
 	byte *cstr = ialloc_string(len, "scan_comment");
 
 	if (cstr == 0)
-	    return_error(e_VMerror);
+	    return_error(imemory, e_VMerror);
 	memcpy(cstr, base, len);
 	make_string(pref, a_all | icurrent_space, len, cstr);
     }
@@ -360,7 +363,7 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
     int code;
 
     if (!r_has_attr(pstr, a_read))
-	return_error(e_invalidaccess);
+	return_error(imemory, e_invalidaccess);
     s_init(s, NULL);
     sread_string(s, pstr->value.bytes, r_size(pstr));
     scanner_state_init_options(&state, options | SCAN_FROM_STRING);
@@ -379,7 +382,7 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
 	    }
 	    break;
 	case scan_Refill:	/* error */
-	    code = gs_note_error(e_syntaxerror);
+	    code = gs_note_error(imemory, e_syntaxerror);
 	case scan_EOF:
 	    break;
     }
@@ -410,7 +413,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     byte *daptr;
 
 #define sreturn(code)\
-  { retcode = gs_note_error(code); goto sret; }
+  { retcode = gs_note_error(s->memory, code); goto sret; }
 #define sreturn_no_error(code)\
   { scan_end_inline(); return(code); }
 #define if_not_spush1()\
@@ -483,7 +486,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	    case scanning_string:
 		goto cont_string;
 	    default:
-		return_error(e_Fatal);
+		return_error(s->memory, e_Fatal);
 	}
     }
     /* Fetch any state variables that are relevant even if */
@@ -497,7 +500,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
      *      If pstack != 0, myref = osp, and *osp is a valid slot.
      */
   top:c = scan_getc();
-    if_debug1('S', (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
+    if_debug1(s->memory, 'S', (c >= 32 && c <= 126 ? "`%c'" : c >= 0 ? "`\\%03o'" : "`%d'"), c);
     switch (c) {
 	case ' ':
 	case '\f':
@@ -609,7 +612,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	    }
 	    make_int(osp, pstack);
 	    pstack = ref_stack_count_inline(&o_stack);
-	    if_debug3('S', "[S{]d=%d, s=%d->%d\n",
+	    if_debug3(s->memory, 'S', "[S{]d=%d, s=%d->%d\n",
 		      pdepth, (int)osp->value.intval, pstack);
 	    goto snext;
 	case '>':
@@ -630,7 +633,8 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		uint size = ref_stack_count_inline(&o_stack) - pstack;
 		ref arr;
 
-		if_debug4('S', "[S}]d=%d, s=%d->%ld, c=%d\n",
+		if_debug4(s->memory,
+			  'S', "[S}]d=%d, s=%d->%ld, c=%d\n",
 			  pdepth, pstack,
 			  (pstack == pdepth ? 0 :
 			   ref_stack_index(&o_stack, size)->value.intval),
@@ -836,8 +840,9 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	     * early, to be sure that we can test for CR+LF within the
 	     * buffer, by passing endptr rather than endptr + 1.
 	     */
-	    retcode = scan_number(sptr + (sign & 1),
-		    endptr /*(*endptr == char_CR ? endptr : endptr + 1) */ ,
+	    retcode = scan_number(imemory, 
+				  sptr + (sign & 1),
+				  endptr /*(*endptr == char_CR ? endptr : endptr + 1) */ ,
 				  sign, myref, &newptr, PDFScanRules);
 	    if (retcode == 1 && decoder[newptr[-1]] == ctype_space) {
 		sptr = newptr - 1;
@@ -1047,7 +1052,7 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 		const byte *base = da.base;
 
 		scan_sign(sign, base);
-		retcode = scan_number(base, daptr, sign, myref, &newptr, PDFScanRules);
+		retcode = scan_number(imemory, base, daptr, sign, myref, &newptr, PDFScanRules);
 		if (retcode == 1) {
 		    ref_mark_new(myref);
 		    retcode = 0;

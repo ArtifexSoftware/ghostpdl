@@ -97,7 +97,7 @@ typedef struct obj_header_data_s {
  *
  * Note: OBJECTS ARE NOT GUARANTEED to be aligned any more strictly than
  * required by the hardware, regardless of the value of obj_align_mod.
- * See gsmemraw.h for more information about this.
+ * See gsmemory.h for more information about this.
  */
 #define obj_align_mod\
   (((arch_align_memory_mod - 1) |\

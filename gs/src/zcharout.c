@@ -80,29 +80,29 @@ zchar_get_metrics(const gs_font_base * pbfont, const ref * pcnref,
     if (dict_find_string(pfdict, "Metrics", &pmdict) > 0) {
 	ref *pmvalue;
 
-	check_type_only(*pmdict, t_dictionary);
-	check_dict_read(*pmdict);
+	check_type_only(pbfont->memory, *pmdict, t_dictionary);
+	check_dict_read(pbfont->memory, *pmdict);
 	if (dict_find(pmdict, pcnref, &pmvalue) > 0) {
-	    if (num_params(pmvalue, 1, psbw + 2) >= 0) {	/* <wx> only */
+	    if (num_params(pbfont->memory, pmvalue, 1, psbw + 2) >= 0) {	/* <wx> only */
 		psbw[3] = 0;
 		return metricsWidthOnly;
 	    } else {
 		int code;
 
-		check_read_type_only(*pmvalue, t_array);
+		check_read_type_only(pbfont->memory, *pmvalue, t_array);
 		switch (r_size(pmvalue)) {
 		    case 2:	/* [<sbx> <wx>] */
-			code = num_params(pmvalue->value.refs + 1,
+			code = num_params(pbfont->memory, pmvalue->value.refs + 1,
 					  2, psbw);
 			psbw[2] = psbw[1];
 			psbw[1] = psbw[3] = 0;
 			break;
 		    case 4:	/* [<sbx> <sby> <wx> <wy>] */
-			code = num_params(pmvalue->value.refs + 3,
+			code = num_params(pbfont->memory, pmvalue->value.refs + 3,
 					  4, psbw);
 			break;
 		    default:
-			return_error(e_rangecheck);
+			return_error(pbfont->memory, e_rangecheck);
 		}
 		if (code < 0)
 		    return code;
@@ -124,12 +124,12 @@ zchar_get_metrics2(const gs_font_base * pbfont, const ref * pcnref,
     if (dict_find_string(pfdict, "Metrics2", &pmdict) > 0) {
 	ref *pmvalue;
 
-	check_type_only(*pmdict, t_dictionary);
-	check_dict_read(*pmdict);
+	check_type_only(pbfont->memory, *pmdict, t_dictionary);
+	check_dict_read(pbfont->memory, *pmdict);
 	if (dict_find(pmdict, pcnref, &pmvalue) > 0) {
-	    check_read_type_only(*pmvalue, t_array);
+	    check_read_type_only(pbfont->memory, *pmvalue, t_array);
 	    if (r_size(pmvalue) == 4) {
-		int code = num_params(pmvalue->value.refs + 3, 4, pwv);
+		int code = num_params(pbfont->memory, pmvalue->value.refs + 3, 4, pwv);
 
 		return (code < 0 ? code : metricsSideBearingAndWidth);
 	    }
@@ -207,7 +207,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	int nparams;
 
 	if (have_cdevproc) {
-	    check_proc_only(*pcdevproc);
+	    check_proc_only(imemory, *pcdevproc);
 	    zsetc = zsetcachedevice2;
 	    
 	    /* If we have cdevproc and the font type is CID type 0,
@@ -231,11 +231,11 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 	check_estack(3);
 	/* Push the l.s.b. for .type1addpath if necessary. */
 	if (psb != 0) {
-	    push(nparams + 3);
+	    push(imemory, nparams + 3);
 	    make_real(op - (nparams + 2), psb[0]);
 	    make_real(op - (nparams + 1), psb[1]);
 	} else {
-	    push(nparams + 1);
+	    push(imemory, nparams + 1);
 	}
 	for (i = 0; i < nparams; ++i)
 	    make_real(op - nparams + i, w2[i]);
@@ -258,7 +258,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
 
     /* Push the l.s.b. for .type1addpath if necessary. */
     if (psb != 0) {
-	push(2);
+	push(imemory, 2);
 	make_real(op - 1, psb[0]);
 	make_real(op, psb[1]);
     }
@@ -270,7 +270,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
  * Get the CharString data corresponding to a glyph.  Return typecheck
  * if it isn't a string.
  */
-private bool charstring_is_notdef_proc(const ref *);
+private bool charstring_is_notdef_proc(const gs_memory_t *mem, const ref *);
 private int charstring_make_notdef(gs_glyph_data_t *, gs_font *);
 int
 zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
@@ -278,7 +278,7 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
     ref *pcstr;
 
     if (dict_find(&pfont_data(font)->CharStrings, pgref, &pcstr) <= 0)
-	return_error(e_undefined);
+	return_error(font->memory, e_undefined);
     if (!r_has_type(pcstr, t_string)) {
 	/*
 	 * The ADOBEPS4 Windows driver replaces the .notdef entry of
@@ -290,25 +290,25 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
 	 *	0 0 hsbw endchar
 	 */
 	if (font->FontType == ft_encrypted &&
-	    charstring_is_notdef_proc(pcstr)
+	    charstring_is_notdef_proc(font->memory, pcstr)
 	    )
 	    return charstring_make_notdef(pgd, font);
 	else
-	    return_error(e_typecheck);
+	    return_error(font->memory, e_typecheck);
     }
     gs_glyph_data_from_string(pgd, pcstr->value.const_bytes, r_size(pcstr),
 			      NULL);
     return 0;
 }
 private bool
-charstring_is_notdef_proc(const ref *pcstr)
+charstring_is_notdef_proc(const gs_memory_t *mem, const ref *pcstr)
 {
     if (r_is_array(pcstr) && r_size(pcstr) == 4) {
 	ref elts[4];
 	long i;
 
 	for (i = 0; i < 4; ++i)
-	    array_get(pcstr, i, &elts[i]);
+	    array_get(mem, pcstr, i, &elts[i]);
 	if (r_has_type(&elts[0], t_name) &&
 	    r_has_type(&elts[1], t_integer) && elts[1].value.intval == 0 &&
 	    r_has_type(&elts[2], t_integer) && elts[2].value.intval == 0 &&
@@ -340,7 +340,7 @@ charstring_make_notdef(gs_glyph_data_t *pgd, gs_font *font)
     byte *chars = gs_alloc_string(font->memory, len, "charstring_make_notdef");
 
     if (chars == 0)
-	return_error(e_VMerror);
+	return_error(font->memory, e_VMerror);
     gs_glyph_data_from_string(pgd, chars, len, font);
     if (pfont->data.lenIV < 0)
 	memcpy(chars, char_data, sizeof(char_data));

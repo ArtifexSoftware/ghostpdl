@@ -40,8 +40,8 @@ set_float_value(i_ctx_t *i_ctx_p, int (*set_value)(gs_state *, floatp))
     double value;
     int code;
 
-    if (real_param(op, &value) < 0)
-	return_op_typecheck(op);
+    if (real_param(imemory, op, &value) < 0)
+	return_op_typecheck(imemory, op);
     if ((code = set_value(igs, value)) < 0)
 	return code;
     pop(1);
@@ -54,13 +54,13 @@ current_float_value(i_ctx_t *i_ctx_p,
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_real(op, current_value(igs));
     return 0;
 }
 
 private int
-enum_param(const ref *pnref, const char *const names[])
+enum_param(const gs_memory_t *mem, const ref *pnref, const char *const names[])
 {
     const char *const *p;
     ref nsref;
@@ -71,7 +71,7 @@ enum_param(const ref *pnref, const char *const names[])
 	    !memcmp(*p, nsref.value.const_bytes, r_size(&nsref))
 	    )
 	    return p - names;
-    return_error(e_rangecheck);
+    return_error(mem, e_rangecheck);
 }
 
 /* ------ Graphics state operators ------ */
@@ -87,8 +87,8 @@ zsetblendmode(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(*op, t_name);
-    if ((code = enum_param(op, blend_mode_names)) < 0 ||
+    check_type(imemory, *op, t_name);
+    if ((code = enum_param(imemory, op, blend_mode_names)) < 0 ||
 	(code = gs_setblendmode(igs, code)) < 0
 	)
 	return code;
@@ -107,7 +107,7 @@ zcurrentblendmode(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    push(1);
+    push(imemory, 1);
     *op = nref;
     return 0;
 }
@@ -146,7 +146,7 @@ zsettextknockout(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     gs_settextknockout(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -158,7 +158,7 @@ zcurrenttextknockout(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, gs_currenttextknockout(igs));
     return 0;
 }
@@ -166,10 +166,10 @@ zcurrenttextknockout(i_ctx_t *i_ctx_p)
 /* ------ Rendering stack operators ------ */
 
 private int
-rect_param(gs_rect *prect, os_ptr op)
+rect_param(const gs_memory_t *mem, gs_rect *prect, os_ptr op)
 {
     double coords[4];
-    int code = num_params(op, 4, coords);
+    int code = num_params(mem, op, 4, coords);
 
     if (code < 0)
 	return code;
@@ -183,7 +183,7 @@ mask_op(i_ctx_t *i_ctx_p,
 	int (*mask_proc)(gs_state *, gs_transparency_channel_selector_t))
 {
     int csel;
-    int code = int_param(osp, 1, &csel);
+    int code = int_param(imemory, osp, 1, &csel);
 
     if (code < 0)
 	return code;
@@ -204,14 +204,14 @@ zbegintransparencygroup(i_ctx_t *i_ctx_p)
     gs_rect bbox;
     int code;
 
-    check_type(*dop, t_dictionary);
-    check_dict_read(*dop);
+    check_type(imemory, *dop, t_dictionary);
+    check_dict_read(imemory, *dop);
     gs_trans_group_params_init(&params);
-    if ((code = dict_bool_param(dop, "Isolated", false, &params.Isolated)) < 0 ||
-	(code = dict_bool_param(dop, "Knockout", false, &params.Knockout)) < 0
+    if ((code = dict_bool_param(imemory, dop, "Isolated", false, &params.Isolated)) < 0 ||
+	(code = dict_bool_param(imemory, dop, "Knockout", false, &params.Knockout)) < 0
 	)
 	return code;
-    code = rect_param(&bbox, op);
+    code = rect_param(imemory, &bbox, op);
     if (code < 0)
 	return code;
     params.ColorSpace = gs_currentcolorspace(igs);
@@ -227,7 +227,7 @@ private int
 zdiscardtransparencygroup(i_ctx_t *i_ctx_p)
 {
     if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Group)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     return gs_discard_transparency_layer(igs);
 }
 
@@ -239,7 +239,7 @@ zendtransparencygroup(i_ctx_t *i_ctx_p)
 }
 
 /* <paramdict> <llx> <lly> <urx> <ury> .begintransparencymask - */
-private int tf_using_function(floatp, float *, void *);
+private int tf_using_function(const gs_memory_t *mem, floatp, float *, void *);
 private int
 zbegintransparencymask(i_ctx_t *i_ctx_p)
 {
@@ -255,14 +255,14 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
 	GS_TRANSPARENCY_MASK_SUBTYPE_NAMES, 0
     };
 
-    check_type(*dop, t_dictionary);
-    check_dict_read(*dop);
+    check_type(imemory, *dop, t_dictionary);
+    check_dict_read(imemory, *dop);
     if (dict_find_string(dop, "Subtype", &pparam) <= 0)
-	return_error(e_rangecheck);
-    if ((code = enum_param(pparam, subtype_names)) < 0)
+	return_error(imemory, e_rangecheck);
+    if ((code = enum_param(imemory, pparam, subtype_names)) < 0)
 	return code;
     gs_trans_mask_params_init(&params, code);
-    if ((code = dict_floats_param(dop, "Background", num_components,
+    if ((code = dict_floats_param(imemory, dop, "Background", num_components,
 				  params.Background, NULL)) < 0
 	)
 	return code;
@@ -272,11 +272,11 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
 	gs_function_t *pfn = ref_function(pparam);
 
 	if (pfn == 0 || pfn->params.m != 1 || pfn->params.n != 1)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	params.TransferFunction = tf_using_function;
 	params.TransferFunction_data = pfn;
     }
-    code = rect_param(&bbox, op);
+    code = rect_param(imemory, &bbox, op);
     if (code < 0)
 	return code;
     code = gs_begin_transparency_mask(igs, &params, &bbox);
@@ -287,12 +287,12 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
 }
 /* Implement the TransferFunction using a Function. */
 private int
-tf_using_function(floatp in_val, float *out, void *proc_data)
+tf_using_function(const gs_memory_t *mem, floatp in_val, float *out, void *proc_data)
 {
     float in = in_val;
     gs_function_t *const pfn = proc_data;
 
-    return gs_function_evaluate(pfn, &in, out);
+    return gs_function_evaluate(mem, pfn, &in, out);
 }
 
 /* - .discardtransparencymask - */
@@ -300,7 +300,7 @@ private int
 zdiscardtransparencymask(i_ctx_t *i_ctx_p)
 {
     if (gs_current_transparency_type(igs) != TRANSPARENCY_STATE_Mask)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     return gs_discard_transparency_layer(igs);
 }
 
@@ -321,7 +321,8 @@ zinittransparencymask(i_ctx_t *i_ctx_p)
 /* ------ Soft-mask images ------ */
 
 /* <dict> .image3x - */
-private int mask_dict_param(os_ptr, image_params *, const char *, int,
+private int mask_dict_param(const gs_memory_t *mem,
+			    os_ptr, image_params *, const char *, int,
 			    gs_image3x_mask_t *);
 private int
 zimage3x(i_ctx_t *i_ctx_p)
@@ -335,24 +336,24 @@ zimage3x(i_ctx_t *i_ctx_p)
     int ignored;
     int code;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
+    check_type(imemory, *op, t_dictionary);
+    check_dict_read(imemory, *op);
     gs_image3x_t_init(&image, NULL);
     if (dict_find_string(op, "DataDict", &pDataDict) <= 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
 				   (gs_pixel_image_t *)&image, &ip_data,
 				   12, false)) < 0 ||
-	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0
+	(code = dict_int_param(imemory, pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0
 	)
 	return code;
     /*
      * We have to process the masks in the reverse order, because they
      * insert their DataSource before the one(s) for the DataDict.
      */
-    if ((code = mask_dict_param(op, &ip_data, "ShapeMaskDict", num_components,
+    if ((code = mask_dict_param(imemory, op, &ip_data, "ShapeMaskDict", num_components,
 				&image.Shape)) < 0 ||
-	(code = mask_dict_param(op, &ip_data, "OpacityMaskDict", num_components,
+	(code = mask_dict_param(imemory, op, &ip_data, "OpacityMaskDict", num_components,
 				&image.Opacity)) < 0
 	)
 	return code;
@@ -363,7 +364,8 @@ zimage3x(i_ctx_t *i_ctx_p)
 
 /* Get one soft-mask dictionary parameter. */
 private int
-mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
+mask_dict_param(const gs_memory_t *mem, 
+		os_ptr op, image_params *pip_data, const char *dict_name,
 		int num_components, gs_image3x_mask_t *pixm)
 {
     ref *pMaskDict;
@@ -373,12 +375,12 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
 
     if (dict_find_string(op, dict_name, &pMaskDict) <= 0)
 	return 1;
-    if ((mcode = code = data_image_params(pMaskDict, &pixm->MaskDict,
+    if ((mcode = code = data_image_params(mem, pMaskDict, &pixm->MaskDict,
 					  &ip_mask, false, 1, 12, false)) < 0 ||
-	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
-	(code = dict_int_param(pMaskDict, "InterleaveType", 1, 3, -1,
+	(code = dict_int_param(mem, pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
+	(code = dict_int_param(mem, pMaskDict, "InterleaveType", 1, 3, -1,
 			       &pixm->InterleaveType)) < 0 ||
-	(code = dict_floats_param(op, "Matte", num_components, pixm->Matte, NULL)) < 0
+	(code = dict_floats_param(mem, op, "Matte", num_components, pixm->Matte, NULL)) < 0
 	)
 	return code;
     pixm->has_Matte = code > 0;
@@ -389,7 +391,7 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
 	ip_mask.MultipleDataSources ||
 	mcode != (pixm->InterleaveType != 3)
 	)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     if (pixm->InterleaveType == 3) {
 	/* Insert the mask DataSource before the data DataSources. */
 	memmove(&pip_data->DataSource[1], &pip_data->DataSource[0],
@@ -411,7 +413,7 @@ zpushpdf14devicefilter(i_ctx_t *i_ctx_p)
     gs_memory_t *mem = gs_memory_stable(imemory);
     os_ptr op = osp;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     code = gs_pdf14_device_filter(&df, op->value.intval, mem);
     if (code < 0)
         return code;

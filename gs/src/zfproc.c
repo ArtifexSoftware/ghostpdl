@@ -68,7 +68,7 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
     if (sstrm == 0 || state == 0) {
 	gs_free_object(mem, state, "s_proc_init(state)");
 	/*gs_free_object(mem, sstrm, "s_proc_init(stream)"); *//* just leave it on the file list */
-	return_error(e_VMerror);
+	return_error((const gs_memory_t *)imem, e_VMerror);
     }
     s_std_init(sstrm, NULL, 0, procs, mode);
     sstrm->procs.process = temp->process;
@@ -190,7 +190,7 @@ s_handle_read_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 	case CALLC:
 	    break;
 	default:
-	    return_error(e_ioerror);
+	    return_error(imemory, e_ioerror);
     }
     /* Find the stream whose buffer needs refilling. */
     for (ps = fptr(fop); ps->strm != 0;)
@@ -226,8 +226,8 @@ s_proc_read_continue(i_ctx_t *i_ctx_p)
     stream *ps;
     stream_proc_state *ss;
 
-    check_file(ps, op);
-    check_read_type(*opbuf, t_string);
+    check_file(imemory, ps, op);
+    check_read_type(imemory, *opbuf, t_string);
     while ((ps->end_status = 0, ps->strm) != 0)
 	ps = ps->strm;
     ss = (stream_proc_state *) ps->state;
@@ -321,7 +321,7 @@ s_handle_write_exception(i_ctx_t *i_ctx_p, int status, const ref * fop,
 	case CALLC:
 	    break;
 	default:
-	    return_error(e_ioerror);
+	    return_error(imemory, e_ioerror);
     }
     /* Find the stream whose buffer needs emptying. */
     for (ps = fptr(fop); ps->strm != 0;)
@@ -366,8 +366,8 @@ s_proc_write_continue(i_ctx_t *i_ctx_p)
     stream *ps;
     stream_proc_state *ss;
 
-    check_file(ps, op);
-    check_write_type(*opbuf, t_string);
+    check_file(imemory, ps, op);
+    check_write_type(imemory, *opbuf, t_string);
     while (ps->strm != 0) {
 	if (ps->end_status == CALLC)
 	    ps->end_status = 0;

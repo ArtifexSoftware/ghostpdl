@@ -41,9 +41,9 @@ int zpop(i_ctx_t *);
 int zroll(i_ctx_t *);
 int zsub(i_ctx_t *);
 /* Internal entry points for the interpreter. */
-int zop_add(ref *);
+int zop_add(const gs_memory_t *mem, ref *);
 int zop_def(i_ctx_t *);
-int zop_sub(ref *);
+int zop_sub(const gs_memory_t *mem, ref *);
 
 /* Operators exported for server loop implementations. */
 int zflush(i_ctx_t *);

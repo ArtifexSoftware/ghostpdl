@@ -86,7 +86,7 @@ zcurrentcolor(i_ctx_t * i_ctx_p)
     }
 
     /* check for sufficient space on the stack */
-    push(n);
+    push(imemory, n);
     op -= n - 1;
 
     /* push the numeric operands, if any */
@@ -122,7 +122,7 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;   /* required by "push" macro */
 
-    push(1);
+    push(imemory, 1);
     if ( igs->in_cachedevice ) {
 	int code = ialloc_ref_array(op, a_all, 1, "currentcolorspace");
 	if (code < 0)
@@ -153,7 +153,7 @@ zgetuseciecolor(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
 
-    push(1);
+    push(imemory, 1);
     *op = istate->use_cie_color;
     return 0;
 }
@@ -199,7 +199,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
             n_numeric_comps = ( pattern_instance_uses_base_space(cc.pattern)
                                   ? n_comps - 1
                                   : 0 );
-            (void)dict_int_param(op, "PatternType", 1, 2, 1, &ptype);
+            (void)dict_int_param(imemory, op, "PatternType", 1, 2, 1, &ptype);
             is_ptype2 = ptype == 2;
         } else
             n_numeric_comps = 0;
@@ -208,7 +208,7 @@ zsetcolor(i_ctx_t * i_ctx_p)
         n_numeric_comps = n_comps;
 
     /* gather the numeric operands */
-    float_params(op - num_offset, n_numeric_comps, cc.paint.values);
+    float_params(imemory, op - num_offset, n_numeric_comps, cc.paint.values);
  
     /* pass the color to the graphic library */
     if ((code = gs_setcolor(igs, &cc)) >= 0) {
@@ -272,15 +272,15 @@ zsetdevcspace(i_ctx_t * i_ctx_p)
     switch((gs_color_space_index)osp->value.intval) {
       default:  /* can't happen */
       case gs_color_space_index_DeviceGray:
-        gs_cspace_init_DeviceGray(&cs);
+        gs_cspace_init_DeviceGray(imemory, &cs);
         break;
 
       case gs_color_space_index_DeviceRGB:
-        gs_cspace_init_DeviceRGB(&cs);
+        gs_cspace_init_DeviceRGB(imemory, &cs);
         break;
 
       case gs_color_space_index_DeviceCMYK:
-        gs_cspace_init_DeviceCMYK(&cs);
+        gs_cspace_init_DeviceCMYK(imemory, &cs);
         break;
     }
     if ((code = gs_setcolorspace(igs, &cs)) >= 0)
@@ -295,7 +295,7 @@ zcurrenttransfer(i_ctx_t *i_ctx_p)
 {
     os_ptr  op = osp;
 
-    push(1);
+    push(imemory, 1);
     *op = istate->transfer_procs.gray;
     return 0;
 }
@@ -311,7 +311,7 @@ zprocesscolors(i_ctx_t * i_ctx_p)
 {
     os_ptr  op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, gs_currentdevice(igs)->color_info.num_components);
     return 0;
 }
@@ -323,8 +323,8 @@ zsettransfer(i_ctx_t * i_ctx_p)
     os_ptr  op = osp;
     int     code;
 
-    check_proc(*op);
-    check_ostack(zcolor_remap_one_ostack - 1);
+    check_proc(imemory, *op);
+    check_ostack(imemory, zcolor_remap_one_ostack - 1);
     check_estack(1 + zcolor_remap_one_estack);
     istate->transfer_procs.red =
         istate->transfer_procs.green =
@@ -395,11 +395,11 @@ zcolor_remap_one_store(i_ctx_t *i_ctx_p, floatp min_value)
     gx_transfer_map *pmap = r_ptr(esp, gx_transfer_map);
 
     if (ref_stack_count(&o_stack) < transfer_map_size)
-	return_error(e_stackunderflow);
+	return_error(imemory, e_stackunderflow);
     for (i = 0; i < transfer_map_size; i++) {
 	double v;
 	int code =
-	    real_param(ref_stack_index(&o_stack, transfer_map_size - 1 - i),
+	    real_param(imemory, ref_stack_index(&o_stack, transfer_map_size - 1 - i),
 		       &v);
 
 	if (code < 0)

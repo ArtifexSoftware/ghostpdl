@@ -161,7 +161,7 @@ image_render_color(gx_image_enum *penum_orig, const byte *buffer, int data_x,
 	    break;
     }
 
-    if_debug5('b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
+    if_debug5(pis->memory, 'b', "[b]y=%d data_x=%d w=%d xt=%f yt=%f\n",
 	      penum->y, data_x, w, fixed2float(xprev), fixed2float(yprev));
     memset(&run, 0, sizeof(run));
     memset(&next, 0, sizeof(next));
@@ -240,11 +240,11 @@ map4:	    if (next.all[0] == run.all[0])
 		goto mapped;
 	    }
 	    decode_sample(next.v[3], cc, 3);
-	    if_debug1('B', "[B]cc[3]=%g\n", cc.paint.values[3]);
+	    if_debug1(penum->memory, 'B', "[B]cc[3]=%g\n", cc.paint.values[3]);
 do3:	    decode_sample(next.v[0], cc, 0);
 	    decode_sample(next.v[1], cc, 1);
 	    decode_sample(next.v[2], cc, 2);
-	    if_debug3('B', "[B]cc[0..2]=%g,%g,%g\n",
+	    if_debug3(penum->memory, 'B', "[B]cc[0..2]=%g,%g,%g\n",
 		      cc.paint.values[0], cc.paint.values[1],
 		      cc.paint.values[2]);
 	} else if (spp == 3) {	    /* may be RGB */
@@ -334,11 +334,11 @@ do3:	    decode_sample(next.v[0], cc, 0);
 		decode_sample(next.v[i], cc, i);
 #ifdef DEBUG
 	    if (gs_debug_c('B')) {
-		dprintf2("[B]cc[0..%d]=%g", spp - 1,
+		dprintf2(penum->memory, "[B]cc[0..%d]=%g", spp - 1,
 			 cc.paint.values[0]);
 		for (i = 1; i < spp; ++i)
-		    dprintf1(",%g", cc.paint.values[i]);
-		dputs("\n");
+		    dprintf1(penum->memory, ",%g", cc.paint.values[i]);
+		dputs(penum->memory, "\n");
 	    }
 #endif
 	}
@@ -348,7 +348,7 @@ do3:	    decode_sample(next.v[0], cc, 0);
 	    goto fill;
 mapped:	if (pic == pic_next)
 	    goto fill;
-f:	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
+f:	if_debug7(penum->memory, 'B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 		  next.v[0], next.v[1], next.v[2], next.v[3],
 		  pdevc_next->colors.binary.color[0],
 		  pdevc_next->colors.binary.color[1],

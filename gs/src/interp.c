@@ -43,6 +43,7 @@
 #include "oper.h"
 #include "store.h"
 #include "gpcheck.h"
+#include "idebug.h"
 
 /*
  * We may or may not optimize the handling of the special fast operators
@@ -74,7 +75,7 @@ public_st_op_stack();
 private int
 no_reschedule(i_ctx_t **pi_ctx_p)
 {
-    return_error(e_invalidcontext);
+    return_error( (const gs_memory_t *)(*pi_ctx_p)->memory.current, e_invalidcontext);
 }
 int (*gs_interp_reschedule_proc)(i_ctx_t **) = no_reschedule;
 
@@ -287,7 +288,8 @@ gs_interp_init(i_ctx_t **pi_ctx_p, const ref *psystem_dict,
     if (code >= 0)
 	code = context_state_load(pcst);
     if (code < 0)
-	lprintf1("Fatal error %d in gs_interp_init!", code);
+	lprintf1((const gs_memory_t *)dmem, 
+		 "Fatal error %d in gs_interp_init!", code);
     *pi_ctx_p = pcst;
     return code;
 }
@@ -691,8 +693,8 @@ gs_errorname(i_ctx_t *i_ctx_p, int code, ref * perror_name)
     if (dict_find_string(systemdict, "errordict", &perrordict) <= 0 ||
 	dict_find_string(systemdict, "ErrorNames", &pErrorNames) <= 0
 	)
-	return_error(e_undefined);	/* errordict or ErrorNames not found?! */
-    return array_get(pErrorNames, (long)(-code - 1), perror_name);
+	return_error(imemory, e_undefined);	/* errordict or ErrorNames not found?! */
+    return array_get(imemory, pErrorNames, (long)(-code - 1), perror_name);
 }
 
 /* Store an error string in $error.errorinfo. */
@@ -710,7 +712,7 @@ gs_errorinfo_put_string(i_ctx_t *i_ctx_p, const char *str)
 	!r_has_type(pderror, t_dictionary) ||
 	idict_put_string(pderror, "errorinfo", &rstr) < 0
 	)
-	return_error(e_Fatal);
+	return_error(imemory, e_Fatal);
     return 0;
 }
 
@@ -856,7 +858,8 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     if (iosp >= osbot &&
 	(r_type(iosp) == t__invalid || r_type(iosp) >= tx_next_op)
 	) {
-	lprintf("Invalid value on o-stack!\n");
+	lprintf(imemory, 
+		"Invalid value on o-stack!\n");
 	return_with_error_iref(e_Fatal);
     }
     if (gs_debug['I'] ||
@@ -865,24 +868,25 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	  r_packed_is_name(iref_packed) :
 	  r_has_type(IREF, t_name)))
 	) {
-	void debug_print_ref(const ref *);
 	os_ptr save_osp = osp;	/* avoid side-effects */
 	es_ptr save_esp = esp;
 
 	osp = iosp;
 	esp = iesp;
-	dlprintf5("d%u,e%u<%u>0x%lx(%d): ",
+	dlprintf5(imemory, 
+		  "d%u,e%u<%u>0x%lx(%d): ",
 		  ref_stack_count(&d_stack), ref_stack_count(&e_stack),
 		  ref_stack_count(&o_stack), (ulong)IREF, icount);
-	debug_print_ref(IREF);
+	debug_print_ref(imemory, IREF);
 	if (iosp >= osbot) {
-	    dputs(" // ");
-	    debug_print_ref(iosp);
+	    dputs(imemory, " // ");
+	    debug_print_ref(imemory, iosp);
 	}
-	dputc('\n');
+	dputc(imemory, '\n');
 	osp = save_osp;
 	esp = save_esp;
-	fflush(dstderr);
+	// why flush
+	//fflush(dstderr);
     }
 #endif
 /* Objects that have attributes (arrays, dictionaries, files, and strings) */
@@ -956,7 +960,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	    /* Special operators. */
 	case plain_exec(tx_op_add):
 x_add:	    INCR(x_add);
-	    if ((code = zop_add(iosp)) < 0)
+	    if ((code = zop_add(imemory, iosp)) < 0)
 		return_with_error_code_op(2);
 	    iosp--;
 	    next_either();
@@ -1051,7 +1055,7 @@ x_roll:	    INCR(x_roll);
 	    next_either();
 	case plain_exec(tx_op_sub):
 x_sub:	    INCR(x_sub);
-	    if ((code = zop_sub(iosp)) < 0)
+	    if ((code = zop_sub(imemory, iosp)) < 0)
 		return_with_error_code_op(2);
 	    iosp--;
 	    next_either();
@@ -1264,7 +1268,7 @@ remap:		    if (iesp + 2 >= estop) {
 		stream *s;
 		scanner_state sstate;
 
-		check_read_known_file(s, IREF, return_with_error_iref);
+		check_read_known_file(imemory, s, IREF, return_with_error_iref(e_invalidaccess));
 	    rt:
 		if (iosp >= ostop)	/* check early */
 		    return_with_stackoverflow_iref();
@@ -1409,7 +1413,7 @@ remap:		    if (iesp + 2 >= estop) {
 		    case scan_EOF:	/* end of string */
 			goto bot;
 		    case scan_Refill:	/* error */
-			code = gs_note_error(e_syntaxerror);
+			code = gs_note_error(imemory, e_syntaxerror);
 		    default:	/* error */
 			return_with_code_iref();
 		}
@@ -1685,7 +1689,7 @@ res:
     esp = iesp;
     osp = iosp;
     ref_assign_inline(perror_object, ierror.obj);
-    return gs_log_error(ierror.code, __FILE__, ierror.line);
+    return gs_log_error(imemory, ierror.code, __FILE__, ierror.line);
 }
 
 /* Pop the bookkeeping information for a normal exit from a t_oparray. */
@@ -1748,9 +1752,9 @@ zsetstackprotect(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref *ep = oparray_find(i_ctx_p);
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     if (ep == 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     ep->value.opproc =
 	(op->value.boolval ? oparray_cleanup : oparray_no_cleanup);
     pop(1);
@@ -1766,8 +1770,8 @@ zcurrentstackprotect(i_ctx_t *i_ctx_p)
     ref *ep = oparray_find(i_ctx_p);
 
     if (ep == 0)
-	return_error(e_rangecheck);
-    push(1);
+	return_error(imemory, e_rangecheck);
+    push(imemory, 1);
     make_bool(op, ep->value.opproc == oparray_cleanup);
     return 0;
 }

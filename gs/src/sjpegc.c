@@ -169,7 +169,7 @@ int
 gs_jpeg_destroy(stream_DCT_state * st)
 {
     if (setjmp(st->data.common->exit_jmpbuf))
-	return_error(gs_jpeg_log_error(st));
+	return_error(st->memory, gs_jpeg_log_error(st));
     jpeg_destroy((j_common_ptr) & st->data.compress->cinfo);
     return 0;
 }
@@ -224,7 +224,7 @@ jpeg_free(j_common_ptr cinfo, void *data, const char *info)
         p = p->next;
       }
     if(p == 0)
-      lprintf1("Freeing unrecorded JPEG data 0x%lx!\n", (ulong)data);
+      lprintf1(mem, "Freeing unrecorded JPEG data 0x%lx!\n", (ulong)data);
     else
       *pp = p->next;
     gs_free_object(mem, p, "jpeg_free(block)");

@@ -149,16 +149,19 @@ gx_subpath_is_rectangular(const subpath * pstart, gs_fixed_rect * pbox,
 
 /* Return the smallest value k such that 2^k segments will approximate */
 /* the curve to within the desired flatness. */
-int gx_curve_log2_samples(fixed, fixed, const curve_segment *, fixed);
+int gx_curve_log2_samples(const gs_memory_t *mem,
+			  fixed, fixed, const curve_segment *, fixed);
 
 /*
  * If necessary, find the values of t (never more than 2) which split the
  * curve into monotonic parts.  Return the number of split points.
  */
-int gx_curve_monotonic_points(fixed, fixed, fixed, fixed, double[2]);
+int gx_curve_monotonic_points(const gs_memory_t *mem, 
+			      fixed, fixed, fixed, fixed, double[2]);
 
 /* Split a curve at an arbitrary value of t. */
-void gx_curve_split(fixed, fixed, const curve_segment *, double,
+void gx_curve_split(const gs_memory_t *mem,
+		    fixed, fixed, const curve_segment *, double,
 		    curve_segment *, curve_segment *);
 
 /* Flatten a partial curve by sampling (internal procedure). */
@@ -185,7 +188,7 @@ void gx_curve_cursor_init(curve_cursor * prc, fixed x0, fixed y0,
 
 /* Return the value of X at a given Y value on a monotonic curve. */
 /* y must lie between prc->p0.y and prc->pt.y. */
-fixed gx_curve_x_at_y(curve_cursor * prc, fixed y);
+fixed gx_curve_x_at_y(const gs_memory_t *mem, curve_cursor * prc, fixed y);
 
 /*
  * The path state flags reflect the most recent operation on the path
@@ -380,8 +383,8 @@ extern_st(st_path_enum);
 
 /* Macros equivalent to a few heavily used procedures. */
 /* Be aware that these macros may evaluate arguments more than once. */
-#define gx_path_current_point_inline(ppath,ppt)\
- ( !path_position_valid(ppath) ? gs_note_error(gs_error_nocurrentpoint) :\
+#define gx_path_current_point_inline(mem, ppath,ppt)\
+ ( !path_position_valid(ppath) ? gs_note_error(mem, gs_error_nocurrentpoint) :\
    ((ppt)->x = ppath->position.x, (ppt)->y = ppath->position.y, 0) )
 /* ...rel_point rather than ...relative_point is because */
 /* some compilers dislike identifiers of >31 characters. */

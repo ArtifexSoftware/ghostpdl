@@ -70,14 +70,14 @@ gs_ht_build(
     /* must have at least one component */
     *ppht = 0;
     if (num_comps == 0)
-	return_error(gs_error_rangecheck);
+	return_error(pmem, gs_error_rangecheck);
 
     /* allocate the halftone and the array of components */
     rc_alloc_struct_1(pht,
 		      gs_ht,
 		      &st_gs_ht,
 		      pmem,
-		      return_error(gs_error_VMerror),
+		      return_error(pmem, gs_error_VMerror),
 		      "gs_ht_build"
 	);
     phtc = gs_alloc_struct_array(pmem,
@@ -88,7 +88,7 @@ gs_ht_build(
 	);
     if (phtc == 0) {
 	gs_free_object(pmem, pht, "gs_ht_build");
-	return_error(gs_error_VMerror);
+	return_error(pmem, gs_error_VMerror);
     }
     /* initialize the halftone */
     pht->type = ht_type_multiple;
@@ -111,23 +111,23 @@ gs_ht_build(
  * Set a spot-function halftone component in a gs_ht halftone.
  */
 int
-gs_ht_set_spot_comp(
-		       gs_ht * pht,
-		       int comp,
-		       floatp freq,
-		       floatp angle,
-		       float (*spot_func) (floatp, floatp),
-		       bool accurate,
-		       gs_ht_transfer_proc transfer,
-		       const void *client_data
+gs_ht_set_spot_comp( const gs_memory_t *mem, 
+		     gs_ht * pht,
+		     int comp,
+		     floatp freq,
+		     floatp angle,
+		     float (*spot_func) (floatp, floatp),
+		     bool accurate,
+		     gs_ht_transfer_proc transfer,
+		     const void *client_data
 )
 {
     gs_ht_component *phtc = &(pht->params.ht_multiple.components[comp]);
 
     if (comp >= pht->params.ht_multiple.num_comp)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (phtc->type != ht_type_none)
-	return_error(gs_error_invalidaccess);
+	return_error(mem, gs_error_invalidaccess);
 
     phtc->type = ht_type_spot;
     phtc->params.ht_spot.screen.frequency = freq;
@@ -148,22 +148,22 @@ gs_ht_set_spot_comp(
  * caller is responsible for releasing the threshold data.
  */
 int
-gs_ht_set_threshold_comp(
-			    gs_ht * pht,
-			    int comp,
-			    int width,
-			    int height,
-			    const gs_const_string * thresholds,
-			    gs_ht_transfer_proc transfer,
-			    const void *client_data
+gs_ht_set_threshold_comp( const gs_memory_t *mem,
+			  gs_ht * pht,
+			  int comp,
+			  int width,
+			  int height,
+			  const gs_const_string * thresholds,
+			  gs_ht_transfer_proc transfer,
+			  const void *client_data
 )
 {
     gs_ht_component *phtc = &(pht->params.ht_multiple.components[comp]);
 
     if (comp >= pht->params.ht_multiple.num_comp)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (phtc->type != ht_type_none)
-	return_error(gs_error_invalidaccess);
+	return_error(mem, gs_error_invalidaccess);
 
     phtc->type = ht_type_threshold;
     phtc->params.ht_threshold.width = width;
@@ -182,11 +182,11 @@ gs_ht_set_threshold_comp(
  * Increase the reference count of a gs_ht structure by 1.
  */
 void
-gs_ht_reference(
-		   gs_ht * pht
+gs_ht_reference( const gs_memory_t *mem,
+		 gs_ht * pht
 )
 {
-    rc_increment(pht);
+    rc_increment(mem, pht);
 }
 
 /*
@@ -194,11 +194,11 @@ gs_ht_reference(
  * structure if the reference count reaches 0.
  */
 void
-gs_ht_release(
-		 gs_ht * pht
+gs_ht_release( const gs_memory_t *mem,
+	       gs_ht * pht
 )
 {
-    rc_decrement_only(pht, "gs_ht_release");
+    rc_decrement_only(mem, pht, "gs_ht_release");
 }
 
 
@@ -206,19 +206,19 @@ gs_ht_release(
  *  Verify that a gs_ht halftone is legitimate.
  */
 private int
-check_ht(
-	    gs_ht * pht
-)
+check_ht( const gs_memory_t *mem,
+	  gs_ht * pht
+	  )
 {
     int i;
     int num_comps = pht->params.ht_multiple.num_comp;
 
     if (pht->type != ht_type_multiple)
-	return_error(gs_error_unregistered);
+	return_error(mem, gs_error_unregistered);
     for (i = 0; i < num_comps; i++) {
 	gs_ht_component *phtc = &(pht->params.ht_multiple.components[i]);
 	if ((phtc->type != ht_type_spot) && (phtc->type != ht_type_threshold))
-	    return_error(gs_error_unregistered);
+	    return_error(mem, gs_error_unregistered);
     }
     return 0;
 }
@@ -299,7 +299,7 @@ alloc_ht_order(
 	    return 0;
 	}
 	pmap->proc = gs_mapped_transfer;
-	pmap->id = gs_next_ids(1);
+	pmap->id = gs_next_ids(pmem, 1);
 	pocs[inext].corder.levels = 0;
 	pocs[inext].corder.bit_data = 0;
 	pocs[inext].corder.cache = 0;
@@ -358,7 +358,7 @@ build_component(
 	    );
 	if (code < 0)
 	    return code;
-	gx_ht_construct_threshold_order(
+	gx_ht_construct_threshold_order(pmem, 
 				porder,
 				phtc->params.ht_threshold.thresholds.data
 	    );
@@ -409,12 +409,12 @@ gs_ht_install(
     int i;
 
     /* perform so sanity checks (must have one default component) */
-    if ((code = check_ht(pht)) != 0)
+    if ((code = check_ht(pgs->memory, pht)) != 0)
 	return code;
 
     /* allocate the halftone order structure and transfer maps */
     if ((pocs = alloc_ht_order(pht, pmem, comp2order)) == 0)
-	return_error(gs_error_VMerror);
+	return_error(pgs->memory, gs_error_VMerror);
 
     /* build all of the order for each component */
     for (i = 0; i < num_comps; i++) {
@@ -437,10 +437,10 @@ gs_ht_install(
 		);
 
 	    if (pcache == 0)
-		code = gs_note_error(gs_error_VMerror);
+		code = gs_note_error(pmem, gs_error_VMerror);
 	    else {
 		pocs[j].corder.cache = pcache;
-		gx_ht_init_cache(pcache, &(pocs[j].corder));
+		gx_ht_init_cache(pmem, pcache, &(pocs[j].corder));
 	    }
 	}
 	if (code < 0)
@@ -552,7 +552,8 @@ private const gs_client_order_ht_procs_t mask_order_procs =
  * rendering machinery knows how to deal with.
  */
 int
-gs_ht_set_mask_comp(gs_ht * pht,
+gs_ht_set_mask_comp(const gs_memory_t *mem, 
+		    gs_ht * pht,
 		    int component_index,
 		    int width, int height, int num_levels,
 		    const byte * masks,		/* width x height x num_levels bits */
@@ -563,9 +564,9 @@ gs_ht_set_mask_comp(gs_ht * pht,
     &(pht->params.ht_multiple.components[component_index]);
 
     if (component_index >= pht->params.ht_multiple.num_comp)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (phtc->type != ht_type_none)
-	return_error(gs_error_invalidaccess);
+	return_error(mem, gs_error_invalidaccess);
 
     phtc->type = ht_type_client_order;
     phtc->params.client_order.width = width;

@@ -97,7 +97,8 @@ typedef enum {
 
 /* Evaluate a PostScript Calculator function. */
 private int
-fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
+fn_PtCr_evaluate(const gs_memory_t *mem, 
+		 const gs_function_t *pfn_common, const float *in, float *out)
 {
     const gs_function_PtCr_t *pfn = (const gs_function_PtCr_t *)pfn_common;
     calc_value_t vstack_buf[2 + MAX_VSTACK + 1];
@@ -226,7 +227,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	case PtCr_no_op:
 	    continue;
 	case PtCr_typecheck:
-	    return_error(gs_error_typecheck);
+	    return_error(mem, gs_error_typecheck);
 
 	    /* Coerce and re-dispatch */
 
@@ -266,7 +267,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	case PtCr_atan: {
 	    double result;
 
-	    code = gs_atan2_degrees(vsp[-1].value.f, vsp->value.f,
+	    code = gs_atan2_degrees(mem, vsp[-1].value.f, vsp->value.f,
 				    &result);
 	    if (code < 0)
 		return code;
@@ -297,7 +298,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    continue;	/* prepare handled it */
 	case PtCr_div:
 	    if (vsp->value.f == 0)
-		return_error(gs_error_undefinedresult);
+		return_error(mem, gs_error_undefinedresult);
 	    vsp[-1].value.f /= vsp->value.f;
 	    --vsp; continue;
 	case PtCr_exp:
@@ -308,10 +309,10 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    continue;
 	case PtCr_idiv:
 	    if (vsp->value.i == 0)
-		return_error(gs_error_undefinedresult);
+		return_error(mem, gs_error_undefinedresult);
 	    if ((vsp[-1].value.i /= vsp->value.i) == min_int &&
 		vsp->value.i == -1)  /* anomalous boundary case, fail */
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	    --vsp; continue;
 	case PtCr_ln:
 	    vsp->value.f = log(vsp->value.f);
@@ -321,7 +322,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    continue;
 	case PtCr_mod:
 	    if (vsp->value.i == 0)
-		return_error(gs_error_undefinedresult);
+		return_error(mem, gs_error_undefinedresult);
 	    vsp[-1].value.i %= vsp->value.i;
 	    --vsp; continue;
 	case PtCr_mul_int: {
@@ -437,9 +438,9 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    i = vsp->value.i;
 	    n = vsp - vstack;
 	    if (i < 0 || i >= n)
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	    if (i > MAX_VSTACK - (n - 1))
-		return_error(gs_error_limitcheck);
+		return_error(mem, gs_error_limitcheck);
 	    memcpy(vsp, vsp - i, i * sizeof(*vsp));
 	    vsp += i - 1;
 	    continue;
@@ -454,7 +455,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	case PtCr_index:
 	    i = vsp->value.i;
 	    if (i < 0 || i >= vsp - vstack - 1)
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	    *vsp = vsp[-i - 1];
 	    continue;
 	case PtCr_pop:
@@ -464,7 +465,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    n = vsp[-1].value.i;
 	    i = vsp->value.i;
 	    if (n < 0 || n > vsp - vstack - 2)
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
 	    /* We don't bother to do this efficiently. */
 	    for (; i > 0; i--) {
 		memmove(vsp - n, vsp - (n + 1), n * sizeof(*vsp));
@@ -499,7 +500,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    vsp[1].value.i = false, vsp[1].type = CVT_BOOL;
 	push:
 	    if (vsp == &vstack[MAX_VSTACK])
-		return_error(gs_error_limitcheck);
+		return_error(mem, gs_error_limitcheck);
 	    ++vsp;
 	    continue;
 
@@ -521,7 +522,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
  fin:
 
     if (vsp != vstack + pfn->params.n)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     for (i = 0; i < pfn->params.n; ++i) {
 	switch (vstack[i + 1].type) {
 	case CVT_INT:
@@ -531,7 +532,7 @@ fn_PtCr_evaluate(const gs_function_t *pfn_common, const float *in, float *out)
 	    out[i] = vstack[i + 1].value.f;
 	    break;
 	default:
-	    return_error(gs_error_typecheck);
+	    return_error(mem, gs_error_typecheck);
 	}
     }
     return 0;
@@ -607,7 +608,7 @@ calc_put_ops(stream *s, const byte *ops, uint size)
 	}
 	case PtCr_else:
 	    if (p != ops + size - 2)
-		return_error(gs_error_rangecheck);
+		return_error(s->memory, gs_error_rangecheck);
 	    spputc(s, '}');
 	    return 1;
 	/*case PtCr_return:*/	/* not possible */
@@ -709,7 +710,7 @@ fn_PtCr_make_scaled(const gs_function_PtCr_t *pfn, gs_function_PtCr_t **ppsfn,
     if (psfn == 0 || ops == 0) {
 	gs_free_string(mem, ops, opsize, "fn_PtCr_make_scaled(ops)");
 	gs_free_object(mem, psfn, "fn_PtCr_make_scaled");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     psfn->params = pfn->params;
     psfn->params.ops.data = ops;
@@ -782,12 +783,12 @@ gs_function_PtCr_init(gs_function_t ** ppfn,
     int code;
 
     *ppfn = 0;			/* in case of error */
-    code = fn_check_mnDR((const gs_function_params_t *)params,
+    code = fn_check_mnDR(mem, (const gs_function_params_t *)params,
 			 params->m, params->n);
     if (code < 0)
 	return code;
     if (params->m > MAX_VSTACK || params->n > MAX_VSTACK)
-	return_error(gs_error_limitcheck);
+	return_error(mem, gs_error_limitcheck);
     /*
      * Pre-validate the operation string to reduce evaluation overhead.
      */
@@ -810,10 +811,10 @@ gs_function_PtCr_init(gs_function_t ** ppfn,
 		break;
 	    default:
 		if (*p >= PtCr_NUM_OPS)
-		    return_error(gs_error_rangecheck);
+		    return_error(mem, gs_error_rangecheck);
 	    }
 	if (p != params->ops.data + params->ops.size - 1)
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     }
     {
 	gs_function_PtCr_t *pfn =
@@ -821,7 +822,7 @@ gs_function_PtCr_init(gs_function_t ** ppfn,
 			    "gs_function_PtCr_init");
 
 	if (pfn == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	pfn->params = *params;
 	/*
 	 * We claim to have a DataSource, in order to write the function

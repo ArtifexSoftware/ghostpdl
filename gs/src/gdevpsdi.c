@@ -67,7 +67,7 @@ pixel_resize(psdf_binary_writer * pbw, int width, int num_components,
     st = (stream_1248_state *)
 	s_alloc_state(mem, template->stype, "pixel_resize state");
     if (st == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     code = psdf_encode_binary(pbw, template, (stream_state *) st);
     if (code < 0) {
 	gs_free_object(mem, st, "pixel_resize state");
@@ -137,7 +137,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     }
     st = s_alloc_state(mem, template->stype, "setup_image_compression");
     if (st == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     if (template->set_defaults)
 	(*template->set_defaults) (st);
     if (template == &s_CFE_template) {
@@ -163,7 +163,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	    template = &s_PNGPE_template;
 	    st = s_alloc_state(mem, template->stype, "setup_image_compression");
 	    if (st == 0) {
-		code = gs_note_error(gs_error_VMerror);
+		code = gs_note_error(mem, gs_error_VMerror);
 		goto fail;
 	    }
 	    if (template->set_defaults)
@@ -225,7 +225,7 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
     st = s_alloc_state(pdev->v_memory, template->stype,
 		       "setup_downsampling");
     if (st == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     if (template->set_defaults)
 	template->set_defaults(st);
     {
@@ -320,10 +320,10 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	gs_point pt;
 
 	/* We could do both X and Y, but why bother? */
-	code = gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
+	code = gs_distance_transform_inverse(pdev->memory, 1.0, 0.0, &pim->ImageMatrix, &pt);
 	if (code < 0)
 	    return code;
-	gs_distance_transform(pt.x, pt.y, pctm, &pt);
+	gs_distance_transform(pdev->memory, pt.x, pt.y, pctm, &pt);
 	resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
 				 pt.y / pdev->HWResolution[1]);
     }
@@ -358,7 +358,7 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	gs_color_space rgb_cs;
 
 	if (cmyk_to_rgb) {
-	    gs_cspace_init_DeviceRGB(&rgb_cs);  /* idempotent initialization */
+	    gs_cspace_init_DeviceRGB(pdev->memory, &rgb_cs);  /* idempotent initialization */
 	    pim->ColorSpace = &rgb_cs;
 	}
 	if (params.Depth == -1)
@@ -426,7 +426,7 @@ psdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
                                      "psdf_setup_compression_chooser");
 
     if (ss == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     pbw->memory = pdev->memory;
     pbw->strm = pdev->strm; /* just a stub - will not write to it. */
     pbw->dev = pdev;

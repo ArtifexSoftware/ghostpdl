@@ -132,11 +132,12 @@ gs_glyph_cache_elem__free_data(gs_glyph_data_t *pgd, client_name_t cname)
     e->lock_count--;
 }
 private int
-gs_glyph_cache_elem__substring(gs_glyph_data_t *pgd, uint offset, uint size)
+gs_glyph_cache_elem__substring(const gs_memory_t *mem, 
+			       gs_glyph_data_t *pgd, uint offset, uint size)
 {   gs_glyph_cache_elem *e = (gs_glyph_cache_elem *)pgd->proc_data;
 
     e->lock_count++;
-    return_error(gs_error_unregistered); /* Unsupported; should not happen. */
+    return_error(mem, gs_error_unregistered); /* Unsupported; should not happen. */
 }			       
 
 private const gs_glyph_data_procs_t gs_glyph_cache_elem_procs = {
@@ -164,7 +165,7 @@ gs_get_glyph_data_cached(gs_font_type42 *pfont, uint glyph_index, gs_glyph_data_
 	    e = (gs_glyph_cache_elem *)gs_alloc_struct(gdcache->memory,
 		gs_glyph_cache_elem, &st_glyph_cache_elem, "gs_glyph_cache_elem");
 	    if (e == NULL)
-		return_error(gs_error_VMerror);
+		return_error(pfont->memory, gs_error_VMerror);
 	    memset(e, 0, sizeof(*e));
 	    e->next = gdcache->list;
 	    gdcache->list = e;

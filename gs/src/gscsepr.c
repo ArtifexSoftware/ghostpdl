@@ -96,7 +96,7 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-	dprintf("gx_concretze_space_Separation: color space id mismatch");
+	dprintf(pis->memory, "gx_concretze_space_Separation: color space id mismatch");
 #endif
 
     /*
@@ -168,7 +168,7 @@ gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
 private void
 gx_adjust_cspace_Separation(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->params.separation.map, delta,
+    rc_adjust_const(pcs->pmem, pcs->params.separation.map, delta,
 		    "gx_adjust_Separation");
     (*pcs->params.separation.alt_space.type->adjust_cspace_count)
 	((const gs_color_space *)&pcs->params.separation.alt_space, delta);
@@ -190,12 +190,12 @@ gs_build_Separation(
     int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
-	return_error(gs_error_rangecheck);
+	return_error(pmem, gs_error_rangecheck);
 
     code = alloc_device_n_map(&pcssepr->map, pmem, "gs_cspace_build_Separation");
     if (pcssepr->map == NULL) {
 	gs_free_object(pmem, pcspace, "gs_cspace_build_Separation");
-	return_error(gs_error_VMerror);
+	return_error(pmem, gs_error_VMerror);
     }
     return 0;
 }
@@ -221,7 +221,7 @@ gs_cspace_build_Separation(
     int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
-	return_error(gs_error_rangecheck);
+	return_error(pmem, gs_error_rangecheck);
 
     code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Separation, pmem);
     if (code < 0)
@@ -233,7 +233,7 @@ gs_cspace_build_Separation(
 	return code;
     }
     pcssepr->sep_name = sname;
-    gs_cspace_init_from((gs_color_space *) & pcssepr->alt_space, palt_cspace);
+    gs_cspace_init_from(pmem, (gs_color_space *) & pcssepr->alt_space, palt_cspace);
     *ppcspace = pcspace;
     return 0;
 }
@@ -254,7 +254,7 @@ gs_cspace_set_sepr_proc(gs_color_space * pcspace,
     gs_device_n_map *pimap;
 
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_Separation)
-	return_error(gs_error_rangecheck);
+	return_error(pcspace->pmem, gs_error_rangecheck);
     pimap = pcspace->params.separation.map;
     pimap->tint_transform = proc;
     pimap->tint_transform_data = proc_data;
@@ -267,7 +267,7 @@ gs_cspace_set_sepr_proc(gs_color_space * pcspace,
  * Set the Separation tint transformation procedure to a Function.
  */
 int
-gs_cspace_set_sepr_function(const gs_color_space *pcspace, gs_function_t *pfn)
+gs_cspace_set_sepr_function(const gs_memory_t *mem, const gs_color_space *pcspace, gs_function_t *pfn)
 {
     gs_device_n_map *pimap;
 
@@ -276,7 +276,7 @@ gs_cspace_set_sepr_function(const gs_color_space *pcspace, gs_function_t *pfn)
 	  gs_color_space_num_components((const gs_color_space *)
 					&pcspace->params.separation.alt_space)
 	)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     pimap = pcspace->params.separation.map;
     pimap->tint_transform = map_devn_using_function;
     pimap->tint_transform_data = pfn;
@@ -365,7 +365,7 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-	dprintf("gx_remap_concrete_Separation: color space id mismatch");
+	dprintf(pis->memory, "gx_remap_concrete_Separation: color space id mismatch");
 #endif
 
     if (pis->color_component_map.use_alt_cspace) {

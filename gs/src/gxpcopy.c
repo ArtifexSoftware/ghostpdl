@@ -27,7 +27,8 @@
 #include "vdtrace.h"
 
 /* Forward declarations */
-private void adjust_point_to_tangent(segment *, const segment *,
+private void adjust_point_to_tangent(const gs_memory_t *mem,
+				     segment *, const segment *,
 				     const gs_fixed_point *);
 private int monotonize_internal(gx_path *, const curve_segment *);
 
@@ -130,7 +131,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 				flat = min(flat_x, flat_y);
 			    }
 			}
-			k = gx_curve_log2_samples(x0, y0, pc, flat);
+			k = gx_curve_log2_samples(ppath->memory, x0, y0, pc, flat);
 			if (options & pco_accurate) {
 			    segment *start;
 			    segment *end;
@@ -161,9 +162,9 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 							  ppath->position.y,
 					    pseg->notes | sn_not_first)) < 0)
 				break;
-			    adjust_point_to_tangent(start, start->next,
+			    adjust_point_to_tangent(ppath->memory, start, start->next,
 						    &pc->p1);
-			    adjust_point_to_tangent(end, end->prev,
+			    adjust_point_to_tangent(ppath->memory, end, end->prev,
 						    &pc->p2);
 			} else {
 			    cseg = *pc;
@@ -182,7 +183,7 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
 		vd_closepath;
 		break;
 	    default:		/* can't happen */
-		code = gs_note_error(gs_error_unregistered);
+		code = gs_note_error(ppath->memory, gs_error_unregistered);
 	}
 	if (code < 0) {
 	    gx_path_new(ppath);
@@ -223,7 +224,8 @@ gx_path_copy_reducing(const gx_path *ppath_old, gx_path *ppath,
  * numerical instabilities don't lead to a negative value of T.
  */
 private void
-adjust_point_to_tangent(segment * pseg, const segment * next,
+adjust_point_to_tangent(const gs_memory_t *mem,
+			segment * pseg, const segment * next,
 			const gs_fixed_point * p1)
 {
     const fixed x0 = pseg->pt.x, y0 = pseg->pt.y;
@@ -240,7 +242,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 
 	if (fD == 0)
 	    return;		/* anomalous case */
-	if_debug1('2', "[2]adjusting vertical: DT = %g\n",
+	if_debug1(mem, '2', "[2]adjusting vertical: DT = %g\n",
 		  fixed2float(DT));
 	if ((DT ^ fD) > 0)
 	    pseg->pt.y = DT + y0;
@@ -248,7 +250,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 	/* Horizontal tangent. */
 	const fixed CT = arith_rshift(next->pt.x - x0, 2);
 
-	if_debug1('2', "[2]adjusting horizontal: CT = %g\n",
+	if_debug1(mem, '2', "[2]adjusting horizontal: CT = %g\n",
 		  fixed2float(CT));
 	if ((CT ^ fC) > 0)
 	    pseg->pt.x = CT + x0;
@@ -258,7 +260,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 	const double T = (C * (next->pt.x - x0) + D * (next->pt.y - y0)) /
 	(C * C + D * D);
 
-	if_debug3('2', "[2]adjusting: C = %g, D = %g, T = %g\n",
+	if_debug3(mem, '2', "[2]adjusting: C = %g, D = %g, T = %g\n",
 		  C, D, T);
 	if (T > 0) {
 	    pseg->pt.x = arith_rshift((fixed) (C * T), 2) + x0;
@@ -278,9 +280,11 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 
 #ifdef DEBUG
 private void
-dprint_curve(const char *str, fixed x0, fixed y0, const curve_segment * pc)
+dprint_curve(const gs_memory_t *mem,
+	     const char *str, fixed x0, fixed y0, const curve_segment * pc)
 {
-    dlprintf9("%s p0=(%g,%g) p1=(%g,%g) p2=(%g,%g) p3=(%g,%g)\n",
+    dlprintf9(mem, 
+	      "%s p0=(%g,%g) p1=(%g,%g) p2=(%g,%g) p3=(%g,%g)\n",
 	      str, fixed2float(x0), fixed2float(y0),
 	      fixed2float(pc->p1.x), fixed2float(pc->p1.y),
 	      fixed2float(pc->p2.x), fixed2float(pc->p2.y),
@@ -338,7 +342,7 @@ gx_curve_cursor_init(curve_cursor * prc, fixed x0, fixed y0,
  */
 #define SUBDIVIDE_X USE_FPU_FIXED
 fixed
-gx_curve_x_at_y(curve_cursor * prc, fixed y)
+gx_curve_x_at_y(const gs_memory_t *mem, curve_cursor * prc, fixed y)
 {
     fixed xl, xd;
     fixed yd, yrel;
@@ -480,7 +484,8 @@ gx_curve_x_at_y(curve_cursor * prc, fixed y)
 		    if (any_abs(xlf - xl) > fixed_epsilon ||
 			any_abs(xdf - xd) > fixed_epsilon
 			)
-			dlprintf9("Curve points differ: k=%d t=%d a,b,c=%g,%g,%g\n   xl,xd fixed=%g,%g floating=%g,%g\n",
+			dlprintf9(mem, 
+				  "Curve points differ: k=%d t=%d a,b,c=%g,%g,%g\n   xl,xd fixed=%g,%g floating=%g,%g\n",
 				  k, t,
 			     fixed2float(a), fixed2float(b), fixed2float(c),
 				  fixed2float(xl), fixed2float(xd),
@@ -601,12 +606,12 @@ gx_path_is_monotonic(const gx_path * ppath)
 		{
 		    const curve_segment *pc = (const curve_segment *)pseg;
 		    double t[2];
-		    int nz = gx_curve_monotonic_points(pt0.y,
+		    int nz = gx_curve_monotonic_points(ppath->memory, pt0.y,
 					   pc->p1.y, pc->p2.y, pc->pt.y, t);
 
 		    if (nz != 0)
 			return false;
-		    nz = gx_curve_monotonic_points(pt0.x,
+		    nz = gx_curve_monotonic_points(ppath->memory, pt0.x,
 					   pc->p1.x, pc->p2.x, pc->pt.x, t);
 		    if (nz != 0)
 			return false;
@@ -638,30 +643,31 @@ monotonize_internal(gx_path * ppath, const curve_segment * pc)
     int nz;
 
     /* Monotonize in Y. */
-    nz = gx_curve_monotonic_points(y0, pc->p1.y, pc->p2.y, pc->pt.y, t);
+    nz = gx_curve_monotonic_points(ppath->memory, y0, pc->p1.y, pc->p2.y, pc->pt.y, t);
     nseg = max_segs - 1 - nz;
     pcd = cs + nseg;
     if (nz == 0)
 	*pcd = *pc;
     else {
-	gx_curve_split(x0, y0, pc, t[0], pcd, pcd + 1);
+	gx_curve_split(ppath->memory, x0, y0, pc, t[0], pcd, pcd + 1);
 	if (nz == 2)
-	    gx_curve_split(pcd->pt.x, pcd->pt.y, pcd + 1,
+	    gx_curve_split(ppath->memory, pcd->pt.x, pcd->pt.y, pcd + 1,
 			   (t[1] - t[0]) / (1 - t[0]),
 			   pcd + 1, pcd + 2);
     }
 
     /* Monotonize in X. */
     for (pcs = pcd, pcd = cs, j = nseg; j < max_segs; ++pcs, ++j) {
-	nz = gx_curve_monotonic_points(x0, pcs->p1.x, pcs->p2.x,
+	nz = gx_curve_monotonic_points(ppath->memory, x0, pcs->p1.x, pcs->p2.x,
 				       pcs->pt.x, t);
 
 	if (nz == 0)
 	    *pcd = *pcs;
 	else {
-	    gx_curve_split(x0, y0, pcs, t[0], pcd, pcd + 1);
+	    gx_curve_split(ppath->memory, x0, y0, pcs, t[0], pcd, pcd + 1);
 	    if (nz == 2)
-		gx_curve_split(pcd->pt.x, pcd->pt.y, pcd + 1,
+		gx_curve_split(ppath->memory, 
+			       pcd->pt.x, pcd->pt.y, pcd + 1,
 			       (t[1] - t[0]) / (1 - t[0]),
 			       pcd + 1, pcd + 2);
 	}
@@ -679,12 +685,12 @@ monotonize_internal(gx_path * ppath, const curve_segment * pc)
 
 	pp0 = ppath->position;
 	if (nseg == 1)
-	    dprint_curve("[2]No split", pp0.x, pp0.y, pc);
+	    dprint_curve(ppath->memory, "[2]No split", pp0.x, pp0.y, pc);
 	else {
-	    dlprintf1("[2]Split into %d segments:\n", nseg);
-	    dprint_curve("[2]Original", pp0.x, pp0.y, pc);
+	    dlprintf1(ppath->memory, "[2]Split into %d segments:\n", nseg);
+	    dprint_curve(ppath->memory, "[2]Original", pp0.x, pp0.y, pc);
 	    for (pi = 0; pi < nseg; ++pi) {
-		dprint_curve("[2] =>", pp0.x, pp0.y, cs + pi);
+		dprint_curve(ppath->memory, "[2] =>", pp0.x, pp0.y, cs + pi);
 		pp0 = cs[pi].pt;
 	    }
 	}
@@ -713,7 +719,7 @@ monotonize_internal(gx_path * ppath, const curve_segment * pc)
  * the number of split points (0, 1, or 2).
  */
 int
-gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
+gx_curve_monotonic_points(const gs_memory_t *mem, fixed v0, fixed v1, fixed v2, fixed v3,
 			  double pst[2])
 {
     /*
@@ -818,7 +824,7 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
 	double radicand = nbf * nbf - a3f * c;
 
 	if (radicand < 0) {
-	    if_debug1('2', "[2]negative radicand = %g\n", radicand);
+	    if_debug1(mem, '2', "[2]negative radicand = %g\n", radicand);
 	    return 0;
 	} {
 	    double root = sqrt(radicand);
@@ -831,7 +837,7 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
 	     * positive or negative, so we need to check the ordering
 	     * explicitly.
 	     */
-	    if_debug2('2', "[2]zeros at %g, %g\n", z, (nbf + root) / a3f);
+	    if_debug2(mem, '2', "[2]zeros at %g, %g\n", z, (nbf + root) / a3f);
 	    if (z > 0 && z < 1)
 		*pst = z, nzeros = 1;
 	    if (root != 0) {
@@ -854,7 +860,8 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
  * special case of this with t = 0.5.
  */
 void
-gx_curve_split(fixed x0, fixed y0, const curve_segment * pc, double t,
+gx_curve_split(const gs_memory_t *mem,
+	       fixed x0, fixed y0, const curve_segment * pc, double t,
 	       curve_segment * pc1, curve_segment * pc2)
 {				/*
 				 * If the original function was v(t), we want to compute the points
@@ -882,7 +889,7 @@ gx_curve_split(fixed x0, fixed y0, const curve_segment * pc, double t,
     double omt = 1 - t, omt2 = omt * omt, omt3 = omt2 * omt;
     fixed v01, v12, a, b, c, na, nb, nc;
 
-    if_debug1('2', "[2]splitting at t = %g\n", t);
+    if_debug1(mem, '2', "[2]splitting at t = %g\n", t);
 #define compute_seg(v0, v)\
 	curve_points_to_coefficients(v0, pc->p1.v, pc->p2.v, pc->pt.v,\
 				     a, b, c, v01, v12);\

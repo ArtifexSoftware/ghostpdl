@@ -28,7 +28,7 @@ gp_semaphore_sizeof(void)
 }
 
 int
-gp_semaphore_open(gp_semaphore * sema)
+gp_semaphore_open(const gs_memory_t *mem, gp_semaphore * sema)
 {
     if (sema)
 	*(int *)sema = 0;
@@ -36,22 +36,22 @@ gp_semaphore_open(gp_semaphore * sema)
 }
 
 int
-gp_semaphore_close(gp_semaphore * sema)
+gp_semaphore_close(const gs_memory_t *mem, gp_semaphore * sema)
 {
     return 0;
 }
 
 int
-gp_semaphore_wait(gp_semaphore * sema)
+gp_semaphore_wait(const gs_memory_t *mem, gp_semaphore * sema)
 {
     if (*(int *)sema == 0)
-	return_error(gs_error_unknownerror); /* no real waiting */
+	return_error(mem, gs_error_unknownerror); /* no real waiting */
     --(*(int *)sema);
     return 0;
 }
 
 int
-gp_semaphore_signal(gp_semaphore * sema)
+gp_semaphore_signal(const gs_memory_t *mem, gp_semaphore * sema)
 {
     ++(*(int *)sema);
     return 0;
@@ -66,7 +66,7 @@ gp_monitor_sizeof(void)
 }
 
 int
-gp_monitor_open(gp_monitor * mon)
+gp_monitor_open(const gs_memory_t *mem, gp_monitor * mon)
 {
     if (mon)
 	mon->dummy_ = 0;
@@ -74,25 +74,25 @@ gp_monitor_open(gp_monitor * mon)
 }
 
 int
-gp_monitor_close(gp_monitor * mon)
+gp_monitor_close(const gs_memory_t *mem, gp_monitor * mon)
 {
     return 0;
 }
 
 int
-gp_monitor_enter(gp_monitor * mon)
+gp_monitor_enter(const gs_memory_t *mem, gp_monitor * mon)
 {
     if (mon->dummy_ != 0)
-	return_error(gs_error_unknownerror);
+	return_error(mem, gs_error_unknownerror);
     mon->dummy_ = mon;
     return 0;
 }
 
 int
-gp_monitor_leave(gp_monitor * mon)
+gp_monitor_leave(const gs_memory_t *mem, gp_monitor * mon)
 {
     if (mon->dummy_ != mon)
-	return_error(gs_error_unknownerror);
+	return_error(mem, gs_error_unknownerror);
     mon->dummy_ = 0;
     return 0;
 }
@@ -100,7 +100,7 @@ gp_monitor_leave(gp_monitor * mon)
 /* Thread creation */
 
 int
-gp_create_thread(gp_thread_creation_callback_t proc, void *proc_data)
+gp_create_thread(const gs_memory_t *mem, gp_thread_creation_callback_t proc, void *proc_data)
 {
-    return_error(gs_error_unknownerror);
+    return_error(mem, gs_error_unknownerror);
 }

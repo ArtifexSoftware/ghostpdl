@@ -84,7 +84,7 @@ typedef struct gx_ht_cell_params_s {
 } gx_ht_cell_params_t;
 
 /* Compute the derived values from the defining values. */
-void gx_compute_cell_values(gx_ht_cell_params_t *);
+void gx_compute_cell_values(const gs_memory_t *mem, gx_ht_cell_params_t *);
 
 /*
  * The whitening order is represented by a pair of arrays.
@@ -178,7 +178,7 @@ typedef struct gx_ht_order_procs_s {
     /* Note that for 16-bit threshold values, */
     /* each value is 2 bytes in big-endian order (Adobe spec). */
 
-    int (*construct_order)(gx_ht_order *order, const byte *thresholds);
+    int (*construct_order)(const gs_memory_t *mem, gx_ht_order *order, const byte *thresholds);
 
     /* Return the (x,y) coordinate of an element of bit_data. */
 
@@ -316,7 +316,7 @@ extern_st(st_device_halftone);
 #define st_device_halftone_max_ptrs (st_ht_order_max_ptrs + 1)
 
 /* Complete a halftone order defined by a threshold array. */
-void gx_ht_complete_threshold_order(gx_ht_order *porder);
+void gx_ht_complete_threshold_order(const gs_memory_t *mem, gx_ht_order *porder);
 
 /* Release a gx_device_halftone by freeing its components. */
 /* (Don't free the gx_device_halftone itself.) */

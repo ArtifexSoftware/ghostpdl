@@ -65,22 +65,22 @@ z1_enumerate_glyph(gs_font * pfont, int *pindex, gs_glyph_space_t ignored,
 
 /* Extract pointers to internal structures. */
 int
-charstring_font_get_refs(const_os_ptr op, charstring_font_refs_t *pfr)
+charstring_font_get_refs(const gs_memory_t *mem, const_os_ptr op, charstring_font_refs_t *pfr)
 {
-    check_type(*op, t_dictionary);
+    check_type(mem, *op, t_dictionary);
     if (dict_find_string(op, "Private", &pfr->Private) <= 0 ||
 	!r_has_type(pfr->Private, t_dictionary)
 	)
-	return_error(e_invalidfont);
+	return_error(mem, e_invalidfont);
     make_empty_array(&pfr->no_subrs, 0);
     if (dict_find_string(pfr->Private, "OtherSubrs", &pfr->OtherSubrs) > 0) {
 	if (!r_is_array(pfr->OtherSubrs))
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
     } else
 	pfr->OtherSubrs = &pfr->no_subrs;
     if (dict_find_string(pfr->Private, "Subrs", &pfr->Subrs) > 0) {
 	if (!r_is_array(pfr->Subrs))
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
     } else
 	pfr->Subrs = &pfr->no_subrs;
     pfr->GlobalSubrs = &pfr->no_subrs;
@@ -89,66 +89,67 @@ charstring_font_get_refs(const_os_ptr op, charstring_font_refs_t *pfr)
 
 /* Get the parameters of a CharString-based font or a FDArray entry. */
 int
-charstring_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
+charstring_font_params(const gs_memory_t *mem, 
+		       const_os_ptr op, charstring_font_refs_t *pfr,
 		       gs_type1_data *pdata1)
 {
     const ref *pprivate = pfr->Private;
     int code;
 
     /* Get the rest of the information from the Private dictionary. */
-    if ((code = dict_int_param(pprivate, "lenIV", -1, 255, pdata1->lenIV,
+    if ((code = dict_int_param(mem, pprivate, "lenIV", -1, 255, pdata1->lenIV,
 			       &pdata1->lenIV)) < 0 ||
-	(code = dict_uint_param(pprivate, "subroutineNumberBias",
+	(code = dict_uint_param(mem, pprivate, "subroutineNumberBias",
 				0, max_uint, pdata1->subroutineNumberBias,
 				&pdata1->subroutineNumberBias)) < 0 ||
-	(code = dict_int_param(pprivate, "BlueFuzz", 0, 1999, 1,
+	(code = dict_int_param(mem, pprivate, "BlueFuzz", 0, 1999, 1,
 			       &pdata1->BlueFuzz)) < 0 ||
-	(code = dict_float_param(pprivate, "BlueScale", 0.039625,
+	(code = dict_float_param(mem, pprivate, "BlueScale", 0.039625,
 				 &pdata1->BlueScale)) < 0 ||
-	(code = dict_float_param(pprivate, "BlueShift", 7.0,
+	(code = dict_float_param(mem, pprivate, "BlueShift", 7.0,
 				 &pdata1->BlueShift)) < 0 ||
 	(code = pdata1->BlueValues.count =
-	 dict_float_array_param(pprivate, "BlueValues", max_BlueValues * 2,
+	 dict_float_array_param(mem, pprivate, "BlueValues", max_BlueValues * 2,
 				&pdata1->BlueValues.values[0], NULL)) < 0 ||
-	(code = dict_float_param(pprivate, "ExpansionFactor", 0.06,
+	(code = dict_float_param(mem, pprivate, "ExpansionFactor", 0.06,
 				 &pdata1->ExpansionFactor)) < 0 ||
 	(code = pdata1->FamilyBlues.count =
-	 dict_float_array_param(pprivate, "FamilyBlues", max_FamilyBlues * 2,
+	 dict_float_array_param(mem, pprivate, "FamilyBlues", max_FamilyBlues * 2,
 				&pdata1->FamilyBlues.values[0], NULL)) < 0 ||
 	(code = pdata1->FamilyOtherBlues.count =
-	 dict_float_array_param(pprivate,
+	 dict_float_array_param(mem, pprivate,
 				"FamilyOtherBlues", max_FamilyOtherBlues * 2,
 			    &pdata1->FamilyOtherBlues.values[0], NULL)) < 0 ||
-	(code = dict_bool_param(pprivate, "ForceBold", false,
+	(code = dict_bool_param(mem, pprivate, "ForceBold", false,
 				&pdata1->ForceBold)) < 0 ||
     /*
      * We've seen a few fonts with out-of-range LanguageGroup values;
      * if it weren't for this, the only legal values should be 0 or 1.
      */
-	(code = dict_int_param(pprivate, "LanguageGroup", min_int, max_int, 0,
+	(code = dict_int_param(mem, pprivate, "LanguageGroup", min_int, max_int, 0,
 			       &pdata1->LanguageGroup)) < 0 ||
 	(code = pdata1->OtherBlues.count =
-	 dict_float_array_param(pprivate, "OtherBlues", max_OtherBlues * 2,
+	 dict_float_array_param(mem, pprivate, "OtherBlues", max_OtherBlues * 2,
 				&pdata1->OtherBlues.values[0], NULL)) < 0 ||
-	(code = dict_bool_param(pprivate, "RndStemUp", true,
+	(code = dict_bool_param(mem, pprivate, "RndStemUp", true,
 				&pdata1->RndStemUp)) < 0 ||
 	(code = pdata1->StdHW.count =
-	 dict_float_array_check_param(pprivate, "StdHW", 1,
+	 dict_float_array_check_param(mem, pprivate, "StdHW", 1,
 				      &pdata1->StdHW.values[0], NULL,
 				      0, e_rangecheck)) < 0 ||
 	(code = pdata1->StdVW.count =
-	 dict_float_array_check_param(pprivate, "StdVW", 1,
+	 dict_float_array_check_param(mem, pprivate, "StdVW", 1,
 				      &pdata1->StdVW.values[0], NULL,
 				      0, e_rangecheck)) < 0 ||
 	(code = pdata1->StemSnapH.count =
-	 dict_float_array_param(pprivate, "StemSnapH", max_StemSnap,
+	 dict_float_array_param(mem, pprivate, "StemSnapH", max_StemSnap,
 				&pdata1->StemSnapH.values[0], NULL)) < 0 ||
 	(code = pdata1->StemSnapV.count =
-	 dict_float_array_param(pprivate, "StemSnapV", max_StemSnap,
+	 dict_float_array_param(mem, pprivate, "StemSnapV", max_StemSnap,
 				&pdata1->StemSnapV.values[0], NULL)) < 0 ||
     /* The WeightVector is in the font dictionary, not Private. */
 	(code = pdata1->WeightVector.count =
-	 dict_float_array_param(op, "WeightVector", max_WeightVector,
+	 dict_float_array_param(mem, op, "WeightVector", max_WeightVector,
 				pdata1->WeightVector.values, NULL)) < 0
 	)
 	return code;
@@ -214,7 +215,7 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
 		      font_type ftype, charstring_font_refs_t *pfr,
 		      gs_type1_data *pdata1, build_font_options_t options)
 {
-    int code = charstring_font_params(op, pfr, pdata1);
+    int code = charstring_font_params(imemory, op, pfr, pdata1);
     gs_font_type1 *pfont;
 
     if (code < 0)
@@ -236,7 +237,7 @@ buildfont1or4(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs * pbuild,
 	      font_type ftype, build_font_options_t options)
 {
     charstring_font_refs_t refs;
-    int code = charstring_font_get_refs(op, &refs);
+    int code = charstring_font_get_refs(imemory, op, &refs);
     gs_type1_data data1;
 
     if (code < 0)
@@ -271,7 +272,7 @@ zbuildfont4(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     build_proc_refs build;
-    int code = build_gs_font_procs(op, &build);
+    int code = build_gs_font_procs(imemory, op, &build);
 
     if (code < 0)
 	return code;

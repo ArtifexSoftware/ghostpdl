@@ -208,7 +208,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
     const char *setcolor;
 
     if (!gx_dc_is_pure(pdc))
-	return_error(gs_error_rangecheck);
+	return_error(vdev->memory, gs_error_rangecheck);
     {
 	stream *s = gdev_vector_stream(vdev);
 	gx_color_index color =
@@ -246,7 +246,7 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	    setcolor = ppscc->setgray;
 	    break;
 	default:		/* can't happen */
-	    return_error(gs_error_rangecheck);
+	    return_error(vdev->memory, gs_error_rangecheck);
 	}
 	if (setcolor)
 	    pprints1(s, " %s\n", setcolor);
@@ -278,7 +278,7 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 	    gs_free_object(mem, s, "psdf_begin_binary(stream)");
 	    gs_free_object(mem, ss, "psdf_begin_binary(stream_state)");
 	    gs_free_object(mem, buf, "psdf_begin_binary(buf)");
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	}
 	ss->template = &s_A85E_template;
 	s_init_filter(s, (stream_state *)ss, buf, BUF_SIZE, pdev->strm);
@@ -297,7 +297,7 @@ psdf_encode_binary(psdf_binary_writer * pbw, const stream_template * template,
 		   stream_state * ss)
 {
     return (s_add_filter(&pbw->strm, template, ss, pbw->memory) == 0 ?
-	    gs_note_error(gs_error_VMerror) : 0);
+	    gs_note_error(ss->memory, gs_error_VMerror) : 0);
 }
 
 /*
@@ -339,7 +339,7 @@ psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
 	jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
            &st_jpeg_compress_data, "zDCTE");
         if (jcdp == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	ss->data.compress = jcdp;
 	jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */
 	if ((code = gs_jpeg_create_compress(ss)) < 0)
@@ -383,7 +383,7 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
     int code;
 
     if (st == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     (*template->set_defaults) ((stream_state *) st);
     st->K = -1;
     st->Columns = w;
@@ -402,7 +402,7 @@ psdf_end_binary(psdf_binary_writer * pbw)
 {
     int status = s_close_filters(&pbw->strm, pbw->target);
 
-    return (status >= 0 ? 0 : gs_note_error(gs_error_ioerror));
+    return (status >= 0 ? 0 : gs_note_error(pbw->memory, gs_error_ioerror));
 }
 
 /* ---------------- Overprint, Get Bits ---------------- */
@@ -414,7 +414,7 @@ psdf_end_binary(psdf_binary_writer * pbw)
 int
 psdf_get_bits(gx_device * dev, int y, byte * data, byte ** actual_data)
 {
-    return_error(gs_error_unregistered);
+    return_error(dev->memory, gs_error_unregistered);
 }
 
 int
@@ -424,7 +424,7 @@ psdf_get_bits_rectangle(
     gs_get_bits_params_t *  params,
     gs_int_rect **          unread )
 {
-    return_error(gs_error_unregistered);
+    return_error(dev->memory, gs_error_unregistered);
 }
 
 /*

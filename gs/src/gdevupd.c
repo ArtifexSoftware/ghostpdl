@@ -647,7 +647,7 @@ typedef struct updscan_s { /* Single Scanline (1 Bit/Pixel) */
 #define UPD_VALPTR_MAX  32 /** Number of valbuf-Pointers */
 
 #define upd_proc_pxlget(name) uint32 name(upd_p upd)
-#define upd_proc_render(name) int name(upd_p upd)
+#define upd_proc_render(name) int name(const gs_memory_t *mem, upd_p upd)
 #define upd_proc_writer(name) int name(upd_p upd,FILE *out)
 
 struct upd_s { /* All upd-specific data */
@@ -770,14 +770,14 @@ private void            upd_open_render(   upd_device *udev);
 private void            upd_close_render(  upd_device *udev);
 
 private void            upd_open_fscomp(   upd_device *udev);
-private int             upd_fscomp(        upd_p upd);
+private int             upd_fscomp(const gs_memory_t *mem, upd_p upd);
 private void            upd_close_fscomp(  upd_device *udev);
 
 private void            upd_open_fscmyk(   upd_device *udev);
-private int             upd_fscmyk(        upd_p upd);
+private int             upd_fscmyk(const gs_memory_t *mem, upd_p upd);
 
 private void            upd_open_fscmy_k(  upd_device *udev);
-private int             upd_fscmy_k(       upd_p upd);
+private int             upd_fscmy_k(const gs_memory_t *mem,  upd_p upd);
 
 /**
 I hope that the formatting stuff can be kept simple and thus most
@@ -851,8 +851,8 @@ private int             upd_wrtescnm(      upd_p upd, FILE *out);
 /**
 Generalized Pixel Get & Read
 */
-private uint32 upd_pxlfwd(upd_p upd);
-private uint32 upd_pxlrev(upd_p upd);
+private uint32 upd_pxlfwd(const gs_memory_t *mem, upd_p upd);
+private uint32 upd_pxlrev(const gs_memory_t *mem, upd_p upd);
 #define upd_pxlget(UPD) (*UPD->pxlget)(UPD)
 
 private void *upd_cast(const void *);
@@ -1038,7 +1038,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
  */
    if(!upd || B_OK4GO != (upd->flags & (B_OK4GO | B_ERROR))) {
 #if UPD_MESSAGES & (UPD_M_ERROR | UPD_M_TOPCALLS)
-         errprintf("CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
+         errprintf(pdev->memory, "CALL-REJECTED upd_print_page(0x%05lx,0x%05lx)\n",
              (long) udev,(long) out);
 #endif
       return gs_error_undefined;
@@ -1080,7 +1080,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
    upd->yscnbuf   = 0; /* Next free scnbuf-Line */
 
 /* Rendering & Writing Setup, if available */
-   if(upd->start_render) (*upd->start_render)(upd);
+   if(upd->start_render) (*upd->start_render)(pdev->memory, upd);
    if(upd->start_writer) (*upd->start_writer)(upd,out);
 
 /* How many scanlines do we need ? */
@@ -1122,7 +1122,7 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
 
          }
 
-         if(0 > (*upd->render)(upd)) {
+         if(0 > (*upd->render)(udev->memory, upd)) {
 #if UPD_MESSAGES & UPD_M_WARNING
             errprintf("Rendering aborted with error, yscnbuf = %4d\n",
                upd->yscnbuf);
@@ -2972,7 +2972,7 @@ upd_open_map(upd_device *udev)
          imap = 0;
 
 #if      UPD_MESSAGES & UPD_M_ERROR
-            errprintf("upd_open_map: could not allocate code-arrays\n");
+            errprintf(udev->memory, "upd_open_map: could not allocate code-arrays\n");
 #        endif
 
       }
@@ -3341,7 +3341,7 @@ initial test checks it's integrity.
                (UPD_CMAP_MAX <= order[icomp])   ) {
                success = false;
 #if UPD_MESSAGES & UPD_M_WARNING
-                  errprintf(
+	       errprintf(udev->memory,
                    "upd_open_fscomp: %d is illegal component-index\n",
                    order[icomp]);
 #endif
@@ -3362,7 +3362,7 @@ If anything was ok. up to now, memory get's allocated.
          upd->valptr[icomp] = gs_malloc(1,sizeof(updcomp_t),"upd/fscomp");
          if(NULL == upd->valptr[icomp]) {
 #if UPD_MESSAGES & UPD_M_ERROR
-            errprintf(
+            errprintf(udev->memory,
                "upd_open_fscomp: could not allocate %d. updcomp\n",
                icomp);
 #endif
@@ -3383,7 +3383,7 @@ If anything was ok. up to now, memory get's allocated.
          memset(upd->valbuf,0,need*sizeof(upd->valbuf[0]));
       } else {
 #if UPD_MESSAGES & UPD_M_ERROR
-         errprintf(
+         errprintf(udev->memory,
             "upd_open_fscomp: could not allocate %u words for valbuf\n",need);
 #endif
          icomp = 0;
@@ -3449,21 +3449,21 @@ If anything was ok. up to now, memory get's allocated.
          comp->threshold = comp->spotsize / 2;
 
 #if UPD_MESSAGES & UPD_M_SETUP
-         errprintf(
+         errprintf(udev->memory,
              "Values for %d. Component after %d iterations\n",comp->cmap+1,i);
-         errprintf(
+         errprintf(udev->memory,
              "steps:     %10ld, Bits: %d\n",(long) comp->bitmsk,comp->bits);
-         errprintf(
+         errprintf(udev->memory,
              "xfer:      %10d Points, %s\n",
              upd->float_a[upd->cmap[comp->cmap].xfer].size,
              upd->cmap[comp->cmap].rise ? "rising" : "falling");
-         errprintf(
+         errprintf(udev->memory,
              "offset:    %10d 0x%08x\n",comp->offset,comp->offset);
-         errprintf(
+         errprintf(udev->memory,
              "scale:     %10d 0x%08x\n",comp->scale,comp->scale);
-         errprintf(
+         errprintf(udev->memory,
              "threshold: %10d 0x%08x\n",comp->threshold,comp->threshold);
-         errprintf(
+         errprintf(udev->memory,
              "spotsize:  %10d 0x%08x\n",comp->spotsize,comp->spotsize);
 #endif
       }
@@ -3518,10 +3518,11 @@ upd_close_fscomp(upd_device *udev)
          updcomp_p comp = upd->valptr[icomp];
          if(!comp) continue;
          if(!comp->spotsize) continue;
-         errprintf("%d. Component: %6.3f <= error <= %6.3f\n",
-             icomp+1,
-             (double) fs_emin[icomp] / (double) comp->spotsize,
-             (double) fs_emax[icomp] / (double) comp->spotsize);
+         errprintf(udev->memory, 
+		   "%d. Component: %6.3f <= error <= %6.3f\n",
+		   icomp+1,
+		   (double) fs_emin[icomp] / (double) comp->spotsize,
+		   (double) fs_emax[icomp] / (double) comp->spotsize);
       }
 
    }
@@ -3582,7 +3583,7 @@ upd_close_fscomp(upd_device *udev)
    }             /* Inc/Dec Bit */
 
 private int
-upd_fscomp(upd_p upd)
+upd_fscomp(const gs_memory_t *mem, upd_p upd)
 {
    const updscan_p  scan    = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
    const updcomp_p *comp    = (updcomp_p *) upd->valptr;
@@ -3621,11 +3622,11 @@ upd_fscomp(upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlfwd(upd);
+         upd_pxlfwd(mem, upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlrev(upd);
+      upd_pxlrev(mem, upd);
 
    } else {                       /* This one forward */
 
@@ -3641,11 +3642,11 @@ upd_fscomp(upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlrev(upd);
+         upd_pxlrev(mem, upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlfwd(upd);
+      upd_pxlfwd(mem, upd);
 
    }                              /* reverse or forward */
 /*
@@ -3791,7 +3792,7 @@ upd_open_fscmyk(upd_device *udev)
 /* ------------------------------------------------------------------- */
 
 private int
-upd_fscmyk(upd_p upd)
+upd_fscmyk(const gs_memory_t *mem, upd_p upd)
 {
    const updscan_p  scan   = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
    int32 *const     pixel  = upd->valbuf;
@@ -3979,7 +3980,7 @@ upd_open_fscmy_k(upd_device *udev)
 /* ------------------------------------------------------------------- */
 
 private int
-upd_fscmy_k(upd_p upd)
+upd_fscmy_k(const gs_memory_t *mem, upd_p upd)
 {
    const updscan_p  scan    = upd->scnbuf[upd->yscnbuf & upd->scnmsk];
    const updcomp_p *comp    = (updcomp_p *) upd->valptr;
@@ -4015,11 +4016,11 @@ upd_fscmy_k(upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlfwd(upd);
+         upd_pxlfwd(mem, upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlrev(upd);
+      upd_pxlrev(mem, upd);
 
    } else {                       /* This one forward */
 
@@ -4035,11 +4036,11 @@ upd_fscmy_k(upd_p upd)
       }
 
       if(!(upd->flags & B_FSWHITE)) {
-         upd_pxlrev(upd);
+         upd_pxlrev(mem, upd);
          while((0 < pwidth) && !upd_pxlget(upd)) pwidth--;
       }
 
-      upd_pxlfwd(upd);
+      upd_pxlfwd(mem, upd);
 
    }                              /* reverse or forward */
 /*
@@ -6932,7 +6933,7 @@ upd_open_wrtrtl(upd_device *udev)
 
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf("UNIPRINT-Coding error, wrrtl, state = %d\n",state);
+           errprintf(udev->memory, "UNIPRINT-Coding error, wrrtl, state = %d\n",state);
 #endif
            state = 0;
          break;
@@ -7252,7 +7253,7 @@ private upd_proc_pxlget(upd_pxlget32r); /* 32 Bit Reverse */
 /* Initialize Forward-Run */
 
 private uint32
-upd_pxlfwd(upd_p upd)
+upd_pxlfwd(const gs_memory_t *mem, upd_p upd)
 {
    if(!(upd->pxlptr = upd->gsscan)) {
 
@@ -7269,7 +7270,7 @@ upd_pxlfwd(upd_p upd)
          case 32: upd->pxlget = upd_pxlget32f; break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf("upd_pxlfwd: unsupported depth (%d)\n",
+           errprintf(mem, "upd_pxlfwd: unsupported depth (%d)\n",
               upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;
@@ -7434,7 +7435,7 @@ upd_pxlgetnix(upd_p upd)
 /* Initialize Reverse-Run */
 
 private uint32
-upd_pxlrev(upd_p upd)
+upd_pxlrev(const gs_memory_t *mem, upd_p upd)
 {
    const uint width = upd->pwidth < upd->gswidth ? upd->pwidth : upd->gswidth;
 
@@ -7485,7 +7486,7 @@ upd_pxlrev(upd_p upd)
             break;
          default:
 #if UPD_MESSAGES & UPD_M_ERROR
-           errprintf("upd_pxlrev: unsupported depth (%d)\n",
+           errprintf(mem, "upd_pxlrev: unsupported depth (%d)\n",
               upd->int_a[IA_COLOR_INFO].data[1]);
 #endif
            upd->pxlget = upd_pxlgetnix;

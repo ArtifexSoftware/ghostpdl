@@ -393,7 +393,8 @@ void gx_device_copy_params(gx_device *dev, const gx_device *target);
  * character in *pfmt, otherwise store 0 there.  Note that an empty name
  * is currently allowed.
  */
-int gx_parse_output_file_name(gs_parsed_file_name_t *pfn,
+int gx_parse_output_file_name(const gs_memory_t *mem,
+			      gs_parsed_file_name_t *pfn,
 			      const char **pfmt, const char *fname,
 			      uint len);
 

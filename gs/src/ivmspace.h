@@ -89,11 +89,11 @@ typedef enum {
 /* Check whether a store is allowed. */
 #define store_check_space(destspace,rpnew)\
   if ( r_space(rpnew) > (destspace) )\
-    return_error(e_invalidaccess)
+    return(e_invalidaccess)
 #define store_check_dest(rpdest,rpnew)\
   store_check_space(r_space(rpdest), rpnew)
 /* BACKWARD COMPATIBILITY (not used by any Ghostscript code per se) */
-#define check_store_space(rdest,rnewcont)\
-  store_check_dest(&(rdest),&(rnewcont))
-
+/* #define check_store_space(rdest,rnewcont)\
+ *  store_check_dest(&(rdest),&(rnewcont))
+ */
 #endif /* ivmspace_INCLUDED */

@@ -148,7 +148,7 @@ in_path(os_ptr oppath, i_ctx_t *i_ctx_p, gx_device * phdev)
 
     if (code < 0)
 	return code;
-    code = num_params(oppath, 2, uxy);
+    code = num_params(imemory, oppath, 2, uxy);
     if (code >= 0) {		/* Aperture is a single pixel. */
 	gs_point dxy;
 	gs_fixed_rect fr;
@@ -401,7 +401,7 @@ zupath(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     return make_upath(i_ctx_p, op, igs, igs->path, op->value.boolval);
 }
 int
@@ -432,7 +432,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 		    size += 1;
 		    continue;
 		default:
-		    return_error(e_unregistered);
+		    return_error(imemory, e_unregistered);
 	    }
 	}
     }
@@ -506,7 +506,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 		    opstr = "closepath";
 		    break;
 		default:
-		    return_error(e_unregistered);
+		    return_error(imemory, e_unregistered);
 	    }
 	    if ((code = name_enter_string(opstr, next)) < 0)
 		return code;
@@ -524,14 +524,14 @@ private int
 upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 {
     ref opcodes;
-    check_read(*oppath);
+    check_read(imemory, *oppath);
     gs_newpath(igs);
 /****** ROUND tx AND ty ******/
     if (!r_is_array(oppath))
-	return_error(e_typecheck);
+	return_error(imemory, e_typecheck);
     
     if ( r_size(oppath) == 2 &&
-	 array_get(oppath, 1, &opcodes) >= 0 &&
+	 array_get(imemory, oppath, 1, &opcodes) >= 0 &&
          r_has_type(&opcodes, t_string)
 	) {			/* 1st element is operands, 2nd is operators */
 	ref operands;
@@ -540,8 +540,8 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	const byte *opp;
 	uint ocount, i = 0;
 
-        array_get(oppath, 0, &operands);
-        code = num_array_format(&operands);
+        array_get(imemory, oppath, 0, &operands);
+        code = num_array_format(imemory, &operands);
 	if (code < 0)
 	    return code;
 	format = code;
@@ -553,15 +553,15 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	    if (opx > UPATH_REPEAT)
 		repcount = opx - UPATH_REPEAT;
 	    else if (opx > UPATH_MAX_OP)
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	    else {		/* operator */
 		do {
 		    os_ptr op = osp;
 		    byte opargs = up_nargs[opx];
 
 		    while (opargs--) {
-			push(1);
-			code = num_array_get(&operands, format, i++, op);
+			push(imemory, 1);
+			code = num_array_get(imemory, &operands, format, i++, op);
 			switch (code) {
 			    case t_integer:
 				r_set_type_attrs(op, t_integer, 0);
@@ -570,7 +570,7 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 				r_set_type_attrs(op, t_real, 0);
 				break;
 			    default:
-				return_error(e_typecheck);
+				return_error(imemory, e_typecheck);
 			}
 		    }
 		    code = (*up_ops[opx])(i_ctx_p);
@@ -594,43 +594,43 @@ upath_append(os_ptr oppath, i_ctx_t *i_ctx_p)
 	    ref *defp;
 	    os_ptr op = osp;
 
-	    array_get(arp, index, &rup);
+	    array_get(imemory, arp, index, &rup);
 	    switch (r_type(&rup)) {
 		case t_integer:
 		case t_real:
 		    argcount++;
-		    push(1);
+		    push(imemory, 1);
 		    *op = rup;
 		    break;
 		case t_name:
 		    if (!r_has_attr(&rup, a_executable))
-			return_error(e_typecheck);
+			return_error(imemory, e_typecheck);
 		    if (dict_find(systemdict, &rup, &defp) <= 0)
-			return_error(e_undefined);
+			return_error(imemory, e_undefined);
 		    if (r_btype(defp) != t_operator)
-			return_error(e_typecheck);
+			return_error(imemory, e_typecheck);
 		    goto xop;
 		case t_operator:
 		    defp = &rup;
 		  xop:if (!r_has_attr(defp, a_executable))
-			return_error(e_typecheck);
+			return_error(imemory, e_typecheck);
 		    oproc = real_opproc(defp);
 		    for (opx = 0; opx <= UPATH_MAX_OP; opx++)
 			if (oproc == up_ops[opx])
 			    break;
 		    if (opx > UPATH_MAX_OP || argcount != up_nargs[opx])
-			return_error(e_typecheck);
+			return_error(imemory, e_typecheck);
 		    code = (*oproc)(i_ctx_p);
 		    if (code < 0)
 			return code;
 		    argcount = 0;
 		    break;
 		default:
-		    return_error(e_typecheck);
+		    return_error(imemory, e_typecheck);
 	    }
 	}
 	if (argcount)
-	    return_error(e_typecheck);	/* leftover args */
+	    return_error(imemory, e_typecheck);	/* leftover args */
     }
     return 0;
 }
@@ -644,7 +644,7 @@ upath_stroke(i_ctx_t *i_ctx_p, gs_matrix *pmat)
     int code, npop;
     gs_matrix mat;
 
-    if ((code = read_matrix(op, &mat)) >= 0) {
+    if ((code = read_matrix(imemory, op, &mat)) >= 0) {
 	if ((code = upath_append(op - 1, i_ctx_p)) >= 0) {
 	    if (pmat)
 		*pmat = mat;

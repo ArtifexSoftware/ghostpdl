@@ -81,6 +81,6 @@ hit_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
 		   gx_color_index color)
 {
     if (w > 0 && h > 0)
-	return_error(gs_error_hit_detected);
+	return_error(dev->memory, gs_error_hit_detected);
     return 0;
 }

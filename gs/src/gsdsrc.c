@@ -94,12 +94,12 @@ data_source_access_stream(const gs_data_source_t * psrc, ulong start,
 	int code = sseek(s, start);
 
 	if (code < 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(s->memory, gs_error_rangecheck);
 	code = sgets(s, buf, length, &nread);
 	if (code < 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(s->memory, gs_error_rangecheck);
 	if (nread != length)
-	    return_error(gs_error_rangecheck);
+	    return_error(s->memory, gs_error_rangecheck);
 	if (ptr)
 	    *ptr = buf;
     }

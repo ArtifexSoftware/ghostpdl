@@ -72,7 +72,7 @@ typedef struct gs_function_info_s {
 
 /* Evaluate a function. */
 #define FN_EVALUATE_PROC(proc)\
-  int proc(const gs_function_t * pfn, const float *in, float *out)
+  int proc(const gs_memory_t *mem, const gs_function_t * pfn, const float *in, float *out)
 typedef FN_EVALUATE_PROC((*fn_evaluate_proc_t));
 
 /* Test whether a function is monotonic. */
@@ -177,8 +177,8 @@ int alloc_function_array(uint count, gs_function_t *** pFunctions,
 			 gs_memory_t *mem);
 
 /* Evaluate a function. */
-#define gs_function_evaluate(pfn, in, out)\
-  ((pfn)->head.procs.evaluate)(pfn, in, out)
+#define gs_function_evaluate(mem, pfn, in, out)\
+  ((pfn)->head.procs.evaluate)(mem, pfn, in, out)
 
 /*
  * Test whether a function is monotonic on a given (closed) interval.  If

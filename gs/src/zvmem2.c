@@ -33,7 +33,7 @@ private int
 zsetglobal(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     ialloc_set_space(idmemory,
 		     (op->value.boolval ? avm_global : avm_local));
     pop(1);
@@ -46,7 +46,7 @@ zcurrentglobal(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, ialloc_space(idmemory) != avm_local);
     return 0;
 }
@@ -57,7 +57,7 @@ zgcheck(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(1);
+    check_op(imemory, 1);
     make_bool(op, (r_is_local(op) ? false : true));
     return 0;
 }
@@ -75,7 +75,7 @@ int
 set_vm_threshold(i_ctx_t *i_ctx_p, long val)
 {
     if (val < -1)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     else if (val == -1)
 	val = (gs_debug_c('.') ? DEFAULT_VM_THRESHOLD_SMALL :
 	       DEFAULT_VM_THRESHOLD_LARGE);
@@ -97,7 +97,7 @@ set_vm_reclaim(i_ctx_t *i_ctx_p, long val)
 	gs_memory_set_vm_reclaim(idmemory->space_local, (val == 0));
 	return 0;
     } else
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 }
 
 /*
@@ -111,13 +111,13 @@ zvmreclaim(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     if (op->value.intval == 1 || op->value.intval == 2) {
 	/* Force the interpreter to store its state and exit. */
 	/* The interpreter's caller will do the actual GC. */
-	return_error(e_VMreclaim);
+	return_error(imemory, e_VMreclaim);
     }
-    return_error(e_rangecheck);
+    return_error(imemory, e_rangecheck);
 }
 
 /* ------ Initialization procedure ------ */

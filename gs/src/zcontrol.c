@@ -26,7 +26,7 @@
 private int no_cleanup(i_ctx_t *);
 private uint count_exec_stack(i_ctx_t *, bool);
 private uint count_to_stopped(i_ctx_t *, long);
-private int unmatched_exit(os_ptr, op_proc_t);
+private int unmatched_exit(const gs_memory_t *mem, os_ptr, op_proc_t);
 
 /* See the comment in opdef.h for an invariant which allows */
 /* more efficient implementation of for, loop, and repeat. */
@@ -41,17 +41,17 @@ zcond(i_ctx_t *i_ctx_p)
 
     /* Push the array on the e-stack and call the continuation. */
     if (!r_is_array(op))
-	return_op_typecheck(op);
-    check_execute(*op);
+	return_op_typecheck(imemory, op);
+    check_execute(imemory, *op);
     if ((r_size(op) & 1) != 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     if (r_size(op) == 0)
 	return zpop(i_ctx_p);
     check_estack(3);
     esp = ep += 3;
     ref_assign(ep - 2, op);	/* the cond body */
     make_op_estack(ep - 1, cond_continue);
-    array_get(op, 0L, ep);
+    array_get(imemory, op, 0L, ep);
     esfile_check_cache();
     pop(1);
     return o_push_estack;
@@ -67,9 +67,9 @@ cond_continue(i_ctx_t *i_ctx_p)
     /* the cond body.  The top element of the o-stack should be */
     /* the (boolean) result of the test that is the first element */
     /* of the tail. */
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     if (op->value.boolval) {	/* true */
-	array_get(ep, 1L, ep);
+	array_get(imemory, ep, 1L, ep);
 	esfile_check_cache();
 	code = o_pop_estack;
     } else if (r_size(ep) > 2) {	/* false */
@@ -80,7 +80,7 @@ cond_continue(i_ctx_t *i_ctx_p)
 	elts = packed_next(elts);
 	elts = packed_next(elts);
 	ep->value.packed = elts;
-	array_get(ep, 0L, ep + 2);
+	array_get(imemory, ep, 0L, ep + 2);
 	make_op_estack(ep + 1, cond_continue);
 	esp = ep + 2;
 	esfile_check_cache();
@@ -99,7 +99,7 @@ zexec(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(1);
+    check_op(imemory, 1);
     if (!r_has_attr(op, a_executable))
 	return 0;		/* literal object just gets pushed back */
     check_estack(1);
@@ -118,9 +118,9 @@ zexecn(i_ctx_t *i_ctx_p)
     uint n, i;
     es_ptr esp_orig;
 
-    check_int_leu(*op, max_uint - 1);
+    check_int_leu(imemory, *op, max_uint - 1);
     n = (uint) op->value.intval;
-    check_op(n + 1);
+    check_op(imemory, n + 1);
     check_estack(n);
     esp_orig = esp;
     for (i = 0; i < n; ++i) {
@@ -132,7 +132,7 @@ zexecn(i_ctx_t *i_ctx_p)
 		r_has_attr(rp, a_executable)
 		) {
 		esp = esp_orig;
-		return_error(e_invalidaccess);
+		return_error(imemory, e_invalidaccess);
 	    }
 	}
 	/* Executable nulls have a special meaning on the e-stack, */
@@ -155,7 +155,7 @@ zsuperexec(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr ep;
 
-    check_op(1);
+    check_op(imemory, 1);
     if (!r_has_attr(op, a_executable))
 	return 0;		/* literal object just gets pushed back */
     check_estack(2);
@@ -190,9 +190,9 @@ zrunandhide(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr ep;
 
-    check_op(2);
+    check_op(imemory, 2);
     if (!r_is_array(op - 1))
-	return_op_typecheck(op);
+	return_op_typecheck(imemory, op);
     if (!r_has_attr(op, a_executable))
 	return 0;		/* literal object just gets pushed back */
     check_estack(5);
@@ -215,7 +215,7 @@ runandhide_restore_hidden(i_ctx_t *i_ctx_p, ref *obj, ref *attrs)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     /* restore the hidden_object and its type_attrs */
     ref_assign(op, obj);
     r_clear_attrs(op, a_all);
@@ -252,8 +252,8 @@ zif(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(op[-1], t_boolean);
-    check_proc(*op);
+    check_type(imemory, op[-1], t_boolean);
+    check_proc(imemory, *op);
     if (op[-1].value.boolval) {
 	check_estack(1);
 	++esp;
@@ -270,9 +270,9 @@ zifelse(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(op[-2], t_boolean);
-    check_proc(op[-1]);
-    check_proc(*op);
+    check_type(imemory, op[-2], t_boolean);
+    check_proc(imemory, op[-1]);
+    check_proc(imemory, *op);
     check_estack(1);
     ++esp;
     if (op[-2].value.boolval) {
@@ -298,7 +298,7 @@ zfor(i_ctx_t *i_ctx_p)
 
     check_estack(7);
     ep = esp + 6;
-    check_proc(*op);
+    check_proc(imemory, *op);
     /* Push a mark, the control variable set to the initial value, */
     /* the increment, the limit, and the procedure, */
     /* and invoke the continuation operator. */
@@ -315,7 +315,7 @@ zfor(i_ctx_t *i_ctx_p)
 		make_int(ep - 2, (long)op[-1].value.realval);
 		break;
 	    default:
-		return_op_typecheck(op - 1);
+		return_op_typecheck(imemory, op - 1);
 	}
 	if (ep[-3].value.intval >= 0)
 	    make_op_estack(ep, for_pos_int_continue);
@@ -325,7 +325,7 @@ zfor(i_ctx_t *i_ctx_p)
 	float params[3];
 	int code;
 
-	if ((code = float_params(op - 1, 3, params)) < 0)
+	if ((code = float_params(imemory, op - 1, 3, params)) < 0)
 	    return code;
 	make_real(ep - 4, params[0]);
 	make_real(ep - 3, params[1]);
@@ -354,7 +354,7 @@ for_pos_int_continue(i_ctx_t *i_ctx_p)
 	esp -= 5;		/* pop everything */
 	return o_pop_estack;
     }
-    push(1);
+    push(imemory, 1);
     make_int(op, var);
     ep[-3].value.intval = var + ep[-2].value.intval;
     ref_assign_inline(ep + 2, ep);	/* saved proc */
@@ -373,7 +373,7 @@ for_neg_int_continue(i_ctx_t *i_ctx_p)
 	esp -= 5;		/* pop everything */
 	return o_pop_estack;
     }
-    push(1);
+    push(imemory, 1);
     make_int(op, var);
     ep[-3].value.intval = var + ep[-2].value.intval;
     ref_assign(ep + 2, ep);	/* saved proc */
@@ -395,7 +395,7 @@ for_real_continue(i_ctx_t *i_ctx_p)
 	esp -= 5;		/* pop everything */
 	return o_pop_estack;
     }
-    push(1);
+    push(imemory, 1);
     ref_assign(op, ep - 3);
     ep[-3].value.realval = var + incr;
     esp = ep + 2;
@@ -419,10 +419,10 @@ zfor_samples(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr ep;
 
-    check_type(op[-3], t_real);
-    check_type(op[-2], t_integer);
-    check_type(op[-1], t_real);
-    check_proc(*op);
+    check_type(imemory, op[-3], t_real);
+    check_type(imemory, op[-2], t_integer);
+    check_type(imemory, op[-1], t_real);
+    check_proc(imemory, *op);
     check_estack(8);
     ep = esp + 7;
     make_mark_estack(ep - 6, es_for, no_cleanup);
@@ -449,7 +449,7 @@ for_samples_continue(i_ctx_t *i_ctx_p)
 	esp -= 6;		/* pop everything */
 	return o_pop_estack;
     }
-    push(1);
+    push(imemory, 1);
     make_real(op, ((n - var) * a + var * b) / n);
     ep[-4].value.intval = var + 1;
     ref_assign_inline(ep + 2, ep);	/* saved proc */
@@ -463,10 +463,10 @@ private int
 zrepeat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    check_type(op[-1], t_integer);
-    check_proc(*op);
+    check_type(imemory, op[-1], t_integer);
+    check_proc(imemory, *op);
     if (op[-1].value.intval < 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     check_estack(5);
     /* Push a mark, the count, and the procedure, and invoke */
     /* the continuation operator. */
@@ -500,7 +500,7 @@ zloop(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_proc(*op);
+    check_proc(imemory, *op);
     check_estack(4);
     /* Push a mark and the procedure, and invoke */
     /* the continuation operator. */
@@ -542,13 +542,13 @@ zexit(i_ctx_t *i_ctx_p)
 			pop_estack(i_ctx_p, scanned + (used - count + 1));
 			return o_pop_estack;
 		    case es_stopped:
-			return_error(e_invalidexit);	/* not a loop */
+			return_error(imemory, e_invalidexit);	/* not a loop */
 		}
 	scanned += used;
     } while (ref_stack_enum_next(&rsenum));
     /* No mark, quit.  (per Adobe documentation) */
-    push(2);
-    return unmatched_exit(op, zexit);
+    push(imemory, 2);
+    return unmatched_exit(imemory, op, zexit);
 }
 
 /*
@@ -566,7 +566,7 @@ stopped_push(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     *op = esp[-1];
     esp -= 3;
     return o_pop_estack;
@@ -588,16 +588,16 @@ zstop(i_ctx_t *i_ctx_p)
 	 * any new items from the o-stack.  Wait to push the 'true'
 	 * until we have run all the unwind procedures.
 	 */
-	check_ostack(2);
+	check_ostack(imemory, 2);
 	pop_estack(i_ctx_p, count);
 	op = osp;
-	push(1);
+	push(imemory, 1);
 	make_true(op);
 	return o_pop_estack;
     }
     /* No mark, quit.  (per Adobe documentation) */
-    push(2);
-    return unmatched_exit(op, zstop);
+    push(imemory, 2);
+    return unmatched_exit(imemory, op, zstop);
 }
 
 /* <result> <mask> .stop - */
@@ -607,7 +607,7 @@ zzstop(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint count;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     count = count_to_stopped(i_ctx_p, op->value.intval);
     if (count) {
 	/*
@@ -617,17 +617,17 @@ zzstop(i_ctx_t *i_ctx_p)
 	 */
 	ref save_result;
 
-	check_op(2);
+	check_op(imemory, 2);
 	save_result = op[-1];
 	pop(2);
 	pop_estack(i_ctx_p, count);
 	op = osp;
-	push(1);
+	push(imemory, 1);
 	*op = save_result;
 	return o_pop_estack;
     }
     /* No mark, quit.  (per Adobe documentation) */
-    return unmatched_exit(op, zzstop);
+    return unmatched_exit(imemory, op, zzstop);
 }
 
 /* <obj> stopped <stopped> */
@@ -638,7 +638,7 @@ private int
 zstopped(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    check_op(1);
+    check_op(imemory, 1);
     /* Mark the execution stack, and push the default result */
     /* in case control returns normally. */
     check_estack(5);
@@ -659,8 +659,8 @@ private int
 zzstopped(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    check_type(*op, t_integer);
-    check_op(3);
+    check_type(imemory, *op, t_integer);
+    check_op(imemory, 3);
     /* Mark the execution stack, and push the default result */
     /* in case control returns normally. */
     check_estack(5);
@@ -682,10 +682,10 @@ zinstopped(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     uint count;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     count = count_to_stopped(i_ctx_p, op->value.intval);
     if (count) {
-	push(1);
+	push(imemory, 1);
 	op[-1] = *ref_stack_index(&e_stack, count - 2);		/* default result */
 	make_true(op);
     } else
@@ -701,7 +701,7 @@ zcountexecstack(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, count_exec_stack(i_ctx_p, false));
     return 0;
 }
@@ -710,7 +710,7 @@ zcountexecstack1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     make_int(op, count_exec_stack(i_ctx_p, op->value.boolval));
     return 0;
 }
@@ -734,11 +734,11 @@ push_execstack(i_ctx_t *i_ctx_p, os_ptr op1, bool include_marks,
      */
     uint depth;
 
-    check_write_type(*op1, t_array);
+    check_write_type(imemory, *op1, t_array);
     size = r_size(op1);
     depth = count_exec_stack(i_ctx_p, include_marks);
     if (depth > size)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     {
 	int code = ref_stack_store_check(&e_stack, op1, size, 0);
 
@@ -762,7 +762,7 @@ zexecstack2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     return push_execstack(i_ctx_p, op - 1, op->value.boolval, execstack2_continue);
 }
 /* Continuation operator to do the actual transfer. */
@@ -844,9 +844,9 @@ zquit(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_op(2);
-    check_type(*op, t_integer);
-    return_error(e_Quit);	/* Interpreter will do the exit */
+    check_op(imemory, 2);
+    check_type(imemory, *op, t_integer);
+    return_error(imemory, e_Quit);	/* Interpreter will do the exit */
 }
 
 /* - currentfile <file> */
@@ -857,7 +857,7 @@ zcurrentfile(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     ref *fp;
 
-    push(1);
+    push(imemory, 1);
     /* Check the cache first */
     if (esfile != 0) {
 #ifdef DEBUG
@@ -865,7 +865,8 @@ zcurrentfile(i_ctx_t *i_ctx_p)
 	ref *efp = zget_current_file(i_ctx_p);
 
 	if (esfile != efp) {
-	    lprintf2("currentfile: esfile=0x%lx, efp=0x%lx\n",
+	    lprintf2((const gs_memory_t *)&i_ctx_p->memory, 
+		     "currentfile: esfile=0x%lx, efp=0x%lx\n",
 		     (ulong) esfile, (ulong) efp);
 	    ref_assign(op, efp);
 	} else
@@ -1038,9 +1039,9 @@ pop_estack(i_ctx_t *i_ctx_p, uint count)
  * ensured two free slots on the top of the o-stack.
  */
 private int
-unmatched_exit(os_ptr op, op_proc_t opproc)
+unmatched_exit(const gs_memory_t *mem, os_ptr op, op_proc_t opproc)
 {
     make_oper(op - 1, 0, opproc);
     make_int(op, e_invalidexit);
-    return_error(e_Quit);
+    return_error(mem, e_Quit);
 }

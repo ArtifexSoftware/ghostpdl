@@ -247,9 +247,9 @@ sym:	fmp = find_fontmap(fmp, fname, len);
     xxf->My = (My ? -1 : 1);
     xxf->angle = angle;
     if (xdev->logXFonts) {
-	dprintf3("Using %s\n  for %s at %g pixels.\n", x11fontname,
+	dprintf3(xdev->memory, "Using %s\n  for %s at %g pixels.\n", x11fontname,
 		 fmp->ps_name, height);
-	dflush();
+	dflush(xdev->memory);
     }
     return (gx_xfont *) xxf;
 }

@@ -90,7 +90,8 @@ gx_restrict01_paint_4(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* Null reference count adjustment procedure. */
 void
-gx_no_adjust_color_count(const gs_client_color * pcc,
+gx_no_adjust_color_count(const gs_memory_t *mem, 
+			 const gs_client_color * pcc,
 			 const gs_color_space * pcs, int delta)
 {
 }
@@ -105,7 +106,7 @@ gs_setgray(gs_state * pgs, floatp gray)
     gs_color_space      cs;
     int                 code;
 
-    gs_cspace_init_DeviceGray(&cs);
+    gs_cspace_init_DeviceGray(pgs->memory, &cs);
     if ((code = gs_setcolorspace(pgs, &cs)) >= 0) {
         gs_client_color *   pcc = pgs->ccolor;
 
@@ -124,7 +125,7 @@ gs_setrgbcolor(gs_state * pgs, floatp r, floatp g, floatp b)
     gs_color_space      cs;
     int                 code;
 
-    gs_cspace_init_DeviceRGB(&cs);
+    gs_cspace_init_DeviceRGB(pgs->memory, &cs);
     if ((code = gs_setcolorspace(pgs, &cs)) >= 0) {
        gs_client_color *    pcc = pgs->ccolor;
 
@@ -144,7 +145,7 @@ int
 gs_setnullcolor(gs_state * pgs)
 {
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+	return_error(pgs->memory, gs_error_undefined);
     gs_setgray(pgs, 0.0);	/* set color space to something harmless */
     color_set_null(pgs->dev_color);
     return 0;
@@ -167,13 +168,13 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
      * of the non-default transfer maps, because
      * if any of them get freed, the rc_unshare can't fail.
      */
-    rc_decrement(ptran->red, "gs_settransfer");
-    rc_decrement(ptran->green, "gs_settransfer");
-    rc_decrement(ptran->blue, "gs_settransfer");
+    rc_decrement(pgs->memory, ptran->red, "gs_settransfer");
+    rc_decrement(pgs->memory, ptran->green, "gs_settransfer");
+    rc_decrement(pgs->memory, ptran->blue, "gs_settransfer");
     rc_unshare_struct(ptran->gray, gx_transfer_map, &st_transfer_map,
 		      pgs->memory, goto fail, "gs_settransfer");
     ptran->gray->proc = tproc;
-    ptran->gray->id = gs_next_ids(1);
+    ptran->gray->id = gs_next_ids(pgs->memory, 1);
     ptran->red = 0;
     ptran->green = 0;
     ptran->blue = 0;
@@ -184,11 +185,11 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
     }
     return 0;
   fail:
-    rc_increment(ptran->red);
-    rc_increment(ptran->green);
-    rc_increment(ptran->blue);
-    rc_increment(ptran->gray);
-    return_error(gs_error_VMerror);
+    rc_increment(pgs->memory, ptran->red);
+    rc_increment(pgs->memory, ptran->green);
+    rc_increment(pgs->memory, ptran->blue);
+    rc_increment(pgs->memory, ptran->gray);
+    return_error(pgs->memory, gs_error_VMerror);
 }
 
 /* currenttransfer */
@@ -208,7 +209,7 @@ gx_set_device_color_1(gs_state * pgs)
 
     gs_setoverprint(pgs, false);
     gs_setoverprintmode(pgs, 0);
-    gs_cspace_init_DeviceGray(&cs);
+    gs_cspace_init_DeviceGray(pgs->memory, &cs);
     gs_setcolorspace(pgs, &cs);
     color_set_pure(pgs->dev_color, 1);
     pgs->log_op = lop_default;

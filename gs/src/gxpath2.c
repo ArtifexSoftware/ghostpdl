@@ -29,7 +29,7 @@ int
 gx_path_current_point(const gx_path * ppath, gs_fixed_point * ppt)
 {
     if (!path_position_valid(ppath))
-	return_error(gs_error_nocurrentpoint);
+	return_error(ppath->memory, gs_error_nocurrentpoint);
     /* Copying the coordinates individually */
     /* is much faster on a PC, and almost as fast on other machines.... */
     ppt->x = ppath->position.x, ppt->y = ppath->position.y;
@@ -43,7 +43,7 @@ gx_path_subpath_start_point(const gx_path * ppath, gs_fixed_point * ppt)
     const subpath *psub = ppath->current_subpath;
 
     if (!psub)
-	return_error(gs_error_nocurrentpoint);
+	return_error(ppath->memory, gs_error_nocurrentpoint);
     *ppt = psub->pt;
     return 0;
 }
@@ -389,7 +389,7 @@ gx_path_copy_reversed(const gx_path * ppath_old, gx_path * ppath)
 					     prev->pt.y);
 		    break;
 		default:	/* not possible */
-		    return_error(gs_error_Fatal);
+		    return_error(ppath->memory, gs_error_Fatal);
 	    }
 	} while (code >= 0);
 	return code;		/* only reached if code < 0 */
@@ -478,8 +478,8 @@ gx_path_enum_next(gs_path_enum * penum, gs_fixed_point ppts[3])
 	    return gs_pe_curveto;
 #undef pcseg
 	default:
-	    lprintf1("bad type %x in gx_path_enum_next!\n", pseg->type);
-	    return_error(gs_error_Fatal);
+	    lprintf1(penum->path->memory, "bad type %x in gx_path_enum_next!\n", pseg->type);
+	    return_error(penum->path->memory, gs_error_Fatal);
     }
 }
 

@@ -67,20 +67,21 @@ LOOKUP_ENTRY(cie_cached_value vin, const gx_cie_vector_cache *pcache)
 #endif
 
 /* Forward references */
-private void cie_lookup_mult3(cie_cached_vector3 *,
+private void cie_lookup_mult3(const gs_memory_t *mem, 
+			      cie_cached_vector3 *,
 			      const gx_cie_vector_cache3_t *);
 
 #ifdef DEBUG
 private void
-cie_lookup_map3(cie_cached_vector3 * pvec,
+cie_lookup_map3(const gs_memory_t *mem, cie_cached_vector3 * pvec,
 		const gx_cie_vector_cache3_t * pc, const char *cname)
 {
-    if_debug5('c', "[c]lookup %s 0x%lx [%g %g %g]\n",
+    if_debug5(mem, 'c', "[c]lookup %s 0x%lx [%g %g %g]\n",
 	      (const char *)cname, (ulong) pc,
 	      cie_cached2float(pvec->u), cie_cached2float(pvec->v),
 	      cie_cached2float(pvec->w));
-    cie_lookup_mult3(pvec, pc);
-    if_debug3('c', "        =[%g %g %g]\n",
+    cie_lookup_mult3(mem, pvec, pc);
+    if_debug3(mem, 'c', "        =[%g %g %g]\n",
 	      cie_cached2float(pvec->u), cie_cached2float(pvec->v),
 	      cie_cached2float(pvec->w));
 }
@@ -99,7 +100,7 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     frac abc[3];
     cie_cached_vector3 vec3;
 
-    if_debug4('c', "[c]concretize DEFG [%g %g %g %g]\n",
+    if_debug4(pis->memory, 'c', "[c]concretize DEFG [%g %g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2], pc->paint.values[3]);
     CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
@@ -141,7 +142,7 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
     /* Apply DecodeABC and MatrixABC. */
     if (!pis->cie_joint_caches->skipDecodeABC)
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
+	cie_lookup_map3(pis->memory, &vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
@@ -158,7 +159,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     frac abc[3];
     cie_cached_vector3 vec3;
 
-    if_debug3('c', "[c]concretize DEF [%g %g %g]\n",
+    if_debug3(pis->memory, 'c', "[c]concretize DEF [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
     CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
@@ -195,7 +196,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
     /* Apply DecodeABC and MatrixABC. */
     if (!pis->cie_joint_caches->skipDecodeABC)
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
+	cie_lookup_map3(pis->memory, &vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
@@ -213,7 +214,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     frac conc[4];
     cie_cached_vector3 vec3;
 
-    if_debug3('c', "[c]remap CIEABC [%g %g %g]\n",
+    if_debug3(pis->memory, 'c', "[c]remap CIEABC [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
     CIE_CHECK_RENDERING(pcs, conc, pis, goto map3);
@@ -225,24 +226,24 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC) {
 	const gs_cie_abc *pcie = pcs->params.abc;
 
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
+	cie_lookup_map3(pis->memory, &vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     }
     switch (GX_CIE_REMAP_FINISH(vec3 /* LMN */, conc, pis, pcs)) {
 	case 4:
-	    if_debug4('c', "[c]=CMYK [%g %g %g %g]\n",
+	    if_debug4(pis->memory, 'c', "[c]=CMYK [%g %g %g %g]\n",
 		      frac2float(conc[0]), frac2float(conc[1]),
 		      frac2float(conc[2]), frac2float(conc[3]));
 	    gx_remap_concrete_cmyk(conc[0], conc[1], conc[2], conc[3],
 				   pdc, pis, dev, select);
 	    return 0;
 	default:	/* Can't happen. */
-	    return_error(gs_error_unknownerror);
+	    return_error(pis->memory, gs_error_unknownerror);
 	case 3:
 	    ;
     }
 map3:
-    if_debug3('c', "[c]=RGB [%g %g %g]\n",
+    if_debug3(pis->memory, 'c', "[c]=RGB [%g %g %g]\n",
 	      frac2float(conc[0]), frac2float(conc[1]),
 	      frac2float(conc[2]));
     gx_remap_concrete_rgb(conc[0], conc[1], conc[2], pdc, pis,
@@ -256,7 +257,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     const gs_cie_abc *pcie = pcs->params.abc;
     cie_cached_vector3 vec3;
 
-    if_debug3('c', "[c]concretize CIEABC [%g %g %g]\n",
+    if_debug3(pis->memory, 'c', "[c]concretize CIEABC [%g %g %g]\n",
 	      pc->paint.values[0], pc->paint.values[1],
 	      pc->paint.values[2]);
     CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
@@ -265,7 +266,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     vec3.v = float2cie_cached(pc->paint.values[1]);
     vec3.w = float2cie_cached(pc->paint.values[2]);
     if (!pis->cie_joint_caches->skipDecodeABC)
-	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
+	cie_lookup_map3(pis->memory, &vec3 /* ABC => LMN */, &pcie->caches.DecodeABC,
 			"Decode/MatrixABC");
     GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
@@ -280,7 +281,7 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
     cie_cached_value a = float2cie_cached(pc->paint.values[0]);
     cie_cached_vector3 vlmn;
 
-    if_debug1('c', "[c]concretize CIEA %g\n", pc->paint.values[0]);
+    if_debug1(pis->memory, 'c', "[c]concretize CIEA %g\n", pc->paint.values[0]);
     CIE_CHECK_RENDERING(pcs, pconc, pis, return 0);
 
     /* Apply DecodeA and MatrixA. */
@@ -316,17 +317,17 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 
     /* Apply DecodeLMN, MatrixLMN(decode), and MatrixPQR. */
     if (!pjc->skipDecodeLMN)
-	cie_lookup_map3(&vec3 /* LMN => PQR */, &pjc->DecodeLMN,
+	cie_lookup_map3(pis->memory, &vec3 /* LMN => PQR */, &pjc->DecodeLMN,
 			"Decode/MatrixLMN+MatrixPQR");
 
     /* Apply TransformPQR, MatrixPQR', and MatrixLMN(encode). */
     if (!pjc->skipPQR)
-	cie_lookup_map3(&vec3 /* PQR => LMN */, &pjc->TransformPQR,
+	cie_lookup_map3(pis->memory, &vec3 /* PQR => LMN */, &pjc->TransformPQR,
 			"Transform/Matrix'PQR+MatrixLMN");
 
     /* Apply EncodeLMN and MatrixABC(encode). */
     if (!pjc->skipEncodeLMN)
-	cie_lookup_map3(&vec3 /* LMN => ABC */, &pcrd->caches.EncodeLMN,
+	cie_lookup_map3(pis->memory, &vec3 /* LMN => ABC */, &pcrd->caches.EncodeLMN,
 			"EncodeLMN+MatrixABC");
 
     /* MatrixABCEncode includes the scaling of the EncodeABC */
@@ -380,13 +381,13 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 	rfix[2] = FABC(2);
 #undef FABC
 #undef EABC
-	if_debug6('c', "[c]ABC=%g,%g,%g => iabc=%g,%g,%g\n",
+	if_debug6(pis->memory, 'c', "[c]ABC=%g,%g,%g => iabc=%g,%g,%g\n",
 		  cie_cached2float(vec3.u), cie_cached2float(vec3.v),
 		  cie_cached2float(vec3.w), fixed2float(rfix[0]),
 		  fixed2float(rfix[1]), fixed2float(rfix[2]));
 	gx_color_interpolate_linear(rfix, &pcrd->RenderTable.lookup,
 				    pconc);
-	if_debug3('c', "[c]  interpolated => %g,%g,%g\n",
+	if_debug3(pis->memory, 'c', "[c]  interpolated => %g,%g,%g\n",
 		  frac2float(pconc[0]), frac2float(pconc[1]),
 		  frac2float(pconc[2]));
 	if (!pcrd->caches.RenderTableT_is_identity) {
@@ -415,7 +416,7 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 
 	/* (*pcrd->RenderTable.T)(prtc, m, pcrd, pconc); */
 
-	if_debug6('c', "[c]ABC=%g,%g,%g => iabc=%d,%d,%d\n",
+	if_debug6((pis->memory, 'c', "[c]ABC=%g,%g,%g => iabc=%d,%d,%d\n",
 		  cie_cached2float(vec3.u), cie_cached2float(vec3.v),
 		  cie_cached2float(vec3.w), ia, ib, ic);
 	if (pcrd->caches.RenderTableT_is_identity) {
@@ -473,7 +474,7 @@ gx_cie_xyz_remap_finish(cie_cached_vector3 vec3, frac * pconc,
      * vec3 is LMN values.  Just apply DecodeLMN/MatrixLMN.
      */
     if (!pjc->skipDecodeLMN)
-	cie_lookup_map3(&vec3 /* LMN => XYZ */, &pjc->DecodeLMN,
+	cie_lookup_map3(pis->memory, &vec3 /* LMN => XYZ */, &pjc->DecodeLMN,
 			"Decode/MatrixLMN");
 
 
@@ -485,7 +486,8 @@ gx_cie_xyz_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 
 /* Look up 3 values in a cache, with cached post-multiplication. */
 private void
-cie_lookup_mult3(cie_cached_vector3 * pvec,
+cie_lookup_mult3(const gs_memory_t *mem, 
+		 cie_cached_vector3 * pvec,
 		 const gx_cie_vector_cache3_t * pc)
 {
 #ifdef CIE_CACHE_INTERPOLATE
@@ -525,14 +527,14 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
 	const cie_cached_vector3 *p = I_ENTRY(i, 0);
 	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
 
-	if_debug0('C', "[c]Interpolating u.\n");
+	if_debug0(mem, 'C', "[c]Interpolating u.\n");
 	u = LOOKUP_INTERPOLATE_BETWEEN(p->u, p1->u, i);
 	v = LOOKUP_INTERPOLATE_BETWEEN(p->v, p1->v, i);
 	w = LOOKUP_INTERPOLATE_BETWEEN(p->w, p1->w, i);
     } else {
 	const cie_cached_vector3 *p = LOOKUP_ENTRY(pvec->u, &pc->caches[0]);
 
-	if_debug0('C', "[c]Not interpolating u.\n");
+	if_debug0(mem, 'C', "[c]Not interpolating u.\n");
 	u = p->u, v = p->v, w = p->w;
     }
 
@@ -541,14 +543,14 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
 	const cie_cached_vector3 *p = I_ENTRY(i, 1);
 	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
 
-	if_debug0('C', "[c]Interpolating v.\n");
+	if_debug0(mem, 'C', "[c]Interpolating v.\n");
 	u += LOOKUP_INTERPOLATE_BETWEEN(p->u, p1->u, i);
 	v += LOOKUP_INTERPOLATE_BETWEEN(p->v, p1->v, i);
 	w += LOOKUP_INTERPOLATE_BETWEEN(p->w, p1->w, i);
     } else {
 	const cie_cached_vector3 *p = LOOKUP_ENTRY(pvec->v, &pc->caches[1]);
 
-	if_debug0('C', "[c]Not interpolating v.\n");
+	if_debug0(mem, 'C', "[c]Not interpolating v.\n");
 	u += p->u, v += p->v, w += p->w;
     }
 
@@ -557,14 +559,14 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
 	const cie_cached_vector3 *p = I_ENTRY(i, 2);
 	const cie_cached_vector3 *p1 = I_ENTRY1(i, p);
 
-	if_debug0('C', "[c]Interpolating w.\n");
+	if_debug0(mem, 'C', "[c]Interpolating w.\n");
 	u += LOOKUP_INTERPOLATE_BETWEEN(p->u, p1->u, i);
 	v += LOOKUP_INTERPOLATE_BETWEEN(p->v, p1->v, i);
 	w += LOOKUP_INTERPOLATE_BETWEEN(p->w, p1->w, i);
     } else {
 	const cie_cached_vector3 *p = LOOKUP_ENTRY(pvec->w, &pc->caches[2]);
 
-	if_debug0('C', "[c]Not interpolating w.\n");
+	if_debug0(mem, 'C', "[c]Not interpolating w.\n");
 	u += p->u, v += p->v, w += p->w;
     }
 
@@ -583,7 +585,7 @@ cie_lookup_mult3(cie_cached_vector3 * pvec,
     const cie_cached_vector3 *pv = LOOKUP_ENTRY(pvec->v, &pc->caches[1]);
     const cie_cached_vector3 *pw = LOOKUP_ENTRY(pvec->w, &pc->caches[2]);
 
-    if_debug0('C', "[c]Not interpolating.\n");
+    if_debug0(mem, 'C', "[c]Not interpolating.\n");
 
     pvec->u = pu->u + pv->u + pw->u;
     pvec->v = pu->v + pv->v + pw->v;

@@ -23,6 +23,7 @@
 #include "ifunc.h"
 #include "iname.h"
 #include "dstack.h"
+#include "ialloc.h"
 
 /*
  * FunctionType 4 functions are not defined in the PostScript language.  We
@@ -139,14 +140,14 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	ref * delp;
 	int code;
 
-	array_get(pref, i, &elt);
+	array_get(imemory, pref, i, &elt);
 	switch (r_btype(&elt)) {
 	case t_integer: {
 	    int i = elt.value.intval;
 
 #if ARCH_SIZEOF_INT < ARCH_SIZEOF_LONG
 	    if (i != elt.value.intval) /* check for truncation */
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 #endif
 	    if (i == (byte)i) {
 		*p = PtCr_byte;
@@ -173,7 +174,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    break;
 	case t_name:
 	    if (!r_has_attr(&elt, a_executable))
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	    name_string_ref(&elt, &elt);
 	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
 			       (const byte *)"true", 4)) {
@@ -189,11 +190,11 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	    }
 	    /* Check if the name is a valid operator in systemdict */
 	    if (dict_find(systemdict, &elt, &delp) <= 0)
-		return_error(e_undefined);
+		return_error(imemory, e_undefined);
 	    if (r_btype(delp) != t_operator)
-		return_error(e_typecheck);
+		return_error(imemory, e_typecheck);
 	    if (!r_has_attr(delp, a_executable))
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	    elt = *delp;
 	    /* Fall into the operator case */
 	case t_operator: {
@@ -205,14 +206,14 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		    ++*psize;
 		    goto next;
 		}
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	}
 	default: {
 	    if (!r_is_proc(&elt))
-		return_error(e_typecheck);
+		return_error(imemory, e_typecheck);
 	    if (depth == MAX_PSC_FUNCTION_NESTING)
-		return_error(e_limitcheck);
-	    if ((code = array_get(pref, ++i, &elt2)) < 0)
+		return_error(imemory, e_limitcheck);
+	    if ((code = array_get(imemory, pref, ++i, &elt2)) < 0)
 		return code;
 	    *psize += 3;
 	    code = check_psc_function(i_ctx_p, &elt, depth + 1, ops, psize);
@@ -228,8 +229,8 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		    psc_fixup(p, ops + *psize);
 		}
 	    } else if (!r_is_proc(&elt2))
-		return_error(e_rangecheck);
-	    else if ((code == array_get(pref, ++i, &elt3)) < 0)
+		return_error(imemory, e_rangecheck);
+	    else if ((code == array_get(imemory, pref, ++i, &elt3)) < 0)
 		return code;
 	    else if (R_IS_OPER(&elt3, zifelse)) {
 		if (ops) {
@@ -245,7 +246,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		if (ops)
 		    psc_fixup(p, ops + *psize);
 	    } else
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 #undef R_IS_OPER
 	}
 	}
@@ -274,11 +275,11 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     params.ops.data = 0;	/* in case of failure */
     params.ops.size = 0;	/* ditto */
     if (dict_find_string(op, "Function", &proc) <= 0) {
-	code = gs_note_error(e_rangecheck);
+	code = gs_note_error(imemory, e_rangecheck);
 	goto fail;
     }
     if (!r_is_proc(proc)) {
-	code = gs_note_error(e_typecheck);
+	code = gs_note_error(imemory, e_typecheck);
 	goto fail;
     }
     size = 0;
@@ -287,7 +288,7 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
 	goto fail;
     ops = gs_alloc_string(mem, size + 1, "gs_build_function_4(ops)");
     if (ops == 0) {
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(imemory, e_VMerror);
 	goto fail;
     }
     size = 0;
@@ -301,5 +302,5 @@ gs_build_function_4(i_ctx_t *i_ctx_p, const ref *op, const gs_function_params_t 
     /* free_params will free the ops string */
 fail:
     gs_function_PtCr_free_params(&params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(imemory, e_rangecheck));
 }

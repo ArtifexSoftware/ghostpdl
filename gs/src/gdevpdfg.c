@@ -40,7 +40,7 @@ pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
     const int i = pdev->vgstack_depth;
 
     if (pdev->vgstack_depth >= count_of(pdev->vgstack))
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
     pdev->vgstack[i].transfer_ids[0] = pdev->transfer_ids[0];
     pdev->vgstack[i].transfer_ids[1] = pdev->transfer_ids[1];
     pdev->vgstack[i].transfer_ids[2] = pdev->transfer_ids[2];
@@ -104,7 +104,7 @@ pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
 {   const int i = --pdev->vgstack_depth;
 
     if (i < pdev->vgstack_bottom)
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
     stream_puts(s, "Q\n");
     pdf_load_viewer_state(pdev, pdev->vgstack + i);
     return 0;
@@ -275,7 +275,7 @@ pdf_string_to_cos_name(gx_device_pdf *pdev, const byte *str, uint len,
                                   "pdf_string_to_cos_name");
 
     if (chars == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     chars[0] = '/';
     memcpy(chars + 1, str, len);
     cos_string_value(pvalue, chars, len + 1);
@@ -559,7 +559,7 @@ pdf_write_spot_function(gx_device_pdf *pdev, const gx_ht_order *porder,
      * simplicity, we always use 16.
      */
     if (num_bits > 0x10000)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     params.BitsPerSample = 16;
     params.Encode = 0;
     /*
@@ -574,7 +574,7 @@ pdf_write_spot_function(gx_device_pdf *pdev, const gx_ht_order *porder,
     /* Create the (temporary) threshold array. */
     values = gs_alloc_byte_array(mem, num_bits, 2, "pdf_write_spot_function");
     if (values == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     for (i = 0; i < num_bits; ++i) {
 	gs_int_point pt;
 	int value;
@@ -629,8 +629,8 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
 
 	    gs_screen_enum_init_memory(&senum, &order, NULL, &psht->screen,
 				       mem);
-	    while ((code = gs_screen_currentpoint(&senum, &pt)) == 0 &&
-		   gs_screen_next(&senum, spot_proc(pt.x, pt.y)) >= 0)
+	    while ((code = gs_screen_currentpoint(mem, &senum, &pt)) == 0 &&
+		   gs_screen_next(mem, &senum, spot_proc(pt.x, pt.y)) >= 0)
 		DO_NOTHING;
 	    if (code < 0)
 		continue;
@@ -768,7 +768,8 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
     return pdf_end_data(&writer);
 }
 private int 
-pdf_get_halftone_component_index(const gs_multiple_halftone *pmht,
+pdf_get_halftone_component_index(const gs_memory_t *mem, 
+				 const gs_multiple_halftone *pmht,
 				 const gx_device_halftone *pdht,
 				 int dht_index)
 {
@@ -783,7 +784,7 @@ pdf_get_halftone_component_index(const gs_multiple_halftone *pmht,
 	    if (pmht->components[j].comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS)
 		break;
 	if (j == pmht->num_comp)
-	    return_error(gs_error_undefined);
+	    return_error(mem, gs_error_undefined);
     }
     return j;
 }
@@ -801,12 +802,12 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
     ids = (long *)gs_alloc_byte_array(mem, pmht->num_comp, sizeof(long),
 				      "pdf_write_multiple_halftone");
     if (ids == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     for (i = 0; i < pdht->num_comp; ++i) {
 	const gs_halftone_component *phtc;
 	const gx_ht_order *porder;
 
-	code = pdf_get_halftone_component_index(pmht, pdht, i);
+	code = pdf_get_halftone_component_index(mem, pmht, pdht, i);
 	if (code < 0)
 	    return code;
 	if (pmht->components[code].comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
@@ -832,7 +833,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
 						 porder, &ids[i]);
 	    break;
 	default:
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(mem, gs_error_rangecheck);
 	}
 	if (code < 0) {
 	    gs_free_object(mem, ids, "pdf_write_multiple_halftone");
@@ -849,7 +850,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
 	uint len;
 	cos_value_t value;
 
-	code = pdf_get_halftone_component_index(pmht, pdht, i);
+	code = pdf_get_halftone_component_index(mem, pmht, pdht, i);
 	if (code < 0)
 	    return code;
 	if (pmht->components[code].comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
@@ -922,7 +923,7 @@ pdf_update_halftone(gx_device_pdf *pdev, const gs_imager_state *pis,
 					   pdht, &id);
 	break;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     }
     if (code < 0)
 	return code;
@@ -1046,7 +1047,7 @@ pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
 
     if (pdev->state.opacity.alpha != pis->opacity.alpha) {
 	if (pdev->state.shape.alpha != pis->shape.alpha)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	ais = false;
 	alpha = pdev->state.opacity.alpha = pis->opacity.alpha;
     } else if (pdev->state.shape.alpha != pis->shape.alpha) {
@@ -1093,7 +1094,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    pis->shape.alpha != 1 || pis->shape.mask != 0 ||
 	    pis->transparency_stack != 0
 	    )
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
     }
     /*
      * We originally thought the remaining items were only needed for

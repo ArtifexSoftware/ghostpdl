@@ -102,7 +102,7 @@ gs_build_DeviceN(
     int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
-	return_error(gs_error_rangecheck);
+	return_error(pmem, gs_error_rangecheck);
 
     /* Allocate space for color names list. */
     code = alloc_device_n_map(&pcsdevn->map, pmem, "gs_cspace_build_DeviceN");
@@ -115,7 +115,7 @@ gs_build_DeviceN(
 			  ".gs_cspace_build_DeviceN(names)");
     if (pnames == 0) {
 	gs_free_object(pmem, pcsdevn->map, ".gs_cspace_build_DeviceN(map)");
-	return_error(gs_error_VMerror);
+	return_error(pmem, gs_error_VMerror);
     }
     pcsdevn->names = pnames;
     pcsdevn->num_components = num_components;
@@ -148,7 +148,7 @@ gs_cspace_build_DeviceN(
 	gs_free_object(pmem, pcspace, "gs_cspace_build_DeviceN");
 	return code;
     }
-    gs_cspace_init_from((gs_color_space *)&pcsdevn->alt_space, palt_cspace);
+    gs_cspace_init_from(pmem, (gs_color_space *)&pcsdevn->alt_space, palt_cspace);
     *ppcspace = pcspace;
     return 0;
 }
@@ -161,7 +161,7 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
     gs_device_n_map *pimap;
 
     rc_alloc_struct_1(pimap, gs_device_n_map, &st_device_n_map, mem,
-		      return_error(gs_error_VMerror), cname);
+		      return_error(mem, gs_error_VMerror), cname);
     pimap->tint_transform = 0;
     pimap->tint_transform_data = 0;
     pimap->cache_valid = false;
@@ -173,7 +173,8 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
  * Set the DeviceN tint transformation procedure.
  */
 int
-gs_cspace_set_devn_proc(gs_color_space * pcspace,
+gs_cspace_set_devn_proc(const gs_memory_t *mem, 
+			gs_color_space * pcspace,
 			int (*proc)(const float *,
                                     float *,
                                     const gs_imager_state *,
@@ -185,7 +186,7 @@ gs_cspace_set_devn_proc(gs_color_space * pcspace,
     gs_device_n_map *pimap;
 
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_DeviceN)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     pimap = pcspace->params.device_n.map;
     pimap->tint_transform = proc;
     pimap->tint_transform_data = proc_data;
@@ -210,14 +211,14 @@ map_devn_using_function(const float *in, float *out,
 {
     gs_function_t *const pfn = data;
 
-    return gs_function_evaluate(pfn, in, out);
+    return gs_function_evaluate(pis->memory, pfn, in, out);
 }
 
 /*
  * Set the DeviceN tint transformation procedure to a Function.
  */
 int
-gs_cspace_set_devn_function(gs_color_space *pcspace, gs_function_t *pfn)
+gs_cspace_set_devn_function(const gs_memory_t *mem, gs_color_space *pcspace, gs_function_t *pfn)
 {
     gs_device_n_map *pimap;
 
@@ -227,7 +228,7 @@ gs_cspace_set_devn_function(gs_color_space *pcspace, gs_function_t *pfn)
 	  gs_color_space_num_components((gs_color_space *)
 					&pcspace->params.device_n.alt_space)
 	)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     pimap = pcspace->params.device_n.map;
     pimap->tint_transform = map_devn_using_function;
     pimap->tint_transform_data = pfn;
@@ -300,7 +301,7 @@ gx_concrete_space_DeviceN(const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-	dprintf("gx_concrete_space_DeviceN: color space id mismatch");
+	dprintf(pis->memory, "gx_concrete_space_DeviceN: color space id mismatch");
 #endif
 
     /*
@@ -334,7 +335,7 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-	dprintf("gx_concretize_DeviceN: color space id mismatch");
+	dprintf(pis->memory, "gx_concretize_DeviceN: color space id mismatch");
 #endif
 
     /*
@@ -386,7 +387,7 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
      * Verify that the color space and imager state info match.
      */
     if (pcs->id != pis->color_component_map.cspace_id)
-	dprintf("gx_remap_concrete_DeviceN: color space id mismatch");
+	dprintf(pis->memory, "gx_remap_concrete_DeviceN: color space id mismatch");
 #endif
 
     if (pis->color_component_map.use_alt_cspace) {
@@ -460,7 +461,7 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
 	     */
 	    for (j = 0; j < i; j++) {
 	        if (names[i] == names[j])
-		    return_error(gs_error_rangecheck);
+		    return_error(pgs->memory, gs_error_rangecheck);
             }
 	    /*
 	     * Compare the colorant name to the device's.  If the device's
@@ -534,7 +535,7 @@ gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
 private void
 gx_adjust_cspace_DeviceN(const gs_color_space * pcs, int delta)
 {
-    rc_adjust_const(pcs->params.device_n.map, delta, "gx_adjust_DeviceN");
+    rc_adjust_const(pcs->pmem, pcs->params.device_n.map, delta, "gx_adjust_DeviceN");
     (*pcs->params.device_n.alt_space.type->adjust_cspace_count)
 	((const gs_color_space *)&pcs->params.device_n.alt_space, delta);
 }

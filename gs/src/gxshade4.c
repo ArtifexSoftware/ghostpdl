@@ -303,14 +303,14 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 /* ---------------- Gouraud triangle shadings ---------------- */
 
 private int
-Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
+Gt_next_vertex(const gs_memory_t *mem, const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 	       mesh_vertex_t * vertex)
 {
     int code = shade_next_vertex(cs, vertex);
 
     if (code >= 0 && psh->params.Function) {
 	/* Decode the color with the function. */
-	code = gs_function_evaluate(psh->params.Function, vertex->cc,
+	code = gs_function_evaluate(mem, psh->params.Function, vertex->cc,
 				    vertex->cc);
     }
     return code;
@@ -344,11 +344,11 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
 	switch (flag) {
 	    default:
-		return_error(gs_error_rangecheck);
+		return_error(pis->memory, gs_error_rangecheck);
 	    case 0:
-		if ((code = Gt_next_vertex(state.pshm, &cs, &va)) < 0 ||
+		if ((code = Gt_next_vertex(pis->memory, state.pshm, &cs, &va)) < 0 ||
 		    (code = shade_next_flag(&cs, num_bits)) < 0 ||
-		    (code = Gt_next_vertex(state.pshm, &cs, &vb)) < 0 ||
+		    (code = Gt_next_vertex(pis->memory, state.pshm, &cs, &vb)) < 0 ||
 		    (code = shade_next_flag(&cs, num_bits)) < 0
 		    )
 		    return code;
@@ -357,7 +357,7 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		va = vb;
 	    case 2:
 		vb = vc;
-v2:		if ((code = Gt_next_vertex(state.pshm, &cs, &vc)) < 0 ||
+v2:		if ((code = Gt_next_vertex(pis->memory, state.pshm, &cs, &vc)) < 0 ||
 		    (code = Gt_fill_triangle(&state, &va, &vb, &vc)) < 0
 		    )
 		    return code;
@@ -386,12 +386,12 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	gs_alloc_byte_array(pis->memory, per_row, sizeof(*vertex),
 			    "gs_shading_LfGt_render");
     if (vertex == 0)
-	return_error(gs_error_VMerror);
+	return_error(pis->memory, gs_error_VMerror);
     for (i = 0; i < per_row; ++i)
-	if ((code = Gt_next_vertex(state.pshm, &cs, &vertex[i])) < 0)
+	if ((code = Gt_next_vertex(pis->memory, state.pshm, &cs, &vertex[i])) < 0)
 	    goto out;
     while (!seofp(cs.s)) {
-	code = Gt_next_vertex(state.pshm, &cs, &next);
+	code = Gt_next_vertex(pis->memory, state.pshm, &cs, &next);
 	if (code < 0)
 	    goto out;
 	for (i = 1; i < per_row; ++i) {
@@ -399,7 +399,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    if (code < 0)
 		goto out;
 	    vertex[i - 1] = next;
-	    code = Gt_next_vertex(state.pshm, &cs, &next);
+	    code = Gt_next_vertex(pis->memory, state.pshm, &cs, &next);
 	    if (code < 0)
 		goto out;
 	    code = Gt_fill_triangle(&state, &vertex[i], &vertex[i - 1], &next);

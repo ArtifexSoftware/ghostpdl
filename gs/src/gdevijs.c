@@ -485,7 +485,7 @@ gsijs_open(gx_device *dev)
     int fd = -1;
 
     if (strlen(ijsdev->IjsServer) == 0) {
-	eprintf("ijs server not specified\n");
+	eprintf(dev->memory, "ijs server not specified\n");
 	return gs_note_error(gs_error_ioerror);
     }
 
@@ -515,18 +515,18 @@ gsijs_open(gx_device *dev)
      */
     ijsdev->ctx = ijs_invoke_server(ijsdev->IjsServer);
     if (ijsdev->ctx == (IjsClientCtx *)NULL) {
-	eprintf1("Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
+	eprintf1(dev->memory, "Can't start ijs server \042%s\042\n", ijsdev->IjsServer);
 	return gs_note_error(gs_error_ioerror);
     }
 
     ijsdev->ijs_version = ijs_client_get_version (ijsdev->ctx);
 
     if (ijs_client_open(ijsdev->ctx) < 0) {
-	eprintf("Can't open ijs\n");
+	eprintf(dev->memory, "Can't open ijs\n");
 	return gs_note_error(gs_error_ioerror);
     }
     if (ijs_client_begin_job(ijsdev->ctx, 0) < 0) {
-	eprintf("Can't begin ijs job 0\n");
+	eprintf(dev->memory, "Can't begin ijs job 0\n");
 	ijs_client_close(ijsdev->ctx);
 	return gs_note_error(gs_error_ioerror);
     }
@@ -1016,7 +1016,7 @@ gsijs_client_set_param(gx_device_ijs *ijsdev, const char *key,
     int code = ijs_client_set_param(ijsdev->ctx, 0 /* job id */, 
 	key, value, strlen(value));
     if (code < 0)
-	dprintf2("ijs: Can't set parameter %s=%s\n", key, value);
+	dprintf2(ijsdev->memory, "ijs: Can't set parameter %s=%s\n", key, value);
     return code;
 }
  

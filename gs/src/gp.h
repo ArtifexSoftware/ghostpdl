@@ -80,13 +80,13 @@ const char *gp_strerror(int);
  * Read the current time (in seconds since an implementation-defined epoch)
  * into ptm[0], and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_realtime(long ptm[2]);
+void gp_get_realtime(const gs_memory_t *mem, long ptm[2]);
 
 /*
  * Read the current user CPU time (in seconds) into ptm[0],
  * and fraction (in nanoseconds) into ptm[1].
  */
-void gp_get_usertime(long ptm[2]);
+void gp_get_usertime(const gs_memory_t *mem, long ptm[2]);
 
 /* ------ Reading lines from stdin ------ */
 
@@ -172,7 +172,8 @@ extern const char gp_fmode_wb[];
 
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
-FILE *gp_open_scratch_file(const char *prefix,
+FILE *gp_open_scratch_file(const gs_memory_t *mem,
+			   const char *prefix,
 			   char fname[gp_file_name_sizeof],
 			   const char *mode);
 
@@ -352,7 +353,7 @@ file_enum *gp_enumerate_files_init(const char *pat, uint patlen,
  * returns max length +1.  If there are no more files, the procedure
  * returns -1.
  */
-uint gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen);
+uint gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen);
 
 /*
  * Clean up a file enumeration.  This is only called to abandon

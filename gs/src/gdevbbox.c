@@ -321,7 +321,7 @@ gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
 	dbox.q.x = fixed2float(bbox.q.x);
 	dbox.q.y = fixed2float(bbox.q.y);
 	gs_deviceinitialmatrix((gx_device *)dev, &mat);
-	gs_bbox_transform_inverse(&dbox, &mat, pbbox);
+	gs_bbox_transform_inverse(dev->memory, &dbox, &mat, pbbox);
     }
 }
 
@@ -360,10 +360,10 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
 	gs_rect bbox;
 
 	gx_device_bbox_bbox(bdev, &bbox);
-	dlprintf4("%%%%BoundingBox: %d %d %d %d\n",
+	dlprintf4(dev->memory, "%%%%BoundingBox: %d %d %d %d\n",
 		  (int)floor(bbox.p.x), (int)floor(bbox.p.y),
 		  (int)ceil(bbox.q.x), (int)ceil(bbox.q.y));
-	dlprintf4("%%%%HiResBoundingBox: %f %f %f %f\n",
+	dlprintf4(dev->memory, "%%%%HiResBoundingBox: %f %f %f %f\n",
 		  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     }
     return gx_forward_output_page(dev, num_copies, flush);
@@ -536,7 +536,7 @@ bbox_put_params(gx_device * dev, gs_param_list * plist)
     switch (code) {
 	case 0:
 	    if (bba.size != 4) {
-		ecode = gs_note_error(gs_error_rangecheck);
+		ecode = gs_note_error(dev->memory, gs_error_rangecheck);
 		goto e;
 	    }
 	    break;
@@ -740,7 +740,7 @@ bbox_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	    return 0;
 	adjust = params->adjust;
 	if (params->fill_zero_width)
-	    gx_adjust_if_empty(&ibox, &adjust);
+	    gx_adjust_if_empty(dev->memory, &ibox, &adjust);
 	adjust_box(&ibox, adjust);
 	/*
 	 * If the path lies within the already accumulated box, just draw
@@ -914,14 +914,14 @@ bbox_image_begin(const gs_imager_state * pis, const gs_matrix * pmat,
 
     if (pmat == 0)
 	pmat = &ctm_only(pis);
-    if ((code = gs_matrix_invert(&pic->ImageMatrix, &mat)) < 0 ||
+    if ((code = gs_matrix_invert(memory, &pic->ImageMatrix, &mat)) < 0 ||
 	(code = gs_matrix_multiply(&mat, pmat, &mat)) < 0
 	)
 	return code;
     pbe = gs_alloc_struct(memory, bbox_image_enum, &st_bbox_image_enum,
 			  "bbox_image_begin");
     if (pbe == 0)
-	return_error(gs_error_VMerror);
+	return_error(memory, gs_error_VMerror);
     pbe->memory = memory;
     pbe->matrix = mat;
     pbe->pcpath = pcpath;
@@ -1036,7 +1036,7 @@ bbox_image_plane_data(gx_image_enum_common_t * info,
     sbox.p.y = pbe->y;
     sbox.q.x = pbe->x1;
     sbox.q.y = pbe->y = min(pbe->y + height, pbe->height);
-    gs_bbox_transform_only(&sbox, &pbe->matrix, corners);
+    gs_bbox_transform_only(dev->memory, &sbox, &pbe->matrix, corners);
     gs_points_bbox(corners, &dbox);
     ibox.p.x = float2fixed(dbox.p.x);
     ibox.p.y = float2fixed(dbox.p.y);
@@ -1171,7 +1171,7 @@ bbox_create_compositor(gx_device * dev,
 					   "bbox_create_compositor");
 	if (bbcdev == 0) {
 	    (*dev_proc(cdev, close_device)) (cdev);
-	    return_error(gs_error_VMerror);
+	    return_error(memory, gs_error_VMerror);
 	}
 	gx_device_bbox_init(bbcdev, target);
 	gx_device_set_target((gx_device_forward *)bbcdev, cdev);
@@ -1197,7 +1197,7 @@ bbox_text_begin(gx_device * dev, gs_imager_state * pis,
 
     if (bdev->target != NULL) {
         /* See note on imaging_dev in gxtext.h */
-        rc_assign((*ppenum)->imaging_dev, dev, "bbox_text_begin");
+        rc_assign(dev->memory, (*ppenum)->imaging_dev, dev, "bbox_text_begin");
     }
 
     return code;

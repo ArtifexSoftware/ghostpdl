@@ -149,10 +149,10 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
      * procedures for character rendering expect it.
      */
     if (gs_object_type(mem, pis) != &st_gs_state)
-	return_error(gs_error_Fatal);
+	return_error(mem, gs_error_Fatal);
     penum = gs_show_enum_alloc(mem, pgs, "gx_default_text_begin");
     if (!penum)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     code = gs_text_enum_init((gs_text_enum_t *)penum, &default_text_procs,
 			     dev, pis, text, font, path, pdcolor, pcpath, mem);
     if (code < 0) {
@@ -197,7 +197,7 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
 			    "stringwidth(dev_null)");
 
 	if (dev_null == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	/* Do an extra gsave and suppress output */
 	if ((code = gs_gsave(pgs)) < 0)
 	    return code;
@@ -270,8 +270,8 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    gs_fixed_point rewind_pvxy;
 	    int rewind_code;
 
-	    if ((code = gs_point_transform2fixed(&pgs->ctm, -vx, -vy, &pvxy)) < 0 ||
-		(code = gs_distance_transform2fixed(&pgs->ctm, vx, vy, &dvxy)) < 0
+	    if ((code = gs_point_transform2fixed(pgs->memory, &pgs->ctm, -vx, -vy, &pvxy)) < 0 ||
+		(code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, vx, vy, &dvxy)) < 0
 		)
 		return 0;		/* don't cache */
 	    if ((code = set_char_width(penum, pgs, pw[6], pw[7])) < 0)
@@ -283,10 +283,10 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
 	    if (code != 1) {
 	        if (retry) {
-		   rewind_code = gs_point_transform2fixed(&pgs->ctm, vx, vy, &rewind_pvxy);
+		   rewind_code = gs_point_transform2fixed(pgs->memory, &pgs->ctm, vx, vy, &rewind_pvxy);
 		   if (rewind_code < 0) {
 		       /* If the control passes here, something is wrong. */
-		       return_error(gs_error_unregistered);
+		       return_error(pgs->memory, gs_error_unregistered);
 		   }
 		   /* Rewind the origin by (-vx, -vy) if the cache is failed. */
 		   gx_translate_to_fixed(pgs, rewind_pvxy.x, rewind_pvxy.y);
@@ -307,7 +307,7 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	return code;
     }
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     }
 }
 
@@ -320,8 +320,8 @@ set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
     int code;
 
     if (penum->width_status != sws_none && penum->width_status != sws_retry)
-	return_error(gs_error_undefined);
-    if ((code = gs_distance_transform2fixed(&pgs->ctm, wx, wy, &penum->wxy)) < 0)
+	return_error(pgs->memory, gs_error_undefined);
+    if ((code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, wx, wy, &penum->wxy)) < 0)
 	return code;
     /* Check whether we're setting the scalable width */
     /* for a cached xfont character. */
@@ -411,7 +411,7 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
     if (in_setcachedevice) {
 	/* current point should already be in penum->origin */
     } else {
-	code = gx_path_current_point_inline(pgs->path, &penum->origin);
+	code = gx_path_current_point_inline(pgs->memory, pgs->path, &penum->origin);
 	if (code < 0) {
 	    /* For cshow, having no current point is acceptable. */
 	    if (!SHOW_IS(penum, TEXT_DO_NONE))
@@ -447,7 +447,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	return 0;
     if (SHOW_IS_ALL_OF(penum, TEXT_DO_NONE | TEXT_INTERVENE)) { /* cshow */
 	int code;
-	if_debug0('k', "[k]no cache: cshow");
+	if_debug0(pgs->memory, 'k', "[k]no cache: cshow");
 	code = gs_nulldevice(pgs);
 	if (code < 0)
 	    return code;
@@ -461,7 +461,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
     /* We can only use the cache if ctm is unchanged */
     /* (aside from a possible translation). */
     if (penum->can_cache <= 0 || !pgs->char_tm_valid) {
-	if_debug2('k', "[k]no cache: can_cache=%d, char_tm_valid=%d\n",
+	if_debug2(penum->memory, 'k', "[k]no cache: can_cache=%d, char_tm_valid=%d\n",
 		  penum->can_cache, (int)pgs->char_tm_valid);
 	return 0;
     } {
@@ -489,10 +489,10 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	/* are still opposite afterwards. */
 	gs_fixed_point cll, clr, cul, cur, cdim;
 
-	if ((code = gs_distance_transform2fixed(&pgs->ctm, llx, lly, &cll)) < 0 ||
-	    (code = gs_distance_transform2fixed(&pgs->ctm, llx, ury, &clr)) < 0 ||
-	    (code = gs_distance_transform2fixed(&pgs->ctm, urx, lly, &cul)) < 0 ||
-	 (code = gs_distance_transform2fixed(&pgs->ctm, urx, ury, &cur)) < 0
+	if ((code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, llx, lly, &cll)) < 0 ||
+	    (code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, llx, ury, &clr)) < 0 ||
+	    (code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, urx, lly, &cul)) < 0 ||
+	 (code = gs_distance_transform2fixed(pgs->memory, &pgs->ctm, urx, ury, &cur)) < 0
 	    )
 	    return 0;		/* don't cache */
 	{
@@ -519,11 +519,12 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	    return code;
 #ifdef DEBUG
         if (gs_debug_c('k')) {
-	    dlprintf6("[k]cbox=[%g %g %g %g] scale=%dx%d\n",
+	    dlprintf6(penum->memory, 
+		      "[k]cbox=[%g %g %g %g] scale=%dx%d\n",
 		      fixed2float(cll.x), fixed2float(cll.y),
 		      fixed2float(cur.x), fixed2float(cur.y),
 		      1 << log2_scale.x, 1 << log2_scale.y);
-	    dlprintf6("[p]  ctm=[%g %g %g %g %g %g]\n",
+	    dlprintf6(penum->memory, "[p]  ctm=[%g %g %g %g %g %g]\n",
 		      pgs->ctm.xx, pgs->ctm.xy, pgs->ctm.yx, pgs->ctm.yy,
 		      pgs->ctm.tx, pgs->ctm.ty);
         }
@@ -536,7 +537,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	    return 0;		/* much too big */
 	iwidth = ((ushort) fixed2int_var(cdim.x) + 2) << log2_scale.x;
 	iheight = ((ushort) fixed2int_var(cdim.y) + 2) << log2_scale.y;
-	if_debug3('k', "[k]iwidth=%u iheight=%u dev_cache %s\n",
+	if_debug3(penum->memory, 'k', "[k]iwidth=%u iheight=%u dev_cache %s\n",
 		  (uint) iwidth, (uint) iheight,
 		  (penum->dev_cache == 0 ? "not set" : "set"));
 	if (penum->dev_cache == 0) {
@@ -562,7 +563,7 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	/* Truncate the offsets to avoid artifacts later. */
 	cc->offset.x = fixed_ceiling(-cll.x);
 	cc->offset.y = fixed_ceiling(-cll.y);
-	if_debug4('k', "[k]width=%u, height=%u, offset=[%g %g]\n",
+	if_debug4(penum->memory, 'k', "[k]width=%u, height=%u, offset=[%g %g]\n",
 		  (uint) iwidth, (uint) iheight,
 		  fixed2float(cc->offset.x),
 		  fixed2float(cc->offset.y));
@@ -638,7 +639,7 @@ gx_show_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
     int old_index = pte->index;
 
     if ((pte->text.operation ^ pfrom->text.operation) & ~TEXT_FROM_ANY)
-	return_error(gs_error_rangecheck);
+	return_error(pte->memory, gs_error_rangecheck);
     pte->text = pfrom->text;
     if (pte->index == old_index) {
 	show_set_encode_char(penum);
@@ -718,7 +719,7 @@ show_update(gs_show_enum * penum)
 	    /* We have to check for this by comparing levels. */
 	    switch (pgs->level - penum->level) {
 		default:
-		    return_error(gs_error_invalidfont);		/* WRONG */
+		    return_error(penum->memory, gs_error_invalidfont);		/* WRONG */
 		case 2:
 		    code = gs_grestore(pgs);
 		    if (code < 0)
@@ -805,8 +806,8 @@ show_move(gs_show_enum * penum)
     if (SHOW_IS(penum, TEXT_REPLACE_WIDTHS)) {
 	gs_point dpt;
 
-	gs_text_replaced_width(&penum->text, penum->xy_index - 1, &dpt);
-	gs_distance_transform2fixed(&pgs->ctm, dpt.x, dpt.y, &penum->wxy);
+	gs_text_replaced_width(penum->memory, &penum->text, penum->xy_index - 1, &dpt);
+	gs_distance_transform2fixed(penum->memory, &pgs->ctm, dpt.x, dpt.y, &penum->wxy);
     } else {
 	double dx = 0, dy = 0;
 
@@ -825,7 +826,7 @@ show_move(gs_show_enum * penum)
 	if (!is_fzero2(dx, dy)) {
 	    gs_fixed_point dxy;
 
-	    gs_distance_transform2fixed(&pgs->ctm, dx, dy, &dxy);
+	    gs_distance_transform2fixed(pgs->memory, &pgs->ctm, dx, dy, &dxy);
 	    penum->wxy.x += dxy.x;
 	    penum->wxy.y += dxy.y;
 	}
@@ -1073,7 +1074,7 @@ show_proceed(gs_show_enum * penum)
 	gs_fixed_point cpt;
 	gx_path *ppath = pgs->path;
 
-	if ((code = gx_path_current_point_inline(ppath, &cpt)) < 0) {
+	if ((code = gx_path_current_point_inline(pgs->memory, ppath, &cpt)) < 0) {
 	    /* For cshow, having no current point is acceptable. */
 	    if (!SHOW_IS(penum, TEXT_DO_NONE))
 		goto rret;
@@ -1104,7 +1105,7 @@ show_proceed(gs_show_enum * penum)
 	    fpy = fixed2float(cpt.y) + (pgs->ctm.ty - ty);
 #define f_fits_in_fixed(f) f_fits_in_bits(f, fixed_int_bits)
 	    if (!(f_fits_in_fixed(fpx) && f_fits_in_fixed(fpy))) {
-		gs_note_error(code = gs_error_limitcheck);
+		gs_note_error(pgs->memory, code = gs_error_limitcheck);
 		goto rret;
 	    }
 	    cpt.x = float2fixed(fpx);
@@ -1124,7 +1125,7 @@ show_proceed(gs_show_enum * penum)
     code = (*pfont->procs.build_char)((gs_text_enum_t *)penum, pgs, pfont,
 				      chr, glyph);
     if (code < 0) {
-	discard(gs_note_error(code));
+	discard(gs_note_error(pgs->memory, code));
 	goto rret;
     }
     if (code == 0) {
@@ -1347,7 +1348,7 @@ show_state_setup(gs_show_enum * penum)
 	    if (!(f_fits_in_bits(fdx, int_bits) &&
 		  f_fits_in_bits(fdy, int_bits))
 		)
-		return_error(gs_error_limitcheck);
+		return_error(pgs->memory, gs_error_limitcheck);
 #undef int_bits
 	    penum->ftx = (int)fdx;
 	    penum->fty = (int)fdy;
@@ -1376,7 +1377,8 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 	) {
 	const gs_font_base *pfont = (gs_font_base *) pgs->font;
 	gs_fixed_point extent;
-	int code = gs_distance_transform2fixed(&pgs->char_tm,
+	int code = gs_distance_transform2fixed(pgs->memory, 
+					       &pgs->char_tm,
 				  pfont->FontBBox.q.x - pfont->FontBBox.p.x,
 				  pfont->FontBBox.q.y - pfont->FontBBox.p.y,
 					       &extent);
@@ -1426,7 +1428,7 @@ show_cache_setup(gs_show_enum * penum)
     if (dev == 0 || dev2 == 0) {
 	gs_free_object(mem, dev2, "show_cache_setup(dev_cache2)");
 	gs_free_object(mem, dev, "show_cache_setup(dev_cache)");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     /*
      * We only initialize the devices for the sake of the GC,

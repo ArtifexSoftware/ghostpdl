@@ -48,7 +48,7 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
     int pi;
 
     if (num_planes < 1 || num_planes > GX_DEVICE_COLOR_MAX_COMPONENTS)
-	return_error(gs_error_rangecheck);
+	return_error(mdev->memory, gs_error_rangecheck);
     for (pi = 0, total_depth = 0; pi < num_planes; ++pi) {
 	int shift = planes[pi].shift;
 	int plane_depth = planes[pi].depth;
@@ -56,17 +56,17 @@ gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
 
 	if (shift < 0 || plane_depth > 16 ||
 	    !gdev_mem_device_for_bits(plane_depth))
-	    return_error(gs_error_rangecheck);
+	    return_error(mdev->memory, gs_error_rangecheck);
 	mask = (((gx_color_index)1 << plane_depth) - 1) << shift;
 	if (covered & mask)
-	    return_error(gs_error_rangecheck);
+	    return_error(mdev->memory, gs_error_rangecheck);
 	covered |= mask;
 	if (plane_depth != same_depth)
 	    same_depth = 0;
 	total_depth += plane_depth;
     }
     if (total_depth > mdev->color_info.depth)
-	return_error(gs_error_rangecheck);
+	return_error(mdev->memory, gs_error_rangecheck);
     mdev->num_planes = num_planes;
     memcpy(mdev->planes, planes, num_planes * sizeof(planes[0]));
     mdev->plane_depth = same_depth;
@@ -90,7 +90,7 @@ mem_planar_open(gx_device * dev)
 
     /* Check that we aren't trying to open a chunky device as planar. */
     if (mdev->num_planes == 0)
-	return_error(gs_error_rangecheck);
+	return_error(mdev->memory, gs_error_rangecheck);
     return gdev_mem_open_scan_lines(mdev, dev->height);
 }
 
@@ -457,17 +457,17 @@ mem_planar_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 	    */
 	    GB_PACKING_CHUNKY |
 	    GB_COLORS_NATIVE | GB_ALPHA_NONE;
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     }
     if ((w <= 0) | (h <= 0)) {
 	if ((w | h) < 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
 	return 0;
     }
     if (x < 0 || w > dev->width - x ||
 	y < 0 || h > dev->height - y
 	)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
 
     /*
      * If the request is for exactly one plane, hand it off to a device

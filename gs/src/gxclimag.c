@@ -79,7 +79,7 @@ clist_fill_mask(gx_device * dev,
     /* If depth > 1, this call will be translated to a copy_alpha call. */
     /* if the target device can't perform copy_alpha, exit now. */
     if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
-	return_error(gs_error_unknownerror);
+	return_error(cdev->memory, gs_error_unknownerror);
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;			/* must do after fit_copy */
@@ -245,7 +245,8 @@ private const gx_image_enum_procs_t clist_image_enum_procs =
 /* Forward declarations */
 private bool image_band_box(gx_device * dev, const clist_image_enum * pie,
 			    int y, int h, gs_int_rect * pbox);
-private int begin_image_command(byte *buf, uint buf_size,
+private int begin_image_command(const gs_memory_t *mem,
+				byte *buf, uint buf_size,
 				const gs_image_common_t *pic);
 private int cmd_image_plane_data(gx_device_clist_writer * cldev,
 				 gx_clist_state * pcls,
@@ -324,7 +325,7 @@ clist_begin_typed_image(gx_device * dev,
 				    &st_clist_image_enum,
 				    "clist_begin_typed_image");
     if (pie == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     pie->memory = mem;
     *pinfo = (gx_image_enum_common_t *) pie;
     /* num_planes and plane_depths[] are set later, */
@@ -374,7 +375,7 @@ clist_begin_typed_image(gx_device * dev,
 	has_alpha ||
 	/****** CAN'T HANDLE IMAGES WITH IRREGULAR DEPTHS ******/
 	varying_depths ||
-	(code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
+	(code = gs_matrix_invert(pis->memory, &pim->ImageMatrix, &mat)) < 0 ||
 	(code = gs_matrix_multiply(&mat, &ctm_only(pis), &mat)) < 0 ||
 	!(cdev->disable_mask & clist_disable_nonrect_hl_image ?
 	  (is_xxyy(&mat) || is_xyyx(&mat)) :
@@ -427,7 +428,7 @@ clist_begin_typed_image(gx_device * dev,
     sbox.p.y = pie->rect.p.y - pie->support.y;
     sbox.q.x = pie->rect.q.x + pie->support.x;
     sbox.q.y = pie->rect.q.y + pie->support.y;
-    gs_bbox_transform(&sbox, &mat, &dbox);
+    gs_bbox_transform(dev->memory, &sbox, &mat, &dbox);
 
     if (cdev->disable_mask & clist_disable_complex_clip)
 	if (!check_rect_for_trivial_clip(pcpath,
@@ -436,7 +437,7 @@ clist_begin_typed_image(gx_device * dev,
 	    goto use_default;
     /* Create the begin_image command. */
     if ((pie->begin_image_command_length =
-	 begin_image_command(pie->begin_image_command,
+	 begin_image_command(dev->memory, pie->begin_image_command,
 			     sizeof(pie->begin_image_command), pic)) < 0)
 	goto use_default;
     if (!masked) {
@@ -539,10 +540,10 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 
 #ifdef DEBUG
     if (pie->id != cdev->image_enum_id) {
-	lprintf2("end_image id = %lu != clist image id = %lu!\n",
+	lprintf2(cdev->memory, "end_image id = %lu != clist image id = %lu!\n",
 		 (ulong) pie->id, (ulong) cdev->image_enum_id);
 	*rows_used = 0;
-	return_error(gs_error_Fatal);
+	return_error(cdev->memory, gs_error_Fatal);
     }
 #endif
     /****** CAN'T HANDLE VARYING data_x VALUES YET ******/
@@ -552,14 +553,14 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	for (i = 1; i < info->num_planes; ++i)
 	    if (planes[i].data_x != planes[0].data_x) {
 		*rows_used = 0;
-		return_error(gs_error_rangecheck);
+		return_error(cdev->memory, gs_error_rangecheck);
 	    }
     }
     sbox.p.x = pie->rect.p.x - pie->support.x;
     sbox.p.y = (y0 = y_orig) - pie->support.y;
     sbox.q.x = pie->rect.q.x + pie->support.x;
     sbox.q.y = (y1 = pie->y += yh_used) + pie->support.y;
-    gs_bbox_transform(&sbox, &pie->matrix, &dbox);
+    gs_bbox_transform(cdev->memory, &sbox, &pie->matrix, &dbox);
     /*
      * In order to keep the band list consistent, we must write out
      * the image data in precisely those bands whose begin_image
@@ -758,9 +759,9 @@ clist_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 
 #ifdef DEBUG
     if (pie->id != cdev->image_enum_id) {
-	lprintf2("end_image id = %lu != clist image id = %lu!\n",
+	lprintf2(cdev->memory, "end_image id = %lu != clist image id = %lu!\n",
 		 (ulong) pie->id, (ulong) cdev->image_enum_id);
-	return_error(gs_error_Fatal);
+	return_error(cdev->memory, gs_error_Fatal);
     }
 #endif
     NEST_RECT {
@@ -792,7 +793,7 @@ clist_create_compositor(gx_device * dev,
 {
     byte *                  dp;
     uint                    size = 0;
-    int                     code = pcte->type->procs.write(pcte, 0, &size);
+    int                     code = pcte->type->procs.write(mem, pcte, 0, &size);
 
     /* always return the same device */
     *pcdev = dev;
@@ -815,7 +816,7 @@ clist_create_compositor(gx_device * dev,
     dp[2] = pcte->type->comp_id;
 
     /* serialize the remainder of the compositor */
-    if ((code = pcte->type->procs.write(pcte, dp + 3, &size)) < 0)
+    if ((code = pcte->type->procs.write(mem, pcte, dp + 3, &size)) < 0)
         ((gx_device_clist_writer *)dev)->cnext = dp;
     return code;
 }
@@ -898,7 +899,7 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
                                    ht_size,
                                    "cmd_put_halftone" );
         if (pht_buff == 0)
-            return_error(gs_error_VMerror);
+            return_error(cldev->memory, gs_error_VMerror);
     } else {
         /* send the only segment command */
         req_size += ht_size;
@@ -1112,9 +1113,9 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
     bbox.q.y = fixed2float(min(cbox.q.y, by1) + fixed_half);
 #ifdef DEBUG
     if (gs_debug_c('b')) {
-	dlprintf6("[b]band box for (%d,%d),(%d,%d), band (%d,%d) =>\n",
+	dlprintf6(dev->memory, "[b]band box for (%d,%d),(%d,%d), band (%d,%d) =>\n",
 		  px, py, qx, qy, y, y + h);
-	dlprintf10("      (%g,%g),(%g,%g), matrix=[%g %g %g %g %g %g]\n",
+	dlprintf10(dev->memory, "      (%g,%g),(%g,%g), matrix=[%g %g %g %g %g %g]\n",
 		   bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y,
 		   pie->matrix.xx, pie->matrix.xy, pie->matrix.yx,
 		   pie->matrix.yy, pie->matrix.tx, pie->matrix.ty);
@@ -1128,7 +1129,7 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 	 */
 	gs_rect ibox;		/* bbox transformed back to image space */
 
-	if (gs_bbox_transform_inverse(&bbox, &pie->matrix, &ibox) < 0)
+	if (gs_bbox_transform_inverse(dev->memory, &bbox, &pie->matrix, &ibox) < 0)
 	    return false;
 	pbox->p.x = max(px, I_FLOOR(ibox.p.x));
 	pbox->q.x = min(qx, I_CEIL(ibox.q.x));
@@ -1159,16 +1160,16 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 	 * be nonsense: in this case, there isn't anything useful we
 	 * can do, so return an empty intersection.
 	 */
-	if (gs_point_transform_inverse(bbox.p.x, bbox.p.y, &pie->matrix,
+	if (gs_point_transform_inverse(dev->memory, bbox.p.x, bbox.p.y, &pie->matrix,
 				       &corners[0]) < 0 ||
-	    gs_point_transform_inverse(bbox.q.x, bbox.p.y, &pie->matrix,
+	    gs_point_transform_inverse(dev->memory, bbox.q.x, bbox.p.y, &pie->matrix,
 				       &corners[1]) < 0 ||
-	    gs_point_transform_inverse(bbox.q.x, bbox.q.y, &pie->matrix,
+	    gs_point_transform_inverse(dev->memory, bbox.q.x, bbox.q.y, &pie->matrix,
 				       &corners[2]) < 0 ||
-	    gs_point_transform_inverse(bbox.p.x, bbox.q.y, &pie->matrix,
+	    gs_point_transform_inverse(dev->memory, bbox.p.x, bbox.q.y, &pie->matrix,
 				       &corners[3]) < 0
 	    ) {
-	    if_debug0('b', "[b]can't inverse-transform a band corner!\n");
+	    if_debug0(dev->memory, 'b', "[b]can't inverse-transform a band corner!\n");
 	    return false;
 	}
 	corners[4] = corners[0];
@@ -1185,7 +1186,7 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 
 	    /* Check the image corner for being inside the band. */
 	    pa = rect[i];
-	    gs_point_transform(pa.x, pa.y, &pie->matrix, &pt);
+	    gs_point_transform(dev->memory, pa.x, pa.y, &pie->matrix, &pt);
 	    if (pt.x >= bbox.p.x && pt.x <= bbox.q.x &&
 		pt.y >= bbox.p.y && pt.y <= bbox.q.y
 		)
@@ -1202,12 +1203,12 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 	    if (dx != 0) {
 		double t = (px - pa.x) / dx;
 
-		if_debug3('b', "   (px) t=%g => (%d,%g)\n",
+		if_debug3(dev->memory, 'b', "   (px) t=%g => (%d,%g)\n",
 			  t, px, pa.y + t * dy);
 		if (in_range(t, pa.y + t * dy, py, qy))
 		    box_merge_point(pbox, (floatp) px, t);
 		t = (qx - pa.x) / dx;
-		if_debug3('b', "   (qx) t=%g => (%d,%g)\n",
+		if_debug3(dev->memory, 'b', "   (qx) t=%g => (%d,%g)\n",
 			  t, qx, pa.y + t * dy);
 		if (in_range(t, pa.y + t * dy, py, qy))
 		    box_merge_point(pbox, (floatp) qx, t);
@@ -1215,12 +1216,12 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 	    if (dy != 0) {
 		double t = (py - pa.y) / dy;
 
-		if_debug3('b', "   (py) t=%g => (%g,%d)\n",
+		if_debug3(dev->memory, 'b', "   (py) t=%g => (%g,%d)\n",
 			  t, pa.x + t * dx, py);
 		if (in_range(t, pa.x + t * dx, px, qx))
 		    box_merge_point(pbox, t, (floatp) py);
 		t = (qy - pa.y) / dy;
-		if_debug3('b', "   (qy) t=%g => (%g,%d)\n",
+		if_debug3(dev->memory, 'b', "   (qy) t=%g => (%g,%d)\n",
 			  t, pa.x + t * dx, qy);
 		if (in_range(t, pa.x + t * dx, px, qx))
 		    box_merge_point(pbox, t, (floatp) qy);
@@ -1228,7 +1229,7 @@ image_band_box(gx_device * dev, const clist_image_enum * pie, int y, int h,
 #undef in_range
 	}
     }
-    if_debug4('b', "    => (%d,%d),(%d,%d)\n", pbox->p.x, pbox->p.y,
+    if_debug4(dev->memory, 'b', "    => (%d,%d),(%d,%d)\n", pbox->p.x, pbox->p.y,
 	      pbox->q.x, pbox->q.y);
     /*
      * If necessary, add pixels around the edges so we will have
@@ -1289,7 +1290,8 @@ clist_image_unknowns(gx_device *dev, const clist_image_enum *pie)
 
 /* Construct the begin_image command. */
 private int
-begin_image_command(byte *buf, uint buf_size, const gs_image_common_t *pic)
+begin_image_command(const gs_memory_t *mem, 
+		    byte *buf, uint buf_size, const gs_image_common_t *pic)
 {
     int i;
     stream s;
@@ -1300,7 +1302,7 @@ begin_image_command(byte *buf, uint buf_size, const gs_image_common_t *pic)
 	if (gx_image_type_table[i] == pic->type)
 	    break;
     if (i >= gx_image_type_table_count)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     swrite_string(&s, buf, buf_size);
     sputc(&s, (byte)i);
     code = pic->type->sput(pic, &s, &ignore_pcs);
@@ -1367,7 +1369,7 @@ write_image_end_all(gx_device *dev, const clist_image_enum *pie)
 	if (!(pcls->known & begin_image_known))
 	    continue;
 	TRY_RECT {
-	    if_debug1('L', "[L]image_end for band %d\n", band);
+	    if_debug1(cdev->memory, 'L', "[L]image_end for band %d\n", band);
 	    code = set_cmd_put_op(dp, cdev, pcls, cmd_opv_image_data, 2);
 	} HANDLE_RECT(code);
 	dp[1] = 0;	    /* EOD */

@@ -23,17 +23,17 @@ gdev_prn_save_page(gx_device_printer * pdev, gx_saved_page * page,
 {
     /* Make sure we are banding. */
     if (!pdev->buffer_space)
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     if (strlen(pdev->dname) >= sizeof(page->dname))
-	return_error(gs_error_limitcheck);
+	return_error(pdev->memory, gs_error_limitcheck);
     {
 	gx_device_clist_writer * const pcldev =
 	    (gx_device_clist_writer *)pdev;
 	int code;
 
 	if ((code = clist_end_page(pcldev)) < 0 ||
-	    (code = clist_fclose(pcldev->page_cfile, pcldev->page_cfname, false)) < 0 ||
-	    (code = clist_fclose(pcldev->page_bfile, pcldev->page_bfname, false)) < 0
+	    (code = clist_fclose(pdev->memory, pcldev->page_cfile, pcldev->page_cfname, false)) < 0 ||
+	    (code = clist_fclose(pdev->memory, pcldev->page_bfile, pcldev->page_bfname, false)) < 0
 	    )
 	    return code;
 	/* Save the device information. */
@@ -71,24 +71,24 @@ gdev_prn_render_pages(gx_device_printer * pdev,
 		memcmp(&page->device.color_info, &pdev->color_info,
 		       sizeof(pdev->color_info)) != 0
 		)
-		return_error(gs_error_rangecheck);
+		return_error(pdev->memory, gs_error_rangecheck);
 	    /* Currently we don't allow translation in Y. */
 	    if (ppages[i].offset.y != 0)
-		return_error(gs_error_rangecheck);
+		return_error(pdev->memory, gs_error_rangecheck);
 	    /* Make sure the band parameters are compatible. */
 	    if (page->info.band_params.BandBufferSpace !=
 		pdev->buffer_space ||
 		page->info.band_params.BandWidth !=
 		pdev->width
 		)
-		return_error(gs_error_rangecheck);
+		return_error(pdev->memory, gs_error_rangecheck);
 	    /* Currently we require all band heights to be the same. */
 	    if (i == 0)
 		params = page->info.band_params;
 	    else if (page->info.band_params.BandHeight !=
 		     params.BandHeight
 		)
-		return_error(gs_error_rangecheck);
+		return_error(pdev->memory, gs_error_rangecheck);
 	}
     }
     /* Set up the page list in the device. */
@@ -107,8 +107,8 @@ gdev_prn_render_pages(gx_device_printer * pdev,
 	for (i = 0; i < count; ++i) {
 	    const gx_saved_page *page = ppages[i].page;
 
-	    clist_unlink(page->info.cfname);
-	    clist_unlink(page->info.bfname);
+	    clist_unlink(pdev->memory, page->info.cfname);
+	    clist_unlink(pdev->memory, page->info.bfname);
 	}
 	return code;
     }

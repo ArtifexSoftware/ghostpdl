@@ -24,7 +24,7 @@
 #include "gdebug.h"
 
 /* Temporary switch for a new filling algorithm : */
-#define DROPOUT_PREVENTION 1 /* 0 = old, 1 = new */
+#define DROPOUT_PREVENTION 0 /* 0 = old, 1 = new */
 /* Temporary switch for a new type 1 hinter : */
 #define NEW_TYPE1_HINTER 1 /* 0 = old, 1 = new */
 /* A temporary switch to pattern stream accumulation in a device. */

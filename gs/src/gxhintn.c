@@ -200,11 +200,13 @@ private inline void double_matrix__scale(double_matrix * this, double sx, double
     this->yy *= sy;
 }
 
-private inline int double_matrix__invert_to(const double_matrix * this, double_matrix * m)
+private inline int double_matrix__invert_to(const gs_memory_t *mem,
+					    const double_matrix * this,
+					    double_matrix * m)
 {   double det = this->xx * this->yy - this->xy * this->yx;
 
     if (fabs(det) * 1000000 < fabs(this->xx) + fabs(this->xy) + fabs(this->yx) + fabs(this->yy))
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     m->xx =  this->yy / det;
     m->xy = -this->xy / det;
     m->yx = -this->yx / det;
@@ -247,12 +249,13 @@ private inline void fraction_matrix__to_double(const fraction_matrix * this, dou
     pmat->yy = (double)this->yy / this->denominator;
 }
 
-private int fraction_matrix__invert_to(const fraction_matrix * this, fraction_matrix * pmat)
+private int fraction_matrix__invert_to(const gs_memory_t *mem,
+				       const fraction_matrix * this, fraction_matrix * pmat)
 {   double_matrix m, M;
     int code;
 
     fraction_matrix__to_double(this, &M);
-    code = double_matrix__invert_to(&M, &m);
+    code = double_matrix__invert_to(mem, &M, &m);
     if (code < 0)
 	return code;
     fraction_matrix__set(pmat,&m);
@@ -563,7 +566,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
     if (size == 0)
 	size = 1024 * fixed_scale; /* Hack for fonts with no bbox. */
     if (scale == 0)
-	return_error(gs_error_invalidfont);
+	return_error(this->memory, gs_error_invalidfont);
     this->disable_hinting |= (scale < 1/1024. || scale > 4);
     this->subpixels_x = unit_x / fixed_1;
     this->subpixels_y = unit_y / fixed_1;
@@ -575,15 +578,16 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
         fraction_matrix__drop_bits(&this->ctmf, this->g2o_fraction_bits - max_coord_bits);
         this->g2o_fraction_bits = max_coord_bits;
     }
-    code = fraction_matrix__invert_to(&this->ctmf, &this->ctmi); /* Note: ctmi is inversion of ctmf, not ctm. */
+    code = fraction_matrix__invert_to(this->memory, 
+				      &this->ctmf, &this->ctmi); /* Note: ctmi is inversion of ctmf, not ctm. */
     if (code < 0)
 	return code;
     this->g2o_fraction = 1 << this->g2o_fraction_bits;
     if (!this->disable_hinting) {
         if (this->g2o_fraction == 0)
-    	    return_error(gs_error_limitcheck);
+    	    return_error(this->memory, gs_error_limitcheck);
         if (this->ctmf.denominator == 0 || this->ctmi.denominator == 0)
-    	    return_error(gs_error_limitcheck); /* Must not pass here. */
+    	    return_error(this->memory, gs_error_limitcheck); /* Must not pass here. */
     }
     {   /* height_transform_coef is scaling factor for the
            distance between horizontal lines while transformation.
@@ -611,9 +615,9 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
         gs_point p0, p1, p2;
         double d0, d1, d2;
 
-        gs_distance_transform(0, 1, baseFontMatrix, &p0);
-        gs_distance_transform(0, 1, FontMatrix, &p1);
-        gs_distance_transform(0, 1, (gs_matrix *)ctm, &p2);
+        gs_distance_transform(this->memory, 0, 1, baseFontMatrix, &p0);
+        gs_distance_transform(this->memory, 0, 1, FontMatrix, &p1);
+        gs_distance_transform(this->memory, 0, 1, (gs_matrix *)ctm, &p2);
         d0 = hypot(p0.x, p0.y);
         d1 = hypot(p1.x, p1.y);
         d2 = hypot(p2.x, p2.y);
@@ -679,7 +683,7 @@ private int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int 
 	    if(t1_hinter__realloc_array(this->memory, (void **)&this->zone, this->zone0, &this->max_zone_count, 
 	                                sizeof(this->zone0) / count_of(this->zone0), 
 					max(T1_MAX_ALIGNMENT_ZONES, count), s_zone_array))
-    		return_error(gs_error_VMerror);
+    		return_error(this->memory, gs_error_VMerror);
         for (i = 0; i < count2; i++)
             t1_hinter__make_zone(this, &this->zone[this->zone_count + i], blues + i + i, type, this->blue_fuzz);
         this->zone_count += count2;
@@ -706,7 +710,7 @@ private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count,
 	if(t1_hinter__realloc_array(this->memory, (void **)&this->stem_snap[hv], this->stem_snap0[hv], &this->max_stem_snap_count[hv], 
 	                                sizeof(this->stem_snap0[0]) / count_of(this->stem_snap0[0]), 
 					max(T1_MAX_STEM_SNAPS, count), s_stem_snap_array))
-    	    return_error(gs_error_VMerror);
+    	    return_error(this->memory, gs_error_VMerror);
     for (i = 0; i < count; i++)
         this->stem_snap[hv][count0 + i] = import_shift(float2fixed(value[i]), this->import_shift);
     this->stem_snap_count[hv] += count;
@@ -755,7 +759,7 @@ private inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)
 {   if (this->pole_count >= this->max_pole_count)
         if(t1_hinter__realloc_array(this->memory, (void **)&this->pole, this->pole0, &this->max_pole_count, 
 				    sizeof(this->pole0) / count_of(this->pole0), T1_MAX_POLES, s_pole_array))
-	    return_error(gs_error_VMerror);
+	    return_error(this->memory, gs_error_VMerror);
     *pole = &this->pole[this->pole_count];
     return 0;
 }
@@ -937,7 +941,7 @@ int t1_hinter__closepath(t1_hinter * this)
 	if (this->contour_count >= this->max_contour_count)
 	    if(t1_hinter__realloc_array(this->memory, (void **)&this->contour, this->contour0, &this->max_contour_count, 
 					sizeof(this->contour0) / count_of(this->contour0), T1_MAX_CONTOURS, s_contour_array))
-		return_error(gs_error_VMerror);
+		return_error(this->memory, gs_error_VMerror);
 	this->contour[this->contour_count] = this->pole_count;
         return 0;
     }
@@ -947,21 +951,21 @@ private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
 {   if (this->hint_count >= this->max_hint_count)
         if(t1_hinter__realloc_array(this->memory, (void **)&this->hint, this->hint0, &this->max_hint_count, 
 				    sizeof(this->hint0) / count_of(this->hint0), T1_MAX_HINTS, s_hint_array))
-	    return_error(gs_error_VMerror);
+	    return_error(this->memory, gs_error_VMerror);
     *hint = &this->hint[this->hint_count];
     return 0;
 }
 
 int t1_hinter__flex_beg(t1_hinter * this)
 {   if (this->flex_count != 0)
-	return_error(gs_error_invalidfont);
+	return_error(this->memory, gs_error_invalidfont);
     this->flex_count++;
     return 0;
 }
 
 int t1_hinter__flex_point(t1_hinter * this)
 {   if (this->flex_count == 0)
-	return_error(gs_error_invalidfont);
+	return_error(this->memory, gs_error_invalidfont);
     this->flex_count++;
     return 0;
 }
@@ -973,7 +977,7 @@ int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
     const int32 div_y = this->g2o_fraction * this->subpixels_y;
     
     if (this->flex_count != 8)
-	return_error(gs_error_invalidfont);
+	return_error(this->memory, gs_error_invalidfont);
     /* We've got 8 poles accumulated in pole array. */
     pole0 = &this->pole[this->pole_count - 8];
     pole1 = &this->pole[this->pole_count - 7];
@@ -1034,7 +1038,7 @@ private inline int t1_hinter__can_add_hint_range(t1_hinter * this, t1_hint_range
 {   if (this->hint_range_count >= this->max_hint_range_count)
         if(t1_hinter__realloc_array(this->memory, (void **)&this->hint_range, this->hint_range0, &this->max_hint_range_count, 
 				    sizeof(this->hint_range0) / count_of(this->hint_range0), T1_MAX_HINTS, s_hint_range_array))
-	    return_error(gs_error_VMerror);
+	    return_error(this->memory, gs_error_VMerror);
     *hint_range = &this->hint_range[this->hint_range_count];
     return 0;
 }

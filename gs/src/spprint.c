@@ -78,7 +78,7 @@ pprintd1(stream * s, const char *format, int v)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 'd')	/* shouldn't happen! */
-	lprintf1("Bad format in pprintd1: %s\n", format);
+	lprintf1(s->memory, "Bad format in pprintd1: %s\n", format);
 #endif
     sprintf(str, "%d", v);
     pputs_short(s, str);
@@ -110,7 +110,7 @@ pprintg1(stream * s, const char *format, floatp v)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 'g')	/* shouldn't happen! */
-	lprintf1("Bad format in pprintg: %s\n", format);
+	lprintf1(s->memory, "Bad format in pprintg: %s\n", format);
 #endif
     sprintf(str, "%g", v);
     if (strchr(str, 'e')) {
@@ -152,7 +152,7 @@ pprintld1(stream * s, const char *format, long v)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 'l' || fp[2] != 'd')	/* shouldn't happen! */
-	lprintf1("Bad format in pprintld: %s\n", format);
+	lprintf1(s->memory, "Bad format in pprintld: %s\n", format);
 #endif
     sprintf(str, "%ld", v);
     pputs_short(s, str);
@@ -177,7 +177,7 @@ pprints1(stream * s, const char *format, const char *str)
 
 #ifdef DEBUG
     if (*fp == 0 || fp[1] != 's')	/* shouldn't happen! */
-	lprintf1("Bad format in pprints: %s\n", format);
+	lprintf1(s->memory, "Bad format in pprints: %s\n", format);
 #endif
     pputs_short(s, str);
     return pprintf_scan(s, fp + 2);

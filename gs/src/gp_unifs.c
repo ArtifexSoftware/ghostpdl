@@ -50,7 +50,8 @@ const char gp_current_directory_name[] = ".";
 /* Create and open a scratch file with a given name prefix. */
 /* Write the actual file name at fname. */
 FILE *
-gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
+gp_open_scratch_file(const gs_memory_t *mem, 
+		     const char *prefix, char fname[gp_file_name_sizeof],
 		     const char *mode)
 {	/* The -8 is for XXXXXX plus a possible final / and -. */
     int prefix_length = strlen(prefix);
@@ -85,7 +86,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 
 	    file = mkstemp(fname);
 	    if (file < -1) {
-		    eprintf1("**** Could not open temporary file %s\n", fname);
+		    eprintf1(mem, "**** Could not open temporary file %s\n", fname);
 		    return NULL;
 	    }
 	    fp = fdopen(file, mode);
@@ -97,7 +98,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     fp = gp_fopentemp(fname, mode);
 #endif
     if (fp == NULL)
-	eprintf1("**** Could not open temporary file %s\n", fname);
+	eprintf1(mem, "**** Could not open temporary file %s\n", fname);
     return fp;
 }
 
@@ -150,20 +151,20 @@ gs_private_st_ptrs3(st_file_enum, struct file_enum_s, "file_enum",
 /* Do a wild-card match. */
 #ifdef DEBUG
 private bool
-wmatch(const byte * str, uint len, const byte * pstr, uint plen,
+wmatch(const gs_memory_t *mem, const byte * str, uint len, const byte * pstr, uint plen,
        const string_match_params * psmp)
 {
     bool match = string_match(str, len, pstr, plen, psmp);
 
     if (gs_debug_c('e')) {
 	int i;
-	dlputs("[e]string_match(\"");
+	dlputs(mem, "[e]string_match(\"");
 	for (i=0; i<len; i++)
-	    errprintf("%c", str[i]);
-	dputs("\", \"");
+	    errprintf(mem, "%c", str[i]);
+	dputs(mem, "\", \"");
 	for (i=0; i<plen; i++)
-	    errprintf("%c", pstr[i]);
-	dprintf1("\") = %s\n", (match ? "TRUE" : "false"));
+	    errprintf(mem, "%c", pstr[i]);
+	dprintf1(mem, "\") = %s\n", (match ? "TRUE" : "false"));
     }
     return match;
 }
@@ -282,7 +283,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
 /* Enumerate the next file. */
 uint
-gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
+gp_enumerate_files_next(const gs_memory_t *mem, file_enum * pfen, char *ptr, uint maxlen)
 {
     const dir_entry *de;
     char *work = pfen->work;
@@ -294,7 +295,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 
     if (pfen->first_time) {
 	pfen->dirp = ((worklen == 0) ? opendir(".") : opendir(work));
-	if_debug1('e', "[e]file_enum:First-Open '%s'\n", work);
+	if_debug1(mem, 'e', "[e]file_enum:First-Open '%s'\n", work);
 	pfen->first_time = false;
 	if (pfen->dirp == 0) {	/* first opendir failed */
 	    gp_enumerate_files_close(pfen);
@@ -305,7 +306,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     if (de == 0) {		/* No more entries in this directory */
 	char *p;
 
-	if_debug0('e', "[e]file_enum:Closedir\n");
+	if_debug0(mem, 'e', "[e]file_enum:Closedir\n");
 	closedir(pfen->dirp);
 	/* Back working directory and matching pattern up one level */
 	p = rchr(work, '/', worklen);
@@ -323,10 +324,10 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 	    pathead = 0;
 
 	if (popdir(pfen)) {	/* Back up the directory tree. */
-	    if_debug1('e', "[e]file_enum:Dir popped '%s'\n", work);
+	    if_debug1(mem, 'e', "[e]file_enum:Dir popped '%s'\n", work);
 	    goto top;
 	} else {
-	    if_debug0('e', "[e]file_enum:Dirstack empty\n");
+	    if_debug0(mem, 'e', "[e]file_enum:Dirstack empty\n");
 	    gp_enumerate_files_close(pfen);
 	    return ~(uint) 0;
 	}
@@ -350,7 +351,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
     }
 
     /* Test for a match at this directory level */
-    if (!string_match((byte *) work, len, (byte *) pattern, pathead, NULL))
+    if (!string_match(mem, (byte *) work, len, (byte *) pattern, pathead, NULL))
 	goto top;
 
     /* Perhaps descend into subdirectories */
@@ -385,7 +386,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 	    char save_end = pattern[pathead];
 
 	    pattern[pathead] = 0;
-	    if_debug2('e', "[e]file_enum:fname='%s', p='%s'\n",
+	    if_debug2(mem, 'e', "[e]file_enum:fname='%s', p='%s'\n",
 		      work, pattern);
 	    pattern[pathead] = save_end;
 	}
@@ -419,7 +420,7 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 	    } else
 		DO_NOTHING;	/* >>> e_VMerror!!! */
 
-	    if_debug1('e', "[e]file_enum:Dir pushed '%s'\n",
+	    if_debug1(mem, 'e', "[e]file_enum:Dir pushed '%s'\n",
 		      work);
 	    worklen = len;
 	    pfen->dirp = dp;
@@ -440,7 +441,7 @@ gp_enumerate_files_close(file_enum * pfen)
 {
     gs_memory_t *mem = pfen->memory;
 
-    if_debug0('e', "[e]file_enum:Cleanup\n");
+    if_debug0(mem, 'e', "[e]file_enum:Cleanup\n");
     while (popdir(pfen))	/* clear directory stack */
 	DO_NOTHING;
     gs_free_object(mem, (byte *) pfen->work,

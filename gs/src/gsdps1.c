@@ -51,13 +51,13 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
     int code;
 
     if (llx > urx || lly > ury)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     /* Transform box to device coordinates. */
     ubox.p.x = llx;
     ubox.p.y = lly;
     ubox.q.x = urx;
     ubox.q.y = ury;
-    if ((code = gs_bbox_transform(&ubox, &ctm_only(pgs), &dbox)) < 0)
+    if ((code = gs_bbox_transform(pgs->memory, &ubox, &ctm_only(pgs), &dbox)) < 0)
 	return code;
     /* Round the corners in opposite directions. */
     /* Because we can't predict the magnitude of the dbox values, */
@@ -67,7 +67,7 @@ gs_setbbox(gs_state * pgs, floatp llx, floatp lly, floatp urx, floatp ury)
 	dbox.q.x >= fixed2float(max_fixed - box_rounding_slop_fixed + fixed_epsilon) ||
 	dbox.q.y >= fixed2float(max_fixed - box_rounding_slop_fixed + fixed_epsilon)
 	)
-	return_error(gs_error_limitcheck);
+	return_error(pgs->memory, gs_error_limitcheck);
     bbox.p.x =
 	(fixed) floor(dbox.p.x * fixed_scale) - box_rounding_slop_fixed;
     bbox.p.y =
@@ -166,8 +166,8 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	    gs_fixed_rect draw_rect;
 	    int x, y, w, h;
 
-	    if (gs_point_transform2fixed(&pgs->ctm, pr[i].p.x, pr[i].p.y, &p) < 0 ||
-	    gs_point_transform2fixed(&pgs->ctm, pr[i].q.x, pr[i].q.y, &q) < 0
+	    if (gs_point_transform2fixed(pgs->memory, &pgs->ctm, pr[i].p.x, pr[i].p.y, &p) < 0 ||
+	    gs_point_transform2fixed(pgs->memory, &pgs->ctm, pr[i].q.x, pr[i].q.y, &q) < 0
 		) {		/* Switch to the slow algorithm. */
 		goto slow;
 	    }

@@ -52,9 +52,9 @@ zbind(i_ctx_t *i_ctx_p)
 	    defn = *op->value.const_refs;
 	    break;
 	default:
-	    return_op_typecheck(op);
+	    return_op_typecheck(imemory, op);
     }
-    push(1);
+    push(imemory, 1);
     *op = defn;
     bsp = op;
     /*
@@ -129,7 +129,7 @@ zbind(i_ctx_t *i_ctx_p)
 				code = ref_stack_push(&o_stack, 1);
 				if (code < 0) {
 				    ref_stack_pop(&o_stack, depth);
-				    return_error(code);
+				    return_error(imemory, code);
 				}
 				bsp = osp;
 				*bsp = temp;
@@ -158,7 +158,7 @@ zserialnumber(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, gs_serialnumber);
     return 0;
 }
@@ -169,7 +169,7 @@ private long    real_time_0[2];
 private int
 zmisc_init_realtime(i_ctx_t * i_ctx_p)
 {
-    gp_get_realtime(real_time_0);
+    gp_get_realtime(imemory, real_time_0);
     return 0;
 }
 
@@ -180,10 +180,10 @@ zrealtime(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     long secs_ns[2];
 
-    gp_get_realtime(secs_ns);
+    gp_get_realtime(imemory, secs_ns);
     secs_ns[1] -= real_time_0[1];
     secs_ns[0] -= real_time_0[0];
-    push(1);
+    push(imemory, 1);
     make_int(op, secs_ns[0] * 1000 + secs_ns[1] / 1000000);
     return 0;
 }
@@ -195,8 +195,8 @@ zusertime(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     long secs_ns[2];
 
-    gp_get_usertime(secs_ns);
-    push(1);
+    gp_get_usertime(imemory, secs_ns);
+    push(imemory, 1);
     make_int(op, secs_ns[0] * 1000 + secs_ns[1] / 1000000);
     return 0;
 }
@@ -213,10 +213,10 @@ zgetenv(i_ctx_t *i_ctx_p)
     byte *value;
     int len = 0;
 
-    check_read_type(*op, t_string);
+    check_read_type(imemory, *op, t_string);
     str = ref_to_string(op, imemory, "getenv key");
     if (str == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     if (gp_getenv(str, (char *)0, &len) > 0) {	/* key missing */
 	ifree_string((byte *) str, r_size(op) + 1, "getenv key");
 	make_false(op);
@@ -225,14 +225,14 @@ zgetenv(i_ctx_t *i_ctx_p)
     value = ialloc_string(len, "getenv value");
     if (value == 0) {
 	ifree_string((byte *) str, r_size(op) + 1, "getenv key");
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     }
     DISCARD(gp_getenv(str, (char *)value, &len));	/* can't fail */
     ifree_string((byte *) str, r_size(op) + 1, "getenv key");
     /* Delete the stupid C string terminator. */
     value = iresize_string(value, len, len - 1,
 			   "getenv value");	/* can't fail */
-    push(1);
+    push(imemory, 1);
     make_string(op - 1, a_all | icurrent_space, len - 1, value);
     make_true(op);
     return 0;
@@ -247,8 +247,8 @@ zmakeoperator(i_ctx_t *i_ctx_p)
     uint count;
     ref *tab;
 
-    check_type(op[-1], t_name);
-    check_proc(*op);
+    check_type(imemory, op[-1], t_name);
+    check_proc(imemory, *op);
     switch (r_space(op)) {
 	case avm_global:
 	    opt = &op_array_table_global;
@@ -257,7 +257,7 @@ zmakeoperator(i_ctx_t *i_ctx_p)
 	    opt = &op_array_table_local;
 	    break;
 	default:
-	    return_error(e_invalidaccess);
+	    return_error(imemory, e_invalidaccess);
     }
     count = opt->count;
     tab = opt->table.value.refs;
@@ -272,7 +272,7 @@ zmakeoperator(i_ctx_t *i_ctx_p)
     while (count > 0 && r_has_type(&tab[count - 1], t_null))
 	--count;
     if (count == r_size(&opt->table))
-	return_error(e_limitcheck);
+	return_error(imemory, e_limitcheck);
     ref_assign_old(&opt->table, &tab[count], op, "makeoperator");
     opt->nx_table[count] = name_index(op - 1);
     op_index_ref(opt->base_index + count, op - 1);
@@ -287,7 +287,7 @@ zoserrno(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, errno);
     return 0;
 }
@@ -298,7 +298,7 @@ zsetoserrno(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     errno = op->value.intval;
     pop(1);
     return 0;
@@ -315,13 +315,13 @@ zoserrorstring(i_ctx_t *i_ctx_p)
     uint len;
     byte ch;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     str = gp_strerror((int)op->value.intval);
     if (str == 0 || (len = strlen(str)) == 0) {
 	make_false(op);
 	return 0;
     }
-    check_ostack(1);
+    check_ostack(imemory, 1);
     code = string_to_ref(str, op, iimemory, ".oserrorstring");
     if (code < 0)
 	return code;
@@ -330,7 +330,7 @@ zoserrorstring(i_ctx_t *i_ctx_p)
 	   ((ch = op->value.bytes[--len]) == '\r' || ch == '\n')
 	)
 	r_dec_size(op, 1);
-    push(1);
+    push(imemory, 1);
     make_true(op);
     return 0;
 }
@@ -340,8 +340,8 @@ private int
 zsetdebug(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
-    check_read_type(op[-1], t_string);
-    check_type(*op, t_boolean);
+    check_read_type(imemory, op[-1], t_string);
+    check_type(imemory, *op, t_boolean);
     {
 	int i;
 

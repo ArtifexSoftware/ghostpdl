@@ -379,7 +379,7 @@ bit_print_page(gx_device_printer * pdev, FILE * prn_stream)
     int lnum = 0, bottom = pdev->height;
 
     if (in == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     for (; lnum < bottom; ++lnum) {
 	gdev_prn_get_bits(pdev, lnum, in, &data);
 	if (!nul)

@@ -264,7 +264,7 @@ cos_dict_put_c_key_vector3(cos_dict_t *pcd, const char *key,
     int code;
 
     if (pca == 0)
-	return_error(gs_error_VMerror);
+	return_error(pcd->pdev->memory, gs_error_VMerror);
     code = cos_array_add_vector3(pca, pvec);
     if (code < 0) {
 	COS_FREE(pca, "cos_array_from_vector3");
@@ -313,13 +313,13 @@ const pdf_color_space_names_t pdf_color_space_names_short = {
  * given number of components.
  */
 int
-pdf_cspace_init_Device(gs_color_space *pcs, int num_components)
+pdf_cspace_init_Device(const gs_memory_t *mem, gs_color_space *pcs, int num_components)
 {
     switch (num_components) {
-    case 1: gs_cspace_init_DeviceGray(pcs); break;
-    case 3: gs_cspace_init_DeviceRGB(pcs); break;
-    case 4: gs_cspace_init_DeviceCMYK(pcs); break;
-    default: return_error(gs_error_rangecheck);
+    case 1: gs_cspace_init_DeviceGray(mem, pcs); break;
+    case 3: gs_cspace_init_DeviceRGB(mem, pcs); break;
+    case 4: gs_cspace_init_DeviceCMYK(mem, pcs); break;
+    default: return_error(mem, gs_error_rangecheck);
     }
     return 0;
 }
@@ -377,7 +377,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 
     /* PDF doesn't support Indexed color spaces with more than 256 entries. */
     if (num_entries > 256)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     table = gs_alloc_string(mem, string_size, "pdf_color_space(table)");
     palette = gs_alloc_string(mem, table_size, "pdf_color_space(palette)");
     if (table == 0 || palette == 0) {
@@ -385,7 +385,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		       "pdf_color_space(palette)");
 	gs_free_string(mem, table, string_size,
 		       "pdf_color_space(table)");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     swrite_string(&s, table, string_size);
     s_init(&es, NULL);
@@ -436,7 +436,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    for (i = 0; i < num_entries; ++i)
 		palette[i] = palette[i * 3];
 	    table_size = num_entries;
-	    gs_cspace_init_DeviceGray(&cs_gray);
+	    gs_cspace_init_DeviceGray(mem, &cs_gray);
 	    base_space = &cs_gray;
 	}
     }
@@ -554,7 +554,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     /* Space has parameters -- create an array. */
     pca = cos_array_alloc(pdev, "pdf_color_space");
     if (pca == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
 
     switch (csi) {
 
@@ -572,7 +572,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 
 	pciec = (const gs_cie_common *)pcie;
 	if (!pcie->common.MatrixLMN.is_identity)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	if (unitary && identityA &&
 	    CIE_CACHE_IS_IDENTITY(&pcie->caches.DecodeA) &&
 	    CIE_SCALAR3_CACHE_IS_EXPONENTIAL(pcie->common.caches.DecodeLMN, expts) &&
@@ -595,7 +595,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    return code;
 	pcd = cos_dict_alloc(pdev, "pdf_color_space(dict)");
 	if (pcd == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	if (expts.u != 1) {
 	    code = cos_dict_put_c_key_real(pcd, "/Gamma", expts.u);
 	    if (code < 0)
@@ -636,7 +636,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    /* Represent this as a Lab space. */
 	    pcd = cos_dict_alloc(pdev, "pdf_color_space(dict)");
 	    if (pcd == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    code = pdf_put_lab_color_space(pca, pcd, pcie->RangeABC.ranges);
 	    goto cal;
 	} else {
@@ -651,7 +651,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    return code;
 	pcd = cos_dict_alloc(pdev, "pdf_color_space(dict)");
 	if (pcd == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	if (expts.u != 1 || expts.v != 1 || expts.w != 1) {
 	    code = cos_dict_put_c_key_vector3(pcd, "/Gamma", &expts);
 	    if (code < 0)
@@ -662,7 +662,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 		cos_array_alloc(pdev, "pdf_color_space(Matrix)");
 
 	    if (pcma == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    if ((code = cos_array_add_vector3(pcma, &pmat->cu)) < 0 ||
 		(code = cos_array_add_vector3(pcma, &pmat->cv)) < 0 ||
 		(code = cos_array_add_vector3(pcma, &pmat->cw)) < 0 ||
@@ -696,7 +696,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pfn = gs_cspace_get_devn_function(pcs);
 	/****** CURRENTLY WE ONLY HANDLE Functions ******/
 	if (pfn == 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	{
 	    cos_array_t *psna = 
 		cos_array_alloc(pdev, "pdf_color_space(DeviceN)");
@@ -705,7 +705,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    uint name_string_length;
 
 	    if (psna == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    for (i = 0; i < pcs->params.device_n.num_components; ++i) {
 	 	if ((code = pcs->params.device_n.get_colorname_string(
 		                  pcs->params.device_n.names[i], &name_string, 
@@ -728,7 +728,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pfn = gs_cspace_get_sepr_function(pcs);
 	/****** CURRENTLY WE ONLY HANDLE Functions ******/
 	if (pfn == 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	{
 	    byte *name_string;
 	    uint name_string_length;
@@ -758,7 +758,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	break;
 
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     }
     /*
      * Register the color space as a resource, since it must be referenced
@@ -784,7 +784,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 
 	    if (copy_ranges == 0) {
 		COS_FREE(pca, "pdf_color_space");
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    }
 	    memcpy(copy_ranges, ranges, num_comp * sizeof(gs_range_t));
 	    ppcs->ranges = copy_ranges;

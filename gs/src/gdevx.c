@@ -236,11 +236,11 @@ x_device(gs_x11alpha_device,
 private int alt_put_image(gx_device * dev, Display * dpy, Drawable win,
 GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h);
 
-#define put_image(dpy,win,gc,im,sx,sy,x,y,w,h)\
+#define put_image(mem, dpy,win,gc,im,sx,sy,x,y,w,h)\
   BEGIN\
     if ( xdev->useXPutImage ) {\
       if (XInitImage(im) == 0)\
-	return_error(gs_error_unknownerror);\
+	return_error(mem, gs_error_unknownerror);\
       XPutImage(dpy,win,gc,im,sx,sy,x,y,w,h);\
     } else {\
       int code_ = alt_put_image(dev,dpy,win,gc,im,sx,sy,x,y,w,h);\
@@ -366,7 +366,7 @@ x_fill_rectangle(gx_device * dev,
     if (xdev->bpixmap != (Pixmap) 0) {
 	x_update_add(xdev, x, y, w, h);
     }
-    if_debug5('F', "[F] fill (%d,%d):(%d,%d) %ld\n",
+    if_debug5(dev->memory, 'F', "[F] fill (%d,%d):(%d,%d) %ld\n",
 	      x, y, w, h, (long)color);
     return 0;
 }
@@ -456,7 +456,7 @@ x_copy_mono(gx_device * dev,
 	NOTE_COLOR(xdev, lzero);
     if (one != gx_no_color_index)
 	NOTE_COLOR(xdev, lone);
-    put_image(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
+    put_image(xdev->memory, xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
 	      sourcex, 0, x, y, w, h);
 
     goto out;
@@ -471,13 +471,13 @@ x_copy_mono(gx_device * dev,
 	xdev->cp.pixmap =
 	    XCreatePixmap(xdev->dpy, xdev->win, raster << 3, h, 1);
 	if (xdev->cp.pixmap == (Pixmap) 0) {
-	    lprintf("x_copy_mono: can't allocate pixmap\n");
-	    return_error(gs_error_VMerror);
+	    lprintf(dev->memory, "x_copy_mono: can't allocate pixmap\n");
+	    return_error(dev->memory, gs_error_VMerror);
 	}
 	xdev->cp.gc = XCreateGC(xdev->dpy, xdev->cp.pixmap, 0, 0);
 	if (xdev->cp.gc == (GC) 0) {
-	    lprintf("x_copy_mono: can't allocate GC\n");
-	    return_error(gs_error_VMerror);
+	    lprintf(dev->memory, "x_copy_mono: can't allocate GC\n");
+	    return_error(dev->memory, gs_error_VMerror);
 	}
 	xdev->cp.raster = raster;
 	xdev->cp.height = h;
@@ -496,7 +496,7 @@ x_copy_mono(gx_device * dev,
 	XSetForeground(xdev->dpy, xdev->cp.gc, (x_pixel) 1);
 	X_SET_FORE_COLOR(xdev, lone);
     }
-    put_image(xdev->dpy, xdev->cp.pixmap, xdev->cp.gc,
+    put_image(xdev->memory, xdev->dpy, xdev->cp.pixmap, xdev->cp.gc,
 	      &xdev->image, sourcex, 0, 0, 0, w, h);
 
     /* Install as clipmask. */
@@ -574,7 +574,7 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
 	xdev->image.bytes_per_line = raster;
 	xdev->image.bits_per_pixel = depth;
 	if (XInitImage(&xdev->image) == 0)
-	    return_error(gs_error_unknownerror);
+	    return_error(xdev->memory, gs_error_unknownerror);
 	XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
 		  sourcex, 0, x, y, w, h);
 	xdev->image.depth = xdev->image.bits_per_pixel = 1;
@@ -598,7 +598,7 @@ x_copy_color(gx_device * dev,
     code = x_copy_image(xdev, base, sourcex, raster, x, y, w, h);
     if (xdev->bpixmap != (Pixmap) 0)
 	x_update_add(xdev, x, y, w, h);
-    if_debug4('F', "[F] copy_color (%d,%d):(%d,%d)\n",
+    if_debug4(dev->memory, 'F', "[F] copy_color (%d,%d):(%d,%d)\n",
 	      x, y, w, h);
     return code;
 }
@@ -689,7 +689,7 @@ x_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
     if (xdev->bpixmap != (Pixmap) 0) {
 	x_update_add(xdev, x, y, w, h);
     }
-    if_debug6('F', "[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
+    if_debug6(dev->memory, 'F', "[F] tile (%d,%d):(%d,%d) %ld,%ld\n",
 	      x, y, w, h, lzero, lone);
     return 0;
 }
@@ -747,7 +747,7 @@ x_begin_typed_image(gx_device * dev,
 
 	rect.p.x = rect.p.y = 0;
 	rect.q.x = pim->Width, rect.q.y = pim->Height;
-	gs_bbox_transform(&rect, &dmat, &dest);
+	gs_bbox_transform(dev->memory, &rect, &dmat, &dest);
 	if (pcpath != NULL &&
 	    !gx_cpath_includes_rectangle(pcpath,
 			       float2fixed(dest.p.x), float2fixed(dest.p.y),
@@ -756,7 +756,7 @@ x_begin_typed_image(gx_device * dev,
 	    goto punt;
 	rect.q.x += (rect.p.x = pim->XOrigin);
 	rect.q.y += (rect.p.y = pim->YOrigin);
-	gs_bbox_transform(&rect, &smat, &src);
+	gs_bbox_transform(dev->memory, &rect, &smat, &src);
 	(*pic->type->source_size) (pis, pic, &size);
 	X_SET_FILL_STYLE(xdev, FillSolid);
 	X_SET_FUNCTION(xdev, GXcopy);
@@ -797,7 +797,7 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 #endif /* GET_IMAGE_EXPOSURES */
 
     if (x0 < 0 || y0 < 0 || x1 > dev->width || y1 > dev->height)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     /* XGetImage can only handle x_offset = 0. */
     if ((options & GB_OFFSET_SPECIFIED) && params->x_offset == 0)
 	options = (options & ~GB_OFFSET_SPECIFIED) | GB_OFFSET_0;
@@ -914,7 +914,7 @@ x_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 			    q[0] = p[1], q[1] = p[0];
 		    }
 		} else
-		    code = gs_note_error(gs_error_rangecheck);
+		    code = gs_note_error(xdev->memory, gs_error_rangecheck);
 	    }
 	}
 	XDestroyImage(image);
@@ -1005,17 +1005,17 @@ set_tile(gx_device * dev, const gx_strip_bitmap * tile)
     if (gs_debug['H']) {
 	int i;
 
-	dlprintf4("[H] 0x%lx: width=%d height=%d raster=%d\n",
+	dlprintf4(dev->memory, "[H] 0x%lx: width=%d height=%d raster=%d\n",
 	      (ulong) tile->data, tile->size.x, tile->size.y, tile->raster);
-	dlputs("");
+	dlputs(dev->memory, "");
 	for (i = 0; i < tile->raster * tile->size.y; i++)
-	    dprintf1(" %02x", tile->data[i]);
-	dputc('\n');
+	    dprintf1(dev->memory, " %02x", tile->data[i]);
+	dputc(dev->memory, '\n');
     }
 #endif
     XSetTile(xdev->dpy, xdev->gc, xdev->ht.no_pixmap);	/* *** X bug *** */
     X_SET_FUNCTION(xdev, GXcopy);
-    put_image(xdev->dpy, xdev->ht.pixmap, xdev->gc, &xdev->image,
+    put_image(xdev->memory, xdev->dpy, xdev->ht.pixmap, xdev->gc, &xdev->image,
 	      0, 0, 0, 0, tile->size.x, tile->size.y);
     XSetTile(xdev->dpy, xdev->gc, xdev->ht.pixmap);
     xdev->ht.id = tile->id;
@@ -1198,8 +1198,8 @@ alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc, XImage *pi,
     if (pi->format != XYBitmap || pi->byte_order != MSBFirst ||
 	pi->bitmap_bit_order != MSBFirst || pi->depth != 1
 	) {
-	lprintf("alt_put_image: unimplemented parameter values!\n");
-	return_error(gs_error_rangecheck);
+	lprintf(dev->memory, "alt_put_image: unimplemented parameter values!\n");
+	return_error(dev->memory, gs_error_rangecheck);
     }
 #endif
 
@@ -1213,8 +1213,8 @@ alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc, XImage *pi,
 	/* The only cases used above are fc = ~0 or bc = ~0. */
 #ifdef DEBUG
 	if (gcv.foreground != ~(x_pixel)0 && gcv.background != ~(x_pixel)0) {
-	    lprintf("alt_put_image: unimplemented GXand case!\n");
-	    return_error(gs_error_rangecheck);
+	    lprintf(dev->memory, "alt_put_image: unimplemented GXand case!\n");
+	    return_error(dev->memory, gs_error_rangecheck);
 	}
 #endif
 	if (gcv.background != ~(x_pixel) 0) {
@@ -1225,8 +1225,8 @@ alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc, XImage *pi,
 	/* The only cases used above are fc = 0 or bc = 0. */
 #ifdef DEBUG
 	if (gcv.foreground != 0 && gcv.background != 0) {
-	    lprintf("alt_put_image: unimplemented GXor case!\n");
-	    return_error(gs_error_rangecheck);
+	    lprintf(dev->memory, "alt_put_image: unimplemented GXor case!\n");
+	    return_error(dev->memory, gs_error_rangecheck);
 	}
 #endif
 	if (gcv.background != 0) {
@@ -1234,8 +1234,8 @@ alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc, XImage *pi,
 	    invert = 0xff;
 	}
     } else {
-	lprintf("alt_put_image: unimplemented function.\n");
-	return_error(gs_error_rangecheck);
+	lprintf(dev->memory, "alt_put_image: unimplemented function.\n");
+	return_error(dev->memory, gs_error_rangecheck);
     }
 
     for (yi = 0; yi < h; yi++, data += raster) {

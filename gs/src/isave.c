@@ -150,7 +150,8 @@ private const long min_inner_chunk_space = sizeof(chunk_head_t) + 500;
 private void
 print_save(const char *str, uint spacen, const alloc_save_t *sav)
 {
-  if_debug5('u', "[u]%s space %u 0x%lx: cdata = 0x%lx, id = %lu\n",\
+  if_debug5(sav->state.stable_memory, 
+	    'u', "[u]%s space %u 0x%lx: cdata = 0x%lx, id = %lu\n",\
 	    str, spacen, (ulong)sav, (ulong)sav->client_data, (ulong)sav->id);
 }
 
@@ -222,25 +223,25 @@ gs_private_st_complex_only(st_alloc_change, alloc_change_t, "alloc_change",
 /* Debugging printout */
 #ifdef DEBUG
 private void
-alloc_save_print(alloc_change_t * cp, bool print_current)
+alloc_save_print(const gs_memory_t *mem, alloc_change_t * cp, bool print_current)
 {
-    dprintf2(" 0x%lx: 0x%lx: ", (ulong) cp, (ulong) cp->where);
+    dprintf2(mem, " 0x%lx: 0x%lx: ", (ulong) cp, (ulong) cp->where);
     if (r_is_packed(&cp->contents)) {
 	if (print_current)
-	    dprintf2("saved=%x cur=%x\n", *(ref_packed *) & cp->contents,
+	    dprintf2(mem, "saved=%x cur=%x\n", *(ref_packed *) & cp->contents,
 		     *cp->where);
 	else
-	    dprintf1("%x\n", *(ref_packed *) & cp->contents);
+	    dprintf1(mem, "%x\n", *(ref_packed *) & cp->contents);
     } else {
 	if (print_current)
-	    dprintf6("saved=%x %x %lx cur=%x %x %lx\n",
+	    dprintf6(mem, "saved=%x %x %lx cur=%x %x %lx\n",
 		     r_type_attrs(&cp->contents), r_size(&cp->contents),
 		     (ulong) cp->contents.value.intval,
 		     r_type_attrs((ref *) cp->where),
 		     r_size((ref *) cp->where),
 		     (ulong) ((ref *) cp->where)->value.intval);
 	else
-	    dprintf3("%x %x %lx\n",
+	    dprintf3(mem, "%x %x %lx\n",
 		     r_type_attrs(&cp->contents), r_size(&cp->contents),
 		     (ulong) cp->contents.value.intval);
     }
@@ -307,7 +308,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 {
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
-    ulong sid = gs_next_ids(2);
+    ulong sid = gs_next_ids((const gs_memory_t *)lmem->stable_memory, 2);
     bool global =
 	lmem->save_level == 0 && gmem != lmem &&
 	gmem->num_contexts == 1;
@@ -390,7 +391,8 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 		break;		/* maybe should fail */
 	    alloc_init_chunk(inner, cp->cbot, cp->ctop, cp->sreloc != 0, cp);
 	    alloc_link_chunk(inner, mem);
-	    if_debug2('u', "[u]inner chunk: cbot=0x%lx ctop=0x%lx\n",
+	    if_debug2((const gs_memory_t *)mem, 
+		      'u', "[u]inner chunk: cbot=0x%lx ctop=0x%lx\n",
 		      (ulong) inner->cbot, (ulong) inner->ctop);
 	    if (cp == save_mem.pcc)
 		new_pcc = inner;
@@ -401,7 +403,8 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 
     save = gs_alloc_struct((gs_memory_t *) mem, alloc_save_t,
 			   &st_alloc_save, "alloc_save_space(save)");
-    if_debug2('u', "[u]save space %u at 0x%lx\n",
+    if_debug2((const gs_memory_t *)mem, 
+	      'u', "[u]save space %u at 0x%lx\n",
 	      mem->space, (ulong) save);
     if (save == 0) {
 	/* Free the inner chunk structures.  This is the easiest way. */
@@ -415,7 +418,8 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
     save->is_current = (dmem->current == mem);
     save->id = sid;
     mem->saved = save;
-    if_debug2('u', "[u%u]file_save 0x%lx\n",
+    if_debug2((const gs_memory_t *)mem, 
+	      'u', "[u%u]file_save 0x%lx\n",
 	      mem->space, (ulong) mem->streams);
     mem->streams = 0;
     mem->total_scanned = 0;
@@ -447,7 +451,7 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     else if (r_is_struct(pcont))
 	cp->offset = (byte *) where - (byte *) pcont->value.pstruct;
     else {
-	lprintf3("Bad type %u for save!  pcont = 0x%lx, where = 0x%lx\n",
+	lprintf3((const gs_memory_t *)mem, "Bad type %u for save!  pcont = 0x%lx, where = 0x%lx\n",
 		 r_type(pcont), (ulong) pcont, (ulong) where);
 	gs_abort();
     }
@@ -460,8 +464,8 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     mem->changes = cp;
 #ifdef DEBUG
     if (gs_debug_c('U')) {
-	dlprintf1("[U]save(%s)", client_name_string(cname));
-	alloc_save_print(cp, false);
+	dlprintf1((const gs_memory_t *)mem, "[U]save(%s)", client_name_string(cname));
+	alloc_save_print((const gs_memory_t *)mem, cp, false);
     }
 #endif
     return 0;
@@ -504,7 +508,8 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     const char *const ptr = (const char *)vptr;
     register const gs_ref_memory_t *mem = save->space_local;
 
-    if_debug2('U', "[U]is_since_save 0x%lx, 0x%lx:\n",
+    if_debug2((const gs_memory_t *)mem, 
+	      'U', "[U]is_since_save 0x%lx, 0x%lx:\n",
 	      (ulong) ptr, (ulong) save);
     if (mem->saved == 0) {	/* This is a special case, the final 'restore' from */
 	/* alloc_restore_all. */
@@ -515,15 +520,16 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
     for (;; mem = &mem->saved->state) {
 	const chunk_t *cp;
 
-	if_debug1('U', "[U]checking mem=0x%lx\n", (ulong) mem);
+	if_debug1((const gs_memory_t *)mem, 'U', "[U]checking mem=0x%lx\n", (ulong) mem);
 	for (cp = mem->cfirst; cp != 0; cp = cp->cnext) {
 	    if (ptr_is_within_chunk(ptr, cp)) {
-		if_debug3('U', "[U+]in new chunk 0x%lx: 0x%lx, 0x%lx\n",
+		if_debug3((const gs_memory_t *)mem, 
+			  'U', "[U+]in new chunk 0x%lx: 0x%lx, 0x%lx\n",
 			  (ulong) cp,
 			  (ulong) cp->cbase, (ulong) cp->cend);
 		return true;
 	    }
-	    if_debug1('U', "[U-]not in 0x%lx\n", (ulong) cp);
+	    if_debug1((const gs_memory_t *)mem, 'U', "[U-]not in 0x%lx\n", (ulong) cp);
 	}
 	if (mem->saved == save) {	/* We've checked all the more recent saves, */
 	    /* must be OK. */
@@ -544,10 +550,12 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
 	) {
 	const chunk_t *cp;
 
-	if_debug1('U', "[U]checking global mem=0x%lx\n", (ulong) mem);
+	if_debug1((const gs_memory_t *)mem, 
+		  'U', "[U]checking global mem=0x%lx\n", (ulong) mem);
 	for (cp = mem->cfirst; cp != 0; cp = cp->cnext)
 	    if (ptr_is_within_chunk(ptr, cp)) {
-		if_debug3('U', "[U+]  new chunk 0x%lx: 0x%lx, 0x%lx\n",
+		if_debug3((const gs_memory_t *)mem, 
+			  'U', "[U+]  new chunk 0x%lx: 0x%lx, 0x%lx\n",
 			  (ulong) cp, (ulong) cp->cbase, (ulong) cp->cend);
 		return true;
 	    }
@@ -698,8 +706,8 @@ restore_space(gs_ref_memory_t * mem, gs_dual_memory_t *dmem)
 	while (cp) {
 #ifdef DEBUG
 	    if (gs_debug_c('U')) {
-		dlputs("[U]restore");
-		alloc_save_print(cp, true);
+		dlputs((const gs_memory_t *)mem, "[U]restore");
+		alloc_save_print((const gs_memory_t *)mem, cp, true);
 	    }
 #endif
 	    if (r_is_packed(&cp->contents))
@@ -804,7 +812,8 @@ restore_finalize(gs_ref_memory_t * mem)
 	    struct_proc_finalize((*finalize)) =
 	    pre->o_type->finalize;
 	if (finalize != 0) {
-	    if_debug2('u', "[u]restore finalizing %s 0x%lx\n",
+	    if_debug2((const gs_memory_t *)mem, 
+		      'u', "[u]restore finalizing %s 0x%lx\n",
 		      struct_type_name_string(pre->o_type),
 		      (ulong) (pre + 1));
 	    (*finalize) (pre + 1);
@@ -821,7 +830,8 @@ restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 #ifdef DEBUG
     if (mem) {
 	/* Note restoring of the file list. */
-	if_debug4('u', "[u%u]file_restore 0x%lx => 0x%lx for 0x%lx\n",
+	if_debug4((const gs_memory_t *)mem, 
+		  'u', "[u%u]file_restore 0x%lx => 0x%lx for 0x%lx\n",
 		  mem->space, (ulong)mem->streams,
 		  (ulong)sprev->state.streams, (ulong) sprev);
     }
@@ -986,7 +996,8 @@ forget_changes(gs_ref_memory_t * mem)
     for (; chp; chp = next) {
 	ref_packed *prp = chp->where;
 
-	if_debug1('U', "[U]forgetting change 0x%lx\n", (ulong) chp);
+	if_debug1((const gs_memory_t *)mem, 
+		  'U', "[U]forgetting change 0x%lx\n", (ulong) chp);
 	if (!r_is_packed(prp))
 	    r_clear_attrs((ref *) prp, l_new);
 	next = chp->next;
@@ -1002,7 +1013,8 @@ file_forget_save(gs_ref_memory_t * mem)
     stream *streams = mem->streams;
     stream *saved_streams = save->state.streams;
 
-    if_debug4('u', "[u%d]file_forget_save 0x%lx + 0x%lx for 0x%lx\n",
+    if_debug4((const gs_memory_t *)mem, 
+	      'u', "[u%d]file_forget_save 0x%lx + 0x%lx for 0x%lx\n",
 	      mem->space, (ulong) streams, (ulong) saved_streams,
 	      (ulong) save);
     if (streams == 0)
@@ -1036,7 +1048,7 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 
 	    SCAN_CHUNK_OBJECTS(cp)
 		DO_ALL
-		if_debug3('U', "[U]set_new scan(0x%lx(%u), %d)\n",
+		if_debug3((const gs_memory_t *)mem, 'U', "[U]set_new scan(0x%lx(%u), %d)\n",
 			  (ulong) pre, size, to_new);
 	    if (pre->o_type == &st_refs) {
 		/* These are refs, scan them. */
@@ -1049,7 +1061,7 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 # define RP_REF(rp) ((ref *)rp)
 #endif
 
-		if_debug2('U', "[U]refs 0x%lx to 0x%lx\n",
+		if_debug2((const gs_memory_t *)mem, 'U', "[U]refs 0x%lx to 0x%lx\n",
 			  (ulong) prp, (ulong) next);
 		has_refs = true;
 		scanned += size;
@@ -1085,7 +1097,8 @@ save_set_new(gs_ref_memory_t * mem, bool to_new)
 	}
     }
     END_CHUNKS_SCAN
-	if_debug2('u', "[u]set_new (%s) scanned %ld\n",
+	if_debug2((const gs_memory_t *)mem, 
+		  'u', "[u]set_new (%s) scanned %ld\n",
 		  (to_new ? "restore" : "save"), scanned);
     return scanned;
 }
@@ -1100,7 +1113,8 @@ save_set_new_changes(gs_ref_memory_t * mem, bool to_new)
     for (; chp; chp = chp->next) {
 	ref_packed *prp = chp->where;
 
-	if_debug3('U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
+	if_debug3((const gs_memory_t *)mem, 
+		  'U', "[U]set_new 0x%lx: (0x%lx, %d)\n",
 		  (ulong)chp, (ulong)prp, new);
 	if (!r_is_packed(prp)) {
 	    ref *const rp = (ref *) prp;

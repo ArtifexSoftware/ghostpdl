@@ -40,7 +40,7 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
 	gs_free_object(mem, fdep, "gs_type0_from_cidfont(FDepVector)");
 	gs_free_object(mem, encoding, "gs_type0_from_cidfont(Encoding)");
 	gs_free_object(mem, font0, "gs_type0_from_cidfont(font)");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     if (psmat)
 	font0->FontMatrix = *psmat;

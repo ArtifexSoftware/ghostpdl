@@ -35,7 +35,7 @@
 #include "store.h"
 
 /* Forward references */
-private bool map_glyph_to_char(const ref *, const ref *, ref *);
+private bool map_glyph_to_char(const gs_memory_t *mem, const ref *, const ref *, ref *);
 private int finish_show(i_ctx_t *);
 private int op_show_cleanup(i_ctx_t *);
 private int op_show_return_width(i_ctx_t *, uint, double *);
@@ -65,7 +65,7 @@ zashow(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_text_enum_t *penum;
     double axy[2];
-    int code = num_params(op - 1, 2, axy);
+    int code = num_params(imemory, op - 1, 2, axy);
 
     if (code < 0 ||
 	(code = op_show_setup(i_ctx_p, op)) != 0 ||
@@ -87,10 +87,10 @@ zwidthshow(i_ctx_t *i_ctx_p)
     double cxy[2];
     int code;
 
-    check_type(op[-1], t_integer);
+    check_type(imemory, op[-1], t_integer);
     if ((gs_char) (op[-1].value.intval) != op[-1].value.intval)
-	return_error(e_rangecheck);
-    if ((code = num_params(op - 2, 2, cxy)) < 0 ||
+	return_error(imemory, e_rangecheck);
+    if ((code = num_params(imemory, op - 2, 2, cxy)) < 0 ||
 	(code = op_show_setup(i_ctx_p, op)) != 0 ||
 	(code = gs_widthshow_begin(igs, cxy[0], cxy[1],
 				   (gs_char) op[-1].value.intval,
@@ -113,11 +113,11 @@ zawidthshow(i_ctx_t *i_ctx_p)
     double cxy[2], axy[2];
     int code;
 
-    check_type(op[-3], t_integer);
+    check_type(imemory, op[-3], t_integer);
     if ((gs_char) (op[-3].value.intval) != op[-3].value.intval)
-	return_error(e_rangecheck);
-    if ((code = num_params(op - 4, 2, cxy)) < 0 ||
-	(code = num_params(op - 1, 2, axy)) < 0 ||
+	return_error(imemory, e_rangecheck);
+    if ((code = num_params(imemory, op - 4, 2, cxy)) < 0 ||
+	(code = num_params(imemory, op - 1, 2, axy)) < 0 ||
 	(code = op_show_setup(i_ctx_p, op)) != 0 ||
 	(code = gs_awidthshow_begin(igs, cxy[0], cxy[1],
 				    (gs_char) op[-3].value.intval,
@@ -140,7 +140,7 @@ zkshow(i_ctx_t *i_ctx_p)
     gs_text_enum_t *penum;
     int code;
 
-    check_proc(op[-1]);
+    check_proc(imemory, op[-1]);
     if ((code = op_show_setup(i_ctx_p, op)) != 0 ||
 	(code = gs_kshow_begin(igs, op->value.bytes, r_size(op),
 			       imemory, &penum)) < 0)
@@ -189,7 +189,7 @@ finish_stringwidth(i_ctx_t *i_ctx_p)
     gs_point width;
 
     gs_text_total_width(senum, &width);
-    push(2);
+    push(imemory, 2);
     make_real(op - 1, width.x);
     make_real(op, width.y);
     return 0;
@@ -205,7 +205,7 @@ zchar_path(i_ctx_t *i_ctx_p,
     gs_text_enum_t *penum;
     int code;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     code = op_show_setup(i_ctx_p, op - 1);
     if (code != 0 ||
 	(code = begin(igs, op[-1].value.bytes, r_size(op - 1),
@@ -237,10 +237,10 @@ zsetcachedevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double wbox[6];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    int code = num_params(op, 6, wbox);
+    int code = num_params(imemory, op, 6, wbox);
 
     if (penum == 0)
-	return_error(e_undefined);
+	return_error(imemory, e_undefined);
     if (code < 0)
 	return code;
     if (zchar_show_width_only(penum))
@@ -261,10 +261,10 @@ zsetcachedevice2(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double wbox[10];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    int code = num_params(op, 10, wbox);
+    int code = num_params(imemory, op, 10, wbox);
 
     if (penum == 0)
-	return_error(e_undefined);
+	return_error(imemory, e_undefined);
     if (code < 0)
 	return code;
     if (zchar_show_width_only(penum))
@@ -287,10 +287,10 @@ zsetcharwidth(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double width[2];
     gs_text_enum_t *penum = op_show_find(i_ctx_p);
-    int code = num_params(op, 2, width);
+    int code = num_params(imemory, op, 2, width);
 
     if (penum == 0)
-	return_error(e_undefined);
+	return_error(imemory, e_undefined);
     if (code < 0)
 	return code;
     if (zchar_show_width_only(penum))
@@ -311,13 +311,13 @@ zfontbbox(i_ctx_t *i_ctx_p)
     double bbox[4];
     int code;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    code = font_bbox_param(op, bbox);
+    check_type(imemory, *op, t_dictionary);
+    check_dict_read(imemory, *op);
+    code = font_bbox_param(imemory, op, bbox);
     if (code < 0)
 	return code;
     if (bbox[0] < bbox[2] && bbox[1] < bbox[3]) {
-	push(4);
+	push(imemory, 4);
 	make_reals(op - 4, bbox, 4);
 	make_true(op);
     } else {			/* No bbox, or an empty one. */
@@ -369,7 +369,7 @@ glyph_ref(gs_glyph glyph, ref * gref)
 int
 op_show_setup(i_ctx_t *i_ctx_p, os_ptr op)
 {
-    check_read_type(*op, t_string);
+    check_read_type(imemory, *op, t_string);
     return op_show_enum_setup(i_ctx_p);
 }
 int
@@ -410,7 +410,7 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 	      penum->text.data.bytes[0] ==
 	        (gs_text_current_char(osenum) & 0xff))
 	    )
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	text = penum->text;
 	text.operation =
 	    (text.operation &
@@ -479,7 +479,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 	case TEXT_PROCESS_INTERVENE: {
 	    ref *pslot = &sslot; /* only used for kshow */
 
-	    push(2);
+	    push(imemory, 2);
 	    make_int(op - 1, gs_text_current_char(penum)); /* previous char */
 	    make_int(op, gs_text_next_char(penum));
 	    push_op_estack(op_show_continue);	/* continue after kerning */
@@ -492,7 +492,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 	    gs_char chr = gs_text_current_char(penum);
 	    gs_glyph glyph = gs_text_current_glyph(penum);
 
-	    push(2);
+	    push(imemory, 2);
 	    op[-1] = pfdata->dict;	/* push the font */
 	    /*
 	     * For Type 1 and Type 4 fonts, prefer BuildChar to BuildGlyph
@@ -521,11 +521,11 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		    const ref *pencoding = &pfdata->Encoding;
 
 		    glyph_ref(glyph, &gref);
-		    if (!map_glyph_to_char(&gref, pencoding,
+		    if (!map_glyph_to_char(imemory, &gref, pencoding,
 					   (ref *) op)
 			) {	/* Not found, try .notdef */
 			name_enter_string(".notdef", &gref);
-			if (!map_glyph_to_char(&gref,
+			if (!map_glyph_to_char(imemory, &gref,
 					       pencoding,
 					       (ref *) op)
 			    )
@@ -548,7 +548,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		if (chr != gs_no_char &&
 		    !r_has_type(&pfdata->BuildChar, t_null) &&
 		    (glyph == gs_no_glyph ||
-		     (array_get(&pfdata->Encoding, (long)(chr & 0xff), &eref) >= 0 &&
+		     (array_get(imemory, &pfdata->Encoding, (long)(chr & 0xff), &eref) >= 0 &&
 		      (glyph_ref(glyph, &gref), obj_eq(&gref, &eref))))
 		    ) {
 		    make_int(op, chr & 0xff);
@@ -572,20 +572,20 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 	default:		/* error */
 err:
 	    if (code >= 0)
-		code = gs_note_error(e_invalidfont);
+		code = gs_note_error(imemory, e_invalidfont);
 	    return op_show_free(i_ctx_p, code);
     }
 }
 /* Reverse-map a glyph name to a character code for glyphshow. */
 private bool
-map_glyph_to_char(const ref * pgref, const ref * pencoding, ref * pch)
+map_glyph_to_char(const gs_memory_t *mem, const ref * pgref, const ref * pencoding, ref * pch)
 {
     uint esize = r_size(pencoding);
     uint ch;
     ref eref;
 
     for (ch = 0; ch < esize; ch++) {
-	array_get(pencoding, (long)ch, &eref);
+	array_get(mem, pencoding, (long)ch, &eref);
 	if (obj_eq(pgref, &eref)) {
 	    make_int(pch, ch);
 	    return true;
@@ -668,11 +668,11 @@ op_show_return_width(i_ctx_t *i_ctx_p, uint npop, double *pwidth)
     /* Restore the operand and dictionary stacks. */
     ocount = ref_stack_count(&o_stack) - (uint) esodepth(ep).value.intval;
     if (ocount < npop)
-	return_error(e_stackunderflow);
+	return_error(imemory, e_stackunderflow);
     dsaved = (uint) esddepth(ep).value.intval;
     dcount = ref_stack_count(&d_stack);
     if (dcount < dsaved)
-	return_error(e_dictstackunderflow);
+	return_error(imemory, e_dictstackunderflow);
     while (dcount > dsaved) {
 	code = zend(i_ctx_p);
 	if (code < 0)
@@ -727,7 +727,7 @@ op_show_restore(i_ctx_t *i_ctx_p, bool for_error)
 	     * Bad news: we got an error inside a save inside a BuildChar or
 	     * BuildGlyph.  Don't attempt to recover.
 	     */
-	    code = gs_note_error(e_Fatal);
+	    code = gs_note_error(penum->memory, e_Fatal);
 	} else
 	    code = gs_grestore(igs);
     }
@@ -753,7 +753,7 @@ op_show_free(i_ctx_t *i_ctx_p, int code)
 
 /* Get a FontBBox parameter from a font dictionary. */
 int
-font_bbox_param(const ref * pfdict, double bbox[4])
+font_bbox_param(const gs_memory_t *mem, const ref * pfdict, double bbox[4])
 {
     ref *pbbox;
 
@@ -768,7 +768,7 @@ font_bbox_param(const ref * pfdict, double bbox[4])
     bbox[0] = bbox[1] = bbox[2] = bbox[3] = 0.0;
     if (dict_find_string(pfdict, "FontBBox", &pbbox) > 0) {
 	if (!r_is_array(pbbox))
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
 	if (r_size(pbbox) == 4) {
 	    const ref_packed *pbe = pbbox->value.packed;
 	    ref rbe[4];
@@ -780,7 +780,7 @@ font_bbox_param(const ref * pfdict, double bbox[4])
 		packed_get(pbe, rbe + i);
 		pbe = packed_next(pbe);
 	    }
-	    if ((code = num_params(rbe + 3, 4, bbox)) < 0)
+	    if ((code = num_params(mem, rbe + 3, 4, bbox)) < 0)
 		return code;
 	    /* Require "reasonable" values.  Thanks to Ray */
 	    /* Johnston for suggesting the following test. */

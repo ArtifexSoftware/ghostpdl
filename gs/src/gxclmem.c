@@ -176,12 +176,12 @@ const byte *decomp_rd_ptr1, *decomp_rd_limit1;
 
 /* ----------------------------- Memory Allocation --------------------- */
 void *	/* allocated memory's address, 0 if failure */
-allocateWithReserve(
-         MEMFILE  *f,			/* file to allocate mem to */
-         int      sizeofBlock,		/* size of block to allocate */
-         int      *return_code,         /* RET 0 ok, -ve GS-style error, or +1 if OK but low memory */
-	 const   char     *allocName,		/* name to allocate by */
-	 const   char     *errorMessage         /* error message to print */
+allocateWithReserve( const gs_memory_t *mem, 
+		     MEMFILE  *f,	   /* file to allocate mem to */
+		     int      sizeofBlock, /* size of block to allocate */
+		     int      *return_code, /* RET 0 ok, -ve GS-style error, or +1 if OK but low memory */
+		     const   char     *allocName,   /* name to allocate by */
+		     const   char     *errorMessage /* error message to print */
 )
 {
     int code = 0;	/* assume success */
@@ -210,7 +210,7 @@ allocateWithReserve(
     if (block != NULL)
 	f->total_space += sizeofBlock;
     else
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
     *return_code = code;
     return block;
 }   
@@ -227,7 +227,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 
     /* We don't implement reopening an existing file. */
     if (fname[0] != 0 || fmode[0] != 'w') {
-	code = gs_note_error(gs_error_invalidfileaccess);
+	code = gs_note_error(data_mem, gs_error_invalidfileaccess);
 	goto finish;
     }
 
@@ -239,8 +239,8 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     f = gs_alloc_struct(mem, MEMFILE, &st_MEMFILE,
 			"memfile_open_scratch(MEMFILE)");
     if (f == NULL) {
-	eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
-	code = gs_note_error(gs_error_VMerror);
+	eprintf1(mem, "memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto finish;
     }
     f->memory = mem;
@@ -256,7 +256,7 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
     /* init an empty file           */
     if ((code = memfile_init_empty(f)) < 0)
 	goto finish;
-    if ((code = memfile_set_memory_warning(f, 0)) < 0)
+    if ((code = memfile_set_memory_warning(f->memory, f, 0)) < 0)
 	goto finish;
     /*
      * Disregard the ok_to_compress flag, since the size threshold gives us
@@ -278,8 +278,8 @@ memfile_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 	    gs_alloc_struct(mem, stream_state, decompress_template->stype,
 			    "memfile_open_scratch(decompress_state)");
 	if (f->compress_state == 0 || f->decompress_state == 0) {
-	    eprintf1("memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
-	    code = gs_note_error(gs_error_VMerror);
+	    eprintf1(mem, "memfile_open_scratch(%s): gs_alloc_struct failed\n", fname);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto finish;
 	}
 	memcpy(f->compress_state, compress_proto,
@@ -310,7 +310,7 @@ finish:
     if (code < 0) {
 	/* return failure, clean up memory before leaving */
 	if (f != NULL)
-	    memfile_fclose((clist_file_ptr)f, fname, true);
+	    memfile_fclose(mem, (clist_file_ptr)f, fname, true);
     } else {
       /* return success */
       *pf = f;
@@ -319,13 +319,14 @@ finish:
 }
 
 int
-memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
+memfile_fclose(const gs_memory_t *mem, 
+	       clist_file_ptr cf, const char *fname, bool delete)
 {
     MEMFILE *const f = (MEMFILE *)cf;
 
     /* We don't implement closing without deletion. */
     if (!delete)
-	return_error(gs_error_invalidfileaccess);
+	return_error(mem, gs_error_invalidfileaccess);
     memfile_free_mem(f);
 
     /* Free reserve blocks; don't do it in memfile_free_mem because */
@@ -355,20 +356,21 @@ memfile_fclose(clist_file_ptr cf, const char *fname, bool delete)
 }
 
 int
-memfile_unlink(const char *fname)
+memfile_unlink(const gs_memory_t *mem, const char *fname)
 {
     /*
      * Since we have no way to represent a memfile other than by the
      * pointer, we don't (can't) implement unlinking.
      */
-    return_error(gs_error_invalidfileaccess);
+    return_error(mem, gs_error_invalidfileaccess);
 }
 
 /* ---------------- Writing ---------------- */
 
 /* Pre-alloc enough reserve mem blox to guarantee a write of N bytes will succeed */
 int	/* returns 0 ok, gs_error_VMerror if insufficient */
-memfile_set_memory_warning(clist_file_ptr cf, int bytes_left)
+memfile_set_memory_warning(const gs_memory_t *mem,
+			   clist_file_ptr cf, int bytes_left)
 {
     MEMFILE *const f = (MEMFILE *)cf;
     int code = 0;
@@ -392,7 +394,7 @@ memfile_set_memory_warning(clist_file_ptr cf, int bytes_left)
 	    MALLOC( f, sizeof(LOG_MEMFILE_BLK), "memfile_set_block_size" );
 
 	if (block == NULL) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto finish;
 	}
 	block->link = f->reserveLogBlockChain;
@@ -413,7 +415,7 @@ memfile_set_memory_warning(clist_file_ptr cf, int bytes_left)
 		    "memfile_set_block_size");
 
 	if (block == NULL) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto finish;
 	}
 	block->link = f->reservePhysBlockChain;
@@ -461,7 +463,7 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
 	/* allocate another physical block, then compress remainder       */
 	compressed_size = f->wt.limit - start_ptr;
 	newphys =
-	    allocateWithReserve(f, sizeof(*newphys), &code, "memfile newphys",
+	    allocateWithReserve(f->memory, f, sizeof(*newphys), &code, "memfile newphys",
 			"compress_log_blk : MALLOC for 'newphys' failed\n");
 	if (code < 0)
 	    return code;
@@ -482,25 +484,25 @@ compress_log_blk(MEMFILE * f, LOG_MEMFILE_BLK * bp)
 	     * block never ends up getting split across 3 dest blocks.
 	     */
 	    /* CHANGE memfile_set_memory_warning if this assumption changes. */
-	    eprintf("Compression required more than one full block!\n");
-	    return_error(gs_error_Fatal);
+	    eprintf(f->memory, "Compression required more than one full block!\n");
+	    return_error(f->memory, gs_error_Fatal);
 	}
 	newphys->data_limit = (char *)(f->wt.ptr);
     }
     compressed_size += f->wt.ptr - start_ptr;
     if (compressed_size > MEMFILE_DATA_SIZE) {
-	eprintf2("\nCompression didn't - raw=%d, compressed=%ld\n",
+	eprintf2(f->memory, "\nCompression didn't - raw=%d, compressed=%ld\n",
 		 MEMFILE_DATA_SIZE, compressed_size);
     }
 #ifdef DEBUG
     tot_compressed += compressed_size;
 #endif
-    return (status < 0 ? gs_note_error(gs_error_ioerror) : ecode);
+    return (status < 0 ? gs_note_error(f->memory, gs_error_ioerror) : ecode);
 }				/* end "compress_log_blk()"                                     */
 
 /*      Internal (private) routine to handle end of logical block       */
 private int	/* ret 0 ok, -ve error, or +ve low-memory warning */
-memfile_next_blk(MEMFILE * f)
+memfile_next_blk(const gs_memory_t *mem, MEMFILE * f)
 {
     LOG_MEMFILE_BLK *bp = f->log_curr_blk;
     LOG_MEMFILE_BLK *newbp;
@@ -511,7 +513,7 @@ memfile_next_blk(MEMFILE * f)
     if (f->phys_curr == NULL) {	/* means NOT compressing                */
 	/* allocate a new block                                           */
 	newphys =
-	    allocateWithReserve(f, sizeof(*newphys), &code, "memfile newphys",
+	    allocateWithReserve(mem, f, sizeof(*newphys), &code, "memfile newphys",
 			"memfile_next_blk: MALLOC 1 for 'newphys' failed\n");
 	if (code < 0)
 	    return code;
@@ -520,7 +522,7 @@ memfile_next_blk(MEMFILE * f)
 	newphys->data_limit = NULL;	/* raw                          */
 
 	newbp =
-	    allocateWithReserve(f, sizeof(*newbp), &code, "memfile newbp",
+	    allocateWithReserve(mem, f, sizeof(*newbp), &code, "memfile newbp",
 			"memfile_next_blk: MALLOC 1 for 'newbp' failed\n");
 	if (code < 0) {
 	    FREE(f, newphys, "memfile newphys");
@@ -534,7 +536,7 @@ memfile_next_blk(MEMFILE * f)
 
 	/* check if need to start compressing                             */
 	if (NEED_TO_COMPRESS(f)) {
-	    if_debug0(':', "[:]Beginning compression\n");
+	    if_debug0(f->memory, ':', "[:]Beginning compression\n");
 	    /* compress the entire file up to this point                   */
 	    if (!f->compressor_initialized) {
 		int code = 0;
@@ -542,12 +544,12 @@ memfile_next_blk(MEMFILE * f)
 		if (f->compress_state->template->init != 0)
 		    code = (*f->compress_state->template->init) (f->compress_state);
 		if (code < 0)
-		    return_error(gs_error_VMerror);  /****** BOGUS ******/
+		    return_error(f->memory, gs_error_VMerror);  /****** BOGUS ******/
 		if (f->decompress_state->template->init != 0)
 		    code = (*f->decompress_state->template->init)
 			(f->decompress_state);
 		if (code < 0)
-		    return_error(gs_error_VMerror);  /****** BOGUS ******/
+		    return_error(f->memory, gs_error_VMerror);  /****** BOGUS ******/
 		f->compressor_initialized = true;
 	    }
 	    /* Write into the new physical block we just allocated,        */
@@ -568,7 +570,7 @@ memfile_next_blk(MEMFILE * f)
 	    }			/* end while( ) compress loop                           */
 	    /* Allocate a physical block for this (last) logical block     */
 	    newphys =
-		allocateWithReserve(f, sizeof(*newphys), &code,
+		allocateWithReserve(mem, f, sizeof(*newphys), &code,
 			"memfile newphys",
 			"memfile_next_blk: MALLOC 2 for 'newphys' failed\n");
 	    if (code < 0)
@@ -592,7 +594,7 @@ memfile_next_blk(MEMFILE * f)
 	    return code;
 	ecode |= code;
 	newbp =
-	    allocateWithReserve(f, sizeof(*newbp), &code, "memfile newbp",
+	    allocateWithReserve(mem, f, sizeof(*newbp), &code, "memfile newbp",
 			"memfile_next_blk: MALLOC 2 for 'newbp' failed\n");
 	if (code < 0)
 	    return code;
@@ -630,13 +632,13 @@ memfile_fwrite_chars(const void *data, uint len, clist_file_ptr cf)
 	}
     }
     if (f->log_curr_blk->link != 0) {
-	eprintf(" Write file truncate -- need to free physical blocks.\n");
+	eprintf(f->memory, " Write file truncate -- need to free physical blocks.\n");
     }
     while (count) {
 	uint move_count = f->pdata_end - f->pdata;
 
 	if (move_count == 0) {
-	    if ((ecode = memfile_next_blk(f)) != 0) {
+	    if ((ecode = memfile_next_blk(f->memory, f)) != 0) {
 		f->error_code = ecode;
 		if (ecode < 0)
 		    return 0;
@@ -699,7 +701,7 @@ memfile_get_pdata(MEMFILE * f)
 		int code;
 
 		f->raw_head =
-		    allocateWithReserve(f, sizeof(*f->raw_head), &code,
+		    allocateWithReserve(f->memory, f, sizeof(*f->raw_head), &code,
 					"memfile raw buffer",
 			"memfile_get_pdata: MALLOC for 'raw_head' failed\n");
 		if (code < 0)
@@ -721,7 +723,7 @@ memfile_get_pdata(MEMFILE * f)
 	    }
 	    f->raw_tail->fwd = NULL;
 	    num_raw_buffers = i + 1;	/* if MALLOC failed, then OK    */
-	    if_debug1(':', "[:]Number of raw buffers allocated=%d\n",
+	    if_debug1(f->memory, ':', "[:]Number of raw buffers allocated=%d\n",
 		      num_raw_buffers);
 	}			/* end allocating the raw buffer pool (first time only)           */
 	if (bp->raw_block == NULL) {
@@ -784,8 +786,8 @@ memfile_get_pdata(MEMFILE * f)
 		status = (*f->decompress_state->template->process)
 		    (f->decompress_state, &(f->rd), &(f->wt), true);
 		if (status == 0) {
-		    eprintf("Decompression required more than one full block!\n");
-		    return_error(gs_error_Fatal);
+		    eprintf(f->memory, "Decompression required more than one full block!\n");
+		    return_error(f->memory, gs_error_Fatal);
 		}
 	    }
 	    bp->raw_block = f->raw_head;	/* point to raw block           */
@@ -938,11 +940,11 @@ memfile_free_mem(MEMFILE * f)
 #ifdef DEBUG
     /* output some diagnostics about the effectiveness                   */
     if (tot_raw > 100) {
-	if_debug2(':', "[:]tot_raw=%ld, tot_compressed=%ld\n",
+	if_debug2(f->memory, ':', "[:]tot_raw=%ld, tot_compressed=%ld\n",
 		  tot_raw, tot_compressed);
     }
     if (tot_cache_hits != 0) {
-	if_debug3(':', "[:]Cache hits=%ld, cache misses=%ld, swapouts=%ld\n",
+	if_debug3(f->memory, ':', "[:]Cache hits=%ld, cache misses=%ld, swapouts=%ld\n",
 		 tot_cache_hits,
 		 tot_cache_miss - (f->log_length / MEMFILE_DATA_SIZE),
 		 tot_swap_out);
@@ -1094,8 +1096,8 @@ memfile_init_empty(MEMFILE * f)
     /* File empty - get a physical mem block (includes the buffer area)  */
     pphys = MALLOC(f, sizeof(*pphys), "memfile pphys");
     if (!pphys) {
-	eprintf("memfile_init_empty: MALLOC for 'pphys' failed\n");
-	return_error(gs_error_VMerror);
+	eprintf(f->memory, "memfile_init_empty: MALLOC for 'pphys' failed\n");
+	return_error(f->memory, gs_error_VMerror);
     }
     f->total_space += sizeof(*pphys);
     pphys->data_limit = NULL;	/* raw data for now     */
@@ -1104,8 +1106,8 @@ memfile_init_empty(MEMFILE * f)
     plog = (LOG_MEMFILE_BLK *)MALLOC( f, sizeof(*plog), "memfile_init_empty" );
     if (plog == NULL) {
 	FREE(f, pphys, "memfile_init_empty");
-	eprintf("memfile_init_empty: MALLOC for log_curr_blk failed\n");
-	return_error(gs_error_VMerror);
+	eprintf(f->memory, "memfile_init_empty: MALLOC for log_curr_blk failed\n");
+	return_error(f->memory, gs_error_VMerror);
     }
     f->total_space += sizeof(*plog);
     f->log_head = f->log_curr_blk = plog;

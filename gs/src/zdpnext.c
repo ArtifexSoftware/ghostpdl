@@ -39,7 +39,7 @@ zcurrentalpha(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_real(op, gs_currentalpha(igs));
     return 0;
 }
@@ -52,8 +52,8 @@ zsetalpha(i_ctx_t *i_ctx_p)
     double alpha;
     int code;
 
-    if (real_param(op, &alpha) < 0)
-	return_op_typecheck(op);
+    if (real_param(imemory, op, &alpha) < 0)
+	return_op_typecheck(imemory, op);
     if ((code = gs_setalpha(igs, alpha)) < 0)
 	return code;
     pop(1);
@@ -87,7 +87,7 @@ typedef struct alpha_composite_state_s {
 /* Forward references */
 private int begin_composite(i_ctx_t *, alpha_composite_state_t *);
 private void end_composite(i_ctx_t *, alpha_composite_state_t *);
-private int xywh_param(os_ptr, double[4]);
+private int xywh_param(const gs_memory_t *mem, os_ptr, double[4]);
 
 /* <dict> .alphaimage - */
 /* This is the dictionary version of the alphaimage operator, which is */
@@ -105,11 +105,11 @@ zcompositerect(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double dest_rect[4];
     alpha_composite_state_t cstate;
-    int code = xywh_param(op - 1, dest_rect);
+    int code = xywh_param(imemory, op - 1, dest_rect);
 
     if (code < 0)
 	return code;
-    check_int_leu(*op, compositerect_last);
+    check_int_leu(imemory, *op, compositerect_last);
     cstate.params.op = (gs_composite_op_t) op->value.intval;
     code = begin_composite(i_ctx_p, &cstate);
     if (code < 0)
@@ -137,19 +137,19 @@ composite_image(i_ctx_t *i_ctx_p, const gs_composite_alpha_params_t * params)
     double src_rect[4];
     double dest_pt[2];
     gs_matrix save_ctm;
-    int code = xywh_param(op - 4, src_rect);
+    int code = xywh_param(imemory, op - 4, src_rect);
 
     cstate.params = *params;
     gs_image2_t_init(&image);
     if (code < 0 ||
-	(code = num_params(op - 1, 2, dest_pt)) < 0
+	(code = num_params(imemory, op - 1, 2, dest_pt)) < 0
 	)
 	return code;
     if (r_has_type(op - 3, t_null))
 	image.DataSource = igs;
     else {
-	check_stype(op[-3], st_igstate_obj);
-	check_read(op[-3]);
+	check_stype(imemory, op[-3], st_igstate_obj);
+	check_read(imemory, op[-3]);
 	image.DataSource = igstate_ptr(op - 3);
     }
     image.XOrigin = src_rect[0];
@@ -186,7 +186,7 @@ zcomposite(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_composite_alpha_params_t params;
 
-    check_int_leu(*op, composite_last);
+    check_int_leu(imemory, *op, composite_last);
     params.op = (gs_composite_op_t) op->value.intval;
     return composite_image(i_ctx_p, &params);
 }
@@ -199,12 +199,12 @@ zdissolve(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_composite_alpha_params_t params;
     double delta;
-    int code = real_param(op, &delta);
+    int code = real_param(imemory, op, &delta);
 
     if (code < 0)
 	return code;
     if (delta < 0 || delta > 1)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     params.op = composite_Dissolve;
     params.delta = delta;
     return composite_image(i_ctx_p, &params);
@@ -228,16 +228,16 @@ zsizeimagebox(i_ctx_t *i_ctx_p)
     int w, h;
     int code;
 
-    check_type(op[-4], t_integer);
-    check_type(op[-3], t_integer);
-    check_type(op[-2], t_integer);
-    check_type(op[-1], t_integer);
+    check_type(imemory, op[-4], t_integer);
+    check_type(imemory, op[-3], t_integer);
+    check_type(imemory, op[-2], t_integer);
+    check_type(imemory, op[-1], t_integer);
     srect.p.x = op[-4].value.intval;
     srect.p.y = op[-3].value.intval;
     srect.q.x = srect.p.x + op[-2].value.intval;
     srect.q.y = srect.p.y + op[-1].value.intval;
     gs_currentmatrix(igs, &mat);
-    gs_bbox_transform(&srect, &mat, &drect);
+    gs_bbox_transform(imemory, &srect, &mat, &drect);
     /*
      * We want the dimensions of the image as a source, not a
      * destination, so we need to expand it rather than pixround.
@@ -294,7 +294,7 @@ zsizeimageparams(i_ctx_t *i_ctx_p)
     int ncomp = dev->color_info.num_components;
     int bps;
 
-    push(3);
+    push(imemory, 3);
     if (device_is_true_color(dev))
 	bps = dev->color_info.depth / ncomp;
     else {
@@ -341,9 +341,9 @@ const op_def zdpnext_op_defs[] =
 
 /* Collect a rect operand. */
 private int
-xywh_param(os_ptr op, double rect[4])
+xywh_param(const gs_memory_t *mem, os_ptr op, double rect[4])
 {
-    int code = num_params(op, 4, rect);
+    int code = num_params(mem, op, 4, rect);
 
     if (code < 0)
 	return code;

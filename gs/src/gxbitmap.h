@@ -42,7 +42,7 @@ typedef gs_bitmap_id gx_bitmap_id;
  * aligned, and then must *ensure* that that alignment is not lost.  (The
  * assumption is not true in some MSVC implementations, but even in those
  * implementations, the alignment is sufficient to satisfy the hardware.
- * See gsmemraw.h for more information about this.)
+ * See gsmemory.h for more information about this.)
  * 
  * The padding requirement is that if the last data byte being operated on
  * is at offset B relative to the start of the scan line, bytes up to and

@@ -134,7 +134,7 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
     ulong base = start;
     ulong limit = base + length;
 
-    if_debug3('l', "[l]write_range pos = %ld, start = %lu, length = %u\n",
+    if_debug3(s->memory, 'l', "[l]write_range pos = %ld, start = %lu, length = %u\n",
 	      stell(s), start, length);
     while (base < limit) {
 	uint size = limit - base;
@@ -185,7 +185,7 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
 	mac_glyph = gs_c_known_encode(mac_char, ENCODING_INDEX_MACGLYPH);
 	if (mac_glyph == gs_no_glyph)
 	    return -1;
-	code = gs_c_glyph_name(mac_glyph, &mstr);
+	code = gs_c_glyph_name(font->memory, mac_glyph, &mstr);
 	assert(code >= 0);
 	if (!bytes_compare(pstr->data, pstr->size, mstr.data, mstr.size))
 	    return (int)mac_char;
@@ -693,7 +693,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	uint length;
 
 	if (numTables == MAX_NUM_TABLES)
-	    return_error(gs_error_limitcheck);
+	    return_error(font->memory, gs_error_limitcheck);
 	ACCESS(12 + i * 16, 16, tab);
 	start = u32(tab + 8);
 	length = u32(tab + 12);
@@ -706,7 +706,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	switch (u32(tab)) {
 	case W('h','e','a','d'):
 	    if (length != 54)
-		return_error(gs_error_invalidfont);
+		return_error(font->memory, gs_error_invalidfont);
 	    ACCESS(start, length, data);
 	    memcpy(head, data, length);
 	    continue;
@@ -735,7 +735,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		continue;
 	    have_OS_2 = true;
 	    if (length > OS_2_LENGTH)
-		return_error(gs_error_invalidfont);
+		return_error(font->memory, gs_error_invalidfont);
 	    OS_2_start = start;
 	    OS_2_length = length;
 	    continue;
@@ -780,13 +780,13 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	gs_glyph_data_t glyph_data;
 
 	if (glyph < gs_min_cid_glyph)
-	    return_error(gs_error_invalidfont);
+	    return_error(font->memory, gs_error_invalidfont);
 	glyph_index = glyph - gs_min_cid_glyph;
-	if_debug1('L', "[L]glyph_index %u\n", glyph_index);
+	if_debug1(s->memory, 'L', "[L]glyph_index %u\n", glyph_index);
 	if ((code = pfont->data.get_outline(pfont, glyph_index, &glyph_data)) >= 0) {
 	    max_glyph = max(max_glyph, glyph_index);
 	    glyf_length += glyph_data.bits.size;
-	    if_debug1('L', "[L]  size %u\n", glyph_data.bits.size);
+	    if_debug1(s->memory, 'L', "[L]  size %u\n", glyph_data.bits.size);
 	    gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	}
     }
@@ -810,7 +810,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	if (!indexToLocFormat)
 	    loca_length >>= 1;
     }
-    if_debug2('l', "[l]max_glyph = %lu, glyf_length = %lu\n",
+    if_debug2(s->memory, 'l', "[l]max_glyph = %lu, glyf_length = %lu\n",
 	      (ulong)max_glyph, (ulong)glyf_length);
 
     /*
@@ -845,7 +845,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	+ !have_OS_2		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
     if (numTables_out >= MAX_NUM_TABLES)
-	return_error(gs_error_limitcheck);
+	return_error(font->memory, gs_error_limitcheck);
     offset = 12 + numTables_out * 16;
     for (i = 0; i < numTables; ++i) {
 	byte *tab = &tables[i * 16];
@@ -1013,12 +1013,12 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		) {
 		stream_write(s, glyph_data.bits.data, glyph_data.bits.size);
 		offset += glyph_data.bits.size;
-		if_debug2('L', "[L]glyf index = %u, size = %u\n",
+		if_debug2(s->memory, 'L', "[L]glyf index = %u, size = %u\n",
 			  i, glyph_data.bits.size);
 		gs_glyph_data_free(&glyph_data, "psf_write_truetype_data");
 	    }
 	}
-	if_debug1('l', "[l]glyf final offset = %lu\n", offset);
+	if_debug1(s->memory, 'l', "[l]glyf final offset = %lu\n", offset);
 	/* Add a dummy byte if necessary to make glyf non-empty. */
 	while (offset < glyf_length)
 	    stream_putc(s, 0), ++offset;

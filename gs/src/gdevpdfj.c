@@ -113,7 +113,7 @@ pdf_put_pixel_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 		cos_array_alloc(pdev, "pdf_put_pixel_image_values(decode)");
 
 	    if (pca == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    if (pcs == NULL) {
 		/* 269-01.ps sets /Decode[0 100] with a mask image. */
 		for (i = 0; i < num_components * 2; ++i)
@@ -160,7 +160,7 @@ pdf_put_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 
 	/* Masked images are only supported starting in PDF 1.3. */
 	if (pdev->CompatibilityLevel < 1.3)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
     }
 	break;
     case 4: {
@@ -171,10 +171,10 @@ pdf_put_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
     
 	/* Masked images are only supported starting in PDF 1.3. */
 	if (pdev->CompatibilityLevel < 1.3)
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	pca = cos_array_alloc(pdev, "pdf_put_image_values(mask)");
 	if (pca == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	for (i = 0; i < num_components; ++i) {
 	    int lo, hi;
 
@@ -189,7 +189,7 @@ pdf_put_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
     }
 	break;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     }
     return pdf_put_pixel_image_values(pcd, pdev, pic, pcs, pin, pcsvalue);
 }
@@ -233,7 +233,7 @@ pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
 {
     gs_matrix imat;
 
-    gs_matrix_translate(pmat, 0.0, 1.0 - y_scale, &imat);
+    gs_matrix_translate(pdev->memory, pmat, 0.0, 1.0 - y_scale, &imat);
     gs_matrix_scale(&imat, 1.0, y_scale, &imat);
     pdf_put_matrix(pdev, "q ", &imat, "cm\n");
 }
@@ -282,7 +282,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	piw->pin = &pdf_image_names_short;
 	piw->data = cos_stream_alloc(pdev, "pdf_begin_image_data");
 	if (piw->data == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	piw->end_string = " Q";
 	piw->named = 0;		/* must have named == 0 */
     } else {
@@ -314,7 +314,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
     pdev->strm = pdev->streams.strm;
     pdev->strm = cos_write_stream_alloc(piw->data, pdev, "pdf_begin_write_image");
     if (pdev->strm == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     piw->height = h;
     code = psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary[0]);
     piw->binary[0].target = NULL; /* We don't need target with cos_write_stream. */
@@ -332,12 +332,12 @@ pdf_make_alt_stream(gx_device_pdf * pdev, psdf_binary_writer * pbw)
     int code;
 
     if (pcos == 0)
-        return_error(gs_error_VMerror);
+        return_error(pdev->memory, gs_error_VMerror);
     pcos->id = 0;
     CHECK(cos_dict_put_c_strings(cos_stream_dict(pcos), "/Subtype", "/Image"));
     pbw->strm = cos_write_stream_alloc(pcos, pdev, "pdf_make_alt_stream");
     if (pbw->strm == 0)
-        return_error(gs_error_VMerror);
+        return_error(pdev->memory, gs_error_VMerror);
     pbw->dev = (gx_device_psdf *)pdev;
     pbw->memory = pdev->pdf_memory;
     return 0;
@@ -388,7 +388,7 @@ pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
 		    for (l = bytes_per_line; l > 0; l -= lb)
 			if ((status = sputs(piw->binary[i].strm, buf, min(l, lb), 
 					    &ignore)) < 0)
-			    return_error(gs_error_ioerror);
+			    return_error(pdev->memory, gs_error_ioerror);
 		}
 	}
     }

@@ -37,7 +37,7 @@ s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
     unsigned char s, *S = state->S;
 
     if (keylength < 1)
-	return_error(gs_error_rangecheck);
+	return_error(state->memory, gs_error_rangecheck);
 
     /* initialize to eponymous values */
     for (x = 0; x < 256; x++)

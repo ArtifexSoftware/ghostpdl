@@ -323,7 +323,8 @@ bool
 /* Enumerate a clipping path.  This interface does not copy the path. */
 /* However, it does write into the path's "visited" flags. */
 int gx_cpath_enum_init(gs_cpath_enum *, gx_clip_path *);
-int gx_cpath_enum_next(gs_cpath_enum *, gs_fixed_point[3]);		/* 0 when done */
+int gx_cpath_enum_next(const gs_memory_t *mem,
+		       gs_cpath_enum *, gs_fixed_point[3]);		/* 0 when done */
 
 segment_notes
 gx_cpath_enum_notes(const gs_cpath_enum *);

@@ -182,10 +182,10 @@ struct gs_color_space_type_s {
      */
 
 #define cs_proc_adjust_color_count(proc)\
-  void proc(const gs_client_color *, const gs_color_space *, int)
+  void proc(const gs_memory_t *mem, const gs_client_color *, const gs_color_space *, int)
 #define cs_adjust_color_count(pgs, delta)\
   (*(pgs)->color_space->type->adjust_color_count)\
-    ((pgs)->ccolor, (pgs)->color_space, delta)
+    (pgs->memory, (pgs)->ccolor, (pgs)->color_space, delta)
 	cs_proc_adjust_color_count((*adjust_color_count));
 
 /* Adjust both reference counts. */

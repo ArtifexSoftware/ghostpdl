@@ -46,23 +46,24 @@ int gs_cspace_build_DeviceN(
 /* Set the tint transformation procedure for a DeviceN color space. */
 /* VMS limits procedure names to 31 characters, and some systems only */
 /* compare the first 23 characters. */
-extern int gs_cspace_set_devn_proc(
-				      gs_color_space * pcspace,
-			int (*proc)(const float *,
-				       float *,
-				       const gs_imager_state *,
-				       void *
-				      ),
-				      void *proc_data
-				      );
+extern int gs_cspace_set_devn_proc(const gs_memory_t *mem,
+				   gs_color_space * pcspace,
+				   int (*proc)(const float *,
+					       float *,
+					       const gs_imager_state *,
+					       void *
+					       ),
+				   void *proc_data
+				   );
 
 /* Set the DeviceN tint transformation procedure to a Function. */
 #ifndef gs_function_DEFINED
 typedef struct gs_function_s gs_function_t;
 #  define gs_function_DEFINED
 #endif
-int gs_cspace_set_devn_function(gs_color_space *pcspace,
-				   gs_function_t *pfn);
+int gs_cspace_set_devn_function(const gs_memory_t *mem,
+				gs_color_space *pcspace,
+				gs_function_t *pfn);
 
 /*
  * If the DeviceN tint transformation procedure is a Function,

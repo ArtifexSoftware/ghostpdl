@@ -29,7 +29,7 @@
 /* Forward references */
 
 private stem_hint *type1_stem(const gs_type1_state *, stem_hint_table *, fixed, fixed);
-private fixed find_snap(fixed, const stem_snap_table *, const pixel_scale *);
+private fixed find_snap(const gs_memory_t *mem, fixed, const stem_snap_table *, const pixel_scale *);
 private alignment_zone *find_zone(gs_type1_state *, fixed, fixed);
 
 /* Reset the stem hints. */
@@ -55,11 +55,11 @@ save_replaced_hints(stem_hint_table * psht)
 void
 type1_replace_stem_hints(gs_type1_state * pcis)
 {
-    if_debug2('y', "[y]saving hints: %d hstem, %d vstem\n",
+    if_debug2(pcis->pfont->memory, 'y', "[y]saving hints: %d hstem, %d vstem\n",
 	      pcis->hstem_hints.count, pcis->vstem_hints.count);
     save_replaced_hints(&pcis->hstem_hints);
     save_replaced_hints(&pcis->vstem_hints);
-    if_debug2('y', "[y]total saved hints: %d hstem, %d vstem\n",
+    if_debug2(pcis->pfont->memory, 'y', "[y]total saved hints: %d hstem, %d vstem\n",
 	      pcis->hstem_hints.replaced_count,
 	      pcis->vstem_hints.replaced_count);
 }
@@ -77,8 +77,8 @@ update_stem_hints(gs_type1_state * pcis)
 #undef c_fixed
 #define c_fixed(d, c) m_fixed(d, c, pcis->fc, max_coeff_bits)
 
-#define if_debug_print_add_stem(chr, msg, psht, psh, c, dc, v, dv)\
-	if_debug10(chr, "%s %d/%d: %g,%g -> %g(%g)%g ; d = %g,%g\n",\
+#define if_debug_print_add_stem(mem, chr, msg, psht, psh, c, dc, v, dv)\
+	if_debug10(mem, chr, "%s %d/%d: %g,%g -> %g(%g)%g ; d = %g,%g\n",\
 		   msg, (int)((psh) - &(psht)->data[0]), (psht)->count,\
 		   fixed2float(c), fixed2float(dc),\
 		   fixed2float(v), fixed2float(dv), fixed2float((v) + (dv)),\
@@ -196,7 +196,7 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy, bool add_lsb,
     psh = type1_stem(pcis, &pcis->hstem_hints, v, dv);
     if (psh == 0)
 	return;
-    adj_dv = find_snap(dv, &pcis->fh.snap_h, psp);
+    adj_dv = find_snap(pcis->pfont->memory, dv, &pcis->fh.snap_h, psp);
     pz = find_zone(pcis, vbot, vtop);
     if (pz != 0) {		/* Use the alignment zone to align the outer stem edge. */
 	int inverted =
@@ -213,13 +213,13 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy, bool add_lsb,
 
 	if (pos_over > 0) {
 	    if (pos_over < pcis->fh.blue_shift || pcis->fh.suppress_overshoot) {	/* Character is small, suppress overshoot. */
-		if_debug0('y', "[y]suppress overshoot\n");
+		if_debug0(pcis->pfont->memory, 'y', "[y]suppress overshoot\n");
 		if (pz->is_top_zone)
 		    shift -= overshoot;
 		else
 		    shift += overshoot;
 	    } else if (pos_over < psp->unit) {	/* Enforce overshoot. */
-		if_debug0('y', "[y]enforce overshoot\n");
+		if_debug0(pcis->pfont->memory, 'y', "[y]enforce overshoot\n");
 		if (overshoot < 0)
 		    overshoot = -psp->unit - overshoot;
 		else
@@ -234,12 +234,12 @@ type1_do_hstem(gs_type1_state * pcis, fixed y, fixed dy, bool add_lsb,
 	    psh->dv1 = shift, psh->dv0 = shift - ddv;
 	else
 	    psh->dv0 = shift, psh->dv1 = shift + ddv;
-	if_debug2('y', "[y]flat_v = %g, overshoot = %g for:\n",
+	if_debug2(pcis->pfont->memory, 'y', "[y]flat_v = %g, overshoot = %g for:\n",
 		  fixed2float(flat_v), fixed2float(overshoot));
     } else {			/* Align the stem so its edges fall on pixel boundaries. */
 	store_stem_deltas(&pcis->hstem_hints, psh, psp, v, dv, adj_dv);
     }
-    if_debug_print_add_stem('y', "[y]hstem", &pcis->hstem_hints, psh,
+    if_debug_print_add_stem(pcis->pfont->memory, 'y', "[y]hstem", &pcis->hstem_hints, psh,
 			    y, dy, v, dv);
 }
 
@@ -272,19 +272,20 @@ type1_do_vstem(gs_type1_state * pcis, fixed x, fixed dx, bool add_lsb,
     psh = type1_stem(pcis, &pcis->vstem_hints, v, dv);
     if (psh == 0)
 	return;
-    adj_dv = find_snap(dv, &pcis->fh.snap_v, psp);
+    adj_dv = find_snap(pcis->pfont->memory, dv, &pcis->fh.snap_v, psp);
     if (pcis->pfont->data.ForceBold && adj_dv < psp->unit)
 	adj_dv = psp->unit;
     /* Align the stem so its edges fall on pixel boundaries. */
     store_stem_deltas(&pcis->vstem_hints, psh, psp, v, dv, adj_dv);
-    if_debug_print_add_stem('y', "[y]vstem", &pcis->vstem_hints, psh,
+    if_debug_print_add_stem(pcis->pfont->memory, 'y', "[y]vstem", &pcis->vstem_hints, psh,
 			    x, dx, v, dv);
 }
 
 /* Adjust the character center for a vstem3. */
 /****** NEEDS UPDATING FOR SCALE ******/
 void
-type1_do_center_vstem(gs_type1_state * pcis, fixed x0, fixed dx,
+type1_do_center_vstem(const gs_memory_t *mem, 
+		      gs_type1_state * pcis, fixed x0, fixed dx,
 		      const gs_matrix_fixed * pmat)
 {
     fixed x1 = x0 + dx;
@@ -292,8 +293,8 @@ type1_do_center_vstem(gs_type1_state * pcis, fixed x0, fixed dx,
     fixed center, int_width;
     fixed *psxy;
 
-    if (gs_point_transform2fixed(pmat, fixed2float(x0), 0.0, &pt0) < 0 ||
-	gs_point_transform2fixed(pmat, fixed2float(x1), 0.0, &pt1) < 0
+    if (gs_point_transform2fixed(mem, pmat, fixed2float(x0), 0.0, &pt0) < 0 ||
+	gs_point_transform2fixed(mem, pmat, fixed2float(x1), 0.0, &pt1) < 0
 	) {			/* Punt. */
 	return;
     }
@@ -350,7 +351,7 @@ type1_stem(const gs_type1_state * pcis, stem_hint_table * psht,
 /* Compute the adjusted width of a stem. */
 /* The value returned is always a multiple of scale.unit. */
 private fixed
-find_snap(fixed dv, const stem_snap_table * psst, const pixel_scale * pps)
+find_snap(const gs_memory_t *mem, fixed dv, const stem_snap_table * psst, const pixel_scale * pps)
 {				/* We aren't sure why a maximum difference of pps->half */
     /* works better than pps->unit, but it does. */
 #define max_snap_distance (pps->half)
@@ -362,7 +363,7 @@ find_snap(fixed dv, const stem_snap_table * psst, const pixel_scale * pps)
 	fixed diff = psst->data[i] - dv;
 
 	if (any_abs(diff) < any_abs(best)) {
-	    if_debug3('Y', "[Y]possibly snap %g to [%d]%g\n",
+	    if_debug3(mem, 'Y', "[Y]possibly snap %g to [%d]%g\n",
 		      fixed2float(dv), i,
 		      fixed2float(psst->data[i]));
 	    best = diff;
@@ -375,9 +376,9 @@ find_snap(fixed dv, const stem_snap_table * psst, const pixel_scale * pps)
 	adj_dv = pps->unit;
 #ifdef DEBUG
     if (adj_dv == dv)
-	if_debug1('Y', "[Y]no snap %g\n", fixed2float(dv));
+	if_debug1(mem, 'Y', "[Y]no snap %g\n", fixed2float(dv));
     else
-	if_debug2('Y', "[Y]snap %g to %g\n",
+	if_debug2(mem, 'Y', "[Y]snap %g to %g\n",
 		  fixed2float(dv), fixed2float(adj_dv));
 #endif
     return adj_dv;
@@ -398,7 +399,7 @@ find_zone(gs_type1_state * pcis, fixed vbot, fixed vtop)
 	fixed v = (pz->is_top_zone ? vtop : vbot);
 
 	if (v >= pz->v0 && v <= pz->v1) {
-	    if_debug2('Y', "[Y]stem crosses %s-zone %d\n",
+	    if_debug2(pcis->pfont->memory, 'Y', "[Y]stem crosses %s-zone %d\n",
 		      (pz->is_top_zone ? "top" : "bottom"),
 		      (int)(pz - &pcis->fh.a_zones[0]));
 	    return pz;

@@ -48,7 +48,7 @@ zDCTD(i_ctx_t *i_ctx_p)
     jddp = gs_alloc_struct_immovable(mem,jpeg_decompress_data,
       &st_jpeg_decompress_data, "zDCTD");
     if (jddp == 0)
-	return_error(e_VMerror);
+	return_error(mem, e_VMerror);
     if (s_DCTD_template.set_defaults)
 	(*s_DCTD_template.set_defaults) ((stream_state *) & state);
     state.data.decompress = jddp;

@@ -63,7 +63,7 @@ common_viewclip(gs_state * pgs, int rule)
     if (pcpath == 0) {
 	pcpath = gx_cpath_alloc(pgs->memory, "gs_[eo]viewclip");
 	if (pcpath == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pgs->memory, gs_error_VMerror);
 	pgs->view_clip = pcpath;
     }
     if ((code = gx_path_bbox(pgs->path, &bbox)) < 0)

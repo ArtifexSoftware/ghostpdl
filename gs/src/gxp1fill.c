@@ -120,8 +120,8 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 
 	bbox.p.x = x0, bbox.p.y = y0;
 	bbox.q.x = x1, bbox.q.y = y1;
-	gs_bbox_transform_inverse(&bbox, &step_matrix, &ibbox);
-	if_debug10('T',
+	gs_bbox_transform_inverse(ptfs->pcdev->memory, &bbox, &step_matrix, &ibbox);
+	if_debug10(ptfs->pcdev->memory, 'T',
 	  "[T]x,y=(%d,%d) w,h=(%d,%d) => (%g,%g),(%g,%g), offset=(%g,%g)\n",
 		   x0, y0, w0, h0,
 		   ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
@@ -143,7 +143,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 	i1 = (int)ceil(u1);
 	j1 = (int)ceil(v1);
     }
-    if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
+    if_debug4(ptfs->pcdev->memory, 'T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
     for (i = i0; i < i1; i++)
 	for (j = j0; j < j1; j++) {
 	    int x = (int)(step_matrix.xx * i +
@@ -154,7 +154,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 	    int h = tbits_or_tmask->size.y;
 	    int xoff, yoff;
 
-	    if_debug4('T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
+	    if_debug4(ptfs->pcdev->memory, 'T', "[T]i=%d j=%d x,y=(%d,%d)", i, j, x, y);
 	    if (x < x0)
 		xoff = x0 - x, x = x0, w -= xoff;
 	    else
@@ -167,7 +167,7 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 		w = x1 - x;
 	    if (y + h > y1)
 		h = y1 - y;
-	    if_debug6('T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
+	    if_debug6(ptfs->pcdev->memory, 'T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
 		      x, y, w, h, xoff, yoff);
 	    if (w > 0 && h > 0) {
 		if (ptfs->pcdev == (gx_device *) & ptfs->cdev)

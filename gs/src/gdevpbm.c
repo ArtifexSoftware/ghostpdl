@@ -602,7 +602,7 @@ pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
     int code = 0;
 
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     /* Hack.  This should be done in the callers.  */
     if (magic == '9')
 	fprintf(pstream, "%11d %11d %11d %11d %11d ",
@@ -1039,7 +1039,7 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
     int plane;
 
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     for (plane = 0; plane < pdev->color_info.num_components; ++plane) {
 	int lnum, band_end;
 	/*
@@ -1085,7 +1085,7 @@ psm_print_page(gx_device_printer * pdev, FILE * pstream)
 		    memset(data, 0, raster);
 #ifdef DEBUG
 		if (plane == 0)
-		    if_debug4(':',
+		    if_debug4(pdev->memory, ':',
 			      "[:]%4d - %4d mask = 0x%lx, slow_rop = %d\n",
 			      lnum, band_end - 1, (ulong)colors_used.or,
 			      colors_used.slow_rop);

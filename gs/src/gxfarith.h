@@ -134,6 +134,6 @@ void gs_sincos_degrees(double angle, gs_sincos_t * psincos);
  * the PostScript quadrant rules.  Note that it may return
  * gs_error_undefinedresult.
  */
-int gs_atan2_degrees(double y, double x, double *pangle);
+int gs_atan2_degrees(const gs_memory_t *mem, double y, double x, double *pangle);
 
 #endif /* gxfarith_INCLUDED */

@@ -40,8 +40,8 @@ zCFE(i_ctx_t *i_ctx_p)
     stream_CFE_state cfs;
     int code;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
+    check_type(imemory, *op, t_dictionary);
+    check_dict_read(imemory, *op);
     code = zcf_setup(op, (stream_CF_state *)&cfs, iimemory);
     if (code < 0)
 	return code;
@@ -60,7 +60,7 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
     stream_PNGP_state pps;
 
     if (r_has_type(op, t_dictionary)) {
-	if ((code = dict_int_param(op, "Predictor", 0, 15, 1, &predictor)) < 0)
+	if ((code = dict_int_param(imemory, op, "Predictor", 0, 15, 1, &predictor)) < 0)
 	    return code;
 	switch (predictor) {
 	    case 0:		/* identity */
@@ -80,7 +80,7 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
 		code = zpp_setup(op, &pps);
 		break;
 	    default:
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	}
 	if (code < 0)
 	    return code;

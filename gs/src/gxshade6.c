@@ -78,7 +78,7 @@ patch_curve_t curve[4], gs_fixed_point interior[4] /* 0 for Coons patch */ )
 	return 1;		/* no more data */
     switch (flag & 3) {
 	default:
-	    return_error(gs_error_rangecheck);	/* not possible */
+	    return_error(cs->s->memory, gs_error_rangecheck);	/* not possible */
 	case 0:
 	    if ((code = shade_next_curve(cs, &curve[0])) < 0 ||
 		(code = shade_next_coords(cs, &curve[1].vertex.p, 1)) < 0
@@ -138,10 +138,10 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 
 /* Resolve a patch color using the Function if necessary. */
 private void
-patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
+patch_resolve_color(const gs_memory_t *mem, patch_color_t * ppcr, const patch_fill_state_t * pfs)
 {
     if (pfs->Function)
-	gs_function_evaluate(pfs->Function, &ppcr->t, ppcr->cc.paint.values);
+	gs_function_evaluate(mem, pfs->Function, &ppcr->t, ppcr->cc.paint.values);
 }
 
 /* ================ Specific shadings ================ */
@@ -172,7 +172,8 @@ patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
 
 /* Evaluate a curve at a given point. */
 private void
-curve_eval(gs_fixed_point * pt, const gs_fixed_point * p0,
+curve_eval(const gs_memory_t *mem, 
+	   gs_fixed_point * pt, const gs_fixed_point * p0,
 	   const gs_fixed_point * p1, const gs_fixed_point * p2,
 	   const gs_fixed_point * p3, floatp t)
 {
@@ -187,7 +188,7 @@ curve_eval(gs_fixed_point * pt, const gs_fixed_point * p0,
     curve_points_to_coefficients(d, p1->y, p2->y, p3->y,
 				 a, b, c, t01, t12);
     pt->y = (fixed) (((a * t + b) * t + c) * t + d);
-    if_debug3('2', "[2]t=%g => (%g,%g)\n", t, fixed2float(pt->x),
+    if_debug3(mem, '2', "[2]t=%g => (%g,%g)\n", t, fixed2float(pt->x),
 	      fixed2float(pt->y));
 }
 
@@ -226,16 +227,17 @@ merge_splits(double *out, const double *a1, int n1, const double *a2, int n2)
  * swap = 0 if the control points are in order, 1 if reversed.
  */
 private int
-split_xy(double out[4], const gs_fixed_point *p0, const gs_fixed_point *p1,
+split_xy(const gs_memory_t *mem,
+	 double out[4], const gs_fixed_point *p0, const gs_fixed_point *p1,
 	 const gs_fixed_point *p2, const gs_fixed_point *p3)
 {
     double tx[2], ty[2];
 
     return merge_splits(out, tx,
-			gx_curve_monotonic_points(p0->x, p1->x, p2->x, p3->x,
+			gx_curve_monotonic_points(mem, p0->x, p1->x, p2->x, p3->x,
 						  tx),
 			ty,
-			gx_curve_monotonic_points(p0->y, p1->y, p2->y, p3->y,
+			gx_curve_monotonic_points(mem, p0->y, p1->y, p2->y, p3->y,
 						  ty));
 }
 
@@ -245,19 +247,21 @@ split_xy(double out[4], const gs_fixed_point *p0, const gs_fixed_point *p1,
  * Return the number of split points.
  */
 inline private int
-split2_xy(double out[8], const gs_fixed_point *p10, const gs_fixed_point *p11,
+split2_xy(const gs_memory_t *mem, 
+	  double out[8], const gs_fixed_point *p10, const gs_fixed_point *p11,
 	  const gs_fixed_point *p12, const gs_fixed_point *p13,
 	  const gs_fixed_point *p20, const gs_fixed_point *p21,
 	  const gs_fixed_point *p22, const gs_fixed_point *p23)
 {
     double t1[4], t2[4];
 
-    return merge_splits(out, t1, split_xy(t1, p10, p11, p12, p13),
-			t2, split_xy(t2, p20, p21, p22, p23));
+    return merge_splits(out, t1, split_xy(mem, t1, p10, p11, p12, p13),
+			t2, split_xy(mem, t2, p20, p21, p22, p23));
 }
 
 private int
-patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
+patch_fill(const gs_memory_t *mem, 
+	   patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
 	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
 			      const gs_fixed_point[4], floatp, floatp))
@@ -274,11 +278,11 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	 * together we have a maximum of 8 split points for each axis.
 	 */
     double su[9], sv[9];
-    int nu = split2_xy(su, &curve[C1START].vertex.p,&curve[C1XCTRL].control[1],
+    int nu = split2_xy(mem, su, &curve[C1START].vertex.p,&curve[C1XCTRL].control[1],
 		       &curve[C1XCTRL].control[0], &curve[C1END].vertex.p,
 		       &curve[C2START].vertex.p, &curve[C2CTRL].control[0],
 		       &curve[C2CTRL].control[1], &curve[C2END].vertex.p);
-    int nv = split2_xy(sv, &curve[D1START].vertex.p, &curve[D1CTRL].control[0],
+    int nv = split2_xy(mem, sv, &curve[D1START].vertex.p, &curve[D1CTRL].control[0],
 		       &curve[D1CTRL].control[1], &curve[D1END].vertex.p,
 		       &curve[D2START].vertex.p, &curve[D2XCTRL].control[1],
 		       &curve[D2XCTRL].control[0], &curve[D2END].vertex.p);
@@ -298,9 +302,9 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     if (gs_debug_c('2')) {
 	int k;
 
-	dlputs("[2]patch curves:\n");
+	dlputs(mem, "[2]patch curves:\n");
 	for (k = 0; k < 4; ++k)
-	    dprintf6("        (%g,%g) (%g,%g)(%g,%g)\n",
+	    dprintf6(mem, "        (%g,%g) (%g,%g)(%g,%g)\n",
 		     fixed2float(curve[k].vertex.p.x),
 		     fixed2float(curve[k].vertex.p.y),
 		     fixed2float(curve[k].control[0].x),
@@ -308,16 +312,16 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		     fixed2float(curve[k].control[1].x),
 		     fixed2float(curve[k].control[1].y));
 	if (nu > 1) {
-	    dlputs("[2]Splitting u");
+	    dlputs(mem, "[2]Splitting u");
 	    for (k = 0; k < nu; ++k)
-		dprintf1(", %g", su[k]);
-	    dputs("\n");
+		dprintf1(mem, ", %g", su[k]);
+	    dputs(mem, "\n");
 	}
 	if (nv > 1) {
-	    dlputs("[2]Splitting v");
+	    dlputs(mem, "[2]Splitting v");
 	    for (k = 0; k < nv; ++k)
-		dprintf1(", %g", sv[k]);
-	    dputs("\n");
+		dprintf1(mem, ", %g", sv[k]);
+	    dputs(mem, "\n");
 	}
     }
 #endif
@@ -342,7 +346,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	    cseg.p2 = curve[i].control[1];
 	    cseg.pt = curve[(i + 1) & 3].vertex.p;
 	    log2_k[i] =
-		gx_curve_log2_samples(curve[i].vertex.p.x, curve[i].vertex.p.y,
+		gx_curve_log2_samples(mem, curve[i].vertex.p.x, curve[i].vertex.p.y,
 				      &cseg, flatness);
 	}
 	ku = 1 << max(log2_k[1], log2_k[3]);
@@ -402,14 +406,14 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 #undef CHECK_SPLIT
 
 	    patch_interpolate_color(&cu0v0, &c0v0, &c1v0, pfs, u0);
-	    patch_resolve_color(&cu0v0, pfs);
+	    patch_resolve_color(mem, &cu0v0, pfs);
 	    patch_interpolate_color(&cu1v0, &c0v0, &c1v0, pfs, u1);
-	    patch_resolve_color(&cu1v0, pfs);
+	    patch_resolve_color(mem,&cu1v0, pfs);
 	    patch_interpolate_color(&cu0v1, &c0v1, &c1v1, pfs, u0);
-	    patch_resolve_color(&cu0v1, pfs);
+	    patch_resolve_color(mem,&cu0v1, pfs);
 	    patch_interpolate_color(&cu1v1, &c0v1, &c1v1, pfs, u1);
-	    patch_resolve_color(&cu1v1, pfs);
-	    if_debug6('2', "[2]u[%d]=[%g .. %g], v[%d]=[%g .. %g]\n",
+	    patch_resolve_color(mem, &cu1v1, pfs);
+	    if_debug6(mem, '2', "[2]u[%d]=[%g .. %g], v[%d]=[%g .. %g]\n",
 		      iu, u0, u1, iv, v0, v1);
 
 	    /* Fill the sub-patch given by ((u0,v0),(u1,v1)). */
@@ -420,10 +424,10 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		(*transform)(&mu1v0.p, curve, interior, u1, v0);
 		(*transform)(&mu1v1.p, curve, interior, u1, v1);
 		(*transform)(&mu0v1.p, curve, interior, u0, v1);
-		if_debug4('2', "[2]  => (%g,%g), (%g,%g),\n",
+		if_debug4(mem, '2', "[2]  => (%g,%g), (%g,%g),\n",
 			  fixed2float(mu0v0.p.x), fixed2float(mu0v0.p.y),
 			  fixed2float(mu1v0.p.x), fixed2float(mu1v0.p.y));
-		if_debug4('2', "[2]     (%g,%g), (%g,%g)\n",
+		if_debug4(mem, '2', "[2]     (%g,%g), (%g,%g)\n",
 			  fixed2float(mu1v1.p.x), fixed2float(mu1v1.p.y),
 			  fixed2float(mu0v1.p.x), fixed2float(mu0v1.p.y));
 		memcpy(mu0v0.cc, cu0v0.cc.paint.values, sizeof(mu0v0.cc));
@@ -468,22 +472,23 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 
 /* Calculate the device-space coordinate corresponding to (u,v). */
 private void
-Cp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
+Cp_transform(const gs_memory_t *mem, 
+	     gs_fixed_point * pt, const patch_curve_t curve[4],
 	     const gs_fixed_point ignore_interior[4], floatp u, floatp v)
 {
     double co_u = 1.0 - u, co_v = 1.0 - v;
     gs_fixed_point c1u, d1v, c2u, d2v;
 
-    curve_eval(&c1u, &curve[C1START].vertex.p,
+    curve_eval(mem, &c1u, &curve[C1START].vertex.p,
 	       &curve[C1XCTRL].control[1], &curve[C1XCTRL].control[0],
 	       &curve[C1END].vertex.p, u);
-    curve_eval(&d1v, &curve[D1START].vertex.p,
+    curve_eval(mem, &d1v, &curve[D1START].vertex.p,
 	       &curve[D1CTRL].control[0], &curve[D1CTRL].control[1],
 	       &curve[D1END].vertex.p, v);
-    curve_eval(&c2u, &curve[C2START].vertex.p,
+    curve_eval(mem, &c2u, &curve[C2START].vertex.p,
 	       &curve[C2CTRL].control[0], &curve[C2CTRL].control[1],
 	       &curve[C2END].vertex.p, u);
-    curve_eval(&d2v, &curve[D2START].vertex.p,
+    curve_eval(mem, &d2v, &curve[D2START].vertex.p,
 	       &curve[D2XCTRL].control[1], &curve[D2XCTRL].control[0],
 	       &curve[D2END].vertex.p, v);
 #define COMPUTE_COORD(xy)\
@@ -496,7 +501,7 @@ Cp_transform(gs_fixed_point * pt, const patch_curve_t curve[4],
     COMPUTE_COORD(x);
     COMPUTE_COORD(y);
 #undef COMPUTE_COORD
-    if_debug4('2', "[2](u=%g,v=%g) => (%g,%g)\n",
+    if_debug4(mem, '2', "[2](u=%g,v=%g) => (%g,%g)\n",
 	      u, v, fixed2float(pt->x), fixed2float(pt->y));
 }
 
@@ -517,7 +522,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		    pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
 				    curve, NULL)) == 0 &&
-	   (code = patch_fill(&state, curve, NULL, Cp_transform)) >= 0
+	   (code = patch_fill(pis->memory, &state, curve, NULL, Cp_transform)) >= 0
 	)
 	DO_NOTHING;
     return min(code, 0);
@@ -602,7 +607,7 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	swapped_interior[1] = interior[3];
 	swapped_interior[2] = interior[2];
 	swapped_interior[3] = interior[1];
-	code = patch_fill(&state, curve, swapped_interior, Tpp_transform);
+	code = patch_fill(pis->memory, &state, curve, swapped_interior, Tpp_transform);
 	if (code < 0)
 	    break;
     }

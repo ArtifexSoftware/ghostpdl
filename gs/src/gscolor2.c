@@ -34,7 +34,7 @@ gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
     gs_client_color cc_old = *pgs->ccolor;
 
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+	return_error(pgs->memory, gs_error_undefined);
 
     if (pcs->id != pgs->color_space->id) {
         pcs->type->adjust_cspace_count(pcs, 1);
@@ -49,7 +49,7 @@ gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
 
     if (code >= 0) {
         cs_full_init_color(pgs->ccolor, pcs);
-        cs_old.type->adjust_color_count(&cc_old, &cs_old, -1);
+        cs_old.type->adjust_color_count(pgs->memory, &cc_old, &cs_old, -1);
         gx_unset_dev_color(pgs);
     }
 
@@ -71,12 +71,12 @@ gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
     gs_client_color     cc_old = *pgs->ccolor;
 
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+	return_error(pgs->memory, gs_error_undefined);
     gx_unset_dev_color(pgs);
-    (*pcs->type->adjust_color_count)(pcc, pcs, 1);
+    (*pcs->type->adjust_color_count)(pgs->memory, pcc, pcs, 1);
     *pgs->ccolor = *pcc;
     (*pcs->type->restrict_color)(pgs->ccolor, pcs);
-    (*pcs->type->adjust_color_count)(&cc_old, pcs, -1);
+    (*pcs->type->adjust_color_count)(pgs->memory, &cc_old, pcs, -1);
 
     return 0;
 }
@@ -122,14 +122,14 @@ alloc_indexed_map(gs_indexed_map ** ppmap, int nvals, gs_memory_t * pmem,
     gs_indexed_map *pimap;
 
     rc_alloc_struct_1(pimap, gs_indexed_map, &st_indexed_map, pmem,
-		      return_error(gs_error_VMerror), cname);
+		      return_error(pmem, gs_error_VMerror), cname);
     if (nvals > 0) {
 	pimap->values =
 	    (float *)gs_alloc_byte_array(pmem, nvals, sizeof(float), cname);
 
 	if (pimap->values == 0) {
 	    gs_free_object(pmem, pimap, cname);
-	    return_error(gs_error_VMerror);
+	    return_error(pmem, gs_error_VMerror);
 	}
     } else
 	pimap->values = 0;
@@ -241,7 +241,7 @@ private void
 gx_adjust_cspace_Indexed(const gs_color_space * pcs, int delta)
 {
     if (pcs->params.indexed.use_proc) {
-	rc_adjust_const(pcs->params.indexed.lookup.map, delta,
+	rc_adjust_const(pcs->pmem, pcs->params.indexed.lookup.map, delta,
 			"gx_adjust_Indexed");
     }
     (*pcs->params.indexed.base_space.type->adjust_cspace_count)
@@ -345,7 +345,7 @@ gs_cspace_build_Indexed(
     int code;
 
     if ((pbase_cspace == 0) || !pbase_cspace->type->can_be_base_space)
-	return_error(gs_error_rangecheck);
+	return_error(pmem, gs_error_rangecheck);
 
     code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Indexed, pmem);
     if (code < 0)
@@ -356,14 +356,14 @@ gs_cspace_build_Indexed(
 	    alloc_indexed_palette(pbase_cspace, num_entries, pmem);
 	if (pindexed->lookup.map == 0) {
 	    gs_free_object(pmem, pcspace, "gs_cspace_build_Indexed");
-	    return_error(gs_error_VMerror);
+	    return_error(pmem, gs_error_VMerror);
 	}
 	pindexed->use_proc = true;
     } else {
 	pindexed->lookup.table = *ptbl;
 	pindexed->use_proc = false;
     }
-    gs_cspace_init_from((gs_color_space *) & (pindexed->base_space),
+    gs_cspace_init_from(pmem, (gs_color_space *) & (pindexed->base_space),
 			pbase_cspace);
     pindexed->hival = num_entries - 1;
     *ppcspace = pcspace;
@@ -400,7 +400,7 @@ gs_cspace_indexed_value_array(const gs_color_space * pcspace)
  * Set the lookup procedure to be used with an indexed color space.
  */
 int
-gs_cspace_indexed_set_proc(
+gs_cspace_indexed_set_proc(const gs_memory_t *mem,
 			   gs_color_space * pcspace,
 			   int (*proc)(const gs_indexed_params *, int, float *)
 )
@@ -408,7 +408,7 @@ gs_cspace_indexed_set_proc(
     if ((gs_color_space_get_index(pcspace) != gs_color_space_index_Indexed) ||
 	!pcspace->params.indexed.use_proc
 	)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     pcspace->params.indexed.lookup.map->proc.lookup_index = proc;
     return 0;
 }

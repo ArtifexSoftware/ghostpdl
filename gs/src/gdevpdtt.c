@@ -41,7 +41,7 @@ pdf_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
 
     if ((pte->text.operation ^ pfrom->text.operation) & ~TEXT_FROM_ANY)
-	return_error(gs_error_rangecheck);
+	return_error(pte->memory, gs_error_rangecheck);
     if (penum->pte_default) {
 	int code = gs_text_resync(penum->pte_default, pfrom);
 
@@ -68,7 +68,7 @@ pdf_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
 
     if (penum->pte_default)
 	return gs_text_current_width(penum->pte_default, pwidth);
-    return_error(gs_error_rangecheck); /* can't happen */
+    return_error(pte->memory, gs_error_rangecheck); /* can't happen */
 }
 private int
 pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
@@ -94,7 +94,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	pdev->char_width.y = pw[1];
 	break;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     }
     if (penum->current_font->FontType == ft_user_defined && 
 	    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
@@ -134,7 +134,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 
 	    code = font->procs.glyph_name(font, glyph, &gnstr);
 	    if (code < 0)
-		return_error(gs_error_unregistered); /* Must not happen. */
+		return_error(font->memory, gs_error_unregistered); /* Must not happen. */
 	    gs_make_identity(&m);
 	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
 	    if (control != TEXT_SET_CHAR_WIDTH) {
@@ -168,7 +168,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	else
 	    return gs_text_set_cache(penum->pte_default, pw, control);
     }
-    return_error(gs_error_unregistered); /* can't happen */
+    return_error(penum->memory, gs_error_unregistered); /* can't happen */
 }
 private int
 pdf_text_retry(gs_text_enum_t *pte)
@@ -177,7 +177,7 @@ pdf_text_retry(gs_text_enum_t *pte)
 
     if (penum->pte_default)
 	return gs_text_retry(penum->pte_default);
-    return_error(gs_error_rangecheck); /* can't happen */
+    return_error(pte->memory, gs_error_rangecheck); /* can't happen */
 }
 private void
 pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
@@ -274,7 +274,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     /* Allocate and initialize the enumerator. */
 
     rc_alloc_struct_1(penum, pdf_text_enum_t, &st_pdf_text_enum, mem,
-		      return_error(gs_error_VMerror), "gdev_pdf_text_begin");
+		      return_error(mem, gs_error_VMerror), "gdev_pdf_text_begin");
     penum->rc.free = rc_free_text_enum;
     penum->pte_default = 0; 
     penum->charproc_accum = false;
@@ -407,7 +407,7 @@ alloc_font_cache_elem_arrays(gx_device_pdf *pdev, pdf_font_cache_elem_t *e,
 			    "pdf_attach_font_resource");
 	gs_free_object(pdev->pdf_memory, e->real_widths, 
 			    "alloc_font_cache_elem_arrays");
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     }
     e->num_chars = num_chars;
     e->num_widths = num_widths;
@@ -465,7 +465,7 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
     pdf_font_cache_elem_t *e, **pe = pdf_locate_font_cache_elem(pdev, font);
 
     if (pdfont->FontType != font->FontType)
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
     font_cache_elem_array_sizes(pdev, font, &num_widths, &num_chars);
     len = (num_chars + 7) / 8;
     if (pe != NULL) {
@@ -482,7 +482,7 @@ pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font,
 		pdf_font_cache_elem_t, &st_pdf_font_cache_elem,
 			    "pdf_attach_font_resource");
 	if (e == NULL)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	e->pdfont = pdfont;
 	e->font_id = pdf_font_cache_elem_id(font);
 	e->num_chars = 0;
@@ -556,7 +556,7 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 	}
 	return 0;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(font->memory, gs_error_rangecheck);
     }
 }
 
@@ -851,7 +851,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    return 1;
 	}
     default:
-	return_error(gs_error_invalidfont);
+	return_error(pdev->memory, gs_error_invalidfont);
     }
 
     /* Create an appropriate font resource and descriptor. */
@@ -879,7 +879,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 		    )
 		    continue;
 		/* Can't embed, punt. */
-		return_error(gs_error_rangecheck);
+		return_error(pdev->memory, gs_error_rangecheck);
 	    }
 	}
     }
@@ -1018,7 +1018,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	     * Will fall back to pdf_default_text_begin,
 	     * see pdf_text_process.
 	     */
-	    return_error(gs_error_undefined);
+	    return_error(pdev->memory, gs_error_undefined);
 	}
     }
     /* Get attached font resource (maybe NULL) */
@@ -1031,7 +1031,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	glyphs = (gs_glyph *)gs_alloc_bytes(pdev->memory, 
 		buf_elem_size * glyphs_offset, "pdf_encode_string");
 	if (glyphs == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
     }
     chars = (gs_char *)(glyphs + glyphs_offset * 2);
     /* Build the glyph set of the text : */
@@ -1050,9 +1050,9 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	if (code < 0)
 	    return code;
 	if (num_all_chars > glyphs_offset)
-	    return_error(gs_error_unregistered); /* Must not happen. */
+	    return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
 	if (glyph_usage != 0 && cid > char_cache_size)
-	    return_error(gs_error_unregistered); /* Must not happen. */
+	    return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
 	store_glyphs(glyphs, glyphs_offset,	chars, glyphs_offset,
 		     glyph_usage, char_cache_size,
 		     &num_all_chars, &num_unused_chars,
@@ -1160,7 +1160,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	if (code < 0)
 	    return code;
 	if (glyph_usage != 0 && cid >= char_cache_size)
-	    return_error(gs_error_unregistered); /* Must not happen. */
+	    return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
 	glyph_usage[cid / 8] |= 0x80 >> (cid & 7);
     }
 out:
@@ -1178,10 +1178,11 @@ out:
  * values in ppts->values, not just the ones that need to be set now.
  */
 private int
-transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
+transform_delta_inverse(const gs_memory_t *mem,
+			const gs_point *pdelta, const gs_matrix *pmat,
 			gs_point *ppt)
 {
-    int code = gs_distance_transform_inverse(pdelta->x, pdelta->y, pmat, ppt);
+    int code = gs_distance_transform_inverse(mem, pdelta->x, pdelta->y, pmat, ppt);
     gs_point delta;
 
     if (code < 0)
@@ -1189,7 +1190,7 @@ transform_delta_inverse(const gs_point *pdelta, const gs_matrix *pmat,
     if (ppt->y == 0)
 	return 0;
     /* Check for numerical fuzz. */
-    code = gs_distance_transform(ppt->x, 0.0, pmat, &delta);
+    code = gs_distance_transform(mem, ppt->x, 0.0, pmat, &delta);
     if (code < 0)
 	return 0;		/* punt */
     if (fabs(delta.x - pdelta->x) < 0.01 && fabs(delta.y - pdelta->y) < 0.01) {
@@ -1241,7 +1242,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 
     /* Compute the scaling matrix and combined matrix. */
 
-    gs_matrix_invert(&orig_matrix, &smat);
+    gs_matrix_invert(penum->memory, &orig_matrix, &smat);
     gs_matrix_multiply(&smat, pfmat, &smat);
     tmat = ctm_only(penum->pis);
     tmat.tx = tmat.ty = 0;
@@ -1262,7 +1263,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	if (penum->current_font->WMode == 0) {
 	    gs_point pt;
 
-	    code = transform_delta_inverse(&penum->text.delta_all, &smat, &pt);
+	    code = transform_delta_inverse(penum->memory, &penum->text.delta_all, &smat, &pt);
 	    if (code >= 0 && pt.y == 0)
 		c_s = pt.x * size;
 	    else
@@ -1275,7 +1276,7 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (penum->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
 	gs_point pt;
 
-	code = transform_delta_inverse(&penum->text.delta_space, &smat, &pt);
+	code = transform_delta_inverse(penum->memory, &penum->text.delta_space, &smat, &pt);
 	if (code >= 0 && pt.y == 0 && penum->text.space.s_char == 32)
 	    w_s = pt.x * size;
 	else
@@ -1612,7 +1613,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	byte *buf = gs_alloc_string(pte->memory, size, "pdf_text_process");
 
 	if (buf == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pte->memory, gs_error_VMerror);
 	code = process(pte, vdata, buf, size);
 	gs_free_string(pte->memory, buf, size, "pdf_text_process");
     }

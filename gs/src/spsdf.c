@@ -112,7 +112,7 @@ s_alloc_position_stream(stream ** ps, gs_memory_t * mem)
     stream *s = *ps = s_alloc(mem, "s_alloc_position_stream");
 
     if (s == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     swrite_position_only(s);
     return 0;
 }
@@ -160,7 +160,7 @@ s_alloc_param_printer(gs_param_list ** pplist,
 
     *pplist = (gs_param_list *)prlist;
     if (prlist == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     code = s_init_param_printer(prlist, ppp, s);
     prlist->memory = mem;
     return code;
@@ -254,7 +254,7 @@ param_print_typed(gs_param_list * plist, gs_param_name pkey,
 	    /*case gs_param_type_string_array: */
 	    /*case gs_param_type_name_array: */
 	default:
-	    return_error(gs_error_typecheck);
+	    return_error(s->memory, gs_error_typecheck);
     }
     if (prlist->params.item_suffix)
 	stream_puts(s, prlist->params.item_suffix);

@@ -339,7 +339,7 @@ gx_dc_wts_write(
     uint *                          psize )
 {
     /* not yet implemented */
-    return_error(gs_error_unknownerror);
+    return_error(dev->memory, gs_error_unknownerror);
 }
 
 private int
@@ -353,7 +353,7 @@ gx_dc_wts_read(
     gs_memory_t *           mem )
 {
     /* not yet implemented */
-    return_error(gs_error_unknownerror);
+    return_error(dev->memory, gs_error_unknownerror);
 }
 
 

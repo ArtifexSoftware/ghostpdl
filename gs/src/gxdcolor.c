@@ -276,7 +276,7 @@ gx_dc_no_fill_rectangle(const gx_device_color *pdevc, int x, int y,
     if (w <= 0 || h <= 0)
 	return 0;
     if (lop_uses_T(lop))
-	return_error(gs_error_Fatal);
+	return_error(dev->memory, gs_error_Fatal);
     color_set_pure(&filler, 0);	 /* any valid value for dev will do */
     return gx_dc_pure_fill_rectangle(&filler, x, y, w, h, dev, lop, source);
 }
@@ -289,7 +289,7 @@ gx_dc_no_fill_masked(const gx_device_color *pdevc, const byte *data,
 {
     if (w <= 0 || h <= 0)
 	return 0;
-    return_error(gs_error_Fatal);
+    return_error(dev->memory, gs_error_Fatal);
 }
 
 private bool

@@ -142,7 +142,7 @@ bmp_print_page(gx_device_printer * pdev, FILE * file)
     int code;		/* return code */
 
     if (row == 0)		/* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
 
     /* Write the file header. */
 
@@ -179,7 +179,7 @@ bmp_cmyk_print_page(gx_device_printer * pdev, FILE * file)
     int plane;
 
     if (row == 0)		/* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
 
     for (plane = 0; plane <= 3; ++plane) {
 	gx_render_plane_t render_plane;

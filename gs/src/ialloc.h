@@ -57,7 +57,7 @@
   gs_free_const_string(imemory, data, nbytes, cname)
 
 /* Initialize the interpreter's allocator. */
-int ialloc_init(gs_dual_memory_t *, gs_raw_memory_t *, uint, bool);
+int ialloc_init(gs_dual_memory_t *, gs_memory_t *, uint, bool);
 
 /* ------ Internal routines ------ */
 

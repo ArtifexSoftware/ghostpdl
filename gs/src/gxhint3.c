@@ -111,7 +111,7 @@ line_hints(const gs_type1_state * pcis, const gs_fixed_point * p0,
 	    hints ^= (HINT_HORZ_LOWER | HINT_HORZ_UPPER);
     } else
 	hints = 0;
-    if_debug7('y', "[y]hint from 0x%lx(%1.4f,%1.4f) to 0x%lx(%1.4f,%1.4f) = %d\n",
+    if_debug7(pcis->pfont->memory, 'y', "[y]hint from 0x%lx(%1.4f,%1.4f) to 0x%lx(%1.4f,%1.4f) = %d\n",
 	      (ulong) p0, fixed2float(p0->x), fixed2float(p0->y),
 	      (ulong) p1, fixed2float(p1->x), fixed2float(p1->y),
 	      hints);
@@ -125,7 +125,7 @@ apply_hints_at(gs_type1_state * pcis, int hints, gs_fixed_point * ppt,
 {
     fixed px = ppt->x, py = ppt->y;
 
-    if_debug4('y', "[y]applying hints %d to 0x%lx(%1.4f,%1.4f) ...\n",
+    if_debug4(pcis->pfont->memory, 'y', "[y]applying hints %d to 0x%lx(%1.4f,%1.4f) ...\n",
 	      hints, (ulong) ppt, fixed2float(px), fixed2float(py));
     if ((hints & HINT_VERT) != 0 &&
 	(pcis->vstem_hints.count & pcis->dotsection_flag) != 0
@@ -142,7 +142,7 @@ apply_hints_at(gs_type1_state * pcis, int hints, gs_fixed_point * ppt,
 	    pdiff->y = ppt->y - py;
     /* Here is where we would round *ppt to the nearest quarter-pixel */
     /* if we wanted to. */
-    if_debug2('y', "[y] ... => (%1.4f,%1.4f)\n",
+    if_debug2(pcis->pfont->memory, 'y', "[y] ... => (%1.4f,%1.4f)\n",
 	      fixed2float(ppt->x), fixed2float(ppt->y));
 }
 
@@ -151,9 +151,9 @@ apply_hints_at(gs_type1_state * pcis, int hints, gs_fixed_point * ppt,
 inline
 #endif
 private void
-add_hint_diff(gs_fixed_point * ppt, gs_fixed_point delta)
+add_hint_diff(const gs_memory_t *mem, gs_fixed_point * ppt, gs_fixed_point delta)
 {
-    if_debug7('y', "[y]adding diff (%1.4f,%1.4f) to 0x%lx(%1.4f,%1.4f) => (%1.4f,%1.4f)\n",
+    if_debug7(mem, 'y', "[y]adding diff (%1.4f,%1.4f) to 0x%lx(%1.4f,%1.4f) => (%1.4f,%1.4f)\n",
 	      fixed2float(delta.x), fixed2float(delta.y), (ulong) ppt,
 	      fixed2float(ppt->x), fixed2float(ppt->y),
 	      fixed2float(ppt->x + delta.x), fixed2float(ppt->y + delta.y));
@@ -201,7 +201,7 @@ scale_delta(fixed diff, fixed dv, fixed lv, bool nearer)
 	return fixed_mult_quo(diff, dv, lv);
 }
 private void
-adjust_curve_start(curve_segment * pcseg, const gs_fixed_point * pdiff)
+adjust_curve_start(const gs_memory_t *mem, curve_segment * pcseg, const gs_fixed_point * pdiff)
 {
     fixed dx = pdiff->x, dy = pdiff->y;
     fixed end_x = pcseg->pt.x, end_y = pcseg->pt.y;
@@ -211,13 +211,13 @@ adjust_curve_start(curve_segment * pcseg, const gs_fixed_point * pdiff)
 
     delta.x = scale_delta(dx, end_x - pcseg->p1.x, lx, true);
     delta.y = scale_delta(dy, end_y - pcseg->p1.y, ly, true);
-    add_hint_diff(&pcseg->p1, delta);
+    add_hint_diff(mem, &pcseg->p1, delta);
     delta.x = scale_delta(dx, end_x - pcseg->p2.x, lx, false);
     delta.y = scale_delta(dy, end_y - pcseg->p2.y, ly, false);
-    add_hint_diff(&pcseg->p2, delta);
+    add_hint_diff(mem, &pcseg->p2, delta);
 }
 private void
-adjust_curve_end(curve_segment * pcseg, const gs_fixed_point * pdiff)
+adjust_curve_end(const gs_memory_t *mem, curve_segment * pcseg, const gs_fixed_point * pdiff)
 {
     fixed dx = pdiff->x, dy = pdiff->y;
     const segment *prev = pcseg->prev;
@@ -227,10 +227,10 @@ adjust_curve_end(curve_segment * pcseg, const gs_fixed_point * pdiff)
 
     delta.x = scale_delta(dx, pcseg->p1.x - start_x, lx, false);
     delta.y = scale_delta(dy, pcseg->p1.y - start_y, ly, false);
-    add_hint_diff(&pcseg->p1, delta);
+    add_hint_diff(mem, &pcseg->p1, delta);
     delta.x = scale_delta(dx, pcseg->p2.x - start_x, lx, true);
     delta.y = scale_delta(dy, pcseg->p2.y - start_y, ly, true);
-    add_hint_diff(&pcseg->p2, delta);
+    add_hint_diff(mem, &pcseg->p2, delta);
 }
 
 /*
@@ -238,7 +238,7 @@ adjust_curve_end(curve_segment * pcseg, const gs_fixed_point * pdiff)
  * to a possible curve.  pseg_last.pt has already been adjusted.
  */
 private void
-apply_final_hint(segment * pseg_last, const gs_fixed_point * pdiff)
+apply_final_hint(const gs_memory_t *mem, segment * pseg_last, const gs_fixed_point * pdiff)
 {
     segment *pseg;
 
@@ -247,13 +247,13 @@ apply_final_hint(segment * pseg_last, const gs_fixed_point * pdiff)
 
 	switch (pseg->type) {
 	    case s_curve:
-		adjust_curve_end(((curve_segment *) pseg), pdiff);
+		adjust_curve_end(mem, ((curve_segment *) pseg), pdiff);
 		return;
 	    case s_line:
 	    case s_line_close:
 		if (!line_is_null(prev->pt, pseg->pt))
 		    return;
-		add_hint_diff(&prev->pt, *pdiff);
+		add_hint_diff(mem, &prev->pt, *pdiff);
 		break;
 	    default:		/* s_start */
 		return;
@@ -297,7 +297,7 @@ apply_wrapped_hints(gs_type1_state * pcis, subpath * psub, segment * pseg,
 	int do_x, do_y;
 	gs_fixed_point diff2;
 
-	if_debug2('y', "[y]closing closed, hints=%d, hints_first=%d\n",
+	if_debug2(pcis->pfont->memory, 'y', "[y]closing closed, hints=%d, hints_first=%d\n",
 		  hints, hints_first);
 	if (pcis->fh.axes_swapped)
 	    do_x = HINT_HORZ, do_y = HINT_VERT;
@@ -325,9 +325,9 @@ apply_wrapped_hints(gs_type1_state * pcis, subpath * psub, segment * pseg,
 		(hints_start & do_y ?
 		 pseg->pt.y - pcis->unmoved_end.y : 0);
 	}
-	add_hint_diff(&pseg->pt, diff2);
-	apply_final_hint(pseg, &diff2);
-	add_hint_diff(&psub->pt, *pdiff);
+	add_hint_diff(pcis->pfont->memory, &pseg->pt, diff2);
+	apply_final_hint(pcis->pfont->memory, pseg, &diff2);
+	add_hint_diff(pcis->pfont->memory, &psub->pt, *pdiff);
 	/*
 	 * Now align the initial and final points, to deal with hint
 	 * replacement.
@@ -337,24 +337,24 @@ apply_wrapped_hints(gs_type1_state * pcis, subpath * psub, segment * pseg,
 	if (diff2.x || diff2.y) {
 	    /* Force the points to coincide. */
 	    pseg->pt = psub->pt;
-	    apply_final_hint(pseg, &diff2);
+	    apply_final_hint(pcis->pfont->memory, pseg, &diff2);
 	}
     } else {
 	int hints_close =
 	line_hints(pcis, &pcis->unmoved_end, &pcis->unmoved_start);
 
 	hints_close &= ~(hints | hints_first);
-	if_debug3('y', "[y]closing open, hints=%d, hints_close=%d, hints_first=%d\n",
+	if_debug3(pcis->pfont->memory, 'y', "[y]closing open, hints=%d, hints_close=%d, hints_first=%d\n",
 		  hints, hints_close, hints_first);
 	if (hints_close) {
 	    apply_hints_at(pcis, hints_close, &pseg->pt, pdiff);
-	    apply_final_hint(pseg, pdiff);
+	    apply_final_hint(pcis->pfont->memory, pseg, pdiff);
 	    apply_hints_at(pcis, hints_close, &psub->pt, pdiff);
 	} else
 	    pdiff->x = pdiff->y = 0;
     }
     if (pfirst->type == s_curve)
-	adjust_curve_start((curve_segment *) pfirst, pdiff);
+	adjust_curve_start(pcis->pfont->memory, (curve_segment *) pfirst, pdiff);
 }
 
 /*
@@ -427,11 +427,11 @@ type1_do_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
 		    diff2.x = pseg->pt.x - pcis->unmoved_end.x;
 		    diff2.y = pseg->pt.y - pcis->unmoved_end.y;
 		    hints_next = line_hints(pcis, &pnext_curve->p2, &pnext->pt);
-		    adjust_curve_start(pnext_curve, &diff2);
+		    adjust_curve_start(pcis->pfont->memory, pnext_curve, &diff2);
 		    if (hints_next) {
 			apply_hints_at(pcis, hints_next, &pnext_curve->p2, &diff);
 			pcis->unmoved_end = pnext->pt;
-			add_hint_diff(&pnext->pt, diff);
+			add_hint_diff(pcis->pfont->memory, &pnext->pt, diff);
 		    } else
 			pcis->unmoved_end = pnext->pt;
 		    break;
@@ -460,7 +460,7 @@ type1_do_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
 		    apply_hints_at(pcis, hints_next, &pnext->pt, NULL);
 	}
 	if (pseg->type == s_curve)
-	    adjust_curve_end((curve_segment *) pseg, &dseg);
+	    adjust_curve_end(pcis->pfont->memory, (curve_segment *) pseg, &dseg);
 	hints = hints_next;
     }
     if (closing) {
@@ -502,18 +502,18 @@ apply_vstem_hints(gs_type1_state * pcis, int dy, gs_fixed_point * ppt)
     const stem_hint *ph = search_hints(&pcis->vstem_hints, *pv);
 
     if (ph != 0) {
-	if_debug3('Y', "[Y]use vstem %d: %1.4f (%s)",
+	if_debug3(pcis->pfont->memory, 'Y', "[Y]use vstem %d: %1.4f (%s)",
 		  (int)(ph - &pcis->vstem_hints.data[0]),
 		  fixed2float(*pv),
 		  (dy == 0 ? "?!" : dy > 0 ? "upper" : "lower"));
 #ifdef DEBUG
 	if (dy == 0) {
-	    lprintf("dy == 0 in apply_vstem_hints!\n");
+	    lprintf(pcis->pfont->memory, "dy == 0 in apply_vstem_hints!\n");
 	    return;
 	}
 #endif
 	*pv += (dy > 0 ? ph->dv1 : ph->dv0);
-	if_debug1('Y', " -> %1.4f\n", fixed2float(*pv));
+	if_debug1(pcis->pfont->memory, 'Y', " -> %1.4f\n", fixed2float(*pv));
     }
 }
 
@@ -524,18 +524,18 @@ apply_hstem_hints(gs_type1_state * pcis, int dx, gs_fixed_point * ppt)
     const stem_hint *ph = search_hints(&pcis->hstem_hints, *pv);
 
     if (ph != 0) {
-	if_debug3('Y', "[Y]use hstem %d: %1.4f (%s)",
+	if_debug3(pcis->pfont->memory, 'Y', "[Y]use hstem %d: %1.4f (%s)",
 		  (int)(ph - &pcis->hstem_hints.data[0]),
 		  fixed2float(*pv),
 		  (dx == 0 ? "?!" : dx > 0 ? "upper" : "lower"));
 #ifdef DEBUG
 	if (dx == 0) {
-	    lprintf("dx == 0 in apply_vstem_hints!\n");
+	    lprintf(pcis->pfont->memory, "dx == 0 in apply_vstem_hints!\n");
 	    return;
 	}
 #endif
 	*pv += (dx > 0 ? ph->dv1 : ph->dv0);
-	if_debug1('Y', " -> %1.4f\n", fixed2float(*pv));
+	if_debug1(pcis->pfont->memory, 'Y', " -> %1.4f\n", fixed2float(*pv));
     }
 }
 

@@ -25,19 +25,19 @@ int build_gs_TrueType_font(i_ctx_t *, os_ptr, gs_font_type42 **, font_type,
  * Check a parameter for being an array of strings.  Return the parameter
  * value even if it is of the wrong type.
  */
-int font_string_array_param(os_ptr, const char *, ref *);
+int font_string_array_param(const gs_memory_t *mem, os_ptr, const char *, ref *);
 
 /*
  * Get a GlyphDirectory if present.  Return 0 if present, 1 if absent,
  * or an error code.
  */
-int font_GlyphDirectory_param(os_ptr, ref *);
+int font_GlyphDirectory_param(const gs_memory_t *mem, os_ptr, ref *);
 
 /*
  * Get a glyph outline from GlyphDirectory.  Return an empty string if
  * the glyph is missing or out of range.
  */
-int font_gdir_get_outline(const ref *, long, gs_glyph_data_t *);
+int font_gdir_get_outline(const gs_memory_t *mem, const ref *, long, gs_glyph_data_t *);
 
 /*
  * Access a given byte offset and length in an array of strings.
@@ -46,6 +46,6 @@ int font_gdir_get_outline(const ref *, long, gs_glyph_data_t *);
  * Return code : 0 - success, <0 - error, 
  *               >0 - number of accessible bytes (client must cycle).
  */
-int string_array_access_proc(const ref *, int, ulong, uint, const byte **);
+int string_array_access_proc(const gs_memory_t *mem, const ref *, int, ulong, uint, const byte **);
 
 #endif /* ifont42_INCLUDED */

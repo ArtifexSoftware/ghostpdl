@@ -52,7 +52,7 @@ gs_image_class_3_mono(gx_image_enum * penum)
 	/* We can bypass X clipping for portrait mono-component images. */
 	if (!(penum->slow_loop || penum->posture != image_portrait))
 	    penum->clip_image &= ~(image_clip_xmin | image_clip_xmax);
-	if_debug0('b', "[b]render=mono\n");
+	if_debug0(penum->memory, 'b', "[b]render=mono\n");
 	/* Precompute values needed for rasterizing. */
 	penum->dxx =
 	    float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);

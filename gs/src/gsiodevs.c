@@ -49,13 +49,13 @@ stdio_open(gx_io_device * iodev, const char *access, stream ** ps,
     byte *buf;
 
     if (!streq1(access, rw))
-	return_error(gs_error_invalidfileaccess);
+	return_error(mem, gs_error_invalidfileaccess);
     s = s_alloc(mem, "stdio_open(stream)");
     buf = gs_alloc_bytes(mem, STDIO_BUF_SIZE, "stdio_open(buffer)");
     if (s == 0 || buf == 0) {
 	gs_free_object(mem, buf, "stdio_open(buffer)");
 	gs_free_object(mem, s, "stdio_open(stream)");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     srw_file(s, file, buf, STDIO_BUF_SIZE);
     s->procs.close = stdio_close_file;

@@ -56,10 +56,10 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     if (pte->text.operation &
 	(TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
 	)
-	return_error(gs_error_rangecheck);
+	return_error(pte->memory, gs_error_rangecheck);
     if (pte->text.operation & TEXT_INTERVENE) {
 	/* Not implemented. (PostScript doesn't even allow this case.) */
-	return_error(gs_error_rangecheck);
+	return_error(pte->memory, gs_error_rangecheck);
     }
     total_width.x = total_width.y = 0;
     curr = *penum;
@@ -94,7 +94,7 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 		if (new_font != prev_font)
 		    break;
 		if (chr != (byte)chr)	/* probably can't happen */
-		    return_error(gs_error_rangecheck);
+		    return_error(pte->memory, gs_error_rangecheck);
 		buf[buf_index] = (byte)chr;
 		buf_index++;
 		prev_font = new_font;
@@ -247,7 +247,7 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    if (code < 0)
 		return code;
 	    if (cid < 0 || cid >= char_cache_size || cid >= width_cache_size)
-		return_error(gs_error_unregistered); /* Must not happen */
+		return_error(dev->memory, gs_error_unregistered); /* Must not happen */
 	    if (cid >= pdsubf->count)
 		cid = 0, code = 1; /* undefined CID */
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
@@ -258,7 +258,7 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 		    return code;
 		if (code == 0) { /* OK to cache */
 		    if (cid > pdsubf->count)
-			return_error(gs_error_unregistered); /* Must not happen. */
+			return_error(dev->memory, gs_error_unregistered); /* Must not happen. */
 		    w[cid] = widths.Width.w;
 		    if (v != NULL) {
 			v[cid * 2 + 0] = widths.Width.v.x;
@@ -309,20 +309,20 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
     if (pte->text.operation &
 	(TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
 	)
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     if (pte->text.operation & TEXT_INTERVENE) {
 	/* Not implemented.  (PostScript doesn't allow TEXT_INTERVENE.) */
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     }
     /* Require a single CID-keyed DescendantFont. */
     if (pfont->data.fdep_size != 1)
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     switch (subfont->FontType) {
     case ft_CID_encrypted:
     case ft_CID_TrueType:
 	break;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     }
 
     code = pdf_update_text_state(&text_state, penum, pdfont,
@@ -390,7 +390,7 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 					  "pdf_font_resource_t(CMapName)");
 
 	    if (chars == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    memcpy(chars, pcmap->CMapName.data, size);
 	    if (is_identity)
 		strcpy(pdfont->u.type0.Encoding_name, 
@@ -455,7 +455,7 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     int code;
 
     if (!(operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH)))
-	return_error(gs_error_rangecheck);
+	return_error(pte->memory, gs_error_rangecheck);
 
     /*
      * PDF doesn't support glyphshow directly: we need to create a Type 0
@@ -471,7 +471,7 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    ulong gnum = glyphs[i] - GS_MIN_CID_GLYPH;
 
 	    if (gnum & ~0xffffL)
-		return_error(gs_error_rangecheck);
+		return_error(pte->memory, gs_error_rangecheck);
 	    *pchars++ = (byte)(gnum >> 8);
 	    *pchars++ = (byte)gnum;
 	}
@@ -482,7 +482,7 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     for (font = scaled_font; font->base != font; )
 	font = font->base;
     /* Compute the scaling matrix. */
-    gs_matrix_invert(&font->FontMatrix, &scale_matrix);
+    gs_matrix_invert(pte->memory, &font->FontMatrix, &scale_matrix);
     gs_matrix_multiply(&scale_matrix, &scaled_font->FontMatrix, &scale_matrix);
 
     /* Find or create the CIDFont resource. */

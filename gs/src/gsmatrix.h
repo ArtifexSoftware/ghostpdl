@@ -53,20 +53,20 @@ int gs_make_translation(floatp, floatp, gs_matrix *),
 
 /* Matrix arithmetic */
 int gs_matrix_multiply(const gs_matrix *, const gs_matrix *, gs_matrix *),
-    gs_matrix_invert(const gs_matrix *, gs_matrix *),
-    gs_matrix_translate(const gs_matrix *, floatp, floatp, gs_matrix *),
+    gs_matrix_invert(const gs_memory_t *mem, const gs_matrix *, gs_matrix *),
+    gs_matrix_translate(const gs_memory_t *mem, const gs_matrix *, floatp, floatp, gs_matrix *),
     gs_matrix_scale(const gs_matrix *, floatp, floatp, gs_matrix *),
     gs_matrix_rotate(const gs_matrix *, floatp, gs_matrix *);
 
 /* Coordinate transformation */
-int gs_point_transform(floatp, floatp, const gs_matrix *, gs_point *),
-    gs_point_transform_inverse(floatp, floatp, const gs_matrix *, gs_point *),
-    gs_distance_transform(floatp, floatp, const gs_matrix *, gs_point *),
-    gs_distance_transform_inverse(floatp, floatp, const gs_matrix *, gs_point *),
+int gs_point_transform(const gs_memory_t *mem, floatp, floatp, const gs_matrix *, gs_point *),
+    gs_point_transform_inverse(const gs_memory_t *mem, floatp, floatp, const gs_matrix *, gs_point *),
+    gs_distance_transform(const gs_memory_t *mem, floatp, floatp, const gs_matrix *, gs_point *),
+    gs_distance_transform_inverse(const gs_memory_t *mem, floatp, floatp, const gs_matrix *, gs_point *),
     gs_points_bbox(const gs_point[4], gs_rect *),
-    gs_bbox_transform_only(const gs_rect *, const gs_matrix *, gs_point[4]),
-    gs_bbox_transform(const gs_rect *, const gs_matrix *, gs_rect *),
-    gs_bbox_transform_inverse(const gs_rect *, const gs_matrix *, gs_rect *);
+    gs_bbox_transform_only(const gs_memory_t *mem, const gs_rect *, const gs_matrix *, gs_point[4]),
+    gs_bbox_transform(const gs_memory_t *mem, const gs_rect *, const gs_matrix *, gs_rect *),
+    gs_bbox_transform_inverse(const gs_memory_t *mem, const gs_rect *, const gs_matrix *, gs_rect *);
 
 /* Serialization */
 #ifndef stream_DEFINED

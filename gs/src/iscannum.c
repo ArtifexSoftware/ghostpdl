@@ -31,7 +31,8 @@
  * if not, set *psp to the first character beyond the number and return 1.
  */
 int
-scan_number(const byte * str, const byte * end, int sign,
+scan_number(const gs_memory_t *mem, 
+	    const byte * str, const byte * end, int sign,
 	    ref * pref, const byte ** psp, const bool PDFScanRules)
 {
     const byte *sp = str;
@@ -62,14 +63,14 @@ scan_number(const byte * str, const byte * end, int sign,
 #define WOULD_OVERFLOW(val, d, maxv)\
   (val >= maxv / 10 && (val > maxv / 10 || d > (int)(maxv % 10)))
 
-    GET_NEXT(c, sp, return_error(e_syntaxerror));
+    GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
     if (!IS_DIGIT(d, c)) {
 	if (c != '.')
-	    return_error(e_syntaxerror);
+	    return_error(mem, e_syntaxerror);
 	/* Might be a number starting with '.'. */
-	GET_NEXT(c, sp, return_error(e_syntaxerror));
+	GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
 	if (!IS_DIGIT(d, c))
-	    return_error(e_syntaxerror);
+	    return_error(mem, e_syntaxerror);
 	ival = 0;
 	goto i2r;
     }
@@ -123,7 +124,7 @@ scan_number(const byte * str, const byte * end, int sign,
 		ulong uval = 0, lmax;
 
 		if (sign || radix < min_radix || radix > max_radix)
-		    return_error(e_syntaxerror);
+		    return_error(mem, e_syntaxerror);
 		/* Avoid multiplies for power-of-2 radix. */
 		if (!(radix & (radix - 1))) {
 		    int shift;
@@ -145,7 +146,7 @@ scan_number(const byte * str, const byte * end, int sign,
 			    shift = 5, lmax = max_ulong >> 5;
 			    break;
 			default:	/* can't happen */
-			    return_error(e_rangecheck);
+			    return_error(mem, e_rangecheck);
 		    }
 		    for (;; uval = (uval << shift) + d) {
 			GET_NEXT(c, sp, break);
@@ -156,7 +157,7 @@ scan_number(const byte * str, const byte * end, int sign,
 			    break;
 			}
 			if (uval > lmax)
-			    return_error(e_limitcheck);
+			    return_error(mem, e_limitcheck);
 		    }
 		} else {
 		    int lrem = max_ulong % radix;
@@ -173,7 +174,7 @@ scan_number(const byte * str, const byte * end, int sign,
 			if (uval >= lmax &&
 			    (uval > lmax || d > lrem)
 			    )
-			    return_error(e_limitcheck);
+			    return_error(mem, e_limitcheck);
 		    }
 		}
 		make_int(pref, uval);
@@ -227,7 +228,7 @@ i2l:
 	    exp10 = 0;
 	    goto le;
 	case '#':
-	    return_error(e_syntaxerror);
+	    return_error(mem, e_syntaxerror);
     }
 lret:
     make_int(pref, (sign < 0 ? -lval : lval));
@@ -260,7 +261,7 @@ l2d:
 	    exp10 = 0;
 	    goto fs;
 	case '#':
-	    return_error(e_syntaxerror);
+	    return_error(mem, e_syntaxerror);
     }
 
     /* We saw a '.' while accumulating an integer in ival. */
@@ -347,16 +348,16 @@ fe:
 		int esign = 0;
 		int iexp;
 
-		GET_NEXT(c, sp, return_error(e_syntaxerror));
+		GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
 		switch (c) {
 		    case '-':
 			esign = 1;
 		    case '+':
-			GET_NEXT(c, sp, return_error(e_syntaxerror));
+			GET_NEXT(c, sp, return_error(mem, e_syntaxerror));
 		}
 		/* Scan the exponent.  We limit it arbitrarily to 999. */
 		if (!IS_DIGIT(d, c))
-		    return_error(e_syntaxerror);
+		    return_error(mem, e_syntaxerror);
 		iexp = d;
 		for (;; iexp = iexp * 10 + d) {
 		    GET_NEXT(c, sp, break);
@@ -366,7 +367,7 @@ fe:
 			break;
 		    }
 		    if (iexp > 99)
-			return_error(e_limitcheck);
+			return_error(mem, e_limitcheck);
 		}
 		if (esign)
 		    exp10 -= iexp;
@@ -401,10 +402,10 @@ fe:
      */
     if (dval >= 0) {
 	if (dval > MAX_FLOAT)
-	    return_error(e_limitcheck);
+	    return_error(mem, e_limitcheck);
     } else {
 	if (dval < -MAX_FLOAT)
-	    return_error(e_limitcheck);
+	    return_error(mem, e_limitcheck);
     }
 rret:
     make_real(pref, dval);

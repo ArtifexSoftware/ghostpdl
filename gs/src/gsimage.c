@@ -204,7 +204,7 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
 	    image.adjust = false;
     } else {
 	if (pgs->in_cachedevice)
-	    return_error(gs_error_undefined);
+	    return_error(pgs->memory, gs_error_undefined);
 	if (image.ColorSpace == NULL) {
             /* parameterless color space - no re-entrancy problems */
             static gs_color_space cs;
@@ -215,7 +215,7 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
              * non-current color space is potentially incorrect, but
              * it appears this case doesn't arise.
              */
-            gs_cspace_init_DeviceGray(&cs);
+            gs_cspace_init_DeviceGray(pgs->memory, &cs);
 	    image.ColorSpace = &cs;
         }
     }
@@ -364,7 +364,7 @@ free_row_buffers(gs_image_enum *penum, int num_planes, client_name_t cname)
     int i;
 
     for (i = num_planes - 1; i >= 0; --i) {
-	if_debug3('b', "[b]free plane %d row (0x%lx,%u)\n",
+	if_debug3(penum->memory, 'b', "[b]free plane %d row (0x%lx,%u)\n",
 		  i, (ulong)penum->planes[i].row.data,
 		  penum->planes[i].row.size);
 	gs_free_string(gs_image_row_memory(penum), penum->planes[i].row.data,
@@ -386,7 +386,7 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
     gs_const_string plane_data[gs_image_max_planes];
 
     if (penum->planes[px].source.size != 0)
-	return_error(gs_error_rangecheck);
+	return_error(penum->memory, gs_error_rangecheck);
     for (i = 0; i < num_planes; i++)
 	plane_data[i].size = 0;
     plane_data[px].data = dbytes;
@@ -413,7 +413,7 @@ gs_image_next_planes(gs_image_enum * penum,
 	int pi;
 
 	for (pi = 0; pi < num_planes; ++pi)
-	    dprintf6("[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
+	    dprintf6(penum->memory, "[b]plane %d source=0x%lx,%u pos=%u data=0x%lx,%u\n",
 		     pi, (ulong)penum->planes[pi].source.data,
 		     penum->planes[pi].source.size, penum->planes[pi].pos,
 		     (ulong)plane_data[pi].data, plane_data[pi].size);
@@ -457,11 +457,11 @@ gs_image_next_planes(gs_image_enum * penum,
 			     gs_resize_string(mem, old_data, old_size, raster,
 					      "gs_image_next(row)"));
 
-			if_debug5('b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
+			if_debug5(penum->memory, 'b', "[b]plane %d row (0x%lx,%u) => (0x%lx,%u)\n",
 				  i, (ulong)old_data, old_size,
 				  (ulong)row, raster);
 			if (row == 0) {
-			    code = gs_note_error(gs_error_VMerror);
+			    code = gs_note_error(penum->memory, gs_error_VMerror);
 			    free_row_buffers(penum, i, "gs_image_next(row)");
 			    break;
 			}
@@ -509,7 +509,7 @@ gs_image_next_planes(gs_image_enum * penum,
 	} else {
 	    code = gx_image_plane_data_rows(penum->info, penum->image_planes,
 					    h, &h);
-	    if_debug2('b', "[b]used %d, code=%d\n", h, code);
+	    if_debug2(penum->memory, 'b', "[b]used %d, code=%d\n", h, code);
 	    penum->error = code < 0;
 	}
 	penum->y += h;

@@ -59,7 +59,7 @@ pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
     case ft_user_defined:
 	break;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     }
     font = (gs_font_base *)penum->current_font;
 
@@ -145,7 +145,7 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	if (glyph == GS_NO_GLYPH || glyph == pet->glyph)
 	    continue;
 	if (pet->glyph != GS_NO_GLYPH) { /* encoding conflict */
-	    return_error(gs_error_rangecheck); 
+	    return_error(pdev->memory, gs_error_rangecheck); 
 	    /* Must not happen because pdf_obtain_font_resource
 	     * checks for encoding compatibility. 
 	     */
@@ -219,7 +219,7 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 
     if (font->FontBBox.p.x == font->FontBBox.q.x ||
 	font->FontBBox.p.y == font->FontBBox.q.y)
-	return_error(gs_error_undefined);
+	return_error(pte->memory, gs_error_undefined);
     code = gx_path_current_point(pte->path, &origin);
     if (code < 0)
 	return code;
@@ -240,10 +240,10 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 
 	if (code < 0)
 	    return code;
-	gs_point_transform(font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
-	gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
-	gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
-	gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
+	gs_point_transform(pte->memory, font->FontBBox.p.x, font->FontBBox.p.y, &m, &p0);
+	gs_point_transform(pte->memory, font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
+	gs_point_transform(pte->memory, font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
+	gs_point_transform(pte->memory, font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
 	bbox.p.x = min(min(p0.x, p1.x), min(p1.x, p2.x)) + total.x;
 	bbox.p.y = min(min(p0.y, p1.y), min(p1.y, p2.y)) + total.y;
 	bbox.q.x = max(max(p0.x, p1.x), max(p1.x, p2.x)) + total.x;
@@ -253,21 +253,24 @@ process_text_estimate_bbox(pdf_text_enum_t *pte, gs_font_base *font,
 	else
 	    rect_merge(*text_bbox, bbox);
 	if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
-	    gs_text_replaced_width(&pte->text, xy_index++, &tpt);
-	    gs_distance_transform(tpt.x, tpt.y, &ctm_only(pte->pis), &wanted);
+	    gs_text_replaced_width(pte->memory, &pte->text, xy_index++, &tpt);
+	    gs_distance_transform(pte->memory, tpt.x, tpt.y, &ctm_only(pte->pis), &wanted);
 	} else {
-	    gs_distance_transform(info.width[WMode].x,
+	    gs_distance_transform(pte->memory, 
+				  info.width[WMode].x,
 				  info.width[WMode].y,
 				  &m, &wanted);
 	    if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
-		gs_distance_transform(pte->text.delta_all.x,
+		gs_distance_transform(pte->memory, 
+				      pte->text.delta_all.x,
 				      pte->text.delta_all.y,
 				      &ctm_only(pte->pis), &tpt);
 		wanted.x += tpt.x;
 		wanted.y += tpt.y;
 	    }
 	    if (pstr->data[i] == space_char) {
-		gs_distance_transform(pte->text.delta_space.x,
+		gs_distance_transform(pte->memory, 
+				      pte->text.delta_space.x,
 				      pte->text.delta_space.y,
 				      &ctm_only(pte->pis), &tpt);
 		wanted.x += tpt.x;
@@ -454,11 +457,11 @@ pdf_char_widths(gx_device_pdf *const pdev,
     if (code < 0)
 	return code;
     if (pdfont1 != pdfont)
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
     if (ch < 0 || ch > 255)
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     if (ch >= width_cache_size)
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(pdev->memory, gs_error_unregistered); /* Must not happen. */
     if (pwidths == 0)
 	pwidths = &widths;
     if (real_widths[ch] == 0 && font->FontType != ft_user_defined) {
@@ -564,13 +567,13 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
 	    ++num_spaces;
     }
     *accepted = i;
-    gs_distance_transform(w.x * scale, w.y * scale,
+    gs_distance_transform(pte->memory, w.x * scale, w.y * scale,
 			  &ppts->values.matrix, &dpt);
     if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	int num_chars = *accepted;
 	gs_point tpt;
 
-	gs_distance_transform(pte->text.delta_all.x, pte->text.delta_all.y,
+	gs_distance_transform(pte->memory, pte->text.delta_all.x, pte->text.delta_all.y,
 			      &ctm_only(pte->pis), &tpt);
 	dpt.x += tpt.x * num_chars;
 	dpt.y += tpt.y * num_chars;
@@ -578,7 +581,7 @@ process_text_return_width(const pdf_text_enum_t *pte, gs_font_base *font,
     if (pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH) {
 	gs_point tpt;
 
-	gs_distance_transform(pte->text.delta_space.x, pte->text.delta_space.y,
+	gs_distance_transform(pte->memory, pte->text.delta_space.x, pte->text.delta_space.y,
 			      &ctm_only(pte->pis), &tpt);
 	dpt.x += tpt.x * num_spaces;
 	dpt.y += tpt.y * num_spaces;
@@ -680,7 +683,8 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	if (v.x != 0 || v.y != 0) {
 	    gs_point glyph_origin_shift;
 
-	    gs_distance_transform(-v.x * scale, -v.y * scale,
+	    gs_distance_transform(pte->memory, 
+				  -v.x * scale, -v.y * scale,
 				  &ctm_only(pte->pis), &glyph_origin_shift);
 	    if (glyph_origin_shift.x != 0 || glyph_origin_shift.y != 0) {
 		ppts->values.matrix.tx = start.x + total.x + glyph_origin_shift.x;
@@ -691,16 +695,19 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    }
 	}
 	if (pte->text.operation & TEXT_DO_DRAW) {
-	    gs_distance_transform(cw.Width.xy.x * scale,
+	    gs_distance_transform(pte->memory, 
+				  cw.Width.xy.x * scale,
 				  cw.Width.xy.y * scale,
 				  &ppts->values.matrix, &did);
-	    gs_distance_transform((font->WMode ? 0 : ppts->values.character_spacing),
+	    gs_distance_transform(pte->memory, 
+				  (font->WMode ? 0 : ppts->values.character_spacing),
 				  (font->WMode ? ppts->values.character_spacing : 0),
 				  &ppts->values.matrix, &tpt);
 	    did.x += tpt.x;
 	    did.y += tpt.y;
 	    if (chr == space_char) {
-		gs_distance_transform((font->WMode ? 0 : ppts->values.word_spacing),
+		gs_distance_transform(pte->memory, 
+				      (font->WMode ? 0 : ppts->values.word_spacing),
 				      (font->WMode ? ppts->values.word_spacing : 0),
 				      &ppts->values.matrix, &tpt);
 		did.x += tpt.x;
@@ -714,21 +721,21 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
 	    gs_point dpt;
 
-	    gs_text_replaced_width(&pte->text, pte->xy_index++, &dpt);
-	    gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &wanted);
+	    gs_text_replaced_width(pte->memory, &pte->text, pte->xy_index++, &dpt);
+	    gs_distance_transform(pte->memory, dpt.x, dpt.y, &ctm_only(pte->pis), &wanted);
 	} else {
-	    gs_distance_transform(cw.real_width.xy.x * scale,
+	    gs_distance_transform(pte->memory, cw.real_width.xy.x * scale,
 				  cw.real_width.xy.y * scale,
 				  &ppts->values.matrix, &wanted);
 	    if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
-		gs_distance_transform(pte->text.delta_all.x,
+		gs_distance_transform(pte->memory, pte->text.delta_all.x,
 				      pte->text.delta_all.y,
 				      &ctm_only(pte->pis), &tpt);
 		wanted.x += tpt.x;
 		wanted.y += tpt.y;
 	    }
 	    if (chr == space_char) {
-		gs_distance_transform(pte->text.delta_space.x,
+		gs_distance_transform(pte->memory, pte->text.delta_space.x,
 				      pte->text.delta_space.y,
 				      &ctm_only(pte->pis), &tpt);
 		wanted.x += tpt.x;
@@ -762,7 +769,7 @@ pdf_encode_glyph(gs_font_base *bfont, gs_glyph glyph0,
 
     *char_code_length = 1;
     if (*char_code_length > buf_size) 
-	return_error(gs_error_rangecheck); /* Must not happen. */
+	return_error(bfont->memory, gs_error_rangecheck); /* Must not happen. */
     for (c = 0; c < 255; c++) {
 	gs_glyph glyph1 = bfont->procs.encode_char((gs_font *)bfont, c, 
 		    GLYPH_SPACE_NAME);
@@ -771,7 +778,7 @@ pdf_encode_glyph(gs_font_base *bfont, gs_glyph glyph0,
 	    return 0;
 	}
     }
-    return_error(gs_error_rangecheck); /* Can't encode. */
+    return_error(bfont->memory, gs_error_rangecheck); /* Can't encode. */
 }
 
 /* ---------------- Type 1 or TrueType font ---------------- */
@@ -806,7 +813,7 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    gs_char chr = cdata[pte->index + i];
 
 	    if (chr & ~0xff)
-		return_error(gs_error_rangecheck);
+		return_error(pte->memory, gs_error_rangecheck);
 	    buf[i] = (byte)chr;
 	}
 	encoded = false;
@@ -831,7 +838,7 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	int i;
 
 	if (!pdf_is_simple_font(font))
-	    return_error(gs_error_unregistered); /* Must not ahppen. */
+	    return_error(pte->memory, gs_error_unregistered); /* Must not ahppen. */
 	count = 0;
 	for (i = 0; i < size / sizeof(gs_glyph); ++i) {
 	    gs_glyph glyph = gdata[pte->index + i];
@@ -850,7 +857,7 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	}
 	encoded = true;
     } else
-	return_error(gs_error_rangecheck);
+	return_error(pte->memory, gs_error_rangecheck);
     str.data = buf;
     if (count > 1 && (pte->text.operation & TEXT_INTERVENE)) {
 	/* Just do one character. */

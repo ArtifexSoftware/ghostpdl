@@ -42,8 +42,8 @@ void
 		      gx_semaphore_t * sema	/* semaphore to delete */
 		      );
 
-#define gx_semaphore_wait(sema)  gp_semaphore_wait(&(sema)->native)
-#define gx_semaphore_signal(sema)  gp_semaphore_signal(&(sema)->native)
+#define gx_semaphore_wait(mem, sema)  gp_semaphore_wait(mem, &(sema)->native)
+#define gx_semaphore_signal(mem, sema)  gp_semaphore_signal(mem, &(sema)->native)
 
 
 /* ----- Monitor interface ----- */
@@ -63,7 +63,7 @@ void
 		    gx_monitor_t * mon	/* monitor to delete */
 		    );
 
-#define gx_monitor_enter(sema)  gp_monitor_enter(&(sema)->native)
-#define gx_monitor_leave(sema)  gp_monitor_leave(&(sema)->native)
+#define gx_monitor_enter(mem, sema)  gp_monitor_enter(mem, &(sema)->native)
+#define gx_monitor_leave(mem, sema)  gp_monitor_leave(mem, &(sema)->native)
 
 #endif /* !defined(gxsync_INCLUDED) */

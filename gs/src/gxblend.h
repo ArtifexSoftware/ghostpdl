@@ -46,7 +46,7 @@ typedef bits16 ArtPixMaxDepth;
  * mode. I wouldn't be surprised if it required an API change.
  **/
 void
-art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
+art_blend_pixel(const gs_memory_t *mem, ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
 		const ArtPixMaxDepth * src, int n_chan,
 		gs_blend_mode_t blend_mode);
 
@@ -76,7 +76,7 @@ art_blend_pixel(ArtPixMaxDepth * dst, const ArtPixMaxDepth * backdrop,
  * mode. I wouldn't be surprised if it required an API change.
  **/
 void
-art_blend_pixel_8(byte *dst, const byte *backdrop,
+art_blend_pixel_8(const gs_memory_t *mem, byte *dst, const byte *backdrop,
 		  const byte *src, int n_chan, gs_blend_mode_t blend_mode);
 
 /**
@@ -119,8 +119,8 @@ byte art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask);
  * be accessed.
  **/
 void
-art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
-
+art_pdf_composite_pixel_alpha_8(const gs_memory_t *mem, 
+				byte *dst, const byte *src, int n_chan,
 				gs_blend_mode_t blend_mode);
 
 /**
@@ -156,10 +156,10 @@ art_pdf_uncomposite_group_8(byte *dst,
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
  **/
 void
-art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
+art_pdf_recomposite_group_8(const gs_memory_t *mem,
+			    byte *dst, byte *dst_alpha_g,
 			    const byte *src, byte src_alpha_g,
 			    int n_chan,
-
 			    byte alpha, gs_blend_mode_t blend_mode);
 
 /**
@@ -175,9 +175,9 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
  * @alpha corresponds to $fk_i \cdot fm_i \cdot qk_i \cdot qm_i$.
  **/
 void
-art_pdf_composite_group_8(byte *dst, byte *alpha_g,
+art_pdf_composite_group_8(const gs_memory_t *mem,
+			  byte *dst, byte *alpha_g,
 			  const byte *src,
-
 			  int n_chan, byte alpha, gs_blend_mode_t blend_mode);
 
 /**
@@ -193,9 +193,9 @@ art_pdf_composite_group_8(byte *dst, byte *alpha_g,
  * is interpreted as shape.
  **/
 void
-art_pdf_composite_knockout_simple_8(byte *dst,
+art_pdf_composite_knockout_simple_8(const gs_memory_t *mem,
+				    byte *dst,
 				    byte *dst_shape,
-
 				    const byte *src,
 				    int n_chan, byte opacity);
 
@@ -213,7 +213,8 @@ art_pdf_composite_knockout_simple_8(byte *dst,
  * alpha channel of @src is interpreted as alpha.
  **/
 void
-art_pdf_composite_knockout_isolated_8(byte *dst,
+art_pdf_composite_knockout_isolated_8(const gs_memory_t *mem,
+				      byte *dst,
 				      byte *dst_shape,
 				      const byte *src,
 				      int n_chan,
@@ -238,13 +239,13 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
  * routine.
  **/
 void
-art_pdf_composite_knockout_8(byte *dst,
+art_pdf_composite_knockout_8(const gs_memory_t *mem,
+			     byte *dst,
 			     byte *dst_alpha_g,
 			     const byte *backdrop,
 			     const byte *src,
 			     int n_chan,
 			     byte shape,
-
 			     byte alpha_mask,
 			     byte shape_mask, gs_blend_mode_t blend_mode);
 

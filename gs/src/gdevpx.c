@@ -245,7 +245,7 @@ pclxl_set_color(gx_device_pclxl * xdev, const gx_drawing_color * pdc,
     } else if (gx_dc_is_null(pdc))
 	px_put_uba(s, 0, null_source);
     else
-	return_error(gs_error_rangecheck);
+	return_error(xdev->memory, gs_error_rangecheck);
     spputc(s, (byte)op);
     return 0;
 }
@@ -418,7 +418,7 @@ pclxl_flush_points(gx_device_pclxl * xdev)
 		op = pxtBezierRelPath;
 		goto useb;
 	    default:		/* can't happen */
-		return_error(gs_error_unknownerror);
+		return_error(xdev->memory, gs_error_unknownerror);
 	}
 	px_put_np(s, count, eSInt16);
 	spputc(s, (byte)op);
@@ -833,7 +833,7 @@ pclxl_setdash(gx_device_vector * vdev, const float *pattern, uint count,
 
 	PX_PUT_LIT(s, nac_);
     } else if (count > 255)
-	return_error(gs_error_limitcheck);
+	return_error(s->memory, gs_error_limitcheck);
     else {
 	uint i;
 
@@ -902,7 +902,7 @@ pclxl_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
     if (OUT_OF_RANGE(x0) || OUT_OF_RANGE(y0) ||
 	OUT_OF_RANGE(x1) || OUT_OF_RANGE(y1)
 	)
-	return_error(gs_error_rangecheck);
+	return_error(s->memory, gs_error_rangecheck);
 #undef OUT_OF_RANGE
     if (type & (gx_path_type_fill | gx_path_type_stroke)) {
 	pclxl_set_paints(xdev, type);
@@ -1120,7 +1120,7 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
     sflush(s);
     pclxl_page_init(xdev);
     if (ferror(xdev->file))
-	return_error(gs_error_ioerror);
+	return_error(s->memory, gs_error_ioerror);
     return gx_finish_output_page(dev, num_copies, flush);
 }
 
@@ -1381,7 +1381,7 @@ pclxl_begin_image(gx_device * dev,
      * Check whether we can handle this image.  PCL XL 1.0 and 2.0 only
      * handle orthogonal transformations.
      */
-    gs_matrix_invert(&pim->ImageMatrix, &mat);
+    gs_matrix_invert(mem, &pim->ImageMatrix, &mat);
     gs_matrix_multiply(&mat, &ctm_only(pis), &mat);
     /* Currently we only handle portrait transformations. */
     if (mat.xx <= 0 || mat.xy != 0 || mat.yx != 0 || mat.yy <= 0 ||
@@ -1405,7 +1405,7 @@ pclxl_begin_image(gx_device * dev,
     row_data = gs_alloc_bytes(mem, num_rows * row_raster,
 			      "pclxl_begin_image(rows)");
     if (pie == 0 || row_data == 0) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto fail;
     }
     code = gdev_vector_begin_image(vdev, pis, pim, format, prect,
@@ -1460,7 +1460,7 @@ pclxl_begin_image(gx_device * dev,
 		(*pcs->type->remap_color)
 		    (&cc, pcs, &devc, pis, dev, gs_color_select_source);
 		if (!gx_dc_is_pure(&devc))
-		    return_error(gs_error_Fatal);
+		    return_error(dev->memory, gs_error_Fatal);
 		ci = gx_dc_pure_color(&devc);
 		if (dev->color_info.num_components == 1) {
 		    palette[i] = (byte)ci;
@@ -1543,7 +1543,7 @@ pclxl_image_plane_data(gx_image_enum_common_t * info,
 
     /****** SHOULD HANDLE NON-BYTE-ALIGNED DATA ******/
     if (width_bits != pie->bits_per_row || (data_bit & 7) != 0)
-	return_error(gs_error_rangecheck);
+	return_error(pie->memory, gs_error_rangecheck);
     if (height > pie->height - pie->y)
 	height = pie->height - pie->y;
     for (i = 0; i < height; pie->y++, ++i) {

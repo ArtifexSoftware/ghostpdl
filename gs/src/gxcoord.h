@@ -28,6 +28,6 @@ int gx_scale_char_matrix(gs_state *, int, int);
 
 /* Compute the coefficients for fast fixed-point distance transformations */
 /* from a transformation matrix. */
-int gx_matrix_to_fixed_coeff(const gs_matrix *, fixed_coeff *, int);
+int gx_matrix_to_fixed_coeff(const gs_memory_t *mem, const gs_matrix *, fixed_coeff *, int);
 
 #endif /* gxcoord_INCLUDED */

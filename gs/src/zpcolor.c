@@ -40,7 +40,7 @@
 extern const gs_color_space_type gs_color_space_type_Pattern;
 
 /* Forward references */
-private int zPaintProc(const gs_client_color *, gs_state *);
+private int zPaintProc(const gs_memory_t *mem, const gs_client_color *, gs_state *);
 private int pattern_paint_prepare(i_ctx_t *);
 private int pattern_paint_finish(i_ctx_t *);
 
@@ -66,7 +66,7 @@ int_pattern_alloc(int_pattern **ppdata, const ref *op, gs_memory_t *mem)
 	gs_alloc_struct(mem, int_pattern, &st_int_pattern, "int_pattern");
 
     if (pdata == 0)
-	return_error(e_VMerror);
+	return_error(mem, e_VMerror);
     pdata->dict = *op;
     *ppdata = pdata;
     return 0;
@@ -86,20 +86,20 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     gs_client_color cc_instance;
     ref *pPaintProc;
 
-    check_type(*op1, t_dictionary);
-    check_dict_read(*op1);
+    check_type(imemory, *op1, t_dictionary);
+    check_dict_read(imemory, *op1);
     gs_pattern1_init(&template);
-    if ((code = read_matrix(op, &mat)) < 0 ||
+    if ((code = read_matrix(imemory, op, &mat)) < 0 ||
 	(code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
-	(code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
-	(code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
-	(code = dict_floats_param(op1, "BBox", 4, BBox, NULL)) < 0 ||
-	(code = dict_float_param(op1, "XStep", 0.0, &template.XStep)) != 0 ||
-	(code = dict_float_param(op1, "YStep", 0.0, &template.YStep)) != 0 ||
+	(code = dict_int_param(imemory, op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
+	(code = dict_int_param(imemory, op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
+	(code = dict_floats_param(imemory, op1, "BBox", 4, BBox, NULL)) < 0 ||
+	(code = dict_float_param(imemory, op1, "XStep", 0.0, &template.XStep)) != 0 ||
+	(code = dict_float_param(imemory, op1, "YStep", 0.0, &template.YStep)) != 0 ||
 	(code = dict_find_string(op1, "PaintProc", &pPaintProc)) <= 0
 	)
-	return_error((code < 0 ? code : e_rangecheck));
-    check_proc(*pPaintProc);
+	return_error(imemory, (code < 0 ? code : e_rangecheck));
+    check_proc(imemory, *pPaintProc);
     template.BBox.p.x = BBox[0];
     template.BBox.p.y = BBox[1];
     template.BBox.q.x = BBox[2];
@@ -130,18 +130,18 @@ zsetpatternspace(i_ctx_t *i_ctx_p)
     int code;
 
     if (!r_is_array(op))
-        return_error(e_typecheck);
-    check_read(*op);
+        return_error(imemory, e_typecheck);
+    check_read(imemory, *op);
     switch (r_size(op)) {
 	case 1:		/* no base space */
 	    cs.params.pattern.has_base_space = false;
 	    break;
 	default:
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	case 2:
 	    cs = *gs_currentcolorspace(igs);
 	    if (cs_num_components(&cs) < 0)	/* i.e., Pattern space */
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	    /* We can't count on C compilers to recognize the aliasing */
 	    /* that would be involved in a direct assignment, so.... */
 	    {
@@ -180,13 +180,13 @@ const op_def zpcolor_l2_op_defs[] =
 /* Render the pattern by calling the PaintProc. */
 private int pattern_paint_cleanup(i_ctx_t *);
 private int
-zPaintProc(const gs_client_color * pcc, gs_state * pgs)
+zPaintProc(const gs_memory_t *mem, const gs_client_color * pcc, gs_state * pgs)
 {
     /* Just schedule a call on the real PaintProc. */
     r_ptr(&gs_int_gstate(pgs)->remap_color_info,
 	  int_remap_color_info_t)->proc =
 	pattern_paint_prepare;
-    return_error(e_RemapColor);
+    return_error(mem, e_RemapColor);
 }
 /* Prepare to run the PaintProc. */
 private int
@@ -213,7 +213,7 @@ pattern_paint_prepare(i_ctx_t *i_ctx_p)
     if (internal_accum) {
 	pdev = gx_pattern_accum_alloc(imemory, "pattern_paint_prepare");
 	if (pdev == 0)
-	    return_error(e_VMerror);
+	    return_error(imemory, e_VMerror);
 	pdev->instance = pinst;
 	pdev->bitmap_memory = gstate_pattern_cache(pgs)->memory;
 	code = (*dev_proc(pdev, open_device)) ((gx_device *) pdev);

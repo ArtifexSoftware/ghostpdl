@@ -33,6 +33,6 @@ int param_put_long(gs_param_list * plist, gs_param_name param_name,
 		   long * pval, int ecode);
 
 /* Copy one parameter list to another, recursively if necessary. */
-int param_list_copy(gs_param_list *plto, gs_param_list *plfrom);
+int param_list_copy(const gs_memory_t *mem, gs_param_list *plto, gs_param_list *plfrom);
 
 #endif /* gsparamx_INCLUDED */

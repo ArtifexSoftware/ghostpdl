@@ -56,6 +56,8 @@ bool gs_debug_c(int /*char */ );
  */
 #define gs_log_errors gs_debug['#']
 
+// hack it out
+#if 0
 /* If debugging, direct all error output to gs_debug_out. */
 extern FILE *gs_debug_out;
 
@@ -65,57 +67,58 @@ extern FILE *gs_debug_out;
 #undef estderr
 #define estderr gs_debug_out
 #endif
+#endif
 
 /* Debugging printout macros. */
 #ifdef DEBUG
-#  define if_debug0(c,s)\
-    BEGIN if (gs_debug_c(c)) dlprintf(s); END
-#  define if_debug1(c,s,a1)\
-    BEGIN if (gs_debug_c(c)) dlprintf1(s,a1); END
-#  define if_debug2(c,s,a1,a2)\
-    BEGIN if (gs_debug_c(c)) dlprintf2(s,a1,a2); END
-#  define if_debug3(c,s,a1,a2,a3)\
-    BEGIN if (gs_debug_c(c)) dlprintf3(s,a1,a2,a3); END
-#  define if_debug4(c,s,a1,a2,a3,a4)\
-    BEGIN if (gs_debug_c(c)) dlprintf4(s,a1,a2,a3,a4); END
-#  define if_debug5(c,s,a1,a2,a3,a4,a5)\
-    BEGIN if (gs_debug_c(c)) dlprintf5(s,a1,a2,a3,a4,a5); END
-#  define if_debug6(c,s,a1,a2,a3,a4,a5,a6)\
-    BEGIN if (gs_debug_c(c)) dlprintf6(s,a1,a2,a3,a4,a5,a6); END
-#  define if_debug7(c,s,a1,a2,a3,a4,a5,a6,a7)\
-    BEGIN if (gs_debug_c(c)) dlprintf7(s,a1,a2,a3,a4,a5,a6,a7); END
-#  define if_debug8(c,s,a1,a2,a3,a4,a5,a6,a7,a8)\
-    BEGIN if (gs_debug_c(c)) dlprintf8(s,a1,a2,a3,a4,a5,a6,a7,a8); END
-#  define if_debug9(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
-    BEGIN if (gs_debug_c(c)) dlprintf9(s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
-#  define if_debug10(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)\
-    BEGIN if (gs_debug_c(c)) dlprintf10(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
-#  define if_debug11(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)\
-    BEGIN if (gs_debug_c(c)) dlprintf11(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
-#  define if_debug12(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
-    BEGIN if (gs_debug_c(c)) dlprintf12(s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
+#  define if_debug0(m,c,s)\
+    BEGIN if (gs_debug_c(c)) dlprintf(m,s); END
+#  define if_debug1(m,c,s,a1)\
+    BEGIN if (gs_debug_c(c)) dlprintf1(m,s,a1); END
+#  define if_debug2(m,c,s,a1,a2)\
+    BEGIN if (gs_debug_c(c)) dlprintf2(m,s,a1,a2); END
+#  define if_debug3(m,c,s,a1,a2,a3)\
+    BEGIN if (gs_debug_c(c)) dlprintf3(m,s,a1,a2,a3); END
+#  define if_debug4(m,c,s,a1,a2,a3,a4)\
+    BEGIN if (gs_debug_c(c)) dlprintf4(m,s,a1,a2,a3,a4); END
+#  define if_debug5(m,c,s,a1,a2,a3,a4,a5)\
+    BEGIN if (gs_debug_c(c)) dlprintf5(m,s,a1,a2,a3,a4,a5); END
+#  define if_debug6(m,c,s,a1,a2,a3,a4,a5,a6)\
+    BEGIN if (gs_debug_c(c)) dlprintf6(m,s,a1,a2,a3,a4,a5,a6); END
+#  define if_debug7(m,c,s,a1,a2,a3,a4,a5,a6,a7)\
+    BEGIN if (gs_debug_c(c)) dlprintf7(m,s,a1,a2,a3,a4,a5,a6,a7); END
+#  define if_debug8(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8)\
+    BEGIN if (gs_debug_c(c)) dlprintf8(m,s,a1,a2,a3,a4,a5,a6,a7,a8); END
+#  define if_debug9(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9)\
+    BEGIN if (gs_debug_c(c)) dlprintf9(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9); END
+#  define if_debug10(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10)\
+    BEGIN if (gs_debug_c(c)) dlprintf10(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10); END
+#  define if_debug11(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11)\
+    BEGIN if (gs_debug_c(c)) dlprintf11(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11); END
+#  define if_debug12(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12)\
+    BEGIN if (gs_debug_c(c)) dlprintf12(m,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12); END
 #else
-#  define if_debug0(c,s) DO_NOTHING
-#  define if_debug1(c,s,a1) DO_NOTHING
-#  define if_debug2(c,s,a1,a2) DO_NOTHING
-#  define if_debug3(c,s,a1,a2,a3) DO_NOTHING
-#  define if_debug4(c,s,a1,a2,a3,a4) DO_NOTHING
-#  define if_debug5(c,s,a1,a2,a3,a4,a5) DO_NOTHING
-#  define if_debug6(c,s,a1,a2,a3,a4,a5,a6) DO_NOTHING
-#  define if_debug7(c,s,a1,a2,a3,a4,a5,a6,a7) DO_NOTHING
-#  define if_debug8(c,s,a1,a2,a3,a4,a5,a6,a7,a8) DO_NOTHING
-#  define if_debug9(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9) DO_NOTHING
-#  define if_debug10(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) DO_NOTHING
-#  define if_debug11(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) DO_NOTHING
-#  define if_debug12(c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
+#  define if_debug0(m,c,s) DO_NOTHING
+#  define if_debug1(m,c,s,a1) DO_NOTHING
+#  define if_debug2(m,c,s,a1,a2) DO_NOTHING
+#  define if_debug3(m,c,s,a1,a2,a3) DO_NOTHING
+#  define if_debug4(m,c,s,a1,a2,a3,a4) DO_NOTHING
+#  define if_debug5(m,c,s,a1,a2,a3,a4,a5) DO_NOTHING
+#  define if_debug6(m,c,s,a1,a2,a3,a4,a5,a6) DO_NOTHING
+#  define if_debug7(m,c,s,a1,a2,a3,a4,a5,a6,a7) DO_NOTHING
+#  define if_debug8(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8) DO_NOTHING
+#  define if_debug9(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9) DO_NOTHING
+#  define if_debug10(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10) DO_NOTHING
+#  define if_debug11(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11) DO_NOTHING
+#  define if_debug12(m,c,s,a1,a2,a3,a4,a5,a6,a7,a8,a9,a10,a11,a12) DO_NOTHING
 #endif
 
 /* Debugging support procedures in gsmisc.c */
-void debug_dump_bytes(const byte * from, const byte * to,
+void debug_dump_bytes(const gs_memory_t *mem, const byte * from, const byte * to,
 		      const char *msg);
-void debug_dump_bitmap(const byte * from, uint raster, uint height,
+void debug_dump_bitmap(const gs_memory_t *mem, const byte * from, uint raster, uint height,
 		       const char *msg);
-void debug_print_string(const byte * str, uint len);
-void debug_print_string_hex(const byte * str, uint len);
+void debug_print_string(const gs_memory_t *mem, const byte * str, uint len);
+void debug_print_string_hex(const gs_memory_t *mem, const byte * str, uint len);
 
 #endif /* gdebug_INCLUDED */

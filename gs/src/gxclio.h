@@ -44,12 +44,13 @@ int clist_fopen(char fname[gp_file_name_sizeof], const char *fmode,
 /*
  * Close a file, optionally deleting it.
  */
-int clist_fclose(clist_file_ptr cf, const char *fname, bool delete);
+int clist_fclose(const gs_memory_t *mem, 
+		 clist_file_ptr cf, const char *fname, bool delete);
 
 /*
  * Delete a file.
  */
-int clist_unlink(const char *fname);
+int clist_unlink(const gs_memory_t *mem, const char *fname);
 
 /* ---------------- Writing ---------------- */
 
@@ -68,7 +69,8 @@ int clist_fread_chars(void *data, uint len, clist_file_ptr cf);
  * Set the low-memory warning threshold.  clist_ferror_code will return 1
  * if fewer than this many bytes of memory are left for storing band data.
  */
-int clist_set_memory_warning(clist_file_ptr cf, int bytes_left);
+int clist_set_memory_warning(const gs_memory_t *mem, 
+			     clist_file_ptr cf, int bytes_left);
 
 /*
  * clist_ferror_code returns a negative error code per gserrors.h, not a

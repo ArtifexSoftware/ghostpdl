@@ -82,6 +82,6 @@ gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 				fixed_0, fixed_0);
 	gx_path_free(&cpath, "gs_shfill");
     }
-    gs_pattern_reference(&cc, -1);
+    gs_pattern_reference(pgs->memory, &cc, -1);
     return code;
 }

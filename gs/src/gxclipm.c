@@ -216,7 +216,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 	int cx = mx0;
 	const byte *tp = tile_row;
 
-	if_debug1('B', "[B]clip runs y=%d:", cy - cdev->phase.y);
+	if_debug1(cdev->memory, 'B', "[B]clip runs y=%d:", cy - cdev->phase.y);
 	while (cx < mx1) {
 	    int len;
 	    int tx1, tx, ty;
@@ -259,7 +259,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 		}
 	    }
 	    tx = cx - cdev->phase.x;
-	    if_debug2('B', " %d-%d,", tx1, tx);
+	    if_debug2(cdev->memory, 'B', " %d-%d,", tx1, tx);
 	    ty = cy - cdev->phase.y;
 	    /* Detect vertical rectangles. */
 	    if (prev.p.x == tx1 && prev.q.x == tx && prev.q.y == ty)
@@ -276,7 +276,7 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
 		prev.q.y = ty + 1;
 	    }
 	}
-	if_debug0('B', "\n");
+	if_debug0(cdev->memory, 'B', "\n");
 	tile_row += cdev->tiles.raster;
     }
     if (prev.q.y > prev.p.y) {

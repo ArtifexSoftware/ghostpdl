@@ -34,11 +34,11 @@ alloc_function_array(uint count, gs_function_t *** pFunctions,
     gs_function_t **ptr;
 
     if (count == 0)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     ptr = gs_alloc_struct_array(mem, count, gs_function_t *,
 				&st_function_ptr_element, "Functions");
     if (ptr == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     memset(ptr, 0, sizeof(*ptr) * count);
     *pFunctions = ptr;
     return 0;
@@ -63,19 +63,19 @@ fn_common_free(gs_function_t * pfn, bool free_params, gs_memory_t * mem)
 
 /* Check the values of m, n, Domain, and (if supplied) Range. */
 int
-fn_check_mnDR(const gs_function_params_t * params, int m, int n)
+fn_check_mnDR(const gs_memory_t *mem, const gs_function_params_t * params, int m, int n)
 {
     int i;
 
     if (m <= 0 || n <= 0)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     for (i = 0; i < m; ++i)
 	if (params->Domain[2 * i] > params->Domain[2 * i + 1])
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     if (params->Range != 0)
 	for (i = 0; i < n; ++i)
 	    if (params->Range[2 * i] > params->Range[2 * i + 1])
-		return_error(gs_error_rangecheck);
+		return_error(mem, gs_error_rangecheck);
     return 0;
 }
 
@@ -161,7 +161,7 @@ fn_scale_pairs(const float **ppvalues, const float *pvalues, int npairs,
 
 	*ppvalues = out;
 	if (out == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	if (pranges) {
 	    /* Allocate and compute scaled ranges. */
 	    int i;

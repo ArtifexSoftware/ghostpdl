@@ -149,7 +149,7 @@ gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
     }
     gx_cpath_set_outer_box(&apath);
     apath.path_valid = false;
-    apath.id = gs_next_ids(1);	/* path changed => change id */
+    apath.id = gs_next_ids(padev->memory, 1);	/* path changed => change id */
     gx_cpath_assign_free(pcpath, &apath);
     return 0;
 }
@@ -192,7 +192,7 @@ gx_cpath_intersect_path_slow(gx_clip_path * pcpath, gx_path * ppath,
 #ifdef DEBUG
 /* Validate a clipping path after accumulation. */
 private bool
-clip_list_validate(const gx_clip_list * clp)
+clip_list_validate(const gs_memory_t *mem, const gx_clip_list * clp)
 {
     if (clp->count <= 1)
 	return (clp->head == 0 && clp->tail == 0 &&
@@ -210,7 +210,7 @@ clip_list_validate(const gx_clip_list * clp)
 		   ptr->xmin >= prev->xmax)) ||
 		ptr->prev != prev
 		) {
-		clip_rect_print('q', "WRONG:", ptr);
+		clip_rect_print(mem, 'q', "WRONG:", ptr);
 		ok = false;
 	    }
 	    prev = ptr;
@@ -247,18 +247,18 @@ accum_close(gx_device * dev)
 	gx_clip_rect *rp =
 	    (adev->list.count <= 1 ? &adev->list.single : adev->list.head);
 
-	dlprintf6("[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx, xrange=(%d,%d):\n",
+	dlprintf6(dev->memory, "[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx, xrange=(%d,%d):\n",
 		  (ulong) & adev->list, adev->list.count,
 		  (ulong) adev->list.head, (ulong) adev->list.tail,
 		  adev->list.xmin, adev->list.xmax);
 	while (rp != 0) {
-	    clip_rect_print('q', "   ", rp);
+	    clip_rect_print(adev->list_memory, 'q', "   ", rp);
 	    rp = rp->next;
 	}
     }
-    if (!clip_list_validate(&adev->list)) {
-	lprintf1("[q]Bad clip list 0x%lx!\n", (ulong) & adev->list);
-	return_error(gs_error_Fatal);
+    if (!clip_list_validate(dev->memory, &adev->list)) {
+	lprintf1(dev->memory, "[q]Bad clip list 0x%lx!\n", (ulong) & adev->list);
+	return_error(dev->memory, gs_error_Fatal);
     }
 #endif
     return 0;
@@ -317,11 +317,11 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
 	if (++(adev->list.count) == 1)\
 	  ar = &adev->list.single;\
 	else if ((ar = accum_alloc_rect(adev)) == 0)\
-	  return_error(gs_error_VMerror);\
+	  return_error(adev->list_memory, gs_error_VMerror);\
 	ACCUM_SET(s, ar, px, py, qx, qy)
 #define ACCUM_SET(s, ar, px, py, qx, qy)\
 	(ar)->xmin = px, (ar)->ymin = py, (ar)->xmax = qx, (ar)->ymax = qy;\
-	clip_rect_print('Q', s, ar)
+	clip_rect_print(adev->list_memory, 'Q', s, ar)
 /* Link or unlink a rectangle in the list. */
 #define ACCUM_ADD_LAST(ar)\
 	ACCUM_ADD_BEFORE(ar, adev->list.tail)
@@ -336,7 +336,7 @@ accum_alloc_rect(gx_device_cpath_accum * adev)
 /* Free a rectangle that was removed from the list. */
 #define ACCUM_FREE(s, ar)\
 	if (--(adev->list.count)) {\
-	  clip_rect_print('Q', s, ar);\
+	  clip_rect_print(adev->list_memory, 'Q', s, ar);\
 	  gs_free_object(adev->list_memory, ar, "accum_rect");\
 	}
 /*
@@ -442,7 +442,7 @@ top:
 	ACCUM_ALLOC("a.top", ar, x, ymax, xe, ye);
 	ACCUM_ADD_AFTER(ar, rptr);
 	ye = nr->ymax = ymax;
-	clip_rect_print('Q', " ymax", nr);
+	clip_rect_print(adev->list_memory, 'Q', " ymax", nr);
     }
     /* Here we know ymin < ye <= ymax; */
     /* rptr points to the last node with this value of ymin/ymax. */
@@ -488,7 +488,7 @@ top:
 	if (xe > rptr->xmax) {
 	    rptr->xmax = nr->xmax;	/* might be > xe if */
 	    /* we already did a merge */
-	    clip_rect_print('Q', "widen", rptr);
+	    clip_rect_print(adev->list_memory, 'Q', "widen", rptr);
 	}
 	ACCUM_FREE("free", nr);
 	if (x >= rptr->xmin)
@@ -497,7 +497,7 @@ top:
 	rptr->xmin = x;
 	nr = rptr;
 	ACCUM_REMOVE(rptr);
-	clip_rect_print('Q', "merge", nr);
+	clip_rect_print(adev->list_memory, 'Q', "merge", nr);
     }
     ACCUM_ADD_AFTER(nr, rptr);
 out:
@@ -521,7 +521,7 @@ out:
     /* Check whether there is still more of the new band to process. */
     if (y < ymin) {
 	/* Continue with the bottom part of the new rectangle. */
-	clip_rect_print('Q', " ymin", nr);
+	clip_rect_print(adev->list_memory, 'Q', " ymin", nr);
 	ye = ymin;
 	goto top;
     }

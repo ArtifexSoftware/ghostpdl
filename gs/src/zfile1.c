@@ -30,15 +30,15 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     bool no_sibling;
 
-    check_type(op[ 0], t_boolean);
-    check_type(op[-1], t_string);
-    check_type(op[-2], t_string);
+    check_type(imemory, op[ 0], t_boolean);
+    check_type(imemory, op[-1], t_string);
+    check_type(imemory, op[-2], t_string);
     plen = r_size(op - 2);
     flen = r_size(op - 1);
     blen = blen0 = plen + flen + 2; /* Inserts separator and ending zero byte. */
     buffer = ialloc_string(blen, "zfile_name_combine");
     if (buffer == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     prefix = op[-2].value.const_bytes;
     fname =  op[-1].value.const_bytes;
     no_sibling = op[0].value.boolval;
@@ -49,7 +49,7 @@ zfile_name_combine(i_ctx_t *i_ctx_p)
     } else {
 	buffer = iresize_string(buffer, blen0, blen, "zfile_name_combine");
 	if (buffer == 0)
-	    return_error(e_VMerror);
+	    return_error(imemory, e_VMerror);
 	make_string(op - 2, a_all | icurrent_space, blen, buffer);
 	make_bool(op - 1, true);
 	pop(1);
@@ -67,7 +67,7 @@ private int
 zfile_name_is_absolute(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
 
-    check_type(op[0], t_string);
+    check_type(imemory, op[0], t_string);
     make_bool(op, (gp_file_name_root((const char *)op->value.const_bytes, 
 					r_size(op)) > 0));
     return 0;
@@ -78,7 +78,7 @@ push_string(i_ctx_t *i_ctx_p, const char *v)
 {   os_ptr op = osp;
     int len = strlen(v);
 
-    push(1);
+    push(imemory, 1);
     make_const_string(op, avm_foreign | a_readonly,
 		      len, (const byte *)v);
     return 0;

@@ -61,6 +61,12 @@ ENUM_PTRS_WITH(gs_type1_state_enum_ptrs, gs_type1_state *pcis)
 }
 ENUM_PTR3(0, gs_type1_state, pfont, pis, path);
 ENUM_PTR(3, gs_type1_state, callback_data);
+
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
+#endif
+
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
 {
@@ -105,7 +111,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     const gs_log2_scale_point *plog2_scale =
 	(FORCE_HINTS_TO_BIG_PIXELS ? pscale : &no_scale);
 
-    if_debug0('1', "[1]gs_type1_interp_init\n");
+    if_debug0(pis->memory, '1', "[1]gs_type1_interp_init\n");
     pcis->pfont = pfont;
     pcis->pis = pis;
     pcis->path = ppath;
@@ -168,7 +174,7 @@ gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
     gs_imager_state *pis = pcis->pis;
 
     /* Set up the fixed version of the transformation. */
-    gx_matrix_to_fixed_coeff(&ctm_only(pis), &pcis->fc, max_coeff_bits);
+    gx_matrix_to_fixed_coeff(pis->memory, &ctm_only(pis), &pcis->fc, max_coeff_bits);
     sfc = pcis->fc;
 
     /* Set the current point of the path to the origin, */
@@ -199,7 +205,7 @@ gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
 	if (pcis->charpath_flag)
 	    reset_font_hints(&pcis->fh, &log2_scale);
 	else
-	    compute_font_hints(&pcis->fh, &pis->ctm, &log2_scale,
+	    compute_font_hints(pis->memory, &pcis->fh, &pis->ctm, &log2_scale,
 			       &pcis->pfont->data);
     }
     reset_stem_hints(pcis);
@@ -290,7 +296,7 @@ gs_type1_sbw(gs_type1_state * pcis, fixed lsbx, fixed lsby, fixed wx, fixed wy)
     if (!pcis->width_set)
 	pcis->width.x = wx, pcis->width.y = wy,
 	    pcis->width_set = true;
-    if_debug4('1', "[1]sb=(%g,%g) w=(%g,%g)\n",
+    if_debug4(pcis->pis->memory, '1', "[1]sb=(%g,%g) w=(%g,%g)\n",
 	      fixed2float(pcis->lsb.x), fixed2float(pcis->lsb.y),
 	      fixed2float(pcis->width.x), fixed2float(pcis->width.y));
     return 0;
@@ -299,7 +305,7 @@ gs_type1_sbw(gs_type1_state * pcis, fixed lsbx, fixed lsby, fixed wx, fixed wy)
 /* Blend values for a Multiple Master font instance. */
 /* The stack holds values ... K*N othersubr#. */
 int
-gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results)
+gs_type1_blend(const gs_memory_t *mem, gs_type1_state *pcis, fixed *csp, int num_results)
 {
     gs_type1_data *pdata = &pcis->pfont->data;
     int num_values = fixed2int_var(csp[-1]);
@@ -311,7 +317,7 @@ gs_type1_blend(gs_type1_state *pcis, fixed *csp, int num_results)
     if (num_values < num_results ||
 	num_values % num_results != 0
 	)
-	return_error(gs_error_invalidfont);
+	return_error(mem, gs_error_invalidfont);
     base = csp - 1 - num_values;
     deltas = base + num_results - 1;
     for (j = 0; j < num_results;
@@ -518,17 +524,17 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	if (c >= c_num1) {
 	    /* This is a number, decode it and push it on the stack. */
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, cstack, c);
+		decode_push_num1(pfont->memory, csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, cstack, c, cip, state, encrypted);
+		decode_push_num2(pfont->memory, csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
-		CS_CHECK_PUSH(csp, cstack);
+		CS_CHECK_PUSH(pfont->memory, csp, cstack);
 		*++csp = int2fixed(lw);
 	    } else		/* not possible */
-		return_error(gs_error_invalidfont);
+		return_error(pfont->memory, gs_error_invalidfont);
 	    continue;
 	}
 #define cnext CLEAR_CSTACK(cstack, csp); goto top
@@ -540,7 +546,7 @@ gs_type1_piece_codes(/*const*/ gs_font_type1 *pfont,
 	    code = pdata->procs.subr_data
 		(pfont, c, false, &ipsp[1].cs_data);
 	    if (code < 0)
-		return_error(code);
+		return_error(pfont->memory, code);
 	    --csp;
 	    ipsp->ip = cip, ipsp->dstate = state;
 	    ++ipsp;
@@ -694,11 +700,11 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	code = pdata->interpret(&cis, &gdata, &value);
 	switch (code) {
 	case 0:		/* done with no [h]sbw, error */
-	    code = gs_note_error(gs_error_invalidfont);
+	    code = gs_note_error(font->memory, gs_error_invalidfont);
 	default:		/* code < 0, error */
 	    return code;
 	case type1_result_callothersubr:	/* unknown OtherSubr */
-	    return_error(gs_error_rangecheck); /* can't handle it */
+	    return_error(font->memory, gs_error_rangecheck); /* can't handle it */
 	case type1_result_sbw:
 	    info->width[wmode].x = fixed2float(cis.width.x);
 	    info->width[wmode].y = fixed2float(cis.width.y);

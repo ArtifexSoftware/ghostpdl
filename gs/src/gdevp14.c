@@ -366,7 +366,7 @@ pdf14_ctx_new(gs_int_rect *rect, int n_chan, gs_memory_t *memory)
 	gs_free_object(memory, result, "pdf14_ctx_new");
 	return NULL;
     }
-    if_debug3('v', "[v]base buf: %d x %d, %d channels\n",
+    if_debug3(memory, 'v', "[v]base buf: %d x %d, %d channels\n",
 	      buf->rect.q.x, buf->rect.q.y, buf->n_chan);
     memset(buf->data, 0, buf->planestride * buf->n_planes);
     buf->saved = NULL;
@@ -430,9 +430,10 @@ pdf14_push_transparency_group(pdf14_ctx *ctx, gs_int_rect *rect,
     has_shape = tos->has_shape || tos->knockout;
 
     buf = pdf14_buf_new(rect, !isolated, has_shape, ctx->n_chan, ctx->memory);
-    if_debug3('v', "[v]push buf: %d x %d, %d channels\n", buf->rect.p.x, buf->rect.p.y, buf->n_chan);
+    if_debug3(ctx->memory, 'v', "[v]push buf: %d x %d, %d channels\n", 
+	      buf->rect.p.x, buf->rect.p.y, buf->n_chan);
     if (buf == NULL)
-	return_error(gs_error_VMerror);
+	return_error(ctx->memory, gs_error_VMerror);
     buf->isolated = isolated;
     buf->knockout = knockout;
     buf->alpha = alpha;
@@ -510,7 +511,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
     bool nos_has_shape = nos->has_shape;
 
     if (nos == NULL)
-	return_error(gs_error_rangecheck);
+	return_error(ctx->memory, gs_error_rangecheck);
 
     /* for now, only simple non-knockout */
 
@@ -532,7 +533,8 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 		byte tos_shape = tos_ptr[x + tos_shape_offset];
 
 #if 1
-		art_pdf_composite_knockout_isolated_8 (nos_pixel,
+		art_pdf_composite_knockout_isolated_8 (ctx->memory, 
+						       nos_pixel,
 						       nos_shape_ptr,
 						       tos_pixel,
 						       n_chan - 1,
@@ -540,19 +542,22 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
 						       alpha, shape);
 #else
 		tos_pixel[3] = tos_ptr[x + tos_shape_offset];
-		art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
+		art_pdf_composite_group_8(ctx->memory, 
+					  nos_pixel, nos_alpha_g_ptr,
 					  tos_pixel,
 					  n_chan - 1,
 					  alpha, blend_mode);
 #endif
 	    } else if (tos_isolated) {
-		art_pdf_composite_group_8(nos_pixel, nos_alpha_g_ptr,
+		art_pdf_composite_group_8(ctx->memory, 
+					  nos_pixel, nos_alpha_g_ptr,
 					  tos_pixel,
 					  n_chan - 1,
 					  alpha, blend_mode);
 	    } else {
 		byte tos_alpha_g = tos_ptr[x + tos_alpha_g_offset];
-		art_pdf_recomposite_group_8(nos_pixel, nos_alpha_g_ptr,
+		art_pdf_recomposite_group_8(ctx->memory, 
+					    nos_pixel, nos_alpha_g_ptr,
 					    tos_pixel, tos_alpha_g,
 					    n_chan - 1,
 					    alpha, blend_mode);
@@ -578,7 +583,7 @@ pdf14_pop_transparency_group(pdf14_ctx *ctx)
     }
 
     ctx->stack = nos;
-    if_debug0('v', "[v]pop buf\n");
+    if_debug0(ctx->memory, 'v', "[v]pop buf\n");
     pdf14_buf_free(tos, ctx->memory);
     return 0;
 }
@@ -589,7 +594,7 @@ pdf14_open(gx_device *dev)
     pdf14_device *pdev = (pdf14_device *)dev;
     gs_int_rect rect;
 
-    if_debug2('v', "[v]pdf14_open: width = %d, height = %d\n",
+    if_debug2(dev->memory, 'v', "[v]pdf14_open: width = %d, height = %d\n",
 	     dev->width, dev->height);
 
     rect.p.x = 0;
@@ -598,7 +603,7 @@ pdf14_open(gx_device *dev)
     rect.q.y = dev->height;
     pdev->ctx = pdf14_ctx_new(&rect, 4, dev->memory);
     if (pdev->ctx == NULL)
-	return_error(gs_error_VMerror);
+	return_error(dev->memory, gs_error_VMerror);
 
     return 0;
 }
@@ -642,7 +647,7 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     /* Set color space to RGB, in preparation for sending an RGB image. */
     gs_setrgbcolor(pgs, 0, 0, 0);
 
-    gs_cspace_init_DeviceRGB(&cs);
+    gs_cspace_init_DeviceRGB(pdev->memory, &cs);
     gx_set_dev_color(pgs);
     gs_image_t_init_adjust(&image, &cs, false);
     image.ImageMatrix.xx = (float)width;
@@ -754,7 +759,7 @@ pdf14_output_page(gx_device *dev, int num_copies, int flush)
 private void
 pdf14_finalize(gx_device *dev)
 {
-    if_debug1('v', "[v]finalizing %lx\n", dev);
+    if_debug1(dev->memory, 'v', "[v]finalizing %lx\n", dev);
 }
 
 #define COPY_PARAM(p) dev->p = target->p
@@ -822,7 +827,7 @@ pdf14_get_marking_device(gx_device *dev, const gs_imager_state *pis)
 		      pdf14_mark_fill_rectangle);
     }
 
-    if_debug1('v', "[v]creating %lx\n", mdev);
+    if_debug1(dev->memory, 'v', "[v]creating %lx\n", mdev);
     gs_pdf14_device_copy_params((gx_device *)mdev, dev);
     mdev->finalize = pdf14_finalize;
     return (gx_device *)mdev;
@@ -831,7 +836,7 @@ pdf14_get_marking_device(gx_device *dev, const gs_imager_state *pis)
 private void
 pdf14_release_marking_device(gx_device *marking_dev)
 {
-    rc_decrement_only(marking_dev, "pdf14_release_marking_device");
+    rc_decrement_only(marking_dev->memory, marking_dev, "pdf14_release_marking_device");
 }
 
 private int
@@ -845,7 +850,7 @@ pdf14_fill_path(gx_device *dev, const gs_imager_state *pis,
     gs_imager_state new_is = *pis;
 
     if (mdev == 0)
-	return_error(gs_error_VMerror);
+	return_error(dev->memory, gs_error_VMerror);
     new_is.log_op |= lop_pdf14;
     code = gx_default_fill_path(mdev, &new_is, ppath, params, pdcolor, pcpath);
     pdf14_release_marking_device(mdev);
@@ -863,7 +868,7 @@ pdf14_stroke_path(gx_device *dev, const gs_imager_state *pis,
     gs_imager_state new_is = *pis;
 
     if (mdev == 0)
-	return_error(gs_error_VMerror);
+	return_error(dev->memory, gs_error_VMerror);
     new_is.log_op |= lop_pdf14;
     code = gx_default_stroke_path(mdev, &new_is, ppath, params, pdcolor,
 				  pcpath);
@@ -883,7 +888,7 @@ pdf14_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     int code;
 
     if (mdev == 0)
-	return_error(gs_error_VMerror);
+	return_error(dev->memory, gs_error_VMerror);
 
     code = gx_default_begin_typed_image(mdev, pis, pmat, pic, prect, pdcolor,
 					pcpath, mem, pinfo);
@@ -930,13 +935,13 @@ pdf14_text_begin(gx_device * dev, gs_imager_state * pis,
     gx_device *mdev = pdf14_get_marking_device(dev, pis);
     gs_text_enum_t *penum;
     if (mdev == 0)
-	return_error(gs_error_VMerror);
-    if_debug0('v', "[v]pdf14_text_begin\n");
+	return_error(dev->memory, gs_error_VMerror);
+    if_debug0(dev->memory, 'v', "[v]pdf14_text_begin\n");
     code = gx_default_text_begin(mdev, pis, text, font, path, pdcolor, pcpath,
 				 memory, &penum);
     if (code < 0)
 	return code;
-    rc_decrement_only(mdev, "pdf14_text_begin");
+    rc_decrement_only(dev->memory, mdev, "pdf14_text_begin");
     *ppenum = (gs_text_enum_t *)penum;
     return code;
 }
@@ -945,7 +950,7 @@ private int
 pdf14_fill_rectangle(gx_device * dev,
 		    int x, int y, int w, int h, gx_color_index color)
 {
-    if_debug4('v', "[v]pdf14_fill_rectangle, (%d, %d), %d x %d\n", x, y, w, h);
+    if_debug4(dev->memory, 'v', "[v]pdf14_fill_rectangle, (%d, %d), %d x %d\n", x, y, w, h);
     return 0;
 }
 
@@ -962,7 +967,7 @@ pdf14_begin_transparency_group(gx_device *dev,
     double alpha = pis->opacity.alpha * pis->shape.alpha;
     int code;
 
-    if_debug4('v', "[v]begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
+    if_debug4(mem, 'v', "[v]begin_transparency_group, I = %d, K = %d, alpha = %g, bm = %d\n",
 	      ptgp->Isolated, ptgp->Knockout, alpha, pis->blend_mode);
 
     code = pdf14_push_transparency_group(pdev->ctx, &pdev->ctx->rect,
@@ -981,7 +986,7 @@ pdf14_end_transparency_group(gx_device *dev,
     pdf14_device *pdev = (pdf14_device *)dev;
     int code;
 
-    if_debug0('v', "[v]end_transparency_group\n");
+    if_debug0(dev->memory, 'v', "[v]end_transparency_group\n");
     code = pdf14_pop_transparency_group(pdev->ctx);
     return code;
 }
@@ -1025,7 +1030,7 @@ pdf14_mark_fill_rectangle(gx_device * dev,
 	for (i = 0; i < w; ++i) {
 	    for (k = 0; k < 4; ++k)
 		dst[k] = dst_ptr[k * planestride];
-	    art_pdf_composite_pixel_alpha_8(dst, src, 3, blend_mode);
+	    art_pdf_composite_pixel_alpha_8(dev->memory, dst, src, 3, blend_mode);
 	    for (k = 0; k < 4; ++k)
 		dst_ptr[k * planestride] = dst[k];
 	    if (has_alpha_g) {
@@ -1078,7 +1083,7 @@ pdf14_mark_fill_rectangle_ko_simple(gx_device * dev,
 	for (i = 0; i < w; ++i) {
 	    for (k = 0; k < 4; ++k)
 		dst[k] = dst_ptr[k * planestride];
-	    art_pdf_composite_knockout_simple_8(dst, has_shape ? dst_ptr + shape_off : NULL,
+	    art_pdf_composite_knockout_simple_8(dev->memory, dst, has_shape ? dst_ptr + shape_off : NULL,
 						src, 3, opacity);
 	    for (k = 0; k < 4; ++k)
 		dst_ptr[k * planestride] = dst[k];
@@ -1324,7 +1329,7 @@ gs_pdf14_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
 
     gs_pdf14_device_copy_params((gx_device *)p14dev, target);
 
-    rc_assign(p14dev->target, target, "gs_pdf14_device_filter_push");
+    rc_assign(pgs->memory, p14dev->target, target, "gs_pdf14_device_filter_push");
 
     p14dev->save_get_cmap_procs = pgs->get_cmap_procs;
     pgs->get_cmap_procs = pdf14_get_cmap_procs;
@@ -1360,7 +1365,7 @@ gs_pdf14_device_filter_postpop(gs_device_filter_t *self, gs_memory_t *mem,
     if (code < 0)
 	return code;
 
-    rc_decrement(p14dev->target, "gs_pdf14_device_filter_pop");
+    rc_decrement(pgs->memory, p14dev->target, "gs_pdf14_device_filter_pop");
 
     gs_free_object(mem, self, "gs_pdf14_device_filter_pop");
     return 0;
@@ -1374,7 +1379,7 @@ gs_pdf14_device_filter(gs_device_filter_t **pdf, int depth, gs_memory_t *mem)
     df = gs_alloc_struct(mem, gs_device_filter_t,
 			 &st_gs_device_filter, "gs_pdf14_device_filter");
     if (df == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     df->push = gs_pdf14_device_filter_push;
     df->prepop = gs_pdf14_device_filter_prepop;
     df->postpop = gs_pdf14_device_filter_postpop;

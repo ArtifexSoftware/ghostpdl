@@ -253,7 +253,7 @@ bmpa_reader_thread(void *params)
 private int	/* rets 0 ok, -ve error if couldn't start thread */
 bmpa_reader_start_render_thread(gdev_prn_start_render_params *params)
 {
-    return gp_create_thread(bmpa_reader_thread, params);
+    return gp_create_thread(params->writer_device->memory, bmpa_reader_thread, params);
 }
 
 private int
@@ -316,7 +316,7 @@ bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
 #endif
     row = gs_alloc_bytes(pdev->memory, bmp_raster, "bmp file buffer");
     if (row == 0)		/* can't allocate row buffer */
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
 
     for (plane = first_plane; plane <= last_plane; ++plane) {
 	gx_render_plane_t render_plane;
@@ -330,7 +330,7 @@ bmpa_reader_print_planes(gx_device_printer *pdev, FILE *prn_stream,
 	/* Save the file offset where data begins */
 	if ((prdev->file_offset_to_data[plane - first_plane] =
 	     ftell(prn_stream)) == -1L) {
-	    code = gs_note_error(gs_error_ioerror);
+	    code = gs_note_error(pdev->memory, gs_error_ioerror);
 	    goto done;
 	}
 
@@ -428,7 +428,7 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 	 */
 	if (!pdev->buffer_space) {
 	    /* Not banding.  Can't happen. */
-	    code = gs_note_error(gs_error_Fatal);
+	    code = gs_note_error(pdev->memory, gs_error_Fatal);
 	    goto done;
 	}
 	raster_data = crdev->data;
@@ -441,7 +441,7 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 	    /* Seek to beginning of data portion of file */
 	    if (fseek(file, prdev->file_offset_to_data[plane - first_plane],
 		      SEEK_SET)) {
-		code = gs_note_error(gs_error_ioerror);
+		code = gs_note_error(pdev->memory, gs_error_ioerror);
 		goto done;
 	    }
 
@@ -481,7 +481,7 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 			      raster, 1, file) < 1 ||
 			fseek(file, padding, SEEK_CUR)
 			) {
-			code = gs_note_error(gs_error_ioerror);
+			code = gs_note_error(pdev->memory, gs_error_ioerror);
 			goto done;
 		    }
 
@@ -497,7 +497,7 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 
 		/* Rewind & write out the updated buffer. */
 		if (fseek(file, -bmp_raster * band_height, SEEK_CUR)) {
-		    code = gs_note_error(gs_error_ioerror);
+		    code = gs_note_error(pdev->memory, gs_error_ioerror);
 		    goto done;
 		}
 		for (line = band_height - 1; line >= 0; --line) {
@@ -505,7 +505,7 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 			       bmp_raster, 1, file) < 1 ||
 			fseek(file, padding, SEEK_CUR)
 			) {
-			code = gs_note_error(gs_error_ioerror);
+			code = gs_note_error(pdev->memory, gs_error_ioerror);
 			goto done;
 		    }
 		}

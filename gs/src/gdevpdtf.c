@@ -313,7 +313,7 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	}
 	used = gs_alloc_bytes(mem, size, "font_resource_alloc(used)");
 	if ((!is_CID_font && widths == 0) || used == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto fail;
 	}
 	if (!is_CID_font)
@@ -376,7 +376,7 @@ font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		       "font_resource_encoded_alloc");
 	gs_free_object(pdev->pdf_memory, v, 
 	               "font_resource_encoded_alloc");
-	return_error(gs_error_VMerror);
+	return_error(pdev->pdf_memory, gs_error_VMerror);
     }
     code = font_resource_simple_alloc(pdev, &pdfont, rid, ftype,
 				      256, write_contents);
@@ -385,7 +385,7 @@ font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	               "font_resource_encoded_alloc");
 	gs_free_object(pdev->pdf_memory, v, 
 	               "font_resource_encoded_alloc");
-	return_error(gs_error_VMerror);
+	return_error(pdev->pdf_memory, gs_error_VMerror);
     }
     if (code < 0) {
 	return code;
@@ -569,7 +569,7 @@ pdf_compute_BaseFont(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, bool fini
     data = gs_alloc_string(pdev->pdf_memory, size + extra,
 			   "pdf_compute_BaseFont");
     if (data == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->pdf_memory, gs_error_VMerror);
     memcpy(data, fname.data, size);
     switch (pdfont->FontType) {
     case ft_composite:
@@ -729,12 +729,12 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	map = (void *)gs_alloc_byte_array(pdev->pdf_memory, chars_count,
 					  sizeof(*map), "CIDToGIDMap");
 	if (map == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->pdf_memory, gs_error_VMerror);
 	memset(map, 0, chars_count * sizeof(*map));
 	write_contents = pdf_write_contents_cid2;
 	break;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pdev->pdf_memory, gs_error_rangecheck);
     }
     code = font_resource_alloc(pdev, &pdfont, resourceCIDFont, rid, FontType,
 			       chars_count, write_contents);
@@ -779,7 +779,7 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
     if (ww == 0 || (wmode && vv == 0)) {
 	gs_free_object(mem, ww, "pdf_obtain_cidfont_widths_arrays");
 	gs_free_object(mem, vv, "pdf_obtain_cidfont_widths_arrays");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     if (wmode)
 	memset(vv, 0, chars_count * 2 * sizeof(*vv));

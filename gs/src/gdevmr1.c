@@ -69,7 +69,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
 		       id, scolors, textures, tcolors,
 		       x, y, width, height, phase_x, phase_y, lop);
     if (gs_debug_c('B'))
-	debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,
+	debug_dump_bitmap(dev->memory, scan_line_base(mdev, y), mdev->raster,
 			  height, "initial dest bits");
 #endif
 
@@ -211,7 +211,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
     }
 
 #ifdef DEBUG
-    if_debug1('b', "final rop=0x%x\n", rop);
+    if_debug1(dev->memory, 'b', "final rop=0x%x\n", rop);
 #endif
 
     /* Set up transfer parameters. */
@@ -276,7 +276,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
     }
 #ifdef DEBUG
     if (gs_debug_c('B'))
-	debug_dump_bitmap(scan_line_base(mdev, y), mdev->raster,
+	debug_dump_bitmap(dev->memory, scan_line_base(mdev, y), mdev->raster,
 			  height, "final dest bits");
 #endif
     return 0;

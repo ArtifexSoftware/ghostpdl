@@ -36,8 +36,8 @@ zcopydevice2(i_ctx_t *i_ctx_p)
     gx_device *new_dev;
     int code;
 
-    check_read_type(op[-1], t_device);
-    check_type(*op, t_boolean);
+    check_read_type(imemory, op[-1], t_device);
+    check_type(imemory, *op, t_boolean);
     code = gs_copydevice2(&new_dev, op[-1].value.pdevice, op->value.boolval,
 			  imemory);
     if (code < 0)
@@ -56,7 +56,7 @@ zcurrentdevice(i_ctx_t *i_ctx_p)
     gx_device *dev = gs_currentdevice(igs);
     gs_ref_memory_t *mem = (gs_ref_memory_t *) dev->memory;
 
-    push(1);
+    push(imemory, 1);
     make_tav(op, t_device,
 	     (mem == 0 ? avm_foreign : imemory_space(mem)) | a_all,
 	     pdevice, dev);
@@ -70,7 +70,7 @@ zdevicename(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     const char *dname;
 
-    check_read_type(*op, t_device);
+    check_read_type(imemory, *op, t_device);
     dname = op->value.pdevice->dname;
     make_const_string(op, avm_foreign | a_readonly, strlen(dname),
 		      (const byte *)dname);
@@ -118,17 +118,17 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
     int num_rows;
     int code;
 
-    check_read_type(op[-7], t_device);
+    check_read_type(imemory, op[-7], t_device);
     dev = op[-7].value.pdevice;
-    check_int_leu(op[-6], dev->width);
+    check_int_leu(imemory, op[-6], dev->width);
     rect.p.x = op[-6].value.intval;
-    check_int_leu(op[-5], dev->height);
+    check_int_leu(imemory, op[-5], dev->height);
     rect.p.y = op[-5].value.intval;
-    check_int_leu(op[-4], dev->width);
+    check_int_leu(imemory, op[-4], dev->width);
     w = op[-4].value.intval;
-    check_int_leu(op[-3], dev->height);
+    check_int_leu(imemory, op[-3], dev->height);
     h = op[-3].value.intval;
-    check_type(op[-2], t_integer);
+    check_type(imemory, op[-2], t_integer);
     /*
      * We use if/else rather than switch because the value is long,
      * which is not supported as a switch value in pre-ANSI C.
@@ -140,7 +140,7 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
     else if (op[-2].value.intval == 1)
 	options |= GB_ALPHA_LAST;
     else
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     if (r_has_type(op - 1, t_null)) {
 	options |= GB_COLORS_NATIVE;
 	depth = dev->color_info.depth;
@@ -152,21 +152,21 @@ zgetbitsrect(i_ctx_t *i_ctx_p)
 	gs_get_bits_options_t depth_option;
 	int std_depth;
 
-	check_int_leu(op[-1], 16);
+	check_int_leu(imemory, op[-1], 16);
 	std_depth = (int)op[-1].value.intval;
 	depth_option = depths[std_depth];
 	if (depth_option == 0)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	options |= depth_option | GB_COLORS_NATIVE;
 	depth = (dev->color_info.num_components +
 		 (options & GB_ALPHA_NONE ? 0 : 1)) * std_depth;
     }
     raster = (w * depth + 7) >> 3;
-    check_write_type(*op, t_string);
+    check_write_type(imemory, *op, t_string);
     num_rows = r_size(op) / raster;
     h = min(h, num_rows);
     if (h == 0)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     rect.q.x = rect.p.x + w;
     rect.q.y = rect.p.y + h;
     params.options = options;
@@ -188,12 +188,12 @@ zgetdevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     const gx_device *dev;
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     if (op->value.intval != (int)(op->value.intval))
-	return_error(e_rangecheck);	/* won't fit in an int */
+	return_error(imemory, e_rangecheck);	/* won't fit in an int */
     dev = gs_getdevice((int)(op->value.intval));
     if (dev == 0)		/* index out of range */
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     /* Device prototypes are read-only; */
     /* the cast is logically unnecessary. */
     make_tav(op, t_device, avm_foreign | a_readonly, pdevice,
@@ -212,7 +212,7 @@ zget_device_params(i_ctx_t *i_ctx_p, bool is_hardware)
     int code;
     ref *pmark;
 
-    check_read_type(op[-1], t_device);
+    check_read_type(imemory, op[-1], t_device);
     rkeys = *op;
     dev = op[-1].value.pdevice;
     pop(1);
@@ -257,9 +257,9 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
     int colors_size;
     int code;
 
-    check_int_leu(op[-3], max_uint >> 1);	/* width */
-    check_int_leu(op[-2], max_uint >> 1);	/* height */
-    check_type(*op, t_boolean);
+    check_int_leu(imemory, op[-3], max_uint >> 1);	/* width */
+    check_int_leu(imemory, op[-2], max_uint >> 1);	/* height */
+    check_type(imemory, *op, t_boolean);
     if (r_has_type(op1, t_null)) {	/* true color */
 	colors = 0;
 	colors_size = -24;	/* 24-bit true color */
@@ -271,17 +271,17 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
 	if (op1->value.intval != 16 && op1->value.intval != 24 &&
 	    op1->value.intval != 32
 	    )
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	colors = 0;
 	colors_size = -op1->value.intval;
     } else {
-	check_type(*op1, t_string);	/* palette */
+	check_type(imemory, *op1, t_string);	/* palette */
 	if (r_size(op1) > 3 * 256)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	colors = op1->value.bytes;
 	colors_size = r_size(op1);
     }
-    if ((code = read_matrix(op - 4, &imat)) < 0)
+    if ((code = read_matrix(imemory, op - 4, &imat)) < 0)
 	return code;
     /* Everything OK, create device */
     code = gs_makewordimagedevice(&new_dev, &imat,
@@ -315,8 +315,8 @@ zoutputpage(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(op[-1], t_integer);
-    check_type(*op, t_boolean);
+    check_type(imemory, op[-1], t_integer);
+    check_type(imemory, *op, t_boolean);
     code = gs_output_page(igs, (int)op[-1].value.intval,
 			  op->value.boolval);
     if (code < 0)
@@ -348,14 +348,14 @@ zputdeviceparams(i_ctx_t *i_ctx_p)
     int i, dest;
 
     if (count == 0)
-	return_error(e_unmatchedmark);
+	return_error(imemory, e_unmatchedmark);
     prequire_all = ref_stack_index(&o_stack, count);
     ppolicy = ref_stack_index(&o_stack, count + 1);
     pdev = ref_stack_index(&o_stack, count + 2);
     if (pdev == 0)
-	return_error(e_stackunderflow);
-    check_type_only(*prequire_all, t_boolean);
-    check_write_type_only(*pdev, t_device);
+	return_error(imemory, e_stackunderflow);
+    check_type_only(imemory, *prequire_all, t_boolean);
+    check_write_type_only(imemory, *pdev, t_device);
     dev = pdev->value.pdevice;
     code = stack_param_list_read(&list, &o_stack, 0, ppolicy,
 				 prequire_all->value.boolval, iimemory);
@@ -411,10 +411,10 @@ zsetdevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_write_type(*op, t_device);
+    check_write_type(imemory, *op, t_device);
     if (dev->LockSafetyParams) {	  /* do additional checking if locked  */
         if(op->value.pdevice != dev) 	  /* don't allow a different device    */
-	    return_error(e_invalidaccess);
+	    return_error(imemory, e_invalidaccess);
     }
     code = gs_setdevice_no_erase(igs, op->value.pdevice);
     if (code < 0)

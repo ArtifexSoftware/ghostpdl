@@ -165,15 +165,15 @@ Fb_build_half_region(Fb_fill_state_t * pfs, int h, bool use_old)
 	double xm = (x0 + x1) * 0.5;
 	int h10 = (!h ? 1 : 0), h32 = (!h ? 3 : 2);
 	int h01 = (!h ? 0 : 1), h23 = (!h ? 2 : 3);
-	if_debug1('|', "[|]dividing at x=%g\n", xm);
+	if_debug1(pfs->pis->memory, '|', "[|]dividing at x=%g\n", xm);
 	if (use_old) {
 	    fp1->cc[h10].paint = fp1->cc[h01].paint;
 	    fp1->cc[h32].paint = fp1->cc[h23].paint;
 	} else {
 	    v[0] = xm, v[1] = y0;
-	    CheckRET(gs_function_evaluate(pfn, v, fp1->cc[h10].paint.values));
+	    CheckRET(gs_function_evaluate(pfs->pis->memory, pfn, v, fp1->cc[h10].paint.values));
 	    v[1] = y1;
-	    CheckRET(gs_function_evaluate(pfn, v, fp1->cc[h32].paint.values));
+	    CheckRET(gs_function_evaluate(pfs->pis->memory, pfn, v, fp1->cc[h32].paint.values));
 	}
 	fp1->cc[h01].paint = fp0->cc[h01].paint;
 	fp1->cc[h23].paint = fp0->cc[h23].paint;
@@ -188,15 +188,15 @@ Fb_build_half_region(Fb_fill_state_t * pfs, int h, bool use_old)
 	double ym = (y0 + y1) * 0.5;
 	int h20 = (!h ? 2 : 0), h31 = (!h ? 3 : 1);
 	int h02 = (!h ? 0 : 2), h13 = (!h ? 1 : 3);
-	if_debug1('|', "[|]dividing at y=%g\n", ym);
+	if_debug1(pfs->pis->memory, '|', "[|]dividing at y=%g\n", ym);
 	if (use_old) {
 	    fp1->cc[h20].paint = fp1->cc[h02].paint;
 	    fp1->cc[h31].paint = fp1->cc[h13].paint;
 	} else {
 	    v[0] = x0, v[1] = ym;
-	    CheckRET(gs_function_evaluate(pfn, v, fp1->cc[h20].paint.values));
+	    CheckRET(gs_function_evaluate(pfs->pis->memory, pfn, v, fp1->cc[h20].paint.values));
 	    v[0] = x1;
-	    CheckRET(gs_function_evaluate(pfn, v, fp1->cc[h31].paint.values));
+	    CheckRET(gs_function_evaluate(pfs->pis->memory, pfn, v, fp1->cc[h31].paint.values));
 	}
 	fp1->cc[h02].paint = fp0->cc[h02].paint;
 	fp1->cc[h13].paint = fp0->cc[h13].paint;
@@ -221,23 +221,23 @@ Fb_fill_region_with_constant_color(const Fb_fill_state_t * pfs, const Fb_frame_t
     gs_fixed_point pts[4];
     int code, ci;
 
-    if_debug0('|', "[|]... filling region\n");
+    if_debug0(pfs->pis->memory, '|', "[|]... filling region\n");
     cc = fp->cc[0];
     for (ci = 0; ci < pfs->num_components; ++ci)
 	cc.paint.values[ci] = (c_min->values[ci] + c_max->values[ci]) / 2;
     (*pcs->type->restrict_color)(&cc, pcs);
     (*pcs->type->remap_color)(&cc, pcs, &dev_color, pfs->pis,
 			      pfs->dev, gs_color_select_texture);
-    gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &pts[0]);
-    gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.q.y, &pts[2]);
+    gs_point_transform2fixed(pfs->pis->memory, &pfs->ptm, fp->region.p.x, fp->region.p.y, &pts[0]);
+    gs_point_transform2fixed(pfs->pis->memory, &pfs->ptm, fp->region.q.x, fp->region.q.y, &pts[2]);
     if (pfs->orthogonal) {
 	code = shade_fill_device_rectangle((const shading_fill_state_t *)pfs,
 					   &pts[0], &pts[2], &dev_color);
     } else {
 	gx_path *ppath = gx_path_alloc(pfs->pis->memory, "Fb_fill");
 
-	gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.p.y, &pts[1]);
-	gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.q.y, &pts[3]);
+	gs_point_transform2fixed(pfs->pis->memory, &pfs->ptm, fp->region.q.x, fp->region.p.y, &pts[1]);
+	gs_point_transform2fixed(pfs->pis->memory, &pfs->ptm, fp->region.p.x, fp->region.q.y, &pts[3]);
 	gx_path_add_point(ppath, pts[0].x, pts[0].y);
 	gx_path_add_lines(ppath, pts + 1, 3);
 	code = shade_fill_path((const shading_fill_state_t *)pfs,
@@ -264,8 +264,12 @@ Fb_fill_region_lazy(Fb_fill_state_t * pfs)
 		fp->painted = false;
 		{   /* Region size in device space : */
 		    gs_point p, q;
-		    CheckRET(gs_distance_transform(fp->region.q.x - fp->region.p.x, 0, (gs_matrix *)&pfs->ptm, &p));
-		    CheckRET(gs_distance_transform(0, fp->region.q.y - fp->region.p.y, (gs_matrix *)&pfs->ptm, &q));
+		    CheckRET(gs_distance_transform(pfs->dev->memory, 
+						   fp->region.q.x - fp->region.p.x, 0, 
+						   (gs_matrix *)&pfs->ptm, &p));
+		    CheckRET(gs_distance_transform(pfs->dev->memory, 
+						   0, fp->region.q.y - fp->region.p.y, 
+						   (gs_matrix *)&pfs->ptm, &q));
 		    size_x = float2fixed(hypot(p.x, p.y));
 		    size_y = float2fixed(hypot(q.x, q.y));
 		    single_extreme = (float2fixed(any_abs(p.x) + any_abs(q.x)) < min_edist_x && 
@@ -360,7 +364,7 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     {
 	gs_rect pbox;
 
-	gs_bbox_transform_inverse(rect, &psh->params.Matrix, &pbox);
+	gs_bbox_transform_inverse(pis->memory, rect, &psh->params.Matrix, &pbox);
 	x[0] = max(pbox.p.x, psh->params.Domain[0]);
 	x[1] = min(pbox.q.x, psh->params.Domain[1]);
 	y[0] = max(pbox.p.y, psh->params.Domain[2]);
@@ -371,7 +375,7 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	    float v[2];
 
 	    v[0] = x[xi], v[1] = y[yi];
-	    gs_function_evaluate(psh->params.Function, v,
+	    gs_function_evaluate(pis->memory, psh->params.Function, v,
 				 state.frames[0].cc[yi * 2 + xi].paint.values);
 	}
     state.frames[0].region.p.x = x[0];
@@ -457,13 +461,13 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 	    double slope = pfs->delta.x / pfs->delta.y;
 	    double yi = y0 - slope * (pfs->rect.p.x - x0);
 
-	    gs_point_transform2fixed(&pis->ctm, pfs->rect.p.x, yi, &pts[0]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, pfs->rect.p.x, yi, &pts[0]);
 	    yi = y1 - slope * (pfs->rect.p.x - x1);
-	    gs_point_transform2fixed(&pis->ctm, pfs->rect.p.x, yi, &pts[1]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, pfs->rect.p.x, yi, &pts[1]);
 	    yi = y1 - slope * (pfs->rect.q.x - x1);
-	    gs_point_transform2fixed(&pis->ctm, pfs->rect.q.x, yi, &pts[2]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, pfs->rect.q.x, yi, &pts[2]);
 	    yi = y0 - slope * (pfs->rect.q.x - x0);
-	    gs_point_transform2fixed(&pis->ctm, pfs->rect.q.x, yi, &pts[3]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, pfs->rect.q.x, yi, &pts[3]);
 	}
 	else {
 	    /*
@@ -472,13 +476,13 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 	    double slope = pfs->delta.y / pfs->delta.x;
 	    double xi = x0 - slope * (pfs->rect.p.y - y0);
 
-	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.p.y, &pts[0]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, xi, pfs->rect.p.y, &pts[0]);
 	    xi = x1 - slope * (pfs->rect.p.y - y1);
-	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.p.y, &pts[1]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, xi, pfs->rect.p.y, &pts[1]);
 	    xi = x1 - slope * (pfs->rect.q.y - y1);
-	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.q.y, &pts[2]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, xi, pfs->rect.q.y, &pts[2]);
 	    xi = x0 - slope * (pfs->rect.q.y - y0);
-	    gs_point_transform2fixed(&pis->ctm, xi, pfs->rect.q.y, &pts[3]);
+	    gs_point_transform2fixed(pis->memory, &pis->ctm, xi, pfs->rect.q.y, &pts[3]);
 	}
 	gx_path_add_point(ppath, pts[0].x, pts[0].y);
 	gx_path_add_lines(ppath, pts + 1, 3);
@@ -488,8 +492,8 @@ A_fill_stripe(const A_fill_state_t * pfs, gs_client_color *pcc,
 	return code;
     }
     /* Stripe is horizontal or vertical in both user and device space. */
-    gs_point_transform2fixed(&pis->ctm, x0, y0, &pts[0]);
-    gs_point_transform2fixed(&pis->ctm, x1, y1, &pts[1]);
+    gs_point_transform2fixed(pis->memory, &pis->ctm, x0, y0, &pts[0]);
+    gs_point_transform2fixed(pis->memory, &pis->ctm, x1, y1, &pts[1]);
     return
 	shade_fill_device_rectangle((const shading_fill_state_t *)pfs,
 				    &pts[0], &pts[1], &dev_color);
@@ -522,7 +526,7 @@ A_fill_region(A_fill_state_t * pfs)
 	    double tm = (t0 + t1) * 0.5;
 	    float dm = tm * pfs->dd + psh->params.Domain[0];
 
-	    gs_function_evaluate(pfn, &dm, fp[1].cc[1].paint.values);
+	    gs_function_evaluate(pfs->pis->memory, pfn, &dm, fp[1].cc[1].paint.values);
 	    fp[1].cc[0].paint = fp->cc[0].paint;
 	    fp[1].t0 = t0;
 	    fp[1].t1 = fp->t0 = tm;
@@ -573,17 +577,17 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     cmat.yy = state.delta.y;
     cmat.xx = cmat.yy;
     cmat.xy = -cmat.yx;
-    gs_bbox_transform_inverse(rect, &cmat, &t_rect);
+    gs_bbox_transform_inverse(pis->memory, rect, &cmat, &t_rect);
     state.frames[0].t0 = t0 = max(t_rect.p.y, 0);
     t[0] = t0 * dd + d0;
     state.frames[0].t1 = t1 = min(t_rect.q.y, 1);
     t[1] = t1 * dd + d0;
     for (i = 0; i < 2; ++i) {
-	gs_function_evaluate(psh->params.Function, &t[i],
+	gs_function_evaluate(pis->memory, psh->params.Function, &t[i],
 			     rcc[i].paint.values);
     }
     memcpy(state.frames[0].cc, rcc, sizeof(rcc[0]) * 2);
-    gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pis),
+    gs_distance_transform(pis->memory, state.delta.x, state.delta.y, &ctm_only(pis),
 			  &dist);
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     state.dd = dd;
@@ -668,9 +672,9 @@ R_fill_triangle(const R_fill_state_t * pfs, gs_client_color *pcc,
     (*pcs->type->remap_color)(pcc, pcs, &dev_color, pis,
 			      pfs->dev, gs_color_select_texture);
 
-    gs_point_transform2fixed(&pfs->pis->ctm, x0, y0, &pts[0]);
-    gs_point_transform2fixed(&pfs->pis->ctm, x1, y1, &pts[1]);
-    gs_point_transform2fixed(&pfs->pis->ctm, x2, y2, &pts[2]);
+    gs_point_transform2fixed(pis->memory, &pis->ctm, x0, y0, &pts[0]);
+    gs_point_transform2fixed(pis->memory, &pis->ctm, x1, y1, &pts[1]);
+    gs_point_transform2fixed(pis->memory, &pis->ctm, x2, y2, &pts[2]);
 
     gx_path_add_point(ppath, pts[0].x, pts[0].y);
     gx_path_add_lines(ppath, pts+1, 2);
@@ -709,7 +713,7 @@ R_fill_region(R_fill_state_t * pfs)
 	    float tm = (t0 + t1) * 0.5;
 	    float dm = tm * pfs->dd + psh->params.Domain[0];
 
-	    gs_function_evaluate(pfn, &dm, fp[1].cc[1].paint.values);
+	    gs_function_evaluate(pfs->pis->memory, pfn, &dm, fp[1].cc[1].paint.values);
 	    fp[1].cc[0].paint = fp->cc[0].paint;
 	    fp[1].t0 = t0;
 	    fp[1].t1 = fp->t0 = tm;
@@ -859,7 +863,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     t[0] = d0;
     t[1] = d1;
     for (i = 0; i < 2; ++i)
-	gs_function_evaluate(psh->params.Function, &t[i],
+	gs_function_evaluate(pis->memory, psh->params.Function, &t[i],
 			     rcc[i].paint.values);
     memcpy(state.frames[0].cc, rcc, sizeof(rcc[0]) * 2);
     state.delta.x = x1 - x0;
@@ -872,8 +876,8 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
      * also pretty crude but now it works for circles
      * with same or not so different radii.
      */
-    gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pis), &dev_dpt);
-    gs_distance_transform(state.dr, 0, &ctm_only(pis), &dev_dr);
+    gs_distance_transform(pis->memory, state.delta.x, state.delta.y, &ctm_only(pis), &dev_dpt);
+    gs_distance_transform(pis->memory, state.dr, 0, &ctm_only(pis), &dev_dr);
     
     state.width = hypot(dev_dpt.x, dev_dpt.y) + hypot(dev_dr.x, dev_dr.y);
 

@@ -106,7 +106,7 @@ cpath_init_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
     pcpath->path_valid = false;
     pcpath->path.bbox = *pbox;
     gx_cpath_set_outer_box(pcpath);
-    pcpath->id = gs_next_ids(1);	/* path changed => change id */
+    pcpath->id = gs_next_ids(pcpath->path.memory, 1);	/* path changed => change id */
 }
 private void
 cpath_init_own_contents(gx_clip_path * pcpath)
@@ -131,7 +131,7 @@ cpath_alloc_list(gx_clip_rect_list ** prlist, gs_memory_t * mem,
 		 client_name_t cname)
 {
     rc_alloc_struct_1(*prlist, gx_clip_rect_list, &st_clip_rect_list, mem,
-		      return_error(gs_error_VMerror), cname);
+		      return_error(mem, gs_error_VMerror), cname);
     (*prlist)->rc.free = rc_free_cpath_list;
     return 0;
 }
@@ -141,15 +141,15 @@ gx_cpath_init_contained_shared(gx_clip_path * pcpath,
 {
     if (shared) {
 	if (shared->path.segments == &shared->path.local_segments) {
-	    lprintf1("Attempt to share (local) segments of clip path 0x%lx!\n",
+	    lprintf1(mem, "Attempt to share (local) segments of clip path 0x%lx!\n",
 		     (ulong) shared);
-	    return_error(gs_error_Fatal);
+	    return_error(mem, gs_error_Fatal);
 	}
 	*pcpath = *shared;
 	pcpath->path.memory = mem;
 	pcpath->path.allocation = path_allocated_contained;
-	rc_increment(pcpath->path.segments);
-	rc_increment(pcpath->rect_list);
+	rc_increment(mem, pcpath->path.segments);
+	rc_increment(mem, pcpath->rect_list);
     } else {
 	int code = cpath_alloc_list(&pcpath->rect_list, mem, cname);
 
@@ -195,15 +195,15 @@ gx_cpath_init_local_shared(gx_clip_path * pcpath, const gx_clip_path * shared,
 {
     if (shared) {
 	if (shared->path.segments == &shared->path.local_segments) {
-	    lprintf1("Attempt to share (local) segments of clip path 0x%lx!\n",
+	    lprintf1(mem, "Attempt to share (local) segments of clip path 0x%lx!\n",
 		     (ulong) shared);
-	    return_error(gs_error_Fatal);
+	    return_error(mem, gs_error_Fatal);
 	}
 	pcpath->path = shared->path;
 	pcpath->path.allocation = path_allocated_on_stack;
-	rc_increment(pcpath->path.segments);
+	rc_increment(mem, pcpath->path.segments);
 	pcpath->rect_list = shared->rect_list;
-	rc_increment(pcpath->rect_list);
+	rc_increment(mem, pcpath->rect_list);
 	cpath_share_own_contents(pcpath, shared);
     } else {
 	gx_path_init_local(&pcpath->path, mem);
@@ -231,7 +231,7 @@ gx_cpath_unshare(gx_clip_path * pcpath)
 	    return code;
 	/* Copy the rectangle list. */
 /**************** NYI ****************/
-	rc_decrement(rlist, "gx_cpath_unshare");
+	rc_decrement(pcpath->path.memory, rlist, "gx_cpath_unshare");
     }
     return code;
 }
@@ -240,7 +240,7 @@ gx_cpath_unshare(gx_clip_path * pcpath)
 void
 gx_cpath_free(gx_clip_path * pcpath, client_name_t cname)
 {
-    rc_decrement(pcpath->rect_list, cname);
+    rc_decrement(pcpath->path.memory, pcpath->rect_list, cname);
     /* Clean up pointers for GC. */
     pcpath->rect_list = 0;
     {
@@ -275,7 +275,7 @@ gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
 
 	    if (code < 0)
 		return code;
-	    rc_decrement(pcpto->rect_list, "gx_cpath_assign");
+	    rc_decrement(pcpto->path.memory, pcpto->rect_list, "gx_cpath_assign");
 	} else {
 	    /* Use pcpto's list object. */
 	    rc_free_cpath_list_local(tolist->rc.memory, tolist,
@@ -283,11 +283,11 @@ gx_cpath_assign_preserve(gx_clip_path * pcpto, gx_clip_path * pcpfrom)
 	}
 	tolist->list = fromlist->list;
 	pcpfrom->rect_list = tolist;
-	rc_increment(tolist);
+	rc_increment(pcpfrom->path.memory, tolist);
     } else {
 	/* We can use pcpfrom's list object. */
-	rc_increment(fromlist);
-	rc_decrement(pcpto->rect_list, "gx_cpath_assign");
+	rc_increment(pcpfrom->path.memory, fromlist);
+	rc_decrement(pcpfrom->path.memory, pcpto->rect_list, "gx_cpath_assign");
     }
     path = pcpto->path, *pcpto = *pcpfrom, pcpto->path = path;
     return 0;
@@ -336,7 +336,7 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 
 	gx_path_init_local(&rpath, pcpath->path.memory);
 	gx_cpath_enum_init(&cenum, pcpath);
-	while ((code = gx_cpath_enum_next(&cenum, pts)) != 0) {
+	while ((code = gx_cpath_enum_next(pcpath->path.memory, &cenum, pts)) != 0) {
 	    switch (code) {
 		case gs_pe_moveto:
 		    code = gx_path_add_point(&rpath, pts[0].x, pts[0].y);
@@ -357,7 +357,7 @@ gx_cpath_to_path(gx_clip_path * pcpath, gx_path * ppath)
 		    break;
 		default:
 		    if (code >= 0)
-			code = gs_note_error(gs_error_unregistered);
+			code = gs_note_error(pcpath->path.memory, gs_error_unregistered);
 	    }
 	    if (code < 0)
 		break;
@@ -446,7 +446,7 @@ cpath_set_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
 
 	if (code < 0)
 	    return code;
-	rc_decrement(rlist, "gx_cpath_from_rectangle");
+	rc_decrement(pcpath->path.memory, rlist, "gx_cpath_from_rectangle");
 	rlist = pcpath->rect_list;
     }
     cpath_init_rectangle(pcpath, pbox);
@@ -599,7 +599,7 @@ gx_cpath_scale_exp2_shared(gx_clip_path * pcpath, int log2_scale_x,
 #undef SCALE_V
 	    }
     }
-    pcpath->id = gs_next_ids(1);	/* path changed => change id */
+    pcpath->id = gs_next_ids(pcpath->path.memory, 1);	/* path changed => change id */
     return 0;
 }
 
@@ -676,7 +676,7 @@ gx_cpath_enum_init(gs_cpath_enum * penum, gx_clip_path * pcpath)
 /* Enumerate the next segment of a clipping path. */
 /* In general, this produces a path made up of zillions of tiny lines. */
 int
-gx_cpath_enum_next(gs_cpath_enum * penum, gs_fixed_point pts[3])
+gx_cpath_enum_next(const gs_memory_t *mem, gs_cpath_enum * penum, gs_fixed_point pts[3])
 {
     if (penum->using_path)
 	return gx_path_enum_next(&penum->path_enum, pts);
@@ -836,7 +836,7 @@ gx_cpath_enum_next(gs_cpath_enum * penum, gs_fixed_point pts[3])
 		break;
 
 	    default:
-		return_error(gs_error_unknownerror);
+		return_error(mem, gs_error_unknownerror);
 	}
 
       out:			/* Store the state before exiting. */
@@ -876,11 +876,11 @@ gx_clip_list_free(gx_clip_list * clp, gs_memory_t * mem)
 
 /* Print a clipping list. */
 void
-gx_clip_list_print(const gx_clip_list *list)
+gx_clip_list_print(const gs_memory_t *mem, const gx_clip_list *list)
 {
     const gx_clip_rect *pr;
 
-    dlprintf3("   list count=%d xmin=%d xmax=%d\n",
+    dlprintf3(mem, "   list count=%d xmin=%d xmax=%d\n",
 	     list->count, list->xmin, list->xmax);
     switch (list->count) {
 	case 0:
@@ -893,7 +893,7 @@ gx_clip_list_print(const gx_clip_list *list)
 	    pr = list->head;
     }
     for (; pr != 0; pr = pr->next)
-	dlprintf4("   rect: (%d,%d),(%d,%d)\n",
+	dlprintf4(mem, "   rect: (%d,%d),(%d,%d)\n",
 		  pr->xmin, pr->ymin, pr->xmax, pr->ymax);
 }
 
@@ -904,20 +904,22 @@ gx_cpath_print(const gx_clip_path * pcpath)
     if (pcpath->path_valid)
 	gx_path_print(&pcpath->path);
     else
-	dlputs("   (path not valid)\n");
-    dlprintf4("   inner_box=(%g,%g),(%g,%g)\n",
+	dlputs(pcpath->path.memory, "   (path not valid)\n");
+    dlprintf4(pcpath->path.memory, 
+	      "   inner_box=(%g,%g),(%g,%g)\n",
 	      fixed2float(pcpath->inner_box.p.x),
 	      fixed2float(pcpath->inner_box.p.y),
 	      fixed2float(pcpath->inner_box.q.x),
 	      fixed2float(pcpath->inner_box.q.y));
-    dlprintf4("     outer_box=(%g,%g),(%g,%g)",
+    dlprintf4(pcpath->path.memory, 
+	      "     outer_box=(%g,%g),(%g,%g)",
 	      fixed2float(pcpath->outer_box.p.x),
 	      fixed2float(pcpath->outer_box.p.y),
 	      fixed2float(pcpath->outer_box.q.x),
 	      fixed2float(pcpath->outer_box.q.y));
-    dprintf2("     rule=%d list.refct=%ld\n",
+    dprintf2(pcpath->path.memory, "     rule=%d list.refct=%ld\n",
 	     pcpath->rule, pcpath->rect_list->rc.ref_count);
-    gx_clip_list_print(gx_cpath_list(pcpath));
+    gx_clip_list_print(pcpath->path.memory, gx_cpath_list(pcpath));
 }
 
 #endif /* DEBUG */

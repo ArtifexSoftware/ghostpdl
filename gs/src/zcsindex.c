@@ -48,17 +48,17 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
     int num_entries;
     int code;
 
-    check_read_type(*op, t_array);
+    check_read_type(imemory, *op, t_array);
     if (r_size(op) != 4)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     pcsa = op->value.const_refs + 1;
-    check_type_only(pcsa[1], t_integer);
+    check_type_only(imemory, pcsa[1], t_integer);
     if (pcsa[1].value.intval < 0 || pcsa[1].value.intval > 4095)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     num_entries = (int)pcsa[1].value.intval + 1;
     cs = *gs_currentcolorspace(igs);
     if (!cs.type->can_be_base_space)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     cspace_old = istate->colorspace;
     /*
      * We can't count on C compilers to recognize the aliasing
@@ -74,9 +74,9 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
     if (r_has_type(&pcsa[2], t_string)) {
 	int num_values = num_entries * cs_num_components(&cs);
 
-	check_read(pcsa[2]);
+	check_read(imemory, pcsa[2]);
 	if (r_size(&pcsa[2]) != num_values)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	memmove(&cs.params.indexed.base_space, &cs,
 		sizeof(cs.params.indexed.base_space));
 	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
@@ -88,7 +88,7 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
     } else {
 	gs_indexed_map *map;
 
-	check_proc(pcsa[2]);
+	check_proc(imemory, pcsa[2]);
 	/*
 	 * We have to call zcs_begin_map before moving the parameters,
 	 * since if the color space is a DeviceN or Separation space,
@@ -128,7 +128,7 @@ indexed_map1(i_ctx_t *i_ctx_p)
 
     if (i >= 0) {		/* i.e., not first time */
 	int m = (int)ep[csme_num_components].value.intval;
-	int code = float_params(op, m, &r_ptr(&ep[csme_map], gs_indexed_map)->values[i * m]);
+	int code = float_params(imemory, op, m, &r_ptr(&ep[csme_map], gs_indexed_map)->values[i * m]);
 
 	if (code < 0)
 	    return code;
@@ -139,7 +139,7 @@ indexed_map1(i_ctx_t *i_ctx_p)
 	    return o_pop_estack;
 	}
     }
-    push(1);
+    push(imemory, 1);
     ep[csme_index].value.intval = ++i;
     make_int(op, i);
     make_op_estack(ep + 1, indexed_map1);

@@ -44,13 +44,11 @@ typedef struct gs_main_instance_s gs_main_instance;
 /* ---------------- Instance creation ---------------- */
 
 /*
- * As noted above, multiple instances are not supported yet:
+ * NB: multiple instances are not supported yet
+ * 
+ * // add usage documentation
  */
-/*gs_main_instance *gs_main_alloc_instance(gs_memory_t *); */
-/*
- * Instead, we provide only a default instance:
- */
-gs_main_instance *gs_main_instance_default(void);
+gs_main_instance *gs_main_alloc_instance(gs_memory_t *); 
 
 /* ---------------- Initialization ---------------- */
 
@@ -59,13 +57,6 @@ gs_main_instance *gs_main_instance_default(void);
  * init1, and init2.  These steps must be done in that order, but
  * init1 may be omitted.
  */
-
-/*
- * Since gsio.h (which is included in many other header files)
- * redefines stdin/out/err, callers need a way to get the "real"
- * stdio files to pass to init0 if they wish to do so.
- */
-void gs_get_real_stdio(FILE * stdfiles[3]);
 
 /*
  * init0 records the files to be used for stdio, and initializes the
@@ -238,11 +229,8 @@ void gs_main_dump_stack(gs_main_instance *minst, int code,
 
 /* ---------------- Console output ---------------- */
 
-/*
- * Write to stdout and stderr, possibly using redirection.
- */
-int gs_main_outwrite(gs_main_instance *minst, const char *str, int len);
-int gs_main_errwrite(gs_main_instance *minst, const char *str, int len);
+
+
 
 /* ---------------- Termination ---------------- */
 

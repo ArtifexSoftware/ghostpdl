@@ -47,7 +47,7 @@ typedef enum {
 /* In zbfont.c */
 int build_proc_name_refs(build_proc_refs * pbuild,
 			 const char *bcstr, const char *bgstr);
-int build_gs_font_procs(os_ptr, build_proc_refs *);
+int build_gs_font_procs(const gs_memory_t *mem, os_ptr, build_proc_refs *);
 #define BUILD_BASE_FONT_PROC(proc)\
   int proc(i_ctx_t *, os_ptr, gs_font_base **, font_type,\
 	   gs_memory_type_ptr_t, const build_proc_refs *,\

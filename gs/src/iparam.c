@@ -38,7 +38,7 @@ ref_param_key(const iparam_list * plist, gs_param_name pkey, ref * pkref)
 	long key;
 
 	if (sscanf(pkey, "%ld", &key) != 1)
-	    return_error(e_rangecheck);
+	    return_error(plist->memory, e_rangecheck);
 	make_int(pkref, key);
 	return 0;
     } else
@@ -66,12 +66,12 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
 	/* GC will take care of freeing this: */
 	buf = gs_alloc_string(plist->memory, len, "ref_to_key");
 	if (!buf)
-	    return_error(e_VMerror);
+	    return_error(plist->memory, e_VMerror);
 	key->data = buf;
 	key->size = len;
 	key->persistent = true;
     } else
-	return_error(e_typecheck);
+	return_error(plist->memory, e_typecheck);
     return 0;
 }
 
@@ -164,7 +164,7 @@ ref_param_begin_write_collection(gs_param_list * plist, gs_param_name pkey,
     int code;
 
     if (dlist == 0)
-	return_error(e_VMerror);
+	return_error(plist->memory, e_VMerror);
     if (coll_type != gs_param_collection_array) {
 	ref dref;
 
@@ -256,7 +256,7 @@ ref_param_write_typed(gs_param_list * plist, gs_param_name pkey,
 						    &pvalue->value.d,
 	      (gs_param_collection_type_t)(pvalue->type - gs_param_type_dict));
 	default:
-	    return_error(e_typecheck);
+	    return_error(plist->memory, e_typecheck);
     }
     if (code < 0)
 	return code;
@@ -309,7 +309,7 @@ ref_param_write_string_value(ref * pref, const gs_param_string * pvalue,
 				     "ref_param_write_string");
 
 	if (pstr == 0)
-	    return_error(e_VMerror);
+	    return_error((gs_memory_t *)imem, e_VMerror);
 	memcpy(pstr, pdata, n);
 	make_string(pref, a_readonly | imemory_space(imem), n, pstr);
     }
@@ -450,7 +450,7 @@ int
 dict_param_list_write(dict_param_list *plist, ref *pdict, const ref *pwanted,
 		      gs_ref_memory_t *imem)
 {
-    check_dict_write(*pdict);
+    check_dict_write(plist->memory, *pdict);
     plist->u.w.write = dict_param_write;
     plist->enumerate = dict_param_enumerate;
     ref_param_write_init((iparam_list *) plist, pwanted, imem);
@@ -468,8 +468,8 @@ array_new_indexed_param_write(iparam_list * iplist, const ref * pkey,
     ref *eltp;
 
     if (!r_has_type(pkey, t_integer))
-	return_error(e_typecheck);
-    check_int_ltu(*pkey, r_size(arr));
+	return_error(iplist->memory, e_typecheck);
+    check_int_ltu(iplist->memory, *pkey, r_size(arr));
     store_check_dest(arr, pvalue);
     eltp = arr->value.refs + pkey->value.intval;
     /* ref_assign_new(eltp, pvalue); */
@@ -481,8 +481,8 @@ private int
 array_new_indexed_plist_write(dict_param_list * plist, ref * parray,
 			      const ref * pwanted, gs_ref_memory_t *imem)
 {
-    check_array(*parray);
-    check_write(*parray);
+    check_array(plist->memory, *parray);
+    check_write(plist->memory, *parray);
     plist->u.w.write = array_new_indexed_param_write;
     ref_param_write_init((iparam_list *) plist, pwanted, imem);
     plist->dict = *parray;
@@ -516,19 +516,20 @@ private const gs_param_list_procs ref_read_procs =
 };
 private int ref_param_read(iparam_list *, gs_param_name,
 			   iparam_loc *, int);
-private int ref_param_read_string_value(const iparam_loc *,
+private int ref_param_read_string_value(const gs_memory_t *mem,
+					const iparam_loc *,
 					gs_param_string *);
 private int ref_param_read_array(iparam_list *, gs_param_name,
 				 iparam_loc *);
 
-#define iparam_note_error(loc, code)\
-  gs_note_error(*(loc).presult = code)
-#define iparam_check_type(loc, typ)\
+#define iparam_note_error(mem, loc, code)\
+  gs_note_error(mem, *(loc).presult = code)
+#define iparam_check_type(mem, loc, typ)\
   if ( !r_has_type((loc).pvalue, typ) )\
-    return iparam_note_error(loc, e_typecheck)
-#define iparam_check_read(loc)\
+    return iparam_note_error(mem, loc, e_typecheck)
+#define iparam_check_read(mem, loc)\
   if ( !r_has_attr((loc).pvalue, a_read) )\
-    return iparam_note_error(loc, e_invalidaccess)
+    return iparam_note_error(mem, loc, e_invalidaccess)
 
 private int
 ref_param_read_int_array(gs_param_list * plist, gs_param_name pkey,
@@ -548,18 +549,18 @@ ref_param_read_int_array(gs_param_list * plist, gs_param_name pkey,
 				     "ref_param_read_int_array");
 
     if (piv == 0)
-	return_error(e_VMerror);
+	return_error(iplist->memory, e_VMerror);
     for (i = 0; i < size; i++) {
 	ref elt;
 
-	array_get(loc.pvalue, i, &elt);
+	array_get(iplist->memory, loc.pvalue, i, &elt);
 	if (!r_has_type(&elt, t_integer)) {
-	    code = gs_note_error(e_typecheck);
+	    code = gs_note_error(iplist->memory, e_typecheck);
 	    break;
 	}
 #if arch_sizeof_int < arch_sizeof_long
 	if (elt.value.intval != (int)elt.value.intval) {
-	    code = gs_note_error(e_rangecheck);
+	    code = gs_note_error(iplist->memory, e_rangecheck);
 	    break;
 	}
 #endif
@@ -593,12 +594,12 @@ ref_param_read_float_array(gs_param_list * plist, gs_param_name pkey,
 				       "ref_param_read_float_array");
 
     if (pfv == 0)
-	return_error(e_VMerror);
+	return_error(plist->memory, e_VMerror);
     aref = *loc.pvalue;
     loc.pvalue = &elt;
     for (i = 0; code >= 0 && i < size; i++) {
-	array_get(&aref, i, &elt);
-	code = float_param(&elt, pfv + i);
+	array_get(plist->memory, &aref, i, &elt);
+	code = float_param(plist->memory, &elt, pfv + i);
     }
     if (code < 0) {
 	gs_free_object(plist->memory, pfv, "ref_read_float_array_param");
@@ -628,20 +629,20 @@ ref_param_read_string_array(gs_param_list * plist, gs_param_name pkey,
 	gs_alloc_byte_array(plist->memory, size, sizeof(gs_param_string),
 			    "ref_param_read_string_array");
     if (psv == 0)
-	return_error(e_VMerror);
+	return_error(iplist->memory, e_VMerror);
     aref = *loc.pvalue;
     if (r_has_type(&aref, t_array)) {
 	for (i = 0; code >= 0 && i < size; i++) {
 	    loc.pvalue = aref.value.refs + i;
-	    code = ref_param_read_string_value(&loc, psv + i);
+	    code = ref_param_read_string_value(plist->memory, &loc, psv + i);
 	}
     } else {
 	ref elt;
 
 	loc.pvalue = &elt;
 	for (i = 0; code >= 0 && i < size; i++) {
-	    array_get(&aref, i, &elt);
-	    code = ref_param_read_string_value(&loc, psv + i);
+	    array_get(plist->memory, &aref, i, &elt);
+	    code = ref_param_read_string_value(plist->memory, &loc, psv + i);
 	}
     }
     if (code < 0) {
@@ -670,7 +671,7 @@ ref_param_begin_read_collection(gs_param_list * plist, gs_param_name pkey,
 	gs_alloc_bytes(plist->memory, size_of(dict_param_list),
 		       "ref_param_begin_read_collection");
     if (dlist == 0)
-	return_error(e_VMerror);
+	return_error(plist->memory, e_VMerror);
     if (r_has_type(loc.pvalue, t_dictionary)) {
 	code = dict_param_list_read(dlist, loc.pvalue, NULL, false,
 				    iplist->ref_memory);
@@ -683,10 +684,10 @@ ref_param_begin_read_collection(gs_param_list * plist, gs_param_name pkey,
 	if (code >= 0)
 	    pvalue->size = r_size(loc.pvalue);
     } else
-	code = gs_note_error(e_typecheck);
+	code = gs_note_error(plist->memory, e_typecheck);
     if (code < 0) {
 	gs_free_object(plist->memory, dlist, "ref_param_begin_write_collection");
-	return iparam_note_error(loc, code);
+	return iparam_note_error(plist->memory, loc, code);
     }
     pvalue->list = (gs_param_list *) dlist;
     return 0;
@@ -715,7 +716,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	case t_array:
 	case t_mixedarray:
 	case t_shortarray:
-	    iparam_check_read(loc);
+	    iparam_check_read(iplist->memory, loc);
 	    if (r_size(loc.pvalue) <= 0) {
 		/* 0-length array; can't get type info */
 		pvalue->type = gs_param_type_array;
@@ -728,7 +729,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	     * on the type of the first element of the array.  If that
 	     * fails, we try again with more general types.
 	     */
-	    array_get(loc.pvalue, 0, &elt);
+	    array_get(plist->memory, loc.pvalue, 0, &elt);
 	    switch (r_type(&elt)) {
 		case t_integer:
 		    pvalue->type = gs_param_type_int_array;
@@ -753,7 +754,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 		default:
 		    break;
 	    }
-	    return gs_note_error(e_typecheck);
+	    return gs_note_error(plist->memory, e_typecheck);
 	case t_boolean:
 	    pvalue->type = gs_param_type_bool;
 	    pvalue->value.b = loc.pvalue->value.boolval;
@@ -786,7 +787,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	    return 0;
 	case t_name:
 	    pvalue->type = gs_param_type_name;
-	    return ref_param_read_string_value(&loc, &pvalue->value.n);
+	    return ref_param_read_string_value(plist->memory, &loc, &pvalue->value.n);
 	case t_null:
 	    pvalue->type = gs_param_type_null;
 	    return 0;
@@ -796,11 +797,11 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	    return 0;
 	case t_string:
 	    pvalue->type = gs_param_type_string;
-	    return ref_param_read_string_value(&loc, &pvalue->value.s);
+	    return ref_param_read_string_value(plist->memory, &loc, &pvalue->value.s);
 	default:
 	    break;
     }
-    return gs_note_error(e_typecheck);
+    return gs_note_error(plist->memory, e_typecheck);
 }
 
 private int
@@ -828,7 +829,7 @@ ref_param_read_signal_error(gs_param_list * plist, gs_param_name pkey, int code)
 	case gs_param_policy_ignore:
 	    return 0;
 	case gs_param_policy_consult_user:
-	    return_error(e_configurationerror);
+	    return_error(plist->memory, e_configurationerror);
 	default:
 	    return code;
     }
@@ -845,7 +846,7 @@ ref_param_read_commit(gs_param_list * plist)
     /* Check to make sure that all parameters were actually read. */
     for (i = 0; i < iplist->count; ++i)
 	if (iplist->results[i] == 0)
-	    iplist->results[i] = ecode = gs_note_error(e_undefined);
+	    iplist->results[i] = ecode = gs_note_error(plist->memory, e_undefined);
     return ecode;
 }
 private int
@@ -862,7 +863,7 @@ ref_param_get_next_key(gs_param_list * plist, gs_param_enumerator_t * penum,
 
 /* Read a string value. */
 private int
-ref_param_read_string_value(const iparam_loc * ploc, gs_param_string * pvalue)
+ref_param_read_string_value(const gs_memory_t *mem, const iparam_loc * ploc, gs_param_string * pvalue)
 {
     const ref *pref = ploc->pvalue;
 
@@ -877,13 +878,13 @@ ref_param_read_string_value(const iparam_loc * ploc, gs_param_string * pvalue)
 	}
 	    break;
 	case t_string:
-	    iparam_check_read(*ploc);
+	    iparam_check_read(mem, *ploc);
 	    pvalue->data = pref->value.const_bytes;
 	    pvalue->size = r_size(pref);
 	    pvalue->persistent = false;
 	    break;
 	default:
-	    return iparam_note_error(*ploc, e_typecheck);
+	    return iparam_note_error(mem, *ploc, e_typecheck);
     }
     return 0;
 }
@@ -897,8 +898,8 @@ ref_param_read_array(iparam_list * plist, gs_param_name pkey, iparam_loc * ploc)
     if (code != 0)
 	return code;
     if (!r_is_array(ploc->pvalue))
-	return iparam_note_error(*ploc, e_typecheck);
-    iparam_check_read(*ploc);
+	return iparam_note_error(plist->memory, *ploc, e_typecheck);
+    iparam_check_read(plist->memory, *ploc);
     return 0;
 }
 
@@ -917,7 +918,7 @@ ref_param_read(iparam_list * plist, gs_param_name pkey, iparam_loc * ploc,
     if (code != 0)
 	return code;
     if (type >= 0)
-	iparam_check_type(*ploc, type);
+	iparam_check_type(plist->memory, *ploc, type);
     return 0;
 }
 
@@ -949,7 +950,7 @@ ref_param_read_init(iparam_list * plist, uint count, const ref * ppolicies,
 			    "ref_param_read_init");
 
     if (plist->results == 0)
-	return_error(e_VMerror);
+	return_error(plist->memory, e_VMerror);
     memset(plist->results, 0, count * sizeof(int));
 
     plist->int_keys = false;
@@ -962,7 +963,7 @@ array_indexed_param_read(iparam_list * plist, const ref * pkey, iparam_loc * plo
 {
     ref *const arr = &((dict_param_list *) plist)->dict;
 
-    check_type(*pkey, t_integer);
+    check_type(plist->memory, *pkey, t_integer);
     if (pkey->value.intval < 0 || pkey->value.intval >= r_size(arr))
 	return 1;
     ploc->pvalue = arr->value.refs + pkey->value.intval;
@@ -978,7 +979,7 @@ array_indexed_param_list_read(dict_param_list * plist, const ref * parray,
     iparam_list *const iplist = (iparam_list *) plist;
     int code;
 
-    check_read_type(*parray, t_array);
+    check_read_type(plist->memory, *parray, t_array);
     plist->u.r.read = array_indexed_param_read;
     plist->dict = *parray;
     code = ref_param_read_init(iplist, r_size(parray), ppolicies,
@@ -1038,7 +1039,7 @@ array_param_list_read(array_param_list * plist, ref * bot, uint count,
     iparam_list *const iplist = (iparam_list *) plist;
 
     if (count & 1)
-	return_error(e_rangecheck);
+	return_error(plist->memory, e_rangecheck);
     plist->u.r.read = array_param_read;
     plist->enumerate = array_param_enumerate;
     plist->bot = bot;
@@ -1078,10 +1079,10 @@ stack_param_list_read(stack_param_list * plist, ref_stack_t * pstack,
     uint count = ref_stack_counttomark(pstack);
 
     if (count == 0)
-	return_error(e_unmatchedmark);
+	return_error(plist->memory, e_unmatchedmark);
     count -= skip + 1;
     if (count & 1)
-	return_error(e_rangecheck);
+	return_error(plist->memory, e_rangecheck);
     plist->u.r.read = stack_param_read;
     plist->enumerate = stack_param_enumerate;
     plist->pstack = pstack;
@@ -1115,7 +1116,7 @@ dict_param_list_read(dict_param_list * plist, const ref * pdict,
 	plist->u.r.read = empty_param_read;
 	count = 0;
     } else {
-	check_dict_read(*pdict);
+	check_dict_read(plist->memory, *pdict);
 	plist->u.r.read = dict_param_read;
 	plist->dict = *pdict;
 	count = dict_max_index(pdict) + 1;

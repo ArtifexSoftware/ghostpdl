@@ -205,7 +205,7 @@ clist_init_tile_cache(gx_device * dev, byte * init_data, ulong data_size)
     while (hc >= 3 && (hsize = (hc + 1) * sizeof(tile_hash)) >= bits_size)
 	hc >>= 1;
     if (hc < 3)
-	return_error(gs_error_rangecheck);
+	return_error(cdev->memory, gs_error_rangecheck);
     cdev->tile_hash_mask = hc;
     cdev->tile_max_count = hc - (hc >> 2);
     cdev->tile_table = (tile_hash *) data;
@@ -229,13 +229,13 @@ clist_init_bands(gx_device * dev, gx_device_memory *bdev, uint data_size,
     int nbands;
 
     if (gdev_mem_data_size(bdev, band_width, band_height) > data_size)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     cdev->page_band_height = band_height;
     nbands = (cdev->target->height + band_height - 1) / band_height;
     cdev->nbands = nbands;
 #ifdef DEBUG
     if (gs_debug_c('l') | gs_debug_c(':'))
-	dlprintf4("[:]width=%d, band_width=%d, band_height=%d, nbands=%d\n",
+	dlprintf4(dev->memory, "[:]width=%d, band_width=%d, band_height=%d, nbands=%d\n",
 		  bdev->width, band_width, band_height, nbands);
 #endif
     return 0;
@@ -258,7 +258,7 @@ clist_init_states(gx_device * dev, byte * init_data, uint data_size)
      * bytes will be available to buffer command operands.
      */
     if (state_size + sizeof(cmd_prefix) + cmd_largest_size + 100 > data_size)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     cdev->states = (gx_clist_state *) init_data;
     cdev->cbuf = init_data + state_size;
     cdev->cend = init_data + data_size;
@@ -307,7 +307,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	    gdev_mem_data_size(&bdev, band_width, band_height);
 
 	if (band_data_size >= band_space)
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
 	bits_size = min(band_space - band_data_size, data_size >> 1);
     } else {
 	/*
@@ -319,7 +319,7 @@ clist_init_data(gx_device * dev, byte * init_data, uint data_size)
 	band_height = gdev_mem_max_height(&bdev, band_width,
 					  band_space - bits_size);
 	if (band_height == 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(dev->memory, gs_error_rangecheck);
     }
     code = clist_init_tile_cache(dev, data, bits_size);
     if (code < 0)
@@ -443,9 +443,9 @@ clist_reinit_output_file(gx_device *dev)
     /* if partial page rendering is available */
     if ( clist_test_VMerror_recoverable(cdev) )
 	{ if (cdev->page_bfile != 0)
-	    code = clist_set_memory_warning(cdev->page_bfile, b_block);
+	    code = clist_set_memory_warning(cdev->memory, cdev->page_bfile, b_block);
 	if (code >= 0 && cdev->page_cfile != 0)
-	    code = clist_set_memory_warning(cdev->page_cfile, c_block);
+	    code = clist_set_memory_warning(cdev->memory, cdev->page_cfile, c_block);
 	}
     return code;
 }
@@ -521,14 +521,14 @@ clist_open_output_file(gx_device *dev)
 /* Close, and free the contents of, the temporary files of a page. */
 /* Note that this does not deallocate the buffer. */
 int
-clist_close_page_info(gx_band_page_info_t *ppi)
+clist_close_page_info(const gs_memory_t *mem, gx_band_page_info_t *ppi)
 {
     if (ppi->cfile != NULL) {
-	clist_fclose(ppi->cfile, ppi->cfname, true);
+	clist_fclose(mem, ppi->cfile, ppi->cfname, true);
 	ppi->cfile = NULL;
     }
     if (ppi->bfile != NULL) {
-	clist_fclose(ppi->bfile, ppi->bfname, true);
+	clist_fclose(mem, ppi->bfile, ppi->bfname, true);
 	ppi->bfile = NULL;
     }
     return 0;
@@ -542,7 +542,7 @@ clist_close_output_file(gx_device *dev)
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
 
-    return clist_close_page_info(&cdev->page_info);
+    return clist_close_page_info(dev->memory, &cdev->page_info);
 }
 
 /* Open the device by initializing the device state and opening the */
@@ -579,7 +579,7 @@ clist_close(gx_device *dev)
 private int
 clist_output_page(gx_device * dev, int num_copies, int flush)
 {
-    return_error(gs_error_Fatal);
+    return_error(dev->memory, gs_error_Fatal);
 }
 
 /* Reset (or prepare to append to) the command list after printing a page. */
@@ -642,13 +642,13 @@ clist_end_page(gx_device_clist_writer * cldev)
 
     /* Reset warning margin to 0 to release reserve memory if mem files */
     if (cldev->page_bfile != 0)
-	clist_set_memory_warning(cldev->page_bfile, 0);
+	clist_set_memory_warning(cldev->memory, cldev->page_bfile, 0);
     if (cldev->page_cfile != 0)
-	clist_set_memory_warning(cldev->page_cfile, 0);
+	clist_set_memory_warning(cldev->memory, cldev->page_cfile, 0);
 
 #ifdef DEBUG
     if (gs_debug_c('l') | gs_debug_c(':'))
-	dlprintf2("[:]clist_end_page at cfile=%ld, bfile=%ld\n",
+	dlprintf2(cldev->memory, "[:]clist_end_page at cfile=%ld, bfile=%ld\n",
 		  cb.pos, cldev->page_bfile_end_pos);
 #endif
     return 0;
@@ -706,7 +706,7 @@ clist_VMerror_recover(gx_device_clist_writer *cldev,
 	}
     } while (pages_remain);
 
-    if_debug1('L', "[L]soft flush of command list, status: %d\n", code);
+    if_debug1(cldev->memory, 'L', "[L]soft flush of command list, status: %d\n", code);
     return code;
 }
 
@@ -746,7 +746,7 @@ clist_VMerror_recover_flush(gx_device_clist_writer *cldev,
     }
  
     code = (reset_code < 0 ? reset_code : free_code < 0 ? old_error_code : 0);
-    if_debug1('L', "[L]hard flush of command list, status: %d\n", code);
+    if_debug1(cldev->memory, 'L', "[L]hard flush of command list, status: %d\n", code);
     return code;
 }
 

@@ -25,7 +25,8 @@
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia <key> true */
 /* <pagedict> <attrdict> <policydict> <keys> .matchmedia false */
 /* <pagedict> null <policydict> <keys> .matchmedia null true */
-private int zmatch_page_size(const ref * pvreq, const ref * pvmed,
+private int zmatch_page_size(const gs_memory_t *mem, 
+			     const ref * pvreq, const ref * pvmed,
 			     int policy, int orient, bool roll,
 			     float *best_mismatch, gs_matrix * pmat,
 			     gs_point * pmsize);
@@ -62,21 +63,21 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	ref key, dict;
     } aelt;
     if (r_has_type(pattr, t_null)) {
-	check_op(4);
+	check_op(imemory, 4);
 	make_null(op - 3);
 	make_true(op - 2);
 	pop(2);
 	return 0;
     }
-    check_type(*preq, t_dictionary);
-    check_dict_read(*preq);
-    check_type(*pattr, t_dictionary);
-    check_dict_read(*pattr);
-    check_type(*ppol, t_dictionary);
-    check_dict_read(*ppol);
-    check_array(*pkeys);
-    check_read(*pkeys);
-    switch (code = dict_int_null_param(preq, "MediaPosition", 0, 0x7fff,
+    check_type(imemory, *preq, t_dictionary);
+    check_dict_read(imemory, *preq);
+    check_type(imemory, *pattr, t_dictionary);
+    check_dict_read(imemory, *pattr);
+    check_type(imemory, *ppol, t_dictionary);
+    check_dict_read(imemory, *ppol);
+    check_array(imemory, *pkeys);
+    check_read(imemory, *pkeys);
+    switch (code = dict_int_null_param(imemory, preq, "MediaPosition", 0, 0x7fff,
 				       0, &mepos)) {
 	default:
 	    return code;
@@ -85,7 +86,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	    mepos = -1;
 	case 0:;
     }
-    switch (code = dict_int_null_param(preq, "Orientation", 0, 3,
+    switch (code = dict_int_null_param(imemory, preq, "Orientation", 0, 3,
 				       0, &orient)) {
 	default:
 	    return code;
@@ -94,16 +95,16 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	    orient = -1;
 	case 0:;
     }
-    code = dict_bool_param(preq, "RollFedMedia", false, &roll);
+    code = dict_bool_param(imemory, preq, "RollFedMedia", false, &roll);
     if (code < 0)
 	return code;
-    code = dict_int_param(ppol, "PolicyNotFound", 0, 7, 0,
+    code = dict_int_param(imemory, ppol, "PolicyNotFound", 0, 7, 0,
 			  &policy_default);
     if (code < 0)
 	return code;
     if (dict_find_string(pattr, "Priority", &ppriority) > 0) {
-	check_array_only(*ppriority);
-	check_read(*ppriority);
+	check_array_only(imemory, *ppriority);
+	check_read(imemory, *ppriority);
     } else {
 	make_empty_array(&no_priority, a_readonly);
 	ppriority = &no_priority;
@@ -121,7 +122,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	    bool match_all;
 	    uint ki, pi;
 
-	    code = dict_bool_param(&aelt.dict, "MatchAll", false,
+	    code = dict_bool_param(imemory, &aelt.dict, "MatchAll", false,
 				   &match_all);
 	    if (code < 0)
 		return code;
@@ -133,7 +134,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		ref *ppvalue;
 		int policy;
 
-		array_get(pkeys, ki, &key);
+		array_get(imemory, pkeys, ki, &key);
 		if (dict_find(&aelt.dict, &key, &pmvalue) <= 0)
 		    continue;
 		if (dict_find(preq, &key, &prvalue) <= 0 ||
@@ -146,7 +147,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		}
 		/* Look for the Policies entry for this key. */
 		if (dict_find(ppol, &key, &ppvalue) > 0) {
-		    check_type_only(*ppvalue, t_integer);
+		    check_type_only(imemory, *ppvalue, t_integer);
 		    policy = ppvalue->value.intval;
 		} else
 		    policy = policy_default;
@@ -164,7 +165,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		    gs_matrix ignore_mat;
 		    gs_point ignore_msize;
 
-		    if (zmatch_page_size(prvalue, pmvalue,
+		    if (zmatch_page_size(imemory, prvalue, pmvalue,
 					 policy, orient, roll,
 					 &best_mismatch,
 					 &ignore_mat,
@@ -187,7 +188,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		ref pri;
 
 		pi--;
-		array_get(ppriority, pi, &pri);
+		array_get(imemory, ppriority, pi, &pri);
 		if (obj_eq(&aelt.key, &pri)) {	/* Yes, higher priority. */
 		    match.best_key = aelt.key;
 		    match.priority = pi;
@@ -228,16 +229,17 @@ zmatchpagesize(i_ctx_t *i_ctx_p)
     bool roll;
     int code;
 
-    check_type(op[-3], t_integer);
+    check_type(imemory, op[-3], t_integer);
     if (r_has_type(op - 2, t_null))
 	orient = -1;
     else {
-	check_int_leu(op[-2], 3);
+	check_int_leu(imemory, op[-2], 3);
 	orient = (int)op[-2].value.intval;
     }
-    check_type(op[-1], t_boolean);
+    check_type(imemory, op[-1], t_boolean);
     roll = op[-1].value.boolval;
-    code = zmatch_page_size(op - 5, op - 4, (int)op[-3].value.intval,
+    code = zmatch_page_size(imemory, 
+			    op - 5, op - 4, (int)op[-3].value.intval,
 			    orient, roll,
 			    &ignore_mismatch, &mat, &media_size);
     switch (code) {
@@ -262,13 +264,14 @@ zmatchpagesize(i_ctx_t *i_ctx_p)
 }
 /* Match the PageSize.  See below for details. */
 private int
-match_page_size(const gs_point * request,
-			     const gs_rect * medium,
-			     int policy, int orient, bool roll,
-			     float *best_mismatch, gs_matrix * pmat,
-			     gs_point * pmsize);
+match_page_size(const gs_memory_t *mem, 
+		const gs_point * request,
+		const gs_rect * medium,
+		int policy, int orient, bool roll,
+		float *best_mismatch, gs_matrix * pmat,
+		gs_point * pmsize);
 private int
-zmatch_page_size(const ref * pvreq, const ref * pvmed,
+zmatch_page_size(const gs_memory_t *mem, const ref * pvreq, const ref * pvmed,
 		 int policy, int orient, bool roll,
 		 float *best_mismatch, gs_matrix * pmat, gs_point * pmsize)
 {
@@ -278,23 +281,23 @@ zmatch_page_size(const ref * pvreq, const ref * pvmed,
 
     /* array_get checks array types and size. */
     /* This allows normal or packed arrays to be used */
-    if ((code = array_get(pvreq, 1, &rv[1])) < 0)
-        return_error(code);
+    if ((code = array_get(mem, pvreq, 1, &rv[1])) < 0)
+        return_error(mem, code);
     nr = r_size(pvreq);
-    if ((code = array_get(pvmed, 1, &rv[3])) < 0)
-        return_error(code);
+    if ((code = array_get(mem, pvmed, 1, &rv[3])) < 0)
+        return_error(mem, code);
     nm = r_size(pvmed);
     if (!((nm == 2 || nm == 4) && (nr == 2 || nr == nm)))
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     {
 	uint i;
 	double v[6];
 	int code;
 
-	array_get(pvreq, 0, &rv[0]);
+	array_get(mem, pvreq, 0, &rv[0]);
 	for (i = 0; i < 4; ++i)
-	    array_get(pvmed, i % nm, &rv[i + 2]);
-	if ((code = num_params(rv + 5, 6, v)) < 0)
+	    array_get(mem, pvmed, i % nm, &rv[i + 2]);
+	if ((code = num_params(mem, rv + 5, 6, v)) < 0)
 	    return code;
 	{
 	    gs_point request;
@@ -303,7 +306,7 @@ zmatch_page_size(const ref * pvreq, const ref * pvmed,
 	    request.x = v[0], request.y = v[1];
 	    medium.p.x = v[2], medium.p.y = v[3],
 		medium.q.x = v[4], medium.q.y = v[5];
-	    return match_page_size(&request, &medium, policy, orient,
+	    return match_page_size(mem, &request, &medium, policy, orient,
 				   roll, best_mismatch, pmat, pmsize);
 	}
     }
@@ -321,19 +324,20 @@ zmatch_page_size(const ref * pvreq, const ref * pvmed,
  * NOTE: The algorithm here doesn't work properly for variable-size media
  * when the match isn't exact.  We'll fix it if we ever need to.
  */
-private void make_adjustment_matrix(const gs_point * request,
+private void make_adjustment_matrix(const gs_memory_t *mem, 
+				    const gs_point * request,
 				    const gs_rect * medium,
 				    gs_matrix * pmat,
 				    bool scale, int rotate);
 private int
-match_page_size(const gs_point * request, const gs_rect * medium, int policy,
+match_page_size(const gs_memory_t *mem, const gs_point * request, const gs_rect * medium, int policy,
 		int orient, bool roll, float *best_mismatch, gs_matrix * pmat,
 		gs_point * pmsize)
 {
     double rx = request->x, ry = request->y;
 
     if ((rx <= 0) || (ry <= 0))
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     if (policy == 7) {
 		/* (Adobe) hack: just impose requested values */
 	*best_mismatch = 0;
@@ -347,17 +351,17 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
         
         if ( fit_direct && fit_rotated) {
 	    *best_mismatch = 0;
-	    make_adjustment_matrix(request, medium, pmat, false, orient < 0 ? 0 : orient);
+	    make_adjustment_matrix(mem, request, medium, pmat, false, orient < 0 ? 0 : orient);
         } else if ( fit_direct ) {
             int rotate = orient < 0 ? 0 : orient;
 
             *best_mismatch = (rotate & 1 ? 0.1 : 0);
-	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
+	    make_adjustment_matrix(mem, request, medium, pmat, false, (rotate + 1) & 2);
         } else if ( fit_rotated ) {
             int rotate = (orient < 0 ? 1 : orient);
 
             *best_mismatch = (rotate & 1 ? 0 : 0.1);
-	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
+	    make_adjustment_matrix(mem, request, medium, pmat, false, rotate | 1);
         } else {
 	    int rotate =
 		(orient >= 0 ? orient :
@@ -385,7 +389,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 		    break;
 	    }
 	    if (adjust)
-	        make_adjustment_matrix(request, medium, pmat, !larger, rotate);
+	        make_adjustment_matrix(mem, request, medium, pmat, !larger, rotate);
 	    else {
 	        gs_rect req_rect;
                 if(rotate & 1) { 
@@ -396,7 +400,7 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
                     req_rect.p.y = ry;
                 }
 	        req_rect.q = req_rect.p;
-	        make_adjustment_matrix(request, &req_rect, pmat, false, rotate);
+	        make_adjustment_matrix(mem, request, &req_rect, pmat, false, rotate);
 	    }
 	    *best_mismatch = mismatch;
         }
@@ -422,7 +426,8 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
  */
 #define MIN_MEDIA_SIZE 9
 private void 
-make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
+make_adjustment_matrix(const gs_memory_t *mem, 
+		       const gs_point * request, const gs_rect * medium,
 		       gs_matrix * pmat, bool scale, int rotate)
 {
     double rx = request->x, ry = request->y;
@@ -458,7 +463,7 @@ make_adjustment_matrix(const gs_point * request, const gs_rect * medium,
     }
     /* Now translate the origin back, */ 
     /* using the original, unswapped request. */ 
-    gs_matrix_translate(pmat, -request->x / 2, -request->y / 2, pmat);
+    gs_matrix_translate(mem, pmat, -request->x / 2, -request->y / 2, pmat);
 }
 #undef MIN_MEDIA_SIZE
 

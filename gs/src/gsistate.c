@@ -112,10 +112,10 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
     /* Allocate an initial transfer map. */
     rc_alloc_struct_n(pis->set_transfer.gray,
 		      gx_transfer_map, &st_transfer_map,
-		      mem, return_error(gs_error_VMerror),
+		      mem, return_error(mem, gs_error_VMerror),
 		      "gs_imager_state_init(transfer)", 1);
     pis->set_transfer.gray->proc = imager_null_transfer;
-    pis->set_transfer.gray->id = gs_next_ids(1);
+    pis->set_transfer.gray->id = gs_next_ids(mem, 1);
     pis->set_transfer.gray->values[0] = frac_0;
     pis->set_transfer.red =
 	pis->set_transfer.green =
@@ -151,18 +151,18 @@ gs_imager_state_copy(const gs_imager_state * pis, gs_memory_t * mem)
 void
 gs_imager_state_copied(gs_imager_state * pis)
 {
-    rc_increment(pis->opacity.mask);
-    rc_increment(pis->shape.mask);
-    rc_increment(pis->halftone);
-    rc_increment(pis->dev_ht);
-    rc_increment(pis->cie_render);
-    rc_increment(pis->black_generation);
-    rc_increment(pis->undercolor_removal);
-    rc_increment(pis->set_transfer.gray);
-    rc_increment(pis->set_transfer.red);
-    rc_increment(pis->set_transfer.green);
-    rc_increment(pis->set_transfer.blue);
-    rc_increment(pis->cie_joint_caches);
+    rc_increment(pis->memory, pis->opacity.mask);
+    rc_increment(pis->memory, pis->shape.mask);
+    rc_increment(pis->memory, pis->halftone);
+    rc_increment(pis->memory, pis->dev_ht);
+    rc_increment(pis->memory, pis->cie_render);
+    rc_increment(pis->memory, pis->black_generation);
+    rc_increment(pis->memory, pis->undercolor_removal);
+    rc_increment(pis->memory, pis->set_transfer.gray);
+    rc_increment(pis->memory, pis->set_transfer.red);
+    rc_increment(pis->memory, pis->set_transfer.green);
+    rc_increment(pis->memory, pis->set_transfer.blue);
+    rc_increment(pis->memory, pis->cie_joint_caches);
 }
 
 /* Adjust reference counts before assigning one imager state to another. */
@@ -171,21 +171,21 @@ gs_imager_state_pre_assign(gs_imager_state *pto, const gs_imager_state *pfrom)
 {
     const char *const cname = "gs_imager_state_pre_assign";
 
-#define RCCOPY(element)\
-    rc_pre_assign(pto->element, pfrom->element, cname)
+#define RCCOPY(mem, element)\
+    rc_pre_assign(mem, pto->element, pfrom->element, cname)
 
-    RCCOPY(cie_joint_caches);
-    RCCOPY(set_transfer.blue);
-    RCCOPY(set_transfer.green);
-    RCCOPY(set_transfer.red);
-    RCCOPY(set_transfer.gray);
-    RCCOPY(undercolor_removal);
-    RCCOPY(black_generation);
-    RCCOPY(cie_render);
-    RCCOPY(dev_ht);
-    RCCOPY(halftone);
-    RCCOPY(shape.mask);
-    RCCOPY(opacity.mask);
+    RCCOPY(pto->memory, cie_joint_caches);
+    RCCOPY(pto->memory, set_transfer.blue);
+    RCCOPY(pto->memory, set_transfer.green);
+    RCCOPY(pto->memory, set_transfer.red);
+    RCCOPY(pto->memory, set_transfer.gray);
+    RCCOPY(pto->memory, undercolor_removal);
+    RCCOPY(pto->memory, black_generation);
+    RCCOPY(pto->memory, cie_render);
+    RCCOPY(pto->memory, dev_ht);
+    RCCOPY(pto->memory, halftone);
+    RCCOPY(pto->memory, shape.mask);
+    RCCOPY(pto->memory, opacity.mask);
 #undef RCCOPY
 }
 
@@ -196,17 +196,17 @@ gs_imager_state_release(gs_imager_state * pis)
     const char *const cname = "gs_imager_state_release";
     gx_device_halftone *pdht = pis->dev_ht;
 
-#define RCDECR(element)\
-    rc_decrement(pis->element, cname)
+#define RCDECR(mem, element)\
+    rc_decrement(mem, pis->element, cname)
 
-    RCDECR(cie_joint_caches);
-    RCDECR(set_transfer.gray);
-    RCDECR(set_transfer.blue);
-    RCDECR(set_transfer.green);
-    RCDECR(set_transfer.red);
-    RCDECR(undercolor_removal);
-    RCDECR(black_generation);
-    RCDECR(cie_render);
+    RCDECR(pis->memory, cie_joint_caches);
+    RCDECR(pis->memory, set_transfer.gray);
+    RCDECR(pis->memory, set_transfer.blue);
+    RCDECR(pis->memory, set_transfer.green);
+    RCDECR(pis->memory, set_transfer.red);
+    RCDECR(pis->memory, undercolor_removal);
+    RCDECR(pis->memory, black_generation);
+    RCDECR(pis->memory, cie_render);
     /*
      * If we're going to free the device halftone, make sure we free the
      * dependent structures as well.
@@ -214,9 +214,9 @@ gs_imager_state_release(gs_imager_state * pis)
     if (pdht != 0 && pdht->rc.ref_count == 1) {
 	gx_device_halftone_release(pdht, pdht->rc.memory);
     }
-    RCDECR(dev_ht);
-    RCDECR(halftone);
-    RCDECR(shape.mask);
-    RCDECR(opacity.mask);
+    RCDECR(pis->memory, dev_ht);
+    RCDECR(pis->memory, halftone);
+    RCDECR(pis->memory, shape.mask);
+    RCDECR(pis->memory, opacity.mask);
 #undef RCDECR
 }

@@ -56,11 +56,13 @@ void arg_init(arg_list * pal, const char **argv, int argc,
  * This may also be used (once) to "unread" the last argument.
  * If mem != 0, it is used to free the string when we are done with it.
  * Return 0 on success, non-zero on failure
+ * pmem is used for debug printing.
  */
-int arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem);
+int arg_push_memory_string(const gs_memory_t *pmem, 
+			   arg_list * pal, char *str, gs_memory_t * mem);
 
-#define arg_push_string(pal, str)\
-  arg_push_memory_string(pal, str, (gs_memory_t *)0);
+#define arg_push_string(pmem, pal, str)\
+  arg_push_memory_string(pmem, pal, str, (gs_memory_t *)0);
 
 /* Clean up an arg list before exiting. */
 void arg_finit(arg_list * pal);
@@ -69,7 +71,7 @@ void arg_finit(arg_list * pal);
  * Get the next arg from a list.
  * Note that these are not copied to the heap.
  */
-const char *arg_next(arg_list * pal, int *code);
+const char *arg_next(const gs_memory_t *mem, arg_list * pal, int *code);
 
 /* Copy an argument string to the heap. */
 char *arg_copy(const char *str, gs_memory_t * mem);

@@ -126,7 +126,7 @@ BACKTRACE(pdev);
 	    break;
     }
     if (base == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     *the_memory = base;
 
     /* Try opening the command list, to see if we allocated */
@@ -322,7 +322,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		the_memory = 0;
 	    }
 	    if (space_params.banding_type == BandingNever) {
-		ecode = gs_note_error(gs_error_VMerror);
+		ecode = gs_note_error(pdev->memory, gs_error_VMerror);
 		continue;
 	    }
 	    code = gdev_prn_setup_as_command_list(pdev, buffer_memory,
@@ -351,7 +351,7 @@ gdev_prn_allocate(gx_device *pdev, gdev_prn_space_params *new_space_params,
 		gs_free_object(buffer_memory, base, "printer buffer");
 		pdev->procs = ppdev->orig_procs;
 		ppdev->orig_procs.open_device = 0;	/* prevent uninit'd restore of procs */
-		return_error(code);
+		return_error(pdev->memory, code);
 	    }
 	    pmemdev->base = base;
 	}
@@ -487,12 +487,12 @@ gdev_prn_get_params(gx_device * pdev, gs_param_list * plist)
 
 /* Validate an OutputFile name by checking any %-formats. */
 private int
-validate_output_file(const gs_param_string * ofs)
+validate_output_file(const gs_memory_t *mem, const gs_param_string * ofs)
 {
     gs_parsed_file_name_t parsed;
     const char *fmt;
 
-    return gx_parse_output_file_name(&parsed, &fmt, (const char *)ofs->data,
+    return gx_parse_output_file_name(mem, &parsed, &fmt, (const char *)ofs->data,
 				     ofs->size) >= 0;
 }
 
@@ -594,7 +594,7 @@ label:\
 	        code = gs_error_invalidaccess;
 	    }
 	    else
-		code = validate_output_file(&ofs);
+		code = validate_output_file(pdev->memory, &ofs);
 	    if (code >= 0)
 		break;
 	    /* falls through */
@@ -710,7 +710,7 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 							  num_copies);
 	fflush(ppdev->file);
 	errcode =
-	    (ferror(ppdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+	    (ferror(ppdev->file) ? gs_note_error(pdev->memory, gs_error_ioerror) : 0);
 	if (!upgraded_copypage)
 	    closecode = gdev_prn_close_printer(pdev);
     }
@@ -757,7 +757,7 @@ gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
 	 */
 	fflush(pdev->file);
 	errcode =
-	    (ferror(pdev->file) ? gs_note_error(gs_error_ioerror) : 0);
+	    (ferror(pdev->file) ? gs_note_error(pdev->memory, gs_error_ioerror) : 0);
 	closecode = gdev_prn_close_printer((gx_device *)pdev);
 	pdev->PageCount++;
 	code = (errcode < 0 ? errcode : closecode < 0 ? closecode :
@@ -800,7 +800,7 @@ gx_render_plane_init(gx_render_plane_t *render_plane, const gx_device *dev,
     int plane_depth = dev->color_info.depth / num_planes;
 
     if (index < 0 || index >= num_planes)
-	return_error(gs_error_rangecheck);
+	return_error(dev->memory, gs_error_rangecheck);
     render_plane->index = index;
     render_plane->depth = plane_depth;
     render_plane->shift = plane_depth * (num_planes - 1 - index);
@@ -966,12 +966,12 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
 	depth = target->color_info.depth;
     mdproto = gdev_mem_device_for_bits(depth);
     if (mdproto == 0)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (mem) {
 	mdev = gs_alloc_struct(mem, gx_device_memory, &st_device_memory,
 			       "create_buf_device");
 	if (mdev == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
     } else {
 	mdev = (gx_device_memory *)*pbdev;
     }
@@ -997,7 +997,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
 
 	if (edev == 0) {
 	    gx_default_destroy_buf_device((gx_device *)mdev);
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	}
 	edev->memory = mem;
 	plane_device_init(edev, target, (gx_device *)mdev, render_plane,
@@ -1059,7 +1059,7 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
 				 setup_height),
 				sizeof(byte *), "setup_buf_device");
 	if (ptrs == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mdev->memory, gs_error_VMerror);
 	mdev->line_pointer_memory = mdev->memory;
 	mdev->foreign_line_pointers = false;
     }
@@ -1102,7 +1102,7 @@ gdev_prn_get_lines(gx_device_printer *pdev, int y, int height,
     int plane;
 
     if (y < 0 || height < 0 || y + height > pdev->height)
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     rect.p.x = 0, rect.p.y = y;
     rect.q.x = pdev->width, rect.q.y = y + height;
     params.options =
@@ -1189,7 +1189,7 @@ gdev_prn_close_printer(gx_device * pdev)
     gx_device_printer * const ppdev = (gx_device_printer *)pdev;
     gs_parsed_file_name_t parsed;
     const char *fmt;
-    int code = gx_parse_output_file_name(&parsed, &fmt, ppdev->fname,
+    int code = gx_parse_output_file_name(pdev->memory, &parsed, &fmt, ppdev->fname,
 					 strlen(ppdev->fname));
 
     if ((code >= 0 && fmt) /* file per page */ ||

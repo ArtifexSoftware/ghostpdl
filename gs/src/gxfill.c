@@ -206,52 +206,52 @@ gs_private_st_simple(st_active_line, active_line, "active_line");
 #ifdef DEBUG
 /* Internal procedures for printing and checking active lines. */
 private void
-print_active_line(const char *label, const active_line * alp)
+print_active_line(const gs_memory_t *mem, const char *label, const active_line * alp)
 {
-    dlprintf5("[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
+    dlprintf5(mem, "[f]%s 0x%lx(%d): x_current=%f x_next=%f\n",
 	      label, (ulong) alp, alp->direction,
 	      fixed2float(alp->x_current), fixed2float(alp->x_next));
-    dlprintf5("    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
+    dlprintf5(mem, "    start=(%f,%f) pt_end=0x%lx(%f,%f)\n",
 	      fixed2float(alp->start.x), fixed2float(alp->start.y),
 	      (ulong) alp->pseg,
 	      fixed2float(alp->end.x), fixed2float(alp->end.y));
-    dlprintf2("    prev=0x%lx next=0x%lx\n",
+    dlprintf2(mem, "    prev=0x%lx next=0x%lx\n",
 	      (ulong) alp->prev, (ulong) alp->next);
 }
 private void
-print_line_list(const active_line * flp)
+print_line_list(const gs_memory_t *mem, const active_line * flp)
 {
     const active_line *lp;
 
     for (lp = flp; lp != 0; lp = lp->next) {
 	fixed xc = lp->x_current, xn = lp->x_next;
 
-	dlprintf3("[f]0x%lx(%d): x_current/next=%g",
+	dlprintf3(mem, "[f]0x%lx(%d): x_current/next=%g",
 		  (ulong) lp, lp->direction,
 		  fixed2float(xc));
 	if (xn != xc)
-	    dprintf1("/%g", fixed2float(xn));
-	dputc('\n');
+	    dprintf1(mem, "/%g", fixed2float(xn));
+	dputc(mem, '\n');
     }
 }
 inline private void
-print_al(const char *label, const active_line * alp)
+print_al(const gs_memory_t *mem, const char *label, const active_line * alp)
 {
     if (gs_debug_c('F'))
-	print_active_line(label, alp);
+	print_active_line(mem, label, alp);
 }
 private int
-check_line_list(const active_line * flp)
+check_line_list(const gs_memory_t *mem, const active_line * flp)
 {
     const active_line *alp;
 
     if (flp != 0)
 	for (alp = flp->prev->next; alp != 0; alp = alp->next)
 	    if (alp->next != 0 && alp->next->x_current < alp->x_current) {
-		lprintf("[f]Lines out of order!\n");
-		print_active_line("   1:", alp);
-		print_active_line("   2:", alp->next);
-		return_error(gs_error_Fatal);
+		lprintf(mem, "[f]Lines out of order!\n");
+		print_active_line(mem, "   1:", alp);
+		print_active_line(mem, "   2:", alp->next);
+		return_error(mem, gs_error_Fatal);
 	    }
     return 0;
 }
@@ -376,7 +376,7 @@ private int add_y_list(gx_path *, ll_ptr, fixed, fixed,
 		       const gs_fixed_rect *);
 private int add_y_line(const segment *, const segment *, int, ll_ptr);
 private void insert_x_new(active_line *, ll_ptr);
-private bool end_x_line(active_line *, bool);
+private bool end_x_line(const gs_memory_t *mem, active_line *, bool);
 private void free_all_margins(line_list * ll);
 private inline void init_section(section *sect, int i0, int i1);
 
@@ -410,7 +410,8 @@ private FILL_LOOP_PROC(fill_loop_by_trapezoids);
  * some other drivers that try to fill epsilon-width rectangles.
  */
 void
-gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
+gx_adjust_if_empty(const gs_memory_t *mem, 
+		   const gs_fixed_rect * pbox, gs_fixed_point * adjust)
 {
     /*
      * For extremely large coordinates, the obvious subtractions could
@@ -423,11 +424,11 @@ gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
 
     if (dx < fixed_half && dx > 0 && (dy >= int2fixed(2) || dy < 0)) {
 	adjust->x = arith_rshift_1(fixed_1 + fixed_epsilon - dx);
-	if_debug1('f', "[f]thin adjust_x=%g\n",
+	if_debug1(mem, 'f', "[f]thin adjust_x=%g\n",
 		  fixed2float(adjust->x));
     } else if (dy < fixed_half && dy > 0 && (dx >= int2fixed(2) || dx < 0)) {
 	adjust->y = arith_rshift_1(fixed_1 + fixed_epsilon - dy);
-	if_debug1('f', "[f]thin adjust_y=%g\n",
+	if_debug1(mem, 'f', "[f]thin adjust_y=%g\n",
 		  fixed2float(adjust->y));
     }
 }
@@ -474,7 +475,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
 			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if (params->fill_zero_width && !pseudo_rasterization)
-	gx_adjust_if_empty(&ibox, &adjust);
+	gx_adjust_if_empty(dev->memory, &ibox, &adjust);
     if (vd_enabled) {
 	fixed x0 = int2fixed(fixed2int(ibox.p.x - adjust.x - fixed_epsilon));
 	fixed x1 = int2fixed(fixed2int(ibox.q.x + adjust.x + fixed_scale - fixed_epsilon));
@@ -487,7 +488,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    vd_bar(x0, k, x1, k, 1, RGB(128, 128, 128));
     }
     /* Check the bounding boxes. */
-    if_debug6('f', "[f]adjust=%g,%g bbox=(%g,%g),(%g,%g)\n",
+    if_debug6(dev->memory, 'f', "[f]adjust=%g,%g bbox=(%g,%g),(%g,%g)\n",
 	      fixed2float(adjust.x), fixed2float(adjust.y),
 	      fixed2float(ibox.p.x), fixed2float(ibox.p.y),
 	      fixed2float(ibox.q.x), fixed2float(ibox.q.y));
@@ -502,7 +503,7 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	 */
 	if (pcpath)
 	    gx_cpath_outer_box(pcpath, &bbox);
-	if_debug4('f', "   outer_box=(%g,%g),(%g,%g)\n",
+	if_debug4(dev->memory, 'f', "   outer_box=(%g,%g),(%g,%g)\n",
 		  fixed2float(bbox.p.x), fixed2float(bbox.p.y),
 		  fixed2float(bbox.q.x), fixed2float(bbox.q.y));
 	rect_intersect(ibox, bbox);
@@ -689,19 +690,19 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	gx_path_free(pfpath, "gx_default_fill_path(flattened path)");
 #ifdef DEBUG
     if (gs_debug_c('f')) {
-	dlputs("[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
-	dlprintf5(" %5ld %5ld %5ld %5ld %5ld",
+	dlputs(dev->memory, "[f]  # alloc    up  down horiz step slowx  iter  find  band bstep bfill\n");
+	dlprintf5(dev->memory, " %5ld %5ld %5ld %5ld %5ld",
 		  stats_fill.fill, stats_fill.fill_alloc,
 		  stats_fill.y_up, stats_fill.y_down,
 		  stats_fill.horiz);
-	dlprintf4(" %5ld %5ld %5ld %5ld",
+	dlprintf4(dev->memory, " %5ld %5ld %5ld %5ld",
 		  stats_fill.x_step, stats_fill.slow_x,
 		  stats_fill.iter, stats_fill.find_y);
-	dlprintf3(" %5ld %5ld %5ld\n",
+	dlprintf3(dev->memory, " %5ld %5ld %5ld\n",
 		  stats_fill.band, stats_fill.band_step,
 		  stats_fill.band_fill);
-	dlputs("[f]    afill slant shall sfill mqcrs order slowo\n");
-	dlprintf7("       %5ld %5ld %5ld %5ld %5ld %5ld %5ld\n",
+	dlputs(dev->memory, "[f]    afill slant shall sfill mqcrs order slowo\n");
+	dlprintf7(dev->memory, "       %5ld %5ld %5ld %5ld %5ld %5ld %5ld\n",
 		  stats_fill.afill, stats_fill.slant,
 		  stats_fill.slant_shallow, stats_fill.sfill,
 		  stats_fill.mq_cross, stats_fill.order,
@@ -954,7 +955,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 	alp = gs_alloc_struct(ll->memory, active_line,
 			      &st_active_line, "active line");
 	if (alp == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(ll->memory, gs_error_VMerror);
 	alp->alloc_next = ll->active_area;
 	ll->active_area = alp;
 	INCR(fill_alloc);
@@ -983,7 +984,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 	    alp->pseg = prev_lp;	/* may not need this either */
 	    break;
 	default:		/* can't happen */
-	    return_error(gs_error_unregistered);
+	    return_error(ll->memory, gs_error_unregistered);
     }
     /* Insert the new line in the Y ordering */
     {
@@ -1021,7 +1022,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
     }
     ll->y_line = alp;
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(0, 255, 0));
-    print_al("add ", alp);
+    print_al(ll->memory, "add ", alp);
     return 0;
 }
 
@@ -1075,7 +1076,7 @@ insert_h_new(active_line * alp, ll_ptr ll)
  * the end of a line sequence.
  */
 private bool
-end_x_line(active_line *alp, bool update)
+end_x_line(const gs_memory_t *mem, active_line *alp, bool update)
 {
     const segment *pseg = alp->pseg;
     /*
@@ -1100,7 +1101,7 @@ end_x_line(active_line *alp, bool update)
     npt.y = next->pt.y;
     if (!update)
 	return npt.y <= pseg->pt.y;
-    if_debug5('F', "[F]ended 0x%lx: pseg=0x%lx y=%f next=0x%lx npt.y=%f\n",
+    if_debug5(mem, 'F', "[F]ended 0x%lx: pseg=0x%lx y=%f next=0x%lx npt.y=%f\n",
 	      (ulong) alp, (ulong) pseg, fixed2float(pseg->pt.y),
 	      (ulong) next, fixed2float(npt.y));
     if (npt.y <= pseg->pt.y) {	/* End of a line sequence */
@@ -1109,14 +1110,14 @@ end_x_line(active_line *alp, bool update)
 	alp->prev->next = nlp;
 	if (nlp)
 	    nlp->prev = alp->prev;
-	if_debug1('F', "[F]drop 0x%lx\n", (ulong) alp);
+	if_debug1(mem, 'F', "[F]drop 0x%lx\n", (ulong) alp);
 	return true;
     }
     alp->pseg = next;
     npt.x = next->pt.x;
     SET_AL_POINTS(alp, alp->end, npt);
     vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(128, 0, 128));
-    print_al("repl", alp);
+    print_al(mem, "repl", alp);
     return false;
 }
 
@@ -1276,7 +1277,7 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     /* Insert after m0 */
     m1 = alloc_margin(ll);
     if (m1 == 0)
-	return_error(gs_error_VMerror);
+	return_error(ll->memory, gs_error_VMerror);
     if (m0 != 0) {
 	m1->next = m0->next;
 	m1->prev = m0;
@@ -1707,7 +1708,7 @@ private int start_margin_set(gx_device * dev, line_list * ll, fixed y0, bool fil
 private int fill_slant_adjust(fixed, fixed, fixed, fixed, fixed,
 			      fixed, fixed, fixed, const gs_fixed_rect *,
 	     const gx_device_color *, gx_device *, gs_logical_operation_t);
-private void resort_x_line(active_line *);
+private void resort_x_line(const gs_memory_t *mem, active_line *);
 
 private int
 loop_fill_trap(gx_device * dev, fixed fx0, fixed fw0, fixed fy0,
@@ -1867,9 +1868,9 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		y1 = alp->end.y;
 #ifdef DEBUG
 	if (gs_debug_c('F')) {
-	    dlprintf2("[F]before loop: y=%f y1=%f:\n",
+	    dlprintf2(ll->memory, "[F]before loop: y=%f y1=%f:\n",
 		      fixed2float(y), fixed2float(y1));
-	    print_line_list(ll->x_list);
+	    print_line_list(ll->memory, ll->x_list);
 	}
 #endif
 	/* Now look for line intersections before y1. */
@@ -1905,7 +1906,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		/* Y value using only local information. */
 		fixed dy = y1 - y, y_new;
 
-		if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
+		if_debug3(ll->memory, 'F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
 			  fixed2float(dy), fixed2float(dx_old),
 			  fixed2float(dx_den - dx_old));
 		/* Do the computation in single precision */
@@ -1918,7 +1919,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		/* The crossing value doesn't have to be */
 		/* very accurate, but it does have to be */
 		/* greater than y and less than y1. */
-		if_debug3('F', "[F]cross y=%g, y_new=%g, y1=%g\n",
+		if_debug3(ll->memory, 'F', "[F]cross y=%g, y_new=%g, y1=%g\n",
 			  fixed2float(y), fixed2float(y_new),
 			  fixed2float(y1));
 		stopx = alp;
@@ -1978,8 +1979,8 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    alp->x_next = AL_X_AT_Y(alp, y1);
 #ifdef DEBUG
 	if (gs_debug_c('F')) {
-	    dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
-	    print_line_list(ll->x_list);
+	    dlprintf1(ll->memory, "[F]after loop: y1=%f\n", fixed2float(y1));
+	    print_line_list(ll->memory, ll->x_list);
 	}
 #endif
 #	if PSEUDO_RASTERIZATION
@@ -2006,14 +2007,14 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		int code;
 		active_line als = *alp; /* Save data being broken by end_x_line below. */
 
-		print_al("step", alp);
+		print_al(ll->memory, "step", alp);
 		INCR(band_step);
 		nlp = alp->next;
 		/* Handle ended or out-of-order lines.	After this, */
 		/* the only member of alp we use is alp->direction. */
-		if (alp->end.y != y1 || !end_x_line(alp, true)) {
+		if (alp->end.y != y1 || !end_x_line(ll->memory, alp, true)) {
 		    if (xtop <= x)
-			resort_x_line(alp);
+			resort_x_line(ll->memory, alp);
 		    else
 			x = xtop;
 		}
@@ -2043,7 +2044,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		 * overflow.
 		 */
 		if (xtop < xltop) {
-		    if_debug2('f', "[f]patch %g,%g\n",
+		    if_debug2(ll->memory, 'f', "[f]patch %g,%g\n",
 			      fixed2float(xltop), fixed2float(xtop));
 		    xtop = xltop += arith_rshift(wtop, 1);
 		    wtop = 0;
@@ -2200,7 +2201,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		active_line als = *alp;
 
 		nlp = alp->next;
-		if_debug4('F',
+		if_debug4(ll->memory, 'F',
 			  "[F]check 0x%lx,x=%g 0x%lx,x=%g\n",
 			  (ulong) alp->prev, fixed2float(x),
 			  (ulong) alp, fixed2float(nx));
@@ -2208,18 +2209,18 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		if (!pseudo_rasterization) {
 #		endif
 		    if (alp->end.y == y1) {
-			if (end_x_line(alp, true))
+			if (end_x_line(ll->memory, alp, true))
 			    continue;
 		    }
 		    if (nx <= x)
-			resort_x_line(alp);
+			resort_x_line(ll->memory, alp);
 		    else
 			x = nx;
 #		if PSEUDO_RASTERIZATION
 		} else {
 		    if (alp->end.y != y1 || !end_x_line(alp, true)) {
 			if (nx <= x)
-			    resort_x_line(alp);
+			    resort_x_line(ll->memory, alp);
 			else
 			    x = nx;
 		    }
@@ -2249,7 +2250,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	}
 #ifdef DEBUG
 	if (gs_debug_c('f')) {
-	    int code = check_line_list(ll->x_list);
+	    int code = check_line_list(ll->memory, ll->x_list);
 
 	    if (code < 0)
 		return code;
@@ -2396,7 +2397,7 @@ fill_slant_adjust(fixed xlbot, fixed xbot, fixed y,
 
 /* Re-sort the x list by moving alp backward to its proper spot. */
 private void
-resort_x_line(active_line * alp)
+resort_x_line(const gs_memory_t *mem, active_line * alp)
 {
     active_line *prev = alp->prev;
     active_line *next = alp->next;
@@ -2405,7 +2406,7 @@ resort_x_line(active_line * alp)
     if (next)
 	next->prev = prev;
     while (x_order(prev, alp) > 0) {
-	if_debug2('F', "[F]swap 0x%lx,0x%lx\n",
+	if_debug2(mem, 'F', "[F]swap 0x%lx,0x%lx\n",
 		  (ulong) alp, (ulong) prev);
 	next = prev, prev = prev->prev;
     }
@@ -2490,7 +2491,7 @@ range_alloc(coord_range_list_t *pcrl)
 private void
 range_delete(coord_range_list_t *pcrl, coord_range_t *pcr)
 {
-    if_debug3('Q', "[Qr]delete 0x%lx: [%d,%d)\n", (ulong)pcr, pcr->rmin,
+    if_debug3(pcrl->memory, 'Q', "[Qr]delete 0x%lx: [%d,%d)\n", (ulong)pcr, pcr->rmin,
 	      pcr->rmax);
     pcr->prev->next = pcr->next;
     pcr->next->prev = pcr->prev;
@@ -2501,7 +2502,7 @@ range_delete(coord_range_list_t *pcrl, coord_range_t *pcr)
 private void
 range_list_clear(coord_range_list_t *pcrl)
 {
-    if_debug0('Q', "[Qr]clearing\n");
+    if_debug0(pcrl->memory, 'Q', "[Qr]clearing\n");
     pcrl->first.next = &pcrl->last;
     pcrl->last.prev = &pcrl->first;
     pcrl->current = &pcrl->last;
@@ -2611,12 +2612,12 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
      * abut if the adjacent range is the special min or max range.
      */
     if (rmin < pcr->rmin) {
-	if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, rmin,
+	if_debug3(pcrl->memory, 'Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, rmin,
 		  pcr->rmax);
 	pcr->rmin = rmin;
     }
     if (rmax > pcr->rmax) {
-	if_debug3('Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, pcr->rmin,
+	if_debug3(pcrl->memory, 'Q', "[Qr]update 0x%lx => [%d,%d)\n", (ulong)pcr, pcr->rmin,
 		  rmax);
 	pcr->rmax = rmax;
     }
@@ -2628,8 +2629,8 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
 	coord_range_t *prev = range_alloc(pcrl);
 
 	if (prev == 0)
-	    return_error(gs_error_VMerror);
-	if_debug3('Q', "[Qr]insert 0x%lx: [%d,%d)\n", (ulong)prev, rmin, rmax);
+	    return_error(pcrl->memory, gs_error_VMerror);
+	if_debug3(pcrl->memory, 'Q', "[Qr]insert 0x%lx: [%d,%d)\n", (ulong)prev, rmin, rmax);
 	prev->rmin = rmin, prev->rmax = rmax;
 	(prev->prev = pcr->prev)->next = prev;
 	prev->next = pcr;
@@ -2645,7 +2646,7 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
 private int merge_ranges(coord_range_list_t *pcrl, ll_ptr ll,
 			 fixed y_min, fixed y_top,
 			 fixed adjust_left, fixed adjust_right);
-private void set_scan_line_points(active_line *, fixed);
+private void set_scan_line_points(const gs_memory_t *mem, active_line *, fixed);
 
 /* Main filling loop. */
 private int
@@ -2712,7 +2713,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 	    if (yll != 0)
 		y = min(y, yll->start.y);
 	    for (alp = ll->x_list; alp != 0; alp = alp->next)
-		if (!end_x_line(alp, false))
+		if (!end_x_line(ll->memory, alp, false))
 		    y = min(y, alp->end.y);
 	}
 
@@ -2725,7 +2726,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 		/* Ignore for now. */
 	    } else {
 		insert_x_new(yll, ll);
-		set_scan_line_points(yll, fixed_flat);
+		set_scan_line_points(ll->memory, yll, fixed_flat);
 	    }
 	    yll = ynext;
 	}
@@ -2738,16 +2739,16 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 
 	    nlp = alp->next;
 	  e:if (alp->end.y <= y) {
-		if (end_x_line(alp, true))
+		if (end_x_line(ll->memory, alp, true))
 		    continue;
-		set_scan_line_points(alp, fixed_flat);
+		set_scan_line_points(ll->memory, alp, fixed_flat);
 		goto e;
 	    }
 	    nx = alp->x_current =
 		(alp->start.y >= y ? alp->start.x :
 		 alp->curve_k < 0 ?
 		 AL_X_AT_Y(alp, y) :
-		 gx_curve_x_at_y(&alp->cursor, y));
+		 gx_curve_x_at_y(ll->memory, &alp->cursor, y));
 	    if (nx < x) {
 		/* Move this line backward in the list. */
 		active_line *ilp = alp;
@@ -2779,11 +2780,11 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 		 ) {
 		int x0 = pcr->rmin, x1 = pcr->rmax;
 
-		if_debug4('Q', "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
+		if_debug4(ll->memory, 'Q', "[Qr]draw 0x%lx: [%d,%d),%d\n", (ulong)pcr,
 			  x0, x1, y0);
 		VD_RECT(x0, y0, x1 - x0, 1, VD_TRAP_COLOR);
 		code = LOOP_FILL_RECTANGLE_DIRECT(x0, y0, x1 - x0, 1);
-		if_debug3('F', "[F]drawing [%d:%d),%d\n", x0, x1, y0);
+		if_debug3(ll->memory, 'F', "[F]drawing [%d:%d),%d\n", x0, x1, y0);
 		if (code < 0)
 		    goto done;
 	    }
@@ -2830,7 +2831,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 
 		    for (;;) {
 			/* We're inside a filled region. */
-			print_al("step", alp);
+			print_al(ll->memory, "step", alp);
 			INCR(band_step);
 			inside += alp->direction;
 			if (!INSIDE_PATH_P())
@@ -2889,7 +2890,7 @@ merge_ranges(coord_range_list_t *pcrl, ll_ptr ll, fixed y_min, fixed y_top,
 	else if (alp->curve_k < 0)
 	    x1 = AL_X_AT_Y(alp, y_top);
 	else
-	    x1 = gx_curve_x_at_y(&alp->cursor, y_top);
+	    x1 = gx_curve_x_at_y(ll->memory, &alp->cursor, y_top);
 	if (x0 > x1)
 	    xt = x0, x0 = x1, x1 = xt;
 	code = range_list_add(pcrl,
@@ -2904,7 +2905,7 @@ merge_ranges(coord_range_list_t *pcrl, ll_ptr ll, fixed y_min, fixed y_top,
  * the current segment of an active line.
  */
 private void
-set_scan_line_points(active_line * alp, fixed fixed_flat)
+set_scan_line_points(const gs_memory_t *mem, active_line * alp, fixed fixed_flat)
 {
     const segment *pseg = alp->pseg;
     const gs_fixed_point *pp0;
@@ -2930,7 +2931,7 @@ set_scan_line_points(active_line * alp, fixed fixed_flat)
 	const curve_segment *const pcseg = (const curve_segment *)pseg;
 
 	alp->curve_k =
-	    gx_curve_log2_samples(pp0->x, pp0->y, pcseg, fixed_flat);
+	    gx_curve_log2_samples(mem, pp0->x, pp0->y, pcseg, fixed_flat);
 	gx_curve_cursor_init(&alp->cursor, pp0->x, pp0->y, pcseg,
 			     alp->curve_k);
     }

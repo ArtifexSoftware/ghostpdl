@@ -141,8 +141,8 @@ struct gs_gc_root_s {
     gc_root_enum_ptrs, gc_root_reloc_ptrs, next)
 
 /* Print a root debugging message. */
-#define if_debug_root(c, msg, rp)\
-  if_debug4(c, "%s 0x%lx: 0x%lx -> 0x%lx\n",\
+#define if_debug_root(mem, c, msg, rp)\
+  if_debug4(mem, c, "%s 0x%lx: 0x%lx -> 0x%lx\n",\
 	    msg, (ulong)(rp), (ulong)(rp)->p, (ulong)*(rp)->p)
 
 /*
@@ -332,7 +332,7 @@ struct_proc_reloc_ptrs(basic_reloc_ptrs);
      /* Begin enumeration */
 
 #define ENUM_PTRS_BEGIN_PROC(proc)\
-  gs_ptr_type_t proc(EV_CONST void *vptr, uint size, int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
+  gs_ptr_type_t proc(const gs_memory_t *mem, EV_CONST void *vptr, uint size, int index, enum_ptr_t *pep, const gs_memory_struct_type_t *pstype, gc_state_t *gcst)
 #define ENUM_PTRS_BEGIN(proc)\
   ENUM_PTRS_BEGIN_PROC(proc)\
   { switch ( index ) { default:
@@ -387,6 +387,7 @@ extern gs_ptr_type_t
 
 #define RELOC_PTRS_BEGIN(proc)\
   void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype, gc_state_t *gcst) {
+
 #define RELOC_PTRS_WITH(proc, stype_ptr)\
     RELOC_PTRS_BEGIN(proc) stype_ptr = vptr;
 
@@ -449,7 +450,7 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
     /* Subclass support */
 
 #define ENUM_USING(supst, ptr, size, index)\
-  (*(supst).enum_ptrs)(ptr, size, index, pep, &(supst), gcst)
+  (*(supst).enum_ptrs)(mem, ptr, size, index, pep, &(supst), gcst)
 
 #define RELOC_USING(supst, ptr, size)\
   (*(supst).reloc_ptrs)(ptr, size, &(supst), gcst)
@@ -512,7 +513,7 @@ extern void reloc_const_bytestring(gs_const_bytestring *pbs, gc_state_t *gcst);
  * Boilerplate for clear_marks procedures.
  */
 #define CLEAR_MARKS_PROC(proc)\
-  void proc(void *vptr, uint size, const gs_memory_struct_type_t *pstype)
+  void proc(const gs_memory_t *cmem, void *vptr, uint size, const gs_memory_struct_type_t *pstype)
 
 	/* Complex structures with their own clear_marks, */
 	/* enum, reloc, and finalize procedures. */

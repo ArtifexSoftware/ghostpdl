@@ -148,7 +148,7 @@ psf_add_subset_pieces(gs_glyph *glyphs, uint *pcount, uint max_count,
 	    if (code < 0)
 		continue;
 	    if (count + info.num_pieces > max_count)
-		return_error(gs_error_rangecheck);
+		return_error(font->memory, gs_error_rangecheck);
 	}
 	info.pieces = &glyphs[count];
 	code = font->procs.glyph_info(font, glyphs[i], NULL,
@@ -271,7 +271,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
 
     if (subset_glyphs) {
 	if (subset_size > countof(pglyphs->subset_data))
-	    return_error(gs_error_limitcheck);
+	    return_error(pfont->memory, gs_error_limitcheck);
 	memcpy(pglyphs->subset_data, orig_subset_glyphs,
 	       sizeof(gs_glyph) * subset_size);
 	subset_glyphs = pglyphs->subset_data;
@@ -328,7 +328,7 @@ psf_get_outline_glyphs(psf_outline_glyphs_t *pglyphs, gs_font_base *pfont,
 	    return code;
 	/* Subset fonts require .notdef. */
 	if (notdef == gs_no_glyph)
-	    return_error(gs_error_rangecheck);
+	    return_error(pfont->memory, gs_error_rangecheck);
 	/* Remove undefined glyphs. */
 	for (i = 0, keep_size = 0; i < subset_size; ++i) {
 	    gs_glyph_info_t info;

@@ -341,9 +341,9 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
     int code;
 
     if ((arc->action != arc_nothing &&
-	 (code = gs_point_transform2fixed(&pis->ctm, x0, y0, &p0)) < 0) ||
-	(code = gs_point_transform2fixed(&pis->ctm, xt, yt, &pt)) < 0 ||
-	(code = gs_point_transform2fixed(&pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
+	 (code = gs_point_transform2fixed(pis->memory, &pis->ctm, x0, y0, &p0)) < 0) ||
+	(code = gs_point_transform2fixed(pis->memory, &pis->ctm, xt, yt, &pt)) < 0 ||
+	(code = gs_point_transform2fixed(pis->memory, &pis->ctm, arc->p3.x, arc->p3.y, &p3)) < 0 ||
 	(code =
 	 (arc->action == arc_nothing ?
 	  (p0.x = path->position.x, p0.y = path->position.y, 0) :
@@ -392,7 +392,7 @@ arc_add(const arc_curve_params_t * arc, bool is_quadrant)
     p2.x = p3.x + (fixed)((pt.x - p3.x) * fraction);
     p2.y = p3.y + (fixed)((pt.y - p3.y) * fraction);
 add:
-    if_debug8('r',
+    if_debug8(pis->memory, 'r',
 	      "[r]Arc f=%f p0=(%f,%f) pt=(%f,%f) p3=(%f,%f) action=%d\n",
 	      fraction, x0, y0, xt, yt, arc->p3.x, arc->p3.y,
 	      (int)arc->action);
@@ -479,7 +479,7 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
     if (path_last_is_moveto(pgs->path) && include_moveto) {
 	gs_fixed_point pt;
 
-	gx_path_current_point_inline(pgs->path, &pt);
+	gx_path_current_point_inline(pgs->memory, pgs->path, &pt);
 	if (pt.x < fbox.p.x)
 	    fbox.p.x = pt.x;
 	if (pt.y < fbox.p.y)
@@ -494,7 +494,7 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
     dbox.p.y = fixed2float(fbox.p.y);
     dbox.q.x = fixed2float(fbox.q.x);
     dbox.q.y = fixed2float(fbox.q.y);
-    return gs_bbox_transform_inverse(&dbox, &ctm_only(pgs), pbox);
+    return gs_bbox_transform_inverse(pgs->memory, &dbox, &ctm_only(pgs), pbox);
 }
 
 /* ------ Enumerators ------ */
@@ -511,7 +511,7 @@ gs_path_enum_copy_init(gs_path_enum * penum, const gs_state * pgs, bool copy)
 	int code;
 
 	if (copied_path == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	code = gx_path_copy(pgs->path, copied_path);
 	if (code < 0) {
 	    gx_path_free(copied_path, "gs_path_enum_init");
@@ -542,22 +542,22 @@ gs_path_enum_next(gs_path_enum * penum, gs_point ppts[3])
 	case gs_pe_closepath:
 	    break;
 	case gs_pe_curveto:
-	    if ((code = gs_point_transform_inverse(
-						      fixed2float(fpts[1].x),
-						      fixed2float(fpts[1].y),
-					      &penum->mat, &ppts[1])) < 0 ||
-		(code = gs_point_transform_inverse(
-						      fixed2float(fpts[2].x),
-						      fixed2float(fpts[2].y),
-						&penum->mat, &ppts[2])) < 0)
+	    if ((code = gs_point_transform_inverse(penum->memory, 
+						   fixed2float(fpts[1].x),
+						   fixed2float(fpts[1].y),
+						   &penum->mat, &ppts[1])) < 0 ||
+		(code = gs_point_transform_inverse(penum->memory, 
+						   fixed2float(fpts[2].x),
+						   fixed2float(fpts[2].y),
+						   &penum->mat, &ppts[2])) < 0)
 		return code;
 	    /* falls through */
 	case gs_pe_moveto:
 	case gs_pe_lineto:
-	    if ((code = gs_point_transform_inverse(
-						      fixed2float(fpts[0].x),
-						      fixed2float(fpts[0].y),
-						&penum->mat, &ppts[0])) < 0)
+	    if ((code = gs_point_transform_inverse(penum->memory, 
+						   fixed2float(fpts[0].x),
+						   fixed2float(fpts[0].y),
+						   &penum->mat, &ppts[0])) < 0)
 		return code;
 	default:		/* error */
 	    break;

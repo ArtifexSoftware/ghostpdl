@@ -193,7 +193,7 @@ none_to_stream(gx_device_pdf * pdev)
     stream *s;
 
     if (pdev->contents_id != 0)
-	return_error(gs_error_Fatal);	/* only 1 contents per page */
+	return_error(pdev->memory, gs_error_Fatal);	/* only 1 contents per page */
     pdev->contents_id = pdf_begin_obj(pdev);
     pdev->contents_length_id = pdf_obj_ref(pdev);
     s = pdev->strm;
@@ -212,7 +212,7 @@ none_to_stream(gx_device_pdf * pdev)
 			    template->stype, "PDF compression state");
 
 	if (es == 0 || st == 0 || buf == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	s_std_init(es, buf, sbuf_size, &s_filter_write_procs,
 		   s_mode_write);
 	st->memory = pdev->pdf_memory;
@@ -406,7 +406,7 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
 			   "pdf_alloc_aside(resource)");
     object = cos_object_alloc(pdev, "pdf_alloc_aside(object)");
     if (pres == 0 || object == 0) {
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     }
     if (id < 0) {
 	object->id = -1L;
@@ -687,7 +687,7 @@ pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
 {
     if (!is_in_page(pdev)) {
 	if (pdf_page_id(pdev, pdev->next_page + 1) == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	pdf_open_document(pdev);
     }
     /* Note that context may be PDF_IN_NONE here. */
@@ -847,7 +847,7 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 	    decode_parms =
 		cos_dict_alloc(pdev, "pdf_put_image_filters(decode_parms)");
 	    if (decode_parms == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    CHECK(cos_param_list_writer_init(&writer, decode_parms, 0));
 	    /*
 	     * If EndOfBlock is true, we mustn't write a Rows value.
@@ -872,7 +872,7 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 	    decode_parms =
 		cos_dict_alloc(pdev, "pdf_put_image_filters(decode_parms)");
 	    if (decode_parms == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    CHECK(cos_dict_put_c_key_int(decode_parms, "/Predictor",
 					 ss->Predictor));
 	    CHECK(cos_dict_put_c_key_int(decode_parms, "/Columns",
@@ -899,7 +899,7 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 		cos_array_alloc(pdev, "pdf_put_image_filters(Filters)");
 
 	    if (pca == 0)
-		return_error(gs_error_VMerror);
+		return_error(pdev->memory, gs_error_VMerror);
 	    CHECK(cos_array_add_c_string(pca, pfn->ASCII85Decode));
 	    CHECK(cos_array_add_c_string(pca, filter_name));
 	    CHECK(cos_dict_put_c_key_object(pcd, pfn->Filter,
@@ -908,7 +908,7 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 		pca = cos_array_alloc(pdev,
 				      "pdf_put_image_filters(DecodeParms)");
 		if (pca == 0)
-		    return_error(gs_error_VMerror);
+		    return_error(pdev->memory, gs_error_VMerror);
 		CHECK(cos_array_add_c_string(pca, "null"));
 		CHECK(cos_array_add_object(pca, COS_OBJECT(decode_parms)));
 		CHECK(cos_dict_put_c_key_object(pcd, pfn->DecodeParms,
@@ -929,7 +929,7 @@ pdf_flate_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
 				     "pdf_write_function");
 
     if (st == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     if (template->set_defaults)
 	template->set_defaults(st);
     return psdf_encode_binary(pbw, template, st);
@@ -1024,7 +1024,7 @@ pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 	int i, code;
 
 	if (ranges == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	for (i = 0; i < pfn->params.n; ++i) {
 	    double rbase = pranges[i].rmin;
 	    double rdiff = pranges[i].rmax - rbase;
@@ -1084,7 +1084,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	pcd = cos_stream_dict(pcos);
 	s = cos_write_stream_alloc(pcos, pdev, "pdf_function");
 	if (s == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	pdev->strm = s;
 	code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
 	if (code >= 0 && info.data_size > 30	/* 30 is arbitrary */
@@ -1125,7 +1125,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	cos_value_t v;
 
 	if (functions == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	if ((code = pdf_function_array(pdev, functions, &info)) < 0 ||
 	    (code = cos_dict_put_c_key(pcd, "/Functions",
 				       COS_OBJECT_VALUE(&v, functions))) < 0

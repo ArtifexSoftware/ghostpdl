@@ -43,7 +43,7 @@ zcurrentpoint(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
-    push(2);
+    push(imemory, 2);
     make_real(op - 1, pt.x);
     make_real(op, pt.y);
     return 0;
@@ -86,7 +86,7 @@ common_to(i_ctx_t *i_ctx_p,
     double opxy[2];
     int code;
 
-    if ((code = num_params(op, 2, opxy)) < 0 ||
+    if ((code = num_params(imemory, op, 2, opxy)) < 0 ||
 	(code = (*add_proc)(igs, opxy[0], opxy[1])) < 0
 	)
 	return code;
@@ -117,7 +117,7 @@ common_curve(i_ctx_t *i_ctx_p,
     double opxy[6];
     int code;
 
-    if ((code = num_params(op, 6, opxy)) < 0)
+    if ((code = num_params(imemory, op, 6, opxy)) < 0)
 	return code;
     code = (*add_proc)(igs, opxy[0], opxy[1], opxy[2], opxy[3], opxy[4], opxy[5]);
     if (code >= 0)

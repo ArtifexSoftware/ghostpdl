@@ -34,6 +34,7 @@ struct dict_s {
     ref memory;			/* foreign t_struct, the allocator that */
     /* created this dictionary */
 #define dict_memory(pdict) r_ptr(&(pdict)->memory, gs_ref_memory_t)
+#define dict_mem(pdict) r_ptr(&(pdict)->memory, gs_memory_t)
 };
 
 /*
@@ -70,8 +71,8 @@ int dict_alloc(gs_ref_memory_t *, uint maxlength, ref * pdref);
  * Check a dictionary for read or write permission.
  * Note: this does NOT check the type of its operand!
  */
-#define check_dict_read(dref) check_read(*dict_access_ref(&dref))
-#define check_dict_write(dref) check_write(*dict_access_ref(&dref))
+#define check_dict_read(mem, dref) check_read(mem, *dict_access_ref(&dref))
+#define check_dict_write(mem, dref) check_write(mem, *dict_access_ref(&dref))
 
 /*
  * Look up a key in a dictionary.  Store a pointer to the value slot

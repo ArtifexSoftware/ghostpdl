@@ -36,12 +36,12 @@ arg_init(arg_list * pal, const char **argv, int argc,
 
 /* Push a string onto an arg list. */
 int
-arg_push_memory_string(arg_list * pal, char *str, gs_memory_t * mem)
+arg_push_memory_string(const gs_memory_t *pmem, arg_list *pal, char *str, gs_memory_t *mem)
 {
     arg_source *pas;
 
     if (pal->depth == arg_depth_max) {
-	lprintf("Too much nesting of @-files.\n");
+	lprintf(pmem, "Too much nesting of @-files.\n");
 	return 1;
     }
     pas = &pal->sources[pal->depth];
@@ -70,7 +70,7 @@ arg_finit(arg_list * pal)
 /* Get the next arg from a list. */
 /* Note that these are not copied to the heap. */
 const char *
-arg_next(arg_list * pal, int *code)
+arg_next(const gs_memory_t *mem, arg_list * pal, int *code)
 {
     arg_source *pas;
     FILE *f;
@@ -104,7 +104,7 @@ arg_next(arg_list * pal, int *code)
 	if (c == endc) {
 	    if (in_quote) {
 		cstr[i] = 0;
-		outprintf("Unterminated quote in @-file: %s\n", cstr);
+		outprintf(mem, "Unterminated quote in @-file: %s\n", cstr);
 		*code = gs_error_Fatal;
 		return NULL;
 	    }
@@ -156,7 +156,7 @@ arg_next(arg_list * pal, int *code)
 	    /* This is different from the Unix shells. */
 	    if (i == arg_str_max - 1) {
 		cstr[i] = 0;
-		outprintf("Command too long: %s\n", cstr);
+		outprintf(mem, "Command too long: %s\n", cstr);
 		*code = gs_error_Fatal;
 		return NULL;
 	    }
@@ -167,7 +167,7 @@ arg_next(arg_list * pal, int *code)
 	/* c will become part of the argument */
 	if (i == arg_str_max - 1) {
 	    cstr[i] = 0;
-	    outprintf("Command too long: %s\n", cstr);
+	    outprintf(mem, "Command too long: %s\n", cstr);
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}
@@ -185,14 +185,14 @@ arg_next(arg_list * pal, int *code)
 	pas->u.s.str = astr;
   at:if (pal->expand_ats && result[0] == '@') {
 	if (pal->depth == arg_depth_max) {
-	    lprintf("Too much nesting of @-files.\n");
+	    lprintf(mem, "Too much nesting of @-files.\n");
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}
 	result++;		/* skip @ */
 	f = (*pal->arg_fopen) (result, pal->fopen_data);
 	if (f == NULL) {
-	    outprintf("Unable to open command line file %s\n", result);
+	    outprintf(mem, "Unable to open command line file %s\n", result);
 	    *code = gs_error_Fatal;
 	    return NULL;
 	}
@@ -212,7 +212,7 @@ arg_copy(const char *str, gs_memory_t * mem)
     char *sstr = (char *)gs_alloc_bytes(mem, strlen(str) + 1, "arg_copy");
 
     if (sstr == 0) {
-	lprintf("Out of memory!\n");
+	lprintf(mem, "Out of memory!\n");
 	return NULL;
     }
     strcpy(sstr, str);

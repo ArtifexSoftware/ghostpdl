@@ -44,12 +44,12 @@ font_proc_glyph_outline(zcharstring_glyph_outline);
 
 /* Parse a multi-byte integer from a string. */
 private int
-get_index(gs_glyph_data_t *pgd, int count, ulong *pval)
+get_index(const gs_memory_t *mem, gs_glyph_data_t *pgd, int count, ulong *pval)
 {
     int i;
 
     if (pgd->bits.size < count)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     *pval = 0;
     for (i = 0; i < count; ++i)
 	*pval = (*pval << 8) + pgd->bits.data[i];
@@ -70,7 +70,7 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 
     /* Check for overflow. */
     if (base != (long)base || base > base + count)
-	return_error(e_rangecheck);
+	return_error(pfont->memory, e_rangecheck);
     if (r_has_type(&pfdata->u.cid0.DataSource, t_null)) {
 	/* Get the bytes from GlyphData (a string or array of strings). */
 	const ref *pgdata = &pfdata->u.cid0.GlyphData;
@@ -79,7 +79,7 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 	    uint size = r_size(pgdata);
 
 	    if (base >= size || count > size - base)
-		return_error(e_rangecheck);
+		return_error(pfont->memory, e_rangecheck);
 	    data = pgdata->value.bytes + base;
 	} else {		/* array of strings */
 	    /*
@@ -95,12 +95,12 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 	    uint size;
 
 	    for (;; skip -= size, ++index) {
-		int code = array_get(pgdata, index, &rstr);
+		int code = array_get(pfont->memory, pgdata, index, &rstr);
 
 		if (code < 0)
 		    return code;
 		if (!r_has_type(&rstr, t_string))
-		    return_error(e_typecheck);
+		    return_error(pfont->memory, e_typecheck);
 		size = r_size(&rstr);
 		if (skip < size)
 		    break;
@@ -113,18 +113,18 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 		    data = gs_alloc_string(pfont->memory, count,
 					   "cid0_read_bytes");
 		    if (data == 0)
-			return_error(e_VMerror);
+			return_error(pfont->memory, e_VMerror);
 		    gdfont = (gs_font *)pfont; /* newly allocated */
 		}
 		memcpy(data, rstr.value.bytes + skip, size);
 		copied = size;
 		while (copied < count) {
-		    int code = array_get(pgdata, ++index, &rstr);
+		    int code = array_get(pfont->memory, pgdata, ++index, &rstr);
 
 		    if (code < 0)
 			goto err;
 		    if (!r_has_type(&rstr, t_string)) {
-			code = gs_note_error(e_typecheck);
+			code = gs_note_error(pfont->memory, e_typecheck);
 			goto err;
 		    }
 		    size = r_size(&rstr);
@@ -140,17 +140,17 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 	stream *s;
 	uint nread;
 
-	check_read_known_file(s, &pfdata->u.cid0.DataSource, return_error);
+	check_read_known_file(pfont->memory, s, &pfdata->u.cid0.DataSource, return_error);
 	if (sseek(s, base) < 0)
-	    return_error(e_ioerror);
+	    return_error(pfont->memory, e_ioerror);
 	if (data == 0) {	/* no buffer provided */
 	    data = gs_alloc_string(pfont->memory, count, "cid0_read_bytes");
 	    if (data == 0)
-		return_error(e_VMerror);
+		return_error(pfont->memory, e_VMerror);
 	    gdfont = (gs_font *)pfont; /* newly allocated */
 	}
 	if (sgets(s, data, count, &nread) < 0 || nread != count) {
-	    code = gs_note_error(e_ioerror);
+	    code = gs_note_error(pfont->memory, e_ioerror);
 	    goto err;
 	}
     }
@@ -177,18 +177,19 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
     int code;
 
     if (!r_has_type(&pfdata->u.cid0.GlyphDirectory, t_null)) {
-	code = font_gdir_get_outline(&pfdata->u.cid0.GlyphDirectory,
+	code = font_gdir_get_outline(pfont->memory, 
+				     &pfdata->u.cid0.GlyphDirectory,
 				     glyph_index, &gdata);
 	if (code < 0)
 	    return code;
 	/* Get the definition from GlyphDirectory. */
 	if (!gdata.bits.data)
-	    return_error(e_rangecheck);
-	code = get_index(&gdata, pfont->cidata.FDBytes, &fidx);
+	    return_error(pbfont->memory, e_rangecheck);
+	code = get_index(pbfont->memory, &gdata, pfont->cidata.FDBytes, &fidx);
 	if (code < 0)
 	    return code;
 	if (fidx >= pfont->cidata.FDArray_size)
-	    return_error(e_rangecheck);
+	    return_error(pbfont->memory, e_rangecheck);
 	if (pgd)
 	    *pgd = gdata;
 	*pfidx = (int)fidx;
@@ -199,7 +200,7 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 	*pfidx = 0;
 	if (pgd)
 	    gs_glyph_data_from_null(pgd);
-	return_error(e_undefined);
+	return_error(pbfont->memory, e_undefined);
     }
     {
 	byte fd_gd[(MAX_FDBytes + MAX_GDBytes) * 2];
@@ -213,10 +214,10 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 	if (rcode < 0)
 	    return rcode;
 	orig_data = gdata;
-	if ((code = get_index(&gdata, pfont->cidata.FDBytes, &fidx)) < 0 ||
-	    (code = get_index(&gdata, pfont->cidata.common.GDBytes, &gidx)) < 0 ||
-	    (code = get_index(&gdata, pfont->cidata.FDBytes, &fidx_next)) < 0 ||
-	    (code = get_index(&gdata, pfont->cidata.common.GDBytes, &gidx_next)) < 0
+	if ((code = get_index(pfont->memory, &gdata, pfont->cidata.FDBytes, &fidx)) < 0 ||
+	    (code = get_index(pfont->memory, &gdata, pfont->cidata.common.GDBytes, &gidx)) < 0 ||
+	    (code = get_index(pfont->memory, &gdata, pfont->cidata.FDBytes, &fidx_next)) < 0 ||
+	    (code = get_index(pfont->memory, &gdata, pfont->cidata.common.GDBytes, &gidx_next)) < 0
 	    )
 	    DO_NOTHING;
 	gs_glyph_data_free(&orig_data, "z9_glyph_data");
@@ -230,10 +231,10 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
 	    *pfidx = 0;
 	    if (pgd)
 		gs_glyph_data_from_null(pgd);
-	    return_error(e_undefined);
+	    return_error(pfont->memory, e_undefined);
 	}
 	if (fidx >= pfont->cidata.FDArray_size)
-	    return_error(e_rangecheck);
+	    return_error(pfont->memory, e_rangecheck);
 	*pfidx = (int)fidx;
 	if (pgd == 0)
 	    return 0;
@@ -271,13 +272,13 @@ private int
 z9_FDArray_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
 		      gs_glyph_data_t *pgd)
 {
-    return_error(e_invalidfont);
+    return_error(pfont->memory, e_invalidfont);
 }
 private int
 z9_FDArray_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
 		     gs_glyph_data_t *pgd)
 {
-    return_error(e_invalidfont);
+    return_error(pfont->memory, e_invalidfont);
 }
 
 /* ------ Defining ------ */
@@ -296,10 +297,10 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
      * CFF CIDFontType 0 fonts have Type 2 fonts there.
      */
     int fonttype = 1;		/* default */
-    int code = charstring_font_get_refs(prfd, &refs);
+    int code = charstring_font_get_refs(imemory, prfd, &refs);
 
     if (code < 0 ||
-	(code = dict_int_param(prfd, "FontType", 1, 2, 1, &fonttype)) < 0
+	(code = dict_int_param(imemory, prfd, "FontType", 1, 2, 1, &fonttype)) < 0
 	)
 	return code;
     /*
@@ -312,24 +313,24 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
 	data1.interpret = gs_type1_interpret;
 	data1.subroutineNumberBias = 0;
 	data1.lenIV = DEFAULT_LENIV_1;
-	code = charstring_font_params(prfd, &refs, &data1);
+	code = charstring_font_params(imemory, prfd, &refs, &data1);
 	if (code < 0)
 	    return code;
 	code = build_proc_name_refs(&build,
 				    "%Type1BuildChar", "%Type1BuildGlyph");
 	break;
     case 2:
-	code = type2_font_params(prfd, &refs, &data1);
+	code = type2_font_params(imemory, prfd, &refs, &data1);
 	if (code < 0)
 	    return code;
-	code = charstring_font_params(prfd, &refs, &data1);
+	code = charstring_font_params(imemory, prfd, &refs, &data1);
 	if (code < 0)
 	    return code;
 	code = build_proc_name_refs(&build,
 				    "%Type2BuildChar", "%Type2BuildGlyph");
 	break;
     default:			/* can't happen */
-	return_error(e_Fatal);
+	return_error(imemory, e_Fatal);
     }
     if (code < 0)
 	return code;
@@ -372,10 +373,10 @@ zbuildfont9(i_ctx_t *i_ctx_p)
      * a (reusable) stream.
      */
     if (code < 0 ||
-	(code = cid_font_data_param(op, &common, &GlyphDirectory)) < 0 ||
+	(code = cid_font_data_param(imemory, op, &common, &GlyphDirectory)) < 0 ||
 	(code = dict_find_string(op, "FDArray", &prfda)) < 0 ||
 	(code = dict_find_string(op, "CIDFontName", &CIDFontName)) <= 0 ||
-	(code = dict_int_param(op, "FDBytes", 0, MAX_FDBytes, -1, &FDBytes)) < 0
+	(code = dict_int_param(imemory, op, "FDBytes", 0, MAX_FDBytes, -1, &FDBytes)) < 0
 	)
 	return code;
     if (r_has_type(&GlyphDirectory, t_null)) {
@@ -383,7 +384,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 	ref *pGlyphData;
 
 	if ((code = dict_find_string(op, "GlyphData", &pGlyphData)) < 0 ||
-	    (code = dict_uint_param(op, "CIDMapOffset", 0, max_uint - 1,
+	    (code = dict_uint_param(imemory, op, "CIDMapOffset", 0, max_uint - 1,
 				    max_uint, &CIDMapOffset)) < 0)
 	    return code;
 	GlyphData = *pGlyphData;
@@ -393,11 +394,11 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 
 	    if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
 		return code;
-	    check_read_file(ignore_s, pds);
+	    check_read_file(imemory, ignore_s, pds);
 	    DataSource = *pds;
 	} else {
 	    if (!r_has_type(&GlyphData, t_string) && !r_is_array(&GlyphData))
-		return_error(e_typecheck);
+		return_error(imemory, e_typecheck);
 	    make_null(&DataSource);
 	}
     } else {
@@ -406,20 +407,20 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 	CIDMapOffset = 0;
     }
     if (!r_is_array(prfda))
-	return_error(e_invalidfont);
+	return_error(imemory, e_invalidfont);
     FDArray_size = r_size(prfda);
     if (FDArray_size == 0)
-	return_error(e_invalidfont);
+	return_error(imemory, e_invalidfont);
     FDArray = ialloc_struct_array(FDArray_size, gs_font_type1 *,
 				  &st_gs_font_type1_ptr_element,
 				  "buildfont9(FDarray)");
     if (FDArray == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     memset(FDArray, 0, sizeof(gs_font_type1 *) * FDArray_size);
     for (i = 0; i < FDArray_size; ++i) {
 	ref rfd;
 
-	array_get(prfda, (long)i, &rfd);
+	array_get(imemory, prfda, (long)i, &rfd);
 	code = fd_array_element(i_ctx_p, &FDArray[i], &rfd);
 	if (code < 0)
 	    goto fail;
@@ -463,15 +464,15 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gs_font *pfont;
     gs_font_cid0 *pfcid;
-    int code = font_param(op - 1, &pfont);
+    int code = font_param(imemory, op - 1, &pfont);
     gs_glyph_data_t gdata;
     int fidx;
 
     if (code < 0)
 	return code;
     if (pfont->FontType != ft_CID_encrypted)
-	return_error(e_invalidfont);
-    check_type(*op, t_integer);
+	return_error(imemory, e_invalidfont);
+    check_type(imemory, *op, t_integer);
     pfcid = (gs_font_cid0 *)pfont;
     code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
 			(gs_glyph)(gs_min_cid_glyph + op->value.intval),
@@ -481,7 +482,9 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
     if (code < 0) { /* failed to load glyph data, put CID 0 */
        int default_fallback_CID = 0 ;
 
-       if_debug2('J', "[J]ztype9cidmap() use CID %d instead of glyph-missing CID %d\n", default_fallback_CID, op->value.intval);
+       if_debug2(imemory, 
+		 'J', "[J]ztype9cidmap() use CID %d instead of glyph-missing CID %d\n", 
+		 default_fallback_CID, op->value.intval);
 
        op->value.intval = default_fallback_CID;
 
@@ -492,8 +495,10 @@ ztype9mapcid(i_ctx_t *i_ctx_p)
                                    &gdata, &fidx);
 
        if (code < 0) {
-           if_debug1('J', "[J]ztype9cidmap() could not load default glyph (CID %d)\n", op->value.intval);
-           return_error(e_invalidfont);
+           if_debug1(imemory,  
+		     'J', "[J]ztype9cidmap() could not load default glyph (CID %d)\n", 
+		     op->value.intval);
+           return_error(imemory, e_invalidfont);
        }
 
     }

@@ -49,7 +49,7 @@ common_arc(i_ctx_t *i_ctx_p,
 {
     os_ptr op = osp;
     double xyra[5];		/* x, y, r, ang1, ang2 */
-    int code = num_params(op, 5, xyra);
+    int code = num_params(imemory, op, 5, xyra);
 
     if (code < 0)
 	return code;
@@ -95,7 +95,7 @@ common_arct(i_ctx_t *i_ctx_p, float *tanxy)
 {
     os_ptr op = osp;
     double args[5];		/* x1, y1, x2, y2, r */
-    int code = num_params(op, 5, args);
+    int code = num_params(imemory, op, 5, args);
 
     if (code < 0)
 	return code;
@@ -145,11 +145,11 @@ zpathbbox(i_ctx_t *i_ctx_p)
     gs_rect box;
     int code;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     code = gs_upathbbox(igs, &box, op->value.boolval);
     if (code < 0)
 	return code;
-    push(3);
+    push(imemory, 3);
     make_real(op - 3, box.p.x);
     make_real(op - 2, box.p.y);
     make_real(op - 1, box.q.x);
@@ -167,13 +167,13 @@ zpathforall(i_ctx_t *i_ctx_p)
     gs_path_enum *penum;
     int code;
 
-    check_proc(op[-3]);
-    check_proc(op[-2]);
-    check_proc(op[-1]);
-    check_proc(*op);
+    check_proc(imemory, op[-3]);
+    check_proc(imemory, op[-2]);
+    check_proc(imemory, op[-1]);
+    check_proc(imemory, *op);
     check_estack(8);
     if ((penum = gs_path_enum_alloc(imemory, "pathforall")) == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     code = gs_path_enum_init(penum, igs);
     if (code < 0) {
 	ifree_object(penum, "path_cleanup");
@@ -200,7 +200,7 @@ path_continue(i_ctx_t *i_ctx_p)
 
     /* Make sure we have room on the o-stack for the worst case */
     /* before we enumerate the next path element. */
-    check_ostack(6);		/* 3 points for curveto */
+    check_ostack(imemory, 6);		/* 3 points for curveto */
     code = gs_path_enum_next(penum, ppts);
     switch (code) {
 	case 0:		/* all done */

@@ -39,7 +39,7 @@ gs_notify_register(gs_notify_list_t *nlist, gs_notify_proc_t proc,
 			&st_gs_notify_registration, "gs_notify_register");
 
     if (nreg == 0)
-	return_error(gs_error_VMerror);
+	return_error(nlist->memory, gs_error_VMerror);
     nreg->proc = proc;
     nreg->proc_data = proc_data;
     nreg->next = nlist->first;

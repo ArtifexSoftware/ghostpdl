@@ -29,9 +29,10 @@
 #include "zht2.h"
 
 /* Forward references */
-private int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *);
+private int dict_spot_params(const gs_memory_t *mem, const ref *, gs_spot_halftone *, ref *, ref *);
 private int dict_spot_results(i_ctx_t *, ref *, const gs_spot_halftone *);
-private int dict_threshold_params(const ref *, gs_threshold_halftone *,
+private int dict_threshold_params(const gs_memory_t *mem, 
+				  const ref *, gs_threshold_halftone *,
 				  ref *);
 private int dict_threshold2_params(const ref *, gs_threshold2_halftone *,
 				   ref *, gs_memory_t *);
@@ -41,14 +42,14 @@ private int dict_threshold2_params(const ref *, gs_threshold2_halftone *,
  * pointer and a string length.
  */
 int
-gs_get_colorname_string(gs_separation_name colorname_index,
+gs_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_index,
 			unsigned char **ppstr, unsigned int *pname_size)
 {
     ref nref;
 
     name_index_ref(colorname_index, &nref);
     name_string_ref(&nref, &nref);
-    return obj_string_data(&nref, (const unsigned char**) ppstr, pname_size);
+    return obj_string_data(mem, &nref, (const unsigned char**) ppstr, pname_size);
 }
 
 /* Dummy spot function */
@@ -85,10 +86,10 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     int halftonetype, type = 0;
     gs_state *pgs = igs;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    check_type(op[-1], t_dictionary);
-    check_dict_read(op[-1]);
+    check_type(imemory, *op, t_dictionary);
+    check_dict_read(imemory, *op);
+    check_type(imemory, op[-1], t_dictionary);
+    check_dict_read(imemory, op[-1]);
  
     /*
      * We think that Type 2 and Type 4 halftones, like
@@ -96,7 +97,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
      * the device color space, so we need to mark them
      * with a different internal halftone type.
      */
-    dict_int_param(op - 1, "HalftoneType", 1, 5, 0, &type);
+    dict_int_param(imemory, op - 1, "HalftoneType", 1, 5, 0, &type);
     halftonetype = (type == 2 || type == 4)
     			? ht_type_multiple_colorscreen
 			: ht_type_multiple;
@@ -118,7 +119,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
 	/* Get the name of the component  verify that we will use it. */
 	cname = name_index(&rvalue[0]);
-	code = gs_get_colorname_string(cname, &pname, &name_size);
+	code = gs_get_colorname_string(imemory, cname, &pname, &name_size);
 	if (code < 0)
 	    break;
 	colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
@@ -128,7 +129,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	else if (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
 	    /* If here then we have the "Default" component */
 	    if (have_default)
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	    have_default = true;
 	}
 
@@ -138,7 +139,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	 * components.
 	 */
 	if (count > GS_CLIENT_COLOR_MAX_COMPONENTS + 1) {
-	    code = gs_note_error(e_rangecheck);
+	    code = gs_note_error(imemory, e_rangecheck);
 	    break;
         }
     }
@@ -155,7 +156,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     rc_alloc_struct_0(pdht, gx_device_halftone, &st_device_halftone,
 		      imemory, pdht = 0, ".sethalftone5");
     if (pht == 0 || phtc == 0 || pdht == 0)
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(imemory, e_VMerror);
     else {
         dict_enum = dict_first(op);
 	for (j = 0, pc = phtc; ;) {
@@ -173,7 +174,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
 	    /* Get the name of the component */
 	    cname = name_index(&rvalue[0]);
-	    code = gs_get_colorname_string(cname, &pname, &name_size);
+	    code = gs_get_colorname_string(imemory, cname, &pname, &name_size);
 	    if (code < 0)
 	        break;
 	    colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
@@ -184,23 +185,23 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    pc->comp_number = colorant_number;
 
 	    /* Now process the component dictionary */
-	    check_dict_read(rvalue[1]);
-	    if (dict_int_param(&rvalue[1], "HalftoneType", 1, 7, 0, &type) < 0) {
-		code = gs_note_error(e_typecheck);
+	    check_dict_read(imemory, rvalue[1]);
+	    if (dict_int_param(imemory, &rvalue[1], "HalftoneType", 1, 7, 0, &type) < 0) {
+		code = gs_note_error(imemory, e_typecheck);
 		break;
 	    }
 	    switch (type) {
 		default:
-		    code = gs_note_error(e_rangecheck);
+		    code = gs_note_error(imemory, e_rangecheck);
 		    break;
 		case 1:
-		    code = dict_spot_params(&rvalue[1], &pc->params.spot,
+		    code = dict_spot_params(imemory, &rvalue[1], &pc->params.spot,
 		    				sprocs + j, tprocs + j);
 		    pc->params.spot.screen.spot_function = spot1_dummy;
 		    pc->type = ht_type_spot;
 		    break;
 		case 3:
-		    code = dict_threshold_params(&rvalue[1], &pc->params.threshold,
+		    code = dict_threshold_params(imemory, &rvalue[1], &pc->params.threshold,
 		    					tprocs + j);
 		    pc->type = ht_type_threshold;
 		    break;
@@ -239,7 +240,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
 	    /* Get the name of the component and verify that we will use it. */
 	    cname = name_index(&rvalue[0]);
-	    code = gs_get_colorname_string(cname, &pname, &name_size);
+	    code = gs_get_colorname_string(imemory, cname, &pname, &name_size);
 	    if (code < 0)
 	        break;
 	    colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
@@ -291,7 +292,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 		if (!r_has_type(tprocs + j, t__invalid)) {
 		    /* Schedule TransferFunction sampling. */
 		    /****** check_xstack IS WRONG ******/
-		    check_ostack(zcolor_remap_one_ostack);
+		    check_ostack(imemory, zcolor_remap_one_ostack);
 		    check_estack(zcolor_remap_one_estack);
 		    code = zcolor_remap_one(i_ctx_p, tprocs + j,
 					    porder->transfer, igs,
@@ -371,21 +372,22 @@ const op_def zht2_l2_op_defs[] =
 /* Extract frequency, angle, spot function, and accurate screens flag */
 /* from a dictionary. */
 private int
-dict_spot_params(const ref * pdict, gs_spot_halftone * psp,
+dict_spot_params(const gs_memory_t *mem, 
+		 const ref * pdict, gs_spot_halftone * psp,
 		 ref * psproc, ref * ptproc)
 {
     int code;
 
-    check_dict_read(*pdict);
-    if ((code = dict_float_param(pdict, "Frequency", 0.0,
+    check_dict_read(mem, *pdict);
+    if ((code = dict_float_param(mem, pdict, "Frequency", 0.0,
 				 &psp->screen.frequency)) != 0 ||
-	(code = dict_float_param(pdict, "Angle", 0.0,
+	(code = dict_float_param(mem, pdict, "Angle", 0.0,
 				 &psp->screen.angle)) != 0 ||
-      (code = dict_proc_param(pdict, "SpotFunction", psproc, false)) != 0 ||
-	(code = dict_bool_param(pdict, "AccurateScreens",
+      (code = dict_proc_param(mem, pdict, "SpotFunction", psproc, false)) != 0 ||
+	(code = dict_bool_param(mem, pdict, "AccurateScreens",
 				gs_currentaccuratescreens(),
 				&psp->accurate_screens)) < 0 ||
-      (code = dict_proc_param(pdict, "TransferFunction", ptproc, false)) < 0
+      (code = dict_proc_param(mem, pdict, "TransferFunction", ptproc, false)) < 0
 	)
 	return (code < 0 ? code : e_undefined);
     psp->transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
@@ -404,7 +406,7 @@ dict_real_result(i_ctx_t *i_ctx_p, ref * pdict, const char *kstr, floatp val)
     if (dict_find_string(pdict, kstr, &ignore) > 0) {
 	ref rval;
 
-	check_dict_write(*pdict);
+	check_dict_write(imemory, *pdict);
 	make_real(&rval, val);
 	code = idict_put_string(pdict, kstr, &rval);
     }
@@ -425,19 +427,20 @@ dict_spot_results(i_ctx_t *i_ctx_p, ref * pdict, const gs_spot_halftone * psp)
 
 /* Extract Width, Height, and TransferFunction from a dictionary. */
 private int
-dict_threshold_common_params(const ref * pdict,
+dict_threshold_common_params(const gs_memory_t *mem, 
+			     const ref * pdict,
 			     gs_threshold_halftone_common * ptp,
 			     ref **pptstring, ref *ptproc)
 {
     int code;
 
-    check_dict_read(*pdict);
-    if ((code = dict_int_param(pdict, "Width", 1, 0x7fff, -1,
+    check_dict_read(mem, *pdict);
+    if ((code = dict_int_param(mem, pdict, "Width", 1, 0x7fff, -1,
 			       &ptp->width)) < 0 ||
-	(code = dict_int_param(pdict, "Height", 1, 0x7fff, -1,
+	(code = dict_int_param(mem, pdict, "Height", 1, 0x7fff, -1,
 			       &ptp->height)) < 0 ||
 	(code = dict_find_string(pdict, "Thresholds", pptstring)) <= 0 ||
-      (code = dict_proc_param(pdict, "TransferFunction", ptproc, false)) < 0
+      (code = dict_proc_param(mem, pdict, "TransferFunction", ptproc, false)) < 0
 	)
 	return (code < 0 ? code : e_undefined);
     ptp->transfer_closure.proc = 0;
@@ -447,20 +450,21 @@ dict_threshold_common_params(const ref * pdict,
 
 /* Extract threshold common parameters + Thresholds. */
 private int
-dict_threshold_params(const ref * pdict, gs_threshold_halftone * ptp,
+dict_threshold_params(const gs_memory_t *mem, 
+		      const ref * pdict, gs_threshold_halftone * ptp,
 		      ref * ptproc)
 {
     ref *tstring;
     int code =
-	dict_threshold_common_params(pdict,
+	dict_threshold_common_params(mem, pdict,
 				     (gs_threshold_halftone_common *)ptp,
 				     &tstring, ptproc);
 
     if (code < 0)
 	return code;
-    check_read_type_only(*tstring, t_string);
+    check_read_type_only(mem, *tstring, t_string);
     if (r_size(tstring) != (long)ptp->width * ptp->height)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     ptp->thresholds.data = tstring->value.const_bytes;
     ptp->thresholds.size = r_size(tstring);
     ptp->transfer = (code > 0 ? (gs_mapping_proc) 0 : gs_mapped_transfer);
@@ -475,7 +479,7 @@ dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
 {
     ref *tstring;
     int code =
-	dict_threshold_common_params(pdict,
+	dict_threshold_common_params(mem, pdict,
 				     (gs_threshold_halftone_common *)ptp,
 				     &tstring, ptproc);
     int bps;
@@ -483,17 +487,17 @@ dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
     int cw2, ch2;
 
     if (code < 0 ||
-	(code = cw2 = dict_int_param(pdict, "Width2", 0, 0x7fff, 0,
+	(code = cw2 = dict_int_param(mem, pdict, "Width2", 0, 0x7fff, 0,
 				     &ptp->width2)) < 0 ||
-	(code = ch2 = dict_int_param(pdict, "Height2", 0, 0x7fff, 0,
+	(code = ch2 = dict_int_param(mem, pdict, "Height2", 0, 0x7fff, 0,
 				     &ptp->height2)) < 0 ||
-	(code = dict_int_param(pdict, "BitsPerSample", 8, 16, -1, &bps)) < 0
+	(code = dict_int_param(mem, pdict, "BitsPerSample", 8, 16, -1, &bps)) < 0
 	)
 	return code;
     if ((bps != 8 && bps != 16) || cw2 != ch2 ||
 	(!cw2 && (ptp->width2 == 0 || ptp->height2 == 0))
 	)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     ptp->bytes_per_sample = bps / 8;
     switch (r_type(tstring)) {
     case t_string:
@@ -503,17 +507,17 @@ dict_threshold2_params(const ref * pdict, gs_threshold2_halftone * ptp,
 	break;
     case t_astruct:
 	if (gs_object_type(mem, tstring->value.pstruct) != &st_bytes)
-	    return_error(e_typecheck);
+	    return_error(mem, e_typecheck);
 	size = gs_object_size(mem, tstring->value.pstruct);
 	gs_bytestring_from_bytes(&ptp->thresholds, r_ptr(tstring, byte),
 				 0, size);
 	break;
     default:
-	return_error(e_typecheck);
+	return_error(mem, e_typecheck);
     }
-    check_read(*tstring);
+    check_read(mem, *tstring);
     if (size != (ptp->width * ptp->height + ptp->width2 * ptp->height2) *
 	ptp->bytes_per_sample)
-	return_error(e_rangecheck);
+	return_error(mem, e_rangecheck);
     return 0;
 }

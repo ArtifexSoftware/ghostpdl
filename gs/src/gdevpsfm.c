@@ -177,7 +177,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 		}
 		    break;
 		default:	/* not possible */
-		    return_error(gs_error_unregistered);
+		    return_error(s->memory, gs_error_unregistered);
 		}
 		stream_putc(s, '\n');
 	    }
@@ -203,7 +203,7 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     case 0: case 1: case 2:
 	break;
     default:
-	return_error(gs_error_rangecheck);
+	return_error(s->memory, gs_error_rangecheck);
     }
 
     /* Write the header. */

@@ -173,7 +173,7 @@ tpqr_do_lookup(gs_cie_render *pcrd, const gx_device *dev_proto)
 		memcpy(&pcrd->TransformPQR.proc, proc_addr.data,
 		       sizeof(gs_cie_transform_proc));
 	    } else
-		code = gs_note_error(gs_error_rangecheck);
+		code = gs_note_error(mem, gs_error_rangecheck);
 	}
     }
     gs_c_param_list_release(&list);
@@ -181,7 +181,7 @@ tpqr_do_lookup(gs_cie_render *pcrd, const gx_device *dev_proto)
     return code;
 }
 private int
-tpqr_lookup(int index, floatp in, const gs_cie_wbsd * pwbsd,
+tpqr_lookup(const gs_memory_t *mem, int index, floatp in, const gs_cie_wbsd * pwbsd,
 	    gs_cie_render * pcrd, float *out)
 {
     const gx_device *const *dev_list;
@@ -196,7 +196,7 @@ tpqr_lookup(int index, floatp in, const gs_cie_wbsd * pwbsd,
     if (i < count)
 	code = tpqr_do_lookup(pcrd, dev_list[i]);
     else
-	code = gs_note_error(gs_error_undefined);
+	code = gs_note_error(mem, gs_error_undefined);
     if (code < 0)
 	return code;
     return pcrd->TransformPQR.proc(index, in, pwbsd, pcrd, out);
@@ -250,8 +250,8 @@ gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
     gs_cie_render *pcrd;
 
     rc_alloc_struct_1(pcrd, gs_cie_render, &st_cie_render1, mem,
-		      return_error(gs_error_VMerror), cname);
-    pcrd->id = gs_next_ids(1);
+		      return_error(mem, gs_error_VMerror), cname);
+    pcrd->id = gs_next_ids(mem, 1);
     /* Initialize pointers for the GC. */
     pcrd->client_data = 0;
     pcrd->RenderTable.lookup.table = 0;
@@ -275,7 +275,9 @@ gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
  * default values.
  */
 int
-gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
+gs_cie_render1_init_from(const gs_memory_t *mem,
+			 gs_cie_render * pcrd, 
+			 void *client_data,
 			 const gs_cie_render * pfrom_crd,
 			 const gs_vector3 * WhitePoint,
 			 const gs_vector3 * BlackPoint,
@@ -290,7 +292,7 @@ gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
 			 const gs_range3 * RangeABC,
 			 const gs_cie_render_table_t * RenderTable)
 {
-    pcrd->id = gs_next_ids(1);
+    pcrd->id = gs_next_ids(mem, 1);
     pcrd->client_data = client_data;
     pcrd->points.WhitePoint = *WhitePoint;
     pcrd->points.BlackPoint =
@@ -339,7 +341,8 @@ gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
  * Initialize a CRD without the option of copying cached values.
  */
 int
-gs_cie_render1_initialize(gs_cie_render * pcrd, void *client_data,
+gs_cie_render1_initialize(const gs_memory_t *mem,
+			  gs_cie_render * pcrd, void *client_data,
 			  const gs_vector3 * WhitePoint,
 			  const gs_vector3 * BlackPoint,
 			  const gs_matrix3 * MatrixPQR,
@@ -353,7 +356,7 @@ gs_cie_render1_initialize(gs_cie_render * pcrd, void *client_data,
 			  const gs_range3 * RangeABC,
 			  const gs_cie_render_table_t * RenderTable)
 {
-    return gs_cie_render1_init_from(pcrd, client_data, NULL,
+    return gs_cie_render1_init_from(mem, pcrd, client_data, NULL,
 				    WhitePoint, BlackPoint,
 				    MatrixPQR, RangePQR, TransformPQR,
 				    MatrixLMN, EncodeLMN, RangeLMN,

@@ -91,8 +91,8 @@
  */
 /* packed_search_body also uses kp and kbot as free variables. */
 #define packed_search_value_pointer (pdict->values.value.refs + (kp - kbot))
-#define packed_search_body(found1,found2,del,miss)\
-    { if_debug2('D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);\
+#define packed_search_body(mem,found1,found2,del,miss)\
+    { if_debug2(mem,'D', "[D]probe 0x%lx: 0x%x\n", (ulong)kp, *kp);\
       if ( *kp == kpack )\
        { found1;\
 	 found2;\
@@ -104,13 +104,13 @@
 	 else { del; }\
        }\
     }
-#define packed_search_1(found1,found2,del,miss)\
+#define packed_search_1(mem,found1,found2,del,miss)\
    const ref_packed *kbot = pdict->keys.value.packed;\
    register const ref_packed *kp;\
    for ( kp = kbot + dict_hash_mod(hash, size) + 1; ; kp-- )\
-     packed_search_body(found1,found2,del,miss)
-#define packed_search_2(found1,found2,del,miss)\
+     packed_search_body(mem,found1,found2,del,miss)
+#define packed_search_2(mem,found1,found2,del,miss)\
    for ( kp += size; ; kp-- )\
-     packed_search_body(found1,found2,del,miss)
+     packed_search_body(mem,found1,found2,del,miss)
 
 #endif /* idictdef_INCLUDED */

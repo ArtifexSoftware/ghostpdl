@@ -170,7 +170,7 @@ pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     }
     pdev->clip_path = gx_path_alloc(pdev->pdf_memory, "pdf clip path");
     if (pdev->clip_path == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     return gx_cpath_to_path((gx_clip_path *)pcpath, pdev->clip_path);
 }
 
@@ -192,7 +192,7 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     code = gx_cpath_enum_init(&cenum, (gx_clip_path *)pcpath);
     if (code < 0)
 	return code;
-    while ((code = gx_cpath_enum_next(&cenum, vs0)) > 0) {
+    while ((code = gx_cpath_enum_next(pdev->memory, &cenum, vs0)) > 0) {
 	pe_op = gx_path_enum_next(&penum, vs1);
 	if (pe_op < 0)
 	    return pe_op;
@@ -305,7 +305,7 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	 * a better algorithm, it's necessary.
 	 */
 	gx_cpath_enum_init(&cenum, (gx_clip_path *) pcpath);
-	while ((pe_op = gx_cpath_enum_next(&cenum, vs)) > 0)
+	while ((pe_op = gx_cpath_enum_next(pdev->memory, &cenum, vs)) > 0)
 	    gdev_vector_dopath_segment(&state, pe_op, vs);
 	pprints1(s, "%s n\n", (pcpath->rule <= 0 ? "W" : "W*"));
 	if (pe_op < 0)

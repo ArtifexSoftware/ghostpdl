@@ -139,14 +139,14 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    /* This is a number, decode it and push it on the stack. */
 
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, cstack, c);
+		decode_push_num1(pfont->memory, csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, cstack, c, cip, state, encrypted);
+		decode_push_num2(pfont->memory, csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
-		CS_CHECK_PUSH(csp, cstack);
+		CS_CHECK_PUSH(pfont->memory, csp, cstack);
 		*++csp = int2fixed(lw);
 		if (lw != fixed2long(*csp)) {
 		    /*
@@ -158,7 +158,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    c0 = *cip++;
 		    charstring_next(c0, state, c, encrypted);
 		    if (c < c_num1)
-			return_error(gs_error_rangecheck);
+			return_error(pfont->memory, gs_error_rangecheck);
 		    if (c < c_pos2_0)
 			decode_num1(denom, c);
 		    else if (c < cx_num4)
@@ -166,20 +166,20 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    else if (c == cx_num4)
 			decode_num4(denom, cip, state, encrypted);
 		    else
-			return_error(gs_error_invalidfont);
+			return_error(pfont->memory, gs_error_invalidfont);
 		    c0 = *cip++;
 		    charstring_next(c0, state, c, encrypted);
 		    if (c != cx_escape)
-			return_error(gs_error_rangecheck);
+			return_error(pfont->memory, gs_error_rangecheck);
 		    c0 = *cip++;
 		    charstring_next(c0, state, c, encrypted);
 		    if (c != ce1_div)
-			return_error(gs_error_rangecheck);
+			return_error(pfont->memory, gs_error_rangecheck);
 		    *csp = float2fixed((double)lw / denom);
 		}
 	    } else		/* not possible */
-		return_error(gs_error_invalidfont);
-	  pushed:if_debug3('1', "[1]%d: (%d) %f\n",
+		return_error(pfont->memory, gs_error_invalidfont);
+	  pushed:if_debug3(pfont->memory, '1', "[1]%d: (%d) %f\n",
 		      (int)(csp - cstack), c, fixed2float(*csp));
 	    continue;
 	}
@@ -189,9 +189,9 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    {char1_command_names};
 
 	    if (c1names[c] == 0)
-		dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+		dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 	    else
-		dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+		dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 			  c1names[c]);
 	}
 #endif
@@ -205,13 +205,13 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case c_undef0:
 	    case c_undef2:
 	    case c_undef17:
-		return_error(gs_error_invalidfont);
+		return_error(pfont->memory, gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 		code = pdata->procs.subr_data
 		    (pfont, c, false, &ipsp[1].cs_data);
 		if (code < 0)
-		    return_error(code);
+		    return_error(pfont->memory, code);
 		--csp;
 		ipsp->ip = cip, ipsp->dstate = state;
 		++ipsp;
@@ -268,7 +268,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		OLD(code = gx_path_add_line(sppath, ptx, pty));
 	      cc:if (code < 0)
 		    return code;
-	      pp:if_debug2('1', "[1]pt=(%g,%g)\n",
+	      pp:if_debug2(pfont->memory, '1', "[1]pt=(%g,%g)\n",
 			  fixed2float(ptx), fixed2float(pty));
 		cnext;
 	    case cx_hlineto:
@@ -419,9 +419,9 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 		    {char1_extended_command_names};
 
 		    if (ce1names[c] == 0)
-			dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+			dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 		    else
-			dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+			dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 				  ce1names[c]);
 		}
 #endif
@@ -443,7 +443,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 #		    endif
 			OLD(apply_path_hints(pcis, false));
 			if (!pcis->vstem3_set && pcis->fh.use_x_hints) {
-			    type1_center_vstem(pcis, pcis->lsb.x + cs2, cs3);
+			    type1_center_vstem(pfont->memory, pcis, pcis->lsb.x + cs2, cs3);
 			    /* Adjust the current point */
 			    /* (center_vstem handles everything else). */
 			    ptx += pcis->vs_offset.x;
@@ -543,7 +543,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 					/* Decide whether to do the flex as a curve. */
 					hpt.x = fpts[1].x - fpts[4].x;
 					hpt.y = fpts[1].y - fpts[4].y;
-					if_debug3('1',
+					if_debug3(pfont->memory, '1',
 					  "[1]flex: d=(%g,%g), height=%g\n",
 						  fixed2float(hpt.x), fixed2float(hpt.y),
 						fixed2float(fheight) / 100);
@@ -593,7 +593,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				    inext;
 				case 2:
 				    if (pcis->flex_count >= flex_max)
-					return_error(gs_error_invalidfont);
+					return_error(pfont->memory, gs_error_invalidfont);
 				    OLD(code = gx_path_current_point(sppath,
 						 &fpts[pcis->flex_count++]));
 				    NEW(code = t1_hinter__flex_point(h));
@@ -621,7 +621,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 				case 14:
 				    num_results = 1;
 				  blend:
-				    code = gs_type1_blend(pcis, csp,
+				    code = gs_type1_blend(pfont->memory, pcis, csp,
 							  num_results);
 				    if (code < 0)
 					return code;
@@ -652,12 +652,12 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    if (scount < 1 || csp[-1] < 0 ||
 				csp[-1] > int2fixed(scount - 1)
 				)
-				return_error(gs_error_invalidfont);
+				return_error(pfont->memory, gs_error_invalidfont);
 			    n = fixed2int_var(csp[-1]);
 			    code = (*pdata->procs.push_values)
 				(pcis->callback_data, csp - (n + 1), n);
 			    if (code < 0)
-				return_error(code);
+				return_error(pfont->memory, code);
 			    scount -= n + 1;
 			    pcis->position.x = ptx;
 			    pcis->position.y = pty;
@@ -677,12 +677,12 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    pcis->ignore_pops--;
 			    inext;
 			}
-			CS_CHECK_PUSH(csp, cstack);
+			CS_CHECK_PUSH(pfont->memory, csp, cstack);
 			++csp;
 			code = (*pdata->procs.pop_value)
 			    (pcis->callback_data, csp);
 			if (code < 0)
-			    return_error(code);
+			    return_error(pfont->memory, code);
 			goto pushed;
 		    case ce1_setcurrentpoint:
 			ptx = ftx + pcis->vs_offset.x; 
@@ -692,7 +692,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			accum_xy(cs0, cs1);
 			goto pp;
 		    default:
-			return_error(gs_error_invalidfont);
+			return_error(pfont->memory, gs_error_invalidfont);
 		}
 		/*NOTREACHED */
 
@@ -700,7 +700,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 
 	      case_c1_undefs:
 	    default:		/* pacify compiler */
-		return_error(gs_error_invalidfont);
+		return_error(pfont->memory, gs_error_invalidfont);
 	}
     }
 }

@@ -446,12 +446,12 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
      *   } END_ARRAY_PARAM(pxxa, pxxe);
      */
 
-#define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
+#define BEGIN_ARRAY_PARAM(mem, pread, pname, pa, psize, e)\
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
       case 0:\
 	if ((pa).size != psize) {\
-	  ecode = gs_note_error(gs_error_rangecheck);\
+	  ecode = gs_note_error(mem, gs_error_rangecheck);\
 	  (pa).data = 0;	/* mark as not filled */\
 	} else
 #define END_ARRAY_PARAM(pa, e)\
@@ -476,23 +476,23 @@ e:	param_signal_error(plist, param_name, ecode);\
      * setting both HWResolution and HWSize.
      */
 
-    BEGIN_ARRAY_PARAM(param_read_float_array, "HWResolution", hwra, 2, hwre) {
+    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, "HWResolution", hwra, 2, hwre) {
 	if (hwra.data[0] <= 0 || hwra.data[1] <= 0)
-	    ecode = gs_note_error(gs_error_rangecheck);
+	    ecode = gs_note_error(dev->memory, gs_error_rangecheck);
 	else
 	    break;
     } END_ARRAY_PARAM(hwra, hwre);
-    BEGIN_ARRAY_PARAM(param_read_int_array, "HWSize", hwsa, 2, hwsa) {
+    BEGIN_ARRAY_PARAM(dev->memory, param_read_int_array, "HWSize", hwsa, 2, hwsa) {
 	/* We need a special check to handle the nullpage device, */
 	/* whose size is legitimately [0 0]. */
 	if ((hwsa.data[0] <= 0 && hwsa.data[0] != dev->width) ||
 	    (hwsa.data[1] <= 0 && hwsa.data[1] != dev->height)
 	)
-	    ecode = gs_note_error(gs_error_rangecheck);
+	    ecode = gs_note_error(dev->memory, gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
 	else if (hwsa.data[0] > max_coord || hwsa.data[1] > max_coord)
-	    ecode = gs_note_error(gs_error_limitcheck);
+	    ecode = gs_note_error(dev->memory, gs_error_limitcheck);
 #endif
 #undef max_coord
 	else
@@ -524,18 +524,18 @@ e:	param_signal_error(plist, param_name, ecode);\
 #endif
     }
 
-    BEGIN_ARRAY_PARAM(param_read_float_array, "Margins", ma, 2, me) {
+    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, "Margins", ma, 2, me) {
 	break;
     } END_ARRAY_PARAM(ma, me);
-    BEGIN_ARRAY_PARAM(param_read_float_array, ".HWMargins", hwma, 4, hwme) {
+    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, ".HWMargins", hwma, 4, hwme) {
 	break;
     } END_ARRAY_PARAM(hwma, hwme);
     /* MarginsHWResolution cannot be changed, only checked. */
-    BEGIN_ARRAY_PARAM(param_read_float_array, ".MarginsHWResolution", mhwra, 2, mhwre) {
+    BEGIN_ARRAY_PARAM(dev->memory, param_read_float_array, ".MarginsHWResolution", mhwra, 2, mhwre) {
 	if (mhwra.data[0] != dev->MarginsHWResolution[0] ||
 	    mhwra.data[1] != dev->MarginsHWResolution[1]
 	)
-	    ecode = gs_note_error(gs_error_rangecheck);
+	    ecode = gs_note_error(dev->memory, gs_error_rangecheck);
 	else
 	    break;
     } END_ARRAY_PARAM(mhwra, mhwre);
@@ -583,7 +583,7 @@ nce:
     switch (code = param_read_bool(plist, (param_name = ".LockSafetyParams"), &locksafe)) {
 	case 0:
 	    if (dev->LockSafetyParams && !locksafe)
-		code = gs_note_error(gs_error_invalidaccess);
+		code = gs_note_error(dev->memory, gs_error_invalidaccess);
 	    else
 		break;
 	default:
@@ -611,7 +611,7 @@ nce:
 	    if (ibba.size != 4 ||
 		ibba.data[2] < ibba.data[0] || ibba.data[3] < ibba.data[1]
 		)
-		ecode = gs_note_error(gs_error_rangecheck);
+		ecode = gs_note_error(dev->memory, gs_error_rangecheck);
 	    else
 		break;
 	    goto ibbe;
@@ -640,7 +640,8 @@ nce:
     if ((code = param_check_bool(plist, "Separations", false, true)) < 0)
 	ecode = code;
 
-    BEGIN_ARRAY_PARAM(param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
+    BEGIN_ARRAY_PARAM(dev->memory, 
+		      param_read_name_array, "SeparationColorNames", scna, scna.size, scne) {
 	break;
     } END_ARRAY_PARAM(scna, scne);
 
@@ -778,16 +779,16 @@ param_MediaSize(gs_param_list * plist, gs_param_name pname,
     int ecode = 0;
     int code;
 
-    BEGIN_ARRAY_PARAM(param_read_float_array, pname, *pa, 2, mse) {
+    BEGIN_ARRAY_PARAM(plist->memory, param_read_float_array, pname, *pa, 2, mse) {
 	float width_new = pa->data[0] * res[0] / 72;
 	float height_new = pa->data[1] * res[1] / 72;
 
 	if (width_new < 0 || height_new < 0)
-	    ecode = gs_note_error(gs_error_rangecheck);
+	    ecode = gs_note_error(plist->memory, gs_error_rangecheck);
 #define max_coord (max_fixed / fixed_1)
 #if max_coord < max_int
 	else if (width_new > max_coord || height_new > max_coord)
-	    ecode = gs_note_error(gs_error_limitcheck);
+	    ecode = gs_note_error(plist->memory, gs_error_limitcheck);
 #endif
 #undef max_coord
 	else
@@ -809,7 +810,7 @@ param_check_bool(gs_param_list * plist, gs_param_name pname, bool value,
 	case 0:
 	    if (is_defined && new_value == value)
 		break;
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(plist->memory, gs_error_rangecheck);
 	    goto e;
 	default:
 	    if (param_read_null(plist, pname) == 0)
@@ -831,7 +832,7 @@ param_check_long(gs_param_list * plist, gs_param_name pname, long value,
 	case 0:
 	    if (is_defined && new_value == value)
 		break;
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(plist->memory, gs_error_rangecheck);
 	    goto e;
 	default:
 	    if (param_read_null(plist, pname) == 0)
@@ -856,7 +857,7 @@ param_check_bytes(gs_param_list * plist, gs_param_name pname, const byte * str,
 			size)
 		)
 		break;
-	    code = gs_note_error(gs_error_rangecheck);
+	    code = gs_note_error(plist->memory, gs_error_rangecheck);
 	    goto e;
 	default:
 	    if (param_read_null(plist, pname) == 0)

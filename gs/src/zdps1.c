@@ -55,7 +55,7 @@ zsetstrokeadjust(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     gs_setstrokeadjust(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -67,7 +67,7 @@ zcurrentstrokeadjust(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, gs_currentstrokeadjust(igs));
     return 0;
 }
@@ -93,7 +93,7 @@ gstate_check_space(i_ctx_t *i_ctx_p, int_gstate *isp, uint space)
      */
 #if 1				/* ****** WORKAROUND ****** */
     if (space != avm_local && imemory_save_level(iimemory) > 0)
-	return_error(e_invalidaccess);
+	return_error(imemory, e_invalidaccess);
 #endif				/* ****** END ****** */
 #define gsref_check(p) store_check_space(space, p)
     int_gstate_map_refs(isp, gsref_check);
@@ -116,15 +116,15 @@ zgstate(i_ctx_t *i_ctx_p)
 	return code;
     pigo = ialloc_struct(igstate_obj, &st_igstate_obj, "gstate");
     if (pigo == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     pnew = gs_state_copy(igs, imemory);
     if (pnew == 0) {
 	ifree_object(pigo, "gstate");
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     }
     isp = gs_int_gstate(pnew);
     int_gstate_map_refs(isp, ref_mark_new);
-    push(1);
+    push(imemory, 1);
     /*
      * Since igstate_obj isn't a ref, but only contains a ref, save won't
      * clear its l_new bit automatically, and restore won't set it
@@ -149,9 +149,9 @@ zcopy_gstate(i_ctx_t *i_ctx_p)
     gs_memory_t *mem;
     int code;
 
-    check_stype(*op, st_igstate_obj);
-    check_stype(*op1, st_igstate_obj);
-    check_write(*op);
+    check_stype(imemory, *op, st_igstate_obj);
+    check_stype(imemory, *op1, st_igstate_obj);
+    check_write(imemory, *op);
     code = gstate_unshare(i_ctx_p);
     if (code < 0)
 	return code;
@@ -185,8 +185,8 @@ zcurrentgstate(i_ctx_t *i_ctx_p)
     int code;
     gs_memory_t *mem;
 
-    check_stype(*op, st_igstate_obj);
-    check_write(*op);
+    check_stype(imemory, *op, st_igstate_obj);
+    check_write(imemory, *op);
     code = gstate_unshare(i_ctx_p);
     if (code < 0)
 	return code;
@@ -214,8 +214,8 @@ zsetgstate(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_stype(*op, st_igstate_obj);
-    check_read(*op);
+    check_stype(imemory, *op, st_igstate_obj);
+    check_read(imemory, *op);
     code = gs_setgstate(igs, igstate_ptr(op));
     if (code < 0)
 	return code;
@@ -310,7 +310,7 @@ zrectstroke(i_ctx_t *i_ctx_p)
     local_rects_t lr;
     int npop, code;
 
-    if (read_matrix(op, &mat) >= 0) {
+    if (read_matrix(imemory, op, &mat) >= 0) {
 	/* Concatenate the matrix to the CTM just before stroking the path. */
 	npop = rect_get(&lr, op - 1, imemory);
 	if (npop < 0)
@@ -348,17 +348,17 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 	case t_mixedarray:
 	case t_shortarray:
 	case t_string:
-	    code = num_array_format(op);
+	    code = num_array_format(mem, op);
 	    if (code < 0)
 		return code;
 	    format = code;
 	    count = num_array_size(op, format);
 	    if (count % 4)
-		return_error(e_rangecheck);
+		return_error(mem, e_rangecheck);
 	    count /= 4;
 	    break;
 	default:		/* better be 4 numbers */
-	    code = num_params(op, 4, rv);
+	    code = num_params(mem, op, 4, rv);
 	    if (code < 0)
 		return code;
 	    plr->pr = plr->rl;
@@ -374,7 +374,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 	pr = (gs_rect *)gs_alloc_byte_array(mem, count, sizeof(gs_rect),
 					    "rect_get");
 	if (pr == 0)
-	    return_error(e_VMerror);
+	    return_error(mem, e_VMerror);
     }
     plr->pr = pr;
     for (n = 0; n < count; n++, pr++) {
@@ -382,7 +382,7 @@ rect_get(local_rects_t * plr, os_ptr op, gs_memory_t *mem)
 	int i;
 
 	for (i = 0; i < 4; i++) {
-	    code = num_array_get((const ref *)op, format,
+	    code = num_array_get(mem, (const ref *)op, format,
 				 (n << 2) + i, &rnum);
 	    switch (code) {
 		case t_integer:
@@ -418,7 +418,7 @@ zsetbbox(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double box[4];
 
-    int code = num_params(op, 4, box);
+    int code = num_params(imemory, op, 4, box);
 
     if (code < 0)
 	return code;
@@ -469,7 +469,7 @@ gstate_unshare(i_ctx_t *i_ctx_p)
     /* Copy the gstate. */
     pnew = gs_gstate(pgs);
     if (pnew == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     isp = gs_int_gstate(pnew);
     int_gstate_map_refs(isp, ref_mark_new);
     ref_do_save(op, pgsref, "gstate_unshare");

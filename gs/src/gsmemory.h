@@ -36,8 +36,8 @@
 #ifndef gsmemory_INCLUDED
 #  define gsmemory_INCLUDED
 
-#include "gsmemraw.h"
 #include "gstypes.h"		/* for gs_bytestring */
+#include "pl_stdio.h"
 
 /* Define the opaque type for a structure descriptor. */
 typedef struct gs_memory_struct_type_s gs_memory_struct_type_t;
@@ -71,11 +71,156 @@ struct_name_t gs_struct_type_name(gs_memory_type_ptr_t);
   ((const char *)gs_struct_type_name(styp))
 
 /*
+ * Define the structure for reporting memory manager statistics.
+ */
+typedef struct gs_memory_status_s {
+    /*
+     * "Allocated" space is the total amount of space acquired from
+     * the parent of the memory manager.  It includes space used for
+     * allocated data, space available for allocation, and overhead.
+     */
+    ulong allocated;
+    /*
+     * "Used" space is the amount of space used by allocated data
+     * plus overhead.
+     */
+    ulong used;
+} gs_memory_status_t;
+
+		/*
+		 * Allocate bytes.  The bytes are always aligned maximally
+		 * if the processor requires alignment.
+		 *
+		 * Note that the object memory level can allocate bytes as
+		 * either movable or immovable: raw memory blocks are
+		 * always immovable.
+		 */
+
+#define gs_memory_t_proc_alloc_bytes(proc, mem_t)\
+  byte *proc(mem_t *mem, uint nbytes, client_name_t cname)
+
+#define gs_alloc_bytes_immovable(mem, nbytes, cname)\
+  ((mem)->procs.alloc_bytes_immovable(mem, nbytes, cname))
+
+		/*
+		 * Resize an object to a new number of elements.  At the raw
+		 * memory level, the "element" is a byte; for object memory
+		 * (gsmemory.h), the object may be an an array of either
+		 * bytes or structures.  The new size may be larger than,
+		 * the same as, or smaller than the old.  If the new size is
+		 * the same as the old, resize_object returns the same
+		 * object; otherwise, it preserves the first min(old_size,
+		 * new_size) bytes of the object's contents.
+		 */
+
+#define gs_memory_t_proc_resize_object(proc, mem_t)\
+  void *proc(mem_t *mem, void *obj, uint new_num_elements,\
+	     client_name_t cname)
+
+#define gs_resize_object(mem, obj, newn, cname)\
+  ((mem)->procs.resize_object(mem, obj, newn, cname))
+
+		/*
+		 * Free an object (at the object memory level, this includes
+		 * everything except strings).  Note: data == 0 must be
+		 * allowed, and must be a no-op.
+		 */
+
+#define gs_memory_t_proc_free_object(proc, mem_t)\
+  void proc(mem_t *mem, void *data, client_name_t cname)
+
+#define gs_free_object(mem, data, cname)\
+  ((mem)->procs.free_object(mem, data, cname))
+
+		/*
+		 * Report status (assigned, used).
+		 */
+
+#define gs_memory_t_proc_status(proc, mem_t)\
+  void proc(mem_t *mem, gs_memory_status_t *status)
+
+#define gs_memory_status(mem, pst)\
+  ((mem)->procs.status(mem, pst))
+
+		/*
+		 * Return the stable allocator for this allocator.  The
+		 * stable allocator allocates from the same heap and in
+		 * the same VM space, but is not subject to save and restore.
+		 * (It is the client's responsibility to avoid creating
+		 * dangling pointers.)
+		 *
+		 * Note that the stable allocator may be the same allocator
+		 * as this one.
+		 */
+
+#define gs_memory_t_proc_stable(proc, mem_t)\
+  mem_t *proc(mem_t *mem)
+
+#define gs_memory_stable(mem)\
+  ((mem)->procs.stable(mem))
+
+		/*
+		 * Free one or more of: data memory acquired by the allocator
+		 * (FREE_ALL_DATA), overhead structures other than the
+		 * allocator itself (FREE_ALL_STRUCTURES), and the allocator
+		 * itself (FREE_ALL_ALLOCATOR).  Note that this requires
+		 * allocators to keep track of all the memory they have ever
+		 * acquired, and where they acquired it.  Note that this
+		 * operation propagates to the stable allocator (if
+		 * different).
+		 */
+
+#define FREE_ALL_DATA 1
+#define FREE_ALL_STRUCTURES 2
+#define FREE_ALL_ALLOCATOR 4
+#define FREE_ALL_EVERYTHING\
+  (FREE_ALL_DATA | FREE_ALL_STRUCTURES | FREE_ALL_ALLOCATOR)
+
+#define gs_memory_t_proc_free_all(proc, mem_t)\
+  void proc(mem_t *mem, uint free_mask, client_name_t cname)
+
+#define gs_memory_free_all(mem, free_mask, cname)\
+  ((mem)->procs.free_all(mem, free_mask, cname))
+/* Backward compatibility */
+#define gs_free_all(mem)\
+  gs_memory_free_all(mem, FREE_ALL_DATA, "(free_all)")
+
+		/*
+		 * Consolidate free space.  This may be used as part of (or
+		 * as an alternative to) garbage collection, or before
+		 * giving up on an attempt to allocate.
+		 */
+
+#define gs_memory_t_proc_consolidate_free(proc, mem_t)\
+  void proc(mem_t *mem)
+
+#define gs_consolidate_free(mem)\
+  ((mem)->procs.consolidate_free(mem))
+
+/* Define the members of the procedure structure. */
+#define gs_raw_memory_procs(mem_t)\
+    gs_memory_t_proc_alloc_bytes((*alloc_bytes_immovable), mem_t);\
+    gs_memory_t_proc_resize_object((*resize_object), mem_t);\
+    gs_memory_t_proc_free_object((*free_object), mem_t);\
+    gs_memory_t_proc_stable((*stable), mem_t);\
+    gs_memory_t_proc_status((*status), mem_t);\
+    gs_memory_t_proc_free_all((*free_all), mem_t);\
+    gs_memory_t_proc_consolidate_free((*consolidate_free), mem_t)
+
+
+
+
+
+
+
+
+
+/*
  * Define the memory manager procedural interface.
  */
 typedef struct gs_memory_procs_s {
 
-    gs_raw_memory_procs(gs_memory_t);	/* defined in gsmemraw.h */
+    gs_raw_memory_procs(gs_memory_t);	
 
     /* Redefine inherited procedures with the new allocator type. */
 
@@ -182,7 +327,7 @@ typedef struct gs_memory_procs_s {
 
     /*
      * Resize a string.  The specification is the same as resize_object
-     * (in gsmemraw.h), except that the element size is always a byte.
+     * except that the element size is always a byte.
      */
 
 #define gs_memory_proc_resize_string(proc)\
@@ -290,7 +435,7 @@ gs_memory_proc_consolidate_free(gs_ignore_consolidate_free);
  * void *, and does not take the type of the returned pointer as a
  * parameter.
  */
-void *gs_raw_alloc_struct_immovable(gs_raw_memory_t * rmem,
+void *gs_raw_alloc_struct_immovable(gs_memory_t * rmem,
 				    gs_memory_type_ptr_t pstype,
 				    client_name_t cname);
 
@@ -299,12 +444,13 @@ typedef struct pl_mem_node_s pl_mem_node_t;
 /*
  * Define an abstract allocator instance.
  * Subclasses may have state as well.
- * Note that the initial part of this must match gs_raw_memory_t.
  */
 #define gs_memory_common\
 	gs_memory_t *stable_memory;\
 	gs_memory_procs_t procs;\
+        pl_stdio_t *pl_stdio;\
         pl_mem_node_t *head
+
 
 struct gs_memory_s {
     gs_memory_common;

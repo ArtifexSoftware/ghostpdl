@@ -27,6 +27,8 @@ const byte gs_alloc_fill_collected = 0xc1;
 const byte gs_alloc_fill_deleted = 0xd1;
 const byte gs_alloc_fill_free = 0xf1;
 
+
+
 /* A 'structure' type descriptor for free blocks. */
 gs_public_st_simple(st_free, byte, "(free)");
 
@@ -103,7 +105,7 @@ gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
 	return gs_alloc_struct_array(mem, num_elements, void, pstype, cname);
 #ifdef DEBUG
     if (gs_object_type(mem, obj) != pstype) {
-	lprintf3("resize_struct_array 0x%lx, type was 0x%lx, expected 0x%lx!\n",
+	lprintf3(mem, "resize_struct_array 0x%lx, type was 0x%lx, expected 0x%lx!\n",
 		 (ulong)obj, (ulong)gs_object_type(mem, obj), (ulong)pstype);
 	return 0;
     }
@@ -111,14 +113,20 @@ gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
     return gs_resize_object(mem, obj, num_elements, cname);
 }
 
-/* Allocate a structure using a "raw memory" allocator. */
+
+/* Allocate a structure using a "raw memory" allocator.
+ * really just an alias for gs_alloc_struct_immovable 
+ * with the clients false expectation that it is saving memory   
+ */
+ 
 void *
-gs_raw_alloc_struct_immovable(gs_raw_memory_t * rmem,
+gs_raw_alloc_struct_immovable(gs_memory_t * rmem,
 			      gs_memory_type_ptr_t pstype,
 			      client_name_t cname)
 {
     return gs_alloc_bytes_immovable(rmem, gs_struct_type_size(pstype), cname);
 }
+
 
 /* No-op freeing procedures */
 void
@@ -244,27 +252,27 @@ rc_object_type_name(const void *vp, const rc_header *prc)
 void
 rc_trace_init_free(const void *vp, const rc_header *prc)
 {
-    dprintf3("[^]%s 0x%lx init = %ld\n",
+    dprintf3(prc->memory, "[^]%s 0x%lx init = %ld\n",
 	     rc_object_type_name(vp, prc), (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_free_struct(const void *vp, const rc_header *prc, client_name_t cname)
 {
-    dprintf3("[^]%s 0x%lx => free (%s)\n",
+    dprintf3(prc->memory, "[^]%s 0x%lx => free (%s)\n",
 	      rc_object_type_name(vp, prc),
 	      (ulong)vp, client_name_string(cname));
 }
 void
 rc_trace_increment(const void *vp, const rc_header *prc)
 {
-    dprintf3("[^]%s 0x%lx ++ => %ld\n",
+    dprintf3(prc->memory, "[^]%s 0x%lx ++ => %ld\n",
 	      rc_object_type_name(vp, prc),
 	      (ulong)vp, (long)prc->ref_count);
 }
 void
 rc_trace_adjust(const void *vp, const rc_header *prc, int delta)
 {
-    dprintf4("[^]%s 0x%lx %+d => %ld\n",
+    dprintf4(prc->memory, "[^]%s 0x%lx %+d => %ld\n",
 	     rc_object_type_name(vp, prc),
 	     (ulong)vp, delta, (long)(prc->ref_count + delta));
 }
@@ -279,7 +287,10 @@ rc_free_struct_only(gs_memory_t * mem, void *data, client_name_t cname)
 	gs_free_object(mem, data, cname);
 }
 
+
 /* ---------------- Basic-structure GC procedures ---------------- */
+
+extern const gs_memory_t * gcst_get_const_memory_t_ptr(gc_state_t *gcst);
 
 /* Enumerate pointers */
 ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
@@ -290,8 +301,9 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
     /* with number of elements 0 and allocation not passing 'element' */
     if (size == 0) {
 #ifdef DEBUG
-	dprintf2("  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
-		vptr, pstype->sname);
+	dprintf2(mem, 
+		 "  basic_enum_ptrs: Attempt to enum 0 size structure at 0x%lx, type: %s\n",
+		 vptr, pstype->sname);
 #endif
 	return 0;
     }
@@ -302,8 +314,9 @@ ENUM_PTRS_BEGIN_PROC(basic_enum_ptrs)
 #ifdef DEBUG
 	/* some extra checking to make sure we aren't out of bounds */
 	if (ppe->offset > size - sizeof(void *)) {
-	    dprintf4("  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
-		    ppe->offset, size, vptr, pstype->sname);
+	    dprintf4(mem, 
+		     "  basic_enum_ptrs: Attempt to enum ptr with offset=%d beyond size=%d: structure at 0x%lx, type: %s\n",
+		     ppe->offset, size, vptr, pstype->sname);
 	    return 0;
 	}
 #endif
@@ -352,3 +365,4 @@ RELOC_PTRS_BEGIN(basic_reloc_ptrs)
 		      (void *)((char *)vptr + psd->super_offset),
 		      pstype->ssize);
 } RELOC_PTRS_END
+

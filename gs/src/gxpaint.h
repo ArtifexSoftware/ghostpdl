@@ -61,7 +61,7 @@ int gx_imager_stroke_add(gx_path *ppath, gx_path *to_path,
  * Tweak the fill adjustment if necessary so that (nearly) empty
  * rectangles are guaranteed to produce some output.
  */
-void gx_adjust_if_empty(const gs_fixed_rect *, gs_fixed_point *);
+void gx_adjust_if_empty(const gs_memory_t *mem, const gs_fixed_rect *, gs_fixed_point *);
 
 /*
  * Compute the amount by which to expand a stroked bounding box to account

@@ -129,7 +129,7 @@ sample_device_crd_get_params(gx_device *pdev, gs_param_list *plist,
 
 	    tpqr = bit_TransformPQR;
 	    tpqr.driver_name = pdev->dname;
-	    code = gs_cie_render1_initialize(pcrd, NULL,
+	    code = gs_cie_render1_initialize(pdev->memory, pcrd, NULL,
 			&bit_WhitePoint, NULL /*BlackPoint*/,
 			NULL /*MatrixPQR*/, &bit_RangePQR, &tpqr,
 			NULL /*MatrixLMN*/, &bit_EncodeLMN, &bit_RangeLMN,
@@ -139,7 +139,7 @@ sample_device_crd_get_params(gx_device *pdev, gs_param_list *plist,
 		code = param_write_cie_render1(plist, crd_param_name, pcrd,
 					       pdev->memory);
 	    }
-	    rc_decrement(pcrd, "sample_device_crd_get_params"); /* release */
+	    rc_decrement(pdev->memory, pcrd, "sample_device_crd_get_params"); /* release */
 	}
 	if (code < 0)
 	    ecode = code;
@@ -155,7 +155,7 @@ sample_device_crd_get_params(gx_device *pdev, gs_param_list *plist,
 	int code;
 
 	if (my_addr == 0)
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(pdev->memory, gs_error_VMerror);
 	else {
 	    gs_param_string as;
 

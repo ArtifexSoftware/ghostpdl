@@ -121,7 +121,7 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     if (code < 0)
 	return code;
     if (!tile_size_ok(pdev, p_tile, m_tile))
-	return_error(gs_error_limitcheck);
+	return_error(pdev->memory, gs_error_limitcheck);
     /*
      * We currently can't handle Patterns whose X/Y step isn't parallel
      * to the coordinate axes.
@@ -131,9 +131,9 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     else if (is_xyyx(&tile->step_matrix))
 	step.x = tile->step_matrix.yx, step.y = tile->step_matrix.xy;
     else
-	return_error(gs_error_rangecheck);
+	return_error(pdev->memory, gs_error_rangecheck);
     if (pcd_Resources == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     gs_make_identity(&smat);
     smat.xx = btile->rep_width / (pdev->HWResolution[0] / 72.0);
     smat.yy = btile->rep_height / (pdev->HWResolution[1] / 72.0);
@@ -146,7 +146,7 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	cos_value_t v;
 
 	if (pcd_XObject == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pdev->memory, gs_error_VMerror);
 	sprintf(key, "/R%ld", pcs_image->id);
 	COS_OBJECT_VALUE(&v, pcs_image);
 	if ((code = cos_dict_put(pcd_XObject, (byte *)key, strlen(key), &v)) < 0 ||
@@ -203,7 +203,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     int code;
 
     if (pcd == NULL || pcd_Resources == NULL)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     pdev->substream_Resources = pcd_Resources;
     sprintf(buf, "[%g %g %g %g]", t->BBox.p.x, t->BBox.p.y, 
 				  t->BBox.q.x, t->BBox.q.y);
@@ -215,7 +215,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     smat.ty /= scale_y;
     /* The graphics library assumes a shifted origin to provide 
        positive bitmap pixel indices. Compensate it now. */
-    gs_distance_transform(t->BBox.p.x, t->BBox.p.y, &smat, &p);
+    gs_distance_transform(pdev->memory, t->BBox.p.x, t->BBox.p.y, &smat, &p);
     smat.tx += p.x;
     smat.ty += p.y;
     if (any_abs(smat.tx) < 0.0001)  /* Noise. */
@@ -307,7 +307,7 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	static const psdf_set_color_commands_t no_scc = {0, 0, 0};
 
 	if (!tile_size_ok(pdev, NULL, m_tile))
-	    return_error(gs_error_limitcheck);
+	    return_error(pdev->memory, gs_error_limitcheck);
 #	if !PATTERN_STREAM_ACCUMULATION
 	    if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
 		(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
@@ -408,17 +408,17 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	}
 	if (pdev->CompatibilityLevel < 1.3) {
 	    /* Masked images are only supported starting in PDF 1.3. */
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	}
     }
     /* Acrobat Reader has a size limit for image Patterns. */
     if (!tile_size_ok(pdev, p_tile, m_tile))
-	return_error(gs_error_limitcheck);
+	return_error(pdev->memory, gs_error_limitcheck);
 #   endif
     code = pdf_cs_Pattern_colored(pdev, &v);
     if (code < 0)
 	return code;
-    pdf_cspace_init_Device(&cs_Device, pdev->color_info.num_components);
+    pdf_cspace_init_Device(pdev->memory, &cs_Device, pdev->color_info.num_components);
     /*
      * We don't have to worry about color space scaling: the color
      * space is always a Device space.
@@ -590,7 +590,7 @@ pdf_put_scalar_shading(cos_dict_t *pscd, const gs_shading_t *psh,
 				      params->Extend, pranges);
     }
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pscd->pdev->memory, gs_error_rangecheck);
     }
 }
 
@@ -730,7 +730,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 	int i;
 
 	if (pca == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(pscd->pdev->memory, gs_error_VMerror);
 	for (i = 0; i < 2; ++i)
 	    if ((code = pdf_array_add_real2(pca, MIN_MESH_COORDINATE,
 					    MAX_MESH_COORDINATE)) < 0)
@@ -848,7 +848,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 	break;
     }
     default:
-	return_error(gs_error_rangecheck);
+	return_error(pscd->pdev->memory, gs_error_rangecheck);
     }
     return cos_dict_put_c_key_int(pscd, "/BitsPerFlag", bits_per_flag);
 }
@@ -943,7 +943,7 @@ pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	else if (pdc->type == &gx_dc_pattern2)
 	    code = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
 	else
-	    return_error(gs_error_rangecheck);
+	    return_error(pdev->memory, gs_error_rangecheck);
 	if (code < 0)
 	    return code;
 	/*

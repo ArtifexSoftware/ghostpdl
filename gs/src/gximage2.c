@@ -26,6 +26,8 @@
 #include "gxiparam.h"
 #include "gxpath.h"
 #include "gscolor2.h"
+#include "gzstate.h"
+
 
 /* Forward references */
 private dev_proc_begin_typed_image(gx_begin_image2);
@@ -70,7 +72,7 @@ image2_set_data(const gs_image2_t * pim, image2_data_t * pid)
     sbox.q.x = (sbox.p.x = pim->XOrigin) + pim->Width;
     sbox.q.y = (sbox.p.y = pim->YOrigin) + pim->Height;
     gs_currentmatrix(pgs, &smat);
-    gs_bbox_transform(&sbox, &smat, &dbox);
+    gs_bbox_transform(pgs->memory, &sbox, &smat, &dbox);
     pid->bbox.p.x = (int)floor(dbox.p.x);
     pid->bbox.p.y = (int)floor(dbox.p.y);
     pid->bbox.q.x = (int)ceil(dbox.q.x);
@@ -123,11 +125,11 @@ gx_begin_image2(gx_device * dev,
          memcmp( &dev->color_info,
                  &sdev->color_info,
                  sizeof(dev->color_info) ) != 0  )
-        return_error(gs_error_typecheck);
+        return_error(mem, gs_error_typecheck);
 
 /****** ONLY HANDLE depth <= 8 FOR PixelCopy ******/
     if (pixel_copy && depth <= 8)
-        return_error(gs_error_unregistered);
+        return_error(mem, gs_error_unregistered);
 
     gs_image_t_init(&idata.image, gs_currentcolorspace((const gs_state *)pis));
 
@@ -145,16 +147,16 @@ gx_begin_image2(gx_device * dev,
 	return code;
 /****** ONLY HANDLE SIMPLE CASES FOR NOW ******/
     if (idata.bbox.p.x != floor(idata.origin.x))
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (!(idata.bbox.p.y == floor(idata.origin.y) ||
 	  idata.bbox.q.y == ceil(idata.origin.y))
 	)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     source_size = (idata.image.Width * depth + 7) >> 3;
     row_size = max(3 * idata.image.Width, source_size);
     row = gs_alloc_bytes(mem, row_size, "gx_begin_image2");
     if (row == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     if (pixel_copy) {
 	idata.image.BitsPerComponent = depth;
 	has_alpha = false;	/* no separate alpha channel */

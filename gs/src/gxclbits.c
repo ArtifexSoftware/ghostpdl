@@ -198,15 +198,15 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	}
 	if (uncompressed_size > max_size) {
 	    /* Shorten to zero, erasing the operation altogether */
-	    if_debug1 ('L', "[L]Uncompressed bits %u too large for buffer\n",
+	    if_debug1 (cldev->memory, 'L', "[L]Uncompressed bits %u too large for buffer\n",
 		       uncompressed_size);
 	    cmd_shorten_list_op(cldev,
 			     (pcls ? &pcls->list : &cldev->band_range_list),
 				try_size);
-	    return_error(gs_error_limitcheck);
+	    return_error(cldev->memory, gs_error_limitcheck);
 	}
 	if (uncompressed_size != short_size) {
-	    if_debug2 ('L', "[L]Shortening bits from %u to %u\n",
+	    if_debug2 (cldev->memory, 'L', "[L]Shortening bits from %u to %u\n",
 		       try_size, op_size + short_size);
 	    cmd_shorten_list_op(cldev,
 			     (pcls ? &pcls->list : &cldev->band_range_list),
@@ -215,7 +215,7 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	}
 	compress = 0;
     } else if (uncompressed_size > max_size)
-	return_error(gs_error_limitcheck);
+	return_error(cldev->memory, gs_error_limitcheck);
     else {
 	int code;
 
@@ -246,13 +246,13 @@ cmd_size_tile_params(const gx_strip_bitmap * tile)
 	(tile->rep_shift == 0 ? 0 : cmd_size_w(tile->rep_shift));
 }
 private void
-cmd_store_tile_params(byte * dp, const gx_strip_bitmap * tile, int depth,
+cmd_store_tile_params(const gs_memory_t *mem, byte * dp, const gx_strip_bitmap * tile, int depth,
 		      uint csize)
 {
     byte *p = dp + 2;
     byte bd = cmd_depth_to_code(depth);
 
-    *dp = cmd_count_op(cmd_opv_set_tile_size, csize);
+    *dp = cmd_count_op(mem, cmd_opv_set_tile_size, csize);
     p = cmd_put_w(tile->rep_width, p);
     p = cmd_put_w(tile->rep_height, p);
     if (tile->rep_width != tile->size.x) {
@@ -292,7 +292,7 @@ cmd_put_tile_index(gx_device_clist_writer *cldev, gx_clist_state *pcls,
 	    return code;
 	dp[1] = indx & 0xff;
     }
-    if_debug2('L', "[L]writing index=%u, offset=%lu\n",
+    if_debug2(cldev->memory, 'L', "[L]writing index=%u, offset=%lu\n",
 	      indx, cldev->tile_table[indx].offset);
     return 0;
 }
@@ -387,7 +387,7 @@ clist_delete_tile(gx_device_clist_writer * cldev, tile_slot * slot)
     uint index = slot->index;
     ulong offset;
 
-    if_debug2('L', "[L]deleting index=%u, offset=%lu\n",
+    if_debug2(cldev->memory, 'L', "[L]deleting index=%u, offset=%lu\n",
 	      index, (ulong) ((byte *) slot - cldev->data));
     gx_bits_cache_free(&cldev->bits, (gx_cached_bits_head *) slot,
 		       &cldev->chunk);
@@ -403,7 +403,7 @@ clist_delete_tile(gx_device_clist_writer * cldev, tile_slot * slot)
 
 	if (!clist_find_bits(cldev, tile->id, &loc)) {	/* We didn't find it, so it should be moved into a slot */
 	    /* that we just vacated; instead, delete it. */
-	    if_debug2('L', "[L]move-deleting index=%u, offset=%lu\n",
+	    if_debug2(cldev->memory, 'L', "[L]move-deleting index=%u, offset=%lu\n",
 		      index, offset);
 	    gx_bits_cache_free(&cldev->bits,
 			     (gx_cached_bits_head *) (cldev->data + offset),
@@ -431,28 +431,29 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
     if (cldev->bits.csize == cldev->tile_max_count) {	/* Don't let the hash table get too full: delete an entry. */
 	/* Since gx_bits_cache_alloc returns an entry to delete when */
 	/* it fails, just force it to fail. */
-	gx_bits_cache_alloc(&cldev->bits, (ulong) cldev->chunk.size,
+	gx_bits_cache_alloc(cldev->memory, &cldev->bits, (ulong) cldev->chunk.size,
 			    &slot_head);
 	if (slot_head == 0) {	/* Wrap around and retry. */
 	    cldev->bits.cnext = 0;
-	    gx_bits_cache_alloc(&cldev->bits, (ulong) cldev->chunk.size,
+	    gx_bits_cache_alloc(cldev->memory, 
+				&cldev->bits, (ulong) cldev->chunk.size,
 				&slot_head);
 #ifdef DEBUG
 	    if (slot_head == 0) {
-		lprintf("No entry to delete!\n");
-		return_error(gs_error_Fatal);
+		lprintf(cldev->memory, "No entry to delete!\n");
+		return_error(cldev->memory, gs_error_Fatal);
 	    }
 #endif
 	}
 	clist_delete_tile(cldev, slot);
     }
     /* Allocate the space for the new entry, deleting entries as needed. */
-    while (gx_bits_cache_alloc(&cldev->bits, (ulong) tsize, &slot_head) < 0) {
+    while (gx_bits_cache_alloc(cldev->memory, &cldev->bits, (ulong) tsize, &slot_head) < 0) {
 	if (slot_head == 0) {	/* Wrap around. */
 	    if (cldev->bits.cnext == 0) {	/* Too big to fit.  We should probably detect this */
 		/* sooner, since if we get here, we've cleared the */
 		/* cache. */
-		return_error(gs_error_limitcheck);
+		return_error(cldev->memory, gs_error_limitcheck);
 	    }
 	    cldev->bits.cnext = 0;
 	} else
@@ -477,7 +478,7 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
 
 #ifdef DEBUG
 	if (clist_find_bits(cldev, tiles->id, &loc))
-	    lprintf1("clist_find_bits(0x%lx) should have failed!\n",
+	    lprintf1(cldev->memory, "clist_find_bits(0x%lx) should have failed!\n",
 		     (ulong) tiles->id);
 #else
 	clist_find_bits(cldev, tiles->id, &loc);	/* always fails */
@@ -485,7 +486,7 @@ clist_add_tile(gx_device_clist_writer * cldev, const gx_strip_bitmap * tiles,
 	slot->index = loc.index;
 	cldev->tile_table[loc.index].offset =
 	    (byte *) slot_head - cldev->data;
-	if_debug2('L', "[L]adding index=%u, offset=%lu\n",
+	if_debug2(cldev->memory, 'L', "[L]adding index=%u, offset=%lu\n",
 		  loc.index, cldev->tile_table[loc.index].offset);
     }
     slot->num_bands = 0;
@@ -630,7 +631,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		if (code < 0)
 		    return code;
 		if (extra) {	/* Write the tile parameters before writing the bits. */
-		    cmd_store_tile_params(dp, &cldev->tile_params, depth,
+		    cmd_store_tile_params(cldev->memory, dp, &cldev->tile_params, depth,
 					  extra);
 		    dp += extra;
 		    /* This band now knows the parameters. */
@@ -640,7 +641,7 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		    if (band_index > cldev->tile_known_max)
 			cldev->tile_known_max = band_index;
 		}
-		*dp = cmd_count_op(cmd_opv_set_tile_bits, csize - extra);
+		*dp = cmd_count_op(cldev->memory, cmd_opv_set_tile_bits, csize - extra);
 		dp++;
 		dp = cmd_put_w(loc.index, dp);
 		cmd_put_w(offset, dp);
@@ -715,7 +716,7 @@ clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 
 	    if (code < 0)
 		return code;
-	    *dp = cmd_count_op(cmd_opv_set_bits, csize);
+	    *dp = cmd_count_op(cldev->memory, cmd_opv_set_bits, csize);
 	    dp[1] = (depth << 2) + code;
 	    dp += 2;
 	    dp = cmd_put_w(loc.tile->width, dp);

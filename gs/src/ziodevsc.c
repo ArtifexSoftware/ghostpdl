@@ -100,7 +100,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     int code;
 
     if (!streq1(access, 'r'))
-	return_error(e_invalidfileaccess);
+	return_error(mem,  e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdin)) {
 	/* procedure source */
 	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
@@ -122,7 +122,7 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
 	    		len, "stdin_open");
 	    if (buf == 0)
-		return_error(e_VMerror);
+		return_error(imemory, e_VMerror);
 	    s->cbuf = buf;
 	    s->srptr = s->srlimit = s->swptr = buf - 1;
 	    s->swlimit = buf - 1 + len;
@@ -180,7 +180,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     int code;
 
     if (!streq1(access, 'w'))
-	return_error(e_invalidfileaccess);
+	return_error(mem, e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stdout)) {
 	/* procedure source */
 	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
@@ -202,7 +202,7 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
 	    		len, "stdout_open");
 	    if (buf == 0)
-		return_error(e_VMerror);
+		return_error(mem, e_VMerror);
 	    s->cbuf = buf;
 	    s->srptr = s->srlimit = s->swptr = buf - 1;
 	    s->swlimit = buf - 1 + len;
@@ -244,7 +244,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     int code;
 
     if (!streq1(access, 'w'))
-	return_error(e_invalidfileaccess);
+	return_error(mem, e_invalidfileaccess);
     if (file_is_invalid(s, &ref_stderr)) {
 	/* procedure source */
 	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
@@ -266,7 +266,7 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
 	    byte *buf = gs_alloc_bytes((gs_memory_t *)imemory_system,
 	    		len, "stderr_open");
 	    if (buf == 0)
-		return_error(e_VMerror);
+		return_error(mem, e_VMerror);
 	    s->cbuf = buf;
 	    s->srptr = s->srlimit = s->swptr = buf - 1;
 	    s->swlimit = buf - 1 + len;

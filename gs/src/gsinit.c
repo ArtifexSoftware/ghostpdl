@@ -21,9 +21,6 @@
 #include "gp.h"
 #include "gslib.h"		/* interface definition */
 
-/* Imported from gsmisc.c */
-extern FILE *gs_debug_out;
-
 /* Configuration information from gconfig.c. */
 extern_gx_init_table();
 
@@ -38,8 +35,8 @@ gs_lib_init0(FILE * debug_out)
 {
     gs_memory_t *mem;
 
-    gs_debug_out = debug_out;
-    mem = (gs_memory_t *) gs_malloc_init();
+    mem = (gs_memory_t *) gs_malloc_init(NULL);
+
     /* Reset debugging flags */
     memset(gs_debug, 0, 128);
     gs_log_errors = 0;

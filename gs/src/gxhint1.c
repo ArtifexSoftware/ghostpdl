@@ -30,13 +30,13 @@ static bool USE_HINTS = true;
 typedef zone_table(1) a_zone_table;
 typedef stem_table(1) a_stem_table;
 private void
-    compute_snaps(const gs_matrix_fixed *, const a_stem_table *,
+    compute_snaps(const gs_memory_t *mem, const gs_matrix_fixed *, const a_stem_table *,
 		  stem_snap_table *, int, int, const char *);
 private alignment_zone *
-    compute_zones(const gs_matrix_fixed *, const font_hints *,
+    compute_zones(const gs_memory_t *mem, const gs_matrix_fixed *, const font_hints *,
 	const a_zone_table *, const a_zone_table *, alignment_zone *, int);
 private int
-    transform_zone(const gs_matrix_fixed *, const font_hints *,
+    transform_zone(const gs_memory_t *mem, const gs_matrix_fixed *, const font_hints *,
 		   const float *, alignment_zone *);
 
 /* Reset the font-level hints. */
@@ -54,7 +54,7 @@ reset_font_hints(font_hints * pfh, const gs_log2_scale_point * plog2_scale)
 /* Compute the font-level hints from the font and the matrix. */
 /* We should cache this with the font/matrix pair.... */
 void
-compute_font_hints(font_hints * pfh, const gs_matrix_fixed * pmat,
+compute_font_hints(const gs_memory_t *mem, font_hints * pfh, const gs_matrix_fixed * pmat,
        const gs_log2_scale_point * plog2_scale, const gs_type1_data * pdata)
 {
     alignment_zone *zp = &pfh->a_zones[0];
@@ -76,18 +76,18 @@ compute_font_hints(font_hints * pfh, const gs_matrix_fixed * pmat,
 	pfh->x_inverted = is_fneg(pmat->yx),
 	    pfh->axes_swapped = true,
 	    pfh->use_x_hints = USE_HINTS;
-    if_debug6('y', "[y]ctm=[%g %g %g %g %g %g]\n",
+    if_debug6(mem, 'y', "[y]ctm=[%g %g %g %g %g %g]\n",
 	      pmat->xx, pmat->xy, pmat->yx, pmat->yy,
 	      pmat->tx, pmat->ty);
-    if_debug7('y', "[y]scale=%d/%d, swapped=%d, x/y_hints=%d,%d, x/y_inverted=%d,%d\n",
+    if_debug7(mem, 'y', "[y]scale=%d/%d, swapped=%d, x/y_hints=%d,%d, x/y_inverted=%d,%d\n",
 	      1 << plog2_scale->x, 1 << plog2_scale->y,
 	      pfh->axes_swapped, pfh->use_x_hints, pfh->use_y_hints,
 	      pfh->x_inverted, pfh->y_inverted);
     /* Transform the actual hints. */
     if (pfh->use_x_hints) {
-	compute_snaps(pmat, (const a_stem_table *)&pdata->StdHW,
+	compute_snaps(mem, pmat, (const a_stem_table *)&pdata->StdHW,
 		      &pfh->snap_h, 0, pfh->axes_swapped, "h");
-	compute_snaps(pmat, (const a_stem_table *)&pdata->StemSnapH,
+	compute_snaps(mem, pmat, (const a_stem_table *)&pdata->StemSnapH,
 		      &pfh->snap_h, 0, pfh->axes_swapped, "h");
     }
     if (pfh->use_y_hints) {
@@ -97,7 +97,7 @@ compute_font_hints(font_hints * pfh, const gs_matrix_fixed * pmat,
 	(pfh->axes_swapped ? &pfh->scale.x : &pfh->scale.y);
 
 	/* Convert BlueFuzz to device pixels. */
-	if (gs_distance_transform2fixed(pmat, 0.0,
+	if (gs_distance_transform2fixed(mem, pmat, 0.0,
 					(float)pdata->BlueFuzz,
 					&vw) < 0
 	    )
@@ -125,12 +125,12 @@ compute_font_hints(font_hints * pfh, const gs_matrix_fixed * pmat,
 	 * alignment zone height must be less than 1.  We enforced
 	 * this when the font was constructed (in zfont1.c).
 	 */
-	if (gs_distance_transform2fixed(pmat, 0.0, 1.0, &vw) < 0)
+	if (gs_distance_transform2fixed(mem, pmat, 0.0, 1.0, &vw) < 0)
 	    vw.x = vw.y = fixed_0;
 	pfh->suppress_overshoot =
 	    fixed2float(any_abs(*vp) >> psp->log2_unit) <
 	    pdata->BlueScale;
-	if (gs_distance_transform2fixed(pmat, 0.0, pdata->BlueShift,
+	if (gs_distance_transform2fixed(mem, pmat, 0.0, pdata->BlueShift,
 					&vw) < 0
 	    )
 	    vw.x = vw.y = fixed_0;
@@ -142,22 +142,22 @@ compute_font_hints(font_hints * pfh, const gs_matrix_fixed * pmat,
 	 */
 	if (pfh->blue_shift > psp->half)
 	    pfh->blue_shift = psp->half;
-	if_debug6('y', "[y]blue_fuzz=%d->%g, blue_scale=%g, blue_shift=%g->%g, sup_ov=%d\n",
+	if_debug6(mem, 'y', "[y]blue_fuzz=%d->%g, blue_scale=%g, blue_shift=%g->%g, sup_ov=%d\n",
 		  pdata->BlueFuzz, fixed2float(pfh->blue_fuzz),
 		  pdata->BlueScale,
 		  pdata->BlueShift, fixed2float(pfh->blue_shift),
 		  pfh->suppress_overshoot);
-	zp = compute_zones(pmat, pfh,
+	zp = compute_zones(mem, pmat, pfh,
 			   (const a_zone_table *)&pdata->BlueValues,
 			   (const a_zone_table *)&pdata->FamilyBlues,
 			   zp, 1);
-	zp = compute_zones(pmat, pfh,
+	zp = compute_zones(mem, pmat, pfh,
 			   (const a_zone_table *)&pdata->OtherBlues,
 			   (const a_zone_table *)&pdata->FamilyOtherBlues,
 			   zp, max_OtherBlues);
-	compute_snaps(pmat, (const a_stem_table *)&pdata->StdVW,
+	compute_snaps(mem, pmat, (const a_stem_table *)&pdata->StdVW,
 		      &pfh->snap_v, 1, !pfh->axes_swapped, "v");
-	compute_snaps(pmat, (const a_stem_table *)&pdata->StemSnapV,
+	compute_snaps(mem, pmat, (const a_stem_table *)&pdata->StemSnapV,
 		      &pfh->snap_v, 1, !pfh->axes_swapped, "v");
     }
     pfh->a_zone_count = zp - &pfh->a_zones[0];
@@ -165,7 +165,7 @@ compute_font_hints(font_hints * pfh, const gs_matrix_fixed * pmat,
 
 /* Transform one set of stem snap widths. */
 private void
-compute_snaps(const gs_matrix_fixed * pmat, const a_stem_table * pst,
+compute_snaps(const gs_memory_t *mem, const gs_matrix_fixed * pmat, const a_stem_table * pst,
 	    stem_snap_table * psst, int from_y, int to_y, const char *tname)
 {
     gs_fixed_point wxy;
@@ -177,14 +177,14 @@ compute_snaps(const gs_matrix_fixed * pmat, const a_stem_table * pst,
 	float w = pst->values[i];
 	int code =
 	(from_y ?
-	 gs_distance_transform2fixed(pmat, 0.0, w, &wxy) :
-	 gs_distance_transform2fixed(pmat, w, 0.0, &wxy)
+	 gs_distance_transform2fixed(mem, pmat, 0.0, w, &wxy) :
+	 gs_distance_transform2fixed(mem, pmat, w, 0.0, &wxy)
 	);
 
 	if (code < 0)
 	    continue;
 	psst->data[j] = any_abs(*wp);
-	if_debug3('y', "[y]snap_%s[%d]=%g\n", tname, j,
+	if_debug3(mem, 'y', "[y]snap_%s[%d]=%g\n", tname, j,
 		  fixed2float(psst->data[j]));
 	j++;
     }
@@ -193,7 +193,7 @@ compute_snaps(const gs_matrix_fixed * pmat, const a_stem_table * pst,
 
 /* Compute the alignment zones for one set of 'blue' values. */
 private alignment_zone *
-compute_zones(const gs_matrix_fixed * pmat, const font_hints * pfh,
+compute_zones(const gs_memory_t *mem, const gs_matrix_fixed * pmat, const font_hints * pfh,
 	      const a_zone_table * blues, const a_zone_table * family_blues,
 	      alignment_zone * zp, int bottom_count)
 {
@@ -206,9 +206,9 @@ compute_zones(const gs_matrix_fixed * pmat, const font_hints * pfh,
 	const float *vp = &blues->values[i];
 
 	zp->is_top_zone = i >> 1 >= bottom_count;
-	if (transform_zone(pmat, pfh, vp, zp) < 0)
+	if (transform_zone(mem, pmat, pfh, vp, zp) < 0)
 	    continue;
-	if_debug5('y', "[y]blues[%d]=%g,%g -> %g,%g\n",
+	if_debug5(mem, 'y', "[y]blues[%d]=%g,%g -> %g,%g\n",
 		  i >> 1, vp[0], vp[1],
 		  fixed2float(zp->v0), fixed2float(zp->v1));
 	if (i < family_blues->count) {	/* Check whether family blues should supersede. */
@@ -218,9 +218,9 @@ compute_zones(const gs_matrix_fixed * pmat, const font_hints * pfh,
 			  pfh->scale.x.unit : pfh->scale.y.unit);
 	    fixed diff;
 
-	    if (transform_zone(pmat, pfh, fvp, &fz) < 0)
+	    if (transform_zone(mem, pmat, pfh, fvp, &fz) < 0)
 		continue;
-	    if_debug5('y', "[y]f_blues[%d]=%g,%g -> %g,%g\n",
+	    if_debug5(mem, 'y', "[y]f_blues[%d]=%g,%g -> %g,%g\n",
 		      i >> 1, fvp[0], fvp[1],
 		      fixed2float(fz.v0), fixed2float(fz.v1));
 	    diff = (zp->v1 - zp->v0) - (fz.v1 - fz.v0);
@@ -240,15 +240,15 @@ compute_zones(const gs_matrix_fixed * pmat, const font_hints * pfh,
 /* Transform a single alignment zone to device coordinates, */
 /* taking axis swapping into account. */
 private int
-transform_zone(const gs_matrix_fixed * pmat, const font_hints * pfh,
+transform_zone(const gs_memory_t *mem, const gs_matrix_fixed * pmat, const font_hints * pfh,
 	       const float *vp, alignment_zone * zp)
 {
     gs_fixed_point p0, p1;
     fixed v0, v1;
     int code;
 
-    if ((code = gs_point_transform2fixed(pmat, 0.0, vp[0], &p0)) < 0 ||
-	(code = gs_point_transform2fixed(pmat, 0.0, vp[1], &p1)) < 0
+    if ((code = gs_point_transform2fixed(mem, pmat, 0.0, vp[0], &p0)) < 0 ||
+	(code = gs_point_transform2fixed(mem, pmat, 0.0, vp[1], &p1)) < 0
 	)
 	return code;
     if (pfh->axes_swapped)

@@ -367,7 +367,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     stream fstrm, jstrm;
 
     if (jcdp == 0 || in == 0) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto fail;
     }
     /* Create the DCT decoder state. */
@@ -434,7 +434,7 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     if ((fbuf = gs_alloc_bytes(mem, fbuf_size, "jpeg_print_page(fbuf)")) == 0 ||
 	(jbuf = gs_alloc_bytes(mem, jbuf_size, "jpeg_print_page(jbuf)")) == 0
 	) {
-	code = gs_note_error(gs_error_VMerror);
+	code = gs_note_error(mem, gs_error_VMerror);
 	goto done;
     }
     swrite_file(&fstrm, prn_stream, fbuf, fbuf_size);

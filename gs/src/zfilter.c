@@ -60,7 +60,7 @@ zPFBD(i_ctx_t *i_ctx_p)
     os_ptr sop = osp;
     stream_PFBD_state state;
 
-    check_type(*sop, t_boolean);
+    check_type(imemory, *sop, t_boolean);
     state.binary_to_hex = sop->value.boolval;
     return filter_read(i_ctx_p, 1, &s_PFBD_template, (stream_state *)&state, 0);
 }
@@ -77,13 +77,13 @@ zPSSE(i_ctx_t *i_ctx_p)
 
 /* Common setup for RLE and RLD filters. */
 private int
-rl_setup(os_ptr dop, bool * eod)
+rl_setup(const gs_memory_t *mem, os_ptr dop, bool * eod)
 {
     if (r_has_type(dop, t_dictionary)) {
 	int code;
 
-	check_dict_read(*dop);
-	if ((code = dict_bool_param(dop, "EndOfData", true, eod)) < 0)
+	check_dict_read(mem, *dop);
+	if ((code = dict_bool_param(mem, dop, "EndOfData", true, eod)) < 0)
 	    return code;
 	return 1;
     } else {
@@ -101,11 +101,11 @@ zRLE(i_ctx_t *i_ctx_p)
     stream_RLE_state state;
     int code;
 
-    check_op(2);
-    code = rl_setup(op - 1, &state.EndOfData);
+    check_op(imemory, 2);
+    code = rl_setup(imemory, op - 1, &state.EndOfData);
     if (code < 0)
 	return code;
-    check_int_leu(*op, max_uint);
+    check_int_leu(imemory, *op, max_uint);
     state.record_size = op->value.intval;
     return filter_write(i_ctx_p, 1, &s_RLE_template, (stream_state *) & state, 0);
 }
@@ -117,7 +117,7 @@ zRLD(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     stream_RLD_state state;
-    int code = rl_setup(op, &state.EndOfData);
+    int code = rl_setup(imemory, op, &state.EndOfData);
 
     if (code < 0)
 	return code;
@@ -141,21 +141,21 @@ zSFD(i_ctx_t *i_ctx_p)
 	int count;
 	int code;
 
-	check_dict_read(*op);
-	if ((code = dict_int_param(op, "EODCount", 0, max_int, -1, &count)) < 0)
+	check_dict_read(imemory, *op);
+	if ((code = dict_int_param(imemory, op, "EODCount", 0, max_int, -1, &count)) < 0)
 	    return code;
 	if (dict_find_string(op, "EODString", &sop) <= 0)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	state.count = count;
 	npop = 0;
     } else {
-	check_type(sop[-1], t_integer);
+	check_type(imemory, sop[-1], t_integer);
 	if (sop[-1].value.intval < 0)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
 	state.count = sop[-1].value.intval;
 	npop = 2;
     }
-    check_read_type(*sop, t_string);
+    check_read_type(imemory, *sop, t_string);
     state.eod.data = sop->value.const_bytes;
     state.eod.size = r_size(sop);
     return filter_read(i_ctx_p, npop, &s_SFD_template,
@@ -184,8 +184,8 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 
     /* Skip over an optional dictionary parameter. */
     if (r_has_type(sop, t_dictionary)) {
-	check_dict_read(*sop);
-	if ((code = dict_bool_param(sop, "CloseSource", false, &close)) < 0)
+	check_dict_read(imemory, *sop);
+	if ((code = dict_bool_param(imemory, sop, "CloseSource", false, &close)) < 0)
 	    return code;
 	--sop;
     }
@@ -196,22 +196,22 @@ filter_read(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     use_space = max(use_space, r_space(sop));
     switch (r_type(sop)) {
 	case t_string:
-	    check_read(*sop);
+	    check_read(imemory, *sop);
 	    ialloc_set_space(idmemory, use_space);
 	    sstrm = file_alloc_stream(imemory, "filter_read(string stream)");
 	    if (sstrm == 0) {
-		code = gs_note_error(e_VMerror);
+		code = gs_note_error(imemory, e_VMerror);
 		goto out;
 	    }
 	    sread_string(sstrm, sop->value.bytes, r_size(sop));
 	    sstrm->is_temp = 1;
 	    break;
 	case t_file:
-	    check_read_known_file(sstrm, sop, return);
+	    check_read_known_file(imemory, sstrm, sop, return);
 	    ialloc_set_space(idmemory, use_space);
 	    goto ens;
 	default:
-	    check_proc(*sop);
+	    check_proc(imemory, *sop);
 	    ialloc_set_space(idmemory, use_space);
 	    code = sread_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
@@ -263,8 +263,8 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
 
     /* Skip over an optional dictionary parameter. */
     if (r_has_type(sop, t_dictionary)) {
-	check_dict_read(*sop);
-	if ((code = dict_bool_param(sop, "CloseTarget", false, &close)) < 0)
+	check_dict_read(imemory, *sop);
+	if ((code = dict_bool_param(imemory, sop, "CloseTarget", false, &close)) < 0)
 	    return code;
 	--sop;
     }
@@ -275,22 +275,22 @@ filter_write(i_ctx_t *i_ctx_p, int npop, const stream_template * template,
     use_space = max(use_space, r_space(sop));
     switch (r_type(sop)) {
 	case t_string:
-	    check_write(*sop);
+	    check_write(imemory, *sop);
 	    ialloc_set_space(idmemory, use_space);
 	    sstrm = file_alloc_stream(imemory, "filter_write(string)");
 	    if (sstrm == 0) {
-		code = gs_note_error(e_VMerror);
+		code = gs_note_error(imemory, e_VMerror);
 		goto out;
 	    }
 	    swrite_string(sstrm, sop->value.bytes, r_size(sop));
 	    sstrm->is_temp = 1;
 	    break;
 	case t_file:
-	    check_write_known_file(sstrm, sop, return);
+	    check_write_known_file(imemory, sstrm, sop, return_error);
 	    ialloc_set_space(idmemory, use_space);
 	    goto ens;
 	default:
-	    check_proc(*sop);
+	    check_proc(imemory, *sop);
 	    ialloc_set_space(idmemory, use_space);
 	    code = swrite_proc(sop, &sstrm, iimemory);
 	    if (code < 0)
@@ -387,7 +387,7 @@ filter_ensure_buf(stream ** ps, uint min_buf_size, gs_ref_memory_t *imem,
 				   "filter_ensure_buf");
 
 	if (buf == 0)
-	    return_error(e_VMerror);
+	    return_error((const gs_memory_t *)imem, e_VMerror);
 	s->cbuf = buf;
 	s->srptr = s->srlimit = s->swptr = buf - 1;
 	s->swlimit = buf - 1 + len;

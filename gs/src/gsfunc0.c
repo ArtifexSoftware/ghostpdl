@@ -165,7 +165,7 @@ private int (*const fn_get_samples[]) (const gs_function_Sd_t * pfn,
  * (thanks to Raph Levien for the reference).
  */
 private double
-interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
+interpolate_cubic(const gs_memory_t *mem, floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
 {
     /*
      * The parameter 'a' affects the contribution of the high-frequency
@@ -181,7 +181,7 @@ interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
 	((a+2) * CUBE(m2x) - (a+3) * SQR(m2x) + 1) * f2 +
 	(a * CUBE(m3x) - 5 * a * SQR(m3x) + 8 * a * m3x - 4 * a) * f3;
 
-    if_debug6('~', "[~](%g, %g, %g, %g)order3(%g) => %g\n",
+    if_debug6(mem, '~', "[~](%g, %g, %g, %g)order3(%g) => %g\n",
 	      f0, f1, f2, f3, x, c);
     return c;
 #undef a
@@ -198,14 +198,15 @@ interpolate_cubic(floatp x, floatp f0, floatp f1, floatp f2, floatp f3)
  * match what we believe is Acrobat Reader's behavior.
  */
 inline private double
-interpolate_quadratic(floatp x, floatp f0, floatp f1, floatp f2)
+interpolate_quadratic(const gs_memory_t *mem, floatp x, floatp f0, floatp f1, floatp f2)
 {
-    return interpolate_cubic(x + 1, f0, f0, f1, f2);
+    return interpolate_cubic(mem, x + 1, f0, f0, f1, f2);
 }
 
 /* Calculate a result by multicubic interpolation. */
 private void
-fn_interpolate_cubic(const gs_function_Sd_t *pfn, const float *fparts,
+fn_interpolate_cubic(const gs_memory_t *mem, 
+		     const gs_function_Sd_t *pfn, const float *fparts,
 		     const int *iparts, const ulong *factors,
 		     float *samples, ulong offset, int m)
 {
@@ -228,9 +229,9 @@ top:
 	--m;
 	if (is_fzero(fpart))
 	    goto top;
-	fn_interpolate_cubic(pfn, fparts, iparts, factors, samples,
+	fn_interpolate_cubic(mem, pfn, fparts, iparts, factors, samples,
 			     offset, m);
-	fn_interpolate_cubic(pfn, fparts, iparts, factors, samples1,
+	fn_interpolate_cubic(mem, pfn, fparts, iparts, factors, samples1,
 			     offset + delta, m);
 	/* Ensure we don't try to access out of bounds. */
 	/*
@@ -245,31 +246,31 @@ top:
 	}
 	if (ipart == 0) {
 	    /* Use quadratic interpolation. */
-	    fn_interpolate_cubic(pfn, fparts, iparts, factors,
+	    fn_interpolate_cubic(mem, pfn, fparts, iparts, factors,
 				 samples2, offset + delta * 2, m);
 	    for (j = pfn->params.n - 1; j >= 0; --j)
 		samples[j] =
-		    interpolate_quadratic(fpart, samples[j],
+		    interpolate_quadratic(mem, fpart, samples[j],
 					  samples1[j], samples2[j]);
 	    return;
 	}
 	/* At this point we know ipart > 0, size >= 3. */
-	fn_interpolate_cubic(pfn, fparts, iparts, factors, samplesm1,
+	fn_interpolate_cubic(mem, pfn, fparts, iparts, factors, samplesm1,
 			     offset - delta, m);
 	if (ipart == size - 2) {
 	    /* Use quadratic interpolation. */
 	    for (j = pfn->params.n - 1; j >= 0; --j)
 		samples[j] =
-		    interpolate_quadratic(1 - fpart, samples1[j],
+		    interpolate_quadratic(mem, 1 - fpart, samples1[j],
 					  samples[j], samplesm1[j]);
 	    return;
 	}
 	/* Now we know 0 < ipart < size - 2, size > 3. */
-	fn_interpolate_cubic(pfn, fparts, iparts, factors,
+	fn_interpolate_cubic(mem, pfn, fparts, iparts, factors,
 			     samples2, offset + delta * 2, m);
 	for (j = pfn->params.n - 1; j >= 0; --j)
 	    samples[j] =
-		interpolate_cubic(fpart + 1, samplesm1[j], samples[j],
+		interpolate_cubic(mem, fpart + 1, samplesm1[j], samples[j],
 				  samples1[j], samples2[j]);
     }
 }
@@ -308,7 +309,7 @@ top:
 
 /* Evaluate a Sampled function. */
 private int
-fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
+fn_Sd_evaluate(const gs_memory_t *mem, const gs_function_t * pfn_common, const float *in, float *out)
 {
     const gs_function_Sd_t *pfn = (const gs_function_Sd_t *)pfn_common;
     int bps = pfn->params.BitsPerSample;
@@ -361,7 +362,7 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 	}
     }
     if (pfn->params.Order == 3)
-	fn_interpolate_cubic(pfn, encoded, iparts, factors, samples,
+	fn_interpolate_cubic(mem, pfn, encoded, iparts, factors, samples,
 			     offset, pfn->params.m);
     else
 	fn_interpolate_linear(pfn, encoded, factors, samples, offset,
@@ -395,7 +396,8 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 
 /* Test whether a Sampled function is monotonic. */
 private int
-fn_Sd_is_monotonic(const gs_function_t * pfn_common,
+fn_Sd_is_monotonic(const gs_memory_t *mem, 
+		   const gs_function_t * pfn_common,
 		   const float *lower, const float *upper,
 		   gs_function_effort_t effort)
 {
@@ -437,10 +439,10 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	w1 = (float)pfn->params.Size[0] - 1;
     if ((int)w0 != (int)w1)
 	return gs_error_undefined; /* not in the same sample */
-    code = gs_function_evaluate(pfn_common, lower, r0);
+    code = gs_function_evaluate(mem, pfn_common, lower, r0);
     if (code < 0)
 	return code;
-    gs_function_evaluate(pfn_common, upper, r1);
+    gs_function_evaluate(mem, pfn_common, upper, r1);
     if (code < 0)
 	return code;
     for (i = 0, result = 0; i < pfn->params.n; ++i) {
@@ -519,14 +521,14 @@ fn_Sd_make_scaled(const gs_function_Sd_t *pfn, gs_function_Sd_t **ppsfn,
     int code;
 
     if (psfn == 0)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     psfn->params = pfn->params;
     psfn->params.Encode = 0;		/* in case of failure */
     psfn->params.Decode = 0;
     psfn->params.Size =
 	fn_copy_values(pfn->params.Size, pfn->params.m, sizeof(int), mem);
     if ((code = (psfn->params.Size == 0 ?
-		 gs_note_error(gs_error_VMerror) : 0)) < 0 ||
+		 gs_note_error(mem, gs_error_VMerror) : 0)) < 0 ||
 	(code = fn_common_scale((gs_function_t *)psfn,
 				(const gs_function_t *)pfn,
 				pranges, mem)) < 0 ||
@@ -571,19 +573,19 @@ gs_function_Sd_init(gs_function_t ** ppfn,
     int i;
 
     *ppfn = 0;			/* in case of error */
-    code = fn_check_mnDR((const gs_function_params_t *)params,
+    code = fn_check_mnDR(mem, (const gs_function_params_t *)params,
 			 params->m, params->n);
     if (code < 0)
 	return code;
     if (params->m > max_Sd_m)
-	return_error(gs_error_limitcheck);
+	return_error(mem, gs_error_limitcheck);
     switch (params->Order) {
 	case 0:		/* use default */
 	case 1:
 	case 3:
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     }
     switch (params->BitsPerSample) {
 	case 1:
@@ -596,18 +598,18 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	case 32:
 	    break;
 	default:
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     }
     for (i = 0; i < params->m; ++i)
 	if (params->Size[i] <= 0)
-	    return_error(gs_error_rangecheck);
+	    return_error(mem, gs_error_rangecheck);
     {
 	gs_function_Sd_t *pfn =
 	    gs_alloc_struct(mem, gs_function_Sd_t, &st_function_Sd,
 			    "gs_function_Sd_init");
 
 	if (pfn == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	pfn->params = *params;
 	if (params->Order == 0)
 	    pfn->params.Order = 1;	/* default */

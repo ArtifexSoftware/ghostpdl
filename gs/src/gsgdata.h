@@ -75,7 +75,8 @@ struct gs_glyph_data_procs_s {
  * Replace glyph data by a substring.  If the data were allocated by
  * get_outline et al, this frees the part of the data outside the substring.
  */
-int gs_glyph_data_substring(gs_glyph_data_t *pgd, uint offset, uint size);
+int gs_glyph_data_substring(const gs_memory_t *mem,
+			    gs_glyph_data_t *pgd, uint offset, uint size);
 
 /*
  * Free the data for a glyph if they were allocated by get_outline et al.

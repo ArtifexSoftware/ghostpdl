@@ -45,9 +45,9 @@ void rc_trace_free_struct(const void *vp, const rc_header *prc,
 			  client_name_t cname);
 void rc_trace_increment(const void *vp, const rc_header *prc);
 void rc_trace_adjust(const void *vp, const rc_header *prc, int delta);
-#define IF_RC_DEBUG(call) if (gs_debug_c('^')) dlputs(""), call
+#define IF_RC_DEBUG(mem, call) if (gs_debug_c('^')) dlputs(mem, ""), call
 #else
-#define IF_RC_DEBUG(call) DO_NOTHING
+#define IF_RC_DEBUG(mem, call) DO_NOTHING
 #endif
 
 /* ------ Allocate/free ------ */
@@ -59,7 +59,7 @@ rc_free_proc(rc_free_struct_only);
     (vp)->rc.ref_count = rcinit;\
     (vp)->rc.memory = mem;\
     (vp)->rc.free = proc;\
-    IF_RC_DEBUG(rc_trace_init_free(vp, &(vp)->rc));\
+    IF_RC_DEBUG(mem, rc_trace_init_free(vp, &(vp)->rc));\
   END
 #define rc_init(vp, mem, rcinit)\
   rc_init_free(vp, mem, rcinit, rc_free_struct_only)
@@ -77,38 +77,38 @@ rc_free_proc(rc_free_struct_only);
 #define rc_alloc_struct_1(vp, typ, pstype, mem, errstat, cname)\
   rc_alloc_struct_n(vp, typ, pstype, mem, errstat, cname, 1)
 
-#define rc_free_struct(vp, cname)\
+#define rc_free_struct(mem, vp, cname)\
   BEGIN\
-    IF_RC_DEBUG(rc_trace_free_struct(vp, &(vp)->rc, cname));\
+    IF_RC_DEBUG(mem, rc_trace_free_struct(vp, &(vp)->rc, cname));\
     (vp)->rc.free((vp)->rc.memory, (void *)(vp), cname);\
   END
 
 /* ------ Reference counting ------ */
 
 /* Increment a reference count. */
-#define RC_DO_INCREMENT(vp)\
+#define RC_DO_INCREMENT(mem, vp)\
   BEGIN\
     (vp)->rc.ref_count++;\
-    IF_RC_DEBUG(rc_trace_increment(vp, &(vp)->rc));\
+    IF_RC_DEBUG(mem, rc_trace_increment(vp, &(vp)->rc));\
   END
-#define rc_increment(vp)\
+#define rc_increment(mem, vp)\
   BEGIN\
-    if (vp) RC_DO_INCREMENT(vp);\
+    if (vp) RC_DO_INCREMENT(mem, vp);\
   END
 
 /* Increment a reference count, allocating the structure if necessary. */
 #define rc_allocate_struct(vp, typ, pstype, mem, errstat, cname)\
   BEGIN\
     if (vp)\
-      RC_DO_INCREMENT(vp);\
+      RC_DO_INCREMENT(mem, vp);\
     else\
       rc_alloc_struct_1(vp, typ, pstype, mem, errstat, cname);\
   END
 
 /* Guarantee that a structure is allocated and is not shared. */
-#define RC_DO_ADJUST(vp, delta)\
+#define RC_DO_ADJUST(mem, vp, delta)\
   BEGIN\
-    IF_RC_DEBUG(rc_trace_adjust(vp, &(vp)->rc, delta));\
+    IF_RC_DEBUG(mem, rc_trace_adjust(vp, &(vp)->rc, delta));\
     (vp)->rc.ref_count += (delta);\
   END
 #define rc_unshare_struct(vp, typ, pstype, mem, errstat, cname)\
@@ -116,43 +116,43 @@ rc_free_proc(rc_free_struct_only);
     if ( (vp) == 0 || (vp)->rc.ref_count > 1 || (vp)->rc.memory != (mem) ) {\
       typ *new;\
       rc_alloc_struct_1(new, typ, pstype, mem, errstat, cname);\
-      if ( vp ) RC_DO_ADJUST(vp, -1);\
+      if ( vp ) RC_DO_ADJUST(mem, vp, -1);\
       (vp) = new;\
     }\
   END
 
 /* Adjust a reference count either up or down. */
 #ifdef DEBUG
-#  define rc_check_(vp)\
+#  define rc_check_(mem, vp)\
      BEGIN\
        if (gs_debug_c('?') && (vp)->rc.ref_count < 0)\
-	 lprintf2("0x%lx has ref_count of %ld!\n", (ulong)(vp),\
+	 lprintf2(mem, "0x%lx has ref_count of %ld!\n", (ulong)(vp),\
 		  (vp)->rc.ref_count);\
      END
 #else
-#  define rc_check_(vp) DO_NOTHING
+#  define rc_check_(mem, vp) DO_NOTHING
 #endif
-#define rc_adjust_(vp, delta, cname, body)\
+#define rc_adjust_(mem, vp, delta, cname, body)\
   BEGIN\
     if (vp) {\
-      RC_DO_ADJUST(vp, delta);\
+      RC_DO_ADJUST(mem, vp, delta);\
       if (!(vp)->rc.ref_count) {\
-	rc_free_struct(vp, cname);\
+	rc_free_struct(mem, vp, cname);\
 	body;\
       } else\
-	rc_check_(vp);\
+	rc_check_(mem, vp);\
     }\
   END
-#define rc_adjust(vp, delta, cname)\
-  rc_adjust_(vp, delta, cname, (vp) = 0)
-#define rc_adjust_only(vp, delta, cname)\
-  rc_adjust_(vp, delta, cname, DO_NOTHING)
-#define rc_adjust_const(vp, delta, cname)\
-  rc_adjust_only(vp, delta, cname)
-#define rc_decrement(vp, cname)\
-  rc_adjust(vp, -1, cname)
-#define rc_decrement_only(vp, cname)\
-  rc_adjust_only(vp, -1, cname)
+#define rc_adjust(mem, vp, delta, cname)\
+  rc_adjust_(mem, vp, delta, cname, (vp) = 0)
+#define rc_adjust_only(mem, vp, delta, cname)\
+  rc_adjust_(mem, vp, delta, cname, DO_NOTHING)
+#define rc_adjust_const(mem, vp, delta, cname)\
+  rc_adjust_only(mem, vp, delta, cname)
+#define rc_decrement(mem, vp, cname)\
+  rc_adjust(mem, vp, -1, cname)
+#define rc_decrement_only(mem, vp, cname)\
+  rc_adjust_only(mem, vp, -1, cname)
 
 /*
  * Assign a pointer, adjusting reference counts.  vpfrom might be a local
@@ -160,11 +160,11 @@ rc_free_proc(rc_free_struct_only);
  * vpto might decrement the object's reference count and cause it to be
  * freed (incorrectly); for that reason, we do the increment first.
  */
-#define rc_assign(vpto, vpfrom, cname)\
+#define rc_assign(mem, vpto, vpfrom, cname)\
   BEGIN\
     if ((vpto) != (vpfrom)) {\
-      rc_increment(vpfrom);\
-      rc_decrement_only(vpto, cname);\
+      rc_increment(mem, vpfrom);\
+      rc_decrement_only(mem, vpto, cname);\
       (vpto) = (vpfrom);\
     }\
   END
@@ -173,11 +173,11 @@ rc_free_proc(rc_free_struct_only);
  * but don't do the assignment.  We use this before assigning
  * an entire structure containing reference-counted pointers.
  */
-#define rc_pre_assign(vpto, vpfrom, cname)\
+#define rc_pre_assign(mem, vpto, vpfrom, cname)\
   BEGIN\
     if ((vpto) != (vpfrom)) {\
-      rc_increment(vpfrom);\
-      rc_decrement_only(vpto, cname);\
+      rc_increment(mem, vpfrom);\
+      rc_decrement_only(mem, vpto, cname);\
     }\
   END
 

@@ -83,7 +83,7 @@ ref_stack_init(ref_stack_t *pstack, const ref *pblock_array,
 				 &st_ref_stack_params,
 				 "ref_stack_alloc(stack.params)");
 	if (params == 0)
-	    return_error(-1);	/* avoid binding in any error codes */
+	    return_error((const gs_memory_t *)mem, -1);	/* avoid binding in any error codes */
     }
 
     pstack->bot = body + bot_guard;
@@ -159,7 +159,7 @@ ref_stack_set_max_count(ref_stack_t *pstack, long nmax)
  * Note that this may require allocating a block.
  */
 int
-ref_stack_set_margin(ref_stack_t *pstack, uint margin)
+ref_stack_set_margin(const gs_memory_t *mem, ref_stack_t *pstack, uint margin)
 {
     const ref_stack_params_t *params = pstack->params;
     uint data_size = params->data_size;
@@ -168,7 +168,7 @@ ref_stack_set_margin(ref_stack_t *pstack, uint margin)
 	refset_null_new(pstack->top + 1, pstack->margin - margin, 0);
     } else {
 	if (margin > data_size >> 1)
-	    return_error(e_rangecheck);
+	    return_error(mem, e_rangecheck);
 	if (pstack->top - pstack->p < margin) {
 	    uint used = pstack->p + 1 - pstack->bot;
 	    uint keep = data_size - margin;
@@ -297,7 +297,7 @@ ref_stack_store(const ref_stack_t *pstack, ref *parray, uint count,
     ref_stack_enum_t rsenum;
 
     if (count > ref_stack_count(pstack) || count > r_size(parray))
-	return_error(e_rangecheck);
+	return_error((const gs_memory_t *)pstack->memory, e_rangecheck);
     if (check) {
 	int code = ref_stack_store_check(pstack, parray, count, skip);
 
@@ -380,7 +380,7 @@ ref_stack_pop_block(ref_stack_t *pstack)
     ref next;
 
     if (pnext == 0)
-	return_error(pstack->params->underflow_error);
+	return_error((const gs_memory_t *)pstack->memory, pstack->params->underflow_error);
     used = r_size(&pnext->used);
     body = (ref *) (pnext + 1) + pstack->params->bot_guard;
     next = pcur->next;
@@ -405,7 +405,7 @@ ref_stack_pop_block(ref_stack_t *pstack)
 	uint left;
 
 	if (moved == 0)
-	    return_error(e_Fatal);
+	    return_error((const gs_memory_t *)pstack->memory, e_Fatal);
 	memmove(bot + moved, bot, count * sizeof(ref));
 	left = used - moved;
 	memcpy(bot, body + left, moved * sizeof(ref));
@@ -444,7 +444,7 @@ ref_stack_extend(ref_stack_t *pstack, uint request)
     const ref_stack_params_t *params = pstack->params;
 
     if (request > params->data_size)
-	return_error(params->overflow_error);
+	return_error((const gs_memory_t *)pstack->memory, params->overflow_error);
     if (keep + request > pstack->body_size)
 	keep = pstack->body_size - request;
     if (keep > count)
@@ -504,14 +504,14 @@ ref_stack_push_block(ref_stack_t *pstack, uint keep, uint add)
     int code;
 
     if (keep > count)
-	return_error(e_Fatal);
+	return_error((const gs_memory_t *)pstack->memory, e_Fatal);
     /* Check for overflowing the maximum size, */
     /* or expansion not allowed.  */
     if (pstack->extension_used + (pstack->top - pstack->bot) + add >=
 	pstack->max_stack.value.intval ||
 	!params->allow_expansion
 	)
-	return_error(params->overflow_error);
+	return_error((const gs_memory_t *)pstack->memory, params->overflow_error);
     code = gs_alloc_ref_array(pstack->memory, &next, 0,
 			      params->block_size, "ref_stack_push_block");
     if (code < 0)

@@ -325,7 +325,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
     int code = 0;		/* return code */
 
     if (line == 0)		/* can't allocate line buffer */
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
 
     /* Fill in the other variable entries in the header struct. */
 
@@ -404,7 +404,7 @@ pcx_write_page(gx_device_printer * pdev, FILE * file, pcx_header * phdr,
 		    break;
 
 		default:
-		    code = gs_note_error(gs_error_rangecheck);
+		    code = gs_note_error(pdev->memory, gs_error_rangecheck);
 		    goto pcx_done;
 
 	    }

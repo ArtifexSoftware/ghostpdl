@@ -188,7 +188,8 @@ const byte art_blend_soft_light_8[256] = {
 };
 
 void
-art_blend_pixel_8(byte *dst, const byte *backdrop,
+art_blend_pixel_8(const gs_memory_t *mem, 
+		  byte *dst, const byte *backdrop,
 		  const byte *src, int n_chan, gs_blend_mode_t blend_mode)
 {
     int i;
@@ -339,7 +340,7 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
 	    }
 	    break;
 	default:
-	    dlprintf1("art_blend_pixel_8: blend mode %d not implemented\n",
+	    dlprintf1(mem, "art_blend_pixel_8: blend mode %d not implemented\n",
 		      blend_mode);
 	    memcpy(dst, src, n_chan);
 	    break;
@@ -347,7 +348,8 @@ art_blend_pixel_8(byte *dst, const byte *backdrop,
 }
 
 void
-art_blend_pixel(ArtPixMaxDepth* dst, const ArtPixMaxDepth *backdrop,
+art_blend_pixel(const gs_memory_t *mem, 
+		ArtPixMaxDepth* dst, const ArtPixMaxDepth *backdrop,
 		const ArtPixMaxDepth* src, int n_chan,
 		gs_blend_mode_t blend_mode)
 {
@@ -463,7 +465,7 @@ art_blend_pixel(ArtPixMaxDepth* dst, const ArtPixMaxDepth *backdrop,
 	    }
 	    break;
 	default:
-	    dlprintf1("art_blend_pixel: blend mode %d not implemented\n",
+	    dlprintf1(mem, "art_blend_pixel: blend mode %d not implemented\n",
 		      blend_mode);
 	    memcpy(dst, src, n_chan);
 	    break;
@@ -496,7 +498,7 @@ art_pdf_union_mul_8(byte alpha1, byte alpha2, byte alpha_mask)
 }
 
 void
-art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
+art_pdf_composite_pixel_alpha_8(const gs_memory_t *mem, byte *dst, const byte *src, int n_chan,
 				gs_blend_mode_t blend_mode)
 {
     byte a_b, a_s;
@@ -547,7 +549,7 @@ art_pdf_composite_pixel_alpha_8(byte *dst, const byte *src, int n_chan,
 	/* Do compositing with blending */
 	byte blend[ART_MAX_CHAN];
 
-	art_blend_pixel_8(blend, dst, src, n_chan, blend_mode);
+	art_blend_pixel_8(mem, blend, dst, src, n_chan, blend_mode);
 	for (i = 0; i < n_chan; i++) {
 	    int c_bl;		/* Result of blend function */
 	    int c_mix;		/* Blend result mixed with source color */
@@ -707,7 +709,8 @@ art_pdf_uncomposite_group_8(byte *dst,
 }
 
 void
-art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
+art_pdf_recomposite_group_8(const gs_memory_t *mem, 
+			    byte *dst, byte *dst_alpha_g,
 			    const byte *src, byte src_alpha_g,
 			    int n_chan,
 			    byte alpha, gs_blend_mode_t blend_mode)
@@ -775,13 +778,14 @@ art_pdf_recomposite_group_8(byte *dst, byte *dst_alpha_g,
 	    tmp = (255 - *dst_alpha_g) * (255 - tmp) + 0x80;
 	    *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
 	}
-	art_pdf_composite_pixel_alpha_8(dst, ca, n_chan, blend_mode);
+	art_pdf_composite_pixel_alpha_8(mem, dst, ca, n_chan, blend_mode);
     }
     /* todo: optimize BLEND_MODE_Normal buf alpha != 255 case */
 }
 
 void
-art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
+art_pdf_composite_group_8(const gs_memory_t *mem, 
+			  byte *dst, byte *dst_alpha_g,
 			  const byte *src,
 			  int n_chan, byte alpha, gs_blend_mode_t blend_mode)
 {
@@ -791,7 +795,7 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
     int tmp;
 
     if (alpha == 255) {
-	art_pdf_composite_pixel_alpha_8(dst, src, n_chan, blend_mode);
+	art_pdf_composite_pixel_alpha_8(mem, dst, src, n_chan, blend_mode);
 	if (dst_alpha_g != NULL) {
 	    tmp = (255 - *dst_alpha_g) * (255 - src[n_chan]) + 0x80;
 	    *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -804,7 +808,7 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 	    ((bits32 *) src_tmp)[i] = ((const bits32 *)src)[i];
 	tmp = src_alpha * alpha + 0x80;
 	src_tmp[n_chan] = (tmp + (tmp >> 8)) >> 8;
-	art_pdf_composite_pixel_alpha_8(dst, src_tmp, n_chan, blend_mode);
+	art_pdf_composite_pixel_alpha_8(mem, dst, src_tmp, n_chan, blend_mode);
 	if (dst_alpha_g != NULL) {
 	    tmp = (255 - *dst_alpha_g) * (255 - src_tmp[n_chan]) + 0x80;
 	    *dst_alpha_g = 255 - ((tmp + (tmp >> 8)) >> 8);
@@ -813,7 +817,8 @@ art_pdf_composite_group_8(byte *dst, byte *dst_alpha_g,
 }
 
 void
-art_pdf_composite_knockout_simple_8(byte *dst,
+art_pdf_composite_knockout_simple_8(const gs_memory_t *mem,
+				    byte *dst,
 				    byte *dst_shape,
 				    const byte *src,
 				    int n_chan, byte opacity)
@@ -858,7 +863,8 @@ art_pdf_composite_knockout_simple_8(byte *dst,
 }
 
 void
-art_pdf_composite_knockout_isolated_8(byte *dst,
+art_pdf_composite_knockout_isolated_8(const gs_memory_t *mem,
+				      byte *dst,
 				      byte *dst_shape,
 				      const byte *src,
 				      int n_chan,
@@ -914,7 +920,8 @@ art_pdf_composite_knockout_isolated_8(byte *dst,
 }
 
 void
-art_pdf_composite_knockout_8(byte *dst,
+art_pdf_composite_knockout_8(const gs_memory_t *mem,
+			     byte *dst,
 			     byte *dst_alpha_g,
 			     const byte *backdrop,
 			     const byte *src,
@@ -979,7 +986,7 @@ art_pdf_composite_knockout_8(byte *dst,
     } else {
 	byte blend[ART_MAX_CHAN];
 
-	art_blend_pixel_8(blend, backdrop, src, n_chan, blend_mode);
+	art_blend_pixel_8(mem, blend, backdrop, src, n_chan, blend_mode);
 	for (i = 0; i < n_chan; i++) {
 	    int c_s;
 	    int c_b;

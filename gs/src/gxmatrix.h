@@ -35,9 +35,11 @@ typedef struct gs_matrix_fixed_s {
 int gs_matrix_fixed_from_matrix(gs_matrix_fixed *, const gs_matrix *);
 
 /* Coordinate transformations to fixed point. */
-int gs_point_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
+int gs_point_transform2fixed(const gs_memory_t *mem, 
+			     const gs_matrix_fixed *, floatp, floatp,
 			     gs_fixed_point *);
-int gs_distance_transform2fixed(const gs_matrix_fixed *, floatp, floatp,
+int gs_distance_transform2fixed(const gs_memory_t *mem, 
+				const gs_matrix_fixed *, floatp, floatp,
 				gs_fixed_point *);
 
 /*

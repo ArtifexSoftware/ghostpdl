@@ -80,7 +80,7 @@ s_CF_put_params(gs_param_list * plist, stream_CF_state * ss)
 	 state.DecodedByteAlign < 1 || state.DecodedByteAlign > 16 ||
 	 (state.DecodedByteAlign & (state.DecodedByteAlign - 1)) != 0)
 	)
-	code = gs_note_error(gs_error_rangecheck);
+	code = gs_note_error(ss->memory, gs_error_rangecheck);
     if (code >= 0)
 	*ss = state;
     return code;

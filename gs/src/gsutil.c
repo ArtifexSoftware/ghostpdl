@@ -25,23 +25,20 @@
 
 /* ------ Unique IDs ------ */
 
-/* Generate a block of unique IDs. */
-static ulong gs_next_id;
-
+// hack needs to be removed 
 init_proc(gs_gsutil_init);	/* check prototype */
 int
 gs_gsutil_init(gs_memory_t *mem)
 {
-    gs_next_id = 1;
     return 0;
 }
 
 ulong
-gs_next_ids(uint count)
+gs_next_ids(const gs_memory_t *mem, uint count)
 {
-    ulong id = gs_next_id;
+    ulong id = mem->pl_stdio->gs_next_id;
 
-    gs_next_id += count;
+    mem->pl_stdio->gs_next_id += count;
     return id;
 }
 
@@ -243,7 +240,7 @@ uid_copy(gs_uid *puid, gs_memory_t *mem, client_name_t cname)
 	    gs_alloc_byte_array(mem, xsize, sizeof(long), cname);
 
 	if (xvalues == 0)
-	    return_error(gs_error_VMerror);
+	    return_error(mem, gs_error_VMerror);
 	memcpy(xvalues, uid_XUID_values(puid), xsize * sizeof(long));
 	puid->xvalues = xvalues;
     }

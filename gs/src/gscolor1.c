@@ -43,7 +43,7 @@ gs_setcmykcolor(gs_state * pgs, floatp c, floatp m, floatp y, floatp k)
     gs_color_space      cs;
     int                 code;
 
-    gs_cspace_init_DeviceCMYK(&cs);
+    gs_cspace_init_DeviceCMYK(pgs->memory, &cs);
     if ((code = gs_setcolorspace(pgs, &cs)) >= 0) {
        gs_client_color *    pcc = pgs->ccolor;
 
@@ -71,10 +71,10 @@ gs_setblackgeneration_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 {
     rc_unshare_struct(pgs->black_generation, gx_transfer_map,
 		      &st_transfer_map, pgs->memory,
-		      return_error(gs_error_VMerror),
+		      return_error(pgs->memory, gs_error_VMerror),
 		      "gs_setblackgeneration");
     pgs->black_generation->proc = proc;
-    pgs->black_generation->id = gs_next_ids(1);
+    pgs->black_generation->id = gs_next_ids(pgs->memory, 1);
     if (remap) {
 	load_transfer_map(pgs, pgs->black_generation, 0.0);
 	gx_unset_dev_color(pgs);
@@ -101,10 +101,10 @@ gs_setundercolorremoval_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 {
     rc_unshare_struct(pgs->undercolor_removal, gx_transfer_map,
 		      &st_transfer_map, pgs->memory,
-		      return_error(gs_error_VMerror),
+		      return_error(pgs->memory, gs_error_VMerror),
 		      "gs_setundercolorremoval");
     pgs->undercolor_removal->proc = proc;
-    pgs->undercolor_removal->id = gs_next_ids(1);
+    pgs->undercolor_removal->id = gs_next_ids(pgs->memory, 1);
     if (remap) {
 	load_transfer_map(pgs, pgs->undercolor_removal, -1.0);
 	gx_unset_dev_color(pgs);
@@ -129,7 +129,7 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
 {
     gx_transfer *ptran = &pgs->set_transfer;
     gx_transfer old;
-    gs_id new_ids = gs_next_ids(4);
+    gs_id new_ids = gs_next_ids(pgs->memory, 4);
     gx_device * dev = pgs->device;
 
     old = *ptran;
@@ -167,13 +167,13 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
     }
     return 0;
   fblue:
-    rc_assign(ptran->green, old.green, "setcolortransfer");
+    rc_assign(pgs->memory, ptran->green, old.green, "setcolortransfer");
   fgreen:
-    rc_assign(ptran->red, old.red, "setcolortransfer");
+    rc_assign(pgs->memory, ptran->red, old.red, "setcolortransfer");
   fred:
-    rc_assign(ptran->gray, old.gray, "setcolortransfer");
+    rc_assign(pgs->memory, ptran->gray, old.gray, "setcolortransfer");
   fgray:
-    return_error(gs_error_VMerror);
+    return_error(pgs->memory, gs_error_VMerror);
 }
 int
 gs_setcolortransfer(gs_state * pgs, gs_mapping_proc red_proc,

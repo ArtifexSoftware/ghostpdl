@@ -46,33 +46,33 @@ trace_copy_rop(const char *cname, gx_device * dev,
 	       int x, int y, int width, int height,
 	       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    dlprintf4("%s: dev=0x%lx(%s) depth=%d\n",
+    dlprintf4(dev->memory, "%s: dev=0x%lx(%s) depth=%d\n",
 	      cname, (ulong) dev, dev->dname, dev->color_info.depth);
-    dlprintf4("  source data=0x%lx x=%d raster=%u id=%lu colors=",
+    dlprintf4(dev->memory, "  source data=0x%lx x=%d raster=%u id=%lu colors=",
 	      (ulong) sdata, sourcex, sraster, (ulong) id);
     if (scolors)
-	dprintf2("(%lu,%lu);\n", scolors[0], scolors[1]);
+	dprintf2(dev->memory, "(%lu,%lu);\n", scolors[0], scolors[1]);
     else
-	dputs("none;\n");
+	dputs(dev->memory, "none;\n");
     if (textures)
-	dlprintf8("  textures=0x%lx size=%dx%d(%dx%d) raster=%u shift=%d(%d)",
+	dlprintf8(dev->memory, "  textures=0x%lx size=%dx%d(%dx%d) raster=%u shift=%d(%d)",
 		  (ulong) textures, textures->size.x, textures->size.y,
 		  textures->rep_width, textures->rep_height,
 		  textures->raster, textures->shift, textures->rep_shift);
     else
-	dlputs("  textures=none");
+	dlputs(dev->memory, "  textures=none");
     if (tcolors)
-	dprintf2(" colors=(%lu,%lu)\n", tcolors[0], tcolors[1]);
+	dprintf2(dev->memory, " colors=(%lu,%lu)\n", tcolors[0], tcolors[1]);
     else
-	dputs(" colors=none\n");
-    dlprintf7("  rect=(%d,%d),(%d,%d) phase=(%d,%d) op=0x%x\n",
+	dputs(dev->memory, " colors=none\n");
+    dlprintf7(dev->memory, "  rect=(%d,%d),(%d,%d) phase=(%d,%d) op=0x%x\n",
 	      x, y, x + width, y + height, phase_x, phase_y,
 	      (uint) lop);
     if (gs_debug_c('B')) {
 	if (sdata)
-	    debug_dump_bitmap(sdata, sraster, height, "source bits");
+	    debug_dump_bitmap(dev->memory, sdata, sraster, height, "source bits");
 	if (textures && textures->data)
-	    debug_dump_bitmap(textures->data, textures->raster,
+	    debug_dump_bitmap(dev->memory, textures->data, textures->raster,
 			      textures->size.y, "textures bits");
     }
 }
@@ -117,7 +117,7 @@ gx_default_strip_copy_rop(gx_device * dev,
 		       x, y, width, height, phase_x, phase_y, lop);
 #endif
     if (mdproto == 0)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (sdata == 0) {
 	fit_fill(dev, x, y, width, height);
     } else {
@@ -140,7 +140,7 @@ gx_default_strip_copy_rop(gx_device * dev,
     if (rop3_uses_D(gs_transparent_rop(lop))) {
 	row = gs_alloc_bytes(mem, draster * block_height, "copy_rop row");
 	if (row == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	    code = gs_note_error(mem, gs_error_VMerror);
 	    goto out;
 	}
     }
@@ -410,7 +410,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 	  else {\
 	    buf = gs_alloc_bytes(mem, num_bytes, cname);\
 	    if (buf == 0) {\
-	      code = gs_note_error(gs_error_VMerror);\
+	      code = gs_note_error(mem, gs_error_VMerror);\
 	      goto out;\
 	    }\
 	  }\
@@ -424,7 +424,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 		       x, y, width, height, phase_x, phase_y, lop);
 #endif
     if (mdproto == 0)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (sdata == 0) {
 	fit_fill(dev, x, y, width, height);
     } else {

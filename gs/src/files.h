@@ -57,10 +57,10 @@ void make_invalid_file(ref *);
   (svar = fptr(op), (svar->read_id | svar->write_id) == r_size(op))
 #define file_is_invalid(svar,op)\
   (svar = fptr(op), (svar->read_id | svar->write_id) != r_size(op))
-#define check_file(svar,op)\
+#define check_file(mem,svar,op)\
   BEGIN\
-    check_type(*(op), t_file);\
-    if ( file_is_invalid(svar, op) ) return_error(e_invalidaccess);\
+    check_type(mem, *(op), t_file);\
+    if ( file_is_invalid(svar, op) ) return_error(mem, e_invalidaccess);\
   END
 
 /*
@@ -68,42 +68,43 @@ void make_invalid_file(ref *);
  * and stream procedures and modes reflect the current mode of use;
  * an id check failure will switch it to the other mode.
  */
-int file_switch_to_read(const ref *);
+int file_switch_to_read(const gs_memory_t *mem, const ref *);
 
-#define check_read_file(svar,op)\
-  BEGIN\
-    check_read_type(*(op), t_file);\
-    check_read_known_file(svar, op, return);\
-  END
-#define check_read_known_file(svar,op,error_return)\
-  check_read_known_file_else(svar, op, error_return, svar = invalid_file_entry)
-#define check_read_known_file_else(svar,op,error_return,invalid_action)\
+#define check_read_known_file_else(mem, svar,op,error_return,invalid_action)\
   BEGIN\
     svar = fptr(op);\
     if (svar->read_id != r_size(op)) {\
 	if (svar->read_id == 0 && svar->write_id == r_size(op)) {\
-	    int fcode = file_switch_to_read(op);\
-\
+	    int fcode = file_switch_to_read(mem, op);\
 	    if (fcode < 0)\
-		 error_return(fcode);\
+		 error_return(mem, fcode);\
 	} else {\
 	    invalid_action;	/* closed or reopened file */\
 	}\
     }\
   END
-int file_switch_to_write(const ref *);
+#define check_read_known_file(mem, svar,op,error_return)\
+  check_read_known_file_else(mem, svar, op, error_return, svar = invalid_file_entry)
 
-#define check_write_file(svar,op)\
+#define check_read_file(mem,svar,op)\
   BEGIN\
-    check_write_type(*(op), t_file);\
-    check_write_known_file(svar, op, return);\
+    check_read_type(mem, *(op), t_file);\
+    check_read_known_file(mem, svar, op, return_error);\
   END
-#define check_write_known_file(svar,op,error_return)\
+
+int file_switch_to_write(const gs_memory_t *mem, const ref *);
+
+#define check_write_file(mem, svar,op)\
+  BEGIN\
+    check_write_type(mem, *(op), t_file);\
+    check_write_known_file(mem, svar, op, return_error);\
+  END
+#define check_write_known_file(mem, svar,op,error_return)\
   BEGIN\
     svar = fptr(op);\
     if ( svar->write_id != r_size(op) )\
-	{	int fcode = file_switch_to_write(op);\
-		if ( fcode < 0 ) error_return(fcode);\
+	{	int fcode = file_switch_to_write(mem, op);\
+		if ( fcode < 0 ) error_return(mem, fcode);\
 	}\
   END
 
@@ -113,7 +114,7 @@ extern const uint file_default_buffer_size;
 
 /* Procedures exported by zfile.c. */
 	/* for imainarg.c */
-FILE *lib_fopen(const char *);
+FILE *lib_fopen(const gs_memory_t *mem, const char *);
 
 	/* for imain.c */
 int lib_file_open(i_ctx_t *, const char *, uint, byte *, uint, 

@@ -19,7 +19,7 @@
 /* ------ Unique IDs ------ */
 
 /* Generate a block of unique IDs. */
-gs_id gs_next_ids(uint count);
+gs_id gs_next_ids(const gs_memory_t *mem, uint count);
 
 /* ------ Memory utilities ------ */
 

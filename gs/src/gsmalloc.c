@@ -23,6 +23,7 @@
 #include "gsmalloc.h"
 #include "gsmemlok.h"		/* locking (multithreading) wrapper */
 #include "gsmemret.h"		/* retrying wrapper */
+#include "pl_stdio.h"
 
 /* ------ Heap allocator ------ */
 
@@ -101,7 +102,7 @@ struct gs_malloc_block_s {
 };
 
 /* Initialize a malloc allocator. */
-private long heap_available(void);
+private long heap_available(const gs_memory_t *mem);
 gs_malloc_memory_t *
 gs_malloc_memory_init(void)
 {
@@ -124,7 +125,7 @@ gs_malloc_memory_init(void)
 #define max_malloc_probes 20
 #define malloc_probe_size 64000
 private long
-heap_available(void)
+heap_available(const gs_memory_t *mem)
 {
     long avail = 0;
     void *probes[max_malloc_probes];
@@ -133,7 +134,7 @@ heap_available(void)
     for (n = 0; n < max_malloc_probes; n++) {
 	if ((probes[n] = malloc(malloc_probe_size)) == 0)
 	    break;
-	if_debug2('a', "[a]heap_available probe[%d]=0x%lx\n",
+	if_debug2(mem, 'a', "[a]heap_available probe[%d]=0x%lx\n",
 		  n, (ulong) probes[n]);
 	avail += malloc_probe_size;
     }
@@ -175,7 +176,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	     * We would like to check that malloc aligns blocks at least as
 	     * strictly as the compiler (as defined by arch_align_memory_mod).
 	     * However, Microsoft VC 6 does not satisfy this requirement.
-	     * See gsmemraw.h for more explanation.
+	     * See gsmemory.h for more explanation.
 	     */
 	    set_msg(ok_msg);
 	    if (mmem->allocated)
@@ -195,7 +196,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
     }
 #ifdef DEBUG
     if (gs_debug_c('a') || msg != ok_msg)
-	dlprintf4("[a+]gs_malloc(%s)(%u) = 0x%lx: %s\n",
+	dlprintf4(mem, "[a+]gs_malloc(%s)(%u) = 0x%lx: %s\n",
 		  client_name_string(cname), size, (ulong) ptr, msg);
 #endif
     return ptr;
@@ -286,7 +287,7 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_memory_type_ptr_t pstype;
     struct_proc_finalize((*finalize));
 
-    if_debug3('a', "[a-]gs_free(%s) 0x%lx(%u)\n",
+    if_debug3(mem, 'a', "[a-]gs_free(%s) 0x%lx(%u)\n",
 	      client_name_string(cname), (ulong) ptr,
 	      (ptr == 0 ? 0 : ((gs_malloc_block_t *) ptr)[-1].size));
     if (ptr == 0)
@@ -294,7 +295,7 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     pstype = ((gs_malloc_block_t *) ptr)[-1].type;
     finalize = pstype->finalize;
     if (finalize != 0) {
-	if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
+	if_debug3(mem, 'u', "[u]finalizing %s 0x%lx (%s)\n",
 		  struct_type_name_string(pstype),
 		  (ulong) ptr, client_name_string(cname));
 	(*finalize) (ptr);
@@ -329,7 +330,7 @@ gs_heap_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 		}
 	    }
 	}
-	lprintf2("%s: free 0x%lx not found!\n",
+	lprintf2(mem, "%s: free 0x%lx not found!\n",
 		 client_name_string(cname), (ulong) ptr);
 	free((char *)((gs_malloc_block_t *) ptr - 1));
     }
@@ -344,7 +345,7 @@ gs_heap_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num
 		      client_name_t cname)
 {
     if (gs_heap_object_type(mem, data) != &st_bytes)
-	lprintf2("%s: resizing non-string 0x%lx!\n",
+	lprintf2(mem, "%s: resizing non-string 0x%lx!\n",
 		 client_name_string(cname), (ulong) data);
     return gs_heap_resize_object(mem, data, new_num, cname);
 }
@@ -376,7 +377,7 @@ gs_heap_status(gs_memory_t * mem, gs_memory_status_t * pstat)
 {
     gs_malloc_memory_t *mmem = (gs_malloc_memory_t *) mem;
 
-    pstat->allocated = mmem->used + heap_available();
+    pstat->allocated = mmem->used + heap_available(mem);
     pstat->used = mmem->used;
 }
 private void
@@ -402,7 +403,7 @@ gs_heap_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 
 	for (; bp != 0; bp = np) {
 	    np = bp->next;
-	    if_debug3('a', "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
+	    if_debug3(mem, 'a', "[a]gs_heap_free_all(%s) 0x%lx(%u)\n",
 		      client_name_string(bp->cname), (ulong) (bp + 1),
 		      bp->size);
 	    gs_alloc_fill(bp + 1, gs_alloc_fill_free, bp->size);
@@ -427,7 +428,7 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
     int code;
 
     if (lmem == 0)
-	return_error(gs_error_VMerror);
+	return_error(cmem, gs_error_VMerror);
     code = gs_memory_locked_init(lmem, cmem);
     if (code < 0) {
 	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
@@ -441,7 +442,7 @@ gs_malloc_wrap(gs_memory_t **wrapped, gs_malloc_memory_t *contents)
     if (rmem == 0) {
 	gs_memory_locked_release(lmem);
 	gs_free_object(cmem, lmem, "gs_malloc_wrap(locked)");
-	return_error(gs_error_VMerror);
+	return_error(cmem, gs_error_VMerror);
     }
     code = gs_memory_retrying_init(rmem, (gs_memory_t *)lmem);
     if (code < 0) {
@@ -489,9 +490,15 @@ gs_memory_t *gs_memory_t_default;
 
 /* Create the default allocator. */
 gs_memory_t *
-gs_malloc_init(void)
+gs_malloc_init(const gs_memory_t *parent)
 {
     gs_malloc_memory_default = gs_malloc_memory_init();
+
+    if (parent)
+	gs_malloc_memory_default->pl_stdio = parent->pl_stdio;
+    else 
+	pl_stdio_init(gs_malloc_memory_default);
+
     gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
     gs_memory_t_default->stable_memory = gs_memory_t_default;
     return gs_memory_t_default;

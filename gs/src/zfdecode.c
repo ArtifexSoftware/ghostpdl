@@ -86,7 +86,7 @@ zCFD(i_ctx_t *i_ctx_p)
     int code;
 
     if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
+	check_dict_read(imemory, *op);
 	dop = op;
     } else
 	dop = 0;
@@ -108,7 +108,7 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
     stream_PNGP_state pps;
 
     if (r_has_type(op, t_dictionary)) {
-	if ((code = dict_int_param(op, "Predictor", 0, 15, 1, &predictor)) < 0)
+	if ((code = dict_int_param(imemory, op, "Predictor", 0, 15, 1, &predictor)) < 0)
 	    return code;
 	switch (predictor) {
 	    case 0:		/* identity */
@@ -128,7 +128,7 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
 		code = zpp_setup(op, &pps);
 		break;
 	    default:
-		return_error(e_rangecheck);
+		return_error(imemory, e_rangecheck);
 	}
 	if (code < 0)
 	    return code;
@@ -180,22 +180,22 @@ zlz_setup(os_ptr op, stream_LZW_state * plzs)
     const ref *dop;
 
     if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
+	check_dict_read(plzs->memory, *op);
 	dop = op;
     } else
 	dop = 0;
-    if (   (code = dict_int_param(dop, "EarlyChange", 0, 1, 1,
+    if (   (code = dict_int_param(plzs->memory, dop, "EarlyChange", 0, 1, 1,
 				  &plzs->EarlyChange)) < 0 ||
 	   /*
 	    * The following are not PostScript standard, although
 	    * LanguageLevel 3 provides the first two under different
 	    * names.
 	    */
-	   (code = dict_int_param(dop, "InitialCodeLength", 2, 11, 8,
+	   (code = dict_int_param(plzs->memory, dop, "InitialCodeLength", 2, 11, 8,
 				  &plzs->InitialCodeLength)) < 0 ||
-	   (code = dict_bool_param(dop, "FirstBitLowOrder", false,
+	   (code = dict_bool_param(plzs->memory, dop, "FirstBitLowOrder", false,
 				   &plzs->FirstBitLowOrder)) < 0 ||
-	   (code = dict_bool_param(dop, "BlockData", false,
+	   (code = dict_bool_param(plzs->memory, dop, "BlockData", false,
 				   &plzs->BlockData)) < 0
 	)
 	return code;
@@ -216,9 +216,9 @@ zLZWD(i_ctx_t *i_ctx_p)
     if (LL3_ENABLED && r_has_type(op, t_dictionary)) {
 	int unit_size;
 
-	if ((code = dict_bool_param(op, "LowBitFirst", lzs.FirstBitLowOrder,
+	if ((code = dict_bool_param(imemory, op, "LowBitFirst", lzs.FirstBitLowOrder,
 				    &lzs.FirstBitLowOrder)) < 0 ||
-	    (code = dict_int_param(op, "UnitSize", 3, 8, 8,
+	    (code = dict_int_param(imemory, op, "UnitSize", 3, 8, 8,
 				   &unit_size)) < 0
 	    )
 	    return code;
@@ -240,17 +240,17 @@ zpd_setup(os_ptr op, stream_PDiff_state * ppds)
 {
     int code, bpc;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    if ((code = dict_int_param(op, "Colors", 1, s_PDiff_max_Colors, 1,
+    check_type(ppds->memory, *op, t_dictionary);
+    check_dict_read(ppds->memory, *op);
+    if ((code = dict_int_param(ppds->memory, op, "Colors", 1, s_PDiff_max_Colors, 1,
 			       &ppds->Colors)) < 0 ||
-	(code = dict_int_param(op, "BitsPerComponent", 1, 8, 8,
+	(code = dict_int_param(ppds->memory, op, "BitsPerComponent", 1, 8, 8,
 			       &bpc)) < 0 ||
 	(bpc & (bpc - 1)) != 0 ||
-	(code = dict_int_param(op, "Columns", 1, max_int, 1,
+	(code = dict_int_param(ppds->memory, op, "Columns", 1, max_int, 1,
 			       &ppds->Columns)) < 0
 	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+	return (code < 0 ? code : gs_note_error(ppds->memory, e_rangecheck));
     ppds->BitsPerComponent = bpc;
     return 0;
 }
@@ -289,19 +289,19 @@ zpp_setup(os_ptr op, stream_PNGP_state * ppps)
 {
     int code, bpc;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    if ((code = dict_int_param(op, "Colors", 1, 16, 1,
+    check_type(ppps->memory, *op, t_dictionary);
+    check_dict_read(ppps->memory, *op);
+    if ((code = dict_int_param(ppps->memory, op, "Colors", 1, 16, 1,
 			       &ppps->Colors)) < 0 ||
-	(code = dict_int_param(op, "BitsPerComponent", 1, 16, 8,
+	(code = dict_int_param(ppps->memory, op, "BitsPerComponent", 1, 16, 8,
 			       &bpc)) < 0 ||
 	(bpc & (bpc - 1)) != 0 ||
-	(code = dict_uint_param(op, "Columns", 1, max_uint, 1,
+	(code = dict_uint_param(ppps->memory, op, "Columns", 1, max_uint, 1,
 				&ppps->Columns)) < 0 ||
-	(code = dict_int_param(op, "Predictor", 10, 15, 15,
+	(code = dict_int_param(ppps->memory, op, "Predictor", 10, 15, 15,
 			       &ppps->Predictor)) < 0
 	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+	return (code < 0 ? code : gs_note_error(ppps->memory, e_rangecheck));
     ppps->BitsPerComponent = bpc;
     return 0;
 }

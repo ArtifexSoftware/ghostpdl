@@ -22,6 +22,7 @@
 #include "idict.h"
 #include "idparam.h"
 #include "ifilter.h"
+#include "ialloc.h"
 
 /* <state> <from_string> <to_string> .type1encrypt <new_state> <substring> */
 /* <state> <from_string> <to_string> .type1decrypt <new_state> <substring> */
@@ -45,15 +46,15 @@ type1crypt(i_ctx_t *i_ctx_p,
     crypt_state state;
     uint ssize;
 
-    check_type(op[-2], t_integer);
+    check_type(imemory, op[-2], t_integer);
     state = op[-2].value.intval;
     if (op[-2].value.intval != state)
-	return_error(e_rangecheck);	/* state value was truncated */
-    check_read_type(op[-1], t_string);
-    check_write_type(*op, t_string);
+	return_error(imemory, e_rangecheck);	/* state value was truncated */
+    check_read_type(imemory, op[-1], t_string);
+    check_write_type(imemory, *op, t_string);
     ssize = r_size(op - 1);
     if (r_size(op) < ssize)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     discard((*proc)(op->value.bytes, op[-1].value.const_bytes, ssize,
 		    &state));	/* can't fail */
     op[-2].value.intval = state;
@@ -66,16 +67,16 @@ type1crypt(i_ctx_t *i_ctx_p,
 /* Get the seed parameter for eexecEncode/Decode. */
 /* Return npop if OK. */
 private int
-eexec_param(os_ptr op, ushort * pcstate)
+eexec_param(const gs_memory_t *mem, os_ptr op, ushort * pcstate)
 {
     int npop = 1;
 
     if (r_has_type(op, t_dictionary))
 	++npop, --op;
-    check_type(*op, t_integer);
+    check_type(mem, *op, t_integer);
     *pcstate = op->value.intval;
     if (op->value.intval != *pcstate)
-	return_error(e_rangecheck);	/* state value was truncated */
+	return_error(mem, e_rangecheck);	/* state value was truncated */
     return npop;
 }
 
@@ -86,7 +87,7 @@ zexE(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     stream_exE_state state;
-    int code = eexec_param(op, &state.cstate);
+    int code = eexec_param(imemory, op, &state.cstate);
 
     if (code < 0)
 	return code;
@@ -107,12 +108,12 @@ zexD(i_ctx_t *i_ctx_p)
 	uint cstate;
         bool is_eexec;
 
-	check_dict_read(*op);
-	if ((code = dict_uint_param(op, "seed", 0, 0xffff, 0x10000,
+	check_dict_read(imemory, *op);
+	if ((code = dict_uint_param(imemory, op, "seed", 0, 0xffff, 0x10000,
 				    &cstate)) < 0 ||
-	    (code = dict_int_param(op, "lenIV", 0, max_int, 4,
+	    (code = dict_int_param(imemory, op, "lenIV", 0, max_int, 4,
 				   &state.lenIV)) < 0 ||
-	    (code = dict_bool_param(op, "eexec", false,
+	    (code = dict_bool_param(imemory, op, "eexec", false,
 				   &is_eexec)) < 0
 	    )
 	    return code;
@@ -121,7 +122,7 @@ zexD(i_ctx_t *i_ctx_p)
 	code = 1;
     } else {
         state.binary = 1;
-	code = eexec_param(op, &state.cstate);
+	code = eexec_param(imemory, op, &state.cstate);
     }
     if (code < 0)
 	return code;

@@ -25,27 +25,31 @@
 
 /* Get a range array parameter from a dictionary. */
 /* We know that count <= 4. */
-int dict_ranges_param(const ref * pdref, const char *kstr, int count,
+int dict_ranges_param(const gs_memory_t *mem,
+		      const ref * pdref, const char *kstr, int count,
 		      gs_range * prange);
 
 /* Get 3 ranges from a dictionary. */
-int dict_range3_param(const ref *pdref, const char *kstr,
+int dict_range3_param(const gs_memory_t *mem, const ref *pdref, const char *kstr,
 		      gs_range3 *prange3);
 
 /* Get a 3x3 matrix parameter from a dictionary. */
-int dict_matrix3_param(const ref *pdref, const char *kstr,
+int dict_matrix3_param(const gs_memory_t *mem, 
+		       const ref *pdref, const char *kstr,
 		       gs_matrix3 *pmat3);
 
 /* Get an array of procedures from a dictionary. */
 /* We know count <= countof(empty_procs). */
-int dict_proc_array_param(const ref * pdict, const char *kstr,
+int dict_proc_array_param(const gs_memory_t *mem,
+			  const ref * pdict, const char *kstr,
 			  uint count, ref * pparray);
 
 /* Get 3 procedures from a dictionary. */
-int dict_proc3_param(const ref *pdref, const char *kstr, ref proc3[3]);
+int dict_proc3_param(const gs_memory_t *mem, 
+		     const ref *pdref, const char *kstr, ref proc3[3]);
 
 /* Get WhitePoint and BlackPoint values. */
-int cie_points_param(const ref * pdref, gs_cie_wb * pwb);
+int cie_points_param(const gs_memory_t *mem, const ref * pdref, gs_cie_wb * pwb);
 
 /* Process a 3- or 4-dimensional lookup table from a dictionary. */
 /* The caller has set pclt->n and pclt->m. */

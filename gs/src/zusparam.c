@@ -104,12 +104,12 @@ zcheckpassword(i_ctx_t *i_ctx_p)
 	return code;
     params[1] = *op;
     array_param_list_read(&list, params, 2, NULL, false, iimemory);
-    if (dict_read_password(&pass, systemdict, "StartJobPassword") >= 0 &&
-	param_check_password(plist, &pass) == 0
+    if (dict_read_password(imemory, &pass, systemdict, "StartJobPassword") >= 0 &&
+	param_check_password(imemory, plist, &pass) == 0
 	)
 	result = 1;
-    if (dict_read_password(&pass, systemdict, "SystemParamsPassword") >= 0 &&
-	param_check_password(plist, &pass) == 0
+    if (dict_read_password(imemory, &pass, systemdict, "SystemParamsPassword") >= 0 &&
+	param_check_password(imemory, plist, &pass) == 0
 	)
 	result = 2;
     iparam_list_release(&list);
@@ -226,40 +226,40 @@ zsetsystemparams(i_ctx_t *i_ctx_p)
     gs_param_list *const plist = (gs_param_list *)&list;
     password pass;
 
-    check_type(*op, t_dictionary);
+    check_type(imemory, *op, t_dictionary);
     code = dict_param_list_read(&list, op, NULL, false, iimemory);
     if (code < 0)
 	return code;
-    code = dict_read_password(&pass, systemdict, "SystemParamsPassword");
+    code = dict_read_password(imemory, &pass, systemdict, "SystemParamsPassword");
     if (code < 0)
 	return code;
-    code = param_check_password(plist, &pass);
+    code = param_check_password(imemory, plist, &pass);
     if (code != 0) {
 	if (code > 0)
-	    code = gs_note_error(e_invalidaccess);
+	    code = gs_note_error(imemory, e_invalidaccess);
 	goto out;
     }
-    code = param_read_password(plist, "StartJobPassword", &pass);
+    code = param_read_password(imemory, plist, "StartJobPassword", &pass);
     switch (code) {
 	default:		/* invalid */
 	    goto out;
 	case 1:		/* missing */
 	    break;
 	case 0:
-	    code = dict_write_password(&pass, systemdict,
+	    code = dict_write_password(imemory, &pass, systemdict,
 				       "StartJobPassword",
 				       ! i_ctx_p->LockFilePermissions);
 	    if (code < 0)
 		goto out;
     }
-    code = param_read_password(plist, "SystemParamsPassword", &pass);
+    code = param_read_password(imemory, plist, "SystemParamsPassword", &pass);
     switch (code) {
 	default:		/* invalid */
 	    goto out;
 	case 1:		/* missing */
 	    break;
 	case 0:
-	    code = dict_write_password(&pass, systemdict,
+	    code = dict_write_password(imemory, &pass, systemdict,
 				       "SystemParamsPassword",
 				       ! i_ctx_p->LockFilePermissions);
 	    if (code < 0)
@@ -481,7 +481,7 @@ set_LockFilePermissions(i_ctx_t *i_ctx_p, bool val)
 {
     /* allow locking even if already locked */
     if (i_ctx_p->LockFilePermissions && !val)
-	return_error(e_invalidaccess);
+	return_error(imemory, e_invalidaccess);
     i_ctx_p->LockFilePermissions = val;
     return 0;
 }
@@ -508,7 +508,7 @@ set_user_params(i_ctx_t *i_ctx_p, const ref *paramdict)
     dict_param_list list;
     int code;
 
-    check_type(*paramdict, t_dictionary);
+    check_type(imemory, *paramdict, t_dictionary);
     code = dict_param_list_read(&list, paramdict, NULL, false, iimemory);
     if (code < 0)
 	return code;
@@ -586,7 +586,7 @@ setparams(i_ctx_t *i_ctx_p, gs_param_list * plist, const param_set * pset)
 		break;
 	    case 0:
 		if (val < pdef->min_value || val > pdef->max_value)
-		    return_error(e_rangecheck);
+		    return_error(imemory, e_rangecheck);
 		code = (*pdef->set)(i_ctx_p, val);
 		if (code < 0)
 		    return code;
@@ -679,14 +679,14 @@ currentparam1(i_ctx_t *i_ctx_p, const param_set * pset)
     ref sref;
     int code;
 
-    check_type(*op, t_name);
-    check_ostack(2);
+    check_type(imemory, *op, t_name);
+    check_ostack(imemory, 2);
     name_string_ref((const ref *)op, &sref);
     code = current_param_list(i_ctx_p, pset, &sref);
     if (code < 0)
 	return code;
     if (osp == op)
-	return_error(e_undefined);
+	return_error(imemory, e_undefined);
     /* We know osp == op + 2. */
     ref_assign(op, op + 2);
     pop(2);

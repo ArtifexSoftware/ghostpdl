@@ -734,7 +734,7 @@ pdf_font_notify_proc(void *vpfn /*proc_data*/, void *event_data)
 	{
 	    gs_memory_t *save_memory = font->memory;
 	    gs_ref_memory_t *fmem =
-		ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default,
+		ialloc_alloc_state(&gs_memory_default,
 				   5000);
 
 	    if (fmem == 0)

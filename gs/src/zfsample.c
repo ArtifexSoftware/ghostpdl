@@ -93,13 +93,13 @@ zbuildsampledfunction(i_ctx_t *i_ctx_p)
     gs_function_t *pfn;
     gs_function_Sd_params_t params = {0};
 
-    check_type(*pdict, t_dictionary);
+    check_type(imemory, *pdict, t_dictionary);
     /* 
      * Check procedure to be sampled.
      */
     if (dict_find_string(pdict, "Function", &pfunc) <= 0)
-	return_error(e_rangecheck);
-    check_proc(*pfunc);
+	return_error(imemory, e_rangecheck);
+    check_proc(imemory, *pfunc);
     /*
      * Set up the hyper cube function data structure.
      */
@@ -160,7 +160,7 @@ valid_cube_size(int num_inputs, int num_outputs, int sample_size, const int Size
  * On exit the Size array contains the cube size (if a valid size was found).
  */
 private int
-determine_sampled_data_size(int num_inputs, int num_outputs,
+determine_sampled_data_size(const gs_memory_t *mem, int num_inputs, int num_outputs,
 				int sample_size, int Size[])
 {
     static const int size_list[] = {512, 50, 20, 10, 7, 5, 4, 3};
@@ -184,7 +184,7 @@ determine_sampled_data_size(int num_inputs, int num_outputs,
 	    return 0;		/* We have a valid size */
 
 	if (size == 2)		/* Cannot have less than 2 points per side */
-	    return_error(e_rangecheck);
+	    return_error(mem, e_rangecheck);
 	size--;
     }
 }
@@ -270,8 +270,8 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
     int code, i;
     int total_size;
 
-    if ((code = dict_int_param(pdict, "Order", 1, 3, 1, &params->Order)) < 0 ||
-	(code = dict_int_param(pdict, "BitsPerSample", 1, 32, 0,
+    if ((code = dict_int_param(mem, pdict, "Order", 1, 3, 1, &params->Order)) < 0 ||
+	(code = dict_int_param(mem, pdict, "BitsPerSample", 1, 32, 0,
 			       &params->BitsPerSample)) < 0 ||
 	((code = params->m =
 	    fn_build_float_array(pdict, "Domain", false, true,
@@ -291,7 +291,7 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
     params->n >>= 1;
     if (params->m == 0 || params->n == 0 ||
         params->m > MAX_NUM_INPUTS || params->n > MAX_NUM_OUTPUTS) {
-	code = gs_note_error(e_rangecheck);
+	code = gs_note_error(mem, e_rangecheck);
         goto fail;
     }
     /*
@@ -303,11 +303,11 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
 	    gs_alloc_byte_array(mem, params->m, sizeof(int), "Size");
 
 	if (ptr == NULL) {
-	    code = gs_note_error(e_VMerror);
+	    code = gs_note_error(mem, e_VMerror);
 	    goto fail;
 	}
 	params->Size = ptr;
-	code = dict_ints_param(pdict, "Size", params->m, ptr);
+	code = dict_ints_param(mem, pdict, "Size", params->m, ptr);
         if (code < 0)
 	    goto fail;
         if (code == 0) {
@@ -315,7 +315,7 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
 	     * The Size array has not been specified.  Determine a default
 	     * set of values.
 	     */
-            code = determine_sampled_data_size(params->m, params->n,
+            code = determine_sampled_data_size(mem, params->m, params->n,
 	     			params->BitsPerSample, (int *)params->Size);
             if (code < 0)
 	        goto fail;
@@ -323,7 +323,7 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
 	else {			/* Size array specified - verify valid */
 	    if (code != params->m || !valid_cube_size(params->m, params->n,
 	    				params->BitsPerSample, params->Size))
-	        code = gs_note_error(e_rangecheck);
+	        code = gs_note_error(mem, e_rangecheck);
 	        goto fail;
 	}
     }
@@ -338,7 +338,7 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
      */
     bytes = gs_alloc_byte_array(mem, total_size, 1, "cube_build_func0(bytes)");
     if (!bytes) {
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error(mem, e_VMerror);
 	goto fail;
     }
     data_source_init_bytes(&params->DataSource,
@@ -348,7 +348,7 @@ cube_build_func0(const ref * pdict, gs_function_Sd_params_t * params,
 
 fail:
     gs_function_Sd_free_params(params, mem);
-    return (code < 0 ? code : gs_note_error(e_rangecheck));
+    return (code < 0 ? code : gs_note_error(mem, e_rangecheck));
 }
 
 /*
@@ -389,15 +389,15 @@ sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
     gs_function_Sd_params_t * params = (gs_function_Sd_params_t *)&pfn->params;
 
     check_estack(estack_storage + 1);		/* Verify space on estack */
-    check_ostack(params->m + O_STACK_PAD);	/* and the operand stack */
-    check_ostack(params->n + O_STACK_PAD);
+    check_ostack(imemory, params->m + O_STACK_PAD);	/* and the operand stack */
+    check_ostack(imemory, params->n + O_STACK_PAD);
 
     /*
      * Allocate space for the enumerator data structure.
      */
     penum = gs_sampled_data_enum_alloc(imemory, "zbuildsampledfuntion(params)");
     if (penum == NULL)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
 
     /* Initialize data in the enumeration structure */
 
@@ -416,7 +416,7 @@ sampled_data_setup(i_ctx_t *i_ctx_p, gs_function_t *pfn,
      * outside of the input values.  (This has been found to happen with some
      * proc sets from Adobe.)
      */
-    push(O_STACK_PAD);
+    push(imemory, O_STACK_PAD);
     for (i = 0; i < O_STACK_PAD; i++) 		/* Set space = null */
 	make_null(op - i);
 
@@ -445,7 +445,7 @@ sampled_data_sample(i_ctx_t *i_ctx_p)
     int i;
 
     /* Put set of input values onto the stack. */
-    push(num_inputs);
+    push(imemory, num_inputs);
     for (i = 0; i < num_inputs; i++) {
 	double dmin = params->Domain[2 * i];
 	double dmax = params->Domain[2 * i + 1];
@@ -495,11 +495,11 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
 	     * hope.  (We have not seen real Postscript files that have this
 	     * problem.)
 	     */
-	    push(-stack_depth_adjust);
+	    push(imemory, -stack_depth_adjust);
 	}
 	ifree_object(penum->pfn, "sampled_data_continue(pfn)");
 	ifree_object(penum, "sampled_data_continue((enum)");
-	return_error(e_undefinedresult);
+	return_error(imemory, e_undefinedresult);
     }
     
     /* Save data from the given function */
@@ -510,7 +510,7 @@ sampled_data_continue(i_ctx_t *i_ctx_p)
 	double rmin = params->Range[2 * i];
 	double rmax = params->Range[2 * i + 1];
 
-        code = real_param(op + i - num_out + 1, &value);
+        code = real_param(imemory, op + i - num_out + 1, &value);
         if (code < 0)
 	    return code;
 	if (value < rmin)

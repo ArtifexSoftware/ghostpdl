@@ -36,7 +36,7 @@ zusealternate(i_ctx_t * i_ctx_p)
     os_ptr                  op = osp;
     const gs_color_space *  pcs = gs_currentcolorspace(igs);
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, cs_base_space(pcs) != 0);
     return 0;
 }

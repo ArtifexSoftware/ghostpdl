@@ -84,7 +84,7 @@ gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     if (mdata == 0 || chars == 0) {
 	gs_free_object(struct_mem, chars, "font_dir_alloc(chars)");
 	gs_free_object(struct_mem, mdata, "font_dir_alloc(mdata)");
-	return_error(gs_error_VMerror);
+	return_error(struct_mem, gs_error_VMerror);
     }
     pdir->fmcache.mmax = mmax;
     pdir->fmcache.mdata = mdata;
@@ -190,7 +190,7 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->num_chars = 0;
     pair->xfont_tried = false;
     pair->xfont = 0;
-    if_debug8('k', "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
+    if_debug8(font->memory, 'k', "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
 	      (ulong) pair, (ulong) font,
 	      pair->mxx, pair->mxy, pair->myx, pair->myy,
 	      (long)pair->UID.id, (ulong) pair->UID.xvalues);
@@ -280,7 +280,7 @@ purge_fm_pair_char_xfont(cached_char * cc, void *vpair)
 void
 gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 {
-    if_debug2('k', "[k]purging pair 0x%lx%s\n",
+    if_debug2(pair->memory, 'k', "[k]purging pair 0x%lx%s\n",
 	      (ulong) pair, (xfont_only ? " (xfont only)" : ""));
     if (pair->xfont != 0) {
 	(*pair->xfont->common.procs->release) (pair->xfont,
@@ -295,7 +295,7 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
     if (!xfont_only) {
 #ifdef DEBUG
 	if (pair->num_chars != 0) {
-	    lprintf1("Error in gs_purge_fm_pair: num_chars =%d\n",
+	    lprintf1(pair->memory, "Error in gs_purge_fm_pair: num_chars =%d\n",
 		     pair->num_chars);
 	}
 #endif
@@ -314,13 +314,13 @@ lookup_xfont_by_name(gx_device * fdev, const gx_xfont_procs * procs,
 {
     gx_xfont *xf;
 
-    if_debug5('k', "[k]lookup xfont %s [%g %g %g %g]\n",
+    if_debug5(pair->memory, 'k', "[k]lookup xfont %s [%g %g %g %g]\n",
 	      pfstr->chars, pmat->xx, pmat->xy, pmat->yx, pmat->yy);
     xf = (*procs->lookup_font) (fdev,
 				&pfstr->chars[0], pfstr->size,
 				encoding_index, &pair->UID,
 				pmat, pair->memory);
-    if_debug1('k', "[k]... xfont=0x%lx\n", (ulong) xf);
+    if_debug1(pair->memory, 'k', "[k]... xfont=0x%lx\n", (ulong) xf);
     return xf;
 }
 
@@ -379,7 +379,8 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 
     iraster = bitmap_raster(nwidth_bits);
     if (iraster != 0 && iheight >> log2_yscale > dir->ccache.upper / iraster) {
-	if_debug5('k', "[k]no cache bits: scale=%dx%d, raster/scale=%u, height/scale=%u, upper=%u\n",
+	if_debug5(dev->memory, 
+		  'k', "[k]no cache bits: scale=%dx%d, raster/scale=%u, height/scale=%u, upper=%u\n",
 		  1 << log2_xscale, 1 << log2_yscale,
 		  iraster, iheight, dir->ccache.upper);
 	return 0;		/* too big */
@@ -399,7 +400,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
 	rc = pdev->rc;
 	/* Pass the correct target, but decrement its refct afterwards. */
 	gs_make_mem_mono_device(pdev, pdev->memory, target);
-	rc_decrement_only(target, "gx_alloc_char_bits"); /* can't go to 0 */
+	rc_decrement_only(pdev->memory, target, "gx_alloc_char_bits"); /* can't go to 0 */
 	pdev->rc = rc;
 	pdev->retained = retained;
 	pdev->width = iwidth;
@@ -428,7 +429,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     cc = alloc_char(dir, icdsize);
     if (cc == 0)
 	return 0;
-    if_debug4('k', "[k]adding char 0x%lx:%u(%u,%u)\n",
+    if_debug4(dev->memory, 'k', "[k]adding char 0x%lx:%u(%u,%u)\n",
 	      (ulong) cc, (uint) icdsize, iwidth, iheight);
 
     /* Fill in the entry. */
@@ -488,7 +489,8 @@ gx_free_cached_char(gs_font_dir * dir, cached_char * cc)
     if (cc_pair(cc) != 0) {	/* might be allocated but not added to table yet */
 	cc_pair(cc)->num_chars--;
     }
-    if_debug2('k', "[k]freeing char 0x%lx, pair=0x%lx\n",
+    if_debug2(dir->orig_fonts->memory, 
+	      'k', "[k]freeing char 0x%lx, pair=0x%lx\n",
 	      (ulong) cc, (ulong) cc_pair(cc));
     gx_bits_cache_free((gx_bits_cache *) & dir->ccache, &cc->head, cck);
 }
@@ -498,7 +500,8 @@ void
 gx_add_cached_char(gs_font_dir * dir, gx_device_memory * dev,
 cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 {
-    if_debug5('k', "[k]chaining char 0x%lx: pair=0x%lx, glyph=0x%lx, wmode=%d, depth=%d\n",
+    if_debug5(dev->memory, 
+	      'k', "[k]chaining char 0x%lx: pair=0x%lx, glyph=0x%lx, wmode=%d, depth=%d\n",
 	      (ulong) cc, (ulong) pair, (ulong) cc->code,
 	      cc->wmode, cc_depth(cc));
     if (dev != NULL) {
@@ -541,7 +544,8 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
     if (cc->width % (1 << log2_x) != 0 ||
 	cc->height % (1 << log2_y) != 0
 	) {
-	lprintf4("size %d,%d not multiple of scale %d,%d!\n",
+	lprintf4(dir->orig_fonts->memory,
+		 "size %d,%d not multiple of scale %d,%d!\n",
 		 cc->width, cc->height,
 		 1 << log2_x, 1 << log2_y);
 	cc->width &= -1 << log2_x;
@@ -568,11 +572,13 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
      */
 
     if ((log2_x | log2_y) != 0) {
-	if_debug5('k', "[k]compressing %dx%d by %dx%d to depth=%d\n",
+	if_debug5(dir->orig_fonts->memory,
+		  'k', "[k]compressing %dx%d by %dx%d to depth=%d\n",
 		  cc->width, cc->height, 1 << log2_x, 1 << log2_y,
 		  depth);
 	if (gs_debug_c('K'))
-	    debug_dump_bitmap(bits, raster, cc->height,
+	    debug_dump_bitmap(dir->orig_fonts->memory,
+			      bits, raster, cc->height,
 			      "[K]uncompressed bits");
 	/* Truncate/round the bbox to a multiple of the scale. */
 	{
@@ -591,7 +597,8 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 	cc->height = (bbox.q.y - bbox.p.y) >> log2_y;
 	nwidth_bits = cc->width << log2_depth;
 	nraster = bitmap_raster(nwidth_bits);
-	bits_compress_scaled(bits + raster * bbox.p.y, bbox.p.x,
+	bits_compress_scaled(dir->orig_fonts->memory,
+			     bits + raster * bbox.p.y, bbox.p.x,
 			     cc->width << log2_x,
 			     cc->height << log2_y,
 			     raster,
@@ -643,14 +650,15 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 
 	if (diff >= sizeof(cached_char_head)) {
 	    shorten_cached_char(dir, cc, diff);
-	    if_debug2('K', "[K]shortening char 0x%lx by %u (adding)\n",
+	    if_debug2(dir->orig_fonts->memory,
+		      'K', "[K]shortening char 0x%lx by %u (adding)\n",
 		      (ulong) cc, diff);
 	}
     }
 
     /* Assign a bitmap id. */
 
-    cc->id = gs_next_ids(1);
+    cc->id = gs_next_ids(dir->orig_fonts->memory, 1);
 }
 
 /* Purge from the caches all references to a given font. */
@@ -660,7 +668,8 @@ gs_purge_font_from_char_caches(gs_font_dir * dir, const gs_font * font)
     cached_fm_pair *pair = dir->fmcache.mdata;
     int count = dir->fmcache.mmax;
 
-    if_debug1('k', "[k]purging font 0x%lx\n",
+    if_debug1(font->memory, 
+	      'k', "[k]purging font 0x%lx\n",
 	      (ulong) font);
     while (count--) {
 	if (pair->font == font) {
@@ -693,7 +702,8 @@ alloc_char(gs_font_dir * dir, ulong icdsize)
 	    if (cksize > tsize)
 		cksize = tsize;
 	    if (icdsize + sizeof(cached_char_head) > cksize) {
-		if_debug2('k', "[k]no cache bits: cdsize+head=%lu, cksize=%u\n",
+		if_debug2(mem,
+			  'k', "[k]no cache bits: cdsize+head=%lu, cksize=%u\n",
 			  icdsize + sizeof(cached_char_head),
 			  cksize);
 		return 0;	/* wouldn't fit */
@@ -742,7 +752,8 @@ alloc_char_in_chunk(gs_font_dir * dir, ulong icdsize)
 
 #define cc ((cached_char *)cch)
 
-    while (gx_bits_cache_alloc((gx_bits_cache *) & dir->ccache,
+    while (gx_bits_cache_alloc(dir->orig_fonts->memory,
+			       (gx_bits_cache *) & dir->ccache,
 			       icdsize, &cch) < 0
 	) {
 	if (cch == 0) {		/* Not enough room to allocate in this chunk. */
@@ -800,6 +811,7 @@ shorten_cached_char(gs_font_dir * dir, cached_char * cc, uint diff)
 {
     gx_bits_cache_shorten((gx_bits_cache *) & dir->ccache, &cc->head,
 			  diff, cc->chunk);
-    if_debug2('K', "[K]shortening creates free block 0x%lx(%u)\n",
+    if_debug2(dir->orig_fonts->memory,
+	      'K', "[K]shortening creates free block 0x%lx(%u)\n",
 	      (ulong) ((byte *) cc + cc->head.size), diff);
 }

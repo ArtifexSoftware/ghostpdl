@@ -300,7 +300,7 @@ pdf_close_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf, int code)
     }
     ptf->save_strm = 0;
     return
-	(code < 0 ? code : err != 0 ? gs_note_error(gs_error_ioerror) : code);
+	(code < 0 ? code : err != 0 ? gs_note_error(pdev->pdf_memory, gs_error_ioerror) : code);
 }
 private int
 pdf_close_files(gx_device_pdf * pdev, int code)
@@ -332,10 +332,10 @@ pdf_open_temp_file(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
     strcpy(fmode, "w+");
     strcat(fmode, gp_fmode_binary_suffix);
     ptf->file =
-	gp_open_scratch_file(gp_scratch_file_name_prefix,
+	gp_open_scratch_file(pdev->memory, gp_scratch_file_name_prefix,
 			     ptf->file_name, fmode);
     if (ptf->file == 0)
-	return_error(gs_error_invalidfileaccess);
+	return_error(pdev->memory, gs_error_invalidfileaccess);
     return 0;
 }
 private int
@@ -347,14 +347,14 @@ pdf_open_temp_stream(gx_device_pdf *pdev, pdf_temp_file_t *ptf)
 	return code;
     ptf->strm = s_alloc(pdev->pdf_memory, "pdf_open_temp_stream(strm)");
     if (ptf->strm == 0)
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     ptf->strm_buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
 				   "pdf_open_temp_stream(strm_buf)");
     if (ptf->strm_buf == 0) {
 	gs_free_object(pdev->pdf_memory, ptf->strm,
 		       "pdf_open_temp_stream(strm)");
 	ptf->strm = 0;
-	return_error(gs_error_VMerror);
+	return_error(pdev->memory, gs_error_VMerror);
     }
     swrite_file(ptf->strm, ptf->file, ptf->strm_buf, sbuf_size);
     return 0;
@@ -721,7 +721,7 @@ pdf_close_page(gx_device_pdf * pdev)
     /* Finish up. */
 
     pdf_reset_page(pdev);
-    return (pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) : 0);
+    return (pdf_ferror(pdev) ? gs_note_error(pdev->memory, gs_error_ioerror) : 0);
 }
 
 /* Write the page object. */
@@ -799,7 +799,7 @@ pdf_output_page(gx_device * dev, int num_copies, int flush)
     int code = pdf_close_page(pdev);
 
     return (code < 0 ? code :
-	    pdf_ferror(pdev) ? gs_note_error(gs_error_ioerror) :
+	    pdf_ferror(pdev) ? gs_note_error(dev->memory, gs_error_ioerror) :
 	    gx_finish_output_page(dev, num_copies, flush));
 }
 

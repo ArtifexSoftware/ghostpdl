@@ -70,11 +70,16 @@ extern double hypot(double, double);
 extern double atan2(), ldexp();
 #endif
 
-/* Intercept calls on sqrt for debugging. */
-extern double gs_sqrt(double, const char *, int);
-#ifdef DEBUG
-#undef sqrt
-#define sqrt(x) gs_sqrt(x, __FILE__, __LINE__)
-#endif /* DEBUG */
+
+/* Intercept calls on sqrt for debugging.
+ * NB sqrt no longer prints out anything 
+*/
+#if 0
+  extern double gs_sqrt(double);
+# ifdef DEBUG
+#  undef sqrt
+#  define sqrt(x) gs_sqrt(x)
+# endif /* DEBUG */
+#endif 
 
 #endif /* math__INCLUDED */

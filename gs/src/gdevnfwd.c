@@ -27,7 +27,7 @@ gx_device_forward_finalize(gx_device *dev)
     gx_device *target = ((gx_device_forward *)dev)->target;
 
     ((gx_device_forward *)dev)->target = 0;
-    rc_decrement_only(target, "gx_device_forward_finalize");
+    rc_decrement_only(dev->memory, target, "gx_device_forward_finalize");
 }
 
 /* Set the target of a forwarding device. */
@@ -40,7 +40,7 @@ gx_device_set_target(gx_device_forward *fdev, gx_device *target)
      */
     if (target && !fdev->finalize)
 	fdev->finalize = gx_device_forward_finalize;
-    rc_assign(fdev->target, target, "gx_device_set_target");
+    rc_assign(fdev->memory, fdev->target, target, "gx_device_set_target");
 }
 
 /* Fill in NULL procedures in a forwarding device procedure record. */
@@ -180,7 +180,7 @@ gx_forward_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
-	return_error(gs_error_Fatal);
+	return_error(dev->memory, gs_error_Fatal);
     return dev_proc(tdev, fill_rectangle)(tdev, x, y, w, h, color);
 }
 
@@ -208,7 +208,7 @@ gx_forward_copy_mono(gx_device * dev, const byte * data,
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
-	return_error(gs_error_Fatal);
+	return_error(dev->memory, gs_error_Fatal);
     return dev_proc(tdev, copy_mono)
 	(tdev, data, dx, raster, id, x, y, w, h, zero, one);
 }
@@ -222,7 +222,7 @@ gx_forward_copy_color(gx_device * dev, const byte * data,
     gx_device *tdev = fdev->target;
 
     if (tdev == 0)
-	return_error(gs_error_Fatal);
+	return_error(dev->memory, gs_error_Fatal);
     return dev_proc(tdev, copy_color)
 	(tdev, data, dx, raster, id, x, y, w, h);
 }

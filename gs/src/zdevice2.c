@@ -57,10 +57,10 @@ zcurrentshowpagecount(i_ctx_t *i_ctx_p)
     gx_device *dev = gs_currentdevice(igs);
 
     if ((*dev_proc(dev, get_page_device))(dev) == 0) {
-	push(1);
+	push(imemory, 1);
 	make_false(op);
     } else {
-	push(2);
+	push(imemory, 2);
 	make_int(op - 1, dev->ShowpageCount);
 	make_true(op);
     }
@@ -74,7 +74,7 @@ zcurrentpagedevice(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
 
-    push(2);
+    push(imemory, 2);
     if ((*dev_proc(dev, get_page_device))(dev) != 0) {
 	op[-1] = istate->pagedevice;
 	make_true(op);
@@ -97,21 +97,21 @@ zsetpagedevice(i_ctx_t *i_ctx_p)
 	return_error(e_undefined);
  ******/
     if (r_has_type(op, t_dictionary)) {
-	check_dict_read(*op);
+	check_dict_read(imemory, *op);
 #if 0	/****************/
 	/*
 	 * In order to avoid invalidaccess errors on setpagedevice,
 	 * the dictionary must be allocated in local VM.
 	 */
 	if (!(r_is_local(op)))
-	    return_error(e_invalidaccess);
+	    return_error(imemory, e_invalidaccess);
 #endif	/****************/
 	/* Make the dictionary read-only. */
 	code = zreadonly(i_ctx_p);
 	if (code < 0)
 	    return code;
     } else {
-	check_type(*op, t_null);
+	check_type(imemory, *op, t_null);
     }
     istate->pagedevice = *op;
     pop(1);
@@ -143,7 +143,7 @@ zcallbeginpage(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gx_device *dev = gs_currentdevice(igs);
 
-    check_type(*op, t_integer);
+    check_type(imemory, *op, t_integer);
     if ((dev = (*dev_proc(dev, get_page_device))(dev)) != 0) {
 	int code = (*dev->page_procs.begin_page)(dev, igs);
 
@@ -162,14 +162,14 @@ zcallendpage(i_ctx_t *i_ctx_p)
     gx_device *dev = gs_currentdevice(igs);
     int code;
 
-    check_type(op[-1], t_integer);
-    check_type(*op, t_integer);
+    check_type(imemory, op[-1], t_integer);
+    check_type(imemory, *op, t_integer);
     if ((dev = (*dev_proc(dev, get_page_device))(dev)) != 0) {
 	code = (*dev->page_procs.end_page)(dev, (int)op->value.intval, igs);
 	if (code < 0)
 	    return code;
 	if (code > 1)
-	    return_error(e_rangecheck);
+	    return_error(imemory, e_rangecheck);
     } else {
 	code = (op->value.intval == 2 ? 0 : 1);
     }
@@ -321,7 +321,7 @@ z2setgstate(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_stype(*op, st_igstate_obj);
+    check_stype(imemory, *op, st_igstate_obj);
     if (!restore_page_device(igs, igstate_ptr(op)))
 	return zsetgstate(i_ctx_p);
     return push_callout(i_ctx_p, "%setgstatepagedevice");

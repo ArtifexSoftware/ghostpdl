@@ -20,6 +20,7 @@
 #include "gxdevmem.h"		/* for gdevmem.h */
 #include "gdevmem.h"		/* for mem_*_strip_copy_rop prototypes */
 #include "gdevmrop.h"
+#include "gzstate.h"
 
 /* Stub accessors to logical operation in graphics state. */
 
@@ -32,7 +33,7 @@ gs_current_logical_op(const gs_state * pgs)
 int
 gs_set_logical_op(gs_state * pgs, gs_logical_operation_t lop)
 {
-    return (lop == lop_default ? 0 : gs_note_error(gs_error_rangecheck));
+    return (lop == lop_default ? 0 : gs_note_error(pgs->memory, gs_error_rangecheck));
 }
 
 /* Stub RasterOp implementations for memory devices. */
@@ -45,7 +46,7 @@ mem_mono_strip_copy_rop(gx_device * dev,
 			int x, int y, int width, int height,
 			int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_rangecheck);
+    return_error(dev->memory, gs_error_rangecheck);
 }
 
 int
@@ -56,7 +57,7 @@ mem_gray_strip_copy_rop(gx_device * dev,
 			int x, int y, int width, int height,
 			int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_rangecheck);
+    return_error(dev->memory, gs_error_rangecheck);
 }
 
 int
@@ -67,7 +68,7 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 			       int x, int y, int width, int height,
 		       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_rangecheck);
+    return_error(dev->memory, gs_error_rangecheck);
 }
 
 /* Stub default implementations of device procedures. */
@@ -80,7 +81,7 @@ gx_default_copy_rop(gx_device * dev,
 		    int x, int y, int width, int height,
 		    int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_unknownerror);	/* not implemented */
+    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
 }
 
 int
@@ -91,7 +92,7 @@ gx_default_strip_copy_rop(gx_device * dev,
 			  int x, int y, int width, int height,
 		       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_unknownerror);	/* not implemented */
+    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
 }
 
 int
@@ -102,7 +103,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 			  int x, int y, int width, int height,
 		       int phase_x, int phase_y, gs_logical_operation_t lop)
 {
-    return_error(gs_error_unknownerror);	/* not implemented */
+    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
 }
 
 /* Stub RasterOp source devices. */
@@ -111,7 +112,7 @@ int
 gx_alloc_rop_texture_device(gx_device_rop_texture ** prsdev, gs_memory_t * mem,
 			    client_name_t cname)
 {
-    return_error(gs_error_rangecheck);
+    return_error(mem, gs_error_rangecheck);
 }
 
 void

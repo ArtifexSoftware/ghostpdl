@@ -212,7 +212,7 @@ abuf_flush_block(gx_device_memory * adev, int y)
 	bbox.p.x &= alpha_mask;
 	bbox.q.x = (bbox.q.x + ~alpha_mask) & alpha_mask;
 	width = bbox.q.x - bbox.p.x;
-	bits_compress_scaled(bits, bbox.p.x, width, block_height,
+	bits_compress_scaled(adev->memory, bits, bbox.p.x, width, block_height,
 			     adev->raster, bits, draster, &adev->log2_scale,
 			     adev->log2_alpha_bits);
 	return (*dev_proc(target, copy_alpha)) (target,
@@ -314,7 +314,7 @@ y_transfer_next(y_transfer * pyt, gx_device * dev)
 	tby -= mdev->height;
 	tbh = ms + mh - dev->height - tby;
     }
-    if_debug7('V',
+    if_debug7(mdev->memory, 'V',
 	      "[V]abuf: my=%d, mh=%d, ms=%d, ty=%d, th=%d, tby=%d, tbh=%d\n",
 	      my, mh, ms, ty, th, tby, tbh);
     if (tbh > th)
@@ -334,7 +334,7 @@ mem_abuf_copy_mono(gx_device * dev,
     y_transfer yt;
 
     if (zero != gx_no_color_index || one == gx_no_color_index)
-	return_error(gs_error_undefinedresult);
+	return_error(dev->memory, gs_error_undefinedresult);
     x -= mdev->mapped_x;
     fit_copy_xyw(dev, base, sourcex, sraster, id, x, y, w, h);	/* don't limit h */
     if (w <= 0 || h <= 0)

@@ -34,14 +34,15 @@ typedef struct charstring_font_refs_s {
 /*
  * Parse the substructures of a CharString-based font.
  */
-int charstring_font_get_refs(const_os_ptr op, charstring_font_refs_t *pfr);
+int charstring_font_get_refs(const gs_memory_t *mem, const_os_ptr op, charstring_font_refs_t *pfr);
 
 /*
  * Get the parameters of a CharString-based font or a FDArray entry for a
  * CIDFontType 0 font.  The client has filled in pdata1->interpret,
  * subroutineNumberBias, lenIV, and (if applicable) the Type 2 elements.
  */
-int charstring_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
+int charstring_font_params(const gs_memory_t *mem, 
+			   const_os_ptr op, charstring_font_refs_t *pfr,
 			   gs_type1_data *pdata1);
 
 /*

@@ -137,7 +137,7 @@ gp_monitor_enter(
 }
 
 int				/* rets 0 ok, -ve error */
-gp_monitor_leave(
+gp_monitor_leave(const gs_memory_t *mem, 
 		 gp_monitor * mon	/* monitor to affect */
 )
 {

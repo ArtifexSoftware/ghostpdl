@@ -97,7 +97,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
     }
 #endif
     /* Non-ANSI compilers require the following casts: */
-    gs_distance_transform((float)penum->rect.w, (float)penum->rect.h,
+    gs_distance_transform(penum->memory, (float)penum->rect.w, (float)penum->rect.h,
 			  &penum->matrix, &dst_xy);
     iss.BitsPerComponentOut = sizeof(frac) * 8;
     iss.MaxValueOut = frac_1;
@@ -158,7 +158,7 @@ gs_image_class_0_interpolate(gx_image_enum * penum)
 	penum->xyi.x = fixed2int_pixround(dda_current(x0));
     }
     penum->xyi.y = fixed2int_pixround(dda_current(penum->dda.pixel0.y));
-    if_debug0('b', "[b]render=interpolate\n");
+    if_debug0(penum->memory, 'b', "[b]render=interpolate\n");
     return &image_render_interpolate;
 }
 
@@ -210,7 +210,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    int i;
 
 	    r.ptr = (byte *) psrc - 1;
-	    if_debug0('B', "[B]Concrete row:\n[B]");
+	    if_debug0(penum->memory, 'B', "[B]Concrete row:\n[B]");
 	    for (i = 0; i < pss->params.WidthIn; i++, psrc += c) {
 		int j;
 
@@ -227,13 +227,13 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		    int ci;
 
 		    for (ci = 0; ci < c; ++ci)
-			dprintf2("%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
+			dprintf2(penum->memory, "%c%04x", (ci == 0 ? ' ' : ','), psrc[ci]);
 		}
 #endif
 	    }
 	    out += round_up(pss->params.WidthIn * c * sizeof(frac),
 			    align_bitmap_mod);
-	    if_debug0('B', "\n");
+	    if_debug0(penum->memory, 'B', "\n");
 	}
 	r.limit = r.ptr + row_size;
     } else			/* h == 0 */
@@ -274,11 +274,11 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 	    status = (*pss->template->process)
 		((stream_state *) pss, &r, &w, h == 0);
 	    if (status < 0 && status != EOFC)
-		return_error(gs_error_ioerror);
+		return_error(penum->memory, gs_error_ioerror);
 	    if (w.ptr == w.limit) {
 		int xe = xo + width;
 
-		if_debug1('B', "[B]Interpolated row %d:\n[B]",
+		if_debug1(penum->memory, 'B', "[B]Interpolated row %d:\n[B]",
 			  penum->line_xy);
 		for (x = xo; x < xe;) {
 #ifdef DEBUG
@@ -286,7 +286,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 			int ci;
 
 			for (ci = 0; ci < c; ++ci)
-			    dprintf2("%c%04x", (ci == 0 ? ' ' : ','),
+			    dprintf2(penum->memory, "%c%04x", (ci == 0 ? ' ' : ','),
 				     psrc[ci]);
 		    }
 #endif
@@ -325,7 +325,7 @@ image_render_interpolate(gx_image_enum * penum, const byte * buffer,
 		}
 		LINE_ACCUM_COPY(dev, out, bpp, xo, x, raster, ry);
 		penum->line_xy++;
-		if_debug0('B', "\n");
+		if_debug0(penum->memory, 'B', "\n");
 	    }
 	    if ((status == 0 && r.ptr == r.limit) || status == EOFC)
 		break;

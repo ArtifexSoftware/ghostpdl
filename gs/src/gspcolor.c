@@ -98,20 +98,20 @@ gs_make_pattern_common(gs_client_color *pcc,
     if (mem == 0)
 	mem = gs_state_memory(pgs);
     rc_alloc_struct_1(pinst, gs_pattern_instance_t, pstype, mem,
-		      return_error(gs_error_VMerror),
+		      return_error(mem, gs_error_VMerror),
 		      "gs_make_pattern_common");
     pinst->rc.free = rc_free_pattern_instance;
     pinst->type = ptemp->type;
     saved = gs_state_copy(pgs, mem);
     if (saved == 0) {
 	gs_free_object(mem, pinst, "gs_make_pattern_common");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
     gs_concat(saved, pmat);
     gs_newpath(saved);
     pinst->saved = saved;
     pcc->pattern = pinst;
-    pcc->pattern->pattern_id = gs_next_ids(1);
+    pcc->pattern->pattern_id = gs_next_ids(mem, 1);
     return 0;
 }
 
@@ -145,11 +145,11 @@ gs_setpatternspace(gs_state * pgs)
     int code = 0;
 
     if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
+	return_error(pgs->memory, gs_error_undefined);
     if (pgs->color_space->type->index != gs_color_space_index_Pattern) {
 	gs_color_space cs;
 
-	gs_cspace_init(&cs, &gs_color_space_type_Pattern, NULL);
+	gs_cspace_init(&cs, &gs_color_space_type_Pattern, pgs->memory);
 	/**************** base_space SETTING IS WRONG ****************/
 	cs.params.pattern.base_space =
 	    *(gs_paint_color_space *) pgs->color_space;
@@ -169,10 +169,10 @@ gs_setpatternspace(gs_state * pgs)
  * needed.
  */
 void
-gs_pattern_reference(gs_client_color * pcc, int delta)
+gs_pattern_reference(const gs_memory_t *mem, gs_client_color * pcc, int delta)
 {
     if (pcc->pattern != 0)
-        rc_adjust(pcc->pattern, delta, "gs_pattern_reference");
+        rc_adjust(mem, pcc->pattern, delta, "gs_pattern_reference");
 }
 
 /* getpattern */
@@ -287,15 +287,16 @@ gx_adjust_cspace_Pattern(const gs_color_space * pcs, int delta)
 }
 
 private void
-gx_adjust_color_Pattern(const gs_client_color * pcc,
+gx_adjust_color_Pattern(const gs_memory_t *mem,
+			const gs_client_color * pcc,
 			const gs_color_space * pcs, int delta)
 {
     gs_pattern_instance_t *pinst = pcc->pattern;
 
-    rc_adjust_only(pinst, delta, "gx_adjust_color_Pattern");
+    rc_adjust_only(mem, pinst, delta, "gx_adjust_color_Pattern");
     if (pcs && pcs->params.pattern.has_base_space)
 	(*pcs->params.pattern.base_space.type->adjust_color_count)
-	    (pcc, (const gs_color_space *)&pcs->params.pattern.base_space,
+	    (mem, pcc, (const gs_color_space *)&pcs->params.pattern.base_space,
 	     delta);
 }
 

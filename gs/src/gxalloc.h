@@ -263,12 +263,12 @@ void alloc_free_chunk(chunk_t *, gs_ref_memory_t *);
 /* define the list of variables being printed as a macro. */
 #define dprintf_chunk_format\
   "%s 0x%lx (0x%lx..0x%lx, 0x%lx..0x%lx..0x%lx)\n"
-#define dprintf_chunk(msg, cp)\
-  dprintf7(dprintf_chunk_format,\
+#define dprintf_chunk(mem, msg, cp)\
+  dprintf7(mem, dprintf_chunk_format,\
 	   msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
 	   (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
-#define if_debug_chunk(c, msg, cp)\
-  if_debug7(c, dprintf_chunk_format,\
+#define if_debug_chunk(mem, c, msg, cp)\
+  if_debug7(mem, c, dprintf_chunk_format,\
 	    msg, (ulong)(cp), (ulong)(cp)->cbase, (ulong)(cp)->cbot,\
 	    (ulong)(cp)->ctop, (ulong)(cp)->climit, (ulong)(cp)->cend)
 
@@ -317,7 +317,7 @@ typedef struct ref_s ref;
 struct gs_ref_memory_s {
     /* The following are set at initialization time. */
     gs_memory_common;
-    gs_raw_memory_t *parent;	/* for allocating chunks */
+    gs_memory_t *parent;	/* for allocating chunks */
     uint chunk_size;
     uint large_size;		/* min size to give large object */
 				/* its own chunk: must be */
@@ -437,17 +437,17 @@ extern const dump_control_t dump_control_all;
 /* Print one object with the given options. */
 /* Relevant options: type_addresses, no_types, pointers, pointed_strings, */
 /* contents. */
-void debug_print_object(const void *obj, const dump_control_t * control);
+void debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t *control);
 
 /* Print the contents of a chunk with the given options. */
 /* Relevant options: all. */
-void debug_dump_chunk(const chunk_t * cp, const dump_control_t * control);
-void debug_print_chunk(const chunk_t * cp);	/* default options */
+void debug_dump_chunk(const gs_memory_t *mem, const chunk_t *cp, const dump_control_t *control);
+void debug_print_chunk(const gs_memory_t *mem, const chunk_t *cp);	/* default options */
 
 /* Print the contents of all chunks managed by an allocator. */
 /* Relevant options: all. */
-void debug_dump_memory(const gs_ref_memory_t * mem,
-		       const dump_control_t * control);
+void debug_dump_memory(const gs_ref_memory_t *mem,
+		       const dump_control_t *control);
 
 /* Find all the objects that contain a given pointer. */
 void debug_find_pointers(const gs_ref_memory_t *mem, const void *target);

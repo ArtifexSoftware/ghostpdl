@@ -45,7 +45,7 @@ bool obj_ident_eq(const ref *, const ref *);
  * return 0.  If the object isn't a name or string, return e_typecheck.
  * If the object is a string without read access, return e_invalidaccess.
  */
-int obj_string_data(const ref *op, const byte **pchars, uint *plen);
+int obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint *plen);
 
 /*
  * Create a printable representation of an object, a la cvs and =
@@ -76,11 +76,11 @@ int obj_cvp(const ref * op, byte *str, uint len, uint * prlen,
  * and it can return a pointer to the data for names and strings, like
  * obj_string_data.
  */
-int obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
+int obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
 	    const byte ** pchars);
 
 /* Get an element from an array (packed or not). */
-int array_get(const ref *, long, ref *);
+int array_get(const gs_memory_t *mem, const ref *, long, ref *);
 
 /* Get an element from a packed array. */
 /* (This works for ordinary arrays too.) */
@@ -105,23 +105,23 @@ char *ref_to_string(const ref *, gs_memory_t *, client_name_t);
 /* ------ Operand utilities ------ */
 
 /* Get N numeric operands from the stack or an array. */
-int num_params(const ref *, int, double *);
+int num_params(const gs_memory_t *mem, const ref *, int, double *);
 
 /* float_params can lose accuracy for large integers. */
-int float_params(const ref *, int, float *);
+int float_params(const gs_memory_t *mem, const ref *, int, float *);
 
 /* process_float_array can lose accuracy for large integers */
-int process_float_array(const ref *, int, float *);
+int process_float_array(const gs_memory_t *mem, const ref *, int, float *);
 
 /* Get a single real parameter. */
 /* The only possible error is e_typecheck. */
-int real_param(const ref *, double *);
+int real_param(const gs_memory_t *mem, const ref *, double *);
 
 /* float_param can lose accuracy for large integers. */
-int float_param(const ref *, float *);
+int float_param(const gs_memory_t *mem, const ref *, float *);
 
 /* Get an integer parameter in a given range. */
-int int_param(const ref *, int, int *);
+int int_param(const gs_memory_t *mem, const ref *, int, int *);
 
 /* Make real values on the stack. */
 /* Return e_limitcheck for infinities or double->float overflow. */
@@ -135,7 +135,7 @@ typedef struct gs_matrix_s gs_matrix;
 #endif
 
 /* Read a matrix operand. */
-int read_matrix(const ref *, gs_matrix *);
+int read_matrix(const gs_memory_t *mem, const ref *, gs_matrix *);
 
 /* Write a matrix operand. */
 /* If dmem is NULL, the array is guaranteed newly allocated in imem. */

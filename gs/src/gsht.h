@@ -58,8 +58,8 @@ int gs_currentscreenlevels(const gs_state *);
 typedef struct gs_screen_enum_s gs_screen_enum;
 gs_screen_enum *gs_screen_enum_alloc(gs_memory_t *, client_name_t);
 int gs_screen_init(gs_screen_enum *, gs_state *, gs_screen_halftone *);
-int gs_screen_currentpoint(gs_screen_enum *, gs_point *);
-int gs_screen_next(gs_screen_enum *, floatp);
+int gs_screen_currentpoint(const gs_memory_t *mem, gs_screen_enum *, gs_point *);
+int gs_screen_next(const gs_memory_t *mem, gs_screen_enum *, floatp);
 int gs_screen_install(gs_screen_enum *);
 
 #endif /* gsht_INCLUDED */

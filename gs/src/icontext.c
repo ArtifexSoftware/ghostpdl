@@ -98,7 +98,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	pcst = gs_alloc_struct((gs_memory_t *) mem, gs_context_state_t,
 			       &st_context_state, "context_state_alloc");
 	if (pcst == 0)
-	    return_error(e_VMerror);
+	    return_error((gs_memory_t *) mem, e_VMerror);
     }
     code = gs_interp_alloc_stacks(mem, pcst);
     if (code < 0)
@@ -112,7 +112,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->dict_stack.userdict_index = 0;
     pcst->pgs = int_gstate_alloc(dmem);
     if (pcst->pgs == 0) {
-	code = gs_note_error(e_VMerror);
+	code = gs_note_error((gs_memory_t *) mem, e_VMerror);
 	goto x1;
     }
     pcst->memory = *dmem;
@@ -239,7 +239,7 @@ context_state_store(gs_context_state_t * pcst)
 	i_ctx_t *i_ctx_p = pcst;
 
 	if (dict_find_string(systemdict, "userparams", &puserparams) < 0)
-	    return_error(e_Fatal);
+	    return_error(imemory, e_Fatal);
 	pcst->userparams = *puserparams;
     }
     return 0;

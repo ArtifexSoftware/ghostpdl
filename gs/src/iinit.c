@@ -31,6 +31,7 @@
 #include "ivmspace.h"
 #include "opdef.h"
 #include "store.h"
+#include "idebug.h"
 
 /* Implementation parameters. */
 /*
@@ -93,7 +94,8 @@ i_initial_enter_name_in(i_ctx_t *i_ctx_p, ref *pdict, const char *nstr,
     int code = idict_put_string(pdict, nstr, pref);
 
     if (code < 0)
-	lprintf4("initial_enter failed (%d), entering /%s in -dict:%u/%u-\n",
+	lprintf4((const gs_memory_t *)&i_ctx_p->memory, 
+		 "initial_enter failed (%d), entering /%s in -dict:%u/%u-\n",
 		 code, nstr, dict_length(pdict), dict_maxlength(pdict));
     return code;
 }
@@ -277,7 +279,7 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
 	    for (def = *tptr; def->oname != 0; def++)
 		if (op_def_is_begin_dict(def)) {
 		    if (make_initial_dict(i_ctx_p, def->oname, idicts) == 0)
-			return_error(e_VMerror);
+			return_error(imemory, e_VMerror);
 		}
 	}
 
@@ -368,7 +370,8 @@ zop_init(i_ctx_t *i_ctx_p)
 	if (def->proc != 0) {
 	    code = def->proc(i_ctx_p);
 	    if (code < 0) {
-		lprintf2("op_init proc 0x%lx returned error %d!\n",
+		lprintf2((const gs_memory_t *)&i_ctx_p->memory,
+			 "op_init proc 0x%lx returned error %d!\n",
 			 (ulong)def->proc, code);
 		return code;
 	    }
@@ -419,7 +422,7 @@ alloc_op_array_table(i_ctx_t *i_ctx_p, uint size, uint space,
 	(ushort *) ialloc_byte_array(size, sizeof(ushort),
 				     "op_array nx_table");
     if (opt->nx_table == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     opt->count = 0;
     opt->root_p = &opt->table;
     opt->attrs = space | a_executable;
@@ -448,9 +451,9 @@ op_init(i_ctx_t *i_ctx_p)
 		if (code < 0)
 		    return code;
 		if (!dict_find(systemdict, &nref, &pdict))
-		    return_error(e_Fatal);
+		    return_error(imemory, e_Fatal);
 		if (!r_has_type(pdict, t_dictionary))
-		    return_error(e_Fatal);
+		    return_error(imemory, e_Fatal);
 	    } else {
 		ref oper;
 		uint index_in_table = def - *tptr;
@@ -458,15 +461,16 @@ op_init(i_ctx_t *i_ctx_p)
 		    index_in_table;
 
 		if (index_in_table >= OP_DEFS_MAX_SIZE) {
-		    lprintf1("opdef overrun! %s\n", def->oname);
-		    return_error(e_Fatal);
+		    lprintf1((const gs_memory_t *)&i_ctx_p->memory,
+			     "opdef overrun! %s\n", def->oname);
+		    return_error(imemory, e_Fatal);
 		}
 		gs_interp_make_oper(&oper, def->proc, opidx);
 		/* The first character of the name is a digit */
 		/* giving the minimum acceptable number of operands. */
 		/* Check to make sure it's within bounds. */
 		if (*nstr - '0' > gs_interp_max_op_num_args)
-		    return_error(e_Fatal);
+		    return_error(imemory, e_Fatal);
 		nstr++;
 		/*
 		 * Skip internal operators, and the second occurrence of

@@ -51,7 +51,7 @@ zDCTE(i_ctx_t *i_ctx_p)
     jcdp = gs_alloc_struct_immovable(mem, jpeg_compress_data,
       &st_jpeg_compress_data, "zDCTE");
     if (jcdp == 0)
-	return_error(e_VMerror);
+	return_error(mem, e_VMerror);
     if (s_DCTE_template.set_defaults)
 	(*s_DCTE_template.set_defaults) ((stream_state *) & state);
     state.data.compress = jcdp;

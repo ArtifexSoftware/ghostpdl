@@ -111,7 +111,7 @@ gx_device_text_begin(gx_device * dev, gs_imager_state * pis,
 		     gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     if (TEXT_PARAMS_ARE_INVALID(text))
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     {
 	gx_path *tpath =
 	    ((text->operation & TEXT_DO_NONE) &&
@@ -163,7 +163,7 @@ gs_text_enum_init(gs_text_enum_t *pte, const gs_text_enum_procs_t *procs,
     /* init_dynamic sets index, xy_index, fstack */
     code = gs_text_enum_init_dynamic(pte, font);
     if (code >= 0)
-	rc_increment(dev);
+	rc_increment(mem, dev);
     return code;
 }
 
@@ -489,14 +489,15 @@ gs_text_total_width(const gs_text_enum_t *pte, gs_point *pwidth)
 
 /* Assuming REPLACE_WIDTHS is set, return the width of the i'th character. */
 int
-gs_text_replaced_width(const gs_text_params_t *text, uint index,
+gs_text_replaced_width(const gs_memory_t *mem, 
+		       const gs_text_params_t *text, uint index,
 		       gs_point *pwidth)
 {
     const float *x_widths = text->x_widths;
     const float *y_widths = text->y_widths;
 
     if (index > text->size)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     if (x_widths == y_widths) {
 	if (x_widths) {
 	    index *= 2;
@@ -560,8 +561,8 @@ gs_text_retry(gs_text_enum_t * pte)
 void
 gx_default_text_release(gs_text_enum_t *pte, client_name_t cname)
 {
-    rc_decrement_only(pte->dev, cname);
-    rc_decrement_only(pte->imaging_dev, cname);
+    rc_decrement_only(pte->memory, pte->dev, cname);
+    rc_decrement_only(pte->memory, pte->imaging_dev, cname);
 }
 void
 rc_free_text_enum(gs_memory_t * mem, void *obj, client_name_t cname)
@@ -574,7 +575,7 @@ rc_free_text_enum(gs_memory_t * mem, void *obj, client_name_t cname)
 void
 gs_text_release(gs_text_enum_t * pte, client_name_t cname)
 {
-    rc_decrement_only(pte, cname);
+    rc_decrement_only(pte->memory, pte, cname);
 }
 
 /* ---------------- Default font rendering procedures ---------------- */
@@ -611,7 +612,7 @@ gs_default_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 	*pchr = pte->text.data.chars[pte->index];
 	*pglyph = gs_no_glyph;
     } else
-	return_error(gs_error_rangecheck); /* shouldn't happen */
+	return_error(pte->memory, gs_error_rangecheck); /* shouldn't happen */
     pte->index++;
     return 0;
 }

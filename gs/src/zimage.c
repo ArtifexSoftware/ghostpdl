@@ -48,7 +48,7 @@ private int image_cleanup(i_ctx_t *);
 
 /* Extract and check the parameters for a gs_data_image_t. */
 int
-data_image_params(const ref *op, gs_data_image_t *pim,
+data_image_params(const gs_memory_t *mem, const ref *op, gs_data_image_t *pim,
 		  image_params *pip, bool require_DataSource,
 		  int num_components, int max_bits_per_component,
 		  bool has_alpha)
@@ -57,23 +57,23 @@ data_image_params(const ref *op, gs_data_image_t *pim,
     int decode_size;
     ref *pds;
 
-    check_type(*op, t_dictionary);
-    check_dict_read(*op);
-    if ((code = dict_int_param(op, "Width", 0, max_int_in_fixed / 2,
+    check_type(mem, *op, t_dictionary);
+    check_dict_read(mem, *op);
+    if ((code = dict_int_param(mem, op, "Width", 0, max_int_in_fixed / 2,
 			       -1, &pim->Width)) < 0 ||
-	(code = dict_int_param(op, "Height", 0, max_int_in_fixed / 2,
+	(code = dict_int_param(mem, op, "Height", 0, max_int_in_fixed / 2,
 			       -1, &pim->Height)) < 0 ||
-	(code = dict_matrix_param(op, "ImageMatrix",
+	(code = dict_matrix_param(mem, op, "ImageMatrix",
 				  &pim->ImageMatrix)) < 0 ||
-	(code = dict_bool_param(op, "MultipleDataSources", false,
+	(code = dict_bool_param(mem, op, "MultipleDataSources", false,
 				&pip->MultipleDataSources)) < 0 ||
-	(code = dict_int_param(op, "BitsPerComponent", 1,
+	(code = dict_int_param(mem, op, "BitsPerComponent", 1,
 			       max_bits_per_component, -1,
 			       &pim->BitsPerComponent)) < 0 ||
-	(code = decode_size = dict_floats_param(op, "Decode",
+	(code = decode_size = dict_floats_param(mem, op, "Decode",
 						num_components * 2,
 						&pim->Decode[0], NULL)) < 0 ||
-	(code = dict_bool_param(op, "Interpolate", false,
+	(code = dict_bool_param(mem, op, "Interpolate", false,
 				&pim->Interpolate)) < 0
 	)
 	return code;
@@ -81,17 +81,17 @@ data_image_params(const ref *op, gs_data_image_t *pim,
     /* Extract and check the data sources. */
     if ((code = dict_find_string(op, "DataSource", &pds)) <= 0) {
 	if (require_DataSource)
-	    return (code < 0 ? code : gs_note_error(e_rangecheck));
+	    return (code < 0 ? code : gs_note_error(mem, e_rangecheck));
 	return 1;		/* no data source */
     }
     if (pip->MultipleDataSources) {
 	long i, n = num_components + (has_alpha ? 1 : 0);
         if (!r_is_array(pds))
-            return_error(e_typecheck);
+            return_error(mem, e_typecheck);
 	if (r_size(pds) != n)
-	    return_error(e_rangecheck);
+	    return_error(mem, e_rangecheck);
 	for (i = 0; i < n; ++i)
-            array_get(pds, i, &pip->DataSource[i]);
+            array_get(mem, pds, i, &pip->DataSource[i]);
     } else
 	pip->DataSource[0] = *pds;
     return 0;
@@ -108,9 +108,9 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
     int code;
 
     if (num_components < 1)
-	return_error(e_rangecheck);	/* Pattern space not allowed */
+	return_error(imemory, e_rangecheck);	/* Pattern space not allowed */
     pim->ColorSpace = gs_currentcolorspace(igs);
-    code = data_image_params(op, (gs_data_image_t *) pim, pip, true,
+    code = data_image_params(imemory, op, (gs_data_image_t *) pim, pip, true,
 			     num_components, max_bits_per_component,
 			     has_alpha);
     if (code < 0)
@@ -118,7 +118,7 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
     pim->format =
 	(pip->MultipleDataSources ? gs_image_format_component_planar :
 	 gs_image_format_chunky);
-    return dict_bool_param(op, "CombineWithColor", false,
+    return dict_bool_param(imemory, op, "CombineWithColor", false,
 			   &pim->CombineWithColor);
 }
 
@@ -183,12 +183,12 @@ zimagemask1(i_ctx_t *i_ctx_p)
 
     gs_image_t_init_mask_adjust(&image, false,
 				gs_incachedevice(igs) != CACHE_DEVICE_NONE);
-    code = data_image_params(op, (gs_data_image_t *) & image,
+    code = data_image_params(imemory, op, (gs_data_image_t *) & image,
 			     &ip, true, 1, 1, false);
     if (code < 0)
 	return code;
     if (ip.MultipleDataSources)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image, &ip.DataSource[0],
 			true, 1);
 }
@@ -258,7 +258,7 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 	switch (r_type(pp)) {
 	    case t_file:
 		if (!level2_enabled)
-		    return_error(e_typecheck);
+		    return_error(imemory, e_typecheck);
 		/* Check for aliasing. */
 		{
 		    int pi;
@@ -274,18 +274,18 @@ zimage_data_setup(i_ctx_t *i_ctx_p, const gs_pixel_image_t * pim,
 		/* falls through */
 	    case t_string:
 		if (r_type(pp) != r_type(sources))
-		    return_error(e_typecheck);
-		check_read(*pp);
+		    return_error(imemory, e_typecheck);
+		check_read(imemory, *pp);
 		break;
 	    default:
 		if (!r_is_proc(sources))
-		    return_error(e_typecheck);
-		check_proc(*pp);
+		    return_error(imemory, e_typecheck);
+		check_proc(imemory, *pp);
 	}
 	*ep = *pp;
     }
     if ((penum = gs_image_enum_alloc(imemory, "image_setup")) == 0)
-	return_error(e_VMerror);
+	return_error(imemory, e_VMerror);
     code = gs_image_enum_init(penum, pie, (const gs_data_image_t *)pim, igs);
     if (code != 0) {		/* error, or empty image */
 	int code1 = gs_image_cleanup(penum);
@@ -341,11 +341,11 @@ image_proc_continue(i_ctx_t *i_ctx_p)
     int i, code;
 
     if (!r_has_type_attrs(op, t_string, a_read)) {
-	check_op(1);
+	check_op(imemory, 1);
 	/* Procedure didn't return a (readable) string.  Quit. */
 	esp = zimage_pop_estack(esp);
 	image_cleanup(i_ctx_p);
-	return_error(!r_has_type(op, t_string) ? e_typecheck : e_invalidaccess);
+	return_error(imemory, !r_has_type(op, t_string) ? e_typecheck : e_invalidaccess);
     }
     size = r_size(op);
     if (size == 0 && ETOP_SOURCE(esp, 0)[1].value.intval == 0)
@@ -447,7 +447,7 @@ image_file_continue(i_ctx_t *i_ctx_p)
 						NULL, 0, image_file_continue);
 		default:
 		    /* case ERRC: */
-		    return_error(e_ioerror);
+		    return_error(imemory, e_ioerror);
 		}
 		break;		/* for EOFC */
 	    }

@@ -73,16 +73,16 @@ iostatic_open_file(gx_io_device * iodev, const char *fname, uint namelen,
     ref *cat, *inst, *beg_pos, *end_pos, file;
 
     if (fname[0] != '/')
-	return_error(gs_error_undefinedfilename);
+	return_error(mem, gs_error_undefinedfilename);
     inst_name = strchr(cat_name, '/');
     if (inst_name == NULL)
-	return_error(gs_error_undefinedfilename);
+	return_error(mem, gs_error_undefinedfilename);
     cat_name_len = inst_name - cat_name;
     inst_name++;
     inst_name_len = fname + namelen - inst_name;
     if (cat_name_len > sizeof(buf) - 1 || inst_name_len > sizeof(buf) - 1) {
 	/* The operator 'file' doesn't allow rangecheck here. */
-	return_error(gs_error_undefinedfilename);
+	return_error(mem, gs_error_undefinedfilename);
     }
     memcpy(buf, cat_name, cat_name_len);
     buf[cat_name_len] = 0;
@@ -90,24 +90,24 @@ iostatic_open_file(gx_io_device * iodev, const char *fname, uint namelen,
     if (code < 0)
 	return code;
     if (code == 0 || r_type(cat) != t_dictionary)
-	return_error(gs_error_unregistered); /* Wrong gs_resst.ps . */
+	return_error(mem, gs_error_unregistered); /* Wrong gs_resst.ps . */
     memcpy(buf, inst_name, inst_name_len);
     buf[inst_name_len] = 0;
     code = dict_find_string(cat, buf, &inst);
     if (code < 0)
 	return code;
     if (code == 0 || r_type(inst) != t_dictionary)
-	return_error(gs_error_unregistered); /* Wrong gs_resst.ps . */
+	return_error(mem, gs_error_unregistered); /* Wrong gs_resst.ps . */
     code = dict_find_string(inst, "StaticFilePos", &beg_pos);
     if (code < 0)
 	return code;
     if (code == 0 || r_type(beg_pos) != t_integer)
-	return_error(gs_error_unregistered); /* Wrong gs_resst.ps . */
+	return_error(mem, gs_error_unregistered); /* Wrong gs_resst.ps . */
     code = dict_find_string(inst, "StaticFileEnd", &end_pos);
     if (code < 0)
 	return code;
     if (code == 0 || r_type(end_pos) != t_integer)
-	return_error(gs_error_unregistered); /* Wrong gs_resst.ps . */
+	return_error(mem, gs_error_unregistered); /* Wrong gs_resst.ps . */
     code = file_read_string(gs_init_string + beg_pos->value.intval,
 			    end_pos->value.intval - beg_pos->value.intval, 
 			    &file, (gs_ref_memory_t *)mem);
@@ -134,11 +134,11 @@ zsetup_io_static(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     gx_io_device *piodev;
 
-    check_read_type(*op, t_dictionary);
+    check_read_type(imemory, *op, t_dictionary);
 
     piodev = gs_findiodevice((const byte *)"%static%", 8);
     if (piodev == NULL)
-	return_error(gs_error_unregistered); /* Must not happen. */
+	return_error(imemory, gs_error_unregistered); /* Must not happen. */
     ref_assign_new(&((iostatic_state *)piodev->state)->data, op);
     pop(1);
     return 0;

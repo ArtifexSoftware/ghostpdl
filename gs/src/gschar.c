@@ -105,7 +105,7 @@ gs_kshow_n_init(gs_show_enum * penum,
     case ft_CID_user_defined:
     case ft_CID_TrueType:
     case ft_CID_bitmap:
-	return_error(gs_error_invalidfont);
+	return_error(pgs->memory, gs_error_invalidfont);
     default:
 	break;
     }
@@ -210,7 +210,7 @@ int
 gs_setcachedevice_double(gs_show_enum *penum, gs_state *pgs, const double *pw)
 {
     if (penum->pgs != pgs)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     return gs_text_setcachedevice((gs_text_enum_t *)penum, pw);
 }
 /* The _float procedure is strictly for backward compatibility. */
@@ -233,7 +233,7 @@ gs_setcachedevice2_double(gs_show_enum * penum, gs_state * pgs,
 			  const double *pw2)
 {
     if (penum->pgs != pgs)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     return gs_text_setcachedevice2((gs_text_enum_t *)penum, pw2);
 }
 /* The _float procedure is strictly for backward compatibility. */
@@ -258,7 +258,7 @@ gs_setcharwidth(gs_show_enum * penum, gs_state * pgs,
     double w[2];
 
     if (penum->pgs != pgs)
-	return_error(gs_error_rangecheck);
+	return_error(pgs->memory, gs_error_rangecheck);
     w[0] = wx, w[1] = wy;
     return gs_text_setcharwidth((gs_text_enum_t *)penum, w);
 }

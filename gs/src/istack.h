@@ -81,7 +81,8 @@ int ref_stack_set_max_count(ref_stack_t *pstack, long nmax);
  * Set the margin between the limit and the top of the stack.
  * Note that this may require allocating a block.
  */
-int ref_stack_set_margin(ref_stack_t *pstack, uint margin);
+int ref_stack_set_margin(const gs_memory_t *mem, 
+			 ref_stack_t *pstack, uint margin);
 
 /* Return the number of elements on a stack. */
 uint ref_stack_count(const ref_stack_t *pstack);

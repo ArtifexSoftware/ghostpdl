@@ -103,15 +103,15 @@ typedef struct hce_table_s {
  */
 
 #ifdef DEBUG
-#  define hc_print_value(code, clen)\
+#  define hc_print_value(mem, code, clen)\
     (gs_debug_c('W') ?\
-     (dlprintf2("[W]0x%x,%d\n", code, clen), 0) : 0)
-#  define hc_print_value_then(code, clen) hc_print_value(code, clen),
+     (dlprintf2(mem, "[W]0x%x,%d\n", code, clen), 0) : 0)
+#  define hc_print_value_then(mem, code, clen) hc_print_value(mem, code, clen),
 #else
-#  define hc_print_value(code, clen) 0
-#  define hc_print_value_then(code, clen)	/* */
+#  define hc_print_value(mem, code, clen) 0
+#  define hc_print_value_then(mem, code, clen)	/* */
 #endif
-#define hc_print_code(rp) hc_print_value((rp)->code, (rp)->code_length)
+#define hc_print_code(mem, rp) hc_print_value(mem, (rp)->code, (rp)->code_length)
 
 /* Declare variables that hold the encoder state. */
 #define hce_declare_state\
@@ -132,7 +132,7 @@ typedef struct hce_table_s {
 void hc_put_code_proc(bool, byte *, uint);
 
 #define hc_put_value(ss, q, code, clen)\
-  (hc_print_value_then(code, clen)\
+  (hc_print_value_then(ss->memory, code, clen)\
    ((bits_left -= (clen)) >= 0 ?\
     (bits += (code) << bits_left) :\
     (hc_put_code_proc((ss)->FirstBitLowOrder,\

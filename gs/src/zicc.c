@@ -28,7 +28,7 @@
 #include "idparam.h"
 #include "igstate.h"
 #include "icie.h"
-
+#include "ialloc.h"
 
 /*
  *   <dict>  .seticcspace  -
@@ -78,8 +78,8 @@ zseticcspace(i_ctx_t * i_ctx_p)
 
     /* verify the DataSource entry */
     if (dict_find_string(op, "DataSource", &pstrmval) <= 0)
-        return_error(e_undefined);
-    check_read_file(s, pstrmval);
+        return_error(imemory, e_undefined);
+    check_read_file(imemory, s, pstrmval);
 
     /*
      * Verify that the current color space can be a alternative color space.
@@ -89,7 +89,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     palt_cs = gs_currentcolorspace(igs);
     if ( !palt_cs->type->can_be_alt_space                                ||
          gs_color_space_get_index(palt_cs) == gs_color_space_index_CIEICC  )
-        return_error(e_rangecheck);
+        return_error(imemory, e_rangecheck);
 
     /*
      * Fetch and verify the Range array.
@@ -107,7 +107,8 @@ zseticcspace(i_ctx_t * i_ctx_p)
      * space, we use the range values only to restrict the set of input
      * values; they are not used for normalization.
      */
-    code = dict_floats_param( op,
+    code = dict_floats_param( imemory, 
+			      op,
                               "Range",
                               2 * ncomps,
                               range_buff,
@@ -115,7 +116,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
     for (i = 0; i < 2 * ncomps && range_buff[i + 1] >= range_buff[i]; i += 2)
         ;
     if (i != 2 * ncomps)
-        return_error(e_rangecheck);
+        return_error(imemory, e_rangecheck);
 
     /* build the color space object */
     code = gs_cspace_build_CIEICC(&pcs, NULL, gs_state_memory(igs));
@@ -141,7 +142,7 @@ zseticcspace(i_ctx_t * i_ctx_p)
      */
     gx_increment_cspace_count(palt_cs);
 
-    code = gx_load_icc_profile(picc_info);
+    code = gx_load_icc_profile(s->memory, picc_info);
     if (code < 0)
 	return code;
 

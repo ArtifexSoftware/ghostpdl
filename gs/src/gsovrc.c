@@ -95,14 +95,14 @@ write_color_index(gx_color_index cindex, byte * data, uint * psize)
 }
 
 private int
-read_color_index(gx_color_index * pcindex, const byte * data, uint size)
+read_color_index(const gs_memory_t *mem, gx_color_index * pcindex, const byte * data, uint size)
 {
     gx_color_index  cindex = 0;
     int             nbytes = 0, shift = 0;
 
     for (;; shift += 7, data++) {
         if (++nbytes > size)
-            return_error(gs_error_rangecheck);
+            return_error(mem, gs_error_rangecheck);
         else {
             int     c = *data;
 
@@ -151,7 +151,8 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
  * list device.
  */
 private int
-c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize)
+c_overprint_write(const gs_memory_t *mem,
+		  const gs_composite_t * pct, byte * data, uint * psize)
 {
     const gs_overprint_params_t *   pparams = &((const gs_overprint_t *)pct)->params;
     byte                            flags = 0;
@@ -179,7 +180,7 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize)
     /* check for overflow */
     *psize = used;
     if (used > avail)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
     data[0] = flags;
     return 0;
 }
@@ -200,14 +201,14 @@ c_overprint_read(
     int                     code = 0, nbytes = 1;
 
     if (size < 1)
-        return_error(gs_error_rangecheck);
+        return_error(mem, gs_error_rangecheck);
     flags = *data;
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
 
     /* check if the drawn_comps array is present */
     if (params.retain_any_comps && !params.retain_spot_comps) {
-        code = read_color_index(&params.drawn_comps, data + 1, size - 1);
+        code = read_color_index(mem, &params.drawn_comps, data + 1, size - 1);
         if (code < 0)
             return code;
          nbytes += code;
@@ -250,10 +251,10 @@ gs_create_overprint(
                        gs_overprint_t,
                        &st_overprint,
                        mem,
-                       return_error(gs_error_VMerror),
+                       return_error(mem, gs_error_VMerror),
                        "gs_create_overprint" );
     pct->type = &gs_composite_overprint_type;
-    pct->id = gs_next_ids(1);
+    pct->id = gs_next_ids(mem, 1);
     pct->params = *pparams;
     *ppct = (gs_composite_t *)pct;
     return 0;
@@ -702,7 +703,7 @@ update_overprint_params(
             pprocs->map_gray == 0                                         ||
             pprocs->map_rgb == 0                                          ||
             pprocs->map_cmyk == 0                                           )
-            return_error(gs_error_unknownerror);
+            return_error(dev->memory, gs_error_unknownerror);
 
         pprocs->map_gray(dev, frac_13, cvals);
         drawn_comps |= check_drawn_comps(ncomps, cvals);
@@ -760,7 +761,7 @@ overprint_open_device(gx_device * dev)
 
     /* the overprint device must have a target */
     if (tdev == 0)
-        return_error(gs_error_unknownerror);
+        return_error(dev->memory, gs_error_unknownerror);
     if ((code = gs_opendevice(tdev)) >= 0)
         gx_device_copy_params(dev, tdev);
     return code;
@@ -984,7 +985,7 @@ c_overprint_create_default_compositor(
                                        &st_overprint_device_t,
                                        "create overprint compositor" );
     if ((*popdev = (gx_device *)opdev) == 0)
-        return_error(gs_error_VMerror);
+        return_error(mem, gs_error_VMerror);
     gx_device_init( (gx_device *)opdev, 
                     (const gx_device *)&gs_overprint_device,
                     mem,

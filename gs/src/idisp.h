@@ -13,7 +13,7 @@
 #ifndef display_callback_DEFINED
 # define display_callback_DEFINED
 typedef struct display_callback_s display_callback;
-#endif
+
 
 /* Called from imain.c to set the display callback in the device instance. */
 int display_set_callback(gs_main_instance *minst, display_callback *callback);

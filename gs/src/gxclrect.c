@@ -91,13 +91,13 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 3);
 	    if (code < 0)
 		return code;
-	    if_debug3('L', "    rs2:%d,%d,0,%d\n",
+	    if_debug3(cldev->memory, 'L', "    rs2:%d,%d,0,%d\n",
 		      dx, dwidth, dheight);
 	} else {
 	    code = set_cmd_put_op(dp, cldev, pcls, op + 0x10, 5);
 	    if (code < 0)
 		return code;
-	    if_debug4('L', "    rs4:%d,%d,%d,%d\n",
+	    if_debug4(cldev->memory, 'L', "    rs4:%d,%d,%d,%d\n",
 		      dx, dwidth, dy, dheight);
 	    dp[3] = dy - rmin;
 	    dp[4] = dheight - rmin;
@@ -124,7 +124,7 @@ cmd_write_rect_cmd(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	code = set_cmd_put_op(dp, cldev, pcls, op, rcsize);
 	if (code < 0)
 	    return code;
-	if_debug5('L', "    r%d:%d,%d,%d,%d\n",
+	if_debug5(cldev->memory, 'L', "    r%d:%d,%d,%d,%d\n",
 		  rcsize - 1, dx, dwidth, dy, dheight);
 	cmd_put_rect(&pcls->rect, dp + 1);
     }
@@ -304,10 +304,10 @@ copy:{
 	}
 	op += compress;
 	if (dx) {
-	    *dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+	    *dp++ = cmd_count_op(dev->memory, cmd_opv_set_misc, 2);
 	    *dp++ = cmd_set_misc_data_x + dx;
 	}
-	*dp++ = cmd_count_op(op, csize);
+	*dp++ = cmd_count_op(dev->memory, op, csize);
 	cmd_put2w(x, y, dp);
 	cmd_put2w(w1, height, dp);
 	pcls->rect = rect;
@@ -398,10 +398,10 @@ copy:{
 	    }
 	    op += compress;
 	    if (dx) {
-		*dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+		*dp++ = cmd_count_op(dev->memory, cmd_opv_set_misc, 2);
 		*dp++ = cmd_set_misc_data_x + dx;
 	    }
-	    *dp++ = cmd_count_op(op, csize);
+	    *dp++ = cmd_count_op(dev->memory, op, csize);
 	    cmd_put2w(x, y, dp);
 	    cmd_put2w(w1, height, dp);
 	    pcls->rect = rect;
@@ -427,7 +427,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 
     /* If the target can't perform copy_alpha, exit now */
     if (depth > 1 && (cdev->disable_mask & clist_disable_copy_alpha) != 0)
-	return_error(gs_error_unknownerror);
+	return_error(dev->memory, gs_error_unknownerror);
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
@@ -504,10 +504,10 @@ copy:{
 	    }
 	    op += compress;
 	    if (dx) {
-		*dp++ = cmd_count_op(cmd_opv_set_misc, 2);
+		*dp++ = cmd_count_op(dev->memory, cmd_opv_set_misc, 2);
 		*dp++ = cmd_set_misc_data_x + dx;
 	    }
-	    *dp++ = cmd_count_op(op, csize);
+	    *dp++ = cmd_count_op(dev->memory, op, csize);
 	    *dp++ = depth;
 	    cmd_put2w(x, y, dp);
 	    cmd_put2w(w1, height, dp);
@@ -590,7 +590,7 @@ clist_strip_copy_rop(gx_device * dev,
 		    /* Change tile.  If there is no id, generate one. */
 		    if (tiles->id == gx_no_bitmap_id) {
 			tile_with_id = *tiles;
-			tile_with_id.id = gs_next_ids(1);
+			tile_with_id.id = gs_next_ids(dev->memory, 1);
 			tiles = &tile_with_id;
 		    }
 		    TRY_RECT {
@@ -621,7 +621,7 @@ clist_strip_copy_rop(gx_device * dev,
 			 * Allocate enough fake IDs, since the inner call on
 			 * clist_strip_copy_rop will need them anyway.
 			 */
-			ids = gs_next_ids(min(height, rep_height));
+			ids = gs_next_ids(dev->memory, min(height, rep_height));
 			line_tile = *tiles;
 			line_tile.size.y = 1;
 			line_tile.rep_height = 1;

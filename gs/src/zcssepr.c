@@ -64,15 +64,15 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     int code;
 
     /* Verify that we have an array as our input parameter */
-    check_read_type(*op, t_array);
+    check_read_type(imemory, *op, t_array);
     if (r_size(op) != 4)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 
     /* The alternate color space has been selected as the current color space */
     pacs = gs_currentcolorspace(igs);
     cs = *pacs;
     if (!cs.type->can_be_alt_space)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 
     /*
      * pcsa is a pointer to element 1 (2nd element)  in the Separation colorspace
@@ -83,7 +83,7 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     sname = *pcsa;
     switch (r_type(&sname)) {
 	default:
-	    return_error(e_typecheck);
+	    return_error(imemory, e_typecheck);
 	case t_string:
 	    code = name_from_string(&sname, &sname);
 	    if (code < 0)
@@ -102,10 +102,10 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 
     /* Check tint transform procedure. */
     /* See comment above about psca */
-    check_proc(pcsa[2]);
+    check_proc(imemory, pcsa[2]);
     pfn = ref_function(pcsa + 2);
     if (pfn == NULL)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
 
     cspace_old = istate->colorspace;
     /* See zcsindex.c for why we use memmove here. */
@@ -123,7 +123,7 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     istate->colorspace.procs.special.separation.layer_name = pcsa[0];
     istate->colorspace.procs.special.separation.tint_transform = pcsa[2];
     if (code >= 0)
-        code = gs_cspace_set_sepr_function(&cs, pfn);
+        code = gs_cspace_set_sepr_function(imemory, &cs, pfn);
     if (code >= 0)
 	code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
@@ -131,7 +131,8 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 	ifree_object(pmap, ".setseparationspace(pmap)");
 	return code;
     }
-    rc_decrement(pmap, ".setseparationspace(pmap)");  /* build sets rc = 1 */
+    rc_decrement(imemory, 
+		 pmap, ".setseparationspace(pmap)");  /* build sets rc = 1 */
     pop(1);
     return 0;
 }
@@ -142,7 +143,7 @@ zcurrentoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_bool(op, gs_currentoverprint(igs));
     return 0;
 }
@@ -153,7 +154,7 @@ zsetoverprint(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    check_type(*op, t_boolean);
+    check_type(imemory, *op, t_boolean);
     gs_setoverprint(igs, op->value.boolval);
     pop(1);
     return 0;
@@ -165,7 +166,7 @@ zcurrentoverprintmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
 
-    push(1);
+    push(imemory, 1);
     make_int(op, gs_currentoverprintmode(igs));
     return 0;
 }
@@ -176,7 +177,7 @@ zsetoverprintmode(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int param;
-    int code = int_param(op, max_int, &param);
+    int code = int_param(imemory, op, max_int, &param);
 
     if (code < 0 || (code = gs_setoverprintmode(igs, param)) < 0)
 	return code;

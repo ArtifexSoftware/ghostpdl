@@ -156,7 +156,7 @@ gs_font_finalize(void *vptr)
     gs_font *next = pfont->next;
     gs_font *prev = pfont->prev;
 
-    if_debug4('u', "[u]unlinking font 0x%lx, base=0x%lx, prev=0x%lx, next=0x%lx\n",
+    if_debug4(pfont->memory, 'u', "[u]unlinking font 0x%lx, base=0x%lx, prev=0x%lx, next=0x%lx\n",
 	    (ulong) pfont, (ulong) pfont->base, (ulong) prev, (ulong) next);
     /* Notify clients that the font is being freed. */
     gs_notify_all(&pfont->notify_list, NULL);
@@ -276,7 +276,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->dir = dir;
     pfont->is_resource = false;
     gs_font_notify_init(pfont);
-    pfont->id = gs_next_ids(1);
+    pfont->id = gs_next_ids(mem, 1);
     pfont->base = pfont;
     pfont->client_data = 0;
     /* not FontMatrix, FontType */
@@ -376,7 +376,7 @@ gs_definefont(gs_font_dir * pdir, gs_font * pfont)
 	return code;
     }
     font_link_first(&pdir->orig_fonts, pfont);
-    if_debug2('m', "[m]defining font 0x%lx, next=0x%lx\n",
+    if_debug2(pfont->memory, 'm', "[m]defining font 0x%lx, next=0x%lx\n",
 	      (ulong) pfont, (ulong) pfont->next);
     return 0;
 }
@@ -417,14 +417,14 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 	const gs_font_base *const pbfont = (const gs_font_base *)pfont;
 
 	if (pfont->FontType == ft_composite)
-	    dlprintf("[m]composite");
+	    dlprintf(pfont->memory, "[m]composite");
 	else if (uid_is_UniqueID(&pbfont->UID))
-	    dlprintf1("[m]UniqueID=%ld", pbfont->UID.id);
+	    dlprintf1(pfont->memory, "[m]UniqueID=%ld", pbfont->UID.id);
 	else if (uid_is_XUID(&pbfont->UID))
-	    dlprintf1("[m]XUID(%u)", (uint) (-pbfont->UID.id));
+	    dlprintf1(pfont->memory, "[m]XUID(%u)", (uint) (-pbfont->UID.id));
 	else
-	    dlprintf("[m]no UID");
-	dprintf7(", FontType=%d,\n[m]  new FontMatrix=[%g %g %g %g %g %g]\n",
+	    dlprintf(pfont->memory, "[m]no UID");
+	dprintf7(pfont->memory, ", FontType=%d,\n[m]  new FontMatrix=[%g %g %g %g %g %g]\n",
 		 pfont->FontType,
 		 pmat->xx, pmat->xy, pmat->yx, pmat->yy,
 		 pmat->tx, pmat->ty);
@@ -446,7 +446,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 		pf_out->FontMatrix.ty == newmat.ty
 		) {
 		*ppfont = pf_out;
-		if_debug1('m', "[m]found font=0x%lx\n", (ulong) pf_out);
+		if_debug1(mem, 'm', "[m]found font=0x%lx\n", (ulong) pf_out);
 		return 0;
 	    }
 	can_cache = true;
@@ -455,7 +455,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
     pf_out = gs_alloc_struct(mem, gs_font, gs_object_type(mem, pfont),
 			     "gs_makefont");
     if (!pf_out)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     memcpy(pf_out, pfont, gs_object_size(mem, pfont));
     gs_font_notify_init(pf_out);
     pf_out->FontMatrix = newmat;
@@ -474,7 +474,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 	     * (We can't free it, because there might be
 	     * other references to it.)
 	     */
-	    if_debug1('m', "[m]discarding font 0x%lx\n",
+	    if_debug1(mem, 'm', "[m]discarding font 0x%lx\n",
 		      (ulong) prev);
 	    if (prev->prev != 0)
 		prev->prev->next = 0;
@@ -483,7 +483,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
 	    pdir->ssize--;
 	    prev->prev = 0;
 	    if (prev->FontType != ft_composite) {
-		if_debug1('m', "[m]discarding UID 0x%lx\n",
+		if_debug1(mem, 'm', "[m]discarding UID 0x%lx\n",
 			  (ulong) ((gs_font_base *) prev)->
 			  UID.xvalues);
 		uid_free(&((gs_font_base *) prev)->UID,
@@ -497,7 +497,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
     } else {			/* Prevent garbage pointers. */
 	pf_out->next = pf_out->prev = 0;
     }
-    if_debug2('m', "[m]new font=0x%lx can_cache=%s\n",
+    if_debug2(mem, 'm', "[m]new font=0x%lx can_cache=%s\n",
 	      (ulong) * ppfont, (can_cache ? "true" : "false"));
     return 1;
 }
@@ -616,7 +616,7 @@ gs_purge_font(gs_font * pfont)
     else if (pdir->scaled_fonts == pfont)
 	pdir->scaled_fonts = next;
     else {			/* Shouldn't happen! */
-	lprintf1("purged font 0x%lx not found\n", (ulong) pfont);
+	lprintf1(pfont->memory, "purged font 0x%lx not found\n", (ulong) pfont);
     }
 
     /* Purge the font from the scaled font cache. */
@@ -851,7 +851,7 @@ int
 gs_no_enumerate_glyph(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,
 		      gs_glyph *pglyph)
 {
-    return_error(gs_error_undefined);
+    return_error(font->memory, gs_error_undefined);
 }
 
 /* Default glyph info procedure */
@@ -913,13 +913,13 @@ int
 gs_no_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat,
 		    gx_path *ppath)
 {
-    return_error(gs_error_undefined);
+    return_error(font->memory, gs_error_undefined);
 }
 
 /* Dummy glyph name procedure */
 int
 gs_no_glyph_name(gs_font *font, gs_glyph glyph, gs_const_string *pstr)
 {
-    return_error(gs_error_undefined);
+    return_error(font->memory, gs_error_undefined);
 }
 

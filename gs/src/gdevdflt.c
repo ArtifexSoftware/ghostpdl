@@ -32,7 +32,7 @@ set_cinfo_polarity(gx_device * dev, gx_color_polarity_t new_polarity)
 #ifdef DEBUG
     /* sanity check */
     if (new_polarity == GX_CINFO_POLARITY_UNKNOWN) {
-        dprintf("set_cinfo_polarity: illegal operand");
+        dprintf(dev->memory, "set_cinfo_polarity: illegal operand");
         return;
     }
 #endif
@@ -40,7 +40,7 @@ set_cinfo_polarity(gx_device * dev, gx_color_polarity_t new_polarity)
     if (dev->color_info.polarity == GX_CINFO_POLARITY_UNKNOWN)
         dev->color_info.polarity = new_polarity;
     else if (dev->color_info.polarity != new_polarity)
-        dprintf("set_cinfo_polarity: different polarity already set");
+        dprintf(dev->memory, "set_cinfo_polarity: different polarity already set");
 }
 
 
@@ -93,7 +93,7 @@ private gx_color_index
             else
                 encode_proc = gx_default_encode_color;
         } else
-            dprintf("get_encode_color: no color encoding information");
+            dprintf(dev->memory, "get_encode_color: no color encoding information");
     }
 
     return encode_proc;
@@ -404,7 +404,7 @@ gx_device_fill_in_procs(register gx_device * dev)
 #  define CHECK_NON_DEFAULT(proc, default, procname)\
     BEGIN\
 	if ( dev_proc(dev, proc) != NULL && dev_proc(dev, proc) != default )\
-	    dprintf2("**** Warning: device %s implements obsolete procedure %s\n",\
+	    dprintf2(dev->memory, "**** Warning: device %s implements obsolete procedure %s\n",\
 		     dev->dname, procname);\
     END
 #else
@@ -462,7 +462,7 @@ gx_device_fill_in_procs(register gx_device * dev)
                            get_color_mapping_procs,
                            gx_default_DevGray_get_color_mapping_procs );
         } else {
-            dprintf( "Subtractive gray mapping not implemented");
+            dprintf(dev->memory, "Subtractive gray mapping not implemented");
 #if 0
             fill_dev_proc( dev,
                            get_color_mapping_procs,
@@ -483,7 +483,7 @@ gx_device_fill_in_procs(register gx_device * dev)
                            get_color_comp_index,
                            gx_default_DevRGB_get_color_comp_index );
         } else {
-            dprintf ( "DeviceCMY mapping procs not supported\n" );
+            dprintf (dev->memory, "DeviceCMY mapping procs not supported\n" );
 #if 0
             fill_dev_proc( dev,
                            get_color_mapping_procs,
@@ -642,7 +642,7 @@ gx_no_create_compositor(gx_device * dev, gx_device ** pcdev,
 			const gs_composite_t * pcte,
 			const gs_imager_state * pis, gs_memory_t * memory)
 {
-    return_error(gs_error_unknownerror);	/* not implemented */
+    return_error(dev->memory, gs_error_unknownerror);	/* not implemented */
 }
 int
 gx_default_create_compositor(gx_device * dev, gx_device ** pcdev,
@@ -665,7 +665,7 @@ int
 gx_default_finish_copydevice(gx_device *dev, const gx_device *from_dev)
 {
     /* Only allow copying the prototype. */
-    return (from_dev->memory ? gs_note_error(gs_error_rangecheck) : 0);
+    return (from_dev->memory ? gs_note_error(dev->memory, gs_error_rangecheck) : 0);
 }
 
 int

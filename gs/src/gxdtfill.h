@@ -65,7 +65,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	int peak_y1 = ytop - fixed_half;
 #endif
 
-	if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
+	if_debug2(dev->memory, 'z', "[z]y=[%d,%d]\n", iy, iy1);
 
 	l.h = left->end.y - left->start.y;
 	r.h = right->end.y - right->start.y;
@@ -160,7 +160,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	 */
 	if (iy1 - iy <= max_rect_height) {
 	    iy = iy1 - 1;
-	    if_debug2('z', "[z]rectangle, x=[%d,%d]\n", rxl, rxr);
+	    if_debug2(dev->memory, 'z', "[z]rectangle, x=[%d,%d]\n", rxl, rxr);
 	} else {
 	    /* Compute one line's worth of dx/dy. */
 	    compute_ldx(&l, ysl);
@@ -262,7 +262,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 #undef YMULT_QUO
 #undef VD_RECT_SWAPPED
 xit:	if (code < 0 && fill_direct)
-	    return_error(code);
+	    return_error(dev->memory, code);
 	return_if_interrupt();
 	return code;
     }

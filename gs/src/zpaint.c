@@ -16,6 +16,7 @@
 #include "oper.h"
 #include "gspaint.h"
 #include "igstate.h"
+#include "ialloc.h"
 
 /* - fill - */
 private int
@@ -54,11 +55,11 @@ zimagepath(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     int code;
 
-    check_type(op[-2], t_integer);
-    check_type(op[-1], t_integer);
-    check_read_type(*op, t_string);
+    check_type(imemory, op[-2], t_integer);
+    check_type(imemory, op[-1], t_integer);
+    check_read_type(imemory, *op, t_string);
     if (r_size(op) < ((op[-2].value.intval + 7) >> 3) * op[-1].value.intval)
-	return_error(e_rangecheck);
+	return_error(imemory, e_rangecheck);
     code = gs_imagepath(igs,
 			(int)op[-2].value.intval, (int)op[-1].value.intval,
 			op->value.const_bytes);

@@ -221,19 +221,19 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    /* This is a number, decode it and push it on the stack. */
 
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, cstack, c);
+		decode_push_num1(pfont->memory, csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, cstack, c, cip, state, encrypted);
+		decode_push_num2(pfont->memory, csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
 		/* 32-bit numbers are 16:16. */
-		CS_CHECK_PUSH(csp, cstack);
+		CS_CHECK_PUSH(pfont->memory, csp, cstack);
 		*++csp = arith_rshift(lw, 16 - _fixed_shift);
 	    } else		/* not possible */
-		return_error(gs_error_invalidfont);
-	  pushed:if_debug3('1', "[1]%d: (%d) %f\n",
+		return_error(pfont->memory, gs_error_invalidfont);
+	  pushed:if_debug3(pfont->memory, '1', "[1]%d: (%d) %f\n",
 		      (int)(csp - cstack), c, fixed2float(*csp));
 	    continue;
 	}
@@ -243,9 +243,9 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    {char2_command_names};
 
 	    if (c2names[c] == 0)
-		dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+		dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 	    else
-		dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+		dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 			  c2names[c]);
 	}
 #endif
@@ -258,7 +258,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case c_undef0:
 	    case c_undef2:
 	    case c_undef17:
-		return_error(gs_error_invalidfont);
+		return_error(pfont->memory, gs_error_invalidfont);
 	    case c_callsubr:
 		c = fixed2int_var(*csp) + pdata->subroutineNumberBias;
 		code = pdata->procs.subr_data
@@ -330,7 +330,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    if (code < 0)
 			return code;
 		}
-	      pp:if_debug2('1', "[1]pt=(%g,%g)\n",
+	      pp:if_debug2(pfont->memory, '1', "[1]pt=(%g,%g)\n",
 			  fixed2float(ptx), fixed2float(pty));
 		cnext;
 	    case cx_hlineto:
@@ -572,21 +572,21 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    byte mask[max_total_stem_hints / 8];
 		    int i;
 
-		    if_debug3('1', "[1]mask[%d:%dh,%dv]", pcis->num_hints,
+		    if_debug3(pfont->memory, '1', "[1]mask[%d:%dh,%dv]", pcis->num_hints,
 			  pcis->hstem_hints.count, pcis->vstem_hints.count);
 		    for (i = 0; i < pcis->num_hints; ++cip, i += 8) {
 			charstring_next(*cip, state, mask[i >> 3], encrypted);
-			if_debug1('1', " 0x%02x", mask[i >> 3]);
+			if_debug1(pfont->memory, '1', " 0x%02x", mask[i >> 3]);
 		    }
-		    if_debug0('1', "\n");
+		    if_debug0(pfont->memory, '1', "\n");
 		    ipsp->ip = cip;
 		    ipsp->dstate = state;
 		    if (c == c2_cntrmask) {
 			/****** NYI ******/
 		    } else {	/* hintmask or equivalent */
-			if_debug0('1', "[1]hstem hints:\n");
+			if_debug0(pfont->memory, '1', "[1]hstem hints:\n");
 			OLD(enable_hints(&pcis->hstem_hints, mask));
-			if_debug0('1', "[1]vstem hints:\n");
+			if_debug0(pfont->memory, '1', "[1]vstem hints:\n");
 			OLD(enable_hints(&pcis->vstem_hints, mask));
 #			if NEW_TYPE1_HINTER
 			code = t1_hinter__hint_mask(h, mask);
@@ -669,7 +669,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    ++cip;
 		    charstring_next(*cip, state, c2, encrypted);
 		    ++cip;
-		    CS_CHECK_PUSH(csp, cstack);
+		    CS_CHECK_PUSH(pfont->memory, csp, cstack);
 		    *++csp = int2fixed((((c1 ^ 0x80) - 0x80) << 8) + c2);
 		}
 		goto pushed;
@@ -687,9 +687,9 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    {char2_extended_command_names};
 
 		    if (ce2names[c] == 0)
-			dlprintf2("[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
+			dlprintf2(pfont->memory, "[1]0x%lx: %02x??\n", (ulong) (cip - 1), c);
 		    else
-			dlprintf3("[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
+			dlprintf3(pfont->memory, "[1]0x%lx: %02x %s\n", (ulong) (cip - 1), c,
 				  ce2names[c]);
 		}
 #endif
@@ -771,7 +771,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			csp -= 3;
 			break;
 		    case ce2_random:
-			CS_CHECK_PUSH(csp, cstack);
+			CS_CHECK_PUSH(pfont->memory, csp, cstack);
 			++csp;
 			/****** NYI ******/
 			break;
@@ -790,7 +790,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			    *csp = float2fixed(sqrt(fixed2float(*csp)));
 			break;
 		    case ce2_dup:
-			CS_CHECK_PUSH(csp, cstack);
+			CS_CHECK_PUSH(pfont->memory, csp, cstack);
 			csp[1] = *csp;
 			++csp;
 			break;
@@ -813,7 +813,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
 			    csp -= 2;
 			    if (count < 0 || count > csp + 1 - cstack)
-				return_error(gs_error_invalidfont);
+				return_error(pfont->memory, gs_error_invalidfont);
 			    if (count == 0)
 				break;
 			    if (distance < 0)
@@ -849,12 +849,14 @@ flex:			{
 			    double flex_depth;
 
 			    if ((code =
-				 gs_distance_transform(fixed2float(x_join),
+				 gs_distance_transform(pfont->memory, 
+						       fixed2float(x_join),
 						       fixed2float(y_join),
 						       &ctm_only(pcis->pis),
 						       &join)) < 0 ||
 				(code =
-				 gs_distance_transform(fixed2float(x_end),
+				 gs_distance_transform(pfont->memory, 
+						       fixed2float(x_end),
 						       fixed2float(y_end),
 						       &ctm_only(pcis->pis),
 						       &end)) < 0
@@ -929,7 +931,7 @@ flex:			{
 
 	      case_c2_undefs:
 	    default:		/* pacify compiler */
-		return_error(gs_error_invalidfont);
+		return_error(pfont->memory, gs_error_invalidfont);
 	}
     }
 }

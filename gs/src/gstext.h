@@ -124,7 +124,8 @@ typedef struct gs_text_params_s {
     "gs_text_params", text_params_enum_ptrs, text_params_reloc_ptrs)
 
 /* Assuming REPLACE_WIDTHS is set, return the width of the i'th character. */
-int gs_text_replaced_width(const gs_text_params_t *text, uint index,
+int gs_text_replaced_width(const gs_memory_t *mem,
+			   const gs_text_params_t *text, uint index,
 			   gs_point *pwidth);
 
 /*

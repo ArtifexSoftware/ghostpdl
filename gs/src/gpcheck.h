@@ -29,7 +29,7 @@
  * a symbol CHECK_INTERRUPTS.  Currently this is only the Microsoft
  * Windows platform.
  */
-int gs_return_check_interrupt(int code);
+int gs_return_check_interrupt(const gs_memory_t *mem, int code);
 
 #ifdef CHECK_INTERRUPTS
 int gp_check_interrupts(void);

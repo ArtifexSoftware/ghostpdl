@@ -84,7 +84,7 @@ gs_type0_adjust_matrix(gs_font_dir * pdir, gs_font_type0 * pfont,
 				  &st_gs_font_ptr_element,
 				  "gs_type0_adjust_font(FDepVector)");
     if (ptdep == 0)
-	return_error(gs_error_VMerror);
+	return_error(pfont->memory, gs_error_VMerror);
     memcpy(ptdep, pdep, sizeof(gs_font *) * fdep_size);
     for (; i < fdep_size; i++)
 	if (pdep[i]->FontType == ft_composite) {

@@ -181,7 +181,7 @@ gs_cmap_identity_alloc(gs_cmap_t **ppcmap, int num_bytes, int varying_bytes,
     gs_cmap_identity_t *pcimap;
 
     if (num_bytes != 2)
-	return_error(gs_error_rangecheck);
+	return_error(mem, gs_error_rangecheck);
     code = gs_cmap_alloc(ppcmap, &st_cmap_identity, wmode,
 			 (const byte *)cmap_name, strlen(cmap_name),
 			 &identity_cidsi, 1, &identity_procs, mem);
@@ -282,10 +282,10 @@ gs_cmap_enum_next_entry(gs_cmap_lookups_enum_t *penum)
  * for the GC.  Note that this only initializes the common part.
  */
 void
-gs_cmap_init(gs_cmap_t *pcmap)
+gs_cmap_init(const gs_memory_t *mem, gs_cmap_t *pcmap)
 {
     memset(pcmap, 0, sizeof(*pcmap));
-    pcmap->id = gs_next_ids(1);
+    pcmap->id = gs_next_ids(mem, 1);
     uid_set_invalid(&pcmap->uid);
 }
 
@@ -308,9 +308,9 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
     if (pcmap == 0 || pcidsi == 0) {
 	gs_free_object(mem, pcidsi, "gs_cmap_alloc(CIDSystemInfo)");
 	gs_free_object(mem, pcmap, "gs_cmap_alloc(CMap)");
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     }
-    gs_cmap_init(pcmap);	/* id, uid */
+    gs_cmap_init(mem, pcmap);	/* id, uid */
     pcmap->CMapType = 1;
     pcmap->CMapName.data = map_name;
     pcmap->CMapName.size = name_size;
@@ -552,7 +552,7 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, g
     map = (uchar *)gs_alloc_bytes(mem, num_codes * gs_cmap_ToUnicode_code_bytes, 
                                   "gs_cmap_ToUnicode_alloc");
     if (map == NULL)
-	return_error(gs_error_VMerror);
+	return_error(mem, gs_error_VMerror);
     memset(map, 0, num_codes * gs_cmap_ToUnicode_code_bytes);
     cmap = (gs_cmap_ToUnicode_t *)*ppcmap;
     cmap->glyph_name_data = map;
