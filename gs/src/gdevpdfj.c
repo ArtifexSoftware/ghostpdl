@@ -314,6 +314,9 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	pxo->data_height = h;
 	piw->data = pcos;
 	piw->named = named;
+	code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", piw->pres);
+	if (code < 0)
+	    return code;
     }
     pdev->strm = pdev->streams.strm;
     pdev->strm = cos_write_stream_alloc(piw->data, pdev, "pdf_begin_write_image");
