@@ -546,16 +546,33 @@ gs -dNOPAUSE -dBATCH -sDEVICE=bbox -r100 -g500000x500000
 
 <p>
 Ghostscript is distributed configured to use U.S. letter paper as its
-default page size, but it knows about many others, listed by name and size
-in the section on <a href="#Known_paper_sizes">paper sizes known to
-Ghostscript</a>.  To select one of these as the default paper size for a
-single invocation of Ghostscript, you can use the
-<b><tt>-sPAPERSIZE=</tt></b> switch, for instance
+default page size.  There are two ways to select other paper sizes from the
+command line:
+
+<ul>
+
+<li>
+If the desired paper size is listed in the section on <a
+href="#Known_paper_sizes">paper sizes known to Ghostscript</a> below, you
+can select it as the default paper size for a single invocation of
+Ghostscript by using the <b><tt>-sPAPERSIZE=</tt></b> switch, for instance
 
 <blockquote><b><tt>
 -sPAPERSIZE=a4<br>
 -sPAPERSIZE=legal
 </tt></b></blockquote>
+
+<li>
+Otherwise, let <em>w</em> be the desired paper width and <em>h</em> be the
+desired paper height, in 1/72" units.  You can set the page size using the
+pair of switches
+
+<blockquote>
+<b><tt>-dDEVICEWIDTHPOINTS=</tt></b><em>w</em>
+<b><tt>-dDEVICEHEIGHTPOINTS=</tt></b><em>h</em>
+</blockquote>
+
+</ul>
 
 <p>
 Individual documents can (and often do) specify a paper size, which takes
@@ -2072,6 +2089,13 @@ use 0 to mean landscape and 1 to mean portrait.
 <b><tt>-dORIENT1=false</tt></b> declares that 0 means portrait and 1 means
 landscape, which is the convention used by a smaller number of files
 produced by properly written applications.
+</dl>
+
+<dl>
+<dt><b><tt>-dDEVICEWIDTHPOINTS=</tt></b><em>w</em>
+<br><b><tt>-dDEVICEHEIGHTPOINTS=</tt></b><em>h</em>
+<dd>Sets the initial page width to <em>w</em> or initial page height to
+<em>h</em> respectively, specified in 1/72" units.
 </dl>
 
 <h3><a name="Font_related_parameters"></a>Font-related parameters</h3>
