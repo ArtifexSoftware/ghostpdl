@@ -63,7 +63,8 @@ typedef enum {
     GS_UNKNOWN_TAG = 0x1,
     GS_TEXT_TAG = 0x2,
     GS_IMAGE_TAG = 0x4,
-    GS_PATH_TAG = 0x8
+    GS_PATH_TAG = 0x8,
+    GS_UNTOUCHED_TAG = 0x10
 } gs_object_tag_type_t;
 
 /* accessors for object tags */

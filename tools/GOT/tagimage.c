@@ -4,12 +4,14 @@
 #define TEXT_TAG 0x2
 #define IMAGE_TAG 0x4
 #define PATH_TAG 0x8
+#define UNTOUCHED_TAG 0x10
 
 const char red[]   =  { 0xff, 0x00, 0x00 };
 const char green[] =  { 0x00, 0xff, 0x00 };
 const char blue[]  =  { 0x00, 0x00, 0xff };
 const char white[] =  { 0xff, 0xff, 0xff };
 const char black[] =  { 0x00, 0x00, 0x00 };
+const char yellow[] = { 0xff, 0xff, 0x00 };
 
 static const char *
 tag2color(int tag)
@@ -23,6 +25,8 @@ tag2color(int tag)
         return green;
     case PATH_TAG:
         return blue;
+    case UNTOUCHED_TAG:
+        return yellow;
     default:
         return black;
     }

@@ -14,6 +14,6 @@
 make detag
 ./detag < bit.tmp > bit_detagged.tmp.ppm
 make tagimage
-tagimage < bit.tmp > tag.tmp.ppm
+./tagimage < bit.tmp > tag.tmp.ppm
 rm -f detag tagimage
 display bit_detagged.tmp.ppm tag.tmp.ppm

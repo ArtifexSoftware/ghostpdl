@@ -67,7 +67,7 @@ gs_fillpage(gs_state * pgs)
     int code;
     gs_logical_operation_t save_lop;
 
-    gs_set_object_tag(GS_PATH_TAG);
+    gs_set_object_tag(GS_UNTOUCHED_TAG);
     gx_set_dev_color(pgs);
     dev = gs_currentdevice(pgs);
     /* Fill the page directly, ignoring clipping. */

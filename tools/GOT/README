@@ -9,8 +9,6 @@ limitations and oddities:
   o GOT doesn't band.  In fact the the device prototype disables banding.
   o GOT always has 24 bits of color with 3 components.
   o GOT uses a global variable to maintain its state.
-  o GOT treats the background (unpainted region of the page) as a fill
-    operation and thus tags the entire region as a vector.
   o GOT currently breaks raster operations.
   o GOT hasn't been tested much.
 
@@ -24,6 +22,7 @@ tools (dotags.sh and friends)
      o bit.tmp.ppm - detagged bit file converted to ppmraw output.
      o tag.tmp.ppm - a color coded by object type version of the output
           unknown - white
+          untouched - yellow
           text - red
           image - green
           path - blue
