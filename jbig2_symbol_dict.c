@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2001-2002 artofcode LLC.
+    Copyright (C) 2001-2003 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -28,11 +28,10 @@
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
-#if defined(OUTPUT_PBM) || defined(HAVE_LIBPNG)
+#if defined(OUTPUT_PBM) || defined(DUMP_SYMDICT)
 #include <stdio.h>
 #include "jbig2_image.h"
 #endif
-
 
 /* Table 13 */
 typedef struct {
@@ -52,7 +51,7 @@ typedef struct {
   int8_t sdrat[4];
 } Jbig2SymbolDictParams;
 
-#ifdef DEBUG
+#ifdef DUMP_SYMDICT
 void
 jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
 {
@@ -69,7 +68,7 @@ jbig2_dump_symbol_dict(Jbig2SymbolDict *dict)
 #endif
     }
 }
-#endif /* DEBUG */
+#endif /* DUMP_SYMDICT */
 
 /* 6.5 */
 static Jbig2SymbolDict *
@@ -300,7 +299,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 				  segment_data + offset,
 				  segment->data_length - offset,
 				  GB_stats);
-#ifdef DEBUG
+#ifdef DUMP_SYMDICT
   jbig2_dump_symbol_dict(segment->result);
 #endif
 
