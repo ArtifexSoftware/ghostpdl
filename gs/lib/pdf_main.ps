@@ -217,11 +217,13 @@ pdfdict begin
    { PDFfile fileposition PDFfile read pop 32 gt { exit } if pop
    } loop
    PDFfile exch setfileposition
-		% The PDF specification says that the 'xref' must be on a line
-		% by itself. The code here formerly used readline and linene to
-		% check this. However, Acrobat Reader only requires the line to
-		% begin with 'xref', and there are enough applications producing
-		% non-compliant PDF files that we have to do this too.
+   0		% Initialize xref table error counter
+
+	% The PDF specification says that the 'xref' must be on a line
+	% by itself. The code here formerly used readline and linene to
+	% check this. However, Acrobat Reader only requires the line to
+	% begin with 'xref', and there are enough applications producing
+	% non-compliant PDF files that we have to do this too.
    PDFfile pdfstring 0 4 getinterval readstring pop
    (xref) ne { /readxref cvx /syntaxerror signalerror } if
 		% Store the xref table entry position for each object.
@@ -236,12 +238,23 @@ pdfdict begin
 		% Stack: count obj#
       2 copy add growPDFobjects
       PDFfile fileposition 3 -1 roll
-       { Objects 2 index lget null eq	% later update might have set it
-	  { Objects 2 index 2 index cvx lput }
-         if exch 1 add exch 20 add
-       }
-      repeat PDFfile exch setfileposition pop
+	{ Objects 2 index lget null eq {	% later update might have set it
+	    Objects 2 index 2 index cvx lput
+	  } if exch 1 add exch
+	  PDFfile dup
+	  pdfstring readline pop pop
+	  fileposition
+	  dup 3 2 roll sub
+	  20 ne {
+	    3 2 roll 1 add 3 1 roll
+	  } if
+	}
+      repeat pop pop
     } loop
+   0 ne {
+     (   **** Warning: length of some xref entries is not equal to 20 bytes.\n)
+     pdfformaterror
+   } if
    count /pdfemptycount exch def
    PDFfile traileropdict .pdfrun
  } bind def
