@@ -37,6 +37,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <errno.h>
 #define __PROTOTYPES__
 #include "errors.h"
 #include "iapi.h"
@@ -51,35 +52,26 @@ static int gsdll_stdout(void *instance, const char *str, int len);
 /*********************************************************************/
 /* stdio functions */
 
-struct stdin_buf {
-   char *buf;
-   int len;	/* length of buffer */
-   int count;	/* number of characters returned */
-};
-
 /* callback for reading stdin */
 /* Use async input */
 static int 
 gsdll_stdin(void *instance, char *buf, int len)
 {
-    struct stdin_buf input;
     fd_set rfds;
-
-    input.len = len;
-    input.buf = buf;
-    /* read returns -1 if would block, 0 for EOF and +ve for OK */
-    input.count = read(fileno(stdin), input.buf, input.len);
-
-    if (input.count < 0) {
-        /* Wait until at least one byte is available */
-	FD_ZERO(&rfds);
-	FD_SET(fileno(stdin), &rfds);
-	select(1, &rfds, NULL, NULL, NULL);
-        input.count = read(fileno(stdin), input.buf, input.len);
-	if (input.count < 0)
-	    input.count = 0;	/* EOF */
+    int count;
+    for (;;) {
+	count = read(fd, buf, len);
+	if (count >= 0)
+	    break;
+	if (errno == EAGAIN || errno == EWOULDBLOCK) {
+	    FD_ZERO(&rfds);
+	    FD_SET(fd, &rfds);
+	    select(1, &rfds, NULL, NULL, NULL);
+	} else if (errno != EINTR) {
+	    break;
+	}
     }
-    return input.count;
+    return count;
 }
 
 static int 
