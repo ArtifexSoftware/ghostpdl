@@ -412,10 +412,46 @@ fail:
     return code;
 }
 
+#if defined(DEBUG) || defined(PROFILE) || defined(TEST)
+
+#include "stream.h"
+#include "files.h"
+#include "gdevpsf.h"
+
+/* <file> <cmap> .writecmap - */
+private int
+zwritecmap(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref *pcodemap;
+    int code;
+    stream *s;
+    gs_const_string str;
+
+    check_type(*op, t_dictionary);
+    if (dict_find_string(op, "CodeMap", &pcodemap) <= 0 ||
+	!r_is_struct(pcodemap)
+	)
+	return_error(e_typecheck);
+    check_write_file(s, op - 1);
+    /* Make up an arbitrary name. */
+    str.data = (const byte *)"myCMap";
+    str.size = strlen((const char *)str.data);
+    code = psf_write_cmap(s, r_ptr(pcodemap, gs_cmap_t), &str);
+    if (code >= 0)
+	pop(2);
+    return code;
+}
+
+#endif
+
 /* ------ Initialization procedure ------ */
 
 const op_def zfcmap_op_defs[] =
 {
     {"1.buildcmap", zbuildcmap},
+#if defined(DEBUG) || defined(PROFILE) || defined(TEST)
+    {"2.writecmap", zwritecmap},
+#endif
     op_def_end(0)
 };

@@ -26,6 +26,15 @@
 
 /* ---------------- Embedded font writing ---------------- */
 
+#ifndef gs_font_DEFINED
+#  define gs_font_DEFINED
+typedef struct gs_font_s gs_font;
+#endif
+#ifndef gs_font_base_DEFINED
+#  define gs_font_base_DEFINED
+typedef struct gs_font_base_s gs_font_base;
+#endif
+
 /*
  * Define the structure used for enumerating the glyphs in a font or a
  * font subset.  This type is opaque to clients: we declare it here only
@@ -191,6 +200,18 @@ typedef struct gs_font_cid0_s gs_font_cid0;
 int psf_write_cid0_font(P6(stream *s, gs_font_cid0 *pfont, int options,
 			   const byte *subset_cids, uint subset_size,
 			   const gs_const_string *alt_font_name));
+
+/* ------ Exported by gdevpsfm.c ------ */
+
+/*
+ * Write out a CMap in its customary (source) form.
+ */
+#ifndef gs_cmap_DEFINED
+#  define gs_cmap_DEFINED
+typedef struct gs_cmap_s gs_cmap_t;
+#endif
+int psf_write_cmap(P3(stream *s, const gs_cmap_t *pcmap,
+		      const gs_const_string *cmap_name));
 
 /* ------ Exported by gdevpsft.c ------ */
 

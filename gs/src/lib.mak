@@ -1754,7 +1754,7 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
 
 gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h)
 
-psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ)
+psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ) $(GLOBJ)gdevpsfm.$(OBJ)
 psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
 psf_=$(psf_1) $(psf_2)
 $(DD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
@@ -1774,6 +1774,12 @@ $(GLOBJ)gdevpsf2.$(OBJ) : $(GLSRC)gdevpsf2.c $(GXERR)\
  $(sfilter_h) $(stream_h)\
  $(gdevpsf_h)
 	$(GLCC) $(GLO_)gdevpsf2.$(OBJ) $(C_) $(GLSRC)gdevpsf2.c
+
+$(GLOBJ)gdevpsfm.$(OBJ) : $(GLSRC)gdevpsfm.c $(GXERR)\
+ $(gdevpsf_h)\
+ $(gxfcmap_h)\
+ $(spprint_h) $(spsdf_h) $(stream_h)
+	$(GLCC) $(GLO_)gdevpsfm.$(OBJ) $(C_) $(GLSRC)gdevpsfm.c
 
 $(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(GXERR) $(memory__h)\
  $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
