@@ -78,10 +78,15 @@ gs_fillpage(gs_state * pgs)
     /* Use the default RasterOp. */
     save_lop = pgs->log_op;
     gs_init_rop(pgs);
-    if (hl_color_available)
+    if (hl_color_available) {
+	gs_fixed_rect rect;
+
+	rect.p.x = rect.p.y = 0;
+	rect.q.x = int2fixed(dev->width);
+	rect.q.y = int2fixed(dev->height);
 	code = dev_proc(pgs->device, fill_rectangle_hl_color)(pgs->device, 
-		0, 0, dev->width, dev->height, 
-		(const gs_imager_state *)pgs, pgs->dev_color, NULL);
+		&rect, (const gs_imager_state *)pgs, pgs->dev_color, NULL);
+    }
     if (!hl_color_available || code == gs_error_rangecheck)
 	code = gx_fill_rectangle(0, 0, dev->width, dev->height,
 				 pgs->dev_color, pgs);

@@ -1201,7 +1201,7 @@ typedef enum {
 */
 
 #define dev_t_proc_fill_rectangle_hl_color(proc, dev_t)\
-  int proc(dev_t *dev, int x, int y, int width, int height, \
+  int proc(dev_t *dev, const gs_fixed_rect *rect, \
 	const gs_imager_state *pis, const gx_drawing_color *pdcolor, \
 	const gx_clip_path *pcpath)
 #define dev_proc_fill_rectangle_hl_color(proc)\

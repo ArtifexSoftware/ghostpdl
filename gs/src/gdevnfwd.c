@@ -732,7 +732,7 @@ gx_forward_pattern_manage(gx_device * dev, gx_bitmap_id id,
 
 int
 gx_forward_fill_rectangle_hl_color(gx_device *dev, 
-    int x, int y, int width, int height, 
+    const gs_fixed_rect *rect, 
     const gs_imager_state *pis, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
@@ -744,8 +744,8 @@ gx_forward_fill_rectangle_hl_color(gx_device *dev,
     if (tdev == 0)
 	return_error(gs_error_rangecheck);
     else
-	return dev_proc(tdev, fill_rectangle_hl_color)(tdev, x, y, width, 
-						height, pis, pdcolor, NULL);
+	return dev_proc(tdev, fill_rectangle_hl_color)(tdev, rect, 
+						pis, pdcolor, NULL);
 }
 
 /* ---------------- The null device(s) ---------------- */

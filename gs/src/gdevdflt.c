@@ -682,7 +682,7 @@ gx_default_pattern_manage(gx_device *pdev, gx_bitmap_id id,
 
 int
 gx_default_fill_rectangle_hl_color(gx_device *pdev, 
-    int x, int y, int width, int height, 
+    const gs_fixed_rect *rect, 
     const gs_imager_state *pis, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {

@@ -151,9 +151,10 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
     gx_device_color *pdc = pgs->dev_color;
     const gs_imager_state *pis = (const gs_imager_state *)pgs;
     bool hl_color_available = gx_hld_is_hl_color_available(pis, pdc);
+    gs_fixed_rect empty = {{0, 0}, {0, 0}};
     bool hl_color = (hl_color_available && 
 		dev_proc(pdev, fill_rectangle_hl_color)(pdev, 
-		    	    0, 0, 0, 0, pis, pdc, NULL) == 0);
+		    	    &empty, pis, pdc, NULL) == 0);
 
     gx_set_dev_color(pgs);
     if ((is_fzero2(pgs->ctm.xy, pgs->ctm.yx) ||
@@ -177,31 +178,39 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	for (i = 0; i < count; ++i) {
 	    gs_fixed_point p, q;
 	    gs_fixed_rect draw_rect;
-	    int x, y, w, h;
-
+	    
 	    if (gs_point_transform2fixed(&pgs->ctm, pr[i].p.x, pr[i].p.y, &p) < 0 ||
-	    gs_point_transform2fixed(&pgs->ctm, pr[i].q.x, pr[i].q.y, &q) < 0
+		gs_point_transform2fixed(&pgs->ctm, pr[i].q.x, pr[i].q.y, &q) < 0
 		) {		/* Switch to the slow algorithm. */
 		goto slow;
 	    }
-	    draw_rect.p.x = min(p.x, q.x) - pgs->fill_adjust.x;
-	    draw_rect.p.y = min(p.y, q.y) - pgs->fill_adjust.y;
-	    draw_rect.q.x = max(p.x, q.x) + pgs->fill_adjust.x;
-	    draw_rect.q.y = max(p.y, q.y) + pgs->fill_adjust.y;
-	    rect_intersect(draw_rect, clip_rect);
-	    x = fixed2int_pixround(draw_rect.p.x);
-	    y = fixed2int_pixround(draw_rect.p.y);
-	    w = fixed2int_pixround(draw_rect.q.x) - x;
-	    h = fixed2int_pixround(draw_rect.q.y) - y;
-	    if (w > 0 && h > 0) {
-		if (hl_color) {
-		    if (dev_proc(pdev, fill_rectangle_hl_color)(pdev,
-			     x, y, w, h, pis, pdc, pcpath) < 0)
-			goto slow;
-		} else {
+	    draw_rect.p.x = min(p.x, q.x);
+	    draw_rect.p.y = min(p.y, q.y);
+	    draw_rect.q.x = max(p.x, q.x);
+	    draw_rect.q.y = max(p.y, q.y);
+	    if (hl_color) {
+		rect_intersect(draw_rect, clip_rect);
+		if (draw_rect.p.x < draw_rect.q.x &&
+		    draw_rect.p.y < draw_rect.q.y)
+		    code = dev_proc(pdev, fill_rectangle_hl_color)(pdev,
+			     &draw_rect, pis, pdc, pcpath);
+		    if (code < 0)
+			return code;
+	    } else {
+		int x, y, w, h;
+
+		draw_rect.p.x -= pgs->fill_adjust.x;
+		draw_rect.p.y -= pgs->fill_adjust.x;
+		draw_rect.q.x += pgs->fill_adjust.x;
+		draw_rect.q.y += pgs->fill_adjust.x;
+		rect_intersect(draw_rect, clip_rect);
+		x = fixed2int_pixround(draw_rect.p.x);
+		y = fixed2int_pixround(draw_rect.p.y);
+		w = fixed2int_pixround(draw_rect.q.x) - x;
+		h = fixed2int_pixround(draw_rect.q.y) - y;
+		if (w > 0 && h > 0)
     		    if (gx_fill_rectangle(x, y, w, h, pdc, pgs) < 0)
 			goto slow;
-		}
 	    }
 	}
 	return 0;

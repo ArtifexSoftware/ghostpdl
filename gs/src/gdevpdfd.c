@@ -565,18 +565,18 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
    See gxdevcli.h about return codes.
  */
 int
-gdev_pdf_fill_rectangle_hl_color(gx_device *dev, int x, int y, int width, int height, 
+gdev_pdf_fill_rectangle_hl_color(gx_device *dev, const gs_fixed_rect *rect, 
     const gs_imager_state *pis, const gx_drawing_color *pdcolor,
     const gx_clip_path *pcpath)
 {
     int code;
-    gs_fixed_rect box1, box = {{0, 0}, {0, 0}};
+    gs_fixed_rect box1 = *rect, box = {{0, 0}, {0, 0}};
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
     double scale;
     gs_matrix smat;
     gs_matrix *psmat = NULL;
 
-    if (width == 0)
+    if (rect->p.x == rect->q.x)
 	return 0;
     code = prepare_fill_with_clip(pdev, pis, &box, true, pdcolor, pcpath);
     if (code < 0)
@@ -586,10 +586,6 @@ gdev_pdf_fill_rectangle_hl_color(gx_device *dev, int x, int y, int width, int he
     code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
     if (code < 0)
 	return code;
-    box1.p.x = int2fixed(x);
-    box1.p.y = int2fixed(y);
-    box1.q.x = int2fixed(x + width);
-    box1.q.y = int2fixed(y + height);
     if (pcpath) 
 	rect_intersect(box1, box);
     if (box1.p.x > box1.q.x || box1.p.y > box1.q.y)
