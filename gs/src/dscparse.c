@@ -78,44 +78,44 @@
 #define CDSC_NEEDMORE 11
 
 /* local prototypes */
-dsc_private void * dsc_memalloc(P2(CDSC *dsc, size_t size));
-dsc_private void dsc_memfree(P2(CDSC*dsc, void *ptr));
-dsc_private CDSC * dsc_init2(P1(CDSC *dsc));
-dsc_private void dsc_reset(P1(CDSC *dsc));
-dsc_private void dsc_section_join(P3(unsigned long begin, unsigned long *pend, unsigned long **pplast));
-dsc_private int dsc_read_line(P1(CDSC *dsc));
-dsc_private int dsc_read_doseps(P1(CDSC *dsc));
-dsc_private char * dsc_alloc_string(P3(CDSC *dsc, const char *str, int len));
-dsc_private char * dsc_add_line(P3(CDSC *dsc, const char *line, unsigned int len));
-dsc_private char * dsc_copy_string(P5(char *str, unsigned int slen, 
-    char *line, unsigned int len, unsigned int *offset));
-dsc_private GSDWORD dsc_get_dword(P1(const unsigned char *buf));
-dsc_private GSWORD dsc_get_word(P1(const unsigned char *buf));
-dsc_private int dsc_get_int(P3(const char *line, unsigned int len, unsigned int *offset));
-dsc_private float dsc_get_real(P3(const char *line, unsigned int len, 
-    unsigned int *offset));
-dsc_private int dsc_stricmp(P2(const char *s, const char *t));
-dsc_private void dsc_unknown(P1(CDSC *dsc)); 
-dsc_private int dsc_parse_pages(P1(CDSC *dsc));
-dsc_private int dsc_parse_bounding_box(P3(CDSC *dsc, CDSCBBOX** pbbox, int offset));
-dsc_private int dsc_parse_orientation(P3(CDSC *dsc, unsigned int *porientation, 
-    int offset));
-dsc_private int dsc_parse_order(P1(CDSC *dsc));
-dsc_private int dsc_parse_media(P2(CDSC *dsc, const CDSCMEDIA **page_media));
-dsc_private int dsc_parse_document_media(P1(CDSC *dsc));
-dsc_private int dsc_parse_viewing_orientation(P2(CDSC *dsc, CDSCCTM **pctm));
-dsc_private int dsc_parse_page(P1(CDSC *dsc));
-dsc_private void dsc_save_line(P1(CDSC *dsc));
-dsc_private int dsc_scan_type(P1(CDSC *dsc));
-dsc_private int dsc_scan_comments(P1(CDSC *dsc));
-dsc_private int dsc_scan_preview(P1(CDSC *dsc));
-dsc_private int dsc_scan_defaults(P1(CDSC *dsc));
-dsc_private int dsc_scan_prolog(P1(CDSC *dsc));
-dsc_private int dsc_scan_setup(P1(CDSC *dsc));
-dsc_private int dsc_scan_page(P1(CDSC *dsc));
-dsc_private int dsc_scan_trailer(P1(CDSC *dsc));
-dsc_private int dsc_error(P4(CDSC *dsc, unsigned int explanation, 
-    char *line, unsigned int line_len));
+dsc_private void * dsc_memalloc(CDSC *dsc, size_t size);
+dsc_private void dsc_memfree(CDSC*dsc, void *ptr);
+dsc_private CDSC * dsc_init2(CDSC *dsc);
+dsc_private void dsc_reset(CDSC *dsc);
+dsc_private void dsc_section_join(unsigned long begin, unsigned long *pend, unsigned long **pplast);
+dsc_private int dsc_read_line(CDSC *dsc);
+dsc_private int dsc_read_doseps(CDSC *dsc);
+dsc_private char * dsc_alloc_string(CDSC *dsc, const char *str, int len);
+dsc_private char * dsc_add_line(CDSC *dsc, const char *line, unsigned int len);
+dsc_private char * dsc_copy_string(char *str, unsigned int slen, 
+    char *line, unsigned int len, unsigned int *offset);
+dsc_private GSDWORD dsc_get_dword(const unsigned char *buf);
+dsc_private GSWORD dsc_get_word(const unsigned char *buf);
+dsc_private int dsc_get_int(const char *line, unsigned int len, unsigned int *offset);
+dsc_private float dsc_get_real(const char *line, unsigned int len, 
+    unsigned int *offset);
+dsc_private int dsc_stricmp(const char *s, const char *t);
+dsc_private void dsc_unknown(CDSC *dsc); 
+dsc_private int dsc_parse_pages(CDSC *dsc);
+dsc_private int dsc_parse_bounding_box(CDSC *dsc, CDSCBBOX** pbbox, int offset);
+dsc_private int dsc_parse_orientation(CDSC *dsc, unsigned int *porientation, 
+    int offset);
+dsc_private int dsc_parse_order(CDSC *dsc);
+dsc_private int dsc_parse_media(CDSC *dsc, const CDSCMEDIA **page_media);
+dsc_private int dsc_parse_document_media(CDSC *dsc);
+dsc_private int dsc_parse_viewing_orientation(CDSC *dsc, CDSCCTM **pctm);
+dsc_private int dsc_parse_page(CDSC *dsc);
+dsc_private void dsc_save_line(CDSC *dsc);
+dsc_private int dsc_scan_type(CDSC *dsc);
+dsc_private int dsc_scan_comments(CDSC *dsc);
+dsc_private int dsc_scan_preview(CDSC *dsc);
+dsc_private int dsc_scan_defaults(CDSC *dsc);
+dsc_private int dsc_scan_prolog(CDSC *dsc);
+dsc_private int dsc_scan_setup(CDSC *dsc);
+dsc_private int dsc_scan_page(CDSC *dsc);
+dsc_private int dsc_scan_trailer(CDSC *dsc);
+dsc_private int dsc_error(CDSC *dsc, unsigned int explanation, 
+    char *line, unsigned int line_len);
 
 /* DSC error reporting */
 dsc_private const int dsc_severity[] = {
@@ -522,8 +522,8 @@ dsc_fixup(CDSC *dsc)
  */
 void 
 dsc_set_error_function(CDSC *dsc, 
-	int (*fn)(P5(void *caller_data, CDSC *dsc, 
-	unsigned int explanation, const char *line, unsigned int line_len)))
+	int (*fn)(void *caller_data, CDSC *dsc, 
+	unsigned int explanation, const char *line, unsigned int line_len))
 {
     dsc->dsc_error_fn = fn;
 }
@@ -533,7 +533,7 @@ dsc_set_error_function(CDSC *dsc,
 /* This is optional */
 void 
 dsc_set_debug_function(CDSC *dsc, 
-	void (*debug_fn)(P2(void *caller_data, const char *str)))
+	void (*debug_fn)(void *caller_data, const char *str))
 {
     dsc->debug_print_fn = debug_fn;
 }
