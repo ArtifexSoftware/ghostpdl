@@ -1381,9 +1381,9 @@ hpgl_close_path(
 }
 
 
-/* To implement centered we simply slide everything up and left.  This
-   is not exactly correct but produces the desired results in most
-   cases.  Note this routine is sensitive to the orientation of the
+/* To implement centered we move the points in the path to a pixel boundary.
+   The double translate effectively rounds to pixels location to a pel.
+   Note this routine is sensitive to the orientation of the
    device */
 int
 hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
@@ -1401,7 +1401,9 @@ hpgl_set_special_pixel_placement(hpgl_state_t *pgls, hpgl_rendering_mode_t rende
 	hpgl_call(gs_defaultmatrix(pgls->pgs, &default_matrix));
 	hpgl_call(gs_distance_transform(adjust.x, adjust.y, &default_matrix, &distance));
 	/* translate all points in the path by the adjustment.  The
-           1.5 is a hack, it should be 1 */
+           1.5 is a hack, it should be 1
+	   Removed 1.5 hack Stefan 20010314
+	*/
 	hpgl_call(gx_path_translate(ppath,
 		   float2fixed(1.0 * (distance.x / fabs(distance.x))), 
 		   float2fixed(1.0 * (distance.y / fabs(distance.y)))));
