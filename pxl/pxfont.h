@@ -43,7 +43,7 @@ typedef enum {
 
 /* Fill in generic font boilerplate. */
 #define px_fill_in_font(pfont, pxfont, pxs)\
-  pl_fill_in_font(pfont, pxfont, pxs->font_dir, pxs->memory)
+  pl_fill_in_font(pfont, pxfont, pxs->font_dir, pxs->memory, "nameless_font")
 
 /*
  * Define a font.  The caller must fill in pxfont->storage and ->font_type.
