@@ -58,11 +58,31 @@ overview</a>.
 <h3><a name="Version8.00"></a>Version 8.10 (2003-05-20)</h3>
 
 <p>
-This an unreleased development snapshot of AFPL Ghostscript.
-The most significant new feature since 7.0x is support for 
-DeviceN colorspaces, up to 8 colorants total at 8 bits per
-component. Also, pdfwrite has seen considerable improvement
-in font handling, and many other bug fixes.
+The 8.10 release is an incremental release from 8.00. It contains
+some fairly substantial reworking of important modules, most notably
+in the font rendering. Because of the extent of the changes, we're
+labelling this as a beta release. It should be quite usable, but
+it hasn't been as thoroughly wrung out as our production releases.
+<p>
+The major new feature improved font rendering by Igor Melichev. The
+new font renderer prevents dropouts intelligently rather than relying
+on "fill_adjust" (which has the side effect of making the font
+bolder).
+<p>
+In addition, pdfwrite continues to evolve and improve. Most patterns
+are now output as high-level objects rather than being rasterized.
+<p>
+This is our first release with support for JBIG2 encoded images, using
+our jbig2dec library. This decoder is not yet complete, but
+successfully decodes many PDF files containing JBIG2 images.
+<p>
+This release also contains an important security fix. If you are using
+Ghostscript in a security-critical application, we recommend you
+upgrade now.
+<p>
+Finally, we include the usual bug fixes and improvements. Please
+exercise this release thoroughly, so we can make the next release
+rock-solid.
 
 <p>
 The following SourceForge bug numbers were open at the time of the last release:
@@ -208,9 +228,10 @@ The following SourceForge bug numbers were open at the time of the last release:
 686880,
 686881.
 
-<h3><a name="8.01_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="8.10_Incompatible_changes"></a>Incompatible changes</h3>
 
-<p>No incompatible changes in this release.
+<p>The mechanism for locating resources has changed. See the <a href="Use.htm#Finding_files">usage
+documentation</a> for details of the new mechanism.
 
 <pre>
 </pre>
