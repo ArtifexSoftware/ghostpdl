@@ -233,8 +233,9 @@ make_rfs(i_ctx_t *i_ctx_p, os_ptr op, stream *fs, long offset, long length)
     if (fname.data[0] == '%')
 	return_error(e_invalidfileaccess); /* can't reopen */
     /* Open the file again, to be independent of the source. */
-    code = file_open_stream(fname.data, fname.size, "r", fs->cbsize,
-			    &s, iodev_default->procs.fopen, imemory);
+    code = file_open_stream((const char *)fname.data, fname.size, "r",
+			    fs->cbsize, &s, iodev_default->procs.fopen,
+			    imemory);
     if (code < 0)
 	return code;
     if (sread_subfile(s, offset, length) < 0) {

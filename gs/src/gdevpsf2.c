@@ -158,7 +158,8 @@ private int
 cff_glyph_sid(cff_writer_t *pcw, gs_glyph glyph)
 {
     uint len;
-    const byte *chars = pcw->pfont->procs.callbacks.glyph_name(glyph, &len);
+    const byte *chars = (const byte *)
+	pcw->pfont->procs.callbacks.glyph_name(glyph, &len);
 
     if (chars == 0)
 	return_error(gs_error_rangecheck);
@@ -1174,7 +1175,8 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 				ENCODING_INDEX_CFFSTRINGS)) != gs_no_glyph;
 	 ++j) {
 	uint size;
-	const byte *str = pfont->procs.callbacks.glyph_name(glyph, &size);
+	const byte *str = (const byte *)
+	    pfont->procs.callbacks.glyph_name(glyph, &size);
 	int ignore;
 
 	cff_string_index(&writer.std_strings, str, size, true, &ignore);
@@ -1263,7 +1265,7 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
  write:
     start_pos = stell(writer.strm);
     /* Write the header. */
-    put_bytes(writer.strm, "\001\000\004\002", 4);
+    put_bytes(writer.strm, (const byte *)"\001\000\004\002", 4);
 
     /* Write the names Index. */
     cff_put_Index_header(&writer, 1, font_name.size);
@@ -1527,7 +1529,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     if_debug1('l', "[l]start_pos = %ld\n", start_pos);
     writer.offset_size = (End_offset > 0x7fff ? 3 : 2);
     /* Write the header. */
-    put_bytes(writer.strm, "\001\000\004", 3);
+    put_bytes(writer.strm, (const byte *)"\001\000\004", 3);
     sputc(writer.strm, writer.offset_size);
 
     /* Write the names Index. */
