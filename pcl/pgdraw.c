@@ -366,6 +366,10 @@ hpgl_set_graphics_line_attribute_state(
 
     gs_setfilladjust(pgls->pgs, 0.5, 0.5);
 	    
+    /* character mode has already set up all of this information in
+       the build character routine for the font */
+    if ( render_mode == hpgl_rm_character )
+	return 0;
     /*
      * HP appears to use default line attributes if the the pen
      * width is less than or equal to .35mm or 14.0 plu.  This

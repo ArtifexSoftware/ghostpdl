@@ -7,930 +7,5136 @@
 #include "std.h"
 #include "gstypes.h"
 #include "gsccode.h"
+#include "gsstate.h"
+#include "gspath.h"
+#include "gserror.h"
+#include "gserrors.h"
 #include "gxarith.h"		/* for any_abs */
 #include "pgfdata.h"
 
-/*
- * This file serves 3 different purposes:
- *
- *	Compiled normally, it contains the runtime procedures for
- *	implementing the stick/arc font.
- *
- *	Compiled with -dESCAPEMENTS, it creates an executable that prints out
- *	the escapements for this font.
- *
- *	Compiled with -dOUTLINES, it creates an executable that prints out
- *	PostScript procedures for the character outlines.
- */
 
-/* Define the number of symbols in the stick/arc font. */
-#define hpgl_stick_num_symbols (256+20)
+/* Font data consists of instructions for each character.
+   Fonts are on a 1024x1024 grid. */
 
-/*
- * Characters are defined by a series of 1-byte points.  Normally, the top
- * nibble is X and the bottom nibble is Y.  If the top nibble is 0xf, the
- * bottom nibble has special meaning as follows:
- */
-typedef enum {
-  arc_op_pen_up = 0x0,		/* pen up */
-  arc_op_draw_180 = 0x1,	/* draw half circle, next delta is center of */
-				/* half circle in grid coordinate system. */
-  arc_op_draw_360 = 0x2,	/* same as f1 but draw a circle instead. */
-  arc_op_line_45 = 0x3,		/* next delta specifies 45 degree line */
-				/* instead of an arc. */
-  arc_op_vertical = 0x4,	/* force a vertical for an arc. */
-  arc_op_BS = 0x5,		/* hpgl backspace char */
-  arc_op_up_5 = 0x6,		/* ascend by 5 points */
-  arc_op_down_5 = 0x7,		/* descend by 5 points */
-  arc_op_back_8 = 0x8,		/* backspace by 8 points */
-  arc_op_forward_8 = 0x9	/* forward by 8 points */
-  /* 0xa - 0xf */		/* not used */
-} arc_op_t;
+#define FNT_MOVETO 1
+#define FNT_LINETO 2
+#define FNT_CURVETO 3
 
-/* The actual font data */
-private const byte arc_symbol_strokes[]={
-   0xf5,0x54,0x4e,0xf4,0xf1,0x5e,0x54,0xf0,0x52,0xf2
-  ,0x51,0xf0,0x67,0xf2,0x57,0xf0,0xf7,0x43,0x46,0xf1
-  ,0x56,0x43,0x40,0x43,0xf1,0x53,0x40,0xf4,0x3b,0x2e
-  ,0xf1,0x3e,0x3b,0xf4,0xf0,0x8b,0x7e,0xf1,0x8e,0x8b
-  ,0x9a,0x4a,0x39,0x38,0x47,0xf0,0x97,0x37,0x15,0x14
-  ,0x32,0x82,0x93,0x60,0x40,0x04,0x06,0x28,0x38,0x5a
-  ,0x5e,0x4f,0x3f,0x2e,0x2a,0x90,0x04,0x22,0x82,0xa4
-  ,0xa6,0x88,0x28,0x0a,0x0b,0x2d,0x8d,0xab,0xf0,0x50
-  ,0x5f,0x3c,0x31,0x37,0xf0,0x39,0x3e,0x5e,0x50,0xf0
-  ,0x30,0x70,0xf0,0x5c,0x5b,0xf0,0x39,0x59,0x50,0xf7
-  ,0x52,0x30,0x20,0x02,0x82,0xf0,0x08,0x88,0xf0,0x4c
-  ,0x44,0xf0,0x15,0x7b,0xf0,0x4c,0xf0,0x1b,0x75,0x3f
-  ,0x7f,0xf0,0x70,0x30,0xf0,0x50,0x5f,0xf0,0xaf,0x0f
-  ,0x08,0xf0,0xf6,0x2c,0xf2,0x3c,0xf0,0x6c,0xf2,0x7c
-  ,0xf0,0x0a,0xf7,0xf0,0x0f,0x04,0x40,0x60,0xa4,0xaf
-  ,0x50,0x0f,0x20,0x56,0x80,0xaf,0x00,0xf0,0x0a,0xf1
-  ,0x5a,0xa5,0xf1,0x55,0x0a,0xbf,0xaf,0x7c,0x73,0xa0
-  ,0xb0,0x0c,0x3f,0x7f,0xac,0xab,0x67,0x57,0x02,0x00
-  ,0xa0,0x00,0x0f,0xaf,0xf0,0x78,0x08,0x66,0xa6,0xa4
-  ,0xf4,0x60,0x40,0x04,0x0b,0x4f,0x6f,0xab,0xa4,0xf0
-  ,0x73,0xa0,0x58,0xf0,0x00,0x0f,0x6f,0x9c,0x9b,0x68
-  ,0x08,0xf0,0x68,0xa4,0xa3,0x70,0x00,0x0f,0x3f,0xa8
-  ,0xa7,0x30,0x00,0xaf,0xf0,0x0f,0xa0,0x00,0xaf,0x0f
-  ,0x1f,0x4c,0x43,0x10,0x00,0x09,0xf6,0xf0,0x2c,0xf2
-  ,0x3c,0xf0,0x6c,0xf2,0x7c,0xf0,0x00,0xf7,0xf0,0x00
-  ,0x5f,0xa0,0xf0,0x86,0x26,0x70,0x7f,0x06,0xa6,0x0f
-  ,0xaf,0x59,0x79,0xa6,0xa4,0x60,0x40,0x04,0x06,0x39
-  ,0x69,0xf0,0x39,0x1b,0x1c,0x4f,0x6f,0x9c,0x9b,0x79
-  ,0x04,0x40,0x60,0xa4,0xa5,0x78,0x38,0x0b,0x0c,0x3f
-  ,0x7f,0xac,0xf0,0xf6,0x1f,0x5c,0x9f,0xf7,0x9f,0x4f
-  ,0x0b,0x03,0x30,0x60,0xa4,0xa6,0x6a,0x3a,0x07,0x0f
-  ,0xaf,0x00,0x0f,0xf0,0xaf,0x08,0xf0,0x4b,0xa0,0xaf
-  ,0x59,0x0f,0x00,0x0f,0xf0,0xaf,0xa0,0xf0,0xa8,0x08
-  ,0xf5,0xf0,0x08,0xf6,0xf0,0x0c,0x2e,0x4e,0x5d,0xf3
-  ,0x6c,0x8c,0xae,0xf0,0x00,0xf7,0xf0,0x00,0x0f,0xa0
-  ,0xaf,0x16,0x38,0x48,0x57,0xf3,0x66,0x76,0x98,0xf0
-  ,0x9d,0x7b,0x6b,0x5c,0xf3,0x4d,0x3d,0x1b,0xf0,0x19
-  ,0x10,0x16,0x49,0x59,0x86,0x80,0xf0,0x1e,0x19,0x13
-  ,0x40,0x50,0x83,0xf0,0x89,0x80,0xf2,0x82,0xf0,0x00
-  ,0xaf,0xf0,0x2f,0xf2,0x2d,0x13,0x4d,0xf0,0x8d,0x53
-  ,0xf0,0x1a,0x9a,0xf0,0x86,0x06,0x86,0xf0,0x8a,0x0a
-  ,0xf0,0x02,0x8e,0x52,0xf2,0x51,0xf0,0x53,0x57,0x68
-  ,0x78,0x9a,0x9b,0x5f,0x4f,0x0b,0x87,0x03,0xf0,0x01
-  ,0x81,0x83,0x07,0x8b,0xf0,0x01,0x81,0xa3,0xf4,0x70
-  ,0x50,0x14,0x18,0x5c,0x6c,0xa8,0xa5,0x83,0x87,0x69
-  ,0x59,0x37,0x35,0x53,0x63,0x85,0x04,0x40,0x50,0xa5
-  ,0xaf,0xa9,0xf4,0x76,0x46,0x0a,0x0b,0x4f,0x6f,0xab
-  ,0xa4,0x60,0x10,0xf7,0x10,0x1e,0xf0,0xf6,0x13,0xf4
-  ,0x40,0x50,0x83,0x86,0x59,0x49,0x16,0x13,0xf0,0xf7
-  ,0x80,0x8e,0x89,0x80,0xf0,0x83,0xf4,0x50,0x40,0x13
-  ,0x16,0x49,0x59,0x86,0x85,0x15,0x95,0xf0,0x53,0xf2
-  ,0x52,0xf0,0x57,0xf2,0x58,0x1e,0x10,0xf0,0x50,0x40
-  ,0x13,0x16,0x49,0x59,0x86,0x83,0x50,0xf0,0xf7,0x8e
-  ,0x83,0x50,0x30,0x12,0xf4,0x30,0x60,0x82,0x83,0x65
-  ,0x25,0x16,0x17,0x39,0x79,0x88,0xf0,0x1e,0x5b,0x9e
-  ,0xf7,0x49,0xf4,0x7c,0x8c,0xb9,0xb8,0x85,0x75,0x48
-  ,0x32,0x30,0x3c,0x5e,0x6e,0x8c,0xf0,0x59,0x19,0xf0
-  ,0x3d,0x32,0x50,0x60,0x82,0x99,0x70,0x59,0x30,0x19
-  ,0x50,0x99,0x00,0x30,0x3f,0x0f,0xa0,0x70,0x7f,0xaf
-  ,0x59,0xf0,0x0f,0x59,0x50,0xf0,0x36,0x76,0xf0,0x74
-  ,0x34,0x08,0xf6,0xf0,0x2c,0xf2,0x3c,0xf0,0x6c,0xf2
-  ,0x7c,0xf0,0xa0,0xf7,0xf0,0xa4,0x60,0x40,0x04,0x0b
-  ,0x4f,0x6f,0xab,0xa4,0xf0,0x9f,0x5d,0x1f,0x2f,0x3e
-  ,0x39,0x58,0x37,0x31,0x20,0x10,0x19,0x17,0x39,0x49
-  ,0x67,0x60,0xf0,0x67,0x89,0x99,0xb7,0xb0,0xbf,0xaf
-  ,0x9e,0x99,0x78,0x97,0x91,0xa0,0xb0,0xf5,0x00,0x0f
-  ,0x1f,0x10,0x20,0x2f,0x3f,0x30,0x40,0x4f,0x5f,0x50
-  ,0x60,0x6f,0x7f,0x70,0x80,0x8f,0x9f,0x90,0xa0,0xaf
-  ,0xbf,0xb0,0xc0,0xcf,0xdf,0xd0,0xe0,0xef,0x0f,0x0e
-  ,0xee,0xed,0x0d,0x0c,0xec,0xeb,0x0b,0x0a,0xea,0xe9
-  ,0x09,0x08,0xe8,0xe7,0x07,0x06,0xe6,0xe5,0x05,0x04
-  ,0xe4,0xe3,0x03,0x02,0xe2,0xe1,0x01,0x00,0xe0,0xf5
-  ,0x00,0xe0,0x2c,0xf2,0x3c,0xf0,0x6c,0xf2,0x7c,0x6c
-  ,0xf0,0x19,0x50,0xf0,0xf7,0x9e,0x30,0x10,0x01,0xf0
-  ,0xf6,0x7d,0x3b,0xf7,0x4a,0xf1,0x4c,0x5e,0xf1,0x5c
-  ,0x4a,0xf0,0x12,0x17,0x39,0x69,0x87,0x82,0x60,0x30
-  ,0x12,0xf0,0x89,0x80,0x91,0x80,0x70,0x33,0x23,0x12
-  ,0x11,0x20,0x30,0x52,0x5d,0x7f,0x8f,0xad,0xf0,0x79
-  ,0x39,0xf0,0x77,0x37,0x39,0x59,0x7b,0x7c,0x5e,0x3e
-  ,0x1c,0x1b,0x39,0x19,0x59,0x86,0x80,0xf0,0x83,0x50
-  ,0x30,0x12,0x14,0x36,0x86,0xf0,0x1c,0xf2,0x2c,0xf0
-  ,0x6c,0xf2,0x7c,0x24,0x33,0x83,0x94,0x95,0x86,0x36
-  ,0x27,0x29,0x3a,0x8a,0x99,0x97,0x86,0xf0,0x8a,0x3a
-  ,0x2b,0x2c,0x3d,0x8d,0x9c,0x18,0x3a,0x9a,0xf0,0x92
-  ,0x84,0x7a,0xf0,0x4a,0x12,0x3e,0x6e,0x8c,0x8a,0x68
-  ,0xf0,0x28,0x78,0x96,0x94,0x72,0x32,0x14,0x32,0x62
-  ,0x84,0xaa,0xf0,0x84,0x83,0x92,0xa2,0xf0,0x3a,0x01
-  ,0x0c,0x2e,0x3e,0x5c,0x92,0xf0,0x69,0x02,0x5e,0xa2
-  ,0x02,0x32,0x07,0x0a,0x4e,0x5e,0x9a,0x97,0x62,0x92
-  ,0x1a,0x38,0x43,0x42,0x64,0x9a,0xf0,0x6b,0x41,0xae
-  ,0xaf,0x0f,0x58,0x00,0xa0,0xa1,0xf5,0x2a,0x6d,0xaa
-  ,0x6a,0x3a,0x18,0x14,0x32,0x62,0x84,0x88,0x6a,0x13
-  ,0x16,0x49,0x59,0x86,0x83,0x50,0x40,0x13,0xf0,0x10
-  ,0x89,0x83,0x61,0x31,0x13,0x17,0x4a,0x7a,0x98,0x97
-  ,0xaa,0x83,0x82,0x91,0xb1,0xa4,0xf4,0x60,0x40,0x04
-  ,0x0b,0x4f,0x6f,0xab,0xa4,0xf0,0xaf,0x00,0xaf,0x5f
-  ,0x50,0xa0,0xf0,0x96,0x26,0x07,0x29,0x39,0x48,0x41
-  ,0x30,0x20,0x02,0x07,0xf0,0x45,0x85,0x87,0x69,0x59
-  ,0x48,0x41,0x50,0x60,0x82,0x6d,0x4d,0xf1,0x4e,0x4f
-  ,0x6f,0xf1,0x6e,0xf0,0x00,0x4c,0x6c,0xa0,0x86,0x26
-  ,0x23,0xf2,0x56,0xf0,0x1a,0x29,0xf0,0x9a,0x89,0xf0
-  ,0x92,0x83,0xf0,0x12,0x23,0x2d,0x4f,0x6f,0x9c,0x9b
-  ,0x68,0x58,0xf0,0x68,0xa4,0xa3,0x70,0x50,0x32,0x9d
-  ,0x5f,0x1d,0x10,0xf0,0x89,0x14,0xf0,0x80,0x46,0x45
-  ,0x57,0x65,0xf0,0x57,0x51,0x10,0x89,0xf0,0x19,0x80
-  ,0x10,0x89,0x19,0x13,0x40,0x50,0x83,0x80,0x89,0xf0
-  ,0x1c,0xf2,0x2c,0xf0,0x6c,0xf2,0x7c,0x6c,0xf0,0x50
-  ,0x40,0x13,0x16,0x49,0x59,0x86,0x83,0x50,0x55,0xf0
-  ,0x57,0x58,0xf4,0xbe,0xcf,0xdf,0xee,0xdd,0xcd,0xf0
-  ,0xdd,0xec,0xdb,0xcb,0xbc,0xf4,0xbe,0xcf,0xdf,0xee
-  ,0xed,0xbb,0xeb,0xf7,0x04,0x14,0x10,0xf0,0x21,0x23
-  ,0x34,0x44,0x53,0x51,0x40,0x30,0x21,0xf0,0xf7,0xb2
-  ,0xe2,0xe3,0xd4,0xc4,0xb3,0xb1,0xc0,0xd0,0xe1,0xbb
-  ,0xef,0xf0,0xbf,0xeb,0x5f,0xf2,0x5e,0xf0,0x5c,0x58
-  ,0x47,0x37,0x15,0x14,0x50,0x60,0x93,0xf1,0x64,0x49
-  ,0xf1,0x78,0x93,0xf0,0xb6,0x26,0x1e,0xf2,0x2d,0x6b
-  ,0xf0,0x19,0x59,0x86,0x80,0xf0,0x83,0x50,0x30,0x12
-  ,0x14,0x36,0x86,0xf0,0x6d,0x2b,0xf0,0x15,0x85,0x86
-  ,0x59,0x49,0x16,0x13,0x40,0x50,0x83,0xf0,0x2d,0x6b
-  ,0xf0,0x50,0x40,0x13,0x16,0x49,0x59,0x86,0x83,0x50
-  ,0xf0,0x6d,0x2b,0xf0,0x19,0x13,0x40,0x50,0x83,0x80
-  ,0x89,0xf0,0x2d,0x6b,0xf7,0x42,0x55,0xf0,0xf7,0x8a
-  ,0xf0,0x88,0x55,0x45,0x18,0x1a,0x4d,0x5d,0x8a,0xf0
-  ,0x45,0x34,0x33,0x22,0xa4,0xf4,0x60,0x40,0x04,0x0b
-  ,0x4f,0x6f,0xab,0xf0,0x00,0xf7,0xf0,0x45,0x63,0x41
-  ,0x13,0x1f,0x6f,0x9c,0x9b,0x68,0x18,0xf0,0x68,0xa4
-  ,0xa3,0x70,0x20,0x02,0x68,0x3b,0x2b,0x1a,0xf0,0x8f
-  ,0x40,0xf5,0x4e,0xf2,0x5e,0xf0,0x8e,0xf2,0x9e,0xf5
-  ,0x4d,0xf2,0x5e,0x4c,0xf2,0x5d,0xf0,0x19,0x59,0x86
-  ,0x80,0xf0,0x83,0x50,0x30,0x12,0x14,0x36,0x86,0xf5
-  ,0xf6,0x0c,0x1d,0x2d,0x3c,0x4c,0x5d,0x88,0x8e,0xf0
-  ,0x8e,0x2e,0x22,0xe2,0xee,0x8e,0xf0,0x88,0x88,0x8e
-  ,0xf0,0x8e,0x5e,0x2b,0x25,0x52,0xb2,0xe5,0xeb,0xbe
-  ,0x8e,0xf0,0x88,0x88,0x8e,0xf0,0x8e,0x22,0xe2,0x8e
-  ,0xf0,0x88,0x88,0x8e,0xf0,0x88,0x82,0xf0,0x88,0x28
-  ,0xe8,0xf0,0x88,0xf0,0x2e,0xf3,0x2e,0xf3,0xe2,0x88
-  ,0x22,0xee,0x88,0x88,0x8e,0xf0,0x8e,0xf3,0x28,0xf3
-  ,0x82,0xf3,0xe8,0xf3,0x8e,0xf0,0x88,0x88,0x8e,0xf0
-  ,0x8e,0xf3,0x28,0xf3,0xe8,0xe8,0xf3,0x8e,0x82,0xf0
-  ,0x88,0xe2,0x22,0xf3,0xee,0x2e,0xf3,0xe2,0xf0,0x88
-  ,0x2e,0xee,0xf3,0x22,0xe2,0xf0,0x68,0xa8,0xf0,0x88
-  ,0x88,0x2e,0xf0,0x88,0xee,0xf0,0x88,0x82,0xf0,0x88
-  ,0x88,0x8a,0xf0,0x8a,0x6a,0xf3,0x2e,0xf3,0x6a,0x66
-  ,0xf3,0x22,0xf3,0x66,0xa6,0xf3,0xe2,0xf3,0xa6,0xaa
-  ,0xf3,0xee,0xf3,0xaa,0x8a,0xf0,0x88,0x88,0x26,0xf0
-  ,0x26,0xe6,0x8e,0x26,0xf0,0x8b,0x2b,0x82,0xeb,0x8b
-  ,0xf0,0x88,0x08,0x88,0xf0,0x44,0x4c,0xf0,0x0d,0x8d
-  ,0x76,0xa8,0x7a,0xf0,0xa8,0x28,0xf0,0x56,0x28,0x5a
-  ,0x06,0x26,0x50,0xcf,0xef,0x54,0x88,0x39,0xf0,0x8d
-  ,0x88,0xd9,0xf0,0xb4,0x88,0xf5,0x0f,0xef,0xf5,0x4c
-  ,0x7e,0xf5,0x4e,0x7c,0x12,0x1d,0xf0,0x18,0xb8,0x67
-  ,0x8a,0xa7,0xf0,0x8a,0x82,0xf0,0x65,0x82,0xa5,0x3c
-  ,0x9c,0xf1,0x97,0x32,0xe2,0x82,0xf1,0x87,0xec,0x31
-  ,0x37,0xf1,0x87,0xd1,0xdc,0xd6,0xf1,0x86,0x3c,0x80
-  ,0x4c,0xcc,0x80,0x23,0x22,0x31,0x41,0x52,0x7c,0x8d
-  ,0x9d,0xac,0xab,0x38,0xd8,0xf0,0xd5,0x35,0xf0,0x32
-  ,0xd2,0xf0,0x38,0x59,0x69,0xa7,0xb7,0xd8,0xa4,0xf4
-  ,0x60,0x40,0x04,0x0b,0x4f,0x6f,0xab,0xa4,0xf0,0x08
-  ,0xf6,0xf0,0x0c,0x2e,0x4e,0x5d,0xf3,0x6c,0x8c,0xae
-  ,0xf7,0xf0,0x00,0x5f,0xa0,0xf0,0x86,0x26,0xf6,0xf0
-  ,0x1a,0x5d,0x9a,0xf7,0x05,0xf6,0xf0,0x7e,0x3c,0xf0
-  ,0x00,0xf7,0xf0,0xf0,0x00,0x5f,0xa0,0xf0,0x86,0x26
-  ,0xf6,0xf0,0x3e,0x7c,0xf7,0xf0,0x9d,0x7b,0x6b,0x5c
-  ,0xf3,0x4d,0x3d,0x1b,0xf0,0x19,0x59,0x86,0x80,0xf0
-  ,0x83,0x50,0x30,0x12,0x14,0x36,0x86,0xf0,0x1b,0x5e
-  ,0x9b,0x50,0x40,0x13,0x16,0x49,0x59,0x86,0x83,0x50
-  ,0xf0,0x78,0x1f,0xf0,0x6e,0x1b,0x53,0x43,0x16,0x19
-  ,0x4c,0x5c,0x89,0x86,0x53,0xf0,0x10,0xa0,0xf0,0x8c
-  ,0x83,0xf3,0x86,0xf7,0x53,0x43,0x16,0x19,0x4c,0x5c
-  ,0x89,0xaf,0xaf,0x59,0xf0,0x0f,0x59,0x50,0xf0,0x08
-  ,0xf6,0xf0,0x1c,0xf2,0x2c,0xf0,0x6c,0xf2,0x7c,0xf0
-  ,0x00,0xf7,0xf0,0xa0,0x00,0x0f,0xaf,0xf0,0x78,0x08
-  ,0xa0,0x00,0x0f,0xaf,0xf0,0x78,0x08,0xf0,0xf6,0xf0
-  ,0x1c,0x5f,0x9c,0xf7,0xf0,0xa4,0xf4,0x60,0x40,0x04
-  ,0x0b,0x4f,0x6f,0xab,0xa4,0x05,0xf6,0xf0,0x7e,0x3c
-  ,0xf0,0x00,0xf7,0xf0,0xa0,0x00,0x0f,0xaf,0xf0,0x78
-  ,0x08,0xf6,0xf0,0x3e,0x7c,0xf7,0x1c,0xf2,0x2c,0xf0
-  ,0x6c,0xf2,0x7c,0x6c,0xf0,0x83,0xf4,0x50,0x40,0x13
-  ,0x16,0x49,0x59,0x86,0x85,0x15,0xf0,0x1a,0x5d,0x9a
-  ,0xf0,0x0f,0x04,0x40,0x60,0xa4,0xaf,0xf0,0xf6,0xf0
-  ,0x1c,0x5f,0x9c,0xf7,0xf0,0x3f,0x7f,0xf0,0x70,0x30
-  ,0xf0,0x50,0x5f,0xf0,0xf6,0xf0,0x2c,0xf2,0x3c,0xf0
-  ,0x6c,0xf2,0x7c,0xf7,0xf6,0x7e,0x3c,0xf7,0xf0,0x3f
-  ,0x7f,0xf0,0x70,0x30,0xf0,0x50,0x5f,0xf6,0xf0,0x2e
-  ,0x7c,0x1a,0x5d,0x9a,0xf0,0x30,0x70,0xf0,0x39,0x59
-  ,0x50,0xf0,0x1c,0xf2,0x2c,0xf0,0x6c,0xf2,0x7c,0x6c
-  ,0x6d,0x2b,0xf0,0x30,0x70,0xf0,0x39,0x59,0x50,0xf0
-  ,0x2d,0x6b,0x9d,0x7b,0x6b,0x5c,0xf3,0x4d,0x3d,0x1b
-  ,0xf0,0x50,0x40,0x13,0x16,0x49,0x59,0x86,0x83,0x50
-  ,0xf0,0x1b,0x5e,0x9b,0xf0,0x19,0x13,0x40,0x50,0x83
-  ,0xf0,0x89,0x80,0xf6,0x7e,0x3c,0xf7,0xf0,0x0f,0x04
-  ,0x40,0x60,0xa4,0xaf,0xf6,0xf0,0x3e,0x7c,0xf7,0xf6
-  ,0x7e,0x3c,0xf7,0xf0,0xaf,0xaf,0x59,0xf0,0x0f,0x59
-  ,0x50,0xf6,0x7e,0x3c,0xf7,0xf0,0xa4,0xf4,0x60,0x40
-  ,0x04,0x0b,0x4f,0x6f,0xab,0xa4,0xf6,0xf0,0x3e,0x7c
-  ,0xf7,0xf6,0x2e,0x4f,0x6f,0xf1,0x6d,0x3a,0x4a,0xf1
-  ,0x58,0x36,0x27,0xf7,0xf0,0xf6,0x2d,0x5e,0x6e,0xf1
-  ,0x6c,0x3a,0x6a,0xf1,0x68,0x56,0x27,0xf7,0xf0,0x08
-  ,0x98,0xf0,0xf7,0x71,0x7a,0xf4,0x23,0x83,0xf6,0xf0
-  ,0xf6,0x3b,0x6e,0x66,0xf7,0xf0,0x08,0x98,0xf0,0xf7
-  ,0x29,0x4a,0xf1,0x47,0x33,0x22,0x21,0x71,0xf6,0x4c
-  ,0xf2,0x5d,0x1c,0xf2,0x2c,0xf0,0x6c,0xf2,0x7c,0x6c
-  ,0x0e,0x9e,0x01,0xa1,0xf0,0x51,0x5f,0xf7,0x25,0x24
-  ,0x33,0x53,0x64,0xf6,0x6d,0x7e,0x8e,0x9e,0xad,0xac
-  ,0xf0,0x39,0x89,0x60,0x6f,0xf0,0xa2,0x62,0xf1,0x67
-  ,0xac,0x0b,0x87,0x03,0xf0,0x4b,0xc7,0x43,0x83,0x07
-  ,0x8b,0xf0,0xc3,0x47,0xcb,0x00,0x0a,0x9a,0x90,0x00
-  ,0xf7,0x10,0x1e,0xf6,0x1d,0xf0,0x13,0xf4,0x40,0x50
-  ,0x83,0x86,0x59,0x49,0x16,0x13,0xf0,0xf7,0x00,0x30
-  ,0xf0,0xf6,0x0d,0x3d,0xf8,0x58,0xa8,0xf9,0xf0,0x00
-  ,0x0f,0x3f,0xa8,0xa7,0x30,0x00,0xf0,0x5f,0x50,0xf0
-  ,0x70,0x7f,0xf0,0x59,0x59,0xf1,0x5c,0x5f,0x9f,0x7d
-  ,0x4b,0x28,0xf3,0x4a,0xf0,0x6a,0xf3,0x88,0xf0,0x8d
-  ,0xf3,0x6b,0xf0,0x5c,0x5f,0xf0,0x2d,0xf3,0x4b,0x35
-  ,0x10,0x25,0xf2,0x37,0xf0,0x65,0x65,0xf2,0x77};
+short int stick_font_data[] = {
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 32, 0,
+    FNT_LINETO, 32, 65,
+    FNT_LINETO, 0, 65,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 32, 992,
+    FNT_LINETO, 32, 319,
 
-private const ushort arc_symbol_offsets[]={
-      1,   1,  27, 395,  66, 385,  52,  27
-  , 165, 229, 106, 106,  22, 106,   8, 389
-  , 158,  79, 171, 259, 255, 301, 298, 309
-  , 261, 461,   8,  12, 431, 405, 425, 413
-  , 437, 249, 204, 189, 216, 180, 181, 187
-  , 322, 119, 456, 311, 180, 318, 346, 189
-  , 204, 189, 201, 280, 125, 144, 149, 151
-  , 222, 589, 226, 586, 585, 582, 907, 720
-  ,1502, 492, 515, 495, 491, 495, 561, 518
-  , 369,  90,  93,1031,  86, 635, 369, 518
-  , 473, 478, 369, 533, 567, 378, 579, 575
-  ,1045, 731,1049, 648,  82, 627, 351, 658
-  , 505, 103,1129,1095,1082,1103,1118, 431
-  , 425,1156, 351, 880, 931, 844,1264, 877
-  ,  40,1146, 870, 857, 890, 835, 550, 899
-  , 909, 919, 890,1039, 155,1000, 405, 589
-  , 235, 601, 130, 793,1060,1052,1014,1077
-  , 331,1134, 360, 764,1158,1214, 813,1174
-  ,1204,1177, 744, 957, 965, 985,1029, 625
-  ,1161,1188,1191,1201,1217,1250, 945,1529
-  ,1519,1524,1534,1495,1553,1556,1462,1470
-  ,1474,1513,1543,1485,1539,1498,1502,1480
-  ,1504,1509,1578,1625,1234,1745,1863,1568
-  ,1872,1188,2012,2020,2022,2009,1307,1318
-  ,1333,1342,1353,1363,1377,1392,1400,1410
-  ,1420,1342,1391,1342,1447,1349,1342,   1
-  ,   0,   0,1271,1279,  27, 906, 719, 330
-  ,1299,   0, 657,1501,1498,   0,1495,   0
-  ,1591,1635,1604,1613,1699,1766,1720,1775
-  ,1754,1798,1841,1805,1845,1824,1860,1829
-  ,1728,1881,1936,1931,1666,1676, 280, 533
-  ,1691, 722, 731,1919,1903,1791,1891,1908
-  ,2051,2058,2065,1990,1979,1965,2070,2070
-  ,2107,2141,2043,2027,2094,1651,2119, 764
-  ,1283,1625,2139,2121};
+    FNT_MOVETO, 449, 1056,
+    FNT_LINETO, 449, 768,
+    FNT_MOVETO, 191, 768,
+    FNT_LINETO, 191, 1056,
 
-private const byte arc_symbol_counts[]={
-    0,10,13,11,15,10,14, 6
-  , 6, 6,13, 5, 5, 2, 3, 2
-  , 7, 3,10, 9, 4,10,11, 3
-  ,19,12, 7,10, 3, 5, 3,13
-  ,19, 6,13, 9, 7, 7, 6,11
-  , 8, 8, 5, 8, 3, 5, 5,10
-  , 7,13,10,12, 5, 6, 3, 5
-  , 5, 6, 4, 4, 2, 4, 3, 2
-  , 2,12,12, 9,13,11, 8,17
-  ,10, 9,11, 8, 6,13, 7, 9
-  ,15,14, 6,13, 8, 8, 3, 5
-  , 5, 8, 4, 9, 5, 9, 8,61
-  ,10, 8, 5, 8,13,14,11, 6
-  , 6, 3,17,10,14,14, 7, 4
-  ,13,10, 8,13, 6,10,11, 7
-  ,10,12, 9, 6,10,15, 8,12
-  ,20,24,20,20,18,16,15, 5
-  ,20,13,16,17,15,15,22,13
-  ,10,13,20, 8,20,15, 3, 3
-  ,15,12,12,10,17,14,13, 5
-  , 5, 5, 5, 3, 8,12, 8, 6
-  , 6, 6,10,10, 4, 3, 2, 5
-  , 5, 6,20,22,16,16, 9,23
-  ,19,12, 8, 2, 5, 3,11,15
-  , 9,11,10,14,14, 8,10,10
-  ,27,21, 9, 7,15, 4, 4, 0
-  , 0, 0, 8, 4, 6, 4, 3,16
-  , 8, 1,62, 3, 3, 1, 3, 0
-  ,13,16,16,12,21,21,14,16
-  ,12,15,10,19,15,13, 9,12
-  ,17,14,15,15,12,15,18,17
-  ,22,17,13,12,11,14,12,11
-  , 7, 7, 5,19,16,25,24,16
-  ,12, 8, 8,16,13,15, 2,20
-  ,16,10, 2,18};
+    FNT_MOVETO, 672, 352,
+    FNT_LINETO, 0, 352,
+    FNT_MOVETO, 672, 640,
+    FNT_LINETO, 0, 640,
+    FNT_MOVETO, 352, 992,
+    FNT_LINETO, 96, 0,
+    FNT_MOVETO, 608, 992,
+    FNT_LINETO, 352, 0,
 
-private const byte arc_symbol_widths[] = {
-   0, 6, 9, 9,10,10,11, 4,13, 4,
-   8, 8, 6, 8, 6,10,10, 5,13,10,
-  10,10, 9,10,10,10, 6, 6, 8, 8,
-   8, 8,10,10,10,10,10,10,10,10,
-  10, 7, 8,10,10,10,10,10, 9,10,
-  10,10,10, 9,10,10,10,10,10,10,
-  10, 3,10,14, 7, 8, 8, 8, 8, 8,
-   8, 8, 8, 7, 5, 8, 7,11, 8, 8,
-   7, 8, 8, 8, 7, 7, 9, 9, 8, 9,
-   8,11, 3, 4, 8,14, 9, 8,14,14,
-  14, 5,14, 8, 8, 3, 8, 9,10, 9,
-   9,10, 9,11, 5,10, 8, 9,11,10,
-  10, 8, 8, 6,10, 9, 8,10, 8,10,
-   9, 8, 8, 8,10, 5, 9, 9, 9,10,
-   8, 8, 9, 8, 7, 8, 8,10, 8,10,
-   9, 9, 8, 8, 8, 7, 8,10,10,13,
-  14,14,13,14,13,13, 8,10,10,10,
-  10,13,12, 7, 7,14,11,10, 9,11,
-  10,10, 7,10, 9, 8, 8, 9,10, 6,
-  14,13,14,14,14,14,14,14,14,14,
-  14,14,14, 8,14,14, 8, 0, 0, 0,
-  10, 6, 4,10,14, 9, 5, 0,14, 7,
-   7, 0,14, 0,10, 9,10,10, 8, 8,
-  10, 9,10, 9, 9, 8, 8, 7, 7, 7,
-  10, 9,10,10,10,10,10, 8,10, 8,
-   9,10, 9, 9, 9, 9,12,12, 9, 9,
-   9, 9, 7, 7, 9, 9,11,10,18, 8,
-   7,10, 8, 9, 3, 8,
-   0
+    FNT_MOVETO, 640, 800,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 512, 961,
+    FNT_LINETO, 128, 961,
+    FNT_LINETO, 32, 896,
+    FNT_LINETO, 0, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 32, 575,
+    FNT_LINETO, 128, 512,
+    FNT_LINETO, 544, 480,
+    FNT_LINETO, 640, 416,
+    FNT_LINETO, 672, 319,
+    FNT_LINETO, 672, 191,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 0, 193,
+    FNT_MOVETO, 321, 1089,
+    FNT_LINETO, 321, -128,
+
+    FNT_MOVETO, 384, 96,
+    FNT_LINETO, 416, 32,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 577, 0,
+    FNT_LINETO, 640, 32,
+    FNT_LINETO, 672, 96,
+    FNT_LINETO, 672, 224,
+    FNT_LINETO, 640, 288,
+    FNT_LINETO, 575, 321,
+    FNT_LINETO, 480, 321,
+    FNT_LINETO, 416, 288,
+    FNT_LINETO, 384, 224,
+    FNT_LINETO, 384, 96,
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 640, 928,
+    FNT_MOVETO, 0, 703,
+    FNT_LINETO, 32, 640,
+    FNT_LINETO, 96, 608,
+    FNT_LINETO, 193, 608,
+    FNT_LINETO, 256, 640,
+    FNT_LINETO, 288, 705,
+    FNT_LINETO, 288, 833,
+    FNT_LINETO, 256, 896,
+    FNT_LINETO, 191, 928,
+    FNT_LINETO, 96, 928,
+    FNT_LINETO, 32, 896,
+    FNT_LINETO, 0, 831,
+    FNT_LINETO, 0, 703,
+
+    FNT_MOVETO, 160, 577,
+    FNT_LINETO, 32, 480,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 0, 191,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 224, 0,
+    FNT_LINETO, 449, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 672, 224,
+    FNT_LINETO, 672, 384,
+    FNT_MOVETO, 608, 768,
+    FNT_LINETO, 608, 864,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 224, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 96, 864,
+    FNT_LINETO, 96, 703,
+    FNT_LINETO, 128, 608,
+    FNT_LINETO, 672, 0,
+
+    FNT_MOVETO, 321, 768,
+    FNT_LINETO, 384, 833,
+    FNT_LINETO, 384, 992,
+    FNT_LINETO, 319, 992,
+    FNT_LINETO, 319, 928,
+    FNT_LINETO, 384, 928,
+
+    FNT_MOVETO, 705, 1184,
+    FNT_LINETO, 608, 1056,
+    FNT_LINETO, 544, 896,
+    FNT_LINETO, 512, 736,
+    FNT_LINETO, 512, 319,
+    FNT_LINETO, 544, 160,
+    FNT_LINETO, 608, 0,
+    FNT_LINETO, 705, -128,
+
+    FNT_MOVETO, 0, 1184,
+    FNT_LINETO, 96, 1056,
+    FNT_LINETO, 160, 896,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 193, 319,
+    FNT_LINETO, 160, 160,
+    FNT_LINETO, 96, 0,
+    FNT_LINETO, 0, -128,
+
+    FNT_MOVETO, 672, 512,
+    FNT_LINETO, 0, 512,
+    FNT_MOVETO, 577, 896,
+    FNT_LINETO, 96, 128,
+    FNT_MOVETO, 577, 128,
+    FNT_LINETO, 96, 896,
+
+    FNT_MOVETO, 672, 512,
+    FNT_LINETO, 0, 512,
+    FNT_MOVETO, 321, 896,
+    FNT_LINETO, 321, 128,
+
+    FNT_MOVETO, 0, -160,
+    FNT_LINETO, 65, -96,
+    FNT_LINETO, 65, 65,
+    FNT_LINETO, 0, 65,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 65, 0,
+
+    FNT_MOVETO, 672, 480,
+    FNT_LINETO, 0, 480,
+
+    FNT_MOVETO, 320, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 384, 65,
+    FNT_LINETO, 319, 65,
+    FNT_LINETO, 320, 0,
+
+    FNT_MOVETO, 672, 1088,
+    FNT_LINETO, 0, -128,
+
+    FNT_MOVETO, 640, 352,
+    FNT_LINETO, 640, 640,
+    FNT_LINETO, 608, 800,
+    FNT_LINETO, 544, 896,
+    FNT_LINETO, 480, 961,
+    FNT_LINETO, 384, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 160, 959,
+    FNT_LINETO, 96, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 256, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 608, 193,
+    FNT_LINETO, 640, 352,
+
+    FNT_MOVETO, 416, 0,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 160, 608,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 160, 0,
+
+    FNT_MOVETO, 32, 800,
+    FNT_LINETO, 65, 896,
+    FNT_LINETO, 160, 961,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 449, 992,
+    FNT_LINETO, 544, 959,
+    FNT_LINETO, 640, 896,
+    FNT_LINETO, 672, 800,
+    FNT_LINETO, 672, 608,
+    FNT_LINETO, 640, 512,
+    FNT_LINETO, 544, 447,
+    FNT_LINETO, 319, 416,
+    FNT_LINETO, 128, 352,
+    FNT_LINETO, 63, 288,
+    FNT_LINETO, 32, 224,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 672, 0,
+
+    FNT_MOVETO, 449, 512,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 640, 416,
+    FNT_LINETO, 672, 319,
+    FNT_LINETO, 672, 191,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 575, 32,
+    FNT_LINETO, 447, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 0, 128,
+    FNT_MOVETO, 256, 512,
+    FNT_LINETO, 449, 512,
+    FNT_LINETO, 544, 544,
+    FNT_LINETO, 608, 608,
+    FNT_LINETO, 640, 705,
+    FNT_LINETO, 640, 800,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 224, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 32, 864,
+
+    FNT_MOVETO, 672, 224,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 577, 992,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 577, 32,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 672, 193,
+    FNT_LINETO, 672, 449,
+    FNT_LINETO, 640, 544,
+    FNT_LINETO, 575, 608,
+    FNT_LINETO, 480, 640,
+    FNT_LINETO, 191, 640,
+    FNT_LINETO, 96, 608,
+    FNT_LINETO, 0, 480,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 640, 992,
+
+    FNT_MOVETO, 640, 896,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 191, 992,
+    FNT_LINETO, 96, 959,
+    FNT_LINETO, 32, 896,
+    FNT_LINETO, 0, 768,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 577, 32,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 672, 193,
+    FNT_LINETO, 672, 384,
+    FNT_LINETO, 640, 480,
+    FNT_LINETO, 575, 544,
+    FNT_LINETO, 480, 577,
+    FNT_LINETO, 191, 577,
+    FNT_LINETO, 96, 544,
+    FNT_LINETO, 32, 480,
+    FNT_LINETO, 0, 384,
+
+    FNT_MOVETO, 160, 0,
+    FNT_LINETO, 672, 992,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 0, 321,
+    FNT_LINETO, 0, 191,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 577, 32,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 672, 193,
+    FNT_LINETO, 672, 321,
+    FNT_LINETO, 640, 416,
+    FNT_LINETO, 575, 480,
+    FNT_LINETO, 480, 512,
+    FNT_LINETO, 191, 512,
+    FNT_LINETO, 96, 480,
+    FNT_LINETO, 32, 416,
+    FNT_LINETO, 0, 321,
+    FNT_MOVETO, 449, 512,
+    FNT_LINETO, 544, 544,
+    FNT_LINETO, 608, 608,
+    FNT_LINETO, 640, 705,
+    FNT_LINETO, 640, 800,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 447, 992,
+    FNT_LINETO, 224, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 32, 703,
+    FNT_LINETO, 65, 608,
+    FNT_LINETO, 128, 544,
+    FNT_LINETO, 224, 512,
+
+    FNT_MOVETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 577, 32,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 672, 224,
+    FNT_LINETO, 672, 768,
+    FNT_LINETO, 640, 896,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 191, 992,
+    FNT_LINETO, 96, 959,
+    FNT_LINETO, 32, 896,
+    FNT_LINETO, 0, 800,
+    FNT_LINETO, 0, 608,
+    FNT_LINETO, 32, 512,
+    FNT_LINETO, 96, 447,
+    FNT_LINETO, 193, 416,
+    FNT_LINETO, 480, 416,
+    FNT_LINETO, 577, 449,
+    FNT_LINETO, 640, 512,
+    FNT_LINETO, 672, 608,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 65, 0,
+    FNT_LINETO, 65, 65,
+    FNT_LINETO, 0, 65,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 672,
+    FNT_LINETO, 65, 672,
+    FNT_LINETO, 65, 736,
+    FNT_LINETO, 0, 736,
+    FNT_LINETO, 0, 672,
+
+    FNT_MOVETO, 0, -160,
+    FNT_LINETO, 65, -96,
+    FNT_LINETO, 65, 65,
+    FNT_LINETO, 0, 65,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 65, 0,
+    FNT_MOVETO, 0, 672,
+    FNT_LINETO, 65, 672,
+    FNT_LINETO, 65, 736,
+    FNT_LINETO, 0, 736,
+    FNT_LINETO, 0, 672,
+
+    FNT_MOVETO, 672, 160,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 672, 864,
+
+    FNT_MOVETO, 672, 608,
+    FNT_LINETO, 0, 608,
+    FNT_MOVETO, 672, 352,
+    FNT_LINETO, 0, 352,
+
+    FNT_MOVETO, 0, 160,
+    FNT_LINETO, 672, 512,
+    FNT_LINETO, 0, 864,
+
+    FNT_MOVETO, 160, 0,
+    FNT_LINETO, 224, 0,
+    FNT_LINETO, 224, 65,
+    FNT_LINETO, 160, 65,
+    FNT_LINETO, 160, 0,
+    FNT_MOVETO, 193, 288,
+    FNT_LINETO, 193, 384,
+    FNT_LINETO, 256, 449,
+    FNT_LINETO, 449, 544,
+    FNT_LINETO, 480, 640,
+    FNT_LINETO, 480, 833,
+    FNT_LINETO, 447, 928,
+    FNT_LINETO, 319, 992,
+    FNT_LINETO, 160, 992,
+    FNT_LINETO, 32, 928,
+    FNT_LINETO, 0, 831,
+
+    FNT_MOVETO, 672, 577,
+    FNT_LINETO, 608, 672,
+    FNT_LINETO, 512, 705,
+    FNT_LINETO, 352, 705,
+    FNT_LINETO, 256, 672,
+    FNT_LINETO, 191, 575,
+    FNT_LINETO, 191, 384,
+    FNT_LINETO, 256, 288,
+    FNT_LINETO, 352, 256,
+    FNT_LINETO, 512, 256,
+    FNT_LINETO, 608, 288,
+    FNT_LINETO, 672, 384,
+    FNT_LINETO, 672, 768,
+    FNT_LINETO, 640, 896,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 447, 992,
+    FNT_LINETO, 224, 992,
+    FNT_LINETO, 96, 959,
+    FNT_LINETO, 32, 896,
+    FNT_LINETO, 0, 768,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 224, 0,
+    FNT_LINETO, 608, 0,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 352, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 256,
+    FNT_LINETO, 577, 256,
+
+    FNT_MOVETO, 0, 992,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 480, 512,
+    FNT_LINETO, 544, 544,
+    FNT_LINETO, 608, 608,
+    FNT_LINETO, 640, 705,
+    FNT_LINETO, 640, 800,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 480, 512,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 640, 416,
+    FNT_LINETO, 672, 319,
+    FNT_LINETO, 672, 191,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 575, 32,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 512,
+
+    FNT_MOVETO, 640, 768,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 224,
+
+    FNT_MOVETO, 0, 992,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 577, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 800,
+    FNT_LINETO, 575, 896,
+    FNT_LINETO, 512, 961,
+    FNT_LINETO, 384, 992,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 544, 512,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 512, 512,
+
+    FNT_MOVETO, 640, 800,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 577, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 449,
+    FNT_LINETO, 352, 449,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 672, 512,
+    FNT_LINETO, 0, 512,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 992,
+    FNT_MOVETO, 608, 992,
+    FNT_LINETO, 96, 992,
+    FNT_MOVETO, 608, 0,
+    FNT_LINETO, 96, 0,
+
+    FNT_MOVETO, 0, 384,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 577, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 384,
+    FNT_LINETO, 672, 992,
+
+    FNT_MOVETO, 0, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 224, 512,
+    FNT_LINETO, 640, 992,
+    FNT_MOVETO, 224, 512,
+    FNT_LINETO, 672, 0,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 672, 992,
+    FNT_LINETO, 352, 256,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 672, 0,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+
+    FNT_MOVETO, 0, 416,
+    FNT_LINETO, 480, 416,
+    FNT_LINETO, 577, 449,
+    FNT_LINETO, 640, 512,
+    FNT_LINETO, 672, 608,
+    FNT_LINETO, 672, 800,
+    FNT_LINETO, 640, 896,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 416, 384,
+
+    FNT_MOVETO, 0, 416,
+    FNT_LINETO, 480, 416,
+    FNT_LINETO, 577, 449,
+    FNT_LINETO, 640, 512,
+    FNT_LINETO, 672, 608,
+    FNT_LINETO, 672, 800,
+    FNT_LINETO, 640, 896,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 672, 224,
+    FNT_LINETO, 640, 321,
+    FNT_LINETO, 575, 384,
+    FNT_LINETO, 480, 416,
+
+    FNT_MOVETO, 672, 800,
+    FNT_LINETO, 640, 896,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 191, 992,
+    FNT_LINETO, 96, 959,
+    FNT_LINETO, 32, 896,
+    FNT_LINETO, 0, 800,
+    FNT_LINETO, 0, 703,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 544,
+    FNT_LINETO, 193, 512,
+    FNT_LINETO, 480, 480,
+    FNT_LINETO, 577, 447,
+    FNT_LINETO, 640, 384,
+    FNT_LINETO, 672, 288,
+    FNT_LINETO, 672, 191,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 575, 32,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 0, 193,
+
+    FNT_MOVETO, 352, 992,
+    FNT_LINETO, 352, 0,
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 640, 191,
+    FNT_LINETO, 575, 96,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 32, 193,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 575, 0,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 96, 0,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 608, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 640, 0,
+    FNT_LINETO, 32, 992,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 416,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 352, 416,
+    FNT_LINETO, 672, 992,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 640, 992,
+    FNT_LINETO, 32, 992,
+
+    FNT_MOVETO, 672, -128,
+    FNT_LINETO, 447, -128,
+    FNT_LINETO, 447, 1088,
+    FNT_LINETO, 672, 1088,
+
+    FNT_MOVETO, 0, 1088,
+    FNT_LINETO, 672, -128,
+
+    FNT_MOVETO, 0, -128,
+    FNT_LINETO, 224, -128,
+    FNT_LINETO, 224, 1088,
+    FNT_LINETO, 0, 1088,
+
+    FNT_MOVETO, 480, 896,
+    FNT_LINETO, 288, 1089,
+    FNT_LINETO, 63, 896,
+
+    FNT_MOVETO, 1024, -193,
+    FNT_LINETO, 0, -193,
+
+    FNT_MOVETO, 449, 896,
+    FNT_LINETO, 224, 1120,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 544, 321,
+    FNT_LINETO, 480, 384,
+    FNT_LINETO, 384, 416,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 96, 384,
+    FNT_LINETO, 32, 319,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 193,
+    FNT_MOVETO, 32, 672,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 992,
+
+    FNT_MOVETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 577, 992,
+
+    FNT_MOVETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 384,
+    FNT_LINETO, 0, 384,
+
+    FNT_MOVETO, 544, 961,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 352, 928,
+    FNT_LINETO, 288, 864,
+    FNT_LINETO, 256, 768,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 96, 640,
+    FNT_LINETO, 544, 640,
+
+    FNT_MOVETO, 577, 288,
+    FNT_LINETO, 544, 191,
+    FNT_LINETO, 480, 96,
+    FNT_LINETO, 384, 63,
+    FNT_LINETO, 191, 63,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 32, 193,
+    FNT_LINETO, 0, 288,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 288,
+    FNT_MOVETO, 577, 288,
+    FNT_LINETO, 577, 0,
+    FNT_LINETO, 544, -128,
+    FNT_LINETO, 480, -224,
+    FNT_LINETO, 384, -256,
+    FNT_LINETO, 160, -256,
+    FNT_LINETO, 32, -191,
+    FNT_MOVETO, 577, 512,
+    FNT_LINETO, 577, 736,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 0, 480,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 447,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 384, 0,
+    FNT_LINETO, 384, 672,
+    FNT_LINETO, 128, 672,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 128, 0,
+    FNT_MOVETO, 288, 928,
+    FNT_LINETO, 288, 992,
+
+    FNT_MOVETO, 128, -256,
+    FNT_LINETO, 224, -256,
+    FNT_LINETO, 288, -224,
+    FNT_LINETO, 352, -160,
+    FNT_LINETO, 384, -63,
+    FNT_LINETO, 384, 672,
+    FNT_LINETO, 128, 672,
+    FNT_MOVETO, 288, 928,
+    FNT_LINETO, 288, 992,
+
+    FNT_MOVETO, 0, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 384,
+    FNT_LINETO, 128, 384,
+    FNT_LINETO, 544, 736,
+    FNT_MOVETO, 128, 384,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 384, 0,
+    FNT_LINETO, 384, 992,
+    FNT_LINETO, 128, 992,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 128, 0,
+
+    FNT_MOVETO, 0, 736,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 544,
+    FNT_LINETO, 32, 640,
+    FNT_LINETO, 65, 705,
+    FNT_LINETO, 128, 736,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 256, 703,
+    FNT_LINETO, 288, 640,
+    FNT_LINETO, 321, 544,
+    FNT_LINETO, 321, 0,
+    FNT_MOVETO, 321, 544,
+    FNT_LINETO, 352, 640,
+    FNT_LINETO, 384, 705,
+    FNT_LINETO, 449, 736,
+    FNT_LINETO, 544, 736,
+    FNT_LINETO, 608, 703,
+    FNT_LINETO, 640, 640,
+    FNT_LINETO, 672, 544,
+    FNT_LINETO, 672, 0,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 0, 480,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 447,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_MOVETO, 0, -224,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_MOVETO, 577, -224,
+    FNT_LINETO, 577, 736,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 0, 480,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+
+    FNT_MOVETO, 577, 608,
+    FNT_LINETO, 544, 672,
+    FNT_LINETO, 512, 705,
+    FNT_LINETO, 416, 736,
+    FNT_LINETO, 160, 736,
+    FNT_LINETO, 63, 703,
+    FNT_LINETO, 32, 672,
+    FNT_LINETO, 0, 608,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 447,
+    FNT_LINETO, 65, 416,
+    FNT_LINETO, 160, 384,
+    FNT_LINETO, 416, 384,
+    FNT_LINETO, 512, 352,
+    FNT_LINETO, 544, 319,
+    FNT_LINETO, 577, 256,
+    FNT_LINETO, 577, 128,
+    FNT_LINETO, 544, 63,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 0, 160,
+
+    FNT_MOVETO, 512, 672,
+    FNT_LINETO, 0, 672,
+    FNT_MOVETO, 577, 63,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 256, 32,
+    FNT_LINETO, 191, 96,
+    FNT_LINETO, 160, 193,
+    FNT_LINETO, 160, 992,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 512, 96,
+    FNT_LINETO, 447, 32,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 577, 736,
+
+    FNT_MOVETO, 577, 736,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 672, 736,
+    FNT_LINETO, 544, 0,
+    FNT_LINETO, 319, 544,
+    FNT_LINETO, 128, 0,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 544, 736,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 32, 736,
+
+    FNT_MOVETO, 321, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 96, -256,
+    FNT_LINETO, 160, -256,
+    FNT_LINETO, 224, -224,
+    FNT_LINETO, 256, -160,
+    FNT_LINETO, 577, 736,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 544, 736,
+    FNT_LINETO, 32, 736,
+
+    FNT_MOVETO, 672, 1088,
+    FNT_LINETO, 608, 1088,
+    FNT_LINETO, 575, 1056,
+    FNT_LINETO, 544, 992,
+    FNT_LINETO, 544, 640,
+    FNT_LINETO, 512, 544,
+    FNT_LINETO, 480, 512,
+    FNT_LINETO, 416, 480,
+    FNT_LINETO, 480, 447,
+    FNT_LINETO, 512, 416,
+    FNT_LINETO, 544, 319,
+    FNT_LINETO, 544, -32,
+    FNT_LINETO, 577, -96,
+    FNT_LINETO, 608, -128,
+    FNT_LINETO, 672, -128,
+
+    FNT_MOVETO, 0, -128,
+    FNT_LINETO, 0, 1088,
+
+    FNT_MOVETO, 32, 1088,
+    FNT_LINETO, 96, 1088,
+    FNT_LINETO, 128, 1056,
+    FNT_LINETO, 160, 992,
+    FNT_LINETO, 160, 640,
+    FNT_LINETO, 193, 544,
+    FNT_LINETO, 224, 512,
+    FNT_LINETO, 288, 480,
+    FNT_LINETO, 224, 447,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 160, 319,
+    FNT_LINETO, 160, -32,
+    FNT_LINETO, 128, -96,
+    FNT_LINETO, 96, -128,
+    FNT_LINETO, 32, -128,
+
+    FNT_MOVETO, 577, 1056,
+    FNT_LINETO, 480, 928,
+    FNT_LINETO, 416, 896,
+    FNT_LINETO, 352, 896,
+    FNT_LINETO, 224, 1056,
+    FNT_LINETO, 160, 1056,
+    FNT_LINETO, 96, 1024,
+    FNT_LINETO, 0, 896,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 352, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 256,
+    FNT_LINETO, 577, 256,
+    FNT_MOVETO, 384, 1152,
+    FNT_LINETO, 128, 1408,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 352, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 256,
+    FNT_LINETO, 577, 256,
+    FNT_MOVETO, 128, 1152,
+    FNT_LINETO, 352, 1345,
+    FNT_LINETO, 544, 1152,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 544, 512,
+    FNT_MOVETO, 384, 1152,
+    FNT_LINETO, 128, 1408,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 544, 512,
+    FNT_MOVETO, 128, 1152,
+    FNT_LINETO, 352, 1345,
+    FNT_LINETO, 544, 1152,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 544, 512,
+    FNT_MOVETO, 160, 1152,
+    FNT_LINETO, 224, 1152,
+    FNT_LINETO, 224, 1217,
+    FNT_LINETO, 160, 1217,
+    FNT_LINETO, 160, 1152,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 512, 1217,
+    FNT_LINETO, 448, 1217,
+    FNT_LINETO, 449, 1152,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 992,
+    FNT_MOVETO, 608, 992,
+    FNT_LINETO, 96, 992,
+    FNT_MOVETO, 608, 0,
+    FNT_LINETO, 96, 0,
+    FNT_MOVETO, 128, 1152,
+    FNT_LINETO, 352, 1344,
+    FNT_LINETO, 544, 1152,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 992,
+    FNT_MOVETO, 608, 992,
+    FNT_LINETO, 96, 992,
+    FNT_MOVETO, 608, 0,
+    FNT_LINETO, 96, 0,
+    FNT_MOVETO, 160, 1152,
+    FNT_LINETO, 224, 1152,
+    FNT_LINETO, 224, 1217,
+    FNT_LINETO, 160, 1217,
+    FNT_LINETO, 160, 1152,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 512, 1217,
+    FNT_LINETO, 448, 1217,
+    FNT_LINETO, 449, 1152,
+
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 512, 1408,
+
+    FNT_MOVETO, 384, 1152,
+    FNT_LINETO, 128, 1408,
+
+    FNT_MOVETO, 128, 1152,
+    FNT_LINETO, 352, 1344,
+    FNT_LINETO, 544, 1152,
+
+    FNT_MOVETO, 160, 1152,
+    FNT_LINETO, 224, 1152,
+    FNT_LINETO, 224, 1217,
+    FNT_LINETO, 160, 1217,
+    FNT_LINETO, 160, 1152,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 512, 1217,
+    FNT_LINETO, 448, 1217,
+    FNT_LINETO, 449, 1152,
+
+    FNT_MOVETO, 672, 1312,
+    FNT_LINETO, 575, 1184,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 447, 1152,
+    FNT_LINETO, 224, 1312,
+    FNT_LINETO, 160, 1312,
+    FNT_LINETO, 96, 1280,
+    FNT_LINETO, 0, 1152,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 640, 191,
+    FNT_LINETO, 575, 96,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 32, 193,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 384, 1152,
+    FNT_LINETO, 128, 1408,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 640, 191,
+    FNT_LINETO, 575, 96,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 32, 193,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 128, 1152,
+    FNT_LINETO, 352, 1345,
+    FNT_LINETO, 544, 1152,
+
+    FNT_MOVETO, 672, 128,
+    FNT_LINETO, 640, 63,
+    FNT_LINETO, 575, 0,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 416, 32,
+    FNT_LINETO, 256, 224,
+    FNT_LINETO, 191, 256,
+    FNT_LINETO, 128, 256,
+    FNT_LINETO, 63, 224,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 0, 96,
+    FNT_LINETO, 65, 32,
+    FNT_LINETO, 128, 0,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 256, 32,
+    FNT_LINETO, 321, 128,
+    FNT_LINETO, 352, 256,
+    FNT_LINETO, 352, 800,
+    FNT_LINETO, 384, 896,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 544, 992,
+    FNT_LINETO, 608, 959,
+    FNT_LINETO, 672, 864,
+    FNT_MOVETO, 512, 608,
+    FNT_LINETO, 191, 608,
+
+    FNT_MOVETO, 1024, 1152,
+    FNT_LINETO, 0, 1152,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 416,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 352, 416,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 512, 1408,
+
+    FNT_MOVETO, 321, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 96, -256,
+    FNT_LINETO, 160, -256,
+    FNT_LINETO, 224, -224,
+    FNT_LINETO, 256, -160,
+    FNT_LINETO, 577, 736,
+    FNT_MOVETO, 447, 1152,
+    FNT_LINETO, 160, 896,
+
+    FNT_MOVETO, 352, 896,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 1056,
+    FNT_LINETO, 352, 1120,
+    FNT_LINETO, 256, 1120,
+    FNT_LINETO, 191, 1056,
+    FNT_LINETO, 191, 959,
+    FNT_LINETO, 256, 896,
+    FNT_LINETO, 352, 896,
+
+    FNT_MOVETO, 288, 0,
+    FNT_LINETO, 416, -160,
+    FNT_LINETO, 319, -256,
+    FNT_MOVETO, 640, 768,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 224,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 352, -160,
+    FNT_LINETO, 256, -256,
+    FNT_MOVETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 672, 0,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 608, 1312,
+    FNT_LINETO, 512, 1184,
+    FNT_LINETO, 447, 1152,
+    FNT_LINETO, 384, 1152,
+    FNT_LINETO, 224, 1312,
+    FNT_LINETO, 160, 1312,
+    FNT_LINETO, 96, 1280,
+    FNT_LINETO, 0, 1152,
+
+    FNT_MOVETO, 577, 1056,
+    FNT_LINETO, 480, 928,
+    FNT_LINETO, 416, 896,
+    FNT_LINETO, 352, 896,
+    FNT_LINETO, 224, 1056,
+    FNT_LINETO, 160, 1056,
+    FNT_LINETO, 96, 1024,
+    FNT_LINETO, 0, 896,
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 0, 480,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 704,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 447,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 672, 736,
+    FNT_LINETO, 640, 736,
+    FNT_LINETO, 640, 672,
+    FNT_LINETO, 672, 672,
+    FNT_LINETO, 672, 736,
+    FNT_MOVETO, 672, -256,
+    FNT_LINETO, 672, 416,
+
+    FNT_MOVETO, 416, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 352, 672,
+    FNT_LINETO, 416, 672,
+    FNT_LINETO, 416, 736,
+    FNT_MOVETO, 384, 447,
+    FNT_LINETO, 352, 352,
+    FNT_LINETO, 319, 288,
+    FNT_LINETO, 160, 256,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 0, 96,
+    FNT_LINETO, 0, -96,
+    FNT_LINETO, 32, -193,
+    FNT_LINETO, 160, -256,
+    FNT_LINETO, 321, -256,
+    FNT_LINETO, 449, -191,
+    FNT_LINETO, 480, -96,
+
+    FNT_MOVETO, 0, 384,
+    FNT_LINETO, 0, 577,
+    FNT_LINETO, 32, 672,
+    FNT_LINETO, 96, 768,
+    FNT_LINETO, 224, 833,
+    FNT_LINETO, 449, 833,
+    FNT_LINETO, 577, 768,
+    FNT_LINETO, 640, 672,
+    FNT_LINETO, 672, 575,
+    FNT_LINETO, 672, 384,
+    FNT_LINETO, 640, 288,
+    FNT_LINETO, 575, 191,
+    FNT_LINETO, 447, 128,
+    FNT_LINETO, 224, 128,
+    FNT_LINETO, 96, 193,
+    FNT_LINETO, 32, 288,
+    FNT_LINETO, 0, 384,
+    FNT_MOVETO, 96, 191,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 577, 193,
+    FNT_LINETO, 672, 0,
+    FNT_MOVETO, 575, 768,
+    FNT_LINETO, 672, 961,
+    FNT_MOVETO, 96, 768,
+    FNT_LINETO, 0, 961,
+
+    FNT_MOVETO, 672, 128,
+    FNT_LINETO, 640, 63,
+    FNT_LINETO, 575, 0,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 416, 32,
+    FNT_LINETO, 256, 224,
+    FNT_LINETO, 191, 256,
+    FNT_LINETO, 128, 256,
+    FNT_LINETO, 63, 224,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 0, 96,
+    FNT_LINETO, 65, 32,
+    FNT_LINETO, 128, 0,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 256, 32,
+    FNT_LINETO, 321, 128,
+    FNT_LINETO, 352, 256,
+    FNT_LINETO, 352, 800,
+    FNT_LINETO, 384, 896,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 544, 992,
+    FNT_LINETO, 608, 959,
+    FNT_LINETO, 672, 864,
+    FNT_MOVETO, 512, 608,
+    FNT_LINETO, 191, 608,
+
+    FNT_MOVETO, 288, 0,
+    FNT_LINETO, 288, 672,
+    FNT_LINETO, 0, 1089,
+    FNT_MOVETO, 288, 672,
+    FNT_LINETO, 577, 1089,
+    FNT_MOVETO, 577, 672,
+    FNT_LINETO, 0, 672,
+    FNT_MOVETO, 577, 447,
+    FNT_LINETO, 0, 447,
+
+    FNT_MOVETO, 480, 160,
+    FNT_LINETO, 577, 193,
+    FNT_LINETO, 640, 288,
+    FNT_LINETO, 672, 384,
+    FNT_LINETO, 640, 480,
+    FNT_LINETO, 191, 800,
+    FNT_LINETO, 128, 864,
+    FNT_LINETO, 96, 961,
+    FNT_LINETO, 96, 1056,
+    FNT_LINETO, 160, 1152,
+    FNT_LINETO, 256, 1217,
+    FNT_LINETO, 416, 1217,
+    FNT_LINETO, 512, 1184,
+    FNT_LINETO, 577, 1087,
+    FNT_LINETO, 640, 959,
+    FNT_MOVETO, 191, 800,
+    FNT_LINETO, 96, 768,
+    FNT_LINETO, 32, 672,
+    FNT_LINETO, 0, 575,
+    FNT_LINETO, 32, 480,
+    FNT_LINETO, 480, 160,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 0,
+    FNT_LINETO, 577, -96,
+    FNT_LINETO, 512, -193,
+    FNT_LINETO, 416, -256,
+    FNT_LINETO, 256, -256,
+    FNT_LINETO, 160, -224,
+    FNT_LINETO, 96, -128,
+    FNT_LINETO, 32, 0,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 32, -96,
+    FNT_LINETO, 65, -128,
+    FNT_LINETO, 96, -160,
+    FNT_LINETO, 160, -160,
+    FNT_LINETO, 224, -128,
+    FNT_LINETO, 288, -63,
+    FNT_LINETO, 321, 32,
+    FNT_LINETO, 321, 800,
+    FNT_LINETO, 352, 896,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 544, 992,
+    FNT_LINETO, 608, 959,
+    FNT_LINETO, 640, 928,
+    FNT_LINETO, 672, 831,
+    FNT_MOVETO, 544, 575,
+    FNT_LINETO, 128, 575,
+
+    FNT_MOVETO, 577, 128,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 416, 736,
+    FNT_LINETO, 512, 703,
+    FNT_LINETO, 577, 608,
+    FNT_MOVETO, 288, -160,
+    FNT_LINETO, 288, 864,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 544, 321,
+    FNT_LINETO, 480, 384,
+    FNT_LINETO, 384, 416,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 96, 384,
+    FNT_LINETO, 32, 319,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 193,
+    FNT_MOVETO, 32, 672,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 0,
+    FNT_MOVETO, 63, 896,
+    FNT_LINETO, 288, 1089,
+    FNT_LINETO, 480, 896,
+
+    FNT_MOVETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 384,
+    FNT_LINETO, 0, 384,
+    FNT_MOVETO, 65, 896,
+    FNT_LINETO, 288, 1089,
+    FNT_LINETO, 480, 896,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+    FNT_MOVETO, 63, 896,
+    FNT_LINETO, 288, 1089,
+    FNT_LINETO, 480, 896,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 512, 96,
+    FNT_LINETO, 447, 32,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 577, 736,
+    FNT_MOVETO, 63, 896,
+    FNT_LINETO, 288, 1089,
+    FNT_LINETO, 480, 896,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 544, 321,
+    FNT_LINETO, 480, 384,
+    FNT_LINETO, 384, 416,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 96, 384,
+    FNT_LINETO, 32, 319,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 193,
+    FNT_MOVETO, 32, 672,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 0,
+    FNT_MOVETO, 447, 1152,
+    FNT_LINETO, 160, 896,
+
+    FNT_MOVETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 384,
+    FNT_LINETO, 0, 384,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 160, 896,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+    FNT_MOVETO, 447, 1152,
+    FNT_LINETO, 160, 896,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 512, 96,
+    FNT_LINETO, 447, 32,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 577, 736,
+    FNT_MOVETO, 447, 1152,
+    FNT_LINETO, 160, 896,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 544, 321,
+    FNT_LINETO, 480, 384,
+    FNT_LINETO, 384, 416,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 96, 384,
+    FNT_LINETO, 32, 319,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 193,
+    FNT_MOVETO, 32, 672,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 0,
+    FNT_MOVETO, 447, 896,
+    FNT_LINETO, 191, 1152,
+
+    FNT_MOVETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 384,
+    FNT_LINETO, 0, 384,
+    FNT_MOVETO, 449, 896,
+    FNT_LINETO, 191, 1152,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+    FNT_MOVETO, 447, 896,
+    FNT_LINETO, 191, 1152,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 512, 96,
+    FNT_LINETO, 447, 32,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 577, 736,
+    FNT_MOVETO, 447, 896,
+    FNT_LINETO, 191, 1152,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 544, 321,
+    FNT_LINETO, 480, 384,
+    FNT_LINETO, 384, 416,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 96, 384,
+    FNT_LINETO, 32, 319,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 193,
+    FNT_MOVETO, 32, 672,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 0,
+    FNT_MOVETO, 128, 896,
+    FNT_LINETO, 193, 896,
+    FNT_LINETO, 193, 961,
+    FNT_LINETO, 128, 961,
+    FNT_LINETO, 128, 896,
+    FNT_MOVETO, 416, 896,
+    FNT_LINETO, 480, 896,
+    FNT_LINETO, 480, 961,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 896,
+
+    FNT_MOVETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 384,
+    FNT_LINETO, 0, 384,
+    FNT_MOVETO, 128, 896,
+    FNT_LINETO, 193, 896,
+    FNT_LINETO, 193, 961,
+    FNT_LINETO, 128, 961,
+    FNT_LINETO, 128, 896,
+    FNT_MOVETO, 416, 896,
+    FNT_LINETO, 480, 896,
+    FNT_LINETO, 480, 961,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 896,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+    FNT_MOVETO, 128, 896,
+    FNT_LINETO, 193, 896,
+    FNT_LINETO, 193, 961,
+    FNT_LINETO, 128, 961,
+    FNT_LINETO, 128, 896,
+    FNT_MOVETO, 416, 896,
+    FNT_LINETO, 480, 896,
+    FNT_LINETO, 480, 961,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 896,
+
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 512, 96,
+    FNT_LINETO, 447, 32,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 577, 736,
+    FNT_MOVETO, 128, 896,
+    FNT_LINETO, 193, 896,
+    FNT_LINETO, 193, 961,
+    FNT_LINETO, 128, 961,
+    FNT_LINETO, 128, 896,
+    FNT_MOVETO, 416, 896,
+    FNT_LINETO, 480, 896,
+    FNT_LINETO, 480, 961,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 896,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 352, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 256,
+    FNT_LINETO, 577, 256,
+    FNT_MOVETO, 384, 1152,
+    FNT_LINETO, 449, 1217,
+    FNT_LINETO, 449, 1312,
+    FNT_LINETO, 384, 1376,
+    FNT_LINETO, 288, 1376,
+    FNT_LINETO, 224, 1312,
+    FNT_LINETO, 224, 1215,
+    FNT_LINETO, 288, 1152,
+    FNT_LINETO, 384, 1152,
+
+    FNT_MOVETO, 384, 0,
+    FNT_LINETO, 384, 672,
+    FNT_LINETO, 128, 672,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 128, 0,
+    FNT_MOVETO, 96, 896,
+    FNT_LINETO, 321, 1089,
+    FNT_LINETO, 512, 896,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 288, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 352, 992,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 672, 0,
+    FNT_MOVETO, 160, 512,
+    FNT_LINETO, 672, 512,
+
+    FNT_MOVETO, 352, 896,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 1056,
+    FNT_LINETO, 352, 1120,
+    FNT_LINETO, 256, 1120,
+    FNT_LINETO, 192, 1056,
+    FNT_LINETO, 192, 959,
+    FNT_LINETO, 256, 896,
+    FNT_LINETO, 352, 896,
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 544, 321,
+    FNT_LINETO, 480, 384,
+    FNT_LINETO, 384, 416,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 96, 384,
+    FNT_LINETO, 32, 319,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 193,
+    FNT_MOVETO, 32, 672,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 384, 0,
+    FNT_LINETO, 384, 672,
+    FNT_LINETO, 128, 672,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 128, 0,
+    FNT_MOVETO, 416, 1152,
+    FNT_LINETO, 160, 896,
+
+    FNT_MOVETO, 577, 736,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+
+    FNT_MOVETO, 352, 128,
+    FNT_LINETO, 319, 32,
+    FNT_LINETO, 224, 0,
+    FNT_LINETO, 128, 0,
+    FNT_LINETO, 32, 32,
+    FNT_LINETO, 0, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 65, 321,
+    FNT_LINETO, 224, 384,
+    FNT_LINETO, 352, 416,
+    FNT_LINETO, 672, 416,
+    FNT_LINETO, 672, 608,
+    FNT_LINETO, 608, 705,
+    FNT_LINETO, 544, 736,
+    FNT_LINETO, 447, 736,
+    FNT_LINETO, 384, 703,
+    FNT_LINETO, 352, 608,
+    FNT_LINETO, 352, 128,
+    FNT_LINETO, 384, 32,
+    FNT_LINETO, 449, 0,
+    FNT_LINETO, 577, 0,
+    FNT_LINETO, 672, 65,
+    FNT_MOVETO, 352, 608,
+    FNT_LINETO, 319, 705,
+    FNT_LINETO, 256, 736,
+    FNT_LINETO, 96, 736,
+    FNT_LINETO, 0, 672,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 352, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 256,
+    FNT_LINETO, 577, 256,
+    FNT_MOVETO, 160, 1152,
+    FNT_LINETO, 224, 1152,
+    FNT_LINETO, 224, 1217,
+    FNT_LINETO, 160, 1217,
+    FNT_LINETO, 160, 1152,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 512, 1217,
+    FNT_LINETO, 448, 1217,
+    FNT_LINETO, 449, 1152,
+
+    FNT_MOVETO, 384, 0,
+    FNT_LINETO, 384, 672,
+    FNT_LINETO, 128, 672,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 128, 0,
+    FNT_MOVETO, 449, 896,
+    FNT_LINETO, 191, 1152,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 160, 1152,
+    FNT_LINETO, 224, 1152,
+    FNT_LINETO, 224, 1217,
+    FNT_LINETO, 160, 1217,
+    FNT_LINETO, 160, 1152,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 512, 1217,
+    FNT_LINETO, 448, 1217,
+    FNT_LINETO, 449, 1152,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 640, 191,
+    FNT_LINETO, 575, 96,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 32, 193,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 160, 1152,
+    FNT_LINETO, 224, 1152,
+    FNT_LINETO, 224, 1217,
+    FNT_LINETO, 160, 1217,
+    FNT_LINETO, 160, 1152,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 512, 1217,
+    FNT_LINETO, 448, 1217,
+    FNT_LINETO, 449, 1152,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 992,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 544, 512,
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 512, 1408,
+
+    FNT_MOVETO, 384, 0,
+    FNT_LINETO, 384, 672,
+    FNT_LINETO, 128, 672,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 128, 0,
+    FNT_MOVETO, 128, 896,
+    FNT_LINETO, 193, 896,
+    FNT_LINETO, 193, 961,
+    FNT_LINETO, 128, 961,
+    FNT_LINETO, 128, 896,
+    FNT_MOVETO, 416, 896,
+    FNT_LINETO, 480, 896,
+    FNT_LINETO, 480, 961,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 896,
+
+    FNT_MOVETO, 288, 512,
+    FNT_LINETO, 352, 512,
+    FNT_LINETO, 449, 544,
+    FNT_LINETO, 512, 608,
+    FNT_LINETO, 544, 705,
+    FNT_LINETO, 544, 768,
+    FNT_LINETO, 512, 864,
+    FNT_LINETO, 447, 928,
+    FNT_LINETO, 352, 961,
+    FNT_LINETO, 256, 961,
+    FNT_LINETO, 160, 928,
+    FNT_LINETO, 96, 864,
+    FNT_LINETO, 63, 768,
+    FNT_LINETO, 32, 640,
+    FNT_LINETO, 32, 0,
+    FNT_MOVETO, 384, 512,
+    FNT_LINETO, 512, 447,
+    FNT_LINETO, 577, 384,
+    FNT_LINETO, 608, 288,
+    FNT_LINETO, 608, 191,
+    FNT_LINETO, 575, 96,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 191, 32,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 128, 1152,
+    FNT_LINETO, 352, 1344,
+    FNT_LINETO, 544, 1152,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 352, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 256,
+    FNT_LINETO, 577, 256,
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 512, 1408,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 352, 992,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 256,
+    FNT_LINETO, 577, 256,
+    FNT_MOVETO, 672, 1312,
+    FNT_LINETO, 575, 1184,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 447, 1152,
+    FNT_LINETO, 224, 1312,
+    FNT_LINETO, 160, 1312,
+    FNT_LINETO, 96, 1280,
+    FNT_LINETO, 0, 1152,
+
+    FNT_MOVETO, 577, 1056,
+    FNT_LINETO, 480, 928,
+    FNT_LINETO, 416, 896,
+    FNT_LINETO, 352, 896,
+    FNT_LINETO, 224, 1056,
+    FNT_LINETO, 160, 1056,
+    FNT_LINETO, 96, 1024,
+    FNT_LINETO, 0, 896,
+    FNT_MOVETO, 577, 256,
+    FNT_LINETO, 544, 320,
+    FNT_LINETO, 480, 384,
+    FNT_LINETO, 384, 416,
+    FNT_LINETO, 191, 416,
+    FNT_LINETO, 96, 384,
+    FNT_LINETO, 32, 319,
+    FNT_LINETO, 0, 256,
+    FNT_LINETO, 0, 160,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 193, 0,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 577, 192,
+    FNT_MOVETO, 32, 672,
+    FNT_LINETO, 96, 704,
+    FNT_LINETO, 224, 736,
+    FNT_LINETO, 352, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 480,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 96, 992,
+    FNT_LINETO, 96, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 800,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 96, 992,
+    FNT_MOVETO, 256, 480,
+    FNT_LINETO, 0, 480,
+
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 577, 992,
+    FNT_MOVETO, 672, 864,
+    FNT_LINETO, 416, 864,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 992,
+    FNT_MOVETO, 608, 992,
+    FNT_LINETO, 96, 992,
+    FNT_MOVETO, 608, 0,
+    FNT_LINETO, 96, 0,
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 512, 1408,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 992,
+    FNT_MOVETO, 608, 992,
+    FNT_LINETO, 96, 992,
+    FNT_MOVETO, 608, 0,
+    FNT_LINETO, 96, 0,
+    FNT_MOVETO, 384, 1152,
+    FNT_LINETO, 128, 1408,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 512, 1408,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 384, 1152,
+    FNT_LINETO, 128, 1408,
+
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 608, 96,
+    FNT_LINETO, 640, 193,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 672, 640,
+    FNT_LINETO, 640, 833,
+    FNT_LINETO, 608, 896,
+    FNT_LINETO, 544, 961,
+    FNT_LINETO, 416, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 128, 959,
+    FNT_LINETO, 63, 896,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 0, 640,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 32, 191,
+    FNT_LINETO, 65, 96,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 672, 1312,
+    FNT_LINETO, 575, 1184,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 447, 1152,
+    FNT_LINETO, 224, 1312,
+    FNT_LINETO, 160, 1312,
+    FNT_LINETO, 96, 1280,
+    FNT_LINETO, 0, 1152,
+
+    FNT_MOVETO, 577, 1056,
+    FNT_LINETO, 480, 928,
+    FNT_LINETO, 416, 896,
+    FNT_LINETO, 352, 896,
+    FNT_LINETO, 224, 1056,
+    FNT_LINETO, 160, 1056,
+    FNT_LINETO, 96, 1024,
+    FNT_LINETO, 0, 896,
+    FNT_MOVETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 704,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 703,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+
+    FNT_MOVETO, 672, 800,
+    FNT_LINETO, 640, 896,
+    FNT_LINETO, 575, 961,
+    FNT_LINETO, 480, 992,
+    FNT_LINETO, 191, 992,
+    FNT_LINETO, 96, 959,
+    FNT_LINETO, 32, 896,
+    FNT_LINETO, 0, 800,
+    FNT_LINETO, 0, 703,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 544,
+    FNT_LINETO, 193, 512,
+    FNT_LINETO, 480, 480,
+    FNT_LINETO, 577, 447,
+    FNT_LINETO, 640, 384,
+    FNT_LINETO, 672, 288,
+    FNT_LINETO, 672, 191,
+    FNT_LINETO, 640, 96,
+    FNT_LINETO, 575, 32,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 0, 193,
+    FNT_MOVETO, 128, 1344,
+    FNT_LINETO, 352, 1152,
+    FNT_LINETO, 544, 1344,
+
+    FNT_MOVETO, 577, 608,
+    FNT_LINETO, 544, 672,
+    FNT_LINETO, 512, 705,
+    FNT_LINETO, 416, 736,
+    FNT_LINETO, 160, 736,
+    FNT_LINETO, 63, 703,
+    FNT_LINETO, 32, 672,
+    FNT_LINETO, 0, 608,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 32, 447,
+    FNT_LINETO, 65, 416,
+    FNT_LINETO, 160, 384,
+    FNT_LINETO, 416, 384,
+    FNT_LINETO, 512, 352,
+    FNT_LINETO, 544, 319,
+    FNT_LINETO, 577, 256,
+    FNT_LINETO, 577, 128,
+    FNT_LINETO, 544, 63,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 96,
+    FNT_LINETO, 0, 160,
+    FNT_MOVETO, 65, 1089,
+    FNT_LINETO, 288, 896,
+    FNT_LINETO, 480, 1089,
+
+    FNT_MOVETO, 672, 992,
+    FNT_LINETO, 672, 352,
+    FNT_LINETO, 640, 191,
+    FNT_LINETO, 575, 96,
+    FNT_LINETO, 512, 32,
+    FNT_LINETO, 416, 0,
+    FNT_LINETO, 288, 0,
+    FNT_LINETO, 160, 32,
+    FNT_LINETO, 96, 96,
+    FNT_LINETO, 32, 193,
+    FNT_LINETO, 0, 352,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 512, 1408,
+
+    FNT_MOVETO, 352, 0,
+    FNT_LINETO, 352, 416,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 352, 416,
+    FNT_LINETO, 672, 992,
+    FNT_MOVETO, 160, 1152,
+    FNT_LINETO, 224, 1152,
+    FNT_LINETO, 224, 1217,
+    FNT_LINETO, 160, 1217,
+    FNT_LINETO, 160, 1152,
+    FNT_MOVETO, 449, 1152,
+    FNT_LINETO, 512, 1152,
+    FNT_LINETO, 512, 1217,
+    FNT_LINETO, 448, 1217,
+    FNT_LINETO, 449, 1152,
+
+    FNT_MOVETO, 321, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 96, -256,
+    FNT_LINETO, 160, -256,
+    FNT_LINETO, 224, -224,
+    FNT_LINETO, 256, -160,
+    FNT_LINETO, 577, 736,
+    FNT_MOVETO, 128, 896,
+    FNT_LINETO, 193, 896,
+    FNT_LINETO, 193, 961,
+    FNT_LINETO, 128, 961,
+    FNT_LINETO, 128, 896,
+    FNT_MOVETO, 416, 896,
+    FNT_LINETO, 480, 896,
+    FNT_LINETO, 480, 961,
+    FNT_LINETO, 416, 961,
+    FNT_LINETO, 416, 896,
+
+    FNT_MOVETO, 96, 128,
+    FNT_LINETO, 480, 128,
+    FNT_LINETO, 577, 160,
+    FNT_LINETO, 640, 224,
+    FNT_LINETO, 672, 321,
+    FNT_LINETO, 672, 416,
+    FNT_LINETO, 640, 512,
+    FNT_LINETO, 575, 577,
+    FNT_LINETO, 480, 608,
+    FNT_LINETO, 96, 608,
+    FNT_MOVETO, 96, -256,
+    FNT_LINETO, 96, 992,
+    FNT_MOVETO, 256, 992,
+    FNT_LINETO, 0, 992,
+    FNT_MOVETO, 256, -256,
+    FNT_LINETO, 0, -256,
+
+    FNT_MOVETO, 0, 992,
+    FNT_LINETO, 0, -256,
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 32, 608,
+    FNT_LINETO, 96, 705,
+    FNT_LINETO, 193, 736,
+    FNT_LINETO, 384, 736,
+    FNT_LINETO, 480, 704,
+    FNT_LINETO, 544, 608,
+    FNT_LINETO, 577, 512,
+    FNT_LINETO, 577, 224,
+    FNT_LINETO, 544, 128,
+    FNT_LINETO, 480, 32,
+    FNT_LINETO, 384, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 96, 32,
+    FNT_LINETO, 32, 128,
+    FNT_LINETO, 0, 224,
+
+    FNT_MOVETO, 352, 480,
+    FNT_LINETO, 384, 480,
+    FNT_LINETO, 384, 512,
+    FNT_LINETO, 352, 512,
+    FNT_LINETO, 352, 480,
+
+    FNT_MOVETO, 0, -256,
+    FNT_LINETO, 65, 736,
+    FNT_MOVETO, 672, 160,
+    FNT_LINETO, 640, 32,
+    FNT_LINETO, 575, 0,
+    FNT_LINETO, 544, 32,
+    FNT_LINETO, 512, 128,
+    FNT_LINETO, 512, 256,
+    FNT_LINETO, 544, 736,
+    FNT_MOVETO, 512, 256,
+    FNT_LINETO, 480, 128,
+    FNT_LINETO, 416, 32,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 128, 32,
+    FNT_LINETO, 63, 128,
+    FNT_LINETO, 32, 224,
+
+    FNT_MOVETO, 321, 544,
+    FNT_LINETO, 224, 544,
+    FNT_LINETO, 128, 577,
+    FNT_LINETO, 63, 640,
+    FNT_LINETO, 32, 705,
+    FNT_LINETO, 32, 800,
+    FNT_LINETO, 65, 864,
+    FNT_LINETO, 128, 928,
+    FNT_LINETO, 224, 961,
+    FNT_LINETO, 608, 961,
+    FNT_MOVETO, 319, 961,
+    FNT_LINETO, 319, 0,
+    FNT_MOVETO, 512, 961,
+    FNT_LINETO, 512, 0,
+
+    FNT_MOVETO, 672, 352,
+    FNT_LINETO, 0, 352,
+    FNT_MOVETO, 577, -256,
+    FNT_LINETO, 128, -256,
+    FNT_LINETO, 449, 193,
+    FNT_LINETO, 449, -352,
+    FNT_MOVETO, 256, 864,
+    FNT_LINETO, 384, 864,
+    FNT_LINETO, 480, 831,
+    FNT_LINETO, 512, 768,
+    FNT_LINETO, 512, 640,
+    FNT_LINETO, 480, 575,
+    FNT_LINETO, 416, 544,
+    FNT_LINETO, 224, 544,
+    FNT_LINETO, 160, 576,
+    FNT_LINETO, 128, 640,
+    FNT_MOVETO, 384, 864,
+    FNT_LINETO, 449, 896,
+    FNT_LINETO, 480, 960,
+    FNT_LINETO, 480, 1088,
+    FNT_LINETO, 447, 1152,
+    FNT_LINETO, 384, 1184,
+    FNT_LINETO, 256, 1184,
+    FNT_LINETO, 191, 1152,
+    FNT_LINETO, 160, 1087,
+
+    FNT_MOVETO, 672, 480,
+    FNT_LINETO, 0, 480,
+
+    FNT_MOVETO, 672, 480,
+    FNT_LINETO, 0, 480,
+    FNT_MOVETO, 224, 961,
+    FNT_LINETO, 416, 1217,
+    FNT_LINETO, 416, 672,
+    FNT_MOVETO, 608, -128,
+    FNT_LINETO, 160, -128,
+    FNT_LINETO, 480, 321,
+    FNT_LINETO, 480, -224,
+
+    FNT_MOVETO, 672, 480,
+    FNT_LINETO, 0, 480,
+    FNT_MOVETO, 224, 961,
+    FNT_LINETO, 416, 1217,
+    FNT_LINETO, 416, 672,
+    FNT_MOVETO, 191, 256,
+    FNT_LINETO, 224, 288,
+    FNT_LINETO, 288, 320,
+    FNT_LINETO, 416, 320,
+    FNT_LINETO, 480, 288,
+    FNT_LINETO, 544, 191,
+    FNT_LINETO, 544, 96,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 256, -96,
+    FNT_LINETO, 191, -160,
+    FNT_LINETO, 160, -256,
+    FNT_LINETO, 544, -256,
+
+    FNT_MOVETO, 672, 193,
+    FNT_LINETO, 0, 193,
+    FNT_MOVETO, 544, 352,
+    FNT_LINETO, 544, 800,
+    FNT_LINETO, 512, 896,
+    FNT_LINETO, 447, 961,
+    FNT_LINETO, 384, 992,
+    FNT_LINETO, 256, 992,
+    FNT_LINETO, 160, 959,
+    FNT_MOVETO, 544, 640,
+    FNT_LINETO, 512, 705,
+    FNT_LINETO, 416, 736,
+    FNT_LINETO, 288, 736,
+    FNT_LINETO, 224, 703,
+    FNT_LINETO, 160, 640,
+    FNT_LINETO, 128, 575,
+    FNT_LINETO, 128, 512,
+    FNT_LINETO, 160, 447,
+    FNT_LINETO, 224, 384,
+    FNT_LINETO, 288, 352,
+    FNT_LINETO, 416, 352,
+    FNT_LINETO, 512, 384,
+    FNT_LINETO, 544, 449,
+
+    FNT_MOVETO, 672, 193,
+    FNT_LINETO, 0, 193,
+    FNT_MOVETO, 288, 352,
+    FNT_LINETO, 384, 352,
+    FNT_LINETO, 449, 384,
+    FNT_LINETO, 512, 480,
+    FNT_LINETO, 544, 577,
+    FNT_LINETO, 544, 768,
+    FNT_LINETO, 512, 864,
+    FNT_LINETO, 447, 961,
+    FNT_LINETO, 384, 992,
+    FNT_LINETO, 288, 992,
+    FNT_LINETO, 224, 959,
+    FNT_LINETO, 160, 864,
+    FNT_LINETO, 128, 768,
+    FNT_LINETO, 128, 575,
+    FNT_LINETO, 160, 480,
+    FNT_LINETO, 224, 384,
+    FNT_LINETO, 288, 352,
+
+    FNT_MOVETO, 672, 768,
+    FNT_LINETO, 319, 384,
+    FNT_LINETO, 672, 0,
+    FNT_MOVETO, 384, 768,
+    FNT_LINETO, 0, 384,
+    FNT_LINETO, 352, 0,
+
+    FNT_MOVETO, 0, 736,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 672, 0,
+    FNT_LINETO, 672, 736,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 0, 768,
+    FNT_LINETO, 352, 384,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 288, 768,
+    FNT_LINETO, 672, 384,
+    FNT_LINETO, 319, 0,
+
+    FNT_MOVETO, 672, 96,
+    FNT_LINETO, 0, 96,
+    FNT_MOVETO, 672, 577,
+    FNT_LINETO, 0, 577,
+    FNT_MOVETO, 352, 928,
+    FNT_LINETO, 352, 224
 };
 
-/* Enumerate the segments of a stick/arc character. */
-/* We break this out so that we can use it for calculating escapements. */
-int
-hpgl_stick_arc_segments(const hpgl_stick_segment_procs_t *procs, void *data,
-  uint char_index, floatp chord_angle)
-{	const byte *ptr;
-	const byte *end;
-	gs_int_point prev;
-	gs_int_point shift;
-	bool draw = false;
-	enum {
-	  arc_direction_other,
-	  arc_direction_vertical,
-	  arc_direction_horizontal
-	} direction = arc_direction_other;
-	int code = 0;
+/* offsets are array index into fontData for each beginning of character,
+   data goes until next index (NB. there's an extra entry for end of data)
+   (character codes start with 32)
+*/
+short int fontOffsets[] = {
+    0,
+    0,
+    21,
+    33,
+    57,
+    117,
+    201,
+    267,
+    285,
+    309,
+    333,
+    351,
+    363,
+    381,
+    387,
+    402,
+    408,
+    471,
+    486,
+    537,
+    606,
+    618,
+    669,
+    738,
+    747,
+    846,
+    915,
+    945,
+    978,
+    987,
+    999,
+    1008,
+    1056,
+    1131,
+    1146,
+    1209,
+    1263,
+    1302,
+    1320,
+    1335,
+    1398,
+    1416,
+    1434,
+    1467,
+    1488,
+    1497,
+    1512,
+    1524,
+    1587,
+    1620,
+    1689,
+    1737,
+    1809,
+    1821,
+    1857,
+    1866,
+    1881,
+    1893,
+    1908,
+    1920,
+    1932,
+    1938,
+    1950,
+    1959,
+    1965,
+    1971,
+    2043,
+    2097,
+    2139,
+    2193,
+    2244,
+    2268,
+    2346,
+    2379,
+    2400,
+    2427,
+    2448,
+    2463,
+    2523,
+    2556,
+    2607,
+    2661,
+    2715,
+    2745,
+    2817,
+    2844,
+    2877,
+    2886,
+    2901,
+    2913,
+    2934,
+    2946,
+    2991,
+    2997,
+    3042,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3066,
+    3087,
+    3111,
+    3135,
+    3162,
+    3210,
+    3237,
+    3285,
+    3291,
+    3297,
+    3306,
+    3336,
+    3360,
+    3402,
+    3447,
+    3525,
+    3531,
+    3552,
+    3579,
+    3606,
+    3669,
+    3720,
+    3756,
+    3813,
+    3834,
+    3885,
+    3960,
+    4038,
+    4065,
+    4155,
+    4209,
+    4257,
+    4338,
+    4398,
+    4458,
+    4500,
+    4578,
+    4635,
+    4692,
+    4731,
+    4809,
+    4866,
+    4923,
+    4962,
+    5064,
+    5145,
+    5226,
+    5289,
+    5331,
+    5355,
+    5424,
+    5448,
+    5547,
+    5568,
+    5625,
+    5706,
+    5751,
+    5772,
+    5865,
+    5931,
+    5955,
+    6000,
+    6075,
+    6147,
+    6168,
+    6207,
+    6303,
+    6348,
+    6408,
+    6432,
+    6456,
+    6525,
+    6594,
+    6681,
+    6756,
+    6837,
+    6918,
+    6960,
+    7005,
+    7056,
+    7104,
+    7158,
+    7173,
+    7224,
+    7266,
+    7341,
+    7347,
+    7374,
+    7425,
+    7494,
+    7551,
+    7569,
+    7584,
+    7602,
+    7620,
+    7620
+};
 
-	ptr = &arc_symbol_strokes[arc_symbol_offsets[char_index - 0x20]];
-	end = ptr + arc_symbol_counts[char_index - 0x20];
-	prev.x = prev.y = 0;
-	shift.x = shift.y = 0;
-	while ( ptr < end ) {
-	  int x = *ptr >> 4;
-	  int y = *ptr++ & 0x0f;
-	  int dx, dy;
+short int arc_font_data[] = {
+    FNT_MOVETO, 20, 1014,
+    FNT_LINETO, 20, 362,
+    FNT_MOVETO, 22, 0,
+    FNT_CURVETO, 36, 0, 42, 17, 42, 32,
+    FNT_CURVETO, 42, 47, 36, 65, 22, 65,
+    FNT_CURVETO, 6, 63, 0, 47, 0, 32,
+    FNT_CURVETO, 0, 17, 6, 0, 22, 0,
 
-	  if ( x == 0xf ) {
-	    /* Special function */
-	    switch ( (arc_op_t)y )
-	      {
-	      case arc_op_pen_up:
-		draw = false;
-		continue;
-	      case arc_op_draw_180:
-		draw = true;
-		x = (*ptr >> 4) + shift.x;
-		y = (*ptr++ & 0x0f) + shift.y;
-		code = (*procs->arc)(data, x, y, &prev, -180, chord_angle);
-		prev.x = x * 2 - prev.x, prev.y = y * 2 - prev.y;
-		break;
-	      case arc_op_draw_360:
-		draw = true;
-		x = (*ptr >> 4) + shift.x;
-		y = (*ptr++ & 0x0f) + shift.y;
-		code = (*procs->arc)(data, x, y, &prev, -360, chord_angle);
-		prev.x = x, prev.y = y;
-		break;
-	      case arc_op_line_45:
-		draw = true;
-		x = (*ptr >> 4) + shift.x;
-		y = (*ptr++ & 0x0f) + shift.y;
-		code = (*procs->line)(data, x - prev.x, y - prev.y);
-		direction =
-		  (x == prev.x && y != prev.y ? arc_direction_vertical :
-		   y == prev.y && x != prev.x ? arc_direction_horizontal :
-		   arc_direction_other);
-		prev.x = x, prev.y = y;
-		break;
-	      case arc_op_vertical:
-		direction = arc_direction_vertical;
-		continue;
-	      case arc_op_BS:
-		/****** WHAT TO DO? ******/
-		continue;
-	      case arc_op_up_5:
-		shift.y += 5;
-		continue;
-	      case arc_op_down_5:
-		shift.y -= 5;
-		continue;
-	      case arc_op_back_8:
-		shift.x += 8;
-		continue;
-	      case arc_op_forward_8:
-		shift.x -= 8;
-		continue;
-	      }
-	  } else {
-	    /* Normal segment */
-	    x += shift.x;
-	    y += shift.y;
-	    dx = x - prev.x;
-	    dy = y - prev.y;
-	    if ( !draw ) {
-	      code = (*procs->move)(data, dx, dy);
-	      direction =
-		(x == prev.x ? arc_direction_vertical :
-		 y == prev.y ? arc_direction_horizontal :
-		 arc_direction_other);
-	      draw = true;
-	    } else {
-	      if ( any_abs(dx) == any_abs(dy) &&
-		   direction != arc_direction_other
-		 ) {
-		/* 45 degree move following horizontal or vertical */
-		if ( direction == arc_direction_vertical ) {
-		  /*
-		   * If the current point is in quadrant 2 or 4 relative to
-		   * the previous, draw the arc counter-clockwise, otherwise
-		   * draw clockwise.
-		   */
-		  bool clockwise = !((dx > 0) ^ (dy > 0));
+    FNT_MOVETO, 193, 1120,
+    FNT_LINETO, 193, 852,
+    FNT_MOVETO, 0, 852,
+    FNT_LINETO, 0, 1120,
 
-		  code = (*procs->arc)(data, x, prev.y, &prev,
-				       (clockwise ? -90 : 90), chord_angle);
-		  direction = arc_direction_horizontal;
-		} else {
-		  /* direction == arc_direction_horizontal */
-		  /*
-		   * If the current point is in quadrant 2 or 4 relative to
-		   * the previous, draw the arc clockwise, otherwise
-		   * draw counter-clockwise.
-		   */
-		  bool clockwise = (dx > 0) ^ (dy > 0);
+    FNT_MOVETO, 544, 368,
+    FNT_LINETO, 0, 368,
+    FNT_MOVETO, 544, 640,
+    FNT_LINETO, 0, 640,
+    FNT_MOVETO, 278, 1024,
+    FNT_LINETO, 63, 0,
+    FNT_MOVETO, 492, 1024,
+    FNT_LINETO, 278, 0,
 
-		  code = (*procs->arc)(data, prev.x, y, &prev,
-				       (clockwise ? -90 : 90), chord_angle);
-		  direction = arc_direction_vertical;
-		}
-	      } else {
-		/* Not 45 degree case, just draw the line. */
-		code = (*procs->line)(data, dx, dy);
-		direction =
-		  (dx == 0 ? arc_direction_vertical :
-		   dy == 0 ? arc_direction_horizontal :
-		   arc_direction_other);
-	      }
-	    }
-	    prev.x = x, prev.y = y;
-	  }
-	  if ( code < 0 )
-	    break;
+    FNT_MOVETO, 256, 1152,
+    FNT_LINETO, 256, -128,
+    FNT_MOVETO, 490, 800,
+    FNT_CURVETO, 480, 928, 352, 1024, 256, 1024,
+    FNT_CURVETO, 128, 1024, 14, 922, 14, 762,
+    FNT_CURVETO, 14, 658, 75, 589, 160, 558,
+    FNT_LINETO, 256, 523,
+    FNT_CURVETO, 425, 462, 512, 430, 512, 256,
+    FNT_CURVETO, 512, 96, 416, 0, 256, 0,
+    FNT_CURVETO, 96, 0, 0, 96, 0, 256,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 530, 1024,
+    FNT_MOVETO, 297, 170,
+    FNT_CURVETO, 297, 82, 354, 0, 416, 0,
+    FNT_CURVETO, 478, 0, 535, 82, 535, 170,
+    FNT_CURVETO, 535, 258, 478, 340, 416, 340,
+    FNT_CURVETO, 354, 340, 297, 258, 297, 170,
+    FNT_MOVETO, 0, 854,
+    FNT_CURVETO, 0, 766, 57, 684, 119, 684,
+    FNT_CURVETO, 181, 684, 238, 766, 238, 854,
+    FNT_CURVETO, 238, 942, 181, 1024, 119, 1024,
+    FNT_CURVETO, 57, 1024, 0, 942, 0, 854,
+
+    FNT_MOVETO, 512, 416,
+    FNT_CURVETO, 512, 384, 416, 0, 191, 0,
+    FNT_CURVETO, 96, 0, 22, 128, 22, 256,
+    FNT_CURVETO, 22, 384, 74, 467, 202, 595,
+    FNT_CURVETO, 231, 625, 342, 726, 342, 854,
+    FNT_CURVETO, 342, 918, 305, 1021, 224, 1024,
+    FNT_CURVETO, 141, 1027, 96, 934, 96, 854,
+    FNT_CURVETO, 96, 726, 161, 679, 202, 595,
+    FNT_CURVETO, 330, 371, 423, 233, 544, 0,
+
+    FNT_MOVETO, 0, 896,
+    FNT_CURVETO, 65, 992, 53, 1152, 53, 1152,
+    FNT_MOVETO, 32, 1120,
+    FNT_CURVETO, 47, 1120, 53, 1137, 53, 1152,
+    FNT_CURVETO, 53, 1167, 47, 1184, 32, 1184,
+    FNT_CURVETO, 17, 1184, 11, 1167, 11, 1152,
+    FNT_CURVETO, 11, 1137, 17, 1120, 32, 1120,
+
+    FNT_MOVETO, 160, 1142,
+    FNT_CURVETO, 63, 982, 0, 768, 0, 512,
+    FNT_CURVETO, 0, 256, 65, 32, 160, -118,
+
+    FNT_MOVETO, 0, 1142,
+    FNT_CURVETO, 96, 982, 160, 768, 160, 512,
+    FNT_CURVETO, 160, 256, 96, 32, 0, -118,
+
+    FNT_MOVETO, 512, 512,
+    FNT_LINETO, 0, 512,
+    FNT_MOVETO, 416, 864,
+    FNT_LINETO, 96, 160,
+    FNT_MOVETO, 416, 160,
+    FNT_LINETO, 96, 864,
+
+    FNT_MOVETO, 544, 512,
+    FNT_LINETO, 0, 512,
+    FNT_MOVETO, 272, 896,
+    FNT_LINETO, 272, 128,
+
+    FNT_MOVETO, 0, -224,
+    FNT_CURVETO, 65, -128, 53, 32, 53, 32,
+    FNT_MOVETO, 32, 0,
+    FNT_CURVETO, 47, 0, 53, 17, 53, 32,
+    FNT_CURVETO, 53, 47, 47, 63, 32, 63,
+    FNT_CURVETO, 17, 64, 11, 47, 11, 32,
+    FNT_CURVETO, 11, 17, 17, 0, 32, 0,
+
+    FNT_MOVETO, 544, 512,
+    FNT_LINETO, 0, 512,
+
+    FNT_MOVETO, 22, 0,
+    FNT_CURVETO, 36, 0, 42, 17, 42, 32,
+    FNT_CURVETO, 42, 47, 36, 65, 22, 65,
+    FNT_CURVETO, 6, 63, 0, 47, 0, 32,
+    FNT_CURVETO, 0, 17, 6, 0, 22, 0,
+
+    FNT_MOVETO, 384, 1088,
+    FNT_LINETO, 0, -65,
+
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 66, -12, 256, -12,
+    FNT_CURVETO, 449, -12, 512, 256, 512, 512,
+    FNT_CURVETO, 512, 768, 449, 1036, 256, 1036,
+    FNT_CURVETO, 63, 1036, 0, 768, 0, 512,
+
+    FNT_MOVETO, 176, 0,
+    FNT_LINETO, 176, 1024,
+    FNT_CURVETO, 160, 928, 96, 800, 0, 800,
+
+    FNT_MOVETO, 16, 768,
+    FNT_CURVETO, 46, 978, 168, 1036, 232, 1036,
+    FNT_CURVETO, 296, 1036, 436, 992, 436, 768,
+    FNT_CURVETO, 436, 575, 305, 512, 145, 352,
+    FNT_CURVETO, 17, 225, 0, 128, 0, 0,
+    FNT_LINETO, 449, 0,
+
+    FNT_MOVETO, 256, 570,
+    FNT_CURVETO, 408, 560, 480, 396, 480, 268,
+    FNT_CURVETO, 480, 148, 400, -13, 240, -13,
+    FNT_CURVETO, 145, -13, 50, 66, 0, 172,
+    FNT_MOVETO, 193, 570,
+    FNT_LINETO, 256, 570,
+    FNT_CURVETO, 367, 567, 435, 672, 435, 800,
+    FNT_CURVETO, 435, 992, 307, 1036, 214, 1036,
+    FNT_CURVETO, 157, 1036, 90, 990, 39, 904,
+
+    FNT_MOVETO, 577, 288,
+    FNT_LINETO, 0, 288,
+    FNT_LINETO, 449, 1036,
+    FNT_LINETO, 449, 0,
+
+    FNT_MOVETO, 0, 193,
+    FNT_CURVETO, 40, 60, 150, 0, 209, 0,
+    FNT_CURVETO, 313, 0, 454, 96, 454, 352,
+    FNT_CURVETO, 454, 549, 352, 648, 237, 648,
+    FNT_CURVETO, 141, 648, 68, 588, 18, 512,
+    FNT_LINETO, 54, 1024,
+    FNT_LINETO, 433, 1024,
+
+    FNT_MOVETO, 416, 928,
+    FNT_CURVETO, 416, 928, 352, 1036, 256, 1036,
+    FNT_CURVETO, 128, 1036, 16, 928, 16, 512,
+    FNT_CURVETO, 16, 422, 32, 319, 32, 319,
+    FNT_CURVETO, 65, 63, 160, -12, 256, -12,
+    FNT_CURVETO, 384, -12, 480, 128, 480, 321,
+    FNT_CURVETO, 480, 480, 384, 640, 256, 640,
+    FNT_CURVETO, 160, 640, 32, 512, 32, 319,
+
+    FNT_MOVETO, 128, -32,
+    FNT_CURVETO, 128, 640, 449, 1024, 449, 1024,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 0, 288,
+    FNT_CURVETO, 0, 129, 108, -12, 240, -12,
+    FNT_CURVETO, 373, -12, 480, 129, 480, 288,
+    FNT_CURVETO, 480, 447, 373, 577, 240, 577,
+    FNT_CURVETO, 108, 577, 0, 447, 0, 288,
+    FNT_MOVETO, 288, 572,
+    FNT_CURVETO, 378, 584, 432, 682, 432, 800,
+    FNT_CURVETO, 432, 924, 367, 1036, 240, 1036,
+    FNT_CURVETO, 112, 1036, 48, 924, 48, 800,
+    FNT_CURVETO, 48, 683, 93, 587, 193, 572,
+
+    FNT_MOVETO, 80, 96,
+    FNT_CURVETO, 80, 96, 112, -12, 240, -12,
+    FNT_CURVETO, 368, -12, 480, 96, 480, 512,
+    FNT_CURVETO, 480, 602, 464, 705, 464, 705,
+    FNT_CURVETO, 432, 961, 336, 1036, 240, 1036,
+    FNT_CURVETO, 112, 1036, 16, 896, 16, 703,
+    FNT_CURVETO, 16, 544, 112, 384, 240, 384,
+    FNT_CURVETO, 336, 384, 464, 512, 464, 705,
+
+    FNT_MOVETO, 22, 0,
+    FNT_CURVETO, 36, 0, 42, 17, 42, 32,
+    FNT_CURVETO, 42, 47, 36, 65, 22, 65,
+    FNT_CURVETO, 6, 63, 0, 47, 0, 32,
+    FNT_CURVETO, 0, 17, 6, 0, 22, 0,
+    FNT_MOVETO, 22, 671,
+    FNT_CURVETO, 36, 671, 42, 689, 42, 705,
+    FNT_CURVETO, 42, 719, 36, 736, 22, 736,
+    FNT_CURVETO, 6, 736, 0, 719, 0, 703,
+    FNT_CURVETO, 0, 689, 6, 671, 22, 671,
+
+    FNT_MOVETO, 0, -224,
+    FNT_CURVETO, 65, -128, 53, 32, 53, 32,
+    FNT_MOVETO, 32, 0,
+    FNT_CURVETO, 47, 0, 53, 17, 53, 32,
+    FNT_CURVETO, 53, 47, 47, 63, 32, 63,
+    FNT_CURVETO, 17, 64, 11, 47, 11, 32,
+    FNT_CURVETO, 11, 17, 17, 0, 32, 0,
+    FNT_MOVETO, 32, 671,
+    FNT_CURVETO, 47, 671, 53, 689, 53, 705,
+    FNT_CURVETO, 53, 719, 47, 736, 32, 736,
+    FNT_CURVETO, 17, 736, 11, 719, 11, 703,
+    FNT_CURVETO, 11, 689, 17, 671, 32, 671,
+
+    FNT_MOVETO, 512, 148,
+    FNT_LINETO, 0, 512,
+    FNT_LINETO, 512, 876,
+
+    FNT_MOVETO, 522, 660,
+    FNT_LINETO, 0, 660,
+    FNT_MOVETO, 522, 372,
+    FNT_LINETO, 0, 372,
+
+    FNT_MOVETO, 0, 148,
+    FNT_LINETO, 512, 512,
+    FNT_LINETO, 0, 876,
+
+    FNT_MOVETO, 181, 0,
+    FNT_CURVETO, 196, 0, 202, 17, 202, 32,
+    FNT_CURVETO, 202, 47, 196, 65, 181, 65,
+    FNT_CURVETO, 166, 63, 160, 47, 160, 32,
+    FNT_CURVETO, 160, 17, 166, 0, 181, 0,
+    FNT_MOVETO, 182, 256,
+    FNT_CURVETO, 182, 256, 193, 438, 288, 534,
+    FNT_CURVETO, 362, 608, 384, 677, 384, 768,
+    FNT_CURVETO, 384, 896, 316, 1024, 191, 1024,
+    FNT_CURVETO, 68, 1024, 0, 864, 0, 768,
+
+    FNT_MOVETO, 432, 768,
+    FNT_LINETO, 432, 352,
+    FNT_CURVETO, 432, 316, 455, 293, 490, 293,
+    FNT_CURVETO, 577, 293, 608, 499, 608, 577,
+    FNT_CURVETO, 608, 768, 512, 1024, 319, 1024,
+    FNT_CURVETO, 128, 1024, 0, 768, 0, 512,
+    FNT_CURVETO, 0, 256, 128, 0, 321, 0,
+    FNT_CURVETO, 432, 0, 480, 32, 544, 65,
+    FNT_MOVETO, 432, 672,
+    FNT_CURVETO, 432, 672, 382, 758, 319, 758,
+    FNT_CURVETO, 224, 758, 150, 640, 150, 512,
+    FNT_CURVETO, 150, 394, 224, 256, 321, 256,
+    FNT_CURVETO, 352, 256, 416, 288, 432, 352,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 288, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 321,
+    FNT_LINETO, 480, 321,
+
+    FNT_MOVETO, 0, 1024,
+    FNT_LINETO, 0, 575,
+    FNT_LINETO, 321, 575,
+    FNT_CURVETO, 416, 575, 480, 683, 480, 800,
+    FNT_CURVETO, 480, 928, 393, 1024, 304, 1024,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 321, 575,
+    FNT_CURVETO, 480, 512, 512, 352, 512, 288,
+    FNT_CURVETO, 512, 160, 465, 0, 304, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 577,
+
+    FNT_MOVETO, 630, 736,
+    FNT_CURVETO, 575, 928, 480, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 736, 0, 512,
+    FNT_CURVETO, 0, 288, 128, -20, 321, -20,
+    FNT_CURVETO, 480, -20, 577, 96, 630, 288,
+
+    FNT_MOVETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 224, 0,
+    FNT_CURVETO, 416, 0, 544, 256, 544, 512,
+    FNT_CURVETO, 544, 764, 447, 1024, 224, 1024,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 480, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 480, 1024,
+    FNT_MOVETO, 0, 544,
+    FNT_LINETO, 449, 544,
+
+    FNT_MOVETO, 416, 1024,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 544,
+    FNT_LINETO, 384, 544,
+
+    FNT_MOVETO, 630, 736,
+    FNT_CURVETO, 575, 928, 480, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 736, 0, 512,
+    FNT_CURVETO, 0, 288, 128, -20, 321, -20,
+    FNT_CURVETO, 480, -20, 586, 96, 640, 288,
+    FNT_MOVETO, 640, 0,
+    FNT_LINETO, 640, 480,
+    FNT_LINETO, 384, 480,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 512, 0,
+    FNT_LINETO, 512, 1024,
+    FNT_MOVETO, 512, 544,
+    FNT_LINETO, 0, 544,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 0, 256,
+    FNT_LINETO, 0, 191,
+    FNT_CURVETO, 0, 63, 65, -32, 160, -32,
+    FNT_CURVETO, 321, -32, 352, 96, 352, 224,
+    FNT_LINETO, 352, 1024,
+
+    FNT_MOVETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 352,
+    FNT_LINETO, 480, 1024,
+    FNT_MOVETO, 191, 608,
+    FNT_LINETO, 512, 0,
+
+    FNT_MOVETO, 416, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 672, 0,
+    FNT_LINETO, 672, 1024,
+    FNT_LINETO, 352, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 534, 1024,
+    FNT_LINETO, 534, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, -20, 321, -20,
+    FNT_CURVETO, 544, -20, 662, 256, 662, 512,
+    FNT_CURVETO, 662, 768, 544, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 768, 0, 512,
+
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 256, 512,
+    FNT_CURVETO, 384, 512, 449, 608, 449, 768,
+    FNT_CURVETO, 449, 928, 384, 1024, 256, 1024,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 608, -32,
+    FNT_LINETO, 447, 224,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, 0, 321, 0,
+    FNT_CURVETO, 512, 0, 640, 256, 640, 512,
+    FNT_CURVETO, 640, 768, 512, 1024, 319, 1024,
+    FNT_CURVETO, 128, 1024, 0, 768, 0, 512,
+
+    FNT_MOVETO, 0, 512,
+    FNT_LINETO, 288, 512,
+    FNT_CURVETO, 416, 512, 480, 608, 480, 768,
+    FNT_CURVETO, 480, 928, 416, 1024, 288, 1024,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 288, 512,
+    FNT_CURVETO, 384, 512, 416, 480, 449, 416,
+    FNT_CURVETO, 480, 352, 480, 224, 480, 224,
+    FNT_LINETO, 490, 0,
+
+    FNT_MOVETO, 490, 854,
+    FNT_CURVETO, 447, 992, 352, 1044, 256, 1044,
+    FNT_CURVETO, 128, 1044, 22, 959, 22, 800,
+    FNT_CURVETO, 22, 705, 74, 605, 160, 575,
+    FNT_LINETO, 256, 544,
+    FNT_CURVETO, 427, 487, 512, 431, 512, 256,
+    FNT_CURVETO, 512, 96, 416, -21, 256, -21,
+    FNT_CURVETO, 96, -21, 0, 96, 0, 256,
+
+    FNT_MOVETO, 272, 1024,
+    FNT_LINETO, 272, 0,
+    FNT_MOVETO, 544, 1024,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 512, 1024,
+    FNT_LINETO, 512, 256,
+    FNT_CURVETO, 512, 96, 384, -21, 256, -21,
+    FNT_CURVETO, 128, -21, 0, 96, 0, 256,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 512, 1024,
+    FNT_LINETO, 256, 0,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 833, 1024,
+    FNT_LINETO, 608, 0,
+    FNT_LINETO, 416, 1024,
+    FNT_LINETO, 224, 0,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 512, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 544, 0,
+    FNT_LINETO, 32, 1024,
+
+    FNT_MOVETO, 272, 0,
+    FNT_LINETO, 272, 416,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 272, 416,
+    FNT_LINETO, 544, 1024,
+
+    FNT_MOVETO, 544, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 512, 1024,
+    FNT_LINETO, 32, 1024,
+
+    FNT_MOVETO, 182, -108,
+    FNT_LINETO, 0, -108,
+    FNT_LINETO, 0, 1131,
+    FNT_LINETO, 182, 1131,
+
+    FNT_MOVETO, 0, 1056,
+    FNT_LINETO, 384, -65,
+
+    FNT_MOVETO, 0, -108,
+    FNT_LINETO, 182, -108,
+    FNT_LINETO, 182, 1131,
+    FNT_LINETO, 0, 1131,
+
+    FNT_MOVETO, 321, 938,
+    FNT_LINETO, 160, 1142,
+    FNT_LINETO, 0, 938,
+
+    FNT_MOVETO, 1080, -160,
+    FNT_CURVETO, 1083, -160, 0, -160, 0, -160,
+
+    FNT_MOVETO, 193, 928,
+    FNT_LINETO, 42, 1120,
+
+    FNT_MOVETO, 394, 577,
+    FNT_LINETO, 394, 0,
+    FNT_MOVETO, 394, 160,
+    FNT_CURVETO, 330, 63, 256, 10, 191, 10,
+    FNT_CURVETO, 63, 10, 10, 94, 10, 193,
+    FNT_CURVETO, 10, 288, 66, 377, 224, 416,
+    FNT_CURVETO, 352, 449, 394, 477, 394, 608,
+    FNT_CURVETO, 394, 672, 312, 768, 224, 768,
+    FNT_CURVETO, 42, 768, 42, 586, 42, 586,
+
+    FNT_MOVETO, 0, 577,
+    FNT_CURVETO, 32, 640, 96, 736, 193, 736,
+    FNT_CURVETO, 352, 736, 426, 575, 426, 352,
+    FNT_CURVETO, 426, 160, 352, 0, 191, 0,
+    FNT_CURVETO, 96, 0, 32, 96, 0, 160,
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 426, 577,
+    FNT_CURVETO, 394, 640, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 368,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+
+    FNT_MOVETO, 426, 577,
+    FNT_CURVETO, 394, 640, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 575, 0, 352,
+    FNT_CURVETO, 0, 160, 74, 0, 234, 0,
+    FNT_CURVETO, 330, 0, 394, 96, 426, 160,
+    FNT_MOVETO, 426, 0,
+    FNT_LINETO, 426, 1024,
+
+    FNT_MOVETO, 12, 394,
+    FNT_LINETO, 449, 394,
+    FNT_CURVETO, 449, 650, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 384,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+
+    FNT_MOVETO, 246, 1024,
+    FNT_LINETO, 214, 1024,
+    FNT_CURVETO, 182, 1024, 118, 992, 118, 896,
+    FNT_LINETO, 118, 0,
+    FNT_MOVETO, 0, 704,
+    FNT_LINETO, 256, 704,
+
+    FNT_MOVETO, 436, 577,
+    FNT_CURVETO, 404, 640, 340, 736, 244, 736,
+    FNT_CURVETO, 84, 736, 10, 575, 10, 352,
+    FNT_CURVETO, 10, 160, 84, 0, 244, 0,
+    FNT_CURVETO, 340, 0, 404, 96, 436, 160,
+    FNT_MOVETO, 106, -224,
+    FNT_CURVETO, 138, -256, 178, -277, 234, -277,
+    FNT_CURVETO, 384, -277, 436, -160, 436, -32,
+    FNT_LINETO, 436, 736,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 65, 736, 160, 736, 193, 736,
+    FNT_CURVETO, 288, 736, 352, 672, 352, 480,
+    FNT_LINETO, 352, 0,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 714,
+    FNT_MOVETO, 0, 961,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 0, -256,
+    FNT_CURVETO, 96, -256, 138, -191, 138, -128,
+    FNT_LINETO, 138, 714,
+    FNT_MOVETO, 138, 961,
+    FNT_LINETO, 138, 1024,
+
+    FNT_MOVETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 256,
+    FNT_LINETO, 336, 736,
+    FNT_MOVETO, 160, 480,
+    FNT_LINETO, 384, 0,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 65, 736, 144, 736, 176, 736,
+    FNT_CURVETO, 256, 736, 321, 672, 321, 480,
+    FNT_LINETO, 321, 0,
+    FNT_MOVETO, 321, 512,
+    FNT_CURVETO, 384, 736, 464, 736, 496, 736,
+    FNT_CURVETO, 577, 736, 640, 672, 640, 480,
+    FNT_LINETO, 640, 0,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 65, 736, 160, 736, 193, 736,
+    FNT_CURVETO, 288, 736, 352, 672, 352, 480,
+    FNT_LINETO, 352, 0,
+
+    FNT_MOVETO, 234, 736,
+    FNT_CURVETO, 406, 736, 470, 544, 470, 384,
+    FNT_CURVETO, 470, 191, 406, 0, 234, 0,
+    FNT_CURVETO, 74, 0, 0, 192, 0, 384,
+    FNT_CURVETO, 0, 544, 74, 736, 234, 736,
+
+    FNT_MOVETO, 0, 577,
+    FNT_CURVETO, 32, 640, 96, 736, 193, 736,
+    FNT_CURVETO, 352, 736, 426, 575, 426, 352,
+    FNT_CURVETO, 426, 160, 352, 0, 191, 0,
+    FNT_CURVETO, 96, 0, 32, 96, 0, 160,
+    FNT_MOVETO, 0, -256,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 426, 577,
+    FNT_CURVETO, 394, 640, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 575, 0, 352,
+    FNT_CURVETO, 0, 160, 74, 0, 234, 0,
+    FNT_CURVETO, 330, 0, 394, 96, 426, 160,
+    FNT_MOVETO, 426, -256,
+    FNT_LINETO, 426, 736,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 0, 480,
+    FNT_CURVETO, 32, 705, 160, 736, 224, 736,
+
+    FNT_MOVETO, 336, 618,
+    FNT_CURVETO, 309, 707, 248, 746, 176, 746,
+    FNT_CURVETO, 90, 746, 20, 678, 20, 558,
+    FNT_CURVETO, 20, 486, 70, 412, 160, 401,
+    FNT_LINETO, 204, 396,
+    FNT_CURVETO, 313, 384, 368, 319, 368, 191,
+    FNT_CURVETO, 368, 72, 295, -10, 175, -10,
+    FNT_CURVETO, 111, -10, 35, 26, 0, 112,
+
+    FNT_MOVETO, 240, 672,
+    FNT_LINETO, 0, 672,
+    FNT_MOVETO, 256, 0,
+    FNT_LINETO, 191, 0,
+    FNT_CURVETO, 128, 0, 96, 64, 96, 160,
+    FNT_LINETO, 96, 992,
+
+    FNT_MOVETO, 352, 736,
+    FNT_LINETO, 352, 0,
+    FNT_MOVETO, 352, 224,
+    FNT_CURVETO, 288, 0, 191, 0, 160, 0,
+    FNT_CURVETO, 96, 0, 0, 64, 0, 256,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 384, 736,
+    FNT_LINETO, 191, 0,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 640, 736,
+    FNT_LINETO, 480, 0,
+    FNT_LINETO, 319, 736,
+    FNT_LINETO, 160, 0,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 394, 736,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 428, 0,
+    FNT_LINETO, 42, 736,
+
+    FNT_MOVETO, 193, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 16, -256,
+    FNT_CURVETO, 96, -256, 117, -215, 160, -128,
+    FNT_LINETO, 384, 736,
+
+    FNT_MOVETO, 416, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 394, 736,
+    FNT_LINETO, 32, 736,
+
+    FNT_MOVETO, 224, 1130,
+    FNT_LINETO, 191, 1130,
+    FNT_CURVETO, 128, 1130, 96, 1087, 96, 1024,
+    FNT_LINETO, 96, 672,
+    FNT_CURVETO, 96, 608, 96, 544, 0, 512,
+    FNT_CURVETO, 96, 480, 96, 416, 96, 352,
+    FNT_LINETO, 96, 0,
+    FNT_CURVETO, 96, -65, 128, -107, 193, -107,
+    FNT_LINETO, 224, -107,
+
+    FNT_MOVETO, 0, -118,
+    FNT_LINETO, 0, 1130,
+
+    FNT_MOVETO, 0, 1130,
+    FNT_LINETO, 32, 1130,
+    FNT_CURVETO, 96, 1130, 128, 1087, 128, 1024,
+    FNT_LINETO, 128, 672,
+    FNT_CURVETO, 128, 608, 128, 544, 224, 512,
+    FNT_CURVETO, 128, 480, 128, 416, 128, 352,
+    FNT_LINETO, 128, 0,
+    FNT_CURVETO, 128, -65, 96, -107, 32, -107,
+    FNT_LINETO, 0, -107,
+
+    FNT_MOVETO, 577, 598,
+    FNT_CURVETO, 512, 470, 480, 416, 416, 416,
+    FNT_CURVETO, 352, 416, 319, 480, 288, 512,
+    FNT_CURVETO, 256, 544, 224, 608, 160, 608,
+    FNT_CURVETO, 96, 608, 63, 544, 0, 426,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 288, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 321,
+    FNT_LINETO, 480, 321,
+    FNT_MOVETO, 352, 1184,
+    FNT_LINETO, 160, 1440,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 288, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 321,
+    FNT_LINETO, 480, 321,
+    FNT_MOVETO, 128, 1184,
+    FNT_LINETO, 288, 1376,
+    FNT_LINETO, 449, 1184,
+
+    FNT_MOVETO, 480, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 480, 1024,
+    FNT_MOVETO, 0, 544,
+    FNT_LINETO, 449, 544,
+    FNT_MOVETO, 352, 1184,
+    FNT_LINETO, 160, 1440,
+
+    FNT_MOVETO, 480, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 480, 1024,
+    FNT_MOVETO, 0, 544,
+    FNT_LINETO, 449, 544,
+    FNT_MOVETO, 63, 1184,
+    FNT_LINETO, 224, 1376,
+    FNT_LINETO, 384, 1184,
+
+    FNT_MOVETO, 480, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 480, 1024,
+    FNT_MOVETO, 0, 544,
+    FNT_LINETO, 449, 544,
+    FNT_MOVETO, 96, 1184,
+    FNT_CURVETO, 111, 1184, 117, 1201, 117, 1217,
+    FNT_CURVETO, 117, 1231, 111, 1248, 96, 1248,
+    FNT_CURVETO, 81, 1248, 75, 1231, 75, 1215,
+    FNT_CURVETO, 75, 1201, 81, 1184, 96, 1184,
+    FNT_MOVETO, 373, 1184,
+    FNT_CURVETO, 388, 1184, 395, 1201, 395, 1217,
+    FNT_CURVETO, 395, 1231, 388, 1248, 373, 1248,
+    FNT_CURVETO, 358, 1248, 353, 1231, 353, 1215,
+    FNT_CURVETO, 353, 1201, 359, 1184, 373, 1184,
+
+    FNT_MOVETO, 160, 0,
+    FNT_LINETO, 160, 1024,
+    FNT_MOVETO, 0, 1184,
+    FNT_LINETO, 160, 1376,
+    FNT_LINETO, 321, 1184,
+
+    FNT_MOVETO, 144, 0,
+    FNT_LINETO, 144, 1024,
+    FNT_MOVETO, 22, 1184,
+    FNT_CURVETO, 36, 1184, 42, 1201, 42, 1217,
+    FNT_CURVETO, 42, 1231, 36, 1248, 22, 1248,
+    FNT_CURVETO, 6, 1248, 0, 1231, 0, 1215,
+    FNT_CURVETO, 0, 1201, 6, 1184, 22, 1184,
+    FNT_MOVETO, 288, 1184,
+    FNT_CURVETO, 303, 1184, 309, 1201, 309, 1217,
+    FNT_CURVETO, 309, 1231, 303, 1248, 288, 1248,
+    FNT_CURVETO, 273, 1248, 267, 1231, 267, 1215,
+    FNT_CURVETO, 267, 1201, 273, 1184, 288, 1184,
+
+    FNT_MOVETO, 0, 1184,
+    FNT_LINETO, 193, 1440,
+
+    FNT_MOVETO, 193, 1184,
+    FNT_LINETO, 0, 1440,
+
+    FNT_MOVETO, 0, 1184,
+    FNT_LINETO, 160, 1376,
+    FNT_LINETO, 321, 1184,
+
+    FNT_MOVETO, 22, 1184,
+    FNT_CURVETO, 36, 1184, 42, 1201, 42, 1216,
+    FNT_CURVETO, 42, 1231, 36, 1248, 22, 1248,
+    FNT_CURVETO, 6, 1248, 0, 1231, 0, 1215,
+    FNT_CURVETO, 0, 1201, 6, 1184, 22, 1184,
+    FNT_MOVETO, 299, 1184,
+    FNT_CURVETO, 314, 1184, 320, 1201, 320, 1216,
+    FNT_CURVETO, 319, 1231, 314, 1248, 299, 1248,
+    FNT_CURVETO, 284, 1248, 279, 1231, 278, 1215,
+    FNT_CURVETO, 278, 1201, 284, 1184, 299, 1184,
+
+    FNT_MOVETO, 411, 1312,
+    FNT_CURVETO, 357, 1215, 325, 1192, 293, 1192,
+    FNT_CURVETO, 261, 1192, 236, 1218, 204, 1251,
+    FNT_CURVETO, 172, 1283, 140, 1312, 108, 1312,
+    FNT_CURVETO, 76, 1312, 54, 1288, 0, 1192,
+
+    FNT_MOVETO, 512, 1024,
+    FNT_LINETO, 512, 256,
+    FNT_CURVETO, 512, 96, 384, -21, 256, -21,
+    FNT_CURVETO, 128, -21, 0, 96, 0, 256,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 352, 1184,
+    FNT_LINETO, 160, 1440,
+
+    FNT_MOVETO, 512, 1024,
+    FNT_LINETO, 512, 256,
+    FNT_CURVETO, 512, 96, 384, -21, 256, -21,
+    FNT_CURVETO, 128, -21, 0, 96, 0, 256,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 96, 1184,
+    FNT_LINETO, 256, 1376,
+    FNT_LINETO, 416, 1184,
+
+    FNT_MOVETO, 577, 128,
+    FNT_CURVETO, 560, 96, 512, -12, 416, -12,
+    FNT_CURVETO, 319, -12, 271, 82, 256, 128,
+    FNT_CURVETO, 224, 224, 191, 288, 96, 288,
+    FNT_CURVETO, 32, 288, 0, 192, 0, 160,
+    FNT_CURVETO, 0, 63, 32, 0, 96, 0,
+    FNT_CURVETO, 160, 0, 193, 32, 256, 128,
+    FNT_CURVETO, 256, 128, 272, 193, 272, 256,
+    FNT_LINETO, 272, 800,
+    FNT_CURVETO, 272, 896, 321, 1024, 416, 1024,
+    FNT_CURVETO, 480, 1024, 544, 959, 544, 831,
+    FNT_MOVETO, 416, 512,
+    FNT_LINETO, 128, 512,
+    FNT_MOVETO, 416, 656,
+    FNT_LINETO, 128, 656,
+
+    FNT_MOVETO, 833, 1184,
+    FNT_CURVETO, 830, 1184, 0, 1184, 0, 1184,
+
+    FNT_MOVETO, 272, 0,
+    FNT_LINETO, 272, 416,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 272, 416,
+    FNT_LINETO, 544, 1024,
+    FNT_MOVETO, 160, 1184,
+    FNT_LINETO, 352, 1440,
+
+    FNT_MOVETO, 193, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 16, -256,
+    FNT_CURVETO, 96, -256, 117, -215, 160, -128,
+    FNT_LINETO, 384, 736,
+    FNT_MOVETO, 160, 928,
+    FNT_LINETO, 288, 1120,
+
+    FNT_MOVETO, 56, 1020,
+    FNT_CURVETO, 96, 1020, 115, 1065, 115, 1106,
+    FNT_CURVETO, 115, 1148, 96, 1192, 56, 1192,
+    FNT_CURVETO, 15, 1192, -3, 1147, -3, 1106,
+    FNT_CURVETO, -3, 1065, 15, 1020, 56, 1020,
+
+    FNT_MOVETO, 336, -28,
+    FNT_LINETO, 433, -138,
+    FNT_LINETO, 335, -310,
+    FNT_MOVETO, 586, 854,
+    FNT_CURVETO, 512, 960, 447, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 736, 0, 512,
+    FNT_CURVETO, 0, 288, 128, -21, 321, -21,
+    FNT_CURVETO, 512, -21, 608, 160, 630, 288,
+
+    FNT_MOVETO, 234, -2,
+    FNT_LINETO, 310, -138,
+    FNT_LINETO, 212, -278,
+    FNT_MOVETO, 426, 577,
+    FNT_CURVETO, 394, 640, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 368,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+
+    FNT_MOVETO, 470, 1312,
+    FNT_CURVETO, 416, 1215, 384, 1192, 352, 1192,
+    FNT_CURVETO, 319, 1192, 295, 1218, 263, 1251,
+    FNT_CURVETO, 231, 1283, 199, 1312, 167, 1312,
+    FNT_CURVETO, 135, 1312, 113, 1288, 59, 1192,
+    FNT_MOVETO, 534, 1024,
+    FNT_LINETO, 534, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 0, 0,
+
+    FNT_MOVETO, 0, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 65, 736, 160, 736, 193, 736,
+    FNT_CURVETO, 288, 736, 352, 672, 352, 480,
+    FNT_LINETO, 352, 0,
+    FNT_MOVETO, 374, 1048,
+    FNT_CURVETO, 319, 952, 288, 928, 256, 928,
+    FNT_CURVETO, 224, 928, 199, 955, 167, 987,
+    FNT_CURVETO, 135, 1019, 103, 1048, 71, 1048,
+    FNT_CURVETO, 39, 1048, 17, 1024, -37, 928,
+
+    FNT_MOVETO, 16, -278,
+    FNT_LINETO, 16, 394,
+    FNT_MOVETO, 22, 736,
+    FNT_CURVETO, 36, 736, 42, 719, 42, 703,
+    FNT_CURVETO, 42, 689, 36, 672, 22, 672,
+    FNT_CURVETO, 6, 672, 0, 689, 0, 705,
+    FNT_CURVETO, 0, 719, 6, 736, 22, 736,
+
+    FNT_MOVETO, 213, 738,
+    FNT_CURVETO, 198, 738, 191, 721, 191, 706,
+    FNT_CURVETO, 193, 691, 198, 674, 213, 674,
+    FNT_CURVETO, 228, 674, 234, 721, 234, 706,
+    FNT_CURVETO, 233, 691, 228, 738, 213, 738,
+    FNT_MOVETO, 212, 482,
+    FNT_CURVETO, 212, 482, 202, 300, 106, 204,
+    FNT_CURVETO, 32, 129, 10, 60, 10, -30,
+    FNT_CURVETO, 10, -158, 77, -286, 202, -286,
+    FNT_CURVETO, 327, -287, 394, -126, 394, -30,
+
+    FNT_MOVETO, 118, 171,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 288, 128, 96, 288, 96,
+    FNT_CURVETO, 449, 96, 588, 288, 588, 512,
+    FNT_CURVETO, 588, 736, 447, 928, 288, 928,
+    FNT_CURVETO, 128, 928, 0, 736, 0, 512,
+    FNT_MOVETO, 118, 853,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 458, 853,
+    FNT_LINETO, 577, 1024,
+    FNT_MOVETO, 458, 171,
+    FNT_LINETO, 577, 0,
+
+    FNT_MOVETO, 577, 128,
+    FNT_CURVETO, 560, 96, 512, -12, 416, -12,
+    FNT_CURVETO, 319, -12, 271, 82, 256, 128,
+    FNT_CURVETO, 224, 224, 191, 288, 96, 288,
+    FNT_CURVETO, 32, 288, 0, 192, 0, 160,
+    FNT_CURVETO, 0, 63, 32, 0, 96, 0,
+    FNT_CURVETO, 160, 0, 193, 32, 256, 128,
+    FNT_CURVETO, 256, 128, 272, 193, 272, 256,
+    FNT_LINETO, 272, 800,
+    FNT_CURVETO, 272, 896, 321, 1024, 416, 1024,
+    FNT_CURVETO, 480, 1024, 544, 959, 544, 831,
+    FNT_MOVETO, 416, 652,
+    FNT_LINETO, 128, 652,
+
+    FNT_MOVETO, 236, 0,
+    FNT_LINETO, 236, 705,
+    FNT_LINETO, 0, 1162,
+    FNT_MOVETO, 236, 703,
+    FNT_LINETO, 492, 1162,
+    FNT_MOVETO, 490, 703,
+    FNT_LINETO, 0, 703,
+    FNT_MOVETO, 490, 480,
+    FNT_LINETO, 0, 480,
+
+    FNT_MOVETO, 288, 256,
+    FNT_CURVETO, 321, 256, 325, 256, 352, 256,
+    FNT_CURVETO, 416, 256, 480, 358, 480, 449,
+    FNT_CURVETO, 480, 526, 472, 584, 416, 640,
+    FNT_CURVETO, 321, 736, 288, 768, 160, 896,
+    FNT_CURVETO, 100, 955, 113, 992, 113, 1024,
+    FNT_CURVETO, 113, 1152, 193, 1232, 256, 1232,
+    FNT_CURVETO, 352, 1232, 394, 1120, 394, 992,
+    FNT_MOVETO, 191, 864,
+    FNT_CURVETO, 160, 864, 156, 864, 128, 864,
+    FNT_CURVETO, 63, 864, 0, 762, 0, 672,
+    FNT_CURVETO, 0, 594, 8, 536, 65, 480,
+    FNT_CURVETO, 160, 384, 191, 352, 321, 224,
+    FNT_CURVETO, 379, 165, 406, 128, 406, 32,
+    FNT_CURVETO, 406, -83, 355, -202, 240, -202,
+    FNT_CURVETO, 144, -202, 80, -63, 80, 32,
+
+    FNT_MOVETO, 0, -118,
+    FNT_CURVETO, 0, -182, 32, -256, 96, -256,
+    FNT_CURVETO, 160, -256, 193, -160, 193, -128,
+    FNT_LINETO, 193, 896,
+    FNT_CURVETO, 193, 928, 224, 1024, 288, 1024,
+    FNT_CURVETO, 352, 1024, 384, 950, 384, 886,
+    FNT_MOVETO, 310, 703,
+    FNT_LINETO, 63, 703,
+
+    FNT_MOVETO, 235, -224,
+    FNT_LINETO, 235, 864,
+    FNT_MOVETO, 426, 575,
+    FNT_CURVETO, 394, 640, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 368,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+
+    FNT_MOVETO, 394, 577,
+    FNT_LINETO, 394, 0,
+    FNT_MOVETO, 394, 160,
+    FNT_CURVETO, 330, 63, 256, 10, 191, 10,
+    FNT_CURVETO, 63, 10, 10, 94, 10, 193,
+    FNT_CURVETO, 10, 288, 66, 377, 224, 416,
+    FNT_CURVETO, 352, 449, 394, 477, 394, 608,
+    FNT_CURVETO, 394, 672, 312, 768, 224, 768,
+    FNT_CURVETO, 42, 768, 42, 586, 42, 586,
+    FNT_MOVETO, 65, 928,
+    FNT_LINETO, 224, 1120,
+    FNT_LINETO, 384, 928,
+
+    FNT_MOVETO, 12, 394,
+    FNT_LINETO, 449, 394,
+    FNT_CURVETO, 449, 650, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 384,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+    FNT_MOVETO, 63, 928,
+    FNT_LINETO, 224, 1120,
+    FNT_LINETO, 384, 928,
+
+    FNT_MOVETO, 65, 928,
+    FNT_LINETO, 224, 1120,
+    FNT_LINETO, 384, 928,
+    FNT_MOVETO, 234, 736,
+    FNT_CURVETO, 406, 736, 470, 544, 470, 384,
+    FNT_CURVETO, 470, 191, 406, 0, 234, 0,
+    FNT_CURVETO, 74, 0, 0, 192, 0, 384,
+    FNT_CURVETO, 0, 544, 74, 736, 234, 736,
+
+    FNT_MOVETO, 352, 736,
+    FNT_LINETO, 352, 0,
+    FNT_MOVETO, 352, 224,
+    FNT_CURVETO, 288, 0, 191, 0, 160, 0,
+    FNT_CURVETO, 96, 0, 0, 64, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 32, 928,
+    FNT_LINETO, 193, 1120,
+    FNT_LINETO, 352, 928,
+
+    FNT_MOVETO, 394, 577,
+    FNT_LINETO, 394, 0,
+    FNT_MOVETO, 394, 160,
+    FNT_CURVETO, 330, 63, 256, 10, 191, 10,
+    FNT_CURVETO, 63, 10, 10, 94, 10, 193,
+    FNT_CURVETO, 10, 288, 66, 377, 224, 416,
+    FNT_CURVETO, 352, 449, 394, 477, 394, 608,
+    FNT_CURVETO, 394, 672, 312, 768, 224, 768,
+    FNT_CURVETO, 42, 768, 42, 586, 42, 586,
+    FNT_MOVETO, 160, 928,
+    FNT_LINETO, 352, 1184,
+
+    FNT_MOVETO, 12, 394,
+    FNT_LINETO, 449, 394,
+    FNT_CURVETO, 449, 650, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 384,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+    FNT_MOVETO, 160, 928,
+    FNT_LINETO, 352, 1184,
+
+    FNT_MOVETO, 160, 928,
+    FNT_LINETO, 352, 1184,
+    FNT_MOVETO, 234, 736,
+    FNT_CURVETO, 406, 736, 470, 544, 470, 384,
+    FNT_CURVETO, 470, 191, 406, 0, 234, 0,
+    FNT_CURVETO, 74, 0, 0, 192, 0, 384,
+    FNT_CURVETO, 0, 544, 74, 736, 234, 736,
+
+    FNT_MOVETO, 352, 736,
+    FNT_LINETO, 352, 0,
+    FNT_MOVETO, 352, 224,
+    FNT_CURVETO, 288, 0, 191, 0, 160, 0,
+    FNT_CURVETO, 96, 0, 0, 64, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 160, 928,
+    FNT_LINETO, 352, 1184,
+
+    FNT_MOVETO, 394, 577,
+    FNT_LINETO, 394, 0,
+    FNT_MOVETO, 394, 160,
+    FNT_CURVETO, 330, 63, 256, 10, 191, 10,
+    FNT_CURVETO, 63, 10, 10, 94, 10, 193,
+    FNT_CURVETO, 10, 288, 66, 377, 224, 416,
+    FNT_CURVETO, 352, 449, 394, 477, 394, 608,
+    FNT_CURVETO, 394, 672, 312, 768, 224, 768,
+    FNT_CURVETO, 42, 768, 42, 586, 42, 586,
+    FNT_MOVETO, 256, 928,
+    FNT_LINETO, 63, 1184,
+
+    FNT_MOVETO, 12, 394,
+    FNT_LINETO, 449, 394,
+    FNT_CURVETO, 449, 650, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 384,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+    FNT_MOVETO, 256, 928,
+    FNT_LINETO, 63, 1184,
+
+    FNT_MOVETO, 256, 928,
+    FNT_LINETO, 63, 1184,
+    FNT_MOVETO, 234, 736,
+    FNT_CURVETO, 406, 736, 470, 544, 470, 384,
+    FNT_CURVETO, 470, 191, 406, 0, 234, 0,
+    FNT_CURVETO, 74, 0, 0, 192, 0, 384,
+    FNT_CURVETO, 0, 544, 74, 736, 234, 736,
+
+    FNT_MOVETO, 352, 736,
+    FNT_LINETO, 352, 0,
+    FNT_MOVETO, 352, 224,
+    FNT_CURVETO, 288, 0, 191, 0, 160, 0,
+    FNT_CURVETO, 96, 0, 0, 64, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 256, 928,
+    FNT_LINETO, 63, 1184,
+
+    FNT_MOVETO, 394, 577,
+    FNT_LINETO, 394, 0,
+    FNT_MOVETO, 394, 160,
+    FNT_CURVETO, 330, 63, 256, 10, 191, 10,
+    FNT_CURVETO, 63, 10, 10, 94, 10, 193,
+    FNT_CURVETO, 10, 288, 66, 377, 224, 416,
+    FNT_CURVETO, 352, 449, 394, 477, 394, 608,
+    FNT_CURVETO, 394, 672, 312, 768, 224, 768,
+    FNT_CURVETO, 42, 768, 42, 586, 42, 586,
+    FNT_MOVETO, 69, 926,
+    FNT_CURVETO, 84, 926, 90, 943, 90, 958,
+    FNT_CURVETO, 90, 974, 85, 992, 69, 992,
+    FNT_CURVETO, 53, 992, 48, 974, 48, 958,
+    FNT_CURVETO, 48, 943, 54, 926, 69, 926,
+    FNT_MOVETO, 347, 926,
+    FNT_CURVETO, 361, 926, 368, 943, 368, 958,
+    FNT_CURVETO, 369, 974, 363, 992, 347, 992,
+    FNT_CURVETO, 332, 992, 326, 974, 326, 958,
+    FNT_CURVETO, 327, 943, 332, 927, 347, 926,
+
+    FNT_MOVETO, 12, 394,
+    FNT_LINETO, 449, 394,
+    FNT_CURVETO, 449, 650, 330, 736, 234, 736,
+    FNT_CURVETO, 74, 736, 0, 544, 0, 384,
+    FNT_CURVETO, 0, 191, 74, 0, 234, 0,
+    FNT_CURVETO, 352, 0, 394, 96, 426, 160,
+    FNT_MOVETO, 69, 926,
+    FNT_CURVETO, 84, 926, 90, 943, 90, 958,
+    FNT_CURVETO, 90, 974, 85, 992, 69, 992,
+    FNT_CURVETO, 53, 992, 48, 974, 48, 958,
+    FNT_CURVETO, 48, 943, 54, 926, 69, 926,
+    FNT_MOVETO, 347, 926,
+    FNT_CURVETO, 361, 926, 368, 943, 368, 958,
+    FNT_CURVETO, 369, 974, 362, 992, 347, 992,
+    FNT_CURVETO, 332, 992, 326, 974, 326, 958,
+    FNT_CURVETO, 327, 943, 332, 927, 347, 926,
+
+    FNT_MOVETO, 69, 926,
+    FNT_CURVETO, 84, 926, 90, 943, 90, 958,
+    FNT_CURVETO, 90, 974, 85, 992, 69, 992,
+    FNT_CURVETO, 53, 992, 48, 974, 48, 958,
+    FNT_CURVETO, 48, 943, 54, 926, 69, 926,
+    FNT_MOVETO, 347, 926,
+    FNT_CURVETO, 361, 926, 368, 943, 368, 958,
+    FNT_CURVETO, 369, 974, 362, 992, 347, 992,
+    FNT_CURVETO, 332, 992, 326, 974, 326, 958,
+    FNT_CURVETO, 327, 943, 332, 927, 347, 926,
+    FNT_MOVETO, 234, 736,
+    FNT_CURVETO, 406, 736, 470, 544, 470, 384,
+    FNT_CURVETO, 470, 191, 406, 0, 234, 0,
+    FNT_CURVETO, 74, 0, 0, 192, 0, 384,
+    FNT_CURVETO, 0, 544, 74, 736, 234, 736,
+
+    FNT_MOVETO, 352, 736,
+    FNT_LINETO, 352, 0,
+    FNT_MOVETO, 352, 224,
+    FNT_CURVETO, 288, 0, 191, 0, 160, 0,
+    FNT_CURVETO, 96, 0, 0, 64, 0, 256,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 45, 926,
+    FNT_CURVETO, 60, 926, 65, 943, 65, 958,
+    FNT_CURVETO, 66, 974, 60, 992, 45, 992,
+    FNT_CURVETO, 30, 992, 23, 974, 23, 958,
+    FNT_CURVETO, 24, 943, 29, 926, 45, 926,
+    FNT_MOVETO, 323, 926,
+    FNT_CURVETO, 338, 926, 344, 943, 344, 958,
+    FNT_CURVETO, 344, 974, 339, 992, 323, 992,
+    FNT_CURVETO, 307, 992, 302, 974, 302, 958,
+    FNT_CURVETO, 302, 943, 308, 926, 323, 926,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 288, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 321,
+    FNT_LINETO, 480, 321,
+    FNT_MOVETO, 288, 1025,
+    FNT_CURVETO, 329, 1025, 347, 1070, 347, 1111,
+    FNT_CURVETO, 347, 1153, 329, 1197, 288, 1197,
+    FNT_CURVETO, 248, 1197, 229, 1152, 229, 1111,
+    FNT_CURVETO, 229, 1070, 248, 1025, 288, 1025,
+
+    FNT_MOVETO, 96, 0,
+    FNT_LINETO, 96, 714,
+    FNT_MOVETO, -65, 928,
+    FNT_LINETO, 96, 1120,
+    FNT_LINETO, 256, 928,
+
+    FNT_MOVETO, 640, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, 0, 321, 0,
+    FNT_CURVETO, 512, 0, 640, 256, 640, 512,
+    FNT_CURVETO, 640, 768, 512, 1024, 319, 1024,
+    FNT_CURVETO, 128, 1024, 0, 768, 0, 512,
+
+    FNT_MOVETO, 608, 1024,
+    FNT_LINETO, 319, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 321, 1024,
+    FNT_LINETO, 321, 0,
+    FNT_LINETO, 608, 0,
+    FNT_MOVETO, 160, 512,
+    FNT_LINETO, 608, 512,
+
+    FNT_MOVETO, 219, 928,
+    FNT_CURVETO, 260, 928, 277, 974, 277, 1014,
+    FNT_CURVETO, 277, 1056, 260, 1100, 219, 1100,
+    FNT_CURVETO, 178, 1100, 160, 1055, 160, 1014,
+    FNT_CURVETO, 160, 974, 178, 928, 219, 928,
+    FNT_MOVETO, 394, 575,
+    FNT_LINETO, 394, 0,
+    FNT_MOVETO, 394, 160,
+    FNT_CURVETO, 330, 63, 256, 10, 191, 10,
+    FNT_CURVETO, 63, 10, 10, 94, 10, 193,
+    FNT_CURVETO, 10, 288, 66, 377, 224, 416,
+    FNT_CURVETO, 352, 449, 394, 477, 394, 608,
+    FNT_CURVETO, 394, 672, 312, 768, 224, 768,
+    FNT_CURVETO, 42, 768, 42, 586, 42, 586,
+
+    FNT_MOVETO, 256, 1184,
+    FNT_LINETO, 63, 928,
+    FNT_MOVETO, 96, 0,
+    FNT_LINETO, 96, 714,
+
+    FNT_MOVETO, 416, 736,
+    FNT_LINETO, 63, 0,
+    FNT_MOVETO, 234, 736,
+    FNT_CURVETO, 406, 736, 470, 544, 470, 384,
+    FNT_CURVETO, 470, 191, 406, 0, 234, 0,
+    FNT_CURVETO, 74, 0, 0, 192, 0, 384,
+    FNT_CURVETO, 0, 544, 74, 736, 234, 736,
+
+    FNT_MOVETO, 273, 193,
+    FNT_CURVETO, 273, 63, 192, 0, 128, 0,
+    FNT_CURVETO, 63, 0, 0, 64, 0, 193,
+    FNT_CURVETO, 0, 352, 96, 416, 256, 416,
+    FNT_LINETO, 544, 416,
+    FNT_LINETO, 544, 577,
+    FNT_CURVETO, 544, 672, 480, 736, 416, 736,
+    FNT_CURVETO, 352, 736, 273, 671, 273, 544,
+    FNT_LINETO, 273, 191,
+    FNT_CURVETO, 273, 63, 352, 0, 416, 0,
+    FNT_CURVETO, 512, 0, 544, 96, 544, 193,
+    FNT_MOVETO, 272, 543,
+    FNT_CURVETO, 272, 672, 224, 736, 128, 736,
+    FNT_CURVETO, 96, 736, 0, 671, 0, 543,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 288, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 321,
+    FNT_LINETO, 480, 321,
+    FNT_MOVETO, 160, 1184,
+    FNT_CURVETO, 175, 1184, 181, 1201, 181, 1217,
+    FNT_CURVETO, 181, 1231, 175, 1248, 160, 1248,
+    FNT_CURVETO, 145, 1248, 139, 1231, 139, 1215,
+    FNT_CURVETO, 139, 1201, 146, 1184, 160, 1184,
+    FNT_MOVETO, 427, 1184,
+    FNT_CURVETO, 442, 1184, 448, 1201, 448, 1217,
+    FNT_CURVETO, 447, 1231, 442, 1248, 427, 1248,
+    FNT_CURVETO, 412, 1248, 407, 1231, 406, 1215,
+    FNT_CURVETO, 406, 1201, 412, 1184, 427, 1184,
+
+    FNT_MOVETO, 96, 0,
+    FNT_LINETO, 96, 714,
+    FNT_MOVETO, 96, 928,
+    FNT_LINETO, -96, 1184,
+
+    FNT_MOVETO, 188, 1184,
+    FNT_CURVETO, 203, 1185, 209, 1201, 209, 1216,
+    FNT_CURVETO, 209, 1231, 203, 1247, 188, 1248,
+    FNT_CURVETO, 173, 1248, 167, 1231, 167, 1215,
+    FNT_CURVETO, 167, 1201, 173, 1184, 188, 1184,
+    FNT_MOVETO, 455, 1184,
+    FNT_CURVETO, 470, 1184, 476, 1201, 476, 1216,
+    FNT_CURVETO, 476, 1231, 470, 1248, 455, 1248,
+    FNT_CURVETO, 440, 1248, 434, 1231, 434, 1215,
+    FNT_CURVETO, 434, 1201, 440, 1184, 455, 1184,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, -21, 321, -21,
+    FNT_CURVETO, 544, -21, 662, 256, 662, 512,
+    FNT_CURVETO, 662, 768, 544, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 768, 0, 512,
+
+    FNT_MOVETO, 512, 1024,
+    FNT_LINETO, 512, 256,
+    FNT_CURVETO, 512, 96, 384, -21, 256, -21,
+    FNT_CURVETO, 128, -21, 0, 96, 0, 256,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 122, 1184,
+    FNT_CURVETO, 137, 1184, 143, 1201, 143, 1217,
+    FNT_CURVETO, 143, 1231, 137, 1248, 122, 1248,
+    FNT_CURVETO, 108, 1248, 101, 1231, 101, 1215,
+    FNT_CURVETO, 101, 1201, 107, 1184, 122, 1184,
+    FNT_MOVETO, 389, 1184,
+    FNT_CURVETO, 403, 1184, 411, 1201, 410, 1217,
+    FNT_CURVETO, 410, 1231, 403, 1248, 389, 1248,
+    FNT_CURVETO, 374, 1248, 369, 1231, 368, 1215,
+    FNT_CURVETO, 368, 1201, 374, 1184, 389, 1184,
+
+    FNT_MOVETO, 480, 0,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 0, 1024,
+    FNT_LINETO, 480, 1024,
+    FNT_MOVETO, 0, 544,
+    FNT_LINETO, 449, 544,
+    FNT_MOVETO, 224, 1184,
+    FNT_LINETO, 416, 1440,
+
+    FNT_MOVETO, 193, 0,
+    FNT_LINETO, 193, 714,
+    FNT_MOVETO, 22, 926,
+    FNT_CURVETO, 36, 926, 42, 943, 42, 958,
+    FNT_CURVETO, 42, 974, 37, 992, 22, 992,
+    FNT_CURVETO, 5, 992, 0, 974, 0, 958,
+    FNT_CURVETO, 0, 943, 6, 926, 22, 926,
+    FNT_MOVETO, 299, 926,
+    FNT_CURVETO, 314, 926, 319, 943, 319, 958,
+    FNT_CURVETO, 320, 974, 314, 992, 299, 992,
+    FNT_CURVETO, 284, 992, 278, 974, 278, 958,
+    FNT_CURVETO, 279, 943, 284, 926, 299, 926,
+
+    FNT_MOVETO, 193, 577,
+    FNT_LINETO, 256, 577,
+    FNT_CURVETO, 384, 608, 406, 705, 406, 800,
+    FNT_CURVETO, 406, 935, 336, 1040, 208, 1040,
+    FNT_CURVETO, 63, 1040, 0, 928, 0, 800,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 256, 577,
+    FNT_CURVETO, 384, 544, 449, 447, 449, 256,
+    FNT_CURVETO, 449, 128, 352, -13, 224, -13,
+    FNT_CURVETO, 128, 0, 96, 32, 96, 32,
+
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, -20, 321, -20,
+    FNT_CURVETO, 544, -20, 662, 256, 662, 512,
+    FNT_CURVETO, 662, 768, 544, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 768, 0, 512,
+    FNT_MOVETO, 160, 1184,
+    FNT_LINETO, 321, 1376,
+    FNT_LINETO, 480, 1184,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 288, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 321,
+    FNT_LINETO, 480, 321,
+    FNT_MOVETO, 224, 1184,
+    FNT_LINETO, 416, 1440,
+
+    FNT_MOVETO, 577, 0,
+    FNT_LINETO, 288, 1024,
+    FNT_LINETO, 0, 0,
+    FNT_MOVETO, 96, 321,
+    FNT_LINETO, 480, 321,
+    FNT_MOVETO, 495, 1312,
+    FNT_CURVETO, 441, 1215, 409, 1192, 377, 1192,
+    FNT_CURVETO, 345, 1192, 319, 1219, 288, 1251,
+    FNT_CURVETO, 256, 1283, 224, 1312, 191, 1312,
+    FNT_CURVETO, 160, 1312, 138, 1288, 84, 1192,
+
+    FNT_MOVETO, 394, 577,
+    FNT_LINETO, 394, 0,
+    FNT_MOVETO, 394, 160,
+    FNT_CURVETO, 330, 63, 256, 10, 191, 10,
+    FNT_CURVETO, 63, 10, 10, 94, 10, 193,
+    FNT_CURVETO, 10, 288, 66, 377, 224, 416,
+    FNT_CURVETO, 352, 449, 394, 477, 394, 608,
+    FNT_CURVETO, 394, 672, 312, 768, 224, 768,
+    FNT_CURVETO, 42, 768, 42, 586, 42, 586,
+    FNT_MOVETO, 416, 1056,
+    FNT_CURVETO, 362, 959, 330, 936, 298, 936,
+    FNT_CURVETO, 266, 936, 241, 963, 209, 995,
+    FNT_CURVETO, 177, 1027, 145, 1056, 113, 1056,
+    FNT_CURVETO, 81, 1056, 59, 1032, 5, 936,
+
+    FNT_MOVETO, 256, 512,
+    FNT_LINETO, 0, 512,
+    FNT_MOVETO, 128, 1024,
+    FNT_LINETO, 128, 0,
+    FNT_LINETO, 352, 0,
+    FNT_CURVETO, 544, 0, 672, 256, 672, 512,
+    FNT_CURVETO, 672, 764, 575, 1024, 352, 1024,
+    FNT_LINETO, 128, 1024,
+
+    FNT_MOVETO, 326, 1042,
+    FNT_LINETO, 19, 760,
+    FNT_MOVETO, 381, 506,
+    FNT_CURVETO, 342, 608, 269, 836, 19, 1038,
+    FNT_MOVETO, 202, 612,
+    FNT_CURVETO, 321, 612, 421, 512, 421, 319,
+    FNT_CURVETO, 421, 152, 344, 0, 202, 0,
+    FNT_CURVETO, 96, 0, 0, 152, 0, 321,
+    FNT_CURVETO, 0, 460, 96, 612, 202, 612,
+
+    FNT_MOVETO, 96, 0,
+    FNT_LINETO, 96, 1024,
+    FNT_MOVETO, 48, 1184,
+    FNT_LINETO, 240, 1440,
+
+    FNT_MOVETO, 96, 0,
+    FNT_LINETO, 96, 1024,
+    FNT_MOVETO, 96, 1184,
+    FNT_LINETO, -96, 1440,
+
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, -20, 321, -20,
+    FNT_CURVETO, 544, -20, 662, 256, 662, 512,
+    FNT_CURVETO, 662, 768, 544, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 768, 0, 512,
+    FNT_MOVETO, 224, 1184,
+    FNT_LINETO, 416, 1440,
+
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, -20, 321, -20,
+    FNT_CURVETO, 544, -20, 662, 256, 662, 512,
+    FNT_CURVETO, 662, 768, 544, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 768, 0, 512,
+    FNT_MOVETO, 416, 1184,
+    FNT_LINETO, 224, 1440,
+
+    FNT_MOVETO, 512, 1312,
+    FNT_CURVETO, 458, 1215, 426, 1192, 394, 1192,
+    FNT_CURVETO, 362, 1192, 337, 1218, 305, 1251,
+    FNT_CURVETO, 273, 1283, 241, 1312, 209, 1312,
+    FNT_CURVETO, 177, 1312, 155, 1288, 101, 1192,
+    FNT_MOVETO, 0, 512,
+    FNT_CURVETO, 0, 256, 128, -21, 321, -21,
+    FNT_CURVETO, 544, -21, 662, 256, 662, 512,
+    FNT_CURVETO, 662, 768, 544, 1044, 319, 1044,
+    FNT_CURVETO, 128, 1044, 0, 768, 0, 512,
+
+    FNT_MOVETO, 234, 736,
+    FNT_CURVETO, 364, 736, 470, 544, 470, 384,
+    FNT_CURVETO, 470, 191, 407, 0, 234, 0,
+    FNT_CURVETO, 74, 0, 0, 192, 0, 384,
+    FNT_CURVETO, 0, 544, 74, 736, 234, 736,
+    FNT_MOVETO, 449, 1056,
+    FNT_CURVETO, 394, 959, 362, 936, 330, 936,
+    FNT_CURVETO, 298, 936, 273, 962, 241, 995,
+    FNT_CURVETO, 209, 1027, 177, 1056, 145, 1056,
+    FNT_CURVETO, 113, 1056, 91, 1032, 37, 936,
+
+    FNT_MOVETO, 431, 1344,
+    FNT_LINETO, 256, 1184,
+    FNT_LINETO, 79, 1344,
+    FNT_MOVETO, 490, 854,
+    FNT_CURVETO, 447, 992, 352, 1044, 256, 1044,
+    FNT_CURVETO, 128, 1044, 22, 959, 22, 800,
+    FNT_CURVETO, 22, 704, 74, 605, 160, 575,
+    FNT_LINETO, 256, 544,
+    FNT_CURVETO, 427, 487, 512, 431, 512, 256,
+    FNT_CURVETO, 512, 96, 416, -21, 256, -21,
+    FNT_CURVETO, 96, -21, 0, 96, 0, 256,
+
+    FNT_MOVETO, 367, 1075,
+    FNT_LINETO, 191, 915,
+    FNT_LINETO, 15, 1075,
+    FNT_MOVETO, 336, 618,
+    FNT_CURVETO, 309, 706, 248, 746, 176, 746,
+    FNT_CURVETO, 90, 746, 20, 678, 20, 558,
+    FNT_CURVETO, 20, 486, 70, 412, 160, 401,
+    FNT_LINETO, 204, 396,
+    FNT_CURVETO, 313, 384, 368, 319, 368, 191,
+    FNT_CURVETO, 368, 72, 295, -10, 175, -10,
+    FNT_CURVETO, 111, -10, 35, 27, 0, 112,
+
+    FNT_MOVETO, 512, 1024,
+    FNT_LINETO, 512, 256,
+    FNT_CURVETO, 512, 96, 384, -21, 256, -21,
+    FNT_CURVETO, 128, -21, 0, 96, 0, 256,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 160, 1184,
+    FNT_LINETO, 352, 1440,
+
+    FNT_MOVETO, 272, 0,
+    FNT_LINETO, 272, 416,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 272, 416,
+    FNT_LINETO, 544, 1024,
+    FNT_MOVETO, 138, 1184,
+    FNT_CURVETO, 153, 1184, 159, 1201, 159, 1217,
+    FNT_CURVETO, 159, 1231, 153, 1248, 138, 1248,
+    FNT_CURVETO, 123, 1248, 117, 1231, 117, 1215,
+    FNT_CURVETO, 117, 1201, 123, 1184, 138, 1184,
+    FNT_MOVETO, 406, 1184,
+    FNT_CURVETO, 420, 1184, 426, 1201, 426, 1217,
+    FNT_CURVETO, 426, 1231, 420, 1248, 406, 1248,
+    FNT_CURVETO, 390, 1248, 384, 1231, 384, 1215,
+    FNT_CURVETO, 384, 1201, 390, 1184, 406, 1184,
+
+    FNT_MOVETO, 193, 0,
+    FNT_LINETO, 0, 736,
+    FNT_MOVETO, 16, -256,
+    FNT_CURVETO, 96, -256, 117, -215, 160, -128,
+    FNT_LINETO, 384, 736,
+    FNT_MOVETO, 69, 928,
+    FNT_CURVETO, 84, 928, 90, 975, 90, 959,
+    FNT_CURVETO, 90, 945, 84, 992, 69, 992,
+    FNT_CURVETO, 54, 992, 48, 975, 48, 959,
+    FNT_CURVETO, 48, 945, 54, 928, 69, 928,
+    FNT_MOVETO, 336, 928,
+    FNT_CURVETO, 351, 928, 357, 975, 357, 959,
+    FNT_CURVETO, 357, 945, 351, 992, 336, 992,
+    FNT_CURVETO, 322, 992, 315, 975, 315, 959,
+    FNT_CURVETO, 315, 945, 322, 928, 336, 928,
+
+    FNT_MOVETO, 128, -449,
+    FNT_LINETO, 128, 1024,
+    FNT_MOVETO, 256, 1024,
+    FNT_LINETO, 0, 1024,
+    FNT_MOVETO, 256, -449,
+    FNT_LINETO, 0, -449,
+    FNT_MOVETO, 128, 0,
+    FNT_LINETO, 384, 0,
+    FNT_CURVETO, 512, 0, 586, 128, 586, 288,
+    FNT_CURVETO, 586, 449, 512, 566, 384, 566,
+    FNT_LINETO, 128, 566,
+
+    FNT_MOVETO, 0, 1024,
+    FNT_LINETO, 0, -288,
+    FNT_MOVETO, 0, 577,
+    FNT_CURVETO, 32, 640, 96, 736, 193, 736,
+    FNT_CURVETO, 352, 736, 426, 576, 426, 352,
+    FNT_CURVETO, 426, 160, 352, 0, 191, 0,
+    FNT_CURVETO, 96, 0, 32, 96, 0, 160,
+
+    FNT_MOVETO, 22, 480,
+    FNT_CURVETO, 36, 480, 42, 497, 42, 512,
+    FNT_CURVETO, 42, 527, 36, 544, 22, 544,
+    FNT_CURVETO, 6, 544, 0, 527, 0, 512,
+    FNT_CURVETO, 0, 497, 6, 480, 22, 480,
+
+    FNT_MOVETO, 0, -288,
+    FNT_LINETO, 65, 736,
+    FNT_MOVETO, 512, 63,
+    FNT_CURVETO, 512, 32, 480, -10, 447, -10,
+    FNT_CURVETO, 420, -10, 379, 1, 396, 256,
+    FNT_LINETO, 428, 736,
+    FNT_MOVETO, 396, 256,
+    FNT_CURVETO, 396, 160, 352, -32, 224, -32,
+    FNT_CURVETO, 103, -32, 63, 65, 32, 224,
+
+    FNT_MOVETO, 224, 566,
+    FNT_LINETO, 160, 566,
+    FNT_CURVETO, 96, 566, 11, 611, 0, 768,
+    FNT_CURVETO, -11, 923, 65, 1024, 160, 1024,
+    FNT_CURVETO, 193, 1024, 449, 1024, 449, 1024,
+    FNT_MOVETO, 224, 1024,
+    FNT_LINETO, 224, 0,
+    FNT_MOVETO, 368, 1024,
+    FNT_LINETO, 368, 0,
+
+    FNT_MOVETO, 512, 512,
+    FNT_LINETO, 0, 512,
+    FNT_MOVETO, 449, -86,
+    FNT_LINETO, 63, -86,
+    FNT_LINETO, 352, 352,
+    FNT_LINETO, 352, -256,
+    FNT_MOVETO, 264, 992,
+    FNT_CURVETO, 352, 992, 396, 912, 396, 831,
+    FNT_CURVETO, 396, 752, 362, 679, 266, 679,
+    FNT_CURVETO, 196, 679, 128, 736, 96, 800,
+    FNT_MOVETO, 224, 992,
+    FNT_LINETO, 264, 992,
+    FNT_CURVETO, 344, 992, 374, 1080, 374, 1131,
+    FNT_CURVETO, 374, 1216, 319, 1280, 249, 1280,
+    FNT_CURVETO, 187, 1280, 128, 1224, 106, 1162,
+
+    FNT_MOVETO, 833, 512,
+    FNT_LINETO, 0, 512,
+
+    FNT_MOVETO, 288, 512,
+    FNT_LINETO, -128, 512,
+    FNT_MOVETO, 256, -86,
+    FNT_LINETO, -128, -86,
+    FNT_LINETO, 160, 352,
+    FNT_LINETO, 160, -256,
+    FNT_MOVETO, -22, 1120,
+    FNT_CURVETO, 26, 1140, 65, 1184, 96, 1280,
+    FNT_LINETO, 96, 672,
+
+    FNT_MOVETO, 416, 512,
+    FNT_LINETO, 0, 512,
+    FNT_MOVETO, 80, 202,
+    FNT_CURVETO, 80, 288, 152, 342, 193, 342,
+    FNT_CURVETO, 232, 342, 311, 289, 311, 175,
+    FNT_CURVETO, 311, 96, 272, 38, 171, -60,
+    FNT_CURVETO, 96, -132, 80, -224, 80, -256,
+    FNT_LINETO, 321, -256,
+    FNT_MOVETO, 106, 1120,
+    FNT_CURVETO, 154, 1140, 193, 1184, 224, 1280,
+    FNT_LINETO, 224, 672,
+
+    FNT_MOVETO, 96, 938,
+    FNT_CURVETO, 96, 938, 128, 1024, 214, 1024,
+    FNT_CURVETO, 310, 1024, 352, 896, 352, 831,
+    FNT_LINETO, 352, 368,
+    FNT_MOVETO, 352, 480,
+    FNT_CURVETO, 319, 384, 256, 368, 224, 368,
+    FNT_CURVETO, 128, 368, 80, 449, 80, 544,
+    FNT_CURVETO, 80, 608, 113, 670, 193, 714,
+    FNT_CURVETO, 288, 768, 352, 800, 352, 800,
+    FNT_MOVETO, 416, 191,
+    FNT_LINETO, 0, 191,
+
+    FNT_MOVETO, 416, 193,
+    FNT_LINETO, 0, 193,
+    FNT_MOVETO, 32, 705,
+    FNT_CURVETO, 32, 544, 96, 384, 208, 384,
+    FNT_CURVETO, 321, 384, 384, 544, 384, 705,
+    FNT_CURVETO, 384, 864, 319, 1024, 208, 1024,
+    FNT_CURVETO, 96, 1024, 32, 864, 32, 703,
+
+    FNT_MOVETO, 256, 736,
+    FNT_LINETO, 0, 368,
+    FNT_LINETO, 256, 0,
+    FNT_MOVETO, 512, 736,
+    FNT_LINETO, 256, 368,
+    FNT_LINETO, 512, 0,
+
+    FNT_MOVETO, 0, 736,
+    FNT_LINETO, 0, 0,
+    FNT_LINETO, 512, 0,
+    FNT_LINETO, 512, 736,
+    FNT_LINETO, 0, 736,
+
+    FNT_MOVETO, 449, 736,
+    FNT_LINETO, 705, 368,
+    FNT_LINETO, 447, 0,
+    FNT_MOVETO, 191, 736,
+    FNT_LINETO, 449, 368,
+    FNT_LINETO, 191, 0,
+
+    FNT_MOVETO, 512, 80,
+    FNT_LINETO, 0, 80,
+    FNT_MOVETO, 512, 624,
+    FNT_LINETO, 0, 624,
+    FNT_MOVETO, 256, 961,
+    FNT_LINETO, 256, 288
+};
+
+/* offsets are array index into fontData for each beginning of character,
+   data goes until next index (NB. there's an extra entry for end of data)
+   (character codes start with 32)
+*/
+short int arc_font_offsets[] = {
+    0,
+    0,
+    37,
+    49,
+    73,
+    127,
+    195,
+    254,
+    295,
+    312,
+    329,
+    347,
+    359,
+    400,
+    406,
+    437,
+    443,
+    474,
+    487,
+    521,
+    572,
+    584,
+    621,
+    673,
+    686,
+    748,
+    800,
+    862,
+    934,
+    943,
+    955,
+    964,
+    1026,
+    1105,
+    1120,
+    1169,
+    1200,
+    1226,
+    1244,
+    1259,
+    1299,
+    1317,
+    1323,
+    1346,
+    1364,
+    1373,
+    1388,
+    1400,
+    1431,
+    1457,
+    1494,
+    1540,
+    1588,
+    1600,
+    1623,
+    1632,
+    1647,
+    1659,
+    1674,
+    1686,
+    1698,
+    1704,
+    1716,
+    1725,
+    1735,
+    1741,
+    1792,
+    1829,
+    1860,
+    1897,
+    1931,
+    1953,
+    2004,
+    2030,
+    2042,
+    2061,
+    2079,
+    2085,
+    2131,
+    2157,
+    2188,
+    2225,
+    2262,
+    2278,
+    2326,
+    2348,
+    2374,
+    2383,
+    2398,
+    2410,
+    2429,
+    2441,
+    2484,
+    2490,
+    2533,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2564,
+    2585,
+    2609,
+    2633,
+    2660,
+    2740,
+    2755,
+    2823,
+    2829,
+    2835,
+    2844,
+    2906,
+    2937,
+    2966,
+    2998,
+    3079,
+    3089,
+    3110,
+    3135,
+    3166,
+    3206,
+    3246,
+    3289,
+    3346,
+    3383,
+    3445,
+    3500,
+    3575,
+    3602,
+    3706,
+    3746,
+    3783,
+    3843,
+    3886,
+    3926,
+    3961,
+    4018,
+    4058,
+    4095,
+    4127,
+    4184,
+    4224,
+    4261,
+    4293,
+    4406,
+    4502,
+    4595,
+    4683,
+    4729,
+    4744,
+    4781,
+    4805,
+    4887,
+    4899,
+    4936,
+    5014,
+    5091,
+    5103,
+    5196,
+    5281,
+    5305,
+    5373,
+    5427,
+    5467,
+    5488,
+    5534,
+    5616,
+    5648,
+    5695,
+    5707,
+    5719,
+    5756,
+    5793,
+    5855,
+    5917,
+    5974,
+    6031,
+    6060,
+    6137,
+    6218,
+    6259,
+    6296,
+    6327,
+    6370,
+    6409,
+    6478,
+    6484,
+    6515,
+    6568,
+    6625,
+    6662,
+    6680,
+    6695,
+    6713,
+    6731,
+    6731
+};
+
+/* widths for each char (starting with code 32) */
+short int arc_font_widths[] = {
+    193,
+    240,
+    384,
+    752,
+    705,
+    736,
+    752,
+    256,
+    352,
+    352,
+    705,
+    752,
+    256,
+    752,
+    240,
+    592,
+    705,
+    384,
+    640,
+    752,
+    768,
+    656,
+    688,
+    656,
+    752,
+    688,
+    240,
+    256,
+    736,
+    736,
+    736,
+    592,
+    800,
+    800,
+    705,
+    864,
+    752,
+    672,
+    640,
+    864,
+    705,
+    224,
+    544,
+    705,
+    608,
+    864,
+    736,
+    800,
+    640,
+    833,
+    688,
+    705,
+    752,
+    705,
+    705,
+    1024,
+    736,
+    752,
+    736,
+    384,
+    592,
+    384,
+    512,
+    896,
+    384,
+    592,
+    640,
+    640,
+    640,
+    640,
+    449,
+    640,
+    544,
+    224,
+    336,
+    577,
+    220,
+    833,
+    544,
+    640,
+    640,
+    640,
+    416,
+    577,
+    432,
+    544,
+    592,
+    833,
+    624,
+    592,
+    608,
+    416,
+    224,
+    416,
+    768,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    592,
+    193,
+    800,
+    800,
+    672,
+    672,
+    672,
+    512,
+    512,
+    384,
+    384,
+    512,
+    512,
+    608,
+    705,
+    705,
+    768,
+    896,
+    752,
+    592,
+    321,
+    864,
+    640,
+    736,
+    544,
+    240,
+    592,
+    800,
+    768,
+    688,
+    672,
+    608,
+    640,
+    592,
+    640,
+    640,
+    544,
+    592,
+    640,
+    640,
+    544,
+    592,
+    640,
+    640,
+    544,
+    592,
+    640,
+    640,
+    544,
+    800,
+    384,
+    833,
+    800,
+    592,
+    384,
+    640,
+    752,
+    800,
+    384,
+    800,
+    705,
+    672,
+    544,
+    640,
+    800,
+    800,
+    800,
+    592,
+    864,
+    640,
+    384,
+    384,
+    800,
+    800,
+    800,
+    640,
+    705,
+    577,
+    705,
+    752,
+    592,
+    784,
+    640,
+    240,
+    705,
+    640,
+    705,
+    896,
+    480,
+    608,
+    608,
+    640,
+    705,
+    705,
+    705,
+    705,
+    592
+};
+
+/* generate the segments NB void *data is the the graphics state */
+private int
+hpgl_stick_segments(void *data, uint char_index)
+{
+    /* characters start with 32 - what about char index < 0x20 ?? */
+    short table_index_of_char = char_index - 0x20;
+    /* table of offsets into table which contains the font drawing */
+    short offset = stick_font_offsets[table_index_of_char];
+    /* look up the next characters offset, subtract and the result is
+       the number of drawing operations to render the character. */
+    short count = stick_font_offsets[table_index_of_char+1] - offset;
+    short stop = count + offset;
+    /* set up tables debending on stick or arc font */
+    int i;
+    /* all entries have 3 short entries */
+    i = offset;
+    while ( i < stop ) {
+	if ( stick_font_data[i] == FNT_LINETO ) {
+	    gs_lineto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
+	    i += 3;
 	}
-	return 0;
+	else if ( stick_font_data[i] == FNT_MOVETO ) {
+	    gs_moveto(data, (floatp)(stick_font_data[i+1]), (floatp)(stick_font_data[i+2]));
+	    i += 3;
+	}
+	else
+	    return_error(gs_error_invalidfont);
+    }
+
+    /* table must be corrupt if the loop didn't stop at stop */
+    if ( i != stop )
+	return_error(gs_error_invalidfont);
+    return 0;
+}
+
+/* this procedure has the same cartoon as hpgl_stick_segments() above
+   except the drawing operations are different */
+private int
+hpgl_arc_segments(void *data, uint char_index)
+{
+    /* characters start with 32 - what about char index < 0x20 ?? */
+    short table_index_of_char = char_index - 0x20;
+    /* table of offsets into table which contains the font drawing */
+    short offset = arc_font_offsets[table_index_of_char];
+    /* look up the next characters offset, subtract and the result is
+       the number of drawing operations to render the character. */
+    short count = arc_font_offsets[table_index_of_char+1] - offset;
+    short stop = count + offset;
+    /* set up tables debending on stick or arc font */
+    int i;
+    /* 3 entries for moveto and lineto and 5 for curveto */
+    i = offset;
+    while ( i < stop ) {
+	if ( arc_font_data[i] == FNT_LINETO ) {
+	    gs_lineto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
+	    i += 3;
+	}
+	else if ( arc_font_data[i] == FNT_MOVETO ) {
+	    gs_moveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]));
+	    i += 3;
+	}
+	else if ( arc_font_data[i] == FNT_CURVETO ) {
+	    gs_curveto(data, (floatp)(arc_font_data[i+1]), (floatp)(arc_font_data[i+2]),
+		       (floatp)(arc_font_data[i+3]), (floatp)(arc_font_data[i+4]),
+		       (floatp)(arc_font_data[i+5]), (floatp)(arc_font_data[i+6]));
+	    i += 7;
+	}
+	else
+	    return_error(gs_error_invalidfont);
+    }
+
+    /* table must be corrupt if the loop didn't stop at stop */
+    if ( i != stop )
+	return_error(gs_error_invalidfont);
+    return 0;
+}
+	
+private int
+hpgl_stick_width(uint char_index)
+{
+    /* The fixed space font is always 1024, the width of the cell */
+    return 1024;
 }
 
 /* Get the unscaled width of a stick/arc character. */
-int
-hpgl_stick_arc_width(uint char_index)
-{	/* Add a little for inter-character spacing. */
-	return arc_symbol_widths[char_index - 0x20] + 3;
-}
-
-#ifdef ESCAPEMENTS
-
-/*
- * Main program for computing escapements.  Compile with:
- *	gcc -I../gs -DESCAPEMENTS -lm pgfdata.c
- */
-#include "math_.h"
-typedef struct esc_data_s {
-  int x;
-  int xmin, xmax;
-} esc_data_t;
-private void
-esc_include(esc_data_t *edata, int x)
-{	if ( x < edata->xmin )
-	  edata->xmin = x;
-	if ( x > edata->xmax )
-	  edata->xmax = x;
-}
-
 private int
-esc_rmoveto(void *data, int dx, int dy)
-{	esc_data_t *edata = data;
-
-	esc_include(edata, edata->x += dx);
-	return 0;
-}
-private int
-esc_arc(void *data, int cx, int cy, const gs_int_point *start,
-  int sweep_angle, floatp chord_angle)
-{	esc_data_t *edata = data;
-	int dx = start->x - cx, dy = start->y - cy;
-	double radius, angle;
-
-	if ( dx == 0 ) {
-	  radius = any_abs(dy);
-	  angle = (dy >= 0 ? 90.0 : 270.0);
-	} else if ( dy == 0 ) {
-	  radius = any_abs(dx);
-	  angle = (dx >= 0 ? 0.0 : 180.0);
-	} else {
-	  radius = hypot((floatp)dx, (floatp)dy);
-	  angle = atan2((floatp)dy, (floatp)dx) * radians_to_degrees;
-	}
-	{ double count = ceil(any_abs(sweep_angle) / chord_angle);
-	  double delta = sweep_angle / count;
-
-	  while ( count-- ) {
-	    double cosv = cos(angle += delta);
-
-	    esc_include(edata, (int)(cx + cosv * radius + 0.5));
-	  }
-	}
-	return 0;
+hpgl_arc_width(uint char_index)
+{	
+    return arc_font_widths[char_index - 0x20];
 }
 
-const hpgl_stick_segment_procs_t esc_procs = {
-  esc_rmoveto, esc_rmoveto, esc_arc
-};
-
-int
-main(int argc, char *argv[])
-{	uint index;
-
-	printf("private const byte arc_symbol_widths[] = {");
-	for ( index = 0x20; index < 0x20 + hpgl_stick_num_symbols; ++index )
-	  { esc_data_t edata;
-	    uint count = index - 0x20;
-
-	    edata.x = 0;
-	    edata.xmin = 100;
-	    edata.xmax = 0;
-	    hpgl_stick_arc_segments(&esc_procs, (void *)&edata, index, 22.5);
-	    if ( edata.xmin == 100 )
-	      edata.xmin = 0;
-	    if ( count % 10 == 0 ) {
-	      printf("\n  ");
-	    }
-	    printf("%2d,", edata.xmax);
-	  }
-	printf("\n  0\n};\n");
-	return 0;
+/* interface procedure render the characters */
+int 
+hpgl_stick_arc_segments(void *data, uint char_index, hpgl_font_type_t font_type)
+{
+    if ( font_type == HPGL_ARC_FONT )
+	return hpgl_arc_segments(data, char_index);
+    else
+	return hpgl_stick_segments(data, char_index);
 }
 
-#endif /* ESCAPEMENTS */
-
-#ifdef OUTLINES
-
-/*
- * Main program for printing outlines.  Compile with:
- *	gcc -I../gs -DOUTLINES -lm pgfdata.c 
- */
-#include "math_.h"
-
-private int
-out_rmoveto(void *data, int dx, int dy)
-{	printf(" %d %d rmoveto", dx, dy);
-	return 0;
-}
-private int
-out_rlineto(void *data, int dx, int dy)
-{	printf(" %d %d rlineto", dx, dy);
-	return 0;
-}
-private int
-out_arc(void *data, int cx, int cy, const gs_int_point *start,
-  int sweep_angle, floatp chord_angle)
-{	int sx = start->x, sy = start->y;
-	int dx = sx - cx, dy = sy - cy;
-	double radius, angle;
-
-	if ( dx == 0 ) {
-	  radius = any_abs(dy);
-	  angle = (dy >= 0 ? 90.0 : 270.0);
-	} else if ( dy == 0 ) {
-	  radius = any_abs(dx);
-	  angle = (dx >= 0 ? 0.0 : 180.0);
-	} else {
-	  radius = hypot((floatp)dx, (floatp)dy);
-	  angle = atan2((floatp)dy, (floatp)dx) * radians_to_degrees;
-	}
-	printf(" %d %d %g %g %g %s", cx, cy, radius, angle,
-	       angle + sweep_angle,
-	       (sweep_angle < 0 ? "arcn" : "arc"));
-	return 0;
-}
-
-const hpgl_stick_segment_procs_t out_procs = {
-  out_rmoveto, out_rlineto, out_arc
-};
-
-int
-main(int argc, char *argv[])
-{	uint index;
-
-	for ( index = 0x20; index < 0x20 + hpgl_stick_num_symbols; ++index )
-	  { uint count = index - 0x20;
-
-	    printf("%d {\n", count);
-	    hpgl_stick_arc_segments(&out_procs, (void *)0, index, 0.0);
-	    printf("\n} defchar\n");
-	  }
-	return 0;
-}
-
-#endif /* OUTLINES */
-
-/* Unicode to symbol index mapping */
-
-/*
- * The H-P plotter symbol set includes quite a few symbols that aren't
- * in Unicode, plus what appear to be many duplicate symbols.
- * The following table includes a fair number of educated guesses,
- * and some missing mappings.
- *
- * H-P numbers their symbols starting at 32, so we do too.
- * The table below is indexed by symbol number - 32.
- */
-
-private const ushort hpgl_stick_to_unicode[hpgl_stick_num_symbols] = {
-  /* The first 92 symbols are 1-for-1 with the corresponding Unicode. */
-/* 32 (0x20) */
-  0x0020, 0x0021, 0x0022, 0x0023, 0x0024, 0x0025, 0x0026, 0x0027,
-  0x0028, 0x0029, 0x002a, 0x002b, 0x002c, 0x002d, 0x002e, 0x002f,
-/* 48 (0x30) */
-  0x0030, 0x0031, 0x0032, 0x0033, 0x0034, 0x0035, 0x0036, 0x0037,
-  0x0038, 0x0039, 0x003a, 0x003b, 0x003c, 0x003d, 0x003e, 0x003f,
-/* 64 (0x40) */
-  0x0040, 0x0041, 0x0042, 0x0043, 0x0044, 0x0045, 0x0046, 0x0047,
-  0x0048, 0x0049, 0x004a, 0x004b, 0x004c, 0x004d, 0x004e, 0x004f,
-/* 80 (0x50) */
-  0x0050, 0x0051, 0x0052, 0x0053, 0x0054, 0x0055, 0x0056, 0x0057,
-  0x0058, 0x0059, 0x005a, 0x005b, 0x005c, 0x005d, 0x005e, 0x005f,
-/* 96 (0x60) */
-  0x0060, 0x0061, 0x0062, 0x0063, 0x0064, 0x0065, 0x0066, 0x0067,
-  0x0068, 0x0069, 0x006a, 0x006b, 0x006c, 0x006d, 0x006e, 0x006f,
-/* 112 (0x70) */
-  0x0070, 0x0071, 0x0072, 0x0073, 0x0074, 0x0075, 0x0076, 0x0077,
-  0x0078, 0x0079, 0x007a, 0x007b,
-  0x00a6,			/* broken vertical bar */
-  0x007d,			/* right brace */
-  0x007e,			/* tilde */
-  0x25a0,			/* solid black square (DEL) */
-/* 128 (0x80) */
-  0x00f7,			/* division symbol */
-  0x00b1,			/* plus-minus */
-  0xffff,			/* small superscript x */
-  0x00b2,			/* small superscript 2 */
-  0x00b3,			/* small superscript 3 */
-  0xffff,			/* small subscript 10 */
-  0xffff,			/* small subscript e */
-  0x2264,
-  0x2265,
-  0x00b0,			/* (duplicate) degree symbol */
-  0x2248,
-  0x03a9,
-  0x03b1,
-  0x03b2,
-  0x03b3,
-  0x0394,
-/* 144 (0x90) */
-  0x03b5,			/* small epsilon */
-  0x03b8,
-  0x03bb,
-  0x00b5,
-  0x03bd,
-  0x03c0,
-  0x03c1,
-  0x03a3,
-  0x03c3,
-  0x00f8,
-  0x03c8,
-  0xffff,			/* small upward arrow */
-  0x2205,
-  0x00a4,
-  0x2260,
-  0x00a5,
-/* 160 (0xa0) */
-  0x00c4,			/* capital A diaeresis */
-  0x00d6,
-  0x00dc,
-  0x00e4,
-  0x00f6,
-  0x00fc,
-  0x00df,
-  0x00a1,
-  0x00d1,
-  0x00bf,
-  0x00f1,
-  0x00a3,
-  0x00e0,
-  0x00e7,
-  0x00a7,
-  0x00e9,
-/* 176 (0xb0) */
-  0x00f9,			/* small u grave */
-  0x00e8,
-  0xffff,			/* small a (or o?) ring */
-  0x00c6,
-  0x00e6,
-  0x00c5,
-  0x02c6,
-  0x02c7,
-  0x00e1,
-  0x00f2,
-  0x00f3,
-  0x00fa,
-  0x00e7,
-  0xffff,			/* capital sharp s?? (no such letter) */
-  0x00d8,
-  0x2229,
-/* 192 (0xc0) */
-  0x2283,			/* includes symbol */
-  0x2282,
-  0x222a,
-  0xffff,			/* long overscore */
-  0x2261,
-  0x2245,
-  0x2213,
-  0x2192,
-  0x2190,
-  0x2193,
-  0x222b,
-  0x2217,
-  0x2207,
-  0x02ca,
-  0x02cb,
-  0x221a,
-/* 208 (0xd0) */
-  0x22a2,			/* right tack */
-  0x2191,
-  0x00c3,
-  0x00e3,
-  0x00c7,
-  0x00c9,
-  0x00ec,
-  0x00d5,
-  0x00f5,
-  0x00f2,
-  0xffff,			/* duplicate diaeresis? */
-  0xffff,			/* macron? */
-  0x22a5,
-  0xffff,			/* duplicate ring/degree? */
-  0xffff,			/* square with top vertical tick */
-  0xffff,			/* rounded square with top vertical tick */
-/* 224 (0xe0) */
-  0xffff,			/* upward triangle with top vertical tick */
-  0xffff,			/* large plus sign */
-  0xffff,			/* large X / multiply sign */
-  0xffff,			/* 45 degree tilted square with top v. tick */
-  0xffff,			/* upward pointing arrow with open tri. head */
-  0xffff,			/* X with closed top */
-  0xffff,			/* large Z with small bar */
-  0xffff,			/* large Y */
-  0xffff,			/* large X with center replaced by small */
-				/* square with top vertical tick */
-  0xffff,			/* large 8-point star */
-  0xffff,			/* X with closed top and bottom */
-  0x007c,
-  0x2721,
-  0xffff,			/* em dash? */
-  0xffff,			/* top vertical tick */
-  0xffff,			/* (undefined) */
-/* 240 (0xf0) */
-  0xffff,			/* (undefined) */
-  0xffff,			/* (undefined) */
-  0x00a8,
-  0x02da,
-  0x02c8,
-  0xffff,			/* duplicate circumflex? */
-  0xffff,			/* duplicate em dash? */
-  0xffff,			/* raised large tilde */
-  0x02dc,			/* raised small tilde */
-  0xffff,			/* (undefined) */
-  0x25a0,			/* (duplicate) black square */
-  0x02cb,			/* (duplicate) grave accent */
-  0x02ca,			/* (duplicate) acute accent */
-  0xffff,			/* (undefined) */
-  0xffff,			/* long macron */
-  0xffff,			/* (undefined) */
-/* 256 (0x100) */
-  0x00c2,			/* capital A circumflex */
-  0x00e2,
-  0x00c1,
-  0x00c0,
-  0x00cb,
-  0x00eb,
-  0x00ca,
-  0x00ea,
-  0x00c8,
-  0x00ce,
-  0x00ee,
-  0x00cf,
-  0x00ef,
-  0x00cd,
-  0x00ed,
-  0x00cc,
-/* 272 (0x110) */
-  0x00d4,			/* capital O circumflex */
-  0x00f4,
-  0x00d2,
-  0x00d3,
-  0x00ba,
-  0x00aa,
-  0x0160,
-  0x0161,
-  0x0178,
-  0x00ff,
-  0x00fd,
-  0x00dd,
-  0x00da,
-  0x00db,
-  0x00fb,
-  0x00d9,
-/* 288 (0x120) */
-  0x00bb,			/* double guillemet right */
-  0x00ab,
-  0x25a1,
-  0x00bd,
-  0x00bc,
-  0x00be,
-  0x00de,			/* capital Thorn (maybe small?) */
-  0x00fe,			/* small thorn (maybe capital?) */
-  0x00b6,
-  0xffff,			/* infinity sign? */
-  0x00a2,
-  0x0192,
-  0x00d0,
-  0x00f0,
-  0x02ca,			/* (duplicate) acute accent? */
-  0x20a4,
-/* 304 (0x130) */
-  0x00e5,			/* small a tilde */
-  0xffff,			/* (duplicate) tilde? */
-  0xffff,			/* straight comma */
-  0xffff			/* 5-pointed asterisk */
-};
-
-/*
- * Some stick font symbols have more than 1 plausible Unicode mapping.
- * Define those here.
- */
-
-private const ushort hpgl_stick_alt_unicode[] = {
-  139, 0x2126,			/* capital Omega = ohm symbol */
-  143, 0x2206,			/* capital Delta = increment */
-  143, 0x25b3,			/*   = upward-pointing triangle */
-  147, 0x03bc,			/* micro = small mu */
-  151, 0x2211,			/* capital Sigma = summation  */
-  204, 0x25bd,			/* nabla = downward-pointing triangle */
-  288, 0x226b,			/* double guil. right = much greater than */
-  289, 0x226a			/* double guil. left = much less than */
-};
-
-/*
- * Map a Unicode character number to an index in the stick/arc font
- * symbol table.  Return 0 if not mappable.  (The first real symbol
- * index is 32.)
- */
-uint
-hpgl_unicode_stick_index(gs_glyph char_code)
-{	if ( char_code < 0x20 )
-	  return 0;
-	if ( char_code <= 0x7b )
-	  return char_code;
-	if ( char_code == 0xffff )
-	  return 0;
-	/* Search the table.  This is slow. */
-	{ uint i;
-
-	  for ( i = 0x7c - 0x20; i < countof(hpgl_stick_to_unicode); ++i )
-	    if ( hpgl_stick_to_unicode[i] == char_code )
-	      return i + 0x20;
-	  /* Look for an alternate mapping. */
-	  for ( i = 0; i < countof(hpgl_stick_alt_unicode); i += 2 )
-	    if ( hpgl_stick_alt_unicode[i+1] == char_code )
-	      return hpgl_stick_alt_unicode[i];
-	}
-	return 0;
-}
-
+/* interface procedure to get the width of the characters */
+int hpgl_stick_arc_width(uint char_index, hpgl_font_type_t font_type)
+{
+    if ( font_type == HPGL_ARC_FONT )
+	return hpgl_arc_width(char_index);
+    else
+	return hpgl_stick_width(char_index);
+}    

@@ -71,6 +71,24 @@ hpgl_next_char(gs_show_enum *penum, const hpgl_state_t *pgls, gs_char *pchr)
 	return 0;
 }
 
+/* is it a printable character - duplicate of pcl algorithm in
+   pctext.c */
+private bool
+hpgl_is_printable(
+    const pl_symbol_map_t * psm,
+    gs_char                 chr,
+    bool                    is_stick
+)
+{
+    if ( is_stick )
+	return (chr >= ' ') && (chr <= '\377');
+    if ((psm == 0) || (psm->type >= 2))
+        return true;
+    else if (psm->type == 1)
+        chr &= 0x7f;
+    return (chr >= ' ') && (chr <= '\177');
+}
+
 /*
  * Map a character through the symbol set, if needed.
  */
@@ -110,7 +128,14 @@ hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr, gs_glyph *pglyph)
 	if ( code )
 	  return code;
         *pglyph = gs_no_glyph;
-	*pchr = hpgl_map_symbol(*pchr, pgls);
+	/* Don't map stick or arc fonts */
+	{
+	    pcl_font_selection_t *pfs =
+		&pgls->g.font_selection[pgls->g.font_selected];
+
+	    if ( ((pfs->params.typeface_family & 0xfff) != STICK_FONT_TYPEFACE) )
+		*pchr = hpgl_map_symbol(*pchr, pgls);
+	}
 #undef pgls
 	return 0;
 }
@@ -534,6 +559,7 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 private bool
 hpgl_use_show(hpgl_state_t *pgls)
 {
+
     /* Show cannot be used if CF is not default since the character
        may require additional processing by the line drawing code. */
     if ( (pgls->g.character.fill_mode == 0) &&
@@ -618,8 +644,12 @@ hpgl_print_char(
            the character cell */
 	{
 	    float metrics[4];
-	    pl_font_char_metrics(font, ch, metrics);
-	    lsb = metrics[0];
+	    /* undefined characters are treated as a space */
+	    if ( (pl_font_char_metrics(font, ch, metrics)) == 1 ) {
+		ch = ' ';
+		lsb = 0;
+	    } else
+		lsb = metrics[0];
 	}
 	/* Handle size. */
 	if (pgls->g.character.size_mode == hpgl_size_not_set) {
@@ -751,7 +781,7 @@ hpgl_print_char(
 	 * If we're using a stroked font, patch the pen width to reflect
 	 * the stroke weight.  Note that when the font's build_char
 	 * procedure calls stroke, the CTM is still scaled.
-	 ****** WHAT IF scale.x != scale.y? ******
+	 ****** WHAT IF scale.x != scale.y? ****** this should be unnecessary.
 	 */
 	if (pfont->PaintType != 0) {
             int     code = 0;
@@ -761,7 +791,7 @@ hpgl_print_char(
             if (weight == 9999)
                 nwidth = save_width / scale.y;
             else {
-                nwidth = 0.05 + weight * (weight < 0 ? 0.005 : 0.010);
+                nwidth = 0.06 + weight * (weight < 0 ? 0.005 : 0.010);
 	        pgls->g.pen.width_relative = true;
             }
             if ((code = pcl_palette_PW(pgls, pen, nwidth)) < 0) {
@@ -1203,13 +1233,24 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		      hpgl_select_font_pri_alt(pgls, 1);
 		      continue;
 		    default :
-		      goto print;
+			goto print;
 		    }
 		  hpgl_move_cursor_by_characters(pgls, spaces, lines,
 						 (const hpgl_real_t *)0);
 		  continue;
 		}
-print:	      hpgl_call(hpgl_ensure_font(pgls));
+print:	     {
+		  /* if this a printable character print it
+		     otherwise continue, a character can be
+		     printable and undefined in which case
+		     it is printed as a space character */
+		  const pcl_font_selection_t *pfs =
+		      &pgls->g.font_selection[pgls->g.font_selected];
+		  if ( !hpgl_is_printable(pfs->map, ch, 
+					  (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE ) )
+		      continue;
+	      }
+	      hpgl_call(hpgl_ensure_font(pgls));
 	      hpgl_call(hpgl_print_char(pgls, ch));
 	    }
 	}

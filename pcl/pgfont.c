@@ -21,8 +21,6 @@
 #include "pgfdata.h"
 #include "pgfont.h"
 
-/* Note that we misappropriate pfont->StrokeWidth for the chord angle. */
-
 /* The client handles all encoding issues for these fonts. */
 /* The fonts themselves use Unicode indexing. */
 private gs_glyph
@@ -34,9 +32,13 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
 private int
 hpgl_stick_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
 {	
-    bool in_range = hpgl_unicode_stick_index(uni_code) != 0;
-    pwidth->x = 0.667;
-    return in_range;
+    /* NB need an interface function call to verify the character exists */
+    if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
+	pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_STICK_FONT);
+    else
+	/* doesn't exist */
+	return 1;
+    return 0;
 }
 
 private int
@@ -48,7 +50,9 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4]
     /* no lsb */
     metrics[0] = 0;
     /* just get the width */
-    hpgl_stick_char_width(plfont, uni_code, &width);
+    if ( (hpgl_stick_char_width(plfont, uni_code, &width)) == 1 )
+	/* doesn't exist */
+	return 1;
     metrics[2] = width.x;
     return 0;
 }    
@@ -57,10 +61,13 @@ hpgl_stick_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4]
 private int
 hpgl_arc_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
 {	
-    uint char_code = hpgl_unicode_stick_index(uni_code);
-    bool in_range = char_code != 0;
-    pwidth->x = hpgl_stick_arc_width(char_code) / 15.0 * 0.667 * hpgl_arc_font_condensation;
-    return in_range;
+    /* NB need an interface function call to verify the character exists */
+    if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
+	pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_ARC_FONT);
+    else
+	/* doesn't exist */
+	return 1;
+    return 0;
 }
 
 private int
@@ -72,122 +79,55 @@ hpgl_arc_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4])
     /* no lsb */
     metrics[0] = 0;
     /* just get the width */
-    hpgl_arc_char_width(plfont, uni_code, &width);
+    if ( (hpgl_arc_char_width(plfont, uni_code, &width)) == 1 )
+	/* doesn't exist */
+	return 1;
     metrics[2] = width.x;
     return 0;
 }    
 
-/* Forward procedure declarations */
-private int hpgl_arc_rmoveto(P3(void *data, int dx, int dy));
-private int hpgl_arc_rlineto(P3(void *data, int dx, int dy));
-private int hpgl_arc_add_arc(P6(void *data, int cx, int cy,
-  const gs_int_point *start, int sweep_angle, floatp chord_angle));
-
 /* Add a symbol to the path. */
 private int
 hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
-  gs_glyph uni_code, floatp condensation)
-{	uint char_index = hpgl_unicode_stick_index(uni_code);
-	double chord_angle;
-	int width;
-	gs_matrix save_ctm;
-	int code;
+  gs_glyph uni_code, hpgl_font_type_t font_type)
+{	
+    int width;
+    gs_matrix save_ctm;
+    int code;
 
-	if ( char_index == 0 )
-	  return 0;
-	chord_angle = pfont->StrokeWidth;
-	width = (chord_angle == 0 ? hpgl_stick_arc_width(char_index) : 15);
-	/* The TRM says the stick font is based on a 32x32 unit cell, */
-	/* but the font we're using here is only 15x15. */
-	/* Also, per TRM 23-18, the character cell is only 2/3 the */
-	/* point size. */
-	gs_setcharwidth(penum, pgs, width / 15.0 * 0.667 * condensation, 0.0);
-	gs_currentmatrix(pgs, &save_ctm);
-#define scale (1.0 / 15 * 2 / 3)
-	gs_scale(pgs, scale * condensation, scale);
+    /* we assert the font is present at this point */
+    width = hpgl_stick_arc_width(uni_code, font_type);
+    /* *** incorrect comment The TRM says the stick font is based on a
+       32x32 unit cell, */
+    /* but the font we're using here is only 15x15. */
+    /* Also, per TRM 23-18, the character cell is only 2/3 the */
+    /* point size. */
+    gs_setcharwidth(penum, pgs, width / 1024.0 * .667, 0.0);
+    gs_currentmatrix(pgs, &save_ctm);
+    gs_scale(pgs, 1.0 / 1024.0 * .667, 1.0 / 1024.0 * .667);
 #undef scale
-	gs_moveto(pgs, 0.0, 0.0);
-	{ const hpgl_stick_segment_procs_t draw_procs = {
-	    hpgl_arc_rmoveto, hpgl_arc_rlineto, hpgl_arc_add_arc
-	  };
-	  code = hpgl_stick_arc_segments(&draw_procs, (void *)pgs,
-					 char_index, chord_angle);
-	}
-	gs_setmatrix(pgs, &save_ctm);
-	if ( code < 0 )
-	  return code;
-	/* Set predictable join and cap styles. */
-	gs_setlinejoin(pgs, gs_join_round);
-	gs_setmiterlimit(pgs, 2.61); /* start beveling at 45 degrees */
-	gs_setlinecap(pgs, gs_cap_round);
-	code = gs_stroke(pgs);
-	return (code < 0 ? code : 0);
-}
-
-/* Add a point or line. */
-private int
-hpgl_arc_rmoveto(void *data, int dx, int dy)
-{	return gs_rmoveto((gs_state *)data, (floatp)dx, (floatp)dy);
-}
-private int
-hpgl_arc_rlineto(void *data, int dx, int dy)
-{	return gs_rlineto((gs_state *)data, (floatp)dx, (floatp)dy);
-}
-
-/* Add an arc given the center, start point, and sweep angle. */
-private int
-hpgl_arc_add_arc(void *data, int cx, int cy, const gs_int_point *start,
-  int sweep_angle, floatp chord_angle)
-{	gs_state *pgs = (gs_state *)data;
-	int dx = start->x - cx, dy = start->y - cy;
-	double radius, angle;
-	int code = 0;
-
-	if ( dx == 0 ) {
-	  radius = any_abs(dy);
-	  angle = (dy >= 0 ? 90.0 : 270.0);
-	} else if ( dy == 0 ) {
-	  radius = any_abs(dx);
-	  angle = (dx >= 0 ? 0.0 : 180.0);
-	} else {
-	  radius = hypot((floatp)dx, (floatp)dy);
-	  angle = atan2((floatp)dy, (floatp)dx) * radians_to_degrees;
-	}
-	if ( chord_angle == 0 ) {
-	  /* Just add the arc. */
-	  code = (sweep_angle < 0 ?
-		  gs_arcn(pgs, (floatp)cx, (floatp)cy, radius, angle,
-			  angle + sweep_angle) :
-		  gs_arc(pgs, (floatp)cx, (floatp)cy, radius, angle,
-			 angle + sweep_angle));
-	} else {
-	  double count = ceil(any_abs(sweep_angle) / chord_angle);
-	  double delta = sweep_angle / count;
-
-	  while ( count-- ) {
-	    gs_sincos_t sincos;
-
-	    angle += delta;
-	    gs_sincos_degrees(angle, &sincos);
-	    code = gs_lineto(pgs, cx + sincos.cos * radius,
-			     cy + sincos.sin * radius);
-	    if ( code < 0 )
-	      break;
-	  }
-	}
+    gs_moveto(pgs, 0.0, 0.0);
+    code = hpgl_stick_arc_segments((void *)pgs, uni_code, font_type);
+    gs_setmatrix(pgs, &save_ctm);
+    if ( code < 0 )
 	return code;
+    /* Set predictable join and cap styles. */
+    gs_setlinejoin(pgs, gs_join_round);
+    gs_setmiterlimit(pgs, 2.61); /* start beveling at 45 degrees */
+    gs_setlinecap(pgs, gs_cap_round);
+    return gs_stroke(pgs);
 }
 
 private int
 hpgl_stick_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char ignore_chr, gs_glyph uni_code)
-{	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, 1.0);
+{	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_STICK_FONT);
 }
 private int
 hpgl_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
   gs_char ignore_chr, gs_glyph uni_code)
-{	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code,
-					 hpgl_arc_font_condensation);
+{	return hpgl_stick_arc_build_char(penum, pgs, pfont, uni_code, HPGL_ARC_FONT);
+					 
 }
 
 /* Fill in stick/arc font boilerplate. */
@@ -216,7 +156,6 @@ hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
 void
 hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
-	pfont->StrokeWidth = 22.5;
 #define plfont ((pl_font_t *)pfont->client_data)
 	pfont->procs.build_char = (void *)hpgl_stick_build_char; /* FIX ME (void *) */
 	plfont->char_width = hpgl_stick_char_width;
@@ -226,7 +165,6 @@ hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
 void
 hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id)
 {	hpgl_fill_in_stick_arc_font(pfont, unique_id);
-	pfont->StrokeWidth = 0;  /* don't flatten arcs */
 #define plfont ((pl_font_t *)pfont->client_data)
 	pfont->procs.build_char = (void *)hpgl_arc_build_char; /* FIX ME (void *) */
 	plfont->char_width = hpgl_arc_char_width;
