@@ -193,7 +193,13 @@ SW_PAPER=/DEFINE=("A4","HAVE_MKSTEMP")
 SW_PAPER=/DEFINE=("HAVE_MKSTEMP")
 .endif
 
-COMP=CC$(SW_DEBUG)$(SW_PLATFORM)$(SW_PAPER)
+.ifdef IEEE
+SW_IEEE=/float=ieee
+.else
+SW_IEEE=
+.endif
+
+COMP=CC$(SW_DEBUG)$(SW_PLATFORM)$(SW_PAPER)$(SW_IEEE)
 
 # LINK is the full linker path name
 
