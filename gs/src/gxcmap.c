@@ -149,6 +149,24 @@ gx_default_gray_encode(gx_device * dev, const gx_color_value cv[])
     return cv[0] * (dev->color_info.max_gray + 1) / (gx_max_color_value + 1);
 }
 
+/**
+ * This routine is provided for old devices which provide a
+ * map_rgb_color routine but not encode_color. New devices are
+ * encouraged either to use the defaults or to set encode_color rather
+ * than map_rgb_color.
+ **/
+gx_color_index
+gx_backwards_compatible_gray_encode(gx_device *dev,
+				    const gx_color_value cv[])
+{
+    gx_color_value gray_val = cv[0];
+    gx_color_value rgb_cv[3];
+
+    rgb_cv[0] = gray_val;
+    rgb_cv[1] = gray_val;
+    rgb_cv[2] = gray_val;
+    return (*dev_proc(dev, map_rgb_color))(dev, rgb_cv);
+}
 
 /* -------- Default color space to color model conversion routines -------- */
 

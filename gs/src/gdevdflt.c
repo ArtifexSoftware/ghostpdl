@@ -55,8 +55,11 @@ private gx_color_index
 
     /* use encode_color if it has been provided */
     if ((encode_proc = dev_proc(dev, encode_color)) == 0) {
-        if ( (dev->color_info.num_components == 1 ||
-              dev->color_info.num_components == 3    )              &&
+	if (dev->color_info.num_components == 1                          &&
+	    dev_proc(dev, map_rgb_color) != 0) {
+	    set_cinfo_polarity(dev, GX_CINFO_POLARITY_ADDITIVE);
+	    encode_proc = gx_backwards_compatible_gray_encode;
+	} else  if ( (dev->color_info.num_components == 3    )           &&
              (encode_proc = dev_proc(dev, map_rgb_color)) != 0  )
             set_cinfo_polarity(dev, GX_CINFO_POLARITY_ADDITIVE);
         else if ( dev->color_info.num_components == 4                    &&
@@ -425,9 +428,10 @@ gx_device_fill_in_procs(register gx_device * dev)
     fill_dev_proc(dev, finish_copydevice, gx_default_finish_copydevice);
 
     set_dev_proc(dev, encode_color, get_encode_color(dev));
-    set_dev_proc(dev, map_cmyk_color, dev_proc(dev, encode_color));
-    set_dev_proc(dev, map_rgb_color, dev_proc(dev, encode_color));
-
+    if (dev->color_info.num_components == 3)
+	set_dev_proc(dev, map_rgb_color, dev_proc(dev, encode_color));
+    if (dev->color_info.num_components == 4)
+	set_dev_proc(dev, map_cmyk_color, dev_proc(dev, encode_color));
 
     if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
         fill_dev_proc(dev, encode_color, gx_default_encode_color);

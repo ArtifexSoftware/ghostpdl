@@ -254,6 +254,13 @@ dev_proc_encode_color(gx_default_gray_fast_encode);
 dev_proc_encode_color(gx_default_gray_encode);
 
 /*
+ * This is the default encode_color routine for grayscale devices
+ * that provide a map_rgb_color procedure, but don't themselves
+ * provide encode_color.
+ */
+dev_proc_encode_color(gx_backwards_compatible_gray_encode);
+
+/*
  * These are the default routines for converting a gx_color_index into
  * a list of device colorant values
  */
