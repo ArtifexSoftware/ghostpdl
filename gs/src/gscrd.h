@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Interface for CIE color rendering dictionary creation */
 
 #ifndef gscrd_INCLUDED
@@ -44,6 +44,30 @@ int
  * The actual point, matrix, range, and procedure values are copied into the
  * CRD, but only the pointer to the color lookup table
  * (RenderTable.lookup.table) is copied, not the table itself.
+ *
+ * If pfrom_crd is not NULL, then if the EncodeLMN, EncodeABC, or
+ * RenderTable.T procedures indicate that the values exist only in the
+ * cache, the corresponding values will be copied from pfrom_crd.
+ * Note that NULL values for the individual pointers still represent
+ * default values.
+ */
+int
+    gs_cie_render1_init_from(P15(gs_cie_render * pcrd, void *client_data,
+				 const gs_cie_render * pfrom_crd,
+				 const gs_vector3 * WhitePoint,
+				 const gs_vector3 * BlackPoint,
+				 const gs_matrix3 * MatrixPQR,
+				 const gs_range3 * RangePQR,
+				 const gs_cie_transform_proc3 * TransformPQR,
+				 const gs_matrix3 * MatrixLMN,
+				 const gs_cie_render_proc3 * EncodeLMN,
+				 const gs_range3 * RangeLMN,
+				 const gs_matrix3 * MatrixABC,
+				 const gs_cie_render_proc3 * EncodeABC,
+				 const gs_range3 * RangeABC,
+				 const gs_cie_render_table_t * RenderTable));
+/*
+ * Initialize a CRD without the option of copying cached values.
  */
 int
     gs_cie_render1_initialize(P14(gs_cie_render * pcrd, void *client_data,
@@ -51,14 +75,14 @@ int
 				  const gs_vector3 * BlackPoint,
 				  const gs_matrix3 * MatrixPQR,
 				  const gs_range3 * RangePQR,
-				const gs_cie_transform_proc3 * TransformPQR,
+				  const gs_cie_transform_proc3 * TransformPQR,
 				  const gs_matrix3 * MatrixLMN,
 				  const gs_cie_render_proc3 * EncodeLMN,
 				  const gs_range3 * RangeLMN,
 				  const gs_matrix3 * MatrixABC,
 				  const gs_cie_render_proc3 * EncodeABC,
 				  const gs_range3 * RangeABC,
-				const gs_cie_render_table_t * RenderTable));
+				  const gs_cie_render_table_t * RenderTable));
 
 /*
  * Set or access the client_data pointer in a CRD.

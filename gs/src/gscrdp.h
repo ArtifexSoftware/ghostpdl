@@ -25,15 +25,24 @@
 #include "gscie.h"
 #include "gsparam.h"
 
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+
 /*
  * A driver can provide any number of its own CRDs through (read-only)
  * device parameters whose values are slightly modified PostScript-style
  * dictionaries.  The driver doesn't need to concern itself with how the
  * parameters are encoded: it simply constructs a CRD and calls
  * param_write_cie_render1.
+ *
+ * Logically, the pcrd parameter for this procedure and the next one
+ * should be declared as const gs_cie_render *, but the procedures may
+ * cause certain cached (idempotent) values to be computed.
  */
 int param_write_cie_render1(P4(gs_param_list * plist, gs_param_name key,
-			       const gs_cie_render * pcrd,
+			       gs_cie_render * pcrd,
 			       gs_memory_t * mem));
 
 /*
@@ -41,7 +50,7 @@ int param_write_cie_render1(P4(gs_param_list * plist, gs_param_name key,
  * into a parameter list, rather than as a named parameter in a larger
  * list.
  */
-int param_put_cie_render1(P3(gs_param_list * plist, const gs_cie_render * pcrd,
+int param_put_cie_render1(P3(gs_param_list * plist, gs_cie_render * pcrd,
 			     gs_memory_t * mem));
 
 /*

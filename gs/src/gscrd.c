@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* CIE color rendering dictionary creation */
 #include "math_.h"
 #include "memory_.h"
@@ -303,6 +303,75 @@ gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
  *
  * The actual point, matrix, range, and procedure values are copied into the
  * CRD, but only the pointer to the color lookup table is copied.
+ *
+ * If pfrom_crd is not NULL, then if the EncodeLMN, EncodeABC, or
+ * RenderTable.T procedures indicate that the values exist only in the
+ * cache, the corresponding values will be copied from pfrom_crd.
+ * Note that NULL values for the individual pointers still represent
+ * default values.
+ */
+int
+gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
+			 const gs_cie_render * pfrom_crd,
+			 const gs_vector3 * WhitePoint,
+			 const gs_vector3 * BlackPoint,
+			 const gs_matrix3 * MatrixPQR,
+			 const gs_range3 * RangePQR,
+			 const gs_cie_transform_proc3 * TransformPQR,
+			 const gs_matrix3 * MatrixLMN,
+			 const gs_cie_render_proc3 * EncodeLMN,
+			 const gs_range3 * RangeLMN,
+			 const gs_matrix3 * MatrixABC,
+			 const gs_cie_render_proc3 * EncodeABC,
+			 const gs_range3 * RangeABC,
+			 const gs_cie_render_table_t * RenderTable)
+{
+    pcrd->id = gs_next_ids(1);
+    pcrd->client_data = client_data;
+    pcrd->points.WhitePoint = *WhitePoint;
+    pcrd->points.BlackPoint =
+	*(BlackPoint ? BlackPoint : &BlackPoint_default);
+    pcrd->MatrixPQR = *(MatrixPQR ? MatrixPQR : &Matrix3_default);
+    pcrd->RangePQR = *(RangePQR ? RangePQR : &Range3_default);
+    pcrd->TransformPQR =
+	*(TransformPQR ? TransformPQR : &TransformPQR_default);
+    pcrd->MatrixLMN = *(MatrixLMN ? MatrixLMN : &Matrix3_default);
+    pcrd->EncodeLMN = *(EncodeLMN ? EncodeLMN : &Encode_default);
+    if (pfrom_crd &&
+	!memcmp(&pcrd->EncodeLMN, &EncodeLMN_from_cache,
+		sizeof(EncodeLMN_from_cache))
+	)
+	memcpy(pcrd->caches.EncodeLMN, pfrom_crd->caches.EncodeLMN,
+	       sizeof(pcrd->caches.EncodeLMN));
+    pcrd->RangeLMN = *(RangeLMN ? RangeLMN : &Range3_default);
+    pcrd->MatrixABC = *(MatrixABC ? MatrixABC : &Matrix3_default);
+    pcrd->EncodeABC = *(EncodeABC ? EncodeABC : &Encode_default);
+    if (pfrom_crd &&
+	!memcmp(&pcrd->EncodeABC, &EncodeABC_from_cache,
+		sizeof(EncodeABC_from_cache))
+	)
+	memcpy(pcrd->caches.EncodeABC, pfrom_crd->caches.EncodeABC,
+	       sizeof(pcrd->caches.EncodeABC));
+    pcrd->RangeABC = *(RangeABC ? RangeABC : &Range3_default);
+    if (RenderTable) {
+	pcrd->RenderTable = *RenderTable;
+	if (pfrom_crd &&
+	    !memcmp(&pcrd->RenderTable.T, &RenderTableT_from_cache,
+		    sizeof(RenderTableT_from_cache))
+	    ) {
+	    memcpy(pcrd->caches.RenderTableT, pfrom_crd->caches.RenderTableT,
+		   sizeof(pcrd->caches.RenderTableT));
+	    pcrd->caches.RenderTableT_is_identity =
+		pfrom_crd->caches.RenderTableT_is_identity;
+	}
+    } else {
+	pcrd->RenderTable.lookup.table = 0;
+	pcrd->RenderTable.T = RenderTableT_default;
+    }
+    pcrd->status = CIE_RENDER_STATUS_BUILT;
+}
+/*
+ * Initialize a CRD without the option of copying cached values.
  */
 int
 gs_cie_render1_initialize(gs_cie_render * pcrd, void *client_data,
@@ -319,30 +388,10 @@ gs_cie_render1_initialize(gs_cie_render * pcrd, void *client_data,
 			  const gs_range3 * RangeABC,
 			  const gs_cie_render_table_t * RenderTable)
 {
-    pcrd->id = gs_next_ids(1);
-    pcrd->client_data = client_data;
-    pcrd->points.WhitePoint = *WhitePoint;
-    pcrd->points.BlackPoint =
-	*(BlackPoint ? BlackPoint : &BlackPoint_default);
-    pcrd->MatrixPQR = *(MatrixPQR ? MatrixPQR : &Matrix3_default);
-    pcrd->RangePQR = *(RangePQR ? RangePQR : &Range3_default);
-    pcrd->TransformPQR =
-	*(TransformPQR ? TransformPQR : &TransformPQR_default);
-    pcrd->MatrixLMN = *(MatrixLMN ? MatrixLMN : &Matrix3_default);
-    pcrd->EncodeLMN = *(EncodeLMN ? EncodeLMN : &Encode_default);
-    pcrd->RangeLMN = *(RangeLMN ? RangeLMN : &Range3_default);
-    pcrd->MatrixABC = *(MatrixABC ? MatrixABC : &Matrix3_default);
-    pcrd->EncodeABC = *(EncodeABC ? EncodeABC : &Encode_default);
-    pcrd->RangeABC = *(RangeABC ? RangeABC : &Range3_default);
-    if (RenderTable)
-	pcrd->RenderTable = *RenderTable;
-    else {
-	pcrd->RenderTable.lookup.table = 0;
-	pcrd->RenderTable.T = RenderTableT_default;
-    }
-    pcrd->status = CIE_RENDER_STATUS_BUILT;
-    /* initialize domainLMN, DomainABC, and pqr white and black points
-       for source and device. */
-    gs_cie_render_init(pcrd);
-    return 0;
+    return gs_cie_render1_init_from(pcrd, client_data, NULL,
+				    WhitePoint, BlackPoint,
+				    MatrixPQR, RangePQR, TransformPQR,
+				    MatrixLMN, EncodeLMN, RangeLMN,
+				    MatrixABC, EncodeABC, RangeABC,
+				    RenderTable);
 }
