@@ -2398,6 +2398,26 @@ is_color_span_v_big(const patch_fill_state_t *pfs, const tensor_patch *p)
 }
 
 private inline bool
+is_color_span_v_linear(const patch_fill_state_t *pfs, const tensor_patch *p)
+{
+    int code;
+    gs_direct_color_space *cs = 
+		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+
+    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
+			&p->c[0][0].cc, &p->c[1][0].cc, 
+			&p->c[0][0].cc, NULL, pfs->smoothness);
+    if (code <= 0)
+	return code;
+    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
+			&p->c[0][1].cc, &p->c[1][1].cc, 
+			&p->c[0][1].cc, NULL, pfs->smoothness);
+    if (code <= 0)
+	return code;
+    return true;
+}
+
+private inline bool
 is_color_monotonic_by_v(const patch_fill_state_t *pfs, const tensor_patch *p) 
 {
     if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[1][0]))
@@ -2725,6 +2745,7 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
 {
     patch_color_t d0001, d1011, d;
     double D, D0001, D1011, D0010, D0111, D0011, D0110;
+    double Du, Dv;
 
     color_diff(pfs, &p->p[0][0]->c, &p->p[0][1]->c, &d0001);
     color_diff(pfs, &p->p[1][0]->c, &p->p[1][1]->c, &d1011);
@@ -2739,27 +2760,23 @@ quadrangle_color_change(const patch_fill_state_t *pfs, const quadrangle_patch *p
 	    D0010 <= pfs->smoothness && D0111 <= pfs->smoothness &&
 	    D0011 <= pfs->smoothness && D0110 <= pfs->smoothness)
 	    return color_change_small;
-    if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness) {
-	*uv = false;
-	return color_change_gradient;
-    }
-    if (D0010 <= pfs->smoothness && D0111 <= pfs->smoothness) {
-	*uv = true;
-	return color_change_gradient;
+    if (!USE_LINEAR_COLOR_PROCS) {
+	if (D0001 <= pfs->smoothness && D1011 <= pfs->smoothness) {
+	    *uv = false;
+	    return color_change_gradient;
+	}
+	if (D0010 <= pfs->smoothness && D0111 <= pfs->smoothness) {
+	    *uv = true;
+	    return color_change_gradient;
+	}
     }
     color_diff(pfs, &d0001, &d1011, &d);
     D = color_norm(pfs, &d);
     if (D <= pfs->smoothness)
 	return color_change_linear;
-    {	double D0001 = color_norm(pfs, &d0001);
-	double D1011 = color_norm(pfs, &d1011);
-	double Du = max(D0001, D1011);
-     	double D0010 = color_span(pfs, &p->p[0][0]->c, &p->p[1][0]->c);
-	double D0111 = color_span(pfs, &p->p[0][1]->c, &p->p[1][1]->c);
-	double Dv = max(D0010, D0111);
-
-	*uv = Du > Dv;
-    }
+    Du = max(D0001, D1011);
+    Dv = max(D0010, D0111);
+    *uv = Du > Dv;
     return color_change_general;
 }
 
@@ -3170,7 +3187,8 @@ fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv)
 {
     if (kv <= 1 && (is_patch_narrow(pfs, p) || 
 	    ((pfs->monotonic_color || is_color_monotonic_by_v(pfs, p)) && 
-	     !is_color_span_v_big(pfs, p) &&
+	     (USE_LINEAR_COLOR_PROCS && is_color_span_v_linear(pfs, p) || 
+	      !is_color_span_v_big(pfs, p)) &&
 	    !is_bended(p)))) { /* The order of calls is improtant for performance. */
 	draw_patch(p, true, RGB(0, 128, 0));
 	return fill_stripe(pfs, p);
