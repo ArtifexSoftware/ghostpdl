@@ -228,7 +228,7 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 		return code;
 	    if (code == gs_error_undefined) {
 		/* PS font has no such glyph. */
-		if (bytes_compare(gnstr.data, gnstr.size, ".notdef", 7)) {
+		if (bytes_compare(gnstr.data, gnstr.size, (const byte *)".notdef", 7)) {
 		    pet->glyph = glyph;
 		    pet->str = gnstr;
 		    pet->is_difference = true;
