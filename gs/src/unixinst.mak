@@ -89,7 +89,7 @@ pdf2dsc.ps pdfopt.ps ;\
 	done'
 
 # install the default resource files
-RES_CATEGORIES=CMap Decoding
+RES_CATEGORIES=CMap ColorSpace Decoding
 install-resdata: $(PSRESDIR)/Decoding/Unicode
 	-mkdir -p $(datadir)
 	-mkdir -p $(gsdir)
