@@ -25,6 +25,9 @@ include $(GLSRCDIR)/lib.mak
 debug:
 	$(MAKE) -f $(MAKEFILE) GENOPT='-DDEBUG' CFLAGS='-g -O0 $(GCFLAGS) $(XCFLAGS)'
 
+pg-fp-with-cov:
+	$(MAKE) -f $(MAKEFILE) GENOPT='' CFLAGS='-g -pg -O2 -fprofile-arcs -ftest-coverage $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg -fprofile-arcs -ftest-coverage'
+
 # Configure for profiling
 pg-fp:
 	$(MAKE) -f $(MAKEFILE) GENOPT='' CFLAGS='-g -pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg'
@@ -43,7 +46,7 @@ clean_gs:
 	$(MAKE) -f $(GLSRCDIR)/ugcclib.mak \
 	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
 	GLOBJDIR='$(GLOBJDIR)' clean
-	
+
 # Build the required GS library files.  It's simplest always to build
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
