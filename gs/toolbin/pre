@@ -85,7 +85,7 @@ proc check_version {mak} {
     } elseif {![regexp {([0-9]+)} $ddate skip ddate]} {
 	message "Unable to parse date in $mak"
     } elseif {![string match *x* $rday]} {
-	if {$ddate != $ryear * 10000 + $rmonth * 100 + $rday} {
+	if {$ddate != "${ryear}${rmonth}${rday}"} {
 	    message "Date $rdate in NEWS doesn't match date $ddate in $mak"
 	}
     }
