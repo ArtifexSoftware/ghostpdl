@@ -80,6 +80,8 @@ parameter list enumeration, is changed.
 to initialize the common members.
 	- st_indexed_map is now private.  Clients allocating instances of
 this structure must now call alloc_indexed_map.
+	- Setting a transfer map as the identity mapping now requires
+calling gx_set_identity_transfer.
 
 </pre>
 

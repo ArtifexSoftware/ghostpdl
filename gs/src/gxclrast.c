@@ -2289,7 +2289,7 @@ cmd_select_map(cmd_map_index map_index, cmd_map_contents cont,
 		pis->effective_transfer.indexed[i] = map;
 	    }
 transfer:   if (cont != cmd_map_other) {
-		map->proc = gs_identity_transfer;
+		gx_set_identity_transfer(map);
 		*pmdata = 0;
 		*pcount = 0;
 		return 0;
@@ -2323,7 +2323,7 @@ alloc:	    if (cont == cmd_map_none) {
 			      mem, return_error(gs_error_VMerror), cname);
 	    map = *pmap;
 	    if (cont == cmd_map_identity) {
-		map->proc = gs_identity_transfer;
+		gx_set_identity_transfer(map);
 		*pmdata = 0;
 		*pcount = 0;
 		return 0;

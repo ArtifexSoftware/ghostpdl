@@ -40,7 +40,7 @@
 /* log2... must not be greater than frac_bits, and must be least 8. */
 #define log2_transfer_map_size 8
 #define transfer_map_size (1 << log2_transfer_map_size)
-							/*typedef struct gx_transfer_map_s gx_transfer_map; *//* in gxtmap.h */
+/*typedef struct gx_transfer_map_s gx_transfer_map; *//* in gxtmap.h */
 struct gx_transfer_map_s {
     rc_header rc;
     gs_mapping_proc proc;	/* typedef is in gxtmap.h */
@@ -54,6 +54,9 @@ extern_st(st_transfer_map);
 #define public_st_transfer_map() /* in gscolor.c */\
   gs_public_st_composite(st_transfer_map, gx_transfer_map, "gx_transfer_map",\
     transfer_map_enum_ptrs, transfer_map_reloc_ptrs)
+
+/* Set a transfer map to the identity map. */
+void gx_set_identity_transfer(P1(gx_transfer_map *));
 
 /*
  * Map a color fraction through a transfer map.  If the map is small,
@@ -99,6 +102,8 @@ frac gx_color_frac_map(P2(frac, const frac *));		/* in gxcmap.c */
 float gs_mapped_transfer(P2(floatp, const gx_transfer_map *));
 
 /* Define an identity mapping procedure. */
+/* Don't store this directly in proc/closure.proc: */
+/* use gx_set_identity_transfer. */
 float gs_identity_transfer(P2(floatp, const gx_transfer_map *));
 
 #endif /* gxfmap_INCLUDED */

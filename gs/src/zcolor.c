@@ -163,7 +163,7 @@ zcolor_remap_one(i_ctx_t *i_ctx_p, const ref * pproc,
      * more of these functions.
      */
     if (r_size(pproc) == 0) {
-	pmap->proc = gs_identity_transfer;
+	gx_set_identity_transfer(pmap);
 	/*
 	 * Even though we don't actually push anything on the e-stack, all
 	 * clients do, so we return o_push_estack in this case.  This is

@@ -709,6 +709,18 @@ gs_mapped_transfer(floatp value, const gx_transfer_map * pmap)
     return gx_map_color_float(pmap, value);
 }
 
+/* Set a transfer map to the identity map. */
+void
+gx_set_identity_transfer(gx_transfer_map *pmap)
+{
+    int i;
+
+    pmap->proc = gs_identity_transfer;
+    /* We still have to fill in the cached values. */
+    for (i = 0; i < transfer_map_size; ++i)
+	pmap->values[i] = bits2frac(i, log2_transfer_map_size);
+}
+
 #if FRAC_MAP_INTERPOLATE	/* NOTA BENE */
 
 /* Map a color fraction through a transfer map. */
