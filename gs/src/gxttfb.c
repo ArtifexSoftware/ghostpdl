@@ -34,11 +34,9 @@
 #include "gdebug.h"
 #include "memory_.h"
 #include "math_.h"
-#if TT_GRID_FITTING
-#   include "gxistate.h"
-#   include "gxpaint.h"
-#   include "gzspotan.h"
-#endif
+#include "gxistate.h"
+#include "gxpaint.h"
+#include "gzspotan.h"
 #include <stdarg.h>
 
 gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
@@ -201,7 +199,6 @@ void gx_ttfReader__destroy(gx_ttfReader *this)
 
 /*----------------------------------------------*/
 
-#if NEW_TT_INTERPRETER
 private void DebugRepaint(ttfFont *ttf)
 {
 }
@@ -219,11 +216,9 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
 	va_end(args);
     }
 }
-#endif
 
 private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 {
-#if NEW_TT_INTERPRETER
     if (!ttf->design_grid) {
 	char buf[gs_font_name_max + 1];
 	int l;
@@ -239,7 +234,6 @@ private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 	    base_font->data.warning_patented = true;
 	}
     }
-#endif
 }
 
 /*----------------------------------------------*/
@@ -252,7 +246,6 @@ typedef struct gx_ttfMemory_s {
 gs_private_st_simple(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory");
 /* st_gx_ttfMemory::memory points to a root. */
 
-#if NEW_TT_INTERPRETER 
 private void *gx_ttfMemory__alloc_bytes(ttfMemory *this, int size,  const char *cname)
 {
     gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
@@ -273,7 +266,6 @@ private void gx_ttfMemory__free(ttfMemory *this, void *p,  const char *cname)
 
     gs_free_object(mem, p, cname);
 }
-#endif
 
 /*----------------------------------------------*/
 
@@ -306,13 +298,8 @@ private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * cha
     if (char_size->x <= 2 && char_size->y <= 2) {
     	/* Disable the grid fitting for very small fonts. */
 	design_grid1 = true;
-    } else {
-#if NEW_TT_INTERPRETER
+    } else
 	design_grid1 = design_grid || !(gs_currentgridfittt(pfont->dir) & 1);
-#else
-	design_grid1 = design_grid; /* gs_currentgridfittt is undefined. */;
-#endif
-    }
     *dg = design_grid1;
     subpix_origin->x = (atp ? 0 : reminder(char_tm->tx, scale_x) / scale_x);
     subpix_origin->y = (atp ? 0 : reminder(char_tm->ty, scale_y) / scale_y);
@@ -328,7 +315,6 @@ private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * cha
 
 ttfFont *ttfFont__create(gs_font_dir *dir)
 {
-#if NEW_TT_INTERPRETER 
     gs_memory_t *mem = dir->memory;
     gx_ttfMemory *m = gs_alloc_struct(mem, gx_ttfMemory, &st_gx_ttfMemory, "ttfFont__create");
     ttfFont *ttf;
@@ -341,39 +327,29 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     m->memory = mem;
     if(ttfInterpreter__obtain(&m->super, &dir->tti))
 	return 0;
-#if TT_GRID_FITTING
     if(gx_san__obtain(mem->stable_memory, &dir->san))
 	return 0;
-#endif
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
     ttfFont__init(ttf, &m->super, DebugRepaint, DebugPrint);
     return ttf;
-#else
-    return 0;
-#endif
 }
 
 void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
 {   
-#if NEW_TT_INTERPRETER 
     ttfMemory *mem = this->tti->ttf_memory;
 
     ttfFont__finit(this);
     mem->free(mem, this, "ttfFont__destroy");
     ttfInterpreter__release(&dir->tti);
-#if TT_GRID_FITTING
     gx_san__release(&dir->san);
-#endif
-#endif
 }
 
 int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_font_type42 *pfont,
     	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
 	       bool design_grid)
 {
-#if NEW_TT_INTERPRETER 
     gs_point char_size, subpix_origin;
     gs_matrix post_transform;
     /* 
@@ -404,9 +380,6 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
 		return_error(gs_error_invalidfont);
 	    }
     }
-#else
-    return 0;
-#endif
 }
 
 /*----------------------------------------------*/
@@ -416,9 +389,7 @@ typedef struct gx_ttfExport_s {
     gx_path *path;
     gs_fixed_point w;
     int error;
-#if TT_GRID_FITTING
     bool monotonize;
-#endif
 } gx_ttfExport;
 
 private void gx_ttfExport__MoveTo(ttfExport *this, FloatPoint *p)
@@ -442,18 +413,16 @@ private void gx_ttfExport__CurveTo(ttfExport *this, FloatPoint *p0, FloatPoint *
     gx_ttfExport *e = (gx_ttfExport *)this;
 
     if (!e->error) {
-#	if TT_GRID_FITTING
-	    if (e->monotonize) {
-		curve_segment s;
-    
-		s.notes = sn_none;
-		s.p1.x = float2fixed(p0->x), s.p1.y = float2fixed(p0->y), 
-		s.p2.x = float2fixed(p1->x), s.p2.y = float2fixed(p1->y), 
-		s.pt.x = float2fixed(p2->x), s.pt.y = float2fixed(p2->y);
-		e->error = gx_curve_monotonize(e->path, &s);
-	    } else
-#	endif
-	e->error = gx_path_add_curve_notes(e->path, float2fixed(p0->x), float2fixed(p0->y), 
+	if (e->monotonize) {
+	    curve_segment s;
+
+	    s.notes = sn_none;
+	    s.p1.x = float2fixed(p0->x), s.p1.y = float2fixed(p0->y), 
+	    s.p2.x = float2fixed(p1->x), s.p2.y = float2fixed(p1->y), 
+	    s.pt.x = float2fixed(p2->x), s.pt.y = float2fixed(p2->y);
+	    e->error = gx_curve_monotonize(e->path, &s);
+	} else
+    	    e->error = gx_path_add_curve_notes(e->path, float2fixed(p0->x), float2fixed(p0->y), 
 				     float2fixed(p1->x), float2fixed(p1->y), 
 				     float2fixed(p2->x), float2fixed(p2->y), sn_none);
     }
@@ -485,8 +454,6 @@ private void gx_ttfExport__DebugPaint(ttfExport *this)
 }
 
 /*----------------------------------------------*/
-
-#if TT_GRID_FITTING
 
 private int
 path_to_hinter(t1_hinter *h, gx_path *path)
@@ -688,7 +655,6 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     }
     return code;
 }
-#endif
 
 int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int glyph_index, 
 	const gs_matrix *m, const gs_log2_scale_point *pscale, 
@@ -702,12 +668,8 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     /* so that TTC never comes here. */
     FloatMatrix m1;
     bool dg;
-#   if TT_GRID_FITTING
     uint gftt = gs_currentgridfittt(pfont->dir);
     bool ttin = (gftt & 1);
-#   else
-    uint gftt = 0;
-#   endif
     /*	gs_currentgridfittt values (binary) :
 	00 - no grid fitting;
 	01 - Grid fit with TT interpreter; On failure warn and render unhinted.
@@ -736,9 +698,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     e.path = path;
     e.w.x = 0;
     e.w.y = 0;
-#   if TT_GRID_FITTING
-	e.monotonize = auth;
-#   endif
+    e.monotonize = auth;
     gx_ttfReader__Reset(r);
     ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
     switch(ttfOutliner__Outline(&o, glyph_index, subpix_origin.x, subpix_origin.y, &m1)) {
@@ -746,16 +706,12 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
 	    if (!auth)
 		WarnPatented(pfont, ttf, "Some glyphs of the font");
-#	    if TT_GRID_FITTING
-		if (!design_grid && auth)
-		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
-#	    endif
+	    if (!design_grid && auth)
+		return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
 	    /* Falls through. */
 	case fNoError:
-#	    if TT_GRID_FITTING
-		if (!design_grid && !ttin && auth)
-		    return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
-#	    endif
+	    if (!design_grid && !ttin && auth)
+		return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
 	    ttfOutliner__DrawGlyphOutline(&o);
 	    if (e.error)
 		return e.error;

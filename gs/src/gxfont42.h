@@ -80,9 +80,7 @@ struct gs_type42_data_s {
     uint numGlyphs;		/* from size of loca */
     uint trueNumGlyphs;		/* from maxp */
     gs_glyph_cache *gdcache;
-#if NEW_TT_INTERPRETER
     bool warning_patented;
-#endif
 };
 #define gs_font_type42_common\
     gs_font_base_common;\
@@ -106,16 +104,9 @@ extern_st(st_gs_font_type42);
 int gs_type42_font_init(gs_font_type42 *);
 
 /* Append the outline of a TrueType character to a path. */
-#if NEW_TT_INTERPRETER
 int gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		 gx_path * ppath, const gs_log2_scale_point * pscale,
 		 bool charpath_flag, int paint_type, cached_fm_pair *pair);
-#else
-int gs_type42_append(uint glyph_index, gs_imager_state * pis,
-		     gx_path * ppath, const gs_log2_scale_point * pscale,
-		     bool charpath_flag, int paint_type,
-		     gs_font_type42 * pfont);
-#endif
 
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,

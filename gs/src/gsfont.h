@@ -82,9 +82,7 @@ uint gs_currentcacheupper(const gs_font_dir *);
 int gs_setcacheupper(gs_font_dir *, uint);
 uint gs_currentaligntopixels(const gs_font_dir *);
 int gs_setaligntopixels(gs_font_dir *, uint);
-#if NEW_TT_INTERPRETER
 uint gs_currentgridfittt(const gs_font_dir *);
 int gs_setgridfittt(gs_font_dir *, uint);
-#endif
 
 #endif /* gsfont_INCLUDED */

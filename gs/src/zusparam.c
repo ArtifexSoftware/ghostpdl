@@ -423,7 +423,6 @@ set_AlignToPixels(i_ctx_t *i_ctx_p, long val)
     gs_setaligntopixels(ifont_dir, (uint)val);
     return 0;
 }
-#if NEW_TT_INTERPRETER
 private long
 current_GridFitTT(i_ctx_t *i_ctx_p)
 {
@@ -435,7 +434,6 @@ set_GridFitTT(i_ctx_t *i_ctx_p, long val)
     gs_setgridfittt(ifont_dir, (uint)val);
     return 0;
 }
-#endif
 private const long_param_def_t user_long_params[] =
 {
     {"JobTimeout", 0, MAX_UINT_PARAM,
@@ -462,16 +460,9 @@ private const long_param_def_t user_long_params[] =
     {"MinScreenLevels", 0, MAX_UINT_PARAM,
      current_MinScreenLevels, set_MinScreenLevels},
     {"AlignToPixels", 0, 1,
-     current_AlignToPixels, set_AlignToPixels}
-#if NEW_TT_INTERPRETER
-    , {"GridFitTT", 0, 
-#   if TT_GRID_FITTING
-    3,
-#   else
-    1,
-#   endif
+     current_AlignToPixels, set_AlignToPixels},
+    {"GridFitTT", 0, 3, 
      current_GridFitTT, set_GridFitTT}
-#endif
 };
 
 /* Boolean values */

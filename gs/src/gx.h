@@ -29,8 +29,6 @@
 
 /* Configuration swtches - development needs only. */
 /* Users should not modify them. */
-#define NEW_TT_INTERPRETER 1
-#define TT_GRID_FITTING (NEW_TT_INTERPRETER && 1) /* old code = 0, new code = 1. */
 #   define CURVED_TRAPEZOID_FILL_HEAVY_TEST 0  /* Temporarily used for a debug purpose. */
 #   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
                                                The implementation of 0 is not completed yet. */

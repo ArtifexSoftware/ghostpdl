@@ -118,10 +118,7 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 	}
 	if (pair->mxx == mxx && pair->mxy == mxy &&
 	    pair->myx == myx && pair->myy == myy
-#if NEW_TT_INTERPRETER
-	    && pair->design_grid == design_grid
-#endif
-	    ) {
+	    && pair->design_grid == design_grid) {
 	    if (pair->font == 0) {
 		pair->font = pfont;
 		if_debug2('k', "[k]updating pair 0x%lx with font 0x%lx\n",
@@ -232,9 +229,7 @@ gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
     cc->wxy.y = float2fixed(wxy.y);
     cc->offset.x = int2fixed(-bbox.p.x);
     cc->offset.y = int2fixed(-bbox.p.y);
-#   if NEW_TT_INTERPRETER
-        cc->pair = pair;
-#   endif
+    cc->pair = pair;
     if_debug5('k', "[k]xfont %s char %d/0x%x#0x%lx=>0x%lx\n",
 	      font->font_name.chars, enc_index, (int)chr,
 	      (ulong) glyph, (ulong) xg);

@@ -33,11 +33,8 @@
 #include "gxfont.h"
 #include "gxfcache.h"
 #include "gxxfont.h"
-
-#if NEW_TT_INTERPRETER
 #include "gxttfb.h"
 #include <assert.h>
-#endif
 
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
@@ -128,14 +125,11 @@ gx_char_cache_init(register gs_font_dir * dir)
     memset((char *)dir->ccache.table, 0,
 	   (dir->ccache.table_mask + 1) * sizeof(cached_char *));
     for (i = 0, pair = dir->fmcache.mdata;
-	 i < dir->fmcache.mmax; i++, pair++
-	) {
+	 i < dir->fmcache.mmax; i++, pair++) {
 	pair->index = i;
 	fm_pair_init(pair);
-#if NEW_TT_INTERPRETER
 	pair->ttf = 0;
 	pair->ttr = 0;
-#endif
     }
 }
 
@@ -205,7 +199,6 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->num_chars = 0;
     pair->xfont_tried = false;
     pair->xfont = 0;
-#if NEW_TT_INTERPRETER
     pair->ttf = 0;
     pair->ttr = 0;
     pair->design_grid = false;
@@ -233,7 +226,6 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	if (code < 0)
 	    return code;
     }
-#endif
     pair->memory = 0;
     if_debug8('k', "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
 	      (ulong) pair, (ulong) font,
@@ -338,14 +330,12 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 				   (xfont_only ? purge_fm_pair_char_xfont :
 				    purge_fm_pair_char),
 				   pair);
-#if NEW_TT_INTERPRETER
     if (pair->ttr)
 	gx_ttfReader__destroy(pair->ttr);
     pair->ttr = 0;
     if (pair->ttf)
 	ttfFont__destroy(pair->ttf, dir);
     pair->ttf = 0;
-#endif
     if (!xfont_only) {
 #ifdef DEBUG
 	if (pair->num_chars != 0) {
@@ -489,9 +479,7 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     cc_set_pair_only(cc, 0);	/* not linked in yet */
     cc->id = gx_no_bitmap_id;
     cc->subpix_origin.x = cc->subpix_origin.y = 0;
-#if NEW_TT_INTERPRETER
     cc->linked = false;
-#endif
 
     /* Open the cache device(s). */
 
@@ -532,14 +520,8 @@ gx_free_cached_char(gs_font_dir * dir, cached_char * cc)
 
     dir->ccache.chunks = cck;
     dir->ccache.cnext = (byte *) cc - cck->data;
-#if NEW_TT_INTERPRETER
     if (cc->linked)
 	cc_pair(cc)->num_chars--;
-#else
-    if (cc_pair(cc) != 0) {	/* might be allocated but not added to table yet */
-	cc_pair(cc)->num_chars--;
-    }
-#endif
     if_debug2('k', "[k]freeing char 0x%lx, pair=0x%lx\n",
 	      (ulong) cc, (ulong) cc_pair(cc));
     gx_bits_cache_free((gx_bits_cache *) & dir->ccache, &cc->head, cck);
@@ -570,10 +552,8 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	while (dir->ccache.table[chi &= dir->ccache.table_mask] != 0)
 	    chi++;
 	dir->ccache.table[chi] = cc;
-#if NEW_TT_INTERPRETER
 	assert(cc->pair == pair);
 	cc->linked = true;
-#endif
 	cc_set_pair(cc, pair);
 	pair->num_chars++;
     }

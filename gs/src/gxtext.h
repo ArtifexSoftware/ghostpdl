@@ -108,14 +108,9 @@ rc_free_proc(rc_free_text_enum);
     /* The following are used to return information to the client. */\
     gs_text_returned_t returned
 /* The typedef is in gstext.h. */
-/*typedef*/ struct gs_text_enum_s {
+struct gs_text_enum_s {
     gs_text_enum_common;
-} /*gs_text_enum_t*/;
-
-#if NEW_TT_INTERPRETER
-    /* The 'pair' field is added to the macro above. */
-    /* A definition of cached_fm_pair is added above */
-#endif
+};
 
 /*
  * Notes on the imaging_dev field of device enumeration structures:
