@@ -605,10 +605,6 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	code = t1_hinter__set_font42_data(&h.super, FontType, &pfont->data, false);
 	if (code < 0)
 	    return code;
-	code = t1_hinter__sbw(&h.super, 0/* o->out.sideBearing already in the path */, 0, 
-				o->out.advance.x, o->out.advance.y);
-	if (code < 0)
-	    return code;
 	gx_path_bbox(path, &bbox);
 	if (code < 0)
 	    return code;

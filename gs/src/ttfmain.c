@@ -889,6 +889,10 @@ void ttfOutliner__DrawGlyphOutline(ttfOutliner *this)
 	yMax = Scale_X(&exec->metrics, yMaxB);
 #   endif
 
+    TransformF26Dot6PointFloat(&p1, out->advance.x, out->advance.y, m);
+    p1.x -= this->post_transform.tx;
+    p1.y -= this->post_transform.ty;
+    exp->SetWidth(exp, &p1);
     sp = -1;
     for (ctr = out->contourCount; ctr != 0; --ctr) {
 	short pt, pts = *endP - sp;
@@ -1010,7 +1014,6 @@ FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
 {   ttfFont *pFont = this->pFont;
     ttfExport *exp = this->exp;
     FontError error;
-    FloatPoint p1;
 
     this->post_transform = *m1;
     this->out.contourCount = 0;
@@ -1030,8 +1033,6 @@ FontError ttfOutliner__Outline(ttfOutliner *this, int glyphIndex,
 	this->post_transform.c /= pFont->nUnitsPerEm;
 	this->post_transform.d /= pFont->nUnitsPerEm;
     }
-    TransformF26Dot6PointFloat(&p1, this->out.advance.x, this->out.advance.y, &this->post_transform);
-    exp->SetWidth(exp, &p1);
     if (error != fNoError && error != fPatented)
 	return error;
     return error;
