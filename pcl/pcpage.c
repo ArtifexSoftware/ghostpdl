@@ -679,7 +679,7 @@ set_top_margin(
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
         pcs->margins.top = tmarg;
         pcs->margins.length = PAGE_LENGTH(hgt - tmarg, DFLT_BOTTOM_MARGIN);
-	return pcl_set_cap_y(pcs, 0L, false, false, false);
+	return pcl_set_cap_y(pcs, 0L, false, false, true);
     }
     return 0;
 }
@@ -705,7 +705,7 @@ set_text_length(
 /*
  * ESC & l <enable> L
  *
- * Set perferation skip mode. Though performation skip is more closely related
+ * Set perforation skip mode. Though performation skip is more closely related
  * to vertical motion than to margins, the command is included here because it
  * resets the vertical margins (top margin and text length) to their defaults.
  */
@@ -717,10 +717,8 @@ set_perforation_skip(
 {
     bool            new_skip = uint_arg(pargs);
 
-    if ((new_skip != pcs->perforation_skip) && (new_skip <= 1)) {
-	reset_vertical_margins(pcs);
+    if ((new_skip != pcs->perforation_skip) && (new_skip <= 1))
 	pcs->perforation_skip = new_skip;
-    }
     return 0;
 }
 
