@@ -95,12 +95,43 @@ private const char *const psw_begin_prolog[] = {
     0
 };
 
+/*
+ * To achieve page independence, every page must in the general case
+ * set page parameters. To preserve duplexing the page cannot set page
+ * parameters. The following code checks the current page size and sets
+ * it only if it is necessary.
+ */
 private const char *const psw_ps_procset[] = {
 	/* <w> <h> <sizename> setpagesize - */
-   "/setpagesize{1 index where{pop cvx exec pop pop}{pop /setpagedevice where",
-    "{pop 2 array astore 1 dict dup/PageSize 4 -1 roll put setpagedevice}",
-    "{pop/setpage where{pop pageparams 3{exch pop}repeat setpage}",
-    "{pop pop}ifelse}ifelse}ifelse}bind def",
+   "/PageSize 2 array def"
+   "/setpagesize"              /* x y /a4 -> -          */
+     "{ PageSize aload pop "   /* x y /a4 x0 y0         */
+       "3 index eq exch",      /* x y /a4 bool x0       */
+       "4 index eq and"        /* x y /a4 bool          */
+         "{ pop pop pop"
+         "}"
+         "{ PageSize dup  1",  /* x y /a4 [  ] [  ] 1   */
+           "5 -1 roll put 0 "  /* x /a4 [ y] 0          */
+           "4 -1 roll put "    /* /a4                   */
+           "dup where"        
+             "{ exch get exec" /* -                     */
+             "}",
+             "{ pop"           /* -                     */
+               "/setpagedevice where",
+                 "{ pop 1 dict dup /PageSize PageSize put setpagedevice"
+                 "}",
+                 "{ /setpage where"
+                     "{ pop PageSize aload pop pageparams 3 {exch pop} repeat",
+                       "setpage"
+                     "}"
+                   "if"
+                 "}"
+               "ifelse"
+             "}"
+           "ifelse"
+         "}"
+       "ifelse"
+     "} bind def",
     0
 };
 
