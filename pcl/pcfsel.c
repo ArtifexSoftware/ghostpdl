@@ -32,6 +32,7 @@ typedef enum {
   score_typeface,
   score_location,
   score_orientation,
+  score_fontnumber,
   score_limit
 } score_index_t;
 typedef	int match_score_t[score_limit];
@@ -48,6 +49,7 @@ const char *score_name[] = {
     "typeface",
     "location",
     "orientation",
+    "fontnumber"
 };
 
 private void
@@ -235,6 +237,9 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 	        fhp->Orientation == pcs->xfm_state.lp_orient :
 		0;
 	  }
+
+	/* 10. font number */
+	score[score_fontnumber] = 0x1000000 - fp->params.pjl_font_number;
 
 #ifdef DEBUG
 	if ( gs_debug_c('=') )
