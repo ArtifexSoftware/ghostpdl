@@ -76,30 +76,6 @@ the graphics library that depend on first quadrant coordinates.
 
 <h2><a name="Minor_bugs"></a>Minor Bugs.</h2>
 
-<h3>kshow doesn't restore currentfont after running proc.</h3>
-
-According to the PostScript Language Reference manual, kshow must
-restore currentfont after running the client's procedure, but
-Ghostscript doesn't do this. Test case: 
-<pre>
-%! 
-/f1 /Times-Roman findfont 16 scalefont def 
-/f2 /Helvetica findfont 24 scalefont def 
-100 100 moveto 
-/f f1 def 
-f setfont 
-{ 
-    pop pop 
-    /f f f1 eq { f2 } { f1 } ifelse def 
-    f setfont 
-} (abcde) kshow 
-showpage quit 
-</pre>
-Ghostscript writes the characters in alternating fonts, but Acrobats
-Distiller writes them all in the original font (f1). 
-<br>
-SourceForge Bug #221715, November 5, 2000.
-
 <h3>gs-6.31 and gs-6.60 fail running lib/image-qa.ps</h3>
 Running lib/image-qa.ps with gs-6.31 or gs-6.60 produces an error message. 
 <pre>
@@ -363,6 +339,52 @@ color transitions in the image; in case of uncertainty, it should use Flate.
 </I>
 <p>
 SourceForge Bug #226391, December 19, 2000.
+<p>
+
+
+<h3> Buffering in input filters</h3>
+
+The following program prints differently to stdout on GS and Adobe :
+<p>
+<pre>
+%!
+/proc
+  { currentfile =string readline pop
+    dup ==
+    (%) anchorsearch { pop } if
+  } bind def
+/test
+  { //proc /ASCIIHexDecode filter 
+    3 string readstring pop ==
+  } bind def
+
+(start) ==
+
+test
+%31
+%32
+%33
+%34
+%35
+%36
+%37
+%38
+%39
+
+(stop) ==
+
+%%EOF
+</pre>
+<p>
+<I>
+Adobe fills entire input buffer of ASCIIHexDecode with procedure's output,
+before passing data to ASCIIHexDecode, and without knowledge how much data
+does ASCIIHexDecode want. GS does know the size of data requested,
+so as the procedure is called exact number of times. Thus, GS is more conservative.
+</I>
+<p>
+Anoter useful test to be made by repeating lines %31-%39 hundred times,
+without intermediate empty lines.
 <p>
 <h3>                                              </h3>
 <p>
