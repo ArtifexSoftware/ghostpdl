@@ -633,10 +633,10 @@ $(GLOBJ)gdevlj56.$(OBJ) : $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
 ijs_=$(GLOBJ)gdevijs.$(OBJ) $(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_client.$(OBJ) \
  $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
 
-$(DD)ijs.dev: $(ijs_) $(GLD)page.dev $(DD)ijslib.dev
+$(DD)ijs.dev : $(ijs_) $(GLD)page.dev $(DD)ijslib.dev
 	$(SETPDEV) $(DD)ijs $(ijs_)
 
-$(GLOBJ)gdevijs.$(OBJ): $(GLSRC)gdevijs.c $(PDEVH) \
+$(GLOBJ)gdevijs.$(OBJ) : $(GLSRC)gdevijs.c $(PDEVH) \
  $(ijs_h) $(ijs_client_h)
 	$(CC_) $(I_)$(GLI_) $(II)$(IJSI_)$(_I) $(GLF_) $(GLO_)gdevijs.$(OBJ) $(C_) $(GLSRC)gdevijs.c
 
