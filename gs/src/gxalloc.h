@@ -214,19 +214,7 @@ extern_st(st_chunk);
 			}\
 		}\
 	}
-#ifdef DEBUG
-#  define END_OBJECTS_SCAN\
-			}\
-		}\
-		if ( pre != end )\
-		{	lprintf2("Chunk parsing error, 0x%lx != 0x%lx\n",\
-				 (ulong)pre, (ulong)end);\
-			gs_abort();\
-		}\
-	}
-#else
 #  define END_OBJECTS_SCAN END_OBJECTS_SCAN_NO_ABORT
-#endif
 
 /* Initialize a chunk. */
 /* This is exported for save/restore. */

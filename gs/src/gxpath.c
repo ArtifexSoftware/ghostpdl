@@ -57,6 +57,41 @@ private_st_subpath();
 private rc_free_proc(rc_free_path_segments);
 private rc_free_proc(rc_free_path_segments_local);
 
+/*
+ * Define the default virtual path interface implementation.
+ */
+private int 
+    gz_path_add_point(gx_path *, fixed, fixed),
+    gz_path_add_line_notes(gx_path *, fixed, fixed, segment_notes),
+    gz_path_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
+    gz_path_close_subpath_notes(gx_path *, segment_notes);
+private byte gz_path_state_flags(gx_path *ppath, byte flags);
+
+private gx_path_procs default_path_procs = {
+    gz_path_add_point,
+    gz_path_add_line_notes,
+    gz_path_add_curve_notes,
+    gz_path_close_subpath_notes,
+    gz_path_state_flags
+};
+
+/*
+ * Define virtual path interface implementation for computing a path bbox.
+ */
+private int 
+    gz_path_bbox_add_point(gx_path *, fixed, fixed),
+    gz_path_bbox_add_line_notes(gx_path *, fixed, fixed, segment_notes),
+    gz_path_bbox_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
+    gz_path_bbox_close_subpath_notes(gx_path *, segment_notes);
+
+private gx_path_procs path_bbox_procs = {
+    gz_path_bbox_add_point,
+    gz_path_bbox_add_line_notes,
+    gz_path_bbox_add_curve_notes,
+    gz_path_bbox_close_subpath_notes,
+    gz_path_state_flags
+};
+
 private void
 gx_path_init_contents(gx_path * ppath)
 {
@@ -67,6 +102,7 @@ gx_path_init_contents(gx_path * ppath)
     path_update_newpath(ppath);
     ppath->bbox_set = 0;
     ppath->bbox_accurate = 0;
+    ppath->procs = &default_path_procs;
 }
 
 /*
@@ -107,40 +143,6 @@ gx_path_init_contained_shared(gx_path * ppath, const gx_path * shared,
     return 0;
 }
 
-/*
- * Define the default virtual path interface implementation.
- */
-private int 
-    gz_path_add_point(gx_path *, fixed, fixed),
-    gz_path_add_line_notes(gx_path *, fixed, fixed, segment_notes),
-    gz_path_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
-    gz_path_close_subpath_notes(gx_path *, segment_notes);
-private byte gz_path_state_flags(gx_path *ppath, byte flags);
-
-private gx_path_procs default_path_procs = {
-    gz_path_add_point,
-    gz_path_add_line_notes,
-    gz_path_add_curve_notes,
-    gz_path_close_subpath_notes,
-    gz_path_state_flags
-};
-
-/*
- * Define virtual path interface implementation for computing a path bbox.
- */
-private int 
-    gz_path_bbox_add_point(gx_path *, fixed, fixed),
-    gz_path_bbox_add_line_notes(gx_path *, fixed, fixed, segment_notes),
-    gz_path_bbox_add_curve_notes(gx_path *, fixed, fixed, fixed, fixed, fixed, fixed, segment_notes),
-    gz_path_bbox_close_subpath_notes(gx_path *, segment_notes);
-
-private gx_path_procs path_bbox_procs = {
-    gz_path_bbox_add_point,
-    gz_path_bbox_add_line_notes,
-    gz_path_bbox_add_curve_notes,
-    gz_path_bbox_close_subpath_notes,
-    gz_path_state_flags
-};
 
 /*
  * Allocate a path on the heap, and initialize it.  If shared is NULL,
@@ -155,7 +157,6 @@ gx_path_alloc_shared(const gx_path * shared, gs_memory_t * mem,
 
     if (ppath == 0)
 	return 0;
-    ppath->procs = &default_path_procs;
     if (shared) {
 	if (shared->segments == &shared->local_segments) {
 	    lprintf1("Attempt to share (local) segments of path 0x%lx!\n",
@@ -203,7 +204,6 @@ gx_path_init_local_shared(gx_path * ppath, const gx_path * shared,
     }
     ppath->memory = mem;
     ppath->allocation = path_allocated_on_stack;
-    ppath->procs = &default_path_procs;
     return 0;
 }
 
