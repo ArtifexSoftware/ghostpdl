@@ -179,12 +179,25 @@ FILE *gp_fopen(const char *fname, const char *mode);
 /* if 2nd param true, text mode if 2nd param false */
 int gp_setmode_binary(FILE * pfile, bool mode);
 
-/* Answer whether a file name contains a directory/device specification, */
-/* i.e. is absolute (not directory- or device-relative). */
-bool gp_file_name_is_absolute(const char *fname, uint len);
+/* Answer whether a path string is not "bare" (returns true) i.e.,	*/
+/* contains an absolute reference, an initial 'current directory' ref	*/
+/* or some form of relative reference to the parent directory. The	*/
+/* "non_bare" pathstrings are those for	which it is not valid to prefix	*/
+/* a path (and expect the result to still be meaningful/valid).		*/
+/*									*/
+/* Some examples of non-bare pathstrings platform variants are:		*/
+/*	unix:	starts with '/' or './', or contains '../'		*/
+/*	mac:	starts with ':', or contains '::'			*/
+/*	VMS:	contains (starts with) directory '[  ]' spec.		*/
+/*	Win:	contains initial drive letter, initial '.', '/' or '\'	*/
+/*		or contains '../' or '..\'				*/
+bool gp_pathstring_not_bare(const char *fname, uint len);
 
-/* Answer whether a file name contains a parent directory reference, */
-/* e.g., "../somefile". Currently used for security purposes. */
+/* Answer whether a file name contains a parent directory reference,	*/
+/* e.g., "../somefile". Currently used for security purposes.		*/
+/* Some example platform variants of this are:				*/
+/*	unix:	contains '../'	Windows: contains '..\' or '../'	*/
+/*	mac:	contains '::'	VMS:	'[ ]' contains '-.'		*/
 bool gp_file_name_references_parent(const char *fname, uint len);
 
 /* Answer the string to be used for combining a directory/device prefix */

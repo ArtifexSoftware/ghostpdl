@@ -127,7 +127,7 @@ gp_open_scratch_file(const char *prefix, char *fname, const char *mode)
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 7;
 
-    if (gp_file_name_is_absolute(prefix, prefix_length) ||
+    if (gp_pathstring_not_bare(prefix, prefix_length) ||
 	gp_gettmpdir(fname, &len) != 0
 	)
 	*fname = 0;

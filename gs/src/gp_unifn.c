@@ -18,6 +18,7 @@
 /* Unix-like file name syntax platform routines for Ghostscript */
 #include "gx.h"
 #include "gp.h"
+#include "gsutil.h"
 
 /* Define the character used for separating file names in a list. */
 const char gp_file_name_list_separator = ':';
@@ -30,16 +31,23 @@ const char gp_fmode_binary_suffix[] = "";
 const char gp_fmode_rb[] = "r";
 const char gp_fmode_wb[] = "w";
 
-/* Answer whether a file name contains a directory/device specification, */
-/* i.e. is absolute (not directory- or device-relative). */
+/* Answer whether a path_string can meaningfully have a prefix applied */
 bool
-gp_file_name_is_absolute(const char *fname, unsigned len)
+gp_pathstring_not_bare(const char *fname, unsigned len)
 {			
-    /* A file name is absolute if it starts with a 0 or more .s */
-    /* followed by a /. */
-    while (len && *fname == '.')
-	++fname, --len;
-    return (len && *fname == '/');
+    /* A file name is not bare if it starts with a '/' or a '.' or	*/
+    /* it contains "/../"						*/
+    if (len && (*fname == '.' || *fname == '/'))
+	return true;
+    while (len-- > 3) {
+        int c = *fname++;
+
+	if ((c == '/') &&
+	    ((len >= 3) && (bytes_compare(fname, 2, "..", 2) == 0) &&
+			(fname[2] == '/')))
+	    return true;
+    }
+    return false;
 }
 
 /* Answer whether the file_name references the directory	*/

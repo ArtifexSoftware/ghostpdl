@@ -261,7 +261,7 @@ gp_setmode_binary(FILE * pfile, bool binary)
  */
 
 bool
-gp_file_name_is_absolute(const char *fname, uint len)
+gp_pathstring_not_bare(const char *fname, unsigned len)
 {
     descrip str_desc;
 

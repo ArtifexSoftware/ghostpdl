@@ -150,7 +150,10 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     ref *permitlist = NULL;
     /* an empty string (first character == 0) if '\' character is */
     /* recognized as a file name separator as on DOS & Windows	  */
-    const char *filenamesep = gp_file_name_concat_string("\\", 1);
+    bool use_windows_pathsep = *gp_file_name_concat_string("\\", 1) == '\0';
+    bool fname_bare = !gp_pathstring_not_bare(fname, len);
+    const char *sep_string = NULL;
+    int cwd_len = 0, sep_len = 0;
 
     /*
      * Check here for the %pipe device which is illegal when
@@ -166,6 +169,12 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     }
     if (dict_find_string(&(i_ctx_p->userparams), permitgroup, &permitlist) <= 0)
         return 0;	/* if Permissions not found, just allow access */
+    if (fname_bare) {
+	cwd_len = strlen(gp_current_directory_name);
+	sep_string = gp_file_name_concat_string("", 0);
+	sep_len = strlen(sep_string);
+    }
+
     for (i=0; i<r_size(permitlist); i++) {
         ref permitstring;
 	const string_match_params win_filename_params = {
@@ -178,7 +187,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 	    break;	/* any problem, just fail */
         if (string_match( (const unsigned char*) fname, len,
 			  permitstring.value.bytes, r_size(&permitstring), 
-		filenamesep[0] == 0 ? &win_filename_params : NULL)
+		use_windows_pathsep ? &win_filename_params : NULL)
 	   ) {
 	    /*
 	     * We can't know where we will get to if we reference the parent
@@ -192,6 +201,18 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 	    else
 		return 0;		/* success */
 	}
+	    /* fname is a bare name meaning it will default to the current
+	     * directory. Check to see if the current permitted path is the
+             * platform's current directory, and if so, succeed.
+	     */
+	if (fname_bare && 
+	    (r_size(&permitstring) >= cwd_len + sep_len + 1) &&
+		(bytes_compare(permitstring.value.bytes, cwd_len,
+			(const byte *)gp_current_directory_name, cwd_len) == 0) &&
+		(bytes_compare(permitstring.value.bytes+cwd_len, sep_len,
+			(const byte *)sep_string, sep_len) == 0) &&
+		(permitstring.value.bytes[cwd_len+sep_len] == '*'))
+	    return 0;	/* permitstring was CWD + sep + * */
     }
     /* not found */
     return e_invalidfileaccess;
@@ -634,9 +655,9 @@ zlibfile(i_ctx_t *i_ctx_p)
 	    /* Check to see if this file is allowed */
 	    /* Possibly we should allow access to parent directories if */
 	    /* PermitFileReading includes (*), but this is unlikely if  */
-	    /* we are locked. */
+	    /* we are locked (and we checked LockFilePerminssions above).*/
 	    if (gp_file_name_references_parent(pname.fname, pname.len) ||
-		(gp_file_name_is_absolute(pname.fname, pname.len) &&
+		(gp_pathstring_not_bare(pname.fname, pname.len) &&
 		check_file_permissions(i_ctx_p, pname.fname, pname.len,
 					"PermitFileReading") < 0)
 	       ) 
@@ -699,7 +720,7 @@ ztempfile(i_ctx_t *i_ctx_p)
     }
     if (i_ctx_p->LockFilePermissions) 
         if (gp_file_name_references_parent(pstr, strlen(pstr)) ||
-	    (gp_file_name_is_absolute(pstr, strlen(pstr)) &&
+	    (gp_pathstring_not_bare(pstr, strlen(pstr)) &&
 	      check_file_permissions(i_ctx_p, pstr, strlen(pstr),
 	      				"PermitFileWriting") < 0 )
 	)
@@ -730,13 +751,13 @@ ztempfile(i_ctx_t *i_ctx_p)
     return code;
 }
 
-/* <string> .zpath_is_absolute <bool> */
+/* <string> .pathstring_not_bare <bool> */
 private int
-zpath_is_absolute(i_ctx_t *i_ctx_p)
+zpathstring_not_bare(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     check_type(*op, t_string);
-    make_bool(op, gp_file_name_is_absolute((char *)op->value.bytes, r_size(op)));
+    make_bool(op, gp_pathstring_not_bare((char *)op->value.bytes, r_size(op)));
     return 0;
 }
 
@@ -756,7 +777,7 @@ const op_def zfile_op_defs[] =
     {"2renamefile", zrenamefile},
     {"1status", zstatus},
     {"2.tempfile", ztempfile},
-    {"2.path_is_absolute", zpath_is_absolute},
+    {"2.pathstring_not_bare", zpathstring_not_bare},
 		/* Internal operators */
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},
@@ -896,7 +917,7 @@ lib_file_fopen(gx_io_device * iodev, const char *bname,
 
     strcpy(fmode, "r");
     strcat(fmode, gp_fmode_binary_suffix);
-    if (gp_file_name_is_absolute(bname, len))
+    if (gp_pathstring_not_bare(bname, len))
 	return (*iodev->procs.fopen)(iodev, bname, fmode, pfile,
 				     rfname, rnamelen);
     /* Go through the list of search paths */

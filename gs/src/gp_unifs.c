@@ -60,7 +60,7 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 8;
 
-    if (gp_file_name_is_absolute(prefix, prefix_length))
+    if (gp_pathstring_not_bare(prefix, prefix_length))
 	*fname = 0;
     else if (gp_gettmpdir(fname, &len) != 0)
 	strcpy(fname, "/tmp/");

@@ -179,19 +179,24 @@ const char gp_fmode_binary_suffix[] = "b";
 const char gp_fmode_rb[] = "rb";
 const char gp_fmode_wb[] = "wb";
 
-/* Answer whether a file name contains a directory/device specification, */
-/* i.e. is absolute (not directory- or device-relative). */
+/* Answer whether a path_string can meaningfully have a prefix applied */
 bool
-gp_file_name_is_absolute(const char *fname, uint len)
-{			
-    /* A file name is absolute if it contains a drive specification */
-    /* (second character is a :) or if it start with 0 or more .s */
-    /* followed by a / or \. */
-    if (len >= 2 && fname[1] == ':')
+gp_pathstring_not_bare(const char *fname, uint len)
+{   /* A file name is not bare if it contains a drive specifications	*/
+    /* (second character is a :) or if it starts with a '.', '/' or '\\'*/
+    /* or it contains '/../' (parent reference)				*/
+    if ((len > 0) && ((*fname == '/') || (*fname == '\\') ||
+	  (*fname == '.') || ((len > 2) && (fname[1] == ':'))))
 	return true;
-    while (len && *fname == '.')
-	++fname, --len;
-    return (len && (*fname == '/' || *fname == '\\'));
+    while (len-- > 3) {
+        int c = *fname++;
+
+	if (((c == '/') || (c == '\\')) &&
+	    ((len >= 3) && (bytes_compare(fname, 2, "..", 2) == 0) &&
+			((fname[2] == '/') || (fname[2] == '\\'))))
+	    return true;
+    }
+    return false;
 }
 
 /* Answer whether the file_name references the directory	*/
@@ -746,8 +751,9 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
 #ifdef __IBMC__
     char *temp = 0;
     char *tname;
+    int prefix_length = strlen(prefix);
 
-    if (!gp_file_name_is_absolute(prefix, prefix_length)) {
+    if (!gp_pathstring_not_bare(prefix, prefix_length)) {
 	temp = getenv("TMPDIR");
 	if (temp == 0)
 	    temp = getenv("TEMP");
@@ -767,9 +773,8 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 7;
 
-    if (gp_file_name_is_absolute(prefix, prefix_length) ||
-	gp_gettmpdir(fname, &len) != 0
-	)
+    if (gp_pathstring_not_bare(prefix, prefix_length) ||
+	gp_gettmpdir(fname, &len) != 0)
 	*fname = 0;
     else {
 	char last = '\\';

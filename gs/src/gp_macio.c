@@ -454,56 +454,46 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 }
 */
 
-/* Answer whether a file name contains a directory/device specification, */
-/* i.e. is absolute (not directory- or device-relative). */
+/* Answer whether a path_string can meaningfully have a prefix applied */
+int
+gp_pathstring_not_bare(const char *fname, unsigned len) {
+    /* Macintosh paths are not 'bare' i.e., cannot have a prefix	*/
+    /* applied with predictable results if the string contains '::'	*/
+    /* If a pathstring starts with ':' we also call it not_bare since	*/
+    /* prefixing a 'somedir:' string would end up with '::' which will	*/
+    /* move up a directory level.					*/
+    /* While MacHD:somedir:xyz is a "root" or "absolute" reference we	*/
+    /* assume that this syntax is actually somedir:subdir:xyz since the	*/
+    /* HardDrive name will vary from site to site ("root" or "absolute"	*/
+    /* references aren't really practical on Macintosh pre OS/X)	*/
+    /* As far as we can tell, this whole area is confused on Mac since	*/
+    /* root level references and current_directory references look the	*/
+    /* same.								*/
 
-	int
-gp_file_name_is_absolute (const char *fname, register uint len)
+    if (len != 0) {
+	if (*fname == ':') {	/* leading ':' */
+	    return 1;		/* cannot be prefixed - not_bare, but	*/
+				/* *IS* relative to the current dir.	*/
+	} else {
+	    char *p;
+	    bool lastWasColon;
 
-{
-	if (len /* > 0 */)
-	{
-		if (*fname == ':')
-		{
-			return 0;
-		}
-		else
-		{
-			register char  *p;
-			register char	lastWasColon;
-			register char	sawColon;
-
-
-			for (len, p = (char *) fname, lastWasColon = 0, sawColon = 0;
-				 len /* > 0 */;
-				 len--, p++)
-			{
-				if (*p == ':')
-				{
-					sawColon = 1;
-
-					if (lastWasColon /* != 0 */)
-					{
-						return 0;
-					}
-					else
-					{
-						lastWasColon = 1;
-					}
-				}
-				else
-				{
-					lastWasColon = 0;
-				}
-			}
-
-			return sawColon;
-		}
+	    for (len, p = (char *)fname, lastWasColon = 0; len > 0; len--, p++) {
+		if (*p == ':') {
+		    if (lastWasColon != 0) 
+			return 1;
+		    else 
+			lastWasColon = 1;
+		} else
+		    lastWasColon = 0;
+	    }
+	    return 0;	/* pathstring *ASSUMED* bare */
+	    /* fixme: if the start of the pathstring up to the first ':'*/
+	    /* matches a drive name, then this is really an absolute	*/
+	    /* pathstring, and thus should be not_bare (return 1).	*/
 	}
-	else
-	{
-		return 0;
-	}
+    } else 
+	return 0;	/* empty path ?? */
 }
 
 /* Answer whether the file_name references the directory	*/
