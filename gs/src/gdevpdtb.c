@@ -17,6 +17,7 @@
 /* $Id$ */
 /* BaseFont implementation for pdfwrite */
 #include "memory_.h"
+#include "ctype_.h"		/* for isxdigit() */
 #include <stdlib.h>		/* for rand() */
 #include "gx.h"
 #include "gserrors.h"
