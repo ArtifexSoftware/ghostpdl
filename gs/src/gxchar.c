@@ -1388,13 +1388,13 @@ show_set_scale(const gs_show_enum * penum, gs_log2_scale_point *log2_scale)
 	if (code >= 0) {
 	    int sx =
 	    (extent.x == 0 ? 0 :
-	     any_abs(extent.x) < int2fixed(25) ? 2 :
-	     any_abs(extent.x) < int2fixed(60) ? 1 :
+	     any_abs(extent.x) < int2fixed(60) ? 2 :
+	     any_abs(extent.x) < int2fixed(200) ? 1 :
 	     0);
 	    int sy =
 	    (extent.y == 0 ? 0 :
-	     any_abs(extent.y) < int2fixed(25) ? 2 :
-	     any_abs(extent.y) < int2fixed(60) ? 1 :
+	     any_abs(extent.y) < int2fixed(60) ? 2 :
+	     any_abs(extent.y) < int2fixed(200) ? 1 :
 	     0);
 
 	    /* If we oversample at all, make sure we do it */
