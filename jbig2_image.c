@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.20 2002/08/15 14:54:45 giles Exp $
+    $Id: jbig2_image.c,v 1.21 2003/02/07 05:06:46 raph Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -93,11 +93,15 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
         w, h, x, y);
 #endif
     
+#if 0
     /* special case complete/strip replacement */
+    /* disabled because it's only safe to do when the destination
+       buffer is all-blank. */
     if ((x == 0) && (w == src->width)) {
         memcpy(dst->data + y*dst->stride, src->data, h*src->stride);
         return 0;
     }
+#endif
 
     leftbyte = x >> 3;
     rightbyte = (x + w - 1) >> 3;
