@@ -1,5 +1,12 @@
 #!/usr/bin/env python
-
+# Portions Copyright (C) 2001 Artifex Software Inc.
+#   
+#   This software is distributed under license and may not be copied, modified
+#   or distributed except as expressly authorized under the terms of that
+#   license.  Refer to licensing information at http://www.artifex.com/ or
+#   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+#   San Rafael, CA  94903, (415)492-9861, for further information. 
+#
 # TODO
 # array data should be wrapped.
 #
