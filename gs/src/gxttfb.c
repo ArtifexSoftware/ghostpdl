@@ -274,9 +274,9 @@ static inline float reminder(float v, int x)
     return ((v / x) - floor(v / x)) * x;
 }
 
-private void decompose_matrix(const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
-    bool align_to_pixels, bool design_grid,
-    gs_point *char_size, gs_point *subpix_origin, gs_matrix *post_transform)
+private void decompose_matrix(const gs_font_type42 *pfont, const gs_matrix * char_tm, 
+    const gs_log2_scale_point *log2_scale, bool design_grid,
+    gs_point *char_size, gs_point *subpix_origin, gs_matrix *post_transform, bool *dg)
 {
     /* 
      *	char_tm maps to subpixels. 
@@ -290,15 +290,28 @@ private void decompose_matrix(const gs_matrix * char_tm, const gs_log2_scale_poi
      */
     int scale_x = 1 << log2_scale->x;
     int scale_y = 1 << log2_scale->y;
-    
+    bool atp = gs_currentaligntopixels(pfont->dir);
+    bool design_grid1;
+
     char_size->x = hypot(char_tm->xx, char_tm->xy);
     char_size->y = hypot(char_tm->yx, char_tm->yy);
-    subpix_origin->x = (align_to_pixels ? 0 : reminder(char_tm->tx, scale_x) / scale_x);
-    subpix_origin->y = (align_to_pixels ? 0 : reminder(char_tm->ty, scale_y) / scale_y);
-    post_transform->xx = char_tm->xx / (design_grid ? 1 : char_size->x);
-    post_transform->xy = char_tm->xy / (design_grid ? 1 : char_size->x);
-    post_transform->yx = char_tm->yx / (design_grid ? 1 : char_size->y);
-    post_transform->yy = char_tm->yy / (design_grid ? 1 : char_size->y);
+    if (char_size->x <= 2 && char_size->y <= 2) {
+    	/* Disable the grid fitting for very small fonts. */
+	design_grid1 = true;
+    } else {
+#if NEW_TT_INTERPRETER
+	design_grid1 = design_grid || !gs_currentgridfittt(pfont->dir);
+#else
+	design_grid1 = design_grid; /* gs_currentgridfittt is undefined. */;
+#endif
+    }
+    *dg = design_grid1;
+    subpix_origin->x = (atp ? 0 : reminder(char_tm->tx, scale_x) / scale_x);
+    subpix_origin->y = (atp ? 0 : reminder(char_tm->ty, scale_y) / scale_y);
+    post_transform->xx = char_tm->xx / (design_grid1 ? 1 : char_size->x);
+    post_transform->xy = char_tm->xy / (design_grid1 ? 1 : char_size->x);
+    post_transform->yx = char_tm->yx / (design_grid1 ? 1 : char_size->y);
+    post_transform->yy = char_tm->yy / (design_grid1 ? 1 : char_size->y);
     post_transform->tx = char_tm->tx - subpix_origin->x;
     post_transform->ty = char_tm->ty - subpix_origin->y;
 }
@@ -354,10 +367,9 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
      * Therefore TTC headers never comes here. 
      */
     unsigned int nTTC = 0; 
-    bool atp = gs_currentaligntopixels(pfont->dir);
-    bool dg = design_grid || !gs_currentgridfittt(pfont->dir);
+    bool dg;
 
-    decompose_matrix(char_tm, log2_scale, atp, dg, &char_size, &subpix_origin, &post_transform);
+    decompose_matrix(pfont, char_tm, log2_scale, design_grid, &char_size, &subpix_origin, &post_transform, &dg);
     switch(ttfFont__Open(tti, this, &r->super, nTTC, char_size.x, char_size.y, dg)) {
 	case fNoError:
 	    return 0;
@@ -455,14 +467,9 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
     /* so that TTC never comes here. */
     FloatMatrix m1;
-    bool atp = gs_currentaligntopixels(pfont->dir);
-#if NEW_TT_INTERPRETER
-    bool dg = design_grid || !gs_currentgridfittt(pfont->dir);
-#else
-    bool dg = design_grid;
-#endif
+    bool dg;
 
-    decompose_matrix(m, pscale, atp, dg, &char_size, &subpix_origin, &post_transform);
+    decompose_matrix(pfont, m, pscale, design_grid, &char_size, &subpix_origin, &post_transform, &dg);
     m1.a = post_transform.xx;
     m1.b = post_transform.xy;
     m1.c = post_transform.yx;

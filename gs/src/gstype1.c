@@ -96,7 +96,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			    gs_currentaligntopixels(pfont->dir));
 	    if (code < 0)
 	    	return code;
-	    code = t1_hinter__set_font_data(h, 1, pdata, pcis->charpath_flag);
+	    code = t1_hinter__set_font_data(h, 1, pdata, pcis->no_grid_fitting);
 	    if (code < 0)
 	    	return code;
 	    break;

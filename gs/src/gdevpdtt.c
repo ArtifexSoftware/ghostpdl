@@ -347,6 +347,20 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	gs_free_object(mem, penum, "gdev_pdf_text_begin");
 	return code;
     }
+    if (pdev->font3 != 0) {
+	/* A text operation happens while accumulating a charproc.
+	   This is a case when source document uses a Type 3 font,
+	   which's charproc uses another font.
+	   Since the text operation is handled by the device,
+	   the font isn't converting to a raster (i.e. to a bitmap font).
+	   Disable the grid fitting for the convertion to get a proper outlines, 
+	   because the viewer resolution is not known during the accumulation.
+	   Note we set identity CTM in pdf_text_set_cache for the accumilation,
+	   and therefore the font may look too small while the source charproc 
+	   interpretation. The document tpc2.ps of the bug 687087 is an example.
+	*/
+	penum->device_disabled_grid_fitting = true; 
+    }
 
     *ppte = (gs_text_enum_t *)penum;
 

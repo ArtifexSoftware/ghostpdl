@@ -98,7 +98,7 @@ struct gs_type1_state_s {
     gs_font_type1 *pfont;	/* font-specific data */
     gs_imager_state *pis;	/* imager state */
     gx_path *path;		/* path for appending */
-    bool charpath_flag;		/* false if show, true if charpath */
+    bool no_grid_fitting;
     int paint_type;		/* 0/3 for fill, 1/2 for stroke */
     void *callback_data;
     fixed_coeff fc;		/* cached fixed coefficients */

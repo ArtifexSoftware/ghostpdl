@@ -641,12 +641,30 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
         this->base_font_scale = d0;
         this->font_size =  floor(d1 / d0 * 10000 + 0.5) / 10000;
         this->resolution = floor(d2 / (1 << this->import_shift) / d1 * 10000000 + 0.5) / 10000000;
+	/*
+	 * fixme: base_font_scale, font_size and resolution are computed wrongly 
+	 * for any of the following cases :
+	 *
+	 * 1. CIDFontType0C with FontMatrix=[0.001 0 0 0.001 0 0] gives 1/1000 size.
+	 * A known example : CIDembedded.pdf . We could obtain the Type 9 FontMatrix 
+	 * in type1_exec_init from penum->fstack.
+	 *
+	 * 2. See comment in pdf_font_orig_matrix.
+	 *
+	 * Currently we don't use these values with a regular build. 
+	 * The ADOBE_OVERSHOOT_COMPATIBILIY build needs to fix them.
+	 */
     }
-    {	/* Enable grid fitting setarately for axes : */
+    if (1 || /* Doesn't work - see comment above. Using this->disable_hinting instead. */
+	    this->resolution * this->font_size >= 2) {	
+	/* Enable the grid fitting separately for axes : */
 	this->grid_fit_x = (any_abs(this->ctmf.xy) * 10 < any_abs(this->ctmf.xx) ||
 			    any_abs(this->ctmf.xx) * 10 < any_abs(this->ctmf.xy)); 
 	this->grid_fit_y = (any_abs(this->ctmf.yx) * 10 < any_abs(this->ctmf.yy) ||
 			    any_abs(this->ctmf.yy) * 10 < any_abs(this->ctmf.yx));
+    } else {
+	/* Disable the grid fitting for very small fonts. */
+	this->grid_fit_x = this->grid_fit_y = false;
     }
     this->transposed = (any_abs(this->ctmf.xy) * 10 > any_abs(this->ctmf.xx));
     this->align_to_pixels = align_to_pixels;
@@ -734,7 +752,7 @@ private int t1_hinter__set_stem_snap(t1_hinter * this, float * value, int count,
     return 0;
 }
 
-int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, bool charpath_flag)
+int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, bool no_grid_fitting)
 {   int code;
 
     t1_hinter__init_outline(this);
@@ -744,10 +762,9 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
     this->blue_fuzz  = import_shift(float2fixed(pdata->BlueFuzz), this->import_shift);
     this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / (1 << this->log2_pixels_y) / (1 << this->import_shift) - 0.00020417);
     this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half * (1 << this->log2_pixels_y) / this->heigt_transform_coef) : 0);
-    this->blue_rounding = (t1_hinter_space_coord)((this->BlueScale * 240) * (this->resolution * this->base_font_scale) * this->g2o_fraction);
     this->ForceBold = pdata->ForceBold;
-    this->disable_hinting |= charpath_flag;
-    this->charpath_flag = charpath_flag;
+    this->disable_hinting |= no_grid_fitting;
+    this->charpath_flag = no_grid_fitting;
     if (this->disable_hinting)
 	return 0;
     code = t1_hinter__set_alignment_zones(this, pdata->OtherBlues.values, pdata->OtherBlues.count, botzone, false);
@@ -1439,6 +1456,7 @@ private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit,
     }
 }
 
+#if ADOBE_OVERSHOOT_COMPATIBILIY
 private inline t1_hinter_space_coord g2o_dist_blue(t1_hinter * h, t1_glyph_space_coord gw)
 {   double W = fixed2float(gw);
     double w = W * (h->resolution * h->font_size * h->base_font_scale - h->BlueScale) + 1;
@@ -1447,7 +1465,6 @@ private inline t1_hinter_space_coord g2o_dist_blue(t1_hinter * h, t1_glyph_space
     /* todo : exclude floating point */
 }
 
-#if ADOBE_OVERSHOOT_COMPATIBILIY
 private void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph_space_coord * x, t1_glyph_space_coord * y)
 {   t1_glyph_space_coord gy = *y;
     /* t1_glyph_space_coord gw = any_abs(zone->overshoot_y - zone->y); */

@@ -107,7 +107,8 @@ type1_exec_init(gs_type1_state *pcis, gs_text_enum_t *penum,
     }
     return gs_type1_interp_init(pcis, (gs_imager_state *)pgs, pgs->path,
 				&penum->log2_scale, &log2_subpixels,
-				(penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
+				(penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0 ||
+				penum->device_disabled_grid_fitting,
 				pfont1->PaintType, pfont1);
 }
 
@@ -1077,7 +1078,7 @@ zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
 				pfont1);
     if (code < 0)
 	return code;
-    cxs.cis.charpath_flag = true;	/* suppress hinting */
+    cxs.cis.no_grid_fitting = true;
     gs_type1_set_callback_data(pcis, &cxs);
     switch (cxs.present) {
     case metricsSideBearingAndWidth:

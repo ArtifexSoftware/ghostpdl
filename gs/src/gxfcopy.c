@@ -977,7 +977,7 @@ copied_type1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph,
 				pfont1);
     if (code < 0)
 	return code;
-    cis.charpath_flag = true;	/* suppress hinting */
+    cis.no_grid_fitting = true;
     /* Continue interpreting. */
     for (;;) {
 	int value;

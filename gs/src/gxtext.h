@@ -103,6 +103,8 @@ rc_free_proc(rc_free_text_enum);
     int cmap_code;		/* hack for FMapType 9 composite fonts, */\
 				/* the value returned by decode_next */\
     gs_point FontBBox_as_Metrics2;  /* used with FontType 9,11 && WMode 1 */\
+    /* The following is controlled by a device. */\
+    bool device_disabled_grid_fitting;\
     /* The following are used to return information to the client. */\
     gs_text_returned_t returned
 /* The typedef is in gstext.h. */

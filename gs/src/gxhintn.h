@@ -146,7 +146,6 @@ typedef struct t1_hinter_s
     double heigt_transform_coef;
     double width_transform_coef;
     double base_font_scale;
-    int19 blue_rounding;
     int19 width_transform_coef_rat;
     int19 heigt_transform_coef_rat;
     int19 width_transform_coef_inv;
@@ -163,7 +162,7 @@ int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * F
 			int log2_subpixels_x, int log2_subpixels_y,
 			fixed origin_x, fixed origin_y, bool align_to_pixels);
 int  t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdata, 
-			bool charpath_flag);
+			bool no_grid_fitting);
 
 int  t1_hinter__sbw(t1_hinter * this, fixed sbx, fixed sby, fixed wx,  fixed wy);
 int  t1_hinter__sbw_seac(t1_hinter * this, fixed sbx, fixed sby);

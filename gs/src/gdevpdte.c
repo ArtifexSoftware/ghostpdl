@@ -963,7 +963,8 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	 * we try to encode glyphs with the current
 	 * font's encoding. If the current font has no encoding,
 	 * or the encoding doesn't contain necessary glyphs,
-	 * the text will be represented with a Type 3 font with bitmaps.
+	 * the text will be represented with a Type 3 font with 
+	 * bitmaps or outlines.
 	 *
 	 * When we fail with encoding (136-01.ps is an example),
 	 * we could locate a PDF font resource or create a new one

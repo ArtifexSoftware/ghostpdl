@@ -92,7 +92,7 @@ private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
 int
 gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     gx_path * ppath, const gs_log2_scale_point * pscale, 
-    const gs_log2_scale_point * psubpixels, bool charpath_flag,
+    const gs_log2_scale_point * psubpixels, bool no_grid_fitting,
 		     int paint_type, gs_font_type1 * pfont)
 {
     static const gs_log2_scale_point no_scale = {0, 0};
@@ -106,7 +106,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->pis = pis;
     pcis->path = ppath;
     pcis->callback_data = pfont; /* default callback data */
-    pcis->charpath_flag = charpath_flag;
+    pcis->no_grid_fitting = no_grid_fitting;
     pcis->paint_type = paint_type;
     pcis->os_count = 0;
     pcis->ips_count = 1;
@@ -312,7 +312,7 @@ gs_type1_endchar(gs_type1_state * pcis)
     }
     pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
     /* Set the flatness for curve rendering. */
-    if (!pcis->charpath_flag)
+    if (!pcis->no_grid_fitting)
 	gs_imager_setflat(pis, pcis->flatness);
     return 0;
 }
@@ -545,7 +545,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 				    NULL, NULL, true, 0, pfont);
 	if (code < 0)
 	    return code;
-	cis.charpath_flag = true;	/* suppress hinting */
+	cis.no_grid_fitting = true;
 	code = pdata->interpret(&cis, &gdata, &value);
 	switch (code) {
 	case 0:		/* done with no [h]sbw, error */
