@@ -70,12 +70,11 @@ pdfdict begin
 } bdef
 
 /.resolvefn4 {
-  PDFfile fileposition exch
-  dup true resolvestream 
-		% Stack: filepos fndict stream
-  1 index /Length oget string readstring pop
-  exch dup length dict copy dup /Function undef
-  exch token not {
+  PDFfile fileposition exch             % filepos fndict
+  dup true resolvestream                % filepos fndict stream
+  exch dup length dict copy             % filepos stream fndict2
+  dup /Function undef                   % filepos stream fndict2
+  exch dup token not {
     () /rangecheck cvx signalerror
   } if
   exch token {
