@@ -31,6 +31,10 @@
 #include "strimpl.h"
 #include "srlx.h"
 #include "pldraw.h"
+#ifdef PXL2_0
+#include "jpeglib_.h"
+#include "sdct.h"
+#endif
 
 /* GC descriptors */
 private_st_px_pattern();
@@ -78,10 +82,12 @@ px_purge_pattern_cache(px_state_t *pxs, pxePatternPersistence_t max_persist)
 
 /* Define the structure for enumerating a bitmap being downloaded. */
 typedef struct px_bitmap_enum_s {
-  uint input_per_row;		/* # of (decompressed) input bytes per row */
-  uint data_per_row;		/* ditto minus possible trailing padding */
-  bool initialized;
-  stream_RLD_state stream_state;	/* decompressor state */
+    gs_memory_t *mem;            /* used only for the jpeg filter */
+    uint data_per_row;		 /* ditto minus possible trailing padding */
+    bool initialized;
+    stream_RLD_state rld_stream_state;	/* decompressor states */
+    stream_DCT_state dct_stream_state;
+    jpeg_decompress_data jdd;
 } px_bitmap_enum_t;
 
 /* Define our image enumerator. */
@@ -133,7 +139,7 @@ begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
 	params->dest_height = real_value(par->pv[4], 1);
 	benum->data_per_row =
 	  round_up(params->width * params->depth * num_components, 8) >> 3;
-	benum->input_per_row = round_up(benum->data_per_row, 4);
+	benum->mem = pxs->memory;
 	benum->initialized = false;
 	return 0;
 }
@@ -151,9 +157,16 @@ begin_bitmap(px_bitmap_params_t *params, px_bitmap_enum_t *benum,
  */
 private int
 read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
-{	uint input_per_row = benum->input_per_row;
-	ulong end_pos = (ulong)input_per_row * par->pv[1]->value.i;
-
+{	uint input_per_row = round_up(benum->data_per_row, 4);
+	ulong end_pos;
+#ifdef PXL2_0
+	if ( par->pv[3] )
+	    input_per_row = round_up(benum->data_per_row, par->pv[3]->value.i);
+#endif
+	/* ####### wrong ######## */
+	/*	if ( par->pv[2]->value.i == eJPEGCompression ) 
+		input_per_row = benum->data_per_row; */
+	end_pos = (ulong)input_per_row * par->pv[1]->value.i;
 	if ( par->source.position >= end_pos )
 	  return 0;
 	{ uint data_per_row = benum->data_per_row;
@@ -164,8 +177,7 @@ read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
 	    if ( par->pv[2]->value.i == eRLECompression )
 	      { /* RLE decompress the input. */
-#define ss (&benum->stream_state)
-#define st ((stream_state *)ss)
+        	stream_RLD_state *ss = (&benum->rld_stream_state);
 		stream_cursor_read r;
 		stream_cursor_write w;
 
@@ -182,7 +194,7 @@ read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
 		    w.ptr = data + pos_in_row - 1;
 		    w.limit = data + data_per_row - 1;
-		    (*s_RLD_template.process)(st, &r, &w, false);
+		    (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
 		    used = w.ptr + 1 - data - pos_in_row;
 		    pos_in_row += used;
 		    par->source.position += used;
@@ -193,7 +205,7 @@ read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 
 		    w.ptr = pad - 1;
 		    w.limit = w.ptr + input_per_row - pos_in_row;
-		    (*s_RLD_template.process)(st, &r, &w, false);
+		    (*s_RLD_template.process)((stream_state *)ss, &r, &w, false);
 		    used = w.ptr + 1 - pad;
 		    pos_in_row += used;
 		    par->source.position += used;
@@ -202,9 +214,52 @@ read_bitmap(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
 		par->source.data = r.ptr + 1;
 		par->source.available = avail - used;
 		return (pos_in_row < input_per_row ? pxNeedData : 1);
-#undef ss
-#undef st
 	      }
+#ifdef PXL2_0
+	    else if ( par->pv[2]->value.i == eJPEGCompression ) {
+		stream_DCT_state *ss = (&benum->dct_stream_state);
+		stream_cursor_read r;
+		stream_cursor_write w;
+		if ( !benum->initialized )
+		  { 
+		      jpeg_decompress_data *jddp = &(benum->jdd);
+		      /* use the graphics library support for DCT streams */
+		      s_DCTD_template.set_defaults((stream_state *)ss);
+		      ss->data.decompress = jddp;
+		      jddp->memory = ss->jpeg_memory = benum->mem; 	/* set now for allocation */
+		      jddp->scanline_buffer = NULL;                     /* set this early for safe error exit */
+		      if ( gs_jpeg_create_decompress(ss) < 0 )
+			  return_error(errorInsufficientMemory);
+		      (*s_DCTD_template.init)((stream_state *)ss);
+		      jddp->template = s_DCTD_template;
+		      benum->initialized = true;
+		  }
+		r.ptr = data - 1;
+		r.limit = r.ptr + avail;
+		if ( pos_in_row < data_per_row )
+		  { /* Read more of the current row. */
+		    byte *data = *pdata;
+
+		    w.ptr = data + pos_in_row - 1;
+		    w.limit = data + data_per_row - 1;
+		    (*s_DCTD_template.process)((stream_state *)ss, &r, &w, false);
+		    used = w.ptr + 1 - data - pos_in_row;
+		    pos_in_row += used;
+		    par->source.position += used;
+		  }
+		if ( pos_in_row >= data_per_row && pos_in_row < input_per_row )
+		  { /* We've read all the real data; skip the padding. */
+		      int used = input_per_row - data_per_row;
+		      pos_in_row += used;
+		      par->source.position += used;
+		      r.ptr += used;
+		  }
+		used = r.ptr + 1 - data;
+		par->source.data = r.ptr + 1;
+		par->source.available = avail - used;
+		return (pos_in_row < input_per_row ? pxNeedData : 1);
+	      }
+#endif
 	    else
 	      { /* Just read the input. */
 		int code;
@@ -317,21 +372,20 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	    gs_free_object(pxs->memory, pxenum, "pxBeginImage(pxenum)");
 	    return code;
 	  }
-	/*
-	 * If the padding for the bitmap is at least as large as the
-	 * padding in the file, we can eliminate some overhead by not
-	 * treating the file padding specially.
-	 */
-	if ( pxenum->raster >= benum.input_per_row )
-	  benum.data_per_row = benum.input_per_row;
 	pxenum->benum = benum;
 	pxs->image_enum = pxenum;
 	return 0;
 }
 
+#ifdef PXL2_0
+const byte apxReadImage[] = {
+  pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, pxaPadBytesMultiple, pxaBlockByteLength
+};
+#else
 const byte apxReadImage[] = {
   pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, 0
 };
+#endif
 int
 pxReadImage(px_args_t *par, px_state_t *pxs)
 {	px_image_enum_t *pxenum = pxs->image_enum;
@@ -477,21 +531,33 @@ pxBeginRastPattern(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
+#ifdef PXL2_0
+const byte apxReadRastPattern[] = {
+  pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, pxaPadBytesMultiple, pxaBlockByteLength
+};
+#else
 const byte apxReadRastPattern[] = {
   pxaStartLine, pxaBlockHeight, pxaCompressMode, 0, 0
 };
+#endif
+
 int
 pxReadRastPattern(px_args_t *par, px_state_t *pxs)
 {	px_pattern_enum_t *pxenum = pxs->pattern_enum;
 	int code;
-
+	uint input_per_row = round_up(pxenum->benum.data_per_row, 4);
+#ifdef PXL2_0
+	if ( par->pv[3] )
+	    input_per_row = round_up(pxenum->benum.data_per_row, par->pv[3]->value.i);
+#endif
 	/* Make a quick check for the first call, when no data is available. */
 	if ( par->source.available == 0 && par->pv[1]->value.i != 0 )
 	  return pxNeedData;
 	for ( ; ; )
-	  { byte *data = pxenum->pattern->data +
+	  { 
+	    byte *data = pxenum->pattern->data +
 	      (par->pv[0]->value.i +
-	       par->source.position / pxenum->benum.input_per_row)
+	       par->source.position / input_per_row)
 	        * pxenum->benum.data_per_row;
 	    byte *rdata = data;
 

@@ -117,6 +117,7 @@ typedef struct px_gstate_s {
    */
   px_char_transform_t char_transforms[3];
   pxeCharSubModeArray_t char_sub_mode;
+  pxeWritingMode_t writing_mode;
   pxeClipMode_t clip_mode;
   pxeColorSpace_t color_space;
   gs_const_string palette;

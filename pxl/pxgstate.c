@@ -419,9 +419,11 @@ pxPopGS(px_args_t *par, px_state_t *pxs)
 	 */
 	if ( pxgs->stack_depth == 0 )
 	  return 0;
-	if ( pxgs->palette.data && !pxgs->palette_is_shared )
+	if ( pxgs->palette.data && !pxgs->palette_is_shared ) {
 	  gs_free_string(pxs->memory, pxgs->palette.data,
 			 pxgs->palette.size, "pxPopGS(palette)");
+	  pxgs->palette.data = 0;
+	}
 	px_purge_pattern_cache(pxs, eTempPattern);
 	code = gs_grestore(pgs);
 	pxs->pxgs = gs_state_client_data(pgs);
@@ -474,6 +476,18 @@ pxSetCharAngle(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
+#ifdef PXL2_0
+const byte apxSetCharAttributes[] = {
+    pxaWritingMode, 0, 0
+};
+int
+pxSetCharAttributes(px_args_t *par, px_state_t *pxs)
+{
+    pxs->pxgs->writing_mode = par->pv[0]->value.i;
+    dprintf( "Warning - PXL 2.0 SetCharacterAttributes parsed but not implemented\n");
+    return 0;
+}
+#endif
 const byte apxSetCharScale[] = {
   pxaCharScale, 0, 0
 };

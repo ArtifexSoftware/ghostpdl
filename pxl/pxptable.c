@@ -75,11 +75,20 @@ checkGrayLevel(const px_value_t *pv)
 		      true);
 }
 #define checkNewDestinationSize checkDestinationSize
+#ifdef PXL2_0
+/* pxl 2.0 allows non-orthogonal page angles. */
+private int
+checkPageAngle(const px_value_t *pv)
+{       return 0;
+}
+#else
 private int
 checkPageAngle(const px_value_t *pv)
 {	integer angle = pv->value.i;
 	return ok_iff(angle >= -360 && angle <= 360 && (angle % 90) == 0);
 }
+#endif
+
 private int
 checkPageScale(const px_value_t *pv)
 {	real x = real_value(pv, 0), y = real_value(pv, 1);
@@ -111,6 +120,12 @@ checkUnitsPerMeasure(const px_value_t *pv)
 	return ok_iff(x > 0 && x <= 65535 && y > 0 && y <= 65535);
 }
 
+private int
+checkPadBytesMultiple(const px_value_t *pv)
+{	return ok_iff(pv->value.i >= 1 && pv->value.i <= 4);
+}
+
+
 #undef ok_iff
 
 const px_attr_value_type_t px_attr_value_types[] = {
@@ -128,10 +143,35 @@ const px_attr_value_type_t px_attr_value_types[] = {
   arrp(ub|rl, checkRGBColor),		/* RGBColor = 11 */
   xy(ss),		/* PatternOrigin */
   xyp(us, checkNewDestinationSize),		/* NewDestinationSize */
+#ifdef PXL2_0
+  arr(ub),                  /* PrimaryArray = 14 */
+  en(pxeColorDepth_next),   /* PrimaryDepth = 15 */
+#else
   none,
-  none5,
-  none5,
-  none5,
+  none,
+#endif
+  none,
+#ifdef PXL2_0
+  en(pxeColorimetricColorSpace_next), /* ColorimetricColorSpace = 17 */
+  arr(rl),                            /* XYChromaticities = 18 NB - no limitation range according to the documentation */
+  arr(rl),                            /* WhiteReferencePoint = 19 NB - no limitation range according to the documentation */
+  arr(rl),                            /* CRGBMinMax = 20 NB - no limitation range according to the documentation */
+  arr(rl),                            /* GammaGain = 21 NB - no limitation range according to the documentation */
+#else
+  none,
+  none,
+  none,
+  none,
+  none,
+#endif
+  none,
+  none,
+  none,
+  none,
+  none,
+  none,
+  none,
+  none,
   none,
   none,
   none,
@@ -196,8 +236,13 @@ const px_attr_value_type_t px_attr_value_types[] = {
   scp(us, checkSourceHeight),		/* SourceHeight = 107 */
   scp(us, checkSourceWidth),		/* SourceWidth */
   sc(us),		/* StartLine */
+#ifdef PXL2_0
+  scub(),                        		/* PadBytesMultiple */
+  sc(ul),                                       /* BlockByteLength */
+#else
   none,
   none,
+#endif
   none,
   none,
   none,
@@ -245,7 +290,11 @@ const px_attr_value_type_t px_attr_value_types[] = {
   sc(us),		/* SymbolSet */
   arr(ub|us),		/* TextData */
   arr(ub),		/* CharSubModeArray */
+#ifdef PXL2_0
+  en(pxeWritingMode_next),		/* WritingMode */
+#else
   none,
+#endif
   none,
   arr(ub|us|ss),		/* XSpacingData = 175 */
   arr(ub|us|ss),		/* YSpacingData */
@@ -281,11 +330,16 @@ const char *px_attribute_names[] = {
   0, 0, "PaletteDepth", "ColorSpace", "NullBrush",
   "NullPen", "PaletteData", 0, "PatternSelectID", "GrayLevel",
 /*10*/
-  0, "RGBColor", "PatternOrigin", "NewDestinationSize", 0,
-  0, 0, 0, 0, 0,
-/*20*/
-  0, 0, 0, 0, 0,
-  0, 0, 0, 0, 0,
+  0, "RGBColor", "PatternOrigin", "NewDestinationSize", "PrimaryArray",
+  "PrimaryDepth", 0, 
+#ifdef PXL2_0
+  "ColorimetricColorSpace", "XYChromaticities", "WhiteReferencePoint", "CRGBMinMax", "GammaGain",
+#else
+  0,                         0,                  0,                     0,            0,
+#endif
+/*22*/
+  0, 0, 0, 0,
+  0, 0, 0, 0,
 /*30*/
   0, 0, 0, "DeviceMatrix", "DitherMatrixDataType",
   "DitherOrigin", "MediaDestination", "MediaSize", "MediaSource", "MediaType",
@@ -313,7 +367,13 @@ const char *px_attribute_names[] = {
     "PatternPersistence",
   "PatternDefineID", 0, "SourceHeight", "SourceWidth", "StartLine",
 /*110*/
-  0, 0, 0, 0, 0,
+#ifdef PXL2_0
+  "PadBytesMultiple",
+  "BlockByteLength",
+#else
+  0, 0, 
+#endif
+  0, 0, 0,
   "NumberOfScanLines", 0, 0, 0, 0,
 /*120*/
   0, 0, 0, 0, 0,
@@ -402,7 +462,13 @@ const char *px_operator_names[0x80] = {
   0, 0, 0, "BeginFontHeader",
 /*5x*/
   "ReadFontHeader", "EndFontHeader", "BeginChar", "ReadChar",
-  "EndChar", "RemoveFont", 0, 0,
+  "EndChar", "RemoveFont", 
+#ifdef PXL2_0
+  "SetCharAttributes",
+#else
+  0, 
+#endif
+  0,
   0, 0, 0, "BeginStream",
   "ReadStream", "EndStream", "ExecStream", 0,
 /*6x*/
@@ -464,6 +530,9 @@ odef(pxBeginChar, apxBeginChar);
 odef(pxReadChar, apxReadChar);
 odef(pxEndChar, apxEndChar);
 odef(pxRemoveFont, apxRemoveFont);
+#ifdef PXL2_0
+odef(pxSetCharAttributes, apxSetCharAttributes);
+#endif
 odef(pxBeginStream, apxBeginStream);
 odef(pxReadStream, apxReadStream);
 odef(pxEndStream, apxEndStream);
@@ -558,7 +627,11 @@ const px_operator_definition_t px_operator_definitions[] = {
   {pxReadChar, apxReadChar},
   {pxEndChar, apxEndChar},
   {pxRemoveFont, apxRemoveFont},
+#ifdef PXL2_0
+  {pxSetCharAttributes, apxSetCharAttributes},
+#else
   none,
+#endif
   none,
   none,
   none,

@@ -427,6 +427,108 @@ fraction_value(const px_value_t *pv, int i)
 	v = pv->value.ia[i];
 	return (v < 0 ? 0 : v / int_type_max(type));
 }
+
+#ifdef PXL2_0
+private int
+set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
+{	px_gstate_t *pxgs = pxs->pxgs;
+	int code = 0;
+
+	if ( par->pv[2] || par->pv[3] ) {
+	    dprintf( "Warning - PXL 2.0 Primary Array or Primary Depth not supported continuing\n");
+	    dprintf( "Using null brush\n");
+	    px_paint_rc_adjust(ppt, -1, pxs->memory);
+	    ppt->type = pxpNull;
+	    ppt->needs_halftone = false;
+	}
+	else if ( par->pv[5] )	/* pxaPatternSelectID */
+	  { px_value_t key;
+	    void *value;
+	    px_pattern_t *pattern;
+	    gs_client_color ccolor;
+	    int code;
+
+	    if ( par->pv[0] || par->pv[1] || par->pv[4] )
+	      return_error(errorIllegalAttributeCombination);
+	    key.type = pxd_array | pxd_ubyte;
+	    key.value.array.data = (byte *)&par->pv[5]->value.i;
+	    key.value.array.size = sizeof(integer);
+	    if ( !(px_dict_find(&pxgs->temp_pattern_dict, &key, &value) ||
+		   px_dict_find(&pxs->page_pattern_dict, &key, &value) ||
+		   px_dict_find(&pxs->session_pattern_dict, &key, &value))
+	       )
+	      return_error(errorRasterPatternUndefined);
+	    pattern = value;
+	    px_set_halftone(pxs);
+	    code = render_pattern(&ccolor, pattern, par->pv[6], par->pv[7],
+				  pxs);
+	    /*
+	     * We don't use px_paint_rc_adjust(... 1 ...) here, because
+	     * gs_makepattern creates pattern instances with a reference
+	     * count already set to 1.
+	     */
+	    rc_increment(pattern);
+	    if ( code < 0 )
+	      return code;
+	    px_paint_rc_adjust(ppt, -1, pxs->memory);
+	    ppt->type = pxpPattern;
+	    ppt->value.pattern.pattern = pattern;
+	    ppt->value.pattern.color = ccolor;
+	    ppt->needs_halftone = false;
+	  }
+	else if ( par->pv[6] || par->pv[7] )
+	  return_error(errorIllegalAttributeCombination);
+	else if ( par->pv[0] )	/* pxaRGBColor */
+	  { const px_value_t *prgb = par->pv[0];
+	    uint i;
+
+	    if ( par->pv[1] || par->pv[4] )
+	      return_error(errorIllegalAttributeCombination);
+	    if ( pxgs->color_space != eRGB )
+	      return_error(errorColorSpaceMismatch);
+	    px_paint_rc_adjust(ppt, -1, pxs->memory);
+	    ppt->type = pxpRGB;
+	    for ( i = 0; i < 3; ++i )
+	      if ( prgb->type & pxd_any_real )
+		ppt->value.rgb[i] = real_elt(prgb, i);
+	      else
+		{ integer v = integer_elt(prgb, i);
+		  ppt->value.rgb[i] =
+		    (v < 0 ? 0 : (real)v / int_type_max(prgb->type));
+		}
+#define rgb_is(v)\
+  (ppt->value.rgb[0] == v && ppt->value.rgb[1] == v && ppt->value.rgb[2] == v)
+	    ppt->needs_halftone = !(rgb_is(0) || rgb_is(1));
+#undef rgb_is
+	  }
+	else if ( par->pv[1] )	/* pxaGrayLevel */
+	  { if ( par->pv[4] )
+	      return_error(errorIllegalAttributeCombination);
+	    if ( pxgs->color_space != eGray )
+	      return_error(errorColorSpaceMismatch);
+	    px_paint_rc_adjust(ppt, -1, pxs->memory);
+	    ppt->type = pxpGray;
+	    ppt->value.gray = fraction_value(par->pv[1], 0);
+	    ppt->needs_halftone = ppt->value.gray != 0 && ppt->value.gray != 1;
+	  }
+	else if ( par->pv[4] )	/* pxaNullBrush/Pen */
+	  { px_paint_rc_adjust(ppt, -1, pxs->memory);
+	    ppt->type = pxpNull;
+	    ppt->needs_halftone = false;
+	  }
+	else
+	  return_error(errorMissingAttribute);
+	/*
+	 * Update the halftone to the most recently set one.
+	 * This will do the wrong thing if we set the brush or pen source,
+	 * set the halftone, and then set the other source, but we have
+	 * no way to handle this properly with the current library.
+	 */
+	if ( code >= 0 && ppt->needs_halftone )
+	  code = px_set_halftone(pxs);
+	return code;
+}
+#else
 private int
 set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 {	px_gstate_t *pxgs = pxs->pxgs;
@@ -519,6 +621,7 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	  code = px_set_halftone(pxs);
 	return code;
 }
+#endif
 
 /* Set up a brush or pen for drawing. */
 /* If it is a pattern, SetBrush/PenSource guaranteed that it is compatible */
@@ -546,27 +649,67 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
 
 /* ---------------- Operators ---------------- */
 
+#ifdef PXL2_0
+const byte apxSetBrushSource[] = {
+  0, pxaRGBColor, pxaGrayLevel, pxaPrimaryArray, pxaPrimaryDepth, pxaNullBrush, pxaPatternSelectID,
+  pxaPatternOrigin, pxaNewDestinationSize, 0
+};
+#else
 const byte apxSetBrushSource[] = {
   0, pxaRGBColor, pxaGrayLevel, pxaNullBrush, pxaPatternSelectID,
   pxaPatternOrigin, pxaNewDestinationSize, 0
 };
+#endif
 int
 pxSetBrushSource(px_args_t *par, px_state_t *pxs)
 {	return set_source(par, pxs, &pxs->pxgs->brush);
 }
 
+#ifdef PXL2_0
+const byte apxSetColorSpace[] = {
+  0, pxaColorSpace, pxaColorimetricColorSpace, pxaXYChromaticities, pxaWhiteReferencePoint,
+  pxaCRGBMinMax, pxaGammaGain, pxaPaletteDepth, pxaPaletteData, 0
+};
+#else
 const byte apxSetColorSpace[] = {
   pxaColorSpace, 0, pxaPaletteDepth, pxaPaletteData, 0
 };
+#endif
+
 int
 pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
-	pxeColorSpace_t cspace = par->pv[0]->value.i;
+	pxeColorSpace_t cspace;
 
-	if ( par->pv[1] && par->pv[2] )
+#ifdef PXL2_0
+	if ( par->pv[0] )
+	    cspace = par->pv[0]->value.i;
+	else
+	    cspace = par->pv[1]->value.i;
+#else
+	cspace = par->pv[0]->value.i;
+#endif
+#ifdef PXL2_0
+	if ( cspace == eSRGB ) {
+	    dprintf( "Warning - PXL 2.0 eSRGB colorspace not implemented using RGB\n");
+	    cspace = eRGB;
+	}
+	if ( cspace == eCRGB ) {
+	    dprintf( "Warning - PXL 2.0 eCRGB colorspace not implemented using RGB\n");
+	    cspace = eRGB;
+	}
+#endif
+#ifdef PXL2_0
+	if ( par->pv[6] && par->pv[7] )
+#else
+        if ( par->pv[1] && par->pv[2] )
+#endif
 	  { int ncomp = (cspace == eRGB ? 3 : 1);
+#ifdef PXL2_0
+	    uint size = par->pv[7]->value.array.size;
+#else
 	    uint size = par->pv[2]->value.array.size;
-
+#endif
 	    if ( !(size == ncomp << 1 || size == ncomp << 4 ||
 		   size == ncomp << 8)
 	       )
@@ -591,10 +734,18 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 		  pxgs->palette.data = pdata;
 		  pxgs->palette.size = size;
 		}
+#ifdef PXL2_0
+	      memcpy(pxgs->palette.data, par->pv[7]->value.array.data, size);
+#else
 	      memcpy(pxgs->palette.data, par->pv[2]->value.array.data, size);
+#endif
 	    }
 	  }
+#ifdef PXL2_0
+	else if ( par->pv[6] || par->pv[7] )
+#else
 	else if ( par->pv[1] || par->pv[2] )
+#endif
 	  return_error(errorMissingAttribute);
 	else if ( pxgs->palette.data )
 	  { if ( !pxgs->palette_is_shared )
@@ -726,10 +877,18 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
+#ifdef PXL2_0
+const byte apxSetPenSource[] = {
+  0, pxaRGBColor, pxaGrayLevel, pxaPrimaryArray, pxaPrimaryDepth, pxaNullPen, pxaPatternSelectID,
+  pxaPatternOrigin, pxaNewDestinationSize, 0
+};
+#else
 const byte apxSetPenSource[] = {
   0, pxaRGBColor, pxaGrayLevel, pxaNullPen, pxaPatternSelectID,
   pxaPatternOrigin, pxaNewDestinationSize, 0
 };
+#endif
+
 int
 pxSetPenSource(px_args_t *par, px_state_t *pxs)
 {	return set_source(par, pxs, &pxs->pxgs->pen);
