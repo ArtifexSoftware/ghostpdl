@@ -37,21 +37,6 @@
 #include "vdtrace.h"
 #include <assert.h>
 
-/*
- * Define which fill algorithm(s) to use.  At least one of the following
- * two #defines must be included (not commented out).
- * The dropout prevention code requires FILL_TRAPEZOIDS defined.
- */
-
-#define FILL_SCAN_LINES
-#define FILL_TRAPEZOIDS
-/*
- * Define whether to sample curves when using the scan line algorithm
- * rather than flattening them.  This produces more accurate output, at
- * some cost in time.
- */
-#define FILL_CURVES
-
 #ifdef DEBUG
 /* Define the statistics structure instance. */
 stats_fill_t stats_fill;
@@ -424,19 +409,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * However, we always use the trapezoid algorithm for rectangles.
      */
 #define DOUBLE_WRITE_OK() lop_is_idempotent(lop)
-#ifdef FILL_SCAN_LINES
-#  ifdef FILL_TRAPEZOIDS
     fill_by_trapezoids =
 	(pseudo_rasterization || !gx_path_has_curves(ppath) || params->flatness >= 1.0);
-#  else
-    fill_by_trapezoids = false;
-#  endif
-#else
-    fill_by_trapezoids = true;
-#endif
     if (is_spotan_device(dev))
 	fill_by_trapezoids = true;
-#ifdef FILL_TRAPEZOIDS
     if (fill_by_trapezoids && !DOUBLE_WRITE_OK()) {
 	/* Avoid filling rectangles by scan line. */
 	gs_fixed_rect rbox;
@@ -452,20 +428,11 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	}
 	fill_by_trapezoids = false; /* avoid double write */
     }
-#endif
 #undef DOUBLE_WRITE_OK
-    /*
-     * Pre-process curves.  When filling by trapezoids, we need to
-     * flatten the path completely; when filling by scan lines, we only
-     * need to monotonize it, unless FILL_CURVES is undefined.
-     */
     gx_path_init_local(&ffpath, ppath->memory);
     if (!gx_path_has_curves(ppath))	/* don't need to flatten */
 	pfpath = ppath;
-    else
-#if defined(FILL_CURVES) && defined(FILL_SCAN_LINES)
-    /* Filling curves is possible. */
-    if (gx_path__check_curves(ppath, (!fill_by_trapezoids ? pco_monotonize : pco_none)
+    else if (gx_path__check_curves(ppath, (!fill_by_trapezoids ? pco_monotonize : pco_none)
 					| pco_small_curves, lst.fixed_flat))
 	pfpath = ppath;
     else {
@@ -478,7 +445,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    return code;
 	pfpath = &ffpath;
     }
-#endif
     lst.fill_by_trapezoids = fill_by_trapezoids;
     if ((code = add_y_list(pfpath, &lst)) < 0)
 	goto nope;
