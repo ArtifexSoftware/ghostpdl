@@ -9,10 +9,9 @@ import string
 
 MAIL_SERVER = 'localhost'
 REPORT_EMAIL = 'gs-regression@ghostscript.com'
-#REPORT_EMAIL = 'jack@artifex.com'
 MAIL_FROM = 'jack@meerkat.dimensional.com'
-HEAD_DIR = '/home/jack/HEAD'
-REGRESSION_SCRIPT = '/home/jack/regression/run_regression 2>&1'
+HEAD_DIR = '/path/to/cvs'
+REGRESSION_SCRIPT = 'run_regression 2>&1'
 
 
 def sendmail(frm, to, subject, text):
@@ -55,4 +54,3 @@ for line in p.readlines():
 p.close()
 
 sendmail(MAIL_FROM, REPORT_EMAIL, 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)
-#sendmail(MAIL_FROM, 'jack@artifex.com', 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)
