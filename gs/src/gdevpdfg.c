@@ -299,7 +299,6 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		return code;
 	    pprints1(pdev->strm, " %s\n", command);
 	    break;
-	default: /* must not happen. */
 	case pattern_color_sapce:
 	    {	pdf_resource_t *pres;
 
@@ -321,6 +320,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		pprints1(pdev->strm, " %s\n", ppscc->setcolorn);
 	    }
 	    break;
+	default: /* must not happen. */
 	case use_process_color:
 	write_process_color:
 	    code = psdf_set_color((gx_device_vector *)pdev, pdc, ppscc);
