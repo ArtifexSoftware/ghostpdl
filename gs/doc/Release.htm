@@ -321,7 +321,7 @@ cd /tmp
 /gs/bin/gs -I/gs/lib -I/gs/fonts -dNOPAUSE -dBATCH /gs/toolbin/smoke.ps | tee t
 export TEMP=/gs/tmp
 /gs/bin/gs -I/gs/lib -I/gs/fonts -dNOPAUSE -dBATCH -sDEVICE=bitcmyk\
-  -sOutputFile=/dev/null -r600 -dMaxBitmap=1000000 /gs/toolbin/smoke.ps | tee t
+  -sOutputFile=/dev/null -r600 -dBufferSpace=50000 /gs/toolbin/smoke.ps | tee t
 </pre></blockquote>
 
 <p>
