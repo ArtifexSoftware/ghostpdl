@@ -616,7 +616,7 @@ int tx, int y, int tw, int th, gx_color_index color0, gx_color_index color1,
 	    else
 		set_mono_left_mask(mask, dbit);
 	    for (;;) {
-		int coult = wleft;
+		int count = wleft;
 
 		/* Do first partial chunk. */
 		if (mask)
