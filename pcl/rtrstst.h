@@ -97,7 +97,7 @@
 #ifndef pcl_raster_t_DEFINED
 #define pcl_raster_t_DEFINED
 typedef struct pcl_raster_t pcl_raster_type;
-#endif pcl_raster_t_DEFINED
+#endif /* pcl_raster_t_DEFINED */
 
 typedef struct pcl_raster_state_s {
     uint    resolution;         /* source resolution, dots per inch */
