@@ -7,6 +7,7 @@ OBJ=.o
 
 # todo: this needs to be .dylib on OS X - write a test
 SHARED_OBJ=.so
+SHARED_OBJ=.dylib
 
 EXE=
 FE=-o 
@@ -42,7 +43,8 @@ libijs.a:	$(LIB_OBJS)
 # makes sense to separate them, but they're small enough to make this probably
 # not worthwhile.
 libijs$(SHARED_OBJ):	$(LIB_OBJS)
-	$(CC) -shared $^ -o $@
+	#$(CC) -shared $^ -o $@
+	$(CC) -dynamic $^ -o $@
 
 ijs_client_example$(EXE):	ijs_client_example$(OBJ) ijs_client$(OBJ) $(IJS_COMMON_OBJ) $(IJS_EXEC_SERVER)
 	$(CC) $(CFLAGS) $(FE)ijs_client_example$(EXE) ijs_client_example$(OBJ) ijs_client$(OBJ) $(IJS_COMMON_OBJ) $(IJS_EXEC_SERVER) $(LDLIBS)
@@ -57,8 +59,8 @@ clean: common_clean
 	$(RM) *~ gmon.out core ijs_spec.log ijs_spec.tex ijs_spec.aux libijs.a libijs$(SHARED_OBJ) config.cache config.log config.status ijs-config
 
 install:	all
-	$(INSTALL) ijs_client_example$(EXE) -c $(bindir)/ijs_client_example$(EXE)
-	$(INSTALL) ijs-config -c $(bindir)/ijs-config
+	$(INSTALL) ijs_client_example$(EXE) $(bindir)/ijs_client_example$(EXE)
+	$(INSTALL) ijs-config $(bindir)/ijs-config
 	$(INSTALL) libijs.a $(libdir)/libijs.a
 	$(INSTALL) libijs$(SHARED_OBJ) $(libdir)/libijs$(SHARED_OBJ)
 	mkdir $(pkgincludedir)
