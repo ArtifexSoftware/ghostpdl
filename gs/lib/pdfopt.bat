@@ -4,7 +4,8 @@
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
-echo -q -dNODISPLAY >_.at
+call gssetgs.bat
+echo -q -dNODISPLAY -dSAFER >_.at
 :cp
 if "%3"=="" goto doit
 echo %1 >>_.at
@@ -12,7 +13,7 @@ shift
 goto cp
 
 :doit
-gs -q @_.at -- pdfopt.ps %1 %2
+%GSC% -q @_.at -- pdfopt.ps %1 %2
 goto end
 
 :usage

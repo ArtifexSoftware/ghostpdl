@@ -4,6 +4,7 @@
 
 if "%1"=="" goto usage
 if "%2"=="" goto usage
+call gssetgs.bat
 echo -dNOPAUSE -dBATCH -dSAFER -sDEVICE#pswrite >_.at
 :cp
 if "%3"=="" goto doit
@@ -13,7 +14,7 @@ goto cp
 
 :doit
 rem Watcom C deletes = signs, so use # instead.
-gs -q -sOutputFile#%2 @_.at %1
+%GSC% -q -sOutputFile#%2 @_.at %1
 goto end
 
 :usage
