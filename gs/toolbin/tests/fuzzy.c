@@ -12,6 +12,9 @@ typedef int bool;
 #define FALSE 0
 #define TRUE 1
 
+#define MIN(x,y) ((x)>(y)?(y):(x))
+#define MAX(x,y) ((x)>(y)?(x):(y))
+
 typedef struct _Image Image;
 
 struct _Image {
@@ -197,7 +200,7 @@ seek_bmp_image(Image *self, int y)
   ImagePnm *pnm = (ImagePnm *)self;
   int nOffBits = sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
   fpos_t pos = nOffBits + self->raster * (self->height - y - 1);
-  int r = fsetpos(pnm->f, &pos); /* fseek beond file end doesn't work with MSVC. */
+  int r = fsetpos(pnm->f, &pos); /* fseek beyond file end doesn't work with MSVC. */
 
   return r;
 }
@@ -415,8 +418,8 @@ static void
 fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		   FuzzyReport *freport, ImagePnm *image_out)
 {
-  int width = max(image1->width, image2->width);
-  int height = max(image1->height, image2->height);
+  int width = MAX(image1->width, image2->width);
+  int height = MAX(image1->height, image2->height);
   int tolerance = fparams->tolerance;
   int window_size = fparams->window_size;
   int row_bytes = width * 3;
@@ -435,7 +438,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
     }
 
   /* Read rows ahead for half window : */
-  for (y = 0; y < min(half_win, height); y++) 
+  for (y = 0; y < MIN(half_win, height); y++) 
     {
       image_get_rgb_scan_line (image1, buf1[half_win - y]);
       image_get_rgb_scan_line (image2, buf2[half_win - y]);
