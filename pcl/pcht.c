@@ -1317,6 +1317,16 @@ read_remap_array(
     pcl_ht_update_rendering_remap(pcs, dstring.data);
 }
 
+private void
+pcl_cmap_free(gs_memory_t *mem, void *pcmap, client_name_t cname)
+{
+#ifdef DEBUG
+    dprintf("cmap is static and retained, it should not be freed\n");
+    dprintf("restoring cmap reference count to 1\n");
+#endif
+    ((gx_device *)pcmap)->rc.ref_count = 1;
+}
+
 /*
  * Initialize the default rendering information.
  */
@@ -1341,6 +1351,11 @@ pcl_ht_init_render_methods(
     pcs->rendering_info[0].flags     = HT_NONE;
     pcs->rendering_info[0].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[0].pbidither = &pcs->ordered_dither;
+    /* rather much... */
+    pcs->cmap_device_identity.mapping_method = device_cmap_identity;
+    pcs->cmap_device_snap_to_primaries.mapping_method = device_cmap_snap_to_primaries;
+    pcs->cmap_device_color_to_black_over_white.mapping_method = device_cmap_color_to_black_over_white;
+    pcs->cmap_device_monochrome.mapping_method = device_cmap_monochrome;
 
     /* 1 - dither doesn't matter */                                       
     pcs->rendering_info[1].flags     = HT_FIXED | HT_DEVCSPACE;
@@ -1490,29 +1505,14 @@ pcl_ht_init_render_methods(
     }
     gs_c_param_list_release(&list);
 
-#define high_ref_count_hack(color_mapper) ((color_mapper)->rc.ref_count = (max_long / 2))
-    /* initialize the color mapping mapping devices; install the default */
+    /* initialize and install the default color mapping device */
     gdev_cmap_init(&pcs->cmap_device_identity, pcur_dev, device_cmap_identity);
-    high_ref_count_hack((gx_device *)&pcs->cmap_device_identity);
-
-    gdev_cmap_init( &pcs->cmap_device_snap_to_primaries,
-                    pcur_dev,
-                    device_cmap_snap_to_primaries
-                    );
-    high_ref_count_hack((gx_device *)&pcs->cmap_device_snap_to_primaries);
-
-    gdev_cmap_init( &pcs->cmap_device_color_to_black_over_white,
-                    pcur_dev,
-                    device_cmap_color_to_black_over_white
-                    );
-    high_ref_count_hack((gx_device *)&pcs->cmap_device_color_to_black_over_white);
-  
-    gdev_cmap_init(&pcs->cmap_device_monochrome, pcur_dev, device_cmap_monochrome);
-    high_ref_count_hack((gx_device *)&pcs->cmap_device_monochrome);
-
+    gx_device_retain((gx_device *)&pcs->cmap_device_identity, true);
+    /* HACK redefine referecence counting free */
+    pcs->cmap_device_identity.rc.free = pcl_cmap_free;
     gs_setdevice_no_init(pcs->pgs, (gx_device *)&pcs->cmap_device_identity);
+
     /* initialize default halftone */
-#undef high_ref_count_hack
     pcs->pdflt_ht = 0;
 }
 
@@ -1962,7 +1962,6 @@ get_rendering_info(
 
     return pinfo;
 }
-
 /*
  * Set the halftone component 
  *
@@ -2214,13 +2213,14 @@ pcl_ht_set_halftone(
     }
     pinfo_new = get_rendering_info(pcs, pht->render_method, cstype, for_image);
     if ((pdev = pinfo_new->pdev) != old_pdev) {
-        long    ref_count = pdev->rc.ref_count; /* HACK ALERT */
-
-        if (ref_count == 0)     /* HACK ALERT */
-            ref_count = 1;
-        gdev_cmap_init(pdev, pdev->target, pdev->mapping_method);
-        pdev->rc.ref_count = ref_count; /* HACK ALERT */
-        gs_setdevice_no_init(pcs->pgs, (gx_device *)pdev);
+        gdev_cmap_init(pdev,
+		       ((gx_device_cmap *)gs_currentdevice(pcs->pgs))->target,
+		       pdev->mapping_method);
+	pdev->rc.free = pcl_cmap_free;
+	gx_device_retain(pdev, true);
+	/* no need to set it if the reference is the same */
+	if ( ((gx_device_cmap *)gs_currentdevice(pcs->pgs)) != pdev )
+	    gs_setdevice_no_init(pcs->pgs, (gx_device *)pdev);
     }
     ncomps = pdev->color_info.num_components;
 
