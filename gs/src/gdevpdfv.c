@@ -212,7 +212,7 @@ pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
     pdf_set_pattern_image((gs_data_image_t *)&image, &m_tile->tmask);
     if ((code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, false, 1)) < 0 ||
 	(pdev->params.MonoImage.Encode &&
-	 (code = psdf_CFE_binary(&writer.binary, w, h, true)) < 0) ||
+	 (code = psdf_CFE_binary(&writer.binary[0], w, h, true)) < 0) ||
 	(code = pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image, NULL, 0)) < 0
 	)
 	return code;
