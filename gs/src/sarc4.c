@@ -81,7 +81,8 @@ s_arcfour_process(stream_state * ss, stream_cursor_read * pr,
     unsigned int x = state->x;
     unsigned int y = state->y;
     unsigned char s, *S = state->S;
-    unsigned char z, *limit;
+    unsigned char z;
+   const unsigned char *limit;
     int status;
 
     /* figure out if we're going to run out of space */

@@ -565,7 +565,7 @@ ztempfile(i_ctx_t *i_ctx_p)
     }
     fnlen = strlen(fname);
     file_init_stream(s, sfile, fmode, buf, file_default_buffer_size);
-    code = ssetfilename(s, fname, fnlen);
+    code = ssetfilename(s, (const unsigned char*) fname, fnlen);
     if (code < 0) {
 	sclose(s);
 	iodev_default->procs.delete_file(iodev_default, fname);

@@ -56,7 +56,7 @@ int gs_get_colorname_string(gs_separation_name colorname_index,
 
     name_index_ref(colorname_index, &nref);
     name_string_ref(&nref, &nref);
-    return obj_string_data(&nref, ppstr, pname_size);
+    return obj_string_data(&nref, (const unsigned char**) ppstr, pname_size);
 }
 
 /* <array> .setdevicenspace - */
