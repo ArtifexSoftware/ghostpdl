@@ -862,15 +862,22 @@ $(GLOBJ)gdevpdfv.$(OBJ) : $(GLSRC)gdevpdfv.c $(GXERR) $(math__h) $(string__h)\
 # However, logically they are part of pdfwrite and cannot be used separately.
 
 #### Select old vs. new text code
-# The following makefile rule always compiles both old and new code, but
-# only links in one of the two.  For the old code, the SETMOD line should be
-# (removing the initial #, of course):
-#	$(SETMOD) $(DD)pdtext -include $(DD)pdftext
-# For the new code, the SETMOD line should be
-#	$(SETMOD) $(DD)pdtext -include $(DD)pdxtext
+# Define which pdfwrite text code to link in, pdftext (old) or pdxtext (new).
+PDTEXT=pdftext
 
-$(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(DD)pdftext.dev $(DD)pdxtext.dev
-	$(SETMOD) $(DD)pdtext -include $(DD)pdftext
+# In order to prevent code from decaying, we would like the makefile to
+# compile both old and new code, but only link in the one we are using.
+# However, the 'project' model of Microsoft Visual C++ cannot handle this.
+# Therefore, we define which code to compile and which code to link
+# separately.
+PDTEXT_COMPILE_MSVC=$(DD)$(PDTEXT).dev
+PDTEXT_COMPILE_OTHER=$(DD)pdftext.dev $(DD)pdxtext.dev
+
+# Define which code to compile, PDTEXT_COMPILE_OTHER or PDTEXT_COMPILE_MSVC.
+PDTEXT_COMPILE=$(PDTEXT_COMPILE_OTHER)
+
+$(DD)pdtext.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(PDTEXT_COMPILE)
+	$(SETMOD) $(DD)pdtext -include $(DD)$(PDTEXT)
 
 #### Old text code
 # The next section should be removed when the new code is fully stable.
@@ -936,8 +943,6 @@ $(GLOBJ)gdevpdfw.$(OBJ) : $(GLSRC)gdevpdfw.c\
 
 #### New text code
 # For a code roadmap, see gdevpdtx.h.
-# **************** THIS CODE IS NOT CLOSE TO WORKING YET.
-# **************** DO NOT USE IT.
 
 # gdevpdt_h will eventually be moved up and #included in gdevpdfx.h
 gdevpdt_h=$(GLSRC)gdevpdt.h
