@@ -309,7 +309,7 @@ lpdict begin
 /showline3 {	% xlimit string -> xlimit leftover_string
 		% (finds line break / tab / formfeed)
   1 index tx sub
-    cwx div 0.1 add cvi 0 max 1 index length min
+    cwx div 0.1 add cvi 0 .max 1 index length .min
   1 index 0 3 -1 roll getinterval
 	% look for \f or \t
   StringFF search { exch pop exch pop } if
@@ -457,7 +457,7 @@ lpdict begin
      exch MarginLeft add
      exch MarginBottom add plength add topskip sub
      /pagey exch def /pagex exch def
-   plength pskip sub lheight div cvi MaxLines min
+   plength pskip sub lheight div cvi MaxLines .min
      dup /colines exch def
      Columns mul /llength exch def
    grestore
@@ -561,7 +561,7 @@ lpdict begin
     } def
 /--add-to-space { cvr /AddToSpace exch def } def
 /--add-to-width { cvr /AddToWidth exch def } def
-/--columns { cvi 1 max /Columns exch def } def
+/--columns { cvi 1 .max /Columns exch def } def
 /--detect { /DetectFileType true def } def
 /--first-page { cvi /PageFirst exch def } def
 /--footing-center { /FootingCenter exch def   /Footers true def } def

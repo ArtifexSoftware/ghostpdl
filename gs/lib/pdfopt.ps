@@ -496,7 +496,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 		% Collect objects of other pages and identify sharing.
   [ 2 1 pdfpagecount { null exch identifyPageObjects } for ]
   dup {
-    { marks exch 2 copy lget 1 add 254 min lput } forall
+    { marks exch 2 copy lget 1 add 254 .min lput } forall
   } forall
 		% Mark document-level and first page objects.
   [CatalogNs FirstPageNs] {
@@ -1038,7 +1038,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     writePart11xref 1024 writePart11rest
   } tolength def
   /NominalFileLength 	% Make a generous allowance for parts 2,3,5.
-    HeaderLength ObjectsLength 3 mul add 10000 add 99999 max def
+    HeaderLength ObjectsLength 3 mul add 10000 add 99999 .max def
   /FirstPageXrefLength {	% part 3
     NominalFileLength writePart3
   } tolength def

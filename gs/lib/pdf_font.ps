@@ -408,7 +408,7 @@ end readonly def
 
 % Read the next block of data into the buffer.
 /type1readdata		% <left> <buffer> type1readdata <substring> <left'>
- { 0 2 index 2 index length min getinterval
+ { 0 2 index 2 index length .min getinterval
 		% Adobe requires readstring to signal an error if given
 		% an empty string.  Work around this nonsense here.
    dup length 0 ne { data exch readstring pop } if
@@ -950,7 +950,7 @@ readonly def
 % <string> <match> tailmatch ==> <pre> true
 %                            ==> <string> false
 /tailmatch {
-  2 copy length 1 index length min
+  2 copy length 1 index length .min
   dup 2 index length exch sub exch getinterval
   1 index eq {
     length 1 index length exch sub

@@ -459,10 +459,10 @@ envBDF begin
 	 (BITMAP) checkline
 
 % Update the font bounding box.
-	 /fbbxo fbbxo bbox min def
-	 /fbbyo fbbyo bboy min def
-	 /fbbxe fbbxe bbox bbw add max def
-	 /fbbye fbbye bboy bbh add max def
+	 /fbbxo fbbxo bbox .min def
+	 /fbbyo fbbyo bboy .min def
+	 /fbbxe fbbxe bbox bbw add .max def
+	 /fbbye fbbye bboy bbh add .max def
 
 % Read the bits for this character.
 	 /raster bbw 7 add 8 idiv def
@@ -491,8 +491,8 @@ envBDF begin
       /fbbw fbbxe fbbxo sub def
       /fbbh fbbye fbbyo sub def
       /fraster fbbw 7 add 8 idiv def
-      /bits fraster fbbh mul 200 max 65535 min string def
-      /outline bits length 6 mul 65535 min string def
+      /bits fraster fbbh mul 200 .max 65535 .min string def
+      /outline bits length 6 mul 65535 .min string def
 
 %  Process the characters.
       chardata

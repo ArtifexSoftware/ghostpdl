@@ -177,7 +177,7 @@ pop		% .cidfonttypes
       mark 3 1 roll {
 		% Stack: mark str ... readproc length
 	dup 0 eq { pop exit } if
-	dup 65400 min dup string 3 index exec
+	dup 65400 .min dup string 3 index exec
 		% Stack: mark str ... readproc length newstrlen newstr
 	4 1 roll sub
       } loop

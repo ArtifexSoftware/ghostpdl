@@ -41,7 +41,7 @@
 	% Scale the image (uniformly) to fit the page.
     clippath pathbbox pop pop translate
     pathbbox 3 -1 roll sub h div
-    3 1 roll exch sub w div min dup
+    3 1 roll exch sub w div .min dup
   } ifelse scale
   w h bpc [1 0 0 -1 0 h] f false 4 colorimage
   showpage

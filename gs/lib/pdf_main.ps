@@ -240,8 +240,8 @@ pdfdict begin
 /pdfopencache {		% - pdfopencache -
 	% Create and initialize some caches.
   /PageCount pdfpagecount def
-  /PageNumbers PageCount 65534 min dict def
-  /PageIndex PageCount 65534 min array def
+  /PageNumbers PageCount 65534 .min dict def
+  /PageIndex PageCount 65534 .min array def
 } bind def
 /pdfopenfile {		% <file> pdfopenfile <dict>
    pdfdict readonly pop		% can't do it any earlier than this
@@ -455,7 +455,7 @@ pdfdict begin
 		% Stack: index countleft noderef
    1 index 1 ne { pop pop /pdffindpage cvx /rangecheck signalerror } if
    exch pop
-   PageIndex 2 index 1 sub 65533 min 2 index oforce put
+   PageIndex 2 index 1 sub 65533 .min 2 index oforce put
    PageNumbers 1 index oforce 3 index dup 65534 le
     { put }
     { pop pop pop }	% don't store more than 65534 pagenumbers

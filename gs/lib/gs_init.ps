@@ -1220,7 +1220,7 @@ devicedict /Default devicedict .defaultdevicename get put
    currentdevice mark
      /RedValues 0 /GreenValues 0 /BlueValues 0 /GrayValues 0
    .dicttomark .getdeviceparams
-   counttomark 2 idiv 1 sub { exch pop min } repeat
+   counttomark 2 idiv 1 sub { exch pop .min } repeat
    exch pop exch pop 32 lt 4 index 800 lt and 5 1 roll
 	% Stack: doscreen dpi freq angle proc
 	% Ghostscript currently doesn't use correct, per-plane halftones

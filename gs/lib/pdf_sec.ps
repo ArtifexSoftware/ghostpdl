@@ -269,7 +269,7 @@ def
   pop exch
     2 copy 255 and FileKey length 3 add exch put
     2 copy -8 bitshift 255 and FileKey length 4 add exch put
-  pop md5 0 FileKey length 5 add 2 index length min getinterval
+  pop md5 0 FileKey length 5 add 2 index length .min getinterval
 } bind def
 
 % As .pdfrun, but decrypt strings with key <key>.

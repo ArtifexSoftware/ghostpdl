@@ -269,7 +269,7 @@ ifelse
 		% tox and toy are in user coordinates.
  { .coord 2 copy 6 2 roll .orderrect
 	% Add in the line width.  Assume square or round caps.
-   currentlinewidth 2 div dup .dcoord add abs 1 max 5 1 roll
+   currentlinewidth 2 div dup .dcoord add abs 1 .max 5 1 roll
    4 index add 4 1 roll 4 index add 4 1 roll
    4 index sub 4 1 roll 5 -1 roll sub 4 1 roll
    (R ) //print .show==4
@@ -1206,24 +1206,24 @@ mark
     dup                     % calculate new llx
     dup 0 get
     ch-xoff
-    min
+    .min
     0 exch put
 
     dup                     % calculate new lly
     dup 1 get
     ch-yoff ch-height sub
-    min
+    .min
     1 exch put
 
     dup                     % calculate new urx
     dup 2 get
     ch-dx ch-width add
-    max
+    .max 
     2 exch put
 
     dup 3 get               % calculate new ury
     ch-yoff
-    max
+    .max 
     3 exch put
 
 } def

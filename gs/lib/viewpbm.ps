@@ -116,7 +116,7 @@
     } {
 	% Scale the image (uniformly) to fit the page.
       clippath pathbbox pop pop translate
-      pathbbox min exch pop exch pop ceiling
+      pathbbox .min exch pop exch pop ceiling
       dup Height Width gt {
 	Width mul Height div exch
       } {

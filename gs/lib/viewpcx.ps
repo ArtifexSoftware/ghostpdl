@@ -81,7 +81,7 @@
     }
     { /cspace
 	[/Indexed   /DeviceRGB   1 bpp bitshift 1 sub
-	 header 16 1 nbits bitshift 16 min 3 mul getinterval
+	 header 16 1 nbits bitshift 16 .min 3 mul getinterval
 	] def
       /decode [0 cspace 2 get] def
     }
@@ -95,7 +95,7 @@
     }
     {	% Scale the image (uniformly) to fit the page.
       clippath pathbbox pop pop translate
-      pathbbox min exch pop exch pop ceiling
+      pathbbox .min exch pop exch pop ceiling
       dup h w gt { w mul h div exch } { h mul w div } ifelse
     }
    ifelse scale

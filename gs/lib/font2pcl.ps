@@ -121,7 +121,7 @@ pcldict begin		% internal procedures
 		% Stack: rw rh ymin ymax1 xmin xmax1
    3 index 1 4 index 1 sub
     { currentdevice exch row copyscanlines .findzeros
-      exch 4 1 roll max 3 1 roll min exch
+      exch 4 1 roll .max 3 1 roll .min exch
     }
    for		% xmin xmax1
 		% Special check: xmin > xmax1 if height = 0
@@ -283,8 +283,8 @@ currentdict readonly end pop		% pcldict
     { 0 exch transform exch pop negY ulwidth 2 div add }
     { ully ulwidth add }
    ifelse u0y sub
-   round cvi 1 max 255 min (Underline Position) wbyte
-   ulwidth round cvi 1 max 255 min (Underline Thickness) wbyte
+   round cvi 1 .max 255 .min (Underline Position) wbyte
+   ulwidth round cvi 1 .max 255 .min (Underline Thickness) wbyte
    grestore
    uh 1.2 mul 4 mul cvi (Text Height) wword
    (average lowercase character) dup stringwidth
@@ -305,7 +305,7 @@ currentdict readonly end pop		% pcldict
    0 (Cap Height) wword			% (default)
    currentfont /UniqueID known { UniqueID } { 0 } ifelse
      16#c1000000 add (Font Number (Adobe UniqueID)) wdword
-   FontName length 16 max string
+   FontName length 16 .max string
      dup FontName exch cvs pop
      outfile exch 0 16 getinterval writestring	% Font Name
    WriteResolution?
@@ -419,8 +419,8 @@ currentdict readonly end pop		% pcldict
    ixbbox
      negY /rury exch def  /rurx exch def
      negY /rlly exch def  /rllx exch def
-     /rminx rllx rurx min def
-     /rminy rlly negY rury negY min def
+     /rminx rllx rurx .min def
+     /rminy rlly negY rury negY .min def
      /rw rurx rllx sub abs def
      /rh rury rlly sub abs def
    gsave rot neg rotate
