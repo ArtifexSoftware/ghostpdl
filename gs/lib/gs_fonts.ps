@@ -816,8 +816,12 @@ $error /SubstituteFont { .stdsubstfont } put
 		% Hack: check for the presence of the resource machinery.
   /.genericrfn where {
     pop
-    exch 1 index .fonttempstring /FontResourceDir getsystemparam .genericrfn
-    .loadfontloop { 3 -1 roll pop true } { exch .loadfontloop } ifelse
+    2 copy .fonttempstring /FontResourceDir getsystemparam .genericrfn
+    .loadfontloop {
+      exch pop exch pop true
+    } {
+      .loadfontloop
+    } ifelse
   } {
     .loadfontloop
   } ifelse

@@ -338,7 +338,7 @@ end
 	   }
 	  if .LocalInstances exch exec
 	} bind
-% Because of some badly designed code in Adobe's CID font downloader, which
+% Because of some badly designed code in Adobe's CID font downloader that
 % makes findresource and resourcestatus deliberately inconsistent with each
 % other, the default FindResource must not call ResourceStatus if there is
 % an instance of the desired name already defined in VM.
@@ -347,7 +347,13 @@ end
 	  exch pop 0 get
 	} {
 	  dup ResourceStatus {
-	    pop 1 gt { .DoLoadResource } if .GetInstance pop 0 get
+	    pop 1 gt {
+	      .DoLoadResource .GetInstance not {
+		/findresource load /undefinedresource signalerror
+	      } if 0 get
+	    } {
+	      .GetInstance pop 0 get
+	    } ifelse
 	  } {
 	   /findresource load /undefinedresource signalerror
 	  } ifelse
@@ -749,12 +755,17 @@ setglobal
 	{ dup //undefinefont
 	  /Generic /Category findresource /UndefineResource get exec
 	} bind
-/FindResource
-	{ dup ResourceStatus
-	   { pop 1 gt { .loadfont } { .GetInstance pop 0 get } ifelse }
-	   { .loadfont }
-	  ifelse
-	} bind
+/FindResource {
+	dup .GetInstance {
+	  exch pop 0 get
+	} {
+	  dup ResourceStatus {
+	    pop 1 gt { .loadfontresource } { .GetInstance pop 0 get } ifelse
+	  } {
+	    .loadfontresource
+	  } ifelse
+	} ifelse
+} bind
 /ResourceForAll {
 	{ .scannextfontdir not { exit } if } loop
 	/Generic /Category findresource /ResourceForAll get exec
@@ -763,23 +774,22 @@ setglobal
 	.fontstatus { pop 2 -1 true } { pop false } ifelse
 } bind
 
-/.loadfont
-	{ dup vmstatus pop exch pop exch
+/.loadfontresource {
+	dup vmstatus pop exch pop exch
 		% Hack: rebind .currentresourcefile so that all calls of
 		% definefont will know these are built-in fonts.
-	  currentfile {pop //findfont exec} .execasresource  % (findfont is a procedure)
-	  exch vmstatus pop exch pop exch sub
+	currentfile {pop //findfont exec} .execasresource  % (findfont is a procedure)
+	exch vmstatus pop exch pop exch sub
 		% stack: name font vmused
 		% findfont has the prerogative of not calling definefont
 		% in certain obscure cases of font substitution.
-	  2 index .GetInstance
-	   { dup 1 1 put
-	     2 3 -1 roll put
-	   }
-	   { pop
-	   }
-	  ifelse exch pop
-	} bind
+	2 index .GetInstance {
+	  dup 1 1 put
+	  2 3 -1 roll put
+	} {
+	  pop
+	} ifelse exch pop
+} bind
 
 /.Instances FontDirectory length 2 mul dict
 
