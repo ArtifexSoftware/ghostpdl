@@ -68,7 +68,7 @@ s_proc_init(ref * sop, stream ** psstrm, uint mode,
     if (sstrm == 0 || state == 0) {
 	gs_free_object(mem, state, "s_proc_init(state)");
 	/*gs_free_object(mem, sstrm, "s_proc_init(stream)"); *//* just leave it on the file list */
-	return_error((const gs_memory_t *)imem, e_VMerror);
+	return_error(mem, e_VMerror);
     }
     s_std_init(sstrm, NULL, 0, procs, mode);
     sstrm->procs.process = temp->process;

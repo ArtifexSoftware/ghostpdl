@@ -366,6 +366,8 @@ jpeg_print_page(gx_device_printer * pdev, FILE * prn_stream)
     stream_DCT_state state;
     stream fstrm, jstrm;
 
+    s_stack_init( &fstrm, mem );
+    s_stack_init( &jstrm, mem );
     if (jcdp == 0 || in == 0) {
 	code = gs_note_error(mem, gs_error_VMerror);
 	goto fail;

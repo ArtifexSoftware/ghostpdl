@@ -158,6 +158,7 @@ stream_proc_report_error(s_no_report_error);
 #define stream_state_common\
 	const stream_template *template;\
 	gs_memory_t *memory;\
+        bool isheap;\
 	stream_proc_report_error((*report_error));\
         int min_left; /* required bytes for lookahead */ \
 	char error_string[STREAM_MAX_ERROR_STRING + 1]

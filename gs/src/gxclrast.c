@@ -196,7 +196,7 @@ private int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
                                  gs_color_space *pcolor_space,
                                  gs_memory_t *mem);
 private int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
-                             const gs_color_space *pcs);
+                             const gs_color_space *pcs, gs_memory_t *mem);
 private int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
                             gx_device_clist_reader *cdev,
                             gs_memory_t *mem);
@@ -208,7 +208,7 @@ private int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
 			    gx_device *, gs_memory_t *);
 
 private const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
-private const byte *cmd_read_matrix(gs_matrix *, const byte *);
+private const byte *cmd_read_matrix(gs_matrix *, const byte *, gs_memory_t *mem);
 private const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
                                         int width_bytes, int height,
                                         uint raster, const byte *cbp);
@@ -753,7 +753,7 @@ in:				/* Initialize for a new page. */
 				{
 				    stream_RLD_state sstate;
 
-				    clist_rld_init(&sstate);
+				    clist_rld_init(&sstate, s->memory);
 				    /* The process procedure can't fail. */
 				    (*s_RLD_template.process)
 					(s->memory, 
@@ -766,7 +766,7 @@ in:				/* Initialize for a new page. */
 
 				    clist_cfd_init(&sstate,
 				    width_bytes << 3 /*state.rect.width */ ,
-						   state.rect.height, mem);
+						   state.rect.height, NULL, mem);
 				    /* The process procedure can't fail. */
 				    (*s_CFD_template.process)
 					(s->memory,
@@ -884,7 +884,7 @@ set_phase:	/*
 			{
 			    gs_matrix mat;
 
-			    cbp = cmd_read_matrix(&mat, cbp);
+			    cbp = cmd_read_matrix(&mat, cbp, mem);
 			    mat.tx -= x0;
 			    mat.ty -= y0;
 			    gs_imager_setmatrix(&imager_state, &mat);
@@ -1005,7 +1005,7 @@ set_phase:	/*
 			break;
 		    case cmd_opv_begin_image_rect:
 			cbuf.ptr = cbp;
-			code = read_begin_image(&cbuf, &image.c, pcs);
+			code = read_begin_image(&cbuf, &image.c, pcs, mem);
 			cbp = cbuf.ptr;
 			if (code < 0)
 			    goto out;
@@ -1025,7 +1025,7 @@ set_phase:	/*
 			goto ibegin;
 		    case cmd_opv_begin_image:
 			cbuf.ptr = cbp;
-			code = read_begin_image(&cbuf, &image.c, pcs);
+			code = read_begin_image(&cbuf, &image.c, pcs, mem);
 			cbp = cbuf.ptr;
 			if (code < 0)
 			    goto out;
@@ -1638,7 +1638,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 	    {
 		stream_RLD_state sstate;
 
-		clist_rld_init(&sstate);
+		clist_rld_init(&sstate, mem);
 		(*s_RLD_template.process)
 		    (mem, (stream_state *)&sstate, &r, &w, true);
 	    }
@@ -1649,7 +1649,7 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
 
 		clist_cfd_init(&sstate,
 			       width_bytes << 3 /*width_bits */ ,
-			       rep_height, mem);
+			       rep_height, NULL, mem);
 		(*s_CFD_template.process)
 		    (mem, (stream_state *)&sstate, &r, &w, true);
 		(*s_CFD_template.release)
@@ -1941,13 +1941,14 @@ out:
 
 private int
 read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
-		 const gs_color_space *pcs)
+		 const gs_color_space *pcs, gs_memory_t *mem)
 {
     uint index = *(pcb->ptr)++;
     const gx_image_type_t *image_type = gx_image_type_table[index];
     stream s;
     int code;
 
+    s_stack_init(&s, mem);
     /* This is sloppy, but we don't have enough information to do better. */
     pcb->ptr = top_up_cbuf(pcb, pcb->ptr);
     sread_string(&s, pcb->ptr, pcb->end - pcb->ptr);
@@ -2143,10 +2144,11 @@ cmd_read_rect(int op, gx_cmd_rect * prect, const byte * cbp)
 
 /* Read a transformation matrix. */
 private const byte *
-cmd_read_matrix(gs_matrix * pmat, const byte * cbp)
+cmd_read_matrix(gs_matrix * pmat, const byte * cbp, gs_memory_t *mem)
 {
     stream s;
 
+    s_stack_init(&s, mem);
     sread_string(&s, cbp, 1 + sizeof(*pmat));
     sget_matrix(&s, pmat);
     return cbp + stell(&s);

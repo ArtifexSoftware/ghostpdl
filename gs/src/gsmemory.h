@@ -37,7 +37,7 @@
 #  define gsmemory_INCLUDED
 
 #include "gstypes.h"		/* for gs_bytestring */
-#include "pl_stdio.h"
+#include "gslibctx.h"
 
 /* Define the opaque type for a structure descriptor. */
 typedef struct gs_memory_struct_type_s gs_memory_struct_type_t;
@@ -448,7 +448,7 @@ typedef struct pl_mem_node_s pl_mem_node_t;
 #define gs_memory_common\
 	gs_memory_t *stable_memory;\
 	gs_memory_procs_t procs;\
-        pl_stdio_t *pl_stdio;\
+        gs_lib_ctx_t *gs_lib_ctx;\
         pl_mem_node_t *head
 
 

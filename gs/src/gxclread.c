@@ -476,8 +476,7 @@ clist_playback_file_bands(clist_playback_action action,
     stream_band_read_state rs;
 
     /* setup stream */
-    s_init_state((stream_state *)&rs, &s_band_read_template,
-		 (gs_memory_t *)0);
+    s_init_state((stream_state *)&rs, &s_band_read_template, NULL, cdev->memory);
     rs.band_first = band_first;
     rs.band_last = band_last;
     rs.page_info = *page_info;
@@ -497,12 +496,14 @@ clist_playback_file_bands(clist_playback_action action,
     }
     if (rs.page_cfile != 0 && rs.page_bfile != 0) {
 	stream s;
+
 	byte sbuf[cbuf_size];
 	static const stream_procs no_procs = {
 	    s_std_noavailable, s_std_noseek, s_std_read_reset,
 	    s_std_read_flush, s_std_close, s_band_read_process
 	};
 
+	s_stack_init( &s, cdev->memory);
 	s_band_read_init((stream_state *)&rs);
 	s_std_init(&s, sbuf, cbuf_size, &no_procs, s_mode_read);
 	s.foreign = 1;

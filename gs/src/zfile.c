@@ -124,7 +124,7 @@ zfile_init(i_ctx_t *i_ctx_p)
 
     stream *const s = &invalid_file_stream;
 
-    s_init(s, NULL);
+    s_init(s, NULL, imemory);
     sread_string(s, NULL, 0);
     s->next = s->prev = 0;
     s_init_no_id(s);
@@ -1347,7 +1347,7 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
     } else if (st != 0)		/* might not have client parameters */
 	memcpy(sst, st, ssize);
     s->state = sst;
-    s_init_state(sst, template, mem);
+    s_init_state(sst, template, mem, mem);
     sst->report_error = filter_report_error;
 
     if (template->init != 0) {

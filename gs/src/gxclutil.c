@@ -678,17 +678,17 @@ clist_cf_init(stream_CF_state *ss, int width)
     ss->DecodedByteAlign = align_bitmap_mod;
 }
 void
-clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem)
+clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem, const gs_memory_t *cmem)
 {
-    s_init_state((stream_state *)ss, &s_CFE_template, mem);
+    s_init_state((stream_state *)ss, &s_CFE_template, mem, cmem);
     s_CFE_set_defaults_inline(ss);
     clist_cf_init((stream_CF_state *)ss, width);
     s_CFE_template.init((stream_state *)(ss));
 }
 void
-clist_cfd_init(stream_CFD_state *ss, int width, int height, gs_memory_t *mem)
+clist_cfd_init(stream_CFD_state *ss, int width, int height, gs_memory_t *mem, const gs_memory_t *cmem)
 {
-    s_init_state((stream_state *)ss, &s_CFD_template, mem);
+    s_init_state((stream_state *)ss, &s_CFD_template, mem, cmem);
     s_CFD_template.set_defaults((stream_state *)ss);
     clist_cf_init((stream_CF_state *)ss, width);
     ss->Rows = height;
@@ -697,16 +697,16 @@ clist_cfd_init(stream_CFD_state *ss, int width, int height, gs_memory_t *mem)
 
 /* Initialize RunLength filters. */
 void
-clist_rle_init(stream_RLE_state *ss)
+clist_rle_init(stream_RLE_state *ss, const gs_memory_t *cmem)
 {
-    s_init_state((stream_state *)ss, &s_RLE_template, (gs_memory_t *)0);
+    s_init_state((stream_state *)ss, &s_RLE_template, (gs_memory_t *)0, cmem);
     s_RLE_set_defaults_inline(ss);
     s_RLE_init_inline(ss);
 }
 void
-clist_rld_init(stream_RLD_state *ss)
+clist_rld_init(stream_RLD_state *ss, const gs_memory_t *cmem)
 {
-    s_init_state((stream_state *)ss, &s_RLD_template, (gs_memory_t *)0);
+    s_init_state((stream_state *)ss, &s_RLD_template, (gs_memory_t *)0, cmem);
     s_RLD_set_defaults_inline(ss);
     s_RLD_init_inline(ss);
 }

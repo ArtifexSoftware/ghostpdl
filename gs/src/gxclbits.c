@@ -147,6 +147,8 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	int code;
 	int try_size = op_size + min(uncompressed_size, max_size);
 
+	s_stack_init(&sstate.ss, mem);
+
 	*psize = try_size;
 	code = (pcls != 0 ?
 		set_cmd_put_op(dp, cldev, pcls, 0, try_size) :
@@ -162,12 +164,12 @@ cmd_put_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	if (compression_mask & (1 << cmd_compress_cfe)) {
 	    /* Try CCITTFax compression. */
 	    clist_cfe_init(&sstate.cf,
-			   uncompressed_raster << 3 /*width_bits*/,
-			   mem);
+			   uncompressed_raster << 3, /*width_bits*/
+			   NULL, mem);
 	    compress = cmd_compress_cfe;
 	} else if (compression_mask & (1 << cmd_compress_rle)) {
 	    /* Try RLE compression. */
-	    clist_rle_init(&sstate.rl);
+	    clist_rle_init(&sstate.rl, mem);
 	    compress = cmd_compress_rle;
 	}
 	if (compress) {

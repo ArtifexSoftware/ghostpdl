@@ -329,8 +329,11 @@ stream_state *s_alloc_state(gs_memory_t *, gs_memory_type_ptr_t, client_name_t);
  * Initialize a separately allocated stream or stream state, as if allocated
  * by s_alloc[_state].
  */
-void s_init(stream *, gs_memory_t *);
-void s_init_state(stream_state *, const stream_template *, gs_memory_t *);
+void s_init(stream *s, gs_memory_t *null_if_on_stack, const gs_memory_t *never_null);
+void s_init_state(stream_state *, const stream_template *, gs_memory_t *, const gs_memory_t *);
+
+/* must be called to initialize a stream allocated on the stack */
+void s_stack_init(stream *, const gs_memory_t *);
 
 /* Create a stream on a string or a file. */
 void sread_string(stream *, const byte *, uint),
@@ -356,7 +359,7 @@ int sfilename(stream *, gs_const_string *);
 void swrite_position_only(stream *);
 
 /* Standard stream initialization */
-void s_std_init(stream *, byte *, uint, const stream_procs *, int /*mode */ );
+void s_std_init(stream *, byte *, uint, const stream_procs *, int /*mode */);
 
 /* Standard stream finalization */
 void s_disable(stream *);

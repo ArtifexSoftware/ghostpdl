@@ -640,7 +640,7 @@ calc_put(stream *s, const gs_function_PtCr_t *pfn)
 /* Access the symbolic definition as a DataSource. */
 private int
 calc_access(const gs_data_source_t *psrc, ulong start, uint length,
-	    byte *buf, const byte **ptr)
+	    byte *buf, const byte **ptr, gs_memory_t *mem)
 {
     const gs_function_PtCr_t *const pfn =
 	(const gs_function_PtCr_t *)
@@ -659,11 +659,11 @@ calc_access(const gs_data_source_t *psrc, ulong start, uint length,
     const stream_template *const template = &s_SFD_template;
 
     /* Set up the stream that writes into the buffer. */
-    s_init(&bs, NULL);
+    s_init(&bs, NULL, mem);
     swrite_string(&bs, buf, length);
     /* Set up the SubFileDecode stream. */
-    s_init(&ds, NULL);
-    s_init_state((stream_state *)&st, template, NULL);
+    s_init(&ds, NULL, mem);
+    s_init_state((stream_state *)&st, template, NULL, mem);
     template->set_defaults((stream_state *)&st);
     st.skip_count = start;
     s_init_filter(&ds, (stream_state *)&st, dbuf, sizeof(dbuf), &bs);
@@ -676,7 +676,7 @@ calc_access(const gs_data_source_t *psrc, ulong start, uint length,
 
 /* Return PostScript Calculator function information. */
 private void
-fn_PtCr_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
+fn_PtCr_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi, gs_memory_t *mem)
 {
     const gs_function_PtCr_t *const pfn =
 	(const gs_function_PtCr_t *)pfn_common;
@@ -685,7 +685,7 @@ fn_PtCr_get_info(const gs_function_t *pfn_common, gs_function_info_t *pfi)
     pfi->DataSource = &pfn->data_source;
     {
 	stream s;
-
+	s_stack_init(&s, mem);
 	swrite_position_only(&s);
 	calc_put(&s, pfn);
 	pfi->data_size = stell(&s);

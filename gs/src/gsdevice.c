@@ -799,7 +799,7 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     if (parsed.iodev && !strcmp(parsed.iodev->dname, "%stdout%")) {
 	if (parsed.fname)
 	    return_error(dev->memory, gs_error_undefinedfilename);
-	*pfile = dev->memory->pl_stdio->fstdout;
+	*pfile = dev->memory->gs_lib_ctx->fstdout;
 	/* Force stdout to binary. */
 	return gp_setmode_binary(*pfile, true);
     }

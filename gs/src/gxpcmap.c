@@ -177,6 +177,7 @@ pattern_accum_open(gx_device * dev)
 	 padev->target);
     int width = pinst->size.x;
     int height = pinst->size.y;
+
     int code = 0;
     bool mask_open = false;
 

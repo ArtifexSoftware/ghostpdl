@@ -463,15 +463,13 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	lengths[0] = stell(s) - start;
 	start = stell(s);
 	if (options & WRITE_TYPE1_ASCIIHEX) {
-	    s_init(&AXE_stream, NULL);
-	    s_init_state((stream_state *)&AXE_state, &s_AXE_template, NULL);
+	    s_init_state((stream_state *)&AXE_state, &s_AXE_template, NULL, s->memory);
 	    AXE_state.EndOfData = false;
 	    s_init_filter(&AXE_stream, (stream_state *)&AXE_state,
 			  AXE_buf, sizeof(AXE_buf), es);
 	    es = &AXE_stream;
 	}
-	s_init(&exE_stream, NULL);
-	s_init_state((stream_state *)&exE_state, &s_exE_template, NULL);
+	s_init_state((stream_state *)&exE_state, &s_exE_template, NULL, s->memory);
 	exE_state.cstate = 55665;
 	s_init_filter(&exE_stream, (stream_state *)&exE_state,
 		      exE_buf, sizeof(exE_buf), es);

@@ -798,7 +798,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     int ticks_left = gs_interp_time_slice_ticks;
 
     /*
-     * If we exceed the VMThreshold, set ticks_left to -1
+     * If we exceed the VMThreshold, set ticks_left to -100
      * to alert the interpreter that we need to garbage collect.
      */
     set_gc_signal(i_ctx_p, &ticks_left, -100);
@@ -885,8 +885,6 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	dputc(imemory, '\n');
 	osp = save_osp;
 	esp = save_esp;
-	// why flush
-	//fflush(dstderr);
     }
 #endif
 /* Objects that have attributes (arrays, dictionaries, files, and strings) */
@@ -1379,7 +1377,8 @@ remap:		    if (iesp + 2 >= estop) {
 		scanner_state sstate;
 
 		scanner_state_init_options(&sstate, SCAN_FROM_STRING);
-		s_init(&ss, NULL);
+
+		s_init(&ss, NULL, imemory);
 		sread_string(&ss, IREF->value.bytes, r_size(IREF));
 		osp = iosp;	/* scan_token uses ostack */
 		code = scan_token(i_ctx_p, &ss, &token, &sstate);

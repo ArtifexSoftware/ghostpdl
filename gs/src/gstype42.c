@@ -577,8 +577,13 @@ simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	uint num_metrics = pmtx->numMetrics;
 	const byte *pmetrics;
 
-	if (pmtx->length == 0)
-	    return_error(pfont->memory, gs_error_rangecheck);
+	if (pmtx->length == 0) {
+	    if (wmode)  /* try without wmode */ 
+		pmtx = &pfont->data.metrics[0];
+
+	    if (pmtx->length == 0) 
+		return_error(pfont->memory, gs_error_rangecheck);
+	}
 	if (glyph_index < num_metrics) {
 	    ACCESS(pfont->memory, pmtx->offset + glyph_index * 4, 4, pmetrics);
 	    width = U16(pmetrics);

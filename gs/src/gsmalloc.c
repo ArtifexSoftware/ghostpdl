@@ -23,7 +23,7 @@
 #include "gsmalloc.h"
 #include "gsmemlok.h"		/* locking (multithreading) wrapper */
 #include "gsmemret.h"		/* retrying wrapper */
-#include "pl_stdio.h"
+#include "gslibctx.h"
 
 /* ------ Heap allocator ------ */
 
@@ -115,7 +115,7 @@ gs_malloc_memory_init(void)
     mem->limit = max_long;
     mem->used = 0;
     mem->max_used = 0;
-    mem->pl_stdio = 0;
+    mem->gs_lib_ctx = 0;
 
     return mem;
 }
@@ -497,9 +497,9 @@ gs_malloc_init(const gs_memory_t *parent)
     gs_malloc_memory_default = gs_malloc_memory_init();
 
     if (parent)
-	gs_malloc_memory_default->pl_stdio = parent->pl_stdio;
+	gs_malloc_memory_default->gs_lib_ctx = parent->gs_lib_ctx;
     else 
-	pl_stdio_init(gs_malloc_memory_default);
+        gs_lib_ctx_init(gs_malloc_memory_default);
 
     gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
     gs_memory_t_default->stable_memory = gs_memory_t_default;

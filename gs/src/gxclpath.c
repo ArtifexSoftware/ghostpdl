@@ -374,6 +374,7 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	stream s;
 	uint len;
 
+	s_stack_init(&s, cldev->memory);
 	swrite_position_only(&s);
 	sput_matrix(&s, (const gs_matrix *)&cldev->imager_state.ctm);
 	len = (uint)stell(&s);

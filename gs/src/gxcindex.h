@@ -43,7 +43,7 @@
  */
 
 #ifdef TEST_CINDEX_STRUCT
-
+#error // stefan
 /* Define the type for device color index (pixel value) data. */
 typedef struct { ulong value[2]; } gx_color_index_data;
 
@@ -51,9 +51,14 @@ typedef struct { ulong value[2]; } gx_color_index_data;
 
 /* Define the type for device color index (pixel value) data. */
 #ifdef GX_COLOR_INDEX_TYPE
+
 typedef GX_COLOR_INDEX_TYPE gx_color_index_data;
 #else
-typedef ulong gx_color_index_data;
+
+// stefan toplevel makefile needs to define
+// -DGX_COLOR_INDEX_TYPE='unsigned long long'
+
+typedef unsigned long long gx_color_index_data;
 #endif
 
 #endif /* (!)TEST_CINDEX_STRUCT */

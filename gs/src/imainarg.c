@@ -252,10 +252,10 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 	    return 1;
 	case 0:		/* read stdin as a file char-by-char */
 	    /* This is a ******HACK****** for Ghostview. */
-	    minst->heap->pl_stdio->stdin_is_interactive = true;
+	    minst->heap->gs_lib_ctx->stdin_is_interactive = true;
 	    goto run_stdin;
 	case '_':	/* read stdin with normal buffering */
-	    minst->heap->pl_stdio->stdin_is_interactive = false;
+	    minst->heap->gs_lib_ctx->stdin_is_interactive = false;
 run_stdin:
 	    minst->run_start = false;	/* don't run 'start' */
 	    /* Set NOPAUSE so showpage won't try to read from stdin. */
@@ -265,7 +265,7 @@ run_stdin:
 	    code = gs_main_init2(minst);	/* Finish initialization */
 	    if (code < 0)
 		return code;
-	    gs_stdin_is_interactive = minst->heap->pl_stdio->stdin_is_interactive;
+	    gs_stdin_is_interactive = minst->heap->gs_lib_ctx->stdin_is_interactive;
 	    code = run_string(minst, ".runstdin", runFlush);
 	    if (code < 0)
 		return code;
@@ -546,6 +546,7 @@ run_stdin:
 			stream astream;
 			scanner_state state;
 
+			s_stack_init(&astream, imemory);
 			sread_string(&astream,
 				     (const byte *)eqp, strlen(eqp));
 			scanner_state_init(&state, false);
@@ -812,26 +813,27 @@ try_stdout_redirect(gs_main_instance * minst,
     const char *command, const char *filename)
 {
     if (strcmp(command, "stdout") == 0) {
-	minst->heap->pl_stdio->stdout_to_stderr = 0;
-	minst->heap->pl_stdio->stdout_is_redirected = 0;
+	minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
+	minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
 	/* If stdout already being redirected and it is not stdout
 	 * or stderr, close it
 	 */
-	if (minst->heap->pl_stdio->fstdout2 
-	    && (minst->heap->pl_stdio->fstdout2 != minst->heap->pl_stdio->fstdout)
-	    && (minst->heap->pl_stdio->fstdout2 != minst->heap->pl_stdio->fstderr)) {
-	    fclose(minst->heap->pl_stdio->fstdout2);
-	    minst->heap->pl_stdio->fstdout2 = (FILE *)NULL;
+	if (minst->heap->gs_lib_ctx->fstdout2 
+	    && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
+	    && (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstderr)) {
+	    fclose(minst->heap->gs_lib_ctx->fstdout2);
+	    minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
 	}
 	/* If stdout is being redirected, set minst->fstdout2 */
 	if ( (filename != 0) && strlen(filename) &&
 	    strcmp(filename, "-") && strcmp(filename, "%stdout") ) {
 	    if (strcmp(filename, "%stderr") == 0) {
-		minst->heap->pl_stdio->stdout_to_stderr = 1;
+		minst->heap->gs_lib_ctx->stdout_to_stderr = 1;
 	    }
-	    else if ((minst->heap->pl_stdio->fstdout2 = fopen(filename, "w")) == (FILE *)NULL)
+	    else if ((minst->heap->gs_lib_ctx->fstdout2 = 
+		      fopen(filename, "w")) == (FILE *)NULL)
 		return_error(minst->heap, e_invalidfileaccess);
-	    minst->heap->pl_stdio->stdout_is_redirected = 1;
+	    minst->heap->gs_lib_ctx->stdout_is_redirected = 1;
 	}
 	return 0;
     }

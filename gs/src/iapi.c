@@ -24,7 +24,7 @@
 #include "imainarg.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
-#include "pl_stdio.h"
+#include "gslibctx.h"
 
 /*
  * GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING
@@ -70,10 +70,10 @@ gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
     mem = gs_malloc_init(NULL);
     minst = gs_main_alloc_instance(mem);
     
-    mem->pl_stdio->caller_handle = caller_handle;
-    mem->pl_stdio->stdin_fn = NULL;
-    mem->pl_stdio->stdout_fn = NULL;
-    mem->pl_stdio->stderr_fn = NULL;
+    mem->gs_lib_ctx->caller_handle = caller_handle;
+    mem->gs_lib_ctx->stdin_fn = NULL;
+    mem->gs_lib_ctx->stdout_fn = NULL;
+    mem->gs_lib_ctx->stderr_fn = NULL;
 
     // hack 
     // minst->poll_fn = NULL;
@@ -90,11 +90,11 @@ GSDLLEXPORT void GSDLLAPI
 gsapi_delete_instance(gs_main_instance *minst)
 {
     if ((gsapi_instance_counter > 0) && (minst != NULL)) {
-	minst->heap->pl_stdio->caller_handle = NULL;
-	minst->heap->pl_stdio->stdin_fn = NULL;
-	minst->heap->pl_stdio->stdout_fn = NULL;
-	minst->heap->pl_stdio->stderr_fn = NULL;
-	minst->heap->pl_stdio->poll_fn = NULL;
+	minst->heap->gs_lib_ctx->caller_handle = NULL;
+	minst->heap->gs_lib_ctx->stdin_fn = NULL;
+	minst->heap->gs_lib_ctx->stdout_fn = NULL;
+	minst->heap->gs_lib_ctx->stderr_fn = NULL;
+	minst->heap->gs_lib_ctx->poll_fn = NULL;
 	minst->display = NULL;
 	gsapi_instance_counter--;
     }
@@ -109,9 +109,9 @@ gsapi_set_stdio(gs_main_instance *minst,
 {
     if (minst == NULL)
 	return e_Fatal;
-    minst->heap->pl_stdio->stdin_fn = stdin_fn;
-    minst->heap->pl_stdio->stdout_fn = stdout_fn;
-    minst->heap->pl_stdio->stderr_fn = stderr_fn;
+    minst->heap->gs_lib_ctx->stdin_fn = stdin_fn;
+    minst->heap->gs_lib_ctx->stdout_fn = stdout_fn;
+    minst->heap->gs_lib_ctx->stderr_fn = stderr_fn;
     return 0;
 }
 
@@ -122,7 +122,7 @@ gsapi_set_poll(gs_main_instance *minst,
 {
     if (minst == NULL)
 	return e_Fatal;
-    minst->heap->pl_stdio->poll_fn = poll_fn;
+    minst->heap->gs_lib_ctx->poll_fn = poll_fn;
     return 0;
 }
 

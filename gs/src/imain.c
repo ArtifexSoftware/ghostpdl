@@ -281,13 +281,14 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 	     *  esp[-1] = file, stdin stream
 	     * We read from stdin then pop these 2 items.
 	     */
-	    if (minst->heap->pl_stdio->stdin_fn)
-		count = (*minst->heap->pl_stdio->stdin_fn)(minst->heap->pl_stdio->caller_handle, 
-			minst->stdin_buf, count);
+	    if (minst->heap->gs_lib_ctx->stdin_fn)
+		count = (*minst->heap->gs_lib_ctx->stdin_fn)
+		    (minst->heap->gs_lib_ctx->caller_handle, 
+		     minst->stdin_buf, count);
 	    else
 		count = gp_stdin_read(minst->stdin_buf, count, 
-				      minst->heap->pl_stdio->stdin_is_interactive,
-				      minst->heap->pl_stdio->fstdin);
+				      minst->heap->gs_lib_ctx->stdin_is_interactive,
+				      minst->heap->gs_lib_ctx->fstdin);
 	    if (count < 0)
 	        return_error(imemory, e_ioerror);
 
@@ -861,14 +862,14 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
         i_plugin_finit(mem_raw, h);
     }
     /* clean up redirected stdout */
-    if (minst->heap->pl_stdio->fstdout2 
-	&& (minst->heap->pl_stdio->fstdout2 != minst->heap->pl_stdio->fstdout)
-	&& (minst->heap->pl_stdio->fstdout2 != minst->heap->pl_stdio->fstderr)) {
-	fclose(minst->heap->pl_stdio->fstdout2);
-	minst->heap->pl_stdio->fstdout2 = (FILE *)NULL;
+    if (minst->heap->gs_lib_ctx->fstdout2 
+	&& (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstdout)
+	&& (minst->heap->gs_lib_ctx->fstdout2 != minst->heap->gs_lib_ctx->fstderr)) {
+	fclose(minst->heap->gs_lib_ctx->fstdout2);
+	minst->heap->gs_lib_ctx->fstdout2 = (FILE *)NULL;
     }
-    minst->heap->pl_stdio->stdout_is_redirected = 0;
-    minst->heap->pl_stdio->stdout_to_stderr = 0;
+    minst->heap->gs_lib_ctx->stdout_is_redirected = 0;
+    minst->heap->gs_lib_ctx->stdout_to_stderr = 0;
     /* remove any temporary files, after ghostscript has closed files */
     if (tempnames) {
 	char *p = tempnames;

@@ -241,7 +241,7 @@ rd:
 	    }
 	}
 	buf->data[count++] = char_EOL;
-	s_init(ts, NULL);
+	s_init(ts, NULL, imemory);
 	sread_string(ts, buf->data, count);
 sc:
 	scanner_state_init_check(&state, false, true);

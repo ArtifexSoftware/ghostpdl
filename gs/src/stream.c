@@ -96,9 +96,10 @@ private const stream_template s_no_template = {
 
 /* Allocate a stream and initialize it minimally. */
 void
-s_init(stream *s, gs_memory_t * mem)
+s_init(stream *s, gs_memory_t * mem, const gs_memory_t *cmem)
 {
-    s->memory = mem;
+    s->memory = cmem;
+    s->isheap = (mem != NULL);
     s->report_error = s_no_report_error;
     s->min_left = 0;
     s->error_string[0] = 0;
@@ -117,17 +118,24 @@ s_alloc(gs_memory_t * mem, client_name_t cname)
 	      client_name_string(cname), (ulong) s);
     if (s == 0)
 	return 0;
-    s_init(s, mem);
+    s_init(s, mem, mem);
     return s;
+}
+
+void s_stack_init(stream *s, const gs_memory_t *mem)
+{
+    s->memory = mem;
+    s->isheap = false;
 }
 
 /* Allocate a stream state and initialize it minimally. */
 void
 s_init_state(stream_state *st, const stream_template *template,
-	     gs_memory_t *mem)
+	     gs_memory_t *mem, const gs_memory_t *cmem)
 {
     st->template = template;
-    st->memory = mem;
+    st->memory = cmem;
+    st->isheap = (mem != NULL);
     st->report_error = s_no_report_error;
     st->min_left = 0;
 }
@@ -142,7 +150,7 @@ s_alloc_state(gs_memory_t * mem, gs_memory_type_ptr_t stype,
 	      client_name_string(stype->sname),
 	      (ulong) st);
     if (st)
-	s_init_state(st, NULL, mem);
+	s_init_state(st, NULL, mem, mem);
     return st;
 }
 
@@ -168,6 +176,9 @@ s_std_init(register stream * s, byte * ptr, uint len, const stream_procs * pp,
     s->file = 0;
     s->file_name.data = 0;	/* in case stream is on stack */
     s->file_name.size = 0;
+
+    if ( s->isheap != true || s->isheap != false )
+	if_debug0(s->memory, 's', "This should crash nicely\n");
     if_debug4(s->memory, 's', "[s]init 0x%lx, buf=0x%lx, len=%u, modes=%d\n",
 	      (ulong) s, (ulong) ptr, len, modes);
 }
@@ -408,7 +419,7 @@ sclose(register stream * s)
 	stream_proc_release((*release)) = st->template->release;
 	if (release != 0)
 	    (*release) (st);
-	if (st != (stream_state *) s && st->memory != 0)
+	if (st != (stream_state *) s && st->isheap)
 	    gs_free_object(st->memory, st, "s_std_close");
 	s->state = (stream_state *) s;
     }
@@ -1091,8 +1102,7 @@ s_string_write_process(const gs_memory_t *mem,
 /* ------ Position-tracking stream ------ */
 
 private int
-    s_write_position_process(const gs_memory_t *, 
-			     stream_state *, stream_cursor_read *,
+    s_write_position_process(stream_state *, stream_cursor_read *,
 			     stream_cursor_write *, bool);
 
 /* Set up a write stream that just keeps track of the position. */
@@ -1106,8 +1116,7 @@ swrite_position_only(stream *s)
 }
 
 private int
-s_write_position_process(const gs_memory_t *mem, 
-			 stream_state * st, stream_cursor_read * pr,
+s_write_position_process(stream_state * st, stream_cursor_read * pr,
 			 stream_cursor_write * ignore_pw, bool last)
 {
     pr->ptr = pr->limit;	/* discard data */

@@ -364,7 +364,7 @@ scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
 
     if (!r_has_attr(pstr, a_read))
 	return_error(imemory, e_invalidaccess);
-    s_init(s, NULL);
+    s_init(s, NULL, imemory);
     sread_string(s, pstr->value.bytes, r_size(pstr));
     scanner_state_init_options(&state, options | SCAN_FROM_STRING);
     switch (code = scan_token(i_ctx_p, s, pref, &state)) {

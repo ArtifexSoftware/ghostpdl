@@ -352,19 +352,23 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     gx_device_pswrite_common_t pswrite_common;
     pswrite_common = psrgb_values;
 
+    s_stack_init( &fs, mem );
+    s_stack_init( &a85s, mem );
+    s_stack_init( &rls, mem );
+    s_stack_init( &a85state, mem );
+    s_stack_init( &rlstate, mem );
+
     if (lbuf == 0)
 	return_error(gs_error_VMerror);
     ps_image_write_headers(prn_stream, pdev, psrgb_setup, &pswrite_common);
     fprintf(prn_stream, "%d %d rgbimage\n", width, pdev->height);
     swrite_file(&fs, prn_stream, fsbuf, sizeof(fsbuf));
-    fs.memory = 0;
 
     if (s_A85E_template.set_defaults)
 	(*s_A85E_template.set_defaults) ((stream_state *) & a85state);
     s_std_init(&a85s, a85sbuf, sizeof(a85sbuf), &s_filter_write_procs,
 	       s_mode_write);
-    a85s.memory = 0;
-    a85state.memory = 0;
+
     a85state.template = &s_A85E_template;
     (*s_A85E_template.init) ((stream_state *) & a85state);
     a85s.state = (stream_state *) & a85state;
@@ -374,8 +378,6 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     (*s_RLE_template.set_defaults) ((stream_state *) & rlstate);
     s_std_init(&rls, rlsbuf, sizeof(rlsbuf), &s_filter_write_procs,
 	       s_mode_write);
-    rls.memory = 0;
-    rlstate.memory = 0;
     rlstate.template = &s_RLE_template;
     (*s_RLE_template.init) ((stream_state *) & rlstate);
     rls.state = (stream_state *) & rlstate;

@@ -25,20 +25,12 @@
 
 /* ------ Unique IDs ------ */
 
-// hack needs to be removed 
-init_proc(gs_gsutil_init);	/* check prototype */
-int
-gs_gsutil_init(gs_memory_t *mem)
-{
-    return 0;
-}
-
 ulong
 gs_next_ids(const gs_memory_t *mem, uint count)
 {
-    ulong id = mem->pl_stdio->gs_next_id;
+    ulong id = mem->gs_lib_ctx->gs_next_id;
 
-    mem->pl_stdio->gs_next_id += count;
+    mem->gs_lib_ctx->gs_next_id += count;
     return id;
 }
 

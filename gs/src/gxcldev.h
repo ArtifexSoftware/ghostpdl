@@ -35,11 +35,11 @@
 #define cmd_mask_compress_any\
   ((1 << cmd_compress_rle) | (1 << cmd_compress_cfe))
 /* Exported by gxclutil.c */
-void clist_rle_init(stream_RLE_state *ss);
-void clist_rld_init(stream_RLD_state *ss);
-void clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem);
+void clist_rle_init(stream_RLE_state *ss, const gs_memory_t *cmem);
+void clist_rld_init(stream_RLD_state *ss, const gs_memory_t *cmem);
+void clist_cfe_init(stream_CFE_state *ss, int width, gs_memory_t *mem, const gs_memory_t *cmem);
 void clist_cfd_init(stream_CFD_state *ss, int width, int height,
-		    gs_memory_t *mem);
+		    gs_memory_t *mem, const gs_memory_t *cmem);
 
 /*
  * A command always consists of an operation followed by operands;

@@ -807,7 +807,7 @@ clist_create_compositor(gx_device * dev,
     code = set_cmd_put_all_op( dp,
                                (gx_device_clist_writer *)dev,
                                cmd_opv_extend,
-                               size );
+                               size);
     if (code < 0)
         return code;
 
@@ -1298,6 +1298,7 @@ begin_image_command(const gs_memory_t *mem,
     const gs_color_space *ignore_pcs;
     int code;
 
+    s_stack_init(&s, mem);
     for (i = 0; i < gx_image_type_table_count; ++i)
 	if (gx_image_type_table[i] == pic->type)
 	    break;

@@ -388,7 +388,7 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	return_error(mem, gs_error_VMerror);
     }
     swrite_string(&s, table, string_size);
-    s_init(&es, NULL);
+    s_init(&es, NULL, mem);
     s_init_state((stream_state *)&st, &s_AXE_template, NULL);
     s_init_filter(&es, (stream_state *)&st, buf, sizeof(buf), &s);
     sputc(&s, '<');
