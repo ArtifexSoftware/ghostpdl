@@ -839,32 +839,28 @@ end readonly def
   count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
-  PDFversion PDFtransparencyversion lt NOTRANSPARENCY or {
-    showpagecontents
-  } {
-    dup pageusestransparency {
-      % Show the page within a PDF 1.4 device filter.
-      0 .pushpdf14devicefilter {
-	% If the page has a Group, enclose contents in transparency group.
-        % (Adobe Tech Note 5407, sec 9.2)
-        dup /Group knownoget {
-	  1 index /CropBox knownoget not {
-	    1 index /MediaBox oget
-	  } if .beginformgroup {
-	    showpagecontents
-	  } .internalstopped {
-	    .discardtransparencygroup stop
-	  } if .endtransparencygroup
-        } {
+  dup pageusestransparency dup /PDFusingtransparency exch def {
+    % Show the page within a PDF 1.4 device filter.
+    0 .pushpdf14devicefilter {
+      % If the page has a Group, enclose contents in transparency group.
+      % (Adobe Tech Note 5407, sec 9.2)
+      dup /Group knownoget {
+	1 index /CropBox knownoget not {
+	  1 index /MediaBox oget
+	} if .beginformgroup {
 	  showpagecontents
-        } ifelse
-      } .internalstopped {
-	% todo: discard
-	.popdevicefilter stop
-      } if .popdevicefilter
-    } {
-      showpagecontents
-    } ifelse
+	} .internalstopped {
+	  .discardtransparencygroup stop
+	} if .endtransparencygroup
+      } {
+	showpagecontents
+      } ifelse
+    } .internalstopped {
+      % todo: discard
+      .popdevicefilter stop
+    } if .popdevicefilter
+  } {
+    showpagecontents
   } ifelse
   % check for extra garbage on the ostack and clean it up
   count pdfemptycount sub dup 0 ne {
