@@ -33,28 +33,44 @@ pdfdict begin
 
 % Note that resolvefunction converts a PDF Function to a PostScript Function;
 % resolve*fnproc converts a PDF function to a PostScript procedure.
+% We need to process all required and optional parameters to resolve any
+% use of indirect references.
 
 /fnrdict mark
   0 { .resolvefn0 }
-  2 { }
+  2 { .resolvefn2 }
   3 { .resolvefn3 }
   4 { .resolvefn4 }
 .dicttomark readonly def
 
 /.resolvefn0 {
+  dup length 1 add dict .copydict	% make room for DataSource
+  % now resolve any indirect references
+  dup /Size 2 copy knownoget { put } { pop pop } ifelse
+  dup /BitsPerSample 2 copy knownoget { put } { pop pop } ifelse
+  dup /Order 2 copy knownoget { put } { pop pop } ifelse
+  dup /Encode 2 copy knownoget { put } { pop pop } ifelse
+  dup /Decode 2 copy knownoget { put } { pop pop } ifelse
+  
 		% Don't lose our place in PDFfile.
   PDFfile fileposition exch
   dup true resolvestream
 		% The stream isn't positionable, so read all the data now.
 		% Stack: filepos fndict stream
-  1 index /Range oget length 2 idiv 2 index /BitsPerSample oget mul
-  2 index /Size oget { mul } forall
+  1 index /Range get length 2 idiv 2 index /BitsPerSample get mul
+  2 index /Size get { mul } forall
   7 add 8 idiv string
   1 index exch readstring pop exch closefile
 		% Stack: filepos fndict data
-  exch dup length 1 add dict .copydict
-  dup /DataSource 4 -1 roll put
+  exch dup /DataSource 4 -1 roll put
   exch PDFfile exch setfileposition
+} bdef
+
+/.resolvefn2 {
+  dup length dict .copydict
+  dup /C0 2 copy knownoget { put } { pop pop } ifelse
+  dup /C1 2 copy knownoget { put } { pop pop } ifelse
+  dup /N 2 copy knownoget { put } { pop pop } ifelse
 } bdef
 
 /.resolvefn3 {
@@ -85,6 +101,9 @@ pdfdict begin
 } bdef
 
 /.resolvefn {		% <fndict> .resolvefn <fndict'>
+  dup length dict .copydict
+  dup /Domain 2 copy knownoget { put } { pop pop } ifelse
+  dup /Range 2 copy knownoget { put } { pop pop } ifelse
   dup /FunctionType oget //fnrdict exch get exec
 } bdef
 
