@@ -468,7 +468,11 @@ readonly def
 		% Stack: font charcode
       1 index begin 3 dict begin
       /Font 3 -1 roll def /CharCode 1 index def
-      Encoding exch get CharProcs exch oget
+      % Make unknown characters map to /.notdef
+      Encoding exch get dup CharProcs exch known
+        { CharProcs exch oget }
+	{ pop CharProcs /.notdef oget }
+      ifelse
       PDFfile fileposition exch
       false resolvestream
 		% Stack: filepos stream
