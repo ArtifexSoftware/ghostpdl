@@ -348,7 +348,7 @@ FILE_IMPLEMENTATION=stdio
 # Choose the implementation of stdio: '' for file I/O and 'c' for callouts
 # See gs.mak and ziodevs.c/ziodevsc.c for more details.
 
-STDIO_IMPLEMENTATION= 
+STDIO_IMPLEMENTATION=c
 
 # Override the default device.  This is set to 'display' by 
 # unix-dll.mak when building a shared object.
