@@ -443,9 +443,23 @@
 	    pop /.notdef
 	  } {
 	    258 sub glyphnames exch {
-	      postglyphs 1 index get 1 add add
+	      postglyphs 1 index
+	      % Some badly formed TT fonts have glyph index values past the end
+	      % of the 'post' table.
+              1 index length 1 index le {
+	        DEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
+                exit
+              } if
+              get 1 add add
 	    } repeat
-	    1 add postglyphs exch 2 copy 1 sub get getinterval cvn
+	    1 add postglyphs exch
+            1 index length 1 index
+            lt {
+	      DEBUG { (   *** warning: glyph index past end of 'post' table) = flush } if
+              % extend the postglyphs string by 1 byte of 0x00
+	      exch (\000) concatstrings /postglyphs exch def postglyphs exch
+	    } if
+            2 copy 1 sub get getinterval cvn
 		% At least some of Microsoft's TrueType fonts use incorrect
 		% (Adobe-incompatible) names for some glyphs.
 		% Correct for this here.
