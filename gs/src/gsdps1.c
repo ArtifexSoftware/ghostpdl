@@ -152,6 +152,10 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	 is_fzero2(pgs->ctm.xx, pgs->ctm.yy)) &&
 	gx_effective_clip_path(pgs, &pcpath) >= 0 &&
 	clip_list_is_rectangle(gx_cpath_list(pcpath)) &&
+	(pgs->dev_color->type == gx_dc_type_pure ||
+	 pgs->dev_color->type == gx_dc_type_ht_binary ||
+	 pgs->dev_color->type == gx_dc_type_ht_colored
+	 /* DeviceN todo: add wts case */) &&
 	gs_state_color_load(pgs) >= 0 &&
 	(*dev_proc(pgs->device, get_alpha_bits)) (pgs->device, go_graphics)
 	<= 1
