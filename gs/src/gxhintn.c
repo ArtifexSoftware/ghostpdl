@@ -141,48 +141,48 @@ static const char *s_stem_snap_array = "t1_hinter stem_snap array";
 
 #define member_prt(type, ptr, offset) (type *)((char *)(ptr) + (offset))
 
-typedef int32 int24;
+typedef int32_t int24;
 
 private const unsigned int split_bits = 12;
 private const unsigned int max_coord_bits = 24; /* = split_bits * 2 */
 private const unsigned int matrix_bits = 19; /* <= sizeof(int) * 8 - 1 - split_bits */
 private const unsigned int g2o_bitshift = 12; /* <= matrix_bits + max_coord_bits - (sizeof(int) * 8 + 1) */
-private const int32 FFFFF000 = ~(int32)0xFFF; /* = ~(((int32)1 << split_bits) - 1) */
+private const int32_t FFFFF000 = ~(int32_t)0xFFF; /* = ~(((int32_t)1 << split_bits) - 1) */
 /* Constants above must satisfy expressions given in comments. */
 
-private inline int32 mul_shift(int24 a, int19 b, unsigned int s) 
+private inline int32_t mul_shift(int24 a, int19 b, unsigned int s) 
 {   /* Computes (a*b)>>s, s <= 12 */
-    if (sizeof(int32) == 4) { /* We believe that compiler optimizes this check. */
-        int32 aa = a & FFFFF000, a0 = a - aa, a1 = aa >> s;
+    if (sizeof(int32_t) == 4) { /* We believe that compiler optimizes this check. */
+        int32_t aa = a & FFFFF000, a0 = a - aa, a1 = aa >> s;
 
         return ((a0 * b) >> s) + a1 * b; /* unrounded result */
-    } else if (sizeof(int32) == 8) {
+    } else if (sizeof(int32_t) == 8) {
         return (a * b) >> s; /* unrounded result */
     } else
         assert(("Unsupported platform." == 0));
 }
 
-private inline int32 mul_shift_round(int24 a, int19 b, unsigned int s) 
+private inline int32_t mul_shift_round(int24 a, int19 b, unsigned int s) 
 {   /* Computes (a*b)>>s, s <= 12 */
-    if (sizeof(int32) == 4) { /* We believe that compiler optimizes this check. */
-        int32 aa = a & FFFFF000, a0 = a - aa, a1 = aa >> s;
+    if (sizeof(int32_t) == 4) { /* We believe that compiler optimizes this check. */
+        int32_t aa = a & FFFFF000, a0 = a - aa, a1 = aa >> s;
 
         return ((((a0 * b) >> (s - 1)) + 1) >> 1) + a1 * b; /* rounded result */
-    } else if (sizeof(int32) == 8) {
+    } else if (sizeof(int32_t) == 8) {
         return (((a * b) >> (s -1)) + 1) >> 1; /* rounded result */
     } else
         assert(("Unsupported platform." == 0));
 }
 
-private inline int32 shift_rounded(int32 v, unsigned int s)
+private inline int32_t shift_rounded(int32_t v, unsigned int s)
 {   return ((v >> (s - 1)) + 1) >> 1;
 }
 
-private inline int32 Max(int32 a, int32 b)
+private inline int32_t Max(int32_t a, int32_t b)
 {   return a > b ? a : b;
 }
 
-private inline int32 Min(int32 a, int32 b)
+private inline int32_t Min(int32_t a, int32_t b)
 {   return a < b ? a : b;
 }
 
@@ -232,10 +232,10 @@ private void fraction_matrix__set(fraction_matrix * this, const double_matrix * 
     this->bitshift = matrix_bits - matrix_exp;
     this->denominator = 1 << this->bitshift;
     /* Round towards zero for a better view of mirrored characters : */
-    this->xx = (int32)(pmat->xx * this->denominator + 0.5);
-    this->xy = (int32)(pmat->xy * this->denominator + 0.5);
-    this->yx = (int32)(pmat->yx * this->denominator + 0.5);
-    this->yy = (int32)(pmat->yy * this->denominator + 0.5);
+    this->xx = (int32_t)(pmat->xx * this->denominator + 0.5);
+    this->xy = (int32_t)(pmat->xy * this->denominator + 0.5);
+    this->yx = (int32_t)(pmat->yx * this->denominator + 0.5);
+    this->yy = (int32_t)(pmat->yy * this->denominator + 0.5);
     m = Max(Max(any_abs(this->xx), any_abs(this->xy)), Max(any_abs(this->yx), any_abs(this->yy)));
     unused = frexp(m, &matrix_exp);
     if (matrix_exp > matrix_bits)
@@ -267,10 +267,10 @@ private int fraction_matrix__invert_to(const fraction_matrix * this, fraction_ma
     return 0;
 }
 
-private inline int32 fraction_matrix__transform_x(fraction_matrix *this, int24 x, int24 y, unsigned int s)
+private inline int32_t fraction_matrix__transform_x(fraction_matrix *this, int24 x, int24 y, unsigned int s)
 {   return mul_shift_round(x, this->xx, s) + mul_shift_round(y, this->yx, s);
 }
-private inline int32 fraction_matrix__transform_y(fraction_matrix *this, int24 x, int24 y, unsigned int s)
+private inline int32_t fraction_matrix__transform_y(fraction_matrix *this, int24 x, int24 y, unsigned int s)
 {   return mul_shift_round(x, this->xy, s) + mul_shift_round(y, this->yy, s);
 }
 
@@ -1087,8 +1087,8 @@ int t1_hinter__flex_point(t1_hinter * this)
 int t1_hinter__flex_end(t1_hinter * this, fixed flex_height)
 {   t1_pole *pole0, *pole1, *pole4;
     t1_hinter_space_coord ox, oy;
-    const int32 div_x = this->g2o_fraction << this->log2_pixels_x;
-    const int32 div_y = this->g2o_fraction << this->log2_pixels_y;
+    const int32_t div_x = this->g2o_fraction << this->log2_pixels_x;
+    const int32_t div_y = this->g2o_fraction << this->log2_pixels_y;
     
     if (this->flex_count != 8)
 	return_error(gs_error_invalidfont);
@@ -1527,7 +1527,7 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
     /*todo: optimize narrowing the search range */
 }
 
-private void t1_hinter__align_to_grid__general(t1_hinter * this, int32 unit,
+private void t1_hinter__align_to_grid__general(t1_hinter * this, int32_t unit,
 	    t1_glyph_space_coord gx, t1_glyph_space_coord gy, 
 	    t1_hinter_space_coord *pdx, t1_hinter_space_coord *pdy, 
 	    bool align_to_pixels, bool absolute)
@@ -1587,7 +1587,7 @@ private int t1_hinter__find_best_standard_width(t1_hinter * this, t1_glyph_space
     return 0;   
 }
 
-private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, 
+private void t1_hinter__align_to_grid(t1_hinter * this, int32_t unit, 
 	    t1_glyph_space_coord *x, t1_glyph_space_coord *y, bool align_to_pixels)
 {   if (unit > 0) {
         t1_hinter_space_coord dx, dy;
@@ -1599,8 +1599,8 @@ private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit,
 
 private void t1_hinter__align_stem_width(t1_hinter * this, t1_glyph_space_coord *pgw, const t1_hint *hint)
 {   /* fixme : optimize : move pixel_o_x, pixel_o_y, pixel_gw, pixel_gh to t1_hinter_s. */
-    int32 pixel_o_x = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
-    int32 pixel_o_y = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
+    int32_t pixel_o_x = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_x : this->log2_subpixels_x));
+    int32_t pixel_o_y = rshift(this->g2o_fraction, (this->align_to_pixels ? (int)this->log2_pixels_y : this->log2_subpixels_y));
 #if OPPOSITE_STEM_COORD_BUG_FIX
     t1_glyph_space_coord pixel_gw = any_abs(o2g_dist(this, pixel_o_x, this->heigt_transform_coef_inv));
     t1_glyph_space_coord pixel_gh = any_abs(o2g_dist(this, pixel_o_y, this->width_transform_coef_inv));
@@ -1669,7 +1669,7 @@ private void t1_hinter__align_stem_width(t1_hinter * this, t1_glyph_space_coord 
     }
 }
 
-private void t1_hinter__align_stem_to_grid(t1_hinter * this, int32 unit, 
+private void t1_hinter__align_stem_to_grid(t1_hinter * this, int32_t unit, 
 	    t1_glyph_space_coord *x0, t1_glyph_space_coord *y0, 
 	    t1_glyph_space_coord  x1, t1_glyph_space_coord  y1, 
 	    bool align_to_pixels, const t1_hint *hint)

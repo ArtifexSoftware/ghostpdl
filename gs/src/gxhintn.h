@@ -20,6 +20,8 @@
 #ifndef gxhintn_INCLUDED
 #  define gxhintn_INCLUDED
 
+#include "stdint_.h"
+
 #define FINE_STEM_COMPLEXES 1		/* A temporary development purpose. */
 #define ALIGN_BY_STEM_MIDDLE 1		/* A temporary development purpose. */
 #define OPPOSITE_STEM_COORD_BUG_FIX 1	/* A temporary development purpose. */
@@ -47,10 +49,9 @@ typedef struct gx_path_s gx_path;
 #define T1_MAX_POLES (100 + T1_MAX_CONTOURS) /* Must be grater than 8 for 'flex'. */
 #define T1_MAX_HINTS 30
 
-typedef int int32;
 typedef fixed t1_glyph_space_coord; /* measured in original glyph space units */
-typedef int32 t1_hinter_space_coord; /* measured in internal outliner's space units */
-typedef int32 int19;
+typedef int32_t t1_hinter_space_coord; /* measured in internal outliner's space units */
+typedef int32_t int19;
 
 enum t1_hint_type
 {   hstem, vstem, dot
@@ -77,7 +78,7 @@ typedef struct {
 
 typedef struct {
     int19 xx, xy, yx, yy;
-    int32 denominator;
+    int32_t denominator;
     unsigned int bitshift;
 } fraction_matrix;
 
@@ -121,7 +122,7 @@ typedef struct t1_hinter_s
     fraction_matrix ctmi;
     unsigned int g2o_fraction_bits;
     unsigned int max_import_coord;
-    int32 g2o_fraction;
+    int32_t g2o_fraction;
     t1_glyph_space_coord orig_gx, orig_gy; /* glyph origin in glyph space */
     t1_glyph_space_coord subglyph_orig_gx, subglyph_orig_gy; /* glyph origin in glyph space */
     fixed orig_dx, orig_dy; /* glyph origin in device space */

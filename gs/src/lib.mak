@@ -1843,7 +1843,7 @@ ttobjs_h=$(GLSRC)ttobjs.h $(ttcommon_h) $(tttypes_h) $(tttables_h)
 ttcalc_h=$(GLSRC)ttcalc.h $(ttcommon_h) $(tttypes_h)
 ttinterp_h=$(GLSRC)ttinterp.h $(ttcommon_h) $(ttobjs_h)
 ttload_h=$(GLSRC)ttload.h $(ttcommon_h)
-gxhintn_h=$(GLSRC)gxhintn.h 
+gxhintn_h=$(GLSRC)gxhintn.h $(stdint__h)
 
 $(GLOBJ)ttcalc.$(OBJ) : $(GLSRC)ttcalc.c $(GXERR) $(ttmisc_h) $(ttcalc_h)
 	$(GLCC) $(GLO_)ttcalc.$(OBJ) $(C_) $(GLSRC)ttcalc.c
