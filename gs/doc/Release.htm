@@ -65,12 +65,13 @@ Ghostscript</a>.
 <h1><a name="Introduction"></a>Introduction</h1>
 
 <p>
-This document is a rough set of internal notes that Aladdin Enterprises uses
-to manage the process of making new Ghostscript releases.  As time goes on,
-it will become a more suitable document for others wishing to prepare
-releases for distribution.  Although the <a href="Public.htm">Aladdin Free
-Public License</a> allows anyone to prepare and distribute releases, this
-document is really meant only for developers working closely with Aladdin.
+This document describes the process that Aladdin Enterprises uses to make
+new Ghostscript releases.  As time goes on, it will become a more suitable
+document for others wishing to prepare releases for distribution.  Please
+note that although the <a href="Public.htm">Aladdin Free Public License</a>
+allows anyone to prepare and distribute releases in accordance with its
+terms and conditions, this document is really meant only for developers
+working closely with Aladdin.
 
 <p>
 File names below that don't include an explicit subdirectory name are in the
@@ -112,7 +113,7 @@ distributions with version numbers, intended for wider distribution.
 <h2><a name="Development_files"></a>Development sources and bug reports</h2>
 
 <p>
-The development site for Aladdin Ghostscript is SourceForge (<a
+The primary repository for Aladdin Ghostscript is SourceForge (<a
 href="http://sourceforge.net"><tt>http://sourceforge.net</tt></a>).  Please
 read the SourceForge Aladdin Ghostscript home page (<a
 href=http://ghostscript.sourceforge.net><tt>http://ghostscript.sourceforge.net</tt></a>)
@@ -158,7 +159,8 @@ When adding .c files, update the relevant <b><tt>.mak</tt></b> file (usually
 <b><tt>lib.mak</tt></b>).
 
 <p>
-When adding operators, update <b><tt>doc/Language.htm</tt></b> if desired.
+When adding operators, or adding or changing filters, update
+<b><tt>doc/Language.htm</tt></b> if desired.
 
 <p>
 When adding .h files, add a _h definition in the appropriate
@@ -168,9 +170,6 @@ When adding .h files, add a _h definition in the appropriate
 When adding or changing fonts, update <b><tt>Fontmap.GS</tt></b>,
 <b><tt>fonts.mak</tt></b>, and possibly the compiled fonts in
 <b><tt>gs.mak</tt></b> and the examples in <b><tt>doc/Fonts.htm</tt></b>.
-
-<p>
-When adding or changing filters, update <b><tt>doc/Language.htm</tt></b>.
 
 <p>
 When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
@@ -196,7 +195,7 @@ don't assume that you have done this.  To run the scripts, you will need
 reasonably current versions of Tcl, freely available from Scriptics (<a
 href="http://www.scriptics.com"><tt>http://www.scriptics.com</tt></a>), and
 Python, freely available from <a
-href="http://www.python.org"><tt>http://www.python.org</tt></a>
+href="http://www.python.org"><tt>http://www.python.org</tt></a>.
 
 <p>
 The instructions below also refer to some files that are deliberately
@@ -303,7 +302,7 @@ Do a smoke test in a separate window, replacing <b><tt>/gs</tt></b> with the
 name of the development root directory if necessary:
 
 <blockquote><pre>
-unset GS_DEVICE GS_LIB GS_OPTIONS
+unset GS_DEVICE GS_FONTPATH GS_LIB GS_OPTIONS
 cd /tmp
 /gs/bin/gs -I/gs/lib -I/gs/fonts -dNOPAUSE -dBATCH /gs/toolbin/smoke.ps | tee t
 export TEMP=/gs/tmp
