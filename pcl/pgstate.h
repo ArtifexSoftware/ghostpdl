@@ -299,6 +299,7 @@ typedef struct pcl_hpgl_state_s {
        /* extra pen state for routines that cannot use local variables
 	  because of longjmp parser braindamage. */
        hpgl_pen_state_t pen_state;
+    bool subpolygon_started; /* true if we are just starting a subpolygon */
 } pcl_hpgl_state_t;
 
 #define hpgl_pen_relative (1)
