@@ -467,7 +467,7 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
 			gx_path *ppath)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = (glyph > GS_MIN_GLYPH_INDEX 
+    uint glyph_index = (glyph >= GS_MIN_GLYPH_INDEX 
 		? glyph - GS_MIN_GLYPH_INDEX 
 		: pfont->data.get_glyph_index(pfont, glyph));
     gs_fixed_point origin;
