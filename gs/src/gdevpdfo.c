@@ -378,6 +378,38 @@ cos_uncopy_element_value(cos_value_t *pcv, gs_memory_t *mem, bool copy)
 		       "cos_uncopy_element_value");
 }
 
+/* Compare 2 cos values for equality. */
+private int
+cos_value_equal(const cos_value_t *pcv0, const cos_value_t *pcv1, gx_device_pdf *pdev)
+{
+    if (pcv0->value_type != pcv1->value_type)
+	return false;
+    switch (pcv0->value_type) {
+	case COS_VALUE_SCALAR:
+	case COS_VALUE_CONST:
+	    if (bytes_compare(pcv0->contents.chars.data, pcv0->contents.chars.size, 
+			      pcv1->contents.chars.data, pcv1->contents.chars.size))
+		return false;
+	    break;
+	case COS_VALUE_OBJECT:
+	    if (pcv0->contents.object != pcv1->contents.object) {
+		int code = pcv0->contents.object->cos_procs->equal(
+			pcv0->contents.object, pcv1->contents.object, pdev);
+
+		if (code < 0)
+		    return code;
+		if (!code)
+		    return false;
+	    }
+	    break;
+	case COS_VALUE_RESOURCE:
+	    if (pcv0->contents.object != pcv1->contents.object)
+		return false;
+	    break;
+    }
+    return true;
+}
+
 /* ---------------- Specific object types ---------------- */
 
 /* ------ Generic objects ------ */
@@ -422,8 +454,9 @@ cos_generic_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_
 
 private cos_proc_release(cos_array_release);
 private cos_proc_write(cos_array_write);
+private cos_proc_equal(cos_array_equal);
 const cos_object_procs_t cos_array_procs = {
-    cos_array_release, cos_array_write, cos_generic_equal
+    cos_array_release, cos_array_write, cos_array_equal
 };
 
 cos_array_t *
@@ -496,6 +529,32 @@ cos_array_write(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
     stream_puts(s, "]");
     return 0;
 }
+
+private int
+cos_array_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
+{
+    const cos_array_t *const pca0 = (const cos_array_t *)pco0;
+    const cos_array_t *const pca1 = (const cos_array_t *)pco1;
+    cos_array_element_t *first0 = pca0->elements;
+    cos_array_element_t *first1 = pca1->elements;
+    cos_array_element_t *pcae0, *pcae1;
+    int code;
+
+    for (pcae0 = first0, pcae1 = first1; pcae0 && pcae1; 
+	    pcae0 = pcae0->next, pcae1 = pcae1->next) {
+	if (pcae0->index != pcae1->index)
+	    return false;
+	code = cos_value_equal(&pcae0->value, &pcae1->value, pdev);
+	if (code < 0)
+	    return code;
+	if (!code)
+	    return false;
+    }
+    if (pcae0 || pcae1)
+	return false;
+    return true;
+}
+
 
 /* Put/add an element in/to an array. */
 int
@@ -958,25 +1017,23 @@ cos_dict_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf
     const cos_dict_t *pcd0 = (const cos_dict_t *)pco0;
     const cos_dict_t *pcd1 = (const cos_dict_t *)pco1;
     cos_dict_element_t *pcde0 = pcd0->elements;
+    cos_dict_element_t *pcde1 = pcd1->elements;
 
+    for (; pcde1; pcde1 = pcde1->next) {
+	if (cos_dict_find(pcd0, pcde1->key.data, pcde1->key.size) == NULL)
+	    return false;
+    }
     for (; pcde0; pcde0 = pcde0->next) {
 	const cos_value_t *v = cos_dict_find(pcd1, pcde0->key.data, pcde0->key.size);
+	int code;
 
 	if (v == NULL)
 	    return false;
-	switch (pcde0->value.value_type) {
-	    case COS_VALUE_SCALAR:
-	    case COS_VALUE_CONST:
-		if (bytes_compare(pcde0->value.contents.chars.data, pcde0->value.contents.chars.size, 
-				  v->contents.chars.data, v->contents.chars.size))
-		    return false;
-		break;
-	    case COS_VALUE_OBJECT:
-	    case COS_VALUE_RESOURCE:
-		if (pcde0->value.contents.object != v->contents.object)
-		    return false;
-		break;
-	}
+	code = cos_value_equal(&pcde0->value, v, pdev);
+	if (code < 0)
+	    return code;
+	if (!code)
+	    return false;
     }
     return true;
 }
@@ -1125,8 +1182,12 @@ cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_p
     const cos_stream_t *pcs0 = (const cos_stream_t *)pco0;
     const cos_stream_t *pcs1 = (const cos_stream_t *)pco1;
     bool result = false;
+    int code;
 
-    if (!cos_dict_equal(pco0, pco1, pdev))
+    code = cos_dict_equal(pco0, pco1, pdev);
+    if (code < 0)
+	return code;
+    if (!code)
 	return false;
     {
 	/* fixme : this assumes same segmentation for both streams.
