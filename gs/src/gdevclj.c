@@ -73,7 +73,7 @@ typedef struct clj_paper_size_s {
  * long-edge-feed (landscape) orientation. Only executive, letter, and
  * A4 size are supported for color, so we don't bother to list the others.
  */
-private const clj_paper_size    paper_sizes[] = {
+private const clj_paper_size    clj_paper_sizes[] = {
     {   1,  1, 10.50 * 72.0, 7.25 * 72.0, { .200 * 72.0, 0.0 } },
     {   2,  1, 11.00 * 72.0, 8.50 * 72.0, { .200 * 72.0, 0.0 } },
     {  26,  1, 11.69 * 72.0, 8.27 * 72.0, { .197 * 72.0, 0.0 } }
@@ -141,7 +141,7 @@ get_paper_size(
     const clj_paper_size *  psize = 0;
     int                     i;
 
-    for (i = 0, psize = paper_sizes; i < countof(paper_sizes); i++, psize++) {
+    for (i = 0, psize = clj_paper_sizes; i < countof(clj_paper_sizes); i++, psize++) {
         if ( (fabs(width - psize->width) <= tolerance)  &&
              (fabs(height - psize->height) <= tolerance)  ) {
             if (rotatep != 0)
