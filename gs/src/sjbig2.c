@@ -20,9 +20,6 @@
 #include "memory_.h"
 #include "stdio_.h" /* for debug printouts */
 
-#include <stdint.h>
-#include <jbig2.h>
-
 #include "gserrors.h"
 #include "gserror.h"
 #include "gdebug.h"

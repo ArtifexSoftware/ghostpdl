@@ -22,7 +22,6 @@
 #  define sjbig2_INCLUDED
 
 #include "scommon.h"
-#include <stdint.h>
 #include <jbig2.h>
 
 /* Arcfour is a symmetric cipher whose state is maintained

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1997, 1998, 1999, 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993-2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -250,21 +250,62 @@ typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
 
-/* Since sys/types.h often defines one or more of these (depending on */
-/* the platform), we have to take steps to prevent name clashes. */
-/*** NOTE: This requires that you include std.h *before* any other ***/
-/*** header file that includes sys/types.h. ***/
+/* Define some stdint.h types. The jbig2dec headers require these and 
+ * they're generally useful to have around now that there's a standard.
+ */
+#ifdef HAVE_STDINT_H
+# include <stdint.h>
+#else
+# ifdef __WIN32__ /* MSVC currently doesn't proved C99 headers */
+   typedef signed char             int8_t;
+   typedef short int               int16_t;
+   typedef int                     int32_t;
+   typedef __int64                 int64_t;
+   typedef unsigned char           uint8_t;
+   typedef unsigned short int      uint16_t;
+   typedef unsigned int            uint32_t;
+   /* no uint64_t */
+# else /* hope generic types are adequate */
+   typedef short int               int16_t;
+   typedef int                     int32_t;
+   typedef unsigned char           uint8_t;
+   typedef unsigned short int      uint16_t;
+   typedef unsigned int            uint32_t;
+# endif
+#endif /* STDINT_H */
+
+/* Since sys/types.h may define one or more of these (depending on
+ * the platform), we have to take steps to prevent name clashes.
+ * Unfortunately this can clobber valid definitions for the size-
+ * specific types, but there's no simple solution.
+ *
+ * NOTE: This requires that you include std.h *before* any other
+ * header file that includes sys/types.h.
+ *
+ */
 #define bool bool_		/* (maybe not needed) */
 #define uchar uchar_
 #define uint uint_
 #define ushort ushort_
 #define ulong ulong_
+#define int8_t int8_t_
+#define int16_t int16_t_
+#define int32_t int32_t_
+#define uint8_t uint8_t_
+#define uint16_t uint16_t_
+#define uint32_t uint32_t_
 #include <sys/types.h>
 #undef bool
 #undef uchar
 #undef uint
 #undef ushort
 #undef ulong
+#undef int8_t
+#undef int16_t
+#undef int32_t
+#undef uint8_t
+#undef uint16_t
+#undef uint32_t
 
 /*
  * Define a Boolean type.  Even though we would like it to be
