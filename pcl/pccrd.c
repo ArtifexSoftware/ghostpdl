@@ -14,7 +14,6 @@
 /* pccrd.c - PCL interface to the graphic library color rendering dictionary */
 #include "string_.h"
 #include "gx.h"
-#include "gxdevcli.h"
 #include "gsmatrix.h"
 #include "gsmemory.h"
 #include "gsstruct.h"
