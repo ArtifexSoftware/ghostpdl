@@ -1306,6 +1306,7 @@ $(PSOBJ)zfont0.$(OBJ) : $(PSSRC)zfont0.c $(OP)\
 # because it requires findresource.
 
 icid_h=$(PSSRC)icid.h
+ifcid_h=$(PSSRC)ifcid.h
 
 cmapread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcmap.$(OBJ)
 $(PSD)cmapread.dev : $(INT_MAK) $(ECHOGS_XE) $(cmapread_)\
@@ -1321,26 +1322,37 @@ $(PSOBJ)zfcmap.$(OBJ) : $(PSSRC)zfcmap.c $(OP)\
  $(ialloc_h) $(iddict_h) $(idparam_h) $(ifont_h) $(iname_h) $(store_h)
 	$(PSCC) $(PSO_)zfcmap.$(OBJ) $(C_) $(PSSRC)zfcmap.c
 
-cidread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcid.$(OBJ)
+cidread_=$(PSOBJ)zcid.$(OBJ) $(PSOBJ)zfcid.$(OBJ) $(PSOBJ)zfcid0.$(OBJ) $(PSOBJ)zfcid1.$(OBJ)
 $(PSD)cidfont.dev : $(INT_MAK) $(ECHOGS_XE) $(cidread_)\
  $(PSD)psf1read.dev $(PSD)psl2int.dev $(PSD)type42.dev $(PSD)zfrsd.dev
 	$(SETMOD) $(PSD)cidfont $(cidread_)
 	$(ADDMOD) $(PSD)cidfont -include $(PSD)psf1read $(PSD)psl2int
 	$(ADDMOD) $(PSD)cidfont -include $(PSD)type42 $(PSD)zfrsd
-	$(ADDMOD) $(PSD)cidfont -oper zfcid
+	$(ADDMOD) $(PSD)cidfont -oper zfcid0 zfcid1
 	$(ADDMOD) $(PSD)cidfont -ps gs_cidfn
 
 $(PSOBJ)zcid.$(OBJ) : $(PSSRC)zcid.c $(OP)\
  $(gxcid_h) $(errors_h) $(icid_h) $(idict_h) $(idparam_h)
 	$(PSCC) $(PSO_)zcid.$(OBJ) $(C_) $(PSSRC)zcid.c
 
-$(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP) $(memory__h)\
+$(PSOBJ)zfcid.$(OBJ) : $(PSSRC)zfcid.c $(OP)\
+ $(gsmatrix_h) $(gxfcid_h)\
+ $(bfont_h) $(icid_h) $(idict_h) $(idparam_h) $(ifcid_h) $(store_h)
+	$(PSCC) $(PSO_)zfcid.$(OBJ) $(C_) $(PSSRC)zfcid.c
+
+$(PSOBJ)zfcid0.$(OBJ) : $(PSSRC)zfcid0.c $(OP) $(memory__h)\
  $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h) $(gxfont1_h)\
  $(gdevpsf_h)\
  $(stream_h)\
- $(bfont_h) $(files_h) $(icid_h) $(idict_h) $(idparam_h)\
- $(ifont1_h) $(ifont2_h) $(ifont42_h) $(store_h)
-	$(PSCC) $(PSO_)zfcid.$(OBJ) $(C_) $(PSSRC)zfcid.c
+ $(bfont_h) $(files_h) $(ichar_h) $(ichar1_h) $(icid_h) $(idict_h) $(idparam_h)\
+ $(ifcid_h) $(ifont1_h) $(ifont2_h) $(ifont42_h) $(store_h)
+	$(PSCC) $(PSO_)zfcid0.$(OBJ) $(C_) $(PSSRC)zfcid0.c
+
+$(PSOBJ)zfcid1.$(OBJ) : $(PSSRC)zfcid1.c $(OP) $(memory__h)\
+ $(gsccode_h) $(gsmatrix_h) $(gsstruct_h) $(gxfcid_h)\
+ $(bfont_h) $(icid_h) $(idict_h) $(idparam_h) $(ichar1_h)\
+ $(ifcid_h) $(ifont42_h) $(store_h)
+	$(PSCC) $(PSO_)zfcid1.$(OBJ) $(C_) $(PSSRC)zfcid1.c
 
 # ---------------- CIE color ---------------- #
 

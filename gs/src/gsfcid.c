@@ -101,3 +101,31 @@ gs_font_cid_system_info(const gs_font *pfont)
 	return 0;
     }
 }
+
+/*
+ * Provide a default enumerate_glyph procedure for CIDFontType 0 fonts.
+ * Built for simplicity, not for speed.
+ */
+font_proc_enumerate_glyph(gs_font_cid0_enumerate_glyph); /* check prototype */
+int
+gs_font_cid0_enumerate_glyph(gs_font *font, int *pindex,
+			     gs_glyph_space_t ignore_glyph_space,
+			     gs_glyph *pglyph)
+{
+    gs_font_cid0 *const pfont = (gs_font_cid0 *)font;
+
+    while (*pindex < pfont->cidata.common.CIDCount) {
+	gs_const_string gstr;
+	int fidx;
+	gs_glyph glyph = (gs_glyph)(gs_min_cid_glyph + (*pindex)++);
+	int code = pfont->cidata.glyph_data((gs_font_base *)pfont, glyph,
+					    &gstr, &fidx);
+
+	if (code < 0 || gstr.size == 0)
+	    continue;
+	*pglyph = glyph;
+	return 0;
+    }
+    *pindex = 0;
+    return 0;
+}

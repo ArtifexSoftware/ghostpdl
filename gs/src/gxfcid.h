@@ -152,4 +152,10 @@ extern_st(st_gs_font_cid2);
  */
 const gs_cid_system_info_t *gs_font_cid_system_info(P1(const gs_font *));
 
+/*
+ * Provide a default enumerate_glyph procedure for CIDFontType 0 fonts.
+ * Built for simplicity, not for speed.
+ */
+font_proc_enumerate_glyph(gs_font_cid0_enumerate_glyph);
+
 #endif /* gxfcid_INCLUDED */

@@ -492,7 +492,8 @@ typedef enum {
 } Top_op;
 
 private void
-cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont)
+cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont,
+		     bool full_info)
 {
     gs_font_info_t info;
     int code;
@@ -505,10 +506,11 @@ cff_write_Top_common(cff_writer_t *pcw, gs_font_base *pbfont)
     info.UnderlinePosition = UnderlinePosition_DEFAULT;
     info.UnderlineThickness = UnderlineThickness_DEFAULT;
     code = pbfont->procs.font_info((gs_font *)pbfont, NULL,
-			(FONT_INFO_FLAGS | FONT_INFO_ITALIC_ANGLE |
+			(full_info ?
+			 FONT_INFO_FLAGS | FONT_INFO_ITALIC_ANGLE |
 			 FONT_INFO_UNDERLINE_POSITION |
-			 FONT_INFO_UNDERLINE_THICKNESS |
-			 FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
+			 FONT_INFO_UNDERLINE_THICKNESS : 0) |
+			(FONT_INFO_COPYRIGHT | FONT_INFO_NOTICE |
 			 FONT_INFO_FAMILY_NAME | FONT_INFO_FULL_NAME),
 				  &info);
 
@@ -583,7 +585,7 @@ cff_write_Top_font(cff_writer_t *pcw, uint Encoding_offset,
 {
     gs_font_base *pbfont = (gs_font_base *)pcw->pfont;
 
-    cff_write_Top_common(pcw, pbfont);
+    cff_write_Top_common(pcw, pbfont, true);
     cff_put_int(pcw, Private_size);
     cff_put_int_value(pcw, Private_offset, TOP_Private);
     cff_put_int_value(pcw, CharStrings_offset, TOP_CharStrings);
@@ -615,7 +617,8 @@ cff_write_Top_cidfont(cff_writer_t *pcw, uint charset_offset,
     gs_font_cid0 *pfont = (gs_font_cid0 *)pbfont;
 
     cff_write_ROS(pcw, &pfont->cidata.common.CIDSystemInfo);
-    cff_write_Top_common(pcw, pbfont);
+    cff_write_Top_common(pcw, pbfont, true);
+    cff_put_int_if_ne(pcw, charset_offset, charset_DEFAULT, TOP_charset);
     cff_put_int_value(pcw, CharStrings_offset, TOP_CharStrings);
     /*
      * CIDFontVersion and CIDFontRevision aren't used consistently,
@@ -628,6 +631,19 @@ cff_write_Top_cidfont(cff_writer_t *pcw, uint charset_offset,
     cff_put_int_value(pcw, FDSelect_offset, TOP_FDSelect);
 }
 
+/* FDArray Index for CIDFont (offsets only) */
+private void
+cff_write_FDArray_offsets(cff_writer_t *pcw, uint *FDArray_offsets,
+			  int num_fonts)
+{
+    int j;
+
+    cff_put_Index_header(pcw, num_fonts,
+			 FDArray_offsets[num_fonts] - FDArray_offsets[0]);
+    for (j = 1; j <= num_fonts; ++j)
+	put_offset(pcw, FDArray_offsets[j] - FDArray_offsets[0] + 1);
+}
+
 /* FDArray entry for CIDFont */
 private void
 cff_write_Top_fdarray(cff_writer_t *pcw, gs_font_base *pbfont,
@@ -635,7 +651,7 @@ cff_write_Top_fdarray(cff_writer_t *pcw, gs_font_base *pbfont,
 {
     const gs_font_name *pfname = &pbfont->font_name;
 
-    cff_write_Top_common(pcw, pbfont);
+    cff_write_Top_common(pcw, pbfont, false);
     cff_put_int(pcw, Private_size);
     cff_put_int_value(pcw, Private_offset, TOP_Private);
     if (pfname->size == 0)
@@ -1334,6 +1350,16 @@ cid0_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_const_string *pstr,
 	*ppfont = pfont->cidata.FDArray[font_index];
     return code;
 }
+#ifdef DEBUG
+private int
+offset_error(const char *msg)
+{
+    if_debug1('l', "[l]%s offset error\n", msg);
+    return gs_error_rangecheck;
+}
+#else
+#  define offset_error(msg) gs_error_rangecheck
+#endif
 int
 psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 		    const byte *subset_cids, uint subset_size,
@@ -1373,6 +1399,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	FDSelect_offset = 0x7fffff,
 	CharStrings_offset = 0x7fffff,
 	Font_offset = 0x7fffff,
+	FDArray_offsets[257],
 	Private_offsets[257],
 	Subrs_offsets[257],
 	End_offset = 0x7fffff;
@@ -1385,8 +1412,8 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
 
     /* Initialize the enumeration of the glyphs. */
-    psf_enumerate_cids_begin(&genum, (gs_font *)pfont,
-			     subset_cids, (subset_cids ? subset_size : 0));
+    psf_enumerate_cids_begin(&genum, (gs_font *)pfont, subset_cids,
+			     subset_size);
 
     /* Check that the font can be written. */
     code = psf_check_outline_glyphs((gs_font_base *)pfont, &genum,
@@ -1405,9 +1432,12 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     /* Set the font name. */
     if (alt_font_name)
 	font_name = *alt_font_name;
-    else
+    else if (pfont->font_name.size)
 	font_name.data = pfont->font_name.chars,
 	    font_name.size = pfont->font_name.size;
+    else
+	font_name.data = pfont->key_name.chars,
+	    font_name.size = pfont->key_name.size;
 
     /* Initialize the string tables. */
     cff_string_table_init(&writer.std_strings, std_string_items,
@@ -1417,7 +1447,11 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
     /* Make all entries in the string table. */
     cff_write_ROS(&writer, &pfont->cidata.common.CIDSystemInfo);
-    /****** FDArray FONT NAMES ******/
+    for (j = 0; j < num_fonts; ++j) {
+	gs_font_type1 *pfd = pfont->cidata.FDArray[j];
+
+	cff_write_Top_fdarray(&writer, (gs_font_base *)pfd, 0, 0);
+    }
 
     /*
      * The CFF specification says that sections after the initial Indexes
@@ -1428,7 +1462,8 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
     /* Initialize the offset arrays. */
     for (j = 0; j <= num_fonts; ++j)
-	Private_offsets[j] = Subrs_offsets[j] = 0x7fffff;
+	FDArray_offsets[j] = Private_offsets[j] = Subrs_offsets[j] =
+	    0x7effffff / num_fonts * j + 0x1000000;
 
     /*
      * Compute the size of the charset.  For simplicity, we currently
@@ -1484,13 +1519,12 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	cff_Index_size(0, 0);
     FDSelect_offset = charset_offset + charset_size;
     CharStrings_offset = FDSelect_offset + fdselect_size;
-    Subrs_offsets[0] =		/* relative to Private Dict */
-	Private_offsets[num_fonts] - Private_offsets[0];
-    Private_offsets[0] = CharStrings_offset +
-	cff_Index_size(charstrings_count, charstrings_size);
+    if_debug3('l', "[l]charset at %u, FDSelect at %u, CharStrings at %u\n",
+	      charset_offset, FDSelect_offset, CharStrings_offset);
 
  write:
     start_pos = stell(writer.strm);
+    if_debug1('l', "[l]start_pos = %ld\n", start_pos);
     writer.offset_size = (End_offset > 0x7fff ? 3 : 2);
     /* Write the header. */
     put_bytes(writer.strm, "\001\000\004", 3);
@@ -1508,6 +1542,7 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     cff_write_Top_cidfont(&writer, charset_offset, CharStrings_offset,
 			  FDSelect_offset, Font_offset);
     Top_size = stell(writer.strm) - start_pos - offset;
+    if_debug1('l', "[l]Top_size = %u\n", Top_size);
 
     /* Write the strings Index. */
     cff_put_Index(&writer, &writer.strings);
@@ -1520,21 +1555,33 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
     /* Write the FDSelect structure, checking the offset. */
     offset = stell(writer.strm) - start_pos;
+    if_debug2('l', "[l]FDSelect = %u => %u\n", FDSelect_offset, offset);
     if (offset > FDSelect_offset)
-	return_error(gs_error_rangecheck);
+	return_error(offset_error("FDselect"));
     FDSelect_offset = offset;
     cff_write_FDSelect(&writer, fdselect_size);
 
     /* Write the CharStrings Index, checking the offset. */
     offset = stell(writer.strm) - start_pos;
+    if_debug2('l', "[l]CharStrings = %u => %u\n", CharStrings_offset, offset);
     if (offset > CharStrings_offset)
-	return_error(gs_error_rangecheck);
+	return_error(offset_error("CharStrings"));
     CharStrings_offset = offset;
     cff_write_CharStrings(&writer, &genum, charstrings_count,
 			  charstrings_size);
 
     /* Write the Font Dict Index. */
-
+    offset = stell(writer.strm) - start_pos;
+    if_debug2('l', "[l]Font = %u => %u\n", Font_offset, offset);
+    if (offset > Font_offset)
+	return_error(offset_error("Font"));
+    Font_offset = offset;
+    cff_write_FDArray_offsets(&writer, FDArray_offsets, num_fonts);
+    offset = stell(writer.strm) - start_pos;
+    if_debug2('l', "[l]FDArray[0] = %u => %u\n", FDArray_offsets[0], offset);
+    if (offset > FDArray_offsets[0])
+	return_error(offset_error("FDArray[0]"));
+    FDArray_offsets[0] = offset;
     for (j = 0; j < num_fonts; ++j) {
 	gs_font_type1 *pfd = pfont->cidata.FDArray[j];
 
@@ -1546,6 +1593,12 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	}
 	cff_write_Top_fdarray(&writer, (gs_font_base *)pfd, Private_offsets[j],
 			      Private_offsets[j + 1] - Private_offsets[j]);
+	offset = stell(writer.strm) - start_pos;
+	if_debug3('l', "[l]FDArray[%d] = %u => %u\n", j + 1,
+		  FDArray_offsets[j + 1], offset);
+	if (offset > FDArray_offsets[j + 1])
+	    return_error(offset_error("FDArray"));
+	FDArray_offsets[j + 1] = offset;
     }
 
     /* Write the Private Dicts, checking the offset. */
@@ -1553,8 +1606,10 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	gs_font_type1 *pfd;
 
 	offset = stell(writer.strm) - start_pos;
+	if_debug3('l', "[l]Private[%d] = %u => %u\n",
+		  j, Private_offsets[j], offset);
 	if (offset > Private_offsets[j])
-	    return_error(gs_error_rangecheck);
+	    return_error(offset_error("Private"));
 	Private_offsets[j] = offset;
 	if (j == num_fonts)
 	    break;
@@ -1568,8 +1623,10 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 	gs_font_type1 *pfd;
 
 	offset = stell(writer.strm) - (start_pos + Private_offsets[j]);
+	if_debug3('l', "[l]Subrs[%d] = %u => %u\n",
+		  j, Subrs_offsets[j], offset);
 	if (offset > Subrs_offsets[j])
-	    return_error(gs_error_rangecheck);
+	    return_error(offset_error("Subrs"));
 	Subrs_offsets[j] = offset;
 	if (j == num_fonts)
 	    break;
@@ -1582,8 +1639,9 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
 
     /* Check the final offset. */
     offset = stell(writer.strm) - start_pos;
+    if_debug2('l', "[l]End = %u => %u\n", End_offset, offset);
     if (offset > End_offset)
-	return_error(gs_error_rangecheck);
+	return_error(offset_error("End"));
     if (offset == End_offset) {
 	/* The iteration has converged.  Write the result. */
 	if (writer.strm == &poss) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -857,14 +857,35 @@ const gs_type1_data_procs_t z1_data_procs = {
 
 /* ------ Font procedures for Type 1 fonts ------ */
 
+/*
+ * Get a Type 1 or Type 2 glyph outline.  This is the glyph_outline
+ * procedure for the font.
+ */
 int
-zcharstring_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
-			  gx_path *ppath)
+zchar1_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
+		     gx_path *ppath)
 {
     gs_font_type1 *const pfont1 = (gs_font_type1 *)font;
-    gs_const_string charstring;
     ref gref;
-    gs_const_string *pchars = &charstring;
+    gs_const_string charstring;
+    int code;
+
+    glyph_ref(glyph, &gref);
+    code = zchar_charstring_data(font, &gref, &charstring);
+    if (code < 0)
+	return code;
+    return zcharstring_outline(pfont1, &gref, &charstring, pmat, ppath);
+}
+/*
+ * Get a glyph outline given a CharString.  The glyph_outline procedure
+ * for CIDFontType 0 fonts uses this.
+ */
+int
+zcharstring_outline(gs_font_type1 *pfont1, const ref *pgref,
+		    const gs_const_string *pgstr,
+		    const gs_matrix *pmat, gx_path *ppath)
+{
+    const gs_const_string *pchars = pgstr;
     int code;
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
@@ -877,24 +898,20 @@ zcharstring_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     double sbw[4];
     gs_point mpt;
 
-    glyph_ref(glyph, &gref);
-    code = zchar_charstring_data(font, &gref, &charstring);
-    if (code < 0)
-	return code;
     pdata = &pfont1->data;
-    if (charstring.size <= max(pdata->lenIV, 0))
+    if (pgstr->size <= max(pdata->lenIV, 0))
 	return_error(e_invalidfont);
     pfdict = &pfont_data(pfont1)->dict;
     if (dict_find_string(pfdict, "CDevProc", &pcdevproc) > 0)
 	return_error(e_rangecheck); /* can't call CDevProc from here */
-    switch (font->WMode) {
+    switch (pfont1->WMode) {
     default:
-	code = zchar_get_metrics2((gs_font_base *)pfont1, &gref, sbw);
+	code = zchar_get_metrics2((gs_font_base *)pfont1, pgref, sbw);
 	if (code)
 	    break;
 	/* falls through */
     case 0:
-	code = zchar_get_metrics((gs_font_base *)pfont1, &gref, sbw);
+	code = zchar_get_metrics((gs_font_base *)pfont1, pgref, sbw);
     }
     if (code < 0)
 	return code;

@@ -29,6 +29,7 @@
 #include "bfont.h"
 #include "ialloc.h"
 #include "icharout.h"
+#include "ichar1.h"
 #include "idict.h"
 #include "idparam.h"
 #include "ifont1.h"
@@ -38,7 +39,6 @@
 /* Type 1 font procedures (defined in zchar1.c) */
 extern const gs_type1_data_procs_t z1_data_procs;
 font_proc_glyph_info(z1_glyph_info);
-font_proc_glyph_outline(zcharstring_glyph_outline);
 /* Font procedures defined here */
 private font_proc_font_info(z1_font_info);
 private font_proc_same_font(z1_same_font);
@@ -197,7 +197,7 @@ charstring_font_init(gs_font_type1 *pfont, const charstring_font_refs_t *pfr,
     pfont->procs.same_font = z1_same_font;
     pfont->procs.glyph_info = z1_glyph_info;
     pfont->procs.enumerate_glyph = z1_enumerate_glyph;
-    pfont->procs.glyph_outline = zcharstring_glyph_outline;
+    pfont->procs.glyph_outline = zchar1_glyph_outline;
     return 0;
 }
 

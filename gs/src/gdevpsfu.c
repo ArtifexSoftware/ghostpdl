@@ -90,7 +90,9 @@ psf_enumerate_cids_begin(psf_glyph_enum_t *ppge, gs_font *font,
     ppge->subset.cids = subset_cids;
     ppge->subset.size = subset_size;
     ppge->glyph_space = GLYPH_SPACE_NAME;  /* CIDs are "names" */
-    ppge->enumerate_next = enumerate_cids_next;
+    ppge->enumerate_next =
+	(subset_cids ? enumerate_cids_next :
+	 subset_size ? enumerate_range_next : enumerate_font_next);
     psf_enumerate_glyphs_reset(ppge);
 }
 
