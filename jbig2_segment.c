@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_segment.c,v 1.23 2003/03/10 14:44:01 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -26,6 +26,7 @@
 #include "jbig2.h"
 #include "jbig2_priv.h"
 #include "jbig2_symbol_dict.h"
+#include "jbig2_metadata.h"
 
 Jbig2Segment *
 jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
