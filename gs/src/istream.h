@@ -24,14 +24,14 @@
 /* Procedures exported by zfproc.c */
 
 	/* for zfilter.c - procedure stream initialization */
-int sread_proc(P3(ref *, stream **, gs_ref_memory_t *));
-int swrite_proc(P3(ref *, stream **, gs_ref_memory_t *));
+int sread_proc(ref *, stream **, gs_ref_memory_t *);
+int swrite_proc(ref *, stream **, gs_ref_memory_t *);
 
 	/* for interp.c, zfileio.c, zpaint.c - handle a procedure */
 	/* callback or an interrupt */
-int s_handle_read_exception(P6(i_ctx_t *, int, const ref *, const ref *,
-			       int, op_proc_t));
-int s_handle_write_exception(P6(i_ctx_t *, int, const ref *, const ref *,
-				int, op_proc_t));
+int s_handle_read_exception(i_ctx_t *, int, const ref *, const ref *,
+			    int, op_proc_t);
+int s_handle_write_exception(i_ctx_t *, int, const ref *, const ref *,
+			     int, op_proc_t);
 
 #endif /* istream_INCLUDED */

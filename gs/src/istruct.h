@@ -40,7 +40,7 @@ extern_st(st_refs);
  * Extend the GC procedure vector to include refs.
  */
 #define refs_proc_reloc(proc)\
-  void proc(P3(ref_packed *from, ref_packed *to, gc_state_t *gcst))
+  void proc(ref_packed *from, ref_packed *to, gc_state_t *gcst)
 typedef struct gc_procs_with_refs_s {
     gc_procs_common;
     /* Relocate a pointer to a ref[_packed]. */

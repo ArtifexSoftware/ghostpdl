@@ -21,6 +21,6 @@
 #  define dwtrace_INCLUDED
 
 struct vd_trace_interface_s visual_tracer;
-void visual_tracer_init(P0());
+void visual_tracer_init(void);
 
 #endif /* dwtrace_INCLUDED */

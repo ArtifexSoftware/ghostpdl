@@ -90,7 +90,7 @@ extern const op_def *const op_defs_all[];
  * however, internal operators have a `size' of 0, and their true index
  * must be found by searching the table for their procedure address.
  */
-ushort op_find_index(P1(const ref *));
+ushort op_find_index(const ref *);
 
 #define op_index(opref)\
   (r_size(opref) == 0 ? op_find_index(opref) : r_size(opref))
@@ -138,6 +138,6 @@ extern op_array_table
  * This is only used for debugging and for 'get' from packed arrays,
  * so it doesn't have to be very fast.
  */
-void op_index_ref(P2(uint, ref *));
+void op_index_ref(uint, ref *);
 
 #endif /* opdef_INCLUDED */

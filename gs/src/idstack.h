@@ -29,7 +29,7 @@ typedef s_ptr ds_ptr;
 typedef const_s_ptr const_ds_ptr;
 
 /* Clean up a dictionary stack after a garbage collection. */
-void dstack_gc_cleanup(P1(dict_stack_t *));
+void dstack_gc_cleanup(dict_stack_t *);
 
 /*
  * Define a special fast entry for name lookup on a dictionary stack.
@@ -37,7 +37,7 @@ void dstack_gc_cleanup(P1(dict_stack_t *));
  * Return the pointer to the value slot.
  * If the name isn't found, just return 0.
  */
-ref *dstack_find_name_by_index(P2(dict_stack_t *, uint));
+ref *dstack_find_name_by_index(dict_stack_t *, uint);
 
 /*
  * Define an extra-fast macro for name lookup, optimized for

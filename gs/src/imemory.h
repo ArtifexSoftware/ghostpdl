@@ -38,31 +38,31 @@ typedef struct gs_ref_memory_s gs_ref_memory_t;
 
 	/* Allocate a ref array. */
 
-int gs_alloc_ref_array(P5(gs_ref_memory_t * mem, ref * paref,
-			  uint attrs, uint num_refs, client_name_t cname));
+int gs_alloc_ref_array(gs_ref_memory_t * mem, ref * paref,
+		       uint attrs, uint num_refs, client_name_t cname);
 
 	/* Resize a ref array. */
 	/* Currently this is only implemented for shrinking, */
 	/* not growing. */
 
-int gs_resize_ref_array(P4(gs_ref_memory_t * mem, ref * paref,
-			   uint new_num_refs, client_name_t cname));
+int gs_resize_ref_array(gs_ref_memory_t * mem, ref * paref,
+			uint new_num_refs, client_name_t cname);
 
 	/* Free a ref array. */
 
-void gs_free_ref_array(P3(gs_ref_memory_t * mem, ref * paref,
-			  client_name_t cname));
+void gs_free_ref_array(gs_ref_memory_t * mem, ref * paref,
+		       client_name_t cname);
 
 	/* Allocate a string ref. */
 
-int gs_alloc_string_ref(P5(gs_ref_memory_t * mem, ref * psref,
-			   uint attrs, uint nbytes, client_name_t cname));
+int gs_alloc_string_ref(gs_ref_memory_t * mem, ref * psref,
+			uint attrs, uint nbytes, client_name_t cname);
 
 /* Register a ref root.  This just calls gs_register_root. */
 /* Note that ref roots are a little peculiar: they assume that */
 /* the ref * that they point to points to a *statically* allocated ref. */
-int gs_register_ref_root(P4(gs_memory_t *mem, gs_gc_root_t *root,
-			    void **pp, client_name_t cname));
+int gs_register_ref_root(gs_memory_t *mem, gs_gc_root_t *root,
+			 void **pp, client_name_t cname);
 
 
 /*
@@ -88,7 +88,7 @@ struct gs_dual_memory_s {
     vm_spaces spaces;		/* system, global, local */
     uint current_space;		/* = current->space */
     /* Garbage collection hook */
-    int (*reclaim) (P2(gs_dual_memory_t *, int));
+    int (*reclaim) (gs_dual_memory_t *, int);
     /* Masks for store checking, see isave.h. */
     uint test_mask;
     uint new_mask;

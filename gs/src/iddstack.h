@@ -30,9 +30,9 @@ typedef struct dict_stack_s dict_stack_t;
  * dictionary stack (including changing the protection or size of the
  * top dictionary on the stack) must call this.
  */
-void dstack_set_top(P1(dict_stack_t *));
+void dstack_set_top(dict_stack_t *);
 
 /* Check whether a dictionary is one of the permanent ones on the d-stack. */
-bool dstack_dict_is_permanent(P2(const dict_stack_t *, const ref *));
+bool dstack_dict_is_permanent(const dict_stack_t *, const ref *);
 
 #endif /* iddstack_INCLUDED */

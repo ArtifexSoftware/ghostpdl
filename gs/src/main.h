@@ -96,7 +96,7 @@
 
  * but we make it a procedure instead so it can be called from debuggers.
  */
-void gs_debug_dump_stack(P2(int code, ref * perror_object));
+void gs_debug_dump_stack(int code, ref * perror_object);
 
 /* ---------------- Termination ---------------- */
 

@@ -47,41 +47,41 @@ struct  vd_trace_interface_s {
     double scale_x, scale_y;
     double orig_x, orig_y;
     double shift_x, shift_y;
-    double (*get_size_x)(P1(vd_trace_interface *I));
-    double (*get_size_y)(P1(vd_trace_interface *I));
-    void (*get_dc)(P2(vd_trace_interface *I, vd_trace_interface **I1));
-    void (*release_dc)(P2(vd_trace_interface *I, vd_trace_interface **I1));
-    void (*erase)(P2(vd_trace_interface *I, unsigned long rgbcolor));
-    void (*beg_path)(P1(vd_trace_interface *I));
-    void (*end_path)(P1(vd_trace_interface *I));
-    void (*moveto)(P3(vd_trace_interface *I, double x, double y));
-    void (*lineto)(P3(vd_trace_interface *I, double x, double y));
-    void (*curveto)(P7(vd_trace_interface *I, double x0, double y0, double x1, double y1, double x2, double y2));
-    void (*closepath)(P1(vd_trace_interface *I));
-    void (*circle)(P4(vd_trace_interface *I, double x, double y, int r)); /* Radius doesn't scale. */
-    void (*round)(P4(vd_trace_interface *I, double x, double y, int r)); /* Radius doesn't scale. */
-    void (*fill)(P1(vd_trace_interface *I));
-    void (*stroke)(P1(vd_trace_interface *I));
-    void (*setcolor)(P2(vd_trace_interface *I, unsigned long rgbcolor));
-    void (*setlinewidth)(P2(vd_trace_interface *I, unsigned int width)); /* Width doesn't scale. */
-    void (*text)(P4(vd_trace_interface *I, double x, double y, char *ASCIIZ)); /* Font doesn't scale. */
-    void (*wait)(P1(vd_trace_interface *I));
+    double (*get_size_x)(vd_trace_interface *I);
+    double (*get_size_y)(vd_trace_interface *I);
+    void (*get_dc)(vd_trace_interface *I, vd_trace_interface **I1);
+    void (*release_dc)(vd_trace_interface *I, vd_trace_interface **I1);
+    void (*erase)(vd_trace_interface *I, unsigned long rgbcolor);
+    void (*beg_path)(vd_trace_interface *I);
+    void (*end_path)(vd_trace_interface *I);
+    void (*moveto)(vd_trace_interface *I, double x, double y);
+    void (*lineto)(vd_trace_interface *I, double x, double y);
+    void (*curveto)(vd_trace_interface *I, double x0, double y0, double x1, double y1, double x2, double y2);
+    void (*closepath)(vd_trace_interface *I);
+    void (*circle)(vd_trace_interface *I, double x, double y, int r); /* Radius doesn't scale. */
+    void (*round)(vd_trace_interface *I, double x, double y, int r); /* Radius doesn't scale. */
+    void (*fill)(vd_trace_interface *I);
+    void (*stroke)(vd_trace_interface *I);
+    void (*setcolor)(vd_trace_interface *I, unsigned long rgbcolor);
+    void (*setlinewidth)(vd_trace_interface *I, unsigned int width); /* Width doesn't scale. */
+    void (*text)(vd_trace_interface *I, double x, double y, char *ASCIIZ); /* Font doesn't scale. */
+    void (*wait)(vd_trace_interface *I);
 };
 
 extern vd_trace_interface * vd_trace0; /* Pointer to trace interface. */
 extern vd_trace_interface * vd_trace1; /* A copy of vd_trace0, or NULL if trace is disabled. */
 extern char vd_flags[];
 
-void vd_impl_moveto(P2(double x, double y));
-void vd_impl_lineto(P2(double x, double y));
-void vd_impl_lineto_multi(P2(struct gs_fixed_point_s *p, int n));
-void vd_impl_curveto(P6(double x0, double y0, double x1, double y1, double x2, double y2));
-void vd_impl_bar(P6(double x0, double y0, double x1, double y1, int w, unsigned long c)); /* unscaled width */
-void vd_impl_square(P4(double x0, double y0, int w, unsigned int c)); /* unscaled width */
-void vd_impl_curve(P10(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int w, unsigned long c)); /* unscaled width */
-void vd_impl_circle(P4(double x, double y, int r, unsigned long c)); /* unscaled radius */
-void vd_impl_round(P4(double x, double y, int r, unsigned long c));  /* unscaled radius */
-void vd_impl_text(P4(double x, double y, char *s, unsigned long c)); /* unscaled font */
+void vd_impl_moveto(double x, double y);
+void vd_impl_lineto(double x, double y);
+void vd_impl_lineto_multi(struct gs_fixed_point_s *p, int n);
+void vd_impl_curveto(double x0, double y0, double x1, double y1, double x2, double y2);
+void vd_impl_bar(double x0, double y0, double x1, double y1, int w, unsigned long c); /* unscaled width */
+void vd_impl_square(double x0, double y0, int w, unsigned int c); /* unscaled width */
+void vd_impl_curve(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int w, unsigned long c); /* unscaled width */
+void vd_impl_circle(double x, double y, int r, unsigned long c); /* unscaled radius */
+void vd_impl_round(double x, double y, int r, unsigned long c);  /* unscaled radius */
+void vd_impl_text(double x, double y, char *s, unsigned long c); /* unscaled font */
 void vd_setflag(char f, char v);
 
 #ifndef RGB

@@ -36,9 +36,9 @@
  * base space, since the underlying space of an Indexed color space may be
  * a Separation or DeviceN space.
  */
-int zcs_begin_map(P6(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap,
-		     const ref * pproc, int num_entries,
-		     const gs_direct_color_space * base_space,
-		     op_proc_t map1));
+int zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap,
+		  const ref * pproc, int num_entries,
+		  const gs_direct_color_space * base_space,
+		  op_proc_t map1);
 
 #endif /* icsmap_INCLUDED */

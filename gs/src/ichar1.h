@@ -24,7 +24,7 @@
 
 /* Render a Type 1 or Type 2 outline. */
 /* This is the entire implementation of the .type1/2execchar operators. */
-int charstring_execchar(P2(i_ctx_t *i_ctx_p, int font_type_mask));
+int charstring_execchar(i_ctx_t *i_ctx_p, int font_type_mask);
 
 /* ---------------- Internal ---------------- */
 
@@ -38,8 +38,8 @@ font_proc_glyph_outline(zchar1_glyph_outline);
  * Get a glyph outline given a CharString.  The glyph_outline procedure
  * for CIDFontType 0 fonts uses this.
  */
-int zcharstring_outline(P5(gs_font_type1 *pfont, const ref *pgref,
-			   const gs_glyph_data_t *pgd,
-			   const gs_matrix *pmat, gx_path *ppath));
+int zcharstring_outline(gs_font_type1 *pfont, const ref *pgref,
+			const gs_glyph_data_t *pgd,
+			const gs_matrix *pmat, gx_path *ppath);
 
 #endif /* ichar1_INCLUDED */

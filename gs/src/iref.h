@@ -364,7 +364,7 @@ typedef struct obj_header_s obj_header_t;
 #  define i_ctx_t_DEFINED
 typedef struct gs_context_state_s i_ctx_t;
 #endif
-typedef int (*op_proc_t)(P1(i_ctx_t *i_ctx_p));
+typedef int (*op_proc_t)(i_ctx_t *i_ctx_p);
 /* real_opproc is a holdover.... */
 #define real_opproc(pref) ((pref)->value.opproc)
 

@@ -148,7 +148,7 @@
  * Pop a given number of elements off the execution stack,
  * executing cleanup procedures as necessary.
  */
-void pop_estack(P2(i_ctx_t *, uint));
+void pop_estack(i_ctx_t *, uint);
 
 /*
  * The execution stack is implemented as a linked list of blocks;

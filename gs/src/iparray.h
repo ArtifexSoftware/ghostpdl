@@ -30,7 +30,7 @@
 /* Procedures implemented in zpacked.c */
 
 /* Make a packed array from the top N elements of a stack. */
-int make_packed_array(P5(ref *, ref_stack_t *, uint, gs_dual_memory_t *,
-			 client_name_t));
+int make_packed_array(ref *, ref_stack_t *, uint, gs_dual_memory_t *,
+		      client_name_t);
 
 #endif /* iparray_INCLUDED */

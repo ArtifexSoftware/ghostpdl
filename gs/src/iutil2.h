@@ -33,16 +33,16 @@ typedef struct password_s {
 # define NULL_PASSWORD {0, {0}}
 
 /* Transmit a password to or from a parameter list. */
-int param_read_password(P3(gs_param_list *, const char *, password *));
-int param_write_password(P3(gs_param_list *, const char *, const password *));
+int param_read_password(gs_param_list *, const char *, password *);
+int param_write_password(gs_param_list *, const char *, const password *);
 
 /* Check a password from a parameter list. */
 /* Return 0 if OK, 1 if not OK, or an error code. */
-int param_check_password(P2(gs_param_list *, const password *));
+int param_check_password(gs_param_list *, const password *);
 
 /* Read a password from, or write a password into, a dictionary */
 /* (presumably systemdict). */
-int dict_read_password(P3(password *, const ref *, const char *));
-int dict_write_password(P4(const password *, ref *, const char *, bool));
+int dict_read_password(password *, const ref *, const char *);
+int dict_write_password(const password *, ref *, const char *, bool);
 
 #endif /* iutil2_INCLUDED */

@@ -21,6 +21,6 @@
 #  define icid_INCLUDED
 
 /* Get the information from a CIDSystemInfo dictionary. */
-int cid_system_info_param(P2(gs_cid_system_info_t *, const ref *));
+int cid_system_info_param(gs_cid_system_info_t *, const ref *);
 
 #endif /* icid_INCLUDED */

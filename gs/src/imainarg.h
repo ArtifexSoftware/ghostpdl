@@ -33,12 +33,11 @@ typedef struct gs_main_instance_s gs_main_instance;
  * argv should really be const char *[], but ANSI C requires writable
  * strings (which, however, it forbids the callee to modify!).
  */
-int gs_main_init_with_args(P3(gs_main_instance * minst, int argc,
-			      char *argv[]));
+int gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[]);
 
 /*
  * Run the 'start' procedure (after processing the command line).
  */
-int gs_main_run_start(P1(gs_main_instance * minst));
+int gs_main_run_start(gs_main_instance * minst);
 
 #endif /* imainarg_INCLUDED */

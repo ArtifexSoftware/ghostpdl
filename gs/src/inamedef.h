@@ -153,10 +153,10 @@ struct name_table_s {
 /* ------ Garbage collection ------ */
 
 /* Unmark all non-permanent names before a garbage collection. */
-void names_unmark_all(P1(name_table * nt));
+void names_unmark_all(name_table * nt);
 
 /* Finish tracing the name table by putting free names on the free list. */
-void names_trace_finish(P2(name_table * nt, gc_state_t * gcst));
+void names_trace_finish(name_table * nt, gc_state_t * gcst);
 
 /* ------ Save/restore ------ */
 
@@ -165,6 +165,6 @@ void names_trace_finish(P2(name_table * nt, gc_state_t * gcst));
 typedef struct alloc_save_s alloc_save_t;
 #  define alloc_save_t_DEFINED
 #endif
-void names_restore(P2(name_table * nt, alloc_save_t * save));
+void names_restore(name_table * nt, alloc_save_t * save);
 
 #endif /* inamedef_INCLUDED */

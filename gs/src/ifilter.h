@@ -29,41 +29,41 @@
  * Note that a filter will be allocated in global VM iff the source/target
  * and all relevant parameters (if any) are in global VM.
  */
-int filter_read(P5(
+int filter_read(
 	/* Operator arguments that were passed to zfxxx operator */
-		   i_ctx_t *i_ctx_p,
+		i_ctx_t *i_ctx_p,
 	/* # of parameters to pop off o-stack, */
 	/* not counting the source/target and also not counting any */
 	/* top dictionary operand (both of which will always be popped) */
-		   int npop,
+		int npop,
 	/* Template for stream */
-		   const stream_template * template,
+		const stream_template * template,
 	/* Initialized s_xxx_state, 0 if no separate state */
-		   stream_state * st,
+		stream_state * st,
 	/* Max of space attributes of all parameters referenced by */
 	/* the state, 0 if no such parameters */
-		   uint space
-		));
-int filter_write(P5(i_ctx_t *i_ctx_p, int npop,
-		    const stream_template * template,
-		    stream_state * st, uint space));
+		uint space
+		);
+int filter_write(i_ctx_t *i_ctx_p, int npop,
+		 const stream_template * template,
+		 stream_state * st, uint space);
 
 /*
  * Define a simplified interface for streams with no parameters (except
  * an optional dictionary) or state.
  */
-int filter_read_simple(P2(i_ctx_t *i_ctx_p,
-			  const stream_template * template));
-int filter_write_simple(P2(i_ctx_t *i_ctx_p,
-			   const stream_template * template));
+int filter_read_simple(i_ctx_t *i_ctx_p,
+		       const stream_template * template);
+int filter_write_simple(i_ctx_t *i_ctx_p,
+			const stream_template * template);
 
 /* Mark a filter stream as temporary. */
 /* See stream.h for the meaning of is_temp. */
-void filter_mark_temp(P2(const ref * fop, int is_temp));
+void filter_mark_temp(const ref * fop, int is_temp);
 
 /* Mark the source or target of a filter as temporary, and propagate */
 /* close_strm from the temporary stream to the filter. */
-void filter_mark_strm_temp(P2(const ref * fop, int is_temp));
+void filter_mark_strm_temp(const ref * fop, int is_temp);
 
 /* Define a standard report_error procedure for filters, */
 /* that records the error message in $error.errorinfo. */
@@ -88,6 +88,6 @@ typedef struct stream_proc_state_s {
     "procedure stream state", sproc_clear_marks, sproc_enum_ptrs, sproc_reloc_ptrs, 0)
 
 /* Test whether a stream is procedure-based. */
-bool s_is_proc(P1(const stream *s));
+bool s_is_proc(const stream *s);
 
 #endif /* ifilter_INCLUDED */

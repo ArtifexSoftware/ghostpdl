@@ -25,8 +25,8 @@
  * because these operators are not included in PDF-only configurations.
  */
 
-int zarc(P1(i_ctx_t *));
-int zarcn(P1(i_ctx_t *));
-int zarct(P1(i_ctx_t *));
+int zarc(i_ctx_t *);
+int zarcn(i_ctx_t *);
+int zarct(i_ctx_t *);
 
 #endif /* oparc_INCLUDED */

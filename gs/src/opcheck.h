@@ -37,7 +37,7 @@
   check_array_else(rf, return_error(e_typecheck))
 /* Check for procedure.  check_proc_failed includes the stack underflow */
 /* check, but it doesn't do any harm in the off-stack case. */
-int check_proc_failed(P1(const ref *));
+int check_proc_failed(const ref *);
 
 #define check_proc(rf)\
   BEGIN if ( !r_is_proc(&rf) ) return_error(check_proc_failed(&rf)); END

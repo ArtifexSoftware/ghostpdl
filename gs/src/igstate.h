@@ -190,7 +190,7 @@ typedef struct int_gstate_s {
 
 /* Create the gstate for a new context. */
 /* We export this so that fork can use it. */
-gs_state *int_gstate_alloc(P1(const gs_dual_memory_t * dmem));
+gs_state *int_gstate_alloc(const gs_dual_memory_t * dmem);
 
 /* Get the int_gstate from a gs_state. */
 #define gs_int_gstate(pgs) ((int_gstate *)gs_state_client_data(pgs))

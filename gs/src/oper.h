@@ -54,7 +54,7 @@
  * be used either with a stack operand or with a general operand, and
  * the check for t__invalid is harmless when applied to off-stack refs.
  */
-int check_type_failed(P1(const ref *));
+int check_type_failed(const ref *);
 
 /*
  * Check the type of an object.  Operators almost always use check_type,

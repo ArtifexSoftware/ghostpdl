@@ -29,7 +29,7 @@
  * this procedure: a dummy one for Level 1 systems, and the real one.
  * The interface is entirely internal to the scanner.
  */
-int scan_binary_token(P4(i_ctx_t *i_ctx_p, stream *s, ref *pref,
-			 scanner_state *pstate));
+int scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
+		      scanner_state *pstate);
 
 #endif /* iscanbin_INCLUDED */

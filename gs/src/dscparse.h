@@ -42,18 +42,6 @@ typedef unsigned int GSWORD;	/* must be at least 16 bits */
 # define min(a,b)  ((a) < (b) ? (a) : (b))
 #endif
 
-/* macros to allow conversion of function declarations to K&R */
-#ifndef P0
-#define P0() void
-#define P1(t1) t1
-#define P2(t1,t2) t1,t2
-#define P3(t1,t2,t3) t1,t2,t3
-#define P4(t1,t2,t3,t4) t1,t2,t3,t4
-#define P5(t1,t2,t3,t4,t5) t1,t2,t3,t4,t5
-#define P6(t1,t2,t3,t4,t5,t6) t1,t2,t3,t4,t5,t6
-#endif
-
-
 /* maximum legal length of lines in a DSC compliant file */
 #define DSC_LINE_LENGTH 255
 
@@ -396,16 +384,16 @@ struct CDSC_S {
     CDSCSTRING *string;		/* current list item */
 
     /* memory allocation routines */
-    void *(*memalloc)(P2(size_t size, void *closure_data));
-    void (*memfree)(P2(void *ptr, void *closure_data));
+    void *(*memalloc)(size_t size, void *closure_data);
+    void (*memfree)(void *ptr, void *closure_data);
     void *mem_closure_data;
 
     /* function for printing debug messages */
-    void (*debug_print_fn)(P2(void *caller_data, const char *str));
+    void (*debug_print_fn)(void *caller_data, const char *str);
 
     /* function for reporting errors in DSC comments */
-    int (*dsc_error_fn)(P5(void *caller_data, CDSC *dsc, 
-	unsigned int explanation, const char *line, unsigned int line_len));
+    int (*dsc_error_fn)(void *caller_data, CDSC *dsc, 
+	unsigned int explanation, const char *line, unsigned int line_len);
 
 };
 
@@ -413,46 +401,46 @@ struct CDSC_S {
 /* Public functions */
 
 /* Create and initialise DSC parser */
-CDSC *dsc_init(P1(void *caller_data));
+CDSC *dsc_init(void *caller_data);
 
-CDSC *dsc_init_with_alloc(P4(
+CDSC *dsc_init_with_alloc(
     void *caller_data,
     void *(*memalloc)(size_t size, void *closure_data),
     void (*memfree)(void *ptr, void *closure_data),
-    void *closure_data));
+    void *closure_data);
 
 /* Free the DSC parser */
-void dsc_free(P1(CDSC *dsc));
+void dsc_free(CDSC *dsc);
 
 /* Tell DSC parser how long document will be, to allow ignoring
  * of early %%Trailer and %%EOF.  This is optional.
  */
-void dsc_set_length(P2(CDSC *dsc, unsigned long len));
+void dsc_set_length(CDSC *dsc, unsigned long len);
 
 /* Process a buffer containing DSC comments and PostScript */
-int dsc_scan_data(P3(CDSC *dsc, const char *data, int len));
+int dsc_scan_data(CDSC *dsc, const char *data, int len);
 
 /* All data has been processed, fixup any DSC errors */
-int dsc_fixup(P1(CDSC *dsc));
+int dsc_fixup(CDSC *dsc);
 
 /* Install error query function */
-void dsc_set_error_function(P2(CDSC *dsc, 
-    int (*dsc_error_fn)(P5(void *caller_data, CDSC *dsc, 
-	unsigned int explanation, const char *line, unsigned int line_len))));
+void dsc_set_error_function(CDSC *dsc, 
+    int (*dsc_error_fn)(void *caller_data, CDSC *dsc, 
+	unsigned int explanation, const char *line, unsigned int line_len));
 
 /* Install print function for debug messages */
-void dsc_set_debug_function(P2(CDSC *dsc, 
-	void (*debug_fn)(P2(void *caller_data, const char *str))));
+void dsc_set_debug_function(CDSC *dsc, 
+	void (*debug_fn)(void *caller_data, const char *str));
 
 /* Print a message to debug output, if provided */
-void dsc_debug_print(P2(CDSC *dsc, const char *str));
+void dsc_debug_print(CDSC *dsc, const char *str);
 
 /* should be internal only functions, but made available to 
  * GSview for handling PDF
  */
-int dsc_add_page(P3(CDSC *dsc, int ordinal, char *label));
-int dsc_add_media(P2(CDSC *dsc, CDSCMEDIA *media));
-int dsc_set_page_bbox(P6(CDSC *dsc, unsigned int page_number, 
-    int llx, int lly, int urx, int ury));
+int dsc_add_page(CDSC *dsc, int ordinal, char *label);
+int dsc_add_media(CDSC *dsc, CDSCMEDIA *media);
+int dsc_set_page_bbox(CDSC *dsc, unsigned int page_number, 
+		      int llx, int lly, int urx, int ury);
 
 #endif /* dscparse_INCLUDED */

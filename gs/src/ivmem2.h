@@ -21,7 +21,7 @@
 #  define ivmem2_INCLUDED
 
 /* Exported by zvmem2.c for zusparam.c */
-int set_vm_reclaim(P2(i_ctx_t *, long));
-int set_vm_threshold(P2(i_ctx_t *, long));
+int set_vm_reclaim(i_ctx_t *, long);
+int set_vm_threshold(i_ctx_t *, long);
 
 #endif /* ivmem2_INCLUDED */

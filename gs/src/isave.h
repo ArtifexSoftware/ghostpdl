@@ -40,37 +40,37 @@ typedef struct alloc_save_s alloc_save_t;
 #endif
 
 /* Initialize the save machinery. */
-extern void alloc_save_init(P1(gs_dual_memory_t *));
+extern void alloc_save_init(gs_dual_memory_t *);
 
 /* Map a save ID to its save object.  Return 0 if the ID is invalid. */
-alloc_save_t *alloc_find_save(P2(const gs_dual_memory_t *, ulong));
+alloc_save_t *alloc_find_save(const gs_dual_memory_t *, ulong);
 
 /*
  * Save the state.  Return 0 if we can't allocate the save object,
  * otherwise return the save ID.  The second argument is a client data
  * pointer, assumed to point to an object.
  */
-ulong alloc_save_state(P2(gs_dual_memory_t *, void *));
+ulong alloc_save_state(gs_dual_memory_t *, void *);
 
 /* Get the client pointer passed to alloc_saved_state. */
-void *alloc_save_client_data(P1(const alloc_save_t *));
+void *alloc_save_client_data(const alloc_save_t *);
 
 /* Return (the id of) the innermost externally visible save object. */
-ulong alloc_save_current_id(P1(const gs_dual_memory_t *));
-alloc_save_t *alloc_save_current(P1(const gs_dual_memory_t *));
+ulong alloc_save_current_id(const gs_dual_memory_t *);
+alloc_save_t *alloc_save_current(const gs_dual_memory_t *);
 
 /* Check whether a pointer refers to an object allocated since a given save. */
-bool alloc_is_since_save(P2(const void *, const alloc_save_t *));
+bool alloc_is_since_save(const void *, const alloc_save_t *);
 
 /* Check whether a name was created since a given save. */
-bool alloc_name_is_since_save(P2(const ref *, const alloc_save_t *));
-bool alloc_name_index_is_since_save(P2(uint, const alloc_save_t *));
+bool alloc_name_is_since_save(const ref *, const alloc_save_t *);
+bool alloc_name_index_is_since_save(uint, const alloc_save_t *);
 
 /*
  * Check whether any names have been created since a given save
  * that might be released by the restore.
  */
-bool alloc_any_names_since_save(P1(const alloc_save_t *));
+bool alloc_any_names_since_save(const alloc_save_t *);
 
 /*
  * Do one step of restoring the state.  Return true if the argument
@@ -78,7 +78,7 @@ bool alloc_any_names_since_save(P1(const alloc_save_t *));
  * Assume the caller obtained the argument by calling alloc_find_save;
  * if this is the case, the operation cannot fail.
  */
-bool alloc_restore_step_in(P2(gs_dual_memory_t *, alloc_save_t *));
+bool alloc_restore_step_in(gs_dual_memory_t *, alloc_save_t *);
 /* Backward compatibility */
 #define alloc_restore_state_step(save) alloc_restore_step_in(idmemory, save)
 
@@ -88,12 +88,12 @@ bool alloc_restore_step_in(P2(gs_dual_memory_t *, alloc_save_t *));
  * by calling alloc_find_save.  Note that forgetting a save does not
  * require checking pointers for recency.
  */
-void alloc_forget_save_in(P2(gs_dual_memory_t *, alloc_save_t *));
+void alloc_forget_save_in(gs_dual_memory_t *, alloc_save_t *);
 /* Backward compatibility */
 #define alloc_forget_save(save) alloc_forget_save_in(idmemory, save)
 
 /* Release all memory -- like doing a restore "past the bottom". */
-void alloc_restore_all(P1(gs_dual_memory_t *));
+void alloc_restore_all(gs_dual_memory_t *);
 
 /* ------ Internals ------ */
 
@@ -108,9 +108,9 @@ void alloc_restore_all(P1(gs_dual_memory_t *));
  */
 
 /* Record that we are in a save. */
-void alloc_set_in_save(P1(gs_dual_memory_t *));
+void alloc_set_in_save(gs_dual_memory_t *);
 
 /* Record that we are not in a save. */
-void alloc_set_not_in_save(P1(gs_dual_memory_t *));
+void alloc_set_not_in_save(gs_dual_memory_t *);
 
 #endif /* isave_INCLUDED */

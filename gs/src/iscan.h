@@ -62,7 +62,7 @@ typedef dynamic_area *da_ptr;
 /* Define state specific to binary tokens and binary object sequences. */
 typedef struct scan_binary_state_s {
     int num_format;
-    int (*cont)(P4(i_ctx_t *, stream *, ref *, scanner_state *));
+    int (*cont)(i_ctx_t *, stream *, ref *, scanner_state *);
     ref bin_array;
     uint index;
     uint max_array_index;	/* largest legal index in objects */
@@ -117,7 +117,7 @@ extern_st(st_scanner_state);
 #define SCAN_PDF_RULES 16	/* Special PDF scanning rules used */
 				/* This is for compatibility with Adobe */
 				/* Acrobat Reader			*/
-void scanner_state_init_options(P2(scanner_state *sstate, int options));
+void scanner_state_init_options(scanner_state *sstate, int options);
 #define scanner_state_init_check(pstate, from_string, check_only)\
   scanner_state_init_options(pstate,\
 			     (from_string ? SCAN_FROM_STRING : 0) |\
@@ -134,15 +134,15 @@ void scanner_state_init_options(P2(scanner_state *sstate, int options));
 #define scan_Refill 3		/* get more input data, then call again */
 #define scan_Comment 4		/* comment, non-DSC if processing DSC */
 #define scan_DSC_Comment 5	/* DSC comment */
-int scan_token(P4(i_ctx_t *i_ctx_p, stream * s, ref * pref,
-		  scanner_state * pstate));
+int scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref,
+	       scanner_state * pstate);
 
 /*
  * Read a token from a string.  Return like scan_token, but also
  * update the string to move past the token (if no error).
  */
-int scan_string_token_options(P4(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
-				 int options));
+int scan_string_token_options(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
+			      int options);
 #define scan_string_token(i_ctx_p, pstr, pref)\
   scan_string_token_options(i_ctx_p, pstr, pref, 0)
 
@@ -151,15 +151,15 @@ int scan_string_token_options(P4(i_ctx_t *i_ctx_p, ref * pstr, ref * pref,
  * This may return o_push_estack, 0 (meaning just call scan_token again),
  * or an error code.
  */
-int scan_handle_refill(P6(i_ctx_t *i_ctx_p, const ref * fop,
-			  scanner_state * pstate, bool save, bool push_file,
-			  op_proc_t cont));
+int scan_handle_refill(i_ctx_t *i_ctx_p, const ref * fop,
+		       scanner_state * pstate, bool save, bool push_file,
+		       op_proc_t cont);
 
 /*
  * Define the procedure "hook" for parsing DSC comments.  If not NULL,
  * this procedure is called for every DSC comment seen by the scanner.
  */
-extern int (*scan_dsc_proc) (P2(const byte *, uint));
+extern int (*scan_dsc_proc) (const byte *, uint);
 
 /*
  * Define the procedure "hook" for parsing general comments.  If not NULL,
@@ -167,6 +167,6 @@ extern int (*scan_dsc_proc) (P2(const byte *, uint));
  * If both scan_dsc_proc and scan_comment_proc are set,
  * scan_comment_proc is called only for non-DSC comments.
  */
-extern int (*scan_comment_proc) (P2(const byte *, uint));
+extern int (*scan_comment_proc) (const byte *, uint);
 
 #endif /* iscan_INCLUDED */

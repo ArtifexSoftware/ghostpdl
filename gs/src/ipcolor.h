@@ -34,7 +34,7 @@ typedef struct int_pattern_s {
   gs_private_st_ref_struct(st_int_pattern, int_pattern, "int_pattern")
 
 /* Create an interpreter pattern structure. */
-int int_pattern_alloc(P3(int_pattern **ppdata, const ref *op,
-			 gs_memory_t *mem));
+int int_pattern_alloc(int_pattern **ppdata, const ref *op,
+		      gs_memory_t *mem);
 
 #endif /* ipcolor_INCLUDED */

@@ -56,20 +56,20 @@
 #define seproc eseproc(esp)
 
 /* Procedures exported by zchar.c for zchar*.c. */
-gs_text_enum_t *op_show_find(P1(i_ctx_t *));
-int op_show_setup(P2(i_ctx_t *, os_ptr));
-int op_show_enum_setup(P1(i_ctx_t *));
-int op_show_finish_setup(P4(i_ctx_t *, gs_text_enum_t *, int, op_proc_t));
-int op_show_continue(P1(i_ctx_t *));
-int op_show_continue_pop(P2(i_ctx_t *, int));
-int op_show_continue_dispatch(P3(i_ctx_t *, int, int));
-int op_show_free(P2(i_ctx_t *, int));
-void glyph_ref(P2(gs_glyph, ref *));
-int finish_stringwidth(P1(i_ctx_t *));
+gs_text_enum_t *op_show_find(i_ctx_t *);
+int op_show_setup(i_ctx_t *, os_ptr);
+int op_show_enum_setup(i_ctx_t *);
+int op_show_finish_setup(i_ctx_t *, gs_text_enum_t *, int, op_proc_t);
+int op_show_continue(i_ctx_t *);
+int op_show_continue_pop(i_ctx_t *, int);
+int op_show_continue_dispatch(i_ctx_t *, int, int);
+int op_show_free(i_ctx_t *, int);
+void glyph_ref(gs_glyph, ref *);
+int finish_stringwidth(i_ctx_t *);
 
 /* Exported by zchar.c for zcharout.c */
-bool zchar_show_width_only(P1(const gs_text_enum_t *));
-int zsetcachedevice(P1(i_ctx_t *));
-int zsetcachedevice2(P1(i_ctx_t *));
+bool zchar_show_width_only(const gs_text_enum_t *);
+int zsetcachedevice(i_ctx_t *);
+int zsetcachedevice2(i_ctx_t *);
 
 #endif /* ichar_INCLUDED */

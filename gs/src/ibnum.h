@@ -67,15 +67,15 @@ extern const byte enc_num_bytes[];	/* in ibnum.c */
   (enc_num_bytes[(format) >> 4])
 
 /* Read from an array or encoded number string. */
-int num_array_format(P1(const ref *));	/* returns format or error */
-uint num_array_size(P2(const ref *, int));
-int num_array_get(P4(const ref *, int, uint, ref *));
+int num_array_format(const ref *);	/* returns format or error */
+uint num_array_size(const ref *, int);
+int num_array_get(const ref *, int, uint, ref *);
 
 /* Decode a number from a string with appropriate byte swapping. */
-int sdecode_number(P3(const byte *, int, ref *));
-int sdecodeshort(P2(const byte *, int));
-uint sdecodeushort(P2(const byte *, int));
-long sdecodelong(P2(const byte *, int));
-float sdecodefloat(P2(const byte *, int));
+int sdecode_number(const byte *, int, ref *);
+int sdecodeshort(const byte *, int);
+uint sdecodeushort(const byte *, int);
+long sdecodelong(const byte *, int);
+float sdecodefloat(const byte *, int);
 
 #endif /* ibnum_INCLUDED */
