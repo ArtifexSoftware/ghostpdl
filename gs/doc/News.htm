@@ -58,10 +58,12 @@ overview</a>.
 <h3><a name="Version8.12"></a>Version 8.12 (2003-12-08)</h3>
 
 <p>
-This is an unreleased development snapshot.
+This is the second stable release in the 8.1x series. It contains numerous bug 
+fixes; other highlights include improved font rendering and colorspace handling,
+and unicode text support for high-level devices.
 
 <p>
-The following <a href="http://bugs.ghostscript.com/">bugs.ghostscript.com</a> numbers were open at
+The following <a href="http://bugs.ghostscript.com/">bug</a> numbers were open at
 the time of the last release:
 <blockquote>
 405501,
@@ -227,14 +229,16 @@ the time of the last release:
 687191.
 </blockquote>
 
-<h3><a name="8.11_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="8.12_Incompatible_changes"></a>Incompatible changes</h3>
 
-<p>The mechanism for locating resources has changed since 8.00. See the <a
-href="Use.htm#Finding_files">usage documentation</a> for details of the new mechanism.
+<p>Type 1 font hints are no longer applied to charpaths. This is generally an improvement,
+but will generate a different outline from previously.
 
-<p>Ghostscript now runs in save level 1 by default, which has changed since
-8.10.  Jobservers will need to use the -dNOOUTERSAVE option to restore the
-old behavior.
+<p>A new virtual functions <tt>can_handle_hl_color()</tt> is required for high-level 
+devices derived from <tt>gx_device_vector</tt>.
+
+<p>The library client api now propagates <tt>device_close</tt> errors to the return 
+value of <tt>gsapi_exit()</tt>.
 
 <!-- [2.0 end contents] ==================================================== -->
 
