@@ -1,4 +1,4 @@
-/* Copyright (C) 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -47,6 +47,15 @@ cs_proc_install_cspace(gx_install_CIEABC);
 cs_proc_restrict_color(gx_restrict_CIEA);
 cs_proc_install_cspace(gx_install_CIEA);
 
+/*
+ * Initialize (just enough of) an imager state so that "concretizing" colors
+ * using this imager state will do only the CIE->XYZ mapping.  This is a
+ * semi-hack for the PDF writer.
+ */
+extern	int	gx_cie_to_xyz_alloc(gs_imager_state **,
+				    const gs_color_space *, gs_memory_t *);
+extern	void	gx_cie_to_xyz_free(gs_imager_state *);
+
 /* Defined in gsciemap.c */
 
 /*
@@ -70,13 +79,27 @@ cs_proc_install_cspace(gx_install_CIEA);
     END
 
 /*
- * Do the common remapping operation for CIE color spaces. Returns the numver
- * of components of the concrete color space (3 if RGB, 4 if CMYK).
+ * Do the common remapping operation for CIE color spaces. Returns the
+ * number of components of the concrete color space (3 if RGB, 4 if CMYK).
+ * This simply calls a procedure variable stored in the joint caches
+ * structure.
  */
 extern  int     gx_cie_remap_finish( P4( cie_cached_vector3,
 		       	                 frac *,
                                          const gs_imager_state *,
 				         const gs_color_space * ) );
+/* Make sure the prototype matches the one defined in gscie.h. */
+extern GX_CIE_REMAP_FINISH_PROC(gx_cie_remap_finish);
+
+/*
+ * Define the real remap_finish procedure.  Except for CIE->XYZ mapping,
+ * this is what is stored in the remap_finish member of the joint caches.
+ */
+extern GX_CIE_REMAP_FINISH_PROC(gx_cie_real_remap_finish);
+/*
+ * Define the remap_finish procedure for CIE->XYZ mapping.
+ */
+extern GX_CIE_REMAP_FINISH_PROC(gx_cie_xyz_remap_finish);
 
 cs_proc_concretize_color(gx_concretize_CIEDEFG);
 cs_proc_concretize_color(gx_concretize_CIEDEF);

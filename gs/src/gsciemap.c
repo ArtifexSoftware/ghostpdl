@@ -40,6 +40,18 @@
   ((pcache)->vecs.values[LOOKUP_INDEX(vin, pcache, 0)])
 
 
+/*
+ * Call the remap_finish procedure in the structure without going through
+ * the extra level of procedure.
+ */
+#ifdef DEBUG
+#  define GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs)\
+    gx_cie_remap_finish(vec3, pconc, pis, pcs)
+#else
+#  define GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs)\
+    ((pis)->cie_joint_caches->remap_finish(vec3, pconc, pis, pcs))
+#endif
+
 /* Forward references */
 private void cie_lookup_mult3(P2(cie_cached_vector3 *,
 				 const gx_cie_vector_cache *));
@@ -117,7 +129,7 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
-    gx_cie_remap_finish(vec3, pconc, pis, pcs);
+    GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
 }
 
@@ -171,7 +183,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
-    gx_cie_remap_finish(vec3, pconc, pis, pcs);
+    GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
 }
 #undef SCALE_TO_RANGE
@@ -202,7 +214,7 @@ gx_remap_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
     }
-    switch (gx_cie_remap_finish(vec3 /* LMN */, conc, pis, pcs)) {
+    switch (GX_CIE_REMAP_FINISH(vec3 /* LMN */, conc, pis, pcs)) {
 	case 4:
 	    if_debug4('c', "[c]=CMYK [%g %g %g %g]\n",
 		      frac2float(conc[0]), frac2float(conc[1]),
@@ -241,7 +253,7 @@ gx_concretize_CIEABC(const gs_client_color * pc, const gs_color_space * pcs,
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
 			"Decode/MatrixABC");
-    gx_cie_remap_finish(vec3, pconc, pis, pcs);
+    GX_CIE_REMAP_FINISH(vec3, pconc, pis, pcs);
     return 0;
 }
 
@@ -262,16 +274,26 @@ gx_concretize_CIEA(const gs_client_color * pc, const gs_color_space * pcs,
 	vlmn = LOOKUP_VALUE(a, &pcie->caches.DecodeA);
     else
 	vlmn.u = vlmn.v = vlmn.w = a;
-    gx_cie_remap_finish(vlmn, pconc, pis, pcs);
+    GX_CIE_REMAP_FINISH(vlmn, pconc, pis, pcs);
     return 0;
 }
 
-/* Common rendering code. */
+/* Call the remap_finish procedure in the joint_caches structure. */
+int
+gx_cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
+		    const gs_imager_state * pis,
+		    const gs_color_space *pcs)
+{
+    return pis->cie_joint_caches->remap_finish(vec3, pconc, pis, pcs);
+}
+
+/* Finish remapping a CIEBased color. */
 /* Return 3 if RGB, 4 if CMYK. */
 /* this procedure is exported for the benefit of gsicc.c */
 int
-gx_cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
-      	            const gs_imager_state * pis, const gs_color_space *pcs)
+gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
+			 const gs_imager_state * pis,
+			 const gs_color_space *pcs)
 {
     const gs_cie_render *pcrd = pis->cie_render;
     const gx_cie_joint_caches *pjc = pis->cie_joint_caches;
@@ -413,6 +435,38 @@ gx_cie_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 #undef RT_LOOKUP
 	return m;
     }
+}
+
+/*
+ * Finish "remapping" a CIEBased color only to the XYZ intermediate values.
+ * Note that we can't currently represent values outside the range [0..1]:
+ * this is a bug that we will have to address someday.
+ */
+private frac
+float2frac_clamp(floatp x)
+{
+    return float2frac((x <= 0 ? 0 : x >= 1 ? 1 : x));
+}
+int
+gx_cie_xyz_remap_finish(cie_cached_vector3 vec3, frac * pconc,
+			const gs_imager_state * pis,
+			const gs_color_space *pcs)
+{
+    const gx_cie_joint_caches *pjc = pis->cie_joint_caches;
+
+    /*
+     * All the steps through DecodeABC/MatrixABC have been applied, i.e.,
+     * vec3 is LMN values.  Just apply DecodeLMN/MatrixLMN.
+     */
+    if (!pjc->skipDecodeLMN)
+	cie_lookup_map3(&vec3 /* LMN => XYZ */, &pjc->DecodeLMN[0],
+			"Decode/MatrixLMN");
+
+
+    pconc[0] = float2frac_clamp(cie_cached2float(vec3.u));
+    pconc[1] = float2frac_clamp(cie_cached2float(vec3.v));
+    pconc[2] = float2frac_clamp(cie_cached2float(vec3.w));
+    return 3;
 }
 
 /* Look up 3 values in a cache, with cached post-multiplication. */

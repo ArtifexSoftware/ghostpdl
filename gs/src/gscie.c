@@ -51,6 +51,7 @@ private void cie_matrix_init(P1(gs_matrix3 *));
 
 /* Allocator structure types */
 private_st_joint_caches();
+extern_st(st_imager_state);
 
 #define RESTRICTED_INDEX(v, n, itemp)\
   ((uint)(itemp = (int)(v)) >= (n) ?\
@@ -1105,6 +1106,7 @@ cie_joint_caches_complete(gx_cie_joint_caches * pjc,
     gs_matrix3 MatrixLMN_PQR;
     int j;
 
+    pjc->remap_finish = gx_cie_real_remap_finish;
     /*
      * We number the pipeline steps as follows:
      *   1 - DecodeABC/MatrixABC
@@ -1181,6 +1183,70 @@ cie_joint_caches_complete(gx_cie_joint_caches * pjc,
 	pjc->skipDecodeLMN = false;
 	pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
     }
+}
+
+/*
+ * Initialize (just enough of) an imager state so that "concretizing" colors
+ * using this imager state will do only the CIE->XYZ mapping.  This is a
+ * semi-hack for the PDF writer.
+ */
+int
+gx_cie_to_xyz_alloc(gs_imager_state **ppis, const gs_color_space *pcs,
+		    gs_memory_t *mem)
+{
+    /*
+     * In addition to the imager state itself, we need the joint caches.
+     */
+    gs_imager_state *pis =
+	gs_alloc_struct(mem, gs_imager_state, &st_imager_state,
+			"gx_cie_to_xyz_alloc(imager state)");
+    gx_cie_joint_caches *pjc;
+    const gs_cie_abc *pabc;
+    const gs_cie_common *pcie = cie_cs_common_abc(pcs, &pabc);
+    int j;
+
+    if (pis == 0)
+	return_error(gs_error_VMerror);
+    memset(pis, 0, sizeof(*pis));	/* mostly paranoia */
+    pis->memory = mem;
+
+    pjc = gs_alloc_struct(mem, gx_cie_joint_caches, &st_joint_caches,
+			  "gx_cie_to_xyz_free(joint caches)");
+    if (pjc == 0) {
+	gs_free_object(mem, pis, "gx_cie_to_xyz_alloc(imager state)");
+	return_error(gs_error_VMerror);
+    }
+
+    /*
+     * Perform an abbreviated version of cie_joint_caches_complete.
+     * Don't bother with any optimizations.
+     */
+    for (j = 0; j < 3; j++) {
+	cie_cache_mult(&pjc->DecodeLMN[j], &pcie->MatrixLMN.cu + j,
+		       &pcie->caches.DecodeLMN[j].floats);
+    }
+    pjc->skipDecodeLMN = false;
+    pjc->skipDecodeABC = pabc != 0 && pabc->caches.skipABC;
+    /* Mark the joint caches as completed. */
+    pjc->remap_finish = gx_cie_xyz_remap_finish;
+    pjc->status = CIE_JC_STATUS_COMPLETED;
+    pis->cie_joint_caches = pjc;
+    /*
+     * Set a non-zero CRD to pacify CIE_CHECK_RENDERING.  (It will never
+     * actually be referenced, aside from the zero test.)
+     */
+    pis->cie_render = (void *)~0;
+    *ppis = pis;
+    return 0;
+}
+void
+gx_cie_to_xyz_free(gs_imager_state *pis)
+{
+    gs_memory_t *mem = pis->memory;
+
+    gs_free_object(mem, pis->cie_joint_caches,
+		   "gx_cie_to_xyz_free(joint caches)");
+    gs_free_object(mem, pis, "gx_cie_to_xyz_free(imager state)");
 }
 
 /* ================ Utilities ================ */

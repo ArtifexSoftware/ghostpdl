@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998, 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -565,6 +565,16 @@ typedef enum {
     CIE_JC_STATUS_COMPLETED
 } cie_joint_caches_status_t;
 
+/*
+ * Define the procedure type for finishing CIE color mapping.  This is
+ * replaced by a special procedure to support CIE->XYZ mapping.
+ * It returns the number of components of the concrete color space
+ * (3 if RGB, 4 if CMYK).
+ */
+#define GX_CIE_REMAP_FINISH_PROC(proc)\
+  int proc(cie_cached_vector3 vec3, frac *pconc,\
+	   const gs_imager_state *pis, const gs_color_space *pcs)
+
 typedef struct gx_cie_joint_caches_s {
     /*
      * The first 4 members are the "key" in the cache.  They behave as
@@ -589,11 +599,13 @@ typedef struct gx_cie_joint_caches_s {
      * caches.  If it weren't for that, setcolorspace and setcolorrendering
      * could simply invalidate the caches.
      */
+
     gs_id cspace_id;
     gs_id render_id;
     cie_joint_caches_status_t id_status;
     cie_joint_caches_status_t status;
     rc_header rc;
+    GX_CIE_REMAP_FINISH_PROC((*remap_finish));
     bool skipDecodeABC;
     bool skipDecodeLMN;
     gx_cie_vector_cache DecodeLMN[3];	/* mult. by dLMN_PQR */
