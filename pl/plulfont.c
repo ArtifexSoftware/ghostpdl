@@ -17,6 +17,7 @@
 #include "string_.h"
 #include "gsmemory.h"
 #include "gstypes.h"
+#include "gpgetenv.h"
 #include "plfont.h"
 #include "pldict.h"
 #include "pllfont.h"
@@ -30,20 +31,6 @@ SW16 trace_sw = 0;
 IF_STATE IFS;
 PIF_STATE pIFS = &IFS;
 
-/*
- * NB NB NB The root of the directory tree containing UFST fonts, plugins, and symbol
- * set files. Adjust this as required on your system.
- * Also note this conditional compilation flag is not a very good solution, but it is
- * a #define required by the agfa system and needs only be defined for the UFST specific
- * files.
- */
-
-#ifdef MSVC
-#define UFST_DATA_ROOT  "..\\..\\pl\\agfa\\fontdata"
-#else
-#define UFST_DATA_ROOT 
-#define UFST_DATA_ROOT  "../../pl/agfa/fontdata/"
-#endif
  /*
  * Paths for the statically loadded data. Since only MicroType font collection
  * objects are used for built-in fonts, all of these names are prefaced by fc.
@@ -61,12 +48,12 @@ PIF_STATE pIFS = &IFS;
 #ifdef MSVC
 private const UB8           fcNmPl[] =    "\\mtfonts\\pcl45\\mt1\\plug___f.fco";
 private const UB8 *const    fcNmAry[] = { "\\mtfonts\\pcl45\\mt1\\pcl____f.fco",
-                                          "\\mtfonts\\pcl45\\mt1\\wd_____f.fco" };
+                                          "\\mtfonts\\pcl45\\mt1\\wd_____g.fco" };
 #else
 
 private const UB8           fcNmPl[] =    "mtfonts/pcl45/mt1/plug___f.fco";
 private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____f.fco",
-                                          "mtfonts/pcl45/mt1/wd_____f.fco" };
+                                          "mtfonts/pcl45/mt1/wd_____g.fco" };
 #endif
 
 /* GLOBAL Warning! */
@@ -77,12 +64,18 @@ private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____f.fco",
 private SW16  fcHndlPl = -1;
 private SW16  fcHndlAry[16];
 
-/*
- * Paths for dynamically loaded files. Currently, all such files are kept in
- * the same place. Adjust the definition of UFST_DATA
- */
-private const SB8   ufstPath[] = UFST_DATA_ROOT "support";
-private const SB8   typePath[] = UFST_DATA_ROOT "support";
+private int
+pl_ufst_root_dir(char *pathname, int pathlen)
+{
+ 
+    /* get the ufst root directory */
+    if ( gp_getenv( "PCLFONTSOURCE", pathname, &pathlen) != 0 ) {
+        dprintf( "UFST configuration error.  Set environment variable PCLFONTSOURCE\n" );
+        dprintf( "to the directory containing the ufst fontdata directory\n" );
+        return -1;
+    } else
+        return 0;
+}
 
 /*
  * The pathnames parameter is ignored for now - the name of the font collection
@@ -97,6 +90,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     IFCONFIG            config_block;
     byte                key[3];
     UB8                 pthnm[1024];
+    UB8                 ufst_root_dir[1024];
 
     typedef struct font_resident {
 	const char full_font_name[40];    /* name entry 4 in truetype fonts */
@@ -285,9 +279,13 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
 #define MAX_OPEN_LIBRARIES  5   /* NB */
 #define BITMAP_WIDTH        1   /* must be 1, 2, 4 or 8 */
+    if ( pl_ufst_root_dir(ufst_root_dir, sizeof(ufst_root_dir)) < 0 )
+        return false;
 
-    strcpy(config_block.ufstPath, ufstPath);
-    strcpy(config_block.typePath, typePath);
+    strcpy(config_block.ufstPath, ufst_root_dir);
+    strcat(config_block.ufstPath, "support");
+    strcpy(config_block.typePath, ufst_root_dir);
+    strcat(config_block.typePath, "support");
     config_block.num_files = MAX_OPEN_LIBRARIES;  /* max open library files */
     config_block.bit_map_width = BITMAP_WIDTH;    /* bitmap width 1, 2 or 4 */
 
@@ -306,7 +304,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     }
 
     /* open and register the plug-in font collection object */
-    strcpy((char *)pthnm, UFST_DATA_ROOT);
+    strcpy((char *)pthnm, ufst_root_dir);
     strcat((char *)pthnm, fcNmPl);
     if ((status = CGIFfco_Open(FSA pthnm,(LPSW16)&fcHndlPl)) != 0) {
         dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
@@ -329,7 +327,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
 
     for (k = 0; k < sizeof(fcNmAry) / sizeof(fcNmAry[0]); k++) {
 
-        strcpy((char *)pthnm, UFST_DATA_ROOT);
+        strcpy((char *)pthnm, ufst_root_dir);
         strcat((char *)pthnm, (const char *)fcNmAry[k]);
         if ((status = CGIFfco_Open(FSA pthnm, &fcHndlAry[k])) != 0) {
             dprintf2("CGIFfco_Open error %d for %s\n", status, pthnm);
