@@ -421,13 +421,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      * pixel writing must be avoided, and the trapezoid algorithm otherwise.
      * However, we always use the trapezoid algorithm for rectangles.
      */
-#define DOUBLE_WRITE_OK() lop_is_idempotent(lop)
     fill_by_trapezoids =
-	(pseudo_rasterization || !gx_path_has_curves(ppath) || params->flatness >= 1.0);
-    if (is_spotan_device(dev))
-	fill_by_trapezoids = true;
-    if (fill_by_trapezoids && !DOUBLE_WRITE_OK()) {
-	/* Avoid filling rectangles by scan line. */
+	(pseudo_rasterization || !gx_path_has_curves(ppath) || 
+	 params->flatness >= 1.0 || fo.is_spotan);
+    if (fill_by_trapezoids && !fo.is_spotan && !lop_is_idempotent(lop)) {
 	gs_fixed_rect rbox;
 
 	if (gx_path_is_rectangular(ppath, &rbox)) {
@@ -439,9 +436,9 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    return gx_fill_rectangle_device_rop(x0, y0, x1 - x0, y1 - y0,
 						pdevc, dev, lop);
 	}
-	fill_by_trapezoids = false; /* avoid double write */
+	if (fo.adjust_left | fo.adjust_right | fo.adjust_below | fo.adjust_above)
+	    fill_by_trapezoids = false; /* avoid double writing pixels */
     }
-#undef DOUBLE_WRITE_OK
     gx_path_init_local(&ffpath, ppath->memory);
     if (!gx_path_has_curves(ppath))	/* don't need to flatten */
 	pfpath = ppath;
