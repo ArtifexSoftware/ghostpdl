@@ -747,23 +747,14 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
  */
 
 /* todo :
-   1. is_curve_small must use fixed_half or the like, rather than fixed_flat.
+   - 483-05.ps paints some pixels with a wrong color.
 
-   2. is_xy_monotonic_by_v appears wrong.
-      The right condition of a non-overlapping area boundary
-      is dXY/du parallel to dXU/dV.
+   - Maybe the smoothness threshold isn't correct.
+     483-05.ps renders some unsmoothly, need to investigate why so.
 
-   3. 483-05.ps paints some pixels with a wrong color.
+   - Optimize intersection_of_small_bars - see 'fixme' in there.
 
-   6. Maybe the smoothness threshold isn't correct.
-      483-05.ps renders some unsmoothly, need to investigate why so.
-
-   4. Optimize intersection_of_small_bars - see 'fixme' in there.
-
-   5. Optimize wedge_trap_decompose - see 'fixme' in there.
-   
-   6. A general optimization isn't done yet.
-      Tune thresholds.
+   - A general optimization isn't done yet. Tune thresholds.
  */
 
 /* fixme :
@@ -931,6 +922,35 @@ intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, in
     return intersection_of_big_bars(q, i0, i1, i2, i3, ry, ey);
 }
 
+private inline void
+make_trapezoid(const gs_fixed_point q[4], 
+	int vi0, int vi1, int vi2, int vi3, fixed ybot, fixed ytop, 
+	bool swap_axes, bool orient, gs_fixed_edge *le, gs_fixed_edge *re)
+{
+    if (!orient) {
+	le->start = q[vi0];
+	le->end = q[vi1];
+	re->start = q[vi2];
+	re->end = q[vi3];
+    } else {
+	le->start = q[vi2];
+	le->end = q[vi3];
+	re->start = q[vi0];
+	re->end = q[vi1];
+    }
+    if (swap_axes) {
+	/*  Sinse the rasterizer algorithm assumes semi-open interval
+	    when computing pixel coverage, we should expand
+	    the right side of the area. Otherwise a dropout can happen :
+	    if the left neighbour is painted with !swap_axes,
+	    the left side of this area appears to be the left side 
+	    of the neighbour area, and the side is not included
+	    into both areas.
+	 */
+	re->start.x += fixed_epsilon;
+	re->end.x += fixed_epsilon;
+    }
+}
 
 private inline int 
 gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4], 
@@ -941,33 +961,11 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 
     if (ybot > ytop)
 	return 0;
-    if (!orient) {
-	le.start = q[vi0];
-	le.end = q[vi1];
-	re.start = q[vi2];
-	re.end = q[vi3];
-    } else {
-	le.start = q[vi2];
-	le.end = q[vi3];
-	re.start = q[vi0];
-	re.end = q[vi1];
-    }
 #   if NEW_TENSOR_SHADING_DEBUG
     if (dbg_nofill)
 	return 0;
 #   endif
-    if (swap_axes) {
-	/*  Sinse the rasterizer algorithm assumes semi-open interval
-	    when computing pixel coverage, we should expand
-	    the right side of the area. Otherwise a dropout can happen :
-	    if the left neighbour is painted with !swap_axes,
-	    the left side of this area appears to be the left side 
-	    of the neighbour area, and the side is not included
-	    into both areas.
-	 */
-	re.start.x += fixed_epsilon;
-	re.end.x += fixed_epsilon;
-    }
+    make_trapezoid(q, vi0, vi1, vi2, vi3, ybot, ytop, swap_axes, orient, &le, &re);
     return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
 	    &le, &re, ybot, ytop, swap_axes, pdevc, pfs->pis->log_op);
 }
@@ -1010,80 +1008,112 @@ is_color_monotonic(const patch_fill_state_t * pfs, const patch_color_t *c0, cons
     return gs_function_is_monotonic(pfs->Function, &c0->t, &c1->t, EFFORT_MODERATE);
 }
 
-private int
-constant_color_wedge_trap(patch_fill_state_t *pfs, 
-	const gs_fixed_point q[4], fixed ybot, fixed ytop, const patch_color_t *c, bool swap_axes)
-{
-    gx_device_color dc;
-    fixed ry, ey;
-    int code;
-    patch_color_t c1 = *c;
-    fixed dx1 = q[1].x - q[0].x, dy1 = q[1].y - q[0].y;
-    fixed dx2 = q[2].x - q[0].x, dy2 = q[2].y - q[0].y;
-    bool orient;
-
-#if 0
-    if (!swap_axes)
-	vd_quad(q[0].x, q[0].y, q[1].x, q[1].y, q[3].x, q[3].y, q[2].x, q[2].y, 0, RGB(255, 0, 0));
-    else
-	vd_quad(q[0].y, q[0].x, q[1].y, q[1].x, q[3].y, q[3].x, q[2].y, q[2].x, 0, RGB(255, 0, 0));
-#endif
-    patch_resolve_color(&c1, pfs);
-    patch_color_to_device_color(pfs, &c1, &dc);
-    if (intersection_of_big_bars(q, 0, 1, 2, 3, &ry, &ey)) {
-	orient = ((int64_t)dx1 * dy2 > (int64_t)dy1 * dx2);
-	code = gx_shade_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ry + ey, swap_axes, &dc, orient);
-	if (code < 0)
-	    return code;
-	return gx_shade_trapezoid(pfs, q, 2, 3, 0, 1, ry, ytop, swap_axes, &dc, orient);
-    } else if ((int64_t)dx1 * dy2 != (int64_t)dy1 * dx2) {
-	orient = ((int64_t)dx1 * dy2 > (int64_t)dy1 * dx2);
-	return gx_shade_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ytop, swap_axes, &dc, orient);
-    } else {
-	fixed dx3 = q[3].x - q[0].x, dy3 = q[3].y - q[0].y;
-
-	orient = ((int64_t)dx1 * dy3 > (int64_t)dy1 * dx3);
-	return gx_shade_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ytop, swap_axes, &dc, orient);
-    }
-}
-
 private inline bool
 covers_pixel_centers(fixed ybot, fixed ytop)
 {
     return fixed_pixround(ybot) < fixed_pixround(ytop);
 }
 
-private int
-wedge_trap_decompose(patch_fill_state_t *pfs, gs_fixed_point p[4],
-	fixed ybot, fixed ytop, const patch_color_t *c0, const patch_color_t *c1, bool swap_axes)
+private inline int
+constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
+	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c)
 {
-    patch_color_t c;
+    patch_color_t c1 = *c;
+    gx_device_color dc;
+
+    patch_resolve_color(&c1, pfs);
+    patch_color_to_device_color(pfs, &c1, &dc);
+    return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+	le, re, ybot, ytop, swap_axes, &dc, pfs->pis->log_op);
+}
+
+private int
+decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
+	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, const patch_color_t *c1)
+{
     int code;
     const fixed max_small_coord = (fixed)sqrt(max_fixed);
+    patch_color_t c;
 
-    if (!pfs->vectorization && !covers_pixel_centers(ybot, ytop))
-	return 0;
-    /* fixme : apply the Y subdivision after the trapezoid orientation analyzis 
-       in constant_color_wedge_trap. */
     /* Use the recursive decomposition due to is_color_monotonic
        based on fn_is_monotonic_proc_t is_monotonic, 
        which applies to intervals. */
+    /* Assuming a very narrow trapezoid - ignore the transversal color change. */
     patch_interpolate_color(&c, c0, c1, pfs, 0.5);
     if (ytop - ybot < pfs->fixed_flat) /* Prevent an infinite color decomposition. */
-	return constant_color_wedge_trap(pfs, p, ybot, ytop, &c, swap_axes);
+	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
     else if (!is_color_monotonic(pfs, c0, c1) || is_color_span_big(pfs, c0, c1) || 
 		ytop - ybot > max_small_coord) {
 	fixed y = (ybot + ytop) / 2;
     
-	code = wedge_trap_decompose(pfs, p, ybot, y, c0, &c, swap_axes);
+	code = decompose_linear_color(pfs, le, re, ybot, y, swap_axes, c0, &c);
 	if (code < 0)
 	    return code;
-	return wedge_trap_decompose(pfs, p, y, ytop, &c, c1, swap_axes);
+	return decompose_linear_color(pfs, le, re, y, ytop, swap_axes, &c, c1);
     } else
-	return constant_color_wedge_trap(pfs, p, ybot, ytop, &c, swap_axes);
+	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
+}
+
+private inline int 
+linear_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_point q[4], int i0, int i1, int i2, int i3, 
+		fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, const patch_color_t *c1, 
+		bool orient)
+{
+    /* Assuming a very narrow trapezoid - ignore the transversal color change. */
+    gs_fixed_edge le, re;
+
+#   if NEW_TENSOR_SHADING_DEBUG
+    if (dbg_nofill)
+	return 0;
+#   endif
+    make_trapezoid(q, i0, i1, i2, i3, ybot, ytop, swap_axes, orient, &le, &re);
+    return decompose_linear_color(pfs, &le, &re, ybot, ytop, swap_axes, c0, c1);
 }
 
 private int
+wedge_trap_decompose(patch_fill_state_t *pfs, gs_fixed_point q[4],
+	fixed ybot, fixed ytop, const patch_color_t *c0, const patch_color_t *c1, bool swap_axes)
+{
+    /* Assuming a very narrow trapezoid - ignore the transversal color change. */
+    patch_color_t c;
+    fixed ry, ey;
+    int code;
+    fixed dx1, dy1, dx2, dy2;
+    bool orient;
+
+    if (!pfs->vectorization && !covers_pixel_centers(ybot, ytop))
+	return 0;
+    if (ybot == ytop)
+	return 0;
+    dx1 = q[1].x - q[0].x, dy1 = q[1].y - q[0].y;
+    dx2 = q[2].x - q[0].x, dy2 = q[2].y - q[0].y;
+#if 0
+    if (!swap_axes)
+	vd_quad(q[0].x, q[0].y, q[1].x, q[1].y, q[3].x, q[3].y, q[2].x, q[2].y, 0, RGB(255, 0, 0));
+    else
+	vd_quad(q[0].y, q[0].x, q[1].y, q[1].x, q[3].y, q[3].x, q[2].y, q[2].x, 0, RGB(255, 0, 0));
+#endif
+    if (intersection_of_big_bars(q, 0, 1, 2, 3, &ry, &ey)) {
+	double a = (double)(ry - ybot) / (ytop - ybot); /* Ignore ey since it is small. */
+
+	patch_interpolate_color(&c, c0, c1, pfs, a);
+	orient = ((int64_t)dx1 * dy2 > (int64_t)dy1 * dx2);
+	code = linear_color_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ry + ey, swap_axes, c0, &c, orient);
+	if (code < 0)
+	    return code;
+	return linear_color_trapezoid(pfs, q, 2, 3, 0, 1, ry, ytop, swap_axes, &c, c1, orient);
+    } else if ((int64_t)dx1 * dy2 != (int64_t)dy1 * dx2) {
+	orient = ((int64_t)dx1 * dy2 > (int64_t)dy1 * dx2);
+	return linear_color_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ytop, swap_axes, c0, c1, orient);
+    } else {
+	fixed dx3 = q[3].x - q[0].x, dy3 = q[3].y - q[0].y;
+
+	orient = ((int64_t)dx1 * dy3 > (int64_t)dy1 * dx3);
+	return linear_color_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ytop, swap_axes, c0, c1, orient);
+    }
+}
+
+private inline int
 fill_wedge_trap(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const gs_fixed_point q[2], const patch_color_t *c0, const patch_color_t *c1, 
 	    bool swap_axes)
@@ -1822,44 +1852,89 @@ is_curve_y_monotonic(const gs_fixed_point *pole, int pole_step)
 	    pole[2 * pole_step].y >= pole[3 * pole_step].y);
 }
 
+private inline bool eqs(int a, int b)
+{   /* Equal signs. Assuming -1, 0, 1 only. */
+    return a * b < 0;
+}
+
+private inline int
+vector_pair_orientation(const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *p2)
+{   fixed dx1 = p1->x - p0->x, dy1 = p1->y - p0->y;
+    fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
+    int64_t vp = dx1 * dy1 - dy1 * dx2;
+
+    return (vp > 0 ? 1 : vp < 0 ? -1 : 0);
+}
+
 private inline bool
-is_xy_monotonic_by_v(const tensor_patch *p)
-{   /* true = monotonic, false = don't know. */
-    if (!is_curve_x_monotonic(&p->pole[0][0], 4))
+is_bended(const tensor_patch *p)
+{   
+    int sign = vector_pair_orientation(&p->pole[0][0], &p->pole[0][1], &p->pole[1][0]);
+
+    if (eqs(sign, vector_pair_orientation(&p->pole[0][1], &p->pole[0][2], &p->pole[1][1])))
 	return false;
-    if (!is_curve_x_monotonic(&p->pole[0][1], 4))
+    if (eqs(sign, vector_pair_orientation(&p->pole[0][2], &p->pole[0][3], &p->pole[1][2])))
 	return false;
-    if (!is_curve_x_monotonic(&p->pole[0][2], 4))
+    if (eqs(sign, -vector_pair_orientation(&p->pole[0][3], &p->pole[0][2], &p->pole[1][3])))
 	return false;
-    if (!is_curve_x_monotonic(&p->pole[0][3], 4))
+
+    if (eqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
 	return false;
-    if (!is_curve_y_monotonic(&p->pole[0][0], 4))
+    if (eqs(sign, vector_pair_orientation(&p->pole[1][1], &p->pole[1][2], &p->pole[2][1])))
 	return false;
-    if (!is_curve_y_monotonic(&p->pole[0][1], 4))
+    if (eqs(sign, vector_pair_orientation(&p->pole[1][2], &p->pole[1][3], &p->pole[2][2])))
 	return false;
-    if (!is_curve_y_monotonic(&p->pole[0][2], 4))
+    if (eqs(sign, -vector_pair_orientation(&p->pole[1][3], &p->pole[1][2], &p->pole[2][3])))
 	return false;
-    if (!is_curve_y_monotonic(&p->pole[0][3], 4))
+
+    if (eqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
+	return false;
+    if (eqs(sign, vector_pair_orientation(&p->pole[2][1], &p->pole[2][2], &p->pole[3][1])))
+	return false;
+    if (eqs(sign, vector_pair_orientation(&p->pole[2][2], &p->pole[2][3], &p->pole[3][2])))
+	return false;
+    if (eqs(sign, -vector_pair_orientation(&p->pole[2][3], &p->pole[2][2], &p->pole[3][3])))
+	return false;
+
+    if (eqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+	return false;
+    if (eqs(sign, -vector_pair_orientation(&p->pole[3][1], &p->pole[3][2], &p->pole[2][1])))
+	return false;
+    if (eqs(sign, -vector_pair_orientation(&p->pole[3][2], &p->pole[3][3], &p->pole[2][2])))
+	return false;
+    if (eqs(sign, vector_pair_orientation(&p->pole[3][3], &p->pole[3][2], &p->pole[2][3])))
 	return false;
     return true;
 }
 
 private inline bool
 is_curve_x_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
-{   /* true = monotonic, false = don't know. */
-    return any_abs(pole[0 * pole_step].x - pole[1 * pole_step].x) < fixed_flat &&
-	   any_abs(pole[1 * pole_step].x - pole[2 * pole_step].x) < fixed_flat &&
-	   any_abs(pole[2 * pole_step].x - pole[3 * pole_step].x) < fixed_flat &&
-	   any_abs(pole[0 * pole_step].x - pole[3 * pole_step].x) < fixed_flat;
+{   /* Is curve within a single pixel, or smaller than half pixel ? */
+    fixed xmin0 = min(pole[0 * pole_step].x, pole[1 * pole_step].x);
+    fixed xmin1 = min(pole[2 * pole_step].x, pole[3 * pole_step].x);
+    fixed xmin =  min(xmin0, xmin1);
+    fixed xmax0 = max(pole[0 * pole_step].x, pole[1 * pole_step].x);
+    fixed xmax1 = max(pole[2 * pole_step].x, pole[3 * pole_step].x);
+    fixed xmax =  max(xmax0, xmax1);
+
+    if (fixed_floor(xmin) == fixed_ceiling(xmax))
+	return true;
+    return xmax - xmin < fixed_half;
 }
 
 private inline bool
 is_curve_y_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
-{   /* true = monotonic, false = don't know. */
-    return any_abs(pole[0 * pole_step].y - pole[1 * pole_step].y) < fixed_flat &&
-	   any_abs(pole[1 * pole_step].y - pole[2 * pole_step].y) < fixed_flat &&
-	   any_abs(pole[2 * pole_step].y - pole[3 * pole_step].y) < fixed_flat &&
-	   any_abs(pole[0 * pole_step].y - pole[3 * pole_step].y) < fixed_flat;
+{   /* Is curve within a single pixel, or smaller than half pixel ? */
+    fixed ymin0 = min(pole[0 * pole_step].y, pole[1 * pole_step].y);
+    fixed ymin1 = min(pole[2 * pole_step].y, pole[3 * pole_step].y);
+    fixed ymin =  min(ymin0, ymin1);
+    fixed ymax0 = max(pole[0 * pole_step].y, pole[1 * pole_step].y);
+    fixed ymax1 = max(pole[2 * pole_step].y, pole[3 * pole_step].y);
+    fixed ymax =  max(ymax0, ymax1);
+
+    if (fixed_floor(ymin) == fixed_ceiling(ymax))
+	return true;
+    return ymax - ymin < fixed_half;
 }
 
 private inline bool
@@ -1887,7 +1962,7 @@ is_patch_narrow(const patch_fill_state_t * pfs, const tensor_patch *p)
 private int 
 fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv)
 {
-    if (kv <= 1 && (is_patch_narrow(pfs, p) || is_xy_monotonic_by_v(p)))
+    if (kv <= 1 && (is_patch_narrow(pfs, p) || !is_bended(p)))
 	return fill_stripe(pfs, p);
     else {
 	tensor_patch s0, s1;
