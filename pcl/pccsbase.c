@@ -35,6 +35,9 @@
 /* GC routines */
 private_st_cs_base_t();
 
+/* a special "white" color space */
+private pcl_cs_base_t * pwhite_cs;
+
 
 /*
  * Handle min/max values for device-independent color spaces.
@@ -1115,7 +1118,13 @@ pcl_cs_base_build_white_cspace(
     gs_memory_t *           pmem
 )
 {
-    return alloc_base_cspace(ppbase, pcl_cspace_White, pmem);
+    int                     code = 0;
+
+    if (pwhite_cs == 0)
+        code = alloc_base_cspace(&pwhite_cs, pcl_cspace_White, pmem);
+    if (code >= 0)
+        pcl_cs_base_copy_from(*ppbase, pwhite_cs);
+    return code;
 }
 
 /*
@@ -1130,7 +1139,7 @@ pcl_cs_base_build_white_cspace(
  *
  * Returns > 0 if the update changed the color space, 0 if the update did not
  * change the color space, and < 0 in the event of an error. If the base color
- * space was updated, the current PCL indexed color space (which includes this
+ * Space was updated, the current PCL indexed color space (which includes this
  * color space as a base color space) must also be updated.
  */
   int
@@ -1201,4 +1210,14 @@ pcl_cs_base_install(
 )
 {
     return gs_setcolorspace(pcs->pgs, (*ppbase)->pcspace);
+}
+
+/*
+ * One-time initialization routine. This exists only to handle possible non-
+ * initialization of BSS.
+ */
+  void
+pcl_cs_base_init(void)
+{
+    pwhite_cs = 0;
 }
