@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -47,6 +47,7 @@ struct gs_context_state_s {
     long usertime_total;	/* total accumulated usertime, */
 				/* not counting current time if running */
     bool keep_usertime;		/* true if context ever executed usertime */
+    int in_superexec;		/* # of levels of superexec */
     /* View clipping is handled in the graphics state. */
     ref userparams;		/* t_dictionary */
     ref stdio[3];		/* t_file */

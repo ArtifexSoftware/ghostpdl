@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -127,6 +127,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->rand_state = rand_state_initial;
     pcst->usertime_total = 0;
     pcst->keep_usertime = false;
+    pcst->in_superexec = 0;
     {	/*
 	 * Create an empty userparams dictionary of the right size.
 	 * If we can't determine the size, pick an arbitrary one.
