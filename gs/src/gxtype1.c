@@ -106,12 +106,7 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->pis = pis;
     pcis->path = ppath;
     pcis->callback_data = pfont; /* default callback data */
-    /*
-     * charpath_flag controls coordinate rounding, hinting, and
-     * flatness enhancement.  If we allow it to be set to true,
-     * charpath may produce results quite different from show.
-     */
-    pcis->charpath_flag = false /*charpath_flag */ ;
+    pcis->charpath_flag = charpath_flag;
     pcis->paint_type = paint_type;
     pcis->os_count = 0;
     pcis->ips_count = 1;
