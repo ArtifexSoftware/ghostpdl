@@ -86,6 +86,10 @@ struct gx_device_color_type_s {
      * The "get_dev_halftone" method returns a pointer to the device
      * halftone used by the current color, or NULL if there is no such
      * halftone (i.e.: the device color is a pure color).
+     *
+     * The "get_phase" returns true if the device color contains phase
+     * information, and sets *pphase to the appropriate value. Halftones
+     * that do not use the color information return false.
      */
 #define dev_color_proc_save_dc(proc)\
   void proc(const gx_device_color * pdevc, gx_device_color_saved * psdc)
@@ -94,6 +98,10 @@ struct gx_device_color_type_s {
 #define dev_color_proc_get_dev_halftone(proc)\
   const gx_device_halftone * proc(const gx_device_color * pdevc)
 			 dev_color_proc_get_dev_halftone((*get_dev_halftone));
+
+#define dev_color_proc_get_phase(proc)\
+  bool proc(const gx_device_color * pdevc, gs_int_point * pphase)
+			dev_color_proc_get_phase((*get_phase));
 
     /*
      * If necessary and possible, load the halftone or Pattern cache
@@ -264,6 +272,10 @@ extern  dev_color_proc_get_nonzero_comps(gx_dc_ht_colored_get_nonzero_comps);
 /* convert between color types and color type indices */
 extern int gx_get_dc_type_index(const gx_device_color *);
 extern const gx_device_color_type_t * gx_get_dc_type_from_index(int);
+
+/* the two canonical "get_phase" methods */
+extern  dev_color_proc_get_phase(gx_dc_no_get_phase);
+extern  dev_color_proc_get_phase(gx_dc_ht_get_phase);
 
 
 #define gs_color_writes_pure(pgs)\

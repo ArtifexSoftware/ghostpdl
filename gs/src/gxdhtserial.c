@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id: */
+/* $Id$ */
 /* Serialization and de-serialization for (traditional) halftones */
 
 #include "memory_.h"
@@ -128,12 +128,12 @@ gx_ht_read_tf(
     }
 
     /* allocate a transfer map */
-    pmap = gs_alloc_struct( mem,
-                            gx_transfer_map,
-                            &st_transfer_map,
-                            "gx_ht_read_tf" );
-    if (pmap == 0)
-        return_error(gs_error_VMerror);
+    rc_alloc_struct_1( pmap,
+                       gx_transfer_map,
+                       &st_transfer_map,
+                       mem,
+                       return_error(gs_error_VMerror),
+                       "gx_ht_read_tf" );
 
     pmap->id = gs_next_ids(1);
     pmap->closure.proc = 0;
@@ -144,9 +144,10 @@ gx_ht_read_tf(
     } else if (tf_type == gx_ht_tf_complete && size >= sizeof(pmap->values)) {
         memcpy(pmap->values, data, sizeof(pmap->values));
         pmap->proc = gs_mapped_transfer;
+        *ppmap = pmap;
         return 1 + sizeof(pmap->values);
     } else {
-        gs_free_object(mem, pmap, "gx_ht_read_tf");
+        rc_decrement(pmap, "gx_ht_read_tf");
         return_error(gs_error_rangecheck);
     }
 }
@@ -419,7 +420,9 @@ gx_ht_read_component(
              * will never check values beyond the range required by the
              * current order.
              */
-            if ( memcmp(phtr->levels, new_order.levels, levels_size) == 0  &&
+            if ( phtr->num_levels * sizeof(phtr->levels[0]) >= levels_size &&
+                 phtr->Width * phtr->Height * phtr->elt_size >= bits_size  &&
+                 memcmp(phtr->levels, new_order.levels, levels_size) == 0  &&
                  memcmp(phtr->bit_data, new_order.bit_data, bits_size) == 0  ) {
                 /* the casts below are required to discard const qualifiers */
                 gs_free_object(mem, new_order.bit_data, "gx_ht_read_component");
@@ -595,6 +598,7 @@ gx_ht_read_and_install(
 
     /* process the component orders */
     for (i = 0, code = 0; i < num_comps && code >= 0; i++) {
+        components[i].comp_number = i;
         code = gx_ht_read_component(&components[i], data, size, mem);
         if (code >= 0) {
             size -= code;
@@ -607,18 +611,13 @@ gx_ht_read_and_install(
         code = gx_imager_dev_ht_install(pis, &dht, dht.type, dev);
 
     /*
-     * Regardless of the success of installation, discard the allocated
-     * elements now. The gx_device_halftone_release procedure can't be
-     * used, as the components array is on the stack rather than in the
-     * heap. We must also pay special attention to the transfer functions,
-     * if any, as there reference counts are not incremented until the
-     * halftone is stored in the imager state. Hence, we only want to
-     * release them if their reference counts are still 0.
+     * If installation failed, discard the allocated elements. We can't
+     * use the gx_device_halftone_release procedure, as the components
+     * array is on the stack rather than in the heap.
      */
-    for (i = 0; i < num_comps; i++) {
-        if (components[i].corder.transfer->rc.ref_count != 0)
-            components[i].corder.transfer = 0;
-        gx_ht_order_release(&components[i].corder, mem, false);
+    if (code < 0) {
+        for (i = 0; i < num_comps; i++)
+            gx_ht_order_release(&components[i].corder, mem, false);
     }
 
     return code < 0 ? code : data - data0;
