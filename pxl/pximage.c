@@ -69,7 +69,7 @@ private void
 rc_free_px_pattern(gs_memory_t *mem, void *vptr, client_name_t cname)
 {	px_pattern_t *pattern = vptr;
 
-	gs_free_string(mem, pattern->palette.data, pattern->palette.size,
+	gs_free_string(mem, (void *)pattern->palette.data, pattern->palette.size,
 		       cname);
 	gs_free_object(mem, pattern->data, cname);
 	gs_free_object(mem, pattern, cname);
@@ -202,6 +202,7 @@ read_jpeg_bitmap_data(px_bitmap_enum_t *benum, byte **pdata, px_args_t *par)
     if ( !benum->initialized ) {
         jpeg_decompress_data *jddp = &(benum->jdd);
         /* use the graphics library support for DCT streams */
+        ss->memory = benum->mem;
         s_DCTD_template.set_defaults((stream_state *)ss);
         ss->report_error = stream_error;
         ss->data.decompress = jddp;
