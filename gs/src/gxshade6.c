@@ -930,13 +930,13 @@ release_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *ll, int 
 
 private inline wedge_vertex_list_elem_t *
 wedge_vertex_list_find(wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end, 
-	    const gs_fixed_point *p)
+	    int level)
 {
     wedge_vertex_list_elem_t *e = beg;
     
     assert(beg != NULL && end != NULL);
     for (; e != end; e = e->next)
-	if (e->p.x == p->x && e->p.y == p->y)
+	if (e->level == level)
 	    return e;
     return NULL;
 }
@@ -1660,6 +1660,7 @@ create_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
     l->end->prev = l->beg;
     l->beg->p = *p0;
     l->end->p = *p1;
+    l->beg->level = l->end->level = 0;
 }
 
 private inline wedge_vertex_list_elem_t *
@@ -1675,6 +1676,7 @@ insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, c
     e->next = l->end;
     e->prev = l->beg;
     e->p = *p;
+    e->level = max(l->beg->level, l->end->level) + 1;
     l->beg->next = l->end->prev = e;
     {	int sx = l->beg->p.x < l->end->p.x ? 1 : -1;
 	int sy = l->beg->p.y < l->end->p.y ? 1 : -1;
@@ -1713,7 +1715,8 @@ open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	if (l->beg->next == l->end) {
 	    return insert_wedge_vertex_list_elem(pfs, l, pm);
 	} else {
-	    wedge_vertex_list_elem_t *e = wedge_vertex_list_find(l->beg, l->end, pm);
+	    wedge_vertex_list_elem_t *e = wedge_vertex_list_find(l->beg, l->end, 
+			max(l->beg->level, l->end->level) + 1);
 
 	    assert(e != NULL);
 	    return e;
@@ -1918,8 +1921,8 @@ fill_triangle_wedge_from_list(patch_fill_state_t *pfs,
 
 private int 
 fill_wedge_from_list_rec(patch_fill_state_t *pfs, 
-	    wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end,
-	    const patch_color_t *c0, const patch_color_t *c1)
+	    wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end, 
+	    int level, const patch_color_t *c0, const patch_color_t *c1)
 {
     if (beg->next == end)
 	return 0;
@@ -1933,13 +1936,13 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 
 	p.x = (beg->p.x + end->p.x) / 2;
 	p.y = (beg->p.y + end->p.y) / 2;
-	e = wedge_vertex_list_find(beg, end, &p); /* fixme : could optimize with inserting l->middle. */
+	e = wedge_vertex_list_find(beg, end, level + 1);
 	assert(e != NULL);
 	patch_interpolate_color(&c, c0, c1, pfs, 0.5);
-	code = fill_wedge_from_list_rec(pfs, beg, e, c0, &c);
+	code = fill_wedge_from_list_rec(pfs, beg, e, level + 1, c0, &c);
 	if (code < 0)
 	    return code;
-	code = fill_wedge_from_list_rec(pfs, e, end, &c, c1);
+	code = fill_wedge_from_list_rec(pfs, e, end, level + 1, &c, c1);
 	if (code < 0)
 	    return code;
 	return fill_triangle_wedge_from_list(pfs, beg, end, e, c0, c1);
@@ -1950,7 +1953,8 @@ private int
 fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
 	    const patch_color_t *c0, const patch_color_t *c1)
 {
-    return fill_wedge_from_list_rec(pfs, l->beg, l->end, c0, c1);
+    return fill_wedge_from_list_rec(pfs, l->beg, l->end, 
+		    max(l->beg->level, l->end->level), c0, c1);
 }
 
 private inline int

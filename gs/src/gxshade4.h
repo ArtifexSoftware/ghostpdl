@@ -85,6 +85,7 @@ typedef struct mesh_fill_state_s {
 typedef struct wedge_vertex_list_elem_s wedge_vertex_list_elem_t;
 struct wedge_vertex_list_elem_s {
     gs_fixed_point p;
+    int level;
     wedge_vertex_list_elem_t *next, *prev;
 };
 typedef struct {
