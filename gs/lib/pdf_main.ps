@@ -646,7 +646,8 @@ end readonly def
     boxrect 4 array astore 1 index /ClipRect 3 -1 roll put
   } if
   dictbeginpage /DefaultMatrix 1 index store setmatrix
-  count 1 sub /pdfemptycount exch store
+  dup		  % for showing annotations below
+  count /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
   PDFversion 1.4 lt {
@@ -678,7 +679,7 @@ end readonly def
    end			% scratch dict
 } bind def
 /showpagecontents {	% <pagedict> showpagecontents -
-  dup /Contents knownoget not { 0 array } if
+  /Contents knownoget not { 0 array } if
   dup type /arraytype ne { 1 array astore } if {
     oforce false resolvestream pdfopdict .pdfrun
   } forall
