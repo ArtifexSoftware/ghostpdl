@@ -413,9 +413,9 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 		break;
 	}
     /* Check for trailing "*" and see if we need to add ".*" */
-    if (pat[-1] == "*" && !dot_in_filename) {
+    if (pat[-1] == '*' && !dot_in_filename) {
 	*c++ = '.';
-	*c++ = '*";
+	*c++ = '*';
     }
     len = c - newpat;
 
