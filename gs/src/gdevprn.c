@@ -31,7 +31,7 @@ const gx_device_procs prn_std_procs =
     prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
 
 /* Forward references */
-int gdev_prn_maybe_reallocate_memory(P4(gx_device_printer *pdev, 
+int gdev_prn_maybe_reallocate_memory(P4(gx_device_printer *pdev,
 					gdev_prn_space_params *old_space,
 					int old_width, int old_height));
 
@@ -122,7 +122,7 @@ open_c:
 	     ) {
 	    space <<= 1;
 	    if (reallocate) {
-		base = gs_resize_object(buffer_memory, 
+		base = gs_resize_object(buffer_memory,
 					*the_memory, space,
 					"cmd list buf(retry open)");
 		if (base != 0)
@@ -705,7 +705,8 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 	if (!upgraded_copypage)
 	    closecode = gdev_prn_close_printer(pdev);
     }
-    endcode = (ppdev->buffer_space ? clist_finish_page(pdev, flush) : 0);
+    endcode = (ppdev->buffer_space && !ppdev->is_async_renderer
+              ? clist_finish_page(pdev, flush) : 0);
 
     if (outcode < 0)
 	return outcode;
@@ -880,14 +881,14 @@ gdev_prn_close_printer(gx_device * pdev)
 
 /* If necessary, free and reallocate the printer memory after changing params */
 int
-gdev_prn_maybe_reallocate_memory(gx_device_printer *prdev, 
+gdev_prn_maybe_reallocate_memory(gx_device_printer *prdev,
 				 gdev_prn_space_params *old_sp,
 				 int old_width, int old_height)
 {
     int code = 0;
     gx_device *const pdev = (gx_device *)prdev;
     gx_device_memory * const mdev = (gx_device_memory *)prdev;
-	
+
     if (prdev->is_open != 0 &&
 	(memcmp(&prdev->space_params, old_sp, sizeof(*old_sp)) != 0 ||
 	 prdev->width != old_width || prdev->height != old_height )

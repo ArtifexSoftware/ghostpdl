@@ -1,13 +1,13 @@
 /* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
-  
+
   This file is part of Aladdin Ghostscript.
-  
+
   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
   or distributor accepts any responsibility for the consequences of using it,
   or for whether it serves any particular purpose or works at all, unless he
   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
   License (the "License") for full details.
-  
+
   Every copy of Aladdin Ghostscript must include a copy of the License,
   normally in a plain ASCII text file named PUBLIC.  The License grants you
   the right to copy, modify and redistribute Aladdin Ghostscript, but only
@@ -21,7 +21,8 @@
 
 /* Initial version 2/2/98 by John Desrosiers (soho@crl.com) */
 /* 7/28/98 ghost@aladdin.com - Factored out common BMP format code. */
-
+/* 12/1/98 soho@crl.com - Commented manual override of put_params procedure */
+/*                      - Incr'd image source row components from 3 -> 4 */
 #include "stdio_.h"
 #include "gserrors.h"
 #include "gdevprna.h"
@@ -129,7 +130,7 @@ bmpa_writer_open(gx_device *pdev  /* Driver instance to open */)
     init_async_render_procs(pwdev, bmpa_reader_start_render_thread,
 			    bmpa_reader_buffer_page,
 			    bmpa_reader_print_page_copies);
-    set_dev_proc(pdev, put_params, bmpa_put_params);
+    set_dev_proc(pdev, put_params, bmpa_put_params);	/* because not all device-init macros allow this to be defined */
     set_dev_proc(pdev, get_hardware_params, bmpa_get_hardware_params);
     set_dev_proc(pdev, output_page, bmpa_reader_output_page);	/* hack */
     pwdev->printer_procs.get_space_params = bmpa_get_space_params;
@@ -143,7 +144,7 @@ bmpa_writer_open(gx_device *pdev  /* Driver instance to open */)
     max_width = DEFAULT_WIDTH_10THS * 60;   /* figure max wid = default @ 600dpi */
     min_band_height = max(1, (DEFAULT_HEIGHT_10THS * 60) / 100);
     max_raster = (max_width * pwdev->color_info.depth) / 8;	/* doesn't need to be super accurate */
-    max_src_image_row = max_width * 3 * 2;
+    max_src_image_row = max_width * 4 * 2;
 
     /* Special writer open routine for async interpretation */
     /* Starts render thread */
@@ -155,7 +156,7 @@ bmpa_writer_open(gx_device *pdev  /* Driver instance to open */)
 /* -------------- Renderer instance procedures ----------*/
 
 /* Thread to do rendering, started by bmpa_reader_start_render_thread */
-private void 
+private void
 bmpa_reader_thread(void *params)
 {
     gdev_prn_async_render_thread((gdev_prn_start_render_params *)params);
@@ -171,7 +172,7 @@ private int
 bmpa_reader_open_render_device(gx_device_printer *ppdev)
 {
     gx_device_async * const prdev = (gx_device_async *)ppdev;
-	
+
     /* Do anything that needs to be done at open time here... */
     prdev->copies_printed = 0;
 
@@ -421,7 +422,7 @@ bmpa_get_space_params(const gx_device_printer *pdev,
      *
      * The moral of the story is that you should never make a band
      * so small that its buffer limits the command buffer excessively.
-     * Again, Max image row bytes = band buffer size - # bands * 72. 
+     * Again, Max image row bytes = band buffer size - # bands * 72.
      *
      * In the overlapped case, everything is exactly as above, except that
      * two identical devices, each with an identical buffer, are allocated:
@@ -455,7 +456,7 @@ bmpa_get_space_params(const gx_device_printer *pdev,
      * Note: per the comments in gxclmem.c, the banding logic will perform
      * better with 1MB or better for the command list.
      */
-    
+
     /* This will give us a very "ungenerous" buffer. */
     /* Here, my arbitrary rule for min image row is: twice the dest width */
     /* in full RGB. */
@@ -464,7 +465,7 @@ bmpa_get_space_params(const gx_device_printer *pdev,
     const int tile_cache_space = 50 * 1024;
     const int min_image_rows = 2;
     int min_row_space =
-	min_image_rows * (  3 * ( pdev->width + sizeof(int) - 1 )  );
+	min_image_rows * (  4 * ( pdev->width + sizeof(int) - 1 )  );
     int min_band_count = max(1, pdev->height / 100);	/* make bands >= 1% of total */
 
     space_params->band.BandWidth = pdev->width;
