@@ -56,7 +56,7 @@ private void vd_flatten(double p0x, double p0y, double p1x, double p1y, double p
     double d2norm1 = hypot(d2x1, d2y1);
     double D = max(d2norm0, d2norm1); /* This is half of maximum norm of 2nd derivative of the curve by parameter t. */
     int NN = (int)ceil(sqrt(D * 3 / 4 / flat)); /* Number of output segments. */
-    int i, code;
+    int i;
     int N = max(NN, 1); /* safety (if the curve degenerates to line) */
     double e = 0.5 / N;
     for (i = 0; i < N; i++) {
