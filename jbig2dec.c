@@ -100,8 +100,10 @@ static int
 set_output_format(jbig2dec_params_t *params, const char *format)
 {
 #ifdef HAVE_LIBPNG
-    if (!strncasecmp(format, "png", 3)) {
-    	params->output_format=jbig2dec_format_png;
+    /* this should really by strncasecmp()
+       TODO: we need to provide our own for portability */
+    if (!strncmp(format, "png", 3) || !strncmp(format, "PNG", 3)) {
+	params->output_format=jbig2dec_format_png;
     	return 0;
     }
 #endif
