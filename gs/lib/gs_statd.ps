@@ -258,7 +258,8 @@ STRICT { (%END SIZES) .skipeof } if
 		% The Adobe documentation only defines setpagetype
 		% (a Level 1 operator) as accepting the values 0 and 1,
 		% so we do too.
-      dup .pagetypenames 0 2 getinterval exch get //userdict exch get exec
+      dup .pagetypenames 0 2 getinterval exch get
+      //systemdict /userdict get exch get cvx exec
       /pagetype exch def
     end
   } bind def
