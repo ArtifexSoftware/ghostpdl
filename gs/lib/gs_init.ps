@@ -512,18 +512,6 @@ currentdict /superexec .knownget {
 	{ dup 3 -1 roll { put dup } forall pop } bind def
 /copystring
 	{ dup length string copy } bind def
-/finddevice
-	{ /devicedict .systemvar exch get
-	  dup 1 get null eq
-	   {		% This is the first request for this type of device.
-			% Create a default instance now.
-			% Stack: [proto null]
-	     .currentglobal true .setglobal exch
-	     dup dup 0 get copydevice 1 exch put
-	     exch .setglobal
-	   }
-	  if 1 get
-	} bind def
 /findlibfile {
 	.libfile { dup .filename pop exch true } { false } ifelse
 } odef
@@ -570,6 +558,22 @@ currentdict /superexec .knownget {
 /=print	/=only load def
 % Temporarily define == as = for the sake of runlibfile0.
 /== /= load def
+
+% The following procedures are documented.
+/finddevice {		% <devicename> finddevice <device>
+  /devicedict .systemvar exch get
+  dup 1 get null eq {
+		% This is the first request for this type of device.
+		% Create a default instance now.
+		% Stack: [proto null]
+    .currentglobal true .setglobal exch
+    dup dup 0 get copydevice 1 exch put
+    exch .setglobal
+  } if 1 get
+} bind def
+/findprotodevice {	% <devicename> findprotodevice <protodevice>
+  /devicedict .systemvar exch get 0 get
+} bind def
 
 % Run a resource file.  This allows us to distinguish resource objects
 % from objects coming from input files.

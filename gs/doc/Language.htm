@@ -1,6 +1,6 @@
 <html>
 <head>
-<title>The relationship between Ghostscript and PostScript</title>
+<title>Ghostscript and the PostScript language</title>
 <!-- $Id$ -->
 <!-- Originally: language.txt -->
 </head>
@@ -12,7 +12,7 @@
 
 <table width="100%" border="0">
 <tr><th align="center" bgcolor="#CCCC00"><font size=6>
-The relationship between Ghostscript and PostScript
+Ghostscript and the PostScript language
 </font>
 </table>
 
@@ -985,6 +985,14 @@ ordinary PostScript files.
 is created in global VM.  If <b><tt>finddevice</tt></b> is called more than
 once with the same device name, it creates the default instance the first
 time, and returns the same instance thereafter.
+</dl>
+
+<dl>
+<dt><b><tt>&lt;devicename&gt; findprotodevice &lt;device&gt;</tt></b>
+<dd>Finds the prototype of a device specified by name.  A prototype can be
+used with <b><tt>.getdeviceparams</tt></b> or other parameter-reading
+operators, but it is read-only and cannot be set with
+<b><tt>setdevice</tt></b>: it must be copied first.
 </dl>
 
 <dl>
