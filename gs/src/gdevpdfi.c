@@ -922,7 +922,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      * to avoid trying to create an XObject resource while we're in the
      * middle of writing a Pattern resource.
      */
-    if (in_line)
+    if (for_pattern < 0)
 	pputs(pdev->strm, "q ");
     code = pdf_begin_write_image(pdev, piw, id, in_line);
     if (code < 0)
