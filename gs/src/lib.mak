@@ -1296,7 +1296,7 @@ $(GLOBJ)gshtx.$(OBJ): $(GLSRC)gshtx.c $(GXERR) $(memory__h)\
 gsropc_h=$(GLSRC)gsropc.h $(gscompt_h) $(gsropt_h)
 gxropc_h=$(GLSRC)gxropc.h $(gsropc_h) $(gxcomp_h)
 
-noroplib_=$(GLOBJ)gsnorop.$(OBJ)
+noroplib_=$(GLOBJ)gsnorop.$(OBJ) $(GLOBJ)gsroptab.$(OBJ)
 noroplib.dev: $(LIB_MAK) $(ECHOGS_XE) $(noroplib_)
 	$(SETMOD) noroplib $(noroplib_)
 
