@@ -674,10 +674,17 @@ pcl_palette_set_cid(
                                         gl2,
                                         pcs->memory
                                         );
-   if (code == 0)
+    if (code == 0) {
+       bool is_gray = false; 
+       /* direct raster is always color */
+       if ( pcl_cid_get_encoding(pcid) <= 1 ) { 
+	  /* indexed used palette which maybe gray or color */
+	  is_gray = pcl_ht_is_all_gray_palette(pcs); 
+       }
 	code = pcl_ht_remap_render_method(pcs, 
-				      &(pcs->ppalet->pht), 
-				      pcl_ht_is_all_gray_palette(pcs)); 
+					  &(pcs->ppalet->pht), 
+					  is_gray);
+    }
 
     /* if a halftone exist, inform it of the update and discard lookup tables */
     if ((code == 0) && (ppalet->pht != 0)) {
