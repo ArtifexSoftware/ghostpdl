@@ -590,16 +590,8 @@ map_symbol(uint chr, const gs_text_enum_t *penum)
         }
 
 	first_code = pl_get_uint16(psm->first_code);
-	if ( chr < first_code || chr > pl_get_uint16(psm->last_code) ) {
-            /* it is unclear how to handle the case of double byte
-               characters and single byte symbol sets, based on a
-               small sample of tests hp seems to just return the
-               character. */
-            if ( ( chr > 0xff ) && 
-                 pl_get_uint16(psm->last_code) <= 0xff )
-                return chr;
-            return 0xffff;
-        }
+	if ( chr < first_code || chr > pl_get_uint16(psm->last_code) )
+	  return 0xffff;
 	return psm->codes[chr - first_code];
 }
 
@@ -612,22 +604,26 @@ px_next_char_8(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
     *pchr = map_symbol(penum->text.data.bytes[penum->index++], penum);
     return 0;
 }
+
+/* 16bit char is always unicode */
 private int
 px_next_char_16big(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
 {	
     *pglyph = gs_no_glyph;
     if ( penum->index == penum->text.size )
 	return 2;
-    *pchr = map_symbol(uint16at(&penum->text.data.bytes[penum->index++ << 1], true), penum);
+    *pchr = uint16at(&penum->text.data.bytes[penum->index++ << 1], true);
     return 0;
 }
+
+/* 16bit char is always unicode */
 private int
 px_next_char_16little(gs_text_enum_t *penum, gs_char *pchr, gs_glyph *pglyph)
 {	
     *pglyph = gs_no_glyph;
     if ( penum->index == penum->text.size )
 	return 2;
-    *pchr = map_symbol(uint16at(&penum->text.data.bytes[penum->index++ << 1], false), penum);
+    *pchr = uint16at(&penum->text.data.bytes[penum->index++ << 1], false);
     return 0;
 }
 
