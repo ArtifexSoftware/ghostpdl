@@ -763,17 +763,21 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
 	 *      b = domain->rmax;
 	 *      R = b - a;
 	 *      N = gx_cie_cache_size - 1;
-	 *      f(v) = N(v-a)/R;
+	 *      f(v) = N*(v-a)/R;	// the index of v in the cache
 	 *      x = f(0).
 	 * If x is not an integer, we can either increase b or
 	 * decrease a to make it one.  In the former case, compute:
-	 *      Kb = floor(x); R'b = N(0-a)/Kb; b' = a + R'b.
+	 *      Kb = floor(x); R'b = N*(0-a)/Kb; b' = a + R'b.
 	 * In the latter case, compute:
-	 *      Ka = ceiling(x-N); R'a = N(0-b)/Ka; a' = b - R'a.
+	 *      Ka = ceiling(x-N); R'a = N*(0-b)/Ka; a' = b - R'a.
 	 * We choose whichever method stretches the range the least,
 	 * i.e., the one whose R' value (R'a or R'b) is smaller.
+	 *
+	 * Note that we have to do the computation with floats, rather than
+	 * doubles, in order to match the eventual PostScript loop that
+	 * samples the values.
 	 */
-    double a = domain->rmin, b = domain->rmax;
+    float a = domain->rmin, b = domain->rmax;
     double R = b - a;
     double delta;
 #define NN (gx_cie_cache_size - 1) /* 'N' is a member name, see end of proc */
@@ -784,11 +788,28 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
 	double x = -N * a / R;	/* must be > 0 */
 	double Kb = floor(x);	/* must be >= 0 */
 	double Ka = ceil(x) - N;	/* must be <= 0 */
+	int K;
+	float miss;
 
 	if (Kb == 0 || (Ka != 0 && -b / Ka < -a / Kb))	/* use R'a */
-	    R = -N * b / Ka, a = b - R;
+	    K = (int)Ka + N, R = -N * b / Ka, a = b - R;
 	else			/* use R'b */
-	    R = -N * a / Kb, b = a + R;
+	    K = (int)Kb, R = -N * a / Kb, b = a + R;
+	/* Adjust so we hit zero exactly. */
+	if_debug3('c', "[c]adjusting cache_init(%8g, %8g), x = %8g:\n",
+		  domain->rmin, domain->rmax, x);
+	while ((miss = a + (b - a) * K / N) != 0) {
+	    if_debug3('c', "[c]    a = %8g, b = %8g) missed by %8g\n",
+		      a, b, miss);
+	    if (miss < 0) {
+		/* Adjust b upward slightly. */
+		b += b / (1L << (ARCH_FLOAT_MANTISSA_BITS - 1));
+	    } else {
+		/* Adjust a downward slightly. */
+		a += a / (1L << (ARCH_FLOAT_MANTISSA_BITS - 1));
+	    }
+	}
+	R = b - a;
     }
     delta = R / N;
 #ifdef CIE_CACHE_INTERPOLATE
