@@ -185,14 +185,15 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    /* This is a number, decode it and push it on the stack. */
 
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, c);
+		decode_push_num1(csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, c, cip, state, encrypted);
+		decode_push_num2(csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
 		/* 32-bit numbers are 16:16. */
+		CS_CHECK_PUSH(csp, cstack);
 		*++csp = arith_rshift(lw, 16 - _fixed_shift);
 	    } else		/* not possible */
 		return_error(gs_error_invalidfont);
@@ -551,6 +552,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    ++cip;
 		    charstring_next(*cip, state, c2, encrypted);
 		    ++cip;
+		    CS_CHECK_PUSH(csp, cstack);
 		    *++csp = int2fixed((((c1 ^ 0x80) - 0x80) << 8) + c2);
 		}
 		goto pushed;
@@ -652,6 +654,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			csp -= 3;
 			break;
 		    case ce2_random:
+			CS_CHECK_PUSH(csp, cstack);
 			++csp;
 			/****** NYI ******/
 			break;
@@ -670,6 +673,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			    *csp = float2fixed(sqrt(fixed2float(*csp)));
 			break;
 		    case ce2_dup:
+			CS_CHECK_PUSH(csp, cstack);
 			csp[1] = *csp;
 			++csp;
 			break;

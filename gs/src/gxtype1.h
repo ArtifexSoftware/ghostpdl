@@ -252,11 +252,20 @@ typedef fixed *cs_ptr;
     }\
   END
 
+#define CS_CHECK_PUSH(csp, cstack)\
+  BEGIN\
+    if (csp >= &cstack[countof(cstack)-1])\
+      return_error(gs_error_invalidfont);\
+  END
+
 /* Decode a 1-byte number. */
 #define decode_num1(var, c)\
   (var = c_value_num1(c))
-#define decode_push_num1(csp, c)\
-  (*++csp = int2fixed(c_value_num1(c)))
+#define decode_push_num1(csp, cstack, c)\
+  BEGIN\
+    CS_CHECK_PUSH(csp, cstack);\
+    *++csp = int2fixed(c_value_num1(c));\
+  END
 
 /* Decode a 2-byte number. */
 #define decode_num2(var, c, cip, state, encrypted)\
@@ -268,11 +277,12 @@ typedef fixed *cs_ptr;
 	   c_value_neg2(c, 0) - cn);\
     charstring_skip_next(c2, state, encrypted);\
   END
-#define decode_push_num2(csp, c, cip, state, encrypted)\
+#define decode_push_num2(csp, cstack, c, cip, state, encrypted)\
   BEGIN\
     uint c2 = *cip++;\
     int cn;\
 \
+    CS_CHECK_PUSH(csp, cstack);\
     cn = charstring_this(c2, state, encrypted);\
     if ( c < c_neg2_0 )\
       { if_debug2('1', "[1] (%d)+%d\n", c_value_pos2(c, 0), cn);\

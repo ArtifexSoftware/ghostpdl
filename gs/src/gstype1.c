@@ -120,13 +120,14 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    /* This is a number, decode it and push it on the stack. */
 
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, c);
+		decode_push_num1(csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, c, cip, state, encrypted);
+		decode_push_num2(csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
+		CS_CHECK_PUSH(csp, cstack);
 		*++csp = int2fixed(lw);
 		if (lw != fixed2long(*csp)) {
 		    /*
@@ -558,6 +559,7 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    pcis->ignore_pops--;
 			    inext;
 			}
+			CS_CHECK_PUSH(csp, cstack);
 			++csp;
 			code = (*pdata->procs.pop_value)
 			    (pcis->callback_data, csp);

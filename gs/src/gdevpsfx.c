@@ -166,13 +166,14 @@ type1_next(gs_type1_state *pcis)
 	if (c >= c_num1) {
 	    /* This is a number, decode it and push it on the stack. */
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, c);
+		decode_push_num1(csp, pcis->ostack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, c, cip, state, encrypted);
+		decode_push_num2(csp, pcis->ostack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
+		CS_CHECK_PUSH(csp, pcis->ostack);
 		*++csp = int2fixed(lw);
 	    } else		/* not possible */
 		return_error(gs_error_invalidfont);
@@ -346,10 +347,10 @@ type2_put_fixed(stream *s, fixed v)
 
 /* Put a stem hint table on a stream. */
 private void
-type2_put_stems(stream *s, const stem_hint_table *psht, int op)
+type2_put_stems(stream *s, int os_count, const stem_hint_table *psht, int op)
 {
     fixed prev = 0;
-    int pushed = 0;
+    int pushed = os_count;
     int i;
 
     for (i = 0; i < psht->count; ++i, pushed += 2) {
@@ -607,16 +608,16 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    if (cis.hstem_hints.count) {
 		if (cis.os_count)
 		    type2_put_fixed(s, cis.ostack[0]);
-		cis.os_count = 0;
-		type2_put_stems(s, &cis.hstem_hints,
+		type2_put_stems(s, cis.os_count, &cis.hstem_hints,
 				(replace_hints ? c2_hstemhm : cx_hstem));
+		cis.os_count = 0;
 	    }
 	    if (cis.vstem_hints.count) {
 		if (cis.os_count)
 		    type2_put_fixed(s, cis.ostack[0]);
-		cis.os_count = 0;
-		type2_put_stems(s, &cis.vstem_hints,
+		type2_put_stems(s, cis.os_count, &cis.vstem_hints,
 				(replace_hints ? c2_vstemhm : cx_vstem));
+		cis.os_count = 0;
 	    }
 	    continue;
 	case CE_OFFSET + ce1_seac:

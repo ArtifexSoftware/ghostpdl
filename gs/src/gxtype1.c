@@ -515,13 +515,14 @@ gs_type1_glyph_pieces(gs_font_type1 *pfont, const gs_glyph_data_t *pgd,
 	if (c >= c_num1) {
 	    /* This is a number, decode it and push it on the stack. */
 	    if (c < c_pos2_0) {	/* 1-byte number */
-		decode_push_num1(csp, c);
+		decode_push_num1(csp, cstack, c);
 	    } else if (c < cx_num4) {	/* 2-byte number */
-		decode_push_num2(csp, c, cip, state, encrypted);
+		decode_push_num2(csp, cstack, c, cip, state, encrypted);
 	    } else if (c == cx_num4) {	/* 4-byte number */
 		long lw;
 
 		decode_num4(lw, cip, state, encrypted);
+		CS_CHECK_PUSH(csp, cstack);
 		*++csp = int2fixed(lw);
 	    } else		/* not possible */
 		return_error(gs_error_invalidfont);
