@@ -26,20 +26,24 @@
 <ul>
 <li><a href="#Help_command">Help at the command line: <b><tt>gs -h</tt></b></a>
 </ul>
-<li><a href="#Pipe_input">Input from a pipe</a>
 <li><a href="#Output_device">Selecting an output device</a>
 <ul>
-<li><a href="#Printer_resolution">Printer resolution</a>
+<li><a href="#Output_resolution">Output resolution</a>
 <li><a href="#File_output">Output to files</a>
 <ul>
 <li><a href="#One_page_per_file">One page per file</a>
-<li><a href="#Pipe_output">Output to a pipe</a>
-<li><a href="#Output_to_graphics">Output to graphics file formats</a>
-<li><a href="#Bounding_box_output">Bounding box output</a>
 </ul>
 <li><a href="#Paper_size">Choosing paper size</a>
 <li><a href="#Change_default_size">Changing the installed default paper size</a>
 </ul>
+<li><a href="#Pipes">Interacting with pipes</a>
+<li><a href="#PDF">Using Ghostscript with PDF files</a>
+<ul>
+<li><a href="#PDF_stdin">PDF files from standard input</a>
+<li><a href="#PDF_switches">Switches for PDF files</a>
+<li><a href="#PDF_problems">Problems interpreting a PDF file</a>
+</ul>
+
 <li><a href="#Finding_files">How Ghostscript finds files</a>
 <ul>
 <li><a href="#PS_resources">Finding PostScript Level 2 resources</a>
@@ -47,13 +51,7 @@
 <li><a href="#Temp_files">Temporary files</a>
 </ul>
 <li><a href="#CIDFontSubstitution">CID font substitution</a>
-<li><a href="#Environment_variables">Summary of environment variables</a>
-<li><a href="#PDF">Using Ghostscript with PDF files</a>
-<ul>
-<li><a href="#PDF_stdin">PDF files from standard input</a>
-<li><a href="#PDF_switches">Switches for PDF files</a>
-<li><a href="#PDF_problems">Problems interpreting a PDF file</a>
-</ul>
+
 <li><a href="#Platforms">Notes on specific platforms</a>
 <ul>
 <li><a href="#Unix">Unix</a>
@@ -73,7 +71,8 @@
 </ul>
 <li><a href="#SCO_Unix">SCO Unix</a>
 </ul>
-<li><a href="#Switches">Switches</a>
+
+<li><a href="#Options">Command line options</a>
 <ul>
 <li><a href="#General_switches">General switches</a>
 <ul>
@@ -93,6 +92,8 @@
 </ul>
 </ul>
 <li><a href="#Improving_performance">Improving performance</a>
+<li><a href="#Environment_variables">Summary of environment variables</a>
+
 <li><a href="#Debugging">Debugging</a>
 <ul>
 <li><a href="#Debug_switches">Debug Switches</a>
@@ -131,58 +132,60 @@ overview</a>, the new user's documentation on
 
 <h2><a name="Invoking"></a>Invoking Ghostscript</h2>
 
+<p>This document describes how to use the command line Ghostscript client.
+Ghostscript is also used as a general engine inside other applications (for <a href="New-user.htm#Previewers">viewing files</a> for example).
+Please refer to the documentation for those applications for using Ghostscript in other contexts.
+
 <p><a name="Command_line"></a> The command line to invoke Ghostscript is
 essentially the same on all systems, although the name of the executable
 program itself may differ among systems.  For instance, to invoke
-Ghostscript on Unix:
+Ghostscript on unix-like systems type:
 
 <blockquote>
-<b><tt>gs</tt></b> [switches] {filename 1} ... [switches] {filename <em>N</em>} ...
+<b><tt>gs</tt></b> [options] {filename 1} ... [options] {filename <em>N</em>} ...
 </blockquote>
 
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">Ghostscript's name on different systems</font><hr>
-<tr>	<th align=left>System
-	<td>&nbsp;&nbsp;
-	<th align=left>Ghostscript's name
-<tr>	<td colspan=3><hr>
-<tr>	<td>Unix
-	<td>&nbsp;<td><b><tt>gs</tt></b>
-<tr>	<td>VMS
-	<td>&nbsp;<td><b><tt>gs</tt></b>
-<tr>	<td>DOS &amp; MS Windows 3
-	<td>&nbsp;<td><b><tt>gs386</tt></b>
-<tr>	<td>MS Windows 95/98
-	<td>&nbsp;<td><b><tt>gswin32</tt></b>
-<tr>	<td>MS Windows 95/98 command line
-	<td>&nbsp;<td><b><tt>gswin32c</tt></b>
-<tr>	<td>OS/2
-	<td>&nbsp;<td><b><tt>gsos2</tt></b>
-</table></blockquote>
+<p>Here are some basic examples. The details of how these work are described below.
 
-<p>
-Note, though, that on a system with a windowed graphical user interface,
-it's common to use Ghostscript through a previewer, so you should read the
-<a href="New-user.htm#Previewers">section about previewers</a> in the
-documentation for new users.
+<p>To view a file:
+<blockquote><pre>gs -dSAFER -dBATCH document.pdf</pre></blockquote>
+You'll be prompted to press <em>return</em> between pages.
+
+<p>To convert a figure to an image file:
+<blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -dGraphicsAlphaBits=4 \
+    -sOutputFile=tiger.png tiger.eps</pre></blockquote>
+
+<p>to render the same image at 300 dpi:
+<blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -r300 \
+    -sOutputFile=tiger_300.png tiger.eps</pre></blockquote>
+
+<p>to render a figure in grayscale:
+<blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pnggrey -sOutputFile=figure.png figure.pdf</pre></blockquote>
+
+<p>to rasterize a whole document:
+<blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pgmraw -r150 \
+    -dTextAlphaBits=4 -sOutputFile='paper-%00d.pgm' paper.ps</blockquote</pre>
+
+<p>There are also a number of utility scripts for common
+
+to convert a PostScript document to PDF:
+<blockquote><pre>ps2pdf file.ps</pre></blockquote>
+The output is saved as file.pdf.
+
+<p>There are other utility scripts besides <tt>ps2pdf</tt>, including <tt>pdf2ps</tt>, <tt>ps2epsi</tt>, <tt>pdf2dsc</tt>, <tt>ps2ascii</tt>
+and <tt>ps2ps</tt>. These just call Ghostscript with the appropriate
+(if complicated) set of options. You can use the 'ps2' set with eps files.
 
 <p>
 Ghostscript is capable of interpreting PostScript, encapsulated PostScript
-(EPS), DOS EPS (EPSF), and -- if the executable was built for it -- Adobe
-Portable Document Format (PDF).  The interpreter reads and executes the
-files in sequence, using the method described under
-"<a href="#File_searching">File searching</a>" to find them.  After doing
-this, it reads further lines of PostScript language commands from the
-primary input stream, normally the keyboard, interpreting each line
-separately.  To quit the interpreter, type "<b><tt>quit</tt></b>".  The
-interpreter also quits gracefully if it encounters end-of-file or
-control-C.
+(EPS), DOS EPS (EPSF), and Adobe Portable Document Format (PDF).  The interpreter reads and executes the files in sequence, using the method described under "<a href="#File_searching">File searching</a>" to find them.
+
+<p>The interpreter runs in interactive mode by default. After processing the files given on the command line (if any) it reads further lines of PostScript language commands from the primary input stream, normally the keyboard, interpreting each line separately. To quit the interpreter, type "<b><tt>quit</tt></b>". The <tt>-dBATCH -dNOPAUSE</tt> options in the examples above disable the interactive prompting. The interpreter also quits gracefully if it encounters end-of-file or control-C.
 
 <p>
-The interpreter recognizes many <a href="#Switches">switches</a>. A switch
-may appear anywhere in the command line, and applies to all files named
-after it on the line. Many of the switches include "<b><tt>=</tt></b>"
-followed by a parameter.
+The interpreter recognizes many options. An option may appear anywhere in the command line, and applies to all files named after it on the line. Many of them include "<b><tt>=</tt></b>"
+followed by a parameter. The most important are described in detail here. Please see the reference
+ sections on <a href="#Options">options</a> and <a href="Devices.htm">devices</a> for a more complete listing.
 
 <h3><a name="Help_command"></a>Help at the command line: <b><tt>gs -h</tt></b></h3>
 
@@ -190,141 +193,90 @@ followed by a parameter.
 You can get a brief help message by invoking Ghostscript with the
 <b><tt>-h</tt></b> or <b><tt>-?</tt></b> switch, like this:
 
-<blockquote><b><tt>
-gs -h<br>
+<blockquote><pre>
+gs -h
 gs -?
-</tt></b></blockquote>
+</pre></blockquote>
 
 <p>
-(Of course, for "<b><tt>gs</tt></b>" use the right
-<a href="#Command_line">command for your system</a>.)  The message shows
-for this executable
+The message shows for that version of the Ghostscript executable:
 
 <ul>
-<li>its version
-<li>the format of the command to invoke it
-<li>a few of the most useful switches
+<li>the version and release information
+<li>the general format of the command line
+<li>a few of the most useful options
 <li>the formats it can interpret
-<li>the devices for which it can produce output
-<li>where it looks for font files
-<li>where and how to send bug reports
+<li>the available output devices
+<li>the search path
+<li>the bug report address
 </ul>
 
-<h2><a name="Pipe_input"></a>Input from a pipe</h2>
-
 <p>
-As noted above, one normally specifies input with file names on the command
-line.  However, one can also "pipe" input into Ghostscript by using the
-special file name "<b><tt>-</tt></b>" or "<b><tt>-_</tt></b>", for instance
+On other systems the executable may have a different name:
 
-<blockquote>
-{some program producing PS} <b><tt>| gs</tt></b> {...options...} <b><tt>-</tt></b>
-<br>
-{some program producing PS} <b><tt>| gs</tt></b> {...options...} <b><tt>-_</tt></b>
-</blockquote>
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr bgcolor="#CCCC00">
+	<th align=left>System
+	<th>&nbsp;&nbsp;
+	<th align=left>invocation name
+<tr>	<td>Unix
+	<td>&nbsp;<td><b><tt>gs</tt></b>
+<tr>	<td>VMS
+	<td>&nbsp;<td><b><tt>gs</tt></b>
+<tr>	<td>MS Windows 95 and later
+	<td>&nbsp;<td><b><tt>gswin32c</tt></b>
+<tr>	<td>MS Windows 3.1/Win32s
+	<td>&nbsp;<td><b><tt>gswin32</tt></b>
+<tr>	<td>OS/2
+	<td>&nbsp;<td><b><tt>gsos2</tt></b>
+</table></blockquote>
 
-<p>
-These switches differ from a named file in two respects:
-
-<ol>
-<li>When Ghostscript finishes reading from the pipe, it quits rather than
-going into interactive mode.  Because of this, these switches are
-really only useful as the last argument on the command line.
-
-<li>These switches can't be used to pipe PDF input to Ghostscript.
-See "<a href="#PDF">Using Ghostscript with PDF files</a>" below.
-</ol>
-
-<p>
-
-The difference between "<b><tt>-</tt></b>" and "<b><tt>-_</tt></b>" is that
-"<b><tt>-</tt></b>" reads the input one character at a time, which is useful
-for programs such as GSview that generate input for Ghostscript dynamically
-and watch for some response, whereas "<b><tt>-_</tt></b>" reads the input in
-blocks, which is more efficient for ordinary (batch) execution.
-
+ 
 <h2><a name="Output_device"></a>Selecting an output device</h2>
 
 <p>
-Ghostscript may be built to handle multiple output devices, and it normally
-opens and directs output to the first one built in.  Ghostscript's
-<b><tt>gs&nbsp;-h</tt></b> <a href="#Help_command">help message</a> lists
-the output devices known to the executable.  Once you invoke Ghostscript
-you can also find out what devices are available by
-"<b><tt>devicenames&nbsp;==</tt></b>" at its command prompt.
-
-<p><a name="Source_code"></a>
-
-A little more information about devices appears near the beginning of the
-files <b><tt>devs.mak</tt></b> (for drivers that are considered "part of"
-Ghostscript and are maintained by the maintainers of the main Ghostscript
-code) and <b><tt>contrib.mak</tt></b> (for user-contributed drivers) used to
-build Ghostscript.  (If you got Ghostscript under the Aladdin <a
-href="Public.htm">Free Public License</a>, the person or place from which
-you got it is also required to make the source code available to you; if you
-got it under the GNU General Public License (GPL), see the GNU <a
-href="http://www.gnu.org/copyleft/gpl.html">General Public License</a> for
-more information.)
-
-<p><a name="Device_output"></a>
-To use device <em>xyz</em> as the initial output device, use the
-command-line switch
-
-<blockquote>
-	<b><tt>-sDEVICE=</tt></b><em>xyz</em>
-</blockquote>
+Ghostscript has a notion of 'output devices' which handle saving or displaying the results in a particular format. Ghostscript comes with a diverse variety of such devices supporting vector and raster file output, screen display, driving various printers and communicating with other applications.
 
 <p>
+The command line option '<tt>-sDEVICE=</tt><em>device</em>' selects which output device Ghostscript should use. If this option isn't given the default device (usually a display device) is used. Ghostscript's built-in help message (<tt>gs&nbsp;-h</tt>) lists
+the available output devices. For complete description of the devices distributed with Ghostscript and their options, please see the <a href="Devices.htm">devices section</a> of the documentation.
+
+<p><a name="Device_output"></a>
 Note that this switch must precede the name of the first input file, and
 only its first use has any effect.  For example, for printer output in a
 configuration that includes an Epson printer driver, instead of just
-"<b><tt>gs&nbsp;myfile.ps</tt></b>" you might use
+'<tt>gs&nbsp;myfile.ps</tt>' you might use
 
 <blockquote>
 	<b><tt>gs -sDEVICE=epson myfile.ps</tt></b>
 </blockquote>
 
-<p>
-Alternatively, once you invoke Ghostscript and have its own command prompt
-you can type
-
-<blockquote><b><tt>
-	(epson) selectdevice<br>
-	(myfile.ps) run
-</tt></b></blockquote>
+<p><a name="GS_DEVICE"></a>
+The output device can also be set through the <tt>GS_DEVICE</tt> environment variable.
 
 <p>
+Once you invoke Ghostscript
+you can also find out what devices are available by typing
+'<tt>devicenames&nbsp;==</tt>' at the iteractive prompt.
+You can set the output device and process a file from the interactive prompt as well:
+
+
+<blockquote><pre>
+(epson) selectdevice
+(myfile.ps) run
+</pre></blockquote>
+
 All output then goes to the Epson printer instead of the display until you
 do something to change devices.  You can switch devices at any time by
-using the <b><tt>selectdevice</tt></b> procedure, for
+using the <tt>selectdevice</tt> procedure, for
 instance like one of these:
 
-<blockquote><b><tt>
-	(vga) selectdevice<br>
-	(epson) selectdevice
-</tt></b></blockquote>
+<blockquote><pre>
+(x11alpha) selectdevice
+(epson) selectdevice
+</pre></blockquote>
 
-<p><a name="GS_DEVICE"></a>
-A third possibility is to define an environment variable
-<b><tt>GS_DEVICE</tt></b> with the name of your desired default device.
-The order of precedence for these alternatives, highest to lowest, is:
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr>	<td><b><tt>selectdevice</tt></b>
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<td>Highest precedence
-<tr>	<td>(command line)
-	<td>&nbsp;
-	<td>&nbsp;
-<tr>	<td><b><tt>GS_DEVICE</tt></b>
-	<td>&nbsp;
-	<td>&nbsp;
-<tr>	<td>(first device built in)
-	<td>&nbsp;
-	<td>Default; lowest precedence
-</table></blockquote>
-
-<h3><a name="Printer_resolution"></a>Printer resolution</h3>
+<h3><a name="Output_resolution"></a>Output resolution</h3>
 
 <p>
 Some printers can print at several different resolutions, letting you
@@ -335,219 +287,74 @@ such a printer, use the <b><tt>-r</tt></b> switch:
 	<b><tt>gs -sDEVICE=</tt></b><em>printer</em><b><tt> -r</tt></b><em>XRES</em><b><tt>x</tt></b><em>YRES</em>
 </blockquote>
 
-<p>
-For example, on Epson-compatible printers you have these choices:
+where <em>XRES</em> and <em>YRES</em> are the requested number of dots (or pixels) per inch. Where the two resolutions are same, as is the common case, you can simply use <tt>-r</tt><em>res</em>.
 
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr>	<td><b><tt>gs -sDEVICE=epson</tt></b>
-	<td>&nbsp;&nbsp;
-	<td><b><tt>-r60x72</tt></b>
-	<td>&nbsp;&nbsp;
-	<td>9-pin
-	<td>&nbsp;&nbsp;
-	<td>lowest resolution
-	<td>&nbsp;&nbsp;
-	<td>fastest
-<tr>	<td>&nbsp;
-	<td>&nbsp;
-	<td><b><tt>-r240x72</tt></b>
-	<td>&nbsp;
-	<td>&nbsp;
-	<td>&nbsp;
-	<td>highest
-	<td>&nbsp;
-	<td>slowest
-<tr>	<td>&nbsp;
-<tr>	<td>&nbsp;
-	<td>&nbsp;
-	<td><b><tt>-r60x60</tt></b>
-	<td>&nbsp;
-	<td>24-pin
-	<td>&nbsp;
-	<td>lowest
-	<td>&nbsp;
-	<td>fastest
-<tr>	<td>&nbsp;
-	<td>&nbsp;
-	<td><b><tt>-r360x180</tt></b>
-	<td>&nbsp;
-	<td>&nbsp;
-	<td>&nbsp;
-	<td>highest
-	<td>&nbsp;
-	<td>slowest
-</table></blockquote>
+<p>
+The <tt>-r</tt> option is also useful for controlling the density of pixels when rasterizing to an image file. It is used this way in the examples at the beginning of this document.
 
 <h3><a name="File_output"></a>Output to files</h3>
 
 <p>
-If you select a printer as the output device, Ghostscript also allows you to
-control where the device sends its output.  On DOS and MS Windows systems,
-output normally goes directly to the printer (<b><tt>PRN</tt></b>); on Unix
-or VMS systems normally to a temporary file for later printing.  To send the
-output to a file, use the <b><tt>-sOutputFile=</tt></b> switch (for
-compatibility with older versions of Ghostscript,
-<b><tt>-sOUTPUTFILE=</tt></b> also works).  For instance, to direct all
-output into the file <b><tt>ABC.xyz</tt></b>, use
+Ghostscript also allows you to control where it sends its output. With a display device this isn't necessary as the device handles presenting the output on screen internally. Some specialized printer drivers operate this way as well, but most devices are general and need to be directed to a particular file or printer.
+
+<p>
+To send the output to a file, use the <tt>-sOutputFile=</tt> switch.
+For instance, to direct all output into the file <tt>ABC.xyz</tt>, use
 
 <blockquote><b><tt>
 gs -sOutputFile=ABC.xyz
 </tt></b></blockquote>
 
 <p>
-The file name follows the PostScript convention that if a name begins with
-<b><tt>%</tt></b>, the name must be in the form <b><tt>%</tt></b>filedevice
-or <b><tt>%</tt></b>filedevice<b><tt>%</tt></b>file.  The legal values of
-filedevice are system-dependent, but the following have consistent meanings
-across systems:
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">"%{filedevice}%{file}" in <b><tt>-sOutputFile=</tt></b></font><hr>
-<tr valign=bottom>
-	<th align=left>filedevice
-	<td>&nbsp;&nbsp;&nbsp;
-	<th align=left>Meaning
-<tr>	<td colspan=3><hr>
-<tr valign=top>	<td><b><tt>%os%xyz</tt></b>
-	<td>&nbsp;
-	<td>An ordinary file named <b><tt>xyz</tt></b>
-<tr valign=top>	<td><b><tt>%pipe%cmd</tt></b>
-	<td>&nbsp;
-	<td>(if supported) A pipe to an instance of the command <b><tt>cmd</tt></b>
-<tr valign=top>	<td><b><tt>%stdout</tt></b>
-	<td>&nbsp;
-	<td>The standard output file
-</table></blockquote>
+When printing on MS Windows systems, output normally goes directly to the printer, <tt>PRN</tt>. On Unix and VMS systems it normally goes to a temporary file which is sent to the printer in a separate step. When using Ghostscript as a file rasterizer (converting PostScript or PDF to a raster image format) you will of course want to specify an appropriately named file for the output.
 
 <p>
-Note that because of this, if you want to specify a file name that actually
-begins with <b><tt>%</tt></b>, you must specify the <b><tt>%os%</tt></b>
-filedevice explicitly: e.g., for output to a file named
-<b><tt>%abc</tt></b>, you need to specify
-<b><tt>-sOutputFile=%os%%abc</tt></b>.  Note also that on DOS and MS Windows
-systems, the <b><tt>%</tt></b> character has a special meaning for the
-command processor (shell), so you will have to double it, e.g., for a pipe
-on MS Windows,
+Ghostscript also accepts the special filename '<tt>-</tt>' which indicates the output should be writtent to stardard output (the command shell).
 
-<blockquote><b><tt>
-gs -sOutputFile=%%pipe%%cmd
-</tt></b></blockquote>
+<p>
+Be aware that filenames beginning with the character <tt>%</tt> have a special meaning in PostScript. If you need to specify a file name that actually
+begins with <tt>%</tt>, you must prepend the <tt>%os%</tt> filedevice explicitly. For example to output to a file named <tt>%abc</tt>, you need to specify
+
+<blockquote>
+<b><tt>gs -sOutputFile=%os%%abc</tt></b>
+</blockquote>
+
+Please see <a href="Language.htm">Ghostscript and the PostScript Language</a> and the PostScript Language Reference Manual for more details on <tt>%</tt> and filedevices.
+
+<p>
+Note that on MS Windows systems, the <b><tt>%</tt></b> character also has a special meaning for the command processor (shell), so you will have to double it:
+
+<blockquote>
+<b><tt>gs -sOutputFile=%%os%%%%abc</tt></b> (on MS Windows)
+</blockquote>
 
 <h4><a name="One_page_per_file"></a>One page per file</h4>
 
 <p>
-You can also tell Ghostscript to put each page of output in a separate
-file.  To send output to a series of files each representing a single page,
-use in the filename the <b><tt>printf</tt></b> format specifier
-"<b><tt>%d</tt></b>" (or its extended form like "<b><tt>%02d</tt></b>");
-for instance
+Specifying a single output file works fine for printing and rasterizing figures, but sometimes you want images of each page of a multi-page document. You can tell Ghostscript to put each page of output in a series of similarly named files. To do this place a template '<tt>%d</tt>' in the filename which Ghostscript will replace with the page number.
 
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr><th colspan=3 bgcolor="#CCCC00"><hr><font size="+1">"%{n}d" in <b><tt>-sOutputFile=</tt></b></font><hr>
-<tr valign=bottom>
-	<th align=left>Output specification
-	<td>&nbsp;&nbsp;&nbsp;
-	<th align=left>Produces the series of 1-page files
-<tr>	<td colspan=3><hr>
-<tr valign=top>	<td><b><tt>-sOutputFile=ABC%d.xyz</tt></b>
-	<td>&nbsp;
-	<td><b><tt>ABC1.xyz</tt></b> ... <b><tt>ABC10.xyz</tt></b> ...
-<tr valign=top>	<td><b><tt>-sOutputFile=ABC%03d.xyz</tt></b>
-	<td>&nbsp;
-	<td><b><tt>ABC001.xyz</tt></b> ... <b><tt>ABC010.xyz</tt></b> ...
-</table></blockquote>
+<p>
+You can also control the number of digits used in the file name:
+
+<blockquote><dl>
+<dt><b><tt>-sOutputFile=ABC-%d.png</tt></b>
+<dd>produces '<tt>ABC-1.png</tt>', ... , '<tt>ABC-10.png</tt>', ...<p>
+<dt><b><tt>-sOutputFile=ABC-%03d.pgm</tt></b>
+<dd>produces '<tt>ABC-001.pgm</tt>', ... , '<tt>ABC-010.pgm</tt>', ...<p>
+<dt><b><tt>-sOutputFile=ABC_p%04d.tiff</tt></b>
+<dd>produces '<tt>ABC_p0001.tiff</tt>', ... , '<tt>ABC_p0510.tiff</tt>', ... , '<tt>ABC_p5238.tiff</tt>'<p>
+</dl></blockquote>
+
+Generally <tt>%03d</tt> is the best option for normal documents.
 
 <p>
 As noted above, on DOS and MS Windows systems, you will have to double the
-<b><tt>%</tt></b> character, e.g.,
+<tt>%</tt> character, e.g.,
 
-<blockquote><b><tt>
+<blockquote><tt><b>
 gs -sOutputFile=ABC%%03d.xyz
 </tt></b></blockquote>
 
-<h4><a name="Pipe_output"></a>Output to a pipe</h4>
-
-<p>
-On Unix and (32-bit) MS Windows systems you can use this switch to send
-output directly to a pipe.  For example, to pipe the output to
-<b><tt>lpr</tt></b>, use the command
-
-<blockquote><b><tt>
-	gs -sOutputFile=\|lpr
-</tt></b></blockquote>
-or, as noted above,
-<blockquote><b><tt>
-	gs -sOutputFile=%pipe%lpr
-</tt></b></blockquote>
-
-<p>
-(doubling the <b><tt>%</tt></b> characters on MS Windows systems, as noted
-above.)  You can also send output to standard output for piping in the usual
-way supported by the system:
-
-<blockquote>
-	<b><tt>gs -sOutputFile=- -q |</tt></b> ...
-</blockquote>
-or, as noted above,
-<blockquote>
-	<b><tt>gs -sOutputFile=%stdout -q |</tt></b> ...
-</blockquote>
-
-<p>
-(again, doubling the <b><tt>%</tt></b> character on MS Windows systems.)
-In this case you must also use the <a href="#Quiet"><b><tt>-q</tt></b>
-switch</a> to prevent Ghostscript from writing messages to standard output
-which become mixed with the intended output stream.
-
-<h4><a name="Output_to_graphics"></a>Output to graphics file formats</h4>
-
-<p>
-File formats like PCX and PBM are also "devices".  When you select a file
-format as the "device", you must also specify an output file, for instance
-
-<blockquote><b><tt>
-gs -sDEVICE=pcxmono -sOutputFile=xyz.pcx
-</tt></b></blockquote>
-
-<p>
-Here, as with printable files, you can use "<b><tt>%d</tt></b>"
-("<b><tt>%%d</tt></b>" on DOS and MS Windows) to specify <a
-href="#One_page_per_file">one page per output file</a>.
-
-<h4><a name="Bounding_box_output"></a>Bounding box output</h4>
-
-<p>
-There is a special <b><tt>bbox</tt></b> "device" that just prints the
-bounding box of each page.  You select it in the usual way:
-
-<blockquote><b><tt>
-gs -dNOPAUSE -dBATCH -sDEVICE=bbox
-</tt></b></blockquote>
-
-<p>
-It prints the output in a format like this:
-
-<blockquote>
-<pre><b><tt>%%BoundingBox: 14 37 570 719
-%%HiResBoundingBox: 14.308066 37.547999 569.495061 718.319158
-</tt></b></pre></blockquote>
-
-<p>
-Currently, it always prints the bounding box on <b><tt>stderr</tt></b>;
-eventually, it should also recognize <b><tt>-sOutputFile=</tt></b>.
-
-<p>
-Note that this device, like other devices, has a resolution and a (maximum)
-page size.  As for other devices, the product (resolution x page size) is
-limited to approximately 500K pixels.  By default, the resolution is 4000
-DPI and the maximum page size is approximately 125", or approximately 9000
-default (1/72") user coordinate units.  If you need to measure larger pages
-than this, you must reset <em>both</em> the resolution and the page size in
-pixels, e.g.,
-
-<blockquote><b><tt>
-gs -dNOPAUSE -dBATCH -sDEVICE=bbox -r100 -g500000x500000
-</tt></b></blockquote>
 
 <h3><a name="Paper_size"></a>Choosing paper size</h3>
 
@@ -570,8 +377,7 @@ Ghostscript by using the <b><tt>-sPAPERSIZE=</tt></b> switch, for instance
 </tt></b></blockquote>
 
 <li>
-Otherwise, let <em>w</em> be the desired paper width and <em>h</em> be the
-desired paper height, in 1/72" units.  You can set the page size using the
+Otherwise you can set the page size using the
 pair of switches
 
 <blockquote>
@@ -579,6 +385,8 @@ pair of switches
 <b><tt>-dDEVICEHEIGHTPOINTS=</tt></b><em>h</em>
 </blockquote>
 
+Where <em>w</em> be the desired paper width and <em>h</em> be the
+desired paper height in <em>points</em> (units of 1/72 of an inch).
 </ul>
 
 <p>
@@ -592,27 +400,166 @@ command line.
 <h3><a name="Change_default_size"></a>Changing the installed default paper size</h3>
 
 <p>
-You can change the installed default paper size in installing Ghostscript
-or later, by editing the initialization file <b><tt>gs_init.ps</tt></b>.
+You can change the installed default paper size on an installed version of Ghostscript, by editing the initialization file <b><tt>gs_init.ps</tt></b>.
+This file is usually in the <tt>lib</tt> directory somewhere in the search path. See the section on <a href="#Finding_files">finding files</a> for details.
+
+<p>
 Find the consecutive lines
 
-<blockquote><b><tt>
-%&nbsp;Optionally&nbsp;choose&nbsp;a&nbsp;default&nbsp;paper&nbsp;size&nbsp;other&nbsp;than&nbsp;U.S.&nbsp;letter.<br>
-%&nbsp;(a4)
-</tt></b></blockquote>
+<blockquote><pre>
+% Optionally choose a default paper size other than U.S. letter.
+% (a4)
+</pre></blockquote>
 
 <p>
 Then to make A4 the default paper size, uncomment the second line to change
 this to
 
-<blockquote><b><tt>
-%&nbsp;Optionally&nbsp;choose&nbsp;a&nbsp;default&nbsp;paper&nbsp;size&nbsp;other&nbsp;than&nbsp;U.S.&nbsp;letter.<br>
+<blockquote><pre>
+% Optionally choose a default paper size other than U.S. letter.
 (a4)
-</tt></b></blockquote>
+</pre></blockquote>
 
 <p>
-For <b><tt>a4</tt></b> you can substitute any
+For <tt>a4</tt> you can substitute any
 <a href="#Known_paper_sizes">paper size Ghostscript knows</a>.
+
+<p>
+Sometimes the initialization files are compiled into Ghostscript can cannot be changed.
+
+<h2><a name="Pipes"></a>Interacting with pipes</h2>
+
+<p>
+As noted above, input files are normally specified on the command
+line.  However, one can also "pipe" input into Ghostscript from another
+program by using the special file name '<b><tt>-</tt></b>' which is interpreted as standard input. Examples:
+
+<blockquote>
+{<em>some program producing ps</em>} <b><tt>| gs</tt></b> [options] <b><tt>-</tt></b>
+<br>
+<tt>zcat paper.ps.gz</tt> <b><tt>| gs</tt></b> <b><tt>-</tt></b>
+</blockquote>
+
+<p>
+<em>Ghostscript cannot read PDF files from standard input or a pipe because the PDF language inherently requires random access to the file. Thus '<tt>-</tt>' only works with PostScript documents.</em>
+
+<p>
+When Ghostscript finishes reading from the pipe, it quits rather than
+going into interactive mode.  Because of this, options and files after the '<tt>-</tt>' in the command line will be ignored.
+
+<p>
+On Unix and MS Windows systems you can send output to a pipe in the same way.  For example, to pipe the output to <tt>lpr</tt>, use the command
+
+<blockquote><tt>
+	<b>gs -q -sOutputFile=- |</b> lpr
+</tt></blockquote>
+
+<p>
+In this case you must also use the <a href="#Quiet"><b><tt>-q</tt></b>
+switch</a> to prevent Ghostscript from writing messages to standard output
+which become mixed with the intended output stream.
+
+<p>
+Similar results can be obtained with the <tt>%stdout</tt> and <tt>%pipe%</tt> filedevices. The example above would become
+
+<blockquote><tt>
+	<b>gs -sOutputFile=%stdout -q |</b> lpr
+</tt></blockquote>
+or
+<blockquote><tt>
+	<b>gs -sOutputFile=%pipe%</b>lpr
+</tt></blockquote>
+
+(again, doubling the <b><tt>%</tt></b> character on MS Windows systems.)
+
+<p>
+In the last case, <tt>-q</tt> isn't necessary since Ghostscript handles the pipe itself and messages sent to stdout will be printed as normal.
+
+<h2><a name="PDF"></a>Using Ghostscript with PDF files</h2>
+
+<p>
+Ghostscript is normally built to interpret both PostScript and PDF files, examining each file to determine automatically whether its contents are PDF or PostScript.  All the normal switches and procedures for interpreting PostScript files also apply to PDF files, with a few exceptions. In addition, the
+<tt>pdf2ps</tt> utility uses Ghostscript to convert PDF to (Level 2) PostScript.
+
+<h3><a name="PDF_switches"></a>Switches for PDF files</h3>
+
+<p>Here are some command line options specific to PDF
+
+<dl>
+<dt><b><tt>-dFirstPage=</tt></b><em>pagenumber</em>
+<dd>Begins interpreting on the designated page of the document.
+</dl>
+
+<dl>
+<dt><b><tt>-dLastPage=</tt></b><em>pagenumber</em>
+<dd>Stops interpreting after the designated page of the document.
+</dl>
+
+<dl>
+<dt><b><tt>-dPrinted</tt></b>
+<dt><b><tt>-dPrinted=false</tt></b>
+<dd>Determines whether the file should be displayed or printed using the
+"screen" or "printer" options for annotations and images.  With
+<b><tt>-dPrinted</tt></b>, the output will use the file's "print"
+options; with <b><tt>-dPrinted=false</tt></b>, the output will use the
+file's "screen" options.  If neither of these is specified, the output will
+use the screen options for any output device that doesn't have an
+<b><tt>OutputFile</tt></b> parameter, and the printer options for
+devices that do have this parameter.
+</dl>
+
+<dl>
+<dt><b><tt>-dUseCropBox</tt></b>
+<dd>Sets the page size to the CropBox rather than the MediaBox.
+Some files have a CropBox that is smaller than the MediaBox and
+may include white space, registration or cutting marks outside
+the CropBox.  Using this option will set the page size 
+appropriately for a viewer.
+</dl>
+
+<dl>
+<dt><b><tt>-sPDFPassword=</tt></b><em>password</em>
+<dd>Sets the user or owner password to be used in decoding encrypted
+PDF files.
+</dl>
+
+<h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
+
+<p>
+Occasionally you may try to read or print a 'PDF' file that
+Ghostscript doesn't recognize as PDF, even though the same file
+<b><em>can</em></b> be opened and interpreted by an Adobe Acrobat viewer.
+In many cases, this is because of incorrectly generated PDF. Acrobat
+tends to be very forgiving of invalid PDF files. Ghostscript tends to
+expect files to conform to the standard. For example, even though
+valid PDF files must begin with <b><tt>%PDF</tt></b>, Acrobat will
+scan the first 1000 bytes or so for this string, and ignore any preceding
+garbage.
+
+<p>
+In the past, Ghostscript's policy has been to simply fail with an
+error message when confronted with these files. This policy has, no
+doubt, encouraged PDF generators to be more careful. However, we now
+recognize that this behavior is not very friendly for people who just
+want to use Ghostscript to view or print PDF files. Our new policy is
+to try to render broken PDF's, and also to print a warning, so that
+Ghostscript is still useful as a sanity-check for invalid files.
+
+<h3><a name="PDF_stdin"></a>PDF files from standard input</h3>
+
+<p>
+Using the special filename <a href="#Pipes">'<tt>-</tt>'</a> you can provide PDF input from a file, but not from a pipe, because the PDF language, unlike the PostScript language, inherently requires random access to the file, while a pipe is always sequential. That is,
+
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr>	<td><b><tt>gs - &lt; somefile.pdf</tt></b>
+	<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+	<td>(<b><em>is</em></b> permissible)
+<tr>	<td>{<em>some program producing PDF</em>} <b><tt>| gs -</tt></b>
+	<td>&nbsp;
+	<td>(is <b><em>not</em></b> permissible)
+</table></blockquote>
+
+<hr>
 
 <h2><a name="Finding_files"></a>How Ghostscript finds files</h2>
 
@@ -1021,146 +968,6 @@ designed for same character collection. In other words, you
 cannot substitute Japanese CID font resource to Korean CID font resource,
 etc. Also please pay attention that CMap resource names must not appear in
 <b><tt>gs/lib/cidfmap</tt></b>.
-
-
-<h2><a name="Environment_variables"></a>Summary of environment variables</h2>
-
-<dl>
-<dt><b><tt>GS</tt></b>, <b><tt>GSC</tt></b> (MS Windows only)
-<dd>Specify the names of the Ghostscript executables.  <b><tt>GS</tt></b>
-brings up a new typein window and possibly a graphics window;
-<b><tt>GSC</tt></b> uses the DOS console.  If these are not set,
-<b><tt>GS</tt></b> defaults to <b><tt>gswin32</tt></b>, and
-<b><tt>GSC</tt></b> defaults to <b><tt>gswin32c</tt></b>.
-</dl>
-
-<dl>
-<dt><a href="#GS_DEVICE"><b><tt>GS_DEVICE</tt></b></a>
-<dd>Defines the default output device.
-</dl>
-
-<dl>
-<dt><a href="#Font_lookup"><b><tt>GS_FONTPATH</tt></b></a>
-<dd>Specifies a list of directories to scan for fonts if a font requested
-can't be found anywhere on the search path.
-</dl>
-
-<dl>
-<dt><a href="#Finding_files"><b><tt>GS_LIB</tt></b></a>
-<dd>Provides a search path for initialization files and fonts.
-</dl>
-
-<dl>
-<dt><b><tt>GS_OPTIONS</tt></b>
-<dd>Defines a list of command-line arguments to be processed before the
-ones actually specified on the command line.  For example, setting
-<b><tt>GS_DEVICE</tt></b> to XYZ is equivalent to setting
-<b><tt>GS_OPTIONS</tt></b> to <b><tt>-sDEVICE=XYZ</tt></b>.  The contents
-of <b><tt>GS_OPTIONS</tt></b> are not limited to switches; they may include
-actual file names or even <a href="#Input_control">"@file" arguments</a>.
-
-</dl>
-
-<dl>
-<dt><a href="#Temp_files"><b><tt>TEMP</tt></b>, <b><tt>TMPDIR</tt></b></a>
-<dd>Defines a directory name for temporary files.  If both
-<b><tt>TEMP</tt></b> and <b><tt>TMPDIR</tt></b> are defined,
-<b><tt>TMPDIR</tt></b> takes precedence.
-</dl>
-
-<hr>
-
-<h2><a name="PDF"></a>Using Ghostscript with PDF files</h2>
-
-<p>
-Ghostscript is normally built (except on 16-bit DOS platforms) to interpret
-both PostScript and PDF files, examining each file to determine
-automatically whether its contents are PDF or PostScript.  All the normal
-switches and procedures for interpreting PostScript files also apply to PDF
-files, with a few exceptions.  In addition, the
-<b><tt>pdf2ps</tt></b> utility uses Ghostscript to convert
-PDF to (Level 2) PostScript.
-
-<h3><a name="PDF_stdin"></a>PDF files from standard input</h3>
-
-<p>
-
-Using the <a href="#Pipe_input">"<b><tt>-</tt></b>" or "<b><tt>-_</tt></b>"
-switch</a> you can provide PDF input from a file, but not from a pipe,
-because the PDF language, unlike the PostScript language, inherently
-requires random access to the file, while a pipe is always sequential.  That
-is,
-
-<blockquote><table cellpadding=0 cellspacing=0>
-<tr>	<td><b><tt>gs -_ &lt; somefile.pdf</tt></b>
-	<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-	<td>(<b><em>is</em></b> permissible)
-<tr>	<td>{some program producing PDF} <b><tt>| gs -_</tt></b>
-	<td>&nbsp;
-	<td>(is <b><em>not</em></b> permissible)
-</table></blockquote>
-
-<h3><a name="PDF_switches"></a>Switches for PDF files</h3>
-
-<dl>
-<dt><b><tt>-dFirstPage=</tt></b><em>pagenumber</em>
-<dd>Begins interpreting on the designated page of the document.
-</dl>
-
-<dl>
-<dt><b><tt>-dLastPage=</tt></b><em>pagenumber</em>
-<dd>Stops interpreting after the designated page of the document.
-</dl>
-
-<dl>
-<dt><b><tt>-dPrinted</tt></b>
-<dt><b><tt>-dPrinted=false</tt></b>
-<dd>Determines whether the file should be displayed or printed using the
-"screen" or "printer" options for annotations and images.  With
-<b><tt>-dPrinted</tt></b>, the output will use the file's "print"
-options; with <b><tt>-dPrinted=false</tt></b>, the output will use the
-file's "screen" options.  If neither of these is specified, the output will
-use the screen options for any output device that doesn't have an
-<b><tt>OutputFile</tt></b> parameter, and the printer options for
-devices that do have this parameter.
-</dl>
-
-<dl>
-<dt><b><tt>-dUseCropBox</tt></b>
-<dd>Sets the page size to the CropBox rather than the MediaBox.
-Some files have a CropBox that is smaller than the MediaBox and
-may include white space, registration or cutting marks outside
-the CropBox.  Using this option will set the page size 
-appropriately for a viewer.
-</dl>
-
-<dl>
-<dt><b><tt>-sPDFPassword=</tt></b><em>password</em>
-<dd>Sets the user or owner password to be used in decoding encrypted
-PDF files.
-</dl>
-
-<h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
-
-<p>
-Occasionally you may try to read or print a <b><tt>*.pdf</tt></b> file that
-Ghostscript doesn't recognize as PDF, even though the same file
-<b><em>can</em></b> be opened and interpreted by an Adobe Acrobat viewer.
-In many cases, this is because of incorrectly generated PDF. Acrobat
-tends to be very forgiving of invalid PDF files. Ghostscript tends to
-expect files to conform to the standard. For example, even though
-valid PDF files must begin with <b><tt>%PDF</tt></b>, Acrobat will
-scan the first 1000 bytes or so for this string, and ignore any preceding
-garbage.
-
-<p>
-In the past, Ghostscript's policy has been to simply fail with an
-error message when confronted with these files. This policy has, no
-doubt, encouraged PDF generators to be more careful. However, we now
-recognize that this behavior is not very friendly for people who just
-want to use Ghostscript to view or print PDF files. Our new policy is
-to try to render broken PDF's, and also to print a warning, so that
-Ghostscript is still useful as a sanity-check for invalid files.
 
 <hr>
 
@@ -1869,7 +1676,7 @@ terminal output to a file.
 
 <hr>
 
-<h2><a name="Switches"></a>Switches</h2>
+<h2><a name="Options"></a>Command line options</h2>
 
 <p>
 Unless otherwise noted, these switches can be used on all platforms.
@@ -1909,7 +1716,7 @@ expands <b><tt>@</tt></b><em>filename</em> arguments.
 <dd>These are not really switches: they tell Ghostscript to read from
 standard input, which is coming from a file or a pipe,
 with or without buffering.
-See <a href="#Pipe_input">"Input from a pipe"</a> above.
+On some systems, Ghostscript may read the input one character at a time, which is useful for programs such as GSview that generate input for Ghostscript dynamically and watch for some response, but can slow processing. If performance is significantly slower than with a named file, try '<tt>-_</tt>' which always reads the input in . However, '<tt>-</tt>' is equivalent on most systems.
 </dl>
 
 <dl>
@@ -2090,6 +1897,12 @@ resolution in dots per inch.
 scaled images at the expense of speed.  Note that
 <b><tt>-dNOINTERPOLATE</tt></b> overrides <b><tt>-dDOINTERPOLATE</tt></b> if
 both are specified.
+</dl>
+
+<dl>
+<dt><b><tt>-dTextAlphaBits=</tt></b><em>n</em>
+<dt><b><tt>-dGraphicsAlphaBits=</tt></b><em>n</em>
+<dd>These options control the use of subsample antialiasing. Their use is highly recommended for producing high quality rasterizations. The subsampling box size <em>n</em> should be 4 for optimum output, but smaller values can be used for faster rendering. Antialiasing is enabled separately for text and graphics content.
 </dl>
 
 <dl>
@@ -2437,6 +2250,51 @@ may dramatically improve performance at the cost of an additional 2-3 Mb of
 memory: <b><tt>-c&nbsp;3000000&nbsp;setvmthreshold&nbsp;-f</tt></b>.
 
 </ul>
+
+<h2><a name="Environment_variables"></a>Summary of environment variables</h2>
+
+<dl>
+<dt><b><tt>GS</tt></b>, <b><tt>GSC</tt></b> (MS Windows only)
+<dd>Specify the names of the Ghostscript executables.  <b><tt>GS</tt></b>
+brings up a new typein window and possibly a graphics window;
+<b><tt>GSC</tt></b> uses the DOS console.  If these are not set,
+<b><tt>GS</tt></b> defaults to <b><tt>gswin32</tt></b>, and
+<b><tt>GSC</tt></b> defaults to <b><tt>gswin32c</tt></b>.
+</dl>
+
+<dl>
+<dt><a href="#GS_DEVICE"><b><tt>GS_DEVICE</tt></b></a>
+<dd>Defines the default output device. This overrides the compiled-in default, but is overridden by any commandline setting.
+</dl>
+
+<dl>
+<dt><a href="#Font_lookup"><b><tt>GS_FONTPATH</tt></b></a>
+<dd>Specifies a list of directories to scan for fonts if a font requested
+can't be found anywhere on the search path.
+</dl>
+
+<dl>
+<dt><a href="#Finding_files"><b><tt>GS_LIB</tt></b></a>
+<dd>Provides a search path for initialization files and fonts.
+</dl>
+
+<dl>
+<dt><b><tt>GS_OPTIONS</tt></b>
+<dd>Defines a list of command-line arguments to be processed before the
+ones actually specified on the command line.  For example, setting
+<b><tt>GS_DEVICE</tt></b> to XYZ is equivalent to setting
+<b><tt>GS_OPTIONS</tt></b> to <b><tt>-sDEVICE=XYZ</tt></b>.  The contents
+of <b><tt>GS_OPTIONS</tt></b> are not limited to switches; they may include
+actual file names or even <a href="#Input_control">"@file" arguments</a>.
+
+</dl>
+
+<dl>
+<dt><a href="#Temp_files"><b><tt>TEMP</tt></b>, <b><tt>TMPDIR</tt></b></a>
+<dd>Defines a directory name for temporary files.  If both
+<b><tt>TEMP</tt></b> and <b><tt>TMPDIR</tt></b> are defined,
+<b><tt>TMPDIR</tt></b> takes precedence.
+</dl>
 
 <hr>
 
@@ -3148,8 +3006,7 @@ passes it to UFST as PCLEOs.
 <hr>
 
 <p>
-<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights
-reserved.</small>
+<small>Copyright &copy; 1996-2002 artofcode LLC. All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or

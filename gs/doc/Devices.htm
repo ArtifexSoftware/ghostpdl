@@ -1037,11 +1037,57 @@ meet your needs.
 
 <hr>
 
-<h2><a name="Test"></a>Test devices</h2>
+<h2><a name="Test"></a>Special and Test devices</h2>
 
 <p>
 The devices in this section are intended primarily for testing. They may
 be interesting as code examples, as well.
+
+<h3>Raw 'bit' devices</h3>
+
+<p>There are a collection of 'bit' devices that don't do any special formatting
+but output 'raw' binary data for the page images. These are used for benchmarking
+but can also be useful when you want to directly access the raster data.</p>
+
+<p>
+The raw devices are <tt>bit bitrgb bitcmyk</tt>.
+
+<h3><a name="Bounding_box_output"></a>Bounding box output</h3>
+
+<p>
+There is a special <b><tt>bbox</tt></b> "device" that just prints the
+bounding box of each page.  You select it in the usual way:
+
+<blockquote><b><tt>
+gs -dSAFER -dNOPAUSE -dBATCH -sDEVICE=bbox
+</tt></b></blockquote>
+
+<p>
+It prints the output in a format like this:
+
+<blockquote>
+<pre><b><tt>%%BoundingBox: 14 37 570 719
+%%HiResBoundingBox: 14.308066 37.547999 569.495061 718.319158
+</tt></b></pre></blockquote>
+</p>
+
+<p>
+Currently, it always prints the bounding box on <b><tt>stderr</tt></b>;
+eventually, it should also recognize <b><tt>-sOutputFile=</tt></b>.
+
+<p>
+Note that this device, like other devices, has a resolution and a (maximum)
+page size.  As for other devices, the product (resolution x page size) is
+limited to approximately 500K pixels.  By default, the resolution is 4000
+DPI and the maximum page size is approximately 125", or approximately 9000
+default (1/72") user coordinate units.  If you need to measure larger pages
+than this, you must reset <em>both</em> the resolution and the page size in
+pixels, e.g.,
+
+<blockquote><b><tt>
+gs -dNOPAUSE -dBATCH -sDEVICE=bbox -r100 -g500000x500000
+</tt></b></blockquote>
+
 
 <h3><a name="Permute"></a>Permutation (DeviceN color model)</h3>
 
@@ -1073,15 +1119,7 @@ important to permute the planes of the default halftone accordingly, and
 that any file which sets halftones explicitly will fail a consistency
 check.
 
-<h3>Raw 'bit' devices</h3>
 
-<p>There are a collection of 'bit' devices that don't do any special formatting
-but output 'raw' binary data for the page images. These are used for benchmarking
-but can also be useful when you want to directly access the raster data.</p>
-
-<p>
-The raw devices are <tt>bit bitrgb bitcmyk</tt>.
-</p>
 
 <!-- [2.0 end contents] ==================================================== -->
 

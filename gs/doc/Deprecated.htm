@@ -3,7 +3,6 @@
 <head>
 <title>Deprecated Ghostscript features</title>
 <!-- $Id$ -->
-<!-- Originally: devices.txt -->
 <link rel="stylesheet" type="text/css" href="gs.css" title="Ghostscript Style">
 </head>
 
@@ -12,7 +11,7 @@
 
 <!-- [1.1 begin headline] ================================================== -->
 
-<h1>Deprecated Ghostscript output devices</h1>
+<h1>Deprecated Ghostscript options and output devices</h1>
 
 <!-- [1.1 end headline] ==================================================== -->
 
@@ -21,6 +20,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Options">Deprecated Options</a>
 <li><a href="#HP8_color_inkjet">H-P 8xx, 1100, and 1600 color inkjet printers</a>
 <ul>
 <li><a href="#HP8_gdevcd8">Drivers contained in <b><tt>gdevcd8.c</tt></b></a>
@@ -136,6 +136,14 @@ the description of the <a href="Drivers.htm">driver interface</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
+
+<h2><a name="Options"></a>Deprecated options</h2>
+
+<p>
+For compatibility with older versions of Ghostscript, <tt>-sOUTPUTFILE</tt> 
+is a synonym for <tt>-sOutputFile</tt>. It should not be used in new code.
+
+<hr>
 
 <h2><a name="HP8_color_inkjet"></a>H-P 8xx, 1100, and 1600 color inkjet printers</h2>
 
