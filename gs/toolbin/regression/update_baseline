@@ -7,6 +7,8 @@
 # producing better output than the normal baseline (ie, when a regression
 # is really a progression
 
+# $Id$
+
 import gstest
 import gsconf
 import gssum

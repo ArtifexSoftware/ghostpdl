@@ -6,6 +6,8 @@
 # one from baseline, and one from head
 # these are appropriate for a visual diff
 
+# $Id$
+
 import gstest
 import gsconf
 import os, sys

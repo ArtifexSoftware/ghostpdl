@@ -2,6 +2,8 @@
 #
 # base classes for regression testing
 
+# $Id$
+
 import os
 import unittest
 import traceback

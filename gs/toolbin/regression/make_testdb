@@ -6,6 +6,8 @@
 # with the md5sums of the test data files run through the
 # baseline ghostscript
 
+# $Id$
+
 import gstest
 import gsconf
 import gssum

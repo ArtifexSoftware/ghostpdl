@@ -3,6 +3,8 @@
 # this module contains routines for calculating sums and managing
 # the sum database
 
+# $Id$
+
 def exists(file):
     import anydbm
     import gsconf

@@ -4,6 +4,8 @@
 #
 # dumps the contents of the testdatadb
 
+# $Id$
+
 import sys, anydbm, gsconf
 
 if len(sys.argv) == 2:

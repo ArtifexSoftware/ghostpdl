@@ -6,6 +6,8 @@
 # for all versions of file <file>.  use this when you've accidentally
 # updated a baseline you shouldn't have.
 
+# $Id$
+
 import gstest
 import gsconf
 import gssum

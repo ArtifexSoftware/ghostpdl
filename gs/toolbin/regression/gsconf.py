@@ -2,6 +2,8 @@
 #
 # configuration variables
 
+# $Id$
+
 testroot = '/path/to/regression/'
 testdatadb = testroot + 'testdata.db'
 comparefiledir = testroot + 'comparefiles/'

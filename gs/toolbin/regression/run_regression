@@ -4,6 +4,8 @@
 #
 # runs ghostscript regression tests
 
+# $Id$
+
 import unittest, os
 import gsconf, gstest
 
