@@ -1005,7 +1005,7 @@ process_plain_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 
 	    str.data = buf;
 	    str.size = size;
-	    if (pdf_obtain_font_resource_unencoded(penum, &str, &pdfont, gdata) != 0) {
+	    if (pdf_obtain_font_resource_unencoded(pte, &str, &pdfont, gdata) != 0) {
 		/* 
 		 * pdf_text_process will fall back 
 		 * to default implementation.
