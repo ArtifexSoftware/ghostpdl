@@ -1096,7 +1096,8 @@ currentdict end readonly def
 } bind def
 
 /SubstitutePDFColorSpace % <array> SubstitutePDFColorSpace <array>
-{ { 
+{ currentglobal true setglobal exch
+  { 
     dup 0 get /Pattern eq {
       dup length 1 gt {
         dup 1 get xcheck {
@@ -1170,6 +1171,7 @@ currentdict end readonly def
     } if
     mark exch (Unimplemented color space ) exch //error exec
   } loop
+  exch setglobal
 } bind def
 
 //SubstitutePDFColorSpaceRec 0 //SubstitutePDFColorSpace put
