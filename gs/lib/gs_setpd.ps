@@ -613,7 +613,7 @@ DEBUG { (Merging.) = pstack flush } if
 		% PageSize from InputAttributes and impose it, discard any
 		% attempt to set PageSize to a 4-element value.
     dup /PageSize .knownget {
-      dup length 2 ne { dup /PageSize undef } if
+      length 2 ne { dup /PageSize undef } if
     } if
 
 		% Select input and output media.
