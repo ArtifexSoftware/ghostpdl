@@ -1,4 +1,4 @@
-/* Copyright (C) 1994 - 1997 artofcode LLC.  All rights reserved.
+/* Copyright (C) 1994 - 2003 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -19,10 +19,7 @@
 #ifndef gp_mac_INCLUDED
 #  define gp_mac_INCLUDED
 
-
-FILE *  gp_fopen (const char * fname, const char * mode );
-FILE *  gp_open_scratch_file (const char *prefix, char *fname, const char *mode);
-
+/* no special definitions for macos */
 
 #endif 				/* gp_mac_INCLUDED */
 

@@ -412,26 +412,30 @@ gp_setmode_binary(FILE *pfile, bool binary)
 /* Write the actual file name at fname. */
 
 FILE *
-gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
+gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const char *mode)
 {
     char thefname[256];
     Str255 thepfname;
-	OSErr myErr;
-	short foundVRefNum;
-	long foundDirID;
-	FSSpec fSpec;
-	FILE *f;
+    OSErr myErr;
+    short foundVRefNum;
+    long foundDirID;
+    FSSpec fSpec;
+    FILE *f;
+    int prefix_length = strlen(prefix);
 
-	strcpy (fname, (char *) prefix);
-	{
-		char newName[50];
+    if (prefix_length > fp_file_name_sizeof) return NULL;
+    strcpy (fname, (char *) prefix);
+      {
+	char newName[50];
 
-		tmpnam (newName);
-		strcat (fname, newName);
-	}
+	tmpnam (newName);
+	if ( prefix_length + strlen(newName) > fp_file_name_sizeof ) return NULL;
+	strcat (fname, newName);
+      }
 
+   if ( strlen(fname) > 255 ) return NULL;
    if ( strrchr(fname,':') == NULL ) {
-       memcpy((char*)&thepfname[1],(char *)&fname[0],strlen(fname));
+       memmove((char*)&thepfname[1],(char *)&fname[0],strlen(fname));
 	   thepfname[0]=strlen(fname);
 		myErr = FindFolder(kOnSystemDisk,kTemporaryFolderType,kCreateFolder,
 			&foundVRefNum, &foundDirID);
@@ -444,7 +448,7 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 		sprintf(fname,"%s",thefname);
    } else {
        sprintf((char*)&thefname[0],"%s\0",fname);
-       memcpy((char*)&thepfname[1],(char *)&thefname[0],strlen(thefname));
+       memmove((char*)&thepfname[1],(char *)&thefname[0],strlen(thefname));
 	   thepfname[0]=strlen(thefname);
    }
 
