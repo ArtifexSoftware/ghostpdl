@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.8 2001/06/14 23:09:23 giles Exp $
+    $Id: jbig2dec.c,v 1.9 2001/06/26 00:30:00 giles Exp $
 */
 
 #include <stdio.h>
@@ -206,7 +206,16 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
   SDREFAGG = (result->flags >> 1) & 1;
   SDRTEMPLATE = (result->flags >> 12) & 1;
 
-  /* 7.4.2.1.2 */
+  /* FIXME: there are quite a few of these conditions to check */
+  /* maybe #ifdef CONFORMANCE and a separate routine */
+  if(!SDHUFF && !(result->flags & 0x0006)) {
+	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDH is not.\n");
+  }
+  if(!SDHUFF && !(result->flags & 0x0018)) {
+	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDW is not.\n");
+  }
+
+  /* 7.4.2.1.2 - Symbol dictionary AT flags */
   if (!SDHUFF)
     {
       int SDTEMPLATE = (result->flags >> 10) & 3;
@@ -221,7 +230,7 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
   memset (&result->SDAT_flags + sdat_bytes, 0, 8 - sdat_bytes);
   offset += sdat_bytes;
 
-  /* 7.4.2.1.3 */
+  /* 7.4.2.1.3 - Symbol dictionary refinement AT flags */
   if (SDREFAGG && !SDRTEMPLATE)
     {
       get_bytes (ctx, result->SDRAT_flags, 4, offset);
@@ -235,6 +244,8 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
   result->SDNUMNEWSYMS = get_int32 (ctx, offset + 4);
   offset += 8;
 
+  /* hardwire for the first annex-h example */
+  
   return result;
 }
 

@@ -8,12 +8,10 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_huffman.h,v 1.2 2001/06/10 07:09:18 giles Exp $
+    $Id: jbig2_huffman.h,v 1.3 2001/06/26 00:30:00 giles Exp $
 */
 
-typedef struct _Jbig2HuffmanState Jbig2HuffmanState;
-typedef struct _Jbig2HuffmanTable Jbig2HuffmanTable;
-typedef struct _Jbig2HuffmanParams Jbig2HuffmanParams;
+#include "jbig2_hufftab.h"
 
 Jbig2HuffmanState *
 jbig2_huffman_new (Jbig2WordStream *ws);
