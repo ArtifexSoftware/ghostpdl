@@ -267,7 +267,6 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 
     pbw->target = pdev->strm;
     pbw->dev = pdev;
-    pbw->A85E = 0;		/* for GC in case of failure */
     pbw->strm = 0;		/* for GC in case of failure */
     /* If not binary, set up the encoding stream. */
     if (!pdev->binary_ok) {
@@ -287,7 +286,7 @@ psdf_begin_binary(gx_device_psdf * pdev, psdf_binary_writer * pbw)
 	ss->template = &s_A85E_template;
 	s_init_filter(s, (stream_state *)ss, buf, BUF_SIZE, pdev->strm);
 #undef BUF_SIZE
-	pbw->strm = pbw->A85E = s;
+	pbw->strm = s;
     } else {
 	pbw->strm = pdev->strm;
     }
@@ -406,7 +405,5 @@ psdf_end_binary(psdf_binary_writer * pbw)
 {
     int status = s_close_filters(&pbw->strm, pbw->target);
 
-    /* s_close_filters freed the A85E stream, if any. */
-    pbw->A85E = 0;		/* for GC */
     return (status >= 0 ? 0 : gs_note_error(gs_error_ioerror));
 }

@@ -309,12 +309,8 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
 int
 pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
 {
-    long pos = stell(pdev->streams.strm);  /* piw->binary.target */
-    int ecode = psdf_end_binary(&piw->binary);
-    int code = cos_stream_add_since(piw->data, pos);
+    int code = psdf_end_binary(&piw->binary);
 
-    if (ecode < 0)
-	return ecode;
     if (code < 0)
 	return code;
     /* If the image ended prematurely, update the Height. */

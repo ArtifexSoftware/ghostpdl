@@ -290,16 +290,15 @@ int psdf_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
 /* Define the structure for writing binary data. */
 typedef struct psdf_binary_writer_s {
     gs_memory_t *memory;
-    stream *A85E;		/* optional ASCII85Encode stream */
     stream *target;		/* underlying stream */
-    stream *strm;		/* may point to A85E.s */
+    stream *strm;
     gx_device_psdf *dev;	/* may be unused */
 } psdf_binary_writer;
 extern_st(st_psdf_binary_writer);
 #define public_st_psdf_binary_writer() /* in gdevpsdu.c */\
-  gs_public_st_ptrs4(st_psdf_binary_writer, psdf_binary_writer,\
+  gs_public_st_ptrs3(st_psdf_binary_writer, psdf_binary_writer,\
     "psdf_binary_writer", psdf_binary_writer_enum_ptrs,\
-    psdf_binary_writer_reloc_ptrs, A85E, target, strm, dev)
+    psdf_binary_writer_reloc_ptrs, target, strm, dev)
 #define psdf_binary_writer_max_ptrs 4
 
 /* Begin writing binary data. */
