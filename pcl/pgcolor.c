@@ -52,7 +52,6 @@ hpgl_PC(
 	    return e_Range;
 
 	if (hpgl_arg_c_real(pargs, &primary[0])) {
-            int         c;
             float       comps[3];
 
 	    if ( !hpgl_arg_c_real(pargs, &primary[1]) ||

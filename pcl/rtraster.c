@@ -608,7 +608,6 @@ process_zero_mask_rows(
          ((pen != 0) || ((code = create_mask_enumerator(prast)) >= 0))  ) {
         uint            dummy;
         pcl_state_t *   pcs = prast->pcs;
-        gs_rop3_t       rop = (gs_rop3_t)(pcs->logical_op);
         int             nbytes = (prast->src_width + 7) / 8;
 
         pen = prast->mask_pen;
@@ -980,9 +979,7 @@ pcl_start_raster(
     pcl_palette_t *     ppalet = pcs->ppalet;
     pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
     pcl_encoding_type_t penc = pcl_cs_indexed_get_encoding(pindexed);
-    int                 seed_row_bytes = 0;
     pcl_seed_row_t *    pseed_rows = 0;
-    int                 i;
 
     /* there can only be one raster object present at a time */
     if (prast != 0)

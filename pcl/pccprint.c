@@ -110,8 +110,6 @@ pccprint_do_reset(
                                 | pcl_reset_overlay );
 
     if ((type & mask) != 0) {
-	pcl_args_t  args;
-
         pcs->logical_op = 252;
         pcs->pp_mode = 0;
     }

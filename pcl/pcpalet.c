@@ -952,7 +952,6 @@ palette_do_reset(
     pcl_reset_type_t    type
 )
 {
-    int                 code;
     static const uint   mask = (   pcl_reset_initial
                                  | pcl_reset_cold
                                  | pcl_reset_printer

@@ -675,14 +675,6 @@ hpgl_set_drawing_color(
     int                     code = 0;
     pcl_pattern_set_proc_t  set_proc;
 
-#if 0
-    /* A bizarre HPISM - needs to be re-checked for 5c */
-    if ( pgls->g.pen.selected == 0 ) {
-	pat = pcpt_solid_white;
-	goto set;
-    }
-#endif
-
     switch (render_mode) {
 
       case hpgl_rm_clip_and_fill_polygon:
@@ -824,7 +816,6 @@ fill:
 	break;
     }
 
-set:
     if (code >= 0) {
         /* PCL and GL/2 no longer use graphic library transparency */
         gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);

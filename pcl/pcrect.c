@@ -181,7 +181,6 @@ pcl_fill_rect_area(
     pcl_state_t *           pcs
 )
 {
-    gs_state *              pgs = pcs->pgs;
     pcl_pattern_source_t    type = (pcl_pattern_source_t)int_arg(pargs);
     int                     id = pcs->pattern_id;
     int                     code = 0;

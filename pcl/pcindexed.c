@@ -20,7 +20,7 @@
 
 /* pcindexed.c - PCL indexed color space implementation */
 #include "gx.h"
-#include "math.h"
+#include "math_.h"
 #include "pcmtx3.h"
 #include "pccid.h"
 #include "pccsbase.h"
@@ -492,7 +492,6 @@ set_default_entries(
     int                 bits = pindexed->cid.bits_per_index - 1;
     const byte *        porder;
     int                 cnt = (num + start > 8 ? 8 - start : num);
-    int                 code = 0;
     int                 i;
 
     if (bits > 2)
@@ -589,7 +588,6 @@ pcl_cs_indexed_set_norm_and_Decode(
 )
 {
     pcl_cs_indexed_t *      pindexed = *ppindexed;
-    pcl_cspace_type_t       type = (pcl_cspace_type_t)pindexed->cid.cspace;
     pcl_encoding_type_t     enc = (pcl_encoding_type_t)pindexed->cid.encoding;
     pcl_cs_indexed_norm_t * pnorm;
     int                     code = 0;
@@ -887,7 +885,6 @@ pcl_cs_indexed_set_pen_width(
 {
     pcl_cs_indexed_t *  pindexed = *ppindexed;
     int                 code;
-    int                 i;
 
     /* check for out-of-range pen */
     if ((pen < 0) || (pen > pindexed->num_entries))
@@ -929,7 +926,6 @@ pcl_cs_indexed_build_cspace(
     floatp                  wht_ref[3];
     floatp                  blk_ref[3];
     pcl_cs_base_t *         pbase = 0;
-    int                     num_entries;
     bool                    is_default = false;
     int                     code = 0;
 
@@ -1029,7 +1025,6 @@ pcl_cs_indexed_build_default_cspace(
 {
     if (pdflt_cs_indexed == 0) {
         static pcl_cid_data_t    dflt_cid_data;
-        int                      code = 0;
 
         dflt_cid_data.len = 6;
         dflt_cid_data.u.hdr = dflt_cid_hdr;

@@ -20,7 +20,7 @@
 
 /* pcht.c - PCL halftone/rendering object implementation */
 #include "gx.h"
-#include "math.h"
+#include "math_.h"
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gsrefct.h"
@@ -1665,7 +1665,6 @@ free_pcl_ht(
 )
 {
     pcl_ht_t *      pht = (pcl_ht_t *)pvht;
-    int             i;
 
     if (pht->client_data[0].plktbl != 0)
         rc_adjust(pht->client_data[0].plktbl, -3, cname);
@@ -1891,7 +1890,6 @@ pcl_ht_set_udither(
 {
     pcl_ht_t *  pht = *ppht;
     int         code = 0;
-    int         i;
 
     /* get a unique copy of the halftone object */
     if ((code = unshare_pcl_ht(ppht)) < 0)
@@ -1919,7 +1917,6 @@ pcl_ht_update_cspace(
     pcl_ht_t *          pht = *ppht;
     uint                i = pht->render_method;
     uint                flags = rendering_info[i].flags;
-    int                 code = 0;
 
     if ( ((pht->pfg_ht == 0) && (pht->pim_ht == 0))                         ||
          ((flags & HT_DEVCSPACE) == 0)                                      ||

@@ -485,7 +485,6 @@ pcl_show_chars(
 )
 {
     gs_state *              pgs = pcs->pgs;
-    gs_show_enum *          penum = pcs->penum;
     char                    buff[2];
     floatp                  limit1 = pcs->margins.right;
     floatp                  limit2 = pcs->xfm_state.pd_size.x;
@@ -507,7 +506,6 @@ pcl_show_chars(
     cpt.y = pcl_cap.y;
     while (get_next_char(pcs, &str, &size, &chr, &is_space, literal) == 0) {
         floatp  tmp_x;
-        bool    last_char = false;
 
         /* check if a character was found */
         buff[0] = (chr >> 8);
@@ -519,8 +517,6 @@ pcl_show_chars(
             if (!pfp->params.proportional_spacing || is_space)
                 width = hmi;
             else {
-                gs_point    wpt;
-
                 if ((code = char_width(pcs, buff, &width)) < 0)
                     break;
                 width *= pscale->x;
@@ -652,7 +648,6 @@ pcl_text(
     bool            literal
 )
 {
-    gs_memory_t *   mem = pcs->memory;
     gs_state *      pgs = pcs->pgs;
     gs_matrix       user_ctm;
     gs_point        scale;

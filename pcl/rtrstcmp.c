@@ -239,8 +239,6 @@ uncompress_9(
             i -= 2 * j;
             
         } else {
-            const byte *    ptmp = pin;
-
             if (cnt > i)
                 cnt = i;
             i -= cnt;

@@ -303,7 +303,6 @@ set_simple_color_mode(
                                        (byte)pcl_penc_indexed_by_plane,
                                         3, 1, 1, 1 };
     const byte *        pbuff = 0;
-    int                 code = 0;
 
     if (type == 1)
         pbuff = cid_K;
@@ -375,7 +374,6 @@ set_view_illuminant(
     const byte *        pbuff = arg_data(pargs);
     float               x, y;
     gs_vector3          wht_pt;
-    int                 i;
 
     if (len != 8)
         return e_Range;

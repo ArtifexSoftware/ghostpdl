@@ -346,7 +346,6 @@ check_pattern_rendering(
 )
 {
     pcl_ccolor_t *          pccolor = 0;
-    bool                    transp = pcs->pattern_transparent;
 
     /* check the common parameters first */
     if ( (pptrn->orient != pcs->pat_orient)          ||
@@ -420,7 +419,6 @@ render_pattern(
 {
     int                     code = 0;
     pcl_ccolor_t *          pccolor = 0;
-    int                     wht_index = 0;
     gs_color_space *        pcspace;
     gs_matrix               mat;
     gs_depth_bitmap         pixinfo;

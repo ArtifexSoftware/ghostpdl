@@ -339,7 +339,6 @@ pcl_cmap_create_remap_ary(
     byte                tmp_remap[pcl_cs_indexed_palette_size];
     byte *              pmap = 0;
     pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
-    pcl_encoding_type_t penc;
     int                 b_per_p;
 
     /* if a re-map array might be required, build it on the stack first */

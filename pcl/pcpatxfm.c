@@ -21,7 +21,7 @@
 /* pcpatxfm.c - code to set the pattern transformation */
 
 #include "gx.h"
-#include "math.h"
+#include "math_.h"
 #include "pcpatrn.h"
 #include "pcfont.h"
 #include "pcpatxfm.h"

@@ -103,18 +103,6 @@ pause_end_page(
     return pl_finish_page(pmi, pcls->pgs, num_copies, flush);
 }
 
-/* 
- * Define a minimal spot function.
- */
-  private float
-cspotf(
-    floatp  x,
-    floatp  y
-)
-{
-    return (x * x + y * y) / 2;
-}
-
 /*
  * Define the gstate client procedures.
  */

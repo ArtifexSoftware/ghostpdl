@@ -190,7 +190,6 @@ hpgl_IN(
     hpgl_state_t *  pgls
 )
 {	
-    hpgl_args_t     args;
     int             code = 0;
 
     /* handle the work or an implicit reset */

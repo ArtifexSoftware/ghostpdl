@@ -21,7 +21,7 @@
 /* pccsbase.h - base color space code for PCL 5c */
 
 #include "gx.h"
-#include "math.h"
+#include "math_.h"
 #include "gstypes.h"
 #include "gsmatrix.h"
 #include "gsstruct.h"
@@ -741,11 +741,6 @@ finish_lab_cspace(
     const pcl_cid_data_t *          pcid
 )
 {
-    pcl_mtx3_t                      conv_mtx;
-    pcl_vec3_t                      white_pt;
-    const pcl_cid_col_common_t *    pcoldata;
-    int                             code = 0;
-
     /* RangeABC has the default value */
     *(gs_cie_abc_DecodeABC(pcspace)) = lab_DecodeABC;
     *(gs_cie_abc_MatrixABC(pcspace)) = lab_MatrixABC;
@@ -1163,7 +1158,6 @@ pcl_cs_base_update_lookup_tbl(
     } else {
         pcl_cspace_type_t   cstype = pbase->type;
         pcl_cspace_type_t   lktype = pcl_lookup_tbl_get_cspace(plktbl);
-        int                 code = 0;
 
         /* lookup tables for "higher" color spaces are always ignored */
         if ( (cstype < lktype)          ||
