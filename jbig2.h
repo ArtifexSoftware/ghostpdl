@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.9 2002/06/22 16:05:45 giles Exp $
+    $Id: jbig2.h,v 1.10 2002/07/03 00:10:07 giles Exp $
 */
 
 #ifdef __cplusplus
@@ -43,7 +43,7 @@ typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
 /*
    this is the general image structure used by the jbig2dec library
    images are 1 bpp, packed into word-aligned rows. stride gives
-   the word offset to the next row, while width and height define
+   the byte offset to the next row, while width and height define
    the size of the image area in pixels.
 */
 
