@@ -19,8 +19,6 @@
 /*$Id$ */
 /* Separation color space and operation definition */
 #include "memory_.h"
-#include "iref.h"
-#include "iname.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc.h"
@@ -356,11 +354,8 @@ private int
 gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 		       gs_color_select_t select)
-{   ref sname;
-    int code;
-    if ((code = name_ref((const byte *)"None", 4, &sname, 0)) < 0)
-	return code;
-    if (pcs->params.separation.sname != name_index(&sname))
+{   int code;
+    if (pcs->params.separation.sep_type != SEP_NONE)
 	return gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
     color_set_null(pdc);
     return 0;
@@ -375,12 +370,8 @@ gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
     gs_client_color cc;
     const gs_color_space *pacs =
     (const gs_color_space *)&pcs->params.separation.alt_space;
-    ref sname;
 
-    if ((code = name_ref((const byte *)"All", 3, &sname, 0)) < 0)
-	return code;
-
-    if (pcs->params.separation.sname == name_index(&sname)) {
+    if (pcs->params.separation.sep_type == SEP_ALL) {
 	/* "All" means setting all device components to same value. */
 	int i, n = cs_num_components(pacs);
 	frac conc;

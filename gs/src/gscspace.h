@@ -277,10 +277,13 @@ typedef struct gs_base_color_space_s {
 typedef ulong gs_separation_name;	/* BOGUS */
 typedef struct gs_indexed_map_s gs_indexed_map;
 
+typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
+
 typedef struct gs_separation_params_s {
     gs_separation_name sname;
     gs_base_color_space alt_space;
     gs_indexed_map *map;
+    separation_type sep_type;
 } gs_separation_params;
 
 #ifndef gs_device_n_map_DEFINED
