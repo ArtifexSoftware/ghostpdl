@@ -45,6 +45,6 @@ int param_check_password(P2(gs_param_list *, const password *));
 /* Read a password from, or write a password into, a dictionary */
 /* (presumably systemdict). */
 int dict_read_password(P3(password *, const ref *, const char *));
-int dict_write_password(P3(const password *, ref *, const char *));
+int dict_write_password(P4(const password *, ref *, const char *, bool));
 
 #endif /* iutil2_INCLUDED */

@@ -85,7 +85,7 @@ level2dict begin
 % Some user parameters are managed entirely at the PostScript level.
 % We take care of that here.
 systemdict begin
-/psuserparams 40 dict def
+/psuserparams 48 dict def
 /getuserparam {			% <name> getuserparam <value>
   /userparams .systemvar 1 index get exch pop
 } odef
@@ -155,6 +155,20 @@ end
 /setsystemparams {		% <dict> setsystemparams -
 	% Check that we will be able to set the PostScript-level
 	% system parameters.
+   /SAFETY .systemvar /safe get {
+     % SAFER mode disallows some changes
+     [ /GenericResourceDir /FontResourceDir /GenericResourcePathSep ] {
+       2 copy .knownget {
+	 exch //pssystemparams exch .knownget {
+           ne { /setsystemparams /invalidaccess signalerror } if
+         } {
+           pop
+         } ifelse
+       } {
+         pop
+       } ifelse
+     } forall
+   } if
    /setsystemparams //pssystemparams mark exch {
      type cvlit /.checkparamtype cvx 2 packedarray cvx
    } forall .dicttomark .checksetparams
@@ -212,6 +226,31 @@ end
   /MaxPatternItem 20000 .definepsuserparam
   /MaxScreenItem 48000 .definepsuserparam
   /MaxUPathItem 5000 .definepsuserparam
+
+% File Access Permission parameters
+  .currentglobal true .setglobal
+  /.checkFilePermitparams {
+    type /arraytype eq {
+      currentuserparams /LockFilePermissions get {
+        5 { pop } repeat /setuserparams /invalidaccess signalerror
+      }
+      if
+    } {
+      5 { pop } repeat /setuserparams /typecheck signalerror
+    }
+    ifelse
+    true
+  } .bind def
+% Initialize the File Permission access control to wide open
+% These will only be accessed via current/set userparams.
+% Values are a string containing multiple nul terminated path strings
+  /PermitFileReading dup [ (*) ] .definepsuserparam
+    psuserparams exch /.checkFilePermitparams load put
+  /PermitFileWriting dup [ (*) ] .definepsuserparam
+    psuserparams exch /.checkFilePermitparams load put
+  /PermitFileControl dup [ (*) ] .definepsuserparam
+    psuserparams exch /.checkFilePermitparams load put
+  .setglobal
 
 pssystemparams begin
   /CurDisplayList 0 .forcedef

@@ -98,6 +98,32 @@ gp_file_name_is_absolute(const char *fname, uint len)
     return (len && (*fname == '/' || *fname == '\\'));
 }
 
+/* Answer whether the file_name references the directory	*/
+/* containing the specified path (parent). 			*/
+bool
+gp_file_name_references_parent(const char *fname, unsigned len)
+{
+    int i = 0, last_sep_pos = -1;
+
+    /* A file name references its parent directory if it starts */
+    /* with ../ or ..\  or if one of these strings follows / or \ */
+    while (i < len) {
+	if (fname[i] == '/' || fname[i] == '\\') {
+	    last_sep_pos = i++;
+	    continue;
+	}
+	if (fname[i++] != '.')
+	    continue;
+        if (i > last_sep_pos + 2 || (i < len && fname[i] != '.'))
+	    continue;
+	i++;
+	/* have separator followed by .. */
+	if (i < len && (fname[i] == '/' || fname[i++] == '\\'))
+	    return true;
+    }
+    return false;
+}
+
 /* Answer the string to be used for combining a directory/device prefix */
 /* with a base file name.  The file name is known to not be absolute. */
 const char *
@@ -111,7 +137,7 @@ gp_file_name_concat_string(const char *prefix, uint plen,
 	    case '\\':
 		return "";
 	};
-    return "\\";
+    return "/";
 }
 
 /* ------ File enumeration ------ */

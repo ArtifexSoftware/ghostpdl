@@ -161,7 +161,7 @@ bytes_compare(const byte * s1, uint len1, const byte * s2, uint len2)
 /* Test whether a string matches a pattern with wildcards. */
 /* '*' = any substring, '?' = any character, '\' quotes next character. */
 const string_match_params string_match_params_default = {
-    '*', '?', '\\', false
+    '*', '?', '\\', false, false
 };
 
 bool
@@ -195,7 +195,9 @@ string_match(const byte * str, uint len, const byte * pstr, uint plen,
 	    return false;	/* str too short */
 	if (*sp == ch ||
 	    (psmp->ignore_case && (*sp ^ ch) == 0x20 &&
-	     (ch &= ~0x20) >= 0x41 && ch <= 0x5a)
+	     (ch &= ~0x20) >= 0x41 && ch <= 0x5a) ||
+	     (psmp->slash_equiv && ((ch == '\\' && *sp == '/') ||
+	     (ch == '/' && *sp == '\\')))
 	    )
 	    p++, sp++;
 	else if (pback == 0)

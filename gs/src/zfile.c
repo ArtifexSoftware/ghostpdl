@@ -22,16 +22,20 @@
 #include "string_.h"
 #include "ghost.h"
 #include "gscdefs.h"		/* for gx_io_device_table */
+#include "gsutil.h"		/* for bytes_compare */
 #include "gp.h"
 #include "gsfname.h"
 #include "gsstruct.h"		/* for registering root */
 #include "gxalloc.h"		/* for streams */
 #include "oper.h"
+#include "dstack.h"		/* for systemdict */
 #include "estack.h"		/* for filenameforall, .execfile */
 #include "ialloc.h"
 #include "ilevel.h"		/* %names only work in Level 2 */
 #include "interp.h"		/* gs_errorinfo_put_string prototype */
+#include "iname.h"
 #include "isave.h"		/* for restore */
+#include "idict.h"
 #include "iutil.h"
 #include "stream.h"
 #include "strimpl.h"
@@ -58,7 +62,7 @@ private int parse_file_access_string(P2(const ref *op, char file_access[4]));
 /* Forward references: other. */
 private int execfile_finish(P1(i_ctx_t *));
 private int execfile_cleanup(P1(i_ctx_t *));
-private int zopen_file(P4(const gs_parsed_file_name_t *pfn,
+private int zopen_file(P5(i_ctx_t *, const gs_parsed_file_name_t *pfn,
 			  const char *file_access, stream **ps,
 			  gs_memory_t *mem));
 private iodev_proc_open_file(iodev_os_open_file);
@@ -137,6 +141,54 @@ make_invalid_file(ref * fp)
     make_file(fp, avm_invalid_file_entry, ~0, invalid_file_entry);
 }
 
+/* Check a file name for permission by stringmatch on one of the */
+/* strings of the permitgroup array */
+private int
+check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
+			const char *permitgroup)
+{
+    long i;
+    ref *permitlist = NULL;
+    /* an empty string (first character == 0) if '\' character is */
+    /* recognized as a file name separator as on DOS & Windows	  */
+    const char *filenamesep = gp_file_name_concat_string("\\", 1);
+
+    /*
+     * We can't know where we will get to if we reference the parent
+     * directory, so don't allow access if LockFilePermissions is true
+     * Also check here for the %pipe device which is illegal when
+     * LockFilePermissions is true. In the future we might want to allow
+     * the %pipe device to be included on the PermitFile... paths, but
+     * for now it is simply disallowed.
+     */
+    if (i_ctx_p->LockFilePermissions &&
+	    (gp_file_name_references_parent(fname, len) ||
+               string_match(fname, len, "%pipe*", 5, NULL))
+       ) {
+	return e_invalidfileaccess;
+    }
+    if (dict_find_string(&(i_ctx_p->userparams), permitgroup, &permitlist) <= 0)
+        return 0;	/* if Permissions not found, just allow access */
+    for (i=0; i<r_size(permitlist); i++) {
+        ref permitstring;
+	const string_match_params win_filename_params = {
+		'*', '?', '\\', true, true	/* ignore case & '/' == '\\' */
+	};
+
+	if (array_get(permitlist, i, &permitstring) < 0 ||
+	    r_type(&permitstring) != t_string
+	   )    
+	    break;	/* any problem, just fail */
+        if (string_match(fname, len, permitstring.value.bytes,
+		r_size(&permitstring), 
+		filenamesep[0] == 0 ? &win_filename_params : NULL)
+	   )
+	    return 0;		/* success */
+    }
+    /* not found */
+    return e_invalidfileaccess;
+}
+
 /* <name_string> <access_string> file <file> */
 private int
 zfile(i_ctx_t *i_ctx_p)
@@ -188,7 +240,7 @@ zfile(i_ctx_t *i_ctx_p)
     } else {
 	if (pname.iodev == NULL)
 	    pname.iodev = iodev_default;
-	code = zopen_file(&pname, file_access, &s, imemory);
+	code = zopen_file(i_ctx_p, &pname, file_access, &s, imemory);
     }
     if (code < 0)
 	return code;
@@ -200,6 +252,27 @@ zfile(i_ctx_t *i_ctx_p)
     make_stream_file(op - 1, s, file_access);
     pop(1);
     return code;
+}
+
+/*
+ * Files created with .tempfile permit some operations even if the 
+ * temp directory is not explicitly named on the PermitFile... path 
+ * The names 'SAFETY' and 'tempfiles' are defined by gs_init.ps
+*/
+private bool
+file_is_tempfile(i_ctx_t *i_ctx_p, const ref *op)
+{
+    ref *SAFETY;
+    ref *tempfiles;
+    ref kname;
+
+    if (dict_find_string(systemdict, "SAFETY", &SAFETY) <= 0 ||
+	    dict_find_string(SAFETY, "tempfiles", &tempfiles) <= 0)
+	return false;
+    if (name_ref(op->value.bytes, r_size(op), &kname, -1) < 0 ||
+	    dict_find(tempfiles, &kname, &SAFETY) <= 0)
+	return false;
+    return true;
 }
 
 /* ------ Level 2 extensions ------ */
@@ -214,6 +287,13 @@ zdeletefile(i_ctx_t *i_ctx_p)
 
     if (code < 0)
 	return code;
+    if (pname.iodev == iodev_default) {
+	if ((code = check_file_permissions(i_ctx_p, pname.fname, pname.len,
+		"PermitFileControl")) < 0 &&
+		 !file_is_tempfile(i_ctx_p, op)) {
+	    return code;
+	}
+    }
     code = (*pname.iodev->procs.delete_file)(pname.iodev, pname.fname);
     gs_free_file_name(&pname, "deletefile");
     if (code < 0)
@@ -298,12 +378,21 @@ zrenamefile(i_ctx_t *i_ctx_p)
 	return code;
     pname2.fname = 0;
     code = parse_real_file_name(op, &pname2, imemory, "renamefile(to)");
-    if (code < 0 || pname1.iodev != pname2.iodev ||
-	(code = (*pname1.iodev->procs.rename_file)(pname1.iodev,
-					    pname1.fname, pname2.fname)) < 0
-	) {
-	if (code >= 0)
+    if (code >= 0) {
+        if (pname1.iodev != pname2.iodev ||
+	      (check_file_permissions(i_ctx_p, pname1.fname, pname1.len,
+	      				"PermitFileControl") < 0 &&
+	          !file_is_tempfile(i_ctx_p, op - 1) < 0) ||
+	      check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
+	      				"PermitFileControl") < 0 ||
+	      check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
+	      				"PermitFileWriting") < 0 ) {
+	    /* add a check to permit pname1 to be a tempfile */
 	    code = gs_note_error(e_invalidfileaccess);
+	} else {
+	    code = (*pname1.iodev->procs.rename_file)(pname1.iodev,
+			    pname1.fname, pname2.fname);
+	}
     }
     gs_free_file_name(&pname2, "renamefile(to)");
     gs_free_file_name(&pname1, "renamefile(from)");
@@ -416,7 +505,7 @@ execfile_cleanup(i_ctx_t *i_ctx_p)
     return zclosefile(i_ctx_p);
 }
 
-/* <dir> <name> .filenamedirseparator <string> */
+/* <dir> .filenamedirseparator <string> */
 private int
 zfilenamedirseparator(i_ctx_t *i_ctx_p)
 {
@@ -424,15 +513,11 @@ zfilenamedirseparator(i_ctx_t *i_ctx_p)
     const char *sepr;
 
     check_read_type(*op, t_string);
-    check_read_type(op[-1], t_string);
     sepr =
-	gp_file_name_concat_string((const char *)op[-1].value.const_bytes,
-				   r_size(op - 1),
-				   (const char *)op->value.const_bytes,
+	gp_file_name_concat_string((const char *)op->value.const_bytes,
 				   r_size(op));
-    make_const_string(op - 1, avm_foreign | a_readonly,
+    make_const_string(op, avm_foreign | a_readonly,
 		      strlen(sepr), (const byte *)sepr);
-    pop(1);
     return 0;
 }
 
@@ -479,7 +564,7 @@ zlibfile(i_ctx_t *i_ctx_p)
     if (pname.iodev == NULL)
 	pname.iodev = iodev_default;
     if (pname.iodev != iodev_default) {		/* Non-OS devices don't have search paths (yet). */
-	code = zopen_file(&pname, "r", &s, imemory);
+	code = zopen_file(i_ctx_p, &pname, "r", &s, imemory);
 	if (code >= 0) {
 	    code = ssetfilename(s, op->value.const_bytes, r_size(op));
 	    if (code < 0) {
@@ -496,6 +581,23 @@ zlibfile(i_ctx_t *i_ctx_p)
     } else {
 	ref fref;
 
+	/* Skip checks if this file name came from the command line. */
+	if (i_ctx_p->LockFilePermissions &&
+	    (i_ctx_p->filearg == NULL ||
+	    bytes_compare(op->value.bytes, r_size(op),
+	    (const byte *)i_ctx_p->filearg, strlen(i_ctx_p->filearg)) != 0)
+	   ) {
+	    /* Check to see if this file is allowed */
+	    /* Possibly we should allow access to parent directories if */
+	    /* PermitFileReading includes (*), but this is unlikely if  */
+	    /* we are locked. */
+	    if (gp_file_name_references_parent(pname.fname, pname.len) ||
+		(gp_file_name_is_absolute(pname.fname, pname.len) &&
+		check_file_permissions(i_ctx_p, pname.fname, pname.len,
+					"PermitFileReading") < 0)
+	       ) 
+		    return_error(e_invalidfileaccess);
+	}
 	code = lib_file_open(pname.fname, pname.len, cname, MAX_CNAME,
 			     &clen, &fref, imemory);
 	if (code >= 0) {
@@ -551,6 +653,13 @@ ztempfile(i_ctx_t *i_ctx_p)
 	prefix[psize] = 0;
 	pstr = prefix;
     }
+    if (i_ctx_p->LockFilePermissions) 
+        if (gp_file_name_references_parent(pstr, strlen(pstr)) ||
+	    (gp_file_name_is_absolute(pstr, strlen(pstr)) &&
+	      check_file_permissions(i_ctx_p, pstr, strlen(pstr),
+	      				"PermitFileWriting") < 0 )
+	)
+	    return_error(e_invalidfileaccess);
     s = file_alloc_stream(imemory, "ztempfile(stream)");
     if (s == 0)
 	return_error(e_VMerror);
@@ -596,7 +705,7 @@ const op_def zfile_op_defs[] =
     {"1.execfile", zexecfile},
     {"2file", zfile},
     {"3filenameforall", zfilenameforall},
-    {"2.filenamedirseparator", zfilenamedirseparator},
+    {"1.filenamedirseparator", zfilenamedirseparator},
     {"0.filenamelistseparator", zfilenamelistseparator},
     {"1.filenamesplit", zfilenamesplit},
     {"1.libfile", zlibfile},
@@ -674,8 +783,8 @@ parse_file_access_string(const ref *op, char file_access[4])
  * device).
  */
 private int
-zopen_file(const gs_parsed_file_name_t *pfn, const char *file_access,
-	   stream **ps, gs_memory_t *mem)
+zopen_file(i_ctx_t *i_ctx_p, const gs_parsed_file_name_t *pfn,
+	   const char *file_access, stream **ps, gs_memory_t *mem)
 {
     gx_io_device *const iodev = pfn->iodev;
 
@@ -686,6 +795,14 @@ zopen_file(const gs_parsed_file_name_t *pfn, const char *file_access,
 
 	if (open_file == 0)
 	    open_file = iodev_os_open_file;
+	/* Check OS files to make sure we allow the type of access */
+	if (open_file == iodev_os_open_file) {
+	    int code = check_file_permissions(i_ctx_p, pfn->fname, pfn->len,
+		file_access[0] == 'r' ? "PermitFileReading" : "PermitFileWriting");
+
+	    if (code < 0)
+		return code;
+	}
 	return open_file(iodev, pfn->fname, pfn->len, file_access, ps, mem);
     }
 }
@@ -744,7 +861,7 @@ lib_file_fopen(gx_io_device * iodev, const char *bname,
 	const char *pstr = (const char *)prdir->value.const_bytes;
 	uint plen = r_size(prdir);
 	const char *cstr =
-	gp_file_name_concat_string(pstr, plen, bname, len);
+	gp_file_name_concat_string(pstr, plen);
 	int up, i;
 	int code;
 

@@ -1,4 +1,4 @@
-%    Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
+% (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of AFPL Ghostscript.
 % 
@@ -131,8 +131,14 @@ currentdict /OUTPUTFILE known	% obsolete
    currentdict /OUTPUTFILE .undef
  } if
 currentdict /QUIET known   /QUIET exch def
-currentdict /SAFER known   /SAFER exch def
-currentdict /DELAYSAFER known   /DELAYSAFER exch def
+% DELAYSAFER is effectively the same as newer NOSAFER
+currentdict /DELAYSAFER known { /DELAYSAFER true def /NOSAFER true def } if
+/SAFER currentdict /NOSAFER known {
+  false
+} {
+  currentdict /SAFER known
+}
+ifelse def
 currentdict /SHORTERRORS known   /SHORTERRORS exch def
 currentdict /STRICT known   /STRICT exch def
 currentdict /TTYPAUSE known   /TTYPAUSE exch def
@@ -504,7 +510,7 @@ currentdict /superexec .knownget {
 % the PostScript Language Reference Manual).
 % Warning: these are not guaranteed to stay the same from one release
 % to the next!
-/concatstrings
+/concatstrings	%	(str1) (str2) concatstrings (str1str2)
 	{ exch dup length 2 index length add string	% str2 str1 new
 	  dup dup 4 2 roll copy		% str2 new new new1
 	  length 4 -1 roll putinterval
@@ -1552,86 +1558,107 @@ gsave
  } bind def
 
 % If we want a "safer" system, disable some obvious ways to cause havoc.
-SAFER not { (%END SAFER) .skipeof } if
-
 .currentglobal true .setglobal
 /SAFETY 2 dict
-  dup /safe DELAYSAFER not put
-  dup /tempfiles 10 dict put
+  dup /safe false put
+  dup /tempfiles 10 dict readonly put
 readonly def
 .setglobal
 
-/.setsafe
-  { //SAFETY /safe //true .forceput % overrides readonly
-  } .bind executeonly odef
+% Convert a path name into a string suitable for filenameforall
+% For example: (a\\b*?c) to (a\\\\b\\*\\?c)
+/.makepathtemplate {	% str1 -- str2
+   dup length dup add string 0	% result string up to twice the size
+   0 1 4 index length 1 sub {
+     3 index exch get
+     dup 92 eq {		% \ -> \\
+        2 index 2 index 92
+        put
+        exch 1 add exch
+     } 
+     if
+     dup 42 eq {		% * -> \*
+        2 index 2 index 92
+        put
+        exch 1 add exch
+     } 
+     if
+     dup 63 eq {		% ? -> \?
+        2 index 2 index 92
+        put
+        exch 1 add exch
+     } 
+     if
+     2 index 2 index 3 -1 roll put 1 add
+   } for
+   0 exch getinterval exch pop
+} bind def
 
-/file
- { //SAFETY /safe get {
-     dup (r) eq 2 index (%pipe*) .stringmatch not and
-     2 index (%std*) .stringmatch or
-       { file }
-       { /invalidfileaccess //signalerror exec }
-     ifelse
-   } {
-     file
-   } ifelse
- } .bind executeonly odef
-
-/renamefile
-  { //SAFETY /safe get
-      { /invalidfileaccess //signalerror exec }
-      { renamefile }
-    ifelse
-  } .bind executeonly odef
-
-
-/deletefile {
-  //SAFETY /safe get {
-	% Allow deleting temporary files (created/opened with .tempfile).
-      //SAFETY /tempfiles get 1 index known {
-	deletefile
-      } {
-	/invalidfileaccess //signalerror exec
-      } ifelse
-    } {
-      deletefile
-  } ifelse
+/.locksafe {
+  SAFETY /safe get not {
+    <<
+      /PermitFileReading [
+        currentuserparams /PermitFileReading get aload pop
+	{ .makepathtemplate 
+          dup .filenamedirseparator concatstrings (*) concatstrings 
+	  exch		% put string below this procedure
+	}
+        /LIBPATH .systemvar { 1 index exec } forall
+        /FONTPATH .systemvar  { 1 index exec } forall
+	currentsystemparams /GenericResourceDir get 1 index exec 
+	currentsystemparams /FontResourceDir get exch exec
+      ]
+      /PermitFileWriting [ ]
+      /PermitFileControl [ ]
+      /LockFilePermissions true
+    >> setuserparams
+  }
+  if
+  mark /.LockSafetyParams true currentdevice .putdeviceprops pop pop
+  //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
 
-/putdeviceprops
- { //SAFETY /safe get { 
-     counttomark
-     dup 2 mod 0 eq { pop /rangecheck //signalerror exec } if
-     3 2 3 2 roll
-      { dup index /OutputFile eq  
-         { -2 roll 
-           dup () ne
-             { /putdeviceprops load /invalidfileaccess //signalerror exec
-             } if
-         3 -1 roll
-         }
-         { pop
-         }
-        ifelse
-      } for
-     putdeviceprops
-   } {
-     putdeviceprops
-   } ifelse
- } .bind executeonly odef
+/.setsafe
+{
+  SAFETY /safe get not {
+    <<
+      /PermitFileReading [ ]
+      /PermitFileWriting [ ]
+      /PermitFileControl [ ]
+    >> setuserparams
+  }
+  if
+  .locksafe
+} .bind executeonly odef
+
+/deletefile {
+  count 1 lt {
+    //deletefile /stackunderflow signalerror
+  }
+  if
+  dup { deletefile } stopped {
+    pop //deletefile $error /errorname get signalerror
+  } {
+    % deletefile succeeded. Remove from tempfile list if present
+    //SAFETY /tempfiles get exch cvn 2 copy known {
+      .forceundef
+    } {
+      pop pop
+    }
+    ifelse
+  }
+  ifelse
+} .bind executeonly odef
 
 % If a file is opened with .tempfile with SAFER not (yet) set,
 % the file can be deleted later, even if SAFER is set.
 /.tempfile {
   .tempfile	% filename file
-  //SAFETY /safe get not {	% DELAYSAFER, no .setsafe yet
-    //SAFETY /tempfiles get 2 index true put
-  } if
+  //SAFETY /tempfiles get 2 index true .forceput
 } .bind executeonly odef
 
-currentdict /SAFETY undef
-
-%END SAFER
+% If we are running in SAFER mode, lock things down
+SAFER { .setsafe } if
 
 % If we delayed binding, make it possible to do it later.
 /.bindnow {

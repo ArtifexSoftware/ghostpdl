@@ -107,7 +107,7 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 
 /* Enumerate the next file. */
 private const string_match_params smp_file =
-{'*', '?', -1, true};
+{'*', '?', -1, true, true};
 
 uint
 gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)

@@ -185,10 +185,15 @@ int gp_setmode_binary(P2(FILE * pfile, bool mode));
 /* i.e. is absolute (not directory- or device-relative). */
 bool gp_file_name_is_absolute(P2(const char *fname, uint len));
 
+/* Answer whether a file name contains a parent directory reference, */
+/* e.g., "../somefile". Currently used for security purposes. */
+bool gp_file_name_references_parent(P2(const char *fname, uint len));
+
 /* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name.  The file name is known to not be absolute. */
-const char *gp_file_name_concat_string(P4(const char *prefix, uint plen,
-					  const char *fname, uint len));
+/* with a base file name. The prefix directory/device is examined to	*/
+/* determine if a separator is needed and may return an empty string	*/
+/* in some cases (platform dependent).					*/
+const char *gp_file_name_concat_string(P2(const char *prefix, uint plen));
 
 /* ------ Printer accessing ------ */
 

@@ -133,7 +133,8 @@ dict_read_password(password * ppass, const ref * pdref, const char *pkey)
     return 0;
 }
 int
-dict_write_password(const password * ppass, ref * pdref, const char *pkey)
+dict_write_password(const password * ppass, ref * pdref, const char *pkey,
+			bool change_allowed)
 {
     ref *pvalue;
     int code = dict_find_password(&pvalue, pdref, pkey);
@@ -142,6 +143,10 @@ dict_write_password(const password * ppass, ref * pdref, const char *pkey)
 	return code;
     if (ppass->size >= r_size(pvalue))
 	return_error(e_rangecheck);
+    if (!change_allowed &&
+    	bytes_compare(pvalue->value.bytes + 1, pvalue->value.bytes[0],
+	    ppass->data, ppass->size) != 0)
+	return_error(e_invalidaccess);
     memcpy(pvalue->value.bytes + 1, ppass->data,
 	   (pvalue->value.bytes[0] = ppass->size));
     return 0;

@@ -140,13 +140,15 @@ context_state_alloc(gs_context_state_t ** ppcst,
 	if (dict_find_string(system_dict, "userparams", &puserparams) >= 0)
 	    size = dict_length(puserparams);
 	else
-	    size = 20;
+	    size = 24;
 	code = dict_alloc(pcst->memory.space_local, size, &pcst->userparams);
 	if (code < 0)
 	    goto x2;
 	/* PostScript code initializes the user parameters. */
     }
     pcst->scanner_options = 0;
+    pcst->LockFilePermissions = false;
+    pcst->filearg = NULL;
     /* The initial stdio values are bogus.... */
     make_file(&pcst->stdio[0], a_readonly | avm_invalid_file_entry, 1,
 	      invalid_file_entry);

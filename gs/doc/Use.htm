@@ -2343,12 +2343,49 @@ Useful only for debugging.
 </dl>
 
 <dl>
-<dt><a name="Safer"></a><b><tt>-dSAFER</tt></b>
+<dt><b><tt>-dNOSAFER</tt></b> (equivalent to <b><tt>-dDELAYSAFER</tt></b>).
+<dd>This flag disables SAFER mode until the <b><tt>.setsafe</tt></b>
+procedure is run. This is intended for clients or scripts that cannot
+operate in SAFER mode. If Ghostscript is started with <b><tt>-dNOSAFER</tt></b>
+or <b><tt>-dDELAYSAFER</tt></b>, PostScript programs are allowed to read, write,
+rename or delete any files in the system that are not protected by operating
+system permissions.
+<p><b>This mode should be used with caution, and <tt>.setsafe</tt> should be
+run prior to running any PostScript file with unknown contents.</b>
+</dl>
+
+<a name="Safer"></a>
+<dl>
+<dt><b><tt>-dSAFER</tt></b>
 <dd>Disables the <b><tt>deletefile</tt></b> and <b><tt>renamefile</tt></b>
-operators, the ability to open files other than <b><tt>%stdout</tt></b> and
-<b><tt>%stderr</tt></b> in any mode other than read-only, and the ability to
-open piped commands (<b><tt>%pipe%</tt></b><em>cmd</em>) at all.  This may
-be desirable for spoolers or other sensitive environments.
+operators, and the ability to open piped commands (<b><tt>%pipe%</tt></b><em>cmd</em>)
+at all. Only <b><tt>%stdout</tt></b> and <b><tt>%stderr</tt></b> can be opened
+for writing.  Disables reading of files other than <b><tt>%stdin</tt></b>,
+those given as a command line argument, or those contained on one of the paths
+given by LIBPATH and FONTPATH and specified by the system params /FontResourceDir
+and /GenericResourceDir.
+<p>
+This mode also sets the <a href="Language.htm#LockSafetyParams">.LockSafetyParams</a>
+parameter of the default device, or the device specified with the <b><tt>-sDEVICE= </tt></b>
+switch to protect against programs that attempt to write to files using the
+OutputFile device parameter. Note that since the device parameters specified
+on the command line (including OutputFile) are set prior to SAFER mode,
+the <b><tt>-sOutputFile=...</tt></b> on the command line is unrestricted.
+<p>
+SAFER mode also prevents changing the /GenericResourceDir, /FontResourceDir
+and either the /SystemParamsPassword or the /StartJobPassword.
+<p>
+<b>Note: </b>While SAFER mode is not the default, in a subsequent release of
+Ghostscript, SAFER mode will be the default thus scripts or programs that need
+to open files or set restricted parameters will require the <b><tt>-dNOSAFER</tt></b>
+command line option.
+<p>
+When running -dNOSAFER it is possible to perform a <b><tt>save</tt></b>,
+followed by <b><tt>.setsafe</tt></b>, execute a file or procedure in SAFER mode,
+then use <b><tt>restore</tt></b> to return to NOSAFER mode. In order to prevent
+the save object from being restored by the foreign file or procedure, the
+<a href="Language.htm#Runandhide"><b>.runandhide</b></a> operator should
+be used to hide the save object from the restricted procedure.
 </dl>
 
 <dl>

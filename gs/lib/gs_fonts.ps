@@ -247,7 +247,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
 /.scanfontdir		% <dirname> .scanfontdir -
  { currentglobal exch true setglobal
    QUIET not { (Scanning ) print dup print ( for fonts...) print flush } if
-   (*) 2 copy .filenamedirseparator
+   (*) 1 index .filenamedirseparator
    dup (\\) eq { pop (\\\\) } if	% double \ for pattern match
    exch concatstrings concatstrings
    0 0 0 4 -1 roll	% found scanned files
@@ -1002,7 +1002,7 @@ FAKEFONTS { exch } if pop def	% don't bind, .current/setglobal get redefined
 	     }
 	  }
 	  { LIBPATH
-	     { defaultfontmap 2 copy .filenamedirseparator
+	     { defaultfontmap 1 index .filenamedirseparator
 	       exch concatstrings concatstrings dup VMDEBUG
 	       (r) { file } .internalstopped
 		{ pop pop } { .loadFontmap } ifelse

@@ -293,11 +293,37 @@ gp_file_name_is_absolute(const char *fname, uint len)
 	return false;
 }
 
+/* Answer whether the file_name references the directory	*/
+/* containing the specified path (parent). 			*/
+bool
+gp_file_name_references_parent(const char *fname, unsigned len)
+{
+    int i = 0, last_sep_pos = -gp_file_name_sizeof;
+
+    /* A file name references its parent directory if it contains -. */
+    /* inside the [ ] part of the file specification */
+    while (i < len && fname[i] != ']') {
+	if (fname[i] == '.' || fname[i] == '[') {
+	    last_sep_pos = i++;
+	    continue;
+	}
+	if (fname[i++] != '-')
+	    continue;
+        if (i > last_sep_pos + 2 || (i < len &&
+		(fname[i] != '.') && fname[i] != ']')
+	   ) 
+	    continue;
+	/* have separator followed by -. or -] */
+	return true;
+    }
+    return false;
+}
+
 /* Answer the string to be used for combining a directory/device prefix */
-/* with a base file name.  The file name is known to not be absolute. */
+/* with a base file name. The prefix directory/device is examined to	*/
+/* determine if a separator is needed and may return an empty string	*/
 const char *
-gp_file_name_concat_string(const char *prefix, uint plen,
-			   const char *fname, uint len)
+gp_file_name_concat_string(const char *prefix, uint plen)
 {
     /*  Full VAX/VMS paths are of the form:
 

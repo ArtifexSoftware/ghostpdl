@@ -1013,38 +1013,46 @@ operation.  Currently gives a <b><tt>rangecheck</tt></b> error if
 <b><tt>string</tt></b> is larger than the file's buffer.
 </dl>
 
+<a name=Tempfile></a>
 <dl>
 <dt><b><tt>&lt;prefix_string|null&gt; &lt;access_string&gt; .tempfile
-&lt;string&gt; &lt;file&gt;</tt></b> <dd>Creates and opens a temporary file
+&lt;string&gt; &lt;file&gt;</tt></b>
+<dd>Creates and opens a temporary file
 like the <b><tt>file</tt></b> operator, also returning the file name.  There
 are three cases for the <b><tt>&lt;prefix_string|null&gt;</tt></b> operand:
 
 <ul>
-
+<p>
 <li><b><tt>null</tt></b>: create the file in the same directory and with the
 same name conventions as other temporary files created by the Ghostscript
 implementation on this platform.  E.g., the temporary file might be named
 <b><tt>/tmp/gs_a1234</tt></b>.
-
+<p>
 <li>A string that is not the beginning of an absolute file name (e.g., does
 not begin with <b><tt>.</tt></b> or <b><tt>/</tt></b> on Unix-like
 platforms): create the file in the standard temporary directory, but use the
 <b><tt>&lt;prefix_string&gt;</tt></b> as the first part of the file name.
 E.g., if <b><tt>&lt;prefix_string&gt;</tt></b> is <b><tt>xx</tt></b>, the
 temporary file might be named <b><tt>/tmp/xxa1234</tt></b>.
-
+<p>
 <li>A string that is the beginning of an absolute file name: use the
 <b><tt>&lt;prefix_string&gt;</tt></b> as the first part of the file name.
 E.g., if <b><tt>&lt;prefix_string&gt;</tt></b> is
 <b><tt>/my/tmpdir/zz</tt></b>, the temporary file might be named
 <b><tt>/my/tmpdir/zza1234</tt></b>.
-
+<p>
+When running in <b><tt>SAFER</tt></b> mode, the absolute path must
+be one of the strings on the list given by the <b><tt>PermitFileWriting</tt></b>
+userparameter. Temporary files created with <b><tt>.tempfile</tt></b> can
+be deleted when in SAFER mode, and can be renamed to one of the paths
+that is on <b>both</b> the PermitFileControl and PermitFileWriting
+paths.
 </ul>
 
 <p>
 It is intended that in some future version of Ghostscript, files opened with
 <b><tt>.tempfile</tt></b> will be closed and deleted automatically when
-Ghostscript exits; however, this is not currently the case (version 7.01).
+Ghostscript exits; however, this is not currently the case.
 
 </dl>
 
@@ -1126,6 +1134,86 @@ otherwise.
 <dl>
 <dt><b><tt>- .oserrorstring &lt;string&gt;</tt></b>
 <dd>Returns the error string for the most recent operating system error.
+</dl>
+
+<a name="Runandhide"></a>
+<dl>
+<dt><b><tt>&lt;array&gt; &lt;procedure&gt; .runandhide ... &lt;array&gt;</tt></b>
+<dd>Runs the <i><tt>&lt;procedure&gt;</tt></i> after removing the
+<i><tt>&lt;array&gt;</tt></i> from the stack. As long as <i><tt>&lt;array&gt;</tt></i> 
+is not contained in any readable dictionaries or elsewhere on stacks, it
+will not be accessible to <i><tt>&lt;procedure&gt;</tt></i>.
+<p>
+This operator is intended to allow hiding a <i><tt>&lt;save&gt;</tt></i> object
+during execution of procedures or files that run in <b>SAFER</b> mode.
+If a <b><tt>save</tt></b> is performed prior to entering <b>SAFER</b> mode
+with <b><tt>.setsafe</tt></b>, using the save object as the operand to
+<b><tt>restore</tt></b> will return to <b>NOSAFER</b> mode. In order to
+prevent the procedures running in <b>SAFER</b> mode from being able to
+return to <b>NOSAFER</b> mode, this operator should be used.
+Upon return from the file or procedure <b><tt>restore</tt></b> can be used
+to return to <b>NOSAFER</b> mode.
+<p>
+<b>Note:</b> The array operand hidden during the execution of the file or
+procedure will be placed at the top of the operand stack which may be on
+top of objects that the file or procedure leaves on top of the stack.
+Thus removing objects below the array may be needed to prevent an
+<b><tt>invalidrestore</tt></b> error.
+<p>
+For example, in order for a script or job server to execute a file
+<tt>somefile.ps</tt> with the <b>SAFER</b> mode restrictions in place, returning
+to unrestricted <b>NOSAFER</b> mode when the procedure exits is as follows:
+<pre>
+	Start Ghostscript with <b>-dNOSAFER</b>
+
+	...			% perform any device set up w/o restrictions
+	[ save ]		% create a save object before SAFER
+	(somefile.ps) (r) file cvx	% open the file to process
+	.setsafe		% enter SAFER mode
+	.runandhide		% run the file hiding the save object
+	count 1 roll		% place array below anything left over
+	count 1 sub { pop } repeat	% pop left over stuff
+	cleardictstack		% prevent invalidrestore from dicts
+	0 get restore		% go back to NOSAFER mode
+</pre>
+Another refinement on the above would be to execute <b><tt>.runandhide</tt></b>
+using <b><tt>stopped</tt></b> in order to report errors but continue processing.
+</dl>
+
+<dl>
+<dt><b><tt>- .setsafe -</tt></b>
+<dd>If Ghostscript is started with <b><tt>-dNOSAFER</tt></b> or 
+<b><tt>-dDELAYSAFER</tt></b>, this operator can be used to enter <b>SAFER</b>
+mode (see <a href="Use.htm#Safer"><b>-dSAFER</b></a>)
+<p>
+Since <b>SAFER</b> mode is implemented with userparameters and device parameters,
+it is possible to use <b><tt>save</tt></b> and <b><tt>restore</tt></b> before
+and after <b><tt>.setsafe</tt></b> to return to <b>NOSAFER</b> mode, but care
+should be taken to ensure that the <i><tt>save</tt></i> object is not
+accessible to any procedures or file run in <b>SAFER</b> mode (see 
+<a href="#Runandhide"><b>.runandhide</b></a> above).
+</dl>
+
+<dl>
+<dt><b><tt>- .locksafe -</tt></b>
+<dd>
+This operator sets the current device's <b><tt>.LockSafetyParams</tt></b>
+and the <b><tt>LockFilePermissions</tt></b> userparameter true as well as
+adding the paths on LIBPATH and FONTPATH and the paths given by the
+system params /GenericResourceDir and /FontResourceDir to the current
+PermitFileReading list of paths.
+<p>
+If Ghostscript is started with <b><tt>-dNOSAFER</tt></b> or 
+<b><tt>-dDELAYSAFER</tt></b>, this operator can be used to enter <b>SAFER</b>
+mode with the current set of <b><tt>PermitFile...</tt></b> user parameters
+in effect. Since <b><tt>.setsafe</tt></b> sets the <b><tt>PermitFile...</tt></b>
+user parameters to empty arrays, a script or job server that needs to
+enable certain paths for file Reading, Writing and/or Control can use this
+operator to perform the locking needed to enter <b>SAFER</b> mode.
+<p>
+See also <a href="#LockSafetyParams">.LockSafetyParams</a> and
+<a href="#User_parameters">User Parameters</a>.
+<p>
 </dl>
 
 <h4><a name="Device"></a>Device operators</h4>
@@ -1243,8 +1331,8 @@ complete scan line.  Always copies an integral number of scan lines.
 <dd>Sets the current device to the specified device.  Also resets the
 transformation and clipping path to the initial values for the device.
 Signals an <b><tt>invalidaccess</tt></b> error if the device is a
-prototype or if <b><tt>.LockSafetyParams</tt></b> is true for the
-current device and is not true for the specified device.
+prototype or if <a href="Language.htm#LockSafetyParams">.LockSafetyParams</a>
+is true for the current device.
 </dl>
 
 <dl>
@@ -1717,6 +1805,56 @@ EOL), which the procedure must consume.
 comment (or, if <b><tt>ProcessDSCComment</tt></b> is also not null, a
 comment other than a DSC comment).  The operands are the same as for
 <b><tt>ProcessDSCComment</tt></b>.
+</dl>
+
+<dl>
+<dt><b><tt>LockFilePermissions &lt;boolean&gt;</tt></b>
+<dd>If <tt>true</tt>, this parameter and the three <tt>PermitFile...</tt>
+parameters cannot be changed. Attempts to change any of the values
+when LockFilePermissions is <tt>true</tt> will signal <b><tt>invalidaccess</tt></b>.
+Also, when this value is <tt>true</tt>, the <b><tt>file</tt></b> operator
+will give <b><tt>invalidaccess</tt></b> when attempting to open files
+(processes) using the <b><tt>%pipe</tt></b> device.
+<p>
+Also when <b><tt>LockFilePermissions</tt></b> is <tt>true</tt>, strings
+cannot reference the parent directory (platform specific). For example
+<b><tt>(../../xyz)</tt></b> is illegal on unix, Windows
+and Macintosh, and <b><tt>([.#.#.XYZ])</tt></b> is illegal on VMS.
+<p>
+This parameter is set <tt>true</tt> by the <b><tt>.setsafe</tt></b> and
+<b><tt>.locksafe</tt></b> operators.
+</dl>
+
+<dl>
+<dt><b><tt>PermitFileReading &lt;array of strings&gt;</tt></b>
+<dt><b><tt>PermitFileWriting &lt;array of strings&gt;</tt></b>
+<dt><b><tt>PermitFileControl &lt;array of strings&gt;</tt></b>
+<dd>These parameters specify paths where file reading, writing and the
+'control' operations are permitted, respectively. File control
+operations are <b><tt>deletefile</tt></b> and <b><tt>renamefile</tt></b>.
+For <b><tt>renamefile</tt></b>, the filename for the current filename
+must match one of the paths on the PermitFileControl list, and the
+new filename must be on <b>both</b> the PermitFileControl and the
+PermitFileWriting lists of paths.
+<p>
+The strings can contain wildcard characters as for the <b><tt>filenameforall</tt></b>
+operator and unless specifying a single file, will end with a <b>*</b>
+for directories (folders) to allow access to all files and sub-directories
+in that directory.
+<p>
+<b>Note:</b> The strings are used for stringmatch operations similar
+to <b><tt>search</tt></b>, thus on MS Windows platforms, use the '/'
+character to separate directories and filenames or use '\\\\' to
+have the string contain '\\' which will match a single '\' in the
+target filename (use of '/' is strongly recommended).
+<p>
+The <a href=Use.htm#Safer><b>SAFER</b></a> mode and the
+<b><tt>.setsafe</tt></b> operator set all three lists to empty arrays,
+thus the only files that can be read are the <b><tt>%stdin</tt></b> device and
+on LIBPATH or FONTPATH or the Resource paths specified by the /FontResourceDir
+or /GenericResourceDir system params. Files cannot be opened for writing
+anywhere and cannot be deleted or renamed except for files created with the
+<a href=#Tempfile><b>.tempfile</b></a> operator).
 </dl>
 
 <hr>

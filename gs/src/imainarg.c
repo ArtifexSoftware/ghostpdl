@@ -675,6 +675,8 @@ esc_strcat(char *dest, const char *src)
 private int
 argproc(gs_main_instance * minst, const char *arg)
 {
+    gs_main_init1(minst);		/* need i_ctx_p to proceed */
+    minst->i_ctx_p->filearg = arg;	/* allow reading this file if SAFER set */
     if (minst->run_buffer_size) {
 	/* Run file with run_string. */
 	return run_buffered(minst, arg);
@@ -973,7 +975,6 @@ print_help_trailer(const gs_main_instance *minst)
 {
     outprintf(help_trailer, gs_doc_directory,
 	    gp_file_name_concat_string(gs_doc_directory,
-				       strlen(gs_doc_directory),
-				       "Use.htm", 7),
+				       strlen(gs_doc_directory)),
 	    GS_BUG_MAILBOX);
 }

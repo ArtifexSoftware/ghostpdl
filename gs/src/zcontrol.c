@@ -181,6 +181,79 @@ end_superexec(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <array> <executable> .runandhide <obj>				*/
+/* 	before executing  <executable>, <array> is been removed from	*/
+/*	the operand stack and placed on the execstack with attributes	*/
+/* 	changed to 'noaccess'.						*/
+/* 	After execution, the array will be placed on  the top of the	*/
+/*	operand stack (on top of any elemetns pushed by <executable>	*/
+/*	for both the normal case and for the error case.		*/
+private int end_runandhide(P1(i_ctx_t *));
+private int err_end_runandhide(P1(i_ctx_t *));
+private int
+zrunandhide(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    es_ptr ep;
+    uint size;
+    int code;
+
+    check_op(2);
+    if (!r_is_array(op - 1))
+	return_op_typecheck(op);
+    if (!r_has_attr(op, a_executable))
+	return 0;		/* literal object just gets pushed back */
+    check_estack(5);
+    ep = esp += 5;
+    make_mark_estack(ep - 4, es_other, err_end_runandhide); /* error case */
+    make_op_estack(ep - 1,  end_runandhide); /* normal case */
+    ref_assign(ep, op);
+    /* Store the object we are hiding  and it's current tas.type_attrs */
+    /* on the exec stack then change to 'noaccess' */
+    make_int(ep - 3, (int)op[-1].tas.type_attrs);
+    ref_assign(ep - 2, op - 1);
+    r_clear_attrs(ep - 2, a_all);
+    /* replace the array with a special kind of mark that has a_read access */
+    esfile_check_cache();
+    pop(2);
+    return o_push_estack;
+}
+private int
+runandhide_restore_hidden(i_ctx_t *i_ctx_p, ref *obj, ref *attrs)
+{
+    os_ptr op = osp;
+
+    push(1);
+    /* restore the hidden_object and its type_attrs */
+    ref_assign(op, obj);
+    r_clear_attrs(op, a_all);
+    r_set_attrs(op, attrs->value.intval);
+    return 0;
+}
+
+/* - %end_runandhide hiddenobject */
+private int
+end_runandhide(i_ctx_t *i_ctx_p)
+{
+    int code;
+
+    if ((code = runandhide_restore_hidden(i_ctx_p, esp, esp - 1)) < 0)
+        return code;
+    esp -= 2;		/* pop the hidden value and its atributes */
+    return o_pop_estack;
+}
+
+/* restore hidden object for error returns */
+private int
+err_end_runandhide(i_ctx_t *i_ctx_p)
+{
+    int code;
+
+    if ((code = runandhide_restore_hidden(i_ctx_p, esp + 3, esp + 2)) < 0)
+        return code;
+    return 0;
+}
+
 /* <bool> <proc> if - */
 int
 zif(i_ctx_t *i_ctx_p)
@@ -857,6 +930,8 @@ const op_def zcontrol3_op_defs[] = {
     {"0%stopped_push", stopped_push},
     {"1superexec", zsuperexec},
     {"0%end_superexec", end_superexec},
+    {"2.runandhide", zrunandhide},
+    {"0%end_runandhide", end_runandhide},
     op_def_end(0)
 };
 

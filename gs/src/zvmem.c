@@ -168,6 +168,12 @@ zrestore(i_ctx_t *i_ctx_p)
     dict_set_top();		/* reload dict stack cache */
     if (I_VALIDATE_AFTER_RESTORE)
 	ivalidate_clean_spaces(i_ctx_p);
+    /* If the i_ctx_p LockFilePermissions is true, but the userparams */
+    /* we just restored is false, we need to make sure that we do not */
+    /* cause an 'invalidaccess' in setuserparams. Temporarily set     */
+    /* LockFilePermissions false until the gs_lev2.ps can do a        */
+    /* setuserparams from the restored userparam dictionary.          */
+    i_ctx_p->LockFilePermissions = false;
     return 0;
 }
 /* Check the operand of a restore. */

@@ -56,6 +56,7 @@ typedef struct string_match_params_s {
     int any_char;		/* '?' */
     int quote_next;		/* '\\' */
     bool ignore_case;
+    bool slash_equiv;	/* '\\' is equivalent to '/' for Windows filename matching */
 } string_match_params;
 extern const string_match_params string_match_params_default;
 bool string_match(P5(const byte * str, uint len,
