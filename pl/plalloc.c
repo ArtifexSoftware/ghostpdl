@@ -289,7 +289,7 @@ private gs_memory_t * pl_stable(P1(gs_memory_t *mem));
 
 
 const gs_memory_retrying_t pl_mem = {
-    0, /* stable_memory */
+    &pl_mem, /* also this is stable_memory since no save/restore */
     { pl_alloc_bytes_immovable, /* alloc_bytes_immovable */
       pl_resize_object, /* resize_object */
       pl_free_object, /* free_object */
