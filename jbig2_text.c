@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.5 2002/06/24 23:28:13 giles Exp $
+    $Id: jbig2_text.c,v 1.6 2002/06/27 14:02:08 giles Exp $
 */
 
 #include <stddef.h>
@@ -98,6 +98,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     int S,T;
     int x,y;
     bool first_symbol = TRUE;
+    uint32_t index, max_id;
     Jbig2Image *IB;
     Jbig2ArithState *as;
     Jbig2ArithIntCtx *IADT = NULL;
@@ -106,6 +107,18 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     Jbig2ArithIntCtx *IAIT = NULL;
     Jbig2ArithIntCtx *IAID = NULL;
     int code;
+    
+    max_id = 0;
+    for (index = 0; index < n_dicts; index ++) {
+        max_id += dicts[index]->n_symbols;
+    }
+    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+        "symbol list contains %d glyphs in %d dictionaries", max_id, n_dicts);
+    
+    if (params->SBREFINE) {
+        return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+            "text regions with refinement bitmaps NYI");
+    }
     
     if (!params->SBHUFF) {
         Jbig2WordStream *ws = jbig2_word_stream_buf_new(ctx, data, size);
@@ -126,8 +139,9 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     } else {
         code = jbig2_arith_int_decode(IADT, as, &STRIPT);
     }
+    fprintf(stderr, "decoded stript value %d (scale to %d)\n", STRIPT, -STRIPT*params->SBSTRIPS);
     /* 6.4.5 (2) */
-    STRIPT *= -params->SBSTRIPS;
+    STRIPT *= -(params->SBSTRIPS);
     FIRSTS = 0;
     NINSTANCES = 0;
     
@@ -141,6 +155,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         }
         DT *= params->SBSTRIPS;
         STRIPT += DT;
+        fprintf(stderr, "decoded DT = %d, STRIPT = %d\n", DT, STRIPT);
         
         /* (3c) */
         if (first_symbol) {
@@ -152,6 +167,8 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             }
             FIRSTS += DFS;
             CURS = FIRSTS;
+            first_symbol = FALSE;
+            fprintf(stderr, "decoded DFS = %d (first symbol) CURS = %d\n", DFS, CURS);
         } else {
             /* 6.4.8 */
             if (params->SBHUFF) {
@@ -159,18 +176,60 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             } else {
                 code = jbig2_arith_int_decode(IADS, as, &IDS);
             }
+            if (code) {
+                fprintf(stderr, "Symbol instance S coordinate OOB: End of Strip\n");
+                continue;
+            }
             CURS += IDS + params->SBDSOFFSET;
+            fprintf(stderr, "decoded IDS = %d, CURS = %d\n", IDS, CURS);
         }
+
         /* 6.4.9 */
-        code = jbig2_arith_int_decode(IAIT, as, &CURT);
+        if (params->SBSTRIPS == 1) {
+            CURT = 0;
+        } else if (params->SBHUFF) {
+            /* todo */
+        } else {
+            code = jbig2_arith_int_decode(IAIT, as, &CURT);
+        }
         T = STRIPT + CURT;
+        fprintf(stderr, "decoded CURT = %d, STRIPT = %d, T = %d\n", CURT, STRIPT, T);
         
-        /* (3b.iv) / 6.4.10 */
-        code = jbig2_arith_int_decode(IAID, as, &ID);
+        /* (3b.iv) / 6.4.10 decode the symbol id */
+        if (params->SBHUFF) {
+            /* todo */
+        } else {
+            code = jbig2_arith_int_decode(IAID, as, &ID);
+        }
+        if (ID < 0 || ID >= max_id) {
+            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                "symbol id out of range! (%d/%d)", ID, max_id);
+        }
+        fprintf(stderr, "decoded symbol id = %d (code = %d)\n", ID, code);
+
+        /* (3b.v) look up the symbol bitmap IB */
+        {
+            int id = ID;
+            
+            index = 0;
+            while (id >= dicts[index]->n_symbols)
+                id -= dicts[index++]->n_symbols;
+            IB = dicts[index]->glyphs[id];
+        }
         
-        /* (3b.v) */
+        /* (3b.vi) */
+        if ((!params->TRANSPOSED) && (params->REFCORNER > 1)) {
+            CURS += IB->width - 1;
+        } else if ((params->TRANSPOSED) && (params->REFCORNER < 2)) {
+            CURS += IB->height - 1;
+        }
+        
+        /* (3b.vii) */
+        S = CURS;
+        
+         /* (3b.vii) */
         if (!params->TRANSPOSED) {
-          switch (params->REFCORNER) {	// FIXME: double check offsets
+          switch (params->REFCORNER) {  // FIXME: double check offsets
             case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
             case JBIG2_CORNER_TOPRIGHT: x = S - IB->width; y = T; break;
             case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height; break;
@@ -184,23 +243,12 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
             case JBIG2_CORNER_BOTTOMRIGHT: x = S - IB->width; y = T - IB->height; break;
           }
         }
-            
-        /* (3b.vi) */
-        if ((!params->TRANSPOSED) && (params->REFCORNER > 1)) {
-            CURS += IB->width - 1;
-        } else if ((params->TRANSPOSED) && (params->REFCORNER < 2)) {
-            CURS += IB->height - 1;
-        }
-        
-        /* (3b.vii) */
-        S = CURS;
-        
-        /* (3b.viii) */
-        // todo: choose glyph bitmap
         
         /* (3b.ix) */
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-            "composing glyph id %d at (%d, %d)", ID, x, y);
+            "composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", 
+            ID, IB->width, IB->height, x, y, NINSTANCES + 1,
+            params->SBNUMINSTANCES);
         jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
         
         /* (3b.x) */
@@ -229,7 +277,6 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
     Jbig2Image *image, *page_image;
     Jbig2SymbolDict **dicts;
     int n_dicts;
-    uint32_t num_instances;
     uint16_t flags;
     uint16_t huffman_flags;
     int8_t sbrat[4];
@@ -248,6 +295,7 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
     
     params.SBHUFF = flags & 0x0001;
     params.SBREFINE = flags & 0x0002;
+    params.SBSTRIPS = 1 << ((flags & 0x000c) >> 2);
     params.REFCORNER = (flags & 0x0030) >> 4;
     params.TRANSPOSED = flags & 0x0040;
     params.SBCOMBOP = (flags & 0x00e0) >> 7;
@@ -278,7 +326,7 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
       }
     
     /* 7.4.3.1.4 */
-    num_instances = jbig2_get_int32(segment_data + offset);
+    params.SBNUMINSTANCES = jbig2_get_int32(segment_data + offset);
     offset += 4;
     
     if (params.SBHUFF) {
@@ -306,7 +354,7 @@ jbig2_read_text_info(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
         "text region: %d x %d @ (%d,%d) %d symbols",
         region_info.width, region_info.height,
-        region_info.x, region_info.y, num_instances);
+        region_info.x, region_info.y, params.SBNUMINSTANCES);
     }
     
     /* compose the list of symbol dictionaries */
