@@ -664,7 +664,8 @@ gs_cmap_adobe1_alloc(gs_cmap_adobe1_t **ppcmap, int wmode,
     }
     pcmap1->def.lookup = lookups;
     pcmap1->def.num_lookup = num_lookups;
-    /* no notdef */
+    pcmap1->notdef.lookup = 0;
+    pcmap1->notdef.num_lookup = 0;
     /* no mark_glyph, mark_glyph_data, glyph_name, glyph_name_data */
     return 0;
 }

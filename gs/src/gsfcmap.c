@@ -287,8 +287,9 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
 {
     gs_cmap_t *pcmap =
 	gs_alloc_struct(mem, gs_cmap_t, pstype, "gs_cmap_alloc(CMap)");
+    int num_fonts1 = max(num_fonts, 1); /* patch : don't allow 0-size array against garbager problems. */
     gs_cid_system_info_t *pcidsi =
-	gs_alloc_struct_array(mem, num_fonts, gs_cid_system_info_t,
+	gs_alloc_struct_array(mem, num_fonts1, gs_cid_system_info_t,
 			      &st_cid_system_info,
 			      "gs_cmap_alloc(CIDSystemInfo)");
 
@@ -301,10 +302,11 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
     pcmap->CMapType = 1;
     pcmap->CMapName.data = map_name;
     pcmap->CMapName.size = name_size;
-    if (pcidsi_in)
+    if (pcidsi_in) {
+       	memset(pcidsi, 0, sizeof(*pcidsi));
 	memcpy(pcidsi, pcidsi_in, sizeof(*pcidsi) * num_fonts);
-    else
-	memset(pcidsi, 0, sizeof(*pcidsi) * num_fonts);
+    } else
+	memset(pcidsi, 0, sizeof(*pcidsi) * num_fonts1);
     pcmap->CIDSystemInfo = pcidsi;
     pcmap->num_fonts = num_fonts;
     pcmap->CMapVersion = 1.0;
