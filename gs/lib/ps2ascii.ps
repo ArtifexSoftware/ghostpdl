@@ -1276,18 +1276,33 @@ userdict /start-hook {
                                                     % was a hyphen
         }
     if                                          % string
-    { % begin forall                            % c
-        dup                                     % c c
-        currentfont /Encoding get               % c c vec
-        exch get                                % c name
-        dup //.char.map exch known              % c name bool
-          { exch pop }
-          { pop OT1Encoding exch get }
-        ifelse                                  % name
-        //.char.map exch get                    % translation
+    currentfont /FontType get 0 ne
+      {
+          { % begin forall                          % c
+            dup                                     % c c
+            currentfont /Encoding get               % c c vec
+            exch get                                % c name
+            dup //.char.map exch known              % c name bool
+              { exch pop }
+              { pop OT1Encoding exch get }
+            ifelse                                  % name
+            //.char.map exch get                    % translation
+            .show.stdout exch writestring
+          }
+        forall
+      }
+      { (\0) dup 0 get 0 eq
+          { 0 1 put
+            (%stderr) (w) file dup
+            (*** Warning: composite font characters dumped without decoding.\n) writestring
+            closefile
+          }
+          { pop
+          }
+        ifelse 
         .show.stdout exch writestring
-    }
-    forall
+      }
+    ifelse
 } odef
 
 /.showstring1 {                 % string
