@@ -1799,6 +1799,8 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
          set_dev_proc(sd,map_rgb_color, stc_map_gray_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_gray);
+	 set_dev_proc(sd,encode_color, stc_map_gray_color);
+         set_dev_proc(sd,decode_color, stc_map_color_gray);
          cv[0] = cv[1] = cv[2] = gx_max_color_value;
          white = stc_map_gray_color((gx_device *) sd, cv);
          break;
@@ -1806,6 +1808,8 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
          set_dev_proc(sd,map_rgb_color, stc_map_rgb_color);
          set_dev_proc(sd,map_cmyk_color,gx_default_map_cmyk_color);
          set_dev_proc(sd,map_color_rgb, stc_map_color_rgb);
+	 set_dev_proc(sd,encode_color, stc_map_rgb_color);
+         set_dev_proc(sd,decode_color, stc_map_color_rgb);
          cv[0] = cv[1] = cv[2] = gx_max_color_value;
          white = stc_map_rgb_color((gx_device *) sd, cv);
          break;
@@ -1814,11 +1818,15 @@ stc_open(gx_device *pdev) /* setup margins & arrays */
          if(sd->stc.flags & STCCMYK10) {
             set_dev_proc(sd,map_cmyk_color,stc_map_cmyk10_color);
             set_dev_proc(sd,map_color_rgb, stc_map_color_cmyk10);
+	    set_dev_proc(sd,encode_color,stc_map_cmyk10_color);
+            set_dev_proc(sd,decode_color, stc_map_color_cmyk10);
             cv[0] = cv[1] = cv[2] = cv[3] = 0;
             white = stc_map_cmyk10_color((gx_device *) sd, cv);
          } else {
             set_dev_proc(sd,map_cmyk_color,stc_map_cmyk_color);
             set_dev_proc(sd,map_color_rgb, stc_map_color_cmyk);
+	    set_dev_proc(sd,encode_color,stc_map_cmyk_color);
+            set_dev_proc(sd,decode_color, stc_map_color_cmyk);
             cv[0] = cv[1] = cv[2] = cv[3] = 0;
             white = stc_map_cmyk_color((gx_device *) sd,cv);
          }
