@@ -1033,7 +1033,6 @@ zcharstring_outline(gs_font_type1 *pfont1, int WMode, const ref *pgref,
     gs_type1exec_state cxs;
     gs_type1_state *const pcis = &cxs.cis;
     const gs_type1_data *pdata;
-    ref *pcdevproc;
     int value;
     gs_imager_state gis;
     double wv[4];
