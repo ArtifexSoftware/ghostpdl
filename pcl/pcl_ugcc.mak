@@ -28,7 +28,7 @@ MAIN_OBJ=$(PCLOBJDIR)/pcmain.$(OBJ)
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 #GCFLAGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
-GCFLAGS=-Dconst= -Wall -Wpointer-arith -Wstrict-prototypes
+GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wcast-align
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
 EXTRALIBS=
@@ -39,7 +39,7 @@ XLIBS=Xt SM ICE Xext X11
 
 CCLD=gcc
 
-DEVICE_DEVS=x11.dev x11mono.dev x11alpha.dev x11cmyk.dev\
+DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
  djet500.dev ljet4.dev\
  pcxmono.dev pcxgray.dev\
  pbmraw.dev pgmraw.dev ppmraw.dev\
