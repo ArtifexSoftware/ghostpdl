@@ -381,8 +381,6 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    max(dev->height / (double)MAX_EXTENT,
 		dev->width / (double)MAX_EXTENT);
 
-	if (dev->is_open)
-	    gs_closedevice(dev);
 	gx_device_set_resolution(dev, dev->HWResolution[0] / factor,
 				 dev->HWResolution[1] / factor);
     }
