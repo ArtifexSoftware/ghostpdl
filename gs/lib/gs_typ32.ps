@@ -100,7 +100,7 @@ end		% .cidfonttypes
   dup 2 index .knownget
  { exch pop } { 0 get } ifelse
 		% Stack: font cid cstr
-  dup .getmetrics32
+  dup //.getmetrics32	% use // because of .undef below
   dup 14 gt {
     8 index 8 index 13 3 roll setcachedevice2
   } {
