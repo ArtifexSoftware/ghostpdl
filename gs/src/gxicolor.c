@@ -340,40 +340,41 @@ f:	if_debug7('B', "[B]0x%x,0x%x,0x%x,0x%x -> %ld,%ld,0x%lx\n",
 	    goto set;
 fill:	/* Fill the region between */
 	/* xrun/irun and xprev */
+        /*
+	 * Note;  This section is nearly a copy of a simlar section below
+         * for processing the image pixel in the loop.  This would have been
+         * made into a subroutine except for complications about the number of
+         * variables that would have been needed to be passed to the routine.
+	 */
 	switch (posture) {
 	case image_portrait:
 	    {		/* Rectangle */
 		int xi = irun;
-		int wi =
-		    (irun = fixed2int_var_rounded(xprev)) - xi;
+		int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
 
 		if (wi < 0)
 		    xi += wi, wi = -wi;
 		if (wi > 0)
 		    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
 							pdevc, dev, lop);
-		xrun = xprev;	/* for sake of final run */
 	    }
 	    break;
 	case image_landscape:
 	    {		/* 90 degree rotated rectangle */
 		int yi = irun;
-		int hi =
-		    (irun = fixed2int_var_rounded(yprev)) - yi;
+		int hi = (irun = fixed2int_var_rounded(yprev)) - yi;
 
 		if (hi < 0)
 		    yi += hi, hi = -hi;
 		if (hi > 0)
 		    code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
 							pdevc, dev, lop);
-		yrun = yprev;	/* for sake of final run */
 	    }
 	    break;
 	default:
 	    {		/* Parallelogram */
 		code = (*dev_proc(dev, fill_parallelogram))
-		    (dev, xrun, yrun,
-		     xprev - xrun, yprev - yrun, pdyx, pdyy,
+		    (dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy,
 		     pdevc, lop);
 		xrun = xprev;
 		yrun = yprev;
@@ -401,8 +402,44 @@ inc:	xprev = dda_current(pnext.x);
 	yprev = dda_current(pnext.y);	/* harmless if no skew */
     }
     /* Fill the last run. */
-    code = (*dev_proc(dev, fill_parallelogram))
-	(dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy, pdevc, lop);
+    /*
+     * Note;  This section is nearly a copy of a simlar section above
+     * for processing an image pixel in the loop.  This would have been
+     * made into a subroutine except for complications about the number
+     * variables that would have been needed to be passed to the routine.
+     */
+    switch (posture) {
+    	case image_portrait:
+	    {		/* Rectangle */
+		int xi = irun;
+		int wi = (irun = fixed2int_var_rounded(xprev)) - xi;
+
+		if (wi < 0)
+		    xi += wi, wi = -wi;
+		if (wi > 0)
+		    code = gx_fill_rectangle_device_rop(xi, vci, wi, vdi,
+							pdevc, dev, lop);
+	    }
+	    break;
+	case image_landscape:
+	    {		/* 90 degree rotated rectangle */
+		int yi = irun;
+		int hi = (irun = fixed2int_var_rounded(yprev)) - yi;
+
+		if (hi < 0)
+		    yi += hi, hi = -hi;
+		if (hi > 0)
+		    code = gx_fill_rectangle_device_rop(vci, yi, vdi, hi,
+							pdevc, dev, lop);
+	    }
+	    break;
+	default:
+	    {		/* Parallelogram */
+		code = (*dev_proc(dev, fill_parallelogram))
+		    (dev, xrun, yrun, xprev - xrun, yprev - yrun, pdyx, pdyy,
+		     pdevc, lop);
+	    }
+    }
     return (code < 0 ? code : 1);
     /* Save position if error, in case we resume. */
 err:
