@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Standard memory allocator */
 #include "gx.h"
 #include "memory_.h"
@@ -96,12 +96,13 @@ typedef enum {
 } alloc_flags_t;
 
 /* Forward references */
-private void remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top);
-private obj_header_t *large_freelist_alloc(gs_ref_memory_t *mem, uint size);
-private obj_header_t *scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size);
+private void remove_range_from_freelist(P3(gs_ref_memory_t *mem, void* bottom, void* top));
+private obj_header_t *large_freelist_alloc(P2(gs_ref_memory_t *mem, uint size));
+private obj_header_t *scavenge_low_free(P2(gs_ref_memory_t *mem, unsigned request_size));
 private ulong compute_free_objects(P1(gs_ref_memory_t *));
 private obj_header_t *alloc_obj(P5(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, alloc_flags_t, client_name_t));
-private void trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size);
+private void consolidate_chunk_free(P2(chunk_t *cp, gs_ref_memory_t *mem));
+private void trim_obj(P3(gs_ref_memory_t *mem, obj_header_t *obj, uint size));
 private chunk_t *alloc_acquire_chunk(P4(gs_ref_memory_t *, ulong, bool, client_name_t));
 private chunk_t *alloc_add_chunk(P3(gs_ref_memory_t *, ulong, client_name_t));
 void alloc_close_chunk(P1(gs_ref_memory_t *));
@@ -194,6 +195,7 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
     iimem->cfirst = iimem->clast = cp;
     ialloc_set_limit(iimem);
     iimem->cc.cbot = iimem->cc.ctop = 0;
+    iimem->cc.int_freed_top = iimem->cc.cbase;
     iimem->pcc = 0;
     iimem->streams = 0;
     iimem->roots = 0;
@@ -215,7 +217,7 @@ ialloc_solo(gs_raw_memory_t * parent, gs_memory_type_ptr_t pstype,
 	gs_raw_alloc_struct_immovable(parent, &st_chunk,
 				      "ialloc_solo(chunk)");
     uint csize =
-	round_up(sizeof(chunk_head_t) + sizeof(obj_header_t) +
+	ROUND_UP(sizeof(chunk_head_t) + sizeof(obj_header_t) +
 		 pstype->ssize,
 		 obj_align_mod);
     byte *cdata = gs_alloc_bytes_immovable(parent, csize, "ialloc_solo");
@@ -606,19 +608,20 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
     gs_memory_type_ptr_t pstype = pp->o_type;
     ulong old_size = pre_obj_contents_size(pp);
     ulong new_size = (ulong) pstype->ssize * new_num_elements;
-    void *new_obj = NULL;
+    ulong old_size_rounded = obj_align_round(old_size);
     ulong new_size_rounded = obj_align_round(new_size);
+    void *new_obj = NULL;
 
-    if (obj_align_round(old_size) == new_size_rounded)
+    if (old_size_rounded == new_size_rounded)
 	return obj;
-    if ((byte *)obj + obj_align_round(old_size) == imem->cc.cbot &&
+    if ((byte *)obj + old_size_rounded == imem->cc.cbot &&
 	imem->cc.ctop - (byte *)obj >= new_size_rounded ) {
 	imem->cc.cbot = (byte *)obj + new_size_rounded;
 	pp->o_size = new_size;
 	new_obj = obj;
     } else /* try and trim the object -- but only if room for a dummy header */
-	if (new_size_rounded + sizeof(obj_header_t) <= obj_align_round(old_size)) {
-	    trim_obj(imem, (obj_header_t *)obj, (uint)new_size_rounded);
+	if (new_size_rounded + sizeof(obj_header_t) <= old_size_rounded) {
+	    trim_obj(imem, obj, new_size_rounded);
 	    new_obj = obj;
 	}
     if (new_obj) {
@@ -648,7 +651,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     gs_memory_type_ptr_t pstype;
 
     struct_proc_finalize((*finalize));
-    uint size;
+    uint size, rounded_size;
 
     if (ptr == 0)
 	return;
@@ -681,7 +684,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	/* Check that the object is in the allocated region. */
 	if (cld.memory == imem && cld.cp == imem->pcc)
 	    cld.cp = &imem->cc;
-	if (!(ptr_between((const byte *)pp, cld.cp->cbase,
+	if (!(PTR_BETWEEN((const byte *)pp, cld.cp->cbase,
 			  cld.cp->cbot))
 	    ) {
 	    lprintf5("%s: freeing 0x%lx,\n\toutside chunk 0x%lx cbase=0x%lx, cbot=0x%lx!\n",
@@ -693,6 +696,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     }
 #endif
     size = pre_obj_contents_size(pp);
+    rounded_size = obj_align_round(size);
     finalize = pstype->finalize;
     if (finalize != 0) {
 	if_debug3('u', "[u]finalizing %s 0x%lx (%s)\n",
@@ -700,10 +704,15 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 		  (ulong) ptr, client_name_string(cname));
 	(*finalize) (ptr);
     }
-    if ((byte *) ptr + obj_align_round(size) == imem->cc.cbot) {
+    if ((byte *) ptr + rounded_size == imem->cc.cbot) {
 	alloc_trace(":-o ", imem, cname, pstype, size, ptr);
 	gs_alloc_fill(ptr, gs_alloc_fill_free, size);
 	imem->cc.cbot = (byte *) pp;
+	/* IFF this object is adjacent to (or below) the byte after the
+	 * highest free object, do the consolidation within this chunk. */
+	if ((byte *)pp <= imem->cc.int_freed_top) {
+	    consolidate_chunk_free(&(imem->cc), imem);
+	}
 	return;
     }
     if (pp->o_large) {
@@ -735,7 +744,7 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	}
 	/* Don't overwrite even if gs_alloc_debug is set. */
     }
-    if (obj_align_round(size) >= sizeof(obj_header_t *)) {
+    if (rounded_size >= sizeof(obj_header_t *)) {
 	/*
 	 * Put the object on a freelist, unless it belongs to
 	 * an older save level, in which case we mustn't
@@ -748,6 +757,9 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 		 &imem->freelists[LARGE_FREELIST_INDEX] :
 		 &imem->freelists[(size + obj_align_mask) >> log2_obj_align_mod]);
 
+	    /* keep track of higest object on a freelist */
+	    if ((byte *)pp >= imem->cc.int_freed_top)
+		imem->cc.int_freed_top = (byte *)ptr + rounded_size;
 	    pp->o_type = &st_free;	/* don't confuse GC */
 	    gs_alloc_fill(ptr, gs_alloc_fill_free, size);
 	    *(obj_header_t **) ptr = *pfl;
@@ -845,11 +857,12 @@ i_resize_string(gs_memory_t * mem, byte * data, uint old_num, uint new_num,
 	    gs_alloc_fill(data, gs_alloc_fill_free, old_num - new_num);
 #endif
     } else
-	if( new_num < old_num) {
+	if (new_num < old_num) {
 	    /* trim the string and create a free space hole */
 	    ptr = data;
 	    imem->lost.strings += old_num - new_num;
-	    gs_alloc_fill(data+new_num, gs_alloc_fill_free, old_num - new_num);
+	    gs_alloc_fill(data + new_num, gs_alloc_fill_free,
+			  old_num - new_num);
 	    if_debug5('A', "[a%d:<> ]%s(%u->%u) 0x%lx\n",
 		      imem->space, client_name_string(cname),
 		      old_num, new_num, (ulong)ptr);
@@ -879,7 +892,6 @@ i_free_string(gs_memory_t * mem, byte * data, uint nbytes,
     }
     gs_alloc_fill(data, gs_alloc_fill_free, nbytes);
 }
-
 
 private void
 i_status(gs_memory_t * mem, gs_memory_status_t * pstat)
@@ -1059,54 +1071,67 @@ done:
     return ptr;
 }
 
+/*
+ * Consolidate free objects contiguous to free space at cbot onto the cbot
+ * area. Also keep track of end of highest internal free object
+ * (int_freed_top).
+ */
+private void
+consolidate_chunk_free(chunk_t *cp, gs_ref_memory_t *mem)
+{
+    obj_header_t *begin_free = 0;
+
+    cp->int_freed_top = cp->cbase;	/* below all objects in chunk */
+    SCAN_CHUNK_OBJECTS(cp)
+    DO_ALL
+	if (pre->o_type == &st_free) {
+	    if (begin_free == 0)
+		begin_free = pre;
+	} else {
+	    if (begin_free)
+		cp->int_freed_top = (byte *)pre; /* first byte following internal free */
+	    begin_free = 0;
+        }
+    END_OBJECTS_SCAN
+    if (begin_free) {
+	/* We found free objects at the top of the object area. */
+	/* Remove the free objects from the freelists. */
+	remove_range_from_freelist(mem, begin_free, cp->cbot);
+	if_debug4('a', "[a]resetting chunk 0x%lx cbot from 0x%lx to 0x%lx (%lu free)\n",
+		  (ulong) cp, (ulong) cp->cbot, (ulong) begin_free,
+		  (ulong) ((byte *) cp->cbot - (byte *) begin_free));
+	cp->cbot = (byte *) begin_free;
+    }
+}
+
 /* Consolidate free objects. */
 void
 ialloc_consolidate_free(gs_ref_memory_t *mem)
 {
-	chunk_t *cp;
-	chunk_t *cprev;
-	alloc_close_chunk(mem);
+    chunk_t *cp;
+    chunk_t *cprev;
 
-	/* Visit chunks in reverse order to encourage LIFO behavior. */
-	for (cp = mem->clast; cp != 0; cp = cprev) {
-	    obj_header_t *begin_free = 0;
+    alloc_close_chunk(mem);
 
-	    cprev = cp->cprev;
-	    SCAN_CHUNK_OBJECTS(cp)
-	    DO_ALL
-		if (pre->o_type == &st_free) {
-		    if (begin_free == 0)
-			begin_free = pre;
-		} else
-		    begin_free = 0;
-	    END_OBJECTS_SCAN
-	    if (begin_free) {
-		/* We found free objects at the top of the object area. */
-		/* Remove the free objects from the freelists. */
-		remove_range_from_freelist(mem, begin_free, cp->cbot);
-	    } else
-		begin_free = (obj_header_t *)cp->cbot;
-	    if (begin_free == (obj_header_t *) cp->cbase &&
-		cp->ctop == cp->climit
-		) {		/* The entire chunk is free. */
-		chunk_t *cnext = cp->cnext;
+    /* Visit chunks in reverse order to encourage LIFO behavior. */
+    for (cp = mem->clast; cp != 0; cp = cprev) {
+	cprev = cp->cprev;
+	consolidate_chunk_free(cp, mem);
+	if (cp->cbot == cp->cbase && cp->ctop == cp->climit) {
+	    /* The entire chunk is free. */
+	    chunk_t *cnext = cp->cnext;
 
-		if (!mem->is_controlled)
-		    alloc_free_chunk(cp, mem);
-		if (mem->pcc == cp)
-		    mem->pcc =
-			(cnext == 0 ? cprev : cprev == 0 ? cnext :
-			 cprev->cbot - cprev->ctop >
-			   cnext->cbot - cnext->ctop ? cprev :
-			 cnext);
-	    } else if (begin_free != (obj_header_t *)cp->cbot) {
-		if_debug4('a', "[a]resetting chunk 0x%lx cbot from 0x%lx to 0x%lx (%lu free)\n",
-			  (ulong) cp, (ulong) cp->cbot, (ulong) begin_free,
-			  (ulong) ((byte *) cp->cbot - (byte *) begin_free));
-		cp->cbot = (byte *) begin_free;
-	    }
+	    if (!mem->is_controlled)
+		alloc_free_chunk(cp, mem);
+	    if (mem->pcc == cp)
+		mem->pcc =
+		    (cnext == 0 ? cprev : cprev == 0 ? cnext :
+		     cprev->cbot - cprev->ctop >
+		     cnext->cbot - cnext->ctop ? cprev :
+		     cnext);
 	}
-	alloc_open_chunk(mem);
+    }
+    alloc_open_chunk(mem);
 }
 private void
 i_consolidate_free(gs_memory_t *mem)
@@ -1181,7 +1206,7 @@ remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top)
 	obj_header_t **ppfprev = &mem->freelists[i];
 
 	while ((pfree = *ppfprev) != 0)
-	    if (ptr_ge(pfree, bottom) && ptr_lt(pfree, top)) {
+	    if (PTR_GE(pfree, bottom) && PTR_LT(pfree, top)) {
 		/* We're removing an object. */
 		*ppfprev = *(obj_header_t **) pfree;
 		removed += obj_align_round(pfree[-1].o_size);
@@ -1216,6 +1241,8 @@ trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size)
     	/* Put excess object on a freelist */
     	obj_header_t **pfl;
 
+	if ((byte *)excess_pre >= mem->cc.int_freed_top)
+	    mem->cc.int_freed_top = (byte *)excess_pre + excess_size;
 	if (excess_size <= max_freelist_size)
      	    pfl = &mem->freelists[(excess_size + obj_align_mask) >>
 				  log2_obj_align_mod];
@@ -1285,7 +1312,7 @@ alloc_link_chunk(chunk_t * cp, gs_ref_memory_t * imem)
     chunk_t *icp;
     chunk_t *prev;
 
-    for (icp = imem->cfirst; icp != 0 && ptr_ge(cdata, icp->ctop);
+    for (icp = imem->cfirst; icp != 0 && PTR_GE(cdata, icp->ctop);
 	 icp = icp->cnext
 	);
     cp->cnext = icp;
@@ -1378,7 +1405,7 @@ alloc_init_chunk(chunk_t * cp, byte * bot, byte * top, bool has_strings,
 	outer->inner_count++;
     cp->chead = (chunk_head_t *) cdata;
     cdata += sizeof(chunk_head_t);
-    cp->cbot = cp->cbase = cdata;
+    cp->cbot = cp->cbase = cp->int_freed_top = cdata;
     cp->cend = top;
     cp->rcur = 0;
     cp->rtop = 0;
@@ -1526,22 +1553,22 @@ chunk_locate_ptr(const void *ptr, chunk_locator_t * clp)
 	if (cp == 0)
 	    return false;
     }
-    if (ptr_lt(ptr, cp->cbase)) {
+    if (PTR_LT(ptr, cp->cbase)) {
 	do {
 	    cp = cp->cprev;
 	    if (cp == 0)
 		return false;
 	}
-	while (ptr_lt(ptr, cp->cbase));
-	if (ptr_ge(ptr, cp->cend))
+	while (PTR_LT(ptr, cp->cbase));
+	if (PTR_GE(ptr, cp->cend))
 	    return false;
     } else {
-	while (ptr_ge(ptr, cp->cend)) {
+	while (PTR_GE(ptr, cp->cend)) {
 	    cp = cp->cnext;
 	    if (cp == 0)
 		return false;
 	}
-	if (ptr_lt(ptr, cp->cbase))
+	if (PTR_LT(ptr, cp->cbase))
 	    return false;
     }
     clp->cp = cp;
@@ -1559,8 +1586,8 @@ obj_in_control_region(const void *obot, const void *otop,
 		      const dump_control_t *pdc)
 {
     return
-	((pdc->bottom == NULL || ptr_gt(otop, pdc->bottom)) &&
-	 (pdc->top == NULL || ptr_lt(obot, pdc->top)));
+	((pdc->bottom == NULL || PTR_GT(otop, pdc->bottom)) &&
+	 (pdc->top == NULL || PTR_LT(obot, pdc->top)));
 }
 
 const dump_control_t dump_control_default =
@@ -1711,7 +1738,7 @@ debug_print_object(const void *obj, const dump_control_t * control)
 			dputc('\n');
 		    }
 		} else {
-		    dprintf1((ptr_between(ptr, obj, (const byte *)obj + size) ?
+		    dprintf1((PTR_BETWEEN(ptr, obj, (const byte *)obj + size) ?
 			      "(0x%lx)\n" : "0x%lx\n"), (ulong) ptr);
 		}
 	    }
