@@ -415,10 +415,10 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 		      (descrip *) 0, (descrip *) 0, (uint *) 0, (uint *) 0);
 
     /* Check the return status */
-    if (RMS_IS_ERROR_OR_NMF(i))
+    if (RMS_IS_ERROR_OR_NMF(i)) {
 	gp_free_enumeration(pfen);
 	return (uint)(-1);
-    else if ((len = strlength(filnam, NAM$C_MAXRSS, ' ')) > maxlen)
+    } else if ((len = strlength(filnam, NAM$C_MAXRSS, ' ')) > maxlen)
 	return maxlen + 1;
 
     /* Copy the returned filename over to the input string ptr */
