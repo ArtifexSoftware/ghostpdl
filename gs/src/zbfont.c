@@ -447,12 +447,12 @@ void
 lookup_gs_simple_font_encoding(gs_font_base * pfont)
 {
     const ref *pfe = &pfont_data(pfont)->Encoding;
-    uint esize = r_size(pfe);
     int index = -1;
 
     pfont->encoding_index = index;
-    if (esize <= 256) {
+    if (r_type(pfe) == t_array && r_size(pfe) <= 256) {
 	/* Look for an encoding that's "close". */
+	uint esize = r_size(pfe);
 	int near_index = -1;
 	uint best = esize / 3;	/* must match at least this many */
 	gs_const_string fstrs[256];
@@ -566,6 +566,7 @@ build_gs_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font ** ppfont, font_type ftype,
     if (dict_find_string(op, "Encoding", &pencoding) <= 0) {
 	if (!(options & bf_Encoding_optional))
 	    return_error(e_invalidfont);
+	pencoding = 0;
     } else {
 	if (!r_is_array(pencoding))
 	    return_error(e_invalidfont);
