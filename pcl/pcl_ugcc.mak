@@ -81,7 +81,8 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)cielib.dev    \
                   $(DD)htxlib.dev    \
 	          $(DD)pipe.dev      \
-                  $(DD)devcmap.dev
+                  $(DD)devcmap.dev   \
+		  $(DD)gsnogc.dev
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak

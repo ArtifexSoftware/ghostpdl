@@ -11,7 +11,7 @@ GENDIR=..\pcl\obj
 
 # The sources are taken from these directories:
 !ifndef GLSRCDIR
-GLSRCDIR=..\gs
+GLSRCDIR=..\gs\src
 !endif
 !ifndef PLSRCDIR
 PLSRCDIR=..\pl
@@ -23,15 +23,15 @@ PCLSRCDIR=..\pcl
 COMMONDIR=..\common
 !endif
 !ifndef JSRCDIR
-JSRCDIR=$(GLSRCDIR)\jpeg
+JSRCDIR=..\gs\jpeg
 JVERSION=6
 !endif
 !ifndef PSRCDIR
-PSRCDIR=$(GLSRCDIR)\libpng
+PSRCDIR=..\gs\libpng
 PVERSION=96
 !endif
 !ifndef ZSRCDIR
-ZSRCDIR=$(GLSRCDIR)\zlib
+ZSRCDIR=..\gs\zlib
 !endif
 
 
@@ -61,18 +61,20 @@ PCLGENDIR=$(GENDIR)
 !ifndef PCLOBJDIR
 PCLOBJDIR=$(GENDIR)
 !endif
+!ifndef DD
+DD=$(GLGENDIR)$(D)
+!endif
 
 # Define the name of this makefile.
 MAKEFILE=$(PCLSRCDIR)\pcl_watc.mak
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
-CONFIG=5
 TARGET_DEVS=$(PCLOBJDIR)$(D)pcl5c.dev $(PCLOBJDIR)$(D)hpgl2c.dev
 
 # Main file's name
-MAIN_OBJ=$(PLOBJDIR)$(D)plmain.$(OBJ) $(PCLOBJDIR)$(D)pcimpl.$(OBJ)
-TOP_OBJ=$(PCLOBJDIR)$(D)pctop.$(OBJ)
+MAIN_OBJ=FILE $(PLOBJDIR)$(D)plmain.$(OBJ) FILE $(PCLOBJDIR)$(D)pcimpl.$(OBJ)
+TOP_OBJ=FILE $(PCLOBJDIR)$(D)pctop.$(OBJ)
 
 # Executable path\name w/o the .EXE extension
 !ifndef TARGET_XE
@@ -106,16 +108,17 @@ MAKE=wmake
 
 !ifndef DEVICE_DEVS
 DEVICE_DEVS=$(DD)ljet4.dev\
- $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)bmpmono.dev $(DD)bmp16m.dev\
  $(DD)pkmraw.dev $(DD)ppmraw.dev $(DD)pgmraw.dev $(DD)pbmraw.dev\
  $(DD)pcx16.dev $(DD)pcx256.dev $(DD)bitcmyk.dev\
- $(DD)cljet5.dev\
+ $(DD)cljet5.dev $(DD)ljet4.dev\
  $(DD)pcxmono.dev $(DD)pcxcmyk.dev $(DD)pcxgray.dev\
  $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)pkmraw.dev\
  $(DD)pxlmono.dev $(DD)pxlcolor.dev\
  $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
  $(DD)tifflzw.dev $(DD)tiffpack.dev\
- $(DD)tiff12nc.dev $(DD)tiff24nc.dev
+ $(DD)tiff12nc.dev $(DD)tiff24nc.dev \
+ $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)bmpmono.dev $(DD)bmp16m.dev
+# $(DD)bmpmono.dev $(DD)bmp16m.dev
 !endif
 # Generic makefile
 
@@ -130,7 +133,8 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)colimlib.dev  \
                   $(DD)cielib.dev    \
                   $(DD)htxlib.dev    \
-                  $(DD)devcmap.dev
+                  $(DD)devcmap.dev   \
+		  $(DD)gsnogc.dev
 
 # make sure the target directories exist - use special Watcom .BEFORE
 .BEFORE

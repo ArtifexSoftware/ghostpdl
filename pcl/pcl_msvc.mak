@@ -103,9 +103,10 @@ FPU_TYPE=0
 GS=gs386
 !endif
 
-# Define which major version of MSVC is being used (currently, 4 & 5 supported)
+# Define which major version of MSVC is being used (currently, 4, 5, & 6 supported)
+#	default to the latest version
 !ifndef MSVC_VERSION
-MSVC_VERSION=5
+MSVC_VERSION=6
 !endif
 
 !ifndef DEVICE_DEVS
@@ -145,7 +146,8 @@ FEATURE_DEVS    = $(DD)dps2lib.dev   \
                   $(DD)colimlib.dev  \
                   $(DD)cielib.dev    \
                   $(DD)htxlib.dev    \
-                  $(DD)devcmap.dev
+                  $(DD)devcmap.dev   \
+		  $(DD)gsnogc.dev
 
 !include $(COMMONDIR)\msvc_top.mak
 
