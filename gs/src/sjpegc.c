@@ -157,7 +157,8 @@ jpeg_alloc(j_common_ptr cinfo, size_t size, const char *info)
     jpeg_compress_data *jcd = cinfo2jcd(cinfo);
     gs_memory_t *mem = jcd->memory;
     
-    jpeg_block_t *p = gs_alloc_struct(mem, jpeg_block_t, &st_jpeg_block, "jpeg_alloc(block)");
+    jpeg_block_t *p = gs_alloc_struct_immovable(mem, jpeg_block_t,
+    			&st_jpeg_block, "jpeg_alloc(block)");
     void *data = gs_alloc_bytes_immovable(mem, size, info);
 
     if (p == 0 || data == 0) {
