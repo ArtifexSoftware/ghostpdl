@@ -157,18 +157,21 @@ gx_render_device_DeviceN(frac * pcolor,
 					    ht_phase);
 
     /* TO_DO_DEVICEN - kludge to minimize DeviceN regressions */
-    if (gray_colorspace || num_colors == 1)
+    if (gray_colorspace || num_colors == 1) {
+        bool invert = dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE;
+
 	for (i = 0; i < num_colors; i++) {
 	    unsigned long hsize = pdht ?
 		    (unsigned) pdht->components[i].corder.num_levels
 	    	    : 1;
 	    unsigned long nshades = hsize * max_value + 1;
-	    long shade = nshades * pcolor[i] / (frac_1_long + 1);
-	    int_color[i] = shade / hsize;
-	    l_color[i] = shade % hsize;
+	    long shade = (invert ? frac_1 - pcolor[i] : pcolor[i]) *
+				nshades / (frac_1_long + 1);
+	    int_color[i] = (invert ? hsize - shade : shade) / hsize;
+	    l_color[i] = (invert ? hsize - shade : shade) % hsize;
 	    dither_check |= l_color[i];
 	}
-    else {
+    } else {
 
         /* Compute the quotient and remainder of each color component */
         /* with the actual number of available colors. */
