@@ -280,6 +280,20 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
 
     if (pfont == 0)
 	return 0;
+#if 1 /* Clear entire structure to avoid unitialized pointers 
+         when the initialization exits prematurely by error. */
+    memset(pfont, 0, pstype->ssize);
+    pfont->memory = mem;
+    pfont->dir = dir;
+    gs_font_notify_init(pfont);
+    pfont->id = gs_next_ids(mem, 1);
+    pfont->base = pfont;
+    pfont->ExactSize = pfont->InBetweenSize = pfont->TransformedChar =
+	fbit_use_outlines;
+    pfont->procs = *procs;
+#else
+    /* For clarity we leave old initializations here
+       to know which fields needs to be initialized. */
     pfont->next = pfont->prev = 0;
     pfont->memory = mem;
     pfont->dir = dir;
@@ -297,6 +311,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->StrokeWidth = 0;
     pfont->procs = *procs;
     memset(&pfont->orig_FontMatrix, 0, sizeof(pfont->orig_FontMatrix));
+#endif
     /* not key_name, font_name */
     return pfont;
 }
