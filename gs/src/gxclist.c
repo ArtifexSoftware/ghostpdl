@@ -430,9 +430,9 @@ clist_emit_page_header(gx_device *dev)
 
     if ( (cdev->disable_mask & clist_disable_pass_thru_params) )
 	{ do
-	    if (  ( code = clist_put_current_params(cdev) ) >= 0  )
+	    if ((code = clist_put_current_params(cdev)) >= 0)
 	        break;
-	  while (  ( code = clist_VMerror_recover(cdev, code) ) < 0  );
+	  while ((code = clist_VMerror_recover(cdev, code)) >= 0);
 	cdev->permanent_error = (code < 0) ? code : 0;
 	if (cdev->permanent_error < 0)
 	    cdev->error_is_retryable = 0;
