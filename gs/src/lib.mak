@@ -1773,7 +1773,10 @@ $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
-ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ)
+ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ) \
+ $(GLOBJ)ttcalc.$(OBJ) $(GLOBJ)ttfinp.$(OBJ) $(GLOBJ)ttfmain.$(OBJ) $(GLOBJ)ttfmemd.$(OBJ) \
+ $(GLOBJ)ttinterp.$(OBJ) $(GLOBJ)ttload.$(OBJ) $(GLOBJ)ttobjs.$(OBJ)
+
 $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
 
@@ -1785,6 +1788,50 @@ $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
  $(gxchrout_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h)\
  $(gxpath_h) $(gxttf_h) $(stream_h)
 	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
+
+ttcommon_h=$(GLSRC)ttcommon.h
+ttconf_h=$(GLSRC)ttconf.h
+ttfinp_h=$(GLSRC)ttfinp.h
+ttfmemd_h=$(GLSRC)ttfmemd.h $(gsstype_h)
+ttfsfnt_h=$(GLSRC)ttfsfnt.h
+ttfoutl_h=$(GLSRC)ttfoutl.h $(ttfsfnt_h)
+tttype_h=$(GLSRC)tttype.h
+ttconfig_h=$(GLSRC)ttconfig.h $(ttconf_h)
+tttypes_h=$(GLSRC)tttypes.h $(ttconfig_h) $(tttype_h)
+ttmisc_h=$(GLSRC)ttmisc.h $(std_h) $(gx_h) $(string__h) $(math__h) $(tttypes__h)
+tttables_h=$(GLSRC)tttables.h $(tttypes_h)
+ttobjs_h=$(GLSRC)ttobjs.h $(ttcommon_h) $(tttypes_h) $(tttables_h)
+ttcalc_h=$(GLSRC)ttcalc.h $(ttcommon_h) $(tttypes_h)
+ttinterp_h=$(GLSRC)ttinterp.h $(ttcommon_h) $(ttobjs_h)
+ttload_h=$(GLSRC)ttload.h $(ttcommon_h)
+
+$(GLOBJ)ttcalc.$(OBJ) : $(GLSRC)ttcalc.c $(GXERR) $(ttmisc_h) $(ttcacl_h)
+	$(GLCC) $(GLO_)ttcalc.$(OBJ) $(C_) $(GLSRC)ttcalc.c
+
+$(GLOBJ)ttfinp.$(OBJ) : $(GLSRC)ttfinp.c $(GXERR) $(ttmisc_h)\
+ $(ttfoutl_h) $(ttfsfnt_h) $(ttfinp_h)
+	$(GLCC) $(GLO_)ttfinp.$(OBJ) $(C_) $(GLSRC)ttfinp.c
+
+$(GLOBJ)ttfmain.$(OBJ) : $(GLSRC)ttfmain.c $(GXERR) $(ttmisc_h)\
+ $(ttfoutl_h) $(ttfmemd_h) $(ttfsfnt_h) $(ttobjs_h) $(ttinterp_h) $(ttcalc_h)
+	$(GLCC) $(GLO_)ttfmain.$(OBJ) $(C_) $(GLSRC)ttfmain.c
+
+$(GLOBJ)ttfmemd.$(OBJ) : $(GLSRC)ttfmemd.c $(GXERR) $(ttmisc_h)\
+ $(ttfoutl_h) $(ttobjs_h)
+	$(GLCC) $(GLO_)ttfmemd.$(OBJ) $(C_) $(GLSRC)ttfmemd.c
+
+$(GLOBJ)ttinterp.$(OBJ) : $(GLSRC)ttinterp.c $(GXERR) $(ttmisc_h)\
+ $(ttfoutl_h) $(tttypes_h) $(ttcalc_h) $(ttinterp_h) $(ttfinp_h) 
+	$(GLCC) $(GLO_)ttinterp.$(OBJ) $(C_) $(GLSRC)ttinterp.c
+
+$(GLOBJ)ttload.$(OBJ) : $(GLSRC)ttload.c $(GXERR) $(ttmisc_h)\
+ $(ttfoutl_h) $(tttypes_h) $(ttcalc_h) $(ttobjs_h) $(ttload_h) $(ttfinp_h)
+	$(GLCC) $(GLO_)ttload.$(OBJ) $(C_) $(GLSRC)ttload.c
+
+$(GLOBJ)ttobjs.$(OBJ) : $(GLSRC)ttobjs.c $(GXERR) $(ttmisc_h)\
+ $(ttfoutl_h) $(ttobjs_h) $(ttcacl_h) $(ttload_h) $(ttinterp_h)
+	$(GLCC) $(GLO_)ttobjs.$(OBJ) $(C_) $(GLSRC)ttobjs.c
+
 
 # -------- Composite (PostScript Type 0) font support -------- #
 
