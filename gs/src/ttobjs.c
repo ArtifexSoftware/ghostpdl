@@ -578,6 +578,8 @@ static int free_aux(ttfMemory *mem, void *ptr)
     if (maxp->maxInstructionDefs > 255)
 	goto Fail_Memory;
     memset(ins->IDefPtr, (Byte)ins->numIDefs, sizeof(ins->IDefPtr));
+    if (ins->numFDefs < 50)
+	ins->numFDefs = 50; /* Bug 687858 */
     ins->cvtSize  = face->cvtSize;
 
     ins->metrics.pointSize    = 10 * 64;     /* default pointsize  = 10pts */
