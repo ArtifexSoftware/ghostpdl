@@ -297,18 +297,18 @@ typedef struct pdf_text_enum_s {
 /*
  * Set the current font and size, writing a Tf command if needed.
  */
-int pdf_set_font_and_size(P3(gx_device_pdf * pdev, pdf_font_t * font,
-			     floatp size));
+int pdf_set_font_and_size(gx_device_pdf * pdev, pdf_font_t * font,
+			  floatp size);
 /*
  * Set the text matrix for writing text, writing a Tm, TL, or Tj command
  * if needed.
  */
-int pdf_set_text_matrix(P2(gx_device_pdf * pdev, const gs_matrix * pmat));
+int pdf_set_text_matrix(gx_device_pdf * pdev, const gs_matrix * pmat);
 
 /*
  * Append characters to a string being accumulated.
  */
-int pdf_append_chars(P3(gx_device_pdf * pdev, const byte * str, uint size));
+int pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size);
 
 /* ---------------- Exported by gdevpdfs.c for gdevpdft.c ---------------- */
 
@@ -333,33 +333,33 @@ typedef struct pdf_standard_font_s {
 extern const pdf_standard_font_t pdf_standard_fonts[];
 
 /* Return the index of a standard font name, or -1 if missing. */
-int pdf_find_standard_font(P2(const byte *str, uint size));
+int pdf_find_standard_font(const byte *str, uint size);
 
 /*
  * Compute and return the orig_matrix of a font.
  */
-int pdf_font_orig_matrix(P2(const gs_font *font, gs_matrix *pmat));
+int pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat);
 
 /*
  * Find the original (unscaled) standard font corresponding to an
  * arbitrary font, if any.  Return its index in standard_fonts, or -1.
  */
-int pdf_find_orig_font(P3(gx_device_pdf *pdev, gs_font *font,
-			  gs_matrix *pfmat));
+int pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font,
+		       gs_matrix *pfmat);
 
 /*
  * Determine the embedding status of a font.  If the font is in the base
  * 14, store its index (0..13) in *pindex and its similarity to the base
  * font (as determined by the font's same_font procedure) in *psame.
  */
-pdf_font_embed_t pdf_font_embed_status(P4(gx_device_pdf *pdev, gs_font *font,
-					  int *pindex, int *psame));
+pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
+				       int *pindex, int *psame);
 
 /*
  * Determine the resource type (resourceFont or resourceCIDFont) for
  * a font.
  */
-pdf_resource_type_t pdf_font_resource_type(P1(const gs_font *font));
+pdf_resource_type_t pdf_font_resource_type(const gs_font *font);
 
 /*
  * Allocate a font resource.  If pfd != 0, a FontDescriptor is allocated,
@@ -368,40 +368,39 @@ pdf_resource_type_t pdf_font_resource_type(P1(const gs_font *font));
  * is of type Font or of (pseudo-)type CIDFont; in this case, pfres->font
  * and pfres->FontType are also set.
  */
-int pdf_alloc_font(P5(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
-		      const pdf_font_descriptor_t *pfd,
-		      gs_font *font));
+int pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
+		   const pdf_font_descriptor_t *pfd,
+		   gs_font *font);
 
 /*
  * Create a new pdf_font for a gs_font.  This procedure is only intended
  * to be called from one place in gdevpdft.c.
  */
-int pdf_create_pdf_font(P4(gx_device_pdf *pdev, gs_font *font,
-			   const gs_matrix *pomat, pdf_font_t **pppf));
+int pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font,
+			const gs_matrix *pomat, pdf_font_t **pppf);
 
 /*
  * Determine whether a font is a subset font by examining the name.
  */
-bool pdf_has_subset_prefix(P2(const byte *str, uint size));
+bool pdf_has_subset_prefix(const byte *str, uint size);
 
 /*
  * Make the prefix for a subset font from the font's resource ID.
  */
-void pdf_make_subset_prefix(P3(const gx_device_pdf *pdev, byte *str,
-			       ulong id));
+void pdf_make_subset_prefix(const gx_device_pdf *pdev, byte *str, ulong id);
 
 /*
  * Adjust the FontName of a newly created FontDescriptor so that it is
  * unique if necessary.  If the name was changed, return 1.
  */
-int pdf_adjust_font_name(P3(const gx_device_pdf *pdev,
-			    pdf_font_descriptor_t *pfd,
-			    bool is_standard));
+int pdf_adjust_font_name(const gx_device_pdf *pdev,
+			 pdf_font_descriptor_t *pfd,
+			 bool is_standard);
 
 /* Add an encoding difference to a font. */
-int pdf_add_encoding_difference(P5(gx_device_pdf *pdev, pdf_font_t *ppf,
-				   int chr, gs_font_base *bfont,
-				   gs_glyph glyph));
+int pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf,
+				int chr, gs_font_base *bfont,
+				gs_glyph glyph);
 
 /*
  * Get the widths (unmodified and possibly modified) of a given character
@@ -412,60 +411,60 @@ typedef struct pdf_glyph_widths_s {
     int Width;			/* unmodified, for Widths */
     int real_width;		/* possibly modified, for rendering */
 } pdf_glyph_widths_t;
-int pdf_char_widths(P4(pdf_font_t *ppf, int ch, gs_font *font,
-		       pdf_glyph_widths_t *pwidths /* may be NULL */));
+int pdf_char_widths(pdf_font_t *ppf, int ch, gs_font *font,
+		    pdf_glyph_widths_t *pwidths /* may be NULL */);
 
 /*
  * Get the widths (unmodified and possibly modified) of a glyph in a (base)
  * font.  Return 1 if the width should not be cached.
  */
-int pdf_glyph_widths(P4(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
-			pdf_glyph_widths_t *pwidths));
+int pdf_glyph_widths(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
+		     pdf_glyph_widths_t *pwidths);
 
 /*
  * Find the range of character codes that includes all the defined
  * characters in a font.
  */
-void pdf_find_char_range(P3(gs_font *font, int *pfirst, int *plast));
+void pdf_find_char_range(gs_font *font, int *pfirst, int *plast);
 
 /* Compute the FontDescriptor for a font or a font subset. */
-int pdf_compute_font_descriptor(P4(gx_device_pdf *pdev,
-				   pdf_font_descriptor_t *pfd, gs_font *font,
-				   const byte *used /*[32]*/));
+int pdf_compute_font_descriptor(gx_device_pdf *pdev,
+				pdf_font_descriptor_t *pfd, gs_font *font,
+				const byte *used /*[32]*/);
 
 /* Unregister the standard fonts when cleaning up. */
-void pdf_unregister_fonts(P1(gx_device_pdf *pdev));
+void pdf_unregister_fonts(gx_device_pdf *pdev);
 
 /* ---------------- Exported by gdevpdfw.c ---------------- */
 
 /* Register a font for eventual writing (embedded or not). */
-int pdf_register_font(P3(gx_device_pdf *pdev, gs_font *font, pdf_font_t *ppf));
+int pdf_register_font(gx_device_pdf *pdev, gs_font *font, pdf_font_t *ppf);
 
 /*
  * Close the text-related parts of a document, including writing out font
  * and related resources.
  */
-int pdf_close_text_document(P1(gx_device_pdf *pdev));
+int pdf_close_text_document(gx_device_pdf *pdev);
 
 /*
  * Write a font descriptor.
  * (Exported only for gdevpdfe.c.)
  */
-int pdf_write_FontDescriptor(P2(gx_device_pdf *pdev,
-				const pdf_font_descriptor_t *pfd));
+int pdf_write_FontDescriptor(gx_device_pdf *pdev,
+			     const pdf_font_descriptor_t *pfd);
 
 /*
  * Write CIDSystemInfo for a CIDFont or CMap.
  * (Exported only for gdevpdff.c.)
  */
-int pdf_write_CIDFont_system_info(P2(gx_device_pdf *pdev,
-				     const gs_font *pcidfont));
+int pdf_write_CIDFont_system_info(gx_device_pdf *pdev,
+				  const gs_font *pcidfont);
 #ifndef gs_cmap_DEFINED
 #  define gs_cmap_DEFINED
 typedef struct gs_cmap_s gs_cmap_t;
 #endif
-int pdf_write_CMap_system_info(P2(gx_device_pdf *pdev,
-				  const gs_cmap_t *pcmap));
+int pdf_write_CMap_system_info(gx_device_pdf *pdev,
+			       const gs_cmap_t *pcmap);
 
 /* ---------------- Exported by gdevpdfe.c ---------------- */
 
@@ -474,7 +473,7 @@ int pdf_write_CMap_system_info(P2(gx_device_pdf *pdev,
  * Return a rangecheck error if the font can't be embedded.
  * (Exported only for gdevpdfw.c.)
  */
-int pdf_write_embedded_font(P2(gx_device_pdf *pdev,
-			       pdf_font_descriptor_t *pfd));
+int pdf_write_embedded_font(gx_device_pdf *pdev,
+			    pdf_font_descriptor_t *pfd);
 
 #endif /* gdevpdff_INCLUDED */

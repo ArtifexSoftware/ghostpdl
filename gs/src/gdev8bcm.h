@@ -52,12 +52,12 @@ typedef struct gx_8bit_color_map_s {
 } gx_8bit_color_map;
 
 /* Initialize an 8-bit color map. */
-void gx_8bit_map_init(P2(gx_8bit_color_map *, int));
+void gx_8bit_map_init(gx_8bit_color_map *, int);
 
 /* Look up a color in an 8-bit color map. */
 /* Return -1 if not found. */
-int gx_8bit_map_rgb_color(P4(const gx_8bit_color_map *, gx_color_value,
-			     gx_color_value, gx_color_value));
+int gx_8bit_map_rgb_color(const gx_8bit_color_map *, gx_color_value,
+			  gx_color_value, gx_color_value);
 
 /* Test whether an 8-bit color map has room for more entries. */
 #define gx_8bit_map_is_full(pcm)\
@@ -65,7 +65,7 @@ int gx_8bit_map_rgb_color(P4(const gx_8bit_color_map *, gx_color_value,
 
 /* Add a color to an 8-bit color map. */
 /* Return -1 if the map is full. */
-int gx_8bit_add_rgb_color(P4(gx_8bit_color_map *, gx_color_value,
-			     gx_color_value, gx_color_value));
+int gx_8bit_add_rgb_color(gx_8bit_color_map *, gx_color_value,
+			  gx_color_value, gx_color_value);
 
 #endif /* gdev8bcm_INCLUDED */

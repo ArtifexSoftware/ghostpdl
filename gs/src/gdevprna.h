@@ -158,15 +158,15 @@ struct gdev_prn_start_render_params_s {
  * This routine is always called by the concrete device's xx_open routine 
  * in lieu of gdev_prn_open.
  */
-int gdev_prn_async_write_open(P4(gx_device_printer *pdev, int max_raster,
-				 int min_band_height, int max_src_image_row));
+int gdev_prn_async_write_open(gx_device_printer *pdev, int max_raster,
+			      int min_band_height, int max_src_image_row);
 
 /* Open the render portion of a printer device in ASYNC (overlapped) mode.
  *
  * This routine is always called by concrete device's xx_open_render_device
  * in lieu of gdev_prn_open.
  */
-int gdev_prn_async_render_open(P1(gx_device_printer *prdev));
+int gdev_prn_async_render_open(gx_device_printer *prdev);
 
 /*
  * Must be called by async device driver implementation (see
@@ -175,6 +175,6 @@ int gdev_prn_async_render_open(P1(gx_device_printer *prdev));
  * the device is open. This proc only returns after the device is closed.
  */
 int	/* rets 0 ok, -ve error code */
-gdev_prn_async_render_thread(P1(gdev_prn_start_render_params *));
+gdev_prn_async_render_thread(gdev_prn_start_render_params *);
 
 #endif				/* gdevprna_INCLUDED */

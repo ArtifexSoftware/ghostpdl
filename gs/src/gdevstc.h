@@ -135,7 +135,7 @@ typedef struct stcolor_device_s {
 /*** Datatype for the array of dithering-Algorithms ***/
 
 #define stc_proc_dither(name) \
- int name(P5(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out))
+ int name(stcolor_device *sdev,int npixel,byte *in,byte *buf,byte *out)
 
 typedef struct stc_dither_s {
   const char *name; /* Mode-Name for Dithering */

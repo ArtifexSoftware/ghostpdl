@@ -32,6 +32,6 @@ dev_proc_map_color_rgb(pc_8bit_map_color_rgb);
 #define dci_pc_8bit dci_values(3, 8, 6, 6, 7, 7)
 
 /* Write the palette on a file. */
-int pc_write_palette(P3(gx_device *, uint, FILE *));
+int pc_write_palette(gx_device *, uint, FILE *);
 
 #endif /* gdevpccm_INCLUDED */

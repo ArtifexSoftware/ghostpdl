@@ -47,7 +47,7 @@ extern const stream_template s_8_2_template;
 extern const stream_template s_8_4_template;
 
 /* Initialize an expansion or reduction stream. */
-int s_1248_init(P3(stream_1248_state *ss, int Columns, int samples_per_pixel));
+int s_1248_init(stream_1248_state *ss, int Columns, int samples_per_pixel);
 
 /* ---------------- Color space conversion ---------------- */
 
@@ -64,7 +64,7 @@ typedef struct stream_C2R_state_s {
 extern const stream_template s_C2R_template;
 
 /* Initialize a CMYK => RGB conversion stream. */
-int s_C2R_init(P2(stream_C2R_state *ss, const gs_imager_state *pis));
+int s_C2R_init(stream_C2R_state *ss, const gs_imager_state *pis);
 
 /* Convert an image to indexed form (IndexedEncode filter). */
 typedef struct stream_IE_state_s {
@@ -126,7 +126,7 @@ typedef struct stream_Downsample_state_s {
 } stream_Downsample_state;
 
 /* Return the number of samples after downsampling. */
-int s_Downsample_size_out(P3(int size_in, int factor, bool pad));
+int s_Downsample_size_out(int size_in, int factor, bool pad);
 
 /* Subsample */
 typedef struct stream_Subsample_state_s {
@@ -169,10 +169,10 @@ extern const stream_template s_compr_chooser_template;
 
 /* Set image dimensions. */
 int
-s_compr_chooser_set_dimensions(P5(stream_compr_chooser_state * st, int width, 
-		    int height, int depth, int bits_per_sample));
+s_compr_chooser_set_dimensions(stream_compr_chooser_state * st, int width, 
+			       int height, int depth, int bits_per_sample);
 
 /* Get choice */
-uint s_compr_chooser__get_choice(P2(stream_compr_chooser_state *st, bool force));
+uint s_compr_chooser__get_choice(stream_compr_chooser_state *st, bool force);
 
 #endif /* gdevpsds_INCLUDED */

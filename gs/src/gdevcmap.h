@@ -56,8 +56,8 @@ extern_st(st_device_cmap);
     gx_device_finalize, st_device_forward)
 
 /* Initialize a color mapping device.  Do this just once after allocation. */
-int gdev_cmap_init(P3(gx_device_cmap * dev, gx_device * target,
-		      gx_device_color_mapping_method_t mapping_method));
+int gdev_cmap_init(gx_device_cmap * dev, gx_device * target,
+		   gx_device_color_mapping_method_t mapping_method);
 
 /*
  * Clients can change the color mapping method at any time by setting

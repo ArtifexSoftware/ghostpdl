@@ -65,9 +65,8 @@ extern_st(st_device_plane_extract);
     device_plane_extract_reloc_ptrs, gx_device_finalize)
 
 /* Initialize a plane extraction device. */
-int plane_device_init(P5(gx_device_plane_extract *edev, gx_device *target,
-			 gx_device *plane_dev,
-			 const gx_render_plane_t *render_plane,
-			 bool clear));
+int plane_device_init(gx_device_plane_extract *edev, gx_device *target,
+		      gx_device *plane_dev,
+		      const gx_render_plane_t *render_plane, bool clear);
 
 #endif /* gdevplnx_INCLUDED */

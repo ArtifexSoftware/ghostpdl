@@ -76,19 +76,19 @@
 typedef struct gx_device_bbox_procs_s {
 
 #define dev_bbox_proc_init_box(proc)\
-  bool proc(P1(void *proc_data))
+  bool proc(void *proc_data)
     dev_bbox_proc_init_box((*init_box));
 
 #define dev_bbox_proc_get_box(proc)\
-  void proc(P2(const void *proc_data, gs_fixed_rect *pbox))
+  void proc(const void *proc_data, gs_fixed_rect *pbox)
     dev_bbox_proc_get_box((*get_box));
 
 #define dev_bbox_proc_add_rect(proc)\
-  void proc(P5(void *proc_data, fixed x0, fixed y0, fixed x1, fixed y1))
+  void proc(void *proc_data, fixed x0, fixed y0, fixed x1, fixed y1)
     dev_bbox_proc_add_rect((*add_rect));
 
 #define dev_bbox_proc_in_rect(proc)\
-  bool proc(P2(const void *proc_data, const gs_fixed_rect *pbox))
+  bool proc(const void *proc_data, const gs_fixed_rect *pbox)
     dev_bbox_proc_in_rect((*in_rect));
 
 } gx_device_bbox_procs_t;
@@ -125,20 +125,20 @@ extern_st(st_device_bbox);
     gx_device_finalize, st_device_forward, box_proc_data)
 
 /* Initialize a bounding box device. */
-void gx_device_bbox_init(P2(gx_device_bbox * dev, gx_device * target));
+void gx_device_bbox_init(gx_device_bbox * dev, gx_device * target);
 
 /* Set whether a bounding box device propagates open/close to its target. */
-void gx_device_bbox_fwd_open_close(P2(gx_device_bbox * dev,
-				      bool forward_open_close));
+void gx_device_bbox_fwd_open_close(gx_device_bbox * dev,
+				   bool forward_open_close);
 
 /* Set whether a bounding box device considers white to be opaque. */
-void gx_device_bbox_set_white_opaque(P2(gx_device_bbox *dev,
-					bool white_is_opaque));
+void gx_device_bbox_set_white_opaque(gx_device_bbox *dev,
+				     bool white_is_opaque);
 
 /* Read back the bounding box in 1/72" units. */
-void gx_device_bbox_bbox(P2(gx_device_bbox * dev, gs_rect * pbbox));
+void gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox);
 
 /* Release a bounding box device. */
-void gx_device_bbox_release(P1(gx_device_bbox *dev));
+void gx_device_bbox_release(gx_device_bbox *dev);
 
 #endif /* gdevbbox_INCLUDED */

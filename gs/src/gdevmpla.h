@@ -40,7 +40,7 @@
  * > 0, plane_depths[0 ..  num_planes - 1] > 0, sum of plane_depths <=
  * mdev->color_info.depth.
  */
-int gdev_mem_set_planar(P3(gx_device_memory * mdev, int num_planes,
-			   const gx_render_plane_t *planes /*[num_planes]*/));
+int gdev_mem_set_planar(gx_device_memory * mdev, int num_planes,
+			const gx_render_plane_t *planes /*[num_planes]*/);
 
 #endif /* gdevmpla_INCLUDED */

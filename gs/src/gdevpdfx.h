@@ -489,44 +489,44 @@ dev_proc_text_begin(gdev_pdf_text_begin);
 /* ---------------- Exported by gdevpdf.c ---------------- */
 
 /* Initialize the IDs allocated at startup. */
-void pdf_initialize_ids(P1(gx_device_pdf * pdev));
+void pdf_initialize_ids(gx_device_pdf * pdev);
 
 /* Update the color mapping procedures after setting ProcessColorModel. */
-void pdf_set_process_color_model(P1(gx_device_pdf * pdev));
+void pdf_set_process_color_model(gx_device_pdf * pdev);
 
 /* Reset the text state parameters to initial values. */
-void pdf_reset_text(P1(gx_device_pdf *pdev));
+void pdf_reset_text(gx_device_pdf *pdev);
 
 /* ---------------- Exported by gdevpdfu.c ---------------- */
 
 /* ------ Document ------ */
 
 /* Open the document if necessary. */
-void pdf_open_document(P1(gx_device_pdf * pdev));
+void pdf_open_document(gx_device_pdf * pdev);
 
 /* ------ Objects ------ */
 
 /* Allocate an ID for a future object. */
-long pdf_obj_ref(P1(gx_device_pdf * pdev));
+long pdf_obj_ref(gx_device_pdf * pdev);
 
 /* Read the current position in the output stream. */
-long pdf_stell(P1(gx_device_pdf * pdev));
+long pdf_stell(gx_device_pdf * pdev);
 
 /* Begin an object, optionally allocating an ID. */
-long pdf_open_obj(P2(gx_device_pdf * pdev, long id));
-long pdf_begin_obj(P1(gx_device_pdf * pdev));
+long pdf_open_obj(gx_device_pdf * pdev, long id);
+long pdf_begin_obj(gx_device_pdf * pdev);
 
 /* End an object. */
-int pdf_end_obj(P1(gx_device_pdf * pdev));
+int pdf_end_obj(gx_device_pdf * pdev);
 
 /* ------ Page contents ------ */
 
 /* Open a page contents part. */
 /* Return an error if the page has too many contents parts. */
-int pdf_open_contents(P2(gx_device_pdf * pdev, pdf_context_t context));
+int pdf_open_contents(gx_device_pdf * pdev, pdf_context_t context);
 
 /* Close the current contents part if we are in one. */
-int pdf_close_contents(P2(gx_device_pdf * pdev, bool last));
+int pdf_close_contents(gx_device_pdf * pdev, bool last);
 
 /* ------ Resources et al ------ */
 
@@ -542,42 +542,42 @@ extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
 
 /* Begin an object logically separate from the contents. */
 /* (I.e., an object in the resource file.) */
-long pdf_open_separate(P2(gx_device_pdf * pdev, long id));
-long pdf_begin_separate(P1(gx_device_pdf * pdev));
+long pdf_open_separate(gx_device_pdf * pdev, long id);
+long pdf_begin_separate(gx_device_pdf * pdev);
 
 /* Begin an aside (resource, annotation, ...). */
-int pdf_begin_aside(P4(gx_device_pdf * pdev, pdf_resource_t **plist,
-		       const gs_memory_struct_type_t * pst,
-		       pdf_resource_t **ppres));
+int pdf_begin_aside(gx_device_pdf * pdev, pdf_resource_t **plist,
+		    const gs_memory_struct_type_t * pst,
+		    pdf_resource_t **ppres);
 
 /* Begin a resource of a given type. */
-int pdf_begin_resource(P4(gx_device_pdf * pdev, pdf_resource_type_t rtype,
-			  gs_id rid, pdf_resource_t **ppres));
+int pdf_begin_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype,
+		       gs_id rid, pdf_resource_t **ppres);
 
 /* Begin a resource body of a given type. */
-int pdf_begin_resource_body(P4(gx_device_pdf * pdev, pdf_resource_type_t rtype,
-			       gs_id rid, pdf_resource_t **ppres));
+int pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
+			    gs_id rid, pdf_resource_t **ppres);
 
 /* Allocate a resource, but don't open the stream. */
-int pdf_alloc_resource(P5(gx_device_pdf * pdev, pdf_resource_type_t rtype,
-			  gs_id rid, pdf_resource_t **ppres, long id));
+int pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype,
+		       gs_id rid, pdf_resource_t **ppres, long id);
 
 /* Find a resource of a given type by gs_id. */
-pdf_resource_t *pdf_find_resource_by_gs_id(P3(gx_device_pdf * pdev,
-					      pdf_resource_type_t rtype,
-					      gs_id rid));
+pdf_resource_t *pdf_find_resource_by_gs_id(gx_device_pdf * pdev,
+					   pdf_resource_type_t rtype,
+					   gs_id rid);
 
 /* Get the object id of a resource. */
-long pdf_resource_id(P1(const pdf_resource_t *pres));
+long pdf_resource_id(const pdf_resource_t *pres);
 
 /* End a separate object. */
-int pdf_end_separate(P1(gx_device_pdf * pdev));
+int pdf_end_separate(gx_device_pdf * pdev);
 
 /* End an aside. */
-int pdf_end_aside(P1(gx_device_pdf * pdev));
+int pdf_end_aside(gx_device_pdf * pdev);
 
 /* End a resource. */
-int pdf_end_resource(P1(gx_device_pdf * pdev));
+int pdf_end_resource(gx_device_pdf * pdev);
 
 /*
  * Write the Cos objects for resources local to a content stream.
@@ -593,42 +593,42 @@ int pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype);
  * Store the resource sets for a content stream (page or XObject).
  * Sets page->{procsets, resource_ids[], fonts_id}.
  */
-int pdf_store_page_resources(P2(gx_device_pdf *pdev, pdf_page_t *page));
+int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page);
 
 /* Copy data from a temporary file to a stream. */
-void pdf_copy_data(P3(stream *s, FILE *file, long count));
+void pdf_copy_data(stream *s, FILE *file, long count);
 
 /* ------ Pages ------ */
 
 /* Get or assign the ID for a page. */
 /* Returns 0 if the page number is out of range. */
-long pdf_page_id(P2(gx_device_pdf * pdev, int page_num));
+long pdf_page_id(gx_device_pdf * pdev, int page_num);
 
 /* Get the page structure for the current page. */
-pdf_page_t *pdf_current_page(P1(gx_device_pdf *pdev));
+pdf_page_t *pdf_current_page(gx_device_pdf *pdev);
 
 /* Get the dictionary object for the current page. */
-cos_dict_t *pdf_current_page_dict(P1(gx_device_pdf *pdev));
+cos_dict_t *pdf_current_page_dict(gx_device_pdf *pdev);
 
 /* Open a page for writing. */
-int pdf_open_page(P2(gx_device_pdf * pdev, pdf_context_t context));
+int pdf_open_page(gx_device_pdf * pdev, pdf_context_t context);
 
 /* Write saved page- or document-level information. */
-int pdf_write_saved_string(P2(gx_device_pdf * pdev, gs_string * pstr));
+int pdf_write_saved_string(gx_device_pdf * pdev, gs_string * pstr);
 
 /* ------ Path drawing ------ */
 
 /* Test whether the clip path needs updating. */
-bool pdf_must_put_clip_path(P2(gx_device_pdf * pdev, const gx_clip_path * pcpath));
+bool pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);
 
 /* Write and update the clip path. */
-int pdf_put_clip_path(P2(gx_device_pdf * pdev, const gx_clip_path * pcpath));
+int pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);
 
 /* ------ Miscellaneous output ------ */
 
 #define PDF_MAX_PRODUCER 200	/* adhoc */
 /* Generate the default Producer string. */
-void pdf_store_default_Producer(P1(char buf[PDF_MAX_PRODUCER]));
+void pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER]);
 
 /* Define the strings for filter names and parameters. */
 typedef struct pdf_filter_names_s {
@@ -650,26 +650,26 @@ typedef struct pdf_filter_names_s {
   "/A85", "/AHx", "/CCF", "/DCT", "/DP", "/F", "/Fl", "/LZW", "/RL"
 
 /* Write matrix values. */
-void pdf_put_matrix(P4(gx_device_pdf *pdev, const char *before,
-		       const gs_matrix *pmat, const char *after));
+void pdf_put_matrix(gx_device_pdf *pdev, const char *before,
+		    const gs_matrix *pmat, const char *after);
 
 /* Write a name, with escapes for unusual characters. */
-typedef int (*pdf_put_name_chars_proc_t)(P3(stream *, const byte *, uint));
+typedef int (*pdf_put_name_chars_proc_t)(stream *, const byte *, uint);
 pdf_put_name_chars_proc_t
-    pdf_put_name_chars_proc(P1(const gx_device_pdf *pdev));
-void pdf_put_name_chars(P3(const gx_device_pdf *pdev, const byte *nstr,
-			   uint size));
-void pdf_put_name(P3(const gx_device_pdf *pdev, const byte *nstr, uint size));
+    pdf_put_name_chars_proc(const gx_device_pdf *pdev);
+void pdf_put_name_chars(const gx_device_pdf *pdev, const byte *nstr,
+			uint size);
+void pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size);
 
 /* Write a string in its shortest form ( () or <> ). */
-void pdf_put_string(P3(const gx_device_pdf *pdev, const byte *str, uint size));
+void pdf_put_string(const gx_device_pdf *pdev, const byte *str, uint size);
 
 /* Write a value, treating names specially. */
-void pdf_write_value(P3(const gx_device_pdf *pdev, const byte *vstr, uint size));
+void pdf_write_value(const gx_device_pdf *pdev, const byte *vstr, uint size);
 
 /* Store filters for a stream. */
-int pdf_put_filters(P4(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
-		       const pdf_filter_names_t *pfn));
+int pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
+		    const pdf_filter_names_t *pfn);
 
 /* Define a possibly encoded and compressed data stream. */
 typedef struct pdf_data_writer_s {
@@ -684,13 +684,13 @@ typedef struct pdf_data_writer_s {
 #define DATA_STREAM_NOT_BINARY 0  /* data are text, not binary */
 #define DATA_STREAM_BINARY 1	/* data are binary */
 #define DATA_STREAM_COMPRESS 2	/* OK to compress data */
-int pdf_begin_data_stream(P3(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
-			     int options));
+int pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
+			  int options);
 /* begin_data = begin_data_binary with both options = true. */
-int pdf_begin_data(P2(gx_device_pdf *pdev, pdf_data_writer_t *pdw));
+int pdf_begin_data(gx_device_pdf *pdev, pdf_data_writer_t *pdw);
 
 /* End a data stream. */
-int pdf_end_data(P1(pdf_data_writer_t *pdw));
+int pdf_end_data(pdf_data_writer_t *pdw);
 
 /* ------ Functions ------ */
 
@@ -708,14 +708,14 @@ int pdf_end_data(P1(pdf_data_writer_t *pdw));
 typedef struct gs_function_s gs_function_t;
 #  define gs_function_DEFINED
 #endif
-int pdf_function(P3(gx_device_pdf *pdev, const gs_function_t *pfn,
-		    cos_value_t *pvalue));
+int pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
+		 cos_value_t *pvalue);
 int pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
 			const gs_range_t *pranges, cos_value_t *pvalue);
 
 /* Write a Function object, returning its object ID. */
-int pdf_write_function(P3(gx_device_pdf *pdev, const gs_function_t *pfn,
-			  long *pid));
+int pdf_write_function(gx_device_pdf *pdev, const gs_function_t *pfn,
+		       long *pid);
 
 /* ---------------- Exported by gdevpdfm.c ---------------- */
 
@@ -724,44 +724,44 @@ int pdf_write_function(P3(gx_device_pdf *pdev, const gs_function_t *pfn,
  * If nameable is false, the objname argument is always NULL.
  */
 #define pdfmark_proc(proc)\
-  int proc(P5(gx_device_pdf *pdev, gs_param_string *pairs, uint count,\
-	      const gs_matrix *pctm, const gs_param_string *objname))
+  int proc(gx_device_pdf *pdev, gs_param_string *pairs, uint count,\
+	   const gs_matrix *pctm, const gs_param_string *objname)
 
 /* Compare a C string and a gs_param_string. */
-bool pdf_key_eq(P2(const gs_param_string * pcs, const char *str));
+bool pdf_key_eq(const gs_param_string * pcs, const char *str);
 
 /* Scan an integer out of a parameter string. */
-int pdfmark_scan_int(P2(const gs_param_string * pstr, int *pvalue));
+int pdfmark_scan_int(const gs_param_string * pstr, int *pvalue);
 
 /* Process a pdfmark (called from pdf_put_params). */
-int pdfmark_process(P2(gx_device_pdf * pdev, const gs_param_string_array * pma));
+int pdfmark_process(gx_device_pdf * pdev, const gs_param_string_array * pma);
 
 /* Close the current level of the outline tree. */
-int pdfmark_close_outline(P1(gx_device_pdf * pdev));
+int pdfmark_close_outline(gx_device_pdf * pdev);
 
 /* Finish writing an article. */
-int pdfmark_write_article(P2(gx_device_pdf * pdev, const pdf_article_t * part));
+int pdfmark_write_article(gx_device_pdf * pdev, const pdf_article_t * part);
 
 /* ---------------- Exported by gdevpdfr.c ---------------- */
 
 /* Test whether an object name has valid syntax, {name}. */
-bool pdf_objname_is_valid(P2(const byte *data, uint size));
+bool pdf_objname_is_valid(const byte *data, uint size);
 
 /*
  * Look up a named object.  Return e_rangecheck if the syntax is invalid,
  * e_undefined if no object by that name exists.
  */
-int pdf_find_named(P3(gx_device_pdf * pdev, const gs_param_string * pname,
-		      cos_object_t **ppco));
+int pdf_find_named(gx_device_pdf * pdev, const gs_param_string * pname,
+		   cos_object_t **ppco);
 
 /*
  * Create a named object.  id = -1L means do not assign an id.  pname = 0
  * means just create the object, do not name it.
  */
-int pdf_create_named(P5(gx_device_pdf *pdev, const gs_param_string *pname,
-			cos_type_t cotype, cos_object_t **ppco, long id));
-int pdf_create_named_dict(P4(gx_device_pdf *pdev, const gs_param_string *pname,
-			     cos_dict_t **ppcd, long id));
+int pdf_create_named(gx_device_pdf *pdev, const gs_param_string *pname,
+		     cos_type_t cotype, cos_object_t **ppco, long id);
+int pdf_create_named_dict(gx_device_pdf *pdev, const gs_param_string *pname,
+			  cos_dict_t **ppcd, long id);
 
 /*
  * Look up a named object as for pdf_find_named.  If the object does not
@@ -769,8 +769,8 @@ int pdf_create_named_dict(P4(gx_device_pdf *pdev, const gs_param_string *pname,
  * {ThisPage}, {NextPage}, {PrevPage}, or {Page<#>}, otherwise as a
  * generic object) and return 1.
  */
-int pdf_refer_named(P3(gx_device_pdf *pdev, const gs_param_string *pname,
-		       cos_object_t **ppco));
+int pdf_refer_named(gx_device_pdf *pdev, const gs_param_string *pname,
+		    cos_object_t **ppco);
 
 /*
  * Look up a named object as for pdf_refer_named.  If the object already
@@ -779,18 +779,18 @@ int pdf_refer_named(P3(gx_device_pdf *pdev, const gs_param_string *pname,
  * otherwise, create the object with the given type and return 1.
  * pname = 0 is allowed: in this case, simply create the object.
  */
-int pdf_make_named(P5(gx_device_pdf * pdev, const gs_param_string * pname,
-		      cos_type_t cotype, cos_object_t **ppco, bool assign_id));
-int pdf_make_named_dict(P4(gx_device_pdf * pdev, const gs_param_string * pname,
-			   cos_dict_t **ppcd, bool assign_id));
+int pdf_make_named(gx_device_pdf * pdev, const gs_param_string * pname,
+		   cos_type_t cotype, cos_object_t **ppco, bool assign_id);
+int pdf_make_named_dict(gx_device_pdf * pdev, const gs_param_string * pname,
+			cos_dict_t **ppcd, bool assign_id);
 
 /*
  * Look up a named object as for pdf_refer_named.  If the object does not
  * exist, or is a forward reference, return e_undefined; if the object
  * exists has the wrong type, return e_typecheck.
  */
-int pdf_get_named(P4(gx_device_pdf * pdev, const gs_param_string * pname,
-		     cos_type_t cotype, cos_object_t **ppco));
+int pdf_get_named(gx_device_pdf * pdev, const gs_param_string * pname,
+		  cos_type_t cotype, cos_object_t **ppco);
 
 /*
  * Push the current local namespace onto the namespace stack, and reset it
@@ -810,19 +810,18 @@ int pdf_pop_namespace(gx_device_pdf *pdev);
  * or an error.  On a successful return, the token extends from *ptoken up
  * to but not including *pscan.
  */
-int pdf_scan_token(P3(const byte **pscan, const byte * end,
-		      const byte **ptoken));
+int pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken);
 
 /*
  * Scan a possibly composite token: arrays and dictionaries are treated as
  * single tokens.
  */
-int pdf_scan_token_composite(P3(const byte **pscan, const byte * end,
-				const byte **ptoken));
+int pdf_scan_token_composite(const byte **pscan, const byte * end,
+			     const byte **ptoken);
 
 /* Replace object names with object references in a (parameter) string. */
-int pdf_replace_names(P3(gx_device_pdf *pdev, const gs_param_string *from,
-			 gs_param_string *to));
+int pdf_replace_names(gx_device_pdf *pdev, const gs_param_string *from,
+		      gs_param_string *to);
 
 /* ================ Text module procedures ================ */
 
@@ -834,7 +833,7 @@ int pdf_replace_names(P3(gx_device_pdf *pdev, const gs_param_string *from,
  * Close the text-related parts of a document, including writing out font
  * and related resources.
  */
-int pdf_close_text_document(P1(gx_device_pdf *pdev));
+int pdf_close_text_document(gx_device_pdf *pdev);
 
 /* ---------------- Exported by gdevpdft.c ---------------- */
 
@@ -850,16 +849,16 @@ void pdf_close_text_page(gx_device_pdf *pdev);
 int pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h);
 
 /* Begin a CharProc for an embedded (bitmap) font. */
-int pdf_begin_char_proc(P8(gx_device_pdf * pdev, int w, int h, int x_width,
-			   int y_offset, gs_id id, pdf_char_proc_t **ppcp,
-			   pdf_stream_position_t * ppos));
+int pdf_begin_char_proc(gx_device_pdf * pdev, int w, int h, int x_width,
+			int y_offset, gs_id id, pdf_char_proc_t **ppcp,
+			pdf_stream_position_t * ppos);
 
 /* End a CharProc. */
-int pdf_end_char_proc(P2(gx_device_pdf * pdev, pdf_stream_position_t * ppos));
+int pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos);
 
 /* Put out a reference to an image as a character in an embedded font. */
-int pdf_do_char_image(P3(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
-			 const gs_matrix * pimat));
+int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
+		      const gs_matrix * pimat);
 
 /* For gdevpdfu.c */
 

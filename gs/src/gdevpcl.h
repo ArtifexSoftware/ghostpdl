@@ -48,7 +48,7 @@
 #define PAPER_SIZE_B5 100
 
 /* Get the paper size code, based on width and height. */
-int gdev_pcl_paper_size(P1(gx_device *));
+int gdev_pcl_paper_size(gx_device *);
 
 /* Color mapping procedures for 3-bit-per-pixel RGB printers */
 dev_proc_map_rgb_color(gdev_pcl_3bit_map_rgb_color);
@@ -57,9 +57,9 @@ dev_proc_map_color_rgb(gdev_pcl_3bit_map_color_rgb);
 /* Row compression routines */
 typedef ulong word;
 int
-    gdev_pcl_mode2compress(P3(const word * row, const word * end_row, byte * compressed)),
-    gdev_pcl_mode2compress_padded(P4(const word * row, const word * end_row, byte * compressed, bool pad)),
-    gdev_pcl_mode3compress(P4(int bytecount, const byte * current, byte * previous, byte * compressed)),
-    gdev_pcl_mode9compress(P4(int bytecount, const byte * current, const byte * previous, byte * compressed));
+    gdev_pcl_mode2compress(const word * row, const word * end_row, byte * compressed),
+    gdev_pcl_mode2compress_padded(const word * row, const word * end_row, byte * compressed, bool pad),
+    gdev_pcl_mode3compress(int bytecount, const byte * current, byte * previous, byte * compressed),
+    gdev_pcl_mode9compress(int bytecount, const byte * current, const byte * previous, byte * compressed);
 
 #endif /* gdevpcl_INCLUDED */

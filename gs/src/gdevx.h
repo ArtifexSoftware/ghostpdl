@@ -243,12 +243,12 @@ typedef struct gx_device_X_s {
     symbol_fonts, dingbat_fonts)
 
 /* Send an event to the Ghostview process */
-void gdev_x_send_event(P2(gx_device_X *xdev, Atom msg));
+void gdev_x_send_event(gx_device_X *xdev, Atom msg);
 
 /* function to keep track of screen updates */
-void x_update_add(P5(gx_device_X *, int, int, int, int));
-void gdev_x_clear_window(P1(gx_device_X *));
-int x_catch_free_colors(P2(Display *, XErrorEvent *));
+void x_update_add(gx_device_X *, int, int, int, int);
+void gdev_x_clear_window(gx_device_X *);
+int x_catch_free_colors(Display *, XErrorEvent *);
 
 /* Number used to distinguish when resolution was set from the command line */
 #define FAKE_RES (16*72)
@@ -256,13 +256,13 @@ int x_catch_free_colors(P2(Display *, XErrorEvent *));
 /* ------ Inter-module procedures ------ */
 
 /* Exported by gdevxcmp.c for gdevxini.c */
-int gdev_x_setup_colors(P1(gx_device_X *));
-void gdev_x_free_colors(P1(gx_device_X *));
-void gdev_x_free_dynamic_colors(P1(gx_device_X *));
+int gdev_x_setup_colors(gx_device_X *);
+void gdev_x_free_colors(gx_device_X *);
+void gdev_x_free_dynamic_colors(gx_device_X *);
 
 /* Exported by gdevxini.c for gdevx.c */
-int gdev_x_open(P1(gx_device_X *));
-int gdev_x_close(P1(gx_device_X *));
+int gdev_x_open(gx_device_X *);
+int gdev_x_close(gx_device_X *);
 
 /* Driver procedures exported for gdevx.c */
 dev_proc_map_rgb_color(gdev_x_map_rgb_color);  /* gdevxcmp.c */

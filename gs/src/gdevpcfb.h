@@ -59,10 +59,10 @@ typedef struct pcfb_bios_state_s {
 } pcfb_bios_state;
 
 /* Procedures used by gdevpcfb.c */
-void pcfb_set_signals(P1(gx_device *));
-void pcfb_get_state(P1(pcfb_bios_state *));
-void pcfb_set_mode(P1(int));
-void pcfb_set_state(P1(const pcfb_bios_state *));
+void pcfb_set_signals(gx_device *);
+void pcfb_get_state(pcfb_bios_state *);
+void pcfb_set_mode(int);
+void pcfb_set_state(const pcfb_bios_state *);
 
 /* Types for frame buffer pointers. */
 typedef byte *fb_ptr;
@@ -170,8 +170,8 @@ outport2(int port, int index, int data)
 		      "eax");
 }
 #else
-void outportb(P2(uint, byte));
-void outport2(P3(uint, byte, byte));
+void outportb(uint, byte);
+void outport2(uint, byte, byte);
 
 #endif
 

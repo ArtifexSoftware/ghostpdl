@@ -55,6 +55,6 @@ typedef struct gx_device_run_s {
  * Convert a memory device to run-length form.  The mdev argument should be
  * const, but it isn't because we need to call gx_device_white.
  */
-int gdev_run_from_mem(P2(gx_device_run *rdev, gx_device_memory *mdev));
+int gdev_run_from_mem(gx_device_run *rdev, gx_device_memory *mdev);
 
 #endif /* gdevmrun_INCLUDED */

@@ -51,14 +51,14 @@ dev_proc_put_params(gdev_fax_put_params); /* adds AdjustWidth */
 extern const gx_device_procs gdev_fax_std_procs;
 
 /* Other procedures */
-void gdev_fax_init_state(P2(stream_CFE_state *ss, const gx_device_fax *fdev));
-void gdev_fax_init_fax_state(P2(stream_CFE_state *ss,
-				const gx_device_fax *fdev));
-int gdev_fax_print_strip(P7(gx_device_printer * pdev, FILE * prn_stream,
-			    const stream_template * temp, stream_state * ss,
-			    int width, int row_first,
-			    int row_end /* last + 1 */));
-int gdev_fax_print_page(P3(gx_device_printer *pdev, FILE *prn_stream,
-			   stream_CFE_state *ss));
+void gdev_fax_init_state(stream_CFE_state *ss, const gx_device_fax *fdev);
+void gdev_fax_init_fax_state(stream_CFE_state *ss,
+			     const gx_device_fax *fdev);
+int gdev_fax_print_strip(gx_device_printer * pdev, FILE * prn_stream,
+			 const stream_template * temp, stream_state * ss,
+			 int width, int row_first,
+			 int row_end /* last + 1 */);
+int gdev_fax_print_page(gx_device_printer *pdev, FILE *prn_stream,
+			stream_CFE_state *ss);
 
 #endif /* gdevfax_INCLUDED */

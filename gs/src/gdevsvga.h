@@ -46,9 +46,9 @@ typedef struct {
 typedef struct gx_device_svga_s gx_device_svga;
 struct gx_device_svga_s {
     gx_device_common;
-    int (*get_mode) (P0());
-    void (*set_mode) (P1(int));
-    void (*set_page) (P3(gx_device_svga * fbdev, int pnum, int wnum));
+    int (*get_mode) (void);
+    void (*set_mode) (int);
+    void (*set_page) (gx_device_svga * fbdev, int pnum, int wnum);
     bool fixed_colors;		/* if true, used a fixed palette */
     const mode_info *mode;	/* BIOS display mode info */
     uint raster;		/* frame buffer bytes per line */
@@ -57,7 +57,7 @@ struct gx_device_svga_s {
     /* Following are device-specific. */
     union {
 	struct {
-	    void (*bios_set_page) (P2(int, int));	/* set-page function */
+	    void (*bios_set_page) (int, int);	/* set-page function */
 	    int pn_shift;	/* log2(64K/granularity) */
 	} vesa;
 	struct {
@@ -86,8 +86,8 @@ struct gx_device_svga_s {
   svga_color_device(procs, name, 8, 31, 4, get_mode, set_mode, set_page)
 
 /* Utility procedures */
-void svga_init_colors(P1(gx_device *));
-int svga_find_mode(P2(gx_device *, const mode_info *));
-int svga_open(P1(gx_device *));
+void svga_init_colors(gx_device *);
+int svga_find_mode(gx_device *, const mode_info *);
+int svga_open(gx_device *);
 
 #endif /* gdevsvga_INCLUDED */

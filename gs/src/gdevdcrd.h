@@ -21,7 +21,7 @@
 #define gdevdcrd_INCLUDED
 
 /* Implement get_params for a sample device CRD. */
-int sample_device_crd_get_params(P3(gx_device *pdev, gs_param_list *plist,
-				    const char *crd_param_name));
+int sample_device_crd_get_params(gx_device *pdev, gs_param_list *plist,
+				 const char *crd_param_name);
 
 #endif	/* gdevdcrd_INCLUDED */

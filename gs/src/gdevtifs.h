@@ -168,10 +168,10 @@ typedef enum {
     TIFFTAG_PageNumber = 297,	/* page number if multi-page */
     TIFFTAG_Software = 305,	/* software name & release */
     TIFFTAG_DateTime = 306,	/* creation date and time */
-/*
- * The CleanFaxData tag isn't in the TIFF 6 documentation, and many
- * TIFF-reading applications don't recognize it.  Don't use it!
- */
+    /*
+     * The CleanFaxData tag isn't in the TIFF 6 documentation, and many
+     * TIFF-reading applications don't recognize it.  Don't use it!
+     */
     TIFFTAG_CleanFaxData = 327	/* regenerated line info */
 #define	    CleanFaxData_clean		0	/* no errors detected */
 #define	    CleanFaxData_regenerated	1	/* receiver regenerated lines */
@@ -205,22 +205,22 @@ typedef struct gdev_tiff_state_s {
  * tags; the client can provide additional tags (pre-sorted) and
  * indirect values.
  */
-int gdev_tiff_begin_page(P8(gx_device_printer * pdev, gdev_tiff_state * tifs,
-			    FILE * fp,
-			    const TIFF_dir_entry * entries, int entry_count,
-			    const byte * values, int value_size,
-			    long max_strip_size));
+int gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs,
+			 FILE * fp,
+			 const TIFF_dir_entry * entries, int entry_count,
+			 const byte * values, int value_size,
+			 long max_strip_size);
 
 /*
  * Finish writing a TIFF strip.  All data written since begin or last
  * end_strip is considered to be a single strip.
  */
-int gdev_tiff_end_strip(P2(gdev_tiff_state * tifs, FILE * fp));
+int gdev_tiff_end_strip(gdev_tiff_state * tifs, FILE * fp);
 
 /*
  * Finish writing a TIFF page.  StripOffsets and StripByteCounts are
  * patched into the file.
  */
-int gdev_tiff_end_page(P2(gdev_tiff_state * tifs, FILE * fp));
+int gdev_tiff_end_page(gdev_tiff_state * tifs, FILE * fp);
 
 #endif /* gdevtifs_INCLUDED */
