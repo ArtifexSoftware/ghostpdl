@@ -139,8 +139,9 @@ void pl_print_usage(P3(gs_memory_t *mem, const pl_main_instance_t *pmi,
 
 /* Process the options on the command line, including making the
    initial device and setting its parameters.  */
-int pl_main_process_options(P4(pl_main_instance_t *pmi, arg_list *pal,
+int pl_main_process_options(P5(pl_main_instance_t *pmi, arg_list *pal,
 			       gs_c_param_list *params,
+                               pl_interp_instance_t *pjl_instance,
                                pl_interp_implementation_t const * const impl_array[]));
 
 /* Find default language implementation */
@@ -301,8 +302,14 @@ plmain(
 	bool                in_pjl = true;
 	bool                new_job = false;
 
+        if ( pl_init_job(pjl_instance) < 0 ) {
+            fprintf(gs_stderr, "Unable to init PJL job.\n");
+            exit(1);
+        }
+
 	/* Process any new options. May request new device. */
-	if (argc==1 || pl_main_process_options(&inst, &args, &params, pdl_implementation) < 0) {
+	if (argc==1 
+            || pl_main_process_options(&inst, &args, &params, pjl_instance, pdl_implementation) < 0) {
 	    int i;
 	    const gx_device **dev_list;
 	    int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
@@ -349,10 +356,6 @@ plmain(
 #endif
 
 
-        if ( pl_init_job(pjl_instance) < 0 ) {
-            fprintf(gs_stderr, "Unable to init PJL job.\n");
-            exit(1);
-        }
 
 	/* pump data thru PJL/PDL until EOD or error */
 	new_job = false;
@@ -478,7 +481,8 @@ pl_main_universe_init(
 	gs_memory_t            *mem,                 /* deallocator for devices */
 	pl_interp_implementation_t const * const
 	                       pdl_implementation[], /* implementations to choose from */
-	pl_interp_instance_t   *pjl_instance,        /* pjl to reference */
+	pl_interp_instance_t   *pjl_instance,        /* pjl to
+                                                        reference */
 	pl_main_instance_t     *inst,                /* instance for pre/post print */
 	pl_page_action_t       pl_pre_finish_page,   /* pre-page action */
 	pl_page_action_t       pl_post_finish_page   /* post-page action */
@@ -712,8 +716,9 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
-	    gs_c_param_list *params,
-	    pl_interp_implementation_t const * const impl_array[])
+                        gs_c_param_list *params,
+                        pl_interp_instance_t *pjl_instance,
+                        pl_interp_implementation_t const * const impl_array[])
 {
     int code = 0;
     bool help = false;
@@ -798,10 +803,38 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	case 'h':
 	    help = true;
 	    goto out;
+            /* job control line follows - PJL */
+        case 'j':
+        case 'J':
+            /* set up the read cursor and send it to the pjl parser */
+            {
+                stream_cursor_read cursor;
+
+                /* PJL lines have max length of 80 character + null terminator */
+                byte buf[81];
+                /* length of arg + newline (expected by PJL parser) + null */
+                int buf_len = strlen(arg) + 2;
+                if ( (buf_len ) > sizeof(buf) ) {
+                    fputs("pjl sequence too long\n", gs_stderr);
+                    return -1;
+                }
+                /* copy and concatenate newline */
+                strcpy(buf, arg); strcat(buf, "\n");
+                /* starting pos for pointer is always one position back */
+                cursor.ptr = buf - 1;
+                /* set the end of data pointer */
+                cursor.limit = cursor.ptr + strlen(buf);
+                /* process the pjl */
+                code = pl_process(pjl_instance, &cursor);
+                if ( code < 0 ) {
+                    fputs("illegal pjl sequence in -J option\n", gs_stderr);
+                    return code;
+                }
+            }
+            break;
 	case 'K':		/* max memory in K */
 	    {
 		int maxk;
-
 		if ( sscanf(arg, "%d", &maxk) != 1 ) { 
 		    fputs("-K must be followed by a number\n", gs_stderr);
 		    return -1;
