@@ -20,12 +20,8 @@
 
 /* pcmain.c - PCL5c main program */
 
-#undef DEBUG
-#define DEBUG			/* always enable debug output */
-
 /* HACK - avoid gsio redefinitions */
 #define gsio_INCLUDED
-
 
 #include "malloc_.h"
 #include "math_.h"
@@ -61,7 +57,9 @@
 /*#define BUFFER_SIZE 1024*/	/* minimum is 17 */
 #define BUFFER_SIZE 17
 
+#ifdef DEBUG
 extern  FILE *  gs_debug_out;
+#endif
 
 /* Define the table of pointers to initialization data. */
 #define init_(init) extern const pcl_init_t init;
@@ -179,7 +177,10 @@ main(
     /* Initialize the library. */
     gp_init();
     gs_lib_init(stdout);
+#ifdef DEBUG
     gs_debug_out = stdout;
+#endif
+
     imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
     imem->space = 0;		/****** WRONG ******/
     pl_main_init(&inst, mem);
@@ -258,8 +259,10 @@ main(
     }
     pcl_load_built_in_symbol_sets(pcls);
 
+#ifdef DEBUG
     if (gs_debug_c(':'))
         pl_print_usage(mem, &inst, "Start");
+#endif
 
     /* provide a graphic state we can return to */
     pcl_gsave(pcls);
@@ -279,8 +282,10 @@ main(
         stream_cursor_read  r;
         bool                in_pjl = true;
 
+#ifdef DEBUG
         if (gs_debug_c(':'))
             dprintf1("%% Reading %s:\n", arg);
+#endif
 
         if (in == 0) {
             fprintf(stderr, "Unable to open %s for reading.\n", arg);
@@ -321,12 +326,14 @@ process:
             r.limit = buf + (len - 1);
         }
 #if 0
+#ifdef DEBUG
         if (gs_debug_c(':'))
             dprintf3( "Final file position = %ld, exit code = %d, mode = %s\n",
     	              (long)ftell(in) - (r.limit - r.ptr),
                       code,
     	              (in_pjl ? "PJL" : pcls->parse_other ? "HP-GL/2" : "PCL")
                       );
+#endif
 #endif
         fclose(in);
 
@@ -350,6 +357,7 @@ process:
     pcl_grestore(pcls);
     gs_reclaim(&inst.spaces, true);
 
+#ifdef DEBUG
     if ( gs_debug_c(':') ) {
         typedef struct dump_control_s   dump_control_t;
         extern  const dump_control_t    dump_control_default;
@@ -362,6 +370,7 @@ process:
         dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
         debug_dump_memory(imem, &dump_control_default);
     }
+#endif
 
     gs_lib_finit(0, 0);
     exit(0);
