@@ -315,7 +315,6 @@ fprintf(FILE *file, const char *fmt, ...)
 	int		count;
 	va_list	args;
 	char	buf[1024];
-    int i;
 	
 	va_start(args,fmt);
 	
@@ -334,9 +333,6 @@ fprintf(FILE *file, const char *fmt, ...)
 int
 fputs(const char *string, FILE *file)
 {
-	int i,count;
-	char buf[1024];
-	
 	if (file != stdout  &&  file != stderr) {
 		return fwrite(string, strlen(string), 1, file);
 	}
@@ -423,7 +419,7 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 			&foundVRefNum, &foundDirID);
 		if ( myErr != noErr ) {
 			fprintf(stderr,"Can't find temp folder.\n");
-			return;
+			return (NULL);
 		}
 		FSMakeFSSpec(foundVRefNum, foundDirID,thepfname, &fSpec);
 		convertSpecToPath(&fSpec, thefname, sizeof(thefname) - 1);
@@ -603,11 +599,10 @@ gp_enumerate_files_close (file_enum *pfen)
 }
 
 FILE * 
-gp_fopen (const char * fname, const char * mode ) {
+gp_fopen (const char * fname, const char * mode) {
 
    char thefname[256];
    FILE *fid;
-   int ans;
 
 //sprintf((char*)&thefname[0],"\n%s\n",fname);
 //(*pgsdll_callback) (GSDLL_STDOUT, thefname, strlen(fname));
@@ -625,10 +620,10 @@ gp_fopen (const char * fname, const char * mode ) {
 
 FILE * 
 popen (const char * fname, const char * mode ) {
-return gp_fopen (fname,  mode );
+	return gp_fopen (fname,  mode);
 }
 
 int
 pclose (FILE * pipe ) {
-return fclose (pipe );
+	return fclose (pipe);
 }
