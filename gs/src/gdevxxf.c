@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -345,7 +345,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
     int x, y, w, h;
     int code;
 
-    if (dev->dname == gs_x11_device.dname && !IS_BUFFERED((gx_device_X *)dev)){
+    if (dev->dname == gs_x11_device.dname && !((gx_device_X *)dev)->is_buffered) {
 	code = (*xf->common.procs->char_metrics) (xf, xg, 0, &wxy, &bbox);
 	if (code < 0)
 	    return code;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -127,6 +127,7 @@ const gx_device_X gs_x11_device = {
 	x_get_bits_rectangle
     },
     gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/),
+    0 /*false*/,		/* is_buffered */
     1 /*true*/,			/* IsPageDevice */
     0,				/* MaxBitmap */
     NULL,			/* buffer */
@@ -1020,11 +1021,18 @@ update_do_flush(gx_device_X * xdev)
 
 	fit_fill_xywh(xdev, x, y, w, h);
 	if (w > 0 && h > 0) {
-	    if (IS_BUFFERED(xdev)) {
+	    if (xdev->is_buffered) {
 		/* Copy from memory image to X server. */
 		const gx_device_memory *mdev =
 		    (const gx_device_memory *)xdev->target;
 
+		/*
+		 * The bbox device may have set the target to NULL
+		 * temporarily.  If this is the case, defer the screen
+		 * update.
+		 */
+		if (mdev == NULL)
+		    return;	/* don't reset */
 		x_copy_image(xdev, mdev->line_ptrs[y], x, mdev->raster,
 			     x, y, w, h);
 	    }

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -57,7 +57,12 @@ struct x11fontmap_s {
 /* Define the X Windows device */
 typedef struct gx_device_X_s {
     gx_device_bbox_common;	/* if target != 0, is image buffer */
-#define IS_BUFFERED(xdev) ((xdev)->target != 0)
+    /*
+     * Normally, an X device has an image buffer iff target != 0.  However,
+     * the bbox device sometimes sets target to NULL temporarily, so we need
+     * a separate flag to record whether this device is buffered.
+     */
+    bool is_buffered;
     bool IsPageDevice;
     long MaxBitmap;
     byte *buffer;		/* full-window image */
