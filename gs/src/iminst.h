@@ -105,7 +105,7 @@ struct gs_main_instance_s {
  * must include gconfig.h, because of SEARCH_HERE_FIRST.
  */
 #define gs_main_instance_default_init_values\
-  0, 0, 0, 0, 0, 0 ,1 /*true*/, 0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
+  0, 20000, 0, 0, -1, 0, SEARCH_HERE_FIRST, 1
 extern const gs_main_instance gs_main_instance_init_values;
 
 #endif /* iminst_INCLUDED */
