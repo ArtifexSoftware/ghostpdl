@@ -19,7 +19,7 @@
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "opcheck.h"
 #include "gsparam.h"
 #include "gsutil.h"		/* bytes_compare prototype */

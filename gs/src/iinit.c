@@ -21,7 +21,7 @@
 #include "gscdefs.h"
 #include "gsexit.h"
 #include "gsstruct.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "ialloc.h"
 #include "iddict.h"
 #include "dstack.h"

@@ -23,7 +23,7 @@
  * Should work for Windows, OS/2, Linux, Mac.
  *
  * DLL exported functions should be as similar as possible to imain.c
- * You will need to include "errors.h".
+ * You will need to include "ierrors.h".
  *
  * Current problems:
  * 1. Ghostscript does not support multiple instances.

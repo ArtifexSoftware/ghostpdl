@@ -39,7 +39,7 @@
 
 #include "gscdefs.h"
 #define GSREVISION gs_revision
-#include "errors.h"
+#include "ierrors.h"
 #include "iapi.h"
 
 #if DEBUG

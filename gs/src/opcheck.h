@@ -16,7 +16,7 @@
 
 /* $Id$ */
 /* Definitions for operator operand checking */
-/* Requires ialloc.h (for imemory), iref.h, errors.h */
+/* Requires ialloc.h (for imemory), iref.h, ierrors.h */
 
 #ifndef opcheck_INCLUDED
 #  define opcheck_INCLUDED

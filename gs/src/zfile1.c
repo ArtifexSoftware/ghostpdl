@@ -20,7 +20,7 @@
 #include "memory_.h"
 #include "ghost.h"
 #include "gp.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "oper.h"
 #include "ialloc.h"
 #include "opdef.h"

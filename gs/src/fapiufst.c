@@ -21,7 +21,7 @@
 #include "stdio_.h"
 #include "memory_.h"
 #include "math_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "iplugin.h"
 #include "ifapi.h"
 /* UFST includes : */

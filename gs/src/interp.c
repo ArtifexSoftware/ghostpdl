@@ -21,7 +21,7 @@
 #include "ghost.h"
 #include "gsstruct.h"		/* for iastruct.h */
 #include "stream.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "estack.h"
 #include "ialloc.h"
 #include "iastruct.h"

@@ -19,7 +19,7 @@
 #include "ghost.h"
 #include "gsstruct.h"		/* for gxalloc.h */
 #include "gxalloc.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "stream.h"		/* for files.h */
 #include "files.h"
 #include "idict.h"

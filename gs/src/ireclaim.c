@@ -17,7 +17,7 @@
 /* $Id$ */
 /* Interpreter's interface to garbage collector */
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsstruct.h"
 #include "iastate.h"
 #include "icontext.h"

@@ -118,7 +118,7 @@ See these source files for examples of how to use the DLL.
 The source file <tt>dxmainc.c</tt> can serve as an example of how to use the 
 framework shared component on MacOS X. Just change the header includes to use 
 the Ghostscript namespace:
-<blockquote><pre><tt>#include &lt;Ghostscript/errors.h&gt;
+<blockquote><pre><tt>#include &lt;Ghostscript/ierrors.h&gt;
 #include &lt;Ghostscript/iapi.h&gt;</tt></pre></blockquote>
 and link with:
 <blockquote><pre><tt>cc -o gsc dxmainc.c -framework Ghostscript</tt></pre></blockquote>
@@ -442,7 +442,7 @@ http://www.cs.wisc.edu/~ghost/doc/gsapi.htm</a>.
 # define GSDLLEXPORT __declspec(dllimport)
 #endif
 
-#include "errors.h"
+#include "ierrors.h"
 #include "iapi.h"
 
 gs_main_instance *minst;
@@ -493,7 +493,7 @@ int main(int argc, char *argv[])
 # define GSDLLEXPORT __declspec(dllimport)
 #endif
 #include &lt;stdio.h&gt;
-#include "errors.h"
+#include "ierrors.h"
 #include "iapi.h"
 
 /* stdio functions */

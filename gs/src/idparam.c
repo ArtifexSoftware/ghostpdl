@@ -19,7 +19,7 @@
 #include "memory_.h"
 #include "string_.h"		/* for strlen */
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsmatrix.h"		/* for dict_matrix_param */
 #include "gsuid.h"
 #include "idict.h"

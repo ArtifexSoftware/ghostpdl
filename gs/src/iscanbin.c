@@ -24,7 +24,7 @@
 #include "stream.h"
 #include "strimpl.h"		/* for sfilter.h */
 #include "sfilter.h"		/* for iscan.h */
-#include "errors.h"
+#include "ierrors.h"
 #include "ialloc.h"
 #include "iddict.h"
 #include "dstack.h"		/* for immediately evaluated names */

@@ -24,7 +24,7 @@
 #include "gsmatrix.h"
 #include "gxfont.h"		/* for ifont.h */
 #include "ccfont.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "ialloc.h"
 #include "idict.h"
 #include "ifont.h"

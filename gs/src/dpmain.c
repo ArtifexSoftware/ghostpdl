@@ -40,7 +40,7 @@
 #include <sys/select.h>
 #include "gscdefs.h"
 #define GS_REVISION gs_revision
-#include "errors.h"
+#include "ierrors.h"
 #include "iapi.h"
 #include "gdevdsp.h"
 

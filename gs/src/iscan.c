@@ -19,7 +19,7 @@
 #include "ghost.h"
 #include "memory_.h"
 #include "stream.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "btoken.h"		/* for ref_binary_object_format */
 #include "files.h"		/* for fptr */
 #include "ialloc.h"

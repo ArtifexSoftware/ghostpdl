@@ -18,7 +18,7 @@
 /* Memory allocator for Ghostscript interpreter */
 #include "gx.h"
 #include "memory_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsstruct.h"
 #include "iref.h"		/* must precede iastate.h */
 #include "iastate.h"

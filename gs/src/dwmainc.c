@@ -22,7 +22,7 @@
 #include <stdlib.h>
 #include <io.h>
 #include <fcntl.h>
-#include "errors.h"
+#include "ierrors.h"
 #include "iapi.h"
 #include "vdtrace.h"
 #include "gdevdsp.h"

@@ -20,7 +20,7 @@
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsccode.h"		/* for gxfont.h */
 #include "gsmatrix.h"
 #include "gsutil.h"

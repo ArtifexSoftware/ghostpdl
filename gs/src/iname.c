@@ -21,7 +21,7 @@
 #include "ghost.h"
 #include "gsstruct.h"
 #include "gxobj.h"		/* for o_set_unmarked */
-#include "errors.h"
+#include "ierrors.h"
 #include "inamedef.h"
 #include "imemory.h"		/* for isave.h */
 #include "isave.h"

@@ -23,7 +23,7 @@ Started by Graham Asher, 6th June 2002.
 
 /* GhostScript headers. */
 #include "stdio_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "ifapi.h"
 #include "write_t1.h"
 #include "write_t2.h"

@@ -20,7 +20,7 @@
 #ifndef oper_INCLUDED
 #  define oper_INCLUDED
 
-#include "errors.h"
+#include "ierrors.h"
 #include "ostack.h"
 #include "opdef.h"
 #include "opextern.h"

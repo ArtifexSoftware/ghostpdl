@@ -19,7 +19,7 @@
 #include "memory_.h"
 #include "string_.h"
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "oper.h"		/* for check_type */
 #include "opcheck.h"
 #include "ialloc.h"

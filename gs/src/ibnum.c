@@ -19,7 +19,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "stream.h"
 #include "ibnum.h"
 #include "imemory.h"		/* for iutil.h */

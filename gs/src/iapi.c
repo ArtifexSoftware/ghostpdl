@@ -19,7 +19,7 @@
 /* Public Application Programming Interface to Ghostscript interpreter */
 
 #include "string_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gscdefs.h"
 #include "gstypes.h"
 #include "iapi.h"	/* Public API */

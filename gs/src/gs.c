@@ -21,7 +21,7 @@
 #include "imainarg.h"
 #include "iapi.h"
 #include "iminst.h"
-#include "errors.h"
+#include "ierrors.h"
 
 /* Define an optional array of strings for testing. */
 /*#define RUN_STRINGS */

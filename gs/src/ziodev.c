@@ -33,7 +33,7 @@
 #include "files.h"
 #include "scanchar.h"		/* for char_EOL */
 #include "store.h"
-#include "errors.h"
+#include "ierrors.h"
 
 /* Import the dtype of the stdio IODevices. */
 extern const char iodev_dtype_stdio[];

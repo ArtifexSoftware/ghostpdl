@@ -20,7 +20,7 @@
 #include "string_.h"		/* for strlen */
 #include "ghost.h"
 #include "gxalloc.h"		/* for accessing masks */
-#include "errors.h"
+#include "ierrors.h"
 #include "imemory.h"
 #include "idebug.h"		/* for debug_print_name */
 #include "inamedef.h"

@@ -624,7 +624,7 @@ gsdllos2_h=$(GLSRC)gsdllos2.h
 ICONS=$(PSOBJ)gsos2.ico $(GLOBJ)gspmdrv.ico
 
 $(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
- $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(errors_h)
+ $(gdevdsp_h) $(iapi_h) $(gscdefs_h) $(ierrors_h)
 	$(CC) $(CEXE) -I$(PSSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(PSO_)dpmain.$(OBJ) $(C_) $(PSSRC)dpmain.c
 
 !if $(MAKEDLL)

@@ -18,7 +18,7 @@
 /* Number scanner for Ghostscript interpreter */
 #include "math_.h"
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "scommon.h"
 #include "iscannum.h"		/* defines interface */
 #include "scanchar.h"

@@ -136,7 +136,7 @@ framework: so lib/Info-macos.plist
 	ln -s Versions/Current/doc . ;\
 	ln -s Versions/Current/$(FRAMEWORK_NAME) . )
 	pwd
-	cp src/iapi.h src/errors.h src/gdevdsp.h $(GS_FRAMEWORK)/Headers/
+	cp src/iapi.h src/ierrors.h src/gdevdsp.h $(GS_FRAMEWORK)/Headers/
 	cp lib/Info-macos.plist $(GS_FRAMEWORK)/Resources/
 	cp -r lib $(GS_FRAMEWORK)/Resources/
 	cp $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR) $(GS_FRAMEWORK)/Versions/Current/$(FRAMEWORK_NAME)

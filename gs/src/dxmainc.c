@@ -37,7 +37,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #define __PROTOTYPES__
-#include "errors.h"
+#include "ierrors.h"
 #include "iapi.h"
 
 const char start_string[] = "systemdict /start get exec\n";

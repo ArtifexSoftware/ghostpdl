@@ -38,7 +38,7 @@
 #include "stdio_.h"
 #include "string_.h"
 #include "malloc_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gserror.h"
 #include "gstypes.h"
 #include "gsmemory.h"

@@ -18,7 +18,7 @@
 /* Garbage collector for Ghostscript */
 #include "memory_.h"
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsexit.h"
 #include "gsmdebug.h"
 #include "gsstruct.h"

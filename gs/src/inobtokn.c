@@ -17,7 +17,7 @@
 /* $Id$ */
 /* Dummy scan_binary_token for Level 1 systems */
 #include "ghost.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "stream.h"
 #include "iscan.h"
 #include "iscanbin.h"

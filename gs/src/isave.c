@@ -18,7 +18,7 @@
 /* Save/restore manager for Ghostscript interpreter */
 #include "ghost.h"
 #include "memory_.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "gsexit.h"
 #include "gsstruct.h"
 #include "stream.h"		/* for linking for forgetsave */

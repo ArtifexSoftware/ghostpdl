@@ -35,7 +35,7 @@
 #include <fcntl.h>
 #include <gtk/gtk.h>
 #define __PROTOTYPES__
-#include "errors.h"
+#include "ierrors.h"
 #include "iapi.h"
 #include "gdevdsp.h"
 

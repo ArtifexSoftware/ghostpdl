@@ -31,7 +31,7 @@
 #include "gxdevmem.h"
 #include "gsdevice.h"
 #include "stream.h"
-#include "errors.h"
+#include "ierrors.h"
 #include "estack.h"
 #include "ialloc.h"
 #include "strimpl.h"		/* for sfilter.h */
