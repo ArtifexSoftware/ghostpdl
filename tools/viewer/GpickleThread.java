@@ -107,7 +107,7 @@ public class GpickleThread extends Gpickle implements Runnable {
 	  }
           if (debugPerformance) {
 	     gotItTime = System.currentTimeMillis() - gotItTime;	
-	     System.out.println("Page " + currentPage + " User time: " +  
+	     System.out.println("Page " + currentPage + " User time: " +
 				gotItTime + " milliseconds" );
           }
 
@@ -119,8 +119,9 @@ public class GpickleThread extends Gpickle implements Runnable {
 		// the last page asked for while I was busy
 		// holding the the pageDown key down will get you the next page
 		// and one far into the document (nextPage)
-                startProduction( nextPage );
-		if (debugSpew) System.out.println("Getting Next asked for " +  getPageNumber() );
+		if (debugSpew) System.out.println("Getting Next asked for " +  nextPage );
+                
+		startProduction( nextPage );
              }
 	     else if (lookAhead) {
 		 if ( currentPage < totalPageCount) {
