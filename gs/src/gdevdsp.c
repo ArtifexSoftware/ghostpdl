@@ -76,6 +76,8 @@ private dev_proc_map_rgb_color(display_map_rgb_color_rgb);
 private dev_proc_map_color_rgb(display_map_color_rgb_rgb);
 private dev_proc_map_rgb_color(display_map_rgb_color_bgr24);
 private dev_proc_map_color_rgb(display_map_color_rgb_bgr24);
+private dev_proc_map_rgb_color(display_map_rgb_color_cmyk1);
+private dev_proc_map_rgb_color(display_map_rgb_color_cmyk8);
 
 private dev_proc_fill_rectangle(display_fill_rectangle);
 private dev_proc_copy_mono(display_copy_mono);
@@ -316,10 +318,6 @@ private gx_color_index
 display_map_rgb_color_device4(gx_device * dev, 
     gx_color_value r, gx_color_value g, gx_color_value b)
 {
-    gx_device_display *ddev = (gx_device_display *) dev;
-    if ((r == g) && (g == b) && (r >= gx_max_color_value / 3 * 2 - 1)
-	&& (r < gx_max_color_value / 4 * 3))
-	return ((gx_color_index) 8);	/* light gray */
     return pc_4bit_map_rgb_color(dev, r, g, b);
 }
 
@@ -328,10 +326,7 @@ private int
 display_map_color_rgb_device4(gx_device * dev, gx_color_index color,
 		 gx_color_value prgb[3])
 {
-    if (color == 8)	/* VGA light grey */
-	prgb[0] = prgb[1] = prgb[2] = (gx_max_color_value / 4 * 3);
-    else
-	pc_4bit_map_color_rgb(dev, color, prgb);
+    pc_4bit_map_color_rgb(dev, color, prgb);
     return 0;
 }
 
@@ -455,7 +450,7 @@ display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 	    value = ((color << 3) & 0x18) +  ((color >> 13) & 0x7);
 	    prgb[1] = ((value << 11) + (value << 6) + (value << 1) + 
 	    (value >> 4)) >> (16 - gx_color_value_bits);
-	    value = color & 0x1f;
+	    value = (color >> 8) & 0x1f;
 	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
 	}
@@ -467,7 +462,7 @@ display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 	    value = ((color << 3) & 0x38) +  ((color >> 13) & 0x7);
 	    prgb[1] = ((value << 10) + (value << 4) + (value >> 2))
 		      >> (16 - gx_color_value_bits);
-	    value = color & 0x1f;
+	    value = (color >> 8) & 0x1f;
 	    prgb[2] = ((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
 	}
@@ -548,7 +543,7 @@ display_map_color_rgb_rgb(gx_device * dev, gx_color_index color,
 	case DISPLAY_UNUSED_FIRST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
 		/* xRGB */
-		prgb[0] = ((color) & 2*color_mask) * 
+		prgb[0] = ((color >> 2*bits_per_color) & color_mask) * 
 			(ulong) gx_max_color_value / color_mask;
 		prgb[1] = ((color >> bits_per_color)   & color_mask) * 
 			(ulong) gx_max_color_value / color_mask;
@@ -609,6 +604,48 @@ display_map_color_rgb_bgr24(gx_device * dev, gx_color_index color,
     prgb[2] = gx_color_value_from_byte((color >> 16) & 0xff);
     return 0;
 }
+
+/* 8-bit CMYK
+ * This is currently used for anti-aliasing. A better solution would be to 
+ * replace gx_default_copy_alpha with a version that works in CMYK, not RGB.
+ */
+/* Map a r-g-b color to a color code */
+private gx_color_index
+display_map_rgb_color_cmyk8(gx_device * dev, gx_color_value r, 
+		gx_color_value g, gx_color_value b)
+{
+    gx_color_value c, m, y, k;
+    c = gx_max_color_value - r;
+    m = gx_max_color_value - g;
+    y = gx_max_color_value - b;
+    k = min(c, min(m,y));
+    if (k > 0) {
+	c -= k;
+	m -= k;
+	y -= k;
+    }
+    return cmyk_8bit_map_cmyk_color(dev, c, m, y, k);
+}
+
+/* 1-bit CMYK */
+/* Map a r-g-b color to a color code */
+private gx_color_index
+display_map_rgb_color_cmyk1(gx_device * dev, gx_color_value r, 
+		gx_color_value g, gx_color_value b)
+{
+    gx_color_value c, m, y, k;
+    c = gx_max_color_value - r;
+    m = gx_max_color_value - g;
+    y = gx_max_color_value - b;
+    k = min(c, min(m,y));
+    if (k > 0) {
+	c -= k;
+	m -= k;
+	y -= k;
+    }
+    return cmyk_1bit_map_cmyk_color(dev, c, m, y, k);
+}
+
 
 /* Fill a rectangle */
 private int
@@ -1089,10 +1126,12 @@ display_set_color_format(gx_device_display *ddev, int nFormat)
 	    if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_1) {
 		ddev->procs.map_cmyk_color = cmyk_1bit_map_cmyk_color;
 		ddev->procs.map_color_rgb = cmyk_1bit_map_color_rgb;
+		ddev->procs.map_rgb_color = display_map_rgb_color_cmyk1;
 	    }
 	    else if ((nFormat & DISPLAY_DEPTH_MASK) == DISPLAY_DEPTH_8) {
 		ddev->procs.map_cmyk_color = cmyk_8bit_map_cmyk_color;
 		ddev->procs.map_color_rgb = cmyk_8bit_map_color_rgb;
+		ddev->procs.map_rgb_color = display_map_rgb_color_cmyk8;
 	    }
 	    else
 		return_error(gs_error_rangecheck);
