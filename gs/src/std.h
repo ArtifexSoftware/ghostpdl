@@ -137,11 +137,6 @@ typedef unsigned int uint64_t;
 #  if ARCH_SIZEOF_LONG == 8
 typedef signed long int64_t;
 typedef unsigned long uint64_t;
-#  else
-#   if ARCH_SIZEOF_LONG_LONG == 8
-typedef signed long long int64_t;
-typedef unsigned long long uint64_t;
-#   endif
 #  endif
 # endif
 #  define STDINT_TYPES_DEFINED
