@@ -433,6 +433,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	CLEAR_OP();\
     }\
   END
+    fixed mx0 = 0, my0 = 0; /* See ce1_setcurrentpoint. */
 
     /*
      * Do a first pass to collect hints.  Note that we must also process
@@ -560,7 +561,14 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    HINTS_CHANGED();
 	    continue;
 	case c1_closepath:
+	    continue;
 	case CE_OFFSET + ce1_setcurrentpoint:
+	    if (first) {
+		/*  A workaround for fonts which use ce1_setcurrentpoint 
+		    in an illegal way for shifting a path. 
+		    See t1_hinter__setcurrentpoint for more information. */
+		mx0 = csp[-1], my0 = *csp;
+	    }
 	    continue;
 	case cx_vmoveto:
 	    mx = 0, my = *csp;
@@ -576,7 +584,7 @@ psf_convert_type1_to_type2(stream *s, const gs_glyph_data_t *pgd,
 	    if (first) {
 		if (cis.os_count)
 		    type2_put_fixed(s, *csp); /* width */
-		mx += cis.lsb.x, my += cis.lsb.y;
+		mx += cis.lsb.x + mx0, my += cis.lsb.y + my0;
 		first = false;
 	    }
 	    if (cis.flex_count != flex_max) {

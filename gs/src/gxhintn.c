@@ -917,8 +917,22 @@ int t1_hinter__rcurveto(t1_hinter * this, fixed xx0, fixed yy0, fixed xx1, fixed
 }
 
 void t1_hinter__setcurrentpoint(t1_hinter * this, fixed xx, fixed yy)
-{   this->cx = import_shift(xx, this->import_shift);
-    this->cy = import_shift(yy, this->import_shift);
+{   
+    t1_glyph_space_coord gx = import_shift(xx, this->import_shift);
+    t1_glyph_space_coord gy = import_shift(yy, this->import_shift);
+
+    if (this->cx != gx || this->cy != gy) {
+	/* Type 1 spec reads : "The setcurrentpoint command is used only 
+	   in conjunction with results from OtherSubrs procedures."
+	   We guess that such cases don't cause a real coordinate change
+	   (our testbase shows that). But we met a font 
+	   (see comparefiles/type1-ce1_setcurrentpoint.ps) which use 
+	   setcurrentpoint immediately before moveto, with no conjunction 
+	   with OtherSubrs.
+	 */
+	this->cx = gx;
+	this->cy = gy;
+    }
 }
 
 int t1_hinter__closepath(t1_hinter * this)
