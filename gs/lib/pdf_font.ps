@@ -464,6 +464,19 @@ setglobal
     currentdict //systemdict eq { end } if
      { stop } if
   } bdef
+
+  /undef_proc_warning {
+    (   **** Embedded font uses undefined procedure ) pdfformaterror
+        .namestring pdfformaterror (\n) pdfformaterror
+  } bdef
+
+  /-| { string currentfile exch readstring pop /-| undef_proc_warning } executeonly bdef
+  /RD { string currentfile exch readstring pop /RD undef_proc_warning } executeonly bdef
+  /|- { noaccess def /|- undef_proc_warning } executeonly bdef
+  /ND { noaccess def /ND undef_proc_warning } executeonly bdef
+  /|  { noaccess put /|  undef_proc_warning } executeonly bdef
+  /NP { noaccess put /NP undef_proc_warning } executeonly bdef
+
 end readonly def
 /readtype1 {		% <font-resource> <stream-dict> readtype1 <font>
 		% Read the definition, using a procedure-based filter
