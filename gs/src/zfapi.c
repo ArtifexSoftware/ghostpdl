@@ -712,21 +712,7 @@ private int renderer_retcode(i_ctx_t *i_ctx_p, FAPI_server *I, FAPI_retcode rc)
 
     if (rc == 0)
 	return 0;
-    if (zget_stdout(i_ctx_p, &s) == 0) {
-	uint wlen;
-	const char *s0 = "Error: Font Renderer Plugin ( ", *s1 = " ) return code = ";
-        char buf[10];
-
-        sprintf(buf, "%d", rc);
-	sputs(s, (const byte *)s0, strlen(s0), &wlen);
-	sputs(s, (const byte *)I->ig.d->subtype, strlen(I->ig.d->subtype), &wlen);
-	sputs(s, (const byte *)s1, strlen(s1), &wlen);
-	sputs(s, (const byte *)buf, strlen(buf), &wlen);
-	sputs(s, (const byte *)"\n", 1, &wlen);
-	/* 
-	 * Fixme : sputs may return CALLC, need to perform an interpreter callout.
-	 */
-    }
+    eprintf2("Error: Font Renderer Plugin ( %s ) return code = %d\n", I->ig.d->subtype, rc);
     return rc < 0 ? rc : e_invalidfont;
 }
 
