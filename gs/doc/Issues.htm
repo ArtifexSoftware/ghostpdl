@@ -175,28 +175,28 @@ same color as the left end of the shaded fill.
       612 1 scale 
       /grad 
       { gsave 
-	  0 0 1 100 rectclip 
-	  <<
-	      /ColorSpace [/DeviceCMYK] 
-	      /Domain [0 1] 
-	      /Coords [0 0 1 0] 
-	      /Extend [false false] 
-	      /Function 
-	      << /FunctionType 3 
-		  /Domain [ 0 1] 
-		  /Functions 
-		  [ <<
-		      /FunctionType 2 
-		      /N 1 
-		      /C0 [ 0 0.5 0 0 ] 
-		      /Domain [ 0 1] 
-		      /C1 [0.5 0 0 0] 
-		  >> ] 
-		  /Bounds [] 
-		  /Encode [0 1] 
-	      >> 
-	      /ShadingType 2 
-	  >> shfill 
+          0 0 1 100 rectclip 
+          <<
+              /ColorSpace [/DeviceCMYK] 
+              /Domain [0 1] 
+              /Coords [0 0 1 0] 
+              /Extend [false false] 
+              /Function 
+              << /FunctionType 3 
+                  /Domain [ 0 1] 
+                  /Functions 
+                  [ <<
+                      /FunctionType 2 
+                      /N 1 
+                      /C0 [ 0 0.5 0 0 ] 
+                      /Domain [ 0 1] 
+                      /C1 [0.5 0 0 0] 
+                  >> ] 
+                  /Bounds [] 
+                  /Encode [0 1] 
+              >> 
+              /ShadingType 2 
+          >> shfill 
 
       0 0.5 0 0 setcmykcolor 
       0 0 0.1 50 rectfill 
@@ -215,9 +215,9 @@ SourceForge Bug #232334, Feb 14, 2001.
 The following sequence:
 
 <pre>
-	/Font /Category findresource begin 
-	/CharterBT-Roman 255 string ResourceFileName = 
-	end 
+        /Font /Category findresource begin 
+        /CharterBT-Roman 255 string ResourceFileName = 
+        end 
 </pre>
 
 Gives the results:
@@ -496,6 +496,22 @@ without intermediate empty lines.
 <h3>                                              </h3>
 <p>
 
+<h3>Improper handling of hybrid fonts.</h3>
+
+Hybrid fonts are described in section 9.2 of the "Adobe Type 1 Font Format" book.
+Such fonts cannot load into global VM due to internal usage of <I>save/restore</I>
+(and should do into local VM).
+Hybrid fonts can be recognized by the appearance of the word 'hires' with
+a pre-scan over the font, the same way that .findfontvalue works now.
+
+<h3>Job server loop isn't implemented.</h3>
+
+Rather <I>startjob</I> and <I>exitserver</I> are stubbed in lib/gs_lev2.ps,
+it appears insufficietly compartible with Adobe interpreters.
+Particularly the outermost <I>restore</I> unwinds global VM while interpreting a
+document specified in command line argument. Perhaps global VM should not unwind
+during a document interpretation. A compatible change should introduce a new command
+line option for etablishing a job server loop around douments.
 
 <!-- [2.0 end contents] ==================================================== -->
 
