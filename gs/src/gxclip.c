@@ -279,6 +279,7 @@ clip_open(gx_device * dev)
     rdev->height = tdev->height;
     gx_device_copy_color_procs(dev, tdev);
     rdev->clipping_box_set = false;
+    rdev->memory = tdev->memory;
     return 0;
 }
 
