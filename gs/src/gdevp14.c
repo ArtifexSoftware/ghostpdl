@@ -625,11 +625,13 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     byte *buf_ptr = buf->data;
     byte *linebuf;
 
-#ifdef TEST_CODE
-    code = dev_proc(target, fill_rectangle) (target, 10, 10, 100, 100, 0);
-#endif
+    /* Set graphics state device to target, so that image can set up
+       the color mapping properly. */
+    gs_setdevice_no_init(pgs, target);
 
-    gx_set_dev_color(pgs);
+    /* Set color space to RGB, in preparation for sending an RGB image. */
+    gs_setrgbcolor(pgs, 0, 0, 0);
+
     gs_image_t_init_adjust(&image, pis->shared->device_color_spaces.named.RGB,
 			   false);
     image.ImageMatrix.xx = width;
@@ -679,7 +681,7 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
 		g += (tmp + (tmp >> 8)) >> 8;
 		linebuf[x * 3 + 1] = g;
 
-		tmp = ((bg_g - b) * a) + 0x80;
+		tmp = ((bg_b - b) * a) + 0x80;
 		b += (tmp + (tmp >> 8)) >> 8;
 		linebuf[x * 3 + 2] = b;
 	    } else if (a == 0) {
@@ -707,6 +709,10 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     gs_free_object(pdev->memory, linebuf, "pdf14_put_image");
 
     info->procs->end_image(info, true);
+
+    /* Restore device in graphics state.*/
+    gs_setdevice_no_init(pgs, pdev);
+
     return code;
 }
 
