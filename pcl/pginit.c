@@ -117,6 +117,9 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    hpgl_clear_current_path(pcls);
 	    /* set rendering mode to default */
 	    hpgl_default_render_mode(pcls);
+	    /* Initialize stick/arc font instances */
+	    pcls->g.stick_font[0].pfont =
+	      pcls->g.stick_font[1].pfont = 0;
 	    /* execute IN */
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IN(&hpgl_args, pcls);

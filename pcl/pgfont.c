@@ -5,11 +5,49 @@
 /* pgfont.c */
 /* HP-GL/2 stick and arc font */
 #include "math_.h"
-#include "pgmand.h"
-#include "pgmisc.h"
-#include "pgdraw.h"
-#include "pgfont.h"
+#include "gstypes.h"
+#include "gsccode.h"
+#include "gsmemory.h"		/* for gsstate.h */
+#include "gsstate.h"		/* for gscoord.h, gspath.h */
+#include "gsmatrix.h"
+#include "gscoord.h"
+#include "gspaint.h"
 #include "gspath.h"
+#include "gxfixed.h"		/* for gxchar.h */
+#include "gxchar.h"
+#include "gxfarith.h"
+#include "gxfont.h"
+#include "plfont.h"
+#include "pgfont.h"
+
+/* Note that we misappropriate pfont->StrokeWidth for the chord angle. */
+
+#define num_arc_symbols (256+20) /* HACK forward reference */
+
+/* The client handles all encoding issues for these fonts. */
+private gs_glyph
+hpgl_stick_arc_encode_char(gs_show_enum *penum, gs_font *pfont, gs_char *pchr)
+{	return (gs_glyph)*pchr;
+}
+
+private int
+hpgl_stick_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
+  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
+{	bool in_range =
+	  char_code >= 0x20 && char_code < 0x20 + num_arc_symbols;
+
+	if ( pwidth ) {
+	  gs_distance_transform(0.667, 0.0, pmat, pwidth);
+	}
+	return in_range;
+}
+/* The arc font is proportionally spaced, but we don't have convenient */
+/* access to the escapements. */
+private int
+hpgl_arc_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
+  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
+{	return hpgl_stick_char_width(plfont, map, pmat, char_code, pwidth);
+}
 
 /*
  * Characters are defined by a series of 1-byte points.  Normally, the top
@@ -38,51 +76,48 @@ private const ushort arc_symbol_offsets[];
 private const byte arc_symbol_counts[];
 
 /* Forward procedure declarations */
-private void hpgl_arc_compute_arc(P5(int cx, int cy, const gs_int_point *start,
-  floatp *radius, floatp *angle));
+private int hpgl_arc_add_arc(P6(gs_state *pgs, int cx, int cy,
+  const gs_int_point *start, floatp sweep_angle, floatp chord_angle));
 
-int
-hpgl_stick_char_width(uint char_index, floatp *escapement)
-{	*escapement = 0.667;
-	return 0;
-}
-/* The arc font is proportionally spaced, but we don't have convenient */
-/* access to the escapements. */
-int
-hpgl_arc_char_width(uint char_index, floatp *escapement)
-{	*escapement = 0.667;
-	return 0;
-}
-
-/* Append a symbol to the GL/2 path. */
-int
-hpgl_stick_append_char(hpgl_state_t *pgls, uint char_index)
-{	return hpgl_arc_append_char(pgls, char_index, 22.5);
-}
-int
-hpgl_arc_append_char(hpgl_state_t *pgls, uint char_index, floatp chord_angle)
-{	const byte *ptr =
-	  &arc_symbol_strokes[arc_symbol_offsets[char_index - 0x20]];
-	const byte *end = ptr + arc_symbol_counts[char_index - 0x20];
-	gs_point origin;
+/* Add a symbol to the path. */
+private int
+hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+  gs_char ignore_chr, gs_glyph char_index)
+{	double chord_angle = pfont->StrokeWidth;
+	const byte *ptr;
+	const byte *end;
 	gs_int_point prev;
 	gs_int_point shift;
-	double scale;
 	bool draw = false;
 	enum {
 	  arc_direction_other,
 	  arc_direction_vertical,
 	  arc_direction_horizontal
 	} direction = arc_direction_other;
+	gs_matrix save_ctm;
+	int code = 0;
 
+	if ( char_index < 0x20 || char_index >= 0x20 + num_arc_symbols )
+	  return 0;
+	gs_setcharwidth(penum, pgs, 0.667, 0.0);
+	ptr = &arc_symbol_strokes[arc_symbol_offsets[char_index - 0x20]];
+	end = ptr + arc_symbol_counts[char_index - 0x20];
 	prev.x = prev.y = 0;
 	shift.x = shift.y = 0;
-	scale = 1.0 / 15;
-	gs_currentpoint(pgls->pgs, &origin);
+	gs_currentmatrix(pgs, &save_ctm);
+	/* The TRM says the stick font is based on a 32x32 unit cell, */
+	/* but the font we're using here is only 15x15. */
+	/* Also, per TRM 23-18, the character cell is only 2/3 the */
+	/* point size. */
+#define scale (1.0 / 15 * 2 / 3)
+	gs_scale(pgs, scale, scale);
+#undef scale
+	gs_moveto(pgs, 0.0, 0.0);
+
 	while ( ptr < end ) {
 	  int x = *ptr >> 4;
 	  int y = *ptr++ & 0x0f;
-	  floatp radius, angle;
+	  int dx, dy;
 
 	  if ( x == 0xf ) {
 	    /* Special function */
@@ -90,37 +125,29 @@ hpgl_arc_append_char(hpgl_state_t *pgls, uint char_index, floatp chord_angle)
 	      {
 	      case arc_op_pen_up:
 		draw = false;
-		break;
+		continue;
 	      case arc_op_draw_180:
 		draw = true;
 		x = (*ptr >> 4) + shift.x;
 		y = (*ptr++ & 0x0f) + shift.y;
-		hpgl_arc_compute_arc(x, y, &prev, &radius, &angle);
-		hpgl_call(hpgl_add_arc_to_path(pgls, origin.x + x * scale,
-					       origin.y + y * scale,
-					       radius * scale, angle, -180.0,
-					       -chord_angle, false, true));
+		code = hpgl_arc_add_arc(pgs, x, y, &prev,
+					-180.0, chord_angle);
 		prev.x = x * 2 - prev.x, prev.y = y * 2 - prev.y;
 		break;
 	      case arc_op_draw_360:
 		draw = true;
 		x = (*ptr >> 4) + shift.x;
 		y = (*ptr++ & 0x0f) + shift.y;
-		hpgl_arc_compute_arc(x, y, &prev, &radius, &angle);
-		hpgl_call(hpgl_add_arc_to_path(pglq, origin.x + x * scale,
-					       origin.y + y * scale,
-					       radius * scale, angle, -360.0,
-					       -chord_angle, false, true));
+		code = hpgl_arc_add_arc(pgs, x, y, &prev,
+					-360.0, chord_angle);
 		prev.x = x, prev.y = y;
 		break;
 	      case arc_op_line_45:
 		draw = true;
 		x = (*ptr >> 4) + shift.x;
 		y = (*ptr++ & 0x0f) + shift.y;
-		hpgl_call(hpgl_add_point_to_path(pgls,
-						 (x - prev.x) * scale,
-						 (y - prev.y) * scale,
-						 hpgl_plot_draw_relative));
+		code = gs_rlineto(pgs, (floatp)(x - prev.x),
+				  (floatp)(y - prev.y));
 		direction =
 		  (x == prev.x && y != prev.y ? arc_direction_vertical :
 		   y == prev.y && x != prev.x ? arc_direction_horizontal :
@@ -129,40 +156,37 @@ hpgl_arc_append_char(hpgl_state_t *pgls, uint char_index, floatp chord_angle)
 		break;
 	      case arc_op_vertical:
 		direction = arc_direction_vertical;
-		break;
+		continue;
 	      case arc_op_BS:
 		/****** WHAT TO DO? ******/
-		break;
+		continue;
 	      case arc_op_up_5:
 		shift.y += 5;
-		break;
+		continue;
 	      case arc_op_down_5:
 		shift.y -= 5;
-		break;
+		continue;
 	      case arc_op_back_8:
 		shift.x += 8;
-		break;
+		continue;
 	      case arc_op_forward_8:
 		shift.x -= 8;
-		break;
+		continue;
 	      }
 	  } else {
 	    /* Normal segment */
 	    x += shift.x;
 	    y += shift.y;
+	    dx = x - prev.x;
+	    dy = y - prev.y;
 	    if ( !draw ) {
-	      hpgl_call(hpgl_add_point_to_path(pgls,
-					       (x - prev.x) * scale,
-					       (y - prev.y) * scale,
-					       hpgl_plot_move_relative));
+	      code = gs_rmoveto(pgs, (floatp)dx, (floatp)dy);
 	      direction =
 		(x == prev.x ? arc_direction_vertical :
 		 y == prev.y ? arc_direction_horizontal :
 		 arc_direction_other);
 	      draw = true;
 	    } else {
-	      int dx = x - prev.x, dy = y - prev.y;
-
 	      if ( any_abs(dx) == any_abs(dy) &&
 		   direction != arc_direction_other
 		 ) {
@@ -175,14 +199,9 @@ hpgl_arc_append_char(hpgl_state_t *pgls, uint char_index, floatp chord_angle)
 		   */
 		  bool clockwise = !((dx > 0) ^ (dy > 0));
 
-		  hpgl_arc_compute_arc(x, prev.y, &prev, &radius, &angle);
-		  hpgl_call(hpgl_add_arc_to_path(pgls,
-						 origin.x + x * scale,
-						 origin.y + prev.y * scale,
-						 radius * scale, angle,
-						 (clockwise ? -90.0 : 90.0),
-						 (clockwise ? -chord_angle :
-						  chord_angle), false, true));
+		  code = hpgl_arc_add_arc(pgs, x, prev.y, &prev,
+					  (clockwise ? -90.0 : 90.0),
+					  chord_angle);
 		  direction = arc_direction_horizontal;
 		} else {
 		  /* direction == arc_direction_horizontal */
@@ -193,50 +212,105 @@ hpgl_arc_append_char(hpgl_state_t *pgls, uint char_index, floatp chord_angle)
 		   */
 		  bool clockwise = (dx > 0) ^ (dy > 0);
 
-		  hpgl_arc_compute_arc(prev.x, y, &prev, &radius, &angle);
-		  hpgl_call(hpgl_add_arc_to_path(pgls,
-						 origin.x + prev.x * scale,
-						 origin.y + y * scale,
-						 radius * scale, angle,
-						 (clockwise ? -90.0 : 90.0),
-						 (clockwise ? -chord_angle :
-						  chord_angle), false, true));
+		  code = hpgl_arc_add_arc(pgs, prev.x, y, &prev,
+					  (clockwise ? -90.0 : 90.0),
+					  chord_angle);
 		  direction = arc_direction_vertical;
 		}
 	      } else {
 		/* Not 45 degree case, just draw the line. */
-		hpgl_call(hpgl_add_point_to_path(pgls,
-						 (x - prev.x) * scale,
-						 (y - prev.y) * scale,
-						 hpgl_plot_draw_relative));
+		code = gs_rlineto(pgs, (floatp)dx, (floatp)dy);
 		direction =
-		  (x == prev.x ? arc_direction_vertical :
-		   y == prev.y ? arc_direction_horizontal :
+		  (dx == 0 ? arc_direction_vertical :
+		   dy == 0 ? arc_direction_horizontal :
 		   arc_direction_other);
 	      }
 	    }
 	    prev.x = x, prev.y = y;
 	  }
+	  if ( code < 0 )
+	    break;
 	}
-	return 0;
+	gs_setmatrix(pgs, &save_ctm);
+	if ( code < 0 )
+	  return code;
+	/* Set predictable join and cap styles. */
+	gs_setlinejoin(pgs, gs_join_miter);
+	gs_setlinecap(pgs, gs_cap_triangle);
+	return gs_stroke(pgs);
 }
 
-/* Compute the radius and start angle given the center and start point. */
-private void
-hpgl_arc_compute_arc(int cx, int cy, const gs_int_point *start,
-		     floatp *radius, floatp *angle)
+/* Add an arc given the center, start point, and sweep angle. */
+private int
+hpgl_arc_add_arc(gs_state *pgs, int cx, int cy, const gs_int_point *start,
+  floatp sweep_angle, floatp chord_angle)
 {	int dx = start->x - cx, dy = start->y - cy;
+	double radius, angle;
+	int count = (int)ceil(fabs(sweep_angle) / chord_angle);
+	double delta = sweep_angle / count;
+	int code = 0;
 
 	if ( dx == 0 ) {
-	  *radius = any_abs(dy);
-	  *angle = (dy >= 0 ? 90.0 : 270.0);
+	  radius = any_abs(dy);
+	  angle = (dy >= 0 ? 90.0 : 270.0);
 	} else if ( dy == 0 ) {
-	  *radius = any_abs(dx);
-	  *angle = (dx >= 0 ? 0.0 : 180.0);
+	  radius = any_abs(dx);
+	  angle = (dx >= 0 ? 0.0 : 180.0);
 	} else {
-	  *radius = hypot((floatp)dx, (floatp)dy);
-	  *angle = atan2((floatp)dy, (floatp)dx);
+	  radius = hypot((floatp)dx, (floatp)dy);
+	  angle = atan2((floatp)dy, (floatp)dx) * radians_to_degrees;
 	}
+	while ( count-- ) {
+	  gs_sincos_t sincos;
+
+	  angle += delta;
+	  gs_sincos_degrees(angle, &sincos);
+	  code = gs_lineto(pgs, cx + sincos.cos * radius,
+			   cy + sincos.sin * radius);
+	  if ( code < 0 )
+	    break;
+	}
+	return code;
+}
+
+/* Fill in stick/arc font boilerplate. */
+private void
+hpgl_fill_in_stick_arc_font(gs_font_base *pfont, long unique_id)
+{	/* The way the code is written requires FontMatrix = identity. */
+	gs_make_identity(&pfont->FontMatrix);
+	pfont->FontType = ft_user_defined;
+	pfont->PaintType = 1;		/* stroked fonts */
+	pfont->BitmapWidths = false;
+	pfont->ExactSize = fbit_use_outlines;
+	pfont->InBetweenSize = fbit_use_outlines;
+	pfont->TransformedChar = fbit_use_outlines;
+	pfont->procs.encode_char = hpgl_stick_arc_encode_char;
+	pfont->procs.build_char = hpgl_stick_arc_build_char;
+	/* p.y of the FontBBox is a guess, because of descenders. */
+	/* Because of descenders, we have no real idea what the */
+	/* FontBBox should be. */
+	pfont->FontBBox.p.x = 0;
+	pfont->FontBBox.p.y = -0.333;
+	pfont->FontBBox.q.x = 0.667;
+	pfont->FontBBox.q.y = 0.667;
+	uid_set_UniqueID(&pfont->UID, unique_id);
+	pfont->encoding_index = 1;	/****** WRONG ******/
+	pfont->nearest_encoding_index = 1;	/****** WRONG ******/
+}
+void
+hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
+{	hpgl_fill_in_stick_arc_font(pfont, unique_id);
+	pfont->StrokeWidth = 22.5;
+#define plfont ((pl_font_t *)pfont->client_data)
+	plfont->char_width = hpgl_stick_char_width;
+#undef plfont
+}
+void
+hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id)
+{	hpgl_fill_in_stick_arc_font(pfont, unique_id);
+#define plfont ((pl_font_t *)pfont->client_data)
+	plfont->char_width = hpgl_arc_char_width;
+#undef plfont
 }
 
 /* The actual font data */

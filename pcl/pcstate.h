@@ -56,6 +56,25 @@ typedef struct pcl_font_selection_s {
   pl_symbol_map_t *map;
 } pcl_font_selection_t;
 
+/* Define a text parsing method for single/double byte characters. */
+typedef struct pcl_text_parsing_method_s {
+  byte min1, max1;
+  byte min2, max2;
+} pcl_text_parsing_method_t;
+#define pcl_char_is_2_byte(ch, tpm)\
+  ( (ch) >= (tpm)->min1 && (ch) <= (tpm)->max2 &&\
+    ((ch) <= (tpm)->max1 || (ch) >= (tpm)->min2) )
+#define pcl_tpm_is_single_byte(tpm)\
+  ((tpm)->max1 == 0)
+/* Single-byte only */
+#define pcl_tpm_0_data {0xff, 0, 0xff, 0}
+/* 0x21-0xff are double-byte */
+#define pcl_tpm_21_data {0x21, 0xff, 0x21, 0xff}
+/* 0x81-0x9f, 0xe0-0xfc are double-byte */
+#define pcl_tpm_31_data {0x81, 0x9f, 0xe0, 0xfc}
+/* 0x80-0xff are double-byte */
+#define pcl_tpm_38_data {0x80, 0xff, 0x80, 0xff}
+
 /* Define the indices for PCL color spaces (e.g. for the CID command). */
 typedef enum {
   pcl_csi_DeviceRGB = 0,
@@ -281,15 +300,21 @@ struct pcl_state_s {
 	int font_selected;		/* 0 or 1 */
 	pl_font_t *font;		/* 0 means recompute from params */
 	pl_dict_t built_in_fonts;	/* "built-in", known at start-up */
+		/* Internal variables */
+	gs_font_dir *font_dir;		/* gs-level dictionary of fonts */
+	pl_symbol_map_t *map;		/* map for current font (above) */
+
+		/* more Chapter 8 (pctext.c) */
+
 	bool underline_enabled;
 	bool underline_floating;
 	float underline_position;	/* distance from baseline */
+	const pcl_text_parsing_method_t *text_parsing_method;
+	int text_path;			/* 0 or -1 */
 		/* Internal variables */
-	gs_font_dir *font_dir;		/* gs-level dictionary of fonts */
 	coord_point last_width;		/* escapement of last char (for BS) */
 	coord_point underline_start;	/* start point of underline */
 	bool last_was_BS;		/* no printable chars since last BS */
-	pl_symbol_map_t *map;		/* map for current font (above) */
 
 		/* Chapter 10 (pcsymbol.c) */
 
@@ -339,7 +364,7 @@ struct pcl_state_s {
 	coord_point rectangle;
 	/* uint pattern_id; */	/* in Chapter 13 */
 
-		/* Chapter 15 (pcraster.c) && */
+		/* Chapter 15 (pcraster.c) & */
 		/* Chapter C6 (pccrastr.c) */
 
 	struct r_ {

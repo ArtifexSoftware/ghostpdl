@@ -28,8 +28,8 @@ $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c $(AK) $(malloc__h) $(math__h) $(memory
  $(gdebug_h) $(gp_h)\
  $(gdevbbox_h)\
  $(gscdefs_h) $(gscoord_h) $(gsgc_h) $(gslib_h) $(gsmatrix_h)\
- $(gspaint_h) $(gspath_h) $(gsstate_h)\
- $(gxalloc_h) $(gxdevice_h)\
+ $(gspaint_h) $(gsparam_h) $(gspath_h) $(gsstate_h)\
+ $(gxalloc_h) $(gxdevice_h) $(gxstate_h)\
  $(scommon_h)\
  $(plmain_h)\
  $(pjparse_h)\

@@ -31,6 +31,63 @@
    Potential performance issue.  The design choice is based solely on
    ease of implementation.  */
 
+/* ctm to translate from pcl space to plu space */
+ int
+hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
+{
+	pcl_set_ctm(pgls, false);
+	hpgl_call(gs_translate(pgls->pgs, 
+			       pgls->g.picture_frame.anchor_point.x,
+			       pgls->g.picture_frame.anchor_point.y));
+	/* move the origin */
+	hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
+	/* scale to plotter units and a flip for y */
+	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
+	/* account for rotated coordinate system */
+	hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
+	{
+	  hpgl_real_t fw_plu = (coord_2_plu(pgls->g.picture_frame_width));
+	  hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
+	  switch (pgls->g.rotation)
+	    {
+	    case 0 :
+	      hpgl_call(gs_translate(pgls->pgs, 0, 0));
+	      break;
+	    case 90 : 
+	      hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
+	      break;
+	    case 180 :
+	      hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
+	      break;
+	    case 270 :
+	      hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
+	      break;
+	    }
+	}
+	/* set up scaling wrt plot size and picture frame size.  HAS
+	   we still have the line width issue when scaling is
+	   assymetric !!  */
+	/* if any of these are zero something is wrong */
+        if ( (pgls->g.picture_frame_height == 0) ||
+	     (pgls->g.picture_frame_width == 0) ||
+	     (pgls->g.plot_width == 0) ||
+	     (pgls->g.plot_height == 0) )
+	  return 1;
+	hpgl_call(gs_scale(pgls->pgs, 
+			   ((hpgl_real_t)pgls->g.picture_frame_height /
+			    (hpgl_real_t)pgls->g.plot_height),
+			   ((hpgl_real_t)pgls->g.picture_frame_width /
+			    (hpgl_real_t)pgls->g.plot_width)));
+	return 0;
+}
+
+ private int
+hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
+{
+	hpgl_call(hpgl_set_pcl_to_plu_ctm(pgls));
+	return 0;
+}
+
  private int
 hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 {
@@ -204,10 +261,6 @@ hpgl_polyfill_bbox(hpgl_state_t *pgls, gs_rect *bbox)
  private int
 hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-	gs_fixed_rect fixed_box;
-	gs_rect float_box;
-	gs_matrix mat;
-
 	/* use the path for the current clipping region.  Note this is
            incorrect as it should be the intersection of IW and
            the bounding box of the current clip region. */
@@ -218,6 +271,17 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	  return 0;
 	else
 	  {
+	    gs_fixed_rect fixed_box;
+	    gs_rect float_box;
+	    gs_matrix save_ctm, mat;
+
+	    /*
+	     * We have no idea what the CTM is, but we mustn't disturb it;
+	     * however, the clipping coordinates are all defined in
+	     * absolute PLU.
+	     */
+	    gs_currentmatrix(pgls->pgs, &save_ctm);
+	    hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
 	    hpgl_call(gs_currentmatrix(pgls->pgs, &mat));
 
 	    hpgl_call(gs_bbox_transform(&pgls->g.window, 
@@ -231,65 +295,8 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    fixed_box.q.y = float2fixed(float_box.q.y);
 
 	    hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
-	    
+	    gs_setmatrix(pgls->pgs, &save_ctm);
 	  }
-	return 0;
-}
-
-/* ctm to translate from pcl space to plu space */
- int
-hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
-{
-	pcl_set_ctm(pgls, false);
-	hpgl_call(gs_translate(pgls->pgs, 
-			       pgls->g.picture_frame.anchor_point.x,
-			       pgls->g.picture_frame.anchor_point.y));
-	/* move the origin */
-	hpgl_call(gs_translate(pgls->pgs, 0, pgls->g.picture_frame_height));
-	/* scale to plotter units and a flip for y */
-	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0/1016.0)));
-	/* account for rotated coordinate system */
-	hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
-	{
-	  hpgl_real_t fw_plu = (coord_2_plu(pgls->g.picture_frame_width));
-	  hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
-	  switch (pgls->g.rotation)
-	    {
-	    case 0 :
-	      hpgl_call(gs_translate(pgls->pgs, 0, 0));
-	      break;
-	    case 90 : 
-	      hpgl_call(gs_translate(pgls->pgs, 0, -fw_plu));
-	      break;
-	    case 180 :
-	      hpgl_call(gs_translate(pgls->pgs, -fw_plu, -fh_plu));
-	      break;
-	    case 270 :
-	      hpgl_call(gs_translate(pgls->pgs, -fh_plu, 0));
-	      break;
-	    }
-	}
-	/* set up scaling wrt plot size and picture frame size.  HAS
-	   we still have the line width issue when scaling is
-	   assymetric !!  */
-	/* if any of these are zero something is wrong */
-        if ( (pgls->g.picture_frame_height == 0) ||
-	     (pgls->g.picture_frame_width == 0) ||
-	     (pgls->g.plot_width == 0) ||
-	     (pgls->g.plot_height == 0) )
-	  return 1;
-	hpgl_call(gs_scale(pgls->pgs, 
-			   ((hpgl_real_t)pgls->g.picture_frame_height /
-			    (hpgl_real_t)pgls->g.plot_height),
-			   ((hpgl_real_t)pgls->g.picture_frame_width /
-			    (hpgl_real_t)pgls->g.plot_width)));
-	return 0;
-}
-
- private int
-hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
-{
-	hpgl_call(hpgl_set_pcl_to_plu_ctm(pgls));
 	return 0;
 }
 
@@ -339,6 +346,8 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 		}
 	      gs_make_translation(origin_x, origin_y, pmat);
 	      gs_matrix_scale(pmat, scale_x, scale_y, pmat);
+	      gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+				  -pgls->g.scaling_params.pmin.y, pmat);
 	      break;
 	    }
 	  }
@@ -818,6 +827,7 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	
 	switch ( render_mode )
 	  {
+	  case hpgl_rm_character:
 	  case hpgl_rm_polygon:
 	    if ( pgls->g.fill_type == hpgl_even_odd_rule )
 	      hpgl_call(gs_eofill(pgls->pgs));
@@ -828,7 +838,6 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    /* HACK handled by hpgl_set_drawing_color */
 	    break;
 	  case hpgl_rm_vector:
-	  case hpgl_rm_character:
 	  case hpgl_rm_vector_fill:
 	    /* we reset the ctm before stroking to preserve the line width
 	       information */

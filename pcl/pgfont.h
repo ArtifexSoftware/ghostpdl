@@ -8,13 +8,8 @@
 #ifndef pgfont_INCLUDED
 #  define pgfont_INCLUDED
 
-/* Compute the escapement of a symbol. */
-int hpgl_stick_char_width(P2(uint char_index, floatp *escapement));
-int hpgl_arc_char_width(P2(uint char_index, floatp *escapement));
-
-/* Append a symbol to the GL/2 path. */
-int hpgl_stick_append_char(P2(hpgl_state_t *pgls, uint char_index));
-int hpgl_arc_append_char(P3(hpgl_state_t *pgls, uint char_index,
-			    floatp chord_angle));
+/* Fill in stick/arc font boilerplate. */
+void hpgl_fill_in_stick_font(P2(gs_font_base *pfont, long unique_id));
+void hpgl_fill_in_arc_font(P2(gs_font_base *pfont, long unique_id));
 
 #endif                       /* pgfont_INCLUDED */

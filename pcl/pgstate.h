@@ -167,6 +167,7 @@ typedef struct pcl_hpgl_state_s {
 	  gs_matrix ctm; /* matrix to handle rotation of the polygon buffer */
 	} polygon;
 	bool polygon_mode;
+
 		/* Chapter 22 (pglfill.c) */
 
 	struct lp_ {
@@ -250,7 +251,7 @@ typedef struct pcl_hpgl_state_s {
 	  gs_point direction;
 	  bool direction_relative;
 	  int text_path;
-	  bool reverse_line_feed;
+	  int line_feed_direction; /* +1 = normal, -1 = reversed */
 	  gs_point extra_space;
 	  gs_point size;
 	  bool size_relative;
@@ -268,13 +269,17 @@ typedef struct pcl_hpgl_state_s {
 	  int origin;
 	  uint terminator;
 	  bool print_terminator;
-	  /* NOTE: HAS These pointer could be local to hpgl_LB but the
-             parser can recall hpgl_LB for more data.  So for
-             simplicity we make them part of the global state */
-#define hpgl_char_count 128     /* initial buffer size */
-	  byte *buffer;         /* start of line buffer pointer */
-          unsigned int buffer_size; /* size of the current buffer */
-	  unsigned int char_count;  /* count of chars in the buffer */
+	  /*
+	   * The following are only used during the execution of a
+	   * single LB command, but since hpgl_LB may need to exit
+	   * back to the parser for more data, we can't make them
+	   * local variables of hpgl_LB.
+	   */
+	  gs_point initial_pos;
+#define hpgl_char_count 128	/* initial buffer size */
+	  byte *buffer;		/* start of line buffer pointer */
+          uint buffer_size;	/* size of the current buffer */
+	  uint char_count;	/* count of chars in the buffer */
 	} label;
 	bool transparent_data;
 	uint font_id[2];

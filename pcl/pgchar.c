@@ -9,7 +9,6 @@
 #include "gdebug.h"
 #include "pgmand.h"
 #include "pginit.h"
-#include "pgfont.h"
 #include "pggeom.h"
 #include "pgmisc.h"
 #include "pcfsel.h"
@@ -241,7 +240,7 @@ hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( (path & ~3) | (line & ~1) )
 	  return e_Range;
 	pgls->g.character.text_path = path;
-	pgls->g.character.reverse_line_feed = line;
+	pgls->g.character.line_feed_direction = (line ? -1 : 1);
 	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
 }

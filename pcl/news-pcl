@@ -6,6 +6,36 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.30 (7/5/97)
+=====================
+
+This greatly advances the implementation of GL/2 text.  Still unimplemented:
+	- CF.
+	- "Correct" (i.e. crippled) implementation of DI/DR with SB1.
+	- Interaction of LO and DV.
+	- Text when scaling is on (coordinates & sizes are different).
+	- LO21.
+
+(LPD) Fixes bugs:
+	- Isotropic and anisotropic scaling with a non-zero Xmin or Ymin
+didn't translate the origin.  (pgconfig.c)
+	- The clipping region was set improperly (using scaled rather than
+unscaled plotter coordinates) when scaling was in effect.  (pgdraw.c)
+	- Some makefile rules were out of date (as usual).  (pcl.mak,
+pcl_top.mak)
+
+(LPD)
+	- Starts to implement double-byte text for PCL.  (pcstate.h,
+pcfont.c, pctext.c)
+	- Converts the GL/2 stick and arc fonts to real fonts that work with
+the library.  (pgfont.h, pgchar.c, pgfont.c, pginit.c, pglabel.c)
+	- Enables use of other fonts (besides the stick/arc font) with GL/2.
+(pgdraw.c, pglabel.c)
+	- Implements GL/2 text transformations: DI, DR, SI, SL, SR.
+(pglabel.c)
+	- Mostly implements the GL/2 DV (text path) command.  (pgstate.h,
+pgchar.c, pglabel.c)
+
 Version 0.29 (6/30/97)
 ======================
 
