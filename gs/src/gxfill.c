@@ -650,6 +650,11 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	pfpath = &ffpath;
     }
 #endif
+#   define SMALL_CHARACTER 100
+    lst.pseudo_rasterization = PSEUDO_RASTERIZATION && 
+			    ((adjust.x | adjust.y) == 0 && 
+			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
+			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if ((code = add_y_list(pfpath, &lst, adjust_below, adjust_above, &ibox)) < 0)
 	goto nope;
     {
@@ -663,11 +668,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
 	lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
 	/* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
-#	define SMALL_CHARACTER 100
-	lst.pseudo_rasterization = PSEUDO_RASTERIZATION && 
-				((adjust.x | adjust.y) == 0 && 
-				ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
-				ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
 #	if PSEUDO_RASTERIZATION
 	if (lst.bbox_width > MAX_LOCAL_SECTION && lst.pseudo_rasterization) {
 	    /*
@@ -919,9 +919,8 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
     /* fixed xmax = pbox->q.x; *//* not currently used */
     fixed ymax = pbox->q.y;
 #   if PSEUDO_RASTERIZATION
-    const bool small_character = !(adjust_below | adjust_above) &&
-		    pbox->q.x - pbox->p.x < int2fixed(SMALL_CHARACTER);
     int max_contour_sign;
+    bool pseudo_rasterization = ll->pseudo_rasterization;
 #   endif
     int code;
 
@@ -980,7 +979,7 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 		/* if they would color any pixels. */
 		if (
 #		    if PSEUDO_RASTERIZATION
-		    (small_character && (prev->pt.x != pseg->pt.x)) ||  /* Since TT characters are not hinted. */
+		    (pseudo_rasterization && (prev->pt.x != pseg->pt.x)) ||  /* Since TT characters are not hinted. */
 				    /* Note this disturbs the benchmarking. */
 #		    endif
 		    fixed2int_pixround(iy - adjust_below) <
@@ -988,15 +987,15 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 		    ) {
 		    INCR(horiz);
 #		    if PSEUDO_RASTERIZATION
-		    if (small_character && max_contour_sign == -2)
+		    if (pseudo_rasterization && max_contour_sign == -2)
 			max_contour_sign = compute_max_contour_sign(ppath);
-		    if (small_character && max_contour_sign < 0) {
+		    if (pseudo_rasterization && max_contour_sign < 0) {
 			/* Add reversed line, because add_horiz_margin needs a right direction. */
 			if ((code = add_y_line(pseg, prev, 
 					       DIR_HORIZONTAL, ll)) < 0
 			    )
 			    return code;
-		    } else if (!small_character || max_contour_sign > 0)
+		    } else if (!pseudo_rasterization || max_contour_sign > 0)
 			/* Skip zero area contours from characters. */
 #		    endif
 		    if ((code = add_y_line(prev, pseg,
