@@ -184,7 +184,7 @@ COMMON_ARGS		= DEVICE_DEVS_EXTRA='$(DEVICE_DEVS_EXTRA)' \
 			  JSRCDIR='$(JSRCDIR)' \
 			  PNGSRCDIR='$(PNGSRCDIR)' \
 			  PSRCDIR='$(PNGSRCDIR)' \
-			  PVERSION=10012 \
+			  PVERSION=10201 \
 			  SHARE_LIBPNG='$(SHARE_LIBPNG)' \
 			  SHARE_ZLIB='$(SHARE_ZLIB)' \
 			  XCFLAGS='$(XCFLAGS)' \
@@ -244,11 +244,10 @@ SGIARCH64LIB		= lib64
 SHARE_LIBPNG		= 1
 SHARE_ZLIB		= 1
 
-# Use of the shared libraries still requires reference to source code in
-# these directories:
-JSRCDIR			= $(SRCDIR)/jpeg/jpeg-6b
-PNGSRCDIR		= $(SRCDIR)/libpng/libpng-1.0.10
-ZSRCDIR			= $(SRCDIR)/zlib/zlib-1.1.3
+# These are our standard paths to the library source trees
+JSRCDIR			= $(SRCDIR)/jpeg
+PNGSRCDIR		= $(SRCDIR)/libpng
+ZSRCDIR			= $(SRCDIR)/zlib
 
 # Use this to provide alternate targets to make, instead of the default
 # all.  It can also be used to pass additional arguments to child makes,

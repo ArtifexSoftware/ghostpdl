@@ -127,13 +127,13 @@ JVERSION=6
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
-PSRCDIR=[.libpng-1_0_12]
-PVERSION=10012
+PSRCDIR=[.libpng-1_2_1]
+PVERSION=10201
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
-ZSRCDIR=[.zlib-1_1_3]
+ZSRCDIR=[.zlib-1_1_4]
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information

@@ -36,10 +36,11 @@
 #	ftp://ftp.cs.wisc.edu/ghost/3rdparty/
 # for more convenient access.
 #
-# This makefile is known to work with zlib versions through 1.1.3.
+# This makefile is known to work with zlib versions through 1.1.4.
 # Note that there are obscure bugs in zlib versions before 1.1.3 that
-# may cause the FlateDecode filter to produce an occasional ioerror:
-# we strongly recommend using version 1.1.3 or later.
+# may cause the FlateDecode filter to produce an occasional ioerror
+# and there is a serious security problem with 1.1.3: we strongly
+# recommend using version 1.1.4 or later.
 
 ZSRC=$(ZSRCDIR)$(D)
 ZGEN=$(ZGENDIR)$(D)
