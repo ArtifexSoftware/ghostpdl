@@ -621,8 +621,8 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     uint unknown = 0;
     gs_fixed_rect bbox;
     gs_fixed_point expansion;
-    int adjust_y;
-    int y, height, y0, y1;
+    int adjust_y, expansion_code;
+    int y, height;
     gs_logical_operation_t lop = pis->log_op;
     bool slow_rop = cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor);
 
@@ -636,7 +636,8 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
     gx_path_bbox(ppath, &bbox);
     /* We must use the supplied imager state, not our saved one, */
     /* for computing the stroke expansion. */
-    if (gx_stroke_path_expansion(pis, ppath, &expansion) < 0) {
+    expansion_code = gx_stroke_path_expansion(pis, ppath, &expansion);
+    if (expansion_code < 0) {
 	/* Expansion is too large: use the entire page. */
 	adjust_y = 0;
 	y = 0;
@@ -650,8 +651,6 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	if (height <= 0)
 	    return 0;
     }
-    y0 = y;
-    y1 = y + height;
     /* Check the dash pattern, since we bail out if */
     /* the pattern is too large. */
     if (cdev->imager_state.line_params.dash.pattern_size != pattern_size ||
@@ -737,15 +736,15 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	     * If a dash pattern is active, we can't skip segments
 	     * outside the clipping region, because that would throw off
 	     * the pattern.
+             * Don't skip segments when expansion is unknown.
 	     */
-	    if (pattern_size == 0) {
-		fixed expand = adjust_y + expansion.y;
 
-		ymin = int2fixed(max(y - expand, y0));
-		ymax = int2fixed(min(y + height + expand, y1));
-	    } else {
+            if (pattern_size || expansion_code < 0 ) {
 		ymin = min_fixed;
 		ymax = max_fixed;
+	    } else {
+		ymin = int2fixed(y - adjust_y);
+		ymax = int2fixed(y + height + adjust_y);
 	    }
 	    code = cmd_put_path(cdev, pcls, ppath, ymin, ymax,
 				cmd_opv_stroke,
