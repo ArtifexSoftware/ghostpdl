@@ -67,7 +67,7 @@ struct gc_state_s {
     /* pointers from untraced spaces */
     gs_raw_memory_t *heap;	/* for extending mark stack */
     name_table *ntable;		/* (implicitly referenced by names) */
-#if DEBUG
+#ifdef DEBUG
     chunk_t *container;
 #endif
 };
