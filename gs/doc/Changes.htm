@@ -1,322 +1,316 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html><head>
-<title>Ghostscript 6.63 change history as of 2001-03-31 17:14:30</title>
+<title>Ghostscript 6.64 change history as of 2001-04-07 01:37:51</title>
 <link rel=stylesheet type="text/css" href="gs.css">
 </head><body>
 
 <!-- cvs command: cvs -d raph@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript -Q log  -b -->
 
 <ul>
-<li><a href="#6.63-Documentation">Documentation</a>,
-    <a href="#6.63-Procedures">Procedures</a>,
-    <a href="#6.63-Utilities">Utilities</a>,
-    <a href="#6.63-Drivers">Drivers</a>,
-    <a href="#6.63-PDF_writer">PDF writer</a>,
-    <a href="#6.63-PDF_Interpreter">PDF Interpreter</a>,
-    <a href="#6.63-Interpreter">Interpreter</a>,
-    <a href="#6.63-Streams">Streams</a>,
-    <a href="#6.63-Library">Library</a>
+<li><a href="#6.64-Documentation">Documentation</a>,
+    <a href="#6.64-Procedures">Procedures</a>,
+    <a href="#6.64-Utilities">Utilities</a>,
+    <a href="#6.64-Drivers">Drivers</a>,
+    <a href="#6.64-PDF_writer">PDF writer</a>,
+    <a href="#6.64-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#6.64-Interpreter">Interpreter</a>,
+    <a href="#6.64-Streams">Streams</a>,
+    <a href="#6.64-Library">Library</a>,
+    <a href="#6.64-Other">Other</a>
 </ul>
 
 
-<h2><a name="6.63-Documentation"></a>Documentation</h2><pre>
+<h2><a name="6.64-Documentation"></a>Documentation</h2><pre>
 
-Moves the following SourceForge bugs to the Issues.htm documentation:
-201955, 220967, 223992. (doc/Issues.htm [1.2]: 2001/03/20 07:36:30 rayjj)
+1. Removing the article "Minor Bugs. kshow doesn't restore currentfont after
+running proc." due to fixed. 2. Adding article "Buffering in input filters"
+to "Differences from Adobe Implementation". (doc/Issues.htm [1.6]:
+2001/04/03 15:53:01 igorm)
 
-Added 2 issues related to JPEG in PDF, Bug 226391 (doc/Issues.htm [1.3]:
-2001/03/20 16:41:28 alexcher)
+Updates Glenn Ramsey's email address in the Epson 300 documentation.
+(doc/Devices.htm [1.24]: 2001/04/04 04:25:00 raph)
 
-Adds %printer% device to Windows to allow a printer to be specified as
--sOutputFile="%printer%Printer Name". This replaces the use of
-"\\spool\Printer Name" for all but Windows 3.1/Win32s. Unlike the old
-\\spool\, the new %printer% device does not write a large temporary file.
-(doc/Install.htm [1.17]: 2001/03/26 11:28:20 ghostgum)
+Adds request for code-review submissions to identify intended branches.
+(doc/Maintain.htm [1.14]: 2001/04/04 07:22:48 raph)
 
-Change the search order for the Ghostscript Windows DLL to try the
-executable directory before the location specified in the GS_DLL environment
-variable. (doc/Install.htm [1.18]: 2001/03/27 09:35:22 ghostgum)
+Move SourceForge bug #226943 to the "Other implementation" section of this
+document. The %ram% device has never been a user or customer issue, but it
+might be handy to have. (doc/Projects.htm [1.27]: 2001/04/04 16:36:36 rayjj)
 
-Some attributes of Catalog object are lost during PDF to PDF conversion
-(doc/Issues.htm [1.4]: 2001/03/27 21:03:18 alexcher)
+Updates to documentation. Location of main ftp site is now
+ftp://mirror.cs.wisc.edu/pub/mirrors/ghost. Correct some links to the
+www.cs.wisc.edu web site. Remove the statement that the Inprise compiler is
+used for Windows distribution archives. (doc/Bug-info.htm [1.14],
+doc/Fonts.htm [1.16], doc/Install.htm [1.20], doc/Make.htm [1.26],
+doc/New-user.htm [1.23], doc/Release.htm [1.32], doc/Tester.htm [1.10]:
+2001/04/05 08:49:57 ghostgum)
 
-Increments version number after 6.62 release. (doc/News.htm [1.81]:
-2001/03/28 21:27:15 raph)
+Adds issues from SourceForge bug numbers: 232334, 233403, 406643. Also adds
+missing bug ID for #228808. (doc/Issues.htm [1.7]: 2001/04/05 14:44:39
+rayjj)
 
-Updates dates in preparation for 6.63 beta release. News updated.
-(doc/API.htm [1.4], doc/Bug-form.htm [1.17], doc/Bug-info.htm [1.13],
-doc/C-style.htm [1.14], doc/Commprod.htm [1.11], doc/Copying.htm [1.9],
-doc/Current.htm [1.9], doc/DLL.htm [1.11], doc/Develop.htm [1.35],
-doc/Devices.htm [1.23], doc/Drivers.htm [1.17], doc/Fonts.htm [1.15],
-doc/Helpers.htm [1.13], doc/History1.htm [1.9], doc/History2.htm [1.9],
-doc/History3.htm [1.9], doc/History4.htm [1.9], doc/History5.htm [1.11],
-doc/History6.htm [1.23], doc/Htmstyle.htm [1.12], doc/Install.htm [1.19],
-doc/Issues.htm [1.5], doc/Language.htm [1.28], doc/Lib.htm [1.9],
-doc/Maintain.htm [1.13], doc/Make.htm [1.25], doc/New-user.htm [1.22],
-doc/News.htm [1.82], doc/Projects.htm [1.26], doc/Ps-style.htm [1.9],
-doc/Ps2epsi.htm [1.10], doc/Ps2pdf.htm [1.27], doc/Psfiles.htm [1.16],
-doc/README [1.8], doc/Readme.htm [1.24], doc/Release.htm [1.31],
-doc/Source.htm [1.9], doc/Tester.htm [1.9], doc/Unix-lpr.htm [1.9],
-doc/Use.htm [1.25], doc/Xfonts.htm [1.9], doc/gs-vms.hlp [1.8],
-man/dvipdf.1 [1.6], man/font2c.1 [1.6], man/gs.1 [1.6], man/gslp.1 [1.6],
-man/gsnd.1 [1.6], man/pdf2dsc.1 [1.6], man/pdf2ps.1 [1.8],
-man/pdfopt.1 [1.6], man/pf2afm.1 [1.6], man/pfbtopfa.1 [1.7],
-man/printafm.1 [1.6], man/ps2ascii.1 [1.6], man/ps2epsi.1 [1.6],
-man/ps2pdf.1 [1.10], man/ps2pdfwr.1 [1.7], man/ps2ps.1 [1.13],
-man/wftopfa.1 [1.6]: 2001/04/01 01:10:54 raph)
+Various documenation fixups. Removes pointer to external pdf_sec.ps now that
+the full implementation is in our distribution. Adds note on the
+class="offset" attribute to the html style guidelines. (doc/API.htm [1.5],
+doc/Bug-form.htm [1.18], doc/Htmstyle.htm [1.13], doc/New-user.htm [1.24],
+doc/Psfiles.htm [1.17], doc/Readme.htm [1.25]: 2001/04/06 11:27:00 giles)
 
-</pre><h2><a name="6.63-Procedures"></a>Procedures</h2><pre>
+Uses better test for avoiding crash on "gs -h". Also updates API document.
+Thanks to Russell Lang. (doc/API.htm [1.6]: 2001/04/07 00:08:08 raph)
 
-Adds %printer% device to Windows to allow a printer to be specified as
--sOutputFile="%printer%Printer Name". This replaces the use of
-"\\spool\Printer Name" for all but Windows 3.1/Win32s. Unlike the old
-\\spool\, the new %printer% device does not write a large temporary file.
-(winlib.mak [1.9]: 2001/03/26 11:28:20 ghostgum)
+adds a last few doc fixups before the 6.64 beta release.
+(doc/Bug-info.htm [1.15], doc/C-style.htm [1.15], doc/Htmstyle.htm [1.14]:
+2001/04/07 00:15:02 giles)
 
-Adds Windows %printer% device to MS Visual C++ build. (msvc32.mak [1.13]:
-2001/03/26 12:00:07 ghostgum)
+Integrates patch from hpijs 0.94 so that Ghostscript can use hpijs drivers.
+(doc/Devices.htm [1.25]: 2001/04/07 00:33:29 raph)
 
-Adds icclib subdirectory to tarballs. (toolbin/makeset.tcl [1.7]: 2001/03/28
-21:24:00 raph)
+Corrections to interpreter API documentation. If "gs -h" executed,
+gsapi_exit() must be called next. Assign copyright to artofcode LLC.
+(doc/API.htm [1.7]: 2001/04/07 01:17:50 ghostgum)
 
-Increments version number after 6.62 release. (version.mak [1.30]:
-2001/03/28 21:27:15 raph)
+Updates version number and date in preparation for 6.64 release. Updates
+Develop.htm to accurately list source files. (doc/API.htm [1.8],
+doc/Bug-form.htm [1.19], doc/Bug-info.htm [1.16], doc/C-style.htm [1.16],
+doc/Commprod.htm [1.12], doc/Copying.htm [1.10], doc/Current.htm [1.10],
+doc/DLL.htm [1.12], doc/Develop.htm [1.36], doc/Devices.htm [1.26],
+doc/Drivers.htm [1.18], doc/Fonts.htm [1.17], doc/Helpers.htm [1.14],
+doc/History1.htm [1.10], doc/History2.htm [1.10], doc/History3.htm [1.10],
+doc/History4.htm [1.10], doc/History5.htm [1.12], doc/History6.htm [1.25],
+doc/Htmstyle.htm [1.15], doc/Install.htm [1.21], doc/Issues.htm [1.8],
+doc/Language.htm [1.29], doc/Lib.htm [1.10], doc/Maintain.htm [1.15],
+doc/Make.htm [1.27], doc/New-user.htm [1.25], doc/News.htm [1.83],
+doc/Projects.htm [1.28], doc/Ps-style.htm [1.10], doc/Ps2epsi.htm [1.11],
+doc/Ps2pdf.htm [1.28], doc/Psfiles.htm [1.18], doc/README [1.9],
+doc/Readme.htm [1.26], doc/Release.htm [1.33], doc/Source.htm [1.10],
+doc/Tester.htm [1.11], doc/Unix-lpr.htm [1.10], doc/Use.htm [1.26],
+doc/Xfonts.htm [1.10], doc/gs-vms.hlp [1.9], man/dvipdf.1 [1.7],
+man/font2c.1 [1.7], man/gs.1 [1.7], man/gslp.1 [1.7], man/gsnd.1 [1.7],
+man/pdf2dsc.1 [1.7], man/pdf2ps.1 [1.9], man/pdfopt.1 [1.7],
+man/pf2afm.1 [1.7], man/pfbtopfa.1 [1.8], man/printafm.1 [1.7],
+man/ps2ascii.1 [1.7], man/ps2epsi.1 [1.7], man/ps2pdf.1 [1.11],
+man/ps2pdfwr.1 [1.8], man/ps2ps.1 [1.14], man/wftopfa.1 [1.7]: 2001/04/07
+07:55:24 raph)
 
-Applies PDF 1.4 rendering with all devices. Previously, only pnga device
-contained PDF 1.4 rendering capabilities. Now, when the PDF 1.4 imaging
-model is detected in the source file, it installs the pdf 1.4 rendering
-device as a device filter. (lib.mak [1.46]: 2001/04/01 00:30:41 raph)
+Trivial doc patch. (doc/Develop.htm [1.37]: 2001/04/07 07:58:50 raph)
 
-Updates dates in preparation for 6.63 beta release. News updated.
-(version.mak [1.31]: 2001/04/01 01:10:55 raph)
+Documentation fixups for broken internal links. (doc/Devices.htm [1.27],
+doc/Maintain.htm [1.16], doc/Make.htm [1.28], doc/Release.htm [1.34]:
+2001/04/07 08:18:53 giles)
 
-</pre><h2><a name="6.63-Utilities"></a>Utilities</h2><pre>
+</pre><h2><a name="6.64-Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
-	- closefile added for procedure based stdio to prevent disabled
-stream from appearing valid. (ziodevsc.c [1.2]: 2001/03/27 09:37:10
+	- Speed up shading type 1. (lib.mak [1.47]: 2001/04/05 08:32:28
+igorm)
+
+Adds target to OS/2 makefile to build distribution zip archive. Disables
+multiple image windows for OS/2 because we can't tell when subsequent
+windows are closed. To allow multiple windows we would need to rewrite
+gspmdrv.c. (os2.mak [1.14]: 2001/04/01 10:13:24 ghostgum)
+
+Remove the bmpa*** devices from the default build. These are example devices
+to demonstrate async rendering but do not have any advantages to users over
+the bmp*** devices, and their inclusion requires thread support which is not
+available on all systems. Resolves SourceForge bug #213799.
+(unix-gcc.mak [1.15], unixansi.mak [1.11], unixtrad.mak [1.11]: 2001/04/03
+20:04:46 rayjj)
+
+updates to support libpng v1.0.9. (all-arch.mak [1.7], bcwin32.mak [1.9],
+dvx-gcc.mak [1.9], libpng.mak [1.5], msvc32.mak [1.14], msvclib.mak [1.11],
+openvms.mak [1.10], os2.mak [1.15], ugcclib.mak [1.10], unix-gcc.mak [1.16],
+unixansi.mak [1.12], unixtrad.mak [1.12], watc.mak [1.11],
+watclib.mak [1.11], watcw32.mak [1.10]: 2001/04/04 07:51:15 giles)
+
+updates to support libpng v1.0.10. OS/2 makefile fixup for v1.0.9 and above
+from Russell Lang. (all-arch.mak [1.8], bcwin32.mak [1.10],
+dvx-gcc.mak [1.10], libpng.mak [1.6], msvc32.mak [1.15], msvclib.mak [1.12],
+openvms.mak [1.11], os2.mak [1.16], ugcclib.mak [1.11], unix-gcc.mak [1.17],
+unixansi.mak [1.13], unixtrad.mak [1.13], watc.mak [1.12],
+watclib.mak [1.12], watcw32.mak [1.11]: 2001/04/06 07:27:22 giles)
+
+Integrates patch from hpijs 0.94 so that Ghostscript can use hpijs drivers.
+(contrib.mak [1.23]: 2001/04/07 00:33:29 raph)
+
+Changes default XLIBDIR and XINCLUDE to /usr/X11R6, which is far more likely
+than the previous values. (contrib.mak [1.24], ugcclib.mak [1.12],
+unix-gcc.mak [1.18], unixtrad.mak [1.14]: 2001/04/07 06:50:27 raph)
+
+Updates version number and date in preparation for 6.64 release. Updates
+Develop.htm to accurately list source files. (version.mak [1.32]: 2001/04/07
+07:55:25 raph)
+
+</pre><h2><a name="6.64-Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- -dDELAYSAFER flag added; append operator fixed in Windows and OS/2
+scripts; literal newlines removed from sed script. Bugs #223896, #230699
+(lib/ps2epsi [1.5], lib/ps2epsi.bat [1.4], lib/ps2epsi.cmd [1.2],
+lib/ps2epsi.ps [1.5]: 2001/04/04 04:45:42 alexcher)
+	- The fileposition operator cannot be used on some data sources. Use
+.fileposition (if on Ghostscript) and make some other changes to make this
+portable to other PostScript interpreters. SourceForge bug #223005.
+(lib/image-qa.ps [1.3]: 2001/04/04 04:54:53 rayjj)
+	- Previous fix had OutputFile set to a debug value. Restoring it to
+NUL (lib/ps2epsi.bat [1.5]: 2001/04/04 05:19:33 alexcher)
+	- Adds whitespace to sed command in ps2epsi, needed on RH Linux 6.2.
+(lib/ps2epsi [1.6]: 2001/04/04 21:05:00 raph)
+
+</pre><h2><a name="6.64-Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- JPEG data made GC-traceable to prevent early freeing. Bug # 227090
+gdevjpeg.c gdevpsdu.c sdeparam.c zfdctd.c zfdcte.c : JPEG control structure
+is allocated with a descriptor. sdct.h : defines descriptors for JPEG
+structures. sjpegc.c : implements the linked list of JPEG core blocks
+sjpegd.c sjpege.c : corrects the initialization order of (de)compress
+struct's gsstruct.h : yet another macro for a structure with 1 string and 1
+ptr (gdevjpeg.c [1.3], gdevpsdu.c [1.10]: 2001/04/04 19:20:27 alexcher)
+
+Integrates patch from hpijs 0.94 so that Ghostscript can use hpijs drivers.
+(gdevhpij.c [1.1], gdevhpij.h [1.1]: 2001/04/07 00:33:29 raph)
+
+</pre><h2><a name="6.64-PDF_writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- Emits W or W* after path construction operators when outputting
+clip paths in the pdfwrite driver, to be correct with respect to the PDF
+spec. (gdevpdfd.c [1.14]: 2001/04/07 07:12:52 raph)
+
+</pre><h2><a name="6.64-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+
+Fixes problems:
+	- The search area for %%EOF at the end of PDF file is increased to
+4K to cover a file generated by Distiller 3.02b for AIX 4.1.1 Customer #580
+(lib/pdf_main.ps [1.31]: 2001/04/07 01:34:23 alexcher)
+	- A comment is corrected to match the source.
+(lib/pdf_main.ps [1.32]: 2001/04/07 01:47:00 alexcher)
+
+PDF 1.4 improvements: Fixes garbage collection of device filter stack.
+Forces idempotent path drawing in transparency mode. Corrects handling of
+Group at toplevel page. (lib/pdf_draw.ps [1.29], lib/pdf_main.ps [1.30]:
+2001/04/06 22:23:44 raph)
+
+</pre><h2><a name="6.64-Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- Windows poll function now returns a code to interrupt Ghostscript
+if the text window is closing. Don't show message box on exit if user closed
+the text window. (dwmain.c [1.4], dwtext.c [1.3]: 2001/04/03 11:12:58
 ghostgum)
-	- Avoid rangecheck error when character code exceeds 255. Support
-zero-size bitmap used by some fonts for space character.
-(lib/bdftops.ps [1.3]: 2001/03/27 20:53:36 alexcher)
-	- BATCH parameter is added to all bdftops* scripts
-(lib/bdftops [1.2], lib/bdftops.bat [1.3], lib/bdftops.cmd [1.2]: 2001/03/27
-21:15:55 alexcher)
-	- Corrects memory allocation of command line arguments in the
-programs which load the Ghostscript interpreter DLL / shared object.
-(dxmain.c [1.2]: 2001/03/31 10:09:47 ghostgum)
-
-Adds %printer% device to Windows to allow a printer to be specified as
--sOutputFile="%printer%Printer Name". This replaces the use of
-"\\spool\Printer Name" for all but Windows 3.1/Win32s. Unlike the old
-\\spool\, the new %printer% device does not write a large temporary file.
-(gp_msprn.c [1.1]: 2001/03/26 11:28:20 ghostgum)
-
-</pre><h2><a name="6.63-Drivers"></a>Drivers</h2><pre>
-
-Fixes problems:
-	- AutoFilter.* options now select lossless compression for the image
-smaller than 64 pixels in any dimension. Bug # 226391 from a free user.
-(gdevpsdi.c [1.14]: 2001/03/24 04:17:07 alexcher)
-	- In the display device, allow NULL as a valid value for
-DisplayHandle. Correct the code which requires the device to be closed
-before changing the DisplayHandle and DisplayFormat parameters. SourceForge
-bug # 411101. (gdevdsp.c [1.2]: 2001/03/28 08:46:15 ghostgum)
-	- mdev-&gt;memory member was set to 0 causing gx_device_enum_ptr()
-not enumerate mdev. This led to freeing of mdev by GC and memory exceptions
-during de-allocation of the display device. (gdevdsp.c [1.3]: 2001/03/28
-21:50:56 alexcher)
-	- Correct memory allocation problems in the display device. Return
-correct pointers from display_enum_ptrs so that the memory device and bitmap
-are not moved or prematurely freed. Adds a finalize procedure. Change the
-memory device to not forward to the display device. Mark the memory device
-as retained so it gets freed at the correct time. (gdevdsp.c [1.4],
-gdevdsp2.h [1.2]: 2001/03/29 07:26:57 ghostgum)
-	- Prevents the buffered mode of the x11 device from missing updates
-from the bitmap buffer to the X display. Fix for Artifex customer #1130
-(gdevx.c [1.8]: 2001/03/30 18:22:28 rayjj)
-
-Adds Tumble parameter to mswinpr2 device for specifying the duplex
-arrangement. Adds QueryUser to the parameters returned by
-win_pr2_get_params, so that it works from the command line.
-(gdevwpr2.c [1.8]: 2001/03/26 09:44:08 ghostgum)
-
-Adds %printer% device to Windows to allow a printer to be specified as
--sOutputFile="%printer%Printer Name". This replaces the use of
-"\\spool\Printer Name" for all but Windows 3.1/Win32s. Unlike the old
-\\spool\, the new %printer% device does not write a large temporary file.
-(gdevwpr2.c [1.9]: 2001/03/26 11:28:20 ghostgum)
-
-Applies PDF 1.4 rendering with all devices. Previously, only pnga device
-contained PDF 1.4 rendering capabilities. Now, when the PDF 1.4 imaging
-model is detected in the source file, it installs the pdf 1.4 rendering
-device as a device filter. (gdevp14.h [1.1]: 2001/04/01 00:30:41 raph)
-
-Change: The Ghostscript 'pwrite' function name conflicted with the standard
-pwrite function defined in unistd.h on several systems. To avoid confusion
-with the standard function change the name to stream_write. Also change
-'pputc' to 'stream_putc' and 'pputs' to 'stream_puts'. Fixes SourceForge bug
-#410772. Fix by Ray Johnston. (gdevps.c [1.16], gdevpsdu.c [1.9],
-gdevpsu.c [1.4]: 2001/04/01 00:35:26 raph)
-
-</pre><h2><a name="6.63-PDF_writer"></a>PDF writer</h2><pre>
-
-Fixes problems:
-	- coordinate range is reduced to +/- 16383 to satisfy actual AR4
-restrictions. When CTM was scaled to reduce the range, line width in stroke
-and CTM in fill were wrong. Bug # 409105 from raf_mellen at
-users.sourceforge.net (gdevpdfd.c [1.12]: 2001/03/21 04:25:48 alexcher)
-	- ARTICLE pdfmark generated invalid bead object if /Page key was
-left out. Bug # 227651 from mbentley at users.sourceforge.net
-(gdevpdfm.c [1.10]: 2001/03/21 05:10:31 alexcher)
-	- initial values of fill and stroke color didn't change when
-ProcessColorModel changed. An attempt to set white color in CMYK mode was
-ignored because it was considered equal to the default color. Bug #410441
-from a free user. (gdevpdf.c [1.30]: 2001/03/22 15:12:48 alexcher)
-	- pdf_reset_graphics() didn't set correct default color (black) in
-/DeviceCMYK color model. An attempt to set white color was ignored because
-it was considered equal to the default color causing white objects rendered
-black. Bug #410441 from a free user. (gdevpdfg.c [1.11]: 2001/03/23 22:04:19
+	- equality operation between a pointer and enum constant (with 0
+value) is a syntax error on CodeWarrior. Replacing the enum with NULL. From
+Bernd Heller (zdscpars.c [1.10]: 2001/04/04 05:25:32 alexcher)
+	- Register /All and /None in the name table on look-up. Otherwise an
+attempt to set the separation color space fails with /undefined
+(zcssepr.c [1.7]: 2001/04/04 16:09:15 alexcher)
+	- JPEG data made GC-traceable to prevent early freeing. Bug # 227090
+gdevjpeg.c gdevpsdu.c sdeparam.c zfdctd.c zfdcte.c : JPEG control structure
+is allocated with a descriptor. sdct.h : defines descriptors for JPEG
+structures. sjpegc.c : implements the linked list of JPEG core blocks
+sjpegd.c sjpege.c : corrects the initialization order of (de)compress
+struct's gsstruct.h : yet another macro for a structure with 1 string and 1
+ptr (zfdctd.c [1.4], zfdcte.c [1.4]: 2001/04/04 19:20:27 alexcher)
+	- Set default size of MAX_ESTACK to 5000. This is the minimal fix
+recommended by L. Peter Deutsch in the followup to SourceForge bug #224095.
+This should be fixed later to handle automatic stack expansion. The
+approaches are defined by Peter as #2 and #3. Interim resolution to
+SorceForge bug #224095. (interp.c [1.8]: 2001/04/06 06:42:45 rayjj)
+	- Apparently Japanese Windows uses WM_USER+1 internally and
+conflicts with gswin32c messages starting from WM_USER+1. So gswin32c
+messages are moved to WM_USER+101 range. Fix from Akira Kakuto
+(dwmainc.c [1.4]: 2001/04/06 08:36:02 ghostgum)
+	- Do not put Windows stdin into binary mode if it is the console
+because this returns CR and LF each time the Enter key is pressed. This
+caused Ghostscript to not pause at following showpage prompts.
+(dwmainc.c [1.5]: 2001/04/06 08:43:29 ghostgum)
+	- Genoa FTS 035-07.ps got a SEGV error caused by data being
+allocated in non-GC memory, but pointer enumumeration giving these pointers
+to the GC for tracing. Since these objects didn't have GC type headers bad
+things happened. Also change one of the allocations in sjpegc.c to immovable
+that was not -- this change was not needed to prevent the crash.
+(zfdctd.c [1.5]: 2001/04/07 00:33:22 rayjj)
+	- Compressed fonts are now recognized as narrow during font
+substitution. Customer #580 (lib/gs_fonts.ps [1.11]: 2001/04/07 01:07:01
 alexcher)
-	- Maximum depth of an outline tree increased from 8 to 32. Bug
-#410595 from a free user. (gdevpdfx.h [1.29]: 2001/03/23 22:18:28 alexcher)
+	- two small issues with compilation under xlc on IBM AIX RS6000, a
+name conflict with structures names (u)int64, and trailing commas in enum
+declarations. Patch from Dan Coby. Sourceforge bug #414328.
+(dscparse.h [1.4]: 2001/04/07 07:28:33 giles)
 
-Change: The Ghostscript 'pwrite' function name conflicted with the standard
-pwrite function defined in unistd.h on several systems. To avoid confusion
-with the standard function change the name to stream_write. Also change
-'pputc' to 'stream_putc' and 'pputs' to 'stream_puts'. Fixes SourceForge bug
-#410772. Fix by Ray Johnston. (gdevpdf.c [1.31], gdevpdfb.c [1.4],
-gdevpdfc.c [1.15], gdevpdfd.c [1.13], gdevpdfe.c [1.9], gdevpdfg.c [1.12],
-gdevpdfj.c [1.6], gdevpdfm.c [1.11], gdevpdfo.c [1.7], gdevpdfs.c [1.3],
-gdevpdft.c [1.32], gdevpdfu.c [1.15], gdevpdfw.c [1.10]: 2001/04/01 00:35:26
-raph)
+Adds target to OS/2 makefile to build distribution zip archive. Disables
+multiple image windows for OS/2 because we can't tell when subsequent
+windows are closed. To allow multiple windows we would need to rewrite
+gspmdrv.c. (dpmain.c [1.3]: 2001/04/01 10:13:24 ghostgum)
 
-</pre><h2><a name="6.63-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+updates to support libpng v1.0.10. OS/2 makefile fixup for v1.0.9 and above
+from Russell Lang. (imain.c [1.11]: 2001/04/06 07:27:22 giles)
 
-Fixes problems:
-	- OmniForm generates PDF files with endobj missing in some objects.
-Adobe Acrobat Reader ignores this. Generally speaking, Ghostscript does not
-attempt to accept files that grossly fail to obey the Adobe specification
-and are produced by software other than a very few extremely widespread
-applications. However work-around for this case is easy and unlikely to
-break anything. SourceForge bug #406694. (lib/pdf_base.ps [1.14]: 2001/03/20
-05:04:59 alexcher)
-	- URI action was not converted to corresponding pdfmark and lost
-during PDF to PDF conversion. Bug #409245, patch Leon Bottou with some
-changes. (lib/pdf_main.ps [1.28]: 2001/03/24 23:59:23 alexcher)
+Removed unecessary include of Macintosh QDOffscreen.h header (iapi.h [1.2]:
+2001/04/06 22:57:46 bdheller)
 
-Implementation of security hooks for PDF reader by Geoffrey Keating is
-merged into the main GS code base. (lib/pdf_sec.ps [1.3]: 2001/03/25
-02:03:44 alexcher)
+Uses better test for avoiding crash on "gs -h". Also updates API document.
+Thanks to Russell Lang. (imain.c [1.12]: 2001/04/07 00:08:08 raph)
 
-Applies PDF 1.4 rendering with all devices. Previously, only pnga device
-contained PDF 1.4 rendering capabilities. Now, when the PDF 1.4 imaging
-model is detected in the source file, it installs the pdf 1.4 rendering
-device as a device filter. (lib/pdf_main.ps [1.29]: 2001/04/01 00:30:41
-raph)
+Updates version number and date in preparation for 6.64 release. Updates
+Develop.htm to accurately list source files. (lib/gs_init.ps [1.33]:
+2001/04/07 07:55:25 raph)
 
-</pre><h2><a name="6.63-Interpreter"></a>Interpreter</h2><pre>
+Removes \r\n line ends inadvertently added. (dscparse.h [1.5]: 2001/04/07
+08:07:17 raph)
+
+</pre><h2><a name="6.64-Streams"></a>Streams</h2><pre>
 
 Fixes problems:
-	- flush procedure based stdout and stderr on exit. (imain.c [1.8]:
-2001/03/27 09:38:39 ghostgum)
-	- Fix for CIDFontType 0 : 1. Erroneous glyphs are drawn by cshow
-(with -dNOCACHE); 2. Glyphs written in horizontal direction instead vertical
-(with anti-aliasing); 3. Erroneous glyphs and awkward metrics (with
-anti-aliasing and -dNOCACHE); Patches 1 &amp; 3 from Hideyuki Suzuki
-(hideyuki), improved by igorm. SourceForge bug #222683. (zchar1.c [1.7]:
-2001/03/27 09:56:39 igorm)
-	- Changes to introduce the min_left stream state variable set this
-to 1 for procedure streams, which caused 1 character to be retained in the
-stream buffer which was not passed to the client. This broke the DLL
-interface where procedure callouts were used to get the string from the
-callback. Procedure streams have no need for EOD lookahead (to force
-closure) so the correct min_left value is 0. SourceForge bug #404331.
-(zfproc.c [1.9]: 2001/03/29 04:09:40 rayjj)
-	- After recognizing a number the scanner wrongly interpreted it as a
-name, if the number ends at the end of input buffer. Change from Raph.
-SourceForge bug #224205. (iscannum.c [1.3]: 2001/03/29 13:27:59 igorm)
-	- Correct the Windows virtual key code passed from the image window
-to the console. (dwimg.c [1.2]: 2001/03/31 10:07:48 ghostgum)
-	- Put Windows console stdout and stderr in binary mode. Ignore the
-initial callout for stdout and stderr as the procedure stream acquires a
-buffer. (dwmainc.c [1.2], imain.c [1.9]: 2001/03/31 10:08:43 ghostgum)
-	- Corrects memory allocation of command line arguments in the
-programs which load the Ghostscript interpreter DLL / shared object.
-(dpmain.c [1.2], dwmain.c [1.2], dwmainc.c [1.3]: 2001/03/31 10:09:47
-ghostgum)
-	- When gswin32 text window is closed, exit the interpreter on next
-access to stdin and then destroy the text window. (dwmain.c [1.3],
-dwtext.c [1.2], imain.c [1.10]: 2001/03/31 10:11:55 ghostgum)
+	- JPEG data made GC-traceable to prevent early freeing. Bug # 227090
+gdevjpeg.c gdevpsdu.c sdeparam.c zfdctd.c zfdcte.c : JPEG control structure
+is allocated with a descriptor. sdct.h : defines descriptors for JPEG
+structures. sjpegc.c : implements the linked list of JPEG core blocks
+sjpegd.c sjpege.c : corrects the initialization order of (de)compress
+struct's gsstruct.h : yet another macro for a structure with 1 string and 1
+ptr (sdct.h [1.3], sdeparam.c [1.3], sjpegc.c [1.3], sjpegd.c [1.3],
+sjpege.c [1.3]: 2001/04/04 19:20:27 alexcher)
+	- Genoa FTS 035-07.ps got a SEGV error caused by data being
+allocated in non-GC memory, but pointer enumumeration giving these pointers
+to the GC for tracing. Since these objects didn't have GC type headers bad
+things happened. Also change one of the allocations in sjpegc.c to immovable
+that was not -- this change was not needed to prevent the crash.
+(sjpegc.c [1.4]: 2001/04/07 00:33:22 rayjj)
 
-Change the search order for the Ghostscript Windows DLL to try the
-executable directory before the location specified in the GS_DLL environment
-variable. (dwdll.c [1.2]: 2001/03/27 09:35:22 ghostgum)
-
-Update mail address from bug-gs@aladdin.com to bug-gs@ghostscript.com.
-(imainarg.c [1.10]: 2001/03/28 18:30:35 rayjj)
-
-Increments version number after 6.62 release. (lib/gs_init.ps [1.32]:
-2001/03/28 21:27:15 raph)
-
-Applies PDF 1.4 rendering with all devices. Previously, only pnga device
-contained PDF 1.4 rendering capabilities. Now, when the PDF 1.4 imaging
-model is detected in the source file, it installs the pdf 1.4 rendering
-device as a device filter. (zdfilter.c [1.2]: 2001/04/01 00:30:41 raph)
-
-Change: The Ghostscript 'pwrite' function name conflicted with the standard
-pwrite function defined in unistd.h on several systems. To avoid confusion
-with the standard function change the name to stream_write. Also change
-'pputc' to 'stream_putc' and 'pputs' to 'stream_puts'. Fixes SourceForge bug
-#410772. Fix by Ray Johnston. (zfcmap.c [1.9]: 2001/04/01 00:35:26 raph)
-
-</pre><h2><a name="6.63-Streams"></a>Streams</h2><pre>
+</pre><h2><a name="6.64-Library"></a>Library</h2><pre>
 
 Fixes problems:
-	- Changes to introduce the min_left stream state variable set this
-to 1 for procedure streams, which caused 1 character to be retained in the
-stream buffer which was not passed to the client. This broke the DLL
-interface where procedure callouts were used to get the string from the
-callback. Procedure streams have no need for EOD lookahead (to force
-closure) so the correct min_left value is 0. SourceForge bug #404331.
-(stream.c [1.11], stream.h [1.8]: 2001/03/29 04:09:40 rayjj)
+	- Register /All and /None in the name table on look-up. Otherwise an
+attempt to set the separation color space fails with /undefined
+(gscsepr.c [1.8]: 2001/04/04 16:09:15 alexcher)
+	- JPEG data made GC-traceable to prevent early freeing. Bug # 227090
+gsstruct.h : yet another macro for a structure with 1 string and 1 ptr
+(gsstruct.h [1.8]: 2001/04/04 18:45:08 alexcher)
+	- Speed up shading type 1. (gsshade.c [1.4], gxshade1.c [1.9]:
+2001/04/05 08:32:28 igorm)
+	- Some compilers complain that: "Argument of type "stream *" is
+incompatible with parameter of type "FILE *". Thanks to Nelson Beebe for
+finding this (on SGI). (gs_stdio.h [1.2]: 2001/04/06 03:19:07 rayjj)
+	- Fixes crashes in Type 4 function evaluator when stack is empty.
+(gsfunc4.c [1.5]: 2001/04/06 22:22:38 raph)
 
-Change: The Ghostscript 'pwrite' function name conflicted with the standard
-pwrite function defined in unistd.h on several systems. To avoid confusion
-with the standard function change the name to stream_write. Also change
-'pputc' to 'stream_putc' and 'pputs' to 'stream_puts'. Fixes SourceForge bug
-#410772. Fix by Ray Johnston. (spprint.c [1.3], spprint.h [1.3],
-spsdf.c [1.5]: 2001/04/01 00:35:26 raph)
+Adds a lop_pdf14 field to logical operators, which is used to force non-
+idempotent drawing of paths. (gsropt.h [1.4]: 2001/04/05 23:21:15 raph)
 
-</pre><h2><a name="6.63-Library"></a>Library</h2><pre>
+PDF 1.4 improvements: Fixes garbage collection of device filter stack.
+Forces idempotent path drawing in transparency mode. Corrects handling of
+Group at toplevel page. (gdevp14.c [1.2], gsstate.c [1.11]: 2001/04/06
+22:23:44 raph)
+
+</pre><h2><a name="6.64-Other"></a>Other</h2><pre>
 
 Fixes problems:
-	- The old code can mis-identify ShadingType 1 function as constant
-due to testing it at insufficient set of points. Replacing it with slower
-accurate code. SourceForge bug #228714. (gxshade.c [1.6], gxshade.h [1.4],
-gxshade1.c [1.8]: 2001/03/25 10:18:50 igorm)
-	- Fix for CIDFontType 0 : 1. Erroneous glyphs are drawn by cshow
-(with -dNOCACHE); 2. Glyphs written in horizontal direction instead vertical
-(with anti-aliasing); 3. Erroneous glyphs and awkward metrics (with
-anti-aliasing and -dNOCACHE); Patches 1 &amp; 3 from Hideyuki Suzuki
-(hideyuki), improved by igorm. SourceForge bug #222683. (gxchar.c [1.4]:
-2001/03/27 09:56:39 igorm)
-	- Adds imaging_dev field to text enumeration, so that bbox device
-can intercept low level drawing operations caused by implementation of
-forwarded high level text operations. (gdevbbox.c [1.4], gstext.c [1.6],
-gxccache.c [1.4], gxtext.h [1.7]: 2001/04/01 00:33:36 raph)
+	- two small issues with compilation under xlc on IBM AIX RS6000, a
+name conflict with structures names (u)int64, and trailing commas in enum
+declarations. Patch from Dan Coby. Sourceforge bug #414328.
+(icclib/icc.c [1.2], icclib/icc.h [1.2]: 2001/04/07 07:28:33 giles)
 
-Applies PDF 1.4 rendering with all devices. Previously, only pnga device
-contained PDF 1.4 rendering capabilities. Now, when the PDF 1.4 imaging
-model is detected in the source file, it installs the pdf 1.4 rendering
-device as a device filter. (gdevp14.c [1.1], gsdfilt.c [1.2],
-gsdfilt.h [1.2]: 2001/04/01 00:30:41 raph)
-
-Change: The Ghostscript 'pwrite' function name conflicted with the standard
-pwrite function defined in unistd.h on several systems. To avoid confusion
-with the standard function change the name to stream_write. Also change
-'pputc' to 'stream_putc' and 'pputs' to 'stream_puts'. Fixes SourceForge bug
-#410772. Fix by Ray Johnston. (gdevpsf1.c [1.9], gdevpsfm.c [1.5],
-gdevpsft.c [1.7], gsfunc4.c [1.4]: 2001/04/01 00:35:26 raph)
+Removes \r\n line ends inadvertently added. (icclib/icc.c [1.3],
+icclib/icc.h [1.3]: 2001/04/07 08:07:16 raph)
 
 </pre></body></html>
