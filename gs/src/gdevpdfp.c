@@ -476,10 +476,23 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 	    ppdi->orientation = orient;
 	    continue;
 	}
-	if (pdev->ParseDSCCommentsForDocInfo)
-	    code = cos_dict_put_string(pdev->Info, (const byte *)key,
-				       strlen(key), pvalue->data,
-				       pvalue->size);
+	if (pdev->ParseDSCCommentsForDocInfo) {
+	    /*
+	     * We must copy the key to the heap to avoid confusing the
+	     * memory manager.
+	     */
+	    uint len = strlen(key);
+	    byte *str = gs_alloc_string(pdev->pdf_memory, len,
+					"pdf_dsc_process(key)");
+
+	    if (str == 0)
+		code = gs_note_error(gs_error_VMerror);
+	    else {
+		memcpy(str, key, len);
+		code = cos_dict_put_string(pdev->Info, str, len,
+					   pvalue->data, pvalue->size);
+	    }
+	}
     }
     return code;
 }
