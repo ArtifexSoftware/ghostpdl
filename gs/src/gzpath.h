@@ -398,7 +398,6 @@ extern_st(st_path_enum);
    (ppath->position.x += dx, ppath->position.y += dy,\
     path_update_moveto(ppath), 0) )
 
-#if FLATTENED_CURVE_ITERATOR
 /* An iterator of flattened segments for a minotonic curve. */
 typedef struct gx_flattened_iterator_s gx_flattened_iterator;
 struct gx_flattened_iterator_s {
@@ -437,6 +436,5 @@ bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3,
 		    fixed *ax, fixed *bx, fixed *cx, 
 		    fixed *ay, fixed *by, fixed *cy, 
 		    int k);
-#endif
 
 #endif /* gzpath_INCLUDED */
