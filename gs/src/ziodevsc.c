@@ -110,7 +110,6 @@ stdin_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (file_is_invalid(s, &ref_stdin)) {
 	/* procedure source */
 	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
-	byte *buf;
 	ref rint;
 
 	/* The procedure isn't used. */
@@ -191,7 +190,6 @@ stdout_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (file_is_invalid(s, &ref_stdout)) {
 	/* procedure source */
 	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
-	byte *buf;
 	ref rint;
 
 	/* The procedure isn't used. */
@@ -256,7 +254,6 @@ stderr_open(gx_io_device * iodev, const char *access, stream ** ps,
     if (file_is_invalid(s, &ref_stderr)) {
 	/* procedure source */
 	gs_ref_memory_t *imem = (gs_ref_memory_t *)imemory_system;
-	byte *buf;
 	ref rint;
 
 	/* The procedure isn't used. */
