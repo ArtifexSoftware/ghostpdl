@@ -19,4 +19,6 @@ test_huffman
 test_arith
 test_png
 test_pbm
+test_sha1
+*.pyc
 pbm2png
