@@ -42,7 +42,9 @@ private dev_proc_put_params(psd_put_params);
 private dev_proc_print_page(psd_print_page);
 private dev_proc_map_color_rgb(psd_map_color_rgb);
 private dev_proc_get_color_mapping_procs(get_spotrgb_color_mapping_procs);
+#if 0
 private dev_proc_get_color_mapping_procs(get_spotcmyk_color_mapping_procs);
+#endif
 private dev_proc_get_color_mapping_procs(get_psd_color_mapping_procs);
 private dev_proc_get_color_comp_index(psd_get_color_comp_index);
 private dev_proc_encode_color(psd_encode_color);
@@ -51,7 +53,7 @@ private dev_proc_decode_color(psd_decode_color);
 /*
  * Type definitions associated with the fixed color model names.
  */
-typedef char * fixed_colorant_name;
+typedef const char * fixed_colorant_name;
 typedef fixed_colorant_name fixed_colorant_names_list[];
 
 /*
@@ -94,7 +96,7 @@ typedef struct psd_device_s {
      * names are those in this list plus those in the separation_names
      * list (below).
      */
-    fixed_colorant_names_list * std_colorant_names;
+    const fixed_colorant_names_list * std_colorant_names;
     int num_std_colorant_names;	/* Number of names in list */
 
     /*
@@ -180,19 +182,19 @@ typedef struct psd_device_s {
 }
 
 
-private fixed_colorant_names_list DeviceGrayComponents = {
+private const fixed_colorant_names_list DeviceGrayComponents = {
 	"Gray",
 	0		/* List terminator */
 };
 
-private fixed_colorant_names_list DeviceRGBComponents = {
+private const fixed_colorant_names_list DeviceRGBComponents = {
 	"Red",
 	"Green",
 	"Blue",
 	0		/* List terminator */
 };
 
-private fixed_colorant_names_list DeviceCMYKComponents = {
+private const fixed_colorant_names_list DeviceCMYKComponents = {
 	"Cyan",
 	"Magenta",
 	"Yellow",
@@ -222,8 +224,7 @@ const psd_device gs_psdrgb_device =
     /* DeviceN device specific parameters */
     psd_DEVICE_RGB,		/* Color model */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
-    (fixed_colorant_names_list *)
-	 (&DeviceRGBComponents),/* Names of color model colorants */
+    (&DeviceRGBComponents),/* Names of color model colorants */
     3,				/* Number colorants for RGB */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -247,8 +248,7 @@ const psd_device gs_psdcmyk_device =
     /* DeviceN device specific parameters */
     psd_DEVICE_CMYK,		/* Color model */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
-    (fixed_colorant_names_list *)
-	 (&DeviceCMYKComponents),/* Names of color model colorants */
+    (&DeviceCMYKComponents),/* Names of color model colorants */
     4,				/* Number colorants for RGB */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -432,17 +432,18 @@ get_spotrgb_color_mapping_procs(const gx_device * dev)
     return &spotRGB_procs;
 }
 
+#if 0
 private const gx_cm_color_map_procs *
 get_spotcmyk_color_mapping_procs(const gx_device * dev)
 {
     return &spotCMYK_procs;
 }
-
+#endif
 
 private const gx_cm_color_map_procs *
 get_psd_color_mapping_procs(const gx_device * dev)
 {
-    psd_device *xdev = (psd_device *)dev;
+    const psd_device *xdev = (const psd_device *)dev;
 
     if (xdev->color_model == psd_DEVICE_RGB)
 	return &spotRGB_procs;
@@ -509,80 +510,6 @@ psd_map_color_rgb(gx_device *dev, gx_color_index color, gx_color_value rgb[3])
     return 0;
 }
 
-/*
- * This routine will extract a specified set of bits from a buffer and pack
- * them into a given buffer.
- *
- * Parameters:
- *   source - The source of the data
- *   dest - The destination for the data
- *   depth - The size of the bits per pixel - must be a multiple of 8
- *   first_bit - The location of the first data bit (LSB).
- *   bit_width - The number of bits to be extracted.
- *   npixel - The number of pixels.
- *
- * Returns:
- *   Length of the output line (in bytes)
- *   Data in dest.
- */
-private int
-repack_data(byte * source, byte * dest, int depth, int first_bit,
-		int bit_width, int npixel)
-{
-    int in_nbyte = depth >> 3;		/* Number of bytes per input pixel */
-    int out_nbyte = bit_width >> 3;	/* Number of bytes per output pixel */
-    gx_color_index mask = 1;
-    gx_color_index data;
-    int i, j, length = 0;
-    int in_byte_loc = 0, out_byte_loc = 0;
-    byte temp;
-    byte * out = dest;
-    int max_bit_byte = 8 - bit_width;
-
-    mask = (mask << bit_width) - 1;
-    for (i=0; i<npixel; i++) {
-        /* Get the pixel data */
-	if (!in_nbyte) {		/* Multiple pixels per byte */
-	    data = *source;
-	    data >>= in_byte_loc;
-	    in_byte_loc += depth;
-	    if (in_byte_loc >= 8) {	/* If finished with byte */
-	        in_byte_loc = 0;
-		source++;
-	    }
-	}
-	else {				/* One or more bytes per pixel */
-	    data = *source++;
-	    for (j=1; j<in_nbyte; j++)
-	        data = (data << 8) + *source++;
-	}
-	data >>= first_bit;
-	data &= mask;
-
-	/* Put the output data */
-	if (!out_nbyte) {		/* Multiple pixels per byte */
-	    temp = *out & ~(mask << out_byte_loc);
-	    *out = temp | (data << out_byte_loc);
-	    out_byte_loc += bit_width;
-	    if (out_byte_loc > max_bit_byte) {	/* If finished with byte */
-	        out_byte_loc = 0;
-		out++;
-	    }
-	}
-	else {				/* One or more bytes per pixel */
-	    *out++ = data >> ((out_nbyte - 1) * 8);
-	    for (j=1; j<out_nbyte; j++) {
-	        *out++ = data >> ((out_nbyte - 1 - j) * 8);
-	    }
-	}
-    }
-    /* Return the number of bytes in the destination buffer. */
-    length = out - dest;
-    if (out_byte_loc)		 	/* If partially filled last byte */
-	length++;
-    return length;
-}
-
 private int
 psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
 		 int *poutn)
@@ -592,7 +519,7 @@ psd_open_profile(psd_device *xdev, char *profile_fn, icmLuBase **pluo,
     icmLuBase *luo;
 
     dlprintf1("psd_open_profile %s\n", profile_fn);
-    fp = new_icmFileStd_name(profile_fn, "rb");
+    fp = new_icmFileStd_name(profile_fn, (char *)"rb");
     if (fp == NULL)
 	return_error(gs_error_undefinedfilename);
     icco = new_icc();
@@ -932,7 +859,7 @@ private int
 psd_get_color_comp_index(const gx_device * dev, const char * pname, int name_size, int src_index)
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    const fixed_colorant_names_list * list = ((psd_device *)dev)->std_colorant_names;
+    const fixed_colorant_names_list * list = ((const psd_device *)dev)->std_colorant_names;
     const fixed_colorant_name * pcolor = *list;
     int color_component_number = 0;
     int i;
@@ -949,11 +876,11 @@ psd_get_color_comp_index(const gx_device * dev, const char * pname, int name_siz
 
     /* Check if the component is in the separation names list. */
     {
-	gs_separation_names * separations = &((psd_device *)dev)->separation_names;
+	const gs_separation_names * separations = &((const psd_device *)dev)->separation_names;
 	int num_spot = separations->num_names;
 
 	for (i=0; i<num_spot; i++) {
-	    if (compare_color_names((char *)separations->names[i]->data,
+	    if (compare_color_names((const char *)separations->names[i]->data,
 		  separations->names[i]->size, pname, name_size)) {
 		return color_component_number;
 	    }
