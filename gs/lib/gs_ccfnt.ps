@@ -59,17 +59,19 @@
 /registerfont dup load bind def
 
 /.loadinitialfonts {
-   //.loadinitialfonts exec
-   /ccfonts mark
-     0 1 null .getccfont 1 sub { .getccfont dup /FontName get exch } for
-   .dicttomark def
+  //.loadinitialfonts exec
+  NOCCFONTS not {
+    /ccfonts mark
+      0 1 null .getccfont 1 sub { .getccfont dup /FontName get exch } for
+    .dicttomark def
 		% Make sure these fonts are registered as "resources".
-   currentfile {
-     pop ccfonts
-      { .FontDirectory 2 index known { pop pop } { registerfont pop } ifelse }
-     forall
-  } .execasresource
-  currentdict /ccfonts .undef
+    currentfile {
+      pop ccfonts {
+	.FontDirectory 2 index known { pop pop } { registerfont pop } ifelse
+      } forall
+    } .execasresource
+    currentdict /ccfonts .undef
+  } if
 } bind def
 
 currentdict /registerfont .undef
