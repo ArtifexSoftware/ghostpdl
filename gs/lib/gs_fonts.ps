@@ -56,7 +56,7 @@ end def
 
 % Define a temporary string for local use, since using =string
 % interferes with some PostScript programs.
-/.fonttempstring 128 string def
+/.fonttempstring 8192 string def
 
 % Split up a search path into individual directories or files.
 /.pathlist              % <path> .pathlist <dir1|file1> ...
@@ -247,7 +247,7 @@ FONTPATH length 0 eq { (%END FONTPATH) .skipeof } if
   /pss true             % Adobe Multiple Master font instances
   /txt true
 .dicttomark def
-/.scan1fontstring 128 string def
+/.scan1fontstring 8192 string def
 % %%BeginFont: is not per Adobe documentation, but a few fonts have it.
 /.scanfontheaders [(%!PS-Adobe*) (%!FontType*) (%%BeginFont:*)] def
 0 .scanfontheaders { length .max } forall 6 add % extra for PFB header

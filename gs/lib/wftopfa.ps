@@ -269,11 +269,11 @@ ifelse
    /fontname exch def
    [ templates
       { wfdir (/) concatstrings exch concatstrings { copystring }
-	100 string filenameforall
+	8192 string filenameforall
       }
      forall
      wfdir (/wadalab-sym/*.ps) concatstrings { copystring }
-       100 string filenameforall
+       8192 string filenameforall
    ]
    (%!\n) print
     { /currentuserparams where

@@ -59,7 +59,7 @@ level2dict begin
     } if
     10 dict exch {
 		% Stack: dict filters parms CloseSource contdict file
-      dup 1000 string readstring
+      dup 64000 string readstring
       3 index dup length 4 -1 roll put not { exit } if
     } loop pop
 		% Concatenate the contents into one big string.

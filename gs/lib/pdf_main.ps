@@ -78,7 +78,7 @@ systemdict begin
 	      % Copy PDF from stdin to temporary file then run it.
 	      null (w+) //systemdict /.tempfile get exec exch 3 1 roll
 	      % stack: tempname stdin tempfile
-	      1024 string
+	      64000 string
 	      {
 		% stack: tempname stdin tempfile string
 		2 index 1 index readstring

@@ -39,8 +39,8 @@ languagelevel 2 .setlanguagelevel currentglobal true setglobal
 
 /.prs_dict currentdict def       % self-reference (constant)
 /.prs_empty 0 dict readonly def  
-/path_buffer 255 string def
-/name_buffer 255 string def
+/path_buffer 8192 string def
+/name_buffer 1024 string def
 /minus (-) 0 get def             % character code constant for '-'
 /period (.) 0 get def            % character code constant for '.'
 /CMap 10 dict def                % CSI cache for CMaps

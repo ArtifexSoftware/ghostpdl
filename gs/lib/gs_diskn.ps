@@ -28,7 +28,7 @@ systemdict begin
     mark (*) { 
       dup length string copy dup currentdevparams /Searchable
       .knownget { not { pop } if } { pop } ifelse
-    } 100 string /IODevice resourceforall
+    } 8192 string /IODevice resourceforall
     ]
     % now process the array into correct SearchOrder
     0 1 2 {

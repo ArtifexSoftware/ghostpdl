@@ -479,7 +479,7 @@ lpdict begin
    $error /recordstacks false put
 
 % Initialize for the first page.
-   /lbuf 1000 string def
+   /lbuf 64000 string def
    /pindex 1 def
    beginpage
 
@@ -643,7 +643,7 @@ lpdict begin
    ifelse
  } bind def
 
-/lpcstring 100 string def
+/lpcstring 8192 string def
 
 end
 

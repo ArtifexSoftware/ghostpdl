@@ -42,7 +42,7 @@
 	% by reading it into a buffer.  We rely on the fact that
 	% save/restore don't affect file positions.
 	% Stack: istart ilength dfilter
-   save exch 1000 string
+   save exch 64000 string
 	% Stack: istart ilength save dfilter scratch
    4 index 1 index length idiv { 2 copy readstring pop pop } repeat
    2 copy 0 8 -1 roll 2 index length mod getinterval readstring pop pop pop

@@ -317,7 +317,7 @@ systemdict /.filenamedirseparator known not {
 } if
 
 % Define the generic algorithm for computing resource file names.
-/.rfnstring 100 string def
+/.rfnstring 8192 string def
 /.genericrfn		% <key> <scratch> <prefix> .genericrfn <filename>
  { 3 -1 roll //.rfnstring cvs concatstrings exch copy
  } bind def
@@ -480,10 +480,10 @@ systemdict /.filenamedirseparator known not {
 
           currentdict /ResourceFileName known {
 		% Finally, do instances stored on files.
-	    dup 0 get 100 string ResourceFileName
+	    dup 0 get 8192 string ResourceFileName
 	    dup length 2 index 0 get length sub 3 -1 roll
 	    //.externalresourceforall {exec} 0 get 4 .localpackedarray cvx
-	    100 string {filenameforall} 0 get
+	    8192 string {filenameforall} 0 get
 	    currentdict end 2 .execn begin null	% for pop
 	  } if pop
 
@@ -633,7 +633,7 @@ systemdict /.filenamedirseparator known {
   % It should be removed after alpha testing the new logic.
   systemdict /.filenamedirseparator known {
 	{ currentdict /ResourceFileName known
-	   { mark 1 index 100 string { ResourceFileName }
+	   { mark 1 index 8192 string { ResourceFileName }
 	     .internalstopped
 	      { cleartomark false }
 	      { exch pop findlibfile
