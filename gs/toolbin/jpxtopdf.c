@@ -19,7 +19,8 @@
 /* based on jpegtopdf by Tor Andersson */
 
 /* uses the jasper library from http://www.ece.uvic.ca/~mdadams/jasper/
-   compile with 'cc -o jpxtopdf jpxtopdf -ljasper' */
+   compile with 'cc -o jpxtopdf jpxtopdf.c -ljasper'
+   or 'cc -o jpxtopdf jpxtopdf.c -ljasper -ljpeg -lm' */
 
 #include <stdlib.h>
 #include <stdio.h>
