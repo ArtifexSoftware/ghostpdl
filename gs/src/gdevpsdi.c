@@ -98,6 +98,9 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	 &s_zlibE_template : &s_LZWE_template);
     const gs_color_space *pcs = pim->ColorSpace; /* null if mask */
     int Colors = (pcs ? gs_color_space_num_components(pcs) : 0);
+    bool Indexed =
+	(pcs != 0 && 
+	 gs_color_space_get_index(pcs) == gs_color_space_index_Indexed);
     gs_c_param_list *dict = pdip->Dict;
     stream_state *st;
     int code;
@@ -123,12 +126,11 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	return 0;
     /* Only use DCTE for 8-bit, non-Indexed data. */
     if (template == &s_DCTE_template) {
-	if (!(pdip->Downsample ?
+	if (Indexed ||
+	    !(pdip->Downsample ?
 	      pdip->Depth == 8 ||
 	      (pdip->Depth == -1 && pim->BitsPerComponent == 8) :
-	      pim->BitsPerComponent == 8) ||
-	    (pcs != 0 &&
-	     gs_color_space_get_index(pcs) == gs_color_space_index_Indexed)
+	      pim->BitsPerComponent == 8)
 	    ) {
 	    /* Use LZW/Flate instead. */
 	    template = lossless_template;
@@ -154,23 +156,25 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
     } else if ((template == &s_LZWE_template ||
 		template == &s_zlibE_template) &&
 	       pdev->version >= psdf_version_ll3) {
-	/* Add a PNGPredictor filter. */
-	code = psdf_encode_binary(pbw, template, st);
-	if (code < 0)
-	    goto fail;
-	template = &s_PNGPE_template;
-	st = s_alloc_state(mem, template->stype, "setup_image_compression");
-	if (st == 0) {
-	    code = gs_note_error(gs_error_VMerror);
-	    goto fail;
-	}
-	if (template->set_defaults)
-	    (*template->set_defaults) (st);
-	{
-	    stream_PNGP_state *const ss = (stream_PNGP_state *) st;
+	/* If not Indexed, add a PNGPredictor filter. */
+	if (!Indexed) {
+	    code = psdf_encode_binary(pbw, template, st);
+	    if (code < 0)
+		goto fail;
+	    template = &s_PNGPE_template;
+	    st = s_alloc_state(mem, template->stype, "setup_image_compression");
+	    if (st == 0) {
+		code = gs_note_error(gs_error_VMerror);
+		goto fail;
+	    }
+	    if (template->set_defaults)
+		(*template->set_defaults) (st);
+	    {
+		stream_PNGP_state *const ss = (stream_PNGP_state *) st;
 
-	    ss->Colors = Colors;
-	    ss->Columns = pim->Width;
+		ss->Colors = Colors;
+		ss->Columns = pim->Width;
+	    }
 	}
     } else if (template == &s_DCTE_template) {
 	code = psdf_DCT_filter((dict != 0 && orig_template == template ?
