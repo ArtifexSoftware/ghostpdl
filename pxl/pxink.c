@@ -710,7 +710,7 @@ EncodeABC_2(floatp in, const gs_cie_render * pcrd)
 
 
 int
-build_crd(px_state_t *pxs)
+build_crd(gs_state *pgs)
 {
     gs_cie_render *pcrd;
     int code;
@@ -726,7 +726,7 @@ build_crd(px_state_t *pxs)
 
     /* build the color rendering dictionary if not already built NB.
        Store colorrendering in the state and verify it is the same. */
-    code = gs_cie_render1_build(&pcrd, pxs->memory, "build_crd");
+    code = gs_cie_render1_build(&pcrd, gs_state_memory(pgs), "build_crd");
     if ( code < 0 )
 	return code;
     code = gs_cie_render1_initialize(pcrd,
@@ -745,7 +745,7 @@ build_crd(px_state_t *pxs)
                                      NULL);
     if ( code < 0 )
 	return code; /* should not fail */
-    return gs_setcolorrendering(pxs->pgs, pcrd);
+    return gs_setcolorrendering(pgs, pcrd);
 }
 
 /* Decode LMN procedures for srgb color spaces */
@@ -879,7 +879,7 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	   existing one */
 	if ( cspace == eSRGB || cspace == eCRGB || cspace == eRGB ) {
 	    /* NB free the old cie color space if necessary */
-	    build_crd(pxs);
+	    build_crd(pxs->pgs);
 	    build_sRGB_space(&pxgs->cie_color_space, pxs->memory);
 	}
 #ifndef SET_COLOR_SPACE_NO_SET_BLACK
