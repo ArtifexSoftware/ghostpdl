@@ -477,24 +477,6 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 }
 
 /*
- * Convert a string into cos name.
- */
-private int
-pdf_string_to_cos_name(gx_device_pdf *pdev, const byte *str, uint len, 
-		       cos_value_t *pvalue)
-{
-    byte *chars = gs_alloc_string(pdev->pdf_memory, len + 1, 
-                                  "pdf_string_to_cos_name");
-
-    if (chars == 0)
-	return_error(gs_error_VMerror);
-    chars[0] = '/';
-    memcpy(chars + 1, str, len);
-    cos_string_value(pvalue, chars, len + 1);
-    return 0;
-}
-
-/*
  * Create a PDF color space corresponding to a PostScript color space.
  * For parameterless color spaces, set *pvalue to a (literal) string with
  * the color space name; for other color spaces, create a cos_array_t if

@@ -122,6 +122,12 @@ int pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 			  const gx_drawing_color *pdcolor);
 
+/*
+ * Convert a string into cos name.
+ */
+int pdf_string_to_cos_name(gx_device_pdf *pdev, const byte *str, uint len, 
+		       cos_value_t *pvalue);
+
 /* ---------------- Exported by gdevpdfj.c ---------------- */
 
 /* ------ Image stream dictionaries ------ */

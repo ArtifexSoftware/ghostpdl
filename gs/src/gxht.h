@@ -166,6 +166,8 @@ extern_st(st_ht_component_element);
 typedef struct gs_multiple_halftone_s {
     gs_halftone_component *components;
     uint num_comp;
+    int (*get_colorname_string)(gs_separation_name colorname_index,
+		unsigned char **ppstr, unsigned int *pname_size);
 } gs_multiple_halftone;
 
 #define st_multiple_halftone_max_ptrs 1

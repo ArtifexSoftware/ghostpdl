@@ -183,6 +183,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 						halftonetype);
 	    if (colorant_number < 0)
 		continue;		/* Do not use this component */
+	    pc->cname = cname;
 	    pc->comp_number = colorant_number;
 
 	    /* Now process the component dictionary */
@@ -222,6 +223,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	pht->type = halftonetype;
 	pht->params.multiple.components = phtc;
 	pht->params.multiple.num_comp = j;
+	pht->params.multiple.get_colorname_string = gs_get_colorname_string;
 	code = gs_sethalftone_prepare(igs, pht, pdht);
     }
     if (code >= 0) {

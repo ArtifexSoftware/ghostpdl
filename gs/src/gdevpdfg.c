@@ -122,41 +122,23 @@ pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
     return pdf_reset_color(pdev, &dcolor, pdcolor, ppscc);
 }
 
-/* Get the (string) name of a separation, */
-/* returning a newly allocated string with a / prefixed. */
-/****** BOGUS for all but standard separations ******/
+/*
+ * Convert a string into cos name.
+ */
 int
-pdf_separation_name(gx_device_pdf *pdev, cos_value_t *pvalue,
-		    gs_separation_name sname)
+pdf_string_to_cos_name(gx_device_pdf *pdev, const byte *str, uint len, 
+		       cos_value_t *pvalue)
 {
-    dprintf( "pdf_separation_name() unimplemented\n");
-#ifdef TO_DO_DEVICEN
-    static const char *const snames[] = {
-	gs_ht_separation_name_strings
-    };
-    static char buf[sizeof(ulong) * 8 / 3 + 2];	/****** BOGUS ******/
-    const char *str;
-    uint len;
-    byte *chars;
+    byte *chars = gs_alloc_string(pdev->pdf_memory, len + 1, 
+                                  "pdf_string_to_cos_name");
 
-    if ((ulong)sname < countof(snames)) {
-	str = snames[(int)sname];
-    } else {			/****** TOTALLY BOGUS ******/
-	sprintf(buf, "S%ld", (ulong)sname);
-	str = buf;
-    }
-    len = strlen(str);
-    chars = gs_alloc_string(pdev->pdf_memory, len + 1, "pdf_separation_name");
     if (chars == 0)
 	return_error(gs_error_VMerror);
     chars[0] = '/';
     memcpy(chars + 1, str, len);
     cos_string_value(pvalue, chars, len + 1);
-#endif
     return 0;
 }
-
-/* ------ Support ------ */
 
 /* Print a Boolean using a format. */
 private void
@@ -246,7 +228,7 @@ pdf_write_transfer_map(gx_device_pdf *pdev, const gx_transfer_map *map,
     params.m = 1;
     params.Domain = domain01;
     params.n = 1;
-    range01[0] = range0, range01[1] = 1.0;
+    range01[0] = (float)range0, range01[1] = 1.0;
     params.Range = range01;
     params.Order = 1;
     params.DataSource.access =
@@ -491,7 +473,8 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
      * See if we can recognize the spot function, by comparing its sampled
      * values against those in the order.
      */
-    {
+    if (/* A hack : is porder->params initialized ? */
+	    porder->params.M != 0 && porder->params.N != 0) {
 	gs_screen_enum senum;
 	gx_ht_order order;
 	int code;
@@ -644,26 +627,56 @@ pdf_write_threshold2_halftone(gx_device_pdf *pdev,
     }
     return pdf_end_data(&writer);
 }
+private int 
+pdf_get_halftone_component_index(const gs_multiple_halftone *pmht,
+				 const gx_device_halftone *pdht,
+				 int dht_index)
+{
+    int j;
+
+    for (j = 0; j < pmht->num_comp; j++)
+	if (pmht->components[j].comp_number == dht_index)
+	    break;
+    if (j == pmht->num_comp) { 
+	/* Look for Default. */
+	for (j = 0; j < pmht->num_comp; j++)
+	    if (pmht->components[j].comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS)
+		break;
+	if (j == pmht->num_comp)
+	    return_error(gs_error_undefined);
+    }
+    return j;
+}
 private int
 pdf_write_multiple_halftone(gx_device_pdf *pdev,
 			    const gs_multiple_halftone *pmht,
 			    const gx_device_halftone *pdht, long *pid)
 {
     stream *s;
-    int i, code;
+    int i, code, last_comp = 0;
     gs_memory_t *mem = pdev->pdf_memory;
     long *ids;
+    bool done_Default = false;
 
     ids = (long *)gs_alloc_byte_array(mem, pmht->num_comp, sizeof(long),
 				      "pdf_write_multiple_halftone");
     if (ids == 0)
 	return_error(gs_error_VMerror);
-    for (i = 0; i < pmht->num_comp; ++i) {
-	const gs_halftone_component *const phtc = &pmht->components[i];
-	const gx_ht_order *porder =
-	    (pdht->components == 0 ? &pdht->order :
-	     &pdht->components[i].corder);
+    for (i = 0; i < pdht->num_comp; ++i) {
+	const gs_halftone_component *phtc;
+	const gx_ht_order *porder;
 
+	code = pdf_get_halftone_component_index(pmht, pdht, i);
+	if (code < 0)
+	    return code;
+	if (pmht->components[code].comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
+	    if (done_Default)
+		continue;
+	    done_Default = true;
+	}
+	phtc = &pmht->components[code];
+	porder = (pdht->components == 0 ? &pdht->order :
+	               &pdht->components[i].corder);
 	switch (phtc->type) {
 	case ht_type_spot:
 	    code = pdf_write_spot_halftone(pdev, &phtc->params.spot,
@@ -689,18 +702,40 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
     *pid = pdf_begin_separate(pdev);
     s = pdev->strm;
     stream_puts(s, "<</Type/Halftone/HalftoneType 5\n");
-    for (i = 0; i < pmht->num_comp; ++i) {
-	const gs_halftone_component *const phtc = &pmht->components[i];
+    done_Default = false;
+    for (i = 0; i < pdht->num_comp; ++i) {
+	const gs_halftone_component *phtc;
+	byte *str;
+	uint len;
 	cos_value_t value;
 
-	code = pdf_separation_name(pdev, &value, phtc->cname);
+	code = pdf_get_halftone_component_index(pmht, pdht, i);
 	if (code < 0)
+	    return code;
+	if (pmht->components[code].comp_number == GX_DEVICE_COLOR_MAX_COMPONENTS) {
+	    if (done_Default)
+		continue;
+	    done_Default = true;
+	}
+	phtc = &pmht->components[code];
+	if ((code = pmht->get_colorname_string(phtc->cname, &str, &len)) < 0 ||
+            (code = pdf_string_to_cos_name(pdev, str, len, &value)) < 0)
 	    return code;
 	cos_value_write(&value, pdev);
 	gs_free_string(mem, value.contents.chars.data,
 		       value.contents.chars.size,
 		       "pdf_write_multiple_halftone");
 	pprintld1(s, " %ld 0 R\n", ids[i]);
+	last_comp = i;
+    }
+    if (!done_Default) {
+	/*
+	 * BOGUS: Type 5 halftones must contain Default component.
+	 * Perhaps we have no way to obtain it,
+	 * because pdht contains ProcessColorModel components only.
+	 * We copy the last component as Default one.
+	 */
+	pprintld1(s, " /Default %ld 0 R\n", ids[last_comp]);
     }
     stream_puts(s, ">>\n");
     gs_free_object(mem, ids, "pdf_write_multiple_halftone");
