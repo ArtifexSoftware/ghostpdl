@@ -147,6 +147,16 @@ twice.  This is not completely trivial, since the band list does include
 device resolution information and scaling would be required for some
 constructs.</I>
 
+<h3><b><tt>OutputDevice</tt></b> resource category</h3>
+
+<p>
+Each available output device should provide an instance of the
+<b><tt>OutputDevice</tt></b> resource category, which gives the available
+page sizes, resolutions, media classes, process color models, and other
+information about the device.  <I>This would replace the current
+non-standard use of a 4-element <b><tt>PageSize</tt></b> in the
+<b><tt>InputAttributes</tt></b> entry of the page device dictionary.</I>
+
 <h2><a name="Specific_drivers"></a>Specific drivers</h2>
 
 <h3>PrintGear and PPA output drivers.</h3>
