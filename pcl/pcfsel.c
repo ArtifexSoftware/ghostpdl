@@ -249,7 +249,8 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 	    gs_const_string key;
 	    void *value;
 	    pl_font_t *best_font = 0;
-	    pl_symbol_map_t *mapp, *best_map;
+	    pl_symbol_map_t *best_map = 0;
+	    pl_symbol_map_t *mapp;
 	    match_score_t best_match;
 
 #ifdef DEBUG
@@ -306,7 +307,8 @@ pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
 	    gs_const_string key;
 	    void *value;
 	    pl_font_t *best_font = 0;
-	    pl_symbol_map_t *mapp, *best_map;
+	    pl_symbol_map_t *best_map = 0;
+	    pl_symbol_map_t *mapp;
 	    match_score_t best_match;
 #ifdef DEBUG
 	    if ( gs_debug_c('=') )

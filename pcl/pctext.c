@@ -112,25 +112,22 @@ map_symbol(
 	/* font wants unicode and we have mapped an msl symbol set */
 	if ( ( pl_symbol_map_vocabulary(psm) == plgv_MSL ) &&
 	     ( fgv == plgv_Unicode ) ) {
-	    if ( psm->mapping_type != PLGV_M2U_MAPPING ) {
+	    if ( psm->mapping_type != PLGV_M2U_MAPPING )
 		/* font selection should not have given us this */
-		gs_note_error(gs_error_invalidfont);
-		return code;
-	    } else
+		return_error(gs_error_invalidfont);
+	    else
 		return pl_map_MSL_to_Unicode(code,
-     		         (psm->id[0] << 8) + psm->id[1]);
+		         (psm->id[0] << 8) + psm->id[1]);
 	}
 	/* font wants msl coding we have mapped unicode */
 	if ( ( pl_symbol_map_vocabulary(psm) == plgv_Unicode ) &&
 	     ( fgv == plgv_MSL ) ) {
-	    if ( psm->mapping_type != PLGV_U2M_MAPPING ) {
+	    if ( psm->mapping_type != PLGV_U2M_MAPPING )
 		/* symbol set doesn't support the mapping - should not happen */
-		gs_note_error(gs_error_invalidfont);
-		return code;
-	    } else
+		return_error(gs_error_invalidfont);
+	    else
 		return pl_map_Unicode_to_MSL(code,
         		 (psm->id[0] << 8) + psm->id[1]);
-		    
 	} else
             return 0xffff;
     }
