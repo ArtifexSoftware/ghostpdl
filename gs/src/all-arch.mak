@@ -30,6 +30,11 @@
 # 	Telephone: +1 801 581 5254
 # 	FAX: +1 801 585 1640, +1 801 581 4148
 #
+# /usr/local/src/ghostscript/gs6.0/Makefile, Sat Feb 12 09:46:16 2000
+# Edit by Nelson H. F. Beebe <beebe@math.utah.edu>
+# Update with settings of STDLIBS for several targets, because gs-6.0
+# added a reference to the POSIX threads library, which is not
+# universally available.
 # /usr/local/src/ghostscript/gs5.94/Makefile, Sun Oct  3 08:07:02 1999
 # Edit by Nelson H. F. Beebe <beebe@math.utah.edu>
 # Major update with rearrangement of target names, and addition of
@@ -380,6 +385,7 @@ hp-parisc-hpux:	init
 	$(MAKE) $(ARGS) \
 		CC='c89 -O -D_HPUX_SOURCE +Onolimit' \
 		FEATURE_DEVS_EXTRA= \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/include/X11R5 \
 		XLIBDIRS='-L/usr/lib/X11R5 -L/usr/local/lib' \
 		$(GLOBJ)gdevupd.o $(GLOBJ)gxclread.o
@@ -387,18 +393,21 @@ hp-parisc-hpux:	init
 	$(MAKE) $(ARGS) \
 		CC='c89 -O -D_HPUX_SOURCE' \
 		FEATURE_DEVS_EXTRA= \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/include/X11R5 \
 		XLIBDIRS='-L/usr/lib/X11R5 -L/usr/local/lib'
 
 hp-parisc-hpux-gnu-readline:	init
 	$(MAKE) $(ARGS) \
 		CC='c89 -O -D_HPUX_SOURCE +Onolimit' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/include/X11R5 \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lib/X11R5 -L/usr/local/lib' \
 		$(GLOBJ)gdevupd.o $(GLOBJ)gxclread.o
 
 	$(MAKE) $(ARGS) \
 		CC='c89 -O -D_HPUX_SOURCE' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/include/X11R5 \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lib/X11R5 -L/usr/local/lib' \
 		$(GNU_READLINE_ARGS)
@@ -409,6 +418,7 @@ ibm-rs6000-aix:	init
 		CC='cc -O -D_POSIX_SOURCE' \
 		CP='cp -p' \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/lpp/X11/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib'
 
@@ -420,6 +430,7 @@ ibm-rs6000-aix-c89:	init
 		CC='c89 -O -D_POSIX_SOURCE' \
 		CP='cp -p' \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE='-I/usr/lpp/X11/include -I/usr/local/X11R5/include' \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib -L/usr/local/X11R5/lib'
 
@@ -428,6 +439,7 @@ ibm-rs6000-aix-4-1-c89:	init
 		CC='c89 -O -D_POSIX_SOURCE' \
 		CP='cp -p' \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE='-I/usr/lpp/X11/include' \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib'
 
@@ -438,6 +450,7 @@ ibm-rs6000-aix-3-2-5-gcc:	init
 		CP='cp -p' \
 		GCFLAGS=$(GCFLAGS) \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE='-I/usr/lpp/X11/include -I/usr/local/X11R5/include'\
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib -L/usr/local/X11R5/lib' \
 		EXTRALIBS='-ltermcap'
@@ -449,6 +462,7 @@ ibm-rs6000-aix-gcc:	init
 		CP='cp -p' \
 		GCFLAGS=$(GCFLAGS) \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/lpp/X11/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib' \
 		EXTRALIBS='-ltermcap'
@@ -461,6 +475,7 @@ ibm-rs6000-aix-4.2:	init
 		CP='cp -p' \
 		FEATURE_DEVS_EXTRA= \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/lpp/X11/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib' \
 		$(GLOBJ)gp_unix.o
@@ -470,6 +485,7 @@ ibm-rs6000-aix-4.2:	init
 		CP='cp -p' \
 		FEATURE_DEVS_EXTRA= \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/lpp/X11/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib'
 
@@ -478,6 +494,7 @@ ibm-rs6000-aix-4.2-gnu-readline:	init
 		CC='cc -O -DMAXMEM=4096' \
 		CP='cp -p' \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/lpp/X11/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib' \
 		$(GLOBJ)gp_unix.o
@@ -486,6 +503,7 @@ ibm-rs6000-aix-4.2-gnu-readline:	init
 		CC='cc -O -D_POSIX_SOURCE -DMAXMEM=4096' \
 		CP='cp -p' \
 		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/lpp/X11/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib' \
 		$(GNU_READLINE_ARGS)
@@ -513,6 +531,7 @@ next-m68K-mach:	init
 		CC='gcc -Dconst= -O3 -D_POSIX_SOURCE' \
 		FEATURE_DEVS_EXTRA= \
 		GCFLAGS=$(GCFLAGS) \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/local/X11R5/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/local/X11R5/lib' \
 		INCLUDE=/usr/include/bsd \
@@ -522,6 +541,7 @@ next-m68K-mach-gnu-readline:	init
 	$(MAKE) $(ARGS) \
 		CC='gcc -Dconst= -O3 -D_POSIX_SOURCE' \
 		GCFLAGS=$(GCFLAGS) \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/local/X11R5/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/local/X11R5/lib' \
 		INCLUDE=/usr/include/bsd \
@@ -530,6 +550,7 @@ next-m68K-mach-gnu-readline:	init
 next-m68K-mach-cc:	init
 	$(MAKE) $(ARGS) \
 		CC='cc -Dconst= -O3 -D_POSIX_SOURCE' \
+		STDLIBS=-lm \
 		XINCLUDE=-I/usr/local/X11R5/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/local/X11R5/lib' \
 		INCLUDE=/usr/include/bsd
@@ -817,6 +838,7 @@ GNUREADLINE=
 ## XXXXXXXX.YYYYYYYY.utah.edu:			apple-powerpc-rhapsody5.5$(GNUREADLINE)
 ## XXXXXXXX.YYYYYYYY.utah.edu:		apple-powerpc-rhapsody5.5$(GNUREADLINE)
 ## XXXXXXXX.YYYYYYYY.utah.edu:		dec-alpha-osf$(GNUREADLINE)
+## XXXXXXXX.YYYYYYYY.utah.edu:		linux$(GNUREADLINE)
 ## XXXXXXXX.YYYYYYYY.utah.edu:		linux$(GNUREADLINE)
 ## XXXXXXXX.YYYYYYYY.utah.edu:		sun-sparc-sunos-gcc$(GNUREADLINE)
 ## XXXXXXXX.YYYYYYYY.utah.edu:		sun-sparc-solaris$(GNUREADLINE)
