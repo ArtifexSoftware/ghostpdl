@@ -140,6 +140,7 @@ proc unknown@ {cmd var} {
 	set TARGET_FAILED $var
 	return -errorcode error
     }
+    return [$cmd]
 }
 proc unknown {cmd args} {
     if {[regexp {^([_@])(.*)$} $cmd skip 1st var]} {
