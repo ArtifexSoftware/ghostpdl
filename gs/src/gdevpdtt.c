@@ -1791,11 +1791,11 @@ get_missing_width(gs_font_base *cfont, int wmode, double scale_c,
     if (wmode) {
 	pwidths->Width.xy.x = pwidths->real_width.xy.x = 0;
 	pwidths->Width.xy.y = pwidths->real_width.xy.y =
-		finfo.MissingWidth * scale_c;
+		- finfo.MissingWidth * scale_c;
 	pwidths->Width.w = pwidths->real_width.w =
 		pwidths->Width.xy.y;
-	pwidths->Width.v.x = pwidths->Width.xy.y / 2;
-	pwidths->Width.v.y = pwidths->Width.xy.y;
+	pwidths->Width.v.x = - pwidths->Width.xy.y / 2;
+	pwidths->Width.v.y = - pwidths->Width.xy.y;
     } else {
 	pwidths->Width.xy.x = pwidths->real_width.xy.x =
 		finfo.MissingWidth * scale_c;
@@ -1862,6 +1862,12 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, int wmode, gs_glyph glyph,
 	if (code < 0)
 	    return code;
 	v = pwidths->Width.v;
+	if (wmode && !(info.members & GLYPH_INFO_VVECTOR1)) {
+	    /* After get_missing_width code == 1, so store_glyph_width skips it.
+	       Thus will write DW2[0 0], so make a compatible Widths.
+	       Bug 687603. */
+	    v.y = 0;
+	}
     } else if (code < 0)
 	return code;
     else {
