@@ -17,7 +17,7 @@
 /* $Id$ */
 /* dwmainc.c */
 
-#include <windows.h>
+#include "windows_.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <io.h>
@@ -415,12 +415,21 @@ int main(int argc, char *argv[])
     nargv[2] = ddpi;
     memcpy(&nargv[3], &argv[1], argc * sizeof(char *));
 
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+    __try {
+#endif
     code = gsdll.init_with_args(instance, nargc, nargv);
     if (code == 0)
 	code = gsdll.run_string(instance, start_string, 0, &exit_code);
     code1 = gsdll.exit(instance);
     if (code == 0 || (code == e_Quit && code1 != 0))
 	code = code1;
+#if defined(_MSC_VER) || defined(__BORLANDC__)
+    } __except(exception_code() == EXCEPTION_STACK_OVERFLOW) {
+        code = e_Fatal;
+        fprintf(stderr, "*** C stack overflow. Quiting...\n");
+    }
+#endif
 
     gsdll.delete_instance(instance);
 

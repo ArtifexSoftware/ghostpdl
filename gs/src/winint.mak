@@ -139,7 +139,7 @@ $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
 
 OBJCNO=$(PSOBJ)dwmainc.obj $(PSOBJ)dwnodllc.obj $(GLOBJ)dwimg.obj $(DWTRACE) $(GLOBJ)dwreg.obj
 
-$(PSOBJ)dwmainc.obj: $(PSSRC)dwmainc.c $(AK) $(fcntl__h) $(unistd__h) \
+$(PSOBJ)dwmainc.obj: $(PSSRC)dwmainc.c $(AK) $(windows__h) $(fcntl__h) $(unistd__h) \
   $(iapi_h) $(vdtrace_h) $(gdevdsp_h) $(dwdll_h) $(dwimg_h) $(dwtrace_h)
 	$(PSCCWIN) $(COMPILE_FOR_CONSOLE_EXE) $(PSO_)dwmainc.obj $(C_) $(PSSRC)dwmainc.c
 
@@ -169,7 +169,7 @@ $(GLOBJ)dwtrace.obj: $(GLSRC)dwtrace.c $(AK)\
  $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtrace.obj $(C_) $(GLSRC)dwtrace.c
 
-$(PSOBJ)dwmain.obj: $(PSSRC)dwmain.c $(AK)\
+$(PSOBJ)dwmain.obj: $(PSSRC)dwmain.c $(AK)  $(windows__h) \
  $(iapi_h) $(vdtrace_h) $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
  $(dwreg_h) $(gdevdsp_h)
 	$(PSCCWIN) $(COMPILE_FOR_EXE) $(PSO_)dwmain.obj $(C_) $(PSSRC)dwmain.c

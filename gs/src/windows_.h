@@ -46,4 +46,8 @@ typedef RGBQUAD FAR * LPRGBQUAD;
 #  define _fstrtok(str, set) strtok(str, set)
 #endif
 
+#if defined(__BORLANDC__)
+#  define exception_code() __exception_code  
+#endif
+
 #endif /* windows__INCLUDED */
