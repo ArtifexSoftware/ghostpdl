@@ -33,6 +33,7 @@
 
 /* Forward references */
 private int z42_string_proc(P4(gs_font_type42 *, ulong, uint, const byte **));
+private uint z42_get_glyph_index(P2(gs_font_type42 *, gs_glyph));
 private int z42_gdir_get_outline(P3(gs_font_type42 *, uint, gs_glyph_data_t *));
 private font_proc_enumerate_glyph(z42_enumerate_glyph);
 private font_proc_enumerate_glyph(z42_gdir_enumerate_glyph);
@@ -94,6 +95,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
      * The procedures that access glyph information must accept either
      * glyph names or glyph indexes.
      */
+    pfont->data.get_glyph_index = z42_get_glyph_index;
     pfont->procs.encode_char = z42_encode_char;
     pfont->procs.glyph_info = z42_glyph_info;
     pfont->procs.glyph_outline = z42_glyph_outline;
@@ -201,6 +203,32 @@ const op_def zfont42_op_defs[] =
     op_def_end(0)
 };
 
+/* Reduce a glyph name to a glyph index if needed. */
+private gs_glyph
+glyph_to_index(const gs_font *font, gs_glyph glyph)
+{
+    ref gref;
+    ref *pcstr;
+
+    if (glyph >= gs_min_cid_glyph)
+	return glyph;
+    name_index_ref(glyph, &gref);
+    if (dict_find(&pfont_data(font)->CharStrings, &gref, &pcstr) > 0 &&
+	r_has_type(pcstr, t_integer)
+	) {
+	gs_glyph index_glyph = pcstr->value.intval + gs_min_cid_glyph;
+
+	if (index_glyph >= gs_min_cid_glyph && index_glyph <= gs_max_glyph)
+	    return index_glyph;
+    }
+    return gs_min_cid_glyph;	/* glyph 0 is notdef */
+}
+private uint
+z42_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
+{
+    return glyph_to_index((gs_font *)pfont, glyph) - GS_MIN_CID_GLYPH;
+}
+
 /*
  * Get a glyph outline from GlyphDirectory.  Return an empty string if
  * the glyph is missing or out of range.
@@ -239,27 +267,6 @@ z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
     const ref *pgdir = &pfdata->u.type42.GlyphDirectory;
 
     return font_gdir_get_outline(pgdir, (long)glyph_index, pgd);
-}
-
-/* Reduce a glyph name to a glyph index if needed. */
-private gs_glyph
-glyph_to_index(const gs_font *font, gs_glyph glyph)
-{
-    ref gref;
-    ref *pcstr;
-
-    if (glyph >= gs_min_cid_glyph)
-	return glyph;
-    name_index_ref(glyph, &gref);
-    if (dict_find(&pfont_data(font)->CharStrings, &gref, &pcstr) > 0 &&
-	r_has_type(pcstr, t_integer)
-	) {
-	gs_glyph index_glyph = pcstr->value.intval + gs_min_cid_glyph;
-
-	if (index_glyph >= gs_min_cid_glyph && index_glyph <= gs_max_glyph)
-	    return index_glyph;
-    }
-    return gs_min_cid_glyph;	/* glyph 0 is notdef */
 }
 
 /* Enumerate glyphs from CharStrings or loca / glyf. */
