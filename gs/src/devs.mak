@@ -630,6 +630,22 @@ $(GLOBJ)gdevlj56.$(OBJ) : $(GLSRC)gdevlj56.c $(PDEVH) $(gdevpcl_h)\
  $(gdevpxat_h) $(gdevpxen_h) $(gdevpxop_h) $(gdevpxut_h) $(stream_h)
 	$(GLCC) $(GLO_)gdevlj56.$(OBJ) $(C_) $(GLSRC)gdevlj56.c
 
+### -------------------- The ijs client ----------------- ###
+
+ijs_=$(GLOBJ)gdevijs.$(OBJ) $(IJSOBJ)ijs.$(OBJ) $(IJSOBJ)ijs_client.$(OBJ) \
+ $(IJSOBJ)ijs_exec_$(IJSEXECTYPE).$(OBJ)
+
+$(DD)ijs.dev: $(ijs_) $(GLD)page.dev $(DD)ijslib.dev
+	$(SETPDEV) $(DD)ijs $(ijs_)
+
+$(GLOBJ)gdevijs.$(OBJ): $(GLSRC)gdevijs.c $(PDEVH) \
+ $(ijs_h) $(ijs_client_h)
+	$(CC_) $(I_)$(GLI_) $(II)$(IJSI_)$(_I) $(GLF_) $(GLO_)gdevijs.$(OBJ) $(C_) $(GLSRC)gdevijs.c
+
+# Please see ijs.mak for the Makefile fragment which builds the IJS
+# library.
+
+
 ###### ------------------- High-level file formats ------------------- ######
 
 # Support for PostScript and PDF

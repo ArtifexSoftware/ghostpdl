@@ -120,6 +120,24 @@ AC_SUBST(SHARE_LIBPNG)
 AC_SUBST(PNGDIR)
 AC_SUBST(PNGDEVS)
 
+dnl look for IJS implementation
+AC_ARG_WITH(ijs, AC_HELP_STRING([--without-ijs],[disables IJS driver support]))
+dnl set safe defaults
+    IJSDIR=src
+    IJSDEVS=''
+if test x$with_ijs != xno; then
+    AC_MSG_CHECKING([for local ijs library source])
+    if test -d ijs; then
+        AC_MSG_RESULT([yes])
+        IJSDIR=ijs
+        IJSDEVS='$(DD)ijs.dev'
+    else
+        AC_MSG_RESULT([no])
+    fi
+fi
+AC_SUBST(IJSDIR)
+AC_SUBST(IJSDEVS)
+
 dnl optional X11 for display devices
 AC_PATH_X
 if test x"$no_x" = x"yes"; then
@@ -131,6 +149,7 @@ fi
 AC_SUBST(X11DEVS)
 AC_SUBST(x_includes)
 AC_SUBST(x_libraries)
+
 
 dnl --------------------------------------------------
 dnl Check for library functions

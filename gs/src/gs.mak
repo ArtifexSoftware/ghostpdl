@@ -214,6 +214,8 @@ ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
 ICCGENDIR=$(GLGENDIR)
 ICCOBJDIR=$(GLOBJDIR)
+IJSGENDIR=$(GLGENDIR)
+IJSOBJDIR=$(GLOBJDIR)
 #**************** END PATCHES
 
 GSGEN=$(GLGENDIR)$(D)
@@ -304,6 +306,10 @@ ICCI_=$(ICCSRCDIR)
 ICCF_=
 # Currently there is no option for sharing icclib.
 ICCCF_=
+IJSI_=$(IJSSRCDIR)
+IJSF_=
+# Currently there is no option for sharing ijs.
+IJSCF_=
 JI_=$(JSRCDIR)
 JF_=
 JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)

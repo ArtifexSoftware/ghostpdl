@@ -22,6 +22,7 @@
 
 <blockquote><ul>
 <li><a href="#Measurements">Notes on measurements</a>
+<li><a href="#IJS">IJS - Inkjet and other raster devices</a>
 <li><a href="#Win">MS Windows printers</a>
 <li><a href="#File_formats">File formats</a>
 <ul>
@@ -184,6 +185,118 @@ known to Ghostscript</a> are defined in the initialization file
 </dl>
 
 <hr>
+
+<h2><a name="IJS"></a>IJS - Inkjet and other raster devices</h2>
+
+<p>
+IJS is a relatively new initiative to improve the quality and ease of
+use of inkjet printing with Ghostscript. Using IJS, you can add new
+drivers, or upgrade existing ones, without recompiling Ghostscript.
+All driver authors are encouraged to adapt their drivers for IJS, and
+if there is an IJS driver available for your printer, it should be
+your first choice.
+</p>
+
+<p>Please see the <a href="http://www.linuxprinting.org/ijs/">IJS web
+page</a> for more information about IJS, including a listing of
+IJS-compatible drivers.
+</p>
+
+<p>
+A typical command line for IJS is:
+</p>
+
+<blockquote>
+<b><tt>
+gs -DSAFER -sDEVICE=ijs -sIjsServer=hpijs 
+ -sDeviceManufacturer=HEWLETT-PACKARD -sDeviceModel='DESKJET 990'
+ -DIjsUseOutputFD -sOutputFile=/dev/usb/lp1 -DNOPAUSE --
+ examples/tiger.eps
+</tt></b>
+</blockquote>
+
+
+<p>
+Individual IJS command line parameters are as follows:
+</p>
+
+<dl>
+<dt><b><tt>-sIjsServer=</tt></b><em>{path}</em>
+<dd>Sets the pathname for the IJS server (ie printer driver).
+Ghostscript will spawn a new process for this driver, and communicate
+with it using the IJS protocol. The pathname need not be absolute,
+as the PATH environment variable is searched, but it's probably a good
+idea for robustness and security. Note also that if -dSAFER is not
+specified, it's possible for PostScript code to set this parameter,
+so it can cause arbitrary code to be executed. See the section on <a
+href="Use.htm#Security">Security</a> for more information.
+</dl>
+
+<dl>
+<dt><b><tt>-sDeviceManufacturer=</tt></b><em>{name}</em>
+<dt><b><tt>-sDeviceModel=</tt></b><em>{name}</em>
+<dd>These parameters select the device according to IEEE-1284 standard
+device ID strings. In general, consult the documentation for the
+driver to find the appropriate settings. Note that, if the value
+contains a space, you'll want to quote the value in your shell, as
+in the example above.
+</dl>
+
+<dl>
+<dt><b><tt>-sIjsParams=</tt></b><em>{params}</em>
+<dd>This parameter allows you to set arbitrary IJS parameters on
+the IJS driver. The format is a comma-separated list of
+<b><tt>key=value</tt></b> pairs. If it is necessary to send a
+value containing a comma or backslash, it can be escaped with
+a backslash. Thus, <b><tt>'-sIjsParams=Foo=bar,Baz=a\,b'</tt></b> sets
+the parameter Foo to "bar", and Baz to "a,b".
+</dl>
+
+<dl>
+<dt><b><tt>-dIjsUseOutputFD</tt></b>
+<dd>This flag indicates that Ghostscript should open the output file
+and pass a file descriptor to the server. If not set, Ghostscript
+simply passes the filename set in OutputFile to the server. In most
+cases, this flag won't matter, but if you have a driver which works
+only with OutputFD (such as hpijs 1.0.2), or if you're using the
+-sOutputFile="|cmd" syntax, you'll need to set it.
+</dl>
+
+<dl>
+<dt><b><tt>-dBitsPerSample=</tt></b><em>N</em>
+<dd>This parameter controls the number of bits per sample. The
+default value of 8 should be appropriate for most work. For monochrome
+images, use -dBitsPerSample=1.
+</dl>
+
+<p>Generic Ghostscript options that are particularly relevant for IJS
+are summarized below:
+</p>
+
+<dl>
+<dt><b><tt>-r</tt></b><em>number</em>
+<br><b><tt>-r</tt></b><em>number1</em><b><tt>x</tt></b><em>number2</em>
+<dd>Sets the resolution, in dpi. If the resolution is not specified,
+Ghostscript queries the IJS server to determine the preferred resolution.
+When the resolution is specified, it overrides the value (if any)
+preferred by the IJS server.
+</dl>
+
+<dl>
+<dt><b><tt>-dDuplex</tt></b>
+<dt><b><tt>-dTumble</tt></b>
+<dd>These flags enable duplex (two-sided) printing. Tumble controls
+the orientation. When Tumble is false, the pages
+are oriented suitably at the left or right. When Tumble is true,
+the pages are oriented suitably for binding at the top or
+bottom.
+</dl>
+
+<dl>
+<dt><b><tt>-sProcessColorModel=</tt></b><em>{name}</em>
+<dd>Use this flag to select the process color model. Suitable values
+include DeviceGray, DeviceRGB, and DeviceCMYK.
+</dl>
 
 <h2><a name="Win"></a>MS Windows printers</h2>
 
