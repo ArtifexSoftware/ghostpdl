@@ -413,7 +413,10 @@ set_vert_motion_index(
     pcl_state_t *   pcs
 )
 {
-    pcs->vmi_cp = inch2coord(fabs(float_arg(pargs)) / 48.0);
+    /* LMI :== 48.0 / lpi;  ie 0.16 = 48/300; 
+     * convert to pcl_coord_scale (7200), roundup the float prior to truncation.
+     */
+    pcs->vmi_cp = ((float_arg(pargs) * 7200.0 / 48.0) + 0.5);
     return 0;
 }
 
