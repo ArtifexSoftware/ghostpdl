@@ -80,13 +80,20 @@ PXL_TOP_OBJ=$(PXLOBJDIR)\pxtop.$(OBJ)
 TOP_OBJ=$(PCL_TOP_OBJ) $(PXL_TOP_OBJ)
 
 # Pick a font system technology.  PCL and XL do not need to use the
-# same scaler, but the it is necessary to tinker with pl.mak to get it
+# same scaler, but it is necessary to tinker with pl.mak to get it
 # to work properly.
 # ufst - Agfa universal font scaler.
 # afs - artifex font scaler.
 PCL_FONT_SCALER=afs
 PXL_FONT_SCALER=afs
 PL_SCALER=afs
+
+# specify agfa library locations and includes.  This is ignored
+# if the current scaler is not the AGFA ufst.  Note we assume the agfa
+# directory is under the shared pcl pxl library ..\pl
+AGFA_ROOT=..\pl\agfa
+UFST_LIBDIR=$(AGFA_ROOT)\rts\lib
+AGFA_INCLUDES=$(I_)$(AGFA_ROOT)\rts\inc $(I_)$(AGFA_ROOT)\sys\inc $(I_)$(AGFA_ROOT)\rts\fco -DMSVC
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
