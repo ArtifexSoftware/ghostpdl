@@ -119,7 +119,7 @@ uint64_type="none"
    else
     AC_CHECK_SIZEOF(u_int64_t)
     if test $ac_cv_sizeof_u_int64_t = 8; then
-	unit64_type="u_int64_t"
+	uint64_type="u_int64_t"
     fi
    fi
   fi
