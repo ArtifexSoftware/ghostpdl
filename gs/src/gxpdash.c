@@ -84,10 +84,17 @@ subpath_expand_dashes(const subpath * psub, gx_path * ppath,
 	double scale = 1;
 	double left;
 
-	if (!(udx | udy))	/* degenerate */
+	if (!(udx | udy)) {	/* degenerate */
+	    if (gs_currentlinecap((const gs_state *)pis) != gs_cap_round) {
+		/* From PLRM, stroke operator :
+		   If a subpath is degenerate (consists of a single-point closed path 
+		   or of two or more points at the same coordinates), 
+		   stroke paints it only if round line caps have been specified */
+		continue;
+	    }
 	    dx = 0, dy = 0, length = 0;
-	else {
-	    gs_point d;
+	} else {
+  	    gs_point d;
 
 	    dx = udx, dy = udy;	/* scaled as fixed */
 	    gs_imager_idtransform(pis, dx, dy, &d);

@@ -577,6 +577,13 @@ gx_stroke_path_only(gx_path * ppath, gx_path * to_path, gx_device * pdev,
 		 */
 		if (pgs_lp->dot_length != 0)
 		    break;
+		if (pgs_lp->cap != gs_cap_round) {
+		    /* From PLRM, stroke operator :
+		       If a subpath is degenerate (consists of a single-point closed path 
+		       or of two or more points at the same coordinates), 
+		       stroke paints it only if round line caps have been specified */
+		    break;
+		}
 		/*
 		 * Orient the dot according to the previous segment if
 		 * any, or else the next segment if any, or else
