@@ -77,6 +77,7 @@ inamedef_h=$(PSSRC)inamedef.h\
 store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
 iplugin_h=$(PSSRC)iplugin.h
 ifapi_h=$(PSSRC)ifapi.h $(iplugin_h)
+zht_h=$(PSSRC)zht2.h $(gscspace_h)
 
 GH=$(AK) $(ghost_h)
 
@@ -1524,7 +1525,7 @@ $(PSD)sepr.dev : $(INT_MAK) $(ECHOGS_XE) $(seprread_)\
 
 $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
  $(gscolor_h) $(gscsepr_h) $(gsmatrix_h) $(gsstruct_h)\
- $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h)\
+ $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(zht2_h)\
  $(estack_h) $(ialloc_h) $(icsmap_h) $(ifunc_h) $(igstate_h) $(iname_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
 
@@ -1633,7 +1634,7 @@ $(PSD)psl3.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)psl3 -emulator PostScript PostScriptLevel2 PostScriptLevel3
 
 $(PSOBJ)zcsdevn.$(OBJ) : $(PSSRC)zcsdevn.c $(OP) $(memory__h)\
- $(gscolor2_h) $(gscdevn_h) $(gxcdevn_h) $(gxcspace_h)\
+ $(gscolor2_h) $(gscdevn_h) $(gxcdevn_h) $(gxcspace_h) $(zht2_h)\
  $(estack_h) $(ialloc_h) $(icremap_h) $(ifunc_h) $(igstate_h) $(iname_h)
 	$(PSCC) $(PSO_)zcsdevn.$(OBJ) $(C_) $(PSSRC)zcsdevn.c
 

@@ -29,27 +29,10 @@
 #include "ifunc.h"
 #include "igstate.h"
 #include "iname.h"
+#include "zht2.h"
 
 /* Imported from gscdevn.c */
 extern const gs_color_space_type gs_color_space_type_DeviceN;
-
-/*
- * This routine is used as an interpeter callback function for the
- * graphics library.  This routine translates a colorname_index value,
- * (which is how the separation and DeviceN colorant names are passed
- * to the graphics library) into a character string pointer and a
- * string length.
- */
-private int
-gs_get_colorname_string(gs_separation_name colorname_index,
-			unsigned char **ppstr, unsigned int *pname_size)
-{
-    ref nref;
-
-    name_index_ref(colorname_index, &nref);
-    name_string_ref(&nref, &nref);
-    return obj_string_data(&nref, (const unsigned char**) ppstr, pname_size);
-}
 
 /* <array> .setdevicenspace - */
 /* The current color space is the alternate space for the DeviceN space. */
@@ -98,6 +81,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 	return code;
     names = cs.params.device_n.names;
     pmap = cs.params.device_n.map;
+    cs.params.device_n.get_colorname_string = gs_get_colorname_string;
 
     /* Pick up the names of the components */
     {

@@ -445,7 +445,7 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
 	/*
 	 * Get the character string and length for the component name.
 	 */
-	pgs->client_procs.get_colorname_string(names[i], &pname, &name_size);
+	pcs->params.device_n.get_colorname_string(names[i], &pname, &name_size);
 	/*
          * Postscript does not accept /None as a color component but it is
          * allowed in PDF so we accept it.  It is also accepted as a

@@ -392,7 +392,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs)
     /*
      * Get the character string and length for the component name.
      */
-    pgs->client_procs.get_colorname_string(name, &pname, &name_size);
+    pcs->params.separation.get_colorname_string(name, &pname, &name_size);
     /*
      * Compare the colorant name to the device's.  If the device's
      * compare routine returns GX_DEVICE_COLOR_MAX_COMPONENTS then the

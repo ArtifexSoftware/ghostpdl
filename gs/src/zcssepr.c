@@ -36,6 +36,7 @@
 #include "gscsepr.h"
 #include "gscdevn.h"
 #include "gxcdevn.h"
+#include "zht2.h"
 
 /* Imported from gscsepr.c */
 extern const gs_color_space_type gs_color_space_type_Separation;
@@ -123,6 +124,7 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     gs_cspace_init(&cs, &gs_color_space_type_Separation, NULL);
     cs.params.separation.sep_type = sep_type;
     cs.params.separation.sep_name = name_index(&sname);
+    cs.params.separation.get_colorname_string = gs_get_colorname_string;
     istate->colorspace.procs.special.separation.layer_name = pcsa[0];
     istate->colorspace.procs.special.separation.tint_transform = pcsa[2];
     if (code >= 0)

@@ -686,17 +686,13 @@ gs_color_name_component_number(const gx_device * dev, char * pname,
  * then call gs_color_name_component_number.
  */
 int
-gs_cname_to_colorant_number(gs_state * pgs, gs_separation_name cname, int halftonetype)
+gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
+		int halftonetype)
 {
-    byte * pname;
-    uint name_size;
     const gx_device * dev = pgs->device;
-    int code;
 
-    code = pgs->client_procs.get_colorname_string(cname, &pname, &name_size);
-    if (code < 0)
-	return code;
-    return gs_color_name_component_number(dev, (char *)pname, name_size, halftonetype);
+    return gs_color_name_component_number(dev, (char *)pname, name_size,
+		    halftonetype);
 }
 
 /*

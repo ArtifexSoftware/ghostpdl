@@ -39,6 +39,21 @@ private int dict_threshold_params(const ref *, gs_threshold_halftone *,
 private int dict_threshold2_params(const ref *, gs_threshold2_halftone *,
 				   ref *, gs_memory_t *);
 
+/*
+ * This routine translates a gs_separation_name value into a character string
+ * pointer and a string length.
+ */
+int
+gs_get_colorname_string(gs_separation_name colorname_index,
+			unsigned char **ppstr, unsigned int *pname_size)
+{
+    ref nref;
+
+    name_index_ref(colorname_index, &nref);
+    name_string_ref(&nref, &nref);
+    return obj_string_data(&nref, (const unsigned char**) ppstr, pname_size);
+}
+
 /* Dummy spot function */
 private float
 spot1_dummy(floatp x, floatp y)
@@ -68,6 +83,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     int dict_enum = dict_first(op);
     ref rvalue[2];
     int cname, colorant_number;
+    byte * pname;
+    uint name_size;
     int halftonetype, type = 0;
     gs_state *pgs = igs;
 
@@ -104,6 +121,9 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
 	/* Get the name of the component  verify that we will use it. */
 	cname = name_index(&rvalue[0]);
+	code = gs_get_colorname_string(cname, &pname, &name_size);
+	if (code < 0)
+	    break;
 	colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
 	if (colorant_number < 0)
 	    continue;
@@ -155,6 +175,9 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
 	    /* Get the name of the component */
 	    cname = name_index(&rvalue[0]);
+	    code = gs_get_colorname_string(cname, &pname, &name_size);
+	    if (code < 0)
+	        break;
 	    colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
 	    if (colorant_number < 0)
 		continue;		/* Do not use this component */
@@ -215,6 +238,9 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 
 	    /* Get the name of the component and verify that we will use it. */
 	    cname = name_index(&rvalue[0]);
+	    code = gs_get_colorname_string(cname, &pname, &name_size);
+	    if (code < 0)
+	        break;
 	    colorant_number = gs_cname_to_colorant_number(pgs, cname, halftonetype);
 	    if (colorant_number < 0)
 		continue;
