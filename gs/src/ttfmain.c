@@ -50,7 +50,6 @@ typedef struct {
     bool      bCompound;
     int32     contourCount;
     uint32    pointCount;
-    F26Dot6Point  start;
     F26Dot6Point  advance;
     F26Dot6 sideBearing;
     F26Dot6   xMinB, yMinB, xMaxB, yMaxB;
@@ -228,7 +227,7 @@ void ttfFont__finit(ttfFont *this)
 
 FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r, 
 				    unsigned int nTTC, float w, float h, 
-				    bool no_grid_rounding, bool design_grid)
+				    bool design_grid)
 {   char sVersion[4], sVersion0[4] = {0, 1, 0, 0};
     unsigned int nNumTables, i;
     TT_Error code;
@@ -238,7 +237,6 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     F26Dot6 ww, hh;
 
     this->tti = tti;
-    this->no_grid_rounding = no_grid_rounding;
     this->design_grid = design_grid;
     r->Read(r, sVersion, 4);
     if(!memcmp(sVersion, "ttcf", 4)) {
@@ -508,14 +506,16 @@ private void MoveGlyphOutline(TGlyph_Zone *pts, int nOffset, ttfGlyphOutline *ou
     F26Dot6* y = pts->org_y + nOffset;
     short count = out->pointCount;
     F26Dot6Point p;
+
+    if (m->a != 65536 && m->b == 0 && 
+	m->c == 0 && m->d == 65536 && 
+	m->tx == 0 && m->ty == 0)
+	return;
     for (; count != 0; --count) {
 	TransformF26Dot6PointFix(&p, *x, *y, m);
 	*x++ = p.x;
 	*y++ = p.y;
     }
-    TransformF26Dot6PointFix(&p, out->start.x, out->start.y, m);
-    out->start.x = p.x;
-    out->start.y = p.y;
 }
 
 private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyphIndex, 
@@ -535,7 +535,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
     TGlyph_Zone *pts = &exec->pts;
     TSubglyph_Record  subglyph;
     ttfSubGlyphUsage *usage = tti->usage + tti->usage_top;
-    byte *glyph = NULL;
+    const byte *glyph = NULL;
     int glyph_size;
 
     if(this->bVertical && pFont->t_vhea.nPos && pFont->t_vmtx.nPos) {
@@ -566,8 +566,6 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
     gOutline->sideBearing = shortToF26Dot6(sideBearing);
     gOutline->advance.x = shortToF26Dot6(nAdvance);
     gOutline->advance.y = 0;
-    gOutline->start.x = 0;
-    gOutline->start.y = 0;
     this->bFirst = FALSE;
 
 
@@ -725,7 +723,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		goto errex;
 	    if (nPos + n_ins > glyph_size)
 		goto errex;
-	    code = Set_CodeRange(exec, TT_CodeRange_Glyph, glyph + nPos, n_ins);
+	    code = Set_CodeRange(exec, TT_CodeRange_Glyph, (byte *)glyph + nPos, n_ins);
 	    if (!code) {
 		int nPoints = gOutline->pointCount + 2;
 		int k;
@@ -794,7 +792,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	r->Seek(r, nPos + n_ins);
 	if (r->Error(r))
 	    goto errex;
-	bInsOK = !Set_CodeRange(exec, TT_CodeRange_Glyph, glyph + nPos, n_ins);
+	bInsOK = !Set_CodeRange(exec, TT_CodeRange_Glyph, (byte *)glyph + nPos, n_ins);
 	onCurve = pts->touch;
 	stop = onCurve + gOutline->pointCount;
 

@@ -69,13 +69,6 @@ gx_compute_ccache_key(gs_font * pfont, const gs_matrix *char_tm,
 	 * can't generate both grid_fitted and non-grid-fitted outlines
 	 * with a same face instance. This happens due to control
 	 * values in 'cvt' must be different. 
-	 *
-	 * Note it's a slightly different case than 
-	 * << /GridFitTT 0 >> setuserparams, which skips
-	 * the rounding to pixels and applies projections,
-	 * which may depend on resolution. What we want here
-	 * is to emulate an infinite resolution interpreting a TT bytecode.
-	 * We use the design grid as an emulation of the infinite resolution.
 	 * Since a single face satisfies all font sizes,
 	 * we use a zero matrix as the cache entry key.
 	 */

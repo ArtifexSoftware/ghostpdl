@@ -133,7 +133,6 @@ struct ttfFont_s {
     unsigned int nIndexToLocFormat;
     bool    patented;
     bool    design_grid;
-    bool    no_grid_rounding;
     TFace *face;
     TInstance *inst;
     TExecution_Context  *exec;
@@ -148,7 +147,7 @@ void ttfFont__init(ttfFont *this, ttfMemory *mem,
 void ttfFont__finit(ttfFont *this);
 FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, 
 			unsigned int nTTC, float w, float h, 
-			bool no_grid_rounding, bool design_grid);
+			bool design_grid);
 
 /* Define an abstract class for exporting outlines from the TT interpreter. */
 typedef struct ttfExport_s ttfExport;
