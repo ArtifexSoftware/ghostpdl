@@ -6,6 +6,34 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.17 (10/05/98)
+=======================
+
+	* pxsymbol.psc, pxsymbol.psh, pxbfont.psc:
+	ghostscript generated intermediate files added to the release
+	to avoid users needing gs to build the sources
+
+	* pxmain.c, pxstate.h: changes to support new pjl parser interface
+
+	* pxl_ugcc.mak:
+	adds contone color laserjet device for testing purposese
+
+Wed Sep 30 02:51:10 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pxl.mak: updates makefile for MSVC changes in common
+
+Fri Sep 18 07:09:44 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pxl_ugcc.mak: backed out cljet5 driver.
+
+Sun Sep 13 07:49:52 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pxl_ugcc.mak: adds cljet4 driver to default devices.
+
+Tue Aug 25 19:25:00 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pxl.mak: cleans up gs generated files.
+
 Version 1.16 (08/17/98)
 ======================
 
