@@ -870,47 +870,37 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 		gs_matrix save_ctm, tmp_ctm;
                 gs_image_enum *ienum;
                 FT_Bitmap *ftb = &face->glyph->bitmap;
-                FT_Render_Glyph(face->glyph, ft_render_mode_normal);
-
-		if ( error )
-		    return -1;
+                
                 /* move to device space */
                 gs_currentmatrix(pgs, &save_ctm);
                 gs_make_identity(&tmp_ctm);
                 tmp_ctm.tx = save_ctm.tx;
                 tmp_ctm.ty = save_ctm.ty;
                 gs_setmatrix(pgs, &tmp_ctm);
-#ifdef DEBUG
-                if ( gs_debug_c('B') ) {
-		    int i;
-		    int pixels = round_up(ftb->width, 8) * ftb->rows;
-		    for ( i = 0; i < pixels; i++ ) {
-			if ( i % round_up(ftb->width, 8) == 0 )
-			    dprintf("\n");
-			dprintf1( "%d", ftb->buffer[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
-		    }
-		    dprintf("\n");
-		}
-#endif
-                /* set up the image */
                 ienum = gs_image_enum_alloc(pgs->memory, "pl_ufst_make_char");
                 if (ienum == 0) {
                     gs_setmatrix(pgs, &save_ctm);
                     return_error(gs_error_VMerror);
                 }
-                gs_image4_t_init(&image, gs_cspace_DeviceGray((const gs_imager_state *)pgs));
+                if ( gs_currentdevice(pgs)->color_info.anti_alias.text_bits > 1 ) {
+                    FT_Render_Glyph(face->glyph, ft_render_mode_normal);
+                    gs_image4_t_init(&image, gs_cspace_DeviceGray((const gs_imager_state *)pgs));
+                    image.BitsPerComponent = 8;
+                    image.CombineWithColor = true;
+                    image.MaskColor[0] = 0.0;
+                } else {
+                    FT_Render_Glyph(face->glyph, ft_render_mode_mono);
+                    gs_image_t_init_mask((gs_image_t *)&image, true);
+                }
                 image.Width = ftb->width;
                 image.Height = ftb->rows;
-                image.BitsPerComponent = 8;
                 image.Decode[0] = 1.0;
                 image.Decode[1] = 0.0;
-                image.MaskColor[0] = 0.0;
-                image.CombineWithColor = true;
                 gs_make_identity(&image.ImageMatrix);
                 image.ImageMatrix.tx = -face->glyph->bitmap_left;
                 image.ImageMatrix.ty = face->glyph->bitmap_top;
                 code = image_bitmap_char( ienum,
-                                          &image,
+                                          (gs_image_t *)&image,
                                           (byte *)ftb->buffer,
                                           ftb->width,
                                           ftb->pitch,
