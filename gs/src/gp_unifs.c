@@ -31,8 +31,14 @@
 
 /* Provide a definition of the maximum path length in case the system
  * headers don't define it. This should be gp_file_name_sizeof from
- * gp.h once that value is properly sent in a system-dependent way 
+ * gp.h once that value is properly sent in a system-dependent way.
+ * HP-UX 11i 11.11 incorrectly defines FILENAME_MAX as 14 .
  */
+#ifdef FILENAME_MAX
+#  if FILENAME_MAX < 80  /* arbitrary */
+#    undef FILENAME_MAX
+#  endif
+#endif
 #ifndef FILENAME_MAX
 #  define FILENAME_MAX 1024
 #endif
