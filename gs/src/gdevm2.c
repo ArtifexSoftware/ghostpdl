@@ -105,12 +105,12 @@ mem_mapped2_copy_mono(gx_device * dev,
 		for ( ; ; ) {
 		    if (sbyte & bit)
 			data ^= bxor & mask;
-		    if (--count <= 0)
-			break;
 		    if ((bit >>= 1) == 0)
 			bit = 0x80, sbyte = *sptr++;
 		    if ((mask >>= 2) == 0)
 			mask = 0xc0, *pptr++ = data, data = b0;
+		    if (--count <= 0)
+			break;
 		}
 		if (mask != 0xc0)
 		    *pptr =

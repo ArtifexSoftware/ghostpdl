@@ -639,11 +639,8 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
     } else {
 	gx_ht_order_component *pocs = pdht->components;
 
-	caches[0] = pocs[0].corder.cache;
-	caches[1] = pocs[1].corder.cache;
-	caches[2] = pocs[2].corder.cache;
-	caches[3] = pocs[3].corder.cache;
-	for (i = 4; i < nplanes; ++i)
+
+	for (i = 0; i < nplanes; ++i)
 	    caches[i] = pocs[i].corder.cache;
     }
     special = set_ht_colors(&vp, colors, sbits, pdevc, dev, caches, nplanes);
@@ -851,8 +848,12 @@ set_ht_colors_le_4(color_values_pair_t *pvp /* only used internally */,
     bool invert = dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE;
 
     SET_PLANE_COLOR(0);
-    SET_PLANE_COLOR(1);
-    SET_PLANE_COLOR(2);
+    if (nplanes >= 2) {
+        SET_PLANE_COLOR(1);
+    }
+    if (nplanes >= 3) {
+        SET_PLANE_COLOR(2);
+    }
     if (nplanes == 3) {
 	gx_color_value alpha = pdc->colors.colored.alpha;
 
@@ -873,7 +874,7 @@ set_ht_colors_le_4(color_values_pair_t *pvp /* only used internally */,
 	    M(0); M(1); M(2); M(3); M(4); M(5); M(6); M(7);
 #undef M
 	}
-    } else {
+    } else if (nplanes > 3){
 	SET_PLANE_COLOR(3);
 	if (nplanes > 4) {
 	    /*
