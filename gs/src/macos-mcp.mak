@@ -351,7 +351,8 @@ MAC2=$(GLOBJ)gp_getnv.$(OBJ) $(GLOBJ)gp_nsync.$(OBJ) $(GLOBJ)gdevemap.$(OBJ) $(G
 $(GLD)macos_.dev: $(MAC1)
 	$(SETMOD) $(DD)macos_ $(MAC1) $(MAC)
 	$(ADDMOD) $(DD)macos_ -obj $(MAC2)
-	$(ADDMOD) $(DD)macos_ -iodev macstdio  # macstdio does not work with MSL!!!
+	# uncomment the line below if you need the legacy macstdio device
+	#$(ADDMOD) $(DD)macos_ -iodev macstdio  # macstdio does not work with MSL!!!
 
 # Define polling as a separable feature because it is not needed by the gslib.
 macpoll_=$(GLOBJ)gp_macpoll.$(OBJ)
