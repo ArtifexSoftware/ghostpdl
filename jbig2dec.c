@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.24 2002/06/22 09:58:26 giles Exp $
+    $Id: jbig2dec.c,v 1.25 2002/06/22 10:08:43 giles Exp $
 */
 
 #include <stdio.h>
@@ -119,17 +119,20 @@ static int
 error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity,
 	       int32_t seg_idx)
 {
-    char *string;
+    char *type;
+    char segment[22];
     
     switch (severity) {
-        case JBIG2_SEVERITY_DEBUG: string = "DEBUG"; break;;
-        case JBIG2_SEVERITY_INFO: string = "info"; break;;
-        case JBIG2_SEVERITY_WARNING: string = "WARNING"; break;;
-        case JBIG2_SEVERITY_FATAL: string = "FATAL ERROR"; break;;
-        default: string = "unknown message"; break;;
+        case JBIG2_SEVERITY_DEBUG: type = "DEBUG"; break;;
+        case JBIG2_SEVERITY_INFO: type = "info"; break;;
+        case JBIG2_SEVERITY_WARNING: type = "WARNING"; break;;
+        case JBIG2_SEVERITY_FATAL: type = "FATAL ERROR"; break;;
+        default: type = "unknown message"; break;;
     }
+    if (seg_idx == -1) segment[0] = '\0';
+    else snprintf(segment, sizeof(segment), "(segment 0x%02x)", seg_idx);
     
-    fprintf(stderr, "jbig2dec %s %s (segment 0x%0x)\n", string, buf, seg_idx);
+    fprintf(stderr, "jbig2dec %s %s %s\n", type, buf, segment);
 
     return 0;
 }
