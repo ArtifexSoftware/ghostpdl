@@ -132,7 +132,7 @@ pdf_char_image_y_offset(const gx_device_pdf *pdev, int x, int y, int h)
 
 /* For gdevpdfu.c */
 
-void
+int
 pdf_from_stream_to_text(gx_device_pdf *pdev)
 {
     pdf_text_data_t *ptd = pdev->text;
@@ -140,9 +140,10 @@ pdf_from_stream_to_text(gx_device_pdf *pdev)
     gs_make_identity(&ptd->t.matrix);
     ptd->t.line_start.x = ptd->t.line_start.y = 0;
     ptd->t.buffer_count = 0;
+    return 0;
 }
 
-void
+int
 pdf_from_string_to_text(gx_device_pdf *pdev)
 {
     pdf_text_data_t *ptd = pdev->text;
@@ -151,6 +152,7 @@ pdf_from_string_to_text(gx_device_pdf *pdev)
     stream_puts(pdev->strm, (ptd->t.use_leading ? "'\n" : "Tj\n"));
     ptd->t.use_leading = false;
     ptd->t.buffer_count = 0;
+    return 0;
 }
 
 void

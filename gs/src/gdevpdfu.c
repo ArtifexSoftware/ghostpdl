@@ -251,6 +251,8 @@ none_to_stream(gx_device_pdf * pdev)
 private int
 stream_to_text(gx_device_pdf * pdev)
 {
+    int code;
+
     /*
      * Bizarrely enough, Acrobat Reader cares how the final font size is
      * obtained -- the CTM (cm), text matrix (Tm), and font size (Tf)
@@ -262,15 +264,16 @@ stream_to_text(gx_device_pdf * pdev)
     pprintg2(pdev->strm, "q %g 0 0 %g 0 0 cm BT\n",
 	     pdev->HWResolution[0] / 72.0, pdev->HWResolution[1] / 72.0);
     pdev->procsets |= Text;
-    pdf_from_stream_to_text(pdev);
-    return PDF_IN_TEXT;
+    code = pdf_from_stream_to_text(pdev);
+    return (code < 0 ? code : PDF_IN_TEXT);
 }
 /* Exit string context to text context. */
 private int
 string_to_text(gx_device_pdf * pdev)
 {
-    pdf_from_string_to_text(pdev);
-    return PDF_IN_TEXT;
+    int code = pdf_from_string_to_text(pdev);
+
+    return (code < 0 ? code : PDF_IN_TEXT);
 }
 /* Exit text context to stream context. */
 private int

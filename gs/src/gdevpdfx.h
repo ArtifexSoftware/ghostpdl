@@ -822,8 +822,8 @@ int pdf_do_char_image(P3(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 
 /* For gdevpdfu.c */
 
-void pdf_from_stream_to_text(gx_device_pdf *pdev);
-void pdf_from_string_to_text(gx_device_pdf *pdev);
+int pdf_from_stream_to_text(gx_device_pdf *pdev);
+int pdf_from_string_to_text(gx_device_pdf *pdev);
 void pdf_close_text_contents(gx_device_pdf *pdev);
 
 #endif /* gdevpdfx_INCLUDED */
