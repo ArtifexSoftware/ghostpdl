@@ -173,6 +173,7 @@ int gx_path_new(P1(gx_path *)),
 gx_path *gx_current_path(P1(const gs_state *));
 int gx_path_current_point(P2(const gx_path *, gs_fixed_point *)),
     gx_path_bbox(P2(gx_path *, gs_fixed_rect *));
+int gx_path_subpath_start_point(P2(const gx_path *, gs_fixed_point *));
 bool gx_path_has_curves(P1(const gx_path *)),
     gx_path_is_void(P1(const gx_path *)),	/* no segments */
     gx_path_is_null(P1(const gx_path *)),	/* nothing at all */

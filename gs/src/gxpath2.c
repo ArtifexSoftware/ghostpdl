@@ -40,6 +40,18 @@ gx_path_current_point(const gx_path * ppath, gs_fixed_point * ppt)
     return 0;
 }
 
+/* Read the start point of the current subpath. */
+int
+gx_path_subpath_start_point(const gx_path * ppath, gs_fixed_point * ppt)
+{
+    const subpath *psub = ppath->current_subpath;
+
+    if (!psub)
+	return_error(gs_error_nocurrentpoint);
+    *ppt = psub->pt;
+    return 0;
+}
+
 /* Read the bounding box of a path. */
 /* Note that if the last element of the path is a moveto, */
 /* the bounding box does not include this point, */
