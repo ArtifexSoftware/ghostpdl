@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* DeviceN color space and operation definition */
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscdevn.h"
@@ -38,6 +39,7 @@ private_st_device_n_map();
 /* Define the DeviceN color space type. */
 private cs_proc_num_components(gx_num_components_DeviceN);
 private cs_proc_base_space(gx_alt_space_DeviceN);
+private cs_proc_equal(gx_equal_DeviceN);
 private cs_proc_init_color(gx_init_DeviceN);
 private cs_proc_restrict_color(gx_restrict_DeviceN);
 private cs_proc_concrete_space(gx_concrete_space_DeviceN);
@@ -48,7 +50,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_DeviceN);
 const gs_color_space_type gs_color_space_type_DeviceN = {
     gs_color_space_index_DeviceN, true, false,
     &st_color_space_DeviceN, gx_num_components_DeviceN,
-    gx_alt_space_DeviceN,
+    gx_alt_space_DeviceN, gx_equal_DeviceN,
     gx_init_DeviceN, gx_restrict_DeviceN,
     gx_concrete_space_DeviceN,
     gx_concretize_DeviceN, gx_remap_concrete_DeviceN,
@@ -218,6 +220,23 @@ private const gs_color_space *
 gx_alt_space_DeviceN(const gs_color_space * pcs)
 {
     return (const gs_color_space *)&(pcs->params.device_n.alt_space);
+}
+
+/* Test whether one DeviceN color space equals another. */
+private bool
+gx_equal_DeviceN(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    return (gs_color_space_equal(gx_alt_space_DeviceN(pcs1),
+				 gx_alt_space_DeviceN(pcs2)) &&
+	    pcs1->params.device_n.num_components ==
+	      pcs2->params.device_n.num_components &&
+	    !memcmp(pcs1->params.device_n.names, pcs2->params.device_n.names,
+		    pcs1->params.device_n.num_components *
+		      sizeof(pcs1->params.device_n.names[0])) &&
+	    pcs1->params.device_n.map->tint_transform ==
+	      pcs2->params.device_n.map->tint_transform &&
+	    pcs1->params.device_n.map->tint_transform_data ==
+	      pcs2->params.device_n.map->tint_transform_data);
 }
 
 /* Initialize a DeviceN color. */

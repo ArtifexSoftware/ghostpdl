@@ -166,6 +166,7 @@ gs_private_st_composite(st_color_space_Indexed, gs_paint_color_space,
 
 /* Define the Indexed color space type. */
 private cs_proc_base_space(gx_base_space_Indexed);
+private cs_proc_equal(gx_equal_Indexed);
 private cs_proc_restrict_color(gx_restrict_Indexed);
 private cs_proc_concrete_space(gx_concrete_space_Indexed);
 private cs_proc_concretize_color(gx_concretize_Indexed);
@@ -174,7 +175,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_Indexed);
 const gs_color_space_type gs_color_space_type_Indexed = {
     gs_color_space_index_Indexed, false, false,
     &st_color_space_Indexed, gx_num_components_1,
-    gx_base_space_Indexed,
+    gx_base_space_Indexed, gx_equal_Indexed,
     gx_init_paint_1, gx_restrict_Indexed,
     gx_concrete_space_Indexed,
     gx_concretize_Indexed, NULL,
@@ -229,6 +230,36 @@ private const gs_color_space *
 gx_base_space_Indexed(const gs_color_space * pcs)
 {
     return (const gs_color_space *)&(pcs->params.indexed.base_space);
+}
+
+/* Test whether one Indexed color space equals another. */
+private bool
+gx_equal_Indexed(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    const gs_color_space *base = gx_base_space_Indexed(pcs1);
+    uint hival = pcs1->params.indexed.hival;
+
+    if (!gs_color_space_equal(base, gx_base_space_Indexed(pcs2)))
+	return false;
+    if (hival == pcs2->params.indexed.hival ||
+	/*
+	 * In principle, a table-specified Indexed space could be equal
+	 * to a procedure-specified Indexed space, but we don't bother
+	 * to detect this.
+	 */
+	pcs1->params.indexed.use_proc != pcs2->params.indexed.use_proc
+	)
+	return false;
+    if (pcs1->params.indexed.use_proc) {
+	return !memcmp(pcs1->params.indexed.lookup.map->values,
+		       pcs2->params.indexed.lookup.map->values,
+		       pcs1->params.indexed.lookup.map->num_values *
+		         sizeof(pcs1->params.indexed.lookup.map->values[0]));
+    } else {
+	return !memcmp(&pcs1->params.indexed.lookup.table.data,
+		       &pcs2->params.indexed.lookup.table.data,
+		       gs_color_space_num_components(base) * (hival + 1));
+    }
 }
 
 /* Color space installation ditto. */

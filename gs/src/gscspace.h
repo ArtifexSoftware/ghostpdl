@@ -392,6 +392,14 @@ gs_color_space_index gs_color_space_get_index(P1(const gs_color_space *));
 /* Get the number of components in a color space. */
 int gs_color_space_num_components(P1(const gs_color_space *));
 
+/*
+ * Test whether two color spaces are equal.  Note that this test is
+ * conservative: if it returns true, the color spaces are definitely
+ * equal, while if it returns false, they might still be equivalent.
+ */
+bool gs_color_space_equal(P2(const gs_color_space *pcs1,
+			     const gs_color_space *pcs2));
+
 /* Restrict a color to its legal range. */
 #ifndef gs_client_color_DEFINED
 #  define gs_client_color_DEFINED

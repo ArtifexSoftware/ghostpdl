@@ -66,11 +66,14 @@ except for the following: 101549, 101814, 101905, 101955, 102146, 102735,
 104118, 105289, 105558, 106340, 106652, 109350, 110445, 110898, 110922.
 
 <p>
-The following projects are in a partially completed state in the PDF writer:
+The following projects are in a partially completed state:
 
 <ul>
 
-<li>CID-keyed fonts (gdevpdf[eftw].c) -- barely started.
+<li>Transparency (ztrans.c, gstrans.[hc]) -- opacity and shape masks, and
+the transparency group stack, are not implemented yet.
+
+<li>CID-keyed fonts in the PDF writer (gdevpdf[eftw].c) -- barely started.
 
 </ul>
 
@@ -86,6 +89,7 @@ standard code.
 than XFlush().
 (Library)
 	- gdev_vector_dopath now never returns 1.
+	- Color space types now have a new, required, "equal" procedure.
 
 </pre>
 

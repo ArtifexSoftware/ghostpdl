@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -26,19 +26,27 @@
 #include "gxdevice.h"
 
 /* Define the DevicePixel color space type. */
+private cs_proc_equal(gx_equal_DevicePixel);
 private cs_proc_restrict_color(gx_restrict_DevicePixel);
 private cs_proc_remap_concrete_color(gx_remap_concrete_DevicePixel);
 private cs_proc_concretize_color(gx_concretize_DevicePixel);
 private const gs_color_space_type gs_color_space_type_DevicePixel = {
     gs_color_space_index_DevicePixel, true, false,
     &st_base_color_space, gx_num_components_1,
-    gx_no_base_space,
+    gx_no_base_space, gx_equal_DevicePixel,
     gx_init_paint_1, gx_restrict_DevicePixel,
     gx_same_concrete_space,
     gx_concretize_DevicePixel, gx_remap_concrete_DevicePixel,
     gx_default_remap_color, gx_no_install_cspace,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count
 };
+
+/* Test whether one DevicePixel color space equals another. */
+private bool
+gx_equal_DevicePixel(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    return pcs1->params.pixel.depth == pcs2->params.pixel.depth;
+}
 
 /* Initialize a DevicePixel color space. */
 int

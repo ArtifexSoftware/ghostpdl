@@ -59,7 +59,7 @@ private cs_proc_adjust_color_count(gx_adjust_color_Pattern);
 const gs_color_space_type gs_color_space_type_Pattern = {
     gs_color_space_index_Pattern, false, false,
     &st_color_space_Pattern, gx_num_components_Pattern,
-    gx_base_space_Pattern,
+    gx_base_space_Pattern, gx_cspace_not_equal,
     gx_init_Pattern, gx_restrict_Pattern,
     gx_no_concrete_space,
     gx_no_concretize_color, NULL,

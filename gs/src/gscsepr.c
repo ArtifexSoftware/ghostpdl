@@ -18,6 +18,7 @@
 
 /*$Id$ */
 /* Separation color space and operation definition */
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc.h"
@@ -37,6 +38,7 @@ gs_private_st_composite(st_color_space_Separation, gs_paint_color_space,
 
 /* Define the Separation color space type. */
 private cs_proc_base_space(gx_alt_space_Separation);
+private cs_proc_equal(gx_equal_Separation);
 private cs_proc_init_color(gx_init_Separation);
 private cs_proc_concrete_space(gx_concrete_space_Separation);
 private cs_proc_concretize_color(gx_concretize_Separation);
@@ -46,7 +48,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_Separation);
 const gs_color_space_type gs_color_space_type_Separation = {
     gs_color_space_index_Separation, true, false,
     &st_color_space_Separation, gx_num_components_1,
-    gx_alt_space_Separation,
+    gx_alt_space_Separation, gx_equal_Separation,
     gx_init_Separation, gx_restrict01_paint_1,
     gx_concrete_space_Separation,
     gx_concretize_Separation, gx_remap_concrete_Separation,
@@ -81,6 +83,23 @@ gx_alt_space_Separation(const gs_color_space * pcs)
     return (const gs_color_space *)&(pcs->params.separation.alt_space);
 }
 
+/* Test whether one Separation color space equals another. */
+private bool
+gx_equal_Separation(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    return (gs_color_space_equal(gx_alt_space_Separation(pcs1),
+				 gx_alt_space_Separation(pcs2)) &&
+	    pcs1->params.separation.sname == pcs2->params.separation.sname &&
+	    ((pcs1->params.separation.map->proc.tint_transform ==
+	        pcs2->params.separation.map->proc.tint_transform &&
+	      pcs1->params.separation.map->proc_data ==
+	        pcs2->params.separation.map->proc_data) ||
+	     !memcmp(pcs1->params.separation.map->values,
+		     pcs2->params.separation.map->values,
+		     pcs1->params.separation.map->num_values *
+		     sizeof(pcs1->params.separation.map->values[0]))));
+}
+
 /* Get the concrete space for a Separation space. */
 /* (We don't support concrete Separation spaces yet.) */
 private const gs_color_space *
@@ -88,7 +107,7 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
 			     const gs_imager_state * pis)
 {
     const gs_color_space *pacs =
-    (const gs_color_space *)&pcs->params.separation.alt_space;
+	(const gs_color_space *)&pcs->params.separation.alt_space;
 
     return cs_concrete_space(pacs, pis);
 }

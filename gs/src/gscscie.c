@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -53,7 +53,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEDEFG);
 const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gs_color_space_index_CIEDEFG, true, true,
     &st_color_space_CIEDEFG, gx_num_components_4,
-    gx_no_base_space,
+    gx_no_base_space, gx_cspace_not_equal,
     gx_init_CIE, gx_restrict_CIEDEFG,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEFG, NULL,
@@ -69,7 +69,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEDEF);
 const gs_color_space_type gs_color_space_type_CIEDEF = {
     gs_color_space_index_CIEDEF, true, true,
     &st_color_space_CIEDEF, gx_num_components_3,
-    gx_no_base_space,
+    gx_no_base_space, gx_cspace_not_equal,
     gx_init_CIE, gx_restrict_CIEDEF,
     gx_concrete_space_CIE,
     gx_concretize_CIEDEF, NULL,
@@ -85,7 +85,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEABC);
 const gs_color_space_type gs_color_space_type_CIEABC = {
     gs_color_space_index_CIEABC, true, true,
     &st_color_space_CIEABC, gx_num_components_3,
-    gx_no_base_space,
+    gx_no_base_space, gx_cspace_not_equal,
     gx_init_CIE, gx_restrict_CIEABC,
     gx_concrete_space_CIE,
     gx_concretize_CIEABC, NULL,
@@ -101,7 +101,7 @@ private cs_proc_adjust_cspace_count(gx_adjust_cspace_CIEA);
 const gs_color_space_type gs_color_space_type_CIEA = {
     gs_color_space_index_CIEA, true, true,
     &st_color_space_CIEA, gx_num_components_1,
-    gx_no_base_space,
+    gx_no_base_space, gx_cspace_not_equal,
     gx_init_CIE, gx_restrict_CIEA,
     gx_concrete_space_CIE,
     gx_concretize_CIEA, NULL,

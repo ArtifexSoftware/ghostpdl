@@ -37,7 +37,7 @@
 private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gs_color_space_index_DeviceGray, true, true,
     &st_base_color_space, gx_num_components_1,
-    gx_no_base_space,
+    gx_no_base_space, gx_cspace_is_equal,
     gx_init_paint_1, gx_restrict01_paint_1,
     gx_same_concrete_space,
     gx_concretize_DeviceGray, gx_remap_concrete_DGray,
@@ -47,7 +47,7 @@ private const gs_color_space_type gs_color_space_type_DeviceGray = {
 private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
     &st_base_color_space, gx_num_components_3,
-    gx_no_base_space,
+    gx_no_base_space, gx_cspace_is_equal,
     gx_init_paint_3, gx_restrict01_paint_3,
     gx_same_concrete_space,
     gx_concretize_DeviceRGB, gx_remap_concrete_DRGB,
@@ -57,7 +57,7 @@ private const gs_color_space_type gs_color_space_type_DeviceRGB = {
 private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
     gs_color_space_index_DeviceCMYK, true, true,
     &st_base_color_space, gx_num_components_4,
-    gx_no_base_space,
+    gx_no_base_space, gx_cspace_is_equal,
     gx_init_paint_4, gx_restrict01_paint_4,
     gx_same_concrete_space,
     gx_concretize_DeviceCMYK, gx_remap_concrete_DCMYK,
@@ -212,6 +212,14 @@ gs_color_space_restrict_color(gs_client_color *pcc, const gs_color_space *pcs)
     cs_restrict_color(pcc, pcs);
 }
 
+/* Test whether two color spaces are equal. */
+bool
+gs_color_space_equal(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    return ((pcs1->id == pcs2->id && pcs1->id != gs_no_id) ||
+	    (pcs1->type == pcs1->type && pcs1->type->equal(pcs1, pcs2)));
+}
+
 int
 gx_num_components_1(const gs_color_space * pcs)
 {
@@ -245,6 +253,20 @@ gx_no_base_space(const gs_color_space * pcspace)
 }
 
 /* ------ Other implementation procedures ------ */
+
+/* Color space equality procedure for color spaces with no parameters. */
+bool
+gx_cspace_is_equal(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    return true;
+}
+
+/* Color space equality procedure for cases where a real test is too hard. */
+bool
+gx_cspace_not_equal(const gs_color_space *pcs1, const gs_color_space *pcs2)
+{
+    return false;
+}
 
 /* Null color space installation procedure. */
 int
