@@ -649,7 +649,9 @@ end
 } bdef
 
 /DoImage {
-  checkaltimage dup length 6 add dict makeimagedict doimage
+  checkaltimage dup length 6 add dict
+  1 index /Mask knownoget { 1 index exch /Mask exch put } if
+  makeimagedict doimage
 } bdef
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack
