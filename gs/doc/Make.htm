@@ -1804,7 +1804,7 @@ all the source and font kits and patches needed:
 <a href="ftp://ykbsb2.yk.psu.edu/pub/ghost/GS-5.10-Extra/">ftp://ykbsb2.yk.psu.edu/pub/ghost/GS-5.10-Extra/</a>
 </blockquote>
 
-<h3><a name="NeXTSTEP"></a>NeXTSTEP</h3>
+<h3><a name="NeXTSTEP"></a>NeXTSTEP / OpenSTEP</h3>
 
 <ul>
 <li>If you are using a NeXTSTEP version before 3.3, please get a no-cost
@@ -1818,12 +1818,23 @@ following changes:
 are using only the library) change the definition of <b><tt>INCLUDE</tt></b>
 to "<b><tt>INCLUDE=/usr/include/bsd</tt></b>";
 
-<li>in <b><tt>unix-gcc.mak</tt></b>, change <b><tt>CC=gcc</tt></b> to
-<b><tt>CC=cc</tt></b>; change the definition of <b><tt>STDLIBS</tt></b> to
-only <b><tt>-lm</tt></b>; change <b><tt>SYNC=posync</tt></b> to
-<b><tt>SYNC=nosync</tt></b>; add <b><tt>-D_POSIX_SOURCE</tt></b> to
-<b><tt>CFLAGS</tt></b> and remove <b><tt>-g</tt></b>; and remove
-<b><tt>-Wstrict-prototypes</tt></b> from <b><tt>GCFLAGS</tt></b>;
+<li>in <b><tt>unix-gcc.mak</tt></b>:
+
+<ul>
+<li>change <b><tt>CC=gcc</tt></b> to <b><tt>CC=cc</tt></b>;
+
+<li>change the definition of <b><tt>STDLIBS</tt></b> to only
+<b><tt>-lm</tt></b>;
+
+<li>change <b><tt>SYNC=posync</tt></b> to <b><tt>SYNC=nosync</tt></b>;
+
+<li>add <b><tt>-D_POSIX_SOURCE</tt></b> to <b><tt>CFLAGS</tt></b> and remove
+<b><tt>-g</tt></b>;
+
+<li>remove <b><tt>-Wstrict-prototypes</tt></b> from <b><tt>GCFLAGS</tt></b>,
+and if you are using NeXTSTEP 3.3 (with gcc 2.5.8), also remove
+<b><tt>-Wmissing-declarations</tt></b>;
+</ul>
 
 <li>to the end of <b><tt>Fontmap.GS</tt></b> add the line
 "<b><tt>/Ohlfs&nbsp;/Courier&nbsp;;</tt></b>".
