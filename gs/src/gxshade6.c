@@ -1711,7 +1711,7 @@ fill_triangle_wedge_aux(patch_fill_state_t *pfs,
 
 private inline void
 dc2fc(const patch_fill_state_t *pfs, gx_color_index c, 
-	    frac32 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
+	    frac31 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
 {
     int j;
     const gx_device_color_info *cinfo = &pfs->dev->color_info;
@@ -1720,7 +1720,7 @@ dc2fc(const patch_fill_state_t *pfs, gx_color_index c,
 	    int shift = cinfo->comp_shift[j];
 	    int bits = cinfo->comp_bits[j];
 
-	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac32) * 8 - bits);
+	    fc[j] = ((c >> shift) & ((1 << bits) - 1)) << (sizeof(frac31) * 8 - 1 - bits);
     }
 }
 
@@ -1752,7 +1752,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 		return 1;
 	}
 	{   gx_device *pdev = pfs->dev;
-	    frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    frac31 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    gs_fill_attributes fa;
 	    gx_device_color dc[3];
 
@@ -1975,7 +1975,7 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
 	if (!pfs->halftoned && 
 		pfs->dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN) {
 	    gx_device *pdev = pfs->dev;
-	    frac32 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    frac31 fc[2][GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    gs_fill_attributes fa;
 	    gx_device_color dc[2];
 	    int code;

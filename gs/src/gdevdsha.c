@@ -26,7 +26,7 @@
 int 
 gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	int i0, int j, int w,
-	const frac32 *c0, const ulong *c0f, const long *cg_num, ulong cg_den)
+	const frac31 *c0, const ulong *c0f, const long *cg_num, ulong cg_den)
 {
     /* This default implementation decomposes the area into constant color rectangles.
        Devices may supply optimized implementations with
@@ -34,7 +34,7 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
        i.e. with enumerating planes first, with a direct writing to the raster,
        and with a fixed bits per component.
      */
-    frac32 c[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    frac31 c[GX_DEVICE_COLOR_MAX_COMPONENTS];
     ulong f[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int i, i1 = i0 + w, bi = i0, k;
     gx_color_index ci0 = 0, ci1;
@@ -50,7 +50,7 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 
 	c[k] = c0[k];
 	f[k] = c0f[k];
-	ci0 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift;
+	ci0 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - 1 - bits)) << shift;
     }
     for (i = i0 + 1; i < i1; i++) {
 	ci1 = 0;
@@ -65,18 +65,8 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 		c[k]--;
 		m += cg_den;
 	    }
-
-	    m += cg_num[k]; /* fixme: do at 2nd time due to the shift in set_x_gradient_nowedge */
-	    c[k] += m / (long)cg_den;
-	    m -= m / (long)cg_den * (long)cg_den;
-	    if (m < 0) {
-		c[k]--;
-		m += cg_den;
-	    }
-
-
 	    f[k] = m;
-	    ci1 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - bits)) << shift;
+	    ci1 |= (gx_color_index)(c[k] >> (sizeof(c[k]) * 8 - 1 - bits)) << shift;
 	}
 	if (ci1 != ci0) {
 	    si = max(bi, fixed2int(fa->clip->p.x));

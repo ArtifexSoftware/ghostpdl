@@ -186,13 +186,15 @@ typedef struct gx_device_anti_alias_info_s {
     int graphics_bits;		/* ditto */
 } gx_device_anti_alias_info;
 
-typedef ulong frac32; /* A fraction value from [0,1]. Represents a color in shadings. */
+typedef long frac31; /* A fraction value in [-1,1]. 
+    Represents a color (in [0,1]) 
+    or a color difference (in [-1,1]) in shadings. */
 
 /* Define an edge of a linear color trapezoid.  Requirement: end.y >= start.y. */
 typedef struct gs_linear_color_edge_s {
     gs_fixed_point start;
     gs_fixed_point end;
-    const frac32 *c0, *c1;
+    const frac31 *c0, *c1;
     fixed clip_x;
 } gs_linear_color_edge;
 
@@ -1245,7 +1247,7 @@ typedef struct gs_fill_attributes_s {
 #define dev_t_proc_fill_linear_color_scanline(proc, dev_t)\
   int proc(const gs_fill_attributes *fa,\
 	int i, int j, int w, /* scanline coordinates and width */\
-	const frac32 *c0, /* initial color for the pixel (i,j), the integer part */\
+	const frac31 *c0, /* initial color for the pixel (i,j), the integer part */\
 	const ulong *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
 	const long *cg_num, /* color gradient numerator */\
 	ulong cg_den /* color gradient denominator */)
@@ -1268,8 +1270,8 @@ typedef struct gs_fill_attributes_s {
   int proc(const gs_fill_attributes *fa,\
 	const gs_fixed_point *p0, const gs_fixed_point *p1,\
 	const gs_fixed_point *p2, const gs_fixed_point *p3,\
-	const frac32 *c0, const frac32 *c1,\
-	const frac32 *c2, const frac32 *c3)
+	const frac31 *c0, const frac31 *c1,\
+	const frac31 *c2, const frac31 *c3)
 #define dev_proc_fill_linear_color_trapezoid(proc)\
   dev_t_proc_fill_linear_color_trapezoid(proc, gx_device)
 
@@ -1284,7 +1286,7 @@ typedef struct gs_fill_attributes_s {
   int proc(const gs_fill_attributes *fa,\
 	const gs_fixed_point *p0, const gs_fixed_point *p1,\
 	const gs_fixed_point *p2,\
-	const frac32 *c0, const frac32 *c1, const frac32 *c2)
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
 #define dev_proc_fill_linear_color_triangle(proc)\
   dev_t_proc_fill_linear_color_triangle(proc, gx_device)
 

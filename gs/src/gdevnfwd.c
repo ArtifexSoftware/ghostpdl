@@ -770,7 +770,7 @@ gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace,
 int 
 gx_forward_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	int i, int j, int w,
-	const frac32 *c, const ulong *addx, const long *mulx, ulong divx)
+	const frac31 *c, const ulong *addx, const long *mulx, ulong divx)
 {
     gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
     gx_device *tdev = fdev->target;
@@ -788,8 +788,8 @@ int
 gx_forward_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2, const gs_fixed_point *p3,
-	const frac32 *c0, const frac32 *c1,
-	const frac32 *c2, const frac32 *c3)
+	const frac31 *c0, const frac31 *c1,
+	const frac31 *c2, const frac31 *c3)
 {
     gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
     gx_device *tdev = fdev->target;
@@ -807,7 +807,7 @@ int
 gx_forward_fill_linear_color_triangle(const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
-	const frac32 *c0, const frac32 *c1, const frac32 *c2)
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {
     gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
     gx_device *tdev = fdev->target;

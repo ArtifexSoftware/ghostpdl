@@ -160,13 +160,13 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 #	endif
 #	if LINEAR_COLOR
 	    int num_components = dev->color_info.num_components;
-	    frac32 lgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    frac31 lgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    ulong lgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    long lgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    frac32 rgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    frac31 rgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    ulong rgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    long rgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	    frac32 xgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    frac31 xgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    ulong xgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    long xgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    trap_gradient lg, rg, xg;

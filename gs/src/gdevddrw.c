@@ -101,7 +101,7 @@ typedef struct trap_line_s {
  * the color change during the Bresenham loop.
  */
 typedef struct trap_gradient_s {
-	frac32 *c; /* integer part of the color in frac32 units. */
+	frac31 *c; /* integer part of the color in frac32 units. */
 	ulong *f; /* the fraction part numerator */
 	long *num; /* the gradient numerator */
 	ulong den; /* color gradient denominator */
@@ -204,8 +204,7 @@ step_gradient(trap_gradient *g, int num_components)
 	return;
     for (i = 0; i < num_components; i++) {
 	/* fixme: optimize. */
-	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1 * 2; /* fixme: 
-		2 compensates the division in init_gradient. */
+	int64_t fc = g->f[i] + (int64_t)g->num[i] * fixed_1;
 
 	g->c[i] += (int32_t)(fc / g->den);
 	fc -=  fc / g->den * g->den;
@@ -265,23 +264,22 @@ set_x_gradient_nowedge(trap_gradient *xg, const trap_gradient *lg, const trap_gr
     for (i = 0; i < num_components; i++) {
 	/* Ignoring the ending colors fractions, 
 	   so the color gets a slightly smaller value
-	   (in <1 'frac32' unit), but it's not important due to 
+	   (in <1 'frac31' unit), but it's not important due to 
 	   the further conversion to [0, 1 << cinfo->comp_bits[j]], 
 	   which drops the fraction anyway. */
-	uint32_t cl = lg->c[i];
-	uint32_t cr = rg->c[i];
-	uint32_t c0 = (int32_t)(cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl));
-	uint32_t c1 = (int32_t)(cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl));
+	int32_t cl = lg->c[i];
+	int32_t cr = rg->c[i];
+	int32_t c0 = (int32_t)(cl + ((int64_t)cr - cl) * (x0 - xl) / (xr - xl));
+	int32_t c1 = (int32_t)(cl + ((int64_t)cr - cl) * (x1 - xl) / (xr - xl));
 
 	xg->c[i] = c0;
 	xg->f[i] = 0; /* Insufficient bits to compute it better. 
 	                 The color so the color gets a slightly smaller value
-			 (in <1 'frac32' unit), but it's not important due to 
+			 (in <1 'frac31' unit), but it's not important due to 
 			 the further conversion to [0, 1 << cinfo->comp_bits[j]], 
 			 which drops the fraction anyway. 
 			 So setting 0 appears pretty good and fast. */
-	xg->num[i] = (c1 >> 1) - (c0 >> 1); /* fixme: divided by 2 for the sign to fit into 32 bits. 
-	                               It may sensively loose a precision. */
+	xg->num[i] = c1 - c0;
     }
     return 0;
 }
@@ -429,13 +427,13 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
 }
 
 private inline void
-middle_frac32_color(frac32 *c, const frac32 *c0, const frac32 *c2, int num_components)
+middle_frac31_color(frac31 *c, const frac31 *c0, const frac31 *c2, int num_components)
 {
+    /* Assuming non-negative values. */
     int i;
 
-    /* Compute (c0 + c2) / 2 with no fixed overflow : */
     for (i = 0; i < num_components; i++)
-	c[i] = (c0[i] >> 1) + (c2[i] >> 1) + (1 & c0[i] & c2[i]);
+	c[i] = (int32_t)((uint32_t)c0[i] + (uint32_t)c2[i] >> 1);
 }
 
 private inline int
@@ -473,8 +471,8 @@ int
 gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2, const gs_fixed_point *p3,
-	const frac32 *c0, const frac32 *c1,
-	const frac32 *c2, const frac32 *c3)
+	const frac31 *c0, const frac31 *c1,
+	const frac31 *c2, const frac31 *c3)
 {
     gs_linear_color_edge le, re;
     int num_components = fa->pdev->color_info.num_components;
@@ -498,7 +496,7 @@ private inline int
 fill_linear_color_triangle(const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
-	const frac32 *c0, const frac32 *c1, const frac32 *c2)
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {   /* p0 must be the lowest vertex. */
     int code;
     gs_linear_color_edge e0, e1, e2;
@@ -554,14 +552,14 @@ int
 gx_default_fill_linear_color_triangle(const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
-	const frac32 *c0, const frac32 *c1, const frac32 *c2)
+	const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {
     fixed dx1 = p1->x - p0->x, dy1 = p1->y - p0->y;
     fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
     
     if ((int64_t)dx1 * dy2 < (int64_t)dx2 * dy1) {
 	const gs_fixed_point *p = p1;
-	const frac32 *c = c1;
+	const frac31 *c = c1;
 	
 	p1 = p2; 
 	p2 = p;
