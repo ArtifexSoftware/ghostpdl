@@ -985,7 +985,7 @@ psw_put_params(gx_device * dev, gs_param_list * plist)
 
     switch (code = param_read_float(plist, (param_name = "LanguageLevel"), &ll)) {
 	case 0:
-	    if (ll == 1.0 || ll == 1.5 || ll == 2.0)
+	    if (ll == 1.0 || ll == 1.5 || ll == 2.0 || ll == 3.0)
 		break;
 	    code = gs_error_rangecheck;
 	default:
