@@ -37,6 +37,7 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "gsargs.h"
 #include "gp.h"
 #include "gsdevice.h"
+#include "gxdevice.h"
 #include "gsparam.h"
 #include "gslib.h"
 #include "pjtop.h"
@@ -101,14 +102,12 @@ pl_main_universe_dnit(P2(
 	char                   *err_str              /* RETRUNS errmsg if error return */
 ));
 pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
-pl_main_universe_select(P6(
+pl_main_universe_select(P5(
 	pl_main_universe_t               *universe,              /* universe to select from */
 	char                             *err_str,               /* RETURNS error str if error */
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
-	gx_device                        *desired_device,        /* device to select */
-	gs_param_list                    *params,                /* device params to use */
-	char                             *pcl_personality        /* an additional parameter
-                                                                    for selecting pcl personality */
+        pl_main_instance_t               *pti,                   /* inst contains device */
+	gs_param_list                    *params                 /* device params to use */
 ));
 
 private pl_interp_implementation_t const *
@@ -346,7 +345,7 @@ pl_main(
             if (!arg)
                 break;  /* no nore files to process */
         }
-	/* open file for reading - NB we should respec the minimum
+	/* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
         if (pl_main_cursor_open(&r, arg, buf, sizeof(buf)) < 0) {
@@ -358,27 +357,37 @@ pl_main(
         if (gs_debug_c(':'))
             dprintf1("%% Reading %s:\n", arg);
 #endif
-
-
-
 	/* pump data thru PJL/PDL until EOD or error */
 	new_job = false;
         in_pjl = true;
         for (;;) {
             if_debug1('i', "[i][file pos=%ld]\n", pl_main_cursor_position(&r));
-            if (pl_main_cursor_next(&r) <= 0)
+            if (pl_main_cursor_next(&r) <= 0) {
+                if_debug0('|', "End of of data\n");
+                if ( !in_pjl ) {
+                    if_debug0('|', "end of data stream found in middle of job\n");
+                    if ( close_job(&universe, &inst) < 0 ) {
+			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
+			return -1;
+                    }
+                }
     	        break;
+            }
             if ( in_pjl ) {
+                if_debug0('|', "Processing pjl\n");
 		code = pl_process(pjl_instance, &r.cursor);
 		if (code == e_ExitLanguage) {
+                    if_debug0('|', "Exiting pjl\n" );
 		    in_pjl = false;
 		    new_job = true;
 		}
     	    } else {
 		if ( new_job ) {
-		    if ( (curr_instance = pl_main_universe_select(&universe, err_buf,
-								  pl_select_implementation(pjl_instance, &inst, r),
-								  inst.device, (gs_param_list *)&params, inst.pcl_personality) ) == 0) {
+                    if_debug0( '|', "Selecting PDL\n" );
+                    curr_instance = pl_main_universe_select(&universe, err_buf,
+                                                            pl_select_implementation(pjl_instance, &inst, r),
+                                                            &inst, (gs_param_list *)&params);
+                    if ( curr_instance == NULL ) {
 			fputs(err_buf, gs_stderr);
 			return -1;
 		    }
@@ -387,11 +396,16 @@ pl_main(
 			fprintf(gs_stderr, "Unable to init PDL job.\n");
 			return -1;
 		    }
+                    if_debug1('|', "selected and initializing (%s)\n",
+                              pl_characteristics(curr_instance->interp->implementation)->language);
 		    new_job = false;
 		}
 		code = pl_process(curr_instance, &r.cursor);
+                if_debug1('|', "processing (%s) job\n", pl_characteristics(curr_instance->interp->implementation)->language);
     	        if (code == e_ExitLanguage) {
     	            in_pjl = true;
+                    if_debug1('|', "exiting (%s) job back to pjl\n",
+                    pl_characteristics(curr_instance->interp->implementation)->language);
                     if ( close_job(&universe, &inst) < 0 ) {
 			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
 			return -1;
@@ -401,14 +415,23 @@ pl_main(
 			return -1;
                     }
 		} else if ( code < 0 ) { /* error and not exit language */
-		    dprintf1( "Warning interpreter exited with error code %d\n", code );
-		    dprintf( "Flushing to end of job\n" );
+		    fprintf(gs_stderr, "Warning interpreter exited with error code %d\n", code );
+		    fprintf(gs_stderr, "Flushing to end of job\n" );
 		    /* flush eoj may require more data */
-		    while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0)
-			if (pl_main_cursor_next(&r) <= 0)
-			    goto next;
-		    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
-				     inst.error_report > 0, gs_stdout);
+		    while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0) {
+                        if_debug1('|', "flushing to eoj for (%s) job\n",
+                                   pl_characteristics(curr_instance->interp->implementation)->language);
+			if (pl_main_cursor_next(&r) <= 0) {
+                            if_debug0('|', "end of data found while flushing\n");
+                            break;
+                        }
+                    }
+                    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
+                                     inst.error_report > 0, gs_stdout);
+                    if ( close_job(&universe, &inst) < 0 ) {
+                        fprintf(gs_stderr, "Unable to deinit PJL.\n");
+                        return -1;
+                    }
 		    /* Print PDL status if applicable, then dnit PDL job */
 		    code = 0;
 		    new_job = true;
@@ -418,28 +441,6 @@ pl_main(
 
 	    }
 	}
-next:	if (code < 0)
-	    /* Error: Print PDL status if applicable, dnit PDL job, & skip to eoj */
-	    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
-			     inst.error_report > 0, gs_stdout);
-        /* Print PDL status if applicable, then dnit PDL job */
-        if (!in_pjl) {
-	    pl_process_eof(curr_instance);
-	    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
-			     inst.error_report > 0, gs_stdout);
-	    if ( close_job(&universe, &inst) < 0 ) {
-		fprintf(gs_stderr, "Unable to deinit PDL job.\n");
-		return -1;
-	    }
-        } else {
-	    pl_process_eof(pjl_instance);
-	    if ( close_job(&universe, &inst) < 0 ) {
-		fprintf(gs_stderr, "Unable to deinit PJL.\n");
-		return -1;
-	    }
-        }
-        /* close input file */
-        close_job(&universe, &inst);
         pl_main_cursor_close(&r);
     }
 
@@ -573,17 +574,17 @@ pl_main_universe_dnit(
 /* Select new device and/or implementation, deselect one one (opt) */
 pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
 pl_main_universe_select(
-	pl_main_universe_t               *universe,              /* universe to select from */
+        pl_main_universe_t               *universe,              /* universe to select from */
 	char                             *err_str,               /* RETURNS error str if error */
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
-	gx_device                        *desired_device,        /* device to select */
-	gs_param_list                    *params,                /* device params to set */
-	char                             *pcl_personality        /* an additional parameter
-                                                                    for selecting pcl personality */
+	pl_main_instance_t               *pti,                   /* inst contains device */
+	gs_param_list                    *params                 /* device params to set */
 )
 {	
     int params_are_set = 0;
-
+    
+    /* requesting the device in the main instance */
+    gx_device *desired_device = pti->device;
     /* If new interpreter/device is different, deselect it from old interp */
     if ((universe->curr_implementation
 	 && universe->curr_implementation != desired_implementation)
@@ -601,7 +602,7 @@ pl_main_universe_select(
 	    /* here is that multiple *async* devices would need coordination */
 	    /* since an async device is not guaranteed to have completed */
 	    /* rendering until it is closed. So, we close devices here to */
-	    /* avoid things like intermingling of output streams. */
+	    /* avoid things like intevermingling of output streams. */
 	    if (gs_closedevice(universe->curr_device) < 0) {
 		if (err_str)
 		    strcpy(err_str, "Unable to close device\n");
@@ -657,13 +658,23 @@ pl_main_universe_select(
 	}
 
 	/* NB fix me this parameter should not be passed this way */
-	universe->curr_instance->pcl_personality = pcl_personality;
+	universe->curr_instance->pcl_personality = pti->pcl_personality;
 	/* Select curr/new device into PDL instance */
 	if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
 	    if (err_str)
 		strcpy(err_str, "Unable to install device into PDL interp");
 	    return 0;
 	}
+        /* potentially downgrade the resolution */
+        if ( ( pti->page_count + 1 ) < pti->first_page ) {
+            if ( !pti->saved_hwres ) {
+                gx_device *pdev = universe->curr_device;
+                pti->saved_hwres = true;
+                pti->hwres[0] = pdev->HWResolution[0];
+                pti->hwres[1] = pdev->HWResolution[1];
+                gx_device_set_resolution(pdev, 10, 10);
+            }
+        }
     }
 
     /* Set latest params into device. Write them all in case any changed */
@@ -706,7 +717,8 @@ pl_top_create_device(pl_main_instance_t *pti, int index, bool is_default)
     if ( !is_default || !pti->device ) { 
 	const gx_device **list;
 	gs_lib_device_list((const gx_device * const **)&list, NULL);
-	code = gs_copydevice(&pti->device, list[index], pti->memory);
+        code = gs_copydevice(&pti->device, list[index],
+                             pti->memory->stable_memory);
     }
     return code;
 }
@@ -1007,10 +1019,10 @@ pl_auto_sense(
     /* Lookup this string in the auto sense field for each implementation */
     pl_interp_implementation_t const * const * impl;
     for (impl = impl_array; *impl != 0; ++impl) {
-	if (buffer_length >= (strlen(pl_characteristics(*impl)->auto_sense_string) - 1) )
+	if ( buffer_length >= (strlen(pl_characteristics(*impl)->auto_sense_string)) )
 	    if ( !strncmp(pl_characteristics(*impl)->auto_sense_string,
 			  name,
-			  (strlen(pl_characteristics(*impl)->auto_sense_string) - 1)) )
+			  (strlen(pl_characteristics(*impl)->auto_sense_string))) )
 		return *impl;
     }
     /* Defaults to PCL */
@@ -1045,22 +1057,45 @@ pl_log_string(char *str, int wait_for_key)
 int	/* ret 0 if page should be printed, 1 if no print, else -ve error */
 pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
 {
-	pl_main_instance_t *pti = (pl_main_instance_t *)closure;
-	++(pti->page_count);
-	/* print the page number to stderr */
-	if ( pti->page_count >= pti->first_page &&
-	     pti->page_count <= pti->last_page
-	   )
-	  {
-	    if ( !pti->pause && gs_debug_c(':') )
-	      pl_print_usage(pti->memory, pti, "render:");
-	    return 0;   /* allow printing to proceed */
-	  }
-	else
-	  {
-	    /* prevent printing (& pl_post_finish_page) from occurring */
-	    return 1;
-	  }
+    pl_main_instance_t *pti = (pl_main_instance_t *)closure;
+
+    /* up the page count */
+    ++(pti->page_count);
+
+    /* if the next page is in range we want to restore the resolution */
+    if ( (pti->page_count + 1) >= pti->first_page &&
+         (pti->page_count + 1) <= pti->last_page ) {
+        /* check if we downgraded the resolution */
+        if ( pti->saved_hwres ) {
+            pti->saved_hwres = false;
+            gx_device_set_resolution(pti->device, 
+                                     pti->hwres[0], pti->hwres[1]);
+        }
+    }
+    /* nothing to do now if we are in range */
+    if ( pti->page_count >= pti->first_page && pti->page_count <= pti->last_page )
+        return 0;
+    /* past page count we return an error so the interpreter will exit early */
+    if ( pti->page_count > pti->last_page )
+        return -1;
+    /* finally if the next page is out of range -- must be before
+       the first page if we are here.  We have to render the page
+       but can optimize by downgrading the resolution. */
+    if ( (pti->page_count + 1) < pti->first_page ) {
+        /* If we haven't saved the hardware resolution save the
+           default resolution for the device and set the
+           diminished resolution if it hasn't been done
+           already. NB what if language sets resolution? */
+        if ( !pti->saved_hwres ) {
+            gx_device *pdev = pti->device;
+            pti->saved_hwres = true;
+            pti->hwres[0] = pdev->HWResolution[0];
+            pti->hwres[1] = pdev->HWResolution[1];
+            gx_device_set_resolution(pdev, 10, 10);
+        }
+    }
+    /* out of range don't allow printing the page */
+    return 1;
 }
 
 /* Post-page portion of page finishing routine */
