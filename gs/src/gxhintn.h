@@ -102,7 +102,7 @@ typedef struct t1_hinter_s
 {   fraction_matrix ctmf;
     fraction_matrix ctmi;
     unsigned int g2o_fraction_bits;
-    unsigned int import_shift;
+    unsigned int max_import_coord;
     int32 g2o_fraction;
     t1_glyph_space_coord orig_gx, orig_gy; /* glyph origin in glyph space */
     t1_glyph_space_coord subglyph_orig_gx, subglyph_orig_gy; /* glyph origin in glyph space */
@@ -156,7 +156,7 @@ typedef struct t1_hinter_s
 } t1_hinter;
 
 void t1_hinter__init(t1_hinter * this, gx_path *output_path);
-int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * FontBBox, 
+int  t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
 			gs_matrix * FontMatrix, gs_matrix * baseFontMatrix,
 			int log2_pixels_x, int log2_pixels_y,
 			int log2_subpixels_x, int log2_subpixels_y,
