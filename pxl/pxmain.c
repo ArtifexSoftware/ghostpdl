@@ -119,7 +119,6 @@ main(int argc, char *argv[])
 	px_parser_state_t *st;
 	px_state_t *pxs;
 	const char *arg;
-	pjl_parser_state_t pjstate;
 	arg_list args;
 
 	/* Initialize the library. */
@@ -167,7 +166,7 @@ main(int argc, char *argv[])
 	        exit(1);
 	      }
 
-	    pjl_process_init(&pjstate);
+	    pxs->pjls = pjl_process_init(mem);
 	    r.limit = buf - 1;
 	  for ( ; ; )
 	    { if_debug1('i', "%% file pos=%ld\n", (long)ftell(in));
@@ -187,7 +186,7 @@ process:      switch ( in_pjl )
 		    in_pjl = 1;
 		  goto move;
 		case 1:		/* PJL */
-		  code = pjl_process(&pjstate, NULL, &r);
+		  code = pjl_process(pxs->pjls, NULL, &r);
 		  if ( code > 0 )
 		    { byte chr;
 		      in_pjl = 0;
@@ -281,6 +280,7 @@ move:	      /* Move unread data to the start of the buffer. */
 	      r.limit = buf + (len - 1);
 	    }
 	  gs_reclaim(&inst.spaces, true);
+	  pjl_process_destroy(pxs->pjls, mem);
 	  /* Reset the GC trigger. */
 	  { gs_memory_status_t status;
 	    gs_memory_status(mem, &status);
