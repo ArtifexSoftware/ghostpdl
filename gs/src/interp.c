@@ -27,6 +27,7 @@
 #include "iastruct.h"
 #include "icontext.h"
 #include "icremap.h"
+#include "idebug.h"
 #include "igstate.h"		/* for handling e_RemapColor */
 #include "inamedef.h"
 #include "iname.h"		/* for the_name_table */
@@ -869,7 +870,6 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	  r_packed_is_name(iref_packed) :
 	  r_has_type(IREF, t_name)))
 	) {
-	void debug_print_ref(const ref *);
 	os_ptr save_osp = osp;	/* avoid side-effects */
 	es_ptr save_esp = esp;
 
@@ -878,10 +878,10 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
 	dlprintf5("d%u,e%u<%u>0x%lx(%d): ",
 		  ref_stack_count(&d_stack), ref_stack_count(&e_stack),
 		  ref_stack_count(&o_stack), (ulong)IREF, icount);
-	debug_print_ref(IREF);
+	debug_print_ref(imemory, IREF);
 	if (iosp >= osbot) {
 	    dputs(" // ");
-	    debug_print_ref(iosp);
+	    debug_print_ref(imemory, iosp);
 	}
 	dputc('\n');
 	osp = save_osp;
