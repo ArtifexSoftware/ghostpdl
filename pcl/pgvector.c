@@ -112,8 +112,13 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	      case 0:		/* done */
 		pgls->g.carriage_return_pos = pgls->g.pos;
 		/* draw the path */
-		if ( !pgls->g.polygon_mode )
-		  hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+		if ( !pgls->g.polygon_mode ) {
+		    /* NB - needs documentation */
+		    int save_join = pgls->g.line.join;
+		    pgls->g.line.join = 0;
+		    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+		    pgls->g.line.join = save_join;
+		}
 		return 0;
 	      case 6:
 		break;
