@@ -301,6 +301,23 @@ gs_currentoverprint(const gs_state * pgs)
     return pgs->overprint;
 }
 
+/* setoverprintmode */
+int
+gs_setoverprintmode(gs_state * pgs, int mode)
+{
+    if (mode < 0 || mode > 1)
+	return_error(gs_error_rangecheck);
+    pgs->overprint_mode = mode;
+    return 0;
+}
+
+/* currentoverprintmode */
+int
+gs_currentoverprintmode(const gs_state * pgs)
+{
+    return pgs->overprint_mode;
+}
+
 /* ------ Internal procedures ------ */
 
 /* Initialize a Separation color. */

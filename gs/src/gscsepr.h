@@ -27,6 +27,9 @@
 /* Graphics state */
 bool gs_currentoverprint(P1(const gs_state *));
 void gs_setoverprint(P2(gs_state *, bool));
+/* Overprint mode is a PDF feature, but we include it here. */
+int gs_currentoverprintmode(P1(const gs_state *));
+int gs_setoverprintmode(P2(gs_state *, int));
 
 /*
  * Separation color spaces.

@@ -259,6 +259,7 @@ gs_state_alloc(gs_memory_t * mem)
     }
     gx_set_device_color_1(pgs);
     pgs->overprint = false;
+    pgs->overprint_mode = 0;
     pgs->device = 0;		/* setting device adjusts refcts */
     gs_nulldevice(pgs);
     gs_setalpha(pgs, 1.0);

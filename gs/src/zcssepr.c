@@ -182,13 +182,40 @@ zsetoverprint(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* - .currentoverprintmode <int> */
+private int
+zcurrentoverprintmode(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+
+    push(1);
+    make_int(op, gs_currentoverprintmode(igs));
+    return 0;
+}
+
+/* <int> .setoverprintmode - */
+private int
+zsetoverprintmode(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    int param;
+    int code = int_param(op, max_int, &param);
+
+    if (code < 0 || (code = gs_setoverprintmode(igs, param)) < 0)
+	return code;
+    pop(1);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zcssepr_l2_op_defs[] =
 {
     op_def_begin_level2(),
     {"0currentoverprint", zcurrentoverprint},
+    {"0.currentoverprintmode", zcurrentoverprintmode},
     {"1setoverprint", zsetoverprint},
+    {"1.setoverprintmode", zsetoverprintmode},
     {"1.setseparationspace", zsetseparationspace},
 		/* Internal operators */
     {"1%separation_map1", separation_map1},

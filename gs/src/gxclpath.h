@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -30,14 +30,15 @@
 #define ctm_known		(1<<2)
 #define line_width_known	(1<<3)
 #define miter_limit_known	(1<<4)
-#define misc0_known		(1<<5)
-#define misc1_known		(1<<6)
-#define dash_known		(1<<7)
-#define alpha_known		(1<<8)
-#define clip_path_known		(1<<9)
-#define stroke_all_known	((1<<10)-1)
-#define color_space_known	(1<<10)
-/*#define all_known             ((1<<11)-1) */
+#define misc2_0_known		(1<<5) /* _cap_join */
+#define misc2_1_known		(1<<6) /* _cj_ac_sa */
+#define overprint_known		(1<<7)
+#define dash_known		(1<<8)
+#define alpha_known		(1<<9)
+#define clip_path_known		(1<<10)
+#define stroke_all_known	((1<<11)-1)
+#define color_space_known	(1<<11)
+/*#define all_known             ((1<<12)-1) */
 
 /* Define the drawing color types for distinguishing different */
 /* fill/stroke command variations. */
@@ -61,14 +62,15 @@ typedef enum {
 				/* [, hival#, table|map] */
     cmd_opv_set_misc2 = 0xd5,
 #define cmd_set_misc2_cap_join (0x00) /* 00: cap(3)join(3) */
-#define cmd_set_misc2_cj_ac_op_sa (0x40) /* 01: curve_join+1(3)acc.curves(1) */
-				/* overprint(1)stroke_adj(1) */
-#define cmd_set_misc2_notes (0x80)	/* 10: seg.notes(6) */
+#define cmd_set_misc2_cj_ac_sa (0x40) /* 01: 0(1)curve_join+1(3) */
+				/* acc.curves(1)stroke_adj(1) */
+#define cmd_set_misc2_notes (0x80) /* 10: seg.notes(6) */
 #define cmd_set_misc2_value (0xc0)	/* 11: (see below) */
 #define cmd_set_misc2_flatness (0xc0+0)    /* 11000000, flatness(float) */
 #define cmd_set_misc2_line_width (0xc0+1)  /* 11000001, line width(float) */
 #define cmd_set_misc2_miter_limit (0xc0+2) /* 11000010, miter limit(float) */
 #define cmd_set_misc2_alpha (0xc0+3)	   /* 11000011, alpha */
+#define cmd_set_misc2_overprint (0xc0+4)   /* 11000100, o.p.mode(7)o.p.(1) */
     cmd_opv_set_dash = 0xd6,	/* adapt(1)abs.dot(1)n(6), dot */
 				/* length(float), offset(float), */
 				/* n x (float) */

@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -42,7 +42,7 @@
  *      transformation matrix (CTM)
  *      logical operation: RasterOp, transparency
  *      color modification: alpha, rendering algorithm
- *      overprint flag
+ *      overprint control: overprint flag and mode
  *      rendering tweaks: flatness, fill adjustment, stroke adjust flag,
  *        accurate curves flag, shading smoothness
  *      color rendering information:
@@ -204,6 +204,7 @@ typedef struct gs_imager_state_shared_s {
 	gs_logical_operation_t log_op;\
 	gx_color_value alpha;\
 	bool overprint;\
+	int overprint_mode;\
 	float flatness;\
 	gs_fixed_point fill_adjust;	/* fattening for fill */\
 	bool stroke_adjust;\
@@ -237,7 +238,7 @@ struct gs_imager_state_s {
 #define gs_imager_state_initial(scale)\
   0, 0, 0, { gx_line_params_initial },\
    { scale, 0.0, 0.0, -(scale), 0.0, 0.0 },\
-  lop_default, gx_max_color_value, 0/*false*/, 1.0,\
+  lop_default, gx_max_color_value, 0/*false*/, 0, 1.0,\
    { fixed_half, fixed_half }, 0/*false*/, 0/*false*/, 1.0,\
   gx_default_get_cmap_procs
 

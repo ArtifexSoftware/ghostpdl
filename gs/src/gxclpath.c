@@ -318,25 +318,33 @@ cmd_write_unknown(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	       sizeof(float));
 	pcls->known |= miter_limit_known;
     }
-    if (unknown & misc0_known) {
+    if (unknown & misc2_0_known) {
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2, 2);
 	if (code < 0)
 	    return code;
 	dp[1] = cmd_set_misc2_cap_join +
 	    (cldev->imager_state.line_params.cap << 3) +
 	    cldev->imager_state.line_params.join;
-	pcls->known |= misc0_known;
+	pcls->known |= misc2_0_known;
     }
-    if (unknown & misc1_known) {
+    if (unknown & misc2_1_known) {
 	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2, 2);
 	if (code < 0)
 	    return code;
-	dp[1] = cmd_set_misc2_cj_ac_op_sa +
-	    ((cldev->imager_state.line_params.curve_join + 1) << 3) +
-	    (cldev->imager_state.accurate_curves ? 4 : 0) +
-	    (cldev->imager_state.overprint ? 2 : 0) +
+	dp[1] = cmd_set_misc2_cj_ac_sa +
+	    ((cldev->imager_state.line_params.curve_join + 1) << 2) +
+	    (cldev->imager_state.accurate_curves ? 2 : 0) +
 	    (cldev->imager_state.stroke_adjust ? 1 : 0);
-	pcls->known |= misc1_known;
+	pcls->known |= misc2_1_known;
+    }
+    if (unknown & overprint_known) {
+	code = set_cmd_put_op(dp, cldev, pcls, cmd_opv_set_misc2, 3);
+	if (code < 0)
+	    return code;
+	dp[1] = cmd_set_misc2_overprint;
+	dp[2] = (cldev->imager_state.overprint_mode << 1) +
+	    (cldev->imager_state.overprint ? 1 : 0);
+	pcls->known |= overprint_known;
     }
     if (unknown & dash_known) {
 	int n = cldev->imager_state.line_params.dash.pattern_size;
@@ -691,18 +699,22 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 			   pis->line_params.miter_limit);
     }
     if (state_neq(line_params.cap) || state_neq(line_params.join)) {
-	unknown |= misc0_known;
+	unknown |= misc2_0_known;
 	state_update(line_params.cap);
 	state_update(line_params.join);
     }
     if (state_neq(line_params.curve_join) || state_neq(accurate_curves) ||
-	state_neq(overprint) || state_neq(stroke_adjust)
+	state_neq(stroke_adjust)
 	) {
-	unknown |= misc1_known;
+	unknown |= misc2_1_known;
 	state_update(line_params.curve_join);
 	state_update(accurate_curves);
-	state_update(overprint);
 	state_update(stroke_adjust);
+    }
+    if (state_neq(overprint) || state_neq(overprint_mode)) {
+	unknown |= overprint_known;
+	state_update(overprint);
+	state_update(overprint_mode);
     }
     if (cdev->imager_state.alpha != pis->alpha) {
 	unknown |= alpha_known;
