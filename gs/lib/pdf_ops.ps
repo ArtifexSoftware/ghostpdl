@@ -143,6 +143,9 @@ nodict readonly pop
 /scput		% <color> <colorspace> scput -
  { /StrokeColorSpace gput /StrokeColor gput
  } bdef
+/csput		% <colorspace> csput -
+ { csset 2 copy fcput scput
+ } bdef
 
 /csdevgray [/DeviceGray] readonly def
 /csdevrgb [/DeviceRGB] readonly def
@@ -201,14 +204,20 @@ nodict readonly pop
   currentdict /FillColor .knownget {
     astore pop
   } {
-    /FillColor load length array astore cvx /FillColor gput
+    /FillColor load
+    % FillColor may contain either a single value or an array.
+    dup type /arraytype eq { length }{ pop 1 } ifelse
+    array astore cvx /FillColor gput
   } ifelse
 } bdef
 /SC* {
   currentdict /StrokeColor .knownget {
     astore pop
   } {
-    /StrokeColor load length array astore cvx /StrokeColor gput
+    /StrokeColor load
+    % StrokeColor may contain either a single value or an array.
+    dup type /arraytype eq { length }{ pop 1 } ifelse
+    array astore cvx /StrokeColor gput
   } ifelse
 } bdef
 
