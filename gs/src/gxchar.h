@@ -125,5 +125,7 @@ cached_char *
 int gx_image_cached_char(P2(gs_show_enum *, cached_char *));
 void gx_compute_text_oversampling(P4(const gs_show_enum * penum, const gs_font *pfont, 
                              int alpha_bits, gs_log2_scale_point *p_log2_scale));
+int set_char_width(P4(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy));
+
 
 #endif /* gxchar_INCLUDED */

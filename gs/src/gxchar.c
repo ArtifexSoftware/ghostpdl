@@ -222,8 +222,6 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
 /* ------ Width/cache setting ------ */
 
 private int
-    set_char_width(P4(gs_show_enum *penum, gs_state *pgs,
-		      floatp wx, floatp wy)),
     set_cache_device(P6(gs_show_enum *penum, gs_state *pgs,
 			floatp llx, floatp lly, floatp urx, floatp ury));
 
@@ -284,7 +282,7 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 /* Set the character width. */
 /* Note that this returns 1 if the current show operation is */
 /* non-displaying (stringwidth or cshow). */
-private int
+int
 set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
 {
     int code;
