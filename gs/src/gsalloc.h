@@ -52,7 +52,7 @@ void gs_memory_set_vm_reclaim(gs_ref_memory_t * mem, bool enabled);
  * Allocate and mostly initialize the state of an allocator (system, global,
  * or local).  Does not initialize global or space.
  */
-gs_ref_memory_t *ialloc_alloc_state(gs_raw_memory_t *, uint);
+gs_ref_memory_t *ialloc_alloc_state(gs_memory_t *, uint);
 
 /*
  * Add a chunk to an externally controlled allocator.  Such allocators

@@ -251,7 +251,7 @@ gs_create_overprint(
                        return_error(gs_error_VMerror),
                        "gs_create_overprint" );
     pct->type = &gs_composite_overprint_type;
-    pct->id = gs_next_ids(1);
+    pct->id = gs_next_ids(mem, 1);
     pct->params = *pparams;
     *ppct = (gs_composite_t *)pct;
     return 0;

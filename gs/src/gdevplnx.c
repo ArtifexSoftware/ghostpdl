@@ -985,7 +985,7 @@ plane_begin_typed_image(gx_device * dev,
     *((gx_image_enum_common_t *)info) = *info->info;
     info->procs = &plane_image_enum_procs;
     info->dev = (gx_device *)edev;
-    info->id = gs_next_ids(1);
+    info->id = gs_next_ids(memory, 1);
     info->memory = memory;
     info->pis = pis;
     info->pis_image = pis_image;

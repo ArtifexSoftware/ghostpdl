@@ -83,7 +83,7 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
 	    return_error(e_rangecheck);
 	memmove(&cs.params.indexed.base_space, &cs,
 		sizeof(cs.params.indexed.base_space));
-	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, imemory, false);
 	cs.params.indexed.lookup.table.data = pcsa[2].value.const_bytes;
 	cs.params.indexed.lookup.table.size = num_values;
 	cs.params.indexed.use_proc = 0;
@@ -105,7 +105,7 @@ zsetindexedspace(i_ctx_t *i_ctx_p)
 	    return code;
 	memmove(&cs.params.indexed.base_space, &cs,
 		sizeof(cs.params.indexed.base_space));
-	gs_cspace_init(&cs, &gs_color_space_type_Indexed, NULL);
+	gs_cspace_init(&cs, &gs_color_space_type_Indexed, imemory, false);
 	cs.params.indexed.use_proc = 1;
 	*pproc = pcsa[2];
 	map->proc.lookup_index = lookup_indexed_map;

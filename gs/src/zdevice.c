@@ -287,7 +287,7 @@ zmakewordimagedevice(i_ctx_t *i_ctx_p)
 	colors = op1->value.bytes;
 	colors_size = r_size(op1);
     }
-    if ((code = read_matrix(op - 4, &imat)) < 0)
+    if ((code = read_matrix(imemory, op - 4, &imat)) < 0)
 	return code;
     /* Everything OK, create device */
     code = gs_makewordimagedevice(&new_dev, &imat,

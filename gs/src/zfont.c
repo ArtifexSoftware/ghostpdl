@@ -42,22 +42,22 @@ gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
 
 /* Mark a glyph as a PostScript name (if it isn't a CID). */
 bool
-zfont_mark_glyph_name(gs_glyph glyph, void *ignore_data)
+zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
     return (glyph >= gs_min_cid_glyph || glyph == gs_no_glyph ? false :
-	    name_mark_index((uint) glyph));
+	    name_mark_index(mem, (uint) glyph));
 }
 
 /* Get a global glyph code.  */
 private int 
-zfont_global_glyph_code(gs_const_string *gstr, gs_glyph *pglyph)
+zfont_global_glyph_code(const gs_memory_t *mem, gs_const_string *gstr, gs_glyph *pglyph)
 {
     ref v;
-    int code = name_ref(gstr->data, gstr->size, &v, 0);
+    int code = name_ref(mem, gstr->data, gstr->size, &v, 0);
 
     if (code < 0)
 	return code;
-    *pglyph = (gs_glyph)name_index(&v);
+    *pglyph = (gs_glyph)name_index(mem, &v);
     return 0;
 }
 
@@ -65,7 +65,7 @@ zfont_global_glyph_code(gs_const_string *gstr, gs_glyph *pglyph)
 private int
 zfont_init(i_ctx_t *i_ctx_p)
 {
-    ifont_dir = gs_font_dir_alloc2(imemory, &gs_memory_default);
+    ifont_dir = gs_font_dir_alloc2(imemory, imemory->non_gc_memory);
     ifont_dir->ccache.mark_glyph = zfont_mark_glyph_name;
     ifont_dir->global_glyph_code = zfont_global_glyph_code;
     return gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
@@ -96,7 +96,7 @@ zmakefont(i_ctx_t *i_ctx_p)
     int code;
     gs_matrix mat;
 
-    if ((code = read_matrix(op, &mat)) < 0)
+    if ((code = read_matrix(imemory, op, &mat)) < 0)
 	return code;
     return make_font(i_ctx_p, &mat);
 }
@@ -265,7 +265,7 @@ font_param(const ref * pfdict, gs_font ** ppfont)
 	return_error(e_invalidfont);
     pfont = r_ptr(pid, gs_font);
     pdata = pfont->client_data;
-    if (!obj_eq(&pdata->dict, pfdict))
+    if (!obj_eq(pfont->memory, &pdata->dict, pfdict))
 	return_error(e_invalidfont);
     *ppfont = pfont;
     if (pfont == 0)
@@ -331,7 +331,7 @@ make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
      * font_data of the new font was simply copied from the old one.
      */
     if (pencoding != 0 &&
-	!obj_eq(pencoding, &pfont_data(newfont)->Encoding)
+	!obj_eq(imemory, pencoding, &pfont_data(newfont)->Encoding)
 	) {
 	if (newfont->FontType == ft_composite)
 	    return_error(e_rangecheck);
@@ -408,7 +408,7 @@ zdefault_make_font(gs_font_dir * pdir, const gs_font * oldfont,
 	ref *ppsm;
 
 	if (!(dict_find_string(fp, "ScaleMatrix", &ppsm) > 0 &&
-	      read_matrix(ppsm, &prev_scale) >= 0 &&
+	      read_matrix(mem, ppsm, &prev_scale) >= 0 &&
 	      gs_matrix_multiply(pmat, &prev_scale, &scale) >= 0)
 	    )
 	    scale = *pmat;
@@ -444,9 +444,9 @@ make_uint_array(register os_ptr op, const uint * intp, int count)
 /* Remove scaled font and character cache entries that would be */
 /* invalidated by a restore. */
 private bool
-purge_if_name_removed(cached_char * cc, void *vsave)
+purge_if_name_removed(const gs_memory_t *mem, cached_char * cc, void *vsave)
 {
-    return alloc_name_index_is_since_save(cc->code, vsave);
+    return alloc_name_index_is_since_save(mem, cc->code, vsave);
 }
 
 /* Remove entries from font and character caches. */

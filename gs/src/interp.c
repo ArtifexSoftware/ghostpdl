@@ -696,7 +696,7 @@ gs_errorname(i_ctx_t *i_ctx_p, int code, ref * perror_name)
 	dict_find_string(systemdict, "ErrorNames", &pErrorNames) <= 0
 	)
 	return_error(e_undefined);	/* errordict or ErrorNames not found?! */
-    return array_get(pErrorNames, (long)(-code - 1), perror_name);
+    return array_get(imemory, pErrorNames, (long)(-code - 1), perror_name);
 }
 
 /* Store an error string in $error.errorinfo. */
@@ -781,7 +781,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
      * Get a pointer to the name table so that we can use the
      * inline version of name_index_ref.
      */
-    const name_table *const int_nt = the_name_table();
+    const name_table *const int_nt = imemory->gs_lib_ctx->gs_name_table;
 
 #define set_error(ecode)\
   { ierror.code = ecode; ierror.line = __LINE__; }
@@ -800,7 +800,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
     int ticks_left = gs_interp_time_slice_ticks;
 
     /*
-     * If we exceed the VMThreshold, set ticks_left to -1
+     * If we exceed the VMThreshold, set ticks_left to -100
      * to alert the interpreter that we need to garbage collect.
      */
     set_gc_signal(i_ctx_p, &ticks_left, -100);
@@ -1149,7 +1149,7 @@ remap:		    if (iesp + 2 >= estop) {
 			    return_with_error_iref(code);
 			iesp = esp;
 		    }
-		    packed_get(iref_packed, iesp + 1);
+		    packed_get(imemory, iref_packed, iesp + 1);
 		    make_oper(iesp + 2, 0,
 			      r_ptr(&istate->remap_color_info,
 				    int_remap_color_info_t)->proc);
@@ -1667,7 +1667,7 @@ res:
 	 * We need a real object to return as the error object.
 	 * (It only has to last long enough to store in *perror_object.)
 	 */
-	packed_get((const ref_packed *)ierror.obj, &ierror.full);
+	packed_get(imemory, (const ref_packed *)ierror.obj, &ierror.full);
 	store_state_short(iesp);
 	if (IREF == ierror.obj)
 	    SET_IREF(&ierror.full);

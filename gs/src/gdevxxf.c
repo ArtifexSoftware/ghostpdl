@@ -421,7 +421,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	h = bbox.q.y - bbox.p.y;
 	wbm = ROUND_UP(w, align_bitmap_mod * 8);
 	raster = wbm >> 3;
-	bits = (byte *) gs_malloc(h, raster, "x_render_char");
+	bits = (byte *) gs_malloc(xdev->memory, h, raster, "x_render_char");
 	if (bits == 0)
 	    return gs_error_limitcheck;
 	xpm = XCreatePixmap(xdev->dpy, xdev->win, w, h, 1);
@@ -447,7 +447,7 @@ x_render_char(gx_xfont * xf, gx_xglyph xg, gx_device * dev,
 	code = (*copy_mono) (dev, bits, 0, raster, gx_no_bitmap_id,
 			     xo + bbox.p.x, yo + bbox.p.y, w, h,
 			     gx_no_color_index, color);
-	gs_free((char *)bits, h, raster, "x_render_char");
+	gs_free(xdev->memory, (char *)bits, h, raster, "x_render_char");
 	XFreePixmap(xdev->dpy, xpm);
 	XFreeGC(xdev->dpy, fgc);
 	XDestroyImage(xim);

@@ -97,7 +97,7 @@ z11_CIDMap_proc(gs_font_cid2 *pfont, gs_glyph glyph)
 	    return_error(e_typecheck);
 	return prgnum->value.intval;
     default:			/* array type */
-	code = string_array_access_proc(pcidmap, 1, cid * gdbytes,
+        code = string_array_access_proc(pfont->memory, pcidmap, 1, cid * gdbytes,
 					gdbytes, &data);
 
 	if (code < 0)
@@ -282,7 +282,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	    if (code <= 0 || r_type(a) != t_array)
 		return_error(e_invalidfont);
 	    for (j = 0; j < 2; j++) {
-		code = array_get(a, j, &v); 
+	        code = array_get(imemory, a, j, &v); 
 		if (code < 0 || r_type(&v) != t_integer)
 		    return_error(e_invalidfont);
 		loca_glyph_pos[i][j] = v.value.intval;
@@ -291,7 +291,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 
     } else
 	file = NULL;
-    code = font_string_array_param(op, "CIDMap", &rcidmap);
+    code = font_string_array_param(imemory, op, "CIDMap", &rcidmap);
     switch (code) {
     case 0:			/* in PLRM3 */
     gdb:
@@ -330,7 +330,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     pfont->procs.glyph_info = z11_glyph_info;
     pfont->procs.glyph_outline = z11_glyph_outline;
     pfont->data.get_glyph_index = z11_get_glyph_index;
-    get_font_name(&cfnstr, CIDFontName);
+    get_font_name(imemory, &cfnstr, CIDFontName);
     copy_font_name(&pfcid->font_name, &cfnstr);
     if (MetricsCount) {
 	/* "Wrap" the glyph accessor procedures. */
@@ -403,7 +403,7 @@ zfillCIDMap(i_ctx_t *i_ctx_p)
     check_type(*SubstNWP, t_array);
     check_type(*GDBytes, t_integer);
     check_type(*CIDMap, t_array);
-    code = cid_fill_CIDMap(Decoding, TT_cmap, SubstNWP, GDBytes->value.intval, CIDMap);
+    code = cid_fill_CIDMap(imemory, Decoding, TT_cmap, SubstNWP, GDBytes->value.intval, CIDMap);
     pop(5);
     return code;
 }

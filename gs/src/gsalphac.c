@@ -124,7 +124,7 @@ gs_create_composite_alpha(gs_composite_t ** ppcte,
 		      mem, return_error(gs_error_VMerror),
 		      "gs_create_composite_alpha");
     pcte->type = &gs_composite_alpha_type;
-    pcte->id = gs_next_ids(1);
+    pcte->id = gs_next_ids(mem, 1);
     pcte->params = *params;
     *ppcte = (gs_composite_t *) pcte;
     return 0;

@@ -29,23 +29,12 @@
 
 /* ------ Unique IDs ------ */
 
-/* Generate a block of unique IDs. */
-static ulong gs_next_id;
-
-init_proc(gs_gsutil_init);	/* check prototype */
-int
-gs_gsutil_init(gs_memory_t *mem)
-{
-    gs_next_id = 1;
-    return 0;
-}
-
 ulong
-gs_next_ids(uint count)
+gs_next_ids(const gs_memory_t *mem, uint count)
 {
-    ulong id = gs_next_id;
+    ulong id = mem->gs_lib_ctx->gs_next_id;
 
-    gs_next_id += count;
+    mem->gs_lib_ctx->gs_next_id += count;
     return id;
 }
 

@@ -220,7 +220,7 @@ gx_begin_image3x_generic(gx_device * dev,
 				"gx_begin_image3x_generic");
 	if (pmcs == 0)
 	    return_error(gs_error_VMerror);
-	gs_cspace_init_DevicePixel(pmcs, penum->mask[i].depth);
+	gs_cspace_init_DevicePixel(mem, pmcs, penum->mask[i].depth);
 	mrect.p.x = mrect.p.y = 0;
 	mrect.q.x = penum->mask[i].width;
 	mrect.q.y = penum->mask[i].height;

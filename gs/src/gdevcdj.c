@@ -2047,10 +2047,10 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
   storage_size_words = ((plane_size + plane_size) * num_comps +
 			databuff_size + errbuff_size + outbuff_size) / W;
 
-  storage = (ulong *) gs_malloc(storage_size_words, W, "hp_colour_print_page");
+  storage = (ulong *) gs_malloc(pdev->memory, storage_size_words, W, "hp_colour_print_page");
   ep_storage_size_words = (plane_size * (num_comps + 1)) / W * img_rows
       + 16;			/* Redundant space for sentinel and aligning. */
-  ep_storage = (word *) gs_malloc(ep_storage_size_words, W, "ep_print_buffer");
+  ep_storage = (word *) gs_malloc(pdev->memory, ep_storage_size_words, W, "ep_print_buffer");
 
   /*
    * The principal data pointers are stored as pairs of values, with
@@ -2660,8 +2660,8 @@ hp_colour_print_page(gx_device_printer * pdev, FILE * prn_stream, int ptype)
     fputs("\033&l0H", prn_stream);
 
   /* free temporary storage */
-  gs_free((char *) ep_storage, ep_storage_size_words, W, "ep_print_buffer");
-  gs_free((char *) storage, storage_size_words, W, "hp_colour_print_page");
+  gs_free(pdev->memory, (char *) ep_storage, ep_storage_size_words, W, "ep_print_buffer");
+  gs_free(pdev->memory, (char *) storage, storage_size_words, W, "hp_colour_print_page");
 
   return 0;
 }

@@ -35,7 +35,7 @@
 #include "store.h"		/* for make_null */
 
 /* Forward references */
-private int zcrd1_proc_params(os_ptr op, ref_cie_render_procs * pcprocs);
+private int zcrd1_proc_params(const gs_memory_t *mem, os_ptr op, ref_cie_render_procs * pcprocs);
 private int zcrd1_params(os_ptr op, gs_cie_render * pcrd,
 			 ref_cie_render_procs * pcprocs, gs_memory_t * mem);
 private int cache_colorrendering1(i_ctx_t *i_ctx_p, gs_cie_render * pcrd,
@@ -129,7 +129,7 @@ zsetcolorrendering1(i_ctx_t *i_ctx_p)
 
     check_type(op[-1], t_dictionary);
     check_stype(*op, st_cie_render1);
-    code = zcrd1_proc_params(op - 1, &procs);
+    code = zcrd1_proc_params(imemory, op - 1, &procs);
     if (code < 0)
 	return code;
     code = gs_setcolorrendering(igs, r_ptr(op, gs_cie_render));
@@ -172,14 +172,15 @@ zsetdevicecolorrendering1(i_ctx_t *i_ctx_p)
 
 /* Get ColorRenderingType 1 procedures from the PostScript dictionary. */
 private int
-zcrd1_proc_params(os_ptr op, ref_cie_render_procs * pcprocs)
+zcrd1_proc_params(const gs_memory_t *mem, 
+		  os_ptr op, ref_cie_render_procs * pcprocs)
 {
     int code;
     ref *pRT;
 
-    if ((code = dict_proc3_param(op, "EncodeLMN", &pcprocs->EncodeLMN)) < 0 ||
-      (code = dict_proc3_param(op, "EncodeABC", &pcprocs->EncodeABC)) < 0 ||
-    (code = dict_proc3_param(op, "TransformPQR", &pcprocs->TransformPQR)) < 0
+    if ((code = dict_proc3_param(mem, op, "EncodeLMN", &pcprocs->EncodeLMN)) < 0 ||
+      (code = dict_proc3_param(mem, op, "EncodeABC", &pcprocs->EncodeABC)) < 0 ||
+    (code = dict_proc3_param(mem, op, "TransformPQR", &pcprocs->TransformPQR)) < 0
 	)
 	return (code < 0 ? code : gs_note_error(e_rangecheck));
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
@@ -212,14 +213,14 @@ zcrd1_params(os_ptr op, gs_cie_render * pcrd,
     ref *pRT;
 
     if ((code = dict_int_param(op, "ColorRenderingType", 1, 1, 0, &ignore)) < 0 ||
-	(code = zcrd1_proc_params(op, pcprocs)) < 0 ||
-	(code = dict_matrix3_param(op, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
-	(code = dict_range3_param(op, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
-	(code = dict_matrix3_param(op, "MatrixABC", &pcrd->MatrixABC)) < 0 ||
-	(code = dict_range3_param(op, "RangeABC", &pcrd->RangeABC)) < 0 ||
-	(code = cie_points_param(op, &pcrd->points)) < 0 ||
-	(code = dict_matrix3_param(op, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
-	(code = dict_range3_param(op, "RangePQR", &pcrd->RangePQR)) < 0
+	(code = zcrd1_proc_params(mem, op, pcprocs)) < 0 ||
+	(code = dict_matrix3_param(mem, op, "MatrixLMN", &pcrd->MatrixLMN)) < 0 ||
+	(code = dict_range3_param(mem, op, "RangeLMN", &pcrd->RangeLMN)) < 0 ||
+	(code = dict_matrix3_param(mem, op, "MatrixABC", &pcrd->MatrixABC)) < 0 ||
+	(code = dict_range3_param(mem, op, "RangeABC", &pcrd->RangeABC)) < 0 ||
+	(code = cie_points_param(mem, op, &pcrd->points)) < 0 ||
+	(code = dict_matrix3_param(mem, op, "MatrixPQR", &pcrd->MatrixPQR)) < 0 ||
+	(code = dict_range3_param(mem,op, "RangePQR", &pcrd->RangePQR)) < 0
 	)
 	return code;
     if (dict_find_string(op, "RenderTable", &pRT) > 0) {
@@ -456,7 +457,7 @@ ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
     for (i = 0; i < 4; i++) {
 	ref tmp;
 
-	code = array_get(op - 4 + i, idx, &tmp);
+	code = array_get(imemory, op - 4 + i, idx, &tmp);
 	if (code >= 0)
 	    code = real_param(&tmp, &a[i]);
 	if (code < 0) return code;

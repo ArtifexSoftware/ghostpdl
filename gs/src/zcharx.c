@@ -44,7 +44,7 @@ glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
 	    break;
 	default:
 	    check_type(*op, t_name);
-	    *pglyph = name_index(op);
+	    *pglyph = name_index(imemory, op);
     }
     return op_show_enum_setup(i_ctx_p);
 }
@@ -110,7 +110,7 @@ moveshow(i_ctx_t *i_ctx_p, bool have_x, bool have_y)
     for (i = 0; i < size; ++i) {
 	ref value;
 
-	switch (code = num_array_get(op, format, i, &value)) {
+	switch (code = num_array_get(imemory, op, format, i, &value)) {
 	case t_integer:
 	    values[i] = (float)value.value.intval; break;
 	case t_real:

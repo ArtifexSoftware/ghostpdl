@@ -115,9 +115,14 @@ gs_resize_struct_array(gs_memory_t *mem, void *obj, uint num_elements,
     return gs_resize_object(mem, obj, num_elements, cname);
 }
 
-/* Allocate a structure using a "raw memory" allocator. */
+
+/* Allocate a structure using a "raw memory" allocator.
+ * really just an alias for gs_alloc_struct_immovable 
+ * with the clients false expectation that it is saving memory   
+ */
+ 
 void *
-gs_raw_alloc_struct_immovable(gs_raw_memory_t * rmem,
+gs_raw_alloc_struct_immovable(gs_memory_t * rmem,
 			      gs_memory_type_ptr_t pstype,
 			      client_name_t cname)
 {

@@ -75,7 +75,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
     /* See zcsindex.c for why we use memmove here. */
     memmove(&cs.params.device_n.alt_space, &cs,
 	    sizeof(cs.params.device_n.alt_space));
-    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, NULL);
+    gs_cspace_init(&cs, &gs_color_space_type_DeviceN, imemory, false);
     code = gs_build_DeviceN(&cs, num_components, pacs, imemory);
     if (code < 0)
 	return code;
@@ -89,10 +89,10 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 	ref sname;
 
 	for (i = 0; i < num_components; ++i) {
-	    array_get(pcsa, (long)i, &sname);
+	    array_get(imemory, pcsa, (long)i, &sname);
 	    switch (r_type(&sname)) {
 		case t_string:
-		    code = name_from_string(&sname, &sname);
+		    code = name_from_string(imemory, &sname, &sname);
 		    if (code < 0) {
 			ifree_object(names, ".setdevicenspace(names)");
 			ifree_object(pmap, ".setdevicenspace(map)");
@@ -100,7 +100,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 		    }
 		    /* falls through */
 		case t_name:
-		    names[i] = name_index(&sname);
+		    names[i] = name_index(imemory, &sname);
 		    break;
 		default:
 		    ifree_object(names, ".setdevicenspace(names)");

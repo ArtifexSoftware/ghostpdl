@@ -596,7 +596,7 @@ clist_strip_copy_rop(gx_device * dev,
 		    /* Change tile.  If there is no id, generate one. */
 		    if (tiles->id == gx_no_bitmap_id) {
 			tile_with_id = *tiles;
-			tile_with_id.id = gs_next_ids(1);
+			tile_with_id.id = gs_next_ids(dev->memory, 1);
 			tiles = &tile_with_id;
 		    }
 		    TRY_RECT {
@@ -627,7 +627,7 @@ clist_strip_copy_rop(gx_device * dev,
 			 * Allocate enough fake IDs, since the inner call on
 			 * clist_strip_copy_rop will need them anyway.
 			 */
-			ids = gs_next_ids(min(height, rep_height));
+			ids = gs_next_ids(dev->memory, min(height, rep_height));
 			line_tile = *tiles;
 			line_tile.size.y = 1;
 			line_tile.rep_height = 1;

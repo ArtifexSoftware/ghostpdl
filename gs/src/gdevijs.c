@@ -588,18 +588,18 @@ gsijs_close(gx_device *dev)
 
     code = gdev_prn_close(dev);
     if (ijsdev->IjsParams)
-	gs_free(ijsdev->IjsParams, ijsdev->IjsParams_size, 1, 
+	gs_free(dev->memory, ijsdev->IjsParams, ijsdev->IjsParams_size, 1, 
 	    "gsijs_read_string_malloc");
     if (ijsdev->ColorSpace)
-	gs_free(ijsdev->ColorSpace,
+	gs_free(dev->memory, ijsdev->ColorSpace,
 		ijsdev->ColorSpace_size, 1, 
 		"gsijs_read_string_malloc");
     if (ijsdev->DeviceManufacturer)
-	gs_free(ijsdev->DeviceManufacturer,
+	gs_free(dev->memory, ijsdev->DeviceManufacturer,
 		ijsdev->DeviceManufacturer_size, 1, 
 		"gsijs_read_string_malloc");
     if (ijsdev->DeviceModel)
-	gs_free(ijsdev->DeviceModel, ijsdev->DeviceModel_size, 1, 
+	gs_free(dev->memory, ijsdev->DeviceModel, ijsdev->DeviceModel_size, 1, 
 		"gsijs_read_string_malloc");
     ijsdev->IjsParams = NULL;
     ijsdev->IjsParams_size = 0;
@@ -916,11 +916,11 @@ gsijs_read_string_malloc(gs_param_list *plist, gs_param_name pname, char **str,
 	    }
 	    if (new_value.size >= *size) {
 	        if (*str)
-		    gs_free(str, *size, 1, "gsijs_read_string_malloc");
+		    gs_free(plist->memory, str, *size, 1, "gsijs_read_string_malloc");
 		*str = NULL;
 		*size = 0;
 	    }
-	    *str = gs_malloc(new_value.size + 1, 1, 
+	    *str = gs_malloc(plist->memory, new_value.size + 1, 1, 
 		"gsijs_read_string_malloc");
 	    if (*str == NULL) {
                 code = gs_note_error(gs_error_VMerror);

@@ -38,6 +38,7 @@ struct dict_s {
     ref memory;			/* foreign t_struct, the allocator that */
     /* created this dictionary */
 #define dict_memory(pdict) r_ptr(&(pdict)->memory, gs_ref_memory_t)
+#define dict_mem(pdict) r_ptr(&(pdict)->memory, gs_memory_t)
 };
 
 /*

@@ -99,7 +99,7 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 	    uint size;
 
 	    for (;; skip -= size, ++index) {
-		int code = array_get(pgdata, index, &rstr);
+		int code = array_get(pfont->memory, pgdata, index, &rstr);
 
 		if (code < 0)
 		    return code;
@@ -123,7 +123,7 @@ cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
 		memcpy(data, rstr.value.bytes + skip, size);
 		copied = size;
 		while (copied < count) {
-		    int code = array_get(pgdata, ++index, &rstr);
+		    int code = array_get(pfont->memory, pgdata, ++index, &rstr);
 
 		    if (code < 0)
 			goto err;
@@ -181,7 +181,8 @@ z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_glyph_data_t *pgd,
     int code;
 
     if (!r_has_type(&pfdata->u.cid0.GlyphDirectory, t_null)) {
-	code = font_gdir_get_outline(&pfdata->u.cid0.GlyphDirectory,
+        code = font_gdir_get_outline(pfont->memory,
+				     &pfdata->u.cid0.GlyphDirectory,
 				     glyph_index, &gdata);
 	if (code < 0)
 	    return code;
@@ -259,7 +260,7 @@ z9_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *pmat
 				    &fidx);
     if (code < 0)
 	return code;
-    glyph_ref(glyph, &gref);
+    glyph_ref(font->memory, glyph, &gref);
     ocode = zcharstring_outline(pfcid->cidata.FDArray[fidx], WMode, &gref, &gdata,
 				pmat, ppath);
     gs_glyph_data_free(&gdata, "z9_glyph_outline");
@@ -316,20 +317,20 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
 	data1.interpret = gs_type1_interpret;
 	data1.subroutineNumberBias = 0;
 	data1.lenIV = DEFAULT_LENIV_1;
-	code = charstring_font_params(prfd, &refs, &data1);
+	code = charstring_font_params(imemory, prfd, &refs, &data1);
 	if (code < 0)
 	    return code;
-	code = build_proc_name_refs(&build,
+	code = build_proc_name_refs(imemory, &build,
 				    "%Type1BuildChar", "%Type1BuildGlyph");
 	break;
     case 2:
 	code = type2_font_params(prfd, &refs, &data1);
 	if (code < 0)
 	    return code;
-	code = charstring_font_params(prfd, &refs, &data1);
+	code = charstring_font_params(imemory, prfd, &refs, &data1);
 	if (code < 0)
 	    return code;
-	code = build_proc_name_refs(&build,
+	code = build_proc_name_refs(imemory, &build,
 				    "%Type2BuildChar", "%Type2BuildGlyph");
 	break;
     default:			/* can't happen */
@@ -357,7 +358,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     build_proc_refs build;
-    int code = build_proc_name_refs(&build, NULL, "%Type9BuildGlyph");
+    int code = build_proc_name_refs(imemory, &build, NULL, "%Type9BuildGlyph");
     gs_font_cid_data common;
     ref GlyphDirectory, GlyphData, DataSource;
     ref *prfda, cfnstr, *CIDFontName;
@@ -423,7 +424,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     for (i = 0; i < FDArray_size; ++i) {
 	ref rfd;
 
-	array_get(prfda, (long)i, &rfd);
+	array_get(imemory, prfda, (long)i, &rfd);
 	code = fd_array_element(i_ctx_p, &FDArray[i], &rfd);
 	if (code < 0)
 	    goto fail;
@@ -444,7 +445,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     pfcid->cidata.FDBytes = FDBytes;
     pfcid->cidata.glyph_data = z9_glyph_data;
     pfcid->cidata.proc_data = 0;	/* for GC */
-    get_font_name(&cfnstr, CIDFontName);
+    get_font_name(imemory, &cfnstr, CIDFontName);
     copy_font_name(&pfcid->font_name, &cfnstr);
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphDirectory, &GlyphDirectory);
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphData, &GlyphData);

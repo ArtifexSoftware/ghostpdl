@@ -696,7 +696,7 @@ gx_add_char_bits(gs_font_dir * dir, cached_char * cc,
 
     /* Assign a bitmap id. */
 
-    cc->id = gs_next_ids(1);
+    cc->id = gs_next_ids(dir->orig_fonts->memory, 1);
 }
 
 /* Purge from the caches all references to a given font. */

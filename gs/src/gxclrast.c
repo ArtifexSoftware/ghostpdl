@@ -350,7 +350,7 @@ in:				/* Initialize for a new page. */
     gx_imager_setscreenphase(&imager_state, -x0, -y0, gs_color_select_all);
     halftone_type = ht_type_none;
     fill_params.fill_zero_width = false;
-    gs_cspace_init_DeviceGray(&cs);
+    gs_cspace_init_DeviceGray(mem, &cs);
     pcs = &cs;
     color_unset(&dev_color);
     color_space.params.indexed.use_proc = 0;
@@ -1862,15 +1862,15 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	      (b & 4 ? "(proc)" : ""));
     switch (index) {
     case gs_color_space_index_DeviceGray:
-        gs_cspace_init_DeviceGray(&gray_cs);
+        gs_cspace_init_DeviceGray(mem, &gray_cs);
         pcs = &gray_cs;
 	break;
     case gs_color_space_index_DeviceRGB:
-        gs_cspace_init_DeviceRGB(&rgb_cs);
+        gs_cspace_init_DeviceRGB(mem, &rgb_cs);
         pcs = &rgb_cs;
 	break;
     case gs_color_space_index_DeviceCMYK:
-        gs_cspace_init_DeviceCMYK(&cmyk_cs);
+        gs_cspace_init_DeviceCMYK(mem, &cmyk_cs);
         pcs = &cmyk_cs;
 	break;
     default:

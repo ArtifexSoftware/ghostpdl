@@ -119,7 +119,7 @@ gs_make_pattern_common(gs_client_color *pcc,
     gs_newpath(saved);
     pinst->saved = saved;
     pcc->pattern = pinst;
-    pcc->pattern->pattern_id = gs_next_ids(1);
+    pcc->pattern->pattern_id = gs_next_ids(mem, 1);
     return 0;
 }
 
@@ -157,7 +157,7 @@ gs_setpatternspace(gs_state * pgs)
     if (pgs->color_space->type->index != gs_color_space_index_Pattern) {
 	gs_color_space cs;
 
-	gs_cspace_init(&cs, &gs_color_space_type_Pattern, NULL);
+	gs_cspace_init(&cs, &gs_color_space_type_Pattern, pgs->memory, false);
 	/**************** base_space SETTING IS WRONG ****************/
 	cs.params.pattern.base_space =
 	    *(gs_paint_color_space *) pgs->color_space;

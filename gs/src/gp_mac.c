@@ -142,7 +142,7 @@ gp_get_realtime(long *pdt)
 
 	if (gettimeofday(&tp) == -1) {
 	    lprintf("Ghostscript: gettimeofday failed!\n");
-	    gs_abort();
+	    gs_abort(NULL);
 	}
 
     /* tp.tv_sec is #secs since Jan 1, 1970 */

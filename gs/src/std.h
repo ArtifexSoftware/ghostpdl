@@ -163,6 +163,18 @@ typedef ulong bits32;
  */
 #include <stdio.h>
 
+/*
+ * Not a very good place to define this, but we can't find a better one.
+ */
+#ifndef gs_memory_DEFINED
+#  define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
+#endif
+
+#define init_proc(proc)\
+  int proc(gs_memory_t *)
+
+
 /* dpf and epf may be redefined */
 #define dpf errprintf
 #define epf errprintf
@@ -170,15 +182,15 @@ typedef ulong bits32;
 /* To allow stdout and stderr to be redirected, all stdout goes 
  * though outwrite and all stderr goes through errwrite.
  */
-int outwrite(const char *str, int len);
+int outwrite(const gs_memory_t *mem, const char *str, int len);
 int errwrite(const char *str, int len);
-void outflush(void);
+void outflush(const gs_memory_t *mem);
 void errflush(void);
 /* Formatted output to outwrite and errwrite.
  * The maximum string length is 1023 characters.
  */
 #ifdef __PROTOTYPES__
-int outprintf(const char *fmt, ...);
+int outprintf(const gs_memory_t *mem, const char *fmt, ...);
 int errprintf(const char *fmt, ...);
 #else
 int outprintf();
@@ -252,7 +264,7 @@ void dflush(void);		/* flush stderr */
 #define dlprintf12(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10,arg11,arg12)\
   (_dpl dprintf12(str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12))
 
-void printf_program_ident(const char *program_name, long revision_number);
+void printf_program_ident(const gs_memory_t *mem, const char *program_name, long revision_number);
 void eprintf_program_ident(const char *program_name, long revision_number);
 const char *gs_program_name(void);
 long gs_revision_number(void);

@@ -274,7 +274,7 @@ zchar_set_cache(i_ctx_t *i_ctx_p, const gs_font_base * pbfont,
  * Get the CharString data corresponding to a glyph.  Return typecheck
  * if it isn't a string.
  */
-private bool charstring_is_notdef_proc(const ref *);
+private bool charstring_is_notdef_proc(const gs_memory_t *mem, const ref *);
 private int charstring_make_notdef(gs_glyph_data_t *, gs_font *);
 int
 zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
@@ -294,7 +294,7 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
 	 *	0 0 hsbw endchar
 	 */
 	if (font->FontType == ft_encrypted &&
-	    charstring_is_notdef_proc(pcstr)
+	    charstring_is_notdef_proc(font->memory, pcstr)
 	    )
 	    return charstring_make_notdef(pgd, font);
 	else
@@ -305,14 +305,14 @@ zchar_charstring_data(gs_font *font, const ref *pgref, gs_glyph_data_t *pgd)
     return 0;
 }
 private bool
-charstring_is_notdef_proc(const ref *pcstr)
+charstring_is_notdef_proc(const gs_memory_t *mem, const ref *pcstr)
 {
     if (r_is_array(pcstr) && r_size(pcstr) == 4) {
 	ref elts[4];
 	long i;
 
 	for (i = 0; i < 4; ++i)
-	    array_get(pcstr, i, &elts[i]);
+	    array_get(mem, pcstr, i, &elts[i]);
 	if (r_has_type(&elts[0], t_name) &&
 	    r_has_type(&elts[1], t_integer) && elts[1].value.intval == 0 &&
 	    r_has_type(&elts[2], t_integer) && elts[2].value.intval == 0 &&
@@ -320,9 +320,9 @@ charstring_is_notdef_proc(const ref *pcstr)
 	    ) {
 	    ref nref;
 
-	    name_enter_string("pop", &nref);
+	    name_enter_string(mem, "pop", &nref);
 	    if (name_eq(&elts[0], &nref)) {
-		name_enter_string("setcharwidth", &nref);
+	        name_enter_string(mem, "setcharwidth", &nref);
 		if (name_eq(&elts[3], &nref))
 		    return true;
 	    }
@@ -366,7 +366,7 @@ charstring_make_notdef(gs_glyph_data_t *pgd, gs_font *font)
  * CIDFontType 0 CIDFont.
  */
 int
-zchar_enumerate_glyph(const ref *prdict, int *pindex, gs_glyph *pglyph)
+zchar_enumerate_glyph(const gs_memory_t *mem, const ref *prdict, int *pindex, gs_glyph *pglyph)
 {
     int index = *pindex - 1;
     ref elt[2];
@@ -384,7 +384,7 @@ next:
 		*pglyph = gs_min_cid_glyph + elt[0].value.intval;
 		break;
 	    case t_name:
-		*pglyph = name_index(elt);
+	        *pglyph = name_index(mem, elt);
 		break;
 	    default:		/* can't handle it */
 		goto next;

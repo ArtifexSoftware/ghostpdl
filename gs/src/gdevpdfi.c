@@ -384,7 +384,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * color space, which pdf_color_space() can't handle.  Patch it
 	 * to DeviceGray here.
 	 */
-	gs_cspace_init_DeviceGray(&cs_gray_temp);
+	gs_cspace_init_DeviceGray(pdev->memory, &cs_gray_temp);
 	pcs = &cs_gray_temp;
     } else if (is_mask)
 	code = pdf_prepare_imagemask(pdev, pis, pdcolor);

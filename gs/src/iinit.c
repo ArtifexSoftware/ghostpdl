@@ -113,7 +113,7 @@ i_initial_remove_name(i_ctx_t *i_ctx_p, const char *nstr)
 {
     ref nref;
 
-    if (name_ref((const byte *)nstr, strlen(nstr), &nref, -1) >= 0)
+    if (name_ref(imemory, (const byte *)nstr, strlen(nstr), &nref, -1) >= 0)
 	idict_undef(systemdict, &nref);
 }
 
@@ -348,7 +348,7 @@ obj_init(i_ctx_t **pi_ctx_p, gs_dual_memory_t *idmem)
 	if (code < 0)
 	    return code;
 	for (i = 0; i < n; i++)
-	    if ((code = name_enter_string((const char *)gs_error_names[i],
+	  if ((code = name_enter_string(imemory, (const char *)gs_error_names[i],
 					  era.value.refs + i)) < 0)
 		return code;
 	return initial_enter_name("ErrorNames", &era);
@@ -448,7 +448,7 @@ op_init(i_ctx_t *i_ctx_p)
 	    if (op_def_is_begin_dict(def)) {
 		ref nref;
 
-		code = name_ref((const byte *)nstr, strlen(nstr), &nref, -1);
+		code = name_ref(imemory, (const byte *)nstr, strlen(nstr), &nref, -1);
 		if (code < 0)
 		    return code;
 		if (!dict_find(systemdict, &nref, &pdict))

@@ -45,14 +45,14 @@ private int dict_threshold2_params(const ref *, gs_threshold2_halftone *,
  * pointer and a string length.
  */
 int
-gs_get_colorname_string(gs_separation_name colorname_index,
+gs_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_index,
 			unsigned char **ppstr, unsigned int *pname_size)
 {
     ref nref;
 
-    name_index_ref(colorname_index, &nref);
-    name_string_ref(&nref, &nref);
-    return obj_string_data(&nref, (const unsigned char**) ppstr, pname_size);
+    name_index_ref(mem, colorname_index, &nref);
+    name_string_ref(mem, &nref, &nref);
+    return obj_string_data(mem, &nref, (const unsigned char**) ppstr, pname_size);
 }
 
 /* Dummy spot function */
@@ -89,6 +89,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
     int halftonetype, type = 0;
     gs_state *pgs = igs;
 
+    mem = (gs_memory_t *) idmemory->spaces_indexed[r_space_index(op - 1)];
+
     check_type(*op, t_dictionary);
     check_dict_read(*op);
     check_type(op[-1], t_dictionary);
@@ -121,8 +123,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    continue;
 
 	/* Get the name of the component  verify that we will use it. */
-	cname = name_index(&rvalue[0]);
-	code = gs_get_colorname_string(cname, &pname, &name_size);
+	cname = name_index(mem, &rvalue[0]);
+	code = gs_get_colorname_string(mem, cname, &pname, &name_size);
 	if (code < 0)
 	    break;
 	colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
@@ -147,7 +149,6 @@ zsethalftone5(i_ctx_t *i_ctx_p)
         }
     }
 
-    mem = (gs_memory_t *) idmemory->spaces_indexed[r_space_index(op - 1)];
     check_estack(5);		/* for sampling Type 1 screens */
     refset_null(sprocs, count);
     refset_null(tprocs, count);
@@ -179,8 +180,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 		continue;
 
 	    /* Get the name of the component */
-	    cname = name_index(&rvalue[0]);
-	    code = gs_get_colorname_string(cname, &pname, &name_size);
+	    cname = name_index(mem, &rvalue[0]);
+	    code = gs_get_colorname_string(mem, cname, &pname, &name_size);
 	    if (code < 0)
 	        break;
 	    colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,
@@ -245,8 +246,8 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 		continue;
 
 	    /* Get the name of the component and verify that we will use it. */
-	    cname = name_index(&rvalue[0]);
-	    code = gs_get_colorname_string(cname, &pname, &name_size);
+	    cname = name_index(mem, &rvalue[0]);
+	    code = gs_get_colorname_string(mem, cname, &pname, &name_size);
 	    if (code < 0)
 	        break;
 	    colorant_number = gs_cname_to_colorant_number(pgs, pname, name_size,

@@ -78,16 +78,16 @@ zrsdparams(i_ctx_t *i_ctx_p)
     for (i = 0; i < r_size(pFilter); ++i) {
 	ref f, fname, dp;
 
-	array_get(pFilter, (long)i, &f);
+	array_get(imemory, pFilter, (long)i, &f);
 	if (!r_has_type(&f, t_name))
 	    return_error(e_typecheck);
-	name_string_ref(&f, &fname);
+	name_string_ref(imemory, &f, &fname);
 	if (r_size(&fname) < 6 ||
 	    memcmp(fname.value.bytes + r_size(&fname) - 6, "Decode", 6)
 	    )
 	    return_error(e_rangecheck);
 	if (pDecodeParms) {
-	    array_get(pDecodeParms, (long)i, &dp);
+	    array_get(imemory, pDecodeParms, (long)i, &dp);
 	    if (!(r_has_type(&dp, t_dictionary) || r_has_type(&dp, t_null)))
 		return_error(e_typecheck);
 	}

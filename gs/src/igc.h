@@ -47,7 +47,7 @@ struct struct_shared_procs_s {
     /* Compact an object. */
 
 #define gc_proc_compact(proc)\
-  void proc(obj_header_t *pre, obj_header_t *dpre, uint size)
+  void proc(const gs_memory_t *cmem, obj_header_t *pre, obj_header_t *dpre, uint size)
     gc_proc_compact((*compact));
 
 };
@@ -65,7 +65,7 @@ struct gc_state_s {
     int min_collect;		/* avm_space */
     bool relocating_untraced;	/* if true, we're relocating */
     /* pointers from untraced spaces */
-    gs_raw_memory_t *heap;	/* for extending mark stack */
+    gs_memory_t *heap;	/* for extending mark stack */
     name_table *ntable;		/* (implicitly referenced by names) */
 #ifdef DEBUG
     chunk_t *container;

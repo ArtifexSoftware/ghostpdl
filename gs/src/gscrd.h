@@ -50,7 +50,9 @@ int
  * default values.
  */
 int
-    gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
+    gs_cie_render1_init_from(const gs_memory_t  *mem,
+	    		     gs_cie_render *pcrd, 
+			     void *client_data,
 			     const gs_cie_render * pfrom_crd,
 			     const gs_vector3 * WhitePoint,
 			     const gs_vector3 * BlackPoint,
@@ -68,7 +70,9 @@ int
  * Initialize a CRD without the option of copying cached values.
  */
 int
-    gs_cie_render1_initialize(gs_cie_render * pcrd, void *client_data,
+    gs_cie_render1_initialize(const gs_memory_t *mem, 
+			      gs_cie_render *pcrd, 
+			      void *client_data,
 			      const gs_vector3 * WhitePoint,
 			      const gs_vector3 * BlackPoint,
 			      const gs_matrix3 * MatrixPQR,

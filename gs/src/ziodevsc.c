@@ -48,21 +48,17 @@ const char iodev_dtype_stdio[] = "Special";
  */
 
 #define STDIN_BUF_SIZE 128
-/*#define ref_stdin ref_stdio[0] *//* in files.h */
-bool gs_stdin_is_interactive;	/* exported for command line only */
 private iodev_proc_init(stdin_init);
 private iodev_proc_open_device(stdin_open);
 const gx_io_device gs_iodev_stdin =
     iodev_special("%stdin%", stdin_init, stdin_open);
 
 #define STDOUT_BUF_SIZE 128
-/*#define ref_stdout ref_stdio[1] *//* in files.h */
 private iodev_proc_open_device(stdout_open);
 const gx_io_device gs_iodev_stdout =
     iodev_special("%stdout%", iodev_no_init, stdout_open);
 
 #define STDERR_BUF_SIZE 128
-/*#define ref_stderr ref_stdio[2] *//* in files.h */
 private iodev_proc_open_device(stderr_open);
 const gx_io_device gs_iodev_stderr =
     iodev_special("%stderr%", iodev_no_init, stderr_open);
@@ -90,7 +86,7 @@ stdio_close(stream *s)
 private int
 stdin_init(gx_io_device * iodev, gs_memory_t * mem)
 {
-    gs_stdin_is_interactive = true;
+    mem->gs_lib_ctx->stdin_is_interactive = true;
     return 0;
 }
 

@@ -91,7 +91,7 @@ zsetdefaultmatrix(i_ctx_t *i_ctx_p)
     else {
 	gs_matrix mat;
 
-	code = read_matrix(op, &mat);
+	code = read_matrix(imemory, op, &mat);
 	if (code < 0)
 	    return code;
 	code = gs_setdefaultmatrix(igs, &mat);
@@ -201,7 +201,7 @@ zconcat(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_matrix mat;
-    int code = read_matrix(op, &mat);
+    int code = read_matrix(imemory, op, &mat);
 
     if (code < 0)
 	return code;
@@ -220,8 +220,8 @@ zconcatmatrix(i_ctx_t *i_ctx_p)
     gs_matrix m1, m2, mp;
     int code;
 
-    if ((code = read_matrix(op - 2, &m1)) < 0 ||
-	(code = read_matrix(op - 1, &m2)) < 0 ||
+    if ((code = read_matrix(imemory, op - 2, &m1)) < 0 ||
+	(code = read_matrix(imemory, op - 1, &m2)) < 0 ||
 	(code = gs_matrix_multiply(&m1, &m2, &mp)) < 0 ||
 	(code = write_matrix(op, &mp)) < 0
 	)
@@ -288,7 +288,7 @@ common_transform(i_ctx_t *i_ctx_p,
 	    gs_matrix mat;
 	    gs_matrix *pmat = &mat;
 
-	    if ((code = read_matrix(op, pmat)) < 0 ||
+	    if ((code = read_matrix(imemory, op, pmat)) < 0 ||
 		(code = num_params(op - 1, 2, opxy)) < 0 ||
 		(code = (*matproc) (opxy[0], opxy[1], pmat, &pt)) < 0
 		) {		/* Might be a stack underflow. */
@@ -328,7 +328,7 @@ zinvertmatrix(i_ctx_t *i_ctx_p)
     gs_matrix m;
     int code;
 
-    if ((code = read_matrix(op - 1, &m)) < 0 ||
+    if ((code = read_matrix(imemory, op - 1, &m)) < 0 ||
 	(code = gs_matrix_invert(&m, &m)) < 0 ||
 	(code = write_matrix(op, &m)) < 0
 	)

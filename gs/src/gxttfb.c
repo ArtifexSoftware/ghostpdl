@@ -214,7 +214,9 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
     if (gs_debug_c('Y')) {
 	va_start(args, fmt);
 	count = vsprintf(buf, fmt, args);
-	outwrite(buf, count);
+	/* NB: moved debug output from stdout to stderr
+	 */
+	errwrite(buf, count);
 	va_end(args);
     }
 }
@@ -726,3 +728,4 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	    }
     }
 }
+    

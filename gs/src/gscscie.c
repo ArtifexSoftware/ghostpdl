@@ -133,10 +133,10 @@ gx_concrete_space_CIE(const gs_color_space * pcs, const gs_imager_state * pis)
     if (pcie == 0 || pcie->RenderTable.lookup.table == 0 ||
 	pcie->RenderTable.lookup.m == 3
 	) {
-	gs_cspace_init_DeviceRGB(&rgb_cs);  /* idempotent initialization */
+	gs_cspace_init_DeviceRGB(pis->memory, &rgb_cs);  /* idempotent initialization */
         return &rgb_cs;
     } else {			/* pcie->RenderTable.lookup.m == 4 */
-	gs_cspace_init_DeviceCMYK(&cmyk_cs); /* idempotent initialization */
+	gs_cspace_init_DeviceCMYK(pis->memory, &cmyk_cs); /* idempotent initialization */
 	return &cmyk_cs;
     }
 }

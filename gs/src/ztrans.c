@@ -64,12 +64,13 @@ current_float_value(i_ctx_t *i_ctx_p,
 }
 
 private int
-enum_param(const ref *pnref, const char *const names[])
+enum_param(const gs_memory_t *mem, const ref *pnref, 
+	   const char *const names[])
 {
     const char *const *p;
     ref nsref;
 
-    name_string_ref(pnref, &nsref);
+    name_string_ref(mem, pnref, &nsref);
     for (p = names; *p; ++p)
 	if (r_size(&nsref) == strlen(*p) &&
 	    !memcmp(*p, nsref.value.const_bytes, r_size(&nsref))
@@ -92,7 +93,7 @@ zsetblendmode(i_ctx_t *i_ctx_p)
     int code;
 
     check_type(*op, t_name);
-    if ((code = enum_param(op, blend_mode_names)) < 0 ||
+    if ((code = enum_param(imemory, op, blend_mode_names)) < 0 ||
 	(code = gs_setblendmode(igs, code)) < 0
 	)
 	return code;
@@ -107,7 +108,7 @@ zcurrentblendmode(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     const char *mode_name = blend_mode_names[gs_currentblendmode(igs)];
     ref nref;
-    int code = name_enter_string(mode_name, &nref);
+    int code = name_enter_string(imemory, mode_name, &nref);
 
     if (code < 0)
 	return code;
@@ -261,10 +262,10 @@ zbegintransparencymask(i_ctx_t *i_ctx_p)
     check_dict_read(*dop);
     if (dict_find_string(dop, "Subtype", &pparam) <= 0)
 	return_error(e_rangecheck);
-    if ((code = enum_param(pparam, subtype_names)) < 0)
+    if ((code = enum_param(imemory, pparam, subtype_names)) < 0)
 	return code;
     gs_trans_mask_params_init(&params, code);
-    if ((code = dict_floats_param(dop, "Background", 1,
+    if ((code = dict_floats_param(imemory, dop, "Background", 1,
 				  params.Background, NULL)) < 0
 	)
 	return code;
@@ -323,7 +324,8 @@ zinittransparencymask(i_ctx_t *i_ctx_p)
 /* ------ Soft-mask images ------ */
 
 /* <dict> .image3x - */
-private int mask_dict_param(os_ptr, image_params *, const char *, int,
+private int mask_dict_param(const gs_memory_t *mem, os_ptr, 
+			    image_params *, const char *, int,
 			    gs_image3x_mask_t *);
 private int
 zimage3x(i_ctx_t *i_ctx_p)
@@ -352,9 +354,11 @@ zimage3x(i_ctx_t *i_ctx_p)
      * We have to process the masks in the reverse order, because they
      * insert their DataSource before the one(s) for the DataDict.
      */
-    if ((code = mask_dict_param(op, &ip_data, "ShapeMaskDict", num_components,
+    if ((code = mask_dict_param(imemory, op, &ip_data, 
+				"ShapeMaskDict", num_components,
 				&image.Shape)) < 0 ||
-	(code = mask_dict_param(op, &ip_data, "OpacityMaskDict", num_components,
+	(code = mask_dict_param(imemory, op, &ip_data, 
+				"OpacityMaskDict", num_components,
 				&image.Opacity)) < 0
 	)
 	return code;
@@ -365,7 +369,8 @@ zimage3x(i_ctx_t *i_ctx_p)
 
 /* Get one soft-mask dictionary parameter. */
 private int
-mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
+mask_dict_param(const gs_memory_t *mem, os_ptr op, 
+image_params *pip_data, const char *dict_name,
 		int num_components, gs_image3x_mask_t *pixm)
 {
     ref *pMaskDict;
@@ -375,12 +380,13 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
 
     if (dict_find_string(op, dict_name, &pMaskDict) <= 0)
 	return 1;
-    if ((mcode = code = data_image_params(pMaskDict, &pixm->MaskDict,
+    if ((mcode = code = data_image_params(mem, pMaskDict, &pixm->MaskDict,
 					  &ip_mask, false, 1, 12, false)) < 0 ||
 	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
 	(code = dict_int_param(pMaskDict, "InterleaveType", 1, 3, -1,
 			       &pixm->InterleaveType)) < 0 ||
-	(code = dict_floats_param(op, "Matte", num_components, pixm->Matte, NULL)) < 0
+	(code = dict_floats_param(mem, op, "Matte", num_components,
+				  pixm->Matte, NULL)) < 0
 	)
 	return code;
     pixm->has_Matte = code > 0;

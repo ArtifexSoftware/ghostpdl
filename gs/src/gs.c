@@ -41,7 +41,8 @@ int
 main(int argc, char *argv[])
 {
     int exit_status = 0;
-    gs_main_instance *minst = gs_main_instance_default();
+    gs_main_instance *minst = gs_main_alloc_instance(gs_malloc_init(NULL));
+
     int code = gs_main_init_with_args(minst, argc, argv);
 
 #ifdef RUN_STRINGS
@@ -84,7 +85,7 @@ main(int argc, char *argv[])
 	    exit_status = 255;
     }
 
-    gs_to_exit_with_code(exit_status, code);
+    gs_to_exit_with_code(minst->heap, exit_status, code);
 
     switch (exit_status) {
 	case 0:

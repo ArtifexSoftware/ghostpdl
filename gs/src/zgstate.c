@@ -311,7 +311,7 @@ zsetdash(i_ctx_t *i_ctx_p)
     for (i = 0, code = 0; i < n && code >= 0; ++i) {
 	ref element;
 
-	array_get(op1, (long)i, &element);
+	array_get(mem, op1, (long)i, &element);
 	code = float_param(&element, &pattern[i]);
     }
     if (code >= 0)

@@ -69,7 +69,7 @@ extern const byte enc_num_bytes[];	/* in ibnum.c */
 /* Read from an array or encoded number string. */
 int num_array_format(const ref *);	/* returns format or error */
 uint num_array_size(const ref *, int);
-int num_array_get(const ref *, int, uint, ref *);
+int num_array_get(const gs_memory_t *mem, const ref *, int, uint, ref *);
 
 /* Decode a number from a string with appropriate byte swapping. */
 int sdecode_number(const byte *, int, ref *);

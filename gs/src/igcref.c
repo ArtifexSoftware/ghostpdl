@@ -79,11 +79,14 @@ ENUM_PTRS_BEGIN_PROC(ref_struct_enum_ptrs)
 }
 RELOC_PTRS_BEGIN(ref_struct_reloc_ptrs)
 {
+    vm_spaces spaces = gcst->spaces;
+    const gs_memory_t *cmem = space_system->stable_memory;
+
     ref *beg = vptr;
     ref *end = (ref *) ((char *)vptr + size);
 
     igc_reloc_refs((ref_packed *) beg, (ref_packed *) end, gcst);
-    ref_struct_clear_marks(vptr, size, pstype);
+    ref_struct_clear_marks(cmem, vptr, size, pstype);
 } RELOC_PTRS_END
 
 /* ------ Unmarking phase ------ */
@@ -102,7 +105,8 @@ ptr_ref_unmark(enum_ptr_t *pep, gc_state_t * ignored)
 
 /* Unmarking routine for ref objects. */
 private void
-refs_clear_marks(void /*obj_header_t */ *vptr, uint size,
+refs_clear_marks(const gs_memory_t *cmem, 
+		 void /*obj_header_t */ *vptr, uint size,
 		 const gs_memory_struct_type_t * pstype)
 {
     ref_packed *rp = (ref_packed *) vptr;
@@ -115,7 +119,7 @@ refs_clear_marks(void /*obj_header_t */ *vptr, uint size,
 #ifdef DEBUG
 	    if (gs_debug_c('8')) {
 		dlprintf1("  [8]unmark packed 0x%lx ", (ulong) rp);
-		debug_print_ref((const ref *)rp);
+		debug_print_ref(cmem, (const ref *)rp);
 		dputs("\n");
 	    }
 #endif
@@ -127,7 +131,7 @@ refs_clear_marks(void /*obj_header_t */ *vptr, uint size,
 #ifdef DEBUG
 	    if (gs_debug_c('8')) {
 		dlprintf1("  [8]unmark ref 0x%lx ", (ulong) rp);
-		debug_print_ref(pref);
+		debug_print_ref(cmem, pref);
 		dputs("\n");
 	    }
 #endif
@@ -173,7 +177,7 @@ ptr_ref_mark(enum_ptr_t *pep, gc_state_t * ignored)
 
 /* Clear the relocation for a ref object. */
 private void
-refs_clear_reloc(obj_header_t * hdr, uint size)
+refs_clear_reloc(obj_header_t *hdr, uint size)
 {
     ref_packed *rp = (ref_packed *) (hdr + 1);
     ref_packed *end = (ref_packed *) ((byte *) rp + size);
@@ -383,7 +387,10 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 {
     int min_trace = gcst->min_collect;
     ref_packed *rp = from;
-    bool do_all = gcst->relocating_untraced;
+    bool do_all = gcst->relocating_untraced; 
+
+    vm_spaces spaces = gcst->spaces;
+    const gs_memory_t *cmem = space_system->stable_memory;
 
     while (rp < to) {
 	ref *pref;
@@ -507,7 +514,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 		    break;
 		case t_name:
 		    {
-			void *psub = name_ref_sub_table(pref);
+			void *psub = name_ref_sub_table(cmem, pref);
 			void *rsub = RELOC_OBJ(psub); /* gcst implicit */
 
 			SET_RELOC(pref->value.pname,
@@ -545,7 +552,7 @@ no_reloc:
 /* Relocate a pointer to a ref. */
 /* See gsmemory.h for why the argument is const and the result is not. */
 ref_packed *
-igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
+igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t *gcst)
 {
     /*
      * Search forward for relocation.  This algorithm is intrinsically very
@@ -559,7 +566,6 @@ igc_reloc_ref_ptr(const ref_packed * prp, gc_state_t * ignored)
 #else
 # define RP_REF(rp) ((const ref *)rp)
 #endif
-
     /*
      * Iff this pointer points into a space that wasn't traced,
      * the referent won't be marked.  In this case, we shouldn't
@@ -633,7 +639,7 @@ ret_rp:
 /* Compact a ref object. */
 /* Remove the marks at the same time. */
 private void
-refs_compact(obj_header_t * pre, obj_header_t * dpre, uint size)
+refs_compact(const gs_memory_t *mem, obj_header_t * pre, obj_header_t * dpre, uint size)
 {
     ref_packed *dest;
     ref_packed *src;
@@ -705,7 +711,7 @@ refs_compact(obj_header_t * pre, obj_header_t * dpre, uint size)
 	lprintf3("Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
 		 (ulong) dpre, (ulong) ((byte *) src - (byte *) dest),
 		 (uint) r_size((ref *) src - 1));
-	gs_abort();
+	gs_abort(mem);
     }
 #endif
     /* Pad to a multiple of sizeof(ref). */

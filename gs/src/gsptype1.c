@@ -227,7 +227,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     code = gx_clip_to_rectangle(saved, &cbox);
     if (code < 0)
 	goto fsaved;
-    inst.id = gs_next_ids(1);
+    inst.id = gs_next_ids(mem, 1);
     *pinst = inst;
     return 0;
 #undef mat
@@ -473,7 +473,7 @@ image_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 	return_error(gs_error_VMerror);
 
     if (ppmap->pcspace == 0) {
-        gs_cspace_init_DeviceGray(&cs);
+        gs_cspace_init_DeviceGray(pgs->memory, &cs);
         pcspace = &cs;
     } else
         pcspace = ppmap->pcspace;
@@ -587,7 +587,7 @@ gs_makepixmappattern(
 
     /* set up the client pattern structure */
     gs_pattern1_init(&pat);
-    uid_set_UniqueID(&pat.uid, (id == no_UniqueID) ? gs_next_ids(1) : id);
+    uid_set_UniqueID(&pat.uid, (id == no_UniqueID) ? gs_next_ids(mem, 1) : id);
     pat.PaintType = (mask ? 2 : 1);
     pat.TilingType = 1;
     pat.BBox.p.x = 0;

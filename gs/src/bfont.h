@@ -49,7 +49,8 @@ typedef enum {
 } build_font_options_t;
 
 /* In zbfont.c */
-int build_proc_name_refs(build_proc_refs * pbuild,
+int build_proc_name_refs(const gs_memory_t *mem, 
+			 build_proc_refs * pbuild,
 			 const char *bcstr, const char *bgstr);
 int build_gs_font_procs(os_ptr, build_proc_refs *);
 #define BUILD_BASE_FONT_PROC(proc)\
@@ -75,7 +76,7 @@ int build_gs_sub_font(i_ctx_t *, const ref *, gs_font **,
 		      font_type, gs_memory_type_ptr_t,
 		      const build_proc_refs *, const ref *, ref *);
 int define_gs_font(gs_font *);
-void get_font_name(ref * pfname, const ref * op);
+void get_font_name(const gs_memory_t *mem, ref *pfname, const ref *op);
 void copy_font_name(gs_font_name * pfstr, const ref * pfname);
 gs_glyph zfont_encode_char(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored);
 gs_char gs_font_map_glyph_to_unicode(gs_font *font, gs_glyph glyph);

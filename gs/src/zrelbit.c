@@ -49,7 +49,7 @@ zeq(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     EQ_CHECK_READ(op - 1, check_op(2));
     EQ_CHECK_READ(op, DO_NOTHING);
-    make_bool(op - 1, (obj_eq(op - 1, op) ? 1 : 0));
+    make_bool(op - 1, (obj_eq(imemory, op - 1, op) ? 1 : 0));
     pop(1);
     return 0;
 }
@@ -279,7 +279,7 @@ zidenteq(i_ctx_t *i_ctx_p)
 
     EQ_CHECK_READ(op - 1, check_op(2));
     EQ_CHECK_READ(op, DO_NOTHING);
-    make_bool(op - 1, (obj_ident_eq(op - 1, op) ? 1 : 0));
+    make_bool(op - 1, (obj_ident_eq(imemory, op - 1, op) ? 1 : 0));
     pop(1);
     return 0;
 

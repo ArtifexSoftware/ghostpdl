@@ -279,7 +279,7 @@ extern_st(st_color_space);
  */
 void gs_cspace_init(gs_color_space *pcs,
 		    const gs_color_space_type *pcstype,
-		    gs_memory_t *mem);
+		    gs_memory_t *mem, bool isheap);
 int gs_cspace_alloc(gs_color_space **ppcspace,
 		    const gs_color_space_type *pcstype,
 		    gs_memory_t *mem);

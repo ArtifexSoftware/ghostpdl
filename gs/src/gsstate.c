@@ -251,7 +251,7 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->effective_clip_path = pgs->clip_path;
     pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
-    gs_cspace_init_DeviceGray(pgs->color_space);
+    gs_cspace_init_DeviceGray(pgs->memory, pgs->color_space);
     pgs->in_cachedevice = 0;
     gx_set_device_color_1(pgs); /* sets colorspace and client color */
     pgs->device = 0;		/* setting device adjusts refcts */

@@ -287,13 +287,13 @@ gs_cmap_enum_next_entry(gs_cmap_lookups_enum_t *penum)
  * for the GC.  Note that this only initializes the common part.
  */
 void
-gs_cmap_init(gs_cmap_t *pcmap, int num_fonts)
+gs_cmap_init(const gs_memory_t *mem, gs_cmap_t *pcmap, int num_fonts)
 {
     memset(pcmap, 0, sizeof(*pcmap));
     /* We reserve a range of IDs for pdfwrite needs,
        to allow an identification of submaps for a particular subfont.
      */
-    pcmap->id = gs_next_ids(num_fonts);
+    pcmap->id = gs_next_ids(mem, num_fonts);
     pcmap->num_fonts = num_fonts;
     uid_set_invalid(&pcmap->uid);
 }
@@ -319,7 +319,7 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
 	gs_free_object(mem, pcmap, "gs_cmap_alloc(CMap)");
 	return_error(gs_error_VMerror);
     }
-    gs_cmap_init(pcmap, num_fonts);	/* id, uid, num_fonts */
+    gs_cmap_init(mem, pcmap, num_fonts);	/* id, uid, num_fonts */
     pcmap->CMapType = 1;
     pcmap->CMapName.data = map_name;
     pcmap->CMapName.size = name_size;

@@ -63,8 +63,8 @@ alloc_save_t *alloc_save_current(const gs_dual_memory_t *);
 bool alloc_is_since_save(const void *, const alloc_save_t *);
 
 /* Check whether a name was created since a given save. */
-bool alloc_name_is_since_save(const ref *, const alloc_save_t *);
-bool alloc_name_index_is_since_save(uint, const alloc_save_t *);
+bool alloc_name_is_since_save(const gs_memory_t *mem, const ref *, const alloc_save_t *);
+bool alloc_name_index_is_since_save(const gs_memory_t *mem, uint, const alloc_save_t *);
 
 /*
  * Check whether any names have been created since a given save

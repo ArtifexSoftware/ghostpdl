@@ -35,7 +35,7 @@ public_st_gs_dual_memory();
 
 /* Initialize the allocator */
 int
-ialloc_init(gs_dual_memory_t *dmem, gs_raw_memory_t * rmem, uint chunk_size,
+ialloc_init(gs_dual_memory_t *dmem, gs_memory_t * rmem, uint chunk_size,
 	    bool level2)
 {
     gs_ref_memory_t *ilmem = ialloc_alloc_state(rmem, chunk_size);

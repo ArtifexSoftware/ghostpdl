@@ -73,7 +73,7 @@ ENUM_PTRS_WITH(c_param_enum_ptrs, gs_c_param *param) {
 
 	value.value = *(const gs_param_value *)&param->value;
 	value.type = param->type;
-	return gs_param_typed_value_enum_ptrs(&value, sizeof(value), index,
+	return gs_param_typed_value_enum_ptrs(mem, &value, sizeof(value), index,
 					      pep, NULL, gcst);
     }
     }

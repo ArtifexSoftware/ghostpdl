@@ -35,23 +35,23 @@
 extern_i_plugin_table();
 
 private void *i_plugin_mem_alloc(i_plugin_client_memory *mem, unsigned int nbytes, const char *cname)
-{   gs_raw_memory_t *mem_raw = (gs_raw_memory_t *)mem->client_data;
+{   gs_memory_t *mem_raw = mem->client_data;
     return mem_raw->procs.alloc_bytes_immovable(mem_raw, nbytes, cname);
 }
 
 private void i_plugin_mem_free(i_plugin_client_memory *mem, void *data, const char *cname)
-{   gs_raw_memory_t *mem_raw = (gs_raw_memory_t *)mem->client_data;
+{   gs_memory_t *mem_raw = mem->client_data;
     mem_raw->procs.free_object(mem_raw, data, cname);
 }
 
-void i_plugin_make_memory(i_plugin_client_memory *mem, gs_raw_memory_t *mem_raw)
+void i_plugin_make_memory(i_plugin_client_memory *mem, gs_memory_t *mem_raw)
 {   mem->client_data = mem_raw;
     mem->alloc = i_plugin_mem_alloc;
     mem->free  = i_plugin_mem_free;
 }
 
 int i_plugin_init(i_ctx_t *i_ctx_p)
-{   gs_raw_memory_t *mem_raw = i_ctx_p->memory.current->parent;
+{   gs_memory_t *mem_raw = i_ctx_p->memory.current->non_gc_memory;
     const i_plugin_instantiation_proc *p = i_plugin_table;
     i_plugin_holder *h;
     int code;
@@ -72,7 +72,7 @@ int i_plugin_init(i_ctx_t *i_ctx_p)
     return 0;
 }
 
-void i_plugin_finit(gs_raw_memory_t *mem_raw, i_plugin_holder *list)
+void i_plugin_finit(gs_memory_t *mem_raw, i_plugin_holder *list)
 {   i_plugin_client_memory client_mem;
     i_plugin_make_memory(&client_mem, mem_raw);
     while (list != 0) {

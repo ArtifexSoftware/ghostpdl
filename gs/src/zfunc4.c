@@ -27,7 +27,7 @@
 #include "ifunc.h"
 #include "iname.h"
 #include "dstack.h"
-
+#include "ialloc.h"
 /*
  * FunctionType 4 functions are not defined in the PostScript language.  We
  * provide support for them because they are needed for PDF 1.3.  In
@@ -143,7 +143,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	ref * delp;
 	int code;
 
-	array_get(pref, i, &elt);
+	array_get(imemory, pref, i, &elt);
 	switch (r_btype(&elt)) {
 	case t_integer: {
 	    int i = elt.value.intval;
@@ -178,7 +178,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	case t_name:
 	    if (!r_has_attr(&elt, a_executable))
 		return_error(e_rangecheck);
-	    name_string_ref(&elt, &elt);
+	    name_string_ref(imemory, &elt, &elt);
 	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
 			       (const byte *)"true", 4)) {
 		*p = PtCr_true;
@@ -216,7 +216,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		return_error(e_typecheck);
 	    if (depth == MAX_PSC_FUNCTION_NESTING)
 		return_error(e_limitcheck);
-	    if ((code = array_get(pref, ++i, &elt2)) < 0)
+	    if ((code = array_get(imemory, pref, ++i, &elt2)) < 0)
 		return code;
 	    *psize += 3;
 	    code = check_psc_function(i_ctx_p, &elt, depth + 1, ops, psize);
@@ -233,7 +233,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 		}
 	    } else if (!r_is_proc(&elt2))
 		return_error(e_rangecheck);
-	    else if ((code == array_get(pref, ++i, &elt3)) < 0)
+	    else if ((code == array_get(imemory, pref, ++i, &elt3)) < 0)
 		return code;
 	    else if (R_IS_OPER(&elt3, zifelse)) {
 		if (ops) {

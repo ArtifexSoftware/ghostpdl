@@ -133,7 +133,7 @@ sample_device_crd_get_params(gx_device *pdev, gs_param_list *plist,
 
 	    tpqr = bit_TransformPQR;
 	    tpqr.driver_name = pdev->dname;
-	    code = gs_cie_render1_initialize(pcrd, NULL,
+	    code = gs_cie_render1_initialize(pdev->memory, pcrd, NULL,
 			&bit_WhitePoint, NULL /*BlackPoint*/,
 			NULL /*MatrixPQR*/, &bit_RangePQR, &tpqr,
 			NULL /*MatrixLMN*/, &bit_EncodeLMN, &bit_RangeLMN,

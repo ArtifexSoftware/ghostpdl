@@ -64,7 +64,7 @@ int op_show_continue(i_ctx_t *);
 int op_show_continue_pop(i_ctx_t *, int);
 int op_show_continue_dispatch(i_ctx_t *, int, int);
 int op_show_free(i_ctx_t *, int);
-void glyph_ref(gs_glyph, ref *);
+void glyph_ref(const gs_memory_t *mem, gs_glyph, ref *);
 int finish_stringwidth(i_ctx_t *);
 
 /* Exported by zchar.c for zcharout.c */

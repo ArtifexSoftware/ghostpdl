@@ -287,7 +287,7 @@ typedef ulong gs_separation_name;	/* BOGUS */
  * names.
  */
 typedef int (gs_callback_func_get_colorname_string)
-    (gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
+     (const gs_memory_t *mem, gs_separation_name colorname, unsigned char **ppstr, unsigned int *plen);
 
 typedef enum { SEP_NONE, SEP_ALL, SEP_OTHER } separation_type;
 
@@ -426,13 +426,13 @@ typedef struct gs_color_space_s gs_color_space;
  */
 
 extern int
-    gs_cspace_init_DeviceGray(gs_color_space *pcs),
+    gs_cspace_init_DeviceGray(const gs_memory_t *mem, gs_color_space *pcs),
     gs_cspace_build_DeviceGray(gs_color_space ** ppcspace,
 				  gs_memory_t * pmem),
-    gs_cspace_init_DeviceRGB(gs_color_space *pcs),
+    gs_cspace_init_DeviceRGB(const gs_memory_t *mem, gs_color_space *pcs),
     gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace,
                               gs_memory_t * pmem),
-    gs_cspace_init_DeviceCMYK(gs_color_space *pcs),
+    gs_cspace_init_DeviceCMYK(const gs_memory_t *mem, gs_color_space *pcs),
     gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace,
                                gs_memory_t * pmem);
 

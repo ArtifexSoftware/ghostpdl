@@ -52,7 +52,7 @@ s_zlib_set_defaults(stream_state * st)
 int
 s_zlib_alloc_dynamic_state(stream_zlib_state *ss)
 {
-    gs_memory_t *mem = (ss->memory ? ss->memory : &gs_memory_default);
+    gs_memory_t *mem = ss->memory; 
     zlib_dynamic_state_t *zds =
 	gs_alloc_struct_immovable(mem, zlib_dynamic_state_t,
 				  &st_zlib_dynamic_state,

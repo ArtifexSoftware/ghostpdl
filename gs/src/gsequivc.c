@@ -134,8 +134,8 @@ update_Separation_spot_equivalent_cmyk_colors(gx_device * pdev,
 	    unsigned char * pcs_sep_name;
 
 	    pcs->params.separation.get_colorname_string
-			    (pcs->params.separation.sep_name, &pcs_sep_name,
-			    &cs_sep_name_size);
+		(pdev->memory, pcs->params.separation.sep_name, &pcs_sep_name,
+		 &cs_sep_name_size);
 	    if (compare_color_names(dev_sep_name->data, dev_sep_name->size,
 			    pcs_sep_name, cs_sep_name_size)) {
 		gs_color_space temp_cs = *pcs;
@@ -177,8 +177,8 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
      */
      for (j = 0; j < pcs->params.device_n.num_components; j++) {
 	pcs->params.device_n.get_colorname_string
-			    (pcs->params.device_n.names[j], &pcs_sep_name,
-			    &cs_sep_name_size);
+	    (pdev->memory, pcs->params.device_n.names[j],  
+	     &pcs_sep_name, &cs_sep_name_size);
 	if (compare_color_names("None", 4, pcs_sep_name, cs_sep_name_size))
 	    return;
     }
@@ -194,8 +194,8 @@ update_DeviceN_spot_equivalent_cmyk_colors(gx_device * pdev,
 
 	    for (j = 0; j < pcs->params.device_n.num_components; j++) {
 	        pcs->params.device_n.get_colorname_string
-			    (pcs->params.device_n.names[j], &pcs_sep_name,
-			    &cs_sep_name_size);
+		    (pdev->memory, pcs->params.device_n.names[j], &pcs_sep_name,
+		     &cs_sep_name_size);
 	        if (compare_color_names(dev_sep_name->data, dev_sep_name->size,
 			    pcs_sep_name, cs_sep_name_size)) {
 		    gs_color_space temp_cs = *pcs;

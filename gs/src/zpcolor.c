@@ -95,11 +95,11 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     gs_pattern1_init(&template);
-    if ((code = read_matrix(op, &mat)) < 0 ||
+    if ((code = read_matrix(imemory, op, &mat)) < 0 ||
 	(code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
 	(code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
 	(code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
-	(code = dict_floats_param(op1, "BBox", 4, BBox, NULL)) < 0 ||
+	(code = dict_floats_param(imemory, op1, "BBox", 4, BBox, NULL)) < 0 ||
 	(code = dict_float_param(op1, "XStep", 0.0, &template.XStep)) != 0 ||
 	(code = dict_float_param(op1, "YStep", 0.0, &template.YStep)) != 0 ||
 	(code = dict_find_string(op1, "PaintProc", &pPaintProc)) <= 0
@@ -157,7 +157,7 @@ zsetpatternspace(i_ctx_t *i_ctx_p)
 	    }
 	    cs.params.pattern.has_base_space = true;
     }
-    gs_cspace_init(&cs, &gs_color_space_type_Pattern, NULL);
+    gs_cspace_init(&cs, &gs_color_space_type_Pattern, imemory, false);
     code = gs_setcolorspace(igs, &cs);
     if (code < 0) {
 	ref_stack_pop_to(&e_stack, edepth);

@@ -27,6 +27,7 @@
 #include "gsmalloc.h"
 #include "gsmemlok.h"		/* locking (multithreading) wrapper */
 #include "gsmemret.h"		/* retrying wrapper */
+#include "gslibctx.h"
 
 /* ------ Heap allocator ------ */
 
@@ -118,6 +119,9 @@ gs_malloc_memory_init(void)
     mem->limit = max_long;
     mem->used = 0;
     mem->max_used = 0;
+    mem->gs_lib_ctx = 0;
+    mem->non_gc_memory = (gs_memory_t *)mem;
+
     return mem;
 }
 /*
@@ -128,7 +132,7 @@ gs_malloc_memory_init(void)
 #define max_malloc_probes 20
 #define malloc_probe_size 64000
 private long
-heap_available(void)
+heap_available()
 {
     long avail = 0;
     void *probes[max_malloc_probes];
@@ -179,7 +183,7 @@ gs_heap_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)
 	     * We would like to check that malloc aligns blocks at least as
 	     * strictly as the compiler (as defined by arch_align_memory_mod).
 	     * However, Microsoft VC 6 does not satisfy this requirement.
-	     * See gsmemraw.h for more explanation.
+	     * See gsmemory.h for more explanation.
 	     */
 	    set_msg(ok_msg);
 	    if (mmem->allocated)
@@ -466,8 +470,9 @@ gs_malloc_wrapped_contents(gs_memory_t *wrapped)
     gs_memory_retrying_t *rmem = (gs_memory_retrying_t *)wrapped;
     gs_memory_locked_t *lmem =
 	(gs_memory_locked_t *)gs_memory_retrying_target(rmem);
-
-    return (gs_malloc_memory_t *)gs_memory_locked_target(lmem);
+    if (lmem) 
+	return (gs_malloc_memory_t *)gs_memory_locked_target(lmem);
+    return (gs_malloc_memory_t *) wrapped;
 }
 
 /* Free the wrapper, and return the wrapped contents. */
@@ -485,28 +490,28 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
     return (gs_malloc_memory_t *)contents;
 }
 
-/* ------ Historical single-instance artifacts ------ */
 
-/* Define the default allocator. */
-gs_malloc_memory_t *gs_malloc_memory_default;
-gs_memory_t *gs_memory_t_default;
-
-/* Create the default allocator. */
+/* Create the default allocator, and return it. */
 gs_memory_t *
-gs_malloc_init(void)
+gs_malloc_init(const gs_memory_t *parent)
 {
-    gs_malloc_memory_default = gs_malloc_memory_init();
-    gs_malloc_wrap(&gs_memory_t_default, gs_malloc_memory_default);
-    gs_memory_t_default->stable_memory = gs_memory_t_default;
-    return gs_memory_t_default;
+    gs_malloc_memory_t *malloc_memory_default = gs_malloc_memory_init();
+    gs_memory_t *memory_t_default;
+
+    if (parent)
+	malloc_memory_default->gs_lib_ctx = parent->gs_lib_ctx;
+    else 
+        gs_lib_ctx_init((gs_memory_t *)malloc_memory_default);
+
+    gs_malloc_wrap(&memory_t_default, malloc_memory_default);
+    memory_t_default->stable_memory = memory_t_default;
+    return memory_t_default;
 }
 
 /* Release the default allocator. */
 void
-gs_malloc_release(void)
+gs_malloc_release(gs_memory_t *mem)
 {
-    gs_malloc_unwrap(gs_memory_t_default);
-    gs_memory_t_default = 0;
-    gs_malloc_memory_release(gs_malloc_memory_default);
-    gs_malloc_memory_default = 0;
+    gs_malloc_memory_t * malloc_memory_default = gs_malloc_unwrap(mem);
+    gs_malloc_memory_release(malloc_memory_default);
 }

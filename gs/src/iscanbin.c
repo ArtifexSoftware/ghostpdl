@@ -135,7 +135,7 @@ typedef enum {
 #define SIZEOF_BIN_SEQ_OBJ ((uint)8)
 
 /* Forward references */
-private int scan_bin_get_name(const ref *, int, ref *);
+private int scan_bin_get_name(const gs_memory_t *mem, const ref *, int, ref *);
 private int scan_bin_num_array_continue(i_ctx_t *, stream *, ref *, scanner_state *);
 private int scan_bin_string_continue(i_ctx_t *, stream *, ref *, scanner_state *);
 private int scan_bos_continue(i_ctx_t *, stream *, ref *, scanner_state *);
@@ -305,13 +305,13 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		return code;
 	    }
 	case BT_LITNAME_SYSTEM:
-	    code = scan_bin_get_name(system_names_p, p[1], pref);
+	    code = scan_bin_get_name(imemory, system_names_p, p[1], pref);
 	    goto lname;
 	case BT_EXECNAME_SYSTEM:
-	    code = scan_bin_get_name(system_names_p, p[1], pref);
+	    code = scan_bin_get_name(imemory, system_names_p, p[1], pref);
 	    goto xname;
 	case BT_LITNAME_USER:
-	    code = scan_bin_get_name(user_names_p, p[1], pref);
+	    code = scan_bin_get_name(imemory, user_names_p, p[1], pref);
 	  lname:
 	    if (code < 0)
 		return code;
@@ -320,7 +320,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    s_end_inline(s, p + 1, rlimit);
 	    return 0;
 	case BT_EXECNAME_USER:
-	    code = scan_bin_get_name(user_names_p, p[1], pref);
+	    code = scan_bin_get_name(imemory, user_names_p, p[1], pref);
 	  xname:
 	    if (code < 0)
 		return code;
@@ -356,11 +356,11 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 
 /* Get a system or user name. */
 private int
-scan_bin_get_name(const ref *pnames /*t_array*/, int index, ref *pref)
+scan_bin_get_name(const gs_memory_t *mem, const ref *pnames /*t_array*/, int index, ref *pref)
 {
     if (pnames == 0)
 	return_error(e_rangecheck);
-    return array_get(pnames, (long)index, pref);
+    return array_get(mem, pnames, (long)index, pref);
 }
 
 /* Continue collecting a binary string. */
@@ -535,10 +535,10 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		value = sdecodelong(p + 5, num_format);
 		switch (osize) {
 		    case 0:
-			code = array_get(user_names_p, value, op);
+			code = array_get(imemory, user_names_p, value, op);
 			goto usn;
 		    case 0xffff:
-			code = array_get(system_names_p, value, op);
+			code = array_get(imemory, system_names_p, value, op);
 		      usn:
 			if (code < 0)
 			    return code;
@@ -651,7 +651,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    uint attrs =
 		    (r_has_attr(op, a_executable) ? a_executable : 0);
 
-		    code = name_ref(op->value.bytes, r_size(op), op, 1);
+		    code = name_ref(imemory, op->value.bytes, r_size(op), op, 1);
 		    if (code < 0)
 			return code;
 		    r_set_attrs(op, attrs);
@@ -795,7 +795,7 @@ nos:
 	    break;
 	case t_name:
 	    type = BS_TYPE_NAME;
-	    name_string_ref(obj, &nstr);
+	    name_string_ref(imemory, obj, &nstr);
 	    r_copy_attrs(&nstr, a_executable, obj);
 	    obj = &nstr;
 	    goto nos;

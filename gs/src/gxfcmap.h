@@ -296,7 +296,7 @@ int gs_cmap_enum_next_entry(gs_cmap_lookups_enum_t *penum);
  * Initialize a just-allocated CMap, to ensure that all pointers are clean
  * for the GC.  Note that this only initializes the common part.
  */
-void gs_cmap_init(gs_cmap_t *pcmap, int num_fonts);
+void gs_cmap_init(const gs_memory_t *mem, gs_cmap_t *pcmap, int num_fonts);
 
 /*
  * Allocate and initialize (the common part of) a CMap.

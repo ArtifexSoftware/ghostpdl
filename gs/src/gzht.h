@@ -177,7 +177,7 @@ void gx_ht_free_cache(gs_memory_t *, gx_ht_cache *);
    (pcache)->ht_tiles[0].tiles.data = 0)
 
 /* Initialize a halftone cache with a given order. */
-void gx_ht_init_cache(gx_ht_cache *, const gx_ht_order *);
+void gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache *, const gx_ht_order *);
 
 /* Check whether the tile cache corresponds to the current order */
 bool gx_check_tile_cache_current(const gs_imager_state * pis);

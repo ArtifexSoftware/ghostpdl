@@ -303,7 +303,7 @@ alloc_ht_order(
 	    return 0;
 	}
 	pmap->proc = gs_mapped_transfer;
-	pmap->id = gs_next_ids(1);
+	pmap->id = gs_next_ids(pmem, 1);
 	pocs[inext].corder.levels = 0;
 	pocs[inext].corder.bit_data = 0;
 	pocs[inext].corder.cache = 0;
@@ -444,7 +444,7 @@ gs_ht_install(
 		code = gs_note_error(gs_error_VMerror);
 	    else {
 		pocs[j].corder.cache = pcache;
-		gx_ht_init_cache(pcache, &(pocs[j].corder));
+		gx_ht_init_cache(pmem, pcache, &(pocs[j].corder));
 	    }
 	}
 	if (code < 0)

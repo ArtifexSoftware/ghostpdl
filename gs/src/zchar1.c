@@ -665,7 +665,7 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
 	     */
 	    const font_data *pfdata = pfont_data(gs_currentfont(igs));
 
-	    code = array_get(&pfdata->u.type1.OtherSubrs, (long)value, pos);
+	    code = array_get(imemory, &pfdata->u.type1.OtherSubrs, (long)value, pos);
 	    if (code >= 0)
 		return type1_result_callothersubr;
 	}
@@ -888,7 +888,7 @@ zsetweightvector(i_ctx_t *i_ctx_p)
     size = r_size(op);
     if (size != pfont1->data.WeightVector.count)
 	return_error(e_invalidfont);
-    code = process_float_array(op, size, pfont1->data.WeightVector.values);
+    code = process_float_array(imemory, op, size, pfont1->data.WeightVector.values);
     if (code < 0)
 	return code;
     pop(2);
@@ -919,7 +919,7 @@ z1_glyph_data(gs_font_type1 * pfont, gs_glyph glyph, gs_glyph_data_t *pgd)
 {
     ref gref;
 
-    glyph_ref(glyph, &gref);
+    glyph_ref(pfont->memory, glyph, &gref);
     return zchar_charstring_data((gs_font *)pfont, &gref, pgd);
 }
 
@@ -931,7 +931,7 @@ z1_subr_data(gs_font_type1 * pfont, int index, bool global,
     ref subr;
     int code;
 
-    code = array_get((global ? &pfdata->u.type1.GlobalSubrs :
+    code = array_get(pfont->memory, (global ? &pfdata->u.type1.GlobalSubrs :
 		      &pfdata->u.type1.Subrs),
 		     index, &subr);
     if (code < 0)
@@ -954,11 +954,11 @@ z1_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
     if (glyph == GS_NO_GLYPH)
 	return_error(e_rangecheck);
     if ((code = gs_c_glyph_name(glyph, gstr)) < 0 ||
-	(code = name_ref(gstr->data, gstr->size, &rglyph, 0)) < 0
+	(code = name_ref(pfont->memory, gstr->data, gstr->size, &rglyph, 0)) < 0
 	)
 	return code;
     if (pglyph)
-	*pglyph = name_index(&rglyph);
+	*pglyph = name_index(pfont->memory, &rglyph);
     if (pgd)
 	code = zchar_charstring_data((gs_font *)pfont, &rglyph, pgd);
     return code;
@@ -1015,7 +1015,7 @@ zchar1_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matrix *
     gs_glyph_data_t gdata;
     int code;
 
-    glyph_ref(glyph, &gref);
+    glyph_ref(font->memory, glyph, &gref);
     code = zchar_charstring_data(font, &gref, &gdata);
     if (code < 0)
 	return code;
@@ -1141,7 +1141,7 @@ z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    /* Ignore CDevProc. Used to compure MissingWidth.*/
 	}
     }
-    glyph_ref(glyph, &gref);
+    glyph_ref(pbfont->memory, glyph, &gref);
     if (width_members == GLYPH_INFO_WIDTH1) {
 	double wv[4];
 	code = zchar_get_metrics2(pbfont, &gref, wv);

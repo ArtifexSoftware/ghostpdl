@@ -99,7 +99,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
     /* The * 2's in the next statement are a ****** HACK ****** to deal with */
     /* sandbars in the memory manager. */
     if ((code = alloc_render_memory(&render_memory,
-	    &gs_memory_default, RendererAllocationOverheadBytes + max_raster
+	    pwdev->memory->non_gc_memory, RendererAllocationOverheadBytes + max_raster
 				    /* the first * 2 is not a hack */
 		   + (max_raster + sizeof(void *) * 2) * min_band_height
 		   + max_src_image_row + gx_ht_cache_default_bits() * 2)) < 0)
@@ -109,7 +109,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
     /* Bandlist mem is threadsafe & common to rdr/wtr, so it's used */
     /* for page queue & cmd list buffers. */
     if ((code = alloc_bandlist_memory
-	 (&pwdev->bandlist_memory, &gs_memory_default)) < 0)
+	 (&pwdev->bandlist_memory, pwdev->memory->non_gc_memory)) < 0)
 	goto open_err;
 
     /* Dictate banding parameters for both renderer & writer */
@@ -173,7 +173,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
 	prdev->page_queue = pwdev->page_queue;
 
 	/* Start renderer thread & wait for its successful open of device */
-	if (!(open_semaphore = gx_semaphore_alloc(&gs_memory_default)))
+	if (!(open_semaphore = gx_semaphore_alloc(prdev->memory)))
 	    code = gs_note_error(gs_error_VMerror);
 	else {
 	    gdev_prn_start_render_params thread_params;
@@ -192,7 +192,7 @@ gdev_prn_async_write_open(gx_device_printer * pwdev, int max_raster,
     /* ----- Set the recovery procedure for the mem allocator ----- */
     if (code >= 0) {
 	gs_memory_retrying_set_recover(
-		(gs_memory_retrying_t *)&gs_memory_default,
+		(gs_memory_retrying_t *)pwdev->memory->non_gc_memory,
 		prna_mem_recover,
 		(void *)pcwdev
 	    );
@@ -759,7 +759,7 @@ alloc_render_memory(gs_memory_t **final_allocator,
 		    gs_memory_t *base_allocator, long space)
 {
     gs_ref_memory_t *rmem =
-	ialloc_alloc_state((gs_raw_memory_t *)base_allocator, space);
+	ialloc_alloc_state((gs_memory_t *)base_allocator, space);
     vm_spaces spaces;
     int i, code;
 

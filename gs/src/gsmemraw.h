@@ -23,6 +23,15 @@
 #ifndef gsmemraw_INCLUDED
 #  define gsmemraw_INCLUDED
 
+#if 0
+
+/* gsmemraw was an abstract base class.  
+ * it is no longer in use, instead use the concrete base class is gs_memory_t 
+ * since gs_memory_t contains interfaces that must be availiable throughout the system
+ * is is unadvisable to have a class below it without these.
+ */
+
+
 /*
  * This interface provides minimal memory allocation and freeing capability.
  * It is meant to be used for "wholesale" allocation of blocks -- typically,
@@ -214,9 +223,13 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
 typedef struct gs_raw_memory_procs_s {
     gs_raw_memory_procs(gs_raw_memory_t);
 } gs_raw_memory_procs_t;
+
+
+
 struct gs_raw_memory_s {
     gs_raw_memory_t *stable_memory;	/* cache the stable allocator */
-    gs_raw_memory_procs_t procs;
+    gs_raw_memory_procs_t procs;        
 };
 
+#endif /* 0 */
 #endif /* gsmemraw_INCLUDED */

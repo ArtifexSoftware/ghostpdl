@@ -52,7 +52,8 @@ private int image_cleanup(i_ctx_t *);
 
 /* Extract and check the parameters for a gs_data_image_t. */
 int
-data_image_params(const ref *op, gs_data_image_t *pim,
+data_image_params(const gs_memory_t *mem, 
+		  const ref *op, gs_data_image_t *pim,
 		  image_params *pip, bool require_DataSource,
 		  int num_components, int max_bits_per_component,
 		  bool has_alpha)
@@ -67,14 +68,14 @@ data_image_params(const ref *op, gs_data_image_t *pim,
 			       -1, &pim->Width)) < 0 ||
 	(code = dict_int_param(op, "Height", 0, max_int_in_fixed / 2,
 			       -1, &pim->Height)) < 0 ||
-	(code = dict_matrix_param(op, "ImageMatrix",
+	(code = dict_matrix_param(mem, op, "ImageMatrix",
 				  &pim->ImageMatrix)) < 0 ||
 	(code = dict_bool_param(op, "MultipleDataSources", false,
 				&pip->MultipleDataSources)) < 0 ||
 	(code = dict_int_param(op, "BitsPerComponent", 1,
 			       max_bits_per_component, -1,
 			       &pim->BitsPerComponent)) < 0 ||
-	(code = decode_size = dict_floats_param(op, "Decode",
+	(code = decode_size = dict_floats_param(mem, op, "Decode",
 						num_components * 2,
 						&pim->Decode[0], NULL)) < 0 ||
 	(code = dict_bool_param(op, "Interpolate", false,
@@ -95,7 +96,7 @@ data_image_params(const ref *op, gs_data_image_t *pim,
 	if (r_size(pds) != n)
 	    return_error(e_rangecheck);
 	for (i = 0; i < n; ++i)
-            array_get(pds, i, &pip->DataSource[i]);
+	    array_get(mem, pds, i, &pip->DataSource[i]);
     } else
 	pip->DataSource[0] = *pds;
     return 0;
@@ -114,7 +115,7 @@ pixel_image_params(i_ctx_t *i_ctx_p, const ref *op, gs_pixel_image_t *pim,
     if (num_components < 1)
 	return_error(e_rangecheck);	/* Pattern space not allowed */
     pim->ColorSpace = gs_currentcolorspace(igs);
-    code = data_image_params(op, (gs_data_image_t *) pim, pip, true,
+    code = data_image_params(imemory, op, (gs_data_image_t *) pim, pip, true,
 			     num_components, max_bits_per_component,
 			     has_alpha);
     if (code < 0)
@@ -187,7 +188,7 @@ zimagemask1(i_ctx_t *i_ctx_p)
 
     gs_image_t_init_mask_adjust(&image, false,
 				gs_incachedevice(igs) != CACHE_DEVICE_NONE);
-    code = data_image_params(op, (gs_data_image_t *) & image,
+    code = data_image_params(imemory, op, (gs_data_image_t *) & image,
 			     &ip, true, 1, 1, false);
     if (code < 0)
 	return code;

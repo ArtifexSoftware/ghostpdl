@@ -104,7 +104,7 @@ zop_def(i_ctx_t *i_ctx_p)
     switch (r_type(op1)) {
 	case t_name: {
 	    /* We can use the fast single-probe lookup here. */
-	    uint nidx = name_index(op1);
+	    uint nidx = name_index(imemory, op1);
 	    uint htemp;
 
 	    if_dict_find_name_by_index_top(nidx, htemp, pvslot) {
@@ -264,7 +264,7 @@ zcopy_dict(i_ctx_t *i_ctx_p)
     check_type(*op1, t_dictionary);
     check_dict_read(*op1);
     check_dict_write(*op);
-    if (!dict_auto_expand &&
+    if (!imemory->gs_lib_ctx->dict_auto_expand &&
 	(dict_length(op) != 0 || dict_maxlength(op) < dict_length(op1))
 	)
 	return_error(e_rangecheck);
@@ -346,7 +346,7 @@ zdictcopynew(i_ctx_t *i_ctx_p)
     check_type(*op, t_dictionary);
     check_dict_write(*op);
     /* This is only recognized in Level 2 mode. */
-    if (!dict_auto_expand)
+    if (!imemory->gs_lib_ctx->dict_auto_expand)
 	return_error(e_undefined);
     code = idict_copy_new(op1, op);
     if (code < 0)

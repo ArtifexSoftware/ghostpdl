@@ -205,14 +205,14 @@ ENUM_PTRS_WITH(gs_copied_font_data_enum_ptrs, gs_copied_font_data_t *cfdata)
 	gs_copied_glyph_name_t *names = cfdata->names;
 	gs_copied_glyph_extra_name_t *en = cfdata->extra_names;
 	int i;
-	
+
 	if (names != NULL)
 	    for (i = 0; i < cfdata->glyphs_size; ++i)
 		if (names[i].glyph < gs_c_min_std_encoding_glyph)
-		    cfdata->dir->ccache.mark_glyph(names[i].glyph, NULL);
+		    cfdata->dir->ccache.mark_glyph(mem, names[i].glyph, NULL);
 	for (; en != NULL; en = en->next)
 	    if (en->name.glyph < gs_c_min_std_encoding_glyph)
-		cfdata->dir->ccache.mark_glyph(en->name.glyph, NULL);
+		cfdata->dir->ccache.mark_glyph(mem, en->name.glyph, NULL);
     }
     return ENUM_USING(st_gs_font_info, &cfdata->info, sizeof(gs_font_info_t), index - 12);
     ENUM_PTR3(0, gs_copied_font_data_t, glyphs, names, extra_names);

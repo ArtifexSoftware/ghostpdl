@@ -100,7 +100,7 @@ zbuildshadingpattern(i_ctx_t *i_ctx_p)
     check_type(*op2, t_dictionary);
     check_dict_read(*op2);
     gs_pattern2_init(&template);
-    if ((code = read_matrix(op - 1, &mat)) < 0 ||
+    if ((code = read_matrix(imemory, op - 1, &mat)) < 0 ||
 	(code = dict_uid_param(op2, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
 	(code = shading_param(op, &template.Shading)) < 0 ||
 	(code = int_pattern_alloc(&pdata, op2, imemory)) < 0
@@ -187,7 +187,7 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 	    }
 	    pcc->pattern = 0;
 	    params.Background = pcc;
-	    code = dict_floats_param(op, "Background",
+	    code = dict_floats_param(imemory, op, "Background",
 				     gs_color_space_num_components(pcs),
 				     pcc->paint.values, NULL);
 	    if (code < 0)
@@ -196,7 +196,8 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
     }
     if (dict_find_string(op, "BBox", &pvalue) <= 0)
 	params.have_BBox = false;
-    else if ((code = dict_floats_param(op, "BBox", 4, box, NULL)) == 4) {
+    else if ((code = dict_floats_param(imemory, op, "BBox", 
+				       4, box, NULL)) == 4) {
 	params.BBox.p.x = box[0];
 	params.BBox.p.y = box[1];
 	params.BBox.q.x = box[2];
@@ -248,7 +249,7 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
 	for (i = 0; i < size; ++i) {
 	    ref rsubfn;
 
-	    array_get(pFunction, (long)i, &rsubfn);
+	    array_get(imemory, pFunction, (long)i, &rsubfn);
 	    code = fn_build_function(i_ctx_p, &rsubfn, &Functions[i], mem);
 	    if (code < 0)
 		break;
@@ -301,10 +302,11 @@ build_shading_1(i_ctx_t *i_ctx_p, const ref * op, const gs_shading_params_t * pc
     *(gs_shading_params_t *)&params = *pcommon;
     gs_make_identity(&params.Matrix);
     params.Function = 0;
-    if ((code = dict_floats_param(op, "Domain", 4, params.Domain,
+    if ((code = dict_floats_param(imemory, op, "Domain", 
+				  4, params.Domain,
 				  default_Domain)) < 0 ||
 	(dict_find_string(op, "Matrix", &pmatrix) > 0 &&
-	 (code = read_matrix(pmatrix, &params.Matrix)) < 0) ||
+	 (code = read_matrix(imemory, pmatrix, &params.Matrix)) < 0) ||
 	(code = build_shading_function(i_ctx_p, op, &params.Function, 2, mem)) < 0 ||
 	(code = check_indexed_vs_function(params.ColorSpace, params.Function)) < 0 ||
 	(code = gs_shading_Fb_init(ppsh, &params, mem)) < 0
@@ -327,13 +329,14 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
 			  float Domain[2], gs_function_t ** pFunction,
 			  bool Extend[2], gs_memory_t *mem)
 {
-    int code = dict_floats_param(op, "Coords", num_Coords, Coords, NULL);
+    int code = dict_floats_param(imemory, op, "Coords", 
+				 num_Coords, Coords, NULL);
     static const float default_Domain[2] = {0, 1};
     ref *pExtend;
 
     *pFunction = 0;
     if (code < 0 ||
-	(code = dict_floats_param(op, "Domain", 2, Domain,
+	(code = dict_floats_param(imemory, op, "Domain", 2, Domain,
 				  default_Domain)) < 0 ||
 	(code = build_shading_function(i_ctx_p, op, pFunction, 1, mem)) < 0
 	)
@@ -349,8 +352,10 @@ build_directional_shading(i_ctx_t *i_ctx_p, const ref * op, float *Coords, int n
 	    return_error(e_typecheck);
 	else if (r_size(pExtend) != 2)
 	    return_error(e_rangecheck);
-	else if ((array_get(pExtend, 0L, &E0), !r_has_type(&E0, t_boolean)) ||
-		 (array_get(pExtend, 1L, &E1), !r_has_type(&E1, t_boolean))
+	else if ((array_get(imemory, pExtend, 0L, &E0), 
+		  !r_has_type(&E0, t_boolean)) ||
+		 (array_get(imemory, pExtend, 1L, &E1), 
+		  !r_has_type(&E1, t_boolean))
 	    )
 	    return_error(e_typecheck);
 	Extend[0] = E0.value.boolval, Extend[1] = E1.value.boolval;
@@ -432,7 +437,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 					    "build_mesh_shading");
 	if (data == 0)
 	    return_error(e_VMerror);
-	code = process_float_array(pDataSource, size, data);
+	code = process_float_array(mem, pDataSource, size, data);
 	if (code < 0) {
 	    gs_free_object(mem, data, "build_mesh_shading");
 	    return code;
@@ -480,7 +485,7 @@ build_mesh_shading(i_ctx_t *i_ctx_p, const ref * op,
 	    if (*pDecode == 0)
 		code = gs_note_error(e_VMerror);
 	    else {
-		code = dict_floats_param(op, "Decode", num_decode, *pDecode, NULL);
+	        code = dict_floats_param(mem, op, "Decode", num_decode, *pDecode, NULL);
 		if (code < 0) {
 		    gs_free_object(mem, *pDecode, "build_mesh_shading");
 		    *pDecode = 0;

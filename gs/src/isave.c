@@ -309,7 +309,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 {
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
-    ulong sid = gs_next_ids(2);
+    ulong sid = gs_next_ids((const gs_memory_t *)lmem->stable_memory, 2);
     bool global =
 	lmem->save_level == 0 && gmem != lmem &&
 	gmem->num_contexts == 1;
@@ -385,7 +385,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
 	if (cp->ctop - cp->cbot > min_inner_chunk_space) {
 	    /* Create an inner chunk to cover only the unallocated part. */
 	    chunk_t *inner =
-		gs_raw_alloc_struct_immovable(mem->parent, &st_chunk,
+		gs_raw_alloc_struct_immovable(mem->non_gc_memory, &st_chunk,
 					      "alloc_save_space(inner)");
 
 	    if (inner == 0)
@@ -413,7 +413,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
     }
     save->state = save_mem;
     save->spaces = dmem->spaces;
-    save->restore_names = (name_memory() == (gs_memory_t *) mem);
+    save->restore_names = (name_memory(mem) == (gs_memory_t *) mem);
     save->is_current = (dmem->current == mem);
     save->id = sid;
     mem->saved = save;
@@ -451,7 +451,7 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     else {
 	lprintf3("Bad type %u for save!  pcont = 0x%lx, where = 0x%lx\n",
 		 r_type(pcont), (ulong) pcont, (ulong) where);
-	gs_abort();
+	gs_abort((const gs_memory_t *)mem);
     }
     if (r_is_packed(where))
 	*(ref_packed *)&cp->contents = *where;
@@ -561,25 +561,27 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
 
 /* Test whether a name would be invalidated by a restore. */
 bool
-alloc_name_is_since_save(const ref * pnref, const alloc_save_t * save)
+alloc_name_is_since_save(const gs_memory_t *mem,
+			 const ref * pnref, const alloc_save_t * save)
 {
     const name_string_t *pnstr;
 
     if (!save->restore_names)
 	return false;
-    pnstr = names_string_inline(the_gs_name_table, pnref);
+    pnstr = names_string_inline(mem->gs_lib_ctx->gs_name_table, pnref);
     if (pnstr->foreign_string)
 	return false;
     return alloc_is_since_save(pnstr->string_bytes, save);
 }
 bool
-alloc_name_index_is_since_save(uint nidx, const alloc_save_t * save)
+alloc_name_index_is_since_save(const gs_memory_t *mem,
+			       uint nidx, const alloc_save_t *save)
 {
     const name_string_t *pnstr;
 
     if (!save->restore_names)
 	return false;
-    pnstr = names_index_string_inline(the_gs_name_table, nidx);
+    pnstr = names_index_string_inline(mem->gs_lib_ctx->gs_name_table, nidx);
     if (pnstr->foreign_string)
 	return false;
     return alloc_is_since_save(pnstr->string_bytes, save);
@@ -838,7 +840,7 @@ restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 
     /* Adjust the name table. */
     if (sprev->restore_names)
-	names_restore(the_gs_name_table, sprev);
+	names_restore(mem->gs_lib_ctx->gs_name_table, sprev);
 }
 
 /* Release memory for a restore. */
@@ -945,7 +947,7 @@ combine_space(gs_ref_memory_t * mem)
 	    outer->rtop = cp->rtop;
 	    outer->ctop = cp->ctop;
 	    outer->has_refs |= cp->has_refs;
-	    gs_free_object(mem->parent, cp,
+	    gs_free_object(mem->non_gc_memory, cp,
 			   "combine_space(inner)");
 	}
     }

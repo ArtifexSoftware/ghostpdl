@@ -40,7 +40,7 @@
 
 /* Forward references */
 private int access_check(i_ctx_t *, int, bool);
-private int convert_to_string(os_ptr, os_ptr);
+private int convert_to_string(const gs_memory_t *mem, os_ptr, os_ptr);
 
 /*
  * Max and min integer values expressed as reals.
@@ -69,7 +69,7 @@ ztype(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     ref tnref;
-    int code = array_get(op, (long)r_btype(op - 1), &tnref);
+    int code = array_get(imemory, op, (long)r_btype(op - 1), &tnref);
 
     if (code < 0)
 	return code;
@@ -80,7 +80,7 @@ ztype(i_ctx_t *i_ctx_p)
 	    const char *sname =
 		gs_struct_type_name_string(gs_object_type(imemory,
 							  op[-1].value.pstruct));
-	    int code = name_ref((const byte *)sname, strlen(sname),
+	    int code = name_ref(imemory, (const byte *)sname, strlen(sname),
 				(ref *) (op - 1), 0);
 
 	    if (code < 0)
@@ -109,7 +109,7 @@ ztypenames(i_ctx_t *i_ctx_p)
 	if (i >= countof(tnames) || tnames[i] == 0)
 	    make_null(rtnp);
 	else {
-	    int code = name_enter_string(tnames[i], rtnp);
+	    int code = name_enter_string(imemory, tnames[i], rtnp);
 
 	    if (code < 0)
 		return code;
@@ -284,7 +284,7 @@ zcvn(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     check_read_type(*op, t_string);
-    return name_from_string(op, op);
+    return name_from_string(imemory, op, op);
 }
 
 /* <num> cvr <real> */
@@ -343,7 +343,7 @@ zcvrs(i_ctx_t *i_ctx_p)
 	    case t_integer:
 	    case t_real:
 		{
-		    int code = convert_to_string(op - 2, op);
+		    int code = convert_to_string(imemory, op - 2, op);
 
 		    if (code < 0)
 			return code;
@@ -400,7 +400,7 @@ zcvs(i_ctx_t *i_ctx_p)
 
     check_op(2);
     check_write_type(*op, t_string);
-    code = convert_to_string(op - 1, op);
+    code = convert_to_string(imemory, op - 1, op);
     if (code >= 0)
 	pop(1);
     return code;
@@ -483,11 +483,11 @@ access_check(i_ctx_t *i_ctx_p,
 /* the source.  This is a separate procedure so that */
 /* cvrs can use it when the radix is 10. */
 private int
-convert_to_string(os_ptr op1, os_ptr op)
+convert_to_string(const gs_memory_t *mem, os_ptr op1, os_ptr op)
 {
     uint len;
     const byte *pstr = 0;
-    int code = obj_cvs(op1, op->value.bytes, r_size(op), &len, &pstr);
+    int code = obj_cvs(mem, op1, op->value.bytes, r_size(op), &len, &pstr);
 
     if (code < 0) {
 	/*

@@ -125,7 +125,7 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 		      mem, return_error(gs_error_VMerror),
 		      "gs_imager_state_init(transfer)", 1);
     pis->set_transfer.gray->proc = imager_null_transfer;
-    pis->set_transfer.gray->id = gs_next_ids(1);
+    pis->set_transfer.gray->id = gs_next_ids(pis->memory, 1);
     pis->set_transfer.gray->values[0] = frac_0;
     pis->set_transfer.red =
 	pis->set_transfer.green =

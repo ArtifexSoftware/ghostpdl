@@ -295,7 +295,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
     gx_ht_cache *pcache = porder->cache;
 
     if (pcache->order.bit_data != porder->bit_data)
-	gx_ht_init_cache(pcache, porder);
+	gx_ht_init_cache(pis->memory, pcache, porder);
     /*
      * We do not load the cache now.  Instead we wait until we are ready
      * to actually render the color.  This allows multiple colors to be
@@ -705,7 +705,7 @@ gx_dc_ht_binary_get_nonzero_comps(
 /* Initialize the tile cache for a given screen. */
 /* Cache as many different levels as will fit. */
 void
-gx_ht_init_cache(gx_ht_cache * pcache, const gx_ht_order * porder)
+gx_ht_init_cache(const gs_memory_t *mem, gx_ht_cache * pcache, const gx_ht_order * porder)
 {
     uint width = porder->width;
     uint height = porder->height;
@@ -758,7 +758,7 @@ gx_ht_init_cache(gx_ht_cache * pcache, const gx_ht_order * porder)
 	raster = bitmap_raster(width_unit);
 	tile_bytes = raster * height;
     }
-    pcache->base_id = gs_next_ids(porder->num_levels + 1);
+    pcache->base_id = gs_next_ids(mem, porder->num_levels + 1);
     pcache->order = *porder;
     /* The transfer function is irrelevant, and might become dangling. */
     pcache->order.transfer = 0;

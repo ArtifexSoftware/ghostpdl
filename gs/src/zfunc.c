@@ -271,7 +271,8 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 
 	if (ptr == 0)
 	    return_error(e_VMerror);
-	code = dict_float_array_check_param(op, kstr, size, ptr, NULL,
+	code = dict_float_array_check_param(mem, op, kstr, size, 
+					    ptr, NULL,
 					    0, e_rangecheck);
 	if (code < 0 || (even && (code & 1) != 0)) {
 	    gs_free_object(mem, ptr, kstr);
@@ -311,7 +312,8 @@ fn_build_float_array_forced(const ref * op, const char *kstr, bool required,
     if (ptr == 0)
         return_error(e_VMerror);
     if(r_is_array(par) )    
-        code = dict_float_array_check_param(op, kstr, size, ptr, NULL,
+        code = dict_float_array_check_param(mem, op, kstr, 
+					    size, ptr, NULL,
 					    0, e_rangecheck);
     else {
         code = dict_float_param(op, kstr, 0., ptr); /* defailt cannot happen */

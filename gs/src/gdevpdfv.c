@@ -421,7 +421,7 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     code = pdf_cs_Pattern_colored(pdev, &v);
     if (code < 0)
 	return code;
-    pdf_cspace_init_Device(&cs_Device, pdev->color_info.num_components);
+    pdf_cspace_init_Device(pdev->memory, &cs_Device, pdev->color_info.num_components);
     /*
      * We don't have to worry about color space scaling: the color
      * space is always a Device space.

@@ -28,7 +28,6 @@
 #include "stream.h"		/* for files.h */
 #include "files.h"		/* for e-stack processing */
 #include "store.h"
-#include "gsmalloc.h"		/* for gs_memory_default */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsstate.h"
 
@@ -232,7 +231,8 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		    break;
 		case t_name:
 		    /* Names are special because of how they are allocated. */
-		    if (alloc_name_is_since_save(stkp, asave))
+		    if (alloc_name_is_since_save((const gs_memory_t *)pstack->memory,
+						 stkp, asave))
 			return_error(e_invalidrestore);
 		    continue;
 		case t_string:
@@ -336,7 +336,7 @@ zvmstatus(i_ctx_t *i_ctx_p)
 	mstat.allocated += sstat.allocated;
 	mstat.used += sstat.used;
     }
-    gs_memory_status(&gs_memory_default, &dstat);
+    gs_memory_status(imemory->non_gc_memory, &dstat);
     push(3);
     make_int(op - 2, imemory_save_level(iimemory_local));
     make_int(op - 1, mstat.used);

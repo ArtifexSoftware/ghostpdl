@@ -78,7 +78,7 @@ extern_st(st_font_data);
  * Get the FontBBox from a font dictionary, if any; if none, or if invalid,
  * return 4 zeros.
  */
-int font_bbox_param(const ref * pfdict, double bbox[4]);
+int font_bbox_param(const gs_memory_t *mem, const ref *pfdict, double bbox[4]);
 
 /* ---------------- Exported by zfont.c ---------------- */
 
@@ -98,7 +98,7 @@ int font_param(const ref * pfdict, gs_font ** ppfont);
  * collector.  Return true if a mark was just added.  This procedure is
  * intended to be used as the mark_glyph procedure in the character cache.
  */
-bool zfont_mark_glyph_name(gs_glyph glyph, void *ignore_data);
+bool zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data);
 
 /*
  * Return information about a font, including information from the FontInfo

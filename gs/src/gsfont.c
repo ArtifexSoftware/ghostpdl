@@ -109,7 +109,7 @@ ENUM_PTRS_WITH(font_dir_enum_ptrs, gs_font_dir *dir)
 
 	if (cc != 0 && !--count) {
 	    (*dir->ccache.mark_glyph)
-		(cc->code, dir->ccache.mark_glyph_data);
+		(mem, cc->code, dir->ccache.mark_glyph_data);
 	    /****** HACK: break const.  We'll fix this someday. ******/
 	    ((gs_font_dir *)dir)->enum_index = cci;
 	    ((gs_font_dir *)dir)->enum_offset = offset;
@@ -209,7 +209,7 @@ RELOC_PTRS_END
 
 /* Allocate a font directory */
 private bool
-cc_no_mark_glyph(gs_glyph glyph, void *ignore_data)
+cc_no_mark_glyph(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
     return false;
 }
@@ -285,7 +285,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->dir = dir;
     pfont->is_resource = false;
     gs_font_notify_init(pfont);
-    pfont->id = gs_next_ids(1);
+    pfont->id = gs_next_ids(mem, 1);
     pfont->base = pfont;
     pfont->client_data = 0;
     /* not FontMatrix, FontType */

@@ -282,7 +282,7 @@ ztoken_handle_comment(i_ctx_t *i_ctx_p, const ref *fop, scanner_state *sstate,
 	    return code;
     }
     check_estack(4);
-    code = name_enter_string(proc_name, esp + 4);
+    code = name_enter_string(imemory, proc_name, esp + 4);
     if (code < 0)
 	return code;
     if (save) {

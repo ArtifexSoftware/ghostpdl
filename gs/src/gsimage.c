@@ -219,7 +219,7 @@ gs_image_init(gs_image_enum * penum, const gs_image_t * pim, bool multi,
              * non-current color space is potentially incorrect, but
              * it appears this case doesn't arise.
              */
-            gs_cspace_init_DeviceGray(&cs);
+            gs_cspace_init_DeviceGray(pgs->memory, &cs);
 	    image.ColorSpace = &cs;
         }
     }

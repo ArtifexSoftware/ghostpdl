@@ -839,7 +839,7 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     /* Set color space to RGB, in preparation for sending an RGB image. */
     gs_setrgbcolor(pgs, 0, 0, 0);
 
-    gs_cspace_init_DeviceRGB(&cs);
+    gs_cspace_init_DeviceRGB(pgs->memory, &cs);
     gx_set_dev_color(pgs);
     gs_image_t_init_adjust(&image, &cs, false);
     image.ImageMatrix.xx = (float)width;

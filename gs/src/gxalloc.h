@@ -225,7 +225,7 @@ extern_st(st_chunk);
 		if ( pre != end )\
 		{	lprintf2("Chunk parsing error, 0x%lx != 0x%lx\n",\
 				 (ulong)pre, (ulong)end);\
-			gs_abort();\
+		    /*gs_abort((const gs_memory_t *)NULL);*/	\
 		}\
 	}
 #else
@@ -333,7 +333,6 @@ typedef struct ref_s ref;
 struct gs_ref_memory_s {
     /* The following are set at initialization time. */
     gs_memory_common;
-    gs_raw_memory_t *parent;	/* for allocating chunks */
     uint chunk_size;
     uint large_size;		/* min size to give large object */
 				/* its own chunk: must be */
@@ -453,17 +452,17 @@ extern const dump_control_t dump_control_all;
 /* Print one object with the given options. */
 /* Relevant options: type_addresses, no_types, pointers, pointed_strings, */
 /* contents. */
-void debug_print_object(const void *obj, const dump_control_t * control);
+void debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t * control);
 
 /* Print the contents of a chunk with the given options. */
 /* Relevant options: all. */
-void debug_dump_chunk(const chunk_t * cp, const dump_control_t * control);
-void debug_print_chunk(const chunk_t * cp);	/* default options */
+void debug_dump_chunk(const gs_memory_t *mem, const chunk_t * cp, const dump_control_t * control);
+void debug_print_chunk(const gs_memory_t *mem, const chunk_t * cp);	/* default options */
 
 /* Print the contents of all chunks managed by an allocator. */
 /* Relevant options: all. */
-void debug_dump_memory(const gs_ref_memory_t * mem,
-		       const dump_control_t * control);
+void debug_dump_memory(const gs_ref_memory_t *mem,
+		       const dump_control_t *control);
 
 /* Find all the objects that contain a given pointer. */
 void debug_find_pointers(const gs_ref_memory_t *mem, const void *target);

@@ -73,8 +73,8 @@ zeqproc(i_ctx_t *i_ctx_p)
 	}
 	/* Look at the next elements of the arrays. */
 	i = r_size(&top->proc1) - 1;
-	array_get(&top->proc1, i, &top[1].proc1);
-	array_get(&top->proc2, i, &top[1].proc2);
+	array_get(imemory, &top->proc1, i, &top[1].proc1);
+	array_get(imemory, &top->proc2, i, &top[1].proc2);
 	r_dec_size(&top->proc1, 1);
 	++top;
 	/*
@@ -88,7 +88,7 @@ zeqproc(i_ctx_t *i_ctx_p)
 	    )
 	    break;
 #endif
-	if (obj_eq(&top->proc1, &top->proc2)) {
+	if (obj_eq(imemory, &top->proc1, &top->proc2)) {
 	    /* Names don't match strings. */
 	    if (r_type(&top->proc1) != r_type(&top->proc2) &&
 		(r_type(&top->proc1) == t_name ||

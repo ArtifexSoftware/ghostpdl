@@ -27,18 +27,15 @@
 #include "iminst.h"
 #include "imain.h"
 #include "imainarg.h"
+#include "gsmemory.h"
+#include "gsmalloc.h"
+#include "gslibctx.h"
 
-
-/*
- * GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING
- *
- *                 The nasty global variables
- *
- * GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING GLOBAL WARNING
+/* number of threads to allow per process
+ * currently more than 1 is guarenteed to fail 
  */
-int gsapi_instance_counter = 0;
-/* extern gs_main_instance *gs_main_instance_default(); */
-
+static int gsapi_instance_counter = 0;
+static const int gsapi_instance_max = 1;
 
 /* Return revision numbers and strings of Ghostscript. */
 /* Used for determining if wrong GSDLL loaded. */
@@ -55,27 +52,42 @@ gsapi_revision(gsapi_revision_t *pr, int rvsize)
     return 0;
 }
 
-/* Create a new instance of Ghostscript. */
-/* We do not support multiple instances, so make sure
- * we use the default instance only once.
+/* Create a new instance of Ghostscript. 
+ * First instance per process call with *pinstance == NULL
+ * next instance in a proces call with *pinstance == copy of valid_instance pointer
+ * *pinstance is set to a new instance pointer.
  */
 GSDLLEXPORT int GSDLLAPI 
 gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
 {
+    gs_memory_t *mem = NULL;
     gs_main_instance *minst;
-    if (gsapi_instance_counter != 0) {
-	*pinstance = NULL;
+
+    if (pinstance == NULL)
 	return e_Fatal;
+
+    /* limited to 1 instance, till it works :) */
+    if ( gsapi_instance_counter >= gsapi_instance_max ) 
+	return e_Fatal;
+    ++gsapi_instance_counter;
+
+    if (*pinstance == NULL)
+	/* first instance in this process */
+	mem = gs_malloc_init(NULL);
+    else {
+	/* nothing different for second thread initialization 
+	 * seperate memory, ids, only stdio is process shared.
+	 */
+	mem = gs_malloc_init(NULL);
     }
-    gsapi_instance_counter++;
-    minst = gs_main_instance_default();
-    minst->caller_handle = caller_handle;
-    minst->stdin_fn = NULL;
-    minst->stdout_fn = NULL;
-    minst->stderr_fn = NULL;
-    minst->poll_fn = NULL;
-    minst->display = NULL;
-    minst->i_ctx_p = NULL;
+    minst = gs_main_alloc_instance(mem);
+    mem->gs_lib_ctx->top_of_system = (void*) minst;
+    mem->gs_lib_ctx->caller_handle = caller_handle;
+    mem->gs_lib_ctx->stdin_fn = NULL;
+    mem->gs_lib_ctx->stdout_fn = NULL;
+    mem->gs_lib_ctx->stderr_fn = NULL;
+    mem->gs_lib_ctx->poll_fn = NULL;
+
     *pinstance = minst;
     return 0;
 }
@@ -87,14 +99,17 @@ gsapi_new_instance(gs_main_instance **pinstance, void *caller_handle)
 GSDLLEXPORT void GSDLLAPI 
 gsapi_delete_instance(gs_main_instance *minst)
 {
-    if ((gsapi_instance_counter > 0) && (minst != NULL)) {
-	minst->caller_handle = NULL;
-	minst->stdin_fn = NULL;
-	minst->stdout_fn = NULL;
-	minst->stderr_fn = NULL;
-	minst->poll_fn = NULL;
+    if ((minst != NULL)) {
+	minst->heap->gs_lib_ctx->caller_handle = NULL;
+	minst->heap->gs_lib_ctx->stdin_fn = NULL;
+	minst->heap->gs_lib_ctx->stdout_fn = NULL;
+	minst->heap->gs_lib_ctx->stderr_fn = NULL;
+	minst->heap->gs_lib_ctx->poll_fn = NULL;
 	minst->display = NULL;
-	gsapi_instance_counter--;
+	
+	/* NB: notice how no deletions are occuring, good bet this isn't thread ready
+	 */
+	--gsapi_instance_counter;
     }
 }
 
@@ -107,9 +122,9 @@ gsapi_set_stdio(gs_main_instance *minst,
 {
     if (minst == NULL)
 	return e_Fatal;
-    minst->stdin_fn = stdin_fn;
-    minst->stdout_fn = stdout_fn;
-    minst->stderr_fn = stderr_fn;
+    minst->heap->gs_lib_ctx->stdin_fn = stdin_fn;
+    minst->heap->gs_lib_ctx->stdout_fn = stdout_fn;
+    minst->heap->gs_lib_ctx->stderr_fn = stderr_fn;
     return 0;
 }
 
@@ -120,7 +135,7 @@ gsapi_set_poll(gs_main_instance *minst,
 {
     if (minst == NULL)
 	return e_Fatal;
-    minst->poll_fn = poll_fn;
+    minst->heap->gs_lib_ctx->poll_fn = poll_fn;
     return 0;
 }
 
@@ -224,7 +239,8 @@ gsapi_exit(gs_main_instance *minst)
     if (minst == NULL)
 	return e_Fatal;
 
-    return gs_to_exit(0);
+    gs_to_exit(minst->heap, 0);
+    return 0;
 }
 
 /* Visual tracer : */

@@ -38,18 +38,18 @@ void refset_null_new(ref * to, uint size, uint new_mask);
 #define refset_null(to, size) refset_null_new(to, size, ialloc_new_mask)
 
 /* Compare two objects for equality. */
-bool obj_eq(const ref *, const ref *);
+bool obj_eq(const gs_memory_t *mem, const ref *, const ref *);
 
 /* Compare two objects for identity. */
 /* (This is not a standard PostScript concept.) */
-bool obj_ident_eq(const ref *, const ref *);
+bool obj_ident_eq(const gs_memory_t *mem, const ref *, const ref *);
 
 /*
  * Set *pchars and *plen to point to the data of a name or string, and
  * return 0.  If the object isn't a name or string, return e_typecheck.
  * If the object is a string without read access, return e_invalidaccess.
  */
-int obj_string_data(const ref *op, const byte **pchars, uint *plen);
+int obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint *plen);
 
 /*
  * Create a printable representation of an object, a la cvs and =
@@ -80,17 +80,17 @@ int obj_cvp(const ref * op, byte *str, uint len, uint * prlen,
  * and it can return a pointer to the data for names and strings, like
  * obj_string_data.
  */
-int obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
+int obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
 	    const byte ** pchars);
 
 /* Get an element from an array (packed or not). */
-int array_get(const ref *, long, ref *);
+int array_get(const gs_memory_t *mem, const ref *, long, ref *);
 
 /* Get an element from a packed array. */
 /* (This works for ordinary arrays too.) */
 /* Source and destination are allowed to overlap if the source is packed, */
 /* or if they are identical. */
-void packed_get(const ref_packed *, ref *);
+void packed_get(const gs_memory_t *mem, const ref_packed *, ref *);
 
 /* Check to make sure an interval contains no object references */
 /* to a space younger than a given one. */
@@ -115,7 +115,7 @@ int num_params(const ref *, int, double *);
 int float_params(const ref *, int, float *);
 
 /* process_float_array can lose accuracy for large integers */
-int process_float_array(const ref *, int, float *);
+int process_float_array(const gs_memory_t *mem, const ref *, int, float *);
 
 /* Get a single real parameter. */
 /* The only possible error is e_typecheck. */
@@ -139,7 +139,7 @@ typedef struct gs_matrix_s gs_matrix;
 #endif
 
 /* Read a matrix operand. */
-int read_matrix(const ref *, gs_matrix *);
+int read_matrix(const gs_memory_t *mem, const ref *, gs_matrix *);
 
 /* Write a matrix operand. */
 /* If dmem is NULL, the array is guaranteed newly allocated in imem. */

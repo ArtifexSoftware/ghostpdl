@@ -962,7 +962,7 @@ gx_imager_dev_ht_install(
     /* construct the new device halftone structure */
     memset(&dht.order, 0, sizeof(dht.order));
     /* the rc field is filled in later */
-    dht.id = gs_next_ids(1);
+    dht.id = gs_next_ids(pis->memory, 1);
     dht.type = type;
     dht.components =  gs_alloc_struct_array(
                           pis->memory,
@@ -1104,7 +1104,7 @@ gx_imager_dev_ht_install(
                     code = gs_error_VMerror;
                 else {
                     porder->cache = pcache;
-                    gx_ht_init_cache(pcache, porder);
+                    gx_ht_init_cache(pis->memory, pcache, porder);
                 }
             }
         }

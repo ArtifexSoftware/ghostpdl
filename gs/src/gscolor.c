@@ -109,7 +109,7 @@ gs_setgray(gs_state * pgs, floatp gray)
     gs_color_space      cs;
     int                 code;
 
-    gs_cspace_init_DeviceGray(&cs);
+    gs_cspace_init_DeviceGray(pgs->memory, &cs);
     if ((code = gs_setcolorspace(pgs, &cs)) >= 0) {
         gs_client_color *   pcc = pgs->ccolor;
 
@@ -128,7 +128,7 @@ gs_setrgbcolor(gs_state * pgs, floatp r, floatp g, floatp b)
     gs_color_space      cs;
     int                 code;
 
-    gs_cspace_init_DeviceRGB(&cs);
+    gs_cspace_init_DeviceRGB(pgs->memory, &cs);
     if ((code = gs_setcolorspace(pgs, &cs)) >= 0) {
        gs_client_color *    pcc = pgs->ccolor;
 
@@ -177,7 +177,7 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
     rc_unshare_struct(ptran->gray, gx_transfer_map, &st_transfer_map,
 		      pgs->memory, goto fail, "gs_settransfer");
     ptran->gray->proc = tproc;
-    ptran->gray->id = gs_next_ids(1);
+    ptran->gray->id = gs_next_ids(pgs->memory, 1);
     ptran->red = 0;
     ptran->green = 0;
     ptran->blue = 0;
@@ -213,7 +213,7 @@ gx_set_device_color_1(gs_state * pgs)
 
     gs_setoverprint(pgs, false);
     gs_setoverprintmode(pgs, 0);
-    gs_cspace_init_DeviceGray(&cs);
+    gs_cspace_init_DeviceGray(pgs->memory, &cs);
     gs_setcolorspace(pgs, &cs);
     set_nonclient_dev_color(pgs->dev_color, 1);
     pgs->log_op = lop_default;

@@ -46,7 +46,7 @@ ref_param_key(const iparam_list * plist, gs_param_name pkey, ref * pkref)
 	make_int(pkref, key);
 	return 0;
     } else
-	return name_ref((const byte *)pkey, strlen(pkey), pkref, 0);
+        return name_ref(plist->memory, (const byte *)pkey, strlen(pkey), pkref, 0);
 }
 
 /* Fill in a gs_param_key_t from a name or int ref. */
@@ -56,7 +56,7 @@ ref_to_key(const ref * pref, gs_param_key_t * key, iparam_list *plist)
     if (r_has_type(pref, t_name)) {
 	ref nref;
 
-	name_string_ref(pref, &nref);
+	name_string_ref(plist->memory, pref, &nref);
 	key->data = nref.value.const_bytes;
 	key->size = r_size(&nref);
 	key->persistent = false; /* names may be freed */
@@ -107,7 +107,7 @@ private int ref_array_param_requested(const iparam_list *, gs_param_name,
 private int ref_param_write(iparam_list *, gs_param_name, const ref *);
 private int ref_param_write_string_value(ref *, const gs_param_string *,
 					 gs_ref_memory_t *);
-private int ref_param_write_name_value(ref *, const gs_param_string *);
+private int ref_param_write_name_value(const gs_memory_t *mem, ref *, const gs_param_string *);
 private int
 ref_param_make_int(ref *pe, const void *pvalue, uint i, gs_ref_memory_t *imem)
 {
@@ -132,7 +132,7 @@ ref_param_make_string(ref *pe, const void *pvalue, uint i, gs_ref_memory_t *imem
 private int
 ref_param_make_name(ref * pe, const void *pvalue, uint i, gs_ref_memory_t *imem)
 {
-    return ref_param_write_name_value(pe,
+    return ref_param_write_name_value((const gs_memory_t *)imem, pe,
 			 &((const gs_param_string_array *)pvalue)->data[i]);
 }
 private int
@@ -235,7 +235,7 @@ ref_param_write_typed(gs_param_list * plist, gs_param_name pkey,
 	case gs_param_type_name:
 	    if (!ref_param_requested(plist, pkey))
 		return 0;
-	    code = ref_param_write_name_value(&value, &pvalue->value.n);
+	    code = ref_param_write_name_value(iplist->memory, &value, &pvalue->value.n);
 	    break;
 	case gs_param_type_int_array:
 	    return ref_param_write_typed_array(plist, pkey, &pvalue->value.ia,
@@ -322,9 +322,9 @@ ref_param_write_string_value(ref * pref, const gs_param_string * pvalue,
 
 /* Prepare to write a name value. */
 private int
-ref_param_write_name_value(ref * pref, const gs_param_string * pvalue)
+ref_param_write_name_value(const gs_memory_t *mem, ref * pref, const gs_param_string * pvalue)
 {
-    return name_ref(pvalue->data, pvalue->size, pref,
+    return name_ref(mem, pvalue->data, pvalue->size, pref,
 		    (pvalue->persistent ? 0 : 1));
 }
 
@@ -520,7 +520,8 @@ private const gs_param_list_procs ref_read_procs =
 };
 private int ref_param_read(iparam_list *, gs_param_name,
 			   iparam_loc *, int);
-private int ref_param_read_string_value(const iparam_loc *,
+private int ref_param_read_string_value(const gs_memory_t *mem,
+					const iparam_loc *,
 					gs_param_string *);
 private int ref_param_read_array(iparam_list *, gs_param_name,
 				 iparam_loc *);
@@ -556,7 +557,7 @@ ref_param_read_int_array(gs_param_list * plist, gs_param_name pkey,
     for (i = 0; i < size; i++) {
 	ref elt;
 
-	array_get(loc.pvalue, i, &elt);
+	array_get(plist->memory, loc.pvalue, i, &elt);
 	if (!r_has_type(&elt, t_integer)) {
 	    code = gs_note_error(e_typecheck);
 	    break;
@@ -601,7 +602,7 @@ ref_param_read_float_array(gs_param_list * plist, gs_param_name pkey,
     aref = *loc.pvalue;
     loc.pvalue = &elt;
     for (i = 0; code >= 0 && i < size; i++) {
-	array_get(&aref, i, &elt);
+        array_get(plist->memory, &aref, i, &elt);
 	code = float_param(&elt, pfv + i);
     }
     if (code < 0) {
@@ -637,15 +638,15 @@ ref_param_read_string_array(gs_param_list * plist, gs_param_name pkey,
     if (r_has_type(&aref, t_array)) {
 	for (i = 0; code >= 0 && i < size; i++) {
 	    loc.pvalue = aref.value.refs + i;
-	    code = ref_param_read_string_value(&loc, psv + i);
+	    code = ref_param_read_string_value(plist->memory, &loc, psv + i);
 	}
     } else {
 	ref elt;
 
 	loc.pvalue = &elt;
 	for (i = 0; code >= 0 && i < size; i++) {
-	    array_get(&aref, i, &elt);
-	    code = ref_param_read_string_value(&loc, psv + i);
+	    array_get(plist->memory, &aref, i, &elt);
+	    code = ref_param_read_string_value(plist->memory, &loc, psv + i);
 	}
     }
     if (code < 0) {
@@ -732,7 +733,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	     * on the type of the first element of the array.  If that
 	     * fails, we try again with more general types.
 	     */
-	    array_get(loc.pvalue, 0, &elt);
+	    array_get(plist->memory, loc.pvalue, 0, &elt);
 	    switch (r_type(&elt)) {
 		case t_integer:
 		    pvalue->type = gs_param_type_int_array;
@@ -790,7 +791,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	    return 0;
 	case t_name:
 	    pvalue->type = gs_param_type_name;
-	    return ref_param_read_string_value(&loc, &pvalue->value.n);
+	    return ref_param_read_string_value(plist->memory, &loc, &pvalue->value.n);
 	case t_null:
 	    pvalue->type = gs_param_type_null;
 	    return 0;
@@ -800,7 +801,7 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	    return 0;
 	case t_string:
 	    pvalue->type = gs_param_type_string;
-	    return ref_param_read_string_value(&loc, &pvalue->value.s);
+	    return ref_param_read_string_value(plist->memory, &loc, &pvalue->value.s);
 	default:
 	    break;
     }
@@ -866,7 +867,7 @@ ref_param_get_next_key(gs_param_list * plist, gs_param_enumerator_t * penum,
 
 /* Read a string value. */
 private int
-ref_param_read_string_value(const iparam_loc * ploc, gs_param_string * pvalue)
+ref_param_read_string_value(const gs_memory_t *mem, const iparam_loc * ploc, gs_param_string * pvalue)
 {
     const ref *pref = ploc->pvalue;
 
@@ -874,7 +875,7 @@ ref_param_read_string_value(const iparam_loc * ploc, gs_param_string * pvalue)
 	case t_name: {
 	    ref nref;
 
-	    name_string_ref(pref, &nref);
+	    name_string_ref(mem, pref, &nref);
 	    pvalue->data = nref.value.const_bytes;
 	    pvalue->size = r_size(&nref);
 	    pvalue->persistent = true;

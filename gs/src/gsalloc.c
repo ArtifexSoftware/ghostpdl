@@ -185,10 +185,10 @@ const gs_memory_procs_t gs_ref_memory_procs =
  * Allocate and mostly initialize the state of an allocator (system, global,
  * or local).  Does not initialize global or space.
  */
-private void *ialloc_solo(gs_raw_memory_t *, gs_memory_type_ptr_t,
+private void *ialloc_solo(gs_memory_t *, gs_memory_type_ptr_t,
 			  chunk_t **);
 gs_ref_memory_t *
-ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
+ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
 {
     chunk_t *cp;
     gs_ref_memory_t *iimem = ialloc_solo(parent, &st_ref_memory, &cp);
@@ -197,7 +197,8 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
 	return 0;
     iimem->stable_memory = (gs_memory_t *)iimem;
     iimem->procs = gs_ref_memory_procs;
-    iimem->parent = parent;
+    iimem->gs_lib_ctx = parent->gs_lib_ctx;
+    iimem->non_gc_memory = parent;
     iimem->chunk_size = chunk_size;
     iimem->large_size = ((chunk_size / 4) & -obj_align_mod) + 1;
     iimem->is_controlled = false;
@@ -228,7 +229,7 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
 
 /* Allocate a 'solo' object with its own chunk. */
 private void *
-ialloc_solo(gs_raw_memory_t * parent, gs_memory_type_ptr_t pstype,
+ialloc_solo(gs_memory_t * parent, gs_memory_type_ptr_t pstype,
 	    chunk_t ** pcp)
 {	/*
 	 * We can't assume that the parent uses the same object header
@@ -1539,7 +1540,7 @@ i_register_root(gs_memory_t * mem, gs_gc_root_t * rp, gs_ptr_type_t ptype,
     gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
 
     if (rp == NULL) {
-	rp = gs_raw_alloc_struct_immovable(imem->parent, &st_gc_root_t,
+	rp = gs_raw_alloc_struct_immovable(imem->non_gc_memory, &st_gc_root_t,
 					   "i_register_root");
 	if (rp == 0)
 	    return_error(gs_error_VMerror);
@@ -1568,7 +1569,7 @@ i_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
 	rpp = &(*rpp)->next;
     *rpp = (*rpp)->next;
     if (rp->free_on_unregister)
-	gs_free_object(imem->parent, rp, "i_unregister_root");
+	gs_free_object(imem->non_gc_memory, rp, "i_unregister_root");
 }
 
 /* ================ Chunks ================ */
@@ -1638,7 +1639,7 @@ private chunk_t *
 alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
 		    client_name_t cname)
 {
-    gs_raw_memory_t *parent = mem->parent;
+    gs_memory_t *parent = mem->non_gc_memory;
     chunk_t *cp;
     byte *cdata;
 
@@ -1648,16 +1649,20 @@ alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
 	return 0;
 #endif
     cp = gs_raw_alloc_struct_immovable(parent, &st_chunk, cname);
-    if ((ulong) (mem->allocated + mem->inherited) >= mem->limit) {
-	mem->gc_status.requested += csize;
-	if (mem->limit >= mem->gc_status.max_vm ||
-	    mem->gc_status.psignal == 0
-	    )
-	    return 0;
-	if_debug4('0', "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
-		  mem->space, (long)mem->allocated,
-		  (long)mem->limit, (long)mem->gc_status.requested);
-	*mem->gc_status.psignal = mem->gc_status.signal_value;
+
+    if( mem->gc_status.psignal != 0) {  
+	/* we have a garbage collector */
+	if ((ulong) (mem->allocated + mem->inherited) >= mem->limit) {
+	    mem->gc_status.requested += csize;
+	    if (mem->limit >= mem->gc_status.max_vm) {
+		gs_free_object(parent, cp, cname);
+		return 0;
+	    }
+	    if_debug4('0', "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
+		      mem->space, (long)mem->allocated,
+		      (long)mem->limit, (long)mem->gc_status.requested);
+	    *mem->gc_status.psignal = mem->gc_status.signal_value;
+	}
     }
     cdata = gs_alloc_bytes_immovable(parent, csize, cname);
     if (cp == 0 || cdata == 0) {
@@ -1802,7 +1807,7 @@ alloc_unlink_chunk(chunk_t * cp, gs_ref_memory_t * mem)
 void
 alloc_free_chunk(chunk_t * cp, gs_ref_memory_t * mem)
 {
-    gs_raw_memory_t *parent = mem->parent;
+    gs_memory_t *parent = mem->non_gc_memory;
     byte *cdata = (byte *)cp->chead;
     ulong csize = (byte *)cp->cend - cdata;
 
@@ -1964,7 +1969,7 @@ debug_dump_contents(const byte * bot, const byte * top, int indent,
 /* Relevant options: type_addresses, no_types, pointers, pointed_strings, */
 /* contents. */
 void
-debug_print_object(const void *obj, const dump_control_t * control)
+debug_print_object(const gs_memory_t *mem, const void *obj, const dump_control_t * control)
 {
     const obj_header_t *pre = ((const obj_header_t *)obj) - 1;
     ulong size = pre_obj_contents_size(pre);
@@ -1999,7 +2004,7 @@ debug_print_object(const void *obj, const dump_control_t * control)
 	gs_ptr_type_t ptype;
 
 	if (proc != gs_no_struct_enum_ptrs)
-	    for (; (ptype = (*proc)(pre + 1, size, index, &eptr, type, NULL)) != 0;
+	    for (; (ptype = (*proc)(mem, pre + 1, size, index, &eptr, type, NULL)) != 0;
 		 ++index
 		) {
 		const void *ptr = eptr.ptr;
@@ -2031,7 +2036,7 @@ debug_print_object(const void *obj, const dump_control_t * control)
 /* Print the contents of a chunk with the given options. */
 /* Relevant options: all. */
 void
-debug_dump_chunk(const chunk_t * cp, const dump_control_t * control)
+debug_dump_chunk(const gs_memory_t *mem, const chunk_t * cp, const dump_control_t * control)
 {
     dprintf1("chunk at 0x%lx:\n", (ulong) cp);
     dprintf3("   chead=0x%lx  cbase=0x%lx sbase=0x%lx\n",
@@ -2062,16 +2067,16 @@ debug_dump_chunk(const chunk_t * cp, const dump_control_t * control)
 				  (const byte *)(pre + 1) + size,
 				  control)
 	)
-	debug_print_object(pre + 1, control);
+	debug_print_object(mem, pre + 1, control);
     END_OBJECTS_SCAN_NO_ABORT
 }
 void 
-debug_print_chunk(const chunk_t * cp)
+debug_print_chunk(const gs_memory_t *mem, const chunk_t * cp)
 {
     dump_control_t control;
 
     control = dump_control_default;
-    debug_dump_chunk(cp, &control);
+    debug_dump_chunk(mem, cp, &control);
 }
 
 /* Print the contents of all chunks managed by an allocator. */
@@ -2085,7 +2090,7 @@ debug_dump_memory(const gs_ref_memory_t * mem, const dump_control_t * control)
 	const chunk_t *cp = (mcp == mem->pcc ? &mem->cc : mcp);
 
 	if (obj_in_control_region(cp->cbase, cp->cend, control))
-	    debug_dump_chunk(cp, control);
+	    debug_dump_chunk((const gs_memory_t *)mem, cp, control);
     }
 }
 
@@ -2107,10 +2112,10 @@ debug_find_pointers(const gs_ref_memory_t *mem, const void *target)
 	    enum_ptr_t eptr;
 
 	    if (proc)		/* doesn't trace refs */
-		for (; (*proc)(pre + 1, size, index, &eptr, pre->o_type, NULL); ++index)
+		for (; (*proc)(mem, pre + 1, size, index, &eptr, pre->o_type, NULL); ++index)
 		    if (eptr.ptr == target) {
 			dprintf1("Index %d in", index);
-			debug_print_object(pre + 1, &control);
+			debug_print_object((const gs_memory_t *)mem, pre + 1, &control);
 		    }
 	END_OBJECTS_SCAN_NO_ABORT
     }

@@ -26,7 +26,9 @@
  * This routine translates a gs_separation_name value into a character string
  * pointer and a string length.
  */
-int gs_get_colorname_string(gs_separation_name colorname_index,
-			unsigned char **ppstr, unsigned int *pname_size);
+int gs_get_colorname_string(const gs_memory_t *mem, 
+			    gs_separation_name colorname_index,
+			    unsigned char **ppstr, 
+			    unsigned int *pname_size);
 
 #endif /* zht2_INCLUDED */

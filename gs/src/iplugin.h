@@ -25,9 +25,9 @@
 typedef struct gs_context_state_s i_ctx_t;
 #endif
 
-#ifndef gs_raw_memory_t_DEFINED
-#define gs_raw_memory_t_DEFINED
-typedef struct gs_raw_memory_s gs_raw_memory_t;
+#ifndef gs_memory_DEFINED
+#define gs_memory_DEFINED
+typedef struct gs_memory_s gs_memory_t;
 #endif
 
 typedef struct i_plugin_holder_s i_plugin_holder;
@@ -63,9 +63,9 @@ struct i_plugin_client_memory_s { /* must be copying */
   typedef plugin_instantiation_proc((*i_plugin_instantiation_proc));\
   extern const i_plugin_instantiation_proc i_plugin_table[]
 
-void i_plugin_make_memory(i_plugin_client_memory *mem, gs_raw_memory_t *mem_raw);
+void i_plugin_make_memory(i_plugin_client_memory *mem, gs_memory_t *mem_raw);
 int i_plugin_init(i_ctx_t *);
-void i_plugin_finit(gs_raw_memory_t *mem, i_plugin_holder *list);
+void i_plugin_finit(gs_memory_t *mem, i_plugin_holder *list);
 i_plugin_instance *i_plugin_find(i_ctx_t *i_ctx_p, const char *type, const char *subtype);
 i_plugin_holder * i_plugin_get_list(i_ctx_t *i_ctx_p);
 

@@ -542,7 +542,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->is_simple = pinst->is_simple;
     ctile->is_dummy = false;
     if (mbits != 0) {
-	make_bitmap(&ctile->tbits, mbits, gs_next_ids(1));
+	make_bitmap(&ctile->tbits, mbits, gs_next_ids(pis->memory, 1));
 	mbits->bitmap_memory = 0;	/* don't free the bits */
     } else
 	ctile->tbits.data = 0;

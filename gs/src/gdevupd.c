@@ -889,10 +889,10 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 */
 
 /** UPD_MM_GET_ARRAY allocates & initializes an array of values */
-#define UPD_MM_GET_ARRAY(Which,Nelts)                                 \
+#define UPD_MM_GET_ARRAY(mem, Which,Nelts)                                 \
    Which = NULL;                                                      \
    if(0 < (Nelts)) {                                                  \
-      byte *tmp = gs_malloc(Nelts,sizeof(Which[0]),"uniprint/params");\
+      byte *tmp = gs_malloc(mem, Nelts,sizeof(Which[0]),"uniprint/params");\
       if(tmp) {                                                       \
          memset(tmp,0,(Nelts)*sizeof(Which[0]));                      \
          Which = (void *) tmp;                                        \
@@ -902,50 +902,52 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
    }
 
 /** UPD_MM_DEL_ARRAY frees an array of values */
-#define UPD_MM_DEL_ARRAY(Which,Nelts,Delete)                            \
+#define UPD_MM_DEL_ARRAY(mem, Which,Nelts,Delete)                            \
    if(Which && 0 < (Nelts)) {                                           \
       uint ii;                                                          \
-      for(ii = 0; (Nelts) > ii; ++ii) Delete(Which[ii]);                \
-      gs_free(upd_cast(Which),Nelts,sizeof(Which[0]),"uniprint/params");\
+      for(ii = 0; (Nelts) > ii; ++ii) Delete(mem, Which[ii]);                \
+      gs_free(mem, upd_cast(Which),Nelts,sizeof(Which[0]),"uniprint/params");\
    }                                                                    \
    Which = 0
 
 /** UPD_MM_DEL_VALUE deletes a value, does nothing */
-#define UPD_MM_DEL_VALUE(Which) /* */
+#define UPD_MM_DEL_VALUE(mem, Which) /* */
 
 /** UPD_MM_DEL_PARAM deletes a single gs-array-parameter */
-#define UPD_MM_DEL_PARAM(Which)  {                                  \
+#define UPD_MM_DEL_PARAM(mem, Which)  {                                  \
    if(Which.data && Which.size)                                     \
-      gs_free(upd_cast(Which.data),Which.size,sizeof(Which.data[0]),\
+      gs_free(mem, upd_cast(Which.data),Which.size,sizeof(Which.data[0]),\
          "uniprint/params");                                        \
 }
 
 /** UPD_MM_DEL_APARAM deletes a nested gs-array-parameter */
-#define UPD_MM_DEL_APARAM(Which) {                                  \
+#define UPD_MM_DEL_APARAM(mem, Which) {                                  \
    if(Which.data && Which.size) {                                   \
       uint iii;                                                     \
       for(iii = 0; iii < Which.size; ++iii)                         \
-         UPD_MM_DEL_PARAM(Which.data[iii]);                         \
-      gs_free(upd_cast(Which.data),Which.size,sizeof(Which.data[0]),\
+         UPD_MM_DEL_PARAM(mem, Which.data[iii]);                         \
+      gs_free(mem, upd_cast(Which.data),Which.size,sizeof(Which.data[0]),\
          "uniprint/params");                                        \
    }                                                                \
 }
 
 /** UPD_MM_CPY_ARRAY creates a new copy of an array of values */
-#define UPD_MM_CPY_ARRAY(To,From,Nelts,Copy)                \
-   UPD_MM_GET_ARRAY(To,Nelts);                              \
+#define UPD_MM_CPY_ARRAY(mem, To,From,Nelts,Copy)                \
+   UPD_MM_GET_ARRAY(mem, To,Nelts);                              \
    if(To && From) {                                         \
       uint ii;                                              \
-      for(ii = 0; (Nelts) > ii; ++ii) Copy(To[ii],From[ii]);\
+      for(ii = 0; (Nelts) > ii; ++ii) Copy(mem, To[ii],From[ii]);\
    }
 
 /** UPD_MM_CPY_VALUE Copies a simple Value */
-#define UPD_MM_CPY_VALUE(To,From)  To = From
+#define UPD_MM_CPY_VALUE(mem,To,From)  To = From
+
+#define UPD_MM_CPY_VALUE_3(mem,To,From)  To = From
 
 /** UPD_MM_CPY_PARAM Creates a copy of a gs-parameter */
-#define UPD_MM_CPY_PARAM(To,From)                                       \
+#define UPD_MM_CPY_PARAM(mem, To, From)                                       \
    if(From.data && From.size) {                                         \
-      UPD_MM_GET_ARRAY(To.data,From.size);                              \
+      UPD_MM_GET_ARRAY(mem, To.data,From.size);                              \
       if(To.data) {                                                     \
          To.size = From.size;                                           \
          memcpy(upd_cast(To.data),From.data,To.size*sizeof(To.data[0]));\
@@ -953,15 +955,15 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
    }
 
 /** UPD_MM_CPY_APARAM Creates a copy of a nested gs-parameter */
-#define UPD_MM_CPY_APARAM(To,From)                                     \
+#define UPD_MM_CPY_APARAM(mem, To,From)                                     \
    if(From.data && From.size) {                                        \
-      UPD_MM_GET_ARRAY(To.data,From.size);                             \
+       UPD_MM_GET_ARRAY(mem, To.data,From.size);			       \
       if(To.data) {                                                    \
          gs_param_string *tmp2 = (gs_param_string *) upd_cast(To.data);\
          uint iii;                                                     \
          To.size = From.size;                                          \
          for(iii = 0; To.size > iii; ++iii)                            \
-            UPD_MM_CPY_PARAM(tmp2[iii],From.data[iii]);                \
+	     UPD_MM_CPY_PARAM(mem, tmp2[iii],From.data[iii]);	       \
       }                                                                \
    }
 
@@ -1306,7 +1308,7 @@ buffer for the raw raster-data
 
       if(B_MAP & upd->flags) { /* Only if prerequisites were met */
          uint want  = gx_device_raster(pdev,true);
-         upd->gsbuf = gs_malloc(want,1,"upd/gsbuf");
+         upd->gsbuf = gs_malloc(pdev->memory, want,1,"upd/gsbuf");
 
          if(upd->gsbuf) {
             upd->ngsbuf = want;
@@ -1489,7 +1491,7 @@ upd_close(gx_device *pdev)
       upd_close_writer(udev);
 
       if(upd->gsbuf)
-         gs_free(upd->gsbuf,upd->ngsbuf,1,"uniprint/gsbuf");
+         gs_free(pdev->memory, upd->gsbuf,upd->ngsbuf,1,"uniprint/gsbuf");
       upd->gsbuf  = NULL;
       upd->ngsbuf = 0;
       upd->flags &= ~B_BUF;
@@ -1497,14 +1499,14 @@ upd_close(gx_device *pdev)
       upd_close_render(udev);
       upd_close_map(udev);
 
-      UPD_MM_DEL_ARRAY(upd->choice,  countof(upd_choice),  UPD_MM_DEL_VALUE);
-      UPD_MM_DEL_ARRAY(upd->ints,    countof(upd_ints),    UPD_MM_DEL_VALUE);
-      UPD_MM_DEL_ARRAY(upd->int_a,   countof(upd_int_a),   UPD_MM_DEL_PARAM);
-      UPD_MM_DEL_ARRAY(upd->strings, countof(upd_strings), UPD_MM_DEL_PARAM);
-      UPD_MM_DEL_ARRAY(upd->string_a,countof(upd_string_a),UPD_MM_DEL_APARAM);
-      UPD_MM_DEL_ARRAY(upd->float_a, countof(upd_float_a), UPD_MM_DEL_PARAM);
+      UPD_MM_DEL_ARRAY(pdev->memory, upd->choice,  countof(upd_choice),  UPD_MM_DEL_VALUE);
+      UPD_MM_DEL_ARRAY(pdev->memory, upd->ints,    countof(upd_ints),    UPD_MM_DEL_VALUE);
+      UPD_MM_DEL_ARRAY(pdev->memory, upd->int_a,   countof(upd_int_a),   UPD_MM_DEL_PARAM);
+      UPD_MM_DEL_ARRAY(pdev->memory, upd->strings, countof(upd_strings), UPD_MM_DEL_PARAM);
+      UPD_MM_DEL_ARRAY(pdev->memory, upd->string_a,countof(upd_string_a),UPD_MM_DEL_APARAM);
+      UPD_MM_DEL_ARRAY(pdev->memory, upd->float_a, countof(upd_float_a), UPD_MM_DEL_PARAM);
 
-      gs_free(upd,sizeof(upd[0]),1,"uniprint");
+      gs_free(pdev->memory, upd,sizeof(upd[0]),1,"uniprint");
 
       udev->upd = NULL;
    }
@@ -1792,26 +1794,26 @@ out on this copies.
    color_info = udev->color_info;
    if(upd) {
      flags = upd->flags;
-     UPD_MM_CPY_ARRAY(choice,  upd->choice,  countof(upd_choice),
+     UPD_MM_CPY_ARRAY(udev->memory, choice,  upd->choice,  countof(upd_choice),
         UPD_MM_CPY_VALUE);
-     UPD_MM_CPY_ARRAY(ints,    upd->ints,    countof(upd_ints),
+     UPD_MM_CPY_ARRAY(udev->memory, ints,    upd->ints,    countof(upd_ints),
         UPD_MM_CPY_VALUE);
-     UPD_MM_CPY_ARRAY(int_a,   upd->int_a,   countof(upd_int_a),
+     UPD_MM_CPY_ARRAY(udev->memory, int_a,   upd->int_a,   countof(upd_int_a),
         UPD_MM_CPY_PARAM);
-     UPD_MM_CPY_ARRAY(strings, upd->strings, countof(upd_strings),
+     UPD_MM_CPY_ARRAY(udev->memory, strings, upd->strings, countof(upd_strings),
         UPD_MM_CPY_PARAM);
-     UPD_MM_CPY_ARRAY(string_a,upd->string_a,countof(upd_string_a),
+     UPD_MM_CPY_ARRAY(udev->memory, string_a,upd->string_a,countof(upd_string_a),
         UPD_MM_CPY_APARAM);
-     UPD_MM_CPY_ARRAY(float_a, upd->float_a, countof(upd_float_a),
+     UPD_MM_CPY_ARRAY(udev->memory, float_a, upd->float_a, countof(upd_float_a),
         UPD_MM_CPY_PARAM);
    } else {
      flags = 0;
-     UPD_MM_GET_ARRAY(choice,  countof(upd_choice));
-     UPD_MM_GET_ARRAY(ints,    countof(upd_ints));
-     UPD_MM_GET_ARRAY(int_a,   countof(upd_int_a));
-     UPD_MM_GET_ARRAY(strings, countof(upd_strings));
-     UPD_MM_GET_ARRAY(string_a,countof(upd_string_a));
-     UPD_MM_GET_ARRAY(float_a, countof(upd_float_a));
+     UPD_MM_GET_ARRAY(udev->memory, choice,  countof(upd_choice));
+     UPD_MM_GET_ARRAY(udev->memory, ints,    countof(upd_ints));
+     UPD_MM_GET_ARRAY(udev->memory, int_a,   countof(upd_int_a));
+     UPD_MM_GET_ARRAY(udev->memory, strings, countof(upd_strings));
+     UPD_MM_GET_ARRAY(udev->memory, string_a,countof(upd_string_a));
+     UPD_MM_GET_ARRAY(udev->memory, float_a, countof(upd_float_a));
    }
 
 /** Import the Multiple-Choices */
@@ -1867,12 +1869,12 @@ out on this copies.
       UPD_PARAM_READ(param_read_int_array,upd_int_a[i],value);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_INT_A;
-         UPD_MM_DEL_PARAM(int_a[i]);
+         UPD_MM_DEL_PARAM(udev->memory, int_a[i]);
          if(!value.size) {
             value.data = NULL;
             int_a[i]   = value;
          } else {
-            UPD_MM_CPY_PARAM(int_a[i],value);
+            UPD_MM_CPY_PARAM(udev->memory, int_a[i],value);
          }
       }
    }
@@ -1884,12 +1886,12 @@ out on this copies.
       UPD_PARAM_READ(param_read_string,upd_strings[i],value);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_STRINGS;
-         UPD_MM_DEL_PARAM(strings[i]);
+         UPD_MM_DEL_PARAM(udev->memory, strings[i]);
          if(!value.size) {
             value.data = NULL;
             strings[i]   = value;
          } else {
-            UPD_MM_CPY_PARAM(strings[i],value);
+            UPD_MM_CPY_PARAM(udev->memory, strings[i],value);
          }
       }
    }
@@ -1901,12 +1903,12 @@ out on this copies.
       UPD_PARAM_READ(param_read_string_array,upd_string_a[i],value);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_STRING_A;
-         UPD_MM_DEL_APARAM(string_a[i]);
+         UPD_MM_DEL_APARAM(udev->memory, string_a[i]);
          if(!value.size) {
             value.data  = NULL;
             string_a[i] = value;
          } else {
-            UPD_MM_CPY_APARAM(string_a[i],value);
+            UPD_MM_CPY_APARAM(udev->memory, string_a[i],value);
          }
       }
    }
@@ -1918,12 +1920,12 @@ out on this copies.
       UPD_PARAM_READ(param_read_float_array,upd_float_a[i],value);
       if(0 == code) {
          if(0 <= error) error |= UPD_PUT_FLOAT_A;
-         UPD_MM_DEL_PARAM(float_a[i]);
+         UPD_MM_DEL_PARAM(udev->memory, float_a[i]);
          if(!value.size) {
             value.data = NULL;
             float_a[i] = value;
          } else {
-            UPD_MM_CPY_PARAM(float_a[i],value);
+            UPD_MM_CPY_PARAM(udev->memory, float_a[i],value);
          }
       }
    }
@@ -1939,8 +1941,8 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
       int *ip,*ip2,ncomp,nbits;
 
       if(6 > int_a[IA_COLOR_INFO].size) {
-         UPD_MM_DEL_PARAM(int_a[IA_COLOR_INFO]);
-         UPD_MM_GET_ARRAY(int_a[IA_COLOR_INFO].data,6);
+         UPD_MM_DEL_PARAM(udev->memory, int_a[IA_COLOR_INFO]);
+         UPD_MM_GET_ARRAY(udev->memory, int_a[IA_COLOR_INFO].data,6);
          int_a[IA_COLOR_INFO].size = 6;
       }
       ip = (int *) upd_cast(int_a[IA_COLOR_INFO].data);
@@ -1971,11 +1973,11 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
       if(UPD_CMAP_MAX < ncomp) ncomp = UPD_CMAP_MAX;
 
       if(ncomp > int_a[IA_COMPBITS].size) { /* Default ComponentBits */
-         UPD_MM_GET_ARRAY(ip2,ncomp);
+         UPD_MM_GET_ARRAY(udev->memory, ip2,ncomp);
          nbits = 32 / ncomp;
          if(8 < nbits) nbits = 8;
          for(i = 0; i < ncomp; ++i) ip2[i] = nbits;
-         UPD_MM_DEL_PARAM(int_a[IA_COMPBITS]);
+         UPD_MM_DEL_PARAM(udev->memory, int_a[IA_COMPBITS]);
          int_a[IA_COMPBITS].data = ip2;
          int_a[IA_COMPBITS].size = ncomp;
       }                                     /* Default ComponentBits */
@@ -1983,12 +1985,12 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
       if(ncomp > int_a[IA_COMPSHIFT].size) {  /* Default ComponentShift */
          nbits = 0;
          for(i = 0; i < ncomp; ++i) nbits += int_a[IA_COMPBITS].data[i];
-         UPD_MM_GET_ARRAY(ip2,ncomp);
+         UPD_MM_GET_ARRAY(udev->memory, ip2,ncomp);
          for(i = 0; i < ncomp; ++i) {
             ip2[i] = nbits - int_a[IA_COMPBITS].data[i];
             nbits -= int_a[IA_COMPBITS].data[i];
          }
-         UPD_MM_DEL_PARAM(int_a[IA_COMPSHIFT]);
+         UPD_MM_DEL_PARAM(udev->memory, int_a[IA_COMPSHIFT]);
          int_a[IA_COMPSHIFT].data = ip2;
          int_a[IA_COMPSHIFT].size = ncomp;
       }                                       /* Default ComponentShift */
@@ -2097,15 +2099,15 @@ transferred into the device-structure. In the case of "uniprint", this may
    if(0 < error) { /* Actually something loaded without error */
 
       if(!(upd = udev->upd)) {
-        UPD_MM_GET_ARRAY(udev->upd,1);
+        UPD_MM_GET_ARRAY(udev->memory, udev->upd,1);
         upd = udev->upd;
       } else {
-        UPD_MM_DEL_ARRAY(upd->choice,  countof(upd_choice),  UPD_MM_DEL_VALUE);
-        UPD_MM_DEL_ARRAY(upd->ints,    countof(upd_ints),    UPD_MM_DEL_VALUE);
-        UPD_MM_DEL_ARRAY(upd->int_a,   countof(upd_int_a),   UPD_MM_DEL_PARAM);
-        UPD_MM_DEL_ARRAY(upd->strings, countof(upd_strings), UPD_MM_DEL_PARAM);
-        UPD_MM_DEL_ARRAY(upd->string_a,countof(upd_string_a),UPD_MM_DEL_APARAM);
-        UPD_MM_DEL_ARRAY(upd->float_a, countof(upd_float_a), UPD_MM_DEL_PARAM);
+        UPD_MM_DEL_ARRAY(udev->memory, upd->choice,  countof(upd_choice),  UPD_MM_DEL_VALUE);
+        UPD_MM_DEL_ARRAY(udev->memory, upd->ints,    countof(upd_ints),    UPD_MM_DEL_VALUE);
+        UPD_MM_DEL_ARRAY(udev->memory, upd->int_a,   countof(upd_int_a),   UPD_MM_DEL_PARAM);
+        UPD_MM_DEL_ARRAY(udev->memory, upd->strings, countof(upd_strings), UPD_MM_DEL_PARAM);
+        UPD_MM_DEL_ARRAY(udev->memory, upd->string_a,countof(upd_string_a),UPD_MM_DEL_APARAM);
+        UPD_MM_DEL_ARRAY(udev->memory, upd->float_a, countof(upd_float_a), UPD_MM_DEL_PARAM);
       }
 
       upd->choice   = choice;
@@ -2126,12 +2128,12 @@ transferred into the device-structure. In the case of "uniprint", this may
       udev->MarginsHWResolution[1] = MarginsHWResolution[1];
 
       udev->color_info = color_info;
-      UPD_MM_DEL_ARRAY(choice,  countof(upd_choice),  UPD_MM_DEL_VALUE);
-      UPD_MM_DEL_ARRAY(ints,    countof(upd_ints),    UPD_MM_DEL_VALUE);
-      UPD_MM_DEL_ARRAY(int_a,   countof(upd_int_a),   UPD_MM_DEL_PARAM);
-      UPD_MM_DEL_ARRAY(strings, countof(upd_strings), UPD_MM_DEL_PARAM);
-      UPD_MM_DEL_ARRAY(string_a,countof(upd_string_a),UPD_MM_DEL_APARAM);
-      UPD_MM_DEL_ARRAY(float_a, countof(upd_float_a), UPD_MM_DEL_PARAM);
+      UPD_MM_DEL_ARRAY(udev->memory, choice,  countof(upd_choice),  UPD_MM_DEL_VALUE);
+      UPD_MM_DEL_ARRAY(udev->memory, ints,    countof(upd_ints),    UPD_MM_DEL_VALUE);
+      UPD_MM_DEL_ARRAY(udev->memory, int_a,   countof(upd_int_a),   UPD_MM_DEL_PARAM);
+      UPD_MM_DEL_ARRAY(udev->memory, strings, countof(upd_strings), UPD_MM_DEL_PARAM);
+      UPD_MM_DEL_ARRAY(udev->memory, string_a,countof(upd_string_a),UPD_MM_DEL_APARAM);
+      UPD_MM_DEL_ARRAY(udev->memory, float_a, countof(upd_float_a), UPD_MM_DEL_PARAM);
 
    }
 
@@ -2894,8 +2896,8 @@ upd_open_map(upd_device *udev)
             if((NULL == upd->float_a[upd->cmap[imap].xfer].data) ||
                (2    >  upd->float_a[upd->cmap[imap].xfer].size)   ) {
                float *fp;
-               UPD_MM_DEL_PARAM(upd->float_a[upd->cmap[imap].xfer]);
-               UPD_MM_GET_ARRAY(fp,2);
+               UPD_MM_DEL_PARAM(udev->memory, upd->float_a[upd->cmap[imap].xfer]);
+               UPD_MM_GET_ARRAY(udev->memory, fp,2);
                fp[0] = 0.0;
                fp[1] = 1.0;
                upd->float_a[upd->cmap[imap].xfer].data = fp;
@@ -2963,7 +2965,7 @@ upd_open_map(upd_device *udev)
             upd->float_a[upd->cmap[imap].xfer].data[
                upd->float_a[upd->cmap[imap].xfer].size-1] ?
             true : false;
-         upd->cmap[imap].code     = gs_malloc(upd->cmap[imap].bitmsk+1,
+         upd->cmap[imap].code     = gs_malloc(udev->memory, upd->cmap[imap].bitmsk+1,
              sizeof(upd->cmap[imap].code[0]),"upd/code");
          if(!upd->cmap[imap].code) break;
       }
@@ -3192,7 +3194,7 @@ upd_close_map(upd_device *udev)
       for(imap = 0; UPD_CMAP_MAX > imap; ++imap) {
 
          if(upd->cmap[imap].code)
-            gs_free(upd->cmap[imap].code,sizeof(upd->cmap[imap].code[0]),
+            gs_free(udev->memory, upd->cmap[imap].code,sizeof(upd->cmap[imap].code[0]),
                 upd->cmap[imap].bitmsk+1,"upd/code");
          upd->cmap[imap].code   = NULL;
 
@@ -3291,7 +3293,7 @@ upd_close_render(upd_device *udev)
          (upd->render == upd_fscmyk)   )  upd_close_fscomp(udev);
 
       if((0 < upd->nvalbuf) && upd->valbuf)
-         gs_free(upd->valbuf,upd->nvalbuf,sizeof(upd->valbuf[0]),"upd/valbuf");
+         gs_free(udev->memory, upd->valbuf,upd->nvalbuf,sizeof(upd->valbuf[0]),"upd/valbuf");
       upd->valbuf  = NULL;
       upd->nvalbuf = 0;
 
@@ -3360,7 +3362,7 @@ If anything was ok. up to now, memory get's allocated.
    if(icomp) {
 
       for(icomp = 0; upd->ncomp > icomp; ++icomp) {
-         upd->valptr[icomp] = gs_malloc(1,sizeof(updcomp_t),"upd/fscomp");
+         upd->valptr[icomp] = gs_malloc(udev->memory, 1,sizeof(updcomp_t),"upd/fscomp");
          if(NULL == upd->valptr[icomp]) {
 #if UPD_MESSAGES & UPD_M_ERROR
             errprintf(
@@ -3377,7 +3379,7 @@ If anything was ok. up to now, memory get's allocated.
       uint need;
 
       need  = (2 + upd->rwidth) * upd->ncomp;
-      upd->valbuf = gs_malloc(need,sizeof(upd->valbuf[0]),"upd/valbuf");
+      upd->valbuf = gs_malloc(udev->memory, need,sizeof(upd->valbuf[0]),"upd/valbuf");
 
       if(upd->valbuf) {
          upd->nvalbuf = need;
@@ -3530,7 +3532,7 @@ upd_close_fscomp(upd_device *udev)
 
    for(icomp = 0; UPD_VALPTR_MAX > icomp; ++icomp) {
       if(!upd->valptr[icomp]) continue;
-      gs_free(upd->valptr[icomp],1,sizeof(updcomp_t),"upd/fscomp");
+      gs_free(udev->memory, upd->valptr[icomp],1,sizeof(updcomp_t),"upd/fscomp");
       upd->valptr[icomp] = NULL;
    }
 }
@@ -4174,8 +4176,8 @@ upd_open_writer(upd_device *udev)
 
       if(upd->ints[I_NPASS] > upd->int_a[IA_STD_DY].size) {
          int ix,iy,*ip;
-         UPD_MM_DEL_PARAM(upd->int_a[IA_STD_DY]);
-         UPD_MM_GET_ARRAY(ip,upd->ints[I_NPASS]);
+         UPD_MM_DEL_PARAM(udev->memory, upd->int_a[IA_STD_DY]);
+         UPD_MM_GET_ARRAY(udev->memory, ip,upd->ints[I_NPASS]);
          upd->int_a[IA_STD_DY].data = ip;
          upd->int_a[IA_STD_DY].size = upd->ints[I_NPASS];
 
@@ -4221,8 +4223,8 @@ upd_open_writer(upd_device *udev)
 
       if(0 >= upd->int_a[IA_STD_IX].size) {
          int ix,i,*ip;
-         UPD_MM_DEL_PARAM(upd->int_a[IA_STD_IX]);
-         UPD_MM_GET_ARRAY(ip,upd->int_a[IA_STD_DY].size);
+         UPD_MM_DEL_PARAM(udev->memory, upd->int_a[IA_STD_IX]);
+         UPD_MM_GET_ARRAY(udev->memory, ip,upd->int_a[IA_STD_DY].size);
          upd->int_a[IA_STD_IX].data = ip;
          upd->int_a[IA_STD_IX].size = upd->int_a[IA_STD_DY].size;
 
@@ -4235,8 +4237,8 @@ upd_open_writer(upd_device *udev)
       if((0 >= upd->int_a[IA_BEG_IX].size) &&
          (0 <  upd->int_a[IA_BEG_DY].size)   ) {
          int ix,i,*ip;
-         UPD_MM_DEL_PARAM(upd->int_a[IA_BEG_IX]);
-         UPD_MM_GET_ARRAY(ip,upd->int_a[IA_BEG_DY].size);
+         UPD_MM_DEL_PARAM(udev->memory, upd->int_a[IA_BEG_IX]);
+         UPD_MM_GET_ARRAY(udev->memory, ip,upd->int_a[IA_BEG_DY].size);
          upd->int_a[IA_BEG_IX].data = ip;
          upd->int_a[IA_BEG_IX].size = upd->int_a[IA_BEG_DY].size;
 
@@ -4249,8 +4251,8 @@ upd_open_writer(upd_device *udev)
       if((0 >= upd->int_a[IA_END_IX].size) &&
          (0 <  upd->int_a[IA_END_DY].size)   ) {
          int ix,i,*ip;
-         UPD_MM_DEL_PARAM(upd->int_a[IA_END_IX]);
-         UPD_MM_GET_ARRAY(ip,upd->int_a[IA_END_DY].size);
+         UPD_MM_DEL_PARAM(udev->memory, upd->int_a[IA_END_IX]);
+         UPD_MM_GET_ARRAY(udev->memory, ip,upd->int_a[IA_END_DY].size);
          upd->int_a[IA_END_IX].data = ip;
          upd->int_a[IA_END_IX].size = upd->int_a[IA_END_DY].size;
 
@@ -4460,20 +4462,20 @@ upd_open_writer(upd_device *udev)
 
 /** Allocate the Outputbuffer */
    if(success && (0 < upd->noutbuf)) { /* Allocate outbuf */
-      upd->outbuf = gs_malloc(upd->noutbuf,sizeof(upd->outbuf[0]),"upd/outbuf");
+      upd->outbuf = gs_malloc(udev->memory, upd->noutbuf,sizeof(upd->outbuf[0]),"upd/outbuf");
       if(!upd->outbuf) success = false;
    }                                   /* Allocate outbuf */
 
 /** Allocate the desired scan-buffer-pointers */
    if(success) {
-      upd->scnbuf = gs_malloc(upd->nscnbuf,sizeof(upd->scnbuf[0]),"upd/scnbuf");
+      upd->scnbuf = gs_malloc(udev->memory, upd->nscnbuf,sizeof(upd->scnbuf[0]),"upd/scnbuf");
       if(NULL == upd->scnbuf) {
          success = false;
       } else {
          int ibuf;
          for(ibuf = 0; ibuf < upd->nscnbuf; ++ibuf) {
             if(success) upd->scnbuf[ibuf] =
-               gs_malloc(upd->ocomp,sizeof(upd->scnbuf[0][0]),"upd/scnbuf[]");
+               gs_malloc(udev->memory, upd->ocomp,sizeof(upd->scnbuf[0][0]),"upd/scnbuf[]");
             else upd->scnbuf[ibuf] = NULL;
 
             if(!upd->scnbuf[ibuf]) {
@@ -4482,18 +4484,18 @@ upd_open_writer(upd_device *udev)
                int icomp;
                for(icomp = 0; icomp < upd->ocomp; ++icomp) {
                   if(success) upd->scnbuf[ibuf][icomp].bytes =
-                    gs_malloc(upd->nbytes,sizeof(upd->scnbuf[0][0].bytes[0]),
+                    gs_malloc(udev->memory, upd->nbytes,sizeof(upd->scnbuf[0][0].bytes[0]),
                     "upd/bytes");
                   else        upd->scnbuf[ibuf][icomp].bytes = NULL;
                   if(!upd->scnbuf[ibuf][icomp].bytes) success = false;
 
                   if(0 < upd->nlimits) {
 
-                     upd->scnbuf[ibuf][icomp].xbegin = gs_malloc(upd->nlimits,
+                     upd->scnbuf[ibuf][icomp].xbegin = gs_malloc(udev->memory, upd->nlimits,
                         sizeof(upd->scnbuf[0][0].xbegin[0]),"upd/xbegin");
                      if(!upd->scnbuf[ibuf][icomp].xbegin) success = false;
 
-                     upd->scnbuf[ibuf][icomp].xend   = gs_malloc(upd->nlimits,
+                     upd->scnbuf[ibuf][icomp].xend   = gs_malloc(udev->memory, upd->nlimits,
                         sizeof(upd->scnbuf[0][0].xend[0]),"upd/xend");
                      if(!upd->scnbuf[ibuf][icomp].xbegin) success = false;
 
@@ -4528,7 +4530,7 @@ upd_close_writer(upd_device *udev)
       int ibuf,icomp;
 
       if((0 < upd->noutbuf) && upd->outbuf)
-         gs_free(upd->outbuf,upd->noutbuf,sizeof(upd->outbuf[0]),"upd/outbuf");
+         gs_free(udev->memory, upd->outbuf,upd->noutbuf,sizeof(upd->outbuf[0]),"upd/outbuf");
       upd->noutbuf = 0;
       upd->outbuf  = NULL;
 
@@ -4540,28 +4542,28 @@ upd_close_writer(upd_device *udev)
             for(icomp = 0; icomp < upd->ocomp; ++icomp) {
 
                if((0 < upd->nbytes) && upd->scnbuf[ibuf][icomp].bytes)
-                  gs_free(upd->scnbuf[ibuf][icomp].bytes,upd->nbytes,
+                  gs_free(udev->memory, upd->scnbuf[ibuf][icomp].bytes,upd->nbytes,
                      sizeof(upd->scnbuf[ibuf][icomp].words[0]),"upd/bytes");
                upd->scnbuf[ibuf][icomp].bytes = NULL;
 
                if((0 < upd->nlimits) && upd->scnbuf[ibuf][icomp].xbegin)
-                  gs_free(upd->scnbuf[ibuf][icomp].xbegin,upd->nlimits,
+                  gs_free(udev->memory, upd->scnbuf[ibuf][icomp].xbegin,upd->nlimits,
                      sizeof(upd->scnbuf[ibuf][icomp].xbegin[0]),"upd/xbegin");
                upd->scnbuf[ibuf][icomp].xbegin = NULL;
 
                if((0 < upd->nlimits) && upd->scnbuf[ibuf][icomp].xend)
-                  gs_free(upd->scnbuf[ibuf][icomp].xend,upd->nlimits,
+                  gs_free(udev->memory, upd->scnbuf[ibuf][icomp].xend,upd->nlimits,
                      sizeof(upd->scnbuf[ibuf][icomp].xend[0]),"upd/xend");
                upd->scnbuf[ibuf][icomp].xend = NULL;
             }
 
             if(icomp)
-               gs_free(upd->scnbuf[ibuf],upd->ocomp,sizeof(upd->scnbuf[0][0]),
+               gs_free(udev->memory, upd->scnbuf[ibuf],upd->ocomp,sizeof(upd->scnbuf[0][0]),
                   "upd/scnbuf[]");
             upd->scnbuf[ibuf] = NULL;
 
          }
-         gs_free(upd->scnbuf,upd->nscnbuf,sizeof(upd->scnbuf[0]),"upd/scnbuf");
+         gs_free(udev->memory, upd->scnbuf,upd->nscnbuf,sizeof(upd->scnbuf[0]),"upd/scnbuf");
       }
 
 
@@ -5332,8 +5334,8 @@ upd_open_wrtescp2(upd_device *udev)
 /** Create Y-Move-Command, if not given */
    if(0 == upd->strings[S_YMOVE].size) {
       byte *bp;
-      UPD_MM_DEL_PARAM(upd->strings[S_YMOVE]);
-      UPD_MM_GET_ARRAY(bp,5);
+      UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_YMOVE]);
+      UPD_MM_GET_ARRAY(udev->memory, bp,5);
       upd->strings[S_YMOVE].data = bp;
       upd->strings[S_YMOVE].size = 5;
       *bp++ = 0x1b; /* ESC */
@@ -5369,8 +5371,8 @@ upd_open_wrtescp2(upd_device *udev)
 
       if(2 == upd->ints[I_NXPASS]) { /* Use a relative Step */
 
-         UPD_MM_DEL_PARAM(upd->strings[S_XSTEP]);
-         UPD_MM_GET_ARRAY(bp,4);
+         UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_XSTEP]);
+         UPD_MM_GET_ARRAY(udev->memory, bp,4);
          upd->strings[S_XSTEP].size = 4;
          upd->strings[S_XSTEP].data = bp;
          *bp++ = 0x1b;
@@ -5380,8 +5382,8 @@ upd_open_wrtescp2(upd_device *udev)
 
       } else {                      /* Use relative or absolute Move */
 
-         UPD_MM_DEL_PARAM(upd->strings[S_XMOVE]);
-         UPD_MM_GET_ARRAY(bp,2);
+         UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_XMOVE]);
+         UPD_MM_GET_ARRAY(udev->memory, bp,2);
          upd->strings[S_XMOVE].size = 2;
          upd->strings[S_XMOVE].data = bp;
          *bp++  = 0x1b;
@@ -5405,8 +5407,8 @@ upd_open_wrtescp2(upd_device *udev)
          /* RowMask - default is all 1's */
          if( upd->ints[I_PATRPT] != upd->int_a[IA_ROWMASK].size ) {
             int i, *bp;
-            UPD_MM_DEL_PARAM(upd->int_a[IA_ROWMASK]);
-            UPD_MM_GET_ARRAY(bp,upd->ints[I_PATRPT]);
+            UPD_MM_DEL_PARAM(udev->memory, upd->int_a[IA_ROWMASK]);
+            UPD_MM_GET_ARRAY(udev->memory, bp,upd->ints[I_PATRPT]);
             upd->int_a[IA_ROWMASK].size = upd->ints[I_PATRPT];
             upd->int_a[IA_ROWMASK].data = bp;
             for (i = 0 ; i < upd->ints[I_PATRPT] ; i++){
@@ -5416,8 +5418,8 @@ upd_open_wrtescp2(upd_device *udev)
          /* MaskScanOffset - default is 0-patternRepeat */
          if( upd->ints[I_PATRPT] != upd->int_a[IA_SCNOFS].size ) {
             int i, *bp;
-            UPD_MM_DEL_PARAM(upd->int_a[IA_SCNOFS]);
-            UPD_MM_GET_ARRAY(bp,upd->ints[I_PATRPT]);
+            UPD_MM_DEL_PARAM(udev->memory, upd->int_a[IA_SCNOFS]);
+            UPD_MM_GET_ARRAY(udev->memory, bp,upd->ints[I_PATRPT]);
             upd->int_a[IA_SCNOFS].size = upd->ints[I_PATRPT];
             upd->int_a[IA_SCNOFS].data = bp;
             for (i = 0 ; i < upd->ints[I_PATRPT] ; i++){
@@ -5441,12 +5443,12 @@ upd_open_wrtescp2(upd_device *udev)
       int   i;
 
       if(4 == upd->ocomp) { /* Establish Component-Selection */
-         UPD_MM_DEL_APARAM(upd->string_a[SA_SETCOMP]);
-         UPD_MM_GET_ARRAY(ap,4);
+         UPD_MM_DEL_APARAM(udev->memory, upd->string_a[SA_SETCOMP]);
+         UPD_MM_GET_ARRAY(udev->memory, ap,4);
          upd->string_a[SA_SETCOMP].data = ap;
          upd->string_a[SA_SETCOMP].size = 4;
          for(i = 0; i < 4; ++i) {
-            UPD_MM_GET_ARRAY(bp,3);
+            UPD_MM_GET_ARRAY(udev->memory, bp,3);
             ap[i].size = 3;
             ap[i].data = bp;
             *bp++ = 0x1b;
@@ -5460,12 +5462,12 @@ upd_open_wrtescp2(upd_device *udev)
          }
       }                     /* Establish Component-Selection */
 
-      UPD_MM_DEL_APARAM(upd->string_a[SA_WRITECOMP]);
-      UPD_MM_GET_ARRAY(ap,upd->ocomp);
+      UPD_MM_DEL_APARAM(udev->memory, upd->string_a[SA_WRITECOMP]);
+      UPD_MM_GET_ARRAY(udev->memory, ap,upd->ocomp);
       upd->string_a[SA_WRITECOMP].data = ap;
       upd->string_a[SA_WRITECOMP].size = upd->ncomp;
       for(i = 0; i < upd->ocomp; ++i) {
-         UPD_MM_GET_ARRAY(bp,6);
+         UPD_MM_GET_ARRAY(udev->memory, bp,6);
          ap[i].size = 6;
          ap[i].data = bp;
          *bp++ = 0x1b;
@@ -6497,14 +6499,14 @@ upd_open_wrtrtl(upd_device *udev)
              ncv = strlen(cv);
 
              nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-             UPD_MM_GET_ARRAY(bp,nbp);
+             UPD_MM_GET_ARRAY(udev->memory, bp,nbp);
 
              if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
              memcpy(bp+j+1,    cv,ncv);
              memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
                                upd->strings[S_BEGIN].size-i);
              i = j+1+ncv;
-             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_BEGIN]);
              upd->strings[S_BEGIN].data = bp;
              upd->strings[S_BEGIN].size = nbp;
 
@@ -6515,14 +6517,14 @@ upd_open_wrtrtl(upd_device *udev)
              ncv = strlen(cv);
 
              nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-             UPD_MM_GET_ARRAY(bp,nbp);
+             UPD_MM_GET_ARRAY(udev->memory, bp,nbp);
 
              if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
              memcpy(bp+j+1,    cv,ncv);
              memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
                                upd->strings[S_BEGIN].size-i);
              i = j+1+ncv;
-             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_BEGIN]);
              upd->strings[S_BEGIN].data = bp;
              upd->strings[S_BEGIN].size = nbp;
 
@@ -6547,14 +6549,14 @@ upd_open_wrtrtl(upd_device *udev)
              ncv = strlen(cv);
 
              nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-             UPD_MM_GET_ARRAY(bp,nbp);
+             UPD_MM_GET_ARRAY(udev->memory, bp,nbp);
 
              if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
              memcpy(bp+j+1,    cv,ncv);
              memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
                                upd->strings[S_BEGIN].size-i);
              i = j+1+ncv;
-             UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+             UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_BEGIN]);
              upd->strings[S_BEGIN].data = bp;
              upd->strings[S_BEGIN].size = nbp;
 
@@ -6752,14 +6754,14 @@ upd_open_wrtrtl(upd_device *udev)
                ncv = strlen(cv);
 
                nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-               UPD_MM_GET_ARRAY(bp,nbp);
+               UPD_MM_GET_ARRAY(udev->memory, bp,nbp);
 
                if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
                memcpy(bp+j+1,    cv,ncv);
                memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
                                upd->strings[S_BEGIN].size-i);
                i = j+1+ncv;
-               UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+               UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_BEGIN]);
                upd->strings[S_BEGIN].data = bp;
                upd->strings[S_BEGIN].size = nbp;
              }                                /* insert new number */
@@ -6817,14 +6819,14 @@ upd_open_wrtrtl(upd_device *udev)
                ncv = strlen(cv);
 
                nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-               UPD_MM_GET_ARRAY(bp,nbp);
+               UPD_MM_GET_ARRAY(udev->memory, bp,nbp);
 
                if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
                memcpy(bp+j+1,    cv,ncv);
                memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
                                upd->strings[S_BEGIN].size-i);
                i = j+1+ncv;
-               UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+               UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_BEGIN]);
                upd->strings[S_BEGIN].data = bp;
                upd->strings[S_BEGIN].size = nbp;
              }                                /* insert new number */
@@ -6914,14 +6916,14 @@ upd_open_wrtrtl(upd_device *udev)
                ncv = strlen(cv);
 
                nbp = (j+1) + ncv + (upd->strings[S_BEGIN].size-i);
-               UPD_MM_GET_ARRAY(bp,nbp);
+               UPD_MM_GET_ARRAY(udev->memory, bp,nbp);
 
                if(0 <= j) memcpy(bp,upd->strings[S_BEGIN].data,j+1);
                memcpy(bp+j+1,    cv,ncv);
                memcpy(bp+j+1+ncv,upd->strings[S_BEGIN].data+i,
                                upd->strings[S_BEGIN].size-i);
                i = j+1+ncv;
-               UPD_MM_DEL_PARAM(upd->strings[S_BEGIN]);
+               UPD_MM_DEL_PARAM(udev->memory, upd->strings[S_BEGIN]);
                upd->strings[S_BEGIN].data = bp;
                upd->strings[S_BEGIN].size = nbp;
              }                                /* insert new number */

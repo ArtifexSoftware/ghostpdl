@@ -80,14 +80,17 @@ int dict_ints_param(const ref * pdict, const char *kstr,
  * not NULL, copy (max)len elements from defaultvec to fvec and return
  * (max)len.
  */
-int dict_float_array_check_param(const ref * pdict, const char *kstr,
+int dict_float_array_check_param(const gs_memory_t *mem,
+				 const ref * pdict, const char *kstr,
 				 uint len, float *fvec,
 				 const float *defaultvec,
 				 int under_error, int over_error);
-int dict_float_array_param(const ref * pdict, const char *kstr,
+int dict_float_array_param(const gs_memory_t *mem,
+			   const ref * pdict, const char *kstr,
 			   uint maxlen, float *fvec,
 			   const float *defaultvec);
-int dict_floats_param(const ref * pdict, const char *kstr,
+int dict_floats_param(const gs_memory_t *mem,
+		      const ref * pdict, const char *kstr,
 		      uint len, float *fvec,
 		      const float *defaultvec);
 
@@ -99,7 +102,8 @@ int dict_floats_param(const ref * pdict, const char *kstr,
  */
 int dict_proc_param(const ref * pdict, const char *kstr, ref * pproc,
 		    bool defaultval);
-int dict_matrix_param(const ref * pdict, const char *kstr,
+int dict_matrix_param(const gs_memory_t *mem, 
+		      const ref * pdict, const char *kstr,
 		      gs_matrix * pmat);
 int dict_uid_param(const ref * pdict, gs_uid * puid, int defaultval,
 		   gs_memory_t * mem, const i_ctx_t *i_ctx_p);

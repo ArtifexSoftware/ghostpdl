@@ -94,6 +94,7 @@ gs_memory_locked_init(
     lmem->procs = locked_procs;
 
     lmem->target = target;
+    lmem->gs_lib_ctx = target->gs_lib_ctx;
 
     /* Allocate a monitor to serialize access to structures within */
     lmem->monitor = gx_monitor_alloc(target);
