@@ -1139,10 +1139,11 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( pargs->phase == 0 )
 	  {
-	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    /* initialize the character buffer and CTM first time only */
+ 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    hpgl_call(hpgl_init_label_buffer(pgls));
 	    hpgl_call(hpgl_set_ctm(pgls));
+	    hpgl_call(hpgl_set_clipping_region(pgls, hpgl_rm_vector));
 	    pgls->g.label.initial_pos = pgls->g.pos;
 	    pargs->phase = 1;
 	  }

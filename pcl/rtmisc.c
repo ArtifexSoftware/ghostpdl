@@ -83,7 +83,7 @@ rtl_enter_pcl_mode(
 	    hpgl_call(hpgl_set_ctm(pcs));
 	    hpgl_call(hpgl_get_current_position(pcs, &pt));
 	    hpgl_call(gs_transform(pcs->pgs, pt.x, pt.y, &dev_pt));
-	    hpgl_call(pcl_set_ctm(pcs, false));
+	    hpgl_call(pcl_set_ctm(pcs, true));
 	    hpgl_call(gs_itransform(pcs->pgs, dev_pt.x, dev_pt.y, &pt));
 
 	    /* HPGL/2 uses floats for coordinates */

@@ -26,6 +26,11 @@ int hpgl_set_ctm(P1(hpgl_state_t *pgls));
 
 int hpgl_get_selected_pen(P1(hpgl_state_t *pgls));
 
+/* set the hpgl/2 clipping region accounting for pcl picture frame and
+   gl/2 soft clip window */
+ int
+hpgl_set_clipping_region(P2(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode));
+
 /* function set up the current drawing attributes this is only used by
    the character code since it does most of it's own graphic's state
    bookkeeping */

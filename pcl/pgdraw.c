@@ -404,7 +404,7 @@ hpgl_polyfill_bbox(
 
 /* set up an hpgl clipping region -- intersection of IW command and
    picture frame. */
- private int
+ int
 hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
 	/* if we are doing vector fill a clipping path has already
@@ -458,10 +458,16 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		dev_clip_box.p.y = max(dev_clip_box.p.y, dev_soft_window_box.p.y);
 	    	dev_clip_box.q.x = min(dev_clip_box.q.x, dev_soft_window_box.q.x);
 		dev_clip_box.q.y = min(dev_clip_box.q.y, dev_soft_window_box.q.y);
-		if ( gs_debug_c('P') )
+		if ( gs_debug_c('P') ) {
+		    dprintf4("gl/2 window user units: p.x=%f p.y=%f q.x=%f q.y=%f\n",
+			     pgls->g.soft_clip_window.rect.p.x, 
+			     pgls->g.soft_clip_window.rect.p.y,
+			     pgls->g.soft_clip_window.rect.q.x, 
+			     pgls->g.soft_clip_window.rect.q.y);
 		    dprintf4("gl/2 device soft clip region: p.x=%f p.y=%f q.x=%f q.y=%f\n",
 			     dev_soft_window_box.p.x, dev_soft_window_box.p.y,
 			     dev_soft_window_box.q.x, dev_soft_window_box.q.y);
+		}
 	    }
 	    /* convert intersection box to fixed point and clip */
 	    fixed_box.p.x = float2fixed(round(dev_clip_box.p.x));
@@ -473,11 +479,30 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	    fixed_box.p.y = max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);
 	    fixed_box.q.x = min(fixed_box.q.x, pgls->xfm_state.dev_print_rect.q.x);
 	    fixed_box.q.y = min(fixed_box.q.y, pgls->xfm_state.dev_print_rect.q.y);
-	    if ( gs_debug_c('P') )
+	    if ( gs_debug_c('P') ) {
+		gs_matrix mat;
 		dprintf4("gl/2 device clip region: p.x=%f p.y=%f q.x=%f q.y=%f\n",
 			 fixed2float(fixed_box.p.x), fixed2float(fixed_box.p.y),
 			 fixed2float(fixed_box.q.x), fixed2float(fixed_box.q.y));
-	    hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box)); 
+		    gs_make_identity(&mat);
+		    hpgl_gsave(pgls);
+		    gs_setmatrix(pgls->pgs, &mat);
+		    gs_setgray(pgls->pgs, 0);
+		    gs_newpath(pgls->pgs);
+		    gs_setlinewidth(pgls->pgs, 0);
+		    gs_moveto(pgls->pgs, fixed2float(fixed_box.p.x), 
+			      fixed2float(fixed_box.p.y));
+		    gs_lineto(pgls->pgs, fixed2float(fixed_box.p.x),
+			      fixed2float(fixed_box.q.y));
+		    gs_lineto(pgls->pgs, fixed2float(fixed_box.q.x),
+			      fixed2float(fixed_box.q.y));
+		    gs_lineto(pgls->pgs, fixed2float(fixed_box.q.x),
+			      fixed2float(fixed_box.p.y));
+		    gs_closepath(pgls->pgs);
+		    gs_stroke(pgls->pgs);
+		    hpgl_grestore(pgls);
+		} else
+		    hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box)); 
 	  }
 	return 0;
 }
@@ -843,14 +868,20 @@ fill:
             break;
 
 	  case hpgl_FT_pattern_RF:
-            code = set_proc( pgls,
-                             pgls->g.fill.param.user_defined.pattern_index,
-                             (pgls->g.fill.param.user_defined.use_current_pen
-                                  ? hpgl_get_selected_pen(pgls)
-			          : -hpgl_get_selected_pen(pgls))
-                             );
-            break;
+	      /* pcl5e does not care about the current pen it always uses black (1). */
+	      if ( pgls->personality == pcl5e )
+		  code = set_proc( pgls,
+				   pgls->g.fill.param.user_defined.pattern_index,
+				   1 );
+	      else
+		  code = set_proc( pgls,
+				   pgls->g.fill.param.user_defined.pattern_index,
+				   (pgls->g.fill.param.user_defined.use_current_pen
+				    ? hpgl_get_selected_pen(pgls)
+				    : -hpgl_get_selected_pen(pgls))
+				   );
 
+            break;
 	  default:
 	    dprintf("hpgl_set_drawing_color: internal error illegal fill\n");
 	    break;
@@ -1059,7 +1090,7 @@ hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_pt)
 	gs_point dev_pt, hpgl_pt;
 
 	hpgl_call(hpgl_clear_current_path(pgls));
-	pcl_set_ctm(pgls, false);
+	pcl_set_ctm(pgls, true);
 	hpgl_call(gs_transform(pgls->pgs, pcl_pt->x, pcl_pt->y, &dev_pt));
 	hpgl_call(hpgl_set_ctm(pgls));
 	hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &hpgl_pt));
