@@ -132,7 +132,10 @@ void vd_setflag(char f, char v);
 #    define vd_setlinewidth(w)  BEGIN if (vd_trace1) vd_trace1->setlinewidth(vd_trace1,w); END
 #    define vd_text(x,y,s,c)    BEGIN if (vd_trace1) vd_impl_text(x,y,s,c); END
 #    define vd_wait             BEGIN if (vd_trace1) vd_trace1->wait(vd_trace1); END
-#    define vd_save	vd_trace_interface * vd_trace_save = vd_trace1
+#    define vd_save	vd_trace_interface * vd_trace_save; vd_trace_save = vd_trace1; /* NOTE :
+	    Use vd_save at end of the definition group of a  block,
+	    because in release build it compiles to the empty operator.
+	    We intentionally defined an operator here for a compatible syntax check.  */
 #    define vd_restore	vd_trace1 = vd_trace_save
 #    define vd_disable	vd_trace1 = NULL  
 #else
@@ -174,7 +177,7 @@ void vd_setflag(char f, char v);
 #    define vd_setlinewidth(w)	    DO_NOTHING
 #    define vd_text(x,y,s,c)	    DO_NOTHING
 #    define vd_wait		    DO_NOTHING
-#    define vd_save
+#    define vd_save		    DO_NOTHING
 #    define vd_restore
 #    define vd_disable
 #endif

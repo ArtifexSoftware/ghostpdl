@@ -1218,9 +1218,9 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 {
     gs_fixed_edge le, re;
     int code;
-    vd_save;
     fixed ybot = max(ybot0, swap_axes ? pfs->rect.p.x : pfs->rect.p.y);
     fixed ytop = min(ytop0, swap_axes ? pfs->rect.q.x : pfs->rect.q.y);
+    vd_save;
 
     if (ybot > ytop)
 	return 0;
