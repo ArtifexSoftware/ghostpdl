@@ -32,24 +32,25 @@ Evaluation Test (CET) without egregious errors.
 both PCL5<sup>TM</sup> and PCLXL<sup>TM</sup> languages.
 <h2>
 Quick Start For Unix environment with GCC.</h2>
-<tt><font size=+0>mkdir -p /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# make a font directory.</font></tt>
-<br><tt><font size=+0>cd /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# move to the new font directory.</font></tt>
-<br><tt><font size=+0>tar zxvf fonts.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# unpack the fonts</font></tt>
-<br><tt><font size=+0>cd&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# move to home or work directory.</font></tt>
-<br><tt><font size=+0>tar zxvf pclxxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# unpack the source.</font></tt>
-<br><tt><font size=+0>cd pclxxx/main&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# change to main build directory.</font></tt>
-<br><tt><font size=+0>make -f pcl6_gcc.mak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<tt><font size=+0>tar zxvf ghostpclxxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# unpack the release <sup>1</sup></font></tt>
+<br><tt><font size=+0>mkdir -p /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# make a font directory. <sup>2</sup></font></tt>
+<br><tt><font size=+0>cp ghostpcl/urwfonts/*.ttf /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# copy the fonts.</font></tt>
+<br><tt><font size=+0>cd ghostpcl/main/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# change to build directory</font></tt>
+<br><tt><font size=+0>make -f pcl6_gcc.mak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # build PCL and PCLXL.</font></tt>
-<br><tt><font size=+0>cd obj;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><tt><font size=+0>cd obj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # move to the executable's directory.</font></tt>
-<p><tt><font size=+0># finally test samples PCL and XL samples</font></tt>
-<p><tt><font size=+0>pcl6 ../../tools/owl.pcl&nbsp; ../../tools/frs96.pxl</font></tt>
+<br><tt><font size=+0>pcl6 ../../tools/owl.pcl&nbsp; ../../tools/frs96.pxl
+# test with PCL and PXL test file</font></tt><tt><font size=+0></font></tt>
+<p><tt><font size=+0>1. If tar 'z' option is not supported: gunzip ghostpclxxx.tar.gz;
+tar xvf ghostpclxxx.tar.</font></tt>
+<br><tt><font size=+0>2. See&nbsp;</font></tt> <a href="#Fonts">#Fonts</a>&nbsp;
+to configure this differently..
+<br><tt><font size=+0></font></tt>&nbsp;
 <h2>
 Supported development environments</h2>
 
@@ -345,10 +346,10 @@ be set to PCL5E if the output device is 1 bit per pixel otherwise it is
 set to PCL5C.&nbsp; RTL must be explicitly set on the command line.&nbsp;
 RTL always grayscales and never thresholds colors to black and white.
 <h2>
-Fonts</h2>
+<a NAME="Fonts"></a>Fonts</h2>
 The release is packaged with 45 high quality URW TrueType fonts.&nbsp;
 For commercial use of the GhostPCL technology these fonts can be licensed
-from Artifex.&nbsp; The fonts are searched for in either the /fonts, /windows/fonts,
+from Artifex.&nbsp; The fonts are searched for in either the fonts, /windows/fonts,
 or a directory specified with the PCLFONTSOURCE environment variable.
 <p>Fonts from a third-party vendor such as&nbsp; <a href="http://www.agfa.com">Agfa</a>&nbsp;
 or&nbsp; <a href="http://www.bitstream.com">Bitstream</a>&nbsp; may also
@@ -359,8 +360,7 @@ fonts, using either of these font solutions require minor <a href="#PCL Code mod
 code modifications.</a>
 <h1>
 <a NAME="PCL Code modifications to use Windows TrueType fonts"></a>PCL
-Code changes required to use other&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-TrueType fonts.</h1>
+Code changes required to use other TrueType fonts.</h1>
 At this time, PCL does not have a font mapping technology so to use a new
 set of TrueType fonts requires modifying the C code in the file pl/pllfont.c.&nbsp;
 The C structure resident_table contains a list of Windows TrueType font
