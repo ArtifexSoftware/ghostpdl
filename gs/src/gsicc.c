@@ -578,6 +578,14 @@ gs_cspace_build_CIEICC(
         return_error(gs_error_VMerror);
 
     gx_set_common_cie_defaults(&picc_info->common, client_data);
+    /*
+     * Now set the D50 WhitePoint. The above function does not set any
+     * valid WhitepPoint since PostScript always requires this, but ICC
+     * assumes a D50 WhitePoint as a default
+     */
+    picc_info->common.points.WhitePoint.u = 0.9642;		/* Profile illuminant - D50 */
+    picc_info->common.points.WhitePoint.v = 1.0000;
+    picc_info->common.points.WhitePoint.w = 0.8249;
     picc_info->common.install_cspace = gx_install_CIEICC;
     picc_info->num_components = 0;
     picc_info->Range = Range4_default;
