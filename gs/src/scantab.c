@@ -25,8 +25,9 @@ const byte scan_char_array[max_stream_exception + 256] =
 {stream_exception_repeat(ctype_exception),
 		/* Control characters 0-31. */
  ctype_space,			/* NULL - standard only in Level 2 */
- ctype_name, ctype_name, ctype_name, ctype_name, ctype_name,
  ctype_name, ctype_name, ctype_name,
+ ctype_other,                 /* EOT == ctrl-d <04> */
+ ctype_name, ctype_name, ctype_name, ctype_name,
  ctype_space,			/* TAB (\t) */
  ctype_space,			/* LF (\n) */
  ctype_name,

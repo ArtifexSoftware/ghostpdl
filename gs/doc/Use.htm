@@ -2283,6 +2283,32 @@ for PostScript files or when the output device requests it
 </dl> 
 
 <dl>
+<dt><b><tt>-dJOBSERVER</tt></b>
+<dd>Define <tt>\004 (^D)</tt> to start a new encapsulated job used for
+compatibility with Adobe PS Interpreters that ordinarily run under a job
+server. The <b><tt>-dNOOUTERSAVE</tt></b> switch is ignored if <b><tt>-dJOBSERVER</tt></b>
+is specified since job servers <b>always</b> execute the input PostScript
+under a save level, although the <b><tt>exitserver</tt></b> operator can
+be used to escape from the encapsulated job and execute as if the
+<b><tt>-dNOOUTERSAVE</tt></b> was specified.
+<p>
+This also requires that the input be from stdin, otherwise an error will
+result (<tt>Error: /invalidrestore in --restore--</tt>).
+<p>Example usage is:
+<pre>
+    gs ... -dJOBSERVER - < inputfile.ps
+                     -or-
+    cat inputfile.ps | gs ... -dJOBSERVER -
+</pre>
+<b>Note: </b>The <tt>^D</tt> does not result in an end-of-file action
+on stdin as it may on some PostScript printers that rely on TBCP (Tagged
+Binary Communication Protocol) to cause an out-of-band <tt>^D</tt> to
+signal EOF in a stream input data. This means that direct file actions
+on stdin such as <b><tt>flushfile</tt></b> and <b><tt>closefile</tt></b>
+will affect processing of data beyond the <tt>^D</tt> in the stream.
+</dl>
+
+<dl>
 <dt><b><tt>-dNOBIND</tt></b>
 <dd>Disables the <b><tt>bind</tt></b> operator.  Useful only for debugging.
 </dl>

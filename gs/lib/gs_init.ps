@@ -131,6 +131,7 @@ currentdict /FAKEFONTS known   /FAKEFONTS exch def
 currentdict /FIXEDMEDIA known   /FIXEDMEDIA exch def
 currentdict /FIXEDRESOLUTION known   /FIXEDRESOLUTION exch def
 currentdict /LOCALFONTS known   /LOCALFONTS exch def
+currentdict /JOBSERVER known   /JOBSERVER exch def
 currentdict /NOBIND known   /NOBIND exch def
 /.bind /bind load def
 NOBIND { /bind { } def } if
@@ -443,7 +444,11 @@ userdict /.echo.mode true put
 	  ifelse
 	} odef
 /handleerror
-	{ /errordict .systemvar /handleerror get exec } bind def
+	JOBSERVER {
+	  { /errordict .systemvar /.GShandleerror get exec } bind %%% MODIFIED to always use .GShandleerror.
+	} {
+	  { /errordict .systemvar /handleerror get exec } bind %%% original errorhandling
+	} ifelse def
 /identmatrix [1.0 0.0 0.0 1.0 0.0 0.0] readonly def
 /identmatrix
 	{ dup 0 //identmatrix putinterval } odef
@@ -844,6 +849,7 @@ userdict /.currentresourcefile //null put
 /.errorhandler		% <command> <errorname> .errorhandler -
   {		% Detect an internal 'stopped'.
     1 .instopped { //null eq { pop pop stop } if } if
+    (I) false .setdebug
     $error /.inerror get 1 .instopped { pop } { pop true } ifelse
      { .unstoppederrorhandler
      } if	% detect error recursion
@@ -888,7 +894,8 @@ userdict /.currentresourcefile //null put
 % (.printerror) so that it can be extended for binary output
 % if the Level 2 facilities are present.
   /.printerror
-   { $error begin
+   { $error begin newerror
+     {
        /command load errorname SHORTERRORS
 	{ (%%[ Error: ) print =only flush
 	  (; OffendingCommand: ) print =only
@@ -913,7 +920,21 @@ userdict /.currentresourcefile //null put
 	  .printerror_long
 	}
        ifelse
-       .clearerror
+       .clearerror flush
+     }
+     { % newerror is false, test to see if user has set handleerror to a different
+       % routine, if so execute it, otherwise, just return.  This code deals with the
+       % Genoa issue of setting /handleerror, and then calling it, without an error
+       % being set.  We were erroring in this case, due to /command load failing.
+
+       errordict dup /handleerror get  exch
+         //JOBSERVER { /.GShandleerror } { /handleerror } ifelse
+         get ne
+         { errordict begin handleerror end
+         }
+         if
+     }
+     ifelse	% newerror 
      end
      flush
     } bind def     
@@ -1022,7 +1043,7 @@ end
 % Define errordict similarly.  It has one entry per error name,
 %   plus handleerror.  However, some astonishingly badly written PostScript
 %   files require it to have at least one empty slot.
-/errordict ErrorNames length 2 add dict
+/errordict ErrorNames length 3 add dict
 .forcedef		% errordict is local, systemdict is global
 .setglobal		% contents of errordict are global
 errordict begin
@@ -1034,9 +1055,14 @@ errordict begin
    { /interrupt /timeout }
    { mark 1 index dup systemdict /.errorhandler get /exec load .packtomark cvx def
    } forall
-/handleerror
+/handleerror	% this key is 'well known' and some PS may redefine it
  { /.printerror .systemvar exec
  } bind def
+	% a private entry that we will always use under JOBSERVER mode
+/.GShandleerror
+ { /.printerror .systemvar exec
+ } bind def
+ 
 end
 
 % Define the [write]==[only] procedures.
@@ -1810,13 +1836,16 @@ gsave
 % Define some control sequences as no-ops.
 % This is a hack to get around problems
 % in some common PostScript-generating applications.
-<04> cvn { } def		% Apple job separator
-<0404> cvn { } def		% two of the same
-<1b> cvn { } def		% MS Windows LaserJet 4 prologue
-				% (UEL = ESC %-12345X)
+<04> cvn JOBSERVER {
+    { { clear cleardictstack //false 0 .startnewjob } 2 .stop } bind
+  } {
+    { }
+  } ifelse def
+<1b> cvn {	 		% UEL is <esc>%-12345X and acts the same as ^D
+  currentfile (%-12345X) .peekstring pop (%-12345X) eq <04> cvn load if
+} bind def
 <1b45> cvn { } def		% PJL reset prologue (ESC E)
-<1b451b> cvn { } def		% PJL reset epilogue (ESC E + UEL)
-<041b> cvn { } def		% MS Windows LaserJet 4 epilogue (^D + UEL)
+<1b451b> cvn <1b> cvn load def	% PJL reset epilogue (ESC E + UEL)
 (\001M) cvn			% TBCP initiator
  { currentfile /TBCPDecode filter cvx exec
  } bind def
@@ -2151,11 +2180,6 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 WRITESYSTEMDICT not { systemdict readonly pop } if
-
-% Do outermost save unless it has been disabled. Note: we discard
-% this save object so that it can't be used to circumvent .setsafe
-NOOUTERSAVE not { save pop } if
-
 (END GC) VMDEBUG
 
 % The Adobe AGM_Core used by Illustrator 9 has some code that breaks
@@ -2166,5 +2190,16 @@ NOOUTERSAVE not { save pop } if
 % support DeviceN and spot color separations this will need to
 % be 'true' in some cases.
 userdict /AGM_preserve_spots false put
+
+% Start the job as encapsulated if requested, if not, perform an
+% outer save so that jobs which depend on global VM not being
+% restored will operate correctly.
+% 
+% Note that .setsafe is already in effect if in SAFER mode.
+% so an exitserver will restore with SAFER mode still in effect.
+JOBSERVER
+  { false 0 .startnewjob }
+  { NOOUTERSAVE not { save pop } if }	% do the outermost save unless disabled
+ifelse
 
 % The interpreter will run the initial procedure (start).
