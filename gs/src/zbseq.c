@@ -70,7 +70,9 @@ zinstallsystemnames(i_ctx_t *i_ctx_p)
 
     if (r_space(op) != avm_global || imemory_save_level(iimemory_global) != 0)
 	return_error(imemory, e_invalidaccess);
+#ifndef GS_DEBUGGER
     check_read_type(imemory, *op, t_shortarray);
+#endif
     ref_assign_old(NULL, system_names_p, op, ".installsystemnames");
     pop(1);
     return 0;

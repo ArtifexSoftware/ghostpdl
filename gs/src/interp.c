@@ -652,6 +652,7 @@ p:     if ( pline_buffer == NULL ) {
             tracing = !tracing;
         } else if ( strncmp(pline_buffer, "N", 1) == 0 ) {
             checking_for_new_file_name = true;
+            nexting = true;
             strcpy(Next_filename, filename);
             stepping = false;
         } else if ( strncmp(pline_buffer, "n", 1) == 0 ) {

@@ -403,6 +403,10 @@ struct ref_s {
 	struct gx_device_s *pdevice;
 	obj_header_t *pstruct;
     } value;
+#ifdef GS_DEBUGGER
+    unsigned long offset;
+    unsigned long pfile;
+#endif
 };
 
 /* ---------------- Private ref macros ---------------- */
