@@ -81,6 +81,9 @@ struct active_line_s {
     /* fixme : use an union {cursor, {fi, last}}, because they are used exclusively. */
     gx_flattened_curve_iterator fi;
     bool more_flattened;
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+    bool first_flattened;
+#endif
 #endif
 /*
  * "Pending" lines (not reached in the Y ordering yet) use next and prev

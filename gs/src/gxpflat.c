@@ -480,8 +480,6 @@ gx_subdivide_curve(gx_path * ppath, int k, curve_segment * pc,
 
 #else /* !FLATTENED_CURVE_ITERATOR */
 
-#define FLATTENED_CURVE_ITERATOR0_COMPATIBLE 1
-
 #undef x1
 #undef y1
 #undef x2
@@ -791,6 +789,42 @@ generate_segments(gx_path * ppath, const gs_fixed_point *points,
     }
 }
 
+/*
+ * Check for nearly collinear segments -- 
+ * those where one coordinate of all three points
+ * (the two endpoints and the midpoint) lie within the same
+ * half-pixel and both coordinates are monotonic.
+ */
+private inline bool
+gx_check_nearly_collinear_inline(fixed *x0, fixed *y0, fixed *x1, fixed *y1, fixed *x2, fixed *y2)
+{
+#if MERGE_COLLINEAR_SEGMENTS
+#   define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
+    if (coord_near(*x2, *x1)) {	/* X coordinates are within a half-pixel. */
+	if (coord_near(*x2, *x0) &&
+		coords_in_order(*x0, *x1, *x2) &&
+		coords_in_order(*y0, *y1, *y2))
+	    return true;
+    }
+    if (coord_near(*y2, *y1)) { /* Y coordinates are within a half-pixel. */
+	if (coord_near(*y2, *y0) &&
+		coords_in_order(*x0, *x1, *x2) &&
+		coords_in_order(*y0, *y1, *y2))
+	    return true;
+    }
+#   undef coords_in_order
+#endif
+    return false;
+}
+
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+bool
+gx_check_nearly_collinear(fixed *x0, fixed *y0, fixed *x1, fixed *y1, fixed *x2, fixed *y2)
+{
+    return gx_check_nearly_collinear_inline(x0, y0, x1, y1, x2, y2);
+}
+#endif
+
 private int
 gx_subdivide_curve_rec(gx_flattened_curve_iterator *this, 
 		  gx_path * ppath, int k, curve_segment * pc,
@@ -821,34 +855,10 @@ top :
 
 	for(;;) {
 	    not_last = gx_flattened_curve_iterator__next(this);
-#	    if MERGE_COLLINEAR_SEGMENTS
-	    /*
-	     * Merge nearly collinear
-	     * segments -- those where one coordinate of all three points
-	     * (the two endpoints and the midpoint) lie within the same
-	     * half-pixel and both coordinates are monotonic.
-	     */
-#	    define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
-	    /* Check for collinear segments. */
-	    if (ppt > points + 1 && (!FLATTENED_CURVE_ITERATOR0_COMPATIBLE || not_last)) {
-		if (coord_near(this->lx1, ppt[-1].x)) {	/* X coordinates are within a half-pixel. */
-		    if (coord_near(this->lx1, ppt[-2].x) &&
-			coords_in_order(ppt[-2].x, ppt[-1].x, this->lx1) &&
-			coords_in_order(ppt[-2].y, ppt[-1].y, this->ly1)
-			) {
-			--ppt;		/* remove middle point */
-		    }
-		} else if (coord_near(this->ly1, ppt[-1].y)) { /* Y coordinates are within a half-pixel. */
-		/* Check for collinear segments. */
-		    if (coord_near(this->ly1, ppt[-2].y) &&
-			coords_in_order(ppt[-2].x, ppt[-1].x, this->lx1) &&
-			coords_in_order(ppt[-2].y, ppt[-1].y, this->ly1)
-			)
-			--ppt;		/* remove middle point */
-		}
-	    }
-#	    undef coords_in_order
-#	    endif
+	    if (ppt > points + 1 && (!FLATTENED_CURVE_ITERATOR0_COMPATIBLE || not_last))
+		if (gx_check_nearly_collinear_inline(&ppt[-2].x, &ppt[-2].y, 
+				&ppt[-1].x, &ppt[-1].y, &this->lx1, &this->ly1))
+		    --ppt;		/* remove middle point */
 	    if (!FLATTENED_CURVE_ITERATOR0_COMPATIBLE || !not_last) {
 		/* With FLATTENED_CURVE_ITERATOR0_COMPATIBLE it may store points[max_points] 
 		   This is only reason for reserving max_points + 1 elements.

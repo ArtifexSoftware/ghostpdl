@@ -274,8 +274,11 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      */
     gx_path_bbox(ppath, &ibox);
 #   define SMALL_CHARACTER 500
-    lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
-    lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
+#   if !CURVED_TRAPEZOID_FILL
+	lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
+	lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
+#   endif
+    /* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
     pseudo_rasterization = ((adjust.x | adjust.y) == 0 && 
 #			    if TT_GRID_FITTING
 				!is_spotan_device(dev) &&
@@ -428,7 +431,15 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	/* Filling curves is possible. */
 #  ifdef FILL_TRAPEZOIDS
 	/* Not filling curves is also possible. */
-    if (fill_by_trapezoids && !CURVED_TRAPEZOID_FILL)
+    if (fill_by_trapezoids && 
+	    (!CURVED_TRAPEZOID_FILL || adjust.x || adjust.y
+				    || (pis->ctm.xx != 0 && pis->ctm.xy != 0)
+				    || (pis->ctm.yx != 0 && pis->ctm.yy != 0)
+	      /* Curve monotonization can give a platform dependent result
+		 due to the floating point arithmetics used.
+	         For a while we allow it only for unrotated characters, 
+		 which should have monotonic curves only. */
+	    ))
 #  endif
 #endif
 #if !defined(FILL_CURVES) || defined(FILL_TRAPEZOIDS)
@@ -478,6 +489,11 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	if (code < 0)
 	    return code;
 	pfpath = &ffpath;
+#	if CURVED_TRAPEZOID_FILL
+	    /* The path monotonization may have a numeric error,
+	       which enhances the bbox in 1 device unit. */
+	    gx_path_bbox(pfpath, &ibox);
+#	endif
     }
 #endif
 #   if CURVED_TRAPEZOID_FILL
@@ -493,7 +509,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    fill_loop = fill_loop_by_trapezoids;
 	else
 	    fill_loop = fill_loop_by_scan_lines;
-	/* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
+#	if CURVED_TRAPEZOID_FILL
+	    lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
+	    lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
+#	endif
 	if (lst.bbox_width > MAX_LOCAL_SECTION && lst.pseudo_rasterization) {
 	    /*
 	     * Note that execution pass here only for character size
@@ -630,7 +649,12 @@ init_line_list(line_list *ll, gs_memory_t * mem)
     ll->margin_set0.sect = ll->local_section0;
     ll->margin_set1.sect = ll->local_section1;
     ll->pseudo_rasterization = false;
+#   if CURVED_TRAPEZOID_FILL
+	ll->bbox_left = 0; /* stub */
+	ll->bbox_width = 0; /* stub */
+#   else
     /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
+#   endif
     INCR(fill);
 }
 
@@ -783,6 +807,33 @@ step_al(active_line *alp)
        with the first or the last piece of the line. */
     alp->start.x = alp->fi.lx0;
     alp->start.y = alp->fi.ly0;
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+    /* We can't provide a full compatibility because
+       the new code flattens DIR_DOWN curves in the reverse direction. 
+       (Division points may be shifted due to the numeric errors difference,
+       and MERGE_COLLINEAR_SEGMENTS drops different points.) */
+    if (alp->direction == DIR_UP && alp->first_flattened) {
+	/* The old code isn't symmetric : it always yields the first point. */
+    } else {
+	/* Poorly optimized because it's just for a testing purpose. */
+	while (alp->more_flattened) {
+	    bool more;
+	    gx_flattened_curve_iterator fi = alp->fi;
+
+	    more = gx_flattened_curve_iterator__next(&fi);
+	    if (alp->direction == DIR_DOWN && !more) {
+		/* The old code isn't symmetric : it always yields the last point. */
+		break;
+	    }
+	    if (!gx_check_nearly_collinear(&alp->start.x, &alp->start.y, 
+		    &fi.lx0, &fi.ly0, &fi.lx1, &fi.ly1)) 
+		break;
+	    alp->more_flattened = more;
+	    alp->fi = fi;
+	}
+    }
+    alp->first_flattened = false;
+#endif
     alp->end.x = alp->fi.lx1;
     alp->end.y = alp->fi.ly1;
     alp->diff.x = alp->end.x - alp->start.x;
@@ -814,6 +865,9 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 		s0->pt.x, s0->pt.y, (line_segment *)s1, 0));
     }
     alp->pseg = s1;
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+    alp->first_flattened = true;
+#endif
     step_al(alp);
 }
 #endif
@@ -1640,8 +1694,10 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 #endif
 	/* Now look for line intersections before y1. */
 	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
-	intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1)); /* May change y1. */
-
+	if (!CURVED_TRAPEZOID_FILL || y != y1) {
+	    intersect_al(ll, y, &y1, (covering_pixel_centers ? 1 : -1)); /* May change y1. */
+	    covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
+	}
 	/* Prepare dropout prevention. */
 	if (pseudo_rasterization) {
 	    code = start_margin_set(dev, ll, y1);
@@ -1649,7 +1705,6 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		return code;
 	}
 	/* Fill a multi-trapezoid band for the active lines. */
-	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
 	if (covering_pixel_centers 
 #	    if TT_GRID_FITTING
 		|| all_bands
@@ -1751,12 +1806,18 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 		return code;
 	}
 	move_al_by_y(ll, y1);
+	if (!CURVED_TRAPEZOID_FILL || y != y1) {
+	    ll->h_list1 = ll->h_list0;
+	    ll->h_list0 = 0;
+	}
 	y = y1;
-	ll->h_list1 = ll->h_list0;
-	ll->h_list0 = 0;
     }
     if (pseudo_rasterization) {
-	code = process_h_lists(ll, 0, 0, 0, y, y);
+#	if CURVED_TRAPEZOID_FILL
+	    code = process_h_lists(ll, 0, 0, 0, y, y + 1 /*stub*/);
+#	else
+	    code = process_h_lists(ll, 0, 0, 0, y, y);
+#	endif
 	if (code < 0)
 	    return code;
 	code = close_margins(dev, ll, &ll->margin_set1);

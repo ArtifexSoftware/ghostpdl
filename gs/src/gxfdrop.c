@@ -438,13 +438,10 @@ int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active
 {   
 #   if CURVED_TRAPEZOID_FILL
 	if (y0 == y1) {
-	    /*  This may happen with CURVED_TRAPEZOID_FILL, when a curve piece is horizontal.
+	    /*  fixme :
+		This may happen with CURVED_TRAPEZOID_FILL, when a curve piece is horizontal.
 		Currently we skip such pieces from the H list processing.
-		We could determine whether a piece is upper or below the h-line
-		analyzing the Y-coordinates of the curve ends,
-		but we don't think that it is important for the dropout prevention,
-		because the piece was processed as a margine boundary,
-		knowing its proper orientation.
+		A complete algorithm should move such pieces to H-list.
 	     */
 	    return 0;
 	}
