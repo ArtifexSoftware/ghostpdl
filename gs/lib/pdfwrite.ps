@@ -139,15 +139,25 @@
   dup /Length get dup oforce ne {
     dup /Length 2 copy oget put
   } if
-  pdfwritevalue (stream\n) ows
-  dup /Length oget
-  1 index /File get dup 3 index /FilePosition get setfileposition
-  exch {
-	% Stack: dict file length
+  exch dup /File get dup 3 -1 roll /FilePosition get setfileposition
+  pdfcopystream
+} def
+
+% We put copying the stream contents in separate procedures so that we
+% can replace this function if desired.
+/pdfcopybytes {		% <fromfile> <tofile> <length> pdfcopybytes -
+  {
     dup 0 eq { exit } if
     //pdfcopystring 0 2 index 2 index length .min getinterval
-    2 index exch readstring pop dup ows length sub
-  } loop pop pop pop (endstream) ows
+    3 index exch readstring 3 1 roll
+    3 index 1 index writestring length sub exch not { exit } if
+  } loop pop pop pop
+} def
+/pdfcopystream {	% <newstreamdict> <file> pdfcopystream -
+			%   (file has been positioned)
+  1 index pdfwritevalue (stream\n) ows
+  exch /Length get OFile exch pdfcopybytes
+  (endstream) ows
 } def
 
 % ---------------- General values/objects ---------------- %
@@ -171,12 +181,17 @@
   //pdfwritetypes 1 index type get exec
 } def
 
-/pdfwriteobj {		% <obj#> <gen#> pdfwriteobj -
-  1 index exch resolveR exch omap
-		% Stack: obj newobj#
+% We make pdfwriteobjdef a separate procedure for external use.
+/pdfwriteobjheader {	% <newobj#> pdfwriteobjheader -
   XRef 1 index OFile .fileposition put
   OFile exch write=only ( 0 obj\n) ows
+} def
+/pdfwriteobjdef {	% <newobj#> <value> pdfwriteobjdef -
+  exch pdfwriteobjheader
   pdfwritevalue (\nendobj\n) ows
+} def
+/pdfwriteobj {		% <obj#> <gen#> pdfwriteobj -
+  1 index exch resolveR exch omap exch pdfwriteobjdef
 } def
 
 % ---------------- File-level entities ---------------- %
