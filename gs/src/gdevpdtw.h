@@ -67,6 +67,6 @@ int pdf_write_cid_system_info(gx_device_pdf *pdev,
  * because we write CMaps when they are created.
  */
 int pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-		   pdf_resource_t *pres);
+		   pdf_resource_t *pres, int font_index_only);
 
 #endif /* gdevpdtw_INCLUDED */

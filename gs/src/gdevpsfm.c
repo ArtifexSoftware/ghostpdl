@@ -101,10 +101,12 @@ cmap_put_system_info(stream *s, const gs_cid_system_info_t *pcidsi)
 private int
 cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 		  const cmap_operators_t *pcmo,
-		  psf_put_name_chars_proc_t put_name_chars, int *pfont_index)
+		  psf_put_name_chars_proc_t put_name_chars, 
+		  int font_index_only)
 {
     /* For simplicity, produce one entry for each lookup range. */
     gs_cmap_lookups_enum_t lenum;
+    int font_index = (pcmap->num_fonts <= 1 ? 0 : -1);
     int code;
 
     for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
@@ -113,9 +115,11 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 	int num_entries = 0;
 	int gi;
 
-	if (lenum.entry.font_index != *pfont_index) {
+	if (font_index_only >= 0 && lenum.entry.font_index != font_index_only)
+	    continue;
+	if (font_index_only < 0 && lenum.entry.font_index != font_index) {
 	    pprintd1(s, "%d usefont\n", lenum.entry.font_index);
-	    *pfont_index = lenum.entry.font_index;
+	    font_index = lenum.entry.font_index;
 	}
 	/* Count the number of entries in this lookup range. */
 	counter = lenum;
@@ -197,7 +201,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 int
 psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 	       psf_put_name_chars_proc_t put_name_chars,
-	       const gs_const_string *alt_cmap_name)
+	       const gs_const_string *alt_cmap_name, int font_index_only)
 {
     const gs_const_string *const cmap_name =
 	(alt_cmap_name ? alt_cmap_name : &pcmap->CMapName);
@@ -235,7 +239,9 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 	put_name_chars(s, cmap_name->data, cmap_name->size);
 	stream_puts(s, " def\n");
 	stream_puts(s, "/CIDSystemInfo");
-	if (pcmap->num_fonts == 1) {
+	if (font_index_only >= 0 && font_index_only < pcmap->num_fonts) {
+	    cmap_put_system_info(s, pcidsi + font_index_only);
+	} else if (pcmap->num_fonts == 1) {
 	    cmap_put_system_info(s, pcidsi);
 	} else {
 	    int i;
@@ -287,15 +293,14 @@ psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
     /* Write the code and notdef data. */
 
     {
-	int font_index = (pcmap->num_fonts <= 1 ? 0 : -1);
 	int code;
 
 	code = cmap_put_code_map(s, 1, pcmap, &cmap_notdef_operators,
-			         put_name_chars, &font_index);
+			         put_name_chars, font_index_only);
 	if (code < 0)
 	    return code;
 	code = cmap_put_code_map(s, 0, pcmap, &cmap_cid_operators,
-			         put_name_chars, &font_index);
+			         put_name_chars, font_index_only);
 	if (code < 0)
 	    return code;
     }

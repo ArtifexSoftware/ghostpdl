@@ -105,7 +105,7 @@ pdf_has_subset_prefix(const byte *str, uint size)
 private ulong
 hash(ulong v, int index, ulong w)
 {
-    return v * 3141592653+ w;
+    return v * 3141592653u + w;
 }
 
 /*

@@ -207,52 +207,178 @@ private const char *const standard_cmap_names[] = {
     0
 };
 
+private int
+attach_cmap_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, 
+		const gs_cmap_t *pcmap, int font_index_only)
+{
+    const char *const *pcmn =
+	standard_cmap_names +
+	(pdev->CompatibilityLevel < 1.4 ? END_PDF14_CMAP_NAMES_INDEX : 0);
+    bool is_identity = false;
+    pdf_resource_t *pcmres = 0;	/* CMap */
+    int code;
+
+    /*
+     * If the CMap isn't standard, write it out if necessary.
+     */
+    for (; *pcmn != 0; ++pcmn)
+	if (pcmap->CMapName.size == strlen(*pcmn) &&
+	    !memcmp(*pcmn, pcmap->CMapName.data, pcmap->CMapName.size))
+	    break;
+    if (*pcmn == 0) {
+	/* 
+	 * PScript5.dll Version 5.2 creates identity CMaps with
+	 * instandard name. Check this specially here
+	 * and later replace with a standard name.
+	 * This is a temporary fix for SF bug #615994 "CMAP is corrupt".
+	 */
+	is_identity = gs_cmap_is_identity(pcmap, font_index_only);
+    }
+    if (*pcmn == 0 && !is_identity) {		/* not standard */
+	pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id + font_index_only);
+	if (pcmres == 0) {
+	    /* Create and write the CMap object. */
+	    code = pdf_cmap_alloc(pdev, pcmap, &pcmres, font_index_only);
+	    if (code < 0)
+		return code;
+	}
+    }
+    if (pcmap->from_Unicode) {
+	gs_cmap_ranges_enum_t renum;
+
+	gs_cmap_ranges_enum_init(pcmap, &renum);
+	if (gs_cmap_enum_next_range(&renum) == 0 && renum.range.size == 2 &&
+	    gs_cmap_enum_next_range(&renum) == 1) {
+	    /*
+	     * Exactly one code space range, of size 2.  Add an identity
+	     * ToUnicode CMap.
+	     */
+	    if (!pdev->Identity_ToUnicode_CMaps[pcmap->WMode]) {
+		/* Create and write an identity ToUnicode CMap now. */
+		gs_cmap_t *pidcmap;
+
+		code = gs_cmap_create_char_identity(&pidcmap, 2, pcmap->WMode,
+						    pdev->memory);
+		if (code < 0)
+		    return code;
+		pidcmap->CMapType = 2;	/* per PDF Reference */
+		code = pdf_cmap_alloc(pdev, pidcmap,
+				&pdev->Identity_ToUnicode_CMaps[pcmap->WMode], -1);
+		if (code < 0)
+		    return code;
+	    }
+	    pdfont->res_ToUnicode = pdev->Identity_ToUnicode_CMaps[pcmap->WMode];
+	}
+    }
+    if (pcmres || is_identity) {
+	uint size = pcmap->CMapName.size;
+	byte *chars = gs_alloc_string(pdev->pdf_memory, size,
+				      "pdf_font_resource_t(CMapName)");
+
+	if (chars == 0)
+	    return_error(gs_error_VMerror);
+	memcpy(chars, pcmap->CMapName.data, size);
+	if (is_identity)
+	    strcpy(pdfont->u.type0.Encoding_name, 
+		    (pcmap->WMode ? "/Identity-V" : "/Identity-H"));
+	else
+	    sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
+		    pdf_resource_id(pcmres));
+	pdfont->u.type0.CMapName.data = chars;
+	pdfont->u.type0.CMapName.size = size;
+    } else {
+	sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
+	pdfont->u.type0.CMapName.data = (const byte *)*pcmn;
+	pdfont->u.type0.CMapName.size = strlen(*pcmn);
+	pdfont->u.type0.cmap_is_standard = true;
+    }
+    pdfont->u.type0.WMode = pcmap->WMode;
+    return 0;
+}
+
 /* Record widths and CID => GID mappings. */
 private int
-scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
-	       pdf_font_resource_t *pdsubf /*CIDFont*/,
-	       gs_font_base *subfont /*CIDFont*/)
+scan_cmap_text(pdf_text_enum_t *pte)
 {
-    pdf_font_descriptor_t *pfd = pdsubf->FontDescriptor;
-    gx_device_pdf *dev= (gx_device_pdf *)pte->dev;
-    gs_text_enum_t scan = *pte;
-    pdf_font_resource_t *pdfont;
+    gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
+    gs_font_type0 *const font = (gs_font_type0 *)pte->current_font; /* Type 0, fmap_CMap */
+    gs_text_enum_t scan = *(gs_text_enum_t *)pte;
     int wmode = font->WMode, code;
+    gs_font *subfont = NULL;
+    bool done = false;
 
-    pdf_attached_font_resource(dev, (gs_font *)font, &pdfont, NULL, NULL, NULL, NULL);
-    for ( ; ; ) {
-	gs_char chr;
-	gs_glyph glyph;
-	code = font->procs.next_char_glyph(&scan, &chr, &glyph);
+    pte->returned.total_width.x = pte->returned.total_width.y = 0;;
+    do {
+	uint index = scan.index;
+	gs_const_string str;
+	pdf_text_process_state_t text_state;
+	pdf_font_resource_t *pdfont;
+	gs_point wxy;
 
-	/* Commonly subfont may vary depending on scan.
-	   The PDF spec doesn't allow such cases yet. 
-	   fixme : remove 'pdsubf', 'subfont' arguments.
-	 */
-	if (code == 2)		/* end of string */
-	    break;
+	code = gx_path_current_point(pte->path, &pte->origin);
 	if (code < 0)
 	    return code;
-	if (glyph >= GS_MIN_CID_GLYPH) {
-	    uint cid = glyph - GS_MIN_CID_GLYPH;
-	    gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
-	    pdf_font_resource_t *pdsubf1;
+        for ( ; ; ) {
+	    gs_char chr;
+	    gs_glyph glyph;
+	    pdf_font_resource_t *pdsubf;
+	    pdf_font_descriptor_t *pfd;
 	    byte *glyph_usage;
 	    double *real_widths, *w, *v;
 	    int char_cache_size, width_cache_size;
+	    uint cid;
 
-	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf1, 
+	    code = font->procs.next_char_glyph(&scan, &chr, &glyph);
+	    if (code == 2) {		/* end of string */
+		done = true;
+		break;
+	    }
+	    if (code < 0)
+		return code;
+	    if (subfont != NULL && subfont != scan.fstack.items[scan.fstack.depth].font)
+		break;
+	    subfont = scan.fstack.items[scan.fstack.depth].font;
+	    switch (subfont->FontType) {
+	    case ft_CID_encrypted:
+	    case ft_CID_TrueType:
+		break;
+	    default:
+		/* An unsupported case, fall back to default implementation. */
+		return_error(gs_error_rangecheck);
+	    }
+	    if (glyph == GS_NO_GLYPH)
+		glyph = GS_MIN_CID_GLYPH;
+	    cid = glyph - GS_MIN_CID_GLYPH;
+	    code = pdf_obtain_cidfont_resource(pdev, subfont, &pdsubf, &glyph, 1);
+	    if (code < 0)
+		return code;
+	    code = pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf, 
 				       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+	    if (code < 0)
+		return code;
+	    code = pdf_obtain_parent_type0_font_resource(pdev, pdsubf, &pdfont);
+	    if (code < 0)
+		return code;
+	    if (!pdfont->u.type0.Encoding_name[0]) {
+		/*
+		 * If pdfont->u.type0.Encoding_name is set, 
+		 * a CMap resource is already attached.
+		 * See attach_cmap_resource.
+		 */
+		code = attach_cmap_resource(pdev, pdfont, font->data.CMap, 
+			scan.fstack.items[scan.fstack.depth].index);
+		if (code < 0)
+		    return code;
+	    }
+	    pfd = pdsubf->FontDescriptor;
+	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &v);
 	    if (code < 0)
 		return code;
 	    /* We can't check pdsubf->used[cid >> 3] here,
 	       because it mixed data for different values of WMode. 
 	       Perhaps pdf_font_used_glyph returns fast with reused glyphs.
 	     */
-	    code = pdf_obtain_cidfont_widths_arrays(dev, pdsubf, wmode, &w, &v);
-	    if (code < 0)
-		return code;
-	    code = pdf_font_used_glyph(pfd, glyph, subfont);
+	    code = pdf_font_used_glyph(pfd, glyph, (gs_font_base *)subfont);
 	    if (code < 0)
 		return code;
 	    if (cid < 0 || cid >= char_cache_size || cid >= width_cache_size)
@@ -281,40 +407,37 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 		    pdsubf->u.cidfont.CIDToGIDMap[cid] =
 			subfont2->cidata.CIDMap_proc(subfont2, glyph);
 		}
-	    } else {
 	    }
 	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 	}
-    }
+	pdf_set_text_wmode(pdev, font->WMode);
+	code = pdf_update_text_state(&text_state, (pdf_text_enum_t *)pte, pdfont,
+				     &font->FontMatrix);
+	if (code < 0)
+	    return code;
+	str.data = scan.text.data.bytes + index;
+	str.size = scan.index - index;
+	code = process_text_modify_width((pdf_text_enum_t *)pte, (gs_font *)font,
+			      &text_state, &str, &wxy);
+	if (code < 0)
+	    return code;
+	pte->index = scan.index;
+	pte->xy_index = scan.xy_index;
+
+	code = gx_path_add_point(pte->path,
+			     pte->origin.x + float2fixed(wxy.x),
+			     pte->origin.y + float2fixed(wxy.y));
+	if (code < 0)
+	    return code;
+    } while (!done);
+    pte->index = scan.index;
+    pte->xy_index = scan.xy_index;
     return 0;
 }
 
 int
 process_cmap_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 {
-    gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
-    pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
-    gs_font *font = pte->current_font; /* Type 0, fmap_CMap */
-    gs_font_type0 *const pfont = (gs_font_type0 *)font;
-    gs_font *subfont = pfont->data.FDepVector[0];
-    const gs_cmap_t *pcmap = pfont->data.CMap;
-    const char *const *pcmn =
-	standard_cmap_names +
-	(pdev->CompatibilityLevel < 1.4 ? END_PDF14_CMAP_NAMES_INDEX : 0);
-    pdf_font_resource_t *pdfont, *pdsubf;
-    pdf_resource_t *pcmres = 0;	/* CMap */
-    pdf_text_process_state_t text_state;
-    gs_point wxy;
-    int code;
-    bool is_identity = false;
-    gs_const_string str;
-    bool return_width = (penum->text.operation & TEXT_RETURN_WIDTH);
-
-    pdf_set_text_wmode(pdev, font->WMode);
-    code = pdf_obtain_font_resource(pte, NULL, &pdfont);
-    if (code < 0)
-	return code;
-    pdsubf = pdfont->u.type0.DescendantFont;
     if (pte->text.operation &
 	(TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
 	)
@@ -323,125 +446,7 @@ process_cmap_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
 	/* Not implemented.  (PostScript doesn't allow TEXT_INTERVENE.) */
 	return_error(gs_error_rangecheck);
     }
-    /* Require a single CID-keyed DescendantFont. */
-    if (pfont->data.fdep_size != 1)
-	return_error(gs_error_rangecheck);
-    switch (subfont->FontType) {
-    case ft_CID_encrypted:
-    case ft_CID_TrueType:
-	break;
-    default:
-	return_error(gs_error_rangecheck);
-    }
-
-    code = pdf_update_text_state(&text_state, penum, pdfont,
-				 &font->FontMatrix);
-    if (code < 0)
-	return code;
-    if (!pdfont->u.type0.Encoding_name[0]) {
-	/*
-	 * If the CMap isn't standard, write it out if necessary.
-	 * (if pdfont->u.type0.Encoding_name is set, 
-	 * this is already done - see below).
-	 */
-	for (; *pcmn != 0; ++pcmn)
-	    if (pcmap->CMapName.size == strlen(*pcmn) &&
-		!memcmp(*pcmn, pcmap->CMapName.data, pcmap->CMapName.size))
-		break;
-	if (*pcmn == 0) {
-	    /* 
-	     * PScript5.dll Version 5.2 creates identity CMaps with
-	     * instandard name. Check this specially here
-	     * and later replace with a standard name.
-	     * This is a temporary fix for SF bug #615994 "CMAP is corrupt".
-	     */
-	    is_identity = gs_cmap_is_identity(pcmap);
-	}
-	if (*pcmn == 0 && !is_identity) {		/* not standard */
-	    pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id);
-	    if (pcmres == 0) {
-		/* Create and write the CMap object. */
-		code = pdf_cmap_alloc(pdev, pcmap, &pcmres);
-		if (code < 0)
-		    return code;
-	    }
-	}
-	if (pcmap->from_Unicode) {
-	    gs_cmap_ranges_enum_t renum;
-
-	    gs_cmap_ranges_enum_init(pcmap, &renum);
-	    if (gs_cmap_enum_next_range(&renum) == 0 && renum.range.size == 2 &&
-		gs_cmap_enum_next_range(&renum) == 1) {
-		/*
-		 * Exactly one code space range, of size 2.  Add an identity
-		 * ToUnicode CMap.
-		 */
-		if (!pdev->Identity_ToUnicode_CMaps[pcmap->WMode]) {
-		    /* Create and write an identity ToUnicode CMap now. */
-		    gs_cmap_t *pidcmap;
-
-		    code = gs_cmap_create_char_identity(&pidcmap, 2, pcmap->WMode,
-							pdev->memory);
-		    if (code < 0)
-			return code;
-		    pidcmap->CMapType = 2;	/* per PDF Reference */
-		    code = pdf_cmap_alloc(pdev, pidcmap,
-				    &pdev->Identity_ToUnicode_CMaps[pcmap->WMode]);
-		    if (code < 0)
-			return code;
-		}
-		pdfont->res_ToUnicode = pdev->Identity_ToUnicode_CMaps[pcmap->WMode];
-	    }
-	}
-	if (pcmres || is_identity) {
-	    uint size = pcmap->CMapName.size;
-	    byte *chars = gs_alloc_string(pdev->pdf_memory, size,
-					  "pdf_font_resource_t(CMapName)");
-
-	    if (chars == 0)
-		return_error(gs_error_VMerror);
-	    memcpy(chars, pcmap->CMapName.data, size);
-	    if (is_identity)
-		strcpy(pdfont->u.type0.Encoding_name, 
-			(pcmap->WMode ? "/Identity-V" : "/Identity-H"));
-	    else
-		sprintf(pdfont->u.type0.Encoding_name, "%ld 0 R",
-			pdf_resource_id(pcmres));
-	    pdfont->u.type0.CMapName.data = chars;
-	    pdfont->u.type0.CMapName.size = size;
-	} else {
-	    sprintf(pdfont->u.type0.Encoding_name, "/%s", *pcmn);
-	    pdfont->u.type0.CMapName.data = (const byte *)*pcmn;
-	    pdfont->u.type0.CMapName.size = strlen(*pcmn);
-	    pdfont->u.type0.cmap_is_standard = true;
-	}
-	pdfont->u.type0.WMode = pcmap->WMode;
-    }
-    code = scan_cmap_text(pte, pfont, pdsubf, (gs_font_base *)subfont);
-    if (code < 0)
-	return code;
-    /*
-     * If code == 0 (it's a mask), we could do it few faster,
-     * simply copying the text to the output. Perhaps doing so
-     * we could miss differences in v-vectors (glyph origin).
-     */
-    if (return_width) {
-	code = gx_path_current_point(penum->path, &penum->origin);
-	if (code < 0)
-	    return code;
-    }
-    str.data = pte->text.data.bytes;
-    str.size = pte->text.size - pte->index;
-    code = process_text_modify_width((pdf_text_enum_t *)pte, font,
-			  &text_state, &str, &wxy);
-    if (code < 0)
-	return code;
-    penum->returned.total_width = wxy;
-    if (!return_width)
-	return 0;
-    return gx_path_add_point(penum->path,
-			     penum->origin.x + float2fixed(wxy.x),
-			     penum->origin.y + float2fixed(wxy.y));
+    return scan_cmap_text((pdf_text_enum_t *)pte);
 }
 
 /* ---------------- CIDFont ---------------- */
@@ -532,7 +537,7 @@ process_cid_text(gs_text_enum_t *pte, void *vbuf, uint bsize)
     pte->text.size = size * 2;
     pte->index = 0;
     gs_type0_init_fstack(pte, pte->current_font);
-    code = process_cmap_text(pte, vbuf, pte->text.size);
+    code = process_cmap_text(pte, vbuf, bsize);
     pte->current_font = scaled_font;
     pte->orig_font = save.orig_font;
     pte->text = save.text;

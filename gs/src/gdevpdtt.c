@@ -705,12 +705,11 @@ private int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 /*
  * Create or find a CID font resource object for a glyph set.
  */
-private int
-pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font_type0 *font, 
+int
+pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font *subfont, 
 			    pdf_font_resource_t **ppdsubf, 
 			    gs_glyph *glyphs, int num_glyphs)
 {
-    gs_font *subfont = font->data.FDepVector[0];
     int code = 0;
 
     pdf_attached_font_resource(pdev, subfont, ppdsubf, NULL, NULL, NULL, NULL);
@@ -733,6 +732,14 @@ pdf_obtain_cidfont_resource(gx_device_pdf *pdev, gs_font_type0 *font,
 	 */
     }
     return code;
+}
+private int
+pdf_obtain_cidfont_resource_old(gx_device_pdf *pdev, gs_font_type0 *font, 
+			    pdf_font_resource_t **ppdsubf, 
+			    gs_glyph *glyphs, int num_glyphs)
+{
+    return pdf_obtain_cidfont_resource(pdev, font->data.FDepVector[0], 
+			    ppdsubf, glyphs, num_glyphs);
 }
 
 /*
@@ -827,34 +834,6 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    pdfont->u.simple.s.type3.FontBBox.q.x = (int)bfont->FontBBox.q.x;
 	    pdfont->u.simple.s.type3.FontBBox.q.y = (int)bfont->FontBBox.q.y;
 	    pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
-	    *ppdfont = pdfont;
-	    return 1;
-	}
-    case ft_composite:
-	{
-	    /* Composite fonts don't have descriptors. */
-
-	    /*
-	     * PDF spec 1.4 section 5.6 "Composite Fonts" says :
-	     *
-	     * PDF 1.2 introduces a general architecture for composite fonts that theoretically
-	     * allows a Type 0 font to have multiple descendants,which might themselves be
-	     * Type 0 fonts.However,in versions up to and including PDF 1.4,only a single
-	     * descendant is allowed,which must be a CIDFont (not a font).This restriction
-	     * may be relaxed in a future PDF version.
-	     */
-	    gs_font_type0 *const pfont = (gs_font_type0 *)base_font;
-	    pdf_font_resource_t *pdsubf;
-
-	    code = pdf_obtain_cidfont_resource(pdev, pfont, &pdsubf, glyphs, num_chars);
-	    if (code < 0)
-		return code;
-	    code = pdf_font_type0_alloc(pdev, &pdfont, base_font->id, pdsubf);
-	    if (code < 0)
-		return code;
-	    code = pdf_attach_font_resource(pdev, base_font, pdfont);
-	    if (code < 0)
-		return code;
 	    *ppdfont = pdfont;
 	    return 1;
 	}
@@ -1018,16 +997,8 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     int code;
 
     if (font->FontType == ft_composite) {
-	gs_font_type0 *font0 = (gs_font_type0 *)font;
-
-	if (font0->data.fdep_size > 1) {
-	    /* 
-	     * See comment in pdf_make_font_resource.
-	     * Will fall back to pdf_default_text_begin,
-	     * see pdf_text_process.
-	     */
-	    return_error(gs_error_undefined);
-	}
+	/* Must not happen, because we always split composite fonts into descendents. */
+	return_error(gs_error_unregistered);
     }
     /* Get attached font resource (maybe NULL) */
     code = pdf_attached_font_resource(pdev, font, ppdfont,
@@ -1068,18 +1039,10 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     }
     /* Get/make font resource for the font : */
     if (*ppdfont != 0) {
-	gs_font_base *cfont;
-	gs_font *ofont = font;
-	
-	if ((*ppdfont)->FontType == ft_composite) {
-	    gs_font_type0 *font0 = (gs_font_type0 *)font;
-
-	    cfont = pdf_font_resource_font((*ppdfont)->u.type0.DescendantFont, false);
-	    ofont = font0->data.FDepVector[0];
-	} else 
-	    cfont = pdf_font_resource_font(*ppdfont, false);
+	gs_font_base *cfont = pdf_font_resource_font(*ppdfont, false);
+        
 	if (font->FontType != ft_user_defined) {
-	    code = gs_copied_can_copy_glyphs((gs_font *)cfont, ofont, 
+	    code = gs_copied_can_copy_glyphs((gs_font *)cfont, font, 
 			glyphs + glyphs_offset, num_unused_chars, false);
 	    if (code < 0)
 		goto out;
@@ -1137,15 +1100,6 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	code = pdf_attach_font_resource(pdev, font, *ppdfont);
 	if (code < 0)
 	    goto out;
-	if ((*ppdfont)->FontType == ft_composite) {
-	    gs_font_type0 *const pfont = (gs_font_type0 *)base_font;
-	    pdf_font_resource_t *pdsubf;
-
-	    code = pdf_obtain_cidfont_resource(pdev, pfont, &pdsubf, glyphs, 
-					       num_all_chars);
-	    if (code < 0)
-		goto out;
-	}
     }
     code = pdf_attached_font_resource(pdev, font, ppdfont, 
 			       &glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
@@ -1175,6 +1129,34 @@ out:
     if (glyphs != glyphs0)
 	gs_free_object(pdev->memory, glyphs, "pdf_encode_string");
     return code;
+}
+
+/*
+ * Create or find a parent Type 0 font resource object for a CID font resource.
+ */
+int
+pdf_obtain_parent_type0_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdsubf, 
+		pdf_font_resource_t **pdfont)
+{
+    if (pdsubf->u.cidfont.parent != 0)
+	*pdfont = pdsubf->u.cidfont.parent;
+    else {
+	/*
+	 * PDF spec 1.4 section 5.6 "Composite Fonts" says :
+	 *
+	 * PDF 1.2 introduces a general architecture for composite fonts that theoretically
+	 * allows a Type 0 font to have multiple descendants,which might themselves be
+	 * Type 0 fonts.However,in versions up to and including PDF 1.4,only a single
+	 * descendant is allowed,which must be a CIDFont (not a font).This restriction
+	 * may be relaxed in a future PDF version.
+	 */
+	int code = pdf_font_type0_alloc(pdev, pdfont, gs_no_id, pdsubf);
+
+	if (code < 0)
+	    return code;
+	pdsubf->u.cidfont.parent = *pdfont;
+    }
+    return 0;
 }
 
 /*

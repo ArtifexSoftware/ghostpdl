@@ -191,6 +191,7 @@ struct pdf_font_resource_s {
  	    gs_id glyphshow_font_id;
 	    double *Widths2;	/* [count * 2] (x, y) */
 	    double *v;		/* [count] */
+	    pdf_font_resource_t *parent;
 
 	} cidfont;
 
@@ -358,7 +359,7 @@ const gs_font_name *pdf_choose_font_name(gs_font *font, bool key_name);
  * Allocate a CMap resource.
  */
 int pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-		   pdf_resource_t **ppres /* CMap */);
+		   pdf_resource_t **ppres /* CMap */, int font_index_only);
 
 /*
  * Add a CID-to-GID mapping to a CIDFontType 2 font resource.

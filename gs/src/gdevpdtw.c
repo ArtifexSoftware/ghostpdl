@@ -457,7 +457,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     stream *s;
 
     if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL &&
-	    !gs_cmap_is_identity(pdfont->cmap_ToUnicode)) {
+	    !gs_cmap_is_identity(pdfont->cmap_ToUnicode, -1)) {
 	/*
 	 * The condition above slightly differs from PDF spec
 	 * (see the chapter "ToUnicode CMaps").
@@ -472,7 +472,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	 * follows the spec.
 	 */
 	pdf_resource_t *prcmap;
-	int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap);
+	int code = pdf_cmap_alloc(pdev, pdfont->cmap_ToUnicode, &prcmap, -1);
 
 	if (code < 0)
 	    return code;
@@ -589,7 +589,7 @@ pdf_write_cid_system_info(gx_device_pdf *pdev,
  */
 int
 pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-	       pdf_resource_t *pres /*CMap*/)
+	       pdf_resource_t *pres /*CMap*/, int font_index_only)
 {
     pdf_data_writer_t writer;
     stream *s;
@@ -615,7 +615,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     if (code < 0)
 	return code;
     code = psf_write_cmap(writer.binary.strm, pcmap,
-			  pdf_put_name_chars_proc(pdev), NULL);
+			  pdf_put_name_chars_proc(pdev), NULL, font_index_only);
     if (code < 0)
 	return code;
     code = pdf_end_data(&writer);

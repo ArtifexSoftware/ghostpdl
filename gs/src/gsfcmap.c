@@ -157,7 +157,7 @@ identity_enum_lookups(const gs_cmap_t *pcmap, int which,
 				&identity_lookup_procs));
 }
 private bool
-identity_is_identity(const gs_cmap_t *pcmap)
+identity_is_identity(const gs_cmap_t *pcmap, int font_index_only)
 {
     return true;
 }
@@ -220,9 +220,9 @@ gs_cmap_create_char_identity(gs_cmap_t **ppcmap, int num_bytes, int wmode,
  * Check for identity CMap. Uses a fast check for special cases.
  */
 int
-gs_cmap_is_identity(const gs_cmap_t *pcmap)
+gs_cmap_is_identity(const gs_cmap_t *pcmap, int font_index_only)
 {
-    return pcmap->procs->is_identity(pcmap);
+    return pcmap->procs->is_identity(pcmap, font_index_only);
 }
 
     /* ------ Decoding ------ */
@@ -286,10 +286,14 @@ gs_cmap_enum_next_entry(gs_cmap_lookups_enum_t *penum)
  * for the GC.  Note that this only initializes the common part.
  */
 void
-gs_cmap_init(gs_cmap_t *pcmap)
+gs_cmap_init(gs_cmap_t *pcmap, int num_fonts)
 {
     memset(pcmap, 0, sizeof(*pcmap));
-    pcmap->id = gs_next_ids(1);
+    /* We reserve a range of IDs for pdfwrite needs,
+       to allow an identification of submaps for a particular subfont.
+     */
+    pcmap->id = gs_next_ids(num_fonts);
+    pcmap->num_fonts = num_fonts;
     uid_set_invalid(&pcmap->uid);
 }
 
@@ -314,7 +318,7 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
 	gs_free_object(mem, pcmap, "gs_cmap_alloc(CMap)");
 	return_error(gs_error_VMerror);
     }
-    gs_cmap_init(pcmap);	/* id, uid */
+    gs_cmap_init(pcmap, num_fonts);	/* id, uid, num_fonts */
     pcmap->CMapType = 1;
     pcmap->CMapName.data = map_name;
     pcmap->CMapName.size = name_size;
@@ -323,7 +327,6 @@ gs_cmap_alloc(gs_cmap_t **ppcmap, const gs_memory_struct_type_t *pstype,
     else
 	memset(pcidsi, 0, sizeof(*pcidsi) * num_fonts);
     pcmap->CIDSystemInfo = pcidsi;
-    pcmap->num_fonts = num_fonts;
     pcmap->CMapVersion = 1.0;
     /* uid = 0, UIDOffset = 0 */
     pcmap->WMode = wmode;
@@ -362,15 +365,17 @@ gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
  * different sizes of domain keys and range values.
  */
 bool
-gs_cmap_compute_identity(const gs_cmap_t *pcmap)
+gs_cmap_compute_identity(const gs_cmap_t *pcmap, int font_index_only)
 {
-    const int which = 0, font_index = 0;
+    const int which = 0;
     gs_cmap_lookups_enum_t lenum;
     int code;
 
     for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
 	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
-	if (lenum.entry.font_index != font_index)
+	if (font_index_only >= 0 && lenum.entry.font_index != font_index_only)
+	    continue;
+	if (font_index_only < 0 && lenum.entry.font_index > 0)
 	    return false;
 	while (gs_cmap_enum_next_entry(&lenum) == 0) {
 	    switch (lenum.entry.value_type) {
@@ -509,7 +514,7 @@ gs_cmap_ToUnicode_enum_lookups(const gs_cmap_t *pcmap, int which,
 }
 
 private bool
-gs_cmap_ToUnicode_is_identity(const gs_cmap_t *pcmap)
+gs_cmap_ToUnicode_is_identity(const gs_cmap_t *pcmap, int font_index_only)
 {   const gs_cmap_ToUnicode_t *cmap = (gs_cmap_ToUnicode_t *)pcmap;
     return cmap->is_identity;
 }

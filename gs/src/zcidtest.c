@@ -104,7 +104,7 @@ zwritecmap(i_ctx_t *i_ctx_p)
 	return_error(e_typecheck);
     check_write_file(s, op - 1);
     pcmap = r_ptr(pcodemap, gs_cmap_t);
-    code = psf_write_cmap(s, pcmap, zfcmap_put_name_default, NULL);
+    code = psf_write_cmap(s, pcmap, zfcmap_put_name_default, NULL, -1);
     if (code >= 0)
 	pop(2);
     return code;

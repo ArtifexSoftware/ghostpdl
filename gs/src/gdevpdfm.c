@@ -1359,7 +1359,6 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 {
     gs_rect bbox;
     cos_stream_t *pcs;
-    pdf_graphics_save_t *pdgs;
     int code;
     double xscale = pdev->HWResolution[0] / 72.0,
 	yscale = pdev->HWResolution[1] / 72.0;

@@ -79,9 +79,15 @@ case 9: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  case ft_CID_encrypted:
-     ENUM_RETURN(0);
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
+ default:
+     ENUM_RETURN(0);
+}
+case 10: switch (pdfont->FontType) {
+ case ft_CID_encrypted:
+ case ft_CID_TrueType:
+     ENUM_RETURN(pdfont->u.cidfont.parent);
  default:
      ENUM_RETURN(0);
 }
@@ -109,11 +115,11 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	RELOC_VAR(pdfont->u.simple.s.type3.char_procs);
 	break;
     case ft_CID_encrypted:
+    case ft_CID_TrueType:
 	RELOC_VAR(pdfont->u.cidfont.Widths2);
 	RELOC_VAR(pdfont->u.cidfont.v);
-	/* falls through */
-    case ft_CID_TrueType:
 	RELOC_VAR(pdfont->u.cidfont.CIDToGIDMap);
+	RELOC_VAR(pdfont->u.cidfont.parent);
 	break;
     default:
 	RELOC_VAR(pdfont->u.simple.Encoding);
@@ -752,6 +758,7 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pdfont->u.cidfont.CIDToGIDMap = map;
     pdfont->u.cidfont.Widths2 = NULL;
     pdfont->u.cidfont.v = NULL;
+    pdfont->u.cidfont.parent = NULL;
     /*
      * Write the CIDSystemInfo now, so we don't try to access it after
      * the font may no longer be available.
@@ -809,7 +816,7 @@ pdf_obtain_cidfont_widths_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pdfon
  */
 int
 pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-	       pdf_resource_t **ppres)
+	       pdf_resource_t **ppres, int font_index_only)
 {
     /*
      * We don't store any of the contents of the CMap: instead, we write
@@ -817,9 +824,10 @@ pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
      * large, we should wait, and only write the entries actually used.
      * This is a project for some future date....
      */
-    int code = pdf_alloc_resource(pdev, resourceCMap, pcmap->id, ppres, 0L);
+    int code = pdf_alloc_resource(pdev, resourceCMap, 
+		    pcmap->id + max(font_index_only, 0), ppres, 0L);
 
     if (code < 0)
 	return code;
-    return pdf_write_cmap(pdev, pcmap, *ppres);
+    return pdf_write_cmap(pdev, pcmap, *ppres, font_index_only);
 }

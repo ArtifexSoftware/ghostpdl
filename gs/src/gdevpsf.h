@@ -230,7 +230,7 @@ typedef struct gs_cmap_s gs_cmap_t;
 typedef int (*psf_put_name_chars_proc_t)(stream *, const byte *, uint);
 int psf_write_cmap(stream *s, const gs_cmap_t *pcmap,
 		   psf_put_name_chars_proc_t put_name_chars,
-		   const gs_const_string *alt_cmap_name);
+		   const gs_const_string *alt_cmap_name, int font_index_only);
 /* ------ Exported by gdevpsft.c ------ */
 
 /*

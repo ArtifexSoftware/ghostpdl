@@ -105,6 +105,8 @@ tile_size_ok(const gx_device_pdf *pdev, const gx_color_tile *p_tile,
 	(m_tile == 0 ? 0 : tile_size(&m_tile->tmask, 1));
     return (max(p_size, m_size) <= 65500);
 }
+
+#if !PATTERN_STREAM_ACCUMULATION
 private int
 pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	    const gx_color_tile *p_tile, const gx_color_tile *m_tile,
@@ -190,6 +192,7 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 
     return 0;
 }
+#endif
 
 /* Store pattern 1 parameters to cos dictionary. */
 int 
@@ -245,6 +248,7 @@ pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
     return code;
 }
 
+#if !PATTERN_STREAM_ACCUMULATION
 /* Set the ImageMatrix, Width, and Height for a Pattern image. */
 private void
 pdf_set_pattern_image(gs_data_image_t *pic, const gx_strip_bitmap *tile)
@@ -282,6 +286,7 @@ pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
     *ppcs_mask = pcs_image;
     return 0;
 }
+#endif
 
 /* Write an uncolored Pattern color. */
 /* (Single-use procedure for readability.) */
@@ -305,7 +310,9 @@ pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	cos_value_t v;
 	stream *s = pdev->strm;
 	int code;
+#	if PATTERN_STREAM_ACCUMULATION
 	cos_stream_t *pcs_image;
+#	endif
 	static const psdf_set_color_commands_t no_scc = {0, 0, 0};
 
 	if (!tile_size_ok(pdev, NULL, m_tile))
@@ -345,19 +352,19 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			const psdf_set_color_commands_t *ppscc,
 			pdf_resource_t **ppres)
 {
-    const gx_color_tile *m_tile = pdc->mask.m_tile;
     const gx_color_tile *p_tile = pdc->colors.pattern.p_tile;
-    int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
     gs_color_space cs_Device;
     cos_value_t cs_value;
-    pdf_image_writer writer;
-    gs_image1_t image;
-    cos_stream_t *pcs_image;
-    cos_stream_t *pcs_mask = 0;
     cos_value_t v;
     int code;
 
 #   if !PATTERN_STREAM_ACCUMULATION
+    const gx_color_tile *m_tile = pdc->mask.m_tile;
+    int w = p_tile->tbits.rep_width, h = p_tile->tbits.rep_height;
+    pdf_image_writer writer;
+    gs_image1_t image;
+    cos_stream_t *pcs_image;
+    cos_stream_t *pcs_mask = 0;
     /*
      * NOTE: We assume here that the color space of the cached Pattern
      * is the same as the native color space of the device.  This will
