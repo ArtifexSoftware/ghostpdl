@@ -1003,6 +1003,10 @@ const gx_device_color * pdevc, gx_device * dev, const gs_imager_state * pis,
 	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
 	    return code;
 	code = add_round_cap(ppath, &plp->e);
+	ASSIGN_POINT(&points[npoints], plp->e.ce);
+	++npoints;
+	if ((code = add_points(ppath, points, npoints, moveto_first)) < 0)
+	    return code;
 	goto done;
     } else if (nplp->thin)	/* no join */
 	code = cap_points(gs_cap_butt, &plp->e, points + npoints);
@@ -1275,17 +1279,25 @@ compute_caps(register pl_ptr plp)
 
 /* Add a round cap to a path. */
 /* Assume the current point is the cap origin (endp->co). */
+/* Leave with the current point at [xe, ye] */
 private int
 add_round_cap(gx_path * ppath, const_ep_ptr endp)
 {
     fixed xm = px + cdx;
     fixed ym = py + cdy;
+    fixed xmm = px - cdx;
+    fixed ymm = py - cdy;
     int code;
 
     if ((code = gx_path_add_partial_arc(ppath, xm, ym,
 			   xo + cdx, yo + cdy, quarter_arc_fraction)) < 0 ||
 	(code = gx_path_add_partial_arc(ppath, xe, ye,
-			      xe + cdx, ye + cdy, quarter_arc_fraction)) < 0
+			      xe + cdx, ye + cdy, quarter_arc_fraction)) < 0 ||
+	(code = gx_path_add_partial_arc(ppath, xmm, ymm,
+			      xe - cdx, ye - cdy, quarter_arc_fraction)) < 0 ||
+	(code = gx_path_add_partial_arc(ppath, xo, yo,
+			      xo - cdx, yo - cdy, quarter_arc_fraction)) < 0 ||
+	(code = gx_path_add_point(ppath, xe, ye))
 	)
 	return code;
     return 0;
