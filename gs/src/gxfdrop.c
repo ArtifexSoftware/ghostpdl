@@ -57,7 +57,7 @@ void init_section(section *sect, int i0, int i1)
 private margin * alloc_margin(line_list * ll)
 {   margin *m;
 
-    assert(ll->pseudo_rasterization);
+    assert(ll->fo->pseudo_rasterization);
     if (ll->free_margin_list != 0) {
 	m = ll->free_margin_list;
 	ll->free_margin_list = ll->free_margin_list->next;
@@ -483,6 +483,7 @@ private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, i
     section *sect = ms->sect;
     int iy = fixed2int_var_pixround(ms->y);
     int i, ir, h = -2, code;
+    const fill_options * const fo = ll->fo;
 
     assert(i0 >= 0 && i1 <= ll->bbox_width);
     ir = i0;
@@ -551,7 +552,7 @@ private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, i
 	if (h != hh) {
 	    if (h >= 0) {
 		VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-		code = LOOP_FILL_RECTANGLE_DIRECT(ll, ir + ll->bbox_left, iy + h, i - ir, 1);
+		code = LOOP_FILL_RECTANGLE_DIRECT(fo, ir + ll->bbox_left, iy + h, i - ir, 1);
 		if (code < 0)
 		    return code;
 	    }
@@ -561,7 +562,7 @@ private int fill_margin(gx_device * dev, const line_list * ll, margin_set *ms, i
     }
     if (h >= 0) {
 	VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-	code = LOOP_FILL_RECTANGLE_DIRECT(ll, ir + ll->bbox_left, iy + h, i - ir, 1);
+	code = LOOP_FILL_RECTANGLE_DIRECT(fo, ir + ll->bbox_left, iy + h, i - ir, 1);
 	if (code < 0)
 	    return code;
     }

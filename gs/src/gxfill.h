@@ -93,6 +93,25 @@ struct active_line_s {
     active_line *alloc_next;
 };
 
+typedef struct fill_options_s {
+    bool pseudo_rasterization;  /* See comment about "pseudo-rasterization". */
+    fixed ymin, ymax;
+    const gx_device_color * pdevc;
+    gs_logical_operation_t lop;
+    bool fill_direct;
+    fixed fixed_flat;
+    bool fill_by_trapezoids;
+    fixed adjust_left, adjust_right;
+    fixed adjust_below, adjust_above;
+    fixed coords_near_threshold;
+    gx_device *dev;
+    const gs_fixed_rect * pbox;
+    bool is_spotan;
+    int rule;
+    dev_proc_fill_rectangle((*fill_rect));
+    dev_proc_fill_trapezoid((*fill_trap));
+} fill_options;
+
 /* Line list structure */
 #ifndef line_list_DEFINED
 #  define line_list_DEFINED
@@ -113,7 +132,9 @@ struct line_list_s {
     margin *free_margin_list; 
     int local_margin_alloc_count;
     int bbox_left, bbox_width;
-    bool pseudo_rasterization;  /* See comment about "pseudo-rasterization". */
+    int main_dir;
+    fixed y_break;
+    const fill_options * const fo;
     /* Put the arrays last so the scalars will have */
     /* small displacements. */
     /* Allocate a few active_lines locally */
@@ -129,31 +150,12 @@ struct line_list_s {
     margin local_margins[MAX_LOCAL_ACTIVE];
     section local_section0[MAX_LOCAL_SECTION];
     section local_section1[MAX_LOCAL_SECTION];
-    const gx_device_color * pdevc;
-    gs_logical_operation_t lop;
-    bool fill_direct;
-    fixed fixed_flat;
-    bool fill_by_trapezoids;
-    fixed adjust_left, adjust_right;
-    fixed adjust_below, adjust_above;
-    fixed ymin, ymax;
-    int main_dir;
-    fixed y_break;
-    fixed coords_near_threshold;
-    gx_device *dev;
-    const gs_fixed_rect * pbox;
-    bool is_spotan;
-    int rule;
-    dev_proc_fill_rectangle((*fill_rect));
-    dev_proc_fill_trapezoid((*fill_trap));
 };
 
-#define LOOP_FILL_RECTANGLE(x, y, w, h)\
-  gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop)
-#define LOOP_FILL_RECTANGLE_DIRECT(ll, x, y, w, h)\
-  (ll->fill_direct ?\
-   (*ll->fill_rect)(ll->dev, x, y, w, h, ll->pdevc->colors.pure) :\
-   gx_fill_rectangle_device_rop(x, y, w, h, ll->pdevc, ll->dev, ll->lop))
+#define LOOP_FILL_RECTANGLE_DIRECT(fo, x, y, w, h)\
+  (fo->fill_direct ?\
+   fo->fill_rect(fo->dev, x, y, w, h, fo->pdevc->colors.pure) :\
+   gx_fill_rectangle_device_rop(x, y, w, h, fo->pdevc, fo->dev, fo->lop))
 
 /* ---------------- Statistics ---------------- */
 
