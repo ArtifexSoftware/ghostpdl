@@ -714,6 +714,13 @@ end def
   } ifelse
 } bind def
 
+% Define the setcolor procedure:
+%   <param1> ... <paramN> setcolor -
+% This definition is overridden in PS level 3.
+/setcolor {
+  .setcolor
+} odef
+
 % Define the setcolorspace procedures:
 %	<colorspace> proc <colorspace'|null>
 % We have to define the dictionary first, so it can be bound into the
