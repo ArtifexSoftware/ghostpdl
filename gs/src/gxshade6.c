@@ -436,16 +436,34 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 		memcpy(mu1v0.cc, cu1v0.cc.paint.values, sizeof(mu1v0.cc));
 		memcpy(mu1v1.cc, cu1v1.cc.paint.values, sizeof(mu1v1.cc));
 		memcpy(mu0v1.cc, cu0v1.cc.paint.values, sizeof(mu0v1.cc));
-		mesh_init_fill_triangle((mesh_fill_state_t *)pfs,
-					&mu0v0, &mu1v1, &mu1v0, check);
-		code = mesh_fill_triangle((mesh_fill_state_t *)pfs);
-		if (code < 0)
-		    return code;
-		mesh_init_fill_triangle((mesh_fill_state_t *)pfs,
-					&mu0v0, &mu1v1, &mu0v1, check);
-		code = mesh_fill_triangle((mesh_fill_state_t *)pfs);
-		if (code < 0)
-		    return code;
+/* Make this a procedure later.... */
+#define FILL_TRI(pva, pvb, pvc)\
+  BEGIN\
+    mesh_init_fill_triangle((mesh_fill_state_t *)pfs, pva, pvb, pvc, check);\
+    code = mesh_fill_triangle((mesh_fill_state_t *)pfs);\
+    if (code < 0)\
+	return code;\
+  END
+#if 0
+		FILL_TRI(&mu0v0, &mu1v1, &mu1v0);
+		FILL_TRI(&mu0v0, &mu1v1, &mu0v1);
+#else
+		{
+		    mesh_vertex_t mmid;
+		    int ci;
+
+		    (*transform)(&mmid.p, curve, interior,
+				 (u0 + u1) * 0.5, (v0 + v1) * 0.5);
+		    for (ci = 0; ci < pfs->num_components; ++ci)
+			mmid.cc[ci] =
+			    (mu0v0.cc[ci] + mu1v0.cc[ci] +
+			     mu1v1.cc[ci] + mu0v1.cc[ci]) * 0.25;
+		    FILL_TRI(&mu0v0, &mu1v0, &mmid);
+		    FILL_TRI(&mu1v0, &mu1v1, &mmid);
+		    FILL_TRI(&mu1v1, &mu0v1, &mmid);
+		    FILL_TRI(&mu0v1, &mu0v0, &mmid);
+		}
+#endif
 	    }
 	}
     }

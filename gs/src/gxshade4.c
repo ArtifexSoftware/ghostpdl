@@ -117,7 +117,18 @@ mesh_fill_triangle(mesh_fill_state_t * pfs)
 	    gs_client_color fcc;
 	    int code;
 
+#if 0
 	    memcpy(&fcc.paint, fp->va.cc, sizeof(fcc.paint));
+#else
+	    /* Average the colors at the vertices. */
+	    {
+		int ci;
+
+		for (ci = 0; ci < pfs->num_components; ++ci)
+		    fcc.paint.values[ci] =
+			(fp->va.cc[ci] + fp->vb.cc[ci] + fp->vc.cc[ci]) / 3.0;
+	    }
+#endif
 	    (*pcs->type->restrict_color)(&fcc, pcs);
 	    (*pcs->type->remap_color)(&fcc, pcs, &dev_color, pis,
 				      pfs->dev, gs_color_select_texture);
