@@ -20,6 +20,13 @@
 #ifndef gxfcopy_INCLUDED
 #  define gxfcopy_INCLUDED
 
+#include "gsccode.h"
+
+#ifndef gs_font_DEFINED
+#  define gs_font_DEFINED
+typedef struct gs_font_s gs_font;
+#endif
+
 /*
  * Copy a font, aside from its glyphs.  Note that PostScript-specific data
  * -- that is, data that do not appear in the C structure that is the
