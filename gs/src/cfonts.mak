@@ -35,7 +35,7 @@ CFOBJDIR=$(PSOBJDIR)
 CFGEN=$(CFGENDIR)$(D)
 CFOBJ=$(CFOBJDIR)$(D)
 
-CFCC=$(CC_) $(I_)$(PSSRCDIR)$(_I)
+CFCC=$(CC_) $(I_)$(PSSRCDIR)$(_I) $(I_)$(PSOBJDIR)$(_I)
 CFO_=$(O_)$(CFOBJ)
 
 # Define how to invoke the font2c program.

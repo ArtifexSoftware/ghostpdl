@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1998, 1999 artofcode LLC.  All rights reserved.
+/* Copyright (C) 1992-2004 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -131,13 +131,13 @@ cfont_put_next(ref * pdict, key_enum * kep, const ref * pvalue)
 	if (glyph == GS_NO_GLYPH)
 	    code = gs_note_error(e_undefined);
 	else if ((code = gs_c_glyph_name(glyph, &gstr)) >= 0)
-	    code = name_ref(gstr.data, gstr.size, &kname, 0);
+	    code = name_ref(imemory, gstr.data, gstr.size, &kname, 0);
 	kp->num_enc_keys--;
     } else {			/* must have kp->num_str_keys != 0 */
 	code = cfont_next_string(&kep->strings);
 	if (code != 1)
 	    return (code < 0 ? code : gs_note_error(e_Fatal));
-	code = name_ref(kep->strings.next.value.const_bytes,
+	code = name_ref(imemory, kep->strings.next.value.const_bytes,
 			r_size(&kep->strings.next), &kname, 0);
 	kp->num_str_keys--;
     }
@@ -254,7 +254,7 @@ cfont_name_array_create(i_ctx_t *i_ctx_p, ref * parray, cfont_string_array ksa,
 
 	if (code != 1)
 	    return (code < 0 ? code : gs_note_error(e_Fatal));
-	code = name_ref(senum.next.value.const_bytes,
+	code = name_ref(imemory, senum.next.value.const_bytes,
 			r_size(&senum.next), &nref, 0);
 	if (code < 0)
 	    return code;
@@ -317,7 +317,7 @@ cfont_scalar_array_create(i_ctx_t *i_ctx_p, ref * parray,
 private int
 cfont_name_create(i_ctx_t *i_ctx_p, ref * pnref, const char *str)
 {
-    return name_ref((const byte *)str, strlen(str), pnref, 0);
+    return name_ref(imemory, (const byte *)str, strlen(str), pnref, 0);
 }
 
 /* Create an object by parsing a string. */
@@ -329,7 +329,7 @@ cfont_ref_from_string(i_ctx_t *i_ctx_p, ref * pref, const char *str, uint len)
     int code;
 
     scanner_state_init(&sstate, false);
-    s_init(&s, i_ctx_p->memory);
+    s_init(&s, imemory);
     sread_string(&s, (const byte *)str, len);
     code = scan_token(i_ctx_p, &s, pref, &sstate);
     return (code <= 0 ? code : gs_note_error(e_Fatal));
