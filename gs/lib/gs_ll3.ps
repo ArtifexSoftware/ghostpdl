@@ -354,9 +354,22 @@ systemdict /.reuseparamdict undef
 
 % ------ Miscellaneous ------ %
 
-% Make the .setoverprintmode and .currentoverprintmode operators visible (3015)
-systemdict /setoverprintmode /.setoverprintmode load put
-systemdict /currentoverprintmode /.currentoverprintmode load put
+% Make the setoverprintmode and currentoverprintmode operators visible (3015)
+% Because of the requirements of PDF, the .currentoverprintmode and
+% .setoverprintmode operators have integer parameters.  Thus wee need to
+% convert the Postscript bool parameters to integers.
+%
+/setoverprintmode 		% bool setoverprint -
+{
+  { 1 } { 0 } ifelse		% convert bool to integer
+  //.setoverprintmode
+} odef
+
+/currentoverprintmode 		% - currentoverprintmode bool
+{
+  //.currentoverprintmode
+  0 ne				% convert integers to bool
+} odef
 
 % Define additional user and system parameters.
 /HalftoneMode 0 .definepsuserparam
