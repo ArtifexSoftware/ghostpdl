@@ -1768,16 +1768,17 @@ end
 /InverseEncoding % <encoding> InverseEncoding <dict>
 {
   256 dict begin
-    dup length 1 sub -1 0 {
-      2 copy get
-      dup currentdict exch //knownget exec {
+    dup length 1 sub -1 0 {                       % E i
+      2 copy get                                  % E i n
+      exch                                        % E n i
+      1 index currentdict exch //knownget exec {  % E n i e
         dup type /arraytype eq {
-          aload length 1 add array astore
+          aload length 1 add array astore         % E n e'
         } {
-          2 array astore
+          2 array astore                          % E n e'
         } ifelse
       } if
-      exch def
+      def
     } for
     pop
    currentdict end
@@ -1807,7 +1808,10 @@ end
 } bind def
 
 /PutCharString	% <cmap_array> <glyph_name> <char_code> PutCharString  <cmap_array>
-{ dup type /arraytype eq {
+{ 1 index type /nametype ne {
+    mark (Bad charstring name) //error exec
+  } if
+  dup type /arraytype eq {
     {                                                   % cmap name code
       3 copy //PutCharStringSingle exec                 % cmap name code cmap
       pop pop                                           % cmap name
@@ -1927,7 +1931,13 @@ end
   //PDFR_DEBUG {
     (CharStrings <<) =
     dup {
-      exch //=only exec ( ) print ==
+      exch
+      dup type /nametype eq { 
+        //=only exec 
+      } {
+        ==
+      } ifelse
+      ( ) print ==
     } forall
     (>>) =
   } if

@@ -146,6 +146,8 @@ pdf_write_encoding(gx_device_pdf *pdev, const pdf_font_resource_t *pdfont, long 
     pdf_open_separate(pdev, id);
     s = pdev->strm;
     stream_puts(s, "<</Type/Encoding");
+    if (base_encoding < 0 && pdev->ForOPDFRead)
+	base_encoding = ENCODING_INDEX_STANDARD;
     if (base_encoding > 0)
 	pprints1(s, "/BaseEncoding/%s", encoding_names[base_encoding]);
     stream_puts(s, "/Differences[");
