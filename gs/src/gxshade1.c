@@ -745,50 +745,74 @@ R_compute_radius(floatp x, floatp y, const gs_rect *rect)
 }
 
 /*
- * For differnt radii, compute the coords for /Extend
- * r0 must be greater than r1 
+ * For differnt radii, compute the coords for /Extend option.
+ * r0 MUST be greater than r1.
+ *
+ * The extension is an area which is bounded by the two exterior common
+ * tangent of the given circles except the area between the circles.
+ *
+ * Therefore we can make the extension with the contact points between
+ * the tangent lines and circles, and the intersection point of
+ * the lines (Note that r0 is greater than r1, therefore the exterior common 
+ * tangent for the two circles always intersect at one point.
+ * (The case when both radii are same is handled by 'R_compute_extension_bar')
+ * 
+ * A brief algorithm is following.
+ *
+ * Let C0, C1 be the given circle with r0, r1 as radii.
+ * There exist two contact points for each circles and
+ * say them p0, p1 for C0 and q0, q1 for C1.
+ *
+ * First we compute the intersection point of both tangent lines (isecx, isecy).
+ * Then we get the angle between a tangent line and the line which penentrates
+ * the centers of circles.
+ *
+ * Then we can compute 4 contact points between two tangent lines and two circles,
+ * and 2 points outside the cliping area on the tangent lines.
  */
+
 private void
 R_compute_extension_cone(floatp x0, floatp y0, floatp r0, 
 			 floatp x1, floatp y1, floatp r1, 
 			 floatp max_ext, floatp coord[7][2])
 {
     floatp isecx, isecy;
-    floatp dis;
-    floatp cir_dis;
-    floatp k;
+	floatp dist_c0_isec;
+    floatp dist_c1_isec;
+	floatp dist_p0_isec;
+    floatp dist_q0_isec;
     floatp cost, sint;
-    floatp l;
     floatp dx0, dy0, dx1, dy1;
 
-    coord[0][0] = isecx = (x1-x0)*r0 / (r0-r1) + x0;
-    coord[0][1] = isecy = (y1-y0)*r0 / (r0-r1) + y0;
+    isecx = (x1-x0)*r0 / (r0-r1) + x0;
+    isecy = (y1-y0)*r0 / (r0-r1) + y0;
 
-    dis = hypot(x1-isecx, y1-isecy);
-    k = sqrt(dis*dis-r1*r1);
-    cost = k / dis;
-    sint = r1 / dis;
+	dist_c0_isec = hypot(x0-isecx, y0-isecy);
+    dist_c1_isec = hypot(x1-isecx, y1-isecy);
+	dist_p0_isec = sqrt(dist_c0_isec*dist_c0_isec - r0*r0);
+	dist_q0_isec = sqrt(dist_c1_isec*dist_c1_isec - r1*r1);    
+    cost = dist_p0_isec / dist_c0_isec;
+    sint = r0 / dist_c0_isec;
 
-    cir_dis = hypot(x1-x0, y1-y0);
-    l = sqrt(cir_dis*cir_dis - (r0-r1)*(r0-r1));
-
-    dx0 = ((x1-isecx)*cost - (y1-isecy)*sint) / dis;
-    dy0 = ((x1-isecx)*sint + (y1-isecy)*cost) / dis;
+    dx0 = ((x0-isecx)*cost - (y0-isecy)*sint) / dist_c0_isec;
+    dy0 = ((x0-isecx)*sint + (y0-isecy)*cost) / dist_c0_isec;
     sint = -sint;
-    dx1 = ((x1-isecx)*cost - (y1-isecy)*sint) / dis;
-    dy1 = ((x1-isecx)*sint + (y1-isecy)*cost) / dis;
+    dx1 = ((x0-isecx)*cost - (y0-isecy)*sint) / dist_c0_isec;
+    dy1 = ((x0-isecx)*sint + (y0-isecy)*cost) / dist_c0_isec;
 
-    coord[1][0] = isecx + dx0 * k;
-    coord[1][1] = isecy + dy0 * k;
-    coord[2][0] = isecx + dx1 * k;
-    coord[2][1] = isecy + dy1 * k;
+	coord[0][0] = isecx;
+	coord[0][1] = isecy;
+    coord[1][0] = isecx + dx0 * dist_q0_isec;
+    coord[1][1] = isecy + dy0 * dist_q0_isec;
+    coord[2][0] = isecx + dx1 * dist_q0_isec;
+    coord[2][1] = isecy + dy1 * dist_q0_isec;
 
-    coord[3][0] = isecx + dx0 * (l+k);
-    coord[3][1] = isecy + dy0 * (l+k);
+    coord[3][0] = isecx + dx0 * dist_p0_isec;
+    coord[3][1] = isecy + dy0 * dist_p0_isec;
     coord[4][0] = isecx + dx0 * max_ext;
     coord[4][1] = isecy + dy0 * max_ext;
-    coord[5][0] = isecx + dx1 * (l+k);
-    coord[5][1] = isecy + dy1 * (l+k);
+    coord[5][0] = isecx + dx1 * dist_p0_isec;
+    coord[5][1] = isecy + dy1 * dist_p0_isec;
     coord[6][0] = isecx + dx1 * max_ext;
     coord[6][1] = isecy + dy1 * max_ext;
 }
