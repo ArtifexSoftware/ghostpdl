@@ -8,6 +8,8 @@ compile
 depcomp
 config.h
 config.h.in
+config_types.h
+config_types.h.in
 stamp-h
 stamp-h1
 stamp-h.in
