@@ -175,6 +175,11 @@ WX=$(COMPILE_FOR_DLL)
 WX=$(COMPILE_FOR_EXE)
 !endif
 
+
+!ifndef COMPILE_INITS
+COMPILE_INITS=0
+!endif
+
 !if $(COMPILE_INITS)
 ZM=/Zm600
 !else
