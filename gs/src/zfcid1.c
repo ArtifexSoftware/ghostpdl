@@ -125,6 +125,10 @@ z11_get_outline(gs_font_type42 * pfont, uint glyph_index,
     }
     return code;
 }
+
+#define GET_U16_MSB(p) (((uint)((p)[0]) << 8) + (p)[1])
+#define GET_S16_MSB(p) (int)((GET_U16_MSB(p) ^ 0x8000) - 0x8000)
+
 private int
 z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 		float sbw[4])
@@ -143,8 +147,8 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 	return pfcid->cidata.orig_procs.get_metrics(pfont, glyph_index, wmode,
 						    sbw);
     pmetrics = gdata.bits.data + skip - 4 - (wmode << 2);
-    lsb = (pmetrics[2] << 8) + pmetrics[3];
-    width = (pmetrics[0] << 8) + pmetrics[1];
+    lsb = GET_S16_MSB(pmetrics + 2);
+    width = GET_U16_MSB(pmetrics + 0);
     {
 	double factor = 1.0 / pfont->data.unitsPerEm;
 

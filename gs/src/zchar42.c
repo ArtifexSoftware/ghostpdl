@@ -95,6 +95,7 @@ ztype42execchar(i_ctx_t *i_ctx_p)
 				       (uint) op->value.intval, false, sbw42);
 	if (code < 0)
 	    return code;
+	present = metricsSideBearingAndWidth;
 	for (i = 0; i < 4; ++i)
 	    sbw[i] = sbw42[i];
 	w[0] = sbw[2];

@@ -789,7 +789,7 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
 	return 0;
     numContours = S16(gdata);
     if (numContours >= 0) {
-	simple_glyph_metrics(pfont, glyph_index, pfont->WMode, sbw);
+	gs_type42_get_metrics(pfont, glyph_index, sbw);
 	code = append_simple(gdata, sbw, pmat, ppath, ppts, pfont);
 	gs_glyph_data_free(&glyph_data, "check_component");
 	return (code < 0 ? code : 0); /* simple */
