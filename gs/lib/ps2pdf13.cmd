@@ -8,4 +8,4 @@
 
 parse arg params
 
-call 'ps2pdf' '-dCompatibilityLevel=1.2' params
+call 'ps2pdf' '-dCompatibilityLevel=1.3' params
