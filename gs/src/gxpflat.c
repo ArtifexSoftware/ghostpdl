@@ -546,6 +546,11 @@ gx_flattened_curve_iterator__init(gx_flattened_curve_iterator *this,
 	this->x3 = x0;
 	this->y3 = y0;
     }
+#   if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+#   if CURVED_TRAPEZOID_FILL
+    this->reverse = reverse;
+#   endif
+#   endif
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
 #   ifdef DEBUG
@@ -693,7 +698,19 @@ gx_flattened_curve_iterator__next(gx_flattened_curve_iterator *this)
 		  (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5) ?
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
-	if (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)) {
+	if (
+#	if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+#	if CURVED_TRAPEZOID_FILL
+	    this->reverse ? ((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5)
+		          : ((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)
+#	else
+	    ((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)
+#	endif
+#	else
+	    (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)) &&
+	    (((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5))
+#	endif
+	    ) {
 	    this->lx1 = x, this->ly1 = y;
 	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
 	    return true;
@@ -799,6 +816,7 @@ private inline bool
 gx_check_nearly_collinear_inline(fixed *x0, fixed *y0, fixed *x1, fixed *y1, fixed *x2, fixed *y2)
 {
 #if MERGE_COLLINEAR_SEGMENTS
+    /* fixme: optimise: don't check the coordinate order for monotonic curves. */
 #   define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
     if (coord_near(*x2, *x1)) {	/* X coordinates are within a half-pixel. */
 	if (coord_near(*x2, *x0) &&

@@ -812,11 +812,12 @@ step_al(active_line *alp)
     /* We can't provide a full compatibility because
        the new code flattens DIR_DOWN curves in the reverse direction. 
        (Division points may be shifted due to the numeric errors difference,
-       and MERGE_COLLINEAR_SEGMENTS drops different points.) */
+       and MERGE_COLLINEAR_SEGMENTS drops different points.) 
+       But this shouldn't cause a difference for monotonic curves. */
     if (alp->direction == DIR_UP && alp->first_flattened) {
 	/* The old code isn't symmetric : it always yields the first point. */
     } else {
-	/* Poorly optimized because it's just for a testing purpose. */
+	/* fixme: optimize. */
 	while (alp->more_flattened) {
 	    bool more;
 	    gx_flattened_curve_iterator fi = alp->fi;

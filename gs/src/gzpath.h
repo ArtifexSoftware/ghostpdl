@@ -410,6 +410,11 @@ struct gx_flattened_curve_iterator_s {
     fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
     uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
     segment_notes notes;
+#if CURVED_TRAPEZOID_FILL
+#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+    bool reverse;
+#endif
+#endif
     /* public : */
     fixed lx0, ly0, lx1, ly1;
 };
