@@ -43,7 +43,8 @@ typedef struct pl_main_instance_s {
 	/* The following are updated dynamically. */
   int page_count;		/* # of pages printed */
 
-  bool print_page_count;
+  bool saved_hwres;
+  int hwres[2];
   char pcl_personality[6];      /* a character string to set pcl's
 				   personality - rtl, pcl5c, pcl5e, and
 				   pcl == default.  NB doesn't belong here. */
@@ -73,5 +74,4 @@ void pl_print_usage(P3(gs_memory_t *mem, const pl_main_instance_t *pmi,
 /* Finish a page, possibly printing usage statistics and/or pausing. */
 int pl_finish_page(P4(pl_main_instance_t *pmi, gs_state *pgs,
 		      int num_copies, int flush));
-
 #endif				/* plmain_INCLUDED */

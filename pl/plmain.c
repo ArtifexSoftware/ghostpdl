@@ -687,7 +687,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 	pti->first_page = 1;
 	pti->last_page = max_int;
 	pti->page_count = 0;
-	pti->print_page_count = false;
+	pti->saved_hwres = false;
 	strncpy(&pti->pcl_personality[0], "PCL", sizeof(pti->pcl_personality)-1);
 }
 
@@ -740,10 +740,6 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 	case '\0':
 	    /* read from stdin - must be last arg */
 	    continue;
-	case 'c':
-	case 'C':
-	    pmi->print_page_count = true;
-	    break;
 	case 'd':
 	case 'D':
 	    if ( !strcmp(arg, "BATCH") )
@@ -1045,8 +1041,6 @@ pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
 	pl_main_instance_t *pti = (pl_main_instance_t *)closure;
 	++(pti->page_count);
 	/* print the page number to stderr */
-	if ( pti->print_page_count )
-	    fprintf(gs_stdout, "Printing page %d\n", pti->page_count);
 	if ( pti->page_count >= pti->first_page &&
 	     pti->page_count <= pti->last_page
 	   )

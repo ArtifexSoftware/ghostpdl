@@ -476,7 +476,9 @@ pcl_end_page(
 	}
     }
     /* output the page */
-    (*pcs->end_page)(pcs, pcs->num_copies, true);
+    code = (*pcs->end_page)(pcs, pcs->num_copies, true);
+    if ( code < 0 )
+        return code;
     /* allow the logical orientation command to be used again */
     pcs->orientation_set = false;
 
