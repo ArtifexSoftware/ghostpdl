@@ -1571,7 +1571,11 @@ the non-standard definition
 
 <p>
 and since shared versions of this library will not have been compiled this
-way, you awill get errors on some valid PostScript and PDF input files.
+way, you will get errors on some valid PostScript and PDF input files.  Note
+also that because not all the JPEG library header files that Ghostscript
+uses are normally installed in <b><tt>/usr/include</tt></b>, you must have
+the source code for this library available even if you set
+<b><tt>SHARE_JPEG</tt></b> to 1.
 
 <p>
 If the X11 client header files are located in some directory which your
