@@ -714,7 +714,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    tab += 16;
 	}
 
-	offset = put_table(tab, "head", head_checksum, offset, 56);
+	/*
+	 * Note that the 'head' table must have length 54, even though
+	 * it occupies 56 bytes on the file.
+	 */
+	offset = put_table(tab, "head", head_checksum, offset, 54);
 	tab += 16;
     }
     numTables = numTables_out;
