@@ -457,7 +457,10 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 					"copy_glyph_data(data)");
 
 	    if (str == 0)
-		code = gs_note_error(font->memory, gs_error_VMerror);
+                if (str_size == 0)
+                    code = gs_note_error(font->memory, gs_error_invalidaccess);
+                else
+                    code = gs_note_error(font->memory, gs_error_VMerror);
 	    else {
 		if (prefix_bytes)
 		    memcpy(str, prefix, prefix_bytes);
