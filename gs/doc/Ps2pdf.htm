@@ -23,6 +23,7 @@
 <blockquote><ul>
 <li><a href="#Overview">Overview</a>
 <li><a href="#Usage">Usage</a>
+<li><a href="#Orientation">Setting page orientation</a>
 <li><a href="#Options">Options</a>
 <li><a href="#Limitations">Limitations</a>
 <li><a href="#Problems">Known problems</a>
@@ -130,6 +131,39 @@ executable; otherwise the script assumes the executable is named
 <b><tt>gswin32c</tt></b>.  So in these environments, if the executable has a
 different name, you must set <b><tt>GSC</tt></b> to the name of the
 executable.
+
+<hr>
+
+<h2><a name="Orientation"></a>Setting page orientation</h2>
+
+<p>
+By default Ghostscript determines viewing page orientation based on the dominant
+text orientation on the page. Sometimes, when the page has text in several
+orientations or has no text at all, wrong orientation can be selected.
+
+<p>
+Acrobat Distiller parameter <b><tt>AutoRotatePages</b></tt> controls the
+automatic orientation selection algorithm. On Ghostscript, besides
+input stream, Distiller parameters can be given as command line arguments.
+For instance: <b><tt>-dAutoRotatePages=/None</b></tt> or
+<b><tt>/All</b></tt> or <b><tt>/PageByPage</b></tt>.
+
+<p>
+When there is no text on the page or automatic page rotation is set to
+<b><tt>/None</b></tt> an orientation value from setpagedevice is used.
+Valid values are: <b><tt>0</b></tt> (portrait),
+<b><tt>3</b></tt> (landscape), <b><tt>2</b></tt> (upside down),
+and <b><tt>1</b></tt> (seascape). The orientation can be set from the
+command line as <b><tt>"-c &lt;&lt;/Orientation 3&gt;&gt; setpagedevice"</b></tt>
+using Ghostscript directly but cannot be set in <b><tt>ps2pdf</b></tt>.
+See <a href="#Limitations">Limitations</a> below.
+</pre>
+
+<p>
+Ghostscript passes the orientation values from DSC comments to
+<b><tt>pdfwrite</b></tt> driver
+but they are effectively ignored there. This appears to be consistent with
+Distiller 5 behavior.
 
 <hr>
 
@@ -450,6 +484,17 @@ state parameters, and it handles images with soft masks, but it does not
 handle transparency groups, or soft masks in the graphics state.  (Note that
 there is no standard way to specify any of these things in PostScript, so
 these statements only apply when the input file is already a PDF 1.4 file.)
+
+<p>
+<b><tt>ps2pdf</tt></b> provides simplified interface to Ghostscript
+command line. It is not possible to use <tt><b>-c</tt></b> option or pass
+multiple source files. For the unrestricted access to the command line
+parameters, use Ghostscript directly.
+
+<blockquote><b><tt>
+gs -q -dSAFER -dNOPAUSE -dBATCH -sOutputFile=file.pdf </tt></b><em>[more options]</em><b><tt> \<br>
+&nbsp;&nbsp;-sDEVICE=pdfwrite -c .setpdfwrite -f </b></tt><em>source1.ps [more files]</em>
+</blockquote>
 
 <hr>
 
