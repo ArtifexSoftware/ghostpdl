@@ -43,7 +43,7 @@ private_st_pdf_outline_fonts();
 
 private
 ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
-ENUM_PREFIX(st_pdf_resource, 10);
+ENUM_PREFIX(st_pdf_resource, 11);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
 case 1: ENUM_RETURN(pdfont->FontDescriptor);
 case 2: ENUM_RETURN(pdfont->base_font);
@@ -67,10 +67,19 @@ case 9: switch (pdfont->FontType) {
 	     ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
  case ft_CID_TrueType:
      ENUM_RETURN(pdfont->u.cidfont.CIDToGIDMap);
+ case ft_encrypted:
+ case ft_encrypted2:
+ case ft_TrueType:
+ case ft_user_defined:
+     ENUM_RETURN(pdfont->u.simple.v);
+ default:
+     ENUM_RETURN(0);
+}
+case 10: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  default:
-     ENUM_RETURN(pdfont->u.simple.v);
+     ENUM_RETURN(0);
 }
 ENUM_PTRS_END
 private
