@@ -7,6 +7,86 @@
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
+#ifdef GILES
+
+struct _Jbig2SymbolDictionary {
+  int16 flags;
+  int8 SDAT_flags[8];
+  byte SDRAT_flags[4];
+  int32 SDNUMEXSYMS;
+  int32 SDNUMNEWSYMS;
+};
+
+/* parse the symbol dictionary starting at ctx->offset
+   a pointer to a new Jbig2SymbolDictionary struct is returned
+
+   the ctx->offset pointer is not advanced; the caller must
+   take care of that, using the data_length field of the
+   segment header.
+*/
+static Jbig2SymbolDictionary *
+jbig2_read_symbol_dictionary (Jbig2Ctx_foo *ctx)
+{
+  Jbig2SymbolDictionary *result = (Jbig2SymbolDictionary *)malloc(sizeof(Jbig2SymbolDictionary));
+  int offset = ctx->offset;
+  bool SDHUFF, SDREFAGG, SDRTEMPLATE;
+  int SDTEMPLATE;
+  int sdat_bytes;
+
+  /* 7.4.2.1.1 */
+  result->flags = get_int16(ctx, offset);
+  offset += 2;
+
+  SDHUFF = result->flags & 1;
+  SDREFAGG = (result->flags >> 1) & 1;
+  SDTEMPLATE = (result->flags >> 10) & 3;
+  SDRTEMPLATE = (result->flags >> 12) & 1;
+
+  /* FIXME: there are quite a few of these conditions to check */
+  /* maybe #ifdef CONFORMANCE and a separate routine */
+  if(!SDHUFF && (result->flags & 0x0006)) {
+	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDH is not.\n");
+  }
+  if(!SDHUFF && (result->flags & 0x0018)) {
+	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDW is not.\n");
+  }
+
+  /* 7.4.2.1.2 - Symbol dictionary AT flags */
+  if (!SDHUFF)
+    {
+      int SDTEMPLATE = (result->flags >> 10) & 3;
+      if (SDTEMPLATE == 0)
+	sdat_bytes = 8;
+      else
+	sdat_bytes = 2;
+    }
+  else
+    sdat_bytes = 0;
+  get_bytes(ctx, result->SDAT_flags, sdat_bytes, offset);
+  memset(&result->SDAT_flags + sdat_bytes, 0, 8 - sdat_bytes);
+  offset += sdat_bytes;
+
+  /* 7.4.2.1.3 - Symbol dictionary refinement AT flags */
+  if (SDREFAGG && !SDRTEMPLATE)
+    {
+      get_bytes(ctx, result->SDRAT_flags, 4, offset);
+      offset += 4;
+    }
+
+  /* 7.4.2.1.4 */
+  result->SDNUMEXSYMS = get_int32(ctx, offset);
+
+  /* 7.4.2.1.5 */
+  result->SDNUMNEWSYMS = get_int32(ctx, offset + 4);
+  offset += 8;
+
+  /* hardwire for the first annex-h example */
+  
+  return result;
+}
+
+#endif /* Giles */
+
 /* Table 13 */
 typedef struct {
   bool SDHUFF;

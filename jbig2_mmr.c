@@ -806,7 +806,7 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx,
 
   for (y = 0; y < params->GBH; y++)
     {
-      jbig2_decode_mmr_line(&mmr, gbreg_line);
+      jbig2_decode_mmr_line(&mmr, gbreg_line, NULL);
       gbreg_line += rowstride;
     }
 }

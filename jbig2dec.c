@@ -1,21 +1,26 @@
 /*
     jbig2dec
     
-    Copyright (C) 2002 artofcode LLC.
+    Copyright (C) 2001-2002 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.16 2002/03/28 08:28:02 giles Exp $
+    $Id: jbig2dec.c,v 1.17 2002/05/08 03:03:18 giles Exp $
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <getopt.h>
+
+#ifdef HAVE_GETOPT_H
+# include <getopt.h>
+#else
+# include "getopt.h"
+#endif
 
 #include "jbig2.h"
 
@@ -31,42 +36,7 @@ typedef struct {
 
 
 #ifdef DEAD_CODE
-#include "jbig2dec.h"
 
-typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
-typedef struct _Jbig2PageInfo Jbig2PageInfo;
-
-/* our main 'context' structure for decoding a jbig2 bitstream */
-struct _Jbig2Ctx_foo {
-  FILE *f;
-  int offset;
-  int eof;
-  
-  int32 n_pages;
-  byte flags;
-};
-
-/* useful masks for parsing the flags field */
-#define JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS	0x01
-#define JBIG2_FILE_FLAGS_PAGECOUNT_UNKNOWN	0x02
-
-
-struct _Jbig2SymbolDictionary {
-  int16 flags;
-  int8 SDAT_flags[8];
-  byte SDRAT_flags[4];
-  int32 SDNUMEXSYMS;
-  int32 SDNUMNEWSYMS;
-};
-
-struct _Jbig2PageInfo {
-	int32	height, width;	/* in pixels */
-	int32	x_resolution,
-			y_resolution;	/* in pixels per meter */
-	int16	stripe_size;
-	bool	striped;
-	byte	flags;
-};
 
 int32
 get_bytes (Jbig2Ctx_foo *ctx, byte *buf, int size, int off)
@@ -78,33 +48,6 @@ get_bytes (Jbig2Ctx_foo *ctx, byte *buf, int size, int off)
   if (n_bytes < size)
     ctx->eof = TRUE;
   return n_bytes;
-}
-
-int16
-get_int16 (Jbig2Ctx_foo *ctx, int off)
-{
-  byte buf[2];
-
-  get_bytes(ctx, buf, 2, off);
-  return (buf[0] << 8) | buf[1];
-}
-
-byte
-get_byte (Jbig2Ctx_foo *ctx, int off)
-{
-  byte buf;
-  
-  get_bytes(ctx, &buf, 1, off);
-  return buf;
-}
-
-int32
-get_int32 (Jbig2Ctx_foo *ctx, int off)
-{
-  byte buf[4];
-
-  get_bytes(ctx, buf, 4, off);
-  return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 }
 
 static Jbig2Ctx_foo *
@@ -215,249 +158,8 @@ jbig2_read_segment_header (Jbig2Ctx_foo *ctx)
   return result;
 }
 
-/* parse the symbol dictionary starting at ctx->offset
-   a pointer to a new Jbig2SymbolDictionary struct is returned
-
-   the ctx->offset pointer is not advanced; the caller must
-   take care of that, using the data_length field of the
-   segment header.
-*/
-static Jbig2SymbolDictionary *
-jbig2_read_symbol_dictionary (Jbig2Ctx_foo *ctx)
-{
-  Jbig2SymbolDictionary *result = (Jbig2SymbolDictionary *)malloc(sizeof(Jbig2SymbolDictionary));
-  int offset = ctx->offset;
-  bool SDHUFF, SDREFAGG, SDRTEMPLATE;
-  int SDTEMPLATE;
-  int sdat_bytes;
-
-  /* 7.4.2.1.1 */
-  result->flags = get_int16(ctx, offset);
-  offset += 2;
-
-  SDHUFF = result->flags & 1;
-  SDREFAGG = (result->flags >> 1) & 1;
-  SDTEMPLATE = (result->flags >> 10) & 3;
-  SDRTEMPLATE = (result->flags >> 12) & 1;
-
-  /* FIXME: there are quite a few of these conditions to check */
-  /* maybe #ifdef CONFORMANCE and a separate routine */
-  if(!SDHUFF && (result->flags & 0x0006)) {
-	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDH is not.\n");
-  }
-  if(!SDHUFF && (result->flags & 0x0018)) {
-	printf("warning: SDHUFF is zero, but contrary to spec SDHUFFDW is not.\n");
-  }
-
-  /* 7.4.2.1.2 - Symbol dictionary AT flags */
-  if (!SDHUFF)
-    {
-      int SDTEMPLATE = (result->flags >> 10) & 3;
-      if (SDTEMPLATE == 0)
-	sdat_bytes = 8;
-      else
-	sdat_bytes = 2;
-    }
-  else
-    sdat_bytes = 0;
-  get_bytes(ctx, result->SDAT_flags, sdat_bytes, offset);
-  memset(&result->SDAT_flags + sdat_bytes, 0, 8 - sdat_bytes);
-  offset += sdat_bytes;
-
-  /* 7.4.2.1.3 - Symbol dictionary refinement AT flags */
-  if (SDREFAGG && !SDRTEMPLATE)
-    {
-      get_bytes(ctx, result->SDRAT_flags, 4, offset);
-      offset += 4;
-    }
-
-  /* 7.4.2.1.4 */
-  result->SDNUMEXSYMS = get_int32(ctx, offset);
-
-  /* 7.4.2.1.5 */
-  result->SDNUMNEWSYMS = get_int32(ctx, offset + 4);
-  offset += 8;
-
-  /* hardwire for the first annex-h example */
-  
-  return result;
-}
-
-/* parse the page info segment data starting at ctx->offset
-   a pointer to a new Jbig2PageInfo struct is returned
-
-   the ctx->offset pointer is not advanced; the caller must
-   take care of that, using the data_length field of the
-   segment header.
-*/
-static Jbig2PageInfo *
-jbig2_read_page_info (Jbig2Ctx_foo *ctx) {
-  Jbig2PageInfo *info = (Jbig2PageInfo *)malloc(sizeof(Jbig2PageInfo));
-  int offset = ctx->offset;
-
-	if (info == NULL) {
-		printf("unable to allocate memory to parse page info segment\n");
-		return NULL;
-	}
-	
-	info->width = get_int32(ctx, offset);
-	info->height = get_int32(ctx, offset + 4);
-	offset += 8;
-	
-	info->x_resolution = get_int32(ctx, offset);
-	info->y_resolution = get_int32(ctx, offset);
-	offset += 8;
-	
-	get_bytes(ctx, &(info->flags), 1, offset++);
-	
-	{
-	int16 striping = get_int16(ctx, offset);
-	if (striping & 0x8000) {
-		info->striped = TRUE;
-		info->stripe_size = striping & 0x7FFF;
-	} else {
-		info->striped = FALSE;
-		info->stripe_size = 0;	/* would info->height be better? */
-	}
-	offset += 2;
-	}
-	
-	return info;
-}
-
-static void
-dump_symbol_dictionary (Jbig2SymbolDictionary *sd)
-{
-  printf ("symbol dictionary: flags = %04x, %d new symbols, %d exported\n",
-	  sd->flags, sd->SDNUMNEWSYMS, sd->SDNUMEXSYMS);
-}
-
-static void
-dump_page_info(Jbig2PageInfo *info)
-{
-	printf("image is %dx%d ", info->width, info->height);
-	if (info->x_resolution == 0) {
-		printf("(unknown res) ");
-	} else if (info->x_resolution == info->y_resolution) {
-		printf("(%d ppm) ", info->x_resolution);
-	} else {
-		printf("(%dx%d ppm) ", info->x_resolution, info->y_resolution);
-	}
-	if (info->striped) {
-		printf("\tmaximum stripe size: %d\n", info->stripe_size);
-	} else {
-		printf("\tno striping\n");
-	}
-}
-
-static bool
-dump_segment (Jbig2Ctx_foo *ctx)
-{
-  Jbig2SegmentHeader *sh;
-  Jbig2SymbolDictionary *sd;
-  Jbig2PageInfo	*page_info;
-
-  sh = jbig2_read_segment_header(ctx);
-  if (sh == NULL)
-    return TRUE;
-  
-  printf("segment %d (%d bytes)\t", sh->segment_number, sh->data_length);
-  switch (sh->flags & 63)
-    {
-    case 0:
-      sd = jbig2_read_symbol_dictionary(ctx);
-	  printf("\n");
-      dump_symbol_dictionary(sd);
-      break;
-	case 4:
-		printf("intermediate text region:");
-		break;
-	case 6:
-		printf("immediate text region:");
-		break;
-	case 7:
-		printf("immediate lossless text region:");
-		break;
-	case 16:
-		printf("pattern dictionary:");
-		break;
-	case 20:
-		printf("intermediate halftone region:");
-		break;
-	case 22:
-		printf("immediate halftone region:");
-		break;
-	case 23:
-		printf("immediate lossless halftone region:");
-		break;
-	case 36:
-		printf("intermediate generic region:");
-		break;
-	case 38:
-		printf("immediate generic region:");
-		break;
-	case 39:
-		printf("immediate lossless generic region:");
-		break;
-	case 40:
-		printf("intermediate generic refinement region:");
-		break;
-	case 42:
-		printf("immediate generic refinement region:");
-		break;
-	case 43:
-		printf("immediate lossless generic refinement region:");
-		break;
-	case 48:
-		page_info = jbig2_read_page_info(ctx);
-		printf("page info:\n");
-		if (page_info) dump_page_info(page_info);
-		break;
-	case 49:
-		printf("end of page");
-		break;
-	case 50:
-		printf("end of stripe");
-		break;
-    case 51:
-      printf("end of file\n");
-      return TRUE;
-	  break;
-	case 52:
-		printf("profiles:");
-		break;
-	case 53:
-		printf("tables:");
-		break;
-	case 62:
-		printf("extension:");
-		break;
-	default:
-		printf("UNKNOWN SEGMENT TYPE!!!");
-    }
-	printf("\tflags = %02x, page %d\n",
-	  sh->flags, sh->page_association);
-
-  ctx->offset += sh->data_length;
-  return FALSE;
-}
-
-static void
-dump_jbig2 (Jbig2Ctx_foo *ctx)
-{
-  bool last;
-
-  if (!ctx) return;
-  
-  printf("Number of pages = %d\n", ctx->n_pages);
-  for (;;)
-    {
-      last = dump_segment(ctx);
-      if (last)
-	break;
-    }
-}
 #endif	/* DEAD_CODE */
+
 
 static int
 print_usage (void)
