@@ -10,8 +10,8 @@
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
 /*$Id$ */
-#ifndef PL_STDIO_H 
-#define PL_STDIO_H 
+#ifndef GSLIBCTX_H 
+#define GSLIBCTX_H 
 
 #include "std.h"
 #include "stdio.h"
@@ -26,7 +26,7 @@
 # define GSDLLCALL
 #endif
 
-typedef struct pl_stdio_s
+typedef struct gs_lib_ctx_s
 {  
     FILE *fstdin;
     FILE *fstdout;
@@ -41,13 +41,13 @@ typedef struct pl_stdio_s
     int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
     int (GSDLLCALL *poll_fn)(void *caller_handle);  
     ulong gs_next_id; /* gs_id initialized here, private variable of gs_next_ids() */
-} pl_stdio_t;
+} gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.
  * it is the responsibility of the gs_memory_t objects to copy 
  * the pointer to subsequent memory objects.
  */
-int pl_stdio_init( gs_memory_t *mem ); 
+int gs_lib_ctx_init( gs_memory_t *mem ); 
 
 
-#endif /* PL_STDIO_H */
+#endif /* GSLIBCTX_H */

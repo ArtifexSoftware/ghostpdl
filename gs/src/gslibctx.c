@@ -11,13 +11,15 @@
 
 /*$Id$ */
 
-/* std in out err functionality for ghostscript */
+/* library context functionality for ghostscript 
+ * api callers get a gs_main_instance 
+ */
 
 /* Capture stdin/out/err before gs.h redefines them. */
 #include <stdio.h>
 
 static void
-pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
+gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
 {
     *in = stdin;
     *out = stdout;
@@ -25,26 +27,27 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 }
 
 
-#include "pl_stdio.h"
+#include "gslibctx.h"
 #include "gsmemory.h"
 
-int pl_stdio_init( gs_memory_t *mem )
+int gs_lib_ctx_init( gs_memory_t *mem )
 {
-    pl_stdio_t *pio = 0;
+    gs_lib_ctx_t *pio = 0;
 
     if ( mem == 0 ) 
 	return -1;  /* assert mem != 0 */
 
-    if (mem->pl_stdio) /* one time initialization */
+    if (mem->gs_lib_ctx) /* one time initialization */
 	return 0;  
 
-    pio = mem->pl_stdio = (pl_stdio_t*)gs_alloc_bytes_immovable(mem, 
-								sizeof(pl_stdio_t), 
-								"pl_stdio_init");
+    pio = mem->gs_lib_ctx = 
+	(gs_lib_ctx_t*)gs_alloc_bytes_immovable(mem, 
+						sizeof(gs_lib_ctx_t), 
+						"gs_lib_ctx_init");
     if( pio == 0 ) 
 	return -1;
     
-    pl_get_real_stdio(&pio->fstdin, &pio->fstdout, &pio->fstderr );
+    gs_lib_ctx_get_real_stdio(&pio->fstdin, &pio->fstdout, &pio->fstderr );
 
     pio->stdout_is_redirected = false;
     pio->stdout_to_stderr = false;
@@ -65,7 +68,7 @@ int outwrite(const gs_memory_t *mem, const char *str, int len)
 {
     int code;
     FILE *fout;
-    pl_stdio_t *pio = mem->pl_stdio;
+    gs_lib_ctx_t *pio = mem->gs_lib_ctx;
 
     if (len == 0)
 	return 0;
@@ -90,32 +93,32 @@ int errwrite(const gs_memory_t *mem, const char *str, int len)
     int code;
     if (len == 0)
 	return 0;
-    if (mem->pl_stdio->stderr_fn)
-	return (*mem->pl_stdio->stderr_fn)(mem->pl_stdio->caller_handle, str, len);
+    if (mem->gs_lib_ctx->stderr_fn)
+	return (*mem->gs_lib_ctx->stderr_fn)(mem->gs_lib_ctx->caller_handle, str, len);
 
-    code = fwrite(str, 1, len, mem->pl_stdio->fstderr);
-    fflush(mem->pl_stdio->fstderr);
+    code = fwrite(str, 1, len, mem->gs_lib_ctx->fstderr);
+    fflush(mem->gs_lib_ctx->fstderr);
     return code;
 }
 
 void outflush(const gs_memory_t *mem)
 {
-    if (mem->pl_stdio->stdout_is_redirected) {
-	if (mem->pl_stdio->stdout_to_stderr) {
-	    if (!mem->pl_stdio->stderr_fn)
-		fflush(mem->pl_stdio->fstderr);
+    if (mem->gs_lib_ctx->stdout_is_redirected) {
+	if (mem->gs_lib_ctx->stdout_to_stderr) {
+	    if (!mem->gs_lib_ctx->stderr_fn)
+		fflush(mem->gs_lib_ctx->fstderr);
 	}
 	else
-	    fflush(mem->pl_stdio->fstdout2);
+	    fflush(mem->gs_lib_ctx->fstdout2);
     }
-    else if (!mem->pl_stdio->stdout_fn)
-        fflush(mem->pl_stdio->fstdout);
+    else if (!mem->gs_lib_ctx->stdout_fn)
+        fflush(mem->gs_lib_ctx->fstdout);
 }
 
 void errflush(const gs_memory_t *mem)
 {
-    if (!mem->pl_stdio->stderr_fn)
-        fflush(mem->pl_stdio->fstderr);
+    if (!mem->gs_lib_ctx->stderr_fn)
+        fflush(mem->gs_lib_ctx->fstderr);
     /* else nothing to flush */
 }
 
