@@ -209,8 +209,8 @@ int pl_tt_alloc_char_glyphs(P4(pl_font_t *plfont, uint num_chars,
 #  define gs_font_dir_DEFINED	
 typedef struct gs_font_dir_s gs_font_dir;
 #endif
-int pl_fill_in_font(P4(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
-		       gs_memory_t *mem));
+int pl_fill_in_font(P5(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
+		       gs_memory_t *mem, char *font_name));
 
 /* Fill in bitmap and intellifont gs_font boilerplate. */
 #ifndef gs_font_base_DEFINED
@@ -264,8 +264,8 @@ int pl_font_scan_segments(P6(pl_font_t *plfont, int fst_offset,
 			     const pl_font_offset_errors_t *pfoe));
 
 /* Load a built-in (TrueType) font from external storage. */
-int pl_load_tt_font(P5(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
-		       long unique_id, pl_font_t **pplfont));
+int pl_load_tt_font(P6(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
+		       long unique_id, pl_font_t **pplfont, char *font_name));
 
 /* allocate, read in and free tt font files to and from memory */
 int pl_alloc_tt_fontfile_buffer(P4(FILE *in, gs_memory_t *mem, byte **pptt_font_data, ulong *size));

@@ -82,7 +82,9 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 /* Get the name of a glyph.  We don't need to support this. */
 private const char *
 pl_glyph_name(gs_glyph glyph, uint *plen)
-{	return 0;
+{	
+    *plen = 0;
+    return 0;
 }
 
 /* Get a glyph from a known encoding.  We don't support this either. */
@@ -189,7 +191,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
 	      if ( pfont == 0 )
 		return 0;
-	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem);
+	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
 	      pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
 	      break;
 	    }
@@ -199,7 +201,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		gs_alloc_struct(mem, gs_font_base, &st_gs_font_base, cname);
 	      if ( pfont == 0 )
 		return 0;
-	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem);
+	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
 	      pl_fill_in_intelli_font(pfont, gs_next_ids(1));
 	      break;
 	    }
@@ -214,7 +216,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		bool downloaded = (pfont_src->data.get_outline == pl_tt_get_outline);
 		if ( pfont == 0 )
 		  return 0;
-		pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem);
+		pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
 		pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(1));
 	      }
 	      break;
@@ -294,12 +296,15 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 /* Fill in generic font boilerplate. */
 int
 pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
-  gs_memory_t *mem)
-{	plfont->pfont = pfont;
+  gs_memory_t *mem, char *font_name)
+{	
+         int i;
+	plfont->pfont = pfont;
 	/* Initialize generic font data. */
 	pfont->next = pfont->prev = 0;
 	pfont->memory = mem;
 	pfont->dir = pdir;
+	pfont->is_resource = false;  
 	gs_notify_init(&pfont->notify_list, gs_memory_stable(mem));
 	pfont->base = pfont;
 	pfont->client_data = plfont;
@@ -314,11 +319,15 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;
 	pfont->id = gs_next_ids(1);
-	pfont->key_name.chars[0] = pfont->font_name.chars[0] = (byte)(pfont->id & 0xff);
-	pfont->key_name.chars[1] = pfont->font_name.chars[1] = (byte)(pfont->id >> 8 & 0xff);
-	pfont->key_name.chars[2] = pfont->font_name.chars[2] = (byte)(pfont->id >> 16 & 0xff);
-	pfont->key_name.chars[3] = pfont->font_name.chars[3] = (byte)(pfont->id >> 24 & 0xff);
-	pfont->key_name.size = pfont->font_name.size = 4;
+	strncpy(pfont->font_name.chars, font_name, sizeof(pfont->font_name.chars));
+	pfont->font_name.size = strlen(font_name);
+	/* replace spaces with '-', seems acrobat doesn't like spaces. */
+	for (i = 0; i < pfont->font_name.size; i++) {
+	    if (pfont->font_name.chars[i] == ' ')
+		pfont->font_name.chars[i] = '-';
+	}
+	strncpy(pfont->key_name.chars, font_name, sizeof(pfont->font_name.chars));
+	pfont->key_name.size = strlen(font_name);
 	return 0;
 }
 
@@ -564,7 +573,7 @@ pl_alloc_tt_fontfile_buffer(FILE *in, gs_memory_t *mem, byte **pptt_font_data, u
 /* Load a built-in (TrueType) font from external storage. */
 int
 pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
-  long unique_id, pl_font_t **pplfont)
+  long unique_id, pl_font_t **pplfont, char *font_name)
 {	
     byte *tt_font_datap;
     ulong size;
@@ -583,7 +592,7 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
     if ( pfont == 0 || plfont == 0 )
 	code = gs_note_error(gs_error_VMerror);
     else { /* Initialize general font boilerplate. */
-	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem);
+	code = pl_fill_in_font((gs_font *)pfont, plfont, pdir, mem, font_name);
 	if ( code >= 0 ) { /* Initialize TrueType font boilerplate. */
 	    plfont->header = tt_font_datap;
 	    plfont->header_size = size;
