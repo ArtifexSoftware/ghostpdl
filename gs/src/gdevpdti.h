@@ -68,12 +68,6 @@ int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 pdf_bitmap_fonts_t *pdf_bitmap_fonts_alloc(gs_memory_t *mem);
 
 /*
- * Assign a code for a given X width in the current font, if needed and
- * possible.
- */
-int pdf_space_char(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, int dx);
-
-/*
  * Write the Encoding for bitmap fonts, if needed.
  */
 int pdf_write_bitmap_fonts_Encoding(gx_device_pdf *pdev);

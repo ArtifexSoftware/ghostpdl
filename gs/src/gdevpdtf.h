@@ -222,16 +222,6 @@ struct pdf_font_resource_s {
 		    gs_int_rect FontBBox;
 		    pdf_char_proc_t *char_procs;
 		    int max_y_offset;
-		    /*
-		     * spaces[sp] = ch if character code ch produces a
-		     * space of width sp + X_SPACE_MIN (in device units,
-		     * since this only applies to bitmap fonts).
-		     * The range should be determined by the device
-		     * resolution, but currently it isn't.
-		     */
-/*#define X_SPACE_MIN xxx*/ /* in gdevpdfx.h */
-/*#define X_SPACE_MAX nnn*/ /* in gdevpdfx.h */
-		    byte spaces[X_SPACE_MAX - X_SPACE_MIN + 1];
 		} type3;
 
 	    } s;

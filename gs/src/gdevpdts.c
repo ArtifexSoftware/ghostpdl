@@ -22,7 +22,6 @@
 #include "gdevpdfx.h"
 #include "gdevpdtx.h"
 #include "gdevpdtf.h"		/* for pdfont->FontType */
-#include "gdevpdti.h"		/* for pdf_space_char */
 #include "gdevpdts.h"
 
 /* ================ Types and structures ================ */
@@ -176,7 +175,6 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
     const double precis = 0.001;
 
     if (matrix_is_compatible(pmat, &pts->in.matrix)) {
-	pdf_font_resource_t *const pdfont = pts->in.pdfont;
 	double dx = pmat->tx - pts->in.matrix.tx,
 	    dy = pmat->ty - pts->in.matrix.ty;
 	gs_point dist;
@@ -189,19 +187,6 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	    dw = dist.x, dnotw = dist.y;
 	if (dnotw == 0 && any_abs(dw - pts->in.character_spacing) < precis)
 	    goto finish;
-	if (dnotw == 0 && any_abs(dw - (int)dw) < precis && pdfont != 0 &&
-	    pdfont->FontType == ft_user_defined
-	    ) {
-	    /* Use a pseudo-character. */
-	    int code = pdf_space_char(pdev, pdfont, (int)dw);
-
-	    if (code >= 0) {
-		byte space_char = (byte)code;
-
-		pdf_append_chars(pdev, &space_char, 1, dx, dy);
-		goto finish;
-	    }
-	}
 	if (dnotw == 0 && pts->buffer.count_chars > 0 &&
 	    /*
 	     * Acrobat Reader limits the magnitude of user-space

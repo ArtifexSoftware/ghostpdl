@@ -50,7 +50,6 @@ struct pdf_bitmap_fonts_s {
     bool use_open_font;		/* if false, start new open_font */
     long bitmap_encoding_id;
     int max_embedded_code;	/* max Type 3 code used */
-    long space_char_ids[X_SPACE_MAX - X_SPACE_MIN + 1];
 };
 gs_private_st_ptrs1(st_pdf_bitmap_fonts, pdf_bitmap_fonts_t,
   "pdf_bitmap_fonts_t", pdf_bitmap_fonts_enum_ptrs,
@@ -110,7 +109,6 @@ private int
 write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 {
     stream *s = pdev->strm;
-    pdf_bitmap_fonts_t *const pbfs = pdev->text->bitmap_fonts;
 
     pprintld1(s, "/Encoding %ld 0 R/CharProcs",
 	      pdev->text->bitmap_fonts->bitmap_encoding_id);
@@ -118,7 +116,6 @@ write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     /* Write the CharProcs. */
     {
 	const pdf_char_proc_t *pcp;
-	int w;
 
 	stream_puts(s, "<<");
 	/* Write real characters. */
@@ -127,14 +124,6 @@ write_contents_bitmap(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 	     ) {
 	    pprintld2(s, "/a%ld\n%ld 0 R", (long)pcp->char_code,
 		      pdf_char_proc_id(pcp));
-	}
-	/* Write space characters. */
-	for (w = 0; w < countof(pdfont->u.simple.s.type3.spaces); ++w) {
-	    byte ch = pdfont->u.simple.s.type3.spaces[w];
-
-	    if (ch)
-		pprintld2(s, "/a%ld\n%ld 0 R", (long)ch,
-			  pbfs->space_char_ids[w]);
 	}
 	stream_puts(s, ">>");
     }
@@ -287,43 +276,6 @@ pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
     pdf_set_text_state_values(pdev, &values);
     pdf_append_chars(pdev, &ch, 1, pdfont->Widths[ch] * pimat->xx, 0.0);
     return 0;
-}
-
-/*
- * Assign a code for a given X width in the current font, if needed and
- * possible.
- */
-int
-pdf_space_char(gx_device_pdf *pdev, pdf_font_resource_t *pdfont, int dx)
-{
-    int dx_i = dx - X_SPACE_MIN;
-    int code;
-
-    if (dx_i < 0 || dx_i >= countof(pdfont->u.simple.s.type3.spaces))
-	return -1;
-    code = pdfont->u.simple.s.type3.spaces[dx_i];
-    if (code == 0) {
-	if (pdfont != pdev->text->bitmap_fonts->open_font)
-	    return -1;
-	code = assign_char_code(pdev, dx);
-	if (code < 0)
-	    return -1;
-	pdfont->u.simple.s.type3.spaces[dx_i] = (byte)code;
-	if (pdev->text->bitmap_fonts->space_char_ids[dx_i] == 0) {
-	    /* Create the space char_proc now. */
-	    char spstr[3 + 14 + 1];
-	    stream *s;
-
-	    sprintf(spstr, "%d 0 0 0 0 0 d1\n", dx);
-	    pdev->text->bitmap_fonts->space_char_ids[dx_i] =
-		pdf_begin_separate(pdev);
-	    s = pdev->strm;
-	    pprintd1(s, "<</Length %d>>\nstream\n", strlen(spstr));
-	    pprints1(s, "%sendstream\n", spstr);
-	    pdf_end_separate(pdev);
-	}
-    }
-    return code;
 }
 
 /*
