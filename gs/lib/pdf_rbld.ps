@@ -83,10 +83,11 @@
     (  ) print
     dup Generations exch lget 1 sub =only % print Generation number
     (  ) print
-    ObjectStream exch lget ===		% print ObjectStream object number
+    dup ObjectStream exch lget ==only	% print ObjectStream object number
     (  ) print
     Objects exch lget ===		% print object location
   } for
+  flush
 } bind def
 
 % This is the same as the postscript token operator except that
@@ -286,7 +287,7 @@
   % Output warning if we have two objects with the same object and generation
   % numbers.
   dup_obj_gen_num {
-    (   **** Warning:  There are objects with matching oject and generation\n)
+    (   **** Warning:  There are objects with matching object and generation\n)
     pdfformaterror
     (   **** numbers.  The accuracy of the resulting image is unknown.\n)
     pdfformaterror

@@ -581,7 +581,7 @@ pdfdict begin
   } {				% Else if not resolved ...
     PDFfile fileposition 3 1 roll	% Save current file position
     1 index Objects exch lget		% Get location of object from xref
-    3 1 roll checkgeneration {		% Verify the genration number
+    3 1 roll checkgeneration {		% Verify the generation number
 			% Stack: savepos objpos obj#
        ObjectStream 1 index lget dup 0 eq { % Check if obj in not an objstream
 	 pop exch PDFoffset add PDFfile exch setfileposition

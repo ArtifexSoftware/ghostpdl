@@ -264,7 +264,7 @@ pdfdict begin
      pop pop			% pop <file pos> <obj #>
    } loop
    0 ne {
-     (   **** Warning: length of some xref entries is not equal to 20 bytes.\n)
+     (   **** Warning:  length of some xref entries is not equal to 20 bytes.\n)
      pdfformaterror
    } if
    PDFfile traileropdict .pdfrun
@@ -441,6 +441,48 @@ pdfdict begin
   currentdict end
 } bind def
 
+% Verify that each entry in the xref table is pointing at an object with
+% the correct object number and generation number.
+/verify_xref				% - verify_xref -
+{ 1 1 Objects llength 1 sub		% stack: 1 1 <number of objects - 1>
+  {	% Check if the object is free (i.e. not used).  The values in
+	% Generations is the generation number plus 1.  If the value in
+	% Generations is zero then the object is free.
+    Generations 1 index lget 		% Get the genration number
+    0 ne {				% Skip if object number is free
+      ObjectStream 1 index lget 	% Check if object is in objectstream
+      0 eq {	% We only check objects not in an objectstream
+        {	% Use stop context since we may get an error if object is invalid
+          dup Objects exch lget 	% Get the object location
+	  PDFoffset add PDFfile exch setfileposition
+	  true				% Stack:  <obj num> <true>
+	  PDFfile token pop		% Read object number from file
+	  2 index eq {			% Verify object number
+	    PDFfile token pop		% Read generation number from file
+	    Generations 3 index		% Get specified generaton number
+	    lget 1 sub			% Gen numbs are stored with 1 added.
+	    eq { 			% Verify generation number
+	      PDFfile token pop /obj eq { % Verify 'obj' text
+		pop false		% We have valid object, do not rebuild
+	      } if
+	    } if
+	  } if
+	} .internalstopped
+	{ true } if			% If we stop then we need to rebuild
+	{ 
+	  (   **** Warning:  File has an invalid xref entry:  )
+	  pdfformaterror
+	  pdfstring cvs pdfformaterror
+	  (.  Rebuilding xref table.\n) pdfformaterror
+	  search_objects
+	  exit
+	} if				% If the entry is invalid
+      } if				% If not in an object stream
+    } if				% If object entry is not free
+    pop					% Remove object number
+  } for
+} bind odef
+
 /pdfopencache {		% - pdfopencache -
 	% Create and initialize some caches.
   /PageCount pdfpagecount def
@@ -475,13 +517,29 @@ pdfdict begin
      search_trailer		% Search for the primary trailer
    } {
      /Trailer exch def		% Save trailer dict after first xref table
-	% Read any previous cross-reference tables.
+	% Read any previous cross-reference tables.  When we are done,
+	% verify that the entries in the xref tables are valid if NoVerifyXref
+	% is not defined.
      Trailer
-     { /Prev knownoget not { exit } if
+     { /Prev knownoget not {	% If no previous xref table then ...
+         /NoVerifyXref where { pop } { verify_xref } ifelse exit
+       } if
        { readxref } .internalstopped {
          recover_xref_data	% Read failed.  Attempt to recover xref data.
 	 exit			% Exit loop since recover gets all obj data.
        } if  			% If readxref stopped
+       % The PDF spec. says that each trailer dict should contain the required
+       % entries.  However we have seen a PDF file that only has a Prev entry in
+       % the initial trailer dict.  Acrobat complains but it accepts these files.
+       % To work with these files, we are copying any entries which we find in
+       % a previous trailer dict which are not present in the initial dict.
+       dup {
+         Trailer 2 index known {
+           pop pop              % discard if key already present
+         } {
+           Trailer 3 1 roll put % add key if not present
+         } ifelse
+       } forall
      } loop			% Loop to previous trailer
    } ifelse			% Ifelse readxref stopped
    Trailer /Encrypt knownoget {
