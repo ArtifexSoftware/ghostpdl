@@ -41,7 +41,7 @@ install-scripts: $(PSLIBDIR)/gsnd
 	-mkdir -p $(scriptdir)
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
-bdftops dvipdf eps2eps font2c \
+bdftops dumphints dvipdf eps2eps font2c \
 pdf2dsc pdf2ps pdfopt pf2afm pfbtopfa printafm \
 ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdf14 ps2pdfwr ps2ps wftopfa \
 fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
@@ -68,7 +68,7 @@ Fontmap Fontmap.GS cidfmap \
 FAPIcidfmap FAPIconfig FAPIfontmap xlatmap \
 ht_ccsto.ps \
 acctest.ps addxchar.ps align.ps bdftops.ps \
-caption.ps cid2code.ps decrypt.ps docie.ps \
+caption.ps cid2code.ps decrypt.ps docie.ps dumphints.ps \
 errpage.ps font2c.ps font2pcl.ps gslp.ps gsnup.ps image-qa.ps impath.ps \
 jispaper.ps landscap.ps level1.ps lines.ps markhint.ps markpath.ps \
 packfile.ps pcharstr.ps pf2afm.ps pfbtopfa.ps ppath.ps prfont.ps printafm.ps \
