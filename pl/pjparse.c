@@ -92,6 +92,7 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"plotsizeoverride", "off"},  /* override hpgl/2 PS command args */
     {"plotsize1", "0"},           /* 1st arg to PS - plotter units */
     {"plotsize2", "0"},           /* 2nd arg to PS - plotter units */
+    {"plotsizerotate", "on"},     /* "on" default allows PS rotation per spec */
     /*    {"personality", "rtl"}, */
     {"", ""}
 };
