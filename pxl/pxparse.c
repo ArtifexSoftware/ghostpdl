@@ -527,7 +527,11 @@ top:	if ( st->data_left )
 	      case 4:
 		switch ( tag )
 		  {
-		  case pxtSpace: continue;
+		  case pxtSpace:
+		      /* break; will error, compatible with lj */
+		      /* ++p;continue; silently ignores the space */
+		      ++p; 
+		      continue;
 		  default: break;
 		  }
 		break;
