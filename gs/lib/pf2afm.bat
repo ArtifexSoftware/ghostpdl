@@ -2,8 +2,8 @@
 @rem $Id$
 @rem Make an AFM file from PFB / PFA and (optionally) PFM files.
 
-if "%1"=="" goto usage
-if not "%2"=="" goto usage
+if %1/==/ goto usage
+if not %2/==/ goto usage
 call gssetgs.bat
 
 %GSC% -q -dNODISPLAY -dSAFER -dDELAYSAFER -- pf2afm.ps %1

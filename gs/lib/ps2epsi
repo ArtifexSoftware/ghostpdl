@@ -15,18 +15,18 @@ infile=$1;
 if [ $# -eq 1 ]
 then
 	case "${infile}" in
-	  *.ps)		base=`basename ${infile} .ps` ;;
-	  *.cps)	base=`basename ${infile} .cps` ;;
-	  *.eps)	base=`basename ${infile} .eps` ;;
-	  *.epsf)	base=`basename ${infile} .epsf` ;;
-	  *)		base=`basename ${infile}` ;;
+	  *.ps)		base=`basename "${infile}" .ps` ;;
+	  *.cps)	base=`basename "${infile}" .cps` ;;
+	  *.eps)	base=`basename "${infile}" .eps` ;;
+	  *.epsf)	base=`basename "${infile}" .epsf` ;;
+	  *)		base=`basename "${infile}"` ;;
 	esac
 	outfile=${base}.epsi
 else
 	outfile=$2
 fi
 
-ls -l ${infile} |
+ls -l "${infile}" |
 awk 'F==1	{
 		cd="%%CreationDate: " $6 " " $7 " " $8;
 		t="%%Title: " $9;
@@ -49,9 +49,9 @@ awk 'F==1	{
 		print "end";
 		exit(0);
 		}
-	' U="$USERNAME$LOGNAME"  F=1 - F=2 ${infile} >$tmpfile
+	' U="$USERNAME$LOGNAME"  F=1 - F=2 "${infile}" >$tmpfile
 
-gs -q -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <${infile} 1>&2
+gs -q -dNOPAUSE -dSAFER -dDELAYSAFER -r72 -sDEVICE=bit -sOutputFile=/dev/null $tmpfile ps2epsi.ps $tmpfile <"${infile}" 1>&2
 rm -f $tmpfile
 
 (
@@ -61,7 +61,7 @@ save countdictstack mark newpath /showpage {} def /setpagedevice {pop} def
 %%Page 1 1
 BEGINEPS
 
-cat ${infile} |
+cat "${infile}" |
 sed -e '/^%%BeginPreview:/,/^%%EndPreview[^!-~]*$/d' -e '/^%!PS-Adobe/d'\
 	-e '/^%%[A-Za-z][A-Za-z]*[^!-~]*$/d' -e '/^%%[A-Za-z][A-Za-z]*: /d'
 
@@ -71,6 +71,6 @@ cleartomark countdictstack exch sub { end } repeat restore
 %%EOF
 ENDEPS
 
-) >> ${outfile}
+) >> "${outfile}"
 
 exit 0

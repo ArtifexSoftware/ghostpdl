@@ -2,7 +2,7 @@
 # $Id$
 # Convert PDF to "optimized" form.
 
-OPTIONS=""
+OPTIONS="-dSAFER"
 while true
 do
 	case "$1" in
@@ -17,4 +17,4 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-exec gs -q -dNODISPLAY -dSAFER $OPTIONS -- pdfopt.ps $1 $2
+exec gs -q -dNODISPLAY $OPTIONS -- pdfopt.ps "$1" "$2"

@@ -12,7 +12,7 @@ OPTIONS="-q -dNODISPLAY -dSAFER -dNOBIND -dWRITESYSTEMDICT -dSIMPLE"
 if ( test $# -eq 0 ) then
 	gs $OPTIONS -c save -f ps2ascii.ps - -c quit
 elif ( test $# -eq 1 ) then
-	gs $OPTIONS -c save -f ps2ascii.ps $1 -c quit
+	gs $OPTIONS -c save -f ps2ascii.ps "$1" -c quit
 else
-	gs $OPTIONS -c save -f ps2ascii.ps $1 -c quit >$2
+	gs $OPTIONS -c save -f ps2ascii.ps "$1" -c quit >"$2"
 fi

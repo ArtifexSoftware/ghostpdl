@@ -1,8 +1,8 @@
 @echo off 
 @rem $Id$
 
-if "%1"=="" goto usage
-if "%2"=="" goto usage
+if %1/==/ goto usage
+if %2/==/ goto usage
 
 call gssetgs.bat
 set infile=%1

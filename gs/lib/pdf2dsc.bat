@@ -2,8 +2,8 @@
 @rem $Id$
 @rem Convert PDF to DSC
 
-if "%1"=="" goto usage
-if "%2"=="" goto usage
+if %1/==/ goto usage
+if %2/==/ goto usage
 call gssetgs.bat
 
 rem Watcom C deletes = signs, so use # instead.

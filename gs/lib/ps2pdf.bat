@@ -14,5 +14,5 @@ rem Pass arguments through a file to avoid overflowing the command line.
 echo %1 >>_.at
 shift
 :bot
-if not "%3"=="" goto top
+if not %3/==/ goto top
 call ps2pdfxx %1 %2
