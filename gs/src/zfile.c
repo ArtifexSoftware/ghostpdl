@@ -66,7 +66,7 @@ private int zopen_file(P5(i_ctx_t *, const gs_parsed_file_name_t *pfn,
 private iodev_proc_open_file(iodev_os_open_file);
 private void file_init_stream(P5(stream *s, FILE *file, const char *fmode,
 				 byte *buffer, uint buffer_size));
-private stream_proc_report(filter_report_error);
+stream_proc_report_error(filter_report_error);
 
 /*
  * Since there can be many file objects referring to the same file/stream,
@@ -344,9 +344,9 @@ zfilenameforall(i_ctx_t *i_ctx_p)
     if (pfen == 0)
 	return_error(e_VMerror);
     push_mark_estack(es_for, file_cleanup);
-    *++esp;
+    ++esp;
     make_istruct(esp, 0, iodev);
-    *++esp;
+    ++esp;
     make_int(esp, r_size(op-2) - pname.len);
     *++esp = *op;
     ++esp;
