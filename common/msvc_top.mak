@@ -50,12 +50,12 @@ ld$(CONFIG).tr: $(MAKEFILE) $(AK)
 	echo $(MAKE) /F _vc_temp.mak CONFIG=$(CONFIG) ld$(CONFIG).tr gconfig$(CONFIG).$(OBJ) gscdefs$(CONFIG).$(OBJ) >>$(GSDIR)\_vc_make.bat
 	echo $(ECHOGS_XE) -w _wm_cdir.bat cd -s -r _vc_dir.bat >>$(GSDIR)\_vc_make.bat
 	echo _wm_cdir.bat >>$(GSDIR)\_vc_make.bat
-	$(GSDIR)\_vc_make.bat
+	call $(GSDIR)\_vc_make.bat
 	rem --------------------
-#	del $(GSDIR)\_vc_temp.mak
-#	del $(GSDIR)\_vc_dir.bat
-#	del $(GSDIR)\_vc_make.bat
-#	del $(GSDIR)\_wm_cdir.bat
+	del $(GSDIR)\_vc_temp.mak
+	del $(GSDIR)\_vc_dir.bat
+	del $(GSDIR)\_vc_make.bat
+	del $(GSDIR)\_wm_cdir.bat
 	rem Use type rather than copy to update the creation time
 	type $(GSDIR)\ld$(CONFIG).tr >ld$(CONFIG).tr
 

@@ -48,7 +48,7 @@
 #   1	MAKEFILE, <subsys>DIR for each subsystem, TARGET_XE
 #   2	(rule for building executable)
 #   3	CCC, CCLEAFFLAGS
-#   4	D, OBJ, C_, O_, XE, CP_, RM_, RMN_
+#   4	D, OBJ, C_, I_, II, _I, O_, XE, CP_, RM_, RMN_
 #   5	CCLEAF, GS_XE, ECHOGS_XE, SETMOD, ADDMOD
 #   6	<subsys>_MAK
 #   7	(default rule)
@@ -68,12 +68,12 @@
 CCLEAF=$(CCC) $(CCLEAFFLAGS)
 
 # Define the Ghostscript executable.
-# Currently it always lives in the GS directory.
-GS_XE=$(GSDIR)$(D)gs$(XE)
+# Currently it always lives in the GLOBJ directory.
+GS_XE=$(GLOBJDIR)$(D)gs$(XE)
 
 # Define the echogs executable.
-# Currently it always lives in the GS directory.
-ECHOGS_XE=$(GSDIR)$(D)echogs$(XE)
+# Currently it always lives in the GLOBJ directory.
+ECHOGS_XE=$(GLOBJDIR)$(D)echogs$(XE)
 
 # Define the commands for building module descriptions.
 SETMOD=$(ECHOGS_XE) -e .dev -w- -Q-obj

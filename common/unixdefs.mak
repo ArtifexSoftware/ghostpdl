@@ -7,6 +7,9 @@
 D=/
 OBJ=o
 C_=-c
+I_=-I
+II=-I
+_I=
 # There is a very important <space> at the end of the next line.
 O_=-o 
 XE=

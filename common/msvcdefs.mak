@@ -1,4 +1,4 @@
-#    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # msvcdefs.mak
@@ -28,7 +28,7 @@ COMPBASE=$(DEVSTUDIO)
 SHAREDBASE=$(DEVSTUDIO)
 !else
 ! ifndef DEVSTUDIO
-DEVSTUDIO=c:\progra~1\devstudio
+DEVSTUDIO=c:\devstudio
 ! endif
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\SharedIDE
@@ -48,7 +48,7 @@ MAKE=$(MAKEDIR)\nmake
 
 #CCC is defined ..\gs\msvccom.mak
 #CCLEAFFLAGS is defined in msvc_top.mak, but more importantly CCLEAF is 
-# correclty redefined in msvccom.mak
+# correctly redefined in msvccom.mak
 
 #Always set this to 0; This make file system not yet capable of DLLs
 MAKEDLL=0
