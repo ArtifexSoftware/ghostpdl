@@ -79,6 +79,9 @@ struct active_line_s {
     int curve_k;		/* # of subdivisions for curves,-1 for lines */
     curve_cursor cursor;	/* cursor for curves, unused for lines */
     /* fixme : use an union {cursor, {fi, last}}, because they are used exclusively. */
+#else
+    bool monotonic_x;		/* "false" means "don't know"; only for scanline. */
+    bool monotonic_y;		/* "false" means "don't know"; only for scanline. */
 #endif
     gx_flattened_iterator fi;
     bool more_flattened;

@@ -682,7 +682,8 @@ typedef struct contour_cursor_s {
     bool more_flattened;
     bool first_flattened;
     int dir;
-    bool monotonic;
+    bool monotonic_y;
+    bool monotonic_x;
     bool crossing;
 } contour_cursor;
 
@@ -699,7 +700,7 @@ compute_dir(const fill_options *fo, fixed y0, fixed y1)
 
 private inline int
 add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir, 
-    gx_flattened_iterator *fi, bool more1, bool step_back)
+    gx_flattened_iterator *fi, bool more1, bool step_back, bool monotonic_x)
 {
     active_line *alp = make_al(ll);
 
@@ -719,6 +720,10 @@ add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
 	} while (alp->more_flattened);
     }
     step_al(alp, false);
+#   if SCANLINE_USES_ITERATOR
+	alp->monotonic_y = false;
+	alp->monotonic_x = monotonic_x;
+#   endif
     insert_y_line(ll, alp);
     return 0;
 }
@@ -734,18 +739,18 @@ start_al_pair(line_list *ll, contour_cursor *q, contour_cursor *p)
 {
     int code;
     
-    if (q->monotonic)
+    if (q->monotonic_y)
 	code = add_y_line(q->prev, q->pseg, DIR_DOWN, ll);
     else 
 	code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    !q->first_flattened, false);
+			    !q->first_flattened, false, q->monotonic_x);
     if (code < 0) 
 	return code;
-    if (p->monotonic)
+    if (p->monotonic_y)
 	code = add_y_line(p->prev, p->pseg, DIR_UP, ll);
     else
 	code = add_y_curve_part(ll, p->prev, p->pseg, DIR_UP, p->fi, 
-			    p->more_flattened, false);
+			    p->more_flattened, false, p->monotonic_x);
     return code;
 }
 
@@ -766,21 +771,21 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 	    ll->y_break = q->fi->gy1;
 	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi->gy0 >= fo->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    true, true);
+			    true, true, q->monotonic_x);
 	    if (code < 0) 
 		return code; 
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, false);
+			    q->more_flattened, false, q->monotonic_x);
 	    if (code < 0) 
 		return code; 
 	} else if (q->fi->gy0 < fo->ymin && q->fi->gy1 >= fo->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, q->fi, 
-			    q->more_flattened, false);
+			    q->more_flattened, false, q->monotonic_x);
 	    if (code < 0) 
 		return code; 
 	} else if (q->fi->gy0 >= fo->ymin && q->fi->gy1 < fo->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, q->fi, 
-			    true, false);
+			    true, false, q->monotonic_x);
 	    if (code < 0) 
 		return code; 
 	}
@@ -808,14 +813,19 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	fixed ymax = max(max(q->prev->pt.y, s->p1.y), max(s->p2.y, s->pt.y));
 	bool in_band = ymin <= fo->ymax && ymax >= fo->ymin;
 	q->crossing = ymin < fo->ymin && ymax >= fo->ymin;
-	q->monotonic = (!fo->fill_by_trapezoids && !SCANLINE_USES_ITERATOR) ||
+	q->monotonic_y = (!fo->fill_by_trapezoids && !SCANLINE_USES_ITERATOR) ||
 	    !in_band ||
 	    (!q->crossing &&
 	    ((q->prev->pt.y <= s->p1.y && s->p1.y <= s->p2.y && s->p2.y <= s->pt.y) ||
 	     (q->prev->pt.y >= s->p1.y && s->p1.y >= s->p2.y && s->p2.y >= s->pt.y)));
+#	if SCANLINE_USES_ITERATOR
+	q->monotonic_x = 
+	    ((q->prev->pt.x <= s->p1.x && s->p1.x <= s->p2.x && s->p2.x <= s->pt.x) ||
+	     (q->prev->pt.x >= s->p1.x && s->p1.x >= s->p2.x && s->p2.x >= s->pt.x));
+#	endif
     } else 
-	q->monotonic = true;
-    if (!q->monotonic) {
+	q->monotonic_y = true;
+    if (!q->monotonic_y) {
 	curve_segment *s = (curve_segment *)q->pseg;
 	int k = gx_curve_log2_samples(q->prev->pt.x, q->prev->pt.y, s, fo->fixed_flat);
 
@@ -890,7 +900,7 @@ scan_contour(line_list *ll, contour_cursor *q)
 		ll->y_break = p.fi->gy0;
 	    if (p.fi->gy1 > fo->ymax && ll->y_break > p.fi->gy1)
 		ll->y_break = p.fi->gy1;
-	    if (p.monotonic && p.dir == DIR_HORIZONTAL && 
+	    if (p.monotonic_y && p.dir == DIR_HORIZONTAL && 
 		    !fo->pseudo_rasterization && 
 		    fixed2int_pixround(p.pseg->pt.y - fo->adjust_below) <
 		    fixed2int_pixround(p.pseg->pt.y + fo->adjust_above)) {
@@ -899,7 +909,7 @@ scan_contour(line_list *ll, contour_cursor *q)
 		if (code < 0)
 		    return code;
 	    }
-	    if (p.monotonic && p.dir == DIR_HORIZONTAL && 
+	    if (p.monotonic_y && p.dir == DIR_HORIZONTAL && 
 		    fo->pseudo_rasterization && only_horizontal) {
 		/* Add it here to avoid double processing in process_h_segments. */
 		code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
@@ -931,26 +941,26 @@ scan_contour(line_list *ll, contour_cursor *q)
 		    return code;
 	    }	    
 	    if (p.fi->gy0 < fo->ymin && p.fi->gy1 >= fo->ymin) {
-		if (p.monotonic)
+		if (p.monotonic_y)
 		    code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
 		else
 		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_UP, p.fi, 
-					p.more_flattened, false);
+					p.more_flattened, false, p.monotonic_x);
 		if (code < 0)
 		    return code;
 	    }	    
 	    if (p.fi->gy0 >= fo->ymin && p.fi->gy1 < fo->ymin) {
-		if (p.monotonic)
+		if (p.monotonic_y)
 		    code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
 		else
 		    code = add_y_curve_part(ll, p.prev, p.pseg, DIR_DOWN, p.fi, 
-					!p.first_flattened, false);
+					!p.first_flattened, false, p.monotonic_x);
 		if (code < 0)
 		    return code;
 	    }	    
 	    ll->main_dir = (p.dir == DIR_DOWN ? DIR_DOWN : 
 			    p.dir == DIR_UP ? DIR_UP : ll->main_dir);
-	    if (!p.monotonic && p.more_flattened) {
+	    if (!p.monotonic_y && p.more_flattened) {
 		code = start_al_pair_from_min(ll, &p);
 		if (code < 0)
 		    return code;
@@ -961,7 +971,7 @@ scan_contour(line_list *ll, contour_cursor *q)
 		gx_flattened_iterator *fi1 = q->fi;
 		q->prev = p.prev;
 		q->pseg = p.pseg;
-		q->monotonic = p.monotonic;
+		q->monotonic_y = p.monotonic_y;
 		q->more_flattened = p.more_flattened;
 		q->first_flattened = p.first_flattened;
 		q->fi = p.fi;
@@ -1065,7 +1075,8 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 
     if (curve) {
 	if (alp->direction == DIR_UP) {
-	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (const curve_segment *)s1, ll->fo->fixed_flat);
+	    const curve_segment *cs = (const curve_segment *)s1;
+	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, cs, ll->fo->fixed_flat);
 
 #	    if !DONT_FILTER_SMALL_SEGMENTS
 	    gx_flattened_iterator__init(&alp->fi, 
@@ -1075,8 +1086,16 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k);
 #	    endif
 	    step_al(alp, true);
+#	    if SCANLINE_USES_ITERATOR
+		if (!ll->fo->fill_by_trapezoids) {
+		    alp->monotonic_y = (s0->pt.y <= cs->p1.y && cs->p1.y <= cs->p2.y && cs->p2.y <= cs->pt.y);
+		    alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
+				       (s0->pt.x >= cs->p1.x && cs->p1.x >= cs->p2.x && cs->p2.x >= cs->pt.x);
+		}
+#	    endif
 	} else {
-	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (const curve_segment *)s0, ll->fo->fixed_flat);
+	    const curve_segment *cs = (const curve_segment *)s0;
+	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, cs, ll->fo->fixed_flat);
 	    bool more;
 
 #	    if !DONT_FILTER_SMALL_SEGMENTS
@@ -1093,11 +1112,21 @@ init_al(active_line *alp, const segment *s0, const segment *s1, const line_list 
 	    } while(more);
 	    gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);
 	    step_al(alp, false);
+#	    if SCANLINE_USES_ITERATOR
+		if (!ll->fo->fill_by_trapezoids) {
+		    alp->monotonic_y = (s0->pt.y >= cs->p1.y && cs->p1.y >= cs->p2.y && cs->p2.y >= cs->pt.y);
+		    alp->monotonic_x = (s0->pt.x <= cs->p1.x && cs->p1.x <= cs->p2.x && cs->p2.x <= cs->pt.x) ||
+				       (s0->pt.x >= cs->p1.x && cs->p1.x >= cs->p2.x && cs->p2.x >= cs->pt.x);
+		}
+#	    endif
 	}
     } else {
 	gx_flattened_iterator__init_line(&alp->fi, 
 		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y);
 	step_al(alp, true);
+#	if SCANLINE_USES_ITERATOR
+	    alp->monotonic_x = alp->monotonic_y = true;
+#	endif
     }
     alp->pseg = s1;
 }
@@ -1110,7 +1139,7 @@ add_y_line_aux(const segment * prev_lp, const segment * lp,
 	    const gs_fixed_point *curr, const gs_fixed_point *prev, int dir, line_list *ll)
 {
     active_line *alp = make_al(ll);
-    bool use_iter = SCANLINE_USES_ITERATOR || ll->fo->fill_by_trapezoids;
+    const bool use_iter = SCANLINE_USES_ITERATOR || ll->fo->fill_by_trapezoids;
 
     if (alp == NULL)
 	return_error(gs_error_VMerror);
@@ -2121,27 +2150,40 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
 		x1 = gx_curve_x_at_y(&alp->cursor, y_top);
 	    if (x0 > x1)
 		xt = x0, x0 = x1, x1 = xt;
+	    code = range_list_add(pcrl,
+				  fixed2int_pixround(x0 - ll->fo->adjust_left),
+				  fixed2int_rounded(x1 + ll->fo->adjust_right));
 #	else
-	    x1 = x0;
-step:
-	    if (alp->end.y < y_top)
-		xt = alp->end.x;
-	    else
-		xt = AL_X_AT_Y(alp, y_top);
-	    x0 = min(x0, xt);
-	    x1 = max(x1, xt);
-#	endif
-	code = range_list_add(pcrl,
-			      fixed2int_pixround(x0 - ll->fo->adjust_left),
-			      fixed2int_rounded(x1 + ll->fo->adjust_right));
-#	if SCANLINE_USES_ITERATOR
-	if (alp->more_flattened && alp->end.y < y_top) {
-	    step_al(alp, true);
-	    if (alp->end.y < alp->start.y)
-		remove_al(ll, alp); /* End of a monotonic part of a curve. */
-	    else
-		goto step;
-	}
+	    if (alp->monotonic_x && alp->monotonic_y && alp->fi.y3 <= y_top) {
+    		vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 0, RGB(255, 0, 0));
+		x1 = alp->fi.x3;
+		if (x0 > x1)
+		    xt = x0, x0 = x1, x1 = xt;
+		code = range_list_add(pcrl,
+				      fixed2int_pixround(x0 - ll->fo->adjust_left),
+				      fixed2int_rounded(x1 + ll->fo->adjust_right));
+		alp->more_flattened = false; /* Skip all the segments left. */
+	    } else {
+		x1 = x0;
+		for (;;) {
+		    if (alp->end.y <= y_top)
+			xt = alp->end.x;
+		    else
+			xt = AL_X_AT_Y(alp, y_top);
+		    x0 = min(x0, xt);
+		    x1 = max(x1, xt);
+		    if (!alp->more_flattened || alp->end.y > y_top)
+			break;
+		    step_al(alp, true);
+		    if (alp->end.y < alp->start.y) {
+			remove_al(ll, alp); /* End of a monotonic part of a curve. */
+			break;
+		    }
+		}
+		code = range_list_add(pcrl,
+				      fixed2int_pixround(x0 - ll->fo->adjust_left),
+				      fixed2int_rounded(x1 + ll->fo->adjust_right));
+	    }
 #	endif
 
     }
