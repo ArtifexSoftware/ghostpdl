@@ -1492,7 +1492,7 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
                     t1_glyph_space_coord s = zone->y - pole->gy;
                     if (zone->type == topzone)
                         s = -s;
-                    if (!curve)
+                    if (!curve && s < this->overshoot_threshold)
                         gy = zone->y;
                     else if (s > this->overshoot_threshold) {
                         t1_glyph_space_coord ss = this->overshoot_threshold * 2;
