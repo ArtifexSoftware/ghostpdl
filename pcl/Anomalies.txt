@@ -674,14 +674,6 @@ Difference in specific tests of the PCL 5c FTS
     not accurate. This is particularly noticeable for arbitrary transformations
     of text, as in the first two tests cited.
 
-2040 - 2070:
-
-    The GL/2 clipping behavior of the Artifex PCL 5c interpreter is not
-    identical to that of the CLJ 5/5M.  In particular, the Artifex
-    interpreter clips in device space not source space as hp does.
-    The clipping of zero width lines is device dependant resulting in
-    several differences between HP and Artifex in these fts panels.
-
 2080:
 
     The scaling of the rightmost imported image in this test is
