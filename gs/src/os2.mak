@@ -342,11 +342,11 @@ RMN_=$(GLSRCDIR)\rm.cmd
 # Define the arguments for genconf.
 
 !if $(MAKEDLL)
-CONFILES=-p %%s+ -l $(GLGENDIR)\lib.tr
+CONFILES=-p %%s+
 !else
-CONFILES=-l $(GLGENDIR)\lib.tr
+CONFILES=
 !endif
-CONFLDTR=-o
+CONFLDTR=-ol
 
 # Define the generic compilation flags.
 
@@ -656,7 +656,7 @@ $(PSOBJ)dpmain.$(OBJ): $(PSSRC)dpmain.c $(AK)\
 !if $(MAKEDLL)
 #making a DLL
 GS_ALL=$(PSOBJ)gsdll.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(PSOBJ)$(GS).res $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS)
 
 $(GS_XE): $(BINDIR)\$(GSDLL).dll $(PSSRC)dpmain.c $(gsdll_h) $(gsdllos2_h) $(PSSRC)gsos2.rc $(GLOBJ)gscdefs.$(OBJ)
 !if $(EMX)
@@ -681,7 +681,7 @@ $(BINDIR)\$(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(PSOBJ)gsdll.$(OBJ)
 !else
 #making an EXE
 GS_ALL=$(PSOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GLGEN)lib.tr $(PSOBJ)$(GS).res $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(PSOBJ)$(GS).res $(ICONS)
 
 $(GS_XE): $(GS_ALL) $(ALL_DEVS)
 	$(COMPDIR)\$(COMP) $(CGDB) I$(PSSRCDIR) -I$(GLSRCDIR) -o $(PSOBJ)$(GS) $(PSOBJ)gs.$(OBJ) @$(ld_tr) $(INTASM) -lm

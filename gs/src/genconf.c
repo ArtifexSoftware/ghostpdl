@@ -209,7 +209,8 @@
  *
  *	Writes the list of library paths, links, and library file names
  *	on <lib.tr>.  -lo also writes the list of object file names,
- *	as for -o.
+ *	as for -o. This feature is obsolete and is not longer in use.
+ *      Use -ol instead.
  *
  *    -o[l] <obj.tr>
  *

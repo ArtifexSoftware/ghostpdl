@@ -416,7 +416,7 @@ $(gconfig_h) : \
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) $(GCONFIG_EXTRAS)
 
-$(ld_tr) $(GLGENDIR)$(D)lib.tr : $(gconfig_h)
+$(ld_tr) : $(gconfig_h)
 	
 # The line above is an empty command; don't delete.
 

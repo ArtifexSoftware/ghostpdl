@@ -74,7 +74,7 @@ i_INCDIR=-i$(INCDIR)
 ICONS=$(GLGEN)gswin.ico $(GLGEN)gswin16.ico
 
 GS_ALL=$(INT_ALL) $(INTASM)\
-  $(LIB_ALL) $(LIBCTR) $(GLGEN)lib.tr $(ld_tr) $(GSDLL_OBJ).res $(PSSRC)$(GSDLL).def $(ICONS)
+  $(LIB_ALL) $(LIBCTR) $(ld_tr) $(GSDLL_OBJ).res $(PSSRC)$(GSDLL).def $(ICONS)
 
 dwdll_h=$(PSSRC)dwdll.h
 dwimg_h=$(GLSRC)dwimg.h

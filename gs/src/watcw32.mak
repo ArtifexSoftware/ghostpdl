@@ -449,7 +449,6 @@ $(GENINIT_XE): $(PSSRCDIR)$(D)geninit.c $(GENINIT_DEPS)
 	@if not exist $(PSGENDIR) mkdir $(PSGENDIR)
 	@if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
 	@if not exist $(BINDIR) mkdir $(BINDIR)
-	@if not exist $(GLGENDIR)\lib.tr copy nul: $(GLGENDIR)\lib.tr
 
 # See winlib.mak
 

@@ -57,8 +57,8 @@ RO_=$(O_)
 
 # Define the arguments for genconf.
 
-CONFILES=-p %%s -l $(GLGENDIR)\lib.tr
-CONFLDTR=-o
+CONFILES=-p %%s
+CONFLDTR=-ol
 
 # Define the generic compilation flags.
 

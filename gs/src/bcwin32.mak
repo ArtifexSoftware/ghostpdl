@@ -380,8 +380,8 @@ SH=
 
 # Define the arguments for genconf.
 
-CONFILES=-p %s+ -l $(GLGENDIR)\lib.tr
-CONFLDTR=-o
+CONFILES=-p %s+
+CONFLDTR=-ol
 
 # Define the generic compilation flags.
 
@@ -611,7 +611,7 @@ $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
-	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL) @$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
@@ -621,7 +621,7 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(DWOBJNO) $(INTASM) >> $(PSGEN)gswin32.tr
-	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS) @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
@@ -630,7 +630,7 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(OBJCNO) $(INTASM) >> $(PSGEN)gswin32.tr
-	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE) @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
 # Access to 16 spooler from Win32s
