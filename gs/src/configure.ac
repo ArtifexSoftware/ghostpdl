@@ -312,9 +312,6 @@ if test x$with_jasper != xno; then
   done
   if test "x$JASPERDIR" != xsrc; then
     AC_MSG_RESULT([$JASPERDIR])
-    AC_MSG_WARN([Direct compilation of jasper into ghostscript is not 
-supported. You'll need to compile the source yourself and install the 
-library.])
   else
     AC_MSG_RESULT([no])
     AC_CHECK_LIB([jasper], [jas_image_create], [

@@ -1384,8 +1384,7 @@ $(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
  $(gdebug_h) $(strimpl_h) $(sjpx_h)
 	$(GLCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
 
-$(GLOBJ)libjasper.dev : $(TOP_MAKEFILES) $(ECHOGS_XE)
-	$(SETMOD) $(GLOBJ)libjasper -lib jasper
+# libjasper.dev is created in jasper.mak
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.

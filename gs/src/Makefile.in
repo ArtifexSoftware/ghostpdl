@@ -170,6 +170,10 @@ ZLIB_NAME=z
 SHARE_JBIG2=@SHARE_JBIG2@
 JBIG2SRCDIR=@JBIG2DIR@
 
+# Choose shared of compiled in libjasper (JPXDecode support) and source location
+SHARE_JASPER=@SHARE_JASPER@
+JASPERSRCDIR=@JASPERDIR@
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
@@ -417,6 +421,7 @@ include $(GLSRCDIR)/jpeg.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
 include $(GLSRCDIR)/jbig2.mak
+include $(GLSRCDIR)/jasper.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak
