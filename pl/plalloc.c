@@ -75,7 +75,19 @@ struct pl_mem_node_s {
     byte *address;
     struct pl_mem_node_s *next;
     char *cname;
+#ifdef DEBUG
+    long op_count;
+#endif
 };
+
+#ifdef DEBUG
+/* each add operation increments the operation count.  So if a
+   reference is reported unfreed in the remaining free list it's
+   allocation can easily be found with a conditional
+   breakpoint */
+    static long mem_node_operation_count = 0;
+#endif
+
 
 /* return -1 on error, 0 on success */
 int 
@@ -94,6 +106,10 @@ pl_mem_node_add(gs_memory_t * mem, byte *add, char *cname)
     }
     mem->head->address = add;
     mem->head->cname = cname;
+#ifdef DEBUG
+    mem_node_operation_count++;
+    mem->head->op_count = mem_node_operation_count;
+#endif
   }
   return 0;
 }
@@ -161,11 +177,17 @@ pl_mem_node_free_all_remaining(gs_memory_t *mem)
 	       size = get_size(ptr);
 	       total_size += size;
 	       if (mem != gs_memory_t_default)
-		   dprintf3("Recovered pjl %x size %d client %s\n", 
-			    ptr, size, current->cname);
+#ifdef DEBUG
+		   dprintf4("Recovered pjl %x size %d %ld'th allocation client %s\n",
+			    ptr, size, current->op_count, current->cname)
+#endif
+                       ;
 	       else
-		   dprintf3("Recovered %x size %d client %s\n", 
-			    ptr, size, current->cname);
+#ifdef DEBUG
+		   dprintf4("Recovered %x size %d %ld'th allocation client %s\n",
+			    ptr, size, current->op_count, current->cname)
+#endif
+                       ;
 	    }
 	    free(current->address);
 	    free(current);
