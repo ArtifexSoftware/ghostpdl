@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.77 [en] (X11; U; Linux 2.2.19-7.0.1 i686) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; Linux 2.2.17-21mdk i686) [Netscape]">
    <title>GhostPCL5e, GhostPCL5c, and GhostPXL</title>
 </head>
 <body text="#000000" bgcolor="#FFFFFF" link="#0000EF" vlink="#51188E" alink="#FF0000">
@@ -173,20 +173,16 @@ Choose `New' under the `File' menu.</li>
 Next MSVC++ will prompt for a project type, select `makefile'</li>
 
 <li>
-In the same window create a name for the project and specify the directory
-where the sources are located.</li>
-
-<li>
 After confirming your selections MSVC++ will ask if you want to go to `Project
 Settings`.&nbsp; Choose `yes'.</li>
 
 <li>
 Here you will specify how to run the build command, nmake.&nbsp; The simplest
-arrangement for PCL is:</li>
-</ul>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-nmake /f pcl6_msvc.mak
-<p>This will build both the PCL and XL language and supporting language
+debug arrangement for PCL is:</li>
+
+<p><br>nmake /f pcl6_msvc.mak DEBUG=1</ul>
+
+<p><br>This will build both the PCL and XL language and supporting language
 switching code.
 <p><b>Note:</b>
 <br>In MSVC 6.0 simply opening the file pcl6_msvc.mak in the IDE will create
@@ -198,6 +194,7 @@ MSVC++ IDE.
 variable, and use the same make commands as above (the DEVSTUDIO variable
 should be set to the top level of the Microsoft Developer Studio, e.g.
 set DEVSTUDIO=c:\progra~1\devstu~1").
+<br>&nbsp;
 <h2>
 <a NAME="Linux GCC"></a>Building with Linux GCC</h2>
 The pcl tools have been compiled on Linux using GCC.&nbsp; The makefile
