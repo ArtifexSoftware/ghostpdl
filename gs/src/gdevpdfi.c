@@ -263,6 +263,14 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	if (pim1->Alpha != gs_image_alpha_none)
 	    goto nyi;
 	is_mask = pim1->ImageMask;
+	if (is_mask) {
+	    /* If parameters are invalid, use the default implementation. */
+	    if (pim1->BitsPerComponent != 1 ||
+		!((pim1->Decode[0] == 0.0 && pim1->Decode[1] == 1.0) ||
+		  (pim1->Decode[0] == 1.0 && pim1->Decode[1] == 0.0))
+		)
+		goto nyi;
+	}
 	in_line = context == PDF_IMAGE_DEFAULT &&
 	    can_write_image_in_line(pdev, pim1);
 	image.type1 = *pim1;
