@@ -1261,11 +1261,11 @@ gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
     /* Allocate the generic copied information. */
 
     glyphs = gs_alloc_struct_array(mem, glyphs_size, gs_copied_glyph_t,
-				   &st_gs_copied_glyph,
+				   &st_gs_copied_glyph_element,
 				   "gs_copy_font(glyphs)");
     if (have_names != 0)
 	names = gs_alloc_struct_array(mem, glyphs_size, gs_copied_glyph_name_t,
-				      &st_gs_copied_glyph_name,
+				      &st_gs_copied_glyph_name_element,
 				      "gs_copy_font(names)");
     copied = gs_alloc_struct(mem, gs_font, fstype,
 			     "gs_copy_font(copied font)");
