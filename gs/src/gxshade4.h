@@ -21,7 +21,7 @@
 #  define gxshade4_INCLUDED
 
 /* Configuration flags for development needs only. Users should not modify them. */
-#define NEW_SHADINGS 1 /* Old code = 0, new code = 1. */
+#define NEW_SHADINGS 0 /* Old code = 0, new code = 1. */
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
 #define DIVIDE_BY_PARALLELS 0 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
 #define POLYGONAL_WEDGES 0 /* 1 = polygons allowed, 0 = triangles only. */
