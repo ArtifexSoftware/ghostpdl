@@ -1343,7 +1343,7 @@ assign_char_code(gx_device_pdf * pdev)
 	pdf_end_separate(pdev);
 	pdev->embedded_encoding_id = id;
     }
-    if (font == 0 || font->num_chars == 256) {
+    if (font == 0 || font->num_chars == 256 || !pdev->use_open_font) {
 	/* Start a new synthesized font. */
 	int code = pdf_alloc_font(pdev, gs_no_id, &font, NULL);
 	char *pc;
@@ -1359,6 +1359,7 @@ assign_char_code(gx_device_pdf * pdev)
 	if ((*pc)++ == 0)
 	    *pc = 'A', pc[1] = 0;
 	pdev->open_font = font;
+	pdev->use_open_font = true;
     }
     return font->num_chars++;
 }

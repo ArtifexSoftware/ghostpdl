@@ -202,6 +202,7 @@ const gx_device_pdf gs_pdfwrite_device =
  {{0}},				/* streams */
  {{0}},				/* pictures */
  0,				/* open_font */
+ 0 /*false*/,			/* use_open_font */
  0,				/* embedded_encoding_id */
  0,				/* next_id */
  0,				/* Catalog */
@@ -628,7 +629,7 @@ pdf_close_page(gx_device_pdf * pdev)
      * add additional characters on subsequent pages.
      */
     if (pdev->CompatibilityLevel <= 1.2)
-	pdev->open_font = 0;
+	pdev->use_open_font = false;
 
     /* Accumulate text rotation. */
 

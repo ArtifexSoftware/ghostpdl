@@ -380,7 +380,8 @@ struct gx_device_pdf_s {
      * EP nest, we delete the object from the pictures file at that time.
      */
     pdf_temp_file_t pictures;
-    pdf_font_t *open_font;
+    pdf_font_t *open_font;	/* current Type 3 synthesized font */
+    bool use_open_font;		/* if false, start new open_font */
     long embedded_encoding_id;
     /* ................ */
     long next_id;
