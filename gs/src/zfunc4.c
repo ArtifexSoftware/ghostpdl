@@ -265,6 +265,7 @@ gs_build_function_4(const ref *op, const gs_function_params_t * mnDR,
 
     *(gs_function_params_t *)&params = *mnDR;
     params.ops.data = 0;	/* in case of error */
+    params.ops.size = 0;	/* ibid. */
     if (dict_find_string(op, "Function", &proc) <= 0)
 	goto fail;
     if (!r_is_proc(proc)) {
