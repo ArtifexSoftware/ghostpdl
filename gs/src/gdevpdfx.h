@@ -702,6 +702,7 @@ int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page);
 
 /* Copy data from a temporary file to a stream. */
 void pdf_copy_data(stream *s, FILE *file, long count);
+void pdf_copy_data_safe(stream *s, FILE *file, long position, long count);
 
 /* ------ Pages ------ */
 

@@ -623,6 +623,28 @@ pdf_copy_data(stream *s, FILE *file, long count)
     }
 }
 
+
+/* Copy data from a temporary file to a stream, 
+   which may be targetted to the same file. */
+void
+pdf_copy_data_safe(stream *s, FILE *file, long position, long count)
+{   
+    long left = count;
+
+    while (left > 0) {
+	byte buf[sbuf_size];
+	long copy = min(left, (long)sbuf_size);
+	long end_pos = ftell(file);
+
+	fseek(file, position + count - left, SEEK_SET);
+	fread(buf, 1, copy, file);
+	fseek(file, end_pos, SEEK_SET);
+	stream_write(s, buf, copy);
+	sflush(s);
+	left -= copy;
+    }
+}
+
 /* ------ Pages ------ */
 
 /* Get or assign the ID for a page. */

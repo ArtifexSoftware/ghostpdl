@@ -1104,23 +1104,29 @@ cos_stream_contents_write(const cos_stream_t *pcs, gx_device_pdf *pdev)
     cos_stream_piece_t *next;
     FILE *sfile = pdev->streams.file;
     long end_pos;
+    bool same_file = (pdev->sbstack_depth > 0);
     int code;
 
+    sflush(s);
     sflush(pdev->streams.strm);
-    end_pos = ftell(sfile);
 
     /* Reverse the elements temporarily. */
     for (pcsp = pcs->pieces, last = NULL; pcsp; pcsp = next)
 	next = pcsp->next, pcsp->next = last, last = pcsp;
     for (pcsp = last, code = 0; pcsp && code >= 0; pcsp = pcsp->next) {
-	fseek(sfile, pcsp->position, SEEK_SET);
-	pdf_copy_data(s, sfile, pcsp->size);
+	if (same_file) 
+	    pdf_copy_data_safe(s, sfile, pcsp->position, pcsp->size);
+	else {
+	    end_pos = ftell(sfile);
+	    fseek(sfile, pcsp->position, SEEK_SET);
+	    pdf_copy_data(s, sfile, pcsp->size);
+	    fseek(sfile, end_pos, SEEK_SET);
+	}
     }
     /* Reverse the elements back. */
     for (pcsp = last, last = NULL; pcsp; pcsp = next)
 	next = pcsp->next, pcsp->next = last, last = pcsp;
 
-    fseek(sfile, end_pos, SEEK_SET);
     return code;
 }
 
