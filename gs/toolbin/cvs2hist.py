@@ -161,8 +161,6 @@ def VersionTOC(version, version_date, groups):
 
 # Create a change log group header.
 def ChangeLogGroupHeader(group, previous_group, version):
-    if version == None:
-        return '\n****** ' + group + ' ******'
     header = '\n<h2><a name="' + NormalizeAnchor(version + '-' + group) + '"></a>' + group + '</h2><pre>'
     if previous_group != None:
         header = '\n</pre>' + header[1:]
@@ -191,13 +189,16 @@ def BuildPatch(cvs_command, revision, rcs_file):
     return os.popen(patch_command, 'r').readlines()
 
 # Create an individual history entry.
-def ChangeLogEntry(cvs_command, author, date, rev_files, description_lines, prefix, indent, line_length, patch):
+def ChangeLogEntry(cvs_command, author, date, rev_files, description_lines, prefix, indent, line_length, patch, text_option):
     import string, time
     # Add the description.
     description = ''
     for line in description_lines:
         description = description + line[:-1] + ' '  # drop trailing \n
-    entry = string.split(string.strip(HTMLEncode(description)))
+    if text_option == 0:
+	entry = string.split(string.strip(HTMLEncode(description)))
+    else:
+	entry = string.split(string.strip(description))
     entry[0] = prefix + entry[0]
     # Add the list of RCS files and revisions.
     items = []
@@ -292,13 +293,14 @@ GroupOrder = {
 def main():
     import sys, getopt, time, string, regex, regsub
     try:
-	opts, args = getopt.getopt(sys.argv[1:], "C:d:Hi:l:Mpr:v:",
+	opts, args = getopt.getopt(sys.argv[1:], "C:d:Hi:l:Mptr:v:",
 				   ["CVS_command",
 				    "date",
                                     "indent",
                                     "length",
                                     "Merge",
 				    "patches",     #### not yet supported
+				    "text",
 				    "rlog_options", #### not yet supported
                                     "version"
 				    ])
@@ -308,7 +310,7 @@ def main():
 	print msg
 	print "Usage: cvs2hist ...options..."
 	print "Options: [-C CVS_command] [-d rcs_date] [-i indent] [-l length]"
-	print "         [-M] [-p] [-r rlog_options] [-v version]"
+	print "         [-M] [-p] [-t] [-r rlog_options] [-v version]"
 	sys.exit(2)
 
     # Set up defaults for all of the command line options.
@@ -323,7 +325,8 @@ def main():
     merge = 0
     patches = 0
     rlog_options = ""
-    version = None
+    text_option = 0;
+    version = "CVS"
     # override defaults if specified on the command line
     for o, a in opts:
 	if o == '-C' : cvs_command = a
@@ -332,6 +335,7 @@ def main():
 	elif o == '-l' : length = string.atoi(a)
         elif o == '-M' : merge = 1
         elif o == '-p' : patches = 1
+	elif o == '-t' : text_option = 1
 	elif o == '-r' : rlog_options = a
 	elif o == '-v' : version = a
 	else: print "getopt should have failed already"
@@ -399,7 +403,7 @@ def main():
     time_now = time.localtime(time.time())
     version_date = time.strftime('%Y-%m-%d', time_now)
     version_time = time.strftime('%Y-%m-%d %H:%M:%S', time_now)
-    if version != None:
+    if text_option == 0:
 	print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
         print "<html><head>"
         print "<title>Ghostscript " + version + " change history as of " + version_time + "</title>"
@@ -427,15 +431,18 @@ def main():
     for omit_group_order, section, date, group, description, author, rcs_file, revision, tags in log:
         if group != last_group:
             if rev_files != []:
-                print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches)[:-1]
+                print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches, text_option)[:-1]
                 rev_files = []
-            print ChangeLogGroupHeader(group, last_group, version)
+	    if text_option == 0:
+		print ChangeLogGroupHeader(group, last_group, version)
+	    else:
+		print '\n****** ' + group + ' ******'
             last_group = group
             last_section = None
             last_description = None
         if section != last_section:
             if rev_files != []:
-                print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches)[:-1]
+                print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches, text_option)[:-1]
                 rev_files = []
 	    (header, prefix) = ChangeLogSectionHeader(section, last_section, version)
             if header != None:
@@ -444,7 +451,7 @@ def main():
             last_description = None
 	if author != last_author or description != last_description or abs(RCSDateToSeconds(date) - RCSDateToSeconds(last_date)) >= 3:
             if rev_files != []:
-                print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches)[:-1]
+                print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches, text_option)[:-1]
                 rev_files = []
             last_author = author
             last_date = date
@@ -455,9 +462,9 @@ def main():
     # print the last entry if there is one (i.e. the last two entries
     # have the same author and date)
     if rev_files != []:
-        print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches)[:-1]
+        print ChangeLogEntry(cvs_command, last_author, last_date, rev_files, last_description, prefix, indent, length, patches, text_option)[:-1]
     # Print the HTML trailer.
-    if version != None:
+    if text_option == 0:
         print "\n</pre></body></html>"
 
 if __name__ == '__main__':
