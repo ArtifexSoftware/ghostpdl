@@ -102,11 +102,11 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 extern int pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_const_string *pdata);
 
 /* Structure descriptors for cloning fonts */
-gs_private_st_ptrs1(st_pl_font_glyph, pl_font_glyph_t, "pl_font_glyph_t",
-  pl_font_glyph_enum_ptrs, pl_font_glyph_reloc_ptrs, data);
-gs_private_st_element(st_pl_font_glyph_element, pl_font_glyph_t,
+gs_private_st_ptrs1(st_pl_font_glyph_f, pl_font_glyph_t, "pl_font_glyph_t",
+  pl_font_glyph_enum_ptrs_f, pl_font_glyph_reloc_ptrs_f, data);
+gs_private_st_element(st_pl_font_glyph_element_f, pl_font_glyph_t,
   "pl_font_glyph_t[]",
-  pl_font_glyph_elt_enum_ptrs, pl_font_glyph_elt_reloc_ptrs, st_pl_font_glyph);
+  pl_font_glyph_elt_enum_ptrs_f, pl_font_glyph_elt_reloc_ptrs_f, st_pl_font_glyph_f);
 
 pl_font_t *
 pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
@@ -201,7 +201,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	    int i;
 	    plfont->glyphs.table = 
 	      gs_alloc_struct_array(mem, src->glyphs.size, pl_font_glyph_t,
-				    &st_pl_font_glyph_element, cname);
+				    &st_pl_font_glyph_element_f, cname);
 	    plfont->glyphs.used = src->glyphs.used;
 	    plfont->glyphs.limit = src->glyphs.limit;
 	    plfont->glyphs.size = src->glyphs.size;
