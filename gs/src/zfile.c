@@ -161,7 +161,8 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
      */
     if (i_ctx_p->LockFilePermissions &&
 	    (gp_file_name_references_parent(fname, len) ||
-               string_match(fname, len, "%pipe*", 5, NULL))
+               string_match( (const unsigned char*) fname, len,
+			     (const unsigned char*) "%pipe*", 5, NULL))
        ) {
 	return e_invalidfileaccess;
     }
@@ -177,8 +178,8 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 	    r_type(&permitstring) != t_string
 	   )    
 	    break;	/* any problem, just fail */
-        if (string_match(fname, len, permitstring.value.bytes,
-		r_size(&permitstring), 
+        if (string_match( (const unsigned char*) fname, len,
+			  permitstring.value.bytes, r_size(&permitstring), 
 		filenamesep[0] == 0 ? &win_filename_params : NULL)
 	   )
 	    return 0;		/* success */
@@ -583,7 +584,8 @@ zlibfile(i_ctx_t *i_ctx_p)
 	if (i_ctx_p->LockFilePermissions &&
 	    (i_ctx_p->filearg == NULL ||
 	    bytes_compare(op->value.bytes, r_size(op),
-	    (const byte *)i_ctx_p->filearg, strlen(i_ctx_p->filearg)) != 0)
+	    (const byte *)i_ctx_p->filearg,
+			  strlen( (const char*) i_ctx_p->filearg)) != 0)
 	   ) {
 	    /* Check to see if this file is allowed */
 	    /* Possibly we should allow access to parent directories if */

@@ -684,7 +684,7 @@ argproc(gs_main_instance * minst, const char *arg)
 
     if (code < 0)
         return code;
-    minst->i_ctx_p->filearg = arg;	/* allow reading this file if SAFER set */
+    minst->i_ctx_p->filearg = (unsigned char*) arg;	/* allow reading this file if SAFER set */
     if (minst->run_buffer_size) {
 	/* Run file with run_string. */
 	return run_buffered(minst, arg);
