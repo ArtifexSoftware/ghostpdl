@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Requires gsmemory.h, gsstruct.h */
 
 #ifndef gxalloc_INCLUDED
@@ -133,20 +133,24 @@ struct chunk_s {
     /* Note that allocation takes place both from the bottom up */
     /* (aligned objects) and from the top down (strings). */
     byte *cbase;		/* bottom of chunk data area */
+    byte *int_freed_top;	/* top of most recent internal free area */
+				/* in chunk (which may no longer be free), */
+				/* used to decide when to consolidate */
+				/* trailing free space in allocated area */
     byte *cbot;			/* bottom of free area */
-    /* (top of aligned objects) */
+				/* (top of aligned objects) */
     obj_header_t *rcur;		/* current refs object, 0 if none */
     byte *rtop;			/* top of rcur */
     byte *ctop;			/* top of free area */
-    /* (bottom of strings) */
+				/* (bottom of strings) */
     byte *climit;		/* top of strings */
     byte *cend;			/* top of chunk */
     chunk_t *cprev;		/* chain chunks together, */
     chunk_t *cnext;		/*   sorted by address */
     chunk_t *outer;		/* the chunk of which this is */
-    /*   an inner chunk, if any */
+				/*   an inner chunk, if any */
     uint inner_count;		/* number of chunks of which this is */
-    /*   the outer chunk, if any */
+				/*   the outer chunk, if any */
     bool has_refs;		/* true if any refs in chunk */
     /*
      * Free lists for single bytes in blocks of 1-3 bytes,
@@ -173,7 +177,7 @@ struct chunk_s {
     string_reloc_offset *sreloc;	/* relocation for string blocks */
     byte *sdest;		/* destination for (top of) strings */
     byte *rescan_bot;		/* bottom of rescanning range if */
-    /* the GC mark stack overflows */
+				/* the GC mark stack overflows */
     byte *rescan_top;		/* top of range ditto */
 };
 
@@ -231,30 +235,6 @@ extern_st(st_chunk);
 			gs_exit(1);\
 		}\
 	}
-
-/*
- * Define the options for a memory dump.  These may be or'ed together.
- */
-typedef enum {
-     dump_do_default = 0,	/* pro forma */
-     dump_do_strings = 1,
-     dump_do_type_addresses = 2,
-     dump_do_no_types = 4,
-     dump_do_pointers = 8,
-     dump_do_pointed_strings = 16,	/* only if do_pointers also set */
-     dump_do_contents = 32,
-     dump_do_marks = 64
-} dump_options_t;
-
-/*
- * Define all the parameters controlling what gets dumped.
- */
-typedef struct dump_control_s {
-     dump_options_t options;
-     const byte *bottom;
-     const byte *top;
-} dump_control_t;
-
 #else
 #  define END_OBJECTS_SCAN END_OBJECTS_SCAN_INCOMPLETE
 #endif
@@ -270,10 +250,10 @@ void alloc_init_free_strings(P1(chunk_t *));
 /* Note that ptr_is_within_chunk returns true even if the pointer */
 /* is in an inner chunk of the chunk being tested. */
 #define ptr_is_within_chunk(ptr, cp)\
-  ptr_between((const byte *)(ptr), (cp)->cbase, (cp)->cend)
+  PTR_BETWEEN((const byte *)(ptr), (cp)->cbase, (cp)->cend)
 #define ptr_is_in_inner_chunk(ptr, cp)\
   ((cp)->inner_count != 0 &&\
-   ptr_between((const byte *)(ptr), (cp)->cbot, (cp)->ctop))
+   PTR_BETWEEN((const byte *)(ptr), (cp)->cbot, (cp)->ctop))
 #define ptr_is_in_chunk(ptr, cp)\
   (ptr_is_within_chunk(ptr, cp) && !ptr_is_in_inner_chunk(ptr, cp))
 typedef struct chunk_locator_s {
@@ -396,11 +376,11 @@ struct gs_ref_memory_s {
     int num_contexts;		/* # of contexts sharing this VM */
     struct alloc_change_s *changes;
     struct alloc_save_s *saved;
+    long total_scanned;
     struct alloc_save_s *reloc_saved;	/* for GC */
     gs_memory_status_t previous_status;		/* total allocated & used */
 				/* in outer save levels */
-				/* We put the freelists last to keep the */
-                                /* scalar offsets small. */
+    /* We put the freelists last to keep the scalar offsets small. */
     obj_header_t *freelists[num_freelists];
 };
 
@@ -429,5 +409,55 @@ extern const gs_memory_procs_t gs_ref_memory_procs;
 #define END_CHUNKS_SCAN\
 		}\
 	}
+
+/* ================ Debugging ================ */
+
+#ifdef DEBUG
+
+/*
+ * Define the options for a memory dump.  These may be or'ed together.
+ */
+typedef enum {
+    dump_do_default = 0,	/* pro forma */
+    dump_do_strings = 1,
+    dump_do_type_addresses = 2,
+    dump_do_no_types = 4,
+    dump_do_pointers = 8,
+    dump_do_pointed_strings = 16,	/* only if do_pointers also set */
+    dump_do_contents = 32,
+    dump_do_marks = 64
+} dump_options_t;
+
+/*
+ * Define all the parameters controlling what gets dumped.
+ */
+typedef struct dump_control_s {
+    dump_options_t options;
+    const byte *bottom;
+    const byte *top;
+} dump_control_t;
+
+/* Define the two most useful dump control structures. */
+extern const dump_control_t dump_control_default;
+extern const dump_control_t dump_control_all;
+
+/* ------ Procedures ------ */
+
+/* Print one object with the given options. */
+/* Relevant options: type_addresses, no_types, pointers, pointed_strings, */
+/* contents. */
+void debug_print_object(P2(const void *obj, const dump_control_t * control));
+
+/* Print the contents of a chunk with the given options. */
+/* Relevant options: all. */
+void debug_dump_chunk(P2(const chunk_t * cp, const dump_control_t * control));
+void debug_print_chunk(P1(const chunk_t * cp));	/* default options */
+
+/* Print the contents of all chunks managed by an allocator. */
+/* Relevant options: all. */
+void debug_dump_memory(P2(const gs_ref_memory_t * mem,
+    const dump_control_t * control));
+
+#endif /* DEBUG */
 
 #endif /* gxalloc_INCLUDED */
