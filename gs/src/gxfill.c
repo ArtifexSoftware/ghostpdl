@@ -1306,10 +1306,9 @@ complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, 
 private int
 fill_slant_adjust(const line_list *ll,
 		  fixed xlbot, fixed xbot, fixed y,
-		  fixed xltop, fixed xtop, fixed height)
+		  fixed xltop, fixed xtop, fixed y1)
 {
     const fill_options * const fo = ll->fo;
-    fixed y1 = y + height;
     const fixed yb = y - fo->adjust_below;
     const fixed ya = y + fo->adjust_above;
     const fixed y1b = y1 - fo->adjust_below;
@@ -1322,7 +1321,7 @@ fill_slant_adjust(const line_list *ll,
     int code;
 
     INCR(slant);
-    vd_quad(xlbot, y, xbot, y, xtop, y + height, xltop, y + height, 1, VD_TRAP_COLOR);
+    vd_quad(xlbot, y, xbot, y, xtop, y1, xltop, y1, 1, VD_TRAP_COLOR);
 
     /* Set up all the edges, even though we may not need them all. */
 
@@ -1513,23 +1512,24 @@ process_h_segments(line_list *ll, fixed y)
     /* After this should call move_al_by_y and step to the next band. */
 }
 
-private int
-loop_fill_trap(const line_list *ll, fixed fx0, fixed fw0, fixed fy0,
-	       fixed fx1, fixed fw1, fixed fh, int flags)
+private inline int
+loop_fill_trap(const line_list *ll, fixed fx0, fixed fr0, fixed fy0,
+	       fixed fx1, fixed fr1, fixed fy1, int flags)
 {
     const fill_options * const fo = ll->fo;
-    fixed fy1 = fy0 + fh;
     fixed ybot = max(fy0, fo->pbox->p.y);
     fixed ytop = min(fy1, fo->pbox->q.y);
     gs_fixed_edge left, right;
 
     if (ybot >= ytop)
 	return 0;
-    vd_quad(fx0, ybot, fx0 + fw0, ybot, fx1 + fw1, ytop, fx1, ytop, 1, VD_TRAP_COLOR);
+    vd_quad(fx0, ybot, fr0, ybot, fr1, ytop, fx1, ytop, 1, VD_TRAP_COLOR);
     left.start.y = right.start.y = fy0;
     left.end.y = right.end.y = fy1;
-    right.start.x = (left.start.x = fx0) + fw0;
-    right.end.x = (left.end.x = fx1) + fw1;
+    left.start.x = fx0;
+    right.start.x = fr0;
+    left.end.x = fx1;
+    right.end.x = fr1;
     if (flags & ftf_pseudo_rasterization)
 	return gx_fill_trapezoid_narrow
 	    (fo->dev, &left, &right, ybot, ytop, flags, fo->pdevc, fo->lop);
@@ -1549,8 +1549,6 @@ fill_trap_slanted(const line_list *ll,
      * adjust: There are 3 cases needing different
      * algorithms, plus rectangles as a fast special case.
      */
-    fixed wbot = xbot - xlbot;
-    fixed wtop = xtop - xltop;
     fixed height = y1 - y;
     int xli = fixed2int_var_pixround(xltop);
     int code = 0;
@@ -1585,8 +1583,8 @@ fill_trap_slanted(const line_list *ll,
 
     if (xltop <= xlbot) {
 	if (xtop >= xbot) {	/* Top wider than bottom. */
-	    code = loop_fill_trap(ll, xlbot, wbot, y - fo->adjust_below,
-			xltop, wtop, height, 0);
+	    code = loop_fill_trap(ll, xlbot, xbot, y - fo->adjust_below,
+			xltop, xtop, y1 - fo->adjust_below, 0);
 	    if (ADJUSTED_Y_SPANS_PIXEL(y1)) {
 		if (code < 0)
 		    return code;
@@ -1597,7 +1595,7 @@ fill_trap_slanted(const line_list *ll,
 		vd_rect(xltop, y1 - fo->adjust_below, xtop, y1, 1, VD_TRAP_COLOR);
 	    }
 	} else {	/* Slanted trapezoid. */
-	    code = fill_slant_adjust(ll, xlbot, xbot, y, xltop, xtop, height);
+	    code = fill_slant_adjust(ll, xlbot, xbot, y, xltop, xtop, y1);
 	}
     } else {
 	if (xtop <= xbot) {	/* Bottom wider than top. */
@@ -1611,22 +1609,22 @@ fill_trap_slanted(const line_list *ll,
 		if (code < 0)
 		    return code;
 	    }
-	    code = loop_fill_trap(ll, xlbot, wbot, y + fo->adjust_above,
-			xltop, wtop, height, 0);
+	    code = loop_fill_trap(ll, xlbot, xbot, y + fo->adjust_above,
+			xltop, xtop, y1 + fo->adjust_above, 0);
 	} else {	/* Slanted trapezoid. */
-	    code = fill_slant_adjust(ll, xlbot, xbot, y,
-			  xltop, xtop, height);
+	    code = fill_slant_adjust(ll, xlbot, xbot, y, xltop, xtop, y1);
 	}
     }
     return code;
 }
 
 private int
-fill_trap_or_rect(gx_device* dev, const line_list *ll,
+fill_trap_or_rect(const line_list *ll,
 	    fixed xlbot, fixed xbot, fixed xltop, fixed xtop, fixed y, fixed y1,
-	    active_line *flp, active_line *alp)
+	    int flags)
 {
     const fill_options * const fo = ll->fo;
+    gx_device* dev = ll->fo->dev;
     int code;
 
     if (xltop == xlbot && xtop == xbot) {
@@ -1650,19 +1648,8 @@ fill_trap_or_rect(gx_device* dev, const line_list *ll,
 	}
 	code = LOOP_FILL_RECTANGLE_DIRECT(fo, xli, yi, xi - xli, wi);
 	vd_rect(xltop, y, xtop, y1, 1, VD_TRAP_COLOR);
-    } else {
-	int flags = 0;
-
-	if (fo->pseudo_rasterization) {
-	    flags |= ftf_pseudo_rasterization;
-	    if (flp->start.x == alp->start.x && flp->start.y == y)
-		flags |= ftf_peak0;
-	    if (flp->end.x == alp->end.x && flp->end.y == y1)
-		flags |= ftf_peak0;
-	}
-	code = loop_fill_trap(ll, xlbot, xbot - xlbot, y, xltop, 
-			xtop - xltop, y1 - y, flags);
-    }
+    } else
+	code = loop_fill_trap(ll, xlbot, xbot, y, xltop, xtop, y1, flags);
     return code;
 }
 
@@ -2070,9 +2057,18 @@ fill_loop_by_trapezoids(line_list *ll, fixed band_mask)
 			code = gx_san_trap_store((gx_device_spot_analyzer *)fo->dev, 
 			    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg, 
 			    flp->direction, alp->direction);
-		    } else
-			code = fill_trap_or_rect(fo->dev, ll, 
-				xlbot, xbot, xltop, xtop, y, y1, flp, alp);
+		    } else {
+			int flags = 0;
+
+			if (fo->pseudo_rasterization) {
+			    flags = ftf_pseudo_rasterization;
+			    if (flp->start.x == alp->start.x && flp->start.y == y)
+				flags |= ftf_peak0;
+			    if (flp->end.x == alp->end.x && flp->end.y == y1)
+				flags |= ftf_peak0;
+			}
+			code = fill_trap_or_rect(ll, xlbot, xbot, xltop, xtop, y, y1, flags);
+		    }
 		    if (fo->pseudo_rasterization) {
 			if (code < 0)
 			    return code;
