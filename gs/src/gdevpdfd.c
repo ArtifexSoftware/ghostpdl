@@ -1082,6 +1082,8 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 		return 0;
 	    m.tx = p.x;
 	    m.ty = p.y;
+	    cvd.path_offset.x = m.tx;
+	    cvd.path_offset.y = m.ty;
 	    scale = (double)rect_size.x * rect_size.y * pdev->color_info.num_components /
 		    pdev->MaxShadingBitmapSize;
 	    if (scale > 1) {
@@ -1127,7 +1129,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 
 		gx_path_init_local(&path_intersection, pdev->memory);
 		gx_cpath_init_local_shared(&cpath_intersection, pcpath, pdev->memory);
-		if ((code = gx_cpath_intersect(&cpath_intersection, ppath, params->rule, (const gs_imager_state *)pis)) >= 0)
+		if ((code = gx_cpath_intersect(&cpath_intersection, ppath, params->rule, (gs_imager_state *)pis)) >= 0)
 		    code = gx_cpath_to_path(&cpath_intersection, &path_intersection);
 		if (code >= 0)
 		    code = path_scale(&path_intersection, scalex, scaley);
