@@ -22,7 +22,7 @@
 #  define gp_INCLUDED
 
 /* A temporary switch for the new logics of file path concatenation : */
-#define NEW_COMBINE_PATH 1 /* 0 = old, 1 = new. */
+#define NEW_COMBINE_PATH 0 /* 0 = old, 1 = new. */
 
 #include "gstypes.h"
 /*
@@ -262,11 +262,23 @@ bool gp_file_name_is_current(const char *fname, uint len);
 /*	VMS:	""          */
 const char *gp_file_name_current(void);
 
-/* Returns a string for separating file name items. */
+/* Returns a string for separating a file name item. */
+/*	unix, Win:  "/"	    */
+/*	mac:	":"	    */
+/*	VMS:	"]"	    */
+const char *gp_file_name_separator(void);
+
+/* Returns a string for separating a directory item. */
 /*	unix, Win:  "/"	    */
 /*	mac:	":"	    */
 /*	VMS:	"."	    */
-const char *gp_file_name_separator(void);
+const char *gp_file_name_directory_separator(void);
+
+/* Returns a string for representing a parent directory reference. */
+/*	unix, Win:  ".."    */
+/*	mac:	":"	    */
+/*	VMS:	"."	    */
+const char *gp_file_name_parent(void);
 
 /* Answer whether the platform allows parent refenences. */
 /*	unix, Win, Mac: yes */

@@ -537,9 +537,11 @@ uint gs_file_name_check_separator(const char *fname, int len, const char *item)
     if (len > 0) {
 	/* 
 	 * Ghostscript specifics : an extended syntax like Mac OS.
-	 * We intentionally don't consider ':', '[' and ']' as separators
+	 * We intentionally don't consider ':' and '[' as separators
 	 * in forward search, see gp_file_name_combine. 
 	 */
+	if (fname[0] == ']')
+		return 1; /* It is a file separator. */
 	if (fname[0] == '.') {
 	    if (fname == item + 1 && item[0] == '.')
 		return 1; /* It is a separator after parent. */
@@ -565,6 +567,14 @@ bool gp_file_name_is_current(const char *fname, uint len)
 }
 
 const char *gp_file_name_separator(void)
+{   return "]";
+}
+
+const char *gp_file_name_directory_separator(void)
+{   return ".";
+}
+
+const char *gp_file_name_parent(void)
 {   return ".";
 }
 
@@ -586,6 +596,9 @@ gp_file_name_combine(const char *prefix, uint plen,
 {
     /*
      * Reduce it to the MacOS case.
+     *
+     * Implementation restriction : fname must not contain a part of 
+     * "device:[root.]["
      */
     uint rlen, flen1 = flen, plen1 = plen;
     const char *fname1 = fname;

@@ -119,6 +119,14 @@ const char *gp_file_name_separator(void)
 {   return "/";
 }
 
+const char *gp_file_name_directory_separator(void)
+{   return "/";
+}
+
+const char *gp_file_name_parent(void)
+{   return "..";
+}
+
 const char *gp_file_name_current(void)
 {   return ".";
 }

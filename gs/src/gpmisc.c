@@ -106,6 +106,17 @@ append(char **bp, const char *bpe, const char **ip, uint len)
     return true;
 }
 
+/* Search a separator forward. */
+private inline uint
+search_separator(const char **ip, const char *ipe, const char *item, int direction)
+{   uint slen = 0;
+    for (slen = 0; (*ip - ipe) * direction < 0; (*ip) += direction)
+	if((slen = gs_file_name_check_separator(*ip, ipe - *ip, item)) != 0)
+	    break;
+    return slen;
+}
+
+
 /*
  * Combine a file name with a prefix.
  * Concatenates two paths and reduce parent references and current 
@@ -154,7 +165,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
     slen = gs_file_name_check_separator(bp, buffer - bp, bp); /* Backward search. */
     if (rlen != 0 && slen == 0) {
 	/* Patch it against names like "c:dir" on Windows. */
-	const char *sep = gp_file_name_separator();
+	const char *sep = gp_file_name_directory_separator();
 
 	slen = strlen(sep);
 	if (!append(&bp, bpe, &sep, slen))
@@ -165,9 +176,7 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
 	const char *item = ip;
 	uint ilen;
 
-	for (slen = 0; ip < ipe; ip++)
-	    if((slen = gs_file_name_check_separator(ip, ipe - ip, item)) != 0)
-		break;
+	slen = search_separator(&ip, ipe, item, 1);
 	ilen = ip - item;
 	if (ilen == 0 && !gp_file_name_is_empty_item_meanful()) {
 	    ip += slen;
@@ -220,9 +229,9 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
 	    /* Unappend the last separator and the last item. */
 	    uint slen1 = gs_file_name_check_separator(bp, buffer + rlen - bp, bp); /* Backward search. */
 
-	    for (bp -= slen1; bp > buffer + rlen; bp--)
-		if (gs_file_name_check_separator(bp, buffer + rlen - bp, bp) != 0) /* Backward search. */
-		    break;
+	    bp -= slen1;
+	    DISCARD(search_separator((const char **)&bp, buffer + rlen, bp, -1));
+	    /* The cast above quiets a gcc warning. We believe it's a bug in the compiler. */
 	    /* Skip the input with separator. We cannot use slen on Mac OS. */
 	    ip += gs_file_name_check_separator(ip, ipe - ip, ip);
 	    slen = 0;
@@ -255,18 +264,23 @@ gp_file_name_combine_generic(const char *prefix, uint plen,
 		return gp_combine_success;
 	    } else {
 	        /* ipe == prefix + plen */
+		/* Switch to fname. */
+		ip = fname;
+		ipe = fname + flen;
 		if (slen == 0) {
-		    const char *sep = gp_file_name_separator();
-
+		    /* Insert a separator. */
+		    const char *sep;
+    
+		    slen = search_separator(&ip, ipe, fname, 1);
+		    sep = (slen != 0 ? gp_file_name_directory_separator() 
+		                    : gp_file_name_separator());
 		    slen = strlen(sep);
 		    if (bp == buffer + rlen + infix_len)
 			infix_len += slen;
 		    if (!append(&bp, bpe, &sep, slen))
 			return gp_combine_small_buffer;
+		    ip = fname; /* Switch to fname. */
 		}
-		/* Switch to fname. */
-		ip = fname;
-		ipe = fname + flen;
 	    }
 	}
     }
