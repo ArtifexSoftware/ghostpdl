@@ -170,26 +170,34 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 	uint *pfree1 = &cp->sfree1[str_offset >> 8];
 	uint count = size;
 	byte *prev;
-	byte *ptr = str;
+	byte *ptr;
 
 	if (*pfree1 == 0) {
 	    *str = 0;
 	    *pfree1 = str_offset;
+	    if (!--count)
+		return;
 	    prev = str;
+	    ptr = str + 1;
 	} else if (str_offset < *pfree1) {
 	    *str = *pfree1 - str_offset;
 	    *pfree1 = str_offset;
+	    if (!--count)
+		return;
 	    prev = str;
+	    ptr = str + 1;
 	} else {
 	    uint next;
 
 	    prev = csbase(cp) + *pfree1;
-	    while (prev + (next = *prev) < str)
+	    while ((next = *prev) != 0 && prev + next < str)
 		prev += next;
+	    ptr = str;
 	}
 	for (;;) {
 	    /*
 	     * Invariants:
+	     *      ptr == str + size - count
 	     *      prev < sfbase + str_offset
 	     *      *prev == 0 || prev + *prev > sfbase + str_offset
 	     */
