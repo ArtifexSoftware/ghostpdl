@@ -202,8 +202,6 @@ pl_deallocate_interp_instance(
 {
 	int code
 	 = instance->interp->implementation->proc_deallocate_interp_instance(instance);
-	gs_nogc_reclaim(&instance->spaces, true);
-
 	return code;
 }
 
@@ -215,7 +213,6 @@ pl_deallocate_interp(
 {
 	int code
 	 = interp->implementation->proc_deallocate_interp(interp);
-
 	return code;
 }
 
