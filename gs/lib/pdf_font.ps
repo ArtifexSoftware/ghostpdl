@@ -46,10 +46,22 @@ pdfdict begin
 } bdef
 
 % Get the Encoding for a font.
-/getencoding		% <base-encoding> <font-resource> getencoding <enc>
- { /Encoding knownoget
+/getencoding		% <base-encoding|null> <font-resource> getencoding <enc>
+ { 
+   % if the initial encoding is null, construct a valid array of the
+   % required length (LastChar + 1) or default of 256 filled with .notdef
+   1 index null eq {
+     exch pop [
+       1 index /LastChar knownoget { 1 add } { 256 } ifelse
+       { /.notdef } repeat
+     ] exch
+   } if
+   % Grab the Flags entry to see if this font is "symbolic" later
+   dup /FontDescriptor knownoget { /Flags get } { 0 } ifelse exch
+   /Encoding knownoget
     { dup type /nametype eq
        { 
+         exch pop	% named Encoding explicit, discard Flags
          % The published PDF specification says the Encoding name
          % "must be" one of the 3 predefined Encodings, implying
          % that an error should occur if it isn't.  However, Acrobat
@@ -65,15 +77,29 @@ pdfdict begin
            }
          ifelse
        }
-       { dup /BaseEncoding knownoget
-	  { findencoding 3 -1 roll pop exch
+       {
+	 dup /BaseEncoding knownoget
+	  { exch pop	% named Encoding explicit, discard Flags
+            findencoding 3 -1 roll pop exch
 	  }
-	 if
+          % If BaseEncoding is absent, then the Differences entry describes
+	  % differences from an implicit base encoding. For a font program
+	  % that is embedded in the PDF file, the implicit base encoding
+	  % is the font program’s built-in encoding, which has been passed
+	  % on the stack. Otherwise, for a nonsymbolic font, it is
+	  % StandardEncoding. Symbolic fonts use the built-in encoding.
+
+          { % use StandardEncoding as long as this is not a Symbolic font
+	    exch 4 and 0 eq { /StandardEncoding findencoding 3 -1 roll pop exch } if
+	  }
+	 ifelse
 	 /Differences knownoget { updateencoding } if
        }
       ifelse
+    } {
+      pop	% no Encoding, discard Flags
     }
-   if
+   ifelse
  } bdef
 
 % Rename a font with a generated name.
