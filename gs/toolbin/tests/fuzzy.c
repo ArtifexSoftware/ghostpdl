@@ -634,6 +634,6 @@ main (int argc, char **argv)
       return 1;
     }
   if (freport.n_outof_window > 0)
-      return 1;
+      return 2;
   return 0;
 }
