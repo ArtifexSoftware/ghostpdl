@@ -21,6 +21,12 @@ CLEAN_PLATFORM_FILES=$(TARGET_XE).ilk $(TARGET_XE).pdb
 
 AK=$(GLGENDIR)\ccf32.tr
 
+# clean gs files using the
+clean_gs:
+	nmake /f $(GLSRCDIR)\msvclib.mak \
+	GLSRCDIR=$(GLSRCDIR) GLGENDIR=$(GLGENDIR) \
+	GLOBJDIR=$(GLOBJDIR) clean
+
 # Define names of utility programs
 AUXGENDIR=$(GLGENDIR)
 AUXGEN=$(AUXGENDIR)$(D)

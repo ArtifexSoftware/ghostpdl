@@ -35,6 +35,11 @@ nofp:
 product:
 	make GENOPT='' GCFLAGS='$(GCFLAGS)' CFLAGS='-O2 $(GCFLAGS) $(XCFLAGS)'
 
+clean_gs:
+	make -f $(GLSRCDIR)/ugcclib.mak \
+	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
+	GLOBJDIR='$(GLOBJDIR)' clean
+	
 # We also specify the location of zlib here since we hardwire the
 # banding compresssion method to zlib in the next target.
 ZSRCDIR=$(GLSRCDIR)/zlib
