@@ -1128,23 +1128,19 @@ readonly def
     } {
       true resolvestream
 		% Stack: filepos fontres font mapstream
-      dup 2 index /CIDCount oget dup 32767 le {
-        2 mul string readstring pop
+	% Can't know the length of the decompressed stream, so allocate a big buffer...
+      dup 65534 string readstring {
+   	% Length exceeded max string size, use an array of two strings
+   	1 index dup 65534 string readstring pop   % maybe a null string - not important.
+      	  2 array astore
+      	        % Stack: filepos fontres font mapstream array 
+      	  dup 1 get 32767 add
       } {
-	  % Length exceeded max string size, use an array of two strings
-          % stack: filepos fontres font mapstream mapstream CIDCount
-        1 index 32767 string readstring not {
-          (   **** Warning: CIDToGIDMap length of ) pdfformaterror
-          dup length 2 div cvi =string cvs pdfformaterror
-          (, expected length of ) pdfformaterror
-          exch =string cvs pdfformaterror
-          (.\n) pdfformaterror
-          exch pop
-        } {
-          3 1 roll 32767 sub string readstring pop 
-	  2 array astore
-        } ifelse
+        dup length
       } ifelse
+      2 idiv
+    	% Stack: filepos fontres font mapstream array/string CIDCount
+      3 index exch /CIDCount exch put
       exch closefile exch
       dup /CIDMap 4 -1 roll put
     } ifelse

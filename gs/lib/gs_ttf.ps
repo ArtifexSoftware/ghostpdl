@@ -1082,7 +1082,8 @@ mark
 		% The cmap isn't of any use even if it is present.
 		% Just construct an identity CIDMap covering all the glyphs.
 
-  /CIDCount numloca
+  /CIDCount numloca % Wrong if a CIDFontType2 embedded into PDF with a non-Identity CIDToGIDMap.
+                    % processCIDToGIDMap may replace.
   /CIDMap numloca maxstring le {
                 % Use a single string.
       numloca 2 mul string 0 .fill_identity_cmap
