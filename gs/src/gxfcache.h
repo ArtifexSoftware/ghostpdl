@@ -304,6 +304,7 @@ struct gs_font_dir_s {
     gx_device_spot_analyzer *san;
 #endif
 #endif
+    int (*global_glyph_code)(gs_const_string *gstr, gs_glyph *pglyph);
 };
 
 #define private_st_font_dir()	/* in gsfont.c */\

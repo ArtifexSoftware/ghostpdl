@@ -31,6 +31,7 @@
 #include "gxfont42.h"
 #include "gxfcid.h"
 #include "gxfcopy.h"
+#include "gxfcache.h"		/* for gs_font_dir_s */
 #include "gxistate.h"		/* for Type 1 glyph_outline */
 #include "gxtext.h"		/* for BuildChar */
 #include "gxtype1.h"		/* for Type 1 glyph_outline */
@@ -863,18 +864,22 @@ copied_type1_seac_data(gs_font_type1 * pfont, int ccode,
      * This can only be invoked if the components have already been
      * copied to their proper positions, so it is simple.
      */
-    /*
-     * Retrieving the glyph name to gstr is not implemented.
-     */
-    gs_glyph glyph = copied_encode_char((gs_font *)pfont, (gs_char)ccode,
-					GLYPH_SPACE_NAME);
+    gs_glyph glyph = gs_c_known_encode((gs_char)ccode, ENCODING_INDEX_STANDARD);
+    gs_glyph glyph1;
+    int code;
 
     if (glyph == GS_NO_GLYPH)
 	return_error(gs_error_rangecheck);
+    code = gs_c_glyph_name(glyph, gstr);
+    if (code < 0)
+	return code;
+    code = pfont->dir->global_glyph_code(gstr, &glyph1);
+    if (code < 0)
+	return code;
     if (pglyph)
-	*pglyph = glyph;
+	*pglyph = glyph1;
     if (pgd)
-	return copied_type1_glyph_data(pfont, glyph, pgd);
+	return copied_type1_glyph_data(pfont, glyph1, pgd);
     else
 	return 0;
 }

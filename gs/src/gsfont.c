@@ -270,6 +270,7 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->san = 0;
 #endif
 #endif
+    pdir->global_glyph_code = NULL;
     return pdir;
 }
 

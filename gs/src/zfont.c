@@ -48,12 +48,26 @@ zfont_mark_glyph_name(gs_glyph glyph, void *ignore_data)
 	    name_mark_index((uint) glyph));
 }
 
+/* Get a global glyph code.  */
+private int 
+zfont_global_glyph_code(gs_const_string *gstr, gs_glyph *pglyph)
+{
+    ref v;
+    int code = name_ref(gstr->data, gstr->size, &v, 0);
+
+    if (code < 0)
+	return code;
+    *pglyph = (gs_glyph)name_index(&v);
+    return 0;
+}
+
 /* Initialize the font operators */
 private int
 zfont_init(i_ctx_t *i_ctx_p)
 {
     ifont_dir = gs_font_dir_alloc2(imemory, &gs_memory_default);
     ifont_dir->ccache.mark_glyph = zfont_mark_glyph_name;
+    ifont_dir->global_glyph_code = zfont_global_glyph_code;
     return gs_register_struct_root(imemory, NULL, (void **)&ifont_dir,
 				   "ifont_dir");
 }
