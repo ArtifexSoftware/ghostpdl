@@ -94,6 +94,7 @@ private void
 hpgl_select_font_pri_alt(hpgl_state_t *pgls, int index)
 {
     if ( pgls->g.font_selected != index ) {
+        hpgl_free_stick_fonts(pgls);
 	pgls->g.font_selected = index;
 	pgls->g.font = 0;
     }
@@ -130,29 +131,28 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	  &pgls->g.font_selection[pgls->g.font_selected];
 	pl_font_t *font = &pgls->g.stick_font[pgls->g.font_selected]
 	  [pfs->params.proportional_spacing];
-
+        gs_font_base *pfont;
+        int code;
 	/* Create a gs_font if none has been created yet. */
-	if ( font->pfont == 0 )
-	  { gs_font_base *pfont =
-	      gs_alloc_struct(pgls->memory, gs_font_base, &st_gs_font_base,
+        hpgl_free_stick_fonts(pgls);
+	pfont = gs_alloc_struct(pgls->memory, gs_font_base, &st_gs_font_base,
 			      "stick/arc font");
-	    int code;
+        
 
-	    if ( pfont == 0 )
-	      return_error(pgls->memory, e_Memory);
-	    code = pl_fill_in_font((gs_font *)pfont, font, pgls->font_dir,
-				   pgls->memory, "stick/arc font");
-	    if ( code < 0 )
-	      return code;
-	    if ( pfs->params.proportional_spacing )
-	      hpgl_fill_in_arc_font(pfont, gs_next_ids(pgls->memory, 1));
-	    else
-	      hpgl_fill_in_stick_font(pfont, gs_next_ids(pgls->memory, 1));
-	    font->pfont = (gs_font *)pfont;
-	    font->scaling_technology = plfst_TrueType;/****** WRONG ******/
-	    font->font_type = plft_Unicode;
-	    memcpy(font->character_complement, stick_character_complement, 8);
-	  }
+        if ( pfont == 0 )
+            return_error(pgls->memory, e_Memory);
+        code = pl_fill_in_font((gs_font *)pfont, font, pgls->font_dir,
+                               pgls->memory, "stick/arc font");
+        if ( code < 0 )
+            return code;
+        if ( pfs->params.proportional_spacing )
+            hpgl_fill_in_arc_font(pfont, gs_next_ids(pgls->memory, 1));
+        else
+            hpgl_fill_in_stick_font(pfont, gs_next_ids(pgls->memory, 1));
+        font->pfont = (gs_font *)pfont;
+        font->scaling_technology = plfst_TrueType;/****** WRONG ******/
+        font->font_type = plft_Unicode;
+        memcpy(font->character_complement, stick_character_complement, 8);
 	/*
 	 * The stick/arc font is protean: set its proportional spacing,
 	 * style, and stroke weight parameters to the requested ones.
@@ -433,6 +433,8 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 	pgls->g.carriage_return_pos.x += dx;
 	pgls->g.carriage_return_pos.y += dy;
     }
+    /* free any selected stick fonts */
+    hpgl_free_stick_fonts(pgls);
     return 0;
 }
 
@@ -1403,6 +1405,7 @@ hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
 	/* restore the origin */
 	pgls->g.label.origin = saved_origin;
 	hpgl_call(hpgl_set_current_position(pgls, &save_pos));
+        hpgl_free_stick_fonts(pgls);
 	return 0;
 }
 

@@ -91,12 +91,12 @@ endif
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
 
-XLDFLAGS=
+XLDFLAGS=-rdynamic
 EXTRALIBS=
 AGFA_OBJ=
 ifeq ($(ROMFONTS), true)
 PL_SCALER=afsr
-XLDFLAGS=-L../pl/
+XLDFLAGS=-L../pl/ -rdynamic
 EXTRALIBS=-lttffont
 endif
 

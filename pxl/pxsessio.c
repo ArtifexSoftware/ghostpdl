@@ -29,6 +29,8 @@
 #include "gsstate.h"
 #include "gxfixed.h"
 #include "gxpath.h"             /* for gx_clip_to_rectangle */
+#include "gxdcolor.h"
+#include "gxpcolor.h"
 #include "gxfcache.h"
 #include "gxdevice.h"
 #include "pjtop.h"
@@ -189,7 +191,12 @@ px_end_session_cleanup(px_state_t *pxs)
 	  pxCloseDataSource(NULL, pxs);
 	px_purge_character_cache(pxs);
 	px_dict_release(&pxs->session_pattern_dict);
-	px_purge_pattern_cache(pxs, eSessionPattern);
+        if (gstate_pattern_cache(pxs->pgs)) {
+            (gstate_pattern_cache(pxs->pgs)->free_all)(gstate_pattern_cache(pxs->pgs));
+            gs_free_object(pxs->memory, gstate_pattern_cache(pxs->pgs)->tiles, "px_end_session_cleanup(tiles)");
+            gs_free_object(pxs->memory, gstate_pattern_cache(pxs->pgs), "px_end_session_cleanup(struct)");
+            gstate_set_pattern_cache(pxs->pgs, 0);
+        }
 	/* We believe that streams do *not* persist across sessions.... */
 	px_dict_release(&pxs->stream_dict);
 	/* delete downloaded fonts on end of session */

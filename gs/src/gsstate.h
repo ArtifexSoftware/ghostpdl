@@ -32,6 +32,9 @@ typedef struct gs_overprint_params_s    gs_overprint_params_t;
 gs_state *gs_state_alloc(gs_memory_t *);	/* 0 if fails */
 int gs_state_free(gs_state *);
 
+/* free view clip */
+void gs_state_free_view_clip(gs_state *);
+
 /* Initialization, saving, restoring, and copying */
 int gs_gsave(gs_state *), gs_grestore(gs_state *), gs_grestoreall(gs_state *);
 int gs_grestore_only(gs_state *);

@@ -237,8 +237,6 @@ gs_state_alloc(gs_memory_t * mem)
 
     /* Initialize other things not covered by initgraphics */
 
-    pgs->path = gx_path_alloc(gstate_path_memory(mem), "gs_state_alloc(path)");
-    pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
     pgs->view_clip->rule = 0;	/* no clipping */
@@ -272,6 +270,15 @@ gs_state_alloc(gs_memory_t * mem)
 fail:
     gs_state_free(pgs);
     return 0;
+}
+
+void
+gs_state_free_view_clip(gs_state *pgs)
+{
+    if (pgs->view_clip) {
+        gx_cpath_free(pgs->view_clip, "gs_state_free_view_clip(view_clip)");
+        pgs->view_clip = 0;
+    }
 }
 
 /* Set the client data in a graphics state. */

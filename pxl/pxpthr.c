@@ -43,6 +43,7 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
         if ( code < 0 )
             return code;
         /* nb need to restore the old pcls old device */
+        pcs->personality = 0; /* pcl5c */
         pcl_do_resets(pcs, pcl_reset_initial);
     }
 
@@ -54,7 +55,6 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     state.definitions = pcs->pcl_commands;
     state.hpgl_parser_state=&glstate;
     pcl_process_init(&state);
-    pcs->personality = 0; /* wrong */
 
     r.ptr = par->source.data - 1;
     r.limit = par->source.data + par->source.available - 1;

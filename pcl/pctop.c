@@ -563,7 +563,7 @@ pcl_impl_deallocate_interp_instance(
 
 	/* free halftone cache in gs state */
         // NB	gs_free_ht_cache(mem, pcli->pcs.pgs);
-
+        gs_state_free_view_clip(pcli->pcs.pgs);
 	gs_state_free(pcli->pcs.pgs);
 	/* remove pcl's gsave grestore stack */
 	pcl_free_gstate_stk(&pcli->pcs);

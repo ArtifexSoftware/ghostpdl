@@ -579,6 +579,7 @@ pxl_impl_deallocate_interp_instance(
 	/* free halftone cache */
         //	gs_free_ht_cache(mem, pxli->pgs);
 	/* Unwind allocation */ 
+        gs_state_free_view_clip(pxli->pgs);
 	gs_state_free(pxli->pgs);
 	px_process_release(pxli->st);
 	px_state_release(pxli->pxs);
