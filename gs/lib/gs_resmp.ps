@@ -22,7 +22,7 @@
 %    Methods for interpreting the resource map to be provided by client 
 %    in the argument dictionary.
 %
-%    Note that the procedure Redefine is idempotent :
+%    Note that the procedure Redefine is idempotential :
 %    consequtive calls to it will not replace the category methods,
 %    but will merge resource maps. If an interleaving redefinition
 %    needs to cancel the idempotentity, it must remove the entry
@@ -362,11 +362,6 @@ currentpacking false setpacking
 currentdict end def
 setpacking
 
-% .forceput must be bound and hidden
-/PutPreprocessRecord
-{ NewCategory exch /.PreprocessRecord exch .forceput
-} .bind executeonly def
-
 /Redefine     % <OptionsDict> Redefine -
 { % Before calling this proc, the OptionsDict must specify options for
   % the catregory to be redefined :
@@ -403,23 +398,17 @@ setpacking
     OldCategory /NewCategory exch def
   } {
     % Redefine with a new category instance.
-    OldCategory dup length dict copy /NewCategory exch def
+    OldCategory dup length dict 
+    dup /.PreprocessRecord 4 dict put
+    copy /NewCategory exch def
   } ifelse
 
   % Provide the 'or' logic for PreprocessRecord,
   % to allow different record types to be mixed in a single map file.
-  % We do this with building the array of PreprocessRecord procedures,
+  % We do this with building a dictionary of PreprocessRecord procedures,
   % which come from different calls to Redefine :
-  NewCategory /.PreprocessRecord .knownget {
-    dup length 1 add array dup               % a0 a1 a1
-    3 1 roll                                 % a1 a0 a1
-    exch 0 exch                              % a1 a1 0 a0
-    putinterval                              % a1
-  } {
-    1 array
-  } ifelse                                   % a1
-  dup dup length 1 sub currentdict /PreprocessRecord get put
-  //PutPreprocessRecord exec
+  NewCategory /.PreprocessRecord get dup length   % <<pr>> l  
+  currentdict /PreprocessRecord get .growput
 
   MapFileName .libfile {
     1 dict begin
@@ -438,7 +427,8 @@ setpacking
   dup NewCategory /.PreprocessRecord get     % <<map>> <<map>> <<pr>>
   3 1 roll {                                 % <<pr>> <<map>> /Name raw_record
     false 3 1 roll                           % <<pr>> <<map>> false /Name raw_record 
-    4 index {                                % <<pr>> <<map>> false /Name raw_record {pr}
+    4 index {                                % <<pr>> <<map>> false /Name raw_record i {pr}
+      exch pop                               % <<pr>> <<map>> false /Name raw_record {pr}
       exec {                                 % <<pr>> <<map>> false /Name record
         3 -1 roll pop true 3 1 roll          % <<pr>> <<map>> true /Name record
         exit
