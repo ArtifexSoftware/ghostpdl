@@ -45,7 +45,7 @@
  */
 typedef struct stream_band_read_state_s {
     stream_state_common;
-    gx_band_page_info page_info;
+    gx_band_page_info_t page_info;
     int band;
     uint left;			/* amount of data left in this run */
     cmd_block b_this;
@@ -132,7 +132,7 @@ const stream_template s_band_read_template = {
 private int clist_render_init(P1(gx_device_clist *));
 private int clist_playback_file_band(P7(clist_playback_action action,
 					gx_device_clist_reader *cdev,
-					gx_band_page_info *page_info,
+					gx_band_page_info_t *page_info,
 					gx_device *target,
 					int band, int x0, int y0));
 private int clist_rasterize_lines(P6(gx_device *dev, int y, int lineCount,
@@ -453,7 +453,7 @@ clist_render_init(gx_device_clist *dev /******, gx_device_ht *hdev ******/)
 private int
 clist_playback_file_band(clist_playback_action action, 
 			 gx_device_clist_reader *cdev,
-			 gx_band_page_info *page_info, gx_device *target,
+			 gx_band_page_info_t *page_info, gx_device *target,
 			 int band, int x0, int y0)
 {
     int code = 0;

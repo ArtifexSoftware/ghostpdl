@@ -522,18 +522,27 @@ psw_beginpage(gx_device_vector * vdev)
 	psw_put_lines(s, psw_end_prolog);
     }
     pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page);
-    pprintg2(s, "/pagesave save def GS_pswrite_ProcSet begin %g %g scale\n%%%%EndPageSetup\n",
+    pputs(s, "/pagesave save def GS_pswrite_ProcSet begin\n");
+    if (!pdev->ProduceEPS)
+	pprintd2(s,
+		 (pdev->LanguageLevel > 1.5 ?
+		  "<< /PageSize [%d %d] >> setpagedevice\n" :
+		  "%d %d pageparams 3{exch pop}repeat setpage\n"),
+		 (int)(vdev->width * 72.0 / vdev->HWResolution[0] + 0.5),
+		 (int)(vdev->height * 72.0 / vdev->HWResolution[1] + 0.5));
+    pprintg2(s, "%g %g scale\n%%%%EndPageSetup\n",
 	     72.0 / vdev->HWResolution[0], 72.0 / vdev->HWResolution[1]);
     return 0;
 }
 
 private int
 psw_setlinewidth(gx_device_vector * vdev, floatp width)
-{				/*
-				 * The vector scale is 1, but we have to rescale the line width
-				 * (which is given in device pixels) to account for the actual
-				 * page scaling in effect.
-				 */
+{
+    /*
+     * The vector scale is 1, but we have to rescale the line width
+     * (which is given in device pixels) to account for the actual
+     * page scaling in effect.
+     */
     return psdf_setlinewidth(vdev, width * 72.0 / vdev->HWResolution[1]);
 }
 
@@ -758,7 +767,7 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
     pdev->first_page = false;
     gdev_vector_reset(vdev);
     image_cache_reset(pdev);
-    return 0;
+    return gx_finish_output_page(dev, num_copies, flush);
 }
 
 /* Close the device. */

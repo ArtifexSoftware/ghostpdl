@@ -149,6 +149,7 @@ clist_fill_rectangle(gx_device * dev, int x, int y, int width, int height,
 
     fit_fill(dev, x, y, width, height);
     FOR_RECTS {
+	pcls->colors_used |= color;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0 && color != pcls->colors[1])
@@ -172,12 +173,19 @@ clist_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tile,
     int depth =
 	(color1 == gx_no_color_index && color0 == gx_no_color_index ?
 	 dev->color_info.depth : 1);
+    gx_color_index colors_used =
+	(color1 == gx_no_color_index && color0 == gx_no_color_index ?
+	 /* We can't know what colors will be used: assume the worst. */
+	 ((gx_color_index)1 << depth) - 1 :
+	 (color0 == gx_no_color_index ? 0 : color0) |
+	 (color1 == gx_no_color_index ? 0 : color1));
     int code;
 
     fit_fill(dev, x, y, width, height);
     FOR_RECTS {
 	ulong offset_temp;
 
+	pcls->colors_used |= colors_used;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	} HANDLE_RECT(code);
@@ -228,6 +236,9 @@ clist_copy_mono(gx_device * dev,
 	&((gx_device_clist *)dev)->writer;
     int y0;
     gx_bitmap_id orig_id = id;
+    gx_color_index colors_used =
+	(color0 == gx_no_color_index ? 0 : color0) |
+	(color1 == gx_no_color_index ? 0 : color1);
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
@@ -237,6 +248,7 @@ clist_copy_mono(gx_device * dev,
 	const byte *row = data + (y - y0) * raster + (data_x >> 3);
 	int code;
 
+	pcls->colors_used |= colors_used;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -320,6 +332,8 @@ clist_copy_color(gx_device * dev,
     int depth = dev->color_info.depth;
     int y0;
     int data_x_bit;
+    /* We can't know what colors will be used: assume the worst. */
+    gx_color_index colors_used = ((gx_color_index)1 << depth) - 1;
 
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;
@@ -330,6 +344,7 @@ clist_copy_color(gx_device * dev,
 	const byte *row = data + (y - y0) * raster + (data_x_bit >> 3);
 	int code;
 
+	pcls->colors_used |= colors_used;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -425,6 +440,7 @@ clist_copy_alpha(gx_device * dev, const byte * data, int data_x,
 	const byte *row = data + (y - y0) * raster + (data_x_bit >> 3);
 	int code;
 
+	pcls->colors_used |= color;
 	TRY_RECT {
 	    code = cmd_disable_lop(cdev, pcls);
 	    if (code >= 0)
@@ -517,6 +533,12 @@ clist_strip_copy_rop(gx_device * dev,
     gx_strip_bitmap tile_with_id;
     const gx_strip_bitmap *tiles = textures;
     int y0;
+    /* Compute the set of possible colors that this operation can generate. */
+    gx_color_index all = ((gx_color_index)1 << dev->color_info.depth) - 1;
+    gx_color_index S =
+	(scolors ? scolors[0] | scolors[1] : sdata ? all : 0);
+    gx_color_index T =
+	(tcolors ? tcolors[0] | tcolors[1] : textures ? all : 0);
 
     if (scolors != 0 && scolors[0] != scolors[1]) {
 	fit_fill(dev, x, y, width, height);
@@ -530,8 +552,10 @@ clist_strip_copy_rop(gx_device * dev,
      */
     FOR_RECTS {
 	const byte *row = sdata + (y - y0) * sraster;
+	gx_color_index D = pcls->colors_used;
 	int code;
 
+	pcls->colors_used = (rop_proc_table[rop])(D, S, T) | D;
 	if (rop3_uses_T(rop)) {
 	    if (tcolors == 0 || tcolors[0] != tcolors[1]) {
 		ulong offset_temp;

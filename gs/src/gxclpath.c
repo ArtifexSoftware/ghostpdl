@@ -46,6 +46,25 @@ private int cmd_put_path(P8(gx_device_clist_writer * cldev,
 
 /* ------ Utilities ------ */
 
+/* Compute the colors used by a colored halftone. */
+private gx_color_index
+colored_halftone_colors_used(gx_device_clist_writer *cldev,
+			     const gx_drawing_color *pdcolor)
+{
+    /*
+     * We only know how to compute an accurate color set for the
+     * standard CMYK color mapping function.
+     */
+    if (dev_proc(cldev, map_cmyk_color) != cmyk_1bit_map_cmyk_color)
+	return ((gx_color_index)1 << cldev->color_info.depth) - 1;
+    return
+	((pdcolor->colors.colored.c_base[0] << 3) |
+	 (pdcolor->colors.colored.c_base[1] << 2) |
+	 (pdcolor->colors.colored.c_base[2] << 1) |
+	 (pdcolor->colors.colored.c_base[3]) |
+	 pdcolor->colors.colored.plane_mask);
+}
+
 /* Write out the color for filling, stroking, or masking. */
 /* We should be able to share this with clist_tile_rectangle, */
 /* but I don't see how to do it without adding a level of procedure. */
@@ -53,14 +72,13 @@ int
 cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		      const gx_drawing_color * pdcolor)
 {
-    const gx_strip_bitmap *tile;
-    gx_color_index color0, color1;
     ulong offset_temp;
     int type;
 
     if (gx_dc_is_pure(pdcolor)) {
 	gx_color_index color1 = gx_dc_pure_color(pdcolor);
 
+	pcls->colors_used |= color1;
 	if (color1 != pcls->colors[1]) {
 	    int code = cmd_set_color1(cldev, pcls, color1);
 
@@ -70,9 +88,11 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	return cmd_dc_type_pure;
     }
     if (gx_dc_is_binary_halftone(pdcolor)) {
-	tile = gx_dc_binary_tile(pdcolor);
-	color0 = gx_dc_binary_color0(pdcolor);
-	color1 = gx_dc_binary_color1(pdcolor);
+	const gx_strip_bitmap *tile = gx_dc_binary_tile(pdcolor);
+	gx_color_index color0 = gx_dc_binary_color0(pdcolor);
+	gx_color_index color1 = gx_dc_binary_color1(pdcolor);
+
+	pcls->colors_used |= color0 | color1;
 	/* Set up tile and colors as for clist_tile_rectangle. */
 	if (!cls_has_tile_id(cldev, pcls, tile->id, offset_temp)) {
 	    int depth =
@@ -105,6 +125,8 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	byte *dp;
 	int code;
 
+	pcls->colors_used |=
+	    colored_halftone_colors_used(cldev, pdcolor);
 	/****** HOW TO TELL IF COLOR IS ALREADY SET? ******/
 	if (pdht->id != cldev->device_halftone_id) {
 	    int code = cmd_put_halftone(cldev, pdht, pdht->type);
@@ -121,11 +143,13 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	    bases |= base << ((3 - i) * 5);
 	    short_bases |= base << (3 - i);
 	}
-	if (bases & 0xf7bde) {	/* Some base value requires more than 1 bit. */
+	if (bases & 0xf7bde) {
+	    /* Some base value requires more than 1 bit. */
 	    *bp++ = 0x10 + (byte) (bases >> 16);
 	    *bp++ = (byte) (bases >> 8);
 	    *bp++ = (byte) bases;
-	} else {		/* The bases all fit in 1 bit each. */
+	} else {
+	    /* The bases all fit in 1 bit each. */
 	    *bp++ = 0x00 + (byte) short_bases;
 	}
 	for (i = 0; i < num_comp; ++i)
@@ -151,6 +175,22 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     }
     return type;
 }
+
+/* Compute the colors used by a drawing color. */
+gx_color_index
+cmd_drawing_colors_used(gx_device_clist_writer *cldev,
+			const gx_drawing_color * pdcolor)
+{
+    if (gx_dc_is_pure(pdcolor))
+	return gx_dc_pure_color(pdcolor);
+    else if (gx_dc_is_binary_halftone(pdcolor))
+	return gx_dc_binary_color0(pdcolor) | gx_dc_binary_color1(pdcolor);
+    else if (gx_dc_is_colored_halftone(pdcolor))
+	return colored_halftone_colors_used(cldev, pdcolor);
+    else
+	return ((gx_color_index)1 << cldev->color_info.depth) - 1;
+}
+
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
 /* We must do this whenever the value of a 'known' parameter changes. */
@@ -664,6 +704,93 @@ clist_stroke_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath,
 	}
     } END_RECTS_NO_ERROR;
     return 0;
+}
+
+/*
+ * Fill_parallelogram and fill_triangle aren't very efficient.  This
+ * isn't important right now, since they are only used for smooth
+ * shading.
+ */
+
+private int
+clist_put_polyfill(gx_device *dev, fixed px, fixed py,
+		   const gs_fixed_point *points, int num_points,
+		   const gx_drawing_color *pdcolor, gs_logical_operation_t lop)
+{
+    gx_path path;
+    gs_memory_t *mem = dev->memory;
+    int code;
+    gx_device_clist_writer * const cdev =
+	&((gx_device_clist *)dev)->writer;
+    gs_fixed_rect bbox;
+    int y, height, y0, y1;
+
+    if (gs_debug_c(','))
+	return -1;		/* path-based banding is disabled */
+    gx_path_init_local(&path, mem);
+    if ((code = gx_path_add_point(&path, px, py)) < 0 ||
+	(code = gx_path_add_lines(&path, points, num_points)) < 0
+	)
+	goto out;
+    gx_path_bbox(&path, &bbox);
+    y = fixed2int(bbox.p.y) - 1;
+    height = fixed2int_ceiling(bbox.q.y) - y + 1;
+    fit_fill_y(dev, y, height);
+    fit_fill_h(dev, y, height);
+    if (height <= 0)
+	return 0;
+    y0 = y;
+    y1 = y + height;
+    FOR_RECTS_NO_ERROR {
+	if ((code = cmd_update_lop(cdev, pcls, lop)) < 0 ||
+	    (code = cmd_put_drawing_color(cdev, pcls, pdcolor)) < 0)
+	    goto out;
+	code = cmd_put_path(cdev, pcls, &path,
+			    int2fixed(max(y - 1, y0)),
+			    int2fixed(min(y + height + 1, y1)),
+			    cmd_opv_polyfill + code,
+			    true, sn_none /* fill doesn't need the notes */ );
+	if (code < 0)
+	    goto out;
+    } END_RECTS_NO_ERROR;
+out:
+    gx_path_free(&path, "clist_put_polyfill");
+    return code;
+}
+
+int
+clist_fill_parallelogram(gx_device *dev, fixed px, fixed py,
+			 fixed ax, fixed ay, fixed bx, fixed by,
+			 const gx_drawing_color *pdcolor,
+			 gs_logical_operation_t lop)
+{
+    gs_fixed_point pts[3];
+    int code;
+
+    pts[0].x = px + ax, pts[0].y = py + ay;
+    pts[1].x = pts[0].x + bx, pts[1].y = pts[0].y + by;
+    pts[2].x = px + bx, pts[2].y = py + by;
+    code = clist_put_polyfill(dev, px, py, pts, 3, pdcolor, lop);
+    return (code >= 0 ? code :
+	    gx_default_fill_parallelogram(dev, px, py, ax, ay, bx, by,
+					  pdcolor, lop));
+}
+
+int
+clist_fill_triangle(gx_device *dev, fixed px, fixed py,
+		    fixed ax, fixed ay, fixed bx, fixed by,
+		    const gx_drawing_color *pdcolor,
+		    gs_logical_operation_t lop)
+{
+    gs_fixed_point pts[2];
+    int code;
+
+    pts[0].x = px + ax, pts[0].y = py + ay;
+    pts[1].x = px + bx, pts[1].y = py + by;
+    code = clist_put_polyfill(dev, px, py, pts, 2, pdcolor, lop);
+    return (code >= 0 ? code :
+	    gx_default_fill_triangle(dev, px, py, ax, ay, bx, by,
+				     pdcolor, lop));
 }
 
 /* ------ Path utilities ------ */

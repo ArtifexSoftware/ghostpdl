@@ -87,7 +87,7 @@ typedef struct gdev_prn_start_render_params_s gdev_prn_start_render_params;
 /* Define the abstract type for a page queue for async rendering. */
 #ifndef gx_page_queue_DEFINED
 #  define gx_page_queue_DEFINED
-typedef struct gx_page_queue_s gx_page_queue;
+typedef struct gx_page_queue_s gx_page_queue_t;
 #endif
 
 /* Define the abstract type for parameters describing buffer space. */
@@ -245,7 +245,7 @@ typedef enum {
 struct gdev_prn_space_params_s {
     long MaxBitmap;		/* max size of non-buffered bitmap */
     long BufferSpace;		/* space to use for buffer */
-    gx_band_params band;	/* see gxclist.h */
+    gx_band_params_t band;	/* see gxclist.h */
     bool params_are_read_only;	/* true if put_params may not modify this struct */
     gdev_prn_banding_type banding_type;	/* used to force banding or bitmap */
 };
@@ -273,7 +273,7 @@ struct gdev_prn_space_params_s {
 	gs_memory_t *buffer_memory;	/* allocator for command list */\
 	gs_memory_t *bandlist_memory;	/* allocator for bandlist files */\
 	proc_free_up_bandlist_memory((*free_up_bandlist_memory));  	/* if nz, proc to free some bandlist memory */\
-	gx_page_queue *page_queue;	/* if <> 0,page queue for gdevprna NOT GC'd */\
+	gx_page_queue_t *page_queue;	/* if <> 0,page queue for gdevprna NOT GC'd */\
 	bool is_async_renderer;		/* device is only the rendering part of async device */\
 	gx_device_printer *async_renderer;	/* in async writer, pointer to async renderer */\
 	uint clist_disable_mask;	/* mask of clist options to disable */\
@@ -391,7 +391,7 @@ extern const gx_device_procs prn_std_procs;
 	   gdev_prn_locate_overlay_buffer\
 	 },\
 	 { PRN_MAX_BITMAP, PRN_BUFFER_SPACE,\
-	     { band_params_initial_values },\
+	     { BAND_PARAMS_INITIAL_VALUES },\
 	   0/*false*/,	/* params_are_read_only */\
 	   BandingAuto	/* banding_type */\
 	 },\

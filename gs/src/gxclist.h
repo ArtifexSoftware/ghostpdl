@@ -69,7 +69,7 @@
 typedef struct gx_saved_page_s {
     gx_device device;
     char dname[8 + 1];		/* device name for checking */
-    gx_band_page_info info;
+    gx_band_page_info_t info;
     int num_copies;
 } gx_saved_page;
 
@@ -164,7 +164,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 	gs_memory_t *bandlist_memory;	/* allocator for in-memory bandlist files */\
 	byte *data;			/* buffer area */\
 	uint data_size;			/* size of buffer */\
-	gx_band_params band_params;	/* band buffering parameters */\
+	gx_band_params_t band_params;	/* band buffering parameters */\
 	bool do_not_open_or_close_bandfiles;	/* if true, do not open/close bandfiles */\
 		/* Following are used for both writing and reading. */\
 	gx_bits_cache_chunk chunk;	/* the only chunk of bits */\
@@ -177,7 +177,7 @@ typedef struct gx_clist_state_s gx_clist_state;
 					/* (a hash table when writing) */\
 	int ymin, ymax;			/* current band, <0 when writing */\
 		/* Following are set when writing, read when reading. */\
-	gx_band_page_info page_info;	/* page information */\
+	gx_band_page_info_t page_info;	/* page information */\
 	int nbands		/* # of bands */
 
 typedef struct gx_device_clist_common_s {
@@ -281,8 +281,14 @@ extern const gx_device_procs gs_clist_device_procs;
 /* Reset (or prepare to append to) the command list after printing a page. */
 int clist_finish_page(P2(gx_device * dev, bool flush));
 
-/* Force bandfiles closed */
+/* Close the band files and delete their contents. */
 int clist_close_output_file(P1(gx_device *dev));
+
+/*
+ * Close and delete the contents of the band files associated with a
+ * page_info structure (a page that has been separated from the device).
+ */
+int clist_close_page_info(P1(gx_band_page_info_t *ppi));
 
 /* Define the abstract type for a printer device. */
 #ifndef gx_device_printer_DEFINED

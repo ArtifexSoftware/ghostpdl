@@ -202,6 +202,7 @@ cgm_output_page(gx_device * dev, int num_copies, int flush)
 
 	check_result(result);
 	cdev->in_picture = false;
+	return gx_finish_output_page(dev, num_copies, flush);
     }
     return 0;
 }

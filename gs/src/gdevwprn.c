@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -295,7 +295,7 @@ win_prn_sync_output(gx_device * dev)
 
 /* Write page to printer */
 int
-win_prn_output_page(gx_device * dev, int copies, int flush)
+win_prn_output_page(gx_device * dev, int num_copies, int flush)
 {
     RECT rect;
     HMETAFILE hmf;
@@ -316,7 +316,7 @@ win_prn_output_page(gx_device * dev, int copies, int flush)
     SelectObject(wdev->hdcmf, wdev->hpen);
     SelectObject(wdev->hdcmf, wdev->hbrush);
 
-    return 0;
+    return gx_finish_output_page(dev, num_copies, flush);
 }
 
 

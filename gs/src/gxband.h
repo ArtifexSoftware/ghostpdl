@@ -31,9 +31,9 @@ typedef struct gx_band_params_s {
     int BandWidth;		/* (optional) band width in pixels */
     int BandHeight;		/* (optional) */
     long BandBufferSpace;	/* (optional) */
-} gx_band_params;
+} gx_band_params_t;
 
-#define band_params_initial_values 0, 0, 0
+#define BAND_PARAMS_INITIAL_VALUES 0, 0, 0
 
 /*
  * Define the information for a saved page.
@@ -45,9 +45,11 @@ typedef struct gx_band_page_info_s {
     clist_file_ptr bfile;	/* block file, normally 0 */
     uint tile_cache_size;	/* size of tile cache */
     long bfile_end_pos;		/* ftell at end of bfile */
-    gx_band_params band_params;	/* parameters used when writing band list */
+    gx_band_params_t band_params;  /* parameters used when writing band list */
 				/* (actual values, no 0s) */
-} gx_band_page_info;
+} gx_band_page_info_t;
+#define PAGE_INFO_NULL_VALUES\
+  { 0 }, 0, { 0 }, 0, 0, { BAND_PARAMS_INITIAL_VALUES }
 
 /*
  * By convention, the structure member containing the above is called

@@ -449,5 +449,5 @@ gx_pixel_image_sget(gs_pixel_image_t *pim, stream *s,
 void
 gx_pixel_image_release(gs_pixel_image_t *pic, gs_memory_t *mem)
 {
-    return gx_image_default_release((gs_image_common_t *)pic, mem);
+    gx_image_default_release((gs_image_common_t *)pic, mem);
 }

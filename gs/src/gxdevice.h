@@ -337,6 +337,12 @@ int gx_device_open_output_file(P5(const gx_device * dev, const char *fname,
   ((dev)->color_info.max_gray < 31)
 
 /*
+ * Do generic work for output_page.  All output_page procedures must call
+ * this as the last thing they do, unless an error has occurred earlier.
+ */
+dev_proc_output_page(gx_finish_output_page);
+
+/*
  * Device procedures that draw into rectangles need to clip the coordinates
  * to the rectangle ((0,0),(dev->width,dev->height)).  The following macros
  * do the clipping.  They assume that the arguments of the procedure are

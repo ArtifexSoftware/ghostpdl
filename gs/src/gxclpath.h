@@ -119,7 +119,10 @@ typedef enum {
     cmd_opv_coloreofill = 0xf5,
     cmd_opv_stroke = 0xf6,
     cmd_opv_htstroke = 0xf7,
-    cmd_opv_colorstroke = 0xf8
+    cmd_opv_colorstroke = 0xf8,
+    cmd_opv_polyfill = 0xf9,
+    cmd_opv_htpolyfill = 0xfa,
+    cmd_opv_colorpolyfill = 0xfb
 } gx_cmd_xop;
 
 #define cmd_segment_op_num_operands_values\
@@ -140,7 +143,7 @@ typedef enum {
 #define cmd_path_op_name_strings\
   "fill", "htfill", "colorfill", "eofill",\
   "hteofill", "coloreofill", "stroke", "htstroke",\
-  "colorstroke", "?f9?", "?fa?", "?fb?",\
+  "colorstroke", "polyfill", "htpolyfill", "colorpolyfill",\
   "?fc?", "?fd?", "?fe?", "?ff?"
 
 /*
@@ -172,6 +175,10 @@ typedef enum {
 int cmd_put_drawing_color(P3(gx_device_clist_writer * cldev,
 			     gx_clist_state * pcls,
 			     const gx_drawing_color * pdcolor));
+
+/* Compute the colors used by a drawing color. */
+gx_color_index cmd_drawing_colors_used(P2(gx_device_clist_writer *cldev,
+					  const gx_drawing_color *pdcolor));
 
 /* Clear (a) specific 'known' flag(s) for all bands. */
 /* We must do this whenever the value of a 'known' parameter changes. */

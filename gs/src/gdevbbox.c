@@ -286,12 +286,6 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
 	dlprintf4("%%%%HiResBoundingBox: %f %f %f %f\n",
 		  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     }
-    /*
-     * Propagate the PageCount to the target,
-     * since it changes every time gs_output_page is called.
-     */
-    if (bdev->target)
-	bdev->target->PageCount = dev->PageCount;
     return gx_forward_output_page(dev, num_copies, flush);
 }
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -423,8 +423,8 @@ pm_sync_output(gx_device * dev)
 
 /* Make the output appear on the screen  */
 /* and bring image window to foreground. */
-int
-pm_output_page(gx_device * dev, int copies, int flush)
+private int
+pm_do_output_page(gx_device * dev, int copies, int flush)
 {
     int code;
     APIRET rc;
@@ -500,6 +500,15 @@ pm_output_page(gx_device * dev, int copies, int flush)
 		fprintf(stderr, "pm_output_page: Select Session error code %u\n", rc);
 	}
     }
+    return code;
+}
+int
+pm_output_page(gx_device * dev, int copies, int flush)
+{
+    int code = pm_do_output_page(dev, copies, flush);
+
+    if (code >= 0)
+	code = gx_finish_output_page(dev, copies, flush);
     return code;
 }
 

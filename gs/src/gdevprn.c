@@ -715,7 +715,8 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
 	return closecode;
     if (endcode < 0)
 	return endcode;
-    return (upgraded_copypage ? 1 : 0);
+    endcode = gx_finish_output_page(pdev, num_copies, flush);
+    return (endcode < 0 ? endcode : upgraded_copypage ? 1 : 0);
 }
 
 /* Print multiple copies of a page by calling print_page multiple times. */

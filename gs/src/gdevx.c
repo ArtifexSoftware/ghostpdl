@@ -795,7 +795,7 @@ x_output_page(gx_device * dev, int num_copies, int flush)
 	    XNextEvent(xdev->dpy, &event);
 	}
     }
-    return 0;
+    return gx_finish_output_page(dev, num_copies, flush);
 }
 
 /* Fill a rectangle with a color. */

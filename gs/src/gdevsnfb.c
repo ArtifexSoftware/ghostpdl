@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1990, 1991, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1990, 1991, 1996, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -113,5 +113,5 @@ sonyfb_output_page(gx_device *dev, int num_copies, int flush)
   if(ioctl(fb_file, FBIOCRECTANGLE, &prect) < 0)
     perror("rect ioctl failed");
 
-  return 0;
+  return gx_finish_output_page(dev, num_copies, flush);
 }

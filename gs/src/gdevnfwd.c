@@ -115,9 +115,13 @@ gx_forward_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
+    int code =
+	(tdev == 0 ? gx_default_output_page(dev, num_copies, flush) :
+	 (*dev_proc(tdev, output_page)) (tdev, num_copies, flush));
 
-    return (tdev == 0 ? gx_default_output_page(dev, num_copies, flush) :
-	    (*dev_proc(tdev, output_page)) (tdev, num_copies, flush));
+    if (code >= 0 && tdev != 0)
+	dev->PageCount = tdev->PageCount;
+    return code;
 }
 
 gx_color_index

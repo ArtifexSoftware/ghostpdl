@@ -1297,6 +1297,7 @@ pclxl_output_page(gx_device * dev, int num_copies, int flush)
 	spputc(s, pxtEndPage);
 	sflush(s);
 	pclxl_page_init(xdev);
+	return gx_finish_output_page(dev, num_copies, flush);
     }
     return 0;
 }

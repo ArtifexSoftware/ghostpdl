@@ -47,6 +47,8 @@ extern dev_proc_strip_copy_rop(clist_strip_copy_rop);
 /* In gxclpath.c */
 extern dev_proc_fill_path(clist_fill_path);
 extern dev_proc_stroke_path(clist_stroke_path);
+extern dev_proc_fill_parallelogram(clist_fill_parallelogram);
+extern dev_proc_fill_triangle(clist_fill_triangle);
 
 /* In gxclimag.c */
 extern dev_proc_fill_mask(clist_fill_mask);
@@ -89,8 +91,8 @@ const gx_device_procs gs_clist_device_procs = {
     clist_stroke_path,
     clist_fill_mask,
     gx_default_fill_trapezoid,
-    gx_default_fill_parallelogram,
-    gx_default_fill_triangle,
+    clist_fill_parallelogram,
+    clist_fill_triangle,
     gx_default_draw_thin_line,
     gx_default_begin_image,
     gx_default_image_data,
@@ -474,6 +476,22 @@ clist_open_output_file(gx_device *dev)
     return code;
 }
 
+/* Close, and free the contents of, the temporary files of a page. */
+/* Note that this does not deallocate the buffer. */
+int
+clist_close_page_info(gx_band_page_info_t *ppi)
+{
+    if (ppi->cfile != NULL) {
+	clist_fclose(ppi->cfile, ppi->cfname, true);
+	ppi->cfile = NULL;
+    }
+    if (ppi->bfile != NULL) {
+	clist_fclose(ppi->bfile, ppi->bfname, true);
+	ppi->bfile = NULL;
+    }
+    return 0;
+}
+
 /* Close the device by freeing the temporary files. */
 /* Note that this does not deallocate the buffer. */
 int
@@ -482,15 +500,7 @@ clist_close_output_file(gx_device *dev)
     gx_device_clist_writer * const cdev =
 	&((gx_device_clist *)dev)->writer;
 
-    if (cdev->page_cfile != NULL) {
-	clist_fclose(cdev->page_cfile, cdev->page_cfname, true);
-	cdev->page_cfile = NULL;
-    }
-    if (cdev->page_bfile != NULL) {
-	clist_fclose(cdev->page_bfile, cdev->page_bfname, true);
-	cdev->page_bfile = NULL;
-    }
-    return 0;
+    return clist_close_page_info(&cdev->page_info);
 }
 
 /* Open the device by initializing the device state and opening the */

@@ -40,6 +40,18 @@
   END
 
 /*
+ * Merge two rectangles, replacing the first.  The result may be
+ * anomalous (q < p) if the first rectangle was anomalous.
+ */
+#define rect_merge(to, from)\
+  BEGIN\
+    if ( from.p.x < to.p.x ) to.p.x = from.p.x;\
+    if ( from.q.x > to.q.x ) to.q.x = from.q.x;\
+    if ( from.p.y < to.p.y ) to.p.y = from.p.y;\
+    if ( from.q.y > to.q.y ) to.q.y = from.q.y;\
+  END
+
+/*
  * Calculate the difference of two rectangles, a list of up to 4 rectangles.
  * Return the number of rectangles in the list, and set the first rectangle
  * to the intersection.  The resulting first rectangle is guaranteed not to

@@ -152,5 +152,5 @@ gx_image4_sget(gs_image_common_t *pic, stream *s,
 private void
 gx_image4_release(gs_image_common_t *pic, gs_memory_t *mem)
 {
-    return gx_pixel_image_release((gs_pixel_image_t *)pic, mem);
+    gx_pixel_image_release((gs_pixel_image_t *)pic, mem);
 }

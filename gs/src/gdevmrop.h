@@ -23,12 +23,6 @@
 #ifndef gdevmrop_INCLUDED
 #  define gdevmrop_INCLUDED
 
-/* Define the table of RasterOp implementation procedures. */
-extern const rop_proc rop_proc_table[256];
-
-/* Define the table of RasterOp operand usage. */
-extern const byte /*rop_usage_t*/ rop_usage_table[256];
-
 /*
  * Define whether we implement transparency correctly, or whether we
  * implement it as documented in the H-P manuals.

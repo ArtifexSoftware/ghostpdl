@@ -119,14 +119,21 @@ int
 gs_output_page(gs_state * pgs, int num_copies, int flush)
 {
     gx_device *dev = gs_currentdevice(pgs);
-    int code;
 
     if (dev->IgnoreNumCopies)
 	num_copies = 1;
-    code = (*dev_proc(dev, output_page)) (dev, num_copies, flush);
-    if (code >= 0)
-	dev->PageCount += num_copies;
-    return code;
+    return (*dev_proc(dev, output_page)) (dev, num_copies, flush);
+}
+
+/*
+ * Do generic work for output_page.  All output_page procedures must call
+ * this as the last thing they do, unless an error has occurred earlier.
+ */
+int
+gx_finish_output_page(gx_device *dev, int num_copies, int flush)
+{
+    dev->PageCount += num_copies;
+    return 0;
 }
 
 /* Copy scan lines from an image device */
@@ -518,6 +525,7 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 	COPY_ARRAY_PARAM(MarginsHWResolution);
 	COPY_ARRAY_PARAM(Margins);
 	COPY_ARRAY_PARAM(HWMargins);
+	COPY_PARAM(PageCount);
 	COPY_PARAM(color_info);
 	COPY_PARAM(cached_colors);
 #undef COPY_PARAM

@@ -1097,8 +1097,9 @@ private int
 pdf_output_page(gx_device * dev, int num_copies, int flush)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    int code = pdf_close_page(pdev);
 
-    return pdf_close_page(pdev);
+    return (code < 0 ? code : gx_finish_output_page(dev, num_copies, flush));
 }
 
 /* Write out the CharProcs for an embedded font. */

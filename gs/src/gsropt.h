@@ -171,8 +171,8 @@ typedef uint gs_logical_operation_t;
 #define lop_is_idempotent(lop) rop3_is_idempotent(lop)
 
 /* Define the interface to the table of 256 RasterOp procedures. */
-typedef unsigned rop_operand;
-typedef rop_operand(*rop_proc) (P3(rop_operand D, rop_operand S, rop_operand T));
+typedef unsigned long rop_operand;
+typedef rop_operand (*rop_proc)(P3(rop_operand D, rop_operand S, rop_operand T));
 
 /* Define the table of operand usage by the 256 RasterOp operations. */
 typedef enum {
@@ -185,5 +185,11 @@ typedef enum {
     rop_usage_ST = 6,
     rop_usage_DST = 7
 } rop_usage_t;
+
+/* Define the table of RasterOp implementation procedures. */
+extern const rop_proc rop_proc_table[256];
+
+/* Define the table of RasterOp operand usage. */
+extern const byte /*rop_usage_t*/ rop_usage_table[256];
 
 #endif /* gsropt_INCLUDED */

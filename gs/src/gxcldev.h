@@ -258,9 +258,9 @@ struct gx_clist_state_s {
     gx_cmd_rect rect;		/* most recent rectangle */
     gs_logical_operation_t lop;	/* most recent logical op */
     short lop_enabled;		/* 0 = don't use lop, 1 = use lop, */
-    /* -1 is used internally */
+				/* -1 is used internally */
     short clip_enabled;		/* 0 = don't clip, 1 = do clip, */
-    /* -1 is used internally */
+				/* -1 is used internally */
     ushort color_is_alpha;	/* (Boolean) for copy_color_alpha */
     ushort known;		/* flags for whether this band */
 				/* knows various misc. parameters */
@@ -273,6 +273,7 @@ struct gx_clist_state_s {
     cmd_list list;		/* list of commands for band */
     /* Following is set when writing, read when reading */
     ulong cost;			/* cost of rendering the band */
+    gx_color_index colors_used;	/* 'or' of all colors written */
 };
 
 /* The initial values for a band state */
@@ -282,7 +283,7 @@ struct gx_clist_state_s {
 	0, gx_no_bitmap_id,\
 	 { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
 	 { 0, 0, 0, 0 }, lop_default, 0, 0, 0, initial_known,\
-	 { 0, 0 }, 0
+	 { 0, 0 }, 0, 0
 
 /* Define the size of the command buffer used for reading. */
 /* This is needed to split up operations with a large amount of data, */

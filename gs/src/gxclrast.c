@@ -204,6 +204,9 @@ private int cmd_resize_halftone(P3(gx_device_halftone *, uint, gs_memory_t *));
 private int clist_decode_segment(P7(gx_path *, int, fixed[6],
 				    gs_fixed_point *, int, int,
 				    segment_notes));
+private int clist_do_polyfill(P4(gx_device *, gx_path *,
+				 const gx_drawing_color *,
+				 gs_logical_operation_t));
 
 int
 clist_playback_band(clist_playback_action playback_action,
@@ -1356,6 +1359,28 @@ idata:			data_size = 0;
 					      &imager_state, &stroke_params,
 						       pdevc, pcpath);
 			    break;
+			case cmd_opv_polyfill:
+			    color_set_pure(&devc, state.colors[1]);
+			    pdevc = &devc;
+			    goto poly;
+			case cmd_opv_htpolyfill:
+			    ht_tile.tiles = state_tile;
+			    color_set_binary_tile(&devc,
+						  state.tile_colors[0],
+						  state.tile_colors[1],
+						  &ht_tile);
+			    pdevc = &devc;
+			    pdevc->phase = tile_phase;
+			    goto poly;
+			case cmd_opv_colorpolyfill:
+			    pdevc = &dev_color;
+			    pdevc->phase = tile_phase;
+			    code = gx_color_load(pdevc, &imager_state, tdev);
+			    if (code < 0)
+				break;
+poly:			    code = clist_do_polyfill(tdev, &path, pdevc,
+						     imager_state.log_op);
+			    break;
 			default:
 			    goto bad_op;
 		    }
@@ -2288,5 +2313,44 @@ vhc:	    E = B + D, F = D = A + C, C = B, B = A, A = 0;
 #undef F
     ppos->x = px + int2fixed(x0);
     ppos->y = py + int2fixed(y0);
+    return code;
+}
+
+/*
+ * Execute a polyfill -- either a fill_parallelogram or a fill_triangle.
+ * If we ever implement fill_trapezoid in the band list, that will be
+ * detected here too.
+ */
+private int
+clist_do_polyfill(gx_device *dev, gx_path *ppath,
+		  const gx_drawing_color *pdcolor,
+		  gs_logical_operation_t lop)
+{
+    const subpath *psub = ppath->first_subpath;
+    fixed px = psub->pt.x, py = psub->pt.y;
+    const segment *pseg1 = psub->next;
+    fixed ax = pseg1->pt.x - px, ay = pseg1->pt.y - py;
+    const segment *pseg2 = pseg1->next;
+    fixed bx, by;
+    /*
+     * We take advantage of the fact that the parameter lists for
+     * fill_parallelogram and fill_triangle are identical.
+     */
+    dev_proc_fill_parallelogram((*fill));
+    int code;
+
+    if (pseg2->next) {
+	/* Parallelogram */
+	fill = dev_proc(dev, fill_parallelogram);
+	bx = pseg2->pt.x - pseg1->pt.x;
+	by = pseg2->pt.y - pseg1->pt.y;
+    } else {
+	/* Triangle */
+	fill = dev_proc(dev, fill_triangle);
+	bx = pseg2->pt.x - px;
+	by = pseg2->pt.y - py;
+    }
+    code = fill(dev, px, py, ax, ay, bx, by, pdcolor, lop);
+    gx_path_new(ppath);
     return code;
 }

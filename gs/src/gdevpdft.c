@@ -191,6 +191,7 @@ pdfshow_process(gx_device_pdf * pdev, gs_param_list * plist,
     {
 	int i;
 
+
 	for (i = 0; i < num_resource_chains; ++i)
 	    for (ppf = (pdf_font *) pdev->resources[resourceFont].chains[i];
 		 ppf != 0; ppf = ppf->next
@@ -272,9 +273,9 @@ pdfshow_process(gx_device_pdf * pdev, gs_param_list * plist,
     }
     /* Try to find a reasonable size value.  This isn't necessary, */
     /* but it's worth the effort. */
-    size = fabs(ma.data[0]) / sx;
+    size = fabs(ma.data[3]) / sy;
     if (size < 0.01)
-	size = fabs(ma.data[1]) / sy;
+	size = fabs(ma.data[0]) / sx;
     if (size < 0.01)
 	size = 1;
     /* We attempt to eliminate redundant parameter settings. */

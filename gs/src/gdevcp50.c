@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1994, 1996, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -196,7 +196,8 @@ cp50_output_page(gx_device *pdev, int num_copies, int flush)
  
     if ( outcode < 0 ) return outcode;
     if ( closecode < 0 ) return closecode;
-    return code;
+    if ( code < 0 ) return code;
+    return gx_finish_output_page(pdev, num_copies, flush);
 }
 
 

@@ -25,6 +25,7 @@
 #include "gscspace.h"
 #include "gscdefs.h"		/* for image type table */
 #include "gxarith.h"
+#include "gxcspace.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
@@ -223,6 +224,7 @@ typedef struct clist_image_enum_s {
     byte color_space;
     int ymin, ymax;
     bool map_rgb_to_cmyk;
+    gx_color_index colors_used;
     /* begin_image command prepared & ready to output */
     /****** SIZE COMPUTATION IS WRONG, TIED TO gximage.c, gsmatrix.c ******/
     byte begin_image_command[3 + 2 * cmd_sizew_max + 1 + 6 * sizeof(float) +
@@ -313,6 +315,7 @@ clist_begin_typed_image(gx_device * dev,
     gs_rect sbox, dbox;
     bool use_default_image;
     gs_image_format_t format;
+    gx_color_index colors_used = 0;
     int code;
 
     /* We can only handle a limited set of image types. */
@@ -331,7 +334,7 @@ clist_begin_typed_image(gx_device * dev,
     /* See above for why we allocate the enumerator as immovable. */
     pie = gs_alloc_struct_immovable(mem, clist_image_enum,
 				    &st_clist_image_enum,
-				    "clist_begin_image");
+				    "clist_begin_typed_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
     pie->memory = mem;
@@ -343,13 +346,14 @@ clist_begin_typed_image(gx_device * dev,
 	indexed = false;
 	num_components = 1;
 	uses_color = true;
+	/* cmd_put_drawing_color handles colors_used */
     } else {
 	const gs_color_space *pcs = pim->ColorSpace;
 
 	base_index = gs_color_space_get_index(pcs);
 	if (base_index == gs_color_space_index_Indexed) {
 	    const gs_color_space *pbcs =
-	    gs_color_space_indexed_base_space(pcs);
+		gs_color_space_indexed_base_space(pcs);
 
 	    indexed = true;
 	    base_index = gs_color_space_get_index(pbcs);
@@ -451,12 +455,54 @@ clist_begin_typed_image(gx_device * dev,
 						&pie->default_info);
 
 	if (code < 0)
-	    gs_free_object(mem, pie, "clist_begin_image");
+	    gs_free_object(mem, pie, "clist_begin_typed_image");
 	return code;
+    }
+    if (!masked) {
+	/*
+	 * Calculate (conservatively) the set of colors that this image
+	 * might generate.  For single-component images with up to 4 bits
+	 * per pixel, standard Decode values, and no Interpolate, we
+	 * generate all the possible colors now; otherwise, we assume that
+	 * any color might be generated.  It is possible to do better than
+	 * this, but we won't bother unless there's evidence that it's
+	 * worthwhile.
+	 */
+	gx_color_index all =
+	    ((gx_color_index)1 << dev->color_info.depth) - 1;
+
+	if (bits_per_pixel > 4 || pim->Interpolate || num_components > 1)
+	    colors_used = all;
+	else {
+	    float dmin = pim->Decode[0], dmax = pim->Decode[1];
+	    float dtemp;
+
+	    if (dmax < dmin)
+		dtemp = dmax, dmax = dmin, dmin = dtemp;
+	    if (dmin != 0 ||
+		dmax != (indexed ? (1 << bits_per_pixel) - 1 : 1)
+		) {
+		colors_used = all;
+	    } else {
+		/* Enumerate the possible pixel values. */
+		const gs_color_space *pcs = pim->ColorSpace;
+		cs_proc_remap_color((*remap_color)) = pcs->type->remap_color;
+		gs_client_color cc;
+		gx_drawing_color dcolor;
+		int i;
+
+		for (i = 0; i < bits_per_pixel; ++i) {
+		    remap_color(&cc, pcs, &dcolor, pis, dev,
+				gs_color_select_source);
+		    colors_used |= cmd_drawing_colors_used(cdev, &dcolor);
+		}
+	    }
+	}
     }
 
     pie->map_rgb_to_cmyk = dev->color_info.num_components == 4 &&
 	base_index == gs_color_space_index_DeviceRGB;
+    pie->colors_used = colors_used;
     pie->color_map_is_known = false;
     /*
      * Calculate a (slightly conservative) Y bounding interval for the image
@@ -559,6 +605,7 @@ clist_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
 
 	if (!image_band_box(dev, pie, y, height, &ibox))
 	    continue;
+	pcls->colors_used |= pie->colors_used;
 	/*
 	 * The transmitted subrectangle has to be computed at the time
 	 * we write the begin_image command; this in turn controls how

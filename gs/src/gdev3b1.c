@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1994, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -436,8 +436,8 @@ do_help(gx_device *dev)
     write(att3b1dev->fd, "\033[2J\033[99;1H", 11);
 }
 
-int
-att3b1_output_page(gx_device *dev, int num_copies, int flush)
+private int
+att3b1_do_output_page(gx_device *dev, int num_copies, int flush)
 {
     struct urdata ur;
     struct utdata ut, ut_orig;
@@ -698,6 +698,15 @@ att3b1_output_page(gx_device *dev, int num_copies, int flush)
 	if (yorigin < 0)
 	    yorigin = 0;
     }
+}
+int
+att3b1_output_page(gx_device *dev, int num_copies, int flush)
+{
+    int code = att3b1_do_output_page(dev, num_copies, flush);
+
+    if (code >= 0)
+	code = gx_finish_output_page(dev, num_copies, flush);
+    return code;
 }
 
 static int

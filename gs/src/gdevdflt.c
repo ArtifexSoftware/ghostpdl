@@ -141,7 +141,11 @@ gx_default_sync_output(gx_device * dev)
 int
 gx_default_output_page(gx_device * dev, int num_copies, int flush)
 {
-    return (*dev_proc(dev, sync_output)) (dev);
+    int code = (*dev_proc(dev, sync_output))(dev);
+
+    if (code >= 0)
+	code = gx_finish_output_page(dev, num_copies, flush);
+    return code;
 }
 
 int
