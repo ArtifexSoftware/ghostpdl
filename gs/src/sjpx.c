@@ -350,7 +350,7 @@ s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
     }
     if ((last == 1) && (stream == NULL) && (state->image == NULL)) {
 	/* turn our buffer into a stream */
-	stream = jas_stream_memopen(state->buffer, (char*)state->bufsize);
+	stream = jas_stream_memopen((char*)state->buffer, state->bufsize);
 	state->stream = stream;
     }
     if (out_size > 0) {
