@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.17 2002/05/08 03:03:18 giles Exp $
+    $Id: jbig2dec.c,v 1.18 2002/06/04 16:47:09 giles Exp $
 */
 
 #include <stdio.h>
@@ -165,14 +165,22 @@ static int
 print_usage (void)
 {
   fprintf(stderr,
-    "Usage: jbig2dec file.jbig2\n"
-    "   or  jbig2dec global_stream page_stream\n"
+    "Usage: jbig2dec [options] <file.jbig2>\n"
+    "   or  jbig2dec [options] <global_stream> <page_stream>\n"
     "\n"
     "  When invoked with a single file, it attempts to parse it as\n"
     "  a normal jbig2 file. Invoked with two files, it treats the\n"
     "  first as the global segments, and the second as the segment\n"
     "  stream for a particular page. This is useful for examining\n"
     "  embedded streams.\n"
+    "\n"
+    "  available options:\n"
+    "    -q --quiet     suppress diagnostic output\n"
+    "    -d --dump      print the structure of the jbig2 file,\n"
+    "                   rather than explicitly decoding\n"
+    "    -o <file>	send decoded output to <file>. defaults to the same\n"
+    " 			filename as the input with a different extension.\n"
+    "    -h --help	this usage summary.\n"
     "\n"
   );
   
