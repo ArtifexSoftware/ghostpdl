@@ -7,6 +7,7 @@
 #include "memory_.h"
 #include "stdio_.h"		/* needed for pl_load_tt_font */
 #include "math_.h"
+#include "gdebug.h"
 #include "pcommand.h"
 #include "pcfont.h"
 #include "pcstate.h"
@@ -343,8 +344,8 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcls)
 	  return e_Range;
 	if ( data[1] )
 	  { /**** HANDLE CONTINUATION ****/
-	    dprintf("continuation not implemented\n");
-	    return e_Unimplemented;
+	      if_debug0('1', "continuation not implemented\n");
+	      return e_Unimplemented;
 	  }
 	format = (pcl_font_header_format_t)
                  ((const pcl_font_header_t *)plfont->header)->HeaderFormat;

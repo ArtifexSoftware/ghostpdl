@@ -92,13 +92,13 @@ pcl_define_control_command(int/*char*/ chr,
 {
 #ifdef DEBUG
 	if ( chr < 0 || chr >= countof(pcl_control_command_indices) )
-	  dprintf1("Invalid control character %d\n", chr);
+	  if_debug1('I', "Invalid control character %d\n", chr);
 	else if (
 #endif
 	pcl_register_command(&pcl_control_command_indices[chr], pcmd)
 #ifdef DEBUG
 	)
-	  dprintf1("Redefining control character %d\n", chr);
+	  if_debug1('I', "Redefining control character %d\n", chr);
 #endif
 	;
 }
@@ -108,13 +108,13 @@ pcl_define_escape_command(int/*char*/ chr,
 {
 #ifdef DEBUG
 	if ( chr < min_escape_2char || chr > max_escape_2char )
-	  dprintf1("Invalid escape character %c\n", chr);
+	  if_debug1('I', "Invalid escape character %c\n", chr);
 	else if (
 #endif
 	pcl_register_command(&pcl_escape_command_indices[chr - min_escape_2char], pcmd)
 #ifdef DEBUG
 	)
-	  dprintf1("Redefining ESC %c\n", chr)
+	  if_debug1('I', "Redefining ESC %c\n", chr)
 #endif
 	;
 }
@@ -128,7 +128,7 @@ pcl_define_class_command(int/*char*/ class, int/*char*/ group,
 	     (group != 0 && (group < min_escape_group || group > max_escape_group)) ||
 	     command < min_escape_command || command > max_escape_command
 	   )
-	  dprintf3("Invalid command %c %c %c\n", class, group, command);
+	  if_debug3('I', "Invalid command %c %c %c\n", class, group, command);
 	else if (
 #endif
 	pcl_register_command(&pcl_grouped_command_indices
@@ -137,7 +137,7 @@ pcl_define_class_command(int/*char*/ class, int/*char*/ group,
 			     [command - min_escape_command], pcmd)
 #ifdef DEBUG
 	)
-	  dprintf3("Redefining ESC %c %c %c\n", class,
+	  if_debug3('I', "Redefining ESC %c %c %c\n", class,
 		   (group == 0 ? ' ' : group), command)
 #endif
 	;
@@ -180,11 +180,11 @@ pcl_get_command_definition(int/*char*/ class, int/*char*/ group,
 #ifdef DEBUG
 	if ( cdefn == 0 )
 	  { if ( class == 0 )
-	      dprintf1("ESC %c undefined\n", command);
+	      if_debug1('I', "ESC %c undefined\n", command);
 	    else if ( group == 0 )
-	      dprintf2("ESC %c %c undefined\n", class, command);
+	      if_debug2('I', "ESC %c %c undefined\n", class, command);
 	    else
-	      dprintf3("ESC %c %c %c undefined\n", class, group, command);
+	      if_debug3('I', "ESC %c %c %c undefined\n", class, group, command);
 	  }
 #endif
 	return cdefn;
