@@ -78,7 +78,7 @@ $(GENDIR)/ldgs.tr: FORCE
 	FEATURE_DEVS="$(FEATURE_DEVS)" DEVICE_DEVS="$(DEVICE_DEVS)" \
 	BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
 	FPU_TYPE="$(FPU_TYPE)" CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
-	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) $(GLOBJDIR)\echogs.exe \
+	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\echogs.exe \
 	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
 	$(GLOBJDIR)\gscdefs.$(OBJ)
 	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
@@ -92,7 +92,6 @@ $(GENDIR)\ldall.tr: $(MAKEFILE) $(GENDIR)\ldgs.tr $(GENDIR)\ldconf.tr
 	echo /SUBSYSTEM:CONSOLE >$(GENDIR)\ldall.tr
 	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldgs.tr $(GENDIR)\ldall.tr
 	echo $(GLOBJDIR)\gsargs.$(OBJ) >>$(GENDIR)\ldall.tr
-	echo $(GLOBJDIR)\gsnogc.$(OBJ) >>$(GENDIR)\ldall.tr
 	echo $(GLOBJDIR)\gconfig.$(OBJ) >>$(GENDIR)\ldall.tr
 	echo $(GLOBJDIR)\gscdefs.$(OBJ) >>$(GENDIR)\ldall.tr
 	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldconf.tr $(GENDIR)\ldall.tr

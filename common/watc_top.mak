@@ -69,12 +69,11 @@ $(GLGENDIR)\ld.tr: $(MAKEFILE) $(ECHOGS_XE)
 	echo DEVICE_DEVS=$(DEVICE_DEVS) $(DD)bbox.dev >>$(GLGENDIR)\_wm_temp.mak
 	echo FPU_TYPE=$(FPU_TYPE) >>$(GENDIR)\_wm_temp.mak
 	echo CPU_TYPE=$(CPU_TYPE) >>$(GENDIR)\_wm_temp.mak
-	echo BAND_LIST_STORAGE=file >>$(GLGENDIR)\_wm_temp.mak
+	echo BAND_LIST_STORAGE=memory >>$(GLGENDIR)\_wm_temp.mak
 	echo BAND_LIST_COMPRESSOR=zlib >>$(GLGENDIR)\_wm_temp.mak
 	echo !include $(GLSRCDIR)\watclib.mak >>$(GLGENDIR)\_wm_temp.mak
 	$(MAKE) -u -h -f $(GLGENDIR)\_wm_temp.mak \
 		$(GLOBJDIR)\gsargs.$(OBJ) \
-		$(GLOBJDIR)\gsnogc.$(OBJ) \
 		$(GLGENDIR)\arch.h \
 		$(GLGENDIR)\ld.tr \
 		$(GLOBJDIR)\gconfig.$(OBJ) \

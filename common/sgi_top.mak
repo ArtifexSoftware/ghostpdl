@@ -54,7 +54,7 @@ $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE)
 	     GLGENDIR='$(GLGENDIR)' GLOBJDIR='$(GLOBJDIR)'                  \
 	     -f $(GLSRCDIR)/sgicclib.mak                                    \
 	     $(GLOBJDIR)/ld$(CONFIG).tr                                     \
-	     $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o $(GLOBJDIR)/gsnogc.o \
+	     $(GLOBJDIR)/gsargs.o $(GLOBJDIR)/gsfemu.o \
 	     $(GLOBJDIR)/gconfig$(CONFIG).o $(GLOBJDIR)/gscdefs$(CONFIG).o
 	cp $(GLOBJDIR)/ld$(CONFIG).tr $(GENDIR)/ldl$(CONFIG).tr
 
@@ -70,7 +70,6 @@ $(TARGET_XE): $(GENDIR)/ldl$(CONFIG).tr $(GENDIR)/ldconf$(CONFIG).tr $(MAIN_OBJ)
                      -o $(TARGET_XE)
 	$(ECHOGS_XE) -a $(GENDIR)/ldt.tr -n -s                              \
                      $(GLOBJDIR)/gsargs.o                                   \
-                     $(GLOBJDIR)/gsnogc.o                                   \
                      $(GLOBJDIR)/gconfig$(CONFIG).o                         \
                      $(GLOBJDIR)/gscdefs$(CONFIG).o                         \
                      -s
