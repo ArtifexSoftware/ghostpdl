@@ -41,15 +41,7 @@
 
 .EXTENSIONS: .be .z
 
-# make sure the target directories exist - use special Watcom .BEFORE
-.BEFORE
-	@if not exist $(GLGENDIR) mkdir $(GLGENDIR)
-	@if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
-	@if not exist $(PSGENDIR) mkdir $(PSGENDIR)
-	@if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
-
 # Define the ANSI-to-K&R dependency.  Watcom C accepts ANSI syntax.
-
 AK=
 
 # Note that built-in libpng and zlib aren't available.
@@ -86,13 +78,13 @@ SHP=command /c
 
 # Define generic commands.
 
-CP_=call cp.bat
+CP_=call $(GLSRCDIR)\cp.bat
 RM_=erase
-RMN_=call rm.bat
+RMN_=call $(GLSRCDIR)\rm.bat
 
 # Define the arguments for genconf.
 
-CONFILES=-e ^ -p FILE^s^ps
+CONFILES=-e ~ -p FILE~s~ps
 CONFLDTR=-ol
 
 # Define the names of the Watcom C files.
