@@ -64,7 +64,7 @@ install-libdata:
 	-mkdir -p $(gsdatadir)/lib
 	$(SH) -c 'for f in \
 Fontmap Fontmap.GS cidfmap \
-FAPIcidfmap FAPIconfig FAPIfontmap \
+FAPIcidfmap FAPIconfig FAPIfontmap xlatmap \
 ht_ccsto.ps \
 acctest.ps addxchar.ps align.ps bdftops.ps \
 caption.ps cid2code.ps decrypt.ps docie.ps \
