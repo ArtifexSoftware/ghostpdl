@@ -280,6 +280,7 @@ gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
     if (new_dev == 0)
 	return_error(gs_error_VMerror);
     gx_device_init(new_dev, dev, mem, false);
+    gx_device_set_procs(new_dev);
     new_dev->stype = new_std;
     new_dev->stype_is_dynamic = new_std != std;
     /*
