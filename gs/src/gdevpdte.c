@@ -1,4 +1,4 @@
-/* Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 2002-2004 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -16,10 +16,12 @@
 
 /* $Id$ */
 /* Encoding-based (Type 1/2/42) text processing for pdfwrite. */
+
 #include "math_.h"
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gsutil.h"
 #include "gxfcmap.h"
 #include "gxfcopy.h"
 #include "gxfont.h"
