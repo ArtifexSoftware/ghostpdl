@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE([AC_PACKAGE_NAME], [AC_PACKAGE_VERSION])
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.10 $])
+AC_REVISION([$Revision: 1.11 $])
 
 # Checks for programs.
 AC_PROG_CC
@@ -105,6 +105,5 @@ AC_CHECK_FUNC(getopt_long,
 )
 
 # generate output
-AC_SUBST(LIBOJBS)
 AC_CONFIG_FILES([Makefile config_types.h])
 AC_OUTPUT
