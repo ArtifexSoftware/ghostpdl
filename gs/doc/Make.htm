@@ -1771,7 +1771,8 @@ are using only the library) change the definition of <b><tt>INCLUDE</tt></b>
 to "<b><tt>INCLUDE=/usr/include/bsd</tt></b>";
 
 <li>in <b><tt>unix-gcc.mak</tt></b>, change <b><tt>CC=gcc</tt></b> to
-<b><tt>CC=cc</tt></b>, add <b><tt>-D_POSIX_SOURCE</tt></b> to
+<b><tt>CC=cc</tt></b>, change the definition of <b><tt>STDLIBS</tt></b> to
+only <b><tt>-lm</tt></b>, add <b><tt>-D_POSIX_SOURCE</tt></b> to
 <b><tt>CFLAGS</tt></b> and remove <b><tt>-g</tt></b>, and remove
 <b><tt>-Wstrict-prototypes</tt></b> from <b><tt>GCFLAGS</tt></b>; and
 
@@ -1998,6 +1999,9 @@ standard distribution):
 
 <ul>
 
+<li>HP-UX versions before 11.0 do not support POSIX threads.  Set
+<b><tt>SYNC=nosync</tt></b> in the makefile before building.
+
 <li>Ghostscript builds on H-P machines with either GNU gcc or H-P's
 ANSI-capable <b><tt>cc</tt></b>.  The minimal, non-ANSI-capable
 <b><tt>cc</tt></b> that ships with a basic HPUX system does <b><em>not</em></b>
@@ -2088,6 +2092,7 @@ See "<a href="#ATT_7040">AT&amp;T 7040 R3</a>".
 <h3><a name="RS6000"></a>IBM RS/6000 with AIX</h3>
 
 <ul>
+
 <li>Many versions of the AIX C compiler have bugs that have prevented
 Ghostscript from compiling and linking properly.  We believe that the
 current Ghostscript release works around these bugs, and that
@@ -2095,6 +2100,9 @@ current Ghostscript release works around these bugs, and that
 
 <li>You must also edit the makefile (<b><tt>unixansi.mak</tt></b>) to change
 <b><tt>INSTALL</tt></b> to <b><tt>/usr/ucb/install</tt></b>.
+
+<li>AIX doesn't use a separate library for multi-thread support: set
+<b><tt>STDLIBS=-lm</tt></b> in the makefile.
 
 <li>If <b><tt>-DSYSV</tt></b> produces a complaint about the functions
 <b><tt>index</tt></b> and <b><tt>rindex</tt></b> not being defined, try
