@@ -187,11 +187,19 @@ proc mergehist {news changes hist tmp} {
     set vdpattern {Version ([0-9.]+) \((([0-9]+)-0*([1-9][0-9]*)-0*([1-9][0-9]*))\)}
 
     # Scan the News file to find the header line.
-    while {[string first <h1> [set l [gets $news]]] != 0} {}
+    while {![regexp {^<h[1-3]><a name="Version} [set l [gets $news]]]} {
+	if {[eof $news]} {
+	    puts stderr "EOF scanning News for header line"
+	    return 1
+	}
+    }
     if {![regexp $vdpattern $l skip nver ndate nyear nmonth nday]} {
 	puts stderr "Can't parse header line in News: $l"
 	return 1
     }
+    puts $l
+    # Change the header tag to h1 for compatiability with existing files.
+    regsub -all {h[1-3]>} $l h1> l
     set monthnames [list\
 	January February March April May June\
 	July August September October November December]
@@ -202,6 +210,10 @@ proc mergehist {news changes hist tmp} {
     set nlines [list $l]
     set have_changes 0
     while {[string first </pre> [set l [gets $news]]] != 0} {
+	if {[eof $news]} {
+	    puts stderr "EOF scanning News for Incompatible changes"
+	    return 1
+	}
 	if {[string first "Incompatible changes</h" $l] >= 0} {
 	    set have_changes 1
 	}
@@ -210,6 +222,10 @@ proc mergehist {news changes hist tmp} {
 
     # Copy the prefix of the existing History file.
     while {[string first <li> [set l [gets $hist]]] != 0} {
+	if {[eof $hist]} {
+	    puts stderr "EOF copying History up to <li>"
+	    return 1
+	}
 	puts $tmp $l
     }
 
@@ -224,13 +240,23 @@ proc mergehist {news changes hist tmp} {
     }
     if {$hver == $nver} {
 	# Skip over the TOC section.
-	while {[gets $hist] != "</ul>"} {}
+	while {[gets $hist] != "</ul>"} {
+	    if {[eof $hist]} {
+		puts stderr "EOF skipping History TOC"
+		return 1
+	    }
+	}
 	set l [gets $hist]
     }
     set hline $l
 
     # Advance the Changes file to the TOC.
-    while {[string first <blockquote> [set l [gets $changes]]] != 0} {}
+    while {[string first <ul> [set l [gets $changes]]] != 0} {
+	if {[eof $changes]} {
+	    puts stderr "EOF seeking Changes TOC"
+	    return 1
+	}
+    }
 
     # Create the new TOC entry.
     puts $tmp "<li><a href=\"#Version$nver\">Version $nver ($ndate)</a>"
@@ -245,13 +271,22 @@ proc mergehist {news changes hist tmp} {
 	    puts $tmp $l
 	}
     }
-    while {[set l [gets $changes]] != "</ul></blockquote>"} {
+    while {[set l [gets $changes]] != "</ul>"} {
+	if {[eof $changes]} {
+	    puts stderr "EOF copying Changes TOC"
+	    return 1
+	}
 	puts $tmp $l
     }
+    puts $tmp $l
 
     # Copy the rest of the TOC and preamble.
     puts $tmp $hline
     while {[string first <h1> [set l [gets $hist]]] != 0} {
+	if {[eof $hist]} {
+	    puts stderr "EOF copying History TOC and preamble"
+	    return 1
+	}
 	puts $tmp $l
     }
 
@@ -262,7 +297,12 @@ proc mergehist {news changes hist tmp} {
     }
     if {$hver == $nver} {
 	# Skip over the history section.
-	while {[set l [gets $hist]] != "<hr>"} {}
+	while {[set l [gets $hist]] != "<hr>"} {
+	    if {[eof $hist]} {
+		puts stderr "EOF skipping old History section"
+		return 1
+	    }
+	}
 	# Skip the following blank line, too.
 	gets $hist
 	set l [gets $hist]
@@ -276,6 +316,10 @@ proc mergehist {news changes hist tmp} {
 
     # Copy the rest of Changes.
     while {[string first </pre></body> [set l [gets $changes]]] != 0} {
+	if {[eof $changes]} {
+	    puts stderr "EOF copying rest of Changes"
+	    return 1
+	}
 	puts $tmp $l
     }
 
@@ -284,6 +328,10 @@ proc mergehist {news changes hist tmp} {
     puts $tmp ""
     puts $tmp $hline
     while {[string first "Ghostscript version " [set l [gets $hist]]] != 0} {
+	if {[eof $hist]} {
+	    puts stderr "EOF seeking History Ghostscript version"
+	    return 1
+	}
 	puts $tmp $l
     }
     

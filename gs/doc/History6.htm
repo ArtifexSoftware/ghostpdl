@@ -29,6 +29,20 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version6.60">Version 6.60 (2000-12-31)</a>
+<ul>
+<li><a href="#6.60_Incompatible_changes">Incompatible changes</a>,
+    <a href="#6.60-Documentation">Documentation</a>,
+    <a href="#6.60-Procedures">Procedures</a>,
+    <a href="#6.60-Utilities">Utilities</a>,
+    <a href="#6.60-Drivers">Drivers</a>,
+    <a href="#6.60-PDF_writer">PDF writer</a>,
+    <a href="#6.60-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#6.60-Interpreter">Interpreter</a>,
+    <a href="#6.60-Streams">Streams</a>,
+    <a href="#6.60-Library">Library</a>,
+    <a href="#6.60-Other">Other</a>
+</ul>
 <li><a href="#Version6.30">Version 6.30 (2000-10-03)</a>
 <ul>
 <li><a href="#6.30_Incompatible_changes">Incompatible changes</a>,
@@ -158,6 +172,850 @@ PDF writer (included under Drivers through fileset 5.88), Interpreter,
 Streams (included under Interpreter through release 2.9.9), Library.
 Changes marked with a * were made available as patches to a previous
 release.
+
+<hr>
+
+<h1><a name="Version6.60"></a>Version 6.60 (2000-12-31)</h1>
+
+<p>
+This long-overdue fileset includes major new developer documentation, major
+improvements in the PDF writer (for embedded fonts and for DSC comments),
+and lots of bug fixes.  Unfortunately, for unknown reasons, the release
+"smoke test" loops forever on the file data/ps/screen.ps -- but only when
+compiled in 'production' mode, not in 'debug' mode.  We suspect a gcc bug,
+but don't have the time to track it down before the end of the millennium.
+
+<p>
+All problems registered on SourceForge numbered 127190 or lower are closed,
+except for the following: 101814, 101955, 102735, 105289, 106652, 109350,
+111449, 113116, 113799, 114084, 115256, 116461, 117260, 119676, 119677,
+119798, 120967, 121582, 121715, 122426, 122532, 122534, 122683, 122727,
+123005, 123091, 123702, 123754, 123867, 123896, 123992, 124042, 124056,
+124095, 124134, 124205, 124863, 124973, 126364, 126391, 126462, 126477,
+126506, 126584, 126771, 126943, 127062, 127090, 127190.
+
+<h3><a name="6.60_Incompatible_changes"></a>Incompatible changes</h3>
+
+<pre>
+(Interpreter)
+	- With WMode = 1, CID-keyed fonts with no Metrics2 now use default
+metrics computed from FontBBox rather than the horizontal metrics.
+(PDF interpreter)
+	- The interpreter now skips to the next EOL after reading the data
+following the ID operator.
+	- The incorrectly named ViewerOrientation DSC comment is now
+corrected to ViewingOrientation.
+(Streams)
+	- All decoding filters that recognize an EOD in the source data
+must now have an init procedure that sets state->min_left = 1.
+(Library)
+	- The glyph_data, subr_data, and seac_data procedures in a Type 1
+font (gs_type1_data_procs), and the glyph_data procedure passed to
+psf_{check,get}_outline_glyphs, must now return 1 iff the outline string was
+newly allocated and should be freed by the caller, like the get_outline
+procedure of Type 42 fonts (gs_type42_data).
+	- The ip_state structure is renamed ip_state_t, and has a new
+member, free_char_string.
+	- The incorrectly named ViewerOrientation DSC comment is now
+corrected to ViewingOrientation, and the viewer_orientation members of
+the DSC parsing structure are corrected to viewing_orientation.
+
+
+
+<h2><a name="6.60-Documentation"></a>Documentation</h2><pre>
+
+Fixes problems:
+	- An isolated ampersand needed to be converted to the HTML form.
+(doc/Bug-form.htm [1.12]: 2000/11/04 17:53:57 lpd)
+	- cvs2hist was generating invalid anchor names and not escaping
+special charaters. also enable '-r' commandline option, and pass '-b' if
+it's not specified for default branch logs only. Changes.htm now passes the
+validator. Minor url cleanup in Release.htm (doc/Changes.htm [1.19],
+doc/Release.htm [1.23]: 2000/11/10 01:52:35 giles)
+	- Removes obsolete documentation reference to -DUsePrinterImages and
+clarifies the entry for the replacing -DPrinted. Fixes sourceforge bug #
+121907. (doc/Use.htm [1.16]: 2000/11/20 20:34:23 giles)
+	- Type 1 CharStrings loaded from disk for type 0 CIDFonts were never
+freed, except by garbage collection (which doesn't reclaim chunks with only
+a small amount of surviving data). In practice, this probably only affects
+the PDF writer. (doc/News.htm [1.71]: 2000/11/23 23:34:23 lpd)
+	- The pswrite device couldn't write to pipes. The fix involved
+expanding the API for opening device OutputFiles so that the individual
+driver could specify whether it required, requested, or did not want a
+positionable file. Fixes SourceForge bug # 122223. (doc/Use.htm [1.17]:
+2000/11/29 02:25:13 lpd)
+	- The default ps2pdf "distiller parameters" weren't documented
+correctly; the parameter values for the other PDFSETTINGS (screen, printer,
+prepress) weren't documented at all; the xxxImageDownsampleThreshold
+parameters were incorrectly documented as xxxDownsampleThreshold.
+(doc/Ps2pdf.htm [1.22]: 2000/12/19 17:55:55 lpd)
+	- The documentation of the -dSAFER command line switch was
+inaccurate. (doc/Use.htm [1.18]: 2000/12/23 01:33:06 lpd)
+	- documentation for gs_cidcm.ps and gs_dscp.ps was missing.
+(doc/Psfiles.htm [1.11]: 2000/12/29 02:17:12 lpd)
+
+Adds developer documentation on the color mapping pipeline.
+(doc/Develop.htm [1.16]: 2000/11/03 04:53:00 lpd)
+
+switch to Tobias Burnus' stylesheet for the B-D html documentation, along
+with some minor cleanups (doc/Bug-form.htm [1.10], doc/Bug-info.htm [1.8],
+doc/C-style.htm [1.6], doc/Commprod.htm [1.4], doc/Copying.htm [1.4],
+doc/Current.htm [1.4], doc/DLL.htm [1.4], doc/Develop.htm [1.17],
+doc/Devices.htm [1.14], doc/Drivers.htm [1.10], doc/gs.css [1.1]: 2000/11/03
+06:42:42 giles)
+
+update remaining file links in Develop.htm to &lt;dl&gt; format, plus
+additional cleanup (doc/Commprod.htm [1.5], doc/DLL.htm [1.5],
+doc/Develop.htm [1.18], doc/Devices.htm [1.15], doc/Drivers.htm [1.11]:
+2000/11/03 20:15:55 giles)
+
+Lists all the monochrome TIFF drivers individually, rather than as a class.
+(doc/Devices.htm [1.16]: 2000/11/03 23:33:18 lpd)
+
+Switches the rest of the human-maintained html documentation to the new
+stylesheet. We now pass validator.w3.org for HTML 4.01 with the exception of
+an error I couldn't figure out in Bug-form.htm. (doc/Bug-form.htm [1.11],
+doc/Fonts.htm [1.9], doc/Helpers.htm [1.7], doc/Hershey.htm [1.3],
+doc/Htmstyle.htm [1.7], doc/Humor.htm [1.2], doc/Install.htm [1.10],
+doc/Language.htm [1.21], doc/Lib.htm [1.4], doc/Maintain.htm [1.7],
+doc/Make.htm [1.17], doc/New-user.htm [1.15], doc/Projects.htm [1.20],
+doc/Ps-style.htm [1.4], doc/Ps2epsi.htm [1.5], doc/Ps2pdf.htm [1.19],
+doc/Psfiles.htm [1.10], doc/Public.htm [1.4], doc/Readme.htm [1.15],
+doc/Release.htm [1.22], doc/Source.htm [1.4], doc/Tester.htm [1.4],
+doc/Unix-lpr.htm [1.4], doc/Use.htm [1.15], doc/Xfonts.htm [1.4],
+doc/index.html [1.2]: 2000/11/04 05:00:00 giles)
+
+updated News.htm to use gs.css (doc/News.htm [1.70]: 2000/11/04 21:59:35
+giles)
+
+Adds documentation on Ghostscript's object-oriented coding conventions, and
+more documentation on error generation. (doc/C-style.htm [1.7],
+doc/Develop.htm [1.19]: 2000/11/07 07:34:57 lpd)
+
+Expands the description of the color mapping process.
+(doc/Develop.htm [1.20]: 2000/11/09 05:41:46 lpd)
+
+updates history files 1-4 (historical) to valid html4 and the new stylesheet
+(doc/History1.htm [1.4], doc/History2.htm [1.4], doc/History3.htm [1.4],
+doc/History4.htm [1.4]: 2000/11/28 22:55:34 giles)
+
+updates the version 5.x history file to the conforming html4
+(doc/History5.htm [1.6]: 2000/12/01 00:47:08 giles)
+
+Adds documentation on creating a release directory on the Wisconsin server,
+including checking the version numbers of the third-party libraries.
+(doc/Release.htm [1.24]: 2000/12/05 21:16:25 lpd)
+
+Updates documentation to reflect recent improvements in text and DSC comment
+handling. (doc/Ps2pdf.htm [1.20]: 2000/12/09 08:01:56 lpd)
+
+Documents the change from ViewerOrientation to ViewingOrientation in the DSC
+parser. (doc/News.htm [1.72]: 2000/12/09 19:53:48 lpd)
+
+Makes the PDF writer extract orientation and bounding box information from
+DSC comments, if present. The orientation is used to set Rotate if
+AutoRotatePages is not selected; the bounding box is not yet used for
+anything. (doc/Ps2pdf.htm [1.21]: 2000/12/09 19:54:55 lpd)
+
+adds a brief blurb for Develop.htm (doc/Readme.htm [1.16]: 2000/12/11
+19:39:36 giles)
+
+In the developer documentation, breaks down several long file lists into
+shorter, more focused ones. (doc/Develop.htm [1.21]: 2000/12/12 19:52:49
+lpd)
+
+Adds some additional documentation on halftones. (doc/Develop.htm [1.22]:
+2000/12/15 01:46:57 lpd)
+
+Adds additional documentation on makefile conventions, and improves a few
+other areas. (doc/Develop.htm [1.23]: 2000/12/18 06:45:23 lpd)
+
+Adds more documentation on makefiles, .dev files, and related topics.
+(doc/Develop.htm [1.24]: 2000/12/20 05:09:31 lpd)
+
+Adds more developer documentation on the PostScript interpreter; divides up
+some lists of files to provide more helpful detail. (doc/Develop.htm [1.25]:
+2000/12/20 20:15:41 lpd)
+
+Documents the preferred line breaking and indentation format for assignment
+statements, including chain assignments. (doc/C-style.htm [1.8]: 2000/12/22
+16:58:55 lpd)
+
+Makes some minor corrections and improvements to the developer
+documentation. (doc/Develop.htm [1.26]: 2000/12/28 05:57:18 lpd)
+
+Adds substantial new material on coding conventions for structures, classes,
+and subclasses. (doc/C-style.htm [1.9]: 2000/12/28 07:12:38 lpd)
+
+Documents about 15 additional non-standard operators (the ones most likely
+to be used in future code). (doc/Develop.htm [1.27],
+doc/Language.htm [1.22]: 2000/12/28 18:29:49 lpd)
+
+Documents the need to run hrefcov as part of the release process; also fixes
+some minor inaccuracies. (doc/Release.htm [1.25]: 2000/12/29 02:12:08 lpd)
+
+Adds more files to the developer "roadmap" documentation.
+(doc/Develop.htm [1.28]: 2000/12/29 02:18:47 lpd)
+
+Adds the Fontmaps and the contributed drivers to the developer documentation
+"roadmap", which is now complete. (doc/Develop.htm [1.29]: 2000/12/29
+02:33:40 lpd)
+
+Adds some developer documentation on design principles.
+(doc/Develop.htm [1.30]: 2000/12/30 22:07:37 lpd)
+
+Removes or updates no longer appropriate references to Aladdin Enterprises.
+(doc/Commprod.htm [1.6], doc/Fonts.htm [1.10], doc/Install.htm [1.11],
+doc/Make.htm [1.18], doc/New-user.htm [1.16], doc/Projects.htm [1.21],
+doc/Use.htm [1.19]: 2000/12/31 21:43:59 lpd)
+
+Updates documentation for the Windows uninstall program to reflect the name
+change from Aladdin Ghostscript to AFPL Ghostscript.
+(doc/Install.htm [1.12]: 2000/12/31 22:26:08 lpd)
+
+Updates repository for 6.60 release. (doc/Bug-form.htm [1.13],
+doc/Bug-info.htm [1.9], doc/C-style.htm [1.10], doc/Commprod.htm [1.7],
+doc/Copying.htm [1.5], doc/Current.htm [1.5], doc/DLL.htm [1.6],
+doc/Develop.htm [1.31], doc/Devices.htm [1.17], doc/Drivers.htm [1.12],
+doc/Fonts.htm [1.11], doc/Helpers.htm [1.8], doc/History1.htm [1.5],
+doc/History2.htm [1.5], doc/History3.htm [1.5], doc/History4.htm [1.5],
+doc/History5.htm [1.7], doc/History6.htm [1.15], doc/Htmstyle.htm [1.8],
+doc/Install.htm [1.13], doc/Language.htm [1.23], doc/Lib.htm [1.5],
+doc/Maintain.htm [1.8], doc/Make.htm [1.19], doc/New-user.htm [1.17],
+doc/News.htm [1.73], doc/Projects.htm [1.22], doc/Ps-style.htm [1.5],
+doc/Ps2epsi.htm [1.6], doc/Ps2pdf.htm [1.23], doc/Psfiles.htm [1.12],
+doc/Readme.htm [1.17], doc/Release.htm [1.26], doc/Source.htm [1.5],
+doc/Tester.htm [1.5], doc/Unix-lpr.htm [1.5], doc/Use.htm [1.20],
+doc/Xfonts.htm [1.5], doc/gs-vms.hlp [1.4], man/dvipdf.1 [1.2],
+man/eps2eps.1 [1.3], man/font2c.1 [1.2], man/gs.1 [1.2], man/gslp.1 [1.2],
+man/gsnd.1 [1.2], man/pdf2dsc.1 [1.2], man/pdf2ps.1 [1.4],
+man/pdfopt.1 [1.2], man/pf2afm.1 [1.2], man/pfbtopfa.1 [1.3],
+man/printafm.1 [1.2], man/ps2ascii.1 [1.2], man/ps2epsi.1 [1.2],
+man/ps2pdf.1 [1.6], man/ps2pdfwr.1 [1.3], man/ps2ps.1 [1.9],
+man/wftopfa.1 [1.2]: 2001/01/01 00:24:05 lpd)
+
+</pre><h2><a name="6.60-Procedures"></a>Procedures</h2><pre>
+
+Fixes problems:
+	- cvs2hist was generating invalid anchor names and not escaping
+special charaters. also enable '-r' commandline option, and pass '-b' if
+it's not specified for default branch logs only. Changes.htm now passes the
+validator. Minor url cleanup in Release.htm (toolbin/cvs2hist.py [1.4]:
+2000/11/10 01:52:35 giles)
+	- The OS/2 platform code would no longer compile, because the stdio
+files are no longer available. (fix from rjl) (os2.mak [1.9]: 2000/12/05
+01:16:26 lpd)
+	- Embedded font subsets always used similar sequences of prefixes,
+making it likely that combining multiple PDF files would lead to clashes;
+the code now generates truly random prefixes, using an external source of
+random data. (devs.mak [1.39]: 2000/12/10 00:12:23 lpd)
+	- Fixes a couple of dependency lists that had gotten out of sync.
+(devs.mak [1.40]: 2000/12/10 00:17:51 lpd)
+	- Seek was broken and PDF interpreter failed when
+FILE_IMPLEMENTATION=fd The implementation of streams using direct OS calls
+is extended to support MSVC &amp;&amp; Win32. close_.h is replaced by more
+general unistd_.h (lib.mak [1.40]: 2000/12/19 03:35:40 alexcher)
+	- In the previous fix unistd__h was misspelt as unistd_h .
+(lib.mak [1.41]: 2000/12/19 05:35:53 alexcher)
+	- The recent change for localized man pages didn't update 2 of the 3
+top-level Unix makefiles. (unixansi.mak [1.7], unixtrad.mak [1.7]:
+2000/12/23 16:29:53 lpd)
+	- The list of doc files to be installed had gotten out of date
+(Develop.htm, Maintain.htm, and Ps-style.htm were missing).
+(unixinst.mak [1.16]: 2000/12/23 16:30:36 lpd)
+	- unixinst.mak was checked in with the previous fix only partly
+done. (unixinst.mak [1.17]: 2000/12/23 16:34:12 lpd)
+
+Collect some stray configuration related externs into iconf.h
+(int.mak [1.40]: 2000/11/04 06:12:02 rayjj)
+
+Adds DSC parsing capability to the PostScript interpreter, with an optional
+'feature' to use the DSC Orientation comments to compensate for sloppy
+PostScript producers that don't emit an appropriate setpagedevice command.
+(int.mak [1.41]: 2000/11/05 18:33:53 lpd)
+
+Adds the 'hook' for passing DSC comments to the PDF writer, but doesn't
+actually process any of the comments. NOTE: Part of this code was
+accidentally included in the recent fix for local/global VM problems in the
+PostScript code for using the DSC parser. (devs.mak [1.36]: 2000/11/07
+18:54:26 lpd)
+
+Reorganizes some text-writing code in anticipation of adding CIDFont and
+CMap support. (devs.mak [1.37]: 2000/11/17 22:11:44 lpd)
+
+Avoids exporting empty LD_RUN_PATH environment variable to the link process.
+This was causing binaries to search the current directory for libraries,
+which was a security hole. Fixes SourceForge bug 122532. (ugcclib.mak [1.6],
+unixlink.mak [1.3]: 2000/11/28 00:14:48 raph)
+
+Updates the date and version checker for compatibility with the newest
+documentation standards; also makes it check the makefile values of JVERSION
+and PVERSION against the currently installed third-party source code.
+(toolbin/pre [1.9]: 2000/12/05 21:14:14 lpd)
+
+Extensively revises and updates the pdfwrite text handling code to support
+processing and embedding of all types of fonts (except for Type 3 and
+CIDFontType 1, which are defined by PostScript procedures), and all variants
+of 'show' (including kshow and glyphshow). In particular, Type 0 fonts with
+all FMapTypes (including CMap-based), CIDFontType 0 and 2 fonts, and both
+standard and non-standard CMaps are supported. (devs.mak [1.38],
+int.mak [1.42], lib.mak [1.38]: 2000/12/08 23:35:37 lpd)
+
+removes a spurious import of the cgi module (toolbin/cvs2hist.py [1.5]:
+2000/12/11 19:40:23 giles)
+
+Splits off the code for downsampling an oversampled character bitmap into a
+separate file. (lib.mak [1.39]: 2000/12/14 00:14:52 lpd)
+
+Adds a '-t' option to enable text output rather than html, replacing the old
+behavior, which was to return text unless a version string was passed with
+'-v'. The version string is now set to 'CVS' if no explicit version is
+passed, and this is used in the named anchors within the html output.
+(toolbin/cvs2hist.py [1.6]: 2000/12/23 09:38:10 giles)
+
+Adds support for localized manpages to the make 'install' target. On unix
+the makefile will now intall any files with the $MAN1EXT extension it finds
+under locale subdirs of the man directory that are listed in the MAN_LCDIRS
+variable. The $man1dir is correspondingly removed from unix-gcc.mak. Also
+adds separate targets: install-doc install-man install-examples
+install-libdata (unix-gcc.mak [1.9], unixinst.mak [1.15]: 2000/12/23
+10:10:37 giles)
+
+Improves the set of files checked by hrefcov +lib.
+(toolbin/hrefcov.tcl [1.5]: 2000/12/29 02:16:13 lpd)
+
+Adds a script for batch-converting PostScript files to PDF, intended to be
+useful for testing. (toolbin/many2pdf.tcl [1.1]: 2000/12/31 22:28:09 lpd)
+
+Updates repository for 6.60 release. (toolbin/pre [1.10],
+version.mak [1.24]: 2001/01/01 00:24:06 lpd)
+
+</pre><h2><a name="6.60-Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- pdfopt.ps used the "unresolved?" procedure from pdf_base.ps, which
+has been replaced by the slightly different "resolved?" procedure.
+(lib/pdfopt.ps [1.4]: 2000/12/01 04:15:52 lpd)
+	- The OS/2 platform code would no longer compile, because the stdio
+files are no longer available. (fix from rjl) (gp_os2.c [1.5]: 2000/12/05
+01:16:26 lpd)
+	- File flush method uses file member in stream. On Windows and OS/2
+it is NULL for %stdout or %stderr. So the standard flush method is
+installed. (gp_msio.c [1.3], gp_os2.c [1.6]: 2000/12/19 03:44:24 alexcher)
+	- /NullEncode filter no longer supports fileposition. Replacing
+fileposition with .fileposition (lib/impath.ps [1.3]: 2000/12/28 17:06:07
+alexcher)
+	- _.at file was not deleted in BAT file; SAFER option added to CMD
+file. (lib/eps2eps.bat [1.4], lib/eps2eps.cmd [1.2]: 2000/12/30 18:45:37
+alexcher)
+
+Improves documentation of cid2code.ps by adding a complete usage example.
+(lib/cid2code.ps [1.3]: 2000/11/30 18:22:11 lpd)
+
+Adds extensive documentation to genconf.c; also brings it into line with
+current Ghostscript coding standards. (genconf.c [1.4]: 2000/12/20 04:20:34
+lpd)
+
+Safe mode implemented using DELAYSAFER flag. (lib/pdf2dsc [1.3],
+lib/pdf2dsc.bat [1.1], lib/pdf2dsc.ps [1.3]: 2000/12/29 05:03:49 alexcher)
+
+</pre><h2><a name="6.60-Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- In PDF output, color values of 1.0 were usually written as 0.999.
+(bug introduced in version 6.22) (gdevpsdu.c [1.8]: 2000/11/12 07:13:26 lpd)
+	- The pswrite device couldn't write to pipes. The fix involved
+expanding the API for opening device OutputFiles so that the individual
+driver could specify whether it required, requested, or did not want a
+positionable file. Fixes SourceForge bug # 122223. (gdevps.c [1.13],
+gdevpx.c [1.5]: 2000/11/29 02:25:13 lpd)
+	- Invalid (uninitialized) StripByteCount was being left in file for
+the tiff12nc and tiff24nc devices. Needed to call gdev_tiff_end_strip().
+(gdevtfnx.c [1.4]: 2000/12/15 06:09:27 rayjj)
+	- Fixes bug introduced in gdevxini.c revision 1.5. Don't overwrite
+the pixmap handle provided in the GHOSTVIEW environment variable.
+(gdevxini.c [1.10]: 2000/12/15 10:18:47 ghostgum)
+	- The pswrite device produced an extra page if the transfer function
+didn't map "1 setgray" to device white. (gdevps.c [1.14]: 2000/12/21
+03:58:54 lpd)
+
+</pre><h2><a name="6.60-PDF_writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- kshow caused the PDF writer to revert to bitmapped fonts. Fixes
+SourceForge bug # 104118. (gdevpdft.c [1.21]: 2000/11/06 04:17:14 lpd)
+	- The PDF writer didn't handle stroked fonts correctly (they were
+filled instead of stroked). (gdevpdf.c [1.23], gdevpdfd.c [1.11],
+gdevpdft.c [1.22], gdevpdfx.h [1.23]: 2000/11/12 06:52:08 lpd)
+	- When mixing filled and stroked fonts, the color wasn't set
+correctly. (gdevpdft.c [1.23]: 2000/11/12 07:14:30 lpd)
+	- The PDF writer incorrectly assumed that in PDF 1.3, the standard
+Latin character set was the PostScript 3 extended set (it's actually the old
+PostScript Level 2 set). (gdevpdft.c [1.28]: 2000/11/20 18:13:55 lpd)
+	- Embedded CIDFontType 2 fonts had an incorrect BoundingBox.
+(gdevpdff.c [1.14]: 2000/12/09 06:53:25 lpd)
+	- Embedded font subsets always used similar sequences of prefixes,
+making it likely that combining multiple PDF files would lead to clashes;
+the code now generates truly random prefixes, using an external source of
+random data. (gdevpdf.c [1.26], gdevpdfe.c [1.8], gdevpdff.c [1.15],
+gdevpdff.h [1.9], gdevpdfx.h [1.27]: 2000/12/10 00:12:23 lpd)
+	- Non-embedded Multiple Master instances weren't identified as such
+(font Subtype = /MMType1). (gdevpdfw.c [1.7]: 2000/12/11 08:52:01 lpd)
+	- pdfwrite would crash if a bitmap character was larger than 10Kb
+(compressed). The fix simply raises the limit to 1 Mb. (gdevpdft.c [1.30]:
+2000/12/13 01:33:37 lpd)
+	- When processing DSC comments, some constant strings weren't copied
+to the heap, possibly causing memory access errors. (gdevpdfp.c [1.16]:
+2000/12/16 07:02:35 lpd)
+	- If the same standard (base 14) font was loaded more than once
+(because of save/restore), the PDF file could contain fonts that had
+suffixed names (e.g., Helvetica~2) but with data missing as though they were
+standard fonts, upsetting Acrobat Reader. Fixes SourceForge bug # 101905.
+THIS FIX IS IN A VERY FRAGILE AREA AND MAY INTRODUCE NEW PROBLEMS.
+(gdevpdff.c [1.16]: 2000/12/16 08:00:53 lpd)
+	- The previous fix for copying DSC comment keys to the heap was
+unnecessarily complex. (gdevpdfp.c [1.17]: 2000/12/16 19:28:51 lpd)
+	- Resource usage wasn't tracked separately for Form XObjects (BP/EP
+pdfmarks), producing non-compliant files that caused errors from Acrobat.
+Fixes SourceForge bug # 102146. (gdevpdf.c [1.28], gdevpdff.c [1.17],
+gdevpdff.h [1.10], gdevpdfm.c [1.8], gdevpdfo.c [1.6], gdevpdfo.h [1.6],
+gdevpdft.c [1.31], gdevpdfu.c [1.14], gdevpdfw.c [1.8], gdevpdfx.h [1.28]:
+2000/12/16 19:36:32 lpd)
+	- Strict type correctness is required on VMS system. Contributed by
+Jouk Jansen joukj@hrem.stm.tudelft.nl (gdevpdfw.c [1.9]: 2000/12/18 21:58:03
+alexcher)
+
+Adds the 'hook' for passing DSC comments to the PDF writer, but doesn't
+actually process any of the comments. NOTE: Part of this code was
+accidentally included in the recent fix for local/global VM problems in the
+PostScript code for using the DSC parser. (gdevpdfp.c [1.13]: 2000/11/07
+18:54:26 lpd)
+
+Changes the internal indication of whether to allow font subsetting from a
+Boolean to OK, YES, NO. (Unfortunately, I no longer remember why this change
+is needed.) (gdevpdfe.c [1.6], gdevpdff.c [1.10], gdevpdff.h [1.5],
+gdevpdft.c [1.24]: 2000/11/14 06:57:21 lpd)
+
+When writing PDF output, adds the ability to convert text in Type 0 fonts to
+text in the descendant leaf fonts. This completes the handling of text
+output except for CID-keyed fonts. (gdevpdft.c [1.25]: 2000/11/14 16:47:09
+lpd)
+
+Reorganizes some text-writing code in anticipation of adding CIDFont and
+CMap support. (gdevpdff.c [1.11], gdevpdff.h [1.6], gdevpdft.c [1.26]:
+2000/11/17 22:11:44 lpd)
+
+Makes glyphshow no longer revert to bitmapped fonts. Also adds a CIDFont
+pseudo-resource, in anticipation of adding CID-keyed font support.
+(gdevpdff.c [1.12], gdevpdff.h [1.7], gdevpdft.c [1.27], gdevpdfx.h [1.24]:
+2000/11/20 08:31:20 lpd)
+
+Extensively revises and updates the pdfwrite text handling code to support
+processing and embedding of all types of fonts (except for Type 3 and
+CIDFontType 1, which are defined by PostScript procedures), and all variants
+of 'show' (including kshow and glyphshow). In particular, Type 0 fonts with
+all FMapTypes (including CMap-based), CIDFontType 0 and 2 fonts, and both
+standard and non-standard CMaps are supported. (gdevpdf.c [1.24],
+gdevpdfe.c [1.7], gdevpdff.c [1.13], gdevpdff.h [1.8], gdevpdfs.c [1.1],
+gdevpdft.c [1.29], gdevpdfu.c [1.13], gdevpdfw.c [1.6], gdevpdfx.h [1.25]:
+2000/12/08 23:35:38 lpd)
+
+If ParseDSCCommentsForDocInfo is set to true, copies information from DSC
+comments Creator, CreationDate, For, and Title into the output's Info
+dictionary. (gdevpdfp.c [1.14]: 2000/12/09 07:49:22 lpd)
+
+Makes the PDF writer extract orientation and bounding box information from
+DSC comments, if present. The orientation is used to set Rotate if
+AutoRotatePages is not selected; the bounding box is not yet used for
+anything. (gdevpdf.c [1.25], gdevpdfp.c [1.15], gdevpdfx.h [1.26]:
+2000/12/09 19:54:54 lpd)
+
+Slightly changes the initialization of the random offset for font subset
+prefixes, to work better with low-resolution clocks such as those typical on
+PCs. (gdevpdf.c [1.27]: 2000/12/16 19:31:10 lpd)
+
+</pre><h2><a name="6.60-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+
+Fixes problems:
+	- Type 0 fonts with a non-standard (embedded) CMap didn't work at
+all. (lib/pdf_font.ps [1.15]: 2000/12/02 20:41:52 lpd)
+	- The PDF interpreter ignored the CIDToGIDMap entry in (embedded)
+CIDFontType 2 fonts, producing incorrect output if the map wasn't /Identity.
+(lib/pdf_font.ps [1.16]: 2000/12/07 23:41:10 lpd)
+	- GS didn't dereference indirect objects in Widths array.
+(lib/pdf_font.ps [1.17]: 2000/12/17 19:06:19 alexcher)
+	- Fixes a slight oversight in the true/false/null improvement for
+the PDF interpreter. (lib/pdf_base.ps [1.12]: 2000/12/26 04:10:12 lpd)
+	- When a non-TrueType font was substituted for a TrueType font, the
+Encoding in the font descriptor was ignored. This hack was intended to fix
+SF bug # 104702, an invalid PDF file, but it broke another case. Removal of
+the hack makes GS render both cases similar to AR 4.
+(lib/pdf_font.ps [1.18]: 2000/12/26 04:29:30 alexcher)
+	- The PDF interpreter didn't rotate the CropBox for landscape pages,
+producing incorrect output if the input of ps2pdf was a landscape PDF file.
+(lib/pdf_main.ps [1.26]: 2000/12/31 01:07:18 lpd)
+
+Improves font substitution by taking the "Narrow" property into account.
+Fixes SourceForge bug 116460. Fix due to Leon Bottou.
+(lib/pdf_font.ps [1.13]: 2000/11/05 17:36:28 raph)
+
+Wraps the showpagecontents call in gsave/grestore, so that the graphics
+state for drawing annotations is pristine. Fixes Sourceforge bug 123310.
+(lib/pdf_main.ps [1.23]: 2000/11/25 22:00:21 raph)
+
+The published PDF specification says the Encoding name "must be" one of the
+3 predefined Encodings, implying that an error should occur if it isn't.
+However, Acrobat Reader simply ignores unknown names, and since there are
+some buggy applications that rely on this, we do the same.
+(lib/pdf_font.ps [1.14]: 2000/11/28 18:55:24 alexcher)
+
+The PDF specification says that the 'xref' must be on a line by itself. The
+code formerly used readline and linene to check this. However, Acrobat
+Reader only requires the line to begin with 'xref', and there are enough
+applications producing non-compliant PDF files that we have to do this too.
+(lib/pdf_main.ps [1.24]: 2000/12/18 03:41:35 alexcher)
+
+AI8 writes bogus encoding array [0 1 0 0 0 0 0 0] AR doesn't care. So we
+have to straighten it up here. (lib/pdf_draw.ps [1.24]: 2000/12/20 19:02:24
+alexcher)
+
+Makes the PDF interpreter handle true, false, and null specially, rather
+than by dictionary lookup, so that the PostScript interpreter can still
+process these names using the special fast case for names defined only in
+systemdict. (lib/pdf_base.ps [1.11], lib/pdf_main.ps [1.25]: 2000/12/26
+04:08:44 lpd)
+
+</pre><h2><a name="6.60-Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- The recently updated code for activating the DSC comment parser
+had several local/global VM problems, causing invalidaccess errors.
+(lib/gs_dps2.ps [1.3], lib/gs_init.ps [1.27], lib/gs_pdfwr.ps [1.7]:
+2000/11/07 18:51:24 lpd)
+	- There was still a bug in the code for passing DSC comments to the
+PDF writer, causing typecheck errors. (lib/gs_pdfwr.ps [1.8]: 2000/11/07
+19:27:14 lpd)
+	- If the procedure of a FunctionType 4 Function was syntactically
+valid but exceeded the maximum stack depth, an attempt was made to free a
+string as an object, causing memory corruption. (zfunc4.c [1.6]: 2000/11/11
+17:34:06 lpd)
+	- Disk-based TrueType fonts caused a memory leak. (Currently, there
+are no such fonts, but CIDFontType 2 fonts, and directly-accessed TrueType
+fonts, should be made disk-based.) (zfcid1.c [1.4]: 2000/11/22 08:32:07 lpd)
+	- Type 1 CharStrings loaded from disk for type 0 CIDFonts were never
+freed, except by garbage collection (which doesn't reclaim chunks with only
+a small amount of surviving data). In practice, this probably only affects
+the PDF writer. (zfcid0.c [1.5]: 2000/11/23 23:34:22 lpd)
+	- Single-byte notdef ranges in CMaps incorrectly incremented the CID
+number, rather than assigning the same CID to all characters in the range.
+(lib/gs_cmap.ps [1.9]: 2000/11/29 06:58:36 lpd)
+	- In dictionaries, an int lookup key sometimes didn't match a real
+stored key, and vice versa. Fixes SourceForge bug # 123678. (idict.c [1.3]:
+2000/11/30 07:13:08 lpd)
+	- Further tweaking of the logic to clear end_status flags in a
+pipeline in the continuation of a procedure write, making it more aggressive
+than the previous fix, but less aggressive than the original code. This is a
+revised fix for Sourceforge bug 119777. (zfproc.c [1.7]: 2000/12/02 19:58:45
+raph)
+	- 'gstate' was allowed in global VM even if the current graphics
+state included references to structures in local VM (which is, in fact,
+normally the case) and the save level was non-zero: this could create a
+dangling pointer after the 'restore'. This "fix" is a workaround that simply
+prohibits doing this, but a correct fix would copy any such structures.
+(zdps1.c [1.3]: 2000/12/02 20:39:37 lpd)
+	- The first call of check_psc_function in gs_build_function_4 didn't
+initialize size to 0, causing the computed value of size to be garbage,
+possibly leading to a VMerror or memory corruption. (zfunc4.c [1.7]:
+2000/12/03 16:56:31 alexcher)
+	- The font_info procedure for PostScript fonts other than Type 1
+didn't return information from the FontInfo dictionary (Copyright,
+FamilyName, FullName, Notice), causing this information to be omitted when
+embedding the font in a PDF file. (ifont.h [1.6], zbfont.c [1.7],
+zfont.c [1.3], zfont1.c [1.9]: 2000/12/03 23:35:30 lpd)
+	- The %%ViewingOrientation: DSC comment was misspelled
+%%ViewerOrientation:. This also corrects the CDSC_VIEWINGORIENTATION enum
+value (formerly CDSC_VIEWERORIENTATION, and the viewing_orientation members
+of the CDSCPAGE structure and the CDSC structure (formerly
+viewer_orientation). (dscparse.c [1.3], dscparse.h [1.3], zdscpars.c [1.8]:
+2000/12/09 18:28:23 lpd)
+	- Unitialized member of CDSCPAGE caused random crashes.
+(dscparse.c [1.4]: 2000/12/13 07:18:46 alexcher)
+	- systemdict was being created too small for LanguageLevel 3
+systems. (It expanded properly, but left a sandbar.) (iinit.c [1.3]:
+2000/12/26 04:25:54 lpd)
+	- Expanding a permanent dictionary (systemdict or userdict)
+destroyed the single-definition bookkeeping for names defined in that
+dictionary, slowing down subsequent interpretation. (idict.c [1.4]:
+2000/12/26 06:09:58 lpd)
+	- Fix to dscparse.c for parsing DOS EPS files. Code now looks for
+%!PS-Adobe- at the start of the PostScript section, not at the start of the
+DOS EPS header. (dscparse.c [1.5]: 2000/12/28 01:45:01 ghostgum)
+
+Collect some stray configuration related externs into iconf.h
+(imain.c [1.3], imainarg.c [1.5]: 2000/11/04 06:12:02 rayjj)
+
+branches: 1.1.2; Collect some stray configuration related externs into
+iconf.h (iconf.h [1.1]: 2000/11/04 06:12:02 rayjj)
+
+Add COMPILE_INITS information line to -h help output. (imainarg.c [1.6]:
+2000/11/04 06:13:42 rayjj)
+
+Adds DSC parsing capability to the PostScript interpreter, with an optional
+'feature' to use the DSC Orientation comments to compensate for sloppy
+PostScript producers that don't emit an appropriate setpagedevice command.
+(lib/gs_dscp.ps [1.1], zdscpars.c [1.1]: 2000/11/05 18:33:52 lpd)
+
+branches: 1.1.2; Adds DSC parsing capability to the PostScript interpreter,
+with an optional 'feature' to use the DSC Orientation comments to compensate
+for sloppy PostScript producers that don't emit an appropriate setpagedevice
+command. (dscparse.c [1.1], dscparse.h [1.1]: 2000/11/05 18:33:53 lpd)
+
+Polishes the DSC parser interface: improves comments and formatting, and
+fixes a couple of very minor glitches. (zdscpars.c [1.2]: 2000/11/06
+07:34:21 lpd)
+
+branches: 1.3.2; ... and fixes an overlooked const discrepancy.
+(zdscpars.c [1.3]: 2000/11/06 07:35:51 lpd)
+
+branches: 1.2.2; Fix: The recently updated code for activating the DSC
+comment parser had several local/global VM problems, causing invalidaccess
+errors. (lib/gs_dscp.ps [1.2]: 2000/11/07 18:51:25 lpd)
+
+Return code variables (code and comment_code) in zparse_dsc_comments(). need
+to be signed. (zdscpars.c [1.4]: 2000/11/08 00:54:48 dancoby)
+
+Rewrites .parse_dsc_comment to use the parameter list machinery, removing a
+little functionally duplicated code; changes two incorrect uints to ints
+(fix from dan@artifex.com); adds additional comment types (BoundingBox,
+PageBoundingBox, BeginDefaults, EndDefaults) to the interface.
+(zdscpars.c [1.5]: 2000/11/08 07:07:32 lpd)
+
+DSC parser changes: adds %%ViewerOrientation to DSC parser; doesn't flag an
+error if %%Pages is absent but one %%Page is found; frees memory if
+initialization fails; recognizes general whitespace in some places where
+only spaces were recognized before. (changes from gsview@ghostgum.com.au)
+(dscparse.c [1.2], dscparse.h [1.2]: 2000/11/13 05:44:58 lpd)
+
+Adds DSC comment tracing to ps2pdf, if -dDEBUG is specified on the command
+line. (lib/gs_pdfwr.ps [1.9]: 2000/11/13 17:03:51 lpd)
+
+Adds %%EndDefaults, %%For:, and %%ViewerOrientation: to the set of DSC
+comments handled by the .parse_dsc_comments operator. (zdscpars.c [1.6]:
+2000/11/13 17:06:18 lpd)
+
+Slightly simplifies the code for creating the internal representation of
+CMaps. (lib/gs_cmap.ps [1.8]: 2000/11/16 00:32:00 lpd)
+
+Changes .buildshading to always apply a ReusableStreamDecode filter to file
+and stream DataSources, so that multiple passes over the stream work. This
+patch closes SourceForge bug 121810. (lib/gs_ll3.ps [1.7]: 2000/11/16
+00:37:32 raph)
+
+Makes single-byte CMap ranges convert into a single range in the internal
+representation, rather than (largest - smallest + 1) separate single-element
+ranges. (lib/gs_cmap.ps [1.10]: 2000/11/29 07:10:27 lpd)
+
+Adds documentation for the procedures declared in ifont.h. (ifont.h [1.5]:
+2000/12/03 23:14:28 lpd)
+
+Extensively revises and updates the pdfwrite text handling code to support
+processing and embedding of all types of fonts (except for Type 3 and
+CIDFontType 1, which are defined by PostScript procedures), and all variants
+of 'show' (including kshow and glyphshow). In particular, Type 0 fonts with
+all FMapTypes (including CMap-based), CIDFontType 0 and 2 fonts, and both
+standard and non-standard CMaps are supported. (lib/gs_cidfn.ps [1.18]:
+2000/12/08 23:35:38 lpd)
+
+Makes the default value of ParseDSCCommentsForDocInfo true rather than
+false. (lib/gs_pdfwr.ps [1.10]: 2000/12/09 08:00:52 lpd)
+
+Changes the parsing of the DSC Orientation comments to return -1 .. 3 rather
+than 0 or 1. (lib/gs_dscp.ps [1.3], zdscpars.c [1.7]: 2000/12/09 17:52:29
+lpd)
+
+Changes .parse_dsc_comments to distinguish (document default)
+ViewingOrientation from PageViewingOrientation, as for [Page]Orientation.
+(zdscpars.c [1.9]: 2000/12/09 19:52:49 lpd)
+
+Updates the comments with a new proposal for speeding up name lookup in the
+interpreter. (dstack.h [1.3]: 2000/12/26 01:20:58 lpd)
+
+The old code caused gswin crash when console window closes.
+(dwimg.cpp [1.3]: 2000/12/26 13:41:40 igorm)
+
+New flag DELAYSAFER added to defer activation of safety checks. SAFER=false
+=&gt; no safety checks SAFER=true, DELAYSAFER=false =&gt; safety checks
+always SAFER=true, DELAYSAFER=true =&gt; safety checks after .setsafe
+(lib/gs_init.ps [1.28]: 2000/12/29 04:13:56 alexcher)
+
+</pre><h2><a name="6.60-Streams"></a>Streams</h2><pre>
+
+Fixes problems:
+	- Seek was broken and PDF interpreter failed when
+FILE_IMPLEMENTATION=fd The implementation of streams using direct OS calls
+is extended to support MSVC &amp;&amp; Win32. close_.h is replaced by more
+general unistd_.h (sfxfd.c [1.6]: 2000/12/19 03:35:40 alexcher)
+
+</pre><h2><a name="6.60-Library"></a>Library</h2><pre>
+
+Fixes problems:
+	- Several places in the band list code didn't call s_init_state to
+initialize locally allocated stream states: this is now required (see the
+"Incompatible changes" section above). We suspect there are a few more
+places that will need this fix. (gxclbits.c [1.3], gxcldev.h [1.4],
+gxclread.c [1.3], gxclutil.c [1.3]: 2000/11/05 00:34:24 lpd)
+	- Fixes infinite loops when writing large bitmaps into clist. Now,
+cmd_put_bits never requests an allocation in the clist buffer larger than
+cbuf_size. (gxclbits.c [1.4]: 2000/11/05 18:44:57 raph)
+	- Works around an Acrobat Reader 4 bug that causes AR4 to draw a
+single pixel, rather than nothing, when filling a subpath consisting only of
+a moveto. (gdevvec.c [1.8]: 2000/11/07 16:42:28 lpd)
+	- The PDF writer didn't handle stroked fonts correctly (they were
+filled instead of stroked). (gdevvec.c [1.9], gdevvec.h [1.5]: 2000/11/12
+06:52:08 lpd)
+	- The pdfwrite and pswrite drivers could emit a lineto or rlineto
+without a moveto at the beginning of the path. (bug introduced very
+recently, by a workaround for an Acrobat Reader bug) (gdevvec.c [1.10]:
+2000/11/14 07:41:08 lpd)
+	- Attempting to write a CFF Type 2 font larger than 32K but smaller
+than 64K caused a rangecheck. (gdevpsf2.c [1.8]: 2000/11/19 17:48:08 lpd)
+	- Computing the default width or the fixed width for a CIDFont or
+TrueType font could do a huge amount of unnecessary work. (Probably only
+affects the PDF writer.) (gsfont.c [1.3]: 2000/11/20 21:09:09 lpd)
+	- The Type 1 to Type 2 CharString converter (currently used only by
+the PDF writer) often didn't detect invalid CharStrings as input.
+(gdevpsfx.c [1.6]: 2000/11/21 02:33:55 lpd)
+	- The code for writing a CIDFontType0 CFF font mistook Type 2
+CharStrings for Type 1, and tried to convert them to Type 2. (This currently
+affects only the PDF writer.) (gdevpsf2.c [1.9]: 2000/11/21 02:35:59 lpd)
+	- Disk-based TrueType fonts caused a memory leak. (Currently, there
+are no such fonts, but CIDFontType 2 fonts, and directly-accessed TrueType
+fonts, should be made disk-based.) (gdevpsft.c [1.5], gstype42.c [1.10]:
+2000/11/22 08:32:07 lpd)
+	- Type 1 CharStrings loaded from disk for type 0 CIDFonts were never
+freed, except by garbage collection (which doesn't reclaim chunks with only
+a small amount of surviving data). In practice, this probably only affects
+the PDF writer. (gsfcid.c [1.5], gstype1.c [1.6], gstype2.c [1.9],
+gxfont1.h [1.5], gxtype1.c [1.8], gxtype1.h [1.5]: 2000/11/23 23:34:22 lpd)
+	- The pswrite device couldn't write to pipes. The fix involved
+expanding the API for opening device OutputFiles so that the individual
+driver could specify whether it required, requested, or did not want a
+positionable file. Fixes SourceForge bug # 122223. (gdevpipe.c [1.4],
+gdevvec.c [1.11], gdevvec.h [1.6], gsdevice.c [1.8]: 2000/11/29 02:25:13
+lpd)
+	- The change for freeing transient CharStrings introduced two bugs,
+possibly causing the code to free data twice, or to free data that should be
+retained. (gdevpsfx.c [1.8]: 2000/11/30 05:58:19 lpd)
+	- Allocates graphics state path in stable memory. This prevents
+paths in Type 3 fonts allocated inside a save ... setcachedevice ... restore
+sequence from being prematurely freed. Fixes SourceForge bug 101549.
+(gspath1.c [1.3], gsstate.c [1.6]: 2000/12/04 21:13:55 raph)
+	- An inadvertent change caused the graphics state not to be freed on
+grestore. This fix, due to lpd, restores the freeing statement.
+(gsstate.c [1.7]: 2000/12/05 09:24:57 raph)
+	- The pointers to the substituted color spaces in the graphics state
+weren't included in the structure descriptor, causing memory access errors
+if UseCIEColor was used. (gsstate.c [1.8]: 2000/12/11 04:06:22 alexcher)
+	- In TrueType fonts, glyph outlines starting with an off-curve point
+didn't render correctly, replacing the curve with a pair of straight lines.
+(gstype42.c [1.11]: 2000/12/12 22:27:56 alexcher)
+	- Strict type correctness is required on VMS system. Contributed by
+Jouk Jansen joukj@hrem.stm.tudelft.nl (gdevpsf2.c [1.12], gsfcmap.c [1.13]:
+2000/12/18 21:58:03 alexcher)
+	- Seek was broken and PDF interpreter failed when
+FILE_IMPLEMENTATION=fd The implementation of streams using direct OS calls
+is extended to support MSVC &amp;&amp; Win32. close_.h is replaced by more
+general unistd_.h (gpmisc.c [1.9]: 2000/12/19 03:35:40 alexcher)
+	- Fixes a subtle logic bug in the scan line path filling code, which
+unfortunately involved rewriting the code from scratch. The new code is also
+somewhat subtle, and may contain new bugs: DON'T TRUST IT YET. Fixes
+SourceForge bug # 117066. (gxfill.c [1.7]: 2000/12/23 06:02:39 lpd)
+	- Embedded Type 1 fonts omitted StdVW. (Acrobat Reader requires
+this, even though the Type 1 specification says it is optional.)
+(gdevpsf1.c [1.8]: 2000/12/29 01:18:55 lpd)
+
+Adds developer documentation on the color mapping pipeline. (gxfrac.h [1.3]:
+2000/11/03 04:53:00 lpd)
+
+Improves the documentation of the minimum responsibilities of the 'process'
+procedure in a text enumerator. (gxtext.h [1.6]: 2000/11/06 00:44:37 lpd)
+
+Adds a param_string_from_transient_string macro, to parallel
+param_string_from_string for non-permanent C strings. (gsparam.h [1.8]:
+2000/11/08 06:56:50 lpd)
+
+Adds a macro for declaring suffix subclasses with 5 added pointers (in
+addition to the existing 1, 2, 3, 4, and 6). (gsstruct.h [1.6]: 2000/11/21
+16:46:55 lpd)
+
+Adds a procedure for testing whether a glyph is a "notdef" in a font,
+necessary for fixing a memory consumption problem when accessing type 0
+CIDFonts. (gsfont.c [1.4], gxfont.h [1.3]: 2000/11/23 23:23:40 lpd)
+
+Speeds up the slow case of fixed_mult_quo by nearly a factor of 2, by using
+a tiny bit of numerical analysis. (gsmisc.c [1.9], gxfixed.h [1.3]:
+2000/11/24 06:53:23 lpd)
+
+Improves the performance of embedded font writing by freeing strings when no
+longer needed, and by removing redundant computation. (Currently relevant
+only to the PDF writer.) (gdevpsf1.c [1.7], gdevpsf2.c [1.10],
+gdevpsfu.c [1.5], gdevpsfx.c [1.7]: 2000/11/24 07:10:41 lpd)
+
+Adds a procedure for creating an Identity CMap, needed by the PDF writer.
+(gsfcmap.c [1.11], gxfcmap.h [1.6]: 2000/11/26 04:08:41 lpd)
+
+Implements the stopgap measure of increasing fill_adjust for Coons patch
+shading, to cover the dropouts caused by incorrect triangulation of the mesh
+surface. See SourceForge Bug 119588 for a more thorough analysis.
+(gsptype2.c [1.4], gxshade4.c [1.4]: 2000/11/29 01:31:30 raph)
+
+Adds an internal unique ID to CMap structures (gs_cmap_t), for use as a
+cache or comparison key. (gsfcmap.c [1.12], gxfcmap.h [1.7]: 2000/11/29
+05:50:03 lpd)
+
+The old code did not comply ISO/IEC C language standard and compiled wrongly
+to Mac, causing halftone problem on Mac. (gshtscr.c [1.5]: 2000/11/29
+14:41:34 igorm)
+
+Adds macros for suffix subclass structures with 7 or 8 additional pointers
+(1-6 and 9 existed already). (gsstruct.h [1.7]: 2000/12/04 01:11:53 lpd)
+
+Extensively revises and updates the pdfwrite text handling code to support
+processing and embedding of all types of fonts (except for Type 3 and
+CIDFontType 1, which are defined by PostScript procedures), and all variants
+of 'show' (including kshow and glyphshow). In particular, Type 0 fonts with
+all FMapTypes (including CMap-based), CIDFontType 0 and 2 fonts, and both
+standard and non-standard CMaps are supported. (gdevpsf.h [1.9],
+gdevpsf2.c [1.11], gdevpsfm.c [1.4], gdevpsft.c [1.6], gdevpsfu.c [1.6]:
+2000/12/08 23:35:38 lpd)
+
+Moves definitions of gs_state_do_ptrs and gs_state_num_ptrs from gsstate.c
+to gzstate.h since they depend on the contents of struct gs_state_s defined
+there. (gsstate.c [1.9], gzstate.h [1.4]: 2000/12/11 12:52:16 alexcher)
+
+Splits off the code for downsampling an oversampled character bitmap into a
+separate file. (gsbitcom.c [1.1], gsbitops.c [1.3]: 2000/12/14 00:14:52 lpd)
+
+branches: 1.1.2; Fix: Seek was broken and PDF interpreter failed when
+FILE_IMPLEMENTATION=fd The implementation of streams using direct OS calls
+is extended to support MSVC &amp;&amp; Win32. close_.h is replaced by more
+general unistd_.h (unistd_.h [1.1]: 2000/12/19 03:35:40 alexcher)
+
+Brings gxfill.c up to date with current coding standards (except for adding
+_t to the names of locally defined structure types); also puts #ifdef
+FILL_TRAPEZOIDS around a little more code that tests 'if (fill_trapezoids)'.
+(gxfill.c [1.6]: 2000/12/21 16:10:36 lpd)
+
+Updates repository for 6.60 release. (gscdef.c [1.11]: 2001/01/01 00:24:06
+lpd)
+
+</pre><h2><a name="6.60-Other"></a>Other</h2><pre>
+
+Fixes problems:
+	- Seek was broken and PDF interpreter failed when
+FILE_IMPLEMENTATION=fd The implementation of streams using direct OS calls
+is extended to support MSVC &amp;&amp; Win32. close_.h is replaced by more
+general unistd_.h (close_.h [1.3]: 2000/12/19 03:35:40 alexcher)
 
 <hr>
 
