@@ -513,7 +513,8 @@ pdfdict begin
     not { null } if
   } ifelse
   dup /endobj eq {
-    (   **** PDF format error: stream Length incorrect.\n) pdfformaterror
+    % Another case that Acrobat Reader handles -- 'endobj' without 'endstream'.
+    (   **** PDF format error: stream missing 'endstream'.\n) pdfformaterror
     pop /endstream		% fake a valid endstream
   } if
   /endstream ne { 
