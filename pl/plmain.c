@@ -201,7 +201,7 @@ high_level_device(gx_device *device)
 {
     /* this is a hack, there is not a nice way to determine if the
        device is a high level device at this time */
-    if ( strcmp(gs_devicename(device), "pdfwrite" ) == 0 )
+    if ( strncmp(gs_devicename(device), "pdfwrite", 8) == 0 )
 	return true;
     else
 	return false;
