@@ -178,6 +178,12 @@ $(PLOBJ)plplatf.$(OBJ): $(PLSRC)plplatf.c $(AK) $(string__h)\
  $(gsstruct_h) $(gsdevice) $(plplatf_h)
 	$(PLCCC) $(PLSRC)plplatf.c $(PLO_)plplatf.$(OBJ)
 
+plftable_h=$(PLSRC)plftable.h
+
+# hack - need AGFA included for -DAGFA_FONT_TABLE
+$(PLOBJ)plftable.$(OBJ): $(PLSRC)plftable.c $(AK) $(plftable_h)
+	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plftable.c $(PLO_)plftable.$(OBJ)
+
 $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
  $(gdebug_h) $(gsnogc_h) $(gsdevice_h) $(gsmemory_h) $(gsstruct_h)\
  $(gstypes_h) $(pltop_h)
@@ -236,13 +242,13 @@ pl_obj3=$(PLOBJ)plplatf.$(OBJ) $(PLOBJ)plalloc.$(OBJ)
 pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
 
 # artifex font objects
-afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
+afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
 # ufst font objects
-ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
+ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
 # freetype font objects
-fts_obj=$(PLOBJ)plflfont.$(OBJ) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)plffont.$(OBJ)
+fts_obj=$(PLOBJ)plflfont.$(OBJ) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
 # generic artifex font device.
 $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj)

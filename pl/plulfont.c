@@ -21,6 +21,7 @@
 #include "plfont.h"
 #include "pldict.h"
 #include "pllfont.h"
+#include "plftable.h"
 #include "plvalue.h"
 /* agfa includes */
 #include "cgconfig.h"
@@ -94,187 +95,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
     UB8                 pthnm[1024];
     UB8                 ufst_root_dir[1024];
 
-    typedef struct font_resident {
-	const char full_font_name[40];    /* name entry 4 in truetype fonts */
-	const short unicode_fontname[17]; /* pxl name */
-	pl_font_params_t params;
-	byte character_complement[8];
-	/* a ridiculous hack because somebody thought this was a font solution... */
-    } font_resident_t;
-    static const font_resident_t resident_table[] = {
-	/*
-	 * Symbol sets, typeface family values, and character complements
-	 * are faked; they do not (necessarily) match the actual fonts.  */
-#define C(b) ((byte)((b) ^ 0xff))
-#define cc_alphabetic\
-	  { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
-#define cc_symbol\
-	  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_MSL) }
-#define cc_dingbats\
-	  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_MSL) }
-#define pitch_1 fp_pitch_value_cp(1)
-	/*
-	 * Per TRM 23-87, PCL5 printers are supposed to have Univers
-	 * and CG Times fonts.  Substitute Arial for Univers and
-	 * Times for CG Times.
-	 */
-	/* hack the vendor value to be agfa's. */
-#define agfa (4096)
-	/* the actual typeface number is vendor + base value.  Base
-	   values are found in the pcl 5 Comparison guide - Appendix
-	   C-6.  We can add a parameter for vendor if necessary, for
-	   now it is agfa. */
-#define face_val(base_value, vendor) (vendor + (base_value))
-	/* definition for style word as defined on 11-19 PCLTRM */
-#define style_word(posture, width, structure) \
-	  ((posture) + (4 * (width)) + (32 * (structure)))
-	{"Courier", {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ',' ',' '},
-	 {0, 0, pitch_1, 0, style_word(0, 0, 0), 0, face_val(3, agfa)},
-	 cc_alphabetic},
-	{"CG Times", {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ',' ',' ',' ',' '},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0, face_val(5, agfa)},
-	 cc_alphabetic},
-	{"CG Times Bold", {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ',' ',' ','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 3, face_val(5, agfa)},
-	 cc_alphabetic},
-	{"CG Times Italic", {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ',' ',' ','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0, face_val(5, agfa)},
-	 cc_alphabetic},
-	{"CG Times Bold Italic", {'C','G',' ','T','i','m','e','s',' ',' ',' ',' ','B','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 3, face_val(5, agfa)},
-	 cc_alphabetic},
-	{"CG Omega", {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ',' ',' ',' ',' '},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0, face_val(17, agfa)},
-	 cc_alphabetic},
-	{"CG Omega Bold", {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ',' ',' ','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 3, face_val(17, agfa)},
-	 cc_alphabetic},
-	{"CG Omega Italic", {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ',' ',' ','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0, face_val(17, agfa)},
-	 cc_alphabetic},
-	{"CG Omega Bold Italic", {'C','G',' ','O','m','e','g','a',' ',' ',' ',' ','B','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 3, face_val(17, agfa)},
-	 cc_alphabetic},
-	{"Coronet", {'C','o','r','o','n','e','t',' ',' ',' ',' ',' ',' ',' ',' ',' '},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0, face_val(20, agfa)},
-	 cc_alphabetic},
-	{"Clarendon Condensed Bold", {'C','l','a','r','e','n','d','o','n',' ',' ',' ','C','d','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 1, 0), 3, face_val(44, agfa)},
-	 cc_alphabetic},
-	{"Univers Medium", {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ',' ',' ','M','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Univers Bold", {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ',' ',' ','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 3, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Univers Medium Italic", {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','M','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Univers Bold Italic", {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','B','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 3, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Univers Condensed Medium", {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','C','d','M','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 1, 0), 0, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Univers Condensed Bold", {'U','n','i','v','e','r','s',' ',' ',' ',' ',' ','C','d','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 1, 0), 3, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Univers Condensed Medium Italic", {'U','n','i','v','e','r','s',' ',' ',' ','C','d','M','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 1, 0), 0, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Univers Condensed Bold Italic", {'U','n','i','v','e','r','s',' ',' ',' ','C','d','B','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 1, 0), 3, face_val(52, agfa)},
-	 cc_alphabetic},
-	{"Antique Olive", {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ',' ',' '},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0, face_val(72, agfa)},
-	 cc_alphabetic},
-	{"Antique Olive Bold", {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 3,
-	  face_val(72, agfa)}, cc_alphabetic},
-	{"Antique Olive Italic", {'A','n','t','i','q','O','l','i','v','e',' ',' ',' ',' ','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0, face_val(72, agfa)},
-	 cc_alphabetic},
-	{"Garamond Antiqua", {'G','a','r','a','m','o','n','d',' ','A','n','t','i','q','u','a'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0, face_val(101, agfa)}, cc_alphabetic},
-	{"Garamond Halbfett", {'G','a','r','a','m','o','n','d',' ',' ',' ',' ',' ','H','l','b'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 3, face_val(101, agfa)}, cc_alphabetic},
-	{"Garamond Kursiv", {'G','a','r','a','m','o','n','d',' ',' ',' ',' ','K','r','s','v'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0,
-	  face_val(101, agfa)}, cc_alphabetic},
-	{"Garamond Kursiv Halbfett", {'G','a','r','a','m','o','n','d',' ','K','r','s','v','H','l','b'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 3,
-	  face_val(101, agfa)}, cc_alphabetic},
-	{"Marigold", {'M','a','r','i','g','o','l','d',' ',' ',' ',' ',' ',' ',' ',' '},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0, face_val(201, agfa)},
-	 cc_alphabetic},
-	{"Albertus Medium", {'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','M','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 1,
-	  face_val(266, agfa)}, cc_alphabetic},
-	{"Albertus Extra Bold", {'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','X','b'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 4,
-	  face_val(266, agfa)}, cc_alphabetic},
-	{"Arial", {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0,
-	  face_val(218, agfa)}, cc_alphabetic},
-	{"Arial Bold", {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 3,
-	  face_val(218, agfa)}, cc_alphabetic},
-	{"Arial Italic", {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ',' ',' ','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0, face_val(218, agfa)}, cc_alphabetic},
-	{"Arial Bold Italic", {'A','r','i','a','l',' ',' ',' ',' ',' ',' ',' ','B','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 3, face_val(218, agfa)}, cc_alphabetic},
-	{"Times New Roman", {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ',' ',' '},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 0, face_val(517, agfa)}, 
-	 cc_alphabetic},
-	{"Times New Roman Bold",{'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ','B','d'},
-	 {0, 1, pitch_1, 0, style_word(0, 0, 0), 3,
-	  face_val(517, agfa)}, cc_alphabetic},
-	{"Times New Roman Italic", {'T','i','m','e','s','N','e','w','R','m','n',' ',' ',' ','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 0,
-	  face_val(517, agfa)}, cc_alphabetic},
-	{"Times New Roman Bold Italic", {'T','i','m','e','s','N','e','w','R','m','n',' ','B','d','I','t'},
-	 {0, 1, pitch_1, 0, style_word(1, 0, 0), 3,
-	  face_val(517, agfa)}, cc_alphabetic},
-	{"Symbol", {'S','y','m','b','o','l',' ',' ',' ',' ',' ',' ',' ',' ',' ',' '},
-	 {621, 1, pitch_1, 0, style_word(0, 0, 0), 0,
-	  face_val(302, agfa)}, cc_symbol},
-	{"Wingdings", {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
-	 {18540, 1, pitch_1,0, style_word(0, 0, 0), 0,
-	  face_val(2730, agfa)}, cc_dingbats},
-	{"Courier Bold", {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ','B','d'},
-	 {0, 0, pitch_1, 0, style_word(0, 0, 0), 3, face_val(3, agfa)}, 
-	 cc_alphabetic },
-	{"Courier Italic", {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ',' ',' ','I','t'},
-	 {0, 0, pitch_1, 0, style_word(1, 0, 0), 0, face_val(3, agfa)},
-	 cc_alphabetic },
-	{"Courier Bold Italic", {'C','o','u','r','i','e','r',' ',' ',' ',' ',' ','B','d','I','t'},
-	 {0, 0, pitch_1, 0, style_word(1, 0, 0), 3, face_val(3, agfa)},
-	 cc_alphabetic},
-	{"Letter Gothic", {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ',' ',' '},
-	 {0, 0, pitch_1, 0, style_word(0, 0, 0), 0, face_val(6, agfa)},
-	 cc_alphabetic},
-	{"Letter Gothic Bold",
-	 {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ','B','d'},
-	 {0, 0, pitch_1, 0, style_word(0, 0, 0), 3, face_val(6, agfa)},
-	 cc_alphabetic},
-	{"Letter Gothic Italic", 
-	 {'L','e','t','t','e','r','G','o','t','h','i','c',' ',' ','I','t'},
-	 {0, 0, pitch_1, 0, style_word(1, 0, 0), 0, face_val(6, agfa)},
-	 cc_alphabetic},
-	/* Note that "bound" TrueType fonts are indexed starting at 0xf000, */
-	/* not at 0. */
-	{"", {'0','0'},
-	 {0, 0, pitch_1, 0, 0, 0, 0} }
-#undef C
-#undef cc_alphabetic
-#undef cc_symbol
-#undef cc_dingbats
-#undef pitch_1
-#undef agfa_value
-#undef face_val
-    };
-    pl_font_t *font_found[countof(resident_table)];
-
+    pl_font_t *font_found[pl_resident_font_table_count];
     /* don't load fonts more than once */
     if (pl_dict_length(pfontdict, true) > 0)
 	return true;
@@ -367,11 +188,11 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                 }
 
                 for ( j = 0; 
-                      j < sizeof(resident_table) / sizeof(resident_table[0]) &&
+                      j < pl_resident_font_table_count &&
                       strcmp(resident_table[j].full_font_name, pname) != 0;
                       j++ )
                     ;
-                if (j < sizeof(resident_table) / sizeof(resident_table[0])) {
+                if (j < pl_resident_font_table_count) {
                     pl_font_t * plfont;
                     int         err_cd = pl_load_mt_font( fcHndlAry[k],
                                                           pdir,
