@@ -2,8 +2,16 @@
 
 # Run some or all of a Genoa test suite, optionally checking for memory leaks.
 # Command line syntax:
-#	suite (--[no-]band | --[no-]check | --[no-]debug | --[no-]print | --[no-]together | -<switch> |
+#	suite (--[no-]band | --[no-]check | --[no-]debug | --[no-]print |
+#	   --[no-]profile | --[no-]together | -<switch> |
 #	   <dirname>[,<filename>] | <filename>)*
+
+set __band 1
+set __check 0
+set __debug 0
+set __print 0
+set __profile 0
+set __together 0
 
 proc pcl_args {band print} {
     set args [list -Z@:? -r600 -dNOPAUSE]
@@ -13,7 +21,7 @@ proc pcl_args {band print} {
 	lappend args -sDEVICE=pbmraw -sOutputFile=/dev/null
     }
     if $band {
-	lappend args -dMaxBitmap=500000 -dBufferSpace=500000
+	lappend args -dMaxBitmap=200000 -dBufferSpace=200000
     }
     return $args
 }
@@ -32,35 +40,47 @@ proc catch_exec {command} {
     }
 }
 
-set __band 1
-set __check 0
-set __debug 0
-set __print 0
-set __together 0
-proc suite {files switches} {
-    global __band __check __print __together
-    set pcl_args [pcl_args $__band $__print]
-    if {!$__check && $__together} {
-	set max_files 240
-	set max_files1 [expr $max_files - 1]
-	set pcl_xe [pcl_xe [lindex $files 0]]
-	while {[llength $files] > $max_files} {
-	    catch_exec [concat time $pcl_xe $pcl_args $switches [lrange $files 0 $max_files1] >&@stdout]
-	    set files [lreplace $files 0 $max_files1]
-	}
-	catch_exec [concat time $pcl_xe $pcl_args $switches $files >&@stdout]
+proc output_name {fl} {
+    if {[llength $fl] == 1} {
+	set output [lindex $fl 0]
     } else {
-	foreach f $files {
-	    set pcl_xe [pcl_xe $f]
-	    if $__check {
-		puts $f
-		flush stdout
-		catch_exec [concat $pcl_xe -ZA $pcl_args $switches $f >t]
-		set output $f.leak
-		regsub -all / $output - output
-		exec leaks <t >$output
-	    } else {
-		catch_exec [concat time $pcl_xe $pcl_args $switches $f >&@stdout]
+	set output "[lindex $fl 0]-[lindex $fl end]"
+    }
+    regsub -all / $output - output
+    return $output
+}
+
+proc suite {filelist switches} {
+    global __band __check __print __profile __together
+    set pcl_args [pcl_args $__band $__print]
+    set files [list]
+    if $__together {
+	set left $filelist
+	set max_files 100
+	set max_files1 [expr $max_files - 1]
+	set pcl_xe [pcl_xe [lindex $filelist 0]]
+	while {[llength $left] > $max_files} {
+	    lappend files [lrange $left 0 $max_files1]
+	    set left [lreplace $left 0 $max_files1]
+	}
+	if {$left != {}} {
+	    lappend files $left
+	}
+    } else {
+	foreach f $filelist {lappend files [list $f]}
+    }
+    foreach fl $files {
+	set pcl_xe [pcl_xe [lindex $fl 0]]
+	set output [output_name $fl]
+	if $__check {
+	    puts $fl
+	    flush stdout
+	    catch_exec [concat $pcl_xe -ZA $pcl_args $switches $fl >t]
+	    exec leaks <t >${output}.leak
+	} else {
+	    catch_exec [concat time $pcl_xe $pcl_args $switches $fl | tee ${output}.log >&@stdout]
+	    if $__profile {
+		exec gprof $pcl_xe >${output}.out
 	    }
 	}
     }
@@ -76,7 +96,11 @@ proc get_suite {dir} {
     if [info exists list($dir)] {
 	return $list($dir)
     }
-    return [set list($dir) [lsort -command compare_file_size [glob $dir/*.bin]]]
+    set files [lsort -command compare_file_size [glob $dir/*.bin]]
+    if {[lindex $files 0] == "0release.bin"} {
+	set files [lrange $files 1 end]
+    }
+    return [set list($dir) $files]
 }
 
 # Run the program.

@@ -10,6 +10,7 @@
 #include "pcdraw.h"
 #include "pcparam.h"
 #include "pcparse.h"		/* for pcl_execute_macro */
+#include "pcfont.h"		/* for underline interface */
 #include "gsmatrix.h"		/* for gsdevice.h */
 #include "gsdevice.h"
 #include "gspaint.h"
@@ -31,7 +32,9 @@
 /* Return 1 if the page was actually printed and erased. */
 int
 pcl_end_page(pcl_state_t *pcls, pcl_print_condition_t condition)
-{	if ( condition != pcl_print_always )
+{	
+	pcl_break_underline(pcls);	/* (could mark page) */
+	if ( condition != pcl_print_always )
 	  { /* Check whether there are any marks on the page. */
 	    gx_device *dev = gs_currentdevice(pcls->pgs);
 	    if ( !pcls->have_page )	/* definitely no marks */
@@ -62,15 +65,16 @@ pcl_end_page(pcl_state_t *pcls, pcl_print_condition_t condition)
 		    pcls->overlay_enabled = true; /**** IN copy_after ****/
 		  }
 	      }
-	    (*pcls->finish_page)(pcls);
+	    (*pcls->end_page)(pcls, pcls->num_copies, true);
+	    pcl_continue_underline(pcls);
 	    pcls->have_page = false;
 	    code = gs_erasepage(pcls->pgs);
 	    return (code < 0 ? code : 1);
 	  }
 }
 int
-pcl_default_finish_page(pcl_state_t *pcls)
-{	return gs_output_page(pcls->pgs, pcls->num_copies, true);
+pcl_default_end_page(pcl_state_t *pcls, int num_copies, int flush)
+{	return gs_output_page(pcls->pgs, num_copies, flush);
 }
 
 /* Reset the margins. */
@@ -344,7 +348,7 @@ private void
 pcpage_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { if ( type & pcl_reset_initial )
-	      pcls->finish_page = pcl_default_finish_page;
+	      pcls->end_page = pcl_default_end_page;
 	    pcls->paper_size = &p_size_letter;
 	    pcls->manual_feed = false;
 	    pcls->paper_source = 0;		/* ??? */

@@ -63,7 +63,7 @@ void pl_dict_init(P3(pl_dict_t *pdict, gs_memory_t *memory,
 bool pl_dict_lookup(P6(pl_dict_t *pdict, const byte *kdata, uint ksize,
 		       void **pvalue, bool with_stack, pl_dict_t **ppdict));
 #define pl_dict_find(pdict, kdata, ksize, pvalue)\
-  pl_dict_lookup(pdict, kdata, ksize, pvalue, true, NULL)
+  pl_dict_lookup(pdict, kdata, ksize, pvalue, true, (pl_dict_t **)0)
 
 /*
  * Add an entry to a dictionary.  Return 1 if it replaces an existing entry.

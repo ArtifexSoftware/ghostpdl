@@ -10,6 +10,21 @@
 
 #include "plfont.h"
 
+/* Clear the font pointer cache.  Some non-font operations--removing a
+ * downloaded symbol set, or changing orientations--can cause this.
+ * set == -1 means all. */
+void pcl_decache_font(P2(pcl_state_t *pcls, int set));
+
+/* Do any underlining just before a break in motion (vertical motion or
+ * negative horizontal motion)... */
+#define	pcl_break_underline(pcls)	if ( pcls->underline_enabled ) \
+	pcl_do_underline(pcls)
+/* ...and then, after repositioning, restart underlining if necessary... */
+#define	pcl_continue_underline(pcls)	if ( pcls->underline_enabled ) \
+	pcls->underline_start = pcls->cap
+
+void pcl_do_underline(P1(pcl_state_t *pcls));
+
 /* Define the common structure of downloaded font headers. */
 typedef struct pcl_font_header_s {
   byte FontDescriptorSize[2]; /* must be >=64 */
@@ -64,13 +79,5 @@ typedef struct pcl_resolution_bitmap_header_s {
   byte YResolution[2];
   char Copyright[1];
 } pcl_resolution_bitmap_header_t;
-
-/* Define our directory of fonts. */
-extern gs_font_dir *pcl_font_dir;
-
-/* Clear the font pointer cache.  Some non-font operations--removing a
- * downloaded symbol set, or changing orientations--can cause this.
- * set == -1 means all. */
-void pcl_decache_font(P2(pcl_state_t *pcls, int set));
 
 #endif		/* pcfont_INCLUDED */

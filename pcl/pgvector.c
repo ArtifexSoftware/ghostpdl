@@ -226,10 +226,15 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls,
 
 	/* no argument case */
 	if ( !got_args) 
-	  hpgl_call(hpgl_add_point_to_path(pgls, 
-					   pgls->g.pos.x, 
-					   pgls->g.pos.y, gs_func));
+	  {
+	    gs_point cur_point;
+	    hpgl_call(gs_currentpoint(pgls->pgs, &cur_point));
+	    hpgl_call(hpgl_add_point_to_path(pgls, 
+					     cur_point.x, 
+					     cur_point.y, gs_func));
+	  }
 
+	/* set the current state position */
 	return 0;
 }
 

@@ -8,6 +8,10 @@
 #ifndef pgdraw_INCLUDED
 #  define pgdraw_INCLUDED
 
+/* function to set the gl's current position -- point derived from gs
+   using gs_currentpoint.  */
+int hpgl_set_current_position(P2(hpgl_state_t *pgls, gs_point *pt));
+
 /* puts a point into the path using the operation specified by
    gs_func() - moveto, rmoveto, lineto, rlineto */
 int hpgl_add_point_to_path(P4(hpgl_state_t *pgls, floatp x, floatp y, 
@@ -48,3 +52,4 @@ int hpgl_close_current_path(P1(hpgl_state_t *pgls));
 #define hpgl_init_path(state) ((state)->g.have_path = false)
 
 #endif                          /* pgdraw_INCLUDED */
+

@@ -23,6 +23,10 @@
 /* Structure descriptors */
 private_st_pl_font();
 
+/* Imported procedures */
+int gs_type42_get_metrics(P3(gs_font_type42 *pfont, uint glyph_index,
+  float psbw[4]));
+
 /* Define accessors for unaligned, big-endian quantities. */
 #define u16(bptr) pl_get_uint16(bptr)
 #define s16(bptr) pl_get_int16(bptr)
@@ -345,6 +349,23 @@ pl_load_tt_font(FILE *in, gs_font_dir *pdir, gs_memory_t *mem,
 		  plfont->offsets.GT = 0;
 		  pl_fill_in_tt_font(pfont, data, unique_id);
 		  code = gs_definefont(pdir, (gs_font *)pfont);
+		  if ( code >= 0 )
+		    { /*
+		       * Set the nominal design width to the width of a
+		       * space character.  If there isn't one, set the
+		       * design width arbitrarily at 0.6 em.
+		       */
+		      gs_char space = ' ';
+		      uint glyph_index =
+			(*pfont->procs.encode_char)
+			  (NULL, (gs_font *)pfont, &space);
+		      float sbw[4];
+
+		      if ( gs_type42_get_metrics(pfont, glyph_index, sbw) < 0 )
+			plfont->params.pitch_100ths = 60;
+		      else
+			plfont->params.pitch_100ths = sbw[2] * 100;
+		    }
 		}
 	    }
 	  if ( code < 0 )

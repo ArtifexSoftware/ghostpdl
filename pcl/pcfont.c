@@ -1,14 +1,14 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
  * Unauthorized use, copying, and/or distribution prohibited.
  */
 
 /* pcfont.c */
 /* PCL5 font selection and text printing commands */
 #include "std.h"
-/* XXX Tangled include mess:  We need pl_load_tt_font, which is only supplied
+/* XXX #include tangle:  We need pl_load_tt_font, which is only supplied
  * by plfont.h if stdio.h is included, but pcstate.h back-door includes
  * plfont.h, so we have to pull in stdio.h here even though it should only
- * be down in the font-init-hack code. */
+ * be down local to the font-init-hack code. */
 #include "stdio_.h"
 #include "pcommand.h"
 #include "plvalue.h"
@@ -20,12 +20,14 @@
 #include "gschar.h"
 #include "gscoord.h"
 #include "gsfont.h"
+#include "gspaint.h"
 #include "gspath.h"
 #include "gsstate.h"
 #include "gsutil.h"
 
-/* XXX allow us to compile, but mark the points we'll need to fix later */
-#define	e_Screwup	e_Unimplemented
+/* pseudo-"dots" (actually 1/300" units) used in underline only */
+#define	dots(n)	((float)(7200 / 300 * n))
+
 
 /* Clear the font pointer cache after changing a font parameter.  set
  * indicates which font (0/1 for primary/secondary).  -1 means both. */
@@ -244,7 +246,7 @@ recompute_font(pcl_state_t *pcls)
 	    /* Be sure we've got at least one font. */
 	    pl_dict_enum_begin(&pcls->soft_fonts, &dictp);
 	    if ( !pl_dict_enum_next(&dictp, &key, &value) )
-		return e_Screwup;
+		return e_Unimplemented;
 	    best_font = (pl_font_t *)value;
 	    score_match(pcls, pfs, best_font, &best_map, best_match);
 
@@ -282,9 +284,11 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 {	gs_memory_t *mem = pcls->memory;
 	gs_state *pgs = pcls->pgs;
 	gs_show_enum *penum;
-       	gs_matrix user_ctm, font_ctm;
+       	gs_matrix user_ctm, font_ctm, font_only_mat;
 	pcl_font_selection_t *pfp;
 	coord_point initial;
+	gs_point gs_width;
+	float scale_x, scale_y;
 	int code = 0;
 
 	if ( pcls->font == 0 )
@@ -300,45 +304,66 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	if ( penum == 0 )
 	  return_error(e_Memory);
 	gs_moveto(pgs, (float)pcls->cap.x, (float)pcls->cap.y);
-	{ float scale_x, scale_y;
 
-	  if ( pcls->font->scaling_technology == plfst_bitmap )
-	    {
-	      scale_x = pcl_coord_scale / pcls->font->resolution.x;
-	      scale_y = pcl_coord_scale / pcls->font->resolution.y;
-	    }
-	  else
-	    {
-	      if ( pfp->params.proportional_spacing )
-		scale_x = scale_y = pfp->params.height_4ths * 25.0;
-	      else
-		/* XXX We need to ferret out the design factor that will
-		 * give us the width of a character.  For now, wire in the
-		 * assumption that it's 60% of height--this gives the
-		 * common equivalence of 10 pt == 12 pitch, 12 pt == 10
-		 * pitch.  */
-		scale_x = scale_y = 7200.0 / 0.6 / pfp->params.pitch_100ths;
-	    }
-	  /* Keep copies of both the user-space CTM and the font-space
-	   * (font scale factors * user space) CTM because we flip back and
-	   * forth to deal with effect of past backspace and holding info
-	   * for future backspace.
-	   * XXX I'm using the more general, slower approach rather than
-	   * just multiplying/dividing by scale factors. */
-	  gs_currentmatrix(pgs, &user_ctm);
-	  /* invert text because HP coordinate system is inverted */
-	  gs_scale(pgs, scale_x, -scale_y);
-	  gs_currentmatrix(pgs, &font_ctm);
-	}
+	if ( pcls->font->scaling_technology == plfst_bitmap )
+	  {
+	    scale_x = pcl_coord_scale / pcls->font->resolution.x;
+	    scale_y = pcl_coord_scale / pcls->font->resolution.y;
+	  }
+	else
+	  {
+	    /* XXX LPD I doubt that either of the following computations is
+	     * correct.  The first one was there before I touched the code;
+	     * the second one is my attempt at an update to use the new
+	     * setting of params.pitch_100ths for scalable fonts. */
+	    if ( pfp->params.proportional_spacing )
+	      scale_x = scale_y = pfp->params.height_4ths * 25.0;
+	    else
+	      scale_x = scale_y = 72.0 * pfp->params.pitch_100ths /
+		pcls->font->params.pitch_100ths;
+	  }
+
+	/* If floating underline is on, since we're about to print a real
+	 * character, track the best-underline position.
+	 * XXX Until we have the font's design value for underline position,
+	 * use 0.2 em.  This is enough to almost clear descenders in typical
+	 * fonts; it's also large enough for us to check that the mechanism
+	 * works. */
+	if ( pcls->underline_enabled && pcls->underline_floating )
+	  {
+	    float yu = scale_y / 5.0;
+	    if ( yu > pcls->underline_position )
+	      pcls->underline_position = yu;
+	  }
+
+	/* Keep copies of both the user-space CTM and the font-space
+	 * (font scale factors * user space) CTM because we flip back and
+	 * forth to deal with effect of past backspace and holding info
+	 * for future backspace.
+	 * XXX I'm using the more general, slower approach rather than
+	 * just multiplying/dividing by scale factors, in order to keep it
+	 * correct through orientation changes.  Various parts of this should
+	 * be cleaned up when performance time rolls around. */
+	gs_currentmatrix(pgs, &user_ctm);
+	/* invert text because HP coordinate system is inverted */
+	gs_scale(pgs, scale_x, -scale_y);
+	gs_currentmatrix(pgs, &font_ctm);
 
 	/* Overstrike-center if needed.  Enter here in font space. */
 	if ( pcls->last_was_BS )
-	  { coord_point prev = pcls->cap;
+	  {
+	    coord_point prev = pcls->cap;
 	    coord_point this_width, delta_BS;
 
-	    /* XXX Need width of new character in *user* space. */
-	    this_width = pcls->last_width;	/* XXX DUMMY! */
+	    /* Scale the width only by the font part of transformation so
+	     * it ends up in PCL coordinates. */
+	    gs_make_scaling(scale_x, -scale_y, &font_only_mat);
+	    if ( (code = pl_font_char_width(pcls->font, pcls->map,
+		&font_only_mat, str[0], &gs_width)) != 0 )
+	      goto x;
 
+	    this_width.x = gs_width.x;	/* XXX just swapping types??? */
+	    this_width.y = gs_width.y;
 	    delta_BS = this_width;	/* in case just 1 char */
 	    initial.x = prev.x + (pcls->last_width.x - this_width.x) / 2;
 	    initial.y = prev.y + (pcls->last_width.y - this_width.y) / 2;
@@ -404,11 +429,39 @@ x:	if ( code > 0 )		/* shouldn't happen */
 	pcls->last_was_BS = false;
 	return code;
 }
-int /* individual non-command/control characters */
+
+
+/* individual non-command/control characters */
+int
 pcl_plain_char(pcl_args_t *pargs, pcl_state_t *pcls)
 {	byte str[1];
 	str[0] = pargs->command;
 	return pcl_text(str, 1, pcls);
+}
+
+
+/* draw underline up to current point, adjust status */
+void
+pcl_do_underline(pcl_state_t *pcls)
+{
+	if ( pcls->underline_start.x != pcls->cap.x ||
+	     pcls->underline_start.y != pcls->cap.y )
+	  {
+	    gs_state *pgs = pcls->pgs;
+	    float y = pcls->underline_start.y + pcls->underline_position;
+
+	    pcl_set_ctm(pcls, true);
+	    /* TRM says (8-34) that underline is 3 dots.  In a victory for
+	     * common sense, it's not.  Rather, it's 0.01" (which *is* 3 dots
+	     * at 300 dpi only)  */
+	    gs_setlinewidth(pgs, dots(3));
+	    gs_moveto(pgs, pcls->underline_start.x, y);
+	    gs_lineto(pgs, pcls->cap.x, y);
+	    gs_stroke(pgs);
+	  }
+	/* Fixed underline is 5 "dots" (actually 5/300") down.  Floating
+	 * will be determined on the fly. */
+	pcls->underline_position = pcls->underline_floating? 0.0: dots(5);
 }
 
 /* The font parameter commands all come in primary and secondary variants. */
@@ -636,21 +689,26 @@ pcl_enable_underline(pcl_args_t *pargs, pcl_state_t *pcls)
 {	switch ( int_arg(pargs) )
 	  {
 	  case 0:
-	    pcls->floating_underline = false;
+	    pcls->underline_floating = false;
+	    pcls->underline_position = dots(5);
 	    break;
 	  case 3:
-	    pcls->floating_underline = true;
+	    pcls->underline_floating = true;
+	    pcls->underline_position = 0.0;
 	    break;
 	  default:
 	    return 0;
 	  }
 	pcls->underline_enabled = true;
+	pcls->underline_start = pcls->cap;
 	return 0;
 }
 
 private int /* ESC & d @ */
 pcl_disable_underline(pcl_args_t *pargs, pcl_state_t *pcls)
-{	pcls->underline_enabled = false;
+{	
+	pcl_break_underline(pcls);
+	pcls->underline_enabled = false;
 	return 0;
 }
 
@@ -775,7 +833,7 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	  { pcls->font_selection[0].params.symbol_set = 277;	/* Roman-8 */
 	    /* XXX There is some problem with fixed-pitch fonts; make the
 	     * default proportional until it's fixed. */
-	    pcls->font_selection[0].params.proportional_spacing = true;
+	    pcls->font_selection[0].params.proportional_spacing = false;
 	    pcls->font_selection[0].params.pitch_100ths = 10*100;
 	    pcls->font_selection[0].params.height_4ths = 12*4;
 	    pcls->font_selection[0].params.style = 0;
@@ -790,14 +848,12 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->last_width.x = pcls->hmi;
 	    pcls->last_width.y = 0;
 	  }
-	if ( type & pcl_reset_initial )
-	    pl_dict_init(&pcls->hard_fonts, pcls->memory, pl_free_font);
 
 }
 
-/* Load some hard (built-in) fonts.  This must be done at initialization
- * time, but after the state and memory are set up.  Return an indication
- * of whether some fonts were successfully loaded.
+/* Load some built-in fonts.  This must be done at initialization time, but
+ * after the state and memory are set up.  Return an indication of whether
+ * at least one font was successfully loaded.
  * XXX The existing code is more than a bit of a hack; however it does
  * allow us to see some text.  Approach: expect to find some fonts in the
  * current directory (wherever the interpreter is executed) with names
@@ -805,7 +861,7 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
  * very little of this code can be salvaged for later.
  */
 bool
-pcl_load_hard_fonts(pcl_state_t *pcls)
+pcl_load_built_in_fonts(pcl_state_t *pcls)
 {
 #include <sys/types.h>
 #include <dirent.h>
@@ -842,6 +898,14 @@ pcl_load_hard_fonts(pcl_state_t *pcls)
 	byte key[2];
 	bool found_some = false;
 
+	/* This initialization was moved from the do_reset procedures to
+	 * this point to localize the font initialization in the state
+	 * and have it in a place where memory allocation is safe. */
+	pcls->font_dir = gs_font_dir_alloc(pcls->memory);
+	pl_dict_init(&pcls->built_in_fonts, pcls->memory, pl_free_font);
+	pl_dict_init(&pcls->soft_fonts, pcls->memory, pl_free_font);
+	pl_dict_set_parent(&pcls->soft_fonts, &pcls->built_in_fonts);
+
 	if ( (dp=opendir(FONTDIR)) == NULL )
 	  {
 #ifdef DEBUG
@@ -860,7 +924,7 @@ pcl_load_hard_fonts(pcl_state_t *pcls)
 #endif
 		    continue;
 		  }
-		if ( pl_load_tt_font(fnp, pcl_font_dir, pcls->memory,
+		if ( pl_load_tt_font(fnp, pcls->font_dir, pcls->memory,
 		    gs_next_ids(1), &plfont) < 0 )
 		  {
 #ifdef DEBUG
@@ -868,6 +932,9 @@ pcl_load_hard_fonts(pcl_state_t *pcls)
 #endif
 		    return false;
 		  }
+#ifdef DEBUG
+		dprintf1("Loaded %s\n", dep->d_name);
+#endif
 		plfont->storage = pcds_internal;
 		/* extraordinary hack: get the font characteristics from a
 		 * hardwired table; ignore the font if we don't know it. */
@@ -878,11 +945,16 @@ pcl_load_hard_fonts(pcl_state_t *pcls)
 		  }
 		if ( hackp->ext_name == NULL )
 		    continue;	/* not in table */
-		plfont->params = hackp->params;
+		/* Don't smash the pitch_100ths, which was obtained
+		 * from the actual font. */
+		{ uint save_pitch = plfont->params.pitch_100ths;
+		  plfont->params = hackp->params;
+		  plfont->params.pitch_100ths = save_pitch;
+		}
 		id++;
 		key[0] = id >> 8;
 		key[1] = id;
-		pl_dict_put(&pcls->hard_fonts, key, 2, plfont);
+		pl_dict_put(&pcls->built_in_fonts, key, 2, plfont);
 		found_some = true;
 	    }
 	}

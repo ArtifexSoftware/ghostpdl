@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -23,9 +23,6 @@ typedef enum {
   pccd_truetype = 15
 } pcl_character_format;
 
-/* Formerly private, now shared with pcfont.h for initial hard fonts.
- * XXX Should this be moved into the state? */
-gs_font_dir *pcl_font_dir;
 
 /* ------ Internal procedures ------ */
 
@@ -171,7 +168,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	    if ( pfont == 0 )
 	      return_error(e_Memory);
-	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcl_font_dir,
+	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcls->font_dir,
 				   mem);
 	    if ( code < 0 )
 	      return code;
@@ -222,12 +219,25 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	      if ( code < 0 )
 		return code;
 	    }
-	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcl_font_dir,
+	    { uint num_chars = pl_get_uint16(pfh->LastCode);
+
+	      if ( num_chars < 20 )
+		num_chars = 20;
+	      else if ( num_chars > 300 )
+		num_chars = 300;
+	      code = pl_tt_alloc_char_glyphs(plfont, num_chars, mem,
+					     "pcl_font_header(char_glyphs)");
+	      if ( code < 0 )
+		return code;
+	    }
+	    code = pl_fill_in_font((gs_font *)pfont, plfont, pcls->font_dir,
 				   mem);
 	    if ( code < 0 )
 	      return code;
 	    pl_fill_in_tt_font(pfont, NULL, gs_next_ids(1));
-	    /****** HOW TO SET pitch_100ths, height_4ths? ******/
+	    /* pfh->Pitch is design unit width for scalable fonts. */
+	    plfont->params.pitch_100ths =
+	      pl_get_uint16(pfh->Pitch) * 100 / pfont->data.unitsPerEm;
 	  }
 	/* Extract common parameters from the font header. */
 	plfont->font_type = pfh->FontType;
@@ -240,7 +250,7 @@ pcl_font_header(pcl_args_t *pargs, pcl_state_t *pcls)
 	  (pfh->TypefaceMSB << 8) + pfh->TypefaceLSB;
 	pl_dict_put(&pcls->soft_fonts, id_key(pcls->font_id), 2, plfont);
 	plfont->pfont->procs.define_font = gs_no_define_font;
-	return gs_definefont(pcl_font_dir, plfont->pfont);
+	return gs_definefont(pcls->font_dir, plfont->pfont);
 }
 
 private int /* ESC * c <char_code> E */ 
@@ -327,8 +337,6 @@ pcsfont_do_init(gs_memory_t *mem)
 	DEFINE_CLASS_COMMAND_ARGS(')', 's', 'W', pcl_font_header, pca_bytes)
 	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'E', pcl_character_code, pca_neg_error|pca_big_ok)
 	DEFINE_CLASS_COMMAND_ARGS('(', 's', 'W', pcl_character_data, pca_bytes)
-		/* One-time state initialization */
-	pcl_font_dir = gs_font_dir_alloc(mem);
 	return 0;
 }
 private void
@@ -336,15 +344,7 @@ pcsfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { id_set_value(pcls->font_id, 0);
 	    pcls->character_code = 0;
-	    if ( type & pcl_reset_initial )
-	      {
-	        pl_dict_init(&pcls->soft_fonts, pcls->memory, pl_free_font);
-		/* Make hard fonts the parent, assuming that if we want to
-		 * look at soft fonts we'll want hard fonts afterward, but
-		 * not the reverse. */
-		pl_dict_set_parent(&pcls->soft_fonts, &pcls->hard_fonts);
-	      }
-	    else
+	    if ( !(type & pcl_reset_initial) )
 	      { pcl_args_t args;
 	        arg_set_uint(&args, 1); /* delete temporary fonts */
 		pcl_font_control(&args, pcls);

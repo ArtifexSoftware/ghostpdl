@@ -173,11 +173,13 @@ typedef struct pcl_hpgl_state_s {
 	struct { hpgl_real_t rgb[3]; } pen_color[2];
 	uint number_of_pens;
 	struct { hpgl_real_t cmin, cmax; } color_range[3];
-        /* HAS - ** HACK *** indicates the current command is being
-           executed internally.  The picture frame anchor point has
-           different semantics if executed from within the interpreter */
+	hpgl_rendering_mode_t current_render_mode; /* HAS revisit */
 } pcl_hpgl_state_t;
 
+
+/* HAS this can be done better, either the state should be saved in
+   local variables or a stack should be used.  The difficulty with
+   this state arrangement is it does not support nested saves */
 #define hpgl_save_pen_relative_state(pgls) \
   ((pgls)->g.last_relative = (pgls)->g.relative)
 

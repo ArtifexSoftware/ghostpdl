@@ -32,6 +32,7 @@
 
 extern FILE *gs_debug_out;
 extern gs_ref_memory_t *ialloc_alloc_state(P2(gs_memory_t *, uint));
+extern long gs_malloc_max;
 
 /* Define the table of pointers to initialization data. */
 #define init_(init) extern const pcl_init_t init;
@@ -44,16 +45,18 @@ const pcl_init_t *pcl_init_table[] = {
 	    0
 };
 
-/* Define interim font initialization procedure */
-extern bool pcl_load_hard_fonts(pcl_state_t *);
+/* Interim font initialization procedure */
+extern bool pcl_load_built_in_fonts(pcl_state_t *);
 
-/* Pause at the end of each page. */
+/* Built-in symbol set initialization procedure */
+extern bool pcl_load_built_in_symbol_sets(pcl_state_t *);
+
+/* If inst.pause is set, pause at the end of each page. */
 private int
-pause_finish_page(pcl_state_t *pcls)
-{	int code = pcl_default_finish_page(pcls);
-	fprintf(stderr, "End of page, press <enter> to continue.\n");
-	getchar();
-	return code;
+pause_end_page(pcl_state_t *pcls, int num_copies, int flush)
+{	pl_main_instance_t *pmi = pcls->client_data;
+
+	return pl_finish_page(pmi, pcls->pgs, num_copies, flush);
 }
 
 /* Define a minimal spot function. */
@@ -68,11 +71,12 @@ main(int argc, char *argv[])
 {	gs_ref_memory_t *imem;
 #define mem ((gs_memory_t *)imem)
 	pl_main_instance_t inst;
-	int i;
 	gs_state *pgs;
 	pcl_parser_state_t pstate;
 	pcl_state_t state;
 	pjl_parser_state_t pjstate;
+	arg_list args;
+	const char *arg;
 
 	/* Initialize the library. */
 	gp_init();
@@ -81,7 +85,7 @@ main(int argc, char *argv[])
 	imem = ialloc_alloc_state(&gs_memory_default, 20000);
 	imem->space = 0;		/****** WRONG ******/
 	pl_main_init(&inst, mem);
-	i = pl_main_process_options(&inst, argv, argc);
+	pl_main_process_options(&inst, &args, argv, argc);
 	/* Insert a bounding box device so we can detect empty pages. */
 	{ gx_device_bbox *bdev =
 	    gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,
@@ -117,6 +121,7 @@ main(int argc, char *argv[])
 	gs_gsave(pgs);
 	gs_erasepage(pgs);
 	state.memory = mem;
+	state.client_data = &inst;
 	state.pgs = pgs;
 	/* Run initialization code. */
 	{ const pcl_init_t **init;
@@ -130,20 +135,19 @@ main(int argc, char *argv[])
 	      }
 	  pcl_do_resets(&state, pcl_reset_initial);
 	}
-	/* XXX This doesn't really belong here, but there is no proper
-	 * place for it.  It needs to happen after reset_initial, when
-	 * the state is established and memory is usable. */
-	if ( !pcl_load_hard_fonts(&state) )
+	state.end_page = pause_end_page;
+
+	/* Intermediate initialization: after state is initialized, may
+	 * allocate memory, but we won't re-run this level of init. */
+	if ( !pcl_load_built_in_fonts(&state) )
 	  {
 	    lprintf("No built-in fonts found during initialization\n");
 	    exit(1);
 	  }
-	if ( inst.pause )
-	  state.finish_page = pause_finish_page;
+	pcl_load_built_in_symbol_sets(&state);
 
-	for ( ; i < argc; ++i )
+	while ( (arg = arg_next(&args)) != 0 )
 	  { /* Process one input file. */
-	    char *arg = argv[i];
 	    FILE *in = fopen(arg, "rb");
 	    byte buf[BUFFER_SIZE];
 #define buf_last (buf + (BUFFER_SIZE - 1))
@@ -152,12 +156,10 @@ main(int argc, char *argv[])
 	    stream_cursor_read r;
 	    bool in_pjl = true;
 
-#ifdef DEBUG
 	    if ( gs_debug_c(':') )
 	      { dprintf1("%% Reading %s:\n", arg);
 	        pl_print_usage(mem, &inst, "Start");
 	      }
-#endif
 	    if ( in == 0 )
 	      { fprintf(stderr, "Unable to open %s for reading.\n", arg);
 	        exit(1);
@@ -195,11 +197,10 @@ process:      if ( in_pjl )
 		memmove(buf, r.ptr + 1, len);
 	      r.limit = buf + (len - 1);
 	    }
-#ifdef DEBUG
-	  dprintf3("Final file position = %ld, exit code = %d, mode = %s\n",
-		   (long)ftell(in) - (r.limit - r.ptr), code,
-		   (in_pjl ? "PJL" : state.parse_other ? "HP-GL/2" : "PCL"));
-#endif
+	  if ( gs_debug_c(':') )
+	    dprintf3("Final file position = %ld, exit code = %d, mode = %s\n",
+		     (long)ftell(in) - (r.limit - r.ptr), code,
+		     (in_pjl ? "PJL" : state.parse_other ? "HP-GL/2" : "PCL"));
 	  fclose(in);
 
 	  /* Read out any status responses. */
@@ -211,9 +212,10 @@ process:      if ( in_pjl )
 	  }
 	  gs_reclaim(&inst.spaces, true);
 	  }
-#ifdef DEBUG
-	pl_print_usage(mem, &inst, "Final");
-#endif
+	if ( gs_debug_c(':') )
+	  { pl_print_usage(mem, &inst, "Final");
+	    dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
+	  }
 	gs_lib_finit(0, 0);
 	exit(0);
 	/* NOTREACHED */

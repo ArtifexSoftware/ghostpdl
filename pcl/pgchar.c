@@ -5,10 +5,15 @@
 /* pgchar.c */
 /* HP-GL/2 character commands */
 #include "math_.h"
+#include "ctype_.h"
 #include "stdio_.h"		/* for gdebug.h */
 #include "gdebug.h"
 #include "pgmand.h"
+
 #include "pginit.h"
+#include "pgfont.h"
+#include "pgdraw.h"
+#include "pggeom.h"
 
 /* ------ Internal procedures ------ */
 
@@ -157,15 +162,77 @@ hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return e_Unimplemented;
 }
 
-/* CP [spaces,lines]; */
+private int
+hpgl_get_current_cell_width(hpgl_state_t *pgls, hpgl_real_t *width)
+{
+  	/* HAS - just supports current font */
+	*width = inches_2_plu((1.0 / 
+			       (pgls->g.font_selection[0].params.pitch_100ths / 
+				100.0)));
+	/* HAS NO spec here */
+	*width *= 1.5;
+	return 0;
+}
+
+private int
+hpgl_get_current_cell_height(hpgl_state_t *pgls, hpgl_real_t *height)
+{
+  	/* HAS - just supports current font */
+	*height = points_2_plu((pgls->g.font_selection[0].params.height_4ths) /4.0);
+	/* HAS NO spec here */
+	*height *= 2.0;
+	return 0;
+}
+
+/* CP [spaces,lines]; HAS -- an arcane implementation, but it is late */
  int
 hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{	hpgl_real_t spaces, lines;
+{	
+	hpgl_real_t spaces = 0.0;
+	hpgl_real_t lines = 1.0;
+	
+	/* CP does its work with the pen up -- we restore the current
+           state at the end of the routine */
+	hpgl_save_pen_down_state(pgls);
+	/* We will take advantage of PR so save the current relative
+           state as well */
+	hpgl_save_pen_relative_state(pgls);
+
 	if ( hpgl_arg_c_real(pargs, &spaces) )
 	  { if ( !hpgl_arg_c_real(pargs, &lines) )
 	      return e_Range;
 	  }
-	return e_Unimplemented;
+
+	{
+
+	  hpgl_real_t width, height;
+	  hpgl_args_t args;
+
+	  /* get the character cell height and width */
+	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
+	  hpgl_call(hpgl_get_current_cell_height(pgls, &height));
+
+	  /* set the pen up */
+	  hpgl_args_set_real(&args, pgls->g.pos.x);
+	  hpgl_args_add_real(&args, pgls->g.pos.y);
+	  hpgl_PU(&args, pgls);
+	  
+	  /* relative move to new position, not forgetting ES */
+	  hpgl_args_set_real(&args, ((spaces + pgls->g.character.extra_space.x) * 
+				     width));
+	  hpgl_args_add_real(&args, -((lines + pgls->g.character.extra_space.y) * 
+				      height));
+	  hpgl_PR(&args, pgls);
+
+	  /* save the current position in GL/2's state */
+	  hpgl_call(hpgl_set_current_position(pgls, (gs_point *) NULL));
+
+	}
+	/* put the pen back the way it was, of course we do not want
+           to restore the pen's position */
+	hpgl_restore_pen_relative_state(pgls);
+	hpgl_restore_pen_down_state(pgls);
+	return 0;
 }
 
 /* DI [run,rise]; */
@@ -259,11 +326,107 @@ hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return hpgl_select_font(pargs, pgls, 0);
 }
 
+/* updates the current cursor position, which is the same as the
+   current pen postion */
+
+static int
+hpgl_update_label_pos(hpgl_state_t *pgls, byte ch)
+{
+	int spaces = 1, lines = 0;
+  	hpgl_args_t args;
+	/* HAS missing logic here. */
+	switch (ch) {
+	case BS :
+	  spaces = -1;
+	  break;
+	case LF :
+	  spaces = 0;
+	  break;
+	default :
+	  break;
+	}
+	hpgl_args_set_real(&args, spaces);
+	hpgl_args_add_real(&args, lines);
+	hpgl_CP(&args, pgls);
+	return 0;
+}
+
+/* build the path and render it */
+static int
+hpgl_print_char(hpgl_state_t *pgls,  hpgl_character_point *character)
+{
+	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
+
+	/* set the current gs point to the origin */
+	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
+
+	/* clear the current path, if there is one */
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+
+	pgls->g.current_render_mode = hpgl_rm_character;
+
+	while (character->operation != hpgl_char_end)
+	  {
+	    hpgl_args_t args;
+	    /* setup the arguments */
+	    hpgl_args_setup(&args);
+	    /* all operations supply arguments except: */
+	    if (character->operation != hpgl_char_pen_down_no_args)
+	      {
+		hpgl_args_add_real(&args, character->vertex.x);
+		hpgl_args_add_real(&args, character->vertex.y);
+	      }
+
+	    switch (character->operation)
+	      {
+	      case hpgl_char_pen_up : 
+		hpgl_call(hpgl_PU(&args, pgls));
+		break;
+	      case hpgl_char_pen_down : 
+	      case hpgl_char_pen_down_no_args :
+		hpgl_call(hpgl_PD(&args, pgls));
+		break;
+	      case hpgl_char_pen_relative :
+		hpgl_call(hpgl_PR(&args, pgls));
+		break;
+	      case hpgl_char_arc_relative : /* HAS not yet supported */;
+	      default :
+		dprintf("unsupported character operation\n");
+	      }
+	    character++;
+	  }
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
+
+
+	pgls->g.current_render_mode = rm;
+	return 0;
+}
+	    
+ static int
+hpgl_process_char(hpgl_state_t *pgls, byte ch)
+{
+  
+	if ( isprint(ch) )
+	  /* ascii is all we have right now */
+	  hpgl_call(hpgl_print_char(pgls, hpgl_ascii_char_set[ch - 0x20]));
+
+	hpgl_call(hpgl_update_label_pos(pgls, ch));
+
+	return 0;
+}
+
 /* LB ..text..terminator */
  int
 hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	const byte *p = pargs->source.ptr;
 	const byte *rlimit = pargs->source.limit;
+
+	/* we use the hpgl drawing machinery to stroke the glyph so we
+           need to save the state of the pen and restore it after the
+           glyph is printed.  HAS needs work */
+	bool rel  = pgls->g.relative;
+	bool down = pgls->g.pen_down;
+	gs_point pos = pgls->g.pos;
 
 	while ( p < rlimit )
 	  { byte ch = *++p;
@@ -272,13 +435,18 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		       " \\%03o"),
 		      ch);
 	    if ( ch == pgls->g.label.terminator )
-	      { if ( pgls->g.label.print_terminator )
-		  { /**** PRINT THE CHARACTER ****/
-		  }
+	      { 
+		if ( pgls->g.label.print_terminator )
+		    hpgl_call(hpgl_process_char(pgls, ch));
+
+		/* restore pen's state */
+		pgls->g.relative = rel;
+		pgls->g.pen_down = down;
+		pgls->g.pos = pos;
 		pargs->source.ptr = p;
-	        return e_Unimplemented;
+		return 0;
 	      }
-	    /**** PRINT THE CHARACTER ****/
+	    hpgl_call(hpgl_process_char(pgls, ch));
 	  }
 	pargs->source.ptr = p;
 	return e_NeedData;

@@ -8,22 +8,28 @@
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcdraw.h"
+#include "pcfont.h"
 
 /* Control character implementations. */
 /* do_CR and do_LF are exported for display_functions. */
 
 int
 pcl_do_CR(pcl_state_t *pcls)
-{	pcls->cap.x = pcls->left_margin;
+{	
+	pcl_break_underline(pcls);
+	pcls->cap.x = pcls->left_margin;
+	pcl_continue_underline(pcls);
 	return 0;
 }
 
 private int
 pcl_do_FF(pcl_state_t *pcls)
-{	int code = pcl_end_page_always(pcls);
+{	int code;
+	code = pcl_end_page_always(pcls);
 	if ( code < 0 )
 	  return code;
 	pcls->cap.y = pcls->top_margin;
+	pcl_continue_underline(pcls);	/* (after adjusting y!) */
 	return 0;
 }
 

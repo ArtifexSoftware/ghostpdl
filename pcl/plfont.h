@@ -232,7 +232,7 @@ int pl_font_add_glyph(P3(pl_font_t *plfont, gs_glyph glyph, const byte *data));
 /* Determine whether a font, with a given symbol set, includes a given */
 /* character.  If the font is bound, the symbol set is ignored. */
 #define pl_font_includes_char(plfont, maps, matrix, char_code)\
-  (pl_font_char_width(plfont, maps, matrix, char_code, NULL) == 0)
+  (pl_font_char_width(plfont, maps, matrix, char_code, (gs_point *)0) == 0)
 
 /* Free a font.  This is the freeing procedure in the font dictionary. */
 void pl_free_font(P3(gs_memory_t *mem, void *plf, client_name_t cname));

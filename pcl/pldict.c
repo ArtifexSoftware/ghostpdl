@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -52,11 +52,11 @@ pl_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 }
 
 /*
- * Find an entry in a dictionary.  Return a pointer to the pointer to the
+ * Look up an entry in a dictionary.  Return a pointer to the pointer to the
  * entry.
  */
 private pl_dict_entry_t **
-pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize)
+pl_dict_lookup_entry(pl_dict_t *pdict, const byte *kdata, uint ksize)
 {	pl_dict_entry_t **ppde = &pdict->entries;
 	pl_dict_entry_t *pde;
 
@@ -66,7 +66,7 @@ pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize)
 	       )
 	      return ppde;
 	  }
-	return false;
+	return 0;
 }
 
 /* Delete a dictionary entry. */
@@ -96,19 +96,25 @@ pl_dict_init(pl_dict_t *pdict, gs_memory_t *mem,
 }
 
 /*
- * Look up an entry in a dictionary.  Return true and set *ppvalue if found.
- * This routine, and only this one, searches the stack.
+ * Look up an entry in a dictionary, optionally searching the stack, and
+ * optionally returning a pointer to the actual dictionary where the
+ * entry was found.  Return true, setting *pvalue (and, if ppdict is not
+ * NULL, *ppdict), if found.  Note that this is the only routine that
+ * searches the stack.
  */
 bool
-pl_dict_find(pl_dict_t *pdict, const byte *kdata, uint ksize, void **pvalue)
+pl_dict_lookup(pl_dict_t *pdict, const byte *kdata, uint ksize, void **pvalue,
+  bool with_stack, pl_dict_t **ppdict)
 {	pl_dict_t *pdcur = pdict;
 	pl_dict_entry_t **ppde;
 
-	while ( (ppde = pl_dict_lookup(pdcur, kdata, ksize)) == 0 )
-	  { if ( (pdcur = pdcur->parent) == 0 )
+	while ( (ppde = pl_dict_lookup_entry(pdcur, kdata, ksize)) == 0 )
+	  { if ( !with_stack || (pdcur = pdcur->parent) == 0 )
 	      return false;
 	  }
 	*pvalue = (*ppde)->value;
+	if ( ppdict )
+	  *ppdict = pdcur;
 	return true;
 }
 
@@ -120,7 +126,7 @@ pl_dict_find(pl_dict_t *pdict, const byte *kdata, uint ksize, void **pvalue)
  */
 bool
 pl_dict_put(pl_dict_t *pdict, const byte *kdata, uint ksize, void *value)
-{	pl_dict_entry_t **ppde = pl_dict_lookup(pdict, kdata, ksize);
+{	pl_dict_entry_t **ppde = pl_dict_lookup_entry(pdict, kdata, ksize);
 	gs_memory_t *mem = pdict->memory;
 	pl_dict_entry_t *pde;
 
@@ -160,7 +166,7 @@ pl_dict_put(pl_dict_t *pdict, const byte *kdata, uint ksize, void *value)
  */
 bool
 pl_dict_undef(pl_dict_t *pdict, const byte *kdata, uint ksize)
-{	pl_dict_entry_t **ppde = pl_dict_lookup(pdict, kdata, ksize);
+{	pl_dict_entry_t **ppde = pl_dict_lookup_entry(pdict, kdata, ksize);
 
 	if ( !ppde )
 	  return false;

@@ -84,16 +84,17 @@ status_begin(stream *s, pcl_state_t *pcls)
 
 /* Add an ID to a list being written. */
 private void
-status_put_id(stream *s, const char *id)
+status_put_id(stream *s, const char *title, const char *id)
 {	/* HACK: we know that there's at least one character in the buffer. */
 	if ( *s->cursor.w.ptr == '\n' )
 	  { /* We haven't started the list yet. */
-	    stprintf(s, "IDLIST=\"%s", id);
+	    stprintf(s, "%s=\"%s", title, id);
 	  }
 	else
 	  { stprintf(s, ",%s", id);
 	  }
 }
+
 
 /* Finish writing an ID list. */
 private void
@@ -102,6 +103,24 @@ status_end_id_list(stream *s)
 	if ( *s->cursor.w.ptr != '\n' )
 	  stputs(s, "\"\r\n");
 }
+
+
+private void
+status_print_idlist(stream *s, const ushort *idlist, int nid, const char *title)
+{
+	int i;
+
+	for ( i = 0; i < nid; i++ )
+	  { char idstr[6];	/* ddddL and a null */
+	    int n, l;
+	    n = idlist[i] >> 6;
+	    l = (idlist[i] & 077) + 'A' - 1;
+	    sprintf(idstr, "%d%c", n, l);
+	    status_put_id(s, title, idstr);
+	  }
+	status_end_id_list(s);
+}
+
 
 /* Output a number, at most two decimal places, but trimming trailing 0's
  * and possibly the ".".  Want to match HP's output as closely as we can. */
@@ -177,16 +196,42 @@ status_put_font(stream *s, const pcl_state_t *pcls,
 	if ( !pl_font_is_bound(plfont) && font_set < 0 )
 	  { int nid;
 	    ushort *idlist;
+	    pl_dict_enum_t denum;
+	    gs_const_string key;
+	    void *value;
 
 	    idlist = (ushort *)gs_alloc_bytes(pcls->memory,
-		pl_built_in_symbol_map_count +
-		pl_dict_length(&pcls->symbol_sets, false),
+		pl_dict_length(&pcls->soft_symbol_sets, false) +
+		pl_dict_length(&pcls->built_in_symbol_sets, false),
 		"status_fonts(idlist)");
 	    if ( idlist == NULL )
 	      return e_Memory;
 	    nid = 0;
 	    /* Current fonts show the symbol set bound to them, above. */
-	    /* XXX This needs the big ugly symset compatibility table. */
+
+	    /* NOTE: Temporarily chain soft, built-in symbol sets.  DON'T
+	     * exit this section without unchaining them. */
+	    pl_dict_set_parent(&pcls->soft_symbol_sets,
+		&pcls->built_in_symbol_sets);
+	    pl_dict_enum_begin(&pcls->soft_symbol_sets, &denum);
+	    while ( pl_dict_enum_next(&denum, &key, &value) )
+	      { pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
+		pl_glyph_vocabulary_t gx;
+
+		for ( gx = 0; gx < plgv_next; gx++ )
+		  if ( ssp->maps[gx] != NULL &&
+		      pcl_check_symbol_support(
+			  ssp->maps[gx]->character_requirements,
+			  plfont->character_complement) )
+		    {
+		      nid = status_add_symbol_id(idlist, nid,
+			  (ssp->maps[gx]->id[0] << 8) + ssp->maps[gx]->id[1]);
+		      break;	/* one will suffice */
+		    }
+	      }
+	    pl_dict_set_parent(&pcls->soft_symbol_sets, NULL);
+	    /* Symbol sets are back to normal. */
+
 	    gs_free_object(pcls->memory, (void*)idlist,
 		"status_fonts(idlist)");
 	  }
@@ -307,7 +352,7 @@ status_macros(stream *s, const pcl_state_t *pcls,
 	  if ( ((pcl_entity_t *)value)->storage & storage )
 	    { char id_string[6];
 	      sprintf(id_string, "%u", (key.data[0] << 8) + key.data[1]);
-	      status_put_id(s, id_string);
+	      status_put_id(s, "IDLIST", id_string);
 	    }
 	status_end_id_list(s);
 	return 0;
@@ -330,7 +375,7 @@ status_patterns(stream *s, const pcl_state_t *pcls,
 	       )
 	      { char id_string[6];
 	        sprintf(id_string, "%u", id);
-		status_put_id(s, id_string);
+		status_put_id(s, "IDLIST", id_string);
 	      }
 	  }
 	status_end_id_list(s);
@@ -386,9 +431,8 @@ status_symbol_sets(stream *s, const pcl_state_t *pcls,
 {	gs_const_string key;
 	void *value;
 	pl_dict_enum_t denum;
-	pl_symbol_map_t **maplp;
 	ushort *idlist;
-	int i, nid;
+	int nid;
 
 	if ( storage == 0 )
 	  return 0;		/* no "currently selected" symbol set */
@@ -398,8 +442,8 @@ status_symbol_sets(stream *s, const pcl_state_t *pcls,
 	 * the "storage" value refers to the location of fonts. */
 
 	/* total up built-in symbol sets, downloaded ones */
-	nid = pl_built_in_symbol_map_count +
-	  pl_dict_length(&pcls->symbol_sets, false);
+	nid = pl_dict_length(&pcls->soft_symbol_sets, false) +
+	    pl_dict_length(&pcls->built_in_symbol_sets, false);
 	idlist = (ushort *)gs_alloc_bytes(pcls->memory, nid * sizeof(ushort),
 	    "status_symbol_sets(idlist)");
 	if ( idlist == NULL )
@@ -411,17 +455,11 @@ status_symbol_sets(stream *s, const pcl_state_t *pcls,
 	 *     if the font supports that symbol set, list the symbol set
 	 *     and break (because we only need to find one such font). */
 
-	/* 1. Built-in symbol sets: NULL-terminated array of pointers. */
-	for ( maplp = pl_built_in_symbol_maps; *maplp; maplp++ )
-	  { pl_symbol_map_t *mapp = *maplp;
-	    /* XXX Need to see if this symbol set was overloaded. */
-	    if ( status_check_symbol_set(pcls, mapp, storage) )
-	      nid = status_add_symbol_id(idlist, nid,
-		  (mapp->id[0] << 8) + mapp->id[1]);
-	  }
-
-	/* 2. Downloaded symbol sets: dictionary */
-	pl_dict_enum_begin(&pcls->symbol_sets, &denum);
+	/* NOTE: Temporarily chain soft, built-in symbol sets.  DON'T
+	 * exit this section without unchaining them. */
+	pl_dict_set_parent(&pcls->soft_symbol_sets,
+	    &pcls->built_in_symbol_sets);
+	pl_dict_enum_begin(&pcls->soft_symbol_sets, &denum);
 	while ( pl_dict_enum_next(&denum, &key, &value) )
 	  { pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
 	    pl_glyph_vocabulary_t gx;
@@ -435,15 +473,10 @@ status_symbol_sets(stream *s, const pcl_state_t *pcls,
 		  break;	/* one will suffice */
 		}
 	  }
-	for ( i = 0; i < nid; i++ )
-	  { char idstr[6];	/* ddddL and a null */
-	    int n, l;
-	    n = idlist[i] >> 6;
-	    l = (idlist[i] & 077) + 'A' - 1;
-	    sprintf(idstr, "%d%c", n, l);
-	    status_put_id(s, idstr);
-	  }
-	status_end_id_list(s);
+	pl_dict_set_parent(&pcls->soft_symbol_sets, NULL);
+	/* Symbol sets are back to normal. */
+
+	status_print_idlist(s, idlist, nid, "IDLIST");
 	gs_free_object(pcls->memory, (void*)idlist,
 	    "status_symbol_sets(idlist)");
 	return 0;

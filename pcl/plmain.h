@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -8,6 +8,7 @@
 #ifndef plmain_INCLUDED
 #  define plmain_INCLUDED
 
+#include "gsargs.h"
 #include "gsgc.h"
 
 /*
@@ -37,8 +38,8 @@ void pl_main_init(P2(pl_main_instance_t *pmi, gs_memory_t *memory));
 
 /* Process the options on the command line, */
 /* including making the initial device and setting its parameters. */
-int pl_main_process_options(P3(pl_main_instance_t *pmi, char *argv[],
-			       int argc));
+int pl_main_process_options(P4(pl_main_instance_t *pmi, arg_list *pal,
+			       char *argv[], int argc));
 
 /* Allocate and initialize the first graphics state. */
 #ifndef gs_state_DEFINED

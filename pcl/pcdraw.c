@@ -13,6 +13,7 @@
 #include "gsdcolor.h"
 #include "pcommand.h"
 #include "pcstate.h"
+#include "pcfont.h"		/* for underline break/continue */
 #include "pcdraw.h"
 
 /* ------ Coordinate transformation ------ */
@@ -74,10 +75,13 @@ pcl_compute_logical_page_size(pcl_state_t *pcls)
 /* Home the cursor to the left edge of the logical page at the top margin. */
 void
 pcl_home_cursor(pcl_state_t *pcls)
-{	pcls->cap.x = 0;
+{	
+	pcl_break_underline(pcls);
+	pcls->cap.x = 0;
 	/* See the description of the Top Margin command in Chapter 5 */
 	/* of the PCL5 TRM for the following computation. */
 	pcls->cap.y = pcls->top_margin + 0.75 * pcls->vmi;
+	pcl_continue_underline(pcls);
 }
 
 /* Set the cursor X or Y position, with clamping to either the margins */
@@ -97,12 +101,21 @@ pcl_set_cursor_x(pcl_state_t *pcls, coord cx, bool to_margins)
 	    if ( cx > pcls->logical_page_width )
 	      cx = pcls->logical_page_width;
 	  }
-	pcls->cap.x = cx;
+	if ( cx < pcls->cap.x )
+	  {
+	    pcl_break_underline(pcls);
+	    pcls->cap.x = cx;
+	    pcl_continue_underline(pcls);
+	  }
+	else
+	  pcls->cap.x = cx;
 }
 void
 pcl_set_cursor_y(pcl_state_t *pcls, coord cy, bool to_margins)
 {	/**** DOESN'T CLAMP YET ****/
+	pcl_break_underline(pcls);
 	pcls->cap.y = cy;
+	pcl_continue_underline(pcls);
 }
 
 /* Set the HMI. */

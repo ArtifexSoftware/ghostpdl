@@ -2122,7 +2122,6 @@ const pl_symbol_map_t *pl_built_in_symbol_maps[] = {
   &map_7J_unicode,
   &map_19U_unicode,
   &map_0N_unicode,
-  &map_19U_unicode,
   &map_10U_unicode,
   &map_12U_unicode,
   &map_10J_unicode,

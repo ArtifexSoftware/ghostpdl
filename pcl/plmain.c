@@ -4,6 +4,8 @@
 
 /* plmain.c */
 /* Main program utilities for PCL interpreters */
+#undef DEBUG
+#define DEBUG			/* always enable debug output */
 #include "stdio_.h"
 #include "string_.h"
 #include "gdebug.h"
@@ -21,10 +23,13 @@
 /* Include the extern for the device list. */
 extern_gs_lib_device_list();
 
+/* Import the allocator limit. */
+extern long gs_malloc_limit;
+
 /* Define the usage message. */
 private const char *pl_usage = "\
 Usage: %s option* file...\n\
-Options: -dNOPAUSE -E[#] -h -Z...\n\
+Options: -dNOPAUSE -E[#] -h -K<maxK> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
 ";
@@ -41,9 +46,7 @@ pl_main_init(pl_main_instance_t *pmi, gs_memory_t *mem)
 	  pmi->spaces.named.local = pmi->spaces.named.global =
 	    (gs_ref_memory_t *)mem;
 	}
-#ifdef DEBUG
 	gp_get_usertime(pmi->base_time);
-#endif
 	pmi->error_report = -1;
 	pmi->pause = true;
 	pmi->first_page = 1;
@@ -75,23 +78,31 @@ pl_main_create_device(pl_main_instance_t *pmi, int index)
 }
 
 /* Process the options on the command line. */
+private FILE *
+pl_main_arg_fopen(const char *fname, void *ignore_data)
+{	return fopen(fname, "r");
+}
+#define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
-pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
+pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal, char *argv[],
+  int argc)
 {	gs_memory_t *mem = pmi->memory;
 	const gx_device **dev_list;
 	int num_devs = gs_lib_device_list(&dev_list, NULL);
+	int code = 0;
+	bool help = false;
+	const char *arg;
 	gs_c_param_list params;
 #define plist ((gs_param_list *)&params)
-	int i, code = 0;
 
 	gs_c_param_list_write(&params, mem);
-	for ( i = 1; i < argc && argv[i][0] == '-'; ++i )
-	  { const char *arg = argv[i] + 2;
-
+	arg_init(pal, argv, argc, pl_main_arg_fopen, NULL);
+	while ( (arg = arg_next(pal)) != 0 && *arg == '-' )
+	  { arg += 2;
 	    switch ( arg[-1] )
 	      {
 	      default:
-		fprintf(stderr, "Unrecognized switch: %s\n", argv[i]);
+		fprintf(stderr, "Unrecognized switch: %s\n", arg);
 		exit(1);
 	      case 'd':
 	      case 'D':
@@ -103,11 +114,12 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
 		  /* Currently we only support integer values; */
 		  /* in the future we may support Booleans and floats. */
 		  char *eqp = strchr(arg, '=');
+		  char eqchar;
 		  const char *value;
 		  int vi;
 		  
-		  if ( eqp )
-		    *eqp = 0, value = eqp + 1;
+		  if ( eqp || (eqp = strchr(arg, '#')) )
+		    eqchar = *eqp, *eqp = 0, value = eqp + 1;
 		  else
 		    value = "true";
 		  if ( sscanf(value, "%d", &vi) != 1 )
@@ -119,7 +131,7 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
 		  else if ( !strcmp(arg, "LastPage") )
 		    pmi->last_page = vi;
 		  else
-		    code = param_write_int(plist, arg, &vi);
+		    code = param_write_int(plist, arg_heap_copy(arg), &vi);
 		}
 		break;
 	      case 'E':
@@ -144,7 +156,17 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
 		}
 		break;
 	      case 'h':
-		i = argc - 1;	/* force exit */
+		help = true;
+		goto out;
+	      case 'K':		/* max memory in K */
+		{ int maxk;
+
+		  if ( sscanf(arg, "%d", &maxk) != 1 )
+		    { fputs("-K must be followed by a number\n", stderr);
+		      exit(1);
+		    }
+		  gs_malloc_limit = (long)maxk << 10;
+		}
 		break;
 	      case 'r':
 		{ float res[2];
@@ -169,9 +191,19 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
 		break;
 	      case 's':
 	      case 'S':
-		if ( !strncmp(arg, "DEVICE=", 7) )
-		  { const char *device_name = arg + 7;
-		    int di;
+		{ /* We're setting a device parameter to a string. */
+		  char *eqp = strchr(arg, '=');
+		  char eqchar;
+		  const char *value;
+		  gs_param_string str;
+
+		  if ( !(eqp || (eqp = strchr(arg, '#'))) )
+		    { fputs("Usage for -s is -s<option>=<string>\n", stderr);
+		      exit(1);
+		    }
+		  eqchar = *eqp, *eqp = 0, value = eqp + 1;
+		  if ( !strcmp(arg, "DEVICE") )
+		  { int di;
 
 		    if ( pmi->device )
 		      { fputs("-sDEVICE= must precede any input files\n",
@@ -179,27 +211,19 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
 		        exit(1);
 		      }
 		    for ( di = 0; di < num_devs; ++di )
-		      if ( !strcmp(gs_devicename(dev_list[di]), device_name) )
+		      if ( !strcmp(gs_devicename(dev_list[di]), value) )
 			break;
 		    if ( di == num_devs )
-		      { fprintf(stderr, "Unknown device name %s.\n",
-				device_name);
+		      { fprintf(stderr, "Unknown device name %s.\n", value);
 		        exit(1);
 		      }
 		    pl_main_create_device(pmi, di);
-		    continue;
 		  }
-		{ /* We're setting a device parameter to a string. */
-		  char *eqp = strchr(arg, '=');
-		  gs_param_string str;
-
-		  if ( eqp == NULL )
-		    { fputs("Usage for -s is -s<option>=<string>\n", stderr);
-		      exit(1);
+		  else
+		    { param_string_from_string(str, value);
+		      code = param_write_string(plist, arg_heap_copy(arg),
+						&str);
 		    }
-		  *eqp = 0;
-		  param_string_from_string(str, eqp + 1);
-		  code = param_write_string(plist, arg, &str);
 		}
 		break;
 	      case 'Z':
@@ -209,8 +233,10 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
 		}
 	      }
 	  }
-	if ( argc < 2 || i == argc )
-	  { gs_c_param_list_release(&params);
+out:	if ( arg == 0 || help )
+	  { int i;
+	    arg_finit(pal);
+	    gs_c_param_list_release(&params);
 	    fprintf(stderr, pl_usage, argv[0]);
 	    fputs("Devices:", stderr);
 	    for ( i = 0; i < num_devs; ++i )
@@ -223,7 +249,9 @@ pl_main_process_options(pl_main_instance_t *pmi, char *argv[], int argc)
 	code = gs_putdeviceparams(pmi->device, plist);
 	gs_c_param_list_release(&params);
 #undef plist
-	return i;
+	/* The last argument wasn't a switch, so push it back. */
+	arg_push_string(pal, arg);
+	return 0;
 }
 
 /* Allocate and initialize the first graphics state. */
@@ -242,7 +270,6 @@ pl_main_make_gstate(pl_main_instance_t *pmi, gs_state **ppgs)
 	return 0;
 }
 
-#ifdef DEBUG
 /* Print memory and time usage. */
 void
 pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
@@ -257,7 +284,6 @@ pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pmi,
 		   (utime[1] - pmi->base_time[1]) / 1000000000.0,
 		 pmi->page_count, status.allocated, status.used);
 }
-#endif
 
 /* Finish a page, possibly printing usage statistics and/or pausing. */
 int
@@ -270,20 +296,16 @@ pl_finish_page(pl_main_instance_t *pmi, gs_state *pgs, int num_copies,
 	     pmi->page_count <= pmi->last_page
 	   )
 	  {
-#ifdef DEBUG
 	    if ( !pmi->pause && gs_debug_c(':') )
 	      pl_print_usage(pmi->memory, pmi, "render:");
-#endif
 	    code = gs_output_page(pgs, num_copies, flush);
 	    if ( pmi->pause )
 	      { fprintf(stderr, "End of page %d, press <enter> to continue.\n",
 			pmi->page_count);
 	        getchar();
 	      }
-#ifdef DEBUG
 	    else if ( gs_debug_c(':') )
 	      pl_print_usage(pmi->memory, pmi, " done :");
-#endif
 	  }
 	return code;
 }

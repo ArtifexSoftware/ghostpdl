@@ -4,7 +4,7 @@
 
 /* pginit.c */
 /* Initialization and resetting for HP-GL/2. */
-#include "std.h"
+#include "memory_.h"		/* for memset */
 #include "pgmand.h"
 #include "pginit.h"
 #include "pgdraw.h"
@@ -84,6 +84,13 @@ hpgl_default_fill_pattern(hpgl_state_t *pgls, int index, bool free)
 	pgls->g.fill_pattern[index0].data = 0;
 }
 
+/* HAS this is necessary to support graphics operations in character
+   mode.  The setup should be revisited. */
+void
+hpgl_default_render_mode(pcl_state_t *pcls)
+{
+	pcls->g.current_render_mode = hpgl_rm_vector;
+}
 /* fill the state with a bogus value -- debug only.  HAS fixme -- GL/2
    interpreter actually depends on 0's being here.  It should not. */
 private void
@@ -103,7 +110,6 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
            advance of an hpgl reset.  Alot of repetition here that can
            be done away with */
 	hpgl_args_t hpgl_args;
-	pcl_args_t pcl_args;
 
 	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_cold ))
 	  {
@@ -111,6 +117,9 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    /* provide default anchor point, plot size and picture
                frame size */
 	    hpgl_default_coordinate_system(pcls);
+	    /* set rendering mode to default */
+
+	    hpgl_default_render_mode(pcls);
 	    /* execute IN */
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IN(&hpgl_args, pcls);

@@ -207,8 +207,11 @@ typedef struct gs_state_s gs_state;
 #endif
 #include "pgstate.h"		/* HP-GL/2 state */
 struct pcl_state_s {
-		/* Reference to graphics state */
+
 	gs_memory_t *memory;
+		/* Hook back to client data, for callback procedures */
+	void *client_data;
+		/* Reference to graphics state */
 	gs_state *pgs;
 	gs_point resolution;		/* device resolution, a copy of */
 					/* pgs->device->HWResolution */
@@ -243,7 +246,7 @@ struct pcl_state_s {
 	bool perforation_skip;
 	coord hmi, hmi_unrounded, vmi;
 	bool hmi_set;
-	int (*finish_page)(P1(pcl_state_t *pcls));
+	int (*end_page)(P3(pcl_state_t *pcls, int num_copies, int flush));
 		/* Internal variables */
 	bool have_page;		/* true if anything has been written on page */
 	coord_point logical_page_size;	/* size of logical page */
@@ -262,20 +265,24 @@ struct pcl_state_s {
 		/* Chapter 8 (pcfont.c) */
 
 	pcl_font_selection_t font_selection[2];
-	int font_selected;	/* 0 or 1 */
-	pl_font_t *font;	/* 0 means recompute from params */
-	pl_dict_t hard_fonts;	/* "built-in", known at start-up */
+	int font_selected;		/* 0 or 1 */
+	pl_font_t *font;		/* 0 means recompute from params */
+	pl_dict_t built_in_fonts;	/* "built-in", known at start-up */
 	bool underline_enabled;
-	bool floating_underline;
+	bool underline_floating;
+	float underline_position;	/* distance from baseline */
 		/* Internal variables */
-	coord_point last_width;	/* escapement of last char (for BS) */
-	bool last_was_BS;	/* no printable chars since last BS */
-	pl_symbol_map_t *map;	/* map for current font (above) */
+	gs_font_dir *font_dir;		/* gs-level dictionary of fonts */
+	coord_point last_width;		/* escapement of last char (for BS) */
+	coord_point underline_start;	/* start point of underline */
+	bool last_was_BS;		/* no printable chars since last BS */
+	pl_symbol_map_t *map;		/* map for current font (above) */
 
 		/* Chapter 10 (pcsymbol.c) */
 
 	pcl_id_t symbol_set_id;
-	pl_dict_t symbol_sets;
+	pl_dict_t soft_symbol_sets;
+	pl_dict_t built_in_symbol_sets;
 
 		/* Chapter 9 & 11 (pcsfont.c) */
 

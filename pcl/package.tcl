@@ -53,7 +53,10 @@ proc list-pclxl-only {dir context} {
 	}
     }
     lconcat list [glob-list $dir/pxasm $dir/px*.bat $dir/px*.\[ch\]\
-	    $dir/px*.ps $dir/*.pxs $dir/px*.txt]
+	    $dir/px*.ps $dir/px*.txt]
+    foreach f [glob $dir/*.pxs] {
+	if {[string first $dir/t. $f] < 0} {lappend list $f}
+    }
     return $list
 }
 proc list-pclxl {dir context} {

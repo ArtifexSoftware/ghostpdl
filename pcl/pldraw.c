@@ -17,8 +17,10 @@ pl_begin_image(gs_state *pgs, const gs_image_t *pim,
   void **pinfo)
 {	gx_device *dev = pgs->device;
 
+	if ( pim->ImageMask | pim->CombineWithColor )
+	  gx_set_dev_color(pgs);
 	return (*dev_proc(dev, begin_image))
 	    (dev, (const gs_imager_state *)pgs, pim,
-	     gs_image_format_chunky, NULL,
+	     gs_image_format_chunky, (const gs_int_rect *)0,
 	     pgs->dev_color, pgs->clip_path, pgs->memory, pinfo);
 }

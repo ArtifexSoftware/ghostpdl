@@ -78,8 +78,10 @@ void hpgl_compute_vector_endpoints(P6(floatp magnitude, floatp x, floatp y,
 
 /* centipoints to plotter units (1/1016 inch) */
 #define centipoints_2_plu(a) (((a) / 7200.0) * 1016.0)
-
+/* points to plotter units */
+#define points_2_plu(a) (((a) / 72.0) * 1016.0)
 /* millimeters to plotter units (1/1016 inch) */
 #define mm_2_plu(a) ((a) * 40.0)
 
+#define inches_2_plu(a) ((a) * 1024.0)
 #endif                                /* <filename>_INCLUDED */

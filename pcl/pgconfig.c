@@ -11,6 +11,7 @@
 #include "gsstate.h"            /* for gscoord.h */
 #include "gscoord.h"
 #include "pgmand.h"
+#include "pgdraw.h"
 #include "pginit.h"
 #include "pggeom.h"
 
@@ -88,6 +89,8 @@ hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_LT(&args, pgls);
 
 	hpgl_args_setup(&args);
+	hpgl_args_add_real(&args, 0.0);
+	hpgl_args_add_real(&args, 0.0);
 	hpgl_PA(&args, pgls);
 
 	hpgl_args_set_int(&args,0);
@@ -151,8 +154,7 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_PU(&args, pgls);
 	
 	/* absolute positioning at the lower left of the picture frame */
-	hpgl_args_setup(&args);
-	hpgl_args_add_real(&args, 0.0);
+	hpgl_args_set_real(&args, 0.0);
 	hpgl_args_add_real(&args, 0.0);
 	hpgl_PA(&args, pgls);
 
@@ -198,12 +200,10 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, hpgl_real_t *coords)
 #define y1 coords[1]
 #define x2 coords[2]
 #define y2 coords[3]
-  	x1 = centipoints_2_plu(pgls->g.picture_frame.anchor_point.x);
-	y1 = centipoints_2_plu(pgls->g.picture_frame.anchor_point.y);
-	x2 = centipoints_2_plu(pgls->g.picture_frame.anchor_point.x) +
-	  centipoints_2_plu(pgls->g.picture_frame.width);
-	y2 = centipoints_2_plu(pgls->g.picture_frame.anchor_point.y) +
-	  centipoints_2_plu(pgls->g.picture_frame.height);
+  	x1 = centipoints_2_plu(0.0);
+	y1 = centipoints_2_plu(0.0);
+	x2 = centipoints_2_plu(pgls->g.picture_frame.width);
+	y2 = centipoints_2_plu(pgls->g.picture_frame.height);
 #undef x1
 #undef y1
 #undef x2

@@ -61,8 +61,8 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	/* Symbol set may already exist; if so, we may be replacing one of
 	 * its existing maps or adding one for a new glyph vocabulary. */
-	if ( pl_dict_find(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2, 
-	    (void **)&symsetp) )
+	if ( pl_dict_find(&pcls->soft_symbol_sets, id_key(pcls->symbol_set_id),
+	    2, (void **)&symsetp) )
 	  {
 	    if ( symsetp->maps[gv] != NULL )
 	      gs_free_object(mem, symsetp->maps[gv], "symset map");
@@ -76,8 +76,8 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	    for ( gx = 0; gx < plgv_next; gx++ )
 	      symsetp->maps[gx] = NULL;
 	    symsetp->storage = pcds_temporary;
-	    pl_dict_put(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2,
-		symsetp);
+	    pl_dict_put(&pcls->soft_symbol_sets, id_key(pcls->symbol_set_id),
+		2, symsetp);
 	  }
 	symsetp->maps[gv] = (pl_symbol_map_t *)header;
 
@@ -98,35 +98,36 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	       * to decache and reselect fonts unconditionally.  (Consider,
 	       * for example, deleting a downloaded overload of a built-in
 	       * which might be the default ID.) */
-	      pl_dict_release(&pcls->symbol_sets);
+	      pl_dict_release(&pcls->soft_symbol_sets);
 	      pcl_decache_font(pcls, -1);
 	    }
 	    return 0;
 	  case 1:
 	    { /* Delete all temporary symbol sets. */
-	      pl_dict_enum_stack_begin(&pcls->symbol_sets, &denum, false);
+	      pl_dict_enum_stack_begin(&pcls->soft_symbol_sets, &denum, false);
 	      while ( pl_dict_enum_next(&denum, &key, &value) )
 		if ( ((pcl_symbol_set_t *)value)->storage == pcds_temporary )
-		  pl_dict_undef(&pcls->symbol_sets, key.data, key.size);
+		  pl_dict_undef(&pcls->soft_symbol_sets, key.data, key.size);
 	      pcl_decache_font(pcls, -1);
 	    }
 	    return 0;
 	  case 2:
 	    { /* Delete symbol set <symbol_set_id>. */
-	      pl_dict_undef(&pcls->symbol_sets, id_key(pcls->symbol_set_id), 2);
+	      pl_dict_undef(&pcls->soft_symbol_sets,
+		  id_key(pcls->symbol_set_id), 2);
 	      pcl_decache_font(pcls, -1);
 	    }
 	    return 0;
 	  case 4:
 	    { /* Make <symbol_set_id> temporary. */
-	      if ( pl_dict_find(&pcls->symbol_sets,
+	      if ( pl_dict_find(&pcls->soft_symbol_sets,
 		  id_key(pcls->symbol_set_id), 2, &value) )
 		((pcl_symbol_set_t *)value)->storage = pcds_temporary;
 	    }
 	    return 0;
 	  case 5:
 	    { /* Make <symbol_set_id> permanent. */
-	      if ( pl_dict_find(&pcls->symbol_sets,
+	      if ( pl_dict_find(&pcls->soft_symbol_sets,
 		  id_key(pcls->symbol_set_id), 2, &value) )
 		((pcl_symbol_set_t *)value)->storage = pcds_permanent;
 	    }
@@ -151,10 +152,13 @@ pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 {	pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
 	pl_glyph_vocabulary_t gx;
 
-	for ( gx = 0; gx < plgv_next; gx++ )
+	if ( ssp->storage != pcds_internal )
 	  {
-	    if ( ssp->maps[gx] != NULL )
-	      gs_free_object(mem, (void*)ssp->maps[gx], cname);
+	    for ( gx = 0; gx < plgv_next; gx++ )
+	      {
+		if ( ssp->maps[gx] != NULL )
+		  gs_free_object(mem, (void*)ssp->maps[gx], cname);
+	      }
 	  }
 	gs_free_object(mem, value, cname);
 }
@@ -164,8 +168,16 @@ pcsymbol_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { id_set_value(pcls->symbol_set_id, 0);
 	    if ( type & pcl_reset_initial )
-	      pl_dict_init(&pcls->symbol_sets, pcls->memory,
+	      {
+	      /* Don't set a parent relationship from soft to built-in
+	       * symbol sets.  Although it is arguably useful, it's
+	       * better to avoid it and keep anyone who's looking at the
+	       * soft symbol sets from mucking up the permanent ones. */
+	      pl_dict_init(&pcls->soft_symbol_sets, pcls->memory,
 		  pcsymbol_dict_value_free);
+	      pl_dict_init(&pcls->built_in_symbol_sets, pcls->memory,
+		  pcsymbol_dict_value_free);
+	      }
 	    else
 	      { pcl_args_t args;
 	        arg_set_uint(&args, 1);	/* delete temporary symbol sets */
@@ -179,13 +191,46 @@ pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
   pcl_copy_operation_t operation)
 {	if ( operation & pcl_copy_after )
 	  { /* Don't restore the downloaded symbol set dictionary. */
-	    psaved->symbol_sets = pcls->symbol_sets;
+	    psaved->built_in_symbol_sets = pcls->built_in_symbol_sets;
 	  }
 	return 0;
 }
 
+
+int
+pcl_load_built_in_symbol_sets(pcl_state_t *pcls)
+{
+	pl_symbol_map_t **maplp;
+	pcl_symbol_set_t *symsetp;
+	pl_glyph_vocabulary_t gv;
+
+	for ( maplp = &pl_built_in_symbol_maps[0]; *maplp; maplp++ )
+	  {
+	    pl_symbol_map_t *mapp = *maplp;
+	    /* Create entry for symbol set if this is the first map for
+	     * that set. */
+	    if ( !pl_dict_find(&pcls->built_in_symbol_sets, mapp->id, 2,
+		(void **)&symsetp) )
+	      { pl_glyph_vocabulary_t gx;
+		symsetp = (pcl_symbol_set_t *)gs_alloc_bytes(pcls->memory,
+		    sizeof(pcl_symbol_set_t), "symset init dict value");
+		if ( !symsetp )
+		  return_error(e_Memory);
+		for ( gx = 0; gx < plgv_next; gx++ )
+		  symsetp->maps[gx] = NULL;
+		symsetp->storage = pcds_internal;
+	      }
+	    gv = (mapp->character_requirements[7] & 07)==1?
+		plgv_Unicode: plgv_MSL;
+	    pl_dict_put(&pcls->built_in_symbol_sets, mapp->id, 2, symsetp);
+	    symsetp->maps[gv] = mapp;
+	  }
+	return 0;
+}
+
+
 bool
-pcl_check_symbol_support(byte *symset_req, byte *font_sup)
+pcl_check_symbol_support(const byte *symset_req, const byte *font_sup)
 {	int i;
 
 	/* bottom 3 bits (of 64) have special interpretation */
@@ -203,25 +248,20 @@ pcl_check_symbol_support(byte *symset_req, byte *font_sup)
 
 /* Find the symbol map for a particular symbol set and glyph vocabulary,
  * if it exists.
- * This should not be so hard!  It shouldn't take anything more than
- * one dictionary "find"...but there's no way to initialize the symbol set
- * dictionary properly with the built-in symbol sets.  When that can be
- * fixed, this procedure should be replaced with inline lookup. */
+ * There are two dictionaries--one for soft (downloaded) symbol sets and
+ * one for built-ins.  These are searched separately.  The actual maps
+ * present for a symbol set may overlap between soft and built-in. */
 pl_symbol_map_t *
 pcl_find_symbol_map(const pcl_state_t *pcls, const byte *id,
   pl_glyph_vocabulary_t gv)
 {	pcl_symbol_set_t *setp;
-	pl_symbol_map_t **maplp;
 	
-	if ( pl_dict_find(&pcls->symbol_sets, id, 2, (void **)&setp) &&
+	if ( pl_dict_find(&pcls->soft_symbol_sets, id, 2, (void **)&setp) &&
 	    setp->maps[gv] != NULL )
 	  return setp->maps[gv];
-	for ( maplp = pl_built_in_symbol_maps; *maplp; maplp++ )
-	  { pl_symbol_map_t *mapp = *maplp;
-	    if ( mapp->id[0] == id[0] && mapp->id[1] == id[1] &&
-	        (mapp->character_requirements[7] & 07) == gv )
-	      return mapp;
-	  }
+	if ( pl_dict_find(&pcls->built_in_symbol_sets, id, 2, (void**)&setp) &&
+	    setp->maps[gv] != NULL )
+	  return setp->maps[gv];
 	return NULL;
 }
 

@@ -152,34 +152,17 @@ hpgl_set_clipping_region(hpgl_state_t *pgls)
 				    &mat,
 				    &float_box));
 
-	/*	fprintf(stderr, 
-		"bounding box: %f %f %f %f rotation: %d\n", 
-		float_box.p.x, float_box.p.y, float_box.q.x, float_box.q.y, 
-		pgls->g.rotation); */
-		
 	/* HAS maybe a routine that does this?? */
 	fixed_box.p.x = float2fixed(float_box.p.x);
 	fixed_box.p.y = float2fixed(float_box.p.y);
 	fixed_box.q.x = float2fixed(float_box.q.x);
 	fixed_box.q.y = float2fixed(float_box.q.y);
+
 	hpgl_call(gx_clip_to_rectangle(pgls->pgs, &fixed_box));
 
 	return 0;
 }
 
-private int
-hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
-{
-	/* do dash stuff */
-	hpgl_call(hpgl_set_graphics_dash_state(pgls));
-
-	/* joins, caps, and line width */
-	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
-	
-	hpgl_call(hpgl_set_clipping_region(pgls));
-
-	return 0;
-}
 /* change pcl's transformation.  HAS hpgl's coordinate system rotates
    with pcl's orientation but not pcl's current print direction. */
 private int
@@ -189,19 +172,10 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	pcl_set_ctm(pgls, false);
 	
 	/* translate the coordinate system to the anchor point */
+	hpgl_call(gs_translate(pgls->pgs, 
+			       pgls->g.picture_frame.anchor_point.x,
+			       pgls->g.picture_frame.anchor_point.y));
 
-	if (pgls->g.rotation == 0)
-	  {
-	    hpgl_call(gs_translate(pgls->pgs, 
-				   pgls->g.picture_frame.anchor_point.x,
-				   pgls->g.picture_frame.anchor_point.y));
-	  }
-	else
-	  {
-	    hpgl_call(gs_translate(pgls->pgs, 
-				   -pgls->g.picture_frame.anchor_point.x,
-				   -pgls->g.picture_frame.anchor_point.y));
-	  }
 	/* scale for x and y plu's with a flip for y */
 	hpgl_call(gs_scale(pgls->pgs, (7200.0/1016.0), -(7200.0 / 1016.0)));
 	{
@@ -221,15 +195,15 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	      hpgl_call(gs_translate(pgls->pgs, 0, 0));
 	      break;
 	    case 90 : 
-	      hpgl_call(gs_translate(pgls->pgs, pic_w, 0));
+	      hpgl_call(gs_translate(pgls->pgs, 0, -(pic_h)));
 	      break;
 	    case 180 :
 	      hpgl_call(gs_translate(pgls->pgs, -(pic_w), -(pic_h)));
 	      break;
 	    case 270 :
-	      hpgl_call(gs_translate(pgls->pgs, 0, pic_h));
+	      hpgl_call(gs_translate(pgls->pgs, 0, -(pic_h)));
 	      break;
-	      }/* now move the origin to P1 */
+	      }
 	}
 	/* set up scaling wrt plot size and picture frame size.  HAS
 	   we still have the line width issue when scaling is
@@ -250,6 +224,67 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 		     
 	return 0;
 }
+
+
+private int
+hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+{
+        /* HACK to reset the ctm.  Note that in character mode we
+           concatenate the character matrix to the ctm, but we do not
+           want the tranformation to apply to the line width, miter,
+           etc. */
+	hpgl_call(hpgl_set_ctm(pgls));
+
+	/* do dash stuff */
+	hpgl_call(hpgl_set_graphics_dash_state(pgls));
+
+	/* joins, caps, and line width */
+	hpgl_call(hpgl_set_graphics_line_attribute_state(pgls, render_mode));
+	
+	hpgl_call(hpgl_set_clipping_region(pgls));
+
+	return 0;
+}
+
+/* transformations for the current character.  These are concatenated
+   with current ctm.  This routine is only called for rendering
+   characters with LB */
+private int
+hpgl_concatenate_character_transformations(hpgl_state_t *pgls)
+{
+	/* HAS -- Only LO1 is currently supported -- need to add others */
+	hpgl_call(gs_translate(pgls->pgs, pgls->g.pos.x, pgls->g.pos.y));
+	/* HAS -- only support standard font */
+	hpgl_call(gs_scale(pgls->pgs, 
+			   points_2_plu((pgls->g.font_selection[0].params.height_4ths)
+					/4.0),
+			    inches_2_plu((1.0 / 
+					  (pgls->g.font_selection[0].params.pitch_100ths 
+					  / 100.0)))));
+	return 0;
+}
+
+/* function that simply sets the current pen position based on the
+   current point */
+int
+hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
+{
+        /* HAS - this will be a performance problem */
+	hpgl_call(hpgl_set_ctm(pgls));
+
+	/* if no point is supplied use the current point */
+	if (!pt) 
+	  {
+	    /* don't assume the caller allocated space for pt */
+	    gs_point cur_pt;
+	    hpgl_call(gs_currentpoint(pgls->pgs, &cur_pt));
+	    pgls->g.pos = cur_pt;
+	  }
+	else
+	  pgls->g.pos = *pt;
+	return 0;
+}
+
 int
 hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y, 
 		       int (*gs_func)(gs_state *pgs, floatp x, floatp y))
@@ -265,14 +300,20 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 	    /* initialize the current transformation matrix -- see
                notes above on performance */
 	    hpgl_call(hpgl_set_ctm(pgls));
+	    if (pgls->g.current_render_mode == hpgl_rm_character)
+	      {
+		/* apply necessary character transformations as well */
+		hpgl_call(hpgl_concatenate_character_transformations(pgls));
+	      }
+
 	    hpgl_call(gs_newpath(pgls->pgs));
 	    hpgl_call(gs_moveto(pgls->pgs, x, y));
 	    /* HAS  HACK *** HACK **** HACK */
 	    /* we really do not want to indicate that we have a path
-               as the using gs graphics a path is not truly
-               created with the first moveto.  So we must indicate
-               that we have added the first moveto and subsequently
-               check for that condition.  Then we may set the "have_path" state */
+               as the using gs graphics a path is not truly created
+               with the first moveto.  So we must indicate that we
+               have added the first moveto and subsequently check for
+               that condition.  Then we may set the "have_path" state */
 	  }
 	else
 	  {
@@ -280,9 +321,6 @@ hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
 	    /* update hpgl's state position */
 	    pgls->g.have_path = true;
 	  }
-	/* update the current position irrespective of path state */
-	pgls->g.pos.x = x;
-	pgls->g.pos.y = y;
 	return 0;
 }
 
@@ -334,6 +372,9 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 					     ((pgls->g.pen_down) ? 
 					      gs_lineto : gs_moveto)));
 	  }
+	
+	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
+
 	return 0;
 }
 
@@ -345,6 +386,9 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, x2, gs_moveto));
 	/* HAS we may need to flatten this here */
 	hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
+	/* set the state position */
+	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
+
 	return 0;
 }
 
@@ -356,13 +400,18 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 int
 hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
+	gs_point pt;
+
 	if ( !pgls->g.have_path ) return 0;
+
+	/* get current point */
+	hpgl_call(gs_currentpoint(pgls->pgs, &pt));
 
 	/* If the first point is coincident with the final point the
            path is closed implicitly.  HAS -- add epsilon */
 
-	if ( (pgls->g.pos.x == pgls->g.first_point.x) && 
-	     (pgls->g.pos.y == pgls->g.first_point.y) ) 
+	if ( (pt.x == pgls->g.first_point.x) && 
+	     (pt.y == pgls->g.first_point.y) ) 
 	  {
 	    hpgl_call(gs_closepath(pgls->pgs));
 	  }
@@ -374,7 +423,7 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	if ( render_mode == hpgl_rm_polygon ) 
 	  hpgl_call(gs_fill(pgls->pgs));
 
-	if ( render_mode == hpgl_rm_vector )
+	if ( (render_mode == hpgl_rm_vector) || (render_mode == hpgl_rm_character) )
 	  hpgl_call(gs_stroke(pgls->pgs));
 
 	pgls->g.have_first_moveto = false;
@@ -393,6 +442,9 @@ hpgl_draw_line(hpgl_state_t *pgls, floatp x1, floatp y1, floatp x2, floatp y2)
 	hpgl_call(hpgl_add_point_to_path(pgls, x2, y2, 
 					 ((pgls->g.pen_down) ? 
 					  gs_lineto : gs_moveto)));
+
+	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
+
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	
 	return 0;
@@ -404,6 +456,7 @@ hpgl_draw_dot(hpgl_state_t *pgls, floatp x1, floatp y1)
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
 					 ((pgls->g.pen_down) ? 
 					  gs_lineto : gs_moveto)));
+	hpgl_call(hpgl_set_current_position(pgls, (gs_point *)NULL));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	return 0;

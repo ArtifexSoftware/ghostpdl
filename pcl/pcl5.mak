@@ -310,6 +310,7 @@ pcl5c.dev: pcl5.dev $(PCL5_MAK) $(ECHOGS_XE) $(PCL5C_OPS) rtlbasec.dev
 pgdraw_h=pgdraw.h
 pggeom_h=pggeom.h $(math__h)
 pginit_h=pginit.h
+pgfont_h=pgfont.h $(stdpre_h) $(gstypes_h)
 
 #### HP-GL/2 non-commands
 
@@ -321,6 +322,8 @@ pgdraw.$(OBJ): pgdraw.c $(math__h) $(stdio__h)\
  $(gxfixed_h) $(gxpath_h)\
  $(pcdraw_h)\
  $(pgdraw_h) $(pggeom_h) $(pgmand_h)
+
+pgfont.$(OBJ): pgfont.c $(pgfont_h)
 
 pggeom.$(OBJ): pggeom.c $(math__h) $(stdio__h)\
  $(pggeom_h)
@@ -337,7 +340,7 @@ pgparse.$(OBJ): pgparse.c $(AK) $(math__h) $(stdio__h)\
  $(gdebug_h) $(gstypes_h) $(scommon_h)\
  $(pgmand_h)
 
-HPGL2_OTHER=pgdraw.$(OBJ) pggeom.$(OBJ) pginit.$(OBJ) pgparse.$(OBJ)
+HPGL2_OTHER=pgdraw.$(OBJ) pggeom.$(OBJ) pginit.$(OBJ) pgparse.$(OBJ) pgfont.$(OBJ)
 
 #### HP-GL/2 commands
 # These are organized by chapter # in the PCL 5 Technical Reference Manual.
@@ -352,7 +355,7 @@ pgframe.$(OBJ): pgframe.c $(math__h)\
 # Chapter 19
 pgconfig.$(OBJ): pgconfig.c $(std_h)\
  $(gscoord_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h)\
- $(pggeom_h) $(pginit_h) $(pgmand_h)
+ $(pgdraw_h) $(pggeom_h) $(pginit_h) $(pgmand_h)
 
 # Chapter 20
 pgvector.$(OBJ): pgvector.c $(math__h) $(stdio__h)\
@@ -369,7 +372,7 @@ pglfill.$(OBJ): pglfill.c $(memory__h)\
 
 # Chapter 23
 pgchar.$(OBJ): pgchar.c $(math__h) $(stdio__h)\
- $(gdebug_h) $(pginit_h) $(pgmand_h)
+ $(gdebug_h) $(pgfont_h) $(pginit_h) $(pgmand_h)
 
 HPGL2_OPS1=pgframe.$(OBJ) pgconfig.$(OBJ) pgvector.$(OBJ)
 HPGL2_OPS2=pgpoly.$(OBJ) pglfill.$(OBJ) pgchar.$(OBJ)

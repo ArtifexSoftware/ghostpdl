@@ -3,15 +3,12 @@
 
 # makefile for PCL* interpreter libraries and for PJL
 
-# Currently, the PJL parser is just a stub so we can run the Genoa tests.
-# Eventually it will be integrated properly.
-
 # Define the name of this makefile.
 PCLLIB_MAK=pcllib.mak
 
 ################ PJL ################
 
-# As noted above, this is just a stub.
+# Currently we only parse PJL enough to detect UELs.
 
 pjparse_h=pjparse.h
 
@@ -27,7 +24,7 @@ pjl.dev: $(PCLLIB_MAK) $(ECHOGS_XE) $(PJL)
 
 pldict_h=pldict.h
 pldraw_h=pldraw.h $(gsiparam_h)
-plmain_h=plmain.h $(gsgc_h)
+plmain_h=plmain.h $(gsargs_h) $(gsgc_h)
 plsymbol_h=plsymbol.h
 plvalue_h=plvalue.h
 plvocab_h=plvocab.h
