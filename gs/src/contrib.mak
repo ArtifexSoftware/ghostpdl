@@ -67,6 +67,7 @@ CONTRIB_MAK=$(GLSRC)contrib.mak
 # *	eps9high  Epson-compatible 9-pin, interleaved lines
 #		(triple resolution)
 # *	epsonc	Epson LQ-2550 and Fujitsu 3400/2400/1200 color printers
+# *	hl1250  Brother HL-1250
 # *	hl7x0   Brother HL 720 and HL 730 (HL 760 is PCL compliant);
 #		also usable with the MFC6550MC Fax Machine.
 # *	ibmpro  IBM 9-pin Proprinter
@@ -550,6 +551,19 @@ $(DD)paintjet.dev : $(PJET) $(DD)page.dev
 
 $(DD)pjetxl.dev : $(PJET) $(DD)page.dev
 	$(SETPDEV) $(DD)pjetxl $(PJET)
+ 
+### -------------------- The Brother HL-1250 printer -------------------- ###
+### Brother HL-1250 (may work with some other models too) -               ###
+### ljet4-compatible, plus support for source tray selection and special  ###
+### 1200x600 dpi mode.  For questions about this driver, please contact   ###
+###       Marek Michalkiewicz <marekm@linux.org.pl>                       ###
+
+hl1250_=$(GLOBJ)gdevhl12.$(OBJ) $(HPDLJM)
+$(DD)hl1250.dev : $(hl1250_) $(DD)page.dev
+	$(SETPDEV) $(DD)hl1250 $(hl1250_)
+
+$(GLOBJ)gdevhl12.$(OBJ): $(GLSRC)gdevhl12.c $(PDEVH) $(gdevpcl_h)
+	$(GLCC) $(GLO_)gdevhl12.$(OBJ) $(C_) $(GLSRC)gdevhl12.c
 
 ###--------------------- The Brother HL 7x0 printer --------------------- ### 
 ### Note: this driver was contributed by users: please contact            ###
