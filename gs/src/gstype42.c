@@ -55,20 +55,6 @@ private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
     if ( code > 0 ) return_error(gs_error_invalidfont);\
   END
 
-/* Get the offset to a glyph using the loca table */
-/* Free variables: pfont */
-#define GLYPH_OFFSET(result, glyph_index) \
-BEGIN\
-    const byte *ploca;\
-    if (pfont->data.indexToLocFormat) {\
-	ACCESS(pfont->data.loca + glyph_index * 4, 4, ploca);\
-	result = u32(ploca);\
-    } else {\
-	ACCESS(pfont->data.loca + glyph_index * 2, 2, ploca);\
-	result = (ulong) U16(ploca) << 1;\
-    }\
-END
-
 /* Get 2- or 4-byte quantities from a table. */
 #define U8(p) ((uint)((p)[0]))
 #define S8(p) (int)((U8(p) ^ 0x80) - 0x80)
@@ -79,6 +65,26 @@ END
 /* ---------------- Font level ---------------- */
 
 GS_NOTIFY_PROC(gs_len_glyphs_release);
+
+/* Get the offset to a glyph using the loca table */
+private inline ulong
+get_glyph_offset(gs_font_type42 *pfont, uint glyph_index) 
+{
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
+	pfont->data.string_proc;
+    const byte *ploca;
+    ulong result;
+    int code;		/* hidden variable used by ACCESS */
+
+    if (pfont->data.indexToLocFormat) {
+	ACCESS(pfont->data.loca + glyph_index * 4, 4, ploca);
+	result = u32(ploca);
+    } else {
+	ACCESS(pfont->data.loca + glyph_index * 2, 2, ploca);
+	result = (ulong) U16(ploca) << 1;
+    }
+    return result;
+}
 
 /*
  * Initialize the cached values in a Type 42 font.
@@ -171,9 +177,9 @@ gs_type42_font_init(gs_font_type42 * pfont)
     /* The 'loca' may not be in order, so we construct a glyph length array */
     /* Since 'loca' is usually sorted, first try the simple linear scan to  */
     /* avoid the need to perform the more expensive process. */
-    GLYPH_OFFSET(glyph_start, 0);
+    glyph_start = get_glyph_offset(pfont, 0);
     for (i=1; i < loca_size; i++) {
-	GLYPH_OFFSET(glyph_offset, i);
+	glyph_offset = get_glyph_offset(pfont, i);
 	glyph_length = glyph_offset - glyph_start;
 	if (glyph_length > 0x80000000)
 	    break;				/* out of order loca */
@@ -192,9 +198,9 @@ gs_type42_font_init(gs_font_type42 * pfont)
          * entry. Otherwise we assume that it is a duplicated entry.
 	 */
 	for (i=0; i < loca_size-1; i++) {
-	    GLYPH_OFFSET(glyph_start, i);
+	    glyph_start = get_glyph_offset(pfont, i);
 	    for (j=1, glyph_length = 0x80000000; j<loca_size; j++) {
-		GLYPH_OFFSET(glyph_offset, j);
+		glyph_offset = get_glyph_offset(pfont, j);
 		trial_glyph_length = glyph_offset - glyph_start;
 		if ((trial_glyph_length > 0) && (trial_glyph_length < glyph_length))
 		    glyph_length = trial_glyph_length;
@@ -393,7 +399,7 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
     uint glyph_length;
     int code;
 
-    GLYPH_OFFSET(glyph_start, glyph_index);
+    glyph_start = get_glyph_offset(pfont, glyph_index);
     glyph_length = pfont->data.len_glyphs[glyph_index];
     if (glyph_length == 0)
 	gs_glyph_data_from_null(pgd);

@@ -706,7 +706,7 @@ mark
 % - .makesfnts -
 % Defines checksum, getloca, head, locatable, numloca, post, sfnts, upem
 % Note that the 'loca' table may be out of order. This is handled when
-% needed in dividesfnts
+% needed in .dividesfnts
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
@@ -757,42 +757,40 @@ mark
 /.dividesfnts {
   /glyfs exch def
   /len1 0 glyfs { length add } forall def
-		% Determine where to split the glyfs by scanning loca.
-		% The very last entry in loca may be bogus.
-		% Note that some loca entries may be odd, but we can only
-		% split at even positions.
-		%
-		% Construct splitarray, the array of final lengths of
-		% the sfnts entries covering the glyfs (i.e., all but
-		% the first and last sfnts entries).
+	% Determine where to split the glyfs by scanning the sorted locatable
+	% The very last entry in loca may be bogus.
+	% Note that some loca entries may be odd, but we can only
+	% split at even positions.
+	%
+	% Construct splitarray, the array of final lengths of
+	% the sfnts entries covering the glyfs (i.e., all but
+	% the first and last sfnts entries).
     /prevsplit 0 def
     /prevboundary 0 def
     % sort the locatable in case it is out of order
     % Note the 'loca' table remains unchanged
-    locatable [ exch 0 4 2 index length 1 sub { 1 index exch getu32 exch } for pop ]
-    { lt } .sort
-    locatable length dup string exch 0 exch 1 exch 4 idiv 1 sub
-    {
-      1 index exch dup 4 mul exch 4 index exch get putu32
-    } for
-    /locatable exch def pop
+    [ 0 1 numloca 1 sub { getloca } for ]
+    { lt } .sort	 % stack: locatable_array
     /splitarray [
-      0 1 numloca 1 sub {
-	getloca dup prevsplit maxstring add gt {
+      3 -1 roll 0 1 numloca 1 sub {
+	% stack: /splitarray -mark- { splitlen splitlen ... } locatable_array index
+	1 index exch get dup prevsplit maxstring add gt {
 	  prevboundary prevsplit sub exch
 	  /prevsplit prevboundary def
 	} if
 	dup 1 and 0 eq { /prevboundary exch def } { pop } ifelse
+	dup type /arraytype ne { exch } if	% keep locatable_array on top
       } for
       len1 prevsplit sub
+      exch pop		% discard locatable_array
     ] def
     currentuserparams /VMReclaim get -2 vmreclaim
     [
-		% Re-split the sfnts glyfs strings according to splitarray.
-		% We do this by iterating over the final segments defined
-		% by splitarray, and constructing them from pieces of the
-		% current glyfs strings.  We recycle the current strings
-		% when possible, to avoid stressing the allocator.
+	% Re-split the sfnts glyfs strings according to splitarray.
+	% We do this by iterating over the final segments defined
+	% by splitarray, and constructing them from pieces of the
+	% current glyfs strings.  We recycle the current strings
+	% when possible, to avoid stressing the allocator.
       /sfnt_idx 0 def
       /strpos 0 def
       /avail () def
