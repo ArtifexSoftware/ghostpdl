@@ -145,19 +145,21 @@ private int
 type1_next(gs_type1_state *pcis)
 {
     ip_state_t *ipsp = &pcis->ipstack[pcis->ips_count - 1];
-    const byte *cip;
+    const byte *cip, *cipe;
     crypt_state state;
 #define CLEAR (csp = pcis->ostack - 1)
     fixed *csp = &pcis->ostack[pcis->os_count - 1];
     const bool encrypted = pcis->pfont->data.lenIV >= 0;
-    int c, code, num_results;
+    int c, code, num_results, c0;
 
  load:
     cip = ipsp->ip;
+    cipe = ipsp->cs_data.bits.data + ipsp->cs_data.bits.size;
     state = ipsp->dstate;
     for (;;) {
-	uint c0 = *cip++;
-
+        if (cip >= cipe)
+	    return_error(gs_error_invalidfont);
+	c0 = *cip++;
 	charstring_next(c0, state, c, encrypted);
 	if (c >= c_num1) {
 	    /* This is a number, decode it and push it on the stack. */

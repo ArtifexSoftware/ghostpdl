@@ -1312,8 +1312,10 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     charset_size = 1 + (subset.glyphs.subset_size - 1) * 2;
 
     /* Compute the size of the CharStrings Index. */
-    charstrings_size =
-	cff_write_CharStrings_offsets(&writer, &genum, &charstrings_count);
+    code = cff_write_CharStrings_offsets(&writer, &genum, &charstrings_count);
+    if (code < 0)
+	return code;
+    charstrings_size = (uint)code;
 
     /* Compute the size of the (local) Subrs Index. */
 #ifdef SKIP_EMPTY_SUBRS
