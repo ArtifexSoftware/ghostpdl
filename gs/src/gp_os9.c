@@ -23,7 +23,6 @@
 #include "gp.h"
 #include <signal.h>
 #include <stdlib.h>		/* for exit */
-#include <sys/param.h>		/* for MAXPATHLEN */
 
 int interrupted;
 
