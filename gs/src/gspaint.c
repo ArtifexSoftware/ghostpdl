@@ -69,7 +69,7 @@ gs_fillpage(gs_state * pgs)
     gs_logical_operation_t save_lop;
     bool hl_color_available = gx_hld_is_hl_color_available((gs_imager_state *)pgs, 
 						    pgs->dev_color);
-    gs_set_object_tag(GS_UNTOUCHED_TAG);
+    gs_set_object_tag(pgs, GS_UNTOUCHED_TAG);
     gx_set_dev_color(pgs);
     dev = gs_currentdevice(pgs);
     /* Fill the page directly, ignoring clipping. */
@@ -265,9 +265,9 @@ fill_with_rule(gs_state * pgs, int rule)
            target device 1 bit per component is a cache and this is
            text else it is a path */
         if (gx_device_has_color(gs_currentdevice(pgs)))
-            gs_set_object_tag(GS_PATH_TAG);
+            gs_set_object_tag(pgs, GS_PATH_TAG);
         else
-            gs_set_object_tag(GS_TEXT_TAG);
+            gs_set_object_tag(pgs, GS_TEXT_TAG);
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);
 	if (code < 0)
@@ -332,9 +332,9 @@ gs_stroke(gs_state * pgs)
            target device 1 bit per component is a cache and this is
            text else it is a path */
         if (gx_device_has_color(gs_currentdevice(pgs)))
-            gs_set_object_tag(GS_PATH_TAG);
+            gs_set_object_tag(pgs, GS_PATH_TAG);
         else
-            gs_set_object_tag(GS_TEXT_TAG);
+            gs_set_object_tag(pgs, GS_TEXT_TAG);
 
 	gx_set_dev_color(pgs);
 	code = gs_state_color_load(pgs);

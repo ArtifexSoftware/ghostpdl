@@ -69,7 +69,10 @@ typedef enum {
 
 /* accessors for object tags */
 gs_object_tag_type_t gs_current_object_tag(void);
-void gs_set_object_tag(const gs_object_tag_type_t tag);
+
+#include "gxstate.h"
+
+void gs_set_object_tag(gs_state * pgs, const gs_object_tag_type_t tag);
 void gs_enable_object_tagging(void);
 
 #endif /* gsutil_INCLUDED */

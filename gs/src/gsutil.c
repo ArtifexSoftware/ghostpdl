@@ -23,6 +23,10 @@
 #include "gsuid.h"
 #include "gsutil.h"		/* for prototypes */
 
+#include "gx.h"
+#include "gzstate.h"
+#include "gxdcolor.h"
+
 /* ------ Unique IDs ------ */
 
 ulong
@@ -292,10 +296,17 @@ gs_enable_object_tagging()
 }
 
 void
-gs_set_object_tag(const gs_object_tag_type_t tag)
+gs_set_object_tag(gs_state * pgs, const gs_object_tag_type_t tag)
 {
-    if (BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS)
-        BITTAG = tag;
+    if (BITTAG != GS_DEVICE_DOESNT_SUPPORT_TAGS) {
+	if ( BITTAG != tag ) {
+	    gx_unset_dev_color(pgs);
+	    BITTAG = tag;
+	    /* the assumption is made that the caller will:
+	     * gx_set_dev_color(pgs);
+	     */
+	}
+    }
 }
 
 gs_object_tag_type_t
