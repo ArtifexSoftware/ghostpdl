@@ -1131,7 +1131,7 @@ $(PSD)psl2read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl2read_)\
 	$(ADDMOD) $(PSD)psl2read -oper zcolor2_l2 zcsindex_l2
 	$(ADDMOD) $(PSD)psl2read -oper zht2_l2 zimage2_l2
 
-$(PSOBJ)zcolor2.$(OBJ) : $(PSSRC)zcolor2.c $(OP)\
+$(PSOBJ)zcolor2.$(OBJ) : $(PSSRC)zcolor2.c $(OP) $(string__h)\
  $(gscolor_h) $(gscssub_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxpcolor_h)\
  $(estack_h) $(ialloc_h) $(idict_h) $(iname_h) $(idparam_h) $(igstate_h) $(istruct_h)\

@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -19,6 +19,7 @@
 /*$Id$ */
 /* Level 2 color operators */
 #include "ghost.h"
+#include "string_.h"
 #include "oper.h"
 #include "gscolor.h"
 #include "gscssub.h"
@@ -97,42 +98,41 @@ zcurrentcolorspace(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/*
+ * Look up the device colorant names for a given color model.
+ * ****** THIS WILL NEED REVISITING FOR DeviceN COLORS. ******
+ */
 private int
-dev2ink_idx(const gx_device *dev, uint **pp_ref)
+device_color_idx(const gx_device *dev, uint nidx[4])
 { 
-    int code=0;
-    static uint sep_idx[8] = {0, 0, 0, 0, 0, 0, 0, 0}; 
-    static const char * sep_names[] = {"Gray", "Red", "Green", "Blue", 
-      "Cyan", "Magenta", "Yellow", "Black"};
+    int i, ncomps = dev->color_info.num_components;
+    const char *const *comp_names;
+    static const char *const gray_names[] = {"Gray"};
+    static const char *const rgb_names[] = {"Red", "Green", "Blue"};
+    static const char *const cmyk_names[] = {"Cyan", "Magenta", "Yellow", "Black"};
 
-    if (!sep_idx[7]) { 
-        int i;
-        for (i=0; i<8; i++) { 
-            ref rname;
-            int code = name_ref((const byte *)sep_names[i], strlen(sep_names[i]), &rname, 0);
-            if (code < 0)
-              return code;
-            sep_idx[i]=name_index(&rname);
-        }
+    switch(ncomps) {
+    case 1:
+	comp_names = gray_names; break;
+    case 3:
+	comp_names = rgb_names; break;
+    case 4:
+	comp_names = cmyk_names; break;
+    default:  /* fixme: DeviceN color model not supported */
+	return_error(e_rangecheck);
     }
-    switch(dev->color_info.num_components) {
-        case 1:
-          *pp_ref = sep_idx;
-          break;
-        case 3:
-          *pp_ref = sep_idx + 1;
-          break;
-        case 4:
-          *pp_ref = sep_idx + 4;
-          break;
-        default:  /* fixme: DeviceN color model not supported */
-          *pp_ref = sep_idx;
-          code = gs_note_error(e_rangecheck);
-          break;
+    for (i = 0; i < ncomps; i++) { 
+	ref rname;
+	int code = name_ref((const byte *)comp_names[i], strlen(comp_names[i]), &rname, 0);
+
+	if (code < 0)
+	    return code;
+	nidx[i] = name_index(&rname);
     }
-    return code;
+    return 0;
 }
 
+/* Test whether one set of colorant names is a subset of another. */
 private int
 is_subset_idx(uint *set, int set_len, gs_separation_name *subset, int sub_len)
 { 
@@ -148,6 +148,7 @@ is_subset_idx(uint *set, int set_len, gs_separation_name *subset, int sub_len)
     return is_subset;   
 }
 
+/* Define a dummy cleanup function. */
 private int
 devicen_no_cleanup(i_ctx_t *i_ctx_p)
 { 
@@ -236,13 +237,11 @@ zsetcolor(i_ctx_t *i_ctx_p)
         gx_device const *dev  = gs_currentdevice(igs);
         int num_ink  = dev->color_info.num_components;
         gs_separation_name *idx_comp=pcs->params.device_n.names;
-        uint *idx_ink;
+        uint idx_ink[4];
 
-        code=dev2ink_idx(dev, &idx_ink);
+        code=device_color_idx(dev, idx_ink);
         if(code >= 0 && !is_subset_idx(idx_ink, num_ink, idx_comp, num_comp)) { 
             int i;
-            const gs_color_space *acsp = pcst->base_space(pcs);
-            int alt_num_comp = acsp->type->num_components(acsp);
 
             check_estack(num_comp + 4);
             for (i = 0; i < num_comp; ++i)
