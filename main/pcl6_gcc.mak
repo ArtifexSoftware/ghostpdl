@@ -91,13 +91,16 @@ endif
 # flags for artifex scaler
 ifeq ($(PL_SCALER), afs)
 
+# substitue dingbats for missin wingdings font in PXL
+WING_DING_SUB=-DWINGDING_DINGBATS_SUB_ON
 XLDFLAGS=
 EXTRALIBS=
 AGFA_OBJ=
 ifeq ($(ROMFONTS), true)
 PL_SCALER=afsr
-XLDFLAGS=-L../pl/
+XLDFLAGS=-L../pl/ 
 EXTRALIBS=-lttffont
+
 endif
 
 endif
@@ -116,9 +119,11 @@ GX_COLOR_INDEX_DEFINE=
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
+# disable assert() with -DNDEBUG
 
-GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings $(GX_COLOR_INDEX_DEFINE)
-CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
+GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings -DNDEBUG $(GX_COLOR_INDEX_DEFINE)
+# CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
+CFLAGS= $(GCFLAGS) $(XCFLAGS)
 
 XINCLUDE=-I/usr/X11R6/include
 XLIBDIRS=-L/usr/X11R6/lib

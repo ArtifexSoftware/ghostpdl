@@ -101,6 +101,32 @@ px_lineprinter_font_alias_name(px_value_t *pfnv, px_state_t *pxs)
     return 0;
 }
 
+#ifdef WINGDING_DINGBATS_SUB_ON
+private int 
+px_dingbats_font_alias_name(px_value_t *pfnv, px_state_t *pxs) 
+{    
+    uint size = pfnv->value.array.size; 
+ 
+    /* NB:coupling: depends on this being Dingbats font in plftable.c */ 
+    static  const unsigned short Dingbats[16] = 
+	{'Z','a','p','f','D','i','n','g','b','a','t','s',' ',' ',' ',' '}; 
+    static  const unsigned short Wingdings[16] = 
+	{'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '}; 
+    unsigned short *ptr = (unsigned short *)&pfnv->value.array.data[0]; 
+    uint i; 
+    
+    if ( pfnv->value.array.size != 16 ) 
+	return 0; 
+    for( i = 0; i < 16; i++) { 
+	if ( ptr[i] != Wingdings[i] ) 
+	    return 0; /* no match */ 
+    } 
+    for( i = 0; i < 16; i++) 
+	ptr[i] = Dingbats[i];  /* front matched now make it identical */ 
+    return 0; 
+} 
+#endif
+
 /* ---------------- Operator implementations ---------------- */
 
 /* Look up a font name and return an existing font. */
@@ -122,6 +148,12 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
 	code = px_lineprinter_font_alias_name(pfnv, pxs);
 	if ( code < 0 )
 	  return code;
+
+#       ifdef WINGDING_DINGBATS_SUB_ON
+	    code = px_dingbats_font_alias_name(pfnv, pxs); 
+	    if ( code < 0 ) 
+		return code; 
+#       endif
 
 	if ( px_dict_find(&pxs->font_dict, pfnv, &pxfont) ) { 
 	    /* Make sure this isn't a partially defined font */
