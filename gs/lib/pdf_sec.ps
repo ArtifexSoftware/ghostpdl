@@ -54,7 +54,7 @@ pdfdict begin
 } bind def
 
 /md5_trunk {
-  md5 pdf_key_length 0 exch getinterval
+  md5 0 pdf_key_length getinterval
 } bind def
 
 
@@ -109,14 +109,37 @@ def
     ()
     (   **** ID key in the trailer is required for encrypted files.\n) pdfformaterror
   } ifelse
-  3 { concatstrings } repeat md5_trunk
+  3 { concatstrings } repeat 
+  % We will finish step 5 after possibly including step 6.
 
-  % Step 6.  Only executed for /R equal to 3 or more
-  Trailer /Encrypt oget /R oget 3 ge {
+  % The following only executed for /R equal to 3 or more
+  Trailer /Encrypt oget dup /R oget dup 3 ge {
+
+     % Step 6.  If EncryptMetadata is false, pass 0xFFFFFFFF to md5 function
+     % The PDF 1.5 Spec says that EncryptMetadata is an undocumented
+     % feature of PDF 1.4.  That implies that this piece of logic should
+     % be executed if R >= 3.  However testing with Acrobat 5.0 and 6.0 shows
+     % that this step is not executed if R equal to 3.  Thus we have a test for
+     % R being >= 4.
+     4 ge {
+       /EncryptMetadata knownoget	% Get EncryptMetadata (if present)
+       not { true } if			% Default is true
+       not {				% If EncryptMetadata is false
+         <ff ff ff ff> concatstrings	% Add 0xFFFFFFFF to working string
+       } if
+     } {
+       pop				% Remove Encrypt dict
+     } ifelse
+     md5_trunk				% Finish step 5 and 6.
+
+     % Step 7.  Executed as part of step 6
+     % Step 8.  (This step is defintely a part of PDF 1.4.)
      50 { md5_trunk } repeat
-  } if
+  } {
+     pop pop md5_trunk			% Remove R, Encrypt dict, finish step 5
+  } ifelse
 
-  % Step 7 - Done in md5_trunk.
+  % Step 9 - Done in md5_trunk.
 } bind def
 
 % Algorithm 3.4
@@ -362,29 +385,51 @@ def
     PDFfile exch resolveopdict .decpdfrun
     dup dup dup 5 2 roll
 	% stack: object object key object object
-    xcheck exch type /dicttype eq and	% Check if possible stream
-    {	% Check if we have encrypted streams.  R=4 allows for
-	% selection of encryption on streams and strings
+    {	% Use loop to provide an exitable context.
+      xcheck exch type /dicttype eq and % Check if executable dictionary
+      not {				% If object is not ...
+        pop pop				% ignore object
+        exit				% Exit 'loop' context
+      } if				% If not possible stream
+	% Starting with PDF 1.4 (R = 3), there are some extra features
+	% which control encryption of streams.  The EncryptMetadata entry
+	% in the Encrypt dict controls the encryption of metadata streams.
       Trailer /Encrypt oget		% Get encryption dictionary
-      dup /R oget 4 lt			% only 4 has selectable
-      {					% R < 4 --> encrypted streams
-        pop /StreamKey exch put		% Insert StreamKey in dictionary
-      } {				% Else R = 4
-	% Check for StmF = Identity
-	/StmF knownoget			% Get StmF (if present)
-        {				% If StmF is present ...
-	  /Identity eq 			% Check if StmF = Identity
-	  { pop pop			% Identity --> no encryption
-	  } {				% Else we have an encrption handler
-	    /StreamKey exch put		% Insert StreamKey into dictionary
-	  } ifelse			% Ifelse StmF = identity
-        } { 				% Else StmF not present, default = Identity
-	  pop pop			% Identity --> no encryption
-        } ifelse			% Ifelse StmF is known
-      } ifelse				% Ifelse R < 4
-    } {					% Else object is not a dictionary
-      pop pop				% ignore object
-    } ifelse				% Ifelse possible stream
+      dup /R oget dup 3 lt		% Only PDF 1.4 and higher has options
+      {					% R < 3 --> all streams encrypted
+        pop pop /StreamKey exch put	% Insert StreamKey in dictionary
+	exit				% Exit 'loop' context
+      } if
+	% Check EncryptMeta.  stack:  object object key Encrypt R
+      exch dup /EncryptMetadata knownoget % Get EncryptMetadata (if present)
+      not { true } if			% If not present default = true
+      not				% Check if EncryptMetadata = false
+      { 				% if false we need to check the stream type
+	3 index /Type knownoget		% Get stream type (if present)
+	not { //null } if		% If type not present use fake name
+	/Metadata eq			% Check if the type is Metadata
+        { pop pop pop pop		% Type == Metadata --> no encryption
+	  exit				% Exit 'loop' context
+        } if
+      } if
+    	% PDF 1.5 encryption (R == 4) has selectable encryption handlers.  If
+	% this is not PDF 1.5 encryption (R < 4) then we are done checking and
+	% we need to decrypt the stream.  stack:  object object key R Encrypt
+      exch 4 lt				% Check for less than PDF 1.5
+      { pop /StreamKey exch put		% Insert StreamKey in dictionary
+	exit				% Exit 'loop' context
+      } if
+	% Check if the stream encryption handler (StmF) == Identity.
+      /StmF knownoget			% Get StmF (if present)
+      not { /Identity } if		% If StmF not present default = Identity
+      /Identity eq 			% Check if StmF == Identity
+      { pop pop				% Identity --> no encryption
+	exit				% Exit 'loop' context
+      } if
+      	% If we get here then we need to decrypt the stream.
+      /StreamKey exch put		% Insert StreamKey into dictionary
+      exit				% Exit 'loop' context, never loop
+    } loop				% End of loop exitable context
   } {					% Else file is not encrypted
     PDFfile resolveopdict .pdfrun
   } ifelse				% Ifelse encrypted
