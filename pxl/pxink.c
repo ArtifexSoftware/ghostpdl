@@ -325,6 +325,7 @@ render_pattern(gs_client_color *pcc, const px_pattern_t *pattern,
 	    }
 	}
 	/* Construct a Pattern for the library, and render it. */
+	gs_pattern1_init(&template);
 	uid_set_UniqueID(&template.uid, pattern->id);
 	template.PaintType = 1;
 	template.TilingType = 1;
