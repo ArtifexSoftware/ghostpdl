@@ -571,7 +571,8 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	if (*bptr & bmask) {	/* Already known.  Just set the index. */
 	    if (pcls->tile_index == loc.index)
 		return 0;
-	    cmd_put_tile_index(cldev, pcls, loc.index);
+	    if ((code = cmd_put_tile_index(cldev, pcls, loc.index)) < 0)
+	    	return code;
 	} else {
 	    uint extra = 0;
 
@@ -616,15 +617,14 @@ clist_change_tile(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 		    extra + 1 + cmd_size_w(loc.index) + cmd_size_w(offset);
 		byte *dp;
 		uint csize;
-		int code =
-		cmd_put_bits(cldev, pcls, ts_bits(cldev, loc.tile),
+
+		code = cmd_put_bits(cldev, pcls, ts_bits(cldev, loc.tile),
 			     tiles->rep_width * depth, tiles->rep_height,
 			     loc.tile->cb_raster, rsize,
 			     (cldev->tile_params.size.x > tiles->rep_width ?
 			      decompress_elsewhere | decompress_spread :
 			      decompress_elsewhere),
 			     &dp, &csize);
-
 		if (code < 0)
 		    return code;
 		if (extra) {	/* Write the tile parameters before writing the bits. */
