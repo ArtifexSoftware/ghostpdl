@@ -37,6 +37,8 @@ end
 /.setpagesize { /statusdict .systemvar begin .setpagesize end } bind def
 userdict begin
 		% Page sizes defined by Adobe documentation
+		% Note: these executable arrays should all begin with two
+		% integers which are the width and height (see gs_setpd.ps).
  /11x17 {792 1224 //.setpagesize exec} bind def  % 11x17 portrait
  /a3 {842 1191 //.setpagesize exec} bind def
  /a4 {595 842 //.setpagesize exec} bind def

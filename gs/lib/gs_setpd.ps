@@ -179,11 +179,29 @@ level2dict begin
 /.requiredattrs mark
   /PageDeviceName //null
   /PageOffset [0 0] readonly
-% We define InputAttributes and OutputAttributes with a single
-% dummy media type that handles pages of any size.
-% Devices that care will override this.
+% We populate InputAttributes with all of the known page sizes 
+% followed by a dummy media type that handles pages of any size.
+% This will create some duplicates, but that only slightly slows
+% down the media selection (loop is in zmedia2.c).
+%
+% Some PostScript creators assume that slot 0 is the default media
+% size and some can't handle a non-standard 4-element array which
+% is a 'range' type page size (always put last).
+%
+% Real Devices that can only handle specific page sizes will override this.
   /InputAttributes {
-    mark 0
+    mark
+    % First put the device's default page size in slot 0
+    % This satifies those that have devices built with a4 as the default
+    0 mark /PageSize currentdevice /PageSize gsgetdeviceprop .dicttomark
+    statusdict /.pagetypenames get {
+      counttomark 1 sub 2 idiv exch mark exch /PageSize exch
+      % stack: mark --dict-- --dict-- ... key mark /PageSize pagetypename
+      % see note above about pagetype executable array contents.
+      load dup 0 get exch 1 get 2 array astore .dicttomark
+    } forall
+    % Add one last entry which is the 4 element range array (non-standard)
+    counttomark 2 idiv 
 	% PageSize with either dimension 0 will be detected in
 	% match_page_size, so we can allow it here
     mark /PageSize [0 dup 16#7ffff dup] .dicttomark

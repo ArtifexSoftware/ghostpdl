@@ -184,6 +184,8 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	    if (best_mismatch < mbest) {
 		mbest = best_mismatch;
 		reset_match(&match);
+		/* Save the match in case no match has priority. */
+		match.match_key = aelt.key;
 	    }
 	    /* In case of a tie, see if the new match has */
 	    /* priority. */
@@ -198,8 +200,6 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 		    break;
 		}
 	    }
-	    /* Save the match in case no match has priority. */
-	    match.match_key = aelt.key;
 no:;
 	}
     }
@@ -349,18 +349,34 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 	int fit_rotated = rx - medium->p.y >= -5 && rx - medium->q.y <= 5 
                        && ry - medium->p.x >= -5 && ry - medium->q.x <= 5;
         
+	/* Fudge matches from a non-standard page size match (4 element array) */
+	/* as worse than an exact match from a standard (2 element array), but */
+	/* better than for a rotated match to a standard pagesize. This should */
+	/* prevent rotation unless we have to (particularly for raster file    */
+	/* formats like TIFF, JPEG, PNG, PCX, BMP, etc. and also should allow  */
+	/* exact page size specification when there is a range PageSize entry. */
+	/* As the comment in gs_setpd.ps says "Devices that care will provide  */
+	/* a real InputAttributes dictionary (most without a range pagesize)   */
         if ( fit_direct && fit_rotated) {
-	    *best_mismatch = 0;
+	    if (medium->p.x < medium->q.x || medium->p.y < medium->q.y)
+		*best_mismatch = 0.001;		/* fudge a match to a range as a small number */
+	    else	/* should be 0 for an exact match */
+	        *best_mismatch = (rx - medium->p.x) * (medium->q.x - rx) +
+	    			(ry - medium->p.y) * (medium->q.y - ry);
 	    make_adjustment_matrix(request, medium, pmat, false, orient < 0 ? 0 : orient);
         } else if ( fit_direct ) {
             int rotate = orient < 0 ? 0 : orient;
 
-            *best_mismatch = (rotate & 1 ? 0.1 : 0);
+	    *best_mismatch = abs((medium->p.x - rx) * (medium->q.x - rx)) +
+	    			abs((medium->p.y - ry) * (medium->q.y - ry)) + 
+            			    (rotate & 1 ? 0.01 : 0);
 	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
         } else if ( fit_rotated ) {
             int rotate = (orient < 0 ? 1 : orient);
 
-            *best_mismatch = (rotate & 1 ? 0 : 0.1);
+	    *best_mismatch = abs((medium->p.y - rx) * (medium->q.y - rx)) +
+	    			abs((medium->p.x - ry) * (medium->q.x - ry)) + 
+            			    (rotate & 1 ? 0.01 : 0);
 	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
         } else {
 	    int rotate =
