@@ -164,7 +164,7 @@ getenv(const char * env) {
 //		FSMakeFSSpec(pFile.vRefNum, pFile.parID,thepfname, &pfile);
 		convertSpecToPath(&pFile, fpath, 256);
 //		sprintf(fpath,"%s",fpath);
-		p = (char*)malloc(1, (size_t) ( 4*strlen(fpath) + 40), "getenv");
+		p = (char*)malloc((size_t) ( 4*strlen(fpath) + 40));
 		sprintf(p,"%s,%sGhostscript:lib,%sGhostscript:fonts",
 						(char *)&fpath[0],(char *)&fpath[0],
 						(char *)&fpath[0] );
@@ -956,7 +956,7 @@ void gp_enumerate_fonts_free(void *enum_state)
 	
 	FMDisposeFontIterator(Iterator);
 	
-    /* free any gs_malloc() stuff here */
+    /* free any malloc'd stuff here */
     if (state->name) free(state->name);
     if (state->path) free(state->path);
     if (state->last_container_path) free(state->last_container_path);

@@ -89,7 +89,7 @@ gp_init (void)
 		{
 			GetIndString (string, MACSTRS_RES_ID, i);
 			(void) PtoCstr (string);
-			*p = gs_malloc (1, (size_t) (strlen ((char *) string) + 1), "gp_init");
+			*p = malloc ((size_t) (strlen ((char *) string) + 1));
 			strcpy (*p, (char *) string);
 		}
 	}
