@@ -22,6 +22,7 @@
 #include "math_.h"
 #include "memory_.h"
 #include "string_.h"
+#include <stdlib.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsmalloc.h"		/* for patching font memory */
@@ -833,12 +834,14 @@ pdf_has_subset_prefix(const byte *str, uint size)
  * Make the prefix for a subset font from the font's resource ID.
  */
 void
-pdf_make_subset_prefix(byte *str, ulong id)
+pdf_make_subset_prefix(const gx_device_pdf *pdev, byte *str, ulong id)
 {
     int i;
     ulong v;
 
-    for (i = 0, v = id * 987654321; i < SUBSET_PREFIX_SIZE - 1; ++i, v /= 26)
+    /* We disregard the id and generate a random prefix. */
+    v = (ulong)(pdev->random_offset + rand());
+    for (i = 0; i < SUBSET_PREFIX_SIZE - 1; ++i, v /= 26)
 	str[i] = 'A' + (v % 26);
     str[SUBSET_PREFIX_SIZE - 1] = '+';
 }

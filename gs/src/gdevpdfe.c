@@ -302,7 +302,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     }
     if (do_subset) {
 	memmove(fnchars + SUBSET_PREFIX_SIZE, fnchars, fnsize);
-	pdf_make_subset_prefix(fnchars, FontFile_id);
+	pdf_make_subset_prefix(pdev, fnchars, FontFile_id);
 	fnsize += SUBSET_PREFIX_SIZE;
     }
     font_name.data = fnchars;

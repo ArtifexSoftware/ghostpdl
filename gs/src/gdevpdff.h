@@ -388,7 +388,8 @@ bool pdf_has_subset_prefix(P2(const byte *str, uint size));
 /*
  * Make the prefix for a subset font from the font's resource ID.
  */
-void pdf_make_subset_prefix(P2(byte *str, ulong id));
+void pdf_make_subset_prefix(P3(const gx_device_pdf *pdev, byte *str,
+			       ulong id));
 
 /*
  * Adjust the FontName of a newly created FontDescriptor so that it is

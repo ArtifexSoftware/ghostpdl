@@ -21,6 +21,7 @@
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"
+#include "gp.h"			/* for gp_get_realtime */
 #include "gserrors.h"
 #include "gxdevice.h"
 #include "gdevpdfx.h"
@@ -211,6 +212,7 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* open_font */
  0 /*false*/,			/* use_open_font */
  0,				/* embedded_encoding_id */
+ 0,				/* random_offset */
  0,				/* next_id */
  0,				/* Catalog */
  0,				/* Info */
@@ -474,6 +476,36 @@ pdf_open(gx_device * dev)
     /* named_objects was initialized above */
     pdev->open_graphics = 0;
     pdf_reset_page(pdev);
+
+    /*
+     * We don't use rand() for generating subset prefixes, because it isn't
+     * random across runs (always starts at 1).  We don't seed rand() from a
+     * one-time source of randomness, because a library should never assume
+     * it can modify program-global state.  So what we do is generate a
+     * one-time random offset, and combine that with the sequence produced
+     * by rand().
+     */
+    {
+	/*
+	 * If we're on a system that provides /dev/random, that's the best
+	 * source of good random bits.
+	 */
+	FILE *rfile = fopen("/dev/random", "rb");
+
+	if (rfile && fread(&pdev->random_offset, sizeof(pdev->random_offset),
+			   1, rfile) == sizeof(pdev->random_offset)
+	    )
+	    fclose(rfile);
+	else {
+	    /* Hope that the nanosecond clock is random enough. */
+	    long tm[2];
+
+	    if (rfile)
+		fclose(rfile);
+	    gp_get_realtime(tm);
+	    pdev->random_offset = tm[1];
+	}
+    }
 
     return 0;
   fail:

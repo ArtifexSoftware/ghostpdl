@@ -743,7 +743,7 @@ gdevpdfx_h=$(GLSRC)gdevpdfx.h\
  $(spprint_h) $(stream_h) $(gdevpsdf_h)
 
 $(GLOBJ)gdevpdf.$(OBJ) : $(GLSRC)gdevpdf.c $(GDEVH)\
- $(memory__h) $(string__h)\
+ $(memory__h) $(string__h) $(gp_h)\
  $(gdevpdff_h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)
 	$(GLCC) $(GLO_)gdevpdf.$(OBJ) $(C_) $(GLSRC)gdevpdf.c
 

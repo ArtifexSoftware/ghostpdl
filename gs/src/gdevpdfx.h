@@ -406,6 +406,7 @@ struct gx_device_pdf_s {
     pdf_font_t *open_font;	/* current Type 3 synthesized font */
     bool use_open_font;		/* if false, start new open_font */
     long embedded_encoding_id;
+    long random_offset;		/* for generating subset prefixes */
     /* ................ */
     long next_id;
     /* The following 3 objects, and only these, are allocated */
