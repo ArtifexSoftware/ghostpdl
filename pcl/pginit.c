@@ -104,7 +104,7 @@ hpgl_do_reset(
         if ((type & (pcl_reset_initial | pcl_reset_cold)) != 0) {
             gx_path_alloc_contained( &pcs->g.polygon.buffer.path,
                                      pcs->memory,
-                                     "hpgl_do_reset"
+                                     "hpgl_do_reset polygon buffer"
                                      );
 
 	    /*
@@ -158,6 +158,8 @@ hpgl_do_reset(
 	dprintf("PCL reset plot received\n");
     }
 
+    if ((type & (pcl_reset_permanent)) != 0 )
+	gx_path_free(&pcs->g.polygon.buffer.path, "hpgl_do_reset polygon buffer");
     return;
 }
 
