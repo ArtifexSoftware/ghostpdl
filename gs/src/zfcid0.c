@@ -352,11 +352,6 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
 }
 
 /* <string|name> <font_dict> .buildfont9 <string|name> <font> */
-gs_private_st_ptr(st_gs_font_type1_ptr, gs_font_type1 *, "gs_font_type1 *",
-  font1_ptr_enum_ptrs, font1_ptr_reloc_ptrs);
-gs_private_st_element(st_gs_font_type1_ptr_element, gs_font_type1 *,
-  "gs_font_type1 *[]", font1_ptr_element_enum_ptrs,
-  font1_ptr_element_reloc_ptrs, st_gs_font_type1_ptr);
 private int
 zbuildfont9(i_ctx_t *i_ctx_p)
 {

@@ -82,6 +82,13 @@ RELOC_PTRS_WITH(font_cid2_reloc_ptrs, gs_font_cid2 *pfcid2);
 		sizeof(st_gs_font_cid_data));
 RELOC_PTRS_END
 
+/* GC descriptor for allocating FDArray for CIDFontType 0 fonts. */
+gs_private_st_ptr(st_gs_font_type1_ptr, gs_font_type1 *, "gs_font_type1 *",
+  font1_ptr_enum_ptrs, font1_ptr_reloc_ptrs);
+gs_public_st_element(st_gs_font_type1_ptr_element, gs_font_type1 *,
+  "gs_font_type1 *[]", font1_ptr_element_enum_ptrs,
+  font1_ptr_element_reloc_ptrs, st_gs_font_type1_ptr);
+
 /*
  * The CIDSystemInfo of a CMap may be null.  We represent this by setting
  * Registry and Ordering to empty strings, and Supplement to 0.

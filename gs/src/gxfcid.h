@@ -94,6 +94,9 @@ extern_st(st_gs_font_cid0);
 #define st_gs_font_cid0_max_ptrs\
   (st_gs_font_max_ptrs + st_gs_font_cid_data_num_ptrs + 2)
 
+/* Define a GC descriptor for allocating FDArray. */
+extern_st(st_gs_font_type1_ptr_element); /* in gsfcid.c */
+
 /* CIDFontType 1 doesn't reference any additional structures. */
 
 typedef struct gs_font_cid1_data_s {
