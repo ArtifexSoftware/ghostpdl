@@ -396,7 +396,7 @@ extern_st(st_ref_memory);
 #define public_st_ref_memory()	/* in gsalloc.c */\
   gs_public_st_composite(st_ref_memory, gs_ref_memory_t,\
     "gs_ref_memory", ref_memory_enum_ptrs, ref_memory_reloc_ptrs)
-#define st_ref_memory_max_ptrs 3	/* streams, changes, saved */
+#define st_ref_memory_max_ptrs 4  /* streams, names_array, changes, saved */
 
 /* Define the procedures for the standard allocator. */
 /* We export this for subclasses. */

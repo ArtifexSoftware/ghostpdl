@@ -79,11 +79,13 @@ alloc_size_is_ok(gs_memory_type_ptr_t stype)
 public_st_ref_memory();
 private 
 ENUM_PTRS_BEGIN(ref_memory_enum_ptrs) return 0;
-ENUM_PTR3(0, gs_ref_memory_t, streams, changes, saved);
+ENUM_PTR3(0, gs_ref_memory_t, streams, names_array, changes);
+ENUM_PTR(3, gs_ref_memory_t, saved);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(ref_memory_reloc_ptrs, gs_ref_memory_t *mptr)
 {
     RELOC_PTR(gs_ref_memory_t, streams);
+    RELOC_PTR(gs_ref_memory_t, names_array);
     RELOC_PTR(gs_ref_memory_t, changes);
     /* Don't relocate the saved pointer now -- see igc.c for details. */
     mptr->reloc_saved = RELOC_OBJ(mptr->saved);
