@@ -345,23 +345,31 @@ rc_free_cpath_path_list(gs_memory_t * mem, void *vplist, client_name_t cname)
 /* Allocate a new clip path list node. The created node has a ref count
    of 1, and "steals" the reference to next (i.e. does not increment
    its reference count). */
-private gx_cpath_path_list *
-gx_cpath_path_list_new(gs_memory_t *mem, int rule, gx_path *ppfrom,
-		       gx_cpath_path_list *next)
+private int
+gx_cpath_path_list_new(gs_memory_t *mem, gx_clip_path *pcpath, int rule, 
+			gx_path *ppfrom, gx_cpath_path_list *next, gx_cpath_path_list **pnew)
 {
     int code;
     client_name_t cname = "gx_cpath_path_list_new";
     gx_cpath_path_list *pcplist = gs_alloc_struct(mem, gx_cpath_path_list,
-						  &st_cpath_path_list,
-						  cname);
+						  &st_cpath_path_list, cname);
 
     if (pcplist == 0)
-	return 0;
+	return_error(gs_error_VMerror);
     rc_init_free(pcplist, mem, 1, rc_free_cpath_path_list);
-    code = gx_path_init_contained_shared(&pcplist->path, ppfrom, mem, cname);
+    if (pcpath!=NULL && !pcpath->path_valid) {
+	code = gx_path_init_contained_shared(&pcplist->path, NULL, mem, cname);
+	if (code < 0)
+	    return code;
+	code = gx_cpath_to_path(pcpath, &pcplist->path);
+    } else 
+	code = gx_path_init_contained_shared(&pcplist->path, ppfrom, mem, cname);
+    if (code < 0)
+	return code;
     pcplist->next = next;
     pcplist->rule = rule;
-    return pcplist;
+    *pnew = pcplist;
+    return 0;
 }
 
 /* ------ Clipping path accessing ------ */
@@ -596,20 +604,23 @@ gx_cpath_intersect(gx_clip_path *pcpath, /*const*/ gx_path *ppath_orig,
 					new_box.q.x, new_box.q.y);
 
 	if (!path_valid && next == NULL) {
-	    gs_memory_t *mem = pcpath->path.memory;
-	    next = gx_cpath_path_list_new(mem, pcpath->rule,
-					  &pcpath->path, NULL);
+	    code = gx_cpath_path_list_new(pcpath->path.memory, pcpath, pcpath->rule, 
+					    &pcpath->path, NULL, &next);
+	    if (code < 0)
+		goto ex;
 	}
 	code = gx_cpath_intersect_path_slow(pcpath, ppath, rule, pis);
-	if (code >= 0 && path_valid) {
+	if (code < 0)
+	    goto ex;
+	if (path_valid) {
 	    gx_path_assign_preserve(&pcpath->path, ppath_orig);
 	    pcpath->path_valid = true;
 	} else {
-	    gs_memory_t *mem = pcpath->path.memory;
-	    pcpath->path_list = gx_cpath_path_list_new(mem, rule, ppath_orig,
-						       next);
+	    code = gx_cpath_path_list_new(pcpath->path.memory, NULL, rule, 
+					    ppath_orig, next, &pcpath->path_list);
 	}
     }
+ex:
     if (ppath != ppath_orig)
 	gx_path_free(ppath, "gx_cpath_clip");
     return code;
