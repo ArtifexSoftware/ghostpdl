@@ -28,7 +28,6 @@ import unittest, os
 import gsconf, gstest
 
 # get a list of test files
-crashfiles = os.listdir(gsconf.crashfiledir)
 comparefiles = os.listdir(gsconf.comparefiledir)
 
 suite = unittest.TestSuite()
@@ -41,33 +40,33 @@ def add_compare_test(suite, f, device, dpi, band):
 
 for f in comparefiles:
     if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
-        add_compare_test(suite, f, 'pbmraw', 72, 0))
-        add_compare_test(suite, f, 'pbmraw', 72, 1))
-        add_compare_test(suite, f, 'pbmraw', 300, 0))
-        add_compare_test(suite, f, 'pbmraw', 300, 1))
-        #add_compare_test(suite, f, 'pbmraw', 600, 0))
-        #add_compare_test(suite, f, 'pbmraw', 600, 1))
+        add_compare_test(suite, f, 'pbmraw', 72, 0)
+        add_compare_test(suite, f, 'pbmraw', 72, 1)
+        add_compare_test(suite, f, 'pbmraw', 300, 0)
+        add_compare_test(suite, f, 'pbmraw', 300, 1)
+        #add_compare_test(suite, f, 'pbmraw', 600, 0)
+        #add_compare_test(suite, f, 'pbmraw', 600, 1)
 
-        add_compare_test(suite, f, 'pgmraw', 72, 0))
-        add_compare_test(suite, f, 'pgmraw', 72, 1))
-        add_compare_test(suite, f, 'pgmraw', 300, 0))
-        add_compare_test(suite, f, 'pgmraw', 300, 1))
-        #add_compare_test(suite, f, 'pgmraw', 600, 0))
-        #add_compare_test(suite, f, 'pgmraw', 600, 1))
+        add_compare_test(suite, f, 'pgmraw', 72, 0)
+        add_compare_test(suite, f, 'pgmraw', 72, 1)
+        add_compare_test(suite, f, 'pgmraw', 300, 0)
+        add_compare_test(suite, f, 'pgmraw', 300, 1)
+        #add_compare_test(suite, f, 'pgmraw', 600, 0)
+        #add_compare_test(suite, f, 'pgmraw', 600, 1)
 
-        add_compare_test(suite, f, 'ppmraw', 72, 0))
-        add_compare_test(suite, f, 'ppmraw', 72, 1))
-        add_compare_test(suite, f, 'ppmraw', 300, 0))
-        add_compare_test(suite, f, 'ppmraw', 300, 1))
-        #add_compare_test(suite, f, 'ppmraw', 600, 0))
-        #add_compare_test(suite, f, 'ppmraw', 600, 1))
+        add_compare_test(suite, f, 'ppmraw', 72, 0)
+        add_compare_test(suite, f, 'ppmraw', 72, 1)
+        add_compare_test(suite, f, 'ppmraw', 300, 0)
+        add_compare_test(suite, f, 'ppmraw', 300, 1)
+        #add_compare_test(suite, f, 'ppmraw', 600, 0)
+        #add_compare_test(suite, f, 'ppmraw', 600, 1)
 
-        add_compare_test(suite, f, 'pkmraw', 72, 0))
-        add_compare_test(suite, f, 'pkmraw', 72, 1))
-        add_compare_test(suite, f, 'pkmraw', 300, 0))
-        add_compare_test(suite, f, 'pkmraw', 300, 1))
-        #add_compare_test(suite, f, 'pkmraw', 600, 0))
-        #add_compare_test(suite, f, 'pkmraw', 600, 1))
+        add_compare_test(suite, f, 'pkmraw', 72, 0)
+        add_compare_test(suite, f, 'pkmraw', 72, 1)
+        add_compare_test(suite, f, 'pkmraw', 300, 0)
+        add_compare_test(suite, f, 'pkmraw', 300, 1)
+        #add_compare_test(suite, f, 'pkmraw', 600, 0)
+        #add_compare_test(suite, f, 'pkmraw', 600, 1)
 
 # run all the tests
 runner = gstest.GSTestRunner(verbosity=2)
