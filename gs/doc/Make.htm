@@ -1147,54 +1147,122 @@ You should then run "<b><tt>_genarch.bat</tt></b>", wait until
 
 </ul>
 
-<h3><a name="Microsoft_build"></a>Microsoft environment</h3>
+<h3><a name="Microsoft_build"></a>Microsoft Environment</h3>
 
-<p>
-NOTE: We have received reports that the Microsoft Visual C++ 5.0 and 6.0
-compilers produce incorrect code for Ghostscript version 6.0 and later, from
-the same source code that compiles and runs correctly with other compilers.
-You may also want to try
-out the <a href="#IntelWin32_build">Intel&nbsp;C/C++ compiler</a>, which can
-be integrated into the Microsoft Visual C++ environment.
-
-<p>
-To compile Ghostscript with the Microsoft environment, you need Microsoft
-Visual C++ 4.0 or later with its associated "<b><tt>nmake</tt></b>" utility
-and linker.  If you're using version 4.x, before building, in
-<b><tt>msvc32.mak</tt></b> find the line
-"<b><tt>MSVC_VERSION&nbsp;=&nbsp;5</tt></b>" and change it to
-"<b><tt>MSVC_VERSION&nbsp;=&nbsp;4</tt></b>".
-
-<p>
-To create "<b><tt>makefile</tt></b>", give the command
-
+<p> NOTE: We have received reports that the Microsoft Visual C++ 5.0 and 6.0 compilers 
+  produce incorrect code for Ghostscript version 6.0 and later, from the same 
+  source code that compiles and runs correctly with other compilers. In spite 
+  of these reports, several members of the Artifex staff use version 6.0 of the 
+  MSVC compiler on a regular basis and we have not found any problems. You may 
+  also want to try out the <a href="#IntelWin32_build">Intel&nbsp;C/C++ compiler</a>, 
+  which can be integrated into the Microsoft Visual C++ environment.
+<p>To compile Ghostscript using the Microsoft environment, you need Microsoft 
+  Visual C++ 4.0 or later with its associated "<b><tt>nmake</tt></b>" utility 
+  and linker.
+<h4><a name="Using_the_MS_Development_Environment"> </a>Using Microsoft Developer 
+  Studio</h4>
+<p>Microsoft Developer Studio is the Microsoft Visual C++ integrated development 
+  environment. To use it to build Ghostscript: it is first necessary to create 
+  a new workspace/project. To create the workspace/project, open Microsoft Developer 
+  Studio and select <b><tt>File/New</tt></b>. In the dialog window that is opened, 
+  select 'Makefile' as the type of project. Specify a name for the project. (Microsoft 
+  does not allow special characters such as ., *, ?, /, or \ as part of project 
+  names.) Also specify the location of the master directory for your Ghostscript 
+  files. Then select OK. 
+<p> In the next dialog window, specify the build command line as <b><tt>nmake 
+  /f src/msvc32.mak DEVSTUDIO= </tt></b> Note the value for <b><tt>DEVSTUDIO</tt></b> 
+  is empty. Then select <b><tt>Finish</tt></b>. 
+<p>At this point, it is now possible to build Ghostscript using Developer Studio. 
+  To build, press F7 or select the build icon. Note: multiple warnings will also 
+  given about things like double to float data conversions. Ignore them. We have 
+  not found a way to create a single set of sources that does not create warnings 
+  with the different compilers and operating systems supported by Ghostscript. 
+  We are working to reduce the number of the warning messages. 
+<p>To run Ghostscript inside of Developer Studio, it is necessary to specify the 
+  name of the executable program . Select <b><tt>Project/Settings</tt></b>. Select 
+  the <b><tt>Debug</tt></b> tab. Then for <b><tt>Executable for debug session:</tt></b> 
+  specify <b><tt>bin/gswin32.exe</tt></b> 
+<p>To use all of the features of Microsoft Developer Studio for debugging, and 
+  modifying Ghostscriptt, you need to finish the remaining steps. 
+<p>To add the Ghostscript DLL to the project, select <b><tt>Project/Settings</tt></b>. 
+  Select the <b><tt>Debug</tt></b> tab. Change the <b><tt>Category</tt></b> to 
+  <b><tt>Additional DLLs</tt></b>. Then specify <b><tt>bin/gsdll32.dll</tt></b>. 
+<p> To specify the Ghostscript program arguments, select <b><tt>Project/Settings</tt></b>. 
+  Select the <b><tt>Debug</tt></b> tab. Change the <b><tt>Category</tt></b> to 
+  <b><tt>General</tt></b>. Then specify the desired program arguments. For example, 
+  specifying: <b><tt>examples/tiger.ps</tt></b> will result in the tiger example 
+  file being displayed when Ghostscript is executed. . 
+<p> A final note: it is possible to create a command file (build.bat) to be used 
+  for the build command line. If many different workspaces/projects are created, 
+  it is simpler to use a build batch command file rather than retyping the build 
+  command line for each new project. Here is an example used by one of Artifex's 
+  staff members. This file is one line:
+<blockquote><b><tt> nmake -f src/msvc32.mak DEVSTUDIO= DEBUG=1 GS_LIB_DEFAULT="./lib/;./font;$(GSROOTDIR)/lib;$(AROOTDIR)/fonts" 
+  </tt></b></blockquote>
+<p> The <b><tt>DEBUG=1</tt></b> enables many debugging features built into Ghostscript. 
+  Please note the double quotes around the value for <b><tt>GS_LIB_DEFAULT</tt></b> 
+  and the addition of <b><tt>./lib;./fonts;</tt></b> to its definition. This uses 
+  the local (within the project) copy of the <b><tt>lib</tt></b> and <b><tt>fonts</tt></b> 
+  directories. This is convenient if any changes need to be made in these directories. 
+<h4><a name="Using_the_command_line"></a>Using the command line</h4>
+<p>Ghostscript can be made using either the DOS shell or one one of the various 
+  command line shells made for Windows.
+<p>In order for the makefiles to work properly, two items may have to be changed. 
+  If you are not using version 5.x then before building, in <b><tt>src\msvc32.mak</tt></b> 
+  find the line "<b><tt>MSVC_VERSION=5</tt></b>" and change it to "<b><tt>MSVC_VERSION=4</tt></b>" 
+  or "<b><tt>MSVC_VERSION=6</tt></b>". 
+<p>In some cases the location of the Microsoft Developer Studio, needs to be changed. 
+  The location of Microsoft Developer Studio is defined by the value of <b><tt>DEVSTUDIO</tt></b>. 
+  There are three different definitions of <b><tt>DEVSTUDIO</tt></b> in src\msvc32.mak. 
+  There is one for each of the currently supported versions of Microsoft Visual 
+  C++ (4, 5, and 6). 
+<p>The normal installation process for Microsoft Visual C++ includes setting the 
+  location of the Microsoft Visual C++ executables (cl.exe, link.exe, nmake.exe, 
+  rc.exe) in your PATH definition and the LIB and INCLUDE environment variables 
+  are set to point to the Microsoft Visual C++ directories. If this is true then 
+  the value for <b><tt>DEVSTUDIO</tt></b> can be changed to empty. I.e. <b><tt>DEVSTUDIO=</tt></b>
+<p> If PATH, LIB, and INCLUDE are not correctly set then the value for <b><tt>DEVSTUDIO</tt></b> 
+  needs to be defined. For example, for version 6.0, the default definition for 
+  the location for the Microsoft Developer Studio is: <b><tt>DEVSTUDIO=C:\Program 
+  Files\Microsoft Visual Studio </tt></b> If the path to Microsoft Developer Studio 
+  on your system differs from the default then change the appropriate definition 
+  of <b><tt>DEVSTUDIO</tt></b>. (Remember that there is a separate definition 
+  of <b><tt>DEVSTUDIO</tt></b> for each version of MSVC, so be sure to change 
+  the correct definition.) 
+<p>To run the <b><tt>make</tt></b> program, give the command 
 <blockquote><b><tt>
-echo !include src\msvc32.mak &gt;makefile
+nmake -f src\msvc32.mak
 </tt></b></blockquote>
 
 <p>
-To run the <b><tt>make</tt></b> program, give the commmand
+Rather than changing src/msvc32.mak, these values can be specified on the make
+command line,  I.e.
 
-<blockquote><b><tt>
-nmake
-</tt></b></blockquote>
+<blockquote><b><tt> nmake -f src\msvc32.mak MSVC_VERSION=6 DEVSTUDIO="C:\Program 
+  Files\Microsoft Visual Studio" </tt></b></blockquote>
 
+<p> Note that double quotes have been added around the path for <b><tt>DEVSTUDIO</tt></b> 
+  due to the spaces in the path value.
 <p>
-You may get error messages during compilation about <b><tt>/QI0f</tt></b>
-being an undefined switch, or the message "dwmain32.def: EXETYPE not
-supported for platform; ignored" during linking.  Ignore them.
+This command line can also be put into a batch file.
 
+<p> You may get warning messages during compilation about <b><tt>/QI0f</tt></b> 
+  being an undefined switch, or the message "dwmain32.def: EXETYPE not supported 
+  for platform; ignored" during linking. Multiple warnings will also given about 
+  things like double to float data conversions. Ignore them. We have not found 
+  a way to create a single set of sources that does not create warnings with the 
+  different compilers and operating systems supported by Ghostscript. 
 <p>
 The Microsoft VC++ 5.0 compiler locks up when compiling
 <b><tt>gxi12bit.c</tt></b> with <b><tt>/O2</tt></b>.  Compile this file
 without <b><tt>/O2</tt></b>.
 
-<p>
-The Microsoft VC++ 5.0 compiler produces a non-working executable if
-compiling without stack checking.  Don't change the setting
-<b><tt>TDEBUG=1</tt></b> in <b><tt>msvc32.mak</tt></b>.
+<p> The Microsoft VC++ 5.0 compiler produces a non-working executable if compiling 
+  without stack checking. Don't change the setting <b><tt>TDEBUG=1</tt></b> in 
+  <b><tt>msvc32.mak</tt></b>. 
 
-<h3><a name="Self-extracting_executables"></a>Making self-extracting executables</h3>
+
+<h4><a name="Self-extracting_executables"></a>Making self-extracting executables</h4>
 
 <p>
 You can build self-extracting Windows executables of Ghostscript.  (This is
