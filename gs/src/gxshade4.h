@@ -23,7 +23,7 @@
 /* Configuration flags for development needs only. Users should not modify them. */
 #define NEW_SHADINGS 1 /* Old code = 0, new code = 1. */
 #define USE_LINEAR_COLOR_PROCS 1 /* Old code = 0, new code = 1. */
-#define NEW_RADIAL_SHADINGS 0 /* Old code = 0, new code = 1. */
+#define NEW_RADIAL_SHADINGS 1 /* Old code = 0, new code = 1. */
 
 #define QUADRANGLES 0 /* 0 = decompose by triangles, 1 = by quadrangles. */
 /* The code QUADRANGLES 1 appears unuseful.
