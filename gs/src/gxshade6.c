@@ -34,11 +34,6 @@
 
 #define VD_TRACE_TENSOR_PATCH 1
 
-#if TENSOR_SHADING_DEBUG
-int patch_cnt = 0; /* Temporary for a debug purpose.*/
-static bool dbg_nofill = false;
-int triangle_cnt = 0; /* Temporary for a debug purpose.*/
-#endif
 
 
 
@@ -609,10 +604,6 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
 	/* vd_erase(RGB(192, 192, 192)); */
-#	if TENSOR_SHADING_DEBUG
-	    if (!patch_cnt)
-		vd_erase(RGB(255, 255, 255));
-#	endif
     }
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
@@ -621,9 +612,6 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	   (code = patch_fill(&state, curve, NULL, Cp_transform)) >= 0
 	) {
 	DO_NOTHING;
-#	if TENSOR_SHADING_DEBUG
-	    patch_cnt++;
-#	endif
     }
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
 	vd_release_dc;
@@ -837,11 +825,7 @@ draw_triangle(const gs_fixed_point *p0, const gs_fixed_point *p1,
 #ifdef DEBUG
     if (!vd_enabled)
 	return;
-#   if TENSOR_SHADING_DEBUG
-    /* if (dbg_nofill) A switch for a better view with a specific purpose. 
-	    Feel free to change the condition if needed. */
-#   endif
-	vd_quad(p0->x, p0->y, p0->x, p0->y, p1->x, p1->y, p2->x, p2->y, 0, rgbcolor);
+    vd_quad(p0->x, p0->y, p0->x, p0->y, p1->x, p1->y, p2->x, p2->y, 0, rgbcolor);
 #endif
 }
 
@@ -849,10 +833,6 @@ private inline void
 draw_quadrangle(const quadrangle_patch *p, ulong rgbcolor)
 {
 #ifdef DEBUG
-#   if TENSOR_SHADING_DEBUG
-    /* if (dbg_nofill)  A switch for a better view with a specific purpose. 
-	    Feel free to change the condition if needed. */
-#   endif
 	vd_quad(p->p[0][0]->p.x, p->p[0][0]->p.y, 
 	    p->p[0][1]->p.x, p->p[0][1]->p.y,
 	    p->p[1][1]->p.x, p->p[1][1]->p.y,
@@ -1012,10 +992,6 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 
     if (ybot > ytop)
 	return 0;
-#   if TENSOR_SHADING_DEBUG
-    if (dbg_nofill)
-	return 0;
-#   endif
     make_trapezoid(q, vi0, vi1, vi2, vi3, ybot, ytop, swap_axes, orient, &le, &re);
     if (!VD_TRACE_DOWN)
 	vd_disable;
@@ -1096,18 +1072,6 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
     vd_save;
 
     patch_color_to_device_color(pfs, &c1, &dc);
-#   if VD_DRAW_CIRCLES
-    if (swap_axes)
-	vd_circle((ybot + ytop) / 2,
-		  (le->start.x + (int)((int64_t)(le->end.x - le->start.x) * ((ybot + ytop) / 2 - le->start.y) / (le->end.y - le->start.y)) + 
-		   re->start.x + (int)((int64_t)(re->end.x - re->start.x) * ((ybot + ytop) / 2 - re->start.y) / (re->end.y - re->start.y))) / 2,
-		  5, (uint)dc.colors.pure);
-    else
-	vd_circle((le->start.x + (int)((int64_t)(le->end.x - le->start.x) * ((ybot + ytop) / 2 - le->start.y) / (le->end.y - le->start.y)) + 
-		   re->start.x + (int)((int64_t)(re->end.x - re->start.x) * ((ybot + ytop) / 2 - re->start.y) / (re->end.y - re->start.y))) / 2,
-		  (ybot + ytop) / 2,
-		  5, (uint)dc.colors.pure);
-#   endif
     if (!VD_TRACE_DOWN)
 	vd_disable;
     code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
@@ -1152,10 +1116,6 @@ linear_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_point q[4], int i0, int
     /* Assuming a very narrow trapezoid - ignore the transversal color change. */
     gs_fixed_edge le, re;
 
-#   if TENSOR_SHADING_DEBUG
-    if (dbg_nofill)
-	return 0;
-#   endif
     make_trapezoid(q, i0, i1, i2, i3, ybot, ytop, swap_axes, orient, &le, &re);
     return decompose_linear_color(pfs, &le, &re, ybot, ytop, swap_axes, c0, c1);
 }
@@ -1650,11 +1610,6 @@ constant_color_triangle(patch_fill_state_t *pfs,
     int i;
 
     draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
-#   if TENSOR_SHADING_DEBUG
-    if (dbg_nofill)
-	return 0;
-    triangle_cnt++;
-#   endif
     patch_interpolate_color(&c, &p0->c, &p1->c, pfs, 0.5);
     patch_interpolate_color(&cc, &p2->c, &c, pfs, 0.5);
     for (i = 0; i < 3; i++) {
@@ -1697,11 +1652,6 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bo
     patch_interpolate_color(&c2, &p->p[1][0]->c, &p->p[1][1]->c, pfs, 0.5);
     patch_interpolate_color(&c, &c1, &c2, pfs, 0.5);
     patch_color_to_device_color(pfs, &c, &dc);
-#   if VD_DRAW_CIRCLES
-    vd_circle((p->p[0][0].x + p->p[0][1].x + p->p[1][0].x + p->p[1][1].x) / 4,
-	      (p->p[0][0].y + p->p[0][1].y + p->p[1][0].y + p->p[1][1].y) / 4,
-	      3, (uint)dc.colors.pure);
-#   endif
     {	gs_fixed_point qq[4];
 
 	make_vertices(qq, p);
@@ -2686,10 +2636,6 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     gs_memory_t *memory = pfs->pis->memory;
 #   endif
 
-#   if TENSOR_SHADING_DEBUG
-	if (patch_cnt != 27 && patch_cnt != 3) 
-	    return 0;
-#   endif
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
@@ -2713,9 +2659,6 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	} else
 	    pfs->wedge_buf = buf;
 #   endif
-#   if TENSOR_SHADING_DEBUG
-	dbg_nofill = false;
-#   endif
     code = fill_wedges(pfs, kv[0], kvm, &p.pole[0][0], 4, &p.c[0][0], &p.c[1][0], 
 		interpatch_padding | inpatch_wedge);
     if (code >= 0)
@@ -2734,11 +2677,6 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   patches may use the opposite direction for same bounding curve.
 	   We apply the recursive dichotomy, in which 
 	   the rounding errors do not depend on the direction. */
-#	if TENSOR_SHADING_DEBUG
-	    dbg_nofill = false;
-	    code = fill_patch(pfs, &p, kvm);
-	    dbg_nofill = true;
-#	endif
 	code = fill_patch(pfs, &p, kvm);
     }
 #   if POLYGONAL_WEDGES

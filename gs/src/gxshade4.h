@@ -27,8 +27,6 @@
 #define POLYGONAL_WEDGES 0 /* 1 = polygons allowed, 0 = triangles only. */
 #define INTERPATCH_PADDING (fixed_1 / 8) /* Emulate a trapping for poorly designed documents. */
 #define COLOR_CONTIGUITY 1 /* A smothness divisor for triangulation. */
-#define TENSOR_SHADING_DEBUG 0
-#define VD_DRAW_CIRCLES 0
 #define VD_TRACE_DOWN 0
 /* End of configuration flags (we don't mean that users should modify the rest). */
 
@@ -87,10 +85,6 @@ struct shading_vertex_s {
     gs_fixed_point p;
     patch_color_t c;
 };
-
-#if TENSOR_SHADING_DEBUG
-    extern int triangle_cnt, patch_cnt;
-#endif
 
 /* Initialize the fill state for triangle shading. */
 void mesh_init_fill_state(mesh_fill_state_t * pfs,

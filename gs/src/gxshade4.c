@@ -285,9 +285,6 @@ mesh_fill_triangle(mesh_fill_state_t *pfs)
 			fp->vc.p.x, fp->vc.p.y, 0, RGB(255, 0, 0));
 		if (!VD_TRACE_DOWN)
 		    vd_disable;
-#		if TENSOR_SHADING_DEBUG
-		    triangle_cnt++;
-#		endif
 		code = shade_fill_path((const shading_fill_state_t *)pfs,
 				       ppath, &dev_color);
 		vd_restore;
@@ -371,11 +368,6 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
 	patch_fill_state_t pfs1;
 	int code;
 
-#	if TENSOR_SHADING_DEBUG
-	    patch_cnt ++;
-	    if (patch_cnt != -1)
-		return 0;
-#	endif
  	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
 	pfs1.Function = pfs->pshm->params.Function;
 	init_patch_fill_state(&pfs1);
