@@ -746,6 +746,26 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     before the backward transposition.
  */
 
+/* todo :
+   1. is_curve_small must use fixed_half or the like, rather than fixed_flat.
+
+   2. is_xy_monotonic_by_v appears wrong.
+      The right condition of a non-overlapping area boundary
+      is dXY/du parallel to dXU/dV.
+
+   3. 483-05.ps paints some pixels with a wrong color.
+
+   6. Maybe the smoothness threshold isn't correct.
+      483-05.ps renders some unsmoothly, need to investigate why so.
+
+   4. Optimize intersection_of_small_bars - see 'fixme' in there.
+
+   5. Optimize wedge_trap_decompose - see 'fixme' in there.
+   
+   6. A general optimization isn't done yet.
+      Tune thresholds.
+ */
+
 /* fixme :
    The current code allocates up to 64 instances of tensor_patch on C stack, 
    when executes fill_stripe, decompose_stripe, fill_quadrangle.
@@ -1384,7 +1404,6 @@ constant_color_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
 	}
 	orient = (dx1 * dy3 > dy1 * dx3);
     }
-    /* fixme: case dx2 * dy3 == dy2 * dx3, etc. */
     if (q[1].y <= q[2].y && q[2].y <= q[3].y) {
 	if (intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &ey)) {
 	    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, q[1].y, swap_axes, &dc, orient)) < 0)
