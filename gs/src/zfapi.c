@@ -730,7 +730,9 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     }
 
     /* Refine descendents : */
-    if (pbfont->FontType == ft_CID_encrypted) {
+    if (font_file_path == NULL && pbfont->FontType == ft_CID_encrypted) {
+        /*  fixme : Do we really need this ? (besides FontBBox)
+        */
         gs_font_cid0 *pfcid = (gs_font_cid0 *)pbfont;
         gs_font_type1 **FDArray = pfcid->cidata.FDArray;
         int i, n = pfcid->cidata.FDArray_size;
@@ -1079,10 +1081,12 @@ retry_oversampling:
                     nb = rb.value.intval;
                     ne = re.value.intval;
                     ns = rs.value.intval;
-                    if (client_char_code < nb || client_char_code > ne)
-                        continue;
-                    if (TT_char_code_from_CID(Decoding, ns + (client_char_code - nb), &cr))
-                        break;
+                    if (client_char_code >= nb && client_char_code <= ne)
+                        if (TT_char_code_from_CID(Decoding, ns + (client_char_code - nb), &cr))
+                            break;
+                    if (client_char_code >= ns && client_char_code <= ns + (ne - nb))
+                        if (TT_char_code_from_CID(Decoding, nb + (client_char_code - ns), &cr))
+                            break;
                 }
             }
         } else

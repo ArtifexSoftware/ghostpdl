@@ -365,6 +365,10 @@ currentdict end Redefine
 DEBUG { {exec} } { {pop} } ifelse
 bind def
  
+/FAPI_hook_warn   % <proc> FAPI_hook_debug -
+QUIET { {pop} } { {exec} } ifelse
+bind def
+ 
 /encodingnames mark
  StandardEncoding /StandardEncoding
  ISOLatin1Encoding /ISOLatin1Encoding
@@ -471,7 +475,7 @@ bind def
 {                                                     % name <<font>>
   { (FAPIhook ) print 1 index = } //FAPI_hook_debug exec
   dup /FAPI known {
-    //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get =
+    { //PrintFontRef exec ( is mapped to FAPI=) print dup /FAPI get = } //FAPI_hook_warn exec
     true //.FAPIrebuildfont //FAPI_choose_decoding exec
   } {
     dup /Path known dup {
@@ -488,10 +492,10 @@ bind def
     1 index //GetFontType exec //FindInArray exec      % name <<font>> bHook
     { { (Trying to render the font ) print //PrintFontRef exec ( with FAPI...) = } //FAPI_hook_debug exec
       //.FAPIpassfont {
-        //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get =
+        { //PrintFontRef exec ( is being rendered with FAPI=) print dup /FAPI get = } //FAPI_hook_warn exec
         false //.FAPIrebuildfont //FAPI_choose_decoding exec
       } {
-        (Can't render ) print //PrintFontRef exec ( with FAPI, will do with native GS renderer.) =
+        { (Can't render ) print //PrintFontRef exec ( with FAPI, will do with native GS renderer.) = } //FAPI_hook_warn exec
       } ifelse
     } {
       { (The font ) print //PrintFontRef exec ( doesn't need to render with FAPI.) = } //FAPI_hook_debug exec

@@ -791,6 +791,8 @@ private int export_outline(fapi_ufst_server *r, PIFOUTLINE pol, FAPI_path *p)
     LPSB8 segment;
     PINTRVECTOR points;
     SW16  i,j;
+    if (pol == NULL)
+        return 0;
     p->shift += r->If.frac_shift + pol->VLCpower;
     outchar = &pol->ol;
     num_contrs = outchar->num_loops;
@@ -841,12 +843,6 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
     CGIFchIdptr(&r->IFS, &cc, PSchar_name);
     {   /* hack : Changing UFST internal data. Change to r->fc doesn't help, because Agfa thinks that the "outline/raster" is a property of current font. */
-        if (c->is_glyph_index)
-            r->IFS.fcCur.ssnum = RAW_GLYPH;
-        else
-            r->IFS.fcCur.ssnum = 0x8000 /* no symset mapping */;
-        if (c->is_glyph_index)
-            r->IFS.fcCur.user_platID = r->IFS.fcCur.user_specID = 0;
         r->IFS.fcCur.format &= ~FC_OUTPUT_MASK;
         r->IFS.fcCur.format |= format;
     }
@@ -856,11 +852,13 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     code = CGIFchar_with_design_bbox(&r->IFS, cc, &result, (SW16)0, design_bbox, &design_escapement);
     if (code == ERR_find_cgnum) {
         /* There is no such char in the font, try the glyph 0 (notdef) : */
-        UW16 c1 = 0;
-        CGIFchIdptr(&r->IFS, &c1, (char *)".notdef");
+        UW16 c1 = 0, ssnum = r->IFS.fcCur.ssnum;
         /* hack : Changing UFST internal data - see above. */
         r->IFS.fcCur.ssnum = RAW_GLYPH;
+        CheckRET(r->callback_error);
+        CGIFchIdptr(&r->IFS, &c1, (char *)".notdef");
         code = CGIFchar_with_design_bbox(&r->IFS, c1, &result, (SW16)0, design_bbox, &design_escapement);
+        r->IFS.fcCur.ssnum = ssnum;
     }
     r->ff = 0;
     release_glyphs(r, (ufst_common_font_data *)ff->server_font_data);
@@ -877,6 +875,8 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
         set_metrics(r, metrics, design_bbox, design_escapement, pol->escapement, pol->du_emx, pol->du_emy);
         r->char_data = (IFOUTLINE *)result;
     }
+    if (code == ERR_fixed_space)
+        release_char_data_inline(r);
     return 0;
 }
 
@@ -911,7 +911,7 @@ private FAPI_retcode get_char_raster(FAPI_server *server, FAPI_raster *rast)
 {   fapi_ufst_server *r = If_to_I(server);
     if (!r->bRaster)
         return e_limitcheck;
-    else {
+    else if (r->char_data != NULL) {
         IFBITMAP *pbm = (IFBITMAP *)r->char_data;
         rast->p = pbm->bm;
         rast->height = pbm->depth;
@@ -922,8 +922,8 @@ private FAPI_retcode get_char_raster(FAPI_server *server, FAPI_raster *rast)
             rast->orig_y = pbm->top_indent  * 16 + pbm->yorigin;
         } else
             rast->orig_x = rast->orig_y = 0;
-        return 0;
     }
+    return 0;
 }
 
 private FAPI_retcode release_char_data(FAPI_server *server)
