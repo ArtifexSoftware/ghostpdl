@@ -304,8 +304,22 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
     ******/
     if (text_state.values.character_spacing != 0 ||
 	text_state.values.word_spacing != 0
-	)
-	return_error(gs_error_rangecheck);
+	) {
+	/*
+	 * We could allow to write the text with CID font and Tc/Tw commants, 
+	 * just removing this check. Perhaps if the source CID font 
+	 * replaces widths with Metrics/Metrics2, glyph positions
+	 * become imprecise, because we ignore the replaced widths. 
+	 * This happens re-distilling a PDF file, which substituted a CID font
+	 * and took widths from an original font.
+	 * -r72 comparefiles\RodinCIDEmbed.pdf, page 2 is an example :
+	 * it gives overlapping glyphs.
+	 *
+	 * Also note that Tc assumes that the space character code is 32,
+	 * but it isn't so with many CMaps.
+	 */
+	return_error(gs_error_rangecheck); /* Will fall back to default implementation */
+    }
 	    
     if (!pdfont->u.type0.Encoding_name[0]) {
 	/*
