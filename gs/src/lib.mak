@@ -2494,7 +2494,7 @@ $(GLOBJ)gxshade4.$(OBJ) : $(GLSRC)gxshade4.c $(GXERR)\
 $(GLOBJ)gxshade6.$(OBJ) : $(GLSRC)gxshade6.c $(GXERR) $(memory__h)\
  $(gscoord_h) $(gsmatrix_h)\
  $(gxcspace_h) $(gxdcolor_h) $(gxistate_h) $(gxshade_h) $(gxshade4_h) $(gxdevcli_h)\
- $(gzpath_h)
+ $(gzpath_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxshade6.$(OBJ) $(C_) $(GLSRC)gxshade6.c
 
 shadelib_1=$(GLOBJ)gscolor3.$(OBJ) $(GLOBJ)gsfunc3.$(OBJ) $(GLOBJ)gsptype2.$(OBJ) $(GLOBJ)gsshade.$(OBJ)
