@@ -453,8 +453,16 @@ map_symbol(uint chr, const gs_text_enum_t *penum)
 	        return chr;
 
 	first_code = pl_get_uint16(psm->first_code);
-	if ( chr < first_code || chr > pl_get_uint16(psm->last_code) )
-	  return 0xffff;
+	if ( chr < first_code || chr > pl_get_uint16(psm->last_code) ) {
+            /* it is unclear how to handle the case of double byte
+               characters and single byte symbol sets, based on a
+               small sample of tests hp seems to just return the
+               character. */
+            if ( ( chr > 0xff ) && 
+                 pl_get_uint16(psm->last_code) <= 0xff )
+                return chr;
+            return 0xffff;
+        }
 	return psm->codes[chr - first_code];
 }
 
