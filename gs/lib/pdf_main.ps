@@ -212,10 +212,17 @@ pdfdict begin
    dup (\015%%EOF) eq exch (\012%%EOF) eq or not   
     { /pdfopen cvx /syntaxerror signalerror } if
    1 add setfileposition
-   prevline cvi		% xref start position
-   exch PDFfile exch setfileposition
-   prevline (startxref) linene { /pdfopen cvx /syntaxerror signalerror } if
-   pop
+   prevline token pop dup type /integertype eq 
+    { exch pop cvi		% xref start position
+      exch PDFfile exch setfileposition
+      prevline (startxref) linene { /pdfopen cvx /syntaxerror signalerror } if
+      pop
+    }	% else, this file has 'startxref #####' format
+    { (startxref) ne { /pdfopen cvx /syntaxerror signalerror } if
+      cvi		% xref start position
+      exch PDFfile exch setfileposition
+    }
+    ifelse
 		% Stack: xrefpos
    initPDFobjects
 	% Read the last cross-reference table.
@@ -458,7 +465,7 @@ end readonly def
 	% Stack: pagedict setpagedict
 	% We want to look at Rotate for displays, but not for printers.
 	% The following is a hack, but we don't know a better way to do this.
-   currentpagedevice /OutputFile known not
+   currentpagedevice /OutputFile known
     { dup /Orientation 3 index /Rotate pget not { 0 } if 90 idiv
 	% Rotate specifies *clockwise* rotation!
       neg 3 and put
