@@ -228,7 +228,10 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* outlines_open */
  0,				/* articles */
  0,				/* Dests */
- 0,				/* named_objects */
+ 0,				/* global_named_objects */
+ 0,				/* local_named_objects */
+ 0,				/* NI_stack */
+ 0,				/* Namespace_stack */
  0				/* open_graphics */
 };
 
@@ -486,11 +489,19 @@ pdf_open(gx_device * dev)
     /* any vector implementation procedures. */
     pdev->in_page = true;
     /*
-     * pdf_initialize_ids allocates some named objects, so we must
-     * initialize the named objects list now.
+     * pdf_initialize_ids allocates some (global) named objects, so we must
+     * initialize the named objects dictionary now.
      */
-    pdev->named_objects = cos_dict_alloc(pdev, "pdf_open(named_objects)");
+    pdev->local_named_objects =
+	pdev->global_named_objects =
+	cos_dict_alloc(pdev, "pdf_open(global_named_objects)");
+    /* Initialize internal structures that don't have IDs. */
+    pdev->NI_stack = cos_array_alloc(pdev, "pdf_open(NI stack)");
+    pdev->Namespace_stack = cos_array_alloc(pdev, "pdf_open(Namespace stack)");
     pdf_initialize_ids(pdev);
+    /* Now create a new dictionary for the local named objects. */
+    pdev->local_named_objects =
+	cos_dict_alloc(pdev, "pdf_open(local_named_objects)");
     pdev->outlines_id = 0;
     pdev->next_page = 0;
     pdev->text = pdf_text_data_alloc(mem);
@@ -519,7 +530,7 @@ pdf_open(gx_device * dev)
     pdev->outlines_open = 0;
     pdev->articles = 0;
     pdev->Dests = 0;
-    /* named_objects was initialized above */
+    /* {global,local}_named_objects was initialized above */
     pdev->open_graphics = 0;
     pdf_reset_page(pdev);
 
@@ -922,10 +933,13 @@ pdf_close(gx_device * dev)
     /*
      * Write the definitions of the named objects.
      * Note that this includes Form XObjects created by BP/EP, named PS
-     * XObjects, and eventually images named by NI.
+     * XObjects, and images named by NI.
      */
 
-    cos_dict_objects_write(pdev->named_objects, pdev);
+    do {
+	cos_dict_objects_write(pdev->local_named_objects, pdev);
+    } while (pdf_pop_namespace(pdev) >= 0);
+    cos_dict_objects_write(pdev->global_named_objects, pdev);
 
     /* Copy the resources into the main file. */
 
@@ -989,9 +1003,12 @@ pdf_close(gx_device * dev)
 
     /* Free named objects. */
 
-    cos_dict_objects_delete(pdev->named_objects);
-    COS_FREE(pdev->named_objects, "pdf_close(named_objects)");
-    pdev->named_objects = 0;
+    cos_dict_objects_delete(pdev->local_named_objects);
+    COS_FREE(pdev->local_named_objects, "pdf_close(local_named_objects)");
+    pdev->local_named_objects = 0;
+    cos_dict_objects_delete(pdev->global_named_objects);
+    COS_FREE(pdev->global_named_objects, "pdf_close(global_named_objects)");
+    pdev->global_named_objects = 0;
 
     /* Wrap up. */
 

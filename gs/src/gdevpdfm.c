@@ -1561,7 +1561,9 @@ private int
 pdfmark_NamespacePush(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		      const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    if (count != 0)
+	return_error(gs_error_rangecheck);
+    return pdf_push_namespace(pdev);
 }
 
 /* [ /NamespacePop pdfmark */
@@ -1569,7 +1571,9 @@ private int
 pdfmark_NamespacePop(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 		     const gs_matrix *pctm, const gs_param_string *objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    if (count != 0)
+	return_error(gs_error_rangecheck);
+    return pdf_pop_namespace(pdev);
 }
 
 /* [ /_objdef {image} /NI pdfmark */
@@ -1578,9 +1582,14 @@ pdfmark_NI(gx_device_pdf *pdev, gs_param_string *pairs, uint count,
 	   const gs_matrix *pctm, const gs_param_string *objname)
 {
     cos_object_t *pco;
+    int code;
 
-    /* NOT FULLY IMPLEMENTED YET. Create dictionary object as workaround. */
-    return pdf_make_named(pdev, objname, cos_type_dict, &pco, true);
+    if (objname == 0 || count != 0)
+	return_error(gs_error_rangecheck);
+    code = pdf_make_named(pdev, objname, cos_type_dict, &pco, true);
+    if (code < 0)
+	return code;
+    return cos_array_add_object(pdev->NI_stack, pco);
 }
 
 /* ---------------- Named content pdfmarks ---------------- */

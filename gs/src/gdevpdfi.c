@@ -215,6 +215,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 		      gx_image_enum_common_t ** pinfo,
 		      pdf_typed_image_context_t context)
 {
+    cos_dict_t *pnamed = 0;
     const gs_pixel_image_t *pim;
     int code, i;
     pdf_image_enum *pie;
@@ -241,6 +242,17 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     int width, height;
     const gs_range_t *pranges = 0;
     int alt_writer_count;
+
+    /*
+     * Pop the image name from the NI stack.  We must do this, to keep the
+     * stack in sync, even if it turns out we can't handle the image.
+     */
+    {
+	cos_value_t ni_value;
+
+	if (cos_array_unadd(pdev->NI_stack, &ni_value) >= 0)
+	    pnamed = (cos_dict_t *)ni_value.contents.object;
+    }
 
     /* Check for the image types we can handle. */
     switch (pic->type->index) {
@@ -295,6 +307,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
 					 (const gs_image4_t *)pic,
 					 &image.type1, &icolor) >= 0) {
+	    /* Undo the pop of the NI stack if necessary. */
+	    if (pnamed)
+		cos_array_add_object(pdev->NI_stack, COS_OBJECT(pnamed));
 	    return pdf_begin_typed_image(pdev, pis, pmat,
 					 (gs_image_common_t *)&image.type1,
 					 prect, &icolor, pcpath, mem,
@@ -368,7 +383,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pie->rows_left = height;
     nbytes = (((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
 	pie->num_planes * pie->rows_left;
-    in_line &= nbytes <= MAX_INLINE_IMAGE_BYTES;
+    /* Don't in-line the image if it is named. */
+    in_line &= nbytes <= MAX_INLINE_IMAGE_BYTES && pnamed == 0;
     if (rect.p.x != 0 || rect.p.y != 0 ||
 	rect.q.x != pim->Width || rect.q.y != pim->Height ||
 	(is_mask && pim->CombineWithColor)
@@ -398,7 +414,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 				    (pim->Width <= 64 && pim->Height <= 64) ||
 				    pdev->transfer_not_identity ? 1 : 2);
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
-				      height, NULL, in_line, alt_writer_count)) < 0 ||
+				      height, pnamed, in_line, alt_writer_count)) < 0 ||
 	/*
 	 * Some regrettable PostScript code (such as LanguageLevel 1 output
 	 * from Microsoft's PSCRIPT.DLL driver) misuses the transfer

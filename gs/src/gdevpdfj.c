@@ -232,12 +232,13 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 /* ------ Begin / finish ------ */
 
 /*
- * Begin writing an image, creating the resource if not in-line and
- * pres == 0, and setting up the binary writer.
+ * Begin writing an image, creating the resource if not in-line, and setting
+ * up the binary writer.  If pnamed != 0, it is a stream object created by a
+ * NI pdfmark.
  */
 int
 pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
-		      gx_bitmap_id id, int w, int h, pdf_resource_t *pres,
+		      gx_bitmap_id id, int w, int h, cos_dict_t *named,
 		      bool in_line, int alt_writer_count)
 {
     /* Patch pdev->strm so the right stream gets into the writer. */
@@ -252,20 +253,20 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	if (piw->data == 0)
 	    return_error(gs_error_VMerror);
 	piw->end_string = " Q";
+	piw->named = 0;		/* must have named == 0 */
     } else {
 	pdf_x_object_t *pxo;
 	cos_stream_t *pcos;
 
-	if (pres == 0) {
-	    code = pdf_alloc_resource(pdev, resourceXObject, id, &piw->pres,
-				      0L);
-	    if (code < 0)
-		return code;
-	    cos_become(piw->pres->object, cos_type_stream);
-	} else {
-	    /* Resource already allocated (Mask for ImageType 3 image). */
-	    piw->pres = pres;
-	}
+	/*
+	 * Note that if named != 0, there are two objects with the same id
+	 * while the image is being accumulated: named, and pres->object.
+	 */
+	code = pdf_alloc_resource(pdev, resourceXObject, id, &piw->pres,
+				  (named ? named->id : 0L));
+	if (code < 0)
+	    return code;
+	cos_become(piw->pres->object, cos_type_stream);
 	piw->pres->rid = id;
 	piw->pin = &pdf_image_names_full;
 	pxo = (pdf_x_object_t *)piw->pres;
@@ -277,6 +278,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	/* Initialize data_height for the benefit of copy_{mono,color}. */
 	pxo->data_height = h;
 	piw->data = pcos;
+	piw->named = named;
     }
     pdev->strm = pdev->streams.strm;
     pdev->strm = cos_write_stream_alloc(piw->data, pdev, "pdf_begin_write_image");
@@ -359,9 +361,34 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
     pdf_resource_t *pres = piw->pres;
 
     if (pres) {			/* image resource */
-	if (!pres->named) {	/* named objects are written at the end */
-	    cos_write_object(pres->object, pdev);
-	    cos_release(pres->object, "pdf_end_write_image");
+	cos_object_t *const pco = pres->object;
+	cos_stream_t *const pcs = (cos_stream_t *)pco;
+	cos_dict_t *named = piw->named;
+
+	if (named) {
+	    /*
+	     * This image was named by NI.  Copy any dictionary elements
+	     * from the named dictionary to the image stream, and then
+	     * associate the name with the stream.
+	     */
+	    int code = cos_dict_move_all(cos_stream_dict(pcs), named);
+
+	    if (code < 0)
+		return code;
+	    pres->named = true;
+	    /*
+	     * We need to make the entry in the name dictionary point to
+	     * the stream (pcs) rather than the object created by NI (named).
+	     * Unfortunately, we no longer know what dictionary to use.
+	     * Instead, overwrite the latter with the former's contents,
+	     * and change the only relevant pointer.
+	     */
+	    *(cos_object_t *)named = *pco;
+	    pres->object = COS_OBJECT(named);
+	}
+	else if (!pres->named) { /* named objects are written at the end */
+	    cos_write_object(pco, pdev);
+	    cos_release(pco, "pdf_end_write_image");
 	}
 	return 0;
     } else {			/* in-line image */

@@ -405,7 +405,29 @@ struct gx_device_pdf_s {
     int outlines_open;
     pdf_article_t *articles;
     cos_dict_t *Dests;
-    cos_dict_t *named_objects;
+    /*
+     * global_named_objects holds named objects that are independent of
+     * the current namespace: {Catalog}, {DocInfo}, {Page#}, {ThisPage},
+     * {PrevPage}, {NextPage}.
+     */
+    cos_dict_t *global_named_objects;
+    /*
+     * local_named_objects holds named objects in the current namespace.
+     */
+    cos_dict_t *local_named_objects;
+    /*
+     * NI_stack is a last-in, first-out stack in which each element is a
+     * (named) cos_stream_t object that eventually becomes the object of an
+     * image XObject resource.
+     */
+    cos_array_t *NI_stack;
+    /*
+     * Namespace_stack is a last-in, first-out stack in which each pair of
+     * elements is, respectively, a saved value of local_named_objects and
+     * a saved value of NI_stack.  (The latter is not documented by Adobe,
+     * but it was confirmed by them.)
+     */
+    cos_array_t *Namespace_stack;
     pdf_graphics_save_t *open_graphics;
 };
 
@@ -424,8 +446,10 @@ struct gx_device_pdf_s {
  m(13,cs_Patterns[0])\
  m(14,cs_Patterns[1]) m(15,cs_Patterns[3]) m(16,cs_Patterns[4])\
  m(17,last_resource)\
- m(18,articles) m(19,Dests) m(20,named_objects) m(21,open_graphics)
-#define gx_device_pdf_num_ptrs 22
+ m(18,articles) m(19,Dests) m(20,global_named_objects)\
+ m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
+ m(24,open_graphics)
+#define gx_device_pdf_num_ptrs 25
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -765,6 +789,18 @@ int pdf_make_named_dict(P4(gx_device_pdf * pdev, const gs_param_string * pname,
  */
 int pdf_get_named(P4(gx_device_pdf * pdev, const gs_param_string * pname,
 		     cos_type_t cotype, cos_object_t **ppco));
+
+/*
+ * Push the current local namespace onto the namespace stack, and reset it
+ * to an empty namespace.
+ */
+int pdf_push_namespace(gx_device_pdf *pdev);
+
+/*
+ * Pop the top local namespace from the namespace stack.  Return an error if
+ * the stack is empty.
+ */
+int pdf_pop_namespace(gx_device_pdf *pdev);
 
 /*
  * Scan a string for a token.  <<, >>, [, and ] are treated as tokens.

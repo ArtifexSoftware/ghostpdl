@@ -196,21 +196,23 @@ typedef struct pdf_image_writer_s {
     int height;			/* initially specified image height */
     cos_stream_t *data;
     const char *end_string;	/* string to write after EI if in-line */
+    cos_dict_t *named;		/* named dictionary from NI */
 } pdf_image_writer;
 extern_st(st_pdf_image_writer);	/* public for gdevpdfi.c */
 #define public_st_pdf_image_writer()\
-  gs_public_st_suffix_add2(st_pdf_image_writer, pdf_image_writer,\
+  gs_public_st_suffix_add3(st_pdf_image_writer, pdf_image_writer,\
     "pdf_image_writer", pdf_image_writer_enum_ptrs,\
-    pdf_image_writer_reloc_ptrs, st_psdf_binary_writer, pres, data)
+    pdf_image_writer_reloc_ptrs, st_psdf_binary_writer, pres, data, named)
 #define pdf_image_writer_max_ptrs (psdf_binary_writer_max_ptrs + 2)
 
 /*
- * Begin writing an image, creating the resource if not in-line and
- * pres == 0, and setting up the binary writer.
+ * Begin writing an image, creating the resource if not in-line, and setting
+ * up the binary writer.  If pnamed != 0, it is a dictionary object created
+ * by a NI pdfmark.
  */
 int pdf_begin_write_image(P8(gx_device_pdf * pdev, pdf_image_writer * piw,
 			     gx_bitmap_id id, int w, int h,
-			     pdf_resource_t *pres, bool in_line,
+			     cos_dict_t *pnamed, bool in_line,
 			     int alt_writer_count));
 
 /* Begin writing the image data, setting up the dictionary and filters. */
