@@ -29,7 +29,7 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
-<li><a href="#Version7.20">Version 7.20 (2002-03-29)</a>
+<li><a href="#Version7.20">Version 7.20 (2002-03-31)</a>
 <ul>
 <li><a href="#7.20_Incompatible_changes">Incompatible changes</a>,
     <a href="#7.20-Documentation">Documentation</a>,
@@ -121,7 +121,7 @@ release.
 
 <hr>
 
-<h1><a name="Version7.20"></a>Version 7.20 (2002-03-29)</h1>
+<h1><a name="Version7.20"></a>Version 7.20 (2002-03-31)</h1>
 
 <p>
 This is the first development release after the 7.0x series. While
@@ -288,7 +288,7 @@ The following SourceForge bug numbers were open at the time of release:
 535997.
 
 
-<h2><a name="7.20_Incompatible_changes"></a>Incompatible changes</h2>
+<h3><a name="7.20_Incompatible_changes"></a>Incompatible changes</h3>
 
 <pre>
 (Interpreter)
@@ -317,7 +317,7 @@ Fixes problems:
 	- Check in corrected module after "admin -ko" change to prevent the
 $Id: lines from having the keyword replacement. This was broken for a LONG
 time. (doc/gsdoc.el [1.4]: 2002/02/22 19:08:29 ray)
-	- use UTC universally in the prerelease check script to avoid
+       - use UTC universally in the prerelease check script to avoid
 spurious errors due to timezone differences (doc/Bug-form.htm [1.25],
 doc/Bug-info.htm [1.24], doc/C-style.htm [1.30], doc/Commprod.htm [1.17],
 doc/Copying.htm [1.17], doc/Current.htm [1.17], doc/DLL.htm [1.19],
@@ -337,9 +337,9 @@ man/pdf2ps.1 [1.14], man/pdfopt.1 [1.12], man/pf2afm.1 [1.12],
 man/pfbtopfa.1 [1.13], man/printafm.1 [1.12], man/ps2ascii.1 [1.12],
 man/ps2epsi.1 [1.12], man/ps2pdf.1 [1.16], man/ps2pdfwr.1 [1.15],
 man/ps2ps.1 [1.19], man/wftopfa.1 [1.12]: 2002/03/29 00:44:34 giles)
-	- update the instructions for cvs2hist.py to reflect the new
-branch-sensitivity options. (doc/Release.htm [1.53]: 2002/03/29 07:42:04
-giles)
+       - update the instructions for cvs2hist.py to reflect the new
+branch-sensitivity options. (doc/Release.htm [1.53]: 2002/03/29
+07:42:04 giles)
 
 Adds a reference to the v7.xx History file. (doc/gs.css [1.2]: 2001/10/24
 22:33:38 giles)
@@ -356,8 +356,32 @@ Updates documentation on PDF problem files, removing non-POSIX compliant
 suggested workaround. Thanks to Paul Eggers for pointing out the problem.
 Fixes SF bug #521597. (doc/Use.htm [1.49]: 2002/03/29 04:25:13 raph)
 
+Updates release date for 7.20rc2 (doc/API.htm [1.21],
+doc/Bug-form.htm [1.26], doc/Bug-info.htm [1.25], doc/C-style.htm [1.31],
+doc/Commprod.htm [1.18], doc/Copying.htm [1.18], doc/Current.htm [1.18],
+doc/DLL.htm [1.20], doc/Develop.htm [1.70], doc/Devices.htm [1.44],
+doc/Drivers.htm [1.26], doc/Fonts.htm [1.27], doc/Helpers.htm [1.22],
+doc/History1.htm [1.18], doc/History2.htm [1.18], doc/History3.htm [1.18],
+doc/History4.htm [1.18], doc/History5.htm [1.20], doc/History6.htm [1.35],
+doc/Htmstyle.htm [1.23], doc/Install.htm [1.31], doc/Issues.htm [1.21],
+doc/Language.htm [1.46], doc/Lib.htm [1.20], doc/Maintain.htm [1.28],
+doc/Make.htm [1.48], doc/New-user.htm [1.35], doc/Projects.htm [1.41],
+doc/Ps-style.htm [1.16], doc/Ps2epsi.htm [1.20], doc/Ps2pdf.htm [1.39],
+doc/Psfiles.htm [1.30], doc/Readme.htm [1.37], doc/Source.htm [1.18],
+doc/Tester.htm [1.17], doc/Testing.htm [1.5], doc/Unix-lpr.htm [1.18],
+doc/Use.htm [1.50], doc/Xfonts.htm [1.18], doc/gs-vms.hlp [1.17],
+man/dvipdf.1 [1.13], man/font2c.1 [1.13], man/gs.1 [1.13],
+man/gslp.1 [1.13], man/gsnd.1 [1.13], man/pdf2dsc.1 [1.13],
+man/pdf2ps.1 [1.15], man/pdfopt.1 [1.13], man/pf2afm.1 [1.13],
+man/pfbtopfa.1 [1.14], man/printafm.1 [1.13], man/ps2ascii.1 [1.13],
+man/ps2epsi.1 [1.13], man/ps2pdf.1 [1.17], man/ps2pdfwr.1 [1.16],
+man/ps2ps.1 [1.20], man/wftopfa.1 [1.13]: 2002/03/31 00:32:38 giles)
+
 Document that other API programming examples are available on the
 ghostscript web site. (doc/API.htm [1.20]: 2002/03/29 08:15:59 ghostgum)
+
+further cleanups for release (doc/Release.htm [1.56]: 2002/03/31 00:45:57
+giles)
 
 </pre><h2><a name="7.20-Procedures"></a>Procedures</h2><pre>
 
@@ -366,7 +390,7 @@ Fixes problems:
 .runlibfile (suggested by Raymond J. Johnston), and increase MSVC compiler
 heap for building gs_init.c with COMPILE_INITS=1. Source Forge bug "[ 526192
 ] Broken COMPILE_INITS". (msvccmd.mak [1.9]: 2002/03/06 08:55:16 igor)
-	- base release date on UTC rather than local time
+       - base release date on UTC rather than local time
 (version.mak [1.43]: 2002/03/29 00:36:20 giles)
 	- use UTC universally in the prerelease check script to avoid
 spurious errors due to timezone differences (toolbin/pre.tcl [1.6]:
@@ -388,18 +412,17 @@ Cleans up a few loose ends from the transition to the new testing framework.
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (cfonts.mak [1.4], contrib.mak [1.26], cp.bat [1.3],
-cp.cmd [1.3], dvx-head.mak [1.4], dvx-tail.mak [1.7], dwmain.rc [1.4],
-dwsetup.rc [1.7], dwuninst.rc [1.5], gs16spl.rc [1.4], gsdll2.rc [1.4],
-gsdll32.rc [1.4], gsos2.rc [1.4], gspmdrv.rc [1.4], gswin.rc [1.4],
-icclib.mak [1.6], ijs.mak [1.6], jpeg.mak [1.6], msvctail.mak [1.8],
-mv.bat [1.3], mv.cmd [1.3], openvms.mmk [1.16], pcwin.mak [1.4],
-rm.bat [1.3], rm.cmd [1.3]: 2002/02/21 22:24:51 giles)
+cp.cmd [1.3], dvx-head.mak [1.4], dvx-tail.mak [1.7], gsdll2.rc [1.4],
+gsos2.rc [1.4], gspmdrv.rc [1.4], icclib.mak [1.6], ijs.mak [1.6],
+jpeg.mak [1.6], msvctail.mak [1.8], mv.bat [1.3], mv.cmd [1.3],
+openvms.mmk [1.16], pcwin.mak [1.4], rm.bat [1.3], rm.cmd [1.3]: 2002/02/21
+22:24:51 giles)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
-and Revision pair. (unix-aux.mak [1.7], unix-dll.mak [1.8],
-unix-end.mak [1.4], unixhead.mak [1.4], unixinst.mak [1.24],
-unixlink.mak [1.5], wccommon.mak [1.5], wctail.mak [1.6], winlib.mak [1.16],
-winplat.mak [1.4], wmin.mak [1.4]: 2002/02/21 22:24:54 giles)
+and Revision pair. (unix-dll.mak [1.8], unix-end.mak [1.4],
+unixhead.mak [1.4], unixinst.mak [1.24], unixlink.mak [1.5],
+wccommon.mak [1.5], wctail.mak [1.6], winlib.mak [1.16], winplat.mak [1.4],
+wmin.mak [1.4]: 2002/02/21 22:24:54 giles)
 
 Reverts to marking files with the single Id cvs tag instead of the RCSfile
 and Revision pair. (toolbin/3way.tcl [1.5], toolbin/bughunt.sh [1.3],
@@ -415,15 +438,15 @@ toolbin/makeset.tcl [1.13], toolbin/maketars [1.3],
 toolbin/maketars.tcl [1.3], toolbin/makewin [1.3],
 toolbin/makewin.tcl [1.3], toolbin/many2pdf.tcl [1.3],
 toolbin/pdfinflt.ps [1.3], toolbin/pre [1.14], toolbin/precheck.tcl [1.5],
-toolbin/smoke.ps [1.4], toolbin/suite.tcl [1.5],
-toolbin/tests/check_all.py [1.3], toolbin/tests/check_source.py [1.4],
-toolbin/tests/dump_testdb [1.3], toolbin/tests/gsconf.py [1.4],
-toolbin/tests/gsparamsets.py [1.3], toolbin/tests/gssum.py [1.3],
-toolbin/tests/gstestgs.py [1.5], toolbin/tests/gstestutils.py [1.3],
-toolbin/tests/make_testdb [1.4], toolbin/tests/make_two_versions [1.4],
-toolbin/tests/revert_baseline [1.4], toolbin/tests/run_nightly [1.3],
-toolbin/tests/run_regression [1.3], toolbin/tests/update_baseline [1.4],
-toolbin/tmake [1.3], toolbin/tmake.tcl [1.10]: 2002/02/21 22:44:45 giles)
+toolbin/suite.tcl [1.5], toolbin/tests/check_all.py [1.3],
+toolbin/tests/check_source.py [1.4], toolbin/tests/dump_testdb [1.3],
+toolbin/tests/gsconf.py [1.4], toolbin/tests/gsparamsets.py [1.3],
+toolbin/tests/gssum.py [1.3], toolbin/tests/gstestgs.py [1.5],
+toolbin/tests/gstestutils.py [1.3], toolbin/tests/make_testdb [1.4],
+toolbin/tests/make_two_versions [1.4], toolbin/tests/revert_baseline [1.4],
+toolbin/tests/run_nightly [1.3], toolbin/tests/run_regression [1.3],
+toolbin/tests/update_baseline [1.4], toolbin/tmake [1.3],
+toolbin/tmake.tcl [1.10]: 2002/02/21 22:44:45 giles)
 
 Implementing Visual Trace service to graphics library, and Visual Trace
 server for Windows. (gsdll32.def [1.3]: 2002/02/26 16:09:15 igor)
@@ -453,15 +476,45 @@ Updates the default version of the PNG library to the most-recent 1.2.1.
 Likewise updates references to the zlib version to the more recent 1.1.4,
 which includes an important security fix. Updates the default paths to the
 library source trees in all-arch.mak to reflect current usage.
-(all-arch.mak [1.12], bcwin32.mak [1.17], dvx-gcc.mak [1.17],
-macos-mcp.mak [1.7], macosx.mak [1.8], msvc32.mak [1.27],
-msvclib.mak [1.19], openvms.mak [1.22], os2.mak [1.23], ugcclib.mak [1.17],
-unix-gcc.mak [1.30], unixansi.mak [1.21], watc.mak [1.19],
+(all-arch.mak [1.12], macos-mcp.mak [1.7], msvc32.mak [1.27],
+msvclib.mak [1.19], openvms.mak [1.22], os2.mak [1.23], watc.mak [1.19],
 watclib.mak [1.17], watcw32.mak [1.17], zlib.mak [1.6]: 2002/03/29 00:19:09
 giles)
 
 update the documentation on supported libpng versions (libpng.mak [1.13]:
 2002/03/29 00:22:42 giles)
+
+Changes smoke.ps to use relative paths fromt he top level of the source
+tree. This is simpler than relying on the user having a global /gs alias
+(toolbin/smoke.ps [1.5]: 2002/03/29 08:59:22 giles)
+
+Replace Windows icons with new versions that include 48x48 pixel and 32-bit
+versions for Windows XP. Change the 16x16 pixel icons to use the full 'g'
+instead of just the head. Use a restricted icon gswin16.ico for WinZip SE
+which can't handle the new icon. (bcwin32.mak [1.18], dwmain.rc [1.5],
+dwsetup.rc [1.8], dwuninst.rc [1.6], gs16spl.rc [1.5], gsdll32.rc [1.5],
+gswin.rc [1.5], gswin32.rc [1.2], gswin386.rc [1.2], winint.mak [1.13]:
+2002/03/30 01:29:38 ghostgum)
+
+Adds support for compilation against a standard shared libjpeg. It is
+believed that non-baseline compliant DCTEncoded data, permitted by early
+versions of postscript, is now extremely rare and the prohibition against
+SHARE_JPEG=1 may reasonably be removed. The autoconf build will prefer a
+local copy of the jpeg source, in which case the D_MAX_BLOCKS_IN_MCU patch
+will still be applied. If no such local copy is found, it will try to find a
+shared library on the system. For all unix builds, if $(JSRCDIR)/jmemsys.h
+cannot be found, we define DONT_HAVE_JMEMSYS_H and include our own versions
+of the libjpeg memory manager prototypes. The default allocator in the
+shared library is overridden by the ghostscript one at link-time. While this
+may be implementation-dependent, it appears to function as desired on at
+least GNU/Linux and Solaris. Also changes the autoconf build to prefer local
+zlib and libpng source, and cleans up some variable names.
+(dvx-gcc.mak [1.18], macosx.mak [1.9], ugcclib.mak [1.18],
+unix-aux.mak [1.8], unix-gcc.mak [1.31], unixansi.mak [1.22]: 2002/03/30
+23:55:15 giles)
+
+Updates release date for 7.20rc2 (version.mak [1.44]: 2002/03/31 00:32:38
+giles)
 
 </pre><h2><a name="7.20-Utilities"></a>Utilities</h2><pre>
 
@@ -497,22 +550,22 @@ lib/level1.ps [1.4], lib/lines.ps [1.4], lib/lp386.bat [1.3],
 lib/lp386r2.bat [1.3], lib/lpgs.bat [1.4], lib/lpr2.bat [1.4],
 lib/lprsetup.sh [1.3], lib/markhint.ps [1.4], lib/markpath.ps [1.4],
 lib/packfile.ps [1.4], lib/pcharstr.ps [1.4], lib/pdf2dsc [1.5],
-lib/pdf2dsc.bat [1.4], lib/pdf2dsc.ps [1.6], lib/pdf2ps [1.6],
-lib/pdf2ps.bat [1.7], lib/pdf2ps.cmd [1.4], lib/pdfopt [1.6],
-lib/pdfopt.bat [1.6], lib/pdfopt.ps [1.13], lib/pdfwrite.ps [1.9],
-lib/pf2afm [1.4], lib/pf2afm.bat [1.5], lib/pf2afm.cmd [1.4],
-lib/pf2afm.ps [1.6], lib/pfbtopfa [1.5], lib/pfbtopfa.ps [1.4],
-lib/pftogsf.bat [1.4], lib/pj-gs.sh [1.3], lib/ppath.ps [1.4],
-lib/pphs [1.3], lib/pphs.ps [1.5], lib/prfont.ps [1.4], lib/printafm [1.3],
-lib/printafm.ps [1.4], lib/ps2ai.ps [1.4], lib/ps2ascii [1.6],
-lib/ps2ascii.bat [1.6], lib/ps2ascii.cmd [1.4], lib/ps2ascii.ps [1.6],
-lib/ps2epsi [1.9], lib/ps2epsi.bat [1.8], lib/ps2epsi.cmd [1.5],
-lib/ps2epsi.ps [1.7], lib/ps2pdf [1.3], lib/ps2pdf.bat [1.8],
-lib/ps2pdf.cmd [1.3], lib/ps2pdf12 [1.3], lib/ps2pdf12.bat [1.7],
-lib/ps2pdf12.cmd [1.3], lib/ps2pdf13 [1.3], lib/ps2pdf13.bat [1.7],
-lib/ps2pdf13.cmd [1.4], lib/ps2pdf14 [1.3], lib/ps2pdf14.bat [1.4],
-lib/ps2pdf14.cmd [1.3], lib/ps2pdfwr [1.9], lib/ps2pdfxx.bat [1.12],
-lib/ps2ps [1.5], lib/ps2ps.bat [1.6], lib/ps2ps.cmd [1.3], lib/pv.sh [1.3],
+lib/pdf2dsc.bat [1.4], lib/pdf2ps [1.6], lib/pdf2ps.bat [1.7],
+lib/pdf2ps.cmd [1.4], lib/pdfopt [1.6], lib/pdfopt.bat [1.6],
+lib/pdfopt.ps [1.13], lib/pdfwrite.ps [1.9], lib/pf2afm [1.4],
+lib/pf2afm.bat [1.5], lib/pf2afm.cmd [1.4], lib/pf2afm.ps [1.6],
+lib/pfbtopfa [1.5], lib/pfbtopfa.ps [1.4], lib/pftogsf.bat [1.4],
+lib/pj-gs.sh [1.3], lib/ppath.ps [1.4], lib/pphs [1.3], lib/pphs.ps [1.5],
+lib/prfont.ps [1.4], lib/printafm [1.3], lib/printafm.ps [1.4],
+lib/ps2ai.ps [1.4], lib/ps2ascii [1.6], lib/ps2ascii.bat [1.6],
+lib/ps2ascii.cmd [1.4], lib/ps2ascii.ps [1.6], lib/ps2epsi [1.9],
+lib/ps2epsi.bat [1.8], lib/ps2epsi.cmd [1.5], lib/ps2epsi.ps [1.7],
+lib/ps2pdf [1.3], lib/ps2pdf.bat [1.8], lib/ps2pdf.cmd [1.3],
+lib/ps2pdf12 [1.3], lib/ps2pdf12.bat [1.7], lib/ps2pdf12.cmd [1.3],
+lib/ps2pdf13 [1.3], lib/ps2pdf13.bat [1.7], lib/ps2pdf13.cmd [1.4],
+lib/ps2pdf14 [1.3], lib/ps2pdf14.bat [1.4], lib/ps2pdf14.cmd [1.3],
+lib/ps2pdfwr [1.9], lib/ps2pdfxx.bat [1.12], lib/ps2ps [1.5],
+lib/ps2ps.bat [1.6], lib/ps2ps.cmd [1.3], lib/pv.sh [1.3],
 lib/rollconv.ps [1.3], lib/showchar.ps [1.4], lib/stcinfo.ps [1.4],
 lib/stcolor.ps [1.4], lib/stocht.ps [1.6], lib/sysvlp.sh [1.3],
 lib/traceimg.ps [1.4], lib/traceop.ps [1.4], lib/type1enc.ps [1.4],
@@ -548,6 +601,9 @@ FAPI project : Changing the logics of loading GS fonts with FAPI : now all
 fonts listed in fontmap are being loaded with GS font loader and then are
 passed to FAPI in same way as embedded fonts. (lib/FAPIconfig [1.5]:
 2002/02/26 17:49:12 igor)
+
+Adds DELAYSAFER/.setsafe logic to pdf2dsc output, as needed for a security
+update to gv. (lib/pdf2dsc.ps [1.7]: 2002/03/30 23:39:15 raph)
 
 </pre><h2><a name="7.20-Drivers"></a>Drivers</h2><pre>
 
@@ -662,8 +718,11 @@ Broken COMPILE_INITS". (lib/gs_fapi.ps [1.16]: 2002/03/13 15:55:47 igor)
 	- Fixes a number of problems with Type11 incremental glyph loading
 with MetricsCount=2. Thanks to Brian Stell for the patch. (zchar42.c [1.7],
 zfcid1.c [1.10]: 2002/03/26 08:37:14 raph)
-	- Cleanup some casting and other compiler warnings (minor).
+       - Cleanup some casting and other compiler warnings (minor).
 (zfile.c [1.20]: 2002/03/29 04:37:50 ray)
+	- Botched macro spelling in prototype corrected, also removing the
+incorrect 'private' keyword. Clean up two *++esp; statements that gave gcc
+warnings. (zfile.c [1.21]: 2002/03/29 18:04:04 ray)
 
 Changes the extension of the tiger and golfer example files to '.eps' to
 accurately reflect their internal filetype. (examples/golfer.eps [1.1],
@@ -828,15 +887,30 @@ sdct.h [1.6], sdctc.c [1.4], sdctd.c [1.4], sdcte.c [1.7], sddparam.c [1.4],
 sdeparam.c [1.6], seexec.c [1.6], sfilter.h [1.8], sfilter2.c [1.5],
 sfxboth.c [1.4], sfxfd.c [1.8], sfxstdio.c [1.6], shc.c [1.4], shc.h [1.4],
 siinterp.c [1.4], siinterp.h [1.4], siscale.c [1.6], siscale.h [1.4],
-sisparam.h [1.4], sjpeg.h [1.4], sjpegc.c [1.6], sjpegd.c [1.5],
-sjpege.c [1.5], slzwc.c [1.4], slzwce.c [1.4], slzwd.c [1.5], slzwx.h [1.4],
-smd5.c [1.5], smd5.h [1.4], spdiff.c [1.5], spdiffx.h [1.4], spngp.c [1.4],
+sisparam.h [1.4], sjpeg.h [1.4], sjpegd.c [1.5], sjpege.c [1.5],
+slzwc.c [1.4], slzwce.c [1.4], slzwd.c [1.5], slzwx.h [1.4], smd5.c [1.5],
+smd5.h [1.4], spdiff.c [1.5], spdiffx.h [1.4], spngp.c [1.4],
 spngpx.h [1.4], spprint.c [1.6], spprint.h [1.5], spsdf.c [1.7],
 spsdf.h [1.4], srdline.h [1.4], srld.c [1.4], srle.c [1.4], srlx.h [1.5],
 sstring.c [1.4], sstring.h [1.6], stat_.h [1.8], std.h [1.7],
 stdio_.h [1.6], stdpre.h [1.7], stream.c [1.18], stream.h [1.10],
 strimpl.h [1.5], string_.h [1.4], szlibc.c [1.5], szlibd.c [1.5],
 szlibe.c [1.4], szlibx.h [1.4], szlibxx.h [1.4]: 2002/02/21 22:24:53 giles)
+
+Adds support for compilation against a standard shared libjpeg. It is
+believed that non-baseline compliant DCTEncoded data, permitted by early
+versions of postscript, is now extremely rare and the prohibition against
+SHARE_JPEG=1 may reasonably be removed. The autoconf build will prefer a
+local copy of the jpeg source, in which case the D_MAX_BLOCKS_IN_MCU patch
+will still be applied. If no such local copy is found, it will try to find a
+shared library on the system. For all unix builds, if $(JSRCDIR)/jmemsys.h
+cannot be found, we define DONT_HAVE_JMEMSYS_H and include our own versions
+of the libjpeg memory manager prototypes. The default allocator in the
+shared library is overridden by the ghostscript one at link-time. While this
+may be implementation-dependent, it appears to function as desired on at
+least GNU/Linux and Solaris. Also changes the autoconf build to prefer local
+zlib and libpng source, and cleans up some variable names. (sjpegc.c [1.7]:
+2002/03/30 23:55:15 giles)
 
 </pre><h2><a name="7.20-Library"></a>Library</h2><pre>
 
@@ -1028,10 +1102,12 @@ Update release dates in preparation of the upcoming development release
 </pre><h2><a name="7.20-Other"></a>Other</h2><pre>
 
 Fixes problems:
-	- verify that our default collection of compiler switches
+       - verify that our default collection of compiler switches
 (gcc-specific) work before using them. This allows the autoconf build to
 work with non-gcc compilers. Completes the fix for SF Bug #514898.
 (Makefile.in [1.9], configure.ac [1.10]: 2002/03/28 23:15:53 giles)
+	- 'echo -n' isn't portable. (configure.ac [1.15]: 2002/03/31
+00:26:43 giles)
 
 Removes the check for an install program, since it unfortunately errors out
 if the local fallback install-sh script from automake isn't present. We
@@ -1062,6 +1138,27 @@ and Revision pair. (gp_mac.h [1.4], gp_mswin.h [1.6], gsdll.h [1.6],
 gsdllos2.h [1.4], gsdllwin.h [1.5], gsjmorec.h [1.5], gspmdrv.h [1.4],
 iutilasm.asm [1.4], macsysstat.h [1.4], macsystypes.h [1.4],
 vms_x_fix.h [1.5]: 2002/02/21 22:24:52 giles)
+
+Replace Windows icons with new versions that include 48x48 pixel and 32-bit
+versions for Windows XP. Change the 16x16 pixel icons to use the full 'g'
+instead of just the head. Use a restricted icon gswin16.ico for WinZip SE
+which can't handle the new icon. (gswin.icx [1.1], gswin16.icx [1.1]:
+2002/03/30 01:29:38 ghostgum)
+
+Adds support for compilation against a standard shared libjpeg. It is
+believed that non-baseline compliant DCTEncoded data, permitted by early
+versions of postscript, is now extremely rare and the prohibition against
+SHARE_JPEG=1 may reasonably be removed. The autoconf build will prefer a
+local copy of the jpeg source, in which case the D_MAX_BLOCKS_IN_MCU patch
+will still be applied. If no such local copy is found, it will try to find a
+shared library on the system. For all unix builds, if $(JSRCDIR)/jmemsys.h
+cannot be found, we define DONT_HAVE_JMEMSYS_H and include our own versions
+of the libjpeg memory manager prototypes. The default allocator in the
+shared library is overridden by the ghostscript one at link-time. While this
+may be implementation-dependent, it appears to function as desired on at
+least GNU/Linux and Solaris. Also changes the autoconf build to prefer local
+zlib and libpng source, and cleans up some variable names.
+(Makefile.in [1.12]: 2002/03/30 23:55:15 giles)
 
 <hr>
 
