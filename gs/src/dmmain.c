@@ -668,12 +668,17 @@ void main(void)
     code = gsapi_init_with_args(instance, argc, argv);
     if (code == 0)
        code = gsapi_run_string(instance, start_string, 0, &exit_code);
-    else
+    else 
     {
        printf("Failed to initialize. Error %d.\n", code);
        fflush(stdout);
     }
-    gsapi_exit(instance);
+    code = gsapi_exit(instance);
+    if (code != 0) 
+    {
+       printf("Failed to terminate. Error %d.\n", code);
+       fflush(stdout);
+    }
 
     gsapi_delete_instance(instance);
 

@@ -139,6 +139,7 @@ int GSDLLEXPORT GSDLLAPI
 gsdll_exit(void)
 {
     int code = gsapi_exit(gs_main_instance_default());
+
     gsapi_delete_instance(gs_main_instance_default());
     return code;
 }

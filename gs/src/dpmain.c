@@ -1052,7 +1052,7 @@ main(int argc, char *argv[])
 	if (code == 0) 
 	    code = gsdll.run_string(instance, start_string, 0, &exit_code);
 	code1 = gsdll.exit(instance);
-	if (code == 0 || code == e_Quit)
+	if (code == 0 || (code == e_Quit && code1 != 0))
 	    code = code1;
 
 	gsdll.delete_instance(instance);
