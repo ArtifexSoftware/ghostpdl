@@ -405,6 +405,43 @@ the functions are very non-linear (which we have actually seen in practice).
 severely non-linear, since interpreting the function definition will almost
 always be much slower than interpolating in the table.</I>
 
+<h3>Replace PostScript procedures with Function objects.</h3>
+
+<p>
+Currently, there is a lot of tiresome code for doing callbacks with
+continuations for loading the caches that hold sampled values for the
+procedures listed under "Change sampled functions ..." above.  For the
+Separation and DeviceN tint transform functions, and only for these,
+PostScript code associated with the setcolorspace operator actually converts
+the PostScript procedure to a Function object -- to a FunctionType 4
+(PostScript subset) Function if possible, or to a FunctionType 0 (sampled)
+Function if not.  This approach should be used for all the other sampled
+functions.  Doing this would reduce the amount of C code significantly,
+while only increasing PostScript code slightly.
+
+<p>
+This change would require touching (and slightly changing) all PostScript
+operators that currently do such callbacks: for example, rather than a
+setblackgeneration operator that takes a PostScript procedure as its
+operand, we would have a .setblackgeneration operator that takes as operands
+both the PostScript procedure (so that currentblackgeneration can return it)
+*and* a Function derived from it (which will actually be used when loading
+the cache, or for sampling directly if desired).
+
+<p>
+In some cases, this approach has a non-negligible space cost.  If the
+PostScript procedure cannot be represented as a FunctionType 4 Function, it
+must be sampled and represented as a FunctionType 0 Function.  Then the BG /
+UCR / transfer / ... cache will essentially just hold a copy of the Function
+data.  While it is likely that this situation will be rare in practice, it
+might be worth looking into changing the internal representation of these
+caches so that they were the same as the representation of a FunctionType 0
+Function with a particular choice of parameters.  Then the PostScript code
+that called .buildsampledfunction when necessary could arrange the
+parameters to have the same values as the internal representation of the
+cache, and the cache could use the Function data directly.  This is probably
+not worth the trouble.
+
 <h3>Add optional cubic interpolation to RenderTable and other table
 lookup.</h3>
 
