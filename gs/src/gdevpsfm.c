@@ -317,7 +317,6 @@ psf_is_identity_cmap(const gs_cmap_t *pcmap)
 	if (lenum.entry.font_index != font_index)
 	    return false;
 	while (gs_cmap_enum_next_entry(&lenum) == 0) {
-	    int j;
 	    ulong key = 0, value = 0;
 
 	    switch (lenum.entry.value_type) {

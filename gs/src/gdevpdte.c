@@ -180,7 +180,7 @@ process_text_estimate_bbox(gs_text_enum_t *pte, gs_font_base *font,
     gs_matrix_multiply(pfmat, &m, &m);
     for (i = 0; i < pstr->size; ++i) {
 	byte c = pstr->data[i];
-	gs_rect bbox, bbox1;
+	gs_rect bbox;
 	gs_point wanted, tpt, p0, p1, p2, p3;
 	gs_glyph glyph = font->procs.encode_char((gs_font *)font, c, 
 					GLYPH_SPACE_NAME);
@@ -195,14 +195,14 @@ process_text_estimate_bbox(gs_text_enum_t *pte, gs_font_base *font,
 	gs_point_transform(font->FontBBox.p.x, font->FontBBox.q.y, &m, &p1);
 	gs_point_transform(font->FontBBox.q.x, font->FontBBox.p.y, &m, &p2);
 	gs_point_transform(font->FontBBox.q.x, font->FontBBox.q.y, &m, &p3);
-	bbox1.p.x = min(min(p0.x, p1.x), min(p1.x, p2.x)) + total.x;
-	bbox1.p.y = min(min(p0.y, p1.y), min(p1.y, p2.y)) + total.y;
-	bbox1.q.x = max(max(p0.x, p1.x), max(p1.x, p2.x)) + total.x;
-	bbox1.q.y = max(max(p0.y, p1.y), max(p1.y, p2.y)) + total.y;
+	bbox.p.x = min(min(p0.x, p1.x), min(p1.x, p2.x)) + total.x;
+	bbox.p.y = min(min(p0.y, p1.y), min(p1.y, p2.y)) + total.y;
+	bbox.q.x = max(max(p0.x, p1.x), max(p1.x, p2.x)) + total.x;
+	bbox.q.y = max(max(p0.y, p1.y), max(p1.y, p2.y)) + total.y;
 	if (i == 0)
-	    *text_bbox = bbox1;
+	    *text_bbox = bbox;
 	else
-	    rect_merge(*text_bbox, bbox1);
+	    rect_merge(*text_bbox, bbox);
 	if (pte->text.operation & TEXT_REPLACE_WIDTHS) {
 	    gs_text_replaced_width(&pte->text, xy_index++, &tpt);
 	    gs_distance_transform(tpt.x, tpt.y, &ctm_only(pte->pis), &wanted);
