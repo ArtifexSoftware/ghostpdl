@@ -319,7 +319,7 @@ color space specified by <b><tt>ProcessColorModel</tt></b> rather than
 always to <b><tt>/DeviceRGB</tt></b>.
 
 <p>
-The following "job control" parameters are recognized, but have no effect:
+The following "job control" parameters are recognized:
 
 <blockquote><table cellpadding=0 cellspacing=0>
 <tr valign=bottom>
@@ -327,15 +327,19 @@ The following "job control" parameters are recognized, but have no effect:
 	<td>&nbsp;&nbsp;
 	<th align=left>Initial value
 <tr>	<td colspan=5><hr>
-<tr valign=top><td><b><tt>AutoPositionEPSFiles</tt></b><td><td>false
-<tr valign=top><td><b><tt>CreateJobTicket</tt></b><td><td>false
+<tr valign=top><td><b><tt>AutoPositionEPSFiles</tt></b><td><td>true
+<tr valign=top><td><b><tt>CreateJobTicket</tt></b><td><td>false for default or screen, true for printer or prepress
 <tr valign=top><td><b><tt>EmitDSCWarnings</tt></b><td><td>false
-<tr valign=top><td><b><tt>ParseDSCComments</tt></b><td><td>false
-<tr valign=top><td><b><tt>ParseDSCCommentsForDocInfo</tt></b><td><td>false
-<tr valign=top><td><b><tt>PreserveCopyPage</tt></b><td><td>false
-<tr valign=top><td><b><tt>PreserveEPSInfo</tt></b><td><td>false
+<tr valign=top><td><b><tt>ParseDSCComments</tt></b><td><td>true
+<tr valign=top><td><b><tt>ParseDSCCommentsForDocInfo</tt></b><td><td>true
+<tr valign=top><td><b><tt>PreserveCopyPage</tt></b><td><td>true
+<tr valign=top><td><b><tt>PreserveEPSInfo</tt></b><td><td>true
 <tr valign=top><td><b><tt>UsePrologue</tt></b><td><td>false
 </table></blockquote>
+
+<p>
+The only one of these that currently has any effect is
+<b><tt>ParseDSCCommentsForDocInfo</tt></b>.
 
 <hr>
 
@@ -343,10 +347,11 @@ The following "job control" parameters are recognized, but have no effect:
 
 <p>
 <b><tt>ps2pdf</tt></b> will sometimes convert text to high-resolution
-bitmapped fonts rather than to embedded outline fonts.  Currently, this will
-always occur when the PostScript file uses CID-keyed or double-byte fonts,
-when the input file uses <b><tt>kshow</tt></b>, or in some cases if it uses
-fonts with non-standard encodings; it may occur in other cases as well.
+bitmapped fonts rather than to embedded outline fonts.  This will occur when
+the PostScript file uses Type 3, CIDFontType 1, or CIDFontType 4 fonts, or
+Type 0 fonts that reference any of these; it may also occur in some cases if
+the input file uses fonts with non-standard encodings, or in some other rare
+cases.
 
 <p>
 The PDF output always represents the colors of text and graphics in
@@ -449,7 +454,7 @@ output, especially if the input file involves pattern fills.
 
 <p>
 Many users report that the combination of <b><tt>ps2pdf</tt></b> with
-Acrobat is superior to using a generic PostScript viewer
+Acrobat Reader is superior to using a generic PostScript viewer
 (<b><tt>psview</tt></b> or <b><tt>ghostview</tt></b>), particularly for
 documents with many pages where the navigational support in PDF files
 reduces the overhead involved in navigating conventional PostScript
