@@ -19,6 +19,17 @@
 /* Import the RTL implementation of ESC % # A. */
 extern pcl_command_proc(rtl_enter_pcl_mode);
 
+/* This routine should only be used by the pcl reset command.  We
+   implicitly enter pcl mode if an ESC E is embedded in the gl/2
+   stream. */
+ int
+pcl_implicit_gl2_finish(pcl_state_t *pcs)
+{
+    pcs->parse_other = 0;
+    hpgl_call(hpgl_draw_current_path(pcs, hpgl_rm_vector));
+    return 0;
+}
+
 /* Even though these are PCL commands, */
 /* they are only relevant to HPGL. */
 
