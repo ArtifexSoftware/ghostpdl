@@ -411,12 +411,13 @@ $(devs_tr) : $(GS_MAK) $(TOP_MAKEFILES) $(ECHOGS_XE)
 GCONFIG_EXTRAS=
 
 ld_tr=$(GLGENDIR)$(D)ld.tr
-$(gconfig_h) : \
+$(ld_tr) : \
   $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)$(D)version.mak $(GENCONF_XE) $(ECHOGS_XE) $(devs_tr) $(DEVS_ALL) $(GLGENDIR)$(D)libcore.dev
 	$(EXP)$(GENCONF_XE) $(devs_tr) -h $(gconfig_h) $(CONFILES) $(CONFLDTR) $(ld_tr)
 	$(EXP)$(ECHOGS_XE) -a $(gconfig_h) $(GCONFIG_EXTRAS)
 
-$(ld_tr) : $(gconfig_h)
+$(gconfig_h) : $(ld_tr)
+	$(NO_OP)
 	
 # The line above is an empty command; don't delete.
 
