@@ -1,26 +1,26 @@
 % xlatmap - the map of translation tables for various kinds of fonts.
 %
-% It specifies Deconings to be used with FAPI-handled fonts.
-% If a font contain multiple character mapping tables,
-% this gives priorities for choosing a specific table from the font -
-% just using the order of entries of this map.
+% It specifies character encodings to be used with FAPI-handled fonts.
+% If a font contains multiple character mapping tables, this gives 
+% priorities for choosing a specific table from the font according to
+% the order of entries of this map.
 
-% This file is allowed to customize by users without special agrement.
-% Please keep obvious format of this file.
-% Stings and manes must not contain zero bytes and must not be empty.
+% This file is intended to be customized by users. Please keep the 
+% obvious format of this file. Strings and names must not be empty
+% and must not contain null ('\0') characters.
 
 % $Id$
 
-% The map contains entries for each kind of fonts, being handled by
-% any font rendering plugin. The key of the entry is
-% the kind of fonts. The value is array of pairs.
+% The map contains entries for each kind of font being handled by
+% any font rendering plugin. The key of an entry is the font type
+% and the value is array of pairs.
 % The first element of pair is a string which encodes identifier of
-% character mapping table. The format of the first element 
-% depends on the kind of fonts, and should be recognized by
-% font rendering plugins. The second element is name of
-% Decoding resource. If resource is not available,
-% definefont will fail. Note that currently we supply insufficient
-% decoding resources, as well as insufficient entries in this map.
+% character mapping table. The format of the first element depends
+% on the font type, and should be recognized by the font rendering 
+% plugins. The second element is name of the Decoding resource. If 
+% that resource is not available, definefont will fail. Note that 
+% currently we supply insufficient decoding resources, as well as 
+% insufficient entries in this map.
 
 /TrueType
 [ % Each entry is pair :
