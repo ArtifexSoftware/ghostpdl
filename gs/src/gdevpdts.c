@@ -186,7 +186,8 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	    dw = dist.y, dnotw = dist.x;
 	else
 	    dw = dist.x, dnotw = dist.y;
-	dw -= pts->in.character_spacing;
+	if (dnotw == 0 && dw == pts->in.character_spacing)
+	    goto finish;
 	if (dnotw == 0 && dw == (int)dw && pdfont != 0 &&
 	    pdfont->FontType == ft_user_defined
 	    ) {
