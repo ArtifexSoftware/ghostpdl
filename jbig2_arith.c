@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_arith.c,v 1.12 2002/08/06 11:15:29 giles Exp $
+    $Id: jbig2_arith.c,v 1.13 2002/08/14 10:25:59 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -190,7 +190,7 @@ jbig2_arith_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
   result->A = 0x8000;
 
   return result;
-};
+}
 
 /* could put bit fields in to minimize memory usage */
 typedef struct {
