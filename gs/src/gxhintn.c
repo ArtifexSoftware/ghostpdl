@@ -1478,8 +1478,6 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
                         else { 
 #                           if ADOBE_OVERSHOOT_COMPATIBILIY
                                 t1_hinter__add_overshoot(this, zone, &gx, &gy);
-#                           else
-                                gy = (zone->type == topzone ? zone->y + ss : zone->y - ss);
 #                           endif
                         }
 		    }
