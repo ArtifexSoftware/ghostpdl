@@ -77,7 +77,7 @@ void gx_set_cmap_procs(P2(gs_imager_state *, const gx_device *));
  * -dForceMono= !0 will prevent the unset operation.  
  * The return can be used to match the halftoning scheme to the color mapping.
  */
-bool gx_set_cmap_procs_to_gray(gs_imager_state * pis, gx_device * dev, bool gray);
+bool gx_set_cmap_procs_to_gray(gs_imager_state * pis, const gx_device * dev, bool gray);
 
 
 /* Remap a concrete (frac) gray, RGB or CMYK color. */
