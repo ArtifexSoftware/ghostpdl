@@ -701,7 +701,7 @@ $(GLOBJ)gdevokii.$(OBJ) : $(GLSRC)gdevokii.c $(PDEVH)
 ### This driver was contributed by a user: please contact                ###
 ###	Zoltan Kocsi (zoltan@bendor.com.au) if you have questions.       ###
 
-photoex_=$(GLOBJ)gdevokii.$(OBJ)
+photoex_=$(GLOBJ)gdevphex.$(OBJ)
 $(DD)photoex.dev : $(photoex_) $(DD)page.dev
 	$(SETPDEV) $(DD)photoex $(photoex_)
 
