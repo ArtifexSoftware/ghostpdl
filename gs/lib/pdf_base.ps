@@ -512,10 +512,14 @@ pdfdict begin
   } {
     not { null } if
   } ifelse
-    /endstream ne { 
-      (   **** PDF format error: stream Length incorrect.\n) pdfformaterror
-      exit % exit from .pdfrun now.
-    } if
+  dup /endobj eq {
+    (   **** PDF format error: stream Length incorrect.\n) pdfformaterror
+    pop /endstream		% fake a valid endstream
+  } if
+  /endstream ne { 
+    (   **** PDF format error: stream Length incorrect.\n) pdfformaterror
+    exit % exit from .pdfrun now.
+  } if
   cvx
 } bind def
 /endstream {
