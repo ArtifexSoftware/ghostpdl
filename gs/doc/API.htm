@@ -153,19 +153,19 @@ int
 <li><b><tt>
 int 
 <a href="#new_instance">gsapi_new_instance</a>
-(gs_main_instance **pinstance, void *caller_handle);
+(void **pinstance, void *caller_handle);
 </tt></b>
 
 <li><b><tt>
 void 
 <a href="#delete_instance">gsapi_delete_instance</a>
-(gs_main_instance *instance);
+(void *instance);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#set_stdio">gsapi_set_stdio</a>
-(gs_main_instance *instance,
+(void *instance,
     int(*stdin_fn)(void *caller_handle, char *buf, int len),
     int(*stdout_fn)(void *caller_handle, const char *str, int len),
     int(*stderr_fn)(void *caller_handle, const char *str, int len));
@@ -174,65 +174,65 @@ int
 <li><b><tt>
 int 
 <a href="#set_poll">gsapi_set_poll</a>
-(gs_main_instance *instance, int(*poll_fn)(void *caller_handle));
+(void *instance, int(*poll_fn)(void *caller_handle));
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#set_display_callback">gsapi_set_display_callback</a>
-(gs_main_instance *instance, display_callback *callback);
+(void *instance, display_callback *callback);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#init">gsapi_init_with_args</a>
-(gs_main_instance *instance, int argc, char **argv);
+(void *instance, int argc, char **argv);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#run">gsapi_run_string_begin</a>
-(gs_main_instance *instance, int user_errors, int *pexit_code);
+(void *instance, int user_errors, int *pexit_code);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#run">gsapi_run_string_continue</a>
-(gs_main_instance *instance, 
+(void *instance, 
     const char *str, unsigned int length, int user_errors, int *pexit_code);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#run">gsapi_run_string_end</a>
-(gs_main_instance *instance, int user_errors, int *pexit_code);
+(void *instance, int user_errors, int *pexit_code);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#run">gsapi_run_string_with_length</a>
-(gs_main_instance *instance, 
+(void *instance, 
     const char *str, unsigned int length, int user_errors, int *pexit_code);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#run">gsapi_run_string</a>
-(gs_main_instance *instance, 
+(void *instance, 
     const char *str, int user_errors, int *pexit_code);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#run">gsapi_run_file</a>
-(gs_main_instance *instance, 
+(void *instance, 
     const char *file_name, int user_errors, int *pexit_code);
 </tt></b>
 
 <li><b><tt>
 int 
 <a href="#exit">gsapi_exit</a>
-(gs_main_instance *instance);
+(void *instance);
 </tt></b>
 
 <li><b><tt>
@@ -455,7 +455,7 @@ same directory as the example source.</p>
 #include "ierrors.h"
 #include "iapi.h"
 
-gs_main_instance *minst;
+void *minst;
 
 int main(int argc, char *argv[])
 {
@@ -542,7 +542,7 @@ gsdll_stderr(void *instance, const char *str, int len)
     return len;
 }
 
-gs_main_instance *minst;
+void *minst;
 const char start_string[] = "systemdict /start get exec\n";
 
 int main(int argc, char *argv[])
@@ -706,6 +706,12 @@ Some examples are in
 <b><tt><a href="../src/dpmain.c">dpmain.c</a></tt></b> (OS/2) and  
 <b><tt><a href="../src/dxmain.c">dxmain.c</a></tt></b> (X11/Linux), and  
 <b><tt><a href="../src/dmmain.c">dmmain.c</a></tt></b> (MacOS Classic or Carbon).  
+<p>
+On some platforms, the calling convention for the display device callbacks in 
+<b><tt><a href="../src/gdevdsp.h">gdevdsp.h</a></tt></b>
+is not the same as the exported 
+<a href="#Exported_functions "><b><tt>gsapi_*()</tt></b></a>
+functions in <a href="../src/iapi.h"><b><tt>iapi.h</tt></b></a>.
 
 <p>
 
@@ -716,7 +722,7 @@ Some examples are in
 
 
 <p>
-<small>Copyright &copy; 2003 artofcode LLC.  All rights reserved.</small>
+<small>Copyright &copy; 2000-2004 artofcode LLC.  All rights reserved.</small>
 
 <p>
 This software is provided AS-IS with no warranty, either express or
