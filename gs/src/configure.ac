@@ -73,9 +73,37 @@ AC_STRUCT_TM
 
 dnl we aren't interested in all of DEFS, so manually insert
 dnl the flags we care about
-if test "$ac_cv_c_const" = yes; then
-	GCCFLAGS="$GCCFLAGS -Dconst="
+if test "$ac_cv_c_const" != yes; then
+	GCFLAGS="$GCFLAGS -Dconst="
 fi
+
+dnl try to find a 64 bit type for devicen color index
+uint64_type="none"
+ AC_CHECK_SIZEOF(unsigned long int)
+ if test $ac_cv_sizeof_unsigned_long_int = 8; then
+	uint64_type="unsigned long int"
+ else
+  AC_CHECK_SIZEOF(unsigned long long)
+  if test $ac_cv_sizeof_unsigned_long_long = 8; then
+	uint64_type="unsigned long long"
+  else
+   AC_CHECK_SIZEOF(unsigned __int64)
+   if test $ac_cv_sizeof_unsigned___int64 = 8; then
+	uint64_type="unsigned __int64"
+   else
+    AC_CHECK_SIZEOF(u_int64_t)
+    if test $ac_cv_sizeof_u_int64_t = 8; then
+	unit64_type="u_int64_t"
+    fi
+   fi
+  fi
+ fi
+dnl we don't need to do anything if a 64-bit type wasn't found
+dnl the code falls back to a (probably 32-bit) default
+if test "$uint64_type" != "none"; then
+	GCFLAGS="$GCFLAGS -DGX_COLOR_INDEX_TYPE=\"$uint64_type\""
+fi
+
 
 dnl --------------------------------------------------
 dnl Check for libraries
