@@ -709,7 +709,7 @@ end readonly def
     dup /XObject knownoget {
       false exch {
 	exch pop oforce dup /Subtype get
-	dup /Image eq { pop /SMask known { not exit } if } if
+	dup /Image eq { 1 index /SMask known { pop pop not exit } if } if
 	/Form eq {
 	  dup /Group known { pop not exit } if
 	  resourceusestransparency { not exit } if
