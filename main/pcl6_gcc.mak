@@ -82,7 +82,7 @@ AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ 
 endif
 
 ifeq ($(PL_SCALER), fts)
-LDFLAGS=
+XLDFLAGS=
 EXTRALIBS=-lfreetype
 # the second include is to find ftbuild.h referenced in the FT
 # tutorial.
@@ -133,7 +133,7 @@ DEVICE_DEVS=$(DEVICES_DEVS)
 else
 SYNC=posync
 STDLIBS=-lm -lpthread
-DEVICE_DEVS=$(DD)x11alpha.dev $(DD)x11.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev
+DEVICE_DEVS=$(DD)x11.dev $(DD)x11alpha.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev $(DD)bmpa16m.dev
 endif
 
 # Generic makefile
