@@ -72,8 +72,9 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
     gs_color_space cs;
     ref_colorspace cspace_old;
     uint edepth = ref_stack_count(&e_stack);
-    gs_indexed_map *map;
-    ref sname;
+    gs_indexed_map *map = 0;
+    ref sname, tname1, tname2;
+    bool need_map;
     int code;
 
     check_read_type(*op, t_array);
@@ -92,16 +93,27 @@ zsetseparationspace(i_ctx_t *i_ctx_p)
 	case t_name:
 	    break;
     }
+
+    if ((code = name_ref((const byte *)"All", 3, &tname1, -1)) < 0)
+	return code;
+    if ((code = name_ref((const byte *)"None", 4, &tname2, -1)) < 0)
+	return code;
+    need_map = ( !name_eq(&sname, &tname1) && !name_eq(&sname, &tname2) );
+
     check_proc(pcsa[2]);
     cs = *gs_currentcolorspace(igs);
     if (!cs.type->can_be_alt_space)
 	return_error(e_rangecheck);
-    code = zcs_begin_map(i_ctx_p, &map, &pcsa[2], SEPARATION_CACHE_SIZE + 1,
-			 (const gs_direct_color_space *)&cs,
-			 separation_map1);
-    if (code < 0)
-	return code;
-    map->proc.tint_transform = lookup_tint;
+
+    if (need_map) {
+	code = zcs_begin_map(i_ctx_p, &map, &pcsa[2], SEPARATION_CACHE_SIZE + 1,
+			     (const gs_direct_color_space *)&cs,
+			     separation_map1);
+	if (code < 0)
+	    return code;
+        map->proc.tint_transform = lookup_tint;
+    }
+
     /* See zcsindex.c for why we use memmove here. */
     memmove(&cs.params.separation.alt_space, &cs,
 	    sizeof(cs.params.separation.alt_space));

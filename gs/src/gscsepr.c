@@ -19,6 +19,8 @@
 /*$Id$ */
 /* Separation color space and operation definition */
 #include "memory_.h"
+#include "iref.h"
+#include "iname.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc.h"
@@ -43,6 +45,7 @@ private cs_proc_init_color(gx_init_Separation);
 private cs_proc_concrete_space(gx_concrete_space_Separation);
 private cs_proc_concretize_color(gx_concretize_Separation);
 private cs_proc_remap_concrete_color(gx_remap_concrete_Separation);
+private cs_proc_remap_color(gx_remap_Separation);
 private cs_proc_install_cspace(gx_install_Separation);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Separation);
 const gs_color_space_type gs_color_space_type_Separation = {
@@ -52,7 +55,7 @@ const gs_color_space_type gs_color_space_type_Separation = {
     gx_init_Separation, gx_restrict01_paint_1,
     gx_concrete_space_Separation,
     gx_concretize_Separation, gx_remap_concrete_Separation,
-    gx_default_remap_color, gx_install_Separation,
+    gx_remap_Separation, gx_install_Separation,
     gx_adjust_cspace_Separation, gx_no_adjust_color_count
 };
 
@@ -350,15 +353,49 @@ gx_init_Separation(gs_client_color * pcc, const gs_color_space * pcs)
 /* Remap a Separation color. */
 
 private int
+gx_remap_Separation(const gs_client_color * pcc, const gs_color_space * pcs,
+	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
+		       gs_color_select_t select)
+{   ref sname;
+    int code;
+    if ((code = name_ref((const byte *)"None", 4, &sname, -1)) < 0)
+	return code;
+    if (pcs->params.separation.sname != name_index(&sname))
+	return gx_default_remap_color(pcc, pcs, pdc, pis, dev, select);
+    color_set_null(pdc);
+    return 0;
+}
+
+private int
 gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
 			 frac *pconc, const gs_imager_state *pis)
 {
-    float tint = pc->paint.values[0];
+    float tint;
     int code;
     gs_client_color cc;
     const gs_color_space *pacs =
     (const gs_color_space *)&pcs->params.separation.alt_space;
+    ref sname;
 
+    if ((code = name_ref((const byte *)"All", 3, &sname, -1)) < 0)
+	return code;
+
+    if (pcs->params.separation.sname == name_index(&sname)) {
+	/* "All" means setting all device components to same value. */
+	int i, n = cs_num_components(pacs);
+	float ftemp;
+	frac conc;
+
+	/* hack: using DeviceGray's function to concretize single component color : */
+	code = gx_concretize_DeviceGray(pc, pacs, &conc, pis);
+
+	for (i = 0; i < n; i++)
+	    pconc[i] = conc;
+
+	return code;
+    }
+
+    tint = pc->paint.values[0];
     if (tint < 0)
 	tint = 0;
     else if (tint > 1)

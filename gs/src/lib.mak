@@ -2102,7 +2102,8 @@ $(GLD)seprlib.dev : $(LIB_MAK) $(ECHOGS_XE) $(seprlib_)
 
 $(GLOBJ)gscsepr.$(OBJ) : $(GLSRC)gscsepr.c $(GXERR) $(memory__h)\
  $(gscsepr_h) $(gsfunc_h) $(gsmatrix_h) $(gsrefct_h)\
- $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gzstate_h)
+ $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h) $(gzstate_h)\
+ $(iref_h) $(iname_h)
 	$(GLCC) $(GLO_)gscsepr.$(OBJ) $(C_) $(GLSRC)gscsepr.c
 
 # ================ Display Postscript extensions ================ #
