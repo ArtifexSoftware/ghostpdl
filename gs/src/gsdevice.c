@@ -91,10 +91,10 @@ gx_device_enum_ptr(gx_device * dev)
 gx_device *
 gx_device_reloc_ptr(gx_device * dev, gc_state_t * gcst)
 {
-    // stefan foo try not relocating the device
-    // if (dev == 0 || dev->memory == 0)
+
+    if (dev == 0 || dev->memory == 0)
 	return dev;
-    // return RELOC_OBJ(dev);	/* gcst implicit */
+    return RELOC_OBJ(dev);	/* gcst implicit */
 }
 
 /* Set up the device procedures in the device structure. */
@@ -433,7 +433,10 @@ gx_device_retain(gx_device *dev, bool retained)
 
     if (delta) {
 	dev->retained = retained; /* do first in case dev is freed */
-	rc_adjust_only(dev, delta, "gx_device_retain");
+	if ( retained )
+	    rc_adjust(dev, delta, "gx_device_retain true");
+	else
+	    rc_adjust(dev, delta, "gx_device_retain false");
     }
 }
 
