@@ -122,10 +122,10 @@ dnl use our included getopt if the system doesn't have getopt_long()
 AC_CHECK_FUNC(getopt_long, 
 	AC_DEFINE(HAVE_GETOPT_LONG,,
 	  [Define if the local libc includes getopt_long()]
-	),
+	),[
 	AC_LIBOBJ([getopt])
 	AC_LIBOBJ([getopt1])
-)
+])
 
 # generate output
 AC_CONFIG_FILES([Makefile config_types.h])
