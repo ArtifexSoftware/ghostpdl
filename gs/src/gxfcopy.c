@@ -1977,6 +1977,7 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
 		if (!same_type1_hinting((const gs_font_type1 *)cfont, 
 					(const gs_font_type1 *)ofont))
 		    return 0;
+		code = 1;
 		break;
 	    case ft_TrueType:
 		code = same_type42_hinting((gs_font_type42 *)cfont, 

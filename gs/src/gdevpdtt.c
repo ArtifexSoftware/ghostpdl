@@ -933,7 +933,7 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
     if (*ppdfont == 0) {
 	gs_font *base_font = font;
 	gs_font *below;
-	bool compatible_encoding = true;
+	bool same_encoding = true;
 
 	/* 
 	 * Find the "lowest" base font that has the same outlines.
@@ -942,14 +942,14 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 	while ((below = base_font->base) != base_font &&
 	       base_font->procs.same_font(base_font, below, FONT_SAME_OUTLINES))
 	    base_font = below;
+	if (base_font != font)
+	    same_encoding = ((base_font->procs.same_font(base_font, font, 
+	                      FONT_SAME_ENCODING) & FONT_SAME_ENCODING) != 0);
 	/* Find or make font resource. */
 	pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL);
-	if (*ppdfont != NULL && base_font != font &&
-	    !(base_font->procs.same_font(base_font, font, FONT_SAME_ENCODING)
-	      & FONT_SAME_ENCODING)) {
-	    compatible_encoding = pdf_is_compatible_encoding(pdev, *ppdfont, 
-				    font, glyphs, chars, num_all_chars); 
-	    if (!compatible_encoding)
+	if (*ppdfont != NULL && base_font != font) {
+	    if(!pdf_is_compatible_encoding(pdev, *ppdfont, 
+				    base_font, glyphs, chars, num_all_chars))
 		*ppdfont = NULL;
 	}
 	if (*ppdfont == NULL) {
@@ -966,9 +966,10 @@ pdf_obtain_font_resource(const gs_text_enum_t *penum,
 		if (code < 0)
 		    goto out;
 	    }
-	    if (base_font != font && compatible_encoding) {
+	    if (base_font != font && same_encoding) {
 		code = pdf_attach_font_resource(pdev, base_font, *ppdfont);
-		if (code < 0) 		    goto out;
+		if (code < 0) 		    
+		    goto out;
 	    }
 	}
 	code = pdf_attach_font_resource(pdev, font, *ppdfont);
