@@ -129,7 +129,8 @@ gx_device_bbox far_data gs_bbox_device =
      bbox_text_begin
     },
     0,				/* target */
-    1				/*true *//* free_standing */
+    1,				/*true *//* free_standing */
+    1				/*true *//* forward_open_close */
 };
 
 #undef max_coord
@@ -163,12 +164,12 @@ bbox_close_device(gx_device * dev)
 	 * This device was created as a wrapper for a compositor.
 	 * Just free the devices.
 	 */
-	int code = gs_closedevice(tdev);
+	int code = (bdev->forward_open_close ? gs_closedevice(tdev) : 0);
 
 	gs_free_object(dev->memory, dev, "bbox_close_device(composite)");
 	return code;
     } else {
-	return (tdev == 0 ? 0 : gs_closedevice(tdev));
+	return (tdev && bdev->forward_open_close ? gs_closedevice(tdev) : 0);
     }
 }
 
@@ -223,6 +224,13 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
     dev->free_standing = false;	/* being used as a component */
 }
 
+/* Set whether a bounding box device propagates open/close to its target. */
+void
+gx_device_bbox_fwd_open_close(gx_device_bbox * dev, bool forward_open_close)
+{
+    dev->forward_open_close = forward_open_close;
+}
+
 /* Read back the bounding box in 1/72" units. */
 void
 gx_device_bbox_bbox(gx_device_bbox * dev, gs_rect * pbbox)
@@ -261,7 +269,8 @@ bbox_open_device(gx_device * dev)
     /* gx_forward_open_device doesn't exist */
     {
 	gx_device *tdev = bdev->target;
-	int code = (tdev == 0 ? 0 : gs_opendevice(tdev));
+	int code =
+	    (tdev && bdev->forward_open_close ? gs_opendevice(tdev) : 0);
 
 	bbox_copy_params(bdev, true);
 	return code;

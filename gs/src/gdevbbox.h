@@ -64,10 +64,16 @@
  *              << do whatever you want >>
  *              return gx_forward_output_page(dev, num_copies, flush);
  *      }
+ *
+ * Note that bounding box devices, unlike almost all other forwarding
+ * devices, conditionally propagate the open_device and close_device
+ * calls to their target.  By default, they do propagate these calls:
+ * use gx_device_bbox_fwd_open_close to change this if you want.
  */
 #define gx_device_bbox_common\
 	gx_device_forward_common;\
 	bool free_standing;\
+	bool forward_open_close;\
 	/* In order to handle compositors, we provide a separate pointer */\
 	/* to the bbox device instance that holds the actual box. */\
 	gx_device_bbox *box_device;\
@@ -88,7 +94,14 @@ extern_st(st_device_bbox);
 /* Initialize a bounding box device. */
 void gx_device_bbox_init(P2(gx_device_bbox * dev, gx_device * target));
 
+/* Set whether a bounding box device propagates open/close to its target. */
+void gx_device_bbox_fwd_open_close(P2(gx_device_bbox * dev,
+				      bool forward_open_close));
+
 /* Read back the bounding box in 1/72" units. */
 void gx_device_bbox_bbox(P2(gx_device_bbox * dev, gs_rect * pbbox));
+
+/* Release a bounding box device. */
+void gx_device_bbox_release(P1(gx_device_bbox *dev));
 
 #endif /* gdevbbox_INCLUDED */
