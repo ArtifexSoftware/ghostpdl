@@ -797,9 +797,15 @@ class pxl_dis:
             array_size = self.size_of_element * self.size_of_array
             array_elements = self.unpack( str(self.size_of_array) + self.unpack_string, \
                                      self.data[self.index:self.index+array_size] )
-            print
-            print self.dump(self.data[self.index:self.index+array_size])
-            print "]",
+            # hex dump byte arrays
+            if (self.size_of_element == 1):
+                print
+                print self.dump(self.data[self.index:self.index+array_size])
+                print "]",
+            else:
+                for num in array_elements:
+                    print num,
+                print "]",
             self.index = self.index + array_size
             return 1
         return 0

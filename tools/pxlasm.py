@@ -304,24 +304,29 @@ pxl_attribute_name_to_attribute_number_dict = {
 class pxl_asm:
 
     def __init__(self, data):
-        # skip the first line
-        index = 0
-        while( data[index] != '\n' ):
-            index = index + 1
-        index = index + 1
-        # copy of the data without the PJL
+        # ` HP-PCL XL;3;0
+        index = data.index("` HP-PCL XL;")
         data = data[index:]
         self.data = data
+                # parse out data order and protocol
+        self.binding = data[0]
+        self.protocol = data[12]
+        self.revision = data[14]
+
         # pointer to data
         self.index = 0
-
+        # NB this screws up file indexing - remove all comments
         self.data = re.sub( '\/\/.*\n', '', self.data )
-        self.data = re.sub( '\012+', ' ', self.data )
+
         # print out big endian protocol and revision.  NB should check
         # revisions are the same.
         print "\033%-12345X@PJL ENTER LANGUAGE = PCLXL"
-        print ") HP-PCL XL;2;0"
-        # saved size of last array parsed
+        print ") HP-PCL XL;" + self.protocol + ";" + self.revision
+
+        # skip over protocol and revision
+        while( data[self.index] != '\n' ):
+            self.index = self.index + 1
+        self.index = self.index + 1
 
         # saved size of last array parsed
         self.size_of_array = -1;
@@ -333,12 +338,6 @@ class pxl_asm:
         # the n'th operator in the stream
         self.operator_position = 0
         self.__verbose = DEBUG
-        
-    # set DEBUG=1 above to enable this
-    def debug_trace(self, format, *arguments):
-        if self.__verbose:
-            sys.stderr.write(format % arguments)
-            sys.stderr.write('\n')
         
     def big_endian_stream(self):
         return (self.binding == ')')
@@ -396,7 +395,6 @@ class pxl_asm:
         new_tag = self.next_string()
         if ( new_tag == tag ):
             self.consume_next_string()
-            self.debug_trace( "found tag: %s %x", tag, pxl_tags_dict[tag] )
             self.pack( "B", pxl_tags_dict[tag] )
             return 1
 
@@ -406,16 +404,13 @@ class pxl_asm:
     def operatorTag(self):
         self.operator_position = self.operator_position + 1
         tag = self.next_string()
-        self.debug_trace( "searching for operator: %s", tag )
         if ( tag in pxl_tags_dict.keys() ):
             self.pack( 'B', pxl_tags_dict[tag] )
             self.consume_next_string()
             # handle special cases
             if ( self.is_Embedded(tag) ):
                 self.process_EmbeddedInfo(tag)
-            self.debug_trace( "found operator %s", tag )
             return 1
-        self.debug_trace( "did not find operator %s", tag )
         return 0
 
     def Tag_ubyte(self):
@@ -589,7 +584,7 @@ class pxl_asm:
         self.consume_to_char_plus_one( '[' )
         number_list = []
         while (1):
-            num = self.next_num()
+            num = self.next_hex_num()
             # trick - num will fail on ']'
             if (num != None):
                 number_list.append(num)
@@ -611,12 +606,10 @@ class pxl_asm:
             self.pack( 'B', pxl_tags_dict['attr_ubyte'] )
             self.pack( 'B', pxl_attribute_name_to_attribute_number_dict[tag] )
             self.consume_next_string()
-            self.debug_trace( "found  %s", tag)
             # handle special cases
             if ( self.is_Embedded(tag) ):
                 self.process_EmbeddedInfo(tag)
             return 1
-        self.debug_trace( "did not find attribute %s", tag)
         return 0
 
     def Tag_attr_uint16(self):
@@ -629,17 +622,45 @@ class pxl_asm:
     def attributeID(self):
         return (self.Tag_attr_ubyte() or self.Tag_attr_uint16()) and self.attributeIDValue()
 
+    # return the start and end position of the next string
+    def next_token(self):
+        # token begins or end on a line
+        while self.data[self.index] in string.whitespace:
+            self.index = self.index + 1
+        start = self.index
+        while self.data[self.index] not in string.whitespace:
+            self.index = self.index + 1
+        end = self.index
+        pos = start
+        # return offset within the line of the start of the token.
+        # Useful for assembling hex format.
+        while (self.data[pos] != '\n'):
+            if pos == 0:
+                break
+            pos -= 1
+        return self.data[start:end], start-pos-1
+    
+    def next_hex_num(self):
+        num_str, offset = self.next_token()
+        # end of data
+        if ( offset == 0 and num_str == ']' ):
+            return None
+
+        # offset or ascii columns
+        if ( offset < 7 or offset > 57 ):
+            return self.next_hex_num()
+
+        # hex number
+        return string.atoi(num_str, 16)
+        
     def next_num(self):
         # no checking.
-        while self.data[self.index] in string.whitespace: self.index = self.index + 1
-        start = self.index
-        while self.data[self.index] not in string.whitespace: self.index = self.index + 1
-        end = self.index
+        num_str, offset = self.next_token()
         try:
-            num = string.atoi(self.data[start:end])
+            num = string.atoi(num_str)
         except ValueError:
             try:
-                num = string.atof(self.data[start:end])
+                num = string.atof(num_str)
             except:
                 num = None
         return num
@@ -674,7 +695,6 @@ class pxl_asm:
         if ( self.arraySizeType() ):
             self.size_of_array = self.next_num()
             self.pack(self.pack_string, self.size_of_array)
-            self.debug_trace("array size found %d", self.size_of_array )
             # restore the pack string
             self.pack_string = pack_string
             return 1
@@ -688,8 +708,12 @@ class pxl_asm:
     def arrayType(self):
         if (self.singleValueArrayType() and self.arraySize()):
             for num in range(0, self.size_of_array):
-                n = self.next_num()
-                self.debug_trace( "num %d got %d\n", num, n)
+                # reading byte data hex dump format
+                if ( self.pack_string == 'B' ):
+                    n = self.next_hex_num()
+                # not hex dump format
+                else:
+                    n = self.next_num()
                 self.pack(self.pack_string, n)
             self.consume_to_char_plus_one(']')
             return 1
@@ -733,10 +757,8 @@ class pxl_asm:
         tag = self.next_string()
         if ( tag == uel_string_1 ):
             self.consume_next_string()
-            self.debug_trace("found UEL string 1")
             # an approximate search
             if ( string.find(self.data[self.index:], uel_string_2 ) >= 0 ):
-                self.debug_trace("found UEL string 2")
                 self.consume_to_char_plus_one('X')
                 sys.stdout.write( "\033%-12345X" )
                 return 1
@@ -753,7 +775,7 @@ class pxl_asm:
         except IndexError:
              return
         else:
-            sys.stderr.write("assemble failed")
+            sys.stderr.write("assemble failed\n")
 
 if __name__ == '__main__':
     import sys

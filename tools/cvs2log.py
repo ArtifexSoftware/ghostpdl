@@ -206,7 +206,7 @@ def main():
 	print "cvs2log.py must be executed in a working CVS directory"
 	sys.exit(2)
     indent=8
-    hostname=socket.gethostbyaddr(socket.gethostname())[1][0]
+    hostname=socket.gethostname()
     length=63
     user=0
     recursive=0
