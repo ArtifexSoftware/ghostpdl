@@ -1072,6 +1072,11 @@ hpgl_add_point_to_path(
     static int              (*const gs_procs[])(P3(gs_state *, floatp, floatp))
                                 = { hpgl_plot_function_procedures };
 
+    /*  HP lunacy... if we are starting a polygon path the path
+       machinery (hpgl_plot()) has already made sure the first point
+       is a pen up - if we are drawing for some other reason the flag
+       is moot - so we set it to false. */
+    pgls->g.subpolygon_started = false;
     if (gx_path_is_null(gx_current_path(pgls->pgs))) {
 	/* Start a new GL/2 path. */
 	gs_point    current_pt;

@@ -178,6 +178,7 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	return 0;
 }
 
+
 /* PM op; */
 int
 hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
@@ -201,10 +202,11 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 				hpgl_pen_down | hpgl_pen_pos);
 	    break;
 	  case 1 :
-	    hpgl_call(hpgl_close_current_path(pgls));
-	    /* remain in poly mode, this shouldn't be necessary */
-	    pgls->g.polygon_mode = true;
-	    break;
+	      hpgl_call(hpgl_close_current_path(pgls));
+	      /* remain in poly mode, this shouldn't be necessary */
+	      pgls->g.polygon_mode = true;
+	      pgls->g.subpolygon_started = true;
+	      break;
 	  case 2 :
 	      if ( pgls->g.polygon_mode ) {
 		  /* explicitly close the path if the pen is down */

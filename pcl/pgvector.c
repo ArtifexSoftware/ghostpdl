@@ -179,6 +179,20 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) )
 	  {
 	    pargs->phase = 1;	/* we have arguments */
+	    /* first point of a subpolygon is a pen up - absurd */
+	    if ( pgls->g.subpolygon_started ) {
+		hpgl_pen_state_t pen;
+		hpgl_args_t args;
+		pgls->g.subpolygon_started = false;
+		hpgl_save_pen_state(pgls,
+				    &pen,
+				    hpgl_pen_down);
+		hpgl_args_set_real2(&args, x, y);
+		hpgl_PU(&args, pgls);
+		hpgl_restore_pen_state(pgls,
+				       &pen,
+				       hpgl_pen_down);
+	    }
 	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
 	    /* Prepare for the next set of points. */
 	    if ( pgls->g.symbol_mode != 0 )
@@ -189,6 +203,11 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	/* check for no argument case */
 	if ( !pargs->phase)
 	  {
+	      /* if the first plotted point has no arguments we don't
+		 have to worry about adding a PU (see above) */
+	    if ( pgls->g.subpolygon_started )
+		pgls->g.subpolygon_started = false;
+
 	    if ( hpgl_plot_is_relative(func) )
 	      /*hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func, true)) */;
 	    else
