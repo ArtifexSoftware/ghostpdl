@@ -186,7 +186,7 @@ ICCSRCDIR=icclib
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
- 
+
 IJSSRCDIR=ijs
 IJSEXECTYPE=unix
 
@@ -213,7 +213,7 @@ CCLD=$(CC)
 # the 2.7.0-2.7.2 optimizer bug, either "-Dconst=" or
 # "-Wcast-qual -Wwrite-strings" is automatically included.
 
-GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -Wtraditional -fno-builtin -fno-common
+GCFLAGS=-Wall -Wstrict-prototypes -Wmissing-declarations -Wmissing-prototypes -fno-builtin -fno-common
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
