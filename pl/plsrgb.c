@@ -24,6 +24,7 @@
 #include "gsparam.h"
 #include "gxstate.h"
 #include "gzstate.h"
+#include "pldraw.h"
 
 /* shared language (pcl and pclxl) for setting up sRGB to XYZ and an
    associated default CRD to be used.  The code will request a crd
@@ -131,7 +132,7 @@ private const gs_matrix3 pl_MatrixCRDLMN = {
 private const gs_vector3 pl_WhitePoint = {0.9505, 1.0, 1.0890};
 private const gs_vector3 pl_BlackPoint = {0.0, 0.0, 0.0};
 
-/* Bradford Cone Space - don't ask me, I don't know */
+/* Bradford Cone Space - www.srgb.com */
 private const gs_matrix3 pl_MatrixPQR = {
     {0.8951, -0.7502, 0.0389},
     {0.2664, 1.7135, -0.0685},
@@ -147,7 +148,6 @@ private const gs_range3 pl_RangePQR = {
 
 
 /* tranform pqr */
-
 private int
 pl_TransformPQR_proc(const gs_memory_t *mem, int indx, floatp val, const gs_cie_wbsd *cs_wbsd,
                   gs_cie_render *pcrd, float *pnew_val)
@@ -166,7 +166,7 @@ private const gs_cie_transform_proc3 pl_TransformPQR = {
 };
 
 
-/* ABC - inverse srgb gamman transform */
+/* ABC - inverse srgb gamma transform */
 inline private float
 pl_encodeABC(floatp in, const gs_cie_render * pcrd)
 {
@@ -197,8 +197,6 @@ private const gs_cie_render_proc3 pl_EncodeABC_procs = {
     {pl_EncodeABC_0, pl_EncodeABC_1, pl_EncodeABC_2}
 };
 
-/* SET sRGB stuff */
-
 /*
  * See if the default CRD is specified by the device.
  *
@@ -207,8 +205,8 @@ private const gs_cie_render_proc3 pl_EncodeABC_procs = {
  * and uses the device parameter "CRDName" to select the one that is to be
  * used as a default.
  *
- * Returns 
  */
+
 private bool
 pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
 {
@@ -269,10 +267,12 @@ pl_free_crd(gs_state *pgs)
     return;
 }
 
+/* statics to see if the crd has been built, in practice the crd is a
+   singleton. */
 gs_cie_render *pl_pcrd;
 bool pl_pcrd_built = false; /* the crd has been built */
 
-private int
+int
 pl_build_crd(gs_state *pgs)
 {
     int code;
@@ -281,15 +281,9 @@ pl_build_crd(gs_state *pgs)
         return gs_setcolorrendering(pgs, pl_pcrd);
 
     code = gs_cie_render1_build(&pl_pcrd, gs_state_memory(pgs), "build_crd");
-    pl_pcrd_built = true;
-    // NB global warning - crd is set only once unless a new one is
-    // read from the device which would leak needs testing..
-    /* pl_read_device will also install the crd directly from the
-       device parameter list */
-    /* build the color rendering dictionary if not already built NB.
-       Store colorrendering in the state and verify it is the same. */
     if ( code < 0 )
 	return code;
+    pl_pcrd_built = true;
 
     if ( pl_read_device_CRD(pl_pcrd, pgs) ) {
         dprintf(pgs->memory, "CRD initialized from device\n");
@@ -317,9 +311,9 @@ pl_build_crd(gs_state *pgs)
     return code;
 }
 
+/* statics for singleton CIEABC color space and a procedure to set the
+   sRGB via CIEABC. */
 gs_color_space *pl_pcs;
-gs_color_space *pl_pcs2;
-bool pl_pcs2_built = false;
 bool pl_pcs_built = false;
 extern const gs_color_space_type gs_color_space_type_CIEABC;
 
@@ -340,10 +334,16 @@ pl_build_and_set_sRGB_space(gs_state *pgs)
     return gs_setcolorspace(pgs, pl_pcs);
 }
 
+/* more statics for a singleton CIEABC color space.  This duplicates code but
+   this color space is used for images.  Note we just return the color
+   space to the client and don't set the color space in the gstate. */
+gs_color_space *pl_pcs2;
+bool pl_pcs2_built = false;
 int
 pl_cspace_init_SRGB(gs_color_space **ppcs, gs_state *pgs)
 {
 
+    int code = 0;
     if ( pl_pcs2_built == false ) {
         int code = gs_cspace_build_CIEABC(&pl_pcs2, NULL, gs_state_memory(pgs));
         if ( code < 0 )
@@ -354,20 +354,32 @@ pl_cspace_init_SRGB(gs_color_space **ppcs, gs_state *pgs)
         (gs_cie_BlackPoint(pl_pcs2)) = pl_BlackPoint;
         pl_pcs2_built = true;
     }
-    /* NB may want to initialize a bit */
     pl_pcs2->type = &gs_color_space_type_CIEABC;
     *ppcs = pl_pcs2;
+    return 0;
 }
 
-/* interface */
+/* set an srgb color and check crd and color space prerequisites are ok */
 int
-pl_setSRGB(gs_state *pgs)
+pl_setSRGB(gs_state *pgs, float r, float g, float b)
 {
     int code;
+    /* make sure we have a crd set up */
     code = pl_build_crd(pgs);
     if ( code < 0 )
         return code;
+    /* build (if necessary) and set the color space */
     code = pl_build_and_set_sRGB_space(pgs);
+    if ( code < 0 )
+        return code;
+    /* set the color */
+    {
+        gs_client_color color;
+        color.paint.values[0] = r;
+        color.paint.values[1] = g;
+        color.paint.values[2] = b;
+        code = gs_setcolor(pgs, &color);
+    }
     return code;
 }
     
