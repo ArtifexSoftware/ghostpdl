@@ -649,8 +649,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     ulong offset;
     gs_glyph glyph, glyph_prev;
     ulong max_glyph;
-    uint glyf_length, glyf_checksum = 0 /****** NO CHECKSUM ******/;
-    uint loca_length, loca_checksum[2];
+    uint glyf_length, loca_length;
+    ulong glyf_checksum = 0L; /****** NO CHECKSUM ******/
+    ulong loca_checksum[2] = {0L,0L};
     uint numGlyphs = 0;		/* original value from maxp */
     byte head[56];		/* 0 mod 4 */
     gs_type42_mtx_t mtx[2];
