@@ -254,7 +254,7 @@ cgm_put_params(gx_device * dev, gs_param_list * plist)
 	        ecode = gs_note_error(gs_error_invalidaccess);
 		goto ofe;
 	    }
-	    if (ofs.size >= fname_size)
+	    if (ofs.size >= gp_file_name_sizeof)
 		ecode = gs_error_limitcheck;
 	    else
 		break;
