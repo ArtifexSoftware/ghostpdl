@@ -1953,7 +1953,7 @@ $(GLOBJ)gsfuncv.$(OBJ) : $(GLSRC)gsfuncv.c $(GX)\
 
 gsfunc4_h=$(GLSRC)gsfunc4.h $(gsfunc_h)
 
-func4lib_=$(GLOBJ)gsfunc4.$(OBJ)
+func4lib_=$(GLOBJ)gsfunc4.$(OBJ) $(GLOBJ)spprint.$(OBJ)
 $(GLD)func4lib.dev : $(LIB_MAK) $(ECHOGS_XE) $(func4lib_) $(GLD)funclib.dev
 	$(SETMOD) $(GLD)func4lib $(func4lib_)
 	$(ADDMOD) $(GLD)func4lib -include $(GLD)funclib
