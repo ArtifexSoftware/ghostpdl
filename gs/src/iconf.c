@@ -28,6 +28,7 @@
 #include "ifunc.h"
 #include "iapi.h"
 #include "iminst.h"
+#include "iplugin.h"
 
 /* Define the default values for an interpreter instance. */
 const gs_main_instance gs_main_instance_init_values =
@@ -81,3 +82,17 @@ const op_def *const op_defs_all[] = {
     0
 };
 const uint op_def_count = (countof(op_defs_all) - 1) * OP_DEFS_MAX_SIZE;
+
+/* Set up the plugin table. */
+
+#define plugin_(proc) extern plugin_instantiation_proc(proc);
+#include "gconf.h"
+#undef plugin_
+
+extern_i_plugin_table();
+#define plugin_(proc) proc,
+const i_plugin_instantiation_proc i_plugin_table[] = {
+#include "gconf.h"
+    0
+};
+#undef plugin_

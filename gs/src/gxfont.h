@@ -379,11 +379,18 @@ int gs_font_notify_register(P3(gs_font *font, gs_notify_proc_t proc,
 int gs_font_notify_unregister(P3(gs_font *font, gs_notify_proc_t proc,
 				 void *proc_data));
 
+#ifndef FAPI_server_DEFINED
+#define FAPI_server_DEFINED
+typedef struct FAPI_server_s FAPI_server;
+#endif
+
 /* Define a base (not composite) font. */
 #define gs_font_base_common\
 	gs_font_common;\
 	gs_rect FontBBox;\
 	gs_uid UID;\
+	FAPI_server *FAPI; \
+        void *FAPI_font_data; \
 	gs_encoding_index_t encoding_index;\
 	gs_encoding_index_t nearest_encoding_index  /* (may be >= 0 even if */\
 						/* encoding_index = -1) */

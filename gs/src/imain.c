@@ -37,6 +37,7 @@ set_stdfiles(FILE * stdfiles[3])
 #include "gsmatrix.h"		/* for gxdevice.h */
 #include "gsutil.h"		/* for bytes_compare */
 #include "gxdevice.h"
+#include "gxalloc.h"
 #include "errors.h"
 #include "oper.h"
 #include "iconf.h"		/* for gs_init_* imports */
@@ -59,6 +60,7 @@ set_stdfiles(FILE * stdfiles[3])
 #include "interp.h"
 #include "ivmspace.h"
 #include "idisp.h"		/* for setting display device callback */
+#include "iplugin.h"
 
 /* ------ Exported data ------ */
 
@@ -169,6 +171,9 @@ gs_main_init1(gs_main_instance * minst)
 		return code;
 	}
 	code = obj_init(&minst->i_ctx_p, &idmem);  /* requires name_init */
+	if (code < 0)
+	    return code;
+        code = i_plugin_init(minst->i_ctx_p);
 	if (code < 0)
 	    return code;
 	minst->init_done = 1;
@@ -747,6 +752,8 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     i_ctx_t *i_ctx_p = minst->i_ctx_p;
     int exit_code;
     ref error_object;
+    i_plugin_holder *h = (i_ctx_p != 0 ? i_ctx_p->plugin_list : 0);
+    gs_raw_memory_t *mem_raw = i_ctx_p->memory.current->parent;
 
     /*
      * Previous versions of this code closed the devices in the
@@ -774,6 +781,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     }
     minst->stdout_is_redirected = 0;
     minst->stdout_to_stderr = 0;
+    i_plugin_finit(mem_raw, h);
     gs_lib_finit(exit_status, code);
 }
 void

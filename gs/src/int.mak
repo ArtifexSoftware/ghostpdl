@@ -77,6 +77,8 @@ iastate_h=$(PSSRC)iastate.h $(gxalloc_h) $(ialloc_h) $(istruct_h)
 inamedef_h=$(PSSRC)inamedef.h\
  $(gsstruct_h) $(inameidx_h) $(inames_h) $(inamestr_h)
 store_h=$(PSSRC)store.h $(ialloc_h) $(idosave_h)
+iplugin_h=$(PSSRC)iplugin.h
+ifapi_h=$(PSSRC)ifapi.h $(PSSRC)iplugin.h
 
 GH=$(AK) $(ghost_h)
 
@@ -200,6 +202,10 @@ $(PSOBJ)iutil.$(OBJ) : $(PSSRC)iutil.c $(GH) $(math__h) $(memory__h) $(string__h
  $(iname_h) $(ipacked_h) $(oper_h) $(store_h)
 	$(PSCC) $(PSO_)iutil.$(OBJ) $(C_) $(PSSRC)iutil.c
 
+$(PSOBJ)iplugin.$(OBJ) : $(PSSRC)iplugin.c $(GH) $(ghost_h) $(iplugin_h) $(icstate_h)\
+ $(ialloc_h) $(errors_h)
+	$(PSCC) $(PSO_)iplugin.$(OBJ) $(C_) $(PSSRC)iplugin.c
+
 # ======================== PostScript Level 1 ======================== #
 
 ###### Include files
@@ -253,7 +259,7 @@ ibnum_h=$(PSSRC)ibnum.h
 
 $(PSOBJ)iconfig.$(OBJ) : $(PSSRC)iconf.c $(stdio__h)\
  $(gconf_h) $(gsmemory_h) $(gstypes_h)\
- $(iminst_h) $(iref_h) $(ivmspace_h) $(opdef_h)
+ $(iminst_h) $(iref_h) $(ivmspace_h) $(opdef_h) $(iplugin_h)
 	$(RM_) $(PSGEN)iconfig.c
 	$(CP_) $(gconfig_h) $(PSGEN)gconfig.h
 	$(CP_) $(PSSRC)iconf.c $(PSGEN)iconfig.c
@@ -480,7 +486,7 @@ $(PSOBJ)zpath.$(OBJ) : $(PSSRC)zpath.c $(OP) $(math__h)\
 INT1=$(PSOBJ)iapi.$(OBJ) $(PSOBJ)icontext.$(OBJ) $(PSOBJ)idebug.$(OBJ)
 INT2=$(PSOBJ)idict.$(OBJ) $(PSOBJ)idparam.$(OBJ) $(PSOBJ)idstack.$(OBJ)
 INT3=$(PSOBJ)iinit.$(OBJ) $(PSOBJ)interp.$(OBJ)
-INT4=$(PSOBJ)iparam.$(OBJ) $(PSOBJ)ireclaim.$(OBJ)
+INT4=$(PSOBJ)iparam.$(OBJ) $(PSOBJ)ireclaim.$(OBJ) $(PSOBJ)iplugin.$(OBJ)
 INT5=$(PSOBJ)iscan.$(OBJ) $(PSOBJ)iscannum.$(OBJ) $(PSOBJ)istack.$(OBJ)
 INT6=$(PSOBJ)iutil.$(OBJ) $(GLOBJ)sa85d.$(OBJ) $(GLOBJ)scantab.$(OBJ)
 INT7=$(PSOBJ)sfilter1.$(OBJ) $(GLOBJ)sstring.$(OBJ) $(GLOBJ)stream.$(OBJ)
@@ -1742,6 +1748,54 @@ $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)pdfread -ps pdf_ops gs_l2img
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 
+# ---------------- Font API ---------------- #
+
+$(PSD)fapi.dev : $(INT_MAK) $(ECHOGS_XE) $(PSOBJ)zfapi.$(OBJ)\
+ $(PSD)fapiu$(UFST_BRIDGE).dev
+	$(SETMOD) $(PSD)fapi $(PSOBJ)zfapi.$(OBJ)
+	$(ADDMOD) $(PSD)fapi -oper zfapi
+	$(ADDMOD) $(PSD)fapi -ps gs_fapi
+	$(ADDMOD) $(PSD)fapi -include $(PSD)fapiu$(UFST_BRIDGE)
+
+$(PSOBJ)zfapi.$(OBJ) : $(PSSRC)zfapi.c $(OP) \
+ $(memory__h) $(math__h) $(ghost_h) $(gp_h) $(oper_h) $(gxdevice_h) $(gxfont_h) $(gxfont1_h) \
+ $(gxchar_h) $(gxpath_h) $(bfont_h) $(dstack_h) $(ichar_h) $(idict_h) $(iddict_h) $(iname_h) \
+ $(igstate_h) $(ifapi_h) $(iplugin_h) $(store_h) $(gzstate_h) $(stream_h) $(files_h) $(gscrypt1_h) 
+	$(PSCC) $(PSO_)zfapi.$(OBJ) $(C_) $(PSSRC)zfapi.c
+
+# UFST bridge :
+
+UFST_LIB=$(UFST_ROOT)$(D)rts$(D)lib$(D)
+UFST_INC0=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I) 
+UFST_INC1=$(UFST_INC0) $(I_)$(UFST_ROOT)$(D)rts$(D)psi$(_I)
+UFST_INC2=$(UFST_INC1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) 
+UFST_INC3=$(UFST_INC2) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)
+UFST_INC=$(UFST_INC3) $(I_)$(UFST_ROOT)$(D)rts$(D)tt$(_I)
+
+$(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
+ $(UFST_LIB)fco_lib$(UFST_LIB_EXT) $(UFST_LIB)if_lib$(UFST_LIB_EXT) \
+ $(UFST_LIB)psi_lib$(UFST_LIB_EXT) $(UFST_LIB)tt_lib$(UFST_LIB_EXT) \
+ $(PSOBJ)fapiufst.$(OBJ)
+	$(SETMOD) $(PSD)fapiu1 $(PSOBJ)fapiufst.$(OBJ)
+	$(ADDMOD) $(PSD)fapiu1 -plugin fapiufst
+	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)if_lib$(UFST_LIB_EXT) $(UFST_LIB)fco_lib$(UFST_LIB_EXT)
+	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)tt_lib$(UFST_LIB_EXT) $(UFST_LIB)psi_lib$(UFST_LIB_EXT)
+
+$(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(OP) \
+ $(memory__h) $(stdio__h) $(math__h) $(errors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)CGCONFIG.H\
+ $(UFST_ROOT)$(D)rts$(D)inc$(D)SHAREINC.H\
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)PORT.H \
+ $(UFST_ROOT)$(D)sys$(D)inc$(D)CGMACROS.H \
+ $(UFST_ROOT)$(D)rts$(D)psi$(D)T1ISFNT.H \
+ $(UFST_ROOT)$(D)rts$(D)tt$(D)TTPCLEO.H
+	$(PSCC) $(UFST_CFLAG) $(UFST_INC) $(PSO_)fapiufst.$(OBJ) $(C_) $(PSSRC)fapiufst.c
+
+# stub for UFST bridge :
+
+$(PSD)fapiu.dev : $(INT_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(PSD)fapiu
+
 # ================ Dependencies for auxiliary programs ================ #
 
 GENINIT_DEPS=$(stdpre_h)
@@ -1785,7 +1839,7 @@ $(PSOBJ)imainarg.$(OBJ) : $(PSSRC)imainarg.c $(GH)\
 	$(PSCC) $(PSO_)imainarg.$(OBJ) $(C_) $(PSSRC)imainarg.c
 
 $(PSOBJ)imain.$(OBJ) : $(PSSRC)imain.c $(GH) $(memory__h) $(string__h)\
- $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsutil_h) $(gxdevice_h)\
+ $(gp_h) $(gscdefs_h) $(gslib_h) $(gsmatrix_h) $(gsalloc_h) $(gsutil_h) $(gxdevice_h)\
  $(dstack_h) $(errors_h) $(estack_h) $(files_h)\
  $(ialloc_h) $(iconf_h) $(idebug_h) $(idict_h) $(idisp_h) $(iinit_h)\
  $(iname_h) $(interp_h) $(isave_h) $(iscan_h) $(ivmspace_h)\

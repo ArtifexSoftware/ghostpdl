@@ -133,6 +133,13 @@
  *	<opername> is (usually) the name of the source file in which the
  *	table appears.
  *
+ *    -plugin <plugin_name>
+ *
+ *	Adds plugin_(<name_prefix><plugin_name>_instantiate) to <gconfig.h>.
+ *	Used for plugins to be instantiated when Ghostscript
+ *	is started.  By convention, <plugin_name> is (almost always) the name
+ *	of the source file in which the plugin is defined.
+ *
  *    -ps <psname>
  *
  *	Adds psfile_("<psname>.ps",<len+3>), where <len> is the number of
@@ -826,7 +833,10 @@ pre:		sprintf(template, pat, pconf->name_prefix);
 			    item, (uint)(strlen(item) + 3));
 		    item = str;
 		    break;
-		}
+		} else if (IS_CAT("plugin")) {
+		    pat = "plugin_(%s%%s_instantiate)";
+                    goto pre;
+                }
 		goto err;
 	    case 'r':
 		if (IS_CAT("replace")) {

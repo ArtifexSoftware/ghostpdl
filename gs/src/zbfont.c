@@ -365,6 +365,8 @@ build_gs_simple_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     pfont->procs.define_font = gs_no_define_font;
     pfont->procs.make_font = zbase_make_font;
     pfont->procs.next_char_glyph = gs_default_next_char_glyph;
+    pfont->FAPI = 0;
+    pfont->FAPI_font_data = 0;
     init_gs_simple_font(pfont, bbox, &uid);
     lookup_gs_simple_font_encoding(pfont);
     return 0;

@@ -53,6 +53,8 @@
  * for each operator option;
  *      psfile_("gs_xxxx.ps", strlen("gs_xxxx.ps"))
  * for each optional initialization file.
+ *      plug_(gs_xxx_init)
+ * for each plugin;
  *
  * We include this file multiple times to generate various different
  * source structures.  (It's a hack, but we haven't come up with anything

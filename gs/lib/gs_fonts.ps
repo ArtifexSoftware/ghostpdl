@@ -813,6 +813,19 @@ $error /SubstituteFont { .stdsubstfont } put
     }
    ifelse
  } bind def
+
+/.putgstringcopy  %   <dict> <name> <string> .putgstringcopy -
+{ 2 index gcheck currentglobal
+  2 copy eq {
+    pop pop .forceput
+  } {
+    5 1 roll setglobal
+    dup length string copy
+    .forceput setglobal
+  } ifelse
+} bind def
+
+
 % Attempt to load a font from a file.
 /.tryloadfont {		% <fontname> .tryloadfont <font> true
 			% <fontname> .tryloadfont false
@@ -835,7 +848,7 @@ $error /SubstituteFont { .stdsubstfont } put
 			% -or-
 			%   <fontname> false
 			% See above regarding the use of 'loop'.
-    {
+    { /FAPI_hook_disable pop % gs_fapi accesses this through execstack - don't remove !
 			% Is the font name a string?
 	dup type /stringtype ne
 	 { QUIET not
@@ -901,7 +914,9 @@ $error /SubstituteFont { .stdsubstfont } put
 
 		% Check to make sure the font was actually loaded.
 	dup 3 index .fontknownget
-	 { 4 1 roll pop pop pop true exit } if
+	 { dup /Path 4 index .putgstringcopy
+           4 1 roll pop pop pop true exit 
+         } if
 
 		% Maybe the file had a different FontName.
 		% See if we can get a FontName from the file, and if so,
@@ -909,6 +924,7 @@ $error /SubstituteFont { .stdsubstfont } put
 	exch (r) file .findfontname
 	 { 2 copy .fontknownget
 	    {	% Yes.  Stack: origfontname fontdirectory filefontname fontdict
+              dup /Path 3 index .putgstringcopy
 	      3 -1 roll pop exch
 	      QUIET
 	       { pop

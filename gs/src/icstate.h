@@ -56,6 +56,7 @@ struct gs_context_state_s {
     dict_stack_t dict_stack;
     exec_stack_t exec_stack;
     op_stack_t op_stack;
+    struct i_plugin_holder_s *plugin_list;
 };
 extern const long rand_state_initial; /* in zmath.c */
 

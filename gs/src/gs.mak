@@ -107,6 +107,7 @@
 #			Included automatically in the psl2 feature.
 #		    type42 - support for Type 42 (embedded TrueType) fonts.
 #			Included automatically in the psl2 feature.
+#                   fapi - Font API (3d party font renderer interface).
 #		There are quite a number of other sub-features that can be
 #		selectively included in or excluded from a configuration,
 #		but the above are the ones that are most likely to be of

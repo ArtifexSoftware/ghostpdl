@@ -128,6 +128,7 @@ context_state_alloc(gs_context_state_t ** ppcst,
     pcst->usertime_total = 0;
     pcst->keep_usertime = false;
     pcst->in_superexec = 0;
+    pcst->plugin_list = 0;
     {	/*
 	 * Create an empty userparams dictionary of the right size.
 	 * If we can't determine the size, pick an arbitrary one.

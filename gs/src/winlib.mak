@@ -77,6 +77,12 @@ PLATOPT=
 INTASM=
 PCFBASM=
 
+# Define conditinal name for UFST bridge :
+!ifdef UFST_ROOT
+UFST_BRIDGE = 1
+UFST_LIB_EXT=.lib
+!endif
+
 # Define the files to be removed by `make clean'.
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
