@@ -36,6 +36,9 @@
 #include "pjparse.h"
 #include "pltop.h"
 #include "pctop.h"
+#include "pccrd.h"
+#include "pcpalet.h"
+
 
 
 /* Configuration table for modules */
@@ -191,8 +194,10 @@ typedef struct pcl_interp_s {
 typedef struct pcl_interp_instance_s {
     pl_interp_instance_t      pl;                /* common part: must be first */
     gs_memory_t               *memory;           /* memory allocator to use */
-    pcl_state_t               pcs;              /* pcl state */
+    pcl_state_t               pcs;               /* pcl state */
     pcl_parser_state_t        pst;               /* parser state */
+    gx_device_bbox            *bbox;             /* ptr to free */
+
     pl_page_action_t          pre_page_action;   /* action before page out */
     void                      *pre_page_closure; /* closure to call pre_page_action with */
     pl_page_action_t          post_page_action;  /* action before page out */
@@ -263,6 +268,8 @@ pcl_impl_allocate_interp_instance(
     /* zero-init pre/post page actions for now */
     pcli->pre_page_action = 0;
     pcli->post_page_action = 0;
+    /* reuse one bbox, free at end of process */
+    pcli->bbox = 0;
 
     /* General init of pcl_state */
     pcl_init_state(&pcli->pcs, mem);
@@ -355,25 +362,26 @@ pcl_impl_set_device(
     enum {Sbegin, Ssetdevice, Sgsave1, Serase, Sreset, Sload, Sgsave2, Sdone} stage;
 
     /* Init the bbox device & wrap it around the real device */
-    gx_device_bbox *bbox;
+    gx_device_bbox *bbox = pcli->bbox;
 
     stage = Sbegin;
     /* set personality - pcl5c, pcl5e, or rtl */
     pcli->pcs.personality = pcl_set_personality(instance, device);
     /* Set the device into the pcl_state & gstate */
     stage = Ssetdevice;
-    bbox = gs_alloc_struct_immovable(pcli->memory,
-				     gx_device_bbox,
-				     &st_device_bbox,
-				     "pcl_allocate_interp_intance(bbox device)"
-				     );
+    if (bbox == NULL)
+        bbox = gs_alloc_struct_immovable(pcli->memory,
+					 gx_device_bbox,
+					 &st_device_bbox,
+					 "pcl_allocate_interp_intance(bbox device)"
+					 );
     if ( !bbox )      /* can't erase yet */
 	goto pisdEnd;
+    pcli->bbox = bbox; /* keep ptr to free */
 
     gx_device_bbox_init(bbox, device);
     pcl_set_target_device(&pcli->pcs, device);
-    /* NB prevent static null device from being freed... */
-    rc_increment(gs_currentdevice(pcli->pcs.pgs));
+
     code = gs_setdevice_no_erase(pcli->pcs.pgs, (gx_device *)bbox);
     if (code < 0 )	/* can't erase yet */
 	goto pisdEnd;
@@ -392,7 +400,6 @@ pcl_impl_set_device(
     gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
 
     /* Do device-dependent pcl inits */
-    /* One of these resets will also install an extra color-mapper device */
     stage = Sreset;
     if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0 )
 	goto pisdEnd;
@@ -540,8 +547,7 @@ pcl_impl_remove_device(
 {
         int code;
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
-	/* prevent freeing the color mapper which is static */
-	rc_increment(gs_currentdevice(pcli->pcs.pgs));
+
 	/* return to the original graphic state w/color mapper, bbox, target */
 	code = pcl_grestore(&pcli->pcs);
 	if (code < 0 )
@@ -574,9 +580,18 @@ pcl_impl_deallocate_interp_instance(
         gs_free_object(mem, 
                        pcli->pst.hpgl_parser_state,
                        "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
+
+        /* free default, pdflt_* objects */
+	pcl_free_default_objects( mem, &pcli->pcs);
+
+	/* free halftone cache in gs state */
+	gs_free_ht_cache(mem, pcli->pcs.pgs);
+
 	gs_state_free(pcli->pcs.pgs);
 	/* remove pcl's gsave grestore stack */
 	pcl_free_gstate_stk(&pcli->pcs);
+	gs_free_object(mem, pcli->bbox,
+		       "pcl_deallocate_interp_instance(gx_device_bbox)");
 	gs_free_object(mem, pcli,
 		       "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
 	return 0;
