@@ -39,6 +39,10 @@ ZGENDIR=$(GENDIR)
 ZOBJDIR=$(GENDIR)
 SHARE_ZLIB=0
 
+JSRCDIR=../gs/jpeg
+JGENDIR=$(GENDIR)
+JOBJDIR=$(GENDIR)
+
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 #GCFLAGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
@@ -64,6 +68,7 @@ DEVICE_DEVS=$(DD)x11mono.dev $(DD)x11.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)tifflzw.dev $(DD)tiffpack.dev\
  $(DD)tiff12nc.dev $(DD)tiff24nc.dev\
  $(DD)bit.dev $(DD)bitrgb.dev $(DD)bitcmyk.dev \
+ $(DD)jpeg.dev \
  $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)bmpa16m.dev $(DD)bmpa32b.dev
 
 FEATURE_DEVS    = $(DD)dps2lib.dev   \
