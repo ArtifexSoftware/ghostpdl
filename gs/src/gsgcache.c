@@ -19,6 +19,7 @@
 
 #include "gx.h"
 #include "gserrors.h"
+#include "memory_.h"
 #include "gsstruct.h"
 #include "gsgdata.h"
 #include "gsgcache.h"
@@ -62,8 +63,6 @@ ENUM_PTR(0, gs_glyph_cache_elem, next);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(gs_glyph_cache_elem_reloc_ptrs, gs_glyph_cache_elem *e)
 {
-    int i;
-
     RELOC_PTR(gs_glyph_cache_elem, next);
     RELOC_USING(st_glyph_data, &e->gd, sizeof(e->gd));
 } RELOC_PTRS_END
@@ -103,8 +102,6 @@ gs_glyph_cache__release(gs_glyph_cache *this)
 {   gs_glyph_cache_elem *e = this->list;
     
     while (e != NULL) {
-	gs_glyph_cache_elem *ee = e->next;
-
 	e->gd.procs->free(&e->gd, "gs_glyph_cache__release");
 	gs_free_object(this->memory, e, "gs_glyph_cache_elem__release");
     }

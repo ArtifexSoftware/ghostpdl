@@ -405,7 +405,6 @@ gs_type42_get_outline_from_TT_file(gs_font_type42 * pfont, stream *s, uint glyph
     if (glyph_length == 0)
 	gs_glyph_data_from_null(pgd);
     else {
-	const byte *data;
 	byte *buf;
 
 	sseek(s, pfont->data.glyf + glyph_start);

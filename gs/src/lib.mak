@@ -307,7 +307,7 @@ gsfcmap_h=$(GLSRC)gsfcmap.h $(gsccode_h)
 gsfname_h=$(GLSRC)gsfname.h
 gsfont_h=$(GLSRC)gsfont.h
 gsgdata_h=$(GLSRC)gsgdata.h $(gsstype_h)
-gxgcache_h=$(GLSRC)gxgcache.h
+gsgcache_h=$(GLSRC)gsgcache.h
 gshsb_h=$(GLSRC)gshsb.h
 gsht_h=$(GLSRC)gsht.h
 gsht1_h=$(GLSRC)gsht1.h $(gsht_h)
@@ -770,7 +770,7 @@ $(GLOBJ)gsgdata.$(OBJ) : $(GLSRC)gsgdata.c $(GXERR) $(memory__h)\
 	$(GLCC) $(GLO_)gsgdata.$(OBJ) $(C_) $(GLSRC)gsgdata.c
 
 $(GLOBJ)gsgcache.$(OBJ) : $(GLSRC)gsgcache.c $(GXERR)\
- $(gsstruct_h) $(gsgdata_h) $(gsgcache_h) $(gxfont_h) $(gxfont42_h)
+ $(memory__h) $(gsstruct_h) $(gsgdata_h) $(gsgcache_h) $(gxfont_h) $(gxfont42_h)
 	$(GLCC) $(GLO_)gsgcache.$(OBJ) $(C_) $(GLSRC)gsgcache.c
 
 $(GLOBJ)gsht.$(OBJ) : $(GLSRC)gsht.c $(GXERR) $(memory__h)\
