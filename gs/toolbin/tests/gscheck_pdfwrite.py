@@ -26,26 +26,76 @@
 # to make sure that the pdfwrite device is functioning as expected
 
 import os
+import string
 import gstestutils
 import gsconf, gstestgs, gsparamsets
 
-# get a list of test files
-comparefiles = os.listdir(gsconf.comparefiledir)
 
-suite = gstestutils.GSTestSuite()
+def fuzzy_compare(file1, file2, tolerance=2, windowsize=5):
+	cmd = gsconf.fuzzy + ' -w%d -t%d %s %s > /dev/null 2> /dev/null' % (windowsize, tolerance, file1, file2)
 
-# add compare tests
+	ret = os.system(cmd)
+	if ret == 0:
+		return 1
+	else:
+		return 0
+		
+class GSFuzzyCompareTestCase(gstestgs.GhostscriptTestCase):
+	def shortDescription(self):
+		return "Doing pdfwrite fuzzy test of %s (%s/%d/%d)" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
+	
+	def runTest(self):
+		file1 = '%s.%s.%d.%d' % (self.file, self.device, self.dpi, self.band)
+		file2 = '%s.%s.%d.%d.pdf' % (self.file, 'pdfwrite', self.dpi, self.band)
+		file3 = '%s.pdfwrite.%s.%d.%d' % (self.file, self.device, self.dpi, self.band)
+
+		gs = gstestgs.Ghostscript()
+		gs.command = self.gs
+		gs.dpi = self.dpi
+		gs.band = self.band
+		gs.infile = self.file
+		gs.device = self.device
+
+		# do PostScript->device (pbmraw, pgmraw, ppmraw, pkmraw)
+
+		gs.outfile = file1
+		gs.process()
+
+		# do PostScript->pdfwrite
+		
+		gs.device = 'pdfwrite'
+		gs.outfile = file2
+		gs.process()
+
+		# do PDF->device (pbmraw, pgmraw, ppmraw, pkmraw)
+		
+		gs.device = self.device
+		gs.infile = file2
+		gs.outfile = file3
+		gs.process()
+
+		# fuzzy compare PostScript->device with PostScript->PDF->device
+		
+		ret = fuzzy_compare(file1, file3)
+		os.unlink(file1)
+		os.unlink(file2)
+		os.unlink(file3)
+		self.assert_(ret, "fuzzy match failed")
+
+# Add the tests defined in this file to a suite
+
 def add_compare_test(suite, f, device, dpi, band):
-        suite.addTest(gstestgs.GSFuzzyCompareTestCase(gs=gsconf.comparegs,
-                                               file=gsconf.comparefiledir + f,
-                                          device=device, dpi=dpi, band=band))
+        suite.addTest(GSFuzzyCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device=device, dpi=dpi, band=band))
 
-for f in comparefiles:
-    if f[-3:] == '.ps':
-	for params in gsparamsets.testparamsets:
-            add_compare_test(suite, f, params.device, params.resolution, params.banding)
+def addTests(suite, gsroot, **args):
+	# get a list of test files
+	comparefiles = os.listdir(gsconf.comparefiledir)
 
-# run all the tests
-runner = gstestutils.GSTestRunner(verbosity=2)
-result = runner.run(suite)
 
+	for f in comparefiles:
+		if f[-3:] == '.ps':
+			for params in gsparamsets.testparamsets:
+				add_compare_test(suite, f, params.device, params.resolution, params.banding)
+
+if __name__ == "__main__":
+	gstestutils.gsRunTestsMain(addTests)
