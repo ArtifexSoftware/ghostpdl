@@ -66,6 +66,7 @@ class Entry:
 		for line in self.data['msg']:
 			# skip the details unless wanted
 			if not details and self.r.search(line): break
+			if not details and self.c.search(line): break
 			file.write(line)
 		file.write('</pre>\n')
 		file.write('<p>[')
