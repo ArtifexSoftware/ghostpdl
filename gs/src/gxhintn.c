@@ -121,7 +121,7 @@
  */
 
 #define VD_DRAW_IMPORT 0 /* CAUTION: with 1 can't close DC on import error */
-#define VD_SCALE  (0.2 / 4096.0)
+#define VD_SCALE  (4.0 / 4096.0)
 #define VD_SHIFT_X 50
 #define VD_SHIFT_Y 100
 #define VD_PAINT_POLE_IDS 1
@@ -129,6 +129,13 @@
 
 #define ADOBE_OVERSHOOT_COMPATIBILIY 0
 #define ADOBE_SHIFT_CHARPATH 0
+
+/*  The CONTRAST_STEMS option aligns one of two stem boundaries 
+    to integral pixel boundary when AlignToPixels = 0.
+    It gives more contrast stems, because a bigger part
+    of boldness is concentrated in smaller number of pixels.
+*/
+#define CONTRAST_STEMS 1
 
 static const char *s_pole_array = "t1_hinter pole array";
 static const char *s_zone_array = "t1_hinter zone array";
@@ -402,6 +409,8 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
     long div_y = this->g2o_fraction, div_yy = div_y * this->subpixels_y; 
     long ext_x = div_x * 5;
     long ext_y = div_y * 5;
+    long sx = this->orig_ox % div_xx;
+    long sy = this->orig_oy % div_yy;
 
     if (!vd_enabled)
 	return;
@@ -426,8 +435,8 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
         t1_glyph_space_coord gx0, gy0, gx1, gy1;
 	bool pix = ((int)j / div_xx * div_xx == (int)j);
 
-        o2g_float(this, (int)j, min_oy, &gx0, &gy0); /* o2g may overflow here due to ext. */
-        o2g_float(this, (int)j, max_oy, &gx1, &gy1);
+        o2g_float(this, (int)j - sx, min_oy - sy, &gx0, &gy0); /* o2g may overflow here due to ext. */
+        o2g_float(this, (int)j - sx, max_oy - sy, &gx1, &gy1);
         vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : pix ? c1 : c0));
     }
     /* Paint rows : */
@@ -435,8 +444,8 @@ private void  t1_hinter__paint_raster_grid(t1_hinter * this)
         t1_glyph_space_coord gx0, gy0, gx1, gy1;
 	bool pix = ((int)j / div_yy * div_yy == (int)j);
 
-        o2g_float(this, min_ox, (int)j, &gx0, &gy0);
-        o2g_float(this, max_ox, (int)j, &gx1, &gy1);
+        o2g_float(this, min_ox - sx, (int)j - sy, &gx0, &gy0);
+        o2g_float(this, max_ox - sx, (int)j - sy, &gx1, &gy1);
         vd_bar(gx0, gy0, gx1, gy1, 1, (!j ? 0 : pix ? c1 : c0));
     }
 #endif
@@ -1360,16 +1369,17 @@ private t1_zone * t1_hinter__find_zone(t1_hinter * this, t1_glyph_space_coord po
     /*todo: optimize narrowing the search range */
 }
 
-private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, t1_glyph_space_coord *x, t1_glyph_space_coord *y)
+private void t1_hinter__align_to_grid(t1_hinter * this, int32 unit, 
+	    t1_glyph_space_coord *x, t1_glyph_space_coord *y, bool align_to_pixels)
 {   if (unit > 0) {
-	long div_x = unit * (!this->align_to_pixels ? 1 : this->subpixels_x);
-	long div_y = unit * (!this->align_to_pixels ? 1 : this->subpixels_y);
+	long div_x = unit * (!align_to_pixels ? 1 : this->subpixels_x);
+	long div_y = unit * (!align_to_pixels ? 1 : this->subpixels_y);
         t1_glyph_space_coord gx = *x, gy = *y;
         t1_hinter_space_coord ox, oy;
         int32 dx, dy;
 
         g2o(this, gx, gy, &ox, &oy);
-	if (!this->align_to_pixels) {
+	if (align_to_pixels) {
 	    ox += this->orig_ox;
 	    oy += this->orig_oy;
 	}
@@ -1487,7 +1497,8 @@ private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1
         }
     }
     vd_circle(gx, gy, 7, RGB(0,255,0));
-    t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy);
+    t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy, 
+			    CONTRAST_STEMS || this->align_to_pixels);
     vd_circle(gx, gy, 7, RGB(0,0,255));
     *gc = (horiz ? gy : gx);
     return (align == unaligned ? aligned : align);
@@ -1795,7 +1806,8 @@ private void t1_hinter__process_dotsection(t1_hinter * this, int beg_pole, int e
         }
     }
     vd_circle(center_agx, center_agy, 7, RGB(0,255,0));
-    t1_hinter__align_to_grid(this, this->g2o_fraction / 2, &center_agx, &center_agy);
+    t1_hinter__align_to_grid(this, this->g2o_fraction / 2, &center_agx, &center_agy, 
+				CONTRAST_STEMS || this->align_to_pixels);
     vd_circle(center_agx, center_agy, 7, RGB(0,0,255));
     sx = center_agx - center_gx;
     sy = center_agy - center_gy;
@@ -1997,9 +2009,9 @@ private int t1_hinter__export(t1_hinter * this)
 	    return code;
 	if (i >= this->contour_count)
 	    break;
-	/* vd_setcolor(RGB(255,0,0)); 
+	 vd_setcolor(RGB(255,0,0)); 
            vd_moveto(fx,fy);
-	*/
+	
         for(j = beg_pole + 1; j <= end_pole; j++) {
             pole = & this->pole[j];
             g2d(this, pole->ax, pole->ay, &fx, &fy);
@@ -2007,9 +2019,9 @@ private int t1_hinter__export(t1_hinter * this)
                 code = gx_path_add_line(this->output_path, fx, fy);
 		if (code < 0)
 		    return code;
-                /* vd_setcolor(RGB(255,0,0));
+                 vd_setcolor(RGB(255,0,0));
                    vd_lineto(fx,fy);
-		*/
+		
             } else {
                 int j1 = j + 1, j2 = (j + 2 > end_pole ? beg_pole : j + 2);
                 fixed fx1, fy1, fx2, fy2;
@@ -2019,9 +2031,9 @@ private int t1_hinter__export(t1_hinter * this)
                 code = gx_path_add_curve(this->output_path, fx, fy, fx1, fy1, fx2, fy2);
 		if (code < 0)
 		    return code;
-                /* vd_setcolor(RGB(255,0,0));
+                 vd_setcolor(RGB(255,0,0));
                    vd_curveto(fx,fy,fx1,fy1,fx2,fy2);
-		*/
+		
                 j+=2;
             }
         }
@@ -2036,7 +2048,7 @@ private int t1_hinter__add_trailing_moveto(t1_hinter * this)
 {   t1_glyph_space_coord gx = this->width_gx, gy = this->width_gy;
 
     if (this->align_to_pixels)
-	t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy);
+	t1_hinter__align_to_grid(this, this->g2o_fraction, &gx, &gy, this->align_to_pixels);
     return t1_hinter__rmoveto(this, gx - this->cx, gy - this->cy);
 }
 
