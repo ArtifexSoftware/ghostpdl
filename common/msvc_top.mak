@@ -51,9 +51,6 @@ GLOBJ=$(GLOBJDIR)$(D)
 !include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\msvctail.mak
 
-CCLEAFFLAGS=$(COMPILE_WITHOUT_FRAMES)
-
-
 # Build the required files in the GS directory.
 $(GENDIR)/ldl$(CONFIG).tr: $(MAKEFILE) $(AK)
 	-mkdir $(GLGENDIR)

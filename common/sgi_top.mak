@@ -29,14 +29,13 @@ debug:
 pg-fp:
 	make GENOPT=''                                         \
              CFLAGS='-pg -O2 $(CDEFS) $(SGICFLAGS) $(XCFLAGS)' \
-             LDFLAGS='$(XLDFLAGS) -pg' CCLEAF='$(CC_)'
+             LDFLAGS='$(XLDFLAGS) -pg'
 
 # Configure for optimization (product configuration)
 product:
 	make GENOPT=''                                      \
              CFLAGS='-O2 $(CDEFS) $(SGICFLAGS) $(XCFLAGS)'  \
              FPU_TYPE=1                                     \
-             CCLEAF='$(CC_)'                                \
              XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Build the required GS library files.

@@ -13,7 +13,6 @@ PLOBJ=$(PLOBJDIR)$(D)
 PLO_=$(O_)$(PLOBJ)
 
 PLCCC=$(CC_) -I$(PLSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(C_)
-PLCCLEAF=$(CCLEAF) -I$(PLSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(C_)
 
 # Define the name of this makefile.
 PL_MAK=$(PLSRC)pl.mak
@@ -91,7 +90,7 @@ $(PLOBJ)plsymbol.$(OBJ): $(PLSRC)plsymbol.c $(AK) $(stdpre_h)\
 
 $(PLOBJ)plvalue.$(OBJ): $(PLSRC)plvalue.c $(AK) $(std_h)\
  $(plvalue_h)
-	$(PLCCLEAF) $(PLSRC)plvalue.c $(PLO_)plvalue.$(OBJ)
+	$(PLCCC) $(PLSRC)plvalue.c $(PLO_)plvalue.$(OBJ)
 
 $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
  $(plvocab_h)

@@ -5,4 +5,3 @@
 # Definitions for compilation with the Silicon Graphics C compiler
 
 CC_         = $(CCLD) $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
-CCLEAFFLAGS = 

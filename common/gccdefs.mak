@@ -5,4 +5,3 @@
 # Definitions for compilation with gcc.
 
 CC_=gcc $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
-CCLEAFFLAGS=-fomit-frame-pointer
