@@ -2358,8 +2358,8 @@ gxshade4_h=$(GLSRC)gxshade4.h
 
 $(GLOBJ)gscolor3.$(OBJ) : $(GLSRC)gscolor3.c $(GXERR)\
  $(gscolor3_h) $(gsmatrix_h) $(gsptype2_h)\
- $(gxcolor2_h) $(gxcspace_h) $(gxpaint_h) $(gxpcolor_h) $(gxshade_h)\
- $(gzpath_h) $(gzstate_h)
+ $(gxcolor2_h) $(gxcspace_h) $(gxpaint_h) $(gxdcolor_h) $(gxpcolor_h)\
+ $(gxshade_h) $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gscolor3.$(OBJ) $(C_) $(GLSRC)gscolor3.c
 
 $(GLOBJ)gsfunc3.$(OBJ) : $(GLSRC)gsfunc3.c $(math__h) $(memory__h) $(GXERR)\

@@ -479,7 +479,7 @@ typedef struct gx_device_color_info_s {
         : ( (nc) == 1                                             \
               ? 0                                                 \
               : ((color_bits) - dci_std_gray_bits(nc, color_bits))\
-                     / ((nc) - 1) ) )
+                     / ((nc) == 1 ? 1 : (nc) - 1) ) )
 
 /*
  * Determine the max_gray and max_color values based on the number
