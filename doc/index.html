@@ -32,25 +32,27 @@ Evaluation Test (CET) without egregious errors.
 both PCL5<sup>TM</sup> and PCLXL<sup>TM</sup> languages.
 <h2>
 Quick Start For Unix environment with GCC.</h2>
-<tt><font size=+0>tar zxvf ghostpclxxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<tt><font size=+0>tar zxvf ghostpcl-xxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # unpack the release <sup>1</sup></font></tt>
+<br><tt><font size=+0>tar zxvf urwfonts-xxx.tar.gz&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+# unpack the fonts.</font></tt>
 <br><tt><font size=+0>mkdir -p /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # make a font directory. <sup>2</sup></font></tt>
-<br><tt><font size=+0>cp ghostpcl/urwfonts/*.ttf /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><tt><font size=+0>cp urwfonts-xxx/*.ttf /windows/fonts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # copy the fonts.</font></tt>
-<br><tt><font size=+0>cd ghostpcl/main/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+<br><tt><font size=+0>cd ghostpcl-xxx/main/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # change to build directory</font></tt>
 <br><tt><font size=+0>make -f pcl6_gcc.mak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # build PCL and PCLXL.</font></tt>
 <br><tt><font size=+0>cd obj&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # move to the executable's directory.</font></tt>
 <br><tt><font size=+0>pcl6 ../../tools/owl.pcl&nbsp; ../../tools/frs96.pxl
-# test with PCL and PXL test file</font></tt><tt><font size=+0></font></tt>
-<p><tt><font size=+0>1. If tar 'z' option is not supported: gunzip ghostpclxxx.tar.gz;
-tar xvf ghostpclxxx.tar.</font></tt>
+# test with PCL and PXL test file</font></tt>
+<p><tt><font size=+0>1. If tar 'z' option is not supported: gunzip ghostpcl-xxx.tar.gz;
+tar xvf ghostpcl-xxx.tar.</font></tt>
 <br><tt><font size=+0>2. See&nbsp;</font></tt> <a href="#Fonts">#Fonts</a>&nbsp;
 to configure this differently..
-<br><tt><font size=+0></font></tt>&nbsp;
+<br>&nbsp;
 <h2>
 Supported development environments</h2>
 
