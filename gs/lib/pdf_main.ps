@@ -72,35 +72,35 @@ systemdict begin
 /runpdfstring 50 string def		% length is arbitrary
 /run {
   dup type /filetype ne { (r) file } if
-  dup read {
-    dup (%) 0 get eq {
-      pop dup read {
-	dup (P) 0 get eq {
-	  pop dup //runpdfstring {
+  dup ( ) .peekstring {
+    (%) eq {
+      dup (  ) .peekstring {
+	(%P) eq {
+	  dup //runpdfstring {
 		% Some invalid files might have extra-long first lines....
 	    { readline } .internalstopped not { pop pop exit } if
 	    pop =string
 	  } loop
-	  //runpdfstring (DF-) anchorsearch {
+	  //runpdfstring (%PDF-) anchorsearch {
 	    pop pop runpdf
 	  } {
 	    pop cvx .runexec
 	  } ifelse
 	} {
-	  2 copy unread pop
-	  dup (%) 0 get unread
 	  cvx .runps
 	} ifelse
       } {
 	closefile
       } ifelse
     } {
-      2 copy unread pop .runps
+      cvx .runps
     } ifelse
   } {
     closefile
   } ifelse
 } bind odef
+currentdict /runpdfstring .undef
+
 /runpdf			% <file> runpdf -
  { userdict begin
    /Page# null def

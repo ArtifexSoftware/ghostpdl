@@ -660,6 +660,49 @@ zisprocfilter(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* <file> <string> .peekstring <substring> <filled_bool> */
+private int
+zpeekstring(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    stream *s;
+    uint len, rlen;
+
+    check_read_file(s, op - 1);
+    check_write_type(*op, t_string);
+    len = r_size(op);
+    while ((rlen = sbufavailable(s)) < len) {
+	int status = s->end_status;
+
+	/*
+	 * The following is a HACK.  It should reallocate the buffer to hold
+	 * at least len bytes.  However, this raises messy problems about
+	 * which allocator to use and how it should interact with restore.
+	 */
+	if (len >= s->bsize)
+	    return_error(e_rangecheck);
+	switch (status) {
+	case EOFC:
+	    break;
+	case 0:
+	    s_process_read_buf(s);
+	    continue;
+	default:
+	    return handle_read_status(i_ctx_p, status, op - 1, &rlen,
+				      zpeekstring);
+	}
+	break;
+    }
+    if (rlen > len)
+	rlen = len;
+    /* Don't remove the data from the buffer. */
+    memcpy(op->value.bytes, sbufptr(s), rlen);
+    r_set_size(op, rlen);
+    op[-1] = *op;
+    make_bool(op, (rlen == len ? 1 : 0));
+    return 0;
+}
+
 /* <file> <int> .unread - */
 private int
 zunread(i_ctx_t *i_ctx_p)
@@ -766,16 +809,17 @@ const op_def zfileio1_op_defs[] = {
     {"1fileposition", zfileposition},
     {"0flush", zflush},
     {"1flushfile", zflushfile},
+    {"1.isprocfilter", zisprocfilter},
+    {"2.peekstring", zpeekstring},
     {"1print", zprint},
     {"1read", zread},
     {"2readhexstring", zreadhexstring},
     {"2readline", zreadline},
     {"2readstring", zreadstring},
-    {"1resetfile", zresetfile},
     op_def_end(0)
 };
 const op_def zfileio2_op_defs[] = {
-    {"1.isprocfilter", zisprocfilter},
+    {"1resetfile", zresetfile},
     {"2setfileposition", zsetfileposition},
     {"2.unread", zunread},
     {"2write", zwrite},
@@ -784,10 +828,10 @@ const op_def zfileio2_op_defs[] = {
     {"2writestring", zwritestring},
 		/* Internal operators */
     {"3%zreadhexstring_continue", zreadhexstring_continue},
-    {"3%zwritehexstring_continue", zwritehexstring_continue},
-    {"3%zreadstring_continue", zreadstring_continue},
     {"3%zreadline_continue", zreadline_continue},
+    {"3%zreadstring_continue", zreadstring_continue},
     {"4%zwritecvp_continue", zwritecvp_continue},
+    {"3%zwritehexstring_continue", zwritehexstring_continue},
     op_def_end(0)
 };
 
