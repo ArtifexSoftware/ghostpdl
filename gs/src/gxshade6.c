@@ -1740,9 +1740,8 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
 	int code;
 
-	if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN
-		|| 0 /* fixme: pfs->pis->halftone->type == ht_type_none
-		    doesn't work: with display it appears ht_type_screen. */) 
+	if (pfs->dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN ||
+		pfs->halftoned) 
 	    return 2;
 	if (!wedge) {
 	    code = cs_is_linear(cs, pfs->pis, pfs->dev, 
@@ -1914,6 +1913,18 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
     return wedge_by_triangles(pfs, ka / 2, q[1], &p[2].c, c1);
 }
 
+private inline bool
+is_halftoned(const patch_fill_state_t *pfs, const patch_color_t *c)
+{
+    gx_device_color dc;
+    int code = patch_color_to_device_color(pfs, c, &dc);
+
+    if (code < 0)
+	return true; /* Don't know, disable linear color. */
+    return dc.type != gx_dc_type_pure;
+
+}
+
 int
 mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
 	    const patch_color_t *c0, const patch_color_t *c1)
@@ -1926,6 +1937,7 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
     gs_fixed_edge le, re;
     const fixed adjust = INTERPATCH_PADDING;
 
+    pfs->halftoned = is_halftoned(pfs, c0);
     if (swap_axes) {
 	if (p0->x < p1->x) {
 	    q0.x = p0->y;
@@ -2559,6 +2571,7 @@ int
 mesh_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
 {
+    pfs->halftoned = is_halftoned(pfs, &p0->c);
     if (manhattan_dist(&p0->p, &p1->p) < pfs->max_small_coord &&
 	manhattan_dist(&p1->p, &p2->p) < pfs->max_small_coord &&
 	manhattan_dist(&p2->p, &p0->p) < pfs->max_small_coord)
@@ -3266,6 +3279,7 @@ patch_fill(patch_fill_state_t *pfs, const patch_curve_t curve[4],
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
+    pfs->halftoned = is_halftoned(pfs, &p.c[0][0]);
     /* draw_patch(&p, true, RGB(0, 0, 0)); */
     kv[0] = curve_samples(pfs, &p.pole[0][0], 4, pfs->fixed_flat);
     kv[1] = curve_samples(pfs, &p.pole[0][1], 4, pfs->fixed_flat);
