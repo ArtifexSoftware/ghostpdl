@@ -40,8 +40,8 @@ typedef struct gs_device_filter_stack_s gs_device_filter_stack_t;
 typedef struct gs_device_filter_s gs_device_filter_t;
 
 struct gs_device_filter_s {
-    int (*push)(gs_device_filter_t *self, gs_memory_t *mem, gx_device **pdev,
-		gs_state *pgs, gx_device *target);
+    int (*push)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
+		gx_device **pdev, gx_device *target);
     int (*prepop)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
 		  gx_device *dev);
     int (*postpop)(gs_device_filter_t *self, gs_memory_t *mem, gs_state *pgs,
