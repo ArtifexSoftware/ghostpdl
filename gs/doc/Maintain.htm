@@ -111,6 +111,88 @@ cvs3 add 109999
 cvs3 commit
 </pre></blockquote>
 
+<hr>
+
+<h1><a name="CVS">Rules for CVS Commits</a></h1>
+
+<p>
+<a href="http://sourceforge.net/cvs/?group_id=1897">Sourceforge
+CVS</a> is the primary repository for Ghostscript code changes.  This
+section describes a few rules intended to make life easier
+for people working with this code base.
+
+<p>
+At any given time, there are usually two active branches: a stable
+branch and a development branch. The development branch is HEAD, which
+is the default when doing a checkout without a -r flag. At the time of
+this writing (6 October 2000), the stable branch is tagged
+GS_6_5.
+
+<p>
+A concise and useful document for working with CVS branches is Jeff
+Semke's <a href="http://www.psc.edu/~semke/cvs_branches.html">CVS
+Branch and Tag Primer</a> (or <a
+href="http://www.ghostscript.com/cvs_branches.html">mirror</a>). A
+somewhat more detailed explanation is the <a
+href="http://www.loria.fr/~molli/cvs/doc/cvs_5.html">Branching and
+merging</a> section from the CVS documentation by Pascal Molli.
+
+<p>
+For new development commits, you can basically ignore the
+branches. Just commit to the HEAD branch. For bug fixes for the stable
+branch, it is your responsibility to commit to both the stable branch
+and, if appropriate, HEAD. Commits to HEAD are appropriate if they are
+in an area not being actively reworked, if the development version
+exhibits the same bug symptoms, and if the patch fixes these
+symptoms. Please also let someone (FIXME: give an email address here)
+at Artifex know whenever you do a bug fix commit, so that the change
+can be incorporated into the Artifex private CVS as well.
+
+<p>
+When modifying a number of files for a single issue, please group them
+together as a single commit. For two separate sets of changes dealing
+with two different issues, there should be two commits.
+
+<p>
+You should strive not to introduce any new bugs with your
+commit. Always make sure the code compiles before committing. Test the
+changes with several files, including the problem file in the case of
+a bug fix, and other files that may have been affected by the
+changes.
+
+<p>
+Always supply a descriptive log message for your commits. These log
+messages are used to automatically generate the <a
+href="News.htm">News.htm</a> file and History changelogs, and are also
+crucial for navigating CVS using the CVSweb gateway. Please try to
+keep the style of the descriptions similar to those in the current
+History#.htm files.
+
+<p>
+Information about who changed what, when, and why is maintained in the
+CVS logs. In general, a file should be a clean representation of the
+current version rather than a history trail of how it got
+there. Keeping old code around for reference is usually not necessary,
+as it is stored in the CVS diffs. When necessary, use #if / #endif, or
+descriptive conditionals such as #ifdef OLD_CMAP_TABLES. Do not
+comment out old code. (A very few files that are distributed separate
+from Ghostscript have a change log at the beginning, which should be
+maintained: currently, only ansiknr.c and md5.[ch].)
+
+
+<p>
+Up to 31 December 2000, all patches are to be reviewed by L. Peter
+Deutsch before being committed. Please email your patch to <a
+href="mailto:ghost@aladdin.com">ghost@aladdin.com</a>. Make sure to
+include your commit comment and any other information that would be
+helpful for the review.
+
+<p>
+If you are not an employee or consultant of Artifex or artofcode, then
+we need a copyright assignment form so we can incorporate your
+changes. Please email Raph Levien &lt;<a
+href="mailto:raph@artofcode.com">raph@artofcode.com</a>&gt; and
+include your snailmail address for a hardcopy assignment form.
 
 <!-- [2.0 end contents] ==================================================== -->
 
@@ -119,7 +201,7 @@ cvs3 commit
 
 <font size=2>
 
-<p>Copyright &copy; 2000 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 2000 artofcode LLC.  All rights reserved.
 
 <p>This file is part of AFPL Ghostscript.  See the <a
 href="Public.htm">Aladdin Free Public License</a> (the "License") for full
