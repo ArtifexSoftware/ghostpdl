@@ -132,6 +132,7 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\translib.dev  \
                   $(DD)\cidlib.dev    \
                   $(DD)\psf1lib.dev   \
+		  $(DD)\psf0lib.dev   \
                   $(DD)\sdctd.dev
 
 

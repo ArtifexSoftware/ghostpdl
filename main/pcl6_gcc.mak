@@ -107,7 +107,7 @@ FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
 	     $(DD)devcmap.dev $(DD)gsnogc.dev $(DD)sdctd.dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\
-	     $(DD)cidlib.dev $(DD)psf1lib.dev 
+	     $(DD)cidlib.dev $(DD)psf1lib.dev $(DD)psf0lib.dev
 
 SYNC=posync
 STDLIBS=-lm -lpthread
