@@ -1441,6 +1441,7 @@ private inline t1_hinter_space_coord g2o_dist_blue(t1_hinter * h, t1_glyph_space
     /* todo : exclude floating point */
 }
 
+#if ADOBE_OVERSHOOT_COMPATIBILIY
 private void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph_space_coord * x, t1_glyph_space_coord * y)
 {   t1_glyph_space_coord gy = *y;
     /* t1_glyph_space_coord gw = any_abs(zone->overshoot_y - zone->y); */
@@ -1451,6 +1452,7 @@ private void t1_hinter__add_overshoot(t1_hinter * this, t1_zone * zone, t1_glyph
 
     *y = zone->y + (zone->type == topzone ? gw1 : -gw1);
 }
+#endif
 
 private enum t1_align_type t1_hinter__compute_aligned_coord(t1_hinter * this, t1_glyph_space_coord * gc, int segment_index, fixed t, bool horiz)
 {   /* Returns true, if alignment zone is applied. */

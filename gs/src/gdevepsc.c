@@ -67,9 +67,8 @@
 **	the ESC-r n value
 */
 static char rgb_color[2][2][2] =	{
-	BLACK, VIOLET, GREEN,
-	CYAN, RED, MAGENTA,
-	YELLOW, WHITE,
+	{{BLACK, VIOLET}, {GREEN, CYAN}}, 
+	{{RED, MAGENTA}, {YELLOW, WHITE}}
 	};
 
 /* Map an RGB color to a printer color. */

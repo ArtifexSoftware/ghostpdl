@@ -416,12 +416,6 @@ rsbw:		/* Give the caller the opportunity to intervene. */
 			    switch (*pindex = fixed2int_var(*csp)) {
 				case 0:
 				    {	
-					/* We have to do something really sleazy */
-					/* here, namely, make it look as though */
-					/* the rmovetos never really happened, */
-					/* because we don't want to interrupt */
-					/* the current subpath. */
-					gs_fixed_point ept;
 					fixed fheight = csp[-4];
 					/* Assume the next two opcodes */
 					/* are `pop' `pop'.  Unfortunately, some */

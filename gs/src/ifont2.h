@@ -20,9 +20,6 @@
 #ifndef ifont2_INCLUDED
 #  define ifont2_INCLUDED
 
-/* Declare the Type 2 interpreter. */
-extern charstring_interpret_proc(gs_type2_interpret);
-
 /* Default value of lenIV */
 #define DEFAULT_LENIV_2 (-1)
 

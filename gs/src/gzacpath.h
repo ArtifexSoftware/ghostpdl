@@ -50,4 +50,8 @@ int gx_cpath_accum_end(const gx_device_cpath_accum * padev,
 /* Discard an accumulator in case of error. */
 void gx_cpath_accum_discard(gx_device_cpath_accum * padev);
 
+/* Intersect two clipping paths using an accumulator. */
+int gx_cpath_intersect_path_slow(gx_clip_path *, gx_path *, int,
+					gs_imager_state *);
+
 #endif /* gzacpath_INCLUDED */

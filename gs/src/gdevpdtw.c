@@ -119,7 +119,7 @@ pdf_different_encoding_index(const pdf_font_resource_t *pdfont, int ch0)
 private bool
 pdf_simple_font_needs_ToUnicode(const pdf_font_resource_t *pdfont)
 {
-    int ch, i;
+    int ch;
     unsigned char mask = (pdfont->FontType == ft_encrypted || pdfont->FontType == ft_encrypted2 
 		? GS_C_PDF_GOOD_GLYPH_MASK : GS_C_PDF_GOOD_NON_SYMBOL_MASK);
 

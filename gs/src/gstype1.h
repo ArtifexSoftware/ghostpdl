@@ -66,6 +66,8 @@ typedef charstring_interpret_proc((*charstring_interpret_proc_t));
 
 /* Define the Type 1 interpreter. */
 charstring_interpret_proc(gs_type1_interpret);
+/* Define the Type 2 interpreter. */
+charstring_interpret_proc(gs_type2_interpret);
 
 /* ------ CharString number representation ------ */
 

@@ -502,7 +502,7 @@ gx_default_remap_color(const gs_client_color * pcc, const gs_color_space * pcs,
     code = (*pconcs->type->remap_concrete_color)(conc, pconcs, pdc, pis, dev, select);
 
     /* Save original color space and color info into dev color */
-    i = abs(i);
+    i = any_abs(i);
     for (i--; i >= 0; i--)
 	pdc->ccolor.paint.values[i] = pcc->paint.values[i];
     pdc->ccolor_valid = true;

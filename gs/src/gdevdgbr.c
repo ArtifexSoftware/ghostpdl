@@ -777,7 +777,7 @@ gx_default_get_bits_rectangle(gx_device * dev, const gs_int_rect * prect,
 
 #ifdef DEBUG
 
-void
+private void
 debug_print_gb_options(gx_bitmap_format_t options)
 {
     static const char *const option_names[] = {
@@ -797,7 +797,7 @@ debug_print_gb_options(gx_bitmap_format_t options)
     dputc('\n');
 }
 
-void 
+private void 
 debug_print_gb_planes(const gs_get_bits_params_t * params, int num_planes)
 {
     gs_get_bits_options_t options = params->options;
@@ -812,12 +812,5 @@ debug_print_gb_planes(const gs_get_bits_params_t * params, int num_planes)
 	dprintf1("raster=%u", params->raster);
     dputc('\n');
 }
-
-void 
-debug_print_gb_params(const gs_get_bits_params_t * params)
-{
-    debug_print_gb_planes(params, 1);
-}
-
 
 #endif /* DEBUG */

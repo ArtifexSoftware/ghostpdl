@@ -332,4 +332,9 @@ int gx_cpath_enum_next(gs_cpath_enum *, gs_fixed_point[3]);		/* 0 when done */
 segment_notes
 gx_cpath_enum_notes(const gs_cpath_enum *);
 
+#ifdef DEBUG
+void gx_cpath_print(const gx_clip_path *);
+#endif
+
+
 #endif /* gxpath_INCLUDED */

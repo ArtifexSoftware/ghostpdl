@@ -28,10 +28,6 @@
 #include "gzpath.h"
 #include "gzcpath.h"
 
-/* Imported from gxacpath.c */
-extern int gx_cpath_intersect_path_slow(gx_clip_path *, gx_path *, int,
-					gs_imager_state *);
-
 /* Forward references */
 private void gx_clip_list_from_rectangle(gx_clip_list *, gs_fixed_rect *);
 
@@ -879,7 +875,7 @@ gx_clip_list_free(gx_clip_list * clp, gs_memory_t * mem)
 #ifdef DEBUG
 
 /* Print a clipping list. */
-void
+private void
 gx_clip_list_print(const gx_clip_list *list)
 {
     const gx_clip_rect *pr;
