@@ -19,13 +19,15 @@
 /* $Id$ */
 /* Fake stdin.h header file to access the stream code, for use in icclib. */
 
-#ifndef gs_stdin_INCLUDED
-#  define gs_stdin_INCLUDED
+#ifndef gs_stdio_INCLUDED
+#  define gs_stdio_INCLUDED
 
 #include "stdio_.h"
 #include "stream.h"
 
-#define FILE    stream
+/* WRONG: this should be 'stream' but this causes compile problems */
+/* We really need to clean up the icclib stdio area later */
+#define FILE    void
 
 extern  int     sread(void *, unsigned int, unsigned int, FILE *),
                 swrite(const void *, unsigned int, unsigned int, FILE *);
@@ -39,4 +41,4 @@ extern  int     sread(void *, unsigned int, unsigned int, FILE *),
 /* flush is only used for writing, which we do not require */
 #define fflush(s)   0
 
-#endif  /* gs_stdin_INCLUDED */
+#endif  /* gs_stdio_INCLUDED */
