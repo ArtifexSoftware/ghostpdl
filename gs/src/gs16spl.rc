@@ -23,7 +23,7 @@
 #define ID_TEXT 100
 
 #ifndef gstext_ico
-#define gstext_ico gstext.ico
+#define gstext_ico gswin.ico
 #endif
 
 1 ICON gstext_ico

@@ -21,10 +21,10 @@
 #include "gp_mswin.h"
 
 #ifndef gstext_ico
-#define gstext_ico gstext.ico
+#define gstext_ico gswin.ico
 #endif
 #ifndef gsgraph_ico
-#define gsgraph_ico gsgraph.ico
+#define gsgraph_ico gswin.ico
 #endif
 
 GSTEXT_ICON ICON gstext_ico

@@ -570,9 +570,9 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 
 GSSPL_XE=$(BINDIR)\gs16spl.exe
 
-$(GSSPL_XE): $(GLSRCDIR)\gs16spl.c $(GLSRCDIR)\gs16spl.rc
-	$(ECHOGS_XE) -w $(GLGEN)_spl.rc -x 23 define -s gstext_ico $(GLGENDIR)/gstext.ico
-	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gsgraph.ico
+$(GSSPL_XE): $(GLSRCDIR)\gs16spl.c $(GLSRCDIR)\gs16spl.rc $(GLGENDIR)/gswin.ico
+	$(ECHOGS_XE) -w $(GLGEN)_spl.rc -x 23 define -s gstext_ico $(GLGENDIR)/gswin.ico
+	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -x 23 define -s gsgraph_ico $(GLGENDIR)/gswin.ico
 	$(ECHOGS_XE) -a $(GLGEN)_spl.rc -R $(GLSRC)gs16spl.rc
 	$(COMPBASE16)\bin\bcc -W -ms -v -I$(COMPBASE16)\include $(GLO_)gs16spl.obj -c $(GLSRCDIR)\gs16spl.c
 	$(COMPBASE16)\bin\brcc -i$(COMPBASE16)\include -r -fo$(GLOBJ)gs16spl.res $(GLGEN)_spl.rc

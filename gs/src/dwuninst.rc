@@ -19,7 +19,7 @@
 #include <windows.h>
 #include "dwuninst.h"
 
-ID_UNINSTGS ICON "gstext.ico"
+ID_UNINSTGS ICON "gswin.ico"
 
 
 IDD_UNSET DIALOG 6, 15, 242, 123

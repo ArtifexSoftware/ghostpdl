@@ -19,8 +19,8 @@
 #include <windows.h>
 #include "dwmain.h"
 
-GSTEXT_ICON ICON gstext.ico
-GSIMAGE_ICON ICON gsgraph.ico
+GSTEXT_ICON ICON gswin.ico
+GSIMAGE_ICON ICON gswin.ico
 
 #ifndef DS_3DLOOK
 #define DS_3DLOOK 0x0004L	/* for Windows 95 look */

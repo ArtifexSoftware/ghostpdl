@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2002 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -71,7 +71,7 @@ i_INCDIR=-i$(INCDIR)
 
 # ----------------------------- Main program ------------------------------ #
 
-ICONS=$(GLGEN)gsgraph.ico $(GLGEN)gstext.ico
+ICONS=$(GLGEN)gswin.ico $(GLGEN)gswin16.ico
 
 GS_ALL=$(INT_ALL) $(INTASM)\
   $(LIB_ALL) $(LIBCTR) $(GLGEN)lib.tr $(ld_tr) $(GSDLL_OBJ).res $(GLSRC)$(GSDLL).def $(ICONS)
@@ -85,24 +85,24 @@ dwreg_h=$(GLSRC)dwreg.h
 
 # Make the icons from their text form.
 
-$(GLGEN)gsgraph.ico: $(GLSRC)gsgraph.icx $(ECHOGS_XE) $(WININT_MAK)
-	$(ECHOGS_XE) -wb $(GLGEN)gsgraph.ico -n -X -r $(GLSRC)gsgraph.icx
+$(GLGEN)gswin.ico: $(GLSRC)gswin.icx $(ECHOGS_XE) $(WININT_MAK)
+	$(ECHOGS_XE) -wb $(GLGEN)gswin.ico -n -X -r $(GLSRC)gswin.icx
 
-$(GLGEN)gstext.ico: $(GLSRC)gstext.icx $(ECHOGS_XE) $(WININT_MAK)
-	$(ECHOGS_XE) -wb $(GLGEN)gstext.ico -n -X -r $(GLSRC)gstext.icx
+$(GLGEN)gswin16.ico: $(GLSRC)gswin16.icx $(ECHOGS_XE) $(WININT_MAK)
+	$(ECHOGS_XE) -wb $(GLGEN)gswin16.ico -n -X -r $(GLSRC)gswin16.icx
 
 # resources for short EXE loader (no dialogs)
 $(GS_OBJ).res: $(GLSRC)dwmain.rc $(dwmain_h) $(ICONS) $(WININT_MAK)
-	$(ECHOGS_XE) -w $(GLGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gstext.ico
-	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gsgraph.ico
+	$(ECHOGS_XE) -w $(GLGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
+	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -R $(GLSRC)dwmain.rc
 	$(RCOMP) -I$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GS_OBJ).res $(GLGEN)_exe.rc
 	del $(GLGEN)_exe.rc
 
 # resources for main program (includes dialogs)
 $(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
-	$(ECHOGS_XE) -w $(GLGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)\gstext.ico
-	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gsgraph.ico
+	$(ECHOGS_XE) -w $(GLGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)\gswin.ico
+	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gswin.ico
 	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -R $(GLSRC)gsdll32.rc
 	$(RCOMP) -I$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GSDLL_OBJ).res $(GLGEN)_dll.rc
 	del $(GLGEN)_dll.rc
@@ -188,7 +188,7 @@ $(GLOBJ)dwreg.obj: $(GLSRC)dwreg.c $(AK) $(dwreg_h)
 # These modules shouldn't be referenced if MAKEDDLL==0,but dependencies here
 # don't hurt.
 
-$(GLOBJ)dwsetup.res: $(GLSRC)dwsetup.rc $(GLSRC)dwsetup.h $(GLGEN)gstext.ico
+$(GLOBJ)dwsetup.res: $(GLSRC)dwsetup.rc $(GLSRC)dwsetup.h $(GLGEN)gswin.ico
 	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) $(i_INCDIR) -r $(RO_)$(GLOBJ)dwsetup.res $(GLSRC)dwsetup.rc
 
 $(GLOBJ)dwsetup.obj: $(GLSRC)dwsetup.cpp $(GLSRC)dwsetup.h $(GLSRC)dwinst.h
@@ -199,7 +199,7 @@ $(GLOBJ)dwinst.obj: $(GLSRC)dwinst.cpp $(GLSRC)dwinst.h
 
 # Modules for uninstall program
 
-$(GLOBJ)dwuninst.res: $(GLSRC)dwuninst.rc $(GLSRC)dwuninst.h $(GLGEN)gstext.ico
+$(GLOBJ)dwuninst.res: $(GLSRC)dwuninst.rc $(GLSRC)dwuninst.h $(GLGEN)gswin.ico
 	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) $(i_INCDIR) -r $(RO_)$(GLOBJ)dwuninst.res $(GLSRC)dwuninst.rc
 
 $(GLOBJ)dwuninst.obj: $(GLSRC)dwuninst.cpp $(GLSRC)dwuninst.h
@@ -274,14 +274,16 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 ZIP_RSP = $(GLOBJ)setupgs.rsp
 # Note that we use ECHOGS_XE rather than echo for the .txt files
 # to avoid ANSI/OEM character mapping.
-archive: zip $(GLOBJ)gstext.ico $(ECHOGS_XE)
+# Use a special icon WinZip SE can't handle 48 pixel 32-bit icons 
+# as used by Windows XP.
+archive: zip $(GLOBJ)gswin16.ico $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(ZIP_RSP) -q "-win32 -setup"
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -st -x 22 AFPL Ghostscript $(GS_DOT_VERSION) for Win32 -x 22
-	$(ECHOGS_XE) -a $(ZIP_RSP) -q -i -s $(GLOBJ)gstext.ico
+	$(ECHOGS_XE) -a $(ZIP_RSP) -q -i -s $(GLOBJ)gswin16.ico
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -a -s $(GLOBJ)about.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -t -s $(GLOBJ)dialog.txt
 	$(ECHOGS_XE) -a $(ZIP_RSP) -q -c -s $(SETUP_XE_NAME)
-	$(ECHOGS_XE) -w $(GLOBJ)about.txt "AFPL Ghostscript is Copyright " -x A9 " 2001 artofcode LLC."
+	$(ECHOGS_XE) -w $(GLOBJ)about.txt "AFPL Ghostscript is Copyright " -x A9 " 2002 artofcode LLC."
 	$(ECHOGS_XE) -a $(GLOBJ)about.txt See license in gs$(GS_DOT_VERSION)\doc\PUBLIC.
 	$(ECHOGS_XE) -a $(GLOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
 	$(ECHOGS_XE) -w $(GLOBJ)dialog.txt This installs AFPL Ghostscript $(GS_DOT_VERSION).
