@@ -1364,7 +1364,7 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		   cks |= SHIFT_PRESSED;
 		ir.Event.KeyEvent.dwControlKeyState = cks;
 		if (ir.Event.KeyEvent.uChar.AsciiChar == 3)
-		    GenerateConsoleCtrlEvent(CTRL_C_EVENT, NULL);
+		    GenerateConsoleCtrlEvent(CTRL_C_EVENT, 0L);
 		else if (hStdin != INVALID_HANDLE_VALUE)
 		    WriteConsoleInput(hStdin, &ir, 1, &dwWritten); 
 	    }
