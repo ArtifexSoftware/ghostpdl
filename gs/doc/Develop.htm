@@ -3077,9 +3077,9 @@ all objects were allowed.
 <h4><a name="Structure_descriptors"></a>Structure descriptors</h4>
 
 <p>
-Every object has an associated structure descriptor, which the caller
-provides when allocating the object.  The structure descriptor serves
-several purposes:
+Every object allocated by a Ghostscript allocator has an associated
+structure descriptor, which the caller provides when allocating the object.
+The structure descriptor serves several purposes:
 
 <ul>
 <li>Specifying the size of the object for allocation;
@@ -3103,17 +3103,45 @@ size as well as a reference to its descriptor.
 
 <p>
 Because the standard Ghostscript garbage collector is conservative and can
-move objects, every object must have an accurate structure descriptor.  If
-you define a new type of object (structure) that will be allocated in
-storage managed by Ghostscript, you <em>must</em> create an accurate
-descriptor for it, and use that descriptor to allocate it.  The process of
-creating accurate descriptors for all structures was long and painful, and
-accounted for many hard-to-diagnose bugs.
+move objects, every object allocated by a Ghostscript allocator must have an
+accurate structure descriptor.  If you define a new type of object
+(structure) that will be allocated in storage managed by Ghostscript, you
+<em>must</em> create an accurate descriptor for it, and use that descriptor
+to allocate it.  The process of creating accurate descriptors for all
+structures was long and painful, and accounted for many hard-to-diagnose
+bugs.
 
 <p>
 By convention, the structure descriptor for structure type
 <b><tt>xxx_t</tt></b> is named <b><tt>st_xxx</tt></b> (this is preferred),
 or occasionally <b><tt>st_xxx_t</tt></b>.
+
+<p>
+Note that a structure descriptor is only required for objects allocated by
+the Ghostscript allocator.  A structure type <b><tt>xxx_t</tt></b> does not
+require a structure descriptor if instances of that type are used
+<em>only</em> in the following ways:
+
+<ul>
+
+<li>Instances are allocated only on the C stack, e.g., as
+<b><tt>xxx_t&nbsp;xxx1,&nbsp;xxx2;</tt></b>, or on the C heap, with
+<b><tt>malloc</tt></b> or through the Ghostscript "wrapper" defined in <a
+href="../src/gsmalloc.h">src/gsmalloc.h</a>.
+
+<li>Pointers to instances are not stored in places where the garbage
+collector will try to trace the pointer.
+
+<li>Code never attempts to get the structure type or size of an instance
+through the allocator API.
+
+</ul>
+
+<p>
+In general, structures without descriptors are problem-prone, and are
+deprecated; in new code, they should only be used if the structure is
+confined to a single .c file and its instances are only allocated on the C
+stack.
 
 <dl>
 <dt>
@@ -3138,7 +3166,7 @@ virtual procedure.  In practice, however, there are only two useful garbage
 collectors for Ghostscript's own allocator:
 
 <ul>
-<li>The "real" garbage collector associated withthe PostScript interpreter,
+<li>The "real" garbage collector associated with the PostScript interpreter,
 described <a href="#Interpreter_GC">below</a>;
 <li>A "non" garbage collector that only merges adjacent free blocks.
 </ul>
