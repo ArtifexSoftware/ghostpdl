@@ -94,7 +94,7 @@ s_arcfour_process(stream_state * ss, stream_cursor_read * pr,
 	status = last ? EOFC : 0;
     }
     /* generate a pseudorandom byte stream and xor it with the input */
-    while (pr->ptr < pr->limit) {
+    while (pr->ptr < limit) {
 	x = (x + 1) & 0xFF;
 	y = (y + S[x]) & 0xFF;
 	s = S[x];
