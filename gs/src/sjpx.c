@@ -200,29 +200,24 @@ copy_row_yuv(unsigned char *dest, jas_image_t *image,
 	    p[j] = jas_image_readcmptsample(image, clut[j], x/hstep[j], y/vstep[j]);
 	    p[j] <<= shift[j];
 	}
-	/* clamp and center chroma channels */
-	if (p[0] < 0) p[0] = 0;
-	else if (p[0] > 0xFFFF) p[0] = 0xFFFF;
-	if (!jas_image_cmptsgnd(image, clut[1])) p[1] -= 0x8FFF;
-	if (p[1] < -0x8FFF) p[1] = -0x8FFF;
-	else if (p[1] > 0x8FFE) p[1] = 0x8FFE;
-	if (!jas_image_cmptsgnd(image, clut[2])) p[2] -= 0x8FFF;
-	if (p[2] < -0x8FFF) p[2] = -0x8FFF;
-	else if (p[2] > 0x8FFE) p[2] = 0x8FFE;
+	/* center chroma channels if necessary */
+	if (!jas_image_cmptsgnd(image, clut[1])) p[1] -= 0x8000;
+	if (!jas_image_cmptsgnd(image, clut[2])) p[2] -= 0x8000;
 	/* rotate to RGB */
-#if 0
-	q[0] = (1./1.772) * (p[0] + 1.402 * p[2]);
-	q[1] = (1./1.772) * (p[0] + 1.772 * p[2]);
-	q[2] = (1./1.772) * (p[0] - 0.34413 * p[2] - 0.71414 * p[1]);
-#elif 0
-	q[0] = ((double)p[0] + 1.402 * p[2]);
-	q[1] = ((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
-	q[2] = ((double)p[0] - 1.772 * p[1]);
-#else
+#ifdef JPX_USE_IRT
 	q[1] = p[0] - ((p[1] + p[2])>>2);
 	q[0] = p[1] + q[1];
 	q[2] = p[2] + q[1]; 
+#else
+	q[0] = ((double)p[0] + 1.402 * p[2]);
+	q[1] = ((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
+	q[2] = ((double)p[0] + 1.772 * p[1]);
 #endif
+	/* clamp */
+	for (j = 0; j < 3; j++){
+	  if (q[j] < 0) q[j] = 0;
+	  else if (q[j] > 0xFFFF) q[j] = 0xFFFF;
+   	}
 	/* write out the pixel */
 	dest[i] = q[0] >> 8;
 	dest[i+1] = q[1] >> 8;
@@ -293,6 +288,7 @@ s_jpxd_decode_image(stream_jpxd_state *const state)
 	    dprintf("unable to decode JPX image data.\n");
 	    return ERRC;
 	}
+#ifdef JPX_USE_JASPER_CM
 	/* convert non-rgb multicomponent colorspaces to sRGB */
 	if (jas_image_numcmpts(image) > 1 && 
 	    jas_clrspc_fam(jas_image_clrspc(image)) != JAS_CLRSPC_FAM_RGB) {
@@ -306,6 +302,7 @@ s_jpxd_decode_image(stream_jpxd_state *const state)
 		image = rgbimage;
 	    }
 	}
+#endif
 	state->image = image;
         state->offset = 0;
         jas_stream_close(stream);
