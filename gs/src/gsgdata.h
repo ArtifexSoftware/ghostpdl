@@ -67,7 +67,7 @@ struct gs_glyph_data_procs_s {
   void proc(gs_glyph_data_t *pgd, client_name_t cname)
     GS_PROC_GLYPH_DATA_FREE((*free));
 #define GS_PROC_GLYPH_DATA_SUBSTRING(proc)\
-  int proc(gs_glyph_data_t *pgd, uint offset, uint size)
+  int proc(const gs_memory_t *mem, gs_glyph_data_t *pgd, uint offset, uint size)
     GS_PROC_GLYPH_DATA_SUBSTRING((*substring));
 };
 

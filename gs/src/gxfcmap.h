@@ -164,7 +164,8 @@ typedef struct gs_cmap_procs_s {
      * See gsfcmap.h for details.
      */
 
-    int (*decode_next)(const gs_cmap_t *pcmap, const gs_const_string *str,
+    int (*decode_next)(const gs_memory_t *mem,
+		       const gs_cmap_t *pcmap, const gs_const_string *str,
 		       uint *pindex, uint *pfidx,
 		       gs_char *pchr, gs_glyph *pglyph);
 
@@ -186,7 +187,7 @@ typedef struct gs_cmap_procs_s {
      * Check if the cmap is identity.
      */
 
-    bool (*is_identity)(const gs_cmap_t *pcmap);
+    bool (*is_identity)(const gs_memory_t *mem, const gs_cmap_t *pcmap);
 
 } gs_cmap_procs_t;
 
@@ -219,8 +220,8 @@ struct gs_cmap_ranges_enum_s {
 };
 
 typedef struct gs_cmap_lookups_enum_procs_s {
-    int (*next_lookup)(gs_cmap_lookups_enum_t *penum);
-    int (*next_entry)(gs_cmap_lookups_enum_t *penum);
+    int (*next_lookup)(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
+    int (*next_entry)(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
 } gs_cmap_lookups_enum_procs_t;
 struct gs_cmap_lookups_enum_s {
     /*
@@ -283,8 +284,8 @@ int gs_cmap_enum_next_range(gs_cmap_ranges_enum_t *penum);
  */
 void gs_cmap_lookups_enum_init(const gs_cmap_t *pcmap, int which,
 			       gs_cmap_lookups_enum_t *penum);
-int gs_cmap_enum_next_lookup(gs_cmap_lookups_enum_t *penum);
-int gs_cmap_enum_next_entry(gs_cmap_lookups_enum_t *penum);
+int gs_cmap_enum_next_lookup(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
+int gs_cmap_enum_next_entry(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum);
 
 /* ---------------- Implementation procedures ---------------- */
 
@@ -315,13 +316,13 @@ void gs_cmap_lookups_enum_setup(gs_cmap_lookups_enum_t *penum,
 /* 
  * Check for identity CMap. Uses a fast check for special cases.
  */
-bool gs_cmap_is_identity(const gs_cmap_t *pcmap);
+bool gs_cmap_is_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap);
 
 /* 
  * For a random CMap, compute whether it is identity.
  * It is not applicable to gs_cmap_ToUnicode_t due to
  * different sizes of domain keys and range values.
  */
-bool gs_cmap_compute_identity(const gs_cmap_t *pcmap);
+bool gs_cmap_compute_identity(const gs_memory_t *mem, const gs_cmap_t *pcmap);
 
 #endif /* gxfcmap_INCLUDED */

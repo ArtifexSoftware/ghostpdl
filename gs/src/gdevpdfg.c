@@ -859,7 +859,7 @@ pdf_write_multiple_halftone(gx_device_pdf *pdev,
 	    done_Default = true;
 	}
 	phtc = &pmht->components[code];
-	if ((code = pmht->get_colorname_string(phtc->cname, &str, &len)) < 0 ||
+	if ((code = pmht->get_colorname_string(mem, phtc->cname, &str, &len)) < 0 ||
             (code = pdf_string_to_cos_name(pdev, str, len, &value)) < 0)
 	    return code;
 	cos_value_write(&value, pdev);

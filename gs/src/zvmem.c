@@ -229,7 +229,7 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		case t_name:
 		    /* Names are special because of how they are allocated. */
 		    if (alloc_name_is_since_save(stkp, asave))
-			return_error(pstack->memory, e_invalidrestore);
+			return_error((const gs_memory_t *)pstack->memory, e_invalidrestore);
 		    continue;
 		case t_string:
 		    /* Don't check empty executable strings */
@@ -256,7 +256,7 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		    continue;
 	    }
 	    if (alloc_is_since_save(ptr, asave))
-		return_error(pstack->memory, e_invalidrestore);
+		return_error((const gs_memory_t *)pstack->memory, e_invalidrestore);
 	}
     } while (ref_stack_enum_next(&rsenum));
     return 0;		/* OK */

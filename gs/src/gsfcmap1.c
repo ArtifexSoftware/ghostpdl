@@ -464,13 +464,13 @@ adobe1_next_lookup(gs_cmap_lookups_enum_t *penum, const gx_code_map_t *pcm)
     return 0;
 }
 private int
-adobe1_next_lookup_def(gs_cmap_lookups_enum_t *penum)
+adobe1_next_lookup_def(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_lookup(penum,
 			&((const gs_cmap_adobe1_t *)penum->cmap)->def);
 }
 private int
-adobe1_next_lookup_notdef(gs_cmap_lookups_enum_t *penum)
+adobe1_next_lookup_notdef(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
 {
     return adobe1_next_lookup(penum,
 			&((const gs_cmap_adobe1_t *)penum->cmap)->notdef);

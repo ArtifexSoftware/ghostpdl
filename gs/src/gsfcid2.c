@@ -89,10 +89,11 @@ gs_private_st_suffix_add1(st_cmap_tt_16bit_format4, gs_cmap_tt_16bit_format4_t,
   st_cmap, font);
 
 private int
-tt_16bit_format4_decode_next(const gs_cmap_t * pcmap_in,
-		       const gs_const_string * pstr,
-		       uint * pindex, uint * pfidx,
-		       gs_char * pchr, gs_glyph * pglyph)
+tt_16bit_format4_decode_next(const gs_memory_t *mem,
+			     const gs_cmap_t * pcmap_in,
+			     const gs_const_string * pstr,
+			     uint * pindex, uint * pfidx,
+			     gs_char * pchr, gs_glyph * pglyph)
 {
     const gs_cmap_tt_16bit_format4_t *pcmap =
 	(const gs_cmap_tt_16bit_format4_t *)pcmap_in;
@@ -163,7 +164,7 @@ tt_16bit_format4_enum_ranges(const gs_cmap_t *pcmap,
     gs_cmap_ranges_enum_setup(pre, pcmap, &tt_16bit_format4_range_procs);
 }
 private int
-tt_16bit_format4_next_lookup(gs_cmap_lookups_enum_t *penum)
+tt_16bit_format4_next_lookup(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
 {
     if (penum->index[0] == 0) {
 	penum->entry.key_size = 2;
@@ -177,7 +178,7 @@ tt_16bit_format4_next_lookup(gs_cmap_lookups_enum_t *penum)
     return 1;
 }
 private int
-tt_16bit_format4_next_entry(gs_cmap_lookups_enum_t *penum)
+tt_16bit_format4_next_entry(const gs_memory_t *mem, gs_cmap_lookups_enum_t *penum)
 {
     /* index[1] is segment # << 17 + first code. */
     uint segment2 = penum->index[1] >> 16;

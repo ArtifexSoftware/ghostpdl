@@ -125,7 +125,7 @@ gs_main_init0(gs_main_instance * minst, FILE * in, FILE * out, FILE * err,
 	gp_get_usertime(heap, minst->base_time);
     }
     else {
-	heap = gs_lib_init0(gs_stdout);
+	heap = gs_lib_init0(out);
 	if (heap == 0)
 	    return_error(heap, e_VMerror);
 	minst->heap = heap;

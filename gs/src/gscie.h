@@ -245,7 +245,8 @@ typedef struct gs_cie_render_proc3_s {
  * Note also that since TransformPQR can fail (if the driver doesn't
  * recognize the proc_name), it must return a failure code.
  */
-typedef int (*gs_cie_transform_proc)(int, floatp, const gs_cie_wbsd *,
+typedef int (*gs_cie_transform_proc)(const gs_memory_t *mem,
+				     int, floatp, const gs_cie_wbsd *,
 				     gs_cie_render *, float *);
 typedef struct gs_cie_transform_proc3_s {
     gs_cie_transform_proc proc;

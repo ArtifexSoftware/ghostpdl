@@ -450,7 +450,7 @@ pdf_write_font_resource(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
     stream *s;
 
     if (pdfont->cmap_ToUnicode != NULL && pdfont->res_ToUnicode == NULL &&
-	    !gs_cmap_is_identity(pdfont->cmap_ToUnicode)) {
+	    !gs_cmap_is_identity(pdev->memory, pdfont->cmap_ToUnicode)) {
 	/*
 	 * The condition above slightly differs from PDF spec
 	 * (see the chapter "ToUnicode CMaps").

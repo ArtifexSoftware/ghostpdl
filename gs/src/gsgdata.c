@@ -39,7 +39,7 @@ gs_glyph_data_substring(const gs_memory_t *mem,
 {
     if (offset > pgd->bits.size || size > pgd->bits.size - offset)
 	return_error(mem, gs_error_rangecheck);
-    return pgd->procs->substring(pgd, offset, size);
+    return pgd->procs->substring(mem, pgd, offset, size);
 }
 
 /* Free the data for a glyph. */
@@ -58,7 +58,8 @@ glyph_data_free_permanent(gs_glyph_data_t *pgd, client_name_t cname)
 {
 }
 private int
-glyph_data_substring_permanent(gs_glyph_data_t *pgd, uint offset, uint size)
+glyph_data_substring_permanent(const gs_memory_t *mem, 
+			       gs_glyph_data_t *pgd, uint offset, uint size)
 {
     pgd->bits.data += offset;
     pgd->bits.size = size;
@@ -73,13 +74,14 @@ glyph_data_free_by_font(gs_glyph_data_t *pgd, client_name_t cname)
 			     &pgd->bits, cname);
 }
 private int
-glyph_data_substring_by_font(gs_glyph_data_t *pgd, uint offset, uint size)
+glyph_data_substring_by_font(const gs_memory_t *mem, 
+			     gs_glyph_data_t *pgd, uint offset, uint size)
 {
     gs_font *const font = pgd->proc_data;
     byte *data = (byte *)pgd->bits.data; /* break const */
 
     if (pgd->bits.bytes)	/* object, not string */
-	return glyph_data_substring_permanent(pgd, offset, size);
+	return glyph_data_substring_permanent(mem, pgd, offset, size);
     if (offset > 0)
 	memmove(data, data + offset, size);
     pgd->bits.data = 

@@ -1231,7 +1231,7 @@ cie_joint_caches_init(const gs_memory_t *mem, gx_cie_joint_caches * pjc,
 	for (i = 0; i <= lp.N; ++i) {
 	    float in = SAMPLE_LOOP_VALUE(i, lp);
 	    float out;
-	    int code = (*pcrd->TransformPQR.proc)(j, in, &pjc->points_sd,
+	    int code = (*pcrd->TransformPQR.proc)(mem, j, in, &pjc->points_sd,
 						  pcrd, &out);
 
 	    if (code < 0)

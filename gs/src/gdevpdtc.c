@@ -346,7 +346,7 @@ process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 	     * and later replace with a standard name.
 	     * This is a temporary fix for SF bug #615994 "CMAP is corrupt".
 	     */
-	    is_identity = gs_cmap_is_identity(pcmap);
+	    is_identity = gs_cmap_is_identity(pdev->memory, pcmap);
 	}
 	if (*pcmn == 0 && !is_identity) {		/* not standard */
 	    pcmres = pdf_find_resource_by_gs_id(pdev, resourceCMap, pcmap->id);

@@ -263,7 +263,7 @@ gs_end_transparency_group(gs_state *pgs)
 }
 
 private int
-mask_transfer_identity(floatp in, float *out, void *proc_data)
+mask_transfer_identity(const gs_memory_t *mem, floatp in, float *out, void *proc_data)
 {
     *out = in;
     return 0;

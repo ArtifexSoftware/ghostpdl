@@ -104,7 +104,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
     int code;
 
     for (gs_cmap_lookups_enum_init(pcmap, which, &lenum);
-	 (code = gs_cmap_enum_next_lookup(&lenum)) == 0; ) {
+	 (code = gs_cmap_enum_next_lookup(s->memory, &lenum)) == 0; ) {
 	gs_cmap_lookups_enum_t counter;
 	int num_entries = 0;
 	int gi;
@@ -115,7 +115,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 	}
 	/* Count the number of entries in this lookup range. */
 	counter = lenum;
-	while (gs_cmap_enum_next_entry(&counter) == 0)
+	while (gs_cmap_enum_next_entry(s->memory, &counter) == 0)
 	    ++num_entries;
 	for (gi = 0; gi < num_entries; gi += 100) {
 	    int i = gi, ni = min(i + 100, num_entries);
@@ -144,7 +144,7 @@ cmap_put_code_map(stream *s, int which, const gs_cmap_t *pcmap,
 		long value;
 		int value_size;
 
-		DISCARD(gs_cmap_enum_next_entry(&lenum)); /* can't fail */
+		DISCARD(gs_cmap_enum_next_entry(s->memory, &lenum)); /* can't fail */
 		value_size = lenum.entry.value.size;
 		for (j = 0; j <= lenum.entry.key_is_range; ++j) {
 		    stream_putc(s, '<');

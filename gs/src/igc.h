@@ -73,7 +73,7 @@ ptr_proc_mark(ptr_ref_mark);
 /* Exported by ilocate.c for igc.c */
 void ialloc_validate_memory(const gs_ref_memory_t *, gc_state_t *);
 void ialloc_validate_chunk(const chunk_t *, gc_state_t *);
-void ialloc_validate_object(const gs_ref_memory_t *, const obj_header_t *, const chunk_t *,
+void ialloc_validate_object(const gs_memory_t *, const obj_header_t *, const chunk_t *,
 			    gc_state_t *);
 
 /* Macro for returning a relocated pointer */

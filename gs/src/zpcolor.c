@@ -40,7 +40,7 @@
 extern const gs_color_space_type gs_color_space_type_Pattern;
 
 /* Forward references */
-private int zPaintProc(const gs_memory_t *mem, const gs_client_color *, gs_state *);
+private int zPaintProc(const gs_client_color *, gs_state *);
 private int pattern_paint_prepare(i_ctx_t *);
 private int pattern_paint_finish(i_ctx_t *);
 
@@ -180,13 +180,13 @@ const op_def zpcolor_l2_op_defs[] =
 /* Render the pattern by calling the PaintProc. */
 private int pattern_paint_cleanup(i_ctx_t *);
 private int
-zPaintProc(const gs_memory_t *mem, const gs_client_color * pcc, gs_state * pgs)
+zPaintProc(const gs_client_color * pcc, gs_state * pgs)
 {
     /* Just schedule a call on the real PaintProc. */
     r_ptr(&gs_int_gstate(pgs)->remap_color_info,
 	  int_remap_color_info_t)->proc =
 	pattern_paint_prepare;
-    return_error(mem, e_RemapColor);
+    return_error(gs_state_memory(pgs), e_RemapColor);
 }
 /* Prepare to run the PaintProc. */
 private int

@@ -447,7 +447,7 @@ cka:	    if (!gc_locate(rptr, gcst)) {
 
 /* Validate an object. */
 void
-ialloc_validate_object(const gs_ref_memory_t *cmem, const obj_header_t * ptr, const chunk_t * cp,
+ialloc_validate_object(const gs_memory_t *cmem, const obj_header_t * ptr, const chunk_t * cp,
 		       gc_state_t * gcst)
 {
     const obj_header_t *pre = ptr - 1;

@@ -52,7 +52,7 @@ RELOC_PTRS_END
 /* Default CRD procedures. */
 
 private int
-tpqr_identity(int index, floatp in, const gs_cie_wbsd * pwbsd,
+tpqr_identity(const gs_memory_t *mem, int index, floatp in, const gs_cie_wbsd * pwbsd,
 	      gs_cie_render * pcrd, float *out)
 {
     *out = in;
@@ -60,7 +60,7 @@ tpqr_identity(int index, floatp in, const gs_cie_wbsd * pwbsd,
 }
 
 private int
-tpqr_from_cache(int index, floatp in, const gs_cie_wbsd * pwbsd,
+tpqr_from_cache(const gs_memory_t *mem, int index, floatp in, const gs_cie_wbsd * pwbsd,
 		gs_cie_render * pcrd, float *out)
 {
     /*
@@ -199,7 +199,7 @@ tpqr_lookup(const gs_memory_t *mem, int index, floatp in, const gs_cie_wbsd * pw
 	code = gs_note_error(mem, gs_error_undefined);
     if (code < 0)
 	return code;
-    return pcrd->TransformPQR.proc(index, in, pwbsd, pcrd, out);
+    return pcrd->TransformPQR.proc(mem, index, in, pwbsd, pcrd, out);
 }
 
 

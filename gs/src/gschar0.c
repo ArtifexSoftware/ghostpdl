@@ -384,14 +384,14 @@ gs_type0_next_char_glyph(gs_text_enum_t *pte, gs_char *pchr, gs_glyph *pglyph)
 			    debug_print_string_hex(pte->memory, cstr.data, cstr.size);
 			    dlprintf(pte->memory, ")\n");
 			}
-			code = gs_cmap_decode_next(pdata->CMap, &cstr,
-					(uint*) &submindex, &fidx, &chr, &glyph);
+			code = gs_cmap_decode_next(pte->memory, pdata->CMap, &cstr,
+						   (uint*) &submindex, &fidx, &chr, &glyph);
 			mindex += submindex;
 		    } else {
 			cstr.data = str;
 			cstr.size = end - str;
-			code = gs_cmap_decode_next(pdata->CMap, &cstr, &mindex,
-					       &fidx, &chr, &glyph);
+			code = gs_cmap_decode_next(pte->memory, pdata->CMap, &cstr, &mindex,
+						   &fidx, &chr, &glyph);
 		    }
 		    if (code < 0)
 			return code;

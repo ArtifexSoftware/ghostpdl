@@ -90,7 +90,7 @@ typedef struct gs_transparency_mask_params_s {
     gs_transparency_mask_subtype_t subtype;
     bool has_Background;
     float Background[GS_CLIENT_COLOR_MAX_COMPONENTS];
-    int (*TransferFunction)(floatp in, float *out, void *proc_data);
+    int (*TransferFunction)(const gs_memory_t *mem, floatp in, float *out, void *proc_data);
     void *TransferFunction_data;
 } gs_transparency_mask_params_t;
 
