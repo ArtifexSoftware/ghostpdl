@@ -67,23 +67,20 @@ private int
 push_string(i_ctx_t *i_ctx_p, const char *v)
 {   os_ptr op = osp;
     int len = strlen(v);
-    byte *buffer = ialloc_string(len, "zfile_name_combine");
 
-    if (buffer == 0)
-	return_error(e_VMerror);
-    memcpy(buffer, v, len);
     push(1);
-    make_string(op + 1, a_read | icurrent_space, 1, buffer);
+    make_const_string(op, avm_foreign | a_readonly,
+		      len, (const byte *)v);
     return 0;
 }
 
-/* .file_name_separator <string> */
+/* - .file_name_separator <string> */
 private int
 zfile_name_separator(i_ctx_t *i_ctx_p)
 {   return push_string(i_ctx_p, gp_file_name_separator());
 }
 
-/* .file_name_directory_separator <string> */
+/* - .file_name_directory_separator <string> */
 private int
 zfile_name_directory_separator(i_ctx_t *i_ctx_p)
 {   return push_string(i_ctx_p, gp_file_name_directory_separator());
@@ -95,15 +92,30 @@ zfile_name_parent(i_ctx_t *i_ctx_p)
 {   return push_string(i_ctx_p, gp_file_name_parent());
 }
 
+/* <string> .file_name_parents <integer> */
+private int
+zfile_name_parents(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    uint plen;
+
+    check_read_type(*op, t_string);
+    plen = gp_file_name_parents((const char *)op->value.const_bytes,
+				   r_size(op));
+    make_int(op, plen);
+    return 0;
+}
+
 #endif
 
 const op_def zfile1_op_defs[] =
 {
-    {"2.file_name_combine", zfile_name_combine},
+    {"0.file_name_combine", zfile_name_combine},
 #if NEW_COMBINE_PATH
-    {"2.file_name_separator", zfile_name_separator},
-    {"2.file_name_directory_separator", zfile_name_directory_separator},
-    {"2.file_name_parent", zfile_name_parent},
+    {"0.file_name_separator", zfile_name_separator},
+    {"0.file_name_directory_separator", zfile_name_directory_separator},
+    {"0.file_name_parent", zfile_name_parent},
+    {"0.file_name_parents", zfile_name_parents},
 #endif
     op_def_end(0)
 };

@@ -179,6 +179,7 @@ const char gp_fmode_binary_suffix[] = "b";
 const char gp_fmode_rb[] = "rb";
 const char gp_fmode_wb[] = "wb";
 
+#if !NEW_COMBINE_PATH
 /* Answer whether a path_string can meaningfully have a prefix applied */
 bool
 gp_pathstring_not_bare(const char *fname, uint len)
@@ -241,7 +242,7 @@ gp_file_name_concat_string(const char *prefix, uint plen)
 	};
     return "/";
 }
-
+#endif
 
 /* ------ File enumeration ------ */
 
@@ -754,7 +755,13 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     char *tname;
     int prefix_length = strlen(prefix);
 
-    if (!gp_pathstring_not_bare(prefix, prefix_length)) {
+    if (
+#if !NEW_COMBINE_PATH
+        !gp_pathstring_not_bare(prefix, prefix_length)
+#else
+	!gp_file_name_is_absolute(prefix, prefix_length)
+#endif
+        ) {
 	temp = getenv("TMPDIR");
 	if (temp == 0)
 	    temp = getenv("TEMP");
@@ -774,7 +781,12 @@ gp_open_scratch_file(const char *prefix, char fname[gp_file_name_sizeof],
     int prefix_length = strlen(prefix);
     int len = gp_file_name_sizeof - prefix_length - 7;
 
-    if (gp_pathstring_not_bare(prefix, prefix_length) ||
+    if (
+#if !NEW_COMBINE_PATH
+        gp_pathstring_not_bare(prefix, prefix_length) ||
+#else
+	gp_file_name_is_absolute(prefix, prefix_length) ||
+#endif
 	gp_gettmpdir(fname, &len) != 0)
 	*fname = 0;
     else {

@@ -187,6 +187,7 @@ FILE *gp_fopen(const char *fname, const char *mode);
 /* if 2nd param true, text mode if 2nd param false */
 int gp_setmode_binary(FILE * pfile, bool mode);
 
+#if !NEW_COMBINE_PATH
 /* Answer whether a path string is not "bare" (returns true) i.e.,	*/
 /* contains an absolute reference, an initial 'current directory' ref	*/
 /* or some form of relative reference to the parent directory. The	*/
@@ -213,6 +214,7 @@ bool gp_file_name_references_parent(const char *fname, uint len);
 /* determine if a separator is needed and may return an empty string	*/
 /* in some cases (platform dependent).					*/
 const char *gp_file_name_concat_string(const char *prefix, uint plen);
+#endif
 
 /*
  * Combine a file name with a prefix.

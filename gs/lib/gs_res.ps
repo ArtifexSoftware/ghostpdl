@@ -222,15 +222,51 @@ odef
 % Define the system parameters used for the Generic implementation of
 % ResourceFileName.
 systemdict begin
+
+% The check below for the presence of /.filenamedirseparator
+% is a temporary switch to NEW_COMBINE_PATH logics.
+% It should be removed after alpha testing the new logic.
+systemdict /.filenamedirseparator known not {
+  %     mark <string> <string> ... .file_name_dir_concat <string>
+  /.file_name_dir_concat
+  { 0 string
+    { 1 index mark eq { exit } if
+      .file_name_directory_separator exch concatstrings
+      concatstrings
+    } loop
+    exch pop
+  } bind def
+} if
+
 currentdict /pssystemparams known not {
   /pssystemparams 10 dict readonly def
 } if
 pssystemparams begin
-  /FontResourceDir (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
-  /GenericResourceDir (/Resource/) readonly .forcedef	% pssys'params is r-o
-  /GenericResourcePathSep (/) readonly .forcedef	% pssys'params is r-o
-  (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
-  (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
+  % The check below for the presence of /.filenamedirseparator
+  % is a temporary switch to NEW_COMBINE_PATH logics.
+  % It should be removed after alpha testing the new logic.
+  systemdict /.filenamedirseparator known {
+    /FontResourceDir (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
+    /GenericResourceDir (/Resource/) readonly .forcedef	% pssys'params is r-o
+    /GenericResourcePathSep (/) readonly .forcedef	% pssys'params is r-o
+    (%diskFontResourceDir) cvn (/Resource/Font/) readonly .forcedef	% pssys'params is r-o
+    (%diskGenericResourceDir) cvn (/Resource/) readonly .forcedef	% pssys'params is r-o
+  } {
+    /FontResourceDir mark
+    	.file_name_parent (Resource) (Font)
+    	.file_name_dir_concat readonly .forcedef	% pssys'params is r-o
+    /GenericResourceDir mark
+        .file_name_parent (Resource)
+        .file_name_dir_concat readonly .forcedef	% pssys'params is r-o
+    /GenericResourcePathSep
+    	.file_name_separator readonly .forcedef		% pssys'params is r-o
+    (%diskFontResourceDir) cvn mark
+    	.file_name_parent (Resource) (Font)
+    	.file_name_dir_concat readonly .forcedef	% pssys'params is r-o
+    (%diskGenericResourceDir) cvn mark
+    	.file_name_parent (Resource)
+	.file_name_dir_concat readonly .forcedef	% pssys'params is r-o
+  } ifelse
 end
 end
 

@@ -459,6 +459,7 @@ gp_open_scratch_file (const char *prefix, char *fname, const char *mode)
 }
 */
 
+#if !NEW_COMBINE_PATH
 /* Answer whether a path_string can meaningfully have a prefix applied */
 int
 gp_pathstring_not_bare(const char *fname, unsigned len) {
@@ -539,7 +540,7 @@ gp_file_name_concat_string (const char *prefix, uint plen)
 		return "";
 	return ":";
 }
-
+#endif
 
 
 /* ------ File enumeration ------ */

@@ -150,10 +150,16 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     ref *permitlist = NULL;
     /* an empty string (first character == 0) if '\' character is */
     /* recognized as a file name separator as on DOS & Windows	  */
+#if !NEW_COMBINE_PATH
     bool use_windows_pathsep = *gp_file_name_concat_string("\\", 1) == '\0';
     bool fname_bare = !gp_pathstring_not_bare(fname, len);
     const char *sep_string = NULL;
     int cwd_len = 0, sep_len = 0;
+#else
+    const char *win_sep2 = "\\";
+    bool use_windows_pathsep = (gs_file_name_check_separator(win_sep2, 1, win_sep2) == 1);
+    uint plen = gp_file_name_parents(fname, len);
+#endif
 
     /*
      * Check here for the %pipe device which is illegal when
@@ -169,11 +175,13 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
     }
     if (dict_find_string(&(i_ctx_p->userparams), permitgroup, &permitlist) <= 0)
         return 0;	/* if Permissions not found, just allow access */
+#if !NEW_COMBINE_PATH
     if (fname_bare) {
 	cwd_len = strlen(gp_current_directory_name);
 	sep_string = gp_file_name_concat_string(gp_current_directory_name, cwd_len);
 	sep_len = strlen(sep_string);
     }
+#endif
 
     for (i=0; i<r_size(permitlist); i++) {
         ref permitstring;
@@ -185,10 +193,25 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 	    r_type(&permitstring) != t_string 
 	   )    
 	    break;	/* any problem, just fail */
+#if NEW_COMBINE_PATH
+	/* 
+	 * Check if any file name is permitted with "*".
+	 */
+	if (r_size(&permitstring) == 1 && permitstring.value.bytes[0] == '*')
+	    return 0;		/* success */
+	/* 
+	 * If the filename starts with parent references, 
+	 * the permission element must start with same parent references.
+	 */
+	if (plen != 0 && (r_size(&permitstring) <= plen ||
+		memcmp(fname, permitstring.value.bytes, plen)))
+	    continue;
+#endif
         if (string_match( (const unsigned char*) fname, len,
 			  permitstring.value.bytes, r_size(&permitstring), 
 		use_windows_pathsep ? &win_filename_params : NULL)
 	   ) {
+#if !NEW_COMBINE_PATH
 	    /*
 	     * We can't know where we will get to if we reference the parent
 	     * directory, so don't allow access if LockFilePermissions is true
@@ -200,7 +223,11 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 		continue;	/* disregard this match and keep trying */
 	    else
 		return 0;		/* success */
+#else
+	    return 0;		/* success */
+#endif
 	}
+#if !NEW_COMBINE_PATH
 	    /* fname is a bare name meaning it will default to the current
 	     * directory. Check to see if the current permitted path is the
              * platform's current directory, and if so, succeed.
@@ -213,6 +240,7 @@ check_file_permissions(i_ctx_t *i_ctx_p, const char *fname, int len,
 			(const byte *)sep_string, sep_len) == 0) &&
 		(permitstring.value.bytes[cwd_len+sep_len] == '*'))
 	    return 0;	/* permitstring was CWD + sep + * */
+#endif
     }
     /* not found */
     return e_invalidfileaccess;
@@ -569,6 +597,7 @@ execfile_cleanup(i_ctx_t *i_ctx_p)
     return zclosefile(i_ctx_p);
 }
 
+#if !NEW_COMBINE_PATH
 /* <dir> .filenamedirseparator <string> */
 private int
 zfilenamedirseparator(i_ctx_t *i_ctx_p)
@@ -584,6 +613,7 @@ zfilenamedirseparator(i_ctx_t *i_ctx_p)
 		      strlen(sepr), (const byte *)sepr);
     return 0;
 }
+#endif
 
 /* - .filenamelistseparator <string> */
 private int
@@ -645,6 +675,7 @@ zlibfile(i_ctx_t *i_ctx_p)
     } else {
 	ref fref;
 
+#	if !NEW_COMBINE_PATH
 	/* Skip checks if this file name came from the command line. */
 	if (i_ctx_p->LockFilePermissions &&
 	    (i_ctx_p->filearg == NULL ||
@@ -663,7 +694,8 @@ zlibfile(i_ctx_t *i_ctx_p)
 	       ) 
 		    return_error(e_invalidfileaccess);
 	}
-	code = lib_file_open(pname.fname, pname.len, cname, MAX_CNAME,
+#	endif
+	code = lib_file_open(i_ctx_p, pname.fname, pname.len, cname, MAX_CNAME,
 			     &clen, &fref, imemory);
 	if (code >= 0) {
 	    s = fptr(&fref);
@@ -719,10 +751,17 @@ ztempfile(i_ctx_t *i_ctx_p)
 	pstr = prefix;
     }
     if (i_ctx_p->LockFilePermissions) 
-        if (gp_file_name_references_parent(pstr, strlen(pstr)) ||
+        if (
+#if !NEW_COMBINE_PATH
+	    gp_file_name_references_parent(pstr, strlen(pstr)) ||
 	    (gp_pathstring_not_bare(pstr, strlen(pstr)) &&
 	      check_file_permissions(i_ctx_p, pstr, strlen(pstr),
 	      				"PermitFileWriting") < 0 )
+#else
+	    gp_file_name_is_absolute(pstr, strlen(pstr)) &&
+	    check_file_permissions(i_ctx_p, pstr, strlen(pstr),
+	      				"PermitFileWriting") < 0
+#endif
 	)
 	    return_error(e_invalidfileaccess);
     s = file_alloc_stream(imemory, "ztempfile(stream)");
@@ -751,6 +790,7 @@ ztempfile(i_ctx_t *i_ctx_p)
     return code;
 }
 
+#if !NEW_COMBINE_PATH
 /* <string> .pathstring_not_bare <bool> */
 private int
 zpathstring_not_bare(i_ctx_t *i_ctx_p)
@@ -760,6 +800,7 @@ zpathstring_not_bare(i_ctx_t *i_ctx_p)
     make_bool(op, gp_pathstring_not_bare((char *)op->value.bytes, r_size(op)));
     return 0;
 }
+#endif
 
 
 /* ------ Initialization procedure ------ */
@@ -770,14 +811,18 @@ const op_def zfile_op_defs[] =
     {"1.execfile", zexecfile},
     {"2file", zfile},
     {"3filenameforall", zfilenameforall},
+#if !NEW_COMBINE_PATH
     {"1.filenamedirseparator", zfilenamedirseparator},
+#endif
     {"0.filenamelistseparator", zfilenamelistseparator},
     {"1.filenamesplit", zfilenamesplit},
     {"1.libfile", zlibfile},
     {"2renamefile", zrenamefile},
     {"1status", zstatus},
     {"2.tempfile", ztempfile},
+#if !NEW_COMBINE_PATH
     {"2.pathstring_not_bare", zpathstring_not_bare},
+#endif
 		/* Internal operators */
     {"0%file_continue", file_continue},
     {"0%execfile_finish", execfile_finish},
@@ -973,18 +1018,47 @@ file_prepare_stream(const char *fname, uint len, const char *file_access,
     return 0;
 }
 
+private int
+check_file_permissions_aux(i_ctx_t *i_ctx_p, char *fname, uint flen)
+{   /* i_ctx_p is NULL running init files. */
+    /* fname must be reduced. */
+#if NEW_COMBINE_PATH
+    if (i_ctx_p == NULL)
+	return 0;
+    /* Skip checks if this file name came from the command line. */
+    if (!i_ctx_p->LockFilePermissions ||
+	(i_ctx_p->filearg != NULL &&
+		bytes_compare((const byte *)fname, flen,
+		      (const byte *)i_ctx_p->filearg,
+		      strlen( (const char*)i_ctx_p->filearg) ) == 0))
+	return 0;
+    if (check_file_permissions(i_ctx_p, fname, flen, "PermitFileReading") < 0)
+	return_error(e_invalidfileaccess);
+#endif
+    return 0;
+}
+
+
 /* The startup code calls this to open @-files. */
 private FILE *
-lib_fopen_with_libpath(gx_io_device *iodev, const char *fname, uint flen, char fmode[4], 
-		char *buffer, int blen)
-{
+lib_fopen_with_libpath(i_ctx_t *i_ctx_p, gx_io_device *iodev, 
+		const char *fname, uint flen, char fmode[4], char *buffer, int blen)
+{   /* i_ctx_p is NULL running init files. */
     FILE *file = NULL;
 
-    if (gp_pathstring_not_bare(fname, flen)) {
+    if (
+#if !NEW_COMBINE_PATH
+	gp_pathstring_not_bare(fname, flen)
+#else
+	gp_file_name_is_absolute(fname, flen)
+#endif
+       ) {
 	if (flen + 1 > blen)
 	    return 0;
 	memcpy(buffer, fname, flen);
 	buffer[flen] = 0;
+	if (check_file_permissions_aux(i_ctx_p, buffer, blen) < 0)
+	    return 0;
 	if (iodev->procs.fopen(iodev, buffer, fmode, &file,
 				     buffer, blen) == 0)
 	    return file;
@@ -1000,6 +1074,12 @@ lib_fopen_with_libpath(gx_io_device *iodev, const char *fname, uint flen, char f
 	    gp_file_name_combine_result r = gp_file_name_combine_patch(pstr, plen, 
 		    fname, flen, buffer, &blen1);
 	    if (r != gp_combine_success)
+		continue;
+#if NEW_COMBINE_PATH
+	    if (gp_file_name_parents(buffer, blen1) > 0)
+		continue;
+#endif
+	    if (check_file_permissions_aux(i_ctx_p, buffer, blen) < 0)
 		continue;
 	    if (iodev->procs.fopen(iodev, buffer, fmode, &file,
 					 buffer, blen) == 0)
@@ -1022,7 +1102,7 @@ lib_fopen(const char *fname)
     char fmode[3] = "r";
 
     strcat(fmode, gp_fmode_binary_suffix);
-    return lib_fopen_with_libpath(&iodev_default_copy, fname, strlen(fname), 
+    return lib_fopen_with_libpath(NULL, &iodev_default_copy, fname, strlen(fname), 
 			    fmode, buffer, sizeof(buffer));
 }
 
@@ -1030,9 +1110,9 @@ lib_fopen(const char *fname)
 /* using the search paths. */
 /* The startup code calls this to open the initialization file gs_init.ps. */
 int
-lib_file_open(const char *fname, uint len, byte * cname, uint max_clen,
+lib_file_open(i_ctx_t *i_ctx_p, const char *fname, uint len, byte * cname, uint max_clen,
 	      uint * pclen, ref * pfile, gs_memory_t *mem)
-{
+{   /* i_ctx_p is NULL running init files. */
     stream *s;
     int code;
     char fmode[4];  /* r/w/a, [+], [b], null */
@@ -1048,7 +1128,7 @@ lib_file_open(const char *fname, uint len, byte * cname, uint max_clen,
     if (fname == 0)
 	return 0;
     buffer = (char *)s->cbuf;
-    file = lib_fopen_with_libpath(iodev, fname, len, fmode, buffer, s->bsize);
+    file = lib_fopen_with_libpath(i_ctx_p, iodev, fname, len, fmode, buffer, s->bsize);
     if (file == NULL) {
 	s->cbuf = NULL;
 	s->bsize = s->cbsize = 0;

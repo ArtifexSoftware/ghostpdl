@@ -846,7 +846,7 @@ private const char help_usage2[] = "\
  -sOutputFile=<file> select output file: - for stdout, |command for pipe,\n\
                                          embed %d or %ld for page #\n";
 private const char help_trailer[] = "\
-For more information, see %s%sUse.htm.\n\
+For more information, see %s.\n\
 Report bugs to %s, using the form in Bug-form.htm.\n";
 private const char help_devices[] = "Available devices:";
 private const char help_emulators[] = "Input formats:";
@@ -985,8 +985,12 @@ print_paths(gs_main_instance * minst)
 private void
 print_help_trailer(const gs_main_instance *minst)
 {
-    outprintf(help_trailer, gs_doc_directory,
-	    gp_file_name_concat_string(gs_doc_directory,
-				       strlen(gs_doc_directory)),
-	    GS_BUG_MAILBOX);
+    char buffer[gp_file_name_sizeof];
+    const char *use_htm = "Use.htm", *p = buffer;
+    uint blen = sizeof(buffer);
+
+    if (gp_file_name_combine(gs_doc_directory, strlen(gs_doc_directory), 
+	    use_htm, strlen(use_htm), buffer, &blen) != gp_combine_success)
+	p = use_htm;
+    outprintf(help_trailer, p, GS_BUG_MAILBOX);
 }

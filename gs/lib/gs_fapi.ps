@@ -71,11 +71,9 @@ currentdict /super.complete_instance currentdict /complete_instance get put
 
 /RefinePath      % <FontDict> /key RefinePath <FontDict>
 { exch begin
-  Path .pathstring_not_bare not {	% only add prefix is path is bare
-    /Path //Config 2 index get pssystemparams /GenericResourcePathSep get 
-    Path concatstrings concatstrings def
-  } if
-  pop
+  //Config exch get
+  /Path exch
+  Path .file_name_combine def
   currentdict end
 } bind def
 

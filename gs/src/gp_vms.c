@@ -254,6 +254,7 @@ gp_setmode_binary(FILE * pfile, bool binary)
     return 0;			/* Noop under VMS */
 }
 
+#if !NEW_COMBINE_PATH
 /*  Answer whether a file name contains a directory/device specification, i.e.,
  *  is absolute (not directory- or device-relative).  Since for VMS, the concept
  *  of an "absolute" file reference has no meaning.  As Ghostscript is here
@@ -353,6 +354,7 @@ gp_file_name_concat_string(const char *prefix, uint plen)
 	};
     return ":";
 }
+#endif
 
 /* ------ Wild card file search procedures ------ */
 

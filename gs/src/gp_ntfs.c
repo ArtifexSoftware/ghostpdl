@@ -81,6 +81,7 @@ const char gp_fmode_binary_suffix[] = "b";
 const char gp_fmode_rb[] = "rb";
 const char gp_fmode_wb[] = "wb";
 
+#if !NEW_COMBINE_PATH
 /* Answer whether a path_string can meaningfully have a prefix applied */
 bool
 gp_pathstring_not_bare(const char *fname, unsigned len)
@@ -141,6 +142,7 @@ gp_file_name_concat_string(const char *prefix, uint plen)
 	};
     return "/";
 }
+#endif
 
 /* ------ File enumeration ------ */
 

@@ -465,7 +465,9 @@ gs_main_lib_open(gs_main_instance * minst, const char *file_name, ref * pfile)
     byte fn[maxfn];
     uint len;
 
-    return lib_file_open(file_name, strlen(file_name), fn, maxfn,
+    return lib_file_open(NULL /* Don't check permissions here, because permlist 
+                                 isn't ready running init files. */
+			 , file_name, strlen(file_name), fn, maxfn,
 			 &len, pfile, imemory);
 }
 
