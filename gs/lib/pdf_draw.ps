@@ -983,7 +983,12 @@ end
   3 index false /resolvestream cvx
   /.paintform cvx
   ] cvx /PaintProc exch put
-  q execform Q		% gsave / grestore around the Form
+    % Adjust pdfemptycount since we have an extra dictionary on the stack
+  pdfemptycount exch
+  /pdfemptycount where pop count 2 sub /pdfemptycount exch put
+  q execform Q			% gsave / grestore around the Form
+    % Restore pdfemptycount
+  /pdfemptycount where pop exch /pdfemptycount exch put
 } bdef
 
 /_dops_save 1 array def
