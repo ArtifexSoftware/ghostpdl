@@ -182,6 +182,17 @@ from Ghostscript have a change log at the beginning, which should be
 maintained: currently, only ansiknr.c and md5.[ch].)
 
 <p>
+Additionally, if your patch removes a feature, changes an interface or
+otherwise creates an incompatibility with the last release, you
+must add an entry to the "Incompatible changes" section of <tt>News.htm</tt>
+as this information can only be generated manually.
+This admonition applies to api changes that might
+affect other developers as well as user issues like switch behavior.
+Upon release, the accumulated incompatible changes will be moved to the 
+relevant History file, and the News collection in cvs will be wiped clean 
+for the next version.
+
+<p>
 All patches must be reviewed before being committed. Please email your
 patch to <a
 href="mailto:gs-code-review@ghostscript.com">gs-code-review@ghostscript.com</a>.
