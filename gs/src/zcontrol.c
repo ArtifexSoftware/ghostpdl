@@ -305,7 +305,7 @@ zfor(i_ctx_t *i_ctx_p)
     check_estack(7);
     ep = esp + 6;
     check_proc(*op);
-    /* Push a mark, the control variable, the initial value, */
+    /* Push a mark, the control variable set to the initial value, */
     /* the increment, the limit, and the procedure, */
     /* and invoke the continuation operator. */
     if (r_has_type(op - 3, t_integer) &&
@@ -409,34 +409,58 @@ for_real_continue(i_ctx_t *i_ctx_p)
     return o_push_estack;
 }
 
-/* Here we provide an internal variant of 'for' that enumerates the */
-/* values 0, 1/N, 2/N, ..., 1 precisely.  The arguments must be */
-/* the integers 0, 1, and N.  We need this for */
-/* loading caches such as the transfer function cache. */
-private int for_fraction_continue(P1(i_ctx_t *));
+/*
+ * Here we provide an internal variant of 'for' that enumerates the values
+ * A, A+1*(B-A)/N, A+2*(B-A)/N, ..., B precisely.  The arguments are A
+ * (real), N (integer), and B (real).  We need this for loading caches such
+ * as the transfer function cache.
+ *
+ * NOTE: This computation must match the comment before the definition of
+ * gs_sample_loop_params_t in gscie.h.
+ */
+private int for_samples_continue(P1(i_ctx_t *));
+/* <first> <count> <last> <proc> %for_samples - */
 int
-zfor_fraction(i_ctx_t *i_ctx_p)
+zfor_samples(i_ctx_t *i_ctx_p)
 {
-    int code = zfor(i_ctx_p);
+    os_ptr op = osp;
+    es_ptr ep;
 
-    if (code < 0)
-	return code;		/* shouldn't ever happen! */
-    make_op_estack(esp, for_fraction_continue);
-    return code;
+    check_type(op[-3], t_real);
+    check_type(op[-2], t_integer);
+    check_type(op[-1], t_real);
+    check_proc(*op);
+    check_estack(8);
+    ep = esp + 7;
+    make_mark_estack(ep - 6, es_for, no_cleanup);
+    make_int(ep - 5, 0);
+    memcpy(ep - 4, op - 3, 3 * sizeof(ref));
+    ref_assign(ep - 1, op);
+    make_op_estack(ep, for_samples_continue);
+    esp = ep;
+    pop(4);
+    return o_push_estack;
 }
 /* Continuation procedure */
 private int
-for_fraction_continue(i_ctx_t *i_ctx_p)
+for_samples_continue(i_ctx_t *i_ctx_p)
 {
-    register es_ptr ep = esp;
-    int code = for_pos_int_continue(i_ctx_p);
+    os_ptr op = osp;
+    es_ptr ep = esp;
+    long var = ep[-4].value.intval;
+    float a = ep[-3].value.realval;
+    long n = ep[-2].value.intval;
 
-    if (code != o_push_estack)
-	return code;
-    /* We must use osp instead of op here, because */
-    /* for_pos_int_continue pushes a value on the o-stack. */
-    make_real(osp, (float)osp->value.intval / ep[-1].value.intval);
-    return code;
+    if (var > n) {
+	esp -= 6;		/* pop everything */
+	return o_pop_estack;
+    }
+    push(1);
+    make_real(op, a + (ep[-1].value.realval - a) * var / n);
+    ep[-4].value.intval = var + 1;
+    ref_assign_inline(ep + 2, ep);	/* saved proc */
+    esp = ep + 2;
+    return o_push_estack;
 }
 
 /* <int> <proc> repeat - */
@@ -921,8 +945,8 @@ const op_def zcontrol3_op_defs[] = {
     {"0%for_pos_int_continue", for_pos_int_continue},
     {"0%for_neg_int_continue", for_neg_int_continue},
     {"0%for_real_continue", for_real_continue},
-    {"4%for_fraction", zfor_fraction},
-    {"0%for_fraction_continue", for_fraction_continue},
+    {"4%for_samples", zfor_samples},
+    {"0%for_samples_continue", for_samples_continue},
     {"0%loop_continue", loop_continue},
     {"0%repeat_continue", repeat_continue},
     {"0%stopped_push", stopped_push},

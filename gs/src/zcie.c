@@ -540,36 +540,22 @@ cie_prepare_cache(i_ctx_t *i_ctx_p, const gs_range * domain, const ref * proc,
 		  gs_ref_memory_t * imem, client_name_t cname)
 {
     int space = imemory_space(imem);
-    gs_for_loop_params flp;
+    gs_sample_loop_params_t lp;
     es_ptr ep;
 
-    gs_cie_cache_init(&pcache->params, &flp, domain, cname);
+    gs_cie_cache_init(&pcache->params, &lp, domain, cname);
     pcache->params.is_identity = r_size(proc) == 0;
-    /*
-     * If a matrix was singular, it is possible that flp.step = 0.
-     * In this case, flp.limit = flp.init as well.
-     * Execute the procedure once, and replicate the result.
-     */
-    if (flp.step == 0) {
-	check_estack(5);
-	ep = esp;
-	make_real(ep + 5, flp.init);
-	ep[4] = *proc;
-	make_op_estack(ep + 3, cie_cache_finish1);
-	esp += 5;
-    } else {
-	check_estack(9);
-	ep = esp;
-	make_real(ep + 9, flp.init);
-	make_real(ep + 8, flp.step);
-	make_real(ep + 7, flp.limit);
-	ep[6] = *proc;
-	r_clear_attrs(ep + 6, a_executable);
-	make_op_estack(ep + 5, zcvx);
-	make_op_estack(ep + 4, zfor);
-	make_op_estack(ep + 3, cie_cache_finish);
-	esp += 9;
-    }
+    check_estack(9);
+    ep = esp;
+    make_real(ep + 9, lp.A);
+    make_int(ep + 8, lp.N);
+    make_real(ep + 7, lp.B);
+    ep[6] = *proc;
+    r_clear_attrs(ep + 6, a_executable);
+    make_op_estack(ep + 5, zcvx);
+    make_op_estack(ep + 4, zfor_samples);
+    make_op_estack(ep + 3, cie_cache_finish);
+    esp += 9;
     /*
      * The caches are embedded in the middle of other
      * structures, so we represent the pointer to the cache

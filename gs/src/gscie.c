@@ -71,13 +71,14 @@ extern_st(st_imager_state);
 	for (j = 0; j < countof(pcache); j++) {\
 	    cie_cache_floats *pcf = &(pcache)[j].floats;\
 	    int i;\
-	    gs_for_loop_params lp;\
+	    gs_sample_loop_params_t lp;\
 \
 	    gs_cie_cache_init(&pcf->params, &lp, &(domains)[j], cname);\
-	    for (i = 0; i < gx_cie_cache_size; lp.init += lp.step, i++) {\
-		pcf->values[i] = (*(rprocs)->procs[j])(lp.init, pcie);\
+	    for (i = 0; i < lp.N; ++i) {\
+		float v = SAMPLE_LOOP_VALUE(i, lp);\
+		pcf->values[i] = (*(rprocs)->procs[j])(v, pcie);\
 		if_debug5('C', "[C]%s[%d,%d] = %g => %g\n",\
-			  cname, j, i, lp.init, pcf->values[i]);\
+			  cname, j, i, v, pcf->values[i]);\
 	    }\
 	    pcf->params.is_identity =\
 		(rprocs)->procs[j] == (dprocs).procs[j];\
@@ -448,13 +449,14 @@ int
 gx_install_CIEA(const gs_color_space * pcs, gs_state * pgs)
 {
     gs_cie_a *pcie = pcs->params.a;
+    gs_sample_loop_params_t lp;
     int i;
-    gs_for_loop_params lp;
-    float in;
 
     gs_cie_cache_init(&pcie->caches.DecodeA.floats.params, &lp,
 		      &pcie->RangeA, "DecodeA");
-    for (i = 0, in = lp.init; i < gx_cie_cache_size; in += lp.step, i++) {
+    for (i = 0; i < lp.N; ++i) {
+	float in = SAMPLE_LOOP_VALUE(i, lp);
+
 	pcie->caches.DecodeA.floats.values[i] = (*pcie->DecodeA)(in, pcie);
 	if_debug3('C', "[C]DecodeA[%d] = %g => %g\n",
 		  i, in, pcie->caches.DecodeA.floats.values[i]);
@@ -745,7 +747,7 @@ gx_currentciecaches(gs_state * pgs)
 /* Compute the parameters for loading a cache, setting base and factor. */
 /* This procedure is idempotent. */
 void
-gs_cie_cache_init(cie_cache_params * pcache, gs_for_loop_params * pflp,
+gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
 		  const gs_range * domain, client_name_t cname)
 {
 	/* We need to map the values in the range
@@ -774,7 +776,8 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_for_loop_params * pflp,
     double a = domain->rmin, b = domain->rmax;
     double R = b - a;
     double delta;
-#define N (gx_cie_cache_size - 1)
+#define NN (gx_cie_cache_size - 1) /* 'N' is a member name, see end of proc */
+#define N NN
 
     /* Adjust the range if necessary. */
     if (a < 0 && b >= 0) {
@@ -797,10 +800,11 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_for_loop_params * pflp,
     if_debug4('c', "[c]cache %s 0x%lx base=%g, factor=%g\n",
 	      (const char *)cname, (ulong) pcache,
 	      pcache->base, pcache->factor);
-    pflp->init = a;
-    pflp->step = delta;
-    pflp->limit = b + delta / 2;
+    pslp->A = a;
+    pslp->B = b;
 #undef N
+    pslp->N = NN;
+#undef NN
 }
 
 /* ------ Complete a rendering structure ------ */
@@ -858,12 +862,12 @@ gs_cie_render_sample(gs_cie_render * pcrd)
 			&pcrd->EncodeABC, Encode_default, pcrd, "EncodeABC");
     if (pcrd->RenderTable.lookup.table != 0) {
 	int i, j, m = pcrd->RenderTable.lookup.m;
-	gs_for_loop_params flp;
+	gs_sample_loop_params_t lp;
 	bool is_identity = true;
 
 	for (j = 0; j < m; j++) {
 	    gs_cie_cache_init(&pcrd->caches.RenderTableT[j].fracs.params,
-			      &flp, &Range3_default.ranges[0],
+			      &lp, &Range3_default.ranges[0],
 			      "RenderTableT");
 	    is_identity &= pcrd->RenderTable.T.procs[j] ==
 		RenderTableT_default.procs[j];
@@ -1192,21 +1196,21 @@ cie_joint_caches_init(gx_cie_joint_caches * pjc,
     is_identity = pcrd->TransformPQR.proc == TransformPQR_default.proc;
     for (j = 0; j < 3; j++) {
 	int i;
-	gs_for_loop_params lp;
+	gs_sample_loop_params_t lp;
 
 	gs_cie_cache_init(&pjc->TransformPQR.caches[j].floats.params, &lp,
 			  &pcrd->RangePQR.ranges[j], "TransformPQR");
-	for (i = 0; i < gx_cie_cache_size; lp.init += lp.step, i++) {
+	for (i = 0; i < lp.N; ++i) {
+	    float in = SAMPLE_LOOP_VALUE(i, lp);
 	    float out;
-	    int code =
-		(*pcrd->TransformPQR.proc)(j, lp.init, &pjc->points_sd,
-					   pcrd, &out);
+	    int code = (*pcrd->TransformPQR.proc)(j, in, &pjc->points_sd,
+						  pcrd, &out);
 
 	    if (code < 0)
 		return code;
 	    pjc->TransformPQR.caches[j].floats.values[i] = out;
 	    if_debug4('C', "[C]TransformPQR[%d,%d] = %g => %g\n",
-		      j, i, lp.init, out);
+		      j, i, in, out);
 	}
 	pjc->TransformPQR.caches[j].floats.params.is_identity = is_identity;
     }

@@ -137,7 +137,7 @@ int zcleartomark(P1(i_ctx_t *));
 int zclosefile(P1(i_ctx_t *));	/* for runexec_cleanup */
 int zcopy_dict(P1(i_ctx_t *));	/* for zcopy */
 int zend(P1(i_ctx_t *));
-int zfor_fraction(P1(i_ctx_t *)); /* for color function sampling */
+int zfor_samples(P1(i_ctx_t *)); /* for function sampling */
 int zsetfont(P1(i_ctx_t *));	/* for cshow_continue */
 
 /* Operators exported for special customer needs. */
