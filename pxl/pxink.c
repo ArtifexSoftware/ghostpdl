@@ -556,8 +556,8 @@ set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
 	if ( ppt->type == eRGB || ppt->type == eSRGB ) {
 	    
 	    ppt->value.rgb[0] = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
-	    ppt->value.rgb[1] = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
-	    ppt->value.rgb[2] = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
+	    ppt->value.rgb[1] = (float)par->pv[aPrimaryArray]->value.array.data[1] / 255.0;
+	    ppt->value.rgb[2] = (float)par->pv[aPrimaryArray]->value.array.data[2] / 255.0;
 	} else 
 	    /* NB figure out reals and ints */
 	    ppt->value.gray = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
