@@ -279,7 +279,9 @@
 	1 string dup 0 4 -1 roll put	% prefix
 	<00 00 00 02> ()	% params, keys
 	3 index .endmapvalue
-	6 -1 roll 1 add
+	6 -1 roll
+		% cidchars increment the CID, but notdefchars do not.
+	counttomark 1 add index 1 eq { 1 add } if
       } for pop
     } {
 		% Stack: cid_base code_lo code_hi
