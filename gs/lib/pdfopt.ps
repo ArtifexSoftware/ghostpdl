@@ -446,7 +446,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   Trailer /Root oget null
   1 index /PageMode knownoget {
     /UseOutlines eq {
-      pop dup /Outlines get
+      1 index /Outlines knownoget { exch pop } if
     } if
   } if exch pop
   1 identifyPageObjects
