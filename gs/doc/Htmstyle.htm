@@ -215,7 +215,8 @@ Besides the essential HTML structure elements, Ghostscript HTML document's
 comment:
 
 <blockquote>
-<b><tt>&lt;!-- $RCSfile$ $Revision$ --&gt;</tt></b>
+<!-- The next line must not contain the literal string $,I,d,:! -->
+<b><tt>&lt;!-- $Id</tt><tt>: </tt></b><b><em>{file name}</em></b><b><tt>.htm $ --&gt;</tt></b>
 </blockquote>
 
 <li>For documents converted from another form, an HTML comment line giving
@@ -754,13 +755,13 @@ This is intended for readability both in a browser and as plain text.
 
 <font size=2>
 
-<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+<p>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
 <p>
 This software is licensed to a single customer by Artifex Software Inc.
 under the terms of a specific OEM agreement.
 <p>
-Artifex version 6.12, Aladdin Ghostscript version 
+Artifex version 6.50
 
 </font>
 

@@ -21,10 +21,6 @@
 <tr><th align="center" bgcolor="#FF99CC"><font size=6>
 Changes in the most recent release of Ghostscript
 </font>
-<hr>
-<font size=5>
-Notes for Aladdin 6.01 apply to Artifex 6.12
-</font>
 </table>
 
 <!-- [1.1 end headline] ==================================================== -->
@@ -59,38 +55,49 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
+<h1><a name="Version6.50"></a>Version 6.50 (2000-12-02)</h1>
+
+<p>
+This fileset consists of AFPL Ghostscript 6.50, a maintenance release.
+
+<p>
+All problems registered on SourceForge numbered 124313 or lower are
+closed, except for the following: 101814, 101905, 101955, 102146,
+102735, 105289, 106340, 106652, 109350, 111449, 113116, 113799,
+114084, 115256, 115536, 116461, 117066, 117260, 119676, 119677,
+119798, 120967, 121161, 121582, 121715, 122035, 122426, 122532,
+122534, 122683, 122727, 123005, 123091, 123702, 123754, 123867,
+123896, 123992, 124042, 124056, 124095, 124134, 124204, 124313.
+
+
+<p>
+The following projects are in a partially completed state:
+
+<ul>
+
+<li>CID-keyed fonts in the PDF writer (gdevpdf[eftw].c) -- barely started.
+
+</ul>
+
 <pre>
-<h1><a name="Version6.01"></a>Version 6.01 (2000-03-17)</h1>
 
-The Artifex 6.12 release is equivlent to the Aladdin 6.01.
-Numbers are different allow for future Artifex releases to
-differ from Aladdin releases.
+<h2><a name="6.24_Incompatible_changes"></a>Incompatible changes</h2>
 
-The previous Artifex release was 6.11, corresponding to Aladdin
-6.0 release.
-  
-This is a bug-fix release for 6.0.
-
-This release fixes the following reported bugs: #101555, #101813, #101816,
-#101818, #101827, #101830, #101871, #101853, #101906, #101949, #101950,
-#102003, #102004, #102038, #102081, #102936.
-
-<h2><a name="6.01_Incompatible_changes"></a>Incompatible changes</h2>
-
-(Platforms)
-	- OpenVMS using VAX C is no longer supported.  (OpenVMS with DEC C
-and gcc are still supported.)
+(Procedures)
+	- The -Zv and -ZV switches now trace alpha/transparency features.
+	- The program name is now AFPL Ghostscript rather than Aladdin
+Ghostscript.
+	- The default Windows installation directory is now c:\gs rather
+than c:\Aladdin.
+(Utilities)
+	- lib/pdfeof.ps is deleted; its functionality is included in the
+standard code.
 (Drivers)
-	- The third argument of psdf_set_color is changed from const char *
-to const psdf_set_color_commands_t *.
-(Interpreter)
-	- The non-standard feature of writing dictionaries in binary object
-output is now disabled by default, but can now be enabled dynamically.
+	- The X driver now implements sync_output using XSync(False) rather
+than XFlush().
 (Library)
-	- The definition of TRANSPARENCY_PER_H_P is moved from gdevmrop.h to
-gsropt.h.
-	- The handling of the source opaque, texture transparent case of
-RasterOp when TRANSPARENCY_PER_H_P is defined is changed slightly.
+	- gdev_vector_dopath now never returns 1.
+	- Color space types now have a new, required, "equal" procedure.
 
 </pre>
 
@@ -107,7 +114,7 @@ RasterOp when TRANSPARENCY_PER_H_P is defined is changed slightly.
 This software is licensed to a single customer by Artifex Software Inc.
 under the terms of a specific OEM agreement.
 <p>
-Artifex version 6.12, Aladdin Ghostscript version 
+Artifex version 6.50
 
 </font>
 

@@ -1,7 +1,7 @@
 1 gs
- gs - Aladdin Ghostscript interpreter/previewer
+ gs - AFPL Ghostscript interpreter/previewer
 ! $RCSfile$ $Revision$
-! Ghostscript version 6.0, 3 February 2000
+! Ghostscript version 6.50, 2 December 2000
   Usage:
    $ gs [options] [file ...]
 

@@ -104,6 +104,12 @@ font machinery and provides some utility procedures that work with fonts.
 </dl>
 
 <dl>
+<dt><b><tt>gs_frsd.ps</tt></b>
+<dd>Support for the PostScript LanguageLevel 3
+<b><tt>ReusableStreamDecode</tt></b> filter.
+</dl>
+
+<dl>
 <dt><b><tt>gs_init.ps</tt></b>
 <dd>Ghostscript reads this automatically when it starts up.  It contains
 definitions of many standard procedures and initialization for a wide
@@ -140,6 +146,12 @@ configurations.
 <b><tt>statusdict</tt></b> and some other environmental odds and ends for
 the benefit of PostScript files that really want to be printed on a
 LaserWriter.
+</dl>
+
+<dl>
+<dt><b><tt>gs_trap.ps</tt></b>
+<dd>Stub support for the PostScript LanguageLevel 3 "In-RIP trapping"
+feature.
 </dl>
 
 <dl>
@@ -259,6 +271,17 @@ the Ghostscript source distribution.
 <dd>Stubs for the PDF security (encryption) code.
 </dl>
 
+<dl>
+<dt><b><tt>pdfopt.ps</tt></b>
+<dd>A PDF linearizer ("optimizer").
+</dl>
+
+<dl>
+<dt><b><tt>pdfwrite.ps</tt></b>
+<dd>Support for writing PDF files.  Currently used only by the linearizer,
+but potentially useful for other kinds of PDF-processing utilities.
+</dl>
+
 <hr>
 
 <h1><a name="DPS_specific"></a>Display PostScript-specific system files</h1>
@@ -290,6 +313,11 @@ the Ghostscript source distribution.
 <dl>
 <dt><b><tt>alphabet.ps</tt></b>
 <dd>Print a sample alphabet at several different sizes.
+</dl>
+
+<dl>
+<dt><b><tt>annots.pdf</tt></b>
+<dd>A sample file with a wide variety of PDF "annotations".
 </dl>
 
 <dl>
@@ -453,13 +481,6 @@ in landscape mode.
 <dl>
 <dt><b><tt>pdf2dsc.ps</tt></b>
 <dd>A utility to read a PDF file and produce a DSC "index" file.
-</dl>
-
-<dl>
-<dt><b><tt>pdfeof.ps</tt></b>
-<dd>A patch to make the PDF interpreter accept garbage after the %%EOF line
-at the end of PDF files, which some buggy applications produce (such as,
-apparently, Acrobat Distiller on the Macintosh).
 </dl>
 
 <dl>
@@ -701,7 +722,7 @@ the Ghostscript source distribution.
 This software is licensed to a single customer by Artifex Software Inc.
 under the terms of a specific OEM agreement.
 <p>
-Artifex version 6.12, Aladdin Ghostscript version 
+Artifex version 6.50
 
 </font>
 
