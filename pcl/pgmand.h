@@ -305,6 +305,9 @@ int pcl_set_pic_frame_anchor_point(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
 int pcl_hpgl_plot_horiz_size(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
 int pcl_hpgl_plot_vert_size(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
 
+/* reset required for overlay macros - a partial DF command */
+void hpgl_reset_overlay(P1(hpgl_state_t *pgls));
+
 /* this should find a new home but for now we list it here. */
 int hpgl_print_symbol_mode_char(P1(hpgl_state_t *pgls));
 #endif                                         /* pgmand_INCLUDED */
