@@ -522,8 +522,8 @@ obj_cvs(const ref * op, byte * str, uint len, uint * prlen,
 	*pchars = str;
 	return code;
     }
-    code = obj_string_data(op, pchars, prlen);
-    return (code == e_typecheck ? gs_note_error(e_rangecheck) : code);
+    obj_string_data(op, pchars, prlen);
+    return gs_note_error(e_rangecheck);
 }
 
 /* Find the index of an operator that doesn't have one stored in it. */
