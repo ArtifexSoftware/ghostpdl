@@ -2323,6 +2323,8 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bo
 	    fixed dx2 = q[2].x - q[0].x, dy2 = q[2].y - q[0].y;
 	    int64_t g23 = (int64_t)dx2 * dy3, h23 = (int64_t)dy2 * dx3;
 
+	    if (dx1 == 0 && dy1 == 0 && g23 == h23)
+		return 0;
 	    if (g23 != h23) {
 		orient = (g23 > h23);
 		if (q[2].y <= q[3].y) {
@@ -2335,8 +2337,20 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bo
 		    return gx_shade_trapezoid(pfs, q, 1, 2, 3, 2, q[3].y, q[2].y, swap_axes, &dc, orient);
 		}
 	    } else {
-		/* All 4 points are in a line, the area is zero. */
-		return 0;
+		int64_t g12 = (int64_t)dx1 * dy2, h12 = (int64_t)dy1 * dx2;
+
+		if (dx3 == 0 && dy3 == 0 && g12 == h12)
+		    return 0;
+		orient = (g12 > h12);
+		if (q[1].y <= q[2].y) {
+		    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 3, 2, q[0].y, q[1].y, swap_axes, &dc, orient)) < 0)
+			return code;
+		    return gx_shade_trapezoid(pfs, q, 1, 2, 3, 2, q[1].y, q[2].y, swap_axes, &dc, orient);
+		} else {
+		    if ((code = gx_shade_trapezoid(pfs, q, 0, 1, 3, 2, q[0].y, q[2].y, swap_axes, &dc, orient)) < 0)
+			return code;
+		    return gx_shade_trapezoid(pfs, q, 0, 1, 2, 1, q[2].y, q[1].y, swap_axes, &dc, orient);
+		}
 	    }
 	}
 	orient = ((int64_t)dx1 * dy3 > (int64_t)dy1 * dx3);
