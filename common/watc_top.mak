@@ -5,7 +5,7 @@
 # Generic top-level makefile for MS-DOS/Watcom platforms.
 
 # The product-specific top-level makefile defines the following:
-#	MAKEFILE, COMMONDIR, CONFIG, DEBUG, DEVICE_DEVS, GSDIR, MAIN_OBJ,
+#	MAKEFILE, COMMONDIR, CONFIG, DEBUG, DEVICE_DEVS, GLSRCDIR, MAIN_OBJ,
 #	NOPRIVATE, TDEBUG, TARGET_DEVS, TARGET_XE, WCVERSION
 # It also must include the product-specific *.mak.
 
@@ -17,6 +17,12 @@ default: $(TARGET_XE).exe
 # to get around the limit on the maximum length of a command line.
 
 AK=$(GLGENDIR)\ccf32.tr
+
+# clean gs files using the watc.mak file in the gs directory
+clean_gs:
+	wmake -u -f $(GLSRCDIR)\watc.mak \
+	GLSRCDIR=$(GLSRCDIR) GLGENDIR=$(GLGENDIR) \
+	GLOBJDIR=$(GLOBJDIR) clean
 
 # Define names of utility programs
 AUXGENDIR=$(GLGENDIR)
@@ -41,16 +47,15 @@ GLSRC=$(GLSRCDIR)$(D)
 GLGEN=$(GLGENDIR)$(D)
 GLOBJ=$(GLOBJDIR)$(D)
 #**************** END PATCHES
+
 !include $(COMMONDIR)\watcdefs.mak
 !include $(COMMONDIR)\pcdefs.mak
 !include $(COMMONDIR)\generic.mak
-!include $(GSDIR)\wccommon.mak
-!include $(GSDIR)\version.mak
+!include $(GLSRCDIR)\wccommon.mak
+!include $(GLSRCDIR)\version.mak
 
 # Build the required files in the GS directory.
-ld$(CONFIG).tr: $(MAKEFILE) $(ECHOGS_XE)
-	-mkdir $(GLGENDIR)
-	-mkdir $(GLOBJDIR)
+$(GLGENDIR)\ld$(CONFIG).tr: $(MAKEFILE) $(ECHOGS_XE)
 	echo WCVERSION=$(WCVERSION) >$(GLGENDIR)\_wm_temp.mak
 	echo GLSRCDIR=$(GLSRCDIR) >>$(GENDIR)\_wm_temp.mak
 	echo GLGENDIR=$(GLGENDIR) >>$(GENDIR)\_wm_temp.mak
@@ -66,32 +71,30 @@ ld$(CONFIG).tr: $(MAKEFILE) $(ECHOGS_XE)
 	echo CPU_TYPE=$(CPU_TYPE) >>$(GENDIR)\_wm_temp.mak
 	echo BAND_LIST_STORAGE=memory >>$(GLGENDIR)\_wm_temp.mak
 	echo BAND_LIST_COMPRESSOR=zlib >>$(GLGENDIR)\_wm_temp.mak
-	echo !include watclib.mak >>$(GLGENDIR)\_wm_temp.mak
-	wmakel -u -n -h -f ($GLGENDIR)\_wm_temp.mak CONFIG=$(CONFIG) $(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) >$(GLGENDIR)\_wm_temp.bat
-	call _wm_temp.bat
-	wmakel -u -n -h -f $(GLGENDIR)\_wm_temp.mak CONFIG=$(CONFIG) $(GLGENDIR)\ld$(CONFIG).tr $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ) >$(GLGENDIR)\_wm_temp.bat
-	call _wm_temp.bat
-	rem	Use type rather than copy to update the creation time
-	type $(GLGENDIR)\ld$(CONFIG).tr >$(GLGENDIR)\ld$(CONFIG).tr
+	echo !include $(GLSRCDIR)\watclib.mak >>$(GLGENDIR)\_wm_temp.mak
+	$(MAKE) -u -n -h -f $(GLGENDIR)\_wm_temp.mak CONFIG=$(CONFIG) $(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) $(GLGENDIR)\arch.h >$(GLGENDIR)\_wm_temp.bat
+	call $(GLGENDIR)\_wm_temp.bat
+	$(MAKE) -u -n -h -f $(GLGENDIR)\_wm_temp.mak CONFIG=$(CONFIG) $(GLGENDIR)\ld$(CONFIG).tr $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ) >$(GLGENDIR)\_wm_temp.bat
+	call $(GLGENDIR)\_wm_temp.bat
 
 # Build the configuration file.
 $(GLGENDIR)\pconf$(CONFIG).h $(GLGENDIR)\ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
-	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GLGENDIR)\pconf$(CONFIG).h -p FILE&s&ps -ol $(GLGENDIR)\ldconf$(CONFIG).tr
+	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GLGENDIR)\pconf$(CONFIG).h -e ~ -p FILE~s~ps -ol $(GLGENDIR)\ldconf$(CONFIG).tr
 
 # Link a Watcom executable.
 $(GLGENDIR)\ldt$(CONFIG).tr: $(MAKEFILE) $(GLGENDIR)\ld$(CONFIG).tr $(GLGENDIR)\ldconf$(CONFIG).tr
-	echo SYSTEM DOS4G >$(GLGENDIR)\ldt$(CONFIG).tr
+	echo OPTION STACK=32k >$(GLGENDIR)\ldt$(CONFIG).tr
+!ifeq WAT32 0
+	echo SYSTEM DOS4G >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo OPTION STUB=$(STUB) >>$(GLGENDIR)\ldt$(CONFIG).tr
-	echo OPTION STACK=16k >>$(GLGENDIR)\ldt$(CONFIG).tr
-	echo PATH $(GLOBJDIR) >>$(GLGENDIR)\ldt$(CONFIG).tr
-	$(CP_) $(GLGENDIR)\ldt$(CONFIG).tr+$(GLGENDIR)\ld$(CONFIG).tr $(GLGENDIR)\ldt$(CONFIG).tr
+!endif
+	type $(GLGENDIR)\ld$(CONFIG).tr >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo FILE $(GLOBJDIR)\gsargs.$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo FILE $(GLOBJDIR)\gsnogc.$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo FILE $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
 	echo FILE $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ) >>$(GLGENDIR)\ldt$(CONFIG).tr
-	echo PATH $(GLOBJDIR) >>$(GLGENDIR)\ldt$(CONFIG).tr
-	$(CP_) $(GLGENDIR)\ldt$(CONFIG).tr+$(GLGENDIR)\ldconf$(CONFIG).tr $(GLGENDIR)\ldt$(CONFIG).tr
+	type $(GLGENDIR)\ldconf$(CONFIG).tr >>$(GLGENDIR)\ldt$(CONFIG).tr
 
 # Link the executable.
-$(GLOBJDIR)\$(TARGET_XE)$(XE): $(GLGENDIR)\ldt$(CONFIG).tr $(MAIN_OBJ)
-	$(LINK) $(LCT) NAME $(GLOBJDIR)\$(TARGET_XE) OPTION MAP=$(GLOBJDIR)\$(TARGET_XE) FILE $(MAIN_OBJ) @$(GLGENDIR)\ldt$(CONFIG).tr
+$(TARGET_XE)$(XE): $(GLGENDIR)\ldt$(CONFIG).tr $(MAIN_OBJ)
+	$(LINK) $(LCT) NAME $(TARGET_XE) OPTION MAP=$(TARGET_XE) FILE $(MAIN_OBJ) @$(GLGENDIR)\ldt$(CONFIG).tr
