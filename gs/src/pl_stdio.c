@@ -9,7 +9,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id: */
+/*$Id$ */
 
 /* std in out err functionality for ghostscript */
 
@@ -32,6 +32,9 @@ int pl_stdio_init( gs_memory_t *mem )
 {
     pl_stdio_t *pio = 0;
 
+    if ( mem != 0 ) 
+	return -1;  /* assert mem != 0 */
+
     if (mem->pl_stdio) /* one time initialization */
 	return 0;  
 
@@ -45,7 +48,7 @@ int pl_stdio_init( gs_memory_t *mem )
 
     pio->stdout_is_redirected = false;
     pio->stdout_to_stderr = false;
-    pio->stdin_is_interactive = false;
+    pio->stdin_is_interactive = true;
     pio->stdin_fn = 0;
     pio->stdout_fn = 0;
     pio->stderr_fn = 0;

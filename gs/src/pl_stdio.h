@@ -9,7 +9,7 @@
    contact Artifex Software, Inc., 101 Lucas Valley Road #110,
    San Rafael, CA  94903, (415)492-9861, for further information. */
 
-/*$Id: */
+/*$Id$ */
 #ifndef PL_STDIO_H 
 #define PL_STDIO_H 
 
@@ -40,12 +40,12 @@ typedef struct pl_stdio_s
     int (GSDLLCALL *stdout_fn)(void *caller_handle, const char *str, int len);
     int (GSDLLCALL *stderr_fn)(void *caller_handle, const char *str, int len);
     int (GSDLLCALL *poll_fn)(void *caller_handle);  
-    
     ulong gs_next_id; /* gs_id initialized here, private variable of gs_next_ids() */
 } pl_stdio_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.
- * it is the responsibility of the gs_memory_t objects to copy the point to subsequent objects.
+ * it is the responsibility of the gs_memory_t objects to copy 
+ * the pointer to subsequent memory objects.
  */
 int pl_stdio_init( gs_memory_t *mem ); 
 
