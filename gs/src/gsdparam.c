@@ -599,8 +599,11 @@ nce:
 	ecode = code;
     if ((code = param_check_int(plist, "GrayValues", GrayValues, true)) < 0)
 	ecode = code;
+#if 0
+/* taken out to fix problem with multipage PCL files in async mode */
     if ((code = param_check_long(plist, "PageCount", dev->PageCount, true)) < 0)
 	ecode = code;
+#endif
     if ((code = param_check_int(plist, "RedValues", RGBValues, colors > 1)) < 0)
 	ecode = code;
     if ((code = param_check_int(plist, "GreenValues", RGBValues, colors > 1)) < 0)
