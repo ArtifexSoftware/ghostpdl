@@ -25,7 +25,7 @@
 # compares Ghostscript against a baseline made from file->pdf->raster->md5sum.
 # this test tries to detect Ghostscript changes that affect the pdfwrite driver.
 
-import os
+import os, calendar
 import string
 import gstestutils
 import gsconf, gstestgs, gsparamsets, gssum
@@ -33,10 +33,15 @@ import gsconf, gstestgs, gsparamsets, gssum
 
 class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
     def shortDescription(self):
-        if self.band:
-	    return "Checking pdfwrite of %s (%s/%ddpi/banded) against baseline" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi)
-	else:
-	    return "Checking pdfwrite of %s (%s/%ddpi/noband) against baseline" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi)
+        file = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
+	ct = calendar.localtime(os.stat(gsconf.rasterdbdir + file + ".gz")[9])
+	baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
+
+	if self.band:
+	    return "Checking pdfwrite of %s (%s/%ddpi/banded) against baseline set on %s" % (os.path.basename(self.file), self.device, self.dpi, baseline_date)
+        else:
+	    return "Checking pdfwrite of %s (%s/%ddpi/noband) against baseline set on %s" % (os.path.basename(self.file), self.device, self.dpi, baseline_date)
+
 	
     def runTest(self):
         file1 = '%s.%s.%d.%d.pdf' % (self.file[string.rindex(self.file, '/') + 1:], 'pdf', self.dpi, self.band)
