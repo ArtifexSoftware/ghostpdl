@@ -243,7 +243,7 @@ gs_begin_transparency_group(gs_state *pgs,
     }
 #endif
     return (*dev_proc(pgs->device, begin_transparency_group)) (pgs->device, ptgp,
-							    pbbox, pgs,
+							    pbbox, (gs_imager_state *)pgs,
 							    NULL, NULL);
 #if 0
     return push_transparency_stack(pgs, TRANSPARENCY_STATE_Group,
@@ -255,7 +255,7 @@ int
 gs_end_transparency_group(gs_state *pgs)
 {
     /****** NYI, DUMMY ******/
-    return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, pgs,
+    return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, (gs_imager_state *)pgs,
 							     NULL);
 #if 0
     gs_transparency_state_t *pts = pgs->transparency_stack;

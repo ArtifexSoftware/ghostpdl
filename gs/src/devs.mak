@@ -1180,7 +1180,7 @@ $(DD)png16m.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 ### -------------------- PNG with transparency -------------------- ###
 
 pnga_=$(GLOBJ)gdevpnga.$(OBJ)
-$(DD)pnga.dev:	$(pnga_)
+$(DD)pnga.dev :	$(pnga_)
 	$(SETDEV) $(DD)pnga $(pnga_)
 
 $(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c\
