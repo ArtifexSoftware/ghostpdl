@@ -53,23 +53,25 @@ then
      (cd $RELEASE_DIR; $RELEASE_DIR/tools/cvs2log.py -h artifex.com) >> $RELEASE_DIR/$NEWS_FILE
 fi # update NEWS file condition
 
-echo ""
-echo "Update pl.mak file? (y/n)"
-read PLMAK_UPDATE
-if test $PLMAK_UPDATE = "y" || test $PLMAK_UPDATE = "Y"
-then
-    perl -pi -e s/^PJLVERSION=.\*/PJLVERSION=$VERSION/ $RELEASE_DIR/pl/pl.mak
-fi
 
+perl -pi -e s/^PJLVERSION=.\*/PJLVERSION=$VERSION/ $RELEASE_DIR/pl/pl.mak
+perl -pi -e s/^PJLVERSION=.\*/PJLVERSION=$VERSION/ $RELEASE_DIR/pl/plps.mak
 
 echo ""
 echo "Committing pl.mak (y/n)"
 read COMMIT
 if test $COMMIT = "y" || test $COMMIT = "Y"
 then
-	cvs commit $RELEASE_DIR/pl/pl.mak
+    cvs commit $RELEASE_DIR/pl/pl.mak
+    cvs commit $RELEASE_DIR/pl/plps.mak
 fi
 
-echo "making tar ball"
-tar -C $RELEASE_DIR/.. --exclude CVS -czvf ghostpcl_$VERSION.tar.gz $(basename $RELEASE_DIR)
 
+
+echo "making tar ball"
+if ( test $COMMIT = "y" || test $COMMIT = "Y" ) && ( test $NEWS_UPDATE = "y" || test $NEWS_UPDATE = "Y" )
+then
+   tar -C $RELEASE_DIR/.. --exclude CVS -czvf ghostpcl_$VERSION.tar.gz $(basename $RELEASE_DIR)
+else
+   tar -C $RELEASE_DIR/.. --exclude CVS -czvf BS_ghostpcl_$VERSION.tar.gz $(basename $RELEASE_DIR)
+fi
