@@ -1,6 +1,6 @@
 % xlatmap - the map of translation tables for various kinds of fonts.
 %
-% It specifies character encodings to be used with FAPI-handled fonts.
+% It specifies Decoding resources to be used with FAPI-handled fonts.
 % If a font contains multiple character mapping tables, this gives 
 % priorities for choosing a specific table from the font according to
 % the order of entries of this map.
