@@ -1297,23 +1297,27 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 	gs_glyph *glyphs, int glyphs_offset, gs_char *chars)
 {
     int code;
+    pdf_font_resource_t *pdfont_not_allowed = NULL;
 
     if (*ppdfont != 0) {
 	gs_font_base *cfont = pdf_font_resource_font(*ppdfont, false);
         
 	if (font->FontType != ft_user_defined) {
 	    code = gs_copied_can_copy_glyphs((gs_font *)cfont, font, 
-			glyphs + glyphs_offset, num_unused_chars, false);
+			glyphs + glyphs_offset, num_unused_chars, true);
 	    if (code < 0)
 		return code;
 	} else
 	    code = 1;
-	if (code == 0)
+	if (code == 0) {
+	    pdfont_not_allowed = *ppdfont;
 	    *ppdfont = 0;
-	else if(!pdf_is_compatible_encoding(pdev, *ppdfont, font,
+	} else if(!pdf_is_compatible_encoding(pdev, *ppdfont, font,
 			glyphs + glyphs_offset, chars + glyphs_offset, 
-			num_unused_chars))
+			num_unused_chars)) {
+	    pdfont_not_allowed = *ppdfont;
 	    *ppdfont = 0;
+	}
     }
     if (*ppdfont == 0) {
 	gs_font *base_font = font;
@@ -1333,7 +1337,9 @@ pdf_obtain_font_resource_encoded(gx_device_pdf *pdev, gs_font *font,
 	/* Find or make font resource. */
 	pdf_attached_font_resource(pdev, base_font, ppdfont, NULL, NULL, NULL, NULL);
 	if (*ppdfont != NULL && base_font != font) {
-	    if(!pdf_is_compatible_encoding(pdev, *ppdfont, 
+	    if (pdfont_not_allowed == *ppdfont)
+		*ppdfont = NULL;	
+	    else if(!pdf_is_compatible_encoding(pdev, *ppdfont, 
 				    base_font, glyphs, chars, num_all_chars))
 		*ppdfont = NULL;
 	}

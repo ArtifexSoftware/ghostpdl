@@ -1066,7 +1066,7 @@ same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont,
 	    return 1;
 	if ((code0 == gs_error_rangecheck || code0 == gs_error_typecheck) != 
 	    (code1 == gs_error_rangecheck || code1 == gs_error_typecheck))
-	    exit = true;
+	    continue;
 	else if (code0 < 0)
 	    code = code0, exit = true;
 	else if (code1 < 0)
