@@ -312,10 +312,23 @@ dsc_orientation(gs_param_list *plist, const CDSC *pData)
 private int
 dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
 {
+    int page_num = pData->page_count;
+    const char *key;
+    const CDSCCTM *pctm;
     float values[4];
     gs_param_float_array va;
-    const CDSCCTM *pctm = pData->viewing_orientation;
 
+    /*
+     * As for PageOrientation, ViewingOrientation may be either in the
+     * 'defaults' section or in a page section.
+     */
+    if (page_num && pData->page[page_num - 1].viewing_orientation != CDSC_ORIENT_UNKNOWN) {
+	key = "PageViewingOrientation";
+	pctm = pData->page[page_num - 1].viewing_orientation;
+    } else {
+        key = "ViewingOrientation";
+	pctm = pData->viewing_orientation;
+    }
     values[0] = pctm->xx;
     values[1] = pctm->xy;
     values[2] = pctm->yx;
@@ -323,7 +336,7 @@ dsc_viewing_orientation(gs_param_list *plist, const CDSC *pData)
     va.data = values;
     va.size = 4;
     va.persistent = false;
-    return param_write_float_array(plist, "ViewingOrientation", &va);
+    return param_write_float_array(plist, key, &va);
 }
 
 /*
