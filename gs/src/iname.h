@@ -26,12 +26,6 @@
 
 /* ---------------- Procedural interface ---------------- */
 
-/* Define the interpreter's name table. */
-//extern name_table *the_gs_name_table;
-//#define the_gs_name_table mem->gs_lib_ctx->gs_name_table
-
-/* Backward compatibility */
-//#define the_name_table() ((const name_table *)the_gs_name_table)
 
 /* Get the allocator for the name table. */
 #define name_memory(mem)\
