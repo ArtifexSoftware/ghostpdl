@@ -544,16 +544,16 @@ Note that in contrast to ImageType 3, where any non-zero chunky mask value
 is equivalent to 1, ImageType 103 simply takes the low-order bits of chunky
 mask values.
 
+<li>A <b><tt>Matte</tt></b> entry may be present in one or both mask
+dictionaries, indicating premultiplication of the data values.  If both
+<b><tt>MaskDict</tt></b>s have a <b><tt>Matte</tt></b> entry and the values
+of the two <b><tt>Matte</tt></b> entries are different, a
+<b><tt>rangecheck</tt></b> error occurs.
+
 <li><b><tt>InterleaveType</tt></b> appears in the <b><tt>MaskDict</tt></b>s,
 not the <b><tt>DataDict</tt></b>, because each mask has its own
 <b><tt>InterleaveType</tt></b>.  <b><tt>InterleaveType</tt></b> 2
 (interlaced scan lines) is not supported.
-
-<li>A new <b><tt>Matte</tt></b> entry may be present in the top-level image
-dictionary.  If <b><tt>Matte</tt></b> is present, each
-<b><tt>MaskDict</tt></b> has an optional <b><tt>Matted</tt></b> entry
-(defaulting to <b><tt>true</tt></b>), indicating whether that mask
-participates in the premultiplication.
 
 </ul>
 

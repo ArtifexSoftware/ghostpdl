@@ -325,7 +325,7 @@ zinittransparencymask(i_ctx_t *i_ctx_p)
 /* ------ Soft-mask images ------ */
 
 /* <dict> .image3x - */
-private int mask_dict_param(P4(os_ptr, image_params *, const char *,
+private int mask_dict_param(P5(os_ptr, image_params *, const char *, int,
 			       gs_image3x_mask_t *));
 private int
 zimage3x(i_ctx_t *i_ctx_p)
@@ -337,7 +337,7 @@ zimage3x(i_ctx_t *i_ctx_p)
     int num_components =
 	gs_color_space_num_components(gs_currentcolorspace(igs));
     int ignored;
-    int code, mcode;
+    int code;
 
     check_type(*op, t_dictionary);
     check_dict_read(*op);
@@ -347,21 +347,19 @@ zimage3x(i_ctx_t *i_ctx_p)
     if ((code = pixel_image_params(i_ctx_p, pDataDict,
 				   (gs_pixel_image_t *)&image, &ip_data,
 				   12)) < 0 ||
-	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
-	(mcode = code = dict_floats_param(op, "Matte", num_components, image.Matte, NULL)) < 0
+	(code = dict_int_param(pDataDict, "ImageType", 1, 1, 0, &ignored)) < 0
 	)
 	return code;
     /*
      * We have to process the masks in the reverse order, because they
      * insert their DataSource before the one(s) for the DataDict.
      */
-    if ((code = mask_dict_param(op, &ip_data, "ShapeMaskDict", &image.Shape)) < 0 ||
-	(code = mask_dict_param(op, &ip_data, "OpacityMaskDict", &image.Opacity)) < 0
+    if ((code = mask_dict_param(op, &ip_data, "ShapeMaskDict", num_components,
+				&image.Shape)) < 0 ||
+	(code = mask_dict_param(op, &ip_data, "OpacityMaskDict", num_components,
+				&image.Opacity)) < 0
 	)
 	return code;
-    /* If there is no Matte, reset Matted. */
-    if (mcode == 0)
-	image.Opacity.Matted = image.Shape.Matted = false;
     return zimage_setup(i_ctx_p, (gs_pixel_image_t *)&image,
 			&ip_data.DataSource[0],
 			image.CombineWithColor, 1);
@@ -370,7 +368,7 @@ zimage3x(i_ctx_t *i_ctx_p)
 /* Get one soft-mask dictionary parameter. */
 private int
 mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
-		gs_image3x_mask_t *pixm)
+		int num_components, gs_image3x_mask_t *pixm)
 {
     ref *pMaskDict;
     image_params ip_mask;
@@ -383,9 +381,10 @@ mask_dict_param(os_ptr op, image_params *pip_data, const char *dict_name,
 	(code = dict_int_param(pMaskDict, "ImageType", 1, 1, 0, &ignored)) < 0 ||
 	(code = dict_int_param(pMaskDict, "InterleaveType", 1, 3, -1,
 			       &pixm->InterleaveType)) < 0 ||
-	(code = dict_bool_param(pMaskDict, "Matted", true, &pixm->Matted)) < 0
+	(code = dict_floats_param(op, "Matte", num_components, pixm->Matte, NULL)) < 0
 	)
 	return code;
+    pixm->has_Matte = code > 0;
     /*
      * The MaskDict must have a DataSource iff InterleaveType == 3.
      */

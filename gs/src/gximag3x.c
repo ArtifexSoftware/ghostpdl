@@ -60,7 +60,7 @@ private void
 gs_image3x_mask_init(gs_image3x_mask_t *pimm)
 {
     pimm->InterleaveType = 0;	/* not a valid type */
-    pimm->Matted = false;
+    pimm->has_Matte = false;
     gs_data_image_t_init(&pimm->MaskDict, 1);
     pimm->MaskDict.BitsPerComponent = 0;	/* not supplied */
 }
@@ -111,7 +111,7 @@ gs_private_st_suffix_add9(st_image3x_enum, gx_image3x_enum_t,
   mask[1].info, mask[1].mdev, mask[1].data, pixel.info, pixel.data);
 
 /*
- * Begin a generic ImageType 3 image, with client handling the creation of
+ * Begin a generic ImageType 3x image, with client handling the creation of
  * the mask image and mask clip devices.
  */
 typedef struct image3x_channel_values_s {
@@ -286,7 +286,7 @@ gx_begin_image3x_generic(gx_device * dev,
     }
     code = make_mcde(dev, pis, pmat, (const gs_image_common_t *)&pixel.image,
 		     prect, pdcolor, pcpath, mem, &penum->pixel.info,
-		     &pcdev, midev, minfo, origin);
+		     &pcdev, midev, minfo, origin, pim);
     if (code < 0)
 	goto out3;
     penum->pcdev = pcdev;
@@ -520,13 +520,14 @@ make_midx_default(gx_device **pmidev, gx_device *dev, int width, int height,
 private IMAGE3X_MAKE_MCDE_PROC(make_mcdex_default);  /* check prototype */
 private int
 make_mcdex_default(gx_device *dev, const gs_imager_state *pis,
-		  const gs_matrix *pmat, const gs_image_common_t *pic,
-		  const gs_int_rect *prect, const gx_drawing_color *pdcolor,
-		  const gx_clip_path *pcpath, gs_memory_t *mem,
-		  gx_image_enum_common_t **pinfo,
-		  gx_device **pmcdev, gx_device *midev[2],
-		  gx_image_enum_common_t *pminfo[2],
-		  const gs_int_point origin[2])
+		   const gs_matrix *pmat, const gs_image_common_t *pic,
+		   const gs_int_rect *prect, const gx_drawing_color *pdcolor,
+		   const gx_clip_path *pcpath, gs_memory_t *mem,
+		   gx_image_enum_common_t **pinfo,
+		   gx_device **pmcdev, gx_device *midev[2],
+		   gx_image_enum_common_t *pminfo[2],
+		   const gs_int_point origin[2],
+		   const gs_image3x_t *pim)
 {
     /*
      * There is no soft-mask analogue of make_mcde_default, because

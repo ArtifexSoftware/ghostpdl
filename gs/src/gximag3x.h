@@ -47,7 +47,7 @@ typedef IMAGE3X_MAKE_MID_PROC((*image3x_make_mid_proc_t));
  * The device is closed and freed at the end of processing the image.
  */
 #define IMAGE3X_MAKE_MCDE_PROC(proc)\
-  int proc(P13(/* The initial arguments are those of begin_typed_image. */\
+  int proc(P14(/* The initial arguments are those of begin_typed_image. */\
 	       gx_device *dev,\
 	       const gs_imager_state *pis,\
 	       const gs_matrix *pmat,\
@@ -59,7 +59,8 @@ typedef IMAGE3X_MAKE_MID_PROC((*image3x_make_mid_proc_t));
 	       /* The following arguments are added. */\
 	       gx_device **pmcdev, gx_device *midev[2],\
 	       gx_image_enum_common_t *pminfo[2],\
-	       const gs_int_point origin[2]))
+	       const gs_int_point origin[2],\
+	       const gs_image3x_t *pim))
 typedef IMAGE3X_MAKE_MCDE_PROC((*image3x_make_mcde_proc_t));
 
 /*
