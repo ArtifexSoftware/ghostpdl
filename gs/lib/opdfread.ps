@@ -98,13 +98,17 @@ errordict /handleerror
         (STACK:) //prnt exec
         $error /ostack get aload length {
           //newline exec
-          dup type /nametype eq { 
-            dup xcheck not {
-              (/) show
-              (/) print
-            } if
+          dup mark eq {
+            (-mark-) dup = show
+          } {
+            dup type /nametype eq { 
+              dup xcheck not {
+                (/) show
+                (/) print
+             } if
           } if
           dup = //ebuf cvs show
+          } ifelse
         } repeat
       } if
     } ifelse
@@ -2327,7 +2331,6 @@ end
     dup 0 get /Lab eq {
       1 get						% dict
       begin
-        pstack
         currentdict /Range //knownget exec { aload pop } { -100 100 -100 100 } ifelse
 	  0 100 6 2 roll 6 array astore 
           /RangeABC exch def
