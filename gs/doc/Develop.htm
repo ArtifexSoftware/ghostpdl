@@ -512,17 +512,20 @@ Clipping:
 <h3><a name="Text"></a>Text</h3>
 
 <p>
-Fonts:
+Fonts, generic:
+<a href="../src/gsfont.c">src/gsfont.c</a>,
+<a href="../src/gsfont.h">src/gsfont.h</a>,
+<a href="../src/gxfont.h">src/gxfont.h</a>.
+
+<p>
+Fonts, specific FontTypes:
 <a href="../src/gsfcid.c">src/gsfcid.c</a>,
 <a href="../src/gsfcmap.c">src/gsfcmap.c</a>,
 <a href="../src/gsfcmap.h">src/gsfcmap.h</a>,
-<a href="../src/gsfont.c">src/gsfont.c</a>,
-<a href="../src/gsfont.h">src/gsfont.h</a>,
 <a href="../src/gsfont0.c">src/gsfont0.c</a>,
 <a href="../src/gxcid.h">src/gxcid.h</a>,
 <a href="../src/gxfcid.h">src/gxfcid.h</a>,
 <a href="../src/gxfcmap.h">src/gxfcmap.h</a>,
-<a href="../src/gxfont.h">src/gxfont.h</a>,
 <a href="../src/gxfont0.h">src/gxfont0.h</a>,
 <a href="../src/gxfont1.h">src/gxfont1.h</a>,
 <a href="../src/gxfont42.h">src/gxfont42.h</a>,
@@ -530,34 +533,37 @@ Fonts:
 <a href="../src/gxttf.h">src/gxttf.h</a>.
 
 <p>
-Character rendering + font cache:
+Character rendering + font cache, generic:
 <a href="../src/gsccode.h">src/gsccode.h</a>,
 <a href="../src/gschar.c">src/gschar.c</a>,
 <a href="../src/gschar.h">src/gschar.h</a>,
-<a href="../src/gschar0.c">src/gschar0.c</a>,
 <a href="../src/gscpm.h">src/gscpm.h</a>,
-<a href="../src/gscrypt1.c">src/gscrypt1.c</a>,
-<a href="../src/gscrypt1.h">src/gscrypt1.h</a>,
 <a href="../src/gstext.c">src/gstext.c</a>,
 <a href="../src/gstext.h">src/gstext.h</a>,
-<a href="../src/gstype1.c">src/gstype1.c</a>,
-<a href="../src/gstype1.h">src/gstype1.h</a>,
-<a href="../src/gstype2.c">src/gstype2.c</a>,
-<a href="../src/gstype42.c">src/gstype42.c</a>,
 <a href="../src/gxbcache.c">src/gxbcache.c</a>,
 <a href="../src/gxbcache.h">src/gxbcache.h</a>,
 <a href="../src/gxccache.c">src/gxccache.c</a>,
 <a href="../src/gxccman.c">src/gxccman.c</a>,
 <a href="../src/gxchar.c">src/gxchar.c</a>,
 <a href="../src/gxchar.h">src/gxchar.h</a>,
+<a href="../src/gxfcache.h">src/gxfcache.h</a>,
+<a href="../src/gxtext.h">src/gxtext.h</a>.
+
+<p>
+Character rendering, specific FontTypes:
+<a href="../src/gschar0.c">src/gschar0.c</a>,
+<a href="../src/gscrypt1.c">src/gscrypt1.c</a>,
+<a href="../src/gscrypt1.h">src/gscrypt1.h</a>,
+<a href="../src/gstype1.c">src/gstype1.c</a>,
+<a href="../src/gstype1.h">src/gstype1.h</a>,
+<a href="../src/gstype2.c">src/gstype2.c</a>,
+<a href="../src/gstype42.c">src/gstype42.c</a>,
 <a href="../src/gxchrout.c">src/gxchrout.c</a>,
 <a href="../src/gxchrout.h">src/gxchrout.h</a>,
-<a href="../src/gxfcache.h">src/gxfcache.h</a>,
 <a href="../src/gxhint1.c">src/gxhint1.c</a>,
 <a href="../src/gxhint2.c">src/gxhint2.c</a>,
 <a href="../src/gxhint3.c">src/gxhint3.c</a>,
 <a href="../src/gxop1.h">src/gxop1.h</a>,
-<a href="../src/gxtext.h">src/gxtext.h</a>,
 <a href="../src/gxtype1.c">src/gxtype1.c</a>,
 <a href="../src/gxtype1.h">src/gxtype1.h</a>.
 
@@ -596,6 +602,86 @@ Images:
 <h3><a name="Paint"></a>Paint</h3>
 
 <p>
+Ghostscript uses 4 internal representations of color.  We list them here in
+the order in which they occur in the rendering pipeline.
+
+<ol>
+
+<li>Clients of the graphics library normally specify colors using the
+<em>client color</em> structure (<b><tt>gs_client_color</tt></b>, defined in
+<a href="../src/gsccolor.h">src/gsccolor.h</a>).  This corresponds directly
+to the values that would be passed to the PostScript
+<b><tt>setcolor</tt></b> operator: one or more (floating-point) numeric
+components and/or a Pattern.  The associated color space is implicit (in the
+graphics state).
+
+<li>For ordinary non-Pattern colors, the first step in color rendering is to
+reduce a client color to a <em>concrete</em> color -- a set of values in the
+device's color model (except for possible conversions between DeviceGray,
+DeviceRGB, and DeviceCMYK).  Concrete colors are represented by arrays of
+<b><tt>frac</tt></b> values, defined in <a
+href="../src/gxfrac.h">src/gxfrac.h</a>.  The color space is implicit in the
+control flow.  The procedure for this step is a virtual procedure in the
+color space.
+
+<li>The result of finishing mapping a concrete color to the device's color
+mode, followed by halftoning if necessary, is called (inappropriately) a
+<em>device color</em> (<b><tt>gx_device_color</tt></b>, defined in <a
+href="../src/gsdcolor.h">src/gsdcolor.h</a> and <a
+href="../src/gxdcolor.h">src/gxdcolor.h</a>).  For ordinary non-Pattern
+colors, a device color is either a pure color, a binary halftone (single
+plane, single bit, with a 2-color palette) halftone, or a multi-plane
+halftone.  The device and color model associated with a device color are
+implicit.  The procedure for this step is also a virtual procedure in the
+color space.
+
+<li>The pure colors that underlie a device color are opaque <em>pixel
+values</em> defined by the device (misnamed <b><tt>gx_color_index</tt></b>,
+defined in <a href="../src/gscindex.h">src/gscindex.h</a>).  The device and
+color model are implicit.  Virtual procedures of the device driver map
+between pixel values and RGB or CMYK.  (This area is untidy and will need to
+be cleaned up when we implement real Separation and DeviceN colors.)
+
+</ol>
+
+<p>
+Steps 2 and 3 are normally combined into a single step for efficiency.
+
+<p>
+Using a device color to actually paint pixels requires a further step called
+<em>color loading</em>.  This does nothing for pure colors, but loads the
+caches for halftones.  Color loading is a virtual procedure in the device
+color.
+
+<p>
+All of the above steps -- concretizing, mapping to a device color, and color
+loading -- are done as late as possible, normally not until the color is
+actually needed for painting.
+
+<p>
+All painting operations (fill, stroke, imagemask) eventually call a virtual
+procedure in the device color, either <b><tt>fill_rectangle</tt></b> or
+<b><tt>fill_mask</tt></b> to actually paint pixels.
+
+<ul>
+
+<li>
+Color specification:
+<a href="../src/gsccolor.h">src/gsccolor.h</a>,
+<a href="../src/gscolor.c">src/gscolor.c</a>,
+<a href="../src/gscolor.h">src/gscolor.h</a>,
+<a href="../src/gscolor1.c">src/gscolor1.c</a>,
+<a href="../src/gscolor1.h">src/gscolor1.h</a>,
+<a href="../src/gscolor2.c">src/gscolor2.c</a>,
+<a href="../src/gscolor2.h">src/gscolor2.h</a>,
+<a href="../src/gscolor3.c">src/gscolor3.c</a>,
+<a href="../src/gscolor3.h">src/gscolor3.h</a>,
+<a href="../src/gshsb.c">src/gshsb.c</a>,
+<a href="../src/gshsb.h">src/gshsb.h</a>,
+<a href="../src/gxcolor2.h">src/gxcolor2.h</a>,
+<a href="../src/gxcvalue.h">src/gxcvalue.h</a>.
+
+<li>
 Color spaces:
 <a href="../src/gscdevn.c">src/gscdevn.c</a>,
 <a href="../src/gscdevn.h">src/gscdevn.h</a>,
@@ -615,23 +701,7 @@ Color spaces:
 <a href="../src/gxcie.h">src/gxcie.h</a>,
 <a href="../src/gxcspace.h">src/gxcspace.h</a>.
 
-<p>
-Color specification:
-<a href="../src/gsccolor.h">src/gsccolor.h</a>,
-<a href="../src/gscolor.c">src/gscolor.c</a>,
-<a href="../src/gscolor.h">src/gscolor.h</a>,
-<a href="../src/gscolor1.c">src/gscolor1.c</a>,
-<a href="../src/gscolor1.h">src/gscolor1.h</a>,
-<a href="../src/gscolor2.c">src/gscolor2.c</a>,
-<a href="../src/gscolor2.h">src/gscolor2.h</a>,
-<a href="../src/gscolor3.c">src/gscolor3.c</a>,
-<a href="../src/gscolor3.h">src/gscolor3.h</a>,
-<a href="../src/gshsb.c">src/gshsb.c</a>,
-<a href="../src/gshsb.h">src/gshsb.h</a>,
-<a href="../src/gxcolor2.h">src/gxcolor2.h</a>,
-<a href="../src/gxcvalue.h">src/gxcvalue.h</a>.
-
-<p>
+<li>
 Color mapping:
 <a href="../src/gsciemap.c">src/gsciemap.c</a>,
 <a href="../src/gscindex.h">src/gscindex.h</a>,
@@ -656,32 +726,7 @@ Color mapping:
 <a href="../src/gxlum.h">src/gxlum.h</a>,
 <a href="../src/gxtmap.h">src/gxtmap.h</a>.
 
-<p>
-Compositing, transparency, and RasterOp:
-<a href="../src/gdevdrop.c">src/gdevdrop.c</a>,
-<a href="../src/gdevrops.c">src/gdevrops.c</a>,
-<a href="../src/gsalpha.c">src/gsalpha.c</a>,
-<a href="../src/gsalpha.h">src/gsalpha.h</a>,
-<a href="../src/gsalphac.c">src/gsalphac.c</a>,
-<a href="../src/gsalphac.h">src/gsalphac.h</a>,
-<a href="../src/gscompt.h">src/gscompt.h</a>,
-<a href="../src/gsdpnext.h">src/gsdpnext.h</a>,
-<a href="../src/gsnorop.c">src/gsnorop.c</a>,
-<a href="../src/gsrop.c">src/gsrop.c</a>,
-<a href="../src/gsrop.h">src/gsrop.h</a>,
-<a href="../src/gsropc.c">src/gsropc.c</a>,
-<a href="../src/gsropc.h">src/gsropc.h</a>,
-<a href="../src/gsropt.h">src/gsropt.h</a>,
-<a href="../src/gsroptab.c">src/gsroptab.c</a>,
-<a href="../src/gstparam.h">src/gstparam.h</a>,
-<a href="../src/gstrans.c">src/gstrans.c</a>,
-<a href="../src/gstrans.h">src/gstrans.h</a>,
-<a href="../src/gxalpha.h">src/gxalpha.h</a>,
-<a href="../src/gxcomp.h">src/gxcomp.h</a>,
-<a href="../src/gxdevrop.h">src/gxdevrop.h</a>,
-<a href="../src/gxropc.h">src/gxropc.h</a>.
-
-<p>
+<li>
 Halftoning:
 <a href="../src/gsht.c">src/gsht.c</a>,
 <a href="../src/gsht.h">src/gsht.h</a>,
@@ -700,7 +745,25 @@ Halftoning:
 <a href="../src/gxhttype.h">src/gxhttype.h</a>,
 <a href="../src/gzht.h">src/gzht.h</a>.
 
+</ul>
+
 <p>
+Pattern colors (tiled patterns and shadings) each use a slightly different
+approach from solid colors.
+
+<p>
+The device color for a tiled (PatternType 1) pattern contains a pointer to a
+pattern instance, plus (for uncolored patterns) the device color to be
+masked.  The pattern instance includes a procedure that actually paints the
+pattern if the pattern is not in the cache.  For the PostScript interpreter,
+this procedure returns an <b><tt>e_RemapColor</tt></b> exception code: this
+eventually causes the interpreter to run the pattern's PaintProc, loading
+the rendering into the cache, and then re-execute the original drawing
+operator.
+
+<ul>
+
+<li>
 Patterns:
 <a href="../src/gspcolor.c">src/gspcolor.c</a>,
 <a href="../src/gspcolor.h">src/gspcolor.h</a>,
@@ -712,7 +775,16 @@ Patterns:
 <a href="../src/gxpcmap.c">src/gxpcmap.c</a>,
 <a href="../src/gxpcolor.h">src/gxpcolor.h</a>.
 
+</ul>
+
 <p>
+The device color for a shading (PatternType 2) pattern also contains a
+pointer to a pattern instance.  Shadings are not cached: painting with a
+shading runs the shading algorithm every time.
+
+<ul>
+
+<li>
 Shading:
 <a href="../src/gsptype2.c">src/gsptype2.c</a>,
 <a href="../src/gsptype2.h">src/gsptype2.h</a>,
@@ -724,6 +796,54 @@ Shading:
 <a href="../src/gxshade4.c">src/gxshade4.c</a>,
 <a href="../src/gxshade4.h">src/gxshade4.h</a>,
 <a href="../src/gxshade6.c">src/gxshade6.c</a>.
+
+</ul>
+
+<p>
+In addition to the PostScript graphics model, Ghostscript supports RasterOp,
+a weak form of alpha channel, and eventually the full PDF 1.4 transparency
+model.  The implemention of these facilities is quite slipshod and
+scattered: only RasterOp is really implemented fully.  There is a general
+compositing architecture, but it is hardly used at all, and in particular is
+not used for RasterOp.  ****** TO BE COMPLETED ******
+
+<ul>
+
+<li>
+Compositing architecture:
+<a href="../src/gscompt.h">src/gscompt.h</a>,
+<a href="../src/gxcomp.h">src/gxcomp.h</a>.
+
+<li>
+RasterOp:
+<a href="../src/gdevdrop.c">src/gdevdrop.c</a>,
+<a href="../src/gdevrops.c">src/gdevrops.c</a>,
+<a href="../src/gsnorop.c">src/gsnorop.c</a>,
+<a href="../src/gsrop.c">src/gsrop.c</a>,
+<a href="../src/gsrop.h">src/gsrop.h</a>,
+<a href="../src/gsropc.c">src/gsropc.c</a>,
+<a href="../src/gsropc.h">src/gsropc.h</a>,
+<a href="../src/gsropt.h">src/gsropt.h</a>,
+<a href="../src/gsroptab.c">src/gsroptab.c</a>,
+<a href="../src/gxdevrop.h">src/gxdevrop.h</a>,
+<a href="../src/gxropc.h">src/gxropc.h</a>.
+
+<li>
+Alpha channel and compositing:
+<a href="../src/gsalpha.c">src/gsalpha.c</a>,
+<a href="../src/gsalpha.h">src/gsalpha.h</a>,
+<a href="../src/gsalphac.c">src/gsalphac.c</a>,
+<a href="../src/gsalphac.h">src/gsalphac.h</a>,
+<a href="../src/gsdpnext.h">src/gsdpnext.h</a>,
+<a href="../src/gxalpha.h">src/gxalpha.h</a>.
+
+<li>
+Advanced transparency:
+<a href="../src/gstparam.h">src/gstparam.h</a>,
+<a href="../src/gstrans.c">src/gstrans.c</a>,
+<a href="../src/gstrans.h">src/gstrans.h</a>.
+
+</ul>
 
 <h3><a name="Other_graphics"></a>Other graphics</h3>
 

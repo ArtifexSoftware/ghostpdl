@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1993, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -23,10 +23,9 @@
 #  define gxfrac_INCLUDED
 
 /*
- * Represent a fraction in [0.0..1.0].
- * Note that the 1.0 endpoint is included.
- * Since undercolor removal requires a signed frac,
- * we limit fracs to 15 bits rather than 16.
+ * Represent a fraction in [0.0..1.0].  Note that the 1.0 endpoint is
+ * included.  Since undercolor removal requires a signed frac, we limit
+ * fracs to 15 bits rather than 16.
  */
 typedef short frac;
 typedef short signed_frac;
@@ -35,8 +34,15 @@ typedef short signed_frac;
 #define arch_sizeof_frac arch_sizeof_short
 #define frac_bits 15
 #define frac_0 ((frac)0)
-/* The following definition of frac_1 allows exact representation of */
-/* almost all common fractions (e.g., N/360 for 0<=N<=360). */
+
+/*
+ * Normally one would represent a fractional value of this kind as a short
+ * integer, in [-32767..32767].  Unfortunately, this approach cannot
+ * represent any of the common values like 1/2, 1/3, or 1/5 exactly, causing
+ * rounding errors.  Instead, we opt for using the range [-32760..32760],
+ * which allows exact representation of almost all commonly used fractions
+ * (e.g., N/360 for 0<=N<=360).
+ */
 #define frac_1_0bits 3
 #define frac_1 ((frac)0x7ff8)
 #define frac_1_long ((long)frac_1)
