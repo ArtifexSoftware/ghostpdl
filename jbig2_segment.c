@@ -134,7 +134,7 @@ jbig2_find_segment(Jbig2Ctx *ctx, uint32_t number)
     int index, index_max = ctx->segment_index - 1;
     const Jbig2Ctx *global_ctx = ctx->global_ctx;
 
-    /* FIXME: binary search would be better? */
+    /* FIXME: binary search would be better */
     for (index = index_max; index >= 0; index--)
         if (ctx->segments[index]->number == number)
             return (ctx->segments[index]);
@@ -148,6 +148,7 @@ jbig2_find_segment(Jbig2Ctx *ctx, uint32_t number)
     return NULL;
 }
 
+/* parse the generic portion of a region segment data header */
 void
 jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
 			      const byte *segment_data)
@@ -160,6 +161,7 @@ jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
   info->flags = segment_data[16];
 }
 
+/* dispatch code for extension segment parsing */
 int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
                             const uint8_t *segment_data)
 {
@@ -193,6 +195,7 @@ int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
     return 0;
 }
 
+/* general segment parsing dispatch */
 int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
 			 const uint8_t *segment_data)
 {
