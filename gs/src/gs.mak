@@ -174,10 +174,9 @@
 #		leaf procedures, which don't need to build stack frames.
 #		This is needed only because many compilers aren't able to
 #		recognize leaf procedures on their own.
-#	AK - if source files must be converted from ANSI to K&R syntax,
-#		this is $(ANSI2KNR_XE); if not, it is null.
-#		If a particular platform requires other utility programs
-#		to be built, AK must include them too.
+#	AK - if a particular platform requires any programs or data files
+#		to be built before compiling the source code, AK must list
+#		them.
 #	EXP - the prefix for invoking an executable program in a specified
 #		directory (MCR on OpenVMS, null on all other platforms).
 #	SH - the shell for scripts (null on MS-DOS, sh on Unix).
