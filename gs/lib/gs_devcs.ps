@@ -66,7 +66,7 @@ dup
 
     /cs_substitute
       {
-        .getuseciecolor
+        .getuseciecolor NOSUBCOLORSPACES not and
           { /DefaultGray /ColorSpace findresource }
           { dup }
         ifelse
@@ -129,7 +129,7 @@ put
 
     /cs_substitute
       {
-        .getuseciecolor
+        .getuseciecolor NOSUBCOLORSPACES not and
           { /DefaultRGB /ColorSpace findresource }
           { dup }
         ifelse
@@ -188,7 +188,7 @@ colorspacedict
 
     /cs_substitute
       {
-        .getuseciecolor
+        .getuseciecolor NOSUBCOLORSPACES not and
           { /DefaultCMYK /ColorSpace findresource }
           { dup }
         ifelse

@@ -144,8 +144,8 @@ program itself may differ among systems.  For instance, to invoke
 Ghostscript on unix-like systems type:
 
 <blockquote>
-<b><tt>gs</tt></b> [options] {filename 1} ... [options] {filename <em>N</em>} ...
-</blockquote>
+	<b><tt><pre>gs</tt></b> [options] {filename 1} ... [options] {filename <em>N</em>} ...
+</pre></blockquote>
 
 <p>Here are some basic examples. The details of how these work are described below.
 
@@ -157,16 +157,18 @@ You'll be prompted to press <em>return</em> between pages.
 <blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -dGraphicsAlphaBits=4 \
     -sOutputFile=tiger.png tiger.eps</pre></blockquote>
 
-<p>to render the same image at 300 dpi:
+<p>To render the same image at 300 dpi:
 <blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=png16m -r300 \
-    -sOutputFile=tiger_300.png tiger.eps</pre></blockquote>
+		-sOutputFile=tiger_300.png tiger.eps
+</pre></blockquote>
 
-<p>to render a figure in grayscale:
-<blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pnggrey -sOutputFile=figure.png figure.pdf</pre></blockquote>
+<p>To render a figure in grayscale:
+<blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pnggray -sOutputFile=figure.png figure.pdf
+</pre></blockquote>
 
-<p>to rasterize a whole document:
+<p>To rasterize a whole document:
 <blockquote><pre>gs -dSAFER -dBATCH -dNOPAUSE -sDEVICE=pgmraw -r150 \
-    -dTextAlphaBits=4 -sOutputFile='paper-%00d.pgm' paper.ps</blockquote></pre>
+		-dTextAlphaBits=4 -sOutputFile='paper-%00d.pgm' paper.ps</pre></blockquote>
 
 <p>There are also a number of utility scripts for common
 
@@ -247,7 +249,7 @@ the available output devices. For complete description of the devices distribute
 Note that this switch must precede the name of the first input file, and
 only its first use has any effect.  For example, for printer output in a
 configuration that includes an Epson printer driver, instead of just
-'<tt>gs&nbsp;myfile.ps</tt>' you might use
+<tt>'gs&nbsp;myfile.ps'</tt> you might use
 
 <blockquote>
 	<b><tt>gs -sDEVICE=epson myfile.ps</tt></b>
@@ -259,7 +261,7 @@ The output device can also be set through the <tt>GS_DEVICE</tt> environment var
 <p>
 Once you invoke Ghostscript
 you can also find out what devices are available by typing
-'<tt>devicenames&nbsp;==</tt>' at the iteractive prompt.
+'<tt>devicenames&nbsp;==</tt>' at the interactive prompt.
 You can set the output device and process a file from the interactive prompt as well:
 
 
@@ -311,7 +313,7 @@ gs -sOutputFile=ABC.xyz
 When printing on MS Windows systems, output normally goes directly to the printer, <tt>PRN</tt>. On Unix and VMS systems it normally goes to a temporary file which is sent to the printer in a separate step. When using Ghostscript as a file rasterizer (converting PostScript or PDF to a raster image format) you will of course want to specify an appropriately named file for the output.
 
 <p>
-Ghostscript also accepts the special filename '<tt>-</tt>' which indicates the output should be writtent to stardard output (the command shell).
+Ghostscript also accepts the special filename '<tt>-</tt>' which indicates the output should be written to standard output (the command shell).
 
 <p>
 Be aware that filenames beginning with the character <tt>%</tt> have a special meaning in PostScript. If you need to specify a file name that actually
@@ -366,7 +368,7 @@ As noted above, on MS Windows systems, you will have to double the
 
 <blockquote><tt><b>
 gs -sOutputFile=ABC%%03d.xyz
-</tt></b></blockquote>
+</b></tt></blockquote>
 
 
 <h3><a name="Paper_size"></a>Choosing paper size</h3>
@@ -981,7 +983,7 @@ third edition, for details.
 <p>
 CID font resources are a different kind of PostScript resources from fonts.
 Particularly they cannot be used as regular fonts.
-CID font resourses must first to be combined with a CMap resource, which
+CID font resources must first to be combined with a CMap resource, which
 defines specific codes for glyphs, before it can be used as a font. This 
 allows the reuse of a collection of glyphs with different encodings.
 
@@ -992,7 +994,7 @@ and a CMap resource in a PostScript document is
 /CIDFont-CMap findfont
 </tt></b></blockquote>
 where <b><tt>CIDFont</tt></b> is a name of any
-CID font resourse, and <b><tt>CMap</tt></b> is a name of a CMap resource
+CID font resource, and <b><tt>CMap</tt></b> is a name of a CMap resource
 designed for the same character collection. The interpreter will compose
 the font automatically from the specified CID font and CMap resources.
 Another method is possible using the <b><tt>composefont</tt></b> operator.
@@ -1062,10 +1064,10 @@ Examples :
 
 <blockquote><b><tt>
 /Ryumin-Medium  /ShinGo-Bold ;
-</b></tt></blockquote>
+</tt></b></blockquote>
 <blockquote><b><tt>
 /Ryumin-Light   << /FileType /TrueType /Path (F:/WIN2000/Fonts/ARIALUNI.TTF) /SubfontID 3 /CSI [(Japan1) 2] >> ;
-</b></tt></blockquote>
+</tt></b></blockquote>
 <p>
 
 <hr>
@@ -1835,14 +1837,25 @@ very slow systems where color accuracy is less important.
 </dl>
 
 <dl>
+<dt><b><tt>-dNOSUBCOLORSPACES</tt></b>
+<dd>This switch prevents the substitution of the <b><tt>ColorSpace</tt></b>
+resources (<b><tt>DefaultGray</tt></b>, <b><tt>DefaultRGB</tt></b>, and
+<b><tt>DefaultCMYK</tt></b>) for the <b><tt>DeviceGray</tt></b>,
+<b><tt>DeviceRGB</tt></b>, and <b><tt>DeviceCMYK</tt></b> color spaces.
+This switch is primarily useful for PDF creation using the <tt><b>pdfwrite</b></tt>
+device when retaining the color spaces from the original dicument is
+important.
+</dl>
+
+<dl>
 <dt><b><tt>-dNOPSICC</tt></b>
 <dd>Disables the automatic loading and use of an input color space that is
 contained in a PostScript file as DSC comments starting with the %%BeginICCProfile:
 comment. ICC profiles are sometimes embedded by applications to convey the exact
 input color space allowing better color fidelity. Since the embedded ICC profiles
 often use multidimensional RenderTables, color conversion may be slower than using
-the Default color conversion invoked when the <dt><b><tt>-dUseCIEColor</tt></b>
-option is specified, therefore the <dt><b><tt>-dNOPSICC</tt></b> option may result
+the Default color conversion invoked when the <b><tt>-dUseCIEColor</tt></b>
+option is specified, therefore the <b><tt>-dNOPSICC</tt></b> option may result
 in improved performance at slightly reduced color fidelity.
 </dl>
 
@@ -1998,10 +2011,10 @@ only as a default directory for resources being not installed.
 Therefore <b><tt>GenericResourceDir</tt></b> may be considered as a place
 where new resources to be installed. The default implementation of the function
 <b><tt>ResourceFileName</tt></b> uses <b><tt>GenericResourceDir</tt></b> when
-(1) it is an absolute path, or (2) the recource file is absent.
+(1) it is an absolute path, or (2) the resource file is absent.
 The extended search method does not call <b><tt>ResourceFileName</tt></b> .
 <p>
-Default value is <tt><b>(./Resource/)</tt></b> for Unix, and an equivalent one on other
+Default value is <tt><b>(./Resource/)</b></tt> for Unix, and an equivalent one on other
 platforms.
 </dl>
 
@@ -2011,10 +2024,10 @@ platforms.
 It's meaning is similar to <b><tt>GenericResourceDir</tt></b>.
 
 <p>
-Default value is <tt><b>(./Font/)</tt></b> for Unix, and an equivalent one on other
+Default value is <tt><b>(./Font/)</b></tt> for Unix, and an equivalent one on other
 platforms.
 </dl>
-</dl>
+
 
 
 <h4><a name="Interaction_related_parameters"></a>Interaction-related parameters</h4>
@@ -2542,7 +2555,7 @@ Currently the rasterization is implemented for Windows only, in clients
 gswin32.exe and gswin32c.exe. They open Visual Trace window when graphical
 debug output appears, <b><tt>-T</tt></b> <a href="#Debug_switches">switch</a> is set,
 and Ghostscript was <a href="Make.htm#Debugging">built</a> with DEBUG option.
-There are two important incompletnesses of the implementation :
+There are two important incompletenesses of the implementation :
 
 <p>
 1. The graphical output uses a hardcoded scale. An advanced client
@@ -3074,5 +3087,5 @@ San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
-</body>
+</small></body>
 </html>
