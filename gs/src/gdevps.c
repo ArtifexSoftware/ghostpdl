@@ -326,24 +326,32 @@ private const char *const psw_2_procset[] = {
 private int
 psw_begin_file(gx_device_pswrite *pdev, const gs_rect *pbbox)
 {
+    int code;
     FILE *f = pdev->file;
+    char const * const *p1;
+    char const * const *p2;
 
-    psw_begin_file_header(f, (gx_device *)pdev, pbbox,
-			  &pdev->pswrite_common,
-			  pdev->params.ASCII85EncodePages);
-    psw_print_lines(f, psw_procset);
     if (pdev->pswrite_common.LanguageLevel < 1.5) {
-	psw_print_lines(f, psw_1_x_procset);
-	psw_print_lines(f, psw_1_procset);
+	p1 = psw_1_x_procset;
+	p2 = psw_1_procset;
     } else if (pdev->pswrite_common.LanguageLevel > 1.5) {
-	psw_print_lines(f, psw_1_5_procset);
-	psw_print_lines(f, psw_2_procset);
+	p1 = psw_1_5_procset;
+	p2 = psw_2_procset;
     } else {
-	psw_print_lines(f, psw_1_x_procset);
-	psw_print_lines(f, psw_1_5_procset);
+	p1 = psw_1_x_procset;
+	p2 = psw_1_5_procset;
     }
-    psw_end_file_header(f);
-    fflush(f);
+
+    if ((code = psw_begin_file_header(f, (gx_device *)pdev, pbbox,
+			  &pdev->pswrite_common,
+			  pdev->params.ASCII85EncodePages)) < 0 ||
+        (code = psw_print_lines(f, psw_procset)) < 0 ||
+        (code = psw_print_lines(f, p1)) < 0 ||
+        (code = psw_print_lines(f, p2)) < 0 ||
+        (code = psw_end_file_header(f)) < 0)
+        return code;
+    if(fflush(f) == EOF)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -428,17 +436,20 @@ psw_image_stream_setup(gx_device_pswrite * pdev, bool binary_ok)
 }
 
 /* Clean up after writing an image. */
-private void
+private int
 psw_image_cleanup(gx_device_pswrite * pdev)
 {
+    int code = 0;
+    
     if (pdev->image_stream != 0) {
-	psdf_end_binary(pdev->image_writer);
+	code = psdf_end_binary(pdev->image_writer);
 	memset(pdev->image_writer, 0, sizeof(*pdev->image_writer));
     }
+    return code;
 }
 
 /* Write data for an image.  Assumes width > 0, height > 0. */
-private void
+private int
 psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
 	     uint width_bits, int height)
 {
@@ -446,7 +457,7 @@ psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
     int shift = data_x_bit & 7;
     int y;
 
-    for (y = 0; y < height; ++y, row += raster)
+    for (y = 0; y < height; ++y, row += raster) {
 	if (shift == 0)
 	    stream_write(s, row, (width_bits + 7) >> 3);
 	else {
@@ -459,15 +470,23 @@ psw_put_bits(stream * s, const byte * data, int data_x_bit, uint raster,
 	    if (wleft > 0)
 		stream_putc(s, (byte)((*src << shift) & (byte)(0xff00 >> wleft)));
 	}
+        if (s->end_status == ERRC)
+            return_error(gs_error_ioerror);
+    }
+    return 0;
 }
 private int
 psw_put_image_bits(gx_device_pswrite *pdev, const char *op,
 		   const byte * data, int data_x, uint raster,
 		   int width, int height, int depth)
 {
+    int code;
+    
     pprints1(pdev->strm, "%s\n", op);
-    psw_put_bits(pdev->image_stream, data, data_x * depth, raster,
+    code = psw_put_bits(pdev->image_stream, data, data_x * depth, raster,
 		 width * depth, height);
+    if (code < 0)
+        return code;
     psw_image_cleanup(pdev);
     return 0;
 }
@@ -505,6 +524,8 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	sprintf(str, "%d%c", index / 26, index % 26 + 'A');
 	pprintd2(s, "%d %d ", x, y);
 	pprints2(s, "%s %s\n", str, imagestr);
+        if (s->end_status == ERRC)
+            return_error(gs_error_ioerror);
 	return 0;
     }
     pprintd4(s, "%d %d %d %d ", x, y, width, height);
@@ -537,6 +558,8 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	op = cached[encode];
 	sprintf(endstr, "\n%s\n", imagestr);
     }
+    if (s->end_status == ERRC)
+        return_error(gs_error_ioerror);
     /*
      * In principle, we should put %%BeginData: / %%EndData around all data
      * sections.  However, as long as the data are ASCII (not binary), they
@@ -575,6 +598,8 @@ psw_image_write(gx_device_pswrite * pdev, const char *imagestr,
 	stream_puts(s, "\n%%EndData");
     }
     stream_puts(s, endstr);
+    if (s->end_status == ERRC)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -624,6 +649,7 @@ psw_is_separate_pages(gx_device_vector *const vdev)
     const char *fmt;
     gs_parsed_file_name_t parsed;
     int code = gx_parse_output_file_name(&parsed, &fmt, vdev->fname, strlen(vdev->fname));
+    
     return (code >= 0 && fmt != 0);
 }
 
@@ -640,12 +666,18 @@ psw_beginpage(gx_device_vector * vdev)
     if (code < 0)
 	 return code;
 
-    if (pdev->first_page)
-	psw_begin_file(pdev, NULL);
+    if (pdev->first_page) {
+	code = psw_begin_file(pdev, NULL);
+        if (code < 0)
+	     return code;
+    }
 
-    psw_write_page_header(s, (gx_device *)vdev, &pdev->pswrite_common, true, 
+    code = psw_write_page_header(s, (gx_device *)vdev, &pdev->pswrite_common, true, 
                           (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount + 1),
                           image_cache_size);
+    if (code < 0)
+	 return code;
+
     pdev->page_fill.color = gx_no_color_index;
     return 0;
 }
@@ -678,6 +710,8 @@ psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc)
 	    pprintd2(s, "%d %d r5\n", g, b);
 	else
 	    pprintd3(s, "%d %d %d rG\n", r, g, b);
+        if (s->end_status == ERRC)
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -692,6 +726,8 @@ psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1, fixed y1,
     pprintg4(gdev_vector_stream(vdev), "%g %g %g %g rf\n",
 	     fixed2float(x0), fixed2float(y0),
 	     fixed2float(x1 - x0), fixed2float(y1 - y0));
+    if ((gdev_vector_stream(vdev))->end_status == ERRC)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -737,6 +773,8 @@ psw_beginpath(gx_device_vector * vdev, gx_path_type_t type)
 
 	stream_puts(s, "Q q\n");
 	gdev_vector_reset(vdev);
+        if (s->end_status == ERRC)
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -760,6 +798,8 @@ psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
     print_coord2(s, x, y, NULL);
     pdev->path_state.num_points = 1;
     pdev->path_state.move = 1;
+    if (s->end_status == ERRC)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -792,6 +832,8 @@ psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0, floatp x, floatp y,
 	pdev->path_state.dprev[1] = pdev->path_state.dprev[0];
 	pdev->path_state.dprev[0].x = dx;
 	pdev->path_state.dprev[0].y = dy;
+        if (s->end_status == ERRC)
+            return_error(gs_error_ioerror);
     }
     return 0;
 }
@@ -824,6 +866,8 @@ psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
     }
     pdev->path_state.num_points = 0;
     pdev->path_state.move = 0;
+    if (s->end_status == ERRC)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -838,6 +882,8 @@ psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
 	   "H\n" : "h\n"));
     pdev->path_state.num_points = 0;
     pdev->path_state.move = 0;
+    if ((gdev_vector_stream(vdev))->end_status == ERRC)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -864,6 +910,8 @@ psw_endpath(gx_device_vector * vdev, gx_path_type_t type)
     }
     if (type & gx_path_type_clip)
 	pprints1(s, "Y%s\n", star);
+    if (s->end_status == ERRC)
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -908,6 +956,7 @@ psw_open(gx_device * dev)
 private int
 psw_output_page(gx_device * dev, int num_copies, int flush)
 {
+    int code;
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     stream *s = gdev_vector_stream(vdev);
@@ -915,7 +964,9 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
     /* Check for a legitimate empty page. */
     CHECK_BEGIN_PAGE(pdev);
     sflush(s);			/* sync stream and file */
-    psw_write_page_trailer(vdev->file, num_copies, flush);
+    code = psw_write_page_trailer(vdev->file, num_copies, flush);
+    if(code < 0)
+        return code;
     vdev->in_page = false;
     pdev->first_page = false;
     gdev_vector_reset(vdev);
@@ -925,7 +976,7 @@ psw_output_page(gx_device * dev, int num_copies, int flush)
 
     dev->PageCount ++;
     if (psw_is_separate_pages(vdev)) {
-	int code = psw_close_printer(dev);
+	code = psw_close_printer(dev);
 
 	if (code < 0) 
 	    return code;
@@ -1084,6 +1135,7 @@ psw_open_printer(gx_device * dev)
 private int 
 psw_close_printer(gx_device * dev)
 {
+    int code;
     gx_device_vector *const vdev = (gx_device_vector *)dev;
     gx_device_pswrite *const pdev = (gx_device_pswrite *)vdev;
     FILE *f = vdev->file;
@@ -1092,7 +1144,9 @@ psw_close_printer(gx_device * dev)
     gx_device_bbox_bbox(vdev->bbox_device, &bbox);
     if (pdev->first_page & !vdev->in_page) {
 	/* Nothing has been written.  Write the file header now. */
-	psw_begin_file(pdev, &bbox);
+	code = psw_begin_file(pdev, &bbox);
+        if (code < 0)
+            return code;
     } else {
 	/* If there is an incomplete page, complete it now. */
 	if (vdev->in_page) { 
@@ -1101,14 +1155,18 @@ psw_close_printer(gx_device * dev)
 	     */
 
 	    stream *s = vdev->strm;
-	    psw_write_page_trailer(vdev->file, 1, 1);
+	    code = psw_write_page_trailer(vdev->file, 1, 1);
+            if(code < 0)
+                return code;
 	    sflush(s);
 
 	    dev->PageCount++;
 	}
     }
-    psw_end_file(f, dev, &pdev->pswrite_common, &bbox, 
+    code = psw_end_file(f, dev, &pdev->pswrite_common, &bbox, 
                  (psw_is_separate_pages(vdev) ? 1 : vdev->PageCount));
+    if(code < 0)
+        return code;
 
     return gdev_vector_close_file(vdev);
 }
@@ -1249,7 +1307,9 @@ psw_stroke_path(gx_device * dev, const gs_imager_state * pis,
 		psw_put_matrix(s, &mat);
 		stream_puts(s, "concat\n");
 	    }
-	}
+            if (s->end_status == ERRC)
+                return_error(gs_error_ioerror);
+        }
 	code = gdev_vector_dopath(vdev, ppath, gx_path_type_stroke,
 				  (set_ctm ? &mat : (const gs_matrix *)0));
 	if (code < 0)
@@ -1505,6 +1565,12 @@ psw_begin_image(gx_device * dev,
 	}
 	stream_putc(s, '\n');
 	pprints1((bs ? bs : s), "%s\n", op);
+        if (s->end_status == ERRC) {
+            gs_free_object(mem, bs, "psw_begin_image(buffer stream)");
+            gs_free_object(mem, buffer, "psw_begin_image(buffer)");
+            gs_free_object(mem, pie, "psw_begin_image");
+            return_error(gs_error_ioerror);
+        }
     }
     *pinfo = (gx_image_enum_common_t *) pie;
     return 0;
@@ -1536,6 +1602,8 @@ psw_image_plane_data(gx_image_enum_common_t * info,
 		     planes[pi].data_x * info->plane_depths[pi],
 		     planes[pi].raster, pie->bits_per_row,
 		     *rows_used);
+        if (pdev->image_stream->end_status == ERRC)
+            return_error(gs_error_ioerror);
     }
     pie->y += *rows_used;
     return code;
@@ -1578,6 +1646,8 @@ psw_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 	    gs_free_object(mem, buffer, "psw_image_end_image(buffer)");
 	}
 	stream_puts(s, "\nQ\n");
+        if (s->end_status == ERRC)
+            return_error(gs_error_ioerror);
     }
     return code;
 }

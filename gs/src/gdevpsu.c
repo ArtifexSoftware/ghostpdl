@@ -24,17 +24,20 @@
 #include "gdevpsu.h"
 #include "spprint.h"
 #include "stream.h"
+#include "gserrors.h"
 
 /* ---------------- Low level ---------------- */
 
 /* Write a 0-terminated array of strings as lines. */
-void
+int
 psw_print_lines(FILE *f, const char *const lines[])
 {
     int i;
-
-    for (i = 0; lines[i] != 0; ++i)
-	fprintf(f, "%s\n", lines[i]);
+    for (i = 0; lines[i] != 0; ++i) {
+	if (fprintf(f, "%s\n", lines[i]) < 0)
+            return_error(gs_error_ioerror);
+    }
+    return 0;
 }
 
 /* Write the ProcSet name. */
@@ -145,7 +148,7 @@ private const char *const psw_end_prolog[] = {
  * Write the file header, up through the BeginProlog.  This must write to a
  * file, not a stream, because it may be called during finalization.
  */
-void
+int
 psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
 		      gx_device_pswrite_common_t *pdpc, bool ascii)
 {
@@ -191,41 +194,51 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     fputs(" 80 dict dup begin\n", f);
     psw_print_lines(f, psw_ps_procset);
     fflush(f);
+    if (ferror(f))
+        return_error(gs_error_ioerror);
+    return 0;
 }
 
 /*
  * End the file header.
  */
-void
+int
 psw_end_file_header(FILE *f)
 {
-    psw_print_lines(f, psw_end_prolog);
+    return psw_print_lines(f, psw_end_prolog);
 }
 
 /*
  * End the file.
  */
-void
+int
 psw_end_file(FILE *f, const gx_device *dev,
 	     const gx_device_pswrite_common_t *pdpc, const gs_rect *pbbox,
              int /* should be long */ page_count)
 {
     if (f == NULL)
-        return;		/* clients should be more careful */
+        return 0;	/* clients should be more careful */
     fprintf(f, "%%%%Trailer\n%%%%Pages: %ld\n", (long)page_count);
+    if (ferror(f))
+        return_error(gs_error_ioerror);
     if (dev->PageCount > 0 && pdpc->bbox_position != 0) {
 	if (pdpc->bbox_position >= 0) {
 	    long save_pos = ftell(f);
 
 	    fseek(f, pdpc->bbox_position, SEEK_SET);
 	    psw_print_bbox(f, pbbox);
-	    fputc('%', f);
-	    fseek(f, save_pos, SEEK_SET);
+            fputc('%', f);
+            if (ferror(f))
+                return_error(gs_error_ioerror);
+            fseek(f, save_pos, SEEK_SET);
 	} else
 	    psw_print_bbox(f, pbbox);
     }
     if (!pdpc->ProduceEPS)
 	fputs("%%EOF\n", f);
+    if (ferror(f))
+        return_error(gs_error_ioerror);
+    return 0;
 }
 
 /* ---------------- Page level ---------------- */
@@ -233,7 +246,7 @@ psw_end_file(FILE *f, const gx_device *dev,
 /*
  * Write the page header.
  */
-void
+int
 psw_write_page_header(stream *s, const gx_device *dev,
                       const gx_device_pswrite_common_t *pdpc,
                       bool do_scale, long page_ord, int dictsize)
@@ -282,13 +295,16 @@ psw_write_page_header(stream *s, const gx_device *dev,
 	pprintg2(s, "%g %g scale\n",
 		 72.0 / dev->HWResolution[0], 72.0 / dev->HWResolution[1]);
     stream_puts(s, "%%EndPageSetup\ngsave mark\n");
+    if (s->end_status == ERRC)
+        return_error(gs_error_ioerror);
+    return 0;
 }
 
 /*
  * Write the page trailer.  We do this directly to the file, rather than to
  * the stream, because we may have to do it during finalization.
  */
-void
+int
 psw_write_page_trailer(FILE *f, int num_copies, int flush)
 {
     if (num_copies != 1)
@@ -296,4 +312,7 @@ psw_write_page_trailer(FILE *f, int num_copies, int flush)
     fprintf(f, "cleartomark end end pagesave restore %s\n%%%%PageTrailer\n",
 	    (flush ? "showpage" : "copypage"));
     fflush(f);
+    if (ferror(f))
+        return_error(gs_error_ioerror);
+    return 0;
 }

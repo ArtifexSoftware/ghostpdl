@@ -165,7 +165,7 @@ private int
 psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
     int line_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
-    int lnum;
+    int code, lnum;
     byte *line = gs_alloc_bytes(pdev->memory, line_size, "psmono_print_page");
     byte invert = (pdev->color_info.depth == 1 ? 0xff : 0);
     gx_device_pswrite_common_t pswrite_common;
@@ -228,7 +228,9 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 		    putc(repeat_run_code + count_left,
 			 prn_stream);
 	    }
-	}
+            if (ferror(prn_stream))
+	        return_error(gs_error_ioerror);
+        }
 	/* Write the remaining data, if any. */
 	write_data_run(p, left, prn_stream, invert);
     }
@@ -237,6 +239,8 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fputs("\n", prn_stream);
     psw_write_page_trailer(prn_stream, 1, true);
     gs_free_object(pdev->memory, line, "psmono_print_page");
+    if (ferror(prn_stream))
+	return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -244,8 +248,11 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 private int
 psmono_close(gx_device *dev)
 {
-    psw_end_file(((gx_device_printer *)dev)->file, dev, &psmono_values, NULL, 
-                 dev->PageCount);
+    int code = psw_end_file(((gx_device_printer *)dev)->file, dev, 
+            &psmono_values, NULL, dev->PageCount);
+    
+    if (code < 0)
+        return code;
     return gdev_prn_close(dev);
 }
 
@@ -335,6 +342,7 @@ static const gx_device_pswrite_common_t psrgb_values =
 private int
 psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
+    int code;
     gs_memory_t *mem = pdev->memory;
     int width = pdev->width;
     byte *lbuf = gs_alloc_bytes(mem, width * 3,
@@ -389,6 +397,8 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 
 	    for (i = 0, p = data + c; i < width; ++i, p += 3)
 		sputc(&rls, *p);
+            if (rls.end_status == ERRC)
+              return_error(gs_error_ioerror);
 	}
     }
     sclose(&rls);
@@ -397,6 +407,8 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
     fputs("\n", prn_stream);
     psw_write_page_trailer(prn_stream, 1, true);
     gs_free_object(mem, lbuf, "psrgb_print_page(lbuf)");
+    if (ferror(prn_stream))
+        return_error(gs_error_ioerror);
     return 0;
 }
 
@@ -404,7 +416,10 @@ psrgb_print_page(gx_device_printer * pdev, FILE * prn_stream)
 private int
 psrgb_close(gx_device *dev)
 {
-    psw_end_file(((gx_device_printer *)dev)->file, dev, &psrgb_values, NULL, 
-                 dev->PageCount);
+    int code = psw_end_file(((gx_device_printer *)dev)->file, dev,
+            &psrgb_values, NULL, dev->PageCount);
+    
+    if (code < 0)
+        return code;
     return gdev_prn_close(dev);
 }
