@@ -176,8 +176,8 @@ pdf_end_obj(gx_device_pdf * pdev)
 void
 pdf_reset_graphics(gx_device_pdf * pdev)
 {
-    color_set_pure(&pdev->fill_color, 0);	/* black */
-    color_set_pure(&pdev->stroke_color, 0);	/* ditto */
+    color_set_pure(&pdev->fill_color, pdev->black);
+    color_set_pure(&pdev->stroke_color, pdev->black);
     pdev->state.flatness = -1;
     {
 	static const gx_line_params lp_initial = {
