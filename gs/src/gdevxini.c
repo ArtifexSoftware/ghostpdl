@@ -492,7 +492,11 @@ gdev_x_open(gx_device_X * xdev)
 private int
 x_set_buffer(gx_device_X * xdev)
 {
-    gs_memory_t *mem = xdev->memory;
+    /*
+     * We must use the stable memory here, since the existence of the
+     * buffer is independent of save/restore.
+     */
+    gs_memory_t *mem = gs_memory_stable(xdev->memory);
     bool buffered = xdev->MaxBitmap > 0;
     const gx_device_procs *procs;
 
