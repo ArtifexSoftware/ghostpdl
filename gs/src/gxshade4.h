@@ -86,11 +86,11 @@ typedef struct wedge_vertex_list_elem_s wedge_vertex_list_elem_t;
 struct wedge_vertex_list_elem_s {
     gs_fixed_point p;
     int level;
+    bool divide_count;
     wedge_vertex_list_elem_t *next, *prev;
 };
 typedef struct {
-    bool last_side, from_last_side;
-    bool divided_left, divided_right;
+    bool last_side;
     wedge_vertex_list_elem_t *beg, *end;    
 } wedge_vertex_list_t;
 

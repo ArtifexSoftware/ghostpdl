@@ -344,7 +344,7 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 		    code = set_x_gradient(&xg, &lg, &rg, &l, &r, rxl, rxr, num_components);
 		    if (code < 0)
 			goto xit;
-		    VD_RECT_SWAPPED(rxl, iy, rxr, iy + 1);
+		    /*VD_RECT_SWAPPED(rxl, iy, rxr, iy + 1);*/
 		    code = FILL_TRAP_RECT(rxl, iy, rxr - rxl, 1);
 		    if (code < 0)
 			goto xit;

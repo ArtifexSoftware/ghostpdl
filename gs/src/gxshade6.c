@@ -1691,6 +1691,7 @@ insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, c
     e->prev = l->beg;
     e->p = *p;
     e->level = max(l->beg->level, l->end->level) + 1;
+    e->divide_count = 0;
     l->beg->next = l->end->prev = e;
     {	int sx = l->beg->p.x < l->end->p.x ? 1 : -1;
 	int sy = l->beg->p.y < l->end->p.y ? 1 : -1;
@@ -1707,35 +1708,39 @@ private inline wedge_vertex_list_elem_t *
 open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
 {
+    wedge_vertex_list_elem_t *e;
+
     if (!l->last_side) {
-	l->divided_left = true;
-	if (l->beg == NULL) {
-	    l->from_last_side = l->last_side;
+	if (l->beg == NULL)
 	    create_wedge_vertex_list(pfs, l, p0, p1);
-	}
 	assert(l->beg->p.x == p0->x);
 	assert(l->beg->p.y == p0->y);
 	assert(l->end->p.x == p1->x);
 	assert(l->end->p.y == p1->y);
-	return insert_wedge_vertex_list_elem(pfs, l, pm);
+	e = insert_wedge_vertex_list_elem(pfs, l, pm);
+	e->divide_count++;
+	return e;
     } else {
-	l->divided_right = true;
 	if (l->beg == NULL) {
 	    create_wedge_vertex_list(pfs, l, p1, p0);
-	    l->from_last_side = l->last_side;
-	    return insert_wedge_vertex_list_elem(pfs, l, pm);
+	    e = insert_wedge_vertex_list_elem(pfs, l, pm);
+	    e->divide_count++;
+	    return e;
 	}
 	assert(l->beg->p.x == p1->x);
 	assert(l->beg->p.y == p1->y);
 	assert(l->end->p.x == p0->x);
 	assert(l->end->p.y == p0->y);
 	if (l->beg->next == l->end) {
-	    return insert_wedge_vertex_list_elem(pfs, l, pm);
+	    e = insert_wedge_vertex_list_elem(pfs, l, pm);
+	    e->divide_count++;
+	    return e;
 	} else {
-	    wedge_vertex_list_elem_t *e = wedge_vertex_list_find(l->beg, l->end, 
+	    e = wedge_vertex_list_find(l->beg, l->end, 
 			max(l->beg->level, l->end->level) + 1);
-
 	    assert(e != NULL);
+	    assert(e->p.x == pm->x && e->p.y == pm->y);
+    	    e->divide_count++;
 	    return e;
 	}
     }
@@ -1746,8 +1751,7 @@ make_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	wedge_vertex_list_t *l0, bool forth, 
 	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
 {
-    l->divided_left = l->divided_right = false;
-    l->last_side = l->from_last_side = l0->last_side;
+    l->last_side = l0->last_side;
     if (!l->last_side ^ !forth) {
 	l->end = open_wedge_median(pfs, l0, p0, p1, pm);
 	l->beg = l0->beg;
@@ -1764,18 +1768,13 @@ private inline int
 close_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	const patch_color_t *c0, const patch_color_t *c1)
 {
+    int code;
+
     if (!l->last_side)
 	return 0;
-    if (l->divided_left != l->divided_right) {
-	int code;
-	
-	if (l->from_last_side)
-	    code = fill_wedge_from_list(pfs, l, c1, c0);
-	else
-	    code = fill_wedge_from_list(pfs, l, c0, c1);
-	if (code < 0)
-	    return code;
-    }
+    code = fill_wedge_from_list(pfs, l, c1, c0);
+    if (code < 0)
+	return code;
     release_wedge_vertex_list_interval(pfs, l->beg, l->end);
     return 0;
 }
@@ -1962,6 +1961,9 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
     if (beg->next == end)
 	return 0;
     else if (beg->next->next == end) {
+	assert(beg->next->divide_count == 1 || beg->next->divide_count == 2);
+	if (beg->next->divide_count != 1)
+	    return 0;
 	return fill_triangle_wedge_from_list(pfs, beg, end, beg->next, c0, c1);
     } else {
 	gs_fixed_point p;
@@ -1973,6 +1975,7 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 	p.y = (beg->p.y + end->p.y) / 2;
 	e = wedge_vertex_list_find(beg, end, level + 1);
 	assert(e != NULL);
+	assert(e->p.x == p.x && e->p.y == p.y);
 	patch_interpolate_color(&c, c0, c1, pfs, 0.5);
 	code = fill_wedge_from_list_rec(pfs, beg, e, level + 1, c0, &c);
 	if (code < 0)
@@ -1980,6 +1983,9 @@ fill_wedge_from_list_rec(patch_fill_state_t *pfs,
 	code = fill_wedge_from_list_rec(pfs, e, end, level + 1, &c, c1);
 	if (code < 0)
 	    return code;
+	assert(e->divide_count == 1 || e->divide_count == 2);
+	if (e->divide_count != 1)
+	    return 0;
 	return fill_triangle_wedge_from_list(pfs, beg, end, e, c0, c1);
     }
 }
@@ -1997,12 +2003,10 @@ terminate_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
 	const patch_color_t *c0, const patch_color_t *c1)
 {
     if (l->beg != NULL) {
-	if (l->divided_left != l->divided_right) {
-	    int code = fill_wedge_from_list(pfs, l, c0, c1);
+	int code = fill_wedge_from_list(pfs, l, c0, c1);
 
-	    if (code < 0)
-		return code;
-	}
+	if (code < 0)
+	    return code;
 	release_wedge_vertex_list(pfs, l, 1);
     }
     return 0;
@@ -2797,7 +2801,7 @@ triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argumen
     code = terminate_wedge_vertex_list(pfs, &l[2], &p->p[1][0]->c, &q.c);
     if (code < 0)
 	return code;
-    code = terminate_wedge_vertex_list(pfs, &l[3], &p->p[0][0]->c, &q.c);
+    code = terminate_wedge_vertex_list(pfs, &l[3], &q.c, &p->p[0][0]->c);
     if (code < 0)
 	return code;
     return 0;
