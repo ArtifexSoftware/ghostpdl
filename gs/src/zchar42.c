@@ -178,8 +178,8 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
     os_ptr opc = op;
 
     if (!r_has_type(op - 3, t_dictionary)) {
-	check_op(pfont->memory, 6);
-	code = num_params(pfont->memory, op, 2, sbxy);
+	check_op(imemory, 6);
+	code = num_params(imemory, op, 2, sbxy);
 	if (code < 0)
 	    return code;
 	sbpt.x = sbxy[0];
@@ -187,14 +187,14 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
 	psbpt = &sbpt;
 	opc -= 2;
     }
-    check_type(pfont->memory, *opc, t_integer);
-    code = font_param(pfont->memory, opc - 3, &pfont);
+    check_type(imemory, *opc, t_integer);
+    code = font_param(imemory, opc - 3, &pfont);
     if (code < 0)
 	return code;
     if (penum == 0 || (pfont->FontType != ft_TrueType &&
 		       pfont->FontType != ft_CID_TrueType)
 	)
-	return_error(pfont->memory, e_undefined);
+	return_error(imemory, e_undefined);
     /*
      * We have to disregard penum->pis and penum->path, and render to
      * the current gstate and path.  This is a design bug that we will
