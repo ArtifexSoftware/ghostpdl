@@ -390,7 +390,7 @@ type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
      * and hint members of the state haven't been set up yet.  In this
      * case, we know there are no relevant hints.
      */
-    if (pcis->init_done < 0)
+    if (pcis->init_done < 0 || !(pcis->fh.use_x_hints | pcis->fh.use_y_hints))
 	return;
     if (pseg == 0) {
 	/* Start at the beginning of the subpath. */
