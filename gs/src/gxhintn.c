@@ -554,6 +554,15 @@ private inline void t1_hinter__init_outline(t1_hinter * this)
     this->path_opened = false;
 }
 
+private void t1_hinter__compute_rat_transform_coef(t1_hinter * this)
+{
+    /* Round towards zero for a better view of mirrored characters : */
+    this->heigt_transform_coef_rat = (int19)(this->heigt_transform_coef * this->ctmf.denominator + 0.5);
+    this->width_transform_coef_rat = (int19)(this->width_transform_coef * this->ctmf.denominator + 0.5);
+    this->heigt_transform_coef_inv = (int19)(this->ctmi.denominator / this->heigt_transform_coef + 0.5);
+    this->width_transform_coef_inv = (int19)(this->ctmi.denominator / this->width_transform_coef + 0.5);
+}
+
 private inline void t1_hinter__adjust_matrix_precision(t1_hinter * this, fixed xx, fixed yy)
 {   fixed x = any_abs(xx), y = any_abs(yy);
     fixed c = (x > y ? x : y);
@@ -565,6 +574,7 @@ private inline void t1_hinter__adjust_matrix_precision(t1_hinter * this, fixed x
 	fraction_matrix__drop_bits(&this->ctmi, 1);
 	this->g2o_fraction_bits -= 1;
 	this->g2o_fraction >>= 1;
+	t1_hinter__compute_rat_transform_coef(this);
     }
     if (this->ctmf.denominator == 0) {
 	/* ctmf should be degenerate. */
@@ -657,11 +667,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm,
         if (vp != 0 && div_x != 0 && div_y != 0) {
             this->heigt_transform_coef = vp / div_x;
             this->width_transform_coef = vp / div_y;
-	    /* Round towards zero for a better view of mirrored characters : */
-            this->heigt_transform_coef_rat = (int19)(this->heigt_transform_coef * this->ctmf.denominator + 0.5);
-            this->width_transform_coef_rat = (int19)(this->width_transform_coef * this->ctmf.denominator + 0.5);
-            this->heigt_transform_coef_inv = (int19)(this->ctmi.denominator / this->heigt_transform_coef + 0.5);
-            this->width_transform_coef_inv = (int19)(this->ctmi.denominator / this->width_transform_coef + 0.5);
+	    t1_hinter__compute_rat_transform_coef(this);
             this->keep_stem_width = (sp <= vp / 3); /* small skew */
         }
     }
