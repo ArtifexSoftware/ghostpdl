@@ -361,6 +361,13 @@ end
    if
    count 1 gt
  } bdef
+ 
+/.pdfpaintproc {         % <patdict> <resdict> .pdfpaintproc -
+  DEBUG { (%Begin PaintProc) = flush } if
+  exch false resolvestream pdfopdict .pdfruncontext
+  DEBUG { (%End PaintProc) = flush } if
+} bind def
+
 /resolvepattern		% <patternstreamdict> resolvepattern <patterndict>
  {		% Don't do the resolvestream now: just capture the data
 		% from the file if necessary.
@@ -376,11 +383,10 @@ end
       dup /FilePosition undef
     }
    if
-   dup /PaintProc {
-     DEBUG { (%Begin PaintProc) = flush } if
-     false resolvestream pdfopdict .pdfrun
-     DEBUG { (%End PaintProc) = flush } if
-   } put
+   dup [
+     1 index /Resources knownoget { oforce } { 0 dict } ifelse
+     /.pdfpaintproc cvx
+   ] cvx /PaintProc exch put
    DEBUG {
      (%Pattern: ) print dup === flush
    } if
