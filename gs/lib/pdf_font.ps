@@ -1188,6 +1188,15 @@ drawopdict begin
     .adjustcharwidth setcharwidth
   } bdef
   /d1 {
+    4 index 0 ne {
+      % invalid wy parameter for d1 in Type3 font (must be 0)
+      % Even though the PDF 1.4 specification states that this must be 0,
+      % Distiller sometimes creates Type3 fonts with non-zero wy. We set
+      % it to 0 since this is apparently what Acrobat Reader 4 and 5 do,
+      % but if the specification is ever changed to allow non-zero wy, this
+      % will not work.
+      5 -1 roll pop 0 5 1 roll	% set wy to 0
+    } if
     6 -2 roll .adjustcharwidth 6 2 roll setcachedevice
   } bdef
   /Tf {
