@@ -248,7 +248,8 @@ pdf_scan_token(const byte **pscan, const byte * end, const byte **ptoken)
 	r.limit = end - 1;
 	w.limit = buf + sizeof(buf) - 1;
 	do {
-	    w.ptr = buf - 1;
+	    /* One picky compiler complains if we initialize to buf - 1. */
+	    w.ptr = buf;  w.ptr--;
 	    status = (*s_PSSD_template.process)
 		((stream_state *) & ss, &r, &w, true);
 	}

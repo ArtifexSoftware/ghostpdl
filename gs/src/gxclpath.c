@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -878,7 +878,10 @@ cmd_put_segment(cmd_segment_writer * psw, byte op,
 	cmd_segment_op_num_operands_values
     };
     int i = op_num_operands[op & 0xf];
-    byte *q = psw->cmd - 1;
+    /* One picky compiler complains if we initialize to psw->cmd - 1. */
+    byte *q = psw->cmd;
+
+    --q;
 
 #ifdef DEBUG
     if (gs_debug_c('L')) {

@@ -102,7 +102,8 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 	r.limit = r.ptr + size;
 	w.limit = buf + sizeof(buf) - 1;
 	do {
-	    w.ptr = buf - 1;
+	    /* One picky compiler complains if we initialize to buf - 1. */
+	    w.ptr = buf;  w.ptr--;
 	    status = (*template->process) (st, &r, &w, true);
 	    pwrite(s, buf, (uint) (w.ptr + 1 - buf));
 	}
