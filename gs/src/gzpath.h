@@ -412,7 +412,6 @@ struct gx_flattened_iterator_s {
     uint rmask;			/* M-1 */
     fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
     uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
-    segment_notes notes;
     /* public : */
 #if CURVED_TRAPEZOID_FILL
     bool curve;
@@ -438,9 +437,9 @@ struct gx_flattened_iterator_s {
 };
 
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes);
+	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse);
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes);
+	    fixed x0, fixed y0, fixed x1, fixed y1);
 void gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this);
 void gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this, bool last_segment);
 bool gx_flattened_iterator__next(gx_flattened_iterator *this);

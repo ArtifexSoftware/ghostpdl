@@ -207,7 +207,7 @@ private void gx_flattened_iterator__test_filtered2(gx_flattened_iterator *this);
  */
 bool
 gx_flattened_iterator__init(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse, segment_notes notes)
+	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse)
 {
     /* Note : Immediately after the ininialization it keeps an invalid (zero length) segment. */
     fixed x1, y1, x2, y2;
@@ -267,7 +267,6 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
     }
     this->rmask = (1 << k3) - 1;
     this->i = (1 << k);
-    this->notes = notes;
     this->rx = this->ry = 0;
     if_debug6('3', "[3]ax=%f bx=%f cx=%f\n   ay=%f by=%f cy=%f\n",
 	      fixed2float(this->ax), fixed2float(this->bx), fixed2float(this->cx),
@@ -323,7 +322,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 /*  Initialize the iterator with a line. */
 bool
 gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
-	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes)
+	    fixed x0, fixed y0, fixed x1, fixed y1)
 {
     this->x0 = this->lx0 = this->lx1 = x0;
     this->y0 = this->ly0 = this->ly1 = y0;
@@ -1222,7 +1221,7 @@ gx_subdivide_curve_rec(gx_flattened_iterator *this,
 
 top :
     if (!gx_flattened_iterator__init(this, 
-		ppath->position.x, ppath->position.y, pc, k, false, notes)) {
+		ppath->position.x, ppath->position.y, pc, k, false)) {
 	/* Curve is too long.  Break into two pieces and recur. */
 	curve_segment cseg;
 

@@ -133,8 +133,11 @@ struct line_list_s {
     gs_logical_operation_t lop;
     bool fill_direct;
     fixed fixed_flat;
-#if CURVED_TRAPEZOID_FILL
     bool fill_by_trapezoids;
+    fixed adjust_below, adjust_above;
+    fixed ymin, ymax;
+#if CURVED_TRAPEZOID_FILL
+    int main_dir;
 #endif
 };
 
