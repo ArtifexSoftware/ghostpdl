@@ -395,7 +395,7 @@ private void pack_pseo_fhdr(fapi_ufst_server *r, FAPI_font *ff, UB8 *p)
         pack_float(&p, ff->get_float(ff, FAPI_FONT_FEATURE_FontMatrix, j));
     while ((UL32)p & 0x03) /* align to QUADWORD */
 	PACK_ZERO(p);
-    /* UFST has no definition for PSEO structure, so implementalization : */
+    /* UFST has no definition for PSEO structure, so implement serialization : */
     PACK_LONG(p, 0, FAPI_FONT_FEATURE_UniqueID);
     PACK_LONG(p, 0, FAPI_FONT_FEATURE_BlueScale);
     PACK_WORD(p, 0, FAPI_FONT_FEATURE_Weight);
