@@ -107,6 +107,35 @@ true setglobal
 /ObjectRegistry 50 array def % may grow later
 /CurrentObject null def
 /DoneDocumentStructure false def
+/GraphicState 20 dict begin
+  /InitialTextMatrix matrix def
+currentdict end def
+/TempMatrix matrix def
+/GraphicStateStack 20 array def
+/GraphicStateStackPointer 0 def
+
+% We need some structures in local VM, put then into the userdict :
+currentglobal false setglobal
+userdict /PDFR_InitialGS gstate put
+userdict /PDFR_Patterns 50 dict put
+setglobal
+
+% ===================== Constants =========================================
+
+/InitialExtGState 20 dict begin
+  /BG2 currentblackgeneration def
+  /UCR2 currentundercolorremoval def
+  /TR2 [ currentcolortransfer ] def
+  /HT currenthalftone def
+currentdict end readonly def
+/InitialGraphicState 20 dict begin
+  /FontSize 0 def
+  /CharacterSpacing 0 def
+  /TextLeading 0 def
+  /TextRenderingMode 0 def
+  /WordSpacing 0 def
+currentdict end readonly def
+
 
 % ===================== Reading PDF objects ===============================
 
@@ -755,12 +784,6 @@ currentdict end def
 
 % ===================== Color Spaces and Colors ==============
 
-% We need some structures in local VM, put then into the userdict :
-currentglobal false setglobal
-userdict /PDFR_InitialGS gstate put
-userdict /PDFR_Patterns 50 dict put
-setglobal
-
 /CheckColorSpace %  <key> <val> CheckColorSpace  <key> <val>
 {
   dup type /arraytype ne {
@@ -826,25 +849,32 @@ setglobal
   } ifelse
 } bind def
 
-% ===================== Interpret Data Streams ===============
+% ===================== Viewer State ===============
 
-/TempMatrix matrix def
-/InitialExtGState 20 dict begin
-  /BG2 currentblackgeneration def
-  /UCR2 currentundercolorremoval def
-  /TR2 [ currentcolortransfer ] def
-  /HT currenthalftone def
-currentdict end def
-/InitialGraphicState 20 dict begin
-  /FontSize 0 def
-  /CharacterSpacing 0 def
-  /TextLeading 0 def
-  /TextRenderingMode 0 def
-  /WordSpacing 0 def
-currentdict end def
-/GraphicState 20 dict begin
-  /InitialTextMatrix matrix def
-currentdict end def
+/GSave % - GSave -
+{
+  gsave
+  //PDFReader /GraphicStateStackPointer get
+  dup //GraphicStateStack exch get null eq {
+	dup //GraphicStateStack exch //InitialGraphicState length dict put 
+  } if
+  dup //GraphicStateStack exch get
+  //GraphicState exch copy pop
+  1 add //PDFReader exch /GraphicStateStackPointer exch put
+} bind def
+
+/GRestore % - GRestore -
+{
+  grestore
+  //PDFReader /GraphicStateStackPointer get
+  1 sub dup
+  //PDFReader exch /GraphicStateStackPointer exch put
+  //GraphicStateStack exch get
+  //GraphicState copy pop
+} bind def
+
+
+% ===================== Interpret Data Streams ===============
 
 /SetFont  % <resource_name> <size> SetFont -
 { dup //GraphicState exch /FontSize exch put
@@ -866,7 +896,7 @@ currentdict end def
 	  % Not sure how it works with CID fonts.
 	  {														% c wx wy
 	    currentpoint 5 4 roll								% wx wy x y c
-	    dup ( ) exch 0 put true charpath					% wx wy x y c
+	    ( ) dup 0 3 index put true charpath				    % wx wy x y c
 	    5 1 roll											% c wx wy x y
 	    moveto rmoveto										% c
 	    //GraphicState /CharacterSpacing get 0 rmoveto		% c
@@ -1096,8 +1126,8 @@ currentdict end def
 } bind def
 
 /Operators 50 dict begin
-  /q /gsave load def
-  /Q /grestore load def
+  /q { //GSave exec } bind def
+  /Q { //GRestore exec } bind def
   /cm { //TempMatrix astore concat } bind def
   /i { 1 .min setflat } bind def
   /J /setlinecap load def
