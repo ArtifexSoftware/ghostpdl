@@ -180,11 +180,12 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     gs_font_type42 *pfont;
     gs_font_cid2 *pfcid;
     int MetricsCount;
-    ref rcidmap, ignore_gdir, *file;
+    ref rcidmap, ignore_gdir, *file, cfnstr, *CIDFontName;
     ulong loca_glyph_pos[2][2];
     int code = cid_font_data_param(op, &common, &ignore_gdir);
 
     if (code < 0 ||
+	(code = dict_find_string(op, "CIDFontName", &CIDFontName)) <= 0 ||
 	(code = dict_int_param(op, "MetricsCount", 0, 4, 0, &MetricsCount)) < 0
 	)
 	return code;
@@ -251,6 +252,8 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     pfcid->cidata.MetricsCount = MetricsCount;
     ref_assign(&pfont_data(pfont)->u.type42.CIDMap, &rcidmap);
     pfcid->cidata.CIDMap_proc = z11_CIDMap_proc;
+    get_font_name(&cfnstr, CIDFontName);
+    copy_font_name(&pfcid->font_name, &cfnstr);
     if (MetricsCount) {
 	/* "Wrap" the glyph accessor procedures. */
 	pfcid->cidata.orig_procs.get_outline = pfont->data.get_outline;

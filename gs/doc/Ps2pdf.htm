@@ -282,7 +282,7 @@ containing '=' mean that the value of the parameter is the same as in the
 <tr valign=top><td><b><tt>MonoImageDownsampleType</tt></b><td><td><td><td>/Subsample<td><td>/Average<td><td>/Bicubic<td><td>/Bicubic<td><td>/Bicubic
 <tr valign=top><td><b><tt>MonoImageFilter</tt></b><td><td><td><td>/CCITTFaxEncode<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>MonoImageResolution</tt></b><td><td><td><td>300<td><td>300<td><td>300<td><td>1200<td><td>1200
-<tr valign=top><td><b><tt>NeverEmbed</tt></b><td><td><td><td><a href="#note_11">(note 11)</a><td><td><a href="#note_11">(note 11)</a><td><td><a href="#note_11">(note 11)</a><td><td>[]<td><td>[]
+<tr valign=top><td><b><tt>NeverEmbed</tt></b><td><td><td><td><a href="#note_11">(note 11)</a><a href="#note_12">(note 12)</a><td><td><a href="#note_11">(note 11)</a><a href="#note_12">(note 12)</a><td><td><a href="#note_11">(note 11)</a><a href="#note_12">(note 12)</a><td><td>[]<a href="#note_12">(note 12)</a><td><td>[]<a href="#note_12">(note 12)</a>
 <tr valign=top><td><b><tt>OffOptimizations</tt></b><td><td><td><td>0<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>OPM</tt></b><td><td><td><td>1<td><td>=<td><td>=<td><td>=<td><td>=
 <tr valign=top><td><b><tt>Optimize</tt></b><td><td><a href="#note_0">(0</a>,<a href="#note_5">5)</a><td><td>false<td><td>true<td><td>true<td><td>true<td><td>true
@@ -384,6 +384,14 @@ The screen and ebook ACS image parameter dictionary is
 <a name="note_11">(note 11)</a>
 The default, screen, and ebook settings never embed the 14 standard fonts
 (Courier, Helvetica, and Times families, Symbol, and ZapfDingbats).
+
+<p>
+<a name="note_12">(note 12)</a>
+<b><tt>NeverEnbed</tt></b> can include CID font names.
+If a CID font is substituted in <b><tt>lib/cidfmap</tt></b>,
+the substitute font name is used when the CID font is embedded,
+and the original CID font name is used when it is not embedded.
+<b><tt>NeverEnbed</tt></b> should always specify the original CID font name.
 
 <hr>
 

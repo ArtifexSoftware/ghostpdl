@@ -460,8 +460,6 @@ lookup_gs_simple_font_encoding(gs_font_base * pfont)
 }
 
 /* Get FontMatrix and FontName parameters. */
-private void get_font_name(ref *, const ref *);
-private void copy_font_name(gs_font_name *, const ref *);
 private int
 sub_font_params(const ref *op, gs_matrix *pmat, ref *pfname)
 {
@@ -652,7 +650,7 @@ build_gs_sub_font(i_ctx_t *i_ctx_p, const ref *op, gs_font **ppfont,
 
 /* Get the string corresponding to a font name. */
 /* If the font name isn't a name or a string, return an empty string. */
-private void
+void
 get_font_name(ref * pfname, const ref * op)
 {
     switch (r_type(op)) {
@@ -669,7 +667,7 @@ get_font_name(ref * pfname, const ref * op)
 }
 
 /* Copy a font name into the gs_font structure. */
-private void
+void
 copy_font_name(gs_font_name * pfstr, const ref * pfname)
 {
     uint size = r_size(pfname);

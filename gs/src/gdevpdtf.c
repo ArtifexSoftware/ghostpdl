@@ -491,12 +491,21 @@ embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index,
     return (find_std_appearance(pdev, (gs_font_base *)font, -1,
 				glyphs, num_glyphs) == index);
 }
+/*
+ * Choose a name for embedded font.
+ */
+const gs_font_name *pdf_choose_font_name(gs_font *font, bool orig_name)
+{
+    return orig_name ? (font->key_name.size != 0 ? &font->key_name : &font->font_name)
+	             : (font->font_name.size != 0 ? &font->font_name : &font->key_name);
+}
 pdf_font_embed_t
 pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 		      gs_glyph *glyphs, int num_glyphs)
 {
-    const byte *chars = font->font_name.chars;
-    uint size = font->font_name.size;
+    const gs_font_name *fn = pdf_choose_font_name(font, true);
+    const byte *chars = fn->chars;
+    uint size = fn->size;
     int index = pdf_find_standard_font_name(chars, size);
     bool embed_as_standard_called = false, do_embed_as_standard;
 
@@ -653,7 +662,7 @@ pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pdf_standard_font_t *psf = &pdf_standard_fonts(pdev)[index];
 
     if (code < 0 ||
-	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, true)) < 0
+	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, true, true)) < 0
 	)
 	return code;
     pdfont->BaseFont.data = (byte *)psfi->fname; /* break const */
