@@ -125,8 +125,10 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	code = (pdfont->base_font != 0 ?
 		pdf_base_font_copy_glyph(pdfont->base_font, glyph, (gs_font_base *)font) :
 		pdf_font_used_glyph(pdfont->FontDescriptor, glyph, (gs_font_base *)font));
+	if (code == gs_error_undefined)
+	    continue;	/* notdef */
 	if (code < 0)
-	    return code;	/* can't copy the glyph */
+	    return code;
 	pet->glyph = glyph;
 	pet->str = gnstr;
 	/*

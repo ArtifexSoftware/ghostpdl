@@ -1316,12 +1316,12 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	if (wmode) {
 	    pwidths->Width.xy.x = pwidths->real_width.xy.x = 0;
 	    pwidths->Width.xy.y = pwidths->real_width.xy.y =
-		    finfo.MissingWidth * pscale->y;
+		    finfo.MissingWidth * scale_c;
 	    pwidths->Width.w = pwidths->real_width.w =
 		    pwidths->Width.xy.y;
 	} else {
 	    pwidths->Width.xy.x = pwidths->real_width.xy.x =
-		    finfo.MissingWidth * pscale->x;
+		    finfo.MissingWidth * scale_c;
 	    pwidths->Width.w = pwidths->real_width.w =
 		    pwidths->Width.xy.x;
 	    pwidths->Width.xy.y = pwidths->real_width.xy.y = 0;
