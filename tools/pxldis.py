@@ -670,27 +670,19 @@ class pxl_dis:
             # an int.
             length = int(self.unpack('L', self.data[self.index:self.index+4])[0])
             self.index = self.index + 4
-            print "length:",
-            print length
         if ( name == 'embedded_data_byte' ):
             length = int(self.unpack('B', self.data[self.index:self.index+1])[0])
             self.index = self.index + 1
+        print "length:",
+        print length
 
         # NB needs wrapping
         print "[ ",
         for byte in self.data[self.index:self.index+length]:
             print ord(byte),
         print " ]"
-        # for some screwed up reason trailing nulls can comme after
-        # embedded data
-#        self.index = self.index + length
-#        while ( 1 ):
-#            if ( ord(self.data[self.index]) == 0 or ord(self.data[self.index]) == 1 ):
-#                self.index = self.index + 1
-#            else:
-#                break
-            
-                 
+        self.index = self.index + length
+
     def Tag_attr_ubyte(self):
         new_tag = unpack('B', self.data[self.index])[0]
 
@@ -843,11 +835,11 @@ class pxl_dis:
         except IndexError:
             return
         else:
+            print "dissassemble failed at file position %d" % self.index
             endpos = min(len(self.data), self.index + 25)
             for byte in self.data[self.index:endpos]:
                 print hex(ord(byte)),
             print
-            print "dissassemble failed"
 
 if __name__ == '__main__':
     import sys
