@@ -24,7 +24,7 @@
 #include "vdtrace.h"
 
 int 
-gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
+gx_default_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
 	int i0, int j, int w,
 	const frac31 *c0, const ulong *c0f, const long *cg_num, ulong cg_den)
 {
@@ -38,7 +38,7 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
     ulong f[GX_DEVICE_COLOR_MAX_COMPONENTS];
     int i, i1 = i0 + w, bi = i0, k;
     gx_color_index ci0 = 0, ci1;
-    const gx_device_color_info *cinfo = &fa->pdev->color_info;
+    const gx_device_color_info *cinfo = &dev->color_info;
     int n = cinfo->num_components;
     int si, ei, code;
 
@@ -74,9 +74,9 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
 	    if (si < ei) {
 		vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
 		if (fa->swap_axes)
-		    code = dev_proc(fa->pdev, fill_rectangle)(fa->pdev, j, bi, 1, i - bi, ci0);
+		    code = dev_proc(dev, fill_rectangle)(dev, j, bi, 1, i - bi, ci0);
 		else
-		    code = dev_proc(fa->pdev, fill_rectangle)(fa->pdev, bi, j, i - bi, 1, ci0);
+		    code = dev_proc(dev, fill_rectangle)(dev, bi, j, i - bi, 1, ci0);
 		if (code < 0)
 		    return code;
 	    }
@@ -89,9 +89,9 @@ gx_default_fill_linear_color_scanline(const gs_fill_attributes *fa,
     vd_rect(int2fixed(bi), int2fixed(j), int2fixed(i), int2fixed(j + 1), 1, (ulong)ci0);
     if (si < ei) {
 	if (fa->swap_axes)
-	    return dev_proc(fa->pdev, fill_rectangle)(fa->pdev, j, bi, 1, i - bi, ci0);
+	    return dev_proc(dev, fill_rectangle)(dev, j, bi, 1, i - bi, ci0);
 	else
-	    return dev_proc(fa->pdev, fill_rectangle)(fa->pdev, bi, j, i - bi, 1, ci0);
+	    return dev_proc(dev, fill_rectangle)(dev, bi, j, i - bi, 1, ci0);
     }
     return 0;
 }

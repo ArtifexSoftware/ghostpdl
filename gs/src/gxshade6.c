@@ -1756,7 +1756,6 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 	    gs_fill_attributes fa;
 	    gx_device_color dc[3];
 
-	    fa.pdev = pdev;
 	    fa.clip = &pfs->rect;
 	    fa.ht = NULL;
 	    fa.swap_axes = false;
@@ -1778,7 +1777,7 @@ try_device_linear_color(patch_fill_state_t *pfs, bool wedge,
 		return code;
 	    dc2fc(pfs, dc[2].colors.pure, fc[2]);
 	    draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
-	    code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
+	    code = dev_proc(pdev, fill_linear_color_triangle)(pdev, &fa, 
 			    &p0->p, &p1->p, &p2->p, 
 			    fc[0], (wedge ? NULL : fc[1]), fc[2]);
 	    if (code == 1)
@@ -1980,7 +1979,6 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
 	    gx_device_color dc[2];
 	    int code;
 
-	    fa.pdev = pdev;
 	    fa.clip = &pfs->rect;
 	    fa.ht = NULL;
 	    fa.swap_axes = swap_axes;
@@ -1994,7 +1992,7 @@ mesh_padding(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_p
 		if (code < 0)
 		    return code;
 		dc2fc(pfs, dc[1].colors.pure, fc[1]);
-		code = dev_proc(pdev, fill_linear_color_trapezoid)(&fa, 
+		code = dev_proc(pdev, fill_linear_color_trapezoid)(pdev, &fa, 
 				&le.start, &le.end, &re.start, &re.end, 
 				fc[0], fc[1], NULL, NULL);
 		if (code == 1)

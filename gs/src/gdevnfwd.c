@@ -768,57 +768,45 @@ gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace,
 }
 
 int 
-gx_forward_fill_linear_color_scanline(const gs_fill_attributes *fa,
+gx_forward_fill_linear_color_scanline(gx_device *dev, const gs_fill_attributes *fa,
 	int i, int j, int w,
 	const frac31 *c, const ulong *addx, const long *mulx, ulong divx)
 {
-    gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
     dev_proc_fill_linear_color_scanline((*proc)) =
-	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_linear_color_scanline) :
+	(tdev == 0 ? (tdev = dev, gx_default_fill_linear_color_scanline) :
 	 dev_proc(tdev, fill_linear_color_scanline));
-    gs_fill_attributes fa1;
-
-    fa1 = *fa;
-    fa1.pdev = tdev;
-    return proc(&fa1, i, j, w, c, addx, mulx, divx);
+    return proc(tdev, fa, i, j, w, c, addx, mulx, divx);
 }
 
 int 
-gx_forward_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
+gx_forward_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2, const gs_fixed_point *p3,
 	const frac31 *c0, const frac31 *c1,
 	const frac31 *c2, const frac31 *c3)
 {
-    gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
     dev_proc_fill_linear_color_trapezoid((*proc)) =
-	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_linear_color_trapezoid) :
+	(tdev == 0 ? (tdev = dev, gx_default_fill_linear_color_trapezoid) :
 	 dev_proc(tdev, fill_linear_color_trapezoid));
-    gs_fill_attributes fa1;
-
-    fa1 = *fa;
-    fa1.pdev = tdev;
-    return proc(&fa1, p0, p1, p2, p3, c0, c1, c2, c3);
+    return proc(tdev, fa, p0, p1, p2, p3, c0, c1, c2, c3);
 }
 
 int 
-gx_forward_fill_linear_color_triangle(const gs_fill_attributes *fa,
+gx_forward_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
 	const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {
-    gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
     dev_proc_fill_linear_color_triangle((*proc)) =
-	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_linear_color_triangle) :
+	(tdev == 0 ? (tdev = dev, gx_default_fill_linear_color_triangle) :
 	 dev_proc(tdev, fill_linear_color_triangle));
-    gs_fill_attributes fa1;
-
-    fa1 = *fa;
-    fa1.pdev = tdev;
-    return proc(&fa1, p0, p1, p2, c0, c1, c2);
+    return proc(tdev, fa, p0, p1, p2, c0, c1, c2);
 }
 
 

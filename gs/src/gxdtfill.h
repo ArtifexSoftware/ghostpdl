@@ -199,7 +199,7 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 
 #if LINEAR_COLOR
 #   define FILL_TRAP_RECT(x,y,w,h)\
-	(!(w) ? 0 : dev_proc(dev, fill_linear_color_scanline)(fa, x, y, w, xg.c, xg.f, xg.num, xg.den))
+	(!(w) ? 0 : dev_proc(dev, fill_linear_color_scanline)(dev, fa, x, y, w, xg.c, xg.f, xg.num, xg.den))
 #else
 #   define FILL_TRAP_RECT(x,y,w,h)\
 	(FILL_DIRECT ? FILL_TRAP_RECT_DIRECT(x,y,w,h) : FILL_TRAP_RECT_INDIRECT(x,y,w,h))

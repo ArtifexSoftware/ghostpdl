@@ -1235,7 +1235,6 @@ typedef enum {
 		/* Shading support. */
 
 typedef struct gs_fill_attributes_s {
-      gx_device *pdev; 
       const gs_fixed_rect *clip;
       bool swap_axes;
       const gx_device_halftone *ht; /* Reserved for possible use in future. */
@@ -1245,7 +1244,7 @@ typedef struct gs_fill_attributes_s {
 /* Fill a linear color scanline. */
 
 #define dev_t_proc_fill_linear_color_scanline(proc, dev_t)\
-  int proc(const gs_fill_attributes *fa,\
+  int proc(dev_t *dev, const gs_fill_attributes *fa,\
 	int i, int j, int w, /* scanline coordinates and width */\
 	const frac31 *c0, /* initial color for the pixel (i,j), the integer part */\
 	const ulong *c0_f, /* initial color for the pixel (i,j), the fraction part numerator */\
@@ -1267,7 +1266,7 @@ typedef struct gs_fill_attributes_s {
  */
 
 #define dev_t_proc_fill_linear_color_trapezoid(proc, dev_t)\
-  int proc(const gs_fill_attributes *fa,\
+  int proc(dev_t *dev, const gs_fill_attributes *fa,\
 	const gs_fixed_point *p0, const gs_fixed_point *p1,\
 	const gs_fixed_point *p2, const gs_fixed_point *p3,\
 	const frac31 *c0, const frac31 *c1,\
@@ -1283,7 +1282,7 @@ typedef struct gs_fill_attributes_s {
  */
 
 #define dev_t_proc_fill_linear_color_triangle(proc, dev_t)\
-  int proc(const gs_fill_attributes *fa,\
+  int proc(dev_t *dev, const gs_fill_attributes *fa,\
 	const gs_fixed_point *p0, const gs_fixed_point *p1,\
 	const gs_fixed_point *p2,\
 	const frac31 *c0, const frac31 *c1, const frac31 *c2)

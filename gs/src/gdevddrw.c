@@ -433,18 +433,18 @@ middle_frac31_color(frac31 *c, const frac31 *c0, const frac31 *c2, int num_compo
     int i;
 
     for (i = 0; i < num_components; i++)
-	c[i] = (int32_t)((uint32_t)c0[i] + (uint32_t)c2[i] >> 1);
+	c[i] = (int32_t)(((uint32_t)c0[i] + (uint32_t)c2[i]) >> 1);
 }
 
 private inline int
-fill_linear_color_trapezoid_nocheck(const gs_fill_attributes *fa,
+fill_linear_color_trapezoid_nocheck(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_linear_color_edge *le, const gs_linear_color_edge *re)
 {
     fixed y02 = max(le->start.y, re->start.y), ymin = max(y02, fa->clip->p.y);
     fixed y13 = min(le->end.y, re->end.y), ymax = min(y13, fa->clip->q.y);
     int code;
 
-    code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
+    code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(dev, 
 	    le, re, ymin, ymax, 0, NULL, fa);
     if (code < 0)
 	return code;
@@ -468,14 +468,14 @@ fill_linear_color_trapezoid_nocheck(const gs_fill_attributes *fa,
     <0 - error.
  */
 int 
-gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
+gx_default_fill_linear_color_trapezoid(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2, const gs_fixed_point *p3,
 	const frac31 *c0, const frac31 *c1,
 	const frac31 *c2, const frac31 *c3)
 {
     gs_linear_color_edge le, re;
-    int num_components = fa->pdev->color_info.num_components;
+    int num_components = dev->color_info.num_components;
 
     le.start = *p0;
     le.end = *p1;
@@ -489,23 +489,23 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
     re.clip_x = fa->clip->q.x;
     if (check_gradient_overflow(&le, &re, num_components))
         return 0;
-    return fill_linear_color_trapezoid_nocheck(fa, &le, &re);
+    return fill_linear_color_trapezoid_nocheck(dev, fa, &le, &re);
 }
 
 private inline int 
-fill_linear_color_triangle(const gs_fill_attributes *fa,
+fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
 	const frac31 *c0, const frac31 *c1, const frac31 *c2)
 {   /* p0 must be the lowest vertex. */
     int code;
     gs_linear_color_edge e0, e1, e2;
-    int num_components = fa->pdev->color_info.num_components;
+    int num_components = dev->color_info.num_components;
 
     if (p0->y == p1->y)
-	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p1, p2, c0, c2, c1, c2);
+	return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p2, p1, p2, c0, c2, c1, c2);
     if (p1->y == p2->y)
-	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p0, p1, c0, c2, c0, c1);
+	return gx_default_fill_linear_color_trapezoid(dev, fa, p0, p2, p0, p1, c0, c2, c0, c1);
     e0.start = *p0;
     e0.end = *p2;
     e0.c0 = c0;
@@ -526,10 +526,10 @@ fill_linear_color_triangle(const gs_fill_attributes *fa,
 	    return 0;
 	if (check_gradient_overflow(&e0, &e2, num_components))
 	    return 0;
-	code = fill_linear_color_trapezoid_nocheck(fa, &e0, &e1);
+	code = fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e1);
 	if (code <= 0) /* Sic! */
 	    return code;
-	return fill_linear_color_trapezoid_nocheck(fa, &e0, &e2);
+	return fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e2);
     } else { /* p0->y < p2->y && p2->y < p1->y */
 	e2.start = *p2;
 	e2.end = *p1;
@@ -540,16 +540,16 @@ fill_linear_color_triangle(const gs_fill_attributes *fa,
 	    return 0;
 	if (check_gradient_overflow(&e2, &e1, num_components))
 	    return 0;
-	code = fill_linear_color_trapezoid_nocheck(fa, &e0, &e1);
+	code = fill_linear_color_trapezoid_nocheck(dev, fa, &e0, &e1);
 	if (code <= 0) /* Sic! */
 	    return code;
-	return fill_linear_color_trapezoid_nocheck(fa, &e2, &e1);
+	return fill_linear_color_trapezoid_nocheck(dev, fa, &e2, &e1);
     }
 }
 
 /*  Fill a triangle with a linear color. */
 int 
-gx_default_fill_linear_color_triangle(const gs_fill_attributes *fa,
+gx_default_fill_linear_color_triangle(gx_device *dev, const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
 	const frac31 *c0, const frac31 *c1, const frac31 *c2)
@@ -567,11 +567,11 @@ gx_default_fill_linear_color_triangle(const gs_fill_attributes *fa,
 	c2 = c;
     }
     if (p0->y <= p1->y && p0->y <= p2->y)
-	return fill_linear_color_triangle(fa, p0, p1, p2, c0, c1, c2);
+	return fill_linear_color_triangle(dev, fa, p0, p1, p2, c0, c1, c2);
     if (p1->y <= p0->y && p1->y <= p2->y)
-	return fill_linear_color_triangle(fa, p1, p2, p0, c1, c2, c0);
+	return fill_linear_color_triangle(dev, fa, p1, p2, p0, c1, c2, c0);
     else
-	return fill_linear_color_triangle(fa, p2, p0, p1, c2, c0, c1);
+	return fill_linear_color_triangle(dev, fa, p2, p0, p1, c2, c0, c1);
 }
 
 /* Fill a parallelogram whose points are p, p+a, p+b, and p+a+b. */
