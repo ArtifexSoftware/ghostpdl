@@ -1385,8 +1385,8 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    if ( !hpgl_can_concat_labels(pgls) )
 		      { 
 			  hpgl_call(hpgl_add_point_to_path(pgls,
-					pgls->g.label.initial_pos.x,
-					pgls->g.label.initial_pos.y,
+					pgls->g.carriage_return_pos.x,
+					pgls->g.carriage_return_pos.y,
 					hpgl_plot_move_absolute, true));
 		      }
  		    /* always clear the current path since terminating
