@@ -2296,25 +2296,25 @@ $(GLD)shadelib.dev : $(LIB_MAK) $(ECHOGS_XE) $(shadelib_)\
 # (This stuff fixes Agfa's reentrancy problem with UFST callbacks.)
 # (To be removed after Agfa fixes the problem.)
 
-UFST_INC1=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I) 
-UFST_INC=$(UFST_INC1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)
+UFST_INC_1=$(I_)$(UFST_ROOT)$(D)sys$(D)inc$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)inc$(_I) 
+UFST_INC_=$(UFST_INC_1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(D)rts$(D)gray$(_I)
 
 gxfapi_h=$(GLSRC)gxfapi.h
 
 $(PSD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ)
 	$(SETMOD) $(GLD)gxfapiu1 $(GLOBJ)gxfapi.$(OBJ)
 
-$(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c $(OP) \
+$(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c \
  $(gx_h) $(gxfapi_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)CGCONFIG.H\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)SHAREINC.H\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)PORT.H
-	$(GLCC) $(UFST_CFLAG) $(UFST_INC) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
+	$(GLCC) $(UFST_CFLAG) $(UFST_INC_) $(GLO_)gxfapi.$(OBJ) $(C_) $(GLSRC)gxfapi.c
 
 
 # stub for UFST bridge support	:
 
-$(PSD)gxfapiu.dev : $(INT_MAK) $(ECHOGS_XE)
+$(PSD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(PSD)gxfapiu
 
 
