@@ -69,8 +69,8 @@
 
 /* Initial values for width and height */
 #define INITIAL_RESOLUTION 96
-#define INITIAL_WIDTH (INITIAL_RESOLUTION * 85 / 10 + 1)
-#define INITIAL_HEIGHT (INITIAL_RESOLUTION * 11 + 1)
+#define INITIAL_WIDTH ((INITIAL_RESOLUTION * 85 + 5) / 10)
+#define INITIAL_HEIGHT ((INITIAL_RESOLUTION * 110 + 5) / 10)
 
 /* A macro for casting the device argument */
 #define pmdev ((gx_device_pm *)dev)
