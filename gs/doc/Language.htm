@@ -67,6 +67,8 @@
 <li><a href="#Miscellaneous_additions">Miscellaneous additions</a>
 <ul>
 <li><a href="#Extendeed_semantics_of_run">Extendeed semantics of 'run'</a>
+<li><a href="#DecodingResources">Decoding resources</a>
+<li><a href="#CIDDecodingResources">CIDDecoding resources</a>
 <li><a href="#GlyphNames2Unicode">GlyphNames2Unicode</a>
 </ul>
 </ul></blockquote>
@@ -1939,6 +1941,85 @@ may be overridden by the command line argument
 The operator <b><tt>run</tt></b> can take either a string or a file as its argument.  In
 the latter case, it just runs the file, closing it at the end, and trapping
 errors just as for the string case.
+
+<h3><a name="DecodingResources"></a>Decoding resources</h3>
+
+<p>
+<b><tt>Decoding</tt></b> is a Ghostscript-specific resource category, which is used
+for emulating Postscript fonts with other font technologies.
+Instances of the <b><tt>Decoding</tt></b> category are tables which allow
+to map Postscript glyph names to character codes used with
+True Type, Intellifont, Microtype and other font formats.
+
+<p>
+Currently Ghostscript is capable of PS font emulation in 2 ways :
+<li>
+1. With <a href="./Use.htm#FAPI_run">FAPI</a>, 
+</li>
+<li>
+2. With True Type font files, using the native font renderer,
+specifying a True Type font in <a href="../lib/Fontmap">lib/Fontmap</a>.
+</li>
+<p>
+<b><tt>Decoding</tt></b> resources are not used yet for (2).
+To be improved later.
+
+<p>
+An instance of the <b><tt>Decoding</tt></b> resource category is
+a dictionary. Keys in the dictionary are Postscript glyph names,
+values are character codes. The name of the resource instance should
+reflect the character set, which it maps to. For example,
+<b><tt>/Unicode</tt></b> <b><tt>/Decoding</tt></b> resource maps to
+Unicode UTC-16.
+
+<p>
+The rule for using <b><tt>Decoding</tt></b> resources is
+being specified in the configuration file
+<a href="../lib/xlatmap">lib/xlatmap</a>. See instructions in there.
+
+<p>
+The file format for <b><tt>Decoding</tt></b> resource file is
+generic Postscript.
+Users are allowed to define custom resources to <b><tt>Decoding</tt></b>
+resource category. A procset <b><tt>ParseDecoding</tt></b> defined in 
+<a href="../lib/gs_ciddc.ps">lib/gs_ciddc.ps</a> allows to represent
+the table in a comfortable form.
+
+
+<h3><a name="CIDDecodingResources"></a>CIDDecoding resources</h3>
+
+<p>
+<b><tt>CIDDecoding</tt></b> resources are similar to <b><tt>Decoding</tt></b>
+resources, except they map CIDs rather than glyph names. Another difference is that
+the native Ghostscript font renderer already uses <b><tt>CIDDecoding</tt></b> resources
+while emulate CID fonts with True Types.
+
+<p>
+An instance of the <b><tt>CIDDecoding</tt></b> resource category is
+a dictionary of strings. Keys in the dictionary are integers,
+which correspond to high order byte of a CID. Values are
+512-bytes strings. Each string represents 256 character codes,
+corresponding various values of the lower byte of CID.
+Each character code ocupies 2 bytes, high order byte first.
+Two zero bytes represent mapping to default character.
+
+<p>
+Ghostscript library is capable of generating some <b><tt>CIDDecoding</tt></b>
+instances automatically, using appropriate <b><tt>CMap</tt></b> resources.
+It covers most of practical cases.
+The neccessary <b><tt>CMap</tt></b> resources must be provided.
+See the table <b><tt>.CMapChooser</tt></b> in
+<a href="../lib/gs_ciddc.ps">lib/gs_ciddc.ps</a>
+to know names of automatically gerenated resources and used <b><tt>CMap</tt></b>s.
+They allow to map CNS1, GB1, Japan1, Japan2 and Korea1 CID sets to True Type
+character sets known as Unicode (exactly UTC-16), Big5, 
+GB1213, ShiftJIS, Johab and Wansung.
+
+<p>
+The file format for <b><tt>CIDDecoding</tt></b> resource file is
+generic Postscript.
+Users are allowed to define custom resources to <b><tt>CIDDecoding</tt></b>
+resource category. 
 
 <h3><a name="GlyphNames2Unicode"></a>GlyphNames2Unicode</h3>
 <p>
