@@ -391,7 +391,14 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
     case 4:
 	set_dev_proc(pdev, map_rgb_color, NULL);
 	set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
+#ifdef VMS
+#pragma message disable BADANSIALIAS
+#endif
+       /* possible problems with aliassing on next statement */
 	set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+#ifdef VMS
+#pragma message enable BADANSIALIAS
+#endif
         color = gx_map_cmyk_color((gx_device *)pdev,
 		      frac2cv(frac_0), frac2cv(frac_0),
 		      frac2cv(frac_0), frac2cv(frac_1));

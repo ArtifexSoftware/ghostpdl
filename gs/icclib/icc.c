@@ -2913,7 +2913,7 @@ static int icmData_read(
 	} else if (f == 1) {
 		p->flag = icmDataBin;
 	} else {
-		sprintf(p->icp->err,"icmData_read: Unknown flag value 0x%x"),f;
+		sprintf(p->icp->err,"icmData_read: Unknown flag value 0x%x",f);
 		free(buf);
 		return p->icp->errc = 1;
 	}
@@ -2985,7 +2985,7 @@ static int icmData_write(
 
 	if (p->data != NULL) {
 		if (p->flag == icmDataASCII) {
-			if ((rv = check_null_string(p->data, p->size)) != 0) {
+			if ((rv = check_null_string( (char*)p->data, p->size)) != 0) {
 				sprintf(p->icp->err,"icmData_write: ASCII is not null terminated");
 				free(buf);
 				return p->icp->errc = 1;
@@ -5617,7 +5617,7 @@ static int icmTextDescription_core_write(
 			sprintf(p->icp->err,"icmTextDescription_write: ScriptCode string too long");
 			return p->icp->errc = 1;
 		}
-		if (check_null_string(p->scDesc,p->scSize)) {
+		if (check_null_string( (char*) p->scDesc,p->scSize)) {
 			*bpp = bp;
 			sprintf(p->icp->err,"icmTextDescription_write: ScriptCode string is not terminated");
 			return p->icp->errc = 1;
