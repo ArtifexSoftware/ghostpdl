@@ -511,7 +511,8 @@ s_IScale_init(stream_state * st)
 
 /* Process a buffer.  Note that this handles Encode and Decode identically. */
 private int
-s_IScale_process(stream_state * st, stream_cursor_read * pr,
+s_IScale_process(const gs_memory_t *mem, 
+		 stream_state * st, stream_cursor_read * pr,
 		 stream_cursor_write * pw, bool last)
 {
     stream_IScale_state *const ss = (stream_IScale_state *) st;

@@ -28,7 +28,8 @@ private_st_exE_state();
 
 /* Process a buffer */
 private int
-s_exE_process(stream_state * st, stream_cursor_read * pr,
+s_exE_process(const gs_memory_t *mem, 
+	      stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_exE_state *const ss = (stream_exE_state *) st;
@@ -86,7 +87,8 @@ s_exD_init(stream_state * st)
 
 /* Process a buffer. */
 private int
-s_exD_process(stream_state * st, stream_cursor_read * pr,
+s_exD_process(const gs_memory_t *mem, 
+	      stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
     stream_exD_state *const ss = (stream_exD_state *) st;

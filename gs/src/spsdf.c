@@ -98,7 +98,7 @@ s_write_ps_string(stream * s, const byte * str, uint size, int print_ok)
 	do {
 	    /* One picky compiler complains if we initialize to buf - 1. */
 	    w.ptr = buf;  w.ptr--;
-	    status = (*template->process) (st, &r, &w, true);
+	    status = (*template->process) (s->memory, st, &r, &w, true);
 	    stream_write(s, buf, (uint) (w.ptr + 1 - buf));
 	}
 	while (status == 1);

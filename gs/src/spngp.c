@@ -213,7 +213,8 @@ optimum_predictor(const stream_state * st, const stream_cursor_read * pr)
     return cSub;
 }
 private int
-s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
+s_PNGPE_process(const gs_memory_t *mem, 
+		stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_PNGP_state *const ss = (stream_PNGP_state *) st;
@@ -299,7 +300,8 @@ s_PNGPE_process(stream_state * st, stream_cursor_read * pr,
  *        of the previous output row.
  */
 private int
-s_PNGPD_process(stream_state * st, stream_cursor_read * pr,
+s_PNGPD_process(const gs_memory_t *mem,
+		stream_state * st, stream_cursor_read * pr,
 		stream_cursor_write * pw, bool last)
 {
     stream_PNGP_state *const ss = (stream_PNGP_state *) st;

@@ -122,7 +122,8 @@ s_IIEncode_init(stream_state * st)
 
 /* Process a buffer. */
 private int
-s_IIEncode_process(stream_state * st, stream_cursor_read * pr,
+s_IIEncode_process(const gs_memory_t *mem,
+		   stream_state * st, stream_cursor_read * pr,
 		   stream_cursor_write * pw, bool last)
 {
     stream_IIEncode_state *const ss = (stream_IIEncode_state *) st;
