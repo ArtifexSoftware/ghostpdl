@@ -48,8 +48,7 @@ static const bool USE_HL_IMAGES = true;
 private int cmd_put_set_data_x(gx_device_clist_writer * cldev,
 			       gx_clist_state * pcls, int data_x);
 private int cmd_put_color_mapping(gx_device_clist_writer * cldev,
-				  const gs_imager_state * pis,
-				  bool write_rgb_to_cmyk);
+				  const gs_imager_state * pis);
 private bool check_rect_for_trivial_clip(
     const gx_clip_path *pcpath,  /* May be NULL, clip to evaluate */
     int px, int py, int qx, int qy  /* corners of box to test */
@@ -215,7 +214,6 @@ typedef struct clist_image_enum_s {
     bool uses_color;
     clist_color_space_t color_space;
     int ymin, ymax;
-    bool map_rgb_to_cmyk;
     gx_colors_used_t colors_used;
     /* begin_image command prepared & ready to output */
     /****** SIZE COMPUTATION IS WRONG, TIED TO gximage.c, gsmatrix.c ******/
@@ -490,8 +488,6 @@ clist_begin_typed_image(gx_device * dev,
 	}
     }
 
-    pie->map_rgb_to_cmyk = dev->color_info.num_components == 4 &&
-	base_index == gs_color_space_index_DeviceRGB;
     pie->colors_used.or = colors_used;
     pie->colors_used.slow_rop =
 	cmd_slow_rop(dev, pis->log_op, (uses_color ? pdcolor : NULL));
@@ -640,8 +636,7 @@ clist_image_plane_data(gx_image_enum_common_t * info,
 	    /* Make sure the imager state is up to date. */
 	    TRY_RECT {
 	        code = (pie->color_map_is_known ? 0 :
-			cmd_put_color_mapping(cdev, pie->pis,
-					      pie->map_rgb_to_cmyk));
+			cmd_put_color_mapping(cdev, pie->pis));
 		pie->color_map_is_known = true;
 		if (code >= 0) {
 		    uint want_known = ctm_known | clip_path_known |
@@ -975,7 +970,7 @@ cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht
 /* Write out any necessary color mapping data. */
 private int
 cmd_put_color_mapping(gx_device_clist_writer * cldev,
-		      const gs_imager_state * pis, bool write_rgb_to_cmyk)
+		      const gs_imager_state * pis)
 {
     int code;
     const gx_device_halftone *pdht = pis->dev_ht;
@@ -987,19 +982,17 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
 	    return code;
 	cldev->device_halftone_id = pdht->id;
     }
-    /* If we need to map RGB to CMYK, put out b.g. and u.c.r. */
-    if (write_rgb_to_cmyk) {
-	code = cmd_put_color_map(cldev, cmd_map_black_generation,
+    /* Put the under color removal and black generation functions */
+    code = cmd_put_color_map(cldev, cmd_map_black_generation,
 				 0, pis->black_generation,
 				 &cldev->black_generation_id);
-	if (code < 0)
-	    return code;
-	code = cmd_put_color_map(cldev, cmd_map_undercolor_removal,
+    if (code < 0)
+	return code;
+    code = cmd_put_color_map(cldev, cmd_map_undercolor_removal,
 				 0, pis->undercolor_removal,
 				 &cldev->undercolor_removal_id);
-	if (code < 0)
-	    return code;
-    }
+    if (code < 0)
+	return code;
     /* Now put out the transfer functions. */
     {
 	uint which = 0;
