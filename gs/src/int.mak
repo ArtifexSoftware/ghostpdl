@@ -729,10 +729,18 @@ $(PSD)type32.dev : $(INT_MAK) $(ECHOGS_XE) $(type32_)
 
 # ---------------- TrueType and PostScript Type 42 fonts ---------------- #
 
+# Mac glyph support (has an internal dependency)
+$(PSD)macroman.dev : $(INT_MAK) $(ECHOGS_XE) $(PSLIB)gs_mro_e.ps
+	$(SETMOD) $(PSD)macroman -ps gs_mro_e
+
+$(PSD)macglyph.dev : $(INT_MAK) $(ECHOGS_XE) $(PSLIB)gs_mgl_e.ps\
+ $(PSD)macroman.dev 
+	$(SETMOD) $(PSD)macglyph -include $(PSD)macroman -ps gs_mgl_e
+
 # Native TrueType support
-$(PSD)ttfont.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)type42.dev
-	$(SETMOD) $(PSD)ttfont -include $(PSD)type42
-	$(ADDMOD) $(PSD)ttfont -ps gs_mro_e gs_mgl_e gs_wan_e gs_ttf
+$(PSD)ttfont.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)macglyph.dev $(PSD)type42.dev
+	$(SETMOD) $(PSD)ttfont -include $(PSD)macglyph $(PSD)type42
+	$(ADDMOD) $(PSD)ttfont -ps gs_wan_e gs_ttf
 
 # Type 42 (embedded TrueType) support
 type42read_=$(PSOBJ)zchar42.$(OBJ) $(PSOBJ)zcharout.$(OBJ) $(PSOBJ)zfont42.$(OBJ)
