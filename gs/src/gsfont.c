@@ -266,6 +266,9 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->grid_fit_tt = false;
     pdir->memory = struct_mem;
     pdir->tti = 0;
+#if TT_GRID_FITTING
+    pdir->san = 0;
+#endif
 #endif
     return pdir;
 }

@@ -496,6 +496,7 @@ gxdtfill_h=$(GLSRC)gxdtfill.h
 
 ttfoutl_h=$(GLSRC)ttfoutl.h
 gxttfb_h = $(GLSRC)gxttfb.h $(ttfoutl_h)
+gzspotan_h = $(GLSRC)gzspotan.h $(gxdevcli_h)
 
 ### Executable code
 
@@ -592,7 +593,7 @@ $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR)\
  $(gsstruct_h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxhttile_h)\
  $(gxistate_h) $(gxpaint_h) $(gxfill_h) $(gxfdrop_h) $(gsptype2_h)\
- $(gzcpath_h) $(gzpath_h) $(gdevddrw_h) $(vdtrace_h)
+ $(gzcpath_h) $(gzpath_h) $(gzspotan_h) $(gdevddrw_h) $(vdtrace_h)
 	$(GLCC) $(GLO_)gxfill.$(OBJ) $(C_) $(GLSRC)gxfill.c
 
 $(GLOBJ)gxfdrop.$(OBJ) : $(GLSRC)gxfdrop.c $(GXERR)\
@@ -1785,7 +1786,7 @@ $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
 ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ) \
  $(GLOBJ)ttcalc.$(OBJ) $(GLOBJ)ttfinp.$(OBJ) $(GLOBJ)ttfmain.$(OBJ) $(GLOBJ)ttfmemd.$(OBJ) \
  $(GLOBJ)ttinterp.$(OBJ) $(GLOBJ)ttload.$(OBJ) $(GLOBJ)ttobjs.$(OBJ) \
- $(GLOBJ)gxttfb.$(OBJ)
+ $(GLOBJ)gxttfb.$(OBJ) $(GLOBJ)gzspotan.$(OBJ)
 
 $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
@@ -1843,8 +1844,15 @@ $(GLOBJ)ttobjs.$(OBJ) : $(GLSRC)ttobjs.c $(GXERR) $(ttmisc_h)\
 
 $(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(GXERR) \
  $(gx_h) $(gxfont_h) $(gxfont42_h) $(gxttfb_h) $(gxfcache_h) $(ttfmemd_h)\
-  $(gsstruct_h) $(gserrors_h) $(gsfont_h) $(gsdebug_h) $(memory__h) $(math__h)
+ $(gsstruct_h) $(gserrors_h) $(gsfont_h) $(gsdebug_h) $(memory__h) $(math__h)\
+ $(gxistate_h) $(gxpaint_h) $(gzspotan_h)
 	$(GLCC) $(GLO_)gxttfb.$(OBJ) $(C_) $(GLSRC)gxttfb.c
+
+$(GLOBJ)gzspotan.$(OBJ) : $(GLSRC)gzspotan.c $(GXERR)\
+ $(gx_h) $(gserrors_h) $(gsdevice_h) $(gsfixed_h) $(gxdevice_h)\
+ $(gzspotan_h) $(memory__h) $(vdtrace_h)
+	$(GLCC) $(GLO_)gzspotan.$(OBJ) $(C_) $(GLSRC)gzspotan.c
+
 
 # -------- Composite (PostScript Type 0) font support -------- #
 

@@ -32,6 +32,9 @@
 #include "gxfill.h"
 #include "gsptype2.h"
 #include "gdevddrw.h"
+#if TT_GRID_FITTING
+#   include "gzspotan.h" /* Only for gx_san_trap_store. */
+#endif
 #include "vdtrace.h"
 
 /*
@@ -41,7 +44,7 @@
  */
 
 #define FILL_SCAN_LINES
-#define FILL_TRAPEZOIDS
+#define FILL_TRAPEZOIDS /* Necessary for TT_GRID_FITTING. */
 /*
  * Define whether to sample curves when using the scan line algorithm
  * rather than flattening them.  This produces more accurate output, at
@@ -263,6 +266,11 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
     lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
     lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     pseudo_rasterization = ((adjust.x | adjust.y) == 0 && 
+#			    if TT_GRID_FITTING
+				gs_object_type(dev->memory, dev) != &st_device_spot_analyzer &&
+#			    else
+				1 &&
+#			    endif
 			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
 			    ibox.q.x - ibox.p.x < SMALL_CHARACTER * fixed_scale);
     if (params->fill_zero_width && !pseudo_rasterization)
@@ -372,6 +380,10 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 #  endif
 #else
     fill_by_trapezoids = true;
+#endif
+#if TT_GRID_FITTING
+    if (gs_object_type(dev->memory, dev) == &st_device_spot_analyzer)
+	fill_by_trapezoids = true;
 #endif
 #ifdef FILL_TRAPEZOIDS
     if (fill_by_trapezoids && !DOUBLE_WRITE_OK()) {
@@ -1218,6 +1230,15 @@ fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
      */
     int code;
 
+#if TT_GRID_FITTING
+    /* We can't pass data through the device interface because 
+       we need to pass segment pointers. We're unhappy of that. */
+    if (gs_object_type(dev->memory, dev) == &st_device_spot_analyzer) {
+	return gx_san_trap_store((gx_device_spot_analyzer *)dev, 
+	    y, y1, xlbot, xbot, xltop, xtop, flp->pseg, alp->pseg);
+    }
+#endif
+
     if (xltop == xlbot && xtop == xbot) {
 	int yi = fixed2int_pixround(y - adjust_below);
 	int wi = fixed2int_pixround(y1 + adjust_above) - yi;
@@ -1390,6 +1411,9 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
     int code;
     bool fill_direct = color_writes_pure(pdevc, lop);
     const bool pseudo_rasterization = ll->pseudo_rasterization;
+#if TT_GRID_FITTING
+    const bool all_bands = (gs_object_type(dev->memory, dev) == &st_device_spot_analyzer);
+#endif
 
     dev_proc_fill_rectangle((*fill_rect));
 
@@ -1492,7 +1516,11 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	}
 	/* Fill a multi-trapezoid band for the active lines. */
 	covering_pixel_centers = COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above);
-	if (covering_pixel_centers) {
+	if (covering_pixel_centers 
+#	    if TT_GRID_FITTING
+		|| all_bands
+#	    endif
+	    ) {
 	    fixed xlbot, xltop; /* as of last "outside" line */
 	    int inside = 0;
 	    active_line *flp;

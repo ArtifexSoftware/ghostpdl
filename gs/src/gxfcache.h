@@ -42,6 +42,8 @@ typedef struct cached_fm_pair_s cached_fm_pair;
 #  define gs_matrix_DEFINED
 typedef struct gs_matrix_s gs_matrix;
 #endif
+
+#if NEW_TT_INTERPRETER
 #ifndef ttfFont_DEFINED
 #  define ttfFont_DEFINED
 typedef struct ttfFont_s ttfFont;
@@ -54,6 +56,15 @@ typedef struct gx_ttfReader_s gx_ttfReader;
 #  define ttfInterpreter_DEFINED
 typedef struct ttfInterpreter_s ttfInterpreter;
 #endif
+
+#if TT_GRID_FITTING
+#ifndef gx_device_spot_analyzer_DEFINED
+#   define gx_device_spot_analyzer_DEFINED
+typedef struct gx_device_spot_analyzer_s gx_device_spot_analyzer;
+#endif
+#endif /* TT_GRID_FITTING */
+#endif /* NEW_TT_INTERPRETER */
+
 
 /*
  * Define the entry for a cached (font,matrix) pair.  If the UID
@@ -289,6 +300,9 @@ struct gs_font_dir_s {
     ttfInterpreter *tti;
     /* User parameter GridFitTT. */
     bool grid_fit_tt;
+#if TT_GRID_FITTING
+    gx_device_spot_analyzer *san;
+#endif
 #endif
 };
 
@@ -298,18 +312,26 @@ struct gs_font_dir_s {
 
 /* Enumerate the pointers in a font directory, except for orig_fonts. */
 #if NEW_TT_INTERPRETER
+#if TT_GRID_FITTING
+#define font_dir_do_ptrs(m)\
+  /*m(-,orig_fonts)*/ m(0,scaled_fonts) m(1,fmcache.mdata)\
+  m(2,ccache.table) m(3,ccache.mark_glyph_data)\
+  m(4,glyph_to_unicode_table) m(5,tti) m(6,san)
+#define st_font_dir_max_ptrs 7
+#else
 #define font_dir_do_ptrs(m)\
   /*m(-,orig_fonts)*/ m(0,scaled_fonts) m(1,fmcache.mdata)\
   m(2,ccache.table) m(3,ccache.mark_glyph_data)\
   m(4,glyph_to_unicode_table) m(5,tti)
 #define st_font_dir_max_ptrs 6
+#endif /* TT_GRID_FITTING */
 #else
 #define font_dir_do_ptrs(m)\
   /*m(-,orig_fonts)*/ m(0,scaled_fonts) m(1,fmcache.mdata)\
   m(2,ccache.table) m(3,ccache.mark_glyph_data)\
   m(4,glyph_to_unicode_table) 
 #define st_font_dir_max_ptrs 5
-#endif
+#endif /* NEW_TT_INTERPRETER */
 
 /* Character cache procedures (in gxccache.c and gxccman.c) */
 int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,

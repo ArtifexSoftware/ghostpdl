@@ -105,7 +105,7 @@ typedef struct margin_set_s
 extern_st(st_section);
 
 /* vd_trace helpers. */
-#define VD_SCALE 0.004
+#define VD_SCALE 0.04
 #define VD_RECT(x, y, w, h, c) vd_rect(int2fixed(x), int2fixed(y), int2fixed(x + w), int2fixed(y + h), 1, c)
 #define VD_TRAP_COLOR RGB(0, 255, 255)
 #define VD_MARG_COLOR RGB(255, 0, 0)

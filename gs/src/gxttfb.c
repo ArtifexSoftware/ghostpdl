@@ -31,6 +31,11 @@
 #include "gdebug.h"
 #include "memory_.h"
 #include "math_.h"
+#if TT_GRID_FITTING
+#   include "gxistate.h"
+#   include "gxpaint.h"
+#   include "gzspotan.h"
+#endif
 #include <stdarg.h>
 
 gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
@@ -333,6 +338,10 @@ ttfFont *ttfFont__create(gs_font_dir *dir)
     m->memory = mem;
     if(ttfInterpreter__obtain(&m->super, &dir->tti))
 	return 0;
+#if TT_GRID_FITTING
+    if(gx_san__obtain(mem, &dir->san))
+	return 0;
+#endif
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
@@ -351,6 +360,9 @@ void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
     ttfFont__finit(this);
     mem->free(mem, this, "ttfFont__destroy");
     ttfInterpreter__release(&dir->tti);
+#if TT_GRID_FITTING
+    gx_san__release(&dir->san);
+#endif
 #endif
 }
 
@@ -456,6 +468,30 @@ private void gx_ttfExport__DebugPaint(ttfExport *this)
 
 /*----------------------------------------------*/
 
+#if TT_GRID_FITTING
+private int grid_fit(gx_device_spot_analyzer *padev, 
+	    gx_path *path, const gs_log2_scale_point *pscale)
+{
+    /* Not completed yet. */
+    gs_imager_state is_stub;
+    gx_fill_params params;
+    gx_device_color devc_stub;
+    int code;
+
+    memset(&is_stub, 0, sizeof(is_stub));
+    set_nonclient_dev_color(&devc_stub, 1);
+    params.rule = gx_rule_winding_number;
+    params.adjust.x = params.adjust.y = 0;
+    params.flatness = (float)0.2;
+    params.fill_zero_width = false;
+    gx_san_begin(padev);
+    code = dev_proc(padev, fill_path)((gx_device *)padev, 
+		    &is_stub, path, &params, &devc_stub, NULL);
+    gx_san_end(padev);
+    return code;
+}
+#endif
+
 int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int glyph_index, 
 	const gs_matrix *m, const gs_log2_scale_point *pscale, 
 	gx_path *path, bool design_grid)
@@ -491,9 +527,12 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     e.w.y = 0;
     gx_ttfReader__Reset(r);
     ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
-    switch(ttfOutliner__Outline(&o, glyph_index, 
-	    subpix_origin.x, subpix_origin.y, &m1)) {
+    switch(ttfOutliner__Outline(&o, glyph_index, subpix_origin.x, subpix_origin.y, &m1)) {
 	case fNoError:
+#	    if TT_GRID_FITTING
+		if (!gs_currentgridfittt(pfont->dir))
+		    return grid_fit(pfont->dir->san, path, pscale);
+#	    endif
 	    return 0;
 	case fMemoryError:
 	    return_error(gs_error_VMerror);
@@ -502,6 +541,10 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	case fPatented:
 	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
 	    WarnPatented(pfont, ttf, "Some glyphs of the font");
+#	    if TT_GRID_FITTING
+		if (!gs_currentgridfittt(pfont->dir))
+		    return grid_fit(pfont->dir->san, path, pscale);
+#	    endif
 	    return 0;
 	default:
 	    {	int code = r->super.Error(&r->super);
