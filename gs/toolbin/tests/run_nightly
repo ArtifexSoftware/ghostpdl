@@ -133,6 +133,9 @@ def get_file(f):
     file.close()
     return string.join(lines, '')
 
+# set umask
+os.umask(0002)
+
 err, starttime, endtime = update_ghostscript()
 if err != 0:
     if err == 1:
