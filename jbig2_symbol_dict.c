@@ -1,7 +1,7 @@
 /*
     jbig2dec
     
-    Copyright (C) 2001-2003 artofcode LLC.
+    Copyright (C) 2001-2004 artofcode LLC.
     
     This software is distributed under license and may not
     be copied, modified or distributed except as expressly
@@ -364,8 +364,11 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		  } else {
 		      /* 6.5.8.2.2 */
 		      bool SBHUFF = params->SDHUFF;
+		      Jbig2RefinementRegionParams rparams;
+		      Jbig2Image *image;
 		      uint32_t ID;
 		      int32_t RDX, RDY;
+		      int ninsyms = params->SDINSYMS->n_symbols;
 
 		      if (params->SDHUFF) {
 			  /* todo */
@@ -378,6 +381,22 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 			"symbol is a refinement of id %d with the refinement applied at (%d,%d)",
 			ID, RDX, RDY);
+
+		      image = jbig2_image_new(ctx, SYMWIDTH, HCHEIGHT);
+
+		      /* Table 18 */
+		      rparams.GRTEMPLATE = params->SDRTEMPLATE;
+		      rparams.reference = (ninsyms > ID) ? 
+					params->SDINSYMS->glyphs[ID] :
+					SDNEWSYMS->glyphs[ID-ninsyms];
+		      rparams.DX = RDX;
+		      rparams.DY = RDY;
+		      rparams.TPGDON = 0;
+		      memcpy(rparams.grat, params->sdrat, 4);
+		      jbig2_decode_refinement_region(ctx, segment, 
+		          &rparams, as, image, GB_stats);
+
+		      SDNEWSYMS->glyphs[NSYMSDECODED] = image;
 
 		  }
                }

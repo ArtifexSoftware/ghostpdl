@@ -2,7 +2,7 @@
 ## process this file with automake to generate Makefile.in
 
 # require automake 1.7
-AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 dist-zip
+AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 dist-zip -Wall
 
 lib_LIBRARIES = libjbig2dec.a
 include_HEADERS = jbig2.h
@@ -11,7 +11,7 @@ libjbig2dec_a_SOURCES = jbig2.c \
 	jbig2_arith.c jbig2_arith_int.c jbig2_arith_iaid.c jbig2_huffman.c \
 	jbig2_segment.c jbig2_page.c \
 	jbig2_symbol_dict.c jbig2_text.c \
-	jbig2_generic.c jbig2_mmr.c \
+	jbig2_generic.c jbig2_refinement.c jbig2_mmr.c \
 	jbig2_image.c jbig2_image_pbm.c \
 	os_types.h config_types.h config_win32.h \
 	jbig2.h jbig2_priv.h jbig2_image.h \
