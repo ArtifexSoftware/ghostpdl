@@ -280,7 +280,7 @@ context_reclaim(vm_spaces * pspaces, bool global)
 #ifdef DEBUG
     if (!psched->current->visible) {
 	lprintf("Current context is invisible!\n");
-	gs_exit(1);
+	gs_abort();
     }
 #endif
 

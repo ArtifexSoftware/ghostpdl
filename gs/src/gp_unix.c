@@ -84,7 +84,7 @@ gp_get_realtime(long *pdt)
     {
 	if (gettimeofday(&tp) == -1) {
 	    lprintf("Ghostscript: gettimeofday failed!\n");
-	    gs_exit(1);
+	    tp.tv_sec = tp.tv_usec = 0;
 	}
     }
 #else /* All other systems */
@@ -93,7 +93,7 @@ gp_get_realtime(long *pdt)
 
 	if (gettimeofday(&tp, &tzp) == -1) {
 	    lprintf("Ghostscript: gettimeofday failed!\n");
-	    gs_exit(1);
+	    tp.tv_sec = tp.tv_usec = 0;
 	}
     }
 #endif

@@ -410,20 +410,5 @@ typedef const char *client_name_t;
 #  define exit_OK 0
 #  define exit_FAILED 1
 #endif
-/*
- * Define the informational exit status.
- * We need to distinguish information returns because under MS Windows,
- * they must return like an error so that the text window stays on the
- * screen, while on other platforms, they must return successfully.
- * Note that we define both gs_exit_INFO (before platform-specific
- * mapping of 0 to exit_OK and 1 to exit_FAILED) and exit_INFO.
- */
-#if defined(_WINDOWS) || defined(_Windows)
-#  define exit_INFO exit_FAILED
-#  define gs_exit_INFO 1
-#else
-#  define exit_INFO exit_OK
-#  define gs_exit_INFO 0
-#endif
 
 #endif /* stdpre_INCLUDED */

@@ -663,6 +663,12 @@ gs_exit(int exit_status)
 {
     gs_exit_with_code(exit_status, 0);
 }
+void
+gs_abort(void)
+{
+    gs_exit(1);
+    exit(1);
+}
 
 /* ------ Debugging ------ */
 

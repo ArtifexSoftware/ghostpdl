@@ -707,7 +707,7 @@ refs_compact(obj_header_t * pre, obj_header_t * dpre, uint size)
 	lprintf3("Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
 		 (ulong) dpre, (ulong) ((byte *) src - (byte *) dest),
 		 (uint) r_size((ref *) src - 1));
-	gs_exit(1);
+	gs_abort();
     }
 #endif
     /* Pad to a multiple of sizeof(ref). */

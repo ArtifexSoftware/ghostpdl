@@ -166,7 +166,7 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 		helping = true;
 	    }
 	if (helping)
-	    gs_exit(gs_exit_INFO);
+	    return e_Info;
     }
     /* Execute files named in the command line, */
     /* processing options along the way. */
@@ -183,10 +183,11 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 	    (char *)gs_alloc_bytes(minst->heap, len, "GS_OPTIONS");
 
 	    gp_getenv(GS_OPTIONS, opts, &len);	/* can't fail */
-	    arg_push_memory_string(&args, opts, minst->heap);
+	    if (arg_push_memory_string(&args, opts, minst->heap))
+		return e_Fatal;
 	}
     }
-    while ((arg = arg_next(&args)) != 0) {
+    while ((arg = arg_next(&args, &code)) != 0) {
 	switch (*arg) {
 	    case '-':
 		code = swproc(minst, arg, &args);
@@ -202,18 +203,26 @@ gs_main_init_with_args(gs_main_instance * minst, int argc, char *argv[])
 		    return code;
 	}
     }
+    if (code < 0)
+	return code;
 
-    return gs_main_init2(minst);
+
+    code = gs_main_init2(minst);
+    if (code < 0)
+	return code;
+
+    if (!minst->run_start)
+	return e_Quit;
+    return code ;
 }
 
 /*
  * Run the 'start' procedure (after processing the command line).
- * Note that in case of error, this procedure exits rather than returning.
  */
-void
+int
 gs_main_run_start(gs_main_instance * minst)
 {
-    run_string(minst, "systemdict /start get exec", runFlush);
+    return run_string(minst, "systemdict /start get exec", runFlush);
 }
 
 /* Process switches.  Return 0 if processed, 1 for unknown switch, */
@@ -223,7 +232,7 @@ swproc(gs_main_instance * minst, const char *arg, arg_list * pal)
 {
     char sw = arg[1];
     ref vtrue;
-    int code;
+    int code = 0;
 #undef initial_enter_name
 #define initial_enter_name(nstr, pvalue)\
   i_initial_enter_name(minst->i_ctx_p, nstr, pvalue)
@@ -249,30 +258,46 @@ run_stdin:
 	    if (code < 0)
 		return code;
 	    gs_stdin_is_interactive = minst->stdin_is_interactive;
-	    run_string(minst, ".runstdin", runFlush);
+	    code = run_string(minst, ".runstdin", runFlush);
+	    if (code < 0)
+		return code;
 	    break;
 	case '-':		/* run with command line args */
 	case '+':
 	    pal->expand_ats = false;
 	case '@':		/* ditto with @-expansion */
 	    {
-		const char *psarg = arg_next(pal);
+		const char *psarg = arg_next(pal, &code);
 
+		if (code < 0)
+		    return e_Fatal;
 		if (psarg == 0) {
 		    fprintf(minst->fstdout,
 			    "Usage: gs ... -%c file.ps arg1 ... argn\n", sw);
 		    arg_finit(pal);
-		    gs_exit(1);
+		    return e_Fatal;
 		}
 		psarg = arg_heap_copy(psarg);
+		if (psarg == NULL)
+		    return e_Fatal;
 		code = gs_main_init2(minst);
 		if (code < 0)
 		    return code;
-		run_string(minst, "userdict/ARGUMENTS[", 0);
-		while ((arg = arg_next(pal)) != 0)
-		    runarg(minst, "", arg_heap_copy(arg), "", runInit);
-		runarg(minst, "]put", psarg, ".runfile", runInit | runFlush);
-		gs_exit(0);
+		code = run_string(minst, "userdict/ARGUMENTS[", 0);
+		if (code < 0)
+		    return code;
+		while ((arg = arg_next(pal, &code)) != 0) {
+		    char *fname = arg_heap_copy(arg);
+		    if (fname == NULL)
+			return e_Fatal;
+		    code = runarg(minst, "", fname, "", runInit);
+		    if (code < 0)
+			return code;
+		}
+		if (code < 0)
+		    return e_Fatal;
+		code = runarg(minst, "]put", psarg, ".runfile", runInit | runFlush);
+		return code;
 	    }
 	case 'A':		/* trace allocator */
 	    switch (*arg) {
@@ -284,7 +309,7 @@ run_stdin:
 		    break;
 		default:
 		    puts("-A may only be followed by -");
-		    gs_exit(1);
+		    return e_Fatal;
 	    }
 	    break;
 	case 'B':		/* set run_string buffer size */
@@ -297,7 +322,7 @@ run_stdin:
 		    bsize <= 0 || bsize > MAX_BUFFERED_SIZE
 		    ) {
 		    fprintf(minst->fstdout, "-B must be followed by - or size between 1 and %u\n", MAX_BUFFERED_SIZE);
-		    gs_exit(1);
+		    return e_Fatal;
 		}
 		minst->run_buffer_size = bsize;
 	    }
@@ -310,7 +335,7 @@ run_stdin:
 		if (code < 0)
 		    return code;
 		pal->expand_ats = false;
-		while ((arg = arg_next(pal)) != 0) {
+		while ((arg = arg_next(pal, &code)) != 0) {
 		    char *sarg;
 
 		    if (arg[0] == '@' ||
@@ -318,10 +343,20 @@ run_stdin:
 			)
 			break;
 		    sarg = arg_heap_copy(arg);
-		    runarg(minst, "", sarg, ".runstring", 0);
+		    if (sarg == NULL)
+			return e_Fatal;
+		    code = runarg(minst, "", sarg, ".runstring", 0);
+		    if (code < 0)
+			return code;
 		}
-		if (arg != 0)
-		    arg_push_string(pal, arg_heap_copy(arg));
+		if (code < 0)
+		    return e_Fatal;
+		if (arg != 0) {
+		    char *p = arg_heap_copy(arg);
+		    if (p == NULL)
+			return e_Fatal;
+		    arg_push_string(pal, p);
+		}
 		pal->expand_ats = ats;
 		break;
 	    }
@@ -335,7 +370,7 @@ run_stdin:
 		    break;
 		default:
 		    puts("-E may only be followed by -");
-		    gs_exit(1);
+		    return e_Fatal;
 	    }
 	    break;
 	case 'f':		/* run file of arbitrary name */
@@ -345,7 +380,7 @@ run_stdin:
 	case 'F':		/* run file with buffer_size = 1 */
 	    if (!*arg) {
 		puts("-F requires a file name");
-		gs_exit(1);
+		return e_Fatal;
 	    } {
 		uint bsize = minst->run_buffer_size;
 
@@ -362,7 +397,7 @@ run_stdin:
 		gs_main_init1(minst);
 		if (sscanf((const char *)arg, "%ldx%ld", &width, &height) != 2) {
 		    puts("-g must be followed by <width>x<height>");
-		    gs_exit(1);
+		    return e_Fatal;
 		}
 		make_int(&value, width);
 		initial_enter_name("DEVICEWIDTH", &value);
@@ -374,9 +409,14 @@ run_stdin:
 	case 'h':		/* print help */
 	case '?':		/* ditto */
 	    print_help(minst);
-	    gs_exit(gs_exit_INFO);
+	    return e_Info;	/* show usage info on exit */
 	case 'I':		/* specify search path */
-	    gs_main_add_lib_path(minst, arg_heap_copy(arg));
+	    {
+		char *path = arg_heap_copy(arg);
+		if (path == NULL)
+		    return e_Fatal;
+		gs_main_add_lib_path(minst, path);
+	    }
 	    break;
 	case 'K':		/* set malloc limit */
 	    {
@@ -387,7 +427,7 @@ run_stdin:
 		    fprintf(minst->fstdout,
 			    "-K<numK> must have 1 <= numK <= %ld\n",
 			    max_long >> 10);
-		    gs_exit(1);
+		    return e_Fatal;
 		}
 		gs_malloc_limit = msize << 10;
 	    }
@@ -400,7 +440,7 @@ run_stdin:
 #if arch_ints_are_short
 		if (msize <= 0 || msize >= 64) {
 		    puts("-M must be between 1 and 63");
-		    gs_exit(1);
+		    return e_Fatal;
 		}
 #endif
 		minst->memory_chunk_size = msize << 10;
@@ -414,7 +454,7 @@ run_stdin:
 #if arch_ints_are_short
 		if (nsize < 2 || nsize > 64) {
 		    puts("-N must be between 2 and 64");
-		    gs_exit(1);
+		    return e_Fatal;
 		}
 #endif
 		minst->name_table_size = (ulong) nsize << 10;
@@ -427,7 +467,7 @@ run_stdin:
 		minst->search_here_first = false;
 	    else {
 		puts("Only -P or -P- is allowed.");
-		gs_exit(1);
+		return e_Fatal;
 	    }
 	    break;
 	case 'q':		/* quiet startup */
@@ -443,7 +483,7 @@ run_stdin:
 		switch (sscanf((const char *)arg, "%fx%f", &xres, &yres)) {
 		    default:
 			puts("-r must be followed by <res> or <xres>x<yres>");
-			gs_exit(1);
+			return e_Fatal;
 		    case 1:	/* -r<res> */
 			yres = xres;
 		    case 2:	/* -r<xres>x<yres> */
@@ -461,9 +501,13 @@ run_stdin:
 	case 's':
 	    {
 		char *adef = arg_heap_copy(arg);
-		char *eqp = strchr(adef, '=');
+		char *eqp;
 		bool isd = (sw == 'D' || sw == 'd');
 		ref value;
+
+		if (adef == NULL)
+		    return e_Fatal;
+		eqp = strchr(adef, '=');
 
 		if (eqp == NULL)
 		    eqp = strchr(adef, '#');
@@ -472,7 +516,7 @@ run_stdin:
 		gs_main_init1(minst);
 		if (eqp == adef) {
 		    puts("Usage: -dname, -dname=token, -sname=string");
-		    gs_exit(1);
+		    return e_Fatal;
 		}
 		if (eqp == NULL) {
 		    if (isd)
@@ -497,7 +541,7 @@ run_stdin:
 					  &state);
 			if (code) {
 			    puts("-dname= must be followed by a valid token");
-			    gs_exit(1);
+			    return e_Fatal;
 			}
 			if (r_has_type_attrs(&value, t_name,
 					     a_executable)) {
@@ -515,7 +559,7 @@ run_stdin:
 				make_false(&value);
 			    else {
 				puts("-dvar=name requires name=null, true, or false");
-				gs_exit(1);
+				return e_Fatal;
 			    }
 #undef name_is_string
 			}
@@ -527,7 +571,7 @@ run_stdin:
 
 			if (str == 0) {
 			    lprintf("Out of memory!\n");
-			    gs_exit(1);
+			    return e_Fatal;
 			}
 			memcpy(str, eqp, len);
 			make_const_string(&value,
@@ -543,14 +587,14 @@ run_stdin:
 	case 'u':		/* undefine name */
 	    if (!*arg) {
 		puts("-u requires a name to undefine.");
-		gs_exit(1);
+		return e_Fatal;
 	    }
 	    gs_main_init1(minst);
 	    i_initial_remove_name(minst->i_ctx_p, arg);
 	    break;
 	case 'v':		/* print revision */
 	    print_revision(minst);
-	    gs_exit(0);
+	    return e_Info;
 /*#ifdef DEBUG */
 	    /*
 	     * Here we provide a place for inserting debugging code that can be
@@ -575,7 +619,7 @@ run_stdin:
 		run_x("== flush\n");
 		stop_x();
 	    }
-	    gs_exit(0);
+	    return e_Quit;
 /*#endif */
 	case 'Z':
 	    {
@@ -709,21 +753,14 @@ run_finish(gs_main_instance *minst, int code, int exit_code,
 	   ref * perror_object)
 {
     switch (code) {
-	case 0:
-	    break;
 	case e_Quit:
-	    gs_exit(0);
-	    /* NOTREACHED */
+	case 0:
 	    break;
 	case e_Fatal:
 	    eprintf1("Unrecoverable error, exit code %d\n", exit_code);
-	    gs_exit(exit_code);
-	    /* NOTREACHED */
 	    break;
 	default:
 	    gs_main_dump_stack(minst, code, perror_object);
-	    gs_exit_with_code(255, code);
-	    /* NOTREACHED */
     }
     return code;
 }

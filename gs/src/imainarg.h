@@ -40,8 +40,7 @@ int gs_main_init_with_args(P3(gs_main_instance * minst, int argc,
 
 /*
  * Run the 'start' procedure (after processing the command line).
- * Note that in case of error, this procedure exits rather than returning.
  */
-void gs_main_run_start(P1(gs_main_instance * minst));
+int gs_main_run_start(P1(gs_main_instance * minst));
 
 #endif /* imainarg_INCLUDED */

@@ -24,8 +24,7 @@
 
 void gs_exit_with_code(P2(int exit_status, int code));
 void gs_exit(P1(int exit_status));
-
-#define gs_abort() gs_exit(1)
+void gs_abort(P0());
 
 /* The only reason we export gs_exit_status is so that window systems */
 /* with alert boxes can know whether to pause before exiting if */
