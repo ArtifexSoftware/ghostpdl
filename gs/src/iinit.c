@@ -57,7 +57,7 @@
 #endif
 /* The size of level2dict, if applicable, can be set in the makefile. */
 #ifndef LEVEL2DICT_SIZE
-#  define LEVEL2DICT_SIZE 233
+#  define LEVEL2DICT_SIZE 251
 #endif
 /* Ditto the size of ll3dict. */
 #ifndef LL3DICT_SIZE

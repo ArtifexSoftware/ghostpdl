@@ -132,8 +132,8 @@ int file_read_string(P4(const byte *, uint, ref *, gs_ref_memory_t *));
 
 	/* for os_open in ziodev.c */
 #ifdef iodev_proc_fopen		/* in gxiodev.h */
-int file_open_stream(P7(const char *, uint, const char *, uint,
-			stream **, iodev_proc_fopen_t, gs_memory_t *));
+int file_open_stream(P8(const char *, uint, const char *, uint, stream **,
+			gx_io_device *, iodev_proc_fopen_t, gs_memory_t *));
 #endif
 
 	/* for zfilter.c */

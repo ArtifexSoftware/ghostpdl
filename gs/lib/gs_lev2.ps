@@ -579,7 +579,7 @@ currentdict end
     /Type .knownget { /FileSystem eq } { false } ifelse
     { exec } { pop pop } ifelse
   } /exec load 3 packedarray cvx exch
-  (*) 3 1 roll ppstack flush /IODevice resourceforall
+  (*) 3 1 roll /IODevice resourceforall
 } odef
 /devstatus {		% <(%disk*%)> devstatus <searchable> <writable>
 			%   <hasNames> <mounted> <removable> <searchOrder>
@@ -590,7 +590,7 @@ currentdict end
       dup /IODevice resourcestatus {
 	pop pop dup currentdevparams
 	dup /Searchable get
-	exch dup /Writable get
+	exch dup /Writeable get
 	exch dup /HasNames get
 	exch dup /Mounted get
 	exch dup /Removable get

@@ -87,6 +87,9 @@
 #			Included automatically in the psl2 feature.
 #		    dct - support for DCTEncode/Decode filters.
 #			Included automatically in the psl2 feature.
+#                   diskn - support for %disk IODevice emulation. Adds support
+#                       for %disk0 thru %disk9. Use requires setting the /Root
+#                       paramter for each %disk (see Language.htm).
 #		    dps - (partial) support for Display PostScript extensions:
 #			see Language.htm for details.
 #		    dpsnext - (partial) support for Display PostScript

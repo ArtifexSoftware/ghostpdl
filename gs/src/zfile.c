@@ -302,7 +302,6 @@ zdeletefile(i_ctx_t *i_ctx_p)
 }
 
 /* <template> <proc> <scratch> filenameforall - */
-/****** NOT CONVERTED FOR IODEVICES YET ******/
 private int file_continue(P1(i_ctx_t *));
 private int file_cleanup(P1(i_ctx_t *));
 private int
@@ -310,19 +309,36 @@ zfilenameforall(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     file_enum *pfen;
-    int code;
+    gx_io_device *iodev = NULL;
+    gs_parsed_file_name_t pname;
+    int code = 0;
 
     check_write_type(*op, t_string);
     check_proc(op[-1]);
     check_read_type(op[-2], t_string);
-    /* Push a mark, the pattern, the scratch string, the enumerator, */
+    /* Push a mark, the iodev, devicenamelen, the scratch string, the enumerator, */
     /* and the procedure, and invoke the continuation. */
     check_estack(7);
-    pfen = gp_enumerate_files_init((char *)op[-2].value.bytes, r_size(op - 2), imemory);
+    /* Get the iodevice */
+    code = parse_file_name(op - 2, &pname);
+    if (code < 0)
+	return code;
+    iodev = (pname.iodev == NULL) ? iodev_default : pname.iodev;
+
+    /* Check for several conditions that just cause us to return success */
+    if (pname.len == 0 || iodev->procs.enumerate_files == iodev_no_enumerate_files) {
+        pop(3);
+        return 0;	/* no pattern, or device not found -- just return */
+    }
+    pfen = iodev->procs.enumerate_files(iodev, (char *)pname.fname,
+    		pname.len, imemory);
     if (pfen == 0)
 	return_error(e_VMerror);
     push_mark_estack(es_for, file_cleanup);
-    *++esp = op[-2];
+    *++esp;
+    make_istruct(esp, 0, iodev);
+    *++esp;
+    make_int(esp, r_size(op-2) - pname.len);
     *++esp = *op;
     ++esp;
     make_istruct(esp, 0, pfen);
@@ -338,19 +354,25 @@ file_continue(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     es_ptr pscratch = esp - 2;
     file_enum *pfen = r_ptr(esp - 1, file_enum);
+    long devlen = esp[-3].value.intval;
+    gx_io_device *iodev = r_ptr(esp - 4, gx_io_device);
     uint len = r_size(pscratch);
-    uint code =
-    gp_enumerate_files_next(pfen, (char *)pscratch->value.bytes, len);
+    uint code;
 
+    if (len < devlen)
+	return_error(e_rangecheck);	/* not even room for device len */
+    memcpy((char *)pscratch->value.bytes, iodev->dname, devlen);
+    code = iodev->procs.enumerate_next(pfen, (char *)pscratch->value.bytes + devlen,
+    		len - devlen);
     if (code == ~(uint) 0) {	/* all done */
-	esp -= 4;		/* pop proc, pfen, scratch, mark */
+	esp -= 5;		/* pop proc, pfen, devlen, iodev , mark */
 	return o_pop_estack;
     } else if (code > len)	/* overran string */
 	return_error(e_rangecheck);
     else {
 	push(1);
 	ref_assign(op, pscratch);
-	r_set_size(op, code);
+	r_set_size(op, code + devlen);
 	push_op_estack(file_continue);	/* come again */
 	*++esp = pscratch[2];	/* proc */
 	return o_push_estack;
@@ -360,7 +382,9 @@ file_continue(i_ctx_t *i_ctx_p)
 private int
 file_cleanup(i_ctx_t *i_ctx_p)
 {
-    gp_enumerate_files_close(r_ptr(esp + 4, file_enum));
+    gx_io_device *iodev = r_ptr(esp + 2, gx_io_device);
+
+    iodev->procs.enumerate_close(r_ptr(esp + 4, file_enum));
     return 0;
 }
 
@@ -378,14 +402,21 @@ zrenamefile(i_ctx_t *i_ctx_p)
     pname2.fname = 0;
     code = parse_real_file_name(op, &pname2, imemory, "renamefile(to)");
     if (code >= 0) {
-        if (pname1.iodev != pname2.iodev ||
-	      (check_file_permissions(i_ctx_p, pname1.fname, pname1.len,
+	if (pname1.iodev != pname2.iodev ) {
+	    if (pname1.iodev == iodev_default)
+		pname1.iodev = pname2.iodev;
+	    if (pname2.iodev == iodev_default)
+		pname2.iodev = pname1.iodev;
+	}
+	if (pname1.iodev != pname2.iodev ||
+	    pname1.iodev == iodev_default &&
+	      ((check_file_permissions(i_ctx_p, pname1.fname, pname1.len,
 	      				"PermitFileControl") < 0 &&
 	          !file_is_tempfile(i_ctx_p, op - 1) < 0) ||
 	      check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
 	      				"PermitFileControl") < 0 ||
 	      check_file_permissions(i_ctx_p, pname2.fname, pname2.len,
-	      				"PermitFileWriting") < 0 ) {
+	      				"PermitFileWriting") < 0 )) {
 	    /* add a check to permit pname1 to be a tempfile */
 	    code = gs_note_error(e_invalidfileaccess);
 	} else {
@@ -817,7 +848,7 @@ iodev_os_open_file(gx_io_device * iodev, const char *fname, uint len,
 {
     return file_open_stream(fname, len, file_access,
 			    file_default_buffer_size, ps,
-			    iodev->procs.fopen, mem);
+			    iodev, iodev->procs.fopen, mem);
 }
 
 /* Make a t_file reference to a stream. */
@@ -914,7 +945,7 @@ lib_file_open(const char *fname, uint len, byte * cname, uint max_clen,
 {
     stream *s;
     int code = file_open_stream(fname, len, "r", file_default_buffer_size,
-				&s, lib_file_fopen, mem);
+				&s, (gx_io_device *)0, lib_file_fopen, mem);
     char *bname;
     uint blen;
 
@@ -990,8 +1021,8 @@ file_init_stream(stream *s, FILE *file, const char *fmode, byte *buffer,
 /* but don't open an OS file or initialize the stream. */
 int
 file_open_stream(const char *fname, uint len, const char *file_access,
-		 uint buffer_size, stream ** ps, iodev_proc_fopen_t fopen_proc,
-		 gs_memory_t *mem)
+		 uint buffer_size, stream ** ps, gx_io_device *iodev,
+		 iodev_proc_fopen_t fopen_proc, gs_memory_t *mem)
 {
     byte *buffer;
     register stream *s;
@@ -1021,8 +1052,9 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 	/* Open the file, always in binary mode. */
 	strcpy(fmode, file_access);
 	strcat(fmode, gp_fmode_binary_suffix);
-	/****** iodev_default IS QUESTIONABLE ******/
-	code = (*fopen_proc)(iodev_default, file_name, fmode, &file,
+	if (!iodev)
+	    iodev = iodev_default;
+	code = (*fopen_proc)(iodev, file_name, fmode, &file,
 			     (char *)buffer, buffer_size);
 	if (code < 0) {
 	    gs_free_object(mem, buffer, "file_open_stream(buffer)");
@@ -1065,8 +1097,8 @@ filter_open(const char *file_access, uint buffer_size, ref * pfile,
 	if (sst == 0)
 	    return_error(e_VMerror);
     }
-    code = file_open_stream((char *)0, 0, file_access,
-			    buffer_size, &s, (iodev_proc_fopen_t)0, mem);
+    code = file_open_stream((char *)0, 0, file_access, buffer_size, &s,
+    				(gx_io_device *)0, (iodev_proc_fopen_t)0, mem);
     if (code < 0) {
 	gs_free_object(mem, sst, "filter_open(stream_state)");
 	return code;

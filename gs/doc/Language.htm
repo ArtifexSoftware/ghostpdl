@@ -164,7 +164,7 @@ a very few special devices.
 <li><b><tt>IODevice</tt></b>s other than <b><tt>%stdin</tt></b>,
 <b><tt>%stdout</tt></b>, <b><tt>%stderr</tt></b>, <b><tt>%lineedit</tt></b>,
 <b><tt>%statementedit</tt></b>, <b><tt>%os%</tt></b>, and (if configured)
-<b><tt>%pipe%</tt></b>.
+<b><tt>%pipe%</tt></b> and <b><tt>%disk0%</tt></b> through <b><tt>%disk0%</tt></b>.
 </ul>
 
 <p>
@@ -1077,9 +1077,36 @@ use <b><tt>.peekstring</tt></b> in new code.
 <p>
 Ghostscript also supports the following <b><tt>IODevice</tt></b> in
 addition to a subset of those defined in the Adobe documentation:
+<ul>
+<li>
 <b><tt>%pipe%command</tt></b>, which opens a pipe on the given command.
 This is supported only on operating systems that provide
 <b><tt>popen</tt></b> (primarily Unix systems, and not all of those).
+<p>
+<li>
+<b><tt>%disk#%</tt></b>, which emulates the %disk0
+through %disk9 devices on some Adobe PostScript printers. This pseudo
+device provides a flat filenaming system with a user definable location
+for the files (/Root). These devices will only be present if the
+diskn.dev feature is specified during the build.
+<p>
+This feature is intended to allow compatibility with font downloaders
+that expect to store fonts on the %disk device of the printer.
+<p>
+Use of the %disk#% devices requires that the location of files be given
+by the user setting the /Root device parameter. The syntax for setting
+the /Root parameter is:<pre>
+    mark /Root (directory_specification) (%disk#) .putdevparams
+</pre>
+For example, to store the files of the %disk0 device on the directory
+/tmp/disk0, use:<pre>
+    mark /Root (/tmp/disk0/) (%disk0) .putdevparams
+</pre>
+The files will be stored in the specified directory with arbitrary names.
+A mapping file is used to store the association between the file
+names given for the file operations on the %diskn# device and the file
+that resides in the /Root directory.
+</ul>
 
 <h4><a name="Virtual_memory"></a>Virtual memory operators</h4>
 

@@ -190,6 +190,8 @@ STRICT { (%END SIZES) .skipeof } if
  /diskonline {
     false (%disk*%) { pop not exit } 100 string /IODevice resourceforall
  } bind def
+ /diskstatus {10240 2097152 } bind odef %  - diskstatus <free> <total> (in 1024 byte pages)
+
 %/dostartpage
  /eescratch {pop 0} bind def
  /idlefonts {statusdict begin mark .idlefonts aload pop end} bind def
@@ -309,6 +311,7 @@ end	% statusdict
 systemdict begin
 .currentglobal true .setglobal
 
+/devformat true def
 /devforall {		% <pattern> <proc> <scratch> devforall -
   exch {
     1 index currentdevparams

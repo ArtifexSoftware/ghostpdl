@@ -52,7 +52,7 @@ null_open(gx_io_device * iodev, const char *access, stream ** ps,
     return file_open_stream(gp_null_file_name,
 			    strlen(gp_null_file_name),
 			    access, 256 /* arbitrary */ , ps,
-			    iodev->procs.fopen, mem);
+			    iodev, iodev->procs.fopen, mem);
 }
 
 /* ------ Operators ------ */

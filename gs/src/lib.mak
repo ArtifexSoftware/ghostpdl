@@ -746,6 +746,10 @@ $(GLOBJ)gsiodev.$(OBJ) : $(GLSRC)gsiodev.c $(GXERR) $(errno__h) $(string__h)\
  $(gp_h) $(gscdefs_h) $(gsparam_h) $(gsstruct_h) $(gxiodev_h)
 	$(GLCC) $(GLO_)gsiodev.$(OBJ) $(C_) $(GLSRC)gsiodev.c
 
+$(GLOBJ)gsiodisk.$(OBJ) : $(GLSRC)gsiodisk.c $(GXERR) $(errno__h) $(string__h)\
+ $(gp_h) $(gscdefs_h) $(gsparam_h) $(gsstruct_h) $(gxiodev_h) $(gsutil_h)
+	$(GLCC) $(GLO_)gsiodisk.$(OBJ) $(C_) $(GLSRC)gsiodisk.c
+
 $(GLOBJ)gsistate.$(OBJ) : $(GLSRC)gsistate.c $(GXERR)\
  $(gscie_h) $(gscspace_h) $(gsstruct_h) $(gsutil_h)\
  $(gxbitmap_h) $(gxcmap_h) $(gxdht_h) $(gxistate_h) $(gzht_h) $(gzline_h)
@@ -970,7 +974,7 @@ LIB3s=$(GLOBJ)gschar.$(OBJ) $(GLOBJ)gscolor.$(OBJ) $(GLOBJ)gscoord.$(OBJ)
 LIB4s=$(GLOBJ)gscparam.$(OBJ) $(GLOBJ)gscspace.$(OBJ) $(GLOBJ)gscssub.$(OBJ)
 LIB5s=$(GLOBJ)gsdevice.$(OBJ) $(GLOBJ)gsdevmem.$(OBJ) $(GLOBJ)gsdparam.$(OBJ) $(GLOBJ)gsdfilt.$(OBJ)
 LIB6s=$(GLOBJ)gsfname.$(OBJ) $(GLOBJ)gsfont.$(OBJ) $(GLOBJ)gsgdata.$(OBJ)
-LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ)
+LIB7s=$(GLOBJ)gsht.$(OBJ) $(GLOBJ)gshtscr.$(OBJ) $(GLOBJ)gsiodisk.$(OBJ)
 LIB8s=$(GLOBJ)gsimage.$(OBJ) $(GLOBJ)gsimpath.$(OBJ) $(GLOBJ)gsinit.$(OBJ)
 LIB9s=$(GLOBJ)gsiodev.$(OBJ) $(GLOBJ)gsistate.$(OBJ) $(GLOBJ)gsline.$(OBJ)
 LIB10s=$(GLOBJ)gsmalloc.$(OBJ) $(GLOBJ)gsmatrix.$(OBJ) $(GLOBJ)gsmemlok.$(OBJ)
