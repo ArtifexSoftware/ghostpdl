@@ -45,7 +45,7 @@
 #include "gxfcache.h"
 #include "gzstate.h"
 /* prescribed freetype include file setup */
-#include <ftbuild.h>
+#include <ft2build.h>
 #include FT_FREETYPE_H
 
 /*
@@ -776,6 +776,52 @@ pl_ft_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
     return 0;
 }
     
+private int 
+ft_moveto(FT_Vector *to, gs_state *pgs)
+{
+    gs_fixed_point pt;
+    gs_point_transform2fixed(&pgs->ctm, (double)to->x/2048.0, (double)to->y/2048.0, &pt);
+    return gx_path_add_point(pgs->path, pt.x, pt.y);
+}
+
+private int 
+ft_lineto(FT_Vector *to, gs_state *pgs)
+{
+    gs_fixed_point pt;
+    gs_point_transform2fixed(&pgs->ctm, (double)to->x/2048.0, (double)to->y/2048.0, &pt);
+    return gx_path_add_line(pgs->path, pt.x, pt.y);
+}
+
+private int 
+ft_conicto(FT_Vector* control, FT_Vector* to, gs_state *pgs)
+{
+    gs_fixed_point cur_pt;  /* current */
+    gs_fixed_point con_pt;  /* control */
+    gs_fixed_point end_pt;  /* end point */
+
+    gx_path_current_point(pgs->path, &cur_pt);
+    gs_point_transform2fixed(&pgs->ctm, (double)control->x/2048.0,
+                             (double)control->y/2048.0, &con_pt);
+    gs_point_transform2fixed(&pgs->ctm, (double)to->x/2048.0,
+                             (double)to->y/2048.0, &end_pt);
+
+    /* convert quadratic to cubic */
+    gx_path_add_curve(pgs->path, 
+                      (cur_pt.x + 2 * con_pt.x) / 3,
+                      (cur_pt.y + 2 * con_pt.y) / 3,
+                      (end_pt.x + 2 * con_pt.x) / 3,
+                      (end_pt.y + 2 * con_pt.y) / 3,
+                      end_pt.x,
+                      end_pt.y);
+    return 0;
+}
+
+private
+int ft_cubicto( FT_Vector* control1, FT_Vector* control2, FT_Vector* to, void* user )
+{
+    dprintf("error\n");
+    return 0;
+}
 
 /* Render a TrueType character. */
 private int
@@ -819,7 +865,7 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	    /* get an outline of the glyph... we'll scale the
 	       outline by the ctm and then render the bitmap */
 
-            {
+            if ( gs_show_in_charpath(penum) == false ) /* bitmap */ {
 		gs_matrix save_ctm, tmp_ctm;
                 gs_image_enum *ienum;
                 FT_Bitmap *ftb = &face->glyph->bitmap;
@@ -868,7 +914,34 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                 gs_free_object(pgs->memory, ienum, "pl_ufst_make_char");
                 gs_setmatrix(pgs, &save_ctm);
                 return (code < 0 ? code : 0);
+            } else /* outline */ {
+                FT_Outline_Funcs interface;
+#if 0
+		gs_matrix save_ctm, tmp_ctm;
+                /* move to device space */
+                gs_currentmatrix(pgs, &save_ctm);
+                gs_make_identity(&tmp_ctm);
+                tmp_ctm.tx = save_ctm.tx;
+                tmp_ctm.ty = save_ctm.ty;
+                gs_setmatrix(pgs, &tmp_ctm);
+#endif
+                interface.move_to = ft_moveto;
+                interface.line_to = ft_lineto;
+                interface.conic_to = ft_conicto;
+                interface.cubic_to = ft_cubicto;
+                interface.shift = interface.delta = 0;
+                FT_Outline_Decompose( &face->glyph->outline,
+                                      &interface,
+                                      (void *)pgs );
+                code = gx_path_close_subpath(pgs->path);
+                if ( code >= 0 )
+                    code = gs_fill(pgs);
+#if 0
+                gs_setmatrix(pgs, &save_ctm);
+                dprintf( "outline\n" );
+#endif
             }
+        
         }
 	return (code < 0 ? code : 0);
 #undef pfont42
@@ -1131,12 +1204,381 @@ pl_bitmap_init_procs(gs_font_base *pfont)
 
 /* Initialize the procedures for a TrueType font. */
 void
-pl_tt_init_procs(gs_font_type42 *pfont)
+pl_ft_init_procs(gs_font_type42 *pfont)
 {	pfont->procs.encode_char = (void *)pl_ft_encode_char; /* FIX ME (void *) */
 	pfont->procs.build_char = (void *)pl_ft_build_char; /* FIX ME (void *) */
 #define plfont ((pl_font_t *)pfont->client_data)
 	plfont->char_width = pl_ft_char_width;
 	plfont->char_metrics = pl_ft_char_metrics;
+#undef plfont
+}
+
+/* Encode a character using the TrueType cmap tables. */
+/* (We think this is never used for downloaded fonts.) */
+private gs_glyph
+pl_tt_cmap_encode_char(gs_font_type42 *pfont, ulong cmap_offset,
+  uint cmap_len, gs_char chr)
+{	const byte *cmap;
+	const byte *cmap_sub;
+	const byte *table;
+	uint value;
+	int code;
+
+	access(cmap_offset, cmap_len, cmap);
+	/* Since the Apple cmap format is of no help in determining */
+	/* the encoding, look for a Microsoft table; but if we can't */
+	/* find one, take the first one. */
+	cmap_sub = cmap + 4;
+	{ uint i;
+	  for ( i = 0; i < u16(cmap + 2); ++i )
+	    { if_debug3('j', "[j]cmap %d: platform %u encoding %u\n",
+			i, u16(cmap_sub + i * 8), u16(cmap_sub + i * 8 + 2));
+	      if ( u16(cmap_sub + i * 8) == 3 )
+		{ cmap_sub += i * 8;
+		  break;
+		}
+	    }
+	}
+	{ uint offset = cmap_offset + u32(cmap_sub + 4);
+	  access(offset, cmap_offset + cmap_len - offset, table);
+	}
+	code = pl_cmap_lookup((uint)chr, table, &value);
+	return (code < 0 ? gs_no_glyph : value);
+}
+
+/* Encode a character using the map built for downloaded TrueType fonts. */
+private gs_glyph
+pl_tt_dynamic_encode_char(const gs_font_type42 *pfont, gs_char chr)
+{	pl_font_t *plfont = pfont->client_data;
+	const pl_tt_char_glyph_t *ptcg = pl_tt_lookup_char(plfont, chr);
+
+	return (ptcg->chr == gs_no_char ? gs_no_glyph : ptcg->glyph);
+}
+
+/* Return the galley character for a character code, if any; */
+/* otherwise return gs_no_char. */
+/* Note that we return 0xffff for a character that is explicitly */
+/* designated as undefined. */
+private gs_char
+pl_font_galley_character(gs_char chr, const pl_font_t *plfont)
+{	long GC = plfont->offsets.GC;
+	const byte *gcseg;
+	uint b0, b1;
+	uint i, len;
+	uint default_char;
+
+	if ( GC < 0 )
+	  return gs_no_char;
+	gcseg = plfont->header + GC;
+	if ( plfont->large_sizes )
+	  len = u32(gcseg + 2),
+	  i = 12;
+	else
+	  len = u16(gcseg + 2),
+	  i = 10;
+	if ( len != u16(gcseg + i - 2) * 6 + 6 ) /* bad data */
+	  return gs_no_char;
+	default_char = u16(gcseg + i - 4); /* default character */
+	len += i - 6;
+	b0 = chr >> 8;
+	b1 = chr & 0xff;
+	for ( ; i < len; i += 6 )
+	  if ( b0 >= gcseg[i] && b0 <= gcseg[i + 1] &&
+	       b1 >= gcseg[i + 2] && b1 <= gcseg[i + 3]
+	     )
+	    return u16(gcseg + i + 4);
+	return default_char;
+}
+
+/* Encode a character for a TrueType font. */
+/* What we actually return is the TT glyph index.  Note that */
+/* we may return either gs_no_glyph or 0 for an undefined character. */
+gs_glyph
+pl_tt_encode_char(gs_font *pfont_generic, gs_char chr, gs_glyph not_used)
+{	
+	gs_font_type42 *pfont = (gs_font_type42 *)pfont_generic;
+	uint cmap_len;
+	ulong cmap_offset = tt_find_table(pfont, "cmap", &cmap_len);
+	gs_glyph glyph = 
+	  (cmap_offset == 0 ?
+	    /* This is a downloaded font with no cmap. */
+	   pl_tt_dynamic_encode_char(pfont, chr) :
+	   pl_tt_cmap_encode_char(pfont, cmap_offset, cmap_len, chr));
+	pl_font_t *plfont = pfont->client_data;
+	pl_font_glyph_t *pfg;
+
+	if ( plfont->offsets.GC < 0 )
+	  return glyph;	 /* no substitute */
+	pfg = pl_font_lookup_glyph(plfont, glyph);
+	/* If the character is missing, use the galley character instead. */
+	if ( !pfg->data )
+	  { gs_char galley_char = pl_font_galley_character(chr, plfont);
+
+	    if ( galley_char != gs_no_char )
+	      { return
+		  (galley_char == 0xffff ? 0 :
+		   cmap_offset == 0 ?
+		   pl_tt_dynamic_encode_char(pfont, galley_char) :
+		   pl_tt_cmap_encode_char(pfont, cmap_offset, cmap_len,
+					  galley_char));
+	      }
+	  }
+	return glyph;	/* no substitute */
+}
+
+/* Return the vertical substitute for a glyph, if it has one; */
+/* otherwise return gs_no_glyph. */
+private gs_glyph
+pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
+{	long VT = plfont->offsets.VT;
+	const byte *vtseg;
+	uint i, len;
+
+	if ( VT < 0 )
+	  return gs_no_glyph;
+	vtseg = plfont->header + VT;
+	if ( plfont->large_sizes )
+	  len = u32(vtseg + 2),
+	  i = 6;
+	else
+	  len = u16(vtseg + 2),
+	  i = 4;
+	len += i;
+	for ( ; i < len; i += 4 )
+	  if ( glyph == u16(vtseg + i) )
+	    return u16(vtseg + i + 2);
+	return gs_no_glyph;
+}
+
+/* Get metrics */
+private int
+pl_tt_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, float metrics[4])
+{
+    gs_glyph unused_glyph = gs_no_glyph;
+    gs_glyph glyph = pl_tt_encode_char(plfont->pfont, char_code, unused_glyph);
+    if ( glyph == gs_no_glyph ) {
+	dprintf("warning tt font glyph not found\n");
+	return 1;
+    }
+    return gs_type42_get_metrics((gs_font_type42 *)plfont->pfont,
+				  glyph, metrics);
+}
+    
+/* Get character existence and escapement for a TrueType font. */
+private int
+pl_tt_char_width(const pl_font_t *plfont, const void *pgs, uint char_code, gs_point *pwidth)
+{	gs_font *pfont = plfont->pfont;
+	gs_char chr = char_code;
+	gs_glyph unused_glyph = gs_no_glyph;
+	gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
+	int code;
+	float sbw[4];
+	
+	pwidth->x = pwidth->y = 0;
+
+	/* Check for a vertical substitute. */
+	if ( pfont->WMode & 1 ) {
+	    gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
+	    if ( vertical != gs_no_glyph )
+	      glyph = vertical;
+	}
+
+	/* undefined character */
+	if ( glyph == 0xffff || glyph == gs_no_glyph )
+	    return 1;
+
+	code = gs_type42_get_metrics((gs_font_type42 *)pfont, glyph, sbw);
+	if ( code < 0 )
+	    return code;
+	/* character exists */
+	pwidth->x = sbw[2];
+	return 0;
+}
+
+/* Render a TrueType character. */
+private int
+pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
+  gs_char chr, gs_glyph orig_glyph)
+{	gs_glyph glyph = orig_glyph;
+#define pbfont ((gs_font_base *)pfont)
+#define pfont42 ((gs_font_type42 *)pfont)
+	int code;
+	pl_font_t *plfont = (pl_font_t *)pfont->client_data;
+	float bold_fraction = gs_show_in_charpath(penum) != cpm_show ? 0.0 : plfont->bold_fraction;
+	uint bold_added;
+	double scale;
+	float sbw[4], w2[6];
+	int ipx, ipy, iqx, iqy;
+	gx_device_memory mdev;
+
+#ifdef CACHE_TRUETYPE_CHARS
+#  define tt_set_cache(penum, pgs, w2)\
+     gs_setcachedevice(penum, pgs, w2)
+#else
+#  define tt_set_cache(penum, pgs, w2)\
+     gs_setcharwidth(penum, pgs, w2[0], w2[1]);
+#endif
+	/* undefined */
+	if ( glyph == gs_no_glyph )
+	    return 0;
+	/* Check for a vertical substitute. */
+	if ( pfont->WMode & 1 )
+	  { pl_font_t *plfont = pfont->client_data;
+	    gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
+
+	    if ( vertical != gs_no_glyph )
+	      glyph = vertical;
+	  }
+
+	/* Establish a current point. */
+
+	if ( (code = gs_moveto(pgs, 0.0, 0.0)) < 0 )
+	  return code;
+
+	/* Get the metrics and set the cache device. */
+
+	code = gs_type42_get_metrics(pfont42, glyph, sbw);
+	if ( code < 0 )
+	  return code;
+	w2[0] = sbw[2], w2[1] = sbw[3];
+
+	/* Adjust the bounding box for stroking if needed. */
+
+	{ const gs_rect *pbbox = &pbfont->FontBBox;
+
+	  w2[2] = pbbox->p.x, w2[3] = pbbox->p.y;
+	  w2[4] = pbbox->q.x, w2[5] = pbbox->q.y;
+	  if ( pfont->PaintType )
+	    {	double expand = max(1.415, gs_currentmiterlimit(pgs)) *
+		  gs_currentlinewidth(pgs) / 2;
+
+		w2[2] -= expand, w2[3] -= expand;
+		w2[4] += expand, w2[5] += expand;
+	    }
+	}
+
+	/*
+	 * If we want pseudo-bold, render untransformed to an intermediate
+	 * bitmap, smear it, and then transform it to produce the output.
+	 * This is really messy.
+	 */
+	if ( bold_fraction == 0 )
+	  { code = tt_set_cache(penum, pgs, w2);
+	    if ( code < 0 )
+	      return code;
+	    bold_added = 0;
+	  }
+	else
+	  { gs_matrix mat, smat;
+	    gs_rect sbox;
+
+	    code = gs_gsave(pgs);
+	    if ( code < 0 )
+	      return code;
+	    gs_currentmatrix(pgs, &mat);
+	    /* Determine an appropriate scale for the bitmap. */
+	    scale = max(fabs(mat.xx) + fabs(mat.yx),
+			fabs(mat.xy) + fabs(mat.yy));
+	    gs_make_scaling(scale, scale, &smat);
+	    sbox.p.x = w2[2], sbox.p.y = w2[3];
+	    sbox.q.x = w2[4], sbox.q.y = w2[5];
+	    gs_bbox_transform(&sbox, &smat, &sbox);
+	    ipx = (int)sbox.p.x, ipy = (int)sbox.p.y;
+	    iqx = (int)ceil(sbox.q.x), iqy = (int)ceil(sbox.q.y);
+	    /* Set up the memory device for the bitmap. */
+	    gs_make_mem_mono_device(&mdev, NULL, pgs->device);
+	    /* prevent freeing - shoule not be freed */
+	    gx_device_retain((gx_device *)&mdev, true);
+	    bold_added = (int)ceil((iqy - ipy) * bold_fraction);
+	    mdev.width = iqx - ipx + bold_added;
+	    mdev.height = iqy - ipy;
+	    mdev.bitmap_memory = pgs->memory;
+	    code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
+	    if ( code < 0 )
+	      { gs_grestore(pgs);
+	        return code;
+	      }
+	    /* Don't allow gs_setdevice to reset things. */
+	    pgs->device = (gx_device *)&mdev;
+	    { gs_fixed_rect cbox;
+	      cbox.p.x = cbox.p.y = fixed_0;
+	      cbox.q.x = int2fixed(mdev.width);
+	      cbox.q.y = int2fixed(mdev.height);
+	      gx_clip_to_rectangle(pgs, &cbox);
+	    }
+	    /* Make sure we clear the entire bitmap. */
+	    memset(mdev.base, 0, bitmap_raster(mdev.width) * mdev.height);
+	    gx_set_device_color_1(pgs);	/* write 1's */
+	    smat.tx = -ipx;
+	    smat.ty = -ipy;
+	    gs_setmatrix(pgs, &smat);
+	  }
+	code = gs_type42_append(glyph,
+				(gs_imager_state *)pgs, pgs->path,
+				&penum->log2_current_scale,
+				gs_show_in_charpath(penum) != cpm_show,
+				pfont->PaintType, pfont42);
+	if ( code >= 0 )
+	  code = (pfont->PaintType ? gs_stroke(pgs) : gs_fill(pgs));
+	if ( bold_added )
+	  gs_grestore(pgs);
+	if ( code < 0 || !bold_added )
+	  return (code < 0 ? code : 0);
+
+	/* Now smear the bitmap and copy it to the destination. */
+
+	{ gs_image_t image;
+	  gs_image_enum *ienum =
+	    gs_image_enum_alloc(pgs->memory, "pl_tt_build_char");
+	  byte *bold_lines =
+	    alloc_bold_lines(pgs->memory, mdev.width - bold_added, bold_added,
+			     "pl_tt_build_char(bold_lines)");
+
+	  if ( ienum == 0 || bold_lines == 0 )
+	    { code = gs_note_error(gs_error_VMerror);
+	      goto out;
+	    }
+	  gs_image_t_init_mask(&image, true);
+	  image.Width = mdev.width;
+	  image.Height = mdev.height + bold_added;
+	  gs_make_scaling(scale, scale, &image.ImageMatrix);
+	  image.ImageMatrix.tx = -ipx;
+	  image.ImageMatrix.ty = -ipy;
+	  image.adjust = true;
+	  code = tt_set_cache(penum, pgs, w2);
+	  if ( code < 0 )
+	    goto out;
+	  code = image_bitmap_char(ienum, &image, mdev.base,
+				   bitmap_raster(mdev.width), bold_added,
+				   bold_lines, pgs);
+out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
+	  gs_free_object(pgs->memory, ienum, "pl_tt_build_char(image enum)");
+	  gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
+	}
+	return (code < 0 ? code : 0);
+#undef pfont42
+#undef pbfont
+}
+
+/* Get a string from a TrueType font. */
+private int
+pl_tt_string_proc(gs_font_type42 *pfont, ulong offset, uint length,
+  const byte **pdata)
+{	pl_font_t *plfont = pfont->client_data;
+
+	*pdata = plfont->header + plfont->offsets.GT +
+	  (plfont->large_sizes ? 6 : 4) + offset;
+	return 0;
+}
+
+void
+pl_tt_init_procs(gs_font_type42 *pfont)
+{	pfont->procs.encode_char = (void *)pl_tt_encode_char; /* FIX ME (void *) */
+	pfont->procs.build_char = (void *)pl_tt_build_char; /* FIX ME (void *) */
+	pfont->data.string_proc = pl_tt_string_proc;
+#define plfont ((pl_font_t *)pfont->client_data)
+	plfont->char_width = pl_tt_char_width;
+	plfont->char_metrics = pl_tt_char_metrics;
 #undef plfont
 }
 

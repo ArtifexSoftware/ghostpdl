@@ -145,6 +145,7 @@ int get_windows_name_from_tt_file(FILE *tt_file, gs_memory_t *mem, char *pfontfi
 	}
 	pfontfilename[++i] = '\0';
     }
+
     return 0;
 }
 
