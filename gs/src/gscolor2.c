@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -450,40 +450,46 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 	(is_fneg(value) ? 0 :
 	 value >= pcs->params.indexed.hival ? pcs->params.indexed.hival :
 	 (int)value);
-    gs_client_color cc;
     const gs_color_space *pbcs =
 	(const gs_color_space *)&pcs->params.indexed.base_space;
+    gs_client_color cc;
+    int code = gs_cspace_indexed_lookup(&pcs->params.indexed, index, &cc);
 
-    if (pcs->params.indexed.use_proc) {
-	int code =
-	    (*pcs->params.indexed.lookup.map->proc.lookup_index)
-	    (&pcs->params.indexed, index, &cc.paint.values[0]);
+    if (code < 0)
+	return code;
+    return (*pbcs->type->concretize_color) (&cc, pbcs, pconc, pis);
+}
 
-	if (code < 0)
-	    return code;
+/* Look up an index in an Indexed color space. */
+int
+gs_cspace_indexed_lookup(const gs_indexed_params *pip, int index,
+			 gs_client_color *pcc)
+{
+    if (pip->use_proc) {
+	return pip->lookup.map->proc.lookup_index
+	    (pip, index, &pcc->paint.values[0]);
     } else {
-	int m = cs_num_components((const gs_color_space *)
-				  &pcs->params.indexed.base_space);
-	const byte *pcomp =
-	pcs->params.indexed.lookup.table.data + m * index;
+	const gs_color_space *pbcs = (const gs_color_space *)&pip->base_space;
+	int m = cs_num_components(pbcs);
+	const byte *pcomp = pip->lookup.table.data + m * index;
 
 	switch (m) {
 	    default: {		/* DeviceN */
 		int i;
 
 		for (i = 0; i < m; ++i)
-		    cc.paint.values[i] = pcomp[i] * (1.0 / 255.0);
+		    pcc->paint.values[i] = pcomp[i] * (1.0 / 255.0);
 	    }
 		break;
 	    case 4:
-		cc.paint.values[3] = pcomp[3] * (1.0 / 255.0);
+		pcc->paint.values[3] = pcomp[3] * (1.0 / 255.0);
 	    case 3:
-		cc.paint.values[2] = pcomp[2] * (1.0 / 255.0);
+		pcc->paint.values[2] = pcomp[2] * (1.0 / 255.0);
 	    case 2:
-		cc.paint.values[1] = pcomp[1] * (1.0 / 255.0);
+		pcc->paint.values[1] = pcomp[1] * (1.0 / 255.0);
 	    case 1:
-		cc.paint.values[0] = pcomp[0] * (1.0 / 255.0);
+		pcc->paint.values[0] = pcomp[0] * (1.0 / 255.0);
 	}
+	return 0;
     }
-    return (*pbcs->type->concretize_color) (&cc, pbcs, pconc, pis);
 }
