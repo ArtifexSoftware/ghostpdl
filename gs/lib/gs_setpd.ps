@@ -209,6 +209,9 @@ level2dict begin
 /.dynamicppkeys mark
   /.MediaSize dup		% because it changes when PageSize is set
   /PageCount dup
+  /Colors dup
+  /BitsPerPixel dup
+  /ColorValues dup
 .dicttomark readonly def
 /.makecurrentpagedevice {	% - .makecurrentpagedevice <dict>
   currentdevice null .getdeviceparams
