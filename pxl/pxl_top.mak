@@ -23,6 +23,18 @@ config-clean: pl.config-clean pxl.config-clean
 
 #### Main program
 
+
+PXLVERSION=1.20
+
+$(PXLSRC)pxlver.h: $(PXLSRC)pxl_top.mak
+	$(PXLGEN)echogs$(XE) -e .h -w $(PXLSRC)pxlver -n "#define PXLVERSION"
+	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 $(PXLVERSION) -x 22
+	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -n "#define PXLBUILDDATE"
+	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 -d -x 22
+
+pxlver_h=$(PXLSRC)pxlver.h
+
+
 # Note: we always compile the main program with -DDEBUG.
 $(PXLOBJ)pxmain.$(OBJ): $(PXLSRC)pxmain.c $(AK)\
  $(malloc__h) $(math__h) $(memory__h) $(string__h)\
@@ -32,6 +44,7 @@ $(PXLOBJ)pxmain.$(OBJ): $(PXLSRC)pxmain.c $(AK)\
  $(gsstate_h) $(gsstruct_h) $(gstypes_h)\
  $(gxalloc_h) $(gxstate_h)\
  $(plmain_h) $(plparse_h) $(pjparse_h)\
+ $(pxlver_h)\
  $(pxattr_h) $(pxerrors_h) $(pxparse_h) $(pxptable_h) $(pxstate_h) $(pxvalue_h)\
  $(PXLGEN)pconf$(CONFIG).h
 	$(CP_) $(PXLGEN)pconf$(CONFIG).h $(PXLGEN)pconfig.h

@@ -40,6 +40,7 @@
 #include "pxparse.h"
 #include "pxptable.h"
 #include "pxstate.h"
+#include "pxlver.h"
 
 /* Define the input buffer size. */
 #define buf_size max(px_parser_min_input_size, 1000)	/* see pxparse.h */
@@ -130,7 +131,7 @@ main(int argc, char *argv[])
 	imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
 	imem->space = 0;		/****** WRONG ******/
 	pl_main_init(&inst, mem);
-	pl_main_process_options(&inst, &args, argv, argc, NULL, NULL);
+	pl_main_process_options(&inst, &args, argv, argc, PXLVERSION, PXLBUILDDATE);
 	pl_main_make_gstate(&inst, &pgs);
 	st = px_process_alloc(mem);
 	pxs = px_state_alloc(mem);
