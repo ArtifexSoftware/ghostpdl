@@ -429,12 +429,16 @@ end readonly def
   TextLineMatrix TextMatrix copy pop settextstate
 } bdef
 /TD { dup neg /TextLeading gput Td } bdef
-/T* { 0 TextLeading neg Td } bdef
+/T* { 0 TextLeading neg Vexch Td } bdef
 /Tm {
   TextLineMatrix astore TextMatrix copy pop settextstate
 } bdef
 
 % ---------------- Text painting ---------------- %
+
+/Vexch {
+  rootfont /WMode .knownget { 1 eq { exch } if } if
+} bind def
 
 /textrenderingprocs [		% (0 is handled specially)
 	% Painting-only modes
@@ -454,10 +458,11 @@ end readonly def
     }
     { TextRenderingMode 0 eq
        { WordSpacing 0 eq
-          { { setfillstate TextSpacing exch 0 exch ashow } }
+          { { setfillstate TextSpacing 0 Vexch 3 -1 roll ashow } }
 	  { TextSpacing 0 eq
-	     { { setfillstate WordSpacing exch 0 exch 32 exch widthshow } }
-	     { { setfillstate WordSpacing exch TextSpacing exch 0 32 4 2 roll 0 exch awidthshow } }
+            { { setfillstate WordSpacing 0 Vexch 32 4 -1 roll widthshow } }
+            { { setfillstate WordSpacing 0 Vexch 32
+                 TextSpacing 0 Vexch 6 -1 roll awidthshow } }
 	    ifelse
 	  }
 	 ifelse
@@ -469,7 +474,7 @@ end readonly def
 			% Stack: string xword xchar
 	    { pop pop (x) dup 0 3 index put false charpath
 			% Stack: xword xchar ccode
-	      3 copy 32 eq { add } { exch pop } ifelse 0 rmoveto pop
+             3 copy 32 eq { add } { exch pop } ifelse 0 Vexch rmoveto pop
 	    }
 	   4 -1 roll cshow pop pop
 	   textrenderingprocs TextRenderingMode get exec
@@ -492,7 +497,7 @@ end readonly def
       Show
     } { -1000 div
       currentfont /ScaleMatrix .knownget { 0 get mul } if
-      0 rmoveto
+      0 Vexch rmoveto
     } ifelse
   } forall settextposition
 } bdef

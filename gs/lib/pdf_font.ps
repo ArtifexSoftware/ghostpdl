@@ -653,7 +653,7 @@ readonly def
     /CMapName exch def
     /CIDSystemInfo 3 dict dup begin
       /Registry (Adobe) def
-      /Ordering (Japan1) def
+      /Ordering (Identity) def
       /Supplement 0 def
     end def
     %/CMapName (see above)
@@ -748,15 +748,110 @@ readonly def
 	% ****** NOT IMPLEMENTED YET ******
   pop end
 } bdef
+% <string> <match> tailmatch ==> <pre> true
+%                            ==> <string> false
+/tailmatch {
+  2 copy length 1 index length min
+  dup 2 index length exch sub exch getinterval
+  1 index eq {
+    length 1 index length exch sub
+    0 exch getinterval true
+  } {
+    pop false
+  } ifelse
+} bind def
+
+/makeboldfont {
+  16 dict begin
+    /strokewidth exch def
+    /basecidfont exch def
+    /FontMatrix [ 1 0 0 1 0 0 ] def
+
+    /CIDFontName /.boldfont def
+    /CIDFontType 1 def
+
+    /basefont-H /.basefont-H /Identity-H [ basecidfont ] composefont def
+    /basefont-V /.basefont-V /Identity-V [ basecidfont ] composefont def
+
+    /CIDSystemInfo dup basecidfont exch get def
+    /FontBBox [ basecidfont /FontBBox get cvx exec
+      4 2 roll basecidfont /FontMatrix get transform
+      4 2 roll basecidfont /FontMatrix get transform
+    ] def
+
+    /tmpstr 2 string def
+    /BuildGlyph {
+      gsave
+      exch begin
+        dup 256 idiv tmpstr exch 0 exch put
+        256 mod tmpstr exch 1 exch put
+        rootfont /WMode known { rootfont /WMode get 1 eq } { false } ifelse
+        { basefont-V } { basefont-H } ifelse setfont
+        strokewidth setlinewidth
+        1 setlinejoin
+        newpath
+        0 0 moveto tmpstr false charpath stroke
+        0 0 moveto tmpstr show
+        currentpoint setcharwidth
+      end
+      grestore
+    } bind def
+
+   currentdict
+  end
+  dup /CIDFontName get exch /CIDFont defineresource
+} bind def
+
+% <CIDFont-resource> <CIDFontName> findCIDFont <CIDFont-resource> <font>
+%   CIDFont-resource is not modified.
+/findCIDFont {
+  {
+    dup /CIDFont resourcestatus {
+      pop pop /CIDFont findresource
+      exit
+    } if
+
+    dup dup length string cvs
+    (,Bold) tailmatch {
+      exch pop
+      cvn findCIDFont 0.03 makeboldfont
+      exit
+    } if
+    (,Italic) tailmatch {
+      exch pop
+      cvn findCIDFont
+      [ 1 0 0.3 1 0 0 ] makefont
+      exit
+    } if
+    (,BoldItalic) tailmatch {
+      exch pop
+      cvn findCIDFont 0.03 makeboldfont
+      [ 1 0 0.3 1 0 0 ] makefont
+      exit
+    } if
+    pop
+
+    1 index /CIDSystemInfo get begin Registry (-) Ordering end
+    concatstrings concatstrings
+    cvn
+    QUIET not {
+      (Substituting ) print dup ==only
+      ( for ) print 1 index ==only (.\n) print
+    } if
+    exch pop
+    /CIDFont findresource
+    exit
+  } loop
+} bdef
 
 /buildCIDType0 {	% <CIDFontType0-font-resource> buildCIDType0 <font>
-  dup /BaseFont get /CIDFont findresource
-  addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
+  dup /BaseFont get exch 1 index findCIDFont
+  addCIDmetrics /CIDFont defineresource
 } bdef
 
 /buildCIDType2 {	% <CIDFontType2-font-resource> buildCIDType2 <font>
-  dup /BaseFont get /CIDFont findresource
-  addCIDmetrics dup /CIDFontName get exch /CIDFont defineresource
+  dup /BaseFont get exch 1 index findCIDFont
+  addCIDmetrics /CIDFont defineresource
 } bdef
 
 % ---------------- Other embedded fonts ---------------- %
