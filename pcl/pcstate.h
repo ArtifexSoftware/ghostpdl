@@ -354,6 +354,9 @@ struct pcl_state_s {
     
     /* store a pointer to the command definitions for use by macros */
     void *pcl_commands;
+    
+    /* indicates page has been written to with a drawing command */
+    bool page_marked;
 
     /* end page procedure to use */
     int (*end_page)( pcl_state_t * pcs, int num_copies, int flush );
@@ -361,8 +364,6 @@ struct pcl_state_s {
 
 /* accessor functions for the pcl target device.  These live in
    pctop.c for now */
-void pcl_set_target_device(P2(pcl_state_t *pcs, gx_device *pdev));
-gx_device *pcl_get_target_device(P1(pcl_state_t *pcs));
 int pcl_load_cartridge_fonts(P2(pcl_state_t *pcs, const char *pathname));
 int pcl_load_simm_fonts(P2(pcl_state_t *pcs, const char *pathname));
 int pcl_load_built_in_fonts(P2(pcl_state_t *pcs, const char *pathname));

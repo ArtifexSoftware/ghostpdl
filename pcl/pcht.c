@@ -1791,7 +1791,7 @@ pcl_ht_remap_render_method(
 
 	    /* gray may be forced, -dForceMono=1 */ 
 	    is_gray = gx_set_cmap_procs_to_gray(pcs->pgs, 
-						pcl_get_target_device(pcs), 
+                                                gs_currentdevice(pcs->pgs),
 						is_gray);
 
 	    if( is_gray ) {
@@ -2269,7 +2269,8 @@ pcl_ht_set_halftone(
                                         );
     }
 
-    ncomps = pcl_get_target_device(pcs)->color_info.num_components;
+    /* NB - fix me device fields should not be accessed */
+    ncomps = gs_currentdevice(pcs->pgs)->color_info.num_components;
 
     /* see if we need to create a halftone object */
     if ( ((pgsht = (for_image ? pht->pim_ht : pht->pfg_ht)) == 0) &&

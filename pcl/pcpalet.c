@@ -939,8 +939,9 @@ set_print_mode(
         return code;
     pcl_home_cursor(pcs);
 
-    pcs->monochrome_mode = gx_set_cmap_procs_to_gray(pcs->pgs, 
-						     pcl_get_target_device(pcs), mode);
+    pcs->monochrome_mode = gx_set_cmap_procs_to_gray(pcs->pgs,
+                                                     gs_currentdevice(pcs->pgs),
+						     mode);
     pcl_ht_set_print_mode(pcs, pcs->monochrome_mode);
     return pcl_palette_set_render_method(pcs, pcs->render_mode);
 }

@@ -152,7 +152,7 @@ read_device_CRD(
     pcl_state_t *   pcs
 )
 {
-    gx_device *     pdev = pcl_get_target_device(pcs);
+    gx_device *     pdev = gs_currentdevice(pcs->pgs);
     gs_c_param_list list;
     gs_param_string dstring;
     char            nbuff[64];  /* ample size */

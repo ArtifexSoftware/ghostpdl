@@ -231,15 +231,12 @@ pcl_init_state(
     pcl_init_gstate_stk(pcs);
     pcs->configure_appletalk = 0;
     pcs->uom_cp = 7200L / 300L;
-
-
-    /* handle possible non-initialization of BSS */
     pcs->palette_stack = 0;
     pcs->pcl_default_crd = 0;
     pcs->pdflt_palette = 0;
     pcs->pdflt_frgrnd = 0;
     pcs->pdflt_ht = 0;
-
+    pcs->page_marked = false;
     pcl_cs_base_init(pcs);
     pcl_cs_indexed_init(pcs);
 

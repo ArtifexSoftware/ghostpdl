@@ -653,7 +653,6 @@ $(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(gxalloc_h)                \
                         $(gxdevice_h)               \
                         $(gxstate_h)                \
-                        $(gdevbbox_h)               \
                         $(pjparse_h)                \
                         $(pltop_h)                  \
                         $(pctop_h)                  \
@@ -704,7 +703,6 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
                         $(gsdevice_h)       \
                         $(gspaint_h)        \
                         $(gxdevice_h)       \
-                        $(gdevbbox_h)       \
                         $(pjtop_h)
 	$(PCLCCC) $(PCLSRC)pcpage.c $(PCLO_)pcpage.$(OBJ)
 

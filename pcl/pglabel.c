@@ -860,6 +860,9 @@ hpgl_print_char(
             }
 	}
 
+        /* at this point we will assume the page is marked */
+        pgls->page_marked = true;
+
 	/* Check for SP control code. */
 	if (ch == ' ' && space_code != 0) {
             /* Space is a control code.  Just advance the position. */

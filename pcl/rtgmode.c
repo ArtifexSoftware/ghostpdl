@@ -302,25 +302,8 @@ pcl_enter_graphics_mode(
 
     /* determine (conservatively) if the region of interest has been
        marked */
-    marked = true;
-#if 0 
-    /* pull performance optimization out; it fails on 1 bit xor rops to non-marked destination */
-    if ( !pcs->source_transparent && pcs->pattern_transparent ) {
-	gs_rect page_bbox;
-	code = pcl_current_bounding_box(pcs, &page_bbox);
-	if ( code < 0 )
-	    return code; /* a shouldn't happen */
-	/* get the bounding box for the raster and convert the box to
-           device space and check if the two rectangles overlap.  */
-	print_rect.q.x = print_rect.p.x + src_wid;
-	print_rect.q.y = print_rect.p.y + src_hgt;
-	gs_bbox_transform(&print_rect, &rst2dev, &print_rect);
-	rect_intersect(print_rect, page_bbox);
-	if ((print_rect.p.x >= print_rect.q.x) || (print_rect.p.y >= print_rect.q.y))
-	    marked = false;
-    }
-#endif
-    if ((code = pcl_start_raster(src_wid, src_hgt, marked, pcs)) >= 0)
+    pcs->page_marked = true;
+    if ((code = pcl_start_raster(src_wid, src_hgt, pcs)) >= 0)
         prstate->graphics_mode = true;
     else
         pcl_grestore(pcs);

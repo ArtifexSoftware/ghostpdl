@@ -582,6 +582,8 @@ pcl_show_chars_slow(
                 code = show_char_foreground(pcs, buff);
             if (code < 0)
                 break;
+            /* NB WRONG - */
+            pcs->page_marked = true;
         }
 
         /* 

@@ -32,8 +32,8 @@
 #include "gscoord.h"
 #include "gsdevice.h"
 #include "gspaint.h"
+#include "gspath.h"
 #include "gxdevice.h"
-#include "gdevbbox.h"
 #include "pjtop.h"
 
 /*
@@ -360,6 +360,7 @@ new_page_size(
     if (!reset_initial) {
         hpgl_do_reset(pcs, pcl_reset_page_params);
 	gs_erasepage(pcs->pgs);
+        pcs->page_marked = false;
     }
 }
 
@@ -388,33 +389,23 @@ new_logical_page(
     new_page_size(pcs, psize, reset_initial);
 }
 
- int
-pcl_current_bounding_box(pcl_state_t *           pcs,
-			 gs_rect *               pbbox)
-{
-    gx_device * dev = gs_currentdevice(pcs->pgs);
-    /* Check whether we're working with a bbox device. */
-    if (strcmp(gs_devicename(dev), "bbox") == 0) {
-	gs_matrix mat;
-	/*
-	 * A bbox device can give us a definitive answer;
-	 * (otherwise we have to be conservative).
-	 */
-	gx_device_bbox_bbox((gx_device_bbox *)dev, pbbox);
-	/* wacko - NB fix this the coordinates come out wrong for
-           the 0 area case */
-	if ((pbbox->p.x >= pbbox->q.x) || (pbbox->p.y >= pbbox->q.y))
-	    return 0;
-	/* convert to device space */
-	gs_deviceinitialmatrix((gx_device *)dev, &mat);
-	gs_bbox_transform(pbbox, &mat, pbbox);
-    } else {
-	dprintf("Error bbox not installed\n");
-	return -1;
-    }
-    return 0;
-}
+/* page marking routines */
 
+/* set page marked for path drawing commands.  NB doesn't handle 0 width - lenghth */
+void
+pcl_mark_page_for_path(pcl_state_t *pcs)
+{
+    if ( pcs->page_marked )
+        return;
+    {
+        gs_rect bbox;
+        bbox.p.x = bbox.p.y = bbox.q.x = bbox.q.y = 0;
+        gs_pathbbox(pcs->pgs, &bbox);
+        if ((bbox.p.x < bbox.q.x) && (bbox.p.y < bbox.q.y))
+            pcs->page_marked = true;
+        return;
+    }
+}
 /* returns the bounding box coordinates for the current device and a
    boolean to indicate marked status. 0 - unmarked 1 - marked -1 error */
  int
@@ -422,17 +413,7 @@ pcl_page_marked(
     pcl_state_t *           pcs
 )
 {
-    gs_rect bbox;
-    int code;
-    
-    code = pcl_current_bounding_box(pcs, &bbox);
-    if ( code < 0 )
-	return code;
-
-    if ((bbox.p.x >= bbox.q.x) || (bbox.p.y >= bbox.q.y))
-	return false;
-    else
-	return true;
+    return pcs->page_marked;
 }
     
 /*
@@ -484,7 +465,7 @@ pcl_end_page(
 
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
-
+    pcs->page_marked = false;
     /* force new logical page, allows external resolution changes.
      * see -dFirstPage -dLastPage 
      * NB would be faster if we didn't do this every page.
@@ -774,14 +755,12 @@ set_top_margin(
 
     if ((pcs->vmi_cp != 0) && (tmarg <= hgt)) {
 	int code;
-	gs_rect bbox;
         pcs->margins.top = tmarg;
         pcs->margins.length = PAGE_LENGTH(hgt - tmarg, DFLT_BOTTOM_MARGIN);
 	/* The pcl manual implies the cursor is only adjusted for the
            first line of text we approximate this language by checking
            that the page is blank.  If it is we "home" the cursor. */
-	code = pcl_current_bounding_box(pcs, &bbox) ;
-	if ( (bbox.p.x >= bbox.q.x) || (bbox.p.y >= bbox.q.y) ) 
+        if ( pcl_page_marked(pcs) == 0 )
 	    return pcl_set_cap_y(pcs, 0L, false, false, true);
     }
     return 0;

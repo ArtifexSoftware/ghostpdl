@@ -33,6 +33,8 @@
 #include "pcdraw.h"
 #include "pcpalet.h"
 #include "pcpatrn.h"
+#include "pcpage.h"
+
 
 
 /* hack to quiet compiler warnings */
@@ -41,6 +43,7 @@ extern  int     abs( int );
 #endif
 
 #define round(x)    (((x) < 0.0) ? (ceil ((x) - 0.5)) : (floor ((x) + 0.5)))
+
 
  int
 hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
@@ -850,6 +853,7 @@ hpgl_fill_polyfill_background(hpgl_state_t *pgls)
     /* fill a white region.  NB have not experimented with different
        rasterops and transparency. */
     hpgl_call(gs_setgray(pgls->pgs, 1.0));
+    pcl_mark_page_for_path(pgls);
     hpgl_call(gs_fill(pgls->pgs));
     /* restore the foreground color */
     hpgl_call(hpgl_grestore(pgls));
@@ -1492,13 +1496,15 @@ hpgl_draw_current_path(
 		hpgl_call(hpgl_set_plu_ctm(pgls));
 		hpgl_call(gs_setlinewidth(pgls->pgs, 
          		  pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
-		hpgl_call(gs_stroke(pgs));
+                pcl_mark_page_for_path(pgls);
+		hpgl_call(gs_stroke(pgls->pgs));
 		break;
 
 	    case hpgl_char_fill:
 		/* the fill has already been done if the fill type is
                    hpgl/2 vector fills.  This was handled when we set
                    the drawing color */
+                pcl_mark_page_for_path(pgls);
 		if ((pgls->g.fill.type != hpgl_FT_pattern_one_line) &&
 		    (pgls->g.fill.type != hpgl_FT_pattern_two_lines))
 		    hpgl_call((*fill)(pgs));
@@ -1517,6 +1523,7 @@ hpgl_draw_current_path(
 		    hpgl_call(hpgl_gsave(pgls));
 		    /* all character fills appear to have 0 fill adjustment */
 		    gs_setfilladjust(pgls->pgs, 0, 0);
+                    pcl_mark_page_for_path(pgls);
 		    hpgl_call((*fill)(pgs));
 		    hpgl_call(hpgl_grestore(pgls));
 		}
@@ -1529,7 +1536,8 @@ hpgl_draw_current_path(
 		hpgl_call(gs_setrasterop(pgls->pgs, (gs_rop3_t)252));
 		hpgl_call(gs_setlinewidth(pgls->pgs,
 			  pgls->g.font_selection[pgls->g.font_selected].params.height_4ths * 0.0375));
-		hpgl_call(gs_stroke(pgs));
+                pcl_mark_page_for_path(pgls);
+		hpgl_call(gs_stroke(pgls->pgs));
 		break;
 	    }
 	    break;
@@ -1537,6 +1545,7 @@ hpgl_draw_current_path(
 	break;
     case hpgl_rm_polygon:
 	hpgl_set_special_pixel_placement(pgls, hpgl_rm_polygon);
+        pcl_mark_page_for_path(pgls);
 	if (pgls->g.fill_type == hpgl_even_odd_rule)
 	    hpgl_call(gs_eofill(pgs));
 	else    /* hpgl_winding_number_rule */
@@ -1551,8 +1560,10 @@ hpgl_draw_current_path(
          * hpgl_set_drawing_color() handles this case by drawing
          * the lines that comprise the vector fill
          */
-	if (hpgl_get_selected_pen(pgls) == 0)
+	if (hpgl_get_selected_pen(pgls) == 0) {
+            pcl_mark_page_for_path(pgls);
 	    hpgl_call(gs_fill(pgls->pgs));
+        }
 	hpgl_call(hpgl_clear_current_path(pgls));
 	break;
 
@@ -1568,6 +1579,7 @@ hpgl_draw_current_path(
 	    hpgl_call(hpgl_set_plu_ctm(pgls));
 	    if ( !pgls->g.line.current.is_solid && (pgls->g.line.current.type == 0) )
 		hpgl_call(gs_reversepath(pgls->pgs));
+            pcl_mark_page_for_path(pgls);
 	    hpgl_call(gs_stroke(pgls->pgs));
 	    gs_setmatrix(pgs, &save_ctm);
 	    break;
