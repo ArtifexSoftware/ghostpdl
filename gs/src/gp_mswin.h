@@ -48,8 +48,6 @@ extern HWND hDlgModeless;
 extern HINSTANCE phInstance;
 extern const LPSTR szAppName;
 extern BOOL is_win32s;
-extern BOOL CALLBACK _export AbortProc(HDC, int);
-extern BOOL CALLBACK _export CancelDlgProc(HWND, UINT, WPARAM, LPARAM);
 extern int is_spool(const char *queue);
 
 #endif /* !defined(RC_INVOKED) */

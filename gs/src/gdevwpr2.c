@@ -128,6 +128,7 @@
 #include "gp_mswin.h"
 
 #include "gp.h"
+#include "gpcheck.h"
 #include "commdlg.h"
 
 
@@ -154,6 +155,10 @@ private const gx_device_procs win_pr2_procs =
 prn_color_params_procs(win_pr2_open, gdev_prn_output_page, win_pr2_close,
 		       win_pr2_map_rgb_color, win_pr2_map_color_rgb,
 		       win_pr2_get_params, win_pr2_put_params);
+
+#define PARENT_WINDOW  HWND_DESKTOP
+BOOL CALLBACK CancelDlgProc(HWND, UINT, WPARAM, LPARAM);
+BOOL CALLBACK AbortProc2(HDC, int);
 
 
 /* The device descriptor */
@@ -186,6 +191,7 @@ struct gx_device_win_pr2_s {
 
     DLGPROC lpfnAbortProc;
     DLGPROC lpfnCancelProc;
+    HWND hDlgModeless;
 
     gx_device_win_pr2* original_device;	/* used to detect copies */
 };
@@ -249,12 +255,6 @@ win_pr2_open(gx_device * dev)
     
     win_pr2_copy_check(wdev);
 
-    if ((!wdev->nocancel) && (hDlgModeless)) {
-	/* device cannot opened twice since only one hDlgModeless */
-	fprintf(stderr, "Can't open mswinpr2 device twice\n");
-	return gs_error_limitcheck;
-    }
-
     /* get a HDC for the printer */
     if ((wdev->win32_hdevmode) &&
 	(wdev->win32_hdevnames)) {
@@ -285,7 +285,7 @@ win_pr2_open(gx_device * dev)
 	memset(&pd, 0, sizeof(pd));
 	
 	pd.lStructSize = sizeof(pd);
-	pd.hwndOwner = hwndtext;
+	pd.hwndOwner = PARENT_WINDOW;
 	pd.Flags = PD_RETURNDC;
 	pd.nMinPage = wdev->doc_page_begin;
 	pd.nMaxPage = wdev->doc_page_end;
@@ -320,15 +320,7 @@ win_pr2_open(gx_device * dev)
 	return gs_error_limitcheck;
     }
     /* initialise printer, install abort proc */
-#ifdef __WIN32__
-    wdev->lpfnAbortProc = (DLGPROC) AbortProc;
-#else
-#ifdef __DLL__
-    wdev->lpfnAbortProc = (DLGPROC) GetProcAddress(phInstance, "AbortProc");
-#else
-    wdev->lpfnAbortProc = (DLGPROC) MakeProcInstance((FARPROC) AbortProc, phInstance);
-#endif
-#endif
+    wdev->lpfnAbortProc = (DLGPROC) AbortProc2;
     SetAbortProc(wdev->hdcprn, (ABORTPROC) wdev->lpfnAbortProc);
 
     /*
@@ -349,9 +341,6 @@ win_pr2_open(gx_device * dev)
 
     if (StartDoc(wdev->hdcprn, &docinfo) <= 0) {
 	fprintf(stderr, "Printer StartDoc failed (error %08x)\n", GetLastError());
-#if !defined(__WIN32__) && !defined(__DLL__)
-	FreeProcInstance((FARPROC) wdev->lpfnAbortProc);
-#endif
 	DeleteDC(wdev->hdcprn);
 	return gs_error_limitcheck;
     }
@@ -408,18 +397,10 @@ win_pr2_open(gx_device * dev)
 
     if (!wdev->nocancel) {
 	/* inform user of progress with dialog box and allow cancel */
-#ifdef __WIN32__
 	wdev->lpfnCancelProc = (DLGPROC) CancelDlgProc;
-#else
-#ifdef __DLL__
-	wdev->lpfnCancelProc = (DLGPROC) GetProcAddress(phInstance, "CancelDlgProc");
-#else
-	wdev->lpfnCancelProc = (DLGPROC) MakeProcInstance((FARPROC) CancelDlgProc, phInstance);
-#endif
-#endif
-	hDlgModeless = CreateDialog(phInstance, "CancelDlgBox",
-				    hwndtext, wdev->lpfnCancelProc);
-	ShowWindow(hDlgModeless, SW_HIDE);
+	wdev->hDlgModeless = CreateDialog(phInstance, "CancelDlgBox",
+				    PARENT_WINDOW, wdev->lpfnCancelProc);
+	ShowWindow(wdev->hDlgModeless, SW_HIDE);
     }
     return code;
 };
@@ -436,23 +417,17 @@ win_pr2_close(gx_device * dev)
     /* Free resources */
 
     if (!wdev->nocancel) {
-	if (!hDlgModeless)
+	if (!wdev->hDlgModeless)
 	    aborted = TRUE;
 	else
-	    DestroyWindow(hDlgModeless);
-	hDlgModeless = 0;
-#if !defined(__WIN32__) && !defined(__DLL__)
-	FreeProcInstance((FARPROC) wdev->lpfnCancelProc);
-#endif
+	    DestroyWindow(wdev->hDlgModeless);
+	wdev->hDlgModeless = 0;
     }
     if (aborted)
 	AbortDoc(wdev->hdcprn);
     else
 	EndDoc(wdev->hdcprn);
 
-#if !defined(__WIN32__) && !defined(__DLL__)
-    FreeProcInstance((FARPROC) wdev->lpfnAbortProc);
-#endif
     DeleteDC(wdev->hdcprn);
 
     if (wdev->win32_hdevmode != NULL) {
@@ -557,8 +532,8 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 
     if (!wdev->nocancel) {
 	sprintf(dlgtext, "Printing page %d", (int)(pdev->PageCount) + 1);
-	SetWindowText(GetDlgItem(hDlgModeless, CANCEL_PRINTING), dlgtext);
-	ShowWindow(hDlgModeless, SW_SHOW);
+	SetWindowText(GetDlgItem(wdev->hDlgModeless, CANCEL_PRINTING), dlgtext);
+	ShowWindow(wdev->hDlgModeless, SW_SHOW);
     }
     for (y = 0; y < scan_lines;) {
 	/* copy slice to row buffer */
@@ -586,31 +561,31 @@ win_pr2_print_page(gx_device_printer * pdev, FILE * file)
 	if (!wdev->nocancel) {
 	    /* inform user of progress */
 	    sprintf(dlgtext, "%d%% done", (int)(y * 100L / scan_lines));
-	    SetWindowText(GetDlgItem(hDlgModeless, CANCEL_PCDONE), dlgtext);
+	    SetWindowText(GetDlgItem(wdev->hDlgModeless, CANCEL_PCDONE), dlgtext);
 	}
 	/* process message loop */
-	while (PeekMessage(&msg, hDlgModeless, 0, 0, PM_REMOVE)) {
-	    if ((hDlgModeless == 0) || !IsDialogMessage(hDlgModeless, &msg)) {
+	while (PeekMessage(&msg, wdev->hDlgModeless, 0, 0, PM_REMOVE)) {
+	    if ((wdev->hDlgModeless == 0) || !IsDialogMessage(wdev->hDlgModeless, &msg)) {
 		TranslateMessage(&msg);
 		DispatchMessage(&msg);
 	    }
 	}
-	if ((!wdev->nocancel) && (hDlgModeless == 0)) {
+	if ((!wdev->nocancel) && (wdev->hDlgModeless == 0)) {
 	    /* user pressed cancel button */
 	    break;
 	}
     }
 
-    if ((!wdev->nocancel) && (hDlgModeless == 0))
+    if ((!wdev->nocancel) && (wdev->hDlgModeless == 0))
 	code = gs_error_Fatal;	/* exit Ghostscript cleanly */
     else {
 	/* push out the page */
 	if (!wdev->nocancel)
-	    SetWindowText(GetDlgItem(hDlgModeless, CANCEL_PCDONE),
+	    SetWindowText(GetDlgItem(wdev->hDlgModeless, CANCEL_PCDONE),
 			  "Ejecting page...");
 	EndPage(wdev->hdcprn);
 	if (!wdev->nocancel)
-	    ShowWindow(hDlgModeless, SW_HIDE);
+	    ShowWindow(wdev->hDlgModeless, SW_HIDE);
     }
 
   bmp_done:
@@ -832,9 +807,6 @@ win_pr2_put_params(gx_device * pdev, gs_param_list * plist)
 
 /********************************************************************************/
 
-#ifndef __WIN32__
-#include <print.h>
-#endif
 
 /* Get Device Context for printer */
 private int
@@ -863,9 +835,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     LPFNDEVCAPS pfnDeviceCapabilities;
     LPDEVMODE podevmode, pidevmode;
 
-#ifdef __WIN32__
     HANDLE hprinter;
-#endif
 
     /* first try to derive the printer name from -sOutputFile= */
     /* is printer if name prefixed by \\spool\ */
@@ -894,15 +864,12 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     GetProfileString("Devices", device, "", driverbuf, sizeof(driverbuf));
     driver = strtok(driverbuf, ",");
     output = strtok(NULL, ",");
-#ifdef __WIN32__
     if (is_win32s)
-#endif
     {
 	strcpy(drvname, driver);
 	strcat(drvname, ".drv");
 	driver = drvname;
     }
-#ifdef __WIN32__
 
     if (!is_win32s) {		/* Win32 */
 	if (!OpenPrinter(device, &hprinter, NULL))
@@ -920,7 +887,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	DocumentProperties(NULL, hprinter, device, podevmode, NULL, DM_OUT_BUFFER);
 	pfnDeviceCapabilities = (LPFNDEVCAPS) DeviceCapabilities;
     } else
-#endif
     {				/* Win16 and Win32s */
 	/* now load the printer driver */
 	hlib = LoadLibrary(driver);
@@ -1054,7 +1020,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     
     win_pr2_update_win(wdev, pidevmode);
     
-#ifdef WIN32
     if (!is_win32s) {
 	
 	/* merge the entries */
@@ -1064,7 +1029,6 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
 	/* now get a DC */
 	wdev->hdcprn = CreateDC(driver, device, NULL, podevmode);
     } else
-#endif
     {				/* Win16 and Win32s */
 	pfnExtDeviceMode(NULL, hlib, podevmode, device, output,
 			 pidevmode, NULL, DM_IN_BUFFER | DM_OUT_BUFFER);
@@ -1159,6 +1123,7 @@ win_pr2_update_win(gx_device_win_pr2 * dev, LPDEVMODE pdevmode)
 	pdevmode->dmFields |= DM_PAPERSIZE;
 	pdevmode->dmPaperSize = dev->user_paper;
     }
+    return 0;
 }
 
 /********************************************************************************/
@@ -1367,7 +1332,7 @@ win_pr2_print_setup_interaction(gx_device_win_pr2 * wdev, int mode)
 
     memset(&pd, 0, sizeof(pd));
     pd.lStructSize = sizeof(pd);
-    pd.hwndOwner = hwndtext;
+    pd.hwndOwner = PARENT_WINDOW;
 
     switch (mode) {
 	case 2:	pd.Flags = PD_PRINTSETUP; break;
@@ -1492,3 +1457,34 @@ win_pr2_copy_check(gx_device_win_pr2 * wdev)
 	}
     }
 }
+
+
+/* Modeless dialog box - Cancel printing */
+BOOL CALLBACK 
+CancelDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
+{
+    switch (message) {
+	case WM_INITDIALOG:
+	    SetWindowText(hDlg, szAppName);
+	    return TRUE;
+	case WM_COMMAND:
+	    switch (LOWORD(wParam)) {
+		case IDCANCEL:
+		    DestroyWindow(hDlg);
+		    EndDialog(hDlg, 0);
+		    return TRUE;
+	    }
+    }
+    return FALSE;
+}
+
+
+BOOL CALLBACK 
+AbortProc2(HDC hdcPrn, int code)
+{
+    process_interrupts();
+    if (code == SP_OUTOFDISK)
+	return (FALSE);		/* cancel job */
+    return (TRUE);
+}
+

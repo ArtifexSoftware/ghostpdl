@@ -581,9 +581,9 @@ pm_find_queue(char *queue_name, char *driver_name)
 		    } else {
 			/* list queue details */
 			if (prq->fsType & PRQ3_TYPE_APPDEFAULT)
-			    fprintf(gs_stdout, "  %s  (DEFAULT)\n", prq->pszName);
+			    eprintf1("  %s  (DEFAULT)\n", prq->pszName);
 			else
-			    fprintf(gs_stdout, "  %s\n", prq->pszName);
+			    eprintf1("  %s\n", prq->pszName);
 		    }
 		    prq++;
 		}		/*endfor cReturned */
@@ -594,7 +594,7 @@ pm_find_queue(char *queue_name, char *driver_name)
     /* end if Q level given */ 
     else {
 	/* If we are here we had a bad error code. Print it and some other info. */
-	fprintf(gs_stdout, "SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
+	eprintf4("SplEnumQueue Error=%ld, Total=%ld, Returned=%ld, Needed=%ld\n",
 		splerr, cTotal, cReturned, cbNeeded);
     }
     if (splerr)
@@ -651,7 +651,7 @@ pm_spool(char *filename, const char *queue)
     }
     if (pm_find_queue(queue_name, driver_name)) {
 	/* error, list valid queue names */
-	fprintf(gs_stdout, "Invalid queue name.  Use one of:\n");
+	eprintf("Invalid queue name.  Use one of:\n");
 	pm_find_queue(NULL, NULL);
 	return 1;
     }
@@ -660,12 +660,12 @@ pm_spool(char *filename, const char *queue)
 
 
     if ((buffer = malloc(PRINT_BUF_SIZE)) == (char *)NULL) {
-	fprintf(gs_stdout, "Out of memory in pm_spool\n");
+	eprintf("Out of memory in pm_spool\n");
 	return 1;
     }
     if ((f = fopen(filename, "rb")) == (FILE *) NULL) {
 	free(buffer);
-	fprintf(gs_stdout, "Can't open temporary file %s\n", filename);
+	eprintf1("Can't open temporary file %s\n", filename);
 	return 1;
     }
     /* Allocate memory for pdata */
@@ -684,7 +684,7 @@ pm_spool(char *filename, const char *queue)
 
 	hspl = SplQmOpen(pszToken, 4L, (PQMOPENDATA) pdata);
 	if (hspl == SPL_ERROR) {
-	    fprintf(gs_stdout, "SplQmOpen failed.\n");
+	    eprintf("SplQmOpen failed.\n");
 	    DosFreeMem((PVOID) pdata);
 	    free(buffer);
 	    fclose(f);
@@ -692,7 +692,7 @@ pm_spool(char *filename, const char *queue)
 	}
 	rc = SplQmStartDoc(hspl, "Ghostscript");
 	if (!rc) {
-	    fprintf(gs_stdout, "SplQmStartDoc failed.\n");
+	    eprintf("SplQmStartDoc failed.\n");
 	    DosFreeMem((PVOID) pdata);
 	    free(buffer);
 	    fclose(f);
@@ -702,19 +702,19 @@ pm_spool(char *filename, const char *queue)
 	while (rc && (count = fread(buffer, 1, PRINT_BUF_SIZE, f)) != 0) {
 	    rc = SplQmWrite(hspl, count, buffer);
 	    if (!rc)
-		fprintf(gs_stdout, "SplQmWrite failed.\n");
+		eprintf("SplQmWrite failed.\n");
 	}
 	free(buffer);
 	fclose(f);
 
 	if (!rc) {
-	    fprintf(gs_stdout, "Aborting Spooling.\n");
+	    eprintf("Aborting Spooling.\n");
 	    SplQmAbort(hspl);
 	} else {
 	    SplQmEndDoc(hspl);
 	    rc = SplQmClose(hspl);
 	    if (!rc)
-		fprintf(gs_stdout, "SplQmClose failed.\n");
+		eprintf("SplQmClose failed.\n");
 	}
     } else
 	rc = 0;			/* no memory */

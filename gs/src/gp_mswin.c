@@ -18,7 +18,7 @@
 
 /*$Id$ */
 /*
- * Microsoft Windows 3.n platform support for Ghostscript.
+ * Microsoft Windows platform support for Ghostscript.
  *
  * Original version by Russell Lang and Maurice Castro with help from
  * Programming Windows, 2nd Ed., Charles Petzold, Microsoft Press;
@@ -52,9 +52,7 @@
 
 #include "windows_.h"
 #include <shellapi.h>
-#ifdef __WIN32__
 #include <winspool.h>
-#endif
 #include "gp_mswin.h"
 #include "gsdll.h"
 /* use longjmp instead of exit when using DLL */
@@ -79,8 +77,6 @@ char FAR win_prntmp[MAXSTR];	/* filename of PRN temporary file */
 private int is_printer(const char *name);
 int win_init = 0;		/* flag to know if gp_exit has been called */
 int win_exit_status;
-
-BOOL CALLBACK _export AbortProc(HDC, int);
 
 #ifdef __WIN32__
 /* DLL entry point for Borland C++ */
@@ -123,15 +119,6 @@ WEP(int nParam)
 }
 #endif
 
-
-BOOL CALLBACK _export
-AbortProc(HDC hdcPrn, int code)
-{
-    process_interrupts();
-    if (code == SP_OUTOFDISK)
-	return (FALSE);		/* cancel job */
-    return (TRUE);
-}
 
 /* ------ Process message loop ------ */
 /*
@@ -207,67 +194,9 @@ gp_close_printer(FILE * pfile, const char *fname)
     unlink(win_prntmp);
 }
 
-/* Printer abort procedure and progress/cancel dialog box */
-/* Used by Win32 and mswinprn device */
-
-HWND hDlgModeless;
-
-BOOL CALLBACK _export
-PrintAbortProc(HDC hdcPrn, int code)
-{
-    MSG msg;
-
-    while (hDlgModeless && PeekMessage(&msg, 0, 0, 0, PM_REMOVE)) {
-	if (hDlgModeless || !IsDialogMessage(hDlgModeless, &msg)) {
-	    TranslateMessage(&msg);
-	    DispatchMessage(&msg);
-	}
-    }
-    return (hDlgModeless != 0);
-}
-
-/* Modeless dialog box - Cancel printing */
-BOOL CALLBACK _export
-CancelDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
-{
-    switch (message) {
-	case WM_INITDIALOG:
-	    SetWindowText(hDlg, szAppName);
-	    return TRUE;
-	case WM_COMMAND:
-	    switch (LOWORD(wParam)) {
-		case IDCANCEL:
-		    DestroyWindow(hDlg);
-		    hDlgModeless = 0;
-		    EndDialog(hDlg, 0);
-		    return TRUE;
-	    }
-    }
-    return FALSE;
-}
-
-#ifndef __WIN32__
-
-/* Windows does not provide API's in the SDK for writing directly to a */
-/* printer.  Instead you are supposed to use the Windows printer drivers. */
-/* Ghostscript has its own printer drivers, so we need to use some API's */
-/* that are documented only in the Device Driver Adaptation Guide */
-/* that comes with the DDK.  Prototypes taken from DDK <print.h> */
-DECLARE_HANDLE(HPJOB);
-
-HPJOB WINAPI OpenJob(LPSTR, LPSTR, HPJOB);
-int WINAPI StartSpoolPage(HPJOB);
-int WINAPI EndSpoolPage(HPJOB);
-int WINAPI WriteSpool(HPJOB, LPSTR, int);
-int WINAPI CloseJob(HPJOB);
-int WINAPI DeleteJob(HPJOB, int);
-int WINAPI WriteDialog(HPJOB, LPSTR, int);
-int WINAPI DeleteSpoolPage(HPJOB);
-
-#endif /* WIN32 */
 
 /* Dialog box to select printer port */
-BOOL CALLBACK _export
+BOOL CALLBACK
 SpoolDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LPSTR entry;
@@ -284,12 +213,7 @@ SpoolDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_COMMAND:
 	    switch (LOWORD(wParam)) {
 		case SPOOL_PORT:
-#ifdef __WIN32__
-		    if (HIWORD(wParam)
-#else
-		    if (HIWORD(lParam)
-#endif
-			== LBN_DBLCLK)
+		    if (HIWORD(wParam) == LBN_DBLCLK)
 			PostMessage(hDlg, WM_COMMAND, IDOK, 0L);
 		    return FALSE;
 		case IDOK:
@@ -345,14 +269,13 @@ is_printer(const char *name)
     return FALSE;
 }
 
-#ifdef __WIN32__		/* ******** WIN32 ******** */
 
 /******************************************************************/
 /* Print File to port or queue */
 /* port==NULL means prompt for port or queue with dialog box */
 
 /* This is messy because Microsoft changed the spooler interface */
-/* between Window 3.1 and Windows 95/NT */
+/* between Windows 3.1 and Windows 95/NT */
 /* and didn't provide the spooler interface in Win32s */
 
 /* Win95, WinNT: Use OpenPrinter, WritePrinter etc. */
@@ -476,10 +399,8 @@ get_ports(void)
 {
     char *buffer;
 
-#ifdef __WIN32__
     if (!is_win32s)
 	return get_queues();
-#endif
 
     if ((buffer = malloc(PORT_BUF_SIZE)) == (char *)NULL)
 	return NULL;
@@ -698,134 +619,6 @@ gp_printfile_gs16spl(const char *filename, const char *port)
 
 
 
-#else /* ******** !WIN32 ******** */
-
-/* Print File to port */
-private int
-gp_printfile(const char *filename, const char *pmport)
-{
-#define PRINT_BUF_SIZE 16384u
-    char *buffer;
-    char *portname;
-    int i, port;
-    FILE *f;
-    DLGPROC lpfnSpoolProc;
-    WORD count;
-    DLGPROC lpfnCancelProc;
-    int error = FALSE;
-    long lsize;
-    long ldone;
-    char pcdone[20];
-    MSG msg;
-    HPJOB hJob;
-
-    if (is_spool(pmport) && (strlen(pmport) >= 8)) {
-	/* translate from printer name to port name */
-	char driverbuf[256];
-
-	GetProfileString("Devices", pmport + 8, "", driverbuf, sizeof(driverbuf));
-	strtok(driverbuf, ",");
-	pmport = strtok(NULL, ",");
-    }
-    /* get list of ports */
-    if ((buffer = malloc(PRINT_BUF_SIZE)) == (char *)NULL)
-	return FALSE;
-
-    if ((strlen(pmport) == 0) || (strcmp(pmport, "PRN") == 0)) {
-	GetProfileString("ports", NULL, "", buffer, PRINT_BUF_SIZE);
-	/* select a port */
-#ifdef __WIN32__
-	lpfnSpoolProc = (DLGPROC) SpoolDlgProc;
-#else
-#ifdef __DLL__
-	lpfnSpoolProc = (DLGPROC) GetProcAddress(phInstance, "SpoolDlgProc");
-#else
-	lpfnSpoolProc = (DLGPROC) MakeProcInstance((FARPROC) SpoolDlgProc, phInstance);
-#endif
-#endif
-	port = DialogBoxParam(phInstance, "SpoolDlgBox", (HWND) NULL, lpfnSpoolProc, (LPARAM) buffer);
-#if !defined(__WIN32__) && !defined(__DLL__)
-	FreeProcInstance((FARPROC) lpfnSpoolProc);
-#endif
-	if (!port) {
-	    free(buffer);
-	    return FALSE;
-	}
-	portname = buffer;
-	for (i = 1; i < port && strlen(portname) != 0; i++)
-	    portname += lstrlen(portname) + 1;
-    } else
-	portname = (char *)pmport;	/* Print Manager port name already supplied */
-
-    if ((f = fopen(filename, "rb")) == (FILE *) NULL) {
-	free(buffer);
-	return FALSE;
-    }
-    fseek(f, 0L, SEEK_END);
-    lsize = ftell(f);
-    if (lsize <= 0)
-	lsize = 1;
-    fseek(f, 0L, SEEK_SET);
-
-    hJob = OpenJob(portname, filename, (HPJOB) NULL);
-    switch ((int)hJob) {
-	case SP_APPABORT:
-	case SP_ERROR:
-	case SP_OUTOFDISK:
-	case SP_OUTOFMEMORY:
-	case SP_USERABORT:
-	    fclose(f);
-	    free(buffer);
-	    return FALSE;
-    }
-    if (StartSpoolPage(hJob) < 0)
-	error = TRUE;
-
-#ifdef __WIN32__
-    lpfnCancelProc = (DLGPROC) CancelDlgProc;
-#else
-#ifdef __DLL__
-    lpfnCancelProc = (DLGPROC) GetProcAddress(phInstance, "CancelDlgProc");
-#else
-    lpfnCancelProc = (DLGPROC) MakeProcInstance((FARPROC) CancelDlgProc, phInstance);
-#endif
-#endif
-    hDlgModeless = CreateDialog(phInstance, "CancelDlgBox", (HWND) NULL, lpfnCancelProc);
-    ldone = 0;
-
-    while (!error && hDlgModeless
-	   && (count = fread(buffer, 1, PRINT_BUF_SIZE, f)) != 0) {
-	if (WriteSpool(hJob, buffer, count) < 0)
-	    error = TRUE;
-	ldone += count;
-	sprintf(pcdone, "%d %%done", (int)(ldone * 100 / lsize));
-	SetWindowText(GetDlgItem(hDlgModeless, CANCEL_PCDONE), pcdone);
-	while (PeekMessage(&msg, hDlgModeless, 0, 0, PM_REMOVE)) {
-	    if ((hDlgModeless == 0) || !IsDialogMessage(hDlgModeless, &msg)) {
-		TranslateMessage(&msg);
-		DispatchMessage(&msg);
-	    }
-	}
-    }
-    free(buffer);
-    fclose(f);
-
-    if (!hDlgModeless)
-	error = TRUE;
-    DestroyWindow(hDlgModeless);
-    hDlgModeless = 0;
-#if !defined(__WIN32__) && !defined(__DLL__)
-    FreeProcInstance((FARPROC) lpfnCancelProc);
-#endif
-    EndSpoolPage(hJob);
-    if (error)
-	DeleteJob(hJob, 0);
-    else
-	CloseJob(hJob);
-    return !error;
-}
-
-#endif /* ******** (!)WIN32 ******** */
 
 /* ------ File naming and accessing ------ */
 
