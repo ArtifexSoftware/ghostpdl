@@ -73,11 +73,13 @@ data_image_params(const ref *op, gs_data_image_t *pim,
 	return 1;		/* no data source */
     }
     if (pip->MultipleDataSources) {
-	check_type_only(*pds, t_array);
+	long i;
+        if (!r_is_array(pds))
+            return_error(e_typecheck);
 	if (r_size(pds) != num_components)
 	    return_error(e_rangecheck);
-	memcpy(&pip->DataSource[0], pds->value.refs,
-	       sizeof(ref) * num_components);
+	for (i = 0; i < num_components; ++i)
+            array_get(pds, i, &pip->DataSource[i]);
     } else
 	pip->DataSource[0] = *pds;
     return 0;
