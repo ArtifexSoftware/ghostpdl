@@ -65,6 +65,16 @@ pprintf_scan(stream * s, const char *format)
     return fp;
 }
 
+/* Print a short string on a stream. */
+private void
+pputs_short(stream *s, const char *str)
+{
+    const char *p = str;
+
+    for (; *p; ++p)
+	sputc(s, *p);
+}
+
 /* Print (an) int value(s) using a format. */
 const char *
 pprintd1(stream * s, const char *format, int v)
@@ -77,7 +87,7 @@ pprintd1(stream * s, const char *format, int v)
 	lprintf1("Bad format in pprintd1: %s\n", format);
 #endif
     sprintf(str, "%d", v);
-    stream_puts(s, str);
+    pputs_short(s, str);
     return pprintf_scan(s, fp + 2);
 }
 const char *
@@ -113,7 +123,7 @@ pprintg1(stream * s, const char *format, floatp v)
 	/* Bad news.  Try again using f-format. */
 	sprintf(str, (fabs(v) > 1 ? "%1.1f" : "%1.8f"), v);
     }
-    stream_puts(s, str);
+    pputs_short(s, str);
     return pprintf_scan(s, fp + 2);
 }
 const char *
@@ -151,7 +161,7 @@ pprintld1(stream * s, const char *format, long v)
 	lprintf1("Bad format in pprintld: %s\n", format);
 #endif
     sprintf(str, "%ld", v);
-    stream_puts(s, str);
+    pputs_short(s, str);
     return pprintf_scan(s, fp + 3);
 }
 const char *
@@ -175,7 +185,7 @@ pprints1(stream * s, const char *format, const char *str)
     if (*fp == 0 || fp[1] != 's')	/* shouldn't happen! */
 	lprintf1("Bad format in pprints: %s\n", format);
 #endif
-    stream_puts(s, str);
+    pputs_short(s, str);
     return pprintf_scan(s, fp + 2);
 }
 const char *
