@@ -1437,11 +1437,12 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 	pdw->encrypted = true;
     } else
     	pdw->encrypted = false;
-    if ((options & DATA_STREAM_BINARY) || !PDFW_DELAYED_STREAMS) 
+    if ((options & DATA_STREAM_BINARY) || !PDFW_DELAYED_STREAMS) {
 	code = psdf_begin_binary((gx_device_psdf *)pdev, &pdw->binary);
 	if (code < 0)
 	    return code;
-    else {
+    } else {
+	code = 0;
 	pdw->binary.target = pdev->strm;
 	pdw->binary.dev = (gx_device_psdf *)pdev;
 	pdw->binary.strm = pdev->strm;
