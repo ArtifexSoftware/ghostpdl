@@ -265,15 +265,12 @@ end
   } ifelse
 } bdef
 /gsparamdict mark
-  /SA { setstrokeadjust }
-  /op {
-	%****** STROKE OVERPRINT, NOT IMPLEMENTED YET ******
-	pop
-  }
-  /OP { setoverprint }
+  /SA /setstrokeadjust load
+  /op { op }
+  /OP { 1 index /op known not { dup op } if OP }
   /OPM {
-	%****** OVERPRINT MODE, NOT IMPLEMENTED YET ******
-	pop
+	% OPM may be present even if this interpreter doesn't implement it.
+    /.setoverprintmode where { pop .setoverprintmode } { pop } ifelse
   }
 	% The PDF 1.3 specification says that the name /Default is only
 	% recognized for {BG,UCR,TR}2.  However, PDF 1.3 files produced
@@ -293,12 +290,12 @@ end
       resolvehalftone sethalftone
     } ifelse
   }
-	% HTP may be present even if this isn't a DPS interpreter.
   /HTP {
+	% HTP may be present even if this isn't a DPS interpreter.
     /sethalftonephase where { pop aload pop sethalftonephase } { pop } ifelse
   }
-	% SM may be present even if this is only a Level 2 interpreter.
   /SM {
+	% SM may be present even if this is only a Level 2 interpreter.
     /setsmoothness where { pop setsmoothness } { pop } ifelse
   }
   /Font { aload pop Tf }

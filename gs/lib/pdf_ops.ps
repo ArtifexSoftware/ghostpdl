@@ -46,8 +46,10 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 % (The following correspond directly to PDF state parameters.)
 %	FillColor
 %	FillColorSpace
+%	FillOverprint
 %	StrokeColor
 %	StrokeColorSpace
+%	StrokeOverprint
 %	TextSpacing
 %	TextHScaling
 %	Leading
@@ -73,7 +75,7 @@ nodict readonly pop
 /graphicsbeginpage {
   initgraphics
   currentdict /ClipRect .knownget { aload pop rectclip } if
-  0 g  0 G
+  0 g  0 G  false op  false OP
 } bdef
 
 /gput		% <value> <key> gput -
@@ -169,12 +171,18 @@ nodict readonly pop
     /StrokeColor load length array astore cvx /StrokeColor gput
   } ifelse
 } bdef
+/op { /FillOverprint gput } bdef
+/OP { /StrokeOverprint gput } bdef
 
 % ---------------- Color installation ---------------- %
 
 % Establish a given color (and color space) as current.
-/setfillcolor { FillColor FillColorSpace setgcolor } def
-/setstrokecolor { StrokeColor StrokeColorSpace setgcolor } def
+/setfillcolor {
+  FillColor FillColorSpace setgcolor FillOverprint setoverprint
+} def
+/setstrokecolor {
+  StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
+} def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef
   /DeviceRGB { pop setrgbcolor } bdef
