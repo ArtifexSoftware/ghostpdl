@@ -1203,12 +1203,10 @@ $ gs "-Isys$login:"
 <ul>
 <li>PDF files (or PostScript files that use the
 <b><tt>setfileposition</tt></b> operator) must be "stream LF" type files to
-work properly on VMS systems. (<b><em>Note:</em></b> This matters only if
-Ghostscript was compiled with DEC C; there is no known way to get these
-files to work properly if Ghostscript was compiled with the old VAX C
-compiler. This is unlikely to be a problem, however.)  Because of this, if
-you transfer files by FTP, you probably need to do one of these two things
-after the transfer:
+work properly on VMS systems. (<b><em>Note:</em></b> This definitely matters
+if Ghostscript was compiled with DEC C; we are not sure of the situation if
+you use <b><tt>gcc</tt></b>.)  Because of this, if you transfer files by
+FTP, you probably need to do one of these two things after the transfer:
 
 <ol>
 <li>If the FTP transfer was in text (ASCII) mode:

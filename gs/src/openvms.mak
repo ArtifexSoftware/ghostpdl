@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises. All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises. All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -19,6 +19,8 @@
 # makefile for OpenVMS VAX and Alpha
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
+# Support for VAX C on OpenVMS was removed in release 6.01 by Aladdin:
+# DEC C is now used on both VAX and Alpha platforms.
 #
 # ------------------------------- Options ------------------------------- #
 
@@ -128,7 +130,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=[.libpng-1_0_3]
-PVERSION=10003
+PVERSION=10005
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
@@ -158,11 +160,7 @@ else
 COMP:=$(COMP)/NODEBUG/OPTIMIZE
 endif
 
-ifeq "$(OPENVMS)"	"VAX"
-COMP:=$(COMP)/VAXC
-else
 COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY
-endif
 
 # Define any other compilation flags. 
 # Including defines for A4 paper size
@@ -326,11 +324,7 @@ CCA2K=
 
 # Define the C invocation for auxiliary programs (echogs, genarch).
   
-ifeq "$(OPENVMS)"	"VAX"
-CCAUX=CC/VAXC
-else
 CCAUX=CC/DECC
-endif
 
 # Define the C invocation for normal compilation.
 
@@ -477,20 +471,11 @@ $(GLGENDIR)openvms.com : $(GLSRCDIR)append_l.com
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB X11 $(X_INCLUDE)"
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_LIB ''F$$ENVIRONMENT(""DEFAULT"")'"
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB GS_DOC ''F$$ENVIRONMENT(""DEFAULT"")'"
-ifeq "$(OPENVMS)" "VAX"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB C$$INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, SYS$$LIBRARY"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB VAXC$$INCLUDE C$$INCLUDE"
-	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB SYS SYS$$LIBRARY"
-else
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB DECC$$USER_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB DECC$$SYSTEM_INCLUDE ''F$$ENVIRONMENT(""DEFAULT"")', DECW$$INCLUDE, DECC$$LIBRARY_INCLUDE, SYS$$LIBRARY"
 	$$ @$(GLSRCDIR)APPEND_L $@ "$$ DEFINE/JOB SYS "DECC$$LIBRARY_INCLUDE,SYS$$LIBRARY"
-endif
 
 $(GLGENDIR)openvms.opt:
-ifeq "$(OPENVMS)" "VAX"
-	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:VAXCRTL.EXE/SHARE"
-endif
 ifeq "$(DECWINDOWS)" "1.2"
 	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XMLIBSHR12.EXE/SHARE"
 	$$ @$(GLSRCDIR)APPEND_L $@ "SYS$$SHARE:DECW$$XTLIBSHRR5.EXE/SHARE"

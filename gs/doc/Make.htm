@@ -2365,10 +2365,9 @@ Now, if you wish, you can edit OS2.MAK to suit your needs, and then perform
 <p>
 DEC C runtime library versions 5.5 and newer have an <b><tt>exit</tt></b>
 function that is compatible with all other C systems, but some older ones
-don't; we don't know whether the <b><tt>exit</tt></b> function in VAX C is
-compatible or not.  If you get error messages from VMS when auxiliary
-programs such as <b><tt>genarch</tt></b> or <b><tt>echogs</tt></b> finish
-executing, find the line in stdpre.h that reads
+don't.  If you get error messages from VMS when auxiliary programs such as
+<b><tt>genarch</tt></b> or <b><tt>echogs</tt></b> finish executing, find the
+line in stdpre.h that reads
 
 <blockquote><b><tt>
 /*#define&nbsp;OLD_VMS_C*/
@@ -2435,18 +2434,14 @@ As of Ghostscript version 5.0 you can use GNU make -- with the file
 -- to build Ghostscript on OpenVMS.  Use the command:
 
 <blockquote>
-<b><tt>make&nbsp;-fopenvms.mak&nbsp;"OPENVMS=</tt></b><em>{</em><b><tt>VAX</tt></b>,<b><tt>ALPHA</tt></b><em>}</em><b><tt>"&nbsp;"DECWINDOWS=</tt></b><em>[</em><b><tt>1.2</tt></b><em>]</em><b><tt>"</tt></b>
+<b><tt>make&nbsp;-fopenvms.mak&nbsp;"DECWINDOWS=</tt></b><em>[</em><b><tt>1.2</tt></b><em>]</em><b><tt>"</tt></b>
 </blockquote>
 
 <p>
-That is, specify either <b><tt>VAX</tt></b> or <b><tt>ALPHA</tt></b> as the
-value of the <b><tt>OPENVMS</tt></b> parameter, and either
-"<b><tt>1.2</tt></b>" or nothing (blank) as the value of
-<b><tt>DECWINDOWS</tt></b>.  (The value "<b><tt>VAX</tt></b>" just means
-that you want to use the VAX C compiler: it doesn't imply that you are
-running on VAX hardware.)  In Europe and other parts of the world where ISO
-standard paper sizes are used, append "<b><tt>A4_PAPER=1</tt></b>" to that
-line to make A4 the default paper size at run time.
+That is, specify either "<b><tt>1.2</tt></b>" or nothing (blank) as the
+value of <b><tt>DECWINDOWS</tt></b>.  In Europe and other parts of the world
+where ISO standard paper sizes are used, append "<b><tt>A4_PAPER=1</tt></b>"
+to that line to make A4 the default paper size at run time.
 
 <p>
 If you haven't a prebuilt copy of GNU make, you'll have to build it
@@ -2472,15 +2467,13 @@ Building Ghostscript with MMK or MMS uses the file
 To build Ghostscript with MMK or MMS, use the command:
 
 <blockquote>
-<b><tt>###/descrip=[.src]openvms.mmk/macro=("VAXC=</tt></b><em>{</em><b><tt>0</tt></b>,<b><tt>1</tt></b><em>}</em><b><tt>","DECWINDOWS1_2=</tt></b><em>{</em><b><tt>0</tt></b>,<b><tt>1</tt></b><em>}</em><b><tt>")</tt></b>
+<b><tt>###/descrip=[.src]openvms.mmk/macro=("DECWINDOWS1_2=</tt></b><em>{</em><b><tt>0</tt></b>,<b><tt>1</tt></b><em>}</em><b><tt>")</tt></b>
 </blockquote>
 
 where <b><tt>###</tt></b> is either <b><tt>mmk</tt></b> or <b><tt>mms</tt></b>.
 
 <p>
-Specify <b><tt>VAXC=1</tt></b> for the VAX C compiler,
-<b><tt>VAXC=0</tt></b> for the DEC C compiler.  Specify
-<b><tt>DECWINDOWS1_2=1</tt></b> for DECWINDOWS 1.2,
+Specify <b><tt>DECWINDOWS1_2=1</tt></b> for DECWINDOWS 1.2,
 <b><tt>DECWINDOWS1_2=0</tt></b> for other DECWINDOWS versions.  In Europe
 and other parts of the world where ISO standard paper sizes are used, add
 <b><tt>,"A4_PAPER=1"</tt></b> just before the final closing parenthesis to

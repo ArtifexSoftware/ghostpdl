@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises. All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises. All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -20,13 +20,15 @@
 #
 # Please contact Jim Dunham (dunham@omtool.com) if you have questions.
 # Addapted for MMK by Jouk Jansen (joukj@crys.chem.uva.nl)
+# Support for VAX C on OpenVMS was removed in release 6.01 by Aladdin:
+# DEC C is now used on both VAX and Alpha platforms.
 #
 # ------------------------------- Options ------------------------------- #
 
 ###### This section is the only part of the file you should need to edit.
 
 # on the make command line specify:
-#	mmk/descrip=[.src]openvms.mmk/macro=("VAXC={0,1}","DECWINDOWS1_2={0,1}")
+#	mmk/descrip=[.src]openvms.mmk/macro=("DECWINDOWS1_2={0,1}")
 
 # Define the directory for the final executable, and the
 # source, generated intermediate file, and object directories
@@ -159,11 +161,7 @@ SW_DEBUG=/DEBUG/NOOPTIMIZE
 SW_DEBUG=/NODEBUG/OPTIMIZE
 .endif
 
-.ifdef VAXC
-SW_PLATFORM=/VAXC
-.else
 SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY
-.endif
 
 # Define any other compilation flags. 
 # Including defines for A4 paper size
@@ -421,7 +419,6 @@ macro :
 	@ decw12 = f$search("SYS$SHARE:DECW$XTLIBSHRR5.EXE").nes.""
 	@ macro = ""
 	@ if a4p.or.decc.or.decw12 then macro = "/MACRO=("
-	@ if .not. decc then macro = macro + "VAXC=1,"
 	@ if decw12 then macro = macro + "DECWINDOWS1_2=1,"
 	@ if a4p then macro = macro + "A4_PAPER=1,"
 	@ if macro.nes."" then macro = f$extract(0,f$length(macro)-1,macro)+ ")"
@@ -463,20 +460,11 @@ $(GLSRCDIR)openvms.com : $(GLSRCDIR)append_l.com
 	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB X11 $(X_INCLUDE)"
 	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB GS_LIB ''F$ENVIRONMENT(""DEFAULT"")'"
 	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB GS_DOC ''F$ENVIRONMENT(""DEFAULT"")'"
-.ifdef VAXC
-	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB C$INCLUDE ''F$ENVIRONMENT(""DEFAULT"")', DECW$INCLUDE, SYS$LIBRARY"
-	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB VAXC$INCLUDE C$INCLUDE"
-	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB SYS SYS$LIBRARY"
-.else
 	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB DECC$USER_INCLUDE ''F$ENVIRONMENT(""DEFAULT"")', DECW$INCLUDE, DECC$LIBRARY_INCLUDE, SYS$LIBRARY"
 	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB DECC$SYSTEM_INCLUDE ''F$ENVIRONMENT(""DEFAULT"")', DECW$INCLUDE, DECC$LIBRARY_INCLUDE, SYS$LIBRARY"
 	@$(GLSRCDIR)APPEND_L $@ "$ DEFINE/JOB SYS "DECC$LIBRARY_INCLUDE,SYS$LIBRARY"
-.endif
 
 $(GLSRCDIR)openvms.opt :
-.ifdef VAXC
-	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:VAXCRTL.EXE/SHARE"
-.endif
 .ifdef DECWINDOWS1_2
 	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XMLIBSHR12.EXE/SHARE"
 	@$(GLSRCDIR)APPEND_L $@ "SYS$SHARE:DECW$XTLIBSHRR5.EXE/SHARE"
