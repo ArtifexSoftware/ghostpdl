@@ -464,7 +464,7 @@ row:
 	    ss->prev[0] = s0;
 	    for (; count >= colors; count -= colors)
 		for (ci = 0; ci < colors; ++ci) {
-		    ti = *++p << 8;
+		    ti = (int)*++p << 8;
 		    ti = (ti + *++p) - ss->prev[ci];
 		    *++q = ti >> 8; *++q = ti & 0xff;
 		    ss->prev[ci] = ti;

@@ -214,9 +214,9 @@ copy_row_yuv(unsigned char *dest, jas_image_t *image,
 	q[0] = p[1] + q[1];
 	q[2] = p[2] + q[1]; 
 #else
-	q[0] = ((double)p[0] + 1.402 * p[2]);
-	q[1] = ((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
-	q[2] = ((double)p[0] + 1.772 * p[1]);
+	q[0] = (int)((double)p[0] + 1.402 * p[2]);
+	q[1] = (int)((double)p[0] - 0.34413 * p[1] - 0.71414 * p[2]);
+	q[2] = (int)((double)p[0] + 1.772 * p[1]);
 #endif
 	/* clamp */
 	for (j = 0; j < 3; j++){
