@@ -498,7 +498,7 @@ pcl_cid_IN(
 
     static const byte   cid_GL2_Mono[6] =  { (byte)pcl_cspace_RGB,
 					     (byte)pcl_penc_indexed_by_plane,
-					     1, 1, 1, 1 };
+					     3, 1, 1, 1 };
 
     return install_cid_data(6,
 			    pcs->personality == pcl5e ? cid_GL2_Mono : cid_GL2_Color,
