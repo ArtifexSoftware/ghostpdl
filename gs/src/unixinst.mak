@@ -102,7 +102,7 @@ winmaps.ps wftopfa.ps wrfont.ps zeroline.ps \
 gs_l2img.ps \
 pdf2dsc.ps pdfeof.ps \
 pdf_base.ps pdf_draw.ps pdf_font.ps pdf_main.ps pdf_ops.ps pdf_sec.ps \
-gs_lgo_e.ps gs_lgx_e.ps gs_mex_e.ps gs_mgl_e.ps gs_mro_e.ps \
+gs_css_e.ps gs_lgo_e.ps gs_lgx_e.ps gs_mex_e.ps gs_mgl_e.ps gs_mro_e.ps \
 gs_pdf_e.ps gs_wan_e.ps \
 gs_pdfwr.ps ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_DATA) $(PSLIBDIR)/$$f $(gsdatadir)/lib; fi;\

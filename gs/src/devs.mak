@@ -717,7 +717,7 @@ $(DD)pdfwrite.dev : $(DEVS_MAK) $(ECHOGS_XE) $(pdfwrite_)\
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite5_)
 	$(ADDMOD) $(DD)pdfwrite $(pdfwrite6_)
 	$(ADDMOD) $(DD)pdfwrite -ps gs_pdfwr
-	$(ADDMOD) $(DD)pdfwrite -ps gs_lgo_e gs_lgx_e gs_mex_e
+	$(ADDMOD) $(DD)pdfwrite -ps gs_css_e gs_lgo_e gs_lgx_e gs_mex_e
 	$(ADDMOD) $(DD)pdfwrite -ps gs_mgl_e gs_mro_e gs_wan_e
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)cmyklib $(GLD)cfe $(GLD)lzwe
 	$(ADDMOD) $(DD)pdfwrite -include $(GLD)rle $(GLD)sdcte $(GLD)sdeparam

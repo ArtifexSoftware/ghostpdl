@@ -690,7 +690,7 @@ $(PSOBJ)zmisc1.$(OBJ) : $(PSSRC)zmisc1.c $(OP) $(memory__h)\
 # -------------- Compact Font Format and Type 2 charstrings ------------- #
 
 $(PSD)cff.dev : $(INT_MAK) $(ECHOGS_XE) $(PSD)psl2int.dev
-	$(SETMOD) $(PSD)cff -include $(PSD)psl2int -ps gs_cff
+	$(SETMOD) $(PSD)cff -include $(PSD)psl2int -ps gs_css_e gs_cff
 
 $(PSOBJ)zchar2.$(OBJ) : $(PSSRC)zchar2.c $(OP)\
  $(gxfixed_h) $(gxmatrix_h) $(gxfont_h) $(gxfont1_h) $(gxtype1_h)\
