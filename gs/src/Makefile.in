@@ -395,7 +395,7 @@ AK=
 
 CCFLAGS=$(GENOPT) $(CAPOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
-CCAUX=$(CC) 
+CCAUX=$(CC) $(GCFLAGS)
 CC_LEAF=$(CC_)
 # note gcc can't use -fomit-frame-pointer with -pg.
 CC_LEAF_PG=$(CC_)
