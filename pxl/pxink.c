@@ -18,6 +18,7 @@
 #include "gscolor2.h"
 #include "gscoord.h"
 #include "gsimage.h"
+#include "gscie.h"
 #include "gspath.h"
 #include "gxdevice.h"
 #include "gxht.h"
@@ -428,294 +429,331 @@ fraction_value(const px_value_t *pv, int i)
 	return (v < 0 ? 0 : v / int_type_max(type));
 }
 
-#ifdef PXL2_0
-private int
-set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
-{	px_gstate_t *pxgs = pxs->pxgs;
-	int code = 0;
 
-	if ( par->pv[2] || par->pv[3] ) {
-	    dprintf( "Warning - PXL 2.0 Primary Array or Primary Depth not supported continuing\n");
-	    dprintf( "Using null brush\n");
-	    px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpNull;
-	    ppt->needs_halftone = false;
+/* we use an enumeration instead of index numbers improve readability in this
+   "very busy" routine */
+typedef enum {
+    aRGBColor = 0,
+    aGrayLevel = 1,
+    aPrimaryArray = 2,
+    aPrimaryDepth = 3,
+    aNullBrushPen = 4,
+    aPatternSelectID = 5,
+    aPatternOrigin = 6,
+    aNewDestinationSize = 7
+} pxl_source_t;
+
+/* given a paint type decide if a halftone is necessary */
+private bool
+px_needs_halftone(px_paint_t *ppt)
+{
+    bool needs_halftone;
+    if ( ppt->type == pxpPattern )
+	needs_halftone = true;
+    else if ( ppt->type == pxpNull )
+	needs_halftone = false;
+    else if ( ppt->type == pxpGray )
+	needs_halftone = ppt->value.gray != 0 && ppt->value.gray != 1;
+    else if ( ppt->type == pxpRGB || ppt->type == pxpSRGB ) { /* rgb or srgb */
+	int i;
+	needs_halftone = false;
+	for ( i = 0; i < 3; i++ ) {
+	    if ( ppt->value.rgb[i] != 0 && ppt->value.rgb[i] != 1 ) {
+		needs_halftone = true;
+		break;
+	    }
 	}
-	else if ( par->pv[5] )	/* pxaPatternSelectID */
-	  { px_value_t key;
-	    void *value;
-	    px_pattern_t *pattern;
-	    gs_client_color ccolor;
-	    int code;
-
-	    if ( par->pv[0] || par->pv[1] || par->pv[4] )
-	      return_error(errorIllegalAttributeCombination);
-	    key.type = pxd_array | pxd_ubyte;
-	    key.value.array.data = (byte *)&par->pv[5]->value.i;
-	    key.value.array.size = sizeof(integer);
-	    if ( !(px_dict_find(&pxgs->temp_pattern_dict, &key, &value) ||
-		   px_dict_find(&pxs->page_pattern_dict, &key, &value) ||
-		   px_dict_find(&pxs->session_pattern_dict, &key, &value))
-	       )
-	      return_error(errorRasterPatternUndefined);
-	    pattern = value;
-	    px_set_halftone(pxs);
-	    code = render_pattern(&ccolor, pattern, par->pv[6], par->pv[7],
-				  pxs);
-	    /*
-	     * We don't use px_paint_rc_adjust(... 1 ...) here, because
-	     * gs_makepattern creates pattern instances with a reference
-	     * count already set to 1.
-	     */
-	    rc_increment(pattern);
-	    if ( code < 0 )
-	      return code;
-	    px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpPattern;
-	    ppt->value.pattern.pattern = pattern;
-	    ppt->value.pattern.color = ccolor;
-	    ppt->needs_halftone = false;
-	  }
-	else if ( par->pv[6] || par->pv[7] )
-	  return_error(errorIllegalAttributeCombination);
-	else if ( par->pv[0] )	/* pxaRGBColor */
-	  { const px_value_t *prgb = par->pv[0];
-	    uint i;
-
-	    if ( par->pv[1] || par->pv[4] )
-	      return_error(errorIllegalAttributeCombination);
-	    if ( pxgs->color_space != eRGB )
-	      return_error(errorColorSpaceMismatch);
-	    px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpRGB;
-	    for ( i = 0; i < 3; ++i )
-	      if ( prgb->type & pxd_any_real )
-		ppt->value.rgb[i] = real_elt(prgb, i);
-	      else
-		{ integer v = integer_elt(prgb, i);
-		  ppt->value.rgb[i] =
-		    (v < 0 ? 0 : (real)v / int_type_max(prgb->type));
-		}
-#define rgb_is(v)\
-  (ppt->value.rgb[0] == v && ppt->value.rgb[1] == v && ppt->value.rgb[2] == v)
-	    ppt->needs_halftone = !(rgb_is(0) || rgb_is(1));
-#undef rgb_is
-	  }
-	else if ( par->pv[1] )	/* pxaGrayLevel */
-	  { if ( par->pv[4] )
-	      return_error(errorIllegalAttributeCombination);
-	    if ( pxgs->color_space != eGray )
-	      return_error(errorColorSpaceMismatch);
-	    px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpGray;
-	    ppt->value.gray = fraction_value(par->pv[1], 0);
-	    ppt->needs_halftone = ppt->value.gray != 0 && ppt->value.gray != 1;
-	  }
-	else if ( par->pv[4] )	/* pxaNullBrush/Pen */
-	  { px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpNull;
-	    ppt->needs_halftone = false;
-	  }
-	else
-	  return_error(errorMissingAttribute);
-	/*
-	 * Update the halftone to the most recently set one.
-	 * This will do the wrong thing if we set the brush or pen source,
-	 * set the halftone, and then set the other source, but we have
-	 * no way to handle this properly with the current library.
-	 */
-	if ( code >= 0 && ppt->needs_halftone )
-	  code = px_set_halftone(pxs);
-	return code;
+    } else {
+	dprintf("unknown paint type\n");
+	needs_halftone = true;
+    }
+    return needs_halftone;
 }
-#else
+	    
 private int
 set_source(const px_args_t *par, px_state_t *pxs, px_paint_t *ppt)
-{	px_gstate_t *pxgs = pxs->pxgs;
-	int code = 0;
-
-	if ( par->pv[3] )	/* pxaPatternSelectID */
-	  { px_value_t key;
-	    void *value;
-	    px_pattern_t *pattern;
-	    gs_client_color ccolor;
-	    int code;
-
-	    if ( par->pv[0] || par->pv[1] || par->pv[2] )
-	      return_error(errorIllegalAttributeCombination);
-	    key.type = pxd_array | pxd_ubyte;
-	    key.value.array.data = (byte *)&par->pv[3]->value.i;
-	    key.value.array.size = sizeof(integer);
-	    if ( !(px_dict_find(&pxgs->temp_pattern_dict, &key, &value) ||
-		   px_dict_find(&pxs->page_pattern_dict, &key, &value) ||
-		   px_dict_find(&pxs->session_pattern_dict, &key, &value))
-	       )
-	      return_error(errorRasterPatternUndefined);
-	    pattern = value;
-	    px_set_halftone(pxs);
-	    code = render_pattern(&ccolor, pattern, par->pv[4], par->pv[5],
-				  pxs);
-	    /*
-	     * We don't use px_paint_rc_adjust(... 1 ...) here, because
-	     * gs_makepattern creates pattern instances with a reference
-	     * count already set to 1.
-	     */
-	    rc_increment(pattern);
-	    if ( code < 0 )
-	      return code;
-	    px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpPattern;
-	    ppt->value.pattern.pattern = pattern;
-	    ppt->value.pattern.color = ccolor;
-	    ppt->needs_halftone = false;
-	  }
-	else if ( par->pv[4] || par->pv[5] )
-	  return_error(errorIllegalAttributeCombination);
-	else if ( par->pv[0] )	/* pxaRGBColor */
-	  { const px_value_t *prgb = par->pv[0];
-	    uint i;
-
-	    if ( par->pv[1] || par->pv[2] )
-	      return_error(errorIllegalAttributeCombination);
-	    if ( pxgs->color_space != eRGB )
-	      return_error(errorColorSpaceMismatch);
-	    px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpRGB;
-	    for ( i = 0; i < 3; ++i )
-	      if ( prgb->type & pxd_any_real )
-		ppt->value.rgb[i] = real_elt(prgb, i);
-	      else
-		{ integer v = integer_elt(prgb, i);
-		  ppt->value.rgb[i] =
-		    (v < 0 ? 0 : (real)v / int_type_max(prgb->type));
-		}
-#define rgb_is(v)\
-  (ppt->value.rgb[0] == v && ppt->value.rgb[1] == v && ppt->value.rgb[2] == v)
-	    ppt->needs_halftone = !(rgb_is(0) || rgb_is(1));
-#undef rgb_is
-	  }
-	else if ( par->pv[1] )	/* pxaGrayLevel */
-	  { if ( par->pv[2] )
-	      return_error(errorIllegalAttributeCombination);
-	    if ( pxgs->color_space != eGray )
-	      return_error(errorColorSpaceMismatch);
-	    px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpGray;
-	    ppt->value.gray = fraction_value(par->pv[1], 0);
-	    ppt->needs_halftone = ppt->value.gray != 0 && ppt->value.gray != 1;
-	  }
-	else if ( par->pv[2] )	/* pxaNullBrush/Pen */
-	  { px_paint_rc_adjust(ppt, -1, pxs->memory);
-	    ppt->type = pxpNull;
-	    ppt->needs_halftone = false;
-	  }
-	else
-	  return_error(errorMissingAttribute);
+{
+    px_gstate_t *pxgs = pxs->pxgs;
+    int code = 0;
+    /* pxaPatternSelectID */ 
+    if ( par->pv[aPatternSelectID] ) {
+	px_value_t key;
+	void *value;
+	px_pattern_t *pattern;
+	gs_client_color ccolor;
+	int code;
+	if ( par->pv[aRGBColor] || par->pv[aGrayLevel] || par->pv[aNullBrushPen] )
+	    return_error(errorIllegalAttributeCombination);
+	key.type = pxd_array | pxd_ubyte;
+	key.value.array.data = (byte *)&par->pv[aPatternSelectID]->value.i;
+	key.value.array.size = sizeof(integer);
+	if ( !(px_dict_find(&pxgs->temp_pattern_dict, &key, &value) ||
+	       px_dict_find(&pxs->page_pattern_dict, &key, &value) ||
+	       px_dict_find(&pxs->session_pattern_dict, &key, &value))
+	     )
+	    return_error(errorRasterPatternUndefined);
+	pattern = value;
+	px_set_halftone(pxs);
+	code = render_pattern(&ccolor, pattern, par->pv[aPatternOrigin], 
+			      par->pv[aNewDestinationSize], pxs);
 	/*
-	 * Update the halftone to the most recently set one.
-	 * This will do the wrong thing if we set the brush or pen source,
-	 * set the halftone, and then set the other source, but we have
-	 * no way to handle this properly with the current library.
+	 * We don't use px_paint_rc_adjust(... 1 ...) here, because
+	 * gs_makepattern creates pattern instances with a reference
+	 * count already set to 1.
 	 */
-	if ( code >= 0 && ppt->needs_halftone )
-	  code = px_set_halftone(pxs);
-	return code;
+	rc_increment(pattern);
+	if ( code < 0 )
+	    return code;
+	px_paint_rc_adjust(ppt, -1, pxs->memory);
+	ppt->type = pxpPattern;
+	ppt->value.pattern.pattern = pattern;
+	ppt->value.pattern.color = ccolor;
+	/* not pxaPatternSelectID but we have a pattern origin or
+	   newdestination size */
+    } else if ( par->pv[aPatternOrigin] || par->pv[aNewDestinationSize] ) {
+	return_error(errorIllegalAttributeCombination);
+    } else if ( par->pv[aRGBColor] ) {
+	const px_value_t *prgb = par->pv[aRGBColor];
+	int i;
+	if ( par->pv[aGrayLevel] || par->pv[aNullBrushPen] )
+	    return_error(errorIllegalAttributeCombination);
+	if ( pxgs->color_space != eRGB )
+	    return_error(errorColorSpaceMismatch);
+	px_paint_rc_adjust(ppt, -1, pxs->memory);
+	ppt->type = pxpRGB;
+	for ( i = 0; i < 3; ++i )
+	    if ( prgb->type & pxd_any_real )
+		ppt->value.rgb[i] = real_elt(prgb, i);
+	    else {
+		integer v = integer_elt(prgb, i);
+		ppt->value.rgb[i] = (v < 0 ? 0 : (real)v / int_type_max(prgb->type));
+	    }
+    } else if ( par->pv[aGrayLevel] )	/* pxaGrayLevel */ { 
+	if ( par->pv[aNullBrushPen] )
+	    return_error(errorIllegalAttributeCombination);
+	if ( pxgs->color_space != eGray )
+	    return_error(errorColorSpaceMismatch);
+	px_paint_rc_adjust(ppt, -1, pxs->memory);
+	ppt->type = pxpGray;
+	ppt->value.gray = fraction_value(par->pv[aGrayLevel], 0);
+    } else if ( par->pv[aNullBrushPen] )	/* pxaNullBrush/Pen */ { 
+	px_paint_rc_adjust(ppt, -1, pxs->memory);
+	ppt->type = pxpNull;
+    } else if ( par->pv[aPrimaryDepth] && par->pv[aPrimaryArray] ) {
+	int i;
+	px_paint_rc_adjust(ppt, -1, pxs->memory);
+	if ( pxgs->color_space == eRGB )
+	    ppt->type = pxpRGB;
+	else if ( pxgs->color_space == eGray )
+	    ppt->type = pxpGray;
+	else if ( pxgs->color_space == eSRGB )
+	    ppt->type = pxpSRGB;
+	else {
+	    dprintf1("Warning unknown color space %d\n", pxgs->color_space);
+	    ppt->type = pxpGray;
+	}
+	/* NB depth?? - for range checking */
+	if ( ppt->type == eRGB || ppt->type == eSRGB ) {
+	    
+	    ppt->value.rgb[0] = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
+	    ppt->value.rgb[1] = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
+	    ppt->value.rgb[2] = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
+	} else 
+	    /* NB figure out reals and ints */
+	    ppt->value.gray = (float)par->pv[aPrimaryArray]->value.array.data[0] / 255.0;
+    } else
+	return_error(errorMissingAttribute);
+    /*
+     * Update the halftone to the most recently set one.
+     * This will do the wrong thing if we set the brush or pen source,
+     * set the halftone, and then set the other source, but we have
+     * no way to handle this properly with the current library.
+     */
+    if ( code >= 0 && px_needs_halftone(ppt) )
+	code = px_set_halftone(pxs);
+    return code;
 }
-#endif
 
 /* Set up a brush or pen for drawing. */
 /* If it is a pattern, SetBrush/PenSource guaranteed that it is compatible */
 /* with the current color space. */
 int
 px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
-{	gs_state *pgs = pxs->pgs;
-
-	switch ( ppt->type )
-	  {
-	  case pxpNull:
-	    gs_setnullcolor(pgs);
-	    return 0;
-	  case pxpGray:
-	    return gs_setgray(pgs, ppt->value.gray);
-	  case pxpRGB:
-	    return gs_setrgbcolor(pgs, ppt->value.rgb[0], ppt->value.rgb[1],
-				  ppt->value.rgb[2]);
-	  case pxpPattern:
-	    return gs_setpattern(pgs, &ppt->value.pattern.color);
-	  default:		/* can't happen */
-	    return_error(errorIllegalAttributeValue);
-	  }
+{	
+    gs_state *pgs = pxs->pgs;
+    switch ( ppt->type ) {
+    case pxpNull:
+	gs_setnullcolor(pgs);
+	return 0;
+    case pxpGray:
+	return gs_setgray(pgs, ppt->value.gray);
+    case pxpRGB:
+	return gs_setrgbcolor(pgs, ppt->value.rgb[0], ppt->value.rgb[1],
+			      ppt->value.rgb[2]);
+    case pxpPattern:
+	return gs_setpattern(pgs, &ppt->value.pattern.color);
+    case pxpSRGB: {
+	gs_client_color color;
+	color.paint.values[0] = ppt->value.rgb[0];
+	color.paint.values[1] = ppt->value.rgb[1];
+	color.paint.values[2] = ppt->value.rgb[2];
+	return gs_setcolor(pgs, &color);
+    }
+    default:		/* can't happen */
+	return_error(errorIllegalAttributeValue);
+    }
 }
 
 /* ---------------- Operators ---------------- */
 
-#ifdef PXL2_0
 const byte apxSetBrushSource[] = {
   0, pxaRGBColor, pxaGrayLevel, pxaPrimaryArray, pxaPrimaryDepth, pxaNullBrush, pxaPatternSelectID,
   pxaPatternOrigin, pxaNewDestinationSize, 0
 };
-#else
-const byte apxSetBrushSource[] = {
-  0, pxaRGBColor, pxaGrayLevel, pxaNullBrush, pxaPatternSelectID,
-  pxaPatternOrigin, pxaNewDestinationSize, 0
-};
-#endif
+
 int
 pxSetBrushSource(px_args_t *par, px_state_t *pxs)
 {	return set_source(par, pxs, &pxs->pxgs->brush);
 }
 
-#ifdef PXL2_0
 const byte apxSetColorSpace[] = {
   0, pxaColorSpace, pxaColorimetricColorSpace, pxaXYChromaticities, pxaWhiteReferencePoint,
   pxaCRGBMinMax, pxaGammaGain, pxaPaletteDepth, pxaPaletteData, 0
 };
-#else
-const byte apxSetColorSpace[] = {
-  pxaColorSpace, 0, pxaPaletteDepth, pxaPaletteData, 0
-};
-#endif
+
+
+/* use this arrangement described in the postscript level 3 manual to
+   implement sRGB */
+
+/* [ /CIEBasedABC << 
+   /DecodeLMN [ { dup 0.03928 le { 12.92321 div} {
+   0.055 add 1.055 div 2.4 exp} ifelse } bind dup dup ] 
+   /MatrixLMN
+   [0.412457 0.212673 0.019334 0.357576 0.715152 0.119192 0.180437
+   0.072175 0.950301] 
+   /WhitePoint [0.9505 1.0 1.0890] >> ]
+   setcolorspace */
+
+/* ---------------- Utilities ---------------- */
+/* NB this should be fixed to use the new interface in gscspace.h */
+/* decode lmn procedure for srgb color space.  Unlike the other color spaces RGB and Gray this color space is built */
+inline private float
+DecodeLMN(floatp val, const gs_cie_common *pcie)
+{
+    /* cast to single precision */
+    float inval = (float)val;
+    
+    if ( inval <= 0.03928 )
+	inval = inval / 12.92321;
+    else
+	inval = (float)pow(1.0 / (inval + 0.055), 2.4);
+    return inval;
+}
+
+const gs_vector3 WhitePoint = {0.9505, 1.0, 1.0890};
+
+private int
+build_crd(px_state_t *pxs)
+{
+    gs_cie_render *pcrd;
+    int code;
+    /* build the color rendering dictionary if not already built NB.
+       Store colorrendering in the state and verify it is the same. */
+    if ( gs_currentcolorrendering(pxs->pgs) )
+	return 0;
+    code = gs_cie_render1_build(&pcrd, pxs->memory, "build_crd");
+    if ( code < 0 )
+	return code;
+    code = gs_cie_render1_initialize(pcrd, NULL, &WhitePoint, NULL,
+				     NULL, NULL, NULL, NULL, NULL, NULL,
+				     NULL, NULL, NULL, NULL);
+    if ( code < 0 )
+	return code; /* should not fail */
+    return gs_setcolorrendering(pxs->pgs, pcrd);
+}
+
+private float
+DecodeLMN_0(floatp val, const gs_cie_common *pcie)
+{
+    return DecodeLMN(val, pcie);
+}
+
+private float
+DecodeLMN_1(floatp val, const gs_cie_common *pcie)
+{
+    return DecodeLMN(val, pcie);
+}
+
+private float
+DecodeLMN_2(floatp val, const gs_cie_common *pcie)
+{
+    return DecodeLMN(val, pcie);
+}
+
+/* NB how do these beasts get freed similar to pattern */
+private int
+build_sRGB_space(gs_color_space **ppcs, gs_memory_t *mem)
+{
+    /* RangeLMN has the default value */
+    private const gs_matrix3 MatrixLMN = {
+	{0.412457, 0.212673, 0.019334},
+	{0.357576, 0.715152, 0.119192},
+	{0.180437, 0.072175, 0.950301}
+    };
+
+    private const gs_cie_common_proc3   DecodeLMN = {
+	{ DecodeLMN_0, DecodeLMN_1, DecodeLMN_2 }
+    };
+
+    int code = gs_cspace_build_CIEABC(ppcs, NULL, mem);
+    if ( code < 0 )
+	return_error(errorInsufficientMemory);
+		
+    /* NB code sigh */
+    *(gs_cie_MatrixLMN(*ppcs)) = MatrixLMN;
+    *(gs_cie_DecodeLMN(*ppcs))= DecodeLMN;
+    (gs_cie_WhitePoint(*ppcs)) = WhitePoint;
+    return 0;
+}
 
 int
 pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 {	px_gstate_t *pxgs = pxs->pxgs;
 	pxeColorSpace_t cspace;
 
-#ifdef PXL2_0
 	if ( par->pv[0] )
 	    cspace = par->pv[0]->value.i;
 	else
 	    cspace = par->pv[1]->value.i;
-#else
-	cspace = par->pv[0]->value.i;
-#endif
-#ifdef PXL2_0
-	if ( cspace == eSRGB ) {
-	    dprintf( "Warning - PXL 2.0 eSRGB colorspace not implemented using RGB\n");
+	/* work on srgb is still in progress so we map all srgb and
+           crgb requests to rgb */
+	if ( cspace == eSRGB || cspace == eCRGB )
 	    cspace = eRGB;
+	else if ( ( par->pv[2] ) || ( par->pv[3] ) || ( par->pv[4] ) || ( par->pv[5] ) ) {
+
+	    if ( par->pv[2] )
+		dprintf( "Warning - PXL 2.0 XY Chromaticities not documented or supported\n" );
+	    if ( par->pv[3] )
+		dprintf( "Warning - PXL 2.0 White reference not documented or supported\n" );
+	    if ( par->pv[4] )
+		dprintf( "Warning - PXL 2.0 CRGB MinMax not documented or supported\n" );
+	    if ( par->pv[5] )
+		dprintf( "Warning - PXL 2.0 GammaGain not documented or supported\n" );
 	}
 	if ( cspace == eCRGB ) {
-	    dprintf( "Warning - PXL 2.0 eCRGB colorspace not implemented using RGB\n");
-	    cspace = eRGB;
+	    dprintf( "Warning - PXL 2.0 eCRGB colorspace not implemented using sRGB\n");
+	    cspace = eSRGB;
 	}
-#endif
-#ifdef PXL2_0
 	if ( par->pv[6] && par->pv[7] )
-#else
-        if ( par->pv[1] && par->pv[2] )
-#endif
-	  { int ncomp = (cspace == eRGB ? 3 : 1);
-#ifdef PXL2_0
+	  { int ncomp = (( cspace == eRGB || cspace == eSRGB || cspace == eCRGB ) ? 3 : 1);
 	    uint size = par->pv[7]->value.array.size;
-#else
-	    uint size = par->pv[2]->value.array.size;
-#endif
-	    if ( !(size == ncomp << 1 || size == ncomp << 4 ||
+ 	    if ( !(size == ncomp << 1 || size == ncomp << 4 ||
 		   size == ncomp << 8)
 	       )
 	      return_error(errorIllegalAttributeValue);
 	    /* The palette is in an array, but we want a string. */
-	    { if ( pxgs->palette.data && !pxgs->palette_is_shared &&
+	    { 
+		if ( pxgs->palette.data && !pxgs->palette_is_shared &&
 		   pxgs->palette.size != size
 		 )
 	        { gs_free_string(pxs->memory, pxgs->palette.data,
@@ -734,18 +772,10 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 		  pxgs->palette.data = pdata;
 		  pxgs->palette.size = size;
 		}
-#ifdef PXL2_0
 	      memcpy(pxgs->palette.data, par->pv[7]->value.array.data, size);
-#else
-	      memcpy(pxgs->palette.data, par->pv[2]->value.array.data, size);
-#endif
 	    }
 	  }
-#ifdef PXL2_0
 	else if ( par->pv[6] || par->pv[7] )
-#else
-	else if ( par->pv[1] || par->pv[2] )
-#endif
 	  return_error(errorMissingAttribute);
 	else if ( pxgs->palette.data )
 	  { if ( !pxgs->palette_is_shared )
@@ -757,6 +787,13 @@ pxSetColorSpace(px_args_t *par, px_state_t *pxs)
 	  }
 	pxgs->palette_is_shared = false;
 	pxgs->color_space = cspace;
+	/* build a color space if necessary and NB free the
+	   existing one */
+	if ( cspace == eSRGB || cspace == eCRGB ) {
+	    /* NB free the old cie color space if necessary */
+	    build_crd(pxs);
+	    build_sRGB_space(&pxgs->cie_color_space, pxs->memory);
+	}
 #ifndef SET_COLOR_SPACE_NO_SET_BLACK
 	  { px_paint_rc_adjust(&pxgs->brush, -1, pxs->memory);
 	    pxgs->brush.type = pxpGray;
@@ -836,7 +873,7 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 		      {
 		      case ePortraitOrientation:
 			dest += source_y * width + source_x;
-			skip = 1;
+		skip = 1;
 			break;
 		      case eLandscapeOrientation:
 			dest += (width - 1 - source_x) * height + source_y;
@@ -877,17 +914,10 @@ pxSetHalftoneMethod(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
-#ifdef PXL2_0
 const byte apxSetPenSource[] = {
   0, pxaRGBColor, pxaGrayLevel, pxaPrimaryArray, pxaPrimaryDepth, pxaNullPen, pxaPatternSelectID,
   pxaPatternOrigin, pxaNewDestinationSize, 0
 };
-#else
-const byte apxSetPenSource[] = {
-  0, pxaRGBColor, pxaGrayLevel, pxaNullPen, pxaPatternSelectID,
-  pxaPatternOrigin, pxaNewDestinationSize, 0
-};
-#endif
 
 int
 pxSetPenSource(px_args_t *par, px_state_t *pxs)
