@@ -692,7 +692,7 @@ hpgl_set_drawing_color(
 	  case hpgl_char_solid_edge:    /* fall through */
 	  case hpgl_char_edge:
             set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-            code = set_proc(pgls, pgls->g.pen.selected, 0);
+            code = set_proc(pgls, pgls->g.pen.selected, false);
 	    break;
 
 	  case hpgl_char_fill:
@@ -728,13 +728,13 @@ fill:
              * set to the value of the current pen - (i.e pen 0 is
              * solid white
              */
-	    code = set_proc(pgls, pgls->g.pen.selected, 0);
+	    code = set_proc(pgls, pgls->g.pen.selected, false);
 	    break;
 
           case hpgl_FT_pattern_one_line:
 	  case hpgl_FT_pattern_two_lines:
 	    set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-            code = set_proc(pgls, pgls->g.pen.selected, 0);
+            code = set_proc(pgls, pgls->g.pen.selected, false);
 	    break;
 
 	  case hpgl_FT_pattern_cross_hatch:
@@ -779,7 +779,7 @@ fill:
 	switch(pgls->g.screen.type) {
 
 	  case hpgl_SV_pattern_solid_pen:
-	    code = set_proc(pgls, pgls->g.pen.selected, 0);
+	    code = set_proc(pgls, pgls->g.pen.selected, false);
 	    break;
 
 	  case hpgl_SV_pattern_shade:
@@ -1214,7 +1214,7 @@ hpgl_draw_current_path(
 
 	    case hpgl_char_solid_edge:
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-                if ((code = set_proc(pgls, pgls->g.pen.selected, 0)) < 0)
+                if ((code = set_proc(pgls, pgls->g.pen.selected, false)) < 0)
                     return code;
 		hpgl_call((*fill)(pgs));
 		/* falls through */
@@ -1223,7 +1223,7 @@ hpgl_draw_current_path(
 		if (pgls->g.bitmap_fonts_allowed)
 		    break;	/* no edging */
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-                if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), 0)) < 0)
+                if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
 		gs_setlinewidth(pgs, 0.1);
@@ -1245,7 +1245,7 @@ hpgl_draw_current_path(
 		    break;	/* no edging */
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
 		hpgl_call(hpgl_gsave(pgls));
-                if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), 0)) < 0)
+                if ((code = set_proc(pgls, hpgl_get_character_edge_pen(pgls), false)) < 0)
                     return code;
 		hpgl_call(hpgl_set_plu_ctm(pgls));
 		gs_setlinewidth(pgs, 0.1); /* NB WRONG */

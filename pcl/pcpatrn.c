@@ -671,12 +671,23 @@ set_colored_pattern(
  *                          to avoid possible re-mapping of white to some
  *                          other color.
  *
- *    pattern_set_pen       One additional operand, the pen number. Uses
+ *    pattern_set_pen       Two additional operand: the pen number and a flag
+ *                          to suppress use of unsolid patterns. GL pens Use
  *                          the indexed color space from the current palette
- *                          as the color space, and the pen number as the
- *                          color. The halftone and color rendering
- *                          dictionaries are taken from the current
+ *                          as the color space, and the pen number operand as
+ *                          the index into this palette. The halftone and color
+ *                          rendering dictionaries are taken from the current
  *                          palette.
+ *
+ *                          This routine is also used to set up the color to
+ *                          be used for PCL rasters. This is necessary because,
+ *                          while images in the graphic library carry their
+ *                          own color space, this space must be installed in
+ *                          a graphic state at least once inorder to be used
+ *                          (specifically, CIE color spaces have this
+ *                          requirement). In this situation, the use of the
+ *                          "unsolid pattern" for transparency, which is
+ *                          specific to GL, must be suppressed.
  *
  *                          Note that this routine does NOT set the current
  *                          line width (it does not have sufficient
@@ -859,7 +870,7 @@ private int     pattern_set_shade_gl(
 pattern_set_pen(
     pcl_state_t *       pcs,
     int                 pen,
-    int                 arg2    /* ignored */
+    int                 for_pcl_raster
 )
 {
     pcl_cs_indexed_t *  pindexed = pcs->ppalet->pindexed;
@@ -872,10 +883,11 @@ pattern_set_pen(
 	pen = 1;
 
     /* check if the current pen is white; if so, use the "unsolid" pattern */
-    if (pcl_cs_indexed_is_white(pindexed, pen))
-	code = pattern_set_shade_gl(pcs, 1, pen);
-    else
-	code = set_ht_crd_from_palette(pcs);
+    if (!for_pcl_raster && pcl_cs_indexed_is_white(pindexed, pen))
+        return pattern_set_shade_gl(pcs, 1, pen);
+
+    /* set halftone and crd from the palette */
+    code = set_ht_crd_from_palette(pcs);
 
     if (code >= 0) {
         gs_paint_color  paint;
@@ -954,7 +966,7 @@ pattern_set_shade_gl(
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
         pptrn = pcl_pattern_get_unsolid_pattern();
     else if (pptrn == 0)
-        return ( inten > 0 ? pattern_set_pen(pcs, pen, 0)
+        return ( inten > 0 ? pattern_set_pen(pcs, pen, false)
                            : pattern_set_white(pcs, 0, 0)   );
     
     pcl_xfm_gl_set_pat_ref_pt(pcs);
@@ -996,7 +1008,7 @@ pattern_set_hatch_gl(
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
         pptrn = pcl_pattern_get_unsolid_pattern();
     else if (pptrn == 0)
-        return pattern_set_pen(pcs, pen, 0);
+        return pattern_set_pen(pcs, pen, false);
 
     pcl_xfm_gl_set_pat_ref_pt(pcs);
     return set_uncolored_palette_pattern(pcs, pptrn, pen);
@@ -1036,7 +1048,7 @@ pattern_set_user_gl(
     pcl_pattern_t * pptrn = pcl_pattern_get_pcl_uptrn(id);
 
     if (pptrn == 0)
-        return pattern_set_pen(pcs, 0, 0);
+        return pattern_set_pen(pcs, 0, false);
     else {
 
         pcl_xfm_gl_set_pat_ref_pt(pcs);
@@ -1067,7 +1079,7 @@ pattern_set_gl_RF(
      * to use the current pen if the pattern does not exist.
      */
     if (pptrn == 0)
-        return pattern_set_pen(pcs, (pen < 0 ? -pen : pen), 0);
+        return pattern_set_pen(pcs, (pen < 0 ? -pen : pen), false);
     else {
         if (pen < 0)
             pen = 1;
