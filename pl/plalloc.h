@@ -28,4 +28,4 @@ gs_memory_t *pl_alloc_init(void);
 #define PL_KEEP_GLOBAL_FREE_LIST true
 
 /* free all remaining memory blocks */
-void pl_mem_node_free_all_remaining(void);
+void pl_mem_node_free_all_remaining(gs_memory_t *mem);

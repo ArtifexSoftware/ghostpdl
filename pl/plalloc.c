@@ -17,7 +17,6 @@
 /* a screwed up mess, we try to make it manageable here */
 extern const gs_memory_struct_type_t st_bytes;
 
-
 /* assume doubles are the largest primitive types and malloc alignment
    is consistent.  Covers the machines we care about */
 inline private uint
@@ -72,40 +71,38 @@ set_type(byte *bptr, gs_memory_type_ptr_t type)
 #error "feature binding PL_KEEP_GLOBAL_FREE_LIST is undefined"
 #endif
 
-typedef struct pl_mem_node_s {
+struct pl_mem_node_s {
     byte *address;
     struct pl_mem_node_s *next;
     char *cname;
-} pl_mem_node_t;
-
-/* head of global free list */
-private pl_mem_node_t *head = NULL;
+};
 
 /* return -1 on error, 0 on success */
 int 
-pl_mem_node_add(byte *add, char *cname)
+pl_mem_node_add(gs_memory_t * mem, byte *add, char *cname)
 {
   if( PL_KEEP_GLOBAL_FREE_LIST ) {
     pl_mem_node_t *node = (pl_mem_node_t *)malloc(sizeof(pl_mem_node_t));
     if ( node == NULL )
         return -1;
-    if (head == NULL) {
-        head = node;
-        head->next = NULL;
+    if (mem->head == NULL) {
+        mem->head = node;
+        mem->head->next = NULL;
     } else {
-        node->next = head;
-        head = node;
+        node->next = mem->head;
+        mem->head = node;
     }
-    head->address = add;
-    head->cname = cname;
+    mem->head->address = add;
+    mem->head->cname = cname;
   }
   return 0;
 }
 
 int        
-pl_mem_node_remove(byte *addr)
+pl_mem_node_remove(gs_memory_t *mem, byte *addr)
 {
   if ( PL_KEEP_GLOBAL_FREE_LIST ) {
+    pl_mem_node_t *head = mem->head;
     pl_mem_node_t *current;
     /* check the head first */
     if ( head == NULL ) {
@@ -116,7 +113,7 @@ pl_mem_node_remove(byte *addr)
     if ( head && head->address == addr ) {
         pl_mem_node_t *tmp = head->next;
 	free(head);
-        head = tmp;
+        mem->head = tmp;
     } else {
         /* stop in front of element */
         bool found = false;
@@ -139,9 +136,10 @@ pl_mem_node_remove(byte *addr)
 }
     
 void
-pl_mem_node_free_all_remaining()
+pl_mem_node_free_all_remaining(gs_memory_t *mem)
 {
     if( PL_KEEP_GLOBAL_FREE_LIST ) {
+	pl_mem_node_t *head = mem->head;
 #       ifdef DEBUG
             static const bool print_recovered_block_info = true;
 #       else
@@ -162,23 +160,33 @@ pl_mem_node_free_all_remaining()
 	       ptr = ((byte*)current->address) + (2 * round_up_to_align(1));
 	       size = get_size(ptr);
 	       total_size += size;
-	       dprintf3("Recovered %x size %d client %s\n", ptr, size, current->cname);
+	       if (mem != gs_memory_t_default)
+		   dprintf3("Recovered pjl %x size %d client %s\n", 
+			    ptr, size, current->cname);
+	       else
+		   dprintf3("Recovered %x size %d client %s\n", 
+			    ptr, size, current->cname);
 	    }
 	    free(current->address);
 	    free(current);
 	    current = next;
 	}
 	if ( print_recovered_block_info && blk_count )
-	    dprintf2("Recovered %d blocks, %d bytes\n", blk_count, total_size);
-    }
+	    if (mem != gs_memory_t_default)
+		dprintf2("Recovered pjl %d blocks, %d bytes\n", 
+			 blk_count, total_size);
+	    else
+		dprintf2("Recovered %d blocks, %d bytes\n", 
+			 blk_count, total_size);
     head = NULL;
+    }
 }
 
 
 /* all of the allocation routines modulo realloc reduce to the this
    function */
 private byte *
-pl_alloc(gs_memory_t * mem, uint size, gs_memory_type_ptr_t type, client_name_t cname)
+pl_alloc(gs_memory_t *mem, uint size, gs_memory_type_ptr_t type, client_name_t cname)
 {
 
     uint minsize, newsize;
@@ -198,8 +206,13 @@ pl_alloc(gs_memory_t * mem, uint size, gs_memory_type_ptr_t type, client_name_t 
 	byte *ptr = (byte *)malloc(newsize);
 	if ( !ptr )
 	    return NULL;
-	/* da for debug allocator - so scripts can parse the trace */
-	if_debug2('A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
+#ifdef DEBUG
+	if (mem != gs_memory_t_default)
+	    /* da for debug allocator - so scripts can parse the trace */
+	    if_debug2('A', "[da]:malloc pjl:%x:%s\n", &ptr[minsize * 2], cname );
+	else
+	    if_debug2('A', "[da]:malloc:%x:%s\n", &ptr[minsize * 2], cname );
+#endif
 	/* set the type and size */
 	set_type(ptr, type);
 	set_size(ptr, size);
@@ -208,7 +221,7 @@ pl_alloc(gs_memory_t * mem, uint size, gs_memory_type_ptr_t type, client_name_t 
 	if ( gs_debug_c('@') )
 	    memset(&ptr[minsize * 2], 0xff, get_size(&ptr[minsize * 2]));
 #endif
-	if ( pl_mem_node_add(ptr, cname) ) { 
+	if ( pl_mem_node_add(mem, ptr, cname) ) { 
 	   free( ptr );
 	   return NULL;
 	}
@@ -284,9 +297,9 @@ pl_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements, client_nam
     /* get new object's size */
     ulong new_size = (objs_type->ssize * new_num_elements) + header_size;
     /* replace the size field */
-    pl_mem_node_remove(&bptr[-header_size]);
+    pl_mem_node_remove(mem, &bptr[-header_size]);
     ptr = (byte *)realloc(&bptr[-header_size], new_size);
-    if ( !ptr || pl_mem_node_add(ptr, cname) )
+    if ( !ptr || pl_mem_node_add(mem, ptr, cname) )
 	return NULL;
     /* da for debug allocator - so scripts can parse the trace */
     if_debug2('A', "[da]:realloc:%x:%s\n", ptr, cname );
@@ -307,11 +320,16 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	if ( gs_debug_c('@') )
 	    memset(&bptr[-header_size], 0xee, header_size + get_size(ptr));
 #endif
-	pl_mem_node_remove(&bptr[-header_size]);
+	pl_mem_node_remove(mem, &bptr[-header_size]);
 	free(&bptr[-header_size]);
-
-	/* da for debug allocator - so scripts can parse the trace */
-	if_debug2('A', "[da]:free:%x:%s\n", ptr, cname );
+	
+#ifdef DEBUG
+	if (mem != gs_memory_t_default)
+	    if_debug2('A', "[da]:free pjl:%x:%s\n", ptr, cname );
+	else
+	    /* da for debug allocator - so scripts can parse the trace */
+	    if_debug2('A', "[da]:free:%x:%s\n", ptr, cname );
+#endif
     }
 }
 
@@ -408,7 +426,7 @@ no_recover_proc(gs_memory_retrying_t *rmem, void *proc_data)
 private gs_memory_t * pl_stable(P1(gs_memory_t *mem));
 
 
-const gs_memory_retrying_t pl_mem = {
+gs_memory_retrying_t pl_mem = {
     &pl_mem, /* also this is stable_memory since no save/restore */
     { pl_alloc_bytes_immovable, /* alloc_bytes_immovable */
       pl_resize_object, /* resize_object */
@@ -436,7 +454,40 @@ const gs_memory_retrying_t pl_mem = {
     },
     NULL,            /* target */
     no_recover_proc, /* recovery procedure */
-    NULL             /* recovery data */
+    NULL,            /* recovery data */
+    0                /* head */
+};
+
+gs_memory_retrying_t pl_pjl_mem = {
+    &pl_pjl_mem, /* also this is stable_memory since no save/restore */
+    { pl_alloc_bytes_immovable, /* alloc_bytes_immovable */
+      pl_resize_object, /* resize_object */
+      pl_free_object, /* free_object */
+      pl_stable, /* stable */
+      pl_status, /* status */
+      pl_free_all, /* free_all */
+      pl_consolidate_free, /* consolidate_free */
+      pl_alloc_bytes, /* alloc_bytes */ 
+      pl_alloc_struct, /* alloc_struct */
+      pl_alloc_struct_immovable, /* alloc_struct_immovable */
+      pl_alloc_byte_array, /* alloc_byte_array */
+      pl_alloc_byte_array_immovable, /* alloc_byte_array_immovable */
+      pl_alloc_struct_array, /* alloc_struct_array */
+      pl_alloc_struct_array_immovable, /* alloc_struct_array_immovable */
+      pl_object_size, /* object_size */
+      pl_object_type, /* object_type */
+      pl_alloc_string, /* alloc_string */
+      pl_alloc_string_immovable, /* alloc_string_immovable */
+      pl_resize_string, /* resize_string */
+      pl_free_string, /* free_string */
+      pl_register_root, /* register_root */ 
+      pl_unregister_root, /* unregister_root */
+      pl_enable_free /* enable_free */ 
+    },
+    NULL,            /* target */
+    no_recover_proc, /* recovery procedure */
+    NULL,            /* recovery data */
+    0                /* head */
 };
 
 private gs_memory_t *
@@ -445,7 +496,7 @@ pl_stable(gs_memory_t *mem)
     return &pl_mem;
 }
 
-const gs_malloc_memory_t pl_malloc_memory = {
+pl_malloc_memory = {
     0, /* stable */
     { pl_alloc_bytes_immovable, /* alloc_bytes_immovable */
       pl_resize_object, /* resize_object */
@@ -472,8 +523,10 @@ const gs_malloc_memory_t pl_malloc_memory = {
       pl_enable_free /* enable_free */ 
     },
     0, /* allocated */
-    0, /* limit */
-    0  /* max used */
+    0, /* limit */ 
+    0, /* used */ 
+    0, /* max used */
+    0  /* head */
 };
 
 /* retrun the c-heap manager set the global default as well. */
@@ -484,11 +537,17 @@ pl_malloc_init(void)
 }
 
 gs_memory_t *
+pl_pjl_alloc_init(void)
+{
+    return &pl_pjl_mem;
+}
+
+gs_memory_t *
 pl_alloc_init(void)
 {
 
 #ifndef PSI_INCLUDED
-    if ( pl_malloc_init() == NULL )
+    if ( pl_malloc_init() ==  NULL )
 	return NULL;
     return &pl_mem;
 #else
@@ -510,6 +569,7 @@ pl_alloc_init(void)
 
     if (gs_malloc_init(&local_memory_t_default))
 	return 0;
+    local_memory_t_default->head = 0;
     return local_memory_t_default;
 #endif
 }

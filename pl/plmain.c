@@ -239,6 +239,7 @@ pl_main(
 )
 {
     gs_memory_t *           mem;
+    gs_memory_t *           pjl_mem;
     pl_main_instance_t      inst;
     arg_list                args;
     const char *             arg;
@@ -254,7 +255,12 @@ pl_main(
 
     pl_platform_init(gs_stdout);
     mem = pl_alloc_init();
-    gs_lib_init1(mem);
+    /* process level allocations above a job */
+    pjl_mem = pl_pjl_alloc_init();
+
+    gs_lib_init1(pjl_mem);
+
+
     /* Create a memory allocator to allocate various states from */
     {
 	/*
@@ -264,18 +270,19 @@ pl_main(
 	 * stdxxx IODevices.
 	 */
 	extern void gs_iodev_init(P1(gs_memory_t *));
-	gs_iodev_init(mem);
+	gs_iodev_init(pjl_mem);
     }
 
     /* Init the top-level instance */
-    gs_c_param_list_write(&params, mem);
+    gs_c_param_list_write(&params, pjl_mem);
     gs_param_list_set_persistent_keys(&params, false);
     pl_main_init_instance(&inst, mem);
     arg_init(&args, (const char **)argv, argc, pl_main_arg_fopen, NULL);
 
+    
     /* Create PJL instance */
-    if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, mem) < 0
-	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, mem) < 0 ) {
+    if ( pl_allocate_interp(&pjl_interp, &pjl_implementation, pjl_mem) < 0
+	 || pl_allocate_interp_instance(&pjl_instance, pjl_interp, pjl_mem) < 0 ) {
 	fprintf(gs_stderr, "Unable to create PJL interpreter");
 	return -1;
     }
@@ -450,7 +457,6 @@ pl_main(
 		    /* go back to pjl */
 		    in_pjl = true;
 		}
-
 	    }
 	}
         pl_main_cursor_close(&r);
@@ -463,7 +469,6 @@ pl_main(
 	fputs(err_buf, gs_stderr);
 	return -1;
     }
-
     /* dnit pjl */
     if ( pl_deallocate_interp_instance(pjl_instance) < 0
 	 || pl_deallocate_interp(pjl_interp) < 0 ) {
@@ -483,14 +488,16 @@ pl_main(
     arg_finit(&args);
 
     /* free iodev */
-    gs_iodev_free(mem);
+    gs_iodev_free(pjl_mem);
    
     if ( gs_debug_c('A') )
 	dprintf( "Final time" );
     pl_platform_dnit(0);
 
-    if ( inst.mem_cleanup )
-        pl_mem_node_free_all_remaining();
+    if ( inst.mem_cleanup ) {
+        pl_mem_node_free_all_remaining(mem);
+        pl_mem_node_free_all_remaining(pjl_mem);
+    }
     return 0;
 #undef mem
 }
