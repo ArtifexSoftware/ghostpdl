@@ -21,9 +21,6 @@
 
 level2dict begin
 
-% We need LanguageLevel 2 or higher in order to have defineresource.
-languagelevel dup 2 max .setlanguagelevel
-
 % ------ ReusableStreamDecode filter ------ %
 
 /.reusablestreamdecode {	% <source> <dict> .reusablestreamdecode <file>
@@ -83,7 +80,5 @@ languagelevel dup 2 max .setlanguagelevel
 } odef
 
 filterdict /ReusableStreamDecode /.reusablestreamdecode load put
-
-.setlanguagelevel
 
 end			% level2dict
