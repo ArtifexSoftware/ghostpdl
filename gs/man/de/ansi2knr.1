@@ -1,0 +1,35 @@
+.\" $Id$
+.\" Using encoding of the German (de_DE) translation: ISO-8859-1
+.\" Translation by Tobias Burnus <burnus@gmx.de>
+.TH ANSI2KNR 1 "8 Mai 2000" \" -*- nroff -*-
+.SH NAME
+ansi2knr \- konvertiert ANSI C zu Kernighan & Ritchie C
+.SH SYNTAX
+\fBansi2knr\fR [\fB--filename\fR \fIDateiname\fR] [\fIEingabedatei\fR [\fIAusgabedatei\fR]]
+.br
+.SH BESCHREIBUNG
+\fB--filename\fR setzt den Dateinamen für die #line-Anweisung in der Ausgabe anstatt die \fIEingabedatei\fR (falls angegeben) zu benutzen.
+.sp
+Falls keine \fIEingabedatei\fR angegeben wird, wird die Eingabe von der Standardeingabe (stdin) gelesen.
+.sp
+Falls keine \fIAusgabedatei\fR angegeben wird, wird die Ausgabe zur Standardausgabe (stdout) geschrieben.
+.sp
+Es gibt keine Fehlermeldungen.
+.sp
+\fBansi2knr\fR
+erkennt Funktionsdefinitionen indem nach nicht Schlüsselwortbezeichnern am linken Rand gesucht wird, denen eine linke Klammer folgt und dessen Zeile mit einer rechten Klammer endet; und mit einen linken geschweiften Klammer as erstes Element in der folgenden Zeile. (Dabei werden etwaige dazwischenliegende Kommentare ignoriert.) Es erkennt mehrzeilige Header falls keine Zeilen dazwischen mit einer geschweiften Klammer oder einem Semikolon enden. Dieser Algorithmus ignoriert Leerzeichen und Kommentare mit Außnahme, daß der Funktionsname als erstes in der Zeile stehen muß.
+.sp
+\fBansi2knr\fP
+erkennt auch aufeinanderfolgende Zeichkettenkonstanten und verschmelzt diese.
+.sp
+Folgende Konstrukte verwirren das Programm:
+.br
+     - Alle anderen Konstrukte die am linken Rand beginnen und den oben genannten Syntax besitzten (wie Makros oder Funktionsaufrufe).
+.br
+     - Einige Makros, die mit der Syntax von Funtionsheadern herumdoktoren.
+.br
+     - Zeichenkettenliterale, dessen Verknüpfung verlangt, daß der Inhalt geändert werden muß; beispielsweise wird "ab\0" "07c" zu "ab\007c" verknüpft, was falsch ist.
+.sp
+Der --varargs Schalter ist obsolet und wird nur noch aus Kompatibilitätgründen erkannt. Die aktuelle Version von \fBansi2knr\fR wird immer versuchen, ein ... Argument zu va_alist und va_dcl zu konvertieren.
+.SH AUTOR
+L. Peter Deutsch <ghost@aladdin.com> schrieb die urspüngliche Version von ansi2knr und pflegt diese noch immer; der größte Teil des Programmes wurde von ihm geschrieben. ansi2knr enthält also Ergänzungen von Francois Pinard <pinard@iro.umontreal.ca>, Jim Avera <jima@netcom.com> und Paul Eggert <eggert@twinsun.com>.

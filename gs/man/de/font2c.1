@@ -1,0 +1,27 @@
+.\" $Id$
+.\" Using encoding of the German (de_DE) translation: ISO-8859-1
+.\" Translation by Tobias Burnus <burnus@gmx.de>
+.TH FONT2C 1 "3. Februar 2000" 6.0 Ghostscript \" -*- nroff -*-
+.SH NAME
+font2c \- schreibt PostScript-Type-0- oder Type-1-Schriften als C-Code
+.SH SYNTAX
+\fBfont2c\fR \fISchriftname\fR
+.SH BESCHREIBUNG
+Das Skript ruft
+.BR gs (1)
+mit den folgen Paramtern auf:
+
+.ce
+.B -q -dNODISPLAY -dWRITESYSTEMDICT
+
+gefolgt von den Argumenten der Kommandozeile. Dies schreibt eine
+PostScript-Type-0 oder Type-1-Schrift als C-Quelltext, so daß sie mit dem Interpreter gelinkt werden kann.
+.SH SIEHE AUCH
+gs(1)
+.SH VERSION
+Dieses Dokument wurde zuletzt für Ghostscript Version 6.0 durchfgesehen.
+.SH AUTHOR
+L. Peter Deutsch <ghost@aladdin.com> ist der Hauptautor von Ghostscript.
+Russell J. Lang <rjl@aladdin.com> ist der Autor des Hauptteils des MS-Windows Quelltexts in Ghostscript.
+Diese Manpage ist von George Ferguson.
+
