@@ -401,7 +401,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
 
     code = jbig2_decode_text_region(ctx, segment, &params,
-                dicts, n_dicts, image,
+                (const Jbig2SymbolDict * const *)dicts, n_dicts, image,
                 segment_data + offset, segment->data_length - offset);
 
     /* todo: check errors */
