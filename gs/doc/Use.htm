@@ -417,9 +417,14 @@ across systems:
 </table></blockquote>
 
 <p>
-Note that on DOS and MS Windows systems, the <b><tt>%</tt></b> character has
-a special meaning for the command processor (shell), so you will have to
-double it, e.g., for a pipe on MS Windows,
+Note that because of this, if you want to specify a file name that actually
+begins with <b><tt>%</tt></b>, you must specify the <b><tt>%os%</tt></b>
+filedevice explicitly: e.g., for output to a file named
+<b><tt>%abc</tt></b>, you need to specify
+<b><tt>-sOutputFile=%os%%abc</tt></b>.  Note also that on DOS and MS Windows
+systems, the <b><tt>%</tt></b> character has a special meaning for the
+command processor (shell), so you will have to double it, e.g., for a pipe
+on MS Windows,
 
 <blockquote><b><tt>
 gs -sOutputFile=%%pipe%%cmd

@@ -157,6 +157,7 @@ int gdev_vector_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0,
 	stream *strm;\
 	byte *strmbuf;\
 	uint strmbuf_size;\
+	int open_options;	/* see below */\
 		/* Graphics state */\
 	gs_imager_state state;\
 	float dash_pattern[max_dash];\
@@ -180,6 +181,7 @@ int gdev_vector_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0,
 	0,		/* strm */\
 	0,		/* strmbuf */\
 	0,		/* strmbuf_size */\
+	0,		/* open_options */\
 	 { 0 },		/* state */\
 	 { 0 },		/* dash_pattern */\
 	 { 0 },		/* fill_color ****** WRONG ****** */\
@@ -215,10 +217,20 @@ void gdev_vector_init(P1(gx_device_vector * vdev));
 /* Reset the remembered graphics state. */
 void gdev_vector_reset(P1(gx_device_vector * vdev));
 
-/* Open the output file and stream, with optional bbox tracking. */
-int gdev_vector_open_file_bbox(P3(gx_device_vector * vdev, uint strmbuf_size,
-				  bool bbox));
-
+/*
+ * Open the output file and stream, with optional bbox tracking.
+ * The options must be defined so that 0 is always the default.
+ */
+#define VECTOR_OPEN_FILE_ASCII 1	/* open file as text, not binary */
+#define VECTOR_OPEN_FILE_SEQUENTIAL 2	/* open as non-seekable */
+#define VECTOR_OPEN_FILE_SEQUENTIAL_OK 4  /* open as non-seekable if */
+					/* open as seekable fails */
+#define VECTOR_OPEN_FILE_BBOX 8		/* also open bbox device */
+int gdev_vector_open_file_options(P3(gx_device_vector * vdev,
+				     uint strmbuf_size, int open_options));
+#define gdev_vector_open_file_bbox(vdev, bufsize, bbox)\
+  gdev_vector_open_file_options(vdev, bufsize,\
+				(bbox ? VECTOR_OPEN_FILE_BBOX : 0))
 #define gdev_vector_open_file(vdev, strmbuf_size)\
   gdev_vector_open_file_bbox(vdev, strmbuf_size, false)
 

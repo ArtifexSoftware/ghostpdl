@@ -23,6 +23,7 @@
 #include "stdio_.h"
 #include "string_.h"
 #include "gserror.h"
+#include "gserrors.h"
 #include "gstypes.h"
 #include "gsmemory.h"		/* for gxiodev.h */
 #include "gxiodev.h"
@@ -46,9 +47,17 @@ private int
 pipe_fopen(gx_io_device * iodev, const char *fname, const char *access,
 	   FILE ** pfile, char *rfname, uint rnamelen)
 {
-    /* The OSF/1 1.3 library doesn't include const in the */
-    /* prototype for popen.... */
     errno = 0;
+    /*
+     * Some platforms allow opening a pipe with a '+' in the access
+     * mode, even though pipes are not positionable.  Detect this here.
+     */
+    if (strchr(access, '+'))
+	return_error(gs_error_invalidfileaccess);
+    /*
+     * The OSF/1 1.3 library doesn't include const in the
+     * prototype for popen, so we have to break const here.
+     */
     *pfile = popen((char *)fname, (char *)access);
     if (*pfile == NULL)
 	return_error(gs_fopen_errno_to_code(errno));

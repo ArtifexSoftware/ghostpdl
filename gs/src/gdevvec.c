@@ -262,19 +262,32 @@ gdev_vector_reset(gx_device_vector * vdev)
 
 /* Open the output file and stream. */
 int
-gdev_vector_open_file_bbox(gx_device_vector * vdev, uint strmbuf_size,
-			   bool bbox)
-{				/* Open the file as positionable if possible. */
-    int code = gx_device_open_output_file((gx_device *) vdev, vdev->fname,
-					  true, true, &vdev->file);
+gdev_vector_open_file_options(gx_device_vector * vdev, uint strmbuf_size,
+			      int open_options)
+{
+    bool binary = !(open_options & VECTOR_OPEN_FILE_ASCII);
+    int code = -1;		/* (only for testing, never returned) */
 
+    /* Open the file as seekable or sequential, as requested. */
+    if (!(open_options & VECTOR_OPEN_FILE_SEQUENTIAL)) {
+	/* Try to open as seekable. */
+	code =
+	    gx_device_open_output_file((gx_device *)vdev, vdev->fname,
+				       binary, true, &vdev->file);
+    }
+    if (code < 0 && (open_options & (VECTOR_OPEN_FILE_SEQUENTIAL |
+				     VECTOR_OPEN_FILE_SEQUENTIAL_OK))) {
+	/* Try to open as sequential. */
+	code = gx_device_open_output_file((gx_device *)vdev, vdev->fname,
+					  binary, false, &vdev->file);
+    }
     if (code < 0)
 	return code;
     if ((vdev->strmbuf = gs_alloc_bytes(vdev->v_memory, strmbuf_size,
 					"vector_open(strmbuf)")) == 0 ||
 	(vdev->strm = s_alloc(vdev->v_memory,
 			      "vector_open(strm)")) == 0 ||
-	(bbox &&
+	((open_options & VECTOR_OPEN_FILE_BBOX) &&
 	 (vdev->bbox_device =
 	  gs_alloc_struct_immovable(vdev->v_memory,
 				    gx_device_bbox, &st_device_bbox,
@@ -298,6 +311,7 @@ gdev_vector_open_file_bbox(gx_device_vector * vdev, uint strmbuf_size,
     }
     vdev->strmbuf_size = strmbuf_size;
     swrite_file(vdev->strm, vdev->file, vdev->strmbuf, strmbuf_size);
+    vdev->open_options = open_options;
     /*
      * We don't want finalization to close the file, but we do want it
      * to flush the stream buffer.
@@ -972,8 +986,8 @@ gdev_vector_put_params(gx_device * dev, gs_param_list * plist)
 	    vdev->bbox_device = bbdev;
 	    if (code < 0)
 		return code;
-	    return gdev_vector_open_file_bbox(vdev, vdev->strmbuf_size,
-					      bbdev != 0);
+	    return gdev_vector_open_file_options(vdev, vdev->strmbuf_size,
+						 vdev->open_options);
 	}
     }
     gdev_vector_load_cache(vdev);	/* in case color mapping changed */

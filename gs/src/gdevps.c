@@ -807,7 +807,9 @@ psw_open(gx_device * dev)
     vdev->v_memory = mem;
     vdev->vec_procs = &psw_vector_procs;
     {
-	int code = gdev_vector_open_file_bbox(vdev, 512, true);
+	int code = gdev_vector_open_file_options(vdev, 512,
+					VECTOR_OPEN_FILE_SEQUENTIAL_OK |
+					VECTOR_OPEN_FILE_BBOX);
 
 	if (code < 0)
 	    return code;

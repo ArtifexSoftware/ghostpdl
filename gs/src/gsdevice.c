@@ -780,10 +780,8 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	strcpy(fmode, gp_fmode_wb);
 	if (positionable)
 	    strcat(fmode, "+");
-	code = parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
+	return parsed.iodev->procs.fopen(parsed.iodev, parsed.fname, fmode,
 					 pfile, NULL, 0);
-	if (*pfile)
-	    return 0;
     }
     *pfile = gp_open_printer((fmt ? pfname : fname), binary);
     if (*pfile)
