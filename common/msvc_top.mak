@@ -28,7 +28,7 @@ clean_gs:
 	GLOBJDIR=$(GLOBJDIR) clean
 	erase $(TARGET_XE).ilk
 	erase $(TARGET_XE).pdb
-	
+
 # Define names of utility programs
 AUXGENDIR=$(GLGENDIR)
 AUXGEN=$(AUXGENDIR)$(D)
@@ -97,7 +97,22 @@ $(GENDIR)\ldall.tr: $(MAKEFILE) $(GENDIR)\ldgs.tr $(GENDIR)\ldconf.tr
 	echo $(GLOBJDIR)\gscdefs.$(OBJ) >>$(GENDIR)\ldall.tr
 	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldconf.tr $(GENDIR)\ldall.tr
 
+!IF "$(PL_FONT_SCALER)" == "ufst"
+# HACK in the AGFA STUFF here.
 
-$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR)
+FONTLIB=$(GENDIR)\fontlib.tr
+
+
+# I have no idea what NODEFAULTLIB means.
+$(FONTLIB): $(MAKEFILE)
+	echo /NODEFAULTLIB:LIBC.lib > $(FONTLIB)
+        echo $(UFST_LIBDIR)\fco_lib.lib >>$(FONTLIB)
+        echo $(UFST_LIBDIR)\if_lib.lib >>$(FONTLIB)
+        echo $(UFST_LIBDIR)\tt_lib.lib >>$(FONTLIB)
+!ELSE
+FONTLIB=
+!ENDIF
+
+$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR) $(FONTLIB)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR) @$(FONTLIB)
