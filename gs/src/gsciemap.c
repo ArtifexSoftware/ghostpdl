@@ -51,7 +51,7 @@
 	pconc[0] = pconc[1] = pconc[2] = frac_0;\
 	do_exit;\
     }\
-    if (pis->cie_joint_caches->id_status != CIE_JC_STATUS_COMPLETED) {\
+    if (pis->cie_joint_caches->status != CIE_JC_STATUS_COMPLETED) {\
 	int code = gs_cie_jc_complete(pis, pcs);\
 \
 	if (code < 0)\
