@@ -1063,13 +1063,13 @@ is,
 <dt><b><tt>-dPrinted</tt></b>
 <dt><b><tt>-dPrinted=false</tt></b>
 <dd>Determines whether the file should be displayed or printed using the
-screen or printed options for annotations and images.  With
-<b><tt>-dPrinted</tt></b>, the output will use the file's "printer"
+"screen" or "printer" options for annotations and images.  With
+<b><tt>-dPrinted</tt></b>, the output will use the file's "print"
 options; with <b><tt>-dPrinted=false</tt></b>, the output will use the
 file's "screen" options.  If neither of these is specified, the output will
-use the "screen" options for any output device that doesn't have an
-<b><tt>OutputFile</tt></b> parameter, and the "printer" options for devices
-that do have this parameter.
+use the screen options for any output device that doesn't have an
+<b><tt>OutputFile</tt></b> parameter, and the printer options for
+devices that do have this parameter.
 </dl>
 
 <h3><a name="PDF_problems"></a>Problems interpreting a PDF file</h3>
@@ -2049,12 +2049,6 @@ very slow systems where color accuracy is less important.
 <dd>Turns off image interpolation, improving performance on interpolated
 images at the expense of image quality.  <b><tt>-dNOINTERPOLATE</tt></b>
 overrides <b><tt>-dDOINTERPOLATE</tt></b>.
-</dl>
-
-<dl>
-<dt><b><tt>-dUsePrinterImages</tt></b>
-<dd>In PDF files that provide alternate images for printing, uses the
-alternate image (for all output devices).  Useful for print previewing.
 </dl>
 
 <h4><a name="Page_parameters"></a>Page parameters</h4>
