@@ -1300,7 +1300,7 @@ idata:			data_size = 0;
 			/* the Borland C++ 4.5 compiler incorrectly */
 			/* sign-extends the result of the shift. */
 			vs[i] = (v << 16) + (uint) (cbp[-2] << 8) + cbp[-1];
-			if_debug1('L', " %", fixed2int(vs[i]));
+			if_debug1('L', " %d", fixed2int(vs[i]));
 		    }
 		    if_debug0('L', "\n");
 		    code = clist_decode_segment(&path, op, vs, &ppos,
