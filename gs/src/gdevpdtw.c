@@ -690,6 +690,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
     if (code < 0)
 	return code;
     *ppres = writer.pres;
+    writer.pres->where_used = 0; /* CMap isn't a PDF resource. */
     if (!pcmap->ToUnicode) {
 	byte buf[200];
 	cos_dict_t *pcd = (cos_dict_t *)writer.pres->object;
