@@ -178,7 +178,7 @@ pl_mem_node_free_all_remaining(gs_memory_t *mem)
 	    else
 		dprintf2("Recovered %d blocks, %d bytes\n", 
 			 blk_count, total_size);
-    head = NULL;
+	mem->head = NULL;
     }
 }
 
