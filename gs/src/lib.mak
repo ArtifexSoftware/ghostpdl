@@ -2469,7 +2469,7 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(gstparam_h)\
  $(gxblend_h) $(gxdcolor_h) $(gxdevice_h) $(gxiparam_h) $(gxistate_h)\
  $(gxtext_h)\
- $(gzstate_h) $(gdevp14_h) $(gsovrc_h)
+ $(gzstate_h) $(gdevp14_h) $(gsovrc_h) $(gxcmap_h) $(gscolor1_h)
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
