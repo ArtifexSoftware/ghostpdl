@@ -1063,14 +1063,14 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
      * (see below).
      */
     uint
-	Top_size = 0x7fff,
-	Encoding_offset = 0x7fff,
-	charset_offset = 0x7fff,
-	CharStrings_offset = 0x7fff,
-	Private_offset = 0x7fff,
-	Private_size = 0x7fff,
-	Subrs_offset = 0x7fff,
-	End_offset = 0x7fff;
+	Top_size = 0xffff,
+	Encoding_offset = 0xffff,
+	charset_offset = 0xffff,
+	CharStrings_offset = 0xffff,
+	Private_offset = 0xffff,
+	Private_size = 0xffff,
+	Subrs_offset = 0xffff,
+	End_offset = 0xffff;
     int j;
     psf_glyph_enum_t genum;
     gs_glyph glyph;
