@@ -683,8 +683,8 @@ gx_dc_ht_binary_get_nonzero_comps(
                                               pdevc->colors.binary.color[0],
                                               cvals_0 )) >= 0 &&
          (code = dev_proc(dev, decode_color)( (gx_device *)dev,
-                                              pdevc->colors.binary.color[0],
-                                              cvals_0 )) >= 0   ) {
+                                              pdevc->colors.binary.color[1],
+                                              cvals_1 )) >= 0   ) {
         int     i, ncomps = dev->color_info.num_components;
         int     mask = 0x1, comp_bits = 0;
 
