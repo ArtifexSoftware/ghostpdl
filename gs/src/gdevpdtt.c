@@ -673,6 +673,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
     double scale = font_orig_scale((const gs_font *)pdf_font_resource_font(pdfont)) * 1000.0;
     int code, rcode = 0;
 
+    pwidths->v.x = pwidths->v.y = 0;
     if (glyph != GS_NO_GLYPH &&
 	(code = font->procs.glyph_info((gs_font *)font, glyph, NULL,
 				       (GLYPH_INFO_WIDTH0 << wmode) |
@@ -698,6 +699,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 		)
 		return code;
 	    rcode |= code;
+	    pwidths->v = info.v;
 	} else
 	    pwidths->real_width = pwidths->Width;
 	/*

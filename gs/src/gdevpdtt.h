@@ -120,6 +120,7 @@ typedef struct pdf_glyph_width_s {
 typedef struct pdf_glyph_widths_s {
     pdf_glyph_width_t Width;		/* unmodified, for Widths */
     pdf_glyph_width_t real_width;	/* possibly modified, for rendering */
+    gs_point v;				/* glyph origin for WMode 1 */
 } pdf_glyph_widths_t;
 
 /* ---------------- Procedures ---------------- */

@@ -70,7 +70,7 @@ case 9: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  default:
-     ENUM_RETURN(0);
+     ENUM_RETURN(pdfont->u.simple.v);
 }
 ENUM_PTRS_END
 private
@@ -99,6 +99,7 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
 	break;
     default:
 	RELOC_VAR(pdfont->u.simple.Encoding);
+	RELOC_VAR(pdfont->u.simple.v);
 	/* falls through */
     case ft_user_defined:
 	RELOC_VAR(pdfont->u.simple.s.type3.char_procs);
@@ -660,13 +661,28 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		      gs_id rid, pdf_font_descriptor_t *pfd)
 {
     pdf_font_resource_t *pdfont;
-    int code = font_resource_encoded_alloc(pdev, &pdfont, rid,
+    gs_font_base *pfont = pdf_font_descriptor_font(pfd);
+    gs_point *v;
+    int code;
+
+    if (pfont->WMode) {
+	v = (gs_point *)gs_alloc_byte_array(pdev->pdf_memory, 
+			256, sizeof(gs_point), "pdf_font_simple_alloc");
+	if (v == 0)
+	    return_error(gs_error_VMerror);
+	memset(v, 0, 256 * sizeof(*v));
+    }
+    code = font_resource_encoded_alloc(pdev, &pdfont, rid,
 					   pdf_font_descriptor_FontType(pfd),
 					   pdf_write_contents_simple);
 
-    if (code < 0)
+    if (code < 0) {
+	gs_free_object(pdev->pdf_memory, v,
+		       "pdf_font_simple_alloc");
 	return code;
+    }
     pdfont->FontDescriptor = pfd;
+    pdfont->u.simple.v = v;
     set_is_MM_instance(pdfont, pdf_font_descriptor_font(pfd));
     *ppfres = pdfont;
     return pdf_compute_BaseFont(pdev, pdfont);

@@ -203,6 +203,7 @@ struct pdf_font_resource_s {
 	     */
 	    gs_encoding_index_t BaseEncoding;
 	    pdf_encoding_element_t *Encoding; /* [256], not for Type 3 */
+	    gs_point *v; /* [256], glyph origin for WMode 1 */
 
 	    union {
 

@@ -314,9 +314,15 @@ pdf_char_widths(pdf_font_resource_t *pdfont, int ch, gs_font_base *font,
 	    pdfont->Widths[ch] = pwidths->Width.w;
 	    pdfont->real_widths[ch] = pwidths->real_width.w;
 	}
+	if (pdfont->u.simple.v != 0)
+	    pdfont->u.simple.v[ch] = pwidths->v;
     } else {
 	pwidths->Width.w = pdfont->Widths[ch];
 	pwidths->real_width.w = pdfont->real_widths[ch];
+	if (pdfont->u.simple.v != 0)
+	    pwidths->v = pdfont->u.simple.v[ch];
+	else
+	    pwidths->v.x = pwidths->v.y = 0;
 	if (font->WMode) {
 	    pwidths->Width.xy.x = 0;
 	    pwidths->Width.xy.y = pwidths->Width.w;
@@ -393,6 +399,35 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font_base *font,
 
     return widths_differ;
 }
+
+/*
+ * Retrieve glyph origing shift for WMode = 1 in design units.
+ */
+private void 
+pdf_glyph_origin(pdf_font_resource_t *pdfont, int ch, int WMode, gs_point *p)
+{
+    if (WMode == 0) {
+        p->x = p->y = 0;
+	return;
+    }
+    /* For CID fonts PDF viewers provide glyph origin shift automatically.
+     * Therefore we only need to do for non-CID fonts.
+     */
+    switch (pdfont->FontType) {
+	case ft_encrypted:
+	case ft_encrypted2:
+	case ft_TrueType:
+	    if (pdfont->u.simple.v != 0)
+		*p = pdfont->u.simple.v[ch];
+	    else
+		p->x = p->y = 0;
+	    break;
+	default:
+	    p->x = p->y = 0;
+	    break;
+    }
+}
+
 /*
  * Emulate TEXT_ADD_TO_ALL_WIDTHS and/or TEXT_ADD_TO_SPACE_WIDTH,
  * and implement TEXT_REPLACE_WIDTHS if requested.
@@ -427,9 +462,25 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 	int code = pdf_char_widths(ppts->values.pdfont, pstr->data[i], font,
 				   &cw);
 	gs_point did, wanted;	/* user space */
+	gs_point v; /* design space */
 
+	pdf_glyph_origin(ppts->values.pdfont, pstr->data[i], font->WMode, &v);
 	if (code < 0)
 	    break;
+
+	if (v.x != 0 || v.y != 0) {
+	    gs_point glyph_origin_shift;
+
+	    gs_distance_transform(-v.x * scale, -v.y * scale,
+				  &ctm_only(pte->pis), &glyph_origin_shift);
+	    if (glyph_origin_shift.x != 0 || glyph_origin_shift.y != 0) {
+		ppts->values.matrix.tx = start.x + total.x + glyph_origin_shift.x;
+		ppts->values.matrix.ty = start.y + total.y + glyph_origin_shift.y;
+		code = pdf_set_text_state_values(pdev, &ppts->values);
+		if (code < 0)
+		    break;
+	    }
+	}
 	if (pte->text.operation & TEXT_DO_DRAW) {
 	    gs_distance_transform(cw.Width.xy.x * scale,
 				  cw.Width.xy.y * scale,

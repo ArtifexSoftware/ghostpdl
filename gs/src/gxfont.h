@@ -141,6 +141,7 @@ typedef struct gs_glyph_info_s {
 #define GLYPH_INFO_WIDTH1 2	/* must be WIDTH0 << 1 */
 #define GLYPH_INFO_WIDTHS (GLYPH_INFO_WIDTH0 | GLYPH_INFO_WIDTH1)
     gs_point width[2];		/* width for WMode 0/1 */
+    gs_point v;			/* glyph origin for WMode 1 */
 #define GLYPH_INFO_BBOX 4
     gs_rect bbox;
 #define GLYPH_INFO_NUM_PIECES 8

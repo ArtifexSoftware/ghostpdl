@@ -1050,6 +1050,8 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    modified_widths = true;
 	    info->width[1].x = wv[0];
 	    info->width[1].y = wv[1];
+	    info->v.x = wv[2];
+	    info->v.y = wv[3];
 	    done_members = width_members;
 	    width_members = 0;
 	}
@@ -1061,6 +1063,8 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    modified_widths = true;
 	    info->width[wmode].x = sbw[2];
 	    info->width[wmode].y = sbw[3];
+	    info->v.x = 0;
+	    info->v.y = 0;
 	    done_members = width_members;
 	    width_members = 0;
 	}
