@@ -69,29 +69,16 @@ pdfdict begin
    loop pop pop 3 -1 roll pop
  } bind def
 
-% Read a token from a file, recognizing the PDF 1.2 #nn escape convention.
-% This should be done in C!
-/.pdftoken {			% <file> .pdftoken <obj> -true-
-				% <file> .pdftoken -false-
-  token {
-    dup type /nametype eq {
-      dup xcheck {
-	true
-      } {
-	PDFversion 1.2 ge {
-	  dup .namestring (#) search {
-	    name#escape cvn exch pop
-	  } {
-	    pop
-	  } ifelse
-	} if true
-      } ifelse
+% Handle the PDF 1.2 #nn escape convention when reading from a file.
+% This should eventually be done in C.
+/.pdffixname {			% <execname> .pdffixname <execname'>
+  PDFversion 1.2 ge {
+    dup .namestring (#) search {
+      name#escape cvn exch pop
     } {
-      true
+      pop
     } ifelse
-  } {
-    false
-  } ifelse
+  } if
 } bind def
 /name#escape			% <post> <(#)> <pre> name#escape <string>
 { exch pop
@@ -106,29 +93,38 @@ pdfdict begin
 % Execute a file, interpreting its executable names in a given
 % dictionary.  The name procedures may do whatever they want
 % to the operand stack.
-/.pdfrun			% <file> <opdict> .pdfrun -
- {	% Construct a procedure with the stack depth, file and opdict
+/.pdfexectoken {		% <count> <opdict> <exectoken> .pdfexectoken ?
+  DEBUG { dup == flush } if
+  2 copy .knownget {
+    exch pop exch pop exch pop exec
+  } {
+    BXlevel 0 le {
+      (%stderr) (w) file
+      dup (****************Unknown operator: ) writestring
+      dup 2 index .writecvs dup (\n) writestring flushfile
+    } if pop pop
+    count exch sub { pop } repeat	% pop all the operands
+  } ifelse
+} bind def
+/.pdfrun {			% <file> <opdict> .pdfrun -
+	% Construct a procedure with the stack depth, file and opdict
 	% bound into it.
-   1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll
-    {	% Stack: ..operands.. count opdict file
-    .pdftoken not { (%%EOF) cvn cvx } if
-      dup xcheck
-       { DEBUG { dup == flush } if
-	 2 copy .knownget
-	  { exch pop exch pop exch pop exec }
-	  { BXlevel 0 le
-	     { (%stderr) (w) file
-	  dup (****************Unknown operator: ) writestring
-	  dup 2 index .writecvs dup (\n) writestring flushfile
-	     }
-	    if pop pop
-	count exch sub { pop } repeat	% pop all the operands
-	  }
-	 ifelse
-       }
-       { exch pop exch pop DEBUG { dup ==only ( ) print flush } if
-       }
-      ifelse
+  1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll
+  {	% Stack: ..operands.. count opdict file
+    token {
+      dup type /nametype eq {
+	dup xcheck {
+	  .pdfexectoken
+	} {
+	  .pdffixname
+	  exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+	} ifelse
+      } {
+	exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+      } ifelse
+    } {
+      (%%EOF) cvn cvx .pdfexectoken
+    } ifelse
   }
   aload pop .packtomark cvx
   /loop cvx 2 packedarray cvx
@@ -136,7 +132,7 @@ pdfdict begin
   PDFsource
   { store { stop } if } aload pop .packtomark cvx
   /PDFsource 3 -1 roll store exec
- } bind def
+} bind def
 
 % Execute a file, like .pdfrun, for a marking context.
 % This temporarily rebinds LocalResources and DefaultMatrix.
