@@ -1203,6 +1203,10 @@ static int nInstrCount=0;
 
   static void  Compute_Round( EXEC_OPS Byte  round_mode )
   {
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     switch ( round_mode )
     {
     case TT_Round_Off:
@@ -3020,6 +3024,10 @@ static int nInstrCount=0;
   { (void)args;
     CUR.GS.round_state = TT_Round_To_Half_Grid;
 
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     CUR.func_round = (TRound_Function)Round_To_Half_Grid;
   }
 
@@ -3032,6 +3040,10 @@ static int nInstrCount=0;
   { (void)args;
     CUR.GS.round_state = TT_Round_To_Grid;
 
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     CUR.func_round = (TRound_Function)Round_To_Grid;
   }
 
@@ -3044,6 +3056,10 @@ static int nInstrCount=0;
   { (void)args;
     CUR.GS.round_state = TT_Round_To_Double_Grid;
 
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     CUR.func_round = (TRound_Function)Round_To_Double_Grid;
   }
 
@@ -3056,6 +3072,10 @@ static int nInstrCount=0;
   { (void)args;
     CUR.GS.round_state = TT_Round_Up_To_Grid;
 
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     CUR.func_round = (TRound_Function)Round_Up_To_Grid;
   }
 
@@ -3068,6 +3088,10 @@ static int nInstrCount=0;
   { (void)args;
     CUR.GS.round_state = TT_Round_Down_To_Grid;
 
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     CUR.func_round = (TRound_Function)Round_Down_To_Grid;
   }
 
@@ -3093,6 +3117,10 @@ static int nInstrCount=0;
     SET_SuperRound( 0x4000L, args[0] );
     CUR.GS.round_state = TT_Round_Super;
 
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     CUR.func_round = (TRound_Function)Round_Super;
   }
 
@@ -3106,6 +3134,10 @@ static int nInstrCount=0;
     SET_SuperRound( 0x2D41L, args[0] );
     CUR.GS.round_state = TT_Round_Super_45;
 
+    if (CUR.current_face->font->no_grid_fitting) {
+	CUR.func_round = (TRound_Function)Round_None;
+	return;
+    }
     CUR.func_round = (TRound_Function)Round_Super_45;
   }
 

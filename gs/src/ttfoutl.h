@@ -123,6 +123,7 @@ struct ttfFont_s {
     unsigned int nIndexToLocFormat;
     bool    patented;
     bool    bOwnScale;
+    bool    no_grid_fitting;
     TFace *face;
     TInstance *inst;
     TExecution_Context  *exec;
@@ -136,7 +137,7 @@ void ttfFont__init(ttfFont *this, ttfMemory *mem,
 		    void (*DebugPrint)(ttfFont *, const char *s, ...));
 void ttfFont__finit(ttfFont *this);
 FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, 
-			unsigned int nTTC, float w, float h);
+			unsigned int nTTC, float w, float h, bool no_grid_fitting);
 
 typedef struct ttfExport_s ttfExport;
 struct ttfExport_s {

@@ -277,7 +277,6 @@ struct gs_font_dir_s {
     uint enum_offset;		/* ccache.table[offset] is N'th non-zero entry */
 
     /* User parameter AlignToPixels. */
-
     bool align_to_pixels;
 
     /* A table for converting glyphs to Unicode */
@@ -287,6 +286,8 @@ struct gs_font_dir_s {
     /* An allocator for extension structures */
     gs_memory_t *memory;
     ttfInterpreter *tti;
+    /* User parameter GridFitTT. */
+    bool grid_fit_tt;
 #endif
 };
 

@@ -1964,6 +1964,13 @@ false setpacking
   /AlignToPixels undef
 } if
 
+% Set up GridFitTT :
+
+/GridFitTT where {
+  mark /GridFitTT 2 index /GridFitTT get .dicttomark setuserparams
+  /GridFitTT undef
+} if
+
 % Conditionally turn image interpolation on or off.
 currentdict /INTERPOLATE known not { (%END INTERPOLATE) .skipeof } if
 

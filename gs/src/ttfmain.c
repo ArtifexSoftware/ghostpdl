@@ -235,7 +235,7 @@ void ttfFont__finit(ttfFont *this)
 				  while a glyph is loaded. */
 
 FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r, 
-				    unsigned int nTTC, float w, float h)
+				    unsigned int nTTC, float w, float h, bool no_grid_fitting)
 {   char sVersion[4], sVersion0[4] = {0, 1, 0, 0};
     unsigned int nNumTables, i;
     TT_Error code;
@@ -245,6 +245,7 @@ FontError ttfFont__Open(ttfInterpreter *tti, ttfFont *this, ttfReader *r,
     F26Dot6 ww, hh;
 
     this->tti = tti;
+    this->no_grid_fitting = no_grid_fitting;
     r->Read(r, sVersion, 4);
     if(!memcmp(sVersion, "ttcf", 4)) {
 	unsigned int nFonts, nPos;

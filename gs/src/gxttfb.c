@@ -210,21 +210,23 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
 }
 #endif
 
-private void WarnPatented(gs_font_type42 *pfont, const char *txt)
+private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 {
 #if NEW_TT_INTERPRETER
-    char buf[100];
-    int l;
-    gs_font_type42 *base_font = pfont;
+    if (!ttf->no_grid_fitting) {
+	char buf[100];
+	int l;
+	gs_font_type42 *base_font = pfont;
 
-    while ((gs_font_type42 *)base_font->base != base_font)
-	base_font = (gs_font_type42 *)base_font->base;
-    if (!base_font->data.warning_patented) {
-	l = min(sizeof(buf) - 1, base_font->font_name.size);
-	memcpy(buf, base_font->font_name.chars, l);
-	buf[l] = 0;
-	eprintf2("%s %s requires a patented True Type interpreter.\n", txt, buf);
-	base_font->data.warning_patented = true;
+	while ((gs_font_type42 *)base_font->base != base_font)
+	    base_font = (gs_font_type42 *)base_font->base;
+	if (!base_font->data.warning_patented) {
+	    l = min(sizeof(buf) - 1, base_font->font_name.size);
+	    memcpy(buf, base_font->font_name.chars, l);
+	    buf[l] = 0;
+	    eprintf2("%s %s requires a patented True Type interpreter.\n", txt, buf);
+	    base_font->data.warning_patented = true;
+	}
     }
 #endif
 }
@@ -336,9 +338,10 @@ void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
 #endif
 }
 
-int ttfFont__Open_aux(ttfInterpreter *tti, ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont,
+int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_font_type42 *pfont,
     	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale)
 {
+#if NEW_TT_INTERPRETER 
     gs_point char_size, subpix_origin;
     gs_matrix post_transform;
     /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
@@ -348,7 +351,8 @@ int ttfFont__Open_aux(ttfInterpreter *tti, ttfFont *this, gx_ttfReader *r, gs_fo
 
     decompose_matrix(char_tm, log2_scale, atp, &char_size, &subpix_origin, &post_transform);
     /* fixme : AlignToPixels==1 (log2_scale) isn't processed yet. */
-    switch(ttfFont__Open(tti, this, &r->super, nTTC, char_size.x, char_size.y)) {
+    switch(ttfFont__Open(tti, this, &r->super, nTTC, char_size.x, char_size.y, 
+			!gs_currentgridfittt(pfont->dir))) {
 	case fNoError:
 	    return 0;
 	case fMemoryError:
@@ -356,7 +360,7 @@ int ttfFont__Open_aux(ttfInterpreter *tti, ttfFont *this, gx_ttfReader *r, gs_fo
 	case fUnimplemented:
 	    return_error(gs_error_unregistered);
 	case fPatented:
-	    WarnPatented(pfont, "The font");
+	    WarnPatented(pfont, this, "The font");
 	    this->patented = true;
 	    return 0;
 	default:
@@ -367,6 +371,9 @@ int ttfFont__Open_aux(ttfInterpreter *tti, ttfFont *this, gx_ttfReader *r, gs_fo
 		return_error(gs_error_invalidfont);
 	    }
     }
+#else
+    return 0;
+#endif
 }
 
 /*----------------------------------------------*/
@@ -476,7 +483,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
 	    return_error(gs_error_unregistered);
 	case fPatented:
 	    /* The returned outline did not apply a bytecode (it is "unhinted"). */
-	    WarnPatented(pfont, "Some glyphs of the font");
+	    WarnPatented(pfont, ttf, "Some glyphs of the font");
 	    return 0;
 	default:
 	    {	int code = r->super.Error(&r->super);

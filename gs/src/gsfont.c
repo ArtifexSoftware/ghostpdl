@@ -263,6 +263,7 @@ gs_font_dir_alloc2_limits(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
     pdir->align_to_pixels = true;
     pdir->glyph_to_unicode_table = NULL;
 #if NEW_TT_INTERPRETER
+    pdir->grid_fit_tt = true;
     pdir->memory = struct_mem;
     pdir->tti = 0;
 #endif
@@ -576,11 +577,19 @@ gs_setcacheupper(gs_font_dir * pdir, uint size)
     return 0;
 }
 int
-gs_setaligntopixels(gs_font_dir * pdir, uint size)
+gs_setaligntopixels(gs_font_dir * pdir, uint v)
 {
-    pdir->align_to_pixels = size;
+    pdir->align_to_pixels = v;
     return 0;
 }
+#if NEW_TT_INTERPRETER
+int
+gs_setgridfittt(gs_font_dir * pdir, uint v)
+{
+    pdir->grid_fit_tt = v;
+    return 0;
+}
+#endif
 
 /* currentcacheparams */
 uint
@@ -603,6 +612,13 @@ gs_currentaligntopixels(const gs_font_dir * pdir)
 {
     return pdir->align_to_pixels;
 }
+#if NEW_TT_INTERPRETER
+uint
+gs_currentgridfittt(const gs_font_dir * pdir)
+{
+    return pdir->grid_fit_tt;
+}
+#endif
 
 /* Purge a font from all font- and character-related tables. */
 /* This is only used by restore (and, someday, the GC). */
