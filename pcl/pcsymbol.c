@@ -154,24 +154,6 @@ pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcs)
 	  }
 }
 
-/* Initialization */
-private int
-pcsymbol_do_registration(
-    pcl_parser_state_t *pcl_parser_state,
-    gs_memory_t *mem
-)
-{		/* Register commands */
-	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'R', "Symbol Set ID Code",
-				  pcl_symbol_set_id_code,
-				  pca_neg_error|pca_big_error)
-	DEFINE_CLASS_COMMAND_ARGS('(', 'f', 'W', "Define Symbol Set",
-				  pcl_define_symbol_set, pca_bytes)
-	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', "Symbol Set Control",
-				  pcl_symbol_set_control,
-				  pca_neg_ignore|pca_big_ignore)
-	return 0;
-}
-
 private void	/* free any symbol maps as well as dict value entry */
 pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 {	pcl_symbol_set_t *ssp = (pcl_symbol_set_t *)value;
@@ -188,50 +170,7 @@ pcsymbol_dict_value_free(gs_memory_t *mem, void *value, client_name_t cname)
 	gs_free_object(mem, value, cname);
 }
 
-private void
-pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
-{	
-    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
-	id_set_value(pcs->symbol_set_id, 0);
-	if ( type & pcl_reset_initial ) {
-	    /* Don't set a parent relationship from soft to built-in
-	     * symbol sets.  Although it is arguably useful, it's
-	     * better to avoid it and keep anyone who's looking at the
-	     * soft symbol sets from mucking up the permanent ones. */
-	    pl_dict_init(&pcs->soft_symbol_sets, pcs->memory,
-			 pcsymbol_dict_value_free);
-	    pl_dict_init(&pcs->built_in_symbol_sets, pcs->memory,
-			 pcsymbol_dict_value_free);
-	    // NB.  Symbol sets are require for RTL/HPGL/2 mode for
-	    // stickfonts but we shouldn't load all of them.
-	    if ( pcl_load_built_in_symbol_sets(pcs) < 0 )
-		dprintf("Internal error, no symbol sets found");
-	}
-	else if ( type & pcl_reset_printer ) { 
-	    pcl_args_t args;
-	    arg_set_uint(&args, 1);	/* delete temporary symbol sets */
-	    pcl_symbol_set_control(&args, pcs);
-	}
-    }
-    if ( type & pcl_reset_permanent ) {
-	pl_dict_release(&pcs->soft_symbol_sets);
-	pl_dict_release(&pcs->built_in_symbol_sets);
-    }
-}
-
-
 private int
-pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
-  pcl_copy_operation_t operation)
-{	if ( operation & pcl_copy_after )
-	  { /* Don't restore the downloaded symbol set dictionary. */
-	    psaved->built_in_symbol_sets = pcs->built_in_symbol_sets;
-	  }
-	return 0;
-}
-
-
-int
 pcl_load_built_in_symbol_sets(pcl_state_t *pcs)
 {
 	const pl_symbol_map_t **maplp;
@@ -261,7 +200,6 @@ pcl_load_built_in_symbol_sets(pcl_state_t *pcs)
 	  }
 	return 0;
 }
-
 
 bool
 pcl_check_symbol_support(const byte *symset_req, const byte *font_sup)
@@ -316,6 +254,65 @@ pcl_find_symbol_map(const pcl_state_t *pcs, const byte *id,
 	    return setp->maps[plgv_Unicode];
     }
     return NULL;
+}
+
+/* Initialization */
+private int
+pcsymbol_do_registration(
+    pcl_parser_state_t *pcl_parser_state,
+    gs_memory_t *mem
+)
+{		/* Register commands */
+	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'R', "Symbol Set ID Code",
+				  pcl_symbol_set_id_code,
+				  pca_neg_error|pca_big_error)
+	DEFINE_CLASS_COMMAND_ARGS('(', 'f', 'W', "Define Symbol Set",
+				  pcl_define_symbol_set, pca_bytes)
+	DEFINE_CLASS_COMMAND_ARGS('*', 'c', 'S', "Symbol Set Control",
+				  pcl_symbol_set_control,
+				  pca_neg_ignore|pca_big_ignore)
+	return 0;
+}
+
+private void
+pcsymbol_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
+{	
+    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
+	id_set_value(pcs->symbol_set_id, 0);
+	if ( type & pcl_reset_initial ) {
+	    /* Don't set a parent relationship from soft to built-in
+	     * symbol sets.  Although it is arguably useful, it's
+	     * better to avoid it and keep anyone who's looking at the
+	     * soft symbol sets from mucking up the permanent ones. */
+	    pl_dict_init(&pcs->soft_symbol_sets, pcs->memory,
+			 pcsymbol_dict_value_free);
+	    pl_dict_init(&pcs->built_in_symbol_sets, pcs->memory,
+			 pcsymbol_dict_value_free);
+	    // NB.  Symbol sets are require for RTL/HPGL/2 mode for
+	    // stickfonts but we shouldn't load all of them.
+	    if ( pcl_load_built_in_symbol_sets(pcs) < 0 )
+		dprintf("Internal error, no symbol sets found");
+	}
+	else if ( type & pcl_reset_printer ) { 
+	    pcl_args_t args;
+	    arg_set_uint(&args, 1);	/* delete temporary symbol sets */
+	    pcl_symbol_set_control(&args, pcs);
+	}
+    }
+    if ( type & pcl_reset_permanent ) {
+	pl_dict_release(&pcs->soft_symbol_sets);
+	pl_dict_release(&pcs->built_in_symbol_sets);
+    }
+}
+
+private int
+pcsymbol_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
+  pcl_copy_operation_t operation)
+{	if ( operation & pcl_copy_after )
+	  { /* Don't restore the downloaded symbol set dictionary. */
+	    psaved->built_in_symbol_sets = pcs->built_in_symbol_sets;
+	  }
+	return 0;
 }
 
 const pcl_init_t pcsymbol_init = {

@@ -24,8 +24,7 @@
    with HP hardware will be necessary.
 
    Issue (ii), There is a class of resets which are currently done by calling 
-   pcl_do_resets(pcs, pcl_reset_initial), followed by 
-   pcl_load_built_in_symbol_sets(pcs). A device must have been selected into 
+   pcl_do_resets(pcs, pcl_reset_initial).  A device must have been selected into
    the associated gstate before those resets are invoked, since some of the reset 
    actions are device-specific. The upshot of this arrangement is that some reset 
    actions must be carried out again when a new device is selected into the 
@@ -46,14 +45,13 @@
    Issue (iii): PCL does two layers of 1-time init at startup, both of
    which allocate memory: I) the "static" inits called by the various
    pcl_init_table[]->do_init's, II) the above-mentioned pcl_do_resets
-   (pcs, pcl_reset_initial), followed by
-   pcl_load_built_in_symbol_sets(pcs).  In both cases, no
-   corresponding function exists to free the allocated memory, so
-   reallocation functions are needed. If resolution (c) to issue (ii)
-   is adopted, you only need a function to undo (I). Otherwise, you
-   need a complete de-init function(s).  My initial feeling is that
-   it'd be quickest to implement resolution (c) to issue (ii), and
-   resolve issue (iii) by implementing a function to undo (I). 
+   (pcs, pcl_reset_initial).  In both cases, no corresponding function
+   exists to free the allocated memory, so reallocation functions are
+   needed. If resolution (c) to issue (ii) is adopted, you only need a
+   function to undo (I). Otherwise, you need a complete de-init
+   function(s).  My initial feeling is that it'd be quickest to
+   implement resolution (c) to issue (ii), and resolve issue (iii) by
+   implementing a function to undo (I).  
 */
 
 #include "malloc_.h"
@@ -93,7 +91,6 @@ const pcl_init_t *    pcl_init_table[] = {
 
 
 /* Built-in symbol set initialization procedure */
-extern  bool    pcl_load_built_in_symbol_sets( pcl_state_t * );
 private int pcl_end_page_top(P3(pcl_state_t *pcs, int num_copies, int flush));
 
 
