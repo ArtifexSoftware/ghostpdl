@@ -135,11 +135,14 @@ main(int argc, char *argv[])
 	gs_clippath(pgs);
 	{ gs_rect bbox;
 	  gs_pathbbox(pgs, &bbox);
-	  gs_translate(pgs, 0.0, bbox.q.y);
 	}
 	gs_newpath(pgs);
-	gs_scale(pgs, 0.01, -0.01);
 	{ gs_matrix mat;
+	  /* undo postscript handedness and translate the origin to
+             the upper left corner.  Y increases down the page. */
+	  gs_scale(pgs, 0.01, -0.01);
+	  gs_currentmatrix(pgs, &mat);
+	  gs_translate(pgs, 0.0, -(mat.ty / mat.yy));
 	  gs_currentmatrix(pgs, &mat);
 	  gs_setdefaultmatrix(pgs, &mat);
 	  pcls->resolution.x = mat.xx * 7200;
