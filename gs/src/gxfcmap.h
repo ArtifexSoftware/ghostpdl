@@ -113,7 +113,15 @@ typedef struct gx_code_map_s {
 
 /* A CMap proper is relatively simple. */
 struct gs_cmap_s {
+	/*
+	 * The following entries are common to all CMapTypes, and must
+	 * come first.
+	 */
     int CMapType;		/* must be first; must be 0 or 1 */
+    gs_id id;			/* internal ID (no relation to UID) */
+	/* 
+	 * End of common entries.
+	 */
     gs_const_string CMapName;
     gs_cid_system_info_t *CIDSystemInfo; /* [num_fonts] */
     int num_fonts;

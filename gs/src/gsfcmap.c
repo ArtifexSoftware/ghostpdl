@@ -22,6 +22,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
+#include "gsutil.h"		/* for gs_next_ids */
 #include "gxfcmap.h"
 
 /* GC descriptors */
@@ -68,6 +69,7 @@ void
 gs_cmap_init(gs_cmap_t *pcmap)
 {
     memset(pcmap, 0, sizeof(*pcmap));
+    pcmap->id = gs_next_ids(1);
     uid_set_invalid(&pcmap->uid);
 }
 
