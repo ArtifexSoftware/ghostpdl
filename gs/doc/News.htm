@@ -54,63 +54,18 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version7.20"></a>Version 7.20 (2002-04-03)</h3>
+<h3><a name="Version7.21"></a>Version 7.21 (pre-release)</h3>
 
 <p>
-This is the first development release after the 7.0x series. While
-it is a development release, it is likely to be quite stable and
-robust, largely thanks to automated regression testing.
+This is a cvs snapshot of development in progress.
 
-<p> Major changes include:
-
-<ul>
-<li>Support for external font renderers such as Agfa UFST.
-
-<li>An optional "diskn" feature that emulates the "%disk" devices
-found on some Adobe printers.
-
-<li>The <tt><b>-dSAFER</b></tt> flag now tightens read access to
-arbitrary files, as well as write access. Thus,
-<tt><b>-dSAFER</b></tt> in this release is equivalent to
-<tt><b>-dSAFER -dPARANOIDSAFER</b></tt> in 7.04. This will break some
-viewers, notably gv.
-
-</ul>
-
-<p> In addition, the following improvements have been merged from
-the 7.04 release:
-
-<ul>
-
-<li>A rather serious security hole, where PostScript code could cause
-arbitrary commands to be executed, has been patched.
-
-<li>This release integrates the IJS driver, which makes it much easier
-to add and upgrade printer drivers without needing to recompile
-Ghostscript.
-
-<li>There is a configure script for automatically configuring the
-build system on Unix platforms. Those who enjoy the fun of hand-editing
-the makefile are still welcome to do so.
-
-</ul>
+<p> Major changes will include:
 
 <p>
-And, of course, the usual bug fixing and performance enhancement.
+none at this time
 
 <p>
-There has also been considerable development of our DeviceN
-implementation and related color work on a private branch. These new
-features are <em>not</em> included in this release. We expect to merge
-them into the main branch soon.
-
-<p>
-There exists another private branch which integrates PCL and PostScript/PDF
-in the same executable. Again, that work is not reflected in this
-release.
-
-<p>
-The following SourceForge bug numbers were open at the time of release:
+The following SourceForge bug numbers were open at the time of the last release:
  219798,
  405342,
  406979,
@@ -230,26 +185,10 @@ The following SourceForge bug numbers were open at the time of release:
  538428.
 
 
-<h3><a name="7.20_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="7.21_Incompatible_changes"></a>Incompatible changes</h3>
 
-<pre>
-(Interpreter)
-	- Updates clients and implementors for the new glyph outline data
-structure.
-	- -dSAFER flag now restricts read access to arbitrary files in
-addition to restricting write access.
-	- While not strictly an incompatible change, authors of drivers
-with potential security implications are encouraged to review the
-security changes, including the LockSafetyParams mechanism.
-
-(Library)
-	- Changes all procedures for getting glyph outline data to return
-the data by storing it into a gs_glyph_data_t structure that includes memory
-management information.  This is a NON-BACKWARD-COMPATIBLE change to both
-implementors and clients.  It corrects a significant design error: formerly
-these procedures encoded memory management information in their return code,
-which was obscure and error-prone.  See src/gsgdata.[hc].
-</pre>
+<p>
+None have been reported at this time.
 
 <!-- [2.0 end contents] ==================================================== -->
 
