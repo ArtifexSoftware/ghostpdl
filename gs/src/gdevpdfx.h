@@ -353,13 +353,14 @@ typedef struct pdf_substream_save_s {
     pdf_procset_t	procsets;
     bool		skip_colors;
     pdf_resource_t      *font3;
+    pdf_resource_t	*accumulating_substream_resource;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
-    gs_private_st_ptrs5(st_pdf_substream_save, pdf_substream_save,\
+    gs_private_st_ptrs6(st_pdf_substream_save, pdf_substream_save,\
 	"pdf_substream_save", pdf_substream_save_enum,\
 	pdf_substream_save_reloc, text_state, clip_path, strm, \
-	substream_Resources, font3)
+	substream_Resources, font3, accumulating_substream_resource)
 #define private_st_pdf_substream_save_element()\
   gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
     "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\
@@ -553,6 +554,7 @@ struct gx_device_pdf_s {
     bool skip_colors; /* Skip colors while a pattern/charproc accumulation. */
     bool AR4_save_bug; /* See pdf_put_uncolored_pattern */
     pdf_resource_t *font3; /* The owner of the accumulated charstring. */
+    pdf_resource_t *accumulating_substream_resource;
     gs_matrix_fixed charproc_ctm;
 };
 
@@ -575,8 +577,9 @@ struct gx_device_pdf_s {
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
  m(24,font_cache) m(25,clip_path)\
  m(26,PageLabels) m(27,PageLabels_current_label)\
- m(28,sbstack) m(29,substream_Resources) m(30,font3)
-#define gx_device_pdf_num_ptrs 31
+ m(28,sbstack) m(29,substream_Resources) m(30,font3)\
+ m(31,accumulating_substream_resource)
+#define gx_device_pdf_num_ptrs 32
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\
@@ -1037,7 +1040,7 @@ int pdf_do_char_image(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 int pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw, 
 		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr);
 /* Complete charproc accumulation for aType 3 font. */
-int pdf_end_charproc_accum(gx_device_pdf *pdev);
+int pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font);
 
 /* Enter the substream accumulation mode. */
 int pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype, 

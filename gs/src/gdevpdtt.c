@@ -905,6 +905,43 @@ pdf_refine_encoding_index(int index, bool is_standard)
 }
 
 /*
+ * Create a font resource object for a gs_font of Type 3.
+ */
+private int
+pdf_make_font3_resource(gx_device_pdf *pdev, gs_font *font,
+		       pdf_font_resource_t **ppdfont)
+{
+    const gs_font_base *bfont = (const gs_font_base *)font;
+    pdf_font_resource_t *pdfont;
+    int code;
+
+    code = font_resource_encoded_alloc(pdev, &pdfont, bfont->id, 
+		    ft_user_defined, pdf_write_contents_bitmap);
+    if (code < 0)
+	return code;
+    pdfont->u.simple.s.type3.bitmap_font = false;
+    pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
+			bfont->nearest_encoding_index, true);
+    pdfont->u.simple.s.type3.FontBBox.p.x = (int)floor(bfont->FontBBox.p.x);
+    pdfont->u.simple.s.type3.FontBBox.p.y = (int)floor(bfont->FontBBox.p.y);
+    pdfont->u.simple.s.type3.FontBBox.q.x = (int)ceil(bfont->FontBBox.q.x);
+    pdfont->u.simple.s.type3.FontBBox.q.y = (int)ceil(bfont->FontBBox.q.y);
+    pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
+    /* Adobe viewers have a precision problem with small font matrices : */
+    while (any_abs(pdfont->u.simple.s.type3.FontMatrix.xx) < 0.001 &&
+	   any_abs(pdfont->u.simple.s.type3.FontMatrix.xy) < 0.001 &&
+	   any_abs(pdfont->u.simple.s.type3.FontMatrix.yx) < 0.001 &&
+	   any_abs(pdfont->u.simple.s.type3.FontMatrix.yy) < 0.001) {
+	pdfont->u.simple.s.type3.FontMatrix.xx *= 10;
+	pdfont->u.simple.s.type3.FontMatrix.xy *= 10;
+	pdfont->u.simple.s.type3.FontMatrix.yx *= 10;
+	pdfont->u.simple.s.type3.FontMatrix.yy *= 10;
+    }
+    *ppdfont = pdfont;
+    return 0;
+}
+
+/*
  * Create a font resource object for a gs_font.  Return 1 iff the
  * font was newly created (it's a roudiment, keeping reverse compatibility).
  * This procedure is only intended to be called
@@ -959,34 +996,10 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	font_alloc = pdf_font_simple_alloc;
 	break;
     case ft_user_defined:
-	{
-	    const gs_font_base *bfont = (const gs_font_base *)font;
-
-	    code = font_resource_encoded_alloc(pdev, &pdfont, bfont->id, 
-			    ft_user_defined, pdf_write_contents_bitmap);
-	    if (code < 0)
-		return code;
-	    pdfont->u.simple.s.type3.bitmap_font = false;
-	    pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
-				bfont->nearest_encoding_index, true);
-	    pdfont->u.simple.s.type3.FontBBox.p.x = (int)floor(bfont->FontBBox.p.x);
-	    pdfont->u.simple.s.type3.FontBBox.p.y = (int)floor(bfont->FontBBox.p.y);
-	    pdfont->u.simple.s.type3.FontBBox.q.x = (int)ceil(bfont->FontBBox.q.x);
-	    pdfont->u.simple.s.type3.FontBBox.q.y = (int)ceil(bfont->FontBBox.q.y);
-	    pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
-	    /* Adobe viewers have a precision problem with small font matrices : */
-	    while (any_abs(pdfont->u.simple.s.type3.FontMatrix.xx) < 0.001 &&
-		   any_abs(pdfont->u.simple.s.type3.FontMatrix.xy) < 0.001 &&
-		   any_abs(pdfont->u.simple.s.type3.FontMatrix.yx) < 0.001 &&
-		   any_abs(pdfont->u.simple.s.type3.FontMatrix.yy) < 0.001) {
-		pdfont->u.simple.s.type3.FontMatrix.xx *= 10;
-		pdfont->u.simple.s.type3.FontMatrix.xy *= 10;
-		pdfont->u.simple.s.type3.FontMatrix.yx *= 10;
-		pdfont->u.simple.s.type3.FontMatrix.yy *= 10;
-	    }
-	    *ppdfont = pdfont;
-	    return 1;
-	}
+	code = pdf_make_font3_resource(pdev, font, ppdfont);
+	if (code < 0)
+	    return code;
+	return 1;
     default:
 	return_error(gs_error_invalidfont);
     }
@@ -1947,7 +1960,7 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     if (pte_default) {
 	if (penum->charproc_accum) {
-	    code = pdf_end_charproc_accum(pdev);
+	    code = pdf_end_charproc_accum(pdev, penum->current_font);
 	    if (code < 0)
 		return code;
 	    penum->charproc_accum = false;

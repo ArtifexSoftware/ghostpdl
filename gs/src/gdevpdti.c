@@ -42,6 +42,8 @@ struct pdf_char_proc_s {
     int y_offset;		/* of character (0,0) */
     gs_char char_code;
     gs_const_string char_name;
+    gs_point real_width;        /* Not used with synthesised bitmap fonts. */
+    gs_point v;			/* Not used with synthesised bitmap fonts. */
 };
 
 /* The descriptor is public for pdf_resource_type_structs. */
@@ -383,55 +385,25 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr)
 {
     pdf_font_resource_t *pdfont;
-    byte *glyph_usage;
     pdf_resource_t *pres;
     pdf_char_proc_t *pcp;
-    double *real_widths;
-    int char_cache_size, width_cache_size;
     int code;
 
-    code = pdf_attached_font_resource(pdev, font, &pdfont,
-		&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    code = pdf_attached_font_resource(pdev, font, &pdfont, NULL, NULL, NULL, NULL);
     if (code < 0)
 	return code;
-    if (ch != GS_NO_CHAR) {
-	int i;
-	gs_glyph glyph0 = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
-
-	if (ch >= char_cache_size || ch >= width_cache_size)
-	    return_error(gs_error_unregistered);
-	real_widths[ch * 2    ] = pdfont->Widths[ch] = pw[font->WMode ? 6 : 0];
-	real_widths[ch * 2 + 1] = pw[font->WMode ? 7 : 1];
-	glyph_usage[ch / 8] |= 0x80 >> (ch & 7);
-	pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
-	if (pdfont->u.simple.v != NULL && font->WMode) {
-	    pdfont->u.simple.v[ch].x = pw[8];
-	    pdfont->u.simple.v[ch].y = pw[9];
-	}
-	for (i = 0; i < 256; i++) {
-	    gs_glyph glyph = font->procs.encode_char(font, i, 
-			font->FontType == ft_user_defined ? GLYPH_SPACE_NOGEN
-							  : GLYPH_SPACE_NAME);
-
-	    if (glyph == glyph0) {
-		real_widths[i * 2    ] = real_widths[ch * 2    ];
-		real_widths[i * 2 + 1] = real_widths[ch * 2 + 1];
-		glyph_usage[i / 8] |= 0x80 >> (i & 7);
-		pdfont->used[i >> 3] |= 0x80 >> (i & 7);
-		pdfont->u.simple.v[i] = pdfont->u.simple.v[ch];
-		pdfont->Widths[i] = pdfont->Widths[ch];
-	    }
-	}
-    }
     code = pdf_enter_substream(pdev, resourceCharProc, gs_next_ids(1), &pres);
     if (code < 0)
 	return code;
-    pcp = (pdf_char_proc_t *) pres;
+    pcp = (pdf_char_proc_t *)pres;
+    pcp->char_next = NULL;
     pcp->font = pdfont;
-    pcp->char_next = pdfont->u.simple.s.type3.char_procs;
-    pdfont->u.simple.s.type3.char_procs = pcp;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
+    pcp->real_width.x = pdfont->Widths[ch] = pw[font->WMode ? 6 : 0];
+    pcp->real_width.y = pw[font->WMode ? 7 : 1];
+    pcp->v.x = pw[8];
+    pcp->v.y = pw[9];
     if (control == TEXT_SET_CHAR_WIDTH) {
 	/* PLRM 5.7.1 "BuildGlyph" reads : "Normally, it is unnecessary and 
 	undesirable to initialize the current color parameter, because show 
@@ -508,11 +480,13 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].substream_Resources = pdev->substream_Resources;
     pdev->sbstack[sbstack_ptr].skip_colors = pdev->skip_colors;
     pdev->sbstack[sbstack_ptr].font3 = pdev->font3;
+    pdev->sbstack[sbstack_ptr].accumulating_substream_resource = pdev->accumulating_substream_resource;
     pdev->skip_colors = false;
     pdev->sbstack_depth++;
     pdev->procsets = 0;
     pdev->font3 = 0;
     pdev->context = PDF_IN_STREAM;
+    pdev->accumulating_substream_resource = pres;
     pdf_reset_graphics(pdev);
     *ppres = pres;
     return 0;
@@ -566,6 +540,8 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->skip_colors = pdev->sbstack[sbstack_ptr].skip_colors;
     pdev->font3 = pdev->sbstack[sbstack_ptr].font3;
     pdev->sbstack[sbstack_ptr].font3 = 0;
+    pdev->accumulating_substream_resource = pdev->sbstack[sbstack_ptr].accumulating_substream_resource;
+    pdev->sbstack[sbstack_ptr].accumulating_substream_resource = 0;
     pdev->sbstack_depth = sbstack_ptr;
     return code;
 }
@@ -574,9 +550,62 @@ pdf_exit_substream(gx_device_pdf *pdev)
  * Complete charproc accumulation for a Type 3 font.
  */
 int
-pdf_end_charproc_accum(gx_device_pdf *pdev) 
+pdf_end_charproc_accum(gx_device_pdf *pdev, gs_font *font) 
 {
-    return pdf_exit_substream(pdev);
+    int code;
+    pdf_font_resource_t *pres = (pdf_font_resource_t *)pdev->accumulating_substream_resource;
+    /* We could use pdfont->u.simple.s.type3.char_procs insted the thing above
+       unless the font is defined recursively.
+       But we don't want such assumption. */
+    pdf_char_proc_t *pcp = (pdf_char_proc_t *)pres;
+    pdf_font_resource_t *font3 = (pdf_font_resource_t *)pdev->font3;
+    pdf_font_resource_t *pdfont;
+    int ch = pcp->char_code;
+    double *real_widths;
+    byte *glyph_usage;
+    int char_cache_size, width_cache_size;
+    gs_glyph glyph0;
+    int i;
+
+    code = pdf_attached_font_resource(pdev, font, &pdfont,
+		&glyph_usage, &real_widths, &char_cache_size, &width_cache_size);
+    if (code < 0)
+	return code;
+    if (pdfont != font3)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (ch == GS_NO_CHAR)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    if (ch >= char_cache_size || ch >= width_cache_size)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    code = pdf_exit_substream(pdev);
+    if (code < 0)
+	return code;
+    glyph0 = font->procs.encode_char(font, ch, GLYPH_SPACE_NAME);
+    pcp->char_next = pdfont->u.simple.s.type3.char_procs;
+    pdfont->u.simple.s.type3.char_procs = pcp;
+    real_widths[ch * 2    ] = pcp->real_width.x;
+    real_widths[ch * 2 + 1] = pcp->real_width.y;
+    glyph_usage[ch / 8] |= 0x80 >> (ch & 7);
+    pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
+    if (pdfont->u.simple.v != NULL && font->WMode) {
+	pdfont->u.simple.v[ch].x = pcp->v.x;
+	pdfont->u.simple.v[ch].y = pcp->v.x;
+    }
+    for (i = 0; i < 256; i++) {
+	gs_glyph glyph = font->procs.encode_char(font, i, 
+		    font->FontType == ft_user_defined ? GLYPH_SPACE_NOGEN
+						      : GLYPH_SPACE_NAME);
+
+	if (glyph == glyph0) {
+	    real_widths[i * 2    ] = real_widths[ch * 2    ];
+	    real_widths[i * 2 + 1] = real_widths[ch * 2 + 1];
+	    glyph_usage[i / 8] |= 0x80 >> (i & 7);
+	    pdfont->used[i >> 3] |= 0x80 >> (i & 7);
+	    pdfont->u.simple.v[i] = pdfont->u.simple.v[ch];
+	    pdfont->Widths[i] = pdfont->Widths[ch];
+	}
+    }
+    return 0;
 }
 
 /* Add procsets to substream Resources. */
