@@ -23,6 +23,7 @@ in Fitz, which in turn is based on the one in Ghostscript.
 
 #include <stddef.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
