@@ -249,6 +249,6 @@ int gs_color_name_component_number(const gx_device * dev, char * pname,
  * This version converts a name index value into a string and size and
  * then call gs_color_name_component_number.
  */
-int gs_cname_to_colorant_number(gs_state * pgs, gs_separation_name cname,
+int gs_cname_to_colorant_number(gs_state * pgs, byte * pname, uint name_size,
 				 int halftonetype);
 #endif /* gzht_INCLUDED */
