@@ -431,6 +431,7 @@ gs_grestore_only(gs_state * pgs)
     saved->client_data = pdata;
     if (pdata != 0 && sdata != 0)
 	gstate_copy_client_data(pgs, pdata, sdata, copy_for_grestore);
+    gstate_free_contents(pgs);
     *pgs = *saved;
     pgs->transparency_stack = tstack;
     if (pgs->show_gstate == saved)
