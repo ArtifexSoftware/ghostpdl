@@ -63,6 +63,7 @@
 <li><a href="#Paths">Paths</a>
 <li><a href="#Images">Images</a> [<a href="#Images_notes">Notes</a>]
 <li><a href="#Text">Text</a> [<a href="#Text_notes">Notes</a>]
+<li><a href="#Unicode">Unicode support for high level devices</a>
 </ul>
 <li><a href="#Reading_bits_back">Reading bits back</a>
 <li><a href="#Parameters">Parameters</a>
@@ -2536,6 +2537,28 @@ return an enumerator.  Furthermore, the implementation of the
 <b><tt>gs_text_process</tt></b>) cannot simply return without doing
 anything, even if it doesn't want to draw anything on the output.  See the
 comments in <a href="../src/gxtext.h">gxtext.h</a> for details.
+
+<h4><a name="Unicode"></a>Unicode support for high level devices</h4>
+
+<p>
+<p>Implementing a new high level device, one may need to translate <b><tt>Postscript</b></tt>
+character codes into <b><tt>Unicode</b></tt>. This can be done pretty simply.
+
+<p>For translating a <b><tt>Postscript</b></tt> text you need to inplement the device
+virtual function <b><tt>text_begin</b></tt>. It should create a new instance of
+<b><tt>gs_text_enum_t</b></tt> in the heap (let its pointer be <b><tt>pte</b></tt>),
+and assign a special function to <b><tt>gs_text_enum_t::procs.process</b></tt>.
+The function will receive <b><tt>pte</b></tt>. It should take the top level font from
+<b><tt>pte->orig_font</b></tt>,
+and iterate with <b><tt>font->procs.next_char_glyph(pte, ..., &glyph)</b></tt>.
+The last argument receives a <b><tt>gs_glyph</b></tt> value, which encodes a
+<b><tt>Postscript</b></tt> character name or CID (and also stores it into
+<b><tt>pte->returned.current_glyph</b></tt>).
+Then obtain the current subfont with <b><tt>gs_text_current_font(pte)</b></tt>
+(it can differ from the font)
+and call <b><tt>subfont->procs.decode_glyph(subfont, glyph)</b></tt>.
+The return value will be an <b><tt>Unicode</b></tt> code, or <b><tt>GS_NO_CHAR</b></tt>
+if the glyph can't be translated to Unicode.
 
 <h3><a name="Reading_bits_back"></a>Reading bits back</h3>
 
