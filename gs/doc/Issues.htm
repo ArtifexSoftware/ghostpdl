@@ -207,10 +207,39 @@ SourceForge Bug #406643, Mar 7, 2001.
 
 <h3> PDF 1.4 images don't deallocate all memory </h3>
 
+<p>
 The pdf14_begin_typed_image() function in the PDF 1.4 device creates
 a marking device, but this is not freed on end_image. The garbage
 collector will free it, so it's not a real memory leak, but it would
 still be nicer to free it explicitly.
+
+<h3> Truetype fonts are written with incorrect table checksums </h3>
+
+<p>
+psf_write_truetype_data() writes truetype fonts with incorrect 
+checksums on most tables. Most truetype interpreters ignore these
+so in practice the issue hasn't been a problem. Nevertheless,
+Ghostscript is embedding off-spec fonts in pdf documents.
+
+<p>
+A complete fix should generate font data in 2 passes: the
+first pass computes the checksums, the second one
+really writes data. Fonts can be very large, so
+buffering the entire font is not a good solution. The 
+checksums can't be modified after the data is written
+because the output stream may not be positionable 
+(likely it's a FlateEncode filter).
+
+<p>
+<i>Igor suggests implementing a special encoding filter for
+checksums, and executing the body of
+psf_write_truetype_data twice: first with the checksum
+filter, second with the real output stream. After a TT
+table is completed, its checksum to be taken from the
+filter and to be put into the 'tables' array.</i>
+
+<p>
+SourceForge Bug #615620, September 27, 2002.
 
 <hr>
 
