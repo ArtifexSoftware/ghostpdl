@@ -750,6 +750,7 @@ gx_forward_fill_rectangle_hl_color(gx_device *dev,
 
 /* ---------------- The null device(s) ---------------- */
 
+private dev_proc_get_initial_matrix(gx_forward_upright_get_initial_matrix);
 private dev_proc_fill_rectangle(null_fill_rectangle);
 private dev_proc_copy_mono(null_copy_mono);
 private dev_proc_copy_color(null_copy_color);
@@ -768,9 +769,9 @@ private dev_proc_decode_color(null_decode_color);
 /* Y position so it can return 1 when done. */
 private dev_proc_strip_copy_rop(null_strip_copy_rop);
 
-#define null_procs(get_page_device) {\
+#define null_procs(get_initial_matrix, get_page_device) {\
 	gx_default_open_device,\
-	gx_forward_get_initial_matrix,\
+	get_initial_matrix, /* differs */\
 	gx_default_sync_output,\
 	gx_default_output_page,\
 	gx_default_close_device,\
@@ -829,16 +830,30 @@ private dev_proc_strip_copy_rop(null_strip_copy_rop);
 const gx_device_null gs_null_device = {
     std_device_std_body_type_open(gx_device_null, 0, "null", &st_device_null,
 				  0, 0, 72, 72),
-    null_procs(gx_default_get_page_device /* not a page device */ ),
+    null_procs(gx_forward_upright_get_initial_matrix, /* upright matrix */
+               gx_default_get_page_device     /* not a page device */ ),
     0				/* target */
 };
 
 const gx_device_null gs_nullpage_device = {
 std_device_std_body_type_open(gx_device_null, 0, "nullpage", &st_device_null,
 			      72 /*nominal */ , 72 /*nominal */ , 72, 72),
-    null_procs(gx_page_device_get_page_device /* a page device */ ),
+    null_procs( gx_forward_get_initial_matrix, /* default matrix */
+                gx_page_device_get_page_device /* a page device */ ),
     0				/* target */
 };
+
+private void
+gx_forward_upright_get_initial_matrix(gx_device * dev, gs_matrix * pmat)
+{
+    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    gx_device *tdev = fdev->target;
+
+    if (tdev == 0)
+	gx_upright_get_initial_matrix(dev, pmat);
+    else
+	dev_proc(tdev, get_initial_matrix)(tdev, pmat);
+}
 
 private int
 null_decode_color(gx_device * dev, gx_color_index cindex, gx_color_value colors[])
