@@ -413,10 +413,8 @@ main(
         pl_print_usage(mem, &inst, "Final");
         dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
     }
-/*
     if (gs_debug_c('!'))
         debug_dump_memory(imem, &dump_control_default);
-*/
 #endif
 
     /* release param list */
@@ -587,22 +585,23 @@ pl_main_universe_select(
 	}
 
 	/* Open a new device if needed. */
-	if (!universe->curr_device)  /* remember that curr_device==0 if we closed it above */
+	if (!universe->curr_device)  { /* remember that curr_device==0 if we closed it above */
+	    /* Set latest params into device BEFORE setting into device. */
+	    /* Do this here because PCL5 will do some 1-time initializations based */
+	    /* on device geometry when pl_set_device, below, selects the device. */
+	    if ( gs_putdeviceparams(desired_device, params) < 0 ) {
+		strcpy(err_str, "Unable to set params into device\n");
+		return 0;
+	    }
+	    params_are_set = 1;
+
 	    if (gs_opendevice(desired_device) < 0) {
 		if (err_str)
 		    strcpy(err_str, "Unable to open new device\n");
 		return 0;
 	    } else
 		universe->curr_device = desired_device;
-
-	/* Set latest params into device BEFORE setting into device. */
-	/* Do this here because PCL5 will do some 1-time initializations based */
-	/* on device geometry when pl_set_device, below, selects the device. */
-	if ( gs_putdeviceparams(universe->curr_device, params) < 0 ) {
-	    strcpy(err_str, "Unable to set params into device\n");
-	    return 0;
 	}
-	params_are_set = 1;
 
 	/* Select curr/new device into PDL instance */
 	if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
