@@ -28,6 +28,10 @@ pxl.clean: pxl.config-clean pxl.clean-not-config-clean
 pxl.clean-not-config-clean:
 	$(RM_) $(PXLOBJ)*.$(OBJ)
 	$(RMN_) $(PXLGEN)pxbfont.c $(PXLGEN)pxsymbol.c $(PXLGEN)pxsymbol.h
+	$(RM_) $(PXLOBJ)devs.tr6
+	make -f $(GLSRCDIR)$(D)ugcclib.mak \
+	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
+	GLOBJDIR='$(GLOBJDIR)' clean
 
 # devices are still created in the current directory.  Until that 
 # is fixed we will have to remove them from both directories.
