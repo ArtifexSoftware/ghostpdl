@@ -1095,11 +1095,15 @@ x_update_add(gx_device_X * xdev, int xo, int yo, int w, int h)
 	    return;
 	}
     }
-    update_do_flush(xdev);
-    xdev->update.box.p.x = xo, xdev->update.box.p.y = yo;
-    xdev->update.box.q.x = xe, xdev->update.box.q.y = ye;
-    xdev->update.count = 1;
-    xdev->update.area = xdev->update.total = added;
+    if (xdev->is_buffered && (xdev->target == NULL))
+	xdev->update.box = u;	/* update deferred since bbox has target disabled */
+    else {
+	update_do_flush(xdev);
+	xdev->update.box.p.x = xo, xdev->update.box.p.y = yo;
+	xdev->update.box.q.x = xe, xdev->update.box.q.y = ye;
+	xdev->update.count = 1;
+	xdev->update.area = xdev->update.total = added;
+    }
 }
 
 /* Flush buffered text to the screen. */
