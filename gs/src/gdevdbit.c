@@ -214,7 +214,7 @@ gx_default_copy_alpha(gx_device * dev, const byte * data, int data_x,
 			    const byte *src = line + (bit >> 3);
 
 			    previous =
-				(*src >> (8 - (bit + bpp))) &
+				(*src >> (8 - ((bit & 7) + bpp))) &
 				((1 << bpp) - 1);
 			} else {
 			    const byte *src = line + (rx * (bpp >> 3));
