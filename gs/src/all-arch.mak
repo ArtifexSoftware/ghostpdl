@@ -227,6 +227,9 @@ XLIBDIRSALL=' \
 SGIARCHFLAGS		= -n32 -mips3
 SGIARCHLIB		= libn32
 
+SGIARCH64FLAGS		= -64 -mips3
+SGIARCH64LIB		= lib64
+
 # [20-Mar-1999]: New from gs-5.73: use png and zlib libraries already
 # installed on the system.
 
@@ -508,6 +511,16 @@ ibm-rs6000-aix-4.2-gnu-readline:	init
 		XLIBDIRS='-L/usr/local/lib -L/usr/local/lib -L/usr/lpp/X11/lib/R5 -L/usr/lpp/X11/lib' \
 		$(GNU_READLINE_ARGS)
 
+ibm-rs6000-aix-4.3:	init
+	$(MAKE) $(ARGS) \
+		CC='cc -O -D_ALL_SOURCE -DMAXMEM=4096 -Dconst=' \
+		CP='cp -p' \
+		FEATURE_DEVS_EXTRA= \
+		INSTALL='/usr/ucb/install -c' \
+		STDLIBS=-lm \
+		XINCLUDE=-I/usr/lpp/X11/include \
+		XLIBDIRS='-L/usr/local/lib -L/usr/lpp/X11/lib/R6 -L/usr/lpp/X11/lib'
+
 linux:	init
 	$(MAKE) $(ARGSGCC) \
 		CC='gcc' \
@@ -751,12 +764,53 @@ sgi-mips-irix6.5: sgi-mips-irix6.4
 
 sgi-mips-irix6.5-gnu-readline: sgi-mips-irix6.4-gnu-readline
 
+sgi-mips-irix6.5-64bit:	init
+	$(MAKE) $(ARGS) \
+		CFLAGS_STANDARD= \
+		CC='cc $(SGIARCH64FLAGS) -D_POSIX_4SOURCE' \
+		FEATURE_DEVS_EXTRA= \
+		XINCLUDE=-I/usr/include/X11 \
+		XLIBDIRS='-L/usr/lib/X11 -L/usr/local/lib' \
+		$(GLOBJ)idict.o \
+		$(GLOBJ)isave.o
+
+	$(MAKE) $(ARGS) \
+		CC='cc $(SGIARCH64FLAGS) -D_POSIX_4SOURCE' \
+		FEATURE_DEVS_EXTRA= \
+		XINCLUDE=-I/usr/include/X11 \
+		XLIBDIRS='-L/usr/lib/X11 -L/usr/local/lib' \
+		$(GLOBJ)gdevpdf.o \
+		$(GLOBJ)gdevps.o \
+		$(GLOBJ)gdevtifs.o \
+		$(GLOBJ)gp_unix.o \
+		$(GLOBJ)zdevcal.o
+#
+	$(MAKE) $(ARGS) \
+		CC='cc $(SGIARCH64FLAGS) -ansi -D_POSIX_4SOURCE -woff 1185,1429 -OPT:Olimit=2500' \
+		FEATURE_DEVS_EXTRA= \
+		XINCLUDE=-I/usr/include/X11 \
+		XLIBDIRS='-L/usr/lib/X11 -L/usr/local/lib' \
+		$(GLOBJ)gxclread.o
+
+	$(MAKE) $(ARGS) \
+		CC='cc $(SGIARCH64FLAGS) -ansi -D_POSIX_4SOURCE -woff 1185,1429' \
+		FEATURE_DEVS_EXTRA= \
+		XINCLUDE=-I/usr/include/X11 \
+		XLIBDIRS='-L/usr/local/$(SGIARCH64LIB) -L/usr/local/lib -L/usr/lib/X11'
+
 sun-sparc-solaris:	init
 	$(MAKE) $(ARGS) \
 		CC='cc -Xc' \
 		FEATURE_DEVS_EXTRA= \
 		XINCLUDE=-I/usr/openwin/include \
 		XLIBDIRS='-L/usr/local/lib -L/usr/openwin/lib'
+
+sun-sparc-solaris-64bit:	init
+	$(MAKE) $(ARGS) \
+		CC='cc -Xc  -xarch=v9a' \
+		FEATURE_DEVS_EXTRA= \
+		XINCLUDE=-I/usr/openwin/include \
+		XLIBDIRS='-L/usr/openwin/lib/sparcv9 -L/usr/local/lib64'
 
 sun-sparc-solaris-gnu-readline:	init
 	$(MAKE) $(ARGS) \
