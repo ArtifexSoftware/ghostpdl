@@ -106,27 +106,29 @@ pdfdict begin
 % Execute a file, interpreting its executable names in a given
 % dictionary.  The name procedures may do whatever they want
 % to the operand stack.
-/.pdfrun {			% <file> <opdict> .pdfrun -
-	% Construct a procedure with the stack depth, file and opdict
+/.pdfrun			% <file> <opdict> .pdfrun -
+ {	% Construct a procedure with the stack depth, file and opdict
 	% bound into it.
-  1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll {
-	% Stack: ..operands.. count opdict file
+   1 index cvlit count 2 sub 3 1 roll mark mark 5 2 roll
+    {	% Stack: ..operands.. count opdict file
     .pdftoken not { (%%EOF) cvn cvx } if
-    dup xcheck {
-      DEBUG { dup == flush } if
-      2 copy .knownget {
-	exch pop exch pop exch pop exec
-      } {
-	BXlevel 0 le {
-	  (%stderr) (w) file
+      dup xcheck
+       { DEBUG { dup == flush } if
+	 2 copy .knownget
+	  { exch pop exch pop exch pop exec }
+	  { BXlevel 0 le
+	     { (%stderr) (w) file
 	  dup (****************Unknown operator: ) writestring
 	  dup 2 index .writecvs dup (\n) writestring flushfile
-	} if pop pop
+	     }
+	    if pop pop
 	count exch sub { pop } repeat	% pop all the operands
-      } ifelse
-    } {
-      exch pop exch pop DEBUG { dup ==only ( ) print flush } if
-    } ifelse
+	  }
+	 ifelse
+       }
+       { exch pop exch pop DEBUG { dup ==only ( ) print flush } if
+       }
+      ifelse
   }
   aload pop .packtomark cvx
   /loop cvx 2 packedarray cvx
@@ -134,7 +136,7 @@ pdfdict begin
   PDFsource
   { store { stop } if } aload pop .packtomark cvx
   /PDFsource 3 -1 roll store exec
-} bind def
+ } bind def
 
 % Execute a file, like .pdfrun, for a marking context.
 % This temporarily rebinds LocalResources.
@@ -198,7 +200,7 @@ pdfdict begin
 /lstring {	% - lstring <lstring>
   [ () ]
 } bind def
-/ltype {	% <lseq> type <type
+/ltype {	% <lseq> type <type>
   0 get type
 } bind def
 /lget {		% <lseq> <index> lget <value>
@@ -310,24 +312,20 @@ pdfdict begin
 /oforce /exec load def
 /oget {		% <array> <index> oget <object>
 		% <dict> <key> oget <object>
-  2 copy get dup xcheck {
-    exec dup 4 1 roll put
-  } {
-    exch pop exch pop
-  } ifelse
+		% Before release 6.20, this procedure stored the resolved
+		% object back into the referring slot.  In order to support
+		% PDF linearization, we no longer do this.
+  get oforce
 } bind def
 % A null value in a dictionary is equivalent to an omitted key;
 % we must check for this specially.
-/knownoget {
-  2 copy .knownget {
-    dup xcheck {
-      exec dup 4 1 roll put
-    } {
-      exch pop exch pop
-    } ifelse
-    dup null eq { pop false } { true } ifelse
+/knownoget {	% <dict> <key> knownoget <value> true
+		% <dict> <key> knownoget false
+		% See oget above regarding this procedure.
+  .knownget {
+    oforce dup null eq { pop false } { true } ifelse
   } {
-    pop pop false
+    false
   } ifelse
 } bind def
 
@@ -350,10 +348,7 @@ pdfdict begin
   } ifelse
 } bind def
 /R {		% <object#> <generation#> R <object>
-  1 index unresolved?
-    { /resolveR cvx 3 packedarray cvx }
-    { checkgeneration { Objects exch lget } { pop null } ifelse }
-   ifelse
+  /resolveR cvx 3 packedarray cvx
 } bind def
 
 % If we encounter an object definition while reading sequentially,
@@ -393,8 +388,8 @@ pdfdict begin
   valueopdict { } forall
   /endobj { endobj exit } bind
 .dicttomark readonly def
-/resolveR		% <object#> <generation#> resolveR <object>
- { DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
+/resolveR {		% <object#> <generation#> resolveR <object>
+   DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
    1 index unresolved?
     { PDFfile fileposition 3 1 roll
       1 index readxrefentry

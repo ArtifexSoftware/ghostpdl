@@ -500,7 +500,7 @@ end
     1 index /File get dup fileposition 3 1 roll
 		% Stack: dict savepos pos file
     dup 3 -1 roll setfileposition
-    dup 3 index /Length get string readstring pop
+    dup 3 index /Length oget string readstring pop
 		% Stack: dict savepos file string
     3 1 roll exch setfileposition
     1 index /File 3 -1 roll put
