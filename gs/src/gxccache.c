@@ -232,9 +232,9 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
      * Note that if the original device implements fill_mask, we may
      * never actually use the clipping device.
      */
-    pt.x -= cc->offset.x;
+    pt.x -= cc->offset.x + cc->subpix_origin.x;
     x = fixed2int_var_rounded(pt.x) + penum->ftx;
-    pt.y -= cc->offset.y;
+    pt.y -= cc->offset.y + cc->subpix_origin.y;
     y = fixed2int_var_rounded(pt.y) + penum->fty;
     w = cc->width;
     h = cc->height;

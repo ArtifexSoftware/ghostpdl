@@ -84,7 +84,7 @@ private int continue_show_update(gs_show_enum *);
 private void show_set_scale(const gs_show_enum *, gs_log2_scale_point *log2_scale);
 private int show_cache_setup(gs_show_enum *);
 private int show_state_setup(gs_show_enum *);
-private int show_origin_setup(gs_state *, fixed, fixed, gs_char_path_mode);
+private int show_origin_setup(gs_state *, fixed, fixed, gs_show_enum * penum);
 
 /* Accessors for current_char and current_glyph. */
 #define CURRENT_CHAR(penum) ((penum)->returned.current_char)
@@ -428,10 +428,13 @@ compute_glyph_raster_params(gs_show_enum *penum, bool in_setcachedevice, int *al
     else
 	gx_compute_text_oversampling(penum, penum->current_font, *alpha_bits, log2_scale);
     if (gs_currentaligntopixels(penum->current_font->dir) == 0) {
-	subpix_origin->x = fixed2int_pixround(penum->origin.x) & ((fixed_1 << log2_scale->x) - 1); /* see gx_lookup_cached_char */
-	subpix_origin->y = fixed2int_pixround(penum->origin.y) & ((fixed_1 << log2_scale->y) - 1);
-	subpix_origin->x &= ((1 << log2_scale->x) - 1);
-	subpix_origin->y &= ((1 << log2_scale->y) - 1);
+	int scx = -1L << (_fixed_shift - log2_scale->x);
+	int scy = -1L << (_fixed_shift - log2_scale->y);
+	int rdx =  1L << (_fixed_shift - 1 - log2_scale->x);
+	int rdy =  1L << (_fixed_shift - 1 - log2_scale->y);
+
+	subpix_origin->x = ((penum->origin.x + rdx) & scx) & (fixed_1 - 1);
+	subpix_origin->y = ((penum->origin.y + rdy) & scy) & (fixed_1 - 1);
     } else
 	subpix_origin->x = subpix_origin->y = 0;
     return 0;
@@ -587,8 +590,8 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	/* Adjust the transformation in the graphics context */
 	/* so that the character lines up with the cache. */
 	gx_translate_to_fixed(pgs,
-			      cc->offset.x << log2_scale.x,
-			      cc->offset.y << log2_scale.y);
+			      (cc->offset.x + subpix_origin.x) << log2_scale.x,
+			      (cc->offset.y + subpix_origin.y) << log2_scale.y);
 	if ((log2_scale.x | log2_scale.y) != 0)
 	    gx_scale_char_matrix(pgs, 1 << log2_scale.x,
 				 1 << log2_scale.y);
@@ -1064,8 +1067,6 @@ show_proceed(gs_show_enum * penum)
     /* Reset the in_cachedevice flag, so that a recursive show */
     /* will use the cache properly. */
     pgs->in_cachedevice = CACHE_DEVICE_NONE;
-    /* Reset the sampling scale. */
-    penum->log2_scale.x = penum->log2_scale.y = 0;
     /* Set the charpath data in the graphics context if necessary, */
     /* so that fill and stroke will add to the path */
     /* rather than having their usual effect. */
@@ -1115,13 +1116,14 @@ show_proceed(gs_show_enum * penum)
 	    cpt.y = float2fixed(fpy);
 	}
 	gs_newpath(pgs);
-	code = show_origin_setup(pgs, cpt.x, cpt.y,
-				 penum->charpath_flag);
+	code = show_origin_setup(pgs, cpt.x, cpt.y, penum);
 	if (code < 0)
 	    goto rret;
     }
     penum->width_status = sws_none;
     penum->continue_proc = continue_show_update;
+    /* Reset the sampling scale. */
+    penum->log2_scale.x = penum->log2_scale.y = 0;
     /* Try using the build procedure in the font. */
     /* < 0 means error, 0 means success, 1 means failure. */
     penum->cc = cc;		/* set this now for build procedure */
@@ -1452,14 +1454,23 @@ show_cache_setup(gs_show_enum * penum)
 /* Used before rendering characters, and for moving the origin */
 /* in setcachedevice2 when WMode=1. */
 private int
-show_origin_setup(gs_state * pgs, fixed cpt_x, fixed cpt_y,
-		  gs_char_path_mode charpath_flag)
+show_origin_setup(gs_state * pgs, fixed cpt_x, fixed cpt_y, gs_show_enum * penum)
 {
-    if (charpath_flag == cpm_show) {
+    if (penum->charpath_flag == cpm_show) {
 	/* Round the translation in the graphics state. */
 	/* This helps prevent rounding artifacts later. */
-	cpt_x = fixed_rounded(cpt_x);
-	cpt_y = fixed_rounded(cpt_y);
+	if (gs_currentaligntopixels(penum->current_font->dir) == 0) {
+	    int scx = -1L << (_fixed_shift - penum->log2_scale.x);
+	    int scy = -1L << (_fixed_shift - penum->log2_scale.y);
+	    int rdx =  1L << (_fixed_shift - 1 - penum->log2_scale.x);
+	    int rdy =  1L << (_fixed_shift - 1 - penum->log2_scale.y);
+
+	    cpt_x = (cpt_x + rdx) & scx;
+	    cpt_y = (cpt_y + rdy) & scy;
+	} else {
+	    cpt_x = fixed_rounded(cpt_x);
+	    cpt_y = fixed_rounded(cpt_y);
+	}
     }
     /*
      * BuildChar procedures expect the current point to be undefined,
