@@ -225,7 +225,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 	    return;		/* anomalous case */
 	if_debug1('2', "[2]adjusting vertical: DT = %g\n",
 		  fixed2float(DT));
-	if (DT > 0)
+	if (DT ^ fD > 0)
 	    pseg->pt.y = DT + y0;
     } else if (fD == 0) {
 	/* Horizontal tangent. */
@@ -233,7 +233,7 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 
 	if_debug1('2', "[2]adjusting horizontal: CT = %g\n",
 		  fixed2float(CT));
-	if (CT > 0)
+	if (CT ^ fC > 0)
 	    pseg->pt.x = CT + x0;
     } else {
 	/* General case. */
