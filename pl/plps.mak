@@ -36,7 +36,7 @@ pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
 ################ PJL ################
 
 
-PJLVERSION=1.36
+PJLVERSION=1.37
 
 # Translate pjl file system volume "0:" to a directory of your choice 
 # Use forward slash '/' not '\\'; no trailing slash 
@@ -180,6 +180,13 @@ $(PLOBJ)plplatfps.$(OBJ): $(PLSRC)plplatfps.c $(AK) $(string__h)\
  $(gsstruct_h) $(gsdevice) $(plplatf_h)
 	$(PLCCC) $(PLSRC)plplatfps.c $(PLO_)plplatfps.$(OBJ)
 
+plftable_h=$(PLSRC)plftable.h
+
+# hack - need AGFA included for -DAGFA_FONT_TABLE
+$(PLOBJ)plftable.$(OBJ): $(PLSRC)plftable.c $(AK) $(plftable_h)\
+  $(gstype_h) $(plfont_h)
+	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plftable.c $(PLO_)plftable.$(OBJ)
+
 $(PLOBJ)pltop.$(OBJ): $(PLSRC)pltop.c $(AK) $(string__h)\
  $(gdebug_h) $(gsnogc_h) $(gsdevice_h) $(gsmemory_h) $(gsstruct_h)\
  $(gstypes_h) $(pltop_h)
@@ -201,9 +208,11 @@ $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
  $(plvocab_h)
 	$(PLCCC) $(PLSRC)plvocab.c $(PLO_)plvocab.$(OBJ)
 
+plalloc_h=$(PLSRC)plalloc.h
+
 $(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) \
        $(malloc_h) $(memory_h) $(gdebug_h)\
-       $(gsmemory_h) $(gsstype_h)
+       $(gsmemory_h) $(gsstype_h) $(plalloc_h)
 	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
 
 # freetype font loading module.
@@ -211,21 +220,21 @@ $(PLOBJ)plflfont.$(OBJ): $(PLSRC)plflfont.c $(PLSRC)pllfont.h  $(AK)\
         $(ctype__h) $(stdio__h) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
 	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(pllfont_h)\
-        $(plvalue_h) $(freetype_h)
+        $(plvalue_h) $(freetype_h) $(plftable_h)
 	$(PLCCC) $(FT_INCLUDES) $(PLSRC)plflfont.c $(PLO_)plflfont.$(OBJ)
 
 # ufst font loading module.
 $(PLOBJ)plulfont.$(OBJ): $(PLSRC)plulfont.c $(PLSRC)pllfont.h $(AK)\
         $(stdio_h) $(string__h) $(gsmemory_h) $(gstypes_h)\
         $(plfont_h) $(pldict_h) $(pllfont_h) $(plvalue_h)\
-	$(cgconfig_h) $(port_h) $(shareinc_h) 
+	$(cgconfig_h) $(port_h) $(shareinc_h)  $(plftable_h)
 	$(PLCCC) $(AGFA_INCLUDES) $(PLSRC)plulfont.c $(PLO_)plulfont.$(OBJ)
 
 # artifex font loading module.
 $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK)\
         $(ctype__h) $(stdio__h) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gserrors_h) $(gsmatrix_h) $(gsutil_h)\
-	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h)
+	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
 pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ)
@@ -236,10 +245,14 @@ pl_obj3=$(PLOBJ)plplatfps.$(OBJ) $(PLOBJ)plalloc.$(OBJ)
 pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
 
 # artifex font objects
-afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
+afs_obj=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)plfont.$(OBJ) $(PLOBJ)pllfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
+
 
 # ufst font objects
-ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ)
+ufst_obj=$(PLOBJ)pluchar.$(OBJ) $(PLOBJ)plufont.$(OBJ) $(PLOBJ)plulfont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
+
+# freetype font objects
+fts_obj=$(PLOBJ)plflfont.$(OBJ) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plftable.$(OBJ)
 
 # generic artifex font device.
 $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(afs_obj)
@@ -254,14 +267,11 @@ $(PLOBJ)ufst.dev: $(PL_MAK) $(ECHOGS_XE) $(ufst_obj)
 # Bitstream font device
 $(PLOBJ)bfs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
 	$(SETMOD) $(PLOBJ)bfs $(pl_obj1) $(pl_obj2)
-
-# Freetype font device  NB organize.
-$(PLOBJ)fts.dev: $(PL_MAK) $(ECHOGS_XE) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plflfont.$(OBJ)
-	$(SETMOD) $(PLOBJ)fts $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plffont.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)plflfont.$(OBJ)
-	$(ADDMOD) $(PLOBJ)fts -link $(FT_LIBDIRS)
-	$(ADDMOD) $(PLOBJ)fts -lib $(FT_LIBS)
-
 ### END BROKEN ###
+
+# Freetype font device.
+$(PLOBJ)fts.dev: $(PL_MAK) $(ECHOGS_XE) $(fts_obj)
+	$(SETMOD) $(PLOBJ)fts $(fts_obj)
 
 $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
