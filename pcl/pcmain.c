@@ -161,7 +161,7 @@ main(
     imem = ialloc_alloc_state((gs_raw_memory_t *)&gs_memory_default, 20000);
     imem->space = 0;		/****** WRONG ******/
     pl_main_init(&inst, mem);
-    pl_main_process_options(&inst, &args, argv, argc, PCLVERSION, PCLBUILDATE);
+    pl_main_process_options(&inst, &args, argv, argc, PCLVERSION, PCLBUILDDATE);
     /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
     pcls = (pcl_state_t *)gs_alloc_bytes( mem,
                                           sizeof(pcl_state_t),

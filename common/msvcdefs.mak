@@ -47,6 +47,7 @@ LINK=$(LINKDIR)\link
 MAKE=$(MAKEDIR)\nmake
 
 #CC_ is defined ..\gs\msvccom.mak
+#CCAUX is defined in ..\gs\msvc*.mak
 
 #Always set this to 0; This make file system not yet capable of DLLs
 MAKEDLL=0

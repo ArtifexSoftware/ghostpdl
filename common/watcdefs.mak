@@ -8,3 +8,4 @@ C_=
 O_=-fo=
 
 #CC_ is defined elsewhere
+#CCAUX is defined elsewhere
