@@ -1,6 +1,6 @@
-/* Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
- */
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
+   reserved.  Unauthorized use, copying, and/or distribution
+   prohibited.  */
 
 /* pgmisc.h */
 /* definitions for HP-GL/2 lost mode and error handling routines. */

@@ -1,6 +1,6 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
- */
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights
+   reserved.  Unauthorized use, copying, and/or distribution
+   prohibited.  */
 
 /* pcparse.h */
 /* Interface and definitions for PCL5 parser */

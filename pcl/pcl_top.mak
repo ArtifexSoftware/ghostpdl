@@ -1,4 +1,4 @@
-#    Copyright (C) 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
 #    Unauthorized use, copying, and/or distribution prohibited.
 
 # pcl_top.mak
@@ -48,8 +48,8 @@ $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(gscdefs_h)                \
                         $(gsgc_h)                   \
                         $(gslib_h)                  \
-                        $(gsmemory.h)               \
-                        $(gsmalloc.h)               \
+                        $(gsmemory_h)               \
+                        $(gsmalloc_h)               \
                         $(gsmatrix_h)               \
                         $(gspaint_h)                \
                         $(gsparam_h)                \
