@@ -213,15 +213,6 @@ pcl_init_state(
     pcs->memory = pmem;
     pcs->num_copies = 1;
     pcs->output_bin = 1;
-    /* rtl always uses native units for user units.  The hp
-         documentation does not say what to do if the resolution is
-         assymetric... */
-    if ( pcs->personality == rtl )
-        pcs->uom_cp =
-            7200L / 600L;
-    else
-        pcs->uom_cp = 7200L / 300L;
-
     pcs->perforation_skip = 1;
 
     pcs->font_id_type = numeric_id;
@@ -239,4 +230,5 @@ pcl_init_state(
     pcs->next_id = 8UL;
     pcl_init_gstate_stk(pcs);
     pcs->configure_appletalk = 0;
+    pcs->uom_cp = 7200L / 300L;
 }
