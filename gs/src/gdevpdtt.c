@@ -198,7 +198,7 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    if (code < 0)
 		return code;
 	    code = pdf_set_charproc_attrs(pdev, pte->current_font, 
-			pw1, control, ch, &gnstr);
+			pw1, narg, control, ch, &gnstr);
 	    if (code < 0)
 		return code;
 	    if (control == TEXT_SET_CHAR_WIDTH) {

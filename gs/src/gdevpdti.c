@@ -402,7 +402,7 @@ pdf_start_charproc_accum(gx_device_pdf *pdev)
  * Install charproc accumulator for a Type 3 font.
  */
 int
-pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, 
+pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw, int narg,
 		gs_text_cache_control_t control, gs_char ch, gs_const_string *gnstr)
 {
     pdf_font_resource_t *pdfont;
@@ -418,10 +418,10 @@ pdf_set_charproc_attrs(gx_device_pdf *pdev, gs_font *font, const double *pw,
     pcp->font = pdfont;
     pcp->char_code = ch;
     pcp->char_name = *gnstr;
-    pcp->real_width.x = pw[font->WMode ? 6 : 0];
-    pcp->real_width.y = pw[font->WMode ? 7 : 1];
-    pcp->v.x = pw[8];
-    pcp->v.y = pw[9];
+    pcp->real_width.x = pw[font->WMode && narg > 6 ? 6 : 0];
+    pcp->real_width.y = pw[font->WMode && narg > 6 ? 7 : 1];
+    pcp->v.x = (narg > 8 ? pw[8] : 0);
+    pcp->v.y = (narg > 8 ? pw[9] : 0);
     if (control == TEXT_SET_CHAR_WIDTH) {
 	/* PLRM 5.7.1 "BuildGlyph" reads : "Normally, it is unnecessary and 
 	undesirable to initialize the current color parameter, because show 
