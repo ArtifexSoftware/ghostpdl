@@ -341,10 +341,15 @@ while [ $# -ge 1 ]; do
     shift
 done
 
-LIBS="console.stubs.c MSL\ ShLibRuntime.Lib MSL\ RuntimePPC.Lib"
-CARBONLIBS="MSL\ C.Carbon.Lib CarbonLib"
+# libs for codewarrior 6
+#LIBS="console.stubs.c MSL\ ShLibRuntime.Lib MSL\ RuntimePPC.Lib"
 #CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib FontManager MathLib"
-CLASSICLIBS="MSL\ C.PPC.Lib InterfaceLib MathLib"
+
+# libs for codewarrior 7
+LIBS="console.stubs.c"
+CARBONLIBS="MSL_All_Carbon.Lib CarbonLib"
+CLASSICLIBS="MSL_All_PPC.Lib InterfaceLib FontManager MathLib"
+CLASSICLIBS="$CLASSICLIBS TextCommon UnicodeConverter UTCUtils"
 
 #####
 # 
@@ -360,10 +365,10 @@ WriteXMLHeader
 echo "<PROJECT>"
     
     echo "<TARGETLIST>"
-#    WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES $LIBS $CARBONLIBS
-    WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.Carbon.Lib" "CarbonLib"
-#    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES $LIBS $CLASSICLIBS
-    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.PPC.Lib" "InterfaceLib" "FontManager" "MathLib"
+    WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES $LIBS $CARBONLIBS
+#    WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.Carbon.Lib" "CarbonLib"
+    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES $LIBS $CLASSICLIBS
+#    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.PPC.Lib" "InterfaceLib" "FontManager" "MathLib"
     echo "</TARGETLIST>"
     
     echo "<TARGETORDER>"
@@ -375,17 +380,19 @@ echo "<PROJECT>"
         WriteGROUP "Ghostscript Sources" "$CARBONDEBUGTARGETNAME" $CFILES
 #        WriteGROUP "Libraries" "$CARBONDEBUGTARGETNAME" $LIBS $CARBONLIBS $CLASSICLIBS
 #        WriteGROUP "Libraries" "$CARBONDEBUGTARGETNAME" "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.Carbon.Lib" "CarbonLib" "MSL C.PPC.Lib" "InterfaceLib" "FontManager" "MathLib"
-        
+
+# nb: this code doesn't work if there are spaces in the library filenames        
         echo "<GROUP><NAME>Libraries</NAME>"
-            WriteFILEREF "console.stubs.c" "$CARBONDEBUGTARGETNAME"
-            WriteFILEREF "MSL ShLibRuntime.Lib" "$CARBONDEBUGTARGETNAME"
-            WriteFILEREF "MSL RuntimePPC.Lib" "$CARBONDEBUGTARGETNAME"
-            WriteFILEREF "MSL C.Carbon.Lib" "$CARBONDEBUGTARGETNAME"
-            WriteFILEREF "CarbonLib" "$CARBONDEBUGTARGETNAME"
-            WriteFILEREF "MSL C.PPC.Lib" "$CLASSICDEBUGTARGETNAME"
-            WriteFILEREF "InterfaceLib" "$CLASSICDEBUGTARGETNAME"
-            WriteFILEREF "FontManager" "$CLASSICDEBUGTARGETNAME"
-            WriteFILEREF "MathLib" "$CLASSICDEBUGTARGETNAME"
+	for lib in $LIBS; do
+            WriteFILEREF "$lib" "$CARBONDEBUGTARGETNAME"
+	    WriteFILEREF "$lib" "$CLASSICDEBUGTARGETNAME"
+	done
+	for lib in $CARBONLIBS; do
+            WriteFILEREF "$lib" "$CARBONDEBUGTARGETNAME"
+	done
+	for lib in $CLASSICLIBS; do
+            WriteFILEREF "$lib" "$CLASSICDEBUGTARGETNAME"
+	done
         echo "</GROUP>"
         
     echo "</GROUPLIST>"
