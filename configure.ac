@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE([AC_PACKAGE_NAME], [AC_PACKAGE_VERSION])
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.6 $])
+AC_REVISION([$Revision: 1.7 $])
 
 # Checks for programs.
 AC_PROG_CC
@@ -38,31 +38,24 @@ AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 if test $ac_cv_sizeof_char = 1; then
-  AC_MSG_RESULT([can define int8_t as char])
   int8_type="char"
 else
   stdint_types_discovered="no"
 fi
 if test $ac_cv_sizeof_short = 2; then
-  AC_MSG_RESULT([can define int16_t as short])
   int16_type="short"
 elif test $ac_cv_sizeof_char = 2; then
-  AC_MSG_RESULT([can define int16_t as char])
   int16_type="char"
 elif test $ac_cv_sizeof_int = 2; then
-  AC_MSG_RESULT([can define int16_t as int])
   int16_type="char"
 else
   stdint_types_discovered="no"
 fi
 if test $ac_cv_sizeof_int = 4; then
-  AC_MSG_RESULT([can define int32_t as int])
   int32_type="int"
 elif test $ac_cv_sizeof_long = 4; then
-  AC_MSG_RESULT([can define int32_t as long])
   int32_type="long"
 elif test $ac_cv_sizeof_short = 4; then
-  AC_MSG_RESULT([can define int32_t as short])
   int32_type="short"
 else
   stdint_types_discovered="no"
@@ -78,7 +71,7 @@ if test "x$ac_cv_header_stdint_h" != "xyes"; then
     ], AC_MSG_RESULT([no])
     )
   done
-  if test "x$stding_types_in" != "xno_replacement_found"; then
+  if test "x$stdint_types_in" != "xno_replacement_found"; then
     AC_MSG_RESULT([Adding $stdint_types_in to config header for stdint types])
     AC_DEFINE([JBIG2_REPLACE_STDINT_H],,
       [set by configure if an alternate header with the stdint.h types is found])
