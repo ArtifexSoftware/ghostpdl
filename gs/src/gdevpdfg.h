@@ -94,9 +94,15 @@ int pdf_set_drawing_color(P4(gx_device_pdf *pdev,
 			     gx_drawing_color *pdcolor,
 			     const psdf_set_color_commands_t *ppscc));
 
-/* Bring the graphics state up to date for filling or stroking. */
+/*
+ * Bring the graphics state up to date for a drawing operation.
+ * (Text uses either fill or stroke.)
+ */
 int pdf_prepare_fill(P2(gx_device_pdf *pdev, const gs_imager_state *pis));
 int pdf_prepare_stroke(P2(gx_device_pdf *pdev, const gs_imager_state *pis));
+int pdf_prepare_image(P2(gx_device_pdf *pdev, const gs_imager_state *pis));
+int pdf_prepare_imagemask(P3(gx_device_pdf *pdev, const gs_imager_state *pis,
+			     const gx_drawing_color *pdcolor));
 
 /* Get the (string) name of a separation, */
 /* returning a newly allocated string with a / prefixed. */

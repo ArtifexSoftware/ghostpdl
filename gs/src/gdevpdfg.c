@@ -744,17 +744,75 @@ pdf_update_transfer(gx_device_pdf *pdev, const gs_imager_state *pis,
     return code;
 }
 
+/*
+ * Update the current alpha if necessary.  Note that because Ghostscript
+ * stores separate opacity and shape alpha, a rangecheck will occur if
+ * both are different from the current setting.
+ */
+private int
+pdf_update_alpha(gx_device_pdf *pdev, const gs_imager_state *pis,
+		 const char *ca_format, pdf_resource_t **ppres)
+{
+    bool ais;
+    floatp alpha;
+    int code;
+
+    if (pdev->state.opacity.alpha != pis->opacity.alpha) {
+	if (pdev->state.shape.alpha != pis->shape.alpha)
+	    return_error(gs_error_rangecheck);
+	ais = false;
+	alpha = pdev->state.opacity.alpha = pis->opacity.alpha;
+    } else if (pdev->state.shape.alpha != pis->shape.alpha) {
+	ais = true;
+	alpha = pdev->state.shape.alpha = pis->shape.alpha;
+    } else
+	return 0;
+    code = pdf_open_gstate(pdev, ppres);
+    if (code < 0)
+	return code;
+    pprintb1(pdev->strm, "/AIS %s", ais);
+    pprintg1(pdev->strm, ca_format, alpha);
+    return 0;
+}
+
+/* Update the graphics subset common to all drawing operations. */
+private int
+pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
+		    const char *ca_format, pdf_resource_t **ppres)
+{
+    int code;
+
+    if (pdev->CompatibilityLevel >= 1.4) {
+	if (pdev->state.blend_mode != pis->blend_mode) {
+	    static const char *const bm_names[] = { GS_BLEND_MODE_NAMES };
+
+	    code = pdf_open_gstate(pdev, ppres);
+	    if (code < 0)
+		return code;
+	    pprints1(pdev->strm, "/BM/%s", bm_names[pis->blend_mode]);
+	    pdev->state.blend_mode = pis->blend_mode;
+	}
+	code = pdf_update_alpha(pdev, pis, ca_format, ppres);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
+}
+
 /* Update the graphics state subset common to fill and stroke. */
 private int
-pdf_prepare_state(gx_device_pdf *pdev, const gs_imager_state *pis,
-		  pdf_resource_t **ppres)
+pdf_prepare_vector(gx_device_pdf *pdev, const gs_imager_state *pis,
+		   const char *ca_format, pdf_resource_t **ppres)
 {
-    int code = 0;
-
     /*
      * Update halftone, transfer function, black generation, undercolor
-     * removal, halftone phase, smoothness.
+     * removal, halftone phase, overprint mode, smoothness, blend mode, text
+     * knockout.
      */
+    int code = pdf_prepare_drawing(pdev, pis, ca_format, ppres);
+
+    if (code < 0)
+	return code;
     if (pdev->CompatibilityLevel >= 1.2) {
 	gs_int_point phase, dev_phase;
 	char hts[5 + MAX_FN_CHARS + 1],
@@ -826,15 +884,25 @@ pdf_prepare_state(gx_device_pdf *pdev, const gs_imager_state *pis,
 	    pprintg1(pdev->strm, "/SM %g", pis->smoothness);
 	    pdev->state.smoothness = pis->smoothness;
 	}
+	if (pdev->CompatibilityLevel >= 1.4) {
+	    if (pdev->state.text_knockout != pis->text_knockout) {
+		code = pdf_open_gstate(pdev, ppres);
+		if (code < 0)
+		    return code;
+		pprintb1(pdev->strm, "/TK %s", pis->text_knockout);
+		pdev->state.text_knockout = pis->text_knockout;
+	    }
+	}
     }
     return code;
 }
 
+/* Update the graphics state for filling. */
 int
 pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_state(pdev, pis, &pres);
+    int code = pdf_prepare_vector(pdev, pis, "/ca %g", &pres);
 
     if (code < 0)
 	return code;
@@ -859,11 +927,12 @@ pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
     return pdf_end_gstate(pdev, pres);
 }
 
+/* Update the graphics state for stroking. */
 int
 pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
-    int code = pdf_prepare_state(pdev, pis, &pres);
+    int code = pdf_prepare_vector(pdev, pis, "/CA %g", &pres);
 
     if (code < 0)
 	return code;
@@ -890,4 +959,29 @@ pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 	}
     }
     return pdf_end_gstate(pdev, pres);
+}
+
+/* Update the graphics state for an image other than an ImageType 1 mask. */
+int
+pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis)
+{
+    pdf_resource_t *pres = 0;
+    int code = pdf_prepare_drawing(pdev, pis, "/ca %g", &pres);
+
+    if (code < 0)
+	return code;
+    return pdf_end_gstate(pdev, pres);
+}
+
+/* Update the graphics state for an ImageType 1 mask. */
+int
+pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
+		      const gx_drawing_color *pdcolor)
+{
+    int code = pdf_prepare_image(pdev, pis);
+
+    if (code < 0)
+	return code;
+    return pdf_set_drawing_color(pdev, pdcolor, &pdev->fill_color,
+				 &psdf_set_fill_color_commands);
 }
