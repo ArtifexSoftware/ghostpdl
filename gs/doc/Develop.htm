@@ -23,9 +23,11 @@ Information for Ghostscript developers
 
 <blockquote><ul>
 <li><a href="#Introduction">Introduction</a>
-<li><a href="#File_roadmap">File roadmap</a>
 <ul>
 <li><a href="#Layer_architecture">Layer architecture</a>
+</ul>
+<li><a href="#File_roadmap">File roadmap</a>
+<ul>
 <li><a href="#Plumbing">Plumbing</a>
 <li><a href="#Graphics_library">Graphics library</a>
 <ul>
@@ -33,6 +35,13 @@ Information for Ghostscript developers
     <a href="#Graphics_model">Graphics model</a>,
     <a href="#Driver_support">Driver support</a>,
     <a href="#Graphics_library_miscellaneous">Miscellaneous</a>
+</ul>
+<li><a href="#Device_drivers">Device drivers</a>
+<ul>
+<li><a href="#Internal_devices">Internal devices</a>,
+    <a href="#High_level_devices">High-level devices</a>,
+    <a href="#Other_maintained_drivers">Other maintained drivers</a>,
+    <a href="#Contributed_drivers">Contributed drivers</a>
 </ul>
 <li><a href="#PostScript_interpreter">PostScript interpreter</a>
 <ul>
@@ -97,6 +106,7 @@ Information for Ghostscript developers
 <li><a href="#Explicit_dependencies">Explicit dependencies</a>,
     <a href="#Implicit_dependencies">Implicit dependencies</a>
 </ul>
+<li><a href="#Platform_specific_code">Platform-specific code</a>
 </ul>
 <li><a href="#Adding_features_and_options">Adding features and options</a>
 <li><a href="#Troubleshooting">Troubleshooting</a>
@@ -127,6 +137,8 @@ internals, primarily for developers actively working on Ghostscript.
 <p>
 THIS FILE IS A WORK IN PROGRESS.  MANY SECTIONS ARE PLACE-HOLDERS.
 
+<h1><a name="Layer_architecture"></a>Layer architecture</h1>
+
 <hr>
 
 <h1><a name="File_roadmap"></a>File roadmap</h1>
@@ -134,8 +146,6 @@ THIS FILE IS A WORK IN PROGRESS.  MANY SECTIONS ARE PLACE-HOLDERS.
 <p>
 This section of the document provides a roadmap to all of the Ghostscript
 source files.
-
-<h2><a name="Layer_architecture"></a>Layer architecture</h2>
 
 <h2><a name="Plumbing"></a>Plumbing</h2>
 
@@ -291,6 +301,218 @@ Banding
 Built-in devices
 
 <h3><a name="Graphics_library_miscellaneous"></a>Miscellaneous</h3>
+
+<h2><a name="Device_drivers"></a>Device drivers</h2>
+
+<h3><a name="Internal_devices"></a>Internal devices</h3>
+
+<p>
+There are a number of "devices" that serve internal purposes.  Some of these
+are meant to be real rendering targets; others are intended for use in
+device pipelines.  The rendering targets are:
+
+<ul>
+
+<li>Memory devices, files:
+<a href="../src/gdevmem.c">src/gdevmem.c</a>,
+<a href="../src/gdevmem.h">src/gdevmem.h</a>,
+<a href="../src/gdevm1.c">src/gdevm1.c</a>,
+<a href="../src/gdevm2.c">src/gdevm2.c</a>,
+<a href="../src/gdevm4.c">src/gdevm4.c</a>,
+<a href="../src/gdevm8.c">src/gdevm8.c</a>,
+<a href="../src/gdevm16.c">src/gdevm16.c</a>,
+<a href="../src/gdevm24.c">src/gdevm24.c</a>,
+<a href="../src/gdevm32.c">src/gdevm32.c</a>,
+<a href="../src/gdevmpla.c">src/gdevmpla.c</a>,
+<a href="../src/gdevmpla.h">src/gdevmpla.h</a>,
+<a href="../src/gdevmrop.h">src/gdevmrop.h</a>,
+<a href="../src/gdevmr1.c">src/gdevmr1.c</a>,
+<a href="../src/gdevmr2n.c">src/gdevmr2n.c</a>,
+<a href="../src/gdevmr8n.c">src/gdevmr8n.c</a>.
+
+<li>Alpha-related devices, files:
+<a href="../src/gdevabuf.c">src/gdevabuf.c</a>,
+<a href="../src/gdevalph.c">src/gdevalph.c</a>.
+
+<li>Other devices, files:
+<a href="../src/gdevdflt.c">src/gdevdflt.c</a>,
+<a href="../src/gdevhit.c">src/gdevhit.c</a>,
+<a href="../src/gdevmrun.c">src/gdevmrun.c</a>,
+<a href="../src/gdevmrun.h">src/gdevmrun.h</a>,
+<a href="../src/gdevplnx.c">src/gdevplnx.c</a>,
+<a href="../src/gdevplnx.h">src/gdevplnx.h</a>,
+<a href="../src/gxacpath.c">src/gxacpath.c</a>.
+
+</ul>
+
+<p>
+The forwarding devices meant for use in pipelines are:
+
+<ul>
+
+<li>The bounding box device, files:
+<a href="../src/gdevbbox.h">src/gdevbbox.h</a>,
+<a href="../src/gdevbbox.c">src/gdevbbox.c</a>.
+
+<li>Clipping devices, files:
+<a href="../src/gxclip.c">src/gxclip.c</a>,
+<a href="../src/gxclip2.c">src/gxclip2.c</a>,
+<a href="../src/gxclip2.h">src/gxclip2.h</a>,
+<a href="../src/gxclipm.c">src/gxclipm.c</a>,
+<a href="../src/gxmclip.c">src/gxmclip.c</a>,
+<a href="../src/gxmclip.h">src/gxmclip.h</a>.
+
+<li>Other devices, files:
+<a href="../src/gdevcmap.c">src/gdevcmap.c</a>,
+<a href="../src/gdevcmap.h">src/gdevcmap.h</a>,
+<a href="../src/gdevnfwd.c">src/gdevnfwd.c</a>.
+
+</ul>
+
+<h3><a name="High_level_devices"></a>High-level devices</h3>
+
+<p>
+The driver API includes high-level (path / image / text), mid-level
+(polygon), and low-level (rectangle / raster) operations.  Most devices
+implement only the low-level operations, and let generic code break down the
+high-level operations.  However, some devices produce high-level output, and
+therefore must implement the high-level operations.
+
+<p>
+Currently, the CGM driver is raster-only.  If anyone cares seriously about
+CGM in the future, this driver should be upgraded to a higher level.
+
+<p>
+High-level device support files:
+<a href="../src/gdevvec.c">src/gdevvec.c</a>,
+<a href="../src/gdevvec.h">src/gdevvec.h</a>.
+
+<p>
+PostScript/PDF output device support files:
+<a href="../src/gdevpsdf.h">src/gdevpsdf.h</a>,
+<a href="../src/gdevpsdi.c">src/gdevpsdi.c</a>,
+<a href="../src/gdevpsdp.c">src/gdevpsdp.c</a>,
+<a href="../src/gdevpsds.c">src/gdevpsds.c</a>,
+<a href="../src/gdevpsds.h">src/gdevpsds.h</a>,
+<a href="../src/gdevpsdu.c">src/gdevpsdu.c</a>,
+<a href="../src/gdevpsf.h">src/gdevpsf.h</a>,
+<a href="../src/gdevpsf1.c">src/gdevpsf1.c</a>,
+<a href="../src/gdevpsf2.c">src/gdevpsf2.c</a>,
+<a href="../src/gdevpsfm.c">src/gdevpsfm.c</a>,
+<a href="../src/gdevpsft.c">src/gdevpsft.c</a>,
+<a href="../src/gdevpsfu.c">src/gdevpsfu.c</a>,
+<a href="../src/gdevpsfx.c">src/gdevpsfx.c</a>.
+
+<p>
+PostScript output device ([e]pswrite) files:
+<a href="../src/gdevps.c">src/gdevps.c</a>,
+<a href="../src/gdevpsu.c">src/gdevpsu.c</a>,
+<a href="../src/gdevpsu.h">src/gdevpsu.h</a>.
+
+<p>
+PDF output device (pdfwrite) files:
+<a href="../src/gdevpdf.c">src/gdevpdf.c</a>,
+<a href="../src/gdevpdfb.c">src/gdevpdfb.c</a>,
+<a href="../src/gdevpdfc.c">src/gdevpdfc.c</a>,
+<a href="../src/gdevpdfd.c">src/gdevpdfd.c</a>,
+<a href="../src/gdevpdfe.c">src/gdevpdfe.c</a>,
+<a href="../src/gdevpdff.c">src/gdevpdff.c</a>,
+<a href="../src/gdevpdff.h">src/gdevpdff.h</a>,
+<a href="../src/gdevpdfg.c">src/gdevpdfg.c</a>,
+<a href="../src/gdevpdfg.h">src/gdevpdfg.h</a>,
+<a href="../src/gdevpdfi.c">src/gdevpdfi.c</a>,
+<a href="../src/gdevpdfj.c">src/gdevpdfj.c</a>,
+<a href="../src/gdevpdfm.c">src/gdevpdfm.c</a>,
+<a href="../src/gdevpdfo.c">src/gdevpdfo.c</a>,
+<a href="../src/gdevpdfo.h">src/gdevpdfo.h</a>,
+<a href="../src/gdevpdfp.c">src/gdevpdfp.c</a>,
+<a href="../src/gdevpdfr.c">src/gdevpdfr.c</a>,
+<a href="../src/gdevpdft.c">src/gdevpdft.c</a>,
+<a href="../src/gdevpdfu.c">src/gdevpdfu.c</a>,
+<a href="../src/gdevpdfv.c">src/gdevpdfv.c</a>,
+<a href="../src/gdevpdfw.c">src/gdevpdfw.c</a>,
+<a href="../src/gdevpdfx.h">src/gdevpdfx.h</a>.
+
+<p>
+PCL XL output device (pxlmono, pxlcolor) files:
+<a href="../src/gdevpx.c">src/gdevpx.c</a>,
+<a href="../src/gdevpxat.h">src/gdevpxat.h</a>,
+<a href="../src/gdevpxen.h">src/gdevpxen.h</a>,
+<a href="../src/gdevpxop.h">src/gdevpxop.h</a>,
+<a href="../src/gdevpxut.c">src/gdevpxut.c</a>,
+<a href="../src/gdevpxut.h">src/gdevpxut.h</a>.
+
+<p>
+Other high-level devices, files:
+<a href="../src/gdevtrac.c">src/gdevtrac.c</a>.
+
+<h3><a name="Other_maintained_drivers"></a>Other maintained drivers</h3>
+
+<p>
+The standard Ghostscript distribution includes a collection of drivers,
+mostly written by Aladdin Enterprises, that are "maintained" in the same
+sense as the Ghostscript core code.
+
+<p>
+Display drivers, files:
+<a href="../src/gdev8bcm.c">src/gdev8bcm.c</a>,
+<a href="../src/gdev8bcm.h">src/gdev8bcm.h</a>,
+<a href="../src/gdevegaa.asm">src/gdevegaa.asm</a>,
+<a href="../src/gdevevga.c">src/gdevevga.c</a>,
+<a href="../src/gdevl256.c">src/gdevl256.c</a>,
+<a href="../src/gdevpccm.c">src/gdevpccm.c</a>,
+<a href="../src/gdevpccm.h">src/gdevpccm.h</a>,
+<a href="../src/gdevpcfb.c">src/gdevpcfb.c</a>,
+<a href="../src/gdevpcfb.h">src/gdevpcfb.h</a>,
+<a href="../src/gdevs3ga.c">src/gdevs3ga.c</a>,
+<a href="../src/gdevsco.c">src/gdevsco.c</a>,
+<a href="../src/gdevsvga.c">src/gdevsvga.c</a>,
+<a href="../src/gdevsvga.h">src/gdevsvga.h</a>,
+<a href="../src/gdevvglb.c">src/gdevvglb.c</a>.
+
+<p>
+Window system drivers, files:
+<a href="../src/gdevmswn.c">src/gdevmswn.c</a>,
+<a href="../src/gdevmswn.h">src/gdevmswn.h</a>,
+<a href="../src/gdevmsxf.c">src/gdevmsxf.c</a>,
+<a href="../src/gdevpm.c">src/gdevpm.c</a>,
+<a href="../src/gdevpm.h">src/gdevpm.h</a>,
+<a href="../src/gdevx.c">src/gdevx.c</a>,
+<a href="../src/gdevx.h">src/gdevx.h</a>,
+<a href="../src/gdevxalt.c">src/gdevxalt.c</a>,
+<a href="../src/gdevxcmp.c">src/gdevxcmp.c</a>,
+<a href="../src/gdevxcmp.h">src/gdevxcmp.h</a>,
+<a href="../src/gdevxini.c">src/gdevxini.c</a>,
+<a href="../src/gdevxres.c">src/gdevxres.c</a>,
+<a href="../src/gdevxxf.c">src/gdevxxf.c</a>.
+
+<p>
+Raster file output drivers, files:
+<a href="../src/gdevbit.c">src/gdevbit.c</a>,
+<a href="../src/gdevbmp.c">src/gdevbmp.c</a>,
+<a href="../src/gdevbmpa.c">src/gdevbmpa.c</a>,
+<a href="../src/gdevcgm.c">src/gdevcgm.c</a>,
+<a href="../src/gdevcgml.c">src/gdevcgml.c</a>,
+<a href="../src/gdevcgml.h">src/gdevcgml.h</a>,
+<a href="../src/gdevcgmx.h">src/gdevcgmx.h</a>,
+<a href="../src/gdevfax.c">src/gdevfax.c</a>,
+<a href="../src/gdevfax.h">src/gdevfax.h</a>,
+<a href="../src/gdevjpeg.c">src/gdevjpeg.c</a>,
+<a href="../src/gdevmiff.c">src/gdevmiff.c</a>,
+<a href="../src/gdevpcx.c">src/gdevpcx.c</a>,
+<a href="../src/gdevpbm.c">src/gdevpbm.c</a>,
+<a href="../src/gdevpng.c">src/gdevpng.c</a>,
+<a href="../src/gdevpsim.c">src/gdevpsim.c</a>,
+<a href="../src/gdevtfax.c">src/gdevtfax.c</a>,
+<a href="../src/gdevtfax.h">src/gdevtfax.h</a>,
+<a href="../src/gdevtifs.c">src/gdevtifs.c</a>,
+<a href="../src/gdevtifs.h">src/gdevtifs.h</a>,
+<a href="../src/gdevtfnx.c">src/gdevtfnx.c</a>.
+
+<p>
+Printer drivers, files:
+
+<h3><a name="Contributed_drivers"></a>Contributed drivers</h3>
 
 <h2><a name="PostScript_interpreter"></a>PostScript interpreter</h2>
 
@@ -1611,6 +1833,41 @@ same allocated block of memory, the code uses the
 See the files listed above for other situations where a macro provides
 platform-independence or a workaround for bugs in specific compilers or
 libraries (of which there are a distressing number).
+
+<h2><a name="Platform_specific_code"></a>Platform-specific code</h2>
+
+<p>
+There are some features that are inherently platform-specific:
+
+<ul>
+
+<li>Microsoft Windows requires a lot of special top-level code, and also has
+an installer and uninstaller.
+
+<li>MacOS also requires special top-level code (not distributed with the
+standard Ghostscript package).
+
+</ul>
+
+MS Windows files:
+<a href="../src/dpmainc.c">src/dpmainc.c</a>,
+<a href="../src/dwdll.cpp">src/dwdll.cpp</a>,
+<a href="../src/dwdll.h">src/dwdll.h</a>,
+<a href="../src/dwimg.cpp">src/dwimg.cpp</a>,
+<a href="../src/dwimg.h">src/dwimg.h</a>,
+<a href="../src/dwinst.cpp">src/dwinst.cpp</a>,
+<a href="../src/dwinst.h">src/dwinst.h</a>,
+<a href="../src/dwmain.cpp">src/dwmain.cpp</a>,
+<a href="../src/dwmain.h">src/dwmain.h</a>,
+<a href="../src/dwmainc.cpp">src/dwmainc.cpp</a>,
+<a href="../src/dwnodll.cpp">src/dwnodll.cpp</a>,
+<a href="../src/dwsetup.cpp">src/dwsetup.cpp</a>,
+<a href="../src/dwsetup.h">src/dwsetup.h</a>,
+<a href="../src/dwtext.cpp">src/dwtext.cpp</a>,
+<a href="../src/dwtext.h">src/dwtext.h</a>,
+<a href="../src/dwuninst.cpp">src/dwuninst.cpp</a>,
+<a href="../src/dwuninst.h">src/dwuninst.h</a>,
+<a href="../src/gs16spl.c">src/gs16spl.c</a>.
 
 <hr>
 
