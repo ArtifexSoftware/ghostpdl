@@ -252,7 +252,6 @@ $(PLOBJ)plmain.$(OBJ): $(PLSRC)plmain.c $(AK) $(stdio__h) $(string__h)\
  $(gsalloc_h) $(gsargs_h) $(gp_h) $(gsdevice_h)\
  $(gsparam_h) $(pjtop_h) $(plparse_h) $(plplatf_h)\
  $(plmain_h) $(pltop_h) $(pltoputl_h) $(gsargs_h) $(gsgc_h)
-
 	$(PLCCC) $(PLSRC)plmain.c $(PLO_)plmain.$(OBJ)
 
 $(PLOBJ)plimpl.$(OBJ):  $(PLSRC)plimpl.c            \
