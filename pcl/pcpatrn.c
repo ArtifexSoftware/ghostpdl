@@ -972,8 +972,8 @@ pattern_set_shade_gl(
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
         pptrn = pcl_pattern_get_unsolid_pattern();
     else if (pptrn == 0)
-        return ( inten <= 0 ? pattern_set_pen(pcs, pen, 0)
-                            : pattern_set_white(pcs, 0, 0)   );
+        return ( inten > 0 ? pattern_set_pen(pcs, pen, 0)
+                           : pattern_set_white(pcs, 0, 0)   );
     
     pcl_xfm_gl_set_pat_ref_pt(pcs);
     return set_uncolored_palette_pattern(pcs, pptrn, pen);
@@ -1335,3 +1335,4 @@ pattern_do_reset(
 
 const pcl_init_t    pcl_pattern_init = { pattern_do_init, pattern_do_reset, 0 };
     
+  
