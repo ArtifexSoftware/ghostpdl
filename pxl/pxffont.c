@@ -84,8 +84,6 @@ px_widen_font_name(px_value_t *pfnv, px_state_t *pxs)
 private int
 px_lineprinter_font_alias_name(px_value_t *pfnv, px_state_t *pxs)
 {	
-    uint size = pfnv->value.array.size;
-
     /* NB:coupling: depends on this being the first LinePrinter font in plftable.c */
     static  const unsigned short linePrinter[16] = 
 	{'L','i','n','e',' ','P','r','i','n','t','e','r',' ',' ','0','N'};
