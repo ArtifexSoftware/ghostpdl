@@ -260,6 +260,8 @@ ppm_open(gx_device * pdev)
 
     if (code < 0)
 	return code;
+    pdev->color_info.separable_and_linear = GX_CINFO_SEP_LIN;
+    set_linear_color_bits_mask_shift(pdev);
     bdev->uses_color = 0;
     ppm_set_dev_procs(pdev);
     return code;
