@@ -101,8 +101,7 @@ px_find_existing_font(px_value_t *pfnv, px_font_t **ppxfont,
 		  return -1;
 	      }
 	} else {
-	    dprintf("font not found\n");
-	    return -1;
+	    return -1; /* font not found */
 	}
 	return 0;
 }
