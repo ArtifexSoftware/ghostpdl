@@ -1163,7 +1163,7 @@ psf_write_cid2_font(stream *s, gs_font_cid2 *pfont, int options,
 			     (subset_bits ? subset_size : 0),
 			     GLYPH_SPACE_INDEX);
     return psf_write_truetype_data(s, (gs_font_type42 *)font,
-				   WRITE_TRUETYPE_CID, &genum,
+				   options | WRITE_TRUETYPE_CID, &genum,
 				   subset_bits != 0, alt_font_name);
 }
 
