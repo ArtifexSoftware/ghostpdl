@@ -461,10 +461,6 @@ buildfontdict 3 /.buildfont3 cvx put
 % We go to some trouble to parse the font name and extract
 % properties from it.  Later entries take priority over earlier.
 /.substitutefaces [
-	% Generic terms have lowest priority.
-	% If 'Sans' and 'Serif' both appear, 'Sans' has priority.
-  [(Serif) /Times 0]
-  [(Sans) /Helvetica 0]
 	% Guess at suitable substitutions for random unknown fonts.
   [(Chancery) /ZapfChancery-MediumItalic 0]
   [(Grot) /Times 0]
@@ -526,13 +522,16 @@ buildfontdict 3 /.buildfont3 cvx put
   [(It) 9] [(Oblique) 1]
   [(Black) 2] [(Bd) 2] [(Bold) 2] [(bold) 2] [(Demi) 2] [(Heavy) 2] [(Sb) 2]
   [(Cn) 4] [(Cond) 4] [(Narrow) 4] [(Pkg) 4]
-  % 8 is serif, currently only used in PDF and for (It)
+  [(Serif) 8] [(Sans) -8]
 ] readonly def
-/.fontnameproperties {		% <string|name> .fontnameproperties <int>
+/.fontnameproperties {		% <int> <string|name> .fontnameproperties
+				%   <int'>
   .fontnamestring
-  0 exch .substituteproperties {
+  .substituteproperties {
     2 copy 0 get search {
-      pop pop pop 1 get 3 -1 roll or exch
+      pop pop pop dup length 1 sub 1 exch getinterval 3 -1 roll exch {
+	dup 0 ge { or } { neg not and } ifelse
+      } forall
     } {
       pop pop
     } ifelse
@@ -600,7 +599,7 @@ buildfontdict 3 /.buildfont3 cvx put
   1 index length mod get exec
 } bind def
 /.substitutefont {		% <fontname> .substitutefont <altname>
-  dup .fontnameproperties .substitutefontname
+  dup 0 exch .fontnameproperties .substitutefontname
 	% Only accept fonts known in the Fontmap.
    Fontmap 1 index known not { pop defaultfontname } if
 } bind def

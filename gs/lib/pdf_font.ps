@@ -191,6 +191,9 @@ pdfdict begin
  } bdef
 
 % Find a font, and adjust its encoding if necessary.
+/.pdfdfndict mark
+  /defaultfontname /Helvetica
+.dicttomark readonly def
 /pdffindfont {		% <font-resource> <fontname> pdffindfont <font>
 		% If the font isn't available, synthesize one based on
 		% its descriptor.
@@ -206,8 +209,9 @@ pdfdict begin
 		% We should look at the fixed flag, too.
 		% Stack: font-res fontname fontdesc properties
       1 index /FontName oget exch
-      1 index .fontnameproperties or
-      .substitutefontname
+		% Rebind the default font name to Helvetica so that
+		% fonts with no properties are handled correctly.
+      //.pdfdfndict begin .substitutefontname end
 		% Stack: font-res fontname fontdesc substname|null
       Fontmap 1 index known not {
 		% No available good substitution, use the standard one.
