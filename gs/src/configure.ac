@@ -208,17 +208,35 @@ AC_SUBST(IJSDEVS)
 
 dnl look for jbig2dec
 AC_ARG_WITH(jbig2dec, AC_HELP_STRING([--with-jbig2dec],[include JBIG2 decode support]))
+JBIG2DIR=src
+SHARE_JBIG2=0
 JBIG2DEVS=''
 if test x$with_jbig2dec != xno; then
+  AC_MSG_CHECKING([for local jbig2dec library source])
+  for d in jbig2dec jbig2dec-0.2; do
+    test -d "$d" && JBIG2DIR=$d && break
+  done
+  if test "x$JBIG2DIR" != xsrc; then
+    AC_MSG_RESULT([$JBIG2DIR])
+  else
+    AC_MSG_RESULT([no])
     AC_CHECK_LIB([jbig2dec], [jbig2_page_out], [
-	JBIG2DEVS='$(PSD)jbig2.dev'
-	if test x$ac_cv_header_stdint_h != xyes; then
-	  AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
-	fi
+	SHARE_JBIG2=1
     ], [
 	AC_MSG_WARN([disabling support for JBIG2 files])
+        with_jbig2dec=no
     ])
+  fi
 fi
+if test x$with_jbig2dec != xno; then
+  JBIG2DEVS='$(PSD)jbig2.dev'
+  if test x$ac_cv_header_stdint_h != xyes; then
+    AC_MSG_WARN([JBIG2 support requires stdint types which do not seem to be available.])
+  fi
+fi
+
+AC_SUBST(JBIG2DIR)
+AC_SUBST(SHARE_JBIG2)
 AC_SUBST(JBIG2DEVS)
 
 dnl optional X11 for display devices

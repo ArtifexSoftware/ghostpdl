@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996-9, 2002 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1989, 1996-2003 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -54,6 +54,11 @@
 #	    and linking libgz/libz explicitly.
 #	ZLIB_NAME - the name of the shared zlib, either gz (for libgz, -lgz)
 #	    or z (for libz, -lz).
+#	SHARE_JBIG2 - normally 0; if set to 1, asks the linker to use
+#	    an existing complied libjbig2dec instead of compiling and linking
+#	    in from a local copy of the source
+#	JBIG2SRCDIR - the name of the jbig2dec library source directory
+#	    typically 'jbig2dec' or 'jbig2dec-/version/'
 #	ICCSRCDIR - the name of the ICC lib source dir, currently
 #	    always icclib (compiled in statically)
 #	DEVICE_DEVS - the devices to include in the executable.
@@ -209,6 +214,8 @@ PNGGENDIR=$(GLGENDIR)
 PNGOBJDIR=$(GLOBJDIR)
 ZGENDIR=$(GLGENDIR)
 ZOBJDIR=$(GLOBJDIR)
+JBIG2GENDIR=$(GLGENDIR)
+JBIG2OBJDIR=$(GLOBJDIR)
 ICCGENDIR=$(GLGENDIR)
 ICCOBJDIR=$(GLOBJDIR)
 IJSGENDIR=$(GLGENDIR)

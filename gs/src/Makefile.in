@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2002 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1997, 2003 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -160,6 +160,10 @@ SHARE_ZLIB=@SHARE_ZLIB@
 ZSRCDIR=@ZLIBDIR@
 #ZLIB_NAME=gz
 ZLIB_NAME=z
+
+# Choose shared or compiled in libjbig2dec and source location
+SHARE_JBIG2=@SHARE_JBIG2@
+JBIG2SRCDIR=@JBIG2DIR@
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
@@ -410,6 +414,7 @@ include $(GLSRCDIR)/jpeg.mak
 # zlib.mak must precede libpng.mak
 include $(GLSRCDIR)/zlib.mak
 include $(GLSRCDIR)/libpng.mak
+include $(GLSRCDIR)/jbig2.mak
 include $(GLSRCDIR)/icclib.mak
 include $(GLSRCDIR)/ijs.mak
 include $(GLSRCDIR)/devs.mak

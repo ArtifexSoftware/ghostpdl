@@ -1339,9 +1339,9 @@ $(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
 # ---------------- JBIG2 compression filter ---------------- #
 
 sjbig2_=$(GLOBJ)sjbig2.$(OBJ)
-$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(sjbig2_)
+$(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjbig2.dev $(sjbig2_)
 	$(SETMOD) $(GLD)sjbig2 $(sjbig2_)
-	$(ADDMOD) $(GLD)sjbig2 -lib jbig2dec
+	$(ADDMOD) $(GLD)sjbig2 -include $(GLD)libjbig2.dev
 
 $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
  $(gserror_h) $(gserrors_h) $(gdebug_h) $(sjbig2_h) $(strimpl_h)
