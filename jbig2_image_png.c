@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_png.c,v 1.6 2002/07/20 17:23:15 giles Exp $
+    $Id: jbig2_image_png.c,v 1.7 2002/08/06 10:57:49 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -73,6 +73,9 @@ int jbig2_image_write_png(Jbig2Image *image, FILE *out)
 		return 4;
 	}
 
+        /* note that this doesn't work linking dynamically to libpng on win32
+           one has to either link statically or use callbacks because of runtime
+           variations */s
 	png_init_io(png, out);
    
 	/* now we fill out the info structure with our format data */
