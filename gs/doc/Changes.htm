@@ -1,5 +1,5 @@
 <html><head>
-<title>Ghostscript 6.23 change history as of 2000-07-11 20:03:52</title>
+<title>Ghostscript 6.23 change history as of 2000-08-07 13:26:07</title>
 </head><body>
 
 <blockquote><ul>
@@ -20,6 +20,13 @@ Fixes problems:
 	- Local GC in a multi-context system caused a crash. Also updates
 all the internal type names in zcontext.c by adding a _t suffix if
 necessary. (doc/News.htm [1.54]: 2000/07/10 23:56:55 lpd)
+	- With some high-level drivers, changing the OutputFile after
+opening the device could cause a crash. After the fix, doing this works
+properly if no pages have actually been written out, but causes a rangecheck
+error if any pages have been written. (This is required to maintain internal
+consistency.) (doc/News.htm [1.55]: 2000/07/12 14:02:03 lpd)
+	- The documented limit on the length of a file name was incorrect.
+(doc/Language.htm [1.9]: 2000/08/03 06:45:25 lpd)
 
 Increments the version number, in preparation for the next fileset.
 (doc/News.htm [1.52]: 2000/07/06 02:45:06 lpd)
@@ -38,11 +45,51 @@ Updates the references to the Computer Modern Fontmap on CTAN.
 Updates a couple of release procedures. (doc/Release.htm [1.15]: 2000/07/10
 19:32:59 lpd)
 
+Adds documentation and a script for preparing GNU releases from Aladdin
+releases. (doc/Release.htm [1.16]: 2000/07/17 17:10:57 lpd)
+
+Clarifies that device parameters set with -d or -s can be changed
+subsequently. (doc/Use.htm [1.8]: 2000/07/17 20:13:03 lpd)
+
+Adds a project for making Ghostscript work as a Netscape browser plug-in.
+(doc/Projects.htm [1.13]: 2000/07/19 22:50:18 lpd)
+
+Removes the SVG driver from the list of projects, since there is a group
+close to completing one (referenced from the Ghostscript home page on the
+Web). (doc/Projects.htm [1.14]: 2000/07/20 14:49:52 lpd)
+
+Directs users to the Ghostscript home page on the Web for information about
+third-party drivers. (doc/New-user.htm [1.9]: 2000/07/20 14:50:34 lpd)
+
+Adds a partially implemented driver that just produces a trace of its
+drawing calls. This driver also serves as a minimal example of how to
+implement the high-level driver operations. (doc/Drivers.htm [1.5]:
+2000/07/29 04:00:00 lpd)
+
+Updates dates and version #s for the 6.23 fileset. (doc/Bug-info.htm [1.4],
+doc/Changes.htm [1.15], doc/Drivers.htm [1.6], doc/Fonts.htm [1.6],
+doc/History5.htm [1.3], doc/Htmstyle.htm [1.4], doc/Install.htm [1.5],
+doc/Language.htm [1.10], doc/New-user.htm [1.10], doc/News.htm [1.56],
+doc/Projects.htm [1.15], doc/Ps2pdf.htm [1.15], doc/Release.htm [1.17],
+doc/Use.htm [1.9], man/ps2ps.1 [1.6]: 2000/08/07 17:48:09 lpd)
+
 </pre><h2><a name="6.23 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
 	- $(GLGEN)/md5.h wasn't deleted after compilation. (lib.mak [1.26]:
 2000/07/09 23:19:59 lpd)
+	- TrueType font loading now requires the Adobe glyph list, but this
+dependency was missing from the makefile. (int.mak [1.26]: 2000/07/19
+08:11:15 lpd)
+	- During compilation, GLSRCDIR was searched before GLGENDIR. (We're
+very surprised that this didn't cause detectable trouble before.)
+(lib.mak [1.27]: 2000/07/19 14:32:00 lpd)
+	- The dependency on gsparamx.$(OBJ) was incorrectly attached to
+pdfwrite.dev rather than psdf.dev. (devs.mak [1.30]: 2000/08/03 17:42:52
+lpd)
+	- 'pre' didn't work with dates in August or September (Tcl doesn't
+accept 08 and 09 as valid numbers). (toolbin/pre [1.5]: 2000/08/07 17:35:27
+lpd)
 
 Increments the version number, in preparation for the next fileset.
 (version.mak [1.17]: 2000/07/06 02:45:06 lpd)
@@ -50,12 +97,37 @@ Increments the version number, in preparation for the next fileset.
 Adds some user-contributed comments about using the Canon BJ200 driver with
 the BJ300. (contrib.mak [1.18]: 2000/07/11 15:33:19 lpd)
 
+Updates the (user-contributed) all-architecture build script to work around
+a detail in the SGI IRIX C library header files. (all-arch.mak [1.4]:
+2000/07/15 19:23:45 lpd)
+
+Adds documentation and a script for preparing GNU releases from Aladdin
+releases. (toolbin/makegnu.tcl [1.1]: 2000/07/17 17:10:57 lpd)
+
+Adds a partially implemented driver that just produces a trace of its
+drawing calls. This driver also serves as a minimal example of how to
+implement the high-level driver operations. (lib.mak [1.28]: 2000/07/29
+04:00:00 lpd)
+
+Changes 'gsmake' to report line number rather than character position for
+errors and warnings. (toolbin/gsmake.tcl [1.3]: 2000/08/07 17:22:27 lpd)
+
+Updates dates and version #s for the 6.23 fileset. (version.mak [1.18]:
+2000/08/07 17:48:10 lpd)
+
+Adds some missing dependencies. (int.mak [1.27], lib.mak [1.29]: 2000/08/07
+17:52:22 lpd)
+
 </pre><h2><a name="6.23 Utilities"></a>Utilities</h2><pre>
 
 Fixes problems:
 	- An invalid file name or pattern passed to filenameforall would
 (incorrectly) return an empty string rather than not returning any file
 names at all. (gp_vms.c [1.3]: 2000/07/09 21:09:51 lpd)
+	- Some DOS/Windows script files didn't use 'call', so they would
+terminate execution prematurely if called from another script file.
+(lib/ps2pdf.bat [1.5], lib/ps2pdf12.bat [1.4], lib/ps2pdf13.bat [1.4],
+lib/ps2pdfxx.bat [1.8]: 2000/07/24 15:12:21 lpd)
 
 </pre><h2><a name="6.23 Drivers"></a>Drivers</h2><pre>
 
@@ -75,6 +147,15 @@ Fixes problems:
 when mixing text and graphics, sometimes producing horizontally misplaced
 text. (gdevpdf.c [1.18], gdevpdfg.c [1.7], gdevpdfu.c [1.10],
 gdevpdfx.h [1.19]: 2000/07/11 14:33:54 lpd)
+	- 'show'ing an empty string could cause the next string to be
+positioned incorrectly. (gdevpdft.c [1.14]: 2000/07/27 14:18:11 lpd)
+
+Updates font embedding code to handle CIDFontType 2 fonts. NOT TESTED.
+(gdevpdfe.c [1.3]: 2000/07/27 04:18:13 lpd)
+
+Adds glyphs_used to FontDescriptors and pfd to std_fonts in the device
+structure. WORK IN PROGRESS. (gdevpdf.c [1.19], gdevpdff.c [1.7],
+gdevpdff.h [1.3], gdevpdfx.h [1.20]: 2000/07/27 04:19:24 lpd)
 
 </pre><h2><a name="6.23 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
 
@@ -84,6 +165,13 @@ alphabetic fonts explicitly as a TrueType font (e.g., /BaseFont
 /TimesNewRoman /Subtype /TrueType) without embedding it, the substituted
 Type 1 font had the wrong Encoding. (lib/pdf_font.ps [1.10]: 2000/07/10
 13:18:28 lpd)
+	- Piped input beginning with a % caused an ioerror. (bug introduced
+in 6.22) (lib/pdf_main.ps [1.10]: 2000/07/14 05:30:19 lpd)
+	- As a result of some recent changes to fix other problems, setting
+certain text state parameters (Tf, Ts, Tz) outside of text mode (BT/ET)
+caused an error. (lib/pdf_ops.ps [1.6]: 2000/07/19 15:57:54 lpd)
+	- Setting a singular text matrix (e.g., 0 0 0 0 <x> <y> Tm) caused
+an error. (lib/pdf_ops.ps [1.7]: 2000/08/04 16:08:05 lpd)
 
 </pre><h2><a name="6.23 Interpreter"></a>Interpreter</h2><pre>
 
@@ -102,6 +190,36 @@ a page device sometimes caused an error. (bug introduced in 6.21)
 	- Local GC in a multi-context system caused a crash. Also updates
 all the internal type names in zcontext.c by adding a _t suffix if
 necessary. (zcontext.c [1.4]: 2000/07/10 23:56:55 lpd)
+	- A garbage collection occurring within a save could cause a memory
+access error. (bug introduced in 6.22) (zcontext.c [1.5]: 2000/07/14
+05:28:56 lpd)
+	- Piped input beginning with a % caused an ioerror. (bug introduced
+in 6.22) (zfileio.c [1.8]: 2000/07/14 05:30:19 lpd)
+	- A garbage collection occurring while scanning a binary token
+sequence could cause a syntaxerror or corrupted data. (iscan.c [1.3]:
+2000/07/18 15:39:02 lpd)
+	- (correction) An interruption (including a callout for a
+procedure-based stream), not a garbage collection, while scanning a binary
+token sequence could cause a syntaxerror or corrupted data. (iscan.c [1.4]:
+2000/07/18 15:41:55 lpd)
+	- When loading a TrueType font, invalid glyph numbers in the 'post'
+table (which appear in some Adobe-created PDF files) caused an error instead
+of being ignored; a test was backwards, causing some embedded TrueType fonts
+in PDF files to produce a rangecheck error. (lib/gs_ttf.ps [1.6]: 2000/07/19
+08:12:41 lpd)
+	- When NOPROMPT was set, no flush or flushpage occurred at the end
+of a page. (fix from an anonymous user on SourceForge)
+(lib/gs_init.ps [1.19]: 2000/07/20 01:40:50 lpd)
+	- Type 1 or Type 2 fonts with invalid LanguageGroup values < 0
+caused an error. (Such fonts are invalid, but some real fonts have garbage
+LanguageGroup values, and Adobe software doesn't give an error.)
+(zfont1.c [1.6]: 2000/07/24 18:08:38 lpd)
+	- Errors while executing gs_init.ps and other PostScript
+initialization files were sometimes ignored, leading to mysterious error
+messages later. (imainarg.c [1.3]: 2000/08/03 06:43:17 lpd)
+	- Showing text with a singular matrix (scaling matrix x CTM) could
+leave extraneous values on the operand stack. (zchar1.c [1.4]: 2000/08/04
+16:09:30 lpd)
 
 Increments the version number, in preparation for the next fileset.
 (lib/gs_init.ps [1.15]: 2000/07/06 02:45:06 lpd)
@@ -118,6 +236,13 @@ NON-BACKWARD-COMPATIBLE change; however, using copydevice on a device
 instance never worked reliably, so it should not have been used this way
 before. (lib/gs_init.ps [1.17]: 2000/07/06 04:13:24 lpd)
 
+Adds the ability to load CIDFont resources from CFF OpenType font files.
+(lib/gs_cff.ps [1.6], lib/gs_cidfn.ps [1.16]: 2000/07/29 05:58:28 lpd)
+
+Ensures that errordict has at least one empty entry, for the sake of some
+astonishingly bad PostScript code that tests for this and has a bug in the
+case where it isn't true. (lib/gs_init.ps [1.20]: 2000/08/04 04:29:45 lpd)
+
 </pre><h2><a name="6.23 Library"></a>Library</h2><pre>
 
 Fixes problems:
@@ -127,6 +252,22 @@ gxmatrix.h [1.2]: 2000/07/11 09:25:46 lpd)
 	- If the current color space was DeviceRGB, gs_currentgray returned
 the wrong value. (bug introduced in 6.22) (gscolor.c [1.3]: 2000/07/11
 14:00:09 lpd)
+	- With some high-level drivers, changing the OutputFile after
+opening the device could cause a crash. After the fix, doing this works
+properly if no pages have actually been written out, but causes a rangecheck
+error if any pages have been written. (This is required to maintain internal
+consistency.) (gdevvec.c [1.4]: 2000/07/12 14:02:04 lpd)
+	- A file had accidentally acquired an incorrect license notice.
+(gscoord.c [1.4]: 2000/07/13 02:02:09 lpd)
+	- Type 2 fonts that used the 'hflex' operator could produce
+distorted characters (e.g., slanted bottoms). (gstype2.c [1.4]: 2000/07/13
+02:09:21 lpd)
+	- The use of macros within procedure argument lists confused
+ansi2knr. (gximage3.c [1.5], gximage3.h [1.3]: 2000/07/19 14:30:45 lpd)
+	- Freeing a locking allocator could cause infinite recursion.
+(gsmemlok.c [1.2]: 2000/07/19 21:32:12 lpd)
+	- "Accurate curves" was a no-op for certain cases of horizontal or
+vertical tangents. (gxpcopy.c [1.2]: 2000/08/05 01:04:28 lpd)
 
 Increments the version number, in preparation for the next fileset.
 (gscdef.c [1.5]: 2000/07/06 02:45:06 lpd)
@@ -152,5 +293,23 @@ Adds a little more tracing output for images. (gxidata.c [1.3]: 2000/07/09
 
 Adds _simple_final structure type definition macros. (gsstruct.h [1.3]:
 2000/07/10 15:43:30 lpd)
+
+Removes a structure member no longer needed after a recent fix.
+(gscoord.c [1.3], gxmatrix.h [1.3]: 2000/07/12 04:49:43 lpd)
+
+Adds the ability to write subsetted CIDFontType 2 (TrueType-based) fonts.
+(gdevpsf.h [1.6], gdevpsft.c [1.2], gdevpsfu.c [1.3], gxfcid.h [1.5]:
+2000/07/21 01:09:16 lpd)
+
+Adds a partially implemented driver that just produces a trace of its
+drawing calls. This driver also serves as a minimal example of how to
+implement the high-level driver operations. (gdevtrac.c [1.1]: 2000/07/29
+04:00:00 lpd)
+
+Improves the smoothness of ShadingType 4 - 7 gradient fills.
+(gxshade4.c [1.2], gxshade6.c [1.2]: 2000/08/03 20:47:48 lpd)
+
+Updates dates and version #s for the 6.23 fileset. (gscdef.c [1.6]:
+2000/08/07 17:48:10 lpd)
 
 </pre></body></html>
