@@ -170,9 +170,17 @@ WX=$(COMPILE_FOR_DLL)
 !else
 WX=$(COMPILE_FOR_EXE)
 !endif
+
+!if $(COMPILE_INITS)
+ZM=/Zm200
+!else
+ZM=
+!endif
+
+
 # /Za disables the MS-specific extensions & enables ANSI mode.
 CC_WX=$(CC) $(WX)
-CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) /Za
+CC_=$(CC_WX) $(COMPILE_FULL_OPTIMIZED) /Za $(ZM)
 CC_D=$(CC_WX) $(COMPILE_WITH_FRAMES)
 CC_INT=$(CC_)
 CC_LEAF=$(CC_) $(COMPILE_WITHOUT_FRAMES)
