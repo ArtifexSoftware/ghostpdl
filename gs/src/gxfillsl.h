@@ -66,9 +66,7 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 
 	INCR(iter);
 
-#	if SCANLINE_USES_ITERATOR
-	    move_al_by_y(ll, y);
-#	endif
+	move_al_by_y(ll, y); /* Skip horizontal pieces. */
 	/*
 	 * Find the next sampling point, either the bottom of a sampling
 	 * band or a line start.
@@ -80,17 +78,12 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 	    y = y_bot + fixed_1;
 	    if (yll != 0)
 		y = min(y, yll->start.y);
-	    for (alp = ll->x_list; alp != 0; alp = alp->next)
-#		if !SCANLINE_USES_ITERATOR
-		if (!end_x_line(alp, ll, false))
-		    y = min(y, alp->end.y);
-#		else
-		{   fixed yy = max(alp->fi.y3, alp->fi.y0);
-		    
-		    yy = max(yy, alp->end.y); /* Non-monotonic curves may have an inner extreme. */
-		    y = min(y, yy);
-		}
-#		endif
+	    for (alp = ll->x_list; alp != 0; alp = alp->next) {
+		fixed yy = max(alp->fi.y3, alp->fi.y0);
+		
+		yy = max(yy, alp->end.y); /* Non-monotonic curves may have an inner extreme. */
+		y = min(y, yy);
+	    }
 	}
 
 	/* Move newly active lines from y to x list. */
@@ -100,12 +93,8 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 
 	    if (yll->direction == DIR_HORIZONTAL) {
 		/* Ignore for now. */
-	    } else {
+	    } else
 		insert_x_new(yll, ll);
-#		if !SCANLINE_USES_ITERATOR
-		    set_scan_line_points(yll, fo.fixed_flat);
-#		endif
-	    }
 	    yll = ynext;
 	}
 
@@ -119,24 +108,12 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 	  e:if (alp->end.y <= y || alp->start.y == alp->end.y) {
 		if (end_x_line(alp, ll, true))
 		    continue;
-#		if !SCANLINE_USES_ITERATOR
-		    set_scan_line_points(alp, fo.fixed_flat);
-#		else
-		    if (alp->more_flattened)
-			if (alp->end.y <= y || alp->start.y == alp->end.y)
-			    step_al(alp, true);
-#		endif
+		if (alp->more_flattened)
+		    if (alp->end.y <= y || alp->start.y == alp->end.y)
+			step_al(alp, true);
 		goto e;
 	    }
-	    nx = alp->x_current =
-		(alp->start.y >= y ? alp->start.x :
-#		if !SCANLINE_USES_ITERATOR
-		 alp->curve_k < 0 ?
-		 AL_X_AT_Y(alp, y) :
-		 gx_curve_x_at_y(&alp->cursor, y));
-#		else
-		 AL_X_AT_Y(alp, y));
-#		endif
+	    nx = alp->x_current = (alp->start.y >= y ? alp->start.x : AL_X_AT_Y(alp, y));
 	    if (nx < x) {
 		/* Move this line backward in the list. */
 		active_line *ilp = alp;
