@@ -127,6 +127,34 @@ void vd_impl_square(double x, double y, int w, unsigned int c)
     vd_trace1->stroke(vd_trace1);
 }
 
+void vd_impl_rect(double x0, double y0, double x1, double y1, int w, unsigned int c)
+{   NullRET;
+    vd_trace1->setcolor(vd_trace1, c);
+    vd_trace1->setlinewidth(vd_trace1, w);
+    vd_trace1->beg_path(vd_trace1);
+    vd_trace1->moveto(vd_trace1, SX(x0), SY(y0));
+    vd_trace1->lineto(vd_trace1, SX(x0), SY(y1));
+    vd_trace1->lineto(vd_trace1, SX(x1), SY(y1));
+    vd_trace1->lineto(vd_trace1, SX(x1), SY(y0));
+    vd_trace1->lineto(vd_trace1, SX(x0), SY(y0));
+    vd_trace1->end_path(vd_trace1);
+    vd_trace1->stroke(vd_trace1);
+}
+
+void vd_impl_quad(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int w, unsigned int c)
+{   NullRET;
+    vd_trace1->setcolor(vd_trace1, c);
+    vd_trace1->setlinewidth(vd_trace1, w);
+    vd_trace1->beg_path(vd_trace1);
+    vd_trace1->moveto(vd_trace1, SX(x0), SY(y0));
+    vd_trace1->lineto(vd_trace1, SX(x1), SY(y1));
+    vd_trace1->lineto(vd_trace1, SX(x2), SY(y2));
+    vd_trace1->lineto(vd_trace1, SX(x3), SY(y3));
+    vd_trace1->lineto(vd_trace1, SX(x0), SY(y0));
+    vd_trace1->end_path(vd_trace1);
+    vd_trace1->stroke(vd_trace1);
+}
+
 void vd_impl_curve(double x0, double y0, double x1, double y1, double x2, double y2, double x3, double y3, int w, unsigned long c)
 {   NullRET;
     vd_trace1->setcolor(vd_trace1, c);

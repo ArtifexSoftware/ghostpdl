@@ -428,6 +428,11 @@ The following table explains the semantics of Visual Trace instructions.
 	<td>Release drawing context
         <td>&nbsp;&nbsp;
 	<td>
+<tr>	<td><b><tt>vd_enabled</tt></b>
+        <td>&nbsp;&nbsp;
+	<td>Is trace currently enabled ?
+        <td>&nbsp;&nbsp;
+	<td>
 <tr>	<td><b><tt>vd_get_size_unscaled_x</tt></b>
         <td>&nbsp;&nbsp;
 	<td>Get the horizontal size of the output window in pixels.
@@ -533,12 +538,7 @@ The following table explains the semantics of Visual Trace instructions.
 	<td>Path construction : Close the path (is necessary for filling an area).
         <td>&nbsp;&nbsp;
 	<td>
-<tr>	<td><b><tt>vd_bar(x0,y0,x1,y1,c)</tt></b>
-        <td>&nbsp;&nbsp;
-	<td>Bar from point to point.
-        <td>&nbsp;&nbsp;
-	<td>2 points (debugee coordinates) and color.
-<tr>	<td><b><tt>vd_bar_w(x0,y0,x1,y1,w,c)</tt></b>
+<tr>	<td><b><tt>vd_bar(x0,y0,x1,y1,w,c)</tt></b>
         <td>&nbsp;&nbsp;
 	<td>Bar from point to point.
         <td>&nbsp;&nbsp;
@@ -548,12 +548,17 @@ The following table explains the semantics of Visual Trace instructions.
 	<td>Square with specified center and size.
         <td>&nbsp;&nbsp;
 	<td>The center (debugee coordinates), size (in pixels) and color.
-<tr>	<td><b><tt>vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,c)</tt></b>
+<tr>	<td><b><tt>vd_rect(x0,y0,x1,y1,w,c)</tt></b>
         <td>&nbsp;&nbsp;
-	<td>Curve with specified begin point, 2 poles and end point.
+	<td>Canonic rectangle with specified coordinites.
         <td>&nbsp;&nbsp;
-	<td>4 points (debugee coordinates), and color.
-<tr>	<td><b><tt>vd_curve_w(x0,y0,x1,y1,x2,y2,x3,y3,c,w)</tt></b>
+	<td>Coordinates of boundaries (debugee coordinates), line width (in pixels) and color.
+<tr>	<td><b><tt>vd_quad(x0,y0,x1,y1,x2,y2,x3,y3,w,c)</tt></b>
+        <td>&nbsp;&nbsp;
+	<td>Quadrangle with specified coordinites.
+        <td>&nbsp;&nbsp;
+	<td>Coordinates of vertices (debugee coordinates), line width (in pixels) and color.
+<tr>	<td><b><tt>vd_curve(x0,y0,x1,y1,x2,y2,x3,y3,c,w)</tt></b>
         <td>&nbsp;&nbsp;
 	<td>Curve with width.
         <td>&nbsp;&nbsp;
