@@ -23,6 +23,7 @@
 #include "gstrans.h"
 #include "gsutil.h"
 #include "gzstate.h"
+#include "gxdevcli.h"
 
 /* ------ Transparency-related graphics state elements ------ */
 
@@ -241,14 +242,22 @@ gs_begin_transparency_group(gs_state *pgs,
 		 ptgp->Isolated, ptgp->Knockout);
     }
 #endif
+    return (*dev_proc(pgs->device, begin_transparency_group)) (pgs->device, ptgp,
+							    pbbox, pgs,
+							    NULL, NULL);
+#if 0
     return push_transparency_stack(pgs, TRANSPARENCY_STATE_Group,
 				   "gs_begin_transparency_group");
+#endif
 }
 
 int
 gs_end_transparency_group(gs_state *pgs)
 {
     /****** NYI, DUMMY ******/
+    return (*dev_proc(pgs->device, end_transparency_group)) (pgs->device, pgs,
+							     NULL);
+#if 0
     gs_transparency_state_t *pts = pgs->transparency_stack;
 
     if_debug1('v', "[v](0x%lx)end_transparency_group\n", (ulong)pgs);
@@ -256,6 +265,7 @@ gs_end_transparency_group(gs_state *pgs)
 	return_error(gs_error_rangecheck);
     pop_transparency_stack(pgs, "gs_end_transparency_group");
     return 0;
+#endif
 }
 
 private int

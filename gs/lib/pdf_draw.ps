@@ -861,6 +861,7 @@ end
 
 drawopdict begin
   /Do {
+    setfillblend
     PDFfile fileposition exch
     dup Page /XObject rget { 
       exch pop dup /Subtype get xobjectprocs exch get

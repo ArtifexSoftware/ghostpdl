@@ -840,11 +840,3 @@ $(DD)sunhmono.dev : $(sunr_) $(DD)page.dev
 $(GLOBJ)gdevsunr.$(OBJ) : $(GLSRC)gdevsunr.c $(PDEVH)
 	$(GLCC) $(GLO_)gdevsunr.$(OBJ) $(C_) $(GLSRC)gdevsunr.c
 
-### -------------------- PNG with transparency -------------------- ###
-
-pnga_=$(GLOBJ)gdevpnga.$(OBJ)
-$(DD)pnga.dev:	$(pnga_)
-	$(SETDEV) $(DD)pnga $(pnga_)
-
-$(GLOBJ)gdevpnga.$(OBJ):	$(GLSRC)gdevpnga.c
-	$(GLCC) $(GLO_)gdevpnga.$(OBJ) $(C_) $(GLSRC)gdevpnga.c

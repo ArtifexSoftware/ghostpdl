@@ -1177,6 +1177,16 @@ $(DD)png16m.dev : $(DEVS_MAK) $(libpng_dev) $(png_) $(GLD)page.dev
 	$(SETPDEV2) $(DD)png16m $(png_)
 	$(ADDMOD) $(DD)png16m $(png_i_)
 
+### -------------------- PNG with transparency -------------------- ###
+
+pnga_=$(GLOBJ)gdevpnga.$(OBJ)
+$(DD)pnga.dev:	$(pnga_)
+	$(SETDEV) $(DD)pnga $(pnga_)
+
+$(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c\
+ $(gdevprn_h) $(gdevpccm_h) $(gscdefs_h) $(png__h)
+	$(CC_) $(I_)$(GLI_) $(II)$(PI_)$(_I) $(PCF_) $(GLF_) $(GLO_)gdevpnga.$(OBJ) $(C_) $(GLSRC)gdevpnga.c
+
 ### ---------------------- PostScript image format ---------------------- ###
 ### These devices make it possible to print monochrome Level 2 files on a ###
 ###   Level 1 printer, by converting them to a bitmap in PostScript       ###
