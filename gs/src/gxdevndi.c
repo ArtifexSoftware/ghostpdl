@@ -141,9 +141,7 @@ gx_render_device_DeviceN(frac * pcolor,
 	gx_device_halftone * pdht, const gs_int_point * ht_phase,
 	bool gray_colorspace)
 {
-    uint max_value = (dev->color_info.max_components == 1) ?
-	dev->color_info.dither_grays - 1 :
-	dev->color_info.dither_colors - 1;
+    uint max_value[GS_CLIENT_COLOR_MAX_COMPONENTS];
     frac rem_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
     frac dither_check = 0;
     uint int_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
@@ -151,6 +149,12 @@ gx_render_device_DeviceN(frac * pcolor,
     int i;
     int num_colors = dev->color_info.num_components;
     uint l_color[GS_CLIENT_COLOR_MAX_COMPONENTS];
+
+    for (i=0; i<num_colors; i++) {
+	max_value[i] = (dev->color_info.gray_index == i) ?
+	     dev->color_info.dither_grays - 1 :
+	     dev->color_info.dither_colors - 1;
+    }
 
     if (pdht && pdht->components && pdht->components[0].corder.wts)
 	return gx_render_device_DeviceN_wts(pcolor, pdevc, dev, pdht,
@@ -164,53 +168,46 @@ gx_render_device_DeviceN(frac * pcolor,
 	    unsigned long hsize = pdht ?
 		    (unsigned) pdht->components[i].corder.num_levels
 	    	    : 1;
-	    unsigned long nshades = hsize * max_value + 1;
+	    unsigned long nshades = hsize * max_value[i] + 1;
 	    long shade = (invert ? frac_1 - pcolor[i] : pcolor[i]) *
 				nshades / (frac_1_long + 1);
 	    int_color[i] = (invert ? nshades - 1 - shade : shade) / hsize;
 	    l_color[i] = (invert ? nshades - 1 - shade : shade) % hsize;
-	    dither_check |= l_color[i];
+	    if (max_value[i] < MIN_CONTONE_LEVELS)
+	        dither_check |= l_color[i];
 	}
     } else {
 
         /* Compute the quotient and remainder of each color component */
         /* with the actual number of available colors. */
-        switch (max_value) {
-	    case 1:		/* 8 or 16 colors */
-	        for (i = 0; i < num_colors; i++) {
-	            if (pcolor[i] == frac_1) {
-		        rem_color[i] = 0;
-		        int_color[i] = 1;
-		    }
-		    else {
-		        rem_color[i] = pcolor[i];
-		        dither_check |= rem_color[i];
-		        int_color[i] = 0;
-		    }
-	        }
-	        break;
-	    default:
-	        {
-		    ulong want_x;
+	for (i = 0; i < num_colors; i++) {
+            if (max_value[i] == 1) {	/* 8 or 16 colors */
+	        if (pcolor[i] == frac_1) {
+		    rem_color[i] = 0;
+		    int_color[i] = 1;
+		} else {
+		    rem_color[i] = pcolor[i];
+		    dither_check |= rem_color[i];
+		    int_color[i] = 0;
+		}
+	    } else {
+		ulong want_x;
 
-	            for (i = 0; i < num_colors; i++) {
-		        want_x = (ulong) max_value * pcolor[i];
-		        int_color[i] = frac_1_quo(want_x);
-		        rem_color[i] = frac_1_rem(want_x, int_color[i]);
-		        dither_check |= rem_color[i];
-	            }
-	        }
-        }
-
-	for (i = 0; i < num_colors; i++)
+	        want_x = (ulong) max_value[i] * pcolor[i];
+	        int_color[i] = frac_1_quo(want_x);
+	        rem_color[i] = frac_1_rem(want_x, int_color[i]);
+		if (max_value[i] < MIN_CONTONE_LEVELS)
+	            dither_check |= rem_color[i];
+            }
 	    l_color[i] = rem_color[i] * pdht->components[i].corder.num_levels
 				/ frac_1;
+        }
     }
 
     /* Check for no dithering required */
     if (!dither_check) {
 	for (i = 0; i < num_colors; i++)
-	    vcolor[i] = fractional_color(int_color[i], max_value);
+	    vcolor[i] = fractional_color(int_color[i], max_value[i]);
 	color_set_pure(pdevc, dev_proc(dev, encode_color)(dev, vcolor));
 	return 0;
     }
@@ -255,17 +252,18 @@ gx_devn_reduce_colored_halftone(gx_device_color *pdevc, gx_device *dev)
     int planes = pdevc->colors.colored.plane_mask;
     int gray_index = dev->color_info.gray_index;
     int num_colors = dev->color_info.num_components;
-    gx_color_value max_color = (num_colors == 1 && gray_index == 0) ?
-	dev->color_info.dither_grays - 1 :
-	dev->color_info.dither_colors - 1;
+    uint max_value[GS_CLIENT_COLOR_MAX_COMPONENTS];
     uint b[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_value v[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index c0, c1;
     int i;
 
     for (i = 0; i < num_colors; i++) {
+	max_value[i] = (dev->color_info.gray_index == i) ?
+	     dev->color_info.dither_grays - 1 :
+	     dev->color_info.dither_colors - 1;
         b[i] = pdevc->colors.colored.c_base[i];
-        v[i] = fractional_color(b[i], max_color);
+        v[i] = fractional_color(b[i], max_value[i]);
     }
     c0 = dev_proc(dev, encode_color)(dev, v);
 
@@ -303,7 +301,7 @@ gx_devn_reduce_colored_halftone(gx_device_color *pdevc, gx_device *dev)
 	i += planes >> 1;  /* log2 for 1,2,4 */
 
 	bi = b[i] + 1;
-	v[i] = fractional_color(bi, max_color);
+	v[i] = fractional_color(bi, max_value[i]);
 	level = pdevc->colors.colored.c_level[i];
         c1 = dev_proc(dev, encode_color)(dev, v);
 	if (invert) {

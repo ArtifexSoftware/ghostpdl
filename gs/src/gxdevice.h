@@ -431,12 +431,17 @@ int gx_device_close_output_file(const gx_device * dev, const char *fname,
 				FILE *file);
 
 /*
+ * Define the number of levels for a colorant above which we do not halftone.
+ */
+#define MIN_CONTONE_LEVELS 31
+
+/*
  * Determine whether a given device needs to halftone.  Eventually this
  * should take an imager state as an additional argument.
  */
 #define gx_device_must_halftone(dev)\
   ((gx_device_has_color(dev) ? (dev)->color_info.max_color :\
-    (dev)->color_info.max_gray) < 31)
+    (dev)->color_info.max_gray) < MIN_CONTONE_LEVELS)
 
 /*
  * Do generic work for output_page.  All output_page procedures must call
