@@ -40,7 +40,7 @@ private image_enum_proc_flush(gx_image3_flush);
 private image_enum_proc_planes_wanted(gx_image3_planes_wanted);
 
 /* GC descriptor */
-public_st_gs_image3();
+private_st_gs_image3();
 
 /* Define the image type for ImageType 3 images. */
 const gx_image_type_t gs_image_type_3 = {

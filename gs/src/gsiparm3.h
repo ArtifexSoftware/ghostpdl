@@ -47,8 +47,8 @@ typedef struct gs_image3_s {
     gs_data_image_t MaskDict;
 } gs_image3_t;
 
-#define public_st_gs_image3()	/* in gximage3.c */\
-  gs_public_st_suffix_add0(st_gs_image3, gs_image3_t, "gs_image3_t",\
+#define private_st_gs_image3()	/* in gximage3.c */\
+  gs_private_st_suffix_add0(st_gs_image3, gs_image3_t, "gs_image3_t",\
     image3_enum_ptrs, image3_reloc_ptrs, st_gs_pixel_image)
 
 /*
