@@ -62,7 +62,8 @@ typedef enum {
     fUnimplemented,
     fCMapNotFound,
     fGlyphNotFound,
-    fBadFontData
+    fBadFontData,
+    fPatented
 } FontError;
 
 typedef struct ttfReader_s ttfReader;
@@ -106,6 +107,7 @@ struct ttfFont_s {
     unsigned int nLongMetricsVert;
     unsigned int nLongMetricsHorz;
     unsigned int nIndexToLocFormat;
+    bool    patented;
     byte  *onCurve;   
     F26Dot6 *x;         
     F26Dot6 *y;

@@ -730,9 +730,15 @@ show_update(gs_show_enum * penum)
 		case 1:
 		    ;
 	    }
-	    gx_add_cached_char(pgs->font->dir, penum->dev_cache,
-			       cc, gx_lookup_fm_pair(pgs->font, &char_tm_only(pgs), &penum->log2_scale),
-			       &penum->log2_scale);
+	    {   cached_fm_pair *pair;
+
+		code = gx_lookup_fm_pair(pgs->font, &char_tm_only(pgs), 
+					    &penum->log2_scale, &pair);
+		if (code < 0)
+		    return code;
+		gx_add_cached_char(pgs->font->dir, penum->dev_cache,
+			       cc, pair, &penum->log2_scale);
+	    }
 	    if (!SHOW_USES_OUTLINE(penum) ||
 		penum->charpath_flag != cpm_show
 		)
@@ -933,8 +939,11 @@ show_proceed(gs_show_enum * penum)
 			code = compute_glyph_raster_params(penum, false, &alpha_bits, &depth, &subpix_origin, &log2_scale);
 			if (code < 0)
 			    return code;
-			if (pair == 0)
-			    pair = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale);
+			if (pair == 0) {
+			    code = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale, &pair);
+			    if (code < 0)
+				return code;
+			}
 #			if NEW_TT_INTERPRETER
 			    penum->pair = pair;
 #			endif
@@ -1057,8 +1066,11 @@ show_proceed(gs_show_enum * penum)
 			code = compute_glyph_raster_params(penum, false, &alpha_bits, &depth, &subpix_origin, &log2_scale);
 			if (code < 0)
 			    return code;
-			if (pair == 0)
-			    pair = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale);
+			if (pair == 0) {
+			    code = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale, &pair);
+			    if (code < 0)
+				return code;
+			}
 			penum->pair = pair;
 		    }
 #		endif

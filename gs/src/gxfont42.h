@@ -77,6 +77,9 @@ struct gs_type42_data_s {
     uint numGlyphs;		/* from size of loca */
     uint trueNumGlyphs;		/* from maxp */
     gs_glyph_cache *gdcache;
+#if NEW_TT_INTERPRETER
+    bool warning_patented;
+#endif
 };
 #define gs_font_type42_common\
     gs_font_base_common;\

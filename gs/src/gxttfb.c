@@ -36,7 +36,9 @@ gs_public_st_composite(st_gx_ttfReader, gx_ttfReader,
 private 
 ENUM_PTRS_WITH(gx_ttfReader_enum_ptrs, gx_ttfReader *mptr)
     {
-	return ENUM_USING(st_glyph_data, &mptr->glyph_data, sizeof(mptr->glyph_data), index - 2);
+	if (index < 2 + ST_GLYPH_DATA_NUM_PTRS)
+	    return ENUM_USING(st_glyph_data, &mptr->glyph_data, sizeof(mptr->glyph_data), index - 2);
+	return 0;
     }
     ENUM_PTR(0, gx_ttfReader, pfont);
     ENUM_PTR(1, gx_ttfReader, memory);
@@ -52,7 +54,11 @@ private bool gx_ttfReader__Eof(ttfReader *this)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
-    return r->error;
+    if (r->extra_glyph_index != -1)
+	return r->pos >= r->glyph_data.bits.size;
+    /* We can't know whether pfont->data.string_proc has more bytes,
+       so we never report Eof for it. */
+    return false;
 }
 
 private void gx_ttfReader__Read(ttfReader *this, void *p, int n)
@@ -60,13 +66,19 @@ private void gx_ttfReader__Read(ttfReader *this, void *p, int n)
     gx_ttfReader *r = (gx_ttfReader *)this;
     const byte *q;
 
-    /* We assume no seeks while reading a charstring. 
-       Therefore a seek terminates the reading of an extra glyph. */
-    if (r->extra_glyph_index != -1 && !r->seeked) {
-	q = r->glyph_data.bits.data + r->pos;
-	r->error = (r->glyph_data.bits.size - r->pos < n);
-    } else
-	r->error = !!r->pfont->data.string_proc(r->pfont, (ulong)r->pos, (ulong)n, &q);
+    if (!r->error) {
+	if (r->extra_glyph_index != -1) {
+	    q = r->glyph_data.bits.data + r->pos;
+	    r->error = (r->glyph_data.bits.size - r->pos < n ? 
+			    gs_note_error(gs_error_invalidfont) : 0);
+	} else {
+	    r->error = r->pfont->data.string_proc(r->pfont, (ulong)r->pos, (ulong)n, &q);
+	    if (r->error > 0) {
+		/* Need a loop with pfont->data.string_proc . Not implemented yet. */
+		r->error = gs_note_error(gs_error_unregistered);
+	    }
+	}
+    }
     if (r->error) {
 	memset(p, 0, n);
 	return;
@@ -80,7 +92,6 @@ private void gx_ttfReader__Seek(ttfReader *this, int nPos)
     gx_ttfReader *r = (gx_ttfReader *)this;
 
     r->pos = nPos;
-    r->seeked = true;
 }
 
 private int gx_ttfReader__Tell(ttfReader *this)
@@ -103,15 +114,20 @@ private int gx_ttfReader__SeekExtraGlyph(ttfReader *this, int glyph_index)
     gs_font_type42 *pfont = r->pfont;
     int code;
 
-    if (r->extra_glyph_index == -1)
-	return 0; /* A subglyph is requested, it can't be an incremental glyph. */
-
+    if (r->extra_glyph_index != -1)
+	return 0; /* We only maintain a single glyph buffer.
+	             It's enough because ttfOutliner__BuildGlyphOutline
+		     is optimized for that, and pfont->data.get_outline 
+		     implements a charstring cache. */
     code = pfont->data.get_outline(pfont, (uint)glyph_index, &r->glyph_data);
     r->extra_glyph_index = glyph_index;
     r->pos = 0;
-    r->seeked = false;
-    if (code)
-	r->error = true;
+    if (code < 0)
+	r->error = code;
+    else if (code > 0) {
+	/* Should not happen. */
+	r->error = gs_note_error(gs_error_unregistered);
+    }
     return 2; /* found */
 }
 
@@ -132,7 +148,6 @@ private void gx_ttfReader__Reset(gx_ttfReader *this)
 	gs_glyph_data_free(&this->glyph_data, "gx_ttfReader__Reset");
     }
     this->error = false;
-    this->seeked = false;
     this->pos = 0;
 }
 
@@ -149,7 +164,6 @@ gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont)
 	r->super.SeekExtraGlyph = gx_ttfReader__SeekExtraGlyph;
 	r->super.ReleaseExtraGlyph = gx_ttfReader__ReleaseExtraGlyph;
 	r->pos = 0;
-	r->seeked = false;
 	r->error = false;
 	r->extra_glyph_index = -1;
 	memset(&r->glyph_data, 0, sizeof(r->glyph_data));
@@ -183,6 +197,25 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
 	outwrite(buf, count);
 	va_end(args);
     }
+}
+
+private void WarnPatented(gs_font_type42 *pfont)
+{
+#if NEW_TT_INTERPRETER
+    char buf[100];
+    int l;
+    gs_font_type42 *base_font = pfont;
+
+    while ((gs_font_type42 *)base_font->base != base_font)
+	base_font = (gs_font_type42 *)base_font->base;
+    if (!base_font->data.warning_patented) {
+	l = min(sizeof(buf) - 1, base_font->font_name.size);
+	memcpy(buf, base_font->font_name.chars, l);
+	buf[l] = 0;
+	eprintf1("The font %s requires a patented True Type interpreter.\n", buf);
+	base_font->data.warning_patented = true;
+    }
+#endif
 }
 
 /*----------------------------------------------*/
@@ -245,8 +278,12 @@ void ttfFont__destroy(ttfFont *this)
     mem->free(mem, mem, "ttfFont__destroy");
 }
 
-int ttfFont__Open_aux(ttfFont *this, ttfReader *r, unsigned int nTTC)
+int ttfFont__Open_aux(ttfFont *this, ttfReader *r, gs_font_type42 *pfont)
 {
+    /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
+    /* so that TTC never comes here. */
+    unsigned int nTTC = 0; 
+
     switch(ttfFont__Open(this, r, nTTC)) {
 	case fNoError:
 	    return 0;
@@ -254,6 +291,10 @@ int ttfFont__Open_aux(ttfFont *this, ttfReader *r, unsigned int nTTC)
 	    return_error(gs_error_VMerror);
 	case fUnimplemented:
 	    return_error(gs_error_unregistered);
+	case fPatented:
+	    WarnPatented(pfont);
+	    this->patented = true;
+	    return 0;
 	default:
 	    return_error(gs_error_invalidfont);
     }
@@ -321,7 +362,7 @@ private void gx_ttfExport__DebugPaint(ttfExport *this)
 
 /*----------------------------------------------*/
 
-int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, int wmode, int glyph_index, 
+int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int glyph_index, 
 	const gs_matrix *m, const gs_log2_scale_point * pscale, 
 	gx_path *path)
 {
@@ -335,7 +376,6 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, int wmode, int glyph_index,
     m1.d = m->yy;
     m1.tx = m->tx;
     m1.ty = m->ty;
-
     e.super.bPoints = false;
     e.super.bOutline = true;
     e.super.MoveTo = gx_ttfExport__MoveTo;
@@ -350,7 +390,7 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, int wmode, int glyph_index,
     e.w.x = 0;
     e.w.y = 0;
     gx_ttfReader__Reset(r);
-    ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, wmode != 0);
+    ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
     switch(ttfOutliner__Outline(&o, glyph_index, &m1)) {
 	case fNoError:
 	    return 0;
@@ -358,7 +398,16 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, int wmode, int glyph_index,
 	    return_error(gs_error_VMerror);
 	case fUnimplemented:
 	    return_error(gs_error_unregistered);
+	case fPatented:
+	    /* The returned outline did not apply a bytecode (it is "unhinted"). */
+	    WarnPatented(pfont);
+	    return 0;
 	default:
-	    return_error(gs_error_invalidfont);
+	    {	int code = r->super.Error(&r->super);
+
+		if (code < 0)
+		    return code;
+		return_error(gs_error_invalidfont);
+	    }
     }
 }

@@ -165,6 +165,9 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.q.x = S16(head_box + 4) / upem;
 	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
     }
+#if NEW_TT_INTERPRETER
+    pfont->data.warning_patented = false;
+#endif
     pfont->data.get_glyph_index = default_get_glyph_index;
     pfont->data.get_outline = default_get_outline;
     pfont->data.get_metrics = gs_type42_default_get_metrics;
@@ -480,7 +483,11 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
        Currently font_proc_glyph_outline is only used by pdfwrite for computing a
        character bbox, which doesn't need a grid fitting.
      */
-    cached_fm_pair *pair = gx_lookup_fm_pair(font, pmat, &log2_scale);
+    cached_fm_pair *pair;
+    code = gx_lookup_fm_pair(font, pmat, &log2_scale, &pair);
+
+    if (code < 0)
+	return code;
 #endif
 
     if (pmat == 0)
@@ -1086,7 +1093,7 @@ append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 {
     gs_font_type42 *pfont = (gs_font_type42 *)pair->font;
 
-    return gx_ttf_outline(pair->ttf, pair->ttr, pfont->WMode, (uint)glyph_index, 
+    return gx_ttf_outline(pair->ttf, pair->ttr, pfont, (uint)glyph_index, 
 	pmat, pscale, ppath);
 }
 #endif

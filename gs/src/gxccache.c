@@ -45,9 +45,9 @@ static const gs_log2_scale_point scale_log2_1 =
 {0, 0};
 
 /* Look up, and if necessary add, a font/matrix pair in the cache */
-cached_fm_pair *
+int
 gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm, 
-    const gs_log2_scale_point *log2_scale)
+    const gs_log2_scale_point *log2_scale, cached_fm_pair **ppair)
 {
     int scale_x = 1 << log2_scale->x;
     int scale_y = 1 << log2_scale->y;
@@ -95,10 +95,11 @@ gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm,
 		if_debug2('k', "[k]found pair 0x%lx: font=0x%lx\n",
 			  (ulong) pair, (ulong) pair->font);
 	    }
-	    return pair;
+	    *ppair = pair;
+	    return 0;
 	}
     }
-    return gx_add_fm_pair(dir, pfont, &uid, char_tm, log2_scale);
+    return gx_add_fm_pair(dir, pfont, &uid, char_tm, log2_scale, ppair);
 }
 
 /* Look up a glyph with the right depth in the cache. */

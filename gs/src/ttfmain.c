@@ -97,7 +97,7 @@ private void TransformF26Dot6PointFix(F26Dot6Point *pt, F26Dot6 dx, F26Dot6 dy, 
 
 private void TransformF26Dot6PointFloat(FloatPoint *pt, F26Dot6 dx, F26Dot6 dy, FloatMatrix *m)
 {   pt->x = dx*m->a/64 + dy*m->c/64 + m->tx;
-    pt->y = dx*m->c/64 + dy*m->d/64 + m->ty;
+    pt->y = dx*m->b/64 + dy*m->d/64 + m->ty;
 }
 
 /*-------------------------------------------------------------------*/
@@ -360,8 +360,7 @@ FontError ttfFont__Open(ttfFont *this, ttfReader *r, unsigned int nTTC)
 	return fBadFontData;
     I.z = this->inst;
     code = TT_Set_Instance_CharSizes(I, shortToF26Dot6(this->nUnitsPerEm), shortToF26Dot6(this->nUnitsPerEm));
-    if (code)
-	return fBadFontData;
+    /* Note : Free memory before checking the return code. */
     this->memory->free(this->memory, this->exec->pts.touch, "ttfFont__Open");
     this->exec->pts.touch = NULL;
     this->memory->free(this->memory, this->exec->pts.org_y, "ttfFont__Open");
@@ -372,7 +371,15 @@ FontError ttfFont__Open(ttfFont *this, ttfReader *r, unsigned int nTTC)
     this->exec->pts.contours = NULL;
     Context_Save(this->exec, this->inst);
     this->inst->metrics  = this->exec->metrics;
-    return fNoError;
+    if (code == TT_Err_Invalid_Engine) {
+	this->patented = true;
+	return fPatented;
+    }
+    if (code == TT_Err_Out_Of_Memory)
+	return fMemoryError;
+    if (code)
+	return fBadFontData;
+    return code;
 }
 
 private void ttfFont__StartGlyph(ttfFont *this)
@@ -574,6 +581,8 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	r->Seek(r, nMtxPos + 4 * nLongMetrics + 2 * (nMtxGlyph - nLongMetrics));
 	sideBearing = ttfReader__Short(r);
     }
+    if (r->Error(r))
+	goto errex;
     gOutline->sideBearing = shortToF26Dot6(sideBearing);
     gOutline->advance.x = shortToF26Dot6(nAdvance);
     gOutline->start.x = 0;
@@ -595,6 +604,8 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	r->ReleaseExtraGlyph(r, glyphIndex);
 	return fNoError;
     }
+    if (r->Error(r))
+	goto errex;
     nPosBeg = r->Tell(r);
 
     gOutline->contourCount = ttfReader__Short(r);
@@ -678,9 +689,12 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	    nUsage++;
         } while (flags & MORE_COMPONENTS);
 	/* Some fonts have bad WE_HAVE_INSTRUCTIONS, so use nNextGlyphPtr : */
+	if (r->Error(r))
+	    goto errex;
 	nPos = r->Tell(r);
 	n_ins = ((!r->Eof(r) && (bHaveInstructions || nPos < nNextGlyphPtr)) ? ttfReader__UShort(r) : 0);
 	nPos = r->Tell(r);
+	r->ReleaseExtraGlyph(r, glyphIndex);
 	for (i = 0; i < nUsage; i++) {
 	    ttfGlyphOutline out;
 	    ttfSubGlyphUsage *e = &usage[i];
@@ -723,6 +737,8 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	    r->SeekExtraGlyph(r, glyphIndex); /* incremental font support */
 	    r->Seek(r, nPos);
 	    r->Read(r, exec->glyphIns, n_ins);
+	    if (r->Error(r))
+		goto errex;
 	    code = Set_CodeRange(exec, TT_CodeRange_Glyph, exec->glyphIns, exec->glyphSize);
 	    if (!code) {
 		TGlyph_Zone *pts = &exec->pts;
@@ -758,11 +774,16 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 		    pts->touch[k] = pts->touch[k] & TT_Flag_On_Curve;
 		org_to_cur(nPoints, pts);
 		exec->is_composite = TRUE;
-		code = Context_Run(exec, FALSE);
+		if (pFont->patented)
+		    code = TT_Err_Invalid_Engine;
+		else
+		    code = Context_Run(exec, FALSE);
 		if (!code)
 		    cur_to_org(nPoints, pts);
+		else if (code == TT_Err_Invalid_Engine)
+		    error = fPatented;
 		else
-		    error = code;
+		    error = fBadFontData;
 		gOutline->sideBearing = gOutline->xMinB - subglyph.pp1.x;
 		gOutline->advance.x = subglyph.pp2.x - subglyph.pp1.x;
             }
@@ -798,6 +819,8 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	    error = fMemoryError; goto ex;
         }
 	r->Read(r, exec->glyphIns, exec->glyphSize);
+	if (r->Error(r))
+	    goto errex;
 	bInsOK = !Set_CodeRange(exec,TT_CodeRange_Glyph, exec->glyphIns, exec->glyphSize);
 	onCurve = gOutline->onCurve;
 	stop = onCurve + gOutline->pointCount;
@@ -843,6 +866,8 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 		*onCurve++ = flag & ONCURVE;
 	    }
 	}
+	if (r->Error(r))
+	    goto errex;
 	if (exec->glyphSize && bInsOK && !(pFont->inst->GS.instruct_control&1)) {
 	    TGlyph_Zone *pts = &exec->pts;
 	    int n_points = nPoints + 2;
@@ -873,16 +898,24 @@ private FontError ttfOutliner__BuildGlyphOutline(ttfOutliner *this, int glyphInd
 	    exec->is_composite = FALSE;
 	    for (k = 0; k < n_points; k++)
 		pts->touch[k] &= TT_Flag_On_Curve;
-	    code = Context_Run(exec, FALSE );
+	    if (pFont->patented)
+		code = TT_Err_Invalid_Engine;
+	    else
+		code = Context_Run(exec, FALSE );
 	    if (!code)
 		cur_to_org(n_points, pts);
+	    else if (code == TT_Err_Invalid_Engine)
+		error = fPatented;
 	    else
-		error = code;
+		error = fBadFontData;
 	    gOutline->sideBearing = gOutline->xMinB - subglyph.pp1.x;
 	    gOutline->advance.x = subglyph.pp2.x - subglyph.pp1.x;
         }
     } else
 	error = fBadFontData;
+    goto ex;
+errex:;
+    error = fBadFontData;
 ex:;
     if (usage != NULL)
 	pFont->memory->free(pFont->memory, usage, "ttfOutliner__BuildGlyphOutline");

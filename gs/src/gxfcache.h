@@ -287,11 +287,11 @@ int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
 			uint cmax, uint upper);
 void gx_char_cache_init(gs_font_dir *);
 void gx_purge_selected_cached_chars(gs_font_dir *, bool(*)(cached_char *, void *), void *);
-cached_fm_pair *
-               gx_lookup_fm_pair(gs_font *, const gs_matrix *, const gs_log2_scale_point *);
-cached_fm_pair *
-               gx_add_fm_pair(gs_font_dir *, gs_font *, const gs_uid *, const gs_matrix *, 
-	       const gs_log2_scale_point *);
+int gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm, 
+    const gs_log2_scale_point *log2_scale, cached_fm_pair **ppair);
+int gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
+	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+	       cached_fm_pair **ppair);
 void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
 void gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
 void gs_purge_font_from_char_caches(gs_font_dir *, const gs_font *);

@@ -161,9 +161,10 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
 
 /* Add a font/matrix pair to the cache. */
 /* (This is only exported for gxccache.c.) */
-cached_fm_pair *
+int
 gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
-	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale)
+	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale,
+	       cached_fm_pair **ppair)
 {
     int scale_x = 1 << log2_scale->x;
     int scale_y = 1 << log2_scale->y;
@@ -213,13 +214,13 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	 */
 	pair->ttr = gx_ttfReader__create(font->memory, (gs_font_type42 *)font);
 	if (!pair->ttr)
-	    return 0; /* fixme : propagate error. */
+	    return_error(gs_error_VMerror);
 	pair->ttf = ttfFont__create(font->memory);
 	if (!pair->ttf)
-	    return 0; /* fixme : propagate error. */
-	code = ttfFont__Open_aux(pair->ttf, &pair->ttr->super, 0 /* fixme */);
+	    return_error(gs_error_VMerror);
+	code = ttfFont__Open_aux(pair->ttf, &pair->ttr->super, (gs_font_type42 *)font);
 	if (code < 0)
-	    return 0; /* fixme : propagate error. */
+	    return code; /* fixme : propagate error. */
     } else {
 	pair->ttf = 0;
 	pair->ttr = 0;
@@ -230,7 +231,8 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	      (ulong) pair, (ulong) font,
 	      pair->mxx, pair->mxy, pair->myx, pair->myy,
 	      (long)pair->UID.id, (ulong) pair->UID.xvalues);
-    return pair;
+    *ppair = pair;
+    return 0;
 }
 
 /* Look up the xfont for a font/matrix pair. */
