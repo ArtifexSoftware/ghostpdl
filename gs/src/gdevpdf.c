@@ -30,6 +30,7 @@
 #include "gdevpdfo.h"
 #include "gdevpdt.h"
 #include "smd5.h"
+#include "sarc4.h"
 
 /* Define the default language level and PDF compatibility level. */
 /* Acrobat 4 (PDF 1.3) is the default. */
@@ -199,6 +200,13 @@ const gx_device_pdf gs_pdfwrite_device =
  1,				/* FirstObjectNumber */
  1 /*true*/,			/* CompressFonts */
  4000,				/* MaxInlineImageSize */
+ {0, 0},			/* OwnerPassword */
+ {0, 0},			/* UserPassword */
+ 0,				/* KeyLength */
+ -4,				/* Permissions */
+ {0},				/* EncryptionO */
+ {0},				/* EncryptionU */
+ {0},				/* EncryptionKey */
  0 /*false*/,			/* is_EPS */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */
@@ -448,6 +456,98 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     return 0;
 }
 
+private const byte pad[32] = { 0x28, 0xBF, 0x4E, 0x5E, 0x4E, 0x75, 0x8A, 0x41, 
+			       0x64, 0x00, 0x4E, 0x56, 0xFF, 0xFA, 0x01, 0x08,
+			       0x2E, 0x2E, 0x00, 0xB6, 0xD0, 0x68, 0x3E, 0x80,
+			       0x2F, 0x0C, 0xA9, 0xFE, 0x64, 0x53, 0x69, 0x7A};
+
+private inline void
+copy_padded(byte buf[32], gs_const_string *str)
+{
+    memcpy(buf, str->data, min(str->size, 32));
+    if (32 > str->size)
+	memcpy(buf, pad, 32 - str->size);
+}
+
+private int
+pdf_compute_encryption_data(gx_device_pdf * pdev)
+{
+    gs_memory_t *mem = pdev->pdf_memory;
+    uint ignore;
+    int code;
+    stream *s;
+    byte digest[16], buf[32];
+    stream_arcfour_state sarc4;
+
+    if (pdev->KeyLength == 0)
+	pdev->KeyLength = 40;
+    if (pdev->CompatibilityLevel < 1.4 && pdev->KeyLength != 40) {
+	eprintf("PDF 1.4 only supports 40 bits encryption keys.");
+	return_error(gs_error_rangecheck);
+    }
+    if (pdev->KeyLength > 128) {
+	eprintf("The maximal length of PDF encryption key is 128 bits.");
+	return_error(gs_error_rangecheck);
+    }
+    if (pdev->KeyLength % 8) {
+	eprintf("PDF encryption key length must be a multiple of 8.");
+	return_error(gs_error_rangecheck);
+    }
+    /* Compute O : */
+    s = s_MD5E_make_stream(mem, digest, sizeof(digest));
+    if (s == NULL)
+	return_error(gs_error_VMerror);
+    copy_padded(buf, &pdev->OwnerPassword);
+    sputs(s, buf, sizeof(buf), &ignore);
+    sclose(s);
+    gs_free_object(mem, s, "pdf_compute_encryption_data");
+    copy_padded(pdev->EncryptionO, &pdev->UserPassword);
+    code = s_arcfour_set_key(&sarc4, digest, pdev->KeyLength / 8);
+    if (code < 0)
+	return code;
+    code = s_arcfour_process_buffer(&sarc4, pdev->EncryptionO, sizeof(pdev->EncryptionO));
+    if (code < 0)
+	return code;
+
+    /* Compute Key : */
+    s = s_MD5E_make_stream(mem, digest, sizeof(digest));
+    if (s == NULL)
+	return_error(gs_error_VMerror);
+    copy_padded(buf, &pdev->UserPassword);
+    sputs(s, buf, sizeof(buf), &ignore);
+    sputs(s, pdev->EncryptionO, sizeof(pdev->EncryptionO), &ignore);
+    sputs(s, (byte *)&pdev->Permissions + 3, 1, &ignore);
+    sputs(s, (byte *)&pdev->Permissions + 2, 1, &ignore);
+    sputs(s, (byte *)&pdev->Permissions + 1, 1, &ignore);
+    sputs(s, (byte *)&pdev->Permissions + 0, 1, &ignore);
+    sputs(s, pdev->fileID, sizeof(pdev->fileID), &ignore);
+    sclose(s);
+    gs_free_object(mem, s, "pdf_compute_encryption_data");
+    memcpy(pdev->EncryptionKey, digest, pdev->KeyLength / 8);
+
+    /* Compute U : */
+    memcpy(pdev->EncryptionU, pad, sizeof(pdev->EncryptionU));
+    code = s_arcfour_set_key(&sarc4, pdev->EncryptionKey, pdev->KeyLength / 8);
+    if (code < 0)
+	return code;
+    code = s_arcfour_process_buffer(&sarc4, pdev->EncryptionU, sizeof(pdev->EncryptionU));
+    if (code < 0)
+	return code;
+    return 0;
+}
+
+private int
+security_revision(gx_device_pdf * pdev)
+{
+    if (pdev->KeyLength > 40)
+	return 3;
+    /* In the PDF spec bit positions are numbered from 1. Checking bits 9-12 : */
+    if (~pdev->Permissions & ((ulong)0xF << 8))
+	return 3;
+    return 2;
+}
+
+
 #ifdef __DECC
 /* The ansi alias rules are violated in this next routine.  Tell the compiler
    to ignore this.
@@ -580,6 +680,11 @@ pdf_open(gx_device * dev)
     code = pdf_compute_fileID(pdev);
     if (code < 0)
 	goto fail;
+    if (pdev->OwnerPassword.size > 0) {
+	code = pdf_compute_encryption_data(pdev);
+	if (code < 0)
+	    goto fail;
+    }
     /* Now create a new dictionary for the local named objects. */
     pdev->local_named_objects =
 	cos_dict_alloc(pdev, "pdf_open(local_named_objects)");
@@ -1094,6 +1199,19 @@ pdf_close(gx_device * dev)
     pdf_put_string(pdev, pdev->fileID, sizeof(pdev->fileID));
     pdf_put_string(pdev, pdev->fileID, sizeof(pdev->fileID));
     stream_puts(s, "]\n");
+    if (pdev->OwnerPassword.size > 0) {
+	stream_puts(s, "/Encrypt <<");
+	stream_puts(s, "/Filter /Standard ");
+	pprintld1(s, "/V %ld ", pdev->KeyLength == 40 ? 1 : 2);
+	pprintld1(s, "/Length %ld ", pdev->KeyLength);
+	pprintld1(s, "/R %ld ", security_revision(pdev));
+	pprintld1(s, "/P %ld ", pdev->Permissions);
+	stream_puts(s, "/O ");
+	pdf_put_string(pdev, pdev->EncryptionO, sizeof(pdev->EncryptionO));
+	stream_puts(s, "\n/U ");
+	pdf_put_string(pdev, pdev->EncryptionU, sizeof(pdev->EncryptionU));
+	stream_puts(s, ">>\n");
+    }
     stream_puts(s, ">>\n");
     pprintld1(s, "startxref\n%ld\n%%%%EOF\n", xref);
 

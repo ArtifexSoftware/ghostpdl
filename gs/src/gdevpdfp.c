@@ -75,6 +75,12 @@ private const gs_param_item_t pdf_param_items[] = {
     pi("FirstObjectNumber", gs_param_type_long, FirstObjectNumber),
     pi("CompressFonts", gs_param_type_bool, CompressFonts),
     pi("MaxInlineImageSize", gs_param_type_long, MaxInlineImageSize),
+
+	/* PDF Encryption */
+    pi("OwnerPassword", gs_param_type_string, OwnerPassword),
+    pi("UserPassword", gs_param_type_string, UserPassword),
+    pi("KeyLength", gs_param_type_int, KeyLength),
+    pi("Permissions", gs_param_type_long, Permissions),
 #undef pi
     gs_param_item_end
 };

@@ -44,4 +44,9 @@ int s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
     "Arcfour filter state")
 extern const stream_template s_arcfour_template;
 
+/* (de)crypt a section of text in a buffer -- the procedure is the same
+ * in each direction. see strimpl.h for return codes.
+ */
+int s_arcfour_process_buffer(stream_arcfour_state *ss, byte *buf, int buf_size);
+
 #endif /* sarc4_INCLUDED */

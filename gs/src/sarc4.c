@@ -113,3 +113,19 @@ s_arcfour_process(stream_state * ss, stream_cursor_read * pr,
 const stream_template s_arcfour_template = {
     &st_arcfour_state, NULL, s_arcfour_process, 1, 1
 };
+
+/* (de)crypt a section of text in a buffer -- the procedure is the same
+ * in each direction. see strimpl.h for return codes.
+ */
+int
+s_arcfour_process_buffer(stream_arcfour_state *ss, byte *buf, int buf_size)
+{
+    stream_cursor_read r;
+    stream_cursor_write w;
+    const bool unused = false;
+
+    r.ptr = w.ptr = buf;
+    r.limit = w.limit = buf + buf_size;
+    return s_arcfour_process((stream_state *)ss, &r, &w, unused);
+}
+

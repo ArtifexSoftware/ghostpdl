@@ -384,7 +384,16 @@ struct gx_device_pdf_s {
     long FirstObjectNumber;
     bool CompressFonts;
     long MaxInlineImageSize;
+    /* Encryption parameters */
+    gs_const_string OwnerPassword;
+    gs_const_string UserPassword;
+    uint KeyLength;
+    ulong Permissions;
     /* End of parameters */
+    /* Encryption data */
+    byte EncryptionO[32];
+    byte EncryptionU[32];
+    byte EncryptionKey[16];
     /* Values derived from DSC comments */
     bool is_EPS;
     pdf_page_dsc_info_t doc_dsc_info; /* document default */
