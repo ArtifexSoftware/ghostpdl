@@ -22,7 +22,7 @@
 #include "string_.h"
 #include "gdebug.h"
 #include "gserrors.h"
-#include "..\gs\src\errors.h"	/* FIXME: Microsoft seems to pull in <errors.h> */
+#include "../gs/src/errors.h"	/* FIXME: Microsoft seems to pull in <errors.h> */
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
@@ -37,7 +37,7 @@
 #include "gxstate.h"
 #include "plparse.h"
 #include "pltop.h"
-
+#include "gzstate.h"
 /* Forward decls */
 
 /************************************************************/
@@ -112,10 +112,10 @@ ps_impl_allocate_interp_instance(
 	char *argv[1] = { "" };
 
 	ps_interp_instance_t *psi  /****** SHOULD HAVE A STRUCT DESCRIPTOR ******/
-	 = (ps_interp_instance_t *)gs_alloc_bytes( mem,
-	                                            sizeof(ps_interp_instance_t),
-	                                            "ps_allocate_interp_instance(ps_interp_instance_t)"
-                                              );
+	    = (ps_interp_instance_t *)gs_alloc_bytes( mem,
+						      sizeof(ps_interp_instance_t),
+						      "ps_allocate_interp_instance(ps_interp_instance_t)"
+						      );
 	/* If allocation error, deallocate & return */
 	if (!psi) {
 	  return gs_error_VMerror;
@@ -135,12 +135,17 @@ ps_impl_allocate_interp_instance(
 	    return code;
 
 	/* General init of PS interp instance */
-        gs_memory_t_default = psi->minst->heap;	/* while running PS interp */
+        
+	/* gs_memory_t_default = psi->minst->heap; */ /* while running PS interp */
+	
 	code = gsapi_run_string_begin(psi->minst, 0, &exit_code);
 
-	/* Because PS uses its own 'heap' allocator, we restore to the pl */
-	/* allocator before returning (PostScript will use minst->heap)	  */
-	gs_memory_t_default = psi->plmemory;
+	/* Because PS uses its own 'heap' allocator, we restore to the pl 
+	 * allocator before returning (PostScript will use minst->heap)	  
+	 */
+	
+	/* gs_memory_t_default = psi->plmemory;
+         */
 	if (code<0)
 	    return exit_code;
 
@@ -196,7 +201,7 @@ ps_impl_set_pre_page_action(
   void                   *closure       /* closure to call action with */
 )
 {
-	return 0;
+    return 0;
 }
 
 /* Set an interpreter instance's post-page action */
@@ -230,6 +235,7 @@ ps_impl_set_device(
 	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 	char tmpstring[256];
 
+#if 0
 	/*
 	 * Set the device by having PostScript do it
 	 * This insures that the device allocation, etc. will be correct
@@ -249,6 +255,16 @@ ps_impl_set_device(
 set_device_return:
 	psi->params_set = 1;
 	gs_memory_t_default = psi->plmemory;	/* restore for pl */
+#else
+	/*
+	 * gs_opendevice(device);
+	 * code = gs_setdevice_no_erase(psi->minst->i_ctx_p->pgs, device);
+	 * psi->device = device;
+	 */
+	/* hack into ps device 
+	 */
+	psi->device = psi->minst->i_ctx_p->pgs->device;
+#endif
 	return code;
 }
 
@@ -274,14 +290,9 @@ ps_impl_init_job(
 )
 {
 	int code = 0, exit_code;
-	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
 
 	/* Insert job server encapsulation here */
-        gs_memory_t_default = psi->minst->heap;	/* while running PS interp */
-	if (!psi->params_set)
-	    code = ps_impl_putdeviceparams(psi);
 
-	gs_memory_t_default = psi->plmemory;	/* restore for pl */
 	return code;
 }
 
@@ -436,11 +447,15 @@ const pl_interp_implementation_t ps_implementation = {
   ps_impl_allocate_interp,
   ps_impl_allocate_interp_instance,
   ps_impl_set_client_instance,
+#if NOT_YET
   ps_impl_arg_handler,
+#endif
   ps_impl_set_pre_page_action,
   ps_impl_set_post_page_action,
   ps_impl_set_device,
+#if NOT_YET
   ps_impl_set_device_params,
+#endif
   ps_impl_init_job,
   ps_impl_process,
   ps_impl_flush_to_eoj,
