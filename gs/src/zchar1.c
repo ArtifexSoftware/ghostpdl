@@ -520,6 +520,8 @@ type1_continue_dispatch(i_ctx_t *i_ctx_p, gs_type1exec_state *pcxs,
     pcxs->num_args = num_args;
     memcpy(pcxs->save_args, osp - (num_args - 1), num_args * sizeof(ref));
     osp -= num_args;
+    pcxs->i_ctx_p = i_ctx_p;
+    gs_type1_set_callback_data( &pcxs->cis, pcxs );
     code = pcxs->cis.pfont->data.interpret(&pcxs->cis, pchars, &value);
     switch (code) {
 	case type1_result_callothersubr: {
