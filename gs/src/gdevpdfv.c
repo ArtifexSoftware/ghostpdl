@@ -176,7 +176,7 @@ pdf_set_pattern_image(gs_data_image_t *pic, const gx_strip_bitmap *tile)
     pic->ImageMatrix.yy = pic->Height = tile->rep_height;
 }
 
-/* Write the mask for a Pattern. */
+/* Write the mask for a Pattern (colored or uncolored). */
 private int
 pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
 		     cos_stream_t **ppcs_mask)
@@ -209,6 +209,35 @@ pdf_put_pattern_mask(gx_device_pdf *pdev, const gx_color_tile *m_tile,
     return 0;
 }
 
+/* Write an uncolored Pattern color. */
+/* (Single-use procedure for readability.) */
+private int
+pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			  const psdf_set_color_commands_t *ppscc,
+			  pdf_resource_t **ppres)
+{
+    const gx_color_tile *m_tile = pdc->mask.m_tile;
+    cos_value_t v;
+    stream *s = pdev->strm;
+    int code;
+    cos_stream_t *pcs_image;
+    gx_drawing_color dc_pure;
+    static const psdf_set_color_commands_t no_scc = {0, 0, 0};
+
+    if (!tile_size_ok(pdev, NULL, m_tile))
+	return_error(gs_error_limitcheck);
+    if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
+	(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
+	(code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
+	)
+	return code;
+    cos_value_write(&v, pdev);
+    pprints1(s, " %s ", ppscc->setcolorspace);
+    color_set_pure(&dc_pure, gx_dc_pure_color(pdc));
+    psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
+    return 0;
+}
+
 /* Write a colored Pattern color. */
 /* (Single-use procedure for readability.) */
 private int
@@ -229,9 +258,60 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     long pos;
     int code;
 
-    /* Masked images are only supported starting in PDF 1.3. */
-    if (m_tile && pdev->CompatibilityLevel < 1.3)
-	return_error(gs_error_rangecheck);
+    /*
+     * NOTE: We assume here that the color space of the cached Pattern
+     * is the same as the native color space of the device.  This will
+     * have to change in the future!
+     */
+    /*
+     * Check whether this colored pattern is actually a masked pure color,
+     * by testing whether all the colored pixels have the same color.
+     */
+    if (m_tile) {
+	if (p_tile && !(p_tile->depth & 7) && p_tile->depth <= sizeof(gx_color_index) * 8) {
+	    int depth_bytes = p_tile->depth >> 3;
+	    int width = p_tile->tbits.rep_width;
+	    int skip = p_tile->tbits.raster -
+		p_tile->tbits.rep_width * depth_bytes;
+	    const byte *bp;
+	    const byte *mp;
+	    int i, j, k;
+	    gx_color_index color = 0; /* init is arbitrary if not empty */
+	    bool first = true;
+
+	    for (i = 0, bp = p_tile->tbits.data, mp = m_tile->tbits.data;
+		 i < p_tile->tbits.rep_height;
+		 ++i, bp += skip, mp += m_tile->tbits.raster) {
+
+		for (j = 0; j < width; ++j) {
+		    if (mp[j >> 3] & (0x80 >> (j & 7))) {
+			gx_color_index ci = 0;
+		    
+			for (k = 0; k < depth_bytes; ++k)
+			    ci = (ci << 8) + *bp++;
+			if (first)
+			    color = ci, first = false;
+			else if (ci != color)
+			    goto not_pure;
+		    } else
+			bp += depth_bytes;
+		}
+	    }
+	    {
+		/* Set the color, then handle as an uncolored pattern. */
+		gx_drawing_color dcolor;
+
+		dcolor = *pdc;
+		dcolor.colors.pure = color;
+		return pdf_put_uncolored_pattern(pdev, &dcolor, ppscc, ppres);
+	    }
+	not_pure:
+	}
+	if (pdev->CompatibilityLevel < 1.3) {
+	    /* Masked images are only supported starting in PDF 1.3. */
+	    return_error(gs_error_rangecheck);
+	}
+    }
     /* Acrobat Reader has a size limit for image Patterns. */
     if (!tile_size_ok(pdev, p_tile, m_tile))
 	return_error(gs_error_limitcheck);
@@ -277,35 +357,6 @@ pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	return code;
     cos_value_write(&v, pdev);
     pprints1(pdev->strm, " %s", ppscc->setcolorspace);
-    return 0;
-}
-
-/* Write an uncolored Pattern color. */
-/* (Single-use procedure for readability.) */
-private int
-pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
-			  const psdf_set_color_commands_t *ppscc,
-			  pdf_resource_t **ppres)
-{
-    const gx_color_tile *m_tile = pdc->mask.m_tile;
-    cos_value_t v;
-    stream *s = pdev->strm;
-    int code;
-    cos_stream_t *pcs_image;
-    gx_drawing_color dc_pure;
-    static const psdf_set_color_commands_t no_scc = {0, 0, 0};
-
-    if (!tile_size_ok(pdev, NULL, m_tile))
-	return_error(gs_error_limitcheck);
-    if ((code = pdf_cs_Pattern_uncolored(pdev, &v)) < 0 ||
-	(code = pdf_put_pattern_mask(pdev, m_tile, &pcs_image)) < 0 ||
-	(code = pdf_pattern(pdev, pdc, NULL, m_tile, pcs_image, ppres)) < 0
-	)
-	return code;
-    cos_value_write(&v, pdev);
-    pprints1(s, " %s ", ppscc->setcolorspace);
-    color_set_pure(&dc_pure, gx_dc_pure_color(pdc));
-    psdf_set_color((gx_device_vector *)pdev, &dc_pure, &no_scc);
     return 0;
 }
 
