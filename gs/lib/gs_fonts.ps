@@ -728,7 +728,12 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
       } ifelse
   .dofindfont
 } bind def
-$error /SubstituteFont { .stdsubstfont } put
+
+% Default font substitution does {pop /Courier} om many implementations.
+% GS post-process font substitution in .stdsubstfont and uses {} for
+% backward compatibility
+$error /SubstituteFont { } put
+
 % Scan the next directory on FONTPATH.
 /.scannextfontdir {	% - .scannextfontdir <bool>
 			% If we haven't scanned all the directories in
@@ -765,7 +770,7 @@ $error /SubstituteFont { .stdsubstfont } put
 	/findfont cvx /invalidfont signalerror
       } if
 			% Substitute for the font.  Don't alias.
-      $error /SubstituteFont get exec
+      $error /SubstituteFont get exec .stdsubstfont
     } ifelse
   } if
 } bind def
