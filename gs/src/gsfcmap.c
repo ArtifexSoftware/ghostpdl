@@ -552,7 +552,7 @@ gs_cmap_ToUnicode_alloc(gs_memory_t *mem, int id, int num_codes, int key_size, g
 	memcpy(cmap_name + pref_len, sid, sid_len);
 #   endif
     code = gs_cmap_alloc(ppcmap, &st_cmap_ToUnicode,
-	      0, cmap_name, name_len, NULL, 0, &gs_cmap_ToUnicode_procs, mem);
+	      0, cmap_name, name_len, NULL, 1, &gs_cmap_ToUnicode_procs, mem);
     if (code < 0)
 	return code;
     map = (uchar *)gs_alloc_bytes(mem, num_codes * gs_cmap_ToUnicode_code_bytes, 
