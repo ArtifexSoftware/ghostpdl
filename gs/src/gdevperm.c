@@ -53,6 +53,7 @@ struct gx_device_perm_s {
     gx_prn_device_common;
     const char **std_colorant_names;
     int num_std_colorant_names;	/* Number of names in list */
+    int mode;
     int permute;
 };
 typedef struct gx_device_perm_s gx_device_perm_t;
@@ -124,7 +125,7 @@ const gx_device_perm_t gs_perm_device = {
 	GX_CINFO_SEP_LIN,
 	"DeviceN",
 	perm_print_page),
-    0
+    NULL, 0, 0, 0
 };
 
 
@@ -139,6 +140,7 @@ perm_print_page(gx_device_printer *pdev, FILE *pstream)
     byte *cooked_line;
     byte *row;
     int code = 0;
+    int mode = dev->mode;
     int permute = dev->permute;
 
     fprintf(pstream, "P6\n%d %d\n255\n", dev->width, dev->height);
@@ -151,16 +153,30 @@ perm_print_page(gx_device_printer *pdev, FILE *pstream)
 	    int c, m, y, k;
 	    int r, g, b;
 
-	    if (permute) {
-		c = row[x * ncomp + 1];
-		m = row[x * ncomp + 3];
-		y = row[x * ncomp + 0];
-		k = row[x * ncomp + 5];
-	    } else {
-		c = row[x * ncomp];
-		m = row[x * ncomp + 1];
-		y = row[x * ncomp + 2];
-		k = row[x * ncomp + 3];
+	    if (mode == 0) {
+		if (permute) {
+		    c = row[x * ncomp + 1];
+		    m = row[x * ncomp + 3];
+		    y = row[x * ncomp + 0];
+		    k = row[x * ncomp + 5];
+		} else {
+		    c = row[x * ncomp];
+		    m = row[x * ncomp + 1];
+		    y = row[x * ncomp + 2];
+		    k = row[x * ncomp + 3];
+		}
+	    } else /* if (mode == 1) */ {
+		if (permute) {
+		    c = row[x * ncomp + 1];
+		    m = row[x * ncomp + 3];
+		    y = row[x * ncomp + 0];
+		    k = 0;
+		} else {
+		    c = row[x * ncomp];
+		    m = row[x * ncomp + 1];
+		    y = row[x * ncomp + 2];
+		    k = 0;
+		}
 	    }
 	    r = (255 - c) * (255 - k) / 255;
 	    g = (255 - m) * (255 - k) / 255;
@@ -176,85 +192,13 @@ perm_print_page(gx_device_printer *pdev, FILE *pstream)
     return code;
 }
 
-private int
-perm_get_params(gx_device *pdev, gs_param_list *plist)
-{
-    gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
-    int code;
-
-    code = param_write_int(plist, "Permute", &dev->permute);
-    if (code >= 0)
-    code = gdev_prn_get_params(pdev, plist);
-    return code;
-}
-
-private const char * DeviceCMYKComponents[] = {
-	"Cyan",
-	"Magenta",
-	"Yellow",
-	"Black",
-	0		/* List terminator */
-};
-
-private const char * DeviceNComponents[] = {
-	"Yellow",
-	"Cyan",
-	"Cyan2",
-	"Magenta",
-	"Zero",
-	"Black",
-	0		/* List terminator */
-};
-
-private int
-perm_set_color_model(gx_device_perm_t *dev, int permute)
-{
-    dev->permute = permute;
-    if (permute == 0) {
-	dev->std_colorant_names = DeviceCMYKComponents;
-	dev->num_std_colorant_names = 4;
-	dev->color_info.cm_name = "DeviceCMYK";
-	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-    } else if (permute == 1) {
-	dev->std_colorant_names = DeviceNComponents;
-	dev->num_std_colorant_names = 6;
-	dev->color_info.cm_name = "DeviceN";
-	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
-    } else {
-	return -1;
-    }
-    dev->color_info.num_components = dev->num_std_colorant_names;
-    dev->color_info.depth = 8 * dev->num_std_colorant_names;
-
-    return 0;
-}
-
-private int
-perm_put_params(gx_device *pdev, gs_param_list *plist)
-{
-    gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
-    gx_device_color_info save_info;
-    int code;
-
-    code = param_read_int(plist, "Permute", &dev->permute);
-    if (code < 0)
-	return code;
-    save_info = pdev->color_info;
-    code = perm_set_color_model(dev, dev->permute);
-    if (code >= 0)
-	code = gdev_prn_put_params(pdev, plist);
-    if (code < 0)
-	pdev->color_info = save_info;
-    return code;
-}
-
 private void
 perm_permute_cm(gx_device *pdev, frac out[])
 {
     gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
     if (dev->permute) {
 	frac y;
-	out[5] = out[3];
+	out[5] = dev->mode == 0 ? out[3] : 0;
 	out[4] = frac_0;
 	y = out[2];
 	out[3] = out[1];
@@ -265,7 +209,7 @@ perm_permute_cm(gx_device *pdev, frac out[])
 }
 
 private void
-gray_cs_to_perm_cm(gx_device *dev, frac gray, frac out[])
+gray_cs_to_perm_cm_0(gx_device *dev, frac gray, frac out[])
 {
     out[0] = out[1] = out[2] = frac_0;
     out[3] = frac_1 - gray;
@@ -273,7 +217,7 @@ gray_cs_to_perm_cm(gx_device *dev, frac gray, frac out[])
 }
 
 private void
-rgb_cs_to_perm_cm(gx_device *dev, const gs_imager_state *pis,
+rgb_cs_to_perm_cm_0(gx_device *dev, const gs_imager_state *pis,
 				  frac r, frac g, frac b, frac out[])
 {
     color_rgb_to_cmyk(r, g, b, pis, out);
@@ -281,7 +225,7 @@ rgb_cs_to_perm_cm(gx_device *dev, const gs_imager_state *pis,
 }
 
 private void
-cmyk_cs_to_perm_cm(gx_device *dev, frac c, frac m, frac y, frac k, frac out[])
+cmyk_cs_to_perm_cm_0(gx_device *dev, frac c, frac m, frac y, frac k, frac out[])
 {
     out[0] = c;
     out[1] = m;
@@ -290,14 +234,54 @@ cmyk_cs_to_perm_cm(gx_device *dev, frac c, frac m, frac y, frac k, frac out[])
     perm_permute_cm(dev, out);
 };
 
-private const gx_cm_color_map_procs perm_cmapping_procs = {
-    gray_cs_to_perm_cm, rgb_cs_to_perm_cm, cmyk_cs_to_perm_cm
+private void
+gray_cs_to_perm_cm_1(gx_device *dev, frac gray, frac out[])
+{
+    out[0] = out[1] = out[2] = frac_1 - gray;
+    perm_permute_cm(dev, out);
+}
+
+private void
+rgb_cs_to_perm_cm_1(gx_device *dev, const gs_imager_state *pis,
+				  frac r, frac g, frac b, frac out[])
+{
+    out[0] = frac_1 - r;
+    out[1] = frac_1 - g;
+    out[2] = frac_1 - b;
+    perm_permute_cm(dev, out);
+}
+
+private void
+cmyk_cs_to_perm_cm_1(gx_device *dev, frac c, frac m, frac y, frac k, frac out[])
+{
+    color_cmyk_to_rgb(c, m, y, k, NULL, out);
+    out[0] = frac_1 - out[0];
+    out[1] = frac_1 - out[1];
+    out[2] = frac_1 - out[2];
+    perm_permute_cm(dev, out);
+};
+
+private const gx_cm_color_map_procs perm_cmapping_procs_0 = {
+    gray_cs_to_perm_cm_0, rgb_cs_to_perm_cm_0, cmyk_cs_to_perm_cm_0
+};
+
+private const gx_cm_color_map_procs perm_cmapping_procs_1 = {
+    gray_cs_to_perm_cm_1, rgb_cs_to_perm_cm_1, cmyk_cs_to_perm_cm_1
+};
+
+private const gx_cm_color_map_procs *perm_cmapping_procs[] = {
+    &perm_cmapping_procs_0,
+    &perm_cmapping_procs_1
 };
 
 private const gx_cm_color_map_procs *
 perm_get_color_mapping_procs(const gx_device *dev)
 {
-    return &perm_cmapping_procs;
+    const gx_device_perm_t * const pdev = (const gx_device_perm_t *)dev;
+
+    if (pdev->mode < 0 || pdev->mode >= sizeof(perm_cmapping_procs) / sizeof(perm_cmapping_procs[0]))
+	return NULL;
+    return perm_cmapping_procs[pdev->mode];
 }
 
 #define compare_color_names(name, name_size, str, str_size) \
@@ -360,5 +344,108 @@ perm_decode_color(gx_device *dev, gx_color_index color, gx_color_value *out)
 	color >>= bpc;
     }
     return 0;
+}
+
+private int
+perm_get_params(gx_device *pdev, gs_param_list *plist)
+{
+    gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
+    int code;
+
+    code = param_write_int(plist, "Permute", &dev->permute);
+    if (code >= 0)
+	code = param_write_int(plist, "Mode", &dev->mode);
+    if (code >= 0)
+	code = gdev_prn_get_params(pdev, plist);
+    return code;
+}
+
+private const char * DeviceCMYKComponents[] = {
+	"Cyan",
+	"Magenta",
+	"Yellow",
+	"Black",
+	0		/* List terminator */
+};
+
+private const char * DeviceCMYComponents[] = {
+	"Cyan",
+	"Magenta",
+	"Yellow",
+	0		/* List terminator */
+};
+
+private const char * DeviceNComponents[] = {
+	"Yellow",
+	"Cyan",
+	"Cyan2",
+	"Magenta",
+	"Zero",
+	"Black",
+	0		/* List terminator */
+};
+
+private int
+perm_set_color_model(gx_device_perm_t *dev, int mode, int permute)
+{
+    dev->mode = mode;
+    dev->permute = permute;
+    if (mode == 0 && permute == 0) {
+	dev->std_colorant_names = DeviceCMYKComponents;
+	dev->num_std_colorant_names = 4;
+	dev->color_info.cm_name = "DeviceCMYK";
+	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+    } else if (mode == 0 && permute == 1) {
+	dev->std_colorant_names = DeviceNComponents;
+	dev->num_std_colorant_names = 6;
+	dev->color_info.cm_name = "DeviceN";
+	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+    } else if (mode == 1 && permute == 0) {
+	dev->std_colorant_names = DeviceCMYComponents;
+	dev->num_std_colorant_names = 3;
+	dev->color_info.cm_name = "DeviceCMY";
+	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+    } else if (mode == 1 && permute == 1) {
+	dev->std_colorant_names = DeviceNComponents;
+	dev->num_std_colorant_names = 6;
+	dev->color_info.cm_name = "DeviceN";
+	dev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
+    } else {
+	return -1;
+    }
+    dev->color_info.num_components = dev->num_std_colorant_names;
+    dev->color_info.depth = 8 * dev->num_std_colorant_names;
+
+    return 0;
+}
+
+private int
+perm_put_params(gx_device *pdev, gs_param_list *plist)
+{
+    gx_device_perm_t * const dev = (gx_device_perm_t *)pdev;
+    gx_device_color_info save_info;
+    int code;
+    int new_permute = dev->permute;
+    int new_mode = dev->mode;
+
+    code = param_read_int(plist, "Permute", &new_permute);
+    if (code < 0)
+	return code;
+    code = param_read_int(plist, "Mode", &new_mode);
+    if (code < 0)
+	return code;
+    if (new_mode < 0 || new_mode >= sizeof(perm_cmapping_procs) / sizeof(perm_cmapping_procs[0])) {
+	dlprintf("rangecheck!\n");
+	return_error(gs_error_rangecheck);
+    }
+    dev->permute = new_permute;
+    dev->mode = new_mode;
+    save_info = pdev->color_info;
+    code = perm_set_color_model(dev, dev->mode, dev->permute);
+    if (code >= 0)
+	code = gdev_prn_put_params(pdev, plist);
+    if (code < 0)
+	pdev->color_info = save_info;
+    return code;
 }
 
