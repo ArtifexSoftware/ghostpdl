@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.1
+#!/usr/bin/env python2.2
 
 #    Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
 # 
@@ -25,6 +25,7 @@ def addTests(suite, **args):
     import check_dirs; check_dirs.addTests(suite, **args)
     import check_docrefs; check_docrefs.addTests(suite, **args)
     import check_source; check_source.addTests(suite, **args)
-
+    import check_comments; check_comments.addTests(suite, **args)
+    
 if __name__ == "__main__":
     gsRunTestsMain(addTests)

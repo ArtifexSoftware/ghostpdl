@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.1
+#!/usr/bin/env python2.2
 
 #    Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
 # 
