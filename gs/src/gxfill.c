@@ -48,6 +48,9 @@
 #define ADJUST_SERIF 1 /* See comments near occurances. */
 #define CHECK_SPOT_CONTIGUITY 1 /* See comments near occurances. */
 
+#define CONTOUR_AREA_WITH_FIXED_POINT 1
+#define CONTOUR_AREA_WITH_FLOATING_POINT 0
+
 /*
  * Define which fill algorithm(s) to use.  At least one of the following
  * two #defines must be included (not commented out).
@@ -846,37 +849,140 @@ free_line_list(ll_ptr ll)
 
 #   if PSEUDO_RASTERIZATION
 
-/* Compute contour area 
- * (2 / fixed_1 ^ 2 of square pixels).
+/* Compute contour area.
+ * Returns multiple 2 of the area in square pixels.
  */
 private double
-compute_contour_area(subpath *psub)
+compute_contour_area(subpath *psub, const gs_fixed_rect * pbox)
 {
-    double area = 0;
+    double area;
     segment *pseg = (segment *)psub, *pseg_prev = psub->last;
+    fixed x0 = pbox->p.x, y0 = pbox->p.y;
 
+#   if CONTOUR_AREA_WITH_FIXED_POINT
+	/* We assume that area is computed for small characters only,
+	 * i.e. the contour size < 128 pixels, and fixed_shift <= 15.
+	 */
+	struct { 
+	    int s;              /* sign */
+	    unsigned long i, f; /* integer, fraction */
+	} s, a, b, c;
+	double area1;
+	fixed aa, bb;
+	int k;
+
+	s.s = 1; s.i = s.f = 0;
+#   endif
+#   if CONTOUR_AREA_WITH_FLOATING_POINT
+    area = 0;
+#endif
     for (;; pseg_prev = pseg, pseg = pseg->next) {
-	double dx = pseg->pt.x - pseg_prev->pt.x;
-	double dy = pseg->pt.y - pseg_prev->pt.y;
-	double vp = pseg->pt.x * dy - pseg->pt.y * dx;
+#	if CONTOUR_AREA_WITH_FLOATING_POINT
+	    double dx = pseg->pt.x - pseg_prev->pt.x;
+	    double dy = pseg->pt.y - pseg_prev->pt.y;
+	    double vp = (pseg->pt.x - x0) * dy - (pseg->pt.y - y0) * dx;
 
-	area += vp;
+	    area += vp;
+	    /* In general, the products may be truncated here.
+	     * But it cannot happen with small characters.
+	     * Note : It may be slow on processors which have no floating point.
+	     */
+#   endif
+#   if CONTOUR_AREA_WITH_FIXED_POINT
+	/* We don't want subroutine calls here, use 2-step cycle instead. */
+	for (k = 0, aa = pseg->pt.x - x0, bb = pseg->pt.y - pseg_prev->pt.y; 
+	     k < 2; 
+	     k++,   aa = y0 - pseg->pt.y, bb = pseg->pt.x - pseg_prev->pt.x
+	    ) {
+	    fixed p, q;
+
+	    /* a = aa; */
+	    if (aa == 0 || bb == 0)
+		continue;
+	    a.s = (aa >= 0 ? 1 : -1);
+	    aa = any_abs(aa);
+	    a.i = aa >> _fixed_shift;
+	    a.f = aa & _fixed_fraction_v;
+
+	    /* b = bb; */
+	    b.s = (bb >= 0 ? 1 : -1);
+	    bb = any_abs(bb);
+	    b.i = bb >> _fixed_shift;
+	    b.f = bb & _fixed_fraction_v;
+
+	    /* c = a * b; */
+	    c.s = a.s * b.s;
+	    c.i = a.i * b.i;
+	    c.f = a.f * b.f;
+	    p = a.i * b.f;
+	    q = a.f * b.i;
+	    c.i += (p >> _fixed_shift) + (q >> _fixed_shift);
+	    c.f += ((p & _fixed_fraction_v) + (q & _fixed_fraction_v)) << _fixed_shift;
+	    c.i += c.f >> _fixed_shift * 2;  /* normalize */
+	    c.f &= ((1 << _fixed_shift * 2) - 1);
+
+	    /* s += c; */
+	    if (s.s == c.s) {
+		/* add mantiss */
+		s.i += c.i;
+		s.f += c.f;
+	    } else {
+		/* subtract mantiss */
+		if (s.i > c.i) {
+		    s.i -= c.i;
+		    if (s.f < c.f) {
+			s.i--;
+			s.f += (1 << _fixed_shift * 2);
+		    }
+		    s.f -= c.f;
+		} else if (s.i < c.i) {
+		    s.s = - s.s;
+		    s.i = c.i - s.i;
+		    if (c.f < s.f) {
+			s.i--;
+			c.f += (1 << _fixed_shift * 2);
+		    }
+		    s.f = c.f - s.f;
+		} else if (s.f >= c.f) {
+		    s.i = 0;
+		    s.f -= c.f;
+		} else {
+		    s.i = 0;
+		    s.s = - s.s;
+		    s.f = c.f - s.f;
+		}
+	    }
+	    s.i += s.f >> _fixed_shift * 2;  /* normalize */
+	    s.f &= ((1 << _fixed_shift * 2) - 1);
+	}
+#	endif
+#	if CONTOUR_AREA_WITH_FIXED_POINT && CONTOUR_AREA_WITH_FLOATING_POINT
+	    area1 = (s.i + s.f / (double)(fixed_1 * fixed_1)) * s.s;
+	    /* assert(any_abs(area / (double)(fixed_1 * fixed_1) - area1) < 10 / (double)(fixed_1 * fixed_1)); */
+	    assert(area / (double)(fixed_1 * fixed_1) == area1);
+#	endif
 	if (pseg == psub->last)
 	    break;
     }
+#   if CONTOUR_AREA_WITH_FLOATING_POINT
+	area /= (double)(fixed_1 * fixed_1);
+#   endif
+#   if CONTOUR_AREA_WITH_FIXED_POINT
+	area1 = (s.i + s.f / (double)(fixed_1 * fixed_1)) * s.s;
+#   endif
+#   if CONTOUR_AREA_WITH_FIXED_POINT && CONTOUR_AREA_WITH_FLOATING_POINT
+	/* assert(any_abs(area - area1) < 10 / (double)(fixed_1 * fixed_1)); */
+	assert(area == area1);
+#   endif
+#   if CONTOUR_AREA_WITH_FIXED_POINT
+	area = area1;
+#   endif
     return area;
-    /* In general, the products may be truncated here to 1/16 of square pixel.
-     * We believe that such precision is enough. We could improve
-     * the precision with pre-computing the path weight center.
-     * Perhaps if the precision is lost, the sign of area may be random.
-     * This isn't good, but we believe that it must not happen.
-     * fixme : It may be slow on processors which have no floating point.
-     */
 }
 
 /* Compute sign of the maximal contour. */
 private int
-compute_max_contour_sign(gx_path *ppath)
+compute_max_contour_sign(gx_path *ppath, const gs_fixed_rect * pbox)
 {
     /* According to specification all outer contours in characters 
      * must be positive. Perhaps a font in comparefiles/a.pdf is not such.
@@ -891,7 +997,7 @@ compute_max_contour_sign(gx_path *ppath)
     double max_area = 0;
 
     for (; psub != NULL; psub = (subpath *)psub->last->next) {
-	double a = compute_contour_area(psub);
+	double a = compute_contour_area(psub, pbox);
 
 	if (any_abs(a) > any_abs(max_area)) {
 	    max_area = a;
@@ -988,7 +1094,7 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
 		    INCR(horiz);
 #		    if PSEUDO_RASTERIZATION
 		    if (pseudo_rasterization && max_contour_sign == -2)
-			max_contour_sign = compute_max_contour_sign(ppath);
+			max_contour_sign = compute_max_contour_sign(ppath, pbox);
 		    if (pseudo_rasterization && max_contour_sign < 0) {
 			/* Add reversed line, because add_horiz_margin needs a right direction. */
 			if ((code = add_y_line(pseg, prev, 
