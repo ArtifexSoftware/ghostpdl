@@ -93,7 +93,10 @@ def BuildPatch(revision, rcs_file):
     # NB this needs work we only handle the special cases here.
     rev_int_str = revision[:string.find(revision, '.')]
     rev_frac_str = revision[string.find(revision, '.')+1:]
-    prev_frac_int = string.atoi(rev_frac_str) - 1;
+    try:
+        prev_frac_int = string.atoi(rev_frac_str) - 1;
+    except:
+        return "the patch must be created manually"
     prev_revision = rev_int_str + '.' + `prev_frac_int`
     patch_command = 'cvs diff -C2 -r' + revision + ' -r' + prev_revision + ' ' + rcs_file
     return os.popen(patch_command, 'r').readlines()
