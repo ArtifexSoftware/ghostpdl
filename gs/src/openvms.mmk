@@ -176,7 +176,12 @@ X_INCLUDE=DECW$INCLUDE
 .ifdef DEBUG
 SW_DEBUG=/DEBUG/NOOPTIMIZE
 .else
-SW_DEBUG=/NODEBUG/OPTIMIZE
+# This should include /OPTIMIZE, but some OpenVMS compilers have an
+# optimizer bug that causes them to generate incorrect code for gdevpsfx.c,
+# so we must disable optimization.  (Eventually we will check for the bug
+# in genarch and enable optimization if it is safe.)
+#SW_DEBUG=/NODEBUG/OPTIMIZE
+SW_DEBUG=/NODEBUG/NOOPTIMIZE
 .endif
 
 SW_PLATFORM=/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/name=(as_is,short)

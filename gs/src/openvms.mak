@@ -173,7 +173,12 @@ COMP=CC
 ifdef DEBUG
 COMP:=$(COMP)/DEBUG/NOOPTIMIZE
 else
-COMP:=$(COMP)/NODEBUG/OPTIMIZE
+# This should include /OPTIMIZE, but some OpenVMS compilers have an
+# optimizer bug that causes them to generate incorrect code for gdevpsfx.c,
+# so we must disable optimization.  (Eventually we will check for the bug
+# in genarch and enable optimization if it is safe.)
+#COMP:=$(COMP)/NODEBUG/OPTIMIZE
+COMP:=$(COMP)/NODEBUG/NOOPTIMIZE
 endif
 
 COMP:=$(COMP)/DECC/PREFIX=ALL/NESTED_INCLUDE=PRIMARY/NAMES=SHORTENED
