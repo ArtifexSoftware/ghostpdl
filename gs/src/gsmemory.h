@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1996, 1997, 1998, 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -36,6 +36,7 @@
 #  define gsmemory_INCLUDED
 
 #include "gsmemraw.h"
+#include "gstypes.h"		/* for gs_bytestring */
 
 /* Define the opaque type for a structure descriptor. */
 typedef struct gs_memory_struct_type_s gs_memory_struct_type_t;
@@ -253,6 +254,15 @@ void gs_free_const_object(P3(gs_memory_t *mem, const void *data,
 			     client_name_t cname));
 void gs_free_const_string(P4(gs_memory_t *mem, const byte *data, uint nbytes,
 			     client_name_t cname));
+
+/*
+ * Free a [const] bytestring.  Note that this is *not* a member procedure of
+ * the allocator: it calls the free_object or free_string procedure.
+ */
+void gs_free_bytestring(gs_memory_t *mem, gs_bytestring *pbs,
+			client_name_t cname);
+void gs_free_const_bytestring(gs_memory_t *mem, gs_const_bytestring *pbs,
+			      client_name_t cname);
 
 /*
  * Either allocate (if obj == 0) or resize (if obj != 0) a structure array.

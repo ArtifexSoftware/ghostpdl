@@ -157,6 +157,25 @@ gs_free_const_string(gs_memory_t * mem, const byte * data, uint nbytes,
     gs_free_string(mem, u.w, nbytes, cname);
 }
 
+/* Free a [const] bytestring. */
+void
+gs_free_bytestring(gs_memory_t *mem, gs_bytestring *pbs, client_name_t cname)
+{
+    if (pbs->bytes)
+	gs_free_object(mem, pbs->bytes, cname);
+    else
+	gs_free_string(mem, pbs->data, pbs->size, cname);
+}
+void
+gs_free_const_bytestring(gs_memory_t *mem, gs_const_bytestring *pbs,
+			 client_name_t cname)
+{
+    if (pbs->bytes)
+	gs_free_const_object(mem, pbs->bytes, cname);
+    else
+	gs_free_const_string(mem, pbs->data, pbs->size, cname);
+}
+
 /* No-op consolidation procedure */
 void
 gs_ignore_consolidate_free(gs_memory_t *mem)
