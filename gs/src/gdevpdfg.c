@@ -1272,8 +1272,8 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 				     gs_color_select_all);
 	}
     }
-    if (pdev->CompatibilityLevel >= 1.3) {
-	if (pdev->overprint_mode != pdev->params.OPM && pdev->sbstack_depth == 0) {
+    if (pdev->CompatibilityLevel >= 1.3 && pdev->sbstack_depth == 0) {
+	if (pdev->overprint_mode != pdev->params.OPM) {
 	    code = pdf_open_gstate(pdev, ppres);
 	    if (code < 0)
 		return code;
