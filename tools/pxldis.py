@@ -154,7 +154,7 @@ pxl_enumerations_dict = {
     'ClipRegion' : ['eInterior=0', 'eExterior=1'],
     'ColorDepth' : [ 'e1Bit=0', 'e4Bit=1', 'e8Bit=2' ],
     'ColorMapping' : [ 'eDirectPixel=0', 'eIndexedPixel=1' ],
-    'ColorSpace' : [ 'eGray=1', 'eRGB=2', 'eSRGB=3' ], # srgb deprecated
+    'ColorSpace' : [ 'eGray=1', 'eRGB=2', 'eSRGB=6' ], # srgb deprecated
     'ColorTreatment' : [ 'eNoTreatment=0', 'eScreenMatch=1', 'eVivid=2' ],
     'CompressMode' : [ 'eNoCompression=0', 'eRLECompression=1',
                        'eJPEGCompression=2', 'eDeltaRowCompression=3' ],
@@ -326,7 +326,8 @@ class pxl_dis:
         self.skipped_over = index
         # pointer to data
         self.index = 0
-
+        # graphic state number of pushes - number of pops
+        self.graphics_state_level = 0
         # print out ascii protocol and revision.  NB should check
         # revisions are the same.
         print "` HP-PCL XL;" + self.protocol + ";" + self.revision
@@ -387,7 +388,12 @@ class pxl_dis:
         tag = unpack('B', self.data[self.index] )[0]
         for k in pxl_tags_dict.keys():
             if ( pxl_tags_dict[k] == tag ):
-                print "// Operator Position: %d Operator File Offset: %d Operator Hex Code: %X" % (self.operator_position, self.index + self.skipped_over, tag)
+                if ( k == "PopGS" ):
+                    self.graphics_state_level = self.graphics_state_level - 1
+                if ( k == "PushGS" ):
+                    self.graphics_state_level = self.graphics_state_level + 1
+                    
+                print "// Operator Position: %d Operator File Offset: %d Operator Hex Code: %X Level: %d" % (self.operator_position, self.index + self.skipped_over, tag, self.graphics_state_level)
                 print k
                 self.index = self.index + 1
                 # handle special cases
