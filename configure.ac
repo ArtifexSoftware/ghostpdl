@@ -7,7 +7,7 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.17 $])
+AC_REVISION([$Revision: 1.18 $])
 
 # Checks for programs.
 AC_PROG_CC
@@ -116,7 +116,6 @@ AC_TYPE_SIZE_T
 AC_C_BIGENDIAN
 
 # Checks for library functions.
-AC_FUNC_MALLOC
 AC_FUNC_MEMCMP
 AC_CHECK_FUNCS([memset strdup])
 
