@@ -35,7 +35,6 @@
 #include "plfont.h"
 #include "plvalue.h"
 #include "gscoord.h"
-#include "gsstate.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxpath.h"
