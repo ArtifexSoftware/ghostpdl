@@ -81,10 +81,11 @@ PCFBASM=
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-# ****** WRONG ****** NEED GLOBJ PREFIX ******
-BEGINFILES=gs*.res gs*.ico $(GLGENDIR)\ccf32.tr\
-   $(GSDLL).dll $(GSCONSOLE).exe\
-   $(BEGINFILES2)
+BEGINFILES=$(GLGENDIR)\ccf32.tr\
+ $(GLOBJDIR)\*.res $(GLOBJDIR)\*.ico\
+ $(BINDIR)\$(GSDLL).dll $(BINDIR)\$(GSCONSOLE).exe\
+ $(BINDIR)\setupgs.exe $(BINDIR)\uninstgs.exe\
+ $(BEGINFILES2)
 
 # Include the generic makefiles.
 #!include $(COMMONDIR)/pcdefs.mak
