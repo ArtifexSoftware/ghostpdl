@@ -251,9 +251,9 @@ sc:
 	scanner_state_init_check(&state, false, true);
 	code = scan_token(i_ctx_p, ts, &ignore_value, &state);
 	ref_stack_pop_to(&o_stack, depth);
+	if (code < 0)
+	    code = scan_EOF;	/* stop on scanner error */
 	switch (code) {
-	    case e_undefined:
-		code = 0;	/* ignore undefined //name */
 	    case 0:		/* read a token */
 	    case scan_BOS:
 		goto sc;	/* keep going until we run out of data */

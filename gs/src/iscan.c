@@ -1119,9 +1119,12 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     }
   sret:if (retcode < 0) {
 	scan_end_inline();
-	if (pstack != 0)
+	if (pstack != 0) {
+	    if (retcode == e_undefined)
+		*pref = *osp;	/* return undefined name as error token */
 	    ref_stack_pop(&o_stack,
 			  ref_stack_count(&o_stack) - (pdepth - 1));
+	}
 	return retcode;
     }
     /* If we are at the top level, return the object, */
