@@ -1,0 +1,98 @@
+#!/bin/sh
+#	Script to add a bug to the directory containing the bugs
+#
+#   Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+#   Unauthorized use, copying, and/or distribution prohibited.
+#
+#-------
+# name of the bug directory
+BUGS=bugs
+# default editor if neither EDITOR and CVSEDITOR are defined
+ED=vi
+#------------------------------------------------------------------
+#
+# This script will accept the bug ID on the command line, or will
+# prompt for it.
+#
+# If the script is invoked from a different directory, it will try
+# to locate the 'bugs' directory by looking down then up a few
+# directory levels.
+#
+# If the bug already exists, as with a work in progress, the
+# user will be prompted to continue updating the bug, or bail.
+#
+# Once the bug file is complete, the user is required to confirm
+# the addition to CVS.
+#
+#-------------------------------------------------------------------
+# save the current directory in case this script is sourced
+S=`pwd`
+# First find the bug directory in case we aren't there
+if [ ! -f TEMPLATE ]; then
+    if [ -d $BUGS ]; then
+       cd $BUGS
+    else
+	cd ..
+	if [ -d $BUGS ]; then
+	    cd $BUGS
+	else
+	    cd ..
+	    if [ -d $BUGS ]; then
+		cd $BUGS
+	    else
+		echo "Please change to the $BUGS directory before adding a bug"
+		cd $S
+		exit 1
+	    fi
+	fi
+    fi
+fi
+# If not NT, then echo needs -e switch
+if [ `uname` != Windows_NT ]; then
+    E=-e
+else
+    E=""
+fi
+# Get the bug ID if it wasn't given on the command line
+if [ -z "$1" ]; then
+    echo "*** The bug number was not given on the command line ***"
+    echo $E "\nPlease enter the bug number: \c"
+    read B
+else
+    B=$1
+    shift
+fi
+# Find out which editor we should use. Priority given to $CVSEDITOR
+if [ ! -z "$EDITOR" ] ; then
+    ED=$EDITOR
+elif [ ! -z "$CVSEDITOR" ]; then
+    ED=$CVSEDITOR
+fi
+# If the file already exists, say so and make sure we want to continue
+# adding it
+if [ -f $B ]; then
+    echo $E "\nThe local bug file $S/$B already exists."
+    echo $E "   enter 'y' to continue adding or 'n' to abort: \c"
+    read A
+    if [ `echo $A | tr "A-Z" "a-z"` != "y" ]; then
+        echo "Bug $B not added."
+	cd $S
+	exit 1
+    fi
+else
+#   Copy the TEMPLATE into the new bug and edit it
+    echo $E "\nCreating new bug $B."
+    cp TEMPLATE $B
+fi
+$ED $B
+# Now prompt to see if we are ready to put in cvs
+echo $E "\nAre you ready to add this bug to CVS ? \c"
+read A
+if [ `echo $A | tr "A-Z" "a-z"` != "y" ]; then
+    echo Bug $B saved in local file $S/$B, not added to CVS.
+    cd $S
+    exit 0
+fi
+cvs add $B
+cvs commit $B
+cd $S
