@@ -18,6 +18,7 @@ rem Watcom C deletes = signs, so use # instead.
 goto end
 
 :usage
-echo "Usage: ps2ps ...switches... input.ps output.ps"
+echo "Usage: ps2ps [options] input.ps output.ps"
+echo "  e.g. ps2ps -sPAPERSIZE=a4 input.ps output.ps
 
 :end
