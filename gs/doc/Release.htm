@@ -366,7 +366,11 @@ to ensure the repository is up to date.
 Execute
 
 <blockquote><pre>
-toolbin/cvs2hist.py -v #.## > doc/Changes.htm
+<tt>toolbin/cvs2hist.py -j <last release tag> -r '-r<branch tag>' -v #.## > doc/Changes.htm</tt>
+</pre></blockquote>
+e.g.
+<blockquote><pre>
+<tt>toolbin/cvs2hist.py -j gs7_03 -r '-rHEAD' -v 7.20 > doc/Changes.htm</tt>
 </pre></blockquote>
 
 <p>
