@@ -922,7 +922,7 @@ $(PSD)stocht0.dev : $(INT_MAK) $(ECHOGS_XE)
 
 # If we are compiling, a special compilation step is needed.
 stocht1_=$(PSOBJ)ht_ccsto.$(OBJ)
-$(PSD)stocht1.dev : $(stocht1_) $(INT_MAK) $(ECHOGS_XE) $(PSD)stocht0.dev
+$(PSD)stocht1.dev : $(INT_MAK) $(ECHOGS_XE) $(stocht1_) $(PSD)stocht0.dev
 	$(SETMOD) $(PSD)stocht1 $(stocht1_)
 	$(ADDMOD) $(PSD)stocht1 -halftone $(Q)StochasticDefault$(Q)
 	$(ADDMOD) $(PSD)stocht1 -include $(PSD)stocht0
@@ -1465,22 +1465,33 @@ $(PSOBJ)zcspixel.$(OBJ) : $(PSSRC)zcspixel.c $(OP)\
  $(igstate_h)
 	$(PSCC) $(PSO_)zcspixel.$(OBJ) $(C_) $(PSSRC)zcspixel.c
 
+# ---------------- ReusableStreamDecode filter ---------------- #
+# This is also used by the implementation of CIDFontType 0 fonts.
+
+frsd_=$(PSOBJ)zfrsd.$(OBJ)
+$(PSD)frsd.dev : $(INT_MAK) $(ECHOGS_XE) $(frsd_)
+	$(SETMOD) $(PSD)frsd $(frsd_)
+	$(ADDMOD) $(PSD)frsd -oper zfrsd
+	$(ADDMOD) $(PSD)frsd -ps gs_lev2 gs_res gs_frsd
+
+$(PSOBJ)zfrsd.$(OBJ) : $(PSSRC)zfrsd.c $(OP) $(memory__h)\
+ $(sfilter_h) $(stream_h) $(strimpl_h)\
+ $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
+	$(PSCC) $(PSO_)zfrsd.$(OBJ) $(C_) $(PSSRC)zfrsd.c
+
 # ---------------- Rest of LanguageLevel 3 ---------------- #
 
 $(PSD)psl3.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(PSD)psl2.dev $(PSD)cspixel.dev $(PSD)func.dev $(GLD)psl3lib.dev $(PSD)psl3read.dev
-	$(SETMOD) $(PSD)psl3 -include $(PSD)psl2 $(PSD)cspixel $(PSD)func $(GLD)psl3lib $(PSD)psl3read
+ $(PSD)psl2.dev $(PSD)cspixel.dev $(PSD)frsd.dev $(PSD)func.dev\
+ $(GLD)psl3lib.dev $(PSD)psl3read.dev
+	$(SETMOD) $(PSD)psl3 -include $(PSD)psl2 $(PSD)cspixel $(PSD)frsd $(PSD)func
+	$(ADDMOD) $(PSD)psl3 -include $(GLD)psl3lib $(PSD)psl3read
 
 $(PSOBJ)zcsdevn.$(OBJ) : $(PSSRC)zcsdevn.c $(OP) $(memory__h)\
  $(gscolor2_h) $(gxcdevn_h) $(gxcspace_h)\
  $(estack_h) $(ialloc_h) $(icremap_h) $(igstate_h) $(iname_h) $(ostack_h)\
  $(store_h)
 	$(PSCC) $(PSO_)zcsdevn.$(OBJ) $(C_) $(PSSRC)zcsdevn.c
-
-$(PSOBJ)zfreuse.$(OBJ) : $(PSSRC)zfreuse.c $(OP) $(memory__h)\
- $(sfilter_h) $(stream_h) $(strimpl_h)\
- $(files_h) $(idict_h) $(idparam_h) $(iname_h) $(store_h)
-	$(PSCC) $(PSO_)zfreuse.$(OBJ) $(C_) $(PSSRC)zfreuse.c
 
 $(PSOBJ)zfunc3.$(OBJ) : $(PSSRC)zfunc3.c $(memory__h) $(OP)\
  $(gsfunc3_h) $(gsstruct_h)\
@@ -1523,18 +1534,20 @@ $(PSOBJ)zshade.$(OBJ) : $(PSSRC)zshade.c $(memory__h) $(OP)\
  $(store_h)
 	$(PSCC) $(PSO_)zshade.$(OBJ) $(C_) $(PSSRC)zshade.c
 
-psl3read_1=$(PSOBJ)zcsdevn.$(OBJ) $(PSOBJ)zfreuse.$(OBJ) $(PSOBJ)zfunc3.$(OBJ)
+psl3read_1=$(PSOBJ)zcsdevn.$(OBJ) $(PSOBJ)zfunc3.$(OBJ)
 psl3read_2=$(PSOBJ)zimage3.$(OBJ) $(PSOBJ)zmisc3.$(OBJ) $(PSOBJ)zshade.$(OBJ)
 psl3read_=$(psl3read_1) $(psl3read_2)
 
-$(PSD)psl3read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl3read_) $(PSD)fzlib.dev
+# Note: we need the ReusableStreamDecode filter for shadings.
+$(PSD)psl3read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl3read_)\
+ $(PSD)frsd.dev $(PSD)fzlib.dev
 	$(SETMOD) $(PSD)psl3read $(psl3read_1)
 	$(ADDMOD) $(PSD)psl3read $(psl3read_2)
-	$(ADDMOD) $(PSD)psl3read -oper zcsdevn zfreuse
+	$(ADDMOD) $(PSD)psl3read -oper zcsdevn
 	$(ADDMOD) $(PSD)psl3read -oper zimage3 zmisc3 zshade
 	$(ADDMOD) $(PSD)psl3read -functiontype 2 3
 	$(ADDMOD) $(PSD)psl3read -ps gs_ll3
-	$(ADDMOD) $(PSD)psl3read -include $(PSD)fzlib
+	$(ADDMOD) $(PSD)psl3read -include $(PSD)frsd $(PSD)fzlib
 
 # ---------------- Trapping ---------------- #
 

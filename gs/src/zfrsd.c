@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -219,7 +219,7 @@ make_rss(i_ctx_t *i_ctx_p, os_ptr op, const byte * data, uint size,
 
 /* ---------------- Initialization procedure ---------------- */
 
-const op_def zfreuse_op_defs[] =
+const op_def zfrsd_op_defs[] =
 {
     {"2.reusablestream", zreusablestream},
     {"2.rsdparams", zrsdparams},
