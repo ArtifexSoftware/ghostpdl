@@ -42,6 +42,7 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
     gs_font **fdep =
 	gs_alloc_struct_array(mem, 1, gs_font *, &st_gs_font_ptr_element,
 			      "gs_type0_from_cidfont(FDepVector)");
+    int code;
 
     if (font0 == 0 || encoding == 0 || fdep == 0) {
 	gs_free_object(mem, fdep, "gs_type0_from_cidfont(FDepVector)");
@@ -70,7 +71,9 @@ type0_from_cidfont_cmap(gs_font_type0 **ppfont0, gs_font *font,
     font0->data.CMap = pcmap;
     font0->data.SubsVector.data = 0;
     font0->data.SubsVector.size = 0;
-    gs_definefont(font->dir, (gs_font *)font0);
+    code = gs_definefont(font->dir, (gs_font *)font0);
+    if (code < 0)
+	return code;
     *ppfont0 = font0;
     return 0;
 }
