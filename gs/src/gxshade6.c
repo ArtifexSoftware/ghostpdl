@@ -26,7 +26,11 @@
 #include "gxistate.h"
 #include "gxshade.h"
 #include "gxshade4.h"
+#include "gxdevcli.h"
 #include "gzpath.h"
+#include "stdint_.h"
+
+#define NEW_TENSOR_SHADING 0 /* Old code = 0, new code = 1. */
 
 /* ================ Utilities ================ */
 
@@ -116,7 +120,36 @@ vx:	    if ((code = shade_next_coords(cs, curve[1].control, 2)) < 0 ||
 typedef struct patch_fill_state_s {
     mesh_fill_state_common;
     const gs_function_t *Function;
+#if NEW_TENSOR_SHADING
+    bool vectorization;
+    gs_fixed_point *wedge_buf;
+    gs_client_color color_domain;
+    fixed fixed_flat;
+#endif
 } patch_fill_state_t;
+
+#if NEW_TENSOR_SHADING
+private void
+init_patch_fill_state(patch_fill_state_t *pfs)
+{
+    const gs_color_space *pcs = pfs->direct_space;
+    gs_client_color fcc0, fcc1;
+    int n = pcs->type->num_components(pcs), i;
+    double m;
+
+    for (i = 0; i < n; i++) {
+	fcc0.paint.values[i] = -1000000;
+	fcc1.paint.values[i] = 1000000;
+    }
+    pcs->type->restrict_color(&fcc0, pcs);
+    pcs->type->restrict_color(&fcc1, pcs);
+    for (i = 0; i < n; i++)
+	pfs->color_domain.paint.values[i] = max(fcc1.paint.values[i] - fcc0.paint.values[i], 1);
+    pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
+    pfs->wedge_buf = NULL;
+    pfs->fixed_flat = float2fixed(pfs->pis->flatness);
+}
+#endif
 
 /*
  * Calculate the interpolated color at a given point.
@@ -141,7 +174,7 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 }
 
 /* Resolve a patch color using the Function if necessary. */
-private void
+inline private void
 patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
 {
     if (pfs->Function)
@@ -259,6 +292,15 @@ split2_xy(double out[8], const gs_fixed_point *p10, const gs_fixed_point *p11,
     return merge_splits(out, t1, split_xy(t1, p10, p11, p12, p13),
 			t2, split_xy(t2, p20, p21, p22, p23));
 }
+
+#if NEW_TENSOR_SHADING
+private int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
+	   const gs_fixed_point interior[4],
+	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
+			      const gs_fixed_point[4], floatp, floatp));
+#endif
+
+#if !NEW_TENSOR_SHADING
 
 private int
 patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
@@ -467,6 +509,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     }
     return 0;
 }
+#endif
 
 /* ---------------- Coons patch shading ---------------- */
 
@@ -517,6 +560,9 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     mesh_init_fill_state((mesh_fill_state_t *) & state,
 			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
     state.Function = psh->params.Function;
+#if NEW_TENSOR_SHADING
+    init_patch_fill_state(&state);
+#endif
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
@@ -592,6 +638,9 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     mesh_init_fill_state((mesh_fill_state_t *) & state,
 			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
     state.Function = psh->params.Function;
+#if NEW_TENSOR_SHADING
+    init_patch_fill_state(&state);
+#endif
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
@@ -612,3 +661,988 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     }
     return min(code, 0);
 }
+
+#if NEW_TENSOR_SHADING
+
+/* fixme :
+   The current code allocates up to 64 instances of tensor_patch on C stack, 
+   when executes fill_stripe, decompose_stripe, fill_quadrangle.
+   Our estimation of the stack size id about 10K.
+   Maybe it needs to reduce with a heap-allocated stack.
+*/
+
+typedef struct {
+    gs_fixed_point pole[4][4]; /* [v][u] */
+    patch_color_t c[2][2];     /* [v][u] */
+} tensor_patch;
+
+private inline int
+curve_samples(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
+{
+    curve_segment s;
+
+    s.p1.x = pole[pole_step].x;
+    s.p1.y = pole[pole_step].y;
+    s.p2.x = pole[pole_step * 2].x;
+    s.p2.y = pole[pole_step * 2].y;
+    s.pt.x = pole[pole_step * 3].x;
+    s.pt.y = pole[pole_step * 3].y;
+    return 1 << gx_curve_log2_samples(pole[0].x, pole[0].y, &s, fixed_flat);
+}
+
+private bool 
+intersection_of_big_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int i3, fixed *ry, double *error)
+{
+    fixed dx1 = q[i1].x - q[i0].x, dy1 = q[i1].y - q[i0].y;
+    fixed dx2 = q[i2].x - q[i0].x, dy2 = q[i2].y - q[i0].y;
+    fixed dx3 = q[i3].x - q[i0].x, dy3 = q[i3].y - q[i0].y;
+    int64_t vp2a, vp2b, vp3a, vp3b;
+    int s2, s3;
+
+    if (dx2 == 0 && dy2 == 0)
+	return false; /* Contacting ends are out of interest. */
+    if (dx3 == 0 && dy3 == 0)
+	return false; /* Contacting ends are out of interest. */
+    if (dx2 == dx1 && dy2 == dx1)
+	return false; /* Contacting ends are out of interest. */
+    if (dx3 == dx1 && dy3 == dx1)
+	return false; /* Contacting ends are out of interest. */
+    vp2a = (int64_t)dx1 * dy2;
+    vp2b = (int64_t)dy1 * dx2; 
+    /* vp2 = vp2a - vp2b; It can overflow int64_t, but we only need the sign. */
+    if (vp2a > vp2b)
+	s2 = 1;
+    else if (vp2a < vp2b)
+	s2 = -1;
+    else 
+	s2 = 0;
+    vp3a = (int64_t)dx1 * dy3;
+    vp3b = (int64_t)dy1 * dx3; 
+    /* vp3 = vp3a - vp3b; It can overflow int64_t, but we only need the sign. */
+    if (vp3a > vp3b)
+	s3 = 1;
+    else if (vp3a < vp3b)
+	s3 = -1;
+    else 
+	s3 = 0;
+    if (s2 = 0) {
+	if (s3 == 0)
+	    return false; /* Collinear bars - out of interest. */
+	if (0 <= dx2 && dx2 <= dx1 && 0 <= dy2 && dy2 <= dy1) {
+	    /* The start of the bar 2 is in the bar 1. */
+	    *ry = q[i2].y;
+	    *error = 0;
+	    return true;
+	}
+    } else if (s3 == 0) {
+	if (0 <= dx3 && dx3 <= dx1 && 0 <= dy3 && dy3 <= dy1) {
+	    /* The end of the bar 2 is in the bar 1. */
+	    *ry = q[i3].y;
+	    *error = 0;
+	    return true;
+	}
+    } else if (s2 * s3 < 0) {
+	/* The intersection definitely exists, so the determinant isn't zero.  */
+	/* This branch is passed only with wedges,
+	   which have at least 3 segments. 
+	   Therefore the determinant can't overflow int64_t. */
+	/* The determinant can't compute in double due to 
+	   possible loss of all significant bits when subtracting the 
+	   trucnated prodicts. But after we subtract in int64_t,
+	   it converts to 'double' with a reasonable truncation. */
+	fixed d23x = dx3 - dx2, d23y = dy3 - dy2;
+	int64_t det = (int64_t)dx1 * d23y - (int64_t)dy1 * d23x;
+	int64_t mul = (int64_t)dy2 * d23x - (int64_t)dx2 * d23y;
+	double dy = dy1 * (double)mul / (double)det;
+	*ry = q[i0].y + (fixed)dy; /* Drop the fraction part, no rounding. */
+	*error = dy - (fixed)dy;
+	return true;
+    }
+    return false;
+}
+
+private bool
+intersection_of_small_bars(const gs_fixed_point q[4], int i0, int i1, int i2, int i3, fixed *ry, double *error)
+{
+    /* fixme : optimize assuming the XY span lesser than sqrt(max_fixed).  */
+    return intersection_of_big_bars(q, i0, i1, i2, i3, ry, error);
+}
+
+
+private inline int 
+gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4], 
+	int vi0, int vi1, int vi2, int vi3, fixed ybot, fixed ytop, 
+	bool swap_axes, const gx_device_color *pdevc)
+{
+    gs_fixed_edge le, ri;
+
+    if (ybot > ytop)
+	return 0;
+    if (q[vi0].x < q[vi2].x || q[vi1].x < q[vi2].x) {
+	le.start = q[vi0];
+	le.end = q[vi1];
+	ri.start = q[vi2];
+	ri.end = q[vi3];
+    } else {
+	le.start = q[vi2];
+	le.end = q[vi3];
+	ri.start = q[vi0];
+	ri.end = q[vi1];
+    }
+    return dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
+	    &le, &ri, ybot, ytop, swap_axes, pdevc, pfs->pis->log_op);
+}
+
+private void
+patch_color_to_device_color(const patch_fill_state_t * pfs, const patch_color_t *c, gx_device_color *pdevc)
+{
+    /* A code fragment copied from mesh_fill_triangle. */
+    const gs_color_space *pcs = pfs->direct_space;
+    gs_client_color fcc;
+    int n = pcs->type->num_components(pcs);
+
+    memcpy(fcc.paint.values, c->cc.paint.values, sizeof(fcc.paint.values[0]) * n);
+    pcs->type->restrict_color(&fcc, pcs);
+    pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
+			      pfs->dev, gs_color_select_texture);
+}
+
+private inline bool
+is_color_span_big(const patch_fill_state_t * pfs, const patch_color_t *c0, const patch_color_t *c1)
+{
+    const gs_color_space *pcs = pfs->direct_space;
+    patch_color_t cc0 = *c0, cc1 = *c1;
+    int n = pcs->type->num_components(pcs), i;
+    double m;
+
+    patch_resolve_color(&cc0, pfs);
+    patch_resolve_color(&cc1, pfs);
+    m = any_abs(cc1.cc.paint.values[0] - cc0.cc.paint.values[0]) / pfs->color_domain.paint.values[0];
+    for (i = 1; i < n; i++)
+	m = max(m, any_abs(cc1.cc.paint.values[i] - cc0.cc.paint.values[i]) / pfs->color_domain.paint.values[i]);
+    return m > pfs->pis->smoothness;
+}
+
+private inline bool
+is_color_monotonic(const patch_fill_state_t * pfs, const patch_color_t *c0, const patch_color_t *c1)
+{
+    if (!pfs->Function)
+	return true;
+    return gs_function_is_monotonic(pfs->Function, &c0->t, &c1->t, EFFORT_MODERATE);
+}
+
+private int
+constant_color_wedge_trap(patch_fill_state_t *pfs, 
+	const gs_fixed_point q[4], fixed ybot, fixed ytop, const patch_color_t *c, bool swap_axes)
+{
+    gx_device_color dc;
+    fixed ry;
+    int code;
+    double error;
+    patch_color_t c1 = *c;
+
+    patch_resolve_color(&c1, pfs);
+    patch_color_to_device_color(pfs, &c1, &dc);
+    if (intersection_of_big_bars(q, 0, 1, 2, 3, &ry, &error)) {
+	fixed ey = (error > 0 ? 1 : 0);
+	/* 2 triangles : */
+	/* Assuning ry is trancated. */
+	code = gx_shade_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ry + ey, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	return gx_shade_trapezoid(pfs, q, 0, 1, 2, 3, ry, ytop, swap_axes, &dc);
+    } else
+	return gx_shade_trapezoid(pfs, q, 0, 1, 2, 3, ybot, ytop, swap_axes, &dc);
+}
+
+private inline bool
+covers_pixel_centers(fixed ybot, fixed ytop)
+{
+    return fixed_pixround(ybot) < fixed_pixround(ytop);
+}
+
+private int
+wedge_trap_decompose(patch_fill_state_t *pfs, gs_fixed_point p[4],
+	fixed ybot, fixed ytop, const patch_color_t *c0, const patch_color_t *c1, bool swap_axes)
+{
+    patch_color_t c;
+    int code;
+    if (!pfs->vectorization && !covers_pixel_centers(ybot, ytop))
+	return 0;
+    /* Use the recursive decomposition due to is_color_monotonic
+       based on fn_is_monotonic_proc_t is_monotonic,
+       which applies to intervals. */
+    patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+    if (ytop - ybot < pfs->fixed_flat) /* Prevent an infinite color decomposition. */
+	return constant_color_wedge_trap(pfs, p, ybot, ytop, &c, swap_axes);
+    else if (!is_color_monotonic(pfs, c0, c1) || is_color_span_big(pfs, c0, c1)) {
+	fixed y = (ybot + ytop) / 2;
+    
+	code = wedge_trap_decompose(pfs, p, ybot, y, c0, &c, swap_axes);
+	if (code < 0)
+	    return code;
+	return wedge_trap_decompose(pfs, p, y, ytop, &c, c1, swap_axes);
+    } else
+	return constant_color_wedge_trap(pfs, p, ybot, ytop, &c, swap_axes);
+}
+
+private int
+fill_wedge_trap(patch_fill_state_t *pfs, const gs_fixed_point *p0, const gs_fixed_point *p1, 
+	    const gs_fixed_point q[2], const patch_color_t *c0, const patch_color_t *c1, 
+	    bool swap_axes)
+{
+    /* We assume that the width of the wedge is close to zero,
+       so we can ignore the slope when computing transversal distances. */
+    gs_fixed_point p[4];
+
+    if (p0->y < p1->y) {
+	p[0] = *p0;
+	p[1] = *p1;
+    } else {
+	p[1] = *p1;
+	p[0] = *p0;
+    }
+    p[2] = q[0];
+    p[3] = q[1];
+    return wedge_trap_decompose(pfs, p, p[0].y, p[1].y, c0, c1, swap_axes);
+}
+
+private void
+split_curve_s(const gs_fixed_point *pole, gs_fixed_point *q0, gs_fixed_point *q1, int pole_step)
+{
+    /*	This copies a code fragment from split_curve_midpoint,
+        substituting another data type.
+     */				
+    /*
+     * We have to define midpoint carefully to avoid overflow.
+     * (If it overflows, something really pathological is going
+     * on, but we could get infinite recursion that way....)
+     */
+#define midpoint(a,b)\
+  (arith_rshift_1(a) + arith_rshift_1(b) + ((a) & (b) & 1) + 1)
+    fixed x12 = midpoint(pole[1 * pole_step].x, pole[2 * pole_step].x);
+    fixed y12 = midpoint(pole[1 * pole_step].y, pole[2 * pole_step].y);
+
+    /* q[0] and q[1] must not be the same as pole. */
+    q0[1 * pole_step].x = midpoint(pole[0 * pole_step].x, pole[1 * pole_step].x);
+    q0[1 * pole_step].y = midpoint(pole[0 * pole_step].y, pole[1 * pole_step].y);
+    q1[2 * pole_step].x = midpoint(pole[2 * pole_step].x, pole[3 * pole_step].x);
+    q1[2 * pole_step].y = midpoint(pole[2 * pole_step].y, pole[3 * pole_step].y);
+    q0[2 * pole_step].x = midpoint(q0[1 * pole_step].x, x12);
+    q0[2 * pole_step].y = midpoint(q0[1 * pole_step].y, y12);
+    q1[1 * pole_step].x = midpoint(x12, q1[2 * pole_step].x);
+    q1[1 * pole_step].y = midpoint(y12, q1[2 * pole_step].y);
+    q1[3 * pole_step].x = pole[3].x;
+    q1[3 * pole_step].y = pole[3].y;
+    q0[3 * pole_step].x = midpoint(q0[2 * pole_step].x, q1[1 * pole_step].x);
+    q0[3 * pole_step].y = midpoint(q0[2 * pole_step].y, q1[1 * pole_step].y);
+#undef midpoint
+}
+
+private void
+split_curve(const gs_fixed_point pole[4], gs_fixed_point q0[4], gs_fixed_point q1[4])
+{
+    split_curve_s(pole, q0, q1, 1);
+}
+
+
+private void
+generate_inner_vertices(gs_fixed_point *p, const gs_fixed_point pole[4], int k)
+{
+    /* Recure to get exactly same points as when devided a patch. */
+    /* An iteration can't give them preciselly. */
+    if (k > 1) {
+	gs_fixed_point q[2][4];
+
+	split_curve(pole, q[0], q[1]);
+	p[k / 2 + 1] = q[0][3];
+	generate_inner_vertices(p, q[0], k / 2);
+	generate_inner_vertices(p + k / 2, q[1], k / 2);
+    }
+}
+
+private inline void
+do_swap_axes(gs_fixed_point *p, int k)
+{
+    int i;
+
+    for (i = 1; i < k; i++) {
+	p[i].x ^= p[i].y; p[i].y ^= p[i].x; p[i].x ^= p[i].y;
+    }
+}
+
+private inline void
+y_extreme_vertice(gs_fixed_point *q, const gs_fixed_point *p, int k, int minmax)
+{
+    int i;
+    gs_fixed_point r = *p;
+
+    for (i = 1; i < k; i++)
+	if ((p[i].y - r.y) * minmax < 0)
+	    r = p[i];
+    *q = r;	
+}
+
+private inline fixed
+span_x(gs_fixed_point *p, int k)
+{
+    int i;
+    fixed xmin = p[0].x, xmax = p[0].x;
+
+    for (i = 1; i < k; i++) {
+	xmin = min(xmin, p[i].x);
+	xmax = max(xmax, p[i].x);
+    }
+    return xmax - xmin;
+}
+
+private inline fixed
+span_y(gs_fixed_point *p, int k)
+{
+    int i;
+    fixed ymin = p[0].y, ymax = p[0].y;
+
+    for (i = 1; i < k; i++) {
+	ymin = min(ymin, p[i].y);
+	ymax = max(ymax, p[i].y);
+    }
+    return ymax - ymin;
+}
+
+private int
+fill_wedge(patch_fill_state_t *pfs, int ka, 
+	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
+{
+    patch_color_t ca, cb, *pca = &ca, *pcb = &cb, *pcc;
+    fixed dx, dy;
+    bool swap_axes;
+    int k1 = ka + 1, i, code;
+    gs_fixed_point q[2], *p = pfs->wedge_buf;
+
+    p[0] = pole[0];
+    p[k1] = pole[3];
+    generate_inner_vertices(p, pole, ka); /* ka >= 2, see fill_wedges */
+    dx = span_x(p, k1);
+    dy = span_y(p, k1);
+    swap_axes = (dx > dy);
+    if (swap_axes)
+	do_swap_axes(p, k1);
+    /* We assume that the width of the wedge is close to zero.
+       An exception is a too big setflat, which we assume to be
+       a bad document design, which we don't care of.
+       Therefore we don't bother with exact coverage.
+       We generate a simple coverage within the convex hull. */
+    y_extreme_vertice(&q[0], p, k1, -1);
+    y_extreme_vertice(&q[1], p, k1, 1);
+    *pca = *c0;
+    for (i = 1; i < k1; i++) {
+	patch_interpolate_color(pcb, c0, c1, pfs, (i - 1.0) / (ka - 1.0)); /* ka >= 2, see fill_wedges */
+	code = fill_wedge_trap(pfs, &p[i - 1], &p[i], q, pca, pcb, swap_axes);
+	if (code < 0)
+	    return code;
+	pcc = pca; pca = pcb; pcb = pcc;
+    }
+    if (p[0].x == q[0].x && p[0].y == q[0].y && 
+	    p[ka].x == q[1].x && p[ka].y == q[1].y)
+	return 0;
+    return fill_wedge_trap(pfs, &p[0], &p[ka], q, c0, c1, swap_axes);
+}
+
+private int
+fill_wedges_aux(patch_fill_state_t *pfs, int k, int ka, 
+	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
+{
+    if (k > 1) {
+	gs_fixed_point q[2][4];
+	patch_color_t c;
+	int code;
+
+	patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+	split_curve(pole, q[0], q[1]);
+	code = fill_wedges_aux(pfs, k / 2, ka, q[0], c0, &c);
+	if (code < 0)
+	    return code;
+	return fill_wedges_aux(pfs, k / 2, ka, q[1], &c, c1);
+   } else
+	return fill_wedge(pfs, ka, pole, c0, c1);
+}
+
+private int
+fill_wedges(patch_fill_state_t *pfs, int k0, int k1, 
+	const gs_fixed_point *pole, int pole_step, const patch_color_t *c0, const patch_color_t *c1)
+{
+    /* Generate wedges between 2 variants of a curve flattening. */
+    /* k0, k1 is a power of 2. */
+    int i;
+    gs_fixed_point p[4];
+
+    if (k0 == k1)
+	return 0; /* Wedges are zero area. */
+    if (k0 > k1) {
+	k0 ^=k1; k1 ^=k0; k0 ^=k1;
+    }
+    p[0] = pole[0];
+    p[1] = pole[pole_step];
+    p[2] = pole[pole_step * 2];
+    p[3] = pole[pole_step * 3];
+    return fill_wedges_aux(pfs, k0, k1 / k0, p, c0, c1);
+}
+
+private inline void
+make_vertices(gs_fixed_point q[4], const tensor_patch *p)
+{
+    q[0] = p->pole[0][0];
+    q[1] = p->pole[0][1];
+    q[2] = p->pole[1][1];
+    q[3] = p->pole[1][0];
+}
+
+private inline void
+wrap_vertices_by_y(gs_fixed_point q[4], const gs_fixed_point s[4])
+{
+    fixed y = s[0].y;
+    int i = 0;
+
+    if (y > s[1].y)
+	i = 1, y > s[1].y;
+    if (y > s[2].y)
+	i = 2, y > s[2].y;
+    if (y > s[3].y)
+	i = 3, y > s[3].y;
+
+    q[0] = s[(i + 0) % 4];
+    q[1] = s[(i + 1) % 4];
+    q[2] = s[(i + 2) % 4];
+    q[3] = s[(i + 3) % 4];
+}
+
+private int 
+constant_color_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
+{
+    /* Assuming the XY span lesser than sqrt(max_fixed). 
+       It helps for intersection_of_small_bars to comppute faster. */
+    gs_fixed_point q[4];
+    fixed dx, dy, ry;
+    int code;
+    bool swap_axes;
+    gx_device_color dc;
+    double error;
+    patch_color_t c1, c2, c;
+
+    patch_interpolate_color(&c1, &p->c[0][0], &p->c[0][1], pfs, 0.5);
+    patch_interpolate_color(&c2, &p->c[1][0], &p->c[1][1], pfs, 0.5);
+    patch_interpolate_color(&c, &c1, &c2, pfs, 0.5);
+    patch_resolve_color(&c1, pfs);
+    patch_color_to_device_color(pfs, &c, &dc);
+    {	gs_fixed_point qq[4];
+	make_vertices(qq, p);
+	dx = span_x(qq, 4);
+	dy = span_y(qq, 4);
+	swap_axes = (dy < dx);
+	if (swap_axes)
+	    do_swap_axes(qq, 4);
+	wrap_vertices_by_y(q, qq);
+    }
+    if (q[1].y > q[2].y) {
+	/* self-crossing, 4 triangles : */
+	fixed ey;
+
+	intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &error);
+	ey = (error > 0 ? 1 : 0);
+	code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 3, q[0].y, ry + ey, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	code = gx_shade_trapezoid(pfs, q, 2, 1, 2, 3, q[0].y, ry + ey, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	code = gx_shade_trapezoid(pfs, q, 0, 3, 2, 3, ry, q[3].y, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	return gx_shade_trapezoid(pfs, q, 0, 1, 2, 1, ry, q[1].y, swap_axes, &dc);
+    } else if (intersection_of_small_bars(q, 0, 1, 2, 3, &ry, &error)) {
+	/* self-crossing, 4 triangles : */
+	fixed ey = (error > 0 ? 1 : 0);
+
+	code = gx_shade_trapezoid(pfs, q, 0, 2, 0, 1, q[0].y, q[1].y, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	code = gx_shade_trapezoid(pfs, q, 0, 2, 1, 3, q[1].y, ry + ey, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	code = gx_shade_trapezoid(pfs, q, 0, 2, 1, 3, ry, q[2].y, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	return gx_shade_trapezoid(pfs, q, 2, 3, 1, 3, q[2].y, q[3].y, swap_axes, &dc);
+    } else if (intersection_of_small_bars(q, 0, 3, 1, 2, &ry, &error)) {
+	/* self-crossing,  4 triangles : */
+	fixed ey = (error > 0 ? 1 : 0);
+
+	code = gx_shade_trapezoid(pfs, q, 0, 3, 0, 1, q[0].y, q[1].y, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	code = gx_shade_trapezoid(pfs, q, 0, 3, 1, 2, q[1].y, ry + ey, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	code = gx_shade_trapezoid(pfs, q, 0, 3, 1, 2, ry, q[2].y, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	return gx_shade_trapezoid(pfs, q, 0, 3, 2, 3, q[2].y, q[3].y, swap_axes, &dc);
+    } else {
+	/* triangle, trapezoid, triangle : */
+	code = gx_shade_trapezoid(pfs, q, 0, 1, 0, 2, q[0].y, q[1].y, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	code = gx_shade_trapezoid(pfs, q, 2, 3, 0, 2, q[1].y, q[2].y, swap_axes, &dc);
+	if (code < 0)
+	    return code;
+	return gx_shade_trapezoid(pfs, q, 1, 3, 2, 3, q[2].y, q[3].y, swap_axes, &dc);
+    }
+}
+
+private inline void
+divide_quadrangle_by_v(patch_fill_state_t * pfs, tensor_patch *s0, tensor_patch *s1, 
+	    const tensor_patch *p)
+{
+    s0->pole[0][0] = p->pole[0][0];
+    s0->pole[0][1] = p->pole[0][1];
+    s0->pole[1][0].x = s1->pole[0][0].x = (p->pole[0][0].x + p->pole[1][0].x) / 2;
+    s0->pole[1][1].x = s1->pole[0][1].x = (p->pole[0][1].x + p->pole[1][1].x) / 2;
+    s0->pole[1][0].y = s1->pole[0][0].y = (p->pole[0][0].y + p->pole[1][0].y) / 2;
+    s0->pole[1][1].y = s1->pole[0][1].y = (p->pole[0][1].y + p->pole[1][1].y) / 2;
+    s1->pole[1][0] = p->pole[1][0];
+    s1->pole[1][1] = p->pole[1][1];
+    s0->c[0][0] = p->c[0][0];
+    s0->c[0][1] = p->c[0][1];
+    patch_interpolate_color(&s0->c[1][0], &p->c[0][0], &p->c[1][0], pfs, 0.5);
+    patch_interpolate_color(&s0->c[1][1], &p->c[0][1], &p->c[1][1], pfs, 0.5);
+    s1->c[0][0] = s1->c[1][0];
+    s1->c[0][1] = s1->c[1][1];
+    s1->c[1][0] = p->c[1][0];
+    s1->c[1][1] = p->c[1][1];
+}
+
+private inline void
+divide_quadrangle_by_u(patch_fill_state_t * pfs, tensor_patch *s0, tensor_patch *s1, 
+	    const tensor_patch *p)
+{
+    s0->pole[0][0] = p->pole[0][0];
+    s0->pole[1][0] = p->pole[1][0];
+    s0->pole[0][1].x = s1->pole[0][0].x = (p->pole[0][0].x + p->pole[0][1].x) / 2;
+    s0->pole[1][1].x = s1->pole[1][0].x = (p->pole[1][0].x + p->pole[1][1].x) / 2;
+    s0->pole[0][1].y = s1->pole[0][0].y = (p->pole[0][0].y + p->pole[0][1].y) / 2;
+    s0->pole[1][1].y = s1->pole[1][0].y = (p->pole[1][0].y + p->pole[1][1].y) / 2;
+    s1->pole[0][1] = p->pole[0][1];
+    s1->pole[1][1] = p->pole[1][1];
+    s0->c[0][0] = p->c[0][0];
+    s0->c[1][0] = p->c[1][0];
+    patch_interpolate_color(&s0->c[0][1], &p->c[0][0], &p->c[0][1], pfs, 0.5);
+    patch_interpolate_color(&s0->c[1][1], &p->c[1][0], &p->c[1][1], pfs, 0.5);
+    s1->c[0][0] = s1->c[0][1];
+    s1->c[1][0] = s1->c[1][1];
+    s1->c[0][1] = p->c[0][1];
+    s1->c[1][1] = p->c[1][1];
+}
+
+private inline bool
+is_color_span_v_big(const patch_fill_state_t * pfs, const tensor_patch *p)
+{
+    if (is_color_span_big(pfs, &p->c[0][0], &p->c[1][0]))
+	return true;
+    if (is_color_span_big(pfs, &p->c[0][1], &p->c[1][1]))
+	return true;
+    return false;
+}
+
+private inline bool
+is_color_span_u_big(const patch_fill_state_t * pfs, const tensor_patch *p)
+{
+    if (is_color_span_big(pfs, &p->c[0][0], &p->c[0][1]))
+	return true;
+    if (is_color_span_big(pfs, &p->c[1][0], &p->c[1][1]))
+	return true;
+    return false;
+}
+
+private inline bool
+is_color_monotonic_by_v(const patch_fill_state_t * pfs, const tensor_patch *p) 
+{
+    if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[1][0]))
+	return false;
+    if (!is_color_monotonic(pfs, &p->c[0][1], &p->c[1][1]))
+	return false;
+    return true;
+}
+
+private inline bool
+is_color_monotonic_by_u(const patch_fill_state_t * pfs, const tensor_patch *p) 
+{
+    if (!is_color_monotonic(pfs, &p->c[0][0], &p->c[0][1]))
+	return false;
+    if (!is_color_monotonic(pfs, &p->c[1][0], &p->c[1][1]))
+	return false;
+    return true;
+}
+
+private inline bool
+quadrangle_x_span_covers_pixel_centers(const tensor_patch *p)
+{
+    fixed xbot = min(min(p->pole[0][0].x, p->pole[0][3].x),
+		     min(p->pole[3][0].x, p->pole[3][3].x));
+    fixed xtop = max(max(p->pole[0][0].x, p->pole[0][3].x),
+		     max(p->pole[3][0].x, p->pole[3][3].x));
+    return covers_pixel_centers(xbot, xtop);
+}
+
+private inline bool
+quadrangle_y_span_covers_pixel_centers(const tensor_patch *p)
+{
+    fixed ybot = min(min(p->pole[0][0].y, p->pole[0][3].y),
+		     min(p->pole[3][0].y, p->pole[3][3].y));
+    fixed ytop = max(max(p->pole[0][0].y, p->pole[0][3].y),
+		     max(p->pole[3][0].y, p->pole[3][3].y));
+    return covers_pixel_centers(ybot, ytop);
+}
+
+private inline bool
+quadrangle_bbox_covers_pixel_centers(const tensor_patch *p)
+{
+    if (quadrangle_x_span_covers_pixel_centers(p))
+	return true;
+    if (quadrangle_y_span_covers_pixel_centers(p))
+	return true;
+    return false;
+}
+
+private int 
+fill_quadrangle(patch_fill_state_t * pfs, const tensor_patch *p)
+{
+    /* The quadrangle is flattened enough by V and U, so ignore inner poles. */
+    tensor_patch s0, s1;
+    int code;
+    fixed dxu0 = any_abs(p->pole[0][0].x - p->pole[0][3].x);
+    fixed dxu3 = any_abs(p->pole[3][0].x - p->pole[3][3].x);
+    fixed dyu0 = any_abs(p->pole[0][0].y - p->pole[0][3].y);
+    fixed dyu3 = any_abs(p->pole[3][0].y - p->pole[3][3].y);
+    fixed dyu = max(dyu0, dyu3), dxu = max(dxu0, dxu3);
+    bool is_big_u = (dxu > pfs->fixed_flat || dyu > pfs->fixed_flat);
+    fixed dxv0 = any_abs(p->pole[0][0].x - p->pole[3][0].x);
+    fixed dxv3 = any_abs(p->pole[0][3].x - p->pole[3][3].x);
+    fixed dyv0 = any_abs(p->pole[0][0].y - p->pole[3][0].y);
+    fixed dyv3 = any_abs(p->pole[0][3].y - p->pole[3][3].y);
+    fixed dyv = max(dyv0, dyv3), dxv = max(dxv0, dxv3);
+    bool is_big_v = (dxv > pfs->fixed_flat || dyv > pfs->fixed_flat);
+
+    if (!pfs->vectorization && !quadrangle_bbox_covers_pixel_centers(p))
+	return 0;
+    if (!is_big_v && !is_big_u)
+	return constant_color_quadrangle(pfs, p);
+    else if (!is_color_monotonic_by_v(pfs, p) || is_color_span_v_big(pfs, p) || is_big_v) {
+	fill_wedges(pfs, 2, 1, p->pole[0], 1, &p->c[0][0], &p->c[0][1]);
+	fill_wedges(pfs, 2, 1, p->pole[3], 1, &p->c[1][0], &p->c[1][1]);
+	divide_quadrangle_by_v(pfs, &s0, &s1, p);
+	code = fill_quadrangle(pfs, &s0);
+	if (code < 0)
+	    return code;
+	return fill_quadrangle(pfs, &s1);
+    } else if (!is_color_monotonic_by_u(pfs, p) || is_color_span_u_big(pfs, p) || is_big_u) {
+	fill_wedges(pfs, 2, 1, &p->pole[0][0], 4, &p->c[0][0], &p->c[1][0]);
+	fill_wedges(pfs, 2, 1, &p->pole[0][3], 4, &p->c[0][1], &p->c[1][1]);
+	divide_quadrangle_by_u(pfs, &s0, &s1, p);
+	code = fill_quadrangle(pfs, &s0);
+	if (code < 0)
+	    return code;
+	return fill_quadrangle(pfs, &s1);
+    } else
+	return constant_color_quadrangle(pfs, p);
+}
+
+private inline void
+split_stripe(patch_fill_state_t * pfs, tensor_patch *s0, tensor_patch *s1, const tensor_patch *p)
+{
+    split_curve_s(&p->pole[0][0], &s0->pole[0][0], &s1->pole[0][0], 4);
+    split_curve_s(&p->pole[0][1], &s0->pole[0][1], &s1->pole[0][1], 4);
+    split_curve_s(&p->pole[0][2], &s0->pole[0][2], &s1->pole[0][2], 4);
+    split_curve_s(&p->pole[0][3], &s0->pole[0][1], &s1->pole[0][3], 4);
+    s0->c[0][0] = p->c[0][0];
+    s0->c[0][1] = p->c[0][1];
+    patch_interpolate_color(&s0->c[1][0], &p->c[0][0], &p->c[1][0], pfs, 0.5);
+    patch_interpolate_color(&s0->c[1][1], &p->c[0][1], &p->c[1][1], pfs, 0.5);
+    s1->c[0][0] = s1->c[1][0];
+    s1->c[0][1] = s1->c[1][1];
+    s1->c[1][0] = p->c[1][0];
+    s1->c[1][1] = p->c[1][1];
+}
+
+private int 
+decompose_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int ku)
+{
+    if (ku > 1) {
+	tensor_patch s0, s1;
+	int code;
+
+	split_stripe(pfs, &s0, &s1, p);
+	code = decompose_stripe(pfs, &s0, ku / 2);
+	if (code < 0)
+	    return code;
+	return decompose_stripe(pfs, &s1, ku / 2);
+    } else
+	return fill_quadrangle(pfs, p);
+}
+
+private int 
+fill_narrow_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int kum)
+{
+    /* The stripe is flattened enough by V, so ignore inner poles. */
+    int ku[4], kum1, code;
+
+    /* We would like to apply iterations for enumerating the kum curve parts,
+       but the roundinmg errors would be too complicated due to
+       the dependence on the direction. Note that neigbour
+       patches may use the opposite direction for same bounding curve.
+       We apply the recursive dichotomy, in which 
+       the rounding errors do not depend on the direction. */
+    ku[0] = curve_samples(&p->pole[0][0], 4, pfs->fixed_flat);
+    ku[3] = curve_samples(&p->pole[0][3], 4, pfs->fixed_flat);
+    kum1 = max(ku[0], ku[3]);
+    code = fill_wedges(pfs, ku[0], kum, &p->pole[0][0], 4, &p->c[0][0], &p->c[0][1]);
+    if (code < 0)
+	return code;
+    code = fill_wedges(pfs, ku[3], kum, &p->pole[0][3], 4, &p->c[1][0], &p->c[1][1]);
+    if (code < 0)
+	return code;
+    return decompose_stripe(pfs, p, kum1);
+}
+
+private inline bool
+is_curve_x_monotonic(const gs_fixed_point *pole, int pole_step)
+{   /* true = monotonic, false = don't know. */
+    return (pole[0 * pole_step].x <= pole[1 * pole_step].x && 
+	    pole[1 * pole_step].x <= pole[2 * pole_step].x &&
+	    pole[2 * pole_step].x <= pole[3 * pole_step].x) ||
+	   (pole[0 * pole_step].x >= pole[1 * pole_step].x && 
+	    pole[1 * pole_step].x >= pole[2 * pole_step].x &&
+	    pole[2 * pole_step].x >= pole[3 * pole_step].x);
+}
+
+private inline bool
+is_curve_y_monotonic(const gs_fixed_point *pole, int pole_step)
+{   /* true = monotonic, false = don't know. */
+    return (pole[0 * pole_step].y <= pole[1 * pole_step].y && 
+	    pole[1 * pole_step].y <= pole[2 * pole_step].y &&
+	    pole[2 * pole_step].y <= pole[3 * pole_step].y) ||
+	   (pole[0 * pole_step].y >= pole[1 * pole_step].y && 
+	    pole[1 * pole_step].y >= pole[2 * pole_step].y &&
+	    pole[2 * pole_step].y >= pole[3 * pole_step].y);
+}
+
+private inline bool
+is_xy_monotonic_by_v(const tensor_patch *p)
+{   /* true = monotonic, false = don't know. */
+    if (!is_curve_x_monotonic(&p->pole[0][0], 4))
+	return false;
+    if (!is_curve_x_monotonic(&p->pole[0][1], 4))
+	return false;
+    if (!is_curve_x_monotonic(&p->pole[0][2], 4))
+	return false;
+    if (!is_curve_x_monotonic(&p->pole[0][3], 4))
+	return false;
+    if (!is_curve_y_monotonic(&p->pole[0][0], 4))
+	return false;
+    if (!is_curve_y_monotonic(&p->pole[0][1], 4))
+	return false;
+    if (!is_curve_y_monotonic(&p->pole[0][2], 4))
+	return false;
+    if (!is_curve_y_monotonic(&p->pole[0][3], 4))
+	return false;
+    return true;
+}
+
+private inline bool
+is_curve_x_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
+{   /* true = monotonic, false = don't know. */
+    return any_abs(pole[0 * pole_step].x - pole[1 * pole_step].x) < fixed_flat &&
+	   any_abs(pole[1 * pole_step].x - pole[2 * pole_step].x) < fixed_flat &&
+	   any_abs(pole[2 * pole_step].x - pole[3 * pole_step].x) < fixed_flat &&
+	   any_abs(pole[0 * pole_step].x - pole[3 * pole_step].x) < fixed_flat;
+}
+
+private inline bool
+is_curve_y_small(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
+{   /* true = monotonic, false = don't know. */
+    return any_abs(pole[0 * pole_step].y - pole[1 * pole_step].y) < fixed_flat &&
+	   any_abs(pole[1 * pole_step].y - pole[2 * pole_step].y) < fixed_flat &&
+	   any_abs(pole[2 * pole_step].y - pole[3 * pole_step].y) < fixed_flat &&
+	   any_abs(pole[0 * pole_step].y - pole[3 * pole_step].y) < fixed_flat;
+}
+
+private inline bool
+is_stripe_narrow(const patch_fill_state_t * pfs, const tensor_patch *p)
+{
+    if (!is_curve_x_small(&p->pole[0][0], 4, pfs->fixed_flat))
+	return false;
+    if (!is_curve_x_small(&p->pole[0][1], 4, pfs->fixed_flat))
+	return false;
+    if (!is_curve_x_small(&p->pole[0][2], 4, pfs->fixed_flat))
+	return false;
+    if (!is_curve_x_small(&p->pole[0][3], 4, pfs->fixed_flat))
+	return false;
+    if (!is_curve_y_small(&p->pole[0][0], 4, pfs->fixed_flat))
+	return false;
+    if (!is_curve_y_small(&p->pole[0][1], 4, pfs->fixed_flat))
+	return false;
+    if (!is_curve_y_small(&p->pole[0][2], 4, pfs->fixed_flat))
+	return false;
+    if (!is_curve_y_small(&p->pole[0][3], 4, pfs->fixed_flat))
+	return false;
+    return true;
+}
+
+private int 
+fill_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int kv, int kum)
+{
+    if (kv <= 1 && (is_stripe_narrow(pfs, p) || is_xy_monotonic_by_v(p)))
+	return fill_narrow_stripe(pfs, p, kum);
+    else {
+	tensor_patch s1, s2;
+	int code;
+
+	if (kv <= 1) {
+	    fill_wedges(pfs, 2, 1, p->pole[0], 1, &p->c[0][0], &p->c[0][1]);
+	    fill_wedges(pfs, 2, 1, p->pole[3], 1, &p->c[1][0], &p->c[1][1]);
+	} else {
+	    /* Nothing to do, because patch_fill processed wedges over kvm. */
+	    /* The wedges over kvm are not processed here,
+	       because with a non-monotonic curve it would cause 
+	       redundant filling of the wedge parts. 
+	       We prefer to consider such wedge as a poligon
+	       rather than a set of overlapping triangles. */
+	}
+	split_stripe(pfs, &s1, &s2, p);
+	code = fill_stripe(pfs, &s1, kv / 2, kum);
+	if (code < 0)
+	    return code;
+	return fill_stripe(pfs, &s2, kv / 2, kum);
+    }
+}
+
+private inline fixed
+lcp1(fixed p0, fixed p3)
+{   /* Computing the 1st pole of a 3d order besier, which applears a line. */
+    return (p0 + p0 + p3) / 3;
+}
+lcp2(fixed p0, fixed p3)
+{   /* Computing the 2nd pole of a 3d order besier, which applears a line. */
+    return (p0 + p3 + p3) / 3;
+}
+
+private void
+make_tensor_patch(tensor_patch *p, const patch_curve_t curve[4],
+	   const gs_fixed_point interior[4])
+{
+    p->pole[0][0] = curve[0].vertex.p;
+    p->pole[0][1] = curve[0].control[0];
+    p->pole[0][2] = curve[0].control[1];
+    p->pole[0][3] = curve[1].vertex.p;
+    p->pole[1][3] = curve[1].control[0];
+    p->pole[2][3] = curve[1].control[1];
+    p->pole[3][3] = curve[2].vertex.p;
+    p->pole[3][2] = curve[2].control[0];
+    p->pole[3][1] = curve[2].control[1];
+    p->pole[3][0] = curve[3].vertex.p;
+    p->pole[2][0] = curve[3].control[0];
+    p->pole[1][0] = curve[3].control[1];
+    if (interior != NULL) {
+	p->pole[1][1] = interior[0];
+	p->pole[2][1] = interior[1];
+	p->pole[2][2] = interior[2];
+	p->pole[1][2] = interior[3];
+    } else {
+	p->pole[1][1].x = lcp1(p->pole[0][1].x, p->pole[3][1].x) +
+			  lcp1(p->pole[1][0].x, p->pole[1][3].x) -
+			  lcp1(lcp1(p->pole[0][0].x, p->pole[0][3].x),
+			       lcp1(p->pole[3][0].x, p->pole[3][3].x));
+	p->pole[1][2].x = lcp1(p->pole[0][2].x, p->pole[3][2].x) +
+			  lcp2(p->pole[1][0].x, p->pole[1][3].x) -
+			  lcp1(lcp2(p->pole[0][0].x, p->pole[0][3].x),
+			       lcp2(p->pole[3][0].x, p->pole[3][3].x));
+	p->pole[2][1].x = lcp2(p->pole[0][1].x, p->pole[3][1].x) +
+			  lcp1(p->pole[2][0].x, p->pole[2][3].x) -
+			  lcp2(lcp1(p->pole[0][0].x, p->pole[0][3].x),
+			       lcp1(p->pole[3][0].x, p->pole[3][3].x));
+	p->pole[2][2].x = lcp2(p->pole[0][2].x, p->pole[3][2].x) +
+			  lcp2(p->pole[2][0].x, p->pole[2][3].x) -
+			  lcp2(lcp2(p->pole[0][0].x, p->pole[0][3].x),
+			       lcp2(p->pole[3][0].x, p->pole[3][3].x));
+
+	p->pole[1][1].y = lcp1(p->pole[0][1].y, p->pole[3][1].y) +
+			  lcp1(p->pole[1][0].y, p->pole[1][3].y) -
+			  lcp1(lcp1(p->pole[0][0].y, p->pole[0][3].y),
+			       lcp1(p->pole[3][0].y, p->pole[3][3].y));
+	p->pole[1][2].y = lcp1(p->pole[0][2].y, p->pole[3][2].y) +
+			  lcp2(p->pole[1][0].y, p->pole[1][3].y) -
+			  lcp1(lcp2(p->pole[0][0].y, p->pole[0][3].y),
+			       lcp2(p->pole[3][0].y, p->pole[3][3].y));
+	p->pole[2][1].y = lcp2(p->pole[0][1].y, p->pole[3][1].y) +
+			  lcp1(p->pole[2][0].y, p->pole[2][3].y) -
+			  lcp2(lcp1(p->pole[0][0].y, p->pole[0][3].y),
+			       lcp1(p->pole[3][0].y, p->pole[3][3].y));
+	p->pole[2][2].y = lcp2(p->pole[0][2].y, p->pole[3][2].y) +
+			  lcp2(p->pole[2][0].y, p->pole[2][3].y) -
+			  lcp2(lcp2(p->pole[0][0].y, p->pole[0][3].y),
+			       lcp2(p->pole[3][0].y, p->pole[3][3].y));
+
+    }
+}
+
+
+private int
+patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
+	   const gs_fixed_point interior[4],
+	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
+			      const gs_fixed_point[4], floatp, floatp))
+{
+    tensor_patch p;
+    int kv[4], kvm, vi, ku[2], kum, km;
+    int code;
+    gs_fixed_point buf[33];
+    gs_memory_t *memory = pfs->pis->memory;
+
+    /* We decompose the patch into tiny quadrangles,
+       possibly inserting wedges between them against a dropout. */
+    make_tensor_patch(&p, curve, interior);
+    kv[0] = curve_samples(p.pole[0], 1, pfs->fixed_flat);
+    kv[1] = curve_samples(p.pole[1], 1, pfs->fixed_flat);
+    kv[2] = curve_samples(p.pole[2], 1, pfs->fixed_flat);
+    kv[3] = curve_samples(p.pole[3], 1, pfs->fixed_flat);
+    kvm = max(max(kv[0], kv[1]), max(kv[2], kv[3]));
+    ku[0] = curve_samples(&p.pole[0][0], 4, pfs->fixed_flat);
+    ku[3] = curve_samples(&p.pole[0][3], 4, pfs->fixed_flat);
+    kum = max(ku[0], ku[3]);
+    km = max(kvm, kum);
+    if (km + 1 > count_of(buf)) {
+	/* km may be randomly big with a patch which looks as a triangle in XY. */
+	pfs->wedge_buf = (gs_fixed_point *)gs_alloc_bytes(memory, 
+		sizeof(gs_fixed_point) * (km + 1), "patch_fill");
+	if (pfs->wedge_buf == NULL)
+	    return_error(gs_error_VMerror);
+    } else
+	pfs->wedge_buf = buf;
+    code = fill_wedges(pfs, kv[0], kvm, p.pole[0], 1, &p.c[0][0], &p.c[0][1]);
+    if (code >= 0)
+	code = fill_wedges(pfs, kv[3], kvm, p.pole[3], 1, &p.c[1][0], &p.c[1][1]);
+    if (code >= 0) {
+	/* We would like to apply iterations for enumerating the kvm curve parts,
+	   but the roundinmg errors would be too complicated due to
+	   the dependence on the direction. Note that neigbour
+	   patches may use the opposite direction for same bounding curve.
+	   We apply the recursive dichotomy, in which 
+	   the rounding errors do not depend on the direction. */
+	code = fill_stripe(pfs, &p, kvm, kum);
+    }
+    if (km + 1 > count_of(buf))
+	gs_free_object(memory, pfs->wedge_buf, "patch_fill");
+    pfs->wedge_buf = NULL;
+    return code;
+}
+
+#endif
