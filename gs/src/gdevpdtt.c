@@ -209,50 +209,13 @@ private const gs_text_enum_procs_t pdf_text_procs = {
     pdf_text_release
 };
 
-int
-gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
-		    const gs_text_params_t *text, gs_font * font,
-		    gx_path * path0, const gx_device_color * pdcolor,
-		    const gx_clip_path * pcpath,
-		    gs_memory_t * mem, gs_text_enum_t ** ppte)
+private int
+pdf_prepare_text_drawing(gx_device_pdf *const pdev, gs_imager_state * pis, 
+	    const gx_device_color * pdcolor, const gx_clip_path * pcpath,
+	    const gs_text_params_t *text)
 {
-    gx_device_pdf *const pdev = (gx_device_pdf *)dev;
-    gx_path *path = path0;
-    pdf_text_enum_t *penum;
-    gs_fixed_point cpt;
     bool new_clip;
     int code;
-
-    /* Track the dominant text rotation. */
-    {
-	gs_matrix tmat;
-	int i;
-
-	gs_matrix_multiply(&font->FontMatrix, &ctm_only(pis), &tmat);
-	if (is_xxyy(&tmat))
-	    i = (tmat.xx >= 0 ? 0 : 2);
-	else if (is_xyyx(&tmat))
-	    i = (tmat.xy >= 0 ? 1 : 3);
-	else
-	    i = 4;
-	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
-    }
-
-    if (font->FontType == ft_user_defined &&
-	(text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH)) {
-	/* This is stringwidth, see gx_default_text_begin.
-	 * We need to prevent writing characters to PS cache,
-	 * otherwise the font converts to bitmaps.
-	 * So pass through even with stringwidth.
-	 */
-	code = gx_hld_stringwidth_begin(pis, &path);
-	if (code < 0)
-	    return code;
-    } else if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3) 
-		|| path == 0 || gx_path_current_point(path, &cpt) < 0
-	    )
-	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
-					 pcpath, mem, ppte);
 
     if (!(text->operation & TEXT_DO_NONE)) {
 	new_clip = pdf_must_put_clip_path(pdev, pcpath);
@@ -292,6 +255,52 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	    )
 	    return code;
     }
+    return 0;
+}
+
+int
+gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
+		    const gs_text_params_t *text, gs_font * font,
+		    gx_path * path0, const gx_device_color * pdcolor,
+		    const gx_clip_path * pcpath,
+		    gs_memory_t * mem, gs_text_enum_t ** ppte)
+{
+    gx_device_pdf *const pdev = (gx_device_pdf *)dev;
+    gx_path *path = path0;
+    pdf_text_enum_t *penum;
+    gs_fixed_point cpt;
+    int code;
+
+    /* Track the dominant text rotation. */
+    {
+	gs_matrix tmat;
+	int i;
+
+	gs_matrix_multiply(&font->FontMatrix, &ctm_only(pis), &tmat);
+	if (is_xxyy(&tmat))
+	    i = (tmat.xx >= 0 ? 0 : 2);
+	else if (is_xyyx(&tmat))
+	    i = (tmat.xy >= 0 ? 1 : 3);
+	else
+	    i = 4;
+	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
+    }
+
+    if (font->FontType == ft_user_defined &&
+	(text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH)) {
+	/* This is stringwidth, see gx_default_text_begin.
+	 * We need to prevent writing characters to PS cache,
+	 * otherwise the font converts to bitmaps.
+	 * So pass through even with stringwidth.
+	 */
+	code = gx_hld_stringwidth_begin(pis, &path);
+	if (code < 0)
+	    return code;
+    } else if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3) 
+		|| path == 0 || gx_path_current_point(path, &cpt) < 0
+	    )
+	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+					 pcpath, mem, ppte);
 
     /* Allocate and initialize the enumerator. */
 
@@ -1607,7 +1616,7 @@ pdf_text_process(gs_text_enum_t *pte)
     uint size = pte->text.size - pte->index;
     gs_text_enum_t *pte_default;
     PROCESS_TEXT_PROC((*process));
-    int code = -1;		/* to force default implementation */
+    int code;
     gx_device_pdf *pdev = (gx_device_pdf *)penum->dev;
 #define BUF_SIZE 100		/* arbitrary > 0 */
     /* Use a union to ensure alignment. */
@@ -1616,6 +1625,11 @@ pdf_text_process(gs_text_enum_t *pte)
 	gs_char chars[BUF_SIZE / sizeof(gs_char)];
 	gs_glyph glyphs[BUF_SIZE / sizeof(gs_glyph)];
     } buf;
+
+    code = pdf_prepare_text_drawing(pdev, pte->pis, pte->pdcolor, pte->pcpath, &pte->text);
+    if (code < 0)
+	return code;
+    code = -1;		/* to force default implementation */
 
     /*
      * If we fell back to the default implementation, continue using it.
