@@ -36,7 +36,7 @@
 int gs_return_check_interrupt(const gs_memory_t *mem, int code);
 
 #ifdef CHECK_INTERRUPTS
-int gp_check_interrupts(mem);
+int gp_check_interrupts(const gs_memory_t *mem);
 #  define process_interrupts(mem) discard(gp_check_interrupts(mem))
 #  define return_if_interrupt(mem)\
     { int icode_ = gp_check_interrupts(mem);	\
