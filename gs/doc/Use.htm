@@ -2303,7 +2303,12 @@ dramatically improve performance on files that have a lot of bitmap images.
 If you are using Chinese, Japanese, or other fonts with very large character
 sets, adding the following sequence of switches before the first file name
 may dramatically improve performance at the cost of an additional 2-3 Mb of
-memory: <b><tt>-c&nbsp;3000000&nbsp;setvmthreshold&nbsp;-f</tt></b>.
+memory: <b><tt>-c&nbsp;3000000&nbsp;setvmthreshold&nbsp;-f</tt></b>. This 
+can also be useful in processing large documents when using a high-level
+output device (like pdfwrite) that maintains significant internal state.
+In fact, the <a href="Language.htm#.setpdfwrite"><tt>.setpdfwrite</tt></a>
+operator used by the ps2pdf script and others sets a vmthreshold value of
+3&nbsp;MB to account for this.
 
 </ul>
 

@@ -1318,6 +1318,20 @@ See also <a href="#LockSafetyParams">.LockSafetyParams</a> and
 <p>
 </dl>
 
+<dl><a name=".setpdfwrite"></a>
+<dt><b><tt>.setpdfwrite</tt></b></dt>
+<dd>This operator conditions the environment for the <tt>pdfwrite</tt> output device.
+It is a shorthand for setting parameters that have been deemed benificial. While not strictly necessary, it is usually helpful to set call this when using the pdfwrite device.
+For example, this is how the ps2pdf script calls Ghostscript:
+<blockquote><b><tt>
+gs -q -dSAFER -dNOPAUSE -dBATCH -sOutputFile=file.pdf </tt></b><em>[more options]</em><b><tt> \<br>
+&nbsp;&nbsp;-sDEVICE=pdfwrite -c .setpdfwrite -f </b></tt><em>source1.ps [more files]</em>
+</blockquote>
+<p>Currently, the operator just sets a minimum 3&nbsp;MB vmthreshold to allow for
+accumulating shared object data and to reduce the incidence of garbage
+collection as a performance improvement. Additional settings may be added in the future.
+</dl>
+
 <h4><a name="Device"></a>Device operators</h4>
 
 <dl>
