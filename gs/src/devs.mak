@@ -382,7 +382,7 @@ $(DD)lvga256.dev : $(DEVS_MAK) $(lvga256_)
 	$(SETDEV) $(DD)lvga256 $(lvga256_)
 	$(ADDMOD) $(DD)lvga256 -lib vga vgagl
 
-$(GLOBJ)gdevl256.$(OBJ) : $(GLSRC)gdevl256.c $(GDEV)
+$(GLOBJ)gdevl256.$(OBJ) : $(GLSRC)gdevl256.c $(GDEV) $(memory__h)
 	$(GLCC) $(GLO_)gdevl256.$(OBJ) $(C_) $(GLSRC)gdevl256.c
 
 vgalib_=$(GLOBJ)gdevvglb.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
