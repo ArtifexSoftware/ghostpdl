@@ -549,12 +549,15 @@ do not use <b><tt>inline</tt></b> in header files.  Instead, use the
 
 <dt><b><tt>extern_inline</tt></b>
 
-<dd><strong>****** NOT IMPLEMENTED YET ******</strong>
-Compilers that do support <b><tt>inline</tt></b> vary in how they decide
+<dd>Compilers that do support <b><tt>inline</tt></b> vary in how they decide
 whether to (also) compile a closed-code copy of the procedure.  Because of
 this, putting an <b><tt>inline</tt></b> procedure in a header file may
 produce multiple closed copies, causing duplicate name errors at link time.
-****** TO BE COMPLETED ******
+<b><tt>extern_inline</tt></b> provides a safe way to put
+<b><tt>inline</tt></b> procedures in header files, regardless of compiler.
+Unfortunately, the only way we've found to make this fully portable involves
+a fair amount of boilerplate.  For details, please see <a
+href="../src/stdpre.h">stdpre.h</a>.
 
 <dt><b><tt>private</tt></b>
 

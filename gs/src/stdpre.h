@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1997, 1998, 1999, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -103,6 +103,63 @@
 #endif
 
 /*
+ * Provide a way to include inline procedures in header files, regardless of
+ * whether the compiler (A) doesn't support inline at all, (B) supports it
+ * but also always compiles a closed copy, (C) supports it but somehow only
+ * includes a single closed copy in the executable, or (D) supports it and
+ * also supports a different syntax if no closed copy is desired.
+ *
+ * The code that appears just after this comment indicates which compilers
+ * are of which kind.  (Eventually this might be determined automatically.)
+ *	(A) and (B) require nothing here.
+ *	(C) requires
+ *		#define extern_inline inline
+ *	(D) requires
+ *		#define extern_inline extern inline  // or whatever
+ * Note that for case (B), the procedure will only be declared inline in
+ * the .c file where its closed copy is compiled.
+ */
+#ifdef __GNUC__
+#  define extern_inline extern inline
+#endif
+
+/*
+ * To include an inline procedure xyz in a header file abc.h, use the
+ * following template in the header file:
+
+extern_inline int xyz(<<parameters>>)
+#if HAVE_EXTERN_INLINE || defined(INLINE_INCLUDE_xyz)
+{
+    <<body>>
+}
+#else
+;
+#endif
+
+ * And use the following in whichever .c file takes responsibility for
+ * including the closed copy of xyz:
+
+#define EXTERN_INCLUDE_xyz	// must precede all #includes
+#include "abc.h"
+
+ * The definitions of the EXTERN_INCLUDE_ macros must precede *all* includes
+ * because there is no way to know whether some other .h file #includes abc.h
+ * indirectly, and because of the protection against double #includes, the
+ * EXTERN_INCLUDE_s must be defined before the first inclusion of abc.h.
+ */
+
+/*
+ * The following is generic code that does not need per-compiler
+ * customization.
+ */
+#ifdef extern_inline
+#  define HAVE_EXTERN_INLINE 1
+#else
+#  define extern_inline /* */
+#  define HAVE_EXTERN_INLINE 0
+#endif
+
+/*
  * Some compilers give a warning if a function call that returns a value
  * is used as a statement; a few compilers give an error for the construct
  * (void)0, which is contrary to the ANSI standard.  Since we don't know of
@@ -110,8 +167,7 @@
  * the value of an expression statement, which can be defined as either
  * including or not including the cast.  (We don't conditionalize this here,
  * because no commercial compiler gives the error on (void)0, although
- * some give warnings.)
- */
+ * some give warnings.)  */
 #define DISCARD(expr) ((void)(expr))
 /* Backward compatibility */
 #define discard(expr) DISCARD(expr)
