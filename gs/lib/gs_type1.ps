@@ -22,34 +22,41 @@
 % in the book "Adobe Type 1 Font Format", published by Adobe Systems Inc.
 
 % Define an augmented version of .buildfont1 that inserts UnderlinePosition
-% and UnderlineThickness entries in FontInfo if they aren't there already.
+% and UnderlineThickness entries in FontInfo if they aren't there already,
+% and FontBBox isn't degenerate.
 % (This works around the incorrect assumption, made by many word processors,
 % that these entries are present in the built-in fonts.)
 /.buildfont1
- { dup /FontInfo known not
-    { .growfontdict dup /FontInfo 2 dict put }
-   if
-   dup dup /FontInfo get dup dup
-   /UnderlinePosition known exch /UnderlineThickness known and
-    { pop pop		% entries already present
-    }
-    { dup length 2 add dict .copydict
-      dup /UnderlinePosition known not
-       { dup /UnderlinePosition 3 index /FontBBox .knownget
-          { 1 get 2 div }			% 1/2 the font descent
-	  { -100 } ifelse put
-       }
-      if
-      dup /UnderlineThickness known not
-       { dup /UnderlineThickness 3 index /FontBBox .knownget
-          { dup 3 get exch 1 get sub 20 div }	% 1/20 the font height
-	  { 50 } ifelse put
-       }
-      if
-      1 index /FontInfo get wcheck not { readonly } if
-      /FontInfo exch put
-    }
-   ifelse //.buildfont1
+ {
+   false 1 index /FontBBox .knownget {
+     { 0 ne { not exit } if } forall
+   } if
+   { dup /FontInfo known not
+      { .growfontdict dup /FontInfo 2 dict put }
+     if
+     dup dup /FontInfo get dup dup
+     /UnderlinePosition known exch /UnderlineThickness known and
+      { pop pop		% entries already present
+      }
+      { dup length 2 add dict .copydict
+        dup /UnderlinePosition known not
+         { dup /UnderlinePosition 3 index /FontBBox .knownget
+            { 1 get 2 div }			% 1/2 the font descent
+	    { -100 } ifelse put
+         }
+        if
+        dup /UnderlineThickness known not
+         { dup /UnderlineThickness 3 index /FontBBox .knownget
+            { dup 3 get exch 1 get sub 20 div }	% 1/20 the font height
+    	    { 50 } ifelse put
+         }
+        if
+        1 index /FontInfo get wcheck not { readonly } if
+        /FontInfo exch put
+      }
+     ifelse
+   } if
+   //.buildfont1
  } bind def
 % If the diskfont feature isn't included, define a dummy .loadfontdict.
 /.loadfontdict where
