@@ -208,6 +208,28 @@ pdf_convert_image4_to_image1(gx_device_pdf *pdev,
     return -1;			/* arbitrary <0 */
 }
 
+private int
+pdf_begin_image_data_decoded(gx_device_pdf *pdev, int num_components, const gs_range_t *pranges, int i, 
+			     gs_pixel_image_t *pi, cos_value_t *cs_value, pdf_image_enum *pie)
+{
+
+    if (pranges) {
+	/* Rescale the Decode values for the image data. */
+	const gs_range_t *pr = pranges;
+	float *decode = pi->Decode;
+	int j;
+
+	for (j = 0; j < num_components; ++j, ++pr, decode += 2) {
+	    double vmin = decode[0], vmax = decode[1];
+	    double base = pr->rmin, factor = pr->rmax - base;
+
+	    decode[1] = (vmax - vmin) / factor + (vmin - base);
+	    decode[0] = vmin - base;
+	}
+    }
+    return pdf_begin_image_data(pdev, &pie->writer, pi, cs_value, i);
+}
+
 /*
  * Start processing an image.  This procedure takes extra arguments because
  * it has to do something slightly different for the parts of an ImageType 3
@@ -249,7 +271,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	gs_image3_t type3;
 	gs_image3x_t type3x;
 	gs_image4_t type4;
-    } image[2];
+    } image[4];
     int width, height;
     const gs_range_t *pranges = 0;
 
@@ -352,7 +374,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    return gs_grestore(pgs);
 	}
 	/* No luck.  Masked images require PDF 1.3 or higher. */
-	if (pdev->CompatibilityLevel < 1.3)
+	if (pdev->CompatibilityLevel < 1.2 || 
+		(pdev->CompatibilityLevel < 1.3 && (!PS2WRITE || !pdev->OrderResources)))
 	    goto nyi;
 	image[0].type4 = *(const gs_image4_t *)pic;
 	break;
@@ -512,7 +535,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 				  &pie->writer.binary[1], &image[1].pixel,
 				  pmat, pis, false);
 	if (code == gs_error_rangecheck) {
-	    /* setup_image_compression rejected rthe alternative compression. */
+	    /* setup_image_compression rejected the alternative compression. */
 	    pie->writer.alt_writer_count = 1;
 	    memset(pie->writer.binary + 1, 0, sizeof(pie->writer.binary[1]));
 	    memset(pie->writer.binary + 2, 0, sizeof(pie->writer.binary[1]));
@@ -520,23 +543,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    goto fail;
     }
     for (i = 0; i < pie->writer.alt_writer_count; i++) {
-	if (pranges) {
-	    /* Rescale the Decode values for the image data. */
-	    const gs_range_t *pr = pranges;
-	    float *decode = image[i].pixel.Decode;
-	    int j;
-
-	    for (j = 0; j < num_components; ++j, ++pr, decode += 2) {
-		double vmin = decode[0], vmax = decode[1];
-		double base = pr->rmin, factor = pr->rmax - base;
-
-		decode[1] = (vmax - vmin) / factor + (vmin - base);
-		decode[0] = vmin - base;
-	    }
-	}
-        if ((code = pdf_begin_image_data(pdev, &pie->writer,
-				         &image[i].pixel,
-				         &cs_value, i)) < 0)
+	code = pdf_begin_image_data_decoded(pdev, num_components, pranges, i,
+			     &image[i].pixel, &cs_value, pie);
+	if (code < 0)
   	    goto fail;
     }
     if (pie->writer.alt_writer_count == 2) {
@@ -544,6 +553,43 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	     (gx_device_psdf *)pdev, pim->Width, pim->Height, 
 	     num_components, pim->BitsPerComponent);
 	pie->writer.alt_writer_count = 3;
+    }
+    if (pic->type->index == 4 && pdev->CompatibilityLevel < 1.3) {
+	int i;
+
+	if (!PS2WRITE || !pdev->OrderResources)
+	    goto fail;
+	/* Create a stream for writing the mask. */
+	i = pie->writer.alt_writer_count;
+	gs_image_t_init_mask_adjust((gs_image_t *)&image[i].type1, true, false);
+	image[i].type1.Width = image[0].pixel.Width;
+	image[i].type1.Height = image[0].pixel.Height;
+	/* Won't use image[2]. */
+	code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
+		    height, NULL, false);
+        if (code)
+            goto fail;
+	code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+				  &pie->writer.binary[i], &image[i].pixel,
+				  pmat, pis, true);
+	if (code < 0)
+  	    goto fail;
+        psdf_setup_image_to_mask_filter(&pie->writer.binary[i], 
+	     (gx_device_psdf *)pdev, pim->Width, pim->Height, 
+	     num_components, pim->BitsPerComponent, image[i].type4.MaskColor);
+	code = pdf_begin_image_data_decoded(pdev, num_components, pranges, i, 
+			     &image[i].pixel, &cs_value, pie);
+	if (code < 0)
+  	    goto fail;
+	++pie->writer.alt_writer_count;
+	/* Note : Possible values for alt_writer_count are 1,2,3, 4.
+	   1 means no alternative streams.
+	   2 means the main image stream and a mask stream while converting 
+		   an Image Type 4.
+	   3 means the main image steram, alternative image compression stream, 
+		   and the compression chooser.
+	   4 meams 3 and a mask stream while convertingh an Image Type 4.
+         */
     }
     return 0;
  fail:
@@ -658,7 +704,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
             return code;
     }
     pie->rows_left -= *rows_used;
-    if (pie->writer.alt_writer_count > 1)
+    if (pie->writer.alt_writer_count > 2)
         pdf_choose_compression(&pie->writer, false);
     return !pie->rows_left;
 }
@@ -733,6 +779,38 @@ typedef enum {
     USE_AS_PATTERN
 } pdf_image_useage_t;
 
+/* Close PDF image and do it. */
+private int
+pdf_end_and_do_image(gx_device_pdf *pdev, pdf_image_writer *piw, 
+		     const gs_matrix *mat, gs_id ps_bitmap_id, pdf_image_useage_t do_image)
+{
+    int code = pdf_end_write_image(pdev, piw);
+    const pdf_resource_t *pres = piw->pres;
+
+    switch (code) {
+    default:
+	return code;	/* error */
+    case 1:
+	code = 0;
+	break;
+    case 0:
+	if (do_image == USE_AS_IMAGE)
+	    code = pdf_do_image(pdev, pres, mat, true);
+	else if (do_image == USE_AS_MASK) {
+	    /* Provide data for pdf_do_image_by_id, which will be called through 
+		use_image_as_pattern during the next call to this function. 
+		See pdf_do_image about the meaning of 'scale'. */
+	    const pdf_x_object_t *const pxo = (const pdf_x_object_t *)pres;
+
+	    pdev->image_mask_scale = (double)pxo->data_height / pxo->height;
+	    pdev->image_mask_id = pdf_resource_id(pres);
+	    pdev->image_mask_matrix = *mat;
+	} else if (do_image == USE_AS_PATTERN)
+	    code = use_image_as_pattern(pdev, pres, mat, ps_bitmap_id);
+    }
+    return code;
+}
+
 /* Clean up by releasing the buffers. */
 private int
 pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
@@ -754,31 +832,30 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 	if (code < 0)
 	    return code;
 	code = pdf_end_image_binary(pdev, &pie->writer, data_height);
+	/* The call above possibly decreases pie->writer.alt_writer_count in 2. */
 	if (code < 0)
  	    return code;
-	code = pdf_end_write_image(pdev, &pie->writer);
-	switch (code) {
-	default:
-	    return code;	/* error */
-	case 1:
-	    code = 0;
-	    break;
-	case 0:
-	    if (do_image == USE_AS_IMAGE)
-		code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
-	    else if (do_image == USE_AS_MASK) {
-		/* Provide data for pdf_do_image_by_id, which will be called through 
-		   use_image_as_pattern during the next call to this function. 
-		   See pdf_do_image about the meaning of 'scale'. */
-		const pdf_resource_t *pres =  pie->writer.pres;
-		const pdf_x_object_t *const pxo = (const pdf_x_object_t *)pres;
+	if (pie->writer.alt_writer_count == 2) {
+	    /* We're converting a type 4 image into an imagemask with a pattern color. */
+	    /* Since the type 3 image writes the mask first, do so here. */
+	    pdf_image_writer writer = pie->writer;
 
-		pdev->image_mask_scale = (double)pxo->data_height / pxo->height;
-		pdev->image_mask_id = pdf_resource_id(pres);
-		pdev->image_mask_matrix = pie->mat;
-	    } else if (do_image == USE_AS_PATTERN)
-		code = use_image_as_pattern(pdev, pie->writer.pres, &pie->mat, info->id);
-	}
+	    writer.binary[0] = pie->writer.binary[1];
+	    writer.pres = pie->writer.pres_mask;
+	    writer.alt_writer_count = 1;
+	    memset(&pie->writer.binary[1], 0, sizeof(pie->writer.binary[1]));
+	    pie->writer.alt_writer_count--; /* For GC. */
+	    pie->writer.pres_mask = 0; /* For GC. */
+	    code = pdf_end_image_binary(pdev, &writer, data_height);
+	    if (code < 0)
+ 		return code;
+	    code = pdf_end_and_do_image(pdev, &writer, &pie->mat, info->id, USE_AS_MASK);
+	    if (code < 0)
+ 		return code;
+	    code = pdf_end_and_do_image(pdev, &pie->writer, &pie->mat, info->id, USE_AS_PATTERN);
+	} else
+	    code = pdf_end_and_do_image(pdev, &pie->writer, &pie->mat, info->id, do_image);
+	pie->writer.alt_writer_count--; /* For GC. */
     }
     gs_free_object(pie->memory, pie, "pdf_end_image");
     return code;

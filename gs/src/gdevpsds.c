@@ -21,6 +21,7 @@
 #include "gserrors.h"
 #include "gxdcconv.h"
 #include "gdevpsds.h"
+#include "gxbitmap.h"
 
 /* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
 
@@ -995,3 +996,117 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
     return 0;
 }
 
+/* ---------------- Am "image to mask" filter ---------------- */
+
+private_st_image_to_mask_state();
+
+/* Initialize the state. */
+private int
+s_image_to_mask_init(stream_state * st)
+{
+    stream_image_to_mask_state *const ss = (stream_image_to_mask_state *) st;
+
+    ss->width = ss->height = ss->depth = ss->bits_per_sample = 0;
+    ss->output_bits_buffer = 0;
+    ss->output_bits_buffered = 0;
+    ss->raster = 0;
+    ss->row_bits = 0;
+    ss->row_bits_passed = 0;
+    ss->row_alignment_bytes = 0;
+    ss->row_alignment_bytes_left = 0;
+    ss->input_component_index = 0;
+    ss->input_bits_buffer = 0;
+    ss->input_bits_buffered = 0;
+    return 0;
+}
+
+/* Set image dimensions. */
+void
+s_image_to_mask_set_dimensions(stream_image_to_mask_state * ss, 
+			       int width, int height, int depth, int bits_per_sample, 
+			       uint *MaskColor)
+{
+    ss->width = width;
+    ss->height = height;
+    ss->depth = depth;
+    ss->bits_per_sample = bits_per_sample;
+    ss->row_bits = bits_per_sample * depth * width;
+    ss->raster = bitmap_raster(ss->row_bits);
+    ss->row_alignment_bytes = (ss->raster * 8 - ss->row_bits) / 8;
+    memcpy(ss->MaskColor, MaskColor, ss->depth * sizeof(MaskColor[0]) * 2);
+}
+
+/* Process a buffer. */
+private int
+s_image_to_mask_process(stream_state * st, stream_cursor_read * pr,
+	     stream_cursor_write * pw, bool last)
+{
+    stream_image_to_mask_state *const ss = (stream_image_to_mask_state *) st;
+
+    for (;;) {
+	if (pw->ptr >= pw->limit)
+	    break;
+	if (ss->row_bits_passed >= ss->row_bits) {
+	    ss->row_alignment_bytes_left = ss->row_alignment_bytes;
+	    ss->input_bits_buffered = 0;
+	    ss->input_bits_buffer = 0; /* Just to simplify the debugging. */
+	    if (ss->output_bits_buffered) {
+		*(pw->ptr++) = ss->output_bits_buffer;
+		ss->output_bits_buffered = 0;
+		ss->output_bits_buffer = 0;
+	    }
+	    ss->row_bits_passed = 0;
+	    continue;
+	}
+	if (ss->row_alignment_bytes_left) {
+	    uint k = pr->limit - pr->ptr;
+
+	    if (k > ss->row_alignment_bytes_left)
+		k = ss->row_alignment_bytes_left;
+	    pr->ptr += k;
+	    ss->row_alignment_bytes_left -= k;
+	    if (pr->ptr >= pr->limit)
+		break;
+	}
+	if (ss->input_bits_buffered < ss->bits_per_sample) {
+	    if (pr->ptr >= pr->limit)
+		break;
+	    ss->input_bits_buffer = (ss->input_bits_buffer << 8) | *pr->ptr;
+	    ss->input_bits_buffered += 8;
+	    pr->ptr++;
+	}
+	if (ss->input_bits_buffered >= ss->bits_per_sample) {
+	    uint w;
+
+	    ss->input_bits_buffered -= ss->bits_per_sample;
+	    ss->color[ss->input_component_index] = w = ss->input_bits_buffer >> ss->input_bits_buffered;
+	    ss->input_bits_buffer &= ~w << ss->input_bits_buffered;
+	    ss->input_component_index++;
+	    if (ss->input_component_index >= ss->depth) {
+		uint i, ii;
+
+		for (i = ii = 0; i < ss->depth; i++, ii += 2)
+		    if (ss->color[i] < ss->MaskColor[ii] ||
+			ss->color[i] > ss->MaskColor[ii + 1])
+			break;
+		ss->output_bits_buffer <<= 1;
+		if (i < ss->depth)
+		    ss->output_bits_buffer |= 1;
+		ss->output_bits_buffered++;
+		if (ss->output_bits_buffered == 8) {
+		    *(pw->ptr++) = ss->output_bits_buffer;
+		    ss->output_bits_buffered = 0;
+		    ss->output_bits_buffer = 0;
+		}
+		ss->input_component_index = 0;
+	    }
+	    ss->row_bits_passed += ss->bits_per_sample;
+	}
+    }
+    return 0;
+}
+
+const stream_template s__image_to_mask_template = {
+    &st_stream_image_to_mask_state, s_image_to_mask_init, s_image_to_mask_process, 1, 1,
+    NULL, NULL
+};

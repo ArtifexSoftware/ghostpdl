@@ -33,7 +33,7 @@
 /* GC descriptors */
 public_st_pdf_image_writer();
 private ENUM_PTRS_WITH(pdf_image_writer_enum_ptrs, pdf_image_writer *piw)
-     index -= 3;
+     index -= 4;
      if (index < psdf_binary_writer_max_ptrs * piw->alt_writer_count) {
 	 gs_ptr_type_t ret =
 	     ENUM_USING(st_psdf_binary_writer, &piw->binary[index / psdf_binary_writer_max_ptrs],
@@ -47,6 +47,7 @@ private ENUM_PTRS_WITH(pdf_image_writer_enum_ptrs, pdf_image_writer *piw)
 case 0: ENUM_RETURN(piw->pres);
 case 1: ENUM_RETURN(piw->data);
 case 2: ENUM_RETURN(piw->named);
+case 3: ENUM_RETURN(piw->pres_mask);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(pdf_image_writer_reloc_ptrs, pdf_image_writer *piw)
 {
@@ -58,6 +59,7 @@ private RELOC_PTRS_WITH(pdf_image_writer_reloc_ptrs, pdf_image_writer *piw)
     RELOC_VAR(piw->pres);
     RELOC_VAR(piw->data);
     RELOC_VAR(piw->named);
+    RELOC_VAR(piw->pres_mask);
 }
 RELOC_PTRS_END
 
@@ -174,6 +176,8 @@ pdf_put_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 	int i;
     
 	/* Masked images are only supported starting in PDF 1.3. */
+	if (pdev->CompatibilityLevel < 1.3 && PS2WRITE && pdev->OrderResources)
+	    break; /* Will convert into an imagemask with a pattern color. */
 	if (pdev->CompatibilityLevel < 1.3)
 	    return_error(gs_error_rangecheck);
 	pca = cos_array_alloc(pdev, "pdf_put_image_values(mask)");
@@ -296,32 +300,37 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 {
     /* Patch pdev->strm so the right stream gets into the writer. */
     stream *save_strm = pdev->strm;
+    cos_stream_t *data;
+    bool mask = (PS2WRITE && piw->data != NULL);
+    int alt_stream_index = (!mask ? 0 : piw->alt_writer_count);
     int code;
 
     if (in_line) {
 	piw->pres = 0;
 	piw->pin = &pdf_image_names_short;
-	piw->data = cos_stream_alloc(pdev, "pdf_begin_image_data");
-	if (piw->data == 0)
+	data = cos_stream_alloc(pdev, "pdf_begin_image_data");
+	if (data == 0)
 	    return_error(gs_error_VMerror);
 	piw->end_string = " Q";
 	piw->named = 0;		/* must have named == 0 */
     } else {
 	pdf_x_object_t *pxo;
 	cos_stream_t *pcos;
+	pdf_resource_t *pres;
 
 	/*
 	 * Note that if named != 0, there are two objects with the same id
 	 * while the image is being accumulated: named, and pres->object.
 	 */
-	code = pdf_alloc_resource(pdev, resourceXObject, id, &piw->pres,
+	code = pdf_alloc_resource(pdev, resourceXObject, id, &pres,
 				  (named ? named->id : -1L));
 	if (code < 0)
 	    return code;
-	cos_become(piw->pres->object, cos_type_stream);
-	piw->pres->rid = id;
+	*(mask ? &piw->pres_mask : &piw->pres) = pres;
+	cos_become(pres->object, cos_type_stream);
+	pres->rid = id;
 	piw->pin = &pdf_image_names_full;
-	pxo = (pdf_x_object_t *)piw->pres;
+	pxo = (pdf_x_object_t *)pres;
 	pcos = (cos_stream_t *)pxo->object;
 	CHECK(cos_dict_put_c_strings(cos_stream_dict(pcos), "/Subtype",
 				     "/Image"));
@@ -329,16 +338,19 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	pxo->height = h;
 	/* Initialize data_height for the benefit of copy_{mono,color}. */
 	pxo->data_height = h;
-	piw->data = pcos;
-	piw->named = named;
+	data = pcos;
+	if (!mask)
+	    piw->named = named;
     }
     pdev->strm = pdev->streams.strm;
-    pdev->strm = cos_write_stream_alloc(piw->data, pdev, "pdf_begin_write_image");
+    pdev->strm = cos_write_stream_alloc(data, pdev, "pdf_begin_write_image");
     if (pdev->strm == 0)
 	return_error(gs_error_VMerror);
+    if (!mask)
+	piw->data = data;
     piw->height = h;
-    code = psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary[0]);
-    piw->binary[0].target = NULL; /* We don't need target with cos_write_stream. */
+    code = psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary[alt_stream_index]);
+    piw->binary[alt_stream_index].target = NULL; /* We don't need target with cos_write_stream. */
     pdev->strm = save_strm;
     return code;
 }
@@ -391,8 +403,7 @@ pdf_complete_image_data(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h,
 			int width, int bits_per_pixel)
 {
     if (data_h != piw->height) {
-	if (piw->alt_writer_count > 1 ||
-	    piw->binary[0].strm->procs.process == s_DCTE_template.process) {
+	if (piw->binary[0].strm->procs.process == s_DCTE_template.process) {
 	    /* 	Since DCTE can't safely close with incomplete data,
 		we add stub data to complete the stream.
 	    */
@@ -422,7 +433,7 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
 {
     int code, code1 = 0;
 
-    if (piw->alt_writer_count > 1)
+    if (piw->alt_writer_count > 2)
 	code = pdf_choose_compression(piw, true);
     else
 	code = psdf_end_binary(&piw->binary[0]);
@@ -594,10 +605,16 @@ pdf_choose_compression_cos(pdf_image_writer *piw, cos_stream_t *s[2], bool force
     piw->binary[0].strm = piw->binary[k1].strm;
     sclose(piw->binary[2].strm);
     piw->binary[1].strm = piw->binary[2].strm = 0; /* for GC */
+    piw->binary[1].target = piw->binary[2].target = 0;
     s[k1]->id = piw->pres->object->id;
     piw->pres->object = (cos_object_t *)s[k1];
     piw->data = s[k1];
-    piw->alt_writer_count = 1;
+    if (PS2WRITE && piw->alt_writer_count > 3) {
+	piw->binary[1] = piw->binary[3];
+	piw->binary[3].strm = 0; /* for GC */
+	piw->binary[3].target = 0;
+    }
+    piw->alt_writer_count -= 2;
 }
 
 /* End binary with choosing image compression. */

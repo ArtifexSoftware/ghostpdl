@@ -453,3 +453,24 @@ psdf_setup_compression_chooser(psdf_binary_writer *pbw, gx_device_psdf *pdev,
 		    width, height, depth, bits_per_sample);
     return code;
 }
+
+/* Set up an "image to mask" filter. */
+int
+psdf_setup_image_to_mask_filter(psdf_binary_writer *pbw, gx_device_psdf *pdev,
+		    int width, int height, int depth, int bits_per_sample, uint *MaskColor)
+{
+    int code;
+    stream_state *ss = s_alloc_state(pdev->memory, s__image_to_mask_template.stype, 
+	"psdf_setup_image_to_mask_filter");
+
+    if (ss == 0)
+	return_error(gs_error_VMerror);
+    pbw->memory = pdev->memory;
+    pbw->dev = pdev;
+    code = psdf_encode_binary(pbw, &s__image_to_mask_template, ss);
+    if (code < 0)
+	return code;
+    s_image_to_mask_set_dimensions((stream_image_to_mask_state *)ss, 
+		    width, height, depth, bits_per_sample, MaskColor);
+    return 0;
+}

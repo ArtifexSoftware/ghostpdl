@@ -227,11 +227,15 @@ int pdf_do_image_by_id(gx_device_pdf * pdev, double scale,
 int pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 		 const gs_matrix * pimat, bool in_contents);
 
-#define pdf_image_writer_num_alt_treams 3
+#if PS2WRITE
+#define pdf_image_writer_num_alt_streams 4
+#else
+#define pdf_image_writer_num_alt_streams 3
+#endif
 
 /* Define the structure for writing an image. */
 typedef struct pdf_image_writer_s {
-    psdf_binary_writer binary[pdf_image_writer_num_alt_treams];
+    psdf_binary_writer binary[pdf_image_writer_num_alt_streams];
     int alt_writer_count; /* no. of active elements in writer[] (1,2,3) */
     const pdf_image_names_t *pin;
     pdf_resource_t *pres;	/* XObject resource iff not in-line */
@@ -239,12 +243,13 @@ typedef struct pdf_image_writer_s {
     cos_stream_t *data;
     const char *end_string;	/* string to write after EI if in-line */
     cos_dict_t *named;		/* named dictionary from NI */
+    pdf_resource_t *pres_mask;	/* PS2WRITE only : XObject resource for mask */
 } pdf_image_writer;
 extern_st(st_pdf_image_writer);	/* public for gdevpdfi.c */
 #define public_st_pdf_image_writer() /* in gdevpdfj.c */\
   gs_public_st_composite(st_pdf_image_writer, pdf_image_writer,\
     "pdf_image_writer", pdf_image_writer_enum_ptrs, pdf_image_writer_reloc_ptrs)
-#define pdf_image_writer_max_ptrs (psdf_binary_writer_max_ptrs * pdf_image_writer_num_alt_treams + 3)
+#define pdf_image_writer_max_ptrs (psdf_binary_writer_max_ptrs * pdf_image_writer_num_alt_streams + 4)
 
 /* Initialize image writer. */
 void pdf_image_writer_init(pdf_image_writer * piw);

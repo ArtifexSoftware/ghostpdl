@@ -21,6 +21,7 @@
 #  define gdevpsds_INCLUDED
 
 #include "strimpl.h"
+#include "gsiparam.h"
 
 /* ---------------- Depth conversion ---------------- */
 
@@ -174,5 +175,37 @@ s_compr_chooser_set_dimensions(stream_compr_chooser_state * st, int width,
 
 /* Get choice */
 uint s_compr_chooser__get_choice(stream_compr_chooser_state *st, bool force);
+
+/* ---------------- Am "image to mask" filter ---------------- */
+
+typedef struct stream_image_to_mask_state_s {
+    stream_state_common;
+    uint width, height, depth, bits_per_sample;
+    byte output_bits_buffer;
+    uint output_bits_buffered;
+    uint raster;
+    uint row_bits;
+    uint row_bits_passed;
+    uint row_alignment_bytes;
+    uint row_alignment_bytes_left;
+    uint input_component_index;
+    uint input_bits_buffer;
+    uint input_bits_buffered;
+    uint color[GS_IMAGE_MAX_COLOR_COMPONENTS];
+    uint MaskColor[GS_IMAGE_MAX_COLOR_COMPONENTS * 2];
+} stream_image_to_mask_state;
+
+#define private_st_image_to_mask_state()	/* in gdevpsds.c */\
+  gs_private_st_simple(st_stream_image_to_mask_state, stream_image_to_mask_state,\
+    "stream_image_to_mask_state")
+
+extern const stream_template s_image_to_mask_template;
+
+/* Set image dimensions. */
+void s_image_to_mask_set_dimensions(stream_image_to_mask_state * st, 
+			       int width, int height, int depth, int bits_per_sample, 
+			       uint *MaskColor);
+
+extern const stream_template s__image_to_mask_template;
 
 #endif /* gdevpsds_INCLUDED */
