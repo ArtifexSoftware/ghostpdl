@@ -10,11 +10,16 @@
 
 LIBPNGDIR=../libpng
 ZLIBDIR=../zlib
+# define iff you're linking to libpng
+LIBPNG_CFLAGS=-DHAVE_LIBPNG -I$(LIBPNGDIR) -I$(ZLIBDIR)
+LIBPNG_LDFLAGS=$(LIBPNGDIR)/libpng.lib $(ZLIBDIR)/zlib.lib
+#LIBPNG_CFLAGS=
+#LIBPNG_LDFLAGS=
 
 EXE=.exe
 OBJ=.obj
 NUL=
-CFLAGS=-nologo -W4 -Zi -DHAVE_STRING_H=1 -I$(LIBPNGDIR) -I$(ZLIBDIR)
+CFLAGS=-nologo -W4 -Zi -DHAVE_STRING_H=1 $(LIBPNG_CFLAGS)
 CC=cl
 FE=-Fe
 
@@ -33,7 +38,7 @@ HDRS=getopt.h jbig2.h jbig2_arith.h jbig2_arith_iaid.h jbig2_arith_int.h \
 all: jbig2dec$(EXE)
 
 jbig2dec$(EXE): $(OBJS)
-	$(CC) $(CFLAGS) $(FE)jbig2dec$(EXE) $(OBJS) $(LIBPNGDIR)/libpng.lib $(ZLIBDIR)/zlib.lib
+	$(CC) $(CFLAGS) $(FE)jbig2dec$(EXE) $(OBJS) $(LIBPNG_LDFLAGS)
 
 getopt$(OBJ): getopt.c getopt.h
 	$(CC) $(CFLAGS) -c getopt.c

@@ -4,9 +4,6 @@
 #define PACKAGE "jbig2dec"
 #define VERSION "0.3"
 
-/* define this iff you are linking to/compiling in libpng */
-#define HAVE_LIBPNG
-
 #ifdef _MSC_VER /* Microsoft Visual C+*/
 
   typedef signed char             int8_t;
