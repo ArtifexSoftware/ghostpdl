@@ -24,6 +24,15 @@
 #  define ibnum_INCLUDED
 
 /*
+ * There is a bug in all Adobe interpreters that causes them to byte-swap
+ * native reals in binary object sequences iff the native real format is
+ * IEEE.  We emulate this bug (it will be added to the PLRM errata at some
+ * point), but under a conditional so that it is clear where this is being
+ * done.
+ */
+#define BYTE_SWAP_IEEE_NATIVE_REALS 1
+
+/*
  * Define the byte that begins an encoded number string.
  * (This is the same as the value of bt_num_array in btoken.h.)
  */

@@ -84,8 +84,14 @@ private const byte bin_token_num_formats[NUM_BIN_TOKEN_TYPES] =
 {
     num_msb + num_float_IEEE,	/* BT_SEQ_IEEE_MSB */
     num_lsb + num_float_IEEE,	/* BT_SEQ_IEEE_LSB */
+#if ARCH_FLOATS_ARE_IEEE && BYTE_SWAP_IEEE_NATIVE_REALS
+    /* Treat native floats like IEEE floats for byte swapping. */
+    num_msb + num_float_IEEE,	/* BT_SEQ_NATIVE_MSB */
+    num_lsb + num_float_IEEE,	/* BT_SEQ_NATIVE_LSB */
+#else
     num_msb + num_float_native,	/* BT_SEQ_NATIVE_MSB */
     num_lsb + num_float_native,	/* BT_SEQ_NATIVE_LSB */
+#endif
     num_msb + num_int32,	/* BT_INT32_MSB */
     num_lsb + num_int32,	/* BT_INT32_LSB */
     num_msb + num_int16,	/* BT_INT16_MSB */
@@ -472,7 +478,8 @@ scan_bos_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    osize = sdecodeushort(p + 3, num_format);
 		    if (osize != 0) {	/* fixed-point number */
 			value = sdecodelong(p + 5, num_format);
-			vreal = (float)ldexp((double)value, -osize);
+			/* ldexp requires a signed 2nd argument.... */
+			vreal = (float)ldexp((double)value, -(int)osize);
 		    } else {
 			vreal = sdecodefloat(p + 5, num_format);
 		    }
@@ -716,6 +723,7 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
 {
     bin_seq_type_t type;
     uint size = 0;
+    int format = (int)ref_binary_object_format.value.intval;
     long value;
     ref nstr;
 
@@ -732,13 +740,17 @@ encode_binary_token(i_ctx_t *i_ctx_p, const ref *obj, long *ref_offset,
 	    break;
 	case t_real:
 	    type = BS_TYPE_REAL;
-	    /***** DOESN'T HANDLE NON-IEEE NATIVE *****/
-	    if (sizeof(obj->value.realval) == sizeof(int)) {
-		value = *(const int *)&obj->value.realval;
-	    } else {
-		/****** CAN'T HANDLE IT ******/
+	    if (sizeof(obj->value.realval) != sizeof(int)) {
+		/* The PLRM allocates exactly 4 bytes for reals. */
 		return_error(e_rangecheck);
 	    }
+	    value = *(const int *)&obj->value.realval;
+#if !(ARCH_FLOATS_ARE_IEEE && BYTE_SWAP_IEEE_NATIVE_REALS)
+	    if (format >= 3) {
+		/* Never byte-swap native reals -- use native byte order. */
+		format = 4 - ARCH_IS_BIG_ENDIAN;
+	    }
+#endif
 	    break;
 	case t_boolean:
 	    type = BS_TYPE_BOOLEAN;
@@ -772,18 +784,17 @@ nos:
     }
     {
 	byte s0 = (byte) size, s1 = (byte) (size >> 8);
-	byte v0 = (byte) value, v1 = (byte) (value >> 8), v2 = (byte) (value >> 16),
-	     v3 = (byte) (value >> 24);
-	int order = (int)ref_binary_object_format.value.intval - 1;
+	byte v0 = (byte) value, v1 = (byte) (value >> 8),
+	    v2 = (byte) (value >> 16), v3 = (byte) (value >> 24);
 
-	if (order & 1) {
-	    /* Store little-endian */
-	    str[2] = s0, str[3] = s1;
-	    str[4] = v0, str[5] = v1, str[6] = v2, str[7] = v3;
-	} else {
+	if (format & 1) {
 	    /* Store big-endian */
 	    str[2] = s1, str[3] = s0;
 	    str[4] = v3, str[5] = v2, str[6] = v1, str[7] = v0;
+	} else {
+	    /* Store little-endian */
+	    str[2] = s0, str[3] = s1;
+	    str[4] = v0, str[5] = v1, str[6] = v2, str[7] = v3;
 	}
     }
 tx:
