@@ -440,8 +440,8 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
     /*
      * Now check the names of the color components.
      */
+    non_match = false;
     for(i = 0; i < num_comp; i++ ) {
-        non_match = false;
 	/*
 	 * Get the character string and length for the component name.
 	 */
