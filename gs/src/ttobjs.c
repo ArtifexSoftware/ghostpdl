@@ -276,7 +276,6 @@ static int free_aux(ttfMemory *mem, void *ptr)
    exec->callTop  = 0;
 
    /* free glyph code range */
-   FREE( exec->glyphIns );
    exec->glyphSize = 0;
    exec->maxGlyphSize = 0;
 
@@ -315,10 +314,7 @@ static int free_aux(ttfMemory *mem, void *ptr)
    n_points        = face->maxPoints + 2;
    n_twilight      = maxp->maxTwilightPoints;
 
-   if ( ALLOC_ARRAY( exec->glyphIns, exec->maxGlyphSize, maxp->maxSizeOfInstructions, Byte )        ||
-        /* reserve glyph code range */
-
-        ALLOC_ARRAY( exec->callStack, exec->callSize, callSize, TCallRecord ) ||
+   if ( ALLOC_ARRAY( exec->callStack, exec->callSize, callSize, TCallRecord ) ||
         /* reserve interpreter call stack */
 
         ALLOC_ARRAY( exec->stack, exec->stackSize, stackSize, Long )           ||

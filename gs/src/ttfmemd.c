@@ -64,7 +64,7 @@ ENUM_PTRS_BEGIN(TExecution_Context_enum_ptrs) return 0;
     /* ENUM_PTR(1, TExecution_Context, code); // local, no gc invocations */
     ENUM_PTR(1, TExecution_Context, FDefs);
     ENUM_PTR(2, TExecution_Context, IDefs);
-    /* ENUM_PTR(4, TExecution_Context, glyphIns); // local, no gc invocations */
+    /* ENUM_PTR(4, TExecution_Context, glyphIns); // Never used. */
     ENUM_PTR(3, TExecution_Context, callStack);
     ENUM_PTR(4, TExecution_Context, codeRangeTable[0].Base);
     ENUM_PTR(5, TExecution_Context, codeRangeTable[1].Base);
@@ -95,7 +95,7 @@ private RELOC_PTRS_WITH(TExecution_Context_reloc_ptrs, TExecution_Context *mptr)
     /* RELOC_PTR(TExecution_Context, code);  // local, no gc invocations */
     RELOC_PTR(TExecution_Context, FDefs);
     RELOC_PTR(TExecution_Context, IDefs);
-    /* RELOC_PTR(TExecution_Context, glyphIns);  // local, no gc invocations */
+    /* RELOC_PTR(TExecution_Context, glyphIns);  // Never used. */
     RELOC_PTR(TExecution_Context, callStack);
     RELOC_PTR(TExecution_Context, codeRangeTable[0].Base);
     RELOC_PTR(TExecution_Context, codeRangeTable[1].Base);

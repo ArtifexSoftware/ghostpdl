@@ -5106,12 +5106,15 @@ static int nInstrCount=0;
     Compute_Round( EXEC_ARGS (Byte)exc->GS.round_state );
 
 #   ifdef DEBUG
-      save_ox = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_ox), "RunIns");
-      save_oy = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_oy), "RunIns");
-      save_cx = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_cx), "RunIns");
-      save_cy = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_cy), "RunIns");
-      if (!save_ox || !save_oy || !save_cx || !save_cy)
-	return TT_Err_Out_Of_Memory;
+      if (CUR.pts.n_points) {
+        save_ox = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_ox), "RunIns");
+        save_oy = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_oy), "RunIns");
+        save_cx = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_cx), "RunIns");
+        save_cy = mem->alloc_bytes(mem, CUR.pts.n_points * sizeof(*save_cy), "RunIns");
+        if (!save_ox || !save_oy || !save_cx || !save_cy)
+	  return TT_Err_Out_Of_Memory;
+      } else
+	save_ox = save_oy = save_cx = save_cy = NULL;
 #   endif
 
     Result = setjmp(exc->trap);
