@@ -80,6 +80,7 @@ struct pdf_text_state_s {
     double leading;		/* TL (not settable, only used internally) */
     bool use_leading;		/* if true, use T* or ' */
     gs_point line_start;
+    gs_point out_pos;		/* output position */
 };
 private const pdf_text_state_t ts_default = {
     /* State as seen by client */
@@ -91,7 +92,8 @@ private const pdf_text_state_t ts_default = {
     { TEXT_STATE_VALUES_DEFAULT },	/* out */
     0,				/* leading */
     0 /*false*/,		/* use_leading */
-    { 0, 0 }			/* line_start */
+    { 0, 0 },			/* line_start */
+    { 0, 0 }			/* output position */
 };
 /* GC descriptor */
 gs_private_st_ptrs2(st_pdf_text_state, pdf_text_state_t,  "pdf_text_state_t",
@@ -184,7 +186,7 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	    dw = dist.y, dnotw = dist.x;
 	else
 	    dw = dist.x, dnotw = dist.y;
-	dw -= pts->out.character_spacing;
+	dw -= pts->in.character_spacing;
 	if (dnotw == 0 && dw == (int)dw && pdfont != 0 &&
 	    pdfont->FontType == ft_user_defined
 	    ) {
@@ -377,8 +379,8 @@ sync_text_state(gx_device_pdf *pdev)
 	pts->in.matrix.xy != pts->out.matrix.xy ||
 	pts->in.matrix.yx != pts->out.matrix.yx ||
 	pts->in.matrix.yy != pts->out.matrix.yy ||
-	pts->start.x != pts->out.matrix.tx ||
-	pts->start.y != pts->out.matrix.ty) {
+	pts->start.x != pts->out_pos.x ||
+	pts->start.y != pts->out_pos.y) {
 	/* pdf_set_text_matrix sets out.matrix = in.matrix */
 	code = pdf_set_text_matrix(pdev);
 	if (code < 0)
@@ -538,8 +540,8 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
     uint left = size;
 
     if (pts->buffer.count_chars == 0 && pts->buffer.count_moves == 0) {
-	pts->start.x = pts->in.matrix.tx;
-	pts->start.y = pts->in.matrix.ty;
+	pts->out_pos.x = pts->start.x = pts->in.matrix.tx;
+	pts->out_pos.y = pts->start.y = pts->in.matrix.ty;
     }
     while (left)
 	if (pts->buffer.count_chars == MAX_TEXT_BUFFER_CHARS) {
@@ -561,5 +563,7 @@ pdf_append_chars(gx_device_pdf * pdev, const byte * str, uint size,
 	}
     pts->in.matrix.tx += wx;
     pts->in.matrix.ty += wy;
+    pts->out_pos.x += wx;
+    pts->out_pos.y += wy;
     return 0;
 }

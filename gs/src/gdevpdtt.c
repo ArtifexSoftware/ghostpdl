@@ -444,7 +444,7 @@ font_orig_scale(const gs_font *font)
 	    if (base_font->FontMatrix.xx == 1.0/2048 &&
 		base_font->FontMatrix.xy == 0 &&
 		base_font->FontMatrix.yx == 0 &&
-		base_font->FontMatrix.yy == 1.0/2048
+		any_abs(base_font->FontMatrix.yy) == 1.0/2048
 		)
 		return 1.0/2048;
 	    else
@@ -1224,7 +1224,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 
 	if (code < 0 ||
 	    (code = store_glyph_width(&pwidths->Width, wmode, 
-	                              scale_o, &info)) < 0
+	                              scale_c, &info)) < 0
 	    )
 	    return code;
 	v = info.v;
@@ -1235,7 +1235,7 @@ pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 	    ) {
 	    if (code < 0 ||
 		(code = store_glyph_width(&pwidths->real_width, wmode, 
-		                          scale_c, &info)) < 0
+		                          scale_o, &info)) < 0
 		)
 		return code;
 	    rcode |= code;
@@ -1318,14 +1318,15 @@ store_glyph_width(pdf_glyph_width_t *pwidth, int wmode, double scale,
 {
     double w, v;
 
-    pwidth->xy = pinfo->width[wmode];
+    pwidth->xy.x = (int)(pinfo->width[wmode].x * scale);
+    pwidth->xy.y = (int)(pinfo->width[wmode].y * scale);
     if (wmode)
 	w = pwidth->xy.y, v = pwidth->xy.x;
     else
 	w = pwidth->xy.x, v = pwidth->xy.y;
     if (v != 0)
 	return 1;
-    pwidth->w = (int)(w * scale);
+    pwidth->w = (int)w;
     return 0;
 }
 

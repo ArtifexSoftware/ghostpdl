@@ -994,9 +994,14 @@ same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont,
 	int code1 = ofont->data.procs.subr_data((gs_font_type1 *)ofont, 
 						i, global, &gdata1);
 	
-	if (code0 == gs_error_rangecheck && code1 == gs_error_rangecheck)
+	/*  Some fonts use null for skiping elements in subrs array. 
+	    This gives typecheck.
+	*/
+	if ((code0 == gs_error_rangecheck || code0 == gs_error_typecheck) && 
+	    (code1 == gs_error_rangecheck || code1 == gs_error_typecheck))
 	    return 1;
-	if ((code0 == gs_error_rangecheck) != (code1 == gs_error_rangecheck))
+	if ((code0 == gs_error_rangecheck || code0 == gs_error_typecheck) != 
+	    (code1 == gs_error_rangecheck || code1 == gs_error_typecheck))
 	    exit = true;
 	else if (code0 < 0)
 	    code = code0, exit = true;
@@ -1961,15 +1966,17 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
 	return 0;
     if (cfont->WMode != ofont->WMode)
 	return 0;
-    if (cfont->font_name.size != ofont->font_name.size ||
-	memcmp(cfont->font_name.chars, ofont->font_name.chars, 
-			cfont->font_name.size))
-	return 0; /* Don't allow to merge random fonts. */
-    if (cfont->font_name.size == 0)
+    if (cfont->font_name.size == 0 || ofont->font_name.size == 0) {
 	if (cfont->key_name.size != ofont->key_name.size ||
 	    memcmp(cfont->key_name.chars, ofont->key_name.chars, 
 			cfont->font_name.size))
     	    return 0; /* Don't allow to merge random fonts. */
+    } else {
+	if (cfont->font_name.size != ofont->font_name.size ||
+	    memcmp(cfont->font_name.chars, ofont->font_name.chars, 
+			    cfont->font_name.size))
+	    return 0; /* Don't allow to merge random fonts. */
+    }
     if (check_hinting) {
 	switch(cfont->FontType) {
 	    case ft_encrypted:
