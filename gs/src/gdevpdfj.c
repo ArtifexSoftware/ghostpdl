@@ -187,14 +187,18 @@ pdf_make_bitmap_matrix(gs_matrix * pmat, int x, int y, int w, int h,
     pmat->ty = y + h;
 }
 
-/* Put out the gsave and matrix for an image. */
+/*
+ * Put out the gsave and matrix for an image.  y_scale adjusts the matrix
+ * for images that end prematurely.
+ */
 void
 pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
 		     floatp y_scale)
 {
     gs_matrix imat;
 
-    gs_matrix_scale(pmat, 1.0, y_scale, &imat);
+    gs_matrix_translate(pmat, 0.0, 1.0 - y_scale, &imat);
+    gs_matrix_scale(&imat, 1.0, y_scale, &imat);
     pdf_put_matrix(pdev, "q ", &imat, "cm\n");
 }
 
@@ -210,7 +214,7 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 	    return code;
     }
     if (pimat) {
-	/* Scale the matrix to account for short images. */
+	/* Adjust the matrix to account for short images. */
 	const pdf_x_object_t *const pxo = (const pdf_x_object_t *)pres;
 	double scale = (double)pxo->data_height / pxo->height;
 
