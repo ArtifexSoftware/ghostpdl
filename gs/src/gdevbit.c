@@ -259,11 +259,11 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     int v;
     int ecode = 0;
     int code;
-    static const byte depths[4][8] = {
-	{1, 2, 0, 4, 8, 0, 0, 8},
+    static const byte depths[4][16] = {
+	{1, 2, 0, 4, 8, 0, 0, 8, 0, 0, 0, 16, 0, 0, 0, 16},
 	{0},
-	{4, 8, 0, 16, 16, 0, 0, 24},
-	{4, 8, 0, 16, 32, 0, 0, 32}
+	{4, 8, 0, 16, 16, 0, 0, 24, 0, 0, 0, 40, 0, 0, 0, 48},
+	{4, 8, 0, 16, 32, 0, 0, 32, 0, 0, 0, 48, 0, 0, 0, 64}
     };
     const char *vname;
 
@@ -287,6 +287,8 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
 		case  16: bpc = 4; break;
 		case  32: bpc = 5; break;
 		case 256: bpc = 8; break;
+		case 4096: bpc = 12; break;
+		case 65536: bpc = 16; break;
 		default:
 		    param_signal_error(plist, vname,
 				       ecode = gs_error_rangecheck);
