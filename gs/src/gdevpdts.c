@@ -126,6 +126,11 @@ append_text_move(pdf_text_state_t *pts, floatp dw)
     rounded = floor(dw + 0.5);
     if (fabs(dw - rounded) < 0.001)
 	dw = rounded;
+    if (dw < -MAX_USER_COORD) {
+	/* Acrobat reader 4.0c, 5.0 can't handle big offsets. 
+	   Adobe Reader 6 can. */
+	return -1;
+    }
     if (dw != 0) {
 	if (count == MAX_TEXT_BUFFER_MOVES)
 	    return -1;
