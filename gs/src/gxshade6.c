@@ -3039,12 +3039,17 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    /* go to divide. */
 	} else switch(quadrangle_color_change(pfs, p, &color_u)) {
 	    case color_change_small: 
-		return (QUADRANGLES || !pfs->maybe_self_intersecting ? 
+		code = (QUADRANGLES || !pfs->maybe_self_intersecting ? 
 			    constant_color_quadrangle : triangles)(pfs, p, 
 				pfs->maybe_self_intersecting);
+		pfs->monotonic_color = monotonic_color_save;
+		return code;
 	    case color_change_linear:
-		if (!QUADRANGLES)
-		    return triangles(pfs, p, true);
+		if (!QUADRANGLES) {
+		    code = triangles(pfs, p, true);
+		    pfs->monotonic_color = monotonic_color_save;
+		    return code;
+		}
 	    case color_change_gradient:
 	    case color_change_general:
 		; /* goto divide. */
