@@ -21,9 +21,30 @@
 #
 # configuration variables
 
-testroot = '/path/to/regression/'
-testdatadb = testroot + 'testdata.db'
-comparefiledir = testroot + 'comparefiles/'
-crashfiledir = testroot + 'crashfiles/'
-baselinegs = '/path/to/baseline/bin/gs'
-comparegs = '/path/to/compare/bin/gs'
+import os
+
+if os.name == 'nt' :
+
+	testroot = 'D:/path/to/testbase/'
+	baselinedir = 'D:/path/to/baseline/gs/'
+	comparedir  = 'D:/path/to/compare/gs/'
+	gsfontdir   = 'D:/path/to/fonts'
+
+	baselinegs = baselinedir + 'bin/gswin32c.exe'
+	comparegs  = comparedir  + 'bin/gswin32c.exe '
+	testdatadb = baselinedir + 'testdata.db'
+	comparefiledir = testroot + 'comparefiles/'
+	crashfiledir   = testroot + 'crashfiles/'
+	baselineoptions = ' -I' + baselinedir + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
+	compareoptions  = ' -I' + comparedir  + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
+
+else:
+
+	testroot = '/path/to/testbase/'
+	testdatadb = testroot + 'testdata.db'
+	comparefiledir = testroot + 'comparefiles/'
+	crashfiledir = testroot + 'crashfiles/'
+	baselinegs = '/path/to/baseline/bin/gs'
+	comparegs = '/path/to/compare/bin/gs'
+	baselineoptions = ''
+	compareoptions  = ''

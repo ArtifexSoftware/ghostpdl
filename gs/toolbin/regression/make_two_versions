@@ -50,6 +50,7 @@ gs.outfile = ofile
 gs.device = device
 gs.dpi = res
 gs.band = 0
+gs.gsoptions = gsconf.baselineoptions
 
 gs.process()
 
@@ -62,5 +63,6 @@ gs.outfile = ofile
 gs.device = device
 gs.dpi = res
 gs.band = 0
+gs.gsoptions = gsconf.compareoptions
 
 gs.process()

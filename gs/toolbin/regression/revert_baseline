@@ -46,6 +46,7 @@ def make_entry(ifile, device, dpi, band):
     gs.device = device
     gs.dpi = dpi
     gs.band = band
+    gs.gsoptions = gsconf.compareoptions
 
     if gs.process():
         try:
