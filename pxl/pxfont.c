@@ -708,7 +708,8 @@ pxReadChar(px_args_t *par, px_state_t *pxs)
 	    case 1:		/* TrueType outline */
 	      if ( header[4] != plfst_TrueType )
 		code = gs_note_error(errorFSTMismatch);
-	      else if ( data[1] != 0 )
+	      else if ( data[1] != 0 && data[1] != 1 
+			/* && data[1] != 2  NB Needs to be tested uncomment to try */ )
 		code = gs_note_error(errorUnsupportedCharacterClass);
 	      else if ( size < 6 || size != 2 + pl_get_uint16(data + 2) )
 		code = gs_note_error(errorIllegalCharacterData);
