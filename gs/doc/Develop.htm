@@ -51,10 +51,18 @@ Information for Ghostscript developers
 <li><a href="#Memory_manager_architecture">Memory manager architecture</a>
 <ul>
 <li><a href="#Objects_vs_strings">Objects vs strings</a>,
-    <a href="#Movability_and_GC">Movability and GC</a>,
+    <a href="#Structure_descriptors">Structure descriptors</a>,
+    <a href="#Garbage_collection">Garbage collection</a>,
+    <a href="#Movability">Movability</a>,
     <a href="#Stable_allocators">Stable_allocators</a>,
     <a href="#Parent_hierarchy">Parent hierarchy</a>,
     <a href="#Allocator_API">Allocator API</a>,
+</ul>
+<li><a href="#Freeing_storage">Freeing storage</a>
+<ul>
+<li><a href="#Explicit_freeing">Explicit freeing</a>,
+    <a href="#Reference_counting">Reference counting</a>,
+    <a href="#Real_garbage_collection">(Real) garbage collection</a>
 </ul>
 <li><a href="#Special_implementations">Special implementations</a>
 <ul>
@@ -63,17 +71,11 @@ Information for Ghostscript developers
     <a href="#Retrying">Retrying</a>
 </ul>
 <li><a href="#Standard_implementation">Standard implementation</a>
-<li><a href="#Modalities_of_freeing">Modalities of freeing</a>
-<ul>
-<li><a href="#Explicit_freeing">Explicit freeing</a>,
-    <a href="#Reference_counting">Reference counting</a>,
-    <a href="#Garbage_collection">Garbage collection</a>,
-    <a href="#Merge_only_GC">Merge-only "GC"</a>
-</ul>
 <li><a href="#PostScript_interpreter_extensions">PostScript interpreter extensions</a>
 <ul>
 <li><a href="#Refs_and_ref_objects">Refs and ref objects</a>,
-    <a href="#save_forgetsave_restore">save/.forgetsave/restore</a>
+    <a href="#save_forgetsave_restore">save/.forgetsave/restore</a>,
+    <a href="#Interpreter_GC">Garbage collection</a>
 </ul>
 </ul>
 <li><a href="#Portability">Portability</a>
@@ -308,18 +310,80 @@ probably opt for a different design in which strings were allocated within
 container objects of a few hundred bytes, and pointers into the middle of
 all objects were allowed.
 
-<h3><a name="Movability_and_GC"></a>Movability + GC</h3>
+<h3><a name="Structure_descriptors"></a>Structure descriptors</h3>
+
+<p>
+Every object has an associated structure descriptor, which the caller
+provides when allocating the object.  The structure descriptor serves
+several purposes:
+
+<ul>
+<li>Specifying the size of the object for allocation;
+<li>Providing pointer-enumeration and pointer-relocation procedures for
+the garbage collector;
+<li>Providing an optional finalization procedure to be called when the
+object is freed (either explicitly or automatically).
+</ul>
+
+<p>
+Structure descriptors are read-only, and are normally allocated statically
+using one of a large set of macros.
+
+<p>
+While the structure descriptor normally specifies the size of the object,
+one can also allocate an array of bytes or objects, whose size is a multiple
+of the size in the descriptor.  For this reason, every object stores its
+size as well as a reference to its descriptor.
+
+<p>
+Because the standard Ghostscript garbage collector is conservative and can
+move objects, every object must have an accurate structure descriptor.  If
+you define a new type of object (structure) that will be allocated in
+storage managed by Ghostscript, you <em>must</em> create an accurate
+descriptor for it, and use that descriptor to allocate it.  The process of
+creating accurate descriptors for all structures was long and painful, and
+accounted for many hard-to-diagnose bugs.
+
+<p>
+Files:
+<a href="../src/gsstruct.h">src/gsstruct.h</a>,
+<a href="../src/gsstype.h">src/gsstype.h</a>.
+
+<h3><a name="Garbage_collection"></a>Garbage collection</h3>
 
 <p>
 The allocator architecture is designed to support compacting garbage
 collection.  Every object must be able to enumerate all the pointers it
-contains, both for tracing and for relocation.
+contains, both for tracing and for relocation.  As noted just above, the
+structure descriptor provides procedures that do this.
 
 <p>
-Objects are normally movable by the garbage collector.  However, some
-objects must be immovable, usually because some other piece of software must
-retain pointers to them.  The allocator API includes procedures for
-allocating both movable (default) and immovable objects.
+Whether or not a particular allocator type actually provides a garbage
+collector is up to the allocator: garbage collection is invoked through a
+virtual procedure.  In practice, however, there are only two useful garbage
+collectors for Ghostscript's own allocator:
+
+<ul>
+<li>The "real" garbage collector associated withthe PostScript interpreter,
+described <a href="#Interpreter_GC">below</a>;
+<li>A "non" garbage collector that only merges adjacent free blocks.
+</ul>
+
+<p>
+Files:
+<a href="../src/gsgc.h">src/gsgc.h</a>,
+<a href="../src/gsnogc.c">src/gsnogc.c</a>,
+<a href="../src/gsnogc.h">src/gsnogc.h</a>.
+
+<h3><a name="Movability"></a>Movability</h3>
+
+<p>
+As just noted, objects are normally movable by the garbage collector.
+However, some objects must be immovable, usually because some other piece of
+software must retain pointers to them.  The allocator API includes
+procedures for allocating both movable (default) and immovable objects.
+Note, however, that even immovable objects must be traceable (have a
+structure descriptor), and may be freed, by the garbage collector.
 
 <h3><a name="Stable_allocators"></a>Stable allocators</h3>
 
@@ -327,7 +391,7 @@ allocating both movable (default) and immovable objects.
 Even though <b><tt>save</tt></b> and <b><tt>restore</tt></b> are concepts
 from the PostScript interpreter, the allocator architecture includes a
 feature to support them, called <em>stable</em> allocators, which are
-described in detail <a href="save_forgetsave_restore">below</a>
+described in detail <a href="#save_forgetsave_restore">below</a>.
 
 <h3><a name="Parent_hierarchy">Parent hierarchy</h3>
 
@@ -336,9 +400,10 @@ When an allocator needs to add memory to the pool that it manages, it
 requests the memory from its <em>parent</em> allocator.  Every allocator has
 a pointer to its parent; multiple allocators may share a single parent.  The
 ultimate ancestor of all allocators that can expand their pool dynamically
-is an allocator that calls <b><tt>malloc</tt></b>.  However, especially in
-embedded environments, an allocator may be limited to a fixed-size pool
-assigned to it when it is created.
+is an allocator that calls <b><tt>malloc</tt></b>, described <a
+href="#malloc">below</a>.  However, especially in embedded environments, an
+allocator may be limited to a fixed-size pool assigned to it when it is
+created.
 
 <h3><a name="Allocator_API"></a>Allocator API</h3>
 
@@ -364,6 +429,64 @@ Files:
 <a href="../src/gsmemory.h">src/gsmemory.h</a>,
 <a href="../src/gsstruct.h">src/gsstruct.h</a>,
 <a href="../src/gsstype.h">src/gsstype.h</a>.
+
+<h2><a name="Freeing_storage"></a>Freeing storage</h2>
+
+<p>
+Ghostscript's memory management architecture provides three different ways
+to free objects: explicitly, by reference counting, or by garbage
+collection.  They provide different safety / performance / convenience
+tradeoffs; we believe that all three are necessary.
+
+<p>
+Objects are always freed as a whole; strings may be freed piecemeal.
+
+<p>
+An object may have an associated finalization procedure, defined in the
+structure descriptor.  This procedure is called just before the object is
+freed, independent of which method is being used to free the object.  A few
+types of objects have a virtual finalization procedure as well: the
+finalization procedure defined in the descriptor simply calls the one in the
+object.
+
+<h3><a name="Explicit_freeing"></a>Explicit freeing</h3>
+
+<p>
+Objects and strings may be freed explicitly, using the
+<b><tt>gs_free_</tt></b> virtual procedures in the allocator API.  It is up
+to the client to ensure that all allocated objects are freed at most once,
+and that there are no dangling pointers.
+
+<p>
+Explicit freeing is the fastest method, but is the least convenient and
+least safe.  It is most appropriate when storage is freed in the same
+procedure where it is allocated, or for storage that is known to be
+referenced by only one pointer.
+
+<h3><a name="Reference_counting"></a>Reference counting</h3>
+
+<p>
+Objects may be managed by reference counting.  When an object is allocated,
+its reference count may be set to 0 or 1.  Subsequently, when the reference
+count is decremented to 0, the object is freed.  Reference-counted objects
+always have a virtual finalization procedure.
+
+<p>
+Reference counting is as fast as explicit freeing, but takes more space in
+the object.  It is most appropriate for relatively large objects which are
+referenced only from a small set of pointers.  Note that reference counting
+cannot free objects that are involved in a pointer cycle (e.g., A -> B -> C
+-> A).
+
+<p>
+Files:
+<a href="../src/gsrefct.h">src/gsrefct.h</a>.
+
+<h3><a name="Real_garbage_collection"></a>(Real) garbage collection</h3>
+
+<p>
+Objects and strings may be freed automatically by a garbage collector.  We
+discuss this in detail <a href="#Interpreter_GC">below</a>.
 
 <h2><a name="Special_implementations"></a>Special implementations</h2>
 
@@ -413,33 +536,67 @@ Files:
 <h2><a name="Standard_implementation"></a>Standard implementation</h2>
 
 <p>
-Chunks
+The standard Ghostscript allocator gets storage from its parent (normally
+the <b><tt>malloc</tt></b> allocator) in large blocks called
+<em>chunks</em>, and then allocates objects up from the low end and strings
+down from the high end.  Large objects or strings are allocated in their own
+chunk.
 
 <p>
-Free list management
-
-<h2><a name="Modalities_of_freeing"></a>Modalities of freeing</h2>
-
-<p>
-Explicit
-
-<p>
-Reference-counted
+The standard allocator maintains a set of free-block lists for small object
+sizes, one list per size (rounded up to the word size), plus a free-block
+list for large objects (but not for objects so large that they get their own
+chunk: when such an object is freed, its chunk is returned to the parent).
+The lists are not sorted; adjacent blocks are only merged if needed.
 
 <p>
-GC (interpreter only); Merge-only "GC"
-
-<p>
-When to use which one
+Files:
+<a href="../src/gsalloc.c">src/gsalloc.c</a>,
+<a href="../src/gsalloc.h">src/gsalloc.h</a>,
+<a href="../src/gxalloc.h">src/gxalloc.h</a>,
+<a href="../src/gxobj.h">src/gxobj.h</a>.
 
 <h2><a name="PostScript_interpreter_extensions"></a>PostScript interpreter extensions</h2>
 
+<p>
+The PostScript interpreter uses an allocator that extends the graphic
+library's standard allocator to handle PostScript objects,
+<b><tt>save</tt></b> and <b><tt>restore</tt></b>, and real garbage
+collection.
+
+<p>
+Files:
+<a href="../src/ialloc.c">src/ialloc.c</a>,
+<a href="../src/ialloc.h">src/ialloc.h</a>,
+<a href="../src/imemory.h">src/imemory.h</a>.
+
 <h3><a name="Refs_and_ref_objects"></a>Refs and ref objects</h3>
+
+<p>
+Files:
+<a href="../src/iref.h">src/iref.h</a>,
+<a href="../src/ivmspace.h">src/ivmspace.h</a>.
 
 <h3><a name="save_forgetsave_restore"></a>save/.forgetsave/restore</h3>
 
 <p>
 Stable allocators + when to use them
+
+<p>
+Files:
+<a href="../src/idosave.h">src/idosave.h</a>,
+<a href="../src/isave.c">src/isave.c</a>,
+<a href="../src/isave.h">src/isave.h</a>.
+
+<h3><a name="Interpreter_GC"></a>Garbage collection</h3>
+
+<p>
+Files:
+<a href="../src/igc.c">src/igc.c</a>,
+<a href="../src/igc.h">src/igc.h</a>,
+<a href="../src/igcref.c">src/igcref.c</a>,
+<a href="../src/igcstr.c">src/igcstr.c</a>,
+<a href="../src/igcstr.h">src/igcstr.h</a>.
 
 <hr>
 
