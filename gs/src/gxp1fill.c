@@ -1,4 +1,4 @@
-/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -47,10 +47,11 @@ typedef struct tile_fill_state_s {
     gx_device_tile_clip cdev;
     gx_device *pcdev;		/* original device or &cdev */
     const gx_strip_bitmap *tmask;
+    gs_int_point phase;
 
     /* Following are only for uncolored patterns */
 
-                    dev_color_proc_fill_rectangle((*fill_rectangle));
+    dev_color_proc_fill_rectangle((*fill_rectangle));
 
     /* Following are only for colored patterns */
 
@@ -63,18 +64,33 @@ typedef struct tile_fill_state_s {
 /* Initialize the filling state. */
 private int
 tile_fill_init(tile_fill_state_t * ptfs, const gx_device_color * pdevc,
-	       gx_device * dev)
+	       gx_device * dev, bool set_mask_phase)
 {
     gx_color_tile *m_tile = pdevc->mask.m_tile;
+    int px, py;
 
     ptfs->pdevc = pdevc;
     if (m_tile == 0) {		/* no clipping */
 	ptfs->pcdev = dev;
+	ptfs->phase = pdevc->phase;
 	return 0;
     }
     ptfs->pcdev = (gx_device *) & ptfs->cdev;
     ptfs->tmask = &m_tile->tmask;
-    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, 0, 0);
+    ptfs->phase.x = pdevc->mask.m_phase.x;
+    ptfs->phase.y = pdevc->mask.m_phase.y;
+    /*
+     * For non-simple tiles, the phase will be reset on each pass of the
+     * tile_by_steps loop, but for simple tiles, we must set it now.
+     */
+    if (set_mask_phase && m_tile->is_simple) {
+	px = imod(-(int)(m_tile->step_matrix.tx - ptfs->phase.x + 0.5),
+		m_tile->tmask.rep_width);
+	py = imod(-(int)(m_tile->step_matrix.ty - ptfs->phase.y + 0.5),
+		m_tile->tmask.rep_height);
+    } else
+	px = py = 0;
+    return tile_clip_initialize(&ptfs->cdev, ptfs->tmask, dev, px, py);
 }
 
 /*
@@ -99,6 +115,8 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
     ptfs->x0 = x0, ptfs->w0 = w0;
     ptfs->y0 = y0, ptfs->h0 = h0;
     step_matrix = ptile->step_matrix;
+    step_matrix.tx -= ptfs->phase.x;
+    step_matrix.ty -= ptfs->phase.y;
     {
 	gs_rect bbox;		/* bounding box in device space */
 	gs_rect ibbox;		/* bounding box in stepping space */
@@ -226,12 +244,17 @@ gx_dc_pattern_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     if (rop_source == NULL)
 	set_rop_no_source(rop_source, no_source, dev);
     bits = &ptile->tbits;
-    code = tile_fill_init(&state, pdevc, dev);
+    code = tile_fill_init(&state, pdevc, dev, false);
     if (code < 0)
 	return code;
     if (ptile->is_simple) {
-	int px = imod(-(int)(ptile->step_matrix.tx + 0.5), bits->rep_width);
-	int py = imod(-(int)(ptile->step_matrix.ty + 0.5), bits->rep_height);
+	int px =
+	    imod(-(int)(ptile->step_matrix.tx - state.phase.x + 0.5),
+		bits->rep_width);
+	int py =
+	    imod(-(int)(ptile->step_matrix.ty - state.phase.y + 0.5),
+		bits->rep_height);
+  
 
 	if (state.pcdev != dev)
 	    tile_clip_set_phase(&state.cdev, px, py);
@@ -296,17 +319,9 @@ gx_dc_pure_masked_fill_rect(const gx_device_color * pdevc,
      * This routine should never be called if there is no masking,
      * but we leave the checks below just in case.
      */
-    code = tile_fill_init(&state, pdevc, dev);
+    code = tile_fill_init(&state, pdevc, dev, true);
     if (code < 0)
 	return code;
-    if (state.pcdev != dev) {
-	int px = imod(-(int)(ptile->step_matrix.tx + 0.5),
-		      ptile->tmask.rep_width);
-	int py = imod(-(int)(ptile->step_matrix.ty + 0.5),
-		      ptile->tmask.rep_height);
-
-	tile_clip_set_phase(&state.cdev, px, py);
-    }
     if (state.pcdev == dev || ptile->is_simple)
 	return (*gx_dc_type_data_pure.fill_rectangle)
 	    (pdevc, x, y, w, h, state.pcdev, lop, source);
@@ -328,7 +343,7 @@ gx_dc_binary_masked_fill_rect(const gx_device_color * pdevc,
     tile_fill_state_t state;
     int code;
 
-    code = tile_fill_init(&state, pdevc, dev);
+    code = tile_fill_init(&state, pdevc, dev, true);
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
@@ -352,7 +367,7 @@ gx_dc_colored_masked_fill_rect(const gx_device_color * pdevc,
     tile_fill_state_t state;
     int code;
 
-    code = tile_fill_init(&state, pdevc, dev);
+    code = tile_fill_init(&state, pdevc, dev, true);
     if (code < 0)
 	return code;
     if (state.pcdev == dev || ptile->is_simple)
