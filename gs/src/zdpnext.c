@@ -96,7 +96,7 @@ typedef struct alpha_composite_state_s {
 /* Forward references */
 private int begin_composite(P2(i_ctx_t *, alpha_composite_state_t *));
 private void end_composite(P2(i_ctx_t *, alpha_composite_state_t *));
-private int rect_param(P2(os_ptr, double[4]));
+private int xywh_param(P2(os_ptr, double[4]));
 
 /* <width> <height> <bits/comp> <matrix> */
 /*      <datasrc_0> ... <datasrc_ncomp-1> true <ncomp> alphaimage - */
@@ -115,7 +115,7 @@ zcompositerect(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     double dest_rect[4];
     alpha_composite_state_t cstate;
-    int code = rect_param(op - 1, dest_rect);
+    int code = xywh_param(op - 1, dest_rect);
 
     if (code < 0)
 	return code;
@@ -147,7 +147,7 @@ composite_image(i_ctx_t *i_ctx_p, const gs_composite_alpha_params_t * params)
     double src_rect[4];
     double dest_pt[2];
     gs_matrix save_ctm;
-    int code = rect_param(op - 4, src_rect);
+    int code = xywh_param(op - 4, src_rect);
 
     cstate.params = *params;
     gs_image2_t_init(&image);
@@ -351,7 +351,7 @@ const op_def zdpnext_op_defs[] =
 
 /* Collect a rect operand. */
 private int
-rect_param(os_ptr op, double rect[4])
+xywh_param(os_ptr op, double rect[4])
 {
     int code = num_params(op, 4, rect);
 
