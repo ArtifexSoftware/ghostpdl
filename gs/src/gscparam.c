@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -99,9 +99,17 @@ gs_c_param_list_write(gs_c_param_list * plist, gs_memory_t * mem)
     plist->procs = &c_write_procs;
     plist->memory = mem;
     plist->head = 0;
+    plist->target = 0;                /* not used for writing */
     plist->count = 0;
     plist->any_requested = false;
     plist->coll_type = gs_param_collection_dict_any;
+}
+
+/* Set the target of a list.  Only relevant for reading. */
+void
+gs_c_param_list_set_target(gs_c_param_list *plist, gs_param_list *target)
+{
+    plist->target = target;
 }
 
 /* Release a list. */
@@ -311,9 +319,17 @@ private int
 c_param_requested(const gs_param_list * plist, gs_param_name pkey)
 {
     const gs_c_param_list *const cplist = (const gs_c_param_list *)plist;
+    gs_param_list *target = cplist->target;
+    int code;
 
-    return (!cplist->any_requested ? -1 :
-	    c_param_find(cplist, pkey, true) != 0);
+    if (!cplist->any_requested)
+	return (target ? param_requested(target, pkey) : -1);
+    if (c_param_find(cplist, pkey, true) != 0)
+	return 1;
+    if (!target)
+	return 0;
+    code = param_requested(target, pkey);
+    return (code < 0 ? 0 : 1);
 }
 
 /* ---------------- Reading from a list to parameters ---------------- */
@@ -357,7 +373,8 @@ c_param_read_typed(gs_param_list * plist, gs_param_name pkey,
     int code;
 
     if (pparam == 0)
-	return 1;
+	return (cplist->target ?
+		param_read_typed(cplist->target, pkey, pvalue) : 1);
     pvalue->type = pparam->type;
     switch (pvalue->type) {
 	case gs_param_type_dict:
@@ -413,7 +430,11 @@ c_param_begin_read_collection(gs_param_list * plist, gs_param_name pkey,
     gs_c_param *pparam = c_param_find(cplist, pkey, false);
 
     if (pparam == 0)
-	return 1;
+	 return
+	     (cplist->target ?
+	      param_begin_read_collection(cplist->target,
+	                                  pkey, pvalue, coll_type) :
+	      1);
     switch (pparam->type) {
 	case gs_param_type_dict:
 	    if (coll_type != gs_param_collection_dict_any)
