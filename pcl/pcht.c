@@ -1204,7 +1204,7 @@ static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
  * only the K plane.  This is a work around for PCL not having a gray colorspace.
  * Should match the behavior of hp clj 4500, 4550 printers.
  */
-static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = true;
+static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = false;
 
 /*
  * Update built-in rendering information. Attempts to changed fixed rendering
