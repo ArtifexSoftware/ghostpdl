@@ -373,8 +373,8 @@ int s_filter_write_flush(P1(stream *)), s_filter_close(P1(stream *));
 extern const stream_procs s_filter_read_procs, s_filter_write_procs;
 
 /*
- * Add a filter to a pipeline.  The client must have allocated the stream
- * state, if any, using the given allocator.  For s_init_filter, the
+ * Add a filter to an output pipeline.  The client must have allocated the
+ * stream state, if any, using the given allocator.  For s_init_filter, the
  * client must have called s_init and s_init_state.
  *
  * Note that if additional buffering is needed, s_add_filter may add

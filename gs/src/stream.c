@@ -1110,8 +1110,8 @@ s_write_position_process(stream_state * st, stream_cursor_read * pr,
 /* ------ Filter pipelines ------ */
 
 /*
- * Add a filter to a pipeline.  The client must have allocated the stream
- * state, if any, using the given allocator.  For s_init_filter, the
+ * Add a filter to an output pipeline.  The client must have allocated the
+ * stream state, if any, using the given allocator.  For s_init_filter, the
  * client must have called s_init and s_init_state.
  */
 int
@@ -1120,7 +1120,7 @@ s_init_filter(stream *fs, stream_state *fss, byte *buf, uint bsize,
 {
     const stream_template *template = fss->template;
 
-    if (bsize < template->min_out_size)
+    if (bsize < template->min_in_size)
 	return ERRC;
     s_std_init(fs, buf, bsize, &s_filter_write_procs, s_mode_write);
     fs->procs.process = template->process;
@@ -1136,7 +1136,7 @@ s_add_filter(stream **ps, const stream_template *template,
 {
     stream *es;
     stream_state *ess;
-    uint bsize = max(template->min_out_size, 256);	/* arbitrary */
+    uint bsize = max(template->min_in_size, 256);	/* arbitrary */
     byte *buf;
 
     /*
@@ -1147,7 +1147,7 @@ s_add_filter(stream **ps, const stream_template *template,
 	stream_template null_template;
 
 	null_template = s_NullE_template;
-	null_template.min_out_size = bsize;
+	null_template.min_in_size = bsize;
 	if (s_add_filter(ps, &null_template, NULL, mem) == 0)
 	    return 0;
     }
