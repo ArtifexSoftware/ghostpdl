@@ -592,7 +592,10 @@ readonly def
       /FirstChar 1 index /FirstChar oget def
       /LastChar 1 index /LastChar oget def
     } if
-    /FontName 1 index /Name get def
+    /FontName 1 index /Name .knownget not { 
+       PDFfile fileposition 16 10 string cvrs cvn
+    } if def
+
     /Encoding .notdefEncoding 2 index getencoding def
 		% We have to define BuildChar rather than BuildGlyph:
 		% there is no PDF equivalent of glyphshow, and we need
