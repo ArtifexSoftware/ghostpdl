@@ -56,6 +56,7 @@ ztoken(i_ctx_t *i_ctx_p)
 	}
 	case t_string: {
 	    ref token;
+	    os_ptr op_orig = osp;
 	    int code = scan_string_token(i_ctx_p, op, &token);
 
 	    switch (code) {
@@ -63,8 +64,10 @@ ztoken(i_ctx_t *i_ctx_p)
 		make_false(op);
 		return 0;
 	    default:
-		if (code < 0)
+		if (code < 0) {
+		    osp = op = op_orig;
 		    return code;
+		}
 	    }
 	    push(2);
 	    op[-1] = token;
