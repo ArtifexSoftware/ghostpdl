@@ -38,6 +38,7 @@ public_st_gs_font_type42();
 /* Forward references */
 private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
 			      gx_path * ppath, gs_font_type42 * pfont));
+private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
 private int default_get_outline(P3(gs_font_type42 *pfont, uint glyph_index,
 				   gs_glyph_data_t *pgd));
 private int default_get_metrics(P4(gs_font_type42 *pfont, uint glyph_index,
@@ -60,8 +61,11 @@ private int default_get_metrics(P4(gs_font_type42 *pfont, uint glyph_index,
 
 /* ---------------- Font level ---------------- */
 
-/* Initialize the cached values in a Type 42 font. */
-/* Note that this initializes get_outline and the font procedures as well. */
+/*
+ * Initialize the cached values in a Type 42 font.
+ * Note that this initializes the type42_data procedures other than
+ * string_proc, and the font procedures as well.
+ */
 int
 gs_type42_font_init(gs_font_type42 * pfont)
 {
@@ -150,6 +154,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.q.x = S16(head_box + 4) / upem;
 	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
     }
+    pfont->data.get_glyph_index = default_get_glyph_index;
     pfont->data.get_outline = default_get_outline;
     pfont->data.get_metrics = default_get_metrics;
     pfont->procs.glyph_outline = gs_type42_glyph_outline;
@@ -281,6 +286,18 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
     return total;
 }
 
+/*
+ * Define the default implementation for getting the glyph index from a
+ * gs_glyph.  This is trivial for integer ("CID" but representing a GID)
+ * gs_glyph values, and not implemented for name glyphs.
+ */
+private uint
+default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph)
+{
+    return (glyph < GS_MIN_CID_GLYPH ? 0 : /* undefined */
+	    glyph - GS_MIN_CID_GLYPH);
+}
+
 /* Define the default implementation for getting the outline data for */
 /* a glyph, using indexToLocFormat and the loca and glyf tables. */
 /* Set pglyph->data = 0 if the glyph is empty. */
@@ -327,7 +344,7 @@ private int
 parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	     int *pnum_pieces)
 {
-    uint glyph_index = glyph - gs_min_cid_glyph;
+    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
     gs_glyph_data_t glyph_data;
     int code = pfont->data.get_outline(pfont, glyph_index, &glyph_data);
 
@@ -359,7 +376,7 @@ gs_type42_glyph_outline(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 			gx_path *ppath)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = glyph - gs_min_cid_glyph;
+    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
     gs_fixed_point origin;
     int code;
     gs_glyph_info_t info;
@@ -383,7 +400,7 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     int members, gs_glyph_info_t *info)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = glyph - gs_min_cid_glyph;
+    uint glyph_index = pfont->data.get_glyph_index(pfont, glyph);
     int default_members =
 	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
 		    GLYPH_INFO_PIECES);

@@ -39,6 +39,7 @@ struct gs_type42_data_s {
      * The following are initialized by ...font_init, but may be reset by
      * the client.
      */
+    uint (*get_glyph_index)(gs_font_type42 *pfont, gs_glyph glyph);
     int (*get_outline)(P3(gs_font_type42 *pfont, uint glyph_index,
 			  gs_glyph_data_t *pgd));
     int (*get_metrics)(P4(gs_font_type42 *pfont, uint glyph_index, int wmode,
@@ -69,7 +70,8 @@ extern_st(st_gs_font_type42);
 /*
  * Because a Type 42 font contains so many cached values,
  * we provide a procedure to initialize them from the font data.
- * Note that this initializes get_outline and the font procedures as well.
+ * Note that this initializes the type42_data procedures other than
+ * string_proc, and the font procedures as well.
  */
 int gs_type42_font_init(P1(gs_font_type42 *));
 
