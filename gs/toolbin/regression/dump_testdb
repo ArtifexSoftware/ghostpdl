@@ -1,0 +1,17 @@
+#!/usr/bin/env python2.1
+#
+# dump_testdb
+#
+# dumps the contents of the testdatadb
+
+import sys, anydbm, gsconf
+
+if len(sys.argv) == 2:
+    print "opening ", sys.argv[1]
+    db = anydbm.open(sys.argv[1])
+else:
+    db = anydbm.open(gsconf.testdatadb)
+
+for k in db.keys():
+    print db[k], k
+

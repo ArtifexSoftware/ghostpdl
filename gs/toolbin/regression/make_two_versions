@@ -1,0 +1,46 @@
+#!/usr/bin/env python2.1
+#
+# make_two_versions <filename> [<device> [<res>]]
+#
+# this script creates two versions of the file specified
+# one from baseline, and one from head
+# these are appropriate for a visual diff
+
+import gstest
+import gsconf
+import os, sys
+import string
+
+file = sys.argv[1]
+if len(sys.argv) > 2:
+	device = sys.argv[2]
+else:
+	device = 'ppmraw'
+if len(sys.argv) > 3:
+	res = int(sys.argv[3])
+else:
+	res = 72
+
+ofile = "%s.%s.baseline.pnm" % (file, device)
+
+gs = gstest.Ghostscript()
+gs.command = gsconf.baselinegs
+gs.infile = gsconf.comparefiledir + file
+gs.outfile = ofile
+gs.device = device
+gs.dpi = res
+gs.band = 0
+
+gs.process()
+
+ofile = "%s.%s.compare.pnm" % (file, device)
+
+gs = gstest.Ghostscript()
+gs.command = gsconf.comparegs
+gs.infile = gsconf.comparefiledir + file
+gs.outfile = ofile
+gs.device = device
+gs.dpi = res
+gs.band = 0
+
+gs.process()

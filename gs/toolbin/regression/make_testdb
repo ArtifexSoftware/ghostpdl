@@ -1,0 +1,82 @@
+#!/usr/bin/env python2.1
+#
+# make_testdb <dir>
+#
+# this script creates the gstestdb database and intializes it
+# with the md5sums of the test data files run through the
+# baseline ghostscript
+
+import gstest
+import gsconf
+import gssum
+import anydbm
+import os, sys
+import string
+
+def make_entry(ifile, device, dpi, band):
+    ofile = "%s.%s.%d.%d" % (ifile, device, dpi, band)
+    print "creating entry: " + ofile + "...",
+    sys.stdout.flush()
+    
+    gs = gstest.Ghostscript()
+    gs.command = gsconf.baselinegs
+    gs.infile = gsconf.comparefiledir + ifile
+    gs.outfile = ofile
+    gs.device = device
+    gs.dpi = dpi
+    gs.band = band
+
+    if not gssum.exists(ofile):
+        if gs.process():
+	    try:
+       	        gssum.add_file(ofile)
+    	        os.unlink(ofile)
+    	        print "done."
+            except OSError:
+                print "no output produced."
+        else:
+	    print "error."
+    else:
+	print "exists."
+
+# create the testdatadb
+db = anydbm.open(gsconf.testdatadb, 'c')
+db.close()
+
+files = os.listdir(gsconf.comparefiledir)
+for f in files:
+    if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
+        # mono
+        make_entry(f, 'pbmraw', 72, 0)
+        make_entry(f, 'pbmraw', 72, 1)
+        make_entry(f, 'pbmraw', 300, 0)
+        make_entry(f, 'pbmraw', 300, 1)
+        #make_entry(f, 'pbmraw', 600, 0)
+        #make_entry(f, 'pbmraw', 600, 1)
+
+        # grayscale
+        make_entry(f, 'pgmraw', 72, 0)
+        make_entry(f, 'pgmraw', 72, 1)
+        make_entry(f, 'pgmraw', 300, 0)
+        make_entry(f, 'pgmraw', 300, 1)
+        #make_entry(f, 'pgmraw', 600, 0)
+        #make_entry(f, 'pgmraw', 600, 1)
+
+        # color
+        make_entry(f, 'ppmraw', 72, 0)
+        make_entry(f, 'ppmraw', 72, 1)
+        make_entry(f, 'ppmraw', 300, 0)
+        make_entry(f, 'ppmraw', 300, 1)
+        #make_entry(f, 'ppmraw', 600, 0)
+        #make_entry(f, 'ppmraw', 600, 1)
+
+        # ?
+        make_entry(f, 'pkmraw', 72, 0)
+        make_entry(f, 'pkmraw', 72, 1)
+        make_entry(f, 'pkmraw', 300, 0)
+        make_entry(f, 'pkmraw', 300, 1)
+        #make_entry(f, 'pkmraw', 600, 0)
+        #make_entry(f, 'pkmraw', 600, 1)
+        
+        
+

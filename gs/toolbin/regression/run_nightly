@@ -1,0 +1,58 @@
+#!/usr/bin/env python2.1
+
+import os
+import re
+import time
+import string
+
+# configuration variables
+
+MAIL_SERVER = 'localhost'
+REPORT_EMAIL = 'gs-regression@ghostscript.com'
+#REPORT_EMAIL = 'jack@artifex.com'
+MAIL_FROM = 'jack@meerkat.dimensional.com'
+HEAD_DIR = '/home/jack/HEAD'
+REGRESSION_SCRIPT = '/home/jack/regression/run_regression 2>&1'
+
+
+def sendmail(frm, to, subject, text):
+	import smtplib
+
+	msg = 'From: %s\r\nTo: %s\r\nSubject: %s\r\n\r\n%s' % (frm, to, subject, text)
+
+	server = smtplib.SMTP(MAIL_SERVER)
+	server.sendmail(frm, to, msg)
+	server.quit()
+
+def update_ghostscript():
+	cwd = os.getcwd()
+	os.chdir(HEAD_DIR)
+	
+	if os.system("cvs update -Pd > /dev/null 2> /dev/null") != 0: return -1
+	if os.system("make clean > /dev/null 2> /dev/null") != 0: return -1
+	if os.system("make > /dev/null 2> /dev/null") != 0: return -1
+	if os.system("make install > /dev/null 2> /dev/null") != 0: return -1
+
+	return 0
+
+
+if update_ghostscript() != 0:
+	sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'There was an error updating and building ghostscript from CVS.  Please investigate.')
+	exit(0)
+
+p = os.popen(REGRESSION_SCRIPT)
+if p == None:
+	sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'There was an error updating and building ghostscript from CVS.  Please investigate.')
+	exit(0)
+
+pattern = 'ok$'
+msg = ''
+for line in p.readlines():
+	if re.search(pattern, line):
+		continue
+	msg = msg + line
+	
+p.close()
+
+sendmail(MAIL_FROM, REPORT_EMAIL, 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)
+#sendmail(MAIL_FROM, 'jack@artifex.com', 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)

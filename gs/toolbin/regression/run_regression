@@ -1,0 +1,56 @@
+#!/usr/bin/env python2.1
+#
+# run_regression
+#
+# runs ghostscript regression tests
+
+import unittest, os
+import gsconf, gstest
+
+# get a list of test files
+crashfiles = os.listdir(gsconf.crashfiledir)
+comparefiles = os.listdir(gsconf.comparefiledir)
+
+suite = unittest.TestSuite()
+
+# add crash tests
+#for f in crashfiles:
+#    suite.addTest(gstest.GSCrashTestCase(gs='/home/jack/artifex/gshead/bin/gs', file=gsconf.crashfiledir + f))
+#    suite.addTest(gstest.GSCrashTestCase(gs='/home/jack/artifex/gs65/bin/gs', file=gsconf.crashfiledir + f))
+
+# add compare tests
+for f in comparefiles:
+    if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pbmraw', dpi=72, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pbmraw', dpi=72, band=1))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pbmraw', dpi=300, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pbmraw', dpi=300, band=1))
+#    suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pbmraw', dpi=600, band=0))
+#    suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pbmraw', dpi=600, band=1))
+
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pgmraw', dpi=72, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pgmraw', dpi=72, band=1))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pgmraw', dpi=300, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pgmraw', dpi=300, band=1))
+#    suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pgmraw', dpi=600, band=0))
+#    suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pgmraw', dpi=600, band=1))
+
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='ppmraw', dpi=72, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='ppmraw', dpi=72, band=1))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='ppmraw', dpi=300, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='ppmraw', dpi=300, band=1))
+#    suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='ppmraw', dpi=600, band=0))
+#    suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='ppmraw', dpi=600, band=1))
+
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pkmraw', dpi=72, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pkmraw', dpi=72, band=1))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pkmraw', dpi=300, band=0))
+        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pkmraw', dpi=300, band=1))
+#        suite.addTest(gstest.GSCompareTestCase(gs='/home/jack/gshead/bin/gs', file=gsconf.comparefiledir + f, device='pkmraw', dpi=600, band=0))
+
+
+
+# run all the tests
+runner = gstest.GSTestRunner(verbosity=2)
+result = runner.run(suite)
+
