@@ -463,6 +463,7 @@ pxl_impl_flush_to_eoj(
 	    continue;
 	  if (avail < 9)
 	    break;
+	  cursor->ptr = p;
 	  return 1;  /* found eoj */
 	}
 	cursor->ptr = p;

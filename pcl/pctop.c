@@ -444,23 +444,24 @@ pcl_impl_flush_to_eoj(
 	stream_cursor_read   *cursor           /* data to process */
 )
 {
-	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
-	const byte *p = cursor->ptr;
-	const byte *rlimit = cursor->limit;
+    pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
+    const byte *p = cursor->ptr;
+    const byte *rlimit = cursor->limit;
 
-	/* Skip to, but leave UEL in buffer for PJL to find later */
-	for (; p < rlimit; ++p)
-	  if (p[1] == '\033') {
+    /* Skip to, but leave UEL in buffer for PJL to find later */
+    for (; p < rlimit; ++p)
+	if (p[1] == '\033') {
 	    uint avail = rlimit - p;
 
-	  if (memcmp(p + 1, "\033%-12345X", min(avail, 9)))
-	    continue;
-	  if (avail < 9)
-	    break;
-	  return 1;  /* found eoj */
+	    if (memcmp(p + 1, "\033%-12345X", min(avail, 9)))
+		continue;
+	    if (avail < 9)
+		break;
+	    cursor->ptr = p;
+	    return 1;  /* found eoj */
 	}
-	cursor->ptr = p;
-	return 0;  /* need more */
+    cursor->ptr = p;
+    return 0; /* need more data */
 }
 
 /* Parser action for end-of-file */
@@ -469,10 +470,10 @@ pcl_impl_process_eof(
 	pl_interp_instance_t *instance        /* interp instance to process data job in */
 )
 {
+        int code;
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	pcl_process_init(&pcli->pst);
-
-/* @@@@force restore & cleanup if unexpected data end was encountered */	
+        /* force restore & cleanup if unexpected data end was encountered */
 	return 0;
 }
 
@@ -522,21 +523,14 @@ pcl_impl_remove_device(
 	/* to help with memory leak detection, issue a reset */
 	code = pcl_do_resets(&pcli->pcs, pcl_reset_printer);
 
-	/*@@@ unload built-in sym sets  */
-	/*@@@ undo do_resets */
-
 	/* return to the original graphic state w/color mapper, bbox, target */
 	error = pcl_grestore(&pcli->pcs);
 	/* free the pcl's gstate that mirrors the gs gstate */
 	pcl_free_gstate_stk(&pcli->pcs);
-#define DEVICE_NAME (gs_devicename(gs_currentdevice((pcli->pcs.pgs))))
-	PL_ASSERT(strcmp(DEVICE_NAME, "special color mapper") == 0);
 	if (code >= 0)
 	  code = error;
 	/* return to original gstate w/bbox, target */
 	gs_grestore_no_wraparound(pcli->pcs.pgs);	/* destroys gs_save stack */
-	PL_ASSERT(strcmp(DEVICE_NAME, "bbox") == 0);
-#undef DEVICE_NAME
 	/* Deselect bbox. Bbox has been prevented from auto-closing/deleting */
 	error = gs_nulldevice(pcli->pcs.pgs);
 	if (code >= 0)
@@ -558,7 +552,6 @@ pcl_impl_deallocate_interp_instance(
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	gs_memory_t *mem = pcli->memory;
 
-	/*@@@ Do total deinit of interpreter instance */
 	/* Get rid of permanent and internal objects */
 	if ( pcl_do_resets(&pcli->pcs, pcl_reset_permanent) < 0 )
 	    return -1;
