@@ -392,32 +392,49 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 void
 pdf_set_process_color_model(gx_device_pdf * pdev)
 {
+    /*
+     * The conversion from PS to PDF should be transparent as possible.
+     * Particularly it should not change representation of colors.
+     * Perhaps due to historical reasons the source color information
+     * sometimes isn't accessible from device methods, and
+     * therefore they perform a mapping of colors to 
+     * an output color model. Here we handle some color models,
+     * which were selected almost due to antique reasons.
+     */
     gx_color_index color = 0; /* black */
-    switch (pdev->color_info.num_components) {
-    case 1:
+    if (!strcmp(pdev->color_info.cm_name, "DeviceGray")) {
 	set_dev_proc(pdev, map_rgb_color, gx_default_gray_map_rgb_color);
 	set_dev_proc(pdev, map_color_rgb, gx_default_gray_map_color_rgb);
 	set_dev_proc(pdev, map_cmyk_color, NULL);
-	break;
-    case 3:
+        set_dev_proc(pdev, get_color_mapping_procs, gx_default_DevGray_get_color_mapping_procs);
+        set_dev_proc(pdev, get_color_comp_index, gx_default_DevGray_get_color_comp_index);
+        set_dev_proc(pdev, encode_color, gx_default_gray_map_rgb_color);
+        set_dev_proc(pdev, decode_color, gx_default_gray_map_color_rgb);
+    } else if (!strcmp(pdev->color_info.cm_name, "DeviceRGB")) {
 	set_dev_proc(pdev, map_rgb_color, gx_default_rgb_map_rgb_color);
 	set_dev_proc(pdev, map_color_rgb, gx_default_rgb_map_color_rgb);
 	set_dev_proc(pdev, map_cmyk_color, NULL);
-	break;
-    case 4:
+        set_dev_proc(pdev, get_color_mapping_procs, gx_default_DevRGB_get_color_mapping_procs);
+        set_dev_proc(pdev, get_color_comp_index, gx_default_DevRGB_get_color_comp_index);
+        set_dev_proc(pdev, encode_color, gx_default_rgb_map_rgb_color);
+        set_dev_proc(pdev, decode_color, gx_default_rgb_map_color_rgb);
+    } else if (!strcmp(pdev->color_info.cm_name, "DeviceCMYK")) {
 	set_dev_proc(pdev, map_rgb_color, NULL);
 	set_dev_proc(pdev, map_color_rgb, cmyk_8bit_map_color_rgb);
        /* possible problems with aliassing on next statement */
 	set_dev_proc(pdev, map_cmyk_color, cmyk_8bit_map_cmyk_color);
+        set_dev_proc(pdev, get_color_mapping_procs, gx_default_DevCMYK_get_color_mapping_procs);
+        set_dev_proc(pdev, get_color_comp_index, gx_default_DevCMYK_get_color_comp_index);
+        set_dev_proc(pdev, encode_color, cmyk_8bit_map_cmyk_color);
+        set_dev_proc(pdev, decode_color, cmyk_8bit_map_color_rgb);
         {
             gx_color_value cv[4];
             cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
             cv[3] = frac2cv(frac_1);
             color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
         }
-	break;
-    default:			/* can't happen */
-	DO_NOTHING;
+    } else {	/* can't happen - see the call from gdev_pdf_put_params. */
+ 	DO_NOTHING;
     }
     color_set_pure(&pdev->fill_color, color);
     color_set_pure(&pdev->stroke_color, color);

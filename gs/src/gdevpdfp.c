@@ -340,13 +340,16 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 	    static const char *const pcm_names[] = {
 		"DeviceGray", "DeviceRGB", "DeviceCMYK", 0
 	    };
-	    static const gx_device_color_info pcm_color_info[] = {
+	    static gx_device_color_info pcm_color_info[] = {
 		dci_values(1, 8, 255, 0, 256, 0),
 		dci_values(3, 24, 255, 255, 256, 256),
 		dci_values(4, 32, 255, 255, 256, 256)
 	    };
 	    int pcm = -1;
 
+	    pcm_color_info[0].separable_and_linear = GX_CINFO_SEP_LIN;
+	    pcm_color_info[1].separable_and_linear = GX_CINFO_SEP_LIN;
+	    pcm_color_info[2].separable_and_linear = GX_CINFO_SEP_LIN;
 	    ecode = param_put_enum(plist, "ProcessColorModel", &pcm,
 				   pcm_names, ecode);
 	    if (pcm >= 0) {
