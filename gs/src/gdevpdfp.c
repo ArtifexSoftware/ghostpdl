@@ -18,10 +18,12 @@
 
 /*$Id$ */
 /* Get/put parameters for PDF-writing driver */
-#include "memory_.h"		/* should be first */
+#include "memory_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpdfx.h"
+#include "gdevpdfo.h"
 #include "gsparamx.h"
 
 /*
@@ -113,8 +115,6 @@ private const gs_param_item_t pdf_param_items[] = {
 
   ---- Other functionality ----
 
-  Embed CID fonts
-  Compress TT, CFF, CID/TT, and CID/CFF if CompressPages
   Compress forms, Type 3 fonts, and Cos streams
 
   ---- Image parameters ----
@@ -169,7 +169,6 @@ private const gs_param_item_t pdf_param_items[] = {
   ---- Job-level control ----
 
   ParseDSCComments
-  ParseDSCCommentsForDocInfo
   EmitDSCWarnings
     Require DSC parser / interceptor
   CreateJobTicket
@@ -393,6 +392,41 @@ gdev_pdf_put_params(gx_device * dev, gs_param_list * plist)
 private int
 pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 {
-    /* This is just a place-holder. */
+    /*
+     * The Adobe "Distiller Parameters" documentation says that Distiller
+     * looks at DSC comments, but it doesn't say which ones.  We look at
+     * the ones that we see how to map directly to obvious PDF constructs.
+     */
+    int i;
+
+    if (!pdev->ParseDSCCommentsForDocInfo)
+	return 0;
+    for (i = 0; i + 1 < pma->size; i += 2) {
+	const gs_param_string *pkey = &pma->data[i];
+	const gs_param_string *pvalue = &pma->data[i + 1];
+	const char *key;
+	int code;
+
+	if (pdf_key_eq(pkey, "Creator"))
+	    key = "/Creator";
+	else if (pdf_key_eq(pkey, "CreationDate"))
+	    key = "/CreationDate";
+	else if (pdf_key_eq(pkey, "Title"))
+	    key = "/Title";
+	else if (pdf_key_eq(pkey, "For"))
+	    key = "/Author";
+	else {
+	    /*
+	     * Should handle:
+	     * Orientation, PageOrientation, ViewingOrientation;
+	     * perhaps BoundingBox, PageBoundingBox.
+	     */
+	    continue;
+	}
+	code = cos_dict_put_string(pdev->Info, (const byte *)key,
+				   strlen(key), pvalue->data, pvalue->size);
+	if (code < 0)
+	    return code;
+    }
     return 0;
 }
