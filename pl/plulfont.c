@@ -67,6 +67,7 @@ private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____f.fco",
                                           "mtfonts/pcl45/mt1/wd_____f.fco" };
 #endif
 
+/* GLOBAL Warning! */
 /*
  * Handle for the plugin object and the various font collection objects. The
  * latter is made large enough to hold the largest reasonable case.
