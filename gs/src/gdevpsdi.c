@@ -121,6 +121,7 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
           ( pim->Width < 64 || pim->Height < 64 ) ? lossless_template : &s_DCTE_template;
 	dict = pdip->ACSDict;
     }
+    gs_c_param_list_read(dict);	/* ensure param list is in read mode */
     if (template == 0)	/* no compression */
 	return 0;
     if (pim->Width * pim->Height * Colors * pim->BitsPerComponent <= 160)	/* not worth compressing */
