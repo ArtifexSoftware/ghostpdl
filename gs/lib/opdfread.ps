@@ -1013,13 +1013,25 @@ currentdict end readonly def
   } ifelse
 } bind def
 
+/FunctionToProc4 % <function_dict> FunctionToProc4 <proc>
+{ [ exch
+    //MakeStreamReader
+    /exec load
+    /cvx load
+    /exec load
+  ] cvx
+} bind def
+
 /FunctionToProc1 % <function_dict> FunctionToProc <proc>
 { % Assuming a 1-argument function.
   dup /FunctionType get
   { dup 0 eq {
       pop //FunctionToProc10 exec exit
     } if
-	mark exch (Function type) exch ( isn't implemented yet.) //error exec
+    dup 4 eq {
+      pop //FunctionToProc4 exec exit
+    } if
+    mark exch (Function type ) exch ( isn't implemented yet.) //error exec
   } loop
 } bind def
 
