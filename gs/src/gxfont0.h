@@ -59,10 +59,15 @@ typedef struct gs_type0_data_s {
 
 #define gs_type0_data_max_ptrs 3
 
-typedef struct gs_font_type0_s {
+#ifndef gs_font_type0_DEFINED
+#  define gs_font_type0_DEFINED
+typedef struct gs_font_type0_s gs_font_type0;
+#endif
+
+struct gs_font_type0_s {
     gs_font_common;
     gs_type0_data data;
-} gs_font_type0;
+};
 
 extern_st(st_gs_font_type0);
 #define public_st_gs_font_type0()	/* in gsfont0.c */\
