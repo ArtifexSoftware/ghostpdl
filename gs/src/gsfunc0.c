@@ -843,10 +843,10 @@ clamp_poles(double *T0, double *T1, int ii, int i, double * pole,
     } else if (i == ii) {
 	clamp_poles(T0, T1, ii - 1, i, pole, p_offset, pole_step / 4, pole_step);
     } else {
-	int i, ei = (T0[ii] == T1[ii] ? 1 : 4);
+	int j, ei = (T0[ii] == T1[ii] ? 1 : 4);
 
-	for (i = 0; i < ei; i++)
-	    clamp_poles(T0, T1, ii - 1, i, pole, p_offset + i * pole_step, 
+	for (j = 0; j < ei; j++)
+	    clamp_poles(T0, T1, ii - 1, i, pole, p_offset + j * pole_step, 
 			    pole_step / 4, pole_step_i);
     }
 }
@@ -859,14 +859,14 @@ curve_monotonity(double *pole, int pole_step)
     double p2 = pole[pole_step * 2];
     double p3 = pole[pole_step * 3];
 
-    if (p0 == p1 && p1 == p2 && p2 == p3)
+    if (p0 == p1 && any_abs(p1 - p2) < 1e-13 && p2 == p3)
 	return 0;
     if (p0 <= p1 && p1 <= p2 && p2 <= p3)
 	return 1;
     if (p0 >= p1 && p1 >= p2 && p2 >= p3)
 	return -1;
     /* Maybe not monotonic. 
-       Don't want to solve quadric equations, so return "don't know". 
+       Don't want to solve quadratic equations, so return "don't know". 
        This case should be rare.
      */
     return 2;
@@ -881,10 +881,10 @@ dimension_monotonity(double *T0, double *T1, int ii, int i, double *pole,
     } else if (i == ii) {
 	return dimension_monotonity(T0, T1, ii - 1, i, pole, p_offset, pole_step / 4, pole_step);
     } else {
-	int i, ei = (T0[ii] == T1[ii] ? 1 : 4), m = 0, mm;
+	int j, ei = (T0[ii] == T1[ii] ? 1 : 4), m = 0, mm;
 
-	for (i = 0; i < ei; i++) {
-	    mm = dimension_monotonity(T0, T1, ii - 1, i, pole, p_offset + i * pole_step, 
+	for (j = 0; j < ei; j++) {
+	    mm = dimension_monotonity(T0, T1, ii - 1, i, pole, p_offset + j * pole_step, 
 			    pole_step / 4, pole_step_i);
 	    if (mm == 2)
 		return 2;
@@ -979,6 +979,11 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	    w1 = 0;
 	else if (w1 >= pfn->params.Size[i] - 1)
 	    w1 = (float)pfn->params.Size[i] - 1;
+	if (w0 > w1) {
+	    double w;
+	    
+	    w = w0; w0 = w1; w1 = w;
+	}
 	if ((int)w0 != (int)w1 && ((int)w1 != w1 || (int)w0 + 1 != w1))
 	    return gs_error_undefined; /* not in the same sample */
 #	if POLE_CACHE
