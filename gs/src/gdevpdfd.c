@@ -914,6 +914,7 @@ pdf_setup_masked_image_converter(gx_device_pdf *pdev, gs_memory_t *mem, const gs
     cvd->mask_is_empty = true;
     cvd->mask_is_clean = false;
     cvd->mask = 0;
+    cvd->write_matrix = true;
     code = (*dev_proc(&cvd->mdev, open_device))((gx_device *)&cvd->mdev);
     if (code < 0)
 	return code;
