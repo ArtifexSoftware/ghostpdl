@@ -477,8 +477,7 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
     const uchar *map = cmap->glyph_name_data;
     const int num_codes = cmap->num_codes;
     uint index = penum->index[1], i, j;
-    uchar c0, c1;
-    ushort c2;
+    uchar c0, c1, c2;
 
     /* Warning : this hardcodes gs_cmap_ToUnicode_num_code_bytes = 2 */
     for (i = index; i < num_codes; i++)
@@ -488,9 +487,16 @@ gs_cmap_ToUnicode_next_entry(gs_cmap_lookups_enum_t *penum)
 	return 1;
     c0 = map[i + i + 0];
     c1 = map[i + i + 1];
-    for (j = i + 1, c2 = c1 + 1; j < num_codes; j++, c2++)
-	if (map[j + j + 0] != c0 || (ushort)map[j + j + 1] != c2)
+    for (j = i + 1, c2 = c1 + 1; j < num_codes; j++, c2++) {
+	/* Due to PDF spec, *bfrange boundaries may differ 
+	   in the last byte only. */
+	if (j % 256 == 0)
 	    break;
+	if ((uchar)c2 == 0)
+	    break;
+	if (map[j + j + 0] != c0 || map[j + j + 1] != c2)
+	    break;
+    }
     penum->index[1] = j;
     penum->entry.key[0][0] = (uchar)(i >> 8);
     penum->entry.key[0][cmap->key_size - 1] = (uchar)(i & 0xFF);
