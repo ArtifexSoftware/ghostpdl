@@ -93,7 +93,7 @@ hpgl_map_symbol(uint chr, const hpgl_state_t *pgls)
 private int
 hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr, gs_glyph *pglyph)
 {	const pcl_state_t *pcs = gs_state_client_data(penum->pgs);
-#define pgls pcs		/****** NOTA BENE ******/
+#define pgls pcs
 	int code = hpgl_next_char(penum, pgls, pchr);
 	if ( code )
 	  return code;
@@ -106,18 +106,27 @@ hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr, gs_glyph *pglyph)
 /* ------ Font selection ------- */
 
 /* Select primary (0) or alternate (1) font. */
-#define hpgl_select_font(pgls, i)\
-  do {\
-    if ( (pgls)->g.font_selected != (i) )\
-      (pgls)->g.font_selected = (i), (pgls)->g.font = 0;\
-  } while (0)
+private void
+hpgl_select_font(hpgl_state_t *pgls, int index)
+{
+    if ( pgls->g.font_selected != index ) {
+	pgls->g.font_selected = index;
+	pgls->g.font = 0;
+    }
+    return;
+}
+
+/* forward decl */
+private int hpgl_recompute_font(P1(hpgl_state_t *pgls));
 
 /* Ensure a font is available. */
-#define hpgl_ensure_font(pgls)\
-  do {\
-    if ( (pgls)->g.font == 0 )\
-      hpgl_call(hpgl_recompute_font(pgls));\
-  } while (0)
+private int
+hpgl_ensure_font(hpgl_state_t *pgls) 
+{
+    if ( pgls->g.font == 0 ) 
+	hpgl_call(hpgl_recompute_font(pgls));
+    return 0;
+}
 
 /*
  * The character complement for the stick font is puzzling: it doesn't seem
@@ -178,7 +187,7 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 
 	  id[0] = pfs->params.symbol_set >> 8;
 	  id[1] = pfs->params.symbol_set & 255;
-	  pfs->map = pcl_find_symbol_map(pgls /****** NOTA BENE ******/,
+	  pfs->map = pcl_find_symbol_map(pgls,
 					 id, plgv_Unicode);
 	}
 	return 0;
@@ -208,14 +217,14 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 
 	if ( ((pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE
 	     && pfs->params.style == 0 /* upright */
-	     && hpgl_stick_font_supports(pgls /****** NOTA BENE ******/,
+	     && hpgl_stick_font_supports(pgls,
 					 pfs->params.symbol_set))
 	     /* rtl only has stick fonts */
 	     || ( pgls->personality == rtl )
 	   )
 	  hpgl_call(hpgl_select_stick_font(pgls));
 	else
-	  { int code = pcl_reselect_font(pfs, pgls /****** NOTA BENE ******/);
+	  { int code = pcl_reselect_font(pfs, pgls);
 
 	    if ( code < 0 )
 	      return code;
@@ -298,7 +307,7 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
 		*height *= 0.75;	/****** HACK ******/
 	} else {
 	    /* character size is actually the cap height see 23-6 */
-	    *height = pgls->g.character.size.y;
+	    *height = pgls->g.character.size.y * 1.5;
 	    if (pgls->g.character.size_mode == hpgl_size_relative)
 		*height *= pgls->g.P2.y - pgls->g.P1.y;
 	}
@@ -350,7 +359,7 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
     int nx, ny;
     double dx = 0, dy = 0;
 
-    hpgl_ensure_font(pgls);
+    hpgl_call(hpgl_ensure_font(pgls));
 
     lines *= pgls->g.character.line_feed_direction;
     /* For vertical text paths, we have to swap spaces and lines. */
@@ -376,10 +385,13 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
     }
     if ( ny ) {
 	hpgl_real_t height;
+	pcl_font_selection_t *pfs =
+		&pgls->g.font_selection[pgls->g.font_selected];
 	hpgl_call(hpgl_get_current_cell_height(pgls, &height, true));
-	dy = height * ny;
-	if ( pgls->g.character.size_mode != hpgl_size_not_set )
-	    dy *= 2;
+	if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
+	    dy = ny * height * 1.15;
+	else
+	    dy = ny * height * 1.2;
     }
 
     /*
@@ -614,8 +626,8 @@ hpgl_print_char(
 		    scale.y = -(ratio * inches_2_plu(1.0 / font->resolution.y));
 		}
             } else {
-		scale.x = points_2_plu( pl_fp_pitch_cp(&pfs->params)
-                                        / pl_fp_pitch_cp(&font->params) );
+		scale.x = points_2_plu( pl_fp_pitch_cp(&pfs->params) /
+					pl_fp_pitch_cp(&pfs->font->params) );
                 scale.y = scale.x;
 	    }
 
@@ -624,12 +636,10 @@ hpgl_print_char(
 	     * Note that the CTM takes P1/P2 into account unless
 	     * an absolute character size is in effect.
 	     */
-	    /*
-             * HACKS - I am not sure what this should be the
-             * actual values ??? 
-             */
-	    scale.x = pgls->g.character.size.x * 3.0/2.0 * 3.0/2.0;
-	    scale.y = pgls->g.character.size.y * 3.0/2.0;
+	    /* HP is really scaling the cap height not the point size.
+               We assume point size is 1.5 times the point size */
+	    scale.x = pgls->g.character.size.x * 1.5 * 1.25;
+	    scale.y = pgls->g.character.size.y * 1.5;
 	    if (pgls->g.character.size_mode == hpgl_size_relative)
 		scale.x *= pgls->g.P2.x - pgls->g.P1.x,
 		scale.y *= pgls->g.P2.y - pgls->g.P1.y;
@@ -748,9 +758,17 @@ hpgl_print_char(
             space_code = hpgl_get_char_width(pgls, ' ', &space_width);
 	    if (space_code == 1) {
                 /* Space is a control code. */
-		space_width = pl_fp_pitch_cp(&pfs->params) / 100.0
-                                * points_2_plu(1.0) / scale.x
-                                * (1.0 + pgls->g.character.extra_space.x);
+		if ( pl_font_is_scalable(font) ) {
+		    if (pfs->params.proportional_spacing)
+			space_width = 
+			    (coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)
+					 * pfs->params.height_4ths / 4) ) / scale.x;
+		    else
+			space_width = 1.0; /* NB not sure */
+		} else
+		    space_width =
+			    ( coord_2_plu(pl_fp_pitch_cp(&pfs->font->params)) ) / scale.x;
+		space_width *= (1.0 + pgls->g.character.extra_space.x);
             }
 	}
 
@@ -793,7 +811,6 @@ hpgl_print_char(
 	 * Adjust the final position according to the text path.
 	 */
 	switch (text_path) {
-
 	  case hpgl_text_right:
 	    break;
 
@@ -805,6 +822,11 @@ hpgl_print_char(
                                                          &height,
                                                          true
                                                          ) );
+		/* magic number nonsense */
+		if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
+		    height *= (13.8/16.0);
+		else
+		    height *= (14.375/16.0);
 		hpgl_call( hpgl_add_point_to_path(pgls, start_pt.x, end_pt.y - height / scale.y,
 						  hpgl_plot_move_absolute, false) );
 
@@ -823,7 +845,10 @@ hpgl_print_char(
 							&height,
 							true
 							));
-
+		if ( (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
+		    height *= (13.8/16.0);
+		else
+		    height *= (14.375/16.0);
 		hpgl_call(hpgl_add_point_to_path(pgls, start_pt.x, 
 						 end_pt.y + height / scale.y, hpgl_plot_move_absolute, false));
 	    }
@@ -975,7 +1000,7 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 	  hpgl_real_t width = 0.0, height = 0.0;
 	  int save_index = pgls->g.font_selected;
 	  int i = 0;
-
+	  bool first_char_on_line = true;
 	  while ( i < pgls->g.label.char_count )
 	    {
 	      byte ch = pgls->g.label.buffer[i++];
@@ -985,7 +1010,7 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		{
 		case BS :
 		  if ( width == 0.0 ) /* BS as first char of string */
-		    { hpgl_ensure_font(pgls);
+		    { hpgl_call(hpgl_ensure_font(pgls));
 		      hpgl_get_char_width(pgls, ' ', &width);
 		      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		    }
@@ -1003,13 +1028,14 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		    }
 		  continue;
 		case LF :
-		  continue;
+		    first_char_on_line = true;
+		    continue;
 		case CR :
 		  continue;
 		case FF :
 		  continue;
 		case HT :
-		  hpgl_ensure_font(pgls);
+		  hpgl_call(hpgl_ensure_font(pgls));
 		  hpgl_get_char_width(pgls, ' ', &width);
 		  width *= 5;
 		  goto acc_ht;
@@ -1022,14 +1048,24 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 		default :
 		  break;
 		}
-	      hpgl_ensure_font(pgls);
+	      hpgl_call(hpgl_ensure_font(pgls));
 	      hpgl_get_char_width(pgls, ch, &width);
 acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 	      if ( vertical )
 		{ /* Vertical text path: sum heights, take max of widths. */
-		  if ( width > label_length )
-		    label_length = width;
-		  label_height += height;
+		    const pcl_font_selection_t *    pfs =
+			&pgls->g.font_selection[pgls->g.font_selected];
+		    if ( !pfs->params.proportional_spacing &&
+			 (pfs->params.typeface_family & 0xfff) == STICK_FONT_TYPEFACE )
+			height *= (13.80/16.0);
+		    else
+			height *= (14.375/16.0);
+		    if ( width > label_length )
+			label_length = width;
+		    if ( !first_char_on_line )
+			label_height += height;
+		    else
+			first_char_on_line = false;
 		}
 	      else
 		{ /* Horizontal text path: sum widths, take max of heights. */
@@ -1084,11 +1120,44 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 		       * computed label (horizontal) width, not the width
 		       * of a space.
 		       */
-		      if ( vertical )
-			{ hpgl_move_cursor_by_characters(pgls, 0, -1,
-							 &label_length);
+		      if ( vertical ) { 
+			  const pcl_font_selection_t *    pfs =
+			      &pgls->g.font_selection[pgls->g.font_selected];
+			  hpgl_real_t label_advance;
+			  /* Handle size. */
+			  if (pgls->g.character.size_mode == hpgl_size_not_set) {
+
+			      /* Scale fixed-width fonts by pitch, variable-width by height. */
+			      if (pfs->params.proportional_spacing) {
+				  if (pl_font_is_scalable(pfs->font))
+				      label_advance = points_2_plu(pfs->params.height_4ths / 4.0);
+				  else {
+				      double  ratio = (double)pfs->params.height_4ths
+					  / pfs->font->params.height_4ths;
+				      label_advance = ratio * inches_2_plu(1.0 / pfs->font->resolution.x);
+				  }
+			      } else
+				  label_advance = points_2_plu( pl_fp_pitch_cp(&pfs->params) /
+								pl_fp_pitch_cp(&pfs->font->params) );
+			  } else {
+			      /*
+			       * Note that the CTM takes P1/P2 into account unless
+			       * an absolute character size is in effect.
+			       *
+			       *
+			       * HACKS - I am not sure what this should be the
+			       * actual values ??? 
+			       */
+			      label_advance = pgls->g.character.size.x * 1.5 * 1.25;
+			      if (pgls->g.character.size_mode == hpgl_size_relative)
+				  label_advance *= pgls->g.P2.x - pgls->g.P1.x;
+			      if (pgls->g.bitmap_fonts_allowed)    /* no mirroring */
+				  label_advance = fabs(label_advance);
+			  }
+			  hpgl_move_cursor_by_characters(pgls, 0, -1,
+							 &label_advance);
 			  continue;
-			}
+		      }
 		      spaces = 0, lines = -1;
 		      break;
 		    case CR :
@@ -1115,7 +1184,7 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 						 (const hpgl_real_t *)0);
 		  continue;
 		}
-print:	      hpgl_ensure_font(pgls);
+print:	      hpgl_call(hpgl_ensure_font(pgls));
 	      hpgl_call(hpgl_print_char(pgls, ch));
 	    }
 	}
