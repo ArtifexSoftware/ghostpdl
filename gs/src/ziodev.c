@@ -33,6 +33,7 @@
 #include "files.h"
 #include "scanchar.h"		/* for char_EOL */
 #include "store.h"
+#include "errors.h"
 
 /* Import the dtype of the stdio IODevices. */
 extern const char iodev_dtype_stdio[];
@@ -251,6 +252,8 @@ sc:
 	code = scan_token(i_ctx_p, ts, &ignore_value, &state);
 	ref_stack_pop_to(&o_stack, depth);
 	switch (code) {
+	    case e_undefined:
+		code = 0;	/* ignore undefined //name */
 	    case 0:		/* read a token */
 	    case scan_BOS:
 		goto sc;	/* keep going until we run out of data */

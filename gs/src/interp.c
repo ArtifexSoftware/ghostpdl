@@ -1302,6 +1302,8 @@ remap:		    if (iesp + 2 >= estop) {
 			SET_IREF(&token);
 			icount = 0;
 			goto top;
+		    case e_undefined:	/* //name undefined */
+			return_with_error(code, &token);
 		    case scan_EOF:	/* end of file */
 			esfile_clear_cache();
 			goto bot;
