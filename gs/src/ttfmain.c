@@ -456,7 +456,7 @@ private void MoveGlyphOutline(TGlyph_Zone *pts, int nOffset, ttfGlyphOutline *ou
     short count = out->pointCount;
     F26Dot6Point p;
 
-    if (m->a != 65536 && m->b == 0 && 
+    if (m->a == 65536 && m->b == 0 && 
 	m->c == 0 && m->d == 65536 && 
 	m->tx == 0 && m->ty == 0)
 	return;
@@ -574,7 +574,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	    }
 	    flags = ttfReader__UShort(r);
 	    index = ttfReader__UShort(r);
-	    bHaveInstructions |= (flags&WE_HAVE_INSTRUCTIONS);
+	    bHaveInstructions |= (flags & WE_HAVE_INSTRUCTIONS);
 	    if (flags & ARG_1_AND_2_ARE_WORDS) {
 		arg1 = ttfReader__Short(r);
 		arg2 = ttfReader__Short(r);
@@ -652,8 +652,8 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		e->m.tx = Scale_X( &exec->metrics, e->arg1 ) << 10;
 		e->m.ty = Scale_Y( &exec->metrics, e->arg2 ) << 10;
             } else {
-		e->m.tx = (pts->org_x[nPointsStored + e->arg1] - pts->org_x[nPointsStored + e->arg2]) << 10;
-		e->m.ty = (pts->org_y[nPointsStored + e->arg1] - pts->org_y[nPointsStored + e->arg2]) << 10;
+		e->m.tx = (pts->org_x[e->arg1] - pts->org_x[e->arg2]) << 10;
+		e->m.ty = (pts->org_y[e->arg1] - pts->org_y[e->arg2]) << 10;
             }
 	    MoveGlyphOutline(pts, nPointsStored, &out, &e->m);
 	    for (j = nContoursStored; j < out.contourCount + nContoursStored; j++)
