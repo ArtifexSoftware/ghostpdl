@@ -1175,27 +1175,30 @@ end
   } if pop pop
 } bdef
 
-%
 %  For stamp object we have to determine the size of the output rectangle
 %  and the size of the BBox for the stamp image.  From these we calculate
 %  a scale factor for drawing the stamp.
-%
 /calcstampscale {		% <annot> calcstampscale scale
-  dup annotrect 4 -2 roll pop pop pop	% get x width
-  dup 0 lt { neg } if		% get magnitude
-  exch /AP knownoget {
+  dup annotrect 4 -2 roll pop pop	 % get width height size in user space
+  3 -1 roll /AP knownoget {
     /N knownoget {
+      dup /Matrix knownoget {
+	% transform /Annot /Rect xwidth to Form space
+	4 -2 roll 3 -1 roll dtransform 3 -1 roll
+      } if
       /BBox knownoget {
-         aload pop 4 -2 roll pop pop pop
-         div
+        exch pop	% discard y height
+        aload pop pop exch pop sub	% BBox width
+	div		% scale x widths
+	dup 0 lt { neg } if		% get magnitude
       } {
-        pop 1			% default to unity scaling
+        pop pop 1		% default to unity scaling
       } ifelse			% if we have /BBox
     } {
-      pop 1
+      pop pop 1
     } ifelse			% if we have /N
   } {
-    pop 1
+    pop pop 1
   } ifelse			% if we have /AP
 } bdef
 
