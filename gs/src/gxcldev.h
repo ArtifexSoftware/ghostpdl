@@ -61,7 +61,7 @@ void clist_cfd_init(stream_CFD_state *ss, int width, int height,
 typedef enum {
     cmd_op_misc = 0x00,		/* (see below) */
     cmd_opv_end_run = 0x00,	/* (nothing) */
-    cmd_opv_set_tile_size = 0x01,	/* rs?(1)nry?(1)nrx?(1)depth-1(5), */
+    cmd_opv_set_tile_size = 0x01,   /* rs?(1)nry?(1)nrx?(1)depth(5, encoded), */
 				/* rep_width#, rep_height#, */
 				/* [, nreps_x#][, nreps_y #] */
 				/* [, rep_shift#] */
@@ -168,6 +168,22 @@ typedef struct {
 
 #define cmd_min_dxy_tiny (-8)
 #define cmd_max_dxy_tiny 7
+
+/*
+ * Encoding for tile depth information.
+ *
+ * The cmd_opv_set_tile_size command code stores tile depth information
+ * as part of the first byte following the command code. Only 5 bits of
+ * this byte are available, which held the value depth - 1. The DeviceN
+ * code requires depths of > 32 bits, so a new encoding is required. The
+ * encoding selected represents depth information either directly (for
+ * depth <= 15), or as a multiple of 8. The high-order bit determines
+ * which is the case; it is cleared if the depth is represented directly,
+ * and set if the depth is represented as a multiple of 8.
+ */
+#define cmd_depth_to_code(d)    ((d) > 0xf ? 0x10 | ((d) >> 3) : (d))
+#define cmd_code_to_depth(v)    \
+    (((v) & 0x10) != 0 ? ((v) & 0xf) << 3 : (v) & 0xf)
 
 /*
  * When we write bitmaps, we remove raster padding selectively:

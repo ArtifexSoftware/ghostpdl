@@ -1534,7 +1534,7 @@ read_set_tile_size(command_buf_t *pcb, tile_slot *bits)
     uint rep_width, rep_height;
     byte bd = *cbp++;
 
-    bits->cb_depth = (bd & 31) + 1;
+    bits->cb_depth = cmd_code_to_depth(bd);
     cmd_getw(rep_width, cbp);
     cmd_getw(rep_height, cbp);
     if (bd & 0x20) {

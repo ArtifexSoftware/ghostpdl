@@ -254,7 +254,7 @@ cmd_store_tile_params(byte * dp, const gx_strip_bitmap * tile, int depth,
 		      uint csize)
 {
     byte *p = dp + 2;
-    byte bd = depth - 1;
+    byte bd = cmd_depth_to_code(depth);
 
     *dp = cmd_count_op(cmd_opv_set_tile_size, csize);
     p = cmd_put_w(tile->rep_width, p);
