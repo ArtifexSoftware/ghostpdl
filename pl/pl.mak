@@ -44,8 +44,6 @@ $(PLSRC)plver.h: $(PLSRC)pl.mak
 	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -n -x 23 "define PJLBUILDDATE"
 	$(GLGEN)echogs$(XE) -e .h -a $(PLSRC)plver -s -x 22 -d -x 22
 
-
-
 # Currently we only parse PJL enough to detect UELs.
 
 pjparse_h=$(PLSRC)pjparse.h
@@ -179,6 +177,9 @@ $(PLOBJ)plvocab.$(OBJ): $(PLSRC)plvocab.c $(AK) $(stdpre_h)\
  $(plvocab_h)
 	$(PLCCC) $(PLSRC)plvocab.c $(PLO_)plvocab.$(OBJ)
 
+$(PLOBJ)plalloc.$(OBJ): $(PLSRC)plalloc.c $(AK) $(malloc_.h) $(plalloc.h)
+	$(PLCCC) $(PLSRC)plalloc.c $(PLO_)plalloc.$(OBJ)
+
 # freetype font loading module.
 $(PLOBJ)plflfont.$(OBJ): $(PLSRC)plflfont.c $(PLSRC)pllfont.h $(AK) $(string__h)\
 	$(gx_h) $(gp_h) $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
@@ -200,7 +201,8 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK) $(string__h)\
 pl_obj1=$(PLOBJ)plchar.$(OBJ) $(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plfont.$(OBJ)
 pl_obj2=$(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pllfont.$(OBJ)
 pl_obj3=$(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ) $(PLOBJ)plplatf.$(OBJ)
-pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3)
+pl_obj4=$(PLOBJ)plalloc.$(OBJ)
+pl_obj=$(pl_obj1) $(pl_obj2) $(pl_obj3) $(pl_obj4)
 
 # generic artifex font device.
 $(PLOBJ)afs.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj1) $(pl_obj2)
@@ -222,8 +224,11 @@ $(PLOBJ)fts.dev: $(PL_MAK) $(ECHOGS_XE) $(PLOBJ)plfchar.$(OBJ) $(PLOBJ)pldict.$(
 	$(ADDMOD) $(PLOBJ)fts -link $(FT_LIBDIRS)
 	$(ADDMOD) $(PLOBJ)fts -lib $(FT_LIBS)
 
-$(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj3)
-	$(SETMOD) $(PLOBJ)pl $(pl_obj3)
+$(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
+	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
+	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
+	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
+	$(ADDMOD) $(PLOBJ)pl $(pl_obj4)
 
 ###### Command-line driver's main program #####
 
