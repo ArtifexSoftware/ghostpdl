@@ -625,8 +625,8 @@ gdevpsdf_h=$(GLSRC)gdevpsdf.h $(gdevvec_h) $(gsparam_h)\
  $(sa85x_h) $(scfx_h) $(spsdf_h) $(strimpl_h)
 gdevpsds_h=$(GLSRC)gdevpsds.h $(strimpl_h)
 
-psdf_1=$(GLOBJ)gdevpsdf.$(OBJ) $(GLOBJ)gdevpsdi.$(OBJ)
-psdf_2=$(GLOBJ)gdevpsdp.$(OBJ) $(GLOBJ)gdevpsds.$(OBJ)
+psdf_1=$(GLOBJ)gdevpsdi.$(OBJ) $(GLOBJ)gdevpsdp.$(OBJ)
+psdf_2=$(GLOBJ)gdevpsds.$(OBJ) $(GLOBJ)gdevpsdu.$(OBJ)
 psdf_3=$(GLOBJ)scfparam.$(OBJ) $(GLOBJ)sdcparam.$(OBJ) $(GLOBJ)sdeparam.$(OBJ)
 psdf_4=$(GLOBJ)spprint.$(OBJ) $(GLOBJ)spsdf.$(OBJ) $(GLOBJ)sstring.$(OBJ)
 psdf_=$(psdf_1) $(psdf_2) $(psdf_3) $(psdf_4)
@@ -640,12 +640,6 @@ $(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(psdf_inc)
 	$(ADDMOD) $(DD)psdf -obj $(psdf_4)
 	$(ADDMOD) $(DD)psdf -include $(psdf_inc1)
 	$(ADDMOD) $(DD)psdf -include $(psdf_inc2)
-
-$(GLOBJ)gdevpsdf.$(OBJ) : $(GLSRC)gdevpsdf.c $(GXERR) $(memory__h)\
- $(gxfont_h)\
- $(sa85x_h) $(scanchar_h) $(scfx_h) $(sstring_h) $(strimpl_h)\
- $(gdevpsdf_h) $(spprint_h)
-	$(GLCC) $(GLO_)gdevpsdf.$(OBJ) $(C_) $(GLSRC)gdevpsdf.c
 
 $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
  $(math__h) $(jpeglib__h)\
@@ -664,6 +658,12 @@ $(GLOBJ)gdevpsdp.$(OBJ) : $(GLSRC)gdevpsdp.c $(GDEVH)\
 $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
  $(gdevpsds_h) $(gserrors_h) $(gxdcconv_h)
 	$(GLCC) $(GLO_)gdevpsds.$(OBJ) $(C_) $(GLSRC)gdevpsds.c
+
+$(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR) $(memory__h)\
+ $(gxfont_h)\
+ $(sa85x_h) $(scanchar_h) $(scfx_h) $(sstring_h) $(strimpl_h)\
+ $(gdevpsdf_h) $(spprint_h)
+	$(GLCC) $(GLO_)gdevpsdu.$(OBJ) $(C_) $(GLSRC)gdevpsdu.c
 
 # Support for PostScript and PDF font writing
 
