@@ -96,9 +96,10 @@ pl_alloc(gs_memory_t * mem, uint size, gs_memory_type_ptr_t type, client_name_t 
 	set_type(ptr, type);
 	set_size(ptr, size);
 	/* initialize for debugging */
+#ifdef DEBUG
 	if ( gs_debug_c('@') )
 	    memset(&ptr[minsize * 2], 0xff, get_size(&ptr[minsize * 2]));
-
+#endif
 	/* return the memory after the size and type words. */
 	return &ptr[minsize * 2];
     }
@@ -189,8 +190,10 @@ pl_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
     if ( ptr != NULL ) {
 	byte *bptr = (byte *)ptr;
 	uint header_size = round_up_to_align(1) + round_up_to_align(1);
+#ifdef DEBUG
 	if ( gs_debug_c('@') )
 	    memset(&bptr[-header_size], 0xee, header_size + get_size(ptr));
+#endif
 	free(&bptr[-header_size]);
 	/* da for debug allocator - so scripts can parse the trace */
 	if_debug2('A', "[da]:free:%x:%s\n", ptr, cname );
