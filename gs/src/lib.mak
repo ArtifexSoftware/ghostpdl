@@ -868,6 +868,14 @@ $(GLOBJ)gdevalph.$(OBJ) : $(GLSRC)gdevalph.c $(GXERR) $(memory__h)\
 
 ### Other built-in devices
 
+# The bbox device can either be used as forwarding device to support
+# graphics functions, or it can be a real target device. We create
+# the bboxutil.dev pseudo device to allow inclusion without putting
+# the bbox device on the list of devices.
+
+$(GLD)bboxutil.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ)
+	$(ADDMOD) $(GLD)bboxutil $(GLOBJ)gdevbbox.$(OBJ)
+
 $(GLD)bbox.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevbbox.$(OBJ)
 	$(SETDEV2) $(GLD)bbox $(GLOBJ)gdevbbox.$(OBJ)
 
@@ -1541,9 +1549,9 @@ gdevvec_h=$(GLSRC)gdevvec.h $(gdevbbox_h) $(gp_h)\
 
 vector_=$(GLOBJ)gdevvec.$(OBJ)
 $(GLD)vector.dev : $(LIB_MAK) $(ECHOGS_XE) $(vector_)\
- $(GLD)bbox.dev $(GLD)sfile.dev
+ $(GLD)bboxutil.dev $(GLD)sfile.dev
 	$(SETMOD) $(GLD)vector $(vector_)
-	$(ADDMOD) $(GLD)vector -include $(GLD)bbox $(GLD)sfile
+	$(ADDMOD) $(GLD)vector -include $(GLD)bboxutil $(GLD)sfile
 
 $(GLOBJ)gdevvec.$(OBJ) : $(GLSRC)gdevvec.c $(GXERR)\
  $(math__h) $(memory__h) $(string__h)\
@@ -1852,7 +1860,7 @@ $(GLOBJ)gstype2.$(OBJ) : $(GLSRC)gstype2.c $(GXERR) $(math__h) $(memory__h)\
 gdevpsf_h=$(GLSRC)gdevpsf.h $(gsccode_h) $(gsgdata_h)
 
 psf_1=$(GLOBJ)gdevpsf1.$(OBJ) $(GLOBJ)gdevpsf2.$(OBJ) $(GLOBJ)gdevpsfm.$(OBJ)
-psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ)
+psf_2=$(GLOBJ)gdevpsft.$(OBJ) $(GLOBJ)gdevpsfu.$(OBJ) $(GLOBJ)gdevpsfx.$(OBJ) $(GLOBJ)spsdf.$(OBJ)
 psf_=$(psf_1) $(psf_2)
 $(DD)psf.dev : $(LIB_MAK) $(ECHOGS_XE) $(psf_)
 	$(SETMOD) $(DD)psf $(psf_1)
@@ -2228,11 +2236,11 @@ $(GLOBJ)gdevp14.$(OBJ) : $(GLSRC)gdevp14.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gdevp14.$(OBJ) $(C_) $(GLSRC)gdevp14.c
 
 translib_=$(GLOBJ)gstrans.$(OBJ) $(GLOBJ)gximag3x.$(OBJ)\
- $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gdevp14.$(OBJ)
-$(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_) $(GLD)cspixlib.dev
+ $(GLOBJ)gxblend.$(OBJ) $(GLOBJ)gdevp14.$(OBJ) 
+$(GLD)translib.dev : $(LIB_MAK) $(ECHOGS_XE) $(translib_) $(GLD)cspixlib.dev $(GLD)bboxutil.dev
 	$(SETMOD) $(GLD)translib $(translib_)
 	$(ADDMOD) $(GLD)translib -imagetype 3x
-	$(ADDMOD) $(GLD)translib -include $(GLD)cspixlib
+	$(ADDMOD) $(GLD)translib -include $(GLD)cspixlib $(GLD)bboxutil
 
 # ---------------- Smooth shading ---------------- #
 

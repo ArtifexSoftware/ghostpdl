@@ -425,11 +425,11 @@ gdevx_h=$(GLSRC)gdevx.h $(gdevbbox_h) $(gdevxcmp_h)
 x11_=$(GLOBJ)gdevx.$(OBJ) $(GLOBJ)gdevxcmp.$(OBJ) $(GLOBJ)gdevxini.$(OBJ)\
  $(GLOBJ)gdevxres.$(OBJ) $(GLOBJ)gdevxxf.$(OBJ)\
  $(GLOBJ)gdevemap.$(OBJ) $(GLOBJ)gsparamx.$(OBJ)
-$(DD)x11_.dev : $(DEVS_MAK) $(x11_) $(GLD)bbox.dev
+$(DD)x11_.dev : $(DEVS_MAK) $(x11_) $(GLD)bboxutil.dev
 	$(SETMOD) $(DD)x11_ $(x11_)
 	$(ADDMOD) $(DD)x11_ -link $(XLIBDIRS)
 	$(ADDMOD) $(DD)x11_ -lib $(XLIBS)
-	$(ADDMOD) $(DD)x11_ -include $(GLD)bbox
+	$(ADDMOD) $(DD)x11_ -include $(GLD)bboxutil
 
 $(DD)x11.dev : $(DEVS_MAK) $(DD)x11_.dev
 	$(SETDEV2) $(DD)x11 -include $(DD)x11_
@@ -1227,7 +1227,7 @@ $(GLOBJ)gdevpnga.$(OBJ) : $(GLSRC)gdevpnga.c\
 ###   format.  They also can convert big, complex color PostScript files  ###
 ###   to (often) smaller and more easily printed bitmaps.                 ###
 
-psim_=$(GLOBJ)gdevpsim.$(OBJ)
+psim_=$(GLOBJ)gdevpsim.$(OBJ) $(GLOBJ)gdevpsu.$(OBJ)
 
 $(GLOBJ)gdevpsim.$(OBJ) : $(GLSRC)gdevpsim.c $(PDEVH)\
  $(gdevpsu_h)\
