@@ -251,6 +251,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	if (piw->data == 0)
 	    return_error(gs_error_VMerror);
 	piw->end_string = " Q";
+        pdev->strm = pdev->streams.strm;
     } else {
 	pdf_x_object_t *pxo;
 	cos_stream_t *pcos;
@@ -276,9 +277,11 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	/* Initialize data_height for the benefit of copy_{mono,color}. */
 	pxo->data_height = h;
 	piw->data = pcos;
+        pdev->strm = cos_write_stream_alloc(pcos, pdev, "pdf_begin_write_image");
+	if (pdev->strm == 0)
+	    return_error(gs_error_VMerror);
     }
     piw->height = h;
-    pdev->strm = pdev->streams.strm;
     code = psdf_begin_binary((gx_device_psdf *) pdev, &piw->binary);
     pdev->strm = save_strm;
     return code;

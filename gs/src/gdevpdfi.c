@@ -480,8 +480,6 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     uint ignore;
     int nplanes = pie->num_planes;
     stream *s = pdev->streams.strm;
-    long pos = stell(s);
-    int code;
     int status = 0;
 
     if (h > pie->rows_left)
@@ -540,8 +538,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     *rows_used = h;
     if (status < 0)
 	return_error(gs_error_ioerror);
-    code = cos_stream_add_since(pie->writer.data, pos);
-    return (code < 0 ? code : !pie->rows_left);
+    return !pie->rows_left;
 #undef ROW_BYTES
 }
 
