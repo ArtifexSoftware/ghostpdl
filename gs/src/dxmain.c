@@ -779,10 +779,11 @@ int main(int argc, char *argv[])
     char dformat[64];
     int flags;
     int exit_code;
+    gboolean use_gui;
 
     /* Gtk initialisation */
     gtk_set_locale();
-    gtk_init (&argc, &argv);
+    use_gui = gtk_init_check(&argc, &argv);
 
     /* set stdin to non-blocking */
     flags = fcntl(fileno(stdin), F_GETFL, 0);
@@ -802,7 +803,8 @@ int main(int argc, char *argv[])
     /* run Ghostscript */
     if ((code = gsapi_new_instance(&instance, NULL)) == 0) {
         gsapi_set_stdio(instance, gsdll_stdin, gsdll_stdout, gsdll_stderr);
-        gsapi_set_display_callback(instance, &display);
+	if (use_gui)
+            gsapi_set_display_callback(instance, &display);
 	code = gsapi_init_with_args(instance, nargc, nargv);
 
 	if (code == 0)
