@@ -21,12 +21,9 @@
 #include "stdio_.h"		/* for FILE for jpeglib.h */
 #include "jpeglib_.h"		/* for sdct.h */
 #include "memory_.h"
-#include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gserrors.h"
 #include "gdevpsdf.h"
-#include "gxfont.h"
-#include "scanchar.h"
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
