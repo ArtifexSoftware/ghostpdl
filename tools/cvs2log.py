@@ -100,12 +100,12 @@ def ChangeLogFileRevDesc(entry_dict, indent, line_length):
 	    # NB do a better wrapping job.
 	    if pos > line_length:
 		change_log_entry = change_log_entry + '\n' + leading_space
-		pos = 0
+		pos = len(leading_space)
 	    change_log_entry = change_log_entry + rcs_file + ' [' + revision + ']' + ', '
 	    pos = pos + len(rcs_file + ' [' + revision + ']' + ', ')
 	# replace last ', ' with a semicolon - strings are immutable so
 	# an inplace assignment won't do.
-	change_log_entry = change_log_entry[:-2] + ':\n\n'
+	change_log_entry = change_log_entry[:-2] + ':\n'
 	# add on the current description
 	change_log_entry = change_log_entry + description + '\n'
     return change_log_entry
@@ -124,11 +124,11 @@ def BuildLog(log_date_command):
 	    if description != []:
 		# append these items in the sort order we'll want later on.
 		log.append(RcsDate2CtimeTuple(date), author, description,
-			   rcs_file[len(GetCVSRepository()):-3], revision[:-1])
+			   rcs_file[:-1], revision[:-1])
 	    reading_description = 0
 	    description = []
-	elif not reading_description and line[:len("RCS file: ")] == "RCS file: ":
-	    rcs_file = line[len("RCS file: "):]
+	elif not reading_description and line[:len("Working file: ")] == "Working file: ":
+	    rcs_file = line[len("Working file: "):]
 	elif not reading_description and line[:len("revision ")] == "revision ":
 	    revision = line[len("revision "):]
 	elif not reading_description and line[:len("date: ")] == "date: ":
@@ -171,7 +171,7 @@ def main():
 	sys.exit(2)
     indent=8
     hostname=socket.gethostbyaddr(socket.gethostname())[1][0]
-    length=79
+    length=63
     user=0
     recursive=0
     tabwidth=8
@@ -197,7 +197,6 @@ def main():
     # we get all dates later than the logfile.
     if logfile:
 	date_option = "'" + "-d>" + time.asctime(LastLogDate2CtimeTuple(logfile)) + "'"
-
     log_date_command= 'cvs -d ' + GetCVSRepository() + ' -Q log -N ' + date_option
     # build the logs.
     log = BuildLog(log_date_command)
