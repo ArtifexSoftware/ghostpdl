@@ -241,7 +241,7 @@ void gx_set_effective_transfer(gs_state * pgs);
  *
  * A negative value is returned if the color name is not found.
  */
-int gs_color_name_component_number(const gx_device * dev, char * pname,
+int gs_color_name_component_number(const gx_device * dev, const char * pname,
 				int name_size, int halftonetype);
 /*
  * See gs_color_name_component_number for main description.

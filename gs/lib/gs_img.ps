@@ -571,7 +571,8 @@ if
                 % should be used.
                 %
                 % The mechanism to determine depth for the DevicePixel
-                % color space is somewhat of a hack.
+                % color space when BitsPerPixel is not available is 
+                % somewhat of a hack.
                 %
                 gsave
                 0 .setoverprintmode     % disable overprintmode for images
@@ -581,15 +582,15 @@ if
                   {
                       [
                         /DevicePixel
-                        currentpagedevice dup /ColorValues .knownget
+                        currentpagedevice dup /BitsPerPixel .knownget
                           { exch pop }
                           {
                             /GrayValues .knownget not
                               { 2 }     % try a guess
                             if
+                            ln 2 ln div round cvi
                           }
-                        if
-                        ln 2 ln div round cvi
+                        ifelse
                       ]
                   }
                   { /DeviceRGB }

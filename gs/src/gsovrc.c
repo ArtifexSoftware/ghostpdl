@@ -55,6 +55,67 @@ gs_private_st_simple(st_overprint, gs_overprint_t, "gs_overprint_t");
 
 
 /*
+ * Utility routine for encoding or decoding a color index. We cannot use
+ * the general integer encoding routins for these, as they may be 64 bits
+ * in length (the general routines are only designed for 32 bits). We also
+ * cannot use the color-specific routines, as we do not have the required
+ * device color information available.
+ *
+ * The scheme employed is the potentially 64-bit analog of the 32-bit
+ * routines: the low order seven bits of each bytes represents a base-128
+ * digit, and the high order bit is set if there is another digit. The
+ * encoding order is little-endian.
+ *
+ * The write routine returns 0 on success, with *psize set to the number
+ * of bytes used. Alternatively, the return value will be gs_error_rangecheck,
+ * with *psize set to the number of bytes required, if there was insufficient
+ * space.
+ *
+ * The read routine returns the number of bytes read on success, or < 0 in
+ * the event of an error.
+ */
+private int
+write_color_index(gx_color_index cindex, byte * data, uint * psize)
+{
+    int             num_bytes = 0;
+    gx_color_index  ctmp = cindex;
+
+    for (num_bytes = 1; (ctmp >>= 7) != 0; ++num_bytes)
+        ;
+    if (num_bytes > *psize) {
+        *psize = num_bytes;
+        return gs_error_rangecheck;
+    }
+    ctmp = cindex;
+    *psize = num_bytes;
+    for (; num_bytes > 1; ctmp >>= 7, --num_bytes)
+        *data++ = 0x80 | (ctmp & 0x7f);
+    *data = ctmp & 0x7f;
+    return 0;
+}
+
+private int
+read_color_index(gx_color_index * pcindex, const byte * data, uint size)
+{
+    gx_color_index  cindex = 0;
+    int             nbytes = 0, shift = 0;
+
+    for (;; shift += 7, data++) {
+        if (++nbytes > size)
+            return_error(gs_error_rangecheck);
+        else {
+            int     c = *data;
+
+            cindex += (c & 0x7f) << shift;
+            if ((c & 0x80) == 0)
+                break;
+        }
+    }
+    *pcindex = cindex;
+    return nbytes;
+}
+
+/*
  * Check for equality of two overprint compositor objects.
  *
  * This is fairly simple.
@@ -70,13 +131,10 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
         pparams1 = &((const gs_overprint_t *)(pct1))->params;
         if (!pparams0->retain_any_comps)
             return !pparams1->retain_any_comps;
-        if ( pparams0->retain_spot_comps != pparams1->retain_spot_comps    ||
-             pparams0->retain_zeroed_comps != pparams1->retain_zeroed_comps  )
-            return false;
-        if (!pparams0->retain_spot_comps && !pparams0->retain_zeroed_comps)
-            return pparams0->drawn_comps == pparams1->drawn_comps;
+        else if (pparams0->retain_spot_comps)
+            return pparams1->retain_spot_comps;
         else
-            return true;
+            return pparams0->drawn_comps == pparams1->drawn_comps;
     } else
         return false;
 }
@@ -87,7 +145,6 @@ c_overprint_equal(const gs_composite_t * pct0, const gs_composite_t * pct1)
  */
 #define OVERPRINT_ANY_COMPS     1
 #define OVERPRINT_SPOT_COMPS    2
-#define OVERPRINT_ZEROED_COMPS  4
 
 /*
  * Convert an overprint compositor to string form for use by the command
@@ -103,18 +160,20 @@ c_overprint_write(const gs_composite_t * pct, byte * data, uint * psize)
     /* encoded the booleans in a single byte */
     if (pparams->retain_any_comps) {
         flags |= OVERPRINT_ANY_COMPS;
-        if (pparams->retain_spot_comps)
-            flags |= OVERPRINT_SPOT_COMPS;
-        if (pparams->retain_zeroed_comps)
-            flags |= OVERPRINT_ZEROED_COMPS;
 
         /* write out the component bits only if necessary (and possible) */
-        if ( !pparams->retain_spot_comps                    &&
-             !pparams->retain_zeroed_comps                  &&
-             (used += sizeof(pparams->drawn_comps)) <= avail  )
-            memcpy( data + 1,
-                    &pparams->drawn_comps,
-                    sizeof(pparams->drawn_comps) );
+        if (pparams->retain_spot_comps)
+            flags |= OVERPRINT_SPOT_COMPS;
+        else {
+            uint    tmp_size = (avail > 0 ? avail - 1 : 0);
+            int     code = write_color_index( pparams->drawn_comps,
+                                              data + 1,
+                                              &tmp_size );
+
+            if (code < 0 && code != gs_error_rangecheck)
+                return code;
+            used += tmp_size;
+        }            
     }
 
     /* check for overflow */
@@ -138,23 +197,20 @@ c_overprint_read(
 {
     gs_overprint_params_t   params;
     byte                    flags = 0;
-    int                     code, nbytes = 1;
+    int                     code = 0, nbytes = 1;
 
     if (size < 1)
         return_error(gs_error_rangecheck);
     flags = *data;
     params.retain_any_comps = (flags & OVERPRINT_ANY_COMPS) != 0;
     params.retain_spot_comps = (flags & OVERPRINT_SPOT_COMPS) != 0;
-    params.retain_zeroed_comps = (flags & OVERPRINT_ZEROED_COMPS) != 0;
 
     /* check if the drawn_comps array is present */
-    if ( params.retain_any_comps   &&
-         !params.retain_spot_comps &&
-         !params.retain_zeroed_comps ) {
-        if (size < sizeof(params.drawn_comps) + 1)
-            return_error(gs_error_rangecheck);
-        memcpy(&params.drawn_comps, data + 1, sizeof(params.drawn_comps));
-        nbytes += sizeof(params.drawn_comps);
+    if (params.retain_any_comps && !params.retain_spot_comps) {
+        code = read_color_index(&params.drawn_comps, data + 1, size - 1);
+        if (code < 0)
+            return code;
+         nbytes += code;
     }
 
     code = gs_create_overprint(ppct, &params, mem);
@@ -234,22 +290,6 @@ gs_is_overprint_compositor(const gs_composite_t * pct)
  */
 typedef struct overprint_device_s {
     gx_device_forward_common;
-
-    /*
-     * Retain all components which have a zero value in the drawing
-     * color.
-     *
-     * This field is true only if both overprint and overprint mode
-     * are set. If this is the case, the drawn_comps and retain_mask
-     * fields are updated per drawing operation by those rendering
-     * routines that deal with the gx_device_color structure. This
-     * operation cannot be performed by the lowest-level rendering
-     * routines, as they must work with the gx_color_index, which
-     * cannot distinguish regions that have zero intensity due to
-     * halftoning from those that have zero intensity because the
-     * corresponding device color intensity value is zero.
-     */
-    bool            retain_zeroed_comps;
 
     /*
      * The set of components to be drawn. This field is used only if the
@@ -367,13 +407,9 @@ private gx_device_procs no_overprint_procs = {
 
 /*
  * If overprint is set, the high and mid-level rendering methods are
- * replaced by routines specific to the overprint device. These will set
- * up the drawn component information if retain_zeroed_comps is true,
- * and then call the default rendering routines.
- *
- * The low-level color rendering methods are replaced with one of two
- * sets of functions, depending on whether or not the target device has
- * a separable and linear color encoding.
+ * replaced by the default routines. The low-level color rendering methods
+ * are replaced with one of two sets of functions, depending on whether or
+ * not the target device has a separable and linear color encoding.
  *
  *  1. If the target device does not have a separable and linear
  *     encoding, an overprint-specific fill_rectangle method is used,
@@ -391,21 +427,13 @@ private gx_device_procs no_overprint_procs = {
  *     performance: the more methods, the better the performance.
  *
  *     Note that certain procedures, such as copy_alpha and copy_rop,
- *     are likely always be given their default values, as the concepts
- *     of alpha-compositing and raster operations are not compatible
- *     in a strict sense.
+ *     are likely to always be given their default values, as the concepts
+ *     of alpha-compositing and raster operations are not compatible in
+ *     a strict sense.
  */
 private dev_proc_fill_rectangle(overprint_generic_fill_rectangle);
 private dev_proc_fill_rectangle(overprint_sep_fill_rectangle);
 /* other low-level overprint_sep_* rendering methods prototypes go here */
-
-private dev_proc_fill_path(overprint_fill_path);
-private dev_proc_stroke_path(overprint_stroke_path);
-private dev_proc_fill_mask(overprint_fill_mask);
-private dev_proc_fill_trapezoid(overprint_fill_trapezoid);
-private dev_proc_fill_parallelogram(overprint_fill_parallelogram);
-private dev_proc_fill_triangle(overprint_fill_triangle);
-private dev_proc_draw_thin_line(overprint_draw_thin_line);
 
 private gx_device_procs generic_overprint_procs = {
     overprint_open_device,              /* open_device */
@@ -424,7 +452,7 @@ private gx_device_procs generic_overprint_procs = {
     0,                                  /* get_params */
     overprint_put_params,               /* put_params */
     0,                                  /* map_cmyk_color */
-    gx_default_get_xfont_procs,         /* get_xfont_procs */
+    0,                                  /* get_xfont_procs */
     gx_default_get_xfont_device,        /* get_xfont_device */
     0,                                  /* map_rgb_alpha_color */
     overprint_get_page_device,          /* get_page_device */
@@ -432,13 +460,13 @@ private gx_device_procs generic_overprint_procs = {
     gx_default_copy_alpha,              /* copy alpha */
     0,                                  /* get_band */
     gx_default_copy_rop,                /* copy_rop */
-    overprint_fill_path,                /* fill_path */
-    overprint_stroke_path,              /* stroke_path */
-    overprint_fill_mask,                /* fill_mask */
-    overprint_fill_trapezoid,           /* fill_trapezoid */
-    overprint_fill_parallelogram,       /* fill_parallelogram */
-    overprint_fill_triangle,            /* fill_triangle */
-    overprint_draw_thin_line,           /* draw_thin_line */
+    gx_default_fill_path,               /* fill_path */
+    gx_default_stroke_path,             /* stroke_path */
+    gx_default_fill_mask,               /* fill_mask */
+    gx_default_fill_trapezoid,          /* fill_trapezoid */
+    gx_default_fill_parallelogram,      /* fill_parallelogram */
+    gx_default_fill_triangle,           /* fill_triangle */
+    gx_default_draw_thin_line,          /* draw_thin_line */
     gx_default_begin_image,             /* begin_image */
     0,                                  /* image_data (obsolete) */
     0,                                  /* end_image (obsolete) */
@@ -454,7 +482,7 @@ private gx_device_procs generic_overprint_procs = {
     0,                                  /* gx_finish_copydevice */
     0,                                  /* begin_transparency_group */
     0,                                  /* end_transparency_group */
-    0,                                  /* being_transparency_mask */
+    0,                                  /* begin_transparency_mask */
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
@@ -474,13 +502,13 @@ private gx_device_procs sep_overprint_procs = {
     overprint_sep_fill_rectangle,       /* fill_rectangle */
     gx_default_tile_rectangle,          /* tile_rectangle */
     gx_default_copy_mono,               /* copy_mono */
-    gx_default_copy_color,              /* forward_copy_color */
+    gx_default_copy_color,              /* copy_color */
     gx_default_draw_line,               /* draw_line (obsolete) */
     0,                                  /* get_bits */
     0,                                  /* get_params */
     overprint_put_params,               /* put_params */
     0,                                  /* map_cmyk_color */
-    gx_default_get_xfont_procs,         /* get_xfont_procs */
+    0,                                  /* get_xfont_procs */
     gx_default_get_xfont_device,        /* get_xfont_device */
     0,                                  /* map_rgb_alpha_color */
     overprint_get_page_device,          /* get_page_device */
@@ -488,13 +516,13 @@ private gx_device_procs sep_overprint_procs = {
     gx_default_copy_alpha,              /* copy alpha */
     0,                                  /* get_band */
     gx_default_copy_rop,                /* copy_rop */
-    overprint_fill_path,                /* fill_path */
-    overprint_stroke_path,              /* stroke_path */
-    overprint_fill_mask,                /* fill_mask */
-    overprint_fill_trapezoid,           /* fill_trapezoid */
-    overprint_fill_parallelogram,       /* fill_parallelogram */
-    overprint_fill_triangle,            /* fill_triangle */
-    overprint_draw_thin_line,           /* draw_thin_line */
+    gx_default_fill_path,               /* fill_path */
+    gx_default_stroke_path,             /* stroke_path */
+    gx_default_fill_mask,               /* fill_mask */
+    gx_default_fill_trapezoid,          /* fill_trapezoid */
+    gx_default_fill_parallelogram,      /* fill_parallelogram */
+    gx_default_fill_triangle,           /* fill_triangle */
+    gx_default_draw_thin_line,          /* draw_thin_line */
     gx_default_begin_image,             /* begin_image */
     0,                                  /* image_data (obsolete) */
     0,                                  /* end_image (obsolete) */
@@ -510,7 +538,7 @@ private gx_device_procs sep_overprint_procs = {
     0,                                  /* gx_finish_copydevice */
     0,                                  /* begin_transparency_group */
     0,                                  /* end_transparency_group */
-    0,                                  /* being_transparency_mask */
+    0,                                  /* begin_transparency_mask */
     0,                                  /* end_transparency_mask */
     0,                                  /* discard_transparency_layer */
     0,                                  /* get_color_mapping_procs */
@@ -612,32 +640,6 @@ set_retain_mask(overprint_device_t * opdev)
     opdev->retain_mask = retain_mask;
 }
 
-
-/*
- * Update the set of drawn components, given a specific device color.
- * This may not work perfectly for shading and color tiling patterns.
- *
- * This routine should only be called if retain_zeroed_comps is true.
- */
-private int
-update_drawn_comps(overprint_device_t * opdev, const gx_drawing_color * pdcolor)
-{
-    int             code;
-    gx_color_index  drawn_comps = 0;
-
-    code = pdcolor->type->get_nonzero_comps( pdcolor,
-                                             (const gx_device *)opdev,
-                                             &drawn_comps );
-
-    if (code == 0) {
-        opdev->drawn_comps = drawn_comps;
-        if (opdev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
-            set_retain_mask(opdev);
-    }
-
-    return code;  
-}
-
 /* enlarge mask of non-zero components */
 private gx_color_index
 check_drawn_comps(int ncomps, frac cvals[GX_DEVICE_COLOR_MAX_COMPONENTS])
@@ -684,16 +686,12 @@ update_overprint_params(
     else
         memcpy( &opdev->procs,
                 &generic_overprint_procs,
-                sizeof(sep_overprint_procs) );
-
-    /* if overprint mode is set, set draw_component dynamically */
-    if ((opdev->retain_zeroed_comps = pparams->retain_zeroed_comps))
-        return 0;
+                sizeof(generic_overprint_procs) );
 
     /* see if we need to determine the spot color components */
-    if (!pparams->retain_spot_comps) {
+    if (!pparams->retain_spot_comps)
         opdev->drawn_comps = pparams->drawn_comps;
-    } else {
+    else {
         gx_device *                     dev = (gx_device *)opdev;
         const gx_cm_color_map_procs *   pprocs;
         frac                            cvals[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -916,186 +914,6 @@ overprint_sep_fill_rectangle(
                                                       color,
                                                       dev->memory );
     }
-}
-
-
-/*
- * The high-level procedures will update the drawn-components/retain mask
- * information. This is not fully legitimate: we are assuming that any
- * lower-level operation uses the same color as the most recently called
- * enclosing higher-level operation. Particularly for cached patterns,
- * this may not be the case. On the other hand, there is not a great deal
- * that can be done about it given the current device interface.
- */
-private int
-overprint_fill_path(
-    gx_device *                 dev,
-    const gs_imager_state *     pis,
-    gx_path *                   ppath,
-    const gx_fill_params *      params,
-    const gx_drawing_color *    pdcolor,
-    const gx_clip_path *        pcpath )
-{
-    overprint_device_t *        opdev = (overprint_device_t *)dev;
-    int                         code = 0;
-
-    if ( opdev->retain_zeroed_comps                     &&
-         (code = update_drawn_comps(opdev, pdcolor)) < 0  )
-        return code;
-    else
-        return gx_default_fill_path(dev, pis, ppath, params, pdcolor, pcpath);
-}
-
-private int
-overprint_stroke_path(
-    gx_device *                 dev,
-    const gs_imager_state *     pis,
-    gx_path *                   ppath,
-    const gx_stroke_params *    params,
-    const gx_drawing_color *    pdcolor,
-    const gx_clip_path *        pcpath )
-{
-    overprint_device_t *        opdev = (overprint_device_t *)dev;
-    int                         code = 0;
-
-    if ( opdev->retain_zeroed_comps                     &&
-         (code = update_drawn_comps(opdev, pdcolor)) < 0  )
-        return code;
-    else
-        return gx_default_stroke_path(dev, pis, ppath, params, pdcolor, pcpath);
-}
-
-private int
-overprint_fill_mask(
-    gx_device *                 dev,
-    const byte *                data,
-    int                         data_x,
-    int                         raster,
-    gx_bitmap_id                id,
-    int                         x,
-    int                         y,
-    int                         width,
-    int                         height,
-    const gx_drawing_color *    pdcolor,
-    int                         depth,
-    gs_logical_operation_t      lop,
-    const gx_clip_path *        pcpath )
-{
-    overprint_device_t *        opdev = (overprint_device_t *)dev;
-    int                         code = 0;
-
-    if ( opdev->retain_zeroed_comps                     &&
-         (code = update_drawn_comps(opdev, pdcolor)) < 0  )
-        return code;
-    else
-        return gx_default_fill_mask( dev,
-                                     data,
-                                     data_x,
-                                     raster,
-                                     id,
-                                     x, y, width, height,
-                                     pdcolor,
-                                     depth,
-                                     lop,
-                                     pcpath );
-}
-
-private int
-overprint_fill_trapezoid(
-    gx_device *                 dev,
-    const gs_fixed_edge *       left,
-    const gs_fixed_edge *       right,
-    fixed                       ybot,
-    fixed                       ytop,
-    bool                        swap_axes,
-    const gx_drawing_color *    pdcolor,
-    gs_logical_operation_t      lop )
-{
-    overprint_device_t *        opdev = (overprint_device_t *)dev;
-    int                         code = 0;
-
-    if ( opdev->retain_zeroed_comps                     &&
-         (code = update_drawn_comps(opdev, pdcolor)) < 0  )
-        return code;
-    else
-        return gx_default_fill_trapezoid( dev,
-                                          left,
-                                          right,
-                                          ybot,
-                                          ytop,
-                                          swap_axes,
-                                          pdcolor,
-                                          lop );
-}
-
-private int
-overprint_fill_parallelogram(
-    gx_device *                 dev,
-    fixed                       px,
-    fixed                       py,
-    fixed                       ax,
-    fixed                       ay,
-    fixed                       bx,
-    fixed                       by,
-    const gx_drawing_color *    pdcolor,
-    gs_logical_operation_t      lop )
-{
-    overprint_device_t *        opdev = (overprint_device_t *)dev;
-    int                         code = 0;
-
-    if ( opdev->retain_zeroed_comps                     &&
-         (code = update_drawn_comps(opdev, pdcolor)) < 0  )
-        return code;
-    else
-        return gx_default_fill_parallelogram( dev,
-                                              px, py, ax, ay, bx, by,
-                                              pdcolor,
-                                              lop );
-}
-
-private int
-overprint_fill_triangle(
-    gx_device *                 dev,
-    fixed                       px,
-    fixed                       py,
-    fixed                       ax,
-    fixed                       ay,
-    fixed                       bx,
-    fixed                       by,
-    const gx_drawing_color *    pdcolor,
-    gs_logical_operation_t      lop )
-{
-    overprint_device_t *        opdev = (overprint_device_t *)dev;
-    int                         code = 0;
-
-    if ( opdev->retain_zeroed_comps                     &&
-         (code = update_drawn_comps(opdev, pdcolor)) < 0  )
-        return code;
-    else
-        return gx_default_fill_triangle( dev,
-                                         px, py, ax, ay, bx, by,
-                                         pdcolor,
-                                         lop );
-}
-
-private int
-overprint_draw_thin_line(
-    gx_device *                 dev,
-    fixed                       fx0,
-    fixed                       fy0,
-    fixed                       fx1,
-    fixed                       fy1,
-    const gx_drawing_color *    pdcolor,
-    gs_logical_operation_t      lop )
-{
-    overprint_device_t *        opdev = (overprint_device_t *)dev;
-    int                         code = 0;
-
-    if ( opdev->retain_zeroed_comps                     &&
-         (code = update_drawn_comps(opdev, pdcolor)) < 0  )
-        return code;
-    else
-        return gx_default_draw_thin_line(dev, fx0, fy0, fx1, fy1, pdcolor, lop);
 }
 
 

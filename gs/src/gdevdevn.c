@@ -48,7 +48,7 @@ private dev_proc_decode_color(devicen_decode_color);
 /*
  * Type definitions associated with the fixed color model names.
  */
-typedef char * fixed_colorant_name;
+typedef const char * fixed_colorant_name;
 typedef fixed_colorant_name fixed_colorant_names_list[];
 
 /*
@@ -80,7 +80,7 @@ typedef struct devicen_device_s {
      * names are those in this list plus those in the separation_names
      * list (below).
      */
-    fixed_colorant_names_list * std_colorant_names;
+    const fixed_colorant_names_list * std_colorant_names;
     const int num_std_colorant_names;	/* Number of names in list */
 
     /*
@@ -155,14 +155,14 @@ typedef struct devicen_device_s {
 }
 
 
-private fixed_colorant_names_list DeviceRGBComponents = {
+private const fixed_colorant_names_list DeviceRGBComponents = {
 	"Red",
 	"Green",
 	"Blue",
 	0		/* List terminator */
 };
 
-private fixed_colorant_names_list DeviceCMYKComponents = {
+private const fixed_colorant_names_list DeviceCMYKComponents = {
 	"Cyan",
 	"Magenta",
 	"Yellow",
@@ -191,8 +191,7 @@ const devicen_device gs_spotrgb_device =
 	 devicen_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
     8,				/* Bits per color - must match ncomp, depth, etc. above */
-    (fixed_colorant_names_list *)
-	 (&DeviceRGBComponents),/* Names of color model colorants */
+    (&DeviceRGBComponents),	/* Names of color model colorants */
     3,				/* Number colorants for RGB */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -219,8 +218,7 @@ const devicen_device gs_spotcmyk_device =
 
     /* DeviceN device specific parameters */
     1,				/* Bits per color - must match ncomp, depth, etc. above */
-    (fixed_colorant_names_list *)
-	 (&DeviceCMYKComponents),	/* Names of color model colorants */
+    (&DeviceCMYKComponents),	/* Names of color model colorants */
     4,				/* Number colorants for CMYK */
     {0},			/* SeparationNames */
     {0}				/* SeparationOrder names */
@@ -632,8 +630,7 @@ check_process_color_names(const fixed_colorant_names_list * pcomp_list,
 			  const gs_param_string * pstring)
 {
     if (pcomp_list) {
-        fixed_colorant_name * plist = 
-	    (fixed_colorant_name *) * pcomp_list;
+        const fixed_colorant_name * plist = *pcomp_list;
         uint size = pstring->size;
     
 	while( *plist) {
@@ -800,7 +797,7 @@ private int
 devicen_get_color_comp_index(const gx_device * dev, const char * pname, int name_size, int src_index)
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
-    const fixed_colorant_names_list * list = ((devicen_device *)dev)->std_colorant_names;
+    const fixed_colorant_names_list * list = ((const devicen_device *)dev)->std_colorant_names;
     const fixed_colorant_name * pcolor = *list;
     int color_component_number = 0;
     int i;
@@ -817,11 +814,11 @@ devicen_get_color_comp_index(const gx_device * dev, const char * pname, int name
 
     /* Check if the component is in the separation names list. */
     {
-	gs_separation_names * separations = &((devicen_device *)dev)->separation_names;
+	const gs_separation_names * separations = &((const devicen_device *)dev)->separation_names;
 	int num_spot = separations->num_names;
 
 	for (i=0; i<num_spot; i++) {
-	    if (compare_color_names((char *)separations->names[i]->data,
+	    if (compare_color_names((const char *)separations->names[i]->data,
 		  separations->names[i]->size, pname, name_size)) {
 		return color_component_number;
 	    }

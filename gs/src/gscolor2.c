@@ -74,21 +74,16 @@ gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
 {
     gs_color_space *    pcs = pgs->color_space;
     gs_client_color     cc_old = *pgs->ccolor;
-    int                 code = 0;
 
     if (pgs->in_cachedevice)
 	return_error(gs_error_undefined);
+    gx_unset_dev_color(pgs);
     (*pcs->type->adjust_color_count)(pcc, pcs, 1);
     *pgs->ccolor = *pcc;
     (*pcs->type->restrict_color)(pgs->ccolor, pcs);
-    if (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0) {
-        *pgs->ccolor = cc_old;
-        (*pcs->type->adjust_color_count)(pcc, pcs, -1);
-    } else {
-        (*pcs->type->adjust_color_count)(&cc_old, pcs, -1);
-        gx_unset_dev_color(pgs);
-    }
-    return code;
+    (*pcs->type->adjust_color_count)(&cc_old, pcs, -1);
+
+    return 0;
 }
 
 /* currentcolor */
@@ -242,7 +237,7 @@ private int
 gx_set_overprint_Indexed(const gs_color_space * pcs, gs_state * pgs)
 {
     return (*pcs->params.indexed.base_space.type->set_overprint)
-	((const gs_color_space *) & pcs->params.indexed.base_space, pgs);
+	((const gs_color_space *)&pcs->params.indexed.base_space, pgs);
 }
 
 /* Color space reference count adjustment ditto. */

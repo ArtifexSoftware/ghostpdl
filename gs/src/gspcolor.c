@@ -270,15 +270,14 @@ gx_install_Pattern(const gs_color_space * pcs, gs_state * pgs)
 	((const gs_color_space *) & pcs->params.pattern.base_space, pgs);
 }
 
-/* Set the overprint compositor for a Pattern color space. */
+/*
+ * Set the overprint compositor for a Pattern color space. This does nothing;
+ * for patterns the overprint compositor is set at set_device_color time.
+*/
 private int
 gx_set_overprint_Pattern(const gs_color_space * pcs, gs_state * pgs)
 {
-    if (pcs->params.pattern.has_base_space)
-        return pcs->params.pattern.base_space.type->set_overprint
-	    ((const gs_color_space *)&pcs->params.pattern.base_space, pgs);
-    else
-	return 0;
+    return 0;
 }
 
 /* Adjust the reference counts for Pattern color spaces or colors. */

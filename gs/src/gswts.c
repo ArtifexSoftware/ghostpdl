@@ -735,7 +735,7 @@ typedef struct {
     int size;
 } gs_wts_screen_enum_j_t;
 
-gs_wts_screen_enum_t *
+private gs_wts_screen_enum_t *
 gs_wts_screen_enum_j_new(gx_wts_cell_params_t *wcp)
 {
     gs_wts_screen_enum_j_t *wsej;
@@ -819,7 +819,8 @@ gs_wts_screen_enum_next(gs_wts_screen_enum_t *wse, floatp value)
 }
 
 /* Run the enum with a square dot. This is useful for testing. */
-void
+#ifdef UNIT_TEST
+private void
 wts_run_enum_squaredot(gs_wts_screen_enum_t *wse)
 {
     int code;
@@ -834,11 +835,13 @@ wts_run_enum_squaredot(gs_wts_screen_enum_t *wse)
 	gs_wts_screen_enum_next(wse, spot);
     }
 }
+#endif /* UNIT_TEST */
 
 private int
 wts_sample_cmp(const void *av, const void *bv) {
-    const bits32 **a = (const bits32 **)av;
-    const bits32 **b = (const bits32 **)bv;
+    bits32 *const *a = (bits32 *const *)av;
+    bits32 *const *b = (bits32 *const *)bv;
+
     if (**a > **b) return 1;
     if (**a < **b) return -1;
     return 0;

@@ -29,6 +29,7 @@
 #include "gsstate.h"
 #include "gsdevice.h"
 #include "gxdevcli.h"
+#include "gzstate.h"
 
 /*
  * Define the standard color space types.  We include DeviceCMYK in the base
@@ -293,10 +294,9 @@ gx_spot_colors_set_overprint(const gs_color_space * pcs, gs_state * pgs)
     gs_imager_state *       pis = (gs_imager_state *)pgs;
     gs_overprint_params_t   params;
 
-    if ((params.retain_any_comps = pis->overprint)) {
+    if ((params.retain_any_comps = pis->overprint))
         params.retain_spot_comps = true;
-        params.retain_zeroed_comps = false;
-    }
+    pgs->effective_overprint_mode = 0;
     return gs_state_update_overprint(pgs, &params);
 }
 
@@ -314,16 +314,32 @@ check_single_comp(int comp, frac targ_val, int ncomps, const frac * pval)
     return true;
 }
 
-private bool
-gx_is_cmyk_color_model(const gs_state * pgs)
+/*
+ * Determine if the current color model is a "DeviceCMYK" color model, and
+ * if so what are its process color components. This information is required
+ * only if overprint is true and overprint mode is set to 1.
+ *
+ * A color model is considered a "DeviceCMYK" color model if it supports the
+ * cyan, magenta, yellow, and black color components, and maps the DeviceCMYK
+ * color model components directly to these color components. Note that this
+ * does not require any particular component order, allows for additional
+ * spot color components, and does admit DeviceN color spaces if they have
+ * the requisite behavior.
+ *
+ * If the color model is a "DeviceCMYK" color model, return the set of
+ * process color components; otherwise return 0.
+ */
+private gx_color_index
+check_cmyk_color_model_comps(gx_device * dev)
 {
-    gx_device *                     dev = gs_currentdevice(pgs);
-    int                             ncomps = dev->color_info.num_components;
+    gx_device_color_info *          pcinfo = &dev->color_info;
+    int                             ncomps = pcinfo->num_components;
     int                             cyan_c, magenta_c, yellow_c, black_c;
     const gx_cm_color_map_procs *   pprocs;
     cm_map_proc_cmyk((*map_cmyk));
     frac                            frac_14 = frac_1 / 4;
     frac                            out[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_index                  process_comps;
 
     /* check for the appropriate components */
     if ( ncomps < 4                                       ||
@@ -351,82 +367,81 @@ gx_is_cmyk_color_model(const gs_state * pgs)
                         sizeof("Black") - 1,
                         -1 )) < 0                         ||
          black_c == GX_DEVICE_COLOR_MAX_COMPONENTS          )
-        return false;
+        return 0;
 
     /* check the mapping */
     if ( (pprocs = dev_proc(dev, get_color_mapping_procs)(dev)) == 0 ||
          (map_cmyk = pprocs->map_cmyk) == 0                            )
-        return false;
+        return 0;
 
     map_cmyk(dev, frac_14, frac_0, frac_0, frac_0, out);
     if (!check_single_comp(cyan_c, frac_14, ncomps, out))
-        return false;
+        return 0;
     map_cmyk(dev, frac_0, frac_14, frac_0, frac_0, out);
     if (!check_single_comp(magenta_c, frac_14, ncomps, out))
-        return false;
+        return 0;
     map_cmyk(dev, frac_0, frac_0, frac_14, frac_0, out);
     if (!check_single_comp(yellow_c, frac_14, ncomps, out))
         return false;
     map_cmyk(dev, frac_0, frac_0, frac_0, frac_14, out);
     if (!check_single_comp(black_c, frac_14, ncomps, out))
-        return false;
+        return 0;
 
-    return true;
+    process_comps =  ((gx_color_index)1 << cyan_c)
+                   | ((gx_color_index)1 << magenta_c)
+                   | ((gx_color_index)1 << yellow_c)
+                   | ((gx_color_index)1 << black_c);
+    pcinfo->opmode = GX_CINFO_OPMODE;
+    pcinfo->process_comps = process_comps;
+    return process_comps;
 }
 
+/*
+ * This set_overprint method is unique. If overprint is true, overprint
+ * mode is set to 1, the process color model has DeviceCMYK behavior (see
+ * the comment ahead of gx_is_cmyk_color_model above), and the device
+ * color is set, the device color needs to be considered in setting up
+ * the set of drawn components.
+ */
 private int
 gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
 {
-    gs_imager_state *   pis = (gs_imager_state *)pgs;
-
-    /* check if we require special handling */
-    if ( !pis->overprint                    ||
-         pis->effective_overprint_mode != 1 ||
-         !gx_is_cmyk_color_model(pgs)         )
-        return gx_spot_colors_set_overprint(pcs, pgs);
-    else {
-        gs_overprint_params_t   params;
-
-        /* we known everything is true */
-        params.retain_any_comps = true;
-        params.retain_spot_comps = true;
-        params.retain_zeroed_comps = true;
-        return gs_state_update_overprint(pgs, &params);
-    }
-}
-
-
-/*
- * Push the overprint compositor appropriate for the current color map
- * onto the current device. This procedure is used for Separation and
- * DeviceN color spaces that are supported in native mode (and, for
- * Separation, do not involve component "All" or "None").
- */
-int
-gx_comp_map_set_overprint(const gs_color_space * pcs, gs_state * pgs)
-{
-    gs_imager_state *       pis = (gs_imager_state *)pgs;
-    gs_devicen_color_map *  pcmap = &pis->color_component_map;
+    gx_device *             dev = pgs->device;
+    gx_device_color_info *  pcinfo = (dev == 0 ? 0 : &dev->color_info);
+    gx_color_index          drawn_comps = 0;
     gs_overprint_params_t   params;
 
-    params.retain_any_comps = pis->overprint && pcmap->sep_type != SEP_ALL;
-    if (params.retain_any_comps) {
-        params.retain_zeroed_comps = false;
-        if (!(params.retain_spot_comps = pcmap->use_alt_cspace)) {
-            gs_overprint_clear_all_drawn_comps(&params);
-            if (pcmap->sep_type != SEP_NONE) {
-                int     i, ncomps = pcmap->num_components;
+    /* check if we require special handling */
+    if ( !pgs->overprint                      ||
+         pgs->overprint_mode != 1             ||
+         pcinfo == 0                          ||
+         pcinfo->opmode == GX_CINFO_OPMODE_NOT  )
+        return gx_spot_colors_set_overprint(pcs, pgs);
 
-                for (i = 0; i < ncomps; i++) {
-                    int     mcomp = pis->color_component_map.color_map[i];
+    /* check if color model behavior must be determined */
+    if (pcinfo->opmode == GX_CINFO_OPMODE_UNKNOWN)
+        drawn_comps = check_cmyk_color_model_comps(dev);
+    else
+        drawn_comps = pcinfo->process_comps;
+    if (drawn_comps == 0)
+        return gx_spot_colors_set_overprint(pcs, pgs);
 
-                    if (mcomp >= 0)
-                        gs_overprint_set_drawn_comp(&params, mcomp);
-                }
-            }
-        }
+    /* correct for any zero'ed color components */
+    pgs->effective_overprint_mode = 1;
+    if (color_is_set(pgs->dev_color)) {
+        gx_color_index  nz_comps;
+        int             code;
+        dev_color_proc_get_nonzero_comps((*procp));
+
+        procp = pgs->dev_color->type->get_nonzero_comps;
+        if ((code = procp(pgs->dev_color, dev, &nz_comps)) < 0)
+            return code;
+        drawn_comps &= nz_comps;
     }
 
+    params.retain_any_comps = true;
+    params.retain_spot_comps = false;
+    params.drawn_comps = drawn_comps;
     return gs_state_update_overprint(pgs, &params);
 }
 

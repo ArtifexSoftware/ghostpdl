@@ -225,7 +225,7 @@ gx_default_1_sub_decode_color(
  * employ the DeviceCMYK color model but don't provide a decode_color
  * method. The code below works on the assumption of full undercolor
  * removal and black generation. This may not be accurate, but is the
- * best that can be done in the absence of other information.
+ * best that can be done in the general case without other information.
  */
 private int
 gx_default_cmyk_decode_color(
@@ -247,6 +247,22 @@ gx_default_cmyk_decode_color(
     return code;
 }
 
+/*
+ * Special case default color decode routine for a canonical 1-bit per
+ * component DeviceCMYK color model.
+ */
+private int
+gx_1bit_cmyk_decode_color(
+    gx_device *     dev,
+    gx_color_index  color,
+    gx_color_value  cv[4] )
+{
+    cv[0] = ((color & 0x8) != 0 ? gx_max_color_value : 0);
+    cv[1] = ((color & 0x4) != 0 ? gx_max_color_value : 0);
+    cv[2] = ((color & 0x2) != 0 ? gx_max_color_value : 0);
+    cv[3] = ((color & 0x1) != 0 ? gx_max_color_value : 0);
+    return 0;
+}
 
 private int
 (*get_decode_color(gx_device * dev))(gx_device *, gx_color_index, gx_color_value *)
@@ -280,10 +296,19 @@ private int
          * arises with some frequency, so it is useful not to generate an
          * error in this case. The mechanism below assumes full undercolor
          * removal and black generation, which may not be accurate but are
-         * the  best that can be done in the absence of other information.
+         * the  best that can be done in the general case in the absence of
+         * other information.
+         *
+         * As a hack to handle certain common devices, if the map_rgb_color
+         * routine is cmyk_1bit_map_color_rgb, we provide a direct one-bit
+         * decoder.
          */
-        if (is_like_DeviceCMYK(dev))
-            return gx_default_cmyk_decode_color;
+        if (is_like_DeviceCMYK(dev)) {
+            if (dev_proc(dev, map_color_rgb) == cmyk_1bit_map_color_rgb)
+                return gx_1bit_cmyk_decode_color;
+            else
+                return gx_default_cmyk_decode_color;
+        }
     }
 
     /*
@@ -492,6 +517,18 @@ gx_device_fill_in_procs(register gx_device * dev)
     if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
 	set_linear_color_bits_mask_shift(dev);
     }
+    /*
+     * If the device is known not to support overprint mode, indicate this now.
+     * Note that we do not insist that a device be use a strict DeviceCMYK
+     * encoding; any color model that is subtractive and supports the cyan,
+     * magenta, yellow, and black color components will do. We defer a more
+     * explicit check until this information is explicitly required.
+     */
+    if ( dev->color_info.opmode == GX_CINFO_OPMODE_UNKNOWN          &&
+         (dev->color_info.num_components < 4                     || 
+          dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE ||
+          dev->color_info.gray_index == GX_CINFO_COMP_NO_INDEX     )  )
+	dev->color_info.opmode = GX_CINFO_OPMODE_NOT;
 }
 
 int

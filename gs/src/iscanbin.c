@@ -285,8 +285,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		 * the executable, it is probably actually read-only.
 		 */
 		s_end_inline(s, p, rlimit);
-		make_string(pref, a_all | avm_foreign, arg,
-			    (byte *)sbufptr(s));
+		make_const_string(pref, a_all | avm_foreign, arg, sbufptr(s));
 		sbufskip(s, arg);
 		return 0;
 	    } else {

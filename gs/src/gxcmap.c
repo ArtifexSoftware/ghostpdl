@@ -422,12 +422,17 @@ int
 gx_remap_color(gs_state * pgs)
 {
     const gs_color_space *pcs = pgs->color_space;
+    int                   code;
 
     /* The current color in the graphics state is always used for */
     /* the texture, never for the source. */
-    return (*pcs->type->remap_color) (pgs->ccolor, pcs, pgs->dev_color,
+    code = (*pcs->type->remap_color) (pgs->ccolor, pcs, pgs->dev_color,
 				      (gs_imager_state *) pgs, pgs->device,
 				      gs_color_select_texture);
+    /* if overprint mode is in effect, update the overprint information */
+    if (code >= 0 && pgs->effective_overprint_mode == 1)
+	code = gs_do_set_overprint(pgs);
+    return code;
 }
 
 /* Indicate that a color space has no underlying concrete space. */

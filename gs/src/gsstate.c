@@ -605,11 +605,6 @@ gs_state_update_overprint(gs_state * pgs, const gs_overprint_params_t * pparams)
                                                    pgs->memory )) >= 0   ) {
         if (ovptdev != dev)
             gx_set_device_only(pgs, ovptdev);
-
-        /* the device methods may have changed even if the device has not */
-        gx_set_cmap_procs((gs_imager_state *)pgs, ovptdev);
-        gx_unset_dev_color(pgs);
-
     }
     if (pct != 0)
         gs_free_object(pgs->memory, pct, "gs_state_update_overprint");
@@ -678,7 +673,6 @@ gs_setoverprintmode(gs_state * pgs, int mode)
     if (mode < 0 || mode > 1)
 	return_error(gs_error_rangecheck);
     pgs->overprint_mode = mode;
-    pgs->effective_overprint_mode = mode;
     if (pgs->overprint && prior_mode != mode)
         code = gs_do_set_overprint(pgs);
     return code;
@@ -689,27 +683,6 @@ int
 gs_currentoverprintmode(const gs_state * pgs)
 {
     return pgs->overprint_mode;
-}
-
-/*
- * Disable/reset effective overprint mode. These procedures are use by the
- * zsetcolor procedure (setcolor operator) to disable overprint mode when
- * a PatternType 2 (smooth-shading) pattern is the current color.
- */
-void
-gs_disable_effective_overprint_mode(gs_state * pgs)
-{
-    pgs->effective_overprint_mode = 0;
-    if (pgs->overprint && pgs->effective_overprint_mode != pgs->overprint_mode)
-        (void)gs_do_set_overprint(pgs);
-}
-
-void
-gs_reset_effective_overprint_mode(gs_state * pgs)
-{
-    pgs->effective_overprint_mode = pgs->overprint_mode;
-    if (pgs->overprint && pgs->effective_overprint_mode != pgs->overprint_mode)
-        (void)gs_do_set_overprint(pgs);
 }
 
 
@@ -1002,7 +975,7 @@ gstate_copy(gs_state * pto, const gs_state * pfrom,
 	float *pattern = pto->line_params.dash.pattern;
 
 	gs_imager_state_pre_assign((gs_imager_state *)pto,
-				   (gs_imager_state *)pfrom);
+				   (const gs_imager_state *)pfrom);
 	*pto = *pfrom;
 	pto->client_data = pdata;
 	pto->memory = mem;

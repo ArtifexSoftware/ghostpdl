@@ -442,7 +442,7 @@ private ulong FAPI_FF_get_long(FAPI_font *ff, fapi_font_feature var_id, int inde
                 int lenIV = max(pfont->data.lenIV, 0), k;
                 ulong size = 0;
                 long i;
-                char *name[2] = {"Subrs", "GlobalSubrs"};
+                const char *name[2] = {"Subrs", "GlobalSubrs"};
                 if (dict_find_string(pdr, "Private", &Private) <= 0)
                     return 0;
                 for (k = 0; k < 2; k++) {
@@ -495,7 +495,8 @@ private inline void decode_bytes(byte *p, const byte *s, int l, int lenIV)
     }
 }
 
-private ushort get_type1_data(FAPI_font *ff, ref *type1string, byte *buf, ushort buf_length)
+private ushort get_type1_data(FAPI_font *ff, const ref *type1string,
+			      byte *buf, ushort buf_length)
 {   gs_font_type1 *pfont = (gs_font_type1 *)ff->client_font_data;
     int lenIV = max(pfont->data.lenIV, 0);
     int length = r_size(type1string) - (ff->need_decrypt ? lenIV : 0);
@@ -571,7 +572,7 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
 
     if (ff->is_type1) {
         if (ff->is_cid) {
-            ref *glyph = (ref *)ff->char_data;
+            const ref *glyph = ff->char_data;
             glyph_length = get_type1_data(ff, glyph, buf, buf_length);
         } else {
             ref *CharStrings, char_name, *glyph;
@@ -1373,6 +1374,8 @@ private int FAPI_char(i_ctx_t *i_ctx_p, bool bBuildGlyph, ref *charstring)
     }
     return code;
 }
+
+extern int ztype9mapcid(i_ctx_t *);
 
 private int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;                  /* <font0> <cid> <font9> <cid> */

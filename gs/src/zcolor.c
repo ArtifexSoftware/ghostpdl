@@ -210,14 +210,6 @@ zsetcolor(i_ctx_t * i_ctx_p)
     /* pass the color to the graphic library */
     if ((code = gs_setcolor(igs, &cc)) >= 0) {
 
-        /*
-         * Disable overprint mode for PatternType 2 patterns; otherwise
-         * reset overprint mode.
-         */
-        if (is_ptype2)
-            gs_disable_effective_overprint_mode(igs);
-        else
-            gs_reset_effective_overprint_mode(igs);
         if (n_comps > n_numeric_comps) {
             istate->pattern = *op;      /* save pattern dict or null */
             n_comps = n_numeric_comps + 1;

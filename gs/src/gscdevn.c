@@ -33,6 +33,7 @@
 #include "gscoord.h"
 #include "gzstate.h"
 #include "gxdevcli.h"
+#include "gsovrc.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -50,6 +51,7 @@ private cs_proc_concrete_space(gx_concrete_space_DeviceN);
 private cs_proc_concretize_color(gx_concretize_DeviceN);
 private cs_proc_remap_concrete_color(gx_remap_concrete_DeviceN);
 private cs_proc_install_cspace(gx_install_DeviceN);
+private cs_proc_set_overprint(gx_set_overprint_DeviceN);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_DeviceN);
 const gs_color_space_type gs_color_space_type_DeviceN = {
     gs_color_space_index_DeviceN, true, false,
@@ -59,7 +61,7 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
     gx_concrete_space_DeviceN,
     gx_concretize_DeviceN, gx_remap_concrete_DeviceN,
     gx_default_remap_color, gx_install_DeviceN,
-    gx_comp_map_set_overprint,
+    gx_set_overprint_DeviceN,
     gx_adjust_cspace_DeviceN, gx_no_adjust_color_count
 };
 
@@ -499,6 +501,37 @@ gx_install_DeviceN(const gs_color_space * pcs, gs_state * pgs)
         return (*pcs->params.device_n.alt_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.device_n.alt_space, pgs);
     return 0;
+}
+
+/* Set overprint information for a DeviceN color space */
+private int
+gx_set_overprint_DeviceN(const gs_color_space * pcs, gs_state * pgs)
+{
+    gs_devicen_color_map *  pcmap = &pgs->color_component_map;
+
+    if (pcmap->use_alt_cspace)
+        return gx_spot_colors_set_overprint( 
+                   (const gs_color_space *)&pcs->params.device_n.alt_space,
+                   pgs );
+    else {
+        gs_overprint_params_t   params;
+
+        if ((params.retain_any_comps = pgs->overprint)) {
+            int     i, ncomps = pcs->params.device_n.num_components;
+
+            params.retain_spot_comps = false;
+            params.drawn_comps = 0;
+            for (i = 0; i < ncomps; i++) {
+                int     mcomp = pcmap->color_map[i];
+
+                if (mcomp >= 0)
+		    gs_overprint_set_drawn_comp( params.drawn_comps, mcomp);
+            }
+        }
+
+        pgs->effective_overprint_mode = 0;
+        return gs_state_update_overprint(pgs, &params);
+    }
 }
 
 /* Adjust the reference count of a DeviceN color space. */

@@ -216,6 +216,13 @@ gx_set_device_color_1(gs_state * pgs)
     gs_setcolorspace(pgs, &cs);
     color_set_pure(pgs->dev_color, 1);
     pgs->log_op = lop_default;
+    /*
+     * In the unlikely event that  overprint mode is in effect,
+     * update the overprint information.
+     */
+    if (pgs->effective_overprint_mode == 1)
+	(void)gs_do_set_overprint(pgs);
+
 }
 
 /* ------ Internal routines ------ */

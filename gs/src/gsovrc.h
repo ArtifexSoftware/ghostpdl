@@ -46,8 +46,8 @@
  *
  *     For these devices, overprint and overprint mode are just
  *     additional state parameters that are incorporated into the output
- *     file. These may or may not be supported. For example, overprint
- *     mode cannot be supported in the PSWrite device.
+ *     file, which may or may not be supported on the eventual target
+ *     application.
  *
  *     Note that the current implementation of PDFWrite and PSWrite
  *     do require the graphic library to convert between color spaces
@@ -56,8 +56,8 @@
  *     have to support the get_bits_rectangle method, which means they
  *     would need to function as low-level devices. Since that defeats
  *     the purpose of having a high-level device, for the time being
- *     overprint and overprint mode are not supported for the PDFWrite
- *     and PSWrite devices.
+ *     overprint and overprint mode are not fully supported for the
+ *     PDFWrite and PSWrite devices.
  *
  *  2. Low level devices require the graphic library to convert between
  *     color spaces and color models, and perform actual rendering. For
@@ -75,12 +75,19 @@
  * 
  * In principle, the effects of overprint and overprint mode are
  * modified by changes to the current color, the current color space,
- * and the process color model. Changes in the latter are only
- * significant, however, if they change the number or identification of
- * color model components. This can only be done in a sensible way by
- * discarding any existing graphic output. So, for the preparation of a
- * single page of output, we need only be concerned about changes to the
- * current color or current color space.
+ * and the process color model.
+ *
+ * In most situation, the process color model cannot be changed without
+ * discarding any existing graphic output, so within a given page this
+ * affect may be ignored. An exception arises when emulating features
+ * such as the "overprint preview" mode of Acrobat 5.0. This mode uses
+ * a "fully dynamic" color model: any named color component is consider
+ * to exist in the process color model (its conversion to a "real" color
+ * is determined by the tint transform function associated with its
+ * initial invocation). In this situation, the process color model may
+ * "monotonically increase" as a page is processed. Since any such
+ * change is associated with a change of color space, we need not be
+ * concerned with independent changes in the process color model.
  *
  * For typical graphic operations such as line drawing or area filling,
  * both the current color and the current color space remain constant.
@@ -106,7 +113,7 @@
  * this possibility, and need not be concerned with overprint when
  * installing or removing forwarding devices.
  *
- * Overprint mode is of interest to accumulating devices only if these
+ * Overprint is of interest to accumulating devices only if these
  * devices either begin operation with a non-empty output buffer, or if
  * the current color or color space can change during the lifetime of
  * an instantiation of the device. Most instantiations of accumulating
@@ -159,17 +166,27 @@
  *  2. When the current color space changes, if overprint is set to true
  *     (the colorspace cannot be relevant if the overprint is false).
  *     There are a few exceptions to this rule for uncolored caches
- *     (user paths, FontType 3 fonts) and the anti-alias super-sampling.
+ *     (user paths, FontType 3 fonts) and anti-alias super-sampling.
  *
- *  3. If the device in the graphic state is changed, or if this device is
+ *  3. If the current device color changes, if overprint is true and
+ *     overprint mode is 1.
+ *
+ *  4. If the device in the graphic state is changed, or if this device is
  *     reopened after having been closed (e.g.: due to the action of
  *     put_params), if the overprint parameter is set to true.
  *
- *  4. During grestore or setgstate (because the overprint/overprint
+ *  5. During grestore or setgstate (because the overprint/overprint
  *     mode parameters might change without the current device changing).
  *
- *  5. When creating the pattern accumulator device, if overprint is
+ *  6. When creating the pattern accumulator device, if overprint is
  *     set to true.
+ *
+ * In PostScript and PDF, a change of the color space always has an
+ * associated change of the current color, so it is possible to
+ * exclude color space changes from the list above. We do not do this,
+ * however, because changes in the color space are usually less frequent
+ * than changes in the current color, and the latter are only significant
+ * if overprint mode is 1.
  *
  * Unlike the other compositors used by Ghostscript (the alpha-channel
  * compositor and the implemented but not used raster operation
@@ -181,7 +198,7 @@
  * the compositor is to change the current device.
  *
  * Subsequent invocations of create_compositor will not create a new
- * compositor. Rather, it changes the parameters of the existing
+ * compositor. Rather, they change the parameters of the existing
  * compositor device. The compositor functions with only a small
  * performance penalty if overprint is disabled, so there is no reason
  * to discard the compositor if oveprint is turned off.
@@ -199,7 +216,6 @@
  *     it is applied may close itself due to an error condition. We
  *     believe this will never cause difficulty in practice, as the
  *     closing of a device is not itself used as an error indication.
- *
  */
 
 #ifndef gs_overprint_params_t_DEFINED
@@ -216,8 +232,8 @@ struct gs_overprint_params_s {
      * are ignored, and the compositor does nothing with respect to rendering
      * (it doesn't even impose a performance penalty).
      *
-     * If this field is true, the retain_spot_comps, retain_zeroed_comps,
-     * and potentially the retained_comps fields should be initialized.
+     * If this field is true, the retain_spot_comps and potentially the
+     * retained_comps fields should be initialized.
      *
      * Note that this field may be false even if overprint is true. This
      * would be the case if the current color space was a Separation color
@@ -240,19 +256,14 @@ struct gs_overprint_params_s {
      * these cases is considered a spot color.
      *
      * If this field is true, the drawn_comps field (see below) is ignored.
+     *
+     * NB: This field should not be used if the DeviceCMYK color space
+     *     is being used with a DeviceCMYK color model (which may have
+     *     additional spot colors). Such a color model must explicitly
+     *     list the set of drawn components, so as to support overprint
+     *     mode.
      */
     bool            retain_spot_comps;
-
-    /*
-     * Are component values retained when the drawing component value is 0?
-     * This is the case if overprint and overprint mode are both true (this
-     * is a PDF rather than a PostScript feature), and both the color space
-     * and color model are DeviceCMYK. If this flag is set, drawing color
-     * components that have 0 intensity will not affect the output.
-     *
-     * If this field is true, the drawn_comps field (see below) is ignored.
-     */
-    bool            retain_zeroed_comps;
 
     /*
      * The list of color model compoents to be retained (i.e.: that are
@@ -265,17 +276,17 @@ struct gs_overprint_params_s {
 };
 
 /* some elementary macros for manipulating drawn_comps */
-#define gs_overprint_set_drawn_comp(pparam, i)      \
-    ((pparam)->drawn_comps |= 1 << (i))
+#define gs_overprint_set_drawn_comp(drawn_comps, i) \
+    ((drawn_comps) |= (gx_color_index)1 << (i))
 
-#define gs_overprint_clear_drawn_comp(pparam, i)    \
-    ((pparam)->drawn_comps &= ~(1 << 1))
+#define gs_overprint_clear_drawn_comp(drawn_comps, i)   \
+    ((drawn_comps) &= ~((gx_color_index)1 << 1))
 
-#define gs_overprint_clear_all_drawn_comps(pparam)  \
-    ((pparam)->drawn_comps = 0)
+#define gs_overprint_clear_all_drawn_comps(drawn_comps) \
+    ((drawn_comps) = 0)
 
-#define gs_overprint_get_drawn_comp(pparam, i)      \
-    (((pparam)->drawn_comps & (1 << (i))) != 0)
+#define gs_overprint_get_drawn_comp(drawn_comps, i)     \
+    (((drawn_comps) & ((gx_color_index)1 << (i))) != 0)
 
 
 /*

@@ -669,8 +669,8 @@ static const gx_cm_color_map_procs FwdDevice_cm_map_procs = {
 const gx_cm_color_map_procs *
 gx_forward_get_color_mapping_procs(const gx_device * dev)
 {
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
-    gx_device * const tdev = fdev->target;
+    const gx_device_forward * fdev = (const gx_device_forward *)dev;
+    gx_device * tdev = fdev->target;
 
     return (tdev == 0 || dev_proc(tdev, get_color_mapping_procs) == 0
 	? gx_default_DevGray_get_color_mapping_procs(dev)
@@ -681,7 +681,7 @@ int
 gx_forward_get_color_comp_index(const gx_device * dev, const char * pname,
 						int name_size, int src_index)
 {
-    gx_device_forward * const fdev = (gx_device_forward *)dev;
+    const gx_device_forward * fdev = (const gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 

@@ -31,6 +31,7 @@
 #include "gxcdevn.h"		/* for gs_device_n_map_s */
 #include "gxcmap.h"
 #include "gxdevcli.h"
+#include "gsovrc.h"
 
 /* ---------------- Color space ---------------- */
 
@@ -46,6 +47,7 @@ private cs_proc_concretize_color(gx_concretize_Separation);
 private cs_proc_remap_concrete_color(gx_remap_concrete_Separation);
 private cs_proc_remap_color(gx_remap_Separation);
 private cs_proc_install_cspace(gx_install_Separation);
+private cs_proc_set_overprint(gx_set_overprint_Separation);
 private cs_proc_adjust_cspace_count(gx_adjust_cspace_Separation);
 const gs_color_space_type gs_color_space_type_Separation = {
     gs_color_space_index_Separation, true, false,
@@ -55,7 +57,7 @@ const gs_color_space_type gs_color_space_type_Separation = {
     gx_concrete_space_Separation,
     gx_concretize_Separation, gx_remap_concrete_Separation,
     gx_remap_Separation, gx_install_Separation,
-    gx_comp_map_set_overprint,
+    gx_set_overprint_Separation,
     gx_adjust_cspace_Separation, gx_no_adjust_color_count
 };
 
@@ -133,6 +135,37 @@ gx_install_Separation(const gs_color_space * pcs, gs_state * pgs)
         return (*pcs->params.separation.alt_space.type->install_cspace)
 	((const gs_color_space *) & pcs->params.separation.alt_space, pgs);
     return 0;
+}
+
+/* Set the overprint information appropriate to a separation color space */
+private int
+gx_set_overprint_Separation(const gs_color_space * pcs, gs_state * pgs)
+{
+    gs_devicen_color_map *  pcmap = &pgs->color_component_map;
+
+    if (pcmap->use_alt_cspace)
+        return gx_spot_colors_set_overprint( 
+                   (const gs_color_space *)&pcs->params.separation.alt_space,
+                   pgs );
+    else {
+        gs_overprint_params_t   params;
+
+        params.retain_any_comps = pgs->overprint &&
+                                  pcs->params.separation.sep_type != SEP_ALL;
+        if (params.retain_any_comps) {
+            params.retain_spot_comps = false;
+            params.drawn_comps = 0;
+            if (pcs->params.separation.sep_type != SEP_NONE) {
+                int     mcomp = pcmap->color_map[0];
+
+                if (mcomp >= 0)
+		    gs_overprint_set_drawn_comp( params.drawn_comps, mcomp);
+            }
+        }
+
+        pgs->effective_overprint_mode = 0;
+        return gs_state_update_overprint(pgs, &params);
+    }
 }
 
 /* Adjust the reference count of a Separation color space. */

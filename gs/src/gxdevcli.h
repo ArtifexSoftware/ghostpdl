@@ -221,6 +221,30 @@ typedef enum {
     GX_CINFO_POLARITY_ADDITIVE
 } gx_color_polarity_t;
 
+/*
+ * Enumerator to indicate if a color model will support overprint mode.
+ *
+ * Only "DeviceCMYK" color space support this option, but we interpret
+ * this designation some broadly: a DeviceCMYK color model is any sub-
+ * tractive color model that provides the components Cyan, Magenta,
+ * Yellow, and Black, and maps the DeviceCMYK space directly to these
+ * components. This includes DeviceCMYK color models with spot colors,
+ * and DeviceN color models that support the requisite components (the
+ * latter may vary from Adobe's implementations; this is not easily
+ * tested).
+ *
+ * In principle this parameter could be a boolean set at initialization
+ * time. Primarily for historical reasons, the determination of whether
+ * or not a color model supports overprint is delayed until this
+ * information is required, hence the use of an enumeration with an
+ * "unknown" setting.
+ */
+typedef enum {
+    GX_CINFO_OPMODE_UNKNOWN = -1,
+    GX_CINFO_OPMODE_NOT = 0,
+    GX_CINFO_OPMODE
+} gx_cm_opmode_t;
+
 /* component index value used to indicate no color component.  */
 #define GX_CINFO_COMP_NO_INDEX 0xff
 
@@ -361,11 +385,26 @@ typedef struct gx_device_color_info_s {
     byte                   comp_shift[GX_DEVICE_COLOR_MAX_COMPONENTS];
     byte                   comp_bits[GX_DEVICE_COLOR_MAX_COMPONENTS];
     gx_color_index         comp_mask[GX_DEVICE_COLOR_MAX_COMPONENTS];
+
     /*
      * Pointer to name for the process color model.
      */
     const char * cm_name;
 
+    /*
+     * Indicate if overprint mode is supported. This is only supported
+     * for color models that have "DeviceCMYK" like behaivor: they support
+     * the cyan, magenta, yellow, and black color components, and map the
+     * components of a DeviceCMYK color space directly to these compoents.
+     * Most such color spaces will have the name DeviceCMYK, but it is
+     * also possible for DeviceN color models this behavior.
+     *
+     * If opmode has the value GX_CINFO_OPMODE, the process_comps will
+     * be a bit mask, with the (1 << i) bit set if i'th component is the
+     * cyan, magenta, yellow, or black component.
+     */
+    gx_cm_opmode_t opmode;
+    gx_color_index process_comps;
 } gx_device_color_info;
 
 /* NB encoding flag ignored */
@@ -385,7 +424,9 @@ typedef struct gx_device_color_info_s {
      { 0 } /* component shift */, \
      { 0 } /* component bits */, \
      { 0 } /* component mask */, \
-     cn /* process color name */ }
+     cn /* process color name */,\
+     GX_CINFO_OPMODE_UNKNOWN /* opmode */,\
+     0 /* process_cmps */ }
 
 /*
  * The "has color" macro requires a slightly different definition

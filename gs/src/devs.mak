@@ -1135,7 +1135,8 @@ $(DD)xcfcmyk.dev : $(DEVS_MAK) $(xcf_) $(GLD)page.dev
 	$(SETDEV) $(DD)xcfcmyk $(xcf_)
 
 $(GLOBJ)gdevxcf.$(OBJ) : $(GLSRC)gdevxcf.c $(PDEVH) $(math__h)\
- $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)
+ $(gdevdcrd_h) $(gscrd_h) $(gscrdp_h) $(gsparam_h) $(gxlum_h) $(icc_h)\
+ $(gxdcconv_h)
 	$(GLICCCC) $(GLO_)gdevxcf.$(OBJ) $(C_) $(GLSRC)gdevxcf.c
 
 ### ----------------------- The permutation device --------------------- ###

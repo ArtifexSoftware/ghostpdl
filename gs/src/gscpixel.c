@@ -25,6 +25,7 @@
 #include "gxistate.h"
 #include "gsovrc.h"
 #include "gsstate.h"
+#include "gzstate.h"
 
 /* Define the DevicePixel color space type. */
 private cs_proc_restrict_color(gx_restrict_DevicePixel);
@@ -105,5 +106,6 @@ gx_set_overprint_DevicePixel(const gs_color_space * pcs, gs_state * pgs)
     gs_overprint_params_t   params;
 
     params.retain_any_comps = false;
+    pgs->effective_overprint_mode = 0;
     return gs_state_update_overprint(pgs, &params);
 }

@@ -630,7 +630,7 @@ gx_device_halftone_release(gx_device_halftone * pdht, gs_memory_t * mem)
  * A negative value is returned if the color name is not found.
  */
 int
-gs_color_name_component_number(const gx_device * dev, char * pname,
+gs_color_name_component_number(const gx_device * dev, const char * pname,
 				int name_size, int halftonetype)
 {
     int num_colorant;

@@ -206,7 +206,7 @@ gs_sethalftone_prepare(gs_state * pgs, gs_halftone * pht,
 			break;
 		    poc->corder = senum.order;
 		    poc->comp_number = gs_color_name_component_number(pgs->device,
-		    	(char *)color_names[i], strlen(color_names[i]), pht->type);
+				color_names[i], strlen(color_names[i]), pht->type);
 		    poc->cname = 0;  /* name index values are not known (or needed) */
 		    if (i == 0)	/* Gray = Default */
 			pdht->order = poc->corder;	/* Save default value */

@@ -98,7 +98,7 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
      * This crude version of the code simply uses pdf_obtain_font_resource,
      * and never re-encodes characters.
      */
-    code = pdf_obtain_font_resource((gs_text_enum_t *)penum, pstr, &pdfont);
+    code = pdf_obtain_font_resource((const gs_text_enum_t *)penum, pstr, &pdfont);
     if (code < 0)
 	return code;
     cfont = pdf_font_resource_font(pdfont);

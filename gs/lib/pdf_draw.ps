@@ -921,9 +921,20 @@ end
   execform
 } bdef
 
+/_dops_save 1 array def
+
 /DoPS {
-  DONTPS { pop } { true resolvestream cvx exec } ifelse
+  DOPS
+   {
+     //_dops_save 0 save put
+     true resolvestream cvx exec
+     //_dops_save 0 get restore
+   }
+   { pop }
+  ifelse
 } bdef
+
+currentdict /_dops_save undef
 
 drawopdict begin
   /Do {

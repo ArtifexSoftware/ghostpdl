@@ -780,7 +780,7 @@ private char *gs_main_tempnames(gs_main_instance *minst)
 	    i = 0;
 	    while ((idict = dict_next(tempfiles, idict, &keyval[0])) >= 0) {
 		if (obj_string_data(&keyval[0], &data, &size) >= 0) {
-		    memcpy(tempnames+i, (char *)data, size);
+		    memcpy(tempnames+i, (const char *)data, size);
 		    i+= size;
 		    tempnames[i++] = '\0';
 		}
