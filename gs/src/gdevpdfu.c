@@ -804,6 +804,33 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 }
 
 /*
+ * Reverse resource chains.
+ * ps2write uses it with page resources.
+ * Assuming only the 0th chain contauns something.
+ */
+void
+pdf_reverse_resource_chain(gx_device_pdf *pdev, pdf_resource_type_t rtype)
+{
+    pdf_resource_t *pres = pdev->resources[rtype].chains[0];
+    pdf_resource_t *pres1, *pres0 = pres, *pres2;
+
+    if (pres == NULL)
+	return;
+    pres1 = pres->next;
+    for (;;) {
+	if (pres1 == NULL)
+	    break;
+	pres2 = pres1->next;
+	pres1->next = pres;
+	pres = pres1;
+	pres1 = pres2;
+    }
+    pres0->next = NULL;
+    pdev->resources[rtype].chains[0] = pres;
+}
+
+
+/*
  * Free unnamed Cos objects for resources local to a content stream,
  * since they can't be used again.
  */

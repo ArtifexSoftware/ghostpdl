@@ -1104,6 +1104,8 @@ pdf_close(gx_device * dev)
     if (code >= 0)
 	code = code1;
 #if PS2WRITE
+    if (pdev->OrderResources)
+	pdf_reverse_resource_chain(pdev, resourcePage);
     code1 = pdf_write_resource_objects(pdev, resourcePage);
     if (code >= 0)
 	code = code1;
