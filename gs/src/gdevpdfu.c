@@ -193,8 +193,8 @@ private const context_proc context_procs[4][4] =
 };
 
 /* Compute an object encryption key. */
-int
-pdf_object_key(gx_device_pdf * pdev, gs_id object_id, byte key[16])
+private int
+pdf_object_key(const gx_device_pdf * pdev, gs_id object_id, byte key[16])
 {
     md5_state_t md5;
     md5_byte_t zero[2] = {0, 0}, t;
@@ -210,9 +210,19 @@ pdf_object_key(gx_device_pdf * pdev, gs_id object_id, byte key[16])
     return min(KeySize + 5, 16);
 }
 
+/* Initialize encryption. */
+int
+pdf_encrypt_init(const gx_device_pdf * pdev, gs_id object_id, stream_arcfour_state *psarc4)
+{
+    byte key[16];
+
+    return s_arcfour_set_key(psarc4, key, pdf_object_key(pdev, object_id, key));
+}
+
+
 /* Add the encryption filter. */
 int
-pdf_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id)
+pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id)
 {
     gs_memory_t *mem = pdev->v_memory;
     stream_arcfour_state *ss;
@@ -243,7 +253,7 @@ pdf_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id)
 
 /* Remove the encryption filter. */
 void
-pdf_encrypt_end(gx_device_pdf * pdev)
+pdf_end_encrypt(gx_device_pdf * pdev)
 {
     if (pdev->KeyLength) {
 	stream *s = pdev->strm;
@@ -273,7 +283,7 @@ none_to_stream(gx_device_pdf * pdev)
 	pprints1(s, "/Filter /%s", compression_filter_name);
     stream_puts(s, ">>\nstream\n");
     pdev->contents_pos = pdf_stell(pdev);
-    code = pdf_encrypt(pdev, &s, pdev->contents_id);
+    code = pdf_begin_encrypt(pdev, &s, pdev->contents_id);
     if (code < 0)
 	return code;
     pdev->strm = s;
@@ -380,7 +390,7 @@ stream_to_none(gx_device_pdf * pdev)
 	gs_free_object(pdev->pdf_memory, s, "zlib stream");
 	pdev->strm = s = fs;
     }
-    pdf_encrypt_end(pdev);
+    pdf_end_encrypt(pdev);
     s = pdev->strm;
     length = pdf_stell(pdev) - pdev->contents_pos;
     stream_puts(s, "endstream\n");
@@ -940,6 +950,52 @@ pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
     pdf_put_name_chars(pdev, nstr, size);
 }
 
+/* Write an encoded string with possible encryption. */
+private void
+pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
+{
+
+    stream sinp, sstr, sout;
+    stream_PSSD_state st;
+    stream_state so;
+    byte buf[100], bufo[100];
+    stream_arcfour_state sarc4;
+
+    if (!pdev->KeyLength) {
+	pdf_put_string(pdev, str, size);
+	return;
+    }
+    if (pdf_encrypt_init(pdev, object_id, &sarc4) < 0) {
+	/* The interface can't pass an error. */
+	pdf_put_string(pdev, str, size);
+	return;
+    }
+    sread_string(&sinp, str + 1, size);
+    s_init(&sstr, NULL);
+    s_init_state((stream_state *)&st, &s_PSSD_template, NULL);
+    s_init_filter(&sstr, (stream_state *)&st, buf, sizeof(buf), &sinp);
+    s_init(&sout, NULL);
+    s_init_state(&so, &s_PSSE_template, NULL);
+    s_init_filter(&sout, &so, bufo, sizeof(bufo), pdev->strm);
+    stream_putc(pdev->strm, '(');
+    for (;;) {
+	uint n;
+	int code = sgets(&sstr, buf, sizeof(buf), &n);
+
+	if (n > 0) {
+	    s_arcfour_process_buffer(&sarc4, buf, n);
+	    stream_write(&sout, buf, n);
+	}
+	if (code == EOFC)
+	    break;
+	if (code < 0 || n < sizeof(buf)) {
+	    /* The interface can't pass an error. */
+	    break;
+	}
+    }
+    sclose(&sout); /* Writes ')'. */
+}
+
 /*
  * Write a string in its shortest form ( () or <> ).  Note that
  * this form is different depending on whether binary data are allowed.
@@ -954,12 +1010,14 @@ pdf_put_string(const gx_device_pdf * pdev, const byte * str, uint size)
 
 /* Write a value, treating names specially. */
 void
-pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size)
+pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id object_id)
 {
     if (size > 0 && vstr[0] == '/')
 	pdf_put_name(pdev, vstr + 1, size - 1);
     else if (size > 3 && vstr[0] == 0 && vstr[1] == 0 && vstr[size - 1] == 0)
 	pdf_put_name(pdev, vstr + 3, size - 4);
+    else if (size > 1 && vstr[0] == '(')
+	pdf_put_encoded_string(pdev, vstr, size, object_id);
     else
 	stream_write(pdev->strm, vstr, size);
 }
@@ -1118,7 +1176,7 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 	pdw->length_id = length_id;
     }
     if (options & DATA_STREAM_ENCRYPT) {
-	code = pdf_encrypt(pdev, &s, object_id);
+	code = pdf_begin_encrypt(pdev, &s, object_id);
 	if (code < 0)
 	    return code;
 	pdev->strm = s;
@@ -1147,7 +1205,7 @@ pdf_end_data(pdf_data_writer_t *pdw)
     if (code < 0)
 	return code;
     if (pdw->encrypted)
-	pdf_encrypt_end(pdev);
+	pdf_end_encrypt(pdev);
     stream_puts(pdev->strm, "\nendstream\n");
     pdf_end_separate(pdev);
     pdf_open_separate(pdev, pdw->length_id);

@@ -434,21 +434,26 @@ pdf_compute_fileID(gx_device_pdf * pdev)
     /* We compute a file identifier when beginning a document
        to allow its usage with PDF encryption. Due to that,
        in contradiction to the Adobe recommendation, our
-       ID doesn't depend on the document size.
-       Note that the creation date is in pdev->Info. */
-
+       ID doesn't depend on the document size. 
+    */
     gs_memory_t *mem = pdev->pdf_memory;
     stream *strm = pdev->strm;
     uint ignore;
     int code;
     stream *s = s_MD5E_make_stream(mem, pdev->fileID, sizeof(pdev->fileID));
+    long secs_ns[2];
+    uint KeyLength = pdev->KeyLength;
 
     if (s == NULL)
 	return_error(gs_error_VMerror);
+    pdev->KeyLength = 0; /* Disable encryption. URI mustn't encrypt - not sure why. */
+    gp_get_usertime(secs_ns);
+    sputs(s, (byte *)secs_ns, sizeof(secs_ns), &ignore);
     sputs(s, (const byte *)pdev->fname, strlen(pdev->fname), &ignore);
     pdev->strm = s;
     code = cos_dict_elements_write(pdev->Info, pdev);
     pdev->strm = strm;
+    pdev->KeyLength = KeyLength;
     if (code < 0)
 	return code;
     sclose(s);

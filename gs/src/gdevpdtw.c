@@ -18,6 +18,7 @@
 /* Font resource writing for pdfwrite text */
 #include "memory_.h"
 #include "gx.h"
+#include "gserrors.h"
 #include "gxfcmap.h"
 #include "gxfont.h"
 #include "gscencs.h"
@@ -29,6 +30,7 @@
 #include "gdevpdti.h"		/* for writing bitmap fonts Encoding */
 #include "gdevpdtw.h"
 #include "gdevpdtv.h"
+#include "sarc4.h"
 
 private const char *const encoding_names[] = {
     KNOWN_REAL_ENCODING_NAMES
@@ -468,7 +470,8 @@ pdf_write_contents_cid2(gx_device_pdf *pdev, pdf_font_resource_t *pdfont)
 
 	pdf_open_separate(pdev, map_id);
 	stream_puts(pdev->strm, "<<");
-	pdf_begin_data(pdev, &writer);
+	pdf_begin_data_stream(pdev, &writer,
+	    DATA_STREAM_BINARY | DATA_STREAM_COMPRESS | DATA_STREAM_ENCRYPT, map_id);
 	for (i = 0; i < count; ++i) {
 	    uint gid = pdfont->u.cidfont.CIDToGIDMap[i];
 
@@ -593,16 +596,34 @@ pdf_close_text_document(gx_device_pdf *pdev)
  */
 int
 pdf_write_cid_system_info(gx_device_pdf *pdev,
-			  const gs_cid_system_info_t *pcidsi)
+			  const gs_cid_system_info_t *pcidsi, gs_id object_id)
 {
     stream *s = pdev->strm;
+    byte Registry[32], Ordering[32];
 
+    if (pcidsi->Registry.size > sizeof(Registry))
+	return_error(gs_error_limitcheck);
+    if (pcidsi->Ordering.size > sizeof(Ordering))
+	return_error(gs_error_limitcheck);
+    memcpy(Registry, pcidsi->Registry.data, pcidsi->Registry.size);
+    memcpy(Ordering, pcidsi->Ordering.data, pcidsi->Ordering.size);
+    if (pdev->KeyLength) {
+	stream_arcfour_state sarc4;
+	int code; 
+
+	code = pdf_encrypt_init(pdev, object_id, &sarc4);
+	if (code < 0)
+	    return code;
+	s_arcfour_process_buffer(&sarc4, Registry, pcidsi->Registry.size);
+	code = pdf_encrypt_init(pdev, object_id, &sarc4);
+	if (code < 0)
+	    return code;
+	s_arcfour_process_buffer(&sarc4, Ordering, pcidsi->Ordering.size);
+    }
     stream_puts(s, "<<\n/Registry");
-    s_write_ps_string(s, pcidsi->Registry.data, pcidsi->Registry.size,
-		      PRINT_HEX_NOT_OK);
+    s_write_ps_string(s, Registry, pcidsi->Registry.size, PRINT_HEX_NOT_OK);
     stream_puts(s, "\n/Ordering");
-    s_write_ps_string(s, pcidsi->Ordering.data, pcidsi->Ordering.size,
-		      PRINT_HEX_NOT_OK);
+    s_write_ps_string(s, Ordering, pcidsi->Ordering.size, PRINT_HEX_NOT_OK);
     pprintd1(s, "\n/Supplement %d\n>>\n", pcidsi->Supplement);
     return 0;
 }
@@ -628,7 +649,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	pprintd1(s, "/WMode %d/CMapName", pcmap->WMode);
 	pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
 	stream_puts(s, "/CIDSystemInfo");
-	code = pdf_write_cid_system_info(pdev, pcmap->CIDSystemInfo);
+	code = pdf_write_cid_system_info(pdev, pcmap->CIDSystemInfo, pres->object->id);
 	if (code < 0)
 	    return code;
     }

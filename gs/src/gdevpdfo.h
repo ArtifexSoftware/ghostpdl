@@ -73,7 +73,7 @@ typedef struct cos_stream_piece_s cos_stream_piece_t;
 	cos_proc_release((*release));
 
 #define cos_proc_write(proc)\
-  int proc(const cos_object_t *pco, gx_device_pdf *pdev)
+  int proc(const cos_object_t *pco, gx_device_pdf *pdev, gs_id object_id)
 	cos_proc_write((*write));
 
 #define cos_proc_equal(proc)\
@@ -206,7 +206,7 @@ int cos_become(cos_object_t *, cos_type_t);
 cos_proc_release(cos_release);
 #define COS_RELEASE(pc, cname) cos_release(COS_OBJECT(pc), cname)
 cos_proc_write(cos_write);
-#define COS_WRITE(pc, pdev) cos_write(CONST_COS_OBJECT(pc), pdev)
+#define COS_WRITE(pc, pdev) cos_write(CONST_COS_OBJECT(pc), pdev, (pc)->id)
 
 /* Make a value to store into a composite object. */
 const cos_value_t *cos_string_value(cos_value_t *, const byte *, uint);

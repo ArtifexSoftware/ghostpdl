@@ -830,7 +830,9 @@ pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     {
 	long cidsi_id = pdf_begin_separate(pdev);
 
-	pdf_write_cid_system_info(pdev, pcidsi);
+	code = pdf_write_cid_system_info(pdev, pcidsi, cidsi_id);
+	if (code < 0)
+	    return code;
 	pdf_end_separate(pdev);
 	pdfont->u.cidfont.CIDSystemInfo_id = cidsi_id;
     }

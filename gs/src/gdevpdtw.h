@@ -60,7 +60,7 @@ typedef struct gs_cmap_s gs_cmap_t;
  * Write the CIDSystemInfo for a CIDFont or a CMap.
  */
 int pdf_write_cid_system_info(gx_device_pdf *pdev,
-			      const gs_cid_system_info_t *pcidsi);
+			      const gs_cid_system_info_t *pcidsi, gs_id object_id);
 
 /*
  * Write a CMap resource.  We pass the CMap object as well as the resource,

@@ -267,7 +267,7 @@ pdf_begin_char_proc_generic(gx_device_pdf * pdev, pdf_font_resource_t *pdfont,
 	stream_puts(s, "<</Length       >>stream\n");
 	ppos->start_pos = stell(s);
     }
-    code = pdf_encrypt(pdev, &pdev->strm, pres->object->id);
+    code = pdf_begin_encrypt(pdev, &pdev->strm, pres->object->id);
     if (code < 0)
 	return code;
     *ppcp = pcp;
@@ -306,7 +306,7 @@ pdf_end_char_proc(gx_device_pdf * pdev, pdf_stream_position_t * ppos)
     stream *s;
     long start_pos, end_pos, length;
 
-    pdf_encrypt_end(pdev);
+    pdf_end_encrypt(pdev);
     s = pdev->strm;
     start_pos = ppos->start_pos;
     end_pos = stell(s);

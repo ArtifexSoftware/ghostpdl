@@ -739,12 +739,12 @@ int pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page);
 void pdf_copy_data(stream *s, FILE *file, long count, stream_arcfour_state *ss);
 void pdf_copy_data_safe(stream *s, FILE *file, long position, long count);
 
-/* Compute an object encryption key. */
-int pdf_object_key(gx_device_pdf * pdev, gs_id object_id, byte key[16]);
 /* Add the encryption filter. */
-int pdf_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);
+int pdf_begin_encrypt(gx_device_pdf * pdev, stream **s, gs_id object_id);
 /* Remove the encryption filter. */
-void pdf_encrypt_end(gx_device_pdf * pdev);
+void pdf_end_encrypt(gx_device_pdf * pdev);
+/* Initialize encryption. */
+int pdf_encrypt_init(const gx_device_pdf * pdev, gs_id object_id, stream_arcfour_state *psarc4);
 
 
 /* ------ Pages ------ */
@@ -820,7 +820,7 @@ void pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size);
 void pdf_put_string(const gx_device_pdf *pdev, const byte *str, uint size);
 
 /* Write a value, treating names specially. */
-void pdf_write_value(const gx_device_pdf *pdev, const byte *vstr, uint size);
+void pdf_write_value(const gx_device_pdf *pdev, const byte *vstr, uint size, gs_id object_id);
 
 /* Store filters for a stream. */
 int pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,

@@ -382,11 +382,10 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     gs_color_space cs_gray;
     cos_value_t v;
     int code;
-    byte key[16];
     stream_arcfour_state sarc4;
 
     if (pdev->KeyLength) {
-	code = s_arcfour_set_key(&sarc4, key, pdf_object_key(pdev, pca->id, key));
+	code = pdf_encrypt_init(pdev, pca->id, &sarc4);
 	if (code < 0)
 	    return code;
     }
