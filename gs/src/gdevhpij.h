@@ -41,7 +41,8 @@ typedef enum { UNSUPPORTED=-1,
                     DJ9xx,
                     DJ9xxVIP,
                     DJ630,
-                    AP2100 } PRINTER_TYPE;
+                    AP2100,
+                    HPIJS } PRINTER_TYPE;
 
 /*
  * The following defines come from hpijs hpijs.h .
@@ -49,6 +50,8 @@ typedef enum { UNSUPPORTED=-1,
 
 #define SNAME "hpijs"
 #define SRVPATH "hpijs"	/* server path */
+
+#define DEVICE_NAME_MAX 16
 
 /* Packet commands. */
 typedef enum
@@ -69,7 +72,13 @@ typedef enum
    GET_PAPER,
    GET_RESOLUTION,
    GET_EFFECTIVE_RESOLUTION,
-   GET_SRV_VERSION
+   GET_SRV_VERSION,
+   SET_RESOLUTION,
+   SET_DEVICE_NAME,
+   GET_PIXELS_PER_ROW,
+   GET_PRINTABLE_AREA,        /* in inches */
+   GET_PHYSICAL_PAGE_SIZE,    /* in inches */
+   GET_PRINTABLE_START        /* in inches */
 } PK_CMD;
 
 /* Individual packets. PK_CMD must be first in all packets. */
@@ -92,11 +101,7 @@ typedef struct
   int val;
 } PK_MODEL;
 
-typedef struct
-{
-  PK_CMD cmd;
-  int val;
-} PK_MODE;
+typedef PK_MODEL PK_MODE;
 
 typedef struct
 {
@@ -107,8 +112,37 @@ typedef struct
 typedef struct
 {
   PK_CMD cmd;
-  int val;
+  int x;
+  int y;
 } PK_RESOLUTION;
+
+typedef struct
+{
+  PK_CMD cmd;
+  char name[DEVICE_NAME_MAX];
+} PK_DEVICE_NAME;
+
+typedef struct
+{
+  PK_CMD cmd;
+  char str[DEVICE_NAME_MAX];
+} PK_VERSION;
+
+typedef struct
+{
+   PK_CMD cmd;
+   float width;
+   float height;
+} PK_PRINTABLE_AREA;
+
+typedef struct
+{
+   PK_CMD cmd;
+   float x;
+   float y;
+} PK_PHYSICAL_PAGE_SIZE;
+
+typedef PK_PHYSICAL_PAGE_SIZE PK_PRINTABLE_START;
 
 /* Common packet. */
 typedef union
@@ -120,6 +154,11 @@ typedef union
   PK_PAPER paper;
   PK_RESOLUTION res;
   PK_PIXELS_PER_ROW ppr;
+  PK_DEVICE_NAME dev;
+  PK_VERSION ver;
+  PK_PRINTABLE_AREA parea;
+  PK_PHYSICAL_PAGE_SIZE psize;
+  PK_PRINTABLE_START pstart;
 } PK;
 
 /* Server descriptor. */

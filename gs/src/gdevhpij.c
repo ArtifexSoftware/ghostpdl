@@ -42,8 +42,8 @@ typedef struct gx_device_hpijs_s
    /* Additional parameters for hpijs */
    int PrintMode;		/* qrayscale=0, normal=1, photo=2, ??? */
    SRVD sd;			/* server descriptor */
-}
-gx_device_hpijs;
+   gs_param_string DeviceName;
+} gx_device_hpijs;
 
 /* Default X and Y resolution. */
 #ifndef X_DPI
@@ -54,11 +54,12 @@ gx_device_hpijs;
 #endif
 
 /* Margins are left, bottom, right, top. */
-#define DESKJET_MARGINS_LETTER   0.25, 0.44, 0, 0.167
-#define DESKJET_MARGINS_A4       0.125, 0.44, 0, 0.167
+#define DESKJET_MARGINS_LETTER   0.25, 0.44, -0.25, 0.33
+#define DESKJET_MARGINS_A4       0.125, 0.44, -0.125, 0.33
+//#define DESKJET_MARGINS_LETTER   0.25, 0.44, 0, 0.167
+//#define DESKJET_MARGINS_A4       0.125, 0.44, 0, 0.167
 
-private int hpijs_print_page(gx_device_printer * pdev, FILE * prn_stream,
-			     int model);
+private int hpijs_print_page(gx_device_printer * pdev, FILE * prn_stream, const char *dname);
 
 private dev_proc_open_device(hpijs_open);
 private dev_proc_close_device(hpijs_close);
@@ -69,6 +70,7 @@ private dev_proc_print_page(dj8xx_print_page);
 private dev_proc_print_page(dj9xx_print_page);
 private dev_proc_print_page(dj9xx_vip_print_page);
 private dev_proc_print_page(ap21xx_print_page);
+private dev_proc_print_page(hpijs_ext_print_page);
 private dev_proc_get_params(hpijs_get_params);
 private dev_proc_put_params(hpijs_put_params);
 
@@ -139,6 +141,15 @@ gx_device_hpijs gs_AP21xx_device =
 			  0, 0, 0, 0,	/* margins (lm,bm,rm,tm)  */
 			  24, ap21xx_print_page),
    2				/* PrintMode default */
+};
+
+gx_device_hpijs gs_hpijs_device =
+    { prn_device_std_body(gx_device_hpijs, prn_hpijs_procs, "hpijs",
+			  DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
+			  X_DPI, Y_DPI,
+			  0, 0, 0, 0,	/* margins (lm,bm,rm,tm)  */
+			  24, hpijs_ext_print_page),
+   1				/* PrintMode default */
 };
 
 static char s2c[80];
@@ -340,38 +351,93 @@ private int hpijs_open_srv(SRVD * sd, FILE * prn_stream, int raster_width)
    return -1;
 }
 
-private int hpijs_spawn_srv(SRVD * sd, FILE * prn_stream, 
-			    int width, int model, int mode, int paper)
+private int hpijs_spawn_srv(gx_device_hpijs *pdev, FILE * prn_stream, 
+			    const char *dname)
 {
    PK pk;
 
-   hpijs_init_sd(sd);
-   if (hpijs_open_srv(sd, prn_stream, width * 3) < 0)
+   hpijs_init_sd(&pdev->sd);
+   if (hpijs_open_srv(&pdev->sd, prn_stream, pdev->width * 3) < 0)
    {
       bug("unable to spawn server\n");
       return -1;
    }
 
-   pk.model.cmd = SET_MODEL;
-   pk.model.val = model;
-   hpijs_put_pk(&pk, sd->fdc2s);
-   hpijs_get_pk(&pk, sd->fds2c);	/* ack */
+   pk.dev.cmd = SET_DEVICE_NAME;
+   strcpy(pk.dev.name, dname);
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
 
    pk.mode.cmd = SET_PRINTMODE;
-   pk.mode.val = mode;
-   hpijs_put_pk(&pk, sd->fdc2s);
-   hpijs_get_pk(&pk, sd->fds2c);	/* ack */
+   pk.mode.val = pdev->PrintMode;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
 
    pk.paper.cmd = SET_PAPER;
-   pk.paper.size = paper;
-   hpijs_put_pk(&pk, sd->fdc2s);
-   hpijs_get_pk(&pk, sd->fds2c);	/* ack */
+   pk.paper.size = gdev_pcl_paper_size((gx_device *)pdev);
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+
+   pk.res.cmd = SET_RESOLUTION;
+   pk.res.x = pdev->x_pixels_per_inch;
+   pk.res.y = pdev->y_pixels_per_inch;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
 
    pk.ppr.cmd = SET_PIXELS_PER_ROW;
-   pk.ppr.width = width;
-   pk.ppr.outwidth = width;      /* no simple pixel replication */
-   hpijs_put_pk(&pk, sd->fdc2s);
-   hpijs_get_pk(&pk, sd->fds2c);	/* ack */
+   pk.ppr.width = pdev->width;
+   pk.ppr.outwidth = pdev->width;      /* no simple pixel replication (scaling) */
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+
+#ifdef zero_and_no_warning
+/* API Test code. */
+   pk.ppr.cmd = GET_PRINTMODE;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("printmode=%d\n", pk.mode.val);
+
+   pk.ppr.cmd = GET_PRINTMODE_CNT;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("number of printmodes=%d\n", pk.mode.val);
+
+   pk.ppr.cmd = GET_PAPER;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("paper size=%d\n", pk.paper.size);
+
+   pk.ppr.cmd = GET_EFFECTIVE_RESOLUTION;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("eff resolution x=%d, y=%d\n", pk.res.x, pk.res.y);
+
+   pk.ppr.cmd = GET_PIXELS_PER_ROW;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("input width=%d, outwidth=%d\n", pk.ppr.width, pk.ppr.outwidth);
+
+   pk.ppr.cmd = GET_SRV_VERSION;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("hpijs server %s\n", pk.ver.str);
+
+   pk.ppr.cmd = GET_PRINTABLE_AREA;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("printable width=%.2f, height=%.2f (inches)\n", pk.parea.width, pk.parea.height);
+
+   pk.ppr.cmd = GET_PHYSICAL_PAGE_SIZE;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("physical page size x=%.2f, y=%.2f (inches)\n", pk.psize.x, pk.psize.y);
+
+   pk.ppr.cmd = GET_PRINTABLE_START;
+   hpijs_put_pk(&pk, pdev->sd.fdc2s);
+   hpijs_get_pk(&pk, pdev->sd.fds2c);	/* ack */
+   bug("printable start x=%.2f, y=%.2f (inches)\n", pk.pstart.x, pk.pstart.y);
+/* End API test code. */
+#endif
 
    return 0;
 }
@@ -384,11 +450,12 @@ private int hpijs_get_params(gx_device * pdev, gs_param_list * plist)
    if (code < 0)
       return code;
 
-   if (
-       (ecode =
-	param_write_int(plist, "PrintMode",
-			&((gx_device_hpijs *) pdev)->PrintMode)) < 0)
+   if ((ecode = param_write_int(plist, "PrintMode",
+			&((gx_device_hpijs *)pdev)->PrintMode)) < 0)
       code = ecode;
+
+   if ((ecode = param_write_string(plist, "DeviceName", &((gx_device_hpijs *)pdev)->DeviceName)) < 0)
+     code = ecode;
 
    return code;
 }
@@ -398,7 +465,8 @@ private int hpijs_put_params(gx_device * pdev, gs_param_list * plist)
    int ecode = 0;
    int code;
    gs_param_name param_name;
-   int pm = ((gx_device_hpijs *) pdev)->PrintMode;
+   int pm = ((gx_device_hpijs *)pdev)->PrintMode;
+   gs_param_string dname = ((gx_device_hpijs *)pdev)->DeviceName;
 
    switch (code = param_read_int(plist, (param_name = "PrintMode"), &pm))
    {
@@ -415,13 +483,17 @@ private int hpijs_put_params(gx_device * pdev, gs_param_list * plist)
       break;
    }
 
+   if ((code = param_read_string(plist, (param_name = "DeviceName"), &dname)) < 0)
+     ecode = code;
+
    if (ecode < 0)
       return ecode;
    code = gdev_prn_put_params(pdev, plist);
    if (code < 0)
       return code;
 
-   ((gx_device_hpijs *) pdev)->PrintMode = pm;
+   ((gx_device_hpijs *)pdev)->PrintMode = pm;
+   ((gx_device_hpijs *)pdev)->DeviceName = dname;
    return 0;
 }
 
@@ -463,75 +535,72 @@ private int white(unsigned char *data, int size)
 
 private int dj630_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
-   return hpijs_print_page(pdev, prn_stream, DJ630);
+   return hpijs_print_page(pdev, prn_stream, "DJ630");
 }
 
 private int dj6xx_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
-   return hpijs_print_page(pdev, prn_stream, DJ6xx);
+   return hpijs_print_page(pdev, prn_stream, "DJ6xx");
 }
 
 private int dj6xx_photo_print_page(gx_device_printer * pdev,
 				   FILE * prn_stream)
 {
-   return hpijs_print_page(pdev, prn_stream, DJ6xxPhoto);
+   return hpijs_print_page(pdev, prn_stream, "DJ6xxPhoto");
 }
 
 private int dj8xx_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
-   return hpijs_print_page(pdev, prn_stream, DJ8xx);
+   return hpijs_print_page(pdev, prn_stream, "DJ8xx");
 }
 
 private int dj9xx_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
-   return hpijs_print_page(pdev, prn_stream, DJ9xx);
+   return hpijs_print_page(pdev, prn_stream, "DJ9xx");
 }
 
 private int dj9xx_vip_print_page(gx_device_printer * pdev,
 				 FILE * prn_stream)
 {
-   return hpijs_print_page(pdev, prn_stream, DJ9xxVIP);
+   return hpijs_print_page(pdev, prn_stream, "DJ9xxVIP");
 }
 
 private int ap21xx_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {
-   return hpijs_print_page(pdev, prn_stream, AP2100);
+   return hpijs_print_page(pdev, prn_stream, "AP21xx");
+}
+
+private int hpijs_ext_print_page(gx_device_printer * pdev, FILE * prn_stream)
+{
+   char name[DEVICE_NAME_MAX];
+   int len;
+
+   len = ((gx_device_hpijs *)pdev)->DeviceName.size; 
+   if ((len == 0) || (len >= DEVICE_NAME_MAX))
+      return gs_note_error(gs_error_invalidaccess);
+   
+   strncpy(name, ((gx_device_hpijs *)pdev)->DeviceName.data, len);
+   name[len]=0;
+   return hpijs_print_page(pdev, prn_stream, name);
 }
 
 /* Send the page to the printer. */
-private int hpijs_print_page(gx_device_printer * pdev, FILE * prn_stream,
-			     int model)
+private int hpijs_print_page(gx_device_printer * pdev, FILE * prn_stream, const char *dname)
 {
    int line_size;
    int last_row;
    int lnum, code = 0;
-   int isnew, paper;
+   int isnew;
 
    isnew = gdev_prn_file_is_new(pdev);
 
    if (isnew)
    {
-      switch (gdev_pcl_paper_size((gx_device *) pdev))
-      {
-      case PAPER_SIZE_LEGAL:
-	 paper = 2;
-	 break;
-      case PAPER_SIZE_A4:
-	 paper = 1;
-	 break;
-      case PAPER_SIZE_LETTER:
-      default:
-	 paper = 0;
-	 break;
-      }
-
-      if (hpijs_spawn_srv
-	  (&((gx_device_hpijs *) pdev)->sd, prn_stream,
-	   pdev->width, model, ((gx_device_hpijs *) pdev)->PrintMode, paper) != 0)
+      if (hpijs_spawn_srv((gx_device_hpijs *)pdev, prn_stream, dname) != 0)
 	 return gs_note_error(gs_error_invalidaccess);
    }
 
-   line_size = gx_device_raster((gx_device *) pdev, 0);
+   line_size = gx_device_raster((gx_device *)pdev, 0);
    last_row = dev_print_scan_lines(pdev);
 
    for (lnum = 0; lnum < last_row; lnum++)
@@ -541,18 +610,18 @@ private int hpijs_print_page(gx_device_printer * pdev, FILE * prn_stream,
 				   line_size);
       if (code < 0)
 	 return -1;
-      if (!white(((gx_device_hpijs *) pdev)->sd.shmbuf, line_size))
+      if (!white(((gx_device_hpijs *)pdev)->sd.shmbuf, line_size))
       {
-	if (hpijs_put_cmd(&((gx_device_hpijs *) pdev)->sd, SND_RASTER) == -1)
+	if (hpijs_put_cmd(&((gx_device_hpijs *)pdev)->sd, SND_RASTER) == -1)
 	  return -1;
       } else
       {
-	  if (hpijs_put_cmd (&((gx_device_hpijs *) pdev)->sd, SND_NULL_RASTER) == -1)
+	  if (hpijs_put_cmd (&((gx_device_hpijs *)pdev)->sd, SND_NULL_RASTER) == -1)
 	    return -1;
       }
    }
 
-   hpijs_put_cmd(&((gx_device_hpijs *) pdev)->sd, NEW_PAGE);
+   hpijs_put_cmd(&((gx_device_hpijs *)pdev)->sd, NEW_PAGE);
 
    return code;
 }
