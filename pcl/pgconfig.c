@@ -87,10 +87,9 @@ hpgl_reset_overlay(hpgl_state_t *pgls)
 	hpgl_SI(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_SL(&args, pgls);
-	/* HAS needs to be consistant */
+	/* We initialize symbol mode directly because hpgl_SM parses
+           its argument differently than most other commands */
 	pgls->g.symbol_mode = 0;
-	/*	hpgl_args_setup(&args);
-		hpgl_SM(&args, pgls); */
 	hpgl_args_setup(&args);
 	hpgl_SS(&args, pgls);
 	hpgl_args_set_int(&args,1);
@@ -99,8 +98,13 @@ hpgl_reset_overlay(hpgl_state_t *pgls)
 	hpgl_TD(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_MC(&args, pgls);
+#ifdef LJ6_COMPAT
+	/* LJ6 seems to reset PP with an IN command the Color Laserjet
+           does not.  NB this needs to be handled with dynamic
+           configuration */
 	hpgl_args_setup(&args);
 	hpgl_PP(&args, pgls);
+#endif
 }
 
 /* DF; sets programmable features except P1 and P2 */
@@ -337,7 +341,7 @@ hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  pgls->g.soft_clip_window.state = inactive;
 	  return 0;
 	}
-	
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	/* HAS needs error checking */
 	pgls->g.soft_clip_window.rect.p.x = wxy[0];
 	pgls->g.soft_clip_window.rect.p.y = wxy[1];
