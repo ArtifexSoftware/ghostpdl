@@ -270,9 +270,13 @@ hpjet_close(gx_device * pdev)
 
     if (code < 0)
 	return code;
-    if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
-	fputs("\033&l0H", ppdev->file);
-    fputs("\033E", ppdev->file);
+    if (ppdev->PageCount > 0) {
+	if (ppdev->Duplex_set >= 0 && ppdev->Duplex)
+	    fputs("\033&l0H", ppdev->file);
+
+	fputs("\033E", ppdev->file);
+    }
+
     return gdev_prn_close(pdev);
 }
 
