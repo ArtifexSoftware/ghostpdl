@@ -926,10 +926,6 @@ $(GLOBJ)gdevabuf.$(OBJ) : $(GLSRC)gdevabuf.c $(GXERR) $(memory__h)\
  $(gxdevice_h) $(gxdevmem_h) $(gdevmem_h)
 	$(GLCC) $(GLO_)gdevabuf.$(OBJ) $(C_) $(GLSRC)gdevabuf.c
 
-$(GLOBJ)gdevalph.$(OBJ) : $(GLSRC)gdevalph.c $(GXERR) $(memory__h)\
- $(gsdcolor_h) $(gxdevice_h) $(gxdevmem_h) $(gxgetbit_h)
-	$(GLCC) $(GLO_)gdevalph.$(OBJ) $(C_) $(GLSRC)gdevalph.c
-
 ### Other built-in devices
 
 # The bbox device can either be used as forwarding device to support
