@@ -139,6 +139,7 @@ currentdict /NOFONTMAP known   /NOFONTMAP exch def
 currentdict /NOFONTPATH known   /NOFONTPATH exch def
 currentdict /NOGC known   /NOGC exch def
 currentdict /NOINTERPOLATE .knownget { /INTERPOLATE exch not def } if
+currentdict /NOOUTERSAVE known   /NOOUTERSAVE exch def
 currentdict /NOPAGEPROMPT known   /NOPAGEPROMPT exch def
 currentdict /NOPAUSE known   /NOPAUSE exch def
 currentdict /NOPLATFONTS known   /NOPLATFONTS exch def
@@ -2132,6 +2133,10 @@ DELAYBIND not {
   systemdict /.forceundef .undef	% ditto
 } if
 WRITESYSTEMDICT not { systemdict readonly pop } if
+
+% Do outermost save unless it has been disabled. Note: we discard
+% this save object so that it can't be used to circumvent .setsafe
+NOOUTERSAVE not { save pop } if
 
 (END GC) VMDEBUG
 

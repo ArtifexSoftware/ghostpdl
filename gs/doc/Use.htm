@@ -2160,6 +2160,15 @@ Useful only for debugging.
 </dl>
 
 <dl>
+<dt><b><tt>-dNOOUTERSAVE</tt></b>
+<dd>Suppresses the initial save that is used for compatibility with Adobe
+PS Interpreters that ordinarily run under a job server. If a job server is
+going to be used to set up the outermost save level, then <b><tt>-dNOOUTERSAVE</tt></b>
+should be used so that the restore between jobs will restore global VM as
+expected.
+</dl>
+
+<dl>
 <dt><b><tt>-dNOSAFER</tt></b> (equivalent to <b><tt>-dDELAYSAFER</tt></b>).
 <dd>This flag disables SAFER mode until the <b><tt>.setsafe</tt></b>
 procedure is run. This is intended for clients or scripts that cannot
