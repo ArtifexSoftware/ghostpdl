@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -67,10 +67,10 @@ install-data: $(PSDOCDIR)/Use.htm $(PSEXDIR)/golfer.ps $(PSMANDIR)/gs.1
 	do if ( test -f $(PSMANDIR)/$$f.1 ); then $(INSTALL_DATA) $(PSMANDIR)/$$f.1 $(man1dir)/$$f.$(man1ext); fi;\
 	done'
 	$(SH) -c 'for f in $(MAN1_PS2PDF_LINKS) ;\
-	do ln -s ps2pdf.1 $(man1dir)/$$f.$(man1ext);\
+	do rm -f $(man1dir)/$$f.$(man1ext); ln -s ps2pdf.1 $(man1dir)/$$f.$(man1ext);\
 	done'
 	$(SH) -c 'for f in $(MAN1_GSLP_LINKS) ;\
-	do ln -s gslp.1 $(man1dir)/$$f.$(man1ext);\
+	do rm -f $(man1dir)/$$f.$(man1ext); ln -s gslp.1 $(man1dir)/$$f.$(man1ext);\
 	done'
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
@@ -124,8 +124,8 @@ Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
 	done'
 	-mkdir $(exdir)
 	for f in \
-alphabet.ps chess.ps cheq.ps colorcir.ps escher.ps golfer.ps \
-grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
+alphabet.ps chess.ps cheq.ps colorcir.ps doretree.ps escher.ps \
+golfer.ps grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(exdir) ;\
 	done
