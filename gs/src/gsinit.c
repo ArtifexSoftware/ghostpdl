@@ -65,5 +65,12 @@ gs_lib_finit(int exit_status, int code, gs_memory_t *mem)
 {
     /* Do platform-specific cleanup. */
     gp_exit(exit_status, code);
-    gs_malloc_release(mem);
+
+    /* NB: interface problem.
+     * if gs_lib_init0 was called the we should
+     *    gs_malloc_release(mem);
+     * else
+     *    someone else has control of mem so we can't free it.
+     *    gs_view and iapi.h interface 
+     */
 }
