@@ -1658,14 +1658,13 @@ readonly def
     >> setuserparams
   }
   if
-  % Pretty much the same as "<< /.LockSafetyParams true >> setpagedevice"
-  % but without some of the side effects.
-  mark currentdevice //null true mark /.LockSafetyParams true .putdeviceparamsonly
-  counttomark 2 eq 
-  { cleartomark }
-  { cleartomark cleartomark pop pop pop
-    /invalidaccess /.locksafe signalerror
-  } ifelse
+  % setpagedevice has the side effect of clearing the page, but
+  % we will just document that. Using setpagedevice keeps the device
+  % properties and pagedevice .LockSafetyParams in agreement even
+  % after a restore that changes the value to false.
+  currentglobal currentpagedevice gcheck setglobal % use correct VM space
+  << /.LockSafetyParams true >> setpagedevice
+  currentglobal
   //SAFETY /safe //true .forceput % overrides readonly
 } .bind executeonly odef
 

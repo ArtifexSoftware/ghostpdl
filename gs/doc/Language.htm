@@ -1254,6 +1254,9 @@ control (deleting and renaming files), the following can be used:
 In the above example, use of stopped will allow the use of this sequence on
 older versions of Ghostscript where <b><tt>.locksafe</tt></b> was not an operator.
 <p>
+<b>Note: This uses setpagedevice to change .LockSafetyParams, so the page
+will be erased as a side effect of this operator</b>
+<p>
 See also <a href="#LockSafetyParams">.LockSafetyParams</a> and
 <a href="#User_parameters">User Parameters</a>.
 <p>
