@@ -522,29 +522,33 @@ pdf_compute_encryption_data(gx_device_pdf * pdev)
     if (pdev->EncryptionV == 0 && pdev->KeyLength > 40)
 	pdev->EncryptionV = 2;	
     if (pdev->EncryptionV > 1 && pdev->CompatibilityLevel < 1.4) {
-	eprintf("PDF 1.3 only supports 40 bits keys.");
+	eprintf("PDF 1.3 only supports 40 bits keys.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR == 0)
 	pdev->EncryptionR = 2;
     if (pdev->EncryptionR < 2 || pdev->EncryptionR > 3) {
-	eprintf("Encryption revisions 2 and 3 are only supported.");
+	eprintf("Encryption revisions 2 and 3 are only supported.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR > 2 && pdev->CompatibilityLevel < 1.4) {
-	eprintf("PDF 1.3 only supports the encryption revision 2.");
+	eprintf("PDF 1.3 only supports the encryption revision 2.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength > 128) {
-	eprintf("The maximal length of PDF encryption key is 128 bits.");
+	eprintf("The maximal length of PDF encryption key is 128 bits.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->KeyLength % 8) {
-	eprintf("PDF encryption key length must be a multiple of 8.");
+	eprintf("PDF encryption key length must be a multiple of 8.\n");
 	return_error(gs_error_rangecheck);
     }
     if (pdev->EncryptionR == 2 && (pdev->Permissions & (0xF << 8))) {
-	eprintf("Some of Permissions are not allowed with R=2.");
+	eprintf("Some of Permissions are not allowed with R=2.\n");
+	return_error(gs_error_rangecheck);
+    }
+    if (pdev->EncryptionV == 2 && pdev->EncryptionR == 2 && pdev->KeyLength > 40) {
+	eprintf("Encryption version 2 revision 2 with KeyLength > 40 appears incompatible to some viewers. With long keys use revision 3.\n");
 	return_error(gs_error_rangecheck);
     }
     /* Compute O : */
@@ -737,7 +741,7 @@ pdf_open(gx_device * dev)
 	if (code < 0)
 	    goto fail;
     } else if(pdev->UserPassword.size > 0) {
-	eprintf("User password is specified. Need an Owner password or both.");
+	eprintf("User password is specified. Need an Owner password or both.\n");
 	return_error(gs_error_rangecheck);
     }
 
