@@ -481,7 +481,6 @@ bmpa_get_space_params(const gx_device_printer *pdev,
 	max(render_space, writer_space) + tile_cache_space;
     space_params->BufferSpace =
 	max(render_space, writer_space + min_row_space) + tile_cache_space;
-    space_params->BufferSpace = space_params->band.BandBufferSpace;
 }
 
 /* Put device parameters. */
