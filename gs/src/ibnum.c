@@ -190,27 +190,37 @@ sdecodelong(const byte * p, int format)
 float
 sdecodefloat(const byte * p, int format)
 {
-    bits32 lnum = (bits32) sdecodelong(p, format);
+    bits32 lnum;
     float fnum;
 
-#if !arch_floats_are_IEEE
-    if (format != num_float_native) {
-	/* We know IEEE floats take 32 bits. */
-	/* Convert IEEE float to native float. */
-	int sign_expt = lnum >> 23;
-	int expt = sign_expt & 0xff;
-	long mant = lnum & 0x7fffff;
-
-	if (expt == 0 && mant == 0)
-	    fnum = 0;
-	else {
-	    mant += 0x800000;
-	    fnum = (float)ldexp((float)mant, expt - 127 - 23);
-	}
-	if (sign_expt & 0x100)
-	    fnum = -fnum;
-    } else
-#endif
+    if ((format & ~(num_msb | num_lsb)) == num_float_native) {
+	/*
+	 * Just read 4 bytes and interpret them as a float, ignoring
+	 * any indication of byte ordering.
+	 */
+	memcpy(&lnum, p, 4);
 	fnum = *(float *)&lnum;
+    } else {
+	lnum = (bits32) sdecodelong(p, format);
+#if !arch_floats_are_IEEE
+	{
+	    /* We know IEEE floats take 32 bits. */
+	    /* Convert IEEE float to native float. */
+	    int sign_expt = lnum >> 23;
+	    int expt = sign_expt & 0xff;
+	    long mant = lnum & 0x7fffff;
+
+	    if (expt == 0 && mant == 0)
+		fnum = 0;
+	    else {
+		mant += 0x800000;
+		fnum = (float)ldexp((float)mant, expt - 127 - 23);
+	    }
+	    if (sign_expt & 0x100)
+		fnum = -fnum;
+	} else
+#endif
+	    fnum = *(float *)&lnum;
+    }
     return fnum;
 }

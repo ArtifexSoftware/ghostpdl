@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 1996, 1997, 2001 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -23,23 +23,31 @@
 #ifndef ibnum_INCLUDED
 #  define ibnum_INCLUDED
 
-/* Define the byte that begins an encoded number string. */
-/* (This is the same as the value of bt_num_array in btoken.h.) */
+/*
+ * Define the byte that begins an encoded number string.
+ * (This is the same as the value of bt_num_array in btoken.h.)
+ */
 #define bt_num_array_value 149
 
-/* Homogenous number array formats. */
-/* The default for numbers is big-endian. */
+/*
+ * Define the homogenous number array formats.  The default for numbers is
+ * big-endian.  Note that these values are defined by the PostScript
+ * Language Reference Manual: they are not arbitrary.
+ */
 #define num_int32 0		/* [0..31] */
 #define num_int16 32		/* [32..47] */
 #define num_float 48
 #define num_float_IEEE num_float
+/* Note that num_msb / num_lsb is ignored for num_float_native. */
 #define num_float_native (num_float + 1)
 #define num_msb 0
 #define num_lsb 128
 #define num_is_lsb(format) ((format) >= num_lsb)
 #define num_is_valid(format) (((format) & 127) <= 49)
-/* Special "format" for reading from an array. */
-/* num_msb/lsb is not used in this case. */
+/*
+ * Special "format" for reading from an array.
+ * num_msb/lsb is not used in this case.
+ */
 #define num_array 256
 /* Define the number of bytes for a given format of encoded number. */
 extern const byte enc_num_bytes[];	/* in ibnum.c */
