@@ -493,10 +493,7 @@ const font_resident_t resident_table[] = {
     {"StandardSymL", {'S','y','m','b','o','l','P','S',' ',' ',' ',' ',' ',' ',' ',' '},
      {621, 1, {25, 28800}, 0, REGULAR, NOBOLD, 16686}, cc_symbol},
     */
-    /* NB no Wingdings 
-    {"Dingbats", {'W','i','n','g','d','i','n','g','s',' ',' ',' ',' ',' ',' ',' '},
-     {18540, 1, {27, 25914},0, REGULAR, NOBOLD, face_val(2730, agfa)}, cc_dingbats},
-    */
+
 #ifdef AGFA_FONT_TABLE
     {
         fontnames("Wingdings", "noname"),
