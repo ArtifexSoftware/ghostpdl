@@ -1,5 +1,5 @@
 
-.TH GS 1 "20 August 1998" 5.35 Ghostscript \" -*- nroff -*-
+.TH GS 1 "10 September 1998" 5.40 Ghostscript \" -*- nroff -*-
 .SH NAME
 gs \- Ghostscript (PostScript and PDF language interpreter and previewer)
 .SH SYNOPSIS
@@ -119,8 +119,8 @@ and the highest-density (best output quality) mode with
 .fi
 .PP
 If you select a printer as the output device, Ghostscript also allows you
-to control where the device sends its output \-\- on Unix systems, usually
-directly to a temporary file.  To send the output to a file "foo.xyz",
+to choose where Ghostscript sends the output \-\- on Unix systems, usually
+to a temporary file.  To send the output to a file "foo.xyz",
 use the switch
 .PP
 .nf
@@ -139,7 +139,7 @@ Each resulting file receives one page of output, and the files are numbered
 in sequence.  "%d" is a printf format specification; you can also use a
 variant like "%02d".
 .PP
-On Unix systems you can send output directly to a pipe.  For example, to
+On Unix systems you can also send output to a pipe.  For example, to
 pipe output to the "\fBlpr\fR" command (which, on many Unix systems,
 directs it to a printer), use the switch
 .PP
@@ -172,7 +172,7 @@ or
 	-sPAPERSIZE=legal
 .fi
 .PP
-As of this printing, the known paper sizes, defined in the initialization
+At this time, the known paper sizes, defined in the initialization
 file "gs_statd.ps", are:
 .TS
 tab(>);
@@ -211,6 +211,28 @@ legal>8.5>14>21.59>35.56
 11x17>11>17>27.94>43.18
 ledger>17>11>43.18>27.94
 .TE
+.PP
+Ghostscript can do many things other than print or view PostScript and
+PDF files.  For example, if you want to know the bounding box of a
+PostScript (or EPS) file, Ghostscript provides a special "device" that
+just prints out this information:
+.PP
+.nf
+	gs \-sDEVICE=bbox myfile.ps
+.fi
+.PP
+For example, using one of the example files distributed with Ghostscript,
+.PP
+.nf
+	gs \-sDEVICE=bbox golfer.ps
+.fi
+.PP
+prints out
+.PP
+.nf
+	%%BoundingBox: 0 25 583 732
+	%%HiResBoundingBox: 0.808497 25.009496 582.994503 731.809445
+.fi
 .SH "INITIALIZATION FILES"
 When looking for the initialization files "gs_*.ps", the files related to
 fonts, or the file for the "run" operator, Ghostscript first tries to open
@@ -428,11 +450,11 @@ Path names for initialization files and fonts
 .B  TEMP
 Where temporary files are made
 .SH SEE ALSO
-The various Ghostscript document files (above).
+The various Ghostscript document files (above), especially \fBUse.htm\fR.
 .SH BUGS
 See the Usenet news group comp.lang.postscript.
 .SH VERSION
-This document was last revised for Ghostscript version 5.30.
+This document was last revised for Ghostscript version 5.40.
 .SH AUTHOR
 L. Peter Deutsch <ghost@aladdin.com> is the principal author of Ghostscript.
 Russell J. Lang <rjl@aladdin.com> is the author of most of the MS Windows

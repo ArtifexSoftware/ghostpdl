@@ -1,21 +1,19 @@
-/*
- * Copyright (C) 1991, 1992 Aladdin Enterprises.
- * All rights reserved.
- *  
- * This file is part of Aladdin Ghostscript.
- *
- * Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
- * or distributor accepts any responsibility for the consequences of using it,
- * or for whether it serves any particular purpose or works at all, unless he
- * or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
- * License (the "License") for full details.
- *
- * Every copy of Aladdin Ghostscript must include a copy of the License,
- * normally in a plain ASCII text file named PUBLIC.  The License grants you
- * the right to copy, modify and redistribute Aladdin Ghostscript, but only
- * under certain conditions described in the License.  Among other things, the
- * License requires that the copyright notice and this notice be preserved on
- * all copies.
+/* Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
+
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
  */
 
 /*
@@ -27,6 +25,34 @@
 #include "gdevprn.h"
 #include "gdevpcl.h"
 
+
+/*
+ * The HP Color LaserJet 5/5M provides a rather unexpected speed/performance
+ * tradeoff.
+ *
+ * When generating rasters, only the fixed (simple) color spaces provide
+ * reasonable performance (in this case, reasonable != good). However, in
+ * these modes, certain of the fully-saturated primary colors (cyan, blue,
+ * green, and red) are rendered differently as rasters as opposed to colored
+ * geometric objects. Hence, the color of the output will be other than what
+ * is expected.
+ *
+ * Alternatively, the direct color, 1-bit per pixel scheme can be used. This
+ * will produce the expected colors, but performance will deteriorate
+ * significantly (observed printing time will be about 3 times longer than
+ * when using the simple color mode).
+ *
+ * Note that when using the latter mode to view output from the PCL
+ * interpreter, geometric objects and raster rendered with other than
+ * geometric color spaces will have the same appearance as if sent directly
+ * to the CLJ, but rasters generated from simple color spaces will have a
+ * different appearance. To make the latter rasters match in appearance, the
+ * faster printing mode must be used (in which the case the other objects
+ * will not have the same appearance).
+ */
+#define USE_FAST_MODE
+
+
 /* X_DPI and Y_DPI must be the same */
 #define X_DPI 300
 #define Y_DPI 300
@@ -37,7 +63,7 @@
  */
 typedef struct clj_paper_size_s {
     uint        tag;                /* paper type tag */
-    bool        rotate;             /* true ==> rotate page */
+    int         orient;             /* logical page orientation to use */
     float       width, height;      /* in pts; +- 5 pts */
     gs_point    offsets;            /* offsets in the given orientation */
 } clj_paper_size;
@@ -48,33 +74,85 @@ typedef struct clj_paper_size_s {
  * A4 size are supported for color, so we don't bother to list the others.
  */
 private const clj_paper_size    paper_sizes[] = {
-    {   1,  true, 7.25 * 72, 10.50 * 72, { .200 * 72, 0 } },
-    {   2,  true, 8.50 * 72, 11.00 * 72, { .200 * 72, 0 } },
-    {  26,  true, 8.27 * 72, 11.69 * 72, { .197 * 72, 0 } }
+    {   1,  1, 10.50 * 72.0, 7.25 * 72.0, { .200 * 72.0, 0.0 } },
+    {   2,  1, 11.00 * 72.0, 8.50 * 72.0, { .200 * 72.0, 0.0 } },
+    {  26,  1, 11.69 * 72.0, 8.27 * 72.0, { .197 * 72.0, 0.0 } }
 };
+
+/*
+ * The supported set of resolutions.
+ *
+ * The Color LaserJet 5/5M is actually a pseudo-contone device, with hardware
+ * capable of providing about 16 levels of intensity. The current code does
+ * not take advantage of this feature, because it is not readily controllable
+ * via PCL. Rather, the device is modeled as a bi-level device in each of
+ * three color planes. The maximum supported resolution for such an arrangement
+ * is 300 dpi.
+ *
+ * The CLJ does support raster scaling, but to invoke that scaling, even for
+ * integral factors, involves a large performance penalty. Hence, only those
+ * resolutions that can be supported without invoking raster scaling are
+ * included here. These resolutions are always the same in the fast and slow
+ * scan directions, so only a single value is listed here.
+ *
+ * All valuse are in dots per inch.
+ */
+private const float supported_resolutions[] = { 75.0, 100.0, 150.0, 300.0 };
+
+
+/* indicate the maximum supported resolution and scan-line length (pts) */
+#define CLJ_MAX_RES        300.0
+#define CLJ_MAX_SCANLINE   (12.0 * 72.0)
 
 
 /*
+ * Determine a requested resolution pair is supported.
+ */
+  private bool
+is_supported_resolution(
+    const float HWResolution[2]
+)
+{
+    int     i;
+
+    for (i = 0; i < countof(supported_resolutions); i++) {
+        if (HWResolution[0] == supported_resolutions[i])
+            return HWResolution[0] == HWResolution[1];
+    }
+    return false;
+}
+
+/*
  * Find the paper size information corresponding to a given pair of dimensions.
- * Paper sizes are always requested in portrait orientation.
+ * If rotatep != 0, *rotatep is set to true if the page must be rotated 90
+ * degrees to fit.
  *
  * A return value of 0 indicates the paper size is not supported.
  */
   private const clj_paper_size *
 get_paper_size(
-    gx_device *             pdev
+    const float             MediaSize[2],
+    bool *                  rotatep
 )
 {
     static const float      tolerance = 5.0;
-    float                   width = pdev->MediaSize[0];
-    float                   height = pdev->MediaSize[1];
+    float                   width = MediaSize[0];
+    float                   height = MediaSize[1];
     const clj_paper_size *  psize = 0;
     int                     i;
 
     for (i = 0, psize = paper_sizes; i < countof(paper_sizes); i++, psize++) {
         if ( (fabs(width - psize->width) <= tolerance)  &&
-             (fabs(height - psize->height) <= tolerance)  )
+             (fabs(height - psize->height) <= tolerance)  ) {
+            if (rotatep != 0)
+                *rotatep = false;
             return psize;
+        } else if ( (fabs(width - psize->height) <= tolerance) &&
+                    (fabs(height - psize->width) <= tolerance)   ) {
+            if (rotatep != 0)
+                *rotatep = true;
+            return psize;
+        }
     }
 
     return 0;
@@ -94,12 +172,12 @@ clj_get_initial_matrix(
     gs_matrix *             pmat
 )
 {
-    const clj_paper_size *  psize = get_paper_size(pdev);
-    floatp                  fs_dim, ss_dim;     /* fast/slow scan dimension */
-    floatp                  fs_res = X_DPI / 72.0;
-    floatp                  ss_res = Y_DPI / 72.0;
+    bool                    rotate;
+    const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, &rotate);
+    floatp                  fs_res = pdev->HWResolution[0] / 72.0;
+    floatp                  ss_res = pdev->HWResolution[1] / 72.0;
 
-    /* if there is no recognized page, not much can be done */
+    /* if the paper size is not recognized, not much can be done */
     if (psize == 0) {
         pmat->xx = fs_res;
         pmat->xy = 0.0;
@@ -111,28 +189,71 @@ clj_get_initial_matrix(
     }
 
     /* all the pages are rotated, but we include code for both cases */
-    if (psize->rotate) {
-        fs_dim = pdev->MediaSize[1] - 2 * psize->offsets.x;
-        ss_dim = pdev->MediaSize[0] - 2 * psize->offsets.y;
+    if (rotate) {
         pmat->xx = 0.0;
-        pmat->xy = -ss_res;
-        pmat->yx = -fs_res;
+        pmat->xy = ss_res;
+        pmat->yx = fs_res;
         pmat->yy = 0.0;
-        pmat->tx = (fs_dim + psize->offsets.x) * fs_res;
-        pmat->ty = (ss_dim + psize->offsets.y) * ss_res;
+        pmat->tx = -psize->offsets.x * fs_res;
+        pmat->ty = -psize->offsets.y * ss_res;
     } else {
-        fs_dim = pdev->MediaSize[0] - 2 * psize->offsets.x;
-        ss_dim = pdev->MediaSize[1] - 2 * psize->offsets.y;
         pmat->xx = fs_res;
         pmat->xy = 0.0;
         pmat->yx = 0.0;
         pmat->yy = -ss_res;
         pmat->tx = -psize->offsets.x * fs_res;
-        pmat->ty = (ss_dim + psize->offsets.y) * ss_res;
+        pmat->ty = pdev->height + psize->offsets.y * ss_res;
+    }
+}
+
+/*
+ * Special put-params routine, to intercept changes in the MediaSize, and to
+ * make certain the desired MediaSize and HWResolution are supported.
+ *
+ * Though contrary to the documentation provided in gdevcli.h, this routine
+ * uses the same method of operation as gdev_prn_put_params. Specifically,
+ * if an error is detected at this level, that error is returned prior to
+ * invoking the next lower level routine (in this case gdev_prn_put_params;
+ * the latter procedure behaves the same way with respect to
+ * gx_default_put_params). This approach is much simpler than having to change
+ * the device parameters and subsequently undo the change (because several
+ * parameters depend on resolution), and it is not completely clear when the
+ * latter approach would be necessary (all errors other than invalid resolution
+ * and/or MediaSize are ignored at this level).
+ */
+  private int
+clj_put_params(
+    gx_device *             pdev,
+    gs_param_list *         plist
+)
+{
+    gs_param_float_array    farray;
+    int                      code = 0;
+
+    if ( ((param_read_float_array(plist, "HWResolution", &farray) == 0) &&
+          !is_supported_resolution(farray.data)                           ) ||
+         ((param_read_float_array(plist, "PageSize", &farray) == 0) &&
+          (get_paper_size(farray.data, NULL) == 0)                    )     ||
+         ((param_read_float_array(plist, ".MediaSize", &farray) == 0) &&
+          (get_paper_size(farray.data, NULL) == 0)                      )     )
+        return_error(gs_error_rangecheck);
+          
+    if ((code = gdev_prn_put_params(pdev, plist)) >= 0) {
+        bool                    rotate;
+        const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, &rotate);
+        floatp                  fs_res = pdev->HWResolution[0] / 72.0;
+        floatp                  ss_res = pdev->HWResolution[1] / 72.0;
+
+        if (rotate) {
+            pdev->width = (pdev->MediaSize[1] - 2 * psize->offsets.x) * fs_res;
+            pdev->height = (pdev->MediaSize[0] - 2 * psize->offsets.y) * ss_res;
+        } else {
+            pdev->width = (pdev->MediaSize[0] - 2 * psize->offsets.x) * fs_res;
+            pdev->height = (pdev->MediaSize[1] - 2 * psize->offsets.y) * ss_res;
+        }
     }
 
-    pdev->width = (int)ceil(fs_dim * fs_res - 0.5);
-    pdev->height = (int)ceil(ss_dim * ss_res - 0.5);
+    return code;
 }
 
 /*
@@ -164,16 +285,17 @@ pack_and_compress_scanline(
     int                 out_size[3]
 )
 {
-#define BUFF_SIZE   (1024 / sizeof(ulong))      /* ample size */
-#define MASK_SHIFT  (8 * sizeof(ulong) - 1)
+#define BUFF_SIZE                                                           \
+    ( ((int)(CLJ_MAX_RES * CLJ_MAX_SCANLINE / 72.0) + sizeof(ulong) - 1)    \
+         / sizeof(ulong) )
 
     ulong               buff[3 * BUFF_SIZE];
-    ulong *             p_c = buff;
-    ulong *             p_m = buff + BUFF_SIZE;
-    ulong *             p_y = buff + 2 * BUFF_SIZE;
+    byte *              p_c = (byte *)buff;
+    byte *              p_m = (byte *)(buff + BUFF_SIZE);
+    byte *              p_y = (byte *)(buff + 2 * BUFF_SIZE);
     ulong *             ptrs[3];
-    ulong               c_val = 0L, m_val = 0L, y_val = 0L;
-    ulong               mask = 1UL << MASK_SHIFT;
+    byte                c_val = 0, m_val = 0, y_val = 0;
+    ulong               mask = 0x80;
     int                 i;
 
     /* pack the input for 4-bits per index */
@@ -190,24 +312,33 @@ pack_and_compress_scanline(
         }
 
         if ((mask >>= 1) == 0) {
+            /* NB - write out in byte units */
             *p_c++ = c_val;
             c_val = 0L;
             *p_m++ = m_val;
             m_val = 0L;
             *p_y++ = y_val;
             y_val = 0L;
-            mask = 1UL << MASK_SHIFT;
+            mask = 0x80;
         }
     }
-    if (mask != 1UL << MASK_SHIFT) {
+    if (mask != 0x80) {
+        /* NB - write out in byte units */
         *p_c++ = c_val;
         *p_m++ = m_val;
         *p_y++ = y_val;
     }
 
-    ptrs[0] = p_c;
-    ptrs[1] = p_m;
-    ptrs[2] = p_y;
+    /* clear to up a longword boundary */
+    while ((((ulong)p_c) & (sizeof(ulong) - 1)) != 0) {
+        *p_c++ = 0;
+        *p_m++ = 0;
+        *p_y++ = 0;
+    }
+
+    ptrs[0] = (ulong *)p_c;
+    ptrs[1] = (ulong *)p_m;
+    ptrs[2] = (ulong *)p_y;
 
     for (i = 0; i < 3; i++) {
         ulong * p_start = buff + i * BUFF_SIZE;
@@ -223,11 +354,8 @@ pack_and_compress_scanline(
             out_size[i] = gdev_pcl_mode2compress(p_start, p_end, pout[i]);
     }
 
-#undef  BUFF_SIZE   (3 * 1024 / sizeof(ulong))  /* ample size */
-#undef  MASK_SHIFT  (8 * sizeof(ulong) - 1)
-
+#undef BUFF_SIZE
 }
-
 
 /*
  * Send the page to the printer.  Compress each scan line.
@@ -238,7 +366,7 @@ clj_print_page(
     FILE *                  prn_stream
 )
 {
-    const clj_paper_size *  psize = get_paper_size((gx_device *)pdev);
+    const clj_paper_size *  psize = get_paper_size(pdev->MediaSize, NULL);
     int                     lsize = pdev->width;
     int                     clsize = (lsize + (lsize + 255) / 128) / 8;
     byte *                  data = 0;
@@ -262,12 +390,16 @@ clj_print_page(
 
     /* start the page */
     fprintf( prn_stream,
-             "\033E\033&u300D\033&l%da%dx%dO\033*p0x0y-150Y\033*t%dR"
-             "\033*r-3u0f%ds%dt1A\033*b2M",
+             "\033E\033&u300D\033&l%da1x%dO\033*p0x0y-150Y\033*t%dR"
+#ifdef USE_FAST_MODE
+	     "\033*r-3U"
+#else
+             "\033*v6W\001\002\003\001\001\001"
+#endif
+             "\033*r0f%ds%dt1A\033*b2M",
              psize->tag,
-             (pdev->NumCopies_set ? pdev->NumCopies : 1),
-             (psize->rotate ? 3 : 0),
-             X_DPI,
+             psize->orient,
+             (int)(pdev->HWResolution[0]),
              pdev->width,
              pdev->height
              );
@@ -295,7 +427,7 @@ clj_print_page(
     }
 
     /* PCL will take care of blank lines at the end */
-    fputs("\033rC\f", prn_stream);
+    fputs("\033*rC\f", prn_stream);
 
     /* free the buffers used */
     gs_free((char *)cdata[0], 3 * clsize, 1, "clj_print_page(cdata)");
@@ -320,7 +452,7 @@ private gx_device_procs clj_procs = {
     NULL,	                    /* obsolete draw_line */
     NULL,	                    /* get_bits */
     gdev_prn_get_params,            /* get_params */
-    gdev_prn_put_params,            /* put_params */
+    clj_put_params,                 /* put_params */
     NULL,	                    /* map_cmyk_color */
     NULL,	                    /* get_xfont_procs */
     NULL,	                    /* get_xfont_device */
@@ -352,9 +484,9 @@ private gx_device_procs clj_procs = {
 };
 
 /* the CLJ device */
-gx_device_printer   gs_cljet_device = prn_device_margins(
+gx_device_printer   gs_cljet5_device = prn_device_margins(
     clj_procs,              /* procedures */
-    "cljet",                /* device name */
+    "cljet5",               /* device name */
     110,                    /* width - will be overridden subsequently */
     85,                     /* height - will be overridden subsequently */
     X_DPI, Y_DPI,           /* resolutions - current must be the same */

@@ -43,7 +43,8 @@ private int cs_next_array_decoded(P4(shade_coord_stream_t *, int,
 /* Initialize a packed value stream. */
 void
 shade_next_init(shade_coord_stream_t * cs,
-       const gs_shading_mesh_params_t * params, const gs_imager_state * pis)
+		const gs_shading_mesh_params_t * params,
+		const gs_imager_state * pis)
 {
     cs->params = params;
     cs->pctm = &pis->ctm;
@@ -54,12 +55,13 @@ shade_next_init(shade_coord_stream_t * cs,
 		     params->DataSource.data.str.size);
 	cs->s = &cs->ds;
     }
-    if (data_source_is_array(params->DataSource))
-	cs->get_value = cs_next_array_value,
-	    cs->get_decoded = cs_next_array_decoded;
-    else
-	cs->get_value = cs_next_packed_value,
-	    cs->get_decoded = cs_next_packed_decoded;
+    if (data_source_is_array(params->DataSource)) {
+	cs->get_value = cs_next_array_value;
+	cs->get_decoded = cs_next_array_decoded;
+    } else {
+	cs->get_value = cs_next_packed_value;
+	cs->get_decoded = cs_next_packed_decoded;
+    }
     cs->left = 0;
 }
 
@@ -75,10 +77,8 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	/* We can satisfy this request with the current buffered bits. */
 	cs->left = left -= num_bits;
 	*pvalue = (bits >> left) & ((1 << num_bits) - 1);
-	return 0;
-    }
-    /* We need more bits. */
-    {
+    } else {
+	/* We need more bits. */
 	int needed = num_bits - left;
 	uint value = bits & ((1 << left) - 1);	/* all the remaining bits */
 
@@ -92,8 +92,7 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	if (needed == 0) {
 	    cs->left = 0;
 	    *pvalue = value;
-	    return 0;
-	} {
+	} else {
 	    int b = sgetc(cs->s);
 
 	    if (b < 0)
@@ -101,9 +100,9 @@ cs_next_packed_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
 	    cs->bits = b;
 	    cs->left = left = 8 - needed;
 	    *pvalue = (value << needed) + (b >> left);
-	    return 0;
 	}
     }
+    return 0;
 }
 
 /* Get the next (integer) value from an unpacked array. */
@@ -113,12 +112,11 @@ cs_next_array_value(shade_coord_stream_t * cs, int num_bits, uint * pvalue)
     float value;
     uint read;
 
-    if (sgets(cs->s, (byte *) & value, sizeof(float), &read) < 0 ||
+    if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
 	read != sizeof(float) || value < 0 || value >= (1 << num_bits) ||
 	value != (int)value
-    )
-	      return_error(gs_error_rangecheck);
-
+	)
+	return_error(gs_error_rangecheck);
     *pvalue = (uint) value;
     return 0;
 }
@@ -129,7 +127,7 @@ cs_next_packed_decoded(shade_coord_stream_t * cs, int num_bits,
 		       const float decode[2], float *pvalue)
 {
     uint value;
-    int code = next_value(cs, num_bits, &value);
+    int code = cs->get_value(cs, num_bits, &value);
     double max_value = (double)(uint) ((1 << num_bits) - 1);
 
     if (code < 0)
@@ -148,11 +146,10 @@ cs_next_array_decoded(shade_coord_stream_t * cs, int num_bits,
     float value;
     uint read;
 
-    if (sgets(cs->s, (byte *) & value, sizeof(float), &read) < 0 ||
+    if (sgets(cs->s, (byte *)&value, sizeof(float), &read) < 0 ||
 	read != sizeof(float)
     )
-	      return_error(gs_error_rangecheck);
-
+	return_error(gs_error_rangecheck);
     *pvalue = value;
     return 0;
 }
@@ -166,7 +163,7 @@ shade_next_flag(shade_coord_stream_t * cs, int BitsPerFlag)
     int code;
 
     cs->left = 0;		/* start a new byte if packed */
-    code = next_value(cs, BitsPerFlag, &flag);
+    code = cs->get_value(cs, BitsPerFlag, &flag);
     return (code < 0 ? code : flag);
 }
 
@@ -183,8 +180,8 @@ shade_next_coords(shade_coord_stream_t * cs, gs_fixed_point * ppt,
     for (i = 0; i < num_points; ++i) {
 	float x, y;
 
-	if ((code = next_decoded(cs, num_bits, decode, &x)) < 0 ||
-	    (code = next_decoded(cs, num_bits, decode, &y)) < 0 ||
+	if ((code = cs->get_decoded(cs, num_bits, decode, &x)) < 0 ||
+	    (code = cs->get_decoded(cs, num_bits, decode, &y)) < 0 ||
 	    (code = gs_point_transform2fixed(cs->pctm, x, y, &ppt[i])) < 0
 	    )
 	    break;
@@ -203,17 +200,17 @@ shade_next_color(shade_coord_stream_t * cs, float *pc)
 
     if (index == gs_color_space_index_Indexed) {
 	uint i;
-	int code = next_value(cs, num_bits, &i);
+	int code = cs->get_value(cs, num_bits, &i);
 
 	if (code < 0)
 	    return code;
-/****** DO INDEXED LOOKUP TO pc[] ******/
+	/****** DO INDEXED LOOKUP TO pc[] ******/
     } else {
 	int i, code;
 	int ncomp = gs_color_space_num_components(pcs);
 
 	for (i = 0; i < ncomp; ++i)
-	    if ((code = next_decoded(cs, num_bits, decode + i * 2, &pc[i])) < 0)
+	    if ((code = cs->get_decoded(cs, num_bits, decode + i * 2, &pc[i])) < 0)
 		return code;
     }
     return 0;
@@ -232,24 +229,6 @@ shade_next_vertex(shade_coord_stream_t * cs, mesh_vertex_t * vertex)
 
 /* ================ Shading rendering ================ */
 
-/* Fill a (user space) rectangle with a shading. */
-int
-gs_shading_fill_rectangle(const gs_shading_t * psh, const gs_rect * rect,
-			  gx_device * dev, gs_imager_state * pis)
-{
-    gs_rect box;
-    const gs_rect *prect;
-
-    if (psh->params.have_BBox) {
-	box = *rect;
-	rect_intersect(box, psh->params.BBox);
-	prect = &box;
-    } else {
-	prect = rect;
-    }
-    return (*psh->head.fill_rectangle)(psh, prect, dev, pis);
-}
-
 /* Initialize the common parts of the recursion state. */
 void
 shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
@@ -260,7 +239,7 @@ shade_init_fill_state(shading_fill_state_t * pfs, const gs_shading_t * psh,
     /*
      * There's no point in trying to achieve smoothness beyond what
      * the device can implement, i.e., the number of representable
-     * colors times the size of the halftone cell.
+     * colors times the number of halftone levels.
      */
     long num_colors =
 	max(dev->color_info.max_gray, dev->color_info.max_color) + 1;

@@ -218,10 +218,9 @@ mem_mapped4_copy_color(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,
 		       int x, int y, int w, int h)
 {
+    /* Use monobit copy_mono. */
     int code;
 
-    fit_copy(dev, base, sourcex, sraster, id, x, y, w, h);
-    /* Use monobit copy_mono. */
     /* Patch the width in the device temporarily. */
     dev->width <<= 2;
     code = (*dev_proc(&mem_mono_device, copy_mono))

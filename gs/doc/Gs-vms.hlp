@@ -1,8 +1,7 @@
 1 gs
  gs - Aladdin Ghostscript interpreter/previewer
 
-! This file describes version 5.31 of Aladdin Ghostscript.
-! 16 August 1998
+! Ghostscript version 5.40, 10 September 1998
   Usage:
    $ gs [options] [file ...]
 

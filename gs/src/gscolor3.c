@@ -49,17 +49,14 @@ int
 gs_shfill(gs_state * pgs, const gs_shading_t * psh)
 {
     int code = gs_gsave(pgs);
-    gs_rect rect;
 
     if (code < 0)
 	return code;
-    /****** DOESN'T USE Background, BBox ******/
     if ((code = gs_setcolorspace(pgs, psh->params.ColorSpace)) < 0 ||
 	(code = gs_clippath(pgs)) < 0 ||
-	(code = gs_pathbbox(pgs, &rect)) < 0 ||
-	(code = gs_shading_fill_rectangle(psh, &rect,
-					  gs_currentdevice(pgs),
-					  (gs_imager_state *) pgs)) < 0
+	(code = gs_shading_fill_path(psh, pgs->path,
+				     gs_currentdevice(pgs),
+				     (gs_imager_state *)pgs)) < 0
 	)
 	DO_NOTHING;
     gs_grestore(pgs);

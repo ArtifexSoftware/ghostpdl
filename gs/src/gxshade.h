@@ -39,11 +39,11 @@
    2    1-D Domain      Function + Extend       perp. to Coords
    3    1-D Domain      Function + Extend       circles per Coords
    4,5  triangle x      Gouraud interp. on      Gouraud interp. on
-   2-D in tri.    Decode => corner        triangle corners
-   values => Function
+	2-D in tri.	Decode => corner        triangle corners
+			values => Function
    6    patch x (u,v)   Decode => bilinear      Sc + Sd - Sb on each patch
-   in patch       interp. on corner
-   values => Function
+	in patch	interp. on corner
+			values => Function
    7    see 6           see 6                   Sum(i) Sum(j) Pij*Bi(u)*Bj(v)
 
    To be able to render a portion of a shading usefully, we must be able to
@@ -70,43 +70,42 @@ typedef struct gs_shading_Fb_s {
     gs_shading_head_t head;
     gs_shading_Fb_params_t params;
 } gs_shading_Fb_t;
-
 shading_fill_rectangle_proc(gs_shading_Fb_fill_rectangle);
+
 typedef struct gs_shading_A_s {
     gs_shading_head_t head;
     gs_shading_A_params_t params;
 } gs_shading_A_t;
-
 shading_fill_rectangle_proc(gs_shading_A_fill_rectangle);
+
 typedef struct gs_shading_R_s {
     gs_shading_head_t head;
     gs_shading_R_params_t params;
 } gs_shading_R_t;
-
 shading_fill_rectangle_proc(gs_shading_R_fill_rectangle);
+
 typedef struct gs_shading_FfGt_s {
     gs_shading_head_t head;
     gs_shading_FfGt_params_t params;
 } gs_shading_FfGt_t;
-
 shading_fill_rectangle_proc(gs_shading_FfGt_fill_rectangle);
+
 typedef struct gs_shading_LfGt_s {
     gs_shading_head_t head;
     gs_shading_LfGt_params_t params;
 } gs_shading_LfGt_t;
-
 shading_fill_rectangle_proc(gs_shading_LfGt_fill_rectangle);
+
 typedef struct gs_shading_Cp_s {
     gs_shading_head_t head;
     gs_shading_Cp_params_t params;
 } gs_shading_Cp_t;
-
 shading_fill_rectangle_proc(gs_shading_Cp_fill_rectangle);
+
 typedef struct gs_shading_Tpp_s {
     gs_shading_head_t head;
     gs_shading_Tpp_params_t params;
 } gs_shading_Tpp_t;
-
 shading_fill_rectangle_proc(gs_shading_Tpp_fill_rectangle);
 
 /* We should probably get this from somewhere else.... */
@@ -116,19 +115,15 @@ shading_fill_rectangle_proc(gs_shading_Tpp_fill_rectangle);
 typedef struct shade_coord_stream_s shade_coord_stream_t;
 struct shade_coord_stream_s {
     stream ds;			/* stream if DataSource isn't one already -- */
-    /* first for GC-ability (maybe unneeded?) */
+				/* first for GC-ability (maybe unneeded?) */
     stream *s;			/* DataSource or &ds */
     uint bits;			/* shifted bits of current byte */
     int left;			/* # of bits left in bits */
     const gs_shading_mesh_params_t *params;
     const gs_matrix_fixed *pctm;
-#define next_value(cs, num_bits, pvalue)\
-    ((*(cs)->get_value)(cs, num_bits, pvalue))
-    int (*get_value) (P3(shade_coord_stream_t *, int, uint *));
-#define next_decoded(cs, num_bits, decode, pvalue)\
-    ((*(cs)->get_decoded)(cs, num_bits, decode, pvalue))
-    int (*get_decoded) (P4(shade_coord_stream_t *, int, const float[2],
-			   float *));
+    int (*get_value)(P3(shade_coord_stream_t *cs, int num_bits, uint *pvalue));
+    int (*get_decoded)(P4(shade_coord_stream_t *cs, int num_bits,
+			  const float decode[2], float *pvalue));
 };
 
 /* Define one vertex of a mesh. */
@@ -178,15 +173,10 @@ int shade_next_vertex(P2(shade_coord_stream_t * cs, mesh_vertex_t * vertex));
 
    For shadings based on a function, if the function is not monotonic, the
    smoothness test must only be applied when the parameter range extrema are
-   all interpolated from the same entries in the Function.
+   all interpolated from the same entries in the Function.  (We don't
+   currently do this.)
 
  */
-
-/*
- * Fill a (user space) rectangle with a shading.  This is the only procedure
- * in this file meant to be called from outside the shading machinery.
- */
-shading_fill_rectangle_proc(gs_shading_fill_rectangle);
 
 /* Define the common structure for recursive subdivision. */
 #define shading_fill_state_common\
@@ -216,12 +206,6 @@ bool shade_colors4_converge(P2(const gs_client_color cc[4],
 #ifndef gx_device_color_DEFINED
 #  define gx_device_color_DEFINED
 typedef struct gx_device_color_s gx_device_color;
-
-#endif
-#ifndef gx_path_DEFINED
-#  define gx_path_DEFINED
-typedef struct gx_path_s gx_path;
-
 #endif
 int shade_fill_path(P3(const shading_fill_state_t * pfs, gx_path * ppath,
 		       gx_device_color * pdevc));
@@ -237,7 +221,7 @@ int shade_fill_path(P3(const shading_fill_state_t * pfs, gx_path * ppath,
 typedef struct gs_pattern_instance_s {
     rc_header rc;		/* ?? */
     const gs_pattern_type_t *type;
-    gs_uid XIUD;		/* ?? */
+    gs_uid XUID;		/* ?? */
     gs_state *saved;		/* ?? */
     void *data;
 } gs_pattern_instance_t;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, Russell Lang.  All rights reserved.
+/* Copyright (C) 1996-1998, Russell Lang.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -172,79 +172,105 @@ set_font(void)
 int PASCAL 
 WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpszCmdLine, int cmdShow)
 {
-#if defined(_MSC_VER)    /* MSC doesn't give us _argc and _argv[] so ...   */
 #define MAXCMDTOKENS 128
-	int	_argc=0;
-	LPSTR	_argv[MAXCMDTOKENS];
-	LPSTR	p, q;
-#ifdef __WIN32__
-	_argv[_argc] = "gswin32.exe";
-#else
-	_argv[_argc] = "gswin.exe";
-#endif
-	// Parse command line handling quotes.
-	p = lpszCmdLine;
-	while (*p) {
-	    // for each argument
-	    while ((*p) && (*p == ' '))
-		p++;	// skip over leading spaces
+    // BC++ 4.5 will give us _argc and _argv[], but they will be 
+    // incorrect if there is a space in the program name.
+    // Provide our own parsing code to create argc and argv[]. 
+    int argc;
+    LPSTR argv[MAXCMDTOKENS];
+    LPSTR p;
+    char command[256];
+    char *args;
+    char *d, *e;
+ 
+    /* copy the hInstance into a variable so it can be used */
+    ghInstance = hInstance;
+
+    if (hPrevInstance) {
+	MessageBox((HWND)NULL,"Can't run twice", szAppName, 
+		MB_ICONHAND | MB_OK);
+	return FALSE;
+    }
+
+    // If called with "gswin32c.exe arg1 arg2"
+    // lpszCmdLine returns:
+    //    "arg1 arg2" if called with CreateProcess(NULL, command, ...)
+    //    "arg2"      if called with CreateProcess(command, args, ...)
+    // GetCommandLine() returns
+    //    ""gswin32c.exe" arg1 arg2" 
+    //          if called with CreateProcess(NULL, command, ...)
+    //    "  arg1 arg2"      
+    //          if called with CreateProcess(command, args, ...)
+    // Consequently we must use GetCommandLine() 
+    p = GetCommandLine();
+
+    argc = 0;
+    args = (char *)malloc(lstrlen(p)+1);
+    if (args == (char *)NULL) {
+	fprintf(stdout, "Insufficient memory in WinMain()\n");
+	return 1;
+    }
+   
+    // Parse command line handling quotes.
+    d = args;
+    while (*p) {
+	// for each argument
+
+	if (argc >= MAXCMDTOKENS - 1)
+	    break;
+
+        e = d;
+        while ((*p) && (*p != ' ')) {
 	    if (*p == '\042') {
-	       p++;		// skip "
-	       q = p;
-	       // scan to end of argument
-	       // doesn't handle embedded quotes
-	       while ((*p) && (*p != '\042'))
-		    p++;
-	       _argv[++_argc] = q;
-	       if (*p)
-		    *p++ = '\0';
+		// Remove quotes, skipping over embedded spaces.
+		// Doesn't handle embedded quotes.
+		p++;
+		while ((*p) && (*p != '\042'))
+		    *d++ =*p++;
 	    }
-	    else if (*p) {
-	       // delimited by spaces
-	       q = p;
-	       while ((*p) && (*p != ' '))
-		    p++;
-	       _argv[++_argc] = q;
-	       if (*p)
-		    *p++ = '\0';
-	    }
-	}
-	_argv[++_argc] = (LPSTR)NULL;
-#endif
+	    else 
+		*d++ = *p;
+	    if (*p)
+		p++;
+        }
+	*d++ = '\0';
+	argv[argc++] = e;
 
-	if (hPrevInstance) {
-	    MessageBox((HWND)NULL,"Can't run twice", szAppName, MB_ICONHAND | MB_OK);
-	    return FALSE;
-	}
+	while ((*p) && (*p == ' '))
+	    p++;	// Skip over trailing spaces
+    }
+    argv[argc] = NULL;
 
-	/* copy the hInstance into a variable so it can be used */
-	ghInstance = hInstance;
+    if (strlen(argv[0]) == 0) {
+	GetModuleFileName(hInstance, command, sizeof(command)-1);
+	argv[0] = command;
+    }
 
 
-	/* start up the text window */
-	if (!hPrevInstance) {
-	    HICON hicon = LoadIcon(hInstance, (LPSTR)MAKEINTRESOURCE(GSTEXT_ICON));
-	    tw.register_class(hInstance, hicon);
-	}
-	set_font();
-	tw.size(80, 80);
-	tw.drag("(", ") run\r");
+    /* start up the text window */
+    if (!hPrevInstance) {
+	HICON hicon = LoadIcon(hInstance, (LPSTR)MAKEINTRESOURCE(GSTEXT_ICON));
+	tw.register_class(hInstance, hicon);
+    }
+    set_font();
+    tw.size(80, 80);
+    tw.drag("(", ") run\r");
 
-	// create the text window
-	if (tw.create(szAppName, cmdShow))
-	    exit(1);
+    // create the text window
+    if (tw.create(szAppName, cmdShow))
+	exit(1);
 
-	// initialize for image windows
-	ImageWindow::hwndtext = tw.get_handle();
-	ImageWindow::hInstance = hInstance;
+    // initialize for image windows
+    ImageWindow::hwndtext = tw.get_handle();
+    ImageWindow::hInstance = hInstance;
 
-	dll_exit_status = new_main(_argc, _argv);
+    dll_exit_status = new_main(argc, argv);
 
- 	win_exit();
+    win_exit();
 
-	tw.destroy();
+    tw.destroy();
 
-	return dll_exit_status;
+    return dll_exit_status;
 }
 
 

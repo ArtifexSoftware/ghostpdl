@@ -36,7 +36,8 @@
 /* Initialize the fill state for triangle shading. */
 void
 mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
-	       const gs_rect * rect, gx_device * dev, gs_imager_state * pis)
+		     const gs_rect * rect, gx_device * dev,
+		     gs_imager_state * pis)
 {
     shade_init_fill_state((shading_fill_state_t *) pfs,
 			  (const gs_shading_t *)psh, dev, pis);
@@ -48,16 +49,17 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
   if ( a < b ) vmin = a, vmax = b; else vmin = b, vmax = a;\
   if ( c < vmin ) vmin = c; else if ( c > vmax ) vmax = c
 
-private int
-mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
-      fixed yb, fixed xc, fixed yc, const gs_client_color cc[3], bool check)
+int
+mesh_fill_triangle(const mesh_fill_state_t * pfs, const mesh_vertex_t *va,
+		   const mesh_vertex_t *vb, const mesh_vertex_t *vc,
+		   bool check)
 {
     const gs_shading_mesh_t *psh = pfs->pshm;
     int ci;
 
     /*
-     * Fill the triangle with vertices at x/ya, x/yb, and x/yc
-     * with color cc[0].
+     * Fill the triangle with vertices at va->p, vb->p, and vc->p
+     * with color va->cc.
      * If check is true, check for whether the triangle is entirely
      * inside the rectangle, entirely outside, or partly inside;
      * if check is false, assume the triangle is entirely inside.
@@ -65,8 +67,8 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
     if (check) {
 	fixed xmin, ymin, xmax, ymax;
 
-	SET_MIN_MAX_3(xmin, xmax, xa, xb, xc);
-	SET_MIN_MAX_3(ymin, ymax, ya, yb, yc);
+	SET_MIN_MAX_3(xmin, xmax, va->p.x, vb->p.x, vc->p.x);
+	SET_MIN_MAX_3(ymin, ymax, va->p.y, vb->p.y, vc->p.y);
 	if (xmin >= pfs->rect.p.x && xmax <= pfs->rect.q.x &&
 	    ymin >= pfs->rect.p.y && ymax <= pfs->rect.q.y
 	    ) {
@@ -77,15 +79,11 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
 	    ) {
 	    /* The triangle is entirely outside the rectangle. */
 	    return 0;
-	} else {
-/****** CLIP HERE ******/
 	}
     }
     /* Check whether the colors fall within the smoothness criterion. */
     for (ci = 0; ci < pfs->num_components; ++ci) {
-	float
-	      c0 = cc[0].paint.values[ci], c1 = cc[1].paint.values[ci],
-	      c2 = cc[2].paint.values[ci];
+	float c0 = va->cc[ci], c1 = vb->cc[ci], c2 = vc->cc[ci];
 	float cmin, cmax;
 
 	SET_MIN_MAX_3(cmin, cmax, c0, c1, c2);
@@ -100,25 +98,27 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
 	gs_client_color fcc;
 	int code;
 
-	fcc.paint = cc[0].paint;
-	(*pcs->type->restrict_color) (&fcc, pcs);
-	(*pcs->type->remap_color) (&fcc, pcs, &dev_color, pis,
-				   pfs->dev, gs_color_select_texture);
+	memcpy(&fcc.paint, va->cc, sizeof(fcc.paint));
+	(*pcs->type->restrict_color)(&fcc, pcs);
+	(*pcs->type->remap_color)(&fcc, pcs, &dev_color, pis,
+				  pfs->dev, gs_color_select_texture);
 /****** SHOULD ADD adjust ON ANY OUTSIDE EDGES ******/
 #if 0
 	{
 	    gx_path *ppath = gx_path_alloc(pis->memory, "Gt_fill");
 
-	    gx_path_add_point(ppath, xa, ya);
-	    gx_path_add_line(ppath, xb, yb);
-	    gx_path_add_line(ppath, xc, yc);
+	    gx_path_add_point(ppath, va->p.x, va->p.y);
+	    gx_path_add_line(ppath, vb->p.x, vb->p.y);
+	    gx_path_add_line(ppath, vc->p.x, vc->p.y);
 	    code = shade_fill_path((const shading_fill_state_t *)pfs,
 				   ppath, &dev_color);
 	    gx_path_free(ppath, "Gt_fill");
 	}
 #else
 	code = (*dev_proc(pfs->dev, fill_triangle))
-	    (pfs->dev, xa, ya, xb - xa, yb - ya, xc - xa, yc - ya,
+	    (pfs->dev, va->p.x, va->p.y,
+	     vb->p.x - va->p.x, vb->p.y - va->p.y,
+	     vc->p.x - va->p.x, vc->p.y - va->p.y,
 	     &dev_color, pis->log_op);
 #endif
 	return code;
@@ -128,59 +128,42 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
      * that doesn't seem to create anomalous shapes divides the
      * triangle in 4, using the midpoints of each side.
      */
-  recur:{
-#define midpoint_fast(a,b)\
-	arith_rshift_1((a) + (b) + 1)
-	fixed
-	    xab = midpoint_fast(xa, xb), yab = midpoint_fast(ya, yb),
-	    xac = midpoint_fast(xa, xc), yac = midpoint_fast(ya, yc),
-	    xbc = midpoint_fast(xb, xc), ybc = midpoint_fast(yb, yc);
-#undef midpoint_fast
-	gs_client_color rcc[5];
+recur:
+    {
+	mesh_vertex_t vab, vac, vbc;
 	int i;
 	int code;
 
+#define MIDPOINT_FAST(a,b) arith_rshift_1((a) + (b) + 1)
+	vab.p.x = MIDPOINT_FAST(va->p.x, vb->p.x);
+	vab.p.y = MIDPOINT_FAST(va->p.y, vb->p.y);
+	vac.p.x = MIDPOINT_FAST(va->p.x, vc->p.x);
+	vac.p.y = MIDPOINT_FAST(va->p.y, vc->p.y);
+	vbc.p.x = MIDPOINT_FAST(vb->p.x, vc->p.x);
+	vbc.p.y = MIDPOINT_FAST(vb->p.y, vc->p.y);
+#undef MIDPOINT_FAST
 	for (i = 0; i < pfs->num_components; ++i) {
-	    float
-	          ta = cc[0].paint.values[i], tb = cc[1].paint.values[i],
-	          tc = cc[2].paint.values[i];
+	    float ta = va->cc[i], tb = vb->cc[i], tc = vc->cc[i];
 
-	    rcc[1].paint.values[i] = (ta + tb) * 0.5;
-	    rcc[2].paint.values[i] = (ta + tc) * 0.5;
-	    rcc[3].paint.values[i] = (tb + tc) * 0.5;
+	    vab.cc[i] = (ta + tb) * 0.5;
+	    vac.cc[i] = (ta + tc) * 0.5;
+	    vbc.cc[i] = (tb + tc) * 0.5;
 	}
 	/* Do the "A" triangle. */
-	rcc[0].paint = cc[0].paint;	/* rcc: a,ab,ac,bc,- */
-	code = mesh_fill_region(pfs, xa, ya, xab, yab, xac, yac, rcc, check);
+	code = mesh_fill_triangle(pfs, va, &vab, &vac, check);
 	if (code < 0)
 	    return code;
 	/* Do the central triangle. */
-	code = mesh_fill_region(pfs, xab, yab, xac, yac, xbc, ybc, rcc + 1, check);
+	code = mesh_fill_triangle(pfs, &vab, &vac, &vbc, check);
 	if (code < 0)
 	    return code;
 	/* Do the "C" triangle. */
-	rcc[4].paint = cc[2].paint;	/* rcc: a,ab,ac,bc,c */
-	code = mesh_fill_region(pfs, xac, yac, xbc, ybc, xc, yc, rcc + 2, check);
+	code = mesh_fill_triangle(pfs, &vac, &vbc, vc, check);
 	if (code < 0)
 	    return code;
 	/* Do the "B" triangle. */
-	rcc[2].paint = cc[1].paint;	/* rcc: a,ab,b,bc,c */
-	return mesh_fill_region(pfs, xab, yab, xb, yb, xbc, ybc, rcc + 1, check);
+	return mesh_fill_triangle(pfs, &vab, vb, &vbc, check);
     }
-}
-
-int
-mesh_fill_triangle(const mesh_fill_state_t * pfs, const gs_fixed_point * pa,
-	      const float *pca, const gs_fixed_point * pb, const float *pcb,
-		   const gs_fixed_point * pc, const float *pcc, bool check)
-{
-    gs_client_color cc[3];
-
-    memcpy(cc[0].paint.values, pca, sizeof(cc[0].paint.values));
-    memcpy(cc[1].paint.values, pcb, sizeof(cc[1].paint.values));
-    memcpy(cc[2].paint.values, pcc, sizeof(cc[2].paint.values));
-    return mesh_fill_region(pfs, pa->x, pa->y, pb->x, pb->y,
-			    pc->x, pc->y, cc, check);
 }
 
 /* ---------------- Gouraud triangle shadings ---------------- */
@@ -193,24 +176,24 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 
     if (code >= 0 && psh->params.Function) {
 	/* Decode the color with the function. */
-	code = gs_function_evaluate(psh->params.Function, vertex->cc, vertex->cc);
+	code = gs_function_evaluate(psh->params.Function, vertex->cc,
+				    vertex->cc);
     }
     return code;
 }
 
-private int
+inline private int
 Gt_fill_triangle(const mesh_fill_state_t * pfs, const mesh_vertex_t * va,
 		 const mesh_vertex_t * vb, const mesh_vertex_t * vc)
 {
-    return mesh_fill_triangle(pfs, &va->p, va->cc, &vb->p, vb->cc,
-			      &vc->p, vc->cc, true);
+    return mesh_fill_triangle(pfs, va, vb, vc, true);
 }
 
 int
 gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 			       gx_device * dev, gs_imager_state * pis)
 {
-    const gs_shading_FfGt_t *psh = (const gs_shading_FfGt_t *)psh0;
+    const gs_shading_FfGt_t * const psh = (const gs_shading_FfGt_t *)psh0;
     mesh_fill_state_t state;
     shade_coord_stream_t cs;
     int num_bits = psh->params.BitsPerFlag;
@@ -239,10 +222,9 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 		va = vb;
 	    case 2:
 		vb = vc;
-	      v2:if ((code = Gt_next_vertex(state.pshm, &cs, &vc)) < 0)
-		    return code;
-		code = Gt_fill_triangle(&state, &va, &vb, &vc);
-		if (code < 0)
+v2:		if ((code = Gt_next_vertex(state.pshm, &cs, &vc)) < 0 ||
+		    (code = Gt_fill_triangle(&state, &va, &vb, &vc)) < 0
+		    )
 		    return code;
 	}
     }
@@ -253,13 +235,13 @@ int
 gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 			       gx_device * dev, gs_imager_state * pis)
 {
-    const gs_shading_LfGt_t *psh = (const gs_shading_LfGt_t *)psh0;
+    const gs_shading_LfGt_t * const psh = (const gs_shading_LfGt_t *)psh0;
     mesh_fill_state_t state;
     shade_coord_stream_t cs;
     mesh_vertex_t *vertex;
     mesh_vertex_t next;
     int per_row = psh->params.VerticesPerRow;
-    int i, code;
+    int i, code = 0;
 
     mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
 			 dev, pis);
@@ -291,7 +273,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	}
 	vertex[per_row - 1] = next;
     }
-  out:
+out:
     gs_free_object(pis->memory, vertex, "gs_shading_LfGt_render");
     return code;
 }

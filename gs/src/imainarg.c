@@ -702,8 +702,8 @@ private const char help_usage2[] = "\
  -sOutputFile=<file> select output file: - for stdout, |command for pipe,\n\
                                          embed %d or %ld for page #\n";
 private const char help_trailer[] = "\
-For more information, see %s%suse.txt.\n\
-Report bugs to %s, using the form in bug-form.txt.\n";
+For more information, see %s%sUse.htm.\n\
+Report bugs to %s, using the form in Bug-form.htm.\n";
 private const char help_devices[] = "Available devices:";
 private const char help_emulators[] = "Input formats:";
 private const char help_paths[] = "Search path:";
@@ -838,6 +838,6 @@ print_help_trailer(void)
     fprintf(stdout, help_trailer, gs_doc_directory,
 	    gp_file_name_concat_string(gs_doc_directory,
 				       strlen(gs_doc_directory),
-				       "use.txt", 7),
+				       "Use.htm", 7),
 	    GS_BUG_MAILBOX);
 }

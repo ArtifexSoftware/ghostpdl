@@ -142,7 +142,7 @@ bbox_copy_params(gx_device_bbox * bdev, bool remap_white)
     gx_device *tdev = bdev->target;
 
     if (tdev != 0)
-	gx_device_copy_params(bdev, tdev);
+	gx_device_copy_params((gx_device *)bdev, tdev);
     if (remap_white)
 	bdev->white = gx_device_white((gx_device *)bdev);
 }

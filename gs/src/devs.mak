@@ -86,6 +86,7 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	x11gray4  X Windows as a 4-bit gray-scale device
 #	x11mono  X Windows masquerading as a black-and-white device
 # Printers:
+# *	cljet5	H-P Color LaserJet 5/5M
 # +	deskjet  H-P DeskJet and DeskJet Plus
 #	djet500  H-P DeskJet 500; use -r600 for DJ 600 series
 # +	laserjet  H-P LaserJet
@@ -487,6 +488,15 @@ lp2563.dev: $(HPMONO) page.dev
 
 oce9050.dev: $(HPMONO) page.dev
 	$(SETPDEV2) oce9050 $(HPMONO)
+
+### -------------------- The H-P Color LaserJet 5/5M -------------------- ###
+
+cljet5_=$(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
+cljet5.dev: $(cljet5_) page.dev
+	$(SETPDEV) cljet5 $(cljet5_)
+
+$(GLOBJ)gdevclj.$(OBJ): $(GLSRC)gdevclj.c $(math__h) $(PDEVH) $(gdevpcl_h)
+	$(GLCC) $(GLO_)gdevclj.$(OBJ) $(C_) $(GLSRC)gdevclj.c
 
 ### ------------------ The H-P LaserJet 5 and 6 devices ----------------- ###
 

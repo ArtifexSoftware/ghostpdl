@@ -631,7 +631,7 @@ $(GLOBJ)gsparams.$(OBJ): $(GLSRC)gsparams.c $(GXERR) $(memory__h)\
 	$(GLCC) $(GLO_)gsparams.$(OBJ) $(C_) $(GLSRC)gsparams.c
 
 $(GLOBJ)gspath.$(OBJ): $(GLSRC)gspath.c $(GXERR)\
- $(gscoord_h) $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
+ $(gscoord_h) $(gxdevice_h) $(gxdevmem_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gzcpath_h) $(gzpath_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gspath.$(OBJ) $(C_) $(GLSRC)gspath.c
 
@@ -1775,7 +1775,8 @@ $(GLOBJ)gsfunc3.$(OBJ): $(GLSRC)gsfunc3.c $(math__h) $(GXERR)\
 	$(GLCC) $(GLO_)gsfunc3.$(OBJ) $(C_) $(GLSRC)gsfunc3.c
 
 $(GLOBJ)gsshade.$(OBJ): $(GLSRC)gsshade.c $(GXERR)\
- $(gscspace_h) $(gsstruct_h) $(gxshade_h)
+ $(gscspace_h) $(gsstruct_h)\
+ $(gxdevcli_h) $(gxcpath_h) $(gxistate_h) $(gxpath_h) $(gxshade_h)
 	$(GLCC) $(GLO_)gsshade.$(OBJ) $(C_) $(GLSRC)gsshade.c
 
 $(GLOBJ)gxshade.$(OBJ): $(GLSRC)gxshade.c $(GXERR) $(math__h)\

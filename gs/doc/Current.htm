@@ -1,0 +1,214 @@
+<html>
+<head>
+<title>Problems and new features in the current release</title>
+
+<!-- Originally: current.txt -->
+</head>
+
+<body>
+<!-- [1.0 begin visible header] -------------------------------------------- -->
+
+<!-- [1.1 begin headline] -------------------------------------------------- -->
+
+<p><table width="100%" border="0">
+<tr><th align="center" bgcolor="#CCCC00"><font size=6>
+Problems and new features in Ghostscript 5.40
+</font>
+</table>
+
+<!-- [1.1 end headline] ---------------------------------------------------- -->
+
+<!-- [1.2 begin table of contents] ----------------------------------------- -->
+
+<h2>Table of contents</h2>
+
+<blockquote>
+<ul>
+<li><a href="#New_features">New features (since release 5.10)</a>
+<li><a href="#Changes">Changes</a>
+<li><a href="#Known_problems">Known problems</a>
+<ul>
+<li><a href="#Usage">Usage</a>
+<li><a href="#Limitations">Limitations</a>
+<li><a href="#Graphics_bugs">Graphics bugs</a>
+<li><a href="#Non_graphics_bugs">Non-graphics bugs</a>
+</ul>
+</ul>
+</blockquote>
+
+<!-- [1.2 end table of contents] ------------------------------------------- -->
+
+<!-- [1.3 begin hint] ------------------------------------------------------ -->
+
+<p>For other information, see the <a href="Readme.htm">Ghostscript
+overview</a>.
+
+<!-- [1.3 end hint] -------------------------------------------------------- -->
+
+<hr>
+
+<!-- [1.0 end visible header] ---------------------------------------------- -->
+
+<!-- [2.0 begin contents] -------------------------------------------------- -->
+
+<h1><a name="New_features"></a>New features (since release 5.10)</h1>
+
+<p>
+(This is not a complete list of new features: see <a href="News.htm">the
+news</a> for details.)
+
+<p>
+A number of PostScript LanguageLevel 3 features are implemented:
+<b><tt>ImageType</tt></b> 4 images, Type 32 fonts and
+<b><tt>CIDFontType</tt></b> 4 fonts, <b><tt>CIEBasedDEF[G]</tt></b> color
+spaces, idiom recognition, <b><tt>shfill</tt></b> (partial support),
+<b><tt>CloseSource</tt></b> and <b><tt>CloseTarget</tt></b>.
+
+<p>
+More of Display PostScript is implemented: view clipping,
+<b><tt>DevicePixel</tt></b> color space, context creation with private
+local VM, <b><tt>ImageType</tt></b> 2 images, compositing (NeXT extension).
+
+<p>
+The PDF interpreter now handles double-byte fonts.  Ghostscript now handles
+essentially all of PDF 1.2 (Acrobat 3.x compatibility).
+
+<p>
+The PDF writer now implements the xxx<b><tt>ImageFilter</tt></b>,
+<b><tt>Encode</tt></b>xxx<b><tt>Image</tt></b>, and
+<b><tt>ConvertCMYKImagesToRGB</tt></b> distiller parameters, which provide
+the ability to compress images.
+
+<p>
+The PDF writer now recognizes nearly all varieties of pdfmark, other than
+the Distiller 3.0 "named object" pdfmarks.
+
+<p>
+It is now possible (in fact, easy) to build Ghostscript with the source and
+object files in different directories.
+
+<p>
+There is a new PostScript-to-PostScript distiller, <b><tt>ps2ps</tt></b>.
+
+<h1><a name="Changes"></a>Changes</h1>
+
+<p>
+Contributed drivers now have their own makefile (<b><tt>contrib.mak</tt></b>).
+
+<p>
+The IJG JPEG library is now in a directory named <b><tt>jpeg</tt></b>
+rather than <b><tt>jpeg-</tt></b>#.
+
+<p>
+The <b><tt>pdf2ps</tt></b> utility has been completely rewritten.  It
+should be much more reliable, at the expense of possibly producing larger,
+lower-level output.
+
+<p>
+Running <b><tt>tar_cat</tt></b> after editing makefiles is no longer
+necessary.  Users should now edit the <b><tt>unix*.mak</tt></b> makefiles.
+
+<h1><a name="Known_problems"></a>Known problems</h1>
+
+<p>
+(This is not a complete list of known problems: see <a href="News.htm">the
+news</a> for details.)
+
+<h2><a name="Usage"></a>Usage</h2>
+
+<p>
+On a DOS system, interrupting the interpreter by typing control-C doesn't
+restore the display mode.
+
+<h2><a name="Limitations"></a>Limitations</h2>
+
+<p>
+<b><tt>serialnumber</tt></b> returns the same value in all copies.
+
+<p>
+Some floating point exceptions terminate the interpreter, rather than
+producing a limitcheck error.
+
+<p>
+The <b><tt>DCTEncode</tt></b> filter disregards the <b><tt>Blend</tt></b>
+parameter, and uses different <b><tt>QuantTables</tt></b> and
+<b><tt>HuffTables</tt></b> from Adobe's.
+
+<p>
+The DCT filters do not support nonintegral sample ratios.  Also,
+<b><tt>DCTEncode</tt></b> will not create files with Sum(HS&times;VS)&gt;10
+(regardless of the value of the <b><tt>Relax</tt></b> parameter) because
+they violate the JPEG standard; but <b><tt>DCTDecode</tt></b> will read
+such files.
+
+<p>
+The size of the execution stack cannot be changed dynamically.  (However,
+the sizes of the operand and dictionary stacks can be changed.)
+
+<p>
+Separation color spaces are implemented, but devices that actually produce
+color separations are not supported: Separation color spaces always use
+the alternate space.  The special color separations All and None,
+and the primary separations (Red, Green, etc.), are not supported.
+
+<p>
+<b><tt>execform</tt></b> and <b><tt>ucache</tt></b> are implemented, but
+they do not actually do any caching; <b><tt>setucacheparams</tt></b> and
+<b><tt>ucachestatus</tt></b> are dummies.  (This only impacts performance,
+not functionality.)
+
+<p>
+The <b><tt>image</tt></b> operator only honors the
+<b><tt>Interpolate</tt></b> flag in the image dictionary if the combined
+transformation (<b><tt>ImageMatrix</tt></b> + CTM) doesn't involve
+rotation, skewing, or X-reflection; <b><tt>imagemask</tt></b> doesn't honor
+<b><tt>Interpolate</tt></b> at all.
+
+<p>
+Some path-building operations that would generate a device coordinate
+larger than +/-2^<small><sup>19</sup></small> will cause a
+limitcheck.  However, the common ones (<b><tt>[r]moveto</tt></b>,
+<b><tt>[r]lineto</tt></b>, <b><tt>[r]curveto</tt></b>, closepath) will not.
+
+<h2><a name="Graphics_bugs"></a>Graphics bugs</h2>
+
+<p>
+Opening more than one window device at the same time doesn't work.
+This is the case for both X Windows and Microsoft Windows.
+
+<p>
+<b><tt>cshow</tt></b> doesn't work with composite fonts.
+
+<h2><a name="Non_graphics_bugs"></a>Non-graphics bugs</h2>
+
+<p>
+The <b><tt>definefont</tt></b> operator (Subrs (type 1 fonts)) expects
+arrays but won't accept packed arrays:
+
+<p>
+Syntax errors occurring within a binary token do not produce the error
+message specified by the Adobe documentation.
+
+<!-- [2.0 end contents] ---------------------------------------------------- -->
+
+<!-- [3.0 begin visible trailer] ------------------------------------------- -->
+<hr>
+
+<font size=2>
+
+<p>Copyright &copy; 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+
+<p>This file is part of Aladdin Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+Aladdin Ghostscript.
+
+<p>
+Ghostscript version 5.40, 10 September 1998
+
+</font>
+
+<!-- [3.0 end visible trailer] --------------------------------------------- -->
+
+</body>
+</html>

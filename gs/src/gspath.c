@@ -26,6 +26,7 @@
 #include "gzstate.h"
 #include "gzpath.h"
 #include "gxdevice.h"		/* for gxcpath.h */
+#include "gxdevmem.h"		/* for gs_device_is_memory */
 #include "gzcpath.h"
 
 /* ------ Miscellaneous ------ */
@@ -280,15 +281,25 @@ gs_rcurveto(gs_state * pgs,
 /* Forward references */
 private int common_clip(P2(gs_state *, int));
 
-/* Return the effective clipping path of a graphics state, */
-/* the intersection of the clip path and the view clip path. */
+/*
+ * Return the effective clipping path of a graphics state.  Sometimes this
+ * is the intersection of the clip path and the view clip path; sometimes it
+ * is just the clip path.  We aren't sure what the correct algorithm is for
+ * this: for now, we use view clipping unless the current device is a memory
+ * device.  This takes care of the most important case, where the current
+ * device is a cache device.
+ */
 int
 gx_effective_clip_path(gs_state * pgs, gx_clip_path ** ppcpath)
 {
     gs_id view_clip_id =
-    (pgs->view_clip == 0 || pgs->view_clip->rule == 0 ? gs_no_id :
-     pgs->view_clip->id);
+	(pgs->view_clip == 0 || pgs->view_clip->rule == 0 ? gs_no_id :
+	 pgs->view_clip->id);
 
+    if (gs_device_is_memory(pgs->device)) {
+	*ppcpath = pgs->clip_path;
+	return 0;
+    }
     if (pgs->effective_clip_id == pgs->clip_path->id &&
 	pgs->effective_view_clip_id == view_clip_id
 	) {

@@ -1,16 +1,21 @@
 
-.TH ANSI2KNR 1 "19 Jan 1996" \" -*- nroff -*-
+.TH ANSI2KNR 1 "9 September 1998" \" -*- nroff -*-
 .SH NAME
 ansi2knr \- convert ANSI C to Kernighan & Ritchie C
 .SH SYNOPSIS
-.I ansi2knr
-[--varargs] input_file [output_file]
-.SH DESCRIPTION
-If no output_file is supplied, output goes to stdout.
+\fBansi2knr\fR [\fB--filename\fR \fIfilename\fR] [\fIinput_file\fR [\fIoutput_file\fR]]
 .br
+.SH DESCRIPTION
+\fB--filename\fR provides the file name for the #line directive in the output,
+overriding \fIinput_file\fR (if present).
+.sp
+If no \fIinput_file\fR is supplied, input is read from stdin.
+.sp
+If no \fIoutput_file\fR is supplied, output goes to stdout.
+.sp
 There are no error messages.
 .sp
-.I ansi2knr
+\fBansi2knr\fR
 recognizes function definitions by seeing a non-keyword identifier at the left
 margin, followed by a left parenthesis, with a right parenthesis as the last
 character on the line, and with a left brace as the first token on the
@@ -28,7 +33,7 @@ above syntax (such as a macro or function call).
 .sp
 The --varargs switch is obsolete, and is recognized only for
 backwards compatibility.  The present version of
-.I ansi2knr
+\fBansi2knr\fR
 will always attempt to convert a ... argument to va_alist and va_dcl.
 .SH AUTHOR
 L. Peter Deutsch <ghost@aladdin.com> wrote the original ansi2knr and

@@ -52,7 +52,9 @@ shade_colors2_converge(const gs_client_color cc[2],
 /* Fill a user space rectangle that is also a device space rectangle. */
 private int
 shade_fill_device_rectangle(const shading_fill_state_t * pfs,
-			    const gs_fixed_point * p0, const gs_fixed_point * p1, gx_device_color * pdevc)
+			    const gs_fixed_point * p0,
+			    const gs_fixed_point * p1,
+			    gx_device_color * pdevc)
 {
     gs_imager_state *pis = pfs->pis;
     fixed xmin, ymin, xmax, ymax;
@@ -66,8 +68,7 @@ shade_fill_device_rectangle(const shading_fill_state_t * pfs,
 	ymin = p0->y, ymax = p1->y;
     else
 	ymin = p1->y, ymax = p0->y;
-/****** CONFINE TO rect ******/
-/****** NOT QUITE RIGHT FOR PIXROUND ******/
+    /****** NOT QUITE RIGHT FOR PIXROUND ******/
     xmin -= pis->fill_adjust.x;
     xmax += pis->fill_adjust.x;
     ymin -= pis->fill_adjust.y;
@@ -89,19 +90,18 @@ typedef struct Fb_fill_state_s {
     shading_fill_state_common;
     const gs_shading_Fb_t *psh;
     gs_matrix_fixed ptm;	/* parameter space -> device space */
-    gs_client_color cc[4];
+    bool orthogonal;		/* true iff ptm is xxyy or xyyx */
 } Fb_fill_state_t;
 
 private int
-Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
-	       floatp y1)
+Fb_fill_region(const Fb_fill_state_t * pfs, gs_client_color cc[4],
+	       floatp x0, floatp y0, floatp x1, floatp y1)
 {
-    const gs_shading_Fb_t *psh = pfs->psh;
+    const gs_shading_Fb_t * const psh = pfs->psh;
     gs_imager_state *pis = pfs->pis;
 
-  top:if (!shade_colors4_converge(pfs->cc,
-				(const shading_fill_state_t *)pfs)
-	) {
+top:
+    if (!shade_colors4_converge(cc, (const shading_fill_state_t *)pfs)) {
 	/*
 	 * The colors don't converge.  Does the region color more than
 	 * a single pixel?
@@ -111,7 +111,7 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	region.p.x = x0, region.p.y = y0;
 	region.q.x = x1, region.q.y = y1;
 	gs_bbox_transform(&region, (const gs_matrix *)&pfs->ptm, &region);
-	if (region.q.x - region.p.x >= 1 || region.q.y - region.p.y >= 1)
+	if (region.q.x - region.p.x > 1 || region.q.y - region.p.y > 1)
 	    goto recur;
 	{
 	    /*
@@ -121,12 +121,12 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	     */
 	    fixed ax = pis->fill_adjust.x;
 	    int nx =
-	    fixed2int_pixround(float2fixed(region.q.x) + ax) -
-	    fixed2int_pixround(float2fixed(region.p.x) - ax);
+		fixed2int_pixround(float2fixed(region.q.x) + ax) -
+		fixed2int_pixround(float2fixed(region.p.x) - ax);
 	    fixed ay = pis->fill_adjust.y;
 	    int ny =
-	    fixed2int_pixround(float2fixed(region.q.y) + ay) -
-	    fixed2int_pixround(float2fixed(region.p.y) - ay);
+		fixed2int_pixround(float2fixed(region.q.y) + ay) -
+		fixed2int_pixround(float2fixed(region.p.y) - ay);
 
 	    if ((nx > 1 && ny != 0) || (ny > 1 && nx != 0))
 		goto recur;
@@ -141,12 +141,12 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	int code;
 
 	if_debug0('|', "[|]... filling region\n");
-	(*pcs->type->restrict_color) (&pfs->cc[0], pcs);
-	(*pcs->type->remap_color) (&pfs->cc[0], pcs, &dev_color, pis,
-				   pfs->dev, gs_color_select_texture);
+	(*pcs->type->restrict_color)(&cc[0], pcs);
+	(*pcs->type->remap_color)(&cc[0], pcs, &dev_color, pis,
+				  pfs->dev, gs_color_select_texture);
 	gs_point_transform2fixed(&pfs->ptm, x0, y0, &pts[0]);
 	gs_point_transform2fixed(&pfs->ptm, x1, y1, &pts[2]);
-	if (is_xxyy(&pfs->ptm) || is_xyyx(&pfs->ptm)) {
+	if (pfs->orthogonal) {
 	    code =
 		shade_fill_device_rectangle((const shading_fill_state_t *)pfs,
 					    &pts[0], &pts[2], &dev_color);
@@ -171,8 +171,10 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
      * discrepancy, but for now we subdivide on the axis with the
      * largest coordinate difference.
      */
-  recur:{
-	gs_client_color cc[4];
+recur:
+    {
+	gs_client_color mid[2];
+	gs_client_color rcc[4];
 	gs_function_t *pfn = psh->params.Function;
 	float v[2];
 	int code;
@@ -184,18 +186,20 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	    if_debug1('|', "[|]dividing at y=%g\n", ym);
 	    v[1] = ym;
 	    v[0] = x0;
-	    code = gs_function_evaluate(pfn, v, cc[0].paint.values);
+	    code = gs_function_evaluate(pfn, v, mid[0].paint.values);
 	    if (code < 0)
 		return code;
 	    v[0] = x1;
-	    code = gs_function_evaluate(pfn, v, cc[1].paint.values);
+	    code = gs_function_evaluate(pfn, v, mid[1].paint.values);
 	    if (code < 0)
 		return code;
-	    cc[2].paint = pfs->cc[2].paint;
-	    cc[3].paint = pfs->cc[3].paint;
-	    pfs->cc[2].paint = cc[0].paint;
-	    pfs->cc[3].paint = cc[1].paint;
-	    code = Fb_fill_region(pfs, x0, y0, x1, ym);
+	    rcc[0].paint = cc[0].paint;
+	    rcc[1].paint = cc[1].paint;
+	    rcc[2].paint = mid[0].paint;
+	    rcc[3].paint = mid[1].paint;
+	    code = Fb_fill_region(pfs, rcc, x0, y0, x1, ym);
+	    cc[0].paint = mid[0].paint;
+	    cc[1].paint = mid[1].paint;
 	    y0 = ym;
 	} else {
 	    /* Subdivide in X. */
@@ -204,24 +208,22 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	    if_debug1('|', "[|]dividing at x=%g\n", xm);
 	    v[0] = xm;
 	    v[1] = y0;
-	    code = gs_function_evaluate(pfn, v, cc[0].paint.values);
+	    code = gs_function_evaluate(pfn, v, mid[0].paint.values);
 	    if (code < 0)
 		return code;
 	    v[1] = y1;
-	    code = gs_function_evaluate(pfn, v, cc[2].paint.values);
+	    code = gs_function_evaluate(pfn, v, mid[2].paint.values);
 	    if (code < 0)
 		return code;
-	    cc[1].paint = pfs->cc[1].paint;
-	    cc[3].paint = pfs->cc[3].paint;
-	    pfs->cc[1].paint = cc[0].paint;
-	    pfs->cc[3].paint = cc[2].paint;
-	    code = Fb_fill_region(pfs, x0, y0, xm, y1);
+	    rcc[0].paint = cc[0].paint;
+	    rcc[1].paint = mid[0].paint;
+	    rcc[2].paint = cc[2].paint;
+	    rcc[3].paint = mid[1].paint;
+	    code = Fb_fill_region(pfs, rcc, x0, y0, xm, y1);
+	    cc[0].paint = mid[0].paint;
+	    cc[2].paint = mid[1].paint;
 	    x0 = xm;
 	}
-	pfs->cc[0].paint = cc[0].paint;
-	pfs->cc[1].paint = cc[1].paint;
-	pfs->cc[2].paint = cc[2].paint;
-	pfs->cc[3].paint = cc[3].paint;
 	if (code < 0)
 	    return code;
     }
@@ -232,18 +234,21 @@ int
 gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 			     gx_device * dev, gs_imager_state * pis)
 {
-    const gs_shading_Fb_t *psh = (const gs_shading_Fb_t *)psh0;
+    const gs_shading_Fb_t * const psh = (const gs_shading_Fb_t *)psh0;
     gs_matrix save_ctm;
     int xi, yi, code;
     float x[2], y[2];
     Fb_fill_state_t state;
+    gs_client_color cc[4];
 
     shade_init_fill_state((shading_fill_state_t *) & state, psh0, dev, pis);
     state.psh = psh;
-/****** HACK ******/
+    /****** HACK FOR FIXED-POINT MATRIX MULTIPLY ******/
     gs_currentmatrix((gs_state *) pis, &save_ctm);
     gs_concat((gs_state *) pis, &psh->params.Matrix);
     state.ptm = pis->ctm;
+    gs_setmatrix((gs_state *) pis, &save_ctm);
+    state.orthogonal = is_xxyy(&state.ptm) || is_xyyx(&state.ptm);
     /* Compute the parameter X and Y ranges. */
     {
 	gs_rect pbox;
@@ -260,11 +265,9 @@ gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 
 	    v[0] = x[xi], v[1] = y[yi];
 	    gs_function_evaluate(psh->params.Function, v,
-				 state.cc[yi * 2 + xi].paint.values);
+				 cc[yi * 2 + xi].paint.values);
 	}
-    code = Fb_fill_region(&state, x[0], y[0], x[1], y[1]);
-/****** HACK ******/
-    gs_setmatrix((gs_state *) pis, &save_ctm);
+    code = Fb_fill_region(&state, cc, x[0], y[0], x[1], y[1]);
     return code;
 }
 
@@ -274,26 +277,24 @@ typedef struct A_fill_state_s {
     shading_fill_state_common;
     const gs_shading_A_t *psh;
     gs_rect rect;
-    gs_client_color cc[2];
     gs_point delta;
     double length, dd;
 } A_fill_state_t;
 
 /* Note t0 and t1 vary over [0..1], not the Domain. */
 private int
-A_fill_region(A_fill_state_t * pfs, floatp t0, floatp t1)
+A_fill_region(const A_fill_state_t * pfs, gs_client_color cc[2],
+	      floatp t0, floatp t1)
 {
-    const gs_shading_A_t *psh = pfs->psh;
+    const gs_shading_A_t * const psh = pfs->psh;
 
-  top:if (!shade_colors2_converge(pfs->cc,
-				(const shading_fill_state_t *)pfs)
-	) {
+top:
+    if (!shade_colors2_converge(cc, (const shading_fill_state_t *)pfs)) {
 	/*
 	 * The colors don't converge.  Is the stripe less than 1 pixel wide?
 	 */
 	if (pfs->length * (t1 - t0) > 1)
 	    goto recur;
-	/* We could do the 1-pixel case a lot faster! */
     }
     /* Fill the region with the color. */
     {
@@ -301,15 +302,17 @@ A_fill_region(A_fill_state_t * pfs, floatp t0, floatp t1)
 	const gs_color_space *pcs = psh->params.ColorSpace;
 	gs_imager_state *pis = pfs->pis;
 	double
-	       x0 = psh->params.Coords[0] + pfs->delta.x * t0, y0 = psh->params.Coords[1] + pfs->delta.y * t0;
+	    x0 = psh->params.Coords[0] + pfs->delta.x * t0,
+	    y0 = psh->params.Coords[1] + pfs->delta.y * t0;
 	double
-	       x1 = psh->params.Coords[0] + pfs->delta.x * t1, y1 = psh->params.Coords[1] + pfs->delta.y * t1;
+	    x1 = psh->params.Coords[0] + pfs->delta.x * t1,
+	    y1 = psh->params.Coords[1] + pfs->delta.y * t1;
 	gs_fixed_point pts[4];
 	int code;
 
-	(*pcs->type->restrict_color) (&pfs->cc[0], pcs);
-	(*pcs->type->remap_color) (&pfs->cc[0], pcs, &dev_color, pis,
-				   pfs->dev, gs_color_select_texture);
+	(*pcs->type->restrict_color)(&cc[0], pcs);
+	(*pcs->type->remap_color)(&cc[0], pcs, &dev_color, pis,
+				  pfs->dev, gs_color_select_texture);
 	if (x0 == x1) {
 	    /* Stripe is horizontal. */
 	    x0 = pfs->rect.p.x;
@@ -324,17 +327,11 @@ A_fill_region(A_fill_state_t * pfs, floatp t0, floatp t1)
 	     * Extend it to the edges of the rectangle.
 	     */
 	    gx_path *ppath = gx_path_alloc(pis->memory, "A_fill");
-
-	    /*
-	     * Figuring out how far to extend the stripe is hard,
-	     * since one or both of x0/y0 and x1/y1 may lie outside
-	     * the rectangle but part of the stripe may lie inside.
-	     * For now, we do something simple and ****** WRONG ******.
-	     */
 	    double dist = max(pfs->rect.q.x - pfs->rect.p.x,
 			      pfs->rect.q.y - pfs->rect.p.y);
 	    double denom = hypot(pfs->delta.x, pfs->delta.y);
-	    double dx = dist * pfs->delta.y / denom, dy = -dist * pfs->delta.x / denom;
+	    double dx = dist * pfs->delta.y / denom,
+		dy = -dist * pfs->delta.x / denom;
 
 	    if_debug6('|', "[|]p0=(%g,%g), p1=(%g,%g), dxy=(%g,%g)\n",
 		      x0, y0, x1, y1, dx, dy);
@@ -347,6 +344,7 @@ A_fill_region(A_fill_state_t * pfs, floatp t0, floatp t1)
 	    code = shade_fill_path((const shading_fill_state_t *)pfs,
 				   ppath, &dev_color);
 	    gx_path_free(ppath, "A_fill");
+	    return code;
 	}
 	/* Stripe is horizontal or vertical. */
 	gs_point_transform2fixed(&pis->ctm, x0, y0, &pts[0]);
@@ -359,22 +357,21 @@ A_fill_region(A_fill_state_t * pfs, floatp t0, floatp t1)
     /*
      * No luck.  Subdivide the interval and recur.
      */
-  recur:{
-	gs_client_color ccm, cc1;
+recur:
+    {
+	gs_client_color ccm, rcc[2];
 	gs_function_t *pfn = psh->params.Function;
 	float tm = (t0 + t1) * 0.5;
 	float dm = tm * pfs->dd + psh->params.Domain[0];
 
-	cc1.paint = pfs->cc[1].paint;
 	gs_function_evaluate(pfn, &dm, ccm.paint.values);
-	pfs->cc[1].paint = ccm.paint;
-	A_fill_region(pfs, t0, tm);
-	pfs->cc[0].paint = ccm.paint;
-	pfs->cc[1].paint = cc1.paint;
+	rcc[0].paint = cc[0].paint;
+	rcc[1].paint = ccm.paint;
+	A_fill_region(pfs, rcc, t0, tm);
+	cc[0].paint = ccm.paint;
 	t0 = tm;
 	goto top;
     }
-    return 0;
 }
 
 int
@@ -383,6 +380,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 {
     const gs_shading_A_t *const psh = (const gs_shading_A_t *)psh0;
     A_fill_state_t state;
+    gs_client_color cc[2];
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1], dd = d1 - d0;
     float t[2];
     gs_point dist;
@@ -397,7 +395,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 /****** INTERSECT Domain WITH rect ******/
     for (i = 0; i < 2; ++i)
 	gs_function_evaluate(psh->params.Function, &t[i],
-			     state.cc[i].paint.values);
+			     cc[i].paint.values);
     state.delta.x = psh->params.Coords[2] - psh->params.Coords[0];
     state.delta.y = psh->params.Coords[3] - psh->params.Coords[1];
     gs_distance_transform(state.delta.x, state.delta.y, &ctm_only(pis),
@@ -405,7 +403,7 @@ gs_shading_A_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     state.length = hypot(dist.x, dist.y);	/* device space line length */
     state.dd = dd;
 /****** DOESN'T HANDLE Extend ******/
-    return A_fill_region(&state, (t[0] - d0) / dd, (t[1] - d0) / dd);
+    return A_fill_region(&state, cc, (t[0] - d0) / dd, (t[1] - d0) / dd);
 }
 
 /* ---------------- Radial shading ---------------- */
@@ -414,20 +412,19 @@ typedef struct R_fill_state_s {
     shading_fill_state_common;
     const gs_shading_R_t *psh;
     gs_rect rect;
-    gs_client_color cc[2];
     gs_point delta;
     double dr, width, dd;
 } R_fill_state_t;
 
 /* Note t0 and t1 vary over [0..1], not the Domain. */
 private int
-R_fill_region(R_fill_state_t * pfs, floatp t0, floatp t1)
+R_fill_region(const R_fill_state_t * pfs, gs_client_color cc[2],
+	      floatp t0, floatp t1)
 {
-    const gs_shading_R_t *psh = pfs->psh;
+    const gs_shading_R_t * const psh = pfs->psh;
 
-  top:if (!shade_colors2_converge(pfs->cc,
-				(const shading_fill_state_t *)pfs)
-	) {
+top:
+    if (!shade_colors2_converge(cc, (const shading_fill_state_t *)pfs)) {
 	/*
 	 * The colors don't converge.  Is the annulus less than 1 pixel wide?
 	 */
@@ -441,17 +438,19 @@ R_fill_region(R_fill_state_t * pfs, floatp t0, floatp t1)
 	const gs_color_space *pcs = psh->params.ColorSpace;
 	gs_imager_state *pis = pfs->pis;
 	double
-	       x0 = psh->params.Coords[0] + pfs->delta.x * t0, y0 = psh->params.Coords[1] + pfs->delta.y * t0,
-	       r0 = psh->params.Coords[2] + pfs->dr * t0;
+	    x0 = psh->params.Coords[0] + pfs->delta.x * t0,
+	    y0 = psh->params.Coords[1] + pfs->delta.y * t0,
+	    r0 = psh->params.Coords[2] + pfs->dr * t0;
 	double
-	       x1 = psh->params.Coords[0] + pfs->delta.x * t1, y1 = psh->params.Coords[1] + pfs->delta.y * t1,
-	       r1 = psh->params.Coords[2] + pfs->dr * t1;
+	    x1 = psh->params.Coords[0] + pfs->delta.x * t1,
+	    y1 = psh->params.Coords[1] + pfs->delta.y * t1,
+	    r1 = psh->params.Coords[2] + pfs->dr * t1;
 	gx_path *ppath = gx_path_alloc(pis->memory, "R_fill");
 	int code;
 
-	(*pcs->type->restrict_color) (&pfs->cc[0], pcs);
-	(*pcs->type->remap_color) (&pfs->cc[0], pcs, &dev_color, pis,
-				   pfs->dev, gs_color_select_texture);
+	(*pcs->type->restrict_color)(&cc[0], pcs);
+	(*pcs->type->remap_color)(&cc[0], pcs, &dev_color, pis,
+				  pfs->dev, gs_color_select_texture);
 	if ((code = gs_imager_arc_add(ppath, pis, false, x0, y0, r0,
 				      0.0, 360.0, false)) >= 0 &&
 	    (code = gs_imager_arc_add(ppath, pis, true, x1, y1, r1,
@@ -467,22 +466,21 @@ R_fill_region(R_fill_state_t * pfs, floatp t0, floatp t1)
     /*
      * No luck.  Subdivide the interval and recur.
      */
-  recur:{
-	gs_client_color ccm, cc1;
+recur:
+    {
+	gs_client_color ccm, rcc[2];
 	gs_function_t *pfn = psh->params.Function;
 	float tm = (t0 + t1) * 0.5;
 	float dm = tm * pfs->dd + psh->params.Domain[0];
 
-	cc1.paint = pfs->cc[1].paint;
 	gs_function_evaluate(pfn, &dm, ccm.paint.values);
-	pfs->cc[1].paint = ccm.paint;
-	R_fill_region(pfs, t0, tm);
-	pfs->cc[0].paint = ccm.paint;
-	pfs->cc[1].paint = cc1.paint;
+	rcc[0].paint = cc[0].paint;
+	rcc[1].paint = ccm.paint;
+	R_fill_region(pfs, rcc, t0, tm);
+	cc[0].paint = ccm.paint;
 	t0 = tm;
 	goto top;
     }
-    return 0;
 }
 
 int
@@ -491,6 +489,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 {
     const gs_shading_R_t *const psh = (const gs_shading_R_t *)psh0;
     R_fill_state_t state;
+    gs_client_color cc[2];
     float d0 = psh->params.Domain[0], d1 = psh->params.Domain[1], dd = d1 - d0;
     float t[2];
     int i;
@@ -504,7 +503,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 /****** INTERSECT Domain WITH rect ******/
     for (i = 0; i < 2; ++i)
 	gs_function_evaluate(psh->params.Function, &t[i],
-			     state.cc[i].paint.values);
+			     cc[i].paint.values);
     state.delta.x = psh->params.Coords[3] - psh->params.Coords[0];
     state.delta.y = psh->params.Coords[4] - psh->params.Coords[1];
     state.dr = psh->params.Coords[5] - psh->params.Coords[2];
@@ -518,5 +517,5 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	 fabs(pis->ctm.yy)) * fabs(state.dr);
     state.dd = dd;
 /****** DOESN'T HANDLE Extend ******/
-    return R_fill_region(&state, (t[0] - d0) / dd, (t[1] - d0) / dd);
+    return R_fill_region(&state, cc, (t[0] - d0) / dd, (t[1] - d0) / dd);
 }
