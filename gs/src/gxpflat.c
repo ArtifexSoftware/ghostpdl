@@ -234,12 +234,8 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 	this->y3 = y0;
     }
 #   if CURVED_TRAPEZOID_FILL
-#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-#	    if CURVED_TRAPEZOID_FILL_SCANS_BACK
-		this->curve = true;
-#	    else
-		this->reverse = reverse;
-#	    endif
+#	if CURVED_TRAPEZOID_FILL_SCANS_BACK
+	    this->curve = true;
 #	endif
 #   endif
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
@@ -354,9 +350,7 @@ gx_flattened_iterator__print_state(gx_flattened_iterator *this)
 
 /* Move to the next segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * Return true iff there exist more segments.
- * Note : The number of generated segments can be samller than 2^k 
- *	  due to the small segment skipping.
- * Note : It can generate collinear segments. 
+ * Note : It can generate small or collinear segments. 
  */
 bool
 gx_flattened_iterator__next(gx_flattened_iterator *this)
@@ -401,7 +395,8 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
     this->ly0 = this->ly1;
     /* Fast check for N == 3, a common special case for small characters. */
     if (this->k <= 1) {
-	if (--this->i == 0)
+	--this->i;
+	if (this->i == 0)
 	    goto last;
 #	define poly2(a,b,c) arith_rshift_1(arith_rshift_1(arith_rshift_1(a) + b) + c)
 	x += poly2(this->ax, this->bx, this->cx);
@@ -414,13 +409,8 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
 	if (
-#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE || CURVED_TRAPEZOID_FILL_SCANS_BACK
-#	    if CURVED_TRAPEZOID_FILL && !CURVED_TRAPEZOID_FILL_SCANS_BACK
-		this->reverse ? ((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5)
-			      : ((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)
-#	    else
-		((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)
-#	    endif
+#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE
+	    ((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)
 #	else
 	    (((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)) &&
 	    (((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5))
@@ -431,47 +421,31 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 	    return true;
 	}
     } else {
-
-	for (;;) { /* A loop for skipping short segments -- 
-		    those that lie entirely within a square half-pixel. */
-	    --this->i;
-	    if (!this->i)
-		break; /* don't bother with last accum */
-#	    ifdef DEBUG
+	--this->i;
+	if (this->i == 0)
+	    goto last; /* don't bother with last accum */
+#	ifdef DEBUG
 	    gx_flattened_iterator__print_state(this);
-#	    endif
-#	    define accum(i, r, di, dr, rmask)\
+#	endif
+#	define accum(i, r, di, dr, rmask)\
 			if ( (r += dr) > rmask ) r &= rmask, i += di + 1;\
 			else i += di
-	    accum(x, this->rx, this->idx, this->rdx, this->rmask);
-	    accum(y, this->ry, this->idy, this->rdy, this->rmask);
-	    accum(this->idx, this->rdx, this->id2x, this->rd2x, this->rmask);
-	    accum(this->idy, this->rdy, this->id2y, this->rd2y, this->rmask);
-	    accum(this->id2x, this->rd2x, this->id3x, this->rd3x, this->rmask);
-	    accum(this->id2y, this->rd2y, this->id3y, this->rd3y, this->rmask);
-	    if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
-		      (((x ^ this->lx0) | (y ^ this->ly0)) & float2fixed(-0.5) ?
-		       "add" : "skip"),
-		      fixed2float(x), fixed2float(y), x, y);
-	    if (!coord_near(x, this->lx0) || !coord_near(y, this->ly0))
-		break; /* X coordinates are not within a half-pixel. */
-	}
+	accum(x, this->rx, this->idx, this->rdx, this->rmask);
+	accum(y, this->ry, this->idy, this->rdy, this->rmask);
+	accum(this->idx, this->rdx, this->id2x, this->rd2x, this->rmask);
+	accum(this->idy, this->rdy, this->id2y, this->rd2y, this->rmask);
+	accum(this->id2x, this->rd2x, this->id3x, this->rd3x, this->rmask);
+	accum(this->id2y, this->rd2y, this->id3y, this->rd3y, this->rmask);
+	if_debug5('3', "[3]%s x=%g, y=%g x=%d y=%d\n",
+		  (((x ^ this->lx0) | (y ^ this->ly0)) & float2fixed(-0.5) ?
+		   "add" : "skip"),
+		  fixed2float(x), fixed2float(y), x, y);
 #	undef accum
-	if (this->i) {
-	    this->lx1 = x;
-	    this->ly1 = y;
-#	    if CURVED_TRAPEZOID_FILL0_COMPATIBLE && CURVED_TRAPEZOID_FILL_SCANS_BACK
-		this->x = x;
-		this->y = y;
-#	    endif
-	    vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
-	    return true;
-	}
+	this->lx1 = this->x = x;
+	this->ly1 = this->y = y;
+	vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
+	return true;
     }
-#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE && CURVED_TRAPEZOID_FILL_SCANS_BACK
-	this->x = x;
-	this->y = y;
-#   endif
 last:
     this->lx1 = this->x3;
     this->ly1 = this->y3;
@@ -479,6 +453,118 @@ last:
 	      fixed2float(this->lx1), fixed2float(this->ly1), this->lx1, this->ly1);
     vd_bar(this->lx0, this->ly0, this->lx1, this->ly1, 1, RGB(0, 255, 0));
     return false;
+}
+
+/* Move to the next segment uniting small segments,
+ * and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
+ * Return true iff there exist more segments.
+ * Note : The number of generated segments can be samller than 2^k 
+ *	  due to the small segment uniting.
+ * Note : It can generate nearly collinear segments. 
+ */
+bool
+gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
+{
+    fixed x0 = this->lx1, y0 = this->ly1;
+
+    for (;;) {
+	if (!gx_flattened_iterator__next(this)) {
+	    this->lx0 = x0;
+	    this->ly0 = y0;
+	    return false;
+	}
+	if (!coord_near(x0, this->lx1) || !coord_near(y0, this->ly1)) {
+	    this->lx0 = x0;
+	    this->ly0 = y0;
+	    return true;
+	}
+    }
+}
+
+/*
+ * Check for nearly collinear segments -- 
+ * those where one coordinate of all three points
+ * (the two endpoints and the midpoint) lie within the same
+ * half-pixel and both coordinates are monotonic.
+ */
+private inline bool
+gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
+{
+#if MERGE_COLLINEAR_SEGMENTS
+    /* fixme: optimise: don't check the coordinate order for monotonic curves. */
+#   define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
+    if ((coord_near(x2, x0) || coord_near(y2, y0))
+	    /* X or Y coordinates are within a half-pixel. */ &&
+	    coords_in_order(x0, x1, x2) &&
+	    coords_in_order(y0, y1, y2))
+	return true;
+#   undef coords_in_order
+#endif
+    return false;
+}
+
+/* Move to the next segment uniting nearly collinear segments,
+ * and store it to this->fx0, this->fy0, this->fx1, this->fy1 .
+ * Return true iff there exist more segments.
+ * Note : The number of generated segments can be samller than 2^k 
+ *	  due to the segment uniting.
+ */
+bool
+gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
+{
+    /* fixme: CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 is not implemented yet. */
+    if (this->i == 1 << this->k) {
+	/* The first segment. */
+	/* Don't check collinearity because the old code does not. */
+	this->fx0 = this->lx0;
+	this->fy0 = this->ly0;
+	this->ahead = false;
+	gx_flattened_iterator__next_filtered1(this);
+	this->fx1 = this->lx1;
+	this->fy1 = this->ly1;
+	if (this->i != 0) {
+	    /* The unfiltered iterator will go ahead. */
+	    gx_flattened_iterator__next_filtered1(this);
+	    this->ahead = true;
+	}
+    } else {
+	this->fx0 = this->fx1;
+	this->fy0 = this->fy1;
+	for (;;) {
+	    if (!this->i) {
+		/* The unfiltered iterator riched the last segment. */
+		if (!this->ahead) {
+		    this->fx1 = this->lx1;
+		    this->fy1 = this->ly1;
+		    break;
+		}
+		this->ahead = false;
+		if (this->lx0 == this->fx0 && this->lx0 == this->fx0) {
+		    /* The last segment appears immediately after the first one,
+		       but the first one was yielded immediately. */
+		    this->fx1 = this->lx1;
+		    this->fy1 = this->ly1;
+		    break;
+		} else {
+		    /* Don't merge the last segment because the old code does not. */
+		    this->fx1 = this->lx0;
+		    this->fy1 = this->ly0;
+		    vd_bar(this->fx0, this->fy0, this->fx1, this->fy1, 1, RGB(0, 0, 255));
+		    return true;
+		} 
+	    } else {
+		gx_flattened_iterator__next_filtered1(this);
+		if (!gx_check_nearly_collinear_inline(this->fx0, this->fy0, 
+			this->lx0, this->ly0, this->lx1, this->ly1)) {
+		    this->fx1 = this->lx0;
+		    this->fy1 = this->ly0;
+		    break;
+		}
+	    }
+	}
+    }
+    vd_bar(this->fx0, this->fy0, this->fx1, this->fy1, 1, RGB(0, 0, 255));
+    return this->ahead || this->i != 0;
 }
 
 #if CURVED_TRAPEZOID_FILL_SCANS_BACK
@@ -582,28 +668,6 @@ generate_segments(gx_path * ppath, const gs_fixed_point *points,
     }
 }
 
-/*
- * Check for nearly collinear segments -- 
- * those where one coordinate of all three points
- * (the two endpoints and the midpoint) lie within the same
- * half-pixel and both coordinates are monotonic.
- */
-private inline bool
-gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
-{
-#if MERGE_COLLINEAR_SEGMENTS
-    /* fixme: optimise: don't check the coordinate order for monotonic curves. */
-#   define coords_in_order(v0, v1, v2) ( (((v1) - (v0)) ^ ((v2) - (v1))) >= 0 )
-    if ((coord_near(x2, x0) || coord_near(y2, y0))
-	    /* X or Y coordinates are within a half-pixel. */ &&
-	    coords_in_order(x0, x1, x2) &&
-	    coords_in_order(y0, y1, y2))
-	return true;
-#   undef coords_in_order
-#endif
-    return false;
-}
-
 #if CURVED_TRAPEZOID_FILL0_COMPATIBLE
 bool
 gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
@@ -641,13 +705,20 @@ top :
 	bool more;
 
 	for(;;) {
-	    more = gx_flattened_iterator__next(this);
-	    if (ppt > points + 1 && more)
-		if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
-				ppt[-1].x, ppt[-1].y, this->lx1, this->ly1))
-		    --ppt;		/* remove middle point */
-	    ppt->x = this->lx1;
-	    ppt->y = this->ly1;
+#	    if 0
+		/* The old code does so - keeping it for a while. */
+		more = gx_flattened_iterator__next_filtered1(this);
+		if (ppt > points + 1 && more)
+		    if (gx_check_nearly_collinear_inline(ppt[-2].x, ppt[-2].y, 
+				    ppt[-1].x, ppt[-1].y, this->lx1, this->ly1))
+			--ppt;		/* remove middle point */
+		ppt->x = this->lx1;
+		ppt->y = this->ly1;
+#	    else
+		more = gx_flattened_iterator__next_filtered2(this);
+		ppt->x = this->fx1;
+		ppt->y = this->fy1;
+#	    endif
 	    ppt++;
 	    if (ppt == &points[max_points] || !more) {
 		gs_fixed_point *pe = (more ?  ppt - 2 : ppt);

@@ -404,21 +404,22 @@ struct gx_flattened_iterator_s {
     /* private : */
     fixed x0, y0, x3, y3;
     fixed cx, bx, ax, cy, by, ay;
+    fixed x, y;
     uint i, k;
     uint rmask;			/* M-1 */
     fixed idx, idy, id2x, id2y, id3x, id3y;	/* I */
     uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
     segment_notes notes;
     /* public : */
-#if CURVED_TRAPEZOID_FILL0_COMPATIBLE 
+#if CURVED_TRAPEZOID_FILL
 #if CURVED_TRAPEZOID_FILL_SCANS_BACK
-    fixed x, y;
     bool curve;
-#else
-    bool reverse;
 #endif
 #endif
     fixed lx0, ly0, lx1, ly1;
+    /* public data for filtered2 : */
+    fixed fx0, fy0, fx1, fy1;
+    bool ahead;
 };
 
 bool gx_flattened_iterator__init(gx_flattened_iterator *this, 
