@@ -28,6 +28,11 @@ How to prepare an Aladdin Ghostscript release
 <li><a href="#Making_distributions">Making distributions</a>
 <ul>
 <li><a href="#General_procedure">General procedure</a>
+<ul>
+<li><a href="#Checking_source">Checking the source code</a>
+<li><a href="#Windows">Building for Windows</a>
+<li><a href="#Finishing_up">Finishing up</a>
+</ul>
 <li><a href="#Tester_or_beta">Tester or beta distributions</a>
 <li><a href="#Public_releases">Public releases</a>
 </ul>
@@ -128,17 +133,27 @@ When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
 You will need the following tools:
 <blockquote>
 	<b><tt>../bin/precheck.tcl</tt></b> (Tcl script)<br>
-	<b><tt>../bin/put-gs.tcl</tt></b> (Tcl script)<br>
-	<b><tt>../bin/put-gs-c</tt></b> (link to <b><tt>put-gs.tcl</tt></b>)<br>
 	<b><tt>master/pre</tt></b> (Tcl script)<br>
 	<b><tt>master/pre.chk</tt></b> (data file)<br>
-	<b><tt>master/gsmake</tt></b> (link to <b><tt>gsmake.tcl</tt></b>)<br>
 	<b><tt>master/gsmake.tcl</tt></b> (Tcl script)<br>
-	<b><tt>master/makeset</tt></b> (link to <b><tt>makeset.tcl</tt></b>)<br>
+	<b><tt>master/gsmake</tt></b> (link to <b><tt>gsmake.tcl</tt></b>)<br>
 	<b><tt>master/makeset.tcl</tt></b> (Tcl script)<br>
+	<b><tt>master/makefonts</tt></b> (link to <b><tt>makeset.tcl</tt></b>)<br>
+	<b><tt>master/maketars</tt></b> (ibid.)<br>
+	<b><tt>master/makezips</tt></b> (ibid.)<br>
+	<b><tt>master/makemaster</tt></b> (ibid.)<br>
 	<b><tt>master/smoke.ps</tt></b> (PostScript file)<br>
 	<b><tt>data/*/*.ps</tt></b> (PostScript files)<br>
 	<b><tt>beta.msg</tt></b>
+</blockquote>
+
+<p>
+If you are going to make Windows releases, mount the Windows partition on
+<b><tt>/c</tt></b>, and be sure the following directories exist:
+
+<blockquote>
+	<b><tt>/c/work/fonts</tt></b><br>
+	<b><tt>/c/work/gs#.#[#]</tt></b><br>
 </blockquote>
 
 <h2><a name="General_procedure"></a>General procedure</h2>
@@ -228,18 +243,16 @@ master/pre
 </pre></blockquote>
 
 <p>
-again.  Check the consistency of the source code with the makefiles by
+again.
+
+<h3><a name="Checking_source"></a>Checking the source code</h3>
+
+<p>
+Check the consistency of the source code with the makefiles by
 running:
 
 <blockquote><pre>
 master/gsmake check
-</pre></blockquote>
-
-<p>
-Copy changed files to the DOS/Windows partition by running
-
-<blockquote><pre>
-put-gs-c
 </pre></blockquote>
 
 <p>
@@ -253,11 +266,11 @@ rm -f src/*~ src/*.bak src/*.orig src/*.mak.tcl doc/*~ doc/*.orig lib/*~ lib/*.o
 Make the source archives with
 
 <blockquote><pre>
-master/makeset #.##
+master/maketars
 </pre></blockquote>
 
 <p>
-where #.## is the release number (e.g., 5.90).  This creates the files
+This creates the files
 
 <blockquote>
 <b><tt>ghostscript-#.##.tar.gz</tt></b> (main archive)
@@ -299,7 +312,39 @@ This reads files named
 crashes, unusual error messages, or anomalous displayed output.
 
 <p>
-Boot into Windows.  Build with the Borland compiler:
+If you are not making a Windows release, skip the following section and
+proceed to <a href="#Finishing_up">"Finishing up"</a>.
+
+<h3><a name="Windows"></a>Building for Windows</h3>
+
+<p>
+Make the Windows zip files and copy them to the Windows partition:
+
+<blockquote><pre>
+master/makezips
+cp gs###*.zip /c/work
+</pre></blockquote>
+
+<p>
+This creates and copies the files
+
+<blockquote>
+<b><tt>gs###src.zip</tt></b> (source files)<br>
+<b><tt>gs###lib.zip</tt></b> (runtime and font files)<br>
+</blockquote>
+
+<p>
+Boot into Windows.  Unpack the archives:
+
+<blockquote><pre>
+cd \c\work
+unzip -oq gs###src.zip
+unzip -oq gs###lib.zip
+cd gs#.#[#]
+</pre></blockquote>
+
+<p>
+Build with the Borland compiler:
 
 <blockquote><pre>
 config bcwin32
@@ -334,37 +379,20 @@ wmake -u > watc.log
 If everything is OK, make the self-extracting executables:
 
 <blockquote><pre>
-cd ..
-rename gs gs#.##
-cd gs#.##
 nmake archive
-cd ..
-rename gs#.## gs
 </pre></blockquote>
 
 <p>
 Boot back into Linux.  If testing in Windows revealed problems, edit the
-source files as necessary, and go back to "Check the consistency of the
-source code."  If everything was OK, make the PC executable archive with
+source files as necessary, and go back to <a href="#Checking_source">"Check
+the consistency of the source code."</a>
+
+<h3><a name="Finishing_up"></a>Finishing up</h3>
+
+Execute
 
 <blockquote><pre>
-master/makeset --win #.##
-</pre></blockquote>
-
-<p>
-This creates the files
-
-<blockquote>
-<b><tt>gs###w32.zip</tt></b> (MS Windows run-time archive, including fonts
-and documentation)
-<br><b><tt>gs###src.zip</tt></b> (src and man directories)
-</blockquote>
-
-<p>
-Finally, execute
-
-<blockquote><pre>
-master/makeset --move #.##
+master/makemaster
 </pre></blockquote>
 
 <p>
@@ -396,7 +424,7 @@ If <b><tt>doc/C-style.htm</tt></b> has changed, put it on
 Construct the e-mail announcement by editing <b><tt>beta.msg</tt></b>;
 include the News section for this release.  Mail using:
 <blockquote>
-	To: gs-test@aladdin.com
+	To: gs-test
 </blockquote>
 
 <h2><a name="Public_releases"></a>Public releases</h2>
@@ -412,7 +440,7 @@ Do the steps for distributions in general.
 <p>
 E-mail the release announcement using:
 <blockquote>
-	To: gs-announce@aladdin.com
+	To: gs-announce
 </blockquote>
 
 <p>
