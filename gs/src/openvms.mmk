@@ -448,6 +448,11 @@ macro :
 .else
 	@ a4p = 0
 .endif
+.ifdef IEEE
+	@ i3e = 1
+.else
+	@ i3e = 0
+.endif
 .ifdef SYSLIB
 	@ dsl = 1
 .else
@@ -460,6 +465,7 @@ macro :
 	@ if decw12 then macro = macro + "DECWINDOWS1_2=1,"
 	@ if a4p then macro = macro + "A4_PAPER=1,"
 	@ if dsl then macro = macro + "SYSLIB=1,"
+	@ if i3e then macro = macro + "IEEE=1,"
 	@ if macro.nes."" then macro = f$extract(0,f$length(macro)-1,macro)+ ")"
 	$(MMS)$(MMSQUALIFIERS)'macro' $(GS_XE)
 
