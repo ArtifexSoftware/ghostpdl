@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.20 2003/03/04 17:29:24 giles Exp $
+    $Id: jbig2_segment.c,v 1.21 2003/03/05 02:44:43 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -136,6 +136,39 @@ jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
   info->flags = segment_data[16];
 }
 
+int jbig2_parse_extension_segment(Jbig2Ctx *ctx, Jbig2Segment *segment,
+                            const uint8_t *segment_data)
+{
+    uint32_t type;
+    bool reserved, dependent, necessary;
+
+    type = jbig2_get_int32(segment_data);
+    
+    reserved = type & 0x20000000;
+    dependent = type & 0x40000000;
+    necessary = type & 0x80000000;
+
+    if (necessary && !reserved) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+            "extension segment is marked 'necessary' but not 'reservered' contrary to spec");
+    }
+    
+    switch (type) {
+        case 0x20000000: return jbig2_parse_comment_ascii(ctx, segment, segment_data);
+        case 0x20000002: return jbig2_parse_comment_unicode(ctx, segment, segment_data);
+        default:
+            if (necessary) {
+                return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                    "unhandled necessary extension segment type 0x%08x", type);
+            } else {
+                return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
+                    "unhandled extension segment");
+            }
+    }
+    
+    return 0;
+}
+
 int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
 			 const uint8_t *segment_data)
 {
@@ -198,8 +231,7 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled table segment");
     case 62:
-      return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
-        "unhandled extension segment");
+      return jbig2_parse_extension_segment(ctx, segment, segment_data);
     default:
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
           "unknown segment type %d", segment->flags & 63);

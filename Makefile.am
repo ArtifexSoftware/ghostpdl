@@ -1,4 +1,4 @@
-# $Id: Makefile.am,v 1.14 2003/03/04 16:52:47 giles Exp $
+# $Id: Makefile.am,v 1.15 2003/03/05 02:44:43 giles Exp $
 ## process this file with automake to generate Makefile.in
 
 AUTOMAKE_OPTIONS = foreign 1.7 dist-bzip2 # require automake 1.7
@@ -16,7 +16,8 @@ libjbig2dec_a_SOURCES = jbig2.c \
 	jbig2.h jbig2_priv.h jbig2_image.h \
 	jbig2_arith.h jbig2_arith_iaid.h jbig2_arith_int.h \
 	jbig2_huffman.h jbig2_hufftab.h jbig2_mmr.h \
-	jbig2_generic.h jbig2_symbol_dict.h
+	jbig2_generic.h jbig2_symbol_dict.h \
+	jbig2_metadata.c jbig2_metadata.h
 
 bin_PROGRAMS = jbig2dec
 #noinst_PROGRAMS = test_huffman test_arith
