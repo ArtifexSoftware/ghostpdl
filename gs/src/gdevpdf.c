@@ -1300,8 +1300,8 @@ pdf_close(gx_device * dev)
     pprintld3(s, "<< /Size %ld /Root %ld 0 R /Info %ld 0 R\n",
 	      pdev->next_id, Catalog_id, Info_id);
     stream_puts(s, "/ID [");
-    pdf_put_string(pdev, pdev->fileID, sizeof(pdev->fileID));
-    pdf_put_string(pdev, pdev->fileID, sizeof(pdev->fileID));
+    psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
+    psdf_write_string(pdev->strm, pdev->fileID, sizeof(pdev->fileID), 0);
     stream_puts(s, "]\n");
     if (pdev->OwnerPassword.size > 0) {
 	pprintld1(s, "/Encrypt %ld 0 R ", Encrypt_id);
