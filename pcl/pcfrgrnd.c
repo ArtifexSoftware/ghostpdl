@@ -24,6 +24,10 @@
 #include "pcfont.h"
 #include "pcfrgrnd.h"
 
+/* the default foreground, built from the default palette */
+private pcl_frgrnd_t *  pdflt_frgrnd;
+
+
 /* GC routines */
 private_st_frgrnd_t();
 
@@ -98,7 +102,25 @@ build_foreground(
     pcl_frgrnd_t *              pfrgrnd = *ppfrgrnd;
     const pcl_cs_indexed_t *    pindexed = ppalet->pindexed;
     int                         num_entries = pindexed->num_entries;
+    bool                        is_default = false;
     int                         code = 0;
+
+    /* 
+     * Check for a request for the default foreground. Since there are only
+     * three fixed palettes, it is sufficient to check that the palette provided
+     * is fixed and has two entries. The default foreground is black, which is
+     * the second of the two entries.
+     */
+    if ( (pindexed != 0)    &&
+         (pindexed->fixed)  &&
+         (num_entries == 2) &&
+         (pal_entry == 1)     ) {
+        is_default = true;
+        if (pdflt_frgrnd != 0) {
+            pcl_frgrnd_copy_from(*ppfrgrnd, pdflt_frgrnd);
+            return 0;
+        }
+    }
 
     /* release the existing foreground */
     if (pfrgrnd != 0) {
@@ -123,6 +145,9 @@ build_foreground(
     pcl_cs_base_init_from(pfrgrnd->pbase, ppalet->pindexed->pbase);
     pcl_ht_init_from(pfrgrnd->pht, ppalet->pht);
     pcl_crd_init_from(pfrgrnd->pcrd, ppalet->pcrd);
+
+    if (is_default)
+        pcl_frgrnd_init_from(pdflt_frgrnd, pfrgrnd);
 
     return 0;
 }
@@ -194,6 +219,10 @@ frgrnd_do_init(
         PCL_COMMAND("Set Foreground", set_foreground, pca_neg_ok)
     },
     END_CLASS
+
+    /* handle possible non-initialization of BSS */
+    pdflt_frgrnd = 0;
+
     return 0;
 }
 
