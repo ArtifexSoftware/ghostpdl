@@ -1232,12 +1232,17 @@ typedef struct {
       gs_logical_operation_t lop;
 } gs_fill_attributes;
 
-/* Paint a pixel. */
+/* Fill a linear color scanline. */
 
-#define dev_t_proc_fill_pixel(proc, dev_t)\
-  int proc(const gs_fill_attributes *fa, int i, int j, const frac32 *c)
-#define dev_proc_fill_pixel(proc)\
-  dev_t_proc_fill_pixel(proc, gx_device)
+#define dev_t_proc_fill_linear_color_scanline(proc, dev_t)\
+  int proc(const gs_fill_attributes *fa,\
+	int i, int j, int w, /* scanline coordinates and width */\
+	const frac32 *c, /* initial color for the pixel (i,j), the integer part */\
+	const long *addx, /* initial color for the pixel (i,j), the fraction part numerator */\
+	const long *mulx, /* color gradient numerator */\
+	const ulong *divx /* color gradient denominator */)
+#define dev_proc_fill_linear_color_scanline(proc)\
+  dev_t_proc_fill_linear_color_scanline(proc, gx_device)
 
 /* Fill a linear color trapezoid. */
 /* The server assumes a strongly linear color, 
@@ -1331,7 +1336,7 @@ typedef struct {
 	dev_t_proc_pattern_manage((*pattern_manage), dev_t); \
 	dev_t_proc_fill_rectangle_hl_color((*fill_rectangle_hl_color), dev_t); \
 	dev_t_proc_include_color_space((*include_color_space), dev_t); \
-	dev_t_proc_fill_pixel((*fill_pixel), dev_t); \
+	dev_t_proc_fill_linear_color_scanline((*fill_linear_color_scanline), dev_t); \
 	dev_t_proc_fill_linear_color_trapezoid((*fill_linear_color_trapezoid), dev_t); \
 	dev_t_proc_fill_linear_color_triangle((*fill_linear_color_triangle), dev_t); \
 }

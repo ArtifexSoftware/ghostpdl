@@ -104,7 +104,7 @@ gx_device_forward_fill_in_procs(register gx_device_forward * dev)
     fill_dev_proc(dev, pattern_manage, gx_forward_pattern_manage);
     fill_dev_proc(dev, fill_rectangle_hl_color, gx_forward_fill_rectangle_hl_color);
     fill_dev_proc(dev, include_color_space, gx_forward_include_color_space);
-    fill_dev_proc(dev, fill_pixel, gx_forward_fill_pixel);
+    fill_dev_proc(dev, fill_linear_color_scanline, gx_forward_fill_linear_color_scanline);
     fill_dev_proc(dev, fill_linear_color_trapezoid, gx_forward_fill_linear_color_trapezoid);
     fill_dev_proc(dev, fill_linear_color_triangle, gx_forward_fill_linear_color_triangle);
     gx_device_fill_in_procs((gx_device *) dev);
@@ -768,15 +768,17 @@ gx_forward_include_color_space(gx_device *dev, gs_color_space *cspace,
 }
 
 int 
-gx_forward_fill_pixel(const gs_fill_attributes *fa, int i, int j, const frac32 *c)
+gx_forward_fill_linear_color_scanline(const gs_fill_attributes *fa,
+	int i, int j, int w,
+	const frac32 *c, const long *addx, const long *mulx, const ulong *divx)
 {
     gx_device_forward * const fdev = (gx_device_forward *)fa->pdev;
     gx_device *tdev = fdev->target;
-    dev_proc_fill_pixel((*proc)) =
-	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_pixel) :
-	 dev_proc(tdev, fill_pixel));
+    dev_proc_fill_linear_color_scanline((*proc)) =
+	(tdev == 0 ? (tdev = fa->pdev, gx_default_fill_linear_color_scanline) :
+	 dev_proc(tdev, fill_linear_color_scanline));
 
-    return proc(fa, i, j, c);
+    return proc(fa, i, j, w, c, addx, mulx, divx);
 }
 
 int 
