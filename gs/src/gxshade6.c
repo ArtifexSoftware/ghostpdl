@@ -1228,7 +1228,7 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
     return code;
 }
 
-private void
+private int
 patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *c, gx_device_color *pdevc)
 {
     /* A code fragment copied from mesh_fill_triangle. */
@@ -1237,7 +1237,7 @@ patch_color_to_device_color(const patch_fill_state_t *pfs, const patch_color_t *
 
     memcpy(fcc.paint.values, c->cc.paint.values, 
 		sizeof(fcc.paint.values[0]) * pfs->num_components);
-    pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
+    return pcs->type->remap_color(&fcc, pcs, pdevc, pfs->pis,
 			      pfs->dev, gs_color_select_texture);
 }
 
@@ -1304,7 +1304,9 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 	/* if (dbg_nofill)
 		return 0; */
 #   endif
-    patch_color_to_device_color(pfs, &c1, &dc);
+    code = patch_color_to_device_color(pfs, &c1, &dc);
+    if (code < 0)
+	return code;
     if (!VD_TRACE_DOWN)
 	vd_disable;
     code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
@@ -2056,7 +2058,9 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
 #   endif
     if (!VD_TRACE_DOWN)
         vd_disable;
-    patch_color_to_device_color(pfs, c, &dc);
+    code = patch_color_to_device_color(pfs, c, &dc);
+    if (code < 0)
+	return code;
     if (le->end.y < re->end.y) {
 	code = dev_proc(pfs->dev, fill_trapezoid)(pfs->dev,
 	    le, re, le->start.y, le->end.y, false, &dc, pfs->pis->log_op);
@@ -2134,7 +2138,9 @@ constant_color_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bo
     patch_interpolate_color(&c1, &p->p[0][0]->c, &p->p[0][1]->c, pfs, 0.5);
     patch_interpolate_color(&c2, &p->p[1][0]->c, &p->p[1][1]->c, pfs, 0.5);
     patch_interpolate_color(&c, &c1, &c2, pfs, 0.5);
-    patch_color_to_device_color(pfs, &c, &dc);
+    code = patch_color_to_device_color(pfs, &c, &dc);
+    if (code < 0)
+	return code;
     {	gs_fixed_point qq[4];
 
 	make_vertices(qq, p);
