@@ -956,6 +956,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	 * pole coordinate monotonity.
 	 */
 #   endif
+	const float small_noize = (float)1e-6;
 
     if (pfn->params.n > sizeof(int) * 4 - 1)
 	return 0;		/* can't represent result */
@@ -984,6 +985,8 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	    
 	    w = w0; w0 = w1; w1 = w;
 	}
+	if ((int)w0 + 1 - w0 < small_noize * any_abs(e1 - e0))
+	    w0 = (float)((int)w0 + 1);
 	if ((int)w0 != (int)w1 && ((int)w1 != w1 || (int)w0 + 1 != w1))
 	    return gs_error_undefined; /* not in the same sample */
 #	if POLE_CACHE
@@ -991,7 +994,7 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 	    I[i] = min((int)w0, (int)w1);
 	    T0[i] = w0 - I[i];
 	    T1[i] = w1 - I[i];
-	    if (any_abs(T1[i] - T0[i]) < 1e-30)
+	    if (any_abs(T1[i] - T0[i]) < 1e-30 * any_abs(e1 - e0))
 		T1[i] = T0[i]; /* Safety. */
 	    TT[i] = (T0[i] + T1[i]) / 2;
 	}
@@ -1236,8 +1239,6 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	pfn->params.array_step = NULL;
 	pfn->params.stream_step = NULL;
 	pfn->head = function_Sd_head;
-	pfn->head.is_monotonic =
-	    fn_domain_is_monotonic((gs_function_t *)pfn);
 	if (POLE_CACHE && pfn->params.Order == 3) {
 	    int bps = pfn->params.BitsPerSample;
 	    int sa = pfn->params.n, ss = pfn->params.n * bps, i;
@@ -1261,6 +1262,8 @@ gs_function_Sd_init(gs_function_t ** ppfn,
 	    for (i = 0; i < sa; i++)
 		pfn->params.pole[i] = double_stub;    
 	}
+	pfn->head.is_monotonic =
+	    fn_domain_is_monotonic((gs_function_t *)pfn);
 	*ppfn = (gs_function_t *) pfn;
     }
     return 0;
