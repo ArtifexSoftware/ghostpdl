@@ -26,15 +26,12 @@
 % It is not yet ready for prime time, but it is available for anyone wants
 % to fix it.
 % 
-% The main problems are:
+% The main problem is:
 % 
-% 1. It doesn't work for files that use chained filters such as
-%    [ /ASCII85Decode /FlateDecode ]
-% 
-% 2. Sometimes the PDF files that are written are broken. When they are
+% 1. Sometimes the PDF files that are written are broken. When they are
 %    broken, GS gets an xref problem.
 % 
-%    This second problem is actually due to lib/pdfwrite.ps since even
+%    This problem is actually due to lib/pdfwrite.ps since even
 %    when no conversion is done, the file is may be bad.
 
 % Check to make sure both input and output filename was specified.
@@ -47,37 +44,85 @@
       (pdfwrite.ps) runlibfile
    
       /justcopy /pdfcopystream load def
+      /filterstoremove <<
+	  % list of filters to apply
+	  %   - kept as a dictionary, for faster searches
+	  %   - the corresponding value is currently unused
+	  /ASCIIHexDecode   null
+	  /ASCII85Decode    null
+	  /LZWDecode	    null
+	  /FlateDecode	    null
+	% /RunLengthDecode  null
+	% /CCITTFaxDecode   null
+	% /DCTDecode	    null
+	% /JBIG2Decode	    dup /Filter resourcestatus {pop pop (GS-specific)} {pop} ifelse
+	% /JPXDecode	    dup /Filter resourcestatus {pop pop (GS-specific)} {pop} ifelse
+	% /Crypt	    (no equivalent)
+	>> def
       /pdfcopystream {		% <newstreamdict> <file> pdfcopystream -
 				%   (file has been positioned)
-        1 index /Filter knownoget {
-          dup type /arraytype eq {
-	    % fails for chained filters like [ /ASCII85Decode /FlateDecode ]
-            dup length 1 eq { 0 get } if
-          } if 
-	    /FlateDecode eq {
-      		% Decompress the data.  To avoid doing a first pass just to
-      		% find its length, we create an indirect object.
+	1 index /Filter known {
             10 dict begin
-            /infile exch def /sdict exch def
-            RMap ld_length neg omapnew pop /lenobj exch def
-            sdict dup length dict copy
-            dup /Filter undef dup /DecodeParms undef
-            dup /Length lenobj /O cvx 2 packedarray cvx put
-            pdfwritevalue (stream\n) ows
-            /opos OFile fileposition def
-            infile sdict /Length oget () /SubFileDecode filter
-            sdict /DecodeParms knownoget pop /FlateDecode filter
-            dup OFile 16#7fffffff pdfcopybytes closefile
-            /len OFile fileposition opos sub def
-            (\nendstream\nendobj\n) ows
-            lenobj pdfwriteobjheader len pdfwritevalue
-            end
-          } {
-            justcopy
-          } ifelse
-        } {
-          justcopy
-        } ifelse
+		%stack: <newstreamdict> <file>
+		/infile exch def /sdict exch def
+		RMap ld_length neg omapnew pop /lenobj exch def
+		/copyofsdict sdict dup length dict copy def
+		copyofsdict dup /Length lenobj /O cvx 2 packedarray cvx put
+		infile sdict /Length oget () /SubFileDecode filter
+		% apply filters to the (input) stream
+		{
+		    %stack: <file>
+		    % extract first filter and its parameters
+		    {/DecodeParms/Filter} {
+			copyofsdict exch knownoget {
+			    dup type /arraytype eq { 0 get } if
+			} {
+			    null
+			} ifelse
+		    } forall
+		    %stack: <file> <decode|null> <filter>
+		    filterstoremove 1 index known {
+			% apply the filter
+			exch dup null eq { pop } { exch } ifelse
+			filter
+			%stack: <file>
+			% remove first element from each of /Filter and /DecodeParms
+			copyofsdict dup {/DecodeParms/Filter} {
+			    %stack: <file> <copyofsdict> <copyofsdict> </Key>
+			    2 copy knownoget {
+				dup type /arraytype eq {
+				    dup length dup 3 ge {
+					1 exch 1 sub getinterval put
+				    } {
+					{
+					    {pop undef}	    % []
+					    dup		    % [elem]
+					    {1 get put}	    % [elem1 elem2]
+					} exch get exec
+				    } ifelse
+				} {
+				    pop undef
+				} ifelse
+				dup
+			    } {
+				pop
+			    } ifelse
+			} forall pop pop
+		    } {
+			pop pop exit
+		    } ifelse
+		} loop
+		/infile exch def
+		copyofsdict pdfwritevalue (stream\n) ows
+		/opos OFile fileposition def
+		infile dup OFile 16#7fffffff pdfcopybytes closefile
+		/len OFile fileposition opos sub def
+		(\nendstream\nendobj\n) ows
+		lenobj pdfwriteobjheader len pdfwritevalue
+	    end	    
+	} {
+	    justcopy
+	} ifelse
       } def
    
       { InFileName (r) file } stopped
