@@ -516,8 +516,9 @@ sub_font_params(const ref *op, gs_matrix *pmat, gs_matrix *pomat, ref *pfname)
 	read_matrix(pmatrix, pmat) < 0
 	)
 	return_error(e_invalidfont);
-    if (pomat!= NULL && dict_find_string(op, ".OrigFont", &porigfont) > 0) {
-	if (dict_find_string(porigfont, "FontMatrix", &pmatrix) <= 0 ||
+    if (pomat!= NULL) {
+	if (dict_find_string(op, ".OrigFont", &porigfont) <= 0 ||
+	    dict_find_string(porigfont, "FontMatrix", &pmatrix) <= 0 ||
 	    read_matrix(pmatrix, pomat) < 0
 	    )
 	    memset(pomat, 0, sizeof(*pomat));

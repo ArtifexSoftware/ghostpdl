@@ -562,9 +562,11 @@ pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat)
 
 	    while (base_font->base != base_font)
 		base_font = base_font->base;
-	    if (base_font->orig_FontMatrix.xx != 0 || base_font->orig_FontMatrix.xy != 0 ||
-	        base_font->orig_FontMatrix.yx != 0 || base_font->orig_FontMatrix.yy != 0)
+	    if (font->FontType == ft_user_defined)
 		*pmat = base_font->FontMatrix;
+	    else if (base_font->orig_FontMatrix.xx != 0 || base_font->orig_FontMatrix.xy != 0 ||
+	        base_font->orig_FontMatrix.yx != 0 || base_font->orig_FontMatrix.yy != 0)
+		*pmat = base_font->orig_FontMatrix;
 	    else {
 		/*  Must not happen with PS interpreter. 
 		    Provide a hewuristic for other clients.
