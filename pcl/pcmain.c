@@ -339,6 +339,7 @@ process:
     }
 #endif
 
+    gs_closedevice(gs_currentdevice(pgs));
     gs_lib_finit(0, 0);
     exit(0);
     /* NOTREACHED */
