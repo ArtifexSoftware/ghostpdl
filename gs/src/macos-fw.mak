@@ -18,6 +18,7 @@
 
 # Useful make commands:
 #  make framework	make ghostscript as a MacOS X framework
+#  make framework_install install the framework
 #  make so		make ghostscript as a shared object
 #  make sodebug		make debug ghostscript as a shared object
 #  make soinstall	install shared object ghostscript
@@ -148,7 +149,11 @@ framework: so lib/Info-macos.plist
 	cp $(BINDIR)/$(SOBINRELDIR)/$(GS_SONAME_MAJOR_MINOR) $(GS_FRAMEWORK)/Versions/Current/$(FRAMEWORK_NAME)
 	cp -r man $(GS_FRAMEWORK)/Versions/Current
 	cp -r doc $(GS_FRAMEWORK)/Versions/Current
-        
+
+framework_install : framework
+	rm -rf $(prefix)
+	cp -r $(GS_FRAMEWORK) $(prefix)
+
 # Make the build directories
 SODIRS: STDDIRS
 	@if test ! -d $(BINDIR)/$(SOBINRELDIR); then mkdir $(BINDIR)/$(SOBINRELDIR); fi
