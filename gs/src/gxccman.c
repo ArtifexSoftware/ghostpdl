@@ -214,15 +214,17 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
 	m.yx = cyx;
 	m.yy = cyy;
 	m.tx = m.ty = 0;
-	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
+	pair->ttr = gx_ttfReader__create(dir->memory);
 	if (!pair->ttr)
 	    return_error(gs_error_VMerror);
 	/*  We could use a single the reader instance for all fonts ... */
 	pair->ttf = ttfFont__create(dir);
 	if (!pair->ttf)
 	    return_error(gs_error_VMerror);
+	gx_ttfReader__set_font(pair->ttr, (gs_font_type42 *)font);
 	code = ttfFont__Open_aux(pair->ttf, dir->tti, pair->ttr, 
 		    (gs_font_type42 *)font, &m, log2_scale, design_grid);
+	gx_ttfReader__set_font(pair->ttr, NULL);
 	if (code < 0)
 	    return code;
     }

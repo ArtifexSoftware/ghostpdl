@@ -45,14 +45,15 @@ struct gx_ttfReader_s {
 	Since we don't want to change Free Type function prototypes, 
 	we place the gx_ttfReader instance into the global memory,
 	to provide an access to it through TExecution_Context.
-	Due to that, the field 'glyph_data' may contain pointers from global 
+	Due to that, the fields 'pfont' and 'glyph_data' may contain pointers from global 
 	to local memory. They must be NULL when a garbager is invoked.
 	We reset them whan the TT interpreter exits.
      */
 };
 
-gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont);
+gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem);
 void gx_ttfReader__destroy(gx_ttfReader *this);
+void gx_ttfReader__set_font(gx_ttfReader *this, gs_font_type42 *pfont);
 ttfFont *ttfFont__create(gs_font_dir *dir);
 void ttfFont__destroy(ttfFont *this, gs_font_dir *dir);
 int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_font_type42 *pfont,
