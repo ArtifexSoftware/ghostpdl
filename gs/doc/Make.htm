@@ -79,7 +79,7 @@ How to build Ghostscript from source code
 <li><a href="#Digital_Unix">Digital Unix (Alpha)</a>
 <li><a href="#FreeBSD">FreeBSD</a>
 <li><a href="#Linux">Linux</a>
-<li><a href="#NeXTSTEP">NeXTSTEP</a>
+<li><a href="#NeXTSTEP">NeXTSTEP / OpenSTEP</a>
 <li><a href="#SCO">SCO Unix/Xenix</a>
 <li><a href="#SVR4">SVR4 Unix</a>
 <li><a href="#System_V">System V Unix platforms</a>
@@ -1819,10 +1819,11 @@ are using only the library) change the definition of <b><tt>INCLUDE</tt></b>
 to "<b><tt>INCLUDE=/usr/include/bsd</tt></b>";
 
 <li>in <b><tt>unix-gcc.mak</tt></b>, change <b><tt>CC=gcc</tt></b> to
-<b><tt>CC=cc</tt></b>, change the definition of <b><tt>STDLIBS</tt></b> to
-only <b><tt>-lm</tt></b>, add <b><tt>-D_POSIX_SOURCE</tt></b> to
-<b><tt>CFLAGS</tt></b> and remove <b><tt>-g</tt></b>, and remove
-<b><tt>-Wstrict-prototypes</tt></b> from <b><tt>GCFLAGS</tt></b>; and
+<b><tt>CC=cc</tt></b>; change the definition of <b><tt>STDLIBS</tt></b> to
+only <b><tt>-lm</tt></b>; change <b><tt>SYNC=posync</tt></b> to
+<b><tt>SYNC=nosync</tt></b>; add <b><tt>-D_POSIX_SOURCE</tt></b> to
+<b><tt>CFLAGS</tt></b> and remove <b><tt>-g</tt></b>; and remove
+<b><tt>-Wstrict-prototypes</tt></b> from <b><tt>GCFLAGS</tt></b>;
 
 <li>to the end of <b><tt>Fontmap.GS</tt></b> add the line
 "<b><tt>/Ohlfs&nbsp;/Courier&nbsp;;</tt></b>".
