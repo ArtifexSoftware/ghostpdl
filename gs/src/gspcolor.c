@@ -250,7 +250,9 @@ gx_init_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 private void
 gx_restrict_Pattern(gs_client_color * pcc, const gs_color_space * pcs)
 {
-    if (pcc->pattern->type->procs.uses_base_space(gs_get_pattern(pcc)) &&
+    /* We need a special check for the null pattern. */
+    if (pcc->pattern &&
+	pcc->pattern->type->procs.uses_base_space(gs_get_pattern(pcc)) &&
 	pcs->params.pattern.has_base_space
 	) {
 	const gs_color_space *pbcs =

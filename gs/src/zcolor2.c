@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -110,30 +110,35 @@ zsetcolor(i_ctx_t *i_ctx_p)
 	/* Make sure *op is a real Pattern. */
 	ref *pImpl;
 
-	check_type(*op, t_dictionary);
-	check_dict_read(*op);
-	/*
-	 * We have no way to check for a subclass of st_pattern_instance,
-	 * so just make sure the structure is large enough.
-	 */
-	if (dict_find_string(op, "Implementation", &pImpl) <= 0 ||
-	    !r_is_struct(pImpl) ||
-	    gs_object_size(imemory, r_ptr(pImpl, const void)) <
-	      sizeof(gs_pattern_instance_t)
-	    )
-	    return_error(e_rangecheck);
-	pinst = r_ptr(pImpl, gs_pattern_instance_t);
-	c.pattern = pinst;
-	if (pattern_instance_uses_base_space(pinst)) {	/* uncolored */
-	    if (!pcs->params.pattern.has_base_space)
-		return_error(e_rangecheck);
-	    n = load_color_params(op - 1, &c.paint,
-		   (const gs_color_space *)&pcs->params.pattern.base_space);
-	    if (n < 0)
-		return n;
-	    n++;
-	} else
+	if (r_has_type(op, t_null)) {
+	    c.pattern = 0;
 	    n = 1;
+	} else {
+	    check_type(*op, t_dictionary);
+	    check_dict_read(*op);
+	    /*
+	     * We have no way to check for a subclass of st_pattern_instance,
+	     * so just make sure the structure is large enough.
+	     */
+	    if (dict_find_string(op, "Implementation", &pImpl) <= 0 ||
+		!r_is_struct(pImpl) ||
+		gs_object_size(imemory, r_ptr(pImpl, const void)) <
+		sizeof(gs_pattern_instance_t)
+		)
+		return_error(e_rangecheck);
+	    pinst = r_ptr(pImpl, gs_pattern_instance_t);
+	    c.pattern = pinst;
+	    if (pattern_instance_uses_base_space(pinst)) {	/* uncolored */
+		if (!pcs->params.pattern.has_base_space)
+		    return_error(e_rangecheck);
+		n = load_color_params(op - 1, &c.paint,
+				      (const gs_color_space *)&pcs->params.pattern.base_space);
+		if (n < 0)
+		    return n;
+		n++;
+	    } else
+		n = 1;
+	}
     } else {
 	n = load_color_params(op, &c.paint, pcs);
 	c.pattern = 0;		/* for GC */
