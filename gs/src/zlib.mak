@@ -27,8 +27,8 @@
 
 # This partial makefile compiles the zlib library for use in Ghostscript.
 # You can get the source code for this library from:
-#   http://www.cdrom.com/infozip/zlib/
-#   ftp://ftp.cdrom.com/pub/infozip/zlib/
+#   http://www.info-zip.org/pub/infozip/zlib/
+#   ftp://ftp.info-zip.org/pub/infozip/zlib/
 #	zlib-#.#.#.tar.gz or zlib###.zip
 # Please see Ghostscript's `Make.htm' file for instructions about how to
 # unpack these archives.

@@ -36,6 +36,7 @@
 
 # This partial makefile compiles the png library for use in the Ghostscript
 # PNG drivers.  You can get the source code for this library from:
+#   http://www.libpng.org/pub/png/src/
 #   ftp://swrinde.nde.swri.edu/pub/png/src/
 #   ftp://ftp.uu.net/graphics/png/src/
 # Please see Ghostscript's `Make.htm' file for instructions about how to
