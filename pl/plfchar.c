@@ -767,7 +767,7 @@ pl_ft_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_code, flo
     if ( error )
 	return -1;
     /* lsb as proportion of Em square */
-    dprintf("warning: using 0 for left side bearing\n");
+    if_debug0('=', "warning: using 0 for left side bearing\n");
     metrics[0] = 0;
     metrics[1] = 0;
     /* width as a proportion of em square */
