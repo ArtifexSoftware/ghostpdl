@@ -836,11 +836,11 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     for (offset = 0; psf_enumerate_glyphs_next(penum, &glyph) != 1; ) {
 	gs_const_string glyph_string;
 
-	if (pfont->data.get_outline(pfont, 
+	if ((code = pfont->data.get_outline(pfont, 
 				    /* allow both cid offseted glyphs pcl non-offsetted. */
 				    glyph > gs_min_cid_glyph ? 
 				    glyph - gs_min_cid_glyph : glyph,
-				    &glyph_string) >= 0) {
+				    &glyph_string)) >= 0) {
 	    stream_write(s, glyph_string.data, glyph_string.size);
 	    offset += glyph_string.size;
 	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
