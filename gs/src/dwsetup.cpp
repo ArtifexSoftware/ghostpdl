@@ -140,6 +140,7 @@ BOOL install_all();
 BOOL install_prog();
 BOOL install_fonts();
 BOOL make_filelist(int argc, char *argv[]);
+int get_font_path(char *path, unsigned int pathlen);
 BOOL write_cidfmap(const char *gspath, const char *cidpath);
 
 
@@ -694,7 +695,7 @@ install_prog()
 	char *regkey1 = "AFPL Ghostscript";
 	char regkey2[16];
 	char szDLL[MAXSTR];
-	char szLIB[MAXSTR];
+	char szLIB[MAXSTR+MAXSTR];
 	char szProgram[MAXSTR];
 	char szArguments[MAXSTR];
 	char szDescription[MAXSTR];
@@ -760,6 +761,10 @@ install_prog()
 	strcat(szLIB, "\\");
 	strcat(szLIB, cinst.GetMainDir());
 	strcat(szLIB, "\\Resource");
+	if (g_bCJKFonts) {
+	    strcat(szLIB, ";");
+	    get_font_path(szLIB+strlen(szLIB), sizeof(szLIB)-strlen(szLIB)-1);
+	}
 	if (!cinst.UpdateRegistryValue(regkey1, regkey2, "GS_LIB", szLIB)) {
 		gs_addmess("Failed to add registry value\n");
 		return FALSE;
