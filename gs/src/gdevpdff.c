@@ -719,8 +719,14 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
   ((font)->FontType == ft_composite ||\
    ((const gs_font_base *)(font))->encoding_index != ENCODING_INDEX_STANDARD)
 #endif
-    if (CONSIDER_FONT_SYMBOLIC(font))
+    if (0 && CONSIDER_FONT_SYMBOLIC(font)) {
 	desc.Flags |= FONT_IS_SYMBOLIC;
+	/* stefan: dead/unfinished code
+	 * this doesn't work letters[] is uninitialized ...
+	 * missing understanding of the original intent.
+	 */
+	return -1;
+    }
     else {
 	/*
 	 * Look at various specific characters to guess at the remaining

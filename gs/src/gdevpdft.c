@@ -729,20 +729,30 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
 #define ENCODE_NO_DIFF(ch)\
    (bei != ENCODING_INDEX_UNKNOWN ?\
     bfont->procs.callbacks.known_encode((gs_char)(ch), bei) :\
-    /* have_font */ bfont->procs.encode_char(base_font, chr, GLYPH_SPACE_NAME))
+    /* have_font */ bfont->procs.encode_char(base_font, ch, GLYPH_SPACE_NAME))
 #define HAS_DIFF(ch) (pdiff != 0 && pdiff[ch].str.data != 0)
 #define ENCODE_DIFF(ch) (pdiff[ch].glyph)
 #define ENCODE(ch)\
   (HAS_DIFF(ch) ? ENCODE_DIFF(ch) : ENCODE_NO_DIFF(ch))
 
     font_glyph = ENCODE(chr);
-    glyph =
-	(ei == ENCODING_INDEX_UNKNOWN ?
-	 bfont->procs.encode_char((gs_font *)bfont, chr, GLYPH_SPACE_NAME) :
-	 bfont->procs.callbacks.known_encode(chr, ei));
-    if (glyph == font_glyph) {
-	record_used(pfd, chr);
-	return chr;
+    if (ei == ENCODING_INDEX_UNKNOWN) {
+	glyph =	 bfont->procs.encode_char((gs_font *)bfont, chr, GLYPH_SPACE_NAME);
+	if (glyph == font_glyph) {
+	    record_used(pfd, chr);
+	    return chr;
+	}
+    }
+    else {
+	 glyph = bfont->procs.callbacks.known_encode(chr, ei);
+	 if (glyph == gs_no_glyph)
+	     /* work around missing known_encode function in pcl 
+	      */
+	     glyph = font_glyph;
+	 else if (glyph == font_glyph) {
+	     record_used(pfd, chr);
+	     return chr;
+	 }
     }
 
     if (ppf->index == ENCODING_INDEX_UNKNOWN && pfd->FontFile_id == 0 &&
@@ -1005,7 +1015,25 @@ pdf_text_process(gs_text_enum_t *pte)
     if (code < 0)
 	goto dflt;
 
-    /* Check that all characters can be encoded. */
+    /* stefan foo: skip non-unicode safe pdf code 
+     * widths_size is wrong!
+     * how do I discover if non single byte encoding is being used? 
+     */
+    if (text->size * 2 == text->widths_size) {
+	if (str.size > sizeof(strbuf) * 2)
+	    goto dflt;
+	for (i = 0; i < text->widths_size; i += 2) {
+	    if (str.data[i] != 0)
+		goto dflt;
+	    strbuf[i >> 1] = str.data[i + 1];
+	}
+	str.data = strbuf;
+    }
+
+    /* Check that all characters can be encoded. 
+     * Note: fails on 2 byte chars, 
+     * hence all 2 byte chars will be sent as images
+     */
 
     for (i = 0; i < str.size; ++i) {
 	int chr = str.data[i];
@@ -1052,7 +1080,7 @@ pdf_text_process(gs_text_enum_t *pte)
 
 	    code = pdf_append_chars(pdev, str.data + pte->index, 1);
 	    if (code < 0)
-		return code;
+		return code;    
 	    gs_text_replaced_width(&pte->text, pte->xy_index, &d);
 	    w.x += d.x, w.y += d.y;
 	    gs_distance_transform(d.x, d.y, &ctm_only(pte->pis), &dpt);

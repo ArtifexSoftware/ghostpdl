@@ -443,7 +443,7 @@ private int
 pdf_finalize_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     gs_font *font = pfd->base_font;
-    int code =
+    int code = 
 	(font ? pdf_compute_font_descriptor(pdev, pfd, font, NULL) : 0);
 
     if (code >= 0) {

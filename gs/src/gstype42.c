@@ -368,7 +368,8 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 		     int members, gs_glyph_info_t *info)
 {
     gs_font_type42 *const pfont = (gs_font_type42 *)font;
-    uint glyph_index = glyph - gs_min_cid_glyph;
+    /* glyph_index = glyph for pcl; glyph_index = glyph - gs_min_cid_glyph for ps */
+    uint glyph_index = glyph >= gs_min_cid_glyph ? glyph - gs_min_cid_glyph : glyph;
     int default_members =
 	members & ~(GLYPH_INFO_WIDTHS | GLYPH_INFO_NUM_PIECES |
 		    GLYPH_INFO_PIECES);
