@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.17 2002/08/05 22:26:21 giles Exp $
+    $Id: jbig2_text.c,v 1.18 2002/08/05 23:07:54 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -85,7 +85,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
                              const Jbig2TextRegionParams *params,
                              const Jbig2SymbolDict **dicts, const int n_dicts,
                              Jbig2Image *image,
-                             const byte *data, size_t size)
+                             const byte *data, const size_t size)
 {
     /* relevent bits of 6.4.4 */
     uint32_t NINSTANCES;

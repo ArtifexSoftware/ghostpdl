@@ -733,8 +733,6 @@ jbig2_decode_get_run(Jbig2MmrCtx *mmr, const cfd_node *table, int initial_bits)
 static void
 jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
 {
-  int a0 = 0;
-
   while (1)
     {
       uint32_t word = mmr->word;
@@ -812,4 +810,6 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx,
       jbig2_decode_mmr_line(&mmr, gbreg_line, NULL);
       gbreg_line += rowstride;
     }
+    
+  return 0;
 }
