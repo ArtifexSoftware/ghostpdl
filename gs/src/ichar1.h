@@ -50,7 +50,7 @@ int z1_glyph_info_generic(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	      int members, gs_glyph_info_t *info, font_proc_glyph_info((*proc)), 
 	      int wmode);
 
-z1_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref, 
+int z1_set_cache(i_ctx_t *i_ctx_p, gs_font_base *pbfont, ref *cnref, 
 	    gs_glyph glyph, op_proc_t cont, op_proc_t *exec_cont);
 
 #endif /* ichar1_INCLUDED */
