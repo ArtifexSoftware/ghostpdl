@@ -167,7 +167,7 @@ $(GLOBJ)dwimg.obj: $(GLSRC)dwimg.c $(AK)\
 $(GLOBJ)dwtrace.obj: $(GLSRC)dwtrace.c $(AK)\
  $(dwimg_h) $(dwtrace_h)\
  $(gscdefs_h) $(stdpre_h) $(gsdll_h) $(vdtrace_h)
-        $(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtrace.obj $(GLSRC)dwtrace.c
+	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwtrace.obj $(GLSRC)dwtrace.c
 
 $(GLOBJ)dwmain.obj: $(GLSRC)dwmain.c $(AK)\
  $(iapi_h) $(vdtrace_h) $(dwmain_h) $(dwdll_h) $(dwtext_h) $(dwimg_h) $(dwtrace_h) \
