@@ -637,10 +637,10 @@ A_fill_region(A_fill_state_t * pfs)
     gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
     gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h1, y1 - pfs->delta.x * h1, &curve[2].vertex.p);
     gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[3].vertex.p);
-    curve[0].vertex.cc[0] = pfs->t0;
-    curve[1].vertex.cc[0] = pfs->t1;
-    curve[2].vertex.cc[0] = pfs->t1;
-    curve[3].vertex.cc[0] = pfs->t0;
+    curve[0].vertex.cc[0] = curve[0].vertex.cc[1] = pfs->t0; /* The element cc[1] is set to a dummy value against */
+    curve[1].vertex.cc[0] = curve[1].vertex.cc[1] = pfs->t1; /* interrupts while an idle priocessing in gxshade.6.c .  */
+    curve[2].vertex.cc[0] = curve[2].vertex.cc[1] = pfs->t1;
+    curve[3].vertex.cc[0] = curve[3].vertex.cc[1] = pfs->t0;
     make_other_poles(curve);
     code = patch_fill(&pfs1, curve, NULL, NULL);
     term_patch_fill_state(&pfs1);
@@ -1066,7 +1066,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     if (psh->params.Extend[0]) {
 	floatp max_extension;
 	gs_point p, q;
-	p = psh->params.BBox.p; q = psh->params.BBox.q;
+	p = rect->p; q = rect->q;
 	max_extension = hypot(p.x-q.x, p.y-q.y)*2;
 
 	if (r0 < r1) {
@@ -1124,7 +1124,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     if (psh->params.Extend[1]) {
 	floatp max_extension;
 	gs_point p, q;
-	p = psh->params.BBox.p; q = psh->params.BBox.q;
+	p = rect->p; q = rect->q;
 	max_extension = hypot(p.x-q.x, p.y-q.y)*2;
 
 	if (code < 0)

@@ -1885,7 +1885,6 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
 {   /* Assuming ka >= 2, see fill_wedges. */
     gs_fixed_point q[2][4];
     shading_vertex_t p[3];
-    patch_color_t c;
     int code;
 
     split_curve(pole, q[0], q[1]);
@@ -1900,10 +1899,10 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
 	return code;
     if (ka == 2)
 	return 0;
-    code = wedge_by_triangles(pfs, ka / 2, q[0], c0, &c);
+    code = wedge_by_triangles(pfs, ka / 2, q[0], c0, &p[2].c);
     if (code < 0)
 	return code;
-    return wedge_by_triangles(pfs, ka / 2, q[1], &c, c1);
+    return wedge_by_triangles(pfs, ka / 2, q[1], &p[2].c, c1);
 }
 
 int
