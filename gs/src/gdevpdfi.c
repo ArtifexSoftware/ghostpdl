@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000, 2002 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -115,6 +115,111 @@ can_write_image_in_line(const gx_device_pdf *pdev, const gs_image_t *pim)
 }
 
 /*
+ * Convert a Type 4 image to a Type 1 masked image if possible.
+ * Type 1 masked images are more compact, and are supported in all PDF
+ * versions, whereas general masked images require PDF 1.3 or higher.
+ * Also, Acrobat 5 for Windows has a bug that causes an error for images
+ * with a color-key mask, at least for 1-bit-deep images using an Indexed
+ * color space.
+ */
+private int
+color_is_black_or_white(gx_device *dev, const gx_drawing_color *pdcolor)
+{
+    return (!color_is_pure(pdcolor) ? -1 :
+	    gx_dc_pure_color(pdcolor) == gx_device_black(dev) ? 0 :
+	    gx_dc_pure_color(pdcolor) == gx_device_white(dev) ? 1 : -1);
+}
+private int
+pdf_convert_image4_to_image1(gx_device_pdf *pdev,
+			     const gs_imager_state *pis,
+			     const gx_drawing_color *pbcolor,
+			     const gs_image4_t *pim4, gs_image_t *pim1,
+			     gx_drawing_color *pdcolor)
+{
+    if (pim4->BitsPerComponent == 1 &&
+	(pim4->MaskColor_is_range ?
+	 pim4->MaskColor[0] | pim4->MaskColor[1] :
+	 pim4->MaskColor[0]) <= 1
+	) {
+	gx_device *const dev = (gx_device *)pdev;
+	const gs_color_space *pcs = pim4->ColorSpace;
+	bool write_1s = !pim4->MaskColor[0];
+	gs_client_color cc;
+	int code;
+
+	/*
+	 * Prepare the drawing color.  (pdf_prepare_imagemask will set it.)
+	 * This is the other color in the image (the one that isn't the
+	 * mask key), taking Decode into account.
+	 */
+
+	cc.paint.values[0] = pim4->Decode[(int)write_1s];
+	cc.pattern = 0;
+	code = pcs->type->remap_color(&cc, pcs, pdcolor, pis, dev,
+				      gs_color_select_texture);
+	if (code < 0)
+	    return code;
+
+	/*
+	 * The PDF imaging model doesn't support RasterOp.  We can convert a
+	 * Type 4 image to a Type 1 imagemask only if the effective RasterOp
+	 * passes through the source color unchanged.  "Effective" means we
+	 * take into account CombineWithColor, and whether the source and/or
+	 * texture are black, white, or neither.
+	 */
+	{
+	    gs_logical_operation_t lop = pis->log_op;
+	    int black_or_white = color_is_black_or_white(dev, pdcolor);
+
+	    switch (black_or_white) {
+	    case 0: lop = lop_know_S_0(lop); break;
+	    case 1: lop = lop_know_S_1(lop); break;
+	    default: DO_NOTHING;
+	    }
+	    if (pim4->CombineWithColor)
+		switch (color_is_black_or_white(dev, pbcolor)) {
+		case 0: lop = lop_know_T_0(lop); break;
+		case 1: lop = lop_know_T_1(lop); break;
+		default: DO_NOTHING;
+		}
+	    else
+		lop = lop_know_T_0(lop);
+	    switch (lop_rop(lop)) {
+	    case rop3_0:
+		if (black_or_white != 0)
+		    return -1;
+		break;
+	    case rop3_1:
+		if (black_or_white != 1)
+		    return -1;
+		break;
+	    case rop3_S:
+		break;
+	    default:
+		return -1;
+	    }
+	    if ((lop & lop_S_transparent) && black_or_white == 1)
+		return -1;
+	}
+
+	/* All conditions are met.  Convert to a masked image. */
+
+	gs_image_t_init_mask_adjust(pim1, write_1s, false);
+#define COPY_ELEMENT(e) pim1->e = pim4->e
+	COPY_ELEMENT(ImageMatrix);
+	COPY_ELEMENT(Width);
+	COPY_ELEMENT(Height);
+	pim1->BitsPerComponent = 1;
+	/* not Decode */
+	COPY_ELEMENT(Interpolate);
+	pim1->format = gs_image_format_chunky; /* BPC = 1, doesn't matter */
+#undef COPY_ELEMENT
+	return 0;
+    }
+    return -1;			/* arbitrary <0 */
+}
+
+/*
  * Start processing an image.  This procedure takes extra arguments because
  * it has to do something slightly different for the parts of an ImageType 3
  * image.
@@ -204,11 +309,24 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 					pdf_image3x_make_mid,
 					pdf_image3x_make_mcde, pinfo);
     }
-    case 4:
+    case 4: {
+	/* Try to convert the image to a plain masked image. */
+	gx_drawing_color icolor;
+
+	if (pdf_convert_image4_to_image1(pdev, pis, pdcolor,
+					 (const gs_image4_t *)pic,
+					 &image.type1, &icolor) >= 0) {
+	    return pdf_begin_typed_image(pdev, pis, pmat,
+					 (gs_image_common_t *)&image.type1,
+					 prect, &icolor, pcpath, mem,
+					 pinfo, context);
+	}
+	/* No luck.  Masked images require PDF 1.3 or higher. */
 	if (pdev->CompatibilityLevel < 1.3)
 	    goto nyi;
 	image.type4 = *(const gs_image4_t *)pic;
 	break;
+    }
     default:
 	goto nyi;
     }
