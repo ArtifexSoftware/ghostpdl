@@ -803,17 +803,13 @@ end
   //PDFR_DEBUG {
     (MakeType42 beg) =
   } if
-  1 index 2 known {
-    % The font exceeds the stream buffer.
-    (Underimplemented MakeType42.) //error exec
-  } if
   10 dict begin
     /FontName 1 index /FontName get def
     /FontType 42 def
     /FontMatrix [1 0 0 1 0 0] def
     /FontBBox 1 index /FontBBox get def
     /CharStrings 2 index //PDFReader /MakeTTCharStrings get exec def
-    /sfnts [ 3 index 0 get ] def
+    /sfnts [ 3 index //MakeStreamReader exec 65535 string readstring ] def
     /Encoding StandardEncoding def % A stub - will be replaced by font resource.
     /PaintType 0 def
   currentdict end
