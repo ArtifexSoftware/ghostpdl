@@ -1,6 +1,6 @@
 1 gs
  gs - AFPL Ghostscript interpreter/previewer
-! $RCSfile$ $Revision$
+! $Id$
 ! Ghostscript version 7.03, 20 October 2001
   Usage:
    $ gs [options] [file ...]
