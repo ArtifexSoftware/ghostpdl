@@ -115,47 +115,56 @@ typedef struct pcl_ccolor_s     pcl_ccolor_t;
  * is referred to is the pattern dictionary.
  *
  * The primary purpose for this structure is to handle cahcing of pattern
- * instances. The various "render key" field values are used to identify
- * the environment for which the client color pointed to by pccolor is
- * rendered for:
+ * instances. There are potentially two rendered instances of a pattern,
+ * one as a mask (uncolored) pattern and one as a colored pattern.
  *
- *    The transp bit indicates the transparency of the render (pattern
- *        transparent (true) or pattern opaque (false).
+ * A "colored" pattern in the PCL sense will never have a mask rendering, but 
+ * an "uncolored" PCL pattern may have both a mask and a colored rendering,
+ * because mask patterns in the graphic library cannot be opaque, and cannot
+ * use a halftone or color redering dictionary that differs from that being
+ * used by a raster.
  *
- *    The colored bit indicates if the pattern was rendered as a colored
- *        pattern, in the graphic library sense. PCL's colored patterns are
- *        always rendered as graphic library colored patterns, but PCL's
- *        uncolored patterns may be rendered as either mask or colored
- *        patterns, depending on circumstancs.
+ * The various "render key" field values are used to identify the environment
+ * for which the client colors pointed to by pmask_ccolor  and pcol_ccolor
+ * have been rendered for. Not all fields apply to both client colors:
+ *
+ *
+ *    The transp bit indicates if the colored rendering was render with
+ *        transparency set (mask patterns are always rendered with
+ *        transparency set).
  *
  *    The orient field indicates the orientation of the rendering, in
  *        the range 0 to 3.
  *
- *    The pen field is used only for uncolored patterns rendered in GL/2;
- *        it indicates the palette entry to be used as the foreground
- *        color. For color patterns or uncolored patterns rendered in PCL,
- *        this field will be 0. The value 0 is also valid for GL/2, but
- *        this causesno difficulty as uncolored patterns rendered in GL/2
- *        use the current palette, while those rendered in PCL use the
- *        current foreground. Hence, the cache_id will never be the same
- *        for both cases.
+ *    The pen field applies only to the colored pattern rendering and is used
+ *        only for patterns that are uncolored in the PCL sense and rendered 
+ *        from GL/2. The pen field indicates the palette entry used as the
+ *        foreground for the pattern. For PCL colored patterns or uncolored
+ *        patterns rendered from PCL, this field will be 0. The value 0 is
+ *        also valid for GL/2, but this causes no difficulty as uncolored
+ *        patterns rendered in GL/2 use the current palette, while those
+ *        rendered in PCL use the current foreground. Hence, the cache_id
+ *        (see below) will never be the same for both cases.
  *
  *    cache_id is the identifier of either the foreground or palette used
- *        to render the pattern. The foreground is used for uncolored patterns
- *        rendered in PCL, while the palette is used for uncolored patterns
- *        rendered in GL/2 and all colored patterns. Because foregrounds and
- *        palettes are never given the same identifier, there is no need to
- *        distinguish gave rise to the cache_id value.
+ *        to create the colored rendering of the pattern. This is the
+ *        identifier of either a palette or a foreground. Only for opaque
+ *        uncolored (in the PCL sense) patterns rendered from PCL is it
+ *        the id of the foreground; in all other cases it is the id of the
+ *        palette.
+ *
+ *    The ref_pt field identifies the reference point, in device space, for
+ *        which both renderings of the pattern were created.
  */
 typedef struct pcl_pattern_t {
     pcl_pattern_data_t *    ppat_data;
 
-    /* rendering information */
-    pcl_ccolor_t *          pccolor;   /* rendered instance, if any */
+    /* the mask and colored rendered instances, if any */
+    pcl_ccolor_t *          pcol_ccolor;
+    pcl_ccolor_t *          pmask_ccolor;
 
     /* "rendered key" */
     uint                    transp:1;  /* transparency of rendering */
-    uint                    colored:1; /* 1 ==> rendered as colored pattern */
     uint                    orient:2;  /* orientation of rendering */
     uint                    pen:8;     /* 0 for PCL or colored patterns */
     pcl_gsid_t              cache_id;  /* foreground or palette */
@@ -163,13 +172,14 @@ typedef struct pcl_pattern_t {
 } pcl_pattern_t;
 
 #define private_st_pattern_t()  /* in pcuptrn.c */  \
-    gs_private_st_ptrs2( st_pattern_t,              \
+    gs_private_st_ptrs3( st_pattern_t,              \
                          pcl_pattern_t,             \
                          "PCL/GL pattern",          \
                          pattern_enum_ptrs,         \
                          pattern_reloc_ptrs,        \
                          ppat_data,                 \
-                         pccolor                    \
+                         pcol_ccolor,               \
+                         pmask_ccolor               \
                          )
 
 
