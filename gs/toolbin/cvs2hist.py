@@ -193,7 +193,6 @@ def BuildPatch(cvs_command, revision, rcs_file):
 # Create an individual history entry.
 def ChangeLogEntry(cvs_command, author, date, rev_files, description_lines, prefix, indent, line_length, patch):
     import string, time
-    import cgi
     # Add the description.
     description = ''
     for line in description_lines:
