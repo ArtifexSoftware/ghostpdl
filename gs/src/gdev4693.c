@@ -59,10 +59,17 @@ gdev_t4693d_map_rgb_color(gx_device *dev, const gx_color_value cv[])
 private int
 gdev_t4693d_map_color_rgb(gx_device *dev, gx_color_index color, ushort prgb[3])
 {
-	gx_color_value gray = color*gx_max_color_value/dev->color_info.max_gray;
-	prgb[0] = gray;
-	prgb[1] = gray;
-	prgb[2] = gray;
+        ushort bitspercolor = prn_dev->color_info.depth / 3;
+	ulong max_value = (1 << bitspercolor) - 1;
+
+	if (bitspercolor == 5) {
+		bitspercolor--;
+		max_value = (1 << bitspercolor) - 1;
+	}
+
+	prgb[0] = (color >> (bitspercolor*2)) * gx_max_color_value / max_value;
+	prgb[1] = ((color >> bitspercolor) & max_value) * gx_max_color_value / max_value;
+	prgb[2] = (color & max_value) * gx_max_color_value / max_value;
 	return(0);
 }
 
