@@ -32,10 +32,18 @@
 #include "stdint_.h"
 #include "math_.h"
 #include "vdtrace.h"
+#include <assert.h>
 
 #define VD_TRACE_TENSOR_PATCH 1
 
-
+#if NOFILL_TEST
+static bool dbg_nofill = false;
+#endif
+#if SKIP_TEST
+static int dbg_patch_cnt = 0;
+static int dbg_quad_cnt = 0;
+static int dbg_triangle_cnt = 0;
+#endif
 
 
 /* ================ Utilities ================ */
@@ -120,12 +128,12 @@ typedef struct patch_fill_state_s {
 #endif
 
 #if NEW_SHADINGS
-void
+int
 init_patch_fill_state(patch_fill_state_t *pfs)
 {
     const gs_color_space *pcs = pfs->direct_space;
     gs_client_color fcc0, fcc1;
-    int i;
+    int i, code;
 
     for (i = 0; i < pfs->num_components; i++) {
 	fcc0.paint.values[i] = -1000000;
@@ -143,6 +151,20 @@ init_patch_fill_state(patch_fill_state_t *pfs)
 #   endif
     pfs->fixed_flat = float2fixed(pfs->pis->flatness);
     pfs->smoothness = pfs->pis->smoothness;
+#   if LAZY_WEDGES
+	code = wedge_vertex_list_elem_buffer_alloc(pfs);
+	if (code < 0)
+	    return code;
+#   endif
+return 0;
+}
+
+void
+term_patch_fill_state(patch_fill_state_t *pfs)
+{
+#   if LAZY_WEDGES
+	wedge_vertex_list_elem_buffer_free(pfs);
+#   endif
 }
 #endif
 
@@ -578,11 +600,13 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     patch_curve_t curve[4];
     int code;
 
-    mesh_init_fill_state((mesh_fill_state_t *) & state,
+    mesh_init_fill_state((mesh_fill_state_t *) &state,
 			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
     state.Function = psh->params.Function;
 #   if NEW_SHADINGS
-	init_patch_fill_state(&state);
+	code = init_patch_fill_state(&state);
+	if(code < 0)
+	    return code;
 #   endif
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s')) {
 	vd_get_dc('s');
@@ -591,6 +615,7 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_origin(0, 0);
 	/* vd_erase(RGB(192, 192, 192)); */
     }
+
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
@@ -601,6 +626,9 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     }
     if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
 	vd_release_dc;
+#   if NEW_SHADINGS
+	term_patch_fill_state(&state);
+#   endif
     return min(code, 0);
 }
 
@@ -670,8 +698,17 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
     state.Function = psh->params.Function;
 #   if NEW_SHADINGS
-	init_patch_fill_state(&state);
+	code = init_patch_fill_state(&state);
+	if(code < 0)
+	    return code;
 #   endif
+    if (VD_TRACE_TENSOR_PATCH && vd_allowed('s')) {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+	/* vd_erase(RGB(192, 192, 192)); */
+    }
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((code = shade_next_patch(&cs, psh->params.BitsPerFlag,
@@ -690,6 +727,11 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	if (code < 0)
 	    break;
     }
+#   if NEW_SHADINGS
+	term_patch_fill_state(&state);
+#   endif
+    if (VD_TRACE_TENSOR_PATCH && vd_allowed('s'))
+	vd_release_dc;
     return min(code, 0);
 }
 
@@ -772,6 +814,7 @@ typedef struct {
 
 typedef struct {
     const shading_vertex_t *p[2][2]; /* [v][u] */
+    wedge_vertex_list_t *l0001, *l0111, *l1110, *l1000;
 } quadrangle_patch;
 
 typedef enum {
@@ -779,12 +822,124 @@ typedef enum {
     inpatch_wedge = 2  /* Wedges while a patch decomposition. */
 } wedge_type_t;
 
-private void
-draw_patch(tensor_patch *p, bool interior, ulong rgbcolor)
+int
+wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs)
 {
+    const int max_level = LAZY_WEDGES_MAX_LEVEL;
+    gs_memory_t *memory = pfs->pis->memory;
 
+    pfs->wedge_vertex_list_elem_count_max = max_level * (1 << max_level);
+    pfs->wedge_vertex_list_elem_buffer = (wedge_vertex_list_elem_t *)gs_alloc_bytes(memory, 
+	    sizeof(wedge_vertex_list_elem_t) * pfs->wedge_vertex_list_elem_count_max, 
+	    "alloc_wedge_vertex_list_elem_buffer");
+    if (pfs->wedge_vertex_list_elem_buffer == NULL)
+	return_error(gs_error_VMerror);
+    pfs->free_wedge_vertex = NULL;
+    pfs->wedge_vertex_list_elem_count = 0;
+    return 0;
+}
+
+void
+wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs)
+{
+    gs_memory_t *memory = pfs->pis->memory;
+
+    gs_free_object(memory, pfs->wedge_vertex_list_elem_buffer, 
+		"wedge_vertex_list_elem_buffer_free");
+    pfs->wedge_vertex_list_elem_buffer = NULL;
+    pfs->free_wedge_vertex = NULL;
+}
+
+private inline wedge_vertex_list_elem_t *
+wedge_vertex_list_elem_reserve(patch_fill_state_t *pfs)
+{
+    wedge_vertex_list_elem_t *e = pfs->free_wedge_vertex;
+
+    if (e != NULL) {
+	pfs->free_wedge_vertex = e->next;
+	return e;
+    }
+    if (pfs->wedge_vertex_list_elem_count < pfs->wedge_vertex_list_elem_count_max)
+	return pfs->wedge_vertex_list_elem_buffer + pfs->wedge_vertex_list_elem_count++;
+    return NULL;
+}
+
+private inline void
+wedge_vertex_list_elem_release(patch_fill_state_t *pfs, wedge_vertex_list_elem_t *e)
+{
+    e->next = pfs->free_wedge_vertex;
+    pfs->free_wedge_vertex = e;
+}
+
+private inline void
+release_triangle_wedge_vertex_list_elem(patch_fill_state_t *pfs, 
+    wedge_vertex_list_elem_t *beg, wedge_vertex_list_elem_t *end)
+{
+    wedge_vertex_list_elem_t *e = beg->next;
+
+    assert(beg->next->next == end);
+    beg->next = end;
+    end->prev = beg;
+    wedge_vertex_list_elem_release(pfs, e);
+}
+
+private inline void
+release_wedge_vertex_list_interval(patch_fill_state_t *pfs, 
+    wedge_vertex_list_elem_t *beg, wedge_vertex_list_elem_t *end)
+{
+    wedge_vertex_list_elem_t *e = beg->next, *ee;
+
+    beg->next = end;
+    end->prev = beg;
+    for (; e != end; e = ee) {
+	ee = e->next;
+	wedge_vertex_list_elem_release(pfs, e);
+    }
+}
+
+private inline void
+release_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *ll, int n)
+{
+    int i;
+
+    for (i = 0; i < n; i++) {
+	wedge_vertex_list_t *l = ll + i;
+
+	if (l->beg != NULL) {
+	    assert(l->end != NULL);
+	    release_wedge_vertex_list_interval(pfs, l->beg, l->end);
+	    wedge_vertex_list_elem_release(pfs, l->beg);
+	    wedge_vertex_list_elem_release(pfs, l->end);
+	    l->beg = l->end = NULL;
+	} else
+	    assert(l->end == NULL);
+    }
+}
+
+private inline wedge_vertex_list_elem_t *
+wedge_vertex_list_find(wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end, 
+	    const gs_fixed_point *p)
+{
+    wedge_vertex_list_elem_t *e = beg;
+    
+    assert(beg != NULL && end != NULL);
+    for (; e != end; e = e->next)
+	if (e->p.x == p->x && e->p.y == p->y)
+	    return e;
+    return NULL;
+}
+
+private inline void
+init_wedge_vertex_list(wedge_vertex_list_t *l, int n)
+{
+    memset(l, 0, sizeof(*l) * n);
+}
+
+private void
+draw_patch(const tensor_patch *p, bool interior, ulong rgbcolor)
+{
 #ifdef DEBUG
-#if 0 /* Disabled for a better view with a specific purpose. 
+#if 1 /* Disabled for a better view with a specific purpose. 
 	 Feel free to enable fo needed. */
     int i, step = (interior ? 1 : 3);
 
@@ -832,7 +987,9 @@ curve_samples(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 {
     curve_segment s;
     int k1, k2 = 0;
+#   if LAZY_WEDGES
     fixed L;
+#   endif
 
     s.p1.x = pole[pole_step].x;
     s.p1.y = pole[pole_step].y;
@@ -841,12 +998,12 @@ curve_samples(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
     s.pt.x = pole[pole_step * 3].x;
     s.pt.y = pole[pole_step * 3].y;
     k1 = gx_curve_log2_samples(pole[0].x, pole[0].y, &s, fixed_flat);
-#   if 0
+#   if LAZY_WEDGES
 	/* Divide long curves and lines : */
 	L = any_abs(pole[1].x - pole[0].x) + any_abs(pole[1].y - pole[0].y) +
 	    any_abs(pole[2].x - pole[1].x) + any_abs(pole[2].y - pole[1].y) +
 	    any_abs(pole[3].x - pole[2].x) + any_abs(pole[3].y - pole[2].y);
-	k2 = ilog2(L / fixed_1 / 64);
+	k2 = ilog2(L / fixed_1 / (1 << (LAZY_WEDGES_MAX_LEVEL - 1)));
 #   endif
     return 1 << max(k1, k2);
 }
@@ -991,6 +1148,10 @@ gx_shade_trapezoid(patch_fill_state_t *pfs, const gs_fixed_point q[4],
 
     if (ybot > ytop)
 	return 0;
+#   if NOFILL_TEST
+	if (dbg_nofill)
+	    return 0;
+#   endif
     make_trapezoid(q, vi0, vi1, vi2, vi3, ybot, ytop, swap_axes, orient, &le, &re);
     if (!VD_TRACE_DOWN)
 	vd_disable;
@@ -1052,7 +1213,7 @@ is_color_monotonic(const patch_fill_state_t * pfs, const patch_color_t *c0, cons
 {
     if (!pfs->Function)
 	return true;
-    return c0->t[0] == c1->t[0] && (pfs->n_color_args == 1 || c0->t[1] == c1->t[1]) ||
+    return (c0->t[0] == c1->t[0] && (pfs->n_color_args == 1 || c0->t[1] == c1->t[1])) ||
 	   gs_function_is_monotonic(pfs->Function, c0->t, c1->t, EFFORT_MODERATE) > 0;
 }
 
@@ -1071,6 +1232,10 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
     int code;
     vd_save;
 
+#   if NOFILL_TEST
+	/* if (dbg_nofill)
+		return 0; */
+#   endif
     patch_color_to_device_color(pfs, &c1, &dc);
     if (!VD_TRACE_DOWN)
 	vd_disable;
@@ -1269,7 +1434,7 @@ y_extreme_vertice(gs_fixed_point *q, const gs_fixed_point *p, int k, int minmax)
 }
 
 private inline fixed
-span_x(gs_fixed_point *p, int k)
+span_x(const gs_fixed_point *p, int k)
 {
     int i;
     fixed xmin = p[0].x, xmax = p[0].x;
@@ -1282,7 +1447,7 @@ span_x(gs_fixed_point *p, int k)
 }
 
 private inline fixed
-span_y(gs_fixed_point *p, int k)
+span_y(const gs_fixed_point *p, int k)
 {
     int i;
     fixed ymin = p[0].y, ymax = p[0].y;
@@ -1295,7 +1460,7 @@ span_y(gs_fixed_point *p, int k)
 }
 
 private inline void
-draw_wedge(gs_fixed_point *p, int n)
+draw_wedge(const gs_fixed_point *p, int n)
 {
 #ifdef DEBUG
     int i;
@@ -1315,27 +1480,158 @@ draw_wedge(gs_fixed_point *p, int n)
 #endif
 }
 
-private int
-fill_wedge(patch_fill_state_t *pfs, int ka, 
-	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
+private inline fixed
+manhattan_dist(const gs_fixed_point *p0, const gs_fixed_point *p1)
 {
+    fixed dx = any_abs(p1->x - p0->x), dy = any_abs(p1->y - p0->y);
+
+    return max(dx, dy);
+}
+
+private inline void
+create_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1)
+{
+    assert(l->end == NULL);
+    l->beg = wedge_vertex_list_elem_reserve(pfs);
+    l->end = wedge_vertex_list_elem_reserve(pfs);
+    assert(l->beg != NULL);
+    assert(l->end != NULL);
+    l->beg->prev = l->end->next = NULL;
+    l->beg->next = l->end;
+    l->end->prev = l->beg;
+    l->beg->p = *p0;
+    l->end->p = *p1;
+}
+
+private inline wedge_vertex_list_elem_t *
+insert_wedge_vertex_list_elem(patch_fill_state_t *pfs, wedge_vertex_list_t *l, const gs_fixed_point *p)
+{
+    wedge_vertex_list_elem_t *e = wedge_vertex_list_elem_reserve(pfs);
+
+    /* We have got enough free elements due to the preliminary decomposition 
+       of curves to LAZY_WEDGES_MAX_LEVEL, see curve_samples. */
+    assert(e != NULL); 
+    assert(l->beg->next == l->end);
+    assert(l->end->prev == l->beg);
+    e->next = l->end;
+    e->prev = l->beg;
+    e->p = *p;
+    l->beg->next = l->end->prev = e;
+    {	int sx = l->beg->p.x < l->end->p.x ? 1 : -1;
+	int sy = l->beg->p.y < l->end->p.y ? 1 : -1;
+
+	assert((p->x - l->beg->p.x) * sx >= 0);
+	assert((p->y - l->beg->p.y) * sy >= 0);
+	assert((l->end->p.x - p->x) * sx >= 0);
+	assert((l->end->p.y - p->y) * sy >= 0);
+    }
+    return e;
+}
+
+private inline wedge_vertex_list_elem_t *
+open_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
+{
+    if (!l->last_side) {
+	l->divided_left = true;
+	if (l->beg == NULL)
+	    create_wedge_vertex_list(pfs, l, p0, p1);
+	assert(l->beg->p.x == p0->x);
+	assert(l->beg->p.y == p0->y);
+	assert(l->end->p.x == p1->x);
+	assert(l->end->p.y == p1->y);
+	return insert_wedge_vertex_list_elem(pfs, l, pm);
+    } else {
+	l->divided_right = true;
+	if (l->beg == NULL) {
+	    create_wedge_vertex_list(pfs, l, p1, p0);
+	    return insert_wedge_vertex_list_elem(pfs, l, pm);
+	}
+	assert(l->beg->p.x == p1->x);
+	assert(l->beg->p.y == p1->y);
+	assert(l->end->p.x == p0->x);
+	assert(l->end->p.y == p0->y);
+	if (l->beg->next == l->end) {
+	    return insert_wedge_vertex_list_elem(pfs, l, pm);
+	} else {
+	    wedge_vertex_list_elem_t *e = wedge_vertex_list_find(l->beg, l->end, pm);
+
+	    assert(e != NULL);
+	    return e;
+	}
+    }
+}
+
+private inline void
+make_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l, 
+	wedge_vertex_list_t *l0, bool forth, 
+	const gs_fixed_point *p0, const gs_fixed_point *p1, const gs_fixed_point *pm)
+{
+    l->divided_left = l->divided_right = false;
+    l->last_side = l0->last_side;
+    if (!l->last_side ^ !forth) {
+	l->end = open_wedge_median(pfs, l0, p0, p1, pm);
+	l->beg = l0->beg;
+    } else {
+	l->beg = open_wedge_median(pfs, l0, p0, p1, pm);
+	l->end = l0->end;
+    }
+}
+
+private int fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
+	    const patch_color_t *c0, const patch_color_t *c1);
+
+private inline int
+close_wedge_median(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
+	const patch_color_t *c0, const patch_color_t *c1)
+{
+    if (!l->last_side)
+	return 0;
+#   if !POLYGONAL_WEDGES
+        if (l->divided_left != l->divided_right) {
+	    int code = fill_wedge_from_list(pfs, l, c0, c1);
+
+	    if (code < 0)
+		return code;
+	}
+	release_wedge_vertex_list_interval(pfs, l->beg, l->end);
+#   else
+        if (l->divided_left && l->divided_right)
+	    release_triangle_wedge_vertex_list_elem(pfs, l->beg, l->end);
+#   endif
+    return 0;
+}
+
+private inline void
+move_wedge(wedge_vertex_list_t *l, const wedge_vertex_list_t *l0, bool forth)
+{
+    if (!l->last_side ^ !forth) {
+	l->beg = l->end;
+	l->end = l0->end;
+    } else {
+	l->end = l->beg;
+	l->beg = l0->beg;
+    }
+}
+
+private int
+fill_wedge_from_array(patch_fill_state_t *pfs, gs_fixed_point *p, int k1, 
+	const patch_color_t *c0, const patch_color_t *c1, bool interpolate_by_index)
+{
+    /* Smashes p. */
     patch_color_t ca, cb, *pca = &ca, *pcb = &cb, *pcc;
     fixed dx, dy;
     bool swap_axes;
-    int k1 = ka + 1, i, code;
+    int ka = k1 - 1;
+    int i, code;
     gs_fixed_point q0, q1;
-#   if POLYGONAL_WEDGES
-	gs_fixed_point *p = pfs->wedge_buf;
-#   else
-	gs_fixed_point *p = NULL; /* never executes. */
-#   endif
+    double L;
 
-    p[0] = pole[0];
-    p[ka] = pole[3];
-    generate_inner_vertices(p, pole, ka); /* ka >= 2, see fill_wedges */
     draw_wedge(p, k1);
     dx = span_x(p, k1);
     dy = span_y(p, k1);
+    L = max(dx, dy);
     swap_axes = (dx > dy);
     if (swap_axes)
 	do_swap_axes(p, k1);
@@ -1348,7 +1644,10 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
     y_extreme_vertice(&q1, p, k1, 1);
     *pca = *c0;
     for (i = 1; i < k1; i++) {
-	patch_interpolate_color(pcb, c0, c1, pfs, (double)i / ka); /* ka >= 2, see fill_wedges */
+	double t = (interpolate_by_index ? i / (double)ka /* ka >= 2, see fill_wedges */
+					 : manhattan_dist(&q0, &p[i]) / L);
+
+	patch_interpolate_color(pcb, c0, c1, pfs, t); 
 	code = fill_wedge_trap(pfs, &p[i - 1], &p[i], &q0, &q1, pca, pcb, swap_axes, true);
 	if (code < 0)
 	    return code;
@@ -1358,6 +1657,22 @@ fill_wedge(patch_fill_state_t *pfs, int ka,
 	    p[ka].x == q1.x && p[ka].y == q1.y)
 	return 0;
     return fill_wedge_trap(pfs, &p[0], &p[ka], &q0, &q1, c0, c1, swap_axes, true);
+}
+
+private inline int
+fill_wedge(patch_fill_state_t *pfs, int ka, 
+	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
+{
+#   if POLYGONAL_WEDGES
+	gs_fixed_point *p = pfs->wedge_buf;
+#   else
+	gs_fixed_point *p = NULL; /* never executes. */
+#   endif
+
+    p[0] = pole[0];
+    p[ka] = pole[3];
+    generate_inner_vertices(p, pole, ka); /* ka >= 2, see fill_wedges */
+    return fill_wedge_from_array(pfs, p, ka + 1, c0, c1, true); /* Smashes p. */
 }
 
 private inline int 
@@ -1410,6 +1725,84 @@ fill_triangle_wedge(patch_fill_state_t *pfs,
     return fill_triangle_wedge_aux(pfs, q0, q1, q2);
 }
 
+private inline int
+fill_triangle_wedge_from_list(patch_fill_state_t *pfs, 
+    const wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end,
+    const patch_color_t *c0, const patch_color_t *c1)
+{
+    shading_vertex_t p[3];
+
+    assert(beg->next->next == end);
+    p[0].p = beg->p;
+    p[0].c = *c0; /* fixme : unhappy copying colors. */
+    p[1].p = end->p;
+    p[1].c = *c1;
+    p[2].p = beg->next->p;
+    patch_interpolate_color(&p[2].c, c0, c1, pfs, 0.5);
+    return fill_triangle_wedge(pfs, &p[0], &p[1], &p[2]);
+}
+
+private int 
+fill_wedge_from_list_rec(patch_fill_state_t *pfs, 
+	    wedge_vertex_list_elem_t *beg, const wedge_vertex_list_elem_t *end,
+	    const patch_color_t *c0, const patch_color_t *c1)
+{
+    if (beg->next == end)
+	return 0;
+    else if (beg->next->next == end) {
+	return fill_triangle_wedge_from_list(pfs, beg, end, c0, c1);
+    } else {
+	gs_fixed_point p;
+	wedge_vertex_list_elem_t *e;
+	patch_color_t c;
+	int code;
+
+	p.x = (beg->p.x + end->p.x) / 2;
+	p.y = (beg->p.y + end->p.y) / 2;
+	e = wedge_vertex_list_find(beg, end, &p); /* fixme : could optimize with inserting l->middle. */
+	assert(e != NULL);
+	patch_interpolate_color(&c, c0, c1, pfs, 0.5);
+	code = fill_wedge_from_list_rec(pfs, beg, e, c0, &c);
+	if (code < 0)
+	    return code;
+	return fill_wedge_from_list_rec(pfs, e, end, &c, c1);
+    }
+}
+
+private int 
+fill_wedge_from_list(patch_fill_state_t *pfs, const wedge_vertex_list_t *l,
+	    const patch_color_t *c0, const patch_color_t *c1)
+{
+#   if POLYGONAL_WEDGES
+	int k = 0;
+	wedge_vertex_list_elem_t *e = l->beg;
+	gs_fixed_point *p = pfs->wedge_buf;
+    
+	assert(l->beg != NULL && l->end != NULL);
+	for (; e != l->end; e = e->next, k++)
+	    p[k] = e->p;
+	return fill_wedge_from_array(pfs, p, k, c0, c1, false); /* Smashes p. */
+#   else
+	return fill_wedge_from_list_rec(pfs, l->beg, l->end, c0, c1);
+#   endif
+}
+
+private inline int
+terminate_wedge_vertex_list(patch_fill_state_t *pfs, wedge_vertex_list_t *l,
+	const patch_color_t *c0, const patch_color_t *c1)
+{
+    if (l->beg != NULL) {
+	if (l->divided_left != l->divided_right) {
+	    int code = fill_wedge_from_list(pfs, l, c0, c1);
+
+	    if (code < 0)
+		return code;
+	}
+	release_wedge_vertex_list(pfs, l, 1);
+    }
+    return 0;
+}
+
 private int
 wedge_by_triangles(patch_fill_state_t *pfs, int ka, 
 	const gs_fixed_point pole[4], const patch_color_t *c0, const patch_color_t *c1)
@@ -1421,7 +1814,7 @@ wedge_by_triangles(patch_fill_state_t *pfs, int ka,
 
     split_curve(pole, q[0], q[1]);
     p[0].p = pole[0];
-    p[0].c = *c0;
+    p[0].c = *c0; /* fixme : unhappy copying colors. */
     p[1].p = pole[3];
     p[1].c = *c1;
     p[2].p = q[0][3];
@@ -1571,6 +1964,10 @@ ordered_triangle(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
     gx_device_color dc;
     vd_save;
 
+#   if NOFILL_TEST
+	if (dbg_nofill)
+	    return 0;
+#   endif
     if (!VD_TRACE_DOWN)
         vd_disable;
     patch_color_to_device_color(pfs, c, &dc);
@@ -1931,11 +2328,13 @@ divide_bar(patch_fill_state_t *pfs,
 private int 
 triangle_by_4(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
+	wedge_vertex_list_t *l01, wedge_vertex_list_t *l12, wedge_vertex_list_t *l20,
 	double cd, fixed sd)
 {
     shading_vertex_t p01, p12, p20;
+    wedge_vertex_list_t L01, L12, L20, L[3];
     int code;
-        
+    
     if (sd < fixed_1 * 4)
 	return constant_color_triangle(pfs, p2, p0, p1);
     if (pfs->Function != NULL) {
@@ -1952,32 +2351,70 @@ triangle_by_4(patch_fill_state_t *pfs,
     divide_bar(pfs, p0, p1, 2, &p01);
     divide_bar(pfs, p1, p2, 2, &p12);
     divide_bar(pfs, p2, p0, 2, &p20);
-    code = fill_triangle_wedge(pfs, p0, p1, &p01);
+    if (LAZY_WEDGES) {
+	init_wedge_vertex_list(L, count_of(L));
+	make_wedge_median(pfs, &L01, l01, true,  &p0->p, &p1->p, &p01.p);
+	make_wedge_median(pfs, &L12, l12, true,  &p1->p, &p2->p, &p12.p);
+	make_wedge_median(pfs, &L20, l20, false, &p2->p, &p0->p, &p20.p);
+    } else {
+	code = fill_triangle_wedge(pfs, p0, p1, &p01);
+	if (code < 0)
+	    return code;
+	code = fill_triangle_wedge(pfs, p1, p2, &p12);
+	if (code < 0)
+	    return code;
+	code = fill_triangle_wedge(pfs, p2, p0, &p20);
+	if (code < 0)
+	    return code;
+    }
+    code = triangle_by_4(pfs, p0, &p01, &p20, &L01, &L[0], &L20, cd / 2, sd / 2);
     if (code < 0)
 	return code;
-    code = fill_triangle_wedge(pfs, p1, p2, &p12);
+    if (LAZY_WEDGES) {
+	move_wedge(&L01, l01, true);
+	move_wedge(&L20, l20, false);
+    }
+    code = triangle_by_4(pfs, p1, &p12, &p01, &L12, &L[1], &L01, cd / 2, sd / 2);
     if (code < 0)
 	return code;
-    code = fill_triangle_wedge(pfs, p2, p0, &p20);
+    if (LAZY_WEDGES)
+	move_wedge(&L12, l12, true);
+    code = triangle_by_4(pfs, p2, &p20, &p12, &L20, &L[2], &L12, cd / 2, sd / 2);
     if (code < 0)
 	return code;
-    code = triangle_by_4(pfs, p0, &p01, &p20, cd / 2, sd / 2);
+    L[0].last_side = L[1].last_side = L[2].last_side = true;
+    code = triangle_by_4(pfs, &p01, &p12, &p20, &L[1], &L[2], &L[0], cd / 2, sd / 2);
     if (code < 0)
 	return code;
-    code = triangle_by_4(pfs, p1, &p12, &p01, cd / 2, sd / 2);
-    if (code < 0)
-	return code;
-    code = triangle_by_4(pfs, p2, &p20, &p12, cd / 2, sd / 2);
-    if (code < 0)
-	return code;
-    return triangle_by_4(pfs, &p01, &p12, &p20, cd / 2, sd / 2);
-
+    if (LAZY_WEDGES) {
+	code = close_wedge_median(pfs, &L01, &p0->c, &p1->c);
+	if (code < 0)
+	    return code;
+	code = close_wedge_median(pfs, &L12, &p1->c, &p2->c);
+	if (code < 0)
+	    return code;
+	code = close_wedge_median(pfs, &L20, &p2->c, &p0->c);
+	if (code < 0)
+	    return code;
+	code = terminate_wedge_vertex_list(pfs, &L[0], &p01.c, &p20.c);
+	if (code < 0)
+	    return code;
+	code = terminate_wedge_vertex_list(pfs, &L[1], &p12.c, &p01.c);
+	if (code < 0)
+	    return code;
+	code = terminate_wedge_vertex_list(pfs, &L[2], &p20.c, &p12.c);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
 }
 
 private inline int 
 divide_quadrangle_by_parallels(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, 
-	const shading_vertex_t *p2, const shading_vertex_t *p3, double d01)
+	const shading_vertex_t *p2, const shading_vertex_t *p3, 
+	wedge_vertex_list_t *l01, wedge_vertex_list_t *l23,
+	double d01)
 {
     if (d01 < pfs->smoothness / COLOR_CONTIGUITY ||
 	    (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1 &&
@@ -1991,31 +2428,54 @@ divide_quadrangle_by_parallels(patch_fill_state_t *pfs,
 	return constant_color_quadrangle(pfs, &p, false);
     } else {
 	shading_vertex_t q0, q1;
+	wedge_vertex_list_t L01, L23;
 	int code;
 
 	divide_bar(pfs, p0, p1, 2, &q0);
-	code = fill_triangle_wedge(pfs, p0, p1, &q0);
-	if (code < 0)
-	    return code;
 	divide_bar(pfs, p2, p3, 2, &q1);
-	code = fill_triangle_wedge(pfs, p3, p2, &q1);
+	if (LAZY_WEDGES) {
+	    make_wedge_median(pfs, &L01, l01, true,  &p0->p, &p1->p, &q0.p);
+	    make_wedge_median(pfs, &L23, l23, true,  &p2->p, &p3->p, &q1.p);
+	} else {
+	    code = fill_triangle_wedge(pfs, p0, p1, &q0);
+	    if (code < 0)
+		return code;
+	    code = fill_triangle_wedge(pfs, p3, p2, &q1);
+	    if (code < 0)
+		return code;
+	}
+	code = divide_quadrangle_by_parallels(pfs, p0, &q0, &q1, p3, &L01, &L23, d01 / 2);
 	if (code < 0)
 	    return code;
-	code = divide_quadrangle_by_parallels(pfs, p0, &q0, &q1, p3, d01 / 2);
+	if (LAZY_WEDGES) {
+	    move_wedge(&L01, l01, true);
+	    move_wedge(&L23, l23, false);
+	}
+	code = divide_quadrangle_by_parallels(pfs, &q0, p1, p2, &q1, &L01, &L23, d01 / 2);
 	if (code < 0)
 	    return code;
-	return divide_quadrangle_by_parallels(pfs, &q0, p1, p2, &q1, d01 / 2);
+	if (LAZY_WEDGES) {
+	    code = close_wedge_median(pfs, &L01, &p0->c, &p1->c);
+	    if (code < 0)
+		return code;
+	    code = close_wedge_median(pfs, &L23, &p2->c, &p3->c);
+	    if (code < 0)
+		return code;
+	}
+	return 0;
     }
 }
 
 private int 
 divide_triangle_by_parallels(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
+	wedge_vertex_list_t *l01, wedge_vertex_list_t *l12, wedge_vertex_list_t *l20,
 	double d01)
 {
     /* fixme : clone the case of small triangles. */
     int n = (int)ceil(d01 / (pfs->smoothness / COLOR_CONTIGUITY));
     shading_vertex_t q0, q1;
+    wedge_vertex_list_t L12, L20;
     int code;
 
     if (n == 1)
@@ -2024,22 +2484,41 @@ divide_triangle_by_parallels(patch_fill_state_t *pfs,
 	any_abs(p0->p.x - p2->p.x) < fixed_1 && any_abs(p0->p.y - p2->p.y) < fixed_1)
 	return constant_color_triangle(pfs, p0, p1, p2);
     divide_bar(pfs, p2, p0, 2, &q0);
-    code = fill_triangle_wedge(pfs, p0, p2, &q0);
-    if (code < 0)
-	return code;
     divide_bar(pfs, p2, p1, 2, &q1);
-    code = fill_triangle_wedge(pfs, p1, p2, &q1);
+    if (LAZY_WEDGES) {
+	make_wedge_median(pfs, &L12, l12, true,  &p1->p, &p2->p, &q0.p);
+	make_wedge_median(pfs, &L20, l20, false, &p2->p, &p0->p, &q1.p);
+    } else {
+	code = fill_triangle_wedge(pfs, p0, p2, &q0);
+	if (code < 0)
+	    return code;
+	code = fill_triangle_wedge(pfs, p1, p2, &q1);
+	if (code < 0)
+	    return code;
+    }
+    code = divide_quadrangle_by_parallels(pfs, &q0, p0, p1, &q1, &L20, &L12, d01 * (n - 1) / n);
     if (code < 0)
 	return code;
-    code = divide_quadrangle_by_parallels(pfs, &q0, p0, p1, &q1, d01 * (n - 1) / n);
-    if (code < 0)
-	return code;
-    return constant_color_triangle(pfs, p2, &q0, &q1);
+    code = constant_color_triangle(pfs, p2, &q0, &q1);
+    if (LAZY_WEDGES) {
+	code = close_wedge_median(pfs, &L12, &p1->c, &p2->c);
+	if (code < 0)
+	    return code;
+	code = close_wedge_median(pfs, &L20, &p2->c, &p0->c);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
 }
+
+private int fill_triangle(patch_fill_state_t *pfs, 
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2,
+	wedge_vertex_list_t *l01, wedge_vertex_list_t *l12, wedge_vertex_list_t *l20);
 
 private inline int 
 divide_triangle(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2,
+	wedge_vertex_list_t *l01, wedge_vertex_list_t *l12, wedge_vertex_list_t *l20,
 	double d01, double d12, double d20)
 {
     /* Trying to divide into 2 triangles that have a constant color
@@ -2049,24 +2528,44 @@ divide_triangle(patch_fill_state_t *pfs,
        intersect at one line at one side. 
        Otherwise trying to minimize the deviation. */
     shading_vertex_t p;
+    wedge_vertex_list_t L01, lh;
     int code;
 
     draw_triangle(&p0->p, &p1->p, &p2->p, RGB(255, 0, 0));
     p.p.x = (fixed)((p0->p.x * d12 + p1->p.x * d20) / (d12 + d20)); /* Don't need rounding due to wedges. */
     p.p.y = (fixed)((p0->p.y * d12 + p1->p.y * d20) / (d12 + d20)); /* A rounding runs out the interval. */
     patch_interpolate_color(&p.c, &p0->c, &p1->c, pfs, d20 / (d12 + d20));
-    code = fill_triangle_wedge(pfs, p0, p1, &p);
+    if (LAZY_WEDGES) {
+	make_wedge_median(pfs, &L01, l01, true, &p0->p, &p1->p, &p.p);
+	init_wedge_vertex_list(&lh, 1);
+    } else {
+	code = fill_triangle_wedge(pfs, p0, p1, &p);
+	if (code < 0)
+	    return code;
+    }
+    code = fill_triangle(pfs, &p, p2, p0, &lh, l20, &L01);
     if (code < 0)
 	return code;
-    code = mesh_triangle(pfs, &p, p2, p0);
+    if (LAZY_WEDGES)
+	move_wedge(&L01, l01, true);
+    code = fill_triangle(pfs, p2, &p, p1, &lh, &L01, l12);
     if (code < 0)
 	return code;
-    return mesh_triangle(pfs, p2, &p, p1);
+    if (LAZY_WEDGES) {
+	code = close_wedge_median(pfs, &L01, &p0->c, &p1->c);
+	if (code < 0)
+	    return code;
+	code = terminate_wedge_vertex_list(pfs, &lh, &p2->c, &p.c);
+	if (code < 0)
+	    return code;
+    }
+    return 0;
 }
 
 int 
-mesh_triangle(patch_fill_state_t *pfs, 
-	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
+fill_triangle(patch_fill_state_t *pfs, 
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2,
+	wedge_vertex_list_t *l01, wedge_vertex_list_t *l12, wedge_vertex_list_t *l20)
 {
     if (DIVIDE_BY_PARALLELS) {
     	double d01 = color_span(pfs, &p1->c, &p0->c);
@@ -2079,23 +2578,23 @@ mesh_triangle(patch_fill_state_t *pfs,
 	    d20 < pfs->smoothness / COLOR_CONTIGUITY)
 	    return constant_color_triangle(pfs, p0, p1, p2);
 	if (d01 < pfs->smoothness / COLOR_CONTIGUITY)
-	    return divide_triangle_by_parallels(pfs, p0, p1, p2, (d12 + d20) / 2);
+	    return divide_triangle_by_parallels(pfs, p0, p1, p2, l01, l12, l20, (d12 + d20) / 2);
 	if (d12 < pfs->smoothness / COLOR_CONTIGUITY)
-	    return divide_triangle_by_parallels(pfs, p1, p2, p0, (d20 + d01) / 2);
+	    return divide_triangle_by_parallels(pfs, p1, p2, p0, l12, l20, l01, (d20 + d01) / 2);
 	if (d20 < pfs->smoothness / COLOR_CONTIGUITY)
-	    return divide_triangle_by_parallels(pfs, p2, p0, p1, (d01 + d12) / 2);
+	    return divide_triangle_by_parallels(pfs, p2, p0, p1, l20, l01, l12, (d01 + d12) / 2);
 	if (any_abs(p1->p.x - p0->p.x) < fixed_1 && any_abs(p1->p.y - p0->p.y) < fixed_1)
-	    return divide_triangle_by_parallels(pfs, p0, p1, p2, (d12 + d20) / 2);
+	    return divide_triangle_by_parallels(pfs, p0, p1, p2, l01, l12, l20, (d12 + d20) / 2);
 	if (any_abs(p2->p.x - p1->p.x) < fixed_1 && any_abs(p2->p.y - p1->p.y) < fixed_1)
-	    return divide_triangle_by_parallels(pfs, p1, p2, p0, (d20 + d01) / 2);
+	    return divide_triangle_by_parallels(pfs, p1, p2, p0, l12, l20, l01, (d20 + d01) / 2);
 	if (any_abs(p0->p.x - p2->p.x) < fixed_1 && any_abs(p0->p.y - p2->p.y) < fixed_1)
-	    return divide_triangle_by_parallels(pfs, p2, p0, p1, (d01 + d12) / 2);
+	    return divide_triangle_by_parallels(pfs, p2, p0, p1, l20, l01, l12, (d01 + d12) / 2);
 	if (d01 >= d12 && d01 >= d20 && d01 > pfs->smoothness / COLOR_CONTIGUITY)
-	    return divide_triangle(pfs, p0, p1, p2, d01, d12, d20);
+	    return divide_triangle(pfs, p0, p1, p2, l01, l12, l20, d01, d12, d20);
 	if (d12 >= d20 && d12 >= d01 && d12 > pfs->smoothness / COLOR_CONTIGUITY)
-	    return divide_triangle(pfs, p1, p2, p0, d12, d20, d01);
+	    return divide_triangle(pfs, p1, p2, p0, l12, l20, l01, d12, d20, d01);
 	if (d20 >= d12 && d20 >= d01 && d20 > pfs->smoothness / COLOR_CONTIGUITY)
-	    return divide_triangle(pfs, p2, p0, p1, d20, d01, d12);
+	    return divide_triangle(pfs, p2, p0, p1, l20, l01, l12, d20, d01, d12);
 	return constant_color_triangle(pfs, p0, p1, p2);
     } else {
 	fixed sd01 = max(any_abs(p1->p.x - p0->p.x), any_abs(p1->p.y - p0->p.y));
@@ -2105,6 +2604,9 @@ mesh_triangle(patch_fill_state_t *pfs,
 	fixed sd = max(sd1, sd20);
 	double cd = 0;
 
+#	if SKIP_TEST
+	    dbg_triangle_cnt++;
+#	endif
 	if (pfs->Function == NULL) {
     	    double d01 = color_span(pfs, &p1->c, &p0->c);
 	    double d12 = color_span(pfs, &p2->c, &p1->c);
@@ -2113,8 +2615,28 @@ mesh_triangle(patch_fill_state_t *pfs,
 	    
 	    cd = max(cd1, d20);
 	}
-	return triangle_by_4(pfs, p0, p1, p2, cd, sd);
+	return triangle_by_4(pfs, p0, p1, p2, l01, l12, l20, cd, sd);
     }
+}
+
+int 
+mesh_triangle(patch_fill_state_t *pfs, 
+	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2)
+{
+    int code;
+    wedge_vertex_list_t l[3];
+
+    init_wedge_vertex_list(l, count_of(l));
+    code = fill_triangle(pfs, p0, p1, p2, &l[0], &l[1], &l[2]);
+    if (code < 0)
+	return code;
+    code = terminate_wedge_vertex_list(pfs, &l[0], &p0->c, &p1->c);
+    if (code < 0)
+	return code;
+    code = terminate_wedge_vertex_list(pfs, &l[1], &p1->c, &p2->c);
+    if (code < 0)
+	return code;
+    return terminate_wedge_vertex_list(pfs, &l[2], &p2->c, &p0->c);
 }
 
 #if DIVIDE_BY_PARALLELS
@@ -2128,19 +2650,29 @@ triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argumen
     int code;
     double d0011 = color_span(pfs, &p->p[0][0]->c, &p->p[1][1]->c);
     double d0110 = color_span(pfs, &p->p[0][1]->c, &p->p[1][0]->c);
+    wedge_vertex_list_t l;
 
+    init_wedge_vertex_list(l, 1);
     draw_quadrangle(p, RGB(0, 255, 0));
     /* Divide at the smaller color variation to reduce the number of costant color areas. */
     if (d0011 < d0110) {
-	code = mesh_triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][1]);
+	code = fill_triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][1], p->l0001, p->l0111, &l);
 	if (code < 0)
 	    return code;
-	return mesh_triangle(pfs, p->p[0][0], p->p[1][1], p->p[1][0]);
+	l.last_side = true;
+	code = fill_triangle(pfs, p->p[0][0], p->p[1][1], p->p[1][0], &l, p->l1110, p->l1000);
+	if (code < 0)
+	    return code;
+	return terminate_wedge_vertex_list(pfs, &l, &p->p[0][0].c, &p->p[1][1].c);
     } else {
-	code = mesh_triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][0]);
+	code = fill_triangle(pfs, p->p[0][0], p->p[0][1], p->p[1][0], p->l0001, &l, p->l1000);
 	if (code < 0)
 	    return code;
-	return mesh_triangle(pfs, p->p[0][1], p->p[1][1], p->p[1][0]);
+	l.last_side = true;
+	code = fill_triangle(pfs, p->p[0][1], p->p[1][1], p->p[1][0], p->l0111, p->l1110, &l);
+	if (code < 0)
+	    return code;
+	return terminate_wedge_vertex_list(pfs, &l, &p->p[0][1].c, &p->p[1][0].c);
     }
 }
 
@@ -2150,27 +2682,49 @@ private inline int
 triangles(patch_fill_state_t *pfs, const quadrangle_patch *p, bool dummy_argument)
 {
     shading_vertex_t p0001, p1011, q;
+    wedge_vertex_list_t l[4];
     int code;
 
+    init_wedge_vertex_list(l, count_of(l));
     divide_bar(pfs, p->p[0][0], p->p[0][1], 2, &p0001);
     divide_bar(pfs, p->p[1][0], p->p[1][1], 2, &p1011);
     divide_bar(pfs, &p0001, &p1011, 2, &q);
-    code = mesh_triangle(pfs, p->p[0][0], p->p[0][1], &q);
+    code = fill_triangle(pfs, p->p[0][0], p->p[0][1], &q, p->l0001, &l[0], &l[3]);
     if (code < 0)
 	return code;
-    code = mesh_triangle(pfs, p->p[0][1], p->p[1][1], &q);
+    l[0].last_side = true;
+    l[3].last_side = true;
+    code = fill_triangle(pfs, p->p[0][1], p->p[1][1], &q, p->l0111, &l[1], &l[0]);
     if (code < 0)
 	return code;
-    code = mesh_triangle(pfs, p->p[1][1], p->p[1][0], &q);
+    l[1].last_side = true;
+    code = fill_triangle(pfs, p->p[1][1], p->p[1][0], &q, p->l1110, &l[2], &l[1]);
     if (code < 0)
 	return code;
-    return mesh_triangle(pfs, p->p[1][0], p->p[0][0], &q);
+    l[2].last_side = true;
+    code = fill_triangle(pfs, p->p[1][0], p->p[0][0], &q, p->l1000, &l[3], &l[2]);
+    if (code < 0)
+	return code;
+    code = terminate_wedge_vertex_list(pfs, &l[0], &p->p[0][1]->c, &q.c);
+    if (code < 0)
+	return code;
+    code = terminate_wedge_vertex_list(pfs, &l[1], &p->p[1][1]->c, &q.c);
+    if (code < 0)
+	return code;
+    code = terminate_wedge_vertex_list(pfs, &l[2], &p->p[1][0]->c, &q.c);
+    if (code < 0)
+	return code;
+    code = terminate_wedge_vertex_list(pfs, &l[3], &p->p[0][0]->c, &q.c);
+    if (code < 0)
+	return code;
+    return 0;
 }
 
 #endif
 
 private inline void 
-make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2], quadrangle_patch *q)
+make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2], 
+	wedge_vertex_list_t l[4], quadrangle_patch *q)
 {
     qq[0][0].p = p->pole[0][0];
     qq[0][1].p = p->pole[0][3];
@@ -2184,6 +2738,10 @@ make_quadrangle(const tensor_patch *p, shading_vertex_t qq[2][2], quadrangle_pat
     q->p[0][1] = &qq[0][1];
     q->p[1][0] = &qq[1][0];
     q->p[1][1] = &qq[1][1];
+    q->l0001 = &l[0];
+    q->l0111 = &l[1];
+    q->l1110 = &l[2];
+    q->l1000 = &l[3];
 }
 
 typedef enum {
@@ -2240,6 +2798,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 {
     /* The quadrangle is flattened enough by V and U, so ignore inner poles. */
     quadrangle_patch s0, s1;
+    wedge_vertex_list_t l0, l1, l2;
     int code;
     bool divide_u = false, divide_v = false, big1 = big;
     shading_vertex_t q[2];
@@ -2310,31 +2869,86 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    divide_v = is_big_v; /* Unused. Just for a clarity. */
 	}
     }
+    if (LAZY_WEDGES)
+	init_wedge_vertex_list(&l0, 1);
     if (divide_v) {
 	divide_quadrangle_by_v(pfs, &s0, &s1, q, p);
-	code = fill_triangle_wedge(pfs, s0.p[0][0], s1.p[1][0], s0.p[1][0]);
-	if (code < 0)
-	    return code;
-	code = fill_triangle_wedge(pfs, s0.p[0][1], s1.p[1][1], s0.p[1][1]);
-	if (code < 0)
-	    return code;
+	if (LAZY_WEDGES) {
+	    make_wedge_median(pfs, &l1, p->l0111, true,  &p->p[0][1]->p, &p->p[1][1]->p, &s0.p[1][1]->p);
+	    make_wedge_median(pfs, &l2, p->l1000, false, &p->p[1][0]->p, &p->p[0][0]->p, &s0.p[1][0]->p);
+	    s0.l1110 = s1.l0001 = &l0;
+	    s0.l0111 = s1.l0111 = &l1;
+	    s0.l1000 = s1.l1000 = &l2;
+	    s0.l0001 = p->l0001;
+	    s1.l1110 = p->l1110;
+	} else {
+	    code = fill_triangle_wedge(pfs, s0.p[0][0], s1.p[1][0], s0.p[1][0]);
+	    if (code < 0)
+		return code;
+	    code = fill_triangle_wedge(pfs, s0.p[0][1], s1.p[1][1], s0.p[1][1]);
+	    if (code < 0)
+		return code;
+	}
 	code = fill_quadrangle(pfs, &s0, big1);
 	if (code < 0)
 	    return code;
-	return fill_quadrangle(pfs, &s1, big1);
+	if (LAZY_WEDGES) {
+	    l0.last_side = true;
+	    move_wedge(&l1, p->l0111, true);
+	    move_wedge(&l2, p->l1000, false);
+	}
+	code = fill_quadrangle(pfs, &s1, big1);
+	if (LAZY_WEDGES) {
+	    if (code < 0)
+		return code;
+	    code = close_wedge_median(pfs, &l1, &p->p[0][1]->c, &p->p[1][1]->c);
+	    if (code < 0)
+		return code;
+	    code = close_wedge_median(pfs, &l2, &p->p[1][0]->c, &p->p[0][0]->c);
+	    if (code < 0)
+		return code;
+	    code = terminate_wedge_vertex_list(pfs, &l0, &s0.p[1][0]->c, &s0.p[1][1]->c);
+	}
     } else {
 	divide_quadrangle_by_u(pfs, &s0, &s1, q, p);
-	code = fill_triangle_wedge(pfs, s0.p[0][0], s1.p[0][1], s0.p[0][1]);
-	if (code < 0)
-	    return code;
-	code = fill_triangle_wedge(pfs, s0.p[1][0], s1.p[1][1], s0.p[1][1]);
-	if (code < 0)
-	    return code;
+	if (LAZY_WEDGES) {
+	    make_wedge_median(pfs, &l1, p->l0001, true,  &p->p[0][0]->p, &p->p[0][1]->p, &s0.p[0][1]->p);
+	    make_wedge_median(pfs, &l2, p->l1110, false, &p->p[1][1]->p, &p->p[1][0]->p, &s0.p[1][1]->p);
+	    s0.l0111 = s1.l1000 = &l0;
+	    s0.l0001 = s1.l0001 = &l1;
+	    s0.l1110 = s1.l1110 = &l2;
+	    s0.l1000 = p->l1000;
+	    s1.l0111 = p->l0111;
+	} else {
+	    code = fill_triangle_wedge(pfs, s0.p[0][0], s1.p[0][1], s0.p[0][1]);
+	    if (code < 0)
+		return code;
+	    code = fill_triangle_wedge(pfs, s0.p[1][0], s1.p[1][1], s0.p[1][1]);
+	    if (code < 0)
+		return code;
+	}
 	code = fill_quadrangle(pfs, &s0, big1);
 	if (code < 0)
 	    return code;
-	return fill_quadrangle(pfs, &s1, big1);
+	if (LAZY_WEDGES) {
+	    l0.last_side = true;
+	    move_wedge(&l1, p->l0001, true);
+	    move_wedge(&l2, p->l1110, false);
+	}
+	code = fill_quadrangle(pfs, &s1, big1);
+	if (LAZY_WEDGES) {
+	    if (code < 0)
+		return code;
+	    code = close_wedge_median(pfs, &l1, &p->p[0][0]->c, &p->p[0][1]->c);
+	    if (code < 0)
+		return code;
+	    code = close_wedge_median(pfs, &l2, &p->p[1][1]->c, &p->p[1][0]->c);
+	    if (code < 0)
+		return code;
+	    code = terminate_wedge_vertex_list(pfs, &l0, &s0.p[0][1]->c, &s0.p[1][1]->c);
+	}
     }
+    return code;
 }
 
 
@@ -2381,8 +2995,10 @@ decompose_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int ku)
 	int code;
 
 	split_stripe(pfs, &s0, &s1, p);
+#	if 0
 	draw_patch(&s0, true, RGB(0, 128, 128));
 	draw_patch(&s1, true, RGB(0, 128, 128));
+#	endif
 	code = decompose_stripe(pfs, &s0, ku / 2);
 	if (code < 0)
 	    return code;
@@ -2390,9 +3006,30 @@ decompose_stripe(patch_fill_state_t * pfs, const tensor_patch *p, int ku)
     } else {
 	quadrangle_patch q;
 	shading_vertex_t qq[2][2];
+	wedge_vertex_list_t l[4];
+	int code;
 
-	make_quadrangle(p, qq, &q);
-	return fill_quadrangle(pfs, &q, true);
+	init_wedge_vertex_list(l, count_of(l));
+	make_quadrangle(p, qq, l, &q);
+#	if SKIP_TEST
+	    dbg_quad_cnt++;
+#	endif
+	code = fill_quadrangle(pfs, &q, true);
+	if (LAZY_WEDGES) {
+	    code = terminate_wedge_vertex_list(pfs, &l[0], &q.p[0][0]->c, &q.p[0][1]->c);
+	    if (code < 0)
+		return code;
+	    code = terminate_wedge_vertex_list(pfs, &l[1], &q.p[0][1]->c, &q.p[1][1]->c);
+	    if (code < 0)
+		return code;
+	    code = terminate_wedge_vertex_list(pfs, &l[2], &q.p[1][1]->c, &q.p[1][0]->c);
+	    if (code < 0)
+		return code;
+	    code = terminate_wedge_vertex_list(pfs, &l[3], &q.p[1][0]->c, &q.p[0][1]->c);
+	    if (code < 0)
+		return code;
+	}
+	return code;
     }
 }
 
@@ -2555,9 +3192,10 @@ fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv)
     if (kv <= 1 && (is_patch_narrow(pfs, p) || 
 	    (is_color_monotonic_by_v(pfs, p) && 
 	     !is_color_span_v_big(pfs, p) &&
-	    !is_bended(p)))) /* The order of calls is improtant for performance. */
+	    !is_bended(p)))) { /* The order of calls is improtant for performance. */
+	draw_patch(p, true, RGB(0, 128, 0));
 	return fill_stripe(pfs, p);
-    else {
+    } else {
 	tensor_patch s0, s1;
 	int code;
 
@@ -2577,8 +3215,6 @@ fill_patch(patch_fill_state_t * pfs, const tensor_patch *p, int kv)
 	       rather than a set of overlapping triangles. */
 	}
 	split_patch(pfs, &s0, &s1, p);
-	draw_patch(&s0, true, RGB(0, 128, 0));
-	draw_patch(&s1, true, RGB(0, 128, 0));
 	code = fill_patch(pfs, &s0, kv / 2);
 	if (code < 0)
 	    return code;
@@ -2695,10 +3331,15 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     gs_memory_t *memory = pfs->pis->memory;
 #   endif
 
+#if SKIP_TEST
+    dbg_patch_cnt++;
+    if (dbg_patch_cnt != 67 && dbg_patch_cnt != 78)
+	return 0;
+#endif
     /* We decompose the patch into tiny quadrangles,
        possibly inserting wedges between them against a dropout. */
     make_tensor_patch(pfs, &p, curve, interior);
-    draw_patch(&p, true, RGB(0, 0, 0));
+    /* draw_patch(&p, true, RGB(0, 0, 0)); */
     kv[0] = curve_samples(&p.pole[0][0], 4, pfs->fixed_flat);
     kv[1] = curve_samples(&p.pole[0][1], 4, pfs->fixed_flat);
     kv[2] = curve_samples(&p.pole[0][2], 4, pfs->fixed_flat);
@@ -2718,6 +3359,9 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	} else
 	    pfs->wedge_buf = buf;
 #   endif
+#   if NOFILL_TEST
+	dbg_nofill = false;
+#   endif
     code = fill_wedges(pfs, kv[0], kvm, &p.pole[0][0], 4, &p.c[0][0], &p.c[1][0], 
 		interpatch_padding | inpatch_wedge);
     if (code >= 0)
@@ -2736,6 +3380,11 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   patches may use the opposite direction for same bounding curve.
 	   We apply the recursive dichotomy, in which 
 	   the rounding errors do not depend on the direction. */
+#	if NOFILL_TEST
+	    dbg_nofill = false;
+	    code = fill_patch(pfs, &p, kvm);
+	    dbg_nofill = true;
+#	endif
 	code = fill_patch(pfs, &p, kvm);
     }
 #   if POLYGONAL_WEDGES

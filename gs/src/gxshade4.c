@@ -368,23 +368,24 @@ Gt_fill_triangle(mesh_fill_state_t * pfs, const shading_vertex_t * va,
 	return mesh_fill_triangle(pfs);
 #   else
 	patch_fill_state_t pfs1;
-	int code;
+	int code = 0;
 
  	memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
 	pfs1.Function = pfs->pshm->params.Function;
-	init_patch_fill_state(&pfs1);
+	code = init_patch_fill_state(&pfs1);
+	if (code < 0)
+	    return code;
 	if (INTERPATCH_PADDING) {
 	    code = mesh_padding(&pfs1, &va->p, &vb->p, &va->c, &vb->c);
-	    if (code < 0)
-		return code;
-	    code = mesh_padding(&pfs1, &vb->p, &vc->p, &vb->c, &vc->c);
-	    if (code < 0)
-		return code;
-	    code = mesh_padding(&pfs1, &vc->p, &va->p, &vc->c, &va->c);
-	    if (code < 0)
-		return code;
+	    if (code >= 0)
+		code = mesh_padding(&pfs1, &vb->p, &vc->p, &vb->c, &vc->c);
+	    if (code >= 0)
+		code = mesh_padding(&pfs1, &vc->p, &va->p, &vc->c, &va->c);
 	}
-	return mesh_triangle(&pfs1, va, vb, vc);
+	if (code >= 0)
+	    code = mesh_triangle(&pfs1, va, vb, vc);
+	term_patch_fill_state(&pfs1);
+	return code;
 #   endif
 }
 

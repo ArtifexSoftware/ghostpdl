@@ -42,8 +42,8 @@
 /* The code POLYGONAL_WEDGES 1 appears slightly faster, but it uses
    a heavy function intersection_of_small_bars, which includes
    a special effort against numeric errors. From experiments 
-   we decided that the small speed up doesn't worth the trouble
-   with numeric errorr.
+   we decided that the small speeding up doesn't worth the trouble
+   with the numeric error effort.
  */
 #define INTERPATCH_PADDING (fixed_1 / 8) /* Emulate a trapping for poorly designed documents. */
 /* When INTERPATCH_PADDING > 0, it generates paddings between patches.
@@ -56,7 +56,14 @@
     bigger values mean more contiguity. The spead decreases as
     a square of COLOR_CONTIGUITY.
   */
-#define VD_TRACE_DOWN 0 /* Developer's needs, not important. */
+#define LAZY_WEDGES 1 /* 0 = fill immediately, 1 = fill lazy. */
+ /* With the lazy mode the number of wadges dramatically reduce, 
+    causing a significant speedup.
+    The LAZY_WEDGES 0 mode was not debugged yet.
+  */
+#define VD_TRACE_DOWN 0 /* Developer's needs, not important for production. */
+#define NOFILL_TEST 0 /* Developer's needs, must be off for production. */
+#define SKIP_TEST 0 /* Developer's needs, must be off for production. */
 /* End of configuration flags (we don't mean that users should modify the rest). */
 
 #define mesh_max_depth (16 * 3 + 1)	/* each recursion adds 3 entries */
@@ -86,6 +93,20 @@ typedef struct mesh_fill_state_s {
 /****** NEED GC DESCRIPTOR ******/
 
 #if NEW_SHADINGS
+typedef struct wedge_vertex_list_elem_s wedge_vertex_list_elem_t;
+struct wedge_vertex_list_elem_s {
+    gs_fixed_point p;
+    wedge_vertex_list_elem_t *next, *prev;
+};
+typedef struct {
+    bool last_side;
+    bool divided_left, divided_right;
+    wedge_vertex_list_elem_t *beg, *end;    
+} wedge_vertex_list_t;
+
+#define LAZY_WEDGES_MAX_LEVEL 9 /* memory consumption is 
+    sizeof(wedge_vertex_list_elem_t) * LAZY_WEDGES_MAX_LEVEL * (1 << LAZY_WEDGES_MAX_LEVEL) */
+
 /* Define the common state for rendering Coons and tensor patches. */
 typedef struct patch_fill_state_s {
     mesh_fill_state_common;
@@ -94,15 +115,18 @@ typedef struct patch_fill_state_s {
     bool vectorization;
     int n_color_args;
 #   if POLYGONAL_WEDGES
-    gs_fixed_point *wedge_buf;
+        gs_fixed_point *wedge_buf;
 #   endif
+    wedge_vertex_list_elem_t *wedge_vertex_list_elem_buffer;
+    wedge_vertex_list_elem_t *free_wedge_vertex;
+    int wedge_vertex_list_elem_count;
+    int wedge_vertex_list_elem_count_max;
     gs_client_color color_domain;
     fixed fixed_flat;
     double smoothness;
     bool maybe_self_intersecting;
 #endif
 } patch_fill_state_t;
-
 #endif
 /* Define a color to be used in curve rendering. */
 /* This may be a real client color, or a parametric function argument. */
@@ -139,7 +163,8 @@ int mesh_fill_triangle(mesh_fill_state_t * pfs);
 #endif
 
 #if NEW_SHADINGS
-void init_patch_fill_state(patch_fill_state_t *pfs);
+int init_patch_fill_state(patch_fill_state_t *pfs);
+void term_patch_fill_state(patch_fill_state_t *pfs);
 
 int mesh_triangle(patch_fill_state_t *pfs, 
     const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2);
@@ -151,6 +176,9 @@ int patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
 	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
 			      const gs_fixed_point[4], floatp, floatp));
+
+int wedge_vertex_list_elem_buffer_alloc(patch_fill_state_t *pfs);
+void wedge_vertex_list_elem_buffer_free(patch_fill_state_t *pfs);
 #endif
 
 #endif /* gxshade4_INCLUDED */

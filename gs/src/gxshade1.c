@@ -55,6 +55,7 @@ shade_colors2_converge(const gs_client_color cc[2],
     return true;
 }
 
+#if !NEW_SHADINGS 
 /* Fill a user space rectangle that is also a device space rectangle. */
 private int
 shade_fill_device_rectangle(const shading_fill_state_t * pfs,
@@ -92,6 +93,7 @@ shade_fill_device_rectangle(const shading_fill_state_t * pfs,
 				     fixed2int_var_pixround(ymax) - y,
 				     pdevc, pfs->dev, pis->log_op);
 }
+#endif
 
 /* ================ Specific shadings ================ */
 
@@ -366,6 +368,7 @@ make_other_poles(patch_curve_t curve[4])
     }
 }
 
+private int
 Fb_fill_region(Fb_fill_state_t * pfs)
 {
     patch_fill_state_t pfs1;
@@ -381,7 +384,9 @@ Fb_fill_region(Fb_fill_state_t * pfs)
     }
     memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
     pfs1.Function = pfs->psh->params.Function;
-    init_patch_fill_state(&pfs1);
+    code = init_patch_fill_state(&pfs1);
+    if (code < 0)
+	return code;
     pfs1.maybe_self_intersecting = false;
     pfs1.n_color_args = 2;
     gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &curve[0].vertex.p);
@@ -394,6 +399,7 @@ Fb_fill_region(Fb_fill_state_t * pfs)
     curve[2].vertex.cc[0] = fp->region.q.x;   curve[2].vertex.cc[1] = fp->region.q.y;
     curve[3].vertex.cc[0] = fp->region.q.x;   curve[3].vertex.cc[1] = fp->region.p.y;
     code = patch_fill(&pfs1, curve, NULL, NULL);
+    term_patch_fill_state(&pfs1);
     if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
 	vd_release_dc;
     return code;
@@ -619,10 +625,13 @@ A_fill_region(A_fill_state_t * pfs)
     double h0 = pfs->u0, h1 = pfs->u1;
     patch_curve_t curve[4];
     patch_fill_state_t pfs1;
+    int code;
 
     memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
     pfs1.Function = pfn;
-    init_patch_fill_state(&pfs1);
+    code = init_patch_fill_state(&pfs1);
+    if (code < 0)
+	return code;
     pfs1.maybe_self_intersecting = false;
     gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
     gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h1, y0 - pfs->delta.x * h1, &curve[1].vertex.p);
@@ -633,7 +642,9 @@ A_fill_region(A_fill_state_t * pfs)
     curve[2].vertex.cc[0] = pfs->t1;
     curve[3].vertex.cc[0] = pfs->t1;
     make_other_poles(curve);
-    return patch_fill(&pfs1, curve, NULL, NULL);
+    code = patch_fill(&pfs1, curve, NULL, NULL);
+    term_patch_fill_state(&pfs1);
+    return code;
 }
 #endif
 
