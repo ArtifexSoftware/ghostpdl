@@ -228,27 +228,24 @@ pcl_crd_build_default_crd(
         return code;
     pcs->pcl_default_crd = pcrd;
 
-    if (read_device_CRD(pcrd, pcs))
-        return 0;
-    else {
-        pcs->dflt_TransformPQR = dflt_TransformPQR_proto;
-        return gs_cie_render1_initialize( pcs->memory,
-					  pcrd->pgscrd,
-                                          NULL,
-                                          &dflt_WhitePoint,
-                                          NULL,
-                                          NULL,
-                                          &dflt_RangePQR,
-                                          &pcs->dflt_TransformPQR,
-                                          &dflt_MatrixLMN,
-                                          NULL,
-                                          NULL,
-                                          NULL,
-                                          NULL,
-                                          NULL,
-                                          NULL
-                                          );
-    }
+    pcs->dflt_TransformPQR = dflt_TransformPQR_proto;
+    return gs_cie_render1_initialize( pcs->memory,
+                                      pcrd->pgscrd,
+                                      NULL,
+                                      &dflt_WhitePoint,
+                                      NULL,
+                                      NULL,
+                                      &dflt_RangePQR,
+                                      &pcs->dflt_TransformPQR,
+                                      &dflt_MatrixLMN,
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      NULL,
+                                      NULL
+                                      );
+
 }
 
 /*
