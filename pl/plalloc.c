@@ -496,7 +496,7 @@ pl_stable(gs_memory_t *mem)
     return &pl_mem;
 }
 
-pl_malloc_memory = {
+const gs_malloc_memory_t pl_malloc_memory = {
     0, /* stable */
     { pl_alloc_bytes_immovable, /* alloc_bytes_immovable */
       pl_resize_object, /* resize_object */
