@@ -44,7 +44,11 @@ Information for Ghostscript developers
 </ul>
 <li><a href="#PDF_interpreter">PDF interpreter</a>
 <li><a href="#Build_support">Build support</a>
-<li><a href="#Utilities_in_PostScript">Utilities (in PostScript)</a>
+<li><a href="#Utilities">Utilities</a>
+<ul>
+<li><a href="#Utilities_in_PostScript">Utilities in PostScript</a>
+<li><a href="#Utility_scripts">Utility scripts</a>
+</ul>
 </ul>
 <li><a href="#Memory_management">Memory management</a>
 <ul>
@@ -94,6 +98,7 @@ Information for Ghostscript developers
 </ul>
 </ul>
 <li><a href="#Adding_features_and_options">Adding features and options</a>
+<li><a href="#Troubleshooting">Troubleshooting</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -119,8 +124,7 @@ This document provides a wealth of information about Ghostscript's
 internals, primarily for developers actively working on Ghostscript.
 
 <p>
-THIS FILE IS MOSTLY A SKELETON.  IT WILL BE A WORK IN PROGRESS THROUGH THE
-END OF 2000.
+THIS FILE IS A WORK IN PROGRESS.  MANY SECTIONS ARE PLACE-HOLDERS.
 
 <hr>
 
@@ -232,9 +236,147 @@ Miscellaneous
 
 <h2><a name="PDF_interpreter"></a>PDF interpreter</h2>
 
+<p>
+Ghostscript's PDF interpreter is written entirely in PostScript: until
+recently, there was essentially no C code specifically for the purpose of
+supporting PDF interpretation.  The one major exception is the PDF 1.4
+transparency features, which we (but not Adobe) have made available to
+PostScript code.
+
+<p>
+In addition to patching the <b><tt>run</tt></b> operator to detect PDF
+files, the interpreter provides some procedures in <a
+href="../lib/pdf_main.ps">lib/pdf_main.ps</a> that are meant to be called
+from applications such as previewers.
+
+<p>
+Files:
+<a href="../lib/pdf_base.ps">lib/pdf_base.ps</a>,
+<a href="../lib/pdf_draw.ps">lib/pdf_draw.ps</a>,
+<a href="../lib/pdf_font.ps">lib/pdf_font.ps</a>,
+<a href="../lib/pdf_main.ps">lib/pdf_main.ps</a>,
+<a href="../lib/pdf_ops.ps">lib/pdf_ops.ps</a>,
+<a href="../lib/pdf_sec.ps">lib/pdf_sec.ps</a>.
+
 <h2><a name="Build_support"></a>Build support</h2>
 
-<h2><a name="Utilities_in_PostScript"></a>Utilities (in PostScript)</h2>
+<p>
+Ghostscript's build procedure is somewhat unusual in that it compiles and
+then executes some support programs during the build process.  See the
+individual programs for information about what they do.
+
+<p>
+Files:
+<a href="../src/echogs.c">src/echogs.c</a>,
+<a href="../src/genarch.c">src/genarch.c</a>,
+<a href="../src/genconf.c">src/genconf.c</a>,
+<a href="../src/genht.c">src/genht.c</a>,
+<a href="../src/geninit.c">src/geninit.c</a>.
+
+<h2><a name="Utilities"></a>Utilities</h2>
+
+<p>
+Ghostscript comes with many utilities for doing things like viewing bitmap
+files and converting between file formats.  Some of these are written in
+PostScript, some as scripts, and some as scripts that invoke special
+PostScript code.
+
+<h2><a name="Utilities_in_PostScript"></a>Utilities in PostScript</h2>
+
+<p>
+These are all documented in <a href="Psfiles.htm">doc/Psfiles.htm</a>, q.v.
+
+<h2><a name="Utility_scripts"></a>Utility scripts</h2>
+
+<p>
+Many of these scripts come in both Unix and MS-DOS (<b><tt>.bat</tt></b>
+versions; some also have an OS/2 (<b><tt>.cmd</tt></b>) version.  The choice
+of which versions are provided is historical and irregular.  These scripts
+should all be documented somewhere, but currently, many of them have man
+pages, a few have their own documentation in the doc directory, and some
+aren't documented at all.
+
+<p>
+Script files without PC versions:
+<a href="../lib/afmdiff.awk">lib/afmdiff.awk</a>,
+<a href="../lib/dvipdf">lib/dvipdf</a>,
+<a href="../lib/fixmswrd.pl">lib/fixmswrd.pl</a>,
+<a href="../lib/lprsetup.sh">lib/lprsetup.sh</a>,
+<a href="../lib/pdf2dsc">lib/pdf2dsc</a>,
+<a href="../lib/pfbtopfa">lib/pfbtopfa</a>,
+<a href="../lib/pj-gs.sh">lib/pj-gs.sh</a>,
+<a href="../lib/printafm">lib/printafm</a>,
+<a href="../lib/pv.sh">lib/pv.sh</a>,
+<a href="../lib/sysvlp.sh">lib/sysvlp.sh</a>,
+<a href="../lib/unix-lpr.sh">lib/unix-lpr.sh</a>,
+<a href="../lib/wftopfa">lib/wftopfa</a>.
+
+<p>
+Script files with PC versions:
+<a href="../lib/bdftops">lib/bdftops</a>,
+<a href="../lib/bdftops.bat">lib/bdftops.bat</a>,
+<a href="../lib/bdftops.cmd">lib/bdftops.cmd</a>,
+<a href="../lib/eps2eps">lib/eps2eps</a>,
+<a href="../lib/eps2eps.bat">lib/eps2eps.bat</a>,
+<a href="../lib/eps2eps.cmd">lib/eps2eps.cmd</a>,
+<a href="../lib/font2c">lib/font2c</a>,
+<a href="../lib/font2c.bat">lib/font2c.bat</a>,
+<a href="../lib/font2c.cmd">lib/font2c.cmd</a>,
+<a href="../lib/gsbj">lib/gsbj</a>,
+<a href="../lib/gsbj.bat">lib/gsbj.bat</a>,
+<a href="../lib/gsdj">lib/gsdj</a>,
+<a href="../lib/gsdj.bat">lib/gsdj.bat</a>,
+<a href="../lib/gsdj500">lib/gsdj500</a>,
+<a href="../lib/gsdj500.bat">lib/gsdj500.bat</a>,
+<a href="../lib/gslj">lib/gslj</a>,
+<a href="../lib/gslj.bat">lib/gslj.bat</a>,
+<a href="../lib/gslp">lib/gslp</a>,
+<a href="../lib/gslp.bat">lib/gslp.bat</a>,
+<a href="../lib/gsnd">lib/gsnd</a>,
+<a href="../lib/gsnd.bat">lib/gsnd.bat</a>,
+<a href="../lib/pdf2ps">lib/pdf2ps</a>,
+<a href="../lib/pdf2ps.bat">lib/pdf2ps.bat</a>,
+<a href="../lib/pdf2ps.cmd">lib/pdf2ps.cmd</a>,
+<a href="../lib/pdfopt">lib/pdfopt</a>,
+<a href="../lib/pdfopt.bat">lib/pdfopt.bat</a>,
+<a href="../lib/pf2afm">lib/pf2afm</a>,
+<a href="../lib/pf2afm.bat">lib/pf2afm.bat</a>,
+<a href="../lib/pf2afm.cmd">lib/pf2afm.cmd</a>,
+<a href="../lib/ps2ascii">lib/ps2ascii</a>,
+<a href="../lib/ps2ascii.bat">lib/ps2ascii.bat</a>,
+<a href="../lib/ps2ascii.cmd">lib/ps2ascii.cmd</a>,
+<a href="../lib/ps2epsi">lib/ps2epsi</a>,
+<a href="../lib/ps2epsi.bat">lib/ps2epsi.bat</a>,
+<a href="../lib/ps2epsi.cmd">lib/ps2epsi.cmd</a>,
+<a href="../lib/ps2pdf">lib/ps2pdf</a>,
+<a href="../lib/ps2pdf.bat">lib/ps2pdf.bat</a>,
+<a href="../lib/ps2pdf.cmd">lib/ps2pdf.cmd</a>,
+<a href="../lib/ps2pdf12">lib/ps2pdf12</a>,
+<a href="../lib/ps2pdf12.bat">lib/ps2pdf12.bat</a>,
+<a href="../lib/ps2pdf12.cmd">lib/ps2pdf12.cmd</a>,
+<a href="../lib/ps2pdf13">lib/ps2pdf13</a>,
+<a href="../lib/ps2pdf13.bat">lib/ps2pdf13.bat</a>,
+<a href="../lib/ps2pdf13.cmd">lib/ps2pdf13.cmd</a>,
+<a href="../lib/ps2pdf14">lib/ps2pdf14</a>,
+<a href="../lib/ps2pdf14.bat">lib/ps2pdf14.bat</a>,
+<a href="../lib/ps2pdf14.cmd">lib/ps2pdf14.cmd</a>,
+<a href="../lib/ps2pdfwr">lib/ps2pdfwr</a>,
+<a href="../lib/ps2pdfxx.bat">lib/ps2pdfxx.bat</a>,
+<a href="../lib/ps2ps">lib/ps2ps</a>,
+<a href="../lib/ps2ps.bat">lib/ps2ps.bat</a>,
+<a href="../lib/ps2ps.cmd">lib/ps2ps.cmd</a>.
+
+<p>
+Script files with only PC versions:
+<a href="../lib/gsndt.bat">lib/gsndt.bat</a>,
+<a href="../lib/gst.bat">lib/gst.bat</a>,
+<a href="../lib/gstt.bat">lib/gstt.bat</a>,
+<a href="../lib/lp386.bat">lib/lp386.bat</a>,
+<a href="../lib/lp386r2.bat">lib/lp386r2.bat</a>,
+<a href="../lib/lpgs.bat">lib/lpgs.bat</a>,
+<a href="../lib/lpr2.bat">lib/lpr2.bat</a>,
+<a href="../lib/pftogsf.bat">lib/pftogsf.bat</a>,
+<a href="../lib/wmakebat.bat">lib/wmakebat.bat</a>.
 
 <hr>
 
@@ -390,8 +532,13 @@ structure descriptor), and may be freed, by the garbage collector.
 <p>
 Even though <b><tt>save</tt></b> and <b><tt>restore</tt></b> are concepts
 from the PostScript interpreter, the allocator architecture includes a
-feature to support them, called <em>stable</em> allocators, which are
-described in detail <a href="#save_forgetsave_restore">below</a>.
+feature to support them, called <em>stable</em> allocators.  Every allocator
+has an associated stable allocator, which tags pointers with the same VM
+space number but which is not subject to <b><tt>save</tt></b> and
+<b><tt>restore</tt></b>.  System VM is intrinsically stable, so there are
+only 5 allocators: system VM, stable global VM, ordinary global VM, stable
+local VM, ordinary local VM.  The stable allocators should be used with
+care, since using them can easily create dangling pointers.
 
 <h3><a name="Parent_hierarchy">Parent hierarchy</h3>
 
@@ -576,7 +723,20 @@ See those files for detailed information.
 <p>
 Files:
 <a href="../src/ipacked.h">src/ipacked.h</a>,
-<a href="../src/iref.h">src/iref.h</a>,
+<a href="../src/iref.h">src/iref.h</a>.
+
+<p>
+The PLRM calls for two types of "virtual memory" (VM) space: global and
+local.  Ghostscript adds a third space, <em>system</em> VM, whose lifetime
+is an entire session -- i.e., it is effectively "permanent".  All three
+spaces are subject to garbage collection.  There is a separate allocator
+instance for each VM space (actually, two instances each for global and
+local spaces; see <a href="#save_forgetsave_restore">below</a>).  In a
+system with multiple contexts and multiple global or local VMs, each global
+or local VM has its own allocator instance(s).
+
+<p>
+Files:
 <a href="../src/ivmspace.h">src/ivmspace.h</a>.
 
 <p>
@@ -610,13 +770,9 @@ a given <b><tt>save</tt></b> had never happened.  (In data base terminology,
 "abort transaction", and <b><tt>.forgetsave</tt></b> is "end/commit
 transaction").  <b><tt>.forgetsave</tt></b> was implemented for a specific
 commercial customer (who may no longer even be using it): it was a pain to
-make work, but it's in the code now, and should be maintained.
-
-<p>
-****** TBC ******
-
-<p>
-[Stable allocators + when to use them]
+make work, but it's in the code now, and should be maintained.  See the
+extensive comments in <a href="../src/isave.c">src/isave.c</a> for more
+information about how these operations work.
 
 <p>
 Files:
@@ -1036,6 +1192,36 @@ libraries (of which there are a distressing number).
 
 <p>
 [Ray, please supply more information about what you want here]
+
+<h1><a name="Troubleshooting"></a>Troubleshooting</h1>
+
+<p>
+The Ghostscript code has many tracing and debugging features that can be
+enabled at run time using the <b><tt>-Z</tt></b> command line switch, if the
+executable was compiled with <b><tt>DEBUG</tt></b> defined.  One
+particularly useful combination is <b><tt>-Z@\?</tt></b>, which fills free
+memory blocks with a pattern and also turns on run-time memory consistency
+checking.  For more information, see <a
+href="Use.htm#Debugging">doc/Use.htm#Debugging</a>; you can also search for
+occurrences of <b><tt>if_debug</tt></b> or <b><tt>gs_debug_c</tt></b> in the
+source code.  Note that many of these features are in the graphics library
+and do not require a PostScript interpreter.
+
+<p>
+The code also contains many run-time procedures whose only purpose is to be
+called from the debugger to print out various data structures, including all
+the procedures in <a href="../src/idebug.c">src/idebug.c</a> (for the
+PostScript interpreter) and the <b><tt>debug_dump_</tt></b> procedures in <a
+href="../src/gsmisc.c">src/gsmisc.c</a>.
+
+<p>
+Files:
+<a href="Use.htm#Debugging">doc/Use.htm#Debugging</a>,
+<a href="../src/gdebug.h">src/gdebug.h</a>,
+<a href="../src/gsmdebug.h">src/gsmdebug.h</a>,
+<a href="../src/idebug.h">src/idebug.h</a>,
+<a href="../src/idebug.c">src/idebug.c</a>.
+
 
 <!-- [2.0 end contents] ==================================================== -->
 
