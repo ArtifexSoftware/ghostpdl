@@ -129,7 +129,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10005
+PVERSION=10008
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.

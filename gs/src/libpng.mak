@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -25,7 +25,7 @@
 #	PNGGENDIR - the generated intermediate file directory
 #	PNGOBJDIR - the object directory
 #	PNGVERSION - the library version number ("89", "90", "95", "96",
-#	  "10001", "10002", "10003", "10005").
+#	  "10001", "10002", "10003", "10005", "10008").
 #	  For historical reasons, "101" and "102" are also acceptable,
 #	  even though they don't match libpng's numbering scheme
 #	  (see png.h for more details).
@@ -47,7 +47,7 @@
 # for more convenient access.
 #
 # The makefile is known to work with the following library versions:
-# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2, 1.0.3, 1.0.5.
+# 0.89, 0.90, 0.95, 0.96, 1.0.1, 1.0.2, 1.0.3, 1.0.5, 1.0.8.
 # NOTE: the archive for libpng 0.95 may be inconsistent: if you have
 # compilation problems, use an older version.
 # Please see Ghostscript's Make.htm file for instructions about how to
@@ -158,3 +158,6 @@ $(PNGGEN)lpg10003.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGE
 
 $(PNGGEN)lpg10005.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
 	$(SETMOD) $(PNGGEN)lpg10005 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev
+
+$(PNGGEN)lpg10008.dev : $(LIBPNG_MAK) $(ECHOGS_XE) $(PNGOBJ)pngwio.$(OBJ) $(PZGEN)crc32.dev
+	$(SETMOD) $(PNGGEN)lpg10008 $(PNGOBJ)pngwio.$(OBJ) -include $(PZGEN)crc32.dev

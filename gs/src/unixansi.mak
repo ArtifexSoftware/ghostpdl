@@ -149,7 +149,7 @@ JPEG_NAME=jpeg
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10005
+PVERSION=10008
 
 # Choose whether to use a shared version of the PNG library, and if so,
 # what its name is.
