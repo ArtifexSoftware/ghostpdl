@@ -297,7 +297,7 @@ pl_main(
     for (;;) {
 	/* Process one input file. */
 	/* for debugging we test the parser with a small 256 byte
-           buffer - for prodduction systems use 8192 bytes */
+           buffer - for production systems use 8192 bytes */
 #ifdef DEBUG
 	byte                buf[1<<9];
 #else
@@ -314,8 +314,12 @@ pl_main(
         }
 
 	/* Process any new options. May request new device. */
-	if (argc==1 
-            || pl_main_process_options(&inst, &args, &params, pjl_instance, pdl_implementation) < 0) {
+	if (argc==1 ||
+            pl_main_process_options(&inst, 
+                                    &args,
+                                    &params, 
+                                    pjl_instance, pdl_implementation) < 0) {
+            /* Print error verbage and return */
 	    int i;
 	    const gx_device **dev_list;
 	    int num_devs = gs_lib_device_list((const gx_device * const **)&dev_list, NULL);
@@ -336,9 +340,9 @@ pl_main(
 
 	    return -1;
 	}
-	if ( gs_debug_c('A') )
-	    dprintf( "memory allocated\n" );
-	/* Process the next file. process_options leaves next non-option on arg list*/
+
+	/* Process the next file. process_options leaves next
+           non-option on arg list */
         {
             int code = 0;
             arg = arg_next(&args, &code);
@@ -348,6 +352,7 @@ pl_main(
             if (!arg)
                 break;  /* no nore files to process */
         }
+
 	/* open file for reading - NB we should respect the minimum
            requirements specified by each implementation in the
            characteristics structure */
@@ -365,6 +370,8 @@ pl_main(
         in_pjl = true;
         for (;;) {
             if_debug1('i', "[i][file pos=%ld]\n", pl_main_cursor_position(&r));
+            /* end of data - if we are not back in pjl the job has
+               ended in the middle of the data stream. */
             if (pl_main_cursor_next(&r) <= 0) {
                 if_debug0('|', "End of of data\n");
                 if ( !in_pjl ) {
