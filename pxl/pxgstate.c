@@ -13,6 +13,7 @@
 #include "gsstruct.h"
 #include "pxoper.h"
 #include "pxstate.h"
+#include "gdebug.h"
 #include "gsstate.h"
 #include "gscoord.h"
 #include "gxcspace.h"			/* must precede gscolor2.h */
@@ -334,6 +335,10 @@ px_gstate_reset(px_gstate_t *pxgs)
 }
 
 /* ---------------- Utilities ---------------- */
+/* NB this should be fixed to use the new interface in gscspace.h */
+extern const gs_color_space_type
+      gs_color_space_type_DeviceGray, gs_color_space_type_DeviceRGB, gs_color_space_type_DeviceCMYK,
+      gs_color_space_type_Indexed;
 
 /* Set up the color space information for a bitmap image or pattern. */
 int
@@ -346,16 +351,16 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
 	switch ( params->color_space )
 	  {
 	  case eGray:
-	    pcst = &gs_color_space_type_DeviceGray;
+	    gs_cspace_init_DeviceGray(pcs);
 	    break;
 	  case eRGB:
-	    pcst = &gs_color_space_type_DeviceRGB;
+	    gs_cspace_init_DeviceRGB(pcs);
 	    break;
 	  default:
 	    return_error(errorIllegalAttributeValue);
 	  }
 	if ( params->indexed )
-	  { pcs->params.indexed.base_space.type = pcst;
+	  { pcs->params.indexed.base_space.type = pcs->type;
 	    pcs->params.indexed.hival = (1 << depth) - 1;
 	    pcs->params.indexed.lookup.table = *palette;
 	    pcs->params.indexed.use_proc = 0;
