@@ -458,7 +458,7 @@ copy_glyph_data(gs_font *font, gs_glyph glyph, gs_font *copied, int options,
 
 	    if (str == 0)
                 if (str_size == 0)
-                    code = gs_note_error(font->memory, gs_error_invalidaccess);
+                    code = gs_note_error(font->memory, gs_error_undefined);
                 else
                     code = gs_note_error(font->memory, gs_error_VMerror);
 	    else {
