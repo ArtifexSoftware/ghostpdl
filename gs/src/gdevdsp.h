@@ -78,7 +78,7 @@ typedef enum {
     DISPLAY_UNUSED_FIRST = (1<<6),	/* e.g. Mac xRGB */
     DISPLAY_UNUSED_LAST  = (1<<7)	/* e.g. Windows BGRx */
 } DISPLAY_FORMAT_ALPHA;
-#define DISPLAY_ALPHA_MASK 0x0070L
+#define DISPLAY_ALPHA_MASK 0x00f0L
 
 /* Define the depth per component for DISPLAY_COLORS_GRAY, 
  * DISPLAY_COLORS_RGB and DISPLAY_COLORS_CMYK, 

@@ -481,7 +481,7 @@ display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 	    prgb[1] = (gx_color_value)
 		((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
-	    value = (ushort) (color & 0x1f);
+	    value = (ushort) ((color >> 8) & 0x1f);
 	    prgb[2] = (gx_color_value)
 		((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits);
@@ -497,7 +497,7 @@ display_map_color_rgb_device16(gx_device * dev, gx_color_index color,
 	    prgb[1] = (gx_color_value)
 		(((value << 10) + (value << 4) + (value >> 2))
 		      >> (16 - gx_color_value_bits));
-	    value = (ushort) (color & 0x1f);
+	    value = (ushort) ((color >> 8) & 0x1f);
 	    prgb[2] = (gx_color_value)
 		(((value << 11) + (value << 6) + (value << 1) + 
 		(value >> 4)) >> (16 - gx_color_value_bits));
@@ -586,7 +586,8 @@ display_map_color_rgb_rgb(gx_device * dev, gx_color_index color,
 	case DISPLAY_UNUSED_FIRST:
 	    if ((ddev->nFormat & DISPLAY_ENDIAN_MASK) == DISPLAY_BIGENDIAN) {
 		/* xRGB */
-		prgb[0] = (gx_color_value) (((color) & 2*color_mask) * 
+		prgb[0] = (gx_color_value)
+			(((color >> 2*bits_per_color) & color_mask) * 
 			(ulong) gx_max_color_value / color_mask);
 		prgb[1] = (gx_color_value) 
 			(((color >> bits_per_color) & color_mask) * 
