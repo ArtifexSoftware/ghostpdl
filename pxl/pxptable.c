@@ -151,10 +151,15 @@ const px_attr_value_type_t px_attr_value_types[] = {
   en(pxeDitherMatrix_next),		/* DeviceMatrix = 33 */
   enp(pxeDataType_next, checkDitherMatrixDataType),	/* DitherMatrixDataType */
   xy(ub|us|ss),		/* DitherOrigin */
-  scub(),		/* MediaDestination -- NOT DOCUMENTED, THIS IS A GUESS */
-  scub(),		/* MediaSize */
+  scub(),		/* MediaDestination */
+  {pxd_scalar|pxd_array|pxd_ubyte, 255}, /* MediaSize is protean - it
+					    can be either an array or
+					    scalar, so we don't use
+					    the macros that shouldn't
+					    be used in the first place
+					    :-^ */
   scub(),		/* MediaSource */
-  arr(ub),		/* MediaType -- NOT DOCUMENTED, THIS IS A GUESS */
+  arr(ub),		/* MediaType */
   scub(),		/* Orientation -- illegal values only produce a warning! */
   scp(us|ss, checkPageAngle),		/* PageAngle */
   xy(ub|us|ss),		/* PageOrigin */

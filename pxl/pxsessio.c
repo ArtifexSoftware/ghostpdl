@@ -54,6 +54,47 @@ private px_media_t known_media[] = {
 #undef m_data
 #undef m_default
 
+/* table to associate paper name string with paper name enumeration.
+   Note these paper string names correspond exactly with the PJL paper
+   nomenclature. */
+private const struct {
+    const char *pname;
+    pxeMediaSize_t paper_enum;
+} pxl_paper_sizes[] = {
+    { "letter", eLetterPaper },
+    { "legal", eLegalPaper },
+    { "a4", eA4Paper },
+    { "executive", eExecPaper },
+    { "ledger", eLedgerPaper },
+    { "a3", eA3Paper },        
+    { "com10", eCOM10Envelope },
+    { "monarch", eMonarchEnvelope },
+    { "c5", eC5Envelope },
+    { "dl", eDLEnvelope },
+    { "jisb4", eJB4Paper },
+    { "jisb5", eJB5Paper },       
+    { "b5", eB5Envelope },
+    { "jpost", eJPostcard },
+    { "jpostd", eJDoublePostcard },
+    { "a5", eA5Paper },        
+    { "a6", eA6Paper },
+    { "jisb6", eJB6Paper },       
+};
+
+/* system paper size string (same as pjl paper size) to pxl enumeration type */
+private pxeMediaSize_t
+px_paper_string_to_media(pjl_envvar_t *paper_str)
+{
+    /* table to map pjl paper type strings to pxl enums */
+    int i;
+    for (i = 0; i < countof(pxl_paper_sizes); i++) {
+	if ( !pjl_compare(paper_str, pxl_paper_sizes[i].pname) )
+	    return pxl_paper_sizes[i].paper_enum;
+    }
+    /* not found return letter */
+    return eLetterPaper;
+}
+
 /* Define the mapping from the Measure enumeration to points. */
 private const double measure_to_points[] = pxeMeasure_to_points;
 
@@ -182,36 +223,7 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	     = pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "binding"), "longedge");
 	    bool pjl_manualfeed
 	     = pjl_proc_compare(pxs->pjls, pjl_proc_get_envvar(pxs->pjls, "manualfeed"), "off");
-	    /* table to map pjl paper type strings to pxl enums */
-	    private const struct {
-		const char *pname;
-		pxeMediaSize_t paper_enum;
-	    } pjl_paper_sizes[] = {
-		{ "letter", eLetterPaper },
-		{ "legal", eLegalPaper },
-		{ "a4", eA4Paper },
-                { "executive", eExecPaper },
-		{ "ledger", eLedgerPaper },
-		{ "a3", eA3Paper },        
-		{ "com10", eCOM10Envelope },
-		{ "monarch", eMonarchEnvelope },
-		{ "c5", eC5Envelope },
-		{ "dl", eDLEnvelope },
-		{ "jisb4", eJB4Paper },
-		{ "jisb5", eJB5Paper },       
-		{ "b5", eB5Envelope },
-		{ "jpost", eJPostcard },
-		{ "jpostd", eJDoublePostcard },
-		{ "a5", eA5Paper },        
-		{ "a6", eA6Paper },
-		{ "jisb6", eJB6Paper },       
-	    };
-	    int i;
-	    for (i = 0; i < countof(pjl_paper_sizes); i++)
-		if ( !pjl_compare(pjl_psize, pjl_paper_sizes[i].pname) ) {
-		    pxs->media_size = pjl_paper_sizes[i].paper_enum;
-		    break;
-		}
+	    pxs->media_size = px_paper_string_to_media(pjl_psize);
 	    pxs->media_source = (pjl_manualfeed ? eManualFeed : eDefaultSource);
 	    pxs->duplex = pjl_duplex;
 	    pxs->duplex_page_mode = (pjl_bindshort ? eDuplexHorizontalBinding :
@@ -234,8 +246,6 @@ pxEndSession(px_args_t *par, px_state_t *pxs)
 	return 0;
 }
 
-/**** NOTE: MediaDestination and MediaType are not documented by H-P. ****/
-/* We are guessing that they are enumerations, like MediaSize/Source. */
 const byte apxBeginPage[] = {
   pxaOrientation, 0,
   pxaMediaSource, pxaMediaSize, pxaCustomMediaSize, pxaCustomMediaSizeUnits,
@@ -283,28 +293,43 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	}
 	if ( par->pv[1] )
 	  pxs->media_source = par->pv[1]->value.i;
-	if ( par->pv[2] )
-	  { pxeMediaSize_t ms_enum = par->pv[2]->value.i;
+	if ( par->pv[2] ) {
+	    /* default to letter */
+	    pxeMediaSize_t ms_enum = eLetterPaper;
 	    int i;
+	    /* could be an array or enumeration */
+	    if ( par->pv[2]->type & pxd_array ) {
+		/* it's an array, so convert it to the associated
+                   enumeration */
+		byte *str = gs_alloc_string(pxs->memory,
+					    array_value_size(par->pv[2]) + 1,
+					    "pxBeginPage");
+		if ( str == 0 )
+		    return_error(errorInsufficientMemory);
+		/* null terminate */
+		memcpy(str, par->pv[2]->value.array.data, array_value_size(par->pv[2]));
+		str[array_value_size(par->pv[2])] = '\0';
+		ms_enum = px_paper_string_to_media(/* NB */(pjl_envvar_t *)str);
+		gs_free_string(pxs->memory, str,
+			       array_value_size(par->pv[2]) + 1, "pxBeginPage");
 
-	    for ( pm = known_media, i = 0; i < countof(known_media);
-		  ++pm, ++i
-		)
-	      if ( pm->ms_enum == ms_enum )
-		break;
-	    if ( i == countof(known_media) )
-	      { /* No match, select default media. */
+	    } else if ( par->pv[2]->value.i ) { /* it's an enumeration */
+		ms_enum = par->pv[2]->value.i;
+	    }
+	    for ( pm = known_media, i = 0; i < countof(known_media); ++pm, ++i )
+		if ( pm->ms_enum == ms_enum )
+		    break;
+	    if ( i == countof(known_media) ) { /* No match, select default media. */
 		pm = px_get_default_media(pxs);
 		px_record_warning("IllegalMediaSize", false, pxs);
-	      }
+	    }
 	    pxs->media_size = pm->ms_enum;
 	    media_size.x = pm->width * media_size_scale;
 	    media_size.y = pm->height * media_size_scale;
 	    media_height = pm->height;
 	    media_width = pm->width;
-	  }
-	else
-	  { double scale = measure_to_points[par->pv[4]->value.i];
+	} else { /* custom (!par->pv[2]) */ 
+	    double scale = measure_to_points[par->pv[4]->value.i];
 	    media_size.x = real_value(par->pv[3], 0) * scale;
 	    media_size.y = real_value(par->pv[3], 1) * scale;
 	    /*
@@ -314,7 +339,7 @@ pxBeginPage(px_args_t *par, px_state_t *pxs)
 	    pm = px_get_default_media(pxs);
 	    media_height = media_size.y / media_size_scale;
 	    media_width = media_size.x / media_size_scale;
-	  }
+	}
 	if ( par->pv[5] )
 	  { pxs->duplex = false;
 	  }
