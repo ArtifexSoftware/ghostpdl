@@ -117,10 +117,17 @@ then
 fi
 
 echo ""
-echo "Committing NEWS Files, tarring the release, ready (y/n)"
+echo "Committing NEWS Files, ready (y/n)"
 read COMMIT
 if test $COMMIT = "y" || test $COMMIT = "Y"
 then
-	(cd $RELEASE_DIR; cvs commit;
-	(cd ..; tar --exclude CVS -czvf ghostpcl_$VERSION.tar.gz $RELEASE_DIR))
+	(cd $RELEASE_DIR; cvs commit)
+fi
+
+echo ""
+echo "Tar ready (y/n)"
+read TAR
+if test $TAR = "y" || test $TAR = "Y"
+then
+    (cd $RELEASE_DIR; cd ..; tar --exclude CVS -czvf ghostpcl_$VERSION.tar.gz $(basename "$RELEASE_DIR"))
 fi
