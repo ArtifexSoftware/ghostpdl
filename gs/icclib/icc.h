@@ -42,11 +42,11 @@ typedef int icmSig;	/* Otherwise un-enumerated 4 byte signature */
 typedef struct {
 	ORD32 l;			/* High and low components of signed 64 bit */
 	INT32 h;
-} int64;
+} int64bits;
 
 typedef struct {
 	ORD32 l,h;			/* High and low components of unsigned 64 bit */
-} uint64;
+} uint64bits;
 
 /* XYZ Number */
 typedef struct {
@@ -115,7 +115,7 @@ static icmBase *new_icmUInt32Array(struct _icc *icp);
 struct _icmUInt64Array {
 	BASE_MEMBERS
 	unsigned long	size;		/* Allocated and used size of the array */
-    uint64			*data;		/* Pointer to array of hight data */ 
+    uint64bits		*data;		/* Pointer to array of hight data */ 
 }; typedef struct _icmUInt64Array icmUInt64Array;
 static icmBase *new_icmUInt64Array(struct _icc *icp);
 
@@ -388,7 +388,7 @@ struct _icmDescStruct {
 	int             (*allocate)(struct _icmDescStruct *p);	/* Allocate method */
     icmSig            deviceMfg;		/* Dev Manufacturer */
     unsigned int      deviceModel;		/* Dev Model */
-    uint64            attributes;		/* Dev attributes */
+    uint64bits        attributes;		/* Dev attributes */
     icTechnologySignature technology;	/* Technology sig */
 	icmTextDescription device;			/* Manufacturer text (sub structure) */
 	icmTextDescription model;			/* Model text (sub structure) */
@@ -481,11 +481,11 @@ struct _icmHeader {
 	/* Values that should be set before writing */
     icmSig                  manufacturer;	/* Dev manufacturer */
     icmSig		            model;			/* Dev model */
-    uint64                  attributes;		/* Device attributes.l */
+    uint64bits              attributes;		/* Device attributes.l */
     unsigned int            flags;			/* Various bits */
 
 	/* Values that may optionally be set before writing */
-    /* uint64               attributes;		   Device attributes.h (see above) */
+    /* uint64bits           attributes;		   Device attributes.h (see above) */
     icmSig                  creator;		/* Profile creator */
 
 	/* Values that are not normally set, since they have defaults */
@@ -512,7 +512,7 @@ typedef enum {
 /* Public: Parameter to get_luobj function */
 typedef enum {
     icmLuOrdNorm     = 0,  /* Normal profile preference: Lut, matrix, monochrome */
-    icmLuOrdRev      = 1,  /* Reverse profile preference: monochrome, matrix, monochrome */
+    icmLuOrdRev      = 1   /* Reverse profile preference: monochrome, matrix, monochrome */
 } icmLookupOrder;
 
 /* Publix: Lookup algorithm object type */

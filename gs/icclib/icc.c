@@ -142,7 +142,7 @@ static int write_UInt32Number(unsigned int d, char *p) {
 	return 0;
 }
 
-static void read_UInt64Number(uint64 *d, char *p) {
+static void read_UInt64Number(uint64bits *d, char *p) {
 	d->h = 16777216 * (unsigned int)((ORD8 *)p)[0]
 	     +    65536 * (unsigned int)((ORD8 *)p)[1]
 	     +      256 * (unsigned int)((ORD8 *)p)[2]
@@ -153,7 +153,7 @@ static void read_UInt64Number(uint64 *d, char *p) {
 	     +            (unsigned int)((ORD8 *)p)[7];
 }
 
-static int write_UInt64Number(uint64 *d, char *p) {
+static int write_UInt64Number(uint64bits *d, char *p) {
 	((ORD8 *)p)[0] = (ORD8)(d->h >> 24);
 	((ORD8 *)p)[1] = (ORD8)(d->h >> 16);
 	((ORD8 *)p)[2] = (ORD8)(d->h >> 8);
@@ -260,7 +260,7 @@ static int write_SInt32Number(int d, char *p) {
 	return 0;
 }
 
-static void read_SInt64Number(int64 *d, char *p) {
+static void read_SInt64Number(int64bits *d, char *p) {
 	d->h = 16777216 * (int)((INT8 *)p)[0]
 	     +    65536 * (int)((ORD8 *)p)[1]
 	     +      256 * (int)((ORD8 *)p)[2]
@@ -271,7 +271,7 @@ static void read_SInt64Number(int64 *d, char *p) {
 	     +            (unsigned int)((ORD8 *)p)[7];
 }
 
-static int write_SInt64Number(int64 *d, char *p) {
+static int write_SInt64Number(int64bits *d, char *p) {
 	((INT8 *)p)[0] = (INT8)(d->h >> 24);
 	((ORD8 *)p)[1] = (ORD8)(d->h >> 16);
 	((ORD8 *)p)[2] = (ORD8)(d->h >> 8);
@@ -1809,7 +1809,7 @@ static int icmUInt64Array_allocate(
 	icmUInt64Array *p = (icmUInt64Array *)pp;
 
 	if (p->size > 0 && p->data == NULL) {
-		if ((p->data = (uint64 *) malloc(p->size * sizeof(uint64))) == NULL) {
+		if ((p->data = (uint64bits *) malloc(p->size * sizeof(uint64bits))) == NULL) {
 			sprintf(p->icp->err,"icmUInt64Array_alloc: malloc() of icmUInt64Array data failed");
 			return p->icp->errc = 2;
 		}

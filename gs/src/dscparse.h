@@ -184,7 +184,7 @@ typedef enum {
     CDSC_PORTRAIT = 1,
     CDSC_LANDSCAPE = 2,
     CDSC_UPSIDEDOWN = 3,
-    CDSC_SEASCAPE = 4,
+    CDSC_SEASCAPE = 4
 } CDSC_ORIENTATION_ENUM;
 
 /* stored in dsc->document_data */
@@ -284,7 +284,7 @@ typedef enum {
 typedef enum {
   CDSC_ERROR_INFORM	= 0,	/* Not an error */
   CDSC_ERROR_WARN	= 1,	/* Not a DSC error itself,  */
-  CDSC_ERROR_ERROR	= 2,	/* DSC error */
+  CDSC_ERROR_ERROR	= 2	/* DSC error */
 } CDSC_MESSAGE_SEVERITY;
 
 /* response */
