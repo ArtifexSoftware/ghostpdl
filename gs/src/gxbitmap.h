@@ -30,14 +30,28 @@ typedef gs_bitmap_id gx_bitmap_id;
 #define gx_no_bitmap_id gs_no_bitmap_id
 
 /*
- * For gx_bitmap data, each scan line must start on a `word' (long)
- * boundary, and hence is padded to a word boundary, although this should
- * rarely be of concern, since the raster and width are specified
- * individually.
+ * Most graphics library procedures that process bitmap data (such as, for
+ * example, the "device" procedures in gdevm*.c) impose two requirements
+ * on such data: an alignment requirement, and a padding requirement.
+ * Both requirements arise from the fact that these library procedures
+ * attempt to process the bits in units of align_bitmap_mod bytes.
  *
- * Note: BITMAPS ARE NOT GUARANTEED to be aligned any more strictly than
- * required by the hardware, regardless of the value of bitmap_align_mod.
- * See gsmemraw.h for more information about this.
+ * The alignment requirement is that each scan line must start at an
+ * address that is 0 mod align_bitmap_mod.  This requirement is only for
+ * the benefit of the hardware (which may, for example, require that
+ * instructions fetching or storing a 'long' quantity only do so at an
+ * address that is long-aligned), but it must be respected in all
+ * platform-independent code.  More precisely, platform-independent code
+ * can *assume* that Ghostscript allocators return blocks that are adequately
+ * aligned, and then must *ensure* that that alignment is not lost.  (The
+ * assumption is not true in some MSVC implementations, but even in those
+ * implementations, the alignment is sufficient to satisfy the hardware.
+ * See gsmemraw.h for more information about this.)
+ * 
+ * The padding requirement is that if the last data byte being operated on
+ * is at offset B relative to the start of the scan line, bytes up to and
+ * including offset ROUND_UP(B + 1, align_bitmap_mod) - 1 may be accessed,
+ * and therefore must be allocated (not cause hardware-level access faults).
  */
 /* We assume arch_align_long_mod is 1-4 or 8. */
 #if arch_align_long_mod <= 4
