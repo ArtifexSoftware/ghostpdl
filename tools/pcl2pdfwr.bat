@@ -21,10 +21,7 @@ goto opt
 
 :exec
 rem Watcom C deletes = signs, so use # instead.
-rem Doing an initial 'save' helps keep fonts from being flushed between pages.
-rem  We have to include the options twice because -I only takes effect if it
-rem appears before other options.
-%PS2PDFGS% %PS2PDFOPT% %PS2PDFPARAMS% -sOutputFile#%2 %PS2PDFOPT% -c save pop -f %1
+%PS2PDFGS% %PS2PDFOPT% %PS2PDFPARAMS% -sOutputFile#%2 %1
 goto end
 
 :usage
@@ -41,7 +38,7 @@ if "%2"=="" goto nooutfile
 if not "%3"=="" goto opt
 
 rem Watcom C deletes = signs, so use # instead.
-%PS2PDFGS% %PS2PDFOPT% %PS2PDFPARAMS% -sOutputFile#%2 %PS2PDFOPT% -c save pop -f %1
+%PS2PDFGS% %PS2PDFOPT% %PS2PDFPARAMS% -sOutputFile#%2 %1
 goto end
 
 :ntusage
@@ -52,7 +49,7 @@ goto end
 :nooutfile
 set PS2PDF=%1
 set PS2PDF=%PS2PDF:.PS=.PDF%
-%PS2PDFGS% %PS2PDFOPT% %PS2PDFPARAMS% -sOutputFile#%PS2PDF% %PS2PDFOPT% -c save pop -f %1
+%PS2PDFGS% %PS2PDFOPT% %PS2PDFPARAMS% -sOutputFile#%PS2PDF% %1
 
 :end
 rem	Clean up.
