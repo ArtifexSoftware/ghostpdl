@@ -1232,7 +1232,7 @@ typedef enum {
 
 		/* Shading support. */
 
-typedef struct {
+typedef struct gs_fill_attributes_s {
       gx_device *pdev; 
       const gs_fixed_rect *clip;
       const gx_device_halftone *ht;

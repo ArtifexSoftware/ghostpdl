@@ -371,11 +371,27 @@ gx_default_fill_trapezoid(gx_device * dev, const gs_fixed_edge * left,
     }
 }
 
+private inline void
+middle_frac32_color(frac32 *c, const frac32 *c0, const frac32 *c2, int num_components)
+{
+    int i;
+
+    /* Compute (c0 + c2) / 2 with no fixed overflow : */
+    for (i = 0; i < num_components; i++)
+	c[i] = (c0[i] >> 1) + (c2[i] >> 1) + (1 & c0[i] & c2[i]);
+}
+
+
 /*  Fill a trapezoid with a linear color.
     [p0 : p1] - left edge, from bottom to top.
     [p2 : p3] - right edge, from bottom to top.
-    Colors must be linear (with a bilinear color the result may be wrong).
+    The filled area is within Y-spans of both edges.
     Returns the number of unfilled scanlines. 
+
+    This implemetation actually handles a bilinear color,
+    in which the generatrix keeps a parallelizm to the X axis.
+    In general a bilinear function doesn't keep the generatrix parallelizm, 
+    so the caller must decompose/approximate such functions.
  */
 int 
 gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
@@ -385,6 +401,9 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
 	const frac32 *c2, const frac32 *c3)
 {
     gs_linear_color_edge le, re;
+    int code;
+    fixed y02 = max(p0->y, p2->y), ymin = max(y02, fa->clip->p.y);
+    fixed y13 = min(p1->y, p3->y), ymax = min(y13, fa->clip->q.y);
 
     le.start = *p0;
     le.end = *p1;
@@ -396,35 +415,90 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
     re.c0 = c2;
     re.c1 = c3;
     re.clip_x = fa->clip->q.x;
-    return (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
-	    &le, &re, fa->clip->p.y, fa->clip->q.y, 0, NULL, 0);
+    code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
+	    &le, &re, ymin, ymax, 0, NULL, 0);
+    if (code <= 0)
+	return code;
+    /* The device reported a too big area, decompose it now with no dropouts. */
+    /* No dropouts due to upper and lower sides are parallel to the X axis. */
+    {
+	gs_fixed_point p02, p13;
+	frac32 c02[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	frac32 c13[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	/* Same as in GX_FILL_TRAPEZOID : */
+	const fixed ymin = fixed_pixround(fa->clip->p.y) + fixed_half; 
+	int iy = fixed2int_var(ymin);
+	/* Cut off scanlines already filled : */
+	int iy0 = iy + code;
+	gs_fixed_rect clip = *fa->clip;
+	gs_fill_attributes fa1 = *fa;
+
+	clip.p.y = max(fa->clip->p.y, int2fixed(iy0)); 
+	fa1.clip = &clip;
+	/* Subdivide the trapezoid into 2 ones. 
+	   We know that GX_FILL_TRAPEZOID doesn't like wide ones. */
+	p02.x = (p0->x + p2->x) / 2;
+	p02.y = (p0->y + p2->y) / 2;
+	p13.x = (p1->x + p3->x) / 2;
+	p13.y = (p1->y + p3->y) / 2;
+	middle_frac32_color(c02, c0, c2, fa->pdev->color_info.num_components);
+	middle_frac32_color(c13, c1, c3, fa->pdev->color_info.num_components);
+	code = gx_default_fill_linear_color_trapezoid(&fa1,
+		    p0, p1, &p02, &p13, c0, c1, c02, c13);
+	if (code < 0)
+	    return code;
+	return gx_default_fill_linear_color_trapezoid(&fa1,
+		    &p02, &p13, p2, p3, c02, c13, c2, c3);
+    }
 }
 
-/*  Fill a triangle with a linear color.
-    [p0 : p1] - left edge, from bottom to top.
-    [p0 : p2] - right edge, from bottom to top.
-    Returns the number of unfilled scanlines. 
- */
+private inline int 
+fill_linear_color_triangle(const gs_fill_attributes *fa,
+	const gs_fixed_point *p0, const gs_fixed_point *p1,
+	const gs_fixed_point *p2,
+	const frac32 *c0, const frac32 *c1, const frac32 *c2)
+{   /* p0 must be the lowest vertex. */
+    int code;
+
+    if (p0->y == p1->y)
+	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p1, p2, c0, c2, c1, c2);
+    if (p1->y == p2->y)
+	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p0, p1, c0, c2, c0, c1);
+    if (p0->y < p1->y && p1->y < p2->y) {
+	code = gx_default_fill_linear_color_trapezoid(fa, p0, p2, p0, p1, c0, c2, c0, c1);
+	if (code < 0)
+	    return code;
+	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p1, p2, c0, c2, c1, c2);
+    } else { /* p0->y < p2->y && p2->y < p1->y */
+	code = gx_default_fill_linear_color_trapezoid(fa, p0, p2, p0, p1, c0, c2, c0, c1);
+	if (code < 0)
+	    return code;
+	return gx_default_fill_linear_color_trapezoid(fa, p2, p1, p0, p1, c2, c1, c0, c1);
+    }
+}
+
+/*  Fill a triangle with a linear color. */
 int 
 gx_default_fill_linear_color_triangle(const gs_fill_attributes *fa,
 	const gs_fixed_point *p0, const gs_fixed_point *p1,
 	const gs_fixed_point *p2,
 	const frac32 *c0, const frac32 *c1, const frac32 *c2)
 {
-    gs_linear_color_edge le, re;
-
-    le.start = *p0;
-    le.end = *p1;
-    le.c0 = c0;
-    le.c1 = c1;
-    le.clip_x = fa->clip->p.x;
-    re.start = *p0;
-    re.end = *p2;
-    re.c0 = c0;
-    re.c1 = c2;
-    re.clip_x = fa->clip->q.x;
-    return (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
-	    &le, &re, fa->clip->p.y, fa->clip->q.y, 0, NULL, 0);
+    fixed dx1 = p1->x - p0->x, dy1 = p1->y - p0->y;
+    fixed dx2 = p2->x - p0->x, dy2 = p2->y - p0->y;
+    
+    if ((int64_t)dx1 * dy2 < (int64_t)dx2 * dy1) {
+	const gs_fixed_point *p = p1; 
+	
+	p1 = p2; 
+	p2 = p;
+    }
+    if (p0->y <= p1->y && p0->y <= p2->y)
+	return fill_linear_color_triangle(fa, p0, p1, p2, c0, c1, c2);
+    if (p1->y <= p0->y && p1->y <= p2->y)
+	return fill_linear_color_triangle(fa, p1, p2, p0, c1, c2, c0);
+    else
+	return fill_linear_color_triangle(fa, p2, p0, p1, c2, c0, c1);
 }
 
 /* Fill a parallelogram whose points are p, p+a, p+b, and p+a+b. */
