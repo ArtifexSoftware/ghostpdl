@@ -8,8 +8,16 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.h,v 1.3 2001/06/12 09:15:13 giles Exp $
+    $Id: jbig2dec.h,v 1.4 2002/02/12 02:19:08 giles Exp $
 */
+
+#ifndef JBIG2DEC_H
+#define JBIG2DEC_H
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 
 typedef unsigned char byte;
 typedef int bool;
@@ -42,3 +50,10 @@ typedef struct _Jbig2WordStream Jbig2WordStream;
 struct _Jbig2WordStream {
   uint32 (*get_next_word) (Jbig2WordStream *self, int offset);
 };
+
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif /* JBIG2DEC_H */
