@@ -44,7 +44,7 @@ pjl_impl_characteristics(
   const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
 )
 {
-  static pl_interp_characteristics_t pjl_characteristics = {
+  static const pl_interp_characteristics_t pjl_characteristics = {
     "PJL",
     "",
     "Artifex",
