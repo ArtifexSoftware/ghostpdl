@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.34 2002/07/16 21:19:09 giles Exp $
+    $Id: jbig2dec.c,v 1.35 2002/07/17 23:59:29 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -36,7 +36,7 @@
 #endif
 
 #ifdef HAVE_OPENSSL_SHA1
-# include <openssl/sha.h>
+# include <openssl/evp.h>
 #endif
 
 typedef enum {
@@ -47,7 +47,7 @@ typedef struct {
 	jbig2dec_mode mode;
 	int verbose, hash;
 #ifdef HAVE_OPENSSL_SHA1
-        SHA_CTX *hash_ctx;
+        EVP_MD_CTX *hash_ctx;
 #endif
 	char *output_file;
 } jbig2dec_params_t;
@@ -60,13 +60,15 @@ static void
 hash_init(jbig2dec_params_t *params)
 {
 #ifdef HAVE_OPENSSL_SHA1
-    params->hash_ctx = malloc(sizeof(SHA_CTX));
+    params->hash_ctx = malloc(sizeof(EVP_MD_CTX));
     if (params->hash == NULL) {
         fprintf(stderr, "unable to allocate hash state\n");
         params->hash = 0;
         return;
     } else {
-        SHA1_Init(params->hash_ctx);
+        // FIXME: is this call ever necessary?
+        //OpenSSL_add_all_digests();
+        EVP_DigestInit(params->hash_ctx, EVP_sha1());
     }
 #endif /* HAVE_OPENSSL_SHA1 */
 }
@@ -74,9 +76,9 @@ hash_init(jbig2dec_params_t *params)
 static void
 hash_image(jbig2dec_params_t *params, Jbig2Image *image)
 {
-    int N = image->stride * image->height;
+    unsigned int N = image->stride * image->height;
 #ifdef HAVE_OPENSSL_SHA1
-    SHA1_Update(params->hash_ctx, image->data, N);
+    EVP_DigestUpdate(params->hash_ctx, image->data, N);
 #endif
 }
 
@@ -84,12 +86,12 @@ static void
 hash_print(jbig2dec_params_t *params, FILE *out)
 {
 #ifdef HAVE_OPENSSL_SHA1
-    char md[SHA_DIGEST_LENGTH];
-    char digest[2*SHA_DIGEST_LENGTH + 1];
-    int i;
+    unsigned char md[EVP_MAX_MD_SIZE];
+    char digest[2*EVP_MAX_MD_SIZE + 1];
+    int i, len;
     
-    SHA1_Final(md, params->hash_ctx);
-    for (i = 0; i < SHA_DIGEST_LENGTH; i++) {
+    EVP_DigestFinal(params->hash_ctx, md, &len);
+    for (i = 0; i < len; i++) {
         snprintf(&(digest[2*i]), 3, "%02x", md[i]);
     }
     fprintf(out, "%s", digest);
