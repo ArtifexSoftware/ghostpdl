@@ -573,7 +573,7 @@ x_copy_image(gx_device_X * xdev, const byte * base, int sourcex, int raster,
 	xdev->image.height = h;
 	xdev->image.format = ZPixmap;
 	xdev->image.data = (char *)base;
-	xdev->image.depth = depth;
+	xdev->image.depth = xdev->vinfo->depth;
 	xdev->image.bytes_per_line = raster;
 	xdev->image.bits_per_pixel = depth;
 	if (XInitImage(&xdev->image) == 0)
