@@ -60,7 +60,7 @@
 % Note that this code will only work in all cases if systemdict is writable
 % and if `binding' the definitions of operators defined as procedures
 % is deferred.  For this reason, it is normally invoked with
-%	gs -q -dNODISPLAY -dNOBIND -dWRITESYSTEMDICT ps2ascii.ps
+%	gs -q -dNODISPLAY -dDELAYBIND -dWRITESYSTEMDICT ps2ascii.ps
 
 % Thanks to:
 %    J Greely <jgreely@cis.ohio-state.edu> for improvements to this code;
@@ -1491,13 +1491,10 @@ end
 % Bind the operators we just defined, and all the others if we didn't
 % do it before.  Also reenable 'bind' for future files.
 
-.bindoperators
-NOBIND currentdict systemdict ne and
- { systemdict begin .bindoperators end }
-if
-NOBIND
- { /bind /.bind load def }
-if
+DELAYBIND {
+  .bindnow
+  /bind /.bind load def
+} if
 
 % Make systemdict read-only if it wasn't already.
 
@@ -1506,5 +1503,3 @@ systemdict wcheck { systemdict readonly pop } if
 % Restore the current local/global VM mode.
 
 exec
-
-

@@ -8,7 +8,7 @@
 
 trap "rm -f _temp_.err _temp_.out" 0 1 2 15
 
-OPTIONS="-q -dNODISPLAY -dSAFER -dNOBIND -dWRITESYSTEMDICT -dSIMPLE"
+OPTIONS="-q -dNODISPLAY -dSAFER -dDELAYBIND -dWRITESYSTEMDICT -dSIMPLE"
 if ( test $# -eq 0 ) then
 	gs $OPTIONS -c save -f ps2ascii.ps - -c quit
 elif ( test $# -eq 1 ) then
