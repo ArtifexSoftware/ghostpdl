@@ -31,12 +31,10 @@ languagelevel dup 2 .max .setlanguagelevel
 
 % Modify `bind' to apply idiom recognition afterwards.
 /.bindscratch 128 string def
-% Do the right thing if NOBIND or DELAYBIND is in effect.
-% Note also that since this definition of `bind' may get bound in,
+% Note that since this definition of `bind' may get bound in,
 % it has to function properly even at lower language levels,
 % where IdiomRecognition may not be defined.
-/bind load /.bind load ne
-/bind {		% <proc> bind <proc'>
+/.bind {		% <proc> .bind <proc'>
   //.bind currentuserparams /IdiomRecognition
   .knownget not { false } if {
     (*) {
@@ -58,10 +56,11 @@ languagelevel dup 2 .max .setlanguagelevel
     } //.bindscratch /IdiomSet resourceforall
   } if
 } odef
-{ /.bind /bind load def
-  /bind { } def
-} if
 currentdict /.bindscratch .undef
+
+DELAYBIND NOBIND or not { 
+  /bind /.bind load def
+} if
 
 % ------ HalftoneTypes 6, 10, 16 and HalftoneMode ------ %
 

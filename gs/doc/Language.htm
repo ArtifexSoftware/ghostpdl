@@ -1121,6 +1121,52 @@ happened.
 <h4><a name="Miscellaneous"></a>Miscellaneous operators</h4>
 
 <dl>
+<dt><b><tt>&lt;array&gt; bind &lt;array&gt;</tt></b>
+<dd>Depending on the command line parameters <b><tt>bind</tt></b> is redefined as:
+</dl>
+
+<blockquote><table cellpadding=0 cellspacing=0>
+<tr valign=bottom>
+	<th valign=bottom align=left>Flag
+	<td>&nbsp;&nbsp;&nbsp;
+	<th valign=bottom align=left>Definition
+<tr>	<td colspan=3><hr>
+<tr valign=top>	<td>NOBIND
+	<td>&nbsp;
+	<td>/bind {} def ;
+        no operation, returns the argument
+<tr valign=top>	<td>DELAYBIND
+	<td>&nbsp;
+	<td>returns the argument, stores the argument for later use by <b><tt>.bindnow</b></tt>
+</table></blockquote>
+
+
+<dl>
+<dt><b><tt>&lt;array&gt; .bind &lt;array&gt;</tt></b>
+<dd>Performs standard <b><tt>bind</tt></b> operation as defined in PLRM regardless of
+NOBIND or DELAYBIND flags.
+</dl>
+
+<a name="bindnow"></a>
+<dl>
+<dt><b><tt>- .bindnow -</tt></b>
+<dd>Applies <b><tt>bind</tt></b> operator to all savad procedures after binding has been
+deferred through -dDELAYBIND. Note that idiom recognition has no effect for the deferred
+binding because the value returned from <b><tt>bind</tt></b> is discarded.
+<p>
+Since v. 8.12 <b><tt>.bindnow</tt></b> undefines itself and restores standard definition of
+<b><tt>bind</tt></b> operator. In earlier versions after calling <b><tt>.bindnow</tt></b>,
+the postscript <b><tt>bind</tt></b> operator needs to be rebound to the internal implementation
+<b><tt>.bind</tt></b>, as in this fragment from the ps2ascii script:
+<blockquote><pre><tt>DELAYBIND {
+  .bindnow
+  /bind /.bind load def
+} if
+</tt></pre></blockquote>
+This is necessary for correct behavior with later code that uses the <b><tt>bind</tt></b> operator.
+</dl>
+
+<dl>
 <dt><b><tt>&lt;obj1&gt; &lt;obj2&gt; ... &lt;objn&gt; &lt;n&gt; .execn ...</tt></b>
 <dd>This executes <b><tt>obj1</tt></b> through <b><tt>objn</tt></b> in that
 order, essentially equivalent to
@@ -1171,23 +1217,6 @@ otherwise.
 <dl>
 <dt><b><tt>- .oserrorstring &lt;string&gt;</tt></b>
 <dd>Returns the error string for the most recent operating system error.
-</dl>
-
-<a name="bindnow"></a>
-<dl>
-<dt><b><tt>.bindnow</tt></b>
-<dd>Execute all bind invocations after binding has been deferred through -dDELAYBIND.
-This and its corresponding commandline options are generally only of use to special-purpose
-applications.
-Note that after calling <tt>.bindnow</tt>, the postscript <tt>bind</tt> operator needs to be
-rebound to the internal implementation <tt>.bind</tt>, as in this fragment from the ps2ascii
-script:
-<blockquote><pre><tt>DELAYBIND {
-  .bindnow
-  /bind /.bind load def
-} if
-</tt></pre></blockquote>
-This is necessary for correct behavior with later code that uses the <tt>bind</tt> operator.
 </dl>
 
 <a name="Runandhide"></a>

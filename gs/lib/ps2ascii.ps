@@ -1487,12 +1487,9 @@ userdict /start-hook {
 end
 
 % Bind the operators we just defined, and all the others if we didn't
-% do it before.  Also reenable 'bind' for future files.
+% do it before.
 
-DELAYBIND {
-  .bindnow
-  /bind /.bind load def
-} if
+DELAYBIND { .bindnow } if
 
 % Make systemdict read-only if it wasn't already.
 

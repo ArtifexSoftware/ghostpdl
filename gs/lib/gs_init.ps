@@ -280,7 +280,7 @@ DELAYBIND NOBIND not and
        { .delaycount 2 index put
          .userdict /.delaycount .delaycount 1 add put
        }
-       { pop .bind
+       { pop /.bind cvx exec
        }
       ifelse
     } .bind def
