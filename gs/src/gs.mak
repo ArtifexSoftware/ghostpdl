@@ -210,7 +210,7 @@ ZOBJDIR=$(GLOBJDIR)
 GSGEN=$(GLGENDIR)$(D)
 GSOBJ=$(GLOBJDIR)$(D)
 # All top-level makefiles define DD.
-DD=$(GLGEN)
+#DD=$(GLGEN)
 
 # Define the name of this makefile.
 GS_MAK=$(GLSRCDIR)$(D)gs.mak

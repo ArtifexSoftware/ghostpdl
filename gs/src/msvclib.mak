@@ -114,6 +114,10 @@ GLGENDIR=.\obj
 GLOBJDIR=.\obj
 !endif
 
+# Do not edit the next group of lines.
+NUL=
+DD=$(GLGENDIR)\$(NUL)
+GLD=$(GLGENDIR)\$(NUL)
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
 # You may need to change this if the IJG library version changes.
