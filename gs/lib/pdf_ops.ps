@@ -98,7 +98,14 @@ nodict readonly pop
 } bdef
 % Some PDF files have excess Q operators!
 /Q {
-  currentdict /self .knownget { exec //nodict eq { end grestore } if } if
+  currentdict /self .knownget {
+    exec //nodict eq { end grestore false } { true } ifelse
+  } {
+    true	% formaterror -- not a gsave dict
+  } ifelse
+  { (\n   **** File has imbalanced q/Q operators \(too many Q's\) ****\n)
+    pdfformaterror
+  } if
 } bdef
 
 % ---------------- Color setting ---------------- %

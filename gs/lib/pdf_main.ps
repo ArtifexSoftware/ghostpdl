@@ -341,7 +341,7 @@ pdfdict begin
    **** Please notify the author of the software that produced this file
 )
   } {
-    (   **** The file was produced by ) stderrprint
+    (   **** The file was produced by: \n   **** >>>> ) stderrprint
 	% Handle a Unicode Producer.
     (\376\377) anchorsearch {
       pop dup length 2 idiv string 0 1 2 index length 1 sub {
@@ -350,7 +350,7 @@ pdfdict begin
       } for exch pop
     } if
     stderrprint
-    (:
+    ( <<<<
    **** please notify the author of this software
 )
   } ifelse stderrprint
@@ -589,7 +589,13 @@ end readonly def
      pdfshowpage_finish
    % Some PDF files don't have matching q/Q (gsave/grestore) so we need
    % to clean up any left over dicts from the dictstack
-   countdictstack PDFdictstackcount sub { end } repeat
+   countdictstack PDFdictstackcount sub dup 0 ne { 
+     (\n   **** File has imbalanced q/Q operators \(too many q's\) ****\n)
+     pdfformaterror
+     { end } repeat
+   } {
+     pop
+   } ifelse
    (after exec) VMDEBUG
    PDFSave restore
  } bind def
