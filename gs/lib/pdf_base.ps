@@ -509,7 +509,7 @@ pdfdict begin
       { PDFfile read pop dup 13 eq {
 	  % If there had been a \n, token would have advanced over it
 	  % thus, if the terminator was \r, we have a format error!
-	  (   **** PDF format error: stream operator not terminated by valid EOL.\n) pdfformaterror
+	  (   **** Warning: stream operator not terminated by valid EOL.\n) pdfformaterror
 	  pop exit	% fileposition is OK (just past the \r).
 	} if 
 	10 eq { exit } if
@@ -525,7 +525,7 @@ pdfdict begin
 	% Capture the sub-stream contents in a string.
     dup /Length oget string PDFsource exch readstring
     not {
-      (   **** Unexpected EOF in stream!\n) pdfformaterror
+      (   **** Warning: Unexpected EOF in stream!\n) pdfformaterror
       /stream cvx /rangecheck signalerror
     } if
     1 index exch /File exch put
@@ -537,11 +537,11 @@ pdfdict begin
   } ifelse
   dup /endobj eq {
     % Another case that Acrobat Reader handles -- 'endobj' without 'endstream'.
-    (   **** PDF format error: stream missing 'endstream'.\n) pdfformaterror
+    (   **** Warning: stream missing 'endstream'.\n) pdfformaterror
     pop /endstream		% fake a valid endstream
   } if
   /endstream ne { 
-    (   **** PDF format error: stream Length incorrect.\n) pdfformaterror
+    (   **** Warning: stream Length incorrect.\n) pdfformaterror
     exit % exit from .pdfrun now.
   } if
   cvx

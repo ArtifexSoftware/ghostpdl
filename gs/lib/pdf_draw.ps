@@ -504,7 +504,7 @@ end
     /MatrixABC [1 1 1 1 0 0 0 0 -1] def
     dup /BlackPoint knownoget { /BlackPoint exch def } if
     dup /WhitePoint knownoget { /WhitePoint exch def } {
-      (   **** Lab colorspace is missing WhitePoint.\n)
+      (   **** Warning: Lab colorspace is missing WhitePoint.\n)
       pdfformaterror
       /WhitePoint [0.9505 1 1.089] def
     } ifelse
@@ -883,10 +883,10 @@ end
   ifelse
   .systemvar stopped {
     $error /errorname get dup /ioerror eq {
-      pop (\n   **** File has insufficient data for an image.\n)
+      pop (\n   **** Warning: File has insufficient data for an image.\n)
       pdfformaterror
     } {
-      (\n   **** File encountered ')
+      (\n   **** Warning: File encountered ')
       exch 40 string cvs concatstrings
       (' error while processing an image.\n) concatstrings
       pdfformaterror

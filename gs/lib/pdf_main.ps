@@ -335,7 +335,7 @@ pdfdict begin
     dup (%%EOF\n) eq exch dup (%%EOF\r) eq
     exch (%%EOF\r\n) eq or or not
   } ifelse {
-    (   **** File has a corrupted %%EOF marker, or garbage after the %%EOF.\n)
+    (   **** Warning: File has a corrupted %%EOF marker, or garbage after %%EOF.\n)
     pdfformaterror
   } if
   PDFfile exch setfileposition
@@ -348,7 +348,7 @@ pdfdict begin
   } {	% else, this file has 'startxref #####' format
     (startxref) ne { /findxref cvx /syntaxerror signalerror } if
     cvi		% xref start position
-    (   **** The format of the startxref line in this file is invalid.\n)
+    (   **** Warning: format of the startxref line in this file is invalid.\n)
     pdfformaterror
     exch PDFfile exch setfileposition
   } ifelse
@@ -629,7 +629,7 @@ end readonly def
    % Some PDF files don't have matching q/Q (gsave/grestore) so we need
    % to clean up any left over dicts from the dictstack
    countdictstack PDFdictstackcount sub dup 0 ne { 
-     (   **** File has imbalanced q/Q operators \(too many q's\)\n)
+     (   **** Warning: File has imbalanced q/Q operators \(too many q's\)\n)
      pdfformaterror
      { end } repeat
    } {
