@@ -2,6 +2,8 @@
  * Copyright (C) 2002 artofcode LLC.  All rights reserved.
  * See toolbin/encs2c.ps for the complete license notice.
  *
+ * $Id$
+ *
  * This file contains substantial parts of toolbin/encs2c.ps,
  * which generated the remainder of the file mechanically from
  *   gs_std_e.ps  gs_il1_e.ps  gs_sym_e.ps  gs_dbt_e.ps
