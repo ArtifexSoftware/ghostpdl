@@ -3256,23 +3256,23 @@ make_tensor_patch(const patch_fill_state_t * pfs, tensor_patch *p, const patch_c
 {
     const gs_color_space *pcs = pfs->direct_space;
 
-    p->pole[0][0] = curve[0].vertex.p;
-    p->pole[0][1] = curve[0].control[0];
-    p->pole[0][2] = curve[0].control[1];
-    p->pole[0][3] = curve[1].vertex.p;
-    p->pole[1][3] = curve[1].control[0];
-    p->pole[2][3] = curve[1].control[1];
-    p->pole[3][3] = curve[2].vertex.p;
-    p->pole[3][2] = curve[2].control[0];
-    p->pole[3][1] = curve[2].control[1];
-    p->pole[3][0] = curve[3].vertex.p;
-    p->pole[2][0] = curve[3].control[0];
-    p->pole[1][0] = curve[3].control[1];
+    p->pole[0][0] = curve[3].vertex.p;
+    p->pole[0][1] = curve[3].control[0];
+    p->pole[0][2] = curve[3].control[1];
+    p->pole[0][3] = curve[0].vertex.p;
+    p->pole[1][3] = curve[0].control[0];
+    p->pole[2][3] = curve[0].control[1];
+    p->pole[3][3] = curve[1].vertex.p;
+    p->pole[3][2] = curve[1].control[0];
+    p->pole[3][1] = curve[1].control[1];
+    p->pole[3][0] = curve[2].vertex.p;
+    p->pole[2][0] = curve[2].control[0];
+    p->pole[1][0] = curve[2].control[1];
     if (interior != NULL) {
-	p->pole[1][1] = interior[0];
-	p->pole[2][1] = interior[1];
-	p->pole[2][2] = interior[2];
-	p->pole[1][2] = interior[3];
+	p->pole[1][1] = interior[3];
+	p->pole[2][1] = interior[0];
+	p->pole[2][2] = interior[1];
+	p->pole[1][2] = interior[2];
     } else {
 	p->pole[1][1].x = lcp1(p->pole[0][1].x, p->pole[3][1].x) +
 			  lcp1(p->pole[1][0].x, p->pole[1][3].x) -
@@ -3308,10 +3308,10 @@ make_tensor_patch(const patch_fill_state_t * pfs, tensor_patch *p, const patch_c
 			  lcp2(lcp2(p->pole[0][0].y, p->pole[0][3].y),
 			       lcp2(p->pole[3][0].y, p->pole[3][3].y));
     }
-    patch_set_color(pfs, &p->c[0][0], curve[0].vertex.cc);
-    patch_set_color(pfs, &p->c[0][1], curve[1].vertex.cc);
-    patch_set_color(pfs, &p->c[1][1], curve[2].vertex.cc);
-    patch_set_color(pfs, &p->c[1][0], curve[3].vertex.cc);
+    patch_set_color(pfs, &p->c[0][0], curve[3].vertex.cc);
+    patch_set_color(pfs, &p->c[0][1], curve[0].vertex.cc);
+    patch_set_color(pfs, &p->c[1][1], curve[1].vertex.cc);
+    patch_set_color(pfs, &p->c[1][0], curve[2].vertex.cc);
     patch_resolve_color(&p->c[0][0], pfs);
     patch_resolve_color(&p->c[0][1], pfs);
     patch_resolve_color(&p->c[1][0], pfs);
