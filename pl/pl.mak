@@ -265,7 +265,7 @@ $(PLOBJ)pl.dev: $(PL_MAK) $(ECHOGS_XE) $(pl_obj)
 	$(SETMOD) $(PLOBJ)pl $(pl_obj1)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj2)
 	$(ADDMOD) $(PLOBJ)pl $(pl_obj3)
-	$(ADDMOD) $(PLOBJ)pl -include $(SCALER) 
+	$(ADDMOD) $(PLOBJ)pl -include $(PLOBJ)$(PL_SCALER) 
 
 ###### Command-line driver's main program #####
 
