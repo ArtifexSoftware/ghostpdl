@@ -1,0 +1,322 @@
+   Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+   Unauthorized use, copying, and/or distribution prohibited.
+
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+
+This file, NEWS-5, describes the changes in the most recent releases of
+Aladdin's PCL 5 code, in reverse chronological order.
+
+Fileset of 12/13/96
+===================
+
+Procedures
+----------
+
+(LPD) Removes -O (optimization) from the default configuration in the PCL
+makefile, because it creates too many problems for debugging.  (ugccpcl.mak)
+
+PCL5
+----
+
+(LPD) Notes (here) the existence of the following barely-documented and
+rarely-implemented PCL5e commands which we aren't planning to implement:
+	ESC & k <0-7> W - Print Mode Selection (Color LJ5 Dev Guide p. 1-15)
+	ESC & a <0-1> N - Negative Motion (ditto)
+	ESC * r <0-2> Q - Raster Quality (ditto)
+	ESC & o # Q - Mechanical Print Quality (Color LJ5 Dev Guide p. 1-18)
+	ESC ( s # Q - Primary Font Quality (ditto)
+	ESC ) s # Q - Secondary Font Quality (ditto)
+	ESC & v # S - Text Color (ditto)
+There is also one new command that we *should* implement:
+	ESC & n <#bytes> W <data> - AlphaNumeric ID (LJ5 Dev Guide p. 23)
+
+(LPD) Removes next_might_be_BS from the arguments of pcl_text, since it
+doesn't provide any benefit.  (pcommand.h, pcfont.c, pcparse.c)
+
+(LPD) Fixes bugs:
+	- Using the current Ghostscript library caused a crash at startup,
+because no halftone screen was set.  (pcmain.c)
+	- Masked images didn't display, because they didn't initialize the
+color correctly.  (rtraster.c)
+	- An undeclared extern had crept in.  (pcsfont.c)
+
+(RCD) Summary of changes:
+	pcfont.c
+		BS handling, elaboration of font scaling in pcl_text
+	pcursor.c
+		BS handling
+	pcstate.h
+		BS handling
+	pcstatus.c
+		minor tweak, avoid looking for FontName's that aren't there
+	pcsfont.c
+		hack to load some fonts
+	pcpage.c
+		tweak default right margin to nonzero so space works
+
+HP-GL/2
+-------
+
+(HAS):
+
+Thu Dec 12 14:07:04 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgconfig.c (hpgl_IP): fixed typo in IP.  Tracking the P2 y
+ 	coordinate was incorrect as it was using the X value instead of
+ 	the y value.
+	(hpgl_picture_frame_coords): routine to derive the default picture
+ 	frame.
+	(hpgl_IP): updated to use the new picture frame routine with
+ 	rounding ??? (see code).
+	(hpgl_IW): Implemented the IW command, it is also used the new
+ 	picture frame routine.
+
+	* pgdraw.c: set up picture frame and plot size scaling.
+
+	* pgframe.c (pcl_hpgl_plot_horiz_size): modified plot size to
+	to convert arguments to centipoints so that it is in the same
+	units as the picture frame.  All the pcl commands in pgframe.c use
+	centipoints internally now.
+
+	* pgconfig.c (hpgl_IP): fixed location of P1 to be a function of
+	the the pcl anchor points.
+
+Wed Dec 11 00:28:56 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pcl5.mak (pginit_h): more missing dependencies.
+
+	* pggeom.h (mm_2_plu): corrected typo in millimeter 2 plotter unit
+	conversion (ARGH!).
+
+	* pglfill.c (hpgl_PW): Changes to maintain pen width in plu's
+	irrespective of current WU setting.  Also changed hpgl_WU to call
+	hpgl_PW for setting default widths.
+
+	* pgmand.h: Added gdebug.h and stdio.h (for gdebug) as they are
+	used by the macro hpgl_call().
+
+	Note there is a gcc specific variable to print out the name of the
+	invoking function.  This needs to be #ifdef'd out or removed in
+	the future.
+
+	* pcl5.mak: fixed pgvector.c's dependency list, it was missing a
+ 	number of include files.  NOTE: gcc -M generates the dependencies
+ 	automatically.
+
+Tue Dec 10 23:17:37 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgmand.h: added macro hpgl_call() that calls a function and
+ 	returns an error code if the code returned is less than 0.  Most
+ 	of the hpgl and gs functions return if the calling function is
+ 	less than 0 so this avoids cluttering up the code with the if
+ 	statement and debug code.
+
+	Also added a status code - hpgl_ok.  
+
+	* pgdraw.c and pgdraw.h: Extensive modifications for returning
+	error codes.  
+	
+Mon Dec  2 13:36:04 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgdraw.c (hpgl_set_graphics_dash_state): Needed to comment out
+	gs_setdashadapt() and gs_setdotlength() as I don't have them.
+	Would prefer an enumerated type for in lieue of the boolean
+	parameter.
+
+Mon Dec  2 00:05:38 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgdraw.c (hpgl_draw_current_path): removed attempted restore of
+	pcl's ctm, as it was not correct and later discovered to be
+	unnecessary.  
+
+	* pgdraw.c (hpgl_add_point_to_path): used pcl_set_ctm() to
+	initialize the pcl transformation that will be used to derive
+	hpgl's transformation.
+
+	* pginit.c (hpgl_do_reset): fixed duplicated block of code.
+
+Sun Dec  1 14:25:29 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pggeom.c (hpgl_normalize_chord_angle): added floor() to truncate
+	the angle.
+
+	* pgdraw.c (hpgl_set_graphics_line_attribute_state): added large
+	miter limit to do non beveled joins.  
+
+	* pgdraw.c (hpgl_set_graphics_dash_state): uncommented dash API
+	calls that are now supported in gs 4.34.
+
+Wed Nov 27 17:21:50 1996  Henry Stiles  <henrys@meercat.dimensional.com>
+
+	* pgconfig.c: removed second #include of gscoord.h.
+
+	* pglfill.c (hpgl_PW): fixed logical error with pmax and pmin.
+  	The previous code set pmax = pmin even if no pen was specified.
+  	Now pmax is set to pmin if there is a pen number argument and the
+ 	argument is in the range 0 - pmax.
+
+	* pcommand.h (value_set_float): changed name of macro parameter
+	from fl to fr.  This macro is used in pginit.c to set up the
+	picture frame commands.
+
+	* pgmand.h: added comments to tell which file each HPGL/2 commands
+	live in.
+
+	* pgstate.h (pcl_hpgl_state_s): changed pen cap to ints.  A table
+	in pgdraw.c is used to map the ints to appropriate gs graphics
+	types.  Did this change a while back and did not document it.
+
+	* pgdraw.h: changed *state to *pgls in prototypes.
+
+	* pgdraw.h: missing prototype variable name y2 in hpgl_draw_line()
+	declaration.
+
+	* pgdraw.c: removed _a_ from from function names.
+
+	* pgdraw.h: removed _a_ from from function names.
+
+	* pgvector.h: removed _a_ from from function names.
+
+	* pgdraw.c: Added gscoord.h for declarations of gs_initmatrix()
+	and gs_scale().
+
+	* pgdraw.c: Changed pu -> plu.
+
+	* pggeom.h: Added #include math_h.h for sqrt.
+
+	* pggeom.h: Changed pu -> plu.
+
+	* pglfill.c: Added #include pgdraw.h for hpgl_draw_current_path()
+
+	* pg*.[ch]: Removed blank lines at the end of files.  Bad habit of
+	using CTRL-N in emacs at the bottom of files.
+
+Fileset of 11/27/96
+===================
+
+PCL5
+----
+
+(LPD) Replaces pcl_plain_char with pcl_text, which takes a string rather
+than a single character.  (pcommand.h, pcfont.c)
+
+(LPD) Makes the parser look ahead to gather up runs of plain characters.
+(pcparse.c)
+
+(LPD) Fills in the pl_font_params_t properly for downloaded fonts.
+(pcfont.h, pcsfont.c)
+
+Fileset of 11/26/96
+===================
+
+PCL5
+----
+
+(RCD) Adds code for font selection.  (pcfont.c)
+
+HP-GL/2
+-------
+
+(HAS) Makes all command procedures public so they can be called from other
+commands.  (pgmand.h, pg*.c)
+
+(HAS):
+
+	* pginit.c (hpgl_do_reset): initialization of current hpgl/2 path
+ 	to empty.
+
+	* pgdraw.h: corrected incorrect filename from copying template,
+ 	added #ifndef for multiple inclusion of .h, changed float ->
+ 	floatp for all arguments, made function names more readable, and
+ 	added comments for each prototype.
+
+	* pggeom.h: same changes from pgdraw.h.  Added parenthesis to
+ 	macros so that expressions will evaluate correctly.
+
+	* pgstate.h (pcl_hpgl_state_s): Moved statics that maintain the
+ 	current hpgl/2 path state to the hpgl state struct.
+
+	* pgdraw.c (hpgl_add_point_to_path): Change to reflect previous
+ 	pgstate.h change.
+
+	* pgdraw.c (hpgl_draw_current_path): Change to reflect previous
+ 	pgstate.h change.
+
+	* pgdraw.c (hpgl_add_point_to_path): Added parameters to gs_func()
+ 	to make it a proper declaration.
+
+	* pgdraw.c (hpgl_add_arc_to_path): removed function call to adjust
+ 	the chord angle.  Moved initializion of num_chords.
+
+	* pggeom.c (hpgl_compute_arc_direction): changed algorithm to not
+ 	use trancendentals.  Also, only need the first and last point of
+ 	the arc for arguments.
+
+	* pggeom.h: synced pggeom.h with pggeom.c change.
+
+	* pgvector.c: style and indentation changes.
+
+	* pginit.c (hpgl_do_reset): defaulted picture frame and plot size
+ 	to the pcl logical page size.
+
+	* pgconfig.c (hpgl_DF): implemented.
+
+	* pgconfig.c (hpgl_IN): implemented.
+
+	* pginit.c (hpgl_do_reset): rewritten using mneumonics.  Still
+	missing replot size.
+
+	* pginit.h: removed hpgl_do_DF -- now there is just hpgl_DF().
+
+
+	* pgmand.h: added hpgl mneumonics.  As many of the mneumonics are
+	macros for collections of mneumonics it is useful to implement
+	the macros in terms of the commands themselves.  This obviates the
+	difficulty of having elements of the state data structure updated
+	in different portions of the code. 
+
+
+	* pglfill.c (hpgl_AC): done.
+
+
+	* pglfill.c (hpgl_FT): Filled in default spacing and angle, though
+	it is currently incomplete, see comments in the code.
+
+
+	* pgdraw.c (hpgl_set_graphics_state): 
+	Initialize have_path correctly. (OK - should work)
+	Initialize pen number (SP) correctly. (OK)
+	Initialize number pens (NP) correctly. (OK needs work)
+
+
+	* pgdraw.c (hpgl_add_point_to_path): New code to initialize the
+	current transformation matrix each time a gl/2 path is started.
+
+	* pgdraw.c (hpgl_draw_current_path): initialize the graphics state
+	each time we stroke or fill.
+
+
+	* pgmand.h (hpgl_args_add_real):
+	TODO: fix promotion to doubles.  ?? make scanner use doubles.
+
+
+	* pglfill.c (hpgl_UL): UL with no parms executes LT;  Also code to
+	update the both fixed and adaptive line patterns.
+
+	* pgstate.h (pcl_hpgl_state_s): added boolean solid_line_type to
+	the state.  False if a dashed line has been specified.
+
+	* pgstate.h (pcl_hpgl_state_s): split line patterns into 2 data
+ 	structures one for adaptive and one for fixed.
+
+	* pgdraw.c: gs graphics state updates for line types and line
+ 	attributes.
+
+	* pgstate.h (pcl_hpgl_state_s): changed line joins and caps to
+	type int instead of gs enumerated types.  The mapping to the gs
+	types happens later.
+
+
+	* pglfill.c (hpgl_LA): Added defaults for the no argument case.
+
+----------------------------------------------------------------
