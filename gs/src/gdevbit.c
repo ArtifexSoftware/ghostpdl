@@ -390,7 +390,9 @@ bit_put_params(gx_device * pdev, gs_param_list * plist)
     }
     /* Now change num_components -- couldn't above because	*/
     /*  '1' is special in gx_default_put_params			*/
-    pdev->color_info.num_components = new_ncomps;
+    if (ccode == 0)
+	pdev->color_info.num_components = new_ncomps;
+
     if (code != 1) {
 	if (pdev->is_open)
 	    gs_closedevice(pdev);
