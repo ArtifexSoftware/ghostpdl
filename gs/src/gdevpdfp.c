@@ -195,8 +195,10 @@ gdev_pdf_get_params(gx_device * dev, gs_param_list * plist)
     float cl = (float)pdev->CompatibilityLevel;
     int code = gdev_psdf_get_params(dev, plist);
     int cdv = CoreDistVersion;
+    int EmbedFontObjects = 1;
 
     if (code < 0 ||
+	(code = param_write_int(plist, ".EmbedFontObjects", &EmbedFontObjects)) < 0 ||
 	(code = param_write_int(plist, "CoreDistVersion", &cdv)) < 0 ||
 	(code = param_write_float(plist, "CompatibilityLevel", &cl)) < 0 ||
 	/* Indicate that we can process pdfmark and DSC. */

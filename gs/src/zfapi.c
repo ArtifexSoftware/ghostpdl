@@ -731,8 +731,6 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
 
     /* Refine descendents : */
     if (font_file_path == NULL && pbfont->FontType == ft_CID_encrypted) {
-        /*  fixme : Do we really need this ? (besides FontBBox)
-        */
         gs_font_cid0 *pfcid = (gs_font_cid0 *)pbfont;
         gs_font_type1 **FDArray = pfcid->cidata.FDArray;
         int i, n = pfcid->cidata.FDArray_size;
@@ -775,6 +773,8 @@ private int notify_remove_font(void *proc_data, void *event_data)
     to font features. Then zFAPIrebuildfont sets FAPI entry
     into gx_font_base and replaces BuildGlyph and BuildChar 
     to enforce the FAPI handling.
+
+    This operator must not be called with devices which embed fonts.
 
 */
 private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
@@ -1328,6 +1328,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
 
 /* <font_dict> .FAPIpassfont bool <font_dict> */
 /* must insert /FAPI to font dictionary */
+/* This operator must not be called with devices which embed fonts. */
 private int zFAPIpassfont(i_ctx_t *i_ctx_p)
 {   os_ptr op = osp;
     int code;

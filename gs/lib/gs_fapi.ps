@@ -55,7 +55,32 @@ languagelevel 2 .setlanguagelevel
 
 %====================================================================
 % Redefine Font category with FAPIfontmap and CIDFont with FAPIfontmap :
-10 dict begin    % a temporary dictionary for local binding.
+15 dict begin    % a temporary dictionary for local binding.
+
+/EmbedFontObjectsQuery mark
+  /.EmbedFontObjects 0
+.dicttomark def
+
+/is_device_compatible_to_FAPI    % - is_device_compatible_to_FAPI <bool>
+{ currentdevice //EmbedFontObjectsQuery .getdeviceparams               % <mark> <name> <value> ...
+  dup mark eq {
+    pop true
+  } {
+    exch pop exch pop 0 eq
+  } ifelse
+  % The code above assumes that only the requested parameter is rendered.
+  % The commented-out code below may be useful for general case.
+  % Keeping it for a while.
+  % counttomark 2 idiv {
+  %   exch /.EmbedFontObjects eq {
+  %     counttomark 1 add 1 roll cleartomark
+  %     0 eq exit
+  %   } if
+  % } repeat
+  % dup mark eq {
+  %   pop true
+  % } if
+} bind def
 
 %----------------------------- Process FAPIconfig -----------------------
 
@@ -280,9 +305,14 @@ currentdict end def
   % fixme: probably we could provide an estimation size for some fonts.
 } bind def
 
+/IsActive       % <record> IsActive <bool>
+{ pop //is_device_compatible_to_FAPI exec
+} bind def
+
 /FontRecordVirtualMethods 3 dict begin
   /GetFilePath //GetFilePath def
   /GetSize //GetSize def
+  /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   { //FontOptions //complete_instance exec
     2 copy //GetSize exec
@@ -293,6 +323,7 @@ currentdict end def
   /GetFilePath //GetFilePath def
   /GetSize //GetSize def
   /GetCSI //TranslateCSI def
+  /IsActive //IsActive def
   /MakeInstance   % <Name> <record> MakeInstance <Name> <Instance> <size>
   { //CIDFontOptions //complete_instance exec
     2 copy //GetSize exec
@@ -471,7 +502,7 @@ bind def
   } ifelse
 } bind def
 
-/FAPIhook  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
+/FAPIhook_aux  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
 {                                                     % name <<font>>
   { (FAPIhook ) print 1 index = } //FAPI_hook_debug exec
   dup /FAPI known {
@@ -500,6 +531,14 @@ bind def
     } {
       { (The font ) print //PrintFontRef exec ( doesn't need to render with FAPI.) = } //FAPI_hook_debug exec
     } ifelse
+  } ifelse
+} bind def
+
+/FAPIhook  %      <string|name> <font_dict> .FAPIhook <string|name> <font>
+{ //is_device_compatible_to_FAPI exec
+  { //FAPIhook_aux exec
+  } {
+    { (FAPIhook is disabled for the current device.) = } //FAPI_hook_debug exec
   } ifelse
 } bind def
 

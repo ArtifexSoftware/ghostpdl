@@ -2866,6 +2866,17 @@ Other users please skip this section.
 </em>
 
 <p>
+<em>
+Important note: Third-party font renderers (such as UFST) are incompatible
+with devices that can embed fonts in their output (such as pdfwrite),
+because such renderers store fonts in a form from which Ghostscript cannot
+get the necessary information for embedding.  Ghostscript disables such
+renderers when such devices is being used.  In particular, UFST is
+disabled while running Ghostscript with the <b><tt>pdfwrite</tt></b>
+device.
+</em>
+
+<p>
 To run Ghostscript with UFST, you first need to build Ghostscript
 with the UFST bridge. Refer <a href="Make.htm#UFST_build">How to build Ghostscript with UFST</a>.
 
