@@ -81,10 +81,10 @@ class DocRefs:
         elif os.path.islink(fname):
             pass
         elif os.path.isfile(fname):
-            self.to[fname] = adding
+            self.to[os.path.normpath(fname)] = adding
 
     def doFrom(self, fname, adding):
-        self.From[fname] = adding
+        self.From[os.path.normpath(fname)] = adding
 
     def doFromDoc(self, docname, adding):
         for f in hrefs(docname):
@@ -118,9 +118,9 @@ def mainArgs(arglist, root, fromProc, toProc):
             print sys.stderr >> 'Unknown switch: ' + arg
             exit(1)
         elif arg.find('*') >= 0:
-            for f in glob.glob(root + arg): do(f, adding)
+            for f in glob.glob(os.path.join(root, arg)): do(f, adding)
         else:
-            do(root + arg, adding)
+            do(os.path.join(root, arg), adding)
 
 class GSCheckDocRefs(GSTestCase):
 

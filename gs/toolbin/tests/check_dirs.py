@@ -36,8 +36,8 @@ class GSCheckEmptyTopDirectory(GSTestCase):
         """The top-level directory must not have extraneous files."""
         import glob, os.path
         messages = []
-        for f in glob.glob(self.root + '*'):
-            if not (os.path.isdir(f) or os.path.islink(f) or f[len(self.root):] in self.allowedFiles):
+        for f in glob.glob(os.path.join(self.root, '*')):
+            if not (os.path.isdir(f) or os.path.islink(f) or os.path.basename(f) in self.allowedFiles):
                 messages.append(f)
 	messages.sort()
         self.failIfMessages(messages)
@@ -60,22 +60,22 @@ class GSCheckDirectoryMatchesCVS(GSTestCase):
         pattern = re.compile("^/([^/]+)/")
         Entries = {}
         Files = {}
-        d = self.root + self.dirName
+        d = os.path.join(self.root, self.dirName)
         # Skip files matching patterns in .cvsignore.
         fp = None
         skip = []
         try:
-            fp = open(d + '/.cvsignore', 'r')
+            fp = open(os.path.join(d, '.cvsignore'), 'r')
         except:
             pass
         if fp != None:
             while 1:
                 line = fp.readline()
                 if line == '': break
-                skip += glob.glob(d + '/' + line.rstrip())
+                skip += glob.glob(os.path.join(d, line.rstrip()))
             fp.close()
         try:
-            fp = open(d + '/CVS/Entries', 'r')
+            fp = open(os.path.join(d, 'CVS', 'Entries'), 'r')
         except:
             self.fail("Cannot find %s/CVS/Root" % d)
             return
@@ -86,20 +86,20 @@ class GSCheckDirectoryMatchesCVS(GSTestCase):
             if found != None:
                 Entries[found.group(1)] = line
         fp.close()
-        for f in glob.glob(d + "/*") + glob.glob(d + "/.[a-zA-Z0-9_-]*"):
+        for f in glob.glob(os.path.join(d, "*")) + glob.glob(os.path.join(d, ".[a-zA-Z0-9_-]*")):
             if f not in skip and not os.path.isdir(f):
                 Files[os.path.basename(f)] = 1
         m1 = []
         for f in Entries.keys():
             if not Files.has_key(f):
-                m1.append("%s/%s" % (d, f))
+                m1.append(os.path.join(d, f))
         if m1:
             m1.sort()
             m1 = ['These %d files are registered with CVS, but do not exist:' % len(m1)] + m1
         m2 = []
         for f in Files.keys():
             if not Entries.has_key(f):
-                m2.append("%s/%s" % (d, f))
+                m2.append(os.path.join(d, f))
         if m2:
             m2.sort()
             m2 = ['These %d files are not registered with CVS:' % len(m2)] + m2
