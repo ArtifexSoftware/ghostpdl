@@ -58,8 +58,7 @@
 </ul>
 <li><a href="#Version6.62">Version 6.62 (2001-03-19)</a>
 <ul>
-<li><a href="#6.62_Incompatible_changes">Incompatible changes</a>,
-    <a href="#6.62-Documentation">Documentation</a>,
+<li><a href="#6.62-Documentation">Documentation</a>,
     <a href="#6.62-Procedures">Procedures</a>,
     <a href="#6.62-Utilities">Utilities</a>,
     <a href="#6.62-Drivers">Drivers</a>,
@@ -72,8 +71,7 @@
 </ul>
 <li><a href="#Version6.61">Version 6.61 (2001-02-21)</a>
 <ul>
-<li><a href="#6.61_Incompatible_changes">Incompatible changes</a>,
-    <a href="#6.61-Documentation">Documentation</a>,
+<li><a href="#6.61-Documentation">Documentation</a>,
     <a href="#6.61-Procedures">Procedures</a>,
     <a href="#6.61-Utilities">Utilities</a>,
     <a href="#6.61-Drivers">Drivers</a>,
@@ -901,33 +899,6 @@ closed, except for the following: 201955, 202735, 206652, 209350,
 since the 6.61 release, SourceForge has renumbered all bugs in the
 1xxxxx range by adding 100000 (thus, they are now 2xxxxxx).
 
-<h3><a name="6.62_Incompatible_changes"></a>Incompatible changes</h3>
-
-<pre>
-(Interpreter)
-	- With WMode = 1, CID-keyed fonts with no Metrics2 now use default
-metrics computed from FontBBox rather than the horizontal metrics.
-(PDF interpreter)
-	- The interpreter now skips to the next EOL after reading the data
-following the ID operator.
-	- The incorrectly named ViewerOrientation DSC comment is now
-corrected to ViewingOrientation.
-(Streams)
-	- All decoding filters that recognize an EOD in the source data
-must now have an init procedure that sets state->min_left = 1.
-(Library)
-	- The glyph_data, subr_data, and seac_data procedures in a Type 1
-font (gs_type1_data_procs), and the glyph_data procedure passed to
-psf_{check,get}_outline_glyphs, must now return 1 iff the outline string was
-newly allocated and should be freed by the caller, like the get_outline
-procedure of Type 42 fonts (gs_type42_data).
-	- The ip_state structure is renamed ip_state_t, and has a new
-member, free_char_string.
-	- The incorrectly named ViewerOrientation DSC comment is now
-corrected to ViewingOrientation, and the viewer_orientation members of
-the DSC parsing structure are corrected to viewing_orientation.
-
-
 
 <h2><a name="6.62-Documentation"></a>Documentation</h2><pre>
 
@@ -1399,33 +1370,6 @@ closed, except for the following: 101814, 101955, 102735, 106652,
 127709, 127802, 128180, 128354, 128423, 128641, 128714, 128808,
 129425, 129439, 130694, 130699, 131001, 131390, 131514, 132334,
 132696, 133403.
-
-<h3><a name="6.61_Incompatible_changes"></a>Incompatible changes</h3>
-
-<pre>
-(Interpreter)
-	- With WMode = 1, CID-keyed fonts with no Metrics2 now use default
-metrics computed from FontBBox rather than the horizontal metrics.
-(PDF interpreter)
-	- The interpreter now skips to the next EOL after reading the data
-following the ID operator.
-	- The incorrectly named ViewerOrientation DSC comment is now
-corrected to ViewingOrientation.
-(Streams)
-	- All decoding filters that recognize an EOD in the source data
-must now have an init procedure that sets state->min_left = 1.
-(Library)
-	- The glyph_data, subr_data, and seac_data procedures in a Type 1
-font (gs_type1_data_procs), and the glyph_data procedure passed to
-psf_{check,get}_outline_glyphs, must now return 1 iff the outline string was
-newly allocated and should be freed by the caller, like the get_outline
-procedure of Type 42 fonts (gs_type42_data).
-	- The ip_state structure is renamed ip_state_t, and has a new
-member, free_char_string.
-	- The incorrectly named ViewerOrientation DSC comment is now
-corrected to ViewingOrientation, and the viewer_orientation members of
-the DSC parsing structure are corrected to viewing_orientation.
-
 
 
 <h2><a name="6.61-Documentation"></a>Documentation</h2><pre>
