@@ -149,15 +149,6 @@ ENUM_PTRS_WITH(display_enum_ptrs, gx_device_display *ddev) return 0;
 	if (ddev->mdev) {
 	    return ENUM_OBJ(gx_device_enum_ptr((gx_device *)ddev->mdev));
 	}
-	return 0;	/* if mdev is NULL, then pBitmap will be also */
-    case 1: 
-        if (ddev->callback && 
-	    !ddev->callback->display_memalloc && 
-	    !ddev->callback->display_memfree &&
-	    ddev->pBitmap) {
-	    /* we allocated the bitmap */
-	    return ENUM_OBJ(ddev->pBitmap);
-	}
 	return 0;
 ENUM_PTRS_END
 
@@ -904,7 +895,7 @@ display_free_bitmap(gx_device_display * ddev)
 		ddev->pBitmap);
 	}
 	else {
-	    gs_free_object(gs_memory_stable(ddev->memory), 
+	    gs_free_object(&gs_memory_default,
 		ddev->pBitmap, "display_free_bitmap");
 	}
 	ddev->pBitmap = NULL;
@@ -953,19 +944,19 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     /* Tell the memory device to allocate the line pointers separately
      * so we can place the bitmap in special memory.
      */
-    ddev->mdev->line_pointer_memory = gs_memory_stable(ddev->memory); 
+    ddev->mdev->line_pointer_memory = ddev->mdev->memory;
     ddev->ulBitmapSize = gdev_mem_bits_size(ddev->mdev,
 	ddev->mdev->width, ddev->mdev->height);
 
-    /* allocate bitmap */
+    /* allocate bitmap using an allocator not subject to GC */
     if (ddev->callback->display_memalloc 
 	&& ddev->callback->display_memfree) {
         ddev->pBitmap = (*ddev->callback->display_memalloc)(ddev->pHandle, 
 	    ddev, ddev->ulBitmapSize);
     }
     else {
-	ddev->pBitmap = gs_alloc_bytes_immovable(gs_memory_stable(ddev->memory),
-		(uint)ddev->ulBitmapSize, "display_alloc_bitmap");
+	ddev->pBitmap = gs_alloc_byte_array_immovable(&gs_memory_default,
+		(uint)ddev->ulBitmapSize, 1, "display_alloc_bitmap");
     }
 
     if (ddev->pBitmap == NULL) {
