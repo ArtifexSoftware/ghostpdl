@@ -75,8 +75,6 @@ gs_setcolor(gs_state * pgs, const gs_client_color * pcc)
     gs_color_space *    pcs = pgs->color_space;
     gs_client_color     cc_old = *pgs->ccolor;
 
-    if (pgs->in_cachedevice)
-	return_error(gs_error_undefined);
     gx_unset_dev_color(pgs);
     (*pcs->type->adjust_color_count)(pcc, pcs, 1);
     *pgs->ccolor = *pcc;

@@ -361,7 +361,7 @@ gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfont,
     else if (pfont->PaintType != 0) {
 	/* Don't oversample artificially stroked fonts. */
 	log2_scale.x = log2_scale.y = 0;
-    } else if (!gs_color_writes_pure(penum->pgs)) {
+    } else if (!penum->is_pure_color) {
 	/* Don't oversample characters for rendering in non-pure color. */
 	log2_scale.x = log2_scale.y = 0;
     } else {
@@ -578,7 +578,10 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	cc->wmode = gs_rootfont(pgs)->WMode;
 	cc->wxy = penum->wxy;
 	cc->subpix_origin = subpix_origin;
-	cc->pair = penum->pair;
+	if (penum->pair != 0)
+	    cc_set_pair(cc, penum->pair);
+	else
+	    cc->pair = 0;
 	/* Install the device */
 	gx_set_device_only(pgs, (gx_device *) penum->dev_cache);
 	pgs->ctm_default_set = false;
@@ -924,6 +927,12 @@ show_proceed(gs_show_enum * penum)
 			}
 		    } else
     			SET_CURRENT_GLYPH(penum, glyph);
+		    penum->is_pure_color = gs_color_writes_pure(penum->pgs); /* Save
+		                 this data for compute_glyph_raster_params to work 
+				 independently on the color change in BuildChar. 
+				 Doing it here because cshow proc may modify 
+				 the graphic state.
+				 */
 		    {
 			int alpha_bits, depth;
 			gs_log2_scale_point log2_scale;
@@ -1200,6 +1209,7 @@ gx_show_text_retry(gs_text_enum_t *pte)
     gs_grestore(penum->pgs);
     penum->width_status = sws_retry;
     penum->log2_scale.x = penum->log2_scale.y = 0;
+    penum->pair = 0;
     return 0;
 }
 

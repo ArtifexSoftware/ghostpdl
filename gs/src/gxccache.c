@@ -229,7 +229,7 @@ gx_lookup_xfont_char(const gs_state * pgs, cached_fm_pair * pair,
     cc->wxy.y = float2fixed(wxy.y);
     cc->offset.x = int2fixed(-bbox.p.x);
     cc->offset.y = int2fixed(-bbox.p.y);
-    cc->pair = pair;
+    cc_set_pair(cc, pair);
     if_debug5('k', "[k]xfont %s char %d/0x%x#0x%lx=>0x%lx\n",
 	      font->font_name.chars, enc_index, (int)chr,
 	      (ulong) glyph, (ulong) xg);

@@ -554,7 +554,13 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	while (dir->ccache.table[chi &= dir->ccache.table_mask] != 0)
 	    chi++;
 	dir->ccache.table[chi] = cc;
-	assert(cc->pair == pair);
+	if (cc->pair == NULL) {
+	    /* gx_show_text_retry could reset it when bbox_draw
+	       discovered an insufficient FontBBox and enlarged it. 
+	       Glyph raster params could change then. */
+	    cc->pair = pair;
+	} else
+	    assert(cc->pair == pair);
 	cc->linked = true;
 	cc_set_pair(cc, pair);
 	pair->num_chars++;
