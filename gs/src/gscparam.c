@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -74,10 +74,9 @@ private gs_c_param *
 c_param_find(const gs_c_param_list *plist, gs_param_name pkey, bool any)
 {
     gs_c_param *pparam = plist->head;
-    uint len = strlen(pkey);
 
     for (; pparam != 0; pparam = pparam->next)
-	if (pparam->key.size == len && !memcmp(pparam->key.data, pkey, len))
+	if (!strcmp(pparam->key, pkey))
 	    return (pparam->type != gs_param_type_any || any ? pparam : 0);
     return 0;
 }
