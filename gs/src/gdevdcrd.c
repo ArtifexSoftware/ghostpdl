@@ -35,6 +35,8 @@ private const gs_range3 bit_RangePQR = {
     {{0, (float)0.9505}, {0, 1}, {0, (float)1.0890}}
 };
 private const float dent_PQR = 1.0;
+
+
 private int
 bit_TransformPQR_proc(const gs_memory_t *mem, 
 		      int index, floatp in, const gs_cie_wbsd * pwbsd,
@@ -48,7 +50,7 @@ private const gs_cie_transform_proc3 bit_TransformPQR = {
 };
 private const float dent_LMN = 1.0;
 private float
-bit_EncodeLMN_proc(const gs_memory_t *mem, floatp in, const gs_cie_render * pcrd)
+bit_EncodeLMN_proc(floatp in, const gs_cie_render * pcrd)
 {
     return DENT(in, dent_LMN);
 }
@@ -64,7 +66,7 @@ private const gs_matrix3 bit_MatrixABC = {
     {(float)-0.49863, (float) 0.04152, (float) 1.05700}
 };
 private float
-bit_EncodeABC_proc(const gs_memory_t *mem,floatp in, const gs_cie_render * pcrd)
+bit_EncodeABC_proc(floatp in, const gs_cie_render * pcrd)
 {
     return pow(max(in, 0.0), 0.45);
 }
