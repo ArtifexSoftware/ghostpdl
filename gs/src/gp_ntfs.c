@@ -44,9 +44,9 @@ setmode_binary(int fno, bool binary)
 {
     /* Use non-standard setmode that almost all NT compilers offer. */
 #if defined(__STDC__) && !defined(__WATCOMC__)
-    return _setmode(prnfno, binary ? _O_BINARY : _O_TEXT);
+    return _setmode(fno, binary ? _O_BINARY : _O_TEXT);
 #else
-    return setmode(prnfno, binary ? O_BINARY : O_TEXT);
+    return setmode(fno, binary ? O_BINARY : O_TEXT);
 #endif
 }
 void
