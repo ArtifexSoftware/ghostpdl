@@ -1,4 +1,4 @@
-#    Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -221,7 +221,7 @@ LCT=DEBUG LINES
 
 GENOPT=$(CP) $(CD) $(CT) $(CS)
 
-CCOPT=-d+ -i=$(INCDIRS) -zq -zp8
+CCOPT=-d+ -i=$(INCDIRS) -zq -zp8 -ei
 CCFLAGS=$(CCOPT) $(GENOPT) $(PLATOPT) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) -oi $(CCFLAGS)
 CCAUX=$(COMP) -oi $(CCOPT) $(FPFLAGS)
