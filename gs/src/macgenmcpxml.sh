@@ -214,8 +214,8 @@ WriteSETTINGLIST()
         
 	echo "<!-- Settings for "C/C++ Warnings" panel -->"
 	WriteValueSetting MWWarning_C_warn_illpragma 1
-	WriteValueSetting MWWarning_C_warn_emptydecl 1
-	WriteValueSetting MWWarning_C_warn_possunwant 1
+	WriteValueSetting MWWarning_C_warn_emptydecl 0
+	WriteValueSetting MWWarning_C_warn_possunwant 0
 	WriteValueSetting MWWarning_C_warn_unusedvar 1
 	WriteValueSetting MWWarning_C_warn_unusedarg 0
 	WriteValueSetting MWWarning_C_warn_extracomma 1
