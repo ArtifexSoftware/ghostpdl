@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Write an embedded TrueType font */
 #include "memory_.h"
+#include <assert.h>
 #include <stdlib.h>		/* for qsort */
 #include "gx.h"
 #include "gscencs.h"
@@ -172,7 +173,7 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
     if (glyph == gs_no_glyph)
 	return 0;		/* .notdef */
     code = font->procs.glyph_name(font, glyph, pstr);
-    GS_ASSERT(code >= 0);
+    assert(code >= 0);
     if (glyph < gs_min_cid_glyph) {
 	gs_char mac_char;
 	gs_glyph mac_glyph;
@@ -189,7 +190,7 @@ mac_glyph_index(gs_font *font, int ch, gs_const_string *pstr)
 	if (mac_glyph == gs_no_glyph)
 	    return -1;
 	code = gs_c_glyph_name(mac_glyph, &mstr);
-	GS_ASSERT(code >= 0);
+	assert(code >= 0);
 	if (!bytes_compare(pstr->data, pstr->size, mstr.data, mstr.size))
 	    return (int)mac_char;
     }

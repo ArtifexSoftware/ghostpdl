@@ -28,6 +28,7 @@ Started by Graham Asher, 9th August 2002.
 #include "gxfont.h"
 #include "gxfont1.h"
 
+#include <assert.h>
 
 /*
 Public structures and functions in this file are prefixed with FF_ because they are part of
@@ -272,7 +273,7 @@ static void write_subrs_index(FAPI_font* a_fapi_font,WRF_output* a_output)
 	unsigned char* data_start = 0;
 	int i;
 	int count = a_fapi_font->get_word(a_fapi_font,FAPI_FONT_FEATURE_Subrs_count,0);
-	GS_DBG_ASSERT(count >= 0);
+	assert(count >= 0);
 
 	WRF_wbyte(a_output,(unsigned char)(count >> 8));
 	WRF_wbyte(a_output,(unsigned char)(count & 0xFF));

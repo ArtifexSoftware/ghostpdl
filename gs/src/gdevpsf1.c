@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Write an embedded Type 1 font */
 #include "memory_.h"
+#include <assert.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsccode.h"
@@ -303,7 +304,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 		int code;
 
 		code = pfont->procs.glyph_name((gs_font *)pfont, glyph, &gstr);
-		GS_DBG_ASSERT(code >= 0);  /* why isn't this a return code error */
+		assert(code >= 0);
 		stream_puts(s, "/");
 		stream_write(s, gstr.data, gstr.size);
 		pprintd1(s, " %d -| ", gdata.bits.size);

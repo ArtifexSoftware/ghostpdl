@@ -16,6 +16,7 @@
 
 /* $Id$ */
 /* Default polygon and image drawing device procedures */
+#include <assert.h>
 #include "math_.h"
 #include "memory_.h"
 #include "stdint_.h"
@@ -182,7 +183,7 @@ init_gradient(trap_gradient *g, const gs_fill_attributes *fa,
 	    g->den = fa->yend - fa->ystart;
 	else {
 	    g->den = e->end.y - e->start.y;
-	    GS_DBG_ASSERT(g->den == l->h);
+	    assert(g->den == l->h);
 	}
 	for (i = 0; i < num_components; i++) {
 	    g->num[i] = e->c1[i] - e->c0[i];

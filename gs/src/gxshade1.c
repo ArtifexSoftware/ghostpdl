@@ -33,6 +33,7 @@
 #include "gxshade4.h"
 #include "gxdevcli.h"
 #include "vdtrace.h"
+#include <assert.h>
 
 #define VD_TRACE_AXIAL_PATCH 1
 #define VD_TRACE_RADIAL_PATCH 1
@@ -1024,7 +1025,7 @@ R_outer_circle(patch_fill_state_t *pfs, const gs_rect *rect,
 	    (x1 - x0) * s - (r1 - r0) * s == bbox_x - x0 + r0
 	    s = (bbox_x - x0 + r0) / (x1 - x0 - r1 + r0)
 	 */
-	GS_DBG_ASSERT(x1 - x0 + r1 - r0); /* We checked for obtuse cone. */
+	assert(x1 - x0 + r1 - r0); /* We checked for obtuse cone. */
 	sp = (rect->p.x - x0 + r0) / (x1 - x0 - r1 + r0);
 	sq = (rect->q.x - x0 + r0) / (x1 - x0 - r1 + r0);
     } else {
@@ -1135,7 +1136,7 @@ R_obtuse_cone(patch_fill_state_t *pfs, const gs_rect *rect,
 	double da = hypot(ax - x0, ay - y0);
 	double h = r * r0 / da, g;
 
-	GS_DBG_ASSERT(h <= r);
+	assert(h <= r);
 	g = sqrt(r * r - h * h);
 	p0.x = ax - dx * g / d - dy * h / d;
 	p0.y = ay - dy * g / d + dx * h / d;

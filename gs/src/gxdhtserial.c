@@ -18,6 +18,7 @@
 /* Serialization and de-serialization for (traditional) halftones */
 
 #include "memory_.h"
+#include <assert.h>
 #include "gx.h"
 #include "gscdefs.h"
 #include "gserrors.h"
@@ -479,7 +480,7 @@ gx_ht_write(
      *
      * NB: the pdht->order field is ignored by this code.
      */
-    GS_DBG_ASSERT(pdht != 0 && pdht->components != 0);
+    assert(pdht != 0 && pdht->components != 0);
 
     /*
      * The following fields do not need to be transmitted:
@@ -506,7 +507,7 @@ gx_ht_write(
      * transmitted only once per page, so it is not clear that use of
      * such information would significantly reduce command list size.
      */
-    GS_DBG_ASSERT(pdht->num_comp == num_comps);
+    assert(pdht->num_comp == num_comps);
 
     /* calculate the required data space */
     for ( i = 0, code = gs_error_rangecheck;
@@ -515,7 +516,7 @@ gx_ht_write(
         uint     tmp_size = 0;
 
         /* sanity check */
-        GS_DBG_ASSERT(i == pdht->components[i].comp_number);
+        assert(i == pdht->components[i].comp_number);
 
         code = gx_ht_write_component( &pdht->components[i],
                                       data,

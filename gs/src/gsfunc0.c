@@ -37,6 +37,10 @@
 #define POLE_CACHE_IGNORE 0     /* A temporary development technology need. 
 				   Remove after the beta testing. */
 
+#if POLE_CACHE_DEBUG
+#   include <assert.h>
+#endif
+
 typedef struct gs_function_Sd_s {
     gs_function_head_t head;
     gs_function_Sd_params_t params;
@@ -766,9 +770,9 @@ fn_Sd_evaluate(const gs_function_t * pfn_common, const float *in, float *out)
 	    int k, code1;
 
 	    code1 = fn_Sd_evaluate_general(pfn_common, in, y);
-	    GS_DBG_ASSERT(code == code1);
+	    assert(code == code1);
 	    for (k = 0; k < pfn->params.n; k++)
-		GS_DBG_ASSERT(any_abs(y[k] - out[k]) <= 1e-6 * (pfn->params.Range[k * 2 + 1] - pfn->params.Range[k * 2 + 0]));
+		assert(any_abs(y[k] - out[k]) <= 1e-6 * (pfn->params.Range[k * 2 + 1] - pfn->params.Range[k * 2 + 0]));
 	}
 #	endif
     } else

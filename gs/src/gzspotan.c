@@ -31,7 +31,7 @@
 #include "memory_.h"
 #include "math_.h"
 #include "vdtrace.h"
-
+#include <assert.h>
 
 #define VD_TRAP_N_COLOR RGB(128, 128, 0)
 #define VD_TRAP_U_COLOR RGB(0, 0, 255)
@@ -130,7 +130,7 @@ private inline void
 trap_unreserve(gx_device_spot_analyzer *padev, gx_san_trap *t)
 {
     /* Assuming the last reserved one. */
-    GS_DBG_ASSERT(t->link == padev->trap_free);
+    assert(t->link == padev->trap_free);
     padev->trap_free = t;
 }
 
@@ -138,7 +138,7 @@ private inline void
 cont_unreserve(gx_device_spot_analyzer *padev, gx_san_trap_contact *t)
 {
     /* Assuming the last reserved one. */
-    GS_DBG_ASSERT(t->link == padev->cont_free);
+    assert(t->link == padev->cont_free);
     padev->cont_free = t;
 }
 
@@ -318,7 +318,7 @@ check_band_list(const gx_san_trap *list)
 	const gx_san_trap *t = list;
 
 	while (t->next != list) {
-	    GS_DBG_ASSERT(t->xrtop <= t->next->xltop);
+	    assert(t->xrtop <= t->next->xltop);
 	    t = t->next;
 	}
     }
@@ -335,12 +335,10 @@ try_unite_last_trap(gx_device_spot_analyzer *padev, fixed xlbot)
 	   unite it and release the last trapezoid and the last contact. */
 	if (t != NULL && t->upper != NULL && last->xrbot < xlbot && 
 		(last->prev == last || last->prev->xrbot < last->xlbot)) {
-	    if ((t->next == NULL || t->xrtop < t->next->xltop) &&
-	        (t->upper->next == t->upper &&
-		    t->l == last->l && t->r == last->r)) {
+	    if (t->upper->next == t->upper &&
+		    t->l == last->l && t->r == last->r) {
 		if (padev->bot_current == t)
 		    padev->bot_current = (t == band_list_last(padev->bot_band) ? NULL : t->next);
-		GS_DBG_ASSERT(t->upper->upper == last); 
 		band_list_remove(&padev->top_band, last);
 		band_list_remove(&padev->bot_band, t);
 		band_list_insert_last(&padev->top_band, t);
@@ -806,7 +804,7 @@ gx_san_generate_stems(gx_device_spot_analyzer *padev,
 {
     int code;
 
-    vd_get_dc('f');
+    vd_get_dc('h');
     vd_set_shift(0, 0);
     vd_set_scale(VD_SCALE);
     vd_set_origin(0, 0);

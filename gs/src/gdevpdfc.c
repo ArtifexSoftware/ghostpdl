@@ -35,6 +35,7 @@
 #include "sstring.h"
 #include "gxcspace.h"
 #include "sarc4.h"
+#include <assert.h>
 
 /*
  * PDF doesn't have general CIEBased color spaces.  However, it provides
@@ -886,7 +887,7 @@ pdf_color_space_named(gx_device_pdf *pdev, cos_value_t *pvalue,
 		*ppranges = copy_ranges;
 	} else
 	    ppcs->ranges = 0;
-	GS_DBG_ASSERT(pca->id == pres->object->id);
+	assert(pca->id == pres->object->id);
 	COS_FREE(pres->object, "pdf_color_space");
 	pres->object = (cos_object_t *)pca;
 	cos_write_object(COS_OBJECT(pca), pdev);
