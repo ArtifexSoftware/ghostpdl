@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -236,6 +236,9 @@ pdfdict begin
   exch dup dup length 1 sub 2 copy
 		% Stack: newsublen lseq lseq len-1 lseq len-1
   get 5 -1 roll growto put
+} bind def
+/lforall {	% <lseq> <proc> lforall -
+  /forall cvx 2 packedarray cvx forall
 } bind def
 
 % We keep track of PDF objects using the following PostScript variables:
