@@ -294,7 +294,7 @@ pcl_enter_graphics_mode(
 
     /* min size is 1 pixel */
     src_wid = max(1, (uint)(floor(print_rect.q.x) - floor(print_rect.p.x)));
-    src_hgt = max(1, (uint)(floor(print_rect.q.y) - floor(print_rect.p.y));
+    src_hgt = max(1, (uint)(floor(print_rect.q.y) - floor(print_rect.p.y)));
     if (prstate->src_width_set && (src_wid > prstate->src_width))
         src_wid = prstate->src_width;
     if (prstate->src_height_set && (src_hgt > prstate->src_height))
