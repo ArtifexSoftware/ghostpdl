@@ -117,10 +117,8 @@ put_u16(byte *p, uint v)
 private void
 put_u32(byte *p, ulong v)
 {
-    p[0] = (byte)(v >> 24);
-    p[1] = (byte)(v >> 16);
-    p[2] = (byte)(v >> 8);
-    p[3] = (byte)v;
+    put_u16(p, (ushort)(v >> 16));
+    put_u16(p + 2, (ushort)v);
 }
 private ulong
 put_table(byte tab[16], const char *tname, ulong checksum, ulong offset,
@@ -139,8 +137,6 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 {
     ulong base = start;
     ulong limit = base + length;
-    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
-	pfont->data.string_proc;
 
     if_debug3('l', "[l]write_range pos = %ld, start = %lu, length = %u\n",
 	      stell(s), start, length);
@@ -150,7 +146,7 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 	int code;
 
 	/* Write the largest block we can access consecutively. */
-	while ((code = string_proc(pfont, base, size, &ptr)) < 0) {
+	while ((code = pfont->data.string_proc(pfont, base, size, &ptr)) < 0) {
 	    if (size <= 1)
 		return code;
 	    size >>= 1;
@@ -392,6 +388,59 @@ size_cmap(gs_font *font, uint first_code, int num_glyphs, gs_glyph max_glyph,
     return stell(&poss);
 }
 
+/* ------ hmtx/vmtx ------ */
+
+private void
+write_mtx(stream *s, gs_font_type42 *pfont, const gs_type42_mtx_t *pmtx,
+	  int wmode)
+{
+    uint num_metrics = pmtx->numMetrics;
+    uint len = num_metrics * 4;
+    double factor = pfont->data.unitsPerEm * (wmode ? -1 : 1);
+    float sbw[4];
+    uint i;
+
+    sbw[0] = sbw[1] = sbw[2] = sbw[3] = 0; /* in case of failures */
+    for (i = 0; i < pmtx->numMetrics; ++i) {
+	DISCARD(pfont->data.get_metrics(pfont, i, wmode, sbw));
+	put_ushort(s, (ushort)(sbw[wmode + 2] * factor)); /* width */
+	put_ushort(s, (ushort)(sbw[wmode] * factor)); /* lsb, may be <0 */
+    }
+    for (; len < pmtx->length; ++i, len += 2) {
+	DISCARD(pfont->data.get_metrics(pfont, i, wmode, sbw));
+	put_ushort(s, (ushort)(sbw[wmode] * factor)); /* lsb, may be <0 */
+    }
+}
+
+/* Compute the metrics from the glyph_info. */
+private uint
+size_mtx(gs_font_type42 *pfont, gs_type42_mtx_t *pmtx, uint max_glyph,
+	 int wmode)
+{
+    int prev_lsb = min_int, prev_width = min_int;
+    uint last_lsb = 0, last_width = 0; /* pacify compilers */
+    double factor = pfont->data.unitsPerEm * (wmode ? -1 : 1);
+    uint i;
+
+    for (i = 0; i <= max_glyph; ++i) {
+	float sbw[4];
+	int code = pfont->data.get_metrics(pfont, i, wmode, sbw);
+	int lsb, width;
+
+	if (code < 0)
+	    continue;
+	lsb = (int)(sbw[wmode] * factor);
+	width = (int)(sbw[wmode + 2] * factor);
+	if (lsb != prev_lsb)
+	    prev_lsb = lsb, last_lsb = i;
+	if (width != prev_width)
+	    prev_width = width, last_width = last_lsb = i;
+    }
+    pmtx->numMetrics = last_width + 1;
+    pmtx->length = pmtx->numMetrics * 4 + (last_lsb - last_width) * 2;
+    return pmtx->length;
+}
+
 /* ------ name ------ */
 
 /* Write a generated name table. */
@@ -607,12 +656,14 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
     uint loca_length, loca_checksum[2];
     uint numGlyphs;		/* original value from maxp */
     byte head[56];		/* 0 mod 4 */
+    gs_type42_mtx_t mtx[2];
     post_t post;
     ulong head_checksum, file_checksum = 0;
     int indexToLocFormat;
     bool
 	writing_cid = (options & WRITE_TRUETYPE_CID) != 0,
 	writing_stripped = (options & WRITE_TRUETYPE_STRIPPED) != 0,
+	generate_mtx = (options & WRITE_TRUETYPE_HVMTX) != 0,
 	no_generate = writing_cid | writing_stripped,
 	have_cmap = no_generate,
 	have_name = !(options & WRITE_TRUETYPE_NAME),
@@ -654,7 +705,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 #define W(a,b,c,d)\
   ( ((a) << 24) + ((b) << 16) + ((c) << 8) + (d))
 
-	switch (W(tab[0], tab[1], tab[2], tab[3])) {
+	switch (u32(tab)) {
 	case W('h','e','a','d'):
 	    if (length != 54)
 		return_error(gs_error_invalidfont);
@@ -693,22 +744,24 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	case W('p','o','s','t'):
 	    have_post = true;
 	    break;
-	case W('h','h','e','a'):
-	case W('c','v','t',' '):
-	case W('p','r','e','p'):
 	case W('h','m','t','x'):
+	case W('v','m','t','x'):
+	    if (generate_mtx)
+		continue;
+	    /* falls through */
+	case W('c','v','t',' '):
 	case W('f','p','g','m'):
 	case W('g','a','s','p'):
+	case W('h','h','e','a'):
 	case W('k','e','r','n'):
+	case W('p','r','e','p'):
 	case W('v','h','e','a'):
-	case W('v','m','t','x'):
 	    break;		/* always copy these if present */
 	default:
 	    if (writing_cid)
 		continue;
 	    break;
 	}
-#undef W
 	numTables++;
     }
 
@@ -786,6 +839,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
     numTables_out = numTables + 1 /* head */
 	+ !writing_stripped * 2	/* glyf, loca */
+	+ generate_mtx * 2	/* hmtx, vmtx */
 	+ !no_generate		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
     if (numTables_out >= MAX_NUM_TABLES)
@@ -830,6 +884,15 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	if (!no_generate) {
 	    offset = put_table(tab, "OS/2", 0L /****** NO CHECKSUM ******/,
 			       offset, OS_2_length);
+	    tab += 16;
+	}
+
+	if (generate_mtx) {
+	    offset = put_table(tab, "hmtx", 0L /****** NO CHECKSUM ******/,
+			       offset, size_mtx(pfont, &mtx[0], max_glyph, 0));
+	    tab += 16;
+	    offset = put_table(tab, "vmtx", 0L /****** NO CHECKSUM ******/,
+			       offset, size_mtx(pfont, &mtx[1], max_glyph, 1));
 	    tab += 16;
 	}
 
@@ -893,7 +956,18 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    ulong start = u32(tab + 8);
 	    uint length = u32(tab + 12);
 
-	    write_range(s, pfont, start, length);
+	    switch (u32(tab)) {
+	    case W('h','h','e','a'):
+	    case W('v','h','e','a'):
+		if (generate_mtx) {
+		    write_range(s, pfont, start, length - 2); /* 34 */
+		    put_ushort(s, mtx[tab[0] == 'v'].numMetrics);
+		    break;
+		}
+		/* falls through */
+	    default:
+		write_range(s, pfont, start, length);
+	    }
 	    put_pad(s, length);
 	}
     }
@@ -963,9 +1037,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 #endif
 	    if (!have_cmap) {
 		/*
-		 * Adjust the first and last character indices in the OS/2 table
-		 * to reflect the values in the generated cmap.
-	 */
+		 * Adjust the first and last character indices in the OS/2
+		 * table to reflect the values in the generated cmap.
+		 */
 		const byte *pos2;
 		ttf_OS_2_t os2;
 
@@ -979,6 +1053,15 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 		write_range(s, pfont, OS_2_start, OS_2_length);
 		put_pad(s, OS_2_length);
 	    }
+
+	/* If necessary, write [hv]mtx. */
+
+	if (generate_mtx) {
+	    for (i = 0; i < 2; ++i) {
+		write_mtx(s, pfont, &mtx[i], i);
+		put_pad(s, mtx[i].length);
+	    }
+	}
 
 	/* If necessary, write post. */
 

@@ -244,6 +244,7 @@ typedef struct gs_font_type42_s gs_font_type42;
 #define WRITE_TRUETYPE_NAME 2	/* generate name if missing */
 #define WRITE_TRUETYPE_POST 4	/* generate post if missing */
 #define WRITE_TRUETYPE_NO_TRIMMED_TABLE 8  /* not OK to use cmap format 6 */
+#define WRITE_TRUETYPE_HVMTX 16	/* generate [hv]mtx from glyph_info */
 int psf_write_truetype_font(stream *s, gs_font_type42 *pfont, int options,
 			    gs_glyph *subset_glyphs, uint subset_size,
 			    const gs_const_string *alt_font_name);

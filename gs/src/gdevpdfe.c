@@ -255,6 +255,7 @@ pdf_embed_font_type42(gx_device_pdf *pdev, gs_font_type42 *font,
 {
     /* Acrobat Reader 3 doesn't handle cmap format 6 correctly. */
     const int options = WRITE_TRUETYPE_CMAP | WRITE_TRUETYPE_NAME |
+	WRITE_TRUETYPE_HVMTX |
 	(pdev->CompatibilityLevel <= 1.2 ?
 	 WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0);
     stream poss;
@@ -282,7 +283,7 @@ pdf_embed_font_cid2(gx_device_pdf *pdev, gs_font_cid2 *font,
 		    uint subset_size, const gs_const_string *pfname)
 {
     /* CIDFontType 2 fonts don't use cmap, name, OS/2, or post. */
-#define OPTIONS 0
+#define OPTIONS WRITE_TRUETYPE_HVMTX
     int code;
     pdf_data_writer_t writer;
 
