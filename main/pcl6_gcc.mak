@@ -118,7 +118,7 @@ DEVICES_DEVS=$(DD)ljet4.dev $(DD)djet500.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev 
 FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
              $(DD)ttflib.dev  $(DD)cielib.dev $(DD)pipe.dev $(DD)htxlib.dev\
-	     $(DD)devcmap.dev $(DD)gsnogc.dev $(DD)sdctd.dev\
+	     $(DD)gsnogc.dev $(DD)sdctd.dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\
 	     $(DD)cidlib.dev $(DD)psf1lib.dev $(DD)psf0lib.dev
 

@@ -126,7 +126,6 @@ FEATURE_DEVS    = $(DD)\dps2lib.dev   \
                   $(DD)\colimlib.dev  \
                   $(DD)\cielib.dev    \
                   $(DD)\htxlib.dev    \
-                  $(DD)\devcmap.dev   \
                   $(DD)\psl3lib.dev   \
                   $(DD)\seprlib.dev   \
                   $(DD)\translib.dev  \
