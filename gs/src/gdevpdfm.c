@@ -1100,13 +1100,29 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		return code;
 	    pdf_open_separate(pdev, level1_id);
 	    s = pdev->strm;
-	    pprintld1(s, "<</Length %ld 0 R>>stream\n", length_id);
-	    size = pdfmark_write_ps(s, &level1);
-	    stream_puts(s, "endstream\n");
-	    pdf_end_separate(pdev);
-	    pdf_open_separate(pdev, length_id);
-	    pprintld1(s, "%ld\n", (long)size);
-	    pdf_end_separate(pdev);
+#	    if PS2WRITE
+		if (pdev->OrderResources) {
+		    int pos = stell(s) + 8, pos1;
+
+		    pprintld1(s, "<</Length           >>stream\n", length_id);
+		    size = pdfmark_write_ps(s, &level1);
+		    stream_puts(s, "endstream\n");
+		    pos1 = stell(s);
+		    sseek(s, pos);
+		    pprintld1(pdev->strm, "%ld", (long)size);
+		    sseek(s, pos1);
+		    pdf_end_separate(pdev);
+		} else
+#	    endif
+	    {
+		pprintld1(s, "<</Length %ld 0 R>>stream\n", length_id);
+		size = pdfmark_write_ps(s, &level1);
+		stream_puts(s, "endstream\n");
+		pdf_end_separate(pdev);
+		pdf_open_separate(pdev, length_id);
+		pprintld1(s, "%ld\n", (long)size);
+		pdf_end_separate(pdev);
+	    }
 	}
 	size = pdfmark_write_ps(pdev->streams.strm, &source);
 	code = cos_stream_add(pcs, size);

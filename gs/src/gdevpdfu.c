@@ -1260,11 +1260,21 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     if ((options & DATA_STREAM_BINARY) && !pdev->binary_ok)
 	filters |= USE_ASCII85;
     if (!(options & DATA_STREAM_NOLENGTH)) {
-	long length_id = pdf_obj_ref(pdev);
-		
 	stream_puts(s, fnames[filters]);
-	pprintld1(s, "/Length %ld 0 R>>stream\n", length_id);
-	pdw->length_id = length_id;
+#	if PS2WRITE
+	    if (pdev->OrderResources) {
+		pdw->length_pos = stell(s) + 8;
+		stream_puts(s, "/Length             >>stream\n");
+		pdw->length_id = -1;
+	    } else {
+		pdw->length_pos = -1;		
+		pdw->length_id = pdf_obj_ref(pdev);
+		pprintld1(s, "/Length %ld 0 R>>stream\n", pdw->length_id);
+	    }
+#	else
+	    pdw->length_id = pdf_obj_ref(pdev);
+	    pprintld1(s, "/Length %ld 0 R>>stream\n", pdw->length_id);
+#	endif
     }
     if (options & DATA_STREAM_ENCRYPT) {
 	code = pdf_begin_encrypt(pdev, &s, object_id);
@@ -1298,6 +1308,17 @@ pdf_end_data(pdf_data_writer_t *pdw)
     if (pdw->encrypted)
 	pdf_end_encrypt(pdev);
     stream_puts(pdev->strm, "\nendstream\n");
+#   if PS2WRITE
+	if (pdev->OrderResources) {
+	    int pos = stell(pdev->strm);
+	    
+	    sseek(pdev->strm, pdw->length_pos);
+	    pprintld1(pdev->strm, "%ld", length);
+	    sseek(pdev->strm, pos);
+	    pdf_end_separate(pdev);
+	    return 0;
+	}
+#   endif
     pdf_end_separate(pdev);
     pdf_open_separate(pdev, pdw->length_id);
     pprintld1(pdev->strm, "%ld\n", length);

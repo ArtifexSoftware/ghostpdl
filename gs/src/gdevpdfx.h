@@ -867,6 +867,9 @@ int pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 typedef struct pdf_data_writer_s {
     psdf_binary_writer binary;
     long start;
+#if PS2WRITE
+    long length_pos;
+#endif
     long length_id;
     bool encrypted;
 } pdf_data_writer_t;
