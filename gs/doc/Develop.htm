@@ -1032,8 +1032,8 @@ Color mapping:
 <a href="../src/gxdcconv.h">src/gxdcconv.h</a>,
 <a href="../src/gxdcolor.c">src/gxdcolor.c</a>,
 <a href="../src/gxdcolor.h">src/gxdcolor.h</a>,
-<a href="../src/gxdither.c">src/gxdither.c</a>,
-<a href="../src/gxdither.h">src/gxdither.h</a>,
+<a href="../src/gxdevndi.c">src/gevndi.c</a>,
+<a href="../src/gxdevndi.h">src/gxdevndi.h</a>,
 <a href="../src/gxfmap.h">src/gxfmap.h</a>,
 <a href="../src/gxlum.h">src/gxlum.h</a>,
 <a href="../src/gxtmap.h">src/gxtmap.h</a>.
@@ -1091,7 +1091,7 @@ pixel, and stores the color into the fully rendered halftone.
 
 <p>
 The halftone level for rendering a color is computed in <a
-href="../src/gxdither.c">src/gxdither.c</a>; the actual halftone mask or
+href="../src/gxdevndi.c">src/gxdevndi.c</a>; the actual halftone mask or
 tile is computed either in <a href="../src/gxcht.c">src/gxcht.c</a> (for
 multi-plane halftones), or in <a href="../src/gxht.c">src/gxht.c</a> and <a
 href="../src/gxhtbit.c">src/gxhtbit.c</a> (for binary halftones).
@@ -1174,14 +1174,12 @@ Shading:
 
 </dl>
 
-<p>
-In addition to the PostScript graphics model, Ghostscript supports RasterOp,
-a weak form of alpha channel, and eventually the full PDF 1.4 transparency
-model.  The implemention of these facilities is quite slipshod and
-scattered: only RasterOp is really implemented fully.  There is a general
-compositing architecture, but it is hardly used at all, and in particular is
-not used for RasterOp.  ****** TO BE COMPLETED ******
-
+<p> In addition to the PostScript graphics model, Ghostscript supports RasterOp, 
+  a weak form of alpha channel, and eventually the full PDF 1.4 transparency model. 
+  The implemention of these facilities is quite slipshod and scattered: only RasterOp 
+  is really implemented fully. There is a general compositing architecture, but 
+  it is hardly used at all, and in particular is not used for RasterOp. It is 
+  used for implementation of the general support for overprint and overprint mode.
 <dl>
 
 <dt>
@@ -1226,6 +1224,18 @@ Advanced transparency:
 <a href="../src/gdevp14.c">src/gdevp14.c</a>.
 <a href="../src/gdevp14.h">src/gdevp14.h</a>.
 <a href="../src/gdevpnga.c">src/gdevpnga.c</a>.
+
+<dt>
+Overprint and Overprint mode:
+<dd>
+<a href="../src/gsovrc.c">src/gsovrc.c</a>,
+<a href="../src/gsovrc.h">src/gsovrc.h</a>,
+<a href="../src/gxoprect.c">src/gxoprect.c</a>,
+<a href="../src/gxoprect.h">src/gxoprect.h</a>.
+There is support for both overprint and overprint mode. There is a general
+compositor based implementation of these features for all devices. In addition,
+the memory devices implement a higher speed set of special fill routines to
+improve performance for printer based devices.
 
 </dl>
 
@@ -1429,7 +1439,11 @@ Banding:
 <a href="../src/gxclread.c">src/gxclread.c</a>,
 <a href="../src/gxclrect.c">src/gxclrect.c</a>,
 <a href="../src/gxclutil.c">src/gxclutil.c</a>,
-<a href="../src/gxclzlib.c">src/gxclzlib.c</a>.
+<a href="../src/gxclzlib.c">src/gxclzlib.c</a>,
+<a href="../src/gxdhtserial.c">src/gxdhtserial.c</a>,
+<a href="../src/gxdhtserial.h">src/gxdhtserial.h</a>,
+<a href="../src/gxclzlib.c">src/gxclzlib.c</a>,
+<a href="../src/gxclzlib.c">src/gxclzlib.c</a>,
 
 </dl>
 
@@ -1491,6 +1505,10 @@ Memory devices, specific depths:
 <a href="../src/gdevm16.c">src/gdevm16.c</a>,
 <a href="../src/gdevm24.c">src/gdevm24.c</a>,
 <a href="../src/gdevm32.c">src/gdevm32.c</a>,
+<a href="../src/gdevm40.c">src/gdevm40.c</a>,
+<a href="../src/gdevm48.c">src/gdevm48.c</a>,
+<a href="../src/gdevm56.c">src/gdevm56.c</a>,
+<a href="../src/gdevm64.c">src/gdevm64.c</a>,
 <a href="../src/gdevmr1.c">src/gdevmr1.c</a>,
 <a href="../src/gdevmr2n.c">src/gdevmr2n.c</a>,
 <a href="../src/gdevmr8n.c">src/gdevmr8n.c</a>.
@@ -1793,6 +1811,12 @@ Fax and TIFF:
 <a href="../src/gdevcgml.c">src/gdevcgml.c</a>,
 <a href="../src/gdevcgml.h">src/gdevcgml.h</a>,
 <a href="../src/gdevcgmx.h">src/gdevcgmx.h</a>.
+
+<dt>
+Example DeviceN device:
+<dd>
+<a href="../src/gdevdevn.c">src/gdevdevn.c</a>,
+<a href="../src/gdevxcf.c">src/gdevxcf.c</a>,
 
 <dt>
 Other raster file formats:
@@ -2336,6 +2360,7 @@ Color, pattern, and halftone:
 <a href="../src/zcolor.c">src/zcolor.c</a>,
 <a href="../src/zcolor1.c">src/zcolor1.c</a>,
 <a href="../src/zcolor2.c">src/zcolor2.c</a>,
+<a href="../src/zcolor2.c">src/zcolor3.c</a>,
 <a href="../src/zcrd.c">src/zcrd.c</a>,
 <a href="../src/zcsdevn.c">src/zcsdevn.c</a>,
 <a href="../src/zcsindex.c">src/zcsindex.c</a>,
@@ -2522,6 +2547,27 @@ Display PostScript:
 <a href="../lib/gs_dpnxt.ps">lib/gs_dpnxt.ps</a>,
 <a href="../lib/gs_dps.ps">lib/gs_dps.ps</a>.
 
+</dl>
+
+<dt>
+Color Spaces and support:
+<dd>
+
+<dl>
+
+<dt>
+Color Space Loading:
+<dd>
+<a href="../lib/gs_ciecs2.ps">lib/gs_ciecs2.ps</a>,
+<a href="../lib/gs_ciecs3.ps">lib/gs_ciecs3.ps</a>,
+<a href="../lib/gs_cspace.ps">lib/gs_cspace.ps</a>,
+<a href="../lib/gs_devcs.ps">lib/gs_devcs.ps</a>,
+<a href="../lib/gs_devn.ps">lib/gs_devn.ps</a>,
+<a href="../lib/gs_devpxl.ps">lib/gs_devpxl.ps</a>,
+<a href="../lib/gs_indxd.ps">lib/gs_indxd.ps</a>,
+<a href="../lib/gs_patrn.ps">lib/gs_patrn.ps</a>,
+<a href="../lib/gs_sepr.ps">lib/gs_sepr.ps</a>
+
 <dt>
 ICC color profiles:
 <dd>
@@ -2639,6 +2685,11 @@ Miscellaneous:
 <dd>
 
 <dl>
+
+<dt>
+Image support:
+<dd>
+<a href="../lib/gs_img.ps">lib/gs_img.ps</a>,
 
 <dt>
 Emulation of %disk IODevice:
