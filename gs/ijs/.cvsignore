@@ -1,2 +1,7 @@
+config.log
+config.status
+configure
+Makefile
+ijs-config
 ijs_client_example
 ijs_server_example
