@@ -39,7 +39,10 @@ PSOBJDIR=obj
 
 # Define the root directory for Ghostscript installation.
 
+!ifndef AROOTDIR
 AROOTDIR=c:/gs
+!endif
+
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
 
 # Define the directory that will hold documentation at runtime.
@@ -59,7 +62,9 @@ GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource\;$(AROOTDIR)/fonts
 # see the "File searching" section of Use.htm for full details.
 # Because of this, setting SEARCH_HERE_FIRST to 0 is not recommended.
 
+!ifndef SEARCH_HERE_FIRST
 SEARCH_HERE_FIRST=1
+!endif
 
 # Define the name of the interpreter initialization file.
 # (There is no reason to change this.)
@@ -71,19 +76,25 @@ GS_INIT=gs_init.ps
 # Setting DEBUG=1 includes debugging features (-Z switch) in the code.  The
 # compiled code is substantially slower and larger.
 
+!ifndef DEBUG
 DEBUG=0
+!endif
 
 # Setting TDEBUG=1 includes symbol table information for the debugger, and
 # also enables stack checking.  The compiled code is substantially slower
 # and larger.
 
+!ifndef TDEBUG
 TDEBUG=0
+!endif
 
 # Setting NOPRIVATE=1 makes private (static) procedures and variables
 # public, so they are visible to the debugger and profiler.  There is no
 # execution time or space penalty, just larger .OBJ and .EXE files.
 
+!ifndef NOPRIVATE
 NOPRIVATE=0
+!endif
 
 # Define the names of the executable files.
 
@@ -104,14 +115,18 @@ BUILD_TIME_GS=gswin32c
 # To build two small executables and a large DLL, use MAKEDLL=1.
 # To build two large executables, use MAKEDLL=0.
 
+!ifndef MAKEDLL
 MAKEDLL=1
+!endif
 
 # If you want multi-thread-safe compilation, set MULTITHREAD=1; if not, set
 # MULTITHREAD=0.  MULTITHREAD=0 produces slightly smaller and faster code,
 # but MULTITHREAD=1 is required if you use any "asynchronous" output
 # drivers.
 
+!ifndef MULTITHREAD
 MULTITHREAD=1
+!endif
 
 # Define the directory where the IJG JPEG library sources are stored,
 # and the major version of the library that is stored there.
@@ -148,7 +163,9 @@ IJSEXECTYPE=win
 
 # Define any other compilation flags.
 
+!ifndef CFLAGS
 CFLAGS=
+!endif
 
 # Do not edit the next group of lines.
 
@@ -200,6 +217,7 @@ BUILDER_VERSION=0
 !endif
 !endif
 
+!ifndef COMPBASE
 !if $(BUILDER_VERSION) == 0
 COMPBASE=c:\bc
 COMPBASE16=$(COMPBASE)
@@ -215,6 +233,7 @@ COMPBASE16=c:\bc
 !if $(BUILDER_VERSION) == 5
 COMPBASE=c:\Borland\BCC55
 #COMPBASE16=$(COMPBASE)
+!endif
 !endif
 
 COMPDIR=$(COMPBASE)\bin
@@ -534,7 +553,7 @@ SETUP_TARGETS=$(SETUP_XE) $(UNINSTALL_XE)
 # The graphical small EXE loader
 $(GS_XE): $(GSDLL_DLL)  $(DWOBJ) $(GSCONSOLE_XE)\
  $(GS_OBJ).res $(PSSRCDIR)\dwmain32.def $(SETUP_TARGETS)
-	$(LINK) /Tpe /aa $(LCT) @&&!
+	$(LINK) /L$(LIBDIR) /Tpe /aa $(LCT) @&&!
 $(LIBDIR)\c0w32 +
 $(DWOBJ) +
 ,$(GS_XE),$(PSOBJ)$(GS), +
@@ -547,7 +566,7 @@ $(GS_OBJ).res
 # The console mode small EXE loader
 !if $(BUILDER_VERSION) == 5
 $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
-	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
+	$(LINK) /L$(LIBDIR) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0x32 +
 $(OBJC) +
 ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE), +
@@ -559,7 +578,7 @@ $(GS_OBJ).res
 !else
 
 $(GSCONSOLE_XE): $(OBJC) $(GS_OBJ).res $(PSSRCDIR)\dw32c.def
-	$(LINK) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
+	$(LINK) /L$(LIBDIR) /Tpe /ap $(LCT) $(DEBUGLINK) @&&!
 $(LIBDIR)\c0w32 +
 $(OBJC) +
 ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE), +
@@ -576,7 +595,7 @@ $(GSDLL_DLL): $(GS_ALL) $(DEVS_ALL) $(PSOBJ)gsdll.$(OBJ)\
 	-del $(PSGEN)gswin32.tr
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0d32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpd /aa @$(PSGEN)gswin32.tr $(INTASM) ,$(GSDLL_DLL),$(PSOBJ)$(GSDLL),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\gsdll32.def,$(GSDLL_OBJ).res
 
 !else
 # The big graphical EXE
@@ -586,7 +605,7 @@ $(GS_XE):   $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(DWOBJNO) $(INTASM) >> $(PSGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /aa @$(PSGEN)gswin32.tr ,$(GS_XE),$(PSOBJ)$(GS),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dwmain32.def,$(GS_OBJ).res
 
 # The big console mode EXE
 $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
@@ -595,7 +614,7 @@ $(GSCONSOLE_XE):  $(GS_ALL) $(DEVS_ALL)\
 	copy $(ld_tr) $(PSGEN)gswin32.tr
 	echo $(LIBDIR)\c0w32 $(PSOBJ)gsdll + >> $(PSGEN)gswin32.tr
 	echo $(OBJCNO) $(INTASM) >> $(PSGEN)gswin32.tr
-	$(LINK) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
+	$(LINK) /L$(LIBDIR) $(LCT) /Tpe /ap @$(PSGEN)gswin32.tr ,$(GSCONSOLE_XE),$(PSOBJ)$(GSCONSOLE),@$(GLGENDIR)\lib.tr @$(LIBCTR),$(PSSRCDIR)\dw32c.def,$(GS_OBJ).res
 !endif
 
 # Access to 16 spooler from Win32s
