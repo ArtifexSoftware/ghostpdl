@@ -630,6 +630,15 @@ struct gx_device_pdf_s {
 			because it points from global to local memory. */
     int substituted_pattern_count;
     int substituted_pattern_drop_page;
+#if PS2WRITE
+    /* Temporary data for use_image_as_pattern,
+       They pass an information about a mask of a masked image,
+       (which is being converted into a pattern)
+       between 2 consecutive calls to pdf_image_end_image_data. */
+    gs_id     image_mask_id;
+    gs_matrix image_mask_matrix;
+    double    image_mask_scale;
+#endif
 };
 
 #define is_in_page(pdev)\
@@ -1163,7 +1172,7 @@ int pdf_exit_substream(gx_device_pdf *pdev);
 /* Add procsets to substream Resources. */
 int pdf_add_procsets(cos_dict_t *pcd, pdf_procset_t procsets);
 /* Add a resource to substream Resources. */
-int pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_resource_t *pres);
+int pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, const pdf_resource_t *pres);
 
 
 /* For gdevpdfu.c */

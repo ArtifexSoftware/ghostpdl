@@ -244,24 +244,34 @@ pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
 
 /* Put out a reference to an image resource. */
 int
-pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
-	     const gs_matrix * pimat, bool in_contents)
+pdf_do_image_by_id(gx_device_pdf * pdev, double scale,
+	     const gs_matrix * pimat, bool in_contents, gs_id id)
 {
+    /* fixme : in_contents is always true (there are no calls with false). */
     if (in_contents) {
 	int code = pdf_open_contents(pdev, PDF_IN_STREAM);
 
 	if (code < 0)
 	    return code;
     }
+    if (pimat)
+	pdf_put_image_matrix(pdev, pimat, scale);
+    pprintld1(pdev->strm, "/R%ld Do\nQ\n", id);
+    return pdf_register_charproc_resource(pdev, id, resourceXObject);
+}
+int
+pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
+	     const gs_matrix * pimat, bool in_contents)
+{
+    /* fixme : call pdf_do_image_by_id when pimam == NULL. */
+    double scale = 1;
+
     if (pimat) {
 	/* Adjust the matrix to account for short images. */
 	const pdf_x_object_t *const pxo = (const pdf_x_object_t *)pres;
-	double scale = (double)pxo->data_height / pxo->height;
-
-	pdf_put_image_matrix(pdev, pimat, scale);
+	scale = (double)pxo->data_height / pxo->height;
     }
-    pprintld1(pdev->strm, "/R%ld Do\nQ\n", pdf_resource_id(pres));
-    return pdf_register_charproc_resource(pdev, pdf_resource_id(pres), resourceXObject);
+    return pdf_do_image_by_id(pdev, scale, pimat, in_contents, pdf_resource_id(pres));
 }
 
 /* ------ Begin / finish ------ */

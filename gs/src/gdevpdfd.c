@@ -542,6 +542,7 @@ dump_image(gx_device_pdf *pdev, pdf_lcvd_t *cvd)
 	code = write_image(pdev, &cvd->mdev, &cvd->p);
 	cvd->path_is_empty = true;
     } else if (!cvd->mask_is_empty) {
+	/* See also use_image_as_pattern in gdevpdfi.c . */
 	gs_imager_state s;
 	gs_pattern1_instance_t inst;
 	gs_id id = gs_next_ids(cvd->mdev.memory, 1);

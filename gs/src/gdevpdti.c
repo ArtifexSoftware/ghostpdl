@@ -809,7 +809,7 @@ pdf_add_procsets(cos_dict_t *pcd, pdf_procset_t procsets)
 
 /* Add a resource to substream Resources. */
 int
-pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, pdf_resource_t *pres)
+pdf_add_resource(gx_device_pdf *pdev, cos_dict_t *pcd, const char *key, const pdf_resource_t *pres)
 {
     if (pcd != 0) {
 	const cos_value_t *v = cos_dict_find(pcd, (const byte *)key, strlen(key));

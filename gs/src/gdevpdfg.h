@@ -222,6 +222,8 @@ void pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
 			  floatp y_scale);
 
 /* Put out a reference to an image resource. */
+int pdf_do_image_by_id(gx_device_pdf * pdev, double scale,
+	     const gs_matrix * pimat, bool in_contents, gs_id id);
 int pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 		 const gs_matrix * pimat, bool in_contents);
 

@@ -32,12 +32,14 @@
 #include "gsiparm4.h"
 #include "gxdcolor.h"
 #include "gxpcolor.h"
+#include "gxcolor2.h"
 #include "gxhldevc.h"
 
 /* Forward references */
 private image_enum_proc_plane_data(pdf_image_plane_data);
 private image_enum_proc_end_image(pdf_image_end_image);
 private image_enum_proc_end_image(pdf_image_end_image_object);
+private image_enum_proc_end_image(pdf_image_end_image_object2);
 private IMAGE3_MAKE_MID_PROC(pdf_image3_make_mid);
 private IMAGE3_MAKE_MCDE_PROC(pdf_image3_make_mcde);
 private IMAGE3X_MAKE_MID_PROC(pdf_image3x_make_mid);
@@ -50,6 +52,10 @@ private const gx_image_enum_procs_t pdf_image_enum_procs = {
 private const gx_image_enum_procs_t pdf_image_object_enum_procs = {
     pdf_image_plane_data,
     pdf_image_end_image_object
+};
+private const gx_image_enum_procs_t pdf_image_object_enum_procs2 = {
+    pdf_image_plane_data,
+    pdf_image_end_image_object2
 };
 
 /* ---------------- Driver procedures ---------------- */
@@ -284,7 +290,8 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     case 3: {
 	const gs_image3_t *pim3 = (const gs_image3_t *)pic;
 
-	if (pdev->CompatibilityLevel < 1.3)
+	if (pdev->CompatibilityLevel < 1.2 || 
+		(pdev->CompatibilityLevel < 1.3 && (!PS2WRITE || !pdev->OrderResources)))
 	    goto nyi;
 	if (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
 		       prect->q.x == pim3->Width &&
@@ -408,10 +415,16 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
     *pinfo = (gx_image_enum_common_t *) pie;
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
+			((!PS2WRITE || !pdev->OrderResources) ? 
 			      (context == PDF_IMAGE_TYPE3_MASK ?
 			       &pdf_image_object_enum_procs :
+			       &pdf_image_enum_procs) :
+			      context == PDF_IMAGE_TYPE3_MASK ?
+			       &pdf_image_object_enum_procs :
+			      context == PDF_IMAGE_TYPE3_DATA ?
+			       &pdf_image_object_enum_procs2 :
 			       &pdf_image_enum_procs),
-			      (gx_device *)pdev, num_components, format);
+			    (gx_device *)pdev, num_components, format);
     pie->memory = mem;
     width = rect.q.x - rect.p.x;
     pie->width = width;
@@ -522,7 +535,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    }
 	}
         if ((code = pdf_begin_image_data(pdev, &pie->writer,
-				         (const gs_pixel_image_t *)&image[i],
+				         &image[i].pixel,
 				         &cs_value, i)) < 0)
   	    goto fail;
     }
@@ -650,10 +663,80 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     return !pie->rows_left;
 }
 
+private int
+use_image_as_pattern(gx_device_pdf *pdev, const pdf_resource_t *pres1, 
+		     const gs_matrix *pmat, gs_id id)
+{   /* See also dump_image in gdevpdfd.c . */
+    gs_imager_state s;
+    gs_pattern1_instance_t inst;
+    cos_value_t v;
+    const pdf_resource_t *pres;
+    int code;
+
+    memset(&s, 0, sizeof(s));
+    s.ctm.xx = pmat->xx;
+    s.ctm.xy = pmat->xy;
+    s.ctm.yx = pmat->yx;
+    s.ctm.yy = pmat->yy;
+    s.ctm.tx = pmat->tx;
+    s.ctm.ty = pmat->ty;
+    memset(&inst, 0, sizeof(inst));
+    inst.saved = (gs_state *)&s; /* HACK : will use s.ctm only. */
+    inst.template.PaintType = 1;
+    inst.template.TilingType = 1;
+    inst.template.BBox.p.x = inst.template.BBox.p.y = 0;
+    inst.template.BBox.q.x = 1;
+    inst.template.BBox.q.y = 1;
+    inst.template.XStep = 2; /* Set 2 times bigger step against artifacts. */
+    inst.template.YStep = 2;
+    code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
+	id, &inst, pattern_manage__start_accum);
+    if (code >= 0)
+	pprintld1(pdev->strm, "/R%ld Do\n", pdf_resource_id(pres1));
+    pres = pdev->accumulating_substream_resource;
+    if (code >= 0)
+	code = pdf_add_resource(pdev, pdev->substream_Resources, "/XObject", pres1);
+    if (code >= 0)
+	code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
+	    id, &inst, pattern_manage__finish_accum);
+    if (code >= 0)
+	code = (*dev_proc(pdev, pattern_manage))((gx_device *)pdev, 
+	    id, &inst, pattern_manage__load);
+    if (code >= 0) {
+	stream_puts(pdev->strm, "q ");
+	code = pdf_cs_Pattern_colored(pdev, &v);
+    }
+    if (code >= 0) {
+	cos_value_write(&v, pdev);
+	pprintld1(pdev->strm, " cs /R%ld scn ", pdf_resource_id(pres));
+    }
+    if (code >= 0) {
+	/* The image offset weas broken in gx_begin_image3_generic, 
+	   (see 'origin' in there). 
+	   As a temporary hack use the offset of the image. 
+	   fixme : This isn't generally correct, 
+	   because the mask may be "transpozed" against the image. */
+	gs_matrix m = pdev->image_mask_matrix;
+
+	m.tx = pmat->tx;
+	m.ty = pmat->ty;
+	code = pdf_do_image_by_id(pdev, pdev->image_mask_scale,
+	     &m, true, pdev->image_mask_id);
+	stream_puts(pdev->strm, "Q\n");
+    }
+    return code;
+}
+
+typedef enum {
+    USE_AS_MASK,
+    USE_AS_IMAGE,
+    USE_AS_PATTERN
+} pdf_image_useage_t;
+
 /* Clean up by releasing the buffers. */
 private int
 pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
-			 bool do_image)
+			 pdf_image_useage_t do_image)
 {
     gx_device_pdf *pdev = (gx_device_pdf *)info->dev;
     pdf_image_enum *pie = (pdf_image_enum *)info;
@@ -681,8 +764,20 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 	    code = 0;
 	    break;
 	case 0:
-	    if (do_image)
+	    if (do_image == USE_AS_IMAGE)
 		code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
+	    else if (do_image == USE_AS_MASK) {
+		/* Provide data for pdf_do_image_by_id, which will be called through 
+		   use_image_as_pattern during the next call to this function. 
+		   See pdf_do_image about the meaning of 'scale'. */
+		const pdf_resource_t *pres =  pie->writer.pres;
+		const pdf_x_object_t *const pxo = (const pdf_x_object_t *)pres;
+
+		pdev->image_mask_scale = (double)pxo->data_height / pxo->height;
+		pdev->image_mask_id = pdf_resource_id(pres);
+		pdev->image_mask_matrix = pie->mat;
+	    } else if (do_image == USE_AS_PATTERN)
+		code = use_image_as_pattern(pdev, pie->writer.pres, &pie->mat, info->id);
 	}
     }
     gs_free_object(pie->memory, pie, "pdf_end_image");
@@ -693,7 +788,7 @@ pdf_image_end_image_data(gx_image_enum_common_t * info, bool draw_last,
 private int
 pdf_image_end_image(gx_image_enum_common_t * info, bool draw_last)
 {
-    return pdf_image_end_image_data(info, draw_last, true);
+    return pdf_image_end_image_data(info, draw_last, USE_AS_IMAGE);
 }
 
 /* ---------------- Type 3/3x images ---------------- */
@@ -719,7 +814,13 @@ pdf_make_mxd(gx_device **pmxdev, gx_device *tdev, gs_memory_t *mem)
 private int
 pdf_image_end_image_object(gx_image_enum_common_t * info, bool draw_last)
 {
-    return pdf_image_end_image_data(info, draw_last, false);
+    return pdf_image_end_image_data(info, draw_last, USE_AS_MASK);
+}
+/* End the data of an ImageType 3 image, converting it into pattern. */
+private int
+pdf_image_end_image_object2(gx_image_enum_common_t * info, bool draw_last)
+{
+    return pdf_image_end_image_data(info, draw_last, USE_AS_PATTERN);
 }
 
 /* ---------------- Type 3 images ---------------- */
@@ -754,10 +855,11 @@ pdf_mid_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 
     if (code < 0)
 	return code;
-    if ((*pinfo)->procs != &pdf_image_object_enum_procs) {
-	/* We couldn't handle the mask image.  Bail out. */
-	/* (This is never supposed to happen.) */
-	return_error(gs_error_rangecheck);
+    if (!PS2WRITE || !pdev->OrderResources)
+	if ((*pinfo)->procs != &pdf_image_object_enum_procs) {
+	    /* We couldn't handle the mask image.  Bail out. */
+	    /* (This is never supposed to happen.) */
+	    return_error(gs_error_rangecheck);
     }
     return code;
 }
@@ -786,7 +888,8 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
     if (code < 0)
 	return code;
     /* Add the /Mask entry to the image dictionary. */
-    if ((*pinfo)->procs != &pdf_image_enum_procs) {
+    if ((*pinfo)->procs != &pdf_image_enum_procs &&
+	    (!PS2WRITE || !((gx_device_pdf *)dev)->OrderResources)) {
 	/* We couldn't handle the image.  Bail out. */
 	gx_image_end(*pinfo, false);
 	gs_free_object(mem, *pmcdev, "pdf_image3_make_mcde");
@@ -795,6 +898,10 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
     pmie = (pdf_image_enum *)pminfo;
     pmce = (pdf_image_enum *)(*pinfo);
     pmcs = (cos_stream_t *)pmce->writer.pres->object;
+    if (PS2WRITE && ((gx_device_pdf *)dev)->OrderResources) {
+	/* Don't add 'Mask" since we convert into 'imagemask' with a pattern. */
+	return 0;
+    }
     return cos_dict_put_c_key_object(cos_stream_dict(pmcs), "/Mask",
 				     pmie->writer.pres->object);
 }
