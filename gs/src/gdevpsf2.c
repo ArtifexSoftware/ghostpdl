@@ -930,9 +930,11 @@ cff_write_Subrs(cff_writer_t *pcw, uint subrs_count, uint subrs_size,
 private uint
 cff_Encoding_size(int num_encoded, int num_encoded_chars)
 {
-    return 2 + num_encoded +
-	(num_encoded_chars > num_encoded ?
-	 1 + (num_encoded_chars - num_encoded) * 3 : 0);
+    int n = min(num_encoded, 255);
+
+    return 2 + n +
+	(num_encoded_chars > n ?
+	 1 + (num_encoded_chars - n) * 3 : 0);
 }
 
 private int
@@ -941,21 +943,13 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
     stream *s = pcw->strm;
     /* This procedure is only used for Type 1 / Type 2 fonts. */
     gs_font_type1 *pfont = (gs_font_type1 *)pcw->pfont;
-    int num_enc = pgsub->num_encoded, num_enc_chars = pgsub->num_encoded_chars;
-    byte used[256], index[256], supplement[256];
+    byte used[255], index[255], supplement[256];
+    int num_enc = min(pgsub->num_encoded, sizeof(index));
+    int num_enc_chars = pgsub->num_encoded_chars;
     int nsupp = 0;
     int j;
 
-    sputc(s, (byte)(num_enc_chars > num_enc ? 0x80 : 0));
     memset(used, 0, num_enc);
-    if (num_enc == 256) {
-	/*
-	 * The count of encoded characters is only a single byte, so we
-	 * have to use a supplement for the last character.
-	 */
-	/****** NYI ******/
-    }
-    sputc(s, (byte)num_enc);
     for (j = 0; j < 256; ++j) {
 	gs_glyph glyph = pfont->procs.encode_char((gs_font *)pfont,
 						  (gs_char)j,
@@ -965,14 +959,16 @@ cff_write_Encoding(cff_writer_t *pcw, cff_glyph_subset_t *pgsub)
 	if (glyph == gs_no_glyph || glyph == pgsub->glyphs.notdef)
 	    continue;
 	i = psf_sorted_glyphs_index_of(pgsub->glyphs.subset_data + 1,
-				       num_enc, glyph);
+				       pgsub->num_encoded, glyph);
 	if (i < 0)
 	    continue;		/* encoded but not in subset */
-	if (used[i])
+	if (i >= sizeof(used) || used[i])
 	    supplement[nsupp++] = j;
 	else
 	    index[i] = j, used[i] = 1;
     }
+    sputc(s, (byte)(nsupp ? 0x80 : 0));
+    sputc(s, (byte)num_enc);
 #ifdef DEBUG
     if (nsupp != num_enc_chars - num_enc)
 	lprintf3("nsupp = %d, num_enc_chars = %d, num_enc = %d\n",
