@@ -211,7 +211,7 @@ IJSEXECTYPE=win
 
 # 1 --> Use 64 bits for gx_color_index.  This is required only for
 # non standard devices or DeviceN process color model devices.
-USE_LARGE_COLOR_INDEX=0
+USE_LARGE_COLOR_INDEX=1
 
 !if $(USE_LARGE_COLOR_INDEX) == 1
 # Definitions to force gx_color_index to 64 bits
@@ -521,7 +521,7 @@ DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
 DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
 DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
-DEVICE_DEVS21=$(DD)spotrgb.dev $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev
+DEVICE_DEVS21= $(DD)spotrgb.dev $(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdrgb.dev $(DD)psdcmyk.dev
 !endif
 
 # FAPI compilation options :
