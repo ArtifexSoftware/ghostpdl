@@ -456,10 +456,10 @@ zfilenamesplit(i_ctx_t *i_ctx_p)
     return_error(e_undefined);
 }
 
-/* <string> findlibfile <found_string> <file> true */
-/* <string> findlibfile <string> false */
+/* <string> .libfile <file> true */
+/* <string> .libfile <string> false */
 private int
-zfindlibfile(i_ctx_t *i_ctx_p)
+zlibfile(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     int code;
@@ -489,34 +489,30 @@ zfindlibfile(i_ctx_t *i_ctx_p)
 	    make_false(op);
 	    return 0;
 	}
-	make_stream_file(op + 1, s, "r");
+	make_stream_file(op, s, "r");
     } else {
-	byte *cstr;
+	ref fref;
 
 	code = lib_file_open(pname.fname, pname.len, cname, MAX_CNAME,
-			     &clen, op + 1, imemory);
+			     &clen, &fref, imemory);
 	if (code >= 0) {
-	    s = fptr(op + 1);
+	    s = fptr(&fref);
 	    code = ssetfilename(s, cname, clen);
 	    if (code < 0) {
 		sclose(s);
 		return_error(e_VMerror);
 	    }
 	}
-	if (code == e_VMerror)
-	    return code;
 	if (code < 0) {
+	    if (code == e_VMerror)
+		return code;
 	    push(1);
 	    make_false(op);
 	    return 0;
 	}
-	cstr = ialloc_string(clen, "findlibfile");
-	if (cstr == 0)
-	    return_error(e_VMerror);
-	memcpy(cstr, cname, clen);
-	make_string(op, a_all | icurrent_space, clen, cstr);
+	ref_assign(op, &fref);
     }
-    push(2);
+    push(1);
     make_true(op);
     return 0;
 }
@@ -532,7 +528,7 @@ const op_def zfile_op_defs[] =
     {"2.filenamedirseparator", zfilenamedirseparator},
     {"0.filenamelistseparator", zfilenamelistseparator},
     {"1.filenamesplit", zfilenamesplit},
-    {"1findlibfile", zfindlibfile},
+    {"1.libfile", zlibfile},
     {"2renamefile", zrenamefile},
     {"1status", zstatus},
 		/* Internal operators */

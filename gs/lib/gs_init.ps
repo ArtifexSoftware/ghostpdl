@@ -518,6 +518,9 @@ currentdict /superexec .knownget {
 	   }
 	  if 1 get
 	} bind def
+/findlibfile {
+	.libfile { dup .filename pop exch true } { false } ifelse
+} odef
 /.growdictlength	% get size for growing a dictionary
 	{ length 3 mul 2 idiv 1 add
 	} bind def
