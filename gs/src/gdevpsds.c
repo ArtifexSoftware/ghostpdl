@@ -599,7 +599,7 @@ s_Subsample_init(stream_state * st)
 
 /* Process one buffer. */
 private int
-s_Subsample_process(stream_state * st, stream_cursor_read * pr,
+s_Subsample_process(gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 		    stream_cursor_write * pw, bool last)
 {
     stream_Subsample_state *const ss = (stream_Subsample_state *) st;
