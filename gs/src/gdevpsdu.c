@@ -221,25 +221,31 @@ psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
 	stream *s = gdev_vector_stream(vdev);
 	gx_color_index color =
 	    psdf_adjust_color_index(vdev, gx_dc_pure_color(pdc));
-	double
-	    v0 = round_byte_color(color >> 24),
-	    v1 = round_byte_color((color >> 16) & 0xff),
-	    v2 = round_byte_color((color >> 8) & 0xff),
-	    v3 = round_byte_color(color & 0xff);
+	/*
+	 * Normally we would precompute all of v0 .. v3, but gcc 2.7.2.3
+	 * generates incorrect code for Intel CPUs if we do this.  The code
+	 * below is longer, but does less computation in some cases.
+	 */
+	double v3 = round_byte_color(color & 0xff);
 
 	switch (vdev->color_info.num_components) {
 	case 4:
-	    if (v0 == 0 && v1 == 0 && v2 == 0 && ppscc->setgray != 0) {
+	    /* if (v0 == 0 && v1 == 0 && v2 == 0 && ...) */
+	    if ((color & (0xffffff << 8)) == 0 && ppscc->setgray != 0) {
 		v3 = 1.0 - v3;
 		goto g;
 	    }
-	    pprintg4(s, "%g %g %g %g", v0, v1, v2, v3);
+	    pprintg4(s, "%g %g %g %g", round_byte_color(color >> 24),
+		     round_byte_color((color >> 16) & 0xff),
+		     round_byte_color((color >> 8) & 0xff), v3);
 	    setcolor = ppscc->setcmykcolor;
 	    break;
 	case 3:
-	    if (v1 == v2 && v2 == v3 && ppscc->setgray != 0)
+	    /* if (v1 == v2 && v2 == v3 && ...) */
+	    if (!((color ^ (color >> 8)) & 0xffff) && ppscc->setgray != 0)
 		goto g;
-	    pprintg3(s, "%g %g %g", v1, v2, v3);
+	    pprintg3(s, "%g %g %g", round_byte_color((color >> 16) & 0xff),
+		     round_byte_color((color >> 8) & 0xff), v3);
 	    setcolor = ppscc->setrgbcolor;
 	    break;
 	case 1:
