@@ -425,8 +425,8 @@ gx_adjust_if_empty(const gs_fixed_rect * pbox, gs_fixed_point * adjust)
 {
     /*
      * With DROPOUT_PREVENTION we don't need adjustments.
-     * Note that old code does adjustemnt for 0x0 boxes,
-     * but the new one dowes not. We believe that characters
+     * Note that old code does adjustment for 0x0 boxes,
+     * but the new one does not. We believe that characters
      * must have no 0x0 paths, but other paths have been adjusted
      * in advance.
      */
