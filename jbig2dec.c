@@ -8,21 +8,23 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.12 2002/02/12 02:19:36 giles Exp $
+    $Id: jbig2dec.c,v 1.13 2002/02/13 08:47:18 raph Exp $
 */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdint.h>
 
+#include "jbig2.h"
 #include "jbig2dec.h"
 
-typedef struct _Jbig2SegmentHeader Jbig2SegmentHeader;
+#ifdef DEAD_CODE
 typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
 typedef struct _Jbig2PageInfo Jbig2PageInfo;
 
 /* our main 'context' structure for decoding a jbig2 bitstream */
-struct _Jbig2Ctx {
+struct _Jbig2Ctx_foo {
   FILE *f;
   int offset;
   int eof;
@@ -35,14 +37,6 @@ struct _Jbig2Ctx {
 #define JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS	0x01
 #define JBIG2_FILE_FLAGS_PAGECOUNT_UNKNOWN	0x02
 
-
-struct _Jbig2SegmentHeader {
-  int32 segment_number;
-  byte flags;
-  int referred_to_segment_count;
-  int32 page_association;
-  int data_length;
-};
 
 struct _Jbig2SymbolDictionary {
   int16 flags;
@@ -62,7 +56,7 @@ struct _Jbig2PageInfo {
 };
 
 int32
-get_bytes (Jbig2Ctx *ctx, byte *buf, int size, int off)
+get_bytes (Jbig2Ctx_foo *ctx, byte *buf, int size, int off)
 {
   int n_bytes;
 
@@ -74,7 +68,7 @@ get_bytes (Jbig2Ctx *ctx, byte *buf, int size, int off)
 }
 
 int16
-get_int16 (Jbig2Ctx *ctx, int off)
+get_int16 (Jbig2Ctx_foo *ctx, int off)
 {
   byte buf[2];
 
@@ -83,7 +77,7 @@ get_int16 (Jbig2Ctx *ctx, int off)
 }
 
 byte
-get_byte (Jbig2Ctx *ctx, int off)
+get_byte (Jbig2Ctx_foo *ctx, int off)
 {
   byte buf;
   
@@ -92,7 +86,7 @@ get_byte (Jbig2Ctx *ctx, int off)
 }
 
 int32
-get_int32 (Jbig2Ctx *ctx, int off)
+get_int32 (Jbig2Ctx_foo *ctx, int off)
 {
   byte buf[4];
 
@@ -100,15 +94,15 @@ get_int32 (Jbig2Ctx *ctx, int off)
   return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 }
 
-static Jbig2Ctx *
+static Jbig2Ctx_foo *
 jbig2_open (FILE *f)
 {
   byte buf[9];
   const byte header[8] = { 0x97, 0x4a, 0x42, 0x32, 0x0d, 0x0a, 0x1a, 0x0a };
-  Jbig2Ctx *ctx;
+  Jbig2Ctx_foo *ctx;
 
   /* Annex D.4 */
-  ctx = (Jbig2Ctx *)malloc(sizeof(Jbig2Ctx));
+  ctx = (Jbig2Ctx_foo *)malloc(sizeof(Jbig2Ctx_foo));
   ctx->f = f;
   ctx->eof = FALSE;
   get_bytes(ctx, buf, 9, 0);
@@ -139,12 +133,12 @@ jbig2_open (FILE *f)
   return ctx;
 }
 
-static Jbig2Ctx *
+static Jbig2Ctx_foo *
 jbig2_open_embedded (FILE *f_globals, FILE *f_page)
 {
-  Jbig2Ctx *ctx;
+  Jbig2Ctx_foo *ctx;
 
-  ctx = (Jbig2Ctx *)malloc(sizeof(Jbig2Ctx));
+  ctx = (Jbig2Ctx_foo *)malloc(sizeof(Jbig2Ctx_foo));
   ctx->f = f_globals;
   ctx->eof = 0;
   ctx->offset = 0;
@@ -152,7 +146,7 @@ jbig2_open_embedded (FILE *f_globals, FILE *f_page)
 }
 
 static Jbig2SegmentHeader *
-jbig2_read_segment_header (Jbig2Ctx *ctx)
+jbig2_read_segment_header (Jbig2Ctx_foo *ctx)
 {
   Jbig2SegmentHeader *result = (Jbig2SegmentHeader *)malloc(sizeof(Jbig2SegmentHeader));
   int	offset = ctx->offset;
@@ -216,7 +210,7 @@ jbig2_read_segment_header (Jbig2Ctx *ctx)
    segment header.
 */
 static Jbig2SymbolDictionary *
-jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
+jbig2_read_symbol_dictionary (Jbig2Ctx_foo *ctx)
 {
   Jbig2SymbolDictionary *result = (Jbig2SymbolDictionary *)malloc(sizeof(Jbig2SymbolDictionary));
   int offset = ctx->offset;
@@ -282,7 +276,7 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
    segment header.
 */
 static Jbig2PageInfo *
-jbig2_read_page_info (Jbig2Ctx *ctx) {
+jbig2_read_page_info (Jbig2Ctx_foo *ctx) {
   Jbig2PageInfo *info = (Jbig2PageInfo *)malloc(sizeof(Jbig2PageInfo));
   int offset = ctx->offset;
 
@@ -342,7 +336,7 @@ dump_page_info(Jbig2PageInfo *info)
 }
 
 static bool
-dump_segment (Jbig2Ctx *ctx)
+dump_segment (Jbig2Ctx_foo *ctx)
 {
   Jbig2SegmentHeader *sh;
   Jbig2SymbolDictionary *sd;
@@ -434,7 +428,7 @@ dump_segment (Jbig2Ctx *ctx)
 }
 
 static void
-dump_jbig2 (Jbig2Ctx *ctx)
+dump_jbig2 (Jbig2Ctx_foo *ctx)
 {
   bool last;
 
@@ -448,6 +442,7 @@ dump_jbig2 (Jbig2Ctx *ctx)
 	break;
     }
 }
+#endif
 
 static int
 usage (void)
@@ -467,11 +462,20 @@ usage (void)
   return 1;
 }
 
+static int
+error_callback(void *error_callback_data, const char *buf, Jbig2Severity severity,
+	       int32_t seg_idx)
+{
+  fprintf(stderr, "%s\n", buf);
+  return 0;
+}
+
 int
 main (int argc, char **argv)
 {
   FILE *f = NULL, *f_page = NULL;
   Jbig2Ctx *ctx;
+  uint8_t buf[4096];
 
   if (argc == 2)
     {
@@ -483,10 +487,6 @@ main (int argc, char **argv)
 	  fprintf(stderr, "error opening %s\n", fn);
 	  return 1;
 	}
-      ctx = jbig2_open (f);
-      if (ctx != NULL)
-	dump_jbig2(ctx);
-      fclose(f);
     }
   else if (argc == 3)
     {
@@ -505,19 +505,39 @@ main (int argc, char **argv)
 	  fprintf(stderr, "error opening %s\n", fn_page);
 	  return 1;
 	}
-      ctx = jbig2_open_embedded(f, f_page);
-      if (ctx != NULL)
-	dump_jbig2(ctx);
-      ctx->f = f_page;
-      ctx->offset = 0;
-      ctx->eof = FALSE;
-      dump_jbig2(ctx);
-      fclose(f);
-      fclose(f_page);
     }
   else    
     return usage();
     
-  // control should never reach this point
+  ctx = jbig2_ctx_new(NULL, f_page != NULL ? JBIG2_OPTIONS_EMBEDDED : 0,
+		      NULL,
+		      error_callback, NULL);
+  for (;;)
+    {
+      int n_bytes = fread(buf, 1, sizeof(buf), f);
+      if (n_bytes <= 0)
+	break;
+      jbig2_write(ctx, buf, n_bytes);
+    }
+  fclose(f);
+
+  if (f_page != NULL)
+    {
+      Jbig2GlobalCtx *global_ctx = jbig2_make_global_ctx(ctx);
+      ctx = jbig2_ctx_new(NULL, JBIG2_OPTIONS_EMBEDDED, global_ctx,
+			 error_callback, NULL);
+      for (;;)
+	{
+	  int n_bytes = fread(buf, 1, sizeof(buf), f_page);
+	  if (n_bytes <= 0)
+	    break;
+	  jbig2_write(ctx, buf, n_bytes);
+	}
+      fclose(f_page);
+      jbig2_global_ctx_free(global_ctx);
+    }
+
+  jbig2_ctx_free(ctx);
+
   return 0;
 }

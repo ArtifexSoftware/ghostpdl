@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.h,v 1.4 2002/02/12 02:19:08 giles Exp $
+    $Id: jbig2dec.h,v 1.5 2002/02/13 08:47:18 raph Exp $
 */
 
 #ifndef JBIG2DEC_H
@@ -29,16 +29,16 @@ typedef signed char int8;
 #define TRUE 1
 #define FALSE 0
 
-typedef struct _Jbig2Ctx Jbig2Ctx;
+typedef struct _Jbig2Ctx_foo Jbig2Ctx_foo;
 
 int32
-get_bytes (Jbig2Ctx *ctx, byte *buf, int size, int off);
+get_bytes (Jbig2Ctx_foo *ctx, byte *buf, int size, int off);
 
 int16
-get_int16 (Jbig2Ctx *ctx, int off);
+get_int16 (Jbig2Ctx_foo *ctx, int off);
 
 int32
-get_int32 (Jbig2Ctx *ctx, int off);
+get_int32 (Jbig2Ctx_foo *ctx, int off);
 
 /* The word stream design is a compromise between simplicity and
    trying to amortize the number of method calls. Each ::get_next_word
