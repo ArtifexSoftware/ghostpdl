@@ -30,7 +30,11 @@ pdfdict begin
 % Define the name interpretation dictionary for reading values.
 /valueopdict mark
   (<<) cvn { mark } bind	% don't push an actual mark!
-  (>>) cvn /.dicttomark load
+  (>>) cvn { { .dicttomark } stopped {
+      (   **** File has an unbalanced >> \(close dictionary\).\n)
+      pdfformaterror
+    } if
+  } bind
   ([) cvn { mark } bind		% ditto
   (]) cvn dup load
 %  /true true		% see .pdfexectoken below
