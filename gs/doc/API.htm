@@ -428,6 +428,14 @@ are below.  Some more examples including other programming languages
 may be found at
 <a href="http://www.cs.wisc.edu/~ghost/doc/gsapi.htm">
 http://www.cs.wisc.edu/~ghost/doc/gsapi.htm</a>.
+
+<p>To use try out these examples in a development environment like Microsoft's
+developer tools or Metrowerks Codewarrior, create a new project, save the example
+source code as a <tt>.c</tt> file and add it, along with the Ghostscript dll or shared
+library. You will also need to make sure the Ghostscript headers are available, either
+by adding their location (the <tt>src</tt> directory in the Ghostscript source
+distribution) to the project's search path, or by copying ierrors.h and iapi.h into the
+same directory as the example source.</p>
   
 <h3>Example 1</h3>
 <pre>
@@ -437,8 +445,8 @@ http://www.cs.wisc.edu/~ghost/doc/gsapi.htm</a>.
 # define _Windows
 #endif
 #ifdef _Windows
-/* Compile with:
- * cl -D_Windows -Isrc -Febin\ps2pdf.exe ps2pdf.c bin\gsdll32.lib
+/* add this source to a project with gsdll32.dll, or compile it directly with:
+ *   cl -D_Windows -Isrc -Febin\ps2pdf.exe ps2pdf.c bin\gsdll32.lib
  */
 # include &lt;windows.h&gt;
 # define GSDLLEXPORT __declspec(dllimport)
@@ -490,8 +498,8 @@ int main(int argc, char *argv[])
 # define _Windows
 #endif
 #ifdef _Windows
-/* Compile with:
- * cl -D_Windows -Isrc -Febin\gstest.exe gstest.c bin\gsdll32.lib
+/* Compile directly with:
+ *   cl -D_Windows -Isrc -Febin\gstest.exe gstest.c bin\gsdll32.lib
  */
 # include &lt;windows.h&gt;
 # define GSDLLEXPORT __declspec(dllimport)
