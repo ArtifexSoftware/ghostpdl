@@ -130,32 +130,17 @@ static const byte order16x16[256] = {
 };
 private int
 px_set_default_screen(px_state_t *pxs, int method, const gs_point *origin)
-{	gs_state *pgs = pxs->pgs;
-	int px = (int)origin->x, py = (int)origin->y;
-	gs_halftone ht;
-	int code;
+{	
 
-	gs_settransfer(pgs, identity_transfer);
-	ht.type = ht_type_threshold;
-	ht.params.threshold.width = ht.params.threshold.height = 16;
-	ht.params.threshold.thresholds.data = order16x16;
-	ht.params.threshold.thresholds.size = 256;
-	ht.params.threshold.transfer = 0;
-	ht.params.threshold.transfer_closure.proc = 0;
-	code = gs_sethalftone(pgs, &ht);
-	if ( code < 0 )
-	  return code;
-	code = gs_sethalftonephase(pgs, px, py);
-	/*
-	 * Here is where we do the dreadful thing that appears to be
-	 * necessary to match the observed behavior of LaserJet 5 and
-	 * 6 printers with respect to superimposing halftoned source
-	 * and pattern.
-	 */
-	if ( code < 0 )
-	  return code;
-	return gs_setscreenphase(pgs, px + source_phase_x,
-				 py + source_phase_y, gs_color_select_source);
+    gs_const_string thresh;
+    thresh.data = order16x16;
+    thresh.size = 256;
+    return pl_set_pcl_halftone(pxs->pgs, 
+                               /* set transfer */ identity_transfer,
+                               /* width */ 16, /*height */ 16,
+                               /* dither data */ thresh,
+                               /* x phase */ (int)origin->x,
+                               /* y phase */ (int)origin->y);
 }
 
 /* Set the size for a default halftone screen. */
@@ -169,68 +154,64 @@ px_set_default_screen_size(px_state_t *pxs, int method)
 /* If necessary, set the halftone in the graphics state. */
 int
 px_set_halftone(px_state_t *pxs)
-{	px_gstate_t *pxgs = pxs->pxgs;
-	int code;
+{	
+    px_gstate_t *pxgs = pxs->pxgs;
+    int code;
 
-	if ( pxgs->halftone.set )
-	  return 0;
-	if ( pxgs->halftone.method != eDownloaded )
-	  code = px_set_default_screen(pxs, pxgs->halftone.method,
-				       &pxgs->halftone.origin);
-	else
-	  { gs_state *pgs = pxs->pgs;
-	    gs_halftone ht;
-
-	    ht.type = ht_type_threshold;
-	    switch ( pxs->orientation )
-	      {
-	      case ePortraitOrientation:
-	      case eReversePortrait:
-		ht.params.threshold.width = pxgs->halftone.width;
-		ht.params.threshold.height = pxgs->halftone.height;
+    if ( pxgs->halftone.set )
+        return 0;
+    if ( pxgs->halftone.method != eDownloaded ) {
+        gs_const_string thresh;
+        thresh.data = order16x16;
+        thresh.size = 256;
+        code = pl_set_pcl_halftone(pxs->pgs,
+                                   /* set transfer */ identity_transfer,
+                                   /* width */ 16, /*height */ 16,
+                                   /* dither data */ thresh,
+                                   /* x phase */ (int)pxgs->halftone.origin.x,
+                                   /* y phase */ (int)pxgs->halftone.origin.y);
+    } else { /* downloaded */
+        int ht_width, ht_height;
+        switch ( pxs->orientation ) {
+            case ePortraitOrientation:
+            case eReversePortrait:
+		ht_width = pxgs->halftone.width;
+		ht_height = pxgs->halftone.height;
 		break;
-	      case eLandscapeOrientation:
-	      case eReverseLandscape:
-		ht.params.threshold.width = pxgs->halftone.height;
-		ht.params.threshold.height = pxgs->halftone.width;
+            case eLandscapeOrientation:
+            case eReverseLandscape:
+		ht_width = pxgs->halftone.height;
+		ht_height = pxgs->halftone.width;
 		break;
-	      default:
+            default:
 		return -1;
-	       }
+        }
 	    
-	    /* Stupid C compilers don't allow structure assignment where */
-	    /* the only incompatibility is an assignment of a T * to a */
-	    /* const T * (which *is* allowed as a simple assignment): */
-	    ht.params.threshold.thresholds.data =
-	      pxgs->halftone.thresholds.data;
-	    ht.params.threshold.thresholds.size =
-	      pxgs->halftone.thresholds.size;
-	    /* Downloaded dither matrices disable the transfer function. */
-	    ht.params.threshold.transfer = identity_transfer;
-	    code = gs_sethalftone(pgs, &ht);
-	    if ( code >= 0 )
-	      code = gs_sethalftonephase(pgs,
-					 (int)pxgs->halftone.origin.x,
-					 (int)pxgs->halftone.origin.y);
-	    if ( code < 0 )
-	      gs_free_string(pxs->memory, pxgs->halftone.thresholds.data,
-			     pxgs->halftone.thresholds.size,
-			     "px_set_halftone(thresholds)");
-	    else
-	      { gs_free_string(pxs->memory, pxgs->dither_matrix.data,
-			       pxgs->dither_matrix.size,
-			       "px_set_halftone(dither_matrix)");
-	        pxgs->dither_matrix = pxgs->halftone.thresholds;
-	      }
-	    pxgs->halftone.thresholds.data = 0;
-	    pxgs->halftone.thresholds.size = 0;
-	  }
-	if ( code < 0 )
-	  return code;
-	pxgs->halftone.set = true;
-	/* Cached patterns have already been halftoned, so clear the cache. */
-	px_purge_pattern_cache(pxs, eSessionPattern);
-	return 0;
+        code = pl_set_pcl_halftone(pxs->pgs,
+                                   /* set transfer */ identity_transfer,
+                                   /* width */ ht_width, /*height */ ht_height,
+                                   /* dither data */ pxgs->halftone.thresholds,
+                                   /* x phase */ (int)pxgs->halftone.origin.x,
+                                   /* y phase */ (int)pxgs->halftone.origin.y);
+        if ( code < 0 )
+            gs_free_string(pxs->memory, pxgs->halftone.thresholds.data,
+                           pxgs->halftone.thresholds.size,
+                           "px_set_halftone(thresholds)");
+        else { 
+            gs_free_string(pxs->memory, pxgs->dither_matrix.data,
+                           pxgs->dither_matrix.size,
+                           "px_set_halftone(dither_matrix)");
+            pxgs->dither_matrix = pxgs->halftone.thresholds;
+        }
+        pxgs->halftone.thresholds.data = 0;
+        pxgs->halftone.thresholds.size = 0;
+    }
+    if ( code < 0 )
+        return code;
+    pxgs->halftone.set = true;
+    /* Cached patterns have already been halftoned, so clear the cache. */
+    px_purge_pattern_cache(pxs, eSessionPattern);
+    return 0;
 }
 
 /* ------ Patterns ------ */
