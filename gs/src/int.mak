@@ -1412,7 +1412,7 @@ $(PSD)sepr.dev : $(INT_MAK) $(ECHOGS_XE) $(seprread_)\
 $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
  $(gscolor_h) $(gscsepr_h) $(gsmatrix_h) $(gsstruct_h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h)\
- $(ialloc_h) $(icsmap_h) $(estack_h) $(igstate_h) $(iname_h) $(ivmspace_h) $(store_h)
+ $(estack_h) $(ialloc_h) $(icsmap_h) $(ifunc_h) $(igstate_h) $(iname_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
 
 # ---------------- DCT filters ---------------- #
@@ -1513,8 +1513,8 @@ $(PSD)psl3.dev : $(INT_MAK) $(ECHOGS_XE)\
 	$(ADDMOD) $(PSD)psl3 -include $(GLD)psl3lib $(PSD)psl3read
 
 $(PSOBJ)zcsdevn.$(OBJ) : $(PSSRC)zcsdevn.c $(OP) $(memory__h)\
- $(gscolor2_h) $(gxcdevn_h) $(gxcspace_h)\
- $(estack_h) $(ialloc_h) $(icremap_h) $(igstate_h) $(iname_h) $(ostack_h)\
+ $(gscolor2_h) $(gscdevn_h) $(gxcdevn_h) $(gxcspace_h)\
+ $(estack_h) $(ialloc_h) $(icremap_h) $(ifunc_h) $(igstate_h) $(iname_h) $(ostack_h)\
  $(store_h)
 	$(PSCC) $(PSO_)zcsdevn.$(OBJ) $(C_) $(PSSRC)zcsdevn.c
 
