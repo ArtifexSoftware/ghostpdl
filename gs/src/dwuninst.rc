@@ -1,4 +1,4 @@
-/* Copyright (C) 1999, Ghostgum Software Pty Ltd.  All rights reserved.
+/* Copyright (C) 1999, 2000, Ghostgum Software Pty Ltd.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* dwuninst.rc */
+// $Id$
 
 #include <windows.h>
 #include "dwuninst.h"
