@@ -84,7 +84,7 @@ typedef struct px_stored_font_s {
   const char *file_name;
 } px_stored_font_t;
 private const char *known_font_file_prefixes[] = {
-  "/windows/system/", "/windows/fonts/", "/win95/fonts/", 0
+  "/windows/system/", "/windows/fonts/", "/win95/fonts/", "/winnt/fonts/", 0
 };
 private const px_stored_font_t known_fonts[] = {
   {{{'A','l','b','e','r','t','u','s',' ',' ',' ',' ',' ',' ','X','b'},
