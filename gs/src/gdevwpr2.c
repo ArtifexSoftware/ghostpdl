@@ -28,6 +28,7 @@
  * Modified by Pierre Arnaud 1999-11-20 (accept lower resolution)
  * Bug fixed by Pierre Arnaud 2000-03-09 (win_pr2_put_params error when is_open)
  * Bug fixed by Pierre Arnaud 2000-03-20 (win_pr2_set_bpp did not set anti_alias)
+ * Bug fixed by Pierre Arnaud 2000-03-22 (win_pr2_set_bpp depth was wrong)
  */
 
 /* This driver uses the printer default size and resolution and
@@ -681,12 +682,14 @@ win_pr2_set_bpp(gx_device * dev, int depth)
 	static const gx_device_color_info win_pr2_24color = dci_std_color(24);
 
 	dev->color_info = win_pr2_24color;
+	depth = 24;
     } else if (depth >= 8) {
 	/* 8-bit (SuperVGA-style) color. */
 	/* (Uses a fixed palette of 3,3,2 bits.) */
 	static const gx_device_color_info win_pr2_8color = dci_pc_8bit;
 
 	dev->color_info = win_pr2_8color;
+	depth = 8;
     } else if (depth >= 3) {
 	/* 3 plane printer */
 	/* suitable for impact dot matrix CMYK printers */
@@ -694,10 +697,12 @@ win_pr2_set_bpp(gx_device * dev, int depth)
 	static const gx_device_color_info win_pr2_4color = dci_values(3, 4, 1, 1, 2, 2);
 
 	dev->color_info = win_pr2_4color;
+	depth = 4;
     } else {			/* default is black_and_white */
 	static const gx_device_color_info win_pr2_1color = dci_std_color(1);
 
 	dev->color_info = win_pr2_1color;
+	depth = 1;
     }
     
     ((gx_device_win_pr2 *)dev)->selected_bpp = depth;
