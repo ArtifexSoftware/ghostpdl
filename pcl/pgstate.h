@@ -54,7 +54,6 @@ typedef struct hpgl_line_type_s {
 } hpgl_line_type_t;
 
 typedef struct hpgl_path_state_s {
-  bool have_first_moveto;  
   gx_path path; 
 } hpgl_path_state_t;
 
