@@ -32,6 +32,8 @@
 #include "gxcspace.h"
 #include "gscolor2.h"		/* for gscie.h */
 #include "gscie.h"		/* requires gscspace.h */
+#include "gsiparm3.h"
+#include "gsiparm4.h"
 #include "gxistate.h"
 #include "strimpl.h"
 #include "sa85x.h"
@@ -45,373 +47,14 @@
 /* We need this color space type for constructing temporary color spaces. */
 extern const gs_color_space_type gs_color_space_type_Indexed;
 
-/* Import procedures for writing filter parameters. */
-extern stream_state_proc_get_params(s_DCTE_get_params, stream_DCT_state);
-extern stream_state_proc_get_params(s_CF_get_params, stream_CF_state);
-
 #define MAX_INLINE_IMAGE_BYTES 4000
+
+#define CHECK(expr)\
+  BEGIN if ((code = (expr)) < 0) return code; END
 
 /* ---------------- Utilities ---------------- */
 
 /* ------ Images ------ */
-
-/* Test whether a cached CIE procedure is the identity function. */
-#define cie_cache_is_identity(pc)\
-  ((pc)->floats.params.is_identity)
-#define cie_cache3_is_identity(pca)\
-  (cie_cache_is_identity(&(pca)[0]) &&\
-   cie_cache_is_identity(&(pca)[1]) &&\
-   cie_cache_is_identity(&(pca)[2]))
-
-/*
- * Test whether a cached CIE procedure is an exponential.  A cached
- * procedure is exponential iff f(x) = k*(x^p).  We make a very cursory
- * check for this: we require that f(0) = 0, set k = f(1), set p =
- * log[a](f(a)/k), and then require that f(b) = k*(b^p), where a and b are
- * two arbitrarily chosen values between 0 and 1.  Naturally all this is
- * done with some slop.
- */
-#define ia (gx_cie_cache_size / 3)
-#define ib (gx_cie_cache_size * 2 / 3)
-#define iv(i) ((i) / (double)(gx_cie_cache_size - 1))
-#define a iv(ia)
-#define b iv(ib)
-
-private bool
-cie_values_are_exponential(floatp va, floatp vb, floatp k,
-			   float *pexpt)
-{
-    double p;
-
-    if (fabs(k) < 0.001)
-	return false;
-    if (va == 0 || (va > 0) != (k > 0))
-	return false;
-    p = log(va / k) / log(a);
-    if (fabs(vb - k * pow(b, p)) >= 0.001)
-	return false;
-    *pexpt = p;
-    return true;
-}
-
-private bool
-cie_scalar_cache_is_exponential(const gx_cie_scalar_cache * pc, float *pexpt)
-{
-    double k, va, vb;
-
-    if (fabs(pc->floats.values[0]) >= 0.001)
-	return false;
-    k = pc->floats.values[gx_cie_cache_size - 1];
-    va = pc->floats.values[ia];
-    vb = pc->floats.values[ib];
-    return cie_values_are_exponential(va, vb, k, pexpt);
-}
-#define cie_scalar3_cache_is_exponential(pca, expts)\
-  (cie_scalar_cache_is_exponential(&(pca)[0], &(expts)[0]) &&\
-   cie_scalar_cache_is_exponential(&(pca)[1], &(expts)[1]) &&\
-   cie_scalar_cache_is_exponential(&(pca)[2], &(expts)[2]))
-
-private bool
-cie_vector_cache_is_exponential(const gx_cie_vector_cache * pc, float *pexpt)
-{
-    double k, va, vb;
-
-    if (fabs(pc->vecs.values[0].u) >= 0.001)
-	return false;
-    k = pc->vecs.values[gx_cie_cache_size - 1].u;
-    va = pc->vecs.values[ia].u;
-    vb = pc->vecs.values[ib].u;
-    return cie_values_are_exponential(va, vb, k, pexpt);
-}
-#define cie_vector3_cache_is_exponential(pca, expts)\
-  (cie_vector_cache_is_exponential(&(pca)[0], &(expts)[0]) &&\
-   cie_vector_cache_is_exponential(&(pca)[1], &(expts)[1]) &&\
-   cie_vector_cache_is_exponential(&(pca)[2], &(expts)[2]))
-
-#undef ia
-#undef ib
-#undef iv
-#undef a
-#undef b
-
-/*
- * Define the long and short versions of the keys in an image dictionary,
- * and other strings for images.
- */
-/*
- * Based on Adobe's published PDF documentation, it appears that the
- * abbreviations for the calibrated color spaces were introduced in
- * PDF 1.1 (added to Table 7.3) and removed in PDF 1.2 (Table 8.1)!
- */
-const pdf_image_names_t pdf_image_names_full = {
-    { PDF_COLOR_SPACE_NAMES },
-    { PDF_FILTER_NAMES },
-    PDF_IMAGE_PARAM_NAMES
-};
-const pdf_image_names_t pdf_image_names_short = {
-    { PDF_COLOR_SPACE_NAMES_SHORT },
-    { PDF_FILTER_NAMES_SHORT },
-    PDF_IMAGE_PARAM_NAMES_SHORT
-};
-
-/* Write out the values of image parameters other than filters. */
-/* pdev is used only for updating procsets. */
-private int
-pdf_write_image_values(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
-		       const pdf_image_names_t * pin, long *phpos)
-{
-    const gs_color_space *pcs = pim->ColorSpace;
-    const char *cs_name;
-    int num_components;
-    float indexed_decode[2];
-    const float *default_decode = NULL;
-
-    if (pim->ImageMask) {
-	pprints1(s, "%s true", pin->ImageMask);
-	pdev->procsets |= ImageB;
-	num_components = 1;
-    } else {
-	const gs_color_space *pbcs = pcs;
-	const gs_indexed_params *pip = 0;
-	const gs_cie_common *pciec;
-
-	pputs(s, pin->ColorSpace);
-      csw:switch (gs_color_space_get_index(pbcs)) {
-	    case gs_color_space_index_DeviceGray:
-		pdev->procsets |= ImageB;
-		cs_name = pin->color_spaces.DeviceGray;
-		break;
-	    case gs_color_space_index_DeviceRGB:
-		pdev->procsets |= ImageC;
-		cs_name = pin->color_spaces.DeviceRGB;
-		break;
-	    case gs_color_space_index_DeviceCMYK:
-		pdev->procsets |= ImageC;
-		cs_name = pin->color_spaces.DeviceCMYK;
-		break;
-	    case gs_color_space_index_CIEA:
-		pdev->procsets |= ImageB;
-		pprints1(s, "[%s<<", "/CalGray");
-		{
-		    const gs_cie_a *pcie = pbcs->params.a;
-		    float expts[3];
-
-		    if (cie_cache3_is_identity(pcie->common.caches.DecodeLMN))
-			cie_vector_cache_is_exponential(&pcie->caches.DecodeA, &expts[0]);
-		    else
-			discard(cie_scalar3_cache_is_exponential(pcie->common.caches.DecodeLMN, expts));
-		    if (expts[0] != 1)
-			pprintg1(s, "/Gamma %g", expts[0]);
-		    pciec = (const gs_cie_common *)pcie;
-		}
-	      cal:pprintg3(s, "/WhitePoint[%g %g %g]",
-			 pciec->points.WhitePoint.u,
-			 pciec->points.WhitePoint.v,
-			 pciec->points.WhitePoint.w);
-		if (pciec->points.BlackPoint.u != 0 ||
-		    pciec->points.BlackPoint.v != 0 ||
-		    pciec->points.BlackPoint.w != 0
-		    )
-		    pprintg3(s, "/BlackPoint[%g %g %g]",
-			     pciec->points.BlackPoint.u,
-			     pciec->points.BlackPoint.v,
-			     pciec->points.BlackPoint.w);
-		pputs(s, ">>]");
-		cs_name = 0;
-		break;
-	    case gs_color_space_index_CIEABC:
-		pdev->procsets |= ImageC;
-		pprints1(s, "[%s<<", "/CalRGB");
-		{
-		    const gs_cie_abc *pcie = pbcs->params.abc;
-		    const gs_matrix3 *pmat;
-		    float expts[3];
-
-		    if (pcie->common.MatrixLMN.is_identity &&
-			cie_cache3_is_identity(pcie->common.caches.DecodeLMN)
-			) {
-			discard(cie_vector3_cache_is_exponential(pcie->caches.DecodeABC, expts));
-			pmat = &pcie->MatrixABC;
-		    } else {
-			discard(cie_scalar3_cache_is_exponential(pcie->common.caches.DecodeLMN, expts));
-			pmat = &pcie->common.MatrixLMN;
-		    }
-		    if (expts[0] != 1 || expts[1] != 1 || expts[2] != 1)
-			pprintg3(s, "/Gamma[%g %g %g]", expts[0], expts[1],
-				 expts[2]);
-		    if (!pmat->is_identity) {
-			pprintg3(s, "/Matrix[%g %g %g",
-				 pmat->cu.u, pmat->cu.v, pmat->cu.w);
-			pprintg6(s, " %g %g %g %g %g %g]",
-				 pmat->cv.u, pmat->cv.v, pmat->cv.w,
-				 pmat->cw.u, pmat->cw.v, pmat->cw.w);
-		    }
-		    pciec = (const gs_cie_common *)pcie;
-		}
-		goto cal;
-	    case gs_color_space_index_Indexed:
-		pdev->procsets |= ImageI;
-		pprints1(s, "[%s", pin->color_spaces.Indexed);
-		pip = &pcs->params.indexed;
-		pbcs = (const gs_color_space *)&pip->base_space;
-		indexed_decode[0] = 0;
-		indexed_decode[1] = (1 << pim->BitsPerComponent) - 1;
-		default_decode = indexed_decode;
-		goto csw;
-	    default:		/* shouldn't happen */
-		return_error(gs_error_rangecheck);
-	}
-	if (cs_name)
-	    pprints1(s, " %s", cs_name);
-	num_components = gs_color_space_num_components(pbcs);
-	if (pip) {
-	    register const char *const hex_digits = "0123456789abcdef";
-	    int i;
-
-	    pprintd1(s, " %d\n<", pip->hival);
-	    for (i = 0; i < (pip->hival + 1) * num_components; ++i) {
-		byte b = pip->lookup.table.data[i];
-
-		pputc(s, hex_digits[b >> 4]);
-		pputc(s, hex_digits[b & 0xf]);
-	    }
-	    pputs(s, ">\n]");
-	    num_components = 1;
-	}
-    }
-    pputs(s, pin->Width);
-    pprintd1(s, " %d", pim->Width);
-    pputs(s, pin->Height);
-    pputc(s, ' ');
-    if (phpos)
-	*phpos = stell(s);	/* save Height position for later update */
-    pprintd1(s, "%d", pim->Height);
-    pputs(s, pin->BitsPerComponent);
-    pprintd1(s, " %d", pim->BitsPerComponent);
-    {
-	int i;
-
-	for (i = 0; i < num_components * 2; ++i)
-	    if (pim->Decode[i] !=
-		(default_decode ? default_decode[i] : i & 1)
-		)
-		break;
-	if (i < num_components * 2) {
-	    char sepr = '[';
-
-	    pputs(s, pin->Decode);
-	    for (i = 0; i < num_components * 2; sepr = ' ', ++i) {
-		pputc(s, sepr);
-		pprintg1(s, "%g", pim->Decode[i]);
-	    }
-	    pputc(s, ']');
-	}
-    }
-    if (pim->Interpolate)
-	pprints1(s, "%s true", pin->Interpolate);
-    return 0;
-}
-
-/* Write out filters for an image. */
-/* Currently this only writes parameters for CCITTFaxDecode. */
-private int
-pdf_write_image_filters(stream *s, gs_memory_t *mem,
-			const psdf_binary_writer * pbw,
-			const pdf_image_names_t * pin)
-{
-    const char *filter_name = 0;
-    bool binary_ok = true;
-    stream *fs = pbw->strm;
-    byte decode_parms[100];	/* must be large enough, see below */
-    stream s_parms;
-    gs_param_list *printer;
-
-    swrite_string(&s_parms, decode_parms, sizeof(decode_parms));
-    for (; fs != s; fs = fs->strm) {
-	const stream_state *st = fs->state;
-	const stream_template *template = st->template;
-
-#define TEMPLATE_IS(atemp)\
-  (template->process == (atemp).process)
-	if (TEMPLATE_IS(s_A85E_template))
-	    binary_ok = false;
-	else if (TEMPLATE_IS(s_CFE_template)) {
-	    param_printer_params_t ppp;
-	    stream_CF_state cfs;
-	    int code;
-
-	    ppp = param_printer_params_default;
-	    ppp.prefix = "<<";
-	    ppp.suffix = ">>";
-	    code = psdf_alloc_param_printer(&printer, &ppp, &s_parms, mem);
-	    if (code < 0)
-		return code;
-	    /*
-	     * If EndOfBlock is true, we mustn't write out a Rows value.
-	     * This is a hack....
-	     */
-	    cfs = *(const stream_CF_state *)st;
-	    if (cfs.EndOfBlock)
-		cfs.Rows = 0;
-	    code = s_CF_get_params(printer, &cfs, false);
-	    psdf_free_param_printer(printer);
-	    if (code < 0)
-		return code;
-	    filter_name = pin->filter_names.CCITTFaxDecode;
-	} else if (TEMPLATE_IS(s_DCTE_template))
-	    filter_name = pin->filter_names.DCTDecode;
-	else if (TEMPLATE_IS(s_zlibE_template))
-	    filter_name = pin->filter_names.FlateDecode;
-	else if (TEMPLATE_IS(s_LZWE_template))
-	    filter_name = pin->filter_names.LZWDecode;
-	else if (TEMPLATE_IS(s_PNGPE_template)) {
-	    /* This is a predictor for FlateDecode or LZWEncode. */
-	    const stream_PNGP_state *const ss =
-	    (const stream_PNGP_state *)st;
-
-	    pprintd1(&s_parms, "<</Predictor %d", ss->Predictor);
-	    pprintld1(&s_parms, "/Columns %ld", (long)ss->Columns);
-	    if (ss->Colors != 1)
-		pprintd1(&s_parms, "/Colors %d", ss->Colors);
-	    if (ss->BitsPerComponent != 8)
-		pprintd1(&s_parms, "/BitsPerComponent %d", ss->BitsPerComponent);
-	    pputs(&s_parms, ">>");
-	} else if (TEMPLATE_IS(s_RLE_template))
-	    filter_name = pin->filter_names.RunLengthDecode;
-#undef TEMPLATE_IS
-    }
-    spputc(&s_parms, 0);	/* null terminator */
-    sclose(&s_parms);
-    if (filter_name) {
-	if (binary_ok)
-	    pprints2(s, "%s%s", pin->filter_names.Filter, filter_name);
-	else
-	    pprints3(s, "%s[%s%s]", pin->filter_names.Filter,
-		     pin->filter_names.ASCII85Decode, filter_name);
-	if (decode_parms[0])
-	    pprints2(s,
-		     (binary_ok ? "%s%s" : "%s[null%s]"),
-		     pin->filter_names.DecodeParms,
-		     (const char *)decode_parms);
-    } else if (!binary_ok)
-	pprints2(s, "%s%s", pin->filter_names.Filter,
-		 pin->filter_names.ASCII85Decode);
-    return 0;
-}
-
-/* Write out image parameters for an in-line image or an image resource. */
-/* decode_parms, if supplied, must start with /, [, or <<. */
-private int
-pdf_write_image_params(stream *s, gx_device_pdf * pdev, const gs_image_t * pim,
-		       const psdf_binary_writer * pbw,
-		       const pdf_image_names_t * pin, long *phpos)
-{
-    int code = pdf_write_image_values(s, pdev, pim, pin, phpos);
-
-    if (code < 0)
-	return code;
-    return pdf_write_image_filters(s, pdev->pdf_memory, pbw, pin);
-}
 
 /* Fill in the image parameters for a device space bitmap. */
 /* PDF images are always specified top-to-bottom. */
@@ -452,165 +95,10 @@ pdf_put_image_matrix(gx_device_pdf * pdev, const gs_matrix * pmat,
 private image_enum_proc_plane_data(pdf_image_plane_data);
 private image_enum_proc_end_image(pdf_image_end_image);
 
-private const gx_image_enum_procs_t pdf_image_enum_procs =
-{
+private const gx_image_enum_procs_t pdf_image_enum_procs = {
     pdf_image_plane_data,
     pdf_image_end_image
 };
-
-/* Define the structure for writing an image. */
-typedef struct pdf_image_writer_s {
-    psdf_binary_writer binary;
-    const pdf_image_names_t *pin;
-    const char *begin_data;
-    pdf_resource_t *pres;	/* XObject resource iff not in-line */
-    long length_id;		/* id of length object (forward reference) */
-    long Height_pos;		/* position for overwriting Height if needed */
-    int data_offset;		/* offset of data from start of object */
-    int height;			/* initially specified image height */
-    long start_pos;		/* start of data in final file */
-    cos_stream_t *data;
-} pdf_image_writer;
-gs_private_st_suffix_add2(st_pdf_image_writer, pdf_image_writer,
-  "pdf_image_writer", pdf_image_writer_enum_ptrs, pdf_image_writer_reloc_ptrs,
-  st_psdf_binary_writer, pres, data);
-#define pdf_image_writer_max_ptrs (psdf_binary_writer_max_ptrs + 2)
-
-/* Begin writing an image. */
-private int
-pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
-		      gx_bitmap_id id, bool in_line)
-{
-    if (in_line) {
-	piw->pres = 0;
-	piw->pin = &pdf_image_names_short;
-	piw->begin_data = (pdev->binary_ok ? "ID " : "ID\n");
-    } else {
-	int code = pdf_begin_resource(pdev, resourceXObject, id, &piw->pres);
-	stream *s = pdev->strm;
-
-	if (code < 0)
-	    return code;
-	piw->pres->rid = id;
-	piw->length_id = pdf_obj_ref(pdev);
-	pprintld1(s, "/Subtype/Image/Length %ld 0 R\n",
-		  piw->length_id);
-	piw->pin = &pdf_image_names_full;
-	piw->begin_data = ">>\nstream\n";
-    }
-    return 0;
-}
-
-/* Set up the binary writer for an image. */
-private int
-pdf_begin_image_binary(gx_device_pdf *pdev, pdf_image_writer * piw)
-{
-    psdf_binary_writer *const pbw = &piw->binary;
-    /* Patch pdev->strm so the right stream gets into the writer. */
-    stream *save_strm = pdev->strm;
-    int code;
-    
-    pdev->strm = pdev->streams.strm;
-    code = psdf_begin_binary((gx_device_psdf *) pdev, pbw);
-    pdev->strm = save_strm;
-    return code;
-}
-
-/* Begin writing the image data. */
-private int
-pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
-		     const gs_image_t * pim, int h)
-{
-    stream *s = pdev->streams.strm;
-    long start_pos;
-    int code;
-
-    if (piw->pres) {
-	pdf_x_object_t *pxo = (pdf_x_object_t *)piw->pres;
-
-	pxo->width = pim->Width;
-	pxo->height = h;
-    }
-    piw->height = h;
-    piw->data = cos_stream_alloc(pdev, "pdf_begin_image_data");
-    if (piw->data == 0)
-	return_error(gs_error_VMerror);
-    start_pos = stell(s);
-    if (!piw->pres)
-	pputs(s, "BI\n");
-    code = pdf_write_image_params(s, pdev, pim, &piw->binary, piw->pin,
-				  &piw->Height_pos);
-    if (code >= 0) {
-	pprints1(s, "\n%s", piw->begin_data);
-	piw->data_offset = stell(s) - start_pos;
-	code = cos_stream_add_since(piw->data, start_pos);
-    }
-    if (code < 0) {
-	COS_FREE(piw->data, "pdf_begin_image_data");
-	piw->data = 0;
-    }
-    return code;
-}
-
-/* Finish writing the binary data. */
-private int
-pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
-{
-    long pos = stell(pdev->streams.strm);  /* piw->binary.target */
-    int code;
-
-    psdf_end_binary(&piw->binary);
-    code = cos_stream_add_since(piw->data, pos);
-    if (code < 0)
-	return code;
-    if (data_h != piw->height) {
-	/*
-	 * Overwrite the length in the stream file.  Make sure we add
-	 * enough blanks to match the previous length.
-	 */
-	stream *ds = pdev->streams.strm;
-	long save_pos = stell(ds);
-	char hstr[sizeof(int) * 3];
-	int hlen;
-
-	sprintf(hstr, "%d", piw->height);
-	hlen = strlen(hstr);
-	sprintf(hstr, "%d", data_h);
-	memset(hstr + strlen(hstr), ' ', hlen - strlen(hstr));
-	sseek(ds, piw->Height_pos);
-	pputs(ds, hstr);
-	sseek(ds, save_pos);
-    }
-    piw->start_pos = pdf_stell(pdev);
-    code = cos_stream_contents_write(piw->data, pdev);
-    COS_FREE(piw->data, "pdf_end_write_image");
-    return code;
-}
-
-/* Finish writing an image. */
-/* Return 0 if resource, 1 if in-line, or an error code. */
-private int
-pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
-{
-    stream *s = pdev->strm;
-
-    if (piw->pres) {		/* image resource */
-	long length;
-
-	pputs(s, "\n");
-	length = pdf_stell(pdev) - piw->start_pos - piw->data_offset;
-	pputs(s, "endstream\n");
-	pdf_end_resource(pdev);
-	pdf_open_separate(pdev, piw->length_id);
-	s = pdev->strm;
-	pprintld1(s, "%ld\n", length);
-	pdf_end_separate(pdev);
-	return 0;
-    } else {			/* in-line image */
-	pputs(s, "\nEI Q\n");
-	return 1;
-    }
-}
 
 /* Put out a reference to an image resource. */
 private int
@@ -638,6 +126,69 @@ pdf_do_image(gx_device_pdf * pdev, const pdf_resource_t * pres,
 
 /* ------ Low-level calls ------ */
 
+/* Copy a mask bitmap.  for_pattern = -1 means put the image in-line, */
+/* 1 means put the image in a resource. */
+private int
+pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
+		   int raster, gx_bitmap_id id, int x, int y, int w, int h,
+		   gs_image_t *pim, pdf_image_writer *piw,
+		   int for_pattern)
+{
+    ulong nbytes;
+    int code;
+    const byte *row_base;
+    int row_step;
+    long pos;
+    bool in_line;
+
+    gs_image_t_init_mask(pim, true);
+    pdf_make_bitmap_image(pim, x, y, w, h);
+    nbytes = ((ulong)w * h + 7) / 8;
+
+    if (for_pattern) {
+	/*
+	 * Patterns must be emitted in order of increasing user Y, i.e.,
+	 * the opposite of PDF's standard image order.
+	 */
+	row_base = base + (h - 1) * raster;
+	row_step = -raster;
+	in_line = for_pattern < 0;
+    } else {
+	row_base = base;
+	row_step = raster;
+	in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
+	pdf_put_image_matrix(pdev, &pim->ImageMatrix, 1.0);
+	/*
+	 * Check whether we've already made an XObject resource for this
+	 * image.
+	 */
+	if (id != gx_no_bitmap_id) {
+	    piw->pres = pdf_find_resource_by_gs_id(pdev, resourceXObject, id);
+	    if (piw->pres)
+		return 0;
+	}
+    }
+    /*
+     * We have to be able to control whether to put Pattern images in line,
+     * to avoid trying to create an XObject resource while we're in the
+     * middle of writing a Pattern resource.
+     */
+    if (for_pattern < 0)
+	pputs(pdev->strm, "q ");
+    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
+	(code = psdf_setup_image_filters((gx_device_psdf *) pdev, &piw->binary,
+					 (gs_pixel_image_t *)pim, NULL, NULL)) < 0 ||
+	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
+				     NULL)) < 0
+	)
+	return code;
+    pos = stell(pdev->streams.strm);
+    pdf_copy_mask_bits(piw->binary.strm, row_base, sourcex, row_step, w, h, 0);
+    cos_stream_add_since(piw->data, pos);
+    pdf_end_image_binary(pdev, piw, piw->height);
+    return pdf_end_write_image(pdev, piw);
+}
+
 /* Copy a monochrome bitmap or mask. */
 private int
 pdf_copy_mono(gx_device_pdf *pdev,
@@ -647,9 +198,10 @@ pdf_copy_mono(gx_device_pdf *pdev,
 {
     int code;
     gs_color_space cs;
+    cos_value_t cs_value;
+    cos_value_t *pcsvalue;
     byte palette[sizeof(gx_color_index) * 2];
     gs_image_t image;
-    int yi;
     pdf_image_writer writer;
     pdf_stream_position_t ipos;
     pdf_resource_t *pres = 0;
@@ -701,7 +253,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 			 w, h + y_offset);
 		pprintd3(pdev->strm, "%d 0 0 %d 0 %d cm\n", w, h,
 			 y_offset);
-		code = pdf_begin_write_image(pdev, &writer, gs_no_id, true);
+		code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, true);
 		if (code < 0)
 		    return code;
 		pcp->rid = id;
@@ -770,11 +322,20 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
-	code = pdf_begin_write_image(pdev, &writer, gs_no_id, in_line);
+	code = pdf_begin_write_image(pdev, &writer, gs_no_id, w, h, NULL, in_line);
 	if (code < 0)
 	    return code;
     }
   wr:
+    if (image.ImageMask)
+	pcsvalue = NULL;
+    else {
+	code = pdf_color_space(pdev, &cs_value, &cs,
+			       &writer.pin->color_spaces, true);
+	if (code < 0)
+	    return code;
+	pcsvalue = &cs_value;
+    }
     /*
      * There are 3 different cases at this point:
      *      - Writing an in-line image (pres == 0, writer.pres == 0);
@@ -785,7 +346,6 @@ pdf_copy_mono(gx_device_pdf *pdev,
      * simply because there would be an awful lot of parameters
      * that would need to be passed.
      */
-    pdf_begin_image_binary(pdev, &writer);
     if (pres) {
 	/* Always use CCITTFax 2-D for character bitmaps. */
 	psdf_CFE_binary(&writer.binary, image.Width, image.Height, false);
@@ -794,31 +354,13 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	psdf_setup_image_filters((gx_device_psdf *) pdev, &writer.binary,
 				 (gs_pixel_image_t *)&image, NULL, NULL);
     }
-    pdf_begin_image_data(pdev, &writer, &image, h);
+    pdf_begin_image_data(pdev, &writer, (const gs_pixel_image_t *)&image,
+			 pcsvalue);
     pos = stell(pdev->streams.strm);
-    for (yi = 0; yi < h; ++yi) {
-	const byte *data = base + yi * raster + (sourcex >> 3);
-	int sbit = sourcex & 7;
-
-	if (sbit == 0) {
-	    int nbytes = (w + 7) >> 3;
-	    int i;
-
-	    for (i = 0; i < nbytes; ++data, ++i)
-		sputc(writer.binary.strm, *data ^ invert);
-	} else {
-	    int wleft = w;
-	    int rbit = 8 - sbit;
-
-	    for (; wleft + sbit > 8; ++data, wleft -= 8)
-		sputc(writer.binary.strm,
-		      ((*data << sbit) + (data[1] >> rbit)) ^ invert);
-	    if (wleft > 0)
-		sputc(writer.binary.strm,
-		      ((*data << sbit) ^ invert) &
-		      (byte) (0xff00 >> wleft));
-	}
-    }
+    code = pdf_copy_mask_bits(writer.binary.strm, base, sourcex, raster,
+			      w, h, invert);
+    if (code < 0)
+	return code;
     code = cos_stream_add_since(writer.data, pos);
     pdf_end_image_binary(pdev, &writer, writer.height);
     if (!pres) {
@@ -871,8 +413,8 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 {
     int depth = pdev->color_info.depth;
     int bytes_per_pixel = depth >> 3;
-    int yi;
     gs_color_space cs;
+    cos_value_t cs_value;
     ulong nbytes;
     int code;
     const byte *row_base;
@@ -920,26 +462,18 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      */
     if (for_pattern < 0)
 	pputs(pdev->strm, "q ");
-    code = pdf_begin_write_image(pdev, piw, id, in_line);
-    if (code < 0)
-	return code;
-    pdf_begin_image_binary(pdev, piw);
-    code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-				    &piw->binary, (gs_pixel_image_t *)pim,
-				    NULL, NULL);
-    if (code < 0)
-	return code;
-    code = pdf_begin_image_data(pdev, piw, pim, h);
-    if (code < 0)
+    if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
+	(code = pdf_color_space(pdev, &cs_value, &cs,
+				&piw->pin->color_spaces, true)) < 0 ||
+	(code = psdf_setup_image_filters((gx_device_psdf *) pdev, &piw->binary,
+					 (gs_pixel_image_t *)pim, NULL, NULL)) < 0 ||
+	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
+				     &cs_value)) < 0
+	)
 	return code;
     pos = stell(pdev->streams.strm);
-    for (yi = 0; yi < h; ++yi) {
-	uint ignore;
-
-	sputs(piw->binary.strm,
-	      row_base + sourcex * bytes_per_pixel + yi * row_step,
-	      w * bytes_per_pixel, &ignore);
-    }
+    pdf_copy_color_bits(piw->binary.strm, row_base, sourcex, row_step, w, h,
+			bytes_per_pixel);
     cos_stream_add_since(piw->data, pos);
     pdf_end_image_binary(pdev, piw, piw->height);
     return pdf_end_write_image(pdev, piw);
@@ -1007,34 +541,35 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	yscale = pdev->HWResolution[1] / 72.0;
     bool mask;
     int depth;
+    int (*copy_data)(P12(gx_device_pdf *, const byte *, int, int,
+			 gx_bitmap_id, int, int, int, int,
+			 gs_image_t *, pdf_image_writer *, int));
     pdf_resource_t *pres;
+    cos_value_t cs_value;
+    int code;
 
     if (tiles->id == gx_no_bitmap_id || tiles->shift != 0 ||
 	(w < tw && h < th) ||
-	/* We only handle full colored patterns right now. */
-	color0 != gx_no_color_index || color1 != gx_no_color_index ||
+	color0 != gx_no_color_index ||
 	/* Pattern fills are only available starting in PDF 1.2. */
-	pdev->CompatibilityLevel < 1.2)
+	pdev->CompatibilityLevel < 1.2
+	)
 	goto use_default;
     if (color1 != gx_no_color_index) {
 	/* This is a mask pattern. */
 	mask = true;
 	depth = 1;
+	copy_data = pdf_copy_mask_data;
+	code = pdf_cs_Pattern_RGB(pdev, &cs_value);
     } else {
 	/* This is a colored pattern. */
 	mask = false;
 	depth = pdev->color_info.depth;
+	copy_data = pdf_copy_color_data;
+	code = pdf_cs_Pattern(pdev, &cs_value);
     }
-    if (!pdev->cs_Pattern) {
-	/* Create a single Pattern color space resource named Pattern. */
-	int code = pdf_begin_resource_body(pdev, resourceColorSpace, gs_no_id,
-					   &pdev->cs_Pattern);
-
-	if (code < 0)
-	    goto use_default;
-	pputs(pdev->strm, "[/Pattern]\n");
-	pdf_end_resource(pdev);
-    }
+    if (code < 0)
+	goto use_default;
     pres = pdf_find_resource_by_gs_id(pdev, resourcePattern, tiles->id);
     if (!pres) {
 	/* Create the Pattern resource. */
@@ -1059,9 +594,8 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    goto use_default;
 	} else {
 	    /* Write out the image as an XObject resource now. */
-	    code = pdf_copy_color_data(pdev, tiles->data, 0, tiles->raster,
-				       tile_id, 0, 0, tw, th, &image, &writer,
-				       1);
+	    code = copy_data(pdev, tiles->data, 0, tiles->raster,
+			     tile_id, 0, 0, tw, th, &image, &writer, 1);
 	    if (code < 0)
 		goto use_default;
 	    image_id = pdf_resource_id(writer.pres);
@@ -1070,25 +604,30 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	if (code < 0)
 	    goto use_default;
 	s = pdev->strm;
-	length_id = pdf_obj_ref(pdev);
-	pputs(s, "/PatternType 1/PaintType 1/TilingType 1/Resources<<\n");
+	pprintd1(s, "/PatternType 1/PaintType %d/TilingType 1/Resources<<\n",
+		 (mask ? 2 : 1));
 	if (image_id)
 	    pprintld2(s, "/XObject<</R%ld %ld 0 R>>", image_id, image_id);
-	pputs(s, "/ProcSet[/PDF/ImageC]>>\n");
+	pprints1(s, "/ProcSet[/PDF/Image%s]>>\n", (mask ? "B" : "C"));
 	/*
 	 * Because of bugs in Acrobat Reader's Print function, we can't use
 	 * the natural BBox and Step here: they have to be 1.
 	 */
 	pprintg2(s, "/Matrix[%g 0 0 %g 0 0]", tw / xscale, th / yscale);
-	pprintld1(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length %ld 0 R>>stream\n",
-		  length_id);
-	start = pdf_stell(pdev);
-	if (image_id)
-	    pprintld1(s, "/R%ld Do\n", image_id);
-	else {
-	    code = pdf_copy_color_data(pdev, tiles->data, 0, tiles->raster,
-				       tile_id, 0, 0, tw, th, &image, &writer,
-				       -1);
+	pputs(s, "/BBox[0 0 1 1]/XStep 1/YStep 1/Length ");
+	if (image_id) {
+	    char buf[MAX_REF_CHARS + 6 + 1]; /* +6 for /R# Do\n */
+
+	    sprintf(buf, "/R%ld Do\n", image_id);
+	    pprintd1(s, "%d>>stream\n", strlen(buf));
+	    pprints1(s, "%sendstream\n", buf);
+	    pdf_end_resource(pdev);
+	} else {
+	    length_id = pdf_obj_ref(pdev);
+	    pprintld1(s, "%ld 0 R>>stream\n", length_id);
+	    start = pdf_stell(pdev);
+	    code = copy_data(pdev, tiles->data, 0, tiles->raster,
+			     tile_id, 0, 0, tw, th, &image, &writer, -1);
 	    switch (code) {
 	    default:
 		return code;	/* error */
@@ -1097,13 +636,13 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	    case 0:			/* not possible */
 		return_error(gs_error_Fatal);
 	    }
+	    end = pdf_stell(pdev);
+	    pputs(s, "\nendstream\n");
+	    pdf_end_resource(pdev);
+	    pdf_open_separate(pdev, length_id);
+	    pprintld1(pdev->strm, "%ld\n", end - start);
+	    pdf_end_separate(pdev);
 	}
-	end = pdf_stell(pdev);
-	pputs(s, "endstream\n");
-	pdf_end_resource(pdev);
-	pdf_open_separate(pdev, length_id);
-	pprintld1(pdev->strm, "%ld\n", end - start);
-	pdf_end_separate(pdev);
     }
     /* Fill the rectangle with the Pattern. */
     {
@@ -1119,10 +658,14 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	 * Because of bugs in Acrobat Reader's Print function, we can't
 	 * leave the CTM alone here: we have to reset it to the default.
 	 */
-	pprintg2(s, "q %g 0 0 %g 0 0 cm", xscale, yscale);
-	pprintld2(s, "/R%ld cs/R%ld scn ", pdf_resource_id(pdev->cs_Pattern),
-		  pdf_resource_id(pres));
-	pprintg4(s, "%g %g %g %g re f Q\n",
+	pprintg2(s, "q %g 0 0 %g 0 0 cm\n", xscale, yscale);
+	cos_value_write(&cs_value, pdev);
+	pputs(s, " cs");
+	if (mask)
+	    pprintd3(s, " %d %d %d", (int)(color1 >> 16),
+		     (int)((color1 >> 8) & 0xff), (int)(color1 & 0xff));
+	pprintld1(s, "/R%ld scn", pdf_resource_id(pres));
+	pprintg4(s, " %g %g %g %g re f Q\n",
 		 x / xscale, y / yscale, w / xscale, h / xscale);
     }
     return 0;
@@ -1166,125 +709,132 @@ private RELOC_PTRS_WITH(pdf_image_enum_reloc_ptrs, pdf_image_enum *pie)
 }
 RELOC_PTRS_END
 
-/* Test whether we can handle a given color space. */
-private bool
-pdf_can_handle_color_space(const gs_color_space * pcs)
-{
-    gs_color_space_index index = gs_color_space_get_index(pcs);
-
-    if (index == gs_color_space_index_Indexed) {
-	if (pcs->params.indexed.use_proc)
-	    return false;
-	index =
-	    gs_color_space_get_index(gs_color_space_indexed_base_space(pcs));
-    }
-    switch (index) {
-	case gs_color_space_index_DeviceGray:
-	case gs_color_space_index_DeviceRGB:
-	case gs_color_space_index_DeviceCMYK:
-	    return true;
-	case gs_color_space_index_Separation:
-	case gs_color_space_index_Pattern:
-	    return false;
-/****** OK in PDF 1.2 ******/
-	case gs_color_space_index_CIEA:
-	    {			/* Check that we can represent this as a CalGray space. */
-		const gs_cie_a *pcie = pcs->params.a;
-		float expts[3];
-
-		return (pcie->MatrixA.u == 1 && pcie->MatrixA.v == 1 &&
-			pcie->MatrixA.w == 1 &&
-			pcie->common.MatrixLMN.is_identity &&
-			((cie_cache_is_identity(&pcie->caches.DecodeA) &&
-			  cie_scalar3_cache_is_exponential(pcie->common.caches.DecodeLMN, expts) &&
-			  expts[1] == expts[0] && expts[2] == expts[0]) ||
-			 (cie_vector_cache_is_exponential(&pcie->caches.DecodeA, &expts[0]) &&
-		     cie_cache3_is_identity(pcie->common.caches.DecodeLMN)))
-		    );
-	    }
-	case gs_color_space_index_CIEABC:
-	    {			/* Check that we can represent this as a CalRGB space. */
-		const gs_cie_abc *pcie = pcs->params.abc;
-		float expts[3];
-
-		return ((cie_cache3_is_identity(pcie->caches.DecodeABC) &&
-			 pcie->MatrixABC.is_identity &&
-			 cie_scalar3_cache_is_exponential(pcie->common.caches.DecodeLMN, expts)) ||
-			(cie_vector3_cache_is_exponential(pcie->caches.DecodeABC, expts) &&
-		    cie_cache3_is_identity(pcie->common.caches.DecodeLMN) &&
-			 pcie->common.MatrixLMN.is_identity)
-		    );
-	    }
-	default:		/* CIEBasedDEF[G], LL3 spaces */
-	    return false;
-    }
-}
-
 /* Start processing an image. */
 int
-gdev_pdf_begin_image(gx_device * dev,
-		     const gs_imager_state * pis, const gs_image_t * pim,
-		     gs_image_format_t format, const gs_int_rect * prect,
-	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
-		     gs_memory_t * mem, gx_image_enum_common_t ** pinfo)
+gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
+			   const gs_matrix *pmat, const gs_image_common_t *pic,
+			   const gs_int_rect * prect,
+			   const gx_drawing_color * pdcolor,
+			   const gx_clip_path * pcpath, gs_memory_t * mem,
+			   gx_image_enum_common_t ** pinfo)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    const gs_pixel_image_t *pim;
     int code;
     pdf_image_enum *pie;
-    const gs_color_space *pcs = pim->ColorSpace;
-    int num_components =
-	(pim->ImageMask ? 1 : gs_color_space_num_components(pcs));
+    gs_image_format_t format;
+    const gs_color_space *pcs;
+    cos_value_t cs_value;
+    int num_components;
+    bool is_mask, in_line;
     gs_int_rect rect;
-    gs_image_t image;		/* we may change some components */
+    /*
+     * We define this union because psdf_setup_image_filters may alter the
+     * gs_pixel_image_t part, but pdf_begin_image_data must also have access
+     * to the type-specific parameters.
+     */
+    union iu_ {
+	gs_pixel_image_t pixel;	/* we may change some components */
+	gs_image1_t type1;
+	gs_image3_t type3;
+	gs_image4_t type4;
+    } image;
     ulong nbytes;
-    int height;
+    int width, height;
 
+    /* Check for the image types we can handle. */
+    switch (pic->type->index) {
+    case 1: {
+	const gs_image_t *pim1 = (const gs_image_t *)pic;
+
+	if (pim1->Alpha != gs_image_alpha_none)
+	    goto nyi;
+	is_mask = pim1->ImageMask;
+	in_line = true;
+	image.type1 = *pim1;
+	break;
+    }
+    case 3: {
+	const gs_image3_t *pim3 = (const gs_image3_t *)pic;
+
+	if (pdev->CompatibilityLevel < 1.3)
+	    goto nyi;
+	if (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
+		       prect->q.x == pim3->Width &&
+		       prect->q.y == pim3->Height))
+	    goto nyi;
+	/****** NYI ******/
+	if (1) goto nyi;
+	is_mask = in_line = false;
+	image.type3 = *pim3;
+	break;
+    }
+    case 4:
+	if (pdev->CompatibilityLevel < 1.3)
+	    goto nyi;
+	is_mask = in_line = false;
+	image.type4 = *(const gs_image4_t *)pic;
+	break;
+    default:
+	goto nyi;
+    }
+    pim = (const gs_pixel_image_t *)pic;
+    format = pim->format;
     switch (format) {
     case gs_image_format_chunky:
     case gs_image_format_component_planar:
 	break;
     default:
-	return gx_default_begin_image(dev, pis, pim, format, prect,
-				      pdcolor, pcpath, mem, pinfo);
+	goto nyi;
     }
+    pcs = pim->ColorSpace;
+    num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
+
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
+    if (is_mask) {
+	code = pdf_set_drawing_color(pdev, pdcolor, &pdev->fill_color,
+				     &psdf_set_fill_color_commands);
+	if (code < 0)
+	    goto nyi;
+    }
     if (prect)
 	rect = *prect;
     else {
 	rect.p.x = rect.p.y = 0;
 	rect.q.x = pim->Width, rect.q.y = pim->Height;
     }
-    image = *pim;
-#define pim (&image)
     pie = gs_alloc_struct(mem, pdf_image_enum, &st_pdf_image_enum,
 			  "pdf_begin_image");
     if (pie == 0)
 	return_error(gs_error_VMerror);
     *pinfo = (gx_image_enum_common_t *) pie;
-    gx_image_enum_common_init(*pinfo, (gs_data_image_t *) pim,
+    gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
 			      &pdf_image_enum_procs, dev,
 			      num_components, format);
     pie->memory = mem;
-    if ((pim->ImageMask ?
-	 (!gx_dc_is_pure(pdcolor) || pim->CombineWithColor) :
-	 !pdf_can_handle_color_space(pim->ColorSpace)) ||
-	prect != 0
-	) {
-	gs_free_object(mem, pie, "pdf_begin_image");
-	return gx_default_begin_image(dev, pis, pim, format, prect,
-				      pdcolor, pcpath, mem, pinfo);
-    }
-    pie->width = rect.q.x - rect.p.x;
+    width = rect.q.x - rect.p.x;
+    pie->width = width;
     height = rect.q.y - rect.p.y;
     pie->bits_per_pixel =
 	pim->BitsPerComponent * num_components / pie->num_planes;
-    pie->rows_left = rect.q.y - rect.p.y;
+    pie->rows_left = height;
+    nbytes = (((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
+	pie->num_planes * pie->rows_left;
+    in_line &= nbytes <= MAX_INLINE_IMAGE_BYTES;
+    if (prect != 0 ||
+	(is_mask ? pim->CombineWithColor :
+	 pdf_color_space(pdev, &cs_value, pcs,
+			 (in_line ? &pdf_color_space_names_short :
+			  &pdf_color_space_names), true) < 0)
+	) {
+	gs_free_object(mem, pie, "pdf_begin_image");
+	goto nyi;
+    }
     pdf_put_clip_path(pdev, pcpath);
-    if (pim->ImageMask)
-	pdf_set_pure_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
-			   &psdf_set_fill_color_commands);
+    if (pmat == 0)
+	pmat = &ctm_only(pis);
     {
 	gs_matrix mat;
 	gs_matrix bmat;
@@ -1294,31 +844,27 @@ gdev_pdf_begin_image(gx_device * dev,
 			       pim->Width, pim->Height, height);
 	if ((code = gs_matrix_invert(&pim->ImageMatrix, &mat)) < 0 ||
 	    (code = gs_matrix_multiply(&bmat, &mat, &mat)) < 0 ||
-	    (code = gs_matrix_multiply(&mat, &ctm_only(pis), &pie->mat)) < 0
+	    (code = gs_matrix_multiply(&mat, pmat, &pie->mat)) < 0
 	    ) {
 	    gs_free_object(mem, pie, "pdf_begin_image");
 	    return code;
 	}
     }
-    nbytes = (((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
-	pie->num_planes * pie->rows_left;
-    code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id,
-				 nbytes <= MAX_INLINE_IMAGE_BYTES);
-    if (code < 0)
-	return code;
-    pdf_begin_image_binary(pdev, &pie->writer);
-/****** pctm IS WRONG ******/
-    code = psdf_setup_image_filters((gx_device_psdf *) pdev,
-				    &pie->writer.binary,
-				    (gs_pixel_image_t *)pim,
-				    &ctm_only(pis), pis);
-    if (code < 0)
-	return code;
-    code = pdf_begin_image_data(pdev, &pie->writer, pim, height);
-    if (code < 0)
+    if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
+				      height, NULL, in_line)) < 0 ||
+	/****** pctm IS WRONG ******/
+	(code = psdf_setup_image_filters((gx_device_psdf *) pdev,
+					 &pie->writer.binary, &image.pixel,
+					 pmat, pis)) < 
+	(code = pdf_begin_image_data(pdev, &pie->writer,
+				     (const gs_pixel_image_t *)&image,
+				     &cs_value)) < 0
+	)
 	return code;
     return 0;
-#undef pim
+ nyi:
+    return gx_default_begin_typed_image(dev, pis, pmat, pic, prect, pdcolor,
+					pcpath, mem, pinfo);
 }
 
 /* Process the next piece of an image. */
@@ -1340,6 +886,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
     stream *s = pdev->streams.strm;
     long pos = stell(s);
     int code;
+    int status = 0;
 
     if (h > pie->rows_left)
 	h = pie->rows_left;
@@ -1379,16 +926,24 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 		}
 		image_flip_planes(row, bit_planes, offset, flip_count,
 				  nplanes, pie->plane_depths[0]);
-		sputs(pie->writer.binary.strm, row, flipped_count, &ignore);
+		status = sputs(pie->writer.binary.strm, row, flipped_count,
+			       &ignore);
+		if (status < 0)
+		    break;
 		offset += flip_count;
 		count -= flip_count;
 	    }
 	} else {
-	    sputs(pie->writer.binary.strm,
-		  planes[0].data + planes[0].raster * y, bcount, &ignore);
+	    status = sputs(pie->writer.binary.strm,
+			   planes[0].data + planes[0].raster * y, bcount,
+			   &ignore);
 	}
+	if (status < 0)
+	    break;
     }
     *rows_used = h;
+    if (status < 0)
+	return_error(gs_error_ioerror);
     code = cos_stream_add_since(pie->writer.data, pos);
     return (code < 0 ? code : !pie->rows_left);
 #undef ROW_BYTES

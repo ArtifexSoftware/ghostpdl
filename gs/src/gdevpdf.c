@@ -160,13 +160,13 @@ const gx_device_pdf gs_pdfwrite_device =
   NULL,				/* fill_parallelogram */
   NULL,				/* fill_triangle */
   NULL,				/* draw_thin_line */
-  gdev_pdf_begin_image,
+  NULL,				/* begin_image */
   NULL,				/* image_data */
   NULL,				/* end_image */
   gdev_pdf_strip_tile_rectangle,
   NULL,				/* strip_copy_rop */
   NULL,				/* get_clipping_box */
-  NULL,				/* begin_typed_image */
+  gdev_pdf_begin_typed_image,
   NULL,				/* get_bits_rectangle */
   NULL,				/* map_color_rgb_alpha */
   NULL,				/* create_compositor */
@@ -224,7 +224,7 @@ const gx_device_pdf gs_pdfwrite_device =
      {
 	 {0}}},			/* resources */
  0,				/* cs_Pattern */
- 0,				/* cs_PatternRGB */
+ 0,				/* cs_Pattern_RGB */
  0,				/* last_resource */
  {
      {
@@ -292,6 +292,7 @@ pdf_reset_page(gx_device_pdf * pdev)
     pdf_reset_graphics(pdev);
     pdev->procsets = NoMarks;
     pdev->cs_Pattern = 0;	/* simplest to create one for each page */
+    pdev->cs_Pattern_RGB = 0;	/* ibid. */
     {
 	static const pdf_text_state_t text_default = {
 	    pdf_text_state_default

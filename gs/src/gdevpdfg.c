@@ -31,7 +31,6 @@
 #include "gxistate.h"
 #include "gzht.h"
 #include "gdevpdfx.h"
-#define gdevpdfg_IMPL		/**************** PATCH ****************/
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
 #include "szlibx.h"

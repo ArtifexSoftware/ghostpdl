@@ -32,14 +32,11 @@
 #include "gxcolor2.h"		/* for gxpcolor.h */
 #include "gxpcolor.h"		/* for pattern device color types */
 #include "gdevpdfx.h"
-#define gdevpdfg_IMPL		/**************** PATCH ****************/
 #include "gdevpdfg.h"
 #include "gdevpdfo.h"
 #include "stream.h"
 #include "strimpl.h"
 #include "sstring.h"
-
-#define NO_PATTERNS		/**************** PATCH ****************/
 
 /* ---------------- Color spaces ---------------- */
 
@@ -333,7 +330,8 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	int num_entries = pip->hival + 1;
 	int num_components = gs_color_space_num_components(base_space);
 	uint table_size = num_entries * num_components;
-	uint string_size = 1 + table_size * 2 + 1;
+	/* Guess at the extra space needed for ASCII85 encoding. */
+	uint string_size = 1 + table_size * 2 + table_size / 30 + 2;
 	byte buf[100];		/* arbitrary */
 	stream_AXE_state st;
 	stream s, es;
@@ -342,21 +340,10 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	table = gs_alloc_string(mem, string_size, "pdf_color_space(table)");
 	if (table == 0)
 	    return_error(gs_error_VMerror);
-	swrite_string(&s, table + 1, string_size - 1);
+	swrite_string(&s, table, string_size);
+	s_init(&es, NULL);
+	s_init_state((stream_state *)&st, &s_AXE_template, NULL);
 	s_init_filter(&es, (stream_state *)&st, buf, sizeof(buf), &s);
-	if ((code = pdf_color_space(pdev, pvalue,
-				    (const gs_color_space *)
-				    &pcs->params.indexed.base_space,
-				    &pdf_color_space_names, false)) < 0 ||
-	    (code = cos_array_add(pca,
-				  cos_c_string_value(&v, pcsn->Indexed))) < 0 ||
-	    (code = cos_array_add(pca, pvalue)) < 0 ||
-	    (code = cos_array_add_int(pca, pip->hival)) < 0 ||
-	    (code = cos_array_add_no_copy(pca,
-					  cos_string_value(&v, table,
-							   string_size))) < 0
-	    )
-	    return code;
 	sputc(&s, '<');
 	if (pcs->params.indexed.use_proc) {
 	    gs_client_color cmin, cmax;
@@ -387,6 +374,20 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	} else
 	    pwrite(&es, pip->lookup.table.data, table_size);
 	sclose(&es);
+	sflush(&s);
+	if ((code = pdf_color_space(pdev, pvalue,
+				    (const gs_color_space *)
+				    &pcs->params.indexed.base_space,
+				    &pdf_color_space_names, false)) < 0 ||
+	    (code = cos_array_add(pca,
+				  cos_c_string_value(&v, pcsn->Indexed))) < 0 ||
+	    (code = cos_array_add(pca, pvalue)) < 0 ||
+	    (code = cos_array_add_int(pca, pip->hival)) < 0 ||
+	    (code = cos_array_add_no_copy(pca,
+					  cos_string_value(&v, table,
+							   stell(&s)))) < 0
+	    )
+	    return code;
     }
     break;
     case gs_color_space_index_DeviceN:
@@ -625,9 +626,6 @@ private int
 pdf_put_pattern_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 		      const psdf_set_color_commands_t *ppscc)
 {
-#ifdef NO_PATTERNS	/**************** PATCH ****************/
-    return_error(gs_error_rangecheck);
-#else	/**************** PATCH ****************/
     int code;
     pdf_resource_t *pres;
     pdf_image_writer writer;
@@ -763,7 +761,6 @@ pdf_put_pattern_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_value_write(cos_resource_value(&v, pres->object), pdev);
     pprints1(s, " %s\n", scn);
     return 0;
-#endif	/**************** PATCH ****************/
 }
 int
 pdf_put_drawing_color(gx_device_pdf *pdev, const gx_drawing_color *pdc,

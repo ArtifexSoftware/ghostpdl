@@ -454,8 +454,8 @@ dev_proc_stroke_path(gdev_pdf_stroke_path);
 dev_proc_copy_mono(gdev_pdf_copy_mono);
 dev_proc_copy_color(gdev_pdf_copy_color);
 dev_proc_fill_mask(gdev_pdf_fill_mask);
-dev_proc_begin_image(gdev_pdf_begin_image);
 dev_proc_strip_tile_rectangle(gdev_pdf_strip_tile_rectangle);
+dev_proc_begin_typed_image(gdev_pdf_begin_typed_image);
     /* In gdevpdfp.c */
 dev_proc_get_params(gdev_pdf_get_params);
 dev_proc_put_params(gdev_pdf_put_params);

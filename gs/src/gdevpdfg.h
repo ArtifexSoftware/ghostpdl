@@ -142,8 +142,6 @@ int pdf_put_image_filters(P4(cos_dict_t *pcd, gx_device_pdf *pdev,
 
 /* ------ Image writing ------ */
 
-#ifdef gdevpdfg_IMPL	/**************** PATCHED OUT ****************/
-
 /* Define the structure for writing an image. */
 typedef struct pdf_image_writer_s {
     psdf_binary_writer binary;
@@ -189,7 +187,5 @@ int pdf_end_image_binary(P3(gx_device_pdf *pdev, pdf_image_writer *piw,
  * return 1; if a resource, write the resource definition and return 0.
  */
 int pdf_end_write_image(P2(gx_device_pdf * pdev, pdf_image_writer * piw));
-
-#endif	/**************** END PATCH ****************/
 
 #endif /* gdevpdfg_INCLUDED */
