@@ -344,12 +344,7 @@ pcl_cmap_create_remap_ary(
     /* if a re-map array might be required, build it on the stack first */
     *pfirst_white = pindexed->num_entries;
 
-#if 0
-    /*********** TEMPORARY HACK - all images are opaque */
-    return 0;
-#endif
-
-    if ( !pcs->source_transparent                                           ||
+    if ( (!pcs->source_transparent && !pcs->pattern_transparent)            ||
          (pcl_cs_indexed_get_encoding(pindexed) > pcl_penc_indexed_by_pixel)  )
         return 0;
     b_per_p = pcl_cs_indexed_get_bits_per_index(pindexed);
