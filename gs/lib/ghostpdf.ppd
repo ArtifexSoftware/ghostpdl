@@ -1,5 +1,5 @@
 *PPD-Adobe: "4.3"
-*FileVersion: "1.0"
+*FileVersion: "1.1"
 *FormatVersion: "4.3" 
 *LanguageEncoding: "ISOLatin1"
 *LanguageVersion: "English"
@@ -10,7 +10,10 @@
 *% manufacturer code.
 *PCFileName: "GHOSTPDF.PDF"
 *PPD-Adobe: "4.3"
-*Product: "Ghostscript"
+*Product: "(AFPL Ghostscript)"
+*Product: "(GNU Ghostscript)"
+*Product: "(GPL Ghostscript)"
+*Product: "(Ghostscript)"
 *PSVersion: "(3010) 815"
 *ShortNickName: "Ghostscript"
 
@@ -25,9 +28,9 @@
 
 *% == Above are required
 
-*Copyright: "2004 Ghostgum Software Pty Ltd"
+*Copyright: "2004-2005 Ghostgum Software Pty Ltd"
 *%
-*%  Copyright (C) 2004, Ghostgum Software Pty Ltd.  All rights reserved.
+*%  Copyright (C) 2004-2005, Ghostgum Software Pty Ltd.  All rights reserved.
 *%
 *%  Permission is hereby granted, free of charge, to any person obtaining
 *%  a copy of this file ("Software"), to deal in the Software without
@@ -161,33 +164,33 @@
 *End
 *PageSize A10: "<< /PageSize [73 105] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ISO B0: "<< /PageSize [2835 4008] /ImagingBBox null >> setpagedevice"
+*PageSize ISOB0/ISO B0: "<< /PageSize [2835 4008] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ISO B1: "<< /PageSize [2004 2835] /ImagingBBox null >> setpagedevice"
+*PageSize ISOB1/ISO B1: "<< /PageSize [2004 2835] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ISO B2: "<< /PageSize [1417 2004] /ImagingBBox null >> setpagedevice"
+*PageSize ISOB2/ISO B2: "<< /PageSize [1417 2004] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ISO B3: "<< /PageSize [1001 1417] /ImagingBBox null >> setpagedevice"
+*PageSize ISOB3/ISO B3: "<< /PageSize [1001 1417] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ISO B4: "<< /PageSize [709 1001] /ImagingBBox null >> setpagedevice"
+*PageSize ISOB4/ISO B4: "<< /PageSize [709 1001] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ISO B5: "<< /PageSize [499 709] /ImagingBBox null >> setpagedevice"
+*PageSize ISOB5/ISO B5: "<< /PageSize [499 709] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ISO B6: "<< /PageSize [354 499] /ImagingBBox null >> setpagedevice"
+*PageSize ISOB6/ISO B6: "<< /PageSize [354 499] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize JIS B0: "<< /PageSize [2920 4127] /ImagingBBox null >> setpagedevice"
+*PageSize JISB0/JIS B0: "<< /PageSize [2920 4127] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize JIS B1: "<< /PageSize [2064 2920] /ImagingBBox null >> setpagedevice"
+*PageSize JISB1/JIS B1: "<< /PageSize [2064 2920] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize JIS B2: "<< /PageSize [1460 2064] /ImagingBBox null >> setpagedevice"
+*PageSize JISB2/JIS B2: "<< /PageSize [1460 2064] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize JIS B3: "<< /PageSize [1032 1460] /ImagingBBox null >> setpagedevice"
+*PageSize JISB3/JIS B3: "<< /PageSize [1032 1460] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize JIS B4: "<< /PageSize [729 1032] /ImagingBBox null >> setpagedevice"
+*PageSize JISB4/JIS B4: "<< /PageSize [729 1032] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize JIS B5: "<< /PageSize [516 729] /ImagingBBox null >> setpagedevice"
+*PageSize JISB5/JIS B5: "<< /PageSize [516 729] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize JIS B6: "<< /PageSize [363 516] /ImagingBBox null >> setpagedevice"
+*PageSize JISB6/JIS B6: "<< /PageSize [363 516] /ImagingBBox null >> setpagedevice"
 *End
 *PageSize C0: "<< /PageSize [2599 3677] /ImagingBBox null >> setpagedevice"
 *End
@@ -203,15 +206,15 @@
 *End
 *PageSize C6: "<< /PageSize [323 459] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ARCH E: "<< /PageSize [2592 3456] /ImagingBBox null >> setpagedevice"
+*PageSize ARCHE: "<< /PageSize [2592 3456] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ARCH D: "<< /PageSize [1728 2592] /ImagingBBox null >> setpagedevice"
+*PageSize ARCHD: "<< /PageSize [1728 2592] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ARCH C: "<< /PageSize [1296 1728] /ImagingBBox null >> setpagedevice"
+*PageSize ARCHC: "<< /PageSize [1296 1728] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ARCH B: "<< /PageSize [864 1296] /ImagingBBox null >> setpagedevice"
+*PageSize ARCHB: "<< /PageSize [864 1296] /ImagingBBox null >> setpagedevice"
 *End
-*PageSize ARCH A: "<< /PageSize [648 864] /ImagingBBox null >> setpagedevice"
+*PageSize ARCHA: "<< /PageSize [648 864] /ImagingBBox null >> setpagedevice"
 *End
 *PageSize FLSA: "<< /PageSize [612 936] /ImagingBBox null >> setpagedevice"
 *End
@@ -262,33 +265,33 @@
 *End
 *PageRegion A10: "<< /PageSize [73 105] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ISO B0: "<< /PageSize [2835 4008] /ImagingBBox null >> setpagedevice"
+*PageRegion ISOB0/ISO B0: "<< /PageSize [2835 4008] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ISO B1: "<< /PageSize [2004 2835] /ImagingBBox null >> setpagedevice"
+*PageRegion ISOB1/ISO B1: "<< /PageSize [2004 2835] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ISO B2: "<< /PageSize [1417 2004] /ImagingBBox null >> setpagedevice"
+*PageRegion ISOB2/ISO B2: "<< /PageSize [1417 2004] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ISO B3: "<< /PageSize [1001 1417] /ImagingBBox null >> setpagedevice"
+*PageRegion ISOB3/ISO B3: "<< /PageSize [1001 1417] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ISO B4: "<< /PageSize [709 1001] /ImagingBBox null >> setpagedevice"
+*PageRegion ISOB4/ISO B4: "<< /PageSize [709 1001] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ISO B5: "<< /PageSize [499 709] /ImagingBBox null >> setpagedevice"
+*PageRegion ISOB5/ISO B5: "<< /PageSize [499 709] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ISO B6: "<< /PageSize [354 499] /ImagingBBox null >> setpagedevice"
+*PageRegion ISOB6/ISO B6: "<< /PageSize [354 499] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion JIS B0: "<< /PageSize [2920 4127] /ImagingBBox null >> setpagedevice"
+*PageRegion JISB0/JIS B0: "<< /PageSize [2920 4127] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion JIS B1: "<< /PageSize [2064 2920] /ImagingBBox null >> setpagedevice"
+*PageRegion JISB1/JIS B1: "<< /PageSize [2064 2920] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion JIS B2: "<< /PageSize [1460 2064] /ImagingBBox null >> setpagedevice"
+*PageRegion JISB2/JIS B2: "<< /PageSize [1460 2064] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion JIS B3: "<< /PageSize [1032 1460] /ImagingBBox null >> setpagedevice"
+*PageRegion JISB3/JIS B3: "<< /PageSize [1032 1460] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion JIS B4: "<< /PageSize [729 1032] /ImagingBBox null >> setpagedevice"
+*PageRegion JISB4/JIS B4: "<< /PageSize [729 1032] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion JIS B5: "<< /PageSize [516 729] /ImagingBBox null >> setpagedevice"
+*PageRegion JISB5/JIS B5: "<< /PageSize [516 729] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion JIS B6: "<< /PageSize [363 516] /ImagingBBox null >> setpagedevice"
+*PageRegion JISB6/JIS B6: "<< /PageSize [363 516] /ImagingBBox null >> setpagedevice"
 *End
 *PageRegion C0: "<< /PageSize [2599 3677] /ImagingBBox null >> setpagedevice"
 *End
@@ -304,15 +307,15 @@
 *End
 *PageRegion C6: "<< /PageSize [323 459] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ARCH E: "<< /PageSize [2592 3456] /ImagingBBox null >> setpagedevice"
+*PageRegion ARCHE: "<< /PageSize [2592 3456] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ARCH D: "<< /PageSize [1728 2592] /ImagingBBox null >> setpagedevice"
+*PageRegion ARCHD: "<< /PageSize [1728 2592] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ARCH C: "<< /PageSize [1296 1728] /ImagingBBox null >> setpagedevice"
+*PageRegion ARCHC: "<< /PageSize [1296 1728] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ARCH B: "<< /PageSize [864 1296] /ImagingBBox null >> setpagedevice"
+*PageRegion ARCHB: "<< /PageSize [864 1296] /ImagingBBox null >> setpagedevice"
 *End
-*PageRegion ARCH A: "<< /PageSize [648 864] /ImagingBBox null >> setpagedevice"
+*PageRegion ARCHA: "<< /PageSize [648 864] /ImagingBBox null >> setpagedevice"
 *End
 *PageRegion FLSA: "<< /PageSize [612 936] /ImagingBBox null >> setpagedevice"
 *End
@@ -343,20 +346,20 @@
 *ImageableArea A8: "0 0 148 210"
 *ImageableArea A9: "0 0 105 148"
 *ImageableArea A10: "0 0 73 105"
-*ImageableArea ISO B0: "0 0 2835 4008"
-*ImageableArea ISO B1: "0 0 2004 2835"
-*ImageableArea ISO B2: "0 0 1417 2004"
-*ImageableArea ISO B3: "0 0 1001 1417"
-*ImageableArea ISO B4: "0 0 709 1001"
-*ImageableArea ISO B5: "0 0 499 709"
-*ImageableArea ISO B6: "0 0 354 499"
-*ImageableArea JIS B0: "0 0 2920 4127"
-*ImageableArea JIS B1: "0 0 2064 2920"
-*ImageableArea JIS B2: "0 0 1460 2064"
-*ImageableArea JIS B3: "0 0 1032 1460"
-*ImageableArea JIS B4: "0 0 729 1032"
-*ImageableArea JIS B5: "0 0 516 729"
-*ImageableArea JIS B6: "0 0 363 516"
+*ImageableArea ISOB0/ISO B0: "0 0 2835 4008"
+*ImageableArea ISOB1/ISO B1: "0 0 2004 2835"
+*ImageableArea ISOB2/ISO B2: "0 0 1417 2004"
+*ImageableArea ISOB3/ISO B3: "0 0 1001 1417"
+*ImageableArea ISOB4/ISO B4: "0 0 709 1001"
+*ImageableArea ISOB5/ISO B5: "0 0 499 709"
+*ImageableArea ISOB6/ISO B6: "0 0 354 499"
+*ImageableArea JISB0/JIS B0: "0 0 2920 4127"
+*ImageableArea JISB1/JIS B1: "0 0 2064 2920"
+*ImageableArea JISB2/JIS B2: "0 0 1460 2064"
+*ImageableArea JISB3/JIS B3: "0 0 1032 1460"
+*ImageableArea JISB4/JIS B4: "0 0 729 1032"
+*ImageableArea JISB5/JIS B5: "0 0 516 729"
+*ImageableArea JISB6/JIS B6: "0 0 363 516"
 *ImageableArea C0: "0 0 2599 3677"
 *ImageableArea C1: "0 0 1837 2599"
 *ImageableArea C2: "0 0 1298 1837"
@@ -364,11 +367,11 @@
 *ImageableArea C4: "0 0 649 918"
 *ImageableArea C5: "0 0 459 649"
 *ImageableArea C6: "0 0 323 459"
-*ImageableArea ARCH E: "0 0 2592 3456"
-*ImageableArea ARCH D: "0 0 1728 2592"
-*ImageableArea ARCH C: "0 0 1296 1728"
-*ImageableArea ARCH B: "0 0 864 1296"
-*ImageableArea ARCH A: "0 0 648 864"
+*ImageableArea ARCHE: "0 0 2592 3456"
+*ImageableArea ARCHD: "0 0 1728 2592"
+*ImageableArea ARCHC: "0 0 1296 1728"
+*ImageableArea ARCHB: "0 0 864 1296"
+*ImageableArea ARCHA: "0 0 648 864"
 *ImageableArea FLSA: "0 0 612 936"
 *ImageableArea FLSE: "0 0 612 936"
 *ImageableArea HalfLetter: "0 0 396 612"
@@ -393,20 +396,20 @@
 *PaperDimension A8: "148 210"
 *PaperDimension A9: "105 148"
 *PaperDimension A10: "73 105"
-*PaperDimension ISO B0: "2835 4008"
-*PaperDimension ISO B1: "2004 2835"
-*PaperDimension ISO B2: "1417 2004"
-*PaperDimension ISO B3: "1001 1417"
-*PaperDimension ISO B4: "709 1001"
-*PaperDimension ISO B5: "499 709"
-*PaperDimension ISO B6: "354 499"
-*PaperDimension JIS B0: "2920 4127"
-*PaperDimension JIS B1: "2064 2920"
-*PaperDimension JIS B2: "1460 2064"
-*PaperDimension JIS B3: "1032 1460"
-*PaperDimension JIS B4: "729 1032"
-*PaperDimension JIS B5: "516 729"
-*PaperDimension JIS B6: "363 516"
+*PaperDimension ISOB0/ISO B0: "2835 4008"
+*PaperDimension ISOB1/ISO B1: "2004 2835"
+*PaperDimension ISOB2/ISO B2: "1417 2004"
+*PaperDimension ISOB3/ISO B3: "1001 1417"
+*PaperDimension ISOB4/ISO B4: "709 1001"
+*PaperDimension ISOB5/ISO B5: "499 709"
+*PaperDimension ISOB6/ISO B6: "354 499"
+*PaperDimension JISB0/JIS B0: "2920 4127"
+*PaperDimension JISB1/JIS B1: "2064 2920"
+*PaperDimension JISB2/JIS B2: "1460 2064"
+*PaperDimension JISB3/JIS B3: "1032 1460"
+*PaperDimension JISB4/JIS B4: "729 1032"
+*PaperDimension JISB5/JIS B5: "516 729"
+*PaperDimension JISB6/JIS B6: "363 516"
 *PaperDimension C0: "2599 3677"
 *PaperDimension C1: "1837 2599"
 *PaperDimension C2: "1298 1837"
@@ -414,11 +417,11 @@
 *PaperDimension C4: "649 918"
 *PaperDimension C5: "459 649"
 *PaperDimension C6: "323 459"
-*PaperDimension ARCH E: "2592 3456"
-*PaperDimension ARCH D: "1728 2592"
-*PaperDimension ARCH C: "1296 1728"
-*PaperDimension ARCH B: "864 1296"
-*PaperDimension ARCH A: "648 864"
+*PaperDimension ARCHE: "2592 3456"
+*PaperDimension ARCHD: "1728 2592"
+*PaperDimension ARCHC: "1296 1728"
+*PaperDimension ARCHB: "864 1296"
+*PaperDimension ARCHA: "648 864"
 *PaperDimension FLSA: "612 936"
 *PaperDimension FLSE: "612 936"
 *PaperDimension HalfLetter: "396 612"
@@ -429,75 +432,75 @@
 *DefaultFont: Courier
 *% First the standard 35 aliases with the actual fonts commented out.
 *Font Bookman-Demi: Standard "(1.05)" Standard ROM
-;*Font URWBookmanL-DemiBold: Standard "(1.05)" Standard ROM
+*% *Font URWBookmanL-DemiBold: Standard "(1.05)" Standard ROM
 *Font Bookman-DemiItalic: Standard "(1.05)" Standard ROM
-;*Font URWBookmanL-DemiBoldItal: Standard "(1.05)" Standard ROM
+*% *Font URWBookmanL-DemiBoldItal: Standard "(1.05)" Standard ROM
 *Font Bookman-Light: Standard "(1.05)" Standard ROM
-;*Font URWBookmanL-Ligh: Standard "(1.05)" Standard ROM
+*% *Font URWBookmanL-Ligh: Standard "(1.05)" Standard ROM
 *Font Bookman-LightItalic: Standard "(1.05)" Standard ROM
-;*Font URWBookmanL-LighItal: Standard "(1.05)" Standard ROM
+*% *Font URWBookmanL-LighItal: Standard "(1.05)" Standard ROM
 *Font Courier: Standard "(1.05)" Standard ROM
-;*Font NimbusMonL-Regu: Standard "(1.05)" Standard ROM
+*% *Font NimbusMonL-Regu: Standard "(1.05)" Standard ROM
 *Font Courier-Oblique: Standard "(1.05)" Standard ROM
-;*Font NimbusMonL-ReguObli: Standard "(1.05)" Standard ROM
+*% *Font NimbusMonL-ReguObli: Standard "(1.05)" Standard ROM
 *Font Courier-Bold: Standard "(1.05)" Standard ROM
-;*Font NimbusMonL-Bold: Standard "(1.05)" Standard ROM
+*% *Font NimbusMonL-Bold: Standard "(1.05)" Standard ROM
 *Font Courier-BoldOblique: Standard "(1.05)" Standard ROM
-;*Font NimbusMonL-BoldObli: Standard "(1.05)" Standard ROM
+*% *Font NimbusMonL-BoldObli: Standard "(1.05)" Standard ROM
 *Font AvantGarde-Book: Standard "(1.05)" Standard ROM
-;*Font URWGothicL-Book: Standard "(1.05)" Standard ROM
+*% *Font URWGothicL-Book: Standard "(1.05)" Standard ROM
 *Font AvantGarde-BookOblique: Standard "(1.05)" Standard ROM
-;*Font URWGothicL-BookObli: Standard "(1.05)" Standard ROM
+*% *Font URWGothicL-BookObli: Standard "(1.05)" Standard ROM
 *Font AvantGarde-Demi: Standard "(1.05)" Standard ROM
-;*Font URWGothicL-Demi: Standard "(1.05)" Standard ROM
+*% *Font URWGothicL-Demi: Standard "(1.05)" Standard ROM
 *Font AvantGarde-DemiOblique: Standard "(1.05)" Standard ROM
-;*Font URWGothicL-DemiObli: Standard "(1.05)" Standard ROM
+*% *Font URWGothicL-DemiObli: Standard "(1.05)" Standard ROM
 *Font Helvetica: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-Regu: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-Regu: Standard "(1.05)" Standard ROM
 *Font Helvetica-Oblique: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-ReguItal: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-ReguItal: Standard "(1.05)" Standard ROM
 *Font Helvetica-Bold: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-Bold: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-Bold: Standard "(1.05)" Standard ROM
 *Font Helvetica-BoldOblique: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-BoldItal: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-BoldItal: Standard "(1.05)" Standard ROM
 *Font Helvetica-Narrow: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-ReguCond: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-ReguCond: Standard "(1.05)" Standard ROM
 *Font Helvetica-Narrow-Oblique: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-ReguCondItal: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-ReguCondItal: Standard "(1.05)" Standard ROM
 *Font Helvetica-Narrow-Bold: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-BoldCond: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-BoldCond: Standard "(1.05)" Standard ROM
 *Font Helvetica-Narrow-BoldOblique: Standard "(1.05)" Standard ROM
-;*Font NimbusSanL-BoldCondItal: Standard "(1.05)" Standard ROM
+*% *Font NimbusSanL-BoldCondItal: Standard "(1.05)" Standard ROM
 *Font Palatino-Roman: Standard "(1.05)" Standard ROM
-;*Font URWPalladioL-Roma: Standard "(1.05)" Standard ROM
+*% *Font URWPalladioL-Roma: Standard "(1.05)" Standard ROM
 *Font Palatino-Italic: Standard "(1.05)" Standard ROM
-;*Font URWPalladioL-Ital: Standard "(1.05)" Standard ROM
+*% *Font URWPalladioL-Ital: Standard "(1.05)" Standard ROM
 *Font Palatino-Bold: Standard "(1.05)" Standard ROM
-;*Font URWPalladioL-Bold: Standard "(1.05)" Standard ROM
+*% *Font URWPalladioL-Bold: Standard "(1.05)" Standard ROM
 *Font Palatino-BoldItalic: Standard "(1.05)" Standard ROM
-;*Font URWPalladioL-BoldItal: Standard "(1.05)" Standard ROM
+*% *Font URWPalladioL-BoldItal: Standard "(1.05)" Standard ROM
 *Font NewCenturySchlbk-Roman: Standard "(1.05)" Standard ROM
-;*Font CenturySchL-Roma: Standard "(1.05)" Standard ROM
+*% *Font CenturySchL-Roma: Standard "(1.05)" Standard ROM
 *Font NewCenturySchlbk-Italic: Standard "(1.05)" Standard ROM
-;*Font CenturySchL-Ital: Standard "(1.05)" Standard ROM
+*% *Font CenturySchL-Ital: Standard "(1.05)" Standard ROM
 *Font NewCenturySchlbk-Bold: Standard "(1.05)" Standard ROM
-;*Font CenturySchL-Bold: Standard "(1.05)" Standard ROM
+*% *Font CenturySchL-Bold: Standard "(1.05)" Standard ROM
 *Font NewCenturySchlbk-BoldItalic: Standard "(1.05)" Standard ROM
-;*Font CenturySchL-BoldItal: Standard "(1.05)" Standard ROM
+*% *Font CenturySchL-BoldItal: Standard "(1.05)" Standard ROM
 *Font Times-Roman: Standard "(1.05)" Standard ROM
-;*Font NimbusRomNo9L-Regu: Standard "(1.05)" Standard ROM
+*% *Font NimbusRomNo9L-Regu: Standard "(1.05)" Standard ROM
 *Font Times-Italic: Standard "(1.05)" Standard ROM
-;*Font NimbusRomNo9L-ReguItal: Standard "(1.05)" Standard ROM
+*% *Font NimbusRomNo9L-ReguItal: Standard "(1.05)" Standard ROM
 *Font Times-Bold: Standard "(1.05)" Standard ROM
-;*Font NimbusRomNo9L-Medi: Standard "(1.05)" Standard ROM
+*% *Font NimbusRomNo9L-Medi: Standard "(1.05)" Standard ROM
 *Font Times-BoldItalic: Standard "(1.05)" Standard ROM
-;*Font NimbusRomNo9L-MediItal: Standard "(1.05)" Standard ROM
+*% *Font NimbusRomNo9L-MediItal: Standard "(1.05)" Standard ROM
 *Font Symbol: Special "(001.005)" Special ROM
-;*Font StandardSymL: Special (001.005)" Special ROM
+*% *Font StandardSymL: Special (001.005)" Special ROM
 *Font ZapfChancery-MediumItalic: Standard "(1.05)" Standard ROM
-;*Font URWChanceryL-MediItal: Standard "(1.05)" Standard ROM
+*% *Font URWChanceryL-MediItal: Standard "(1.05)" Standard ROM
 *Font ZapfDingbats: Special (001.005)" Special ROM
-;*Font Dingbats: Special (001.005)" Special ROM
+*% *Font Dingbats: Special (001.005)" Special ROM
 *% Then a few ghostscript extras
 *Font Charter-Roman: Standard "(2.0-1.0)" Standard ROM
 *Font CharterBT-Roman: Standard "(2.0-1.0)" Standard ROM
@@ -557,7 +560,7 @@
 *DefaultMonoImageFilter: "Default"
 *OrderDependency: 40 AnySetup *MonoImageFilter
 *MonoImageFilter Default: ""
-*MonoImageFilter Fax G3: "<< /AutoFilterMonoImages false /MonoImageFilter /CCITTFaxEncode >> setdistillerparams"
+*MonoImageFilter FaxG3/Fax G3: "<< /AutoFilterMonoImages false /MonoImageFilter /CCITTFaxEncode >> setdistillerparams"
 *MonoImageFilter Flate: "<< /AutoFilterMonoImages false /MonoImageFilter /FlateEncode >> setdistillerparams"
 *CloseUI: *MonoImageFilter
 
