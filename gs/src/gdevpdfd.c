@@ -22,6 +22,7 @@
 #include "gxfixed.h"
 #include "gxistate.h"
 #include "gxpaint.h"
+#include "gserrors.h"
 #include "gzpath.h"
 #include "gzcpath.h"
 #include "gdevpdfx.h"
@@ -45,7 +46,9 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     if (code < 0)
 	return code;
     /* Make sure we aren't being clipped. */
-    pdf_put_clip_path(pdev, NULL);
+    code = pdf_put_clip_path(pdev, NULL);
+    if (code < 0)
+	return code;
     pdf_set_pure_color(pdev, color, &pdev->fill_color,
 		       &psdf_set_fill_color_commands);
     pprintd4(pdev->strm, "%d %d %d %d re f\n", x, y, w, h);
@@ -155,6 +158,67 @@ const gx_device_vector_procs pdf_vector_procs = {
 
 /* ------ Utilities ------ */
 
+/* Store a copy of clipping path. */
+private int
+pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
+{
+    /* Used for skipping redundant clip paths. SF bug #624168. */
+    if (pdev->clip_path != 0) {
+	gx_path_free(pdev->clip_path, "pdf clip path");
+    }
+    if (pcpath == 0) {
+	pdev->clip_path = 0;
+	return 0;
+    }
+    pdev->clip_path = gx_path_alloc(pdev->pdf_memory, "pdf clip path");
+    if (pdev->clip_path == 0)
+	return_error(gs_error_VMerror);
+    return gx_cpath_to_path((gx_clip_path *)pcpath, pdev->clip_path);
+}
+
+/* Check if same clipping path. */
+private int
+pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
+{
+    /* Used for skipping redundant clip paths. SF bug #624168. */
+    gs_cpath_enum cenum;
+    gs_path_enum penum;
+    gs_fixed_point vs0[3], vs1[3];
+    int code, pe_op;
+
+    if ((pdev->clip_path != 0) != (pcpath != 0))
+	return 0;
+    code = gx_path_enum_init(&penum, pdev->clip_path);
+    if (code < 0)
+	return code;
+    code = gx_cpath_enum_init(&cenum, (gx_clip_path *)pcpath);
+    if (code < 0)
+	return code;
+    while ((code = gx_cpath_enum_next(&cenum, vs0)) > 0) {
+	pe_op = gx_path_enum_next(&penum, vs1);
+	if (pe_op < 0)
+	    return pe_op;
+	if (pe_op != code)
+	    return 0;
+	switch (pe_op) {
+	    case gs_pe_curveto:
+		if (vs0[1].x != vs1[1].x || vs0[1].y != vs1[1].y ||
+		    vs0[2].x != vs1[2].x || vs0[2].y != vs1[2].y)
+		    return 0;
+	    case gs_pe_moveto:
+	    case gs_pe_lineto:
+		if (vs0[0].x != vs1[0].x || vs0[0].y != vs1[0].y)
+		    return 0;
+	}
+    }
+    if (code < 0)
+	return code;
+    code = gx_path_enum_next(&penum, vs1);
+    if (code < 0)
+	return code;
+    return (code == 0);
+}
+
 /* Test whether we will need to put the clipping path. */
 bool
 pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
@@ -196,6 +260,13 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 		return 0;
 	    new_id = pdev->no_clip_path_id;
 	}
+	code = pdf_is_same_clip_path(pdev, pcpath);
+	if (code < 0)
+	    return code;
+	if (code) {
+	    pdev->clip_path_id = new_id;
+	    return 0;
+	}
     }
     /*
      * The contents must be open already, so the following will only exit
@@ -228,7 +299,8 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     }
     pdev->clip_path_id = new_id;
     pdf_reset_graphics(pdev);
-    return 0;
+    return pdf_remember_clip_path(pdev, 
+	    (pdev->clip_path_id == pdev->no_clip_path_id ? NULL : pcpath));
 }
 
 /*
@@ -309,7 +381,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	if (code < 0)
 	    return code;
     }
-    pdf_put_clip_path(pdev, pcpath);
+    code = pdf_put_clip_path(pdev, pcpath);
+    if (code < 0)
+	return code;
     if (pdf_setfillcolor((gx_device_vector *)pdev, pdcolor) < 0)
 	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
 				    pcpath);
@@ -406,7 +480,9 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	    set_ctm = true;
 	}
     }
-    pdf_put_clip_path(pdev, pcpath);
+    code = pdf_put_clip_path(pdev, pcpath);
+    if (code < 0)
+	return code;
     code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
 				      pdcolor, scale);
     if (code < 0)

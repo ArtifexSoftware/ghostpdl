@@ -451,6 +451,11 @@ struct gx_device_pdf_s {
      * with assign_char_code around gdev_pdf_fill_mask. 
      */
     gs_point char_width; 
+    /*
+     * We need a stable copy of clipping path to prevent writing
+     * redundant clipping paths when PS document generates such ones.
+     */
+    gx_path *clip_path;
 };
 
 #define is_in_page(pdev)\
@@ -470,8 +475,8 @@ struct gx_device_pdf_s {
  m(17,last_resource)\
  m(18,articles) m(19,Dests) m(20,global_named_objects)\
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
- m(24,open_graphics) m(25,font_cache)
-#define gx_device_pdf_num_ptrs 26
+ m(24,open_graphics) m(25,font_cache) m(26,clip_path)
+#define gx_device_pdf_num_ptrs 27
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\

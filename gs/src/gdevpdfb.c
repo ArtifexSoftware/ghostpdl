@@ -125,7 +125,9 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
-	pdf_put_clip_path(pdev, pcpath);
+	code = pdf_put_clip_path(pdev, pcpath);
+	if (code < 0)
+	    return code;
     }
     /* We have 3 cases: mask, inverse mask, and solid. */
     if (zero == gx_no_color_index) {
@@ -411,7 +413,9 @@ gdev_pdf_copy_color(gx_device * dev, const byte * base, int sourcex,
     if (code < 0)
 	return code;
     /* Make sure we aren't being clipped. */
-    pdf_put_clip_path(pdev, NULL);
+    code = pdf_put_clip_path(pdev, NULL);
+    if (code < 0)
+	return code;
     code = pdf_copy_color_data(pdev, base, sourcex, raster, id, x, y, w, h,
 			       &image, &writer, 0);
     switch (code) {
@@ -568,7 +572,9 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	if (code < 0)
 	    goto use_default;
 	/* Make sure we aren't being clipped. */
-	pdf_put_clip_path(pdev, NULL);
+	code = pdf_put_clip_path(pdev, NULL);
+	if (code < 0)
+	    return code;
 	s = pdev->strm;
 	/*
 	 * Because of bugs in Acrobat Reader's Print function, we can't

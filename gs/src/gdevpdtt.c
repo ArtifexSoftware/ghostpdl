@@ -186,7 +186,9 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 
 	    if (code < 0)
 		return code;
-	    pdf_put_clip_path(pdev, pcpath);
+	    code = pdf_put_clip_path(pdev, pcpath);
+	    if (code < 0)
+		return code;
 	}
 
 	if ((code =

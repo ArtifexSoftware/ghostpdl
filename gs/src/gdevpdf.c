@@ -231,7 +231,10 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* local_named_objects */
  0,				/* NI_stack */
  0,				/* Namespace_stack */
- 0				/* open_graphics */
+ 0,				/* open_graphics */
+ 0,				/* font_cache */
+ {0, 0},			/* char_width */
+ 0				/* clip_path */
 };
 
 /* ---------------- Device open/close ---------------- */
