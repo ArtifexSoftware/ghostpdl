@@ -36,11 +36,19 @@ typedef enum {
     usage,dump,render
 } jbig2dec_mode;
 
+typedef enum {
+    jbig2dec_format_jbig2,
+    jbig2dec_format_pbm,
+    jbig2dec_format_png,
+    jbig2dec_format_none
+} jbig2dec_format;
+
 typedef struct {
 	jbig2dec_mode mode;
 	int verbose, hash;
         SHA1_CTX *hash_ctx;
 	char *output_file;
+	jbig2dec_format output_format;
 } jbig2dec_params_t;
 
 static int print_version(void);
@@ -88,6 +96,20 @@ hash_free(jbig2dec_params_t *params)
     params->hash_ctx = NULL;
 }
 
+static int
+set_output_format(jbig2dec_params_t *params, const char *format)
+{
+#ifdef HAVE_LIBPNG
+    if (!strncasecmp(format, "png", 3)) {
+    	params->output_format=jbig2dec_format_png;
+    	return 0;
+    }
+#endif
+    /* default to pbm */
+    params->output_format=jbig2dec_format_pbm;
+    
+    return 0;
+}
 
 static int
 parse_options(int argc, char *argv[], jbig2dec_params_t *params)
@@ -144,6 +166,7 @@ parse_options(int argc, char *argv[], jbig2dec_params_t *params)
 				params->output_file = strdup(optarg);
 				break;
                         case 't':
+                        	set_output_format(params, optarg);
                                 break;
 			default:
 				if (!params->verbose) fprintf(stdout,
@@ -181,10 +204,16 @@ print_usage (void)
     "    -d --dump      print the structure of the jbig2 file\n"
     "                   rather than explicitly decoding\n"
     "       --version   program name and version information\n"
-    "       --hash	print a hash of the decode document\n"
-    "    -o <file>	send decoded output to <file>\n"
+    "       --hash      print a hash of the decode document\n"
+    "    -o <file>      send decoded output to <file>\n"
     "                   Defaults to the the input with a different\n"
     "                   extension. Pass '-' for stdout.\n"
+    "    -t <type>      force a particular output file format\n"
+ #ifdef HAVE_LIBPNG
+    "                   supported options are 'png' and 'pbm'\n"
+ #else
+    "                   the only supported option is 'pbm'\n"
+ #endif
     "\n"
   );
   
@@ -273,24 +302,35 @@ make_output_filename(const char *input_filename, const char *extension)
 static int
 write_page_image(jbig2dec_params_t *params, Jbig2Image *image)
 {
+      FILE *out;
+      
       if (!strncmp(params->output_file, "-", 2))
         {
-          fprintf(stderr, "writing decoded page to stdout\n");
+	  switch (params->output_format) {
 #ifdef HAVE_LIBPNG
-          jbig2_image_write_png(image, stdout);
-#else
-          jbig2_image_write_pbm(image, stdout);
+            case jbig2dec_format_png:
+              jbig2_image_write_png(image, stdout);
+              break;
 #endif
+            case jbig2dec_format_pbm:
+              jbig2_image_write_pbm(image, stdout);
+              break;
+          }
         }
       else
         {
           if (params->verbose > 1)
             fprintf(stderr, "saving decoded page as '%s'\n", params->output_file);
+          switch (params->output_format) {
 #ifdef HAVE_LIBPNG
-          jbig2_image_write_png_file(image, params->output_file);
-#else
-          jbig2_image_write_pbm_file(image, params->output_file);
+            case jbig2dec_format_png:
+              jbig2_image_write_png_file(image, params->output_file);
+              break;
 #endif
+            case jbig2dec_format_pbm:
+              jbig2_image_write_pbm_file(image, params->output_file);
+              break;
+          }
         }
         
   return 0;
@@ -422,8 +462,10 @@ main (int argc, char **argv)
       {
 #ifdef HAVE_LIBPNG
         params.output_file = make_output_filename(argv[filearg], ".png");
+        params.output_format = jbig2dec_format_png;
 #else
         params.output_file = make_output_filename(argv[filearg], ".pbm");
+        params.output_format = jbig2dec_format_pbm;
 #endif
       }
     
