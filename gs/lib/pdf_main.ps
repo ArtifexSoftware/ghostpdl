@@ -623,8 +623,8 @@ end readonly def
 	% We would like to clip to the CropBox here, but the subsequent
 	% initgraphics would override it.  Instead, we have to handle it
 	% in graphicsbeginpage.
-  dup /CropBox known systemdict /UseCropBox known and {
-    dup /CropBox get dup 0 get neg exch 1 get neg translate
+  dup /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
+    dup /CropBox pget pop dup 0 get neg exch 1 get neg translate
   } {
     dup /MediaBox pget {
       dup 0 get neg exch 1 get neg translate
@@ -640,9 +640,9 @@ end readonly def
 	% Rotate specifies *clockwise* rotation!
     neg 3 and def
 	% Stack: pagedict currentpagedict
-  1 index /CropBox known systemdict /UseCropBox known and {
+  1 index /CropBox pget dup {exch pop} if systemdict /UseCropBox known and {
 			% Set the page size.
-    1 index /CropBox get
+    1 index /CropBox pget pop
     boxrect 2 array astore /PageSize exch def pop pop
   } {
     1 index /MediaBox pget {
