@@ -425,7 +425,8 @@ sclose(register stream * s)
 int
 spgetcc(register stream * s, bool close_at_eod)
 {
-    int status, left;
+    int status = 0;
+    int left = 0;
     int min_left = sbuf_min_left(s);
 
     while (status = s->end_status,
