@@ -5,6 +5,11 @@ pgobj
 jpeg
 libpng
 zlib
+configure
+configure.ac
+config.status
+Makefile
+Makefile.in
 ghostscript\ Data
 ghostscript.mcp.xml
 ghostscript.mcp
