@@ -460,7 +460,8 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
     /* Check whether we are resuming after an interruption. */
     if (pstate->s_scan_type != scanning_none) {
 	sstate = *pstate;
-	if (!da.is_dynamic && da.base != da.buf) {	/* The da contains some self-referencing pointers. */
+	if (!da.is_dynamic && da.base != da.buf) {
+	    /* The da contains some self-referencing pointers. */
 	    /* Fix them up now. */
 	    uint next = da.next - da.base;
 	    uint limit = da.limit - da.base;
