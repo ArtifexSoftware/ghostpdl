@@ -98,7 +98,7 @@ CPFLAGS=/GB $(QI0f)
 CPFLAGS=/GB $(QI0f)
 !endif
 
-!if $(FPU_TYPE)>0 && $(MSVC_VERSION)<6
+!if $(FPU_TYPE)>0 && $(MSVC_VERSION)<5
 FPFLAGS=/FPi87
 !else
 FPFLAGS=
