@@ -124,7 +124,7 @@ private const gs_state_client_procs pcl_gstate_procs = {
   int
 main(
     int                 argc,
-    char *              argv[]
+    char **             argv
 )
 {
     gs_ref_memory_t *   imem;
