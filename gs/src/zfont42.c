@@ -293,6 +293,7 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
 			 gs_glyph_space_t glyph_space, gs_glyph *pglyph)
 {
     const ref *pgdict;
+    int code;
 
     if (glyph_space == GLYPH_SPACE_INDEX) {
 	pgdict = &pfont_data(font)->u.type42.GlyphDirectory;
@@ -312,7 +313,11 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
 	}
     } else
 	pgdict = &pfont_data(font)->CharStrings;
-    return zchar_enumerate_glyph(pgdict, pindex, pglyph);
+    /* A trick : use zchar_enumerate_glyph to enumerate GIDs : */
+    code = zchar_enumerate_glyph(pgdict, pindex, pglyph);
+    if (*pindex != 0 && *pglyph >= gs_min_cid_glyph)
+	*pglyph	= *pglyph - gs_min_cid_glyph + GS_MIN_GLYPH_INDEX;
+    return code;
 }
 
 /*
