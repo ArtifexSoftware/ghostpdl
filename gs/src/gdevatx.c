@@ -50,7 +50,7 @@
 #define ATX_SET_PAGE_LENGTH "\033f"
 #define ATX_VERTICAL_TAB "\033L"
 #define ATX_UNCOMPRESSED_DATA "\033d"
-#define ATX_COMPRESSED_DATA "\033g"
+#define ATX_COMPRESSED_DATA "\033x"
 #define ATX_END_PAGE "\033e"
 
 /* The device descriptors */
