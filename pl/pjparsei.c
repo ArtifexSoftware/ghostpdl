@@ -59,7 +59,7 @@ pjl_impl_characteristics(
 int   /* ret 0 ok, else -ve error code */
 pjl_impl_allocate_interp(
   pl_interp_t        **interp,       /* RETURNS abstract interpreter struct */
-  pl_interp_implementation_t *impl,     /* implementation of interpereter to alloc */
+  const pl_interp_implementation_t *impl,     /* implementation of interpereter to alloc */
   gs_memory_t        *mem            /* allocator to allocate interp from */
 )
 {
@@ -214,8 +214,7 @@ pjl_impl_report_errors(
 	pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
    int                  code,              /* prev termination status */
    long                 file_position,     /* file position of error, -1 if unknown */
-	bool                 force_to_cout,     /* force errors to cout */
-   FILE                 *cout              /* stream for back-channel reports */
+	bool                 force_to_cout     /* force errors to cout */
 )
 {
 	return 0;
