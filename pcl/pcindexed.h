@@ -323,7 +323,7 @@ extern  int     pcl_cs_indexed_build_default_cspace(
 extern  int     pcl_cs_indexed_build_special(
     pcl_cs_indexed_t ** ppindexed,
     pcl_cs_base_t *     pbase,
-    byte *              pcolor1,
+    const byte *        pcolor1,
     gs_memory_t *       pmem
 );
 
@@ -350,5 +350,11 @@ extern  int     pcl_cs_indexed_install(
  */
 extern  bool    pcl_cs_indexed_0_is_white( const pcl_cs_indexed_t * pindexed );
 extern  bool    pcl_cs_indexed_0_is_black( const pcl_cs_indexed_t * pindexed );
+
+/*
+ * One time initialization. This exists only because of the possibility that
+ * BSS may not be initialized.
+ */
+extern  void    pcl_cs_indexed_init( void );
 
 #endif		/* pcindexed_INCLUDED */
