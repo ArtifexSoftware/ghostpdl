@@ -59,7 +59,7 @@ class Ghostscript:
 
 		cmd = cmd + ' -c false 0 startjob pop '
 
-		if self.infile[-4:] == ".pdf":
+		if string.lower(self.infile[-4:]) == ".pdf":
 			cmd = cmd + ' -dFirstPage=1 -dLastPage=1 '
 		else:
 			cmd = cmd + '- < '
