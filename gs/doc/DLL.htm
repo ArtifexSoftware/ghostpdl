@@ -258,6 +258,11 @@ When executing a string with <b><tt>gsdll_execute_cont()</tt></b>,
 <b><tt>gsdll_execute_cont()</tt></b>.  Reading from <b><tt>%stdin</tt></b>
 uses the callback.
 
+<p>
+Please note that there is a 64 KB length limit on the passed string.
+If you have more input than that to process at a given time, it must
+be split into separate smaller buffers, each passed on a separate call.
+
 </blockquote>
 
 <h3><a name="execute_end"></a><b><tt>gsdll_execute_end()</tt></b></h3>
