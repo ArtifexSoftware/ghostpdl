@@ -206,9 +206,41 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	return 0;
 }
 
+/* Compute the pattern length.  Normally, if the pattern length is
+   relative it is 4% of the diagonal distance from P1 to P2, for
+   isotropic scaling we need 4% of the distance of the plotter unit
+   equivalent of the scaling SC coordinates xmin, xmax, ymin, and
+   ymax.. */
  private int
 hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 {
+    /* dispense with the unusual "isotropic relative" case first.  The
+       normal calculation afterward is straightforward */
+    if ( (pgls->g.line.current.pattern_length_relative == 0) &&
+	 (pgls->g.scaling_type == hpgl_scaling_isotropic) ) {
+	    /* the box in user space */
+	    gs_rect isotropic_user_box;
+	    /* box in plotter units we compute 4% of the diagonal of this box */
+	    gs_rect isotropic_plu_box;
+	    gs_matrix user_to_plu_mat;
+
+	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &user_to_plu_mat));
+
+	    isotropic_user_box.p = pgls->g.scaling_params.pmin;
+	    isotropic_user_box.q = pgls->g.scaling_params.pmax;
+
+	    hpgl_call(gs_bbox_transform(&isotropic_user_box, 
+					&user_to_plu_mat,
+					&isotropic_plu_box));
+
+	    return (pgls->g.line.current.pattern_length / 100.0) *
+		hpgl_compute_distance(isotropic_plu_box.p.x,
+				      isotropic_plu_box.p.y,
+				      isotropic_plu_box.q.x,
+				      isotropic_plu_box.q.y);
+    }
+
+    /* simple case 4% of the diagonal of P1 and P2 or absolute in millimeters */
     return ((pgls->g.line.current.pattern_length_relative == 0) ?
 	    ((pgls->g.line.current.pattern_length / 100.0) *
 	     hpgl_compute_distance(pgls->g.P1.x,
