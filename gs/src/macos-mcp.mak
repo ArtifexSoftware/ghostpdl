@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2001 artofcode LLC.  All rights reserved.
+#    Copyright (C) 1997-2002 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -110,7 +110,7 @@ JVERSION=6
 # See libpng.mak for more information.
 
 PSRCDIR=libpng
-PVERSION=10201
+PVERSION=10204
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
