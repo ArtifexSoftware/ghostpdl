@@ -224,10 +224,11 @@ fail:
 
 /* Collect a Function value. */
 private int
-build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, int num_inputs,
-		       gs_memory_t *mem)
+build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn,
+		       int num_inputs, gs_memory_t *mem)
 {
     ref *pFunction;
+    int code;
 
     *ppfn = 0;
     if (dict_find_string(op, "Function", &pFunction) <= 0)
@@ -237,7 +238,6 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, 
 	gs_function_t **Functions;
 	uint i;
 	gs_function_AdOt_params_t params;
-	int code;
 
 	check_read(*pFunction);
 	if (size == 0)
@@ -253,7 +253,7 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, 
 	    if (code < 0)
 		break;
 	}
-	params.m = 1;
+	params.m = num_inputs;
 	params.Domain = 0;
 	params.n = size;
 	params.Range = 0;
@@ -262,9 +262,16 @@ build_shading_function(i_ctx_t *i_ctx_p, const ref * op, gs_function_t ** ppfn, 
 	    code = gs_function_AdOt_init(ppfn, &params, mem);
 	if (code < 0)
 	    gs_function_AdOt_free_params(&params, mem);
-	return code;
-    } else
-	return fn_build_function(i_ctx_p, pFunction, ppfn, mem);
+    } else {
+	code = fn_build_function(i_ctx_p, pFunction, ppfn, mem);
+	if (code < 0)
+	    return code;
+	if ((*ppfn)->params.m != num_inputs) {
+	    gs_function_free(*ppfn, true, mem);
+	    return_error(e_rangecheck);
+	}
+    }
+    return code;
 }
 
 /* ------ Build shadings ------ */
