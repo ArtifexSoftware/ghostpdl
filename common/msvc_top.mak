@@ -114,6 +114,6 @@ $(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR) $(FONTLIB
 !ELSE
 $(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR) @$(FONTLIB)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR)
 
 !ENDIF
