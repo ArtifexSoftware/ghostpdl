@@ -26,7 +26,9 @@
 #include "gsstruct.h"
 #include "gxfcid.h"
 #include "gxfont1.h"
+#include "stream.h"		/* for files.h */
 #include "bfont.h"
+#include "files.h"
 #include "icid.h"
 #include "idict.h"
 #include "idparam.h"
@@ -64,7 +66,8 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 	return code;
     if (r_has_type(pGlyphDirectory, t_null)) {
 	/* Standard CIDFont, require GDBytes. */
-	return dict_int_param(op, "GDBytes", 1, 4, 0, &pdata->GDBytes);
+	return dict_int_param(op, "GDBytes", 1, MAX_GDBytes, 0,
+			      &pdata->GDBytes);
     } else {
 	pdata->GDBytes = 0;
 	return 0;
@@ -72,6 +75,212 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 }
 
 /* ---------------- CIDFontType 0 (FontType 9) ---------------- */
+
+/* ------ Accessing ------ */
+
+/* Parse a multi-byte integer from a string. */
+private int
+get_index(gs_const_string *pgstr, int count, ulong *pval)
+{
+    int i;
+
+    if (pgstr->size < count)
+	return_error(e_rangecheck);
+    *pval = 0;
+    for (i = 0; i < count; ++i)
+	*pval = (*pval << 8) + pgstr->data[i];
+    pgstr->data += count;
+    pgstr->size -= count;
+    return 0;
+}
+
+/* Get bytes from GlyphData or DataSource. */
+private int
+cid0_read_bytes(gs_font_cid0 *pfont, ulong base, uint count, byte *buf,
+		gs_const_string *pstr)
+{
+    const font_data *pfdata = pfont_data(pfont);
+    byte *data = buf;
+    int code = 0;
+
+    /* Check for overflow. */
+    if (base != (long)base || base > base + count)
+	return_error(e_rangecheck);
+    if (r_has_type(&pfdata->u.cid0.DataSource, t_null)) {
+	/* Get the bytes from GlyphData (a string or array of strings). */
+	const ref *pgdata = &pfdata->u.cid0.GlyphData;
+
+	if (r_has_type(pgdata, t_string)) {  /* single string */
+	    uint size = r_size(pgdata);
+
+	    if (base >= size || count > size - base)
+		return_error(e_rangecheck);
+	    data = pgdata->value.bytes + base;
+	} else {		/* array of strings */
+	    /*
+	     * The algorithm is similar to the one in
+	     * string_array_access_proc in zfont42.c, but it also has to
+	     * deal with the case where the requested string crosses array
+	     * elements.
+	     */
+	    ulong skip = base;
+	    uint copied = 0;
+	    uint index = 0;
+	    ref rstr;
+	    uint size;
+
+	    for (;; skip -= size, ++index) {
+		int code = array_get(pgdata, index, &rstr);
+
+		if (code < 0)
+		    return code;
+		if (!r_has_type(&rstr, t_string))
+		    return_error(e_typecheck);
+		size = r_size(&rstr);
+		if (skip < size)
+		    break;
+		skip -= size;
+	    }
+	    size -= skip;
+	    if (count <= size) {
+		data = rstr.value.bytes + skip;
+	    } else {		/* multiple strings needed */
+		if (data == 0) {  /* no buffer provided */
+		    data = gs_alloc_string(pfont->memory, count,
+					   "cid0_read_bytes");
+		    if (data == 0)
+			return_error(e_VMerror);
+		    code = 1;
+		}
+		memcpy(data, rstr.value.bytes + skip, size);
+		copied = size;
+		while (copied < count) {
+		    int code = array_get(pgdata, ++index, &rstr);
+
+		    if (code < 0)
+			goto err;
+		    if (!r_has_type(&rstr, t_string)) {
+			code = gs_note_error(e_typecheck);
+			goto err;
+		    }
+		    size = r_size(&rstr);
+		    if (size > count - copied)
+			size = count - copied;
+		    memcpy(data + copied, rstr.value.bytes, size);
+		    copied += size;
+		}
+	    }
+	}
+    } else {
+	/* Get the bytes from DataSource (a stream). */
+	stream *s;
+	uint nread;
+
+	check_read_known_file(s, &pfdata->u.cid0.DataSource, return_error);
+	if (sseek(s, base) < 0)
+	    return_error(e_ioerror);
+	if (data == 0) {	/* no buffer provided */
+	    data = gs_alloc_string(pfont->memory, count, "cid0_read_bytes");
+	    if (data == 0)
+		return_error(e_VMerror);
+	    code = 1;
+	}
+	if (sgets(s, data, count, &nread) < 0 || nread != count) {
+	    code = gs_note_error(e_ioerror);
+	    goto err;
+	}
+    }
+    pstr->data = data;
+    pstr->size = count;
+    return code;
+ err:
+    if (data != buf)
+	gs_free_string(pfont->memory, data, count, "cid0_read_bytes");
+    return code;
+}
+
+/* Get the CharString data for a CIDFontType 0 font. */
+/* This is the glyph_data procedure in the font itself. */
+/* Note that pgstr may be NULL. */
+private int
+z9_glyph_data(gs_font_base *pbfont, gs_glyph glyph, gs_const_string *pgstr,
+	      int *pfidx)
+{
+    gs_font_cid0 *pfont = (gs_font_cid0 *)pbfont;
+    const font_data *pfdata = pfont_data(pfont);
+    long glyph_index = (long)(glyph - gs_min_cid_glyph);
+    gs_const_string gstr;
+    ulong fidx;
+    int code;
+
+    if (!r_has_type(&pfdata->u.cid0.GlyphDirectory, t_null)) {
+	code = font_gdir_get_outline(&pfdata->u.cid0.GlyphDirectory,
+				     glyph_index, &gstr);
+	if (code < 0)
+	    return code;
+	/* Get the definition from GlyphDirectory. */
+	if (gstr.data) {
+	    code = get_index(&gstr, pfont->cidata.FDBytes, &fidx);
+	    if (code < 0)
+		return code;
+	    if (fidx >= pfont->cidata.FDArray_size)
+		return_error(e_rangecheck);
+	    if (pgstr)
+		*pgstr = gstr;
+	    *pfidx = (int)fidx;
+	    return code;
+	}
+    }
+    /* Get the definition from the binary data (GlyphData or DataSource). */
+    if (glyph_index < 0 || glyph_index >= pfont->cidata.common.CIDCount) {
+	*pfidx = 0;
+	if (pgstr)
+	    pgstr->data = 0, pgstr->size = 0;
+	return 0;
+    }
+    {
+	byte fd_gd[(MAX_FDBytes + MAX_GDBytes) * 2];
+	uint num_bytes = pfont->cidata.FDBytes + pfont->cidata.common.GDBytes;
+	ulong base = pfont->cidata.CIDMapOffset + glyph_index * num_bytes;
+	ulong gidx, gidx_next;
+
+	code = cid0_read_bytes(pfont, base, (ulong)(num_bytes * 2), fd_gd,
+			       &gstr);
+	if (code < 0)
+	    return code;
+	get_index(&gstr, pfont->cidata.FDBytes, &fidx);
+	get_index(&gstr, pfont->cidata.common.GDBytes, &gidx);
+	if (fidx >= pfont->cidata.FDArray_size)
+	    return_error(e_rangecheck);
+	*pfidx = (int)fidx;
+	if (pgstr == 0)
+	    return 0;
+	gstr.data += pfont->cidata.FDBytes;
+	gstr.size -= pfont->cidata.FDBytes;
+	get_index(&gstr, pfont->cidata.common.GDBytes, &gidx_next);
+	return cid0_read_bytes(pfont, gidx, gidx_next - gidx, NULL, pgstr);
+    }
+}
+
+/*
+ * The "fonts" in the FDArray don't have access to their outlines -- the
+ * outlines are always provided externally.  Replace the accessor procedures
+ * with ones that will give an error if called.
+ */
+private int
+z9_FDArray_glyph_data(gs_font_type1 * pfont, gs_glyph glyph,
+		      gs_const_string * pgdata)
+{
+    return_error(e_invalidfont);
+}
+private int
+z9_FDArray_seac_data(gs_font_type1 *pfont, int ccode, gs_glyph *pglyph,
+		     gs_const_string *pstr)
+{
+    return_error(e_invalidfont);
+}
+
+/* ------ Defining ------ */
 
 /* Get one element of a FDArray. */
 private int
@@ -93,7 +302,11 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
 	(code = dict_int_param(prfd, "FontType", 1, 2, 1, &fonttype)) < 0
 	)
 	return code;
-    /****** HANDLE ALTERNATE SUBR REPRESENTATION ******/
+    /*
+     * We don't handle the alternate Subr representation (SubrCount,
+     * SDBytes, SubrMapOffset) here: currently that is handled in
+     * PostScript code (lib/gs_cidfn.ps).
+     */
     switch (fonttype) {
     case 1:
 	data1.interpret = gs_type1_interpret;
@@ -126,6 +339,8 @@ fd_array_element(i_ctx_t *i_ctx_p, gs_font_type1 **ppfont, ref *prfd)
 	return code;
     pfont = (gs_font_type1 *)pbfont;
     charstring_font_init(pfont, &refs, &data1);
+    pfont->data.procs.glyph_data = z9_FDArray_glyph_data;
+    pfont->data.procs.seac_data = z9_FDArray_seac_data;
     *ppfont = pfont;
     return 0;
 }
@@ -150,15 +365,42 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     int FDBytes;
     gs_font_base *pfont;
     gs_font_cid0 *pfcid;
-    ref GlyphDirectory;
+    ref GlyphDirectory, GlyphData, DataSource;
+    ref *pGlyphData;
     uint i;
 
+    /*
+     * If the CIDFont's data have been loaded into VM, GlyphData will be
+     * a string or an array of strings; if they are loaded incrementally
+     * from a file, GlyphData will be an integer, and DataSource will be
+     * a (reusable) stream.
+     */
     if (code < 0 ||
 	(code = cid_font_data_param(op, &common, &GlyphDirectory)) < 0 ||
+	(code = dict_find_string(op, "GlyphData", &pGlyphData)) < 0 ||
 	(code = dict_find_string(op, "FDArray", &prfda)) < 0 ||
-	(code = dict_int_param(op, "FDBytes", 0, 4, -1, &FDBytes)) < 0
+	(code = dict_int_param(op, "FDBytes", 0, MAX_FDBytes, -1, &FDBytes)) < 0
 	)
 	return code;
+    GlyphData = *pGlyphData;
+    if (r_has_type(&GlyphData, t_integer)) {
+	ref *pds;
+	stream *discard;
+
+	if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
+	    return code;
+	check_read_file(discard, pds);
+	DataSource = *pds;
+    } else {
+	if (!r_has_type(&GlyphData, t_string) && !r_is_array(&GlyphData))
+	    return_error(e_typecheck);
+	make_null(&DataSource);
+    }
+    if (!r_is_array(prfda))
+	return_error(e_invalidfont);
+    FDArray_size = r_size(prfda);
+    if (FDArray_size == 0)
+	return_error(e_invalidfont);
     if (r_has_type(&GlyphDirectory, t_null)) {
 	/* Standard CIDFont, require CIDMapOffset. */
 	if ((code = dict_uint_param(op, "CIDMapOffset", 0, max_uint - 1,
@@ -167,11 +409,6 @@ zbuildfont9(i_ctx_t *i_ctx_p)
     } else {
 	CIDMapOffset = 0;
     }
-    if (!r_is_array(prfda))
-	return_error(e_invalidfont);
-    FDArray_size = r_size(prfda);
-    if (FDArray_size == 0)
-	return_error(e_invalidfont);
     FDArray = ialloc_struct_array(FDArray_size, gs_font_type1 *,
 				  &st_gs_font_type1_ptr_element,
 				  "buildfont9(FDarray)");
@@ -184,7 +421,7 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 	array_get(prfda, (long)i, &rfd);
 	code = fd_array_element(i_ctx_p, &FDArray[i], &rfd);
 	if (code < 0)
-	    return code;
+	    goto fail;
     }
     code = build_gs_simple_font(i_ctx_p, op, &pfont, ft_CID_encrypted,
 				&st_gs_font_cid0, &build,
@@ -192,18 +429,82 @@ zbuildfont9(i_ctx_t *i_ctx_p)
 				bf_FontBBox_required |
 				bf_UniqueID_ignored);
     if (code < 0)
-	return code;
+	goto fail;
     pfcid = (gs_font_cid0 *)pfont;
     pfcid->cidata.common = common;
     pfcid->cidata.CIDMapOffset = CIDMapOffset;
     pfcid->cidata.FDArray = FDArray;
     pfcid->cidata.FDArray_size = FDArray_size;
     pfcid->cidata.FDBytes = FDBytes;
-    /****** SET glyph_data ******/
+    pfcid->cidata.glyph_data = z9_glyph_data;
     pfcid->cidata.proc_data = 0;	/* for GC */
     ref_assign(&pfont_data(pfont)->u.cid0.GlyphDirectory, &GlyphDirectory);
-    return define_gs_font((gs_font *)pfont);
+    ref_assign(&pfont_data(pfont)->u.cid0.GlyphData, &GlyphData);
+    ref_assign(&pfont_data(pfont)->u.cid0.DataSource, &DataSource);
+    code = define_gs_font((gs_font *)pfont);
+    if (code >= 0)
+	return code;
+ fail:
+    ifree_object(FDArray, "buildfont9(FDarray)");
+    return code;
 }
+
+/* <cid9font> <cid> .type9mapcid <charstring> <font_index> */
+private int
+ztype9mapcid(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_font *pfont;
+    gs_font_cid0 *pfcid;
+    int code = font_param(op - 1, &pfont);
+    gs_const_string gstr;
+    int fidx;
+
+    if (code < 0)
+	return code;
+    if (pfont->FontType != ft_CID_encrypted)
+	return_error(e_invalidfont);
+    check_type(*op, t_integer);
+    pfcid = (gs_font_cid0 *)pfont;
+    code = pfcid->cidata.glyph_data((gs_font_base *)pfcid,
+			(gs_glyph)(gs_min_cid_glyph + op->value.intval),
+				    &gstr, &fidx);
+    if (code < 0)
+	return code;
+    make_const_string(op - 1, a_readonly, gstr.size, gstr.data);
+    make_int(op, fidx);
+    return 0;
+}
+
+#ifdef DEBUG
+
+#include "gdevpsf.h"
+
+/* <file> <cid9font> .writefont9 - */
+private int
+zwritefont9(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_font *pfont;
+    gs_font_cid0 *pfcid;
+    int code = font_param(op, &pfont);
+    stream *s;
+
+    if (code < 0)
+	return code;
+    if (pfont->FontType != ft_CID_encrypted)
+	return_error(e_invalidfont);
+    check_write_file(s, op - 1);
+    pfcid = (gs_font_cid0 *)pfont;
+    code = psf_write_cid0_font(s, pfcid,
+			       WRITE_TYPE2_NO_LENIV | WRITE_TYPE2_CHARSTRINGS,
+			       NULL, 0, NULL);
+    if (code >= 0)
+	pop(2);
+    return code;
+}
+
+#endif
 
 /* ---------------- CIDFontType 1 (FontType 10) ---------------- */
 
@@ -235,6 +536,8 @@ zbuildfont10(i_ctx_t *i_ctx_p)
 }
 
 /* ---------------- CIDFontType 2 (FontType 11) ---------------- */
+
+/* ------ Accessing ------ */
 
 /* Map a glyph CID to a TrueType glyph number using the CIDMap. */
 private int
@@ -342,6 +645,8 @@ z11_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
     return 0;
 }
 
+/* ------ Defining ------ */
+
 /* <string|name> <font_dict> .buildfont11 <string|name> <font> */
 private int
 zbuildfont11(i_ctx_t *i_ctx_p)
@@ -428,6 +733,10 @@ ztype11mapcid(i_ctx_t *i_ctx_p)
 const op_def zfcid_op_defs[] =
 {
     {"2.buildfont9", zbuildfont9},
+    {"2.type9mapcid", ztype9mapcid},
+#ifdef DEBUG
+    {"2.writefont9", zwritefont9},
+#endif
     {"2.buildfont10", zbuildfont10},
     {"2.buildfont11", zbuildfont11},
     {"2.type11mapcid", ztype11mapcid},

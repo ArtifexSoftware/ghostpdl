@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1991, 1993, 1994, 1996, 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -52,6 +52,8 @@ typedef struct font_data_s {
 	} type42;
 	struct _fc0 {
 	    ref GlyphDirectory;
+	    ref GlyphData;	/* (if preloaded) string or array of strings */
+	    ref DataSource;	/* (if not preloaded) reusable stream */
 	} cid0;
     } u;
 } font_data;

@@ -259,54 +259,12 @@ currentdict end
 { string ReadString .cvbsi
 } bind def
 
-% Read the glyph data for a given CID.  The CIDFont is currentdict.
-/.readglyphdata {	% <cid> .readglyphdata <subfont> <string|null>
-  currentdict /GlyphDirectory .knownget {
-    dup type /arraytype eq {
-      1 index get
-    } {
-      1 index .knownget not { null } if
-    } ifelse
-			% Stack: cid string|null
-    dup null ne { exch pop .readgdirdata } { pop .readbytedata } ifelse
-  } {
-			% Stack: cid
-    .readbytedata
-  } ifelse
-} bind def
-/.readgdirdata {	% <string|null> .readgdirdata <subfont> <string|null>
-  dup null eq {
-    FDArray 0 get exch
-  } {
-    FDBytes 0 eq {
-      FDArray 0 get exch
-    } {
-      dup 0 FDBytes getinterval .cvbsi FDArray exch get
-      exch dup length FDBytes sub FDBytes exch getinterval
-    }	ifelse
-  } ifelse
-} bind def
-/.readbytedata {	% <cid> .readbytedata <subfont> <string|null>
-  dup dup 0 ge exch CIDCount lt and {
-    FDBytes GDBytes add mul CIDMapOffset add
-    dup FDBytes .readint exch
-    FDBytes add dup GDBytes .readint
-    exch GDBytes add FDBytes add GDBytes .readint
-			% Stack: fd pos nextpos
-    1 index sub dup 0 eq {
-      pop pop pop FDArray 0 get null
-    } {
-			% Stack: fd pos len
-      FDArray 4 -1 roll get
-			% Stack: pos len subfont
-      3 1 roll string ReadString
-    } ifelse
-  } {
-    pop FDArray 0 get null
-  } ifelse
-} bind def
-
 % ------ CIDFontType 0 ------ %
+
+/.readglyphdata {
+  currentfont exch .type9mapcid
+  FDArray exch get exch
+} bind def
 
 % BuildGlyph procedure for CIDFontType 0.
 % The name %Type9BuildGlyph is known to the interpreter.

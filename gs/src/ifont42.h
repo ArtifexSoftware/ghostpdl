@@ -40,6 +40,12 @@ int font_string_array_param(P3(os_ptr, const char *, ref *));
 int font_GlyphDirectory_param(P2(os_ptr, ref *));
 
 /*
+ * Get a glyph outline from GlyphDirectory.  Return an empty string if
+ * the glyph is missing or out of range.
+ */
+int font_gdir_get_outline(P3(const ref *, long, gs_const_string *));
+
+/*
  * Access a given byte offset and length in an array of strings.
  * This is used for sfnts and for CIDMap.  The int argument is 2 for sfnts
  * (because of the strange behavior of odd-length strings), 1 for CIDMap.

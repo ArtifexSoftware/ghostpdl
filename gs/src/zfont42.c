@@ -203,13 +203,14 @@ const op_def zfont42_op_defs[] =
     op_def_end(0)
 };
 
-/* Get an outline from GlyphDirectory instead of loca / glyf. */
-private int
-z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
-		     gs_const_string * pgstr)
+/*
+ * Get a glyph outline from GlyphDirectory.  Return an empty string if
+ * the glyph is missing or out of range.
+ */
+int
+font_gdir_get_outline(const ref *pgdir, long glyph_index,
+		      gs_const_string * pgstr)
 {
-    const font_data *pfdata = pfont_data(pfont);
-    const ref *pgdir = &pfdata->u.type42.GlyphDirectory;
     ref iglyph;
     ref gdef;
     ref *pgdef;
@@ -219,7 +220,7 @@ z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
 	make_int(&iglyph, glyph_index);
 	code = dict_find(pgdir, &iglyph, &pgdef) - 1; /* 0 => not found */
     } else {
-	code = array_get(pgdir, (long)glyph_index, &gdef);
+	code = array_get(pgdir, glyph_index, &gdef);
 	pgdef = &gdef;
     }
     if (code < 0) {
@@ -232,6 +233,15 @@ z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
 	pgstr->size = r_size(pgdef);
     }
     return 0;
+}
+private int
+z42_gdir_get_outline(gs_font_type42 * pfont, uint glyph_index,
+		     gs_const_string * pgstr)
+{
+    const font_data *pfdata = pfont_data(pfont);
+    const ref *pgdir = &pfdata->u.type42.GlyphDirectory;
+
+    return font_gdir_get_outline(pgdir, (long)glyph_index, pgstr);
 }
 
 /* Reduce a glyph name to a glyph index if needed. */

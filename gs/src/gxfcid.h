@@ -32,6 +32,7 @@
  * Define the data common to CIDFontType 0 (FontType 9, analogous to 1)
  * and 2 (FontType 11, analogous to 42).
  */
+#define MAX_GDBytes 4
 typedef struct gs_font_cid_data_s {
     gs_cid_system_info_t CIDSystemInfo;
     int CIDCount;
@@ -67,6 +68,7 @@ typedef struct gs_font_type1_s gs_font_type1;
 typedef struct gs_font_cid0_s gs_font_cid0;
 #endif
 
+#define MAX_FDBytes 4
 typedef struct gs_font_cid0_data_s {
     gs_font_cid_data common;
     ulong CIDMapOffset;		/* optional, for standard glyph_data */
