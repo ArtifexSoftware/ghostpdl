@@ -221,7 +221,7 @@ gdev_tiff_begin_page(gx_device_printer * pdev, gdev_tiff_state * tifs,
 	tms = *localtime(&t);
 	sprintf(std_values.dateTimeValue,
 		"%04d:%02d:%02d %02d:%02d:%02d",
-		tms.tm_year + 1900, tms.tm_mon, tms.tm_mday,
+		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
 		tms.tm_hour, tms.tm_min, tms.tm_sec);
     }
 
