@@ -167,7 +167,7 @@ void gx_curve_split(fixed, fixed, const curve_segment *, double,
 
 /* Flatten a partial curve by sampling (internal procedure). */
 int gx_subdivide_curve(gx_path *, int, curve_segment *, segment_notes);
-#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+#if CURVED_TRAPEZOID_FILL0_COMPATIBLE
 bool gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2);
 #endif
 
@@ -410,7 +410,7 @@ struct gx_flattened_iterator_s {
     uint rx, ry, rdx, rdy, rd2x, rd2y, rd3x, rd3y;	/* R */
     segment_notes notes;
     /* public : */
-#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE 
+#if CURVED_TRAPEZOID_FILL0_COMPATIBLE 
 #if CURVED_TRAPEZOID_FILL_SCANS_BACK
     fixed x, y;
     bool curve;

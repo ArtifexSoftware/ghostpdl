@@ -826,7 +826,7 @@ step_al(active_line *alp, bool move_iterator)
        with the first or the last piece of the line. */
     alp->start.x = (forth ? alp->fi.lx0 : alp->fi.lx1);
     alp->start.y = (forth ? alp->fi.ly0 : alp->fi.ly1);
-#   if FLATTENED_CURVE_ITERATOR0_COMPATIBLE 
+#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE 
 	if (move_iterator) {
 	    if (forth) {
 		gx_flattened_iterator fi = alp->fi;
@@ -883,7 +883,7 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
     /* Warning : p0 may be equal to &alp->end. */
     bool curve = (ss != NULL && ss->type == s_curve);
 
-#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+#if CURVED_TRAPEZOID_FILL0_COMPATIBLE
     alp->first_flattened = true;
 #endif
     if (curve) {

@@ -234,7 +234,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 	this->y3 = y0;
     }
 #   if CURVED_TRAPEZOID_FILL
-#	if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE
 #	    if CURVED_TRAPEZOID_FILL_SCANS_BACK
 		this->curve = true;
 #	    else
@@ -414,7 +414,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 		   "add" : "skip"),
 		  fixed2float(x), fixed2float(y), x, y);
 	if (
-#	if FLATTENED_CURVE_ITERATOR0_COMPATIBLE || CURVED_TRAPEZOID_FILL_SCANS_BACK
+#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE || CURVED_TRAPEZOID_FILL_SCANS_BACK
 #	    if CURVED_TRAPEZOID_FILL && !CURVED_TRAPEZOID_FILL_SCANS_BACK
 		this->reverse ? ((x ^ this->x3) | (y ^ this->y3)) & float2fixed(-0.5)
 			      : ((x ^ this->x0) | (y ^ this->y0)) & float2fixed(-0.5)
@@ -460,7 +460,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 	if (this->i) {
 	    this->lx1 = x;
 	    this->ly1 = y;
-#	    if FLATTENED_CURVE_ITERATOR0_COMPATIBLE && CURVED_TRAPEZOID_FILL_SCANS_BACK
+#	    if CURVED_TRAPEZOID_FILL0_COMPATIBLE && CURVED_TRAPEZOID_FILL_SCANS_BACK
 		this->x = x;
 		this->y = y;
 #	    endif
@@ -468,7 +468,7 @@ gx_flattened_iterator__next(gx_flattened_iterator *this)
 	    return true;
 	}
     }
-#   if FLATTENED_CURVE_ITERATOR0_COMPATIBLE && CURVED_TRAPEZOID_FILL_SCANS_BACK
+#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE && CURVED_TRAPEZOID_FILL_SCANS_BACK
 	this->x = x;
 	this->y = y;
 #   endif
@@ -548,7 +548,7 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
     return !last;
 }
 
-#   if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+#   if CURVED_TRAPEZOID_FILL0_COMPATIBLE
 bool
 gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1)
 {
@@ -604,7 +604,7 @@ gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x
     return false;
 }
 
-#if FLATTENED_CURVE_ITERATOR0_COMPATIBLE
+#if CURVED_TRAPEZOID_FILL0_COMPATIBLE
 bool
 gx_check_nearly_collinear(fixed x0, fixed y0, fixed x1, fixed y1, fixed x2, fixed y2)
 {
