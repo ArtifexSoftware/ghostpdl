@@ -68,6 +68,12 @@ gp_fopentemp(const char *fname, const char *mode)
 	case 'w':
 	    flags |= O_CREAT | O_WRONLY | O_TRUNC;
 	    break;
+#ifdef O_BINARY
+	    /* Watcom C insists on this non-ANSI flag being set. */
+	case 'b':
+	    flags |= O_BINARY;
+	    break;
+#endif
 	case '+':
 	    flags = (flags & ~(O_RDONLY | O_WRONLY)) | O_RDWR;
 	    break;
