@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1994, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1994, 1996 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -127,7 +127,7 @@ main(int argc, char *argv[])
     char errstr[emax + 1];
     int errlen;
     static const char *fnames[] =
-    {"golfer.ps", 0};
+    {"golfer.eps", 0};
     FILE *cin = fopen("stdin.tmp", "w+");
     int sout = open("stdout.tmp", O_WRONLY | O_CREAT | O_TRUNC,
 		    S_IREAD | S_IWRITE);

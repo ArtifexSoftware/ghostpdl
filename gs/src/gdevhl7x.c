@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2001 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -31,7 +31,7 @@
  *
  * Removal of compression code on 1/17/00 by Ross Martin
  * (ross@ross.interwrx.com, martin@walnut.eas.asu.edu)
- * enables this driver to correctly print tiger.ps on a
+ * enables this driver to correctly print tiger.eps on a
  * Brother MFC6550MC Fax Machine.  Change to the Horizontal
  * Offset fixes incorrect page alignment at 300dpi in
  * Landscape mode with a2ps.
@@ -651,7 +651,7 @@ private void makeFullLine( Byte      * pCurrentLine,
      * Disabled line-to-line compression, 1/17/00 Ross Martin
      * ross@ross.interwrx.com and/or martin@walnut.eas.asu.edu
      *
-     * The compression here causes problems printing tiger.ps.
+     * The compression here causes problems printing tiger.eps.
      * The problem is vertical streaks.  The printer I'm printing
      * to is a Brother MFC6550MC Fax Machine, which may be
      * slightly different from the hl720 and hl730.  Note that
@@ -660,11 +660,11 @@ private void makeFullLine( Byte      * pCurrentLine,
      * setup from a DOS program included with the printer.  Thus,
      * the hl7x0 driver seems a better choice.  In any case,
      * on the MFC6550MC, some files print fine with compression
-     * turned on, but others such as tiger.ps print with streaks.
+     * turned on, but others such as tiger.eps print with streaks.
      * disabling the compression fixes the problem, so I haven't
      * looked any further at the cause.  It may be that the
      * compression is correct for the hl720 and hl730, and only
-     * different for the MFC6550MC, or it may be that tiger.ps
+     * different for the MFC6550MC, or it may be that tiger.eps
      * won't print correctly with compression enabled on any
      * of these.  It may be that the problem is only with color
      * and/or grayscale prints.  YMMV.  I don't think it likely

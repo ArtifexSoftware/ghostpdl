@@ -1,4 +1,4 @@
-#    Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1997, 2001 artofcode LLC.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -145,7 +145,7 @@ install-examples:
 	-mkdir $(exdir)
 	for f in \
 alphabet.ps chess.ps colorcir.ps doretree.ps escher.ps \
-golfer.ps grayalph.ps snowflak.ps tiger.ps vasarely.ps waterfal.ps \
+golfer.eps grayalph.ps snowflak.ps tiger.eps vasarely.ps waterfal.ps \
 ridt91.eps ;\
 	do $(INSTALL_DATA) $(PSEXDIR)/$$f $(exdir) ;\
 	done

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995-2001 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -17,7 +17,7 @@
 */
 
 /*$Id$*/
-/* H-P and Canon colour printer drivers */
+/* HP and Canon colour printer drivers */
 
 /****************************************************************
  * The code in this file was contributed by the authors whose names and/or
@@ -120,7 +120,7 @@
  * It is also possible to set various printer-specific parameters
  *     from the gs command line, eg.
  *
- *  gs -sDEVICE=cdj550 -dBitsPerPixel=16 -dDepletion=1 -dShingling=2 tiger.ps
+ *  gs -sDEVICE=cdj550 -dBitsPerPixel=16 -dDepletion=1 -dShingling=2 tiger.eps
  *
  * Please consult the appropriate section in the devices.doc file for
  * further details on all these drivers.
