@@ -1,4 +1,4 @@
- %    Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -241,8 +241,6 @@
 /.setpdfwrite {		% - .setpdfwrite -
 		% Set a large VM threshold to reduce garbage collection.
   currentuserparams /VMThreshold get 3000000 .max setvmthreshold
-		% Install a level of 'save' to reduce font loading.
-  save pop
 } bind def
 
 % ---------------- pdfmark and DSC processing ---------------- %
