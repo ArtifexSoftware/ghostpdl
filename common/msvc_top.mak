@@ -98,7 +98,7 @@ $(GENDIR)\ldall.tr: $(MAKEFILE) $(GENDIR)\ldgs.tr $(GENDIR)\ldconf.tr
 	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldconf.tr $(GENDIR)\ldall.tr
 
 # AGFA Workaround to add needed ufst font libraries.
-!IF "$(PL_FONT_SCALER)" == "ufst"
+!IF "$(PL_SCALER)" == "ufst"
 FONTLIB=$(GENDIR)\fontlib.tr
 # I have no idea what NODEFAULTLIB means.
 $(FONTLIB): $(MAKEFILE)
