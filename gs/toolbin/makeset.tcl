@@ -53,9 +53,6 @@ proc setnum {num3} {
 
     set Num3 $num3
 
-    set major [expr ${Num3} / 100]
-    set minor [format %02d [expr ${Num3} % 100]]
-
     set Dot [expr ${Num3} / 100].[format %02d [expr ${Num3} % 100]]
 
 # Set other, derived globals.
