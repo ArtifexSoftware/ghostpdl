@@ -1,8 +1,14 @@
-/* Copyright (C) 1999, 2000 Aladdin Enterprises.  All rights reserved.
-  
-  This software is licensed to a single customer by Artifex Software Inc.
-  under the terms of a specific OEM agreement.
-*/
+/* Portions Copyright (C) 2001 artofcode LLC.
+   Portions Copyright (C) 1996, 2001 Artifex Software Inc.
+   Portions Copyright (C) 1988, 2000 Aladdin Enterprises.
+   This software is based in part on the work of the Independent JPEG Group.
+   All Rights Reserved.
+
+   This software is distributed under license and may not be copied, modified
+   or distributed except as expressly authorized under the terms of that
+   license.  Refer to licensing information at http://www.artifex.com/ or
+   contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+   San Rafael, CA  94903, (415)492-9861, for further information. */
 
 /*$RCSfile$ $Revision$ */
 /* Font handling for pdfwrite driver. */
@@ -711,21 +717,16 @@ pdf_compute_font_descriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
     /*
      * See the note on FONT_IS_ADOBE_ROMAN / FONT_USES_STANDARD_ENCODING
      * in gdevpdff.h for why the following substitution is made.
+     *
+     * stefan: pcl currently is trying out NOT forcing Symbolic.
+     *  ISOLATIN1 encoding is now not_symbolic.
+     *  This is coupled with the Flags output in pdf_write_FontDescriptor()
      */
-#if 0
-#  define CONSIDER_FONT_SYMBOLIC(font) font_is_symbolic(font)
-#else
-#  define CONSIDER_FONT_SYMBOLIC(font)\
-  ((font)->FontType == ft_composite ||\
-   ((const gs_font_base *)(font))->encoding_index != ENCODING_INDEX_STANDARD)
-#endif
-    if (0 && CONSIDER_FONT_SYMBOLIC(font)) {
+    if (font_is_symbolic(font)) { 
 	desc.Flags |= FONT_IS_SYMBOLIC;
-	/* stefan: dead/unfinished code
-	 * this doesn't work letters[] is uninitialized ...
-	 * missing understanding of the original intent.
+	/* stefan: 
+	 * undertested/unfinished branch, leaves letters[] uninitialized.
 	 */
-	return -1;
     }
     else {
 	/*
