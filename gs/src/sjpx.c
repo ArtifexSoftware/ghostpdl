@@ -18,7 +18,9 @@
 /* JPXDecode filter implementation -- hooks in libjasper */
 
 #include "memory_.h"
-#include "stdio_.h" /* for debug printouts */
+#ifdef JPX_DEBUG
+#include "stdio_.h"
+#endif
 
 #include "gserrors.h"
 #include "gserror.h"
@@ -66,13 +68,14 @@ s_jpxd_init(stream_state * ss)
     return status;
 }
 
+#ifdef JPX_DEBUG
 /* dump information from a jasper image struct for debugging */
 private int
 dump_jas_image(jas_image_t *image)
 {
     int i, numcmpts = jas_image_numcmpts(image);
     int clrspc = jas_image_clrspc(image);
-    char *csname = "unrecognized vendor space";
+    const char *csname = "unrecognized vendor space";
 
     if (image == NULL) return 1;
 
@@ -96,9 +99,9 @@ dump_jas_image(jas_image_t *image)
 
     for (i = 0; i < numcmpts; i++) {
 	int type = jas_image_cmpttype(image, i);
-	char *opacity = (type & JAS_IMAGE_CT_OPACITY) ? " opacity" : "";
-	char *name = "unrecognized";
-	char *issigned = "";
+	const char *opacity = (type & JAS_IMAGE_CT_OPACITY) ? " opacity" : "";
+	const char *name = "unrecognized";
+	const char *issigned = "";
 	if (jas_clrspc_fam(clrspc) == JAS_CLRSPC_FAM_GRAY)
 	    name = "gray";
 	else if (jas_clrspc_fam(clrspc) == JAS_CLRSPC_FAM_RGB)
@@ -130,6 +133,7 @@ dump_jas_image(jas_image_t *image)
 
     return 0;
 }
+#endif /* JPX_DEBUG */
 
 private int
 copy_row_gray(unsigned char *dest, jas_image_t *image,
@@ -276,7 +280,7 @@ s_jpxd_buffer_input(stream_jpxd_state *const state, stream_cursor_read *pr,
 
 /* decode the compressed image data saved in our state */
 private int
-s_jpxd_decode_image(stream_jpxd_state *const state)
+s_jpxd_decode_image(stream_jpxd_state * state)
 {
     jas_stream_t *stream = state->stream;
     jas_image_t *image = NULL;
@@ -317,12 +321,12 @@ s_jpxd_decode_image(stream_jpxd_state *const state)
     return 0;
 }
 
-/* process a section of the input and return any decoded data.
+/* process a secton of the input and return any decoded data.
    see strimpl.h for return codes.
  */
 private int
 s_jpxd_process(stream_state * ss, stream_cursor_read * pr,
-		  stream_cursor_write * pw, bool last)
+                 stream_cursor_write * pw, bool last)
 {
     stream_jpxd_state *const state = (stream_jpxd_state *) ss;
     jas_stream_t *stream = state->stream;
@@ -432,7 +436,8 @@ const stream_template s_jpxd_template = {
     &st_jpxd_state, 
     s_jpxd_init,
     s_jpxd_process,
-    1, 1, /* min in and out buffer sizes we can handle --should be ~32k,64k for efficiency? */
+    1, 1, /* min in and out buffer sizes we can handle 
+                     should be ~32k,64k for efficiency? */
     s_jpxd_release,
     s_jpxd_set_defaults
 };
