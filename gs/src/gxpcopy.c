@@ -26,8 +26,6 @@
 #include "gzpath.h"
 #include "vdtrace.h"
 
-#define OLD_MONOTONIZATION 0 /* Old code - keep it for a while. */
-
 /* Forward declarations */
 private void adjust_point_to_tangent(segment *, const segment *,
 				     const gs_fixed_point *);
@@ -288,20 +286,6 @@ adjust_point_to_tangent(segment * pseg, const segment * next,
 #define y2 pc->p2.y
 #define x3 pc->pt.x
 #define y3 pc->pt.y
-
-#if OLD_MONOTONIZATION
-#ifdef DEBUG
-private void
-dprint_curve(const char *str, fixed x0, fixed y0, const curve_segment * pc)
-{
-    dlprintf9("%s p0=(%g,%g) p1=(%g,%g) p2=(%g,%g) p3=(%g,%g)\n",
-	      str, fixed2float(x0), fixed2float(y0),
-	      fixed2float(pc->p1.x), fixed2float(pc->p1.y),
-	      fixed2float(pc->p2.x), fixed2float(pc->p2.y),
-	      fixed2float(pc->pt.x), fixed2float(pc->pt.y));
-}
-#endif
-#endif
 
 /* Initialize a cursor for rasterizing a monotonic curve. */
 void
@@ -655,83 +639,6 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
 {
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
     segment_notes notes = pc->notes;
-#if OLD_MONOTONIZATION
-    double t[2];
-
-#define max_segs 9
-    curve_segment cs[max_segs];
-    const curve_segment *pcs;
-    curve_segment *pcd;
-    int i, j, nseg;
-    int nz;
-
-    /* Monotonize in Y. */
-    nz = gx_curve_monotonic_points(y0, pc->p1.y, pc->p2.y, pc->pt.y, t);
-    nseg = max_segs - 1 - nz;
-    pcd = cs + nseg;
-    if (nz == 0)
-	*pcd = *pc;
-    else {
-	gx_curve_split(x0, y0, pc, t[0], pcd, pcd + 1);
-	if (nz == 2)
-	    gx_curve_split(pcd->pt.x, pcd->pt.y, pcd + 1,
-			   (t[1] - t[0]) / (1 - t[0]),
-			   pcd + 1, pcd + 2);
-    }
-
-    /* Monotonize in X. */
-    for (pcs = pcd, pcd = cs, j = nseg; j < max_segs; ++pcs, ++j) {
-	nz = gx_curve_monotonic_points(x0, pcs->p1.x, pcs->p2.x,
-				       pcs->pt.x, t);
-
-	if (nz == 0)
-	    *pcd = *pcs;
-	else {
-	    gx_curve_split(x0, y0, pcs, t[0], pcd, pcd + 1);
-	    if (nz == 2)
-		gx_curve_split(pcd->pt.x, pcd->pt.y, pcd + 1,
-			       (t[1] - t[0]) / (1 - t[0]),
-			       pcd + 1, pcd + 2);
-	}
-	pcd += nz + 1;
-	x0 = pcd[-1].pt.x;
-	y0 = pcd[-1].pt.y;
-    }
-    nseg = pcd - cs;
-
-    /* Add the segment(s) to the output. */
-#ifdef DEBUG
-    if (gs_debug_c('2')) {
-	int pi;
-	gs_fixed_point pp0;
-
-	pp0 = ppath->position;
-	if (nseg == 1)
-	    dprint_curve("[2]No split", pp0.x, pp0.y, pc);
-	else {
-	    dlprintf1("[2]Split into %d segments:\n", nseg);
-	    dprint_curve("[2]Original", pp0.x, pp0.y, pc);
-	    for (pi = 0; pi < nseg; ++pi) {
-		dprint_curve("[2] =>", pp0.x, pp0.y, cs + pi);
-		pp0 = cs[pi].pt;
-	    }
-	}
-    }
-#endif
-    for (pcs = cs, i = 0; i < nseg; ++pcs, ++i) {
-	int code = gx_path_add_curve_notes(ppath, pcs->p1.x, pcs->p1.y,
-					   pcs->p2.x, pcs->p2.y,
-					   pcs->pt.x, pcs->pt.y,
-					   notes |
-					   (i > 0 ? sn_not_first :
-					    sn_none));
-
-	if (code < 0)
-	    return code;
-    }
-
-    return 0;
-#else /* OLD_MONOTONIZATION */
     double t[4], tt = 1, tp;
     int c[4];
     int n0, n1, n, i, j, k = 0;
@@ -832,7 +739,6 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
     if ((double)(sx - px) * rx + (double)(sy - py) * ry < 0)
 	rx = -rx, ry = -qy;
     return gx_path_add_curve_notes(ppath, px + qx, py + qy, sx - rx, sy - ry, sx, sy, notes);
-#endif /* OLD_MONOTONIZATION */
 }
 
 /*
@@ -979,56 +885,3 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
     }
 }
 
-#if OLD_MONOTONIZATION
-
-/*
- * Split a curve at an arbitrary point t.  The above midpoint split is a
- * special case of this with t = 0.5.
- */
-void
-gx_curve_split(fixed x0, fixed y0, const curve_segment * pc, double t,
-	       curve_segment * pc1, curve_segment * pc2)
-{				/*
-				 * If the original function was v(t), we want to compute the points
-				 * for the functions v1(T) = v(t * T) and v2(T) = v(t + (1 - t) * T).
-				 * Straightforwardly,
-				 *      v1(T) = a*t^3*T^3 + b*t^2*T^2 + c*t*T + d
-				 * i.e.
-				 *      a1 = a*t^3, b1 = b*t^2, c1 = c*t, d1 = d.
-				 * Similarly,
-				 *      v2(T) = a*[t + (1-t)*T]^3 + b*[t + (1-t)*T]^2 +
-				 *              c*[t + (1-t)*T] + d
-				 *            = a*[(1-t)^3*T^3 + 3*t*(1-t)^2*T^2 + 3*t^2*(1-t)*T +
-				 *                 t^3] + b*[(1-t)^2*T^2 + 2*t*(1-t)*T + t^2] +
-				 *                 c*[(1-t)*T + t] + d
-				 *            = a*(1-t)^3*T^3 + [a*3*t + b]*(1-t)^2*T^2 +
-				 *                 [a*3*t^2 + b*2*t + c]*(1-t)*T +
-				 *                 a*t^3 + b*t^2 + c*t + d
-				 * We do this in the simplest way, namely, we convert the points to
-				 * coefficients, do the arithmetic, and convert back.  It would
-				 * obviously be faster to do the arithmetic directly on the points,
-				 * as the midpoint code does; this is just an implementation issue
-				 * that we can revisit if necessary.
-				 */
-    double t2 = t * t, t3 = t2 * t;
-    double omt = 1 - t, omt2 = omt * omt, omt3 = omt2 * omt;
-    fixed v01, v12, a, b, c, na, nb, nc;
-
-    if_debug1('2', "[2]splitting at t = %g\n", t);
-#define compute_seg(v0, v)\
-	curve_points_to_coefficients(v0, pc->p1.v, pc->p2.v, pc->pt.v,\
-				     a, b, c, v01, v12);\
-	na = (fixed)(a * t3), nb = (fixed)(b * t2), nc = (fixed)(c * t);\
-	curve_coefficients_to_points(na, nb, nc, v0,\
-				     pc1->p1.v, pc1->p2.v, pc1->pt.v);\
-	na = (fixed)(a * omt3);\
-	nb = (fixed)((a * t * 3 + b) * omt2);\
-	nc = (fixed)((a * t2 * 3 + b * 2 * t + c) * omt);\
-	curve_coefficients_to_points(na, nb, nc, pc1->pt.v,\
-				     pc2->p1.v, pc2->p2.v, pc2->pt.v)
-    compute_seg(x0, x);
-    compute_seg(y0, y);
-#undef compute_seg
-}
-
-#endif
