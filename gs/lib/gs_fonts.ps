@@ -20,7 +20,16 @@
 /defaultfontname /Courier def
 
 % Define the name of the font map file.
+% Note that the "%%Replace " comment below provides the font map file name
+% for compiling initialization files into executable. Most likely it should be
+% consistent with the one specified here.
 /defaultfontmap (Fontmap) def
+
+/defaultfontmap_content 50 dict
+1 dict begin
+/; { 2 index 3 1 roll .growput } bind def
+%% Replace 0 (Fontmap)
+end def
 
 % ------ End of editable parameters ------ %
 
@@ -1037,8 +1046,12 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
                  } ifelse
                {
                  dup VMDEBUG
-                 (r) { file } .internalstopped
-                 { pop pop } { .loadFontmap } ifelse
+                 (r) { file } .internalstopped {
+                   pop pop
+                   defaultfontmap_content { .definefontmap } forall
+                 } {
+                   .loadFontmap
+                 } ifelse
                } {
                  pop pop
                } ifelse
@@ -1047,6 +1060,7 @@ FAKEFONTS { exch } if pop def   % don't bind, .current/setglobal get redefined
          ifelse forall
     }
    if
+   userdict /defaultfontmap_content .undef
    .definefakefonts     % current VM is global
  } def                  % don't bind, .current/setglobal get redefined
 
