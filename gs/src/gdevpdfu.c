@@ -1363,7 +1363,8 @@ pdf_put_filters(cos_dict_t *pcd, gx_device_pdf *pdev, stream *s,
 private int
 pdf_flate_binary(gx_device_pdf *pdev, psdf_binary_writer *pbw)
 {
-    const stream_template *template = &s_zlibE_template;
+    const stream_template *template = (pdev->CompatibilityLevel <= 1.2 ? 
+		    &s_LZWE_template : &s_zlibE_template);
     stream_state *st = s_alloc_state(pdev->pdf_memory, template->stype,
 				     "pdf_write_function");
 
@@ -1397,6 +1398,10 @@ pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
 	"", "/Filter/ASCII85Decode", "/Filter/FlateDecode",
 	"/Filter[/ASCII85Decode/FlateDecode]"
     };
+    static const char *const fnames1_2[4] = {
+	"", "/Filter/ASCII85Decode", "/Filter/LZWDecode",
+	"/Filter[/ASCII85Decode/LZWDecode]"
+    };
     int filters = 0;
     int code;
 
@@ -1407,7 +1412,8 @@ pdf_append_data_stream_filters(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     if ((options & DATA_STREAM_BINARY) && !pdev->binary_ok)
 	filters |= USE_ASCII85;
     if (!(options & DATA_STREAM_NOLENGTH)) {
-	stream_puts(s, fnames[filters]);
+	stream_puts(s, (pdev->CompatibilityLevel <= 1.2 ? 
+	    fnames1_2[filters] : fnames[filters]));
 #	if PS2WRITE
 	    if (pdev->OrderResources) {
 		pdw->length_pos = stell(s) + 8;
