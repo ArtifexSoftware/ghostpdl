@@ -120,7 +120,7 @@
     With type 2 it is handled by gstype2.c .
  */
 
-#define VD_DRAW_IMPORT 1 /* CAUTION: with 1 can't close DC on import error */
+#define VD_DRAW_IMPORT 0 /* CAUTION: with 1 can't close DC on import error */
 #define VD_SCALE  (0.2 / 4096.0)
 #define VD_SHIFT_X 50
 #define VD_SHIFT_Y 100
@@ -592,7 +592,7 @@ int t1_hinter__set_mapping(t1_hinter * this, gs_matrix_fixed * ctm, gs_rect * Fo
             this->heigt_transform_coef = vp / div_x;
             this->width_transform_coef = vp / div_y;
             this->heigt_transform_coef_rat = (int19)(this->heigt_transform_coef * this->ctmf.denominator + 0.5);
-            this->width_transform_coef_rat = (int19)(this->heigt_transform_coef * this->ctmf.denominator + 0.5);
+            this->width_transform_coef_rat = (int19)(this->width_transform_coef * this->ctmf.denominator + 0.5);
             this->heigt_transform_coef_inv = (int19)(this->ctmi.denominator / this->heigt_transform_coef + 0.5);
             this->width_transform_coef_inv = (int19)(this->ctmi.denominator / this->width_transform_coef + 0.5);
             this->keep_stem_width = (sp <= vp / 3); /* small skew */
@@ -854,6 +854,7 @@ int t1_hinter__closepath(t1_hinter * this)
 #if VD_DRAW_IMPORT
     vd_setcolor(VD_IMPORT_COLOR);
     vd_setlinewidth(0);
+    vd_moveto(this->cx, this->cy);
     vd_lineto(this->bx, this->by);
 #endif
     if (this->bx == this->cx && this->by == this->cy) {
