@@ -338,6 +338,7 @@ end readonly def
   matrix /TextTempMatrix gput		% see settextposition
 } bdef
 /ET {
+  TextRenderingMode 4 ge { clip newpath } if
   TextSaveMatrix setmatrix
   currentdict /TextSaveMatrix undef
 } bdef
@@ -420,9 +421,13 @@ end readonly def
 % ---------------- Text painting ---------------- %
 
 /textrenderingprocs [		% (0 is handled specially)
+	% Painting-only modes
    { tf } { tS } { tB } { tn }
-	% We don't know what the clipping modes mean....
-   4 copy
+	% Clipping modes
+   { gsave tf grestore tW }
+   { gsave tS grestore tW }
+   { gsave tB grestore tW }
+   { tW }
 ] readonly def
 /setshowstate
  { WordSpacing 0 eq TextSpacing 0 eq and
@@ -487,6 +492,9 @@ end readonly def
    setmatrix moveto
  } bdef
 /tB { gsave tf grestore tS } bdef
+% This does the wrong thing if there have been multiple text operations
+% within a single BT/ET pair, but it's a start.
+/tW { } bdef
 
 end readonly put		% GS_PDF_ProcSet
 
