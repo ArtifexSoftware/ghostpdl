@@ -639,12 +639,15 @@ pl_ufst_make_char(
         wbox[3] = -psbm->yorigin / 16.0 + psbm->top_indent;
         wbox[4] = psbm->black_width + wbox[2];
         wbox[5] = psbm->black_depth + wbox[3];
-        if (status == ERR_fixed_space) {
-            MEMfree(FSA CACHE_POOL, memhdl);
-            code = gs_setcharwidth(penum, pgs, wbox[0], wbox[1]);
-            gs_setmatrix(pgs, &sv_ctm);
-            return code;
-        } else if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
+
+        /* if (status == ERR_fixed_space) 
+	 *   we are relying on ufst to 
+	 *   send a zero sized image; we then cache the escapements of the space character 
+	 *   psbm->bm = psbm->width = psbm->height = 0;  
+	 *   note that the outline code can't be reached on ERR_fixed_space 
+	 */
+
+	if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
             MEMfree(FSA CACHE_POOL, memhdl);
             gs_setmatrix(pgs, &sv_ctm);
             return code;
@@ -694,12 +697,8 @@ pl_ufst_make_char(
         wbox[3] = scale * pols->bottom;
         wbox[4] = scale * pols->right;
         wbox[5] = scale * pols->top;
-        if (status == ERR_fixed_space) {
-            MEMfree(FSA CACHE_POOL, memhdl);
-            code = gs_setcharwidth(penum, pgs, wbox[0], wbox[1]);
-            gs_setmatrix(pgs, &sv_ctm);
-            return code;
-        } else if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
+
+	if ((code = gs_setcachedevice(penum, pgs, wbox)) < 0) {
             MEMfree(FSA CACHE_POOL, memhdl);
             gs_setmatrix(pgs, &sv_ctm);
             return code;
