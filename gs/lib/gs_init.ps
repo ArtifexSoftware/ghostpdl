@@ -1832,4 +1832,13 @@ WRITESYSTEMDICT not { systemdict readonly pop } if
 
 (END GC) VMDEBUG
 
+% The Adobe AGM_Core used by Illustrator 9 has some code that breaks
+% if the 'product' is not (Adobe PostScript Parser). A bug has been
+% submitted to Adobe since this also fails with Acrobat Distiller.
+% As a temporary work around, the following HACK will work for
+% devices without spot color support. Once Ghostscript can
+% support DeviceN and spot color separations this will need to
+% be 'true' in some cases.
+userdict /AGM_preserve_spots false put
+
 % The interpreter will run the initial procedure (start).
