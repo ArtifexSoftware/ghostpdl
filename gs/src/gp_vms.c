@@ -625,7 +625,20 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
 	*blen = flen1;
 	return gp_combine_success;
     }
-    if ( prefix[plen - 1] == ':' || (prefix[plen - 1] == ']' &&
+   
+   if ( prefix[plen - 1] == ']' && fname[ 0 ] == '-' )
+     {
+	memcpy(buffer, prefix, plen - 1 );
+	fname1 = fname + 1;
+	flen1 = flen - 1;
+	memcpy(buffer + plen - 1 , fname1, flen1);
+	memcpy(buffer + plen + flen1 - 1 , "]" , 1 );
+	buffer[plen + flen1] = 0;
+	*blen = plen + flen1;
+	return gp_combine_success;
+     }
+
+   if ( prefix[plen - 1] == ':' || (prefix[plen - 1] == ']' &&
 				     memchr(fname, ']', flen) == 0) )
        {
 	/* Just concatenate. */
