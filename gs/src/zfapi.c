@@ -884,6 +884,23 @@ private void compute_em_scale(const gs_font_base *pbfont, FAPI_metrics *metrics,
     *em_scale_y = (int)(sy * rounding_y + 0.5) / (double)rounding_y;
 }
 
+private int fapi_copy_mono(gx_device *dev1, FAPI_raster *rast, int dx, int dy)
+{   if ((rast->line_step & (align_bitmap_mod - 1)) == 0)
+        return dev_proc(dev1, copy_mono)(dev1, rast->p, 0, rast->line_step, 0, dx, dy, rast->width, rast->height, 0, 1);
+    else { /* bitmap data needs to be aligned, make the aligned copy : */
+        int line_step = bitmap_raster(rast->width), code;
+        byte *p = gs_alloc_byte_array(dev1->memory, rast->height, line_step, "fapi_copy_mono");
+        byte *q = p, *r = rast->p, *pe;
+        if (p == NULL)
+            return_error(e_VMerror);
+        pe = p + rast->height * line_step;
+        for (; q < pe; q+=line_step, r += rast->line_step)
+            memcpy(q, r, rast->line_step);
+        code = dev_proc(dev1, copy_mono)(dev1, p, 0, line_step, 0, dx, dy, rast->width, rast->height, 0, 1);
+        gs_free_object(dev1->memory, p, "fapi_copy_mono");
+        return code;
+    }
+}
 
 private const int frac_pixel_shift = 4;
 
@@ -926,7 +943,7 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
                 int rounding = 1 << (frac_pixel_shift - 1);
                 int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast.orig_x + rounding, frac_pixel_shift);
                 int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) - rast.orig_y + rounding, frac_pixel_shift);
-	        return_if_error(dev_proc(dev1, copy_mono)(dev1, rast.p, 0, rast.line_step, 0, dx, dy, rast.width, rast.height, 0, 1));
+                return_if_error(fapi_copy_mono(dev1, &rast, dx, dy));
             } else { /* Not using GS cache */
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path; 
                 const gx_drawing_color * pdcolor = penum->pdcolor;

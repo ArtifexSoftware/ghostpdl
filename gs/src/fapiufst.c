@@ -857,7 +857,7 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     code = CGIFchar_with_design_bbox(&r->IFS, cc, &result, (SW16)0, design_bbox, &design_escapement);
     if (code == ERR_find_cgnum) {
         /* There is no such char in the font, try the glyph 0 (notdef) : */
-        void *client_char_data = ff->client_char_data;
+        const void *client_char_data = ff->client_char_data;
         UW16 c1 = 0, ssnum = r->IFS.fcCur.ssnum;
         /* hack : Changing UFST internal data - see above. */
         r->IFS.fcCur.ssnum = RAW_GLYPH;
@@ -919,7 +919,10 @@ private FAPI_retcode get_char_raster(FAPI_server *server, FAPI_raster *rast)
 {   fapi_ufst_server *r = If_to_I(server);
     if (!r->bRaster)
         return e_limitcheck;
-    else if (r->char_data != NULL) {
+    else if (r->char_data == NULL) {
+        rast->height = rast->width = rast->line_step = 0;
+        rast->p = 0; 
+    } else {
         IFBITMAP *pbm = (IFBITMAP *)r->char_data;
         rast->p = pbm->bm;
         rast->height = pbm->depth;
