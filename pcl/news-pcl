@@ -6,6 +6,12 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
+Version 0.42 (??/??/98)
+
+- removed borland makefile from pcl directory.  It was the pclxl file.
+- removed outdated font message in the README file.
+
+
 Version 0.41 (11/26/97)
 
 All functionality of the pcl5e fts is now included.  Here is what is
@@ -39,7 +45,7 @@ placement panels do not produce the correct output.  Fills should drop
 one row and one column of pixels when "grid centering" is enabled.
 2) GS bug for triangular joins manifests in the GL/2 portion of the
 pcl5e (e.g. 1493).  Seems like ccw case does not work and cw does.
-3) We lack complete symbol set coverage.  The current fonts do not
+3) We lack complete symbol font set coverage.  The current fonts do not
 provide all of the symbols.
 4) There is a very small difference in space width which is only
 noticeable as an accumulation error after a long line of characters.
@@ -80,7 +86,7 @@ Also, simplification of SC command.
 -pctext.c the hack for bound true type fonts being indexed from 0xf000
 should only apply to internal fonts.
 -state changes to support switching back and forth between numeric id'
-and alphanumeric id's.  Only used for soft fonts and fonts.
+and alphanumeric id's.  Only used for soft fonts and macros.
 -pcifont.c removed - absorbed into the PL library.
 -pcfsel.c - recompute substitute font hack added (see new
 functionality section).  Some reorganization.
