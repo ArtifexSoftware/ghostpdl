@@ -94,9 +94,9 @@ $(PXLOBJ)pxerrors.$(OBJ): $(PXLSRC)pxerrors.c $(AK)\
 	$(PXLCCC) $(PXLSRC)pxerrors.c $(PXLO_)pxerrors.$(OBJ)
 
 $(PXLSRC)pxlver.h: $(PXLSRC)pxl.mak
-	$(PXLGEN)echogs$(XE) -e .h -w $(PXLSRC)pxlver -n "#define PXLVERSION"
+	$(PXLGEN)echogs$(XE) -e .h -w $(PXLSRC)pxlver -n -x 23 "define PXLVERSION"
 	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 $(PXLVERSION) -x 22
-	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -n "#define PXLBUILDDATE"
+	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -n -x 23 "define PXLBUILDDATE"
 	$(PXLGEN)echogs$(XE) -e .h -a $(PXLSRC)pxlver -s -x 22 -d -x 22
 
 $(PXLOBJ)pxparse.$(OBJ): $(PXLSRC)pxparse.c $(AK) $(memory__h) $(stdio__h)\
