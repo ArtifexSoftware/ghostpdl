@@ -110,10 +110,10 @@ int pcl_text(P3(const byte *str, uint size, pcl_state_t *pcls));
 pcl_command_proc(pcl_plain_char);
 
 /* Define error returns. */
-#define e_Range 0		/* ignore range errors */
+#define e_Range (0)		/* ignore range errors */
 #define e_Syntax (-18)		/* gs_error_syntaxerror */
 #define e_Memory gs_error_VMerror
-#define e_Unimplemented 0	/* ignore unimplemented commands */
+#define e_Unimplemented (105)	/* ignore unimplemented commands */
 #define e_ExitLanguage (-102)	/* e_InterpreterExit */
 
 /* Define a command definition. */

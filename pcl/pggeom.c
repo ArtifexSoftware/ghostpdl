@@ -6,7 +6,6 @@
 /* HP-GL/2 geometry routines */
 
 #include "stdio_.h"
-#include "math_.h"
 #include "pggeom.h"
 #include "gxfarith.h" /* for gs_sincos */
 
@@ -16,7 +15,7 @@
 
 /* compute the angle between 0 and 2*PI given the slope */
 floatp
-hpgl_compute_angle(floatp dx, floatp dy) 
+hpgl_compute_angle(floatp dx, floatp dy)
 {
 	floatp alpha = atan2(dy, dx);
 
@@ -25,7 +24,7 @@ hpgl_compute_angle(floatp dx, floatp dy)
 
 /* compute the center of an arc given 3 points on the arc */
 int
-hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2, 
+hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2,
 			floatp x3, floatp y3, floatp *pcx, floatp *pcy)
 
 {
@@ -80,7 +79,7 @@ hpgl_compute_arc_center(floatp x1, floatp y1, floatp x2, floatp y2,
 
 /* compute the coordinates of a point on an arc */
 int
-hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y, 
+hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y,
 			floatp angle, floatp *px, floatp *py)
 {
 	gs_sincos_t sincos;
@@ -93,10 +92,10 @@ hpgl_compute_arc_coords(floatp radius, floatp center_x, floatp center_y,
 /* given a start point, angle (degrees) and magnitude of a vector compute its
    endpoints */
 int
-hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y, 
+hpgl_compute_vector_endpoints(floatp magnitude, floatp x, floatp y,
 			      floatp angle_degrees, floatp *endx, floatp *endy)
 
 {
-	return hpgl_compute_arc_coords(magnitude, x, y, 
+	return hpgl_compute_arc_coords(magnitude, x, y,
 				       angle_degrees, endx, endy);
 }

@@ -35,20 +35,20 @@ hpgl_arc(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	x_current = pgls->g.pos.x;
 	y_current = pgls->g.pos.y;
 
-	if ( relative ) 
+	if ( relative )
 	  {
 	    x_center += x_current;
 	    y_center += y_current;
 	  }
 
-	radius = 
+	radius =
 	  hpgl_compute_distance(x_current, y_current, x_center, y_center);
 
 	start_angle = radians_to_degrees *
 	  hpgl_compute_angle(x_current - x_center, y_current - y_center);
 
-	hpgl_call(hpgl_add_arc_to_path(pgls, x_center, y_center, 
-				       radius, start_angle, sweep, 
+	hpgl_call(hpgl_add_arc_to_path(pgls, x_center, y_center,
+				       radius, start_angle, sweep,
 				       (sweep < 0.0 ) ?
 				       -chord_angle : chord_angle, false,
 				       pgls->g.move_or_draw, true));
@@ -101,10 +101,10 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	 * we reset the argument bookkeeping after each group.
 	 */
 	for ( ; ; )
-	  { 
+	  {
 	    hpgl_real_t coords[6];
 	    int i;
-	    
+
 	    for ( i = 0; i < 6 && hpgl_arg_units(pargs, &coords[i]); ++i )
 	      ;
 	    switch ( i )
@@ -120,27 +120,25 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	      default:
 		return e_Range;
 	      }
-	    
+
 	    x_start = pgls->g.pos.x;
 	    y_start = pgls->g.pos.y;
-	    
+
 	    if ( relative )
 	      hpgl_call(hpgl_add_bezier_to_path(pgls, x_start, y_start,
-						x_start + coords[0], 
+						x_start + coords[0],
 						y_start + coords[1],
-						x_start + coords[2], 
+						x_start + coords[2],
 						y_start + coords[3],
-						x_start + coords[4], 
+						x_start + coords[4],
 						y_start + coords[5],
 						pgls->g.move_or_draw));
 	    else
-	      hpgl_call(hpgl_add_bezier_to_path(pgls, x_start, y_start, 
-						coords[0], coords[1], 
-						coords[2], coords[3], 
+	      hpgl_call(hpgl_add_bezier_to_path(pgls, x_start, y_start,
+						coords[0], coords[1],
+						coords[2], coords[3],
 						coords[4], coords[5],
 						pgls->g.move_or_draw));
-	    
-	    
 	    /* Prepare for the next set of points. */
 	    hpgl_args_init(pargs);
 	  }
@@ -157,36 +155,34 @@ hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 	 */
 
 	hpgl_real_t x, y;
+	if ( hpgl_plot_is_move(func) )
+	  hpgl_call(hpgl_close_path(pgls));
 
-	while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) 
-	  { 
+	while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) )
+	  {
 	    pargs->phase = 1;	/* we have arguments */
 	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func, true));
 	    /* Prepare for the next set of points. */
 	    if ( pgls->g.symbol_mode != 0 )
-	      hpgl_call(hpgl_print_symbol_mode_char(pgls, pgls->g.symbol_mode));
+	      hpgl_call(hpgl_print_symbol_mode_char(pgls));
 	    hpgl_args_init(pargs);
 	  }
 
 	/* check for no argument case */
-	if ( !pargs->phase) 
+	if ( !pargs->phase)
 	  {
 	    if ( hpgl_plot_is_relative(func) )
-	      {
-		hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func, true));
-	      }
+	      /*hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func, true)) */;
 	    else
 	      {
 		gs_point cur_point;
-
 		hpgl_call(hpgl_get_current_position(pgls, &cur_point));
-		hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x, 
+		hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x,
 						 cur_point.y, func, true));
 	      }
-	    if ( pgls->g.symbol_mode != 0 )
-	      hpgl_call(hpgl_print_symbol_mode_char(pgls, pgls->g.symbol_mode));
 	  }
-
+	if ( pgls->g.symbol_mode != 0 )
+	  hpgl_call(hpgl_print_symbol_mode_char(pgls));
 	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
 }
@@ -244,31 +240,21 @@ int
 hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_real_t radius, chord = 5;
-	hpgl_pen_state_t saved_pen_state;
 	bool reset_ctm = true;
+	gs_point pos = pgls->g.pos; /* center */
 
 	if ( !hpgl_arg_units(pargs, &radius) )
 	  return e_Range;
 	hpgl_arg_c_real(pargs, &chord);
-	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
 	/* draw the arc/circle */
 	hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-				       radius, 0.0, 360.0, chord, true, 
+				       radius, 0.0, 360.0, chord, true,
 				       hpgl_plot_draw_absolute, reset_ctm));
-	/* It appears from experiment that a CI in polygon mode leaves
-	   the pen up .. or something like that. */
-	if ( pgls->g.polygon_mode )
-	  {
-	    hpgl_args_t args;
-	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
-	    hpgl_args_setup(&args);
-	    hpgl_PU(&args, pgls);
-	  }
-	else
-	  {
-	    hpgl_call(hpgl_draw_arc(pgls));
-	    hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
-	  }
+	if ( !pgls->g.polygon_mode )
+	  hpgl_call(hpgl_draw_arc(pgls));
+	/* move back to the center */
+	hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y,
+					 hpgl_plot_move_absolute, true));
 	/* restore the ctm - i.e. the ctm with picture frame scaling */
 	hpgl_set_ctm(pgls);
 	return 0;
@@ -384,7 +370,7 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      if ( (ch & 127) <= 32 || (ch & 127) == 127 )
 		continue;
 	      pargs->source.ptr = p - 1;
-	      { 
+	      {
 		int32 xy[2];
 		hpgl_plot_function_t func;
 
@@ -417,10 +403,10 @@ pe_args(hpgl_args_t *pargs, int32 *pvalues, int count)
 	for ( i = 0; i < count; ++i )
 	  { int32 value = 0;
 	    int shift = 0;
-	    
+
 	    for ( ; ; )
 	      { int ch;
-	      
+
 	      if ( p >= rlimit )
 		return false;
 	      ch = *++p;

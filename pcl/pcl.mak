@@ -93,7 +93,7 @@ $(PCLOBJ)pcommand.$(OBJ): $(PCLSRC)pcommand.c $(std_h)\
 
 $(PCLOBJ)pcdraw.$(OBJ): $(PCLSRC)pcdraw.c $(std_h) $(math__h)\
  $(gscolor2_h) $(gscoord_h) $(gscspace_h) $(gsdcolor_h) $(gsimage_h)\
- $(gsmatrix_h) $(gsmemory_h) $(gsrop_h) $(gsstate_h) $(gstypes_h) $(gsutil_h)\
+ $(gsrefct_h) $(gsrop_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h) $(gstypes_h) $(gsutil_h)\
  $(gxfixed_h) $(gxstate_h) $(gzstate_h)\
  $(plvalue_h)\
  $(pcdraw_h) $(pcommand_h) $(pcfont_h) $(pcstate_h)
@@ -206,7 +206,7 @@ pcsymbol_h=$(PCLSRC)pcsymbol.h $(plsymbol_h)
 
 # Font selection is essentially identical in PCL and HP-GL/2.
 $(PCLOBJ)pcfsel.$(OBJ): $(PCLSRC)pcfsel.c\
- $(std_h)\
+ $(stdio_h) $(gdebug_h)\
  $(pcommand_h) $(pcfont_h) $(pcfsel_h) $(pcstate_h) $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcfsel.c $(PCLO_)pcfsel.$(OBJ)
 
@@ -241,7 +241,7 @@ $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c $(std_h)\
 $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c $(memory__h)\
  $(gsccode_h) $(gsmatrix_h)\
  $(gx_h) $(gxfont_h) $(gxfont42_h)\
- $(pcfont_h) $(pcfsel_h) $(pcommand_h) $(pcstate_h)
+ $(pcfont_h) $(pcfsel_h) $(pcommand_h) $(pcstate_h) $(plfont_h)
 	$(PCLCCC) $(PCLSRC)pcfont.c $(PCLO_)pcfont.$(OBJ)
 
 $(PCLOBJ)pclfont.$(OBJ): $(PCLSRC)pclfont.c $(stdio__h) $(string__h)\
@@ -251,8 +251,9 @@ $(PCLOBJ)pclfont.$(OBJ): $(PCLSRC)pclfont.c $(stdio__h) $(string__h)\
 	$(PCLCCC) $(PCLSRC)pclfont.c $(PCLO_)pclfont.$(OBJ)
 
 $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c\
- $(std_h)\
- $(gscoord_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gspath2_h)\
+ $(std_h) $(stdio_h)\
+ $(gdebug_h)\
+ $(gscoord_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gspath2_h) $(gsrop) $(gsstate.h)\
  $(gxchar_h) $(gxfont_h) $(gxstate_h)\
  $(plvalue_h)\
  $(pcdraw_h) $(pcfont_h) $(pcommand_h) $(pcstate_h)
@@ -264,17 +265,8 @@ $(PCLOBJ)pcsymbol.$(OBJ): $(PCLSRC)pcsymbol.c $(stdio__h)\
  $(pcommand_h) $(pcfont_h) $(pcstate_h) $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcsymbol.c $(PCLO_)pcsymbol.$(OBJ)
 
-# Chapter 9 & 11
-$(PCLOBJ)pcifont.$(OBJ): $(PCLSRC)pcifont.c $(stdio__h)\
- $(gdebug_h)\
- $(gsccode_h) $(gschar_h) $(gscoord_h) $(gsmatrix_h) $(gsmemory_h)\
- $(gspaint_h) $(gspath_h) $(gsstate_h) $(gstypes_h)\
- $(gxfont_h)\
- $(plfont_h) $(plvalue_h)
-	$(PCLCCC) $(PCLSRC)pcifont.c $(PCLO_)pcifont.$(OBJ)
-
 $(PCLOBJ)pcsfont.$(OBJ): $(PCLSRC)pcsfont.c $(memory__h) $(stdio__h)\
- $(gsbitops_h) $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
+ $(math__h) $(gsbitops_h) $(gsccode_h) $(gsmatrix_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont42_h)\
  $(pcommand_h) $(pcfont_h) $(pcstate_h)\
  $(pldict_h) $(plvalue_h)
@@ -288,8 +280,8 @@ $(PCLOBJ)pcmacros.$(OBJ): $(PCLSRC)pcmacros.c $(stdio__h)\
 # Chapter 13
 # Some of these are in rtmisc.c.
 $(PCLOBJ)pcprint.$(OBJ): $(PCLSRC)pcprint.c $(stdio__h)\
- $(gsbitops_h) $(gscoord_h) $(gsmatrix_h) $(gsrop_h) $(gsstate_h)\
- $(gxbitmap_h)\
+ $(gsbitops_h) $(gscoord_h) $(gsmatrix_h) $(gsrefct_h) $(gsrop_h) $(gsstate_h)\
+ $(gxbitmap_h) $(gxdevice_h) $(gxpcolor_h)\
  $(plvalue_h)\
  $(pcdraw_h) $(pcommand_h) $(pcstate_h)
 	$(PCLCCC) $(PCLSRC)pcprint.c $(PCLO_)pcprint.$(OBJ)
@@ -306,7 +298,6 @@ $(PCLOBJ)pcrect.$(OBJ): $(PCLSRC)pcrect.c $(math__h)\
 
 # Chapter 16
 $(PCLOBJ)pcstatus.$(OBJ): $(PCLSRC)pcstatus.c $(memory__h) $(stdio__h) $(string__h)\
- $(gsmemory_h) $(gstypes_h) $(gxdevice_h)\
  $(stream_h)\
  $(pcfont_h) $(pcommand_h) $(pcstate_h) $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcstatus.c $(PCLO_)pcstatus.$(OBJ)
@@ -317,7 +308,7 @@ $(PCLOBJ)pcmisc.$(OBJ): $(PCLSRC)pcmisc.c $(std_h) $(pcommand_h) $(pcstate_h)
 
 PCL5_OPS1=$(PCLOBJ)pcjob.$(OBJ) $(PCLOBJ)pcpage.$(OBJ) $(PCLOBJ)pcursor.$(OBJ)
 PCL5_OPS2=$(PCLOBJ)pcfont.$(OBJ) $(PCLOBJ)pclfont.$(OBJ) $(PCLOBJ)pctext.$(OBJ)
-PCL5_OPS3=$(PCLOBJ)pcsymbol.$(OBJ) $(PCLOBJ)pcifont.$(OBJ)
+PCL5_OPS3=$(PCLOBJ)pcsymbol.$(OBJ)
 PCL5_OPS4=$(PCLOBJ)pcsfont.$(OBJ) $(PCLOBJ)pcmacros.$(OBJ) $(PCLOBJ)pcprint.$(OBJ)
 PCL5_OPS5=$(PCLOBJ)pcrect.$(OBJ) $(PCLOBJ)pcstatus.$(OBJ) $(PCLOBJ)pcmisc.$(OBJ)
 PCL5_OPS=$(PCL5_OPS1) $(PCL5_OPS2) $(PCL5_OPS3) $(PCL5_OPS4) $(PCL5_OPS5)
@@ -390,14 +381,14 @@ pgmisc_h=$(PCLSRC)pgmisc.h
 
 $(PCLOBJ)pgdraw.$(OBJ): $(PCLSRC)pgdraw.c $(math__h) $(stdio__h)\
  $(gdebug_h) $(gscoord_h) $(gsmatrix_h) $(gsmemory_h) $(gspaint_h) $(gspath_h)\
- $(gsstate_h) $(gstypes_h)\
+ $(gsrop_h) $(gsstate_h) $(gstypes_h)\
  $(gxfarith_h) $(gxfixed_h)\
  $(pcdraw_h)\
  $(pgdraw_h) $(pggeom_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pgdraw.c $(PCLO_)pgdraw.$(OBJ)
 
-$(PCLOBJ)pggeom.$(OBJ): $(PCLSRC)pggeom.c $(math__h) $(stdio__h)\
- $(gxfarith_h) $(pggeom_h)
+$(PCLOBJ)pggeom.$(OBJ): $(PCLSRC)pggeom.c $(stdio__h)\
+ $(pggeom_h) $(gxfarith_h)
 	$(PCLCCC) $(PCLSRC)pggeom.c $(PCLO_)pggeom.$(OBJ)
 
 $(PCLOBJ)pgmisc.$(OBJ): $(PCLSRC)pgmisc.c $(pgmand_h) $(pgmisc_h)
@@ -406,7 +397,8 @@ $(PCLOBJ)pgmisc.$(OBJ): $(PCLSRC)pgmisc.c $(pgmand_h) $(pgmisc_h)
 # Initialize/reset.  We break this out simply because it's easier to keep
 # track of it this way.
 
-$(PCLOBJ)pginit.$(OBJ): $(PCLSRC)pginit.c $(memory__h)\
+$(PCLOBJ)pginit.$(OBJ): $(PCLSRC)pginit.c $(std_h)\
+ $(gstypes_h) $(gsmatrix_h) $(gsmemory_h) $(gsstate_h)\
  $(pgdraw_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
 	$(PCLCCC) $(PCLSRC)pginit.c $(PCLO_)pginit.$(OBJ)
 
@@ -469,13 +461,14 @@ $(PCLOBJ)pglabel.$(OBJ): $(PCLSRC)pglabel.c\
  $(ctype__h) $(math__h) $(memory__h) $(stdio__h)\
  $(gdebug_h)\
  $(gschar_h) $(gscoord_h) $(gsline_h) $(gspath_h) $(gsutil_h)\
- $(gxfont_h)\
- $(pcfsel_h)\
- $(pgdraw_h) $(pgfont_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)
+ $(gxfont_h) $(gxchar_h) $(gxstate.h)\
+ $(pcfsel_h) $(pcsymbol_h)\
+ $(pgdraw_h) $(pgfont_h) $(pggeom_h) $(pginit_h) $(pgmand_h) $(pgmisc_h)\
+ $(plvalue_h)
 	$(PCLCCC) $(PCLSRC)pglabel.c $(PCLO_)pglabel.$(OBJ)
 
 $(PCLOBJ)pgfdata.$(OBJ): $(PCLSRC)pgfdata.c $(std_h)\
- $(gstypes_h) $(gxarith_h)\
+ $(gstypes_h) $(gsccode_h) $(gxarith_h)\
  $(pgfdata_h)
 	$(PCLCCC) $(PCLSRC)pgfdata.c $(PCLO_)pgfdata.$(OBJ)
 

@@ -4,7 +4,11 @@
 
 /* pginit.c */
 /* Initialization and resetting for HP-GL/2. */
-#include "memory_.h"		/* for memset */
+#include "std.h"
+#include "gstypes.h"		/* for gsstate.h */
+#include "gsmatrix.h"		/* for gsstate.h */
+#include "gsmemory.h"		/* for gsstate.h */
+#include "gsstate.h"            /* for gs_setlimitclamp */
 #include "pgmand.h"
 #include "pginit.h"
 #include "pgdraw.h"
@@ -56,9 +60,9 @@ hpgl_default_pen_color(hpgl_state_t *pgls, int pen)
 private void
 hpgl_default_coordinate_system(hpgl_state_t *pcls)
 {
-	pcls->g.plot_width = pcls->g.picture_frame_width = 
+	pcls->g.plot_width = pcls->g.picture_frame_width =
 	  pcls->logical_page_width;
-	pcls->g.plot_height = pcls->g.picture_frame_height = 
+	pcls->g.plot_height = pcls->g.picture_frame_height =
 	  pcl_text_length(pcls);
 	pcls->g.picture_frame.anchor_point.x = pcl_left_margin(pcls);
 	pcls->g.picture_frame.anchor_point.y = pcl_top_margin(pcls);
@@ -90,18 +94,6 @@ hpgl_default_all_fill_patterns(hpgl_state_t *pgls)
 	  hpgl_default_fill_pattern(pgls, i);
 }
 
-/* fill the state with a bogus value -- debug only.  */
-
- private void
-hpgl_clear_state(pcl_state_t *pcls)
-{
-
-#ifdef DEBUG
-	memset(&pcls->g, 0xee, sizeof(pcls->g));
-#endif
-	return;
-}
-
 void
 hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {		/* pgframe.c (Chapter 18) */
@@ -111,11 +103,13 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	  {
 	    if ( type & (pcl_reset_initial | pcl_reset_cold) )
 	      {
-		hpgl_clear_state(pcls);
 		pl_dict_init(&pcls->g.raster_patterns, pcls->memory, NULL);
 		hpgl_default_all_fill_patterns(pcls);
 		gx_path_init(&pcls->g.polygon.buffer.path,
 			     pcls->memory);
+		/* HAS This is required for GL/2 but probably should
+                   be maintained locally in gl/2's state machinery */
+		gs_setlimitclamp(pcls->pgs, true);
 	      }
 	    else
 	      {
@@ -134,7 +128,7 @@ hpgl_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    /* execute IN */
 	    hpgl_args_setup(&hpgl_args);
 	    hpgl_IN(&hpgl_args, pcls);
-	  }   
+	  }
 	if ( type & (pcl_reset_page_params) )
 	  {
 	    hpgl_default_coordinate_system(pcls);

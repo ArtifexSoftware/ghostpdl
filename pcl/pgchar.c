@@ -362,7 +362,7 @@ hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	     * disallowed.
 	     */
 	    for ( i = 0; i < countof(pgls->g.font_selection); ++i )
-	      { pcl_font_selection_t *pfs = &pgls->font_selection[i];
+	      { pcl_font_selection_t *pfs = &pgls->g.font_selection[i];
 	        if ( !pfs->selected_by_id ||
 		     (!mode && pfs->font != 0 &&
 		      pfs->font->scaling_technology == plfst_bitmap)

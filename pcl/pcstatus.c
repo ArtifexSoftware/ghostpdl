@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -8,9 +8,6 @@
 #include "stdio_.h"
 #include <stdarg.h>		/* how to make this portable? */
 #include "string_.h"
-#include "gsmemory.h"		/* for gxdevice.h */
-#include "gstypes.h"		/* ditto */
-#include "gxdevice.h"		/* for gs_memory_default, if needed */
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcfont.h"
@@ -499,19 +496,19 @@ private int (*status_write[])(P3(stream *s, const pcl_state_t *pcls,
 
 /* Commands */
 
-private int /* ESC * s <enum> T */ 
+private int /* ESC * s <enum> T */
 pcl_set_readback_loc_type(pcl_args_t *pargs, pcl_state_t *pcls)
 {	pcls->location_type = uint_arg(pargs);
 	return 0;
 }
 
-private int /* ESC * s <enum> U */ 
+private int /* ESC * s <enum> U */
 pcl_set_readback_loc_unit(pcl_args_t *pargs, pcl_state_t *pcls)
 {	pcls->location_unit = uint_arg(pargs);
 	return 0;
 }
 
-private int /* ESC * s <enum> I */ 
+private int /* ESC * s <enum> I */
 pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint i = uint_arg(pargs);
 	int unit = pcls->location_unit;
@@ -597,7 +594,7 @@ pcl_inquire_readback_entity(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-private int /* ESC * s 1 M */ 
+private int /* ESC * s 1 M */
 pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcls)
 {	stream st;
 
@@ -625,7 +622,7 @@ pcl_free_space(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-private int /* ESC & r <bool> F */ 
+private int /* ESC & r <bool> F */
 pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcls)
 {	switch ( uint_arg(pargs) )
 	  {
@@ -643,7 +640,7 @@ pcl_flush_all_pages(pcl_args_t *pargs, pcl_state_t *pcls)
 	  }
 }
 
-private int /* ESC * s <int_id> X */ 
+private int /* ESC * s <int_id> X */
 pcl_echo(pcl_args_t *pargs, pcl_state_t *pcls)
 {	stream st;
 

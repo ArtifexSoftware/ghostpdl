@@ -12,14 +12,14 @@
 #include "pcsymbol.h"
 
 
-private int /* ESC * c <id> R */ 
+private int /* ESC * c <id> R */
 pcl_symbol_set_id_code(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint id = uint_arg(pargs);
 	id_set_value(pcls->symbol_set_id, id);
 	return 0;
 }
 
-private int /* ESC ( f <count> W */ 
+private int /* ESC ( f <count> W */
 pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint count = uint_arg(pargs);
 	const pl_symbol_map_t *psm = (pl_symbol_map_t *)arg_data(pargs);
@@ -99,7 +99,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-private int /* ESC * c <ssc_enum> S */ 
+private int /* ESC * c <ssc_enum> S */
 pcl_symbol_set_control(pcl_args_t *pargs, pcl_state_t *pcls)
 {	gs_const_string key;
 	void *value;

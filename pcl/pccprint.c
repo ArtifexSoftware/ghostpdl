@@ -61,7 +61,7 @@ pccprint_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
   pcl_copy_operation_t operation)
 {	if ( operation & pcl_copy_after )
 	  { gs_setrasterop(pcls->pgs, psaved->logical_op);
-	    gs_setfilladjust(pcls->pgs, 
+	    gs_setfilladjust(pcls->pgs,
 			     psaved->grid_adjust, psaved->grid_adjust);
 	  }
 	return 0;

@@ -49,8 +49,8 @@ typedef struct hpgl_line_type_s {
 } hpgl_line_type_t;
 
 typedef struct hpgl_path_state_s {
-  bool have_first_moveto;  
-  gx_path path; 
+  bool have_first_moveto;
+  gx_path path;
 } hpgl_path_state_t;
 
 /* Define rendering modes - character, polygon, or vector.
@@ -116,12 +116,12 @@ typedef enum {
 
 typedef struct pcl_hpgl_state_s {
 		/* Chapter 17 lost mode (pgmisc.c) */
-  
+
 	/* According to PCLTRM IN, PG, RP and PA with args in range clears
 	   lost mode.  Note that all these commands have PA with valid args
 	   as a side effect so only PA needs to clear lost mode.  */
 
-	hpgl_lost_mode_t lost_mode; 
+	hpgl_lost_mode_t lost_mode;
 
 		/* Chapter 18 (pgframe.c) */
 
@@ -160,7 +160,6 @@ typedef struct pcl_hpgl_state_s {
 	gs_point P1, P2;	/* in plotter units */
 
 		/* Chapter 20 (pgvector.c) */
-  
 	int move_or_draw;	/* hpgl_plot_move/draw */
 	int relative_coords;	/* hpgl_plot_absolute/relative */
         gs_point pos;

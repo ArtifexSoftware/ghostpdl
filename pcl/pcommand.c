@@ -17,7 +17,7 @@
 /* Get the command argument as an int, uint, or float. */
 int
 int_value(const pcl_value_t *pv)
-{	return (int)(value_is_neg(pv) ? -pv->i : pv->i);
+{	return (int)(value_is_neg(pv) ? -(int)pv->i : pv->i);
 }
 uint
 uint_value(const pcl_value_t *pv)
@@ -27,7 +27,7 @@ float
 float_value(const pcl_value_t *pv)
 {	return
 	  (value_is_float(pv) ?
-	   (value_is_neg(pv) ? -pv->i - pv->fraction : pv->i + pv->fraction) :
+	   (float)(value_is_neg(pv) ? -(int)pv->i - pv->fraction : pv->i + pv->fraction) :
 	   (float)int_value(pv));
 }
 pcl_fixed

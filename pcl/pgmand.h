@@ -57,7 +57,7 @@ typedef struct hpgl_command_s {
   hpgl_command_proc_t proc;
   byte flags;
 #define hpgl_cdf_polygon 1	/* execute command even in polygon mode */
-#define hpgl_cdf_lost_mode_cleared 2 /* exectute command only if 
+#define hpgl_cdf_lost_mode_cleared 2 /* exectute command only if
 					lost mode cleared */
 } hpgl_command_definition_t;
 
@@ -200,91 +200,93 @@ bool hpgl_arg_units(P2(hpgl_args_t *pargs, hpgl_real_t *pu));
  */
 
 /* commands from pgchar.c -- HP-GL/2 character commands */
-int hpgl_AD(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_CF(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_DI(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_DR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_DT(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_DV(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_ES(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_FI(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_FN(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_LM(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_LO(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SA(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SB(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SD(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SI(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SL(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SS(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_TD(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_AD(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_CF(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_CP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_DI(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_DR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_DT(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_DV(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_ES(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_FI(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_FN(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_LB(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_LM(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_LO(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SA(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SB(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SD(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SI(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SL(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SS(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_TD(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 
 /* commands from pgcolor.c - HP-GL/2 color vector graphics commands */
-int hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PC(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_NP(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_CR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PP(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_MC(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PC(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_NP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_CR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 
 /* commands from pgconfig.c - HP-GL/2 configuration and status commands */
-int hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_IR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_IW(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PG(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_RP(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_CO(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_DF(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_IN(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_IP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_IR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_IW(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PG(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_RO(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_RP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SC(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 
 /* commands from pglfill.c - HP-GL/2 line and fill attributes commands */
-int hpgl_AC(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_FT(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_LA(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SM(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SP(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_SV(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_TR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_UL(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_WU(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_AC(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_FT(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_LA(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_LT(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PW(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_RF(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SM(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_SV(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_TR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_UL(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_WU(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 
 /* commands from pgpoly.c -- HP-GL/2 polygon commands */
-int hpgl_EA(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_EP(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_ER(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_RR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_WG(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_EA(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_EP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_ER(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_EW(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_FP(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PM(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_RA(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_RR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_WG(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 
 /* commands from pgvector.c - HP-GL/2 vector commands */
-int hpgl_AA(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_AR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_AT(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_BR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_BZ(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PA(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PD(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PR(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_PU(hpgl_args_t *pargs, hpgl_state_t *pgls);
-int hpgl_RT(hpgl_args_t *pargs, hpgl_state_t *pgls);
+int hpgl_AA(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_AR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_AT(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_BR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_BZ(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_CI(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PA(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PD(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PE(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PR(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_PU(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
+int hpgl_RT(P2(hpgl_args_t *pargs, hpgl_state_t *pgls));
 
 /* commands from pgframe.c -- PCL5/HP-GL/2 picture frame commands */
-int pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls);
-int pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls);
-int pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls);
-int pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls);
-int pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls);
+int pcl_horiz_pic_frame_size_decipoints(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
+int pcl_vert_pic_frame_size_decipoints(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
+int pcl_set_pic_frame_anchor_point(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
+int pcl_hpgl_plot_horiz_size(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
+int pcl_hpgl_plot_vert_size(P2(pcl_args_t *pargs, hpgl_state_t *pgls));
 
+/* this should find a new home but for now we list it here. */
+int hpgl_print_symbol_mode_char(P1(hpgl_state_t *pgls));
 #endif                                         /* pgmand_INCLUDED */

@@ -6,10 +6,108 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
-Version 0.40 (11/30/97)
-=======================
+Version 0.41 (11/26/97)
 
-(HAS)
+All functionality of the pcl5e fts is now included.  Here is what is
+new with pcl 0.41:
+-pcl alphanumeric id command (ESC & n <count> W [operation][string
+ID]) (pcsfont.c)
+-Assign font id to copy of current font (ESC * c 6 F).  (pcsfont.c)
+-Variable text path (ESC & c # T).  (pctext.c)
+-pcl text parsing method was partially implemented now it is fully
+implemented.
+
+These functions are still not implemented and are not sported in the
+fts:
+
+-Select default font (ESC (|) 3 @).  (pcfont.c)
+-Conditional pattern rotation (ESC * p # R).  (pcprint.c)
+-Continuation blocks for character data (for ESC ( s # W).
+-Double-byte characters (LM command is implemented but has no
+ effect).
+
+This is not implemented and is part of the fts, but does not result in
+erroneous output:
+-media select of pcl alphanumeric id command (ESC & n <count> W) (see
+new functionality above) is not supported.  It requires interaction
+with the control panel.
+
+
+Known problems:
+1) GS does not support grid centered fill model so a number of the fts PP
+placement panels do not produce the correct output.  Fills should drop
+one row and one column of pixels when "grid centering" is enabled.
+2) GS bug for triangular joins manifests in the GL/2 portion of the
+pcl5e (e.g. 1493).  Seems like ccw case does not work and cw does.
+3) We lack complete symbol set coverage.  The current fonts do not
+provide all of the symbols.
+4) There is a very small difference in space width which is only
+noticeable as an accumulation error after a long line of characters.
+We are using the space width value from the fonts which comes very
+close to the actual HP value.
+5) GL/2 fill types FT3, FT4 do not support non-zero winding and
+even/odd filling - A bounding box for the object is filled and
+subsequently clipped in device space to the perimeter of the polygon.
+6) A downloaded intellifont that shows up in several fts panels
+(e.g. 2502) has the value 0xffff for the number of auxillary
+coordinates.  PCL sets the value to zero, prints an error message and
+rasterizes without using auxillary coordinates resulting in a
+misprinted character (char 116 't').
+8) the character substitution model is not correct but is optimized to
+display as many symbols as possible given our font collection.  It
+simply selects the closest matching font that contains the missing symbol.
+9) the escapement for vertical characters is wrong.
+10) several fts panels (e.g. 2381) use logical operation 85 or not
+destination.  We implement this correctly the 6mp does not seem to
+support it.
+12) GS single dots default orientation is wrong.  0 lenghth lines are
+project parallel to the current hpgl/2 X-axis.
+
+The scope of problems 3, 4, 6, 8, and 9 cannot be exactly determined
+without a compatible font solution.
+
+Bug fixes and other changes:
+
+-removed hpgl_clear_state(), -Z@ suffices.
+-pgvector.c incorrect parameters given for
+hpgl_print_symbol_mode_char(), harmless but wrong.
+-pgmand.h added missing prototype decorations.
+-pglabel.c label origin 21 not correct - needs be set in user space
+not plu space as other origin offsets are handled.
+-pgdraw.c gs_setdotlength used always now, not just for dash.
+-pgconfig.c SC now updates the CR point contrary to the documentation.
+Also, simplification of SC command.
+-pctext.c the hack for bound true type fonts being indexed from 0xf000
+should only apply to internal fonts.
+-state changes to support switching back and forth between numeric id'
+and alphanumeric id's.  Only used for soft fonts and fonts.
+-pcifont.c removed - absorbed into the PL library.
+-pcfsel.c - recompute substitute font hack added (see new
+functionality section).  Some reorganization.
+-pcommand.c - float_value() lacked a cast to int, losing sign when
+cast to float.
+-pgdraw.c - Testing on the 6mp indicates if pen 0 (white) is active
+GL/2 always selects a solid white pattern irrespective of current fill
+type.  This does not seem right and might be a 6mp bug but now we
+emulated that behavior.
+-pclfont.c - changed character complement to reflect MSL symbol codes for 
+wingdings and symbol fonts.
+-pginit.c - added limit clamping to prevent overflow on several CET
+tests.  This is probably not a sufficient fix if complete CET
+compliance is needed.
+-pgdraw.c - code to adjust anchor corner for hpgl/2 vector fills.
+Cases where the anchor is greater than the origin of the filled object
+are now handled correctly.  Also, simplified filling code a bit more.
+-pgconfig.c - hpgl's SC now updates carriage return position.
+-pgvector.c - hpgl's CI was not returning the pen to the center
+position in all circumstances.
+-pgpoly.c - exiting polygon mode does not restore the previous pen
+relative status but it does restore position and up/down status.
+-makefile - the usual "missing" include file fixes (this should be
+automated).
+
+Version 0.40 (11/26/97)
+
 -rtmisc.c - changed comments, pcl_source_transparent() changed to only
 update state source transparency; moved gs call to
 pcl_set_drawing_color().
@@ -68,20 +166,15 @@ adjust since this is now maintained directly as floats.
 now float.
 -pcl.mak - new include file dependencies added.
 
-(LPD) Adds some #includes to make the code compile with library version
-5.20, in which gs_memory_default is not declared by gsmemory.h.
-(pcstatus.c)
-
 See Version 0.38 notes for missing functionality.
 
 Version 0.39 (11/25/97)
-=======================
 
-This release simply changes the default pcl5 device to x11mono.  Currently
-the pcl code does not completely support devices with more than 1 bit per
-pixel, previously the default device was X11 which is an 8 bit per pixel
-color device.  The only necessary change was reordering the device files in
-the pcl5 makefile. (pcl.mak)
+This release simply changes the default pcl5 device to x11mono.
+Currently the pcl code does not completely support devices with more
+than 1 bit per pixel, previously the default device was X11 which is
+an 8 bit per pixel color device.  The only necessary change was
+reordering the device files in the pcl5 makefile
 
 Version 0.38 (11/20/97)
 =======================

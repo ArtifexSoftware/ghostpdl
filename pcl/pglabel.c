@@ -228,7 +228,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width,
   bool with_extra_space)
 {
 	uint glyph = hpgl_map_symbol(ch, pgls);
-	const pcl_font_selection_t *pfs = 
+	const pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 	int code = 0;
 	gs_point gs_width;
@@ -273,7 +273,7 @@ private int
 hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
   bool cell_height, bool with_extra_space)
 {
-	const pcl_font_selection_t *pfs = 
+	const pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 
 	*height =
@@ -376,7 +376,7 @@ hpgl_CP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_real_t spaces, lines;
 
 	if ( hpgl_arg_c_real(pargs, &spaces) )
-	  { 
+	  {
 	    if ( !hpgl_arg_c_real(pargs, &lines) )
 	      return e_Range;
 	  }
@@ -446,11 +446,11 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 /* ------ LB command ------ */
 
 /* build the path and render it */
- private int
+ static int
 hpgl_print_char(hpgl_state_t *pgls, uint ch)
 {
 	int text_path = pgls->g.character.text_path;
-	const pcl_font_selection_t *pfs = 
+	const pcl_font_selection_t *pfs =
 	  &pgls->g.font_selection[pgls->g.font_selected];
 	const pl_font_t *font = pfs->font;
 	gs_state *pgs = pgls->pgs;
@@ -474,10 +474,7 @@ hpgl_print_char(hpgl_state_t *pgls, uint ch)
 	 * Reset the CTM if GL/2 scaling is on but we aren't using
 	 * relative-size characters (SR).
 	 */
-	if ( pgls->g.scaling_type != hpgl_scaling_none &&
-	     pgls->g.character.size_mode != hpgl_size_relative
-	   )
-	  hpgl_call(hpgl_set_plu_ctm(pgls));
+	hpgl_call(hpgl_set_plu_ctm(pgls));
 	/*
 	 * We know that the drawing machinery only sets the CTM
 	 * once, at the beginning of the path.  We now impose the scale
@@ -534,7 +531,10 @@ hpgl_print_char(hpgl_state_t *pgls, uint ch)
 	       * Note that the CTM takes P1/P2 into account unless
 	       * an absolute character size is in effect.
 	       */
-	      scale = pgls->g.character.size;
+	      /* * HACKS - I am not sure what this should be the
+                 actual values ??? * */
+	      scale.x = pgls->g.character.size.x * 2.0;
+	      scale.y = pgls->g.character.size.y * (4.0/3.0);
 	      if ( pgls->g.character.size_mode == hpgl_size_relative )
 		scale.x *= pgls->g.P2.x - pgls->g.P1.x,
 		  scale.y *= pgls->g.P2.y - pgls->g.P1.y;
@@ -659,7 +659,7 @@ hpgl_print_char(hpgl_state_t *pgls, uint ch)
 	    case hpgl_char_fill:
 	      switch ( pgls->g.fill.type )
 		{
-		case hpgl_fill_solid: 
+		case hpgl_fill_solid:
 		case hpgl_fill_solid2:
 		  break;
 		  /* Eventually we will be able to do better than this.... */
@@ -762,6 +762,7 @@ hpgl_can_concat_labels(const hpgl_state_t *pgls)
 		(1 << pgls->g.character.text_path)) != 0;
 }
  
+
 /* return relative coordinates to compensate for origin placement -- LO */
  private int
 hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
@@ -840,7 +841,7 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 	      hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
 				      (floatp)pcl_pos_dev.y, &label_origin));
 	      pos_x = -(pgls->g.pos.x - label_origin.x);
-	      pos_y = -(pgls->g.pos.y - label_origin.y);
+	      pos_y = (pgls->g.pos.y - label_origin.y);
 	    }
 	    break;
 	  default:
@@ -864,50 +865,7 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 	/*
 	 * NOTE: the two loops below must be consistent with each other!
 	 */
-  
-#if 0				/* **************** */
-	/****************
 
-The algorithm below for deciding whether to compute the label length is
-wrong: hpgl_can_concat_labels is *not* the correct way to determine what
-needs to be computed.  To minimize the computation, what we need is a table
-that maps
-	<int label_origin, int text_path>
-to
-	<bool need_width, bool need_height>.
-If both need_width and need_height are false, we can skip the loop entirely;
-if only one is true, we can omit some of the computations in the loop (e.g.,
-if we are writing horizontally and only need the height, for example for LO
-3, we can omit the calls on hpgl_get_char_width and the special stuff for BS
-and HT).  I would choose to do this with a table of bytes, similar to
-can_concat, in which the bits of each byte contained
-	h3 h2 h1 h0 w3 w2 w1 w0
-i.e., <height needed for text path 3>, <height needed for text path 2>, ...,
-<width needed for text path 0>:
-	{ static const byte width_height_needed[22] = {
-	     ...
-	  };
-	  byte mask = width_height_needed[pgls->g.label.origin] >>
-	    pgls->g.character.text_path;
-
-	  need_width = (mask & 1) != 0;
-	  need_height = (mask & 0x10) != 0;
-	}
-We still need some special code to handle LFs.
-
-	 ****************/
-
-	/*
-	 * Compute the label length if the combination of text path and
-	 * label origin needs it.  Note that we always need the label
-	 * width if the text path is vertical and there are any LF
-	 * characters in the string, since LF is horizontal in this case.
-	 */
-	if ( !hpgl_can_concat_labels(pgls) ||
-	     (vertical &&
-	      memchr(pgls->g.label.buffer, LF, pgls->g.label.char_count) != 0)
-	   )
-#endif				/* **************** */
 	{
 	  hpgl_real_t width = 0.0, height = 0.0;
 	  int save_index = pgls->g.font_selected;
@@ -918,7 +876,7 @@ We still need some special code to handle LFs.
 	      byte ch = pgls->g.label.buffer[i++];
 
 	      if ( ch < 0x20 && !pgls->g.transparent_data )
-		switch (ch) 
+		switch (ch)
 		{
 		case BS :
 		  if ( width == 0.0 ) /* BS as first char of string */
@@ -929,13 +887,13 @@ We still need some special code to handle LFs.
 		  if ( vertical )
 		    { /* Vertical text path, back up in Y. */
 		      label_height -= height;
-		      if ( label_height < 0.0 ) 
+		      if ( label_height < 0.0 )
 			label_height = 0.0;
 		    }
 		  else
 		    { /* Horizontal text path, back up in X. */
 		      label_length -= width;
-		      if ( label_length < 0.0 ) 
+		      if ( label_length < 0.0 )
 			label_length = 0.0;
 		    }
 		  continue;
@@ -992,16 +950,16 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical, ve
 	    DO_NOTHING;
 	  }
 	
-	/* these units should be strictly plu */
-	{  gs_matrix mat;
-
-	   hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
+	/* these units should be strictly plu except for LO 21 */
+	if ( pgls->g.label.origin != 21 )
+	  {  gs_matrix mat;
+	     hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
 	
-	   offset.x /= mat.xx;
-	   offset.y /= mat.yy;
-	   hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
+	     offset.x /= mat.xx;
+	     offset.y /= mat.yy;
+	  }
+	hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
 					 hpgl_plot_move_relative, true));
-	}
 	
 	{
 	  int i;
@@ -1060,7 +1018,7 @@ print:	      hpgl_ensure_font(pgls);
 
 	pgls->g.label.char_count = 0;
 	return 0;
-}	    
+}
 
 /* LB ..text..terminator */
  int
@@ -1135,19 +1093,26 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
  int
 hpgl_print_symbol_mode_char(hpgl_state_t *pgls)
 {	
+        /* save the original origin since symbol mode character are
+           always centered */
 	int saved_origin = pgls->g.label.origin;
+	gs_point save_pos = pgls->g.pos;
 	hpgl_call(hpgl_gsave(pgls));
+	/* HAS this need checking.  I don't know how text direction
+           and label origin interact in symbol mode */
 	pgls->g.label.origin = 5;
+	/* HAS - alot of work for one character */
 	hpgl_call(hpgl_clear_current_path(pgls));
 	hpgl_call(hpgl_init_label_buffer(pgls));
 	hpgl_call(hpgl_buffer_char(pgls, pgls->g.symbol_mode));
 	hpgl_call(hpgl_process_buffer(pgls));
 	hpgl_call(hpgl_destroy_label_buffer(pgls));
 	hpgl_call(hpgl_grestore(pgls));
+	/* restore the origin */
 	pgls->g.label.origin = saved_origin;
+	pgls->g.pos = save_pos;
 	return 0;
 }
-	
 
 /* Initialization */
 private int

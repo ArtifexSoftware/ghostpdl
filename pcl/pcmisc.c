@@ -8,7 +8,7 @@
 #include "pcommand.h"
 #include "pcstate.h"
 
-private int /* ESC & s <bool> C */ 
+private int /* ESC & s <bool> C */
 pcl_end_of_line_wrap(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint i = uint_arg(pargs);
 

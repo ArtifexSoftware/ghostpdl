@@ -60,6 +60,27 @@ pcl_decache_font(pcl_state_t *pcls, int set)
 	  }
 }
 
+/* set current font and symbol table to selected parameter's font and
+   symbol table */
+private int
+pcl_set_font(pcl_state_t *pcls, pcl_font_selection_t *pfs)
+{
+	pcls->font = pfs->font;
+	pcls->map = pfs->map;
+	return 0;
+}
+
+int
+pcl_recompute_substitute_font(pcl_state_t *pcls, const uint chr)
+{
+	pcl_font_selection_t *pfs = &pcls->font_selection[pcls->font_selected];
+	int code = pcl_reselect_substitute_font(pfs, pcls, chr);
+	if ( code < 0 )
+	  return code;
+	pcl_set_font(pcls, pfs);
+	return 0;
+}
+
 /* Recompute the current font from the descriptive parameters. */
 /* This is exported for resetting HMI. */
 int
@@ -69,13 +90,11 @@ pcl_recompute_font(pcl_state_t *pcls)
 
 	if ( code < 0 )
 	  return code;
-	pcls->font = pfs->font;
-	pcls->map = pfs->map;
+	pcl_set_font(pcls, pfs);
 	return 0;
 }
 
 /* The font parameter commands all come in primary and secondary variants. */
-
 private int
 pcl_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 {	uint num = uint_arg(pargs);

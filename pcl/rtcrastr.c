@@ -62,7 +62,7 @@ uncompress_row_9(pcl_raster_row_t *row, uint in_size, stream_cursor_read *pr)
 /* ------ Commands ------ */
 
 /* This replaces the implementation in pcraster.c. */
-private int /* ESC * r <cap_enum> A */ 
+private int /* ESC * r <cap_enum> A */
 pcl_c_start_raster_graphics(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int setting = int_arg(pargs);
 

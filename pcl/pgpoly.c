@@ -68,7 +68,7 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( sweep == 360.0 ) /* HAS needs epsilon */
 	  hpgl_call(hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
-					 radius, 0.0, 360.0, chord, true, 
+					 radius, 0.0, 360.0, chord, true,
 					 hpgl_plot_draw_absolute, true));
 	else
 	/* draw the 2 lines and the arc using 3 point this does seem
@@ -86,13 +86,13 @@ hpgl_wedge(hpgl_args_t *pargs, hpgl_state_t *pgls)
 					     hpgl_plot_move_absolute, true));
 	    hpgl_call(hpgl_add_point_to_path(pgls, x1, y1,
 					     hpgl_plot_draw_absolute, true));
-	    hpgl_call(hpgl_add_arc_3point_to_path(pgls, 
-						  x1, y1, 
+	    hpgl_call(hpgl_add_arc_3point_to_path(pgls,
+						  x1, y1,
 						  x2, y2,
 						  x3, y3, chord,
 						  hpgl_plot_draw_absolute));
 	  }
-	  
+
 	/* exit polygon mode, this should close the path and the wedge
            is complete */
 	hpgl_args_set_int(pargs,2);
@@ -150,7 +150,7 @@ hpgl_EW(hpgl_args_t *pargs, hpgl_state_t *pgls)
  private hpgl_rendering_mode_t
 hpgl_get_poly_render_mode(hpgl_state_t *pgls)
 {
-	return (((pgls->g.fill.type == hpgl_fill_hatch) || 
+	return (((pgls->g.fill.type == hpgl_fill_hatch) ||
 		(pgls->g.fill.type == hpgl_fill_crosshatch)) ?
 		hpgl_rm_clip_and_fill_polygon :
 		hpgl_rm_polygon);
@@ -165,13 +165,13 @@ hpgl_FP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	if ( hpgl_arg_c_int(pargs, &method) && (method & ~1) )
 	  return e_Range;
 
-	pgls->g.fill_type = (method == 0) ? 
+	pgls->g.fill_type = (method == 0) ?
 	  hpgl_even_odd_rule : hpgl_winding_number_rule;
 	/* preserve the current path and copy the polygon buffer to
            the current path */
 	hpgl_call(hpgl_gsave(pgls));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
-	hpgl_call(hpgl_draw_current_path(pgls, 
+	hpgl_call(hpgl_draw_current_path(pgls,
 					 hpgl_get_poly_render_mode(pgls)));
 	hpgl_call(hpgl_grestore(pgls));
 	return 0;
@@ -182,12 +182,12 @@ int
 hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int op;
 
-	if ( hpgl_arg_c_int(pargs, &op) == 0 )    
+	if ( hpgl_arg_c_int(pargs, &op) == 0 )
 	  op = 0;
 
 	switch( op )
 	  {
-	  case 0 : 
+	  case 0 :
 	    /* clear the current path if there is one */
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    /* clear the polygon buffer as well */
@@ -195,9 +195,9 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    /* global flag to indicate that we are in polygon mode */
 	    pgls->g.polygon_mode = true;
 	    /* save the pen state, to be restored by PM2 */
-	    hpgl_save_pen_state(pgls, 
+	    hpgl_save_pen_state(pgls,
 				&pgls->g.polygon.pen_state,
-				hpgl_pen_all);
+				hpgl_pen_down | hpgl_pen_pos);
 	    break;
 	  case 1 :
 	    hpgl_call(hpgl_close_current_path(pgls));
@@ -214,11 +214,11 @@ hpgl_PM(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    /* restore the pen state */
 	    hpgl_restore_pen_state(pgls,
 				   &pgls->g.polygon.pen_state,
-				   hpgl_pen_all);
+				   hpgl_pen_down | hpgl_pen_pos);
 	    break;
 	  default:
 	    return e_Range;
-	  }    
+	  }
 	return 0;
 }
 
@@ -228,7 +228,7 @@ hpgl_RA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	hpgl_call(hpgl_rectangle(pargs, pgls, 0));
 	hpgl_call(hpgl_copy_polygon_buffer_to_current_path(pgls));
-	hpgl_call(hpgl_draw_current_path(pgls, 
+	hpgl_call(hpgl_draw_current_path(pgls,
 					 hpgl_get_poly_render_mode(pgls)));
 	return 0;
 }

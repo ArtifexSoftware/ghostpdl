@@ -82,8 +82,8 @@ pcl_purge_pattern_cache(pcl_state_t *pcls)
 /* build a pattern and create a dictionary entry for it.  Also used by
    hpgl/2 for raster fills. */
 int
-pcl_store_user_defined_pattern(pcl_state_t *pcls, pl_dict_t *pattern_dict, 
-			       pcl_id_t pattern_id, 
+pcl_store_user_defined_pattern(pcl_state_t *pcls, pl_dict_t *pattern_dict,
+			       pcl_id_t pattern_id,
 			       const byte *data, uint size)
 {
 	uint height, width;
@@ -162,7 +162,7 @@ pcl_user_defined_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( count < 8 )
 	  return e_Range;
 
-	{ int code = pcl_store_user_defined_pattern(pcls, &pcls->patterns, 
+	{ int code = pcl_store_user_defined_pattern(pcls, &pcls->patterns,
 						    pcls->pattern_id,
 						    data, count);
 

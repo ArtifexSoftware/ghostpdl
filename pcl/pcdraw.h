@@ -89,12 +89,12 @@ typedef struct pcl_pattern_s {
 /* the phase or "origin" of the pattern is specified in device space */
 int pcl_set_drawing_color_rotation(P6(pcl_state_t *pcls,
 				      pcl_pattern_type_t type,
-				      const pcl_id_t *pid, pl_dict_t *patterns, 
+				      const pcl_id_t *pid, pl_dict_t *patterns,
 				      int rotation, gs_point *origin));
 
 /* same as above function but is only called only by pcl.  It derives
    the rotation and origin from pcl state values */
-int pcl_set_drawing_color(P3(pcl_state_t *pcls, pcl_pattern_type_t type, 
+int pcl_set_drawing_color(P3(pcl_state_t *pcls, pcl_pattern_type_t type,
 			     const pcl_id_t *pid));
 
 /* get rid of cached pattern references maintained in the pcl state. */

@@ -51,63 +51,70 @@ hpgl_CO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 /* DF; sets programmable features except P1 and P2 */
 int
 hpgl_DF(hpgl_args_t *pargs, hpgl_state_t *pgls)
-{
-	hpgl_args_t args;
-
-#define hpgl_do_command(hpgl_xx)\
-  hpgl_args_setup(&args);\
-  hpgl_xx(&args, pgls)
-#define hpgl_do_int_command(hpgl_xx, intv)\
-  hpgl_args_set_int(&args, intv);\
-  hpgl_xx(&args, pgls)
-
-	hpgl_do_command(hpgl_AC);
-	hpgl_do_command(hpgl_AD);
-	hpgl_do_command(hpgl_CF);
-
+{	hpgl_args_t args;
+	hpgl_args_setup(&args);
+	hpgl_AC(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_AD(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_SD(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_CF(&args, pgls);
 	hpgl_args_setup(&args);
 	hpgl_args_add_int(&args, 1);
 	hpgl_args_add_int(&args, 0);
 	hpgl_DI(&args, pgls);
-
 	/* HAS -- Figure out some way to do this so that it is consistant */
 	pgls->g.label.terminator = 3;
 	pgls->g.label.print_terminator = false;
-
-	hpgl_do_command(hpgl_DV);
-	hpgl_do_command(hpgl_ES);
-	hpgl_do_command(hpgl_FT);
-	hpgl_do_command(hpgl_IW);
-	hpgl_do_command(hpgl_LA);
-	hpgl_do_command(hpgl_LM);
-	hpgl_do_int_command(hpgl_LO, 1);
-	hpgl_do_command(hpgl_LT);
-
+	hpgl_args_setup(&args);
+	hpgl_DV(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_ES(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_FT(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_IW(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_LA(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_LM(&args, pgls);
+	hpgl_args_set_int(&args, 1);
+	hpgl_LO(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_LT(&args, pgls);
 	/* we do this instead of calling SC directly */
 	pgls->g.scaling_type = hpgl_scaling_none;
-
-	hpgl_do_int_command(hpgl_PM, 0);
-	hpgl_do_int_command(hpgl_PM, 2);
-	hpgl_do_command(hpgl_RF);
-	hpgl_do_int_command(hpgl_SB, 0);
-	hpgl_do_command(hpgl_SV);
-	hpgl_do_command(hpgl_SD);
-	hpgl_do_command(hpgl_SI);
-	hpgl_do_command(hpgl_SL);
-
+	hpgl_args_set_int(&args,0);
+	hpgl_PM(&args, pgls);
+	hpgl_args_set_int(&args,2);
+	hpgl_PM(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_RF(&args, pgls);
+	hpgl_args_set_int(&args,0);
+	hpgl_SB(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_SV(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_SI(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_SL(&args, pgls);
 	/* HAS needs to be consistant */
 	pgls->g.symbol_mode = 0;
 	/*	hpgl_args_setup(&args);
 		hpgl_SM(&args, pgls); */
-
-	hpgl_do_command(hpgl_SS);
-	hpgl_do_int_command(hpgl_TR, 1);
-	hpgl_do_command(hpgl_TD);
-	hpgl_do_command(hpgl_UL);
-	hpgl_do_command(hpgl_MC);
-	hpgl_do_command(hpgl_PP);
-#undef hpgl_do_command
-#undef hpgl_do_int_command
+	hpgl_args_setup(&args);
+	hpgl_SS(&args, pgls);
+	hpgl_args_set_int(&args,1);
+	hpgl_TR(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_TD(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_UL(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_MC(&args, pgls);
+	hpgl_args_setup(&args);
+	hpgl_PP(&args, pgls);
 	return 0;
 }
 
@@ -119,8 +126,9 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* restore defaults */
 	hpgl_DF(&args, pgls);
 	/* cancel rotation */
-        hpgl_args_setup(&args);
-	hpgl_RO(&args, pgls);
+        /* hpgl_args_setup(&args);
+	hpgl_RO(&args, pgls); */
+	pgls->g.rotation = 0;
 	/* defaults P1 and P2 */
 	hpgl_args_setup(&args);
 	hpgl_IP(&args, pgls);
@@ -144,7 +152,7 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	   0,0 or the lower left of the picture frame.  Simply sets
 	   the gl/2 state, we subsequently clear the path because we
 	   do not want to create a live gs path. */
-	hpgl_args_setup(&args);
+	hpgl_args_set_real2(&args, 0.0, 0.0);
 	hpgl_PU(&args, pgls);
 	hpgl_args_set_real2(&args, 0.0, 0.0);
 	hpgl_PA(&args, pgls);
@@ -154,7 +162,7 @@ hpgl_IN(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 /* derive the current picture frame coordinates */
 
- private int 
+ private int
 hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 {
 	gs_rect dev_win; /* device window */
@@ -186,8 +194,7 @@ hpgl_picture_frame_coords(hpgl_state_t *pgls, gs_int_rect *gl2_win)
 	}
 	return 0;
 }
-	
-  
+
 /* IP p1x,p1y[,p2x,p2y]; */
 /* IP; */
 int
@@ -208,11 +215,10 @@ hpgl_IP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( i == 2 )
 	  {
-	    pgls->g.P2.x = (ptxy[0] - pgls->g.P1.x) + 
+	    pgls->g.P2.x = (ptxy[0] - pgls->g.P1.x) +
 	      pgls->g.P2.x;
-	    pgls->g.P2.y = (ptxy[1] - pgls->g.P1.y) + 
+	    pgls->g.P2.y = (ptxy[1] - pgls->g.P1.y) +
 	      pgls->g.P2.y;
-	    
 	    pgls->g.P1.x = ptxy[0];
 	    pgls->g.P1.y = ptxy[1];
 	  }
@@ -332,23 +338,12 @@ hpgl_RO(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
         if ( angle != pgls->g.rotation )
 	  {
-	    hpgl_args_t args;
-	    hpgl_pen_state_t saved_pen_state;
-	    hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down | hpgl_pen_relative);
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	    pgls->g.rotation = angle;
 	    hpgl_call(hpgl_set_ctm(pgls));
 	    hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
-	    /* set the pen to the up position */
-	    hpgl_args_setup(&args);
-	    hpgl_PU(&args, pgls);
-	    /* now add a moveto the using the current ctm */
-	    hpgl_args_set_real(&args, point.x);
-	    hpgl_args_add_real(&args, point.y);
-	    hpgl_call(hpgl_PA(&args, pgls));
-	    hpgl_call(hpgl_clear_current_path(pgls));
-	    hpgl_restore_pen_state(pgls, &saved_pen_state, 
-				   hpgl_pen_down | hpgl_pen_relative);
+	    hpgl_call(hpgl_set_current_position(pgls, &point));
+	    pgls->g.carriage_return_pos = pgls->g.pos;	
 	  }
 	return 0;
 }
@@ -425,29 +420,15 @@ pxy:		scale_params.pmin.x = xy[0];
 		return e_Range;
 	      }
 	  }
-
-	{
-	  hpgl_args_t args;
-	    
-	  hpgl_pen_state_t saved_pen_state;
-	  hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
-	  hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	  pgls->g.scaling_params = scale_params;
-	  pgls->g.scaling_type = type;
-	  hpgl_call(hpgl_set_ctm(pgls));
-	  hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
-	  /* we must clear the current path because we set up the CTM
-	     when issuing the first point, and the CTM is a function of
-	     SC. */
-
-	  /* now add a moveto the using the current ctm */
-	  hpgl_args_set_real(&args, point.x);
-	  hpgl_args_add_real(&args, point.y);
-	  hpgl_call(hpgl_PU(&args, pgls));
-	  hpgl_call(hpgl_clear_current_path(pgls));
-	  hpgl_restore_pen_state(pgls, &saved_pen_state, hpgl_pen_down);
-	}
-
+	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+	pgls->g.scaling_params = scale_params;
+	pgls->g.scaling_type = type;
+	hpgl_call(hpgl_set_ctm(pgls));
+	hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &point));
+	hpgl_call(hpgl_set_current_position(pgls, &point));
+	/* PCLTRM 23-7 (commands the update cr position) does not list
+           SC but PCL updates the position */
+	pgls->g.carriage_return_pos = pgls->g.pos;
 	return 0;
 }
 

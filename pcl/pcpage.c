@@ -285,8 +285,8 @@ pcl_perforation_skip(pcl_args_t *pargs, pcl_state_t *pcls)
            length and text length and margins to their defaults */
 	if ( new_skip != pcls->perforation_skip )
 	  {
-	    pcl_top_margin(pcls) = 
-	      (top_margin_default > pcls->rotated_page_height ? 0 : 
+	    pcl_top_margin(pcls) =
+	      (top_margin_default > pcls->rotated_page_height ? 0 :
 	       top_margin_default);
 	    reset_text_length(pcls);
 	    pcls->perforation_skip = new_skip;

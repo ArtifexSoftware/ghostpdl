@@ -56,7 +56,6 @@ pcl_fill_rect_area(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( code < 0 )
 	  return code;
 	{ gs_rect r;
-
 	  r.p.x = pcls->cap.x;
 	  r.p.y = pcls->cap.y;
 	  r.q.x = r.p.x + pcls->rectangle.x;

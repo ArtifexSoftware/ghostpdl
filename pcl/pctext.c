@@ -5,11 +5,13 @@
 /* pctext.c */
 /* PCL5 text printing commands */
 #include "std.h"
+#include "stdio_.h"
 #include "plvalue.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcdraw.h"
 #include "pcfont.h"
+#include "gdebug.h"
 #include "gscoord.h"
 #include "gsline.h"
 #include "gspaint.h"
@@ -40,9 +42,12 @@ pcl_map_symbol(uint chr, const gs_show_enum *penum)
 	const pl_symbol_map_t *psm = pfs->map;
 	uint first_code, last_code;
 
-	if ( psm == 0 )
-	  { /* Hack: bound TrueType fonts are indexed from 0xf000. */
-	    if ( pfs->font->scaling_technology == plfst_TrueType )
+	/* if there is not symbol map we assume the the character
+           implicitly indexes the font.  */
+	if ( psm == 0 ) 
+	  {
+	    if ( (pfs->font->scaling_technology == plfst_TrueType) &&
+		 (pfs->font->storage == pcds_internal) )
 	      return chr + 0xf000;
 	    return chr;
 	  }
@@ -71,7 +76,11 @@ pcl_next_char(const gs_const_string *pstr, uint *pindex,
 	p = pstr->data + i;
 	if ( pcl_char_is_2_byte(*p, tpm) ) {
 	  if ( i + 1 >= size )
-	    return -1;
+	    {
+	      *pindex = size;
+	      *pchr = *p;
+	      return 0;
+	    }
 	  *pchr = (*p << 8) + p[1];
 	  *pindex = i + 2;
 	} else {
@@ -80,49 +89,34 @@ pcl_next_char(const gs_const_string *pstr, uint *pindex,
 	}
 	return 0;
 }
+
 private int
 pcl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
 {	const pcl_state_t *pcls = gs_state_client_data(penum->pgs);
 	int code = pcl_next_char(&penum->str, &penum->index,
 				 pcls->text_parsing_method, pchr);
-	uint mapped_char;
-
 	if ( code )
 	  return code;
-	mapped_char = pcl_map_symbol(*pchr, penum);
-	/*
-	 * Undefined characters should print as spaces.
-	 * We don't currently have any fallback if the symbol set
-	 * doesn't include the space character at position ' ',
-	 * or if the font doesn't include the space character.
-	 * If it turns out that undefined characters should print as a
-	 * space control code (with possibly modified HMI), we'll have to
-	 * do something more complicated in pcl_text and pcl_show_chars.
-	 *
-	 * Checking whether a font includes a character is expensive.
-	 * We'll have to find a better way to do this eventually.
-	 */
-	{ const pl_font_t *plfont =
+	/* get symbol table value */
+	*pchr = pcl_map_symbol(*pchr, penum);
+	/* don't need to look up undefined values */
+	if ( *pchr == 0xffff )
+	  return 0;
+	{
+	  const pl_font_t *plfont =
 	    (const pl_font_t *)(gs_currentfont(penum->pgs)->client_data);
 	  gs_matrix ignore_mat;
-
-	  if ( !pl_font_includes_char(plfont, NULL, &ignore_mat, mapped_char)
-	     )
-	    mapped_char = 0xffff;
+	  if ( !pl_font_includes_char(plfont, NULL, &ignore_mat, *pchr)
+	       )
+	    /* HAS. we should differentiate between unmapped
+	       characters and characters not found in the font to
+	       avoid extra work in pcl_show_chars() */
+	    *pchr = 0xffff;
 	}
-	if ( mapped_char == 0xffff )
-	  mapped_char = pcl_map_symbol(' ', penum);
-	*pchr = mapped_char;
 	return 0;
 }
 
-/* Show a string, possibly substituting a modified HMI for all characters */
-/* or only the space character. */
-typedef enum {
-  char_adjust_none,
-  char_adjust_space,
-  char_adjust_all
-} pcl_char_adjust_t;
+
 private int
 pcl_char_width(gs_show_enum *penum, gs_state *pgs, byte chr, gs_point *ppt)
 {	int code = gs_stringwidth_n_init(penum, pgs, &chr, 1);
@@ -131,16 +125,40 @@ pcl_char_width(gs_show_enum *penum, gs_state *pgs, byte chr, gs_point *ppt)
 	gs_show_width(penum, ppt);
 	return 0;
 }
+
+private void
+pcl_set_gs_font(pcl_state_t *pcls)
+{
+	gs_font *pfont = (gs_font *)pcls->font->pfont;
+	pfont->procs.next_char = pcl_next_char_proc;
+	gs_setfont(pcls->pgs, pfont);
+}
+
+/* restores a font after symbol set substitution */
+private int
+pcl_restore_font(pcl_state_t *pcls, 
+		 pcl_font_selection_t *original_font)
+{
+	pcl_font_selection_t *pfp = &pcls->font_selection[pcls->font_selected];
+	int code;
+	pcl_decache_font(pcls, pcls->font_selected);
+	pfp = original_font;
+	code = pcl_recompute_font(pcls);
+	if ( code < 0 )
+	  return code;
+	pcl_set_gs_font(pcls);
+	return 0;
+}
+
+
 private int
 pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
-  pcl_char_adjust_t adjust, const byte *str, uint size)
+  const byte *str, uint size, gs_point *last_width)
 {	gs_state *pgs = pcls->pgs;
-	int code;
-	floatp scaled_hmi = pcl_hmi(pcls) / pscale->x;
-	floatp diff;
 	floatp limit = (pcl_right_margin(pcls) + 0.5) / pscale->x;
 	gs_rop3_t rop = gs_currentrasterop(pgs);
 	floatp gray = gs_currentgray(pgs);
+	pcl_font_selection_t *pfp = &pcls->font_selection[pcls->font_selected];
 	gs_rop3_t effective_rop =
 	  (gray == 1.0 ? rop3_know_T_1(rop) :
 	   gray == 0.0 ? rop3_know_T_0(rop) : rop);
@@ -148,260 +166,278 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	bool opaque = !source_transparent &&
 	  rop3_know_S_0(effective_rop) != rop3_D;
 	bool wrap = pcls->end_of_line_wrap;
-	bool clip = pcls->check_right_margin;
-
-	/* Compute any width adjustment. */
-	switch ( adjust )
-	  {
-	  case char_adjust_none:
-	    break;
-	  case char_adjust_space:
-	    { gs_point space_width;
-
-	      /* Find the actual width of the space character. */
-	      pcl_char_width(penum, pgs, ' ', &space_width);
-	      diff = scaled_hmi - space_width.x;
-	    }
-	    break;
-	  case char_adjust_all:
-	    { gs_point char_width;
-
-	      /* Find some character that is defined in the font. */
-	      /****** WRONG -- SHOULD GET IT SOMEWHERE ELSE ******/
-	      { byte chr;
-	        for ( chr = ' '; ; ++chr )
-		  { pcl_char_width(penum, pgs, chr, &char_width);
-		    if ( char_width.x != 0 )
-		      break;
-		  }
-		diff = scaled_hmi - char_width.x;
-	      }
-	    }
-	    break;
-	  }
-	/*
-	 * Note that TRM 24-13 states (badly) that wrapping only
-	 * occurs when *crossing* the right margin: if the cursor
-	 * is initially to the right of the margin, wrapping does
-	 * not occur.
-	 *
-	 * If characters are opaque (i.e., affect the part of their
-	 * bounding box that is outside their actual shape), we have to
-	 * do quite a bit of extra work.  This "feature" is a pain!
-	 */
-	 if ( clip )
-	   {
-	   /*
-	    * If end-of-line wrap is enabled, or characters are opaque,
-	    * we must render one character at a time.  (It's a good thing
-	    * this is used primarily for diagnostics and contrived tests.)
-	    */
-	    uint i, ci;
-	    gs_char chr;
-	    gs_const_string gstr;
-
-	    gstr.data = str;
-	    gstr.size = size;
-	    for ( i = ci = 0;
-		  !pcl_next_char(&gstr, &i, pcls->text_parsing_method, &chr);
-		  ci = i
-		)
-	      { gs_point width;
-		floatp move;
-		gs_point pt;
-
-	        if ( adjust == char_adjust_all ||
-		     (chr == ' ' && adjust == char_adjust_space)
-		   )
-		  { width.x = scaled_hmi;
-		    move = diff;
-		  }
+	uint i, ci;
+	gs_char chr, mapped_chr;
+	gs_const_string gstr;
+	gstr.data = str;
+	gstr.size = size;
+	for ( i = ci = 0;
+	      !pcl_next_char(&gstr, &i, pcls->text_parsing_method, &chr);
+	      ci = i
+	      )
+	  { gs_point width;
+	    gs_point move, start;
+	    bool substitute_font = false;
+	    pcl_font_selection_t saved_font;
+	    int code;
+	    bool have_char = true;
+	    gs_currentpoint(pgs, &start);
+	    move = start;
+	    gs_show_n_init(penum, pgs, str + ci, i - ci);
+	    pcl_next_char_proc(penum, &mapped_chr);
+	    /* HAS not good because mapped 0xffff can mean undefined
+               entry in symbol table or "glyph not found in
+               font". Check symbol table first?  (HAS) We only
+               substitute for unbound fonts */
+	    if ( mapped_chr == 0xffff )
+	      {
+		uint mapped_chr2 = (uint)pcl_map_symbol(chr, penum);
+		saved_font = *pfp;
+		if ( !pfp->map )
+		  have_char = false;
 		else
-		  { pcl_char_width(penum, pgs, chr, &width);
-		    move = 0.0;
-		  }
-		gs_currentpoint(pgs, &pt);
-		/*
-		 * Check for end-of-line wrap.
-		 * Compensate for the fact that everything is scaled.
-		 * We should really handle this by scaling the font....
-		 * We need a little fuzz to handle rounding inaccuracies.
-		 */
-		if ( pt.x + width.x > limit )
-		  { 
-		    if ( wrap )
+		  {
+		    pcl_decache_font(pcls, pcls->font_selected);
+		    /* select courier */
+		    code = pcl_recompute_substitute_font(pcls, mapped_chr2);
+		    /* character not in the font repoitore? */
+		    if ( code < 0 )
 		      {
-			pcl_do_CR(pcls);
-			pcl_do_LF(pcls);
-			pcls->check_right_margin = true; /* CR/LF reset this */
-			gs_moveto(pgs, pcls->cap.x / pscale->x,
-				  pcls->cap.y / pscale->y);
-		      }
-		    else
-		      {
-			return 0;
-		      }
-		  }
-		if ( opaque )
-		  { /*
-		     * We have to handle bitmap and outline characters
-		     * differently.  For outlines, we construct the path,
-		     * then use eofill to process the inside and outside
-		     * separately.  For bitmaps, we do the rendering
-		     * ourselves, replacing the BuildChar procedure.
-		     * What a nuisance!
-		     */
-		    gs_font *pfont = gs_currentfont(penum->pgs);
-		    const pl_font_t *plfont =
-		      (const pl_font_t *)(pfont->client_data);
-		    gs_rop3_t background_rop = rop3_know_S_1(effective_rop);
-
-		    if ( plfont->scaling_technology == plfst_bitmap )
-		      { /*
-			 * It's too much work to handle all cases right.
-			 * Do the right thing in the two common ones:
-			 * where the background is unchanged, or where
-			 * the foreground doesn't depend on the previous
-			 * state of the destination.
-			 */
-			gs_point pt;
-
-			gs_gsave(pgs);
-			gs_setfilladjust(pgs, 0.0, 0.0);
-			/*
-			 * Here's where we take the shortcut: if the
-			 * current RasterOp is such that the background is
-			 * actually affected, affect the entire bounding
-			 * box of the character, not just the part outside
-			 * the glyph.
-			 */
-			if ( background_rop != rop3_D )
-			  { /*
-			     * Fill the bounding box.  We get this by
-			     * actually digging into the font structure.
-			     * Someday this should probably be a pl library
-			     * procedure.
-			     */
-			    gs_char chr;
-			    gs_glyph glyph;
-			    const byte *cdata;
-
-			    gs_show_n_init(penum, pgs, str + ci, 1);
-			    pcl_next_char_proc(penum, &chr);
-			    glyph = (*pfont->procs.encode_char)
-			      (penum, pfont, &chr);
-			    cdata = pl_font_lookup_glyph(plfont, glyph)->data;
-			    if ( cdata != 0 )
-			      { const byte *params = cdata + 6;
-			        int lsb = pl_get_int16(params);
-				int ascent = pl_get_int16(params + 2);
-			        int width = pl_get_uint16(params + 4);
-				int height = pl_get_uint16(params + 6);
-				gs_rect bbox;
-
-				gs_currentpoint(pgs, &pt);
-				bbox.p.x = pt.x + lsb;
-				bbox.p.y = pt.y - ascent;
-				bbox.q.x = bbox.p.x + width;
-				bbox.q.y = bbox.p.y + height;
-				gs_gsave(pgs);
-				gs_setrasterop(pgs, background_rop);
-				gs_rectfill(pgs, &bbox, 1);
-				gs_grestore(pgs);
-			      }
-			  }
-			/* Now do the foreground. */
-			gs_show_n_init(penum, pgs, str + ci, 1);
-			code = gs_show_next(penum);
+			*pfp = saved_font;
+			code = pcl_recompute_font(pcls);
 			if ( code < 0 )
 			  return code;
-			gs_currentpoint(pgs, &pt);
-			gs_grestore(pgs);
-			gs_moveto(pgs, pt.x, pt.y);
+			have_char = false;
+			substitute_font = false;
 		      }
 		    else
-		      { gs_point pt;
-		        gs_rect bbox;
-
-			gs_gsave(pgs);
-			gs_currentpoint(pgs, &pt);
-		        gs_newpath(pgs);
-			gs_moveto(pgs, pt.x, pt.y);
-			/* Don't allow pixels to be processed twice. */
-		        gs_setfilladjust(pgs, 0.0, 0.0);
-			gs_charpath_n_init(penum, pgs, str + ci, 1, true);
-			code = gs_show_next(penum);
-			if ( code < 0 )
-			  { gs_grestore(pgs);
-			    return code;
-			  }
-			gs_currentpoint(pgs, &pt); /* save end point */
-			/* Handle the outside of the path. */
-			gs_gsave(pgs);
-			gs_pathbbox(pgs, &bbox);
-			gs_rectappend(pgs, &bbox, 1);
-			gs_setrasterop(pgs, background_rop);
-			gs_eofill(pgs);
-			gs_grestore(pgs);
-			/* Handle the inside of the path. */
-			gs_fill(pgs);
-			gs_grestore(pgs);
-			gs_moveto(pgs, pt.x, pt.y);
+		      {
+			/* found a font with the glyph */
+			substitute_font = true;
+			have_char = true;
 		      }
-		  }
-		else
-		  { gs_show_n_init(penum, pgs, str + ci, 1);
-		    code = gs_show_next(penum);
+		    pcl_set_gs_font(pcls);
+		    code = gs_show_n_init(penum, pgs, str + ci, i - ci);
+		    if ( code < 0 )
+		      return code;
+		    code = pcl_next_char_proc(penum, &mapped_chr);
 		    if ( code < 0 )
 		      return code;
 		  }
-		if ( move != 0 )
-		  gs_rmoveto(pgs, move, 0.0);
 	      }
-	    return 0;
-	  }
-	switch ( adjust )
-	  {
-	  case char_adjust_none:
-	    code = gs_show_n_init(penum, pgs, str, size);
-	    break;
-	  case char_adjust_space:
-	    code = gs_widthshow_n_init(penum, pgs, diff, 0.0, ' ', str, size);
-	    break;
-	  case char_adjust_all:
-	    code = gs_ashow_n_init(penum, pgs, diff, 0.0, str, size);
-	    break;
-	  }
-	if ( code < 0 )
-	  return code;
-	return gs_show_next(penum);
-}
 
-/* Commands */
+	    /* use the character width for proportionally spaced
+               printable characters otherwise use hmi, with one
+               exception: if hmi is set explicitly the space character
+               uses scaled hmi FTS panel 41 */
+	    {
+	      floatp scaled_hmi = pcl_hmi(pcls) / pscale->x;
+	      if ( pfp->params.proportional_spacing  && have_char )
+		{
+		  if ( str[ci] == ' ' && (pcls->hmi_set == hmi_set_explicitly) )
+		    width.x = scaled_hmi;
+		  else
+		    {
+		      code = pcl_char_width(penum, pgs, chr, &width);
+		      if ( code < 0 )
+			return code;
+		    }
+		}
+	      else
+		width.x = scaled_hmi;
+	    }
+	    move.x += width.x;
+	    if ( (move.x > limit) && pcls->check_right_margin )
+	      {
+		if ( wrap )
+		  {
+		    gs_point new_line_coord;
+		    pcl_do_CR(pcls);
+		    pcl_do_LF(pcls);
+		    pcls->check_right_margin = true; /* CR/LF reset this */
+		    gs_moveto(pgs, pcls->cap.x / pscale->x,
+			      pcls->cap.y / pscale->y);
+		    gs_currentpoint(pgs, &new_line_coord);
+		    /* move - start is the advance width */
+		    move.x = (move.x - start.x) + new_line_coord.x;
+		    move.y = new_line_coord.y;
+		  }
+		else
+		  {
+		    if ( substitute_font )
+		      {
+			code = pcl_restore_font(pcls, &saved_font);
+			if ( code < 0 )
+			  return code;
+		      }
+		    /* crossed the right margin, nothing else to do */
+		    return 0;
+		  }
+	      }
+
+	    if ( opaque )
+	      { /*
+		 * We have to handle bitmap and outline characters
+		 * differently.  For outlines, we construct the path,
+		 * then use eofill to process the inside and outside
+		 * separately.  For bitmaps, we do the rendering
+		 * ourselves, replacing the BuildChar procedure.
+		 * What a nuisance!
+		 */
+		gs_font *pfont = gs_currentfont(penum->pgs);
+		const pl_font_t *plfont =
+		  (const pl_font_t *)(pfont->client_data);
+		gs_rop3_t background_rop = rop3_know_S_1(effective_rop);
+
+		if ( plfont->scaling_technology == plfst_bitmap )
+		  { /*
+		     * It's too much work to handle all cases right.
+		     * Do the right thing in the two common ones:
+		     * where the background is unchanged, or where
+		     * the foreground doesn't depend on the previous
+		     * state of the destination.
+		     */
+		    gs_point pt;
+
+		    gs_gsave(pgs);
+		    gs_setfilladjust(pgs, 0.0, 0.0);
+		    /*
+		     * Here's where we take the shortcut: if the
+		     * current RasterOp is such that the background is
+		     * actually affected, affect the entire bounding
+		     * box of the character, not just the part outside
+		     * the glyph.
+		     */
+		    if ( background_rop != rop3_D )
+		      { /*
+			 * Fill the bounding box.  We get this by
+			 * actually digging into the font structure.
+			 * Someday this should probably be a pl library
+			 * procedure.
+			 */
+			gs_char chr;
+			gs_glyph glyph;
+			const byte *cdata;
+
+			gs_show_n_init(penum, pgs, str + ci, i - ci);
+			pcl_next_char_proc(penum, &chr);
+			glyph = (*pfont->procs.encode_char)
+			  (penum, pfont, &chr);
+			cdata = pl_font_lookup_glyph(plfont, glyph)->data;
+			if ( cdata != 0 )
+			  { const byte *params = cdata + 6;
+			  int lsb = pl_get_int16(params);
+			  int ascent = pl_get_int16(params + 2);
+			  int width = pl_get_uint16(params + 4);
+			  int height = pl_get_uint16(params + 6);
+			  gs_rect bbox;
+
+			  gs_currentpoint(pgs, &pt);
+			  bbox.p.x = pt.x + lsb;
+			  bbox.p.y = pt.y - ascent;
+			  bbox.q.x = bbox.p.x + width;
+			  bbox.q.y = bbox.p.y + height;
+			  gs_gsave(pgs);
+			  gs_setrasterop(pgs, background_rop);
+			  gs_rectfill(pgs, &bbox, 1);
+			  gs_grestore(pgs);
+			  }
+		      }
+		    /* Now do the foreground. */
+		    gs_show_n_init(penum, pgs, str + ci, i - ci);
+		    code = gs_show_next(penum);
+		    if ( code < 0 )
+		      return code;
+		    gs_currentpoint(pgs, &pt);
+		    gs_grestore(pgs);
+		    gs_moveto(pgs, pt.x, pt.y);
+		  }
+		else
+		  { gs_point pt;
+		    gs_rect bbox;
+
+		    gs_gsave(pgs);
+		    gs_currentpoint(pgs, &pt);
+		    gs_newpath(pgs);
+		    gs_moveto(pgs, pt.x, pt.y);
+		    /* Don't allow pixels to be processed twice. */
+		    gs_setfilladjust(pgs, 0.0, 0.0);
+		    gs_charpath_n_init(penum, pgs, str + ci, i - ci, true);
+		    code = gs_show_next(penum);
+		    if ( code < 0 )
+		      { gs_grestore(pgs);
+		        return code;
+		      }
+		    gs_currentpoint(pgs, &pt); /* save end point */
+		    /* Handle the outside of the path. */
+		    gs_gsave(pgs);
+		    gs_pathbbox(pgs, &bbox);
+		    gs_rectappend(pgs, &bbox, 1);
+		    gs_setrasterop(pgs, background_rop);
+		    gs_eofill(pgs);
+		    gs_grestore(pgs);
+		    /* Handle the inside of the path. */
+		    gs_fill(pgs);
+		    gs_grestore(pgs);
+		    gs_moveto(pgs, pt.x, pt.y);
+		  }
+	      }
+	    else
+	      { 
+		if ( have_char )
+		  {
+		    gs_matrix fmat;
+		    gs_currentmatrix(pgs, &fmat);
+		    if ( (pcls->text_path == -1) && ((i - ci) == 2) )
+		      {
+			gs_rotate(pgs, 90);
+			move.x += width.x; /* hack */
+		      }
+		    code = gs_show_n_init(penum, pgs, str + ci, i - ci);
+		    if ( code < 0 )
+		      return code;
+		    code = gs_show_next(penum);
+		    if ( code < 0 )
+		      return code;
+		    gs_setmatrix(pgs, &fmat);
+		  }
+		gs_moveto(pgs, move.x, move.y);
+	      }
+	    if ( substitute_font )
+	      {
+		code = pcl_restore_font(pcls, &saved_font);
+		if ( code < 0 ) 
+		  return code;
+		substitute_font = false;
+	      }
+
+	    {
+	      /* set the last character width for backspace.  Could be
+                 moved outside the loop HAS */
+	      gs_point last_pt;
+	      gs_currentpoint(pgs, &last_pt);
+	      last_width->x = last_pt.x - start.x;
+	      last_width->y = last_pt.y - start.y;
+	    }
+	  }
+	return 0;
+}
 
 int
 pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 {	gs_memory_t *mem = pcls->memory;
 	gs_state *pgs = pcls->pgs;
 	gs_show_enum *penum;
-       	gs_matrix user_ctm, font_ctm, font_only_mat;
-	pcl_font_selection_t *pfp;
-	coord_point initial;
-	gs_point gs_width;
+       	gs_matrix user_ctm, font_ctm;
+	gs_point last_width;
 	gs_point scale;
 	int scale_sign;
-	pcl_char_adjust_t adjust = char_adjust_none;
-	int code = 0;
-	gs_const_string gstr;
-	const pcl_text_parsing_method_t *tpm = pcls->text_parsing_method;
-	uint index = 0;
-
+	int code;
 	if ( pcls->font == 0 )
 	  { code = pcl_recompute_font(pcls);
 	    if ( code < 0 )
 	      return code;
 	  }
-	pfp = &pcls->font_selection[pcls->font_selected];
 	/**** WE COULD CACHE MORE AND DO LESS SETUP HERE ****/
 	pcl_set_graphics_state(pcls, true);
 	  /*
@@ -421,11 +457,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 				     &pcls->current_pattern_id);
 	if ( code < 0 )
 	  return code;
-	{ gs_font *pfont = (gs_font *)pcls->font->pfont;
-
-	  pfont->procs.next_char = pcl_next_char_proc;
-	  gs_setfont(pgs, pfont);
-	}
+	pcl_set_gs_font(pcls);
 	penum = gs_show_enum_alloc(mem, pgs, "pcl_plain_char");
 	if ( penum == 0 )
 	  return_error(e_Memory);
@@ -449,6 +481,7 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	     * it must be scaled by pitch, not by height, relative to
 	     * the nominal pitch of the outline.
 	     */
+	    pcl_font_selection_t *pfp = &pcls->font_selection[pcls->font_selected];
 	    if ( pfp->params.proportional_spacing )
 	      scale.x = scale.y = pfp->params.height_4ths * 0.25
 		* inch2coord(1.0/72);
@@ -463,9 +496,6 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	    scale_sign = -1;
 	  }
 
-	gstr.data = str;
-	gstr.size = size;
-
 	/* If floating underline is on, since we're about to print a real
 	 * character, track the best-underline position.
 	 * XXX Until we have the font's design value for underline position,
@@ -478,7 +508,6 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	    if ( yu > pcls->underline_position )
 	      pcls->underline_position = yu;
 	  }
-
 	/* Keep copies of both the user-space CTM and the font-space
 	 * (font scale factors * user space) CTM because we flip back and
 	 * forth to deal with effect of past backspace and holding info
@@ -492,114 +521,23 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	scale.y *= scale_sign;
 	gs_scale(pgs, scale.x, scale.y);
 	gs_currentmatrix(pgs, &font_ctm);
-
-	/*
-	 * If this is a fixed-pitch font and we have an explicitly set HMI,
-	 * override the HMI.
-	 */
-	if ( !pcls->font->params.proportional_spacing )
-	  { if ( pcls->hmi_set == hmi_set_explicitly )
-	      adjust = char_adjust_all;
-	  }
-	else
-	  {  /*
-	     * If the string has any spaces and the font doesn't
-	     * define the space character or hmi has been explicitly
-	     * set we have to do something special.  (required by
-	     * Genoa FTS panel 40).  
-	     */
-	    uint i;
-	    gs_char chr;
-
-	    for ( i = 0; !pcl_next_char(&gstr, &i, tpm, &chr); )
-	      if ( chr == ' ' )
-		{ if ( (!pl_font_includes_char(pcls->font, pcls->map, &font_ctm, ' ')) ||
-		       (pcls->hmi_set == hmi_set_explicitly) )
-		    adjust = char_adjust_space;
-	          break;
-		}
-	  }
-
-	/* Overstrike-center if needed.  Enter here in font space. */
-	if ( pcls->last_was_BS )
-	  {
-	    coord_point prev = pcls->cap;
-	    coord_point this_width, delta_BS;
-	    gs_char chr;
-
-	    if ( pcl_next_char(&gstr, &index, tpm, &chr) != 0 )
-	      return 0;
-	    /* Scale the width only by the font part of transformation so
-	     * it ends up in PCL coordinates. */
-	    gs_make_scaling(scale.x, scale.y, &font_only_mat);
-	    if ( (code = pl_font_char_width(pcls->font, pcls->map,
-		&font_only_mat, chr, &gs_width)) != 0 )
-	      {
-		/* BS followed by an undefined character. Treat as a space. */
-		if ( (code = pl_font_char_width(pcls->font, pcls->map,
-			&font_only_mat, ' ', &gs_width)) != 0 )
-		  goto x;
-	      }
-
-	    this_width.x = gs_width.x;	/* XXX just swapping types??? */
-	    this_width.y = gs_width.y;
-	    delta_BS = this_width;	/* in case just 1 char */
-	    initial.x = prev.x + (pcls->last_width.x - this_width.x) / 2;
-	    initial.y = prev.y + (pcls->last_width.y - this_width.y) / 2;
-	    if ( initial.x != 0 || initial.y != 0 )
-	      {
-		gs_setmatrix(pgs, &user_ctm);
-		gs_moveto(pgs, initial.x, initial.y);
-		gs_setmatrix(pgs, &font_ctm);
-	      }
-	    if ( (code = pcl_show_chars(penum, pcls, &scale, adjust, str, 1)) != 0 )
-	      goto x;
-	    /* Now reposition to "un-backspace", *regardless* of the
-	     * escapement of the character we just printed. */
-	    pcls->cap.x = prev.x + pcls->last_width.x;
-	    pcls->cap.y = prev.y + pcls->last_width.y;
-	    gs_setmatrix(pgs, &user_ctm);
-	    gs_moveto(pgs, pcls->cap.x, pcls->cap.y);
-	    gs_setmatrix(pgs, &font_ctm);
-	    pcls->last_width = delta_BS;
-	  }
-
 	/* Print remaining characters.  Enter here in font space. */
-	/****** FOLLOWING IS WRONG FOR DOUBLE-BYTE CHARS ******/
-	if ( index < size )
-	  { gs_point pt;
-	    if ( size - index > 1 )
-	      {
-		if ( (code = pcl_show_chars(penum, pcls, &scale, adjust,
-					    str + index,
-					    size - index - 1)) != 0
-		   )
-		  goto x;
-		index = size - 1;
-	      }
-
-	    /* Print remaining characters.  Note that pcls->cap may be out
-	     * of sync here. */
-	    gs_setmatrix(pgs, &user_ctm);
-	    gs_currentpoint(pgs, &pt);
-	    initial.x = pt.x;
-	    initial.y = pt.y;
-	    gs_setmatrix(pgs, &font_ctm);
-	    if ( (code = pcl_show_chars(penum, pcls, &scale, adjust,
-					str + index, size - index)) != 0
-	       )
-	      goto x;
-	    gs_setmatrix(pgs, &user_ctm);
-	    gs_currentpoint(pgs, &pt);
-	    pcls->cap.x = pt.x;
-	    pcls->cap.y = pt.y;
-	    pcls->last_width.x = pcls->cap.x - initial.x;
-	    pcls->last_width.y = pcls->cap.y - initial.y;
-	  }
+	code = pcl_show_chars(penum, pcls, &scale, str, size, &last_width);
+	if ( code < 0 )
+	  goto x;
+	gs_setmatrix(pgs, &user_ctm);
+	{
+	  gs_point pt;
+	  gs_currentpoint(pgs, &pt);
+	  pcls->cap.x = pt.x;
+	  pcls->cap.y = pt.y;
+	}
+	pcls->last_width.x = last_width.x * scale.x;
+	pcls->last_width.y = last_width.y * scale.y;
 x:	if ( code > 0 )		/* shouldn't happen */
 	  code = gs_note_error(gs_error_invalidfont);
 	if ( code < 0 )
-	  gs_show_enum_release(penum, mem);
+	    gs_show_enum_release(penum, mem);
 	else
 	  gs_free_object(mem, penum, "pcl_plain_char");
 	pcls->have_page = true;

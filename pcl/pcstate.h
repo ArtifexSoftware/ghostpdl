@@ -109,6 +109,20 @@ typedef struct pcl_id_s {
 #define id_set_value(id, val)\
   ((id).value = (val), (id).key[0] = (val) >> 8, (id).key[1] = (byte)(val))
 
+/* type for string id's */
+typedef struct pcl_string_id_s {
+  byte *id;
+  int size;
+} alphanumeric_string_id_t;
+
+/* type for current state of id's, string or regular id's macros */
+typedef enum id_type_enum {
+  string_id,
+  numeric_id
+} id_type_t;
+
+	/* last set id is the id type used */ 
+
 /* Define the various types of pattern for filling. */
 typedef enum {
   pcpt_solid_black = 0,
@@ -308,9 +322,11 @@ struct pcl_state_s {
 	int line_termination;
 
 		/* Chapter 8 (pcfont.c) */
-
-	pcl_font_selection_t font_selection[2];
-	int font_selected;		/* 0 or 1 */
+	pcl_font_selection_t font_selection[3];
+        enum {
+	  primary = 0,
+	  secondary = 1,
+	} font_selected;	
 	pl_font_t *font;		/* 0 means recompute from params */
 	pl_dict_t built_in_fonts;	/* "built-in", known at start-up */
 		/* Internal variables */
@@ -345,9 +361,15 @@ struct pcl_state_s {
 	pcl_id_t font_id;
 	uint character_code;
 	pl_dict_t soft_fonts;
+                /* PCL comparison guide - alphanumeric string id */
+	alphanumeric_string_id_t alpha_font_id;
+	id_type_t font_id_type;
+#define current_font_id (((pcls->font_id_type == string_id) ?\
+  (pcls->alpha_font_id.id) : (id_key(pcls->font_id))))
+#define current_font_id_size (((pcls->font_id_type == string_id) ?\
+  (pcls->alpha_font_id.size) : (2)))
 
 		/* Chapter 12 (pcmacros.c) */
-
 	pcl_id_t macro_id;
 	pcl_id_t overlay_macro_id;
 	bool overlay_enabled;
@@ -357,6 +379,12 @@ struct pcl_state_s {
 	pcl_state_t *saved;	/* saved state during execute/call/overlay */
 		/* Internal variables */
 	byte *macro_definition;	/* for macro being defined, if any */
+	alphanumeric_string_id_t alpha_macro_id;
+	id_type_t macro_id_type;
+#define current_macro_id (((pcls->macro_id_type == string_id) ?\
+  (pcls->alpha_macro_id.id) : (id_key(pcls->macro_id))))
+#define current_macro_id_size (((pcls->macro_id_type == string_id) ?\
+  (pcls->alpha_macro_id.size) : (2)))
 
 		/* Chapter 13 (pcprint.c) */
 
@@ -370,6 +398,7 @@ struct pcl_state_s {
 	pl_dict_t patterns;
 		/* Internal variables */
 	pcl_id_t current_pattern_id;	/* at last select_pattern */
+	bool pattern_set;	/* true if pattern set in graphics state */
 	gx_ht_tile pattern_tile;	/* set by pcl_set_drawing_color */
 	gs_pattern_instance *cached_shading[7*4];  /* create as needed, */
 						/* 1 per rotation */

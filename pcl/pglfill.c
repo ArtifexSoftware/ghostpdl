@@ -171,7 +171,7 @@ hpgl_LA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* LA1,1,2,1,3,5 is the same as LA */
 	if (no_args)
 	  {
-	    hpgl_args_setup(pargs); 
+	    hpgl_args_setup(pargs);
 	    hpgl_args_add_int(pargs, 1);
 	    hpgl_args_add_int(pargs, 1);
 	    hpgl_args_add_int(pargs, 2);
@@ -225,7 +225,7 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	if ( hpgl_arg_c_int(pargs, &type) )
-	  { 
+	  {
 	    /* restore old saved line if we have a solid line,
                otherwise the instruction is ignored. */
 	    if ( type == 99 )
@@ -258,11 +258,11 @@ hpgl_LT(hpgl_args_t *pargs, hpgl_state_t *pgls)
                  command. */
 	      pgls->g.line.saved = pgls->g.line.current;
 	      pgls->g.line.current.is_solid = true;
-	      memcpy(&pgls->g.fixed_line_type, 
-		     &hpgl_fixed_pats, 
+	      memcpy(&pgls->g.fixed_line_type,
+		     &hpgl_fixed_pats,
 		     sizeof(hpgl_fixed_pats));
-	      memcpy(&pgls->g.adaptive_line_type, 
-		     &hpgl_adaptive_pats, 
+	      memcpy(&pgls->g.adaptive_line_type,
+		     &hpgl_adaptive_pats,
 		     sizeof(hpgl_adaptive_pats));
 	    }
 	
@@ -278,10 +278,13 @@ hpgl_MC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
-	opcode = ( mode ) ? 168 : 252;
+	opcode = mode ? 168 : 252;
 	if ( mode != 0 && hpgl_arg_c_int(pargs, &opcode) )
 	  if (opcode < 0 || opcode > 255 )
-	    return e_Range;
+	    {
+	      pgls->logical_op = 252;
+	      return e_Range;
+	    }
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	pgls->logical_op = opcode;
 	return 0;
@@ -315,11 +318,11 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* we maintain the line widths in plotter units, irrespective
            of current units (WU).  They width argument to PW are mm */
 	if ( hpgl_arg_c_real(pargs, &param) )
-	  { 
-	    if ( hpgl_arg_c_int(pargs, &pmin) ) 
-	      if ( pmin < 0 || pmin > pmax ) 
+	  {
+	    if ( hpgl_arg_c_int(pargs, &pmin) )
+	      if ( pmin < 0 || pmin > pmax )
 		return e_Range;
-	      else 
+	      else
 		pmax = pmin;
 	  }
 	/* width is maintained in plu only */
@@ -336,7 +339,7 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 			      ((hpgl_real_t)pgls->g.picture_frame_width /
 			       (hpgl_real_t)pgls->g.plot_width)));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
-	{ 
+	{
 	  int i;
 
 	  for ( i = pmin; i <= pmax; ++i )
@@ -351,16 +354,16 @@ hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
 	uint index, width, height;
 	if ( pargs->phase == 0 )
-	  { 
+	  {
 	    if ( !hpgl_arg_c_int(pargs, &index) )
-	      { 
+	      {
 		hpgl_default_all_fill_patterns(pgls);
 		return 0;
 	      }
 	    if ( index < 1 || index > 8 )
 	      return e_Range;
 	    if ( !hpgl_arg_c_int(pargs, &width) )
-	      { 
+	      {
 		hpgl_default_fill_pattern(pgls, index);
 		return 0;
 	      }
@@ -396,7 +399,6 @@ hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		    ((uint)floor(pgls->resolution.x + 0.5)) & 0xff,
 		    ((uint)floor(pgls->resolution.y + 0.5)) >> 8,
 		    ((uint)floor(pgls->resolution.y + 0.5)) & 0xff);
-		     
 	    /* global id to uniquely identify the dictionary key.  FT
                selects the pattern */
 	    id_set_value(pgls->g.raster_pattern_id, index);
@@ -408,7 +410,7 @@ hpgl_RF(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	/* bit offset of data */
 #define bitindx ((pargs->phase-1) + (pattern_data_offset * 8))
 	while ( (pargs->phase-1) < pgls->g.raster_fill.width * pgls->g.raster_fill.height )
-	  { 
+	  {
 	    int pixel;
 	    if ( !hpgl_arg_c_int(pargs, &pixel) )
 	      break;
@@ -568,7 +570,7 @@ hpgl_UL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      }
 	    if ( total == 0 )
 	      return e_Range;
-	    
+
 	    for ( k = 0; k < i; k++ )
 	      gap[k] /= total;
 
@@ -579,7 +581,7 @@ hpgl_UL(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	      fixed_plt->count = adaptive_plt->count = i;
 	      memcpy(fixed_plt->gap, gap, i * sizeof(hpgl_real_t));
 	      memcpy(adaptive_plt->gap, gap, i * sizeof(hpgl_real_t));
-	    } 
+	    }
 	  }
 	else
 	  {

@@ -42,9 +42,9 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 #define cc_alphabetic\
 	  { C(0), C(0), C(0), C(0), C(0xff), C(0xc0), C(0), C(plgv_Unicode) }
 #define cc_symbol\
-	  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_Unicode) }
+	  { C(0), C(0), C(0), C(4), C(0), C(0), C(0), C(plgv_MSL) }
 #define cc_dingbats\
-	  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
+	  { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_MSL) }
 #define pitch_1 fp_pitch_value_cp(1)
 	  /*
 	   * Per TRM 23-87, PCL5 printers are supposed to have Univers

@@ -25,6 +25,11 @@ pcl_printer_reset(pcl_args_t *pargs, pcl_state_t *pcls)
 	  if ( code < 0 )
 	    return code;
 	}
+	/* exit hpgl/2 mode if necessary */
+	{ pcl_args_t args;
+	  arg_set_uint(&args, 0);
+	  rtl_enter_pcl_mode(pargs, pcls);
+	}
 	/* Reset to user default state. */
 	return pcl_do_resets(pcls, pcl_reset_printer);
 }
@@ -211,7 +216,7 @@ pcjob_do_init(gs_memory_t *mem)
 	  {'u', 'D',
 	     PCL_COMMAND("Set Unit of Measure", pcl_set_unit_of_measure,
 			 pca_neg_error|pca_big_error)},
-	END_CLASS	  
+	END_CLASS
 	return 0;
 }
 private void

@@ -76,8 +76,8 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	      { /* The parser has included everything through this command */
 		/* in the macro_definition, so we can finish things up. */
 		int code;
-		code = pl_dict_put(&pcls->macros, id_key(pcls->macro_id),
-				   2, pcls->macro_definition);
+		code = pl_dict_put(&pcls->macros, current_macro_id,
+				   current_macro_id_size, pcls->macro_definition);
 		pcls->defining_macro = false;
 		pcls->macro_definition = 0;
 	        return code;
@@ -101,7 +101,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	    { /* Start defining <macro_id>. */
 	      pcl_macro_t *pmac;
 
-	      pl_dict_undef(&pcls->macros, id_key(pcls->macro_id), 2);
+	      pl_dict_undef_purge_links(&pcls->macros, current_macro_id, current_macro_id_size);
 	      pmac = (pcl_macro_t *)
 		gs_alloc_bytes(pcls->memory, sizeof(pcl_macro_t),
 			       "begin macro definition");
@@ -119,7 +119,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	  case macro_execute:	/* 2 */
 	    { /* Execute <macro_id>. */
 	      void *value;
-	      if ( !pl_dict_find(&pcls->macros, id_key(pcls->macro_id), 2,
+	      if ( !pl_dict_find(&pcls->macros, current_macro_id, current_macro_id_size,
 				 &value)
 		 )
 		return 0;
@@ -129,7 +129,7 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	  case macro_call:	/* 3 */
 	    { /* Call <macro_id>, saving and restoring environment. */
 	      void *value;
-	      if ( !pl_dict_find(&pcls->macros, id_key(pcls->macro_id), 2,
+	      if ( !pl_dict_find(&pcls->macros, current_macro_id, current_macro_id_size,
 				 &value)
 		 )
 		return 0;
@@ -158,23 +158,23 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	      pl_dict_enum_stack_begin(&pcls->macros, &denum, false);
 	      while ( pl_dict_enum_next(&denum, &key, &value) )
 		if ( ((pcl_macro_t *)value)->storage == pcds_temporary )
-		  pl_dict_undef(&pcls->macros, key.data, key.size);
+		  pl_dict_undef_purge_links(&pcls->macros, key.data, key.size);
 	      return 0;
 	    }
 	  case 8:
 	    { /* Delete <macro_id>. */
-	      pl_dict_undef(&pcls->macros, id_key(pcls->macro_id), 2);
+	      pl_dict_undef_purge_links(&pcls->macros, current_macro_id, current_macro_id_size);
 	      return 0;
 	    }
 	  case 9:
 	    { /* Make <macro_id> temporary. */
-	      if ( pl_dict_find(&pcls->macros, id_key(pcls->macro_id), 2, &value) )
+	      if ( pl_dict_find(&pcls->macros, current_macro_id, current_macro_id_size, &value) )
 		((pcl_macro_t *)value)->storage = pcds_temporary;
 	      return 0;
 	    }
 	  case 10:
 	    { /* Make <macro_id> permanent. */
-	      if ( pl_dict_find(&pcls->macros, id_key(pcls->macro_id), 2, &value) )
+	      if ( pl_dict_find(&pcls->macros, current_macro_id, current_macro_id_size, &value) )
 		((pcl_macro_t *)value)->storage = pcds_permanent;
 	      return 0;
 	    }
@@ -187,6 +187,7 @@ private int /* ESC & f <id> Y */
 pcl_assign_macro_id(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint id = uint_arg(pargs);
 	id_set_value(pcls->macro_id, id);
+	pcls->macro_id_type = numeric_id;
 	return 0;
 }
 
@@ -212,9 +213,15 @@ pcmacros_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	    pcls->defining_macro = false;
 	    pcls->saved = 0;
 	    pcls->macro_definition = 0;
+	    pcls->alpha_macro_id.size = 0;
+	    pcls->macro_id_type = numeric_id;
 	    id_set_value(pcls->macro_id, 0);
 	    if ( type & pcl_reset_initial )
-	      pl_dict_init(&pcls->macros, pcls->memory, NULL);
+	      {
+		pl_dict_init(&pcls->macros, pcls->memory, NULL);
+		pcls->macro_id_type = numeric_id;
+		/* ***** Free the macro string if necessary **** */
+	      }
 	    else
 	      { pcl_args_t args;
 	        arg_set_uint(&args, macro_delete_temporary);

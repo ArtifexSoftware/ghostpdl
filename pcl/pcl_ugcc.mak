@@ -39,7 +39,7 @@ XLIBS=Xt SM ICE Xext X11
 
 CCLD=gcc
 
-DEVICE_DEVS=x11mono.dev x11.dev x11alpha.dev x11cmyk.dev\
+DEVICE_DEVS=x11.dev x11mono.dev x11alpha.dev x11cmyk.dev\
  djet500.dev ljet4.dev\
  pcxmono.dev pcxgray.dev\
  pbmraw.dev pgmraw.dev ppmraw.dev\

@@ -11,7 +11,7 @@
 #include "gstypes.h"		/* for gsstate.h */
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
-#include "gsstate.h"            
+#include "gsstate.h"
 #include "pcdraw.h"
 #include "pcfont.h"		/* for pcl_continue_underline */
 
@@ -21,7 +21,7 @@ extern pcl_command_proc(rtl_enter_pcl_mode);
 /* Even though these are PCL commands, */
 /* they are only relevant to HPGL. */
 
-int /* ESC * c <w_dp> X */ 
+int /* ESC * c <w_dp> X */
 pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {
 	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
@@ -48,7 +48,7 @@ pcl_horiz_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-int /* ESC * c <h_dp> Y */ 
+int /* ESC * c <h_dp> Y */
 pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
 	coord size = (coord)(float_arg(pargs) * 10.0); /* --> centipoints */
@@ -81,7 +81,7 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-int /* ESC * c 0 T */ 
+int /* ESC * c 0 T */
 pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls)
 {	uint i = uint_arg(pargs);
 	if ( i != 0 )
@@ -112,7 +112,7 @@ pcl_set_pic_frame_anchor_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-int /* ESC * c <w_in> K */ 
+int /* ESC * c <w_in> K */
 pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
 	/* convert to centipoints as to match the picture frame */
@@ -132,7 +132,7 @@ pcl_hpgl_plot_horiz_size(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-int /* ESC * c <h_in> L */ 
+int /* ESC * c <h_in> L */
 pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 {	
 	/* convert to centipoints as to match the picture frame */
@@ -152,7 +152,7 @@ pcl_hpgl_plot_vert_size(pcl_args_t *pargs, pcl_state_t *pcls)
 
 /* We redefine this command so we can draw the current GL path */
 /* and, if appropriate, reset the underline bookkeeping. */
-private int /* ESC % <enum> A */ 
+private int /* ESC % <enum> A */
 pcl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int code;
 

@@ -11,7 +11,7 @@
 void
 hpgl_set_lost_mode(hpgl_state_t *pgls, hpgl_lost_mode_t lost_mode)
 {
-	if ( lost_mode == hpgl_lost_mode_entered ) 
+	if ( lost_mode == hpgl_lost_mode_entered )
 	  {
 #ifdef INFINITE_LOOP
 	    hpgl_args_t args;

@@ -19,6 +19,11 @@ void pcl_decache_font(P2(pcl_state_t *pcls, int set));
 /* This is exported for resetting HMI. */
 int pcl_recompute_font(P1(pcl_state_t *pcls));
 
+/* recompute the font if the glyph is not found at the time of
+   rendering */
+int pcl_recompute_substitute_font(P2(pcl_state_t *pcls, const uint chr));
+
+
 /* Do any underlining just before a break in motion (vertical motion or
  * negative horizontal motion)... */
 #define	pcl_break_underline(pcls)\

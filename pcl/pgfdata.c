@@ -200,7 +200,7 @@ hpgl_stick_arc_width(uint char_index)
 
 /*
  * Main program for computing escapements.  Compile with:
- *	gcc -I../gs -DESCAPEMENTS -lm pgfdata.c 
+ *	gcc -I../gs -DESCAPEMENTS -lm pgfdata.c
  */
 #include "math_.h"
 typedef struct esc_data_s {

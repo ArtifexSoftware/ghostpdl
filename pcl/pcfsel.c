@@ -57,30 +57,34 @@ dprint_font_t(const pl_font_t *pfont)
 
 #endif
 
-/* Decide whether an unbound font supports a symbol set (mostly convenient
- * setup for pcl_check_symbol_support(). */
-private bool
+/* Decide whether an unbound font supports a symbol set (mostly
+   convenient setup for pcl_check_symbol_support(). (HAS) Has the
+   peculiar side effect of setting the symbol table to the default if
+   the requested map is not available or to the requested symbol set
+   if it is available. 2 is returned for no matching symbol set, 1 for
+   mismatched vocabulary and 0 if the sets match. */
+private int
 check_support(const pcl_state_t *pcls, uint symbol_set, pl_font_t *fp,
     pl_symbol_map_t **mapp)
 {
 	pl_glyph_vocabulary_t gv = ~fp->character_complement[7] & 07;
 	byte id[2];
-	pl_symbol_map_t *map;
-
 	id[0] = symbol_set >> 8;
 	id[1] = symbol_set;
-	if ( (map = pcl_find_symbol_map(pcls, id, gv)) == 0 )
-	  return false;
-	if ( pcl_check_symbol_support(map->character_requirements,
-	    fp->character_complement) )
+	*mapp = pcl_find_symbol_map(pcls, id, gv);
+	if ( *mapp == 0 )
 	  {
-	    *mapp = map;
-	    return true;
+	    id[0] = pcl_default_symbol_set_value >> 8;
+	    id[1] = (byte)pcl_default_symbol_set_value;
+	    *mapp = pcl_find_symbol_map(pcls, id, gv);
+	    return 2; /* worst */
 	  }
+	if ( pcl_check_symbol_support((*mapp)->character_requirements,
+	    fp->character_complement) )
+	    return 2; /* best */
 	else
-	  return false;
+	  return 1;
 }
-
 
 /* Compute a font's score against selection parameters.  TRM 8-27.
  * Also set *mapp to the symbol map to be used if this font wins. */
@@ -100,10 +104,7 @@ score_match(const pcl_state_t *pcls, const pcl_font_selection_t *pfs,
 	    *mapp = 0;		/* bound fonts have no map */
 	  }
 	else
-	  score[score_symbol_set] =
-	    check_support(pcls, pfs->params.symbol_set, fp, mapp)? 2:
-	      check_support(pcls, pcl_default_symbol_set_value, fp, mapp);
-
+	  score[score_symbol_set] = check_support(pcls, pfs->params.symbol_set, fp, mapp);
 	/* 2.  Spacing. */
 	score[score_spacing] =
 	  pfs->params.proportional_spacing == fp->params.proportional_spacing;
@@ -283,21 +284,70 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcls)
 	return 0;
 }
 
-/* Select a font by ID, updating the selection parameters. */
-/* Return 0 normally, 1 if no font was found, or an error code. */
+/* Selects a substitute font after a glyph is not found in the
+   currently selected font upon rendering.  Very expensive in the
+   current architecture.  We should have a more efficient way of
+   finding characters in fonts */
+
+/* This is used by both PCL and HP-GL/2. */
 int
-pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
-  const pcl_state_t *pcls)
-{	byte id_key[2];
-	void *value;
-	pl_font_t *fp;
+pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
+			     const pcl_state_t *pcls, const uint chr)
+{
+	if ( pfs->font == 0 )
+	  {
+	    pl_dict_enum_t dictp;
+	    gs_const_string key;
+	    void *value;
+	    pl_font_t *best_font = 0;
+	    pl_symbol_map_t *mapp, *best_map;
+	    match_score_t best_match;
+#ifdef DEBUG
+	    if ( gs_debug_c('=') )
+	      { dputs("[=]request: ");
+	        dprint_font_params_t(&pfs->params);
+	      }
+#endif
 
-	id_key[0] = id >> 8;
-	id_key[1] = (byte)id;
-	if ( !pl_dict_find(&pcls->soft_fonts, id_key, 2, &value) )
-	  return 1;		/* font not found */
-	fp = (pl_font_t *)value;
+	    /* Initialize the best match to be worse than any real font. */
+	    best_match[0] = -1;
+	    pl_dict_enum_begin(&pcls->soft_fonts, &dictp);
+	    while ( pl_dict_enum_next(&dictp, &key, &value) )
+	      { pl_font_t *fp = (pl_font_t *)value;
+		match_score_t match;
+		score_index_t i;
+		gs_matrix ignore_mat;
+		if ( !pl_font_includes_char(fp, NULL, &ignore_mat, chr) )
+		  continue;
+		score_match(pcls, pfs, fp, &mapp, match);
+		for (i=0; i<score_limit; i++)
+		  if ( match[i] != best_match[i] )
+		    {
+		      if ( match[i] > best_match[i] )
+			{
+			  best_font = fp;
+			  best_map = mapp;
+			  memcpy((void*)best_match, (void*)match,
+			      sizeof(match));
+			  if_debug0('=', "   (***best so far***)\n");
+			}
+		      break;
+		    }
+	      }
+	    if ( best_font == 0 )
+	      return -1; /* no font found */
+	    pfs->font = best_font;
+	    pfs->map = best_map;
+	  }
+	pfs->selected_by_id = false;
+	return 0;
+}
 
+/* set font parameters after an id selection */
+void
+pcl_set_id_parameters(const pcl_state_t *pcls, 
+		      pcl_font_selection_t *pfs, const pl_font_t *fp)
+{
 	/* Transfer parameters from the selected font into the selection
 	 * parameters, being careful with the softer parameters. */
 	pfs->font = fp;
@@ -319,7 +369,6 @@ pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
 		 */
 	      }
 	  }
-		 
 	pfs->params.proportional_spacing = fp->params.proportional_spacing;
 	if ( !pfs->params.proportional_spacing && !pl_font_is_scalable(fp) )
 	  pfs->params.pitch = fp->params.pitch;
@@ -328,5 +377,23 @@ pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
 	pfs->params.style = fp->params.style;
 	pfs->params.stroke_weight = fp->params.stroke_weight;
 	pfs->params.typeface_family = fp->params.typeface_family;
+	return;
+}
+  
+/* Select a font by ID, updating the selection parameters. */
+/* Return 0 normally, 1 if no font was found, or an error code. */
+int
+pcl_select_font_by_id(pcl_font_selection_t *pfs, uint id,
+  const pcl_state_t *pcls)
+{	byte id_key[2];
+	void *value;
+	pl_font_t *fp;
+
+	id_key[0] = id >> 8;
+	id_key[1] = (byte)id;
+	if ( !pl_dict_find(&pcls->soft_fonts, id_key, 2, &value) )
+	  return 1;		/* font not found */
+	fp = (pl_font_t *)value;
+	pcl_set_id_parameters(pcls, pfs, fp);
 	return 0;
 }

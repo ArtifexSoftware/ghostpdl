@@ -10,7 +10,7 @@
 #include "pgdraw.h" /* for hpgl_add_pcl_point_to_path() */
 #include "pgmisc.h" /* for hpgl_call */
 #include "gsmemory.h"
-#include "gsrop.h" 
+#include "gsrop.h"
 #include "gscoord.h"
 #include "pcdraw.h"
 
@@ -52,7 +52,7 @@ pcl_source_transparency_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 
 /* ---------------- Chapter 18 ---------------- */
 
-private int /* ESC % <enum> B */ 
+private int /* ESC % <enum> B */
 rtl_enter_hpgl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int i = int_arg(pargs);
 
@@ -84,7 +84,7 @@ rtl_enter_hpgl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 
 /* We export this so we can call it from HP-GL/2 configurations. */
 /* Note that it returns 1 iff it changed the PCL CAP. */
-int /* ESC % <enum> A */ 
+int /* ESC % <enum> A */
 rtl_enter_pcl_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int b = int_arg(pargs) & 1;
 

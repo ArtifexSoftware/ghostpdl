@@ -10,12 +10,12 @@
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsmemory.h"		/* for gsstate.h */
 #include "gsstate.h"
-#include "gsrop.h"
 #include "gscspace.h"		/* for gscolor2.h */
 #include "gscoord.h"
 #include "gsdcolor.h"
 #include "gsimage.h"
 #include "gsrefct.h"
+#include "gsrop.h"
 #include "gsutil.h"
 #include "gxcolor2.h"		/* for gs_makebitmappattern, rc_decrement */
 #include "gxfixed.h"
@@ -263,7 +263,7 @@ pcl_set_hmi(pcl_state_t *pcls, coord hmi, bool explicit)
 	pcls->hmi =
 	  (explicit ? hmi :
 	   (hmi + (pcls->uom_cp >> 1)) / pcls->uom_cp * pcls->uom_cp);
-}	  
+}
 
 /* Update the HMI by recomputing it from the font. */
 coord
@@ -305,7 +305,7 @@ pcl_updated_hmi(pcl_state_t *pcls)
 #define r1(a) r2(a,a)
 #define p4(a,b,c,d) r1(a), r1(b), r1(c), r1(d)
 #define p8(a,b,c,d,e,f,g,h) p4(a,b,c,d), p4(e,f,g,h)
-#define p2x8(a,b,c,d,e,f,g,h) p8(a,b,c,d,e,f,g,h), p8(a,b,c,d,e,f,g,h) 
+#define p2x8(a,b,c,d,e,f,g,h) p8(a,b,c,d,e,f,g,h), p8(a,b,c,d,e,f,g,h)
 private const uint32
   shade_1_2[] = {
     p8(0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00),
@@ -568,7 +568,7 @@ pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
 	    return_error(gs_error_rangecheck);
 	  }
 	tile.id = gx_no_bitmap_id;
-	/* 
+	/*
 	 * Create a bitmap pattern if one doesn't already exist.
 	 */
 	{ gs_client_color ccolor;
@@ -644,19 +644,17 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type, const pcl_id_t
 
 /* get rid of cached pattern references maintained in the pcl state.
    This code is duplicated in pattern initilization. */
-private void
-cached_pattern_release(gs_pattern_instance **pcpat)
-{	rc_decrement_only(*pcpat, "cached_pattern_release");
-	*pcpat = 0;
-}
 int
 pcl_clear_cached_pattern_refs(pcl_state_t *pcls)
 {	int i;
 	for ( i=0; i < countof(pcls->cached_pattern); i++ )
-	  cached_pattern_release(&pcls->cached_pattern[i]);
+	  { rc_decrement_only(pcls->cached_pattern[i],
+			      "old cached_pattern");
+	    pcls->cached_pattern[i] = 0;
+	  }
 	return 0;
 }
-  
+
 /* Initialization */
 private int
 pcdraw_do_init(gs_memory_t *mem)
@@ -665,6 +663,11 @@ pcdraw_do_init(gs_memory_t *mem)
 private void
 cached_pattern_init(gs_pattern_instance **pcpat)
 {	*pcpat = 0;
+}
+private void
+cached_pattern_release(gs_pattern_instance **pcpat)
+{	rc_decrement_only(*pcpat, "cached_pattern_release");
+	*pcpat = 0;
 }
 private void
 pcdraw_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
