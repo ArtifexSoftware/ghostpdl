@@ -15,8 +15,110 @@
 #include "pcuptrn.h"
 #include "gspath.h"
 #include "gspath2.h"
+#include "gsmatrix.h"
+#include "gscoord.h"
 #include "gspaint.h"
 #include "gsrop.h"
+
+
+
+/*
+ * The graphic library is, unfortunately, not equipped to produce accurate
+ * PCL rectangles on its own. These rectangles must always be rendered with
+ * the same pixel dimensions, regardless of location (ignoring clipping), 
+ * in the "grid intersection" pixel placement mode, must always add one
+ * additional pixel in the "right" and "down" directions, relative to print
+ * direction 0.
+ *
+ * To accomplish these tasks, it is necessary to properly adjust the rectangle
+ * dimensions provided to the graphic layer. That task is accomplished by
+ * this routine.
+ *
+ * Note that this code is designed to work with no fill adjustment in the
+ * graphic library.
+ */
+  private int
+adjust_render_rectangle(
+    pcl_state_t *           pcs
+)
+{
+    gs_state *              pgs = pcs->pgs;
+    const pcl_xfm_state_t * pxfmst = &(pcs->xfm_state);
+    coord                   w = pcs->rectangle.x;
+    coord                   h = pcs->rectangle.y;
+    gs_point                dims;
+    gs_rect                 rect;
+    gs_matrix               save_mtx, ident_mtx;
+    int                     code = 0;
+
+    /* adjust the width and height to reflect the logical page boundaries */
+    if (pcl_cap.x + w > pxfmst->pd_size.x)
+        w = pxfmst->pd_size.x - pcl_cap.x;
+    if (pcl_cap.y + h > pxfmst->pd_size.y)
+        h = pxfmst->pd_size.y - pcl_cap.y;
+
+    /* move the current point to an integral pixel location */
+    gs_transform(pgs, (floatp)pcl_cap.x, (floatp)pcl_cap.y, &(rect.p));
+    rect.p.x = floor(rect.p.x + 0.5);
+    rect.p.y = floor(rect.p.y + 0.5);
+
+    /* set the dimensions to be a multiple of pixels */
+    gs_dtransform(pgs, (floatp)w, (floatp)h, &dims);
+    if (dims.x >= 0)
+        rect.q.x = rect.p.x + ceil(dims.x);
+    else {
+        rect.q.x = rect.p.x;
+        rect.p.x += floor(dims.x);
+    }
+    if (dims.y >= 0)
+        rect.q.y = rect.p.y + ceil(dims.y);
+    else {
+        rect.q.y = rect.p.y;
+        rect.p.y += floor(dims.y);
+    }
+
+    /*
+     * If the pixel-placement mode is 1, decrease the size of the rectangle
+     * by one pixel. Note that this occurs only if the rectangle dimension is
+     * not 0; rectangles with a zero dimension are never rendered, irrespective
+     * of pixle placement mode.
+     *
+     * This trickiest part of this increase in dimension concerns correction
+     * for the device orientation relative to print direction 0. The output
+     * produced needs to be the same for pages produced with either long-edge
+     * -feed or short-edge-feed printers, so it is not possible to add one
+     * pixel in each direction in device space.
+     */
+    if ((pcs->pp_mode == 1) && (dims.x != 0.0) && (dims.y != 0.0)) {
+        gs_matrix   dflt_mtx;
+        gs_point    disp;
+
+        gs_defaultmatrix(pgs, &dflt_mtx);
+        gs_distance_transform(1.0, 1.0, &dflt_mtx, &disp);
+        if (disp.x < 0.0)
+            rect.p.x += 1.0;
+        else
+            rect.q.x -= 1.0;
+        if (disp.y < 0.0)
+            rect.p.y += 1.0;
+        else
+            rect.q.y -= 1.0;
+    }
+
+    /* rectangles with 0-dimensions are never printed */
+    if ((rect.p.x == rect.q.x) || (rect.p.y == rect.q.y))
+        return 0;
+
+    /* transform back into pseudo-print-direction space */
+    gs_currentmatrix(pgs, &save_mtx);
+    gs_make_identity(&ident_mtx);
+    gs_setmatrix(pgs, &ident_mtx);
+    code = gs_rectfill(pgs, &rect, 1);
+    gs_setmatrix(pgs, &save_mtx);
+    if (code >= 0)
+        pcs->have_page = true;
+    return code;
+}
 
 /*
  * ESC * c <dp> H
@@ -24,10 +126,10 @@
   private int
 pcl_horiz_rect_size_decipoints(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
-    pcls->rectangle.x = float_arg(pargs) * 10;
+    pcs->rectangle.x = float_arg(pargs) * 10;
     return 0;
 }
 
@@ -37,10 +139,10 @@ pcl_horiz_rect_size_decipoints(
   private int
 pcl_horiz_rect_size_units(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
-    pcls->rectangle.x = int_arg(pargs) * pcls->uom_cp;
+    pcs->rectangle.x = int_arg(pargs) * pcs->uom_cp;
     return 0;
 }
 
@@ -50,10 +152,10 @@ pcl_horiz_rect_size_units(
   private int
 pcl_vert_rect_size_decipoints(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
-    pcls->rectangle.y = float_arg(pargs) * 10;
+    pcs->rectangle.y = float_arg(pargs) * 10;
     return 0;
 }
 
@@ -63,10 +165,10 @@ pcl_vert_rect_size_decipoints(
   private int
 pcl_vert_rect_size_units(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
-    pcls->rectangle.y = int_arg(pargs) * pcls->uom_cp;
+    pcs->rectangle.y = int_arg(pargs) * pcs->uom_cp;
     return 0;
 }
 
@@ -76,19 +178,16 @@ pcl_vert_rect_size_units(
   private int
 pcl_fill_rect_area(
     pcl_args_t *            pargs,
-    pcl_state_t *           pcls
+    pcl_state_t *           pcs
 )
 {
-    gs_state *              pgs = pcls->pgs;
+    gs_state *              pgs = pcs->pgs;
     pcl_pattern_source_t    type = (pcl_pattern_source_t)int_arg(pargs);
-    bool                    pattern_transparent = pcls->pattern_transparent;
-    int                     id = pcls->pattern_id;
+    int                     id = pcs->pattern_id;
     int                     code = 0;
 
     /*
-     * Rectangles have two special properties with respect to patterns:
-     *
-     *     A white rectangle overrides pattern transparency
+     * Rectangles have a special property with respect to patterns:
      *
      *     a non-zero, non-existent pattern specification causes the command
      *        to be ignored, UNLESS this is the current pattern. This only
@@ -96,42 +195,22 @@ pcl_fill_rect_area(
      *        pattern id. is interpreted as an intensity level for shade
      *        patterns, and patterns >= 100% are considered white.
      */
-    if ((type == pcl_pattern_solid_white) || (type == pcl_pattern_solid_frgrnd))
-        pcls->pattern_transparent = false;
-    else if (type == pcl_pattern_cross_hatch) {
+    if (type == pcl_pattern_cross_hatch) {
         if (pcl_pattern_get_cross(id) == 0)
             return 0;
     } else if (type == pcl_pattern_user_defined) {
         if (pcl_pattern_get_pcl_uptrn(id) == 0)
             return 0;
     } else if (type == pcl_pattern_current_pattern) {
-        type = pcls->pattern_type;
-        id = pcls->current_pattern_id;
-    } else if (type != pcl_pattern_shading)
+        type = pcs->pattern_type;
+        id = pcs->current_pattern_id;
+    } else if (type > pcl_pattern_shading)
         return 0;
 
     /* set up the graphic state; render the rectangle */
-    if ( ((code = pcl_set_drawing_color(pcls, type, id, false)) >= 0) &&
-         ((code = pcl_set_graphics_state(pcls)) >= 0)                   ) {
-        gs_rect r;
-
-	r.p.x = pcl_cap.x;
-	r.p.y = pcl_cap.y;
-	r.q.x = r.p.x + pcls->rectangle.x;
-	r.q.y = r.p.y + pcls->rectangle.y;
-        if (r.q.x > pcls->xfm_state.pd_size.x)
-            r.q.x = pcls->xfm_state.pd_size.x;
-        if (r.q.y > pcls->xfm_state.pd_size.y)
-            r.q.y = pcls->xfm_state.pd_size.y;
-
-        /* the graphic library prints zero-dimension rectangles */
-        if ((r.q.x > r.p.x) && (r.q.y > r.p.y)) {
-	    code = gs_rectfill(pgs, &r, 1);
-            pcls->have_page = true;
-        }
-    }
-
-    pcls->pattern_transparent = pattern_transparent;
+    if ( ((code = pcl_set_drawing_color(pcs, type, id, false)) >= 0) &&
+         ((code = pcl_set_graphics_state(pcs)) >= 0)                   )
+        code = adjust_render_rectangle(pcs);
     return code;
 }
 
@@ -186,13 +265,16 @@ pcrect_do_init(
 
   private void
 pcrect_do_reset(
-    pcl_state_t *       pcls,
+    pcl_state_t *       pcs,
     pcl_reset_type_t    type
 )
 {
-    if ( (type & (pcl_reset_initial | pcl_reset_printer)) != 0 ) {
-	pcls->rectangle.x = 0;
-	pcls->rectangle.y = 0;
+    static  const uint  mask = (  pcl_reset_initial
+                                | pcl_reset_printer
+                                | pcl_reset_overlay );
+    if ((type & mask) != 0) {
+	pcs->rectangle.x = 0;
+	pcs->rectangle.y = 0;
     }
 }
 
