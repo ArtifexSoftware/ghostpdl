@@ -255,7 +255,13 @@ end readonly def
 		% Update the TextMatrix translation.
   gsave TextSaveMatrix setmatrix
   currentpoint TextMatrix 4 2 getinterval astore pop
-  grestore currentpoint translate
+		% We would like to do "grestore currentpoint translate"
+		% here, but some PDF files set a singular text matrix
+		% (0 0 0 0 <x> <y> Tm), so we can't do this.
+  TextTempMatrix identmatrix setmatrix currentpoint
+  grestore
+  TextTempMatrix currentmatrix 4 2 getinterval astore pop
+  TextTempMatrix setmatrix
 } bdef
 
 /BT {
@@ -263,10 +269,11 @@ end readonly def
     { identmatrix pop TextMatrix identmatrix pop }
     { matrix /TextLineMatrix gput matrix /TextMatrix gput }
   ifelse
-    { showfirst } /Show gput
-  currentdict /TextSaveMatrix .knownget not
-    { matrix dup /TextSaveMatrix gput }
-  if currentmatrix pop settextmatrix
+  { showfirst } /Show gput
+  currentdict /TextSaveMatrix .knownget not {
+    matrix dup /TextSaveMatrix gput
+  } if currentmatrix pop settextmatrix
+  matrix /TextTempMatrix gput		% see settextposition
 } bdef
 /ET {
   TextSaveMatrix setmatrix
