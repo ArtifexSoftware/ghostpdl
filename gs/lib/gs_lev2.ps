@@ -291,9 +291,10 @@ psuserparams /ProcessComment {.checkprocesscomment} put
 } bind def
 /ProcessDSCComment null .definepsuserparam
 psuserparams /ProcessDSCComment {.checkprocesscomment} put
+/.loadingfont false def
 (%ProcessDSCComment) cvn {
   /ProcessDSCComment getuserparam
-  dup null eq { pop pop pop } { exec } ifelse
+  dup null eq .loadingfont or { pop pop pop } { exec } ifelse
 } bind def
 
 % ------ Miscellaneous ------ %
