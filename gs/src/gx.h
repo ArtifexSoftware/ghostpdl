@@ -36,7 +36,7 @@
 #   define CURVED_TRAPEZOID_FILL_HEAVY_TEST 0  /* Temporarily used for a debug purpose. */
 #   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
                                                The implementation of 0 is not completed yet. */
-#   define FLATTENED_ITERATOR_BACKSCAN 0 /* 0 - simpler and faster code, 1 - smaller RAM. */
+#   define FLATTENED_ITERATOR_BACKSCAN 1 /* 0 - simpler code, 1 - faster and smaller RAM. */
 #   define FLATTENED_ITERATOR_SELFTEST 0 /* Temporarily used for a debug purpose. */
 #   define FLATTENED_ITERATOR_HEAVY_SELFTEST 0 /* Temporarily used for a debug purpose. */
 

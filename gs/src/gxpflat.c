@@ -257,7 +257,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 	}
 #   endif
 #   if !FLATTENED_ITERATOR_BACKSCAN
-        memset(this->skip_points, 0, sizeof(this->skip_points));
+        memset(this->skip_points, 0, min(sizeof(this->skip_points), ((1 << k) + 7) / 8));
 #   endif
     if (k == -1) {
 	/* A special hook for gx_subdivide_curve_rec.
@@ -362,7 +362,7 @@ gx_flattened_iterator__print_state(gx_flattened_iterator *this)
  * Return true iff there exist more segments.
  * Note : It can generate small or collinear segments. 
  */
-bool
+private inline bool
 gx_flattened_iterator__next(gx_flattened_iterator *this)
 {
     /*
@@ -471,7 +471,7 @@ last:
  * Return true iff there exist more segments.
  * Note : It can generate nearly collinear segments. 
  */
-private bool
+private inline bool
 gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
 {
     fixed x0 = this->lx1, y0 = this->ly1;
@@ -644,7 +644,7 @@ gx_flattened_iterator__unaccum(gx_flattened_iterator *this)
  * Return true iff there exist more segments.
  * Note : It can generate collinear segments. 
  */
-bool
+private inline bool
 gx_flattened_iterator__prev(gx_flattened_iterator *this)
 {
     bool last; /* i.e. the first one in the forth order. */
@@ -684,7 +684,7 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
 }
 
 /* Switching from the forward scanning to the backward scanning for the filtered1. */
-void
+private inline void
 gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this)
 {
     /*	When scanning forth, the accumulator stands on the end of a segment,
@@ -709,7 +709,7 @@ gx_flattened_iterator__switch_to_backscan1(gx_flattened_iterator *this)
  * Return true iff there exist more segments.
  * Note : It can generate nearly collinear segments. 
  */
-private bool
+private inline bool
 gx_flattened_iterator__prev_filtered1(gx_flattened_iterator *this)
 {
 #   if CURVED_TRAPEZOID_FILL0_COMPATIBLE
@@ -784,7 +784,7 @@ gx_flattened_iterator__prev_filtered1(gx_flattened_iterator *this)
 #endif /* FLATTENED_ITERATOR_BACKSCAN */
 
 #if !FLATTENED_ITERATOR_BACKSCAN
-private bool
+private inline bool
 gx_flattened_iterator__prev_filtered2_aux(gx_flattened_iterator *this)
 {
     for (;;) { /* this->filtered2_i counts back. */
