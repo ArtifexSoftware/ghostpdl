@@ -511,10 +511,10 @@ private ushort FAPI_FF_get_subr(FAPI_font *ff, int index, byte *buf, ushort buf_
     */
     n = (n1 < n2 ? n2 : n1);
     if (index < n && Subrs != NULL) {
-        if (array_get(Subrs, index, &subr) < 0)
+        if (array_get(Subrs, index, &subr) < 0 || r_type(&subr) != t_string)
             return 0;
     } else if (index >= n && GlobalSubrs != NULL) {
-        if (array_get(GlobalSubrs, index - n, &subr) < 0)
+        if (array_get(GlobalSubrs, index - n, &subr) < 0 || r_type(&subr) != t_string)
             return 0;
     } else
         return 0;
