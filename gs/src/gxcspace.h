@@ -212,6 +212,15 @@ struct gs_color_space_type_s {
 #define cs_serialize(pcs, s)\
   (*(pcs)->type->serialize)(pcs, s)
 	cs_proc_serialize((*serialize));
+
+    /* A color mapping linearity check. */
+
+#define cs_proc_is_linear(proc)\
+  int proc(gs_direct_color_space *cs, const gs_imager_state * pis,\
+		gx_device *dev, const gs_client_color *c, int nc, float smoothness)
+#define cs_is_linear(pcs, s)\
+  (*(pcs)->type->is_linear)(pcs, s)
+	cs_proc_is_linear((*is_linear));
 };
 
 /* Standard color space structure types */
@@ -241,6 +250,8 @@ cs_proc_set_overprint(gx_spot_colors_set_overprint);
 cs_proc_adjust_cspace_count(gx_no_adjust_cspace_count);
 cs_proc_adjust_color_count(gx_no_adjust_color_count);
 cs_proc_serialize(gx_serialize_cspace_type);
+cs_proc_is_linear(gx_cspace_no_linear);
+cs_proc_is_linear(gx_cspace_is_linear_default);
 
 /*
  * Define the implementation procedures for the standard device color

@@ -147,7 +147,8 @@ private const gs_color_space_type gs_color_space_type_CIEICC = {
     gx_spot_colors_set_overprint,   /* set_overprint */
     gx_adjust_cspace_CIEICC,        /* adjust_cspace_count */
     gx_no_adjust_color_count,       /* adjust_color_count */
-    gx_serialize_CIEICC		    /* serialize */
+    gx_serialize_CIEICC,		    /* serialize */
+    gx_cspace_is_linear_default
 };
 
 

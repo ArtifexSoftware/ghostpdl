@@ -61,7 +61,8 @@ const gs_color_space_type gs_color_space_type_Separation = {
     gx_remap_Separation, gx_install_Separation,
     gx_set_overprint_Separation,
     gx_adjust_cspace_Separation, gx_no_adjust_color_count,
-    gx_serialize_Separation
+    gx_serialize_Separation,
+    gx_cspace_is_linear_default
 };
 
 /* GC procedures */

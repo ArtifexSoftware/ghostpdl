@@ -65,7 +65,8 @@ const gs_color_space_type gs_color_space_type_DeviceN = {
     gx_default_remap_color, gx_install_DeviceN,
     gx_set_overprint_DeviceN,
     gx_adjust_cspace_DeviceN, gx_no_adjust_color_count,
-    gx_serialize_DeviceN
+    gx_serialize_DeviceN,
+    gx_cspace_is_linear_default
 };
 
 /* GC procedures */

@@ -48,7 +48,8 @@ private const gs_color_space_type gs_color_space_type_DeviceGray = {
     gx_remap_DeviceGray, gx_no_install_cspace,
     gx_spot_colors_set_overprint,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count,
-    gx_serialize_cspace_type
+    gx_serialize_cspace_type,
+    gx_cspace_is_linear_default
 };
 private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gs_color_space_index_DeviceRGB, true, true,
@@ -60,7 +61,8 @@ private const gs_color_space_type gs_color_space_type_DeviceRGB = {
     gx_remap_DeviceRGB, gx_no_install_cspace,
     gx_spot_colors_set_overprint,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count,
-    gx_serialize_cspace_type
+    gx_serialize_cspace_type,
+    gx_cspace_is_linear_default
 };
 
 private cs_proc_set_overprint(gx_set_overprint_DeviceCMYK);
@@ -75,7 +77,8 @@ private const gs_color_space_type gs_color_space_type_DeviceCMYK = {
     gx_remap_DeviceCMYK, gx_no_install_cspace,
     gx_set_overprint_DeviceCMYK,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count,
-    gx_serialize_cspace_type
+    gx_serialize_cspace_type,
+    gx_cspace_is_linear_default
 };
 
 /* Structure descriptors */
@@ -454,6 +457,134 @@ gx_set_overprint_DeviceCMYK(const gs_color_space * pcs, gs_state * pgs)
 void
 gx_no_adjust_cspace_count(const gs_color_space * pcs, int delta)
 {
+}
+
+/* A stub for a color mapping linearity check, when it is inapplicable. */
+int
+gx_cspace_no_linear(gs_direct_color_space *cs, const gs_imager_state * pis,
+		gx_device * dev, const gs_client_color *c, int nc, float smoothness)
+{
+    return_error(gs_error_rangecheck);
+}
+
+private inline int
+cc2dc(gs_direct_color_space *cs, const gs_imager_state * pis, gx_device *dev,
+	    gx_device_color *dc, const gs_client_color *cc)
+{
+    return cs->type->remap_color(cc, (const gs_color_space *)cs, dc, pis, dev, gs_color_select_texture);
+}
+
+private inline void
+interpolate_cc(gs_client_color *c, 
+	const gs_client_color *c0, const gs_client_color *c1, double t, int n)
+{
+    int i;
+
+    for (i = 0; i < n; i++)
+	c->paint.values[i] = c0->paint.values[i] * t + c1->paint.values[i] * (1 - t);
+}
+
+private inline bool
+is_dc_nearly_linear(const gx_device_color *c, 
+	const gx_device_color *c0, const gx_device_color *c1, 
+	double t, int n, float smoothness)
+{
+    if (c0->type == &gx_dc_type_data_pure) {
+	int i;
+	gx_color_index pure0 = c0->colors.pure;
+	gx_color_index pure1 = c1->colors.pure;
+	gx_color_index pure = c->colors.pure;
+
+	for (i = 0; i < n; i++) {
+	    int b0 = pure0 & 255, b1 = pure1 & 255, b = pure & 255;
+	    int bb = (byte)(b0 * t + b1 * (1 - t));
+
+	    if (any_abs(b - bb) > 255 * smoothness)
+		return false;
+	    pure0 >>= 8;
+	    pure1 >>= 8;
+	    pure >>= 8;
+	}
+	return true;
+    } else {
+	/* Halftones must not paint with fill_linear_color_*. */
+	return false;
+    }
+}
+
+
+/* Default color mapping linearity check, a triangle case. */
+private int
+gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state * pis,
+		gx_device *dev, const gs_client_color *c, float smoothness)
+{
+    /* We check 4 points - the median center, and medians of 3 sides. 
+       Hopely this is enough for reasonable color spaces and color renderings. 
+       Note it gives 7 points for a quadrangle. */
+    gs_client_color c01, c12, c20, c012;
+    gx_device_color d[3], d01, d12, d20, d012;
+    int n = cs->type->num_components((const gs_color_space *)cs);
+    int code;
+
+    code = cc2dc(cs, pis, dev, &d[0], &c[0]);
+    if (code < 0)
+	return code;
+    code = cc2dc(cs, pis, dev, &d[1], &c[1]);
+    if (code < 0)
+	return code;
+    code = cc2dc(cs, pis, dev, &d[2], &c[2]);
+    if (code < 0)
+	return code;
+
+    interpolate_cc(&c01, &c[0], &c[1], 0.5, n);
+    code = cc2dc(cs, pis, dev, &d01, &c01);
+    if (code < 0)
+	return code;
+    if (!is_dc_nearly_linear(&d01, &d[0], &d[1], 0.5, n, smoothness))
+	return 0;
+
+    interpolate_cc(&c012, &c[2], &c01, 2.0 / 3, n);
+    code = cc2dc(cs, pis, dev, &d012, &c012);
+    if (code < 0)
+	return code;
+    if (!is_dc_nearly_linear(&d012, &d[2], &d01, 2.0 / 3, n, smoothness))
+	return 0;
+
+    interpolate_cc(&c12, &c[1], &c[2], 0.5, n);
+    code = cc2dc(cs, pis, dev, &d12, &c12);
+    if (code < 0)
+	return code;
+    if (!is_dc_nearly_linear(&d12, &d[1], &d[2], 0.5, n, smoothness))
+	return 0;
+
+    interpolate_cc(&c20, &c[2], &c[0], 0.5, n);
+    code = cc2dc(cs, pis, dev, &d20, &c20);
+    if (code < 0)
+	return code;
+    if (!is_dc_nearly_linear(&d20, &d[2], &d[0], 0.5, n, smoothness))
+	return 0;
+    return 1;
+}
+
+/* Default color mapping linearity check. */
+int
+gx_cspace_is_linear_default(gs_direct_color_space *cs, const gs_imager_state * pis,
+		gx_device *dev, const gs_client_color *c, int nc, float smoothness)
+{
+    /* Assuming 3 <= nc <= 4. We don't need other cases. */
+    /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
+    int code;
+
+    if (c[0].pattern != 0)
+	return_error(gs_error_rangecheck);
+    if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
+	return_error(gs_error_rangecheck);
+    code = gx_cspace_is_linear_in_triangle(cs, pis, dev, c, smoothness);
+    if (code < 0)
+	return code;
+    if (nc == 3)
+	return 0;
+    return gx_cspace_is_linear_in_triangle(cs, pis, dev, c + 1, smoothness);
 }
 
 /* Serialization. */

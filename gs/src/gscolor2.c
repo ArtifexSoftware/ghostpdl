@@ -171,7 +171,8 @@ const gs_color_space_type gs_color_space_type_Indexed = {
     gx_default_remap_color, gx_install_Indexed,
     gx_set_overprint_Indexed,
     gx_adjust_cspace_Indexed, gx_no_adjust_color_count,
-    gx_serialize_Indexed
+    gx_serialize_Indexed,
+    gx_cspace_is_linear_default
 };
 
 /* GC procedures. */

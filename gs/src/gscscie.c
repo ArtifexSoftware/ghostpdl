@@ -58,7 +58,8 @@ const gs_color_space_type gs_color_space_type_CIEDEFG = {
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEDEFG, gx_no_adjust_color_count,
-    gx_serialize_CIEDEFG
+    gx_serialize_CIEDEFG,
+    gx_cspace_is_linear_default
 };
 
 /* CIEBasedDEF */
@@ -77,7 +78,8 @@ const gs_color_space_type gs_color_space_type_CIEDEF = {
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEDEF, gx_no_adjust_color_count,
-    gx_serialize_CIEDEF
+    gx_serialize_CIEDEF,
+    gx_cspace_is_linear_default
 };
 
 /* CIEBasedABC */
@@ -96,7 +98,8 @@ const gs_color_space_type gs_color_space_type_CIEABC = {
     gx_remap_CIEABC, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEABC, gx_no_adjust_color_count,
-    gx_serialize_CIEABC
+    gx_serialize_CIEABC,
+    gx_cspace_is_linear_default
 };
 
 /* CIEBasedA */
@@ -115,7 +118,8 @@ const gs_color_space_type gs_color_space_type_CIEA = {
     gx_default_remap_color, gx_install_CIE,
     gx_spot_colors_set_overprint,
     gx_adjust_cspace_CIEA, gx_no_adjust_color_count,
-    gx_serialize_CIEA
+    gx_serialize_CIEA,
+    gx_cspace_is_linear_default
 };
 
 private gs_color_space rgb_cs, cmyk_cs;

@@ -44,7 +44,8 @@ private const gs_color_space_type gs_color_space_type_DevicePixel = {
     gx_default_remap_color, gx_no_install_cspace,
     gx_set_overprint_DevicePixel,
     gx_no_adjust_cspace_count, gx_no_adjust_color_count,
-    gx_serialize_DevicePixel
+    gx_serialize_DevicePixel,
+    gx_cspace_is_linear_default
 };
 
 /* Initialize a DevicePixel color space. */
