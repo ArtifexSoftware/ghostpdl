@@ -1,4 +1,4 @@
-/* Copyright (C) 1996-2003 artofcode LLC. All rights reserved.
+/* Copyright (C) 1996-2004 artofcode LLC. All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -34,7 +34,7 @@ CONFIG_CONST long gs_buildtime = GS_BUILDTIME;
 
 #ifndef GS_COPYRIGHT
 #  define GS_COPYRIGHT\
-	"Copyright (C) 2003 artofcode LLC, Benicia, CA.  All rights reserved."
+	"Copyright (C) 2004 artofcode LLC, Benicia, CA.  All rights reserved."
 #endif
 const char *CONFIG_CONST gs_copyright = GS_COPYRIGHT;
 
