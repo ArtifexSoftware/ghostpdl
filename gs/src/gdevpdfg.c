@@ -243,6 +243,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
     const gs_client_color *pcc; /* fixme: not needed due to gx_hld_get_color_component. */
     cos_value_t cs_value;
     const char *command;
+    int code1 = 0;
 
     if (pdev->skip_colors)
 	return 0;
@@ -313,7 +314,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		    if (pis->have_pattern_streams)
 			code = pdf_write_ccolor(pdev, pis, pcc);
 		} else if (pdc->type == &gx_dc_pattern2)
-		    code = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
+		    code1 = pdf_put_pattern2(pdev, pdc, ppscc, &pres);
 		else
 		    return_error(gs_error_rangecheck);
 		if (code < 0)
@@ -333,7 +334,7 @@ pdf_reset_color(gx_device_pdf * pdev, const gs_imager_state * pis,
 		return code;
     }
     *psc = temp;
-    return 0;
+    return code1;
 }
 int
 pdf_set_drawing_color(gx_device_pdf * pdev, const gs_imager_state * pis,

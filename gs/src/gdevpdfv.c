@@ -711,7 +711,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
     gs_color_space *pcs = psh->params.ColorSpace;
     const gs_shading_mesh_params_t *const pmp =
 	(const gs_shading_mesh_params_t *)&psh->params;
-    int code;
+    int code, code1;
     int bits_per_coordinate, bits_per_component, bits_per_flag;
     int num_comp;
     bool from_array = data_source_is_array(pmp->DataSource);
@@ -798,11 +798,14 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 
 	data_params.num_points = 1;
 	data_params.num_components = num_comp;
-	if (from_array)
+	if (from_array) {
 	    while ((flag = shade_next_flag(&cs, 0)) >= 0)
 		if ((code = put_float_mesh_data(pscs, &cs, flag,
 						&data_params)) < 0)
 		    return code;
+	    if (!seofp(cs.s))
+		code = gs_note_error(gs_error_rangecheck);
+	}
 	if (bits_per_flag < 0)
 	    bits_per_flag = params->BitsPerFlag;
 	break;
@@ -818,14 +821,15 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 		if ((code = put_float_mesh_data(pscs, &cs, -1,
 						&data_params)) < 0)
 		    return code;
-	return cos_dict_put_c_key_int(pscd, "/VerticesPerRow",
+	code = cos_dict_put_c_key_int(pscd, "/VerticesPerRow",
 				      params->VerticesPerRow);
+	return code;
     }
     case shading_type_Coons_patch: {
 	const gs_shading_Cp_params_t *const params =
 	    (const gs_shading_Cp_params_t *)pmp;
 
-	if (from_array)
+	if (from_array) {
 	    while ((flag = shade_next_flag(&cs, 0)) >= 0) {
 		data_params.num_points = (flag == 0 ? 12 : 8);
 		data_params.num_components = num_comp * (flag == 0 ? 4 : 2);
@@ -833,6 +837,9 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 						&data_params)) < 0)
 		    return code;
 	    }
+	    if (!seofp(cs.s))
+		code = gs_note_error(gs_error_rangecheck);
+	}
 	if (bits_per_flag < 0)
 	    bits_per_flag = params->BitsPerFlag;
 	break;
@@ -841,7 +848,7 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 	const gs_shading_Tpp_params_t *const params =
 	    (const gs_shading_Tpp_params_t *)pmp;
 
-	if (from_array)
+	if (from_array) {
 	    while ((flag = shade_next_flag(&cs, 0)) >= 0) {
 		data_params.num_points = (flag == 0 ? 16 : 12);
 		data_params.num_components = num_comp * (flag == 0 ? 4 : 2);
@@ -849,6 +856,9 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
 						&data_params)) < 0)
 		    return code;
 	    }
+	    if (!seofp(cs.s))
+		code = gs_note_error(gs_error_rangecheck);
+	}
 	if (bits_per_flag < 0)
 	    bits_per_flag = params->BitsPerFlag;
 	break;
@@ -856,7 +866,10 @@ pdf_put_mesh_shading(cos_stream_t *pscs, const gs_shading_t *psh,
     default:
 	return_error(gs_error_rangecheck);
     }
-    return cos_dict_put_c_key_int(pscd, "/BitsPerFlag", bits_per_flag);
+    code1 =  cos_dict_put_c_key_int(pscd, "/BitsPerFlag", bits_per_flag);
+    if (code1 < 0)
+	return code;
+    return code;
 }
 
 /* Write a PatternType 2 (shading pattern) color. */
@@ -875,6 +888,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     cos_object_t *psco;
     const gs_range_t *pranges;
     int code = pdf_cs_Pattern_colored(pdev, &v);
+    int code1 = 0;
     gs_matrix smat;
 
     if (code < 0)
@@ -895,7 +909,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	code = pdf_put_shading_common(cos_stream_dict((cos_stream_t *)psco),
 				      psh, &pranges);
 	if (code >= 0)
-	    code = pdf_put_mesh_shading((cos_stream_t *)psco, psh, pranges);
+	    code1 = pdf_put_mesh_shading((cos_stream_t *)psco, psh, pranges);
     } else {
 	cos_become(psco, cos_type_dict);
 	code = pdf_put_shading_common((cos_dict_t *)psco, psh, &pranges);
@@ -923,7 +937,7 @@ pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 	return code;
     cos_value_write(&v, pdev);
     pprints1(pdev->strm, " %s", ppscc->setcolorspace);
-    return 0;
+    return code1;
 }
 
 /*

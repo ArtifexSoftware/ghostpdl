@@ -470,9 +470,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	return code;
     if (code == 1)
 	return 0; /* Nothing to paint. */
-    if (pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor) < 0)
-	return gx_default_fill_path(dev, pis, ppath, params, pdcolor,
-				    pcpath);
+    code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
+    if (code < 0)
+	return code;
     if (have_path) {
 	stream *s = pdev->strm;
 	double scale;
