@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.9 2002/07/03 00:30:20 giles Exp $
+    $Id: jbig2_image.c,v 1.10 2002/07/03 00:55:44 giles Exp $
 */
 
 #include <stdio.h>
@@ -61,13 +61,75 @@ void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, 
 			int x, int y, Jbig2ComposeOp op)
 {
-    /* special case complete replacement */
-    if ((x == 0) && (y == 0) && (src->width == dst->width) && (src->height == dst->height)) {
-        memcpy(dst->data, src->data, src->height*src->stride);
+    int w, h;
+    int src_stride, dst_stride;
+    int leftword, rightword;
+    int leftbits, rightbits;
+    int row, word, shift, i;
+    uint32_t *s, *d;
+    uint32_t mask, highmask;
+    
+    if (op != JBIG2_COMPOSE_OR) {
+        jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+            "non-OR composition modes NYI");
+    }
+
+    /* clip */
+    w = src->width;
+    h = src->height;
+    if (x < 0) { w += x; x = 0; }
+    if (y < 0) { h += y; y = 0; } 
+    w = (x + w < dst->width) ? w : dst->width - x;
+    h = (y + h < dst->height) ? h : dst->height - y;
+    
+    fprintf(stderr, "composting %dx%d at (%d, %d) afer clipping\n",
+        w, h, x, y);
+    
+    /* special case complete/strip replacement */
+    if ((x == 0) && (w == src->width)) {
+        memcpy(dst->data + y*dst->stride, src->data, h*src->stride);
         return 0;
     }
+
+    /* general case */
+    leftword = x >> 5;
+    leftbits = x & 31;
+    rightword = (x + w) >> 5;
+    rightbits = (x + w) & 31;
+    shift = 0;
+    while (leftbits >= 1 << shift) shift++;
+    mask = 0;
+    if (leftbits) for (i = 0; i < leftbits; i++)
+        mask = mask << 1 | 1;
+    highmask = 1;    
+    if (rightbits) for (i = 0; i < rightbits; i++)
+        highmask = highmask << 1 | 1;
     
-    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
-        "non-aligned image composition NYI");
-    return 1;
+    /* word strides */
+    src_stride = src->stride >> 2;
+    dst_stride = dst->stride >> 2;
+    fprintf(stderr, "leftword = %d leftbits = %d rightword = %d rightbits=%d shift=%d\n",
+        leftword, leftbits, rightword, rightbits, shift);
+    fprintf(stderr, "mask = 0x%08x highmask = 0x%08x\n", mask, highmask); 
+    
+    if (leftword == rightword) {
+        for (row = 0; row < h; row++) {
+            s = src->data + row*src_stride;
+            d = dst->data + (y + row)*dst_stride + leftword;
+            *d |= (*s & mask) << rightbits;
+        }
+    } else {
+        for (row = 0; row < h; row++) {
+            s = src->data + row*src_stride;
+            d = dst->data + (y + row)*dst_stride + leftword;
+            *d++ |= (*s & mask) << shift;
+            for(word = leftword; word < rightword; word++) {
+                *d |= (*s++ & ~mask) >> (32 - shift);
+                *d++ |= (*s & mask) << shift;
+            }
+            *d |= (*s & highmask) >> (32 - shift);
+        }
+    }
+            
+    return 0;
 }
