@@ -531,7 +531,7 @@ buildfontdict 3 /.buildfont3 cvx put
     2 copy 0 get search {
       pop pop pop dup length 1 sub 1 exch getinterval 3 -1 roll exch {
 	dup 0 ge { or } { neg not and } ifelse
-      } forall
+      } forall exch
     } {
       pop pop
     } ifelse
@@ -561,6 +561,10 @@ buildfontdict 3 /.buildfont3 cvx put
   /ZapfChancery-MediumItalic
     {/ZapfChancery-MediumItalic}
 .dicttomark readonly def
+/.nametostring {		% <name> .nametostring <string>
+				% <other> .nametostring <other>
+  dup type /nametype eq { .namestring } if
+} bind def
 /.fontnamestring {		% <fontname> .fontnamestring <string|name>
   dup type dup /nametype eq {
     pop .namestring
@@ -813,7 +817,7 @@ $error /SubstituteFont { .stdsubstfont } put
 % Attempt to load a font from a file.
 /.tryloadfont {		% <fontname> .tryloadfont <font> true
 			% <fontname> .tryloadfont false
-  dup dup type /nametype eq { .namestring } if
+  dup .nametostring
 		% Hack: check for the presence of the resource machinery.
   /.genericrfn where {
     pop
@@ -821,7 +825,7 @@ $error /SubstituteFont { .stdsubstfont } put
     .loadfontloop {
       exch pop exch pop true
     } {
-      .loadfontloop
+      dup .nametostring .loadfontloop
     } ifelse
   } {
     .loadfontloop
