@@ -8,12 +8,14 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: pbm2png.c,v 1.2 2002/07/08 14:11:36 giles Exp $
+    $Id: pbm2png.c,v 1.3 2002/07/08 14:54:02 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #include "config_types.h"
+#elif _WIN32
+#include "config_win32.h"
 #endif
 #ifdef HAVE_STDINT_H
 #include <stdint.h>

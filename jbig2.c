@@ -8,12 +8,14 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.13 2002/07/08 13:40:15 giles Exp $
+    $Id: jbig2.c,v 1.14 2002/07/08 14:54:01 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #include "config_types.h"
+#elif _WIN32
+#include "config_win32.h"
 #endif
 #ifdef HAVE_STDINT_H
 #include <stdint.h>
@@ -85,7 +87,7 @@ jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int segment_number,
   n = vsnprintf (buf, sizeof(buf), fmt, ap);
   va_end (ap);
   if (n < 0 || n == sizeof(buf))
-    strcpy (buf, "jbig2_error: error in generating error string");
+    strncpy (buf, "jbig2_error: error in generating error string", sizeof(buf));
   code = ctx->error_callback (ctx->error_callback_data, buf, severity, segment_number);
   if (severity == JBIG2_SEVERITY_FATAL)
     code = -1;

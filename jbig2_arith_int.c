@@ -3,6 +3,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #include "config_types.h"
+#elif _WIN32
+#include "config_win32.h"
 #endif
 #ifdef HAVE_STDINT_H
 #include <stdint.h>

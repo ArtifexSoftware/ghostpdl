@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_symbol_dict.c,v 1.15 2002/07/08 13:40:15 giles Exp $
+    $Id: jbig2_symbol_dict.c,v 1.16 2002/07/08 14:54:01 giles Exp $
     
     symbol dictionary segment decode and support
 */
@@ -16,6 +16,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #include "config_types.h"
+#elif _WIN32
+#include "config_win32.h"
 #endif
 #if HAVE_STDINT_H
 #include <stdint.h>
