@@ -15,7 +15,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 
 # Convert the change notices in a CVS repository to the Ghostscript
 # History.htm file format.  Based on cvs2log.py by Henry Stiles

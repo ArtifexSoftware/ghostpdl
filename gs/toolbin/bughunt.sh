@@ -1,6 +1,6 @@
 #! /bin/sh
 
-# $RCSfile$ $Revision$
+# $Id$
 # NB: If your sh does not support functions, then try
 # /usr/local/bin/bash or /bin/ksh, if you have them.
 

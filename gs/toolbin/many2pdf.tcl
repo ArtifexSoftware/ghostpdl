@@ -15,7 +15,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 
 # Batch-convert a list of files to PDF.  If restarted, only convert files
 # that have not been converted yet.  Detect excessive running times and

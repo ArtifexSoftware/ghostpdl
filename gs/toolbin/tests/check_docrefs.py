@@ -15,7 +15,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 
 # Check that the hrefs in an HTML document mention all of a set of files.
 # The requirement is that the union of all the docfiles must somewhere

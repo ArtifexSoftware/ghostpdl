@@ -17,7 +17,7 @@ exec tclsh "$0" "$@"
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-set TMAKE_ID {$RCSfile$ $Revision$}
+set TMAKE_ID {$Id$}
 
 # tmake is intended to be a drop-in replacement for a large and
 # useful subset of 'make'.  It compiles makefiles into Tcl scripts

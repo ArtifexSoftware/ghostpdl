@@ -15,7 +15,7 @@
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 
 # Run some or all of a Genoa test suite, optionally checking for memory leaks.
 # Command line syntax:

@@ -17,7 +17,7 @@ exec tclsh "$0" "$@"
 # contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 # San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-# $RCSfile$ $Revision$
+# $Id$
 
 # This file is supposed to help with 3-way merges.
 # Currently there is only one function:
@@ -42,8 +42,8 @@ proc filesame {f1 f2} {
 	} {
 	    if {[regexp {Copyright} $a]} {
 		if {[regexp {Copyright} $c]} {continue}
-	    } elseif {[regexp {\$RCSfile$ $Revision$a]} {
-		if {[regexp {\$RCSfile$ $Revision$c]} {continue}
+	    } elseif {[regexp {\$Id$a]} {
+		if {[regexp {\$Id$c]} {continue}
 	    }
 	}
 	set same 0
