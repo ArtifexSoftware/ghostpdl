@@ -54,32 +54,12 @@ PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-MAN1_PAGES=gs gslp gsnd dvipdf font2c pdf2dsc pdf2ps pdfopt \
-	   pf2afm pfbtopfa printafm ps2ascii ps2epsi \
-	   ps2pdf ps2pdfwr ps2ps wftopfa
-MAN1_PS2PS_LINKS=eps2eps
-MAN1_PS2PDF_LINKS=ps2pdf12 ps2pdf13
-MAN1_GSLP_LINKS=gsbj gsdj gsdj500 gslj
+install-data: install-libdata install-doc install-man install-examples
+
 # There's no point in providing a complete dependency list: we include
 # one file from each subdirectory just as a sanity check.
-install-data: $(PSDOCDIR)/Use.htm $(PSEXDIR)/golfer.ps $(PSMANDIR)/gs.1
-	-mkdir $(mandir)
-	-mkdir $(man1dir)
-	$(SH) -c 'for f in $(MAN1_PAGES) ;\
-	do if ( test -f $(PSMANDIR)/$$f.1 ); then $(INSTALL_DATA) $(PSMANDIR)/$$f.1 $(man1dir)/$$f.$(man1ext); fi;\
-	done'
-	$(SH) -c 'for f in $(MAN1_PS2PS_LINKS) ;\
-	do rm -f $(man1dir)/$$f.$(man1ext);\
-	ln -s $(man1dir)/ps2ps.1 $(man1dir)/$$f.$(man1ext);\
- 	done'
-	$(SH) -c 'for f in $(MAN1_PS2PDF_LINKS) ;\
-	do rm -f $(man1dir)/$$f.$(man1ext);\
-	ln -s $(man1dir)/ps2pdf.1 $(man1dir)/$$f.$(man1ext);\
-	done'
-	$(SH) -c 'for f in $(MAN1_GSLP_LINKS) ;\
-	do rm -f $(man1dir)/$$f.$(man1ext);\
-	ln -s $(man1dir)/gslp.1 $(man1dir)/$$f.$(man1ext);\
-	done'
+
+install-libdata: 
 	-mkdir $(datadir)
 	-mkdir $(gsdir)
 	-mkdir $(gsdatadir)
@@ -107,20 +87,60 @@ pdf2dsc.ps pdfopt.ps ;\
 	$(SH) -c 'for f in $(PSLIBDIR)/*.ppd $(PSLIBDIR)/*.rpd $(PSLIBDIR)/*.upp $(PSLIBDIR)/*.xbm $(PSLIBDIR)/*.xpm;\
 	do $(INSTALL_DATA) $$f $(gsdatadir)/lib ;\
 	done'
+
+# install html documentation
+DOC_PAGES=PUBLIC README Bug-form.htm Bug-info.htm \
+	   C-style.htm Changes.htm Commprod.htm Copying.htm \
+	   Current.htm DLL.htm Devices.htm Drivers.htm Fonts.htm \
+	   Helpers.htm Hershey.htm \
+	   History1.htm History2.htm History3.htm History4.htm \
+	   History5.htm History6.htm \
+	   Htmstyle.htm Humor.htm Install.htm Language.htm \
+	   Lib.htm Make.htm New-user.htm \
+	   News.htm Projects.htm Ps2epsi.htm Ps2pdf.htm \
+	   Psfiles.htm Public.htm  Readme.htm Release.htm \
+	   Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm
+install-doc: $(PSDOCDIR)/News.htm
 	-mkdir $(docdir)
-	$(SH) -c 'for f in \
-PUBLIC README \
-Bug-form.htm Bug-info.htm \
-C-style.htm Changes.htm Commprod.htm Copying.htm Current.htm \
-DLL.htm Devices.htm Drivers.htm Fonts.htm \
-Helpers.htm Hershey.htm \
-History1.htm History2.htm History3.htm History4.htm History5.htm History6.htm \
-Htmstyle.htm Humor.htm Install.htm Language.htm Lib.htm Make.htm New-user.htm \
-News.htm Projects.htm Ps2epsi.htm Ps2pdf.htm Psfiles.htm Public.htm \
-Readme.htm Release.htm \
-Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm ;\
+	$(SH) -c 'for f in $(DOC_PAGES) ;\
 	do if ( test -f $(PSDOCDIR)/$$f ); then $(INSTALL_DATA) $(PSDOCDIR)/$$f $(docdir); fi;\
 	done'
+
+# install the man pages for each locale
+MAN_LCDIRS=. de
+MAN1_LINKS_PS2PS=eps2eps
+MAN1_LINKS_PS2PDF=ps2pdf12 ps2pdf13
+MAN1_LINKS_GSLP=gsbj gsdj gsdj500 gslj
+install-man: $(PSMANDIR)/gs.1
+	$(SH) -c 'test -d $(mandir) || mkdir $(mandir)'
+	$(SH) -c 'for d in $(MAN_LCDIRS) ;\
+	do man1dir=$(mandir)/$$d/man$(man1ext) ;\
+	  ( test -d $$man1dir || mkdir -p $$man1dir ) ;\
+	  for f in $(PSMANDIR)/$$d/*.1 ;\
+	    do $(INSTALL_DATA) $$f $$man1dir ;\
+	    if ( test -f $$man1dir/ps2ps.$(man1ext) ) ;\
+	      then for f in $(MAN1_LINKS_PS2PS) ;\
+	        do rm -f $$man1dir/$$f.$(man1ext) ;\
+		ln -s $$man1dir/ps2ps.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
+	      done ;\
+	    fi ;\
+	    if ( test -f $$man1dir/ps2pdf.$(man1ext) ) ;\
+	      then for f in $(MAN1_LINKS_PS2PDF) ;\
+	        do rm -f $$man1dir/$$f.$(man1ext) ;\
+	        ln -s $$man1dir/ps2pdf.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
+ 	      done ;\
+	    fi ;\
+	    if ( test -f $$man1dir/gslp.$(man1ext) ) ;\
+	      then for f in $(MAN1_LINKS_GSLP) ;\
+	        do rm -f $$man1dir/$$f.$(man1ext) ;\
+	        ln -s $$man1dir/gslp.$(man1ext) $$man1dir/$$f.$(man1ext) ;\
+ 	      done ;\
+ 	    fi ;\
+	  done ;\
+	done'
+
+# install the example files
+install-examples:
 	-mkdir $(exdir)
 	for f in \
 alphabet.ps chess.ps cheq.ps colorcir.ps doretree.ps escher.ps \
