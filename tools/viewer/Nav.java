@@ -5,11 +5,25 @@ import java.io.File;
 import javax.swing.*;
 import javax.swing.filechooser.*;
 
+/** 
+ * Two window nav + zoomed Viewer for PCL and PXL files.
+ * 
+ * Usage:
+ * java Nav ../frs96.pxl
+ * 
+ * Adds a smaller navigation window coupled to a Gview window.
+ * This allows a small portion of a page to be viewed at high resolution
+ * in the Gview window with navigation occuring via the Nav window.
+ * 
+ * Mostly inherits behavior and reflects action on this window and the 
+ * Gview zoomed window.
+ *
+ * @version $Revision$
+ * @author Stefan Kemper
+ */
 public class Nav extends Gview {
 
     public Nav() {
-	initComponents();
-	pack();
 	pageView = new Gview();
     }
 
@@ -39,76 +53,11 @@ public class Nav extends Gview {
         view.runMain(args);
     }
 
-    /** This method is called from within the constructor to
-     * initialize the form.
-     */
-    private void initComponents() {
-	/*
-        jMenuBar = new javax.swing.JMenuBar();
-        jMenu = new javax.swing.JMenu();
-        jMenuItemOpen = new javax.swing.JMenuItem();
-
-        jMenu.setText("File");
-
-	jMenuItemOpen.setText("Open");
-	jMenuItemOpen.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-                    jMenuItemOpenActionPerformed(evt);
-                }
-            }
-					);
-	jMenu.add(jMenuItemOpen);
-	jMenuBar.add(jMenu);
-	*/
-	
-	// window exit
-	addWindowListener(new java.awt.event.WindowAdapter() {
-		public void windowClosing(java.awt.event.WindowEvent evt) {
-		    exitForm(evt);
-		}
-	    }
-			  );
-	/*
-	 setJMenuBar(jMenuBar);
-	 */
-    }
 
     /** file open From menu */
     private void jMenuItemOpenActionPerformed(java.awt.event.ActionEvent evt) {
 	fileOpen();
     }
-
-    /** file open */
-    /*
-    void fileOpen() {
-	int result = chooser.showOpenDialog(null);
-	File file = chooser.getSelectedFile();
-	if (result == JFileChooser.APPROVE_OPTION) {
-	    if (debug) System.out.println("file open " + file.getPath());
-	    String[] args = new String[1];
-	    args[0] = file.getPath();
-	    runMain(args);
-	}
-    }
-    */
-    /** Exit the Application */
-    private void exitForm(java.awt.event.WindowEvent evt) {
-        System.exit (0);
-    }
-
-    /**
-     * usage:
-    public static String usage() {
-	String str =
-	    "Usage::java Gview file.pcl\n"
-	    + "q ->quit\n"
-	    + "drag mouse1 -> translate\n"
-	    + "crtl mouse1 -> reset zoom \n"
-	    + "mouse2 -> zoom in\n"
-	    ;
-	return str;
-    }
-     */
 
     public void nextPage() {
 	super.nextPage();
@@ -143,9 +92,6 @@ public class Nav extends Gview {
         double psfx = origX / origW * pageView.origW / pageView.origRes * pageView.desiredRes;
         double psfy = origY / origH * pageView.origH / pageView.origRes * pageView.desiredRes;
 	
-	// System.out.println( "tx " +  psfx +
-	//		     " ty " + psfy );
-
 	pageView.translateTo( psfx, psfy );
 	repaint();
     }
@@ -177,14 +123,8 @@ public class Nav extends Gview {
     }
 
     /**
+     * High resolution window.
      * @link aggregationByValue
      */
     private Gview pageView;
-
-    private JFileChooser chooser = new JFileChooser();
-    private javax.swing.JMenuBar jMenuBar;
-    private javax.swing.JMenu jMenu;
-    private javax.swing.JMenuItem jMenuItemOpen;
-
-
 }
