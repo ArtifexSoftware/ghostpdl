@@ -44,6 +44,7 @@ Aladdin's C coding guidelines
 <li><a href="#Scalars">Scalars</a>
 </ul>
 <li><a href="#Static_extern_scoping"><b><tt>static</tt></b> and <b><tt>extern</tt></b> scoping</a>
+<li><a href="#Standard_library">Standard library features</a>
 <li><a href="#Other">Miscellany</a>
 </ul>
 <li><a href="#File_structuring_naming">File structuring and naming</a>
@@ -403,6 +404,15 @@ it, especially if it's local to a file.
 <p>
 Avoid <b><tt>extern</tt></b> in <b><tt>.c</tt></b> files: put it in header
 files.
+
+<h2><a name="Standard_library"></a>Standard library features</h2>
+
+<p>
+Only use library features that are documented in the established ANSI
+standard (e.g., Harbison & Steele's book).  Do not use procedures that are
+"standards" promulgated by Microsoft (e.g., <b><tt>stricmp</tt></b>), or
+originate in BSD Unix (e.g., <b><tt>strcasecmp</tt></b>), or were added in
+later versions of the standard such as C 9X.
 
 <h2><a name="Other"></a>Miscellany</h2>
 
