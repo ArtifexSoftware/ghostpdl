@@ -15,6 +15,7 @@
 #include "gscoord.h"
 #include "gspath.h"
 #include "gspaint.h"
+#include "gxfarith.h"		/* for sincos */
 #include "gxfixed.h"
 #include "pgmand.h"
 #include "pgdraw.h"
@@ -24,7 +25,7 @@
 
 /* HAS: update ghostscript's gs and the current ctm to reflect hpgl's.
    embodied in hpgl_set_graphics_dash_state(),
-   hpgl_set_graphics_line_attributes(), and hpgl_set_graphics_state() below.
+   hpgl_set_graphics_line_attributes(), and hpgl_set_drawing_state() below.
    Note: For now the gs gstate is updated each time graphics are
    rendered and the ctm is updated each time a new path is started.
    Potential performance issue.  The design choice is based solely on
@@ -35,9 +36,11 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 {
 	bool adaptive = ( pgls->g.line.current.type < 0 );
 	int entry = abs(pgls->g.line.current.type);
-	hpgl_line_type_t *pat;
+	const hpgl_line_type_t *pat;
 	float length;
 	float pattern[20];
+	float offset;
+	int count;
 	int i;
 
 	/* handle the simple case (no dash) and return */
@@ -49,6 +52,8 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	    return 0;
 	  }
 	
+	/* Make sure we always draw dots. */
+	hpgl_call(gs_setdotlength(pgls->pgs, 0.00098, true));
 	if ( entry == 0 )
 	  {
 	    /* dot length NOTE this is in absolute 1/72" units not
@@ -59,8 +64,6 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	    pattern[1] = 1.0e6;	/* "infinity" */
 	    hpgl_call(gs_setdash(pgls->pgs, pattern, 2, 0));
 	    gs_setdashadapt(pgls->pgs, true);
-	    hpgl_call(gs_setdotlength(pgls->pgs, (0.00098), 
-				      true));
 	    return 0;
 	  }
 
@@ -79,14 +82,31 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	gs_setdashadapt(pgls->pgs, adaptive);
 	/* HAS not correct as user space may not be PU */
 	
-	for ( i = 0; i < pat->count; i++ )
+	/*
+	 * The graphics library interprets odd pattern counts differently
+	 * from GL: if the pattern count is odd, we need to do something
+	 * a little special.
+	 */
+	/* HAS does not handle residual / offset yet.  It is
+	   not clear where the calculation should take place. */
+	count = pat->count;
+	for ( i = 0; i < count; i++ )
+	  pattern[i] = length * pat->gap[i];
+	offset = 0;
+	if ( count & 1 )
 	  {
-	    pattern[i] = length * pat->gap[i];
+	    /*
+	     * Combine the last gap with the first one, and change the
+	     * offset to compensate.  NOTE: this doesn't work right with
+	     * adaptive line type: we may need to change the library to
+	     * make this work properly.
+	     */
+	    --count;
+	    pattern[0] += pattern[count];
+	    offset += pattern[count];
 	  }
 	
-	/* HAS does not handle residual / offset yet.  It is
-	   not clear where the calculation should take place */
-	hpgl_call(gs_setdash(pgls->pgs, pattern, pat->count, 0));
+	hpgl_call(gs_setdash(pgls->pgs, pattern, count, offset));
 	
 	return 0;
 }
@@ -147,7 +167,7 @@ vector:	      hpgl_call(gs_setlinejoin(pgls->pgs,
 				     pgls->g.miter_limit));
 	  
 	  hpgl_call(gs_setlinewidth(pgls->pgs, 
-				    pgls->g.pen_width[pgls->g.pen]));
+				    pgls->g.pen.width[pgls->g.pen.selected]));
 	  
 	  return 0;
 }
@@ -160,10 +180,10 @@ vector:	      hpgl_call(gs_setlinejoin(pgls->pgs,
 hpgl_polyfill_bbox(hpgl_state_t *pgls, gs_rect *bbox)
 {
 	hpgl_call(gs_pathbbox(pgls->pgs, bbox));
-	bbox->p.x -= pgls->g.pen_width[pgls->g.pen];
-	bbox->p.y -= pgls->g.pen_width[pgls->g.pen];
-	bbox->q.x += pgls->g.pen_width[pgls->g.pen];
-	bbox->q.y += pgls->g.pen_width[pgls->g.pen];
+	bbox->p.x -= pgls->g.pen.width[pgls->g.pen.selected];
+	bbox->p.y -= pgls->g.pen.width[pgls->g.pen.selected];
+	bbox->q.x += pgls->g.pen.width[pgls->g.pen.selected];
+	bbox->q.y += pgls->g.pen.width[pgls->g.pen.selected];
 	return 0;
 }
 
@@ -259,42 +279,67 @@ hpgl_set_plu_to_device_ctm(hpgl_state_t *pgls)
 	return 0;
 }
 
+/* The CTM maps PLU to device units; adjust it to handle scaling, if any. */
  private int
-hpgl_set_label_to_plu_ctm(hpgl_state_t *pgls)
-{
-	/* if we are not in character mode do nothing -- identity
-           transformation */
-        /* HAS font is selection not complete */
-	pcl_font_selection_t *pfs = 
-	  &pgls->g.font_selection[pgls->g.font_selected];
-	hpgl_real_t height_points = pfs->params.height_4ths / 4.0;
-	hpgl_real_t width_points = pl_fp_pitch_cp(&pfs->params) / 100.0;
-	hpgl_call(gs_translate(pgls->pgs, pgls->g.pos.x, pgls->g.pos.y));
-	hpgl_call(gs_scale(pgls->pgs, 
-			   points_2_plu(height_points),
-			   points_2_plu(width_points)));
+hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
+{	floatp origin_x = pgls->g.P1.x, origin_y = pgls->g.P1.y;
+
+	switch ( pgls->g.scaling_type )
+	  {
+	  case hpgl_scaling_none:
+	    gs_make_identity(pmat);
+	    break;
+	  case hpgl_scaling_point_factor:
+	    gs_make_translation(origin_x, origin_y, pmat);
+	    gs_matrix_scale(pmat, pgls->g.scaling_params.factor.x,
+			    pgls->g.scaling_params.factor.y, pmat);
+	    gs_matrix_translate(pmat, -pgls->g.scaling_params.pmin.x,
+				-pgls->g.scaling_params.pmin.y, pmat);
+	    break;
+	  default:
+	  /*case hpgl_scaling_anisotropic:*/
+	  /*case hpgl_scaling_isotropic:*/
+	    {
+	      floatp window_x = pgls->g.P2.x - origin_x,
+		range_x = pgls->g.scaling_params.pmax.x -
+		  pgls->g.scaling_params.pmin.x,
+		scale_x = window_x / range_x;
+	      floatp window_y = pgls->g.P2.y - origin_y,
+		range_y = pgls->g.scaling_params.pmax.y -
+		  pgls->g.scaling_params.pmin.y,
+		scale_y = window_y / range_y;
+
+	      if ( pgls->g.scaling_type == hpgl_scaling_isotropic )
+		{ if ( scale_x > scale_y )
+		    { /* Reduce the X scaling. */
+		      origin_x += range_x * (scale_x - scale_y) *
+			pgls->g.scaling_params.left;
+		      scale_x = scale_y;
+		    }
+		  else if ( scale_y > scale_x )
+		    { /* Reduce the Y scaling. */
+		      origin_y += range_y * (scale_y - scale_x) *
+			pgls->g.scaling_params.bottom;
+		      scale_y = scale_x;
+		    }
+		}
+	      gs_make_translation(origin_x, origin_y, pmat);
+	      gs_matrix_scale(pmat, scale_x, scale_y, pmat);
+	      break;
+	    }
+	  }
 	return 0;
+
 }
-
-
  private int
 hpgl_set_user_units_to_plu_ctm(hpgl_state_t *pgls)
 {
-
-			       
-	/* finally scale to user units.  HAS this only handles the
-           simple scaling scale for the moment. */
 	if ( pgls->g.scaling_type != hpgl_scaling_none )
-	  { 
-	    
-	    floatp scale_x = (pgls->g.P2.x - pgls->g.P1.x) / 
-	      (pgls->g.scaling_params.pmax.x - pgls->g.scaling_params.pmin.x);
-	    floatp scale_y = (pgls->g.P2.y - pgls->g.P1.y) / 
-	      (pgls->g.scaling_params.pmax.y - pgls->g.scaling_params.pmin.y);
-	    hpgl_call(gs_translate(pgls->pgs, 
-				   pgls->g.P1.x, 
-				   pgls->g.P1.y));
-	    hpgl_call(gs_scale(pgls->pgs, scale_x, scale_y));
+	  {
+	    gs_matrix mat;
+
+	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
+	    hpgl_call(gs_concat(pgls->pgs, &mat));
 	  }
 	return 0;
 }
@@ -307,27 +352,48 @@ hpgl_set_ctm(hpgl_state_t *pgls)
 	/* convert pcl->device to plu->device */
 	hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
 
-	/* concatenate on user units ctm or character ctm based on
-           current mode */
-	if ( pgls->g.current_render_mode == hpgl_rm_character )
-	  hpgl_call(hpgl_set_label_to_plu_ctm(pgls));
-	else
+	/* concatenate on user units ctm unless in character mode
+	   with absolute size */
+	if ( !(pgls->g.current_render_mode == hpgl_rm_character &&
+	       pgls->g.character.size_set && !pgls->g.character.size_relative)
+	   )
 	  hpgl_call(hpgl_set_user_units_to_plu_ctm(pgls));
 
 	return 0;
 }
 
+/* Plot one vector for vector fill. */
+ private int
+hpgl_draw_vector(hpgl_state_t *pgls, hpgl_real_t x0, hpgl_real_t y0,
+  hpgl_real_t x1, hpgl_real_t y1)
+{
+	hpgl_args_t args;
+	hpgl_args_set_real(&args, x0);
+	hpgl_args_add_real(&args, y0);
+	hpgl_call(hpgl_PU(&args, pgls));
+	hpgl_args_set_real(&args, x1);
+	hpgl_args_add_real(&args, y1);
+	hpgl_call(hpgl_PD(&args, pgls));
+	return 0;      
+}
+
 /* HAS should replicate lines beginning at the anchor corner to +X and
    +Y.  Not quite right - anchor corner not yet supported.
    pgls->g.anchor_corner needs to be used to set dash offsets */
-
  private int
 hpgl_polyfill(hpgl_state_t *pgls)
 {
-	hpgl_real_t diag_mag, startx, starty, endx, endy, direction,
-	  x_fill_increment, y_fill_increment;
+	hpgl_real_t diag_mag, startx, starty, endx, endy;
+	gs_sincos_t sincos;
+#define sin_dir sincos.sin
+#define cos_dir sincos.cos
 	gs_rect bbox;
 	bool cross = (pgls->g.fill.type == hpgl_fill_crosshatch);
+	const hpgl_hatch_params_t *params =
+	  (cross ? &pgls->g.fill.param.crosshatch : &pgls->g.fill.param.hatch);
+	hpgl_real_t spacing = params->spacing;
+	hpgl_real_t direction = params->angle;
+
 	/* get the bounding box */
         hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
 	/* HAS calculate the offset for dashing - we do not need this
@@ -336,71 +402,69 @@ hpgl_polyfill(hpgl_state_t *pgls)
 	hpgl_call(hpgl_clear_current_path(pgls));
 	/* HAS calculate the diagonals magnitude.  Note we clip this
            latter in the library.  If desired we could clip to the
-           actual bbox here to save path memory.  For now we simply
+           actual bbox here to save processing time.  For now we simply
            draw all fill lines using the diagonals magnitude */
 	diag_mag = 
 	  hpgl_compute_distance(bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
 
-	/* get the current direction in radians */
-	direction = degrees_to_radians * pgls->g.fill.param.hatch.angle;
-start:	x_fill_increment = 
-	  fabs((pgls->g.fill.param.hatch.spacing) / sin(direction));
-	endx = (diag_mag * cos(direction)) + bbox.p.x;
-	endy = (diag_mag * sin(direction)) + bbox.p.y;
+	if ( spacing == 0 )
+	  { /* Per TRM 22-12, use 1% of the P1/P2 distance. */
+	    gs_matrix mat;
+
+	    hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
+	    spacing = 
+	      0.01 * hpgl_compute_distance(pgls->g.P1.x, pgls->g.P1.y,
+					   pgls->g.P2.x, pgls->g.P2.y);
+	    /****** WHAT IF ANISOTROPIC SCALING? ******/
+	    spacing /= min(fabs(mat.xx), fabs(mat.yy));
+	  }
+start:	gs_sincos_degrees(direction, &sincos);
+	if ( sin_dir < 0 )
+	  sin_dir = -sin_dir, cos_dir = -cos_dir; /* ensure y_inc >= 0 */
+	/* Draw one vector regardless of direction. */
 	startx = bbox.p.x; starty = bbox.p.y;
-	/* travel along +x using current spacing */
-	do
-	  {
-	    if ( startx > bbox.q.x ) break; /* done */
-	    /* draw the line */
-	    {
-	      hpgl_args_t args;
-	      hpgl_args_set_real(&args, startx);
-	      hpgl_args_add_real(&args, starty);
-	      hpgl_PU(&args, pgls);
-	      hpgl_args_set_real(&args, endx);
-	      hpgl_args_add_real(&args, endy);
-	      hpgl_PD(&args, pgls);
-	    }
-	    /* update startx by current spacing */
-	    startx += x_fill_increment;
-	    endx += x_fill_increment;
-	  } 
-	while (1);
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
-	/* same for y */
-	startx = bbox.p.x; starty = bbox.p.y;
-	endx = (diag_mag * cos(direction)) + startx;
-	endy = (diag_mag * sin(direction)) + starty;
-	y_fill_increment = 
-	  fabs((pgls->g.fill.param.hatch.spacing) / cos(direction));
-	do
-	  {
-	    if ( starty > bbox.q.y ) break; /* done */
-	    /* draw the line */
-	    {
-	      hpgl_args_t args;
-	      hpgl_args_set_real(&args, startx);
-	      hpgl_args_add_real(&args, starty);
-	      hpgl_PU(&args, pgls);
-	      hpgl_args_set_real(&args, endx);
-	      hpgl_args_add_real(&args, endy);
-	      hpgl_PD(&args, pgls);
-	    }
-	    /* update starty by current spacing */
-	    starty += y_fill_increment;
-	    endy += y_fill_increment;
-	  } 
-	while (1);
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
-	/* HAS not working yet */
+	endx = (diag_mag * cos_dir) + startx;
+	endy = (diag_mag * sin_dir) + starty;
+	hpgl_call(hpgl_draw_vector(pgls, startx, starty, endx, endy));
+	/* Travel along +x using current spacing. */
+	if ( sin_dir != 0 )
+	  { hpgl_real_t x_fill_increment = fabs(spacing / sin_dir);
+
+	    while ( endx += x_fill_increment,
+		    (startx += x_fill_increment) <= bbox.q.x
+		  )
+	      hpgl_call(hpgl_draw_vector(pgls, startx, starty, endx, endy));
+	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
+	  }
+	/* Travel along +Y similarly. */
+	if ( cos_dir != 0 )
+	  { hpgl_real_t y_fill_increment = fabs(spacing / cos_dir);
+
+	    /*
+	     * If the slope is negative, we have to travel along the right
+	     * edge of the box rather than the left edge.  Fortuitously,
+	     * the X loop left everything set up exactly right for this case.
+	     */
+	    if ( cos_dir >= 0 )
+	      { startx = bbox.p.x; starty = bbox.p.y;
+	        endx = (diag_mag * cos_dir) + startx;
+		endy = (diag_mag * sin_dir) + starty;
+	      }
+	    while ( endy += y_fill_increment,
+		    (starty += y_fill_increment) <= bbox.q.y
+		  )
+	      hpgl_call(hpgl_draw_vector(pgls, startx, starty, endx, endy));
+	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector_fill));
+	  }
 	if ( cross )
 	  {
 	    cross = false;
-	    direction += (M_PI / 2.0);
+	    direction += 90;
 	    goto start;
 	  }
 	return 0;
+#undef sin_dir
+#undef cos_dir
 }
 
 /* HAS - probably not necessary and clip intersection with IW */
@@ -509,14 +573,8 @@ hpgl_set_drawing_color(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 }
 
  private int
-hpgl_set_graphics_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
+hpgl_set_drawing_state(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 {
-        /* HACK to reset the ctm.  Note that in character mode we
-           concatenate the character matrix to the ctm, but we do not
-           want the tranformation to apply to the line width, miter,
-           etc. */
-	hpgl_call(hpgl_set_ctm(pgls));
-
 	/* do dash stuff. */
 	hpgl_call(hpgl_set_graphics_dash_state(pgls));
 
@@ -542,70 +600,64 @@ hpgl_get_current_position(hpgl_state_t *pgls, gs_point *pt)
  int
 hpgl_set_current_position(hpgl_state_t *pgls, gs_point *pt)
 {
-	if ( pgls->g.relative )
-	  {
-	    pgls->g.pos.x += pt->x;
-	    pgls->g.pos.y += pt->y;
-	  }
-	else
-	  {
-	    pgls->g.pos.x = pt->x;
-	    pgls->g.pos.y = pt->y;
-	  }
-	return 0;
-}
-
-/* function to set up a new path.  We assume the current path is
-   empty.  Note point is passed by value. */
- private int
-hpgl_start_path(hpgl_state_t *pgls, gs_point pt)
-{
-	/* set up the ctm for this path */
-	hpgl_call(hpgl_set_ctm(pgls));
-	/* create a new path */
-	hpgl_call(gs_newpath(pgls->pgs));
-
-	/* moveto the current position */
-	hpgl_call(hpgl_get_current_position(pgls, &pt));
-	hpgl_call_check_lost(gs_moveto(pgls->pgs, pt.x, pt.y));
-	/* record the first point of the path in gl/2 state so that we
-           can implicitly close the path if necessary */
-	hpgl_call(hpgl_get_current_position(pgls, &pgls->g.first_point));
-
-	/* if we are in lost indicate that we do not have a path */
-	if (!hpgl_lost) pgls->g.have_first_moveto = true;
-
-
-	
+	pgls->g.pos = *pt;
 	return 0;
 }
 
  int
-hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y, 
-		       int (*gs_func)(gs_state *pgs, floatp x, floatp y))
+hpgl_add_point_to_path(hpgl_state_t *pgls, floatp x, floatp y,
+		       hpgl_plot_function_t func)
 {	
-        bool new_path = !pgls->g.have_first_moveto;
-	gs_point point;
-	point.x = x;
-	point.y = y;
+	static const int (*gs_procs[])(P3(gs_state *, floatp, floatp)) = {
+	  hpgl_plot_function_procedures
+	};
 
-	if ( new_path ) 
-	  hpgl_call(hpgl_start_path(pgls, point));
+	if ( !pgls->g.have_first_moveto )
+	  {
+	    /* Start a new GL/2 path. */
+	    gs_point pt;
 
-	hpgl_call_check_lost((*gs_func)(pgls->pgs, point.x, point.y));
+	    hpgl_call(hpgl_set_ctm(pgls));
+	    hpgl_call(gs_newpath(pgls->pgs));
 
-	/* update hpgl's state position */
-	hpgl_call(hpgl_set_current_position(pgls, &point));
+	    /* moveto the current position */
+	    hpgl_call(hpgl_get_current_position(pgls, &pt));
+	    hpgl_call_check_lost(gs_moveto(pgls->pgs, pt.x, pt.y));
+	    /* record the first point of the path in gl/2 state so that we
+	       can implicitly close the path if necessary */
+	    pgls->g.first_point = pt;
+
+	    /* if we are in lost indicate that we do not have a path */
+	    if (!hpgl_lost)
+	      pgls->g.have_first_moveto = true;
+	  }
+
+	{ int code = (*gs_procs[func])(pgls->pgs, x, y);
+
+	  if ( code < 0 )
+	    { hpgl_call_note_error(code);
+	      if ( code == gs_error_limitcheck )
+		hpgl_set_lost_mode(pgls, hpgl_lost_mode_entered);
+	    }
+	  else
+	    { gs_point point;
+
+	      if ( hpgl_plot_is_absolute(func) )
+		hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
+
+	      /* update hpgl's state position */
+	      gs_currentpoint(pgls->pgs, &point);
+	      hpgl_call(hpgl_set_current_position(pgls, &point));
+	    }
+	}
 
 	return 0;
 }
 
-/* destroys the current path.  HAS probably don't need to create a new
-   one also. */
+/* destroy the current path. */
  int 
 hpgl_clear_current_path(hpgl_state_t *pgls)
 {
-	/* if a current path exists set the current state position */
 	hpgl_call(gs_newpath(pgls->pgs));
 	pgls->g.have_first_moveto = false;
 	return 0;
@@ -621,15 +673,17 @@ hpgl_close_current_path(hpgl_state_t *pgls)
 
 /* converts pcl coordinate to device space and back to hpgl space */
  int
-hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, gs_point *pcl_pt)
+hpgl_add_pcl_point_to_path(hpgl_state_t *pgls, const gs_point *pcl_pt)
 {
 	gs_point dev_pt, hpgl_pt;
+
 	hpgl_call(hpgl_clear_current_path(pgls));
 	pcl_set_ctm(pgls, false);
 	hpgl_call(gs_transform(pgls->pgs, pcl_pt->x, pcl_pt->y, &dev_pt));
 	hpgl_call(hpgl_set_ctm(pgls));
 	hpgl_call(gs_itransform(pgls->pgs, dev_pt.x, dev_pt.y, &hpgl_pt));
-	hpgl_call(hpgl_add_point_to_path(pgls, hpgl_pt.x, hpgl_pt.y, gs_moveto));
+	hpgl_call(hpgl_add_point_to_path(pgls, hpgl_pt.x, hpgl_pt.y,
+					 hpgl_plot_move_absolute));
 	return 0;
 }
 
@@ -653,9 +707,10 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 				start_angle_radians, 
 				&arccoord_x, &arccoord_y);
 	hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
-					 ((pgls->g.pen_down) && 
+					 ((pgls->g.move_or_draw) &&
 					 (!start_moveto)) ? 
-					 gs_lineto : gs_moveto));
+					 hpgl_plot_draw_absolute :
+					 hpgl_plot_move_absolute));
 
 	/* HAS - pen up/down is invariant in the loop */
 	for ( i = 0; i < num_chords; i++ ) 
@@ -665,8 +720,8 @@ hpgl_add_arc_to_path(hpgl_state_t *pgls, floatp center_x, floatp center_y,
 				    start_angle_radians, 
 				    &arccoord_x, &arccoord_y);
 	    hpgl_call(hpgl_add_point_to_path(pgls, arccoord_x, arccoord_y, 
-					     ((pgls->g.pen_down) ? 
-					      gs_lineto : gs_moveto)));
+					     pgls->g.move_or_draw |
+					     hpgl_plot_absolute));
 	  }
 	return 0;
 }
@@ -676,7 +731,7 @@ hpgl_add_bezier_to_path(hpgl_state_t *pgls, floatp x1, floatp y1,
 			floatp x2, floatp y2, floatp x3, floatp y3, 
 			floatp x4, floatp y4)
 {
-	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, gs_moveto));
+	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, hpgl_plot_move_absolute));
 	/* HAS we may need to flatten this here */
 	hpgl_call(gs_curveto(pgls->pgs, x2, y2, x3, y3, x4, y4));
 	/* set the state position */
@@ -717,11 +772,7 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 
 	hpgl_call(hpgl_close_path(pgls));
 
-	hpgl_call(hpgl_set_graphics_state(pgls, render_mode));
-
-	/* we reset the ctm before stroking to preserve the line width
-           information */
-	hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
+	hpgl_call(hpgl_set_drawing_state(pgls, render_mode));
 	
 	switch ( render_mode )
 	  {
@@ -732,11 +783,14 @@ hpgl_draw_current_path(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 	      hpgl_call(gs_fill(pgls->pgs));
 	    break;
 	  case hpgl_rm_clip_and_fill_polygon:
-	    /* handled by hpgl_set_graphics_state */
+	    /* HACK handled by hpgl_set_drawing_color */
 	    break;
 	  case hpgl_rm_vector:
 	  case hpgl_rm_character:
 	  case hpgl_rm_vector_fill:
+	    /* we reset the ctm before stroking to preserve the line width
+	       information */
+	    hpgl_call(hpgl_set_plu_to_device_ctm(pgls));
 	    hpgl_call(gs_stroke(pgls->pgs));
 	    break;
 	  default :
@@ -790,11 +844,11 @@ hpgl_copy_polygon_buffer_to_current_path(hpgl_state_t *pgls)
 hpgl_draw_line(hpgl_state_t *pgls, floatp x1, floatp y1, floatp x2, floatp y2)
 {
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
-					 ((pgls->g.pen_down) ? 
-					  gs_lineto : gs_moveto)));
+					 pgls->g.move_or_draw |
+					 hpgl_plot_absolute));
 	hpgl_call(hpgl_add_point_to_path(pgls, x2, y2, 
-					 ((pgls->g.pen_down) ? 
-					  gs_lineto : gs_moveto)));
+					 pgls->g.move_or_draw |
+					 hpgl_plot_absolute));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 	return 0;
 }
@@ -803,8 +857,8 @@ hpgl_draw_line(hpgl_state_t *pgls, floatp x1, floatp y1, floatp x2, floatp y2)
 hpgl_draw_dot(hpgl_state_t *pgls, floatp x1, floatp y1)
 {
 	hpgl_call(hpgl_add_point_to_path(pgls, x1, y1, 
-					 ((pgls->g.pen_down) ? 
-					  gs_lineto : gs_moveto)));
+					 pgls->g.move_or_draw |
+					 hpgl_plot_absolute));
 	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
 	return 0;

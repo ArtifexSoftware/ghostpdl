@@ -38,10 +38,10 @@ typedef struct gx_path_s gx_path;
 typedef double hpgl_real_t;
 
 /* scaling definition */
-typedef struct hpgl_scaling_type_s {
+typedef struct hpgl_scaling_params_s {
   gs_point pmin, pmax, factor;
   float left, bottom;
-} hpgl_scaling_type_t;
+} hpgl_scaling_params_t;
 
 /* Define a line type (a.k.a. dash pattern). */
 typedef struct hpgl_line_type_s {
@@ -82,10 +82,38 @@ typedef enum {
 /* HAS: note don't mix and match save a restores.  perhaps there
    should be a type check field in the structure.  */
 typedef struct hpgl_pen_state_s {
-	bool relative;
-	bool pen_down;
+	int relative_coords;
+	int move_or_draw;
 	gs_point pos;
 } hpgl_pen_state_t;
+
+/* Define the parameters for GL hatch/cross-hatch fill types. */
+typedef struct hpgl_hatch_params_s {
+  float spacing;
+  float angle;
+} hpgl_hatch_params_t;
+
+/*
+ * Define the functions for adding points to paths.  Note that the
+ * move/draw and absolute/relative alternatives can be tested, set, etc.
+ * individually.
+ */
+#define hpgl_plot_absolute 0
+#define hpgl_plot_relative 1
+#define hpgl_plot_is_absolute(func) (((func) & hpgl_plot_relative) == 0)
+#define hpgl_plot_is_relative(func) (((func) & hpgl_plot_relative) != 0)
+#define hpgl_plot_move 0
+#define hpgl_plot_draw 2
+#define hpgl_plot_is_move(func) (((func) & hpgl_plot_draw) == 0)
+#define hpgl_plot_is_draw(func) (((func) & hpgl_plot_draw) != 0)
+typedef enum {
+  hpgl_plot_move_absolute = hpgl_plot_move | hpgl_plot_absolute,
+  hpgl_plot_move_relative = hpgl_plot_move | hpgl_plot_relative,
+  hpgl_plot_draw_absolute = hpgl_plot_draw | hpgl_plot_absolute,
+  hpgl_plot_draw_relative = hpgl_plot_draw | hpgl_plot_relative
+} hpgl_plot_function_t;
+#define hpgl_plot_function_procedures\
+  gs_moveto, gs_rmoveto, gs_lineto, gs_rlineto
 
 typedef struct pcl_hpgl_state_s {
 		/* Chapter 17 lost mode (pgmisc.c) */
@@ -119,24 +147,25 @@ typedef struct pcl_hpgl_state_s {
 	  hpgl_scaling_isotropic = 1,
 	  hpgl_scaling_point_factor = 2
 	} scaling_type;
-	hpgl_scaling_type_t scaling_params;
+	hpgl_scaling_params_t scaling_params;
 	gs_rect window;          /* clipping window (IW) */
 	int rotation;
 	gs_point P1, P2;	/* in plotter units */
 
 		/* Chapter 20 (pgvector.c) */
-
   
-	bool pen_down;
+	int move_or_draw;	/* hpgl_plot_move/draw */
+	int relative_coords;	/* hpgl_plot_absolute/relative */
 	bool have_first_moveto;  
 	bool saved_have_first_moveto; /* used with gsave and grestore */
-	bool relative;		/* true if relative coordinates */
         gs_point pos;
         /* used to track the line drawing state in hpgl */
         gs_point first_point;
+	hpgl_rendering_mode_t current_render_mode; /* HAS revisit */
+
 		/* Chapter 21 (pgpoly.c) */
 
-	/**** polygon buffer ****/
+	hpgl_path_state_t polygon_buffer;
 	bool polygon_mode;
 
 		/* Chapter 22 (pglfill.c) */
@@ -152,10 +181,12 @@ typedef struct pcl_hpgl_state_s {
 	  int join;
 	} line;
 	float miter_limit;
-	/**** FOLLOWING SHOULD BE [number_of_pens] ****/
-	float pen_width[2];	/* millimeters or % */
-	bool pen_width_relative;
-	int pen;
+	struct pen_ {
+	  /**** FOLLOWING SHOULD BE [number_of_pens] ****/
+	  float width[2];	/* millimeters or % */
+	  bool width_relative;
+	  int selected;		/* currently selected pen # */
+	} pen;
 	byte symbol_mode;	/* 0 if not in symbol mode */
 	struct ft_ {
 	  enum {
@@ -168,8 +199,13 @@ typedef struct pcl_hpgl_state_s {
 	    hpgl_fill_pcl_crosshatch = 21,
 	    hpgl_fill_pcl_user_defined = 22
 	  } type;
-	  union fp_ {
-	    struct { float spacing, angle; } hatch;
+	  /*
+	   * Because each fill type remembers its previous parameter values,
+	   * we must use a structure rather than a union here.
+	   */
+	  struct fp_ {
+	    hpgl_hatch_params_t hatch;
+	    hpgl_hatch_params_t crosshatch;
 	    float shading;
 	    int pattern_index;
 	    int pattern_type;
@@ -252,11 +288,7 @@ typedef struct pcl_hpgl_state_s {
 	struct { hpgl_real_t rgb[3]; } pen_color[2];
 	uint number_of_pens;
 	struct { hpgl_real_t cmin, cmax; } color_range[3];
-	hpgl_rendering_mode_t current_render_mode; /* HAS revisit */
-	/* structure used to maintain a copy of the polygon path */
-	hpgl_path_state_t polygon_buffer;
-	/* used to construct filling paths */
-	hpgl_path_state_t fill_path;
+
 } pcl_hpgl_state_t;
 
 #define hpgl_pen_relative (1)
@@ -268,9 +300,9 @@ typedef struct pcl_hpgl_state_s {
 #define hpgl_save_pen_state(pgls, save, save_flags)\
 do {\
   if ( (save_flags) & hpgl_pen_relative )\
-    ((save)->relative = (pgls)->g.relative);\
+    ((save)->relative_coords = (pgls)->g.relative_coords);\
   if ( (save_flags) & hpgl_pen_down )\
-    ((save)->pen_down = (pgls)->g.pen_down);\
+    ((save)->move_or_draw = (pgls)->g.move_or_draw);\
   if ( (save_flags) & hpgl_pen_pos )\
     ((save)->pos = (pgls)->g.pos);\
 } while (0)
@@ -278,9 +310,9 @@ do {\
 #define hpgl_restore_pen_state(pgls, save, restore_flags)\
 do {\
   if ( (restore_flags) & hpgl_pen_relative )\
-    ((pgls)->g.relative = (save)->relative);\
+    ((pgls)->g.relative_coords = (save)->relative_coords);\
   if ( (restore_flags) & hpgl_pen_down )\
-    ((pgls)->g.pen_down = (save)->pen_down);\
+    ((pgls)->g.move_or_draw = (save)->move_or_draw);\
   if ( (restore_flags) & hpgl_pen_pos )\
     ((pgls)->g.pos = (save)->pos);\
 } while (0)

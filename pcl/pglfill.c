@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
  */
 
@@ -50,70 +50,80 @@ hpgl_AC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_FT(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	int type = hpgl_fill_solid;
+	hpgl_hatch_params_t *params;
 
-	if ( hpgl_arg_int(pargs, &type) )
-	  switch ( type )
+	hpgl_arg_int(pargs, &type);
+	switch ( type )
 	  {
 	  case hpgl_fill_solid:	/* 1 */
 	  case hpgl_fill_solid2: /* 2 */
+	    /* Default all the parameters. */
+	    pgls->g.fill.param.hatch.spacing = 0;
+	    pgls->g.fill.param.hatch.angle = 0;
+	    pgls->g.fill.param.crosshatch.spacing = 0;
+	    pgls->g.fill.param.crosshatch.angle = 0;
+	    pgls->g.fill.param.shading = 100;
+	    pgls->g.fill.param.pattern_index = 1;  /****** NOT SURE ******/
+	    pgls->g.fill.param.pattern_type = 1;  /****** NOT SURE ******/
+	    pgls->g.fill.param.pattern_id = 0;  /****** NOT SURE ******/
 	    break;
 	  case hpgl_fill_hatch:	/* 3 */
+	    params = &pgls->g.fill.param.hatch;
+	    goto hatch;
 	  case hpgl_fill_crosshatch: /* 4 */
-	    { hpgl_real_t spacing, angle = 0;
-	      if ( hpgl_arg_real(pargs, &spacing) )
-		hpgl_arg_real(pargs, &angle);
-	      else
-		/* HAS -- this will require work as the default
-                   spacing and angle is that of the last FT issued for that
-                   fill type.  This requires adding state structures
-                   to store the previous spacing and angle values for
-                   each fill type. */
+	    params = &pgls->g.fill.param.crosshatch;
+hatch:	    { hpgl_real_t spacing = params->spacing;
+	      hpgl_real_t angle = params->angle;
 
-		{ 
-		  spacing = 
-		    0.01 * hpgl_compute_distance(pgls->g.P1.x,
-						 pgls->g.P1.y,
-						 pgls->g.P2.x,
-						 pgls->g.P2.y);
-		  angle = 0.0;
-		  
+	      if ( hpgl_arg_real(pargs, &spacing) )
+		{ if ( spacing < 0 )
+		    return e_Range;
+		  hpgl_arg_real(pargs, &angle);
 		}
-	      pgls->g.fill.param.hatch.spacing = spacing;
-	      pgls->g.fill.param.hatch.angle = angle;
+	      /*
+	       * If the specified spacing is 0, we use 1% of the P1/P2
+	       * diagonal distance.  We handle this when performing the
+	       * fill, not here, because this distance may change
+	       * depending on the position of P1 and P2.
+	       */
+	      params->spacing = spacing;
+	      params->angle = angle;
 	    }
 	    break;
 	  case hpgl_fill_shaded: /* 10 */
 	    { int level;
-	      if ( !hpgl_arg_c_int(pargs, &level) ||
-		   level < 0 || level > 100
-		 )
-		return e_Range;
-	      pgls->g.fill.param.shading = level / 100.0;
+	      if ( hpgl_arg_c_int(pargs, &level) )
+		{ if ( level < 0 || level > 100 )
+		    return e_Range;
+		  pgls->g.fill.param.shading = level / 100.0;
+		}
 	    }
 	    break;
 	  case hpgl_fill_hpgl_user_defined: /* 11 */
 	    { int index;
-	      if ( !hpgl_arg_c_int(pargs, &index) ||
-		   index < 1 || index > 8
-		 )
-		return e_Range;
-	      pgls->g.fill.param.pattern_index = index;
-	    }
-	    break;
-	  case hpgl_fill_pcl_user_defined: /* 22 */
-	    { int32 id;
-	      if ( !hpgl_arg_int(pargs, &id) || id < 0 || id > 0xffff )
-		return e_Range;
-	      pgls->g.fill.param.pattern_id = id;
+	      if ( hpgl_arg_c_int(pargs, &index) )
+		{ if ( index < 1 || index > 8 )
+		    return e_Range;
+		  pgls->g.fill.param.pattern_index = index;
+		}
 	    }
 	    break;
 	  case hpgl_fill_pcl_crosshatch: /* 21 */
 	    { int pattern;
-	      if ( !hpgl_arg_c_int(pargs, &pattern) ||
-		   pattern < 1 || pattern > 6
-		 )
-		return e_Range;
-	      pgls->g.fill.param.pattern_type = pattern;
+	      if ( hpgl_arg_c_int(pargs, &pattern) )
+		{ if ( pattern < 1 || pattern > 6 )
+		    return e_Range;
+		  pgls->g.fill.param.pattern_type = pattern;
+		}
+	    }
+	    break;
+	  case hpgl_fill_pcl_user_defined: /* 22 */
+	    { int32 id;
+	      if ( hpgl_arg_int(pargs, &id) )
+		 { if ( id < 0 || id > 0xffff )
+		     return e_Range;
+		   pgls->g.fill.param.pattern_id = id;
+		 }
 	    }
 	    break;
 	  default:
@@ -270,11 +280,11 @@ hpgl_PW(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  }
 	else
 	  /* default arrangement */
-	  width = (pgls->g.pen_width_relative ? (0.001) : (0.35));
+	  width = (pgls->g.pen.width_relative ? (0.001) : (0.35));
 	{ int i;
 	  for ( i = pmin; i <= pmax; ++i )
-	    pgls->g.pen_width[i] = 
-	      ((pgls->g.pen_width_relative) ? 
+	    pgls->g.pen.width[i] = 
+	      ((pgls->g.pen.width_relative) ? 
 	       (width * hpgl_compute_distance(pgls->g.P1.x,
 					      pgls->g.P1.y,
 					      pgls->g.P2.x,
@@ -386,7 +396,7 @@ hpgl_SP(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	     (pen < 0 || pen >= pgls->g.number_of_pens)
 	   )
 	  return e_Range;
-	pgls->g.pen = pen;
+	pgls->g.pen.selected = pen;
 	return 0;
 }
 
@@ -499,7 +509,7 @@ hpgl_WU(hpgl_args_t *pargs, hpgl_state_t *pgls)
 
 	if ( hpgl_arg_c_int(pargs, &mode) && (mode & ~1) )
 	  return e_Range;
-	pgls->g.pen_width_relative = mode;
+	pgls->g.pen.width_relative = mode;
 	hpgl_args_setup(pargs);
 	hpgl_PW(pargs, pgls);
 	return 0;

@@ -217,57 +217,41 @@ hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 	  }
 }
 
-/* plots and clears lost mode if appropriate. */
-private int
-hpgl_plot_and_clear(hpgl_state_t *pgls, floatp x, floatp y,
-		    int (*gs_func)(gs_state *pgs, floatp x, floatp y))
-{
-	int ret = hpgl_add_point_to_path(pgls, x, y, gs_func);
-	if ( (!pgls->g.relative) &&
-	     (ret != gs_error_limitcheck) )
-	  hpgl_set_lost_mode(pgls, hpgl_lost_mode_cleared);
-	    
-	return ret;
-}
-
-
 /* Plot points, symbols, or lines (PA, PD, PR, PU). */
 int
-hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, 
-	  int (*gs_func)(gs_state *pgs, floatp x, floatp y))
+hpgl_plot(hpgl_args_t *pargs, hpgl_state_t *pgls, hpgl_plot_function_t func)
 {	
 
 	/*
 	 * Since these commands take an arbitrary number of arguments,
 	 * we reset the argument bookkeeping after each group.
-	 * Note: handle case of 0 args.
 	 */
 
 	hpgl_real_t x, y;
-	bool got_args = false;
 
 	while ( hpgl_arg_units(pargs, &x) && hpgl_arg_units(pargs, &y) ) 
 	  { 
-	    got_args = true;
-	    hpgl_call(hpgl_plot_and_clear(pgls, x, y, gs_func));
+	    pargs->phase = 1;	/* we have arguments */
+	    hpgl_call(hpgl_add_point_to_path(pgls, x, y, func));
 	    /* Prepare for the next set of points. */
 	    hpgl_args_init(pargs);
 	  }
 
-	/* no argument case */
-	if ( !got_args) 
+	/* check for no argument case */
+	if ( !pargs->phase) 
 	  {
 	    /* HAS needs investigation -- NO ARGS case in relative mode */
-	    if (pgls->g.relative)
+	    if ( hpgl_plot_is_relative(func) )
 	      {
-		hpgl_call(hpgl_plot_and_clear(pgls, 0.0, 0.0, gs_func));
+		hpgl_call(hpgl_add_point_to_path(pgls, 0.0, 0.0, func));
 	      }
 	    else
 	      {
 		gs_point cur_point;
+
 		hpgl_call(hpgl_get_current_position(pgls, &cur_point));
-		hpgl_call(hpgl_plot_and_clear(pgls, cur_point.x, 
-					  cur_point.y, gs_func));
+		hpgl_call(hpgl_add_point_to_path(pgls, cur_point.x, 
+						 cur_point.y, func));
 	      }
 	  }
 
@@ -334,7 +318,7 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_all);
 
 	/* HAS * FIXME */
-	pgls->g.pen_down = true;
+	pgls->g.move_or_draw = hpgl_plot_draw;
 
 	/* draw the arc/circle */
 	hpgl_add_arc_to_path(pgls, pgls->g.pos.x, pgls->g.pos.y,
@@ -364,20 +348,18 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 int
 hpgl_PA(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	/* set the state flag */
-	pgls->g.relative = false;
-	/* plot the point and save the return value */
-	return hpgl_plot(pargs, pgls, 
-			 (pgls->g.pen_down) ? gs_lineto : gs_moveto);
+	pgls->g.relative_coords = hpgl_plot_absolute;
+	return hpgl_plot(pargs, pgls,
+			 pgls->g.move_or_draw | hpgl_plot_absolute);
 }
 
 /* PD (d)x,(d)y...; */
 int
 hpgl_PD(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	pgls->g.pen_down = true;
-	return hpgl_plot(pargs, pgls, 
-			 (pgls->g.relative) ? gs_rlineto : gs_lineto);
+	pgls->g.move_or_draw = hpgl_plot_draw;
+	return hpgl_plot(pargs, pgls,
+			 hpgl_plot_draw | pgls->g.relative_coords);
 }
 
 /* PE (flag|value|coord)*; */
@@ -555,17 +537,19 @@ syntax_error:
 int
 hpgl_PR(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	pgls->g.relative = true;
-	return hpgl_plot(pargs, pgls, 
-			 ((pgls->g.pen_down) ? gs_rlineto : gs_rmoveto));
+	pgls->g.relative_coords = hpgl_plot_relative;
+	return hpgl_plot(pargs, pgls,
+			 pgls->g.move_or_draw | hpgl_plot_relative);
+
 }
 
 /* PU (d)x,(d)y...; */
 int
 hpgl_PU(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	
-	pgls->g.pen_down = false;
-	return hpgl_plot(pargs, pgls, (pgls->g.relative) ? gs_rmoveto : gs_moveto);
+	pgls->g.move_or_draw = hpgl_plot_move;
+	return hpgl_plot(pargs, pgls,
+			 hpgl_plot_move | pgls->g.relative_coords);
 }
 
 /* RT xinter,yinter,xend,yend[,chord]; */

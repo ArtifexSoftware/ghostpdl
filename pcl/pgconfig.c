@@ -387,7 +387,7 @@ hpgl_SC(hpgl_args_t *pargs, hpgl_state_t *pgls)
 {	hpgl_real_t xy[4];
 	int i;
 	int type;
-	hpgl_scaling_type_t scale_params;
+	hpgl_scaling_params_t scale_params;
 	gs_point point, dev_pt;
 
 	scale_params = pgls->g.scaling_params;

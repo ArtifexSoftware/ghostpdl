@@ -48,28 +48,18 @@ hpgl_recompute_font(hpgl_state_t *pgls)
 /* ------ Position management ------ */
 
 private int
-hpgl_get_carriage_return_pos(const hpgl_state_t *pgls, gs_point *pt)
-{
-	*pt = pgls->g.carriage_return_pos;
-        return 0;
-}
-
-private int
-hpgl_set_carriage_return_pos(hpgl_state_t *pgls, const gs_point *pt)
-{
-	pgls->g.carriage_return_pos = *pt;
-	return 0;
-}
-
-private int
 hpgl_get_current_cell_width(const hpgl_state_t *pgls, hpgl_real_t *width)
 {
 	const pcl_font_selection_t *pfs = 
 	  &pgls->g.font_selection[pgls->g.font_selected];
 
+	/*
+	 * The value 0.6 in the next statement seems adhoc, but it
+	 * produces exactly the right output.
+	 */
 	*width =
 	  (pfs->params.proportional_spacing ?
-	   points_2_plu(pfs->params.height_4ths / 4.0 /****** WRONG ******/) :
+	   0.6 * points_2_plu(pfs->params.height_4ths / 4.0 /****** WRONG ******/) :
 	   1.5 * inches_2_plu(pl_fp_pitch_cp(&pfs->params) / 7200.0));
 	return 0;
 }
@@ -114,16 +104,14 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
 
 	{
 	  hpgl_real_t width, height;
-	  hpgl_args_t args;
-	  gs_point pt, crpt, relpos; /* current pos and carriage return pos */
+	  gs_point pt, relpos;
 
 	  /* get the character cell height and width */
 	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
 	  hpgl_call(hpgl_get_current_cell_height(pgls, &height));
 	  
-	  /* get the current position and carriage return position */
+	  /* get the current position */
 	  hpgl_call(hpgl_get_current_position(pgls, &pt));
-	  hpgl_call(hpgl_get_carriage_return_pos(pgls, &crpt));
 	  
 	  /* calculate the next label position in relative coordinates.  If
              CR then the X position is simply the x coordinate of the
@@ -131,30 +119,22 @@ hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
              the movement in either case. HAS the extra space calculations
              are incorrect */
 	  if (do_CR)
-	    relpos.x = -(pt.x - crpt.x);
+	    relpos.x = -(pt.x - pgls->g.carriage_return_pos.x);
 	  else
 	    relpos.x = ((spaces + pgls->g.character.extra_space.x) * width);
 
 	  /* the y coordinate is independant of CR/LF status */
 	  relpos.y = -((lines + pgls->g.character.extra_space.y) * height);
 
-	  /* move to the current position */
-	  hpgl_args_setup(&args);
-	  hpgl_PU(&args, pgls);
-
 	  /* a relative move to the new position */
-	  hpgl_args_set_real2(&args, relpos.x, relpos.y);
-	  hpgl_PR(&args, pgls);
+	  hpgl_call(hpgl_add_point_to_path(pgls, relpos.x, relpos.y,
+					   hpgl_plot_move_relative));
 
 	  /* update the carriage return point - the Y is the Y of
              the current position and the X is the X of the current
              carriage return point position */
 	  hpgl_call(hpgl_get_current_position(pgls, &pt));
-	  hpgl_call(hpgl_get_carriage_return_pos(pgls, &crpt));
-	  crpt.y = pt.y;
-
-	  /* set the value in the state */
-	  hpgl_call(hpgl_set_carriage_return_pos(pgls, &crpt));
+	  pgls->g.carriage_return_pos.y = pt.y;
 
 	}
 
@@ -251,50 +231,61 @@ hpgl_buffer_char(hpgl_state_t *pgls, byte ch)
 
 /* build the path and render it */
  private int
-hpgl_print_char(hpgl_state_t *pgls, hpgl_character_point *character)
+hpgl_print_char(hpgl_state_t *pgls, const hpgl_character_point *character)
 {
 	hpgl_rendering_mode_t rm = pgls->g.current_render_mode;
 	/*
-	 * The default stick font size is 32x32 units.
+	 * The default stick font size is "32x32 units", but this is
+	 * meaningless if the size of the "units" aren't specified,
+	 * and the TRM gives no clue about this.  Instead, since our
+	 * stick font is based on a 1x1 cell, simply use points_2_plu;
+	 * but according to TRM 23-18, the cell is 2/3 of the point size.
 	 * Scale the data according to the current font height.
-	 * (Eventually we must take SI/SR into account.)
+	 * (Eventually we must take DI/DR/SI/SL/SR into account.)
 	 */
 	const pcl_font_selection_t *pfs = 
 	  &pgls->g.font_selection[pgls->g.font_selected];
-	double scale = (pfs->params.height_4ths / 4.0) / 32;
+	double scale = points_2_plu(pfs->params.height_4ths / 4.0) * 2/3;
+	gs_point pos;
+	hpgl_plot_function_t func;
 
 	/* Set up the graphics state. */
 	pgls->g.current_render_mode = hpgl_rm_character;
 
-	/* all character data is absolute */
-	pgls->g.relative = false;
+	pos = pgls->g.pos;
 	/* Reset the 'have path' flag so that the CTM gets reset.
 	   This is a hack; doing things properly requires a more subtle
 	   approach to handling pen up/down and path construction. */
 	hpgl_call(hpgl_clear_current_path(pgls));
+	/*
+	 * All character data is relative, but we have to start at
+	 * the right place.
+	 */
+	/* Is this actually necessary? */
+	hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y,
+					 hpgl_plot_move_absolute));
 	while (character->operation != hpgl_char_end)
 	  {
-	    hpgl_args_t args;
-	    /* setup the arguments */
-	    hpgl_args_setup(&args);
-	    /* all character operations supply numeric arguments except: */
-	    if (character->operation != hpgl_char_pen_down_no_args)
-	      {
-		hpgl_args_add_real(&args, character->vertex.x * scale);
-		hpgl_args_add_real(&args, character->vertex.y * scale);
-	      }
+	    floatp px, py;
 
+	    /* all character operations supply numeric arguments except: */
+	    if ( character->operation != hpgl_char_pen_down_no_args )
+	      px = character->vertex.x * scale,
+		py = character->vertex.y * scale;
 	    switch (character->operation)
 	      {
 	      case hpgl_char_pen_up : 
-		hpgl_call(hpgl_PU(&args, pgls));
+		func = hpgl_plot_move_relative;
+		hpgl_call(hpgl_add_point_to_path(pgls, px, py, func));
+		break;
+	      case hpgl_char_pen_down_no_args :
+		func = hpgl_plot_draw_relative;
 		break;
 	      case hpgl_char_pen_down : 
-	      case hpgl_char_pen_down_no_args :
-		hpgl_call(hpgl_PD(&args, pgls));
-		break;
+		func = hpgl_plot_draw_relative;
+		/* falls through */
 	      case hpgl_char_pen_relative :
-		hpgl_call(hpgl_PR(&args, pgls));
+		hpgl_call(hpgl_add_point_to_path(pgls, px, py, func));
 		break;
 	      case hpgl_char_arc_relative : /* HAS not yet supported */;
 	      default :
@@ -302,7 +293,23 @@ hpgl_print_char(hpgl_state_t *pgls, hpgl_character_point *character)
 	      }
 	    character++;
 	  }
-	hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
+	/*
+	 * Since we're using the stroked font, patch the pen width
+	 * to reflect the stroke weight.
+	 */
+	{ float save_width = pgls->g.pen.width[pgls->g.pen.selected];
+	  bool save_relative = pgls->g.pen.width_relative;
+	  int weight = pfs->params.stroke_weight;
+
+	  if ( weight != 9999 )
+	    { pgls->g.pen.width[pgls->g.pen.selected] =
+		(0.05 + weight * 0.005) * scale; /* adhoc */
+	      pgls->g.pen.width_relative = true;
+	    }
+	  hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
+	  pgls->g.pen.width[pgls->g.pen.selected] = save_width;
+	  pgls->g.pen.width_relative = save_relative;
+	}
 	pgls->g.current_render_mode = rm;
 	return 0;
 }
@@ -426,7 +433,6 @@ hpgl_get_character_origin_offset(const hpgl_state_t *pgls,
 hpgl_process_buffer(hpgl_state_t *pgls)
 {
 	gs_point offset;
-	hpgl_args_t args;
 
 	/* Compute the label length.  (Future performance improvement: */
 	/* only do this if we need it to compute the offset.) */
@@ -439,10 +445,11 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 	  /* get the character cell height and width */
 cell:	  hpgl_call(hpgl_get_current_cell_width(pgls, &width));
 	  hpgl_call(hpgl_get_current_cell_height(pgls, &height));
-	  for ( ; i < pgls->g.label.char_count; ++i )
+	  while ( i < pgls->g.label.char_count )
 	    {
 	      /* HAS missing logic here. */
-	      byte ch = pgls->g.label.buffer[i];
+	      byte ch = pgls->g.label.buffer[i++];
+
 	      if ( pgls->g.transparent_data )
 		label_length += width;
 	      else
@@ -481,10 +488,8 @@ shift:		  hpgl_call(hpgl_recompute_font(pgls));
 	  hpgl_call(hpgl_get_character_origin_offset(pgls, label_length, &offset));
 	}
 
-	hpgl_args_setup(&args);
-	hpgl_PU(&args, pgls);
-	hpgl_args_set_real2(&args, -offset.x, -offset.y);
-	hpgl_PR(&args, pgls);
+	hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
+					 hpgl_plot_move_relative));
 
 	{
 	  int i;
@@ -561,7 +566,7 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	    /* set the carriage return point and initialize the character
 	       buffer first time only */
 	    hpgl_call(hpgl_get_current_position(pgls, &pt));
-	    hpgl_call(hpgl_set_carriage_return_pos(pgls, &pt));
+	    pgls->g.carriage_return_pos = pt;
 	    hpgl_call(hpgl_init_label_buffer(pgls));
 	    /* Remember the pen state so we can restore it at the end. */
 	    hpgl_save_pen_state(pgls, &pgls->g.label.pen_state,
