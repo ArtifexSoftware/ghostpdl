@@ -459,8 +459,8 @@ const char *px_operator_names[0x80] = {
   "ReadFontHeader", "EndFontHeader", "BeginChar", "ReadChar",
   "EndChar", "RemoveFont", 
   "SetCharAttributes",
-  "SetColorTreatment",
-  0, 0, 0, "BeginStream",
+  "SetDefaultGS", "SetColorTreatment",
+  0, 0, "BeginStream",
   "ReadStream", "EndStream", "ExecStream", "RemoveStream",
 /*6x*/
   "PopGS", "PushGS", "SetClipReplace", "SetBrushSource",
@@ -532,6 +532,7 @@ odef(pxExecStream, apxExecStream);
 odef(pxRemoveStream, apxRemoveStream);
 odef(pxPopGS, apxPopGS);
 odef(pxPushGS, apxPushGS);
+odef(pxSetDefaultGS, apxSetDefaultGS);
 odef(pxSetClipReplace, apxSetClipReplace);
 odef(pxSetColorTreatment, apxSetColorTreatment);
 odef(pxSetBrushSource, apxSetBrushSource);
@@ -626,7 +627,7 @@ const px_operator_definition_t px_operator_definitions[] = {
   {pxEndChar, apxEndChar},
   {pxRemoveFont, apxRemoveFont},
   {pxSetCharAttributes, apxSetCharAttributes},
-  none,
+  {pxSetDefaultGS, apxSetDefaultGS},
   {pxSetColorTreatment, apxSetColorTreatment},
   none,
   none,

@@ -464,6 +464,14 @@ pxPushGS(px_args_t *par, px_state_t *pxs)
 	return code;
 }
 
+const byte apxSetDefaultGS[] = {0, 0};
+int
+pxSetDefaultGS(px_args_t *par, px_state_t *pxs)
+{
+    px_gstate_reset(pxs->pxgs);
+    return 0;
+}
+
 const byte apxSetClipReplace[] = {
   pxaClipRegion, 0, 0
 };
