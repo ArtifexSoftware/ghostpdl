@@ -47,8 +47,17 @@ goto end
 :nooutfile
 rem We don't know why the circumlocution with _1 is needed....
 set _1=%1
-call ps2pdfxx %1 %_1:.PS=.pdf%
+set _outf=%_1:.PS=.pdf%
+if %_1%==%_outf% goto addsuff
+call ps2pdfxx %1 %_outf%
+goto postsuff
+
+:addsuff
+call ps2pdfxx %1 %1%.pdf
+
+:postsuff
 set _1=
+set _outf=
 
 :end
 rem	Clean up.
