@@ -194,37 +194,18 @@ odef
 	4 1 roll pop pop pop
 } bind odef
 % We must prevent resourceforall from automatically restoring the stacks,
-% because we don't want the stacks restored if proc causes an error.
-% On the other hand, resourceforall is defined in the PLRM as an operator,
-% so it must have type /operatortype.  We hack this by taking advantage of
-% the fact that the interpreter optimizes tail calls, so stack protection
-% doesn't apply to the very last token of an operator procedure.
+% because we don't want the stacks restored if proc causes an error or
+% executes a 'stop'. On the other hand, resourceforall is defined in the
+% PLRM as an operator, so it must have type /operatortype.  We hack this
+% by taking advantage of the fact that the interpreter optimizes tail
+% calls, so stack protection doesn't apply to the very last token of an
+% operator procedure.
 /resourceforall1 {	% <template> <proc> <scratch> <category> resourceforall1 -
 	dup /Category findresource begin
 	/ResourceForAll load
-		% Make sure we can recover the original operands.
-		% We must create the array in local VM, in case any of the
-		% operands are local.
-		% Stack: ...operands... proc
-	5 copy pop .currentglobal false .setglobal 5 1 roll
-	4 packedarray exch .setglobal count
-		% Stack: ...operands... proc saved count
-	4 -1 roll pop		% pop the category
-	/stopped load 3 1 roll
-	3 .execn
-		% Stack: ... stopped saved count
-	3 -1 roll {
-	  .currentstackprotect {
-		% The count is the original stack depth + 2.
-	    count exch 4 sub sub { exch pop } repeat
-	    aload pop end
-	  } {
-		% Don't restore the stacks.
-	    pop pop
-	  } ifelse stop
-	} {
-	  pop pop end
-	} ifelse
+	% Stack: <template> <proc> <scratch> <category> proc
+	exch pop		% pop the category
+	exec end
 } bind def
 /resourceforall {	% <template> <proc> <scratch> <category> resourceforall1 -
 	//resourceforall1 exec		% see above
