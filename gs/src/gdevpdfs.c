@@ -233,9 +233,9 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	 * This is only an issue with pdfwrite, other places use a correct int get_char(); 
 	 * how do I discover if non single byte encoding is being used? 
 	 */
-	if ( (((const char *)vdata + pte->index))[0] == 0 ) {
-	    for (i = 0; i < pte->text.size; i += 2) {
-		buf[i >> 1] = (((const char *)vdata + pte->index))[i + 1];
+	if ( (((const char *)vdata) + pte->index)[0] == 0 ) {
+	    for (i = 0; i < pte->text.size*2; i += 2) {
+		buf[i >> 1] = ( ((const char *)vdata) + pte->index)[i + 1];
 	    }	    
 	}
 	else
@@ -1212,11 +1212,24 @@ pdf_encode_char(gx_device_pdf *pdev, int chr, gs_font_base *bfont,
 #define ENCODE(ch)\
   (HAS_DIFF(ch) ? ENCODE_DIFF(ch) : ENCODE_NO_DIFF(ch))
 
+    /* stefan foo: nice macros dude, intent, is left as an exercise for the reader.
+     * note these macros start in the middle of this function and are active for 
+     * the pdf_encode_glyph() function below.  
+     */
+    
     font_glyph = ENCODE(chr);
-    glyph =
+    glyph2 =
+	 bfont->procs.encode_char((gs_font *)bfont, chr, GLYPH_SPACE_NAME);
+
+	/*
+	  // stefan foo: HACK
+	  // Calling known_encode is WRONG for pcl.
+	  // assuming this is a shortcut, will postscript die? 
 	(ei == ENCODING_INDEX_UNKNOWN ?
 	 bfont->procs.encode_char((gs_font *)bfont, chr, GLYPH_SPACE_NAME) :
 	 bfont->procs.callbacks.known_encode(chr, ei));
+	*/
+
     if (glyph == font_glyph) {
 	record_used(pfd, chr);
 	return chr;
