@@ -10,7 +10,7 @@
 const byte apxPassthrough[] = {0, 0};
 
 /* NB - what to do with this? */
-pcl_state_t *pcs = NULL;
+pcl_state_t *global_pcs = NULL;
 private int
 pcl_end_page_noop(pcl_state_t *pcs, int num_copies, int flush)
 {
@@ -28,13 +28,14 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
     hpgl_parser_state_t glstate;
     stream_cursor_read r;
     int code = 0;
-    
+    pcl_state_t *pcs = global_pcs;  /* alias global_pcs */
+  
     if ( par->source.available == 0 )
         return pxNeedData;
     /* retrieve the current pcl state and initialize pcl */
     if ( !pcs ) {
         /* nb need to restore the old device */
-        pcs = pcl_get_gstate(pxs->pcls);
+        global_pcs = pcs = pcl_get_gstate(pxs->pcls);
         /* nb - if the page is marked by pxl redefine output page to
            no op - probably should disable all device calls from
            pcl */
