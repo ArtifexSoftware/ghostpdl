@@ -194,12 +194,89 @@ be clipped or scaled.
 
 <h2><a name="Performance"></a>Performance.</h2>
 
-<h3>                                              </h3>
+<h3>Incremental loading for CIDFontType 2 and TrueType fonts.</h3>
+
+Entire TrueType outline data in CIDFontType 2 and TrueType fonts are
+loaded into memory at once.  Incremental loading of the outline data is
+indispensable for practical use of Asian fonts.
 <p>
+There is one other type of CID-keyed font that should also be
+loaded incrementally: CFF CIDFontType0, i.e., a CIDFontType 0
+font represented using the compact binary CFF format. This is
+important because this is one of the two variants of Asian OpenType
+fonts (the other is essentially the same as TrueType). Ghostscript
+already supports both of these OpenType variants, but not with
+incremental loading.
+<p>
+SourceForge bug #223992, November 30, 2000.
+<p><I>
+We suggest that anyone who would like to work on this project
+start by looking at how CIDFontType 0 fonts do incremental loading
+(lib/gs_cidfn.ps and src/zfcid0.c). Probably much of this
+code can be also be used with CIDFontType 2 and TrueType fonts.
+</I>
 
 <hr>
 
 <h2><a name="Differences_from_Adobe"></a>Differences from Adobe Implementation.</h2>
+
+<h3>pdfwrite + TT font => Acrobat 3.x for Windows gives error</h3>
+
+Running ps2pdf12 on the file test1.ps produces a PDF on which Acrobat
+3.x for Windows complains about not being able to find or create a
+particular TrueType font that is embedded in the PDF file.  However,
+Acrobat 3.x for other platforms, and Acrobat 4.x for all platforms,
+accepts the file.
+<p>
+SourceForge bug #201955, February 14, 2000.
+<p><I>
+Since Acrobat 3 is superseded by Acrobat 4 which is available at no
+charge, and the file produced by Ghostscript meets published PDF
+specification, this will most likely be left as is.
+</I>
+
+<h3> Inconsistent handling of /Orientation.</h3>
+PLRM says "The dictionary returned by currentpagedevice always
+contains an entry for every parameter supported by the device".
+GS prints both messages in the following program: 
+
+<pre>
+%! 
+currentpagedevice /Orientation known not 
+{ (This printer does _not_ support Orientation.) = 
+} 
+if 
+<</Orientation 1>> setpagedevice 
+currentpagedevice /Orientation known 
+{ (Err... wait... it does.) = 
+} 
+if 
+%%EOF 
+</pre>
+SourceForge bug #220967, October 31, 2000.
+<p><I>
+The handling of Orientation is a mess. The PLRM says quite explicitly
+that it is only supported for roll devices, where the page size
+alone doesn't give enough information to decide whether to rotate
+the page.
+<p>
+The reason that Ghostscript accepts it for other devices at all
+is twofold: displays are like roll media in that they don't have
+an inherent orientation, and almost none of the other Ghostscript
+devices actually specify their page sizes. Both of these reasons
+are now poorly motivated: displays should behave like
+portrait-orientation devices (albeit with variable page dimensions),
+rotating the image if the requested page width is greater than
+the height, and now that setpagedevice and the Resource machinery
+are fully implemented, all printer drivers should be updated
+to provide the paper size information. Once these fixes are made
+(which will probably have some repercussions other places in
+the code), Ghostscript will handle Orientation properly.
+<p>
+This should be addressed when the "setpagedevice in C" project is
+completed since part of this will require printer drivers to make
+page size information available to the setpagedevice logic.
+</I>
 
 <h3>Filesystem implementation differences.</h3>
 Adobe implementations often treat the filesystem as flat. This means that the
