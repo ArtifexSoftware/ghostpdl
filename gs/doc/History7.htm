@@ -745,8 +745,8 @@ Removes the 'PageSize cannot use packedarray' issue description. Ghostscript
 no longer fails as described. (doc/Issues.htm [1.27]: 2002/10/20 15:54:42
 giles)
 
-Clean up html. Properly escape dictionary delimeters and blockquote code
-examples. Add Peter's update on SourceForge bung #224134.
+Clean up html. Properly escape dictionary delimiters and blockquote code
+examples. Add Peter's update on SourceForge bug #224134.
 (doc/Issues.htm [1.28]: 2002/10/20 17:14:53 giles)
 
 Updates the usage documentation. The first section is re-written to be
@@ -2897,7 +2897,7 @@ The following SourceForge bug numbers were open at the time of the last release:
 
 <p>
 In addition, a significant number of regressions remain. See the <a
-href="http://www.ghostscript.com/pipermail/gs-regression/2002-September/thread.html">archives</>
+href="http://www.ghostscript.com/pipermail/gs-regression/2002-September/thread.html">archives</a>
 of the regression report for more details.
 
 <h3><a name="7.30_Incompatible_changes"></a>Incompatible changes</h3>
@@ -3704,7 +3704,7 @@ Temporary Files:
 This is a repeat of an earlier commit that was backed out. Its back. Split
 the binary half tone cache initialization into two pieces. The halftone
 cache is now initialized just prior to being used in the various halftone
-render routines. This was doe to prevent a problem with cache conflicts. If
+render routines. This was done to prevent a problem with cache conflicts. If
 the half tone cache is not large enough for a separate tile for each level
 then there could be a problem if two different device colors used the same
 cache entry but with different level values. (gxht.c [1.11],
@@ -5016,7 +5016,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             Also fixed a parity bug in the creation of the retain_mask.
         
           src/gsovrc.h
-            Fixed typo (/* $Id$Id: History7.htm,v 1.28 2002/11/18 21:48:24 raph Exp $ */).
+            Fixed typo (/* $Id$Id: History7.htm,v 1.29 2002/11/21 07:12:17 raph Exp $ */).
         
           src/gxdcconv.c
             Modified color_rgb_to_cmyk to work if the imager state pointer
@@ -7629,7 +7629,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             Also fixed a parity bug in the creation of the retain_mask.
         
           src/gsovrc.h
-            Fixed typo (/* $Id$Id: History7.htm,v 1.28 2002/11/18 21:48:24 raph Exp $ */).
+            Fixed typo (/* $Id$Id: History7.htm,v 1.29 2002/11/21 07:12:17 raph Exp $ */).
         
           src/gxdcconv.c
             Modified color_rgb_to_cmyk to work if the imager state pointer
