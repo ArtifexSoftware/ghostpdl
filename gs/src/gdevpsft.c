@@ -151,6 +151,8 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 		return code;
 	    size >>= 1;
 	}
+	if (code > 0 && size > code)
+	    size = code; /* Segmented data - see z42_string_proc. */
 	stream_write(s, ptr, size);
 	base += size;
     }
