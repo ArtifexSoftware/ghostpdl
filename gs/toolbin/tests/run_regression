@@ -35,8 +35,9 @@ suite = gstestutils.GSTestSuite()
 # add compare tests
 def add_compare_test(suite, f, device, dpi, band):
         suite.addTest(gstestgs.GSCompareTestCase(gs=gsconf.comparegs,
-                                               file=gsconf.comparefiledir + f,
-                                          device=device, dpi=dpi, band=band, gsoptions=gsconf.compareoptions))
+						 file=gsconf.comparefiledir + f,
+						 device=device, dpi=dpi, band=band, gsoptions=gsconf.compareoptions,
+						 log_stdout=gsconf.log_stdout, log_stderr=gsconf.log_stderr))
 
 for f in comparefiles:
     if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':

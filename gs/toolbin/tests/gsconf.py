@@ -32,11 +32,14 @@ if os.name == 'nt':
 	comparefiledir = testroot + 'comparefiles/'
 	crashfiledir   = testroot + 'crashfiles/'
 
-	testdatadb = baselinedir + 'testdata.db'
+	testdatadb = testroot + 'testdata.db'
 	baselinegs = baselinedir + 'bin/gswin32c.exe'
 	comparegs  = comparedir  + 'bin/gswin32c.exe '
 	baselineoptions = ' -I' + baselinedir + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
 	compareoptions  = ' -I' + comparedir  + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
+
+	log_stdout = testroot + 'gs-stdout.log'
+	log_stderr = testroot + 'gs-stderr.log'
 
 	fuzzy = 'D:/path/to/fuzzy.exe'
 
@@ -55,5 +58,8 @@ else:
 	comparegs = comparedir + 'bin/gs'
 	baselineoptions = ''
 	compareoptions  = ''
+
+	log_stdout = testroot + 'gs-stdout.log'
+	log_stderr = testroot + 'gs-stderr.log'
 
 	fuzzy = '/path/to/fuzzy'

@@ -21,15 +21,17 @@ import os
 import re
 import time
 import string
+import gsconf
 
 # configuration variables
 
 MAIL_SERVER = 'localhost'
 REPORT_EMAIL = 'gs-regression@ghostscript.com'
 MAIL_FROM = 'regression@casper.ghostscript.com'
-HEAD_DIR = '/path/to/cvs'
+HEAD_DIR = gsconf.gsroot
 REGRESSION_SCRIPT = 'run_regression 2>&1'
-
+LOG_STDOUT = gsconf.log_stdout
+LOG_STDERR = gsconf.log_stderr
 
 def change_gsproduct(file):
     tmpfile = "%s.tmp" % (file,)
@@ -97,6 +99,16 @@ def update_ghostscript():
 if update_ghostscript() != 0:
 	sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'There was an error updating and building ghostscript from CVS.  Please investigate.')
 	exit(0)
+
+# start new log files
+try:
+    log = open(LOG_STDOUT, "w")
+    log.close()
+    log = open(LOG_STDERR, "w")
+    log.close()
+except:
+    sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'The log files were not able to be restartd.')
+    exit(0)
 
 p = os.popen(REGRESSION_SCRIPT)
 if p == None:

@@ -38,6 +38,13 @@ class Ghostscript:
 		self.outfile = self.nullfile
 		self.gsoptions = ''
 
+		# log file options
+		# NOTE: we always append to the log.  if it is desired to start a new
+		# log, it is the responsibility of the caller to clear/erase the old
+		# one.
+		self.log_stdout = self.nullfile
+		self.log_stderr = self.nullfile
+
 	def process(self):
 		bandsize = 10000
 		if (self.band): bandsize = 30000000
@@ -57,7 +64,27 @@ class Ghostscript:
 		else:
 			cmd = cmd + '- < '
 
-		cmd = cmd + ' %s > %s 2> %s' % (self.infile, self.nullfile, self.nullfile)
+		cmd = cmd + ' %s >> %s 2>> %s' % (self.infile, self.log_stdout, self.log_stderr)
+
+
+		# before we execute the command which might append to the log
+		# we output a short header to show the commandline that generates
+		# the log entry.
+		if len(self.log_stdout) > 0 and self.log_stdout != self.nullfile:
+			try:
+				log = open(self.log_stdout, "a")
+				log.write("===\n%s\n---\n" % (cmd,))
+				log.close()
+			except:
+				pass
+		if len(self.log_stderr) > 0 and self.log_stderr != self.nullfile:
+			try:
+				log = open(self.log_stderr, "a")
+				log.write("===\n%s\n---\n" % (cmd,))
+				log.close()
+			except:
+				pass
+			
 
 		ret = os.system(cmd)
 
@@ -68,13 +95,15 @@ class Ghostscript:
 
 		
 class GhostscriptTestCase(GSTestCase):
-	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', gsoptions=''):
+	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', gsoptions='', log_stdout='', log_stderr=''):
 		self.gs = gs
 		self.file = file
 		self.dpi = dpi
 		self.band = band
 		self.device = device
 		self.gsoptions = gsoptions
+		self.log_stdout = log_stdout
+		self.log_stderr = log_stderr
 		GSTestCase.__init__(self)
 
 
@@ -112,6 +141,10 @@ class GSCompareTestCase(GhostscriptTestCase):
 		gs.infile = self.file
 		gs.outfile = file
 		gs.gsoptions = self.gsoptions
+		if self.log_stdout:
+			gs.log_stdout = self.log_stdout
+		if self.log_stderr:
+			gs.log_stderr = self.log_stderr
 
 		gs.process()
 		sum = gssum.make_sum(file)
