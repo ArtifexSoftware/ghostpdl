@@ -211,14 +211,14 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    } else {
 		code = jbig2_arith_iaid_decode(IAID, as, &ID);
 	    }
-	    if (ID < 0 || ID >= max_id) {
+	    if (ID >= max_id) {
 		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                     "symbol id out of range! (%d/%d)", ID, max_id);
 	    }
 
 	    /* (3c.v) look up the symbol bitmap IB */
 	    {
-		int id = ID;
+		uint32_t id = ID;
 
 		index = 0;
 		while (id >= dicts[index]->n_symbols)
