@@ -53,18 +53,20 @@ private_st_cs_indexed_t();
 
 
 /*
- * Find the smallest non-negative integral exponent of 2 larger than the
- * given number.
+ * Find the smallest non-negative integral exponent of 2 larger than 
+ * or equal to the given number; 8 => 2^3 12 => 2^4
+ * Note: in/out should be unsigned.
  */
   private int
 get_pow_2(
     int     num
 )
 {
-    int     i;
+    int      i;
+    unsigned power_2 = 1;
 
-    for (i = 0; num > 1; num >>= 1, ++i)
-        ;
+    for (i = 0; (unsigned)num > power_2; ++i)  
+	power_2 <<= 1;
     return i;
 }
 
