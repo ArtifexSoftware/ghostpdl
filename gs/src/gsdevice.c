@@ -652,7 +652,6 @@ gx_device_copy_params(gx_device *dev, const gx_device *target)
 private int
 gx_parse_output_format(gs_parsed_file_name_t *pfn, const char **pfmt)
 {
-    int code;
     bool have_format = false, field = 0;
     int width[2], int_width = sizeof(int) * 3, w = 0;
     uint i;
@@ -710,7 +709,6 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
 			  const char *fname, uint fnlen)
 {
     int code;
-    int i;
 
     *pfmt = 0;
     pfn->memory = 0;
