@@ -348,8 +348,9 @@ set:
 <dt><b><tt>-dMaxStripSize=</tt><em>N</em></b> (non-negative integer; default = 0)
 <dd>Set the maximum (uncompressed) size of a strip.
 
-<dt><b><tt>-dAdjustWidth</tt></b>
-<dd>If this option is passed then if the requested page width is close to either A4 (1728 columns) or B4 (2048 columns), set the page width to A4 or B4 respectively.
+<dt><b><tt>-dAdjustWidth</tt><em>state</em></b> (0 or 1; default = 1)
+<dd>If this option set then if the requested page width is close to either A4 (1728 columns) or B4 (2048 columns), set the page width to A4 or B4 respectively.
+This behavior is the default. Pass -dAdjustWidth=0 to turn off this behavior.
 </dl></blockquote>
 
 <p>
