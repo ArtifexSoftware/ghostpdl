@@ -282,7 +282,7 @@ const gx_device_printer gs_bitrgbtags_device =
             PRN_BUFFER_SPACE,
             { 0, 0, 0 },
             0 ,
-            BandingNever },
+            BandingAlways },
         { 0 },
         0 ,
         0 ,
