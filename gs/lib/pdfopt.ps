@@ -1211,6 +1211,7 @@ end			% pdfoptdict
     save exch
     aload pop exch (r) file exch (w) file
     3000000 setvmthreshold
+    0 setobjectformat
     pdfoptdict begin pdfOptimize end
     restore
   } {
