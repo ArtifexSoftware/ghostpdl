@@ -517,8 +517,17 @@ pdfdict begin
       dup /FilePosition PDFfile fileposition put
       DEBUG { (%FilePosition: ) print dup /FilePosition get == } if
     } if
-    PDFfile fileposition 1 index /Length oget add
-    PDFfile exch setfileposition
+    % Some (bad) PDf files have invalid stream lengths.  This causes problems
+    % if we reposition beyond the end of the file.  So we compare the given
+    % length to number of bytes left in the file.
+    dup /Length oget 
+    dup PDFfile bytesavailable lt {	% compare to to bytes left in file
+      PDFfile fileposition 		% reposition to the end of stream
+      add PDFfile exch setfileposition
+    } {
+      pop				% bad stream length - do not reposition.
+      					% This will force a length warning below
+    } ifelse
   } {
     pop
 	% We're already reading from a stream, which we can't reposition.
@@ -542,7 +551,7 @@ pdfdict begin
   } if
   /endstream ne { 
     (   **** Warning: stream Length incorrect.\n) pdfformaterror
-    exit % exit from .pdfrun now.
+    cvx endobj exit % exit from .pdfrun now.
   } if
   cvx
 } bind def
