@@ -156,10 +156,11 @@ include $(GLSRCDIR)/unix-aux.mak
 
 # The following replaces unixlink.mak
 
-LIB_ONLY=$(GLOBJ)gslib.$(OBJ) $(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
+LIB_ONLY=$(GLOBJ)gsnogc.$(OBJ) $(GLOBJ)gconfig.$(OBJ) $(GLOBJ)gscdefs.$(OBJ)
 ldt_tr=$(GLOBJ)ldt.tr
-$(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(LIB_ONLY)
+$(GS_XE): $(ld_tr) $(ECHOGS_XE) $(LIB_ALL) $(DEVS_ALL) $(GLOBJ)gslib.$(OBJ) $(LIB_ONLY)
 	$(ECHOGS_XE) -w $(ldt_tr) -n - $(CCLD) $(LDFLAGS) -o $(GS_XE)
+	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(GLOBJ)gslib.$(OBJ) -s
 	$(ECHOGS_XE) -a $(ldt_tr) -n -s $(LIB_ONLY) -s
 	cat $(ld_tr) >>$(ldt_tr)
 	$(ECHOGS_XE) -a $(ldt_tr) -s - $(EXTRALIBS) $(STDLIBS)
