@@ -319,15 +319,85 @@ file format is described in the
 published by Adobe Systems Incorporated.</p>
 
 <p>
-There are two unrelated sets of TIFF drivers.  There are two color TIFF
+There are two unrelated sets of TIFF drivers.  There are five color TIFF
 drivers that produce uncompressed output:
 
 <blockquote>
 <dl>
-<dt><b><tt>tiff24nc</tt></b>
-<dd>Produces 24-bit RGB output (8 bits per component).
+<dt><b><tt>tiffgray</tt></b>
+<dd>Produces 8-bit gray output.
 <dt><b><tt>tiff12nc</tt></b>
 <dd>Produces 12-bit RGB output (4 bits per component).
+<dt><b><tt>tiff24nc</tt></b>
+<dd>Produces 24-bit RGB output (8 bits per component).
+<dt><b><tt>tiff32nc</tt></b>
+<dd>Produces 32-bit CMYK output (8 bits per component).
+<dt><b><tt>tiffsep</tt></b>
+<dd>
+The tiffsep device creates multiple output files.  The device creates a single
+32 bit composite CMYK file (tiff32nc format) and multiple tiffgray files.
+A tiffgray file is created for each separation.
+
+<p>
+The file specified via the OutputFile command line parameter will contain 
+CMYK data. This data is based upon the CMYK data within the file plus 
+an equivalent CMYK color for each spot colors which is present. The equivalent
+CMYK color for each spot colors is determined using the alternate tint transform
+function specified in Separation and DeviceN color spaces. Since 
+this file is created based upon having color planes for each colorant, the
+file will correctly represent the appearance of overprinting with spot colors.
+
+<p>
+File names for the separations for the
+CMYK colorants are created by appending '.Cyan.tif', '.Magenta.tif'
+'.Yellow.tif' or '.Black.tif' to the to the end of the file name
+specified via the OutputFile parameter.  File names for the spot
+color separation files are created by appending '.sn.tif' (where n
+is the spot color number, see below) to the end of the file name specified via
+the OutputFile parameter.
+
+<p>
+Internally each spot color is assigned a spot color number.  These
+numbers start with 0 for the first spot color.  The spot color
+numbers are assigned in the same order as the names are printed to
+stderr (see below).  This order also matches the ordering in the
+SeparationColorNames list, if this parameter is specified.  The
+spot color numbers are not affected by the SeparationOrder parameter.
+
+<p>
+The names of spot colors may be specified via the SeparationColorNames device
+parameters.  Or the tiffsep device will automatically recognize spot color
+names if <b><tt>-dMaxSeparations=8</tt></b> is specified on the
+command line.
+
+<p>
+If only a subset of the colorants for a file is desired then the separations
+to be output can be selected via the SeparationOrder
+device parameter.  When colorants are selected via the
+SeparationOrder parameter, the composite CMYK output contains
+the equivalent CMYK data only for the selected colorants.  
+
+<p>
+The tiffsep device also prints the names of any spot colors
+detected within a document to stderr.  (stderr is also use for the
+output from the bbox device.)  For each spot color the name of
+the color is printed preceded by '%%SeparationName:  '.  This
+provides a simple mechanism for users and external applications to be informed about
+the names of spot colors with a document.
+
+<p>
+Ghostscript currently limits the size of a pixel to 64 bits.
+Since the tiffsep device uses 8 bits per colorant,  the device can handle
+a maximum of 8 colorants per pass.  However it is possible to
+handle more than 8 colorants by doing multiple passes.  For each
+pass after the first one, the names of all of the separations need
+to be specified via the SeparationColorNames parameter and the
+names of the desired separations need to be specified via the
+SeparationOrder parameter.  It is
+possible to create an overall CMYK composite for more than 8
+colorants by then adding together (via an external application like
+imagemagick) the composite CMYK output files from the individual
+Ghostscript passes.
 </dl>
 </blockquote>
 

@@ -176,8 +176,11 @@ GDEV=$(AK) $(ECHOGS_XE) $(GDEVH)
 #	psmono	PostScript (Level 1) monochrome image
 #	psgray	PostScript (Level 1) 8-bit gray image
 #	psrgb	PostScript (Level 2) 24-bit color image
+#	tiffgray  TIFF 8-bit gray, no compression
 #	tiff12nc  TIFF 12-bit RGB, no compression
 #	tiff24nc  TIFF 24-bit RGB, no compression (NeXT standard format)
+#	tiff32nc  TIFF 32-bit CMYK
+#	tiffsep   Creates tiffgray for each colorant plus a CMYK composite
 #	tifflzw  TIFF LZW (tag = 5) (monochrome)
 #	tiffpack  TIFF PackBits (tag = 32773) (monochrome)
 
@@ -1525,7 +1528,18 @@ $(DD)tifflzw.dev : $(DEVS_MAK) $(DD)tfax.dev
 $(DD)tiffpack.dev : $(DEVS_MAK) $(DD)tfax.dev
 	$(SETDEV2) $(DD)tiffpack -include $(DD)tfax
 
-# RGB, no compression
+# TIFF Gray, no compression
+
+tiffgray_=$(GLOBJ)gdevtsep.$(OBJ)
+
+$(DD)tiffgray.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
+	$(SETPDEV2) $(DD)tiffgray $(tiffgray_)
+	$(ADDMOD) $(DD)tiffgray -include $(DD)tiffs
+
+$(GLOBJ)gdevtsep.$(OBJ) : $(GLSRC)gdevtsep.c $(PDEVH) $(gdevtifs_h)
+	$(GLCC) $(GLO_)gdevtsep.$(OBJ) $(C_) $(GLSRC)gdevtsep.c
+
+# TIFF RGB, no compression
 
 tiffrgb_=$(GLOBJ)gdevtfnx.$(OBJ)
 
@@ -1539,3 +1553,16 @@ $(DD)tiff24nc.dev : $(DEVS_MAK) $(tiffrgb_) $(DD)tiffs.dev
 
 $(GLOBJ)gdevtfnx.$(OBJ) : $(GLSRC)gdevtfnx.c $(PDEVH) $(gdevtifs_h)
 	$(GLCC) $(GLO_)gdevtfnx.$(OBJ) $(C_) $(GLSRC)gdevtfnx.c
+
+# TIFF CMYK, no compression
+
+$(DD)tiff32nc.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
+	$(SETPDEV2) $(DD)tiff32nc $(tiffgray_)
+	$(ADDMOD) $(DD)tiff32nc -include $(DD)tiffs
+#
+# Create separation files (tiffgray) plus CMYK composite (tiff32nc)
+
+$(DD)tiffsep.dev : $(DEVS_MAK) $(tiffgray_) $(DD)tiffs.dev
+	$(SETPDEV2) $(DD)tiffsep $(tiffgray_)
+	$(ADDMOD) $(DD)tiffsep -include $(DD)tiffs
+

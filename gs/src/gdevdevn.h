@@ -67,7 +67,7 @@ typedef struct gs_devn_params_s {
     /*
      * Pointer to the colorant names for the color model.  This will be
      * null if we have DeviceN type device.  The actual possible colorant
-     * names are those in this list plus those in the separation[i].info.name
+     * names are those in this list plus those in the separation[i].name
      * list (below).
      */
     fixed_colorant_names_list std_colorant_names;
