@@ -23,14 +23,6 @@ void pcl_decache_font(P2(pcl_state_t * pcs, int set));
 int pcl_recompute_font(P1(pcl_state_t * pcs));
 
 /*
- * Recompute the font if the glyph is not found at the time of rendering
- */
-int pcl_recompute_substitute_font(P2(
-    pcl_state_t *   pcs,
-    const uint      chr
-));
-
-/*
  * Do any underlining just before a break in motion (vertical motion or
  * negative horizontal motion)...
  */

@@ -330,66 +330,6 @@ pcl_reselect_font(pcl_font_selection_t *pfs, const pcl_state_t *pcs)
 	return 0;
 }
 
-/* Selects a substitute font after a glyph is not found in the
-   currently selected font upon rendering.  Very expensive in the
-   current architecture.  We should have a more efficient way of
-   finding characters in fonts */
-
-/* This is used by both PCL and HP-GL/2. */
-int
-pcl_reselect_substitute_font(pcl_font_selection_t *pfs,
-			     const pcl_state_t *pcs, const uint chr)
-{
-	if ( pfs->font == 0 )
-	  {
-	    pl_dict_enum_t dictp;
-	    gs_const_string key;
-	    void *value;
-	    pl_font_t *best_font = 0;
-	    pl_symbol_map_t *best_map = 0;
-	    pl_symbol_map_t *mapp;
-	    match_score_t best_match;
-#ifdef DEBUG
-	    if ( gs_debug_c('=') )
-	      { dputs("[=]request: ");
-	        dprint_font_params_t(&pfs->params);
-	      }
-#endif
-
-	    /* Initialize the best match to be worse than any real font. */
-	    best_match[0] = -1;
-	    pl_dict_enum_begin(&pcs->soft_fonts, &dictp);
-	    while ( pl_dict_enum_next(&dictp, &key, &value) )
-	      { pl_font_t *fp = (pl_font_t *)value;
-		match_score_t match;
-		score_index_t i;
-		gs_matrix ignore_mat;
-		if ( !pl_font_includes_char(fp, NULL, &ignore_mat, chr) )
-		  continue;
-		score_match(pcs, pfs, fp, &mapp, match);
-		for (i=(score_index_t)0; i<score_limit; i++)
-		  if ( match[i] != best_match[i] )
-		    {
-		      if ( match[i] > best_match[i] )
-			{
-			  best_font = fp;
-			  best_map = mapp;
-			  memcpy((void*)best_match, (void*)match,
-			      sizeof(match));
-			  if_debug0('=', "   (***best so far***)\n");
-			}
-		      break;
-		    }
-	      }
-	    if ( best_font == 0 )
-	      return -1; /* no font found */
-	    pfs->font = best_font;
-	    pfs->map = best_map;
-	  }
-	pfs->selected_id = 0;
-	return 0;
-}
-
 /* set font parameters after an id selection */
 void
 pcl_set_id_parameters(const pcl_state_t *pcs, 

@@ -71,17 +71,6 @@ pcl_set_font(pcl_state_t *pcs, pcl_font_selection_t *pfs)
 	return 0;
 }
 
-int
-pcl_recompute_substitute_font(pcl_state_t *pcs, const uint chr)
-{
-	pcl_font_selection_t *pfs = &pcs->font_selection[pcs->font_selected];
-	int code = pcl_reselect_substitute_font(pfs, pcs, chr);
-	if ( code < 0 )
-	  return code;
-	pcl_set_font(pcs, pfs);
-	return 0;
-}
-
 /* Recompute the current font from the descriptive parameters. */
 /* This is exported for resetting HMI. */
 int
