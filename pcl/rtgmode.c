@@ -303,6 +303,8 @@ pcl_enter_graphics_mode(
     /* determine (conservatively) if the region of interest has been
        marked */
     marked = true;
+#if 0 
+    /* pull performance optimization out; it fails on 1 bit xor rops to non-marked destination */
     if ( !pcs->source_transparent && pcs->pattern_transparent ) {
 	gs_rect page_bbox;
 	code = pcl_current_bounding_box(pcs, &page_bbox);
@@ -317,6 +319,7 @@ pcl_enter_graphics_mode(
 	if ((print_rect.p.x >= print_rect.q.x) || (print_rect.p.y >= print_rect.q.y))
 	    marked = false;
     }
+#endif
     if ((code = pcl_start_raster(src_wid, src_hgt, marked, pcs)) >= 0)
         prstate->graphics_mode = true;
     else
