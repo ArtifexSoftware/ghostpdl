@@ -34,10 +34,10 @@ typedef ulong ufixed;		/* only used in a very few places */
 #define fixed_0 0L
 #define fixed_epsilon 1L
 /*
- * 12 bits of fraction provides both the necessary accuracy and
+ * 8 bits of fraction provides both the necessary accuracy and
  * a sufficiently large range of coordinates.
  */
-#define _fixed_shift 12
+#define _fixed_shift 8
 #define fixed_fraction_bits _fixed_shift
 #define fixed_int_bits (sizeof(fixed) * 8 - _fixed_shift)
 #define fixed_scale (1<<_fixed_shift)
