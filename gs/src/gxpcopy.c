@@ -26,6 +26,8 @@
 #include "gzpath.h"
 #include "vdtrace.h"
 
+#define OLD_MONOTONIZATION 0 /* Old code - keep it for a while. */
+
 /* Forward declarations */
 private void adjust_point_to_tangent(segment *, const segment *,
 				     const gs_fixed_point *);
@@ -649,7 +651,7 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
 {
     fixed x0 = ppath->position.x, y0 = ppath->position.y;
     segment_notes notes = pc->notes;
-#if 0 /* Old code - keep it for a while. */
+#if OLD_MONOTONIZATION
     double t[2];
 
 #define max_segs 9
@@ -725,7 +727,7 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
     }
 
     return 0;
-#else
+#else /* OLD_MONOTONIZATION */
     double t[4], tt = 1, tp;
     int c[4];
     int n0, n1, n, i, j, k = 0;
@@ -826,7 +828,7 @@ gx_curve_monotonize(gx_path * ppath, const curve_segment * pc)
     if ((double)(sx - px) * rx + (double)(sy - py) * ry < 0)
 	rx = -rx, ry = -qy;
     return gx_path_add_curve_notes(ppath, px + qx, py + qy, sx - rx, sy - ry, sx, sy, notes);
-#endif
+#endif /* OLD_MONOTONIZATION */
 }
 
 /*
@@ -973,6 +975,8 @@ gx_curve_monotonic_points(fixed v0, fixed v1, fixed v2, fixed v3,
     }
 }
 
+#if OLD_MONOTONIZATION
+
 /*
  * Split a curve at an arbitrary point t.  The above midpoint split is a
  * special case of this with t = 0.5.
@@ -1022,3 +1026,5 @@ gx_curve_split(fixed x0, fixed y0, const curve_segment * pc, double t,
     compute_seg(y0, y);
 #undef compute_seg
 }
+
+#endif
