@@ -222,6 +222,8 @@ i2l:
 	    GET_NEXT(c, sp, c = EOFC);
 	    exp10 = 0;
 	    goto l2r;
+	case EOFC:
+	    break;
 	default:
 	    *psp = sp;
 	    code = 1;
