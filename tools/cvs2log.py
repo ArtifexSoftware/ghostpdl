@@ -54,7 +54,11 @@ def LastLogDate2CtimeTuple(filename):
 def ChangeLogDateNameHeader(date, author, hostname, tabsize):
     import time, pwd
     seperator = ' ' * tabsize
-    return time.asctime(date) + seperator + pwd.getpwnam(author)[4] +\
+    try:
+	author_name = pwd.getpwnam(author)[4]
+    except:
+	author_name = ''
+    return time.asctime(date) + seperator + author_name +\
 	   seperator + author + '@' + hostname + '\n'
 
 # build change log entries with file name, revisions, etc. lumping
