@@ -109,16 +109,16 @@ typedef enum {
 } alloc_flags_t;
 
 /* Forward references */
-private void remove_range_from_freelist(P3(gs_ref_memory_t *mem, void* bottom, void* top));
-private obj_header_t *large_freelist_alloc(P2(gs_ref_memory_t *mem, uint size));
-private obj_header_t *scavenge_low_free(P2(gs_ref_memory_t *mem, unsigned request_size));
-private ulong compute_free_objects(P1(gs_ref_memory_t *));
-private obj_header_t *alloc_obj(P5(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, alloc_flags_t, client_name_t));
-private void consolidate_chunk_free(P2(chunk_t *cp, gs_ref_memory_t *mem));
-private void trim_obj(P4(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp));
-private chunk_t *alloc_acquire_chunk(P4(gs_ref_memory_t *, ulong, bool, client_name_t));
-private chunk_t *alloc_add_chunk(P3(gs_ref_memory_t *, ulong, client_name_t));
-void alloc_close_chunk(P1(gs_ref_memory_t *));
+private void remove_range_from_freelist(gs_ref_memory_t *mem, void* bottom, void* top);
+private obj_header_t *large_freelist_alloc(gs_ref_memory_t *mem, uint size);
+private obj_header_t *scavenge_low_free(gs_ref_memory_t *mem, unsigned request_size);
+private ulong compute_free_objects(gs_ref_memory_t *);
+private obj_header_t *alloc_obj(gs_ref_memory_t *, ulong, gs_memory_type_ptr_t, alloc_flags_t, client_name_t);
+private void consolidate_chunk_free(chunk_t *cp, gs_ref_memory_t *mem);
+private void trim_obj(gs_ref_memory_t *mem, obj_header_t *obj, uint size, chunk_t *cp);
+private chunk_t *alloc_acquire_chunk(gs_ref_memory_t *, ulong, bool, client_name_t);
+private chunk_t *alloc_add_chunk(gs_ref_memory_t *, ulong, client_name_t);
+void alloc_close_chunk(gs_ref_memory_t *);
 
 /*
  * Define the standard implementation (with garbage collection)
@@ -185,8 +185,8 @@ const gs_memory_procs_t gs_ref_memory_procs =
  * Allocate and mostly initialize the state of an allocator (system, global,
  * or local).  Does not initialize global or space.
  */
-private void *ialloc_solo(P3(gs_raw_memory_t *, gs_memory_type_ptr_t,
-			     chunk_t **));
+private void *ialloc_solo(gs_raw_memory_t *, gs_memory_type_ptr_t,
+			  chunk_t **);
 gs_ref_memory_t *
 ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
 {

@@ -40,11 +40,11 @@
 #include <string.h>
 
 /* Forward references */
-private FILE *prefix_open(P2(const char *prefix, const char *inname));
-private void merge_to_c(P5(const char *prefix, const char *inname, FILE * in,
-			   FILE * config, FILE * out));
-private void merge_to_ps(P5(const char *prefix, const char *inname, FILE * in,
-			    FILE * config, FILE * out));
+private FILE *prefix_open(const char *prefix, const char *inname);
+private void merge_to_c(const char *prefix, const char *inname, FILE * in,
+			FILE * config, FILE * out);
+private void merge_to_ps(const char *prefix, const char *inname, FILE * in,
+			 FILE * config, FILE * out);
 
 #define LINE_SIZE 128
 

@@ -351,7 +351,7 @@ mem_default_strip_copy_rop(gx_device * dev,
 {
     int depth = dev->color_info.depth;
     int rop_depth = (gx_device_has_color(dev) ? 24 : 8);
-    void (*pack)(P7(gx_device *, byte *, int, const byte *, int, int, int)) =
+    void (*pack)(gx_device *, byte *, int, const byte *, int, int, int) =
 	(dev_proc(dev, map_cmyk_color) == cmyk_1bit_map_cmyk_color &&
 	 rop_depth == 24 ? pack_cmyk_1bit_from_standard : pack_from_standard);
     const gx_bitmap_format_t no_expand_options =

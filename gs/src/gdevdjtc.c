@@ -54,9 +54,9 @@ const gx_device_printer far_data gs_djet500c_device =
     3, djet500c_print_page);
 
 /* Forward references */
-private int djet500c_print_page(P2(gx_device_printer *, FILE *));
+private int djet500c_print_page(gx_device_printer *, FILE *);
 
-static int mode2compress(P3(byte *row, byte *end_row, byte *compressed));
+static int mode2compress(byte *row, byte *end_row, byte *compressed);
 
 /* The DeskJet 500C uses additive colors in separate planes. */
 /* We only keep one bit of color, with 1 = R, 2 = G, 4 = B. */

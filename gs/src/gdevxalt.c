@@ -57,10 +57,10 @@ gs_private_st_suffix_add0_final(st_device_X_wrapper, gx_device_X_wrapper,
 /* ---------------- Generic procedures ---------------- */
 
 /* Forward declarations */
-private int get_dev_target(P2(gx_device **, gx_device *));
+private int get_dev_target(gx_device **, gx_device *);
 
-private int get_target_info(P1(gx_device *));
-private gx_color_index x_alt_map_color(P2(gx_device *, gx_color_index));
+private int get_target_info(gx_device *);
+private gx_color_index x_alt_map_color(gx_device *, gx_color_index);
 
 /* Clear the color mapping cache. */
 private void

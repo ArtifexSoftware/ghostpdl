@@ -33,7 +33,7 @@
 private dev_proc_print_page(lj250_print_page);
 private dev_proc_print_page(paintjet_print_page);
 private dev_proc_print_page(pjetxl_print_page);
-private int pj_common_print_page(P4(gx_device_printer *, FILE *, int, const char *));
+private int pj_common_print_page(gx_device_printer *, FILE *, int, const char *);
 private gx_device_procs paintjet_procs =
   prn_color_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close,
     gdev_pcl_3bit_map_rgb_color, gdev_pcl_3bit_map_color_rgb);
@@ -63,7 +63,7 @@ const gx_device_printer far_data gs_pjetxl_device =
 	3, pjetxl_print_page);
 
 /* Forward references */
-private int compress1_row(P3(const byte *, const byte *, byte *));
+private int compress1_row(const byte *, const byte *, byte *);
 
 /* ------ Internal routines ------ */
 

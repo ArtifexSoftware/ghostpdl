@@ -110,7 +110,7 @@ private const gx_device_store_alpha gs_store_alpha_device =
 };
 
 /* Forward references */
-private int alloc_alpha_storage(P1(gx_device_store_alpha * sadev));
+private int alloc_alpha_storage(gx_device_store_alpha * sadev);
 
 #define sadev ((gx_device_store_alpha *)dev)
 

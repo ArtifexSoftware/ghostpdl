@@ -24,12 +24,12 @@
 #include "gximage.h"
 
 /* Forward declarations */
-private void update_strip(P1(gx_image_enum *penum));
-private void repack_bit_planes(P7(const gx_image_plane_t *src_planes,
-				  const ulong *offsets, int num_planes,
-				  byte *buffer, int width,
-				  const sample_lookup_t * ptab, int spread));
-private gx_device *setup_image_device(P1(const gx_image_enum *penum));
+private void update_strip(gx_image_enum *penum);
+private void repack_bit_planes(const gx_image_plane_t *src_planes,
+			       const ulong *offsets, int num_planes,
+			       byte *buffer, int width,
+			       const sample_lookup_t * ptab, int spread);
+private gx_device *setup_image_device(const gx_image_enum *penum);
 
 /* Process the next piece of an ImageType 1 image. */
 int

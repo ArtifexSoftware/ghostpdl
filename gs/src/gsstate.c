@@ -39,13 +39,13 @@
 #include "gzcpath.h"
 
 /* Forward references */
-private gs_state *gstate_alloc(P3(gs_memory_t *, client_name_t,
-				  const gs_state *));
-private gs_state *gstate_clone(P4(gs_state *, gs_memory_t *, client_name_t,
-				  gs_state_copy_reason_t));
-private void gstate_free_contents(P1(gs_state *));
-private int gstate_copy(P4(gs_state *, const gs_state *,
-			   gs_state_copy_reason_t, client_name_t));
+private gs_state *gstate_alloc(gs_memory_t *, client_name_t,
+			       const gs_state *);
+private gs_state *gstate_clone(gs_state *, gs_memory_t *, client_name_t,
+			       gs_state_copy_reason_t);
+private void gstate_free_contents(gs_state *);
+private int gstate_copy(gs_state *, const gs_state *,
+			gs_state_copy_reason_t, client_name_t);
 
 /*
  * Graphics state storage management is complicated.  There are many

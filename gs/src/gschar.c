@@ -28,8 +28,8 @@
 #include "gxfont.h"
 
 /* Forward declarations */
-private int show_n_begin(P4(gs_show_enum *penum, gs_state *pgs, int code,
-			    gs_text_enum_t *pte));
+private int show_n_begin(gs_show_enum *penum, gs_state *pgs, int code,
+			 gs_text_enum_t *pte);
 
 /* Structure descriptors */
 extern_st(st_gs_show_enum);

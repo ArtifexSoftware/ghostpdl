@@ -25,7 +25,7 @@
 #include <errno.h>		/* for exit() with other compiler versions */
 #include <unixio.h>
 
-extern char *getenv(P1(const char *));
+extern char *getenv(const char *);
 
 /* Apparently gcc doesn't allow extra arguments for fopen: */
 #ifdef VMS			/* DEC C */

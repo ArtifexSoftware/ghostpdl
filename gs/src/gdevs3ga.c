@@ -23,8 +23,8 @@
 #include "gdevsvga.h"
 
 /* Shared routines from gdevsvga.c */
-extern int vesa_get_mode(P0());
-extern void vesa_set_mode(P1(int));
+extern int vesa_get_mode(void);
+extern void vesa_set_mode(int);
 
 /* Macro for casting gx_device argument */
 #define fb_dev ((gx_device_svga *)dev)

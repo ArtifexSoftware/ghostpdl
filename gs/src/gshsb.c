@@ -22,8 +22,8 @@
 #include "gxfrac.h"
 
 /* Forward references */
-private void color_hsb_to_rgb(P4(floatp h, floatp s, floatp b, float rgb[3]));
-private void color_rgb_to_hsb(P4(floatp r, floatp g, floatp b, float hsb[3]));
+private void color_hsb_to_rgb(floatp h, floatp s, floatp b, float rgb[3]);
+private void color_rgb_to_hsb(floatp r, floatp g, floatp b, float hsb[3]);
 
 /* Force a parameter into the range [0.0..1.0]. */
 #define force_unit(p) (p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p)

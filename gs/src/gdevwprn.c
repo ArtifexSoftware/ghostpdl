@@ -45,9 +45,9 @@ typedef struct gx_device_win_prn_s gx_device_win_prn;
 #define wdev ((gx_device_win_prn *)dev)
 
 /* Forward references */
-private void near win_prn_addtool(P2(gx_device_win_prn *, int));
-private void near win_prn_maketools(P2(gx_device_win_prn *, HDC));
-private void near win_prn_destroytools(P1(gx_device_win_prn *));
+private void near win_prn_addtool(gx_device_win_prn *, int);
+private void near win_prn_maketools(gx_device_win_prn *, HDC);
+private void near win_prn_destroytools(gx_device_win_prn *);
 BOOL CALLBACK _export AbortProc(HDC, int);
 
 /* Device procedures */

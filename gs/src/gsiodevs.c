@@ -47,7 +47,7 @@ stdio_close_file(stream *s)
 private int
 stdio_open(gx_io_device * iodev, const char *access, stream ** ps,
 	   gs_memory_t * mem, char rw, FILE *file,
-	   void (*srw_file)(P4(stream *, FILE *, byte *, uint)))
+	   void (*srw_file)(stream *, FILE *, byte *, uint))
 {
     stream *s;
     byte *buf;

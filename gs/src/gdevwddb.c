@@ -33,9 +33,9 @@ typedef struct gx_device_win_ddb_s gx_device_win_ddb;
 #define wdev ((gx_device_win_ddb *)dev)
 
 /* Forward references */
-private void near win_addtool(P2(gx_device_win_ddb *, int));
-private void near win_maketools(P2(gx_device_win_ddb *, HDC));
-private void near win_destroytools(P1(gx_device_win_ddb *));
+private void near win_addtool(gx_device_win_ddb *, int);
+private void near win_maketools(gx_device_win_ddb *, HDC);
+private void near win_destroytools(gx_device_win_ddb *);
 
 /* Device procedures */
 

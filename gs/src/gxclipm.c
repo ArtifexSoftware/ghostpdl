@@ -193,7 +193,7 @@ mask_clip_copy_mono(gx_device * dev,
  */
 private int
 clip_runs_enumerate(gx_device_mask_clip * cdev,
-		    int (*process) (P5(clip_callback_data_t * pccd, int xc, int yc, int xec, int yec)),
+		    int (*process) (clip_callback_data_t * pccd, int xc, int yc, int xec, int yec),
 		    clip_callback_data_t * pccd)
 {
     DECLARE_MASK_COPY;

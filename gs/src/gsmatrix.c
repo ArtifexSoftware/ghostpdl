@@ -309,7 +309,7 @@ gs_points_bbox(const gs_point pts[4], gs_rect * pbox)
 private int
 bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 			   gs_point pts[4],
-     int (*point_xform) (P4(floatp, floatp, const gs_matrix *, gs_point *)))
+     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
 
@@ -325,7 +325,7 @@ bbox_transform_either_only(const gs_rect * pbox_in, const gs_matrix * pmat,
 private int
 bbox_transform_either(const gs_rect * pbox_in, const gs_matrix * pmat,
 		      gs_rect * pbox_out,
-     int (*point_xform) (P4(floatp, floatp, const gs_matrix *, gs_point *)))
+     int (*point_xform) (floatp, floatp, const gs_matrix *, gs_point *))
 {
     int code;
 

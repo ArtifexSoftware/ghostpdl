@@ -28,8 +28,8 @@
 int interrupted;
 
 /* Forward declarations */
-private void signalhandler(P1(int));
-private FILE *rbfopen(P2(char *, char *));
+private void signalhandler(int);
+private FILE *rbfopen(char *, char *);
 
 /* Do platform-dependent initialization */
 void

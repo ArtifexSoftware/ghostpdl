@@ -31,7 +31,7 @@ int
 gp_readline(stream *s_in, stream *s_out, void *readline_data,
 	    gs_const_string *prompt, gs_string * buf,
 	    gs_memory_t * bufmem, uint * pcount, bool *pin_eol,
-	    bool (*is_stdin)(P1(const stream *)))
+	    bool (*is_stdin)(const stream *))
 {
     return sreadline(s_in, s_out, readline_data, prompt, buf, bufmem, pcount,
 		     pin_eol, is_stdin);

@@ -165,7 +165,7 @@ private int
 write_Private(stream *s, gs_font_type1 *pfont,
 	      gs_glyph *subset_glyphs, uint subset_size,
 	      gs_glyph notdef, int lenIV,
-	      int (*write_CharString)(P3(stream *, const void *, uint)),
+	      int (*write_CharString)(stream *, const void *, uint),
 	      const param_printer_params_t *ppp)
 {
     const gs_type1_data *const pdata = &pfont->data;
@@ -367,7 +367,7 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
     byte exE_buf[200];		/* arbitrary */
     psf_outline_glyphs_t glyphs;
     int lenIV = pfont->data.lenIV;
-    int (*write_CharString)(P3(stream *, const void *, uint)) = stream_write;
+    int (*write_CharString)(stream *, const void *, uint) = stream_write;
     int code = psf_get_type1_glyphs(&glyphs, pfont, orig_subset_glyphs,
 				     orig_subset_size);
 

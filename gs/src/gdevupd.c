@@ -202,7 +202,7 @@ only active, if there is a valid device-structure for then.
 upd_procs_map performs this task.
 */
 
-private int             upd_procs_map( P1(upd_device *udev));
+private int             upd_procs_map( upd_device *udev);
 
 /* ------------------------------------------------------------------- */
 /* Prototype of the Device-Structure (the only thing exported!)        */
@@ -647,9 +647,9 @@ typedef struct updscan_s { /* Single Scanline (1 Bit/Pixel) */
 #define UPD_CMAP_MAX     4 /** Number of Colormaps provided */
 #define UPD_VALPTR_MAX  32 /** Number of valbuf-Pointers */
 
-#define upd_proc_pxlget(name) uint32 name(P1(upd_p upd))
-#define upd_proc_render(name) int name(P1(upd_p upd))
-#define upd_proc_writer(name) int name(P2(upd_p upd,FILE *out))
+#define upd_proc_pxlget(name) uint32 name(upd_p upd)
+#define upd_proc_render(name) int name(upd_p upd)
+#define upd_proc_writer(name) int name(upd_p upd,FILE *out)
 
 struct upd_s { /* All upd-specific data */
 
@@ -744,8 +744,8 @@ Most prominent are "upd_open_map" and "upd_close_map", which
 do the proper actions when opening and closing the device.
 */
 
-private int             upd_open_map( P1(upd_device *udev));
-private int             upd_close_map(P1(upd_device *udev));
+private int             upd_open_map( upd_device *udev);
+private int             upd_close_map(upd_device *udev);
 
 /**
 But "upd_truncate" and "upd_expand" are also mentionable. They are
@@ -755,8 +755,8 @@ and this is what "upd_truncate" does, in the most general manner i can
 think of and with O(log(n)) in time. "upd_expand" is required for the
 reverse mapping-functions and is a constant-time `algorithm'.
 */
-private uint32          upd_truncate(P3(upd_pc,int,gx_color_value));
-private gx_color_value  upd_expand(  P3(upd_pc,int,uint32));
+private uint32          upd_truncate(upd_pc,int,gx_color_value);
+private gx_color_value  upd_expand(  upd_pc,int,uint32);
 
 /**
 The next group of internal functions adresses the rendering. Besides
@@ -767,18 +767,18 @@ is called for each scanline. Actually a fourth function is provided,
 that is invoked at the beginning of each page to be printed, but the
 current algorithms do not need it.
 */
-private void            upd_open_render(   P1(upd_device *udev));
-private void            upd_close_render(  P1(upd_device *udev));
+private void            upd_open_render(   upd_device *udev);
+private void            upd_close_render(  upd_device *udev);
 
-private void            upd_open_fscomp(   P1(upd_device *udev));
-private int             upd_fscomp(        P1(upd_p upd));
-private void            upd_close_fscomp(  P1(upd_device *udev));
+private void            upd_open_fscomp(   upd_device *udev);
+private int             upd_fscomp(        upd_p upd);
+private void            upd_close_fscomp(  upd_device *udev);
 
-private void            upd_open_fscmyk(   P1(upd_device *udev));
-private int             upd_fscmyk(        P1(upd_p upd));
+private void            upd_open_fscmyk(   upd_device *udev);
+private int             upd_fscmyk(        upd_p upd);
 
-private void            upd_open_fscmy_k(  P1(upd_device *udev));
-private int             upd_fscmy_k(       P1(upd_p upd));
+private void            upd_open_fscmy_k(  upd_device *udev);
+private int             upd_fscmy_k(       upd_p upd);
 
 /**
 I hope that the formatting stuff can be kept simple and thus most
@@ -787,10 +787,10 @@ During open, there is a call to a format-specific open-function, but
 this is only for checking and determining the amount of of bytes required
 for the output-buffer (and limit-values in the scan-buffer).
 */
-private int             upd_open_writer(   P1(upd_device *udev));
-private void            upd_close_writer(  P1(upd_device *udev));
+private int             upd_open_writer(   upd_device *udev);
+private void            upd_close_writer(  upd_device *udev);
 #if UPD_SIGNAL
-private void            upd_signal_handler(P1(int sig));
+private void            upd_signal_handler(int sig);
 #endif
 
 /**
@@ -801,9 +801,9 @@ it is a violation of UPD's rules: the start-routine computes the Begin-Page
 sequence (the Rasterfile header) since it would be a nuisance to provide
 this code within each (test-)personalization in PostScript.
 */
-private int             upd_open_rascomp(   P1(upd_device *udev));
-private int             upd_start_rascomp(  P2(upd_p upd, FILE *out));
-private int             upd_rascomp(        P2(upd_p upd, FILE *out));
+private int             upd_open_rascomp(   upd_device *udev);
+private int             upd_start_rascomp(  upd_p upd, FILE *out);
+private int             upd_rascomp(        upd_p upd, FILE *out);
 
 /**
 The second format is ESC/P, the format introduced with the first Epson
@@ -812,9 +812,9 @@ It is also uncompressed. This formatter supports X- and Y-Weaving,
 which makes it the most sophisticated one inside this driver.
 */
 
-private void            upd_limits(        P2(upd_p upd, bool check));
-private int             upd_open_wrtescp(  P1(upd_device *udev));
-private int             upd_wrtescp(       P2(upd_p upd, FILE *out));
+private void            upd_limits(        upd_p upd, bool check);
+private int             upd_open_wrtescp(  upd_device *udev);
+private int             upd_wrtescp(       upd_p upd, FILE *out);
 
 /**
 The third format is ESC/P2, the format use by the newer Epson-Printers.
@@ -823,40 +823,40 @@ This formatter does not allow for X-Weaving.
 
 The fourth writer is a ESC/P2-Writer, that supports X-Weaving
 */
-private int             upd_rle(P3(byte *out,const byte *in,int nbytes));
-private int             upd_open_wrtescp2( P1(upd_device *udev));
-private int             upd_wrtescp2(      P2(upd_p upd, FILE *out));
-private int             upd_wrtescp2x(     P2(upd_p upd, FILE *out));
+private int             upd_rle(byte *out,const byte *in,int nbytes);
+private int             upd_open_wrtescp2( upd_device *udev);
+private int             upd_wrtescp2(      upd_p upd, FILE *out);
+private int             upd_wrtescp2x(     upd_p upd, FILE *out);
 
 /**
 The fifth writer is a HP-RTL/PCL-Writer
 */
 
-private int             upd_open_wrtrtl(   P1(upd_device *udev));
-private int             upd_wrtrtl(        P2(upd_p upd, FILE *out));
+private int             upd_open_wrtrtl(   upd_device *udev);
+private int             upd_wrtrtl(        upd_p upd, FILE *out);
 
 /**
 The sixth writer is for Canon Extended Mode (currently BJC610) (hr)
 */
 
-private int             upd_open_wrtcanon( P1(upd_device *udev));
-private int             upd_wrtcanon(      P2(upd_p upd, FILE *out));
+private int             upd_open_wrtcanon( upd_device *udev);
+private int             upd_wrtcanon(      upd_p upd, FILE *out);
 
 /**
 The seventh writer is for ESC P/2 Nozzle Map Mode (currently Stylus Color 300) (GR)
 */
 
-private int             upd_wrtescnm(      P2(upd_p upd, FILE *out));
+private int             upd_wrtescnm(      upd_p upd, FILE *out);
 
 
 /**
 Generalized Pixel Get & Read
 */
-private uint32 upd_pxlfwd(P1(upd_p upd));
-private uint32 upd_pxlrev(P1(upd_p upd));
+private uint32 upd_pxlfwd(upd_p upd);
+private uint32 upd_pxlrev(upd_p upd);
 #define upd_pxlget(UPD) (*UPD->pxlget)(UPD)
 
-private void *upd_cast(P1(const void *));
+private void *upd_cast(const void *);
 
 /* ------------------------------------------------------------------- */
 /* Macros to deal with the Parameter-Memory                            */
@@ -1028,8 +1028,8 @@ upd_print_page(gx_device_printer *pdev, FILE *out)
    int error,need,yfill;
 
 #if UPD_SIGNAL /* variables required for signal-handling only */
-   void (*oldint )(P1(int)) = NULL;
-   void (*oldterm)(P1(int)) = NULL;
+   void (*oldint )(int) = NULL;
+   void (*oldterm)(int) = NULL;
    upd_p  oldupd            = sigupd;
 #endif         /* variables required for signal-handling only */
 

@@ -132,8 +132,8 @@ private const uint clip_interval = 10000;
 private int
 clip_enumerate_rest(gx_device_clip * rdev,
 		    int x, int y, int xe, int ye,
-		    int (*process)(P5(clip_callback_data_t * pccd,
-				      int xc, int yc, int xec, int yec)),
+		    int (*process)(clip_callback_data_t * pccd,
+				   int xc, int yc, int xec, int yec),
 		    clip_callback_data_t * pccd)
 {
     gx_clip_rect *rptr = rdev->current;		/* const within algorithm */
@@ -239,8 +239,8 @@ clip_enumerate_rest(gx_device_clip * rdev,
 
 private int
 clip_enumerate(gx_device_clip * rdev, int x, int y, int w, int h,
-	       int (*process)(P5(clip_callback_data_t * pccd,
-				 int xc, int yc, int xec, int yec)),
+	       int (*process)(clip_callback_data_t * pccd,
+			      int xc, int yc, int xec, int yec),
 	       clip_callback_data_t * pccd)
 {
     int xe, ye;

@@ -373,7 +373,7 @@ HT_FUNC(ht_Double, (d2fsin_d(x * 180) + d2fsin_d(y * 360)) / 2)
 HT_FUNC(ht_InvertedDouble, -(d2fsin_d(x * 180) + d2fsin_d(y * 360)) / 2)
 typedef struct ht_function_s {
     const char *fname;
-    floatp (*proc)(P2(floatp, floatp));
+    floatp (*proc)(floatp, floatp);
 } ht_function_t;
 private const ht_function_t ht_functions[] = {
     {"Round", ht_Round},
@@ -497,7 +497,7 @@ pdf_write_spot_halftone(gx_device_pdf *pdev, const gs_spot_halftone *psht,
 	if (code < 0)
 	    goto notrec;
 	for (i = 0; i < countof(ht_functions); ++i) {
-	    floatp (*spot_proc)(P2(floatp, floatp)) = ht_functions[i].proc;
+	    floatp (*spot_proc)(floatp, floatp) = ht_functions[i].proc;
 	    gs_point pt;
 
 	    gs_screen_enum_init_memory(&senum, &order, NULL, &psht->screen,

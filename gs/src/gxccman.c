@@ -58,11 +58,11 @@ private RELOC_PTRS_BEGIN(cc_ptr_reloc_ptrs)
 RELOC_PTRS_END
 
 /* Forward references */
-private gx_xfont * lookup_xfont_by_name(P6(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *));
-private cached_char *alloc_char(P2(gs_font_dir *, ulong));
-private cached_char *alloc_char_in_chunk(P2(gs_font_dir *, ulong));
-private void hash_remove_cached_char(P2(gs_font_dir *, uint));
-private void shorten_cached_char(P3(gs_font_dir *, cached_char *, uint));
+private gx_xfont * lookup_xfont_by_name(gx_device *, const gx_xfont_procs *, gs_font_name *, int, const cached_fm_pair *, const gs_matrix *);
+private cached_char *alloc_char(gs_font_dir *, ulong);
+private cached_char *alloc_char_in_chunk(gs_font_dir *, ulong);
+private void hash_remove_cached_char(gs_font_dir *, uint);
+private void shorten_cached_char(gs_font_dir *, cached_char *, uint);
 
 /* ====== Initialization ====== */
 
@@ -136,7 +136,7 @@ gx_char_cache_init(register gs_font_dir * dir)
 /* a client-supplied procedure. */
 void
 gx_purge_selected_cached_chars(gs_font_dir * dir,
-		   bool(*proc) (P2(cached_char *, void *)), void *proc_data)
+		   bool(*proc) (cached_char *, void *), void *proc_data)
 {
     int chi;
     int cmax = dir->ccache.table_mask;

@@ -187,13 +187,13 @@ stcolor_device far_data gs_stcolor_device = {
 /***
  *** Test for white scan-lines
  ***/
-private bool stc_iswhite(P3(stcolor_device *, int, byte *));
+private bool stc_iswhite(stcolor_device *, int, byte *);
 
 /***
  *** Functions used for conversion inside the print-loop
  ***/
 #define stc_proc_iconvert(Name) \
-byte * Name(P4(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line))
+byte * Name(stcolor_device *sd,byte *ext_data,int prt_pixels,byte *alg_line)
 
 private stc_proc_iconvert(stc_any_depth);    /* general input-conversion */
 private stc_proc_iconvert(stc_rgb24_long);   /* 24Bit RGB  -> long's */
@@ -210,10 +210,10 @@ private stc_proc_iconvert(stc_cmyk10_dlong); /* CMYK10 direct longs */
 /***
  *** Print-functions
  ***/
-private void stc_print_weave(P2(stcolor_device *sd,FILE *prn_stream));
-private void stc_print_bands(P2(stcolor_device *sd,FILE *prn_stream));
-private void stc_print_delta(P2(stcolor_device *sd,FILE *prn_stream));
-private int  stc_print_setup(P1(stcolor_device *sd));
+private void stc_print_weave(stcolor_device *sd,FILE *prn_stream);
+private void stc_print_bands(stcolor_device *sd,FILE *prn_stream);
+private void stc_print_delta(stcolor_device *sd,FILE *prn_stream);
+private int  stc_print_setup(stcolor_device *sd);
 
 /***
  *** compute the ESC/P2 specific values

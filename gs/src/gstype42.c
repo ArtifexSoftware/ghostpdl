@@ -36,13 +36,13 @@
 public_st_gs_font_type42();
 
 /* Forward references */
-private int append_outline(P4(uint glyph_index, const gs_matrix_fixed * pmat,
-			      gx_path * ppath, gs_font_type42 * pfont));
+private int append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
+			   gx_path * ppath, gs_font_type42 * pfont);
 private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
-private int default_get_outline(P3(gs_font_type42 *pfont, uint glyph_index,
-				   gs_glyph_data_t *pgd));
-private int default_get_metrics(P4(gs_font_type42 *pfont, uint glyph_index,
-				   int wmode, float sbw[4]));
+private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
+				gs_glyph_data_t *pgd);
+private int default_get_metrics(gs_font_type42 *pfont, uint glyph_index,
+				int wmode, float sbw[4]);
 
 /* Set up a pointer to a substring of the font data. */
 /* Free variables: pfont, string_proc. */
@@ -69,7 +69,7 @@ private int default_get_metrics(P4(gs_font_type42 *pfont, uint glyph_index,
 int
 gs_type42_font_init(gs_font_type42 * pfont)
 {
-    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
     const byte *OffsetTable;
     uint numTables;
@@ -305,7 +305,7 @@ private int
 default_get_outline(gs_font_type42 * pfont, uint glyph_index,
 		    gs_glyph_data_t *pgd)
 {
-    int (*string_proc) (P4(gs_font_type42 *, ulong, uint, const byte **)) =
+    int (*string_proc) (gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
     const byte *ploca;
     ulong glyph_start;
@@ -476,7 +476,7 @@ private int
 simple_glyph_metrics(gs_font_type42 * pfont, uint glyph_index, int wmode,
 		     float sbw[4])
 {
-    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
     double factor = 1.0 / pfont->data.unitsPerEm;
     uint width;

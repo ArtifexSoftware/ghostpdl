@@ -38,7 +38,7 @@
 #endif
 
 /* Library routines not declared in a standard header */
-extern char *mktemp(P1(char *));
+extern char *mktemp(char *);
 
 /* ------ File naming and accessing ------ */
 

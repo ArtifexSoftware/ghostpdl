@@ -468,7 +468,7 @@ gx_pattern_cache_free_entry(gx_pattern_cache * pcache, gx_color_tile * ctile)
  * device, but it may zero out the bitmap_memory pointers to prevent
  * the accumulated bitmaps from being freed when the device is closed.
  */
-private void make_bitmap(P3(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id));
+private void make_bitmap(gx_strip_bitmap *, const gx_device_memory *, gx_bitmap_id);
 int
 gx_pattern_cache_add_entry(gs_imager_state * pis,
 		   gx_device_pattern_accum * padev, gx_color_tile ** pctile)
@@ -556,7 +556,7 @@ make_bitmap(register gx_strip_bitmap * pbm, const gx_device_memory * mdev,
 /* Purge selected entries from the pattern cache. */
 void
 gx_pattern_cache_winnow(gx_pattern_cache * pcache,
-  bool(*proc) (P2(gx_color_tile * ctile, void *proc_data)), void *proc_data)
+  bool(*proc) (gx_color_tile * ctile, void *proc_data), void *proc_data)
 {
     uint i;
 

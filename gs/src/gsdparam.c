@@ -32,7 +32,7 @@
 /* ================ Getting parameters ================ */
 
 /* Forward references */
-private bool param_HWColorMap(P2(gx_device *, byte *));
+private bool param_HWColorMap(gx_device *, byte *);
 
 /* Get the device parameters. */
 int
@@ -382,16 +382,16 @@ gdev_end_output_media(gs_param_list * mlist, gs_param_dict * pdict)
 /* ================ Putting parameters ================ */
 
 /* Forward references */
-private int param_anti_alias_bits(P3(gs_param_list *, gs_param_name, int *));
-private int param_MediaSize(P4(gs_param_list *, gs_param_name,
-			       const float *, gs_param_float_array *));
+private int param_anti_alias_bits(gs_param_list *, gs_param_name, int *);
+private int param_MediaSize(gs_param_list *, gs_param_name,
+			    const float *, gs_param_float_array *);
 
-private int param_check_bool(P4(gs_param_list *, gs_param_name, bool, bool));
-private int param_check_long(P4(gs_param_list *, gs_param_name, long, bool));
+private int param_check_bool(gs_param_list *, gs_param_name, bool, bool);
+private int param_check_long(gs_param_list *, gs_param_name, long, bool);
 #define param_check_int(plist, pname, ival, is_defined)\
   param_check_long(plist, pname, (long)(ival), is_defined)
-private int param_check_bytes(P5(gs_param_list *, gs_param_name, const byte *,
-				 uint, bool));
+private int param_check_bytes(gs_param_list *, gs_param_name, const byte *,
+			      uint, bool);
 #define param_check_string(plist, pname, str, is_defined)\
   param_check_bytes(plist, pname, (const byte *)(str), strlen(str), is_defined)
 

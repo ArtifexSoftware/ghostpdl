@@ -27,11 +27,11 @@
 /* As usual, they return either 0 or a (negative) error code. */
 
 /* Forward references */
-private int path_alloc_copy(P1(gx_path *));
-private int gx_path_new_subpath(P1(gx_path *));
+private int path_alloc_copy(gx_path *);
+private int gx_path_new_subpath(gx_path *);
 
 #ifdef DEBUG
-private void gx_print_segment(P1(const segment *));
+private void gx_print_segment(const segment *);
 
 #  define trace_segment(msg, pseg)\
      if ( gs_debug_c('P') ) dlprintf(msg), gx_print_segment(pseg);

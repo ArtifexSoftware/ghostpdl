@@ -176,7 +176,7 @@ const gx_device_async gs_bmpa32b_device =
 
 /* --------- Forward declarations ---------- */
 
-private void bmpa_reader_thread(P1(void *));
+private void bmpa_reader_thread(void *);
 
 /* ------------ Writer Instance procedures ---------- */
 
@@ -243,9 +243,9 @@ bmpa_cmyk_writer_open(gx_device *pdev  /* Driver instance to open */)
 
 /* Forward declarations */
 private int
-    bmpa_reader_buffer_planes(P6(gx_device_printer *pdev, FILE *prn_stream,
-				 int num_copies, int first_plane,
-				 int last_plane, int raster));
+    bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *prn_stream,
+			      int num_copies, int first_plane,
+			      int last_plane, int raster);
 
 /* Thread to do rendering, started by bmpa_reader_start_render_thread */
 private void 

@@ -245,7 +245,7 @@ gs_cspace_get_sepr_value_array(const gs_color_space * pcspace)
  */
 int
 gs_cspace_set_sepr_proc(gs_color_space * pcspace,
-	    int (*proc) (P3(const gs_separation_params *, floatp, float *)))
+	    int (*proc) (const gs_separation_params *, floatp, float *))
 {
     gs_indexed_map *pimap;
 
@@ -420,12 +420,12 @@ typedef ulong gs_separation;	/* BOGUS */
 #define gs_no_separation ((gs_separation)(-1L))
 
 #define dev_proc_lookup_separation(proc)\
-  gs_separation proc(P4(gx_device *dev, const byte *sname, uint len,\
-    gx_color_value *num_levels))
+  gs_separation proc(gx_device *dev, const byte *sname, uint len,\
+    gx_color_value *num_levels)
 
 #define dev_proc_map_tint_color(proc)\
-  gx_color_index proc(P4(gx_device *dev, gs_separation sepr, bool overprint,\
-    gx_color_value tint))
+  gx_color_index proc(gx_device *dev, gs_separation sepr, bool overprint,\
+    gx_color_value tint)
 
 /*
  * In principle, setting a Separation color space, or setting the device

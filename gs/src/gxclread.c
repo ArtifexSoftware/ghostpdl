@@ -137,17 +137,17 @@ private const stream_template s_band_read_template = {
 
 /* Forward references */
 
-private int clist_render_init(P1(gx_device_clist *));
-private int clist_playback_file_bands(P8(clist_playback_action action,
-					 gx_device_clist_reader *cdev,
-					 gx_band_page_info_t *page_info,
-					 gx_device *target,
-					 int band_first, int band_last,
-					 int x0, int y0));
-private int clist_rasterize_lines(P6(gx_device *dev, int y, int lineCount,
-				     gx_device *bdev,
-				     const gx_render_plane_t *render_plane,
-				     int *pmy));
+private int clist_render_init(gx_device_clist *);
+private int clist_playback_file_bands(clist_playback_action action,
+				      gx_device_clist_reader *cdev,
+				      gx_band_page_info_t *page_info,
+				      gx_device *target,
+				      int band_first, int band_last,
+				      int x0, int y0);
+private int clist_rasterize_lines(gx_device *dev, int y, int lineCount,
+				  gx_device *bdev,
+				  const gx_render_plane_t *render_plane,
+				  int *pmy);
 
 /* Calculate the raster for a chunky or planar device. */
 private int

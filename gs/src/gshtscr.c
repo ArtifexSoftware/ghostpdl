@@ -165,9 +165,9 @@ gx_compute_cell_values(gx_ht_cell_params_t * phcp)
 }
 
 /* Forward references */
-private int pick_cell_size(P6(gs_screen_halftone * ph,
+private int pick_cell_size(gs_screen_halftone * ph,
      const gs_matrix * pmat, ulong max_size, uint min_levels, bool accurate,
-                              gx_ht_cell_params_t * phcp));
+			   gx_ht_cell_params_t * phcp);
 
 /* Allocate a screen enumerator. */
 gs_screen_enum *

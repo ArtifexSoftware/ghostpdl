@@ -139,7 +139,7 @@ write_range(stream *s, gs_font_type42 *pfont, ulong start, uint length)
 {
     ulong base = start;
     ulong limit = base + length;
-    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
 
     if_debug3('l', "[l]write_range pos = %ld, start = %lu, length = %u\n",
@@ -593,7 +593,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 {
     gs_font *const font = (gs_font *)pfont;
     gs_const_string font_name;
-    int (*string_proc)(P4(gs_font_type42 *, ulong, uint, const byte **)) =
+    int (*string_proc)(gs_font_type42 *, ulong, uint, const byte **) =
 	pfont->data.string_proc;
     const byte *OffsetTable;
     uint numTables_stored, numTables, numTables_out;

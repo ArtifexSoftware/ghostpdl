@@ -268,19 +268,19 @@ typedef struct line_list_s line_list;
 typedef line_list *ll_ptr;
 
 /* Forward declarations */
-private void init_line_list(P2(ll_ptr, gs_memory_t *));
-private void unclose_path(P2(gx_path *, int));
-private void free_line_list(P1(ll_ptr));
-private int add_y_list(P5(gx_path *, ll_ptr, fixed, fixed,
-			  const gs_fixed_rect *));
-private int add_y_line(P4(const segment *, const segment *, int, ll_ptr));
-private void insert_x_new(P2(active_line *, ll_ptr));
-private bool end_x_line(P2(active_line *, bool));
+private void init_line_list(ll_ptr, gs_memory_t *);
+private void unclose_path(gx_path *, int);
+private void free_line_list(ll_ptr);
+private int add_y_list(gx_path *, ll_ptr, fixed, fixed,
+		       const gs_fixed_rect *);
+private int add_y_line(const segment *, const segment *, int, ll_ptr);
+private void insert_x_new(active_line *, ll_ptr);
+private bool end_x_line(active_line *, bool);
 
 #define FILL_LOOP_PROC(proc)\
-int proc(P11(ll_ptr, gx_device *,\
+int proc(ll_ptr, gx_device *,\
   const gx_fill_params *, const gx_device_color *, gs_logical_operation_t,\
-  const gs_fixed_rect *, fixed, fixed, fixed, fixed, fixed))
+  const gs_fixed_rect *, fixed, fixed, fixed, fixed, fixed)
 private FILL_LOOP_PROC(fill_loop_by_scan_lines);
 private FILL_LOOP_PROC(fill_loop_by_trapezoids);
 
@@ -926,10 +926,10 @@ end_x_line(active_line *alp, bool update)
 /* ---------------- Trapezoid filling loop ---------------- */
 
 /* Forward references */
-private int fill_slant_adjust(P12(fixed, fixed, fixed, fixed, fixed,
-				  fixed, fixed, fixed, const gs_fixed_rect *,
-	     const gx_device_color *, gx_device *, gs_logical_operation_t));
-private void resort_x_line(P1(active_line *));
+private int fill_slant_adjust(fixed, fixed, fixed, fixed, fixed,
+			      fixed, fixed, fixed, const gs_fixed_rect *,
+	     const gx_device_color *, gx_device *, gs_logical_operation_t);
+private void resort_x_line(active_line *);
 
 /****** PATCH ******/
 #define LOOP_FILL_TRAPEZOID_FIXED(fx0, fw0, fy0, fx1, fw1, fh)\
@@ -1583,7 +1583,7 @@ range_list_clear(coord_range_list_t *pcrl)
 /* ------ "Public" procedures ------ */
 
 /* Initialize a range list.  We require num_local >= 2. */
-private void range_list_clear(P1(coord_range_list_t *));
+private void range_list_clear(coord_range_list_t *);
 private void
 range_list_init(coord_range_list_t *pcrl, coord_range_t *pcr_local,
 		int num_local, gs_memory_t *mem)
@@ -1715,10 +1715,10 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
 /* ---------------- Scan line filling loop ---------------- */
 
 /* Forward references */
-private int merge_ranges(P6(coord_range_list_t *pcrl, ll_ptr ll,
-			    fixed y_min, fixed y_top,
-			    fixed adjust_left, fixed adjust_right));
-private void set_scan_line_points(P2(active_line *, fixed));
+private int merge_ranges(coord_range_list_t *pcrl, ll_ptr ll,
+			 fixed y_min, fixed y_top,
+			 fixed adjust_left, fixed adjust_right);
+private void set_scan_line_points(active_line *, fixed);
 
 /* Main filling loop. */
 private int

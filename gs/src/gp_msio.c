@@ -54,7 +54,7 @@
 #include "gxiodev.h"		/* must come after stream.h */
 
 /* Imported from gp_msdos.c */
-int gp_file_is_console(P1(FILE *));
+int gp_file_is_console(FILE *);
 
 
 /* ====== Substitute for stdio ====== */

@@ -137,7 +137,7 @@ const gx_device_printer far_data gs_epsonc_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-private void epsc_output_run(P6(byte *, int, int, char, FILE *, int));
+private void epsc_output_run(byte *, int, int, char, FILE *, int);
 
 /* Send the page to the printer. */
 #define DD 0x80				/* double density flag */

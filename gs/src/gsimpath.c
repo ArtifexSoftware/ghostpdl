@@ -41,9 +41,9 @@ typedef struct {
 #define step 1
 
 /* Forward declarations */
-private int get_pixel(P3(const status *, int, int));
-private int trace_from(P4(status *, int, int, int));
-private int add_dxdy(P4(status *, int, int, int));
+private int get_pixel(const status *, int, int);
+private int trace_from(status *, int, int, int);
+private int add_dxdy(status *, int, int, int);
 
 #define add_deltas(s, dx, dy, n)\
   if ( (code = add_dxdy(s, dx, dy, n)) < 0 ) return code

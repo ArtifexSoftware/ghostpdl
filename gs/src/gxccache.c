@@ -38,7 +38,7 @@
 #include "gxhttile.h"
 
 /* Forward references */
-private byte *compress_alpha_bits(P2(const cached_char *, gs_memory_t *));
+private byte *compress_alpha_bits(const cached_char *, gs_memory_t *);
 
 /* Define a scale factor of 1. */
 static const gs_log2_scale_point scale_log2_1 =

@@ -59,7 +59,7 @@ typedef struct arc_curve_params_s {
 } arc_curve_params_t;
 
 /* Forward declarations */
-private int arc_add(P2(const arc_curve_params_t *arc, bool is_quadrant));
+private int arc_add(const arc_curve_params_t *arc, bool is_quadrant);
 
 int
 gs_arc(gs_state * pgs,

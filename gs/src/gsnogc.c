@@ -305,7 +305,7 @@ sf_consolidate_free(gs_memory_t *mem)
  * within the chunk if possible.
  */
 
-private void use_string_freelists(P1(gs_ref_memory_t *mem));
+private void use_string_freelists(gs_ref_memory_t *mem);
 void
 gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 {

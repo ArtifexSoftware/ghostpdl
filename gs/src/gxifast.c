@@ -645,7 +645,7 @@ image_render_simple(gx_image_enum * penum, const byte * buffer, int data_x,
 
 /* Rendering procedure for a 90 degree rotated monobit image */
 /* with pure colors.  We buffer and then flip 8 scan lines at a time. */
-private int copy_landscape(P5(gx_image_enum *, int, int, bool, gx_device *));
+private int copy_landscape(gx_image_enum *, int, int, bool, gx_device *);
 private int
 image_render_landscape(gx_image_enum * penum, const byte * buffer, int data_x,
 		       uint w, int h, gx_device * dev)

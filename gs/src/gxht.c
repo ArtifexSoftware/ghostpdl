@@ -254,8 +254,8 @@ gx_check_tile_size(const gs_imager_state * pis, int w, int y, int h,
 }
 
 /* Render a given level into a halftone cache. */
-private int render_ht(P4(gx_ht_tile *, int, const gx_ht_order *,
-			 gx_bitmap_id));
+private int render_ht(gx_ht_tile *, int, const gx_ht_order *,
+		      gx_bitmap_id);
 private gx_ht_tile *
 gx_render_ht_default(gx_ht_cache * pcache, int b_level)
 {

@@ -102,8 +102,8 @@ private int
 tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 	      const gx_color_tile * ptile,
 	      const gx_strip_bitmap * tbits_or_tmask,
-	      int (*fill_proc) (P5(const tile_fill_state_t * ptfs,
-				   int x, int y, int w, int h)))
+	      int (*fill_proc) (const tile_fill_state_t * ptfs,
+				int x, int y, int w, int h))
 {
     int x1 = x0 + w0, y1 = y0 + h0;
     int i0, i1, j0, j1, i, j;

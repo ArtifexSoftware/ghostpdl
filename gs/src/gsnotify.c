@@ -63,7 +63,7 @@ no_unreg_proc(void *pdata)
 int
 gs_notify_unregister_calling(gs_notify_list_t *nlist, gs_notify_proc_t proc,
 			     void *proc_data,
-			     void (*unreg_proc)(P1(void *pdata)))
+			     void (*unreg_proc)(void *pdata))
 {
     gs_notify_registration_t **prev = &nlist->first;
     gs_notify_registration_t *cur;

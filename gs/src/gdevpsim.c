@@ -160,7 +160,7 @@ static const gx_device_pswrite_common_t psmono_values =
 #define max_repeat_run 255
 
 /* Send the page to the printer. */
-private void write_data_run(P4(const byte *, int, FILE *, byte));
+private void write_data_run(const byte *, int, FILE *, byte);
 private int
 psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 {

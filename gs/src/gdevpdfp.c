@@ -37,8 +37,8 @@
  *      pdfmark - see gdevpdfm.c
  *	DSC - processed in this file
  */
-private int pdf_dsc_process(P2(gx_device_pdf * pdev,
-			       const gs_param_string_array * pma));
+private int pdf_dsc_process(gx_device_pdf * pdev,
+			    const gs_param_string_array * pma);
 
 private const int CoreDistVersion = 5000;	/* Distiller 5.0 */
 private const gs_param_item_t pdf_param_items[] = {

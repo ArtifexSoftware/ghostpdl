@@ -34,8 +34,8 @@
 #ifdef __PROTOTYPES__
 #  include <stdlib.h>		/* for exit and getenv */
 #else
-extern void exit(P1(int));
-extern char *getenv(P1(const char *));
+extern void exit(int);
+extern char *getenv(const char *);
 
 #endif
 

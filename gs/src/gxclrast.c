@@ -175,49 +175,49 @@ cmd_copy_value(void *pvar, int var_size, const byte *cbp)
  * Render one band to a specified target device.  Note that if
  * action == setup, target may be 0.
  */
-private int read_set_tile_size(P2(command_buf_t *pcb, tile_slot *bits));
-private int read_set_bits(P8(command_buf_t *pcb, tile_slot *bits,
-			     int compress, gx_clist_state *pcls,
-			     gx_strip_bitmap *tile, tile_slot **pslot,
-			     gx_device_clist_reader *cdev, gs_memory_t *mem));
-private int read_set_ht_order(P4(command_buf_t *pcb,
-				 gx_device_halftone **ppdht,
-				 gx_ht_order **pporder, gs_memory_t *mem));
-private int read_set_ht_data(P7(command_buf_t *pcb, uint *pdata_index,
-				gx_ht_order *porder,
-				gs_halftone_type halftone_type,
-				gs_imager_state *pis,
-				gx_device_clist_reader *cdev,
-				gs_memory_t *mem));
-private int read_set_misc2(P3(command_buf_t *pcb, gs_imager_state *pis,
-			      segment_notes *pnotes));
-private int read_set_color_space(P5(command_buf_t *pcb, gs_imager_state *pis,
-				    const gs_color_space **ppcs,
-				    gs_color_space *pcolor_space,
-				    gs_memory_t *mem));
-private int read_begin_image(P3(command_buf_t *pcb, gs_image_common_t *pic,
-				const gs_color_space *pcs));
-private int read_put_params(P4(command_buf_t *pcb, gs_imager_state *pis,
-			       gx_device_clist_reader *cdev,
-			       gs_memory_t *mem));
+private int read_set_tile_size(command_buf_t *pcb, tile_slot *bits);
+private int read_set_bits(command_buf_t *pcb, tile_slot *bits,
+			  int compress, gx_clist_state *pcls,
+			  gx_strip_bitmap *tile, tile_slot **pslot,
+			  gx_device_clist_reader *cdev, gs_memory_t *mem);
+private int read_set_ht_order(command_buf_t *pcb,
+			      gx_device_halftone **ppdht,
+			      gx_ht_order **pporder, gs_memory_t *mem);
+private int read_set_ht_data(command_buf_t *pcb, uint *pdata_index,
+			     gx_ht_order *porder,
+			     gs_halftone_type halftone_type,
+			     gs_imager_state *pis,
+			     gx_device_clist_reader *cdev,
+			     gs_memory_t *mem);
+private int read_set_misc2(command_buf_t *pcb, gs_imager_state *pis,
+			   segment_notes *pnotes);
+private int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
+				 const gs_color_space **ppcs,
+				 gs_color_space *pcolor_space,
+				 gs_memory_t *mem);
+private int read_begin_image(command_buf_t *pcb, gs_image_common_t *pic,
+			     const gs_color_space *pcs);
+private int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
+			    gx_device_clist_reader *cdev,
+			    gs_memory_t *mem);
 
-private const byte *cmd_read_rect(P3(int, gx_cmd_rect *, const byte *));
-private const byte *cmd_read_matrix(P2(gs_matrix *, const byte *));
-private const byte *cmd_read_short_bits(P6(command_buf_t *pcb, byte *data,
-					   int width_bytes, int height,
-					   uint raster, const byte *cbp));
-private int cmd_select_map(P7(cmd_map_index, cmd_map_contents,
-			      gs_imager_state *, gx_ht_order *, frac **,
-			      uint *, gs_memory_t *));
-private int cmd_create_dev_ht(P2(gx_device_halftone **, gs_memory_t *));
-private int cmd_resize_halftone(P3(gx_device_halftone **, uint,
-				   gs_memory_t *));
-private int clist_decode_segment(P7(gx_path *, int, fixed[6],
-				    gs_fixed_point *, int, int,
-				    segment_notes));
-private int clist_do_polyfill(P4(gx_device *, gx_path *,
-				 const gx_drawing_color *,
-				 gs_logical_operation_t));
+private const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
+private const byte *cmd_read_matrix(gs_matrix *, const byte *);
+private const byte *cmd_read_short_bits(command_buf_t *pcb, byte *data,
+					int width_bytes, int height,
+					uint raster, const byte *cbp);
+private int cmd_select_map(cmd_map_index, cmd_map_contents,
+			   gs_imager_state *, gx_ht_order *, frac **,
+			   uint *, gs_memory_t *);
+private int cmd_create_dev_ht(gx_device_halftone **, gs_memory_t *);
+private int cmd_resize_halftone(gx_device_halftone **, uint,
+				gs_memory_t *);
+private int clist_decode_segment(gx_path *, int, fixed[6],
+				 gs_fixed_point *, int, int,
+				 segment_notes);
+private int clist_do_polyfill(gx_device *, gx_path *,
+			      const gx_drawing_color *,
+			      gs_logical_operation_t);
 
 int
 clist_playback_band(clist_playback_action playback_action,

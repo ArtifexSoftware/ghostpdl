@@ -347,7 +347,7 @@ flipNx12(byte * buffer, const byte ** planes, int offset, int nbytes,
 }
 
 /* Flip data given number of planes and bits per pixel. */
-typedef int (*image_flip_proc) (P4(byte *, const byte **, int, int));
+typedef int (*image_flip_proc) (byte *, const byte **, int, int);
 private int
 flip_fail(byte * buffer, const byte ** planes, int offset, int nbytes)
 {
@@ -363,7 +363,7 @@ private const image_flip_proc image_flip4_procs[13] = {
     flip_fail, flip_fail, flip_fail, flip4x8,
     flip_fail, flip_fail, flip_fail, flip4x12
 };
-typedef int (*image_flipN_proc) (P6(byte *, const byte **, int, int, int, int));
+typedef int (*image_flipN_proc) (byte *, const byte **, int, int, int, int);
 private int
 flipN_fail(byte * buffer, const byte ** planes, int offset, int nbytes,
 	   int num_planes, int bits_per_sample)

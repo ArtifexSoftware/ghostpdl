@@ -98,7 +98,7 @@ typedef struct color_values_pair_s {
     gx_color_value_array values[2];
 } color_values_pair_t;
 #define SET_HT_COLORS_PROC(proc)\
-  int proc(P7(\
+  int proc(\
 	      color_values_pair_t *pvp,\
 	      gx_color_index colors[1 << MAX_DCC],\
 	      const gx_const_strip_bitmap *sbits[MAX_DCC],\
@@ -106,14 +106,14 @@ typedef struct color_values_pair_s {
 	      gx_device *dev,\
 	      gx_ht_cache *caches[MAX_DCC],\
 	      int nplanes\
-	      ))
+	      )
 
 private SET_HT_COLORS_PROC(set_ht_colors_le_4);
 private SET_HT_COLORS_PROC(set_cmyk_1bit_colors);
 private SET_HT_COLORS_PROC(set_ht_colors_gt_4);
 
 #define SET_COLOR_HT_PROC(proc)\
-  void proc(P14(\
+  void proc(\
 	        byte *dest_data, /* the output tile */\
 		uint dest_raster, /* ibid. */\
 		int px,	/* the initial phase of the output tile */\
@@ -130,7 +130,7 @@ private SET_HT_COLORS_PROC(set_ht_colors_gt_4);
 				/* actually [1 << nplanes] */\
 		const gx_const_strip_bitmap * sbits[MAX_DCC]	/* the bitmaps for the planes, */\
 				/* actually [nplanes] */\
-		))
+		)
 
 private SET_COLOR_HT_PROC(set_color_ht_le_4);
 private SET_COLOR_HT_PROC(set_color_ht_gt_4);

@@ -27,7 +27,7 @@
 /* Initialize an arg list. */
 void
 arg_init(arg_list * pal, const char **argv, int argc,
-	 FILE * (*arg_fopen) (P2(const char *fname, void *fopen_data)),
+	 FILE * (*arg_fopen) (const char *fname, void *fopen_data),
 	 void *fopen_data)
 {
     pal->expand_ats = true;

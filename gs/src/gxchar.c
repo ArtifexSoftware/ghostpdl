@@ -73,13 +73,13 @@ private RELOC_PTRS_WITH(show_enum_reloc_ptrs, gs_show_enum *eptr)
 RELOC_PTRS_END
 
 /* Forward declarations */
-private int continue_kshow(P1(gs_show_enum *));
-private int continue_show(P1(gs_show_enum *));
-private int continue_show_update(P1(gs_show_enum *));
-private void show_set_scale(P2(const gs_show_enum *, gs_log2_scale_point *log2_scale));
-private int show_cache_setup(P1(gs_show_enum *));
-private int show_state_setup(P1(gs_show_enum *));
-private int show_origin_setup(P4(gs_state *, fixed, fixed, gs_char_path_mode));
+private int continue_kshow(gs_show_enum *);
+private int continue_show(gs_show_enum *);
+private int continue_show_update(gs_show_enum *);
+private void show_set_scale(const gs_show_enum *, gs_log2_scale_point *log2_scale);
+private int show_cache_setup(gs_show_enum *);
+private int show_state_setup(gs_show_enum *);
+private int show_origin_setup(gs_state *, fixed, fixed, gs_char_path_mode);
 
 /* Accessors for current_char and current_glyph. */
 #define CURRENT_CHAR(penum) ((penum)->returned.current_char)
@@ -221,8 +221,8 @@ gx_default_text_begin(gx_device * dev, gs_imager_state * pis,
 /* ------ Width/cache setting ------ */
 
 private int
-    set_cache_device(P6(gs_show_enum *penum, gs_state *pgs,
-			floatp llx, floatp lly, floatp urx, floatp ury));
+    set_cache_device(gs_show_enum *penum, gs_state *pgs,
+		     floatp llx, floatp lly, floatp urx, floatp ury);
 
 /* This is the default implementation of text enumerator set_cache. */
 private int
@@ -578,10 +578,10 @@ gx_show_text_process(gs_text_enum_t *pte)
 }
 
 /* Continuation procedures */
-private int show_update(P1(gs_show_enum * penum));
-private int show_move(P1(gs_show_enum * penum));
-private int show_proceed(P1(gs_show_enum * penum));
-private int show_finish(P1(gs_show_enum * penum));
+private int show_update(gs_show_enum * penum);
+private int show_move(gs_show_enum * penum);
+private int show_proceed(gs_show_enum * penum);
+private int show_finish(gs_show_enum * penum);
 private int
 continue_show_update(gs_show_enum * penum)
 {

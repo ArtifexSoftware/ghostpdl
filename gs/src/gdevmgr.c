@@ -31,8 +31,8 @@ typedef struct gx_device_mgr_s gx_device_mgr;
 
 static struct nclut clut[256];
 
-private unsigned int clut2mgr(P2(int, int));
-private void swap_bwords(P2(unsigned char *, int));
+private unsigned int clut2mgr(int, int);
+private void swap_bwords(unsigned char *, int);
 
 /* ------ The device descriptors ------ */
 

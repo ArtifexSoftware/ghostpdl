@@ -170,21 +170,21 @@ const gx_device_pswrite gs_epswrite_device = {
 
 /* Vector device implementation */
 private int
-    psw_beginpage(P1(gx_device_vector * vdev)),
-    psw_setcolors(P2(gx_device_vector * vdev, const gx_drawing_color * pdc)),
-    psw_dorect(P6(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
-		  fixed y1, gx_path_type_t type)),
-    psw_beginpath(P2(gx_device_vector * vdev, gx_path_type_t type)),
-    psw_moveto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		  floatp x, floatp y, gx_path_type_t type)),
-    psw_lineto(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		  floatp x, floatp y, gx_path_type_t type)),
-    psw_curveto(P10(gx_device_vector * vdev, floatp x0, floatp y0,
-		    floatp x1, floatp y1, floatp x2, floatp y2,
-		    floatp x3, floatp y3, gx_path_type_t type)),
-    psw_closepath(P6(gx_device_vector * vdev, floatp x0, floatp y0,
-		     floatp x_start, floatp y_start, gx_path_type_t type)),
-    psw_endpath(P2(gx_device_vector * vdev, gx_path_type_t type));
+    psw_beginpage(gx_device_vector * vdev),
+    psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc),
+    psw_dorect(gx_device_vector * vdev, fixed x0, fixed y0, fixed x1,
+	       fixed y1, gx_path_type_t type),
+    psw_beginpath(gx_device_vector * vdev, gx_path_type_t type),
+    psw_moveto(gx_device_vector * vdev, floatp x0, floatp y0,
+	       floatp x, floatp y, gx_path_type_t type),
+    psw_lineto(gx_device_vector * vdev, floatp x0, floatp y0,
+	       floatp x, floatp y, gx_path_type_t type),
+    psw_curveto(gx_device_vector * vdev, floatp x0, floatp y0,
+		floatp x1, floatp y1, floatp x2, floatp y2,
+		floatp x3, floatp y3, gx_path_type_t type),
+    psw_closepath(gx_device_vector * vdev, floatp x0, floatp y0,
+		  floatp x_start, floatp y_start, gx_path_type_t type),
+    psw_endpath(gx_device_vector * vdev, gx_path_type_t type);
 private const gx_device_vector_procs psw_vector_procs = {
 	/* Page management */
     psw_beginpage,

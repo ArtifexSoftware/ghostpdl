@@ -36,18 +36,17 @@
 #endif
 
 /* Imports from gscolor.c */
-void load_transfer_map(P3(gs_state *, gx_transfer_map *, floatp));
+void load_transfer_map(gs_state *, gx_transfer_map *, floatp);
 
 /* Forward declarations */
-private int process_spot(P4(gx_ht_order *, gs_state *,
-			    gs_spot_halftone *, gs_memory_t *));
-private int process_threshold(P4(gx_ht_order *, gs_state *,
-				 gs_threshold_halftone *, gs_memory_t *));
-private int process_threshold2(P4(gx_ht_order *, gs_state *,
-				  gs_threshold2_halftone *,
-				  gs_memory_t *));
-private int process_client_order(P4(gx_ht_order *, gs_state *,
-				gs_client_order_halftone *, gs_memory_t *));
+private int process_spot(gx_ht_order *, gs_state *,
+			 gs_spot_halftone *, gs_memory_t *);
+private int process_threshold(gx_ht_order *, gs_state *,
+			      gs_threshold_halftone *, gs_memory_t *);
+private int process_threshold2(gx_ht_order *, gs_state *,
+			       gs_threshold2_halftone *, gs_memory_t *);
+private int process_client_order(gx_ht_order *, gs_state *,
+				 gs_client_order_halftone *, gs_memory_t *);
 
 /* Structure types */
 public_st_halftone_component();

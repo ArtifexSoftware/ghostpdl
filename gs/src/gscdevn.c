@@ -136,12 +136,12 @@ alloc_device_n_map(gs_device_n_map ** ppmap, gs_memory_t * mem,
  */
 int
 gs_cspace_set_devn_proc(gs_color_space * pcspace,
-			int (*proc)(P5(const gs_device_n_params *,
-				       const float *,
-				       float *,
-				       const gs_imager_state *,
-				       void *
-				       )),
+			int (*proc)(const gs_device_n_params *,
+				    const float *,
+				    float *,
+				    const gs_imager_state *,
+				    void *
+				    ),
 			void *proc_data
 			)
 {

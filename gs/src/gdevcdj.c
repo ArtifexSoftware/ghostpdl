@@ -159,8 +159,8 @@ e:	param_signal_error(plist, oname, code);\
 	pa.data = 0;		/* mark as not filled */\
   }
 
-private int cdj_param_check_bytes(P5(gs_param_list *, gs_param_name, const byte *, uint, bool));
-private int cdj_param_check_float(P4(gs_param_list *, gs_param_name, floatp, bool));
+private int cdj_param_check_bytes(gs_param_list *, gs_param_name, const byte *, uint, bool);
+private int cdj_param_check_float(gs_param_list *, gs_param_name, floatp, bool);
 #define cdj_param_check_string(plist, pname, str, is_defined)\
   cdj_param_check_bytes(plist, pname, (const byte *)(str), strlen(str),\
 			is_defined)
@@ -605,15 +605,15 @@ gx_device_bjc800 far_data gs_bjc800_device =
 	BJC800_DEFAULT_PRINTCOLORS);
 
 /* Forward references */
-private int gdev_pcl_mode1compress(P3(const byte *, const byte *, byte *));
-private int hp_colour_open(P2(gx_device *, int));
-private int hp_colour_print_page(P3(gx_device_printer *, FILE *, int));
-private int cdj_put_param_int(P6(gs_param_list *, gs_param_name, int *, int, int, int));
-private uint gdev_prn_rasterwidth(P2(const gx_device_printer *, int));
-private int cdj_put_param_bpp(P5(gx_device *, gs_param_list *, int, int, int));
-private int cdj_set_bpp(P3(gx_device *, int, int));
-private void cdj_expand_line(P5(word *, int, short, int, int));
-private int bjc_fscmyk(P5(byte**, byte*[4][4], int**, int, int));
+private int gdev_pcl_mode1compress(const byte *, const byte *, byte *);
+private int hp_colour_open(gx_device *, int);
+private int hp_colour_print_page(gx_device_printer *, FILE *, int);
+private int cdj_put_param_int(gs_param_list *, gs_param_name, int *, int, int, int);
+private uint gdev_prn_rasterwidth(const gx_device_printer *, int);
+private int cdj_put_param_bpp(gx_device *, gs_param_list *, int, int, int);
+private int cdj_set_bpp(gx_device *, int, int);
+private void cdj_expand_line(word *, int, short, int, int);
+private int bjc_fscmyk(byte**, byte*[4][4], int**, int, int);
 
 /* String parameters manipulation */
 
@@ -622,14 +622,14 @@ typedef struct {
     int p_value;
 } stringParamDescription;
 
-private const byte* paramValueToString(P2(const stringParamDescription*, int));
-private int paramStringValue(P4(const stringParamDescription*,
-    const byte*, int, int*));
+private const byte* paramValueToString(const stringParamDescription*, int);
+private int paramStringValue(const stringParamDescription*,
+    const byte*, int, int*);
 
-private int put_param_string(P6(gs_param_list*, const byte*,
-    gs_param_string*, const stringParamDescription*, int *, int));
-private int get_param_string(P7(gs_param_list*, const byte*,
-    gs_param_string*, const stringParamDescription*, int, bool, int));
+private int put_param_string(gs_param_list*, const byte*,
+    gs_param_string*, const stringParamDescription*, int *, int);
+private int get_param_string(gs_param_list*, const byte*,
+    gs_param_string*, const stringParamDescription*, int, bool, int);
 
 /* Open the printer and set up the margins. */
 private int

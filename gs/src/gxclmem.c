@@ -153,8 +153,8 @@ private const long COMPRESSION_THRESHOLD = 300000;
 private_st_MEMFILE();
 
 	/* forward references */
-private void memfile_free_mem(P1(MEMFILE * f));
-private int memfile_init_empty(P1(MEMFILE * f));
+private void memfile_free_mem(MEMFILE * f);
+private int memfile_init_empty(MEMFILE * f);
 
 /************************************************/
 /*   #define DEBUG      /- force statistics -/  */

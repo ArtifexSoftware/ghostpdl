@@ -35,8 +35,8 @@
 /* Forward declarations */
 #ifdef DEBUG
 #define trace_ctm(pgs) trace_matrix_fixed(&(pgs)->ctm)
-private void trace_matrix_fixed(P1(const gs_matrix_fixed *));
-private void trace_matrix(P1(const gs_matrix *));
+private void trace_matrix_fixed(const gs_matrix_fixed *);
+private void trace_matrix(const gs_matrix *);
 
 #endif
 

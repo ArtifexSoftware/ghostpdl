@@ -41,27 +41,27 @@
 private_st_device_X();
 
 /* Forward references */
-private int x_copy_image(P8(gx_device_X * xdev, const byte * base, int sourcex,
-			    int raster, int x, int y, int w, int h));
-private int set_tile(P2(gx_device *, const gx_strip_bitmap *));
-private void free_cp(P1(gx_device *));
+private int x_copy_image(gx_device_X * xdev, const byte * base, int sourcex,
+			 int raster, int x, int y, int w, int h);
+private int set_tile(gx_device *, const gx_strip_bitmap *);
+private void free_cp(gx_device *);
 
 /* Screen updating machinery */
-private void update_init(P1(gx_device_X *));
-private void update_do_flush(P1(gx_device_X *));
+private void update_init(gx_device_X *);
+private void update_do_flush(gx_device_X *);
 
 #define flush_text(xdev)\
   if (IN_TEXT(xdev)) do_flush_text(xdev)
-private void do_flush_text(P1(gx_device_X *));
+private void do_flush_text(gx_device_X *);
 
 /* Driver procedures */
 /* (External procedures are declared in gdevx.h.) */
-/*extern int gdev_x_open(P1(gx_device_X *));*/
+/*extern int gdev_x_open(gx_device_X *);*/
 private dev_proc_open_device(x_open);
 private dev_proc_get_initial_matrix(x_get_initial_matrix);
 private dev_proc_sync_output(x_sync);
 private dev_proc_output_page(x_output_page);
-/*extern int gdev_x_close(P1(gx_device_X *));*/
+/*extern int gdev_x_close(gx_device_X *);*/
 private dev_proc_close_device(x_close);
 /*extern dev_proc_map_rgb_color(gdev_x_map_rgb_color);*/
 /*extern dev_proc_map_color_rgb(gdev_x_map_color_rgb);*/
@@ -237,8 +237,8 @@ x_device(gs_x11alpha_device,
 	 50000000);
 
 /* If XPutImage doesn't work, do it ourselves. */
-private int alt_put_image(P11(gx_device * dev, Display * dpy, Drawable win,
-GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h));
+private int alt_put_image(gx_device * dev, Display * dpy, Drawable win,
+GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h);
 
 #define put_image(dpy,win,gc,im,sx,sy,x,y,w,h)\
   BEGIN\

@@ -54,7 +54,7 @@
 #include "gp_mswin.h"
 
 /* Library routines not declared in a standard header */
-extern char *getenv(P1(const char *));
+extern char *getenv(const char *);
 
 /* limits */
 #define MAXSTR 255
@@ -96,7 +96,7 @@ gp_do_exit(int exit_status)
 /* ------ Printer accessing ------ */
 
 /* Forward references */
-private int gp_printfile(P2(const char *, const char *));
+private int gp_printfile(const char *, const char *);
 
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */

@@ -177,10 +177,10 @@ pdf_end_obj(gx_device_pdf * pdev)
 
 /* Handle transitions between contexts. */
 private int
-    none_to_stream(P1(gx_device_pdf *)), stream_to_text(P1(gx_device_pdf *)),
-    string_to_text(P1(gx_device_pdf *)), text_to_stream(P1(gx_device_pdf *)),
-    stream_to_none(P1(gx_device_pdf *));
-typedef int (*context_proc) (P1(gx_device_pdf *));
+    none_to_stream(gx_device_pdf *), stream_to_text(gx_device_pdf *),
+    string_to_text(gx_device_pdf *), text_to_stream(gx_device_pdf *),
+    stream_to_none(gx_device_pdf *);
+typedef int (*context_proc) (gx_device_pdf *);
 private const context_proc context_procs[4][4] =
 {
     {0, none_to_stream, none_to_stream, none_to_stream},
@@ -313,7 +313,7 @@ stream_to_none(gx_device_pdf * pdev)
 int
 pdf_open_contents(gx_device_pdf * pdev, pdf_context_t context)
 {
-    int (*proc) (P1(gx_device_pdf *));
+    int (*proc) (gx_device_pdf *);
 
     while ((proc = context_procs[pdev->context][context]) != 0) {
 	int code = (*proc) (pdev);

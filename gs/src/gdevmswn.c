@@ -32,7 +32,7 @@
 #include "gsdll.h"
 
 /* Forward references */
-private int win_set_bits_per_pixel(P2(gx_device_win *, int));
+private int win_set_bits_per_pixel(gx_device_win *, int);
 
 #define TIMER_ID 1
 

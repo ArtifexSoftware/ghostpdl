@@ -181,7 +181,7 @@ gx_begin_image3(gx_device * dev,
  * Begin a generic ImageType 3 image, with client handling the creation of
  * the mask image and mask clip devices.
  */
-private bool check_image3_extent(P2(floatp mask_coeff, floatp data_coeff));
+private bool check_image3_extent(floatp mask_coeff, floatp data_coeff);
 int
 gx_begin_image3_generic(gx_device * dev,
 			const gs_imager_state *pis, const gs_matrix *pmat,

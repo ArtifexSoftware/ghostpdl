@@ -35,7 +35,7 @@ check_positive(float *pval)
 }
 private int
 trap_put_float_param(gs_param_list * plist, gs_param_name param_name,
-		     float *pval, bool(*check) (P1(float *pval)), int ecode)
+		     float *pval, bool(*check) (float *pval), int ecode)
 {
     int code;
 

@@ -105,7 +105,7 @@ struct gs_malloc_block_s {
 };
 
 /* Initialize a malloc allocator. */
-private long heap_available(P0());
+private long heap_available(void);
 gs_malloc_memory_t *
 gs_malloc_memory_init(void)
 {

@@ -42,15 +42,15 @@ extern_gx_image_type_table();
 static const bool USE_HL_IMAGES = true;
 
 /* Forward references */
-private int cmd_put_set_data_x(P3(gx_device_clist_writer * cldev,
-				  gx_clist_state * pcls, int data_x));
-private int cmd_put_color_mapping(P3(gx_device_clist_writer * cldev,
-				     const gs_imager_state * pis,
-				     bool write_rgb_to_cmyk));
-private bool check_rect_for_trivial_clip(P5(
+private int cmd_put_set_data_x(gx_device_clist_writer * cldev,
+			       gx_clist_state * pcls, int data_x);
+private int cmd_put_color_mapping(gx_device_clist_writer * cldev,
+				  const gs_imager_state * pis,
+				  bool write_rgb_to_cmyk);
+private bool check_rect_for_trivial_clip(
     const gx_clip_path *pcpath,  /* May be NULL, clip to evaluate */
     int px, int py, int qx, int qy  /* corners of box to test */
-));
+);
 
 /* ------ Driver procedures ------ */
 
@@ -259,20 +259,20 @@ private const gx_image_enum_procs_t clist_image_enum_procs =
 };
 
 /* Forward declarations */
-private bool image_band_box(P5(gx_device * dev, const clist_image_enum * pie,
-			       int y, int h, gs_int_rect * pbox));
-private int begin_image_command(P3(byte *buf, uint buf_size,
-				   const gs_image_common_t *pic));
-private int cmd_image_plane_data(P8(gx_device_clist_writer * cldev,
-				    gx_clist_state * pcls,
-				    const gx_image_plane_t * planes,
-				    const gx_image_enum_common_t * pie,
-				    uint bytes_per_plane,
-				    const uint * offsets, int dx, int h));
-private uint clist_image_unknowns(P2(gx_device *dev,
-				     const clist_image_enum *pie));
-private int write_image_end_all(P2(gx_device *dev,
-				   const clist_image_enum *pie));
+private bool image_band_box(gx_device * dev, const clist_image_enum * pie,
+			    int y, int h, gs_int_rect * pbox);
+private int begin_image_command(byte *buf, uint buf_size,
+				const gs_image_common_t *pic);
+private int cmd_image_plane_data(gx_device_clist_writer * cldev,
+				 gx_clist_state * pcls,
+				 const gx_image_plane_t * planes,
+				 const gx_image_enum_common_t * pie,
+				 uint bytes_per_plane,
+				 const uint * offsets, int dx, int h);
+private uint clist_image_unknowns(gx_device *dev,
+				  const clist_image_enum *pie);
+private int write_image_end_all(gx_device *dev,
+				const clist_image_enum *pie);
 
 /*
  * Since currently we are limited to writing a single subrectangle of the

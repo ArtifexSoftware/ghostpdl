@@ -369,10 +369,10 @@ gp_enumerate_files_close(file_enum * pfen)
 #include "string_.h"
 
 /* Library routines not declared in a standard header */
-/* extern char *getenv(P1(const char *)); */
+/* extern char *getenv(const char *); */
 
 /* Forward declarations */
-private void handle_FPE(P1(int));
+private void handle_FPE(int);
 
 /* Do platform-dependent initialization. */
 void

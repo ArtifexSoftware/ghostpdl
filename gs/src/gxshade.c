@@ -37,12 +37,12 @@
 /* ================ Packed coordinate streams ================ */
 
 /* Forward references */
-private int cs_next_packed_value(P3(shade_coord_stream_t *, int, uint *));
-private int cs_next_array_value(P3(shade_coord_stream_t *, int, uint *));
-private int cs_next_packed_decoded(P4(shade_coord_stream_t *, int,
-				      const float[2], float *));
-private int cs_next_array_decoded(P4(shade_coord_stream_t *, int,
-				     const float[2], float *));
+private int cs_next_packed_value(shade_coord_stream_t *, int, uint *);
+private int cs_next_array_value(shade_coord_stream_t *, int, uint *);
+private int cs_next_packed_decoded(shade_coord_stream_t *, int,
+				   const float[2], float *);
+private int cs_next_array_decoded(shade_coord_stream_t *, int,
+				  const float[2], float *);
 
 /* Initialize a packed value stream. */
 void

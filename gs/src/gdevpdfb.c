@@ -458,9 +458,9 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	yscale = pdev->HWResolution[1] / 72.0;
     bool mask;
     int depth;
-    int (*copy_data)(P12(gx_device_pdf *, const byte *, int, int,
-			 gx_bitmap_id, int, int, int, int,
-			 gs_image_t *, pdf_image_writer *, int));
+    int (*copy_data)(gx_device_pdf *, const byte *, int, int,
+		     gx_bitmap_id, int, int, int, int,
+		     gs_image_t *, pdf_image_writer *, int);
     pdf_resource_t *pres;
     cos_value_t cs_value;
     int code;

@@ -62,10 +62,10 @@ typedef struct const_pixel_row_s {
  * alpha data to test whether there are any actual values that would
  * generate a non-unity alpha result.
  */
-int composite_values(P5(const pixel_row_t * pdest,
-			const const_pixel_row_t * psource,
-			int values_per_pixel, uint num_pixels,
-			const gs_composite_params_t * pcp));
+int composite_values(const pixel_row_t * pdest,
+		     const const_pixel_row_t * psource,
+		     int values_per_pixel, uint num_pixels,
+		     const gs_composite_params_t * pcp);
 
 /* ---------------- Alpha-compositing objects ---------------- */
 

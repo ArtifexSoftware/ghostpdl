@@ -327,7 +327,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 /* ---------------- Text and font utilities ---------------- */
 
 /* Forward declarations */
-private int assign_char_code(P1(gx_device_pdf * pdev));
+private int assign_char_code(gx_device_pdf * pdev);
 
 /*
  * Set the current font and size, writing a Tf command if needed.

@@ -29,7 +29,7 @@
 #include "gzstate.h"
 
 /* Imported from gsht.c */
-void gx_set_effective_transfer(P1(gs_state *));
+void gx_set_effective_transfer(gs_state *);
 
 /* Structure descriptors */
 public_st_client_color();
@@ -100,7 +100,7 @@ gx_no_adjust_color_count(const gs_client_color * pcc,
 }
 
 /* Forward declarations */
-void load_transfer_map(P3(gs_state *, gx_transfer_map *, floatp));
+void load_transfer_map(gs_state *, gx_transfer_map *, floatp);
 
 /* setgray */
 int

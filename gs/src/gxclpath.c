@@ -38,10 +38,10 @@ ulong stats_cmd_diffs[5];
 #endif
 
 /* Forward declarations */
-private int cmd_put_path(P8(gx_device_clist_writer * cldev,
-			    gx_clist_state * pcls, const gx_path * ppath,
-			    fixed ymin, fixed ymax, byte op,
-			    bool implicit_close, segment_notes keep_notes));
+private int cmd_put_path(gx_device_clist_writer * cldev,
+			 gx_clist_state * pcls, const gx_path * ppath,
+			 fixed ymin, fixed ymax, byte op,
+			 bool implicit_close, segment_notes keep_notes);
 
 /* ------ Utilities ------ */
 

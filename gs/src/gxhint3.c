@@ -30,8 +30,8 @@
 
 /* Forward references */
 private void
-     apply_hstem_hints(P3(gs_type1_state *, int, gs_fixed_point *)), apply_vstem_hints(P3(gs_type1_state *, int, gs_fixed_point *));
-
+    apply_hstem_hints(gs_type1_state *, int, gs_fixed_point *),
+    apply_vstem_hints(gs_type1_state *, int, gs_fixed_point *);
 
 /*
  * Apply hints along a newly added tail of a subpath.
@@ -479,7 +479,7 @@ type1_apply_path_hints(gs_type1_state * pcis, bool closing, gx_path * ppath)
 
 /* ------ Individual hints ------ */
 
-private const stem_hint *search_hints(P2(stem_hint_table *, fixed));
+private const stem_hint *search_hints(stem_hint_table *, fixed);
 
 /*
  * Adjust a point according to the relevant hints.

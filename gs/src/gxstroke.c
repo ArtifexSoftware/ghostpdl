@@ -84,7 +84,7 @@
  * check and covers many common cases.  Clients that care always have the
  * option of using strokepath to get an exact result.
  */
-private float join_expansion_factor(P2(const gs_imager_state *, gs_line_join));
+private float join_expansion_factor(const gs_imager_state *, gs_line_join);
 int
 gx_stroke_path_expansion(const gs_imager_state * pis, const gx_path * ppath,
 			 gs_fixed_point * ppt)
@@ -208,18 +208,18 @@ typedef partial_line *pl_ptr;
   ((pp)->x = (p).x, (pp)->y = (p).y)
 
 /* Other forward declarations */
-private bool width_is_thin(P1(pl_ptr));
-private void adjust_stroke(P3(pl_ptr, const gs_imager_state *, bool));
-private int line_join_points(P6(const gx_line_params * pgs_lp,
-				pl_ptr plp, pl_ptr nplp,
-				gs_fixed_point * join_points,
-				const gs_matrix * pmat, gs_line_join join));
-private void compute_caps(P1(pl_ptr));
-private int add_points(P4(gx_path *, const gs_fixed_point *,
-			  int, bool));
-private int add_round_cap(P2(gx_path *, const_ep_ptr));
-private int cap_points(P3(gs_line_cap, const_ep_ptr,
-			  gs_fixed_point * /*[3] */ ));
+private bool width_is_thin(pl_ptr);
+private void adjust_stroke(pl_ptr, const gs_imager_state *, bool);
+private int line_join_points(const gx_line_params * pgs_lp,
+			     pl_ptr plp, pl_ptr nplp,
+			     gs_fixed_point * join_points,
+			     const gs_matrix * pmat, gs_line_join join);
+private void compute_caps(pl_ptr);
+private int add_points(gx_path *, const gs_fixed_point *,
+		       int, bool);
+private int add_round_cap(gx_path *, const_ep_ptr);
+private int cap_points(gs_line_cap, const_ep_ptr,
+		       gs_fixed_point * /*[3] */ );
 
 /* Define the default implementation of the device stroke_path procedure. */
 int
@@ -253,10 +253,10 @@ gx_default_stroke_path(gx_device * dev, const gs_imager_state * pis,
  * with an appropriate cap.
  */
 #define stroke_line_proc(proc)\
-  int proc(P11(gx_path *, int, pl_ptr, pl_ptr, const gx_device_color *,\
-	       gx_device *, const gs_imager_state *,\
-	       const gx_stroke_params *, const gs_fixed_rect *, int,\
-	       gs_line_join))
+  int proc(gx_path *, int, pl_ptr, pl_ptr, const gx_device_color *,\
+	   gx_device *, const gs_imager_state *,\
+	   const gx_stroke_params *, const gs_fixed_rect *, int,\
+	   gs_line_join)
 typedef stroke_line_proc((*stroke_line_proc_t));
 
 private stroke_line_proc(stroke_add);

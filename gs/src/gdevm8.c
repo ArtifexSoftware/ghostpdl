@@ -58,12 +58,12 @@ mem_mapped8_fill_rectangle(gx_device * dev,
 
 /* Copy a monochrome bitmap. */
 /* We split up this procedure because of limitations in the bcc32 compiler. */
-private void mapped8_copy01(P9(chunk *, const byte *, int, int, uint,
-			       int, int, byte, byte));
-private void mapped8_copyN1(P8(chunk *, const byte *, int, int, uint,
-			       int, int, byte));
-private void mapped8_copy0N(P8(chunk *, const byte *, int, int, uint,
-			       int, int, byte));
+private void mapped8_copy01(chunk *, const byte *, int, int, uint,
+			    int, int, byte, byte);
+private void mapped8_copyN1(chunk *, const byte *, int, int, uint,
+			    int, int, byte);
+private void mapped8_copy0N(chunk *, const byte *, int, int, uint,
+			    int, int, byte);
 private int
 mem_mapped8_copy_mono(gx_device * dev,
 	       const byte * base, int sourcex, int sraster, gx_bitmap_id id,

@@ -188,7 +188,7 @@ gp_get_usertime(long *pdt)
  * If no string is available, return NULL.  The caller may assume
  * the string is allocated statically and permanently.
  */
-const char *	gp_strerror(P1(int))
+const char *	gp_strerror(int)
 {
 	return NULL;
 }
@@ -327,7 +327,7 @@ gpp_get_usertime(long *pdt)
 /* Initialize the console. */
 /* do nothing, we did it in gp_init()! */
 void
-gp_init_console(P0())
+gp_init_console(void)
 {
 }
 
@@ -360,7 +360,7 @@ gp_make_graphics_current (gx_device *dev)
 */
 
 const char *
-gp_getenv_display(P0())
+gp_getenv_display(void)
 {
 	return NULL;
 }

@@ -174,7 +174,7 @@ private void dumpToPrinter(ByteList * list,FILE * printStream);
 
 /* Real Print function */
 
-private int hl7x0_print_page(P5(gx_device_printer *, FILE *, int, int, ByteList *));
+private int hl7x0_print_page(gx_device_printer *, FILE *, int, int, ByteList *);
 
 
 

@@ -88,8 +88,8 @@ gx_device far_data gs_herc_device = {
 
 
 /* Forward declarations */
-private int herc_get_mode(P0());
-private void herc_set_mode(P1(int));
+private int herc_get_mode(void);
+private void herc_set_mode(int);
 
 /* Save the HERC mode */
 private int herc_save_mode = -1;

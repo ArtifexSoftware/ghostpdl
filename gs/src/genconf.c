@@ -314,20 +314,20 @@ static const string_list_t init_config_lists[] = {
 };
 
 /* Forward definitions */
-private void *mrealloc(P3(void *, size_t, size_t));
-int alloc_list(P1(string_list_t *));
-void dev_file_name(P1(char *));
-int process_replaces(P1(config_t *));
-int read_dev(P2(config_t *, const char *));
-int read_token(P3(char *, int, const char **));
-int add_entry(P4(config_t *, char *, const char *, int));
-string_item_t *add_item(P3(string_list_t *, const char *, int));
-void sort_uniq(P2(string_list_t *, bool));
-void write_list(P3(FILE *, const string_list_t *, const char *));
-void write_list_pattern(P3(FILE *, const string_list_t *, const string_pattern_t *));
-bool var_expand(P3(char *, char [MAX_STR], const config_t *));
-void add_definition(P4(const char *, const char *, string_list_t *, bool));
-string_item_t *lookup(P2(const char *, const string_list_t *));
+private void *mrealloc(void *, size_t, size_t);
+int alloc_list(string_list_t *);
+void dev_file_name(char *);
+int process_replaces(config_t *);
+int read_dev(config_t *, const char *);
+int read_token(char *, int, const char **);
+int add_entry(config_t *, char *, const char *, int);
+string_item_t *add_item(string_list_t *, const char *, int);
+void sort_uniq(string_list_t *, bool);
+void write_list(FILE *, const string_list_t *, const char *);
+void write_list_pattern(FILE *, const string_list_t *, const string_pattern_t *);
+bool var_expand(char *, char [MAX_STR], const config_t *);
+void add_definition(const char *, const char *, string_list_t *, bool);
+string_item_t *lookup(const char *, const string_list_t *);
 
 int
 main(int argc, char *argv[])

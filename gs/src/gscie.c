@@ -38,20 +38,20 @@
 #define OPTIMIZE_CIE_MAPPING
 
 /* Forward references */
-private int cie_joint_caches_init(P3(gx_cie_joint_caches *,
-				     const gs_cie_common *,
-				     gs_cie_render *));
-private void cie_joint_caches_complete(P4(gx_cie_joint_caches *,
-					  const gs_cie_common *,
-					  const gs_cie_abc *,
-					  const gs_cie_render *));
-private void cie_cache_restrict(P2(cie_cache_floats *, const gs_range *));
-private void cie_mult3(P3(const gs_vector3 *, const gs_matrix3 *,
-			  gs_vector3 *));
-private void cie_matrix_mult3(P3(const gs_matrix3 *, const gs_matrix3 *,
-				 gs_matrix3 *));
-private void cie_invert3(P2(const gs_matrix3 *, gs_matrix3 *));
-private void cie_matrix_init(P1(gs_matrix3 *));
+private int cie_joint_caches_init(gx_cie_joint_caches *,
+				  const gs_cie_common *,
+				  gs_cie_render *);
+private void cie_joint_caches_complete(gx_cie_joint_caches *,
+				       const gs_cie_common *,
+				       const gs_cie_abc *,
+				       const gs_cie_render *);
+private void cie_cache_restrict(cie_cache_floats *, const gs_range *);
+private void cie_mult3(const gs_vector3 *, const gs_matrix3 *,
+		       gs_vector3 *);
+private void cie_matrix_mult3(const gs_matrix3 *, const gs_matrix3 *,
+			      gs_matrix3 *);
+private void cie_invert3(const gs_matrix3 *, gs_matrix3 *);
+private void cie_matrix_init(gs_matrix3 *);
 
 /* Allocator structure types */
 private_st_joint_caches();
@@ -399,10 +399,10 @@ gx_restrict_CIEA(gs_client_color * pcc, const gs_color_space * pcs)
 
 /* ------ Install a CIE color space ------ */
 
-private void cie_cache_mult(P4(gx_cie_vector_cache *, const gs_vector3 *,
-			       const cie_cache_floats *, floatp));
-private bool cie_cache_mult3(P3(gx_cie_vector_cache3_t *,
-				const gs_matrix3 *, floatp));
+private void cie_cache_mult(gx_cie_vector_cache *, const gs_vector3 *,
+			    const cie_cache_floats *, floatp);
+private bool cie_cache_mult3(gx_cie_vector_cache3_t *,
+			     const gs_matrix3 *, floatp);
 
 private int
 gx_install_cie_abc(gs_cie_abc *pcie, gs_state * pgs)
@@ -841,8 +841,8 @@ gs_cie_cache_init(cie_cache_params * pcache, gs_sample_loop_params_t * pslp,
  * Compute the derived values in a CRD that don't involve the cached
  * procedure values.  This procedure is idempotent.
  */
-private void cie_transform_range3(P3(const gs_range3 *, const gs_matrix3 *,
-				     gs_range3 *));
+private void cie_transform_range3(const gs_range3 *, const gs_matrix3 *,
+				  gs_range3 *);
 int
 gs_cie_render_init(gs_cie_render * pcrd)
 {

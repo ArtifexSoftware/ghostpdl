@@ -48,8 +48,8 @@ const gx_device_printer gs_lq850_device =
 /* ------ Internal routines ------ */
 
 /* Forward references */
-private void dot24_output_run (P4 (byte *, int, int, FILE *));
-private void dot24_improve_bitmap (P2 (byte *, int));
+private void dot24_output_run (byte *, int, int, FILE *);
+private void dot24_improve_bitmap (byte *, int);
 
 /* Send the page to the printer. */
 private int

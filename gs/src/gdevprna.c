@@ -53,17 +53,17 @@ private dev_proc_get_hardware_params(gdev_prn_async_write_get_hardware_params);
 private dev_proc_put_params(gdev_prn_async_render_put_params);
 
 /* ---------------- Forward Declarations ---------------------- */
-private void gdev_prn_dealloc(P1(gx_device_printer *));
+private void gdev_prn_dealloc(gx_device_printer *);
 private proc_free_up_bandlist_memory(gdev_prn_async_write_free_up_bandlist_memory);
-private int flush_page(P2(gx_device_printer *, bool));
-private int reopen_clist_after_flush(P1(gx_device_printer *));
-private void reinit_printer_into_printera(P1(gx_device_printer * const));
-private int alloc_bandlist_memory(P2(gs_memory_t **, gs_memory_t *));
-private void free_bandlist_memory(P1(gs_memory_t *));
-private int alloc_render_memory(P3(gs_memory_t **, gs_memory_t *, long));
-private void free_render_memory(P1(gs_memory_t *));
+private int flush_page(gx_device_printer *, bool);
+private int reopen_clist_after_flush(gx_device_printer *);
+private void reinit_printer_into_printera(gx_device_printer * const);
+private int alloc_bandlist_memory(gs_memory_t **, gs_memory_t *);
+private void free_bandlist_memory(gs_memory_t *);
+private int alloc_render_memory(gs_memory_t **, gs_memory_t *, long);
+private void free_render_memory(gs_memory_t *);
 private gs_memory_recover_status_t
-    prna_mem_recover(P2(gs_memory_retrying_t *rmem, void *proc_data));
+    prna_mem_recover(gs_memory_retrying_t *rmem, void *proc_data);
 
 /* ------ Open/close ------ */
 

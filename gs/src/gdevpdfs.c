@@ -67,39 +67,39 @@ typedef struct pdf_text_process_state_s {
  * (a caller-supplied buffer large enough to hold the string).
  */
 #define PROCESS_TEXT_PROC(proc)\
-  int proc(P4(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size))
+  int proc(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 private PROCESS_TEXT_PROC(process_plain_text);
 private PROCESS_TEXT_PROC(process_composite_text);
 private PROCESS_TEXT_PROC(process_cmap_text);
 private PROCESS_TEXT_PROC(process_cid_text);
 
 /* Other forward declarations */
-private int encoding_find_glyph(P3(gs_font_base *bfont, gs_glyph font_glyph,
-				   gs_encoding_index_t index));
-private int pdf_process_string(P6(pdf_text_enum_t *penum, gs_string *pstr,
-				  const gs_matrix *pfmat, bool encoded,
-				  pdf_text_process_state_t *pts, int *pindex));
-private int pdf_update_text_state(P3(pdf_text_process_state_t *ppts,
-				     const pdf_text_enum_t *penum,
-				     const gs_matrix *pfmat));
-private int pdf_encode_char(P4(gx_device_pdf *pdev, int chr,
-			       gs_font_base *bfont, pdf_font_t *ppf));
-private int pdf_encode_glyph(P5(gx_device_pdf *pdev, int chr, gs_glyph glyph,
-				gs_font_base *bfont, pdf_font_t *ppf));
-private int pdf_write_text_process_state(P4(gx_device_pdf *pdev,
+private int encoding_find_glyph(gs_font_base *bfont, gs_glyph font_glyph,
+				gs_encoding_index_t index);
+private int pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
+			       const gs_matrix *pfmat, bool encoded,
+			       pdf_text_process_state_t *pts, int *pindex);
+private int pdf_update_text_state(pdf_text_process_state_t *ppts,
+				  const pdf_text_enum_t *penum,
+				  const gs_matrix *pfmat);
+private int pdf_encode_char(gx_device_pdf *pdev, int chr,
+			    gs_font_base *bfont, pdf_font_t *ppf);
+private int pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
+			     gs_font_base *bfont, pdf_font_t *ppf);
+private int pdf_write_text_process_state(gx_device_pdf *pdev,
 			const gs_text_enum_t *pte,	/* for pdcolor, pis */
 			const pdf_text_process_state_t *ppts,
-			const gs_const_string *pstr));
-private int process_text_return_width(P7(const gs_text_enum_t *pte,
-					 gs_font *font, pdf_font_t *pdfont,
-					 const gs_matrix *pfmat,
-					 const gs_const_string *pstr,
-					 int *pindex, gs_point *pdpt));
-private int process_text_add_width(P7(gs_text_enum_t *pte,
-				      gs_font *font, const gs_matrix *pfmat,
-				      const pdf_text_process_state_t *ppts,
+			const gs_const_string *pstr);
+private int process_text_return_width(const gs_text_enum_t *pte,
+				      gs_font *font, pdf_font_t *pdfont,
+				      const gs_matrix *pfmat,
 				      const gs_const_string *pstr,
-				      int *pindex, gs_point *pdpt));
+				      int *pindex, gs_point *pdpt);
+private int process_text_add_width(gs_text_enum_t *pte,
+				   gs_font *font, const gs_matrix *pfmat,
+				   const pdf_text_process_state_t *ppts,
+				   const gs_const_string *pstr,
+				   int *pindex, gs_point *pdpt);
 
 /*
  * Continue processing text.  This is the 'process' procedure in the text

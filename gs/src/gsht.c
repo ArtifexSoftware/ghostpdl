@@ -28,7 +28,7 @@
 #include "gzht.h"
 
 /* Forward declarations */
-void gx_set_effective_transfer(P1(gs_state *));
+void gx_set_effective_transfer(gs_state *);
 
 /* Structure types */
 public_st_ht_order();

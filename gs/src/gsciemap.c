@@ -71,8 +71,8 @@ LOOKUP_ENTRY(cie_cached_value vin, const gx_cie_vector_cache *pcache)
 #endif
 
 /* Forward references */
-private void cie_lookup_mult3(P2(cie_cached_vector3 *,
-				 const gx_cie_vector_cache3_t *));
+private void cie_lookup_mult3(cie_cached_vector3 *,
+			      const gx_cie_vector_cache3_t *);
 
 #ifdef DEBUG
 private void

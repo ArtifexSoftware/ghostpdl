@@ -58,9 +58,9 @@ private_st_gx_page_queue();
 
 /* ------------ Forward Decl's --------------------------- */
 private gx_page_queue_entry_t *	/* removed entry, 0 if none avail */
-    gx_page_queue_remove_first(P1(
-				  gx_page_queue_t * queue	/* page queue to retrieve from */
-				  ));
+    gx_page_queue_remove_first(
+			       gx_page_queue_t * queue	/* page queue to retrieve from */
+			       );
 
 
 /* --------------------Procedures------------------------- */

@@ -74,7 +74,7 @@ private dev_proc_get_band(clist_get_band);
 /* Driver procedures defined in other files are declared in gxcldev.h. */
 
 /* Other forward declarations */
-private int clist_put_current_params(P1(gx_device_clist_writer *cldev));
+private int clist_put_current_params(gx_device_clist_writer *cldev);
 
 /* The device procedures */
 const gx_device_procs gs_clist_device_procs = {

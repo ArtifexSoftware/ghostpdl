@@ -88,7 +88,7 @@ gp_get_usertime(long *pdt)
 /* Open a connection to a printer.  A null file name means use the */
 /* standard printer connected to the machine, if any. */
 /* Return NULL if the connection could not be opened. */
-extern void gp_set_file_binary(P2(int, int));
+extern void gp_set_file_binary(int, int);
 FILE *
 gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {

@@ -510,7 +510,7 @@ pnm_begin_typed_image(gx_device *dev,
 /* Print a page using a given row printing routine. */
 private int
 pbm_print_page_loop(gx_device_printer * pdev, char magic, FILE * pstream,
-	     int (*row_proc) (P4(gx_device_printer *, byte *, int, FILE *)))
+	     int (*row_proc) (gx_device_printer *, byte *, int, FILE *))
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
     uint raster = gdev_prn_raster(pdev);

@@ -186,7 +186,7 @@ gx_image_plane_data_rows(gx_image_enum_common_t * info,
 int
 gx_image_flush(gx_image_enum_common_t * info)
 {
-    int (*flush)(P1(gx_image_enum_common_t *)) = info->procs->flush;
+    int (*flush)(gx_image_enum_common_t *) = info->procs->flush;
 
     return (flush ? flush(info) : 0);
 }
@@ -194,7 +194,7 @@ gx_image_flush(gx_image_enum_common_t * info)
 bool
 gx_image_planes_wanted(const gx_image_enum_common_t *info, byte *wanted)
 {
-    bool (*planes_wanted)(P2(const gx_image_enum_common_t *, byte *)) =
+    bool (*planes_wanted)(const gx_image_enum_common_t *, byte *) =
 	info->procs->planes_wanted;
 
     if (planes_wanted)

@@ -26,9 +26,9 @@
 #include "gzpath.h"
 
 /* Forward declarations */
-private void adjust_point_to_tangent(P3(segment *, const segment *,
-					const gs_fixed_point *));
-private int monotonize_internal(P2(gx_path *, const curve_segment *));
+private void adjust_point_to_tangent(segment *, const segment *,
+				     const gs_fixed_point *);
+private int monotonize_internal(gx_path *, const curve_segment *);
 
 /* Copy a path, optionally flattening or monotonizing it. */
 /* If the copy fails, free the new path. */

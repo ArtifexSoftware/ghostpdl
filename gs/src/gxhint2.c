@@ -32,9 +32,9 @@
 
 /* Forward references */
 
-private stem_hint *type1_stem(P4(const gs_type1_state *, stem_hint_table *, fixed, fixed));
-private fixed find_snap(P3(fixed, const stem_snap_table *, const pixel_scale *));
-private alignment_zone *find_zone(P3(gs_type1_state *, fixed, fixed));
+private stem_hint *type1_stem(const gs_type1_state *, stem_hint_table *, fixed, fixed);
+private fixed find_snap(fixed, const stem_snap_table *, const pixel_scale *);
+private alignment_zone *find_zone(gs_type1_state *, fixed, fixed);
 
 /* Reset the stem hints. */
 void

@@ -109,8 +109,8 @@ gs_pattern1_init(gs_pattern1_template_t * ppat)
 }
 
 /* Make an instance of a PatternType 1 pattern. */
-private int compute_inst_matrix(P3(gs_pattern1_instance_t * pinst,
-				   const gs_state * saved, gs_rect * pbbox));
+private int compute_inst_matrix(gs_pattern1_instance_t * pinst,
+				const gs_state * saved, gs_rect * pbbox);
 int
 gs_makepattern(gs_client_color * pcc, const gs_pattern1_template_t * pcp,
 	       const gs_matrix * pmat, gs_state * pgs, gs_memory_t * mem)
@@ -317,7 +317,7 @@ typedef struct pixmap_info_s {
     gs_depth_bitmap bitmap;	/* must be first */
     const gs_color_space *pcspace;
     uint white_index;
-    void (*free_proc)(P3(gs_memory_t *, void *, client_name_t));
+    void (*free_proc)(gs_memory_t *, void *, client_name_t);
 } pixmap_info;
 
 gs_private_st_suffix_add1(st_pixmap_info,
@@ -357,8 +357,8 @@ free_pixmap_pattern(
 /*
  *  PaintProcs for bitmap and pixmap patterns.
  */
-private int bitmap_paint(P4(gs_image_enum * pen, gs_data_image_t * pim,
-			  const gs_depth_bitmap * pbitmap, gs_state * pgs));
+private int bitmap_paint(gs_image_enum * pen, gs_data_image_t * pim,
+			 const gs_depth_bitmap * pbitmap, gs_state * pgs);
 private int
 mask_PaintProc(const gs_client_color * pcolor, gs_state * pgs)
 {

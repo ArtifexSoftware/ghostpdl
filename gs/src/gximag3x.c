@@ -119,13 +119,13 @@ typedef struct image3x_channel_values_s {
     gs_int_rect rect;
     gs_image_t image;
 } image3x_channel_values_t;
-private bool is_multiple(P2(int x, int y));
-private int check_image3x_mask(P6(const gs_image3x_t *pim,
-				  const gs_image3x_mask_t *pimm,
-				  const image3x_channel_values_t *ppcv,
-				  image3x_channel_values_t *pmcv,
-				  image3x_channel_state_t *pmcs,
-				  gs_memory_t *mem));
+private bool is_multiple(int x, int y);
+private int check_image3x_mask(const gs_image3x_t *pim,
+			       const gs_image3x_mask_t *pimm,
+			       const image3x_channel_values_t *ppcv,
+			       image3x_channel_values_t *pmcv,
+			       image3x_channel_state_t *pmcs,
+			       gs_memory_t *mem);
 int
 gx_begin_image3x_generic(gx_device * dev,
 			const gs_imager_state *pis, const gs_matrix *pmat,

@@ -36,8 +36,8 @@ const gx_device_printer far_data gs_m8510_device =
 
 /* ------ forward declarations ------ */
 
-private void m8510_output_run(P4(gx_device_printer *pdev,
-	byte *out, int pass, FILE *prn_stream));
+private void m8510_output_run(gx_device_printer *pdev,
+	byte *out, int pass, FILE *prn_stream);
 
 /* ------ internal routines ------ */
 

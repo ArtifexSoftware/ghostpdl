@@ -39,15 +39,15 @@
 #if defined(__STDC__)
 #include <stdlib.h>
 #else
-extern char *getenv(P1(const char *));
+extern char *getenv(const char *);
 #endif
 
 #if defined(M_XENIX)
 #include <prototypes.h>
 #include <fcntl.h>
 #else
-extern int ioctl(P3(int, int,...));
-extern int open(P3(const char *, int,...));
+extern int ioctl(int, int,...);
+extern int open(const char *, int,...);
 #endif
 
 private int console_fd = -1;	/* file descriptor of console */
@@ -61,7 +61,7 @@ private int cur_mode = -1;	/* current video mode */
  * /dev/tty = current terminal
  */
 
-private void open_console(P1(void));
+private void open_console(void);
 
 private void
 open_console()

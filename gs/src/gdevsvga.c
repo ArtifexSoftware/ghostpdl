@@ -571,9 +571,9 @@ svga_copy_alpha(gx_device * dev, const byte * base, int sourcex,
 
 private dev_proc_open_device(vesa_open);
 private const gx_device_procs vesa_procs = svga_procs(vesa_open);
-int vesa_get_mode(P0());
-void vesa_set_mode(P1(int));
-private void vesa_set_page(P3(gx_device_svga *, int, int));
+int vesa_get_mode(void);
+void vesa_set_mode(int);
+private void vesa_set_page(gx_device_svga *, int, int);
 gx_device_svga far_data gs_vesa_device =
 svga_device(vesa_procs, "vesa", vesa_get_mode, vesa_set_mode, vesa_set_page);
 
@@ -606,7 +606,7 @@ typedef struct {
     ushort win_size;
     ushort win_a_segment;
     ushort win_b_segment;
-    void (*win_func_ptr) (P2(int, int));
+    void (*win_func_ptr) (int, int);
     ushort bytes_per_line;
     /* Optional information */
     ushort x_resolution;
@@ -753,7 +753,7 @@ private void
 vesa_set_page(gx_device_svga * dev, int pn, int wnum)
 {
 #if USE_ASM
-    extern void vesa_call_set_page(P3(void (*)(P2(int, int)), int, int));
+    extern void vesa_call_set_page(void (*)(int, int), int, int);
 
     if (dev->info.vesa.bios_set_page != NULL)
 	vesa_call_set_page(dev->info.vesa.bios_set_page, pn << dev->info.vesa.pn_shift, wnum);
@@ -774,9 +774,9 @@ vesa_set_page(gx_device_svga * dev, int pn, int wnum)
 
 private dev_proc_open_device(atiw_open);
 private const gx_device_procs atiw_procs = svga_procs(atiw_open);
-private int atiw_get_mode(P0());
-private void atiw_set_mode(P1(int));
-private void atiw_set_page(P3(gx_device_svga *, int, int));
+private int atiw_get_mode(void);
+private void atiw_set_mode(int);
+private void atiw_set_page(gx_device_svga *, int, int);
 gx_device_svga far_data gs_atiw_device =
 svga_device(atiw_procs, "atiw", atiw_get_mode, atiw_set_mode, atiw_set_page);
 
@@ -845,7 +845,7 @@ private dev_proc_open_device(tvga_open);
 private const gx_device_procs tvga_procs = svga_procs(tvga_open);
 
 /* We can use the atiw_get/set_mode procedures. */
-private void tvga_set_page(P3(gx_device_svga *, int, int));
+private void tvga_set_page(gx_device_svga *, int, int);
 gx_device_svga far_data gs_tvga_device =
 svga_device(tvga_procs, "tvga", atiw_get_mode, atiw_set_mode, tvga_set_page);
 
@@ -892,7 +892,7 @@ private const gx_device_procs tseng_procs =
 svga_procs(tseng_open);
 
 /* We can use the atiw_get/set_mode procedures. */
-private void tseng_set_page(P3(gx_device_svga *, int, int));
+private void tseng_set_page(gx_device_svga *, int, int);
 
 /* The 256-color Tseng device */
 gx_device_svga far_data gs_tseng_device =
@@ -955,7 +955,7 @@ private dev_proc_open_device(cirr_open);
 private gx_device_procs cirr_procs = svga_procs(cirr_open);
 
 /* We can use the atiw_get/set_mode procedures. */
-private void cirr_set_page(P3(gx_device_svga *, int, int));
+private void cirr_set_page(gx_device_svga *, int, int);
 gx_device_svga gs_cirr_device =
 svga_device(cirr_procs, "cirr", atiw_get_mode, atiw_set_mode, cirr_set_page);
 
@@ -1003,7 +1003,7 @@ private dev_proc_open_device(ali_open);
 private const gx_device_procs ali_procs = svga_procs(ali_open);
 
 /* We can use the atiw_get/set_mode procedures. */
-private void ali_set_page(P3(gx_device_svga *, int, int));
+private void ali_set_page(gx_device_svga *, int, int);
 
 /* The 256-color Avance Logic device */
 gx_device_svga gs_ali_device =

@@ -436,7 +436,7 @@ gs_cspace_indexed_value_array(const gs_color_space * pcspace)
 int
 gs_cspace_indexed_set_proc(
 			   gs_color_space * pcspace,
-			   int (*proc)(P3(const gs_indexed_params *, int, float *))
+			   int (*proc)(const gs_indexed_params *, int, float *)
 )
 {
     if ((gs_color_space_get_index(pcspace) != gs_color_space_index_Indexed) ||

@@ -101,14 +101,14 @@ private RELOC_PTRS_WITH(image_enum_reloc_ptrs, gx_image_enum *eptr)
 RELOC_PTRS_END
 
 /* Forward declarations */
-private int color_draws_b_w(P2(gx_device * dev,
-			       const gx_drawing_color * pdcolor));
-private void image_init_map(P3(byte * map, int map_size, const float *decode));
-private void image_init_colors(P9(gx_image_enum * penum, int bps, int spp,
-				  gs_image_format_t format,
-				  const float *decode,
-				  const gs_imager_state * pis, gx_device * dev,
-				  const gs_color_space * pcs, bool * pdcb));
+private int color_draws_b_w(gx_device * dev,
+			    const gx_drawing_color * pdcolor);
+private void image_init_map(byte * map, int map_size, const float *decode);
+private void image_init_colors(gx_image_enum * penum, int bps, int spp,
+			       gs_image_format_t format,
+			       const float *decode,
+			       const gs_imager_state * pis, gx_device * dev,
+			       const gs_color_space * pcs, bool * pdcb);
 
 /* Procedures for unpacking the input data into bytes or fracs. */
 /*extern SAMPLE_UNPACK_PROC(sample_unpack_copy); *//* declared above */

@@ -61,21 +61,21 @@ get_real(void)
 /*#define CAPTURE */
 
 /* Test programs */
-private int test1(P2(gs_state *, gs_memory_t *));	/* kaleidoscope */
-private int test2(P2(gs_state *, gs_memory_t *));	/* pattern fill */
-private int test3(P2(gs_state *, gs_memory_t *));	/* RasterOp */
-private int test4(P2(gs_state *, gs_memory_t *));	/* set resolution */
-private int test5(P2(gs_state *, gs_memory_t *));	/* images */
-private int test6(P2(gs_state *, gs_memory_t *));	/* CIE API, snapping */
-private int test7(P2(gs_state *, gs_memory_t *));	/* non-monot HT */
-private int test8(P2(gs_state *, gs_memory_t *));	/* transp patterns */
+private int test1(gs_state *, gs_memory_t *);	/* kaleidoscope */
+private int test2(gs_state *, gs_memory_t *);	/* pattern fill */
+private int test3(gs_state *, gs_memory_t *);	/* RasterOp */
+private int test4(gs_state *, gs_memory_t *);	/* set resolution */
+private int test5(gs_state *, gs_memory_t *);	/* images */
+private int test6(gs_state *, gs_memory_t *);	/* CIE API, snapping */
+private int test7(gs_state *, gs_memory_t *);	/* non-monot HT */
+private int test8(gs_state *, gs_memory_t *);	/* transp patterns */
 
 #ifdef CAPTURE
 #include "k/capture.c"
-private int test10(P2(gs_state *, gs_memory_t *));	/* captured data */
+private int test10(gs_state *, gs_memory_t *);	/* captured data */
 
 #endif
-private int (*tests[]) (P2(gs_state *, gs_memory_t *)) =
+private int (*tests[]) (gs_state *, gs_memory_t *) =
 {
     test1, test2, test3, test4, test5,
 	test6, test7, test8, 0
@@ -88,7 +88,7 @@ private int (*tests[]) (P2(gs_state *, gs_memory_t *)) =
 extern_gs_lib_device_list();
 
 /* Forward references */
-private float odsf(P2(floatp, floatp));
+private float odsf(floatp, floatp);
 
 /* Provide a single point for all "C" stdout and stderr.
  * Eventually these will always be referenced through an instance structure. 

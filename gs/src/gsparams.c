@@ -35,32 +35,32 @@ typedef struct {
 
 /* ---------- Forward refs ----------- */
 private void
-ptr_align_to(P2(
+ptr_align_to(
 	    const byte ** src,	/* pointer to align */
 	    unsigned alignment	/* alignment, must be power of 2 */
-	    ));
+	    );
 private void
-wb_put_word(P2(
+wb_put_word(
 	    unsigned source,	/* number to put to buffer */
 	    WriteBuffer * dest	/* destination descriptor */
-	    ));
+	    );
 private void
-wb_put_bytes(P3(
+wb_put_bytes(
 	     const byte * source,	/* bytes to put to buffer */
 	     unsigned source_sizeof,	/* # bytes to put */
 	     WriteBuffer * dest		/* destination descriptor */
-	     ));
+	     );
 private void
-wb_put_alignment(P2(
+wb_put_alignment(
 		 unsigned alignment,	/* alignment to match, must be power 2 */
 		 WriteBuffer * dest	/* destination descriptor */
-		 ));
+		 );
 
 /* Get word compressed with wb_put_word */
 private unsigned		/* decompressed word */
-buf_get_word(P1(
+buf_get_word(
 	    const byte ** src	/* UPDATES: ptr to src buf ptr */
-	    ));
+	    );
 
 
 /* ------------ Serializer ------------ */

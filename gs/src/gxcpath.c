@@ -29,11 +29,11 @@
 #include "gzcpath.h"
 
 /* Imported from gxacpath.c */
-extern int gx_cpath_intersect_path_slow(P4(gx_clip_path *, gx_path *, int,
-					   gs_imager_state *));
+extern int gx_cpath_intersect_path_slow(gx_clip_path *, gx_path *, int,
+					gs_imager_state *);
 
 /* Forward references */
-private void gx_clip_list_from_rectangle(P2(gx_clip_list *, gs_fixed_rect *));
+private void gx_clip_list_from_rectangle(gx_clip_list *, gs_fixed_rect *);
 
 /* Other structure types */
 public_st_clip_rect();

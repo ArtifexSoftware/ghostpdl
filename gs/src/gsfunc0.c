@@ -151,8 +151,8 @@ fn_gets_32(const gs_function_Sd_t * pfn, ulong offset, uint * samples)
     return 0;
 }
 
-private int (*const fn_get_samples[]) (P3(const gs_function_Sd_t * pfn,
-					  ulong offset, uint * samples)) =
+private int (*const fn_get_samples[]) (const gs_function_Sd_t * pfn,
+				       ulong offset, uint * samples) =
 {
     0, fn_gets_1, fn_gets_2, 0, fn_gets_4, 0, 0, 0,
 	fn_gets_8, 0, 0, 0, fn_gets_12, 0, 0, 0,

@@ -54,9 +54,9 @@ const gx_device_procs prn_std_procs =
     prn_procs(gdev_prn_open, gdev_prn_output_page, gdev_prn_close);
 
 /* Forward references */
-int gdev_prn_maybe_realloc_memory(P4(gx_device_printer *pdev, 
-				     gdev_prn_space_params *old_space,
-				     int old_width, int old_height));
+int gdev_prn_maybe_realloc_memory(gx_device_printer *pdev, 
+				  gdev_prn_space_params *old_space,
+				  int old_width, int old_height);
 
 /* ------ Open/close ------ */
 

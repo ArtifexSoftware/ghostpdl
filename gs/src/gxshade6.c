@@ -263,8 +263,8 @@ split2_xy(double out[8], const gs_fixed_point *p10, const gs_fixed_point *p11,
 private int
 patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
-	   void (*transform) (P5(gs_fixed_point *, const patch_curve_t[4],
-				 const gs_fixed_point[4], floatp, floatp)))
+	   void (*transform) (gs_fixed_point *, const patch_curve_t[4],
+			      const gs_fixed_point[4], floatp, floatp))
 {	/*
 	 * The specification says the output must appear to be produced in
 	 * order of increasing values of v, and for equal v, in order of

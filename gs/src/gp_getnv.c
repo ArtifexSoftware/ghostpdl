@@ -23,7 +23,7 @@
 #include "gp.h"
 
 /* Import the C getenv function. */
-extern char *getenv(P1(const char *));
+extern char *getenv(const char *);
 
 /* Get the value of an environment variable.  See gp.h for details. */
 int

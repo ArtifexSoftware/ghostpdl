@@ -217,8 +217,8 @@ private const tiff_mono_directory dir_mono_template =
 };
 
 /* Forward references */
-private int tfax_begin_page(P4(gx_device_tfax *, FILE *,
-			       const tiff_mono_directory *, int));
+private int tfax_begin_page(gx_device_tfax *, FILE *,
+			    const tiff_mono_directory *, int);
 
 /* Print a fax-encoded page. */
 private int

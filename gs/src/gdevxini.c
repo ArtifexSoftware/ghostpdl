@@ -26,7 +26,7 @@
 #include "gdevbbox.h"
 #include "gdevx.h"
 
-extern char *getenv(P1(const char *));
+extern char *getenv(const char *);
 
 extern const gx_device_bbox gs_bbox_device;
 extern const gx_device_X gs_x11_device;
@@ -48,7 +48,7 @@ private_st_x11fontmap();
 /* ---------------- Opening/initialization ---------------- */
 
 /* Forward references */
-private void gdev_x_setup_fontmap(P1(gx_device_X *));
+private void gdev_x_setup_fontmap(gx_device_X *);
 
 /* Catch the alloc error when there is not enough resources for the
  * backing pixmap.  Automatically shut off backing pixmap and let the

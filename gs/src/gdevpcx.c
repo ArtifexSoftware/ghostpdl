@@ -210,8 +210,8 @@ private const pcx_header pcx_header_prototype =
 #define dcx_max_pages 1023
 
 /* Forward declarations */
-private void pcx_write_rle(P4(const byte *, const byte *, int, FILE *));
-private int pcx_write_page(P4(gx_device_printer *, FILE *, pcx_header *, bool));
+private void pcx_write_rle(const byte *, const byte *, int, FILE *);
+private int pcx_write_page(gx_device_printer *, FILE *, pcx_header *, bool);
 
 /* Write a monochrome PCX page. */
 private int

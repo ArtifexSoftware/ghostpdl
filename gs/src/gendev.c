@@ -77,7 +77,7 @@ static const char *indent_scan_item = "\t";
 static const char *indent_item = "";
 
 /* Forward definitions */
-void add_entry(P4(config *, const char *, const char *, bool));
+void add_entry(config *, const char *, const char *, bool);
 
 main(int argc, char *argv[])
 {

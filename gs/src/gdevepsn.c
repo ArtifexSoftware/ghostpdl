@@ -136,7 +136,7 @@ const gx_device_printer far_data gs_ibmpro_device =
 /* ------ Driver procedures ------ */
 
 /* Forward references */
-private void eps_output_run(P6(byte *, int, int, char, FILE *, int));
+private void eps_output_run(byte *, int, int, char, FILE *, int);
 
 /* Send the page to the printer. */
 #define DD 0x40				/* double density flag */

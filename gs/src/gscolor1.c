@@ -30,10 +30,10 @@
 #include "gscolor1.h"
 
 /* Imports from gscolor.c */
-void load_transfer_map(P3(gs_state *, gx_transfer_map *, floatp));
+void load_transfer_map(gs_state *, gx_transfer_map *, floatp);
 
 /* Imported from gsht.c */
-void gx_set_effective_transfer(P1(gs_state *));
+void gx_set_effective_transfer(gs_state *);
 
 /* Force a parameter into the range [0.0..1.0]. */
 #define FORCE_UNIT(p) (p < 0.0 ? 0.0 : p > 1.0 ? 1.0 : p)

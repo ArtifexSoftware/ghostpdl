@@ -127,7 +127,7 @@ const byte byte_acegbdfh_to_abcdefgh[256] = {
 };
 
 /* Some C compilers insist on having executable code in every file.... */
-void gsbittab_dummy(P0());	/* for picky compilers */
+void gsbittab_dummy(void);	/* for picky compilers */
 void
 gsbittab_dummy(void)
 {

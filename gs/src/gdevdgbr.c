@@ -251,16 +251,16 @@ gx_get_bits_copy_cmyk_1bit(byte *dest_line, uint dest_raster,
  * A good optimizing compiler would compile them in-line.
  */
 private int
-    gx_get_bits_std_to_native(P10(gx_device * dev, int x, int w, int h,
+    gx_get_bits_std_to_native(gx_device * dev, int x, int w, int h,
 				  gs_get_bits_params_t * params,
-				  const gs_get_bits_params_t *stored,
-				  const byte * src_base, uint dev_raster,
-				  int x_offset, uint raster)),
-    gx_get_bits_native_to_std(P11(gx_device * dev, int x, int w, int h,
-				  gs_get_bits_params_t * params,
-				  const gs_get_bits_params_t *stored,
-				  const byte * src_base, uint dev_raster,
-				  int x_offset, uint raster, uint std_raster));
+			      const gs_get_bits_params_t *stored,
+			      const byte * src_base, uint dev_raster,
+			      int x_offset, uint raster),
+    gx_get_bits_native_to_std(gx_device * dev, int x, int w, int h,
+			      gs_get_bits_params_t * params,
+			      const gs_get_bits_params_t *stored,
+			      const byte * src_base, uint dev_raster,
+			      int x_offset, uint raster, uint std_raster);
 int
 gx_get_bits_copy(gx_device * dev, int x, int w, int h,
 		 gs_get_bits_params_t * params,

@@ -67,9 +67,9 @@ LPUB8 PCLglyphID2Ptr(IF_STATE *pIFS, UW16 glyphID)
 {   return m_PCLglyphID2Ptr(FSA glyphID);
 }
 
-void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(P2(LPUB8 pfont_hdr, UW16  sym_code)),
-                           LPUB8 (*p_PCLchId2ptr)(P2(IF_STATE *pIFS, UW16 chId)),
-                           LPUB8 (*p_PCLglyphID2Ptr)(P2(IF_STATE *pIFS, UW16 glyphID)))
+void gx_set_UFST_Callbacks(LPUB8 (*p_PCLEO_charptr)(LPUB8 pfont_hdr, UW16  sym_code),
+                           LPUB8 (*p_PCLchId2ptr)(IF_STATE *pIFS, UW16 chId),
+                           LPUB8 (*p_PCLglyphID2Ptr)(IF_STATE *pIFS, UW16 glyphID))
 {   m_PCLEO_charptr = p_PCLEO_charptr;
     m_PCLchId2ptr = p_PCLchId2ptr;
     m_PCLglyphID2Ptr = p_PCLglyphID2Ptr;
