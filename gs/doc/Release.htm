@@ -365,12 +365,17 @@ cvs commit
 to ensure the repository is up to date.
 
 <p>
-Execute
+Execute either (for the main HEAD branch)
 
 <blockquote><pre>
+toolbin/cvs2hist.py -j &lt;previous_tag&gt; -r '-b' -v &lt;new_version&gt; &gt; doc/Changes.htm
+</pre></blockquote>
+or (for a non-HEAD branch)
+<blockquote><pre>
 toolbin/cvs2hist.py -j &lt;previous_tag&gt; -r '-r&lt;branch_tag&gt;' -v &lt;new_version&gt; &gt; doc/Changes.htm
-</pre>
-e.g. <pre>toolbin/cvs2hist.py -j gs7_20 -r'-b' -v 7.21</pre>
+</pre></blockquote>
+e.g.
+<blockquote><pre>toolbin/cvs2hist.py -j gs7_20 -r '-b' -v 7.21</pre>
 </blockquote>
 
 <p>
