@@ -133,6 +133,21 @@ typedef ulong ufixed;		/* only used in a very few places */
 #endif
 
 /*
+ * Define a macro for checking for overflow of the sum of two fixed values
+ * and and setting the result to the sum if no overflow.
+ * This is a pseudo-function that returns a "limitcheck" if the result
+ * will overflow. Set the result to the max/min _fixed value (depending
+ * on the sign of the operands (note: overflow can only occur with like
+ * signed input values). While the result is only set once, the operand
+ * values are used multiply, so pointer modification operand use will
+ * result in MANY more increments/decrements of the pointer than desired.
+ */
+/* usage: (int)code = CHECK_SET_FIXED_SUM(fixed_result, fixed_op1, fixed_op2); */
+#define CHECK_SET_FIXED_SUM(r, a, b) \
+     ((((a) ^ (b)) >= 0) && ((((a)+(b)) ^ (a)) < 0) ? \
+       (((r)=(((a)<0) ? min_fixed : max_fixed)), gs_error_limitcheck) : \
+       (((r) = ((a)+(b))), 0))		/* no overflow */
+/*
  * Define a procedure for computing a * b / c when b and c are non-negative,
  * b < c, and a * b exceeds (or might exceed) the capacity of a long.
  * Note that this procedure takes the floor, rather than truncating

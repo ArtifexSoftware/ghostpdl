@@ -415,13 +415,15 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
 	    if ((code = CHECK_DFMUL2FIXED_VARS(t, x, pmat->xx, xtemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, xtemp);
-	    px += t;		/* should check for overflow */
+	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+	        return code;
 	}
 	if (!is_fzero(pmat->yy)) {
 	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yy, ytemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	    py += t;		/* should check for overflow */
+	    if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
+	        return code;
 	}
     } else {
 	if ((code = CHECK_DFMUL2FIXED_VARS(px, x, pmat->xx, xtemp)) < 0 ||
@@ -434,11 +436,13 @@ gs_point_transform2fixed(const gs_matrix_fixed * pmat,
 	    if ((code = CHECK_DFMUL2FIXED_VARS(t, y, pmat->yx, ytemp)) < 0)
 		return code;
 	    FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	    px += t;		/* should check for overflow */
+	    if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+	        return code;
 	}
     }
-    ppt->x = px + pmat->tx_fixed;	/* should check for overflow */
-    ppt->y = py + pmat->ty_fixed;	/* should check for overflow */
+    if (((code = CHECK_SET_FIXED_SUM(ppt->x, px, pmat->tx_fixed)) < 0) ||
+        ((code = CHECK_SET_FIXED_SUM(ppt->y, py, pmat->ty_fixed)) < 0) )
+        return code;
     return 0;
 }
 
@@ -461,13 +465,15 @@ gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
 	if ((code = CHECK_DFMUL2FIXED_VARS(t, dy, pmat->yx, ytemp)) < 0)
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(t, ytemp);
-	px += t;		/* should check for overflow */
+	if ((code = CHECK_SET_FIXED_SUM(px, px, t)) < 0)
+	    return code;
     }
     if (!is_fzero(pmat->xy)) {
 	if ((code = CHECK_DFMUL2FIXED_VARS(t, dx, pmat->xy, xtemp)) < 0)
 	    return code;
 	FINISH_DFMUL2FIXED_VARS(t, xtemp);
-	py += t;		/* should check for overflow */
+	if ((code = CHECK_SET_FIXED_SUM(py, py, t)) < 0)
+	    return code;
     }
     ppt->x = px;
     ppt->y = py;
