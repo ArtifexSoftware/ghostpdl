@@ -111,8 +111,8 @@ def
   } ifelse
   3 { concatstrings } repeat md5_trunk
 
-  % Step 6.
-  Trailer /Encrypt oget /R oget 3 eq {
+  % Step 6.  Only executed for /R equal to 3 or more
+  Trailer /Encrypt oget /R oget 3 ge {
      50 { md5_trunk } repeat
   } if
 
@@ -162,9 +162,13 @@ def
     dup 3 eq {
       pop pdf_gen_user_password_R3
     } {
-      (   **** This file uses an unknown standard security handler revision: )
-      exch =string cvs concatstrings pdfformaterror printProducer
-      /pdf_check_user_password cvx /undefined signalerror
+      dup 4 eq {	% 4 uses the algorithm as 3
+        pop pdf_gen_user_password_R3
+      } {
+        (   **** This file uses an unknown standard security handler revision: )
+        exch =string cvs concatstrings pdfformaterror printProducer
+        /pdf_check_user_password cvx /undefined signalerror
+      } ifelse
     } ifelse
   } ifelse
 } bind def
@@ -192,8 +196,8 @@ def
   % Step 2.
   md5_trunk
 
-  % 3.3 Step 3.
-  Trailer /Encrypt oget /R oget 3 eq {
+  % 3.3 Step 3.  Only executed for /R equal to 3 or more
+  Trailer /Encrypt oget /R oget 3 ge {
     50 { md5_trunk } repeat
   } if
 
@@ -210,8 +214,8 @@ def
   Trailer /Encrypt oget dup /O oget 2 index arc4decode
   % <encryption-key> <encrypt-dict> <decrypted-O>
 
-  % Step 3.
-  exch /R oget 3 eq {
+  % Step 3.  Only executed for /R equal to 3 or more
+  exch /R oget 3 ge {
     1 1 19 {
       2 index pdf_xorbytes arc4decode
     } for
@@ -316,10 +320,28 @@ def
        }
        { exch pop PDFDEBUG { dup ==only ( ) print flush } if
 	 dup type /stringtype eq
-	  { 1 index arc4decode
-	    PDFDEBUG { (%Decrypted: ) print dup == flush } if
+          {
+	% Check if we have encrypted strings  R=4 allows for
+	% selection of encryption on streams and strings
+            Trailer /Encrypt oget	% Get encryption dictionary
+            dup /R oget 4 lt		% only 4 has selectable
+             {				% R < 4 --> encrypted strings
+	       pop 1 index arc4decode	% Decrypt string
+	       PDFDEBUG { (%Decrypted: ) print dup == flush } if
+             } {			% Else R = 4
+	       /StrF knownoget		% Get StrF (if present)
+	        {			% If StrF is present ...
+		  /Identity eq not	% Check if StrF != Identity
+	  	   { 1 index arc4decode	% Decrypt string
+		     PDFDEBUG { (%Decrypted: ) print dup == flush } if
+		   }
+		  if			% If StrF != identity
+		}
+	       if			% If StrF is known
+      	     }
+	    ifelse			% Ifelse R < 4
 	  }
-	 if
+	 if				% If  = stringtype
 	 exch pop
        }
       ifelse
@@ -334,26 +356,45 @@ def
 
 % Run the code to resolve an object reference.
 /pdf_run_resolve
- { /FileKey where
-    { pop
-      2 copy computeobjkey dup 4 1 roll
-      PDFfile exch resolveopdict .decpdfrun
-      dup dup dup 5 2 roll
+{ /FileKey where			% Check if the file is encrypted
+  { pop					% File is encrypted
+    2 copy computeobjkey dup 4 1 roll
+    PDFfile exch resolveopdict .decpdfrun
+    dup dup dup 5 2 roll
 	% stack: object object key object object
-      xcheck exch type /dicttype eq and
-       { /StreamKey exch put }
-       { pop pop }
-      ifelse
-    }
-    { PDFfile resolveopdict .pdfrun }
-   ifelse
- } bind def
+    xcheck exch type /dicttype eq and	% Check if possible stream
+    {	% Check if we have encrypted streams.  R=4 allows for
+	% selection of encryption on streams and strings
+      Trailer /Encrypt oget		% Get encryption dictionary
+      dup /R oget 4 lt			% only 4 has selectable
+      {					% R < 4 --> encrypted streams
+        pop /StreamKey exch put		% Insert StreamKey in dictionary
+      } {				% Else R = 4
+	% Check for StmF = Identity
+	/StmF knownoget			% Get StmF (if present)
+        {				% If StmF is present ...
+	  /Identity eq 			% Check if StmF = Identity
+	  { pop pop			% Identity --> no encryption
+	  } {				% Else we have an encrption handler
+	    /StreamKey exch put		% Insert StreamKey into dictionary
+	  } ifelse			% Ifelse StmF = identity
+        } { 				% Else StmF not present, default = Identity
+	  pop pop			% Identity --> no encryption
+        } ifelse			% Ifelse StmF is known
+      } ifelse				% Ifelse R < 4
+    } {					% Else object is not a dictionary
+      pop pop				% ignore object
+    } ifelse				% Ifelse possible stream
+  } {					% Else file is not encrypted
+    PDFfile resolveopdict .pdfrun
+  } ifelse				% Ifelse encrypted
+} bind def
 
 % Prefix a decryption filter to a stream if needed.
 % Stack: readdata? dict parms file/string filternames
 % (both before and after).
 /pdf_decrypt_stream
- { 3 index /StreamKey known
+ { 3 index /StreamKey known	% Check if the file is encrypted
    {
       exch 
 	% Stack: readdata? dict parms filternames file/string
