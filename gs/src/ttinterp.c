@@ -3142,16 +3142,13 @@ static int nInstrCount=0;
     K = args[1];
     L = args[0];
 
-    if ( K < 1 || K > 2 )
+    if ( K < 0 || K > 3 )
     {
       CUR.error = TT_Err_Invalid_Reference;
       return;
     }
 
-    if( L != 0 )
-        L = K;
-
-    CUR.GS.instruct_control = (Int)((CUR.GS.instruct_control & (~K)) | L);
+    CUR.GS.instruct_control = (Int)((CUR.GS.instruct_control & (~K)) | (L & K));
   }
 
 
