@@ -233,11 +233,6 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 #define SET_MINIMAL_WIDTH(ixl, ixr, l, r) DO_NOTHING
 #define CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, adj1, adj2, fill) DO_NOTHING
 #endif
-	/*
-	 * It's worth checking for dxl == dxr, since this is the case
-	 * for parallelograms (including stroked lines).
-	 * Also check for left or right vertical edges.
-	 */
 	if (fixed_floor(l.x) == fixed_pixround(x1l)) {
 	    /* Left edge is vertical, we don't need to increment. */
 	    l.di = 0, l.df = 0;
@@ -279,10 +274,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	}
 	/* Compute one line's worth of dx/dy. */
 	compute_ldx(&l, ysl);
-	if (dxr == dxl && ysr == ysl && r.h == l.h)
-	    r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
-	else
-	    compute_ldx(&r, ysr);
+	compute_ldx(&r, ysr);
 	/* We subtracted fixed_epsilon from l.x, r.x to simplify rounding
 	   when the rational part is zero. Now add it back to get xl', xr' */
 	l.x += fixed_epsilon;
