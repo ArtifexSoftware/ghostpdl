@@ -382,16 +382,22 @@ gx_alloc_char_bits(gs_font_dir * dir, gx_device_memory * dev,
     }
     /* Compute the actual bitmap size(s) and allocate the bits. */
     if (dev2 == 0) {
-	/* Render to a full (possibly oversampled) bitmap; */
-	/* compress (if needed) when done. */
-	/* Preserve the reference count, if any, and target. */
+	/*
+	 * Render to a full (possibly oversampled) bitmap; compress
+	 * (if needed) when done.
+	 *
+	 * HACK: Preserve the reference count and retained flag.
+	 */
 	rc_header rc;
+	bool retained = pdev->retained;
 	gx_device *target = pdev->target;
 
 	rc = pdev->rc;
-	gs_make_mem_mono_device(pdev, pdev->memory, NULL);
+	/* Pass the correct target, but decrement its refct afterwards. */
+	gs_make_mem_mono_device(pdev, pdev->memory, target);
+	rc_decrement_only(target, "gx_alloc_char_bits"); /* can't go to 0 */
 	pdev->rc = rc;
-	pdev->target = target;
+	pdev->retained = retained;
 	pdev->width = iwidth;
 	pdev->height = iheight;
 	isize = gdev_mem_bitmap_size(pdev);
