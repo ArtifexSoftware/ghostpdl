@@ -182,20 +182,22 @@
 .dicttomark readonly def
 /deviceinfo {			% - deviceinfo <dict>
   currentdevice //.deviceinfodict .getdeviceparams .dicttomark
-  begin
-  ColorValues 0 le
-  { currentdict /ColorValues undef }
-  {
-    % hack around devices that incorrect set GrayValues
-    Colors 3 eq { 1 } { GrayValues } ifelse
-    RedValues mul GreenValues mul BlueValues mul ColorValues ne
-    { currentdict /GrayValues undef
-      currentdict /RedValues undef
-      currentdict /GreenValues undef
-      currentdict /BlueValues undef
-    } if
-  }
-  ifelse
+  dup begin
+  /ColorValues .knownget {
+    0 le
+    { currentdict /ColorValues undef }
+    {
+      % hack around devices that incorrect set GrayValues
+      Colors 3 eq { 1 } { GrayValues } ifelse
+      RedValues mul GreenValues mul BlueValues mul ColorValues ne
+      { currentdict /GrayValues undef
+        currentdict /RedValues undef
+        currentdict /GreenValues undef
+        currentdict /BlueValues undef
+      } if
+    }
+    ifelse
+  } if
   currentdict end readonly
 } odef
 
