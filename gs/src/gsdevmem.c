@@ -177,6 +177,7 @@ gs_initialize_wordimagedevice(gx_device_memory * new_dev, const gs_matrix * pmat
 	    new_dev->color_info.num_components = 1;
 	    new_dev->color_info.max_color = 0;
 	    new_dev->color_info.dither_colors = 0;
+	    new_dev->color_info.gray_index = 0;
 	}
     }
     new_dev->initial_matrix = *pmat;

@@ -529,33 +529,59 @@ mem_mapped_map_rgb_color(gx_device * dev, const gx_color_value cv[])
 {
     gx_device_memory * const mdev = (gx_device_memory *)dev;
     byte br = gx_color_value_to_byte(cv[0]);
-    byte bg = gx_color_value_to_byte(cv[1]);
-    byte bb = gx_color_value_to_byte(cv[2]);
+    
     register const byte *pptr = mdev->palette.data;
     int cnt = mdev->palette.size;
     const byte *which = 0;	/* initialized only to pacify gcc */
     int best = 256 * 3;
 
-    while ((cnt -= 3) >= 0) {
-	register int diff = *pptr - br;
+    if (mdev->color_info.num_components != 1) {
+	/* not 1 component, assume three */
+	/* The comparison is rather simplistic, treating differences in	*/
+	/* all components as equal. Better choices would be 'distance'	*/
+	/* in HLS space or other, but these would be much slower.	*/
+	/* At least exact matches will be found.			*/
+	byte bg = gx_color_value_to_byte(cv[1]);
+	byte bb = gx_color_value_to_byte(cv[2]);
 
-	if (diff < 0)
-	    diff = -diff;
-	if (diff < best) {	/* quick rejection */
-	    int dg = pptr[1] - bg;
+	while ((cnt -= 3) >= 0) {
+	    register int diff = *pptr - br;
 
-	    if (dg < 0)
-		dg = -dg;
-	    if ((diff += dg) < best) {	/* quick rejection */
-		int db = pptr[2] - bb;
+	    if (diff < 0)
+		diff = -diff;
+	    if (diff < best) {	/* quick rejection */
+		    int dg = pptr[1] - bg;
 
-		if (db < 0)
-		    db = -db;
-		if ((diff += db) < best)
-		    which = pptr, best = diff;
+		if (dg < 0)
+		    dg = -dg;
+		if ((diff += dg) < best) {	/* quick rejection */
+		    int db = pptr[2] - bb;
+
+		    if (db < 0)
+			db = -db;
+		    if ((diff += db) < best)
+			which = pptr, best = diff;
+		}
 	    }
+	    if (diff == 0)	/* can't get any better than 0 diff */
+		break;
+	    pptr += 3;
 	}
-	pptr += 3;
+    } else {
+	/* Gray scale conversion. The palette is made of three equal	*/
+	/* components, so this case is simpler.				*/
+	while ((cnt -= 3) >= 0) {
+	    register int diff = *pptr - br;
+
+	    if (diff < 0)
+		diff = -diff;
+	    if (diff < best) {	/* quick rejection */
+		which = pptr, best = diff;
+	    }
+	    if (diff == 0)
+		break;
+	    pptr += 3;
+	}
     }
     return (gx_color_index) ((which - mdev->palette.data) / 3);
 }
