@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -116,10 +116,8 @@ FILE *
 gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
     return
-	(strlen(fname) == 0 ?
-	 gp_open_scratch_file(gp_scratch_file_name_prefix, fname, "w") :
-	 fname[0] == '|' ?
-	 popen(fname + 1, "w") :
+	(strlen(fname) == 0 ? 0 :
+	 fname[0] == '|' ? popen(fname + 1, "w") :
 	 rbfopen(fname, "w"));
 }
 

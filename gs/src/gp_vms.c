@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -165,11 +165,8 @@ gp_getenv_display(void)
 FILE *
 gp_open_printer(char fname[gp_file_name_sizeof], int binary_mode)
 {
-    if (strlen(fname) == 0) {
-	strcpy(fname, gp_scratch_file_name_prefix);
-	strcat(fname, "XXXXXX");
-	mktemp(fname);
-    }
+    if (strlen(fname) == 0)
+	return 0;
     if (binary_mode) {		/*
 				 * Printing must be done exactly byte to byte,
 				 * using "passall".  However the standard VMS symbiont

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -726,8 +726,6 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
 	/* Force stdout to binary. */
 	return gp_setmode_binary(*pfile, true);
     }
-    if (!parsed.fname)
-	return_error(gs_error_undefinedfilename);
     if (fmt) {
 	long count1 = dev->PageCount + 1;
 
@@ -743,6 +741,8 @@ gx_device_open_output_file(const gx_device * dev, char *fname,
     if (positionable || (parsed.iodev && parsed.iodev != iodev_default)) {
 	char fmode[4];
 
+	if (!parsed.fname)
+	    return_error(gs_error_undefinedfilename);
 	strcpy(fmode, gp_fmode_wb);
 	if (positionable)
 	    strcat(fmode, "+");
@@ -768,11 +768,13 @@ gx_device_close_output_file(const gx_device * dev, const char *fname,
 
     if (code < 0)
 	return code;
-    if (!strcmp(parsed.iodev->dname, "%stdout%"))
-	return 0;
-    /* NOTE: fname is unsubstituted if the name has any %nnd formats. */
-    if (parsed.iodev != iodev_default)
-	return parsed.iodev->procs.fclose(parsed.iodev, file);
-    gp_close_printer(file, parsed.fname);
+    if (parsed.iodev) {
+	if (!strcmp(parsed.iodev->dname, "%stdout%"))
+	    return 0;
+	/* NOTE: fname is unsubstituted if the name has any %nnd formats. */
+	if (parsed.iodev != iodev_default)
+	    return parsed.iodev->procs.fclose(parsed.iodev, file);
+    }
+    gp_close_printer(file, (parsed.fname ? parsed.fname : fname));
     return 0;
 }

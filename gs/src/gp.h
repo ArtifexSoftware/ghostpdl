@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -212,8 +212,10 @@ const char *gp_file_name_concat_string(P4(const char *prefix, uint plen,
  * values of filedevice are handled by calling the fopen procedure
  * associated with that kind of "file".
  *
- * Note that if the file name is null (0-length), it may be replaced with
- * the name of a scratch file.
+ * Note that if the file name is null (0-length) and a default printer is
+ * available, the file name may be replaced with the name of a scratch file
+ * for spooling.  If the file name is null and no default printer is
+ * available, this procedure returns 0.
  */
 FILE *gp_open_printer(P2(char fname[gp_file_name_sizeof], int binary_mode));
 
