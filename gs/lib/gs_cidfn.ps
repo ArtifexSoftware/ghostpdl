@@ -186,6 +186,13 @@ end		% .cidfonttypes
   end			% scratch dict
 } bind def
 
+% Some Adobe fonts include the line
+%   /Setup /cid_Setup load def
+% This is apparently included only to prevent proper, conforming PostScript
+% interpreters (as opposed to ATM or a special Adobe font loader) from
+% loading the font, since Setup is not referenced anywhere else in the file.
+%/cid_Setup { } def
+
 currentdict end
 
 % ---------------- Rendering ---------------- %
