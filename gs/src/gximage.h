@@ -57,21 +57,25 @@ typedef struct sample_map_s {
 
     sample_lookup_t table;
 
-    /* If an 8-bit fraction doesn't represent the decoded value */
-    /* accurately enough, but the samples have 4 bits or fewer, */
-    /* we precompute the decoded values into a table. */
-    /* Different entries are used depending on bits/sample: */
-    /*      1,8,12 bits/sample: 0,15        */
-    /*      2 bits/sample: 0,5,10,15        */
-    /*      4 bits/sample: all      */
+    /*
+     * If an 8-bit fraction doesn't represent the decoded value
+     * accurately enough, but the samples have 4 bits or fewer,
+     * we precompute the decoded values into a table.
+     * Different entries are used depending on bits/sample:
+     *      1,8,12 bits/sample: 0,15
+     *      2 bits/sample: 0,5,10,15
+     *      4 bits/sample: all
+     */
 
     float decode_lookup[16];
 #define decode_base decode_lookup[0]
 #define decode_max decode_lookup[15]
 
-    /* In the worst case, we have to do the decoding on the fly. */
-    /* The value is base + sample * factor, where the sample is */
-    /* an 8-bit (unsigned) integer or a frac. */
+    /*
+     * In the worst case, we have to do the decoding on the fly.
+     * The value is base + sample * factor, where the sample is
+     * an 8-bit (unsigned) integer or a frac.
+     */
 
     double decode_factor;
 
@@ -154,11 +158,13 @@ typedef enum {
     image_skewed		/* any other transformation */
 } image_posture;
 
-/* Define an entry in the image color table.  For single-source-plane */
-/* images, the table index is the sample value, and the key is not used; */
-/* for multiple-plane (color) images, the table index is a hash of the key, */
-/* which is the concatenation of the source pixel components. */
-/* "Clue" = Color LookUp Entry (by analogy with CLUT). */
+/*
+ * Define an entry in the image color table.  For single-source-plane
+ * images, the table index is the sample value, and the key is not used;
+ * for multiple-plane (color) images, the table index is a hash of the key,
+ * which is the concatenation of the source pixel components.
+ * "Clue" = Color LookUp Entry (by analogy with CLUT).
+ */
 typedef struct gx_image_clue_s {
     gx_device_color dev_color;
     bits32 key;
@@ -166,10 +172,14 @@ typedef struct gx_image_clue_s {
 
 /* Main state structure */
 
+#ifndef gx_device_clip_DEFINED
+#  define gx_device_clip_DEFINED
+typedef struct gx_device_clip_s gx_device_clip;
+#endif
+
 #ifndef gx_device_rop_texture_DEFINED
 #  define gx_device_rop_texture_DEFINED
 typedef struct gx_device_rop_texture_s gx_device_rop_texture;
-
 #endif
 
 struct gx_image_enum_s {
@@ -179,15 +189,25 @@ struct gx_image_enum_s {
     /* Following are set at structure initialization */
     byte bps;			/* bits per sample: 1, 2, 4, 8, 12 */
     byte unpack_bps;		/* bps for computing unpack proc, */
-    /* set to 8 if no unpacking */
+				/* set to 8 if no unpacking */
     byte log2_xbytes;		/* log2(bytes per expanded sample): */
-    /* 0 if bps <= 8, log2(sizeof(frac)) */
-    /* if bps > 8 */
+				/* 0 if bps <= 8, log2(sizeof(frac)) */
+				/* if bps > 8 */
     byte spp;			/* samples per pixel: 1, 3, or 4 */
-    /* (1, 2, 3, 4, or 5 if alpha is allowed) */
+				/* (1, 2, 3, 4, or 5 if alpha is allowed) */
     gs_image_alpha_t alpha;	/* Alpha from image structure */
-    /*byte num_planes; *//* spp if colors are separated, */
-    /* 1 otherwise (in common part) */
+    struct mc_ {
+	uint values[gs_image_max_components * 2]; /* MaskColor values, */
+				/* always as ranges, guaranteed in range */
+				/* and in order (v0 <= v1) */
+	bits32 mask, test;	/* (if spp > 1, bps <= 8) */
+				/* mask & test value for quick filtering */
+	bool exact;		/* (if spp > 1, bps <= 8) */
+				/* if true, mask/test filter is exact */
+    } mask_color;		/* (if ImageType 4) */
+    byte use_mask_color;	/* true if color masking is being used */
+    /*byte num_planes; */	/* spp if colors are separated, */
+				/* 1 otherwise (in common part) */
     byte spread;		/* num_planes << log2_xbytes */
     byte masked;		/* 0 = [color]image, 1 = imagemask */
     byte interpolate;		/* true if Interpolate requested */
@@ -196,13 +216,13 @@ struct gx_image_enum_s {
 	int x, y, w, h;		/* subrectangle being rendered */
     } rect;
     gs_fixed_point x_extent, y_extent;	/* extent of one row of rect */
-                   sample_unpack_proc((*unpack));
-                   irender_proc((*render));
+    sample_unpack_proc((*unpack));
+    irender_proc((*render));
     const gs_imager_state *pis;
     const gs_color_space *pcs;	/* color space of image */
     gs_memory_t *memory;
     byte *buffer;		/* for expanding samples to a */
-    /* byte or frac */
+				/* byte or frac */
     uint buffer_size;
     byte *line;			/* buffer for an output scan line */
     uint line_size;
@@ -220,34 +240,34 @@ struct gx_image_enum_s {
 #define image_clip_ymax 8
 #define image_clip_region 0x10
     byte slow_loop;		/* true if must use slower loop */
-    /* (if needed) */
+				/* (if needed) */
     byte device_color;		/* true if device color space and */
-    /* standard decoding */
+				/* standard decoding */
     gs_fixed_rect clip_outer;	/* outer box of clip path */
     gs_fixed_rect clip_inner;	/* inner box of clip path */
     gs_logical_operation_t log_op;	/* logical operation */
     fixed adjust;		/* adjustment when rendering */
-    /* characters */
+				/* characters */
     fixed dxx, dxy;		/* fixed versions of matrix */
-    /* components (as needed) */
+				/* components (as needed) */
     gx_device_clip *clip_dev;	/* clipping device (if needed) */
     gx_device_rop_texture *rop_dev;	/* RasterOp device (if needed) */
     stream_IScale_state *scaler;	/* scale state for */
-    /* Interpolate (if needed) */
+				/* Interpolate (if needed) */
     /* Following are updated dynamically */
     int y;			/* next source y */
     gs_fixed_point cur, prev;	/* device x, y of current & */
-    /* previous row */
+				/* previous row */
     struct dd_ {
 	gx_dda_fixed_point row;	/* DDA for row origin, has been */
-	/* advanced when render proc called */
+				/* advanced when render proc called */
 	gx_dda_fixed_point pixel0;	/* DDA for first pixel of row */
     } dda;
     int line_xy;		/* x or y value at start of buffered line */
     int xi_next;		/* expected xci of next row */
-    /* (landscape only) */
+				/* (landscape only) */
     gs_int_point xyi;		/* integer origin of row */
-    /* (Interpolate only) */
+				/* (Interpolate only) */
     int yci, hci;		/* integer y & h of row (portrait) */
     int xci, wci;		/* integer x & w of row (landscape) */
     /* The maps are set at initialization.  We put them here */
@@ -273,5 +293,30 @@ struct gx_image_enum_s {
 /* We can special-case this for speed later if we care. */
 #define dev_color_eq(devc1, devc2)\
   gx_device_color_equal(&(devc1), &(devc2))
+
+/*
+ * Do common initialization for processing an ImageType 1 or 4 image.
+ * Allocate the enumerator and fill in the following members:
+ *	matrix, rect
+ */
+int
+gx_image_enum_alloc(P9(gx_device * dev,
+		const gs_imager_state * pis, const gs_matrix * pmat,
+		const gs_image_common_t * pic, const gs_int_rect * prect,
+		const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		gs_memory_t * mem, gx_image_enum **ppenum));
+
+/*
+ * Finish initialization for processing an ImageType 1 or 4 image.
+ * Assumes the following members of *penum are set in addition to those
+ * set by gx_image_enum_alloc:
+ *	alpha, use_mask_color, mask_color (if use_mask_color is true),
+ *	masked, adjust
+ */
+int
+gx_image_enum_begin(P8(gx_device * dev, const gs_imager_state * pis,
+		const gs_image_common_t * pic, const gs_int_rect * prect,
+		const gx_drawing_color * pdcolor, const gx_clip_path * pcpath,
+		gs_memory_t * mem, gx_image_enum *penum));
 
 #endif /* gximage_INCLUDED */

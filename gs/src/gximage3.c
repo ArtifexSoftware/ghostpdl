@@ -43,7 +43,8 @@ public_st_gs_image3();
 
 /* Define the image type for ImageType 3 images. */
 private const gx_image_type_t image3_type = {
-    gx_begin_image3, gx_data_image_source_size, 3
+    gx_begin_image3, gx_data_image_source_size,
+    0/*gx_write_image3*/, 0/*gx_read_image3*/, 0/*gx_release_image3*/, 3
 };
 private const gx_image_enum_procs_t image3_enum_procs = {
     gx_image3_plane_data, gx_image3_end_image

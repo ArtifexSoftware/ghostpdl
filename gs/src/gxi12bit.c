@@ -102,6 +102,14 @@ private irender_proc_t
 image_strategy_frac(gx_image_enum * penum)
 {
     if (penum->bps > 8) {
+	if (penum->use_mask_color) {
+	    /* Convert color mask values to fracs. */
+	    int i;
+
+	    for (i = 0; i < penum->spp * 2; ++i)
+		penum->mask_color.values[i] =
+		    bits2frac(penum->mask_color.values[i], 12);
+	}
 	if_debug0('b', "[b]render=frac\n");
 	return image_render_frac;
     }
@@ -119,8 +127,6 @@ gs_gxi12bit_init(gs_memory_t * mem)
 
 /* ------ Rendering for 12-bit samples ------ */
 
-/* Render an image with more than 8 bits per sample. */
-/* The samples have been expanded into fracs. */
 #define longs_per_4_fracs (arch_sizeof_frac * 4 / arch_sizeof_long)
 typedef union {
     frac v[4];
@@ -136,6 +142,24 @@ typedef union {
      ((f1).all[0] == (f2).all[0] && (f1).all[1] == (f2).all[1])
 #endif
 #endif
+
+/* Test whether a color is transparent. */
+private bool
+mask_color12_matches(const frac *v, const gx_image_enum *penum,
+		   int num_components)
+{
+    int i;
+
+    for (i = num_components * 2, v += num_components - 1; (i -= 2) >= 0; --v)
+	if (*v < penum->mask_color.values[i] ||
+	    *v > penum->mask_color.values[i + 1]
+	    )
+	    return false;
+    return true;
+}
+
+/* Render an image with more than 8 bits per sample. */
+/* The samples have been expanded into fracs. */
 private int
 image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		  uint w, int h, gx_device * dev)
@@ -154,6 +178,7 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
     const gx_color_map_procs *cmap_procs = gx_device_cmap_procs(dev);
     cmap_proc_rgb((*map_rgb)) = cmap_procs->map_rgb;
     cmap_proc_cmyk((*map_cmyk)) = cmap_procs->map_cmyk;
+    bool use_mask_color = penum->use_mask_color;
     gx_device_color devc1, devc2;
     gx_device_color *pdevc = &devc1;
     gx_device_color *pdevc_next = &devc2;
@@ -195,6 +220,10 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		psrc += 4;
 		if (color_frac_eq(next, run))
 		    goto inc;
+		if (use_mask_color && mask_color12_matches(next.v, penum, 4)) {
+		    color_set_null(pdevc_next);
+		    goto f;
+		}
 		if (device_color) {
 		    (*map_cmyk) (next.v[0], next.v[1],
 				 next.v[2], next.v[3],
@@ -218,6 +247,10 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		psrc += 3;
 		if (color_frac_eq(next, run))
 		    goto inc;
+		if (use_mask_color && mask_color12_matches(next.v, penum, 3)) {
+		    color_set_null(pdevc_next);
+		    goto f;
+		}
 		if (device_color) {
 		    (*map_rgb) (next.v[0], next.v[1],
 				next.v[2], pdevc_next, pis, dev,
@@ -235,6 +268,10 @@ image_render_frac(gx_image_enum * penum, const byte * buffer, int data_x,
 		psrc++;
 		if (next.v[0] == run.v[0])
 		    goto inc;
+		if (use_mask_color && mask_color12_matches(next.v, penum, 1)) {
+		    color_set_null(pdevc_next);
+		    goto f;
+		}
 		if (device_color) {
 		    (*map_rgb) (next.v[0], next.v[0],
 				next.v[0], pdevc_next, pis, dev,

@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -68,7 +68,6 @@ extern_st(st_clip_rect);
 #ifndef gx_clip_list_DEFINED
 #  define gx_clip_list_DEFINED
 typedef struct gx_clip_list_s gx_clip_list;
-
 #endif
 struct gx_clip_list_s {
     gx_clip_rect single;	/* (has next = prev = 0) */
@@ -92,12 +91,16 @@ struct gx_clip_list_s {
  * situations that require breaking up a transfer into pieces,
  * but we suspect it could be used more widely.
  */
-typedef struct gx_device_clip_s {
+#ifndef gx_device_clip_DEFINED
+#  define gx_device_clip_DEFINED
+typedef struct gx_device_clip_s gx_device_clip;
+#endif
+struct gx_device_clip_s {
     gx_device_forward_common;	/* target is set by client */
     gx_clip_list list;		/* set by client */
     gx_clip_rect *current;	/* cursor in list */
     gs_int_point translation;
-} gx_device_clip;
+};
 
 extern_st(st_device_clip);
 #define public_st_device_clip()	/* in gxcpath.c */\

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -16,7 +16,7 @@
    all copies.
  */
 
-
+/*$Id$ */
 /* Matrix operators for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -24,6 +24,7 @@
 #include "gxfarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
+#include "stream.h"
 
 /* The identity matrix */
 private const gs_matrix gs_identity_matrix =
@@ -445,5 +446,123 @@ gs_distance_transform2fixed(const gs_matrix_fixed * pmat,
     }
     ppt->x = px;
     ppt->y = py;
+    return 0;
+}
+
+/* ------ Serialization ------ */
+
+/*
+ * For maximum conciseness in band lists, we write a matrix as a control
+ * byte followed by 0 to 6 values.  The control byte has the format
+ * AABBCD00.  AA and BB control (xx,yy) and (xy,yx) as follows:
+ *	00 = values are (0.0, 0.0)
+ *	01 = values are (V, V) [1 value follows]
+ *	10 = values are (V, -V) [1 value follows]
+ *	11 = values are (U, V) [2 values follow]
+ * C and D control tx and ty as follows:
+ *	0 = value is 0.0
+ *	1 = value follows
+ * The following code is the only place that knows this representation.
+ */
+
+/* Put a matrix on a stream. */
+int
+sput_matrix(stream *s, const gs_matrix *pmat)
+{
+    byte buf[1 + 6 * sizeof(float)];
+    byte *cp = buf + 1;
+    byte b = 0;
+    float coeff[6];
+    int i;
+    uint ignore;
+
+    coeff[0] = pmat->xx;
+    coeff[1] = pmat->xy;
+    coeff[2] = pmat->yx;
+    coeff[3] = pmat->yy;
+    coeff[4] = pmat->tx;
+    coeff[5] = pmat->ty;
+    for (i = 0; i < 4; i += 2) {
+	float u = coeff[i], v = coeff[i ^ 3];
+
+	b <<= 2;
+	if (u != 0 || v != 0) {
+	    memcpy(cp, &u, sizeof(float));
+	    cp += sizeof(float);
+
+	    if (v == u)
+		b += 1;
+	    else if (v == -u)
+		b += 2;
+	    else {
+		b += 3;
+		memcpy(cp, &v, sizeof(float));
+		cp += sizeof(float);
+	    }
+	}
+    }
+    for (; i < 6; ++i) {
+	float v = coeff[i];
+
+	b <<= 1;
+	if (v != 0) {
+	    ++b;
+	    memcpy(cp, &v, sizeof(float));
+	    cp += sizeof(float);
+	}
+    }
+    buf[0] = b << 2;
+    return sputs(s, buf, cp - buf, &ignore);
+}
+
+/* Get a matrix from a stream. */
+int
+sget_matrix(stream *s, gs_matrix *pmat)
+{
+    int b = sgetc(s);
+    float coeff[6];
+    int i;
+    int status;
+    uint nread;
+
+    if (b < 0)
+	return b;
+    for (i = 0; i < 4; i += 2, b <<= 2)
+	if (!(b & 0xc0))
+	    coeff[i] = coeff[i ^ 3] = 0.0;
+	else {
+	    float value;
+
+	    status = sgets(s, (byte *)&value, sizeof(value), &nread);
+	    if (status < 0)
+		return status;
+	    coeff[i] = value;
+	    switch ((b >> 6) & 3) {
+		case 1:
+		    coeff[i ^ 3] = value;
+		    break;
+		case 2:
+		    coeff[i ^ 3] = -value;
+		    break;
+		case 3:
+		    status = sgets(s, (byte *)&coeff[i ^ 3],
+				   sizeof(coeff[0]), &nread);
+		    if (status < 0)
+			return status;
+	    }
+	}
+    for (; i < 6; ++i, b <<= 1)
+	if (b & 0x80) {
+	    status = sgets(s, (byte *)&coeff[i], sizeof(coeff[0]), &nread);
+	    if (status < 0)
+		return status;
+	} else
+	    coeff[i] = 0.0;
+    pmat->xx = coeff[0];
+    pmat->xy = coeff[1];
+    pmat->yx = coeff[2];
+    pmat->yy = coeff[3];
+    pmat->tx = coeff[4];
+    pmat->ty = coeff[5];
     return 0;
 }

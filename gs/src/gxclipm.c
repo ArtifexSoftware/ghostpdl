@@ -20,6 +20,7 @@
 /* Mask clipping device */
 #include "memory_.h"
 #include "gx.h"
+#include "gsbittab.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
 #include "gxclipm.h"
@@ -29,6 +30,7 @@ private dev_proc_fill_rectangle(mask_clip_fill_rectangle);
 private dev_proc_copy_mono(mask_clip_copy_mono);
 private dev_proc_copy_color(mask_clip_copy_color);
 private dev_proc_copy_alpha(mask_clip_copy_alpha);
+private dev_proc_strip_tile_rectangle(mask_clip_strip_tile_rectangle);
 private dev_proc_strip_copy_rop(mask_clip_strip_copy_rop);
 private dev_proc_get_clipping_box(mask_clip_get_clipping_box);
 
@@ -70,7 +72,7 @@ const gx_device_mask_clip gs_mask_clip_device =
   gx_default_begin_image,
   gx_default_image_data,
   gx_default_end_image,
-  gx_default_strip_tile_rectangle,
+  mask_clip_strip_tile_rectangle,
   mask_clip_strip_copy_rop,
   mask_clip_get_clipping_box,
   gx_default_begin_typed_image,
@@ -198,41 +200,84 @@ clip_runs_enumerate(gx_device_mask_clip * cdev,
     DECLARE_MASK_COPY;
     int cy;
     const byte *tile_row;
+    gs_int_rect prev;
+    int code;
 
     FIT_MASK_COPY(pccd->data, pccd->sourcex, pccd->raster,
 		  pccd->x, pccd->y, pccd->w, pccd->h);
     tile_row = cdev->tiles.data + my0 * cdev->tiles.raster + (mx0 >> 3);
+    prev.p.y = prev.q.y = -1;	/* arbitrary */
     for (cy = my0; cy < my1; cy++) {
 	int cx = mx0;
 	const byte *tp = tile_row;
-	byte tbit = 0x80 >> (cx & 7);
 
+	if_debug1('B', "[B]clip runs y=%d:", cy - cdev->phase.y);
 	while (cx < mx1) {
+	    int len;
 	    int tx1, tx, ty;
-	    int code;
 
 	    /* Skip a run of 0s. */
-	    while (cx < mx1 && (*tp & tbit) == 0) {
-		if ((tbit >>= 1) == 0)
-		    tp++, tbit = 0x80;
-		++cx;
+	    len = byte_bit_run_length[cx & 7][*tp ^ 0xff];
+	    if (len < 8) {
+		cx += len;
+		if (cx >= mx1)
+		    break;
+	    } else {
+		cx += len - 8;
+		tp++;
+		while (cx < mx1 && *tp == 0)
+		    cx += 8, tp++;
+		if (cx >= mx1)
+		    break;
+		cx += byte_bit_run_length_0[*tp ^ 0xff];
+		if (cx >= mx1)
+		    break;
 	    }
-	    if (cx == mx1)
-		break;
-	    /* Scan a run of 1s. */
 	    tx1 = cx - cdev->phase.x;
-	    do {
-		if ((tbit >>= 1) == 0)
-		    tp++, tbit = 0x80;
-		++cx;
-	    } while (cx < mx1 && (*tp & tbit) != 0);
+	    /* Scan a run of 1s. */
+	    len = byte_bit_run_length[cx & 7][*tp];
+	    if (len < 8) {
+		cx += len;
+		if (cx > mx1)
+		    cx = mx1;
+	    } else {
+		cx += len - 8;
+		tp++;
+		while (cx < mx1 && *tp == 0xff)
+		    cx += 8, tp++;
+		if (cx > mx1)
+		    cx = mx1;
+		else {
+		    cx += byte_bit_run_length_0[*tp];
+		    if (cx > mx1)
+			cx = mx1;
+		}
+	    }
 	    tx = cx - cdev->phase.x;
+	    if_debug2('B', " %d-%d,", tx1, tx);
 	    ty = cy - cdev->phase.y;
-	    code = (*process) (pccd, tx1, ty, tx, ty + 1);
-	    if (code < 0)
-		return code;
+	    /* Detect vertical rectangles. */
+	    if (prev.p.x == tx1 && prev.q.x == tx && prev.q.y == ty)
+		prev.q.y = ty + 1;
+	    else {
+		if (prev.q.y > prev.p.y) {
+		    code = (*process)(pccd, tx1, ty, tx, ty + 1);
+		    if (code < 0)
+			return code;
+		}
+		prev.p.x = tx1;
+		prev.p.y = ty;
+		prev.q.x = tx;
+		prev.q.y = ty + 1;
+	    }
 	}
+	if_debug0('B', "\n");
 	tile_row += cdev->tiles.raster;
+    }
+    if (prev.q.y > prev.p.y) {
+	code = (*process)(pccd, prev.p.x, prev.p.y, prev.q.x, prev.q.y);
+	if (code < 0)
+	    return code;
     }
     return 0;
 }
@@ -266,6 +311,23 @@ mask_clip_copy_alpha(gx_device * dev,
     ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
     ccdata.color[0] = color, ccdata.depth = depth;
     return clip_runs_enumerate(cdev, clip_call_copy_alpha, &ccdata);
+}
+
+private int
+mask_clip_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
+			       int x, int y, int w, int h,
+			       gx_color_index color0, gx_color_index color1,
+			       int phase_x, int phase_y)
+{
+    gx_device_mask_clip *cdev = (gx_device_mask_clip *) dev;
+    clip_callback_data_t ccdata;
+
+    ccdata.tdev = cdev->target;
+    ccdata.x = x, ccdata.y = y, ccdata.w = w, ccdata.h = h;
+    ccdata.tiles = tiles;
+    ccdata.color[0] = color0, ccdata.color[1] = color1;
+    ccdata.phase.x = phase_x, ccdata.phase.y = phase_y;
+    return clip_runs_enumerate(cdev, clip_call_strip_tile_rectangle, &ccdata);
 }
 
 private int

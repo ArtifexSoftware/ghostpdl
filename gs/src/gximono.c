@@ -41,25 +41,35 @@
 
 /* ------ Strategy procedure ------ */
 
-/* We can bypass X clipping for portrait mono-component images. */
 private irender_proc(image_render_mono);
 private irender_proc_t
 image_strategy_mono(gx_image_enum * penum)
 {
-    /*
-     * Use the slow loop for imagemask with a halftone,
-     * or for a non-default logical operation.
-     */
-    penum->slow_loop =
-	(penum->masked && !color_is_pure(&penum->icolor1)) ||
-	penum->use_rop;
     if (penum->spp == 1) {
+	/*
+	 * Use the slow loop for imagemask with a halftone or a non-default
+	 * logical operation.
+	 */
+	penum->slow_loop =
+	    (penum->masked && !color_is_pure(&penum->icolor1)) ||
+	    penum->use_rop;
+	/* We can bypass X clipping for portrait mono-component images. */
 	if (!(penum->slow_loop || penum->posture != image_portrait))
 	    penum->clip_image &= ~(image_clip_xmin | image_clip_xmax);
 	if_debug0('b', "[b]render=mono\n");
 	/* Precompute values needed for rasterizing. */
 	penum->dxx =
 	    float2fixed(penum->matrix.xx + fixed2float(fixed_epsilon) / 2);
+	/*
+	 * If black or white is transparent, reset icolor0 or icolor1,
+	 * which are used directly in the fast case loop.
+	 */
+	if (penum->use_mask_color) {
+	    if (penum->mask_color.values[0] <= 0)
+		color_set_null(&penum->icolor0);
+	    if (penum->mask_color.values[1] >= (1 << penum->bps) - 1)
+		color_set_null(&penum->icolor1);
+	}
 	return image_render_mono;
     }
     return 0;
@@ -83,9 +93,10 @@ no_map_gray(frac pixel, gx_device_color * pdc, const gs_imager_state * pis,
 
 /*
  * Rendering procedure for general mono-component images, dealing with
- * multiple bit-per-sample images, general transformations, and arbitrary
+ * multiple bit-per-sample images, general transformations, arbitrary
  * single-component color spaces (DeviceGray, DevicePixel, CIEBasedA,
- * Separation, Indexed). This procedure handles a single scan line.
+ * Separation, Indexed), and color masking. This procedure handles a
+ * single scan line.
  */
 private int
 image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
@@ -105,16 +116,22 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
      * for masked images with a pure color.
      */
     bool tiles_fit = (pis ? gx_check_tile_cache(pis) : false);
+    uint mask_base = penum->mask_color.values[0];
+    uint mask_limit =
+	(penum->use_mask_color ?
+	 penum->mask_color.values[1] - mask_base + 1 : 0);
 /*
  * Free variables of IMAGE_SET_GRAY:
- *   Read: penum, pis, dev, tiles_fit
+ *   Read: penum, pis, dev, tiles_fit, mask_base, mask_limit
  *   Set: pdevc, code, cc
  */
 #define IMAGE_SET_GRAY(sample_value)\
   BEGIN\
     pdevc = &penum->clues[sample_value].dev_color;\
     if (!color_is_set(pdevc)) {\
-	if (penum->device_color)\
+	if ((uint)(sample_value - mask_base) < mask_limit)\
+	    color_set_null(pdevc);\
+	else if (penum->device_color)\
 	    (*map_gray)(byte2frac(sample_value), pdevc, pis, dev, gs_color_select_source);\
 	else {\
 	    decode_sample(sample_value, cc, 0);\

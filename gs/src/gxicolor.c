@@ -39,12 +39,43 @@
 #include "gxcpath.h"
 #include "gximage.h"
 
+typedef union {
+    byte v[4];
+    bits32 all;			/* for fast comparison & clearing */
+} color_samples;
+
 /* ------ Strategy procedure ------ */
 
 private irender_proc(image_render_color);
 private irender_proc_t
 image_strategy_color(gx_image_enum * penum)
 {
+    if (penum->use_mask_color) {
+	/* Set up the quick-filter parameters. */
+	int i;
+	color_samples mask, test;
+	bool exact = true;
+
+	mask.all = 0;
+	test.all = 0;
+	for (i = 0; i < penum->spp; ++i) {
+	    byte v0 = (byte)penum->mask_color.values[2 * i];
+	    byte v1 = (byte)penum->mask_color.values[2 * i + 1];
+	    byte match = 0xff;
+
+	    while ((v0 & match) != (v1 & match))
+		match <<= 1;
+	    mask.v[i] = match;
+	    test.v[i] = v0 & match;
+	    exact &= (v0 == match && (v1 | match) == 0xff);
+	}
+	penum->mask_color.mask = mask.all;
+	penum->mask_color.test = test.all;
+	penum->mask_color.exact = exact;
+    } else {
+	penum->mask_color.mask = 0;
+	penum->mask_color.test = ~0;
+    }
     return image_render_color;
 }
 
@@ -56,11 +87,22 @@ gs_gxicolor_init(gs_memory_t * mem)
 
 /* ------ Rendering procedures ------ */
 
+/* Test whether a color is transparent. */
+private bool
+mask_color_matches(const byte *v, const gx_image_enum *penum,
+		   int num_components)
+{
+    int i;
+
+    for (i = num_components * 2, v += num_components - 1; (i -= 2) >= 0; --v)
+	if (*v < penum->mask_color.values[i] ||
+	    *v > penum->mask_color.values[i + 1]
+	    )
+	    return false;
+    return true;
+}
+
 /* Render a color image with 8 or fewer bits per sample. */
-typedef union {
-    byte v[4];
-    bits32 all;			/* for fast comparison & clearing */
-} color_samples;
 private int
 image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
 		   uint w, int h, gx_device * dev)
@@ -80,6 +122,8 @@ image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
     cmap_proc_rgb((*map_3)) = cmap_procs->map_rgb;
     cmap_proc_cmyk((*map_4)) =
 	(penum->alpha ? cmap_procs->map_rgb_alpha : cmap_procs->map_cmyk);
+    bits32 mask = penum->mask_color.mask;
+    bits32 test = penum->mask_color.test;
     gx_image_clue *pic = &penum->clues[0];
 #define pdevc (&pic->dev_color)
     gx_image_clue *pic_next = &penum->clues[1];
@@ -162,6 +206,14 @@ map4:	    if (next.all == run.all)
 		}
 		pic_next->key = next.all;
 	    }
+	    /* Check for transparent color. */
+	    if ((next.all & mask) == test &&
+		(penum->mask_color.exact ||
+		 mask_color_matches(next.v, penum, 4))
+		) {
+		color_set_null(pdevc_next);
+		goto mapped;
+	    }
 	    if (device_color) {
 		(*map_4)(byte2frac(next.v[0]), byte2frac(next.v[1]),
 			 byte2frac(next.v[2]), byte2frac(next.v[3]),
@@ -188,6 +240,14 @@ map4:	    if (next.all == run.all)
 		    pic = &clue_temp;
 		}
 		pic_next->key = next.all;
+	    }
+	    /* Check for transparent color. */
+	    if ((next.all & mask) == test &&
+		(penum->mask_color.exact ||
+		 mask_color_matches(next.v, penum, 3))
+		) {
+		color_set_null(pdevc_next);
+		goto mapped;
 	    }
 	    if (device_color) {
 		(*map_3)(byte2frac(next.v[0]), byte2frac(next.v[1]),

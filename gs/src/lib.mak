@@ -462,14 +462,6 @@ $(GLOBJ)gxht.$(OBJ): $(GLSRC)gxht.c $(GXERR) $(memory__h)\
  $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h) $(gzht_h)
 	$(GLCC) $(GLO_)gxht.$(OBJ) $(C_) $(GLSRC)gxht.c
 
-$(GLOBJ)gxiinit.$(OBJ): $(GLSRC)gxiinit.c $(GXERR) $(math__h) $(memory__h)\
- $(gpcheck_h)\
- $(gsccolor_h) $(gspaint_h) $(gsstruct_h) $(gsutil_h)\
- $(gxfixed_h) $(gxfrac_h) $(gxarith_h) $(gxiparam_h) $(gxmatrix_h)\
- $(gxdevice_h) $(gzpath_h) $(gzstate_h)\
- $(gzcpath_h) $(gxdevmem_h) $(gximage_h) $(gdevmrop_h)
-	$(GLCC) $(GLO_)gxiinit.$(OBJ) $(C_) $(GLSRC)gxiinit.c
-
 $(GLOBJ)gxidata.$(OBJ): $(GLSRC)gxidata.c $(GXERR) $(memory__h)\
  $(gxcpath_h) $(gxdevice_h) $(gximage_h)
 	$(GLCC) $(GLO_)gxidata.$(OBJ) $(C_) $(GLSRC)gxidata.c
@@ -481,12 +473,30 @@ $(GLOBJ)gxifast.$(OBJ): $(GLSRC)gxifast.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gzht_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gxifast.$(OBJ) $(C_) $(GLSRC)gxifast.c
 
+$(GLOBJ)gximage.$(OBJ): $(GLSRC)gximage.c $(GXERR)\
+ $(gscspace_h) $(gsmatrix_h) $(gsutil_h)\
+ $(gxiparam_h)\
+ $(stream_h)
+	$(GLCC) $(GLO_)gximage.$(OBJ) $(C_) $(GLSRC)gximage.c
+
+$(GLOBJ)gximage1.$(OBJ): $(GLSRC)gximage1.c $(GX)\
+ $(gximage_h) $(gxiparam_h)
+	$(GLCC) $(GLO_)gximage1.$(OBJ) $(C_) $(GLSRC)gximage1.c
+
 $(GLOBJ)gximono.$(OBJ): $(GLSRC)gximono.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gdevmem_h) $(gsccolor_h) $(gspaint_h) $(gsutil_h)\
  $(gxarith_h) $(gxcmap_h) $(gxcpath_h) $(gxdcolor_h) $(gxdevice_h)\
  $(gxdevmem_h) $(gxfixed_h) $(gximage_h) $(gxistate_h) $(gxmatrix_h)\
  $(gzht_h) $(gzpath_h)
 	$(GLCC) $(GLO_)gximono.$(OBJ) $(C_) $(GLSRC)gximono.c
+
+$(GLOBJ)gxipixel.$(OBJ): $(GLSRC)gxipixel.c $(GXERR) $(math__h) $(memory__h)\
+ $(gpcheck_h)\
+ $(gsccolor_h) $(gspaint_h) $(gsstruct_h) $(gsutil_h)\
+ $(gxfixed_h) $(gxfrac_h) $(gxarith_h) $(gxiparam_h) $(gxmatrix_h)\
+ $(gxdevice_h) $(gzpath_h) $(gzstate_h)\
+ $(gzcpath_h) $(gxdevmem_h) $(gximage_h) $(gdevmrop_h)
+	$(GLCC) $(GLO_)gxipixel.$(OBJ) $(C_) $(GLSRC)gxipixel.c
 
 # gxmclip is used for Patterns and ImageType 3 images:
 # it isn't included in the base library.
@@ -780,8 +790,8 @@ LIB11s=$(GLOBJ)gsstate.$(OBJ) $(GLOBJ)gstext.$(OBJ) $(GLOBJ)gsutil.$(OBJ)
 LIB1x=$(GLOBJ)gxacpath.$(OBJ) $(GLOBJ)gxbcache.$(OBJ) $(GLOBJ)gxccache.$(OBJ) $(GLOBJ)gxccman.$(OBJ)
 LIB2x=$(GLOBJ)gxcht.$(OBJ) $(GLOBJ)gxclip.$(OBJ) $(GLOBJ)gxcmap.$(OBJ) $(GLOBJ)gxcpath.$(OBJ)
 LIB3x=$(GLOBJ)gxdcconv.$(OBJ) $(GLOBJ)gxdcolor.$(OBJ) $(GLOBJ)gxdither.$(OBJ)
-LIB4x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxht.$(OBJ)
-LIB5x=$(GLOBJ)gxiinit.$(OBJ) $(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ) $(GLOBJ)gximono.$(OBJ)
+LIB4x=$(GLOBJ)gxfill.$(OBJ) $(GLOBJ)gxht.$(OBJ) $(GLOBJ)gxidata.$(OBJ) $(GLOBJ)gxifast.$(OBJ)
+LIB5x=$(GLOBJ)gximage.$(OBJ) $(GLOBJ)gximage1.$(OBJ) $(GLOBJ)gximono.$(OBJ) $(GLOBJ)gxipixel.$(OBJ)
 LIB6x=$(GLOBJ)gxpaint.$(OBJ) $(GLOBJ)gxpath.$(OBJ) $(GLOBJ)gxpath2.$(OBJ) $(GLOBJ)gxpcopy.$(OBJ)
 LIB7x=$(GLOBJ)gxpdash.$(OBJ) $(GLOBJ)gxpflat.$(OBJ) $(GLOBJ)gxsample.$(OBJ) $(GLOBJ)gxstroke.$(OBJ)
 LIB1d=$(GLOBJ)gdevabuf.$(OBJ) $(GLOBJ)gdevdbit.$(OBJ) $(GLOBJ)gdevddrw.$(OBJ)
@@ -1397,7 +1407,7 @@ $(GLOBJ)gximage3.$(OBJ): $(GLSRC)gximage3.c $(GXERR) $(math__h) $(memory__h)\
 	$(GLCC) $(GLO_)gximage3.$(OBJ) $(C_) $(GLSRC)gximage3.c
 
 $(GLOBJ)gximage4.$(OBJ): $(GLSRC)gximage4.c $(memory__h) $(GXERR)\
- $(gscspace_h) $(gsiparm3_h) $(gsiparm4_h) $(gxiparam_h)
+ $(gscspace_h) $(gsiparm3_h) $(gsiparm4_h) $(gxiparam_h) $(gximage_h)
 	$(GLCC) $(GLO_)gximage4.$(OBJ) $(C_) $(GLSRC)gximage4.c
 
 imasklib_=$(GLOBJ)gxclipm.$(OBJ) $(GLOBJ)gximage3.$(OBJ) $(GLOBJ)gximage4.$(OBJ) $(GLOBJ)gxmclip.$(OBJ)

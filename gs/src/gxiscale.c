@@ -54,7 +54,7 @@ image_strategy_interpolate(gx_image_enum * penum)
     const gs_color_space *pccs;
     gs_point dst_xy;
 
-    if (!penum->interpolate)
+    if (!penum->interpolate || penum->use_mask_color)
 	return 0;
     if (penum->posture != image_portrait || penum->masked ||
 	penum->alpha

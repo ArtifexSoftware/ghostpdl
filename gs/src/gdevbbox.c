@@ -89,7 +89,7 @@ gx_device_bbox far_data gs_bbox_device =
      NULL,			/* sync_output */
      bbox_output_page,
      bbox_close_device,
-     NULL,			/* map_rgb_color */
+     gx_forward_map_rgb_color,	/* (needed for remapping white) */
      NULL,			/* map_color_rgb */
      bbox_fill_rectangle,
      NULL,			/* tile_rectangle */
@@ -99,7 +99,7 @@ gx_device_bbox far_data gs_bbox_device =
      NULL,			/* get_bits */
      bbox_get_params,
      bbox_put_params,
-     NULL,			/* map_cmyk_color */
+     gx_forward_map_cmyk_color,	/* (needed for remapping white) */
      NULL,			/* get_xfont_procs */
      NULL,			/* get_xfont_device */
      NULL,			/* map_rgb_alpha_color */
@@ -855,7 +855,6 @@ private int
 bbox_image_plane_data(gx_device * dev,
  gx_image_enum_common_t * info, const gx_image_plane_t * planes, int height)
 {
-
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
     gx_device *tdev = bdev->target;
     bbox_image_enum *pbe = (bbox_image_enum *) info;
