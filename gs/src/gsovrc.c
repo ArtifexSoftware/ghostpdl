@@ -32,25 +32,8 @@
 #include "gxistate.h"
 
 
-
-/*
- * The overprint compositor structure. This is exactly analogous to other
- * compositor structures, consisting of a the compositor common elements
- * and the overprint-specific parameters.
- *
- * In a modest violation of good coding practice, the gs_composite_common
- * fields are "known" to be simple (contain no pointers to garbage
- * collected memory), and we also know the gs_overprint_params_t structure
- * to be simple, so we just create a trivial structure descriptor for the
- * entire gs_overprint_s structure.
- */
-typedef struct gs_overprint_s {
-    gs_composite_common;
-    gs_overprint_params_t   params;
-} gs_overprint_t;
-
-gs_private_st_simple(st_overprint, gs_overprint_t, "gs_overprint_t");
-
+/* GC descriptor for gs_overprint_t */
+private_st_gs_overprint_t();
 
 /*
  * Utility routine for encoding or decoding a color index. We cannot use
