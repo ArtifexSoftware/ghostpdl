@@ -47,7 +47,7 @@
 #ifndef iapi_INCLUDED
 #  define iapi_INCLUDED
 
-#ifdef __WINDOWS__
+#if defined(_WINDOWS_) || defined(__WINDOWS__)
 # define _Windows
 #endif
 
