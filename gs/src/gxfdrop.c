@@ -326,7 +326,7 @@ int continue_margin_common(line_list * ll, margin_set * set, active_line * flp, 
 	    s->x1 = max(s->x1, xu);
 	    x_pixel+=0; /* Just a place for breakpoint */
 	}
-	code = store_margin(ll, &ll->margin_set1, i0, i1);
+	code = store_margin(ll, set, i0, i1);
 	if (code < 0)
 	    return code;
 	/* fixme : after ADJUST_SERIF becames permanent,
