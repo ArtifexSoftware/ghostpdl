@@ -79,14 +79,9 @@ pjl_impl_allocate_interp_instance(
                                               );
 	pjl_parser_state *pjls = pjl_process_init(mem);
 
-	/* If allocation error, deallocate & return */
-	if (!pjli || !pjls) {
-	  if (!pjli)
-	    gs_free_object(mem, pjli, "pjl_impl_allocate_interp_instance(pjl_interp_instance_t)");
-	  if (!pjls)
-	    pjl_process_destroy(pjls, mem);
+	/* If any allocation error simply return */
+	if (!pjli || !pjls)
 	  return gs_error_VMerror;
-	}
 
 	/* Setup pointers to allocated mem within instance */
 	pjli->state = pjls;
@@ -324,17 +319,6 @@ pjl_impl_fontsource_to_path(
 	return pjl_fontsource_to_path(pjli->state, fontsource);
 }
 
-/* get a pjl fontnumber for an internal pcl font. */
-int
-pjl_impl_get_pcl_internal_font_number(
-  pl_interp_instance_t   *pli,
-  const char             *filename
-)
-{
-	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)pli;
-	return pjl_get_pcl_internal_font_number(filename);
-}
-
 /* Change to next highest priority font source. */
 void
 pjl_impl_set_next_fontsource(
@@ -409,7 +393,6 @@ pjl_implementation_t pjl_implementation = {
   pjl_impl_vartoi,
   pjl_impl_vartof,
   pjl_impl_fontsource_to_path,
-  pjl_impl_get_pcl_internal_font_number,
   pjl_impl_set_next_fontsource,
   pjl_impl_register_permanent_soft_font_deletion,
   pjl_impl_register_permanent_soft_font_addition,
