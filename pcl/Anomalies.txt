@@ -643,6 +643,13 @@ Difference in specific tests of the PCL 5c FTS
     behavior, and the behavior of HP devices other than the CLJ 5/5M. The
     behavior of the CLJ 5/5M is apparently a bug.
         
+1074 and 1084:
+
+     The artifex interpreter's implementation of fill type 3 and 4
+     (FT) differs slightly from HP.  Artifex gl/2 vector fills always
+     radiate away from the origin in plotter units space.  This can
+     cause slight discrepancies as evidenced in these two frames.
+
 1070:
     The artifex interpreter always fills along +x and +y for hpgl/2
     vector fills.  HP apparently fills in a direction related to the
