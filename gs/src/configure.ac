@@ -29,7 +29,7 @@ dnl --------------------------------------------------
 
 AC_MSG_CHECKING([supported compiler flags])
 cflags_to_try="-Wall -Wstrict-prototypes -Wmissing-declarations \
--Wmissing-prototypes -Wtraditional -fno-builtin -fno-common"
+-Wmissing-prototypes -fno-builtin -fno-common"
 old_cflags=$CFLAGS
 echo
 for flag in $cflags_to_try; do
