@@ -468,7 +468,7 @@ end readonly def
     { currentdict /topFontDict known not { end } { end end exit } ifelse } loop
    count exch sub { pop } repeat
    PDFfile 3 -1 roll setfileposition
-   /BaseFont oget findfont
+   /BaseFont oget pdfcachefont
    exch pop
  } bdef
 
@@ -1182,7 +1182,7 @@ readonly def
   1 index FRD
   closefile closefile pop
   PDFfile 3 -1 roll setfileposition
-  /FontDescriptor oget /FontName oget findfont
+  /FontDescriptor oget /FontName oget pdfcachefont
   exch pop
 } bdef
 
