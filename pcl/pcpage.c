@@ -407,6 +407,8 @@ pcl_end_page(
 	    if ((bbox.p.x >= bbox.q.x) || (bbox.p.y >= bbox.q.y))
 		return 0;
 	}
+	else
+	    dprintf("Error bbox not installed\n");
     }
 
     /* If there's an overlay macro, execute it now. */
