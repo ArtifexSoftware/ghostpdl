@@ -16,11 +16,11 @@
 #include "gdebug.h"
 #include "gp.h"
 #include "gscdefs.h"
-#include "gsgc.h"
 #include "gslib.h"
 #include "gsmemory.h"
 #include "gsmalloc.h"
 #include "gsmatrix.h"		/* for gsstate.h */
+#include "gsnogc.h"
 #include "gspaint.h"
 #include "gsparam.h"
 #include "gsstate.h"

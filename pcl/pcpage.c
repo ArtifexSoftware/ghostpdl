@@ -19,6 +19,7 @@
 #include "pginit.h"
 #include "plmain.h"             /* for finish page */
 #include "gsmatrix.h"		/* for gsdevice.h */
+#include "gsnogc.h"
 #include "gscoord.h"
 #include "gsdevice.h"
 #include "gspaint.h"

@@ -57,7 +57,7 @@ $(PCLOBJ)pcmain.$(OBJ): $(PCLSRC)pcmain.c           \
                         $(gdebug_h)                 \
                         $(gp_h)                     \
                         $(gscdefs_h)                \
-                        $(gsgc_h)                   \
+                        $(gsnogc_h)                 \
                         $(gslib_h)                  \
                         $(gsmemory_h)               \
                         $(gsmalloc_h)               \
