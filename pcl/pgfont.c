@@ -30,6 +30,7 @@
 #include "pgfdata.h"
 #include "pgfont.h"
 
+
 /* The client handles all encoding issues for these fonts. */
 /* The fonts themselves use Unicode indexing. */
 private gs_glyph
@@ -183,4 +184,19 @@ hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id)
 	plfont->char_width = hpgl_arc_char_width;
 	plfont->char_metrics = hpgl_arc_char_metrics;
 #undef plfont
+}
+
+void
+hpgl_initialize_stick_fonts( hpgl_state_t *pcs )
+{
+    pcs->g.stick_font[0][0].pfont =
+	pcs->g.stick_font[0][1].pfont =
+	pcs->g.stick_font[1][0].pfont =
+	pcs->g.stick_font[1][1].pfont = 0;
+
+    /* NB most of the pl_font structure is uninitialized! */
+    pcs->g.stick_font[0][0].font_file =
+	pcs->g.stick_font[0][1].font_file =
+	pcs->g.stick_font[1][0].font_file =
+	pcs->g.stick_font[1][1].font_file = 0;
 }

@@ -131,10 +131,8 @@ hpgl_do_reset(
 	hpgl_clear_current_path(pcs);
 
 	/* Initialize stick/arc font instances */
-	pcs->g.stick_font[0][0].pfont =
-	  pcs->g.stick_font[0][1].pfont =
-	  pcs->g.stick_font[1][0].pfont =
-	  pcs->g.stick_font[1][1].pfont = 0;
+	hpgl_initialize_stick_fonts(pcs);
+
 	/* intialize subpolygon started hack flag */
 	pcs->g.subpolygon_started = false;
 	/* execute only the implicit portion of IN */
