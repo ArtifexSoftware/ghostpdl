@@ -10,6 +10,84 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.04 (12/01/98)
+======================
+
+Mon Nov 30 23:23:29 1998  Henry Stiles  <henrys@meerkat>
+
+	* pcl_msvc.mak: adds new drivers for MSVC builds.
+
+	* pcpage.c: removed unused variable.
+
+	* pgchar.c, pgdraw.c, pgmisc.h:
+	adds accessor function to get the current pen for character fill edge
+	mode.
+
+	* pcursor.c, pcjob.c: adds stdlib and documents its use for atoi().
+
+	* Anomalies.txt: updates for fixed bugs and a spell check.
+
+	* pcl_ugcc.mak: changes order of devices.
+
+Thu Nov 26 19:54:46 1998  Henry Stiles  <henrys@meerkat>
+
+	* pcfont.c, pcjob.c, pcpage.c:
+	changed to use pjl_compare() instead of strcmp().
+
+	* pcl_ugcc.mak:
+	asynchronous drivers are now included by default on unix platforms.
+
+	* Anomalies.txt: updated for recent bug fixes.
+
+Tue Nov 24 23:24:22 1998  Henry Stiles  <henrys@meerkat>
+
+	* rtraster.c, rtgmode.c, pcwhtidx.c, pcwhtidx.h, pcuptrn.c, pcpatrn.c, pcpatrn.h, pcindxed.h, pcpalet.h, pcindxed.c:
+	changes #inlclude to 8.3
+
+	* Attic/pcwhtindx.h, Attic/pcindexed.c, Attic/pcindexed.h, Attic/pcwhtindx.c:
+	removes >8.3 file names.
+
+	* pgdraw.c: hpgl_rm_vector_fill was not handled properly.
+
+	* pgframe.c:
+	factors out common code for side effect of changing the picture frame.  And fixes a fixes bug where we were not setting the default plot size correctly.
+
+	* pginit.c: provides initialization for the plot size being set.
+
+	* pcindxed.h, pcwhtidx.c, pcwhtidx.h, pcindxed.c, pcl.mak:
+	canonicalizes filenames to 8.3 and fixes clean makes for msvc.
+
+Thu Nov 19 06:16:42 1998  Henry Stiles  <henrys@meerkat>
+
+	* pgdraw.c:
+	We now correctly implement the background of hpgl/2 vector fills.
+	Strangely HP draws the backgrounds with an opaque or transparent white
+	depending on the current transparency mode.
+
+	* pcursor.c: pcl support for pjl formlines.
+
+	* pgconfig.c, pggeom.h:
+	hpgl_PS command #ifdef in for the sole purpose of being able to print
+	large plot sizes for RTL customers.
+
+	* pcpage.c, pcstate.h: First cut at wide a4 implementation.
+
+Sun Nov  8 09:00:53 1998  Henry Stiles  <henrys@meerkat>
+
+	* NEWS-PCL: *** empty log message ***
+
+Thu Nov  5 21:50:43 1998  Henry Stiles  <henrys@meerkat>
+
+	* pgvector.c:
+	bezier curves appear to be hardwired to no joins - they do not use the current LA setting for join type
+
+	* pgdraw.c, pgchar.c:
+	fixes for character edging the pen was not being defaulted correctly in CF and the hpgl/2 drawing machinery was filling the character in addition to stroking hpgl/2 vector fills
+
+Thu Nov  5 06:57:31 1998  Marcos H. Woehrmann  <marcos@meerkat>
+
+	* pcfont.c: Added /winnt/fonts/ to tt font search path.
+
 Version 1.03 (11/06/98)
 =====================
 
