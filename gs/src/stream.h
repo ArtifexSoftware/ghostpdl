@@ -360,6 +360,9 @@ extern const stream_procs s_filter_read_procs, s_filter_write_procs;
  * Add a filter to a pipeline.  The client must have allocated the stream
  * state, if any, using the given allocator.  For s_init_filter, the
  * client must have called s_init and s_init_state.
+ *
+ * Note that if additional buffering is needed, s_add_filter may add
+ * an additional filter to provide it.
  */
 int s_init_filter(P5(stream *fs, stream_state *fss, byte *buf, uint bsize,
 		     stream *target));
@@ -371,5 +374,10 @@ stream *s_add_filter(P4(stream **ps, const stream_template *template,
  * their buffers and state structures.
  */
 int s_close_filters(P2(stream **ps, stream *target));
+
+/* Define templates for the NullEncode/Decode filters. */
+/* They have no state. */
+extern const stream_template s_NullE_template;
+extern const stream_template s_NullD_template;
 
 #endif /* stream_INCLUDED */

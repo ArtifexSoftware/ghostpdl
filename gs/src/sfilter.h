@@ -71,11 +71,6 @@ typedef struct stream_exD_state_s {
     exd_enum_ptrs, exd_reloc_ptrs, pfb_state)
 extern const stream_template s_exD_template;
 
-/* NullEncode/Decode */
-/* (no state) */
-extern const stream_template s_NullE_template;
-extern const stream_template s_NullD_template;
-
 /* PFBDecode */
 /* The typedef for the state appears under eexecDecode above. */
 /*typedef */ struct stream_PFBD_state_s {

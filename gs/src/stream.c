@@ -1089,16 +1089,31 @@ stream *
 s_add_filter(stream **ps, const stream_template *template,
 	     stream_state *ss, gs_memory_t *mem)
 {
-    stream *es = s_alloc(mem, "s_add_filter(stream)");
-    stream_state *ess = (ss == 0 ? (stream_state *)es : ss);
+    stream *es;
+    stream_state *ess;
     uint bsize = max(template->min_out_size, 256);	/* arbitrary */
-    byte *buf = gs_alloc_bytes(mem, bsize, "s_add_filter(buf)");
+    byte *buf;
 
+    /*
+     * Ensure enough buffering.  This may require adding an additional
+     * stream.
+     */
+    if (bsize > (*ps)->bsize && template->process != s_NullE_template.process) {
+	stream_template null_template;
+
+	null_template = s_NullE_template;
+	null_template.min_out_size = bsize;
+	if (s_add_filter(ps, &null_template, NULL, mem) == 0)
+	    return 0;
+    }
+    es = s_alloc(mem, "s_add_filter(stream)");
+    buf = gs_alloc_bytes(mem, bsize, "s_add_filter(buf)");
     if (es == 0 || buf == 0) {
 	gs_free_object(mem, buf, "s_add_filter(buf)");
 	gs_free_object(mem, es, "s_add_filter(stream)");
 	return 0;
     }
+    ess = (ss == 0 ? (stream_state *)es : ss);
     ess->template = template;
     ess->memory = mem;
     es->memory = mem;
@@ -1134,3 +1149,21 @@ s_close_filters(stream **ps, stream *target)
     }
     return 0;
 }
+
+/* ------ NullEncode/Decode ------ */
+
+/* Process a buffer */
+private int
+s_Null_process(stream_state * st, stream_cursor_read * pr,
+	       stream_cursor_write * pw, bool last)
+{
+    return stream_move(pr, pw);
+}
+
+/* Stream template */
+const stream_template s_NullE_template = {
+    &st_stream_state, NULL, s_Null_process, 1, 1
+};
+const stream_template s_NullD_template = {
+    &st_stream_state, NULL, s_Null_process, 1, 1
+};

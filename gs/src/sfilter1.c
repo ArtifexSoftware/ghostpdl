@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -23,24 +23,6 @@
 #include "memory_.h"
 #include "strimpl.h"
 #include "sfilter.h"
-
-/* ------ NullEncode/Decode ------ */
-
-/* Process a buffer */
-private int
-s_Null_process(stream_state * st, stream_cursor_read * pr,
-	       stream_cursor_write * pw, bool last)
-{
-    return stream_move(pr, pw);
-}
-
-/* Stream template */
-const stream_template s_NullE_template = {
-    &st_stream_state, NULL, s_Null_process, 1, 1
-};
-const stream_template s_NullD_template = {
-    &st_stream_state, NULL, s_Null_process, 1, 1
-};
 
 /* ------ PFBDecode ------ */
 
