@@ -141,6 +141,8 @@ pdf_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
     gs_make_identity(&smat);
     smat.xx = btile->rep_width / (pdev->HWResolution[0] / 72.0);
     smat.yy = btile->rep_height / (pdev->HWResolution[1] / 72.0);
+    smat.tx = tile->step_matrix.tx / (pdev->HWResolution[0] / 72.0);
+    smat.ty = tile->step_matrix.ty / (pdev->HWResolution[1] / 72.0);
     pres = *ppres;
     {
 	cos_dict_t *pcd_XObject = cos_dict_alloc(pdev, "pdf_pattern(XObject)");
