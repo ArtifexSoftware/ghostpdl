@@ -36,9 +36,52 @@
 
 
 /*
- * Structure for built-in dither methods. For the moment, this only supports
- * threshold array methods. This will be expanded in the future to support
- * (at least) table dithers, and possible other techniques.
+ * Structure for built-in dither methods. "built-in" in this case refers to
+ * items that cannot be modifiied by the user via the PCL interpreter; there
+ * are also "fixed" dithers that are defined in the interpreter itself and
+ * cannot be modified by either the output device or the user.
+ *
+ * Currently two types are recognized: threshold dithers (which have the
+ * monotinicity property), and table dithers. Others may be added subsequently,
+ * though this is a large task.
+ *
+ * As is the case for both PostScript and PCL, all dithers are set up for an
+ * additive color spaces. This is also the organization expected by the (now
+ * repaired) graphic library.
+ *
+ * For thresholds, data is organized as an array of bytes in (device-space)
+ * by row, column, and then color plane. Each byte represents a threshold
+ * level between 1 and 255. Hence, for a 3 (rgb) color 2 x 2 dither, the data
+ * should be provided as:
+ *
+ *   red(0, 0), red(1, 0), red(0, 1), red(1, 1), green(0, 0), ..., blue(1, 1)
+ * 
+ * For table dithers, data is organized by (device-space) row, then column,
+ * then level (the intensity level to which the given color plane corresponds),
+ * then color plane. Data is one bit per pixel, high-order-bit leftmost, and
+ * rows are rounded to byte boundaries. Any number of levels may be provided,
+ * but the zero-intensity level (which, for subtractive color space devices,
+ * is all 1's) should not be provided. Note also that some code in the graphic
+ * library assumes that full intensity colors are pure (all 0's or all 1's),
+ * so these may not be handled correctly if the full intensity dither has
+ * both 0's and 1's.
+ *
+ * Thus, for a 3 color (rgb) 11 x 3 dither with 32 levels, data would be
+ * organized as follows:
+ *
+ *   red_level_1(0..7, 0), red_level_1(8..10, 0),
+ *   red_level_1(0..7, 1), red_level_1(8..10, 1),
+ *   red_level_1(0..7, 2), red_level_1(8..10, 2),
+ *   red_level_2(0..7, 0), red_level_2(8..10, 0),
+ *   ...
+ *   red_level_32(0..7, 2), red_level_32(8..10, 2),
+ *   green_level_1(0..7, 0), green_level_1(8..10, 0),
+ *   ...
+ *   green_level_32(0..7, 2), green_level_32(8..10, 2),
+ *   blue_level_1(0..7, 0), blue_level_1(8..10, 0),
+ *   ...
+ *   blue_level_32(0..7, 2), blue_level_32(8..10, 2)
+ *
  *
  * Note that this module does NOT take ownership of built-in dither objects;
  * that is the responsibility of the caller.
@@ -49,18 +92,35 @@ typedef struct pcl_ht_builtin_threshold_s {
     const byte *    pdata;
 } pcl_ht_builtin_threshold_t;
 
+typedef struct pcl_ht_builtin_table_dither_s {
+    int             nplanes;        /* number of color planes */
+    int             height, width;  /* in device pixels */
+    int             nlevels;        /* number of levels in a plane; must be
+                                       the same for all planes */
+    const byte *    pdata;          /* width x height x num_levels x nplanes */
+} pcl_ht_builtin_table_dither_t;
+
 typedef enum {
     pcl_halftone_Threshold = 0,
+    pcl_halftone_Table_Dither,
     pcl_halftone_num
 } pcl_halftone_type_t;
 
 typedef struct pcl_ht_builtin_dither_s {
     pcl_halftone_type_t type;
     union {
-        pcl_ht_builtin_threshold_t  thresh;
+        pcl_ht_builtin_threshold_t      thresh;
+        pcl_ht_builtin_table_dither_t   tdither;
     }                   u;
 } pcl_ht_builtin_dither_t;
 
+#define private_st_ht_builtin_dither_t()                    \
+    gs_private_st_composite( st_ht_builtin_dither_t,        \
+                             pcl_ht_builtin_dither_t,       \
+                             "pcl builtin dither object",   \
+                             ht_dither_enum_ptrs,           \
+                             ht_dither_reloc_ptrs           \
+                             )
 
 /*
  * Client data structure for PCL halftones. This holds two pieces of

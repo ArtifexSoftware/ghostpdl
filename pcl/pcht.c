@@ -25,6 +25,7 @@
 #include "gsstruct.h"
 #include "gsrefct.h"
 #include "gsdevice.h"
+#include "gsparam.h"
 #include "gxdevice.h"
 #include "gdevcmap.h"
 #include "pcommand.h"
@@ -35,6 +36,37 @@
 /*
  * GC routines
  */
+  private
+ENUM_PTRS_BEGIN(ht_dither_enum_ptrs)
+
+        return 0;
+
+      case 1:
+        {
+            pcl_ht_builtin_dither_t * pdither = (pcl_ht_builtin_dither_t *)vptr;
+
+            if (pdither->type == pcl_halftone_Threshold)
+                ENUM_RETURN(pdither->u.thresh.pdata);
+            else if (pdither->type == pcl_halftone_Table_Dither)
+                ENUM_RETURN(pdither->u.tdither.pdata);
+            else
+                return 0;
+        }
+ENUM_PTRS_END
+
+  private
+RELOC_PTRS_BEGIN(ht_dither_reloc_ptrs)
+    pcl_ht_builtin_dither_t *   pdither = (pcl_ht_builtin_dither_t *)vptr;
+
+    if (pdither->type == pcl_halftone_Threshold)
+        RELOC_VAR(pdither->u.thresh.pdata);
+    else if (pdither->type == pcl_halftone_Table_Dither)
+        RELOC_VAR(pdither->u.tdither.pdata);
+RELOC_PTRS_END
+
+private_st_ht_builtin_dither_t();
+
+
   private
 ENUM_PTRS_BEGIN(ht_enum_ptrs)
         return 0;
@@ -1158,6 +1190,20 @@ private pcl_ht_builtin_dither_t  noise_dither;
 
 
 /*
+ * The forwarding devices to preform any necessary color mapping. There are
+ * four of these: identity mapping, snap to primaries, map black to white and
+ * all other colors to black, and monochrome mapping. The devices are all
+ * identical except for the mapping method used.
+ *
+ * Several devices are required because the rendering method used by the
+ * foreground may not be the same as that used by the current palette.
+ */
+private gx_device_cmap  cmap_device_identity;
+private gx_device_cmap  cmap_device_snap_to_primaries;
+private gx_device_cmap  cmap_device_color_to_black_over_white;
+private gx_device_cmap  cmap_device_monochrome;
+
+/*
  * Array of dithers and devices to be used for different rendering methods.
  *
  * The HT_FIXED flag indicates which methods may not be changed by the output
@@ -1196,100 +1242,90 @@ private pcl_ht_builtin_dither_t  noise_dither;
 
 typedef struct rend_info_s {
     uint                                flags;
-    gx_device_color_mapping_method_t    mapping_method;
+    gx_device_cmap *                    pdev;
     const pcl_ht_builtin_dither_t *     pbidither;
 } rend_info_t;
 
 private const rend_info_t   rendering_info_proto[20] = {
 
     /* 0 */
-    { HT_NONE, device_cmap_identity, &ordered_dither },
+    { HT_NONE, &cmap_device_identity, &ordered_dither },
 
     /* 1 - dither doesn't matter */
     { 
         HT_FIXED | HT_DEVCSPACE,
-        device_cmap_snap_to_primaries,
+        &cmap_device_snap_to_primaries,
         &ordered_dither
     },
 
     /* 2 - dither doesn't matter */
     {
         HT_FIXED | HT_DEVCSPACE,
-        device_cmap_color_to_black_over_white,
+        &cmap_device_color_to_black_over_white,
         &ordered_dither
     },
 
     /* 3 - the default */
-    { HT_NONE, device_cmap_identity, &ordered_dither },
+    { HT_NONE, &cmap_device_identity, &ordered_dither },
 
     /* 4 - currently not supported */
-    { HT_FIXED | HT_IMONLY, device_cmap_identity, 0 },
+    { HT_FIXED | HT_IMONLY, &cmap_device_identity, 0 },
 
     /* 5 - monochrome version of 3 */
-    { HT_NONE, device_cmap_monochrome, &ordered_dither },
+    { HT_NONE, &cmap_device_monochrome, &ordered_dither },
 
     /* 6 - currently not supported */
-    { HT_FIXED | HT_IMONLY, device_cmap_monochrome, 0 },
+    { HT_FIXED | HT_IMONLY, &cmap_device_monochrome, 0 },
 
     /* 7 */
-    { HT_FIXED, device_cmap_identity, &clustered_dither },
+    { HT_FIXED, &cmap_device_identity, &clustered_dither },
 
     /* 8 */
-    { HT_FIXED, device_cmap_monochrome, &clustered_dither },
+    { HT_FIXED, &cmap_device_monochrome, &clustered_dither },
 
     /* 9 - dither comes from user */
     {
         HT_FIXED | HT_USERDEF | HT_DEVCSPACE,
-        device_cmap_identity,
+        &cmap_device_identity,
         0
     },
 
     /* 10 - dither comes from user */
     { 
         HT_FIXED | HT_USERDEF | HT_DEVCSPACE,
-        device_cmap_monochrome,
+        &cmap_device_monochrome,
         0
     },
 
     /* 11 */
-    { HT_FIXED, device_cmap_identity, &ordered_dither },
+    { HT_FIXED, &cmap_device_identity, &ordered_dither },
 
     /* 12 */
-    { HT_FIXED, device_cmap_monochrome, &ordered_dither },
+    { HT_FIXED, &cmap_device_monochrome, &ordered_dither },
 
     /* 13 - device should override */
-    { HT_NONE, device_cmap_identity, &noise_dither },
+    { HT_NONE, &cmap_device_identity, &noise_dither },
 
     /* 14 - device should override */
-    { HT_NONE, device_cmap_monochrome, &noise_dither },
+    { HT_NONE, &cmap_device_monochrome, &noise_dither },
 
     /* 15 - device should override */
-    { HT_NONE, device_cmap_identity, &ordered_dither },
+    { HT_NONE, &cmap_device_identity, &ordered_dither },
 
     /* 16 - device should override */
-    { HT_NONE, device_cmap_monochrome, &ordered_dither },
+    { HT_NONE, &cmap_device_monochrome, &ordered_dither },
 
     /* 17 - device should override */
-    { HT_NONE, device_cmap_monochrome, &ordered_dither },
+    { HT_NONE, &cmap_device_monochrome, &ordered_dither },
 
     /* 18 - device should override */
-    { HT_NONE, device_cmap_identity, &ordered_dither },
+    { HT_NONE, &cmap_device_identity, &ordered_dither },
 
     /* 19 - device should override */
-    { HT_NONE, device_cmap_monochrome, &ordered_dither },
+    { HT_NONE, &cmap_device_monochrome, &ordered_dither },
 };
 
 private rend_info_t rendering_info[20];
-
-/*
- * The forwarding device to preform any necessary color mapping. Only a single
- * device is used, and it is inserted into the graphic state only once (the
- * existing device becomes its target). Changes in the render method modify
- * the mapping_method field of this device. To make certain this change takes
- * effect, the current device color must be un-set whenever a PCL halftone
- * with rendering method have a new mapping_method is installed.
- */
-private gx_device_cmap  cmap_device;
 
 /*
  * Remap the the rendering methods. This will generally be selected from the
@@ -1315,6 +1351,106 @@ private byte    rendering_remap[20];
 private pcl_ht_t *  pdflt_ht;
 
 
+
+/*
+ * Read dither information from a parameter dictionary held by the device.
+ */
+  private void
+read_dither(
+    int                         method,
+    gs_param_list *             plist,
+    gs_memory_t *               pmem
+)
+{
+    pcl_ht_builtin_dither_t *   pdt = 0;
+    int                         itype;
+    int                         height, width;
+    int                         nplanes = 1, nlevels = 1;
+    uint                        req_size = 0;
+    gs_param_string             dstring;
+
+    /* gather the common parameters */
+    if ( (param_read_int(plist, "Type", &itype) != 0)       ||
+         (param_read_int(plist, "NumPlanes", &nplanes) < 0) ||
+         (param_read_int(plist, "Height", &height) != 0)    ||
+         (param_read_int(plist, "Width", &width) != 0)      ||
+         (param_read_string(plist, "Data", &dstring) != 0)    )
+        return;
+
+    /* check for a recognized type, and number of levels for table dither */
+    if (itype == pcl_halftone_Threshold)
+        req_size = width * height;
+    else if ( (itype == pcl_halftone_Table_Dither)               &&
+              (param_read_int(plist, "NumLevels", &nlevels) == 0)  )
+        req_size = ((width + 7) / 8) * height;
+    else
+        return;
+
+    /* check that the data is large enough; copy it if necessary */
+    req_size *= nplanes * nlevels;
+    if (dstring.size < req_size)
+        return;
+
+    pdt = gs_alloc_struct( pmem,
+                           pcl_ht_builtin_dither_t,
+                           &st_ht_builtin_dither_t,
+                           "read device dither"
+                           );
+    if (pdt == 0)
+        return;
+
+    if (!dstring.persistent) {
+        byte *  pdata = gs_alloc_bytes(pmem, req_size, "read device dither");
+
+        if (pdata == 0) {
+            gs_free_object(pmem, pdt, "read device dither");
+            return;
+        }
+        memcpy(pdata, dstring.data, req_size);
+        dstring.data = pdata;
+        dstring.persistent = true;
+    }
+
+    /* update rendering information */
+    pdt->type = (pcl_halftone_type_t)itype;
+    if (itype == pcl_halftone_Threshold) {
+        pdt->u.thresh.nplanes = nplanes;
+        pdt->u.thresh.height = height;
+        pdt->u.thresh.width = width;
+        pdt->u.thresh.pdata = dstring.data;
+    } else {
+        pdt->u.tdither.nplanes = nplanes;
+        pdt->u.tdither.height = height;
+        pdt->u.tdither.width = width;
+        pdt->u.tdither.nlevels = nlevels;
+        pdt->u.tdither.pdata = dstring.data;
+    }
+
+    pcl_ht_update_rendering_info(method, pdt);
+}
+
+/*
+ * Read a re-mapping array for rendering methods.
+ */
+  void
+read_remap_array(
+    gs_param_list * plist,
+    gs_memory_t *   pmem
+)
+{
+    gs_param_string dstring;
+    int             i;
+
+    if ( (param_read_string(plist, "RenderRemap", &dstring) != 0) ||
+         (dstring.size < countof(dflt_rendering_remap))             )
+        return;
+    for (i = 0; i < countof(dflt_rendering_remap); i++) {
+        if (dstring.data[i] >= countof(dflt_rendering_remap))
+            return;
+    }
+    pcl_ht_update_rendering_remap(dstring.data);
+}
+
 /*
  * Initialize the default rendering information.
  */
@@ -1326,6 +1462,7 @@ pcl_ht_init_render_methods(
 {
     int             i;
     gx_device *     pcur_dev = gs_currentdevice(pcs->pgs);
+    gs_c_param_list list;
 
     ordered_dither.type = pcl_halftone_Threshold;
     ordered_dither.u.thresh = ordered_dither_thresh;
@@ -1347,9 +1484,54 @@ pcl_ht_init_render_methods(
             sizeof(rendering_remap_proto)
             );
 
-    /* initialize and install the color mapping device */
-    gdev_cmap_init(&cmap_device, pcur_dev, device_cmap_identity);
-    gs_setdevice_no_init(pcs->pgs, (gx_device *)&cmap_device);
+    /* get any dither information from the current device */
+    for (i = 0; i < countof(rendering_info); i++) {
+        char            nbuff[12];
+
+        if ((rendering_info[i].flags & HT_FIXED) != 0)
+            continue;
+        gs_c_param_list_write(&list, pmem);
+        sprintf(nbuff, "Dither_%d", i);
+        if ( (param_request((gs_param_list *)&list, nbuff) >= 0)        && 
+             (gs_getdeviceparams(pcur_dev, (gs_param_list *)&list) >= 0)  ) {
+            gs_param_dict   dict;
+
+            gs_c_param_list_read(&list);
+            if ( param_begin_read_dict( (gs_param_list *)&list,
+                                        nbuff,
+                                        &dict,
+                                        false
+                                        ) == 0 )
+                read_dither(i, dict.list, pmem);
+            param_end_read_dict((gs_param_list *)&list, nbuff, &dict);
+        }
+
+        gs_c_param_list_release(&list);
+    }
+    gs_c_param_list_release(&list);
+
+    /* read in a new remapping array (if any) */
+    gs_c_param_list_write(&list, pmem);
+    if ( (param_request((gs_param_list *)&list, "RenderRemap") >= 0) &&
+         (gs_getdeviceparams(pcur_dev, (gs_param_list *)&list) >= 0)   ) {
+        gs_c_param_list_read(&list);
+        read_remap_array((gs_param_list *)&list, pmem);
+    }
+    gs_c_param_list_release(&list);
+    
+
+    /* initialize the color mapping mapping devices; install the default */
+    gdev_cmap_init(&cmap_device_identity, pcur_dev, device_cmap_identity);
+    gdev_cmap_init( &cmap_device_snap_to_primaries,
+                    pcur_dev,
+                    device_cmap_snap_to_primaries
+                    );
+    gdev_cmap_init( &cmap_device_color_to_black_over_white,
+                    pcur_dev,
+                    device_cmap_color_to_black_over_white
+                    );
+    gdev_cmap_init(&cmap_device_monochrome, pcur_dev, device_cmap_monochrome);
+    gs_setdevice_no_init(pcs->pgs, (gx_device *)&cmap_device_identity);
 
     /* handle possible non-initialization of BSS */
     pdflt_ht = 0;
@@ -1375,7 +1557,7 @@ pcl_ht_update_rendering_info(
 
 /*
  * Modify the rendering remap table. Note that the change will not take
- * effect until the next time the print mode
+ * effect until the next time the print mode is reset.
  */
   void
 pcl_ht_update_rendering_remap(
@@ -1427,7 +1609,7 @@ is_monochrome(
 {
     rend_info_t *   pinfo = &(rendering_info[method]);
 
-    return pinfo->mapping_method == device_cmap_monochrome;
+    return pinfo->pdev == &cmap_device_monochrome;
 }
 
 
@@ -1853,26 +2035,19 @@ get_rendering_info(
  */
   private int
 set_threshold_ht(
-    pcl_ht_t *              pht,
-    gs_ht *                 pgsht,
-    const rend_info_t *     pinfo,
-    int                     comp
+    pcl_ht_t *                  pht,
+    gs_ht *                     pgsht,
+    const rend_info_t *         pinfo,
+    int                         comp,
+    const gs_ht_separation_name sepname
 )
 {
-    int                     icomp = (comp == 3 ? 0 : comp);
-    int                     width, height, size;
-    byte *                  pb = 0;
-    const byte *            pdata;
-    float                   (*proc)( floatp,
-                                     const gx_transfer_map *,
-                                     const void *
-                                     ) = transfer_proc;
-
-    static const gs_ht_separation_name  sepnames[4] = { gs_ht_separation_Cyan,
-                                                        gs_ht_separation_Magenta,
-                                                        gs_ht_separation_Yellow,
-                                                        gs_ht_separation_Default
-                                                        };
+    int                         icomp = (comp == 3 ? 0 : comp);
+    pcl_ht_builtin_dither_t     dt;
+    float                       (*proc)( floatp,
+                                         const gx_transfer_map *,
+                                         const void *
+                                         ) = transfer_proc;
 
     /* if not in monochrome print mode, make sure K has default transfer */
     if ((comp == 3) && !is_monochrome(pht->render_method))
@@ -1881,51 +2056,94 @@ set_threshold_ht(
     /* set the array threshold pointers */
     if ((pinfo->flags & HT_USERDEF) != 0) {
         if (pht->pdither != 0) {
-            width = pcl_udither_get_width(pht->pdither);
-            height = pcl_udither_get_height(pht->pdither);
-            pdata = pcl_udither_get_threshold(pht->pdither, icomp);
-        } else {
-            width = 16;
-            height = 16;
-            pdata = ordered_dither_data;
+            dt.type = pcl_halftone_Threshold;
+            dt.u.thresh.nplanes = pcl_udither_get_nplanes(pht->pdither);
+            dt.u.thresh.width = pcl_udither_get_width(pht->pdither);
+            dt.u.thresh.height = pcl_udither_get_height(pht->pdither);
+            dt.u.thresh.pdata = pcl_udither_get_threshold(pht->pdither, 0);
+        } else 
+            dt = ordered_dither;
+    } else if (pinfo->pbidither != 0)
+        dt = *(pinfo->pbidither);
+    else
+        return e_Unimplemented;
+
+    if (dt.type == pcl_halftone_Threshold) {
+        ulong           size = dt.u.thresh.width * dt.u.thresh.height;
+        const byte *    pdata = ( dt.u.thresh.nplanes == 1
+                                    ? dt.u.thresh.pdata
+                                    : dt.u.thresh.pdata + icomp * size );
+
+        /* don't create a separate threshold array for the K component */
+        if (comp != 3) {
+            byte *  pb = gs_alloc_string( pht->rc.memory,
+                                          size,
+                                          "set_threshold_ht"
+                                          );
+
+            if (pb == 0)
+                return e_Memory;
+            memcpy(pb, pdata, size);
+            pht->thresholds[comp].size = size;
+            pht->thresholds[comp].data = pb;
         }
-        size = width * height;
-    } else {
-        const pcl_ht_builtin_dither_t * pbi = pinfo->pbidither;
-        int                             nplanes = 1;
 
-        if ((pbi == 0) || (pbi->type != pcl_halftone_Threshold))
-            return e_Unimplemented;
+        return gs_ht_set_threshold_comp( pgsht,
+                                         comp,
+                                         sepname,
+                                         dt.u.thresh.width,
+                                         dt.u.thresh.height,
+                                         (gs_const_string *)
+                                             &(pht->thresholds[icomp]),
+                                         proc,
+                                         &(pht->client_data[icomp])
+                                         );
 
-        width = pbi->u.thresh.width;
-        height = pbi->u.thresh.height;
-        size = width * height;
-        nplanes = pbi->u.thresh.nplanes;
-        pdata = (nplanes == 1 ? pbi->u.thresh.pdata
-                              : pbi->u.thresh.pdata + icomp * size );
-    }
+    } else if (dt.type == pcl_halftone_Table_Dither) {
+        ulong           size = ((dt.u.tdither.width + 7) / 8)
+                                 * dt.u.tdither.height * dt.u.tdither.nlevels;
+        const byte *    pdata = ( dt.u.thresh.nplanes == 1
+                                    ? dt.u.thresh.pdata
+                                    : dt.u.thresh.pdata + icomp * size );
 
-    /* don't create a separate threshold array for the K component */
-    if (comp != 3) {
-        pb = gs_alloc_string(pht->rc.memory, size, "set_threshold_ht");
-        if (pb == 0)
-            return e_Memory;
-        memcpy(pb, pdata, size);
-        pht->thresholds[comp].size = size;
-        pht->thresholds[comp].data = pb;
-    }
+        return gs_ht_set_mask_comp( pgsht,
+                                    comp,
+                                    sepname,
+                                    dt.u.tdither.width,
+                                    dt.u.tdither.height,
+                                    dt.u.tdither.nlevels,
+                                    pdata,
+                                    proc,
+                                    &(pht->client_data[icomp])
+                                    );
 
-    return gs_ht_set_threshold_comp( pgsht,
-                                     comp,
-                                     sepnames[comp],
-                                     width,
-                                     height,
-                                     (gs_const_string *)
-                                         &(pht->thresholds[icomp]),
-                                     proc,
-                                     &(pht->client_data[icomp])
-                                     );
+    } else
+       return e_Unimplemented;
 }
+
+/*
+ * Color plane separation names for the three standard "concrete" color spaces.
+ * The RGB space uses four components so as to provide a default component
+ * (which is required by the graphic library code).
+ */
+private const gs_ht_separation_name sepnames_cmyk[4] = {
+    gs_ht_separation_Cyan,
+    gs_ht_separation_Magenta,
+    gs_ht_separation_Yellow,
+    gs_ht_separation_Default    /* Cyan is arbitrarily made the default */
+};
+
+private const gs_ht_separation_name sepnames_rgb[4] = {
+    gs_ht_separation_Red,
+    gs_ht_separation_Green,
+    gs_ht_separation_Blue,
+    gs_ht_separation_Default,   /* Red is arbitrarily made the default */
+};
+
+private const gs_ht_separation_name sepnames_gray[1] = {
+    gs_ht_separation_Default
+};
+
 
 /*
  * Create the graphic library halftone objects corresponding to a PCL halftone
@@ -1939,12 +2157,14 @@ set_threshold_ht(
   private int
 create_gs_halftones(
     pcl_ht_t *           pht,
-    pcl_cspace_type_t    cstype
+    pcl_cspace_type_t    cstype,
+    int                  ncomps     /* # device components */
 )
 {
-    int                  code = 0;
-    const rend_info_t *  pinfo = 0;
-    int                  i;
+    int                             code = 0;
+    const rend_info_t *             pinfo = 0;
+    int                             i;
+    const gs_ht_separation_name *   sepnames = 0;
 
     /* see if there is anything to do */
     if ( (pht->pfg_ht != 0) && (pht->pim_ht != 0))
@@ -1954,13 +2174,25 @@ create_gs_halftones(
     /* get the rendering information for geometric objects */
     pinfo = get_rendering_info(pht->render_method, cstype, false);
 
+    /* make the typical assumption concerning the color space */
+    if (ncomps == 4)
+        sepnames = sepnames_cmyk;
+    else if (ncomps == 3) {
+        sepnames = sepnames_rgb;
+        ncomps = 4;
+    } else if (ncomps == 1)
+        sepnames = sepnames_gray;
+    else
+        return e_Range;
+
     /* create the top-level halftone graphic object */
-    if ((code = gs_ht_build(&(pht->pfg_ht), 4, pht->rc.memory)) < 0)
+    if ((code = gs_ht_build(&(pht->pfg_ht), ncomps, pht->rc.memory)) < 0)
         return code;
 
     /* create the halftone components (allow for 4-color device) */
-    for (i = 0; i < 4; i++) {
-        if ((code = set_threshold_ht(pht, pht->pfg_ht, pinfo, i)) < 0)
+    for (i = 0; i < ncomps; i++) {
+        code = set_threshold_ht(pht, pht->pfg_ht, pinfo, i, sepnames[i]);
+        if (code < 0)
             break;
     }
 
@@ -1992,9 +2224,12 @@ pcl_ht_set_halftone(
 )
 {
     pcl_ht_t *           pht = *ppht;
+    gx_device_cmap *     pdev = 0;
+    int                  ncomps = 0;
     gs_ht *              pgsht = 0;
     int                  code = 0;
-    const rend_info_t *  pinfo = 0;                      
+    const rend_info_t *  pinfo_old = 0;
+    const rend_info_t *  pinfo_new = 0;
 
     /* if no halftone yet, create one */
     if (pht == 0) {
@@ -2007,22 +2242,44 @@ pcl_ht_set_halftone(
     if (pcs->pids->pht == pht)
         return 0;
 
+    /* 
+     * Check if the color mapping has changed. If it has, re-initialize the
+     * the mapping device, so that it will pick up any changes in the target
+     * device. Be sure to preserve the reference count when doing so (unless
+     * it is 0).
+     */
+    if (pcs->pids->pht != 0)
+        pinfo_old = get_rendering_info( pcs->pids->pht->render_method,
+                                        cstype,     /* irrelevant */
+                                        for_image   /* irrelevant */
+                                        );
+    else
+        pinfo_old = get_rendering_info( 3,
+                                        cstype,     /* irrelevant */
+                                        for_image   /* irrelevant */
+                                        );
+    pinfo_new = get_rendering_info(pht->render_method, cstype, for_image);
+    pdev = pinfo_new->pdev;
+    if (pinfo_old->pdev != pdev) {
+        long    ref_count = pdev->rc.ref_count; /* HACK ALERT */
+
+        if (ref_count == 0)     /* HACK ALERT */
+            ref_count = 1;
+        gdev_cmap_init(pdev, pdev->target, pdev->mapping_method);
+        pdev->rc.ref_count = ref_count; /* HACK ALERT */
+        gs_setdevice_no_init(pcs->pgs, (gx_device *)pdev);
+    }
+    ncomps = pdev->color_info.num_components;
+
     /* see if we need to create a halftone object */
     if ( ((pgsht = (for_image ? pht->pim_ht : pht->pfg_ht)) == 0) &&
-         ((code = create_gs_halftones(pht, cstype)) < 0)            )
+         ((code = create_gs_halftones(pht, cstype, ncomps)) < 0)    )
         return code;
     pgsht = (for_image ? pht->pim_ht : pht->pfg_ht);
 
     /* install the halftone object */
     if ((code = gs_ht_install(pcs->pgs, pgsht)) < 0)
         return code;
-
-    /* check if the color mapping has changed */
-    pinfo = get_rendering_info(pht->render_method, cstype, for_image);
-    if (cmap_device.mapping_method != pinfo->mapping_method) {
-        gdev_cmap_set_method(&cmap_device, pinfo->mapping_method);
-        gs_setdevice_no_init(pcs->pgs, (gx_device *)&cmap_device);
-    }
 
     pcl_ht_copy_from(pcs->pids->pht, pht);
     return code;
