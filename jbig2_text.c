@@ -251,11 +251,12 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 
 		/* (6.4.11 (6)) */
 		IBO = IB;
-		image = jbig2_image_new(ctx, IB->width + RDW,
-					     IB->height + RDH);
+		image = jbig2_image_new(ctx, IBO->width + RDW,
+					     IBO->height + RDH);
+
 		/* Table 12 */
 		rparams.GRTEMPLATE = params->SBRTEMPLATE;
-		rparams.reference = IB;
+		rparams.reference = IBO;
 		rparams.DX = (RDW >> 1) + RDX;
 		rparams.DY = (RDH >> 1) + RDY;
 		rparams.TPGRON = 0;
