@@ -118,7 +118,7 @@ currentdict /tfopdict undef
     dup type /dicttype eq {
       resolvefunction
     } {
-      [ exch { resolvefunction } forall ]
+      [ exch { oforce resolvefunction } forall ]
     } ifelse
   }
 .dicttomark readonly def
