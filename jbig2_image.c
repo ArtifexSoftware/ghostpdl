@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.10 2002/07/03 00:55:44 giles Exp $
+    $Id: jbig2_image.c,v 1.11 2002/07/03 14:56:15 giles Exp $
 */
 
 #include <stdio.h>
@@ -116,18 +116,21 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
         for (row = 0; row < h; row++) {
             s = src->data + row*src_stride;
             d = dst->data + (y + row)*dst_stride + leftword;
-            *d |= (*s & mask) << rightbits;
+            *d |= (*s & mask) << leftbits;
         }
     } else {
+        mask = 0;
+        for (i = 0; i < 32 - leftbits; i++)
+            mask = mask << 1 | 1;
         for (row = 0; row < h; row++) {
             s = src->data + row*src_stride;
             d = dst->data + (y + row)*dst_stride + leftword;
-            *d++ |= (*s & mask) << shift;
+            *d++ |= (*s & mask) << leftbits;
             for(word = leftword; word < rightword; word++) {
-                *d |= (*s++ & ~mask) >> (32 - shift);
-                *d++ |= (*s & mask) << shift;
+                *d |= (*s++ & ~mask) >> (32 - leftbits);
+                *d++ |= (*s & mask) << leftbits;
             }
-            *d |= (*s & highmask) >> (32 - shift);
+            *d |= (*++s & highmask) << (32 - rightbits);
         }
     }
             
