@@ -1280,6 +1280,79 @@ fill_trap_or_rect(gx_device * dev, const gs_fixed_rect * pbox,
 #define COVERING_PIXEL_CENTERS(y, y1, adjust_below, adjust_above)\
     (fixed_pixround(y - adjust_below) < fixed_pixround(y1 + adjust_above))
 
+/* Find an intersection within y, y1. */
+/* lp->x_current, lp->x_next must be set for y, y1. */
+private bool
+intersect(active_line *endp, active_line *alp, fixed y, fixed y1, fixed *p_y_new)
+{
+    fixed y_new, dy;
+    fixed dx_old = alp->x_current - endp->x_current;
+    fixed dx_den = dx_old + endp->x_next - alp->x_next;
+	    
+    if (dx_den <= dx_old)
+	return false; /* Intersection isn't possible. */
+    dy = y1 - y;
+    if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
+	      fixed2float(dy), fixed2float(dx_old),
+	      fixed2float(dx_den - dx_old));
+    /* Do the computation in single precision */
+    /* if the values are small enough. */
+    y_new =
+	((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
+	 dy * dx_old / dx_den :
+	 (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
+	+ y;
+    /* The crossing value doesn't have to be */
+    /* very accurate, but it does have to be */
+    /* greater than y and less than y1. */
+    if_debug3('F', "[F]cross y=%g, y_new=%g, y1=%g\n",
+	      fixed2float(y), fixed2float(y_new),
+	      fixed2float(y1));
+    if (y_new <= y) {
+	/*
+	 * This isn't possible.  Recompute the intersection
+	 * accurately.
+	 */
+	fixed ys, xs0, xs1, ye, xe0, xe1, dy, dx0, dx1;
+
+	INCR(cross_slow);
+	if (endp->start.y < alp->start.y)
+	    ys = alp->start.y,
+		xs0 = AL_X_AT_Y(endp, ys), xs1 = alp->start.x;
+	else
+	    ys = endp->start.y,
+		xs0 = endp->start.x, xs1 = AL_X_AT_Y(alp, ys);
+	if (endp->end.y > alp->end.y)
+	    ye = alp->end.y,
+		xe0 = AL_X_AT_Y(endp, ye), xe1 = alp->end.x;
+	else
+	    ye = endp->end.y,
+		xe0 = endp->end.x, xe1 = AL_X_AT_Y(alp, ye);
+	dy = ye - ys;
+	dx0 = xe0 - xs0;
+	dx1 = xe1 - xs1;
+	/* We need xs0 + cross * dx0 == xs1 + cross * dx1. */
+	if (dx0 == dx1) {
+	    /* The two lines are coincident.  Do nothing. */
+	    y_new = y1;
+	} else {
+	    double cross = (double)(xs0 - xs1) / (dx1 - dx0);
+
+	    y_new = (fixed)(ys + cross * dy);
+	    if (y_new <= y) {
+		/*
+		 * This can only happen through some kind of
+		 * numeric disaster, but we have to check.
+		 */
+		INCR(cross_low);
+		y_new = y + fixed_epsilon;
+	    }
+	}
+    }
+    *p_y_new = y_new;
+    return true;
+}
+
 /* Find intersections of active lines within the band. 
    Intersect and reorder them, and correct the bund top. */
 private void
@@ -1287,98 +1360,37 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 {
     fixed x = min_fixed, y1 = *y_top;
     active_line *alp, *stopx, *endp;
-    const bool pseudo_rasterization = ll->pseudo_rasterization;
 
-    /*
-     * Loop invariants:
-     *	alp = endp->next;
-     *	for all lines lp from stopx up to alp,
-     *	  lp->x_next = AL_X_AT_Y(lp, y1).
-     */
-    for (alp = stopx = ll->x_list;
-	 INCR_EXPR(find_y), alp != 0;
-	 endp = alp, alp = alp->next
-	) {
-	fixed nx = AL_X_AT_Y(alp, y1);
-	fixed dx_old, dx_den;
+    /* don't bother if no pixels with no pseudo_rasterization */
+    if (ll->pseudo_rasterization || draw >= 0) {
+	/*
+	 * Loop invariants:
+	 *	alp = endp->next;
+	 *	for all lines lp from stopx up to alp,
+	 *	  lp->x_next = AL_X_AT_Y(lp, y1).
+	 */
+	for (alp = stopx = ll->x_list;
+	     INCR_EXPR(find_y), alp != 0;
+	     endp = alp, alp = alp->next
+	    ) {
+	    fixed nx = AL_X_AT_Y(alp, y1), y_new;
 
-	/* Check for intersecting lines. */
-	if (nx >= x)
-	    x = nx;
-	else if ((pseudo_rasterization || draw >= 0) &&	/* don't bother if no pixels with no pseudo_rasterization */
-		 (dx_old = alp->x_current - endp->x_current) >= 0 &&
-		 (dx_den = dx_old + endp->x_next - nx) > dx_old
-	    ) {		/* Make a good guess at the intersection */
-	    /* Y value using only local information. */
-	    fixed dy = y1 - y, y_new;
-
-	    if_debug3('F', "[F]cross: dy=%g, dx_old=%g, dx_new=%g\n",
-		      fixed2float(dy), fixed2float(dx_old),
-		      fixed2float(dx_den - dx_old));
-	    /* Do the computation in single precision */
-	    /* if the values are small enough. */
-	    y_new =
-		((dy | dx_old) < 1L << (size_of(fixed) * 4 - 1) ?
-		 dy * dx_old / dx_den :
-		 (INCR_EXPR(mq_cross), fixed_mult_quo(dy, dx_old, dx_den)))
-		+ y;
-	    /* The crossing value doesn't have to be */
-	    /* very accurate, but it does have to be */
-	    /* greater than y and less than y1. */
-	    if_debug3('F', "[F]cross y=%g, y_new=%g, y1=%g\n",
-		      fixed2float(y), fixed2float(y_new),
-		      fixed2float(y1));
-	    stopx = alp;
-	    if (y_new <= y) {
-		/*
-		 * This isn't possible.  Recompute the intersection
-		 * accurately.
-		 */
-		fixed ys, xs0, xs1, ye, xe0, xe1, dy, dx0, dx1;
-
-		INCR(cross_slow);
-		if (endp->start.y < alp->start.y)
-		    ys = alp->start.y,
-			xs0 = AL_X_AT_Y(endp, ys), xs1 = alp->start.x;
-		else
-		    ys = endp->start.y,
-			xs0 = endp->start.x, xs1 = AL_X_AT_Y(alp, ys);
-		if (endp->end.y > alp->end.y)
-		    ye = alp->end.y,
-			xe0 = AL_X_AT_Y(endp, ye), xe1 = alp->end.x;
-		else
-		    ye = endp->end.y,
-			xe0 = endp->end.x, xe1 = AL_X_AT_Y(alp, ye);
-		dy = ye - ys;
-		dx0 = xe0 - xs0;
-		dx1 = xe1 - xs1;
-		/* We need xs0 + cross * dx0 == xs1 + cross * dx1. */
-		if (dx0 == dx1) {
-		    /* The two lines are coincident.  Do nothing. */
-		    y_new = y1;
-		} else {
-		    double cross = (double)(xs0 - xs1) / (dx1 - dx0);
-
-		    y_new = (fixed)(ys + cross * dy);
-		    if (y_new <= y) {
-			/*
-			 * This can only happen through some kind of
-			 * numeric disaster, but we have to check.
-			 */
-			INCR(cross_low);
-			y_new = y + fixed_epsilon;
-		    }
-		}
-	    }
-	    if (y_new < y1) {
-		y1 = y_new;
-		nx = AL_X_AT_Y(alp, y1);
-		draw = 0;
-	    }
-	    if (nx > x)
+	    alp->x_next = nx;
+	    /* Check for intersecting lines. */
+	    if (nx >= x)
 		x = nx;
+	    else if (alp->x_current >= endp->x_current &&
+		     intersect(endp, alp, y, y1, &y_new)) {
+		stopx = alp;
+		if (y_new < y1) {
+		    y1 = y_new;
+		    nx = AL_X_AT_Y(alp, y1);
+		    draw = 0;
+		}
+		if (nx > x)
+		    x = nx;
+	    }
 	}
-	alp->x_next = nx;
     }
     /* Recompute next_x for lines before the intersection. */
     for (alp = ll->x_list; alp != stopx; alp = alp->next)
