@@ -182,17 +182,15 @@ pdfmark_coerce_dest(gs_param_string *dstr, char dest[MAX_DEST_STRING])
 
 /* Put pairs in a dictionary. */
 private int
-pdfmark_put_c_pair(gx_device_pdf * pdev, cos_dict_t *pcd,
-		   const char *key, const gs_param_string * pvalue)
+pdfmark_put_c_pair(cos_dict_t *pcd, const char *key,
+		   const gs_param_string * pvalue)
 {
-    return cos_dict_put_string(pcd, pdev, (const byte *)key, strlen(key),
-			       pvalue->data, pvalue->size);
+    return cos_dict_put_c_key_string(pcd, key, pvalue->data, pvalue->size);
 }
 private int
-pdfmark_put_pair(gx_device_pdf * pdev, cos_dict_t *pcd,
-		 const gs_param_string * pair)
+pdfmark_put_pair(cos_dict_t *pcd, const gs_param_string * pair)
 {
-    return cos_dict_put_string(pcd, pdev, pair->data, pair->size,
+    return cos_dict_put_string(pcd, pair->data, pair->size,
 			       pair[1].data, pair[1].size);
 }
 
@@ -288,6 +286,13 @@ pdfmark_write_border(stream *s, const gs_param_string *str,
     return 0;
 }
 
+/* Put an element in a stream's dictionary. */
+private int
+cos_stream_put_c_strings(cos_stream_t *pcs, const char *key, const char *value)
+{
+    return cos_dict_put_c_strings(cos_stream_dict(pcs), key, value);
+}
+
 /* ---------------- Miscellaneous pdfmarks ---------------- */
 
 /*
@@ -335,7 +340,6 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
     const gs_param_string *File = 0;
     gs_param_string Dest;
     gs_param_string Subtype;
-    gs_memory_t *mem = pdev->pdf_memory;
     uint i;
     int code;
     char dest[MAX_DEST_STRING];
@@ -365,9 +369,9 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    )
 	    params->pres->rid = src_pg - 1;
 	else if (!for_outline && pdf_key_eq(pair, "/Color"))
-	    pdfmark_put_c_pair(pdev, pcd, "/C", pair + 1);
+	    pdfmark_put_c_pair(pcd, "/C", pair + 1);
 	else if (!for_outline && pdf_key_eq(pair, "/Title"))
-	    pdfmark_put_c_pair(pdev, pcd, "/T", pair + 1);
+	    pdfmark_put_c_pair(pcd, "/T", pair + 1);
 	else if (pdf_key_eq(pair, "/Action") || pdf_key_eq(pair, "/A"))
 	    Action = pair;
 	else if (pdf_key_eq(pair, "/File") || pdf_key_eq(pair, "/F"))
@@ -402,7 +406,7 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    /*
 	     * Copy the string into value storage, then update it in place.
 	     */
-	    pdfmark_put_pair(pdev, pcd, pair);
+	    pdfmark_put_pair(pcd, pair);
 	    /* Break const so we can update the (copied) string. */
 	    pcv = (cos_value_t *)
 		cos_dict_find(pcd, (const byte *)"/Contents", 9);
@@ -433,7 +437,8 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    if (code < 0)
 		return code;
 	    pdfmark_make_rect(rstr, &rect);
-	    cos_dict_put_c_strings(pcd, pdev, "/Rect", rstr);
+	    cos_dict_put_c_key_string(pcd, "/Rect", (byte *)rstr,
+				      strlen(rstr));
 	} else if (pdf_key_eq(pair, "/Border")) {
 	    stream s;
 	    char bstr[MAX_BORDER_STRING + 1];
@@ -446,11 +451,12 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	    if (stell(&s) > MAX_BORDER_STRING)
 		return_error(gs_error_limitcheck);
 	    bstr[stell(&s)] = 0;
-	    cos_dict_put_c_strings(pcd, pdev, "/Border", bstr);
+	    cos_dict_put_c_key_string(pcd, "/Border", (byte *)bstr,
+				      strlen(bstr));
 	} else if (for_outline && pdf_key_eq(pair, "/Count"))
 	    DO_NOTHING;
 	else
-	    pdfmark_put_pair(pdev, pcd, pair);
+	    pdfmark_put_pair(pcd, pair);
     }
     if (!for_outline && pdf_key_eq(&Subtype, "/Link")) {
 	if (Action) {
@@ -474,39 +480,39 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 	     (pdf_key_eq(Action + 1, "/GoToR") && File) ||
 	     pdf_key_eq(Action + 1, "/Article"))
 	    ) {
-	    cos_dict_t *adict = cos_dict_alloc(mem, "action dict");
+	    cos_dict_t *adict = cos_dict_alloc(pdev, "action dict");
 	    cos_value_t avalue;
 
 	    if (adict == 0)
 		return_error(gs_error_VMerror);
 	    if (!for_outline) {
 		/* We aren't sure whether this is really needed.... */
-		cos_dict_put_c_strings(adict, pdev, "/Type", "/Action");
+		cos_dict_put_c_strings(adict, "/Type", "/Action");
 	    }
 	    if (pdf_key_eq(Action + 1, "/Article")) {
-		cos_dict_put_c_strings(adict, pdev, "/S", "/Thread");
+		cos_dict_put_c_strings(adict, "/S", "/Thread");
 		coerce_dest = false; /* Dest is not a real destination */
 	    }
 	    else
-		pdfmark_put_c_pair(pdev, adict, "/S", Action + 1);
+		pdfmark_put_c_pair(adict, "/S", Action + 1);
 	    if (Dest.data) {
 		if (coerce_dest)
 		    pdfmark_coerce_dest(&Dest, dest);
-		pdfmark_put_c_pair(pdev, adict, "/D", &Dest);
+		pdfmark_put_c_pair(adict, "/D", &Dest);
 		Dest.data = 0;	/* so we don't write it again */
 	    }
 	    if (File) {
-		pdfmark_put_c_pair(pdev, adict, "/F", File + 1);
+		pdfmark_put_c_pair(adict, "/F", File + 1);
 		File = 0;	/* so we don't write it again */
 	    }
-	    cos_dict_put(pcd, pdev, (const byte *)"/A", 2,
+	    cos_dict_put(pcd, (const byte *)"/A", 2,
 			 COS_OBJECT_VALUE(&avalue, adict));
 	} else if (asize >= 4 && !memcmp(astr, "<<", 2)) {
 	    /* Replace occurrences of /Dest, /File, and /Subtype. */
 	    const byte *scan = astr + 2;
 	    const byte *end = astr + asize;
 	    gs_param_string key, value;
-	    cos_dict_t *adict = cos_dict_alloc(mem, "action dict");
+	    cos_dict_t *adict = cos_dict_alloc(pdev, "action dict");
 	    cos_value_t avalue;
 	    int code;
 
@@ -528,15 +534,15 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 		    param_string_from_string(key, "/F");
 		else if (pdf_key_eq(&key, "/Subtype"))
 		    param_string_from_string(key, "/S");
-		cos_dict_put_string(adict, pdev, key.data, key.size,
+		cos_dict_put_string(adict, key.data, key.size,
 				    value.data, value.size);
 	    }
 	    if (code <= 0 || !pdf_key_eq(&key, ">>"))
 		return_error(gs_error_rangecheck);
-	    cos_dict_put(pcd, pdev, (const byte *)"/A", 2,
+	    cos_dict_put(pcd, (const byte *)"/A", 2,
 			 COS_OBJECT_VALUE(&avalue, adict));
 	} else if (pdf_key_eq(Action + 1, "/GoTo"))
-	    pdfmark_put_pair(pdev, pcd, Action);
+	    pdfmark_put_pair(pcd, Action);
     }
     /*
      * If we have /Dest or /File without the right kind of action,
@@ -546,12 +552,12 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
     if (Dest.data) {
 	if (coerce_dest)
 	    pdfmark_coerce_dest(&Dest, dest);
-	pdfmark_put_c_pair(pdev, pcd, "/Dest", &Dest);
+	pdfmark_put_c_pair(pcd, "/Dest", &Dest);
     }
     if (File)
-	pdfmark_put_pair(pdev, pcd, File);
+	pdfmark_put_pair(pcd, File);
     if (Subtype.data)
-	pdfmark_put_c_pair(pdev, pcd, "/Subtype", &Subtype);
+	pdfmark_put_c_pair(pcd, "/Subtype", &Subtype);
     return 0;
 }
 
@@ -572,7 +578,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return_error(gs_error_rangecheck);
     annots = pdev->pages[page_index].Annots;
     if (annots == 0) {
-	annots = cos_array_alloc(pdev->pdf_memory, "pdfmark_annot");
+	annots = cos_array_alloc(pdev, "pdfmark_annot");
 	if (annots == 0)
 	    return_error(gs_error_VMerror);
 	pdev->pages[page_index].Annots = annots;
@@ -583,7 +589,7 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     code = pdf_make_named_dict(pdev, objname, &pcd, true);
     if (code < 0)
 	return code;
-    code = cos_dict_put_c_strings(pcd, pdev, "/Type", "/Annot");
+    code = cos_dict_put_c_strings(pcd, "/Type", "/Annot");
     if (code < 0)
 	return code;
     code = pdfmark_put_ao_pairs(pdev, pcd, pairs, count, pctm, &params, false);
@@ -592,9 +598,9 @@ pdfmark_annot(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (!objname) {
 	/* Write the annotation now. */
 	COS_WRITE_OBJECT(pcd, pdev);
-	COS_RELEASE(pcd, pdev->pdf_memory, "pdfmark_annot");
+	COS_RELEASE(pcd, "pdfmark_annot");
     }
-    return cos_array_add(annots, pdev,
+    return cos_array_add(annots,
 			 cos_object_value(&value, COS_OBJECT(pcd)));
 }
 
@@ -637,7 +643,7 @@ pdfmark_write_outline(gx_device_pdf * pdev, pdf_outline_node_t * pnode,
 		  pnode->first_id, pnode->last_id);
     pputs(s, ">>\n");
     pdf_end_separate(pdev);
-    COS_FREE(pnode->action, pdev->pdf_memory, "pdfmark_write_outline");
+    COS_FREE(pnode->action, "pdfmark_write_outline");
     pnode->action = 0;
     return 0;
 }
@@ -706,7 +712,7 @@ pdfmark_OUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     }
     if (sub_count != 0 && depth == MAX_OUTLINE_DEPTH - 1)
 	return_error(gs_error_limitcheck);
-    node.action = cos_dict_alloc(pdev->pdf_memory, "pdfmark_OUT");
+    node.action = cos_dict_alloc(pdev, "pdfmark_OUT");
     if (node.action == 0)
 	return_error(gs_error_VMerror);
     ao.pdev = pdev;
@@ -828,7 +834,7 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	const cos_value_t *a_title =
 	    cos_dict_find(part->contents, (const byte *)"/Title", 6);
 
-	if (a_title != 0 && !a_title->is_object &&
+	if (a_title != 0 && !COS_VALUE_IS_OBJECT(a_title) &&
 	    !bytes_compare(a_title->contents.chars.data,
 			   a_title->contents.chars.size,
 			   title.data, title.size))
@@ -836,7 +842,7 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     }
     if (part == 0) {		/* Create the article. */
 	cos_dict_t *contents =
-	    cos_dict_alloc(mem, "pdfmark_ARTICLE(contents)");
+	    cos_dict_alloc(pdev, "pdfmark_ARTICLE(contents)");
 
 	if (contents == 0)
 	    return_error(gs_error_VMerror);
@@ -845,13 +851,13 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	if (part == 0 || contents == 0) {
 	    gs_free_object(mem, part, "pdfmark_ARTICLE(article)");
 	    if (contents)
-		COS_FREE(contents, mem, "pdfmark_ARTICLE(contents)");
+		COS_FREE(contents, "pdfmark_ARTICLE(contents)");
 	    return_error(gs_error_VMerror);
 	}
 	contents->id = pdf_obj_ref(pdev);
 	part->next = pdev->articles;
 	pdev->articles = part;
-	cos_dict_put_string(contents, pdev, (const byte *)"/Title", 6,
+	cos_dict_put_string(contents, (const byte *)"/Title", 6,
 			    title.data, title.size);
 	part->first.id = part->last.id = 0;
 	part->contents = contents;
@@ -884,7 +890,7 @@ pdfmark_ARTICLE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	for (i = 0; i < count; i += 2) {
 	    if (pdf_key_eq(&pairs[i], "/Rect") || pdf_key_eq(&pairs[i], "/Page"))
 		continue;
-	    pdfmark_put_pair(pdev, part->contents, &pairs[i]);
+	    pdfmark_put_pair(part->contents, &pairs[i]);
 	}
     }
     if (part->first.id == 0) {	/* This is the first bead of the article. */
@@ -909,9 +915,9 @@ pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	 pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count)) < 0
 	)
 	return_error(gs_error_rangecheck);
-    cos_c_string_value(&value, dest);
+    cos_string_value(&value, (byte *)dest, strlen(dest));
     if (!pdev->Dests) {
-	pdev->Dests = cos_dict_alloc(pdev->pdf_memory, "pdfmark_DEST(Dests)");
+	pdev->Dests = cos_dict_alloc(pdev, "pdfmark_DEST(Dests)");
 	if (pdev->Dests == 0)
 	    return_error(gs_error_VMerror);
 	pdev->Dests->id = pdf_obj_ref(pdev);
@@ -927,18 +933,19 @@ pdfmark_DEST(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	code = pdf_make_named_dict(pdev, objname, &ddict, false);
 	if (code < 0)
 	    return code;
-	code = cos_dict_put_c_strings(ddict, pdev, "/D", dest);
+	code = cos_dict_put_c_key_string(ddict, "/D", (byte *)dest,
+					 strlen(dest));
 	for (i = 0; code >= 0 && i < count; i += 2)
 	    if (!pdf_key_eq(&pairs[i], "/Dest") &&
 		!pdf_key_eq(&pairs[i], "/Page") &&
 		!pdf_key_eq(&pairs[i], "/View")
 		)
-		code = pdfmark_put_pair(pdev, ddict, &pairs[i]);
+		code = pdfmark_put_pair(ddict, &pairs[i]);
 	if (code < 0)
 	    return code;
 	COS_OBJECT_VALUE(&value, ddict);
     }
-    return cos_dict_put(pdev->Dests, pdev, key.data, key.size, &value);
+    return cos_dict_put(pdev->Dests, key.data, key.size, &value);
 }
 
 /* Check that pass-through PostScript code is a string. */
@@ -1013,10 +1020,10 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	if (code < 0)
 	    return code;
 	pres->object = COS_OBJECT(pcs);
-	code = cos_stream_put_c_strings(pcs, pdev, "/Type", "/XObject");
+	code = cos_stream_put_c_strings(pcs, "/Type", "/XObject");
 	if (code < 0)
 	    return code;
-	code = cos_stream_put_c_strings(pcs, pdev, "/Subtype", "/PS");
+	code = cos_stream_put_c_strings(pcs, "/Subtype", "/PS");
 	if (code < 0)
 	    return code;
 	if (level1.data != 0) {
@@ -1026,7 +1033,8 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    long length_id = pdf_obj_ref(pdev);
 
 	    sprintf(r, "%ld 0 R", level1_id);
-	    code = cos_stream_put_c_strings(pcs, pdev, "/Level1", r);
+	    code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/Level1",
+					     (byte *)r, strlen(r));
 	    if (code < 0)
 		return code;
 	    pdf_open_separate(pdev, level1_id);
@@ -1040,7 +1048,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	    pdf_end_separate(pdev);
 	}
 	size = pdfmark_write_ps(pdev->streams.strm, &source);
-	code = cos_stream_add(pcs, pdev, size);
+	code = cos_stream_add(pcs, size);
 	if (code < 0)
 	    return code;
 	if (objname)
@@ -1048,7 +1056,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	else {
 	    /* Write the resource now, since it won't be written later. */
 	    COS_WRITE_OBJECT(pcs, pdev);
-	    COS_RELEASE(pcs, pdev->pdf_memory, "pdfmark_PS");
+	    COS_RELEASE(pcs, "pdfmark_PS");
 	}
 	code = pdf_open_contents(pdev, PDF_IN_STREAM);
 	if (code < 0)
@@ -1060,15 +1068,14 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 
 /* Common code for pdfmarks that do PUT into a specific object. */
 private int
-pdfmark_put_pairs(gx_device_pdf *pdev, cos_dict_t *pcd,
-		  gs_param_string * pairs, uint count)
+pdfmark_put_pairs(cos_dict_t *pcd, gs_param_string * pairs, uint count)
 {
     int code = 0, i;
 
     if (count & 1)
 	return_error(gs_error_rangecheck);
     for (i = 0; code >= 0 && i < count; i += 2)
-	code = pdfmark_put_pair(pdev, pcd, pairs + i);
+	code = pdfmark_put_pair(pcd, pairs + i);
     return code;
 }
 
@@ -1077,7 +1084,7 @@ private int
 pdfmark_PAGES(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	      const gs_matrix * pctm, const gs_param_string * no_objname)
 {
-    return pdfmark_put_pairs(pdev, pdev->Pages, pairs, count);
+    return pdfmark_put_pairs(pdev->Pages, pairs, count);
 }
 
 /* PAGE pdfmark */
@@ -1085,7 +1092,7 @@ private int
 pdfmark_PAGE(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	     const gs_matrix * pctm, const gs_param_string * no_objname)
 {
-    return pdfmark_put_pairs(pdev, pdf_current_page_dict(pdev), pairs, count);
+    return pdfmark_put_pairs(pdf_current_page_dict(pdev), pairs, count);
 }
 
 /* DOCINFO pdfmark */
@@ -1093,7 +1100,7 @@ private int
 pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		const gs_matrix * pctm, const gs_param_string * no_objname)
 {
-    return pdfmark_put_pairs(pdev, pdev->Info, pairs, count);
+    return pdfmark_put_pairs(pdev->Info, pairs, count);
 }
 
 /* DOCVIEW pdfmark */
@@ -1109,15 +1116,16 @@ pdfmark_DOCVIEW(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (pdfmark_make_dest(dest, pdev, "/Page", "/View", pairs, count)) {
 	int i;
 
-	code = cos_dict_put_c_strings(pdev->Catalog, pdev, "/OpenAction", dest);
+	code = cos_dict_put_c_key_string(pdev->Catalog, "/OpenAction",
+					 (byte *)dest, strlen(dest));
 	for (i = 0; code >= 0 && i < count; i += 2)
 	    if (!(pdf_key_eq(&pairs[i], "/Page") ||
 		  pdf_key_eq(&pairs[i], "/View"))
 		)
-		code = pdfmark_put_pair(pdev, pdev->Catalog, pairs + i);
+		code = pdfmark_put_pair(pdev->Catalog, pairs + i);
 	return code;
     } else
-	return pdfmark_put_pairs(pdev, pdev->Catalog, pairs, count);
+	return pdfmark_put_pairs(pdev->Catalog, pairs, count);
 }
 
 /* ---------------- Named object pdfmarks ---------------- */
@@ -1145,15 +1153,18 @@ pdfmark_BP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 			  (cos_object_t **)&pcs, true);
     if (code < 0)
 	return code;
+    pcs->is_graphics = true;
     gs_bbox_transform(&bbox, pctm, &bbox);
     sprintf(bbox_str, "[%.8g %.8g %.8g %.8g]",
 	    bbox.p.x * xscale, bbox.p.y * yscale,
 	    bbox.q.x * xscale, bbox.q.y * yscale);
-    if ((code = cos_stream_put_c_strings(pcs, pdev, "/Type", "/XObject")) < 0 ||
-	(code = cos_stream_put_c_strings(pcs, pdev, "/Subtype", "/Form")) < 0 ||
-	(code = cos_stream_put_c_strings(pcs, pdev, "/FormType", "1")) < 0 ||
-	(code = cos_stream_put_c_strings(pcs, pdev, "/Matrix", "[1 0 0 1 0 0]")) < 0 ||
-	(code = cos_stream_put_c_strings(pcs, pdev, "/BBox", bbox_str)) < 0
+    if ((code = cos_stream_put_c_strings(pcs, "/Type", "/XObject")) < 0 ||
+	(code = cos_stream_put_c_strings(pcs, "/Subtype", "/Form")) < 0 ||
+	(code = cos_stream_put_c_strings(pcs, "/FormType", "1")) < 0 ||
+	(code = cos_stream_put_c_strings(pcs, "/Matrix", "[1 0 0 1 0 0]")) < 0 ||
+	(code = cos_dict_put_c_key_string(cos_stream_dict(pcs), "/BBox",
+					  (byte *)bbox_str,
+					  strlen(bbox_str))) < 0
 	)
 	return code;
     pdgs = gs_alloc_struct(pdev->pdf_memory, pdf_graphics_save_t,
@@ -1216,7 +1227,7 @@ pdfmark_EP(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     sseek(pdev->strm, start);
     fseek(pdev->pictures.file, start, SEEK_SET);
     pdf_copy_data(pdev->streams.strm, pdev->pictures.file, size);
-    code = cos_stream_add(pcs, pdev, size);
+    code = cos_stream_add(pcs, size);
     /* Keep the file in sync with the stream. */
     fseek(pdev->pictures.file, start, SEEK_SET);
     if (!pdev->open_graphics) {
@@ -1309,7 +1320,7 @@ pdfmark_PUT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return code;
     if (index < 0)
 	return_error(gs_error_rangecheck);
-    return cos_array_put((cos_array_t *)pco, pdev, index,
+    return cos_array_put((cos_array_t *)pco, index,
 		cos_string_value(&value, pairs[2].data, pairs[2].size));
 }
 
@@ -1331,7 +1342,7 @@ pdfmark_PUTDICT(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	return code;
     if (cos_type(pco) != cos_type_dict && cos_type(pco) != cos_type_stream)
 	return_error(gs_error_typecheck);
-    return pdfmark_put_pairs(pdev, (cos_dict_t *)pco, pairs + 1, count - 1);
+    return pdfmark_put_pairs((cos_dict_t *)pco, pairs + 1, count - 1);
 }
 
 /* [ {stream} string ... /.PUTSTREAM pdfmark */
@@ -1349,7 +1360,7 @@ pdfmark_PUTSTREAM(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (!pco->is_open)
 	return_error(gs_error_rangecheck);
     for (i = 1; code >= 0 && i < count; ++i)
-	code = cos_stream_add_bytes((cos_stream_t *)pco, pdev, pairs[i].data,
+	code = cos_stream_add_bytes((cos_stream_t *)pco, pairs[i].data,
 				    pairs[i].size);
     return code;
 }
@@ -1372,7 +1383,7 @@ pdfmark_PUTINTERVAL(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
     if (index < 0)
 	return_error(gs_error_rangecheck);
     for (i = 2; code >= 0 && i < count; ++i)
-	code = cos_array_put((cos_array_t *)pco, pdev, index + i - 2,
+	code = cos_array_put((cos_array_t *)pco, index + i - 2,
 		cos_string_value(&value, pairs[i].data, pairs[i].size));
     return code;
 }

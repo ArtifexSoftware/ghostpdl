@@ -539,7 +539,7 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
 	pst = &st_pdf_resource;
     pres = gs_alloc_struct(pdev->pdf_memory, pdf_resource_t, pst,
 			   "pdf_alloc_aside(resource)");
-    object = cos_object_alloc(pdev->pdf_memory, "pdf_alloc_aside(object)");
+    object = cos_object_alloc(pdev, "pdf_alloc_aside(object)");
     if (pres == 0 || object == 0) {
 	return_error(gs_error_VMerror);
     }
@@ -678,7 +678,7 @@ pdf_page_id(gx_device_pdf * pdev, int page_num)
     }
     if ((Page = pdev->pages[page_num - 1].Page) == 0) {
 	pdev->pages[page_num - 1].Page = Page =
-	    cos_dict_alloc(pdev->pdf_memory, "pdf_page_id");
+	    cos_dict_alloc(pdev, "pdf_page_id");
 	Page->id = pdf_obj_ref(pdev);
     }
     return Page->id;

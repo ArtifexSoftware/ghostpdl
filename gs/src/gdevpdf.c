@@ -349,7 +349,8 @@ pdf_initialize_ids(gx_device_pdf * pdev)
     pdf_create_named_dict(pdev, &nstr, &pdev->Info, 0L);
     sprintf(buf, ((gs_revision % 100) == 0 ? "(%s %1.1f)" : "(%s %1.2f)"),
 	    gs_product, gs_revision / 100.0);
-    cos_dict_put_c_strings(pdev->Info, pdev, "/Producer", buf);
+    cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
+			      strlen(buf));
 
     /* Allocate the root of the pages tree. */
 
@@ -406,7 +407,7 @@ pdf_open(gx_device * dev)
      * pdf_initialize_ids allocates some named objects, so we must
      * initialize the named objects list now.
      */
-    pdev->named_objects = cos_dict_alloc(mem, "pdf_open(named_objects)");
+    pdev->named_objects = cos_dict_alloc(pdev, "pdf_open(named_objects)");
     pdf_initialize_ids(pdev);
     pdev->outlines_id = 0;
     pdev->next_page = 0;
@@ -471,8 +472,10 @@ pdf_close_page(gx_device_pdf * pdev)
      * If the very first page is blank, we need to open the document
      * before doing anything else.
      */
+
     pdf_open_document(pdev);
     pdf_close_contents(pdev, true);
+
     /*
      * We can't write the page object or the annotations array yet, because
      * later pdfmarks might add elements to them.  Write the other objects
@@ -480,13 +483,16 @@ pdf_close_page(gx_device_pdf * pdev)
      *
      * Start by making sure the pages array element exists.
      */
+
     pdf_page_id(pdev, page_num);
     page = &pdev->pages[page_num - 1];
     page->MediaBox.x = (int)(pdev->MediaSize[0]);
     page->MediaBox.y = (int)(pdev->MediaSize[1]);
     page->procsets = pdev->procsets;
     page->contents_id = pdev->contents_id;
+
     /* Write out any resource dictionaries. */
+
     {
 	int i;
 
@@ -580,7 +586,6 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
 {
     long page_id = pdf_page_id(pdev, page_num);
     pdf_page_t *page = &pdev->pages[page_num - 1];
-    gs_memory_t *mem = pdev->pdf_memory;
     stream *s;
 
     pdf_open_obj(pdev, page_id);
@@ -616,7 +621,7 @@ pdf_write_page(gx_device_pdf *pdev, int page_num)
     if (page->Annots) {
 	pputs(s, "/Annots");
 	COS_WRITE(page->Annots, pdev);
-	COS_FREE(page->Annots, mem, "pdf_write_page(Annots)");
+	COS_FREE(page->Annots, "pdf_write_page(Annots)");
 	page->Annots = 0;
     }
     if (page->contents_id == 0)
@@ -746,7 +751,7 @@ pdf_close(gx_device * dev)
 	while ((part = pdev->articles) != 0) {
 	    pdev->articles = part->next;
 	    pprintld1(s, "%ld 0 R\n", part->contents->id);
-	    COS_FREE(part->contents, mem, "pdf_close(article contents)");
+	    COS_FREE(part->contents, "pdf_close(article contents)");
 	    gs_free_object(mem, part, "pdf_close(article)");
 	}
 	pputs(s, "]\n");
@@ -766,11 +771,12 @@ pdf_close(gx_device * dev)
     pputs(s, ">>\n");
     pdf_end_obj(pdev);
     if (pdev->Dests) {
-	COS_FREE(pdev->Dests, mem, "pdf_close(Dests)");
+	COS_FREE(pdev->Dests, "pdf_close(Dests)");
 	pdev->Dests = 0;
     }
 
     /* Prevent writing special named objects twice. */
+
     pdev->Catalog->id = 0;
     /*pdev->Info->id = 0;*/	/* Info should get written */
     pdev->Pages->id = 0;
@@ -788,13 +794,7 @@ pdf_close(gx_device * dev)
      * XObjects, and eventually images named by NI.
      */
 
-    {
-	const cos_dict_element_t *pcde = pdev->named_objects->elements;
-
-	for (; pcde; pcde = pcde->next)
-	    if (pcde->value.contents.object->id)
-		cos_write_object(pcde->value.contents.object, pdev);
-    }
+    cos_dict_objects_write(pdev->named_objects, pdev);
 
     /* Copy the resources into the main file. */
 
@@ -858,18 +858,11 @@ pdf_close(gx_device * dev)
 
     /* Free named objects. */
 
-    {
-	cos_dict_element_t *pcde = pdev->named_objects->elements;
+    cos_dict_objects_delete(pdev->named_objects);
+    COS_FREE(pdev->named_objects, "pdf_close(named_objects)");
+    pdev->named_objects = 0;
 
-	/*
-	 * Delete the objects' IDs so that freeing the dictionary will
-	 * free them.
-	 */
-	for (; pcde; pcde = pcde->next)
-	    pcde->value.contents.object->id = 0;
-	COS_FREE(pdev->named_objects, mem, "pdf_close(named_objects)");
-	pdev->named_objects = 0;
-    }
+    /* Wrap up. */
 
     gs_free_object(mem, pdev->pages, "pages");
     pdev->pages = 0;

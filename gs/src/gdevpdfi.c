@@ -549,7 +549,6 @@ private int
 pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
 		     const gs_image_t * pim, int h)
 {
-    gs_memory_t *mem = pdev->pdf_memory;
     stream *s = pdev->streams.strm;
     long start_pos;
     int code;
@@ -561,7 +560,7 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
 	pxo->height = h;
     }
     piw->height = h;
-    piw->data = cos_stream_alloc(mem, "pdf_begin_image_data");
+    piw->data = cos_stream_alloc(pdev, "pdf_begin_image_data");
     if (piw->data == 0)
 	return_error(gs_error_VMerror);
     start_pos = stell(s);
@@ -572,10 +571,10 @@ pdf_begin_image_data(gx_device_pdf * pdev, pdf_image_writer * piw,
     if (code >= 0) {
 	pprints1(s, "\n%s", piw->begin_data);
 	piw->data_offset = stell(s) - start_pos;
-	code = cos_stream_add_since(piw->data, pdev, start_pos);
+	code = cos_stream_add_since(piw->data, start_pos);
     }
     if (code < 0) {
-	COS_FREE(piw->data, mem, "pdf_begin_image_data");
+	COS_FREE(piw->data, "pdf_begin_image_data");
 	piw->data = 0;
     }
     return code;
@@ -589,7 +588,7 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
     int code;
 
     psdf_end_binary(&piw->binary);
-    code = cos_stream_add_since(piw->data, pdev, pos);
+    code = cos_stream_add_since(piw->data, pos);
     if (code < 0)
 	return code;
     if (data_h != piw->height) {
@@ -612,7 +611,7 @@ pdf_end_image_binary(gx_device_pdf *pdev, pdf_image_writer *piw, int data_h)
     }
     piw->start_pos = pdf_stell(pdev);
     code = cos_stream_contents_write(piw->data, pdev);
-    COS_FREE(piw->data, pdev->pdf_memory, "pdf_end_write_image");
+    COS_FREE(piw->data, "pdf_end_write_image");
     return code;
 }
 
@@ -848,7 +847,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 		      (byte) (0xff00 >> wleft));
 	}
     }
-    code = cos_stream_add_since(writer.data, pdev, pos);
+    code = cos_stream_add_since(writer.data, pos);
     pdf_end_image_binary(pdev, &writer, writer.height);
     if (!pres) {
 	switch (pdf_end_write_image(pdev, &writer)) {
@@ -969,7 +968,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 	      row_base + sourcex * bytes_per_pixel + yi * row_step,
 	      w * bytes_per_pixel, &ignore);
     }
-    cos_stream_add_since(piw->data, pdev, pos);
+    cos_stream_add_since(piw->data, pos);
     pdf_end_image_binary(pdev, piw, piw->height);
     return pdf_end_write_image(pdev, piw);
 }
@@ -1418,7 +1417,7 @@ pdf_image_plane_data(gx_image_enum_common_t * info,
 	}
     }
     *rows_used = h;
-    code = cos_stream_add_since(pie->writer.data, pdev, pos);
+    code = cos_stream_add_since(pie->writer.data, pos);
     return (code < 0 ? code : !pie->rows_left);
 #undef ROW_BYTES
 }

@@ -64,6 +64,15 @@ several aspects of the library and the PostScript and PDF interpreters.
 
 <h2><a name="6.20_Incompatible_changes"></a>Incompatible changes</h2>
 
+(PDF writer)
+	- The Cos procedures no longer take the device as an argument,
+except for object-creating procedures, which now take the device rather
+than an allocator.
+	- The is_object member of Cos values is replaced by value_type.
+Clients must use COS_VALUE_IS_OBJECT() to test whether a value is an object
+reference.
+	- The Cos procedures that take C strings no longer copy the string.
+	- The argument of cos_write_object is no longer const.
 (Drivers)
 	- The default BufferSpace for printer drivers is now 4 Mb.
 	- Device halftone order implementations must now provide a new

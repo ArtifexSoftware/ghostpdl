@@ -61,6 +61,7 @@ typedef struct cos_object_s cos_object_t;
 typedef struct cos_stream_s cos_stream_t;
 typedef struct cos_dict_s cos_dict_t;
 typedef struct cos_array_s cos_array_t;
+typedef struct cos_value_s cos_value_t;
 typedef struct cos_object_procs_s cos_object_procs_t;
 typedef const cos_object_procs_t *cos_type_t;
 #define cos_types_DEFINED

@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -68,17 +68,16 @@ int
 pdf_create_named(gx_device_pdf *pdev, const gs_param_string *pname,
 		 cos_type_t cotype, cos_object_t **ppco, long id)
 {
-    gs_memory_t *mem = pdev->pdf_memory;
     cos_object_t *pco;
     cos_value_t value;
 
-    *ppco = pco = cos_object_alloc(mem, "pdf_create_named");
+    *ppco = pco = cos_object_alloc(pdev, "pdf_create_named");
     if (pco == 0)
 	return_error(gs_error_VMerror);
     pco->id =
 	(id == -1 ? 0L : id == 0 ? pdf_obj_ref(pdev) : id);
     if (pname) {
-	int code = cos_dict_put(pdev->named_objects, pdev, pname->data,
+	int code = cos_dict_put(pdev->named_objects, pname->data,
 				pname->size, cos_object_value(&value, pco));
 
 	if (code < 0)
