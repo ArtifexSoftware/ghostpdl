@@ -705,6 +705,8 @@ mark
 
 % - .makesfnts -
 % Defines checksum, getloca, head, locatable, numloca, post, sfnts, upem
+% Note that the 'loca' table may be out of order. This is handled when
+% needed in dividesfnts
 /.makesfnts {
   .readttdata
   /head tabdict /head get def
@@ -765,6 +767,15 @@ mark
 		% the first and last sfnts entries).
     /prevsplit 0 def
     /prevboundary 0 def
+    % sort the locatable in case it is out of order
+    % Note the 'loca' table remains unchanged
+    locatable [ exch 0 4 2 index length 1 sub { 1 index exch getu32 exch } for pop ]
+    { lt } .sort
+    locatable length dup string exch 0 exch 1 exch 4 idiv 1 sub
+    {
+      1 index exch dup 4 mul exch 4 index exch get putu32
+    } for
+    /locatable exch def pop
     /splitarray [
       0 1 numloca 1 sub {
 	getloca dup prevsplit maxstring add gt {

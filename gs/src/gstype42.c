@@ -55,6 +55,20 @@ private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
     if ( code > 0 ) return_error(gs_error_invalidfont);\
   END
 
+/* Get the offset to a glyph using the loca table */
+/* Free variables: pfont */
+#define GLYPH_OFFSET(result, glyph_index) \
+BEGIN\
+    const byte *ploca;\
+    if (pfont->data.indexToLocFormat) {\
+	ACCESS(pfont->data.loca + glyph_index * 4, 4, ploca);\
+	result = u32(ploca);\
+    } else {\
+	ACCESS(pfont->data.loca + glyph_index * 2, 2, ploca);\
+	result = (ulong) U16(ploca) << 1;\
+    }\
+END
+
 /* Get 2- or 4-byte quantities from a table. */
 #define U8(p) ((uint)((p)[0]))
 #define S8(p) (int)((U8(p) ^ 0x80) - 0x80)
@@ -63,6 +77,8 @@ private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 #define u32(p) get_u32_msb(p)
 
 /* ---------------- Font level ---------------- */
+
+GS_NOTIFY_PROC(gs_len_glyphs_release);
 
 /*
  * Initialize the cached values in a Type 42 font.
@@ -81,6 +97,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
     int code;
     byte head_box[8];
     ulong loca_size = 0;
+    ulong glyph_start, glyph_offset, glyph_length;
 
     ACCESS(0, 12, OffsetTable);
     {
@@ -144,6 +161,47 @@ gs_type42_font_init(gs_font_type42 * pfont)
     }
     loca_size >>= pfont->data.indexToLocFormat + 1;
     pfont->data.numGlyphs = (loca_size == 0 ? 0 : loca_size - 1);
+    /* Now build the len_glyphs array since 'loca' may not be properly sorted */
+    pfont->data.len_glyphs = (uint *)gs_alloc_bytes(pfont->memory, pfont->data.numGlyphs * sizeof(uint),
+	    "gs_type42_font");
+    if (pfont->data.len_glyphs == 0)
+	return_error(gs_error_VMerror);
+    gs_font_notify_register((gs_font *)pfont, gs_len_glyphs_release, (void *)pfont);
+ 
+    /* The 'loca' may not be in order, so we construct a glyph length array */
+    /* Since 'loca' is usually sorted, first try the simple linear scan to  */
+    /* avoid the need to perform the more expensive process. */
+    GLYPH_OFFSET(glyph_start, 0);
+    for (i=1; i < loca_size; i++) {
+	GLYPH_OFFSET(glyph_offset, i);
+	glyph_length = glyph_offset - glyph_start;
+	if (glyph_length > 0x80000000)
+	    break;				/* out of order loca */
+	pfont->data.len_glyphs[i-1] = glyph_length;
+	glyph_start = glyph_offset;
+    }
+    if (i < loca_size) {
+        uint j;
+	ulong trial_glyph_length;
+        /*
+         * loca was out of order, build the len_glyphs the hard way      
+	 * Assume that some of the len_glyphs built so far may be wrong 
+	 * For each starting offset, find the next higher ending offset
+	 * Note that doing this means that there can only be zero length
+	 * glyphs that have loca table offset equal to the last 'dummy'
+         * entry. Otherwise we assume that it is a duplicated entry.
+	 */
+	for (i=0; i < loca_size-1; i++) {
+	    GLYPH_OFFSET(glyph_start, i);
+	    for (j=1, glyph_length = 0x80000000; j<loca_size; j++) {
+		GLYPH_OFFSET(glyph_offset, j);
+		trial_glyph_length = glyph_offset - glyph_start;
+		if ((trial_glyph_length > 0) && (trial_glyph_length < glyph_length))
+		    glyph_length = trial_glyph_length;
+	    }
+	    pfont->data.len_glyphs[i] = glyph_length < 0x80000000 ? glyph_length : 0;
+	}
+    }
     /*
      * If the font doesn't have a valid FontBBox, compute one from the
      * 'head' information.  Since the Adobe PostScript driver sometimes
@@ -170,6 +228,16 @@ gs_type42_font_init(gs_font_type42 * pfont)
     pfont->procs.glyph_outline = gs_type42_glyph_outline;
     pfont->procs.glyph_info = gs_type42_glyph_info;
     pfont->procs.enumerate_glyph = gs_type42_enumerate_glyph;
+    return 0;
+}
+
+int
+gs_len_glyphs_release(void *data, void *event)
+{   
+    gs_font_type42 *pfont = (gs_font_type42 *)data;
+
+    gs_font_notify_unregister((gs_font *)pfont, gs_len_glyphs_release, (void *)data);
+    gs_free_object(pfont->memory, pfont->data.len_glyphs, "gs_len_glyphs_release");
     return 0;
 }
 
@@ -325,22 +393,8 @@ default_get_outline(gs_font_type42 * pfont, uint glyph_index,
     uint glyph_length;
     int code;
 
-    /*
-     * We can't assume that consecutive loca entries are stored
-     * contiguously in memory: we have to access each entry
-     * individually.
-     */
-    if (pfont->data.indexToLocFormat) {
-	ACCESS(pfont->data.loca + glyph_index * 4, 4, ploca);
-	glyph_start = u32(ploca);
-	ACCESS(pfont->data.loca + glyph_index * 4 + 4, 4, ploca);
-	glyph_length = u32(ploca) - glyph_start;
-    } else {
-	ACCESS(pfont->data.loca + glyph_index * 2, 2, ploca);
-	glyph_start = (ulong) U16(ploca) << 1;
-	ACCESS(pfont->data.loca + glyph_index * 2 + 2, 2, ploca);
-	glyph_length = ((ulong) U16(ploca) << 1) - glyph_start;
-    }
+    GLYPH_OFFSET(glyph_start, glyph_index);
+    glyph_length = pfont->data.len_glyphs[glyph_index];
     if (glyph_length == 0)
 	gs_glyph_data_from_null(pgd);
     else {

@@ -79,6 +79,7 @@ struct gs_type42_data_s {
      */
     uint numGlyphs;		/* from size of loca */
     uint trueNumGlyphs;		/* from maxp */
+    uint *len_glyphs;		/* built from the loca table */
     gs_glyph_cache *gdcache;
     bool warning_patented;
     bool warning_bad_instruction;
@@ -92,9 +93,10 @@ struct gs_font_type42_s {
 
 extern_st(st_gs_font_type42);
 #define public_st_gs_font_type42()	/* in gstype42.c */\
-  gs_public_st_suffix_add2_final(st_gs_font_type42, gs_font_type42,\
+  gs_public_st_suffix_add3_final(st_gs_font_type42, gs_font_type42,\
     "gs_font_type42", font_type42_enum_ptrs, font_type42_reloc_ptrs,\
-    gs_font_finalize, st_gs_font_base, data.proc_data, data.gdcache)
+    gs_font_finalize, st_gs_font_base, data.proc_data, data.len_glyphs, \
+    data.gdcache)
 
 /*
  * Because a Type 42 font contains so many cached values,
