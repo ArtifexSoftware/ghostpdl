@@ -795,16 +795,16 @@ jbig2_decode_generic_mmr(Jbig2Ctx *ctx,
 			 int32_t seg_number,
 			 const Jbig2GenericRegionParams *params,
 			 const byte *data, size_t size,
-			 byte *gbreg)
+			 Jbig2Image *image)
 {
   Jbig2MmrCtx mmr;
-  int rowstride = (params->GBW + 7) >> 3;
-  const byte *gbreg_line = gbreg;
+  const int rowstride = image->stride;
+  const byte *gbreg_line = (const byte *)image->data;
   int y;
 
-  jbig2_decode_mmr_init(&mmr, params->GBW, params->GBH, data, size);
+  jbig2_decode_mmr_init(&mmr, image->width, image->height, data, size);
 
-  for (y = 0; y < params->GBH; y++)
+  for (y = 0; y < image->height; y++)
     {
       jbig2_decode_mmr_line(&mmr, gbreg_line, NULL);
       gbreg_line += rowstride;

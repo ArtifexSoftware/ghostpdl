@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.h,v 1.3 2002/02/19 07:09:16 giles Exp $
+    $Id: jbig2_generic.h,v 1.4 2002/06/21 19:10:02 giles Exp $
 */
 
 /* Table 2 */
@@ -29,7 +29,7 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 			    int32_t seg_number,
 			    const Jbig2GenericRegionParams *params,
 			    Jbig2ArithState *as,
-			    byte *gbreg,
+			    Jbig2Image *image,
 			    Jbig2ArithCx *GB_stats);
 
 /* 7.4 */

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.7 2002/06/18 13:40:29 giles Exp $
+    $Id: jbig2.h,v 1.8 2002/06/21 19:10:02 giles Exp $
 */
 
 #ifdef __cplusplus
@@ -85,6 +85,8 @@ int jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size);
 
 /* get the next available decoded page image */
 Jbig2Image *jbig2_get_page(Jbig2Ctx *ctx);
+/* mark a returned page image as read */
+int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image);
 
 /* segment header routines */
 

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.4 2002/06/20 15:40:36 giles Exp $
+    $Id: jbig2_page.c,v 1.5 2002/06/21 19:10:02 giles Exp $
 */
 
 #include <stdio.h>
@@ -16,6 +16,10 @@
 
 #include "jbig2.h"
 #include "jbig2_priv.h"
+
+#ifdef OUTPUT_PBM
+#include "jbig2_image.h"
+#endif
 
 /* dump the page struct info */
 static void
@@ -170,7 +174,63 @@ jbig2_complete_page (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, sh->segment_number,
         "end of page %d", page_number);
 
-    // FIXME: write out the page image
-    
+#ifdef OUTPUT_PBM
+    jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);
+#endif
+
     return 0;
+}
+
+/**
+ * jbig2_get_page: return the next available page image buffer
+ *
+ * the client can call this at any time to check if any pages
+ * have been decoded. If so, it returns the first available
+ * one. The client should then call jbig2_release_page() when
+ * it no longer needs to refer to the image buffer.
+ *
+ * since this is a public routine for the library clients, we
+ * return an image structure pointer, even though the function
+ * name refers to a page; the page structure is private.
+ **/
+Jbig2Image *jbig2_get_page(Jbig2Ctx *ctx)
+{
+    int index;
+    Jbig2Image *image;
+
+    /* search for a completed page */
+    for (index=0; index < ctx->max_page_index; index++) {
+        if (ctx->pages[index].state == JBIG2_PAGE_COMPLETE) {
+            ctx->pages[index].state = JBIG2_PAGE_RETURNED;
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
+                "page %d returned to the client", ctx->pages[index].number);
+            return ctx->pages[index].image;
+        }
+    }
+    
+    /* no pages available */
+    return NULL;
+}
+
+/**
+ * jbig2_release_page: tell the library a page can be freed
+ **/
+int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
+{
+    int index;
+    
+    /* find the matching page struct and mark it released */
+    for (index = 0; index < ctx->max_page_index; index++) {
+        if (ctx->pages[index].image == image) {
+            ctx->pages[index].state = JBIG2_PAGE_RELEASED;
+            jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
+                "page %d released by the client", ctx->pages[index].number);
+            return 0;
+        }
+    }
+    
+    /* no matching pages */
+    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+        "jbig2_release_page called on unknown page");
+    return 1;
 }

@@ -8,14 +8,12 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_generic.c,v 1.5 2002/06/20 15:42:47 giles Exp $
+    $Id: jbig2_generic.c,v 1.6 2002/06/21 19:10:02 giles Exp $
 */
 
 /**
  * Generic region handlers.
  **/
-
-#define OUTPUT_PBM
 
 #include <stdint.h>
 #include <stddef.h>
@@ -33,22 +31,23 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
 			       int32_t seg_number,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
-			       byte *gbreg,
+			       Jbig2Image *image,
 			       Jbig2ArithCx *GB_stats)
 {
-  int GBW = params->GBW;
-  int rowstride = (GBW + 7) >> 3;
+  const int GBW = image->width;
+  const int GBH = image->height;
+  const int rowstride = image->stride;
   int x, y;
-  byte *gbreg_line = gbreg;
+  byte *gbreg_line = (byte *)image->data;
   bool LTP = 0;
 
   /* todo: currently we only handle the nominal gbat location */
 
 #ifdef OUTPUT_PBM
-  printf("P4\n%d %d\n", GBW, params->GBH);
+  printf("P4\n%d %d\n", GBW, GBH);
 #endif
 
-  for (y = 0; y < params->GBH; y++)
+  for (y = 0; y < GBH; y++)
     {
       uint32_t CONTEXT;
       uint32_t line_m1;
@@ -101,22 +100,23 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
 			       int32_t seg_number,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
-			       byte *gbreg,
+			       Jbig2Image *image,
 			       Jbig2ArithCx *GB_stats)
 {
-  int GBW = params->GBW;
-  int rowstride = (GBW + 7) >> 3;
+  const int GBW = image->width;
+  const int GBH = image->height;
+  const int rowstride = image->stride;
   int x, y;
-  byte *gbreg_line = gbreg;
+  byte *gbreg_line = (byte *)image->data;
   bool LTP = 0;
 
   /* todo: currently we only handle the nominal gbat location */
 
 #ifdef OUTPUT_PBM
-  printf("P4\n%d %d\n", GBW, params->GBH);
+  printf("P4\n%d %d\n", GBW, GBH);
 #endif
 
-  for (y = 0; y < params->GBH; y++)
+  for (y = 0; y < GBH; y++)
     {
       uint32_t CONTEXT;
       uint32_t line_m1;
@@ -169,22 +169,23 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
 			       int32_t seg_number,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
-			       byte *gbreg,
+			       Jbig2Image *image,
 			       Jbig2ArithCx *GB_stats)
 {
-  int GBW = params->GBW;
-  int rowstride = (GBW + 7) >> 3;
+  const int GBW = image->width;
+  const int GBH = image->height;
+  const int rowstride = image->stride;
   int x, y;
-  byte *gbreg_line = gbreg;
+  byte *gbreg_line = (byte *)image->data;
   bool LTP = 0;
 
   /* todo: currently we only handle the nominal gbat location */
 
 #ifdef OUTPUT_PBM
-  printf("P4\n%d %d\n", GBW, params->GBH);
+  printf("P4\n%d %d\n", GBW, GBH);
 #endif
 
-  for (y = 0; y < params->GBH; y++)
+  for (y = 0; y < GBH; y++)
     {
       uint32_t CONTEXT;
       uint32_t line_m1;
@@ -237,22 +238,23 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
 			       int32_t seg_number,
 			       const Jbig2GenericRegionParams *params,
 			       Jbig2ArithState *as,
-			       byte *gbreg,
+			       Jbig2Image *image,
 			       Jbig2ArithCx *GB_stats)
 {
-  int GBW = params->GBW;
-  int rowstride = (GBW + 7) >> 3;
+  const int GBW = image->width;
+  const int GBH = image->height;
+  const int rowstride = image->stride;
   int x, y;
-  byte *gbreg_line = gbreg;
+  byte *gbreg_line = (byte *)image->data;
   bool LTP = 0;
 
   /* This is a special case for GBATX1 = 3, GBATY1 = -1 */
 
 #ifdef OUTPUT_PBM
-  printf("P4\n%d %d\n", GBW, params->GBH);
+  printf("P4\n%d %d\n", GBW, GBH);
 #endif
 
-  for (y = 0; y < params->GBH; y++)
+  for (y = 0; y < GBH; y++)
     {
       uint32_t CONTEXT;
       uint32_t line_m1;
@@ -323,23 +325,23 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 			    int32_t seg_number,
 			    const Jbig2GenericRegionParams *params,
 			    Jbig2ArithState *as,
-			    byte *gbreg,
+			    Jbig2Image *image,
 			    Jbig2ArithCx *GB_stats)
 {
   if (!params->MMR && params->GBTEMPLATE == 0)
     return jbig2_decode_generic_template0(ctx, seg_number,
-					  params, as, gbreg, GB_stats);
+					  params, as, image, GB_stats);
   else if (!params->MMR && params->GBTEMPLATE == 1)
     return jbig2_decode_generic_template1(ctx, seg_number,
-					  params, as, gbreg, GB_stats);
+					  params, as, image, GB_stats);
   else if (!params->MMR && params->GBTEMPLATE == 2)
     {
       if (params->gbat[0] == 3 && params->gbat[1] == 255)
 	return jbig2_decode_generic_template2a(ctx, seg_number,
-					       params, as, gbreg, GB_stats);
+					       params, as, image, GB_stats);
       else
 	return jbig2_decode_generic_template2(ctx, seg_number,
-					       params, as, gbreg, GB_stats);
+					       params, as, image, GB_stats);
     }
   {
     int i;
@@ -363,7 +365,7 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   int gbat_bytes = 0;
   Jbig2GenericRegionParams params;
   int code;
-  byte *gbreg;
+  Jbig2Image *image;
   Jbig2WordStream *ws;
   Jbig2ArithState *as;
   Jbig2ArithCx *GB_stats = NULL;
@@ -410,14 +412,16 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
   params.GBH = rsi.height;
   memcpy (params.gbat, gbat, gbat_bytes);
 
-  gbreg = jbig2_alloc(ctx->allocator, ((rsi.width + 7) >> 3) * rsi.height);
-
-
+  image = jbig2_image_new(ctx, rsi.width, rsi.height);
+  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, sh->segment_number,
+    "allocated %d x %d image buffer for region decode results",
+        rsi.width, rsi.height);
+    
   if (params.MMR)
     {
       code = jbig2_decode_generic_mmr(ctx, sh->segment_number, &params,
 				      segment_data + offset, sh->data_length - offset,
-				      gbreg);
+				      image);
     }
   else
     {
@@ -431,12 +435,14 @@ jbig2_immediate_generic_region(Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 				     sh->data_length - offset);
       as = jbig2_arith_new(ctx, ws);
       code = jbig2_decode_generic_region(ctx, sh->segment_number, &params,
-					 as, gbreg, GB_stats);
+					 as, image, GB_stats);
     }
 
-  /* todo: stash gbreg as segment result */
   /* todo: free ws, as */
-
+  
+  jbig2_image_compose(ctx, ctx->pages[ctx->current_page].image, image, rsi.x, rsi.y);
+  jbig2_image_free(ctx, image);
+  
   jbig2_free(ctx->allocator, GB_stats);
 
   return code;

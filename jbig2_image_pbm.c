@@ -8,13 +8,12 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_pbm.c,v 1.4 2002/06/17 16:30:20 giles Exp $
+    $Id: jbig2_image_pbm.c,v 1.5 2002/06/21 19:10:02 giles Exp $
 */
 
 #include <stdio.h>
 
 #include "jbig2.h"
-#include "jbig2_priv.h"
 #include "jbig2_image.h"
 
 /* take an image structure and write it to a file in pbm format */
@@ -25,8 +24,8 @@ int jbig2_image_write_pbm_file(Jbig2Image *image, char *filename)
     int	error;
     
     if ((out = fopen(filename, "wb")) == NULL) {
-		fprintf(stderr, "unable to open '%s' for writing\n", filename);
-		return 1;
+        fprintf(stderr, "unable to open '%s' for writing", filename);
+        return 1;
     }
     
     error = jbig2_image_write_pbm(image, out);
@@ -40,7 +39,7 @@ int jbig2_image_write_pbm_file(Jbig2Image *image, char *filename)
 int jbig2_image_write_pbm(Jbig2Image *image, FILE *out)
 {
         int i, short_stride, extra_bits;
-        byte *p = (byte *)image->data;
+        char *p = (char *)image->data;
         
         // pbm header
         fprintf(out, "P4\n%d %d\n", image->width, image->height);
@@ -53,8 +52,8 @@ int jbig2_image_write_pbm(Jbig2Image *image, FILE *out)
             image->width, image->height, short_stride, extra_bits);
         // write out each row
         for(i = 0; i < image->height; i++) {
-            fwrite(p, sizeof(byte), short_stride, out);
-            if (extra_bits) fwrite(p + short_stride, sizeof(byte), 1, out);
+            fwrite(p, sizeof(*p), short_stride, out);
+            if (extra_bits) fwrite(p + short_stride, sizeof(*p), 1, out);
             p += image->stride;
         }
         
@@ -86,7 +85,7 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
     int done;
     Jbig2Image *image;
     char c,buf[32];
-    byte *data;
+    char *data;
     
     // look for 'P4' magic
     while ((c = fgetc(in)) != 'P') {
@@ -134,9 +133,9 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in)
     // the pbm data is byte-aligned, and our image struct is word-aligned,
     // so we have to index each line separately
     pbm_stride = (dim[0] + 1) >> 3;
-    data = (byte *)image->data;
+    data = (char *)image->data;
     for (i = 0; i < dim[1]; i++) {
-        fread(data, sizeof(byte), pbm_stride, in);
+        fread(data, sizeof(*data), pbm_stride, in);
         if (feof(in)) {
             fprintf(stderr, "unexpected end of pbm file.\n");
             jbig2_image_free(ctx, image);

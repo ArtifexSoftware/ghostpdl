@@ -90,7 +90,8 @@ typedef enum {
     JBIG2_PAGE_FREE,
     JBIG2_PAGE_NEW,
     JBIG2_PAGE_COMPLETE,
-    JBIG2_PAGE_RETURNED
+    JBIG2_PAGE_RETURNED,
+    JBIG2_PAGE_RELEASED
 } Jbig2PageState;
 
 struct _Jbig2Page {
@@ -107,6 +108,8 @@ struct _Jbig2Page {
 
 int jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
 int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment_data);
+
+int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y);
 
 /* region segment info */
 

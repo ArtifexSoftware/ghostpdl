@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.5 2002/06/17 16:30:20 giles Exp $
+    $Id: jbig2_image.c,v 1.6 2002/06/21 19:10:02 giles Exp $
 */
 
 #include <stdio.h>
@@ -55,4 +55,19 @@ void jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image)
 {
 	jbig2_free(ctx->allocator, image->data);
 	jbig2_free(ctx->allocator, image);
+}
+
+/* composite one jbig2_image onto another */
+// FIXME: need to add a drawing mode argument
+int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src, int x, int y)
+{
+    /* special case complete replacement */
+    if ((x == 0) && (y == 0) && (src->width == dst->width) && (src->height == dst->height)) {
+        memcpy(dst->data, src->data, src->height*src->stride);
+        return 0;
+    }
+    
+    jbig2_error(ctx, JBIG2_SEVERITY_WARNING, -1,
+        "non-aligned image composition NYI");
+    return 1;
 }

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.21 2002/06/18 13:40:29 giles Exp $
+    $Id: jbig2dec.c,v 1.22 2002/06/21 19:10:02 giles Exp $
 */
 
 #include <stdio.h>
@@ -27,6 +27,7 @@
 #endif
 
 #include "jbig2.h"
+#include "jbig2_image.h"
 
 typedef enum {
     usage,dump,render
@@ -257,6 +258,15 @@ main (int argc, char **argv)
 
   filearg = parse_options(argc, argv, &params);
 
+  if (params.output_file == NULL)
+    {
+#ifdef HAVE_LIBPNG
+      params.output_file = "out.png";
+#else
+      params.output_file = "out.pbm";
+#endif
+    }
+    
   if ((argc - filearg) == 1)
   // only one argument--open as a jbig2 file
     {
@@ -324,6 +334,21 @@ main (int argc, char **argv)
       jbig2_global_ctx_free(global_ctx);
     }
 
+  // retrieve and output the returned pages
+  {
+    Jbig2Image *image;
+    
+    while ((image = jbig2_get_page(ctx)) != NULL) {
+        fprintf(stderr, "saving decoded page as '%s'\n", params.output_file);
+#ifdef HAVE_LIBPNG
+        jbig2_image_write_png_file(image, params.output_file);
+#else
+        jbig2_image_write_pbm_file(image, params.output_file);
+#endif
+        jbig2_release_page(ctx, image);
+    }
+  }
+  
   jbig2_ctx_free(ctx);
 
   // fin
