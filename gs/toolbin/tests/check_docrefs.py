@@ -100,14 +100,14 @@ class DocRefs:
 
 # Process command line arguments and switches.
 
-def mainArgs(arglist, fromProc, toProc):
+def mainArgs(arglist, root, fromProc, toProc):
     for arg in arglist:
         if arg == '+src':
-            mainArgs(SRC_LIST, fromProc, toProc)
+            mainArgs(SRC_LIST, root, fromProc, toProc)
         elif arg == '+lib':
-            mainArgs(LIB_LIST, fromProc, toProc)
+            mainArgs(LIB_LIST, root, fromProc, toProc)
         elif arg == '+tests':
-            mainArgs(TEST_LIST, fromProc, toProc)
+            mainArgs(TEST_LIST, root, fromProc, toProc)
         elif arg == '+from':
             do, adding = fromProc, 1
         elif arg == '-from':
@@ -120,9 +120,9 @@ def mainArgs(arglist, fromProc, toProc):
             print sys.stderr >> 'Unknown switch: ' + arg
             exit(1)
         elif arg.find('*') >= 0:
-            for f in glob.glob(arg): do(f, adding)
+            for f in glob.glob(root + arg): do(f, adding)
         else:
-            do(arg, adding)
+            do(root + arg, adding)
 
 class GSCheckDocRefs(GSTestCase):
 
@@ -133,7 +133,7 @@ class GSCheckDocRefs(GSTestCase):
 
     def _fromDocs(self):
         refs = DocRefs()
-        mainArgs(self.arglist,
+        mainArgs(self.arglist, self.root,
                  lambda f,b,refs=refs: refs.doFrom(f, b),
                  lambda f,b: None)
         refs.cleanup()
@@ -145,7 +145,7 @@ class GSCheckDocRefs(GSTestCase):
 
     def runTest(self):
         refs = DocRefs()
-        mainArgs(self.arglist,
+        mainArgs(self.arglist, self.root,
                  lambda f,b,refs=refs: refs.doFromDoc(f, b),
                  lambda f,b,refs=refs: refs.doTo(f, b))
         refs.cleanup()
