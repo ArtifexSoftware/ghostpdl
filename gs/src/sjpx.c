@@ -308,7 +308,7 @@ s_jpxd_decode_image(stream_jpxd_state *const state)
         jas_stream_close(stream);
         state->stream = NULL;
 
-#ifdef DEBUG_JPX
+#ifdef JPX_DEBUG
 	dump_jas_image(image);
 #endif
 
