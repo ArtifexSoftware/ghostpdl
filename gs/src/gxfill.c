@@ -36,7 +36,7 @@
 #endif
 #include "vdtrace.h"
 
-#define VD_SCALE 0.002
+#define VD_SCALE 0.004
 #define VD_TRAP_COLOR RGB(0, 255, 255)
 #define VD_MARG_COLOR RGB(255, 0, 0)
 #define VD_RECT(x, y, w, h, c) vd_rect(int2fixed(x), int2fixed(y), int2fixed(x + w), int2fixed(y + h), 1, c)
@@ -45,6 +45,8 @@
  * Configuration flags for dropout prevention code.
  */
 #define PSEUDO_RASTERIZATION (DROPOUT_PREVENTION && 1) /* Change 1 to 0 for benchmarking. */
+#define ADJUST_SERIF 1 /* See comments near occurances. */
+#define CHECK_SPOT_CONTIGUITY 1 /* See comments near occurances. */
 
 /*
  * Define which fill algorithm(s) to use.  At least one of the following
@@ -314,7 +316,10 @@ typedef struct margin_s
 } margin;
 
 typedef struct section_s
-{   short y0, y1; /* Fraction part of fixed y coordinates of intersections of a margin with line x==i + bbox_left */
+{   short y0, y1; /* Fraction part of y coordinates of intersections of the margin with line x==i + bbox_left */
+#if ADJUST_SERIF && CHECK_SPOT_CONTIGUITY
+    short x0, x1; /* Pixel coverage by X for checking the contiguity. */
+#endif
 } section;
 
 typedef struct margin_set_s
@@ -376,7 +381,7 @@ private int add_y_line(const segment *, const segment *, int, ll_ptr);
 private void insert_x_new(active_line *, ll_ptr);
 private bool end_x_line(active_line *, bool);
 private void free_all_margins(line_list * ll);
-private void init_section(line_list * ll);
+private inline void init_section(section *sect, int i0, int i1);
 
 #define FILL_LOOP_PROC(proc)\
 int proc(ll_ptr, gx_device *,\
@@ -678,7 +683,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    lst.margin_set1.sect = lst.margin_set0.sect + lst.bbox_width;
 	}
 	if (lst.pseudo_rasterization) {
-	    init_section(&lst);
+	    init_section(lst.margin_set0.sect, 0, lst.bbox_width);
+	    init_section(lst.margin_set1.sect, 0, lst.bbox_width);
 	}
 #	endif
 	code = (*fill_loop)
@@ -1110,12 +1116,16 @@ end_x_line(active_line *alp, bool update)
    (*fill_rect)(dev, x, y, w, h, cindex) :\
    gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
 
-private void init_section(line_list * ll)
+private inline void init_section(section *sect, int i0, int i1)
 {   int i;
 
-    for (i = 0; i < ll->bbox_width; i++)
-	ll->margin_set0.sect[i].y0 = ll->margin_set0.sect[i].y1 = 
-	ll->margin_set1.sect[i].y0 = ll->margin_set1.sect[i].y1 = -1;
+    for (i = i0; i < i1; i++) {
+#	if CHECK_SPOT_CONTIGUITY
+	sect[i].x0 = fixed_1;
+	sect[i].x1 = 0;
+#	endif
+	sect[i].y0 = sect[i].y1 = -1;
+    }
 }
 
 private margin * alloc_margin(line_list * ll)
@@ -1286,40 +1296,83 @@ private int margin_boundary(line_list * ll, margin_set * set, active_line * alp,
     fixed x0, x1, xmin, xmax;
     int xp0, xp;
     int i0, i;
+#   if CHECK_SPOT_CONTIGUITY
+    int i1;
+#   endif
 
     if (yy0 > yy1)
 	return 0;
     /* enumerate integral x's in [yy0,yy1] : */
 
-    if (alp->start.y == alp->end.y) {
+    if (alp->start.y == alp->end.y)
 	x0 = alp->start.x, x1 = alp->end.x;
-	xmin = min(x0, x1), xmax = max(x0, x1);
-	xp0 = fixed_floor(xmin) + fixed_half;
-    } else {
+    else
 	x0 = AL_X_AT_Y(alp, yy0), x1 = AL_X_AT_Y(alp, yy1);
-	xmin = min(x0, x1), xmax = max(x0, x1);
+    xmin = min(x0, x1);
+    xmax = max(x0, x1);
+#   if !CHECK_SPOT_CONTIGUITY
 	xp0 = fixed_floor(xmin) + fixed_half;
-    }
-    xp = (xp0 < xmin ? xp0 + fixed_1 : xp0);
-    i = i0 = fixed2int_var_pixround(xp) - ll->bbox_left;
-    assert(i >= 0);
-    for (; xp < xmax && i < ll->bbox_width; xp += fixed_1, i++) {
-	fixed y = (alp->start.y == alp->end.y ? alp->start.y : Y_AT_X(alp, xp));
-	fixed dy = y - set->y;
-	bool ud;
-	short *b, h;
+	i0 = fixed2int(xp0) - ll->bbox_left;
+	if (xp0 < xmin) {
+	    xp0 += fixed_1;
+	    i0++;
+	}
+	assert(i0 >= 0);
+	for (i = i0, xp = xp0; xp < xmax && i < ll->bbox_width; xp += fixed_1, i++) {
+	    fixed y = (alp->start.y == alp->end.y ? alp->start.y : Y_AT_X(alp, xp));
+	    fixed dy = y - set->y;
+	    bool ud;
+	    short *b, h;
+	    section *s = &sect[i];
 
-	if (dy < 0)
-	    dy = 0; /* fix rounding errors in AL_X_AT_Y */
-	if (dy >= fixed_1)
-	    dy = fixed_1; /* safety */
-	vd_circle(xp, y, 2, 0);
-	ud = ((alp->start.x - alp->end.x) * dir > 0);
-	b = (ud ? &sect[i].y0 : &sect[i].y1);
-	h = (short)dy;
-	if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
-	    *b = h;
-    }
+	    if (dy < 0)
+		dy = 0; /* fix rounding errors in AL_X_AT_Y */
+	    if (dy >= fixed_1)
+		dy = fixed_1; /* safety */
+	    vd_circle(xp, y, 2, 0);
+	    ud = ((alp->start.x - alp->end.x) * dir > 0);
+	    b = (ud ? &s->y0 : &s->y1);
+	    h = (short)dy;
+	    if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
+		*b = h;
+	}
+#   else
+	xp0 = fixed_floor(xmin) + fixed_half;
+	i = i0 = fixed2int(xp0) - ll->bbox_left;
+	i1 = fixed2int_ceiling(xmax) - ll->bbox_left;
+	if (xp0 < xmin)
+	    i0++;
+	assert(i >= 0 && i1 <= ll->bbox_width);
+	for (xp = xp0; i < i1; xp += fixed_1, i++) {
+	    section *s = &sect[i];
+
+	    if (xp >= xmin && xp <= xmax) {
+		fixed y = (alp->start.y == alp->end.y ? alp->start.y : Y_AT_X(alp, xp));
+		fixed dy = y - set->y;
+		bool ud;
+		short *b, h;
+
+		if (dy < 0)
+		    dy = 0; /* fix rounding errors in AL_X_AT_Y */
+		if (dy >= fixed_1)
+		    dy = fixed_1; /* safety */
+		vd_circle(xp, y, 2, 0);
+		ud = ((alp->start.x - alp->end.x) * dir > 0);
+		b = (ud ? &s->y0 : &s->y1);
+		h = (short)dy;
+		if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
+		    *b = h;
+	    }
+	    {   int x_pixel = int2fixed(i + ll->bbox_left);
+		int xl = max(xmin - x_pixel, 0);
+		int xu = min(xmax - x_pixel, fixed_1);
+
+		s->x0 = min(s->x0, xl);
+		s->x1 = max(s->x1, xu);
+		x_pixel+=0; /* Just a place for breakpoint */
+	    }
+	}
+#	endif
     if (i > i0)
 	return store_margin(ll, set, i0, i);
     return 0;
@@ -1377,19 +1430,50 @@ private inline int continue_margin(line_list * ll, active_line * flp, active_lin
 
 private int complete_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
 {   
+    int i, code;
+    section *sect = ll->margin_set1.sect;
+
+#   if !CHECK_SPOT_CONTIGUITY
     int i0 = fixed2int_var_pixround(flp->x_current);
     int i1 = fixed2int_var_pixround(alp->x_current);
-    int i, ii0 = max(0, i0 - ll->bbox_left), ii1 = min(i1 - ll->bbox_left, ll->bbox_width);
-    int code;
+    int ii0 = max(0, i0 - ll->bbox_left), ii1 = min(i1 - ll->bbox_left, ll->bbox_width);
+	if (ii0 < ii1) {
+	    for (i = ii0; i < ii1; i++)
+		sect[i].y0 = sect[i].y1 = -2;
+	    code = store_margin(ll, &ll->margin_set1, ii0, ii1);
+	    if (code < 0)
+		return code;
+	}
+#   else
+	int xmin = flp->x_current;
+	int xmax = alp->x_current;
+	int imin = fixed2int(xmin) - ll->bbox_left;
+	int imax = fixed2int_ceiling(xmax) - ll->bbox_left;
 
-    if (ii0 < ii1) {
-	for (i = ii0; i < ii1; i++)
-	    ll->margin_set1.sect[i].y0 = ll->margin_set1.sect[i].y1 = -2;
-	code = store_margin(ll, &ll->margin_set1, ii0, ii1);
+	assert(imin >= 0 && imax <= ll->bbox_width);
+	for (i = imin; i < imax; i++) {
+	    section *s = &sect[i];
+	    int x_pixel = int2fixed(i + ll->bbox_left);
+	    int xl = max(xmin - x_pixel, 0);
+	    int xu = min(xmax - x_pixel, fixed_1);
+
+	    s->x0 = min(s->x0, xl);
+	    s->x1 = max(s->x1, xu);
+	    sect[i].y0 = sect[i].y1 = -2;
+	}
+	code = store_margin(ll, &ll->margin_set1, imin, imax);
 	if (code < 0)
 	    return code;
-    }
+#   endif
     return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
+}
+
+static inline int compute_padding(section *s)
+{
+    return (s->y0 < 0 || s->y1 < 0 ? -2 : /* contacts a trapezoid - don't paint */
+	    s->y1 < fixed_half ? 0 : 
+	    s->y0 > fixed_half ? 1 : 
+	    fixed_half - s->y0 < s->y1 - fixed_half ? 1 : 0);
 }
 
 private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0, int i1,
@@ -1398,7 +1482,7 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
 {   /* Returns the new index (positive) or return code (negative). */
     section *sect = ms->sect;
     int iy = fixed2int_var_pixround(ms->y);
-    int i, ir, h = -3, code;
+    int i, ir, h = -2, code;
 
     assert(i0 >= 0 && i1 <= ll->bbox_width);
     ir = i0;
@@ -1409,10 +1493,30 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
 	    y0 = 0;
 	if (y1 == -1) 
 	    y1 = fixed_scale - 1;
-	hh = (sect[i].y0 < 0 || sect[i].y1 < 0 ? -2 : /* contacts a trapezoid - don't paint */
-	      sect[i].y1 < fixed_half ? 0 : 
-	      sect[i].y0 > fixed_half ? 1 : 
-	      fixed_half - sect[i].y0 < sect[i].y1 - fixed_half ? 1 : 0);
+	hh = compute_padding(&sect[i]);
+#	if ADJUST_SERIF
+	    if (hh >= 0) {
+#		if !CHECK_SPOT_CONTIGUITY
+		    if (i == i0 && i + 1 < i1) {
+			int hhh = compute_padding(&sect[i + 1]);
+
+			hh = hhh;
+		    } else if (i == i1 - 1 && i > i0)
+			hh = h; 
+		    /* We could optimize it with moving outside the cycle.
+		     * Delaying the optimization until the code is well tested.
+		     */
+#		else
+		    if (sect[i].x0 > 0 && sect[i].x1 == fixed_1 && i + 1 < i1) {
+			hh = (i + 1 < i1 ? compute_padding(&sect[i + 1]) : -2);
+			/* We could cache hh.
+			 * Delaying the optimization until the code is well tested.
+			 */
+		    } else if (sect[i].x0 == 0 && sect[i].x1 < fixed_1)
+			hh = h;
+#		endif
+	    }
+#	endif
 	if (h != hh) {
 	    if (h >= 0) {
 		VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
@@ -1430,9 +1534,43 @@ private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0,
 	if (code < 0)
 	    return code;
     }
-    for (i = i0; i < i1; i++)
-	sect[i].y0 = sect[i].y1 = -1;
+    init_section(sect, i0, i1);
     return 0;
+/*
+ *  We added the ADJUST_SERIF feature for small fonts, which are poorly hinted.
+ *  An example is 033-52-5873.pdf at 72 dpi.
+ *  We either suppress a serif or move it up or down for 1 pixel.
+ *  If we would paint it as an entire pixel where it occures, it looks too big
+ *  relatively to the character size. Besides, a stem end may
+ *  be placed a little bit below the baseline, and our dropout prevention 
+ *  method desides to paint a pixel below baseline, so that it looks
+ *  fallen down (or fallen up in the case of character top).
+ *  
+ *  We assume that contacting margins are merged in margin_list.
+ *  This implies that areas outside a margin are not painted
+ *  (Only useful without CHECK_SPOT_CONTIGUITY).
+ *
+ *  With no CHECK_SPOT_CONTIGUITY we can't perfectly handle the case when 2 serifs
+ *  contact each another inside a margin interior (such as Serif 'n').
+ *  Since we don't know the contiguty, we misrecognize them as a stem and 
+ *  leave them as they are (possibly still fallen down or up).
+ *
+ *  CHECK_SPOT_CONTIGUITY computes the contiguity of the intersection of the spot
+ *  and the section window. It allows to recognize contacting serifs properly.
+ *
+ *  If a serif isn't painted with regular trapezoids, 
+ *  it appears a small one, so we don't need to measure its size.
+ *  This heuristic isn't perfect, but it is very fast.
+ *  Meanwhile with CHECK_SPOT_CONTIGUITY we actually have something
+ *  like a bbox for a small serif, and a rough estimation is possible.
+ * 
+ *  We believe that in normal cases this stuff should work idle,
+ *  because a perfect rendering should either use anti-aliasing 
+ *  (so that the character isn't small in the subpixel grid),
+ *  and/or the path must be well fitted into the grid. So please consider
+ *  this code as an attempt to do our best for the case of a 
+ *  non-well-setup rendering.
+ */
 }
 
 private int close_margins(gx_device * dev, line_list * ll, margin_set *ms, 
