@@ -53,8 +53,6 @@
 #include "gscrypt1.h"
 #include "gxfcid.h"
 
-#define CheckRET(a) { int x = a; if(x < 0) return x; }
-
 /* -------------------------------------------------------- */
 
 typedef struct FAPI_outline_handler_s {
@@ -76,7 +74,7 @@ private int add_closepath(FAPI_path *I)
 private int add_move(FAPI_path *I, FracInt x, FracInt y)
 {   FAPI_outline_handler *olh = (FAPI_outline_handler *)I->olh;
     if (olh->need_close && olh->close_path)
-        CheckRET(add_closepath(I));
+        return_if_error(add_closepath(I));
     olh->need_close = false;
     return gx_path_add_point(olh->path, import_shift(x, I->shift) + olh->x0, -import_shift(y, I->shift) + olh->y0);
 }
@@ -599,7 +597,7 @@ private const FAPI_font ff_stub = {
 
 private int FAPI_get_xlatmap(i_ctx_t *i_ctx_p, char **xlatmap)
 {   ref *pref;
-    CheckRET(dict_find_string(systemdict, ".xlatmap", &pref));
+    return_if_error(dict_find_string(systemdict, ".xlatmap", &pref));
     if (r_type(pref) != t_string)
         return_error(e_typecheck);
     *xlatmap = (char *)pref->value.bytes;
@@ -649,7 +647,7 @@ private int FAPI_find_plugin(i_ctx_t *i_ctx_p, const char *subtype, FAPI_server 
        	if (!strcmp(h->I->d->type,"FAPI"))
 	    if (!strcmp(h->I->d->subtype, subtype)) {
 	        FAPI_server *I = *pI = (FAPI_server *)h->I;
-	        CheckRET(renderer_retcode(i_ctx_p, I, I->ensure_open(I)));
+	        return_if_error(renderer_retcode(i_ctx_p, I, I->ensure_open(I)));
 	        return 0;
 	    }
     return_error(e_invalidfont);
@@ -666,7 +664,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     char *xlatmap = NULL;
     FAPI_font ff = ff_stub;
     if (font_file_path != NULL && pbfont->FAPI_font_data == NULL)
-        CheckRET(FAPI_get_xlatmap(i_ctx_p, &xlatmap));
+        return_if_error(FAPI_get_xlatmap(i_ctx_p, &xlatmap));
     scale = 1 << I->frac_shift;
     size1 = size = 1 / hypot(pbfont->FontMatrix.xx, pbfont->FontMatrix.xy);
     if (size < 1000)
@@ -684,10 +682,10 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
     ff.client_font_data2 = pdr;
     ff.server_font_data = pbfont->FAPI_font_data; /* Possibly pass it from zFAPIpassfont. */
     ff.is_cid = IsCIDFont(pbfont);
-    CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, xlatmap, false)));
+    return_if_error(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, xlatmap, false)));
     pbfont->FAPI_font_data = ff.server_font_data; /* Save it back to GS font. */
-    CheckRET(renderer_retcode(i_ctx_p, I, I->get_font_bbox(I, &ff, BBox)));
-    CheckRET(renderer_retcode(i_ctx_p, I, I->get_decodingID(I, &ff, &decodingID)));
+    return_if_error(renderer_retcode(i_ctx_p, I, I->get_font_bbox(I, &ff, BBox)));
+    return_if_error(renderer_retcode(i_ctx_p, I, I->get_decodingID(I, &ff, &decodingID)));
 
     /* Refine FontBBox : */
     pbfont->FontBBox.p.x = (double)BBox[0] * size1 / size;
@@ -719,15 +717,15 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
                 return_error(e_invalidfont);
             ordering_length = min(r_size(Ordering), sizeof(buf) - 2 - decodingID_length);
             memcpy(buf, Ordering->value.const_bytes, ordering_length);
-            CheckRET(name_ref(buf, ordering_length, &SubstNWP, 0));
-            CheckRET(dict_put_string(pdr, "SubstNWP", &SubstNWP, NULL));
+            return_if_error(name_ref(buf, ordering_length, &SubstNWP, 0));
+            return_if_error(dict_put_string(pdr, "SubstNWP", &SubstNWP, NULL));
             buf[ordering_length] = '.';
             memcpy(buf + ordering_length + 1, decodingID, decodingID_length);
             buf[decodingID_length + 1 + ordering_length] = 0; /* Debug purpose only */
-            CheckRET(name_ref(buf, decodingID_length + 1 + ordering_length, &Decoding, 0));
+            return_if_error(name_ref(buf, decodingID_length + 1 + ordering_length, &Decoding, 0));
         } else
-            CheckRET(name_ref((const byte *)decodingID, strlen(decodingID), &Decoding, 0));
-        CheckRET(dict_put_string(pdr, "Decoding", &Decoding, NULL));
+            return_if_error(name_ref((const byte *)decodingID, strlen(decodingID), &Decoding, 0));
+        return_if_error(dict_put_string(pdr, "Decoding", &Decoding, NULL));
     }
 
     /* Refine descendents : */
@@ -750,7 +748,7 @@ private int FAPI_refine_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base *pbfont, 
             ff.client_font_data2 = &f;
             ff.server_font_data = pbfont1->FAPI_font_data;
             ff.is_cid = true;
-            CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, 0, matrix, HWResolution, NULL, false)));
+            return_if_error(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, 0, matrix, HWResolution, NULL, false)));
             pbfont1->FAPI_font_data = ff.server_font_data; /* Save it back to GS font. */
         }
     }
@@ -789,7 +787,7 @@ private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
     const byte *pchars;
     uint len;
     font_data *pdata;
-    CheckRET(code);
+    return_if_error(code);
     check_type(*op, t_boolean);
     if (pbfont->FAPI != 0) {
         /*  If the font was processed with zFAPIpassfont,
@@ -803,15 +801,15 @@ private int zFAPIrebuildfont(i_ctx_t *i_ctx_p)
         len = min(len, sizeof(FAPI_ID) - 1);
         strncpy(FAPI_ID, (const char *)pchars, len);
         FAPI_ID[len] = 0;
-        CheckRET(FAPI_find_plugin(i_ctx_p, FAPI_ID, &pbfont->FAPI));
+        return_if_error(FAPI_find_plugin(i_ctx_p, FAPI_ID, &pbfont->FAPI));
     }
     pdata = (font_data *)pfont->client_data;
     if (dict_find_string(op - 1, "Path", &v) <= 0 || !r_has_type(v, t_string))
         v = NULL;
     if (pfont->FontType == ft_CID_encrypted && v == NULL) {
-        CheckRET(build_proc_name_refs(&build, ".FAPIBuildGlyph9", ".FAPIBuildGlyph9"));
+        return_if_error(build_proc_name_refs(&build, ".FAPIBuildGlyph9", ".FAPIBuildGlyph9"));
     } else
-        CheckRET(build_proc_name_refs(&build, ".FAPIBuildChar", ".FAPIBuildGlyph"));
+        return_if_error(build_proc_name_refs(&build, ".FAPIBuildChar", ".FAPIBuildGlyph"));
     if (name_index(&pdata->BuildChar) == name_index(&build.BuildChar)) {
         /* Already rebuilt - maybe a substituted font. */
     } else {
@@ -864,9 +862,9 @@ private int outline_char(i_ctx_t *i_ctx_p, FAPI_server *I, int import_shift_v, g
     olh.need_close = false;
     path_interface.olh = &olh;
     path_interface.shift = import_shift_v;
-    CheckRET(renderer_retcode(i_ctx_p, I, I->get_char_outline(I, &path_interface)));
+    return_if_error(renderer_retcode(i_ctx_p, I, I->get_char_outline(I, &path_interface)));
     if (olh.need_close && olh.close_path)
-        CheckRET(add_closepath(&path_interface));
+        return_if_error(add_closepath(&path_interface));
     return 0;
 }
 
@@ -897,23 +895,23 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
         /* do nothing */
     } else if (igs->in_charpath) {
-        CheckRET(outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->show_gstate->path, !pbfont->PaintType));
+        return_if_error(outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->show_gstate->path, !pbfont->PaintType));
     } else {
         int code = I->get_char_raster(I, &rast);
         if (code == e_limitcheck) {
             /* The rerver provides an outline instead the raster. */
             gs_imager_state *pis = (gs_imager_state *)pgs->show_gstate;
             gs_point pt;
-            CheckRET(gs_currentpoint(pgs->show_gstate, &pt));
-            CheckRET(outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->show_gstate->path, !pbfont->PaintType));
-            CheckRET(gs_imager_setflat(pis, gs_char_flatness(pis, 1.0)));
+            return_if_error(gs_currentpoint(pgs->show_gstate, &pt));
+            return_if_error(outline_char(i_ctx_p, I, import_shift_v, penum_s, pgs->show_gstate->path, !pbfont->PaintType));
+            return_if_error(gs_imager_setflat(pis, gs_char_flatness(pis, 1.0)));
             if (pbfont->PaintType) {
-                CheckRET(gs_stroke(pgs->show_gstate));
+                return_if_error(gs_stroke(pgs->show_gstate));
             } else
-                CheckRET(gs_fill(pgs->show_gstate));
-            CheckRET(gs_moveto(pgs->show_gstate, pt.x, pt.y));
+                return_if_error(gs_fill(pgs->show_gstate));
+            return_if_error(gs_moveto(pgs->show_gstate, pt.x, pt.y));
         } else {
-            CheckRET(renderer_retcode(i_ctx_p, I, code));
+            return_if_error(renderer_retcode(i_ctx_p, I, code));
             if (pgs->in_cachedevice == CACHE_DEVICE_CACHING) { /* Using GS cache */
                 /*  GS and renderer may transform coordinates few differently.
                     The best way is to make set_cache_device to take the renderer's bitmap metrics immediately,
@@ -925,11 +923,11 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
                 int rounding = 1 << (frac_pixel_shift - 1);
                 int dx = arith_rshift_slow((pgs->ctm.tx_fixed >> shift_rd) + rast.orig_x + rounding, frac_pixel_shift);
                 int dy = arith_rshift_slow((pgs->ctm.ty_fixed >> shift_rd) - rast.orig_y + rounding, frac_pixel_shift);
-	        CheckRET(dev_proc(dev1, copy_mono)(dev1, rast.p, 0, rast.line_step, 0, dx, dy, rast.width, rast.height, 0, 1));
+	        return_if_error(dev_proc(dev1, copy_mono)(dev1, rast.p, 0, rast.line_step, 0, dx, dy, rast.width, rast.height, 0, 1));
             } else { /* Not using GS cache */
 	        const gx_clip_path * pcpath = i_ctx_p->pgs->clip_path; 
                 const gx_drawing_color * pdcolor = penum->pdcolor;
-	        CheckRET(dev_proc(dev, fill_mask)(dev, rast.p, 0, rast.line_step, 0,
+	        return_if_error(dev_proc(dev, fill_mask)(dev, rast.p, 0, rast.line_step, 0,
 			          (int)(penum_s->pgs->ctm.tx + (double)rast.orig_x / (1 << frac_pixel_shift) + 0.5), 
 			          (int)(penum_s->pgs->ctm.ty - (double)rast.orig_y / (1 << frac_pixel_shift) + 0.5), 
 			          rast.width, rast.height,
@@ -1039,7 +1037,7 @@ retry_oversampling:
     ff.client_font_data = pbfont;
     ff.client_font_data2 = op - 1;
     ff.server_font_data = pbfont->FAPI_font_data;
-    CheckRET(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, NULL, bVertical)));
+    return_if_error(renderer_retcode(i_ctx_p, I, I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, NULL, bVertical)));
     /* fixme : it would be nice to call get_scaled_font at once for entire 'show' string. */
 
     /* Obtain the character name : */
@@ -1053,7 +1051,7 @@ retry_oversampling:
         if (dict_find_string(osp - 1, "Encoding", &Encoding) > 0 && 
             (r_has_type(Encoding, t_array) || r_has_type(Encoding, t_shortarray))) {
 	    if (array_get(Encoding, client_char_code, &char_name) < 0)
-	        CheckRET(name_ref((const byte *)".notdef", 7, &char_name, -1));
+	        return_if_error(name_ref((const byte *)".notdef", 7, &char_name, -1));
 	} else
             return_error(e_invalidfont);
     } else 
@@ -1077,9 +1075,9 @@ retry_oversampling:
                     */
                     ref rb, re, rs;
                     int nb, ne, ns;
-                    CheckRET(array_get(SubstNWP, i + 1, &rb));
-                    CheckRET(array_get(SubstNWP, i + 2, &re));
-                    CheckRET(array_get(SubstNWP, i + 3, &rs));
+                    return_if_error(array_get(SubstNWP, i + 1, &rb));
+                    return_if_error(array_get(SubstNWP, i + 2, &re));
+                    return_if_error(array_get(SubstNWP, i + 3, &rs));
                     nb = rb.value.intval;
                     ne = re.value.intval;
                     ns = rs.value.intval;
@@ -1100,7 +1098,7 @@ retry_oversampling:
             return_error(e_invalidfont);
         if (dict_find(CharStrings, &char_name, &glyph_index) < 0) {
             cr.char_code = 0; /* .notdef */
-            CheckRET(name_ref((const byte *)".notdef", 7, &char_name, -1));
+            return_if_error(name_ref((const byte *)".notdef", 7, &char_name, -1));
         } else if (r_has_type(glyph_index, t_integer))
             cr.char_code = glyph_index->value.intval;
         else
@@ -1128,7 +1126,7 @@ retry_oversampling:
     } else { /* a non-embedded font, i.e. a disk font */
         bool can_retrieve_char_by_name = false;
         obj_string_data(&char_name, &cr.char_name, &cr.char_name_length);
-        CheckRET(renderer_retcode(i_ctx_p, I, I->can_retrieve_char_by_name(I, &ff, &cr, &can_retrieve_char_by_name)));
+        return_if_error(renderer_retcode(i_ctx_p, I, I->can_retrieve_char_by_name(I, &ff, &cr, &can_retrieve_char_by_name)));
         if (!can_retrieve_char_by_name) {
 	    /* Translate from char name to encoding used with 3d party font technology : */
 	    ref *Decoding, *char_code;
@@ -1145,9 +1143,9 @@ retry_oversampling:
     else
         ff.client_char_data = &char_name;
     if (SHOW_IS(penum, TEXT_DO_NONE)) {
-	CheckRET(renderer_retcode(i_ctx_p, I, I->get_char_width(I, &ff, &cr, &metrics.escapement)));
+	return_if_error(renderer_retcode(i_ctx_p, I, I->get_char_width(I, &ff, &cr, &metrics)));
     } else if (igs->in_charpath) {
-        CheckRET(renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &ff, &cr, &metrics)));
+        return_if_error(renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &ff, &cr, &metrics)));
     } else {
         code = I->get_char_raster_metrics(I, &ff, &cr, &metrics);
         if (code == e_limitcheck) {
@@ -1156,21 +1154,21 @@ retry_oversampling:
                 I->release_char_data(I);
                 goto retry_oversampling;
             }
-            CheckRET(renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &ff, &cr, &metrics)));
+            return_if_error(renderer_retcode(i_ctx_p, I, I->get_char_outline_metrics(I, &ff, &cr, &metrics)));
         } else {
-            CheckRET(renderer_retcode(i_ctx_p, I, code));
+            return_if_error(renderer_retcode(i_ctx_p, I, code));
         }
     }
     compute_em_scale(pbfont, &metrics, FontMatrix_div, &em_scale_x, &em_scale_y);
     code = zchar_get_metrics(pbfont, &char_name, sbw);
-    CheckRET(code);
+    return_if_error(code);
     if (code == metricsNone) {
         if (pbfont->FontType == 2 && font_file_path == NULL) {
             ref *nominalWidthX, *Private;
             float v;
             if (dict_find_string(osp - 1, "Private", &Private) <= 0 || !r_has_type(Private, t_dictionary))
                 return_error(e_invalidfont);
-            CheckRET(dict_float_param(Private, "nominalWidthX", 0, &v));
+            return_if_error(dict_float_param(Private, "nominalWidthX", 0, &v));
             sbw[2] = metrics.escapement / em_scale_x + (int)v;
             sbw[3] = 0;
         } else {
@@ -1178,7 +1176,7 @@ retry_oversampling:
             sbw[3] = 0;
         }
     } else {
-	CheckRET(zchar_get_metrics(pbfont, op, sbw));
+	return_if_error(zchar_get_metrics(pbfont, op, sbw));
     }
     char_bbox.p.x = metrics.bbox_x0 / em_scale_x;
     char_bbox.p.y = metrics.bbox_y0 / em_scale_y;
@@ -1228,7 +1226,7 @@ private int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
     ref font9 = *pfont_dict(gs_currentfont(igs));
     ref *rFDArray, f;
     int font_index;
-    CheckRET(ztype9mapcid(i_ctx_p));  /* <font0> <cid> <charstring> <font_index> */
+    return_if_error(ztype9mapcid(i_ctx_p));  /* <font0> <cid> <charstring> <font_index> */
     /* fixme: what happens if the charstring is absent ? 
        Can FDArray contain 'null' (see %Type9BuildGlyph in gs_cidfn.ps)? */
     font_index = op[0].value.intval;
@@ -1239,7 +1237,7 @@ private int FAPIBuildGlyph9aux(i_ctx_t *i_ctx_p)
     op[0] = op[-2];                   
     op[-2] = op[-1]; /* Keep the charstring on ostack for the garbager. */
     op[-1] = f;                       /* <font0> <charstring> <subfont> <cid> */
-    CheckRET(FAPI_char(i_ctx_p, true, op - 2));
+    return_if_error(FAPI_char(i_ctx_p, true, op - 2));
                                       /* <font0> <charstring> */
     return 0;
 }
@@ -1298,7 +1296,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
     char *xlatmap = NULL; /* Not needed for embedded fonts. */
     ref *SubfontId;
     FAPI_font ff = ff_stub;
-    CheckRET(code);
+    return_if_error(code);
     pbfont = (gs_font_base *)pfont;
     if (dict_find_string(pdr, "SubfontId", &SubfontId) > 0 && r_has_type(SubfontId, t_integer))
         subfont = SubfontId->value.intval;
@@ -1315,7 +1313,7 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
        	if (strcmp(h->I->d->type, "FAPI"))
             continue;
         I = (FAPI_server *)h->I;
-        CheckRET(renderer_retcode(i_ctx_p, I, I->ensure_open(I)));
+        return_if_error(renderer_retcode(i_ctx_p, I, I->ensure_open(I)));
 	HWResolution[0] = HWResolution[1] = 72 << I->frac_shift;
 	matrix[0] = matrix[3] = 1 << I->frac_shift;
 	if(I->get_scaled_font(I, &ff, subfont, matrix, HWResolution, xlatmap, false)) {
@@ -1335,8 +1333,8 @@ private int do_FAPIpassfont(i_ctx_t *i_ctx_p, bool *success)
         }
         /* fixme : with CID fonts we need to test something more. */
         pbfont->FAPI = I; /* We found a good renderer, so go with it */
-        CheckRET(name_ref((const byte *)I->ig.d->subtype, strlen(I->ig.d->subtype), &FAPI_ID, false));
-	CheckRET(dict_put_string(pdr, "FAPI", &FAPI_ID, NULL)); /* Insert FAPI entry to font dictionary. */
+        return_if_error(name_ref((const byte *)I->ig.d->subtype, strlen(I->ig.d->subtype), &FAPI_ID, false));
+	return_if_error(dict_put_string(pdr, "FAPI", &FAPI_ID, NULL)); /* Insert FAPI entry to font dictionary. */
 	*success = true;
 	return 0;
     }

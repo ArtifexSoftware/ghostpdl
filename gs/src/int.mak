@@ -1786,7 +1786,7 @@ $(PSD)fapiu1.dev : $(INT_MAK) $(ECHOGS_XE) \
 	$(ADDMOD) $(PSD)fapiu1 -link $(UFST_LIB)tt_lib$(UFST_LIB_EXT) $(UFST_LIB)psi_lib$(UFST_LIB_EXT)
 
 $(PSOBJ)fapiufst.$(OBJ) : $(PSSRC)fapiufst.c $(OP) \
- $(memory__h) $(stdio__h) $(math__h) $(errors_h) $(iplugin_h) $(ifapi_h) $(gxfapi_h) \
+ $(memory__h) $(stdio__h) $(math__h) $(errors_h) $(iplugin_h) $(ifapi_h) $(gserror_h) $(gxfapi_h) \
  $(UFST_ROOT)$(D)rts$(D)inc$(D)cgconfig.h\
  $(UFST_ROOT)$(D)rts$(D)inc$(D)shareinc.h\
  $(UFST_ROOT)$(D)sys$(D)inc$(D)port.h\

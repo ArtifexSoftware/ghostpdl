@@ -37,7 +37,7 @@
 /* GS includes : */
 #include "gxfapi.h"
 
-#define CheckRET(a) { int x = a; if(x != 0) return x; }
+#define return_if_error(a) { int x = a; if(x != 0) return x; }
 
 GLOBAL const SW16 trace_sw = 0; /* UFST 4.3 wants it. */
 
@@ -123,12 +123,12 @@ private inline void release_char_data_inline(fapi_ufst_server *r)
 
 private FAPI_retcode open_UFST(fapi_ufst_server *r)
 {   IFCONFIG   config_block;
-    CheckRET(CGIFinit(&r->IFS));
+    return_if_error(CGIFinit(&r->IFS));
     r->IFS.mem_avail[BUFFER_POOL]  = 6000000L; /* For Asian TT fonts with vertical writing mode. */
     config_block.num_files = 10;
     config_block.bit_map_width = 1;
-    CheckRET(CGIFconfig(&r->IFS, &config_block));
-    CheckRET(CGIFenter(&r->IFS));
+    return_if_error(CGIFconfig(&r->IFS, &config_block));
+    return_if_error(CGIFenter(&r->IFS));
     return 0;
 }		      
 
@@ -472,7 +472,7 @@ private FAPI_retcode fco_open(fapi_ufst_server *r, const char *font_file_path, f
     }
     if (e == 0) {
         SW16 fcHandle;
-        CheckRET(CGIFfco_Open(&r->IFS, (UB8 *)font_file_path, &fcHandle));
+        return_if_error(CGIFfco_Open(&r->IFS, (UB8 *)font_file_path, &fcHandle));
         e = (fco_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(*e), "fco_list_elem");
         if (e == 0) {
             CGIFfco_Close(&r->IFS, fcHandle);
@@ -537,7 +537,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
         fclose(f);
         if (d->font_type == FC_FCO_TYPE) {
             fco_list_elem *e;
-            CheckRET(fco_open(r, font_file_path, &e));
+            return_if_error(fco_open(r, font_file_path, &e));
             enumerate_fco(r, font_file_path); /* development perpose only */
             d->font_id = (e->fcHandle << 16) | subfont;
         }
@@ -639,7 +639,7 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     FAPI_retcode code;
     ff->need_decrypt = 1;
     if (d == 0) {
-        CheckRET(make_font_data(r, ff->font_file_path, subfont, ff, &d));
+        return_if_error(make_font_data(r, ff->font_file_path, subfont, ff, &d));
         ff->server_font_data = d;
         prepare_typeface(r, d);
         if (ff->font_file_path != NULL || ff->is_type1) /* such fonts don't use RAW_GLYPH */
@@ -693,7 +693,7 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     r->callback_error = 0;
     gx_set_UFST_Callbacks(gs_PCLEO_charptr, gs_PCLchId2ptr, gs_PCLglyphID2Ptr);
     code = CGIFfont(&r->IFS, fc);
-    CheckRET(r->callback_error);
+    return_if_error(r->callback_error);
     return code;
 }
 
@@ -707,7 +707,7 @@ private FAPI_retcode get_decodingID(FAPI_server *server, FAPI_font *ff, const ch
 private FAPI_retcode get_font_bbox(FAPI_server *server, FAPI_font *ff, int BBox[4])
 {   fapi_ufst_server *r = If_to_I(server);
     SW16 VLCPower = 0;
-    CheckRET(CGIFbound_box(&r->IFS, BBox, &VLCPower));
+    return_if_error(CGIFbound_box(&r->IFS, BBox, &VLCPower));
     /*  UFST expands bbox for internal needs, and retrives the expanded bbox.
         We believe it's bug in UFST.
         Now we collapse it back to the correct size :
@@ -774,7 +774,7 @@ private void release_glyphs(fapi_ufst_server *r, ufst_common_font_data *d)
     }
 }
 
-private FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *escapement)
+private FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics)
 {   fapi_ufst_server *r = If_to_I(server);
     UW16 buffer[2];
     UW16 cc = (UW16)c->char_code;
@@ -782,10 +782,11 @@ private FAPI_retcode get_char_width(FAPI_server *server, FAPI_font *ff, FAPI_cha
     make_asciiz_char_name(PSchar_name, sizeof(PSchar_name), c);
     r->ff = ff;
     CGIFchIdptr(&r->IFS, &cc, PSchar_name);
-    CheckRET(CGIFwidth(&r->IFS, cc, 1, 4, buffer));
+    return_if_error(CGIFwidth(&r->IFS, cc, 1, 4, buffer));
     r->ff = 0;
     release_glyphs(r, (ufst_common_font_data *)ff->server_font_data);
-    *escapement = buffer[0]; /* fixme : not tested after the change. */
+    metrics->escapement = buffer[0];
+    metrics->em_x = metrics->em_y = buffer[1];
     return 0;
 }
 
@@ -806,16 +807,16 @@ private int export_outline(fapi_ufst_server *r, PIFOUTLINE pol, FAPI_path *p)
         points = (PINTRVECTOR)((LPSB8)(outchar->loop) + outchar->loop[i].coord_offset);
         for(j=0; j<num_segmts; j++) {
             if(*segment == 0x00) {
-             	CheckRET(p->moveto(p, points->x, points->y));
+             	return_if_error(p->moveto(p, points->x, points->y));
                 points++;
             } else if (*segment == 0x01) {
-		CheckRET(p->lineto(p, points->x, points->y));
+		return_if_error(p->lineto(p, points->x, points->y));
                 points++;
             } else if (*segment == 0x02) {
                 points+=2;
                 return e_invalidfont; /* This must not happen */
             } else if (*segment == 0x03) {
-		CheckRET(p->curveto(p, points[0].x, points[0].y, points[1].x, points[1].y, points[2].x, points[2].y));
+		return_if_error(p->curveto(p, points[0].x, points[0].y, points[1].x, points[1].y, points[2].x, points[2].y));
                 points+=3;
             } else
                 return e_invalidfont; /* This must not happen */
@@ -859,14 +860,14 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
         UW16 c1 = 0, ssnum = r->IFS.fcCur.ssnum;
         /* hack : Changing UFST internal data - see above. */
         r->IFS.fcCur.ssnum = RAW_GLYPH;
-        CheckRET(r->callback_error);
+        return_if_error(r->callback_error);
         CGIFchIdptr(&r->IFS, &c1, (char *)".notdef");
         code = CGIFchar_with_design_bbox(&r->IFS, c1, &result, (SW16)0, design_bbox, &design_escapement);
         r->IFS.fcCur.ssnum = ssnum;
     }
     r->ff = 0;
     release_glyphs(r, (ufst_common_font_data *)ff->server_font_data);
-    CheckRET(r->callback_error);
+    return_if_error(r->callback_error);
     if (code != ERR_fixed_space && code != 0)
 	return code;
     if (format == FC_BITMAP_TYPE) {
