@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.35 2002/07/17 23:59:29 giles Exp $
+    $Id: jbig2dec.c,v 1.36 2002/07/20 16:02:24 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -35,9 +35,7 @@
 # include "getopt.h"
 #endif
 
-#ifdef HAVE_OPENSSL_SHA1
-# include <openssl/evp.h>
-#endif
+#include "sha1.h"
 
 typedef enum {
     usage,dump,render
@@ -46,9 +44,7 @@ typedef enum {
 typedef struct {
 	jbig2dec_mode mode;
 	int verbose, hash;
-#ifdef HAVE_OPENSSL_SHA1
-        EVP_MD_CTX *hash_ctx;
-#endif
+        SHA1_CTX *hash_ctx;
 	char *output_file;
 } jbig2dec_params_t;
 
@@ -59,55 +55,42 @@ static int print_usage(void);
 static void
 hash_init(jbig2dec_params_t *params)
 {
-#ifdef HAVE_OPENSSL_SHA1
-    params->hash_ctx = malloc(sizeof(EVP_MD_CTX));
+    params->hash_ctx = malloc(sizeof(SHA1_CTX));
     if (params->hash == NULL) {
         fprintf(stderr, "unable to allocate hash state\n");
         params->hash = 0;
         return;
     } else {
-        // FIXME: is this call ever necessary?
-        //OpenSSL_add_all_digests();
-        EVP_DigestInit(params->hash_ctx, EVP_sha1());
+        SHA1_Init(params->hash_ctx);
     }
-#endif /* HAVE_OPENSSL_SHA1 */
 }
 
 static void
 hash_image(jbig2dec_params_t *params, Jbig2Image *image)
 {
     unsigned int N = image->stride * image->height;
-#ifdef HAVE_OPENSSL_SHA1
-    EVP_DigestUpdate(params->hash_ctx, image->data, N);
-#endif
+    SHA1_Update(params->hash_ctx, image->data, N);
 }
 
 static void
 hash_print(jbig2dec_params_t *params, FILE *out)
 {
-#ifdef HAVE_OPENSSL_SHA1
-    unsigned char md[EVP_MAX_MD_SIZE];
-    char digest[2*EVP_MAX_MD_SIZE + 1];
+    unsigned char md[SHA1_DIGEST_SIZE];
+    char digest[2*SHA1_DIGEST_SIZE + 1];
     int i, len;
     
-    EVP_DigestFinal(params->hash_ctx, md, &len);
-    for (i = 0; i < len; i++) {
+    SHA1_Final(params->hash_ctx, md);
+    for (i = 0; i < SHA1_DIGEST_SIZE; i++) {
         snprintf(&(digest[2*i]), 3, "%02x", md[i]);
     }
     fprintf(out, "%s", digest);
-#else
-    fprintf(out, "sorry, hash function unimplemented");
-#endif
 }
 
 static void
 hash_free(jbig2dec_params_t *params)
 {
-#ifdef HAVE_OPENSSL_SHA1
-    // FIXME: need to check for SHA1 finalization?
     free(params->hash_ctx);
     params->hash_ctx = NULL;
-#endif
 }
 
 
