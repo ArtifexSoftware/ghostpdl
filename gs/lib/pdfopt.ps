@@ -185,6 +185,14 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   begin N 8 ne { S B write /B 0 def /N 8 def } if end
 } bind def
 
+/bwn {                  % <value> <width> bwn -
+  2 copy                % v w v w
+  2 exch exp ge {       % v w v>=2**w
+    /bwn cvx /rangecheck signalerror
+  } if
+  bits 3 1 roll bitwrite
+} def
+
 % Capture OFile output on the temporary file, in memory, or just as a length.
 /totemp {		% <proc> totemp <start> <end>
   TFile fileposition OFile
@@ -507,15 +515,25 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
     0 get marks exch 1 lput
   } forall
 		% Collect the non-shared objects of each page.
+  dup
   [ exch {
     [ exch {
       marks 1 index lget 1 ne { pop } if
     } forall ]
   } forall ]
-		% Collect the shared objects.
+                % Collect the shared objects of each page.
+  exch
+  [ exch {
+    [ exch {
+      marks 1 index lget dup 1 le exch 255 eq or { pop } if
+    } forall ]
+  } forall ]
+
+                % Collect the shared objects.
   [ 1 1 marks llength 1 sub {
     marks 1 index lget dup 1 le exch 255 eq or { pop } if
   } for ]
+
   end
 } bind def
 
@@ -731,20 +749,30 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 /contentsobjects { % <pagedict> contentsobjects <firstobj#> <lastobj#> true
 		   % <pagedict> contentsobjects false
   /Contents .knownget {
-    dup oforce dup type /dicttype eq {
-      pop dup
+    dup oforce                   % ref []
+    dup type /dicttype eq {
+      pop 0 get dup true         % ref ref
     } {
-      dup 0 get exch dup length 1 sub get
+      exch pop                   % []
+      dup length 0 ne {
+        dup 0 get 0 get          % [] 1st
+        exch dup                 % 1st [] [] 
+        length 1 sub get 0 get   % 1st last 
+        true
+      } {
+        pop false
+      } ifelse
     } ifelse
-    exch 0 get exch 0 get true
   } {
     false
   } ifelse
 } bind def
+
 /contentsstart {	% <pagedict> contentsstart <pos> true
 			% <pagedict> contentsstart false
   contentsobjects { pop omstart true } { false } ifelse
 } bind def
+
 /contentslength {	% <pagedict> contentslength <length>
   contentsobjects { omend exch omstart sub } { 0 } ifelse
 } bind def
@@ -754,12 +782,12 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   PDFOPTDEBUG { /writePageOffsetHints == } if
   20 dict begin
   /bits OFile bitstream def
-  /bwn { bits 3 1 roll bitwrite } def
 
 	% Calculate least length of a page.
   FirstPageLength OtherPageLengths { .min } forall
   /minpl exch def
-	% Calculate least contents length.
+
+        % Calculate least contents length.
   FirstPageNs 0 get Objects exch lget contentslength
   OtherPageNs { 0 get Objects exch lget contentslength .min } forall
   /mincl exch def
@@ -780,7 +808,14 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 	% be equal to item 9 (maxclbits).  Set both to the max of the two.
   maxplbits maxclbits .max /maxplbits 1 index def /maxclbits exch def
 
-		% 1: Least number of objects in a page:
+        % Mapping from object number to shared object reference
+  /shared_id_dict SharedNs length dict begin
+  0 SharedNs { 1 index def 1 add } forall pop
+  currentdict end def 
+
+                % Table F.3 Page offset hint table, header section
+
+                % 1: Least number of objects in a page:
   FirstPageNs length OtherPageNs { length .min } forall
   /minnop 1 index def 32 bwn
 		% 2: Location of first page's Page object:
@@ -804,95 +839,120 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 		% 9: Bits needed to represent the greatest Contents length:
   maxclbits 16 bwn
 		% 10: Bits needed to represent the greatest number of Shared
-  0		% Object references (we don't report any):
+   		% Object references:
+  0 SharedPageNs { length .max } forall bitsneeded
   /maxsorbits 1 index def 16 bwn
-		% 11: Bits needed to identify a Shared Object (we don't
-  0		% report any):
+		% 11: Bits needed to identify a Shared Object:
+  SharedNs length bitsneeded
   /sobits 1 index def 16 bwn
-		% 12: Bits needed to represent numerator of fraction (only
-  0		% needed for Shared Object references, which we don't report):
+		% 12: Bits needed to represent numerator of fraction:
+  2
   /numfbits 1 index def 16 bwn
-		% 13: Denominator of fraction (only needed for Shared Object
-		% references, which we don't report):
-  255	% arbitrary
+		% 13: Denominator of fraction:
+  1
   /denf 1 index def 16 bwn
 
-		% Number of objects in pages:
+                % Table F.4 Page offset hint table, per-page entry
+
+                % 1: Number of objects in pages:
   FirstPageNs length minnop sub maxnopbits bwn
   OtherPageNs {
     length minnop sub maxnopbits bwn
   } forall
+  bits bitflush
 
-		% Total length of pages in bytes;
+		% 2: Total length of pages in bytes;
   FirstPageLength minpl sub maxplbits bwn
   OtherPageLengths {
     minpl sub maxplbits bwn
   } forall
+  bits bitflush
 
-		% Number of shared objects referenced from page:
-		% (Currently we don't report this.)
-  OtherPageNs length 1 add { 0 maxsorbits bwn } repeat
-
-		% Since there are no shared object references,
-		% the next two sections are empty.
-
-		% Contents offsets:
-  [FirstPageNs OtherPageNs aload pop] {
-    0 get Objects exch lget contentsstart { minsco sub } { 0 } ifelse
-    maxscobits bwn
+		% 3: Number of shared objects referenced from page:
+  SharedPageNs { length maxsorbits bwn } forall
+  bits bitflush
+                % 4: A shared object identifier:
+  SharedPageNs {
+    { shared_id_dict exch get sobits bwn
+    } forall
   } forall
+  bits bitflush
 
-		% Contents lengths:
+                % 5: Numerator of fractional position for each shared object:
+  SharedPageNs {
+    { pop 0 numfbits bwn 
+    } forall
+  } forall
+  bits bitflush
+
+		% 6: Contents offsets:
+                % Following Implementation Note 133 section 6 is empty.
+  maxscobits 0 gt {
+    [FirstPageNs OtherPageNs aload pop] {
+       0 get Objects exch lget contentsstart { minsco sub } { 0 } ifelse
+       maxscobits bwn
+    } forall
+    bits bitflush
+  } if
+
+                % 7: Contents lengths:
   [FirstPageNs OtherPageNs aload pop] {
     0 get Objects exch lget contentslength mincl sub maxclbits bwn
   } forall
+  bits bitflush
 
-  bits bitflush end
+  end
+
 } bind def
 
 /writeSharedObjectHints {
   PDFOPTDEBUG { /writeSharedObjectHints == } if
   20 dict begin
   /bits OFile bitstream def
-  /bwn { bits 3 1 roll bitwrite } def
+  /obj_count SharedNs length FirstPageNs length add def
 
-		% Currently we use the Shared Object hint table only for
-		% the objects in the first page, which are all treated as
-		% "shared" objects.
+ 		% Table F.5 Shared object hint table, header section
 
-		% Object number of first object in Shared Objects section
-		% (not currently used):
+              	% 1: Object number of first object in Shared Objects section
   0 32 bwn
-		% Location of first object in Shared Objects section
-		% (not currently used): If there are no shared objects,
+		% 2: Location of first object in Shared Objects section:
+		% If there are no shared objects,
 		% Acrobat sets this to the location of linearization
 		% parameters object (the very first object).
   { pdfwriteheader } tomemory length 32 bwn
-		% Number of Shared Object entries for first page:
+		% 3: Number of Shared Object entries for first page:
   FirstPageNs length 32 bwn
-		% Number of Shared Object entries for Shared Objects
-		% section (not currently used):
-  FirstPageNs length 32 bwn
-		% Bits needed to represent the greatest number of objects
+		% 4: Number of Shared Object entries for Shared Objects
+		% section
+  obj_count 32 bwn
+		% 5: Bits needed to represent the greatest number of objects
 		% in a shared object group (always 0, because all groups
 		% have only 1 object):
   0 16 bwn
-		% Least length of a Shared Object Group in bytes:
+		% 6: Least length of a Shared Object Group in bytes:
   16#7fffffff FirstPageNs { omlength .min } forall
+                 SharedNs { omlength .min } forall
   /minsol 1 index def 32 bwn
-		% Bits needed to represent the greatest length of a
+		% 7: Bits needed to represent the greatest length of a
 		% Shared Object Group:
   0 FirstPageNs { omlength .max } forall
+       SharedNs { omlength .max } forall
   minsol sub bitsneeded
   /maxsolbits 1 index def 16 bwn
 
-		% Lengths of shared object groups:
+                % Table F.6 Shared object hint table, shared object group entry
+
+                % 1: Lengths of shared object groups:
   FirstPageNs { omlength minsol sub maxsolbits bwn } forall
+     SharedNs { omlength minsol sub maxsolbits bwn } forall
+  bits bitflush
+		% 2: MD5 flag:
+  obj_count { 0 1 bwn } repeat
+  bits bitflush
+                % 3: No MD5 shared object signatures.
 
-		% MD5 flag:
-  0 1 bwn
-
-  bits bitflush end
+                % 4: No number_number_of_objects_in_the_group - 1
+  end
 } bind def
 
 % ---------------- Main program ---------------- %
@@ -920,6 +980,12 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
   Trailer touch
   (Read objects) now
+
+        % Encrypted files are not yet supported.
+  Trailer /Encrypt known {
+    (ERROR: Encrypted files are not yet supported.) = flush
+    /pdfOptimize cvx /limitcheck signalerror
+  } if
 
 	% Replace indirect references to numbers.  This is needed
 	% for the Length of streams, and doesn't hurt anything else.
@@ -969,6 +1035,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
   identifyOtherPageObjects
   /SharedNs exch def
+  /SharedPageNs exch def
   /OtherPageNs exch def
   QUIET not { OtherPageNs === flush SharedNs === flush } if
   (Identified other pages) now
@@ -1067,7 +1134,7 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
   XRef PHSN omap CatalogStart put
   (Adjusted positions) now
 
-	% Construct the hint tables (part 5).
+        % Construct the hint tables (part 5).
 
   { writePageOffsetHints } totemp
   pop /PHSTempStart exch def
