@@ -382,6 +382,7 @@ pcl_end_page(
 )
 {	
     int                     code = 0;
+    pl_main_instance_t	    *pmi = pcs->client_data;
 
     pcl_break_underline(pcs);	/* (could mark page) */
 
@@ -425,10 +426,9 @@ pcl_end_page(
 	    pcs->overlay_enabled = true; /**** IN copy_after ****/
 	}
     }
-
+    gs_reclaim(&(pmi->spaces), true);
     /* output the page */
-    pl_finish_page((pl_main_instance_t *)pcs->client_data,
-		   pcs->pgs, pcs->num_copies, /* flush = */ true);
+    pl_finish_page(pmi, pcs->pgs, pcs->num_copies, /* flush = */ true);
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
     /*
@@ -438,7 +438,6 @@ pcl_end_page(
     update_xfm_state(pcs);
 
     pcl_continue_underline(pcs);
-
     return (code < 0 ? code : 1);
 }
 

@@ -345,6 +345,9 @@ struct pcl_state_s {
     
     /* the current language personality */
     pcl_personality_t personality;
+    
+    /* store a pointer to the command definitions for use by macros */
+    void *pcl_commands;
 };
 
 /* accessor functions for the pcl target device.  These live in

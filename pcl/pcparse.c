@@ -25,15 +25,15 @@
 private bool
 pcl_register_command(byte *pindex, const pcl_command_definition_t *pcmd, 
 		     pcl_parser_state_t *pcl_parser_state)
-{	int index = pcl_parser_state->pcl_command_next_index;
+{	int index = pcl_parser_state->definitions->pcl_command_next_index;
 	byte prev = *pindex;
 
-	if ( prev != 0 && prev <= index && pcl_parser_state->pcl_command_list[prev] == pcmd )
+	if ( prev != 0 && prev <= index && pcl_parser_state->definitions->pcl_command_list[prev] == pcmd )
 	  index = prev;
-	else if ( index != 0 && pcl_parser_state->pcl_command_list[index] == pcmd )
+	else if ( index != 0 && pcl_parser_state->definitions->pcl_command_list[index] == pcmd )
 	  ;
 	else
-	  pcl_parser_state->pcl_command_list[pcl_parser_state->pcl_command_next_index = ++index] = pcmd;
+	  pcl_parser_state->definitions->pcl_command_list[pcl_parser_state->definitions->pcl_command_next_index = ++index] = pcmd;
 	*pindex = index;
 	return (prev != 0 && prev != index);
 }
@@ -44,11 +44,11 @@ pcl_define_control_command(int/*char*/ chr, const pcl_command_definition_t *pcmd
 			   pcl_parser_state_t *pcl_parser_state)
 {
 #ifdef DEBUG
-	if ( chr < 0 || chr >= countof(pcl_parser_state->pcl_control_command_indices) )
+	if ( chr < 0 || chr >= countof(pcl_parser_state->definitions->pcl_control_command_indices) )
 	  if_debug1('I', "Invalid control character %d\n", chr);
 	else if (
 #endif
-	pcl_register_command(&pcl_parser_state->pcl_control_command_indices[chr], pcmd, pcl_parser_state)
+	pcl_register_command(&pcl_parser_state->definitions->pcl_control_command_indices[chr], pcmd, pcl_parser_state)
 #ifdef DEBUG
 	)
 	  if_debug1('I', "Redefining control character %d\n", chr);
@@ -64,7 +64,7 @@ pcl_define_escape_command(int/*char*/ chr,
 	if_debug1('I', "Invalid escape character %c\n", chr);
     else if (
 #endif
-	     pcl_register_command(&pcl_parser_state->pcl_escape_command_indices
+	     pcl_register_command(&pcl_parser_state->definitions->pcl_escape_command_indices
 				  [chr - min_escape_2char], pcmd,
 	                          pcl_parser_state)
 #ifdef DEBUG
@@ -94,7 +94,7 @@ pcl_define_class_command(int/*char*/ class, int/*char*/ group,
 	  if_debug3('I', "Invalid command %c %c %c\n", class, group, command);
 	else if (
 #endif
-	pcl_register_command(&pcl_parser_state->pcl_grouped_command_indices
+	pcl_register_command(&pcl_parser_state->definitions->pcl_grouped_command_indices
 			     [pcl_escape_class_indices[class - min_escape_class] - 1]
 			     [group == 0 ? 0 : group - min_escape_group + 1]
 			     [command - min_escape_command], pcmd,
@@ -130,14 +130,14 @@ pcl_get_command_definition(pcl_parser_state_t *pcl_parser_state, int/*char*/ cla
 
 	if ( class == 0 )
 	  {if ( command >= min_escape_2char && command <= max_escape_2char )
-	    cdefn = pcl_parser_state->pcl_command_list
-		[pcl_parser_state->pcl_escape_command_indices[command - min_escape_2char]];
+	    cdefn = pcl_parser_state->definitions->pcl_command_list
+		[pcl_parser_state->definitions->pcl_escape_command_indices[command - min_escape_2char]];
 	  }
 	else
 	  { int class_index = pcl_escape_class_indices[class - min_escape_class];
 	    if ( class_index )
-	      cdefn = pcl_parser_state->pcl_command_list
-		[pcl_parser_state->pcl_grouped_command_indices[class_index - 1]
+	      cdefn = pcl_parser_state->definitions->pcl_command_list
+		[pcl_parser_state->definitions->pcl_grouped_command_indices[class_index - 1]
 		[group ? group - min_escape_group + 1 : 0]
 		[command - min_escape_command]
 		];
@@ -276,8 +276,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			  if ( p >= rlimit )
 			    goto x;
 			  if ( p[1] >= min_escape_2char && p[1] <= max_escape_2char &&
-			       (index = pst->pcl_escape_command_indices[p[1] - min_escape_2char]) != 0 &&
-			       pst->pcl_command_list[index]->proc ==
+			       (index = pst->definitions->pcl_escape_command_indices[p[1] - min_escape_2char]) != 0 &&
+			       pst->definitions->pcl_command_list[index]->proc ==
 			         pcl_disable_display_functions
 			     )
 			    { if ( do_display_functions() )
@@ -424,10 +424,10 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 					   chr >= 33 && chr <= 126 ?
 					   "%c\n" : "\\%03o\n"),
 					  chr);
-				cdefn = pst->pcl_command_list
+				cdefn = pst->definitions->pcl_command_list
 				  [chr < 33 ?
-				  pst->pcl_control_command_indices[chr] :
-				  pst->pcl_control_command_indices[1]];
+				  pst->definitions->pcl_control_command_indices[chr] :
+				  pst->definitions->pcl_control_command_indices[1]];
 				if ( (cdefn == 0 ||
 				      cdefn->proc == pcl_plain_char) &&
 				     !in_macro &&
@@ -571,21 +571,36 @@ x:	pr->ptr = p;
 }
 
 /* inialize the pcl command counter */
-void
-pcl_init_command_index(pcl_parser_state_t *pcl_parser_state)
+ int
+pcl_init_command_index(pcl_parser_state_t *pcl_parser_state, pcl_state_t *pcs)
 {
-    pcl_parser_state->pcl_command_next_index = 0;
-    /* fix me.  This is should be fixed along with
-       hpgl_init_command_index() in pgparse.c */
-#define init_to_zero(foop)\
-    memset(pcl_parser_state->foop, 0, sizeof(pcl_parser_state->foop))
-    init_to_zero(pcl_grouped_command_indices);
-    init_to_zero(pcl_escape_command_indices);
-    init_to_zero(pcl_control_command_indices);
-    init_to_zero(pcl_command_list);
-#undef init_to_zero
+    pcl_command_definitions_t *definitions = 
+	(pcl_command_definitions_t *)gs_alloc_bytes(pcs->memory,
+						    sizeof(pcl_command_definitions_t),
+						    "pcl_init_command_index");
+    /* fatal */
+    if ( definitions == 0 )
+	return -1;
+    /* we should set these individually but each field is properly
+       initialized to zero */
+    memset(definitions, 0, sizeof(pcl_command_definitions_t));
+    /* plug command definitions into the parser state and a pointer
+       for the command definitions into pcl's state for use by macros,
+       I don't like this but the alternative is getting the parser
+       state to the code that executer macros which is inconvenient at
+       this time */
+    pcs->pcl_commands = pcl_parser_state->definitions = definitions;
+    return 0;
 }
 
+/* for now deallocates the memory associated with the command definitions */
+ int
+pcl_parser_shutdown(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem)
+{
+    gs_free_object(mem, pcl_parser_state->definitions,
+		   "pcl_parser_shutdown");
+    return 0;
+}
 /* ---------------- Initialization ---------------- */
 
 void

@@ -149,13 +149,16 @@ pcl_do_registrations(
 )
 {
     const pcl_init_t ** init;
+    int code;
     /* initialize gl/2 command counter */
     hpgl_init_command_index(pst->hpgl_parser_state);
     /* initialize pcl's command counter */
-    pcl_init_command_index(pst);
+    code = pcl_init_command_index(pst, pcs);
+    if ( code < 0 )
+	return code;
     for (init = pcl_init_table; *init; ++init) {
 	if ( (*init)->do_registration ) {
-	    int     code = (*(*init)->do_registration)(pst, pcs->memory);
+	    code = (*(*init)->do_registration)(pst, pcs->memory);
 	    if (code < 0) {
 		lprintf1("Error %d during initialization!\n", code);
 		return code;

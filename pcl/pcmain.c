@@ -324,7 +324,8 @@ process:
     pcl_grestore(pcs);
     gs_reclaim(&inst.spaces, true);
     pjl_process_destroy(pcs->pjls, mem);
-
+    /* shutdown the parser */
+    pcl_parser_shutdown(&pcl_parser_state, pcs->memory);
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
         pl_print_usage(mem, &inst, "Final");

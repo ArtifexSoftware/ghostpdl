@@ -29,23 +29,7 @@ typedef enum {
 #define min_escape_command '@' /* or '`' */
 #define max_escape_command '^' /* or '~' */
 
-/* Define the state of the parser. */
-struct pcl_parser_state_s {
-    /* Internal state */
-    pcl_scan_type_t scan_type;
-    pcl_args_t args;
-    double scale;		/* for accumulating floating numbers */
-    byte param_class, param_group;	/* for parameterized commands */
-    uint data_pos;		/* for data crossing buffer boundaries */
-    /*
-     * We register all the PCL5* commands dynamically, for maximum configuration
-     * flexibility.  pcl_command_list points to the individual command
-     * definitions; as each command is registered, we enter it in the list, and
-     * then store its index in the actual dispatch table
-     * (pcl_xxx_command_xxx_indices).
-     */
-    pcl_command_definition_t *pcl_command_list[256];
-    int pcl_command_next_index;
+typedef struct pcl_command_definitions_s {
     /*
      * First-level dispatch for control characters.
      */
@@ -61,7 +45,27 @@ struct pcl_parser_state_s {
     [5 /* number of implemented classes, see escape_class_indices above */]
     [1 + max_escape_group - min_escape_group + 1]
     [max_escape_command - min_escape_command + 1];
+    int pcl_command_next_index;
+    /*
+     * We register all the PCL5* commands dynamically, for maximum configuration
+     * flexibility.  pcl_command_list points to the individual command
+     * definitions; as each command is registered, we enter it in the list, and
+     * then store its index in the actual dispatch table
+     * (pcl_xxx_command_xxx_indices).
+     */
+    pcl_command_definition_t *pcl_command_list[256];
+} pcl_command_definitions_t;
+
+/* Define the state of the parser. */
+struct pcl_parser_state_s {
+    /* Internal state */
+    pcl_scan_type_t scan_type;
+    pcl_args_t args;
+    double scale;		/* for accumulating floating numbers */
+    byte param_class, param_group;	/* for parameterized commands */
+    uint data_pos;		/* for data crossing buffer boundaries */
     hpgl_parser_state_t *hpgl_parser_state;
+    pcl_command_definitions_t *definitions;
 };
 #define pcl_parser_init_inline(pst)\
   ((pst)->scan_type = scanning_none, (pst)->args.data = 0)
@@ -90,6 +94,8 @@ int pcl_execute_macro(P5(const pcl_macro_t *pmac, pcl_state_t *pcs,
 
 void pcparse_do_reset(P2(pcl_state_t *pcs, pcl_reset_type_t type));
 
-void pcl_init_command_index(P1(pcl_parser_state_t *pcl_parser_state));
+int pcl_init_command_index(P2(pcl_parser_state_t *pcl_parser_state, pcl_state_t *pcs));
 
+/* shutdown the pcl parser */
+int pcl_parser_shutdown(P2(pcl_parser_state_t *pcl_parser_state, gs_memory_t *mem));
 #endif				/* pcparse_INCLUDED */
