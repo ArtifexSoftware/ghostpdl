@@ -401,7 +401,6 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
      * an output color model. Here we handle some color models,
      * which were selected almost due to antique reasons.
      */
-    gx_color_index color = 0; /* black */
     if (!strcmp(pdev->color_info.cm_name, "DeviceGray")) {
 	set_dev_proc(pdev, map_rgb_color, gx_default_gray_map_rgb_color);
 	set_dev_proc(pdev, map_color_rgb, gx_default_gray_map_color_rgb);
@@ -427,17 +426,32 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
         set_dev_proc(pdev, get_color_comp_index, gx_default_DevCMYK_get_color_comp_index);
         set_dev_proc(pdev, encode_color, cmyk_8bit_map_cmyk_color);
         set_dev_proc(pdev, decode_color, cmyk_8bit_map_color_rgb);
-        {
-            gx_color_value cv[4];
-            cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
-            cv[3] = frac2cv(frac_1);
-            color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
-        }
     } else {	/* can't happen - see the call from gdev_pdf_put_params. */
  	DO_NOTHING;
     }
-    color_set_pure(&pdev->fill_color, color);
-    color_set_pure(&pdev->stroke_color, color);
+    /* 
+     * Set initial color value.
+     * Doing this with a model-independent algorithm.
+     */
+    {
+	int i;
+	frac cm_comps[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	gx_color_index color;
+	frac gray = frac_0;	/* Black */
+	const gx_cm_color_map_procs *procs;
+
+	/* map Black to color model components */
+	procs = dev_proc(pdev, get_color_mapping_procs)((gx_device *)pdev);
+	procs->map_gray((gx_device *)pdev, gray, cm_comps);
+	for (i = 0; i < pdev->color_info.num_components; i++)
+		cv[i] = frac2cv(cm_comps[i]);
+	/* Encode as a color index */
+	color = dev_proc(pdev, encode_color)((gx_device *)pdev, cv);
+	/* Now set it. */
+	color_set_pure(&pdev->fill_color, color);
+	color_set_pure(&pdev->stroke_color, color);
+    }
 }
 #ifdef __DECC
 #pragma optimize restore
