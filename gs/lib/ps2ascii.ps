@@ -1481,6 +1481,7 @@ userdict /start-hook {
    0 1 2 index length 1 sub
     {		% Stack: glyph encoding index
       2 copy get 3 index eq { exch pop exch pop null exit } if
+      pop
     }
    for null eq { (X) dup 0 4 -1 roll put show } { pop } ifelse
  } codef
