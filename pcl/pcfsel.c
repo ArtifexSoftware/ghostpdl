@@ -247,9 +247,15 @@ score_match(const pcl_state_t *pcs, const pcl_font_selection_t *pfs,
 		0;
 	  }
 
-	/* 10. font number */
-	score[score_fontnumber] = 0x1000000 - fp->params.pjl_font_number;
-
+	/* 10. font number - give maximum score if a downloaded font -
+	   not quite right NB NB!!.  What we are trying to stumble
+	   into here is to take table order into account when all
+	   other attributes are equal.  It in not clear if this is
+	   right. */
+	if ( fp->storage == pcds_internal )
+	    score[score_fontnumber] = 0x1000000 - fp->params.pjl_font_number;
+	else
+	    score[score_fontnumber] = 0x1000000;
 #ifdef DEBUG
 	if ( gs_debug_c('=') )
 	  { int i;
