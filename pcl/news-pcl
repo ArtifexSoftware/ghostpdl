@@ -1,3 +1,4 @@
+
    Copyright (C) 1997, 1998 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
 
@@ -10,6 +11,492 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.35_Cyclone (07/08/2001)
+======================================
+Mon Jun 18 00:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgmand.h [1.12], pglfill.c [1.25], pgconfig.c [1.27]:
+        LA defaults could be based on unitialized LA state variables.
+        
+        * pcommand.c [1.17]:
+        This "uom_cp" initialization was added along with the change in
+        pcjob.c initialization.  Backing out this one because it is redundant
+        and it is based on the personality, which may not be correct at this
+        point in the show.
+        
+
+Tue Jun  5 20:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgvector.c [1.27]:
+        Performance optimization.
+        PE non-polygon allow generation of sub-paths up to 100 points
+        prior to calling hpgl_draw_current_path.
+        Balance between call on every move and call on end PE command.
+        PE can be extremely large 700K, precluding the build a giant path
+        option.  No state is saved between calls so the point count max
+        needs to be smaller than the input buffer.
+        
+
+Mon Jun  4 17:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgvector.c [1.26]:
+        PE command now draws current path on each move when not in polygon mode.
+        This works around a graphics engine bug with excessively large paths, in
+        this case 700K of PE path.
+        
+        * pglfill.c [1.24]:
+        Work around zero with strokes missing with some placements.
+        Set min pen with to 0.1 plu thin enough for 9600dpi.
+        Brings up the question of can hpgl really go beyond the resolution of a
+        plotter unit 1016 dpi?
+        
+
+Thu May 31 20:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgvector.c [1.25]:
+        Inside a polygon CI creates a subpolygon; CI -> CIPM1
+        
+
+Mon May 28 04:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcursor.c [1.19], pcommand.c [1.16], pcjob.c [1.22]:
+        Unlike pcl, in rtl mode the pcl cursor motion commands <ESC>*p#[XY]
+        are in native resolution units.  Code change to use native resolution
+        units and issue a debug warning when these device dependent commands
+        are used.  Problem discovered in "sprinkler" testfile.
+        
+
+Fri May 25 22:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgvector.c [1.24], pgstate.h [1.13], pgpoly.c [1.14], 
+        pgdraw.h [1.10]:
+        Improvements to polygons with respect to corner cases involving:
+        CI
+        CI with implicit subpolygon closure before and after
+        and conversion of the next point to a pen up after a PM1
+        
+        * pgdraw.c [1.63]:
+        gs_setfilladjust uses 0,0 always.
+        
+
+Wed May 16 16:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgstate.h [1.12]:
+        adds polyline encoding fraction bits state value.  This files should
+        have been checked in with last polyline change to pgvector.c change.
+        
+
+Wed May 16 08:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgvector.c [1.23]:
+        Support for fraction bits in polyline encoding.  Fixes part of
+        inst_pe7bit.hpgl2 which still has a rotation bug reproducible in rtl
+        mode, but not in pcl5[ec] mode.
+        
+
+Wed May 16 02:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgvector.c [1.22], pgpoly.c [1.13]:
+        Support for forced pu move after PM1 command
+        Capture of current point on gs close of an open polygon,
+        Test case: Relative moves, sub polygons and unclosed polygons
+        
+
+Thu May 10 07:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgvector.c [1.21]:
+        Adds unusual pen up side effects found when beginning a sub polygon.
+        The test file still has an incorrect single stray line, this has not
+        been analyzed, but this change should address the open pinebush
+        issues.  The testfile is stored in the database of testfiles with
+        filename kemper.pcl.
+        
+
+Thu May 10 06:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * rtgmode.c [1.18]:
+        make tranlation components in ctm integral after the flurry of
+        tranformation leading from page ctm to raster ctm.
+        
+
+Mon Apr 30 19:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcfsel.c [1.18]:
+        pjl font number is not relevant to font selection unless the candidate
+        font is resident.
+        
+
+Fri Apr 27 07:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pglabel.c [1.39], pcsfont.c [1.27]:
+        Code changes for pcl reentrancy and miscellaneous items for the 1.35
+        release.  The pcl "view" is now reentrant.  This was accomplished
+        without locks.  It is not necessary to lock debugging and diagnostic
+        tools.  Contention for these resources is not important, so these were
+        left alone.  There are several areas where the graphics library
+        initializes global prototypes as part of one time initialization
+        (i.e. zlib and lzw), it is not necessary to lock these resource.
+        Unique id's are now "unique enough" id's using a combination of cpu
+        time and a random number to generate the id, this doesn't require
+        global data anymore.  The globals for the allocators are initialized
+        once at startup and should be never touched again.  With multiple
+        interpreters and multiple allocators it will be necessary for each
+        language to have an instance that holds a pointer to the allocator it
+        will use, but modifying globals in the graphics library to support
+        memory management, the current scheme, is undesirable.  This code does
+        not address the globals for accurate screens, pcl does not use them,
+        but it should be simple to "make local".  I also missed one global in
+        the pjl parser but it is rarely if ever used.  Here's the code logs,
+        expect some more changes I am sure I broke something.
+        
+        pl/pllfont.c, /pl/plfont.c, id changes.
+        
+        plmain.c, plplatf.c - more subtle initialization of the library and
+        platform to support pcl's new memory allocator.
+        
+        pl/plalloc.c, plalloc.h - updated to redefine the allocator that does
+        large allocations on the heap (sometimes locking, retrying and other
+        odd activities).  Essentially plalloc.c and plalloc.h reduce all
+        memory calls directly to malloc, free or realloc.  The allocator
+        maintains no state, so it is as reentrant as the underlying C library
+        allocator.
+        
+        pxl/pxerrors.c, pxl/pxfont.c, pxl/pximage.c,
+        pxl/pxgstate.c: writing mode for 2.0 did not properly get intialized.
+        pxl/pxsessio.c, pxl/pxtop.c: The pxl font dictionary was unnecessarily
+        reinitialized on a per session basis.
+        
+        pcl/pcsfont.c, pcl/pglabel.c - more id changes.
+        
+        main/pcl6_gcc.mak - adds async device bmpamono.
+        
+        main/pcl6_msvc.mak - removes extraneous devices, pdfwrite2.dev is not
+        included in the msvc makefile and is only available for gcc users
+        right now.  Adds font scaler definition.
+        
+        main/pcl_watc.mak - adds pdfwrite2.dev - probably should be
+        "unincluded" like msvc.mak but not important.
+        
+        gs/src/gdevbmpa = default finish_copy_device to allow copying a non
+        prototyped device. It is unclear why the restriction was added to the
+        code but no asyncronous postscript or pcl job will run using the
+        default definition of finish_copy_device.
+        
+        gs/src/gdevdbit.c, gs/src/gdevplnx.c, gs/src/gdevvec.c,
+        gs/src/gsalphac.c, gs/src/gscolor.c, gs/src/gscolor1, gs/src/gscrd.c,
+        gs/src/gsutil.c, gs/src/gscspace, gs/src/gsfont.c, gs/src/gsht.c,
+        gs/src/gsht1.c, src/gshtx.c, gs/src/gsistate.c, gs/src/gslib.c,
+        gs/src/gspcolor, /gs/src/gsptype1.c, gs/src/gsropc.c,
+        gs/src/gstypes.h, /gs/src/gxacpath.c, gs/src/gxccman.c,
+        gs/src/gxcht.c, gs/src/gxclip, src/gxclrect.c, gs/src/gxcpath.c,
+        gs/src/gximage.c, gs/src/gximage.c, gs/src/gxpcmap.c, gs/src/gzht.c,
+        gs/src/isave.c, gs/src/zcontext.c. - modification to support unique id
+        changes.
+        
+        gs/src/gdevprna.c - comments out code that will not work where the
+        client provides its own memory allocator.  This will need to
+        reconciled in the future.
+        
+        gs/src/gsdevice.c - using strcmp with on string without terminating
+        NULL
+        
+        gs/src/gsdparam.c - code doesn't make sense if the parameter
+        SeparationColorName is not provided... so removed for now.
+        
+        gs/src/gshtscr.c - changes declaration to const.  The variables are
+        used as if they are constants.  I am not sure why static was used
+        instead of private but I did not change that.
+        
+        gs/src/gsmalloc.c - removes globals gs_alloc_memory_default and
+        gs_memory_t_default.
+        
+        gs/src/gxchar.c - several statics that "look constant" - so now const.
+        
+        gs/src/gxht.c - adds an id table for storing multiple id's in the
+        halftone cache, allocate one id upfront and resize the table as
+        necessary.
+        
+        gs/src/gxipixel.c - removes unnecessary and incorrect optimization to
+        strength reduce raster ops.
+        
+        gs/src/lib.mak - removes gsutil.c initialization from makefile for
+        gsutil.c - gosh I wish we wouldn't do this at all I have removed it
+        completely from pcl.
+        
+        gs/src/stdpre.h - adds an integer 64 data type that works with gnuc and
+        msvc only for now - triggers an error for other platforms.  Removes
+        watcom pragma which generated spurious error messages with gcc.
+        
+
+Wed Apr 25 20:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pglabel.c [1.38]:
+        hpgl_get_char_width(), added case for bitmap, proportional fonts
+        use during L0 7-9,17-19 labels was incorrect.
+        
+
+Mon Apr 23 21:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pglabel.c [1.37], pcsfont.c [1.26]:
+        adding font name to pl_fill_in_font for pdfwrite.
+        null terminating string of a single character used for LB characters.
+        
+
+Tue Apr 17 23:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgconfig.c [1.26]:
+        BP in non-debug systems
+        
+
+Tue Apr 17 22:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgconfig.c [1.25]:
+        Basic support for BP begin plot command calls IN
+        Support for single argument PS plot size
+        
+        * pcl.mak [1.40]:
+        Added more header file dependancies
+        
+
+Thu Apr 12 16:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pcindxed.c [1.9]:
+        get_pow_2() failed on non-power of 2 input.
+        
+
+Mon Apr  2 16:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pglabel.c [1.36]:
+        Added character extra space addition to LF vertical text processing.
+        
+
+Mon Apr  2 05:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * rtgmode.c [1.17], pcuptrn.c [1.20], pcpatrn.c [1.25], 
+        pcjob.c [1.21]:
+        warning fixes.
+        
+        * pctop.c [1.19]:
+        The bounding box is no longer visible to the language switching
+        machinery.  It is now handled privately within pcl.  Also a few
+        warning fixes.
+        
+        * pcpage.c [1.40]:
+        Fixes excessive calling to erasepage.
+        
+        * pcparse.c [1.14]:
+        fixes a 0 byte malloc - problem is not know to be associated with a
+        bug.
+        
+        * pginit.c [1.16]:
+        subpolygon mode state variable was not initialized properly.
+        
+
+Mon Apr  2 04:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcht.c [1.20]:
+        Simplifies the initialization and loading of the color mapper device.
+        Combines scattered reference counting hacks into one larger hack.
+        
+        * pcfont.c [1.29]:
+        Unload font data after a permanent reset and not for printer reset
+        condition.  The pdfwriter was attempting to access this font data
+        after it was freed.
+        
+
+Tue Mar 27 15:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgparse.c [1.10], pglabel.c [1.35], pgconfig.c [1.24], 
+        pcsymbol.h [1.7], pcparse.c [1.13]:
+        updating copywright headers
+        
+
+Fri Mar 23 16:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * rtrstst.h [1.6], rtrstcmp.h [1.5], rtrstcmp.c [1.5], rtraster.h [1.7], 
+        rtraster.c [1.24], rtmisc.c [1.14], rtgmode.h [1.5], rtgmode.c [1.16], 
+        pgvector.c [1.20], pgstate.h [1.11], pgpoly.c [1.12], pgmisc.h [1.5], 
+        pgmisc.c [1.3], pgmand.h [1.11], pglfill.c [1.23], pginit.h [1.6], 
+        pginit.c [1.15], pggeom.h [1.5], pggeom.c [1.3], pgframe.c [1.12], 
+        pgfont.h [1.3], pgfont.c [1.9], pgfdata.h [1.4], pgfdata.c [1.6], 
+        pgdraw.h [1.9], pgcolor.c [1.9], pgchar.c [1.14], pcxfmst.h [1.4], 
+        pcwhtidx.h [1.4], pcwhtidx.c [1.3], pcursor.h [1.6], pcursor.c [1.18], 
+        pcuptrn.h [1.6], pcuptrn.c [1.19], pctpm.h [1.3], pctop.h [1.2], 
+        pctop.c [1.18], pctext.c [1.31], pcsymbol.h [1.6], pcsymbol.c [1.14], 
+        pcstatus.c [1.9], pcstate.h [1.28], pcsfont.c [1.25], pcrect.c [1.13], 
+        pcpatxfm.h [1.4], pcpatxfm.c [1.9], pcpattyp.h [1.4], pcpatrn.h [1.11], 
+        pcpatrn.c [1.24], pcparse.h [1.6], pcparam.h [1.7], pcpalet.h [1.8], 
+        pcpalet.c [1.19], pcpage.h [1.6], pcpage.c [1.39], pcommand.h [1.9], 
+        pcommand.c [1.15], pcmtx3.h [1.6], pcmtx3.c [1.5], pcmisc.c [1.6], 
+        pcmacros.c [1.10], pclookup.h [1.5], pclookup.c [1.6], pcjob.c [1.20], 
+        pcindxed.h [1.6], pcindxed.c [1.8], pcimpl.c [1.2], pcident.h [1.5], 
+        pcident.c [1.4], pcht.h [1.7], pcht.c [1.19], pcfsel.h [1.8], 
+        pcfsel.c [1.17], pcfrgrnd.h [1.5], pcfrgrnd.c [1.11], pcfontst.h [1.4], 
+        pcfontpg.c [1.2], pcfont.h [1.10], pcfont.c [1.28], pcdraw.h [1.5], 
+        pcdraw.c [1.12], pcdither.h [1.4], pcdither.c [1.5], pcdict.h [1.3], 
+        pccsbase.h [1.7], pccsbase.c [1.10], pccrd.h [1.7], pccrd.c [1.10], 
+        pccprint.c [1.8], pccoord.h [1.4], pccolor.c [1.9], pccid.h [1.6], 
+        pccid.c [1.13], pcbiptrn.h [1.7], pcbiptrn.c [1.9]:
+        Added new copyright
+        
+
+Fri Mar 23 15:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgdraw.c [1.62]:
+        set_special_pixel_placement now translates by .5,.5
+        
+
+Tue Mar 13 19:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgdraw.c [1.61]:
+        updating comments on hpgl_set_pixel_placement
+        
+
+Tue Mar 13 18:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgdraw.c [1.60]:
+        Enlarged IW by 1 pel in all four directions; Fixed scaling interactions with hatch spacing and angles; Changed Pixel Placement to not move the object just fit to the device coord.
+        
+        * pglabel.c [1.34]:
+        Character xtra space takes into account line feed direction rotation
+        
+
+Tue Mar  6 06:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcstate.h [1.27]:
+        adds simm and cartridge font dictionaries to the state.
+        
+        * pclfont.c [1.13], pcl.mak [1.39]:
+        removes pclfont.c - pcl's font loading module.  Provisions for setting
+        the font rasterizer/solution in pcl's makefile.
+        
+        * pcfont.c [1.27]:
+        modified to call new shared font loading procedure and initialization
+        of new dictionaries for simm fonts, and cartridge fonts.
+        
+        * pcfsel.c [1.16]:
+        makes pjl font number a criteria (least important) in font selection.
+        I am not sure this is correct, but I must have written the code for
+        some reason.
+        
+
+Wed Feb 28 05:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcindxed.c [1.7]:
+        Late in the show for a bug like this...  When resizing a gl/2 palette
+        the pen width initialization code went past the end of the pen width
+        array, resulting in corrupting other information in the palette.
+        
+
+Mon Feb 26 08:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgvector.c [1.19], pgpoly.c [1.11], pgdraw.c [1.59]:
+        Adds implicit pen up to the first point of each subpolygon.  Fixes
+        test file accept.hpgl2.  There is probably more excitement to be
+        discovered from HP's subpolygon mode, this is left as an exercise for
+        the reader.
+        
+        * pgstate.h [1.10]:
+        should have been checked in with last commit.
+        
+
+Tue Feb 20 08:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgdraw.c [1.58]:
+        -90 rotate the HPGL2/RTL coordinate system if the plot length is
+        greater than or equal to the width.
+        
+        * pgconfig.c [1.23]:
+        Parsing stub for hpgl command EC  &&  PG was corrected to feed the page
+        (plot) unconditionally if a parameter is given or conditionally (on
+        mark) if no parameter is given.
+        
+
+Fri Feb 16 23:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pcparse.c [1.12]:
+        Esc illegal char doesn't print the char
+        
+
+Thu Feb 15 16:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pglfill.c [1.22]:
+        RF command was not recovering from end of input buffer
+        
+
+Mon Feb 12 21:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pgparse.c [1.9]:
+        Hpgl parsing ignore control characters, they are not seperators
+        
+
+Wed Feb  7 16:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pcpage.c [1.38]:
+        duplicate orientation commands OK if page is not marked
+        
+
+Tue Feb  6 08:00:00 2001 GMT        August Daniel Coby    dan@artifex.com
+
+        * rtraster.c [1.23]:
+        
+        Modifications for using gs6.50 with PCL6.
+        
+
+Sun Jan  7 06:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcsfont.c [1.24]:
+        End the page if it has been marked when a media selection command is
+        received.
+        
+        * pctop.c [1.17]:
+        End page if marked and we gett end of file.
+        
+
+Sat Jan  6 01:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcsfont.c [1.23]:
+        Support for pcl disk based macros and fonts.  PJL filesystem parsing
+        command support for: FSINIT, FSDELETE, FSMKDIR, FSAPPEND and
+        FSDOWNLOAD, FSDISKLOCK, FSDIRLIST, FSQUERY and FSUPLOAD.  Only the
+        first 6 have complete implementations.  The FSDIRLIST, FSQUERY and
+        FSUPLOAD commands are parsed correctly but have no implementation at
+        this time; there is no plans to implement these at this time.
+        
+
+Mon Dec  4 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pgvector.c [1.18]:
+        When exiting polygon mode the paths are closed by connecting the last
+        point to the first point of the first subpath, not to the first point
+        of the last subpath as expected.  This fixes the file Pmk, reported as
+        an IBM field problem.
+        
+
+Tue Nov 21 22:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pcuptrn.c [1.18]:
+        PCL did not parse pattern data correctly if the width was not byte
+        aligned.  Thanks to "Jason Grams/Boulder/IBM" <gramsjj@us.ibm.com> for
+        this fix.
+        
+
+Mon Oct 30 11:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pctop.c [1.15], pcstate.h [1.26], pcjob.c [1.19], pcfontpg.c [1.1], 
+        pcfont.h [1.9]:
+        pcl font status page with font samples and command sequences to select
+        the fonts... NB - missing the font names.
+        
+        * pcl.mak [1.37]:
+        removes obsolete version code.
+        
+        * NEWS-PCL [1.20]:
+        pcl 134 (sleet) alpha release.
+        
+        * pctop.c [1.16], pcl_top.mak [1.20], pcl.mak [1.38]:
+        Version changes were not complete.
+        
 Version 1.34_alpha_sleet (10/30/2000)
 =====================================
 
@@ -2457,7 +2944,7 @@ Sun Aug 23 05:10:18 1998  Red Hat Linux User  <jan@meerkat>
 	Modified pcl_cmap_create_remap_ary to potentially provide a remap
 	array if source of pattern transparency is set. This is necessary to
 	support the "two part" image structure required for rendering images
-	with opaque source\ s but transparent patterns. Also removed a remnant
+	with opaque source s but transparent patterns. Also removed a remnant
 	of the temporary hack that made all rasters opaque.
 
 	* pctext.c: fills in a missing else.

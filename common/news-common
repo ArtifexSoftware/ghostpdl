@@ -1,3 +1,4 @@
+
    Copyright (C) 1998 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
 
@@ -7,6 +8,59 @@ This file, NEWS-COM, describes the changes in the most recent releases of
 Aladdin's library code that is shared between all Aladdin products, in
 reverse chronological order.
 
+Version 1.35_Cyclone (07/08/2001)
+======================================
+Sun Jul  8 12:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * watcdefs.mak [1.5], watc_top.mak [1.9]:
+        removes watcom makefiles.
+        
+
+Sun Jul  8 11:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * msvc_top.mak [1.18]:
+        Makefile broken for default configuration - "regressed" with agfa
+        integration.
+        
+
+Tue Jun 19 05:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * msvc_top.mak [1.17]:
+        MSVC will not allow an empty file in a link file.  Problem introduced with
+        agfa integration.
+        
+
+Mon Jun 18 20:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * msvc_top.mak [1.16]:
+        linking modifications for the agfa libraries.
+        
+
+Tue Nov 21 21:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * ugcc_top.mak [1.23]:
+        gives variable names that should be set in the top level
+        makefile.  Part of the cygwin checkin.
+        
+
+Thu Nov  2 06:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * ugcc_top.mak [1.22]:
+        new profiling target pg-fp-with-cov to generate code that can be used
+        by gcov, the gnu code coverage program.
+        
+
+Wed Nov  1 05:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * msvc_top.mak [1.15]:
+        Adds needed jpeg stuff for pxl2.0.
+        
+
+Mon Oct 30 11:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * NEWS-COMMON [1.13]:
+        pcl 134 (sleet) alpha release.
+        
 Version 1.34_alpha_sleet (10/30/2000)
 =====================================
 

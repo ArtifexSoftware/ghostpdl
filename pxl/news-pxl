@@ -1,3 +1,4 @@
+
    Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
    Unauthorized use, copying, and/or distribution prohibited.
 
@@ -6,6 +7,213 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.35_Cyclone (07/08/2001)
+======================================
+Wed May  9 22:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pxfont.c [1.12]:
+        Support for downloads of truetype fonts with metrics per character
+        instead hmtx and hhea tables in the font header.
+        Only used by pxl.
+        
+
+Fri Apr 27 07:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxstate.c [1.5], pxsessio.c [1.12], pximage.c [1.9], pxgstate.c [1.15], 
+        pxfont.c [1.11], pxerrors.c [1.6]:
+        Code changes for pcl reentrancy and miscellaneous items for the 1.35
+        release.  The pcl "view" is now reentrant.  This was accomplished
+        without locks.  It is not necessary to lock debugging and diagnostic
+        tools.  Contention for these resources is not important, so these were
+        left alone.  There are several areas where the graphics library
+        initializes global prototypes as part of one time initialization
+        (i.e. zlib and lzw), it is not necessary to lock these resource.
+        Unique id's are now "unique enough" id's using a combination of cpu
+        time and a random number to generate the id, this doesn't require
+        global data anymore.  The globals for the allocators are initialized
+        once at startup and should be never touched again.  With multiple
+        interpreters and multiple allocators it will be necessary for each
+        language to have an instance that holds a pointer to the allocator it
+        will use, but modifying globals in the graphics library to support
+        memory management, the current scheme, is undesirable.  This code does
+        not address the globals for accurate screens, pcl does not use them,
+        but it should be simple to "make local".  I also missed one global in
+        the pjl parser but it is rarely if ever used.  Here's the code logs,
+        expect some more changes I am sure I broke something.
+        
+        pl/pllfont.c, /pl/plfont.c, id changes.
+        
+        plmain.c, plplatf.c - more subtle initialization of the library and
+        platform to support pcl's new memory allocator.
+        
+        pl/plalloc.c, plalloc.h - updated to redefine the allocator that does
+        large allocations on the heap (sometimes locking, retrying and other
+        odd activities).  Essentially plalloc.c and plalloc.h reduce all
+        memory calls directly to malloc, free or realloc.  The allocator
+        maintains no state, so it is as reentrant as the underlying C library
+        allocator.
+        
+        pxl/pxerrors.c, pxl/pxfont.c, pxl/pximage.c,
+        pxl/pxgstate.c: writing mode for 2.0 did not properly get intialized.
+        pxl/pxsessio.c, pxl/pxtop.c: The pxl font dictionary was unnecessarily
+        reinitialized on a per session basis.
+        
+        pcl/pcsfont.c, pcl/pglabel.c - more id changes.
+        
+        main/pcl6_gcc.mak - adds async device bmpamono.
+        
+        main/pcl6_msvc.mak - removes extraneous devices, pdfwrite2.dev is not
+        included in the msvc makefile and is only available for gcc users
+        right now.  Adds font scaler definition.
+        
+        main/pcl_watc.mak - adds pdfwrite2.dev - probably should be
+        "unincluded" like msvc.mak but not important.
+        
+        gs/src/gdevbmpa = default finish_copy_device to allow copying a non
+        prototyped device. It is unclear why the restriction was added to the
+        code but no asyncronous postscript or pcl job will run using the
+        default definition of finish_copy_device.
+        
+        gs/src/gdevdbit.c, gs/src/gdevplnx.c, gs/src/gdevvec.c,
+        gs/src/gsalphac.c, gs/src/gscolor.c, gs/src/gscolor1, gs/src/gscrd.c,
+        gs/src/gsutil.c, gs/src/gscspace, gs/src/gsfont.c, gs/src/gsht.c,
+        gs/src/gsht1.c, src/gshtx.c, gs/src/gsistate.c, gs/src/gslib.c,
+        gs/src/gspcolor, /gs/src/gsptype1.c, gs/src/gsropc.c,
+        gs/src/gstypes.h, /gs/src/gxacpath.c, gs/src/gxccman.c,
+        gs/src/gxcht.c, gs/src/gxclip, src/gxclrect.c, gs/src/gxcpath.c,
+        gs/src/gximage.c, gs/src/gximage.c, gs/src/gxpcmap.c, gs/src/gzht.c,
+        gs/src/isave.c, gs/src/zcontext.c. - modification to support unique id
+        changes.
+        
+        gs/src/gdevprna.c - comments out code that will not work where the
+        client provides its own memory allocator.  This will need to
+        reconciled in the future.
+        
+        gs/src/gsdevice.c - using strcmp with on string without terminating
+        NULL
+        
+        gs/src/gsdparam.c - code doesn't make sense if the parameter
+        SeparationColorName is not provided... so removed for now.
+        
+        gs/src/gshtscr.c - changes declaration to const.  The variables are
+        used as if they are constants.  I am not sure why static was used
+        instead of private but I did not change that.
+        
+        gs/src/gsmalloc.c - removes globals gs_alloc_memory_default and
+        gs_memory_t_default.
+        
+        gs/src/gxchar.c - several statics that "look constant" - so now const.
+        
+        gs/src/gxht.c - adds an id table for storing multiple id's in the
+        halftone cache, allocate one id upfront and resize the table as
+        necessary.
+        
+        gs/src/gxipixel.c - removes unnecessary and incorrect optimization to
+        strength reduce raster ops.
+        
+        gs/src/lib.mak - removes gsutil.c initialization from makefile for
+        gsutil.c - gosh I wish we wouldn't do this at all I have removed it
+        completely from pcl.
+        
+        gs/src/stdpre.h - adds an integer 64 data type that works with gnuc and
+        msvc only for now - triggers an error for other platforms.  Removes
+        watcom pragma which generated spurious error messages with gcc.
+        
+
+Mon Apr 23 19:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pxfont.h [1.4]:
+        pdfwrite changes to fill in font name
+        
+
+Tue Apr 17 22:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pxl.mak [1.21]:
+        Updated header file dependancies
+        
+
+Fri Apr 13 04:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxparse.h [1.5], pximage.c [1.8]:
+        fixes memory leak and parsing error with XL 2.0 jpeg filter closing the 2
+        open Venture bugs.
+        
+
+Mon Apr  2 05:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxtop.c [1.11], pxstream.c [1.5], pxsessio.c [1.11], pxink.c [1.12], 
+        pximage.c [1.7], pxgstate.h [1.6], pxgstate.c [1.14]:
+        1) warning fixes.
+        2) XL deallocated fonts at the end of the session.  This is
+           incompatible with pdfwrite requirements - stall font unloading.
+        3) mods to support new allocator.
+        
+
+Tue Mar 27 15:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pxfont.c [1.10]:
+        updating copywright headers
+        
+
+Fri Mar 23 16:00:00 2001 GMT        Stefan Kemper    stefan@artifex.com
+
+        * pxvalue.h [1.2], pxvalue.c [1.2], pxtop.c [1.10], pxtag.h [1.4], 
+        pxstream.c [1.4], pxstate.h [1.5], pxstate.c [1.4], pxsessio.c [1.10], 
+        pxptable.h [1.2], pxptable.c [1.6], pxparse.h [1.4], pxparse.c [1.5], 
+        pxpaint.c [1.8], pxoper.h [1.2], pxink.c [1.11], pximpl.c [1.2], 
+        pximage.c [1.6], pxgstate.h [1.5], pxgstate.c [1.13], pxfont.h [1.3], 
+        pxfont.c [1.9], pxffont.c [1.10], pxerrors.h [1.2], pxerrors.c [1.5], 
+        pxenum.h [1.2], pxdict.h [1.2], pxbfont.h [1.2], pxbfont.c [1.2], 
+        pxattr.h [1.2]:
+        Added new copyright
+        
+
+Tue Mar  6 07:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxtop.c [1.9], pxsessio.c [1.9], pxl.mak [1.20], pxfont.h [1.2], 
+        pxffont.c [1.9], pxerrors.c [1.4]:
+        pxl font loading machinery factored out into shared pcl library.
+        
+
+Thu Feb  1 05:00:00 2001 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxsessio.c [1.8], pxptable.c [1.5]:
+        Support for MediaSize array parameter.  1.0 only supported an
+        enumeration parameter, apparently 2.0 and 2.1 support a character
+        array parameter as well.
+        
+        * pxtop.c [1.8]:
+        modifies language auto sense string so that protocol 2.0 would be
+        recognized.  Interesting this never showed up in testing; all of the
+        testfiles use a pjl ENTER LANGUAGE command to enter XL.
+        
+        * pxink.c [1.10]:
+        fixes a stupid copy-paste typo.
+        
+
+Mon Dec  4 19:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxfont.c [1.8]:
+        Modified to return an error indicating no current font if
+        gs_currentfont() returned null.  Ignoring the null return resulted in
+        a crash in PXL cet error test file e104.bin.  Thanks to Dan for reporting
+        this problem.
+        
+
+Mon Oct 30 11:00:00 2000 GMT        Henry Stiles    henrys@artifex.com
+
+        * pxtop.c [1.7], pxl.mak [1.19]:
+        Version changes were not complete.
+        
+        * pxl.mak [1.18]:
+        removes obsolete version code.
+        
+        * NEWS-PXL [1.14]:
+        pcl 134 (sleet) alpha release.
+        
+        * pxptable.c [1.4]:
+        Changes mediatype type, it is a byte array not an int.
+        
 Version 1.34_alpha_sleet (10/30/2000)
 =====================================
 
@@ -1510,7 +1718,7 @@ This release requires library version 4.36 or later.
 Utilities
 ---------
 
-Removes the extra \n that pxasm used to produce after each operator.
+Removes the extra n that pxasm used to produce after each operator.
 (pxasm.ps)
 
 Interpreter

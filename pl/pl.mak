@@ -34,7 +34,7 @@ pltoputl_h=$(PLSRC)pltoputl.h $(scommon_h)
 ################ PJL ################
 
 
-PJLVERSION=1.34_Ricoh
+PJLVERSION=1.35
 
 # Translate pjl file system volume "0:" to a directory of your choice 
 # Use forward slash '/' not '\\'; no trailing slash 
