@@ -21,17 +21,22 @@
 #ifndef gxfcache_INCLUDED
 #  define gxfcache_INCLUDED
 
+#include "gsccode.h"
 #include "gsuid.h"
 #include "gsxfont.h"
 #include "gxbcache.h"
+#include "gxfixed.h"
 #include "gxftype.h"
 
 /* ------ Font/matrix pair cache entry ------ */
 
+#ifndef gs_font_DEFINED
+#  define gs_font_DEFINED
+typedef struct gs_font_s gs_font;
+#endif
 #ifndef cached_fm_pair_DEFINED
 #  define cached_fm_pair_DEFINED
 typedef struct cached_fm_pair_s cached_fm_pair;
-
 #endif
 
 /*

@@ -387,8 +387,8 @@ gxdither_h=$(GLSRC)gxdither.h $(gxfrac_h)
 gxclip2_h=$(GLSRC)gxclip2.h $(gxmclip_h)
 gxclipm_h=$(GLSRC)gxclipm.h $(gxmclip_h)
 gxctable_h=$(GLSRC)gxctable.h $(gxfixed_h) $(gxfrac_h)
-gxfcache_h=$(GLSRC)gxfcache.h $(gsuid_h) $(gsxfont_h)\
- $(gxbcache_h) $(gxftype_h)
+gxfcache_h=$(GLSRC)gxfcache.h $(gsccode_h) $(gsuid_h) $(gsxfont_h)\
+ $(gxbcache_h) $(gxfixed_h) $(gxftype_h)
 gxfcopy_h=$(GLSRC)gxfcopy.h $(gsccode_h)
 gxfont_h=$(GLSRC)gxfont.h\
  $(gsccode_h) $(gsfont_h) $(gsgdata_h) $(gsmatrix_h) $(gsnotify_h)\
