@@ -227,6 +227,8 @@ int cos_array_add_c_string(P2(cos_array_t *, const char *));
 int cos_array_add_int(P2(cos_array_t *, int));
 int cos_array_add_real(P2(cos_array_t *, floatp));
 int cos_array_add_object(P2(cos_array_t *, cos_object_t *));
+/* add adds at the end, unadd removes the last element */
+int cos_array_unadd(P2(cos_array_t *, cos_value_t *));
     /* dict */
 int cos_dict_put(P4(cos_dict_t *, const byte *, uint, const cos_value_t *));
 int cos_dict_put_no_copy(P4(cos_dict_t *, const byte *, uint,
@@ -241,6 +243,8 @@ int cos_dict_put_c_key_object(P3(cos_dict_t *, const char *, cos_object_t *));
 int cos_dict_put_string(P5(cos_dict_t *, const byte *, uint, const byte *,
 			   uint));
 int cos_dict_put_c_strings(P3(cos_dict_t *, const char *, const char *));
+/* move all the elements from one dict to another */
+int cos_dict_move_all(P2(cos_dict_t *, cos_dict_t *));
     /* stream */
 int cos_stream_add(P2(cos_stream_t *, uint));
 int cos_stream_add_bytes(P3(cos_stream_t *, const byte *, uint));

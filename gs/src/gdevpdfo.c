@@ -581,6 +581,25 @@ cos_array_add_object(cos_array_t *pca, cos_object_t *pco)
     return cos_array_add(pca, cos_object_value(&value, pco));
 }
 
+/*
+ * Remove and return the last element of an array.  Note that this gives an
+ * error unless the array is fully populated (no gaps in indexes).
+ */
+int
+cos_array_unadd(cos_array_t *pca, cos_value_t *pvalue)
+{
+    cos_array_element_t *pcae = pca->elements;
+
+    if (pcae == 0 ||
+	pcae->index != (pcae->next == 0 ? 0 : pcae->next->index + 1)
+	)
+	return_error(gs_error_rangecheck);
+    *pvalue = pcae->value;
+    pca->elements = pcae->next;
+    gs_free_object(COS_OBJECT_MEMORY(pca), pcae, "cos_array_unadd");
+    return 0;
+}
+
 /* Get the first / next element for enumerating an array. */
 const cos_array_element_t *
 cos_array_element_first(const cos_array_t *pca)
@@ -635,19 +654,27 @@ cos_dict_alloc(gx_device_pdf *pdev, client_name_t cname)
 }
 
 private void
+cos_dict_element_free(cos_dict_t *pcd, cos_dict_element_t *pcde,
+		      client_name_t cname)
+{
+    gs_memory_t *mem = COS_OBJECT_MEMORY(pcd);
+
+    cos_value_free(&pcde->value, COS_OBJECT(pcd), cname);
+    if (pcde->owns_key)
+	gs_free_string(mem, pcde->key.data, pcde->key.size, cname);
+    gs_free_object(mem, pcde, cname);
+}
+
+private void
 cos_dict_release(cos_object_t *pco, client_name_t cname)
 {
-    gs_memory_t *mem = cos_object_memory(pco);
     cos_dict_t *const pcd = (cos_dict_t *)pco;
     cos_dict_element_t *cur;
     cos_dict_element_t *next;
 
     for (cur = pcd->elements; cur; cur = next) {
 	next = cur->next;
-	cos_value_free(&cur->value, pco, cname);
-	if (cur->owns_key)
-	    gs_free_string(mem, cur->key.data, cur->key.size, cname);
-	gs_free_object(mem, cur, cname);
+	cos_dict_element_free(pcd, cur, cname);
     }
     pcd->elements = 0;
 }
@@ -869,6 +896,31 @@ cos_dict_put_c_strings(cos_dict_t *pcd, const char *key, const char *value)
     cos_value_t cvalue;
 
     return cos_dict_put_c_key(pcd, key, cos_c_string_value(&cvalue, value));
+}
+
+/* Move all the elements from one dict to another. */
+int
+cos_dict_move_all(cos_dict_t *pcdto, cos_dict_t *pcdfrom)
+{
+    cos_dict_element_t *pcde = pcdfrom->elements;
+    cos_dict_element_t *head = pcdto->elements;
+
+    while (pcde) {
+	cos_dict_element_t *next = pcde->next;
+
+	if (cos_dict_find(pcdto, pcde->key.data, pcde->key.size)) {
+	    /* Free the element, which has been superseded. */
+	    cos_dict_element_free(pcdfrom, pcde, "cos_dict_move_all_from");
+	} else {
+	    /* Move the element. */
+	    pcde->next = head;
+	    head = pcde;
+	}
+	pcde = next;
+    }
+    pcdto->elements = head;
+    pcdfrom->elements = 0;
+    return 0;
 }
 
 /* Look up a key in a dictionary. */
