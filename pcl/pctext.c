@@ -282,7 +282,7 @@ show_char_foreground(
     gs_font *pfont = plfont->pfont;
     gs_text_params_t text;
 
-    if (pcs->text_path == -1 && ((pbuff[0] & 0xff) != 0) && pcs->source_transparent) {
+    if (pcs->text_path == -1 && ((pbuff[0] & 0xff00) != 0) && pcs->source_transparent) {
     	/* -1 text path rotated text path; don't rotate 1 byte chars 
     	 * NB no support for opaque text
     	 * NB no support for centering about the center line of the glyph 
