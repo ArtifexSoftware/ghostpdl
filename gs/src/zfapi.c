@@ -1315,7 +1315,6 @@ retry_oversampling:
     if (bCID) {
         if (font_file_path != NULL) {
             ref *Decoding, *SubstNWP, src_type, dst_type;
-            int SubstNWP_length, i;
 	    uint c;
 
             if (dict_find_string(pdr, "Decoding", &Decoding) <= 0 || !r_has_type(Decoding, t_dictionary))

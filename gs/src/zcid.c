@@ -135,7 +135,7 @@ set_CIDMap_element(ref *CIDMap, uint cid, uint glyph_index)
     if (glyph_index >= 65536)
 	return_error(e_rangecheck); /* Can't store with GDBytes == 2. */
     for (i = 0; i < count; i++) {
-	array_get(CIDMap, i, &s), size;
+	array_get(CIDMap, i, &s);
 	size = r_size(&s) & ~1;
 	if (offset < size) {
 	    c = s.value.bytes + offset;
@@ -166,7 +166,7 @@ cid_fill_CIDMap(const ref *Decoding, const ref *TT_cmap, const ref *SubstNWP, in
     /* Checking the CIDMap structure correctness : */
     for (i = 0; i < count; i++) {
 	ref s;
-	int code = array_get(CIDMap, i, &s), size;
+	int code = array_get(CIDMap, i, &s);
 
 	if (code < 0)
 	    return code;
