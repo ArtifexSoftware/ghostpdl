@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -41,6 +41,10 @@ GS_INIT=gs_init.ps
 GENOPT=
 GS=gslib
 
+# We don't expect to build debug or profiling configurations....
+DEBUGRELDIR=.
+PGRELDIR=.
+
 JSRCDIR=jpeg
 JVERSION=6
 # DON'T SET THIS TO 1!
@@ -63,8 +67,10 @@ GCFLAGS_NO_WARN=-fno-builtin -fno-common
 GCFLAGS_WARNINGS=-Wall -Wcast-qual -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
 GCFLAGS=$(GCFLAGS_NO_WARN) $(GCFLAGS_WARNINGS)
 XCFLAGS=
-CFLAGS=-g -O $(GCFLAGS) $(XCFLAGS)
-CFLAGS_NO_WARN=-g -O $(GCFLAGS_NO_WARN) $(XCFLAGS)
+CFLAGS_STANDARD=-O2
+CFLAGS_DEBUG=-g -O
+CFLAGS_PROFILE=-pg -O2
+CFLAGS=$(CFLAGS_DEBUG) $(GCFLAGS) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
 STDLIBS=-lm
 EXTRALIBS=
@@ -115,7 +121,7 @@ CCFLAGS=$(GENOPT) $(CFLAGS)
 CC_=$(CC) $(CCFLAGS)
 CCAUX=$(CC)
 CC_LEAF=$(CC_)
-CC_NO_WARN=$(CC) $(GENOPT) $(CFLAGS_NO_WARN)
+CC_NO_WARN=$(CC_) -Wno-cast-qual -Wno-traditional
 # When using gcc, CCA2K isn't needed....
 CCA2K=$(CC)
 

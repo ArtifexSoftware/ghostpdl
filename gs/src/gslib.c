@@ -1,4 +1,4 @@
-/* Copyright (C) 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1995, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,6 +27,7 @@ get_real(void)
     real_stdin = stdin, real_stdout = stdout, real_stderr = stderr;
 }
 #include "math_.h"
+#include "string_.h"
 #include "gx.h"
 #include "gp.h"
 #include "gsalloc.h"
@@ -122,6 +123,11 @@ main(int argc, const char *argv[])
 /*gs_debug['L'] = 1; *//****** PATCH ******/
     imem = ialloc_alloc_state(&gs_memory_default, 20000);
     imem->space = 0;
+    /*
+     * gs_iodev_init must be called after the rest of the inits, for
+     * obscure reasons that really should be documented!
+     */
+    gs_iodev_init(mem);
 /****** WRONG ******/
     gs_lib_device_list(&list, NULL);
     gs_copydevice(&dev, list[0], mem);
@@ -151,6 +157,29 @@ main(int argc, const char *argv[])
 	debug_print_string(nstr.data, nstr.size);
 	dputs("\n");
 	gs_c_param_list_release(&list);
+    }
+    /*
+     * If this is a device that takes an OutputFile, set the OutputFile
+     * to "-" in the copy.
+     */
+    {
+	gs_c_param_list list;
+	gs_param_string nstr;
+
+	gs_c_param_list_write(&list, mem);
+	param_string_from_string(nstr, "-");
+	code = param_write_string((gs_param_list *)&list, "OutputFile", &nstr);
+	if (code < 0) {
+	    lprintf1("writing OutputFile failed! code = %d\n", code);
+	    exit(1);
+	}
+	gs_c_param_list_read(&list);
+	code = gs_putdeviceparams(dev, (gs_param_list *)&list);
+	gs_c_param_list_release(&list);
+	if (code < 0 && code != gs_error_undefined) {
+	    lprintf1("putdeviceparams failed! code = %d\n", code);
+	    exit(1);
+	}
     }
     dev = (gx_device *) bbdev;
     pgs = gs_state_alloc(mem);

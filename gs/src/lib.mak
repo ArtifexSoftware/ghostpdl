@@ -777,6 +777,18 @@ $(GLOBJ)gstext.$(OBJ) : $(GLSRC)gstext.c $(memory__h) $(gdebug_h)\
  $(gxdevcli_h) $(gxfont_h) $(gxpath_h) $(gxtext_h) $(gzstate_h)
 	$(GLCC) $(GLO_)gstext.$(OBJ) $(C_) $(GLSRC)gstext.c
 
+# We make gsiodevs a separate module so the PS interpreter can replace it.
+
+$(GLD)gsiodevs.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gsiodevs.$(OBJ)\
+ $(GLD)sfile.dev
+	$(SETMOD) $(GLD)gsiodevs $(GLOBJ)gsiodevs.$(OBJ)
+	$(ADDMOD) $(GLD)gsiodevs -include $(GLD)sfile
+	$(ADDMOD) $(GLD)gsiodevs -iodev stdin stdout stderr
+
+$(GLOBJ)gsiodevs.$(OBJ) : $(GLSRC)gsiodevs.c $(GXERR) $(errno__h) $(string__h)\
+ $(gp_h) $(gscdefs_h) $(gsparam_h) $(gsstruct_h) $(gxiodev_h)
+	$(GLCC) $(GLO_)gsiodevs.$(OBJ) $(C_) $(GLSRC)gsiodevs.c
+
 ###### Internal devices
 
 ### Memory devices
@@ -953,7 +965,7 @@ LIB_ALL=$(LIBs) $(LIBx) $(LIBd)
 # We include some optional library modules in the dependency list,
 # but not in the link, to catch compilation problems.
 LIB_O=$(GLOBJ)gdevmpla.$(OBJ) $(GLOBJ)gdevmrun.$(OBJ) $(GLOBJ)gshtx.$(OBJ) $(GLOBJ)gsnogc.$(OBJ)
-$(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O)
+$(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev
 	$(SETMOD) $(GLD)libs $(LIB0s)
 	$(ADDMOD) $(GLD)libs $(LIB1s)
 	$(ADDMOD) $(GLD)libs $(LIB2s)
@@ -968,6 +980,7 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O)
 	$(ADDMOD) $(GLD)libs $(LIB11s)
 	$(ADDMOD) $(GLD)libs $(LIB12s)
 	$(ADDMOD) $(GLD)libs -init gshtscr gsutil
+	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
 
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)
 	$(SETMOD) $(GLD)libx $(LIB1x)
@@ -2313,7 +2326,8 @@ GENHT_CFLAGS=$(I_)$(GLI_)$(_I) $(GLF_)
 
 # Main program for library testing
 
-$(GLOBJ)gslib.$(OBJ) : $(GLSRC)gslib.c $(AK) $(math__h) $(stdio__h)\
+$(GLOBJ)gslib.$(OBJ) : $(GLSRC)gslib.c $(AK)\
+ $(math__h) $(stdio__h) $(string__h)\
  $(gx_h) $(gp_h)\
  $(gsalloc_h) $(gscssub_h) $(gserrors_h) $(gsmatrix_h)\
  $(gsrop_h) $(gsstate_h) $(gscspace_h)\
