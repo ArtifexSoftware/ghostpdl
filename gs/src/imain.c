@@ -227,8 +227,10 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		    if (minst->stdout_fn)
 			rcode = (*minst->stdout_fn)(minst->caller_handle, 
 			    str, count);
-		    else 
+		    else {
 			fwrite(str, 1, count, minst->fstdout);
+			fflush(minst->fstdout);
+		    }
 		}
 		if (rcode < 0)
 		    return_error(e_ioerror);
@@ -254,8 +256,10 @@ gs_main_interpret(gs_main_instance *minst, ref * pref, int user_errors,
 		    if (minst->stderr_fn)
 			rcode = (*minst->stderr_fn)(minst->caller_handle, 
 			    str, count);
-		    else 
+		    else {
 			fwrite(str, 1, count, minst->fstderr);
+			fflush(minst->fstderr);
+		    }
 		}
 		if (rcode < 0)
 		    return_error(e_ioerror);
