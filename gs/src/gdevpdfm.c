@@ -580,6 +580,19 @@ pdfmark_put_ao_pairs(gx_device_pdf * pdev, cos_dict_t *pcd,
 			 COS_OBJECT_VALUE(&avalue, adict));
 	} else if (pdf_key_eq(Action + 1, "/GoTo"))
 	    pdfmark_put_pair(pcd, Action);
+	else if (Action[1].size < 30) {
+	    /* Hack: we could substitute names in pdfmark_process,
+	       now should recognize whether it was done. 
+	       Not a perfect method though. 
+	       Go with it for a while. */
+	    char buf[30];
+	    int d0, d1;
+
+	    memcpy(buf, Action[1].data, Action[1].size);
+	    buf[Action[1].size] = 0;
+	    if (sscanf(buf, "%d %d R", &d0, &d1) == 2)
+		pdfmark_put_pair(pcd, Action);
+	}
     }
     /*
      * If we have /Dest or /File without the right kind of action,
