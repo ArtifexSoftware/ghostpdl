@@ -303,17 +303,16 @@ gs_reloc_const_string(gs_const_string * sptr, gc_state_t * gcst)
 
 /* Other stubs */
 void
-gs_exit(int exit_status)
+gs_to_exit(int exit_status)
 {
     gs_lib_finit(exit_status, 0);
-    exit(exit_status);
 }
 
 void
 gs_abort(void)
 {
-    gs_exit(1);
-    exit(1);	
+    gs_to_exit(1); /* cleanup */
+    gp_do_exit(1); /* system independent exit() */	
 }
 
 

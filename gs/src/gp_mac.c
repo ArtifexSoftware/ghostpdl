@@ -120,7 +120,7 @@ gp_exit(int exit_status, int code)
 void
 gp_do_exit(int exit_status)
 {
-/*    exit(exit_status);*/
+    exit(exit_status);
 }
 
 /* gettimeofday */
@@ -157,7 +157,7 @@ gp_get_realtime(long *pdt)
 
 	if (gettimeofday(&tp) == -1) {
 	    lprintf("Ghostscript: gettimeofday failed!\n");
-	    gs_exit(1);
+	    gs_abort(1);
 	}
 
     /* tp.tv_sec is #secs since Jan 1, 1970 */

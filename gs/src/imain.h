@@ -260,7 +260,7 @@ int gs_main_errwrite(P3(gs_main_instance *minst, const char *str, int len));
  * the interpreter after terminating it; we plan to fix this as soon as
  * possible.
  *
- * Note that calling gs_exit (defined in gsexit.h) automatically calls
+ * Note that calling gs_to_exit (defined in gsexit.h) automatically calls
  * gs_main_finit for the default instance.
  */
 void gs_main_finit(P3(gs_main_instance * minst, int exit_status, int code));

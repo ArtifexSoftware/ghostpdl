@@ -50,9 +50,8 @@ gp_set_printer_binary(int prnfno, int binary)
 {
 }
 void 
-gs_exit(int n)
+gs_to_exit(int n)
 {
-    exit(n);
 }
 #define eprintf_program_ident(f, pn, rn) (void)0
 void 

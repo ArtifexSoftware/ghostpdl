@@ -743,7 +743,7 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 
 /* ------ Termination ------ */
 
-/* Free all resources and exit. */
+/* Free all resources and return. */
 void
 gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 {
@@ -783,24 +783,21 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     gs_lib_finit(exit_status, code);
 }
 void
-gs_exit_with_code(int exit_status, int code)
+gs_to_exit_with_code(int exit_status, int code)
 {
     gs_finit(exit_status, code);
-    gp_do_exit(exit_status);
 }
 void
-gs_exit(int exit_status)
+gs_to_exit(int exit_status)
 {
-    gs_exit_with_code(exit_status, 0);
+    gs_to_exit_with_code(exit_status, 0);
 }
-
 void
 gs_abort(void)
 {
-    gs_exit(1);
-    /* This is the ONLY reference to exit() */
-    /* Even this one should be removed */
-    exit(1);	
+    gs_to_exit(1);
+    /* it's fatal calling OS independent exit() */
+    gp_do_exit(1);	
 }
 
 /* ------ Debugging ------ */

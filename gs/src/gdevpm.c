@@ -50,7 +50,6 @@
 #include <stdlib.h>
 #include "gx.h"
 #include "gserrors.h"
-#include "gsexit.h"		/* for gs_exit_status */
 #include "gxdevice.h"
 
 #include "gp.h"

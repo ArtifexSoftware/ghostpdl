@@ -224,7 +224,7 @@ gsapi_exit(gs_main_instance *minst)
     if (minst == NULL)
 	return e_Fatal;
 
-    gs_exit(0);
+    gs_to_exit(0);
     return 0;
 }
 
