@@ -41,6 +41,7 @@
 #include "ifont.h"
 #include "igstate.h"
 #include "iname.h"
+#include "iutil.h"
 #include "store.h"
 
 /*
@@ -852,6 +853,34 @@ nobbox_stroke(i_ctx_t *i_ctx_p)
     return nobbox_draw(i_ctx_p, gs_stroke);
 }
 
+/* <font> <array> .setweightvector - */
+private int
+zsetweightvector(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    gs_font *pfont;
+    int code = font_param(op - 1, &pfont);
+    gs_font_type1 *pfont1;
+    int size;
+
+    if (code < 0) {
+	/* The font was not defined yet. Just ignore. See lib/gs_type1.ps . */
+	pop(2);
+	return 0;
+    }
+    if (pfont->FontType != ft_encrypted && pfont->FontType != ft_encrypted2)
+	return_error(e_invalidfont);
+    pfont1 = (gs_font_type1 *)pfont;
+    size = r_size(op);
+    if (size != pfont1->data.WeightVector.count)
+	return_error(e_invalidfont);
+    code = process_float_array(op, size, pfont1->data.WeightVector.values);
+    if (code < 0)
+	return code;
+    pop(2);
+    return 0;
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zchar1_op_defs[] =
@@ -865,6 +894,7 @@ const op_def zchar1_op_defs[] =
     {"4%nobbox_continue", nobbox_continue},
     {"4%nobbox_fill", nobbox_fill},
     {"4%nobbox_stroke", nobbox_stroke},
+    {"4.setweightvector", zsetweightvector},
     op_def_end(0)
 };
 

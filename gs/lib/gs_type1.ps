@@ -175,7 +175,8 @@ ifelse
   dup gcheck 2 index gcheck not and {
     /setweightvector cvx /invalidaccess signalerror
   } if
-  /WeightVector exch .forceput
+  2 copy /WeightVector exch .forceput
+  .setweightvector
 } .bind executeonly def 
 end
 

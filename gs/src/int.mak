@@ -718,7 +718,7 @@ $(PSOBJ)zchar1.$(OBJ) : $(PSSRC)zchar1.c $(OP) $(memory__h)\
  $(gxdevice_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxfont_h) $(gxfont1_h) $(gxtype1_h) $(gzstate_h)\
  $(estack_h) $(ialloc_h) $(ichar_h) $(ichar1_h) $(icharout_h)\
- $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(store_h)
+ $(idict_h) $(ifont_h) $(igstate_h) $(iname_h) $(iutil_h) $(store_h)
 	$(PSCC) $(PSO_)zchar1.$(OBJ) $(C_) $(PSSRC)zchar1.c
 
 $(PSOBJ)zfont1.$(OBJ) : $(PSSRC)zfont1.c $(OP) $(memory__h)\
