@@ -1935,6 +1935,31 @@ may be overridden by the command line argument
 <b><tt>-dAlignToPixels</tt></b>.
 </dl>
 
+<dl>
+<dt><b><tt>UseWTS &lt;boolean&gt;</tt></b>
+<dd>If <tt>true</tt>, and if AccurateScreens are specified (either as
+a user parameter, or as a type 1 halftone dictionary parameter), then
+the Well Tempered Screening algorithm is used for
+halftoning. Otherwise, a rational tangent algorithm is chosen, which
+will typically result in significant differences between the screen
+angle and ruling requested, and actually rendered. Currently, the
+performance of WTS is reasonably good when rendering to a full page
+buffer, but not optimized for banded mode. Thus, when using WTS,
+disable banding (setting
+<b><tt>-dMaxBitmap=500000000</tt></b> should work). In a future
+version, WTS will be optimized for banded mode, and
+<b><tt>UseWTS</tt></b> will be <tt>true</tt> by default.
+
+<p>
+<b>Note:</b> Currently, <b><tt>UseWTS</tt></b> can only be set using
+the PostScript user parameters mechanism, not on the command line with
+a <b><tt>-d</tt></b> switch. Use this code to enable it:
+
+<blockquote><pre>
+&lt;&lt; /UseWTS true &gt;&gt; setuserparams
+</pre></blockquote>
+</dl>
+
 <hr>
 
 <h2><a name="Miscellaneous_additions"></a>Miscellaneous additions</h2>
