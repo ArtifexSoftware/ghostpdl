@@ -257,6 +257,29 @@ nodict readonly pop
   /Indexed /CIEBasedA load def
   /Pattern
    { setgcolorspace
+
+     % Since multiple patterns may share
+     % same dsts stream, we need to ensure
+     % that the stream is at 0 position.
+     % Making this consistently with resolveshading,
+     % which applies ReusableStreamDecode filter
+     % to the PS stream, which represents the
+     % PDF stream in dynamics.
+
+     dup /Shading knownoget {
+       dup /ShadingType oget 4 ge {
+         /DataSource knownoget {
+           dup type /filetype eq {
+             0 setfileposition
+           } {
+             pop
+           } ifelse
+         } if
+       } {
+        pop
+       } ifelse
+     } if
+
      dup /Matrix knownoget not { matrix } if
      gsave DefaultMatrix setmatrix makepattern grestore setcolor
    } bdef
