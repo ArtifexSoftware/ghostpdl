@@ -137,6 +137,12 @@ $(PLOBJ)pldict.$(OBJ): $(PLSRC)pldict.c $(AK) $(memory__h)\
  $(pldict_h)
 	$(PLCCC) $(PLSRC)pldict.c $(PLO_)pldict.$(OBJ)
 
+$(PLOBJ)plht.$(OBJ): $(PLSRC)plht.c
+	$(PLCCC) $(PLSRC)plht.c $(PLO_)plht.$(OBJ)
+
+$(PLOBJ)plsrgb.$(OBJ): $(PLSRC)plsrgb.c
+	$(PLCCC) $(PLSRC)plsrgb.c $(PLO_)plsrgb.$(OBJ)
+
 $(PLOBJ)pldraw.$(OBJ): $(PLSRC)pldraw.c $(AK) $(std_h)\
  $(gsmemory_h) $(gstypes_h) $(gxdevice_h) $(gzstate_h)\
  $(pldraw_h)
@@ -237,7 +243,7 @@ $(PLOBJ)pllfont.$(OBJ): $(PLSRC)pllfont.c $(PLSRC)pllfont.h $(AK)\
 	$(gxfont_h) $(gxfont42_h) $(plfont_h) $(pldict_h) $(plftable_h)
 	$(PLCCC) $(PLSRC)pllfont.c $(PLO_)pllfont.$(OBJ)
 
-pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ)
+pl_obj1=$(PLOBJ)pldict.$(OBJ) $(PLOBJ)pldraw.$(OBJ) $(PLOBJ)plsymbol.$(OBJ) $(PLOBJ)plvalue.$(OBJ) $(PLOBJ)plht.$(OBJ) $(PLOBJ)plsrgb.$(OBJ)
 pl_obj2=$(PLOBJ)plvocab.$(OBJ) $(PLOBJ)pltop.$(OBJ) $(PLOBJ)pltoputl.$(OBJ)
 pl_obj3=$(PLOBJ)plplatfps.$(OBJ) $(PLOBJ)plalloc.$(OBJ)
 
