@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -2064,28 +2064,15 @@ read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
 	cmd_getw(hival, cbp);
 	num_values = (hival + 1) * gs_color_space_num_components(pcs);
 	if (use_proc) {
-	    void *map_values =
-		gs_alloc_byte_array(mem, num_values,
-		    sizeof(pcolor_space->params.indexed.lookup.map->values[0]),
-				    "indexed map values");
-	    gs_indexed_map *map =
-		gs_alloc_struct(mem, gs_indexed_map, &st_indexed_map,
-				"indexed map");
+	    gs_indexed_map *map;
 
-	    if (map_values == 0 || map == 0) {
-		gs_free_object(mem, map, "indexed map");
-		gs_free_object(mem, map_values, "indexed map values");
-		code = gs_note_error(gs_error_VMerror);
+	    code = alloc_indexed_map(&map, num_values, mem, "indexed map");
+	    if (code < 0)
 		goto out;
-	    }
-	    rc_init(map, mem, 1);
 	    map->proc.lookup_index = lookup_indexed_map;
-	    map->num_values = num_values; /* (maybe not needed) */
-	    map->values = map_values;
 	    pcolor_space->params.indexed.lookup.map = map;
-	    data = (byte *)map_values;
-	    data_size = num_values *
-		sizeof(pcolor_space->params.indexed.lookup.map->values[0]);
+	    data = (byte *)map->values;
+	    data_size = num_values * sizeof(map->values[0]);
 	} else {
 	    byte *table = gs_alloc_string(mem, num_values, "indexed table");
 

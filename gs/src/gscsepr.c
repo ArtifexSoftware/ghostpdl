@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -20,6 +20,7 @@
 /* Separation color space and operation definition */
 #include "gx.h"
 #include "gserrors.h"
+#include "gsfunc.h"
 #include "gsrefct.h"
 #include "gsmatrix.h"		/* for gscolor2.h */
 #include "gscsepr.h"
@@ -157,32 +158,16 @@ private gs_indexed_map *
 alloc_separation_map(const gs_color_space * palt_cspace, int cache_size,
 		     gs_memory_t * pmem)
 {
+    int num_values =
+	(cache_size == 0 ? 0 :
+	 cache_size * gs_color_space_num_components(palt_cspace));
     gs_indexed_map *pimap;
+    int code = alloc_indexed_map(&pimap, num_values, pmem,
+				 "gs_cspace_build_Separation");
 
-    rc_alloc_struct_1(pimap, gs_indexed_map, &st_indexed_map, pmem,
-		      return 0,
-		      "gs_cspace_build_Separation"
-	);
-    pimap->rc.free = free_indexed_map;
+    if (code < 0)
+	return 0;
     pimap->proc.tint_transform = map_tint_value;
-
-    if (cache_size != 0) {
-	int num_comps = gs_color_space_num_components(palt_cspace);
-
-	cache_size *= num_comps;
-	pimap->num_values = cache_size;
-	pimap->values =
-	    (float *)gs_alloc_byte_array(pmem, cache_size, sizeof(float),
-					 "gs_cspace_build_Separation"
-	);
-
-	if (pimap->values == 0)
-	    rc_decrement(pimap, "gs_cspace_build_Separation");	/* sets pimap = 0 */
-
-    } else {
-	pimap->num_values = 0;
-	pimap->values = 0;
-    }
     return pimap;
 }
 
@@ -244,9 +229,13 @@ int
 gs_cspace_set_tint_xform_proc(gs_color_space * pcspace,
 	    int (*proc) (P3(const gs_separation_params *, floatp, float *)))
 {
+    gs_indexed_map *pimap;
+
     if (gs_color_space_get_index(pcspace) != gs_color_space_index_Separation)
 	return_error(gs_error_rangecheck);
-    pcspace->params.separation.map->proc.tint_transform = proc;
+    pimap = pcspace->params.separation.map;
+    pimap->proc.tint_transform = proc;
+    pimap->proc_data = 0;
     return 0;
 }
 
@@ -279,8 +268,8 @@ gx_init_Separation(gs_client_color * pcc, const gs_color_space * pcs)
 /* Remap a Separation color. */
 
 private int
-gx_concretize_Separation(const gs_client_color * pc, const gs_color_space * pcs,
-			 frac * pconc, const gs_imager_state * pis)
+gx_concretize_Separation(const gs_client_color *pc, const gs_color_space *pcs,
+			 frac *pconc, const gs_imager_state *pis)
 {
     float tint = pc->paint.values[0];
     int code;

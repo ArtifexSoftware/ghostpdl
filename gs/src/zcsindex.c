@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -174,27 +174,19 @@ zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
 	      op_proc_t map1)
 {
     gs_memory_t *mem = gs_state_memory(igs);
+    int space = imemory_space((gs_ref_memory_t *)mem);
     int num_components =
 	cs_num_components((const gs_color_space *)base_space);
     int num_values = num_entries * num_components;
     gs_indexed_map *map;
+    int code = alloc_indexed_map(&map, num_values, mem,
+				 "setcolorspace(mapped)");
     es_ptr ep;
-    float *values;
 
-    rc_alloc_struct_0(map, gs_indexed_map, &st_indexed_map,
-		      mem, return_error(e_VMerror),
-		      "setcolorspace(mapped)");
-    values =
-	(float *)gs_alloc_byte_array(mem, num_values, sizeof(float),
-				     "setcolorspace(mapped)");
-
-    if (values == 0) {
-	gs_free_object(mem, map, "setcolorspace(mapped)");
-	return_error(e_VMerror);
-    }
-    map->rc.free = free_indexed_map;
-    map->num_values = num_values;
-    map->values = values;
+    if (code < 0)
+	return code;
+    /* Set the reference count to 0 rather than 1. */
+    rc_init_free(map, mem, 0, free_indexed_map);
     *pmap = map;
     /* Map the entire set of color indices.  Since the */
     /* o-stack may not be able to hold N*4096 values, we have */
@@ -202,7 +194,7 @@ zcs_begin_map(i_ctx_t *i_ctx_p, gs_indexed_map ** pmap, const ref * pproc,
     check_estack(num_csme + 1);	/* 1 extra for map1 proc */
     ep = esp += num_csme;
     make_int(ep + csme_num_components, num_components);
-    make_struct(ep + csme_map, imemory_space((gs_ref_memory_t *) mem), map);
+    make_struct(ep + csme_map, space, map);
     ep[csme_proc] = *pproc;
     make_int(ep + csme_hival, num_entries - 1);
     make_int(ep + csme_index, -1);

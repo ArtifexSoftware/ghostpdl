@@ -108,7 +108,7 @@ gs_currentcolor(const gs_state * pgs)
 /* ------ Internal procedures ------ */
 
 /* GC descriptors */
-public_st_indexed_map();
+private_st_indexed_map();
 
 /* Define a lookup_index procedure that just returns the map values. */
 int
@@ -140,13 +140,16 @@ alloc_indexed_map(gs_indexed_map ** ppmap, int nvals, gs_memory_t * pmem,
 
     rc_alloc_struct_1(pimap, gs_indexed_map, &st_indexed_map, pmem,
 		      return_error(gs_error_VMerror), cname);
-    pimap->values =
-	(float *)gs_alloc_byte_array(pmem, nvals, sizeof(float), cname);
+    if (nvals > 0) {
+	pimap->values =
+	    (float *)gs_alloc_byte_array(pmem, nvals, sizeof(float), cname);
 
-    if (pimap->values == 0) {
-	gs_free_object(pmem, pimap, cname);
-	return_error(gs_error_VMerror);
-    }
+	if (pimap->values == 0) {
+	    gs_free_object(pmem, pimap, cname);
+	    return_error(gs_error_VMerror);
+	}
+    } else
+	pimap->values = 0;
     pimap->rc.free = free_indexed_map;
     pimap->proc_data = 0;	/* for GC */
     pimap->num_values = nvals;
@@ -418,7 +421,6 @@ gs_cspace_indexed_set_proc(
 /* ------ Colors ------ */
 
 /* Force an Indexed color into legal range. */
-
 private void
 gx_restrict_Indexed(gs_client_color * pcc, const gs_color_space * pcs)
 {
@@ -431,7 +433,6 @@ gx_restrict_Indexed(gs_client_color * pcc, const gs_color_space * pcs)
 }
 
 /* Color remapping for Indexed color spaces. */
-
 private const gs_color_space *
 gx_concrete_space_Indexed(const gs_color_space * pcs,
 			  const gs_imager_state * pis)
