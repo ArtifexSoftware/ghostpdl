@@ -1,3 +1,16 @@
+/*
+    jbig2dec
+    
+    Copyright (C) 2001-2002 artofcode LLC.
+    
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+
+    $Id: jbig2_mmr.c,v 1.12 2003/02/05 15:27:42 giles Exp $
+*/
+
 /* An implementation of MMR decoding. This is based on the implementation
    in Ghostscript.
 */
@@ -63,9 +76,10 @@ jbig2_decode_mmr_consume(Jbig2MmrCtx *mmr, int n_bits)
 typedef struct {
   int val;
   int n_bits;
-} cfd_node;
+} mmr_table_node;
 
-const cfd_node cf_white_decode[] = {
+/* white decode table (runlength huffman codes) */
+const mmr_table_node jbig2_mmr_white_decode[] = {
 	{ 256, 12 },
 	{ 272, 12 },
 	{ 29, 8 },
@@ -372,8 +386,8 @@ const cfd_node cf_white_decode[] = {
 	{ 1408, 1 }
 };
 
-/* Black decoding table. */
-const cfd_node cf_black_decode[] = {
+/* black decode table (runlength huffman codes) */
+const mmr_table_node jbig2_mmr_black_decode[] = {
 	{ 128, 12 },
 	{ 160, 13 },
 	{ 224, 12 },
@@ -697,7 +711,7 @@ const cfd_node cf_black_decode[] = {
 };
 
 static int
-jbig2_decode_get_code(Jbig2MmrCtx *mmr, const cfd_node *table, int initial_bits)
+jbig2_decode_get_code(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_bits)
 {
   uint32_t word = mmr->word;
   int table_ix = word >> (32 - initial_bits);
@@ -716,7 +730,7 @@ jbig2_decode_get_code(Jbig2MmrCtx *mmr, const cfd_node *table, int initial_bits)
 }
 
 static int
-jbig2_decode_get_run(Jbig2MmrCtx *mmr, const cfd_node *table, int initial_bits)
+jbig2_decode_get_run(Jbig2MmrCtx *mmr, const mmr_table_node *table, int initial_bits)
 {
   int result = 0;
   int val;
@@ -742,8 +756,8 @@ jbig2_decode_mmr_line(Jbig2MmrCtx *mmr, const byte *ref, byte *dst)
 	  int white_run, black_run;
 
 	  jbig2_decode_mmr_consume(mmr, 3);
-	  white_run = jbig2_decode_get_run(mmr, cf_white_decode, 8);
-	  black_run = jbig2_decode_get_run(mmr, cf_black_decode, 7);
+	  white_run = jbig2_decode_get_run(mmr, jbig2_mmr_white_decode, 8);
+	  black_run = jbig2_decode_get_run(mmr, jbig2_mmr_black_decode, 7);
 	  /* printf ("H %d %d\n", white_run, black_run); */
 	}
       else if ((word >> (32 - 4)) == 1)
