@@ -4,6 +4,7 @@
 
 /* pctext.c -  PCL5 text printing commands */
 
+#include "math_.h"
 #include "gx.h"
 #include "gsimage.h"
 #include "plvalue.h"
@@ -476,8 +477,10 @@ pcl_show_chars(
         /* check if a character was found */
         buff[0] = (chr >> 8);
         buff[1] = (chr & 0xff);
-	width = pcl_get_width(pcs, &advance_vector, pscale, chr, is_space);
-
+	/* round width to integral pcl current units */
+	width = (pcl_get_width(pcs, &advance_vector, pscale, chr, is_space));
+	width += (floatp)pcs->uom_cp / 2.0;
+	width -= fmod(width, (floatp)pcs->uom_cp);
         /*
          * Check for transitions of the left margin; this check is
          * disabled if the immediately preceding character was a back-space.
