@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -104,6 +104,8 @@ GSDLL_CALLBACK pgsdll_callback;	/* callback for messages and stdio to caller */
 int GSDLLAPI
 gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char GSFAR * argv[])
 {
+    int code;
+
     if (gsdll_usage) {
 	return GSDLL_INIT_IN_USE;	/* DLL can't be used by multiple programs under Win16 */
     }
@@ -123,7 +125,11 @@ gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char GSFAR * argv[])
     gsdll_minst = gs_main_instance_default();
 
     /* in gs.c */
-    gs_main_init_with_args(gsdll_minst, argc, argv);
+    code = gs_main_init_with_args(gsdll_minst, argc, argv);
+    if (code < 0) {
+	gsdll_usage--;
+	return code;
+    }
 
     return 0;
 }
