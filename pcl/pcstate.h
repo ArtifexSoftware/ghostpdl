@@ -82,7 +82,7 @@ typedef struct gs_state_s   gs_state;
 int pcl_gsave(P1(pcl_state_t * pcs));
 int pcl_grestore(P1(pcl_state_t * pcs));
 void pcl_init_gstate_stk(P1(pcl_state_t * pcs));
-
+void pcl_free_gstate_stk(P1(pcl_state_t * pcs));
 /*
  * "Cold start" initialization for the graphic state.
  */
