@@ -11,7 +11,7 @@
 #include "gxdevice.h"
 #include "gxpcolor.h"
 #include "pldict.h"
-#include "pcindexed.h"
+#include "pcindxed.h"
 #include "pcpatrn.h"
 #include "pcbiptrn.h"
 #include "pcuptrn.h"

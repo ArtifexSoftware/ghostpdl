@@ -13,7 +13,7 @@
 #include "pcpalet.h"
 #include "pcfrgrnd.h"
 #include "pcht.h"
-#include "pcwhtindx.h"
+#include "pcwhtidx.h"
 #include "pcpatrn.h"
 #include "pcbiptrn.h"
 #include "pcuptrn.h"

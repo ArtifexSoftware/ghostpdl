@@ -2,12 +2,12 @@
    reserved.  Unauthorized use, copying, and/or distribution
    prohibited.  */
 
-/* pcwhtindx.c - code to find index of white in a palette */
+/* pcwhtidx.c - code to find index of white in a palette */
 
 #include "pcstate.h"
 #include "pcpalet.h"
-#include "pcindexed.h"
-#include "pcwhtindx.h"
+#include "pcindxed.h"
+#include "pcwhtidx.h"
 
 /*
  * Find the first white point in a palette. If none are found, the palette

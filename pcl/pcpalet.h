@@ -16,7 +16,7 @@
 #include "pclookup.h"
 #include "pcdither.h"
 #include "pccid.h"
-#include "pcindexed.h"
+#include "pcindxed.h"
 #include "pcht.h"
 #include "pccrd.h"
 

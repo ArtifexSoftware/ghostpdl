@@ -10,7 +10,7 @@
 #include "gx.h"
 #include "gsstruct.h"
 #include "gsrefct.h"
-#include "pcindexed.h"
+#include "pcindxed.h"
 #include "pccsbase.h"
 
 /*

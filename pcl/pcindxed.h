@@ -2,7 +2,7 @@
    reserved.  Unauthorized use, copying, and/or distribution
    prohibited.  */
 
-/* pcindexed.h - PCL indexed color space object */
+/* pcindxed.h - PCL indexed color space object */
 
 #ifndef pcindexed_INCLUDED
 #define pcindexed_INCLUDED

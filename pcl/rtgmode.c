@@ -10,7 +10,7 @@
 #include "gsstate.h"
 #include "pcstate.h"
 #include "pcpatxfm.h"
-#include "pcindexed.h"
+#include "pcindxed.h"
 #include "pcpalet.h"
 #include "pcursor.h"
 #include "pcdraw.h"

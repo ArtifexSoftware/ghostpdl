@@ -9,7 +9,7 @@
 #include "pcmtx3.h"
 #include "pccid.h"
 #include "pccsbase.h"
-#include "pcindexed.h"
+#include "pcindxed.h"
 #include "pcpalet.h"
 
 /* default GL/2 pen width, in plotter units (1016 ploter units per inch) */

@@ -9,7 +9,7 @@
 
 #include "gx.h"
 #include "gsbitmap.h"
-#include "pcindexed.h"
+#include "pcindxed.h"
 
 /*
  * To implement transparency in PCL colored patterns and rasters, it is
