@@ -224,7 +224,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	 ~(TEXT_FROM_STRING | TEXT_FROM_BYTES |
 	   TEXT_ADD_TO_ALL_WIDTHS | TEXT_ADD_TO_SPACE_WIDTH |
 	   TEXT_REPLACE_WIDTHS |
-	   TEXT_DO_DRAW | TEXT_RETURN_WIDTH)) != 0 ||
+	   TEXT_DO_DRAW | TEXT_INTERVENE | TEXT_RETURN_WIDTH)) != 0 ||
 	gx_path_current_point(path, &cpt) < 0 ||
 	/*
 	 * It appears that no version of Acrobat Reader handles stroked
@@ -263,8 +263,6 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	return code;
     }
 
-    if (text->operation & TEXT_RETURN_WIDTH)
-	gx_path_current_point(path, &penum->origin);
     *ppte = (gs_text_enum_t *)penum;
 
     return 0;
@@ -946,15 +944,15 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
  * TEXT_ADD_TO_ALL_WIDTHS, TEXT_ADD_TO_SPACE_WIDTH, TEXT_REPLACE_WIDTHS,
  * and/or TEXT_RETURN_WIDTH.
  */
-private int process_text_return_width(P5(const gs_text_enum_t *pte,
+private int process_text_return_width(P6(const gs_text_enum_t *pte,
 					 gs_font *font, pdf_font_t *pdfont,
 					 const gs_const_string *pstr,
-					 gs_point *pdpt));
-private int process_text_add_width(P5(gs_text_enum_t *pte,
+					 int *pindex, gs_point *pdpt));
+private int process_text_add_width(P6(gs_text_enum_t *pte,
 				      gs_font *font,
 				      const pdf_text_process_state_t *ppts,
 				      const gs_const_string *pstr,
-				      gs_point *pdpt));
+				      int *pindex, gs_point *pdpt));
 private int
 pdf_text_process(gs_text_enum_t *pte)
 {
@@ -967,6 +965,7 @@ pdf_text_process(gs_text_enum_t *pte)
     gs_text_params_t alt_text;
     pdf_text_process_state_t text_state;
     gs_const_string str;
+    int index, ok_code, bytes_per_char;
     int i;
     byte strbuf[200];		/* arbitrary */
     int code, mask;
@@ -983,15 +982,30 @@ pdf_text_process(gs_text_enum_t *pte)
 	/****** FOR NOW ******/
 	return 0;
     }
+    index = pte->index;
     str.data = text->data.bytes;
-    str.size = text->size;
+    if ((text->operation & TEXT_INTERVENE) && index < text->size) {
+	/*
+	 * The following is wrong for multi-byte fonts.  PostScript
+	 * doesn't allow TEXT_INTERVENE (kshow) with such fonts, but
+	 * the library does.  We patch this up below.
+	 */
+	str.size = index + 1;
+	ok_code = TEXT_PROCESS_INTERVENE;
+    } else {
+	str.size = text->size;
+	ok_code = 0;
+    }
     font = penum->current_font;
     fmat = font->FontMatrix;
+    if (text->operation & TEXT_RETURN_WIDTH)
+	gx_path_current_point(pte->path, &penum->origin);
  fnt:
     switch (font->FontType) {
     case ft_TrueType:
     case ft_encrypted:
     case ft_encrypted2:
+	bytes_per_char = 1;
 	break;
     case ft_composite: {
 	gs_font_type0 *const font0 = (gs_font_type0 *)font;
@@ -1009,7 +1023,10 @@ pdf_text_process(gs_text_enum_t *pte)
 		strbuf[i >> 1] = str.data[i + 1];
 	    }
 	    str.data = strbuf;
-	    str.size >>= 1;
+	    /* See the note about TEXT_INTERVENE above. */
+	    str.size = (str.size + 1) >> 1;
+	    index >>= 1;
+	    bytes_per_char = 2;
 	    font = penum->current_font = font0->data.FDepVector[0];
 	    /*
 	     * The FontMatrix of descendant base fonts is not scaled by
@@ -1030,10 +1047,11 @@ pdf_text_process(gs_text_enum_t *pte)
     code = pdf_update_text_state(&text_state, penum, &fmat);
     if (code > 0) {
 	/* Try not to emulate ADD_TO_WIDTH if we don't have to. */
-	if (pte->index >= str.size)
+	if (index >= str.size)
 	    code = 0;
 	else if (code & TEXT_ADD_TO_SPACE_WIDTH) {
-	    if (!memchr(str.data, pte->text.space.s_char, str.size))
+	    if (!memchr(str.data + index, pte->text.space.s_char,
+			str.size - index))
 		code &= ~TEXT_ADD_TO_SPACE_WIDTH;
 	}
     }
@@ -1043,7 +1061,7 @@ pdf_text_process(gs_text_enum_t *pte)
 
     /* Check that all characters can be encoded. */
 
-    for (i = 0; i < str.size; ++i) {
+    for (i = index; i < str.size; ++i) {
 	int chr = str.data[i];
 	pdf_font_t *pdfont = text_state.pdfont;
 	int code = pdf_encode_char(pdev, chr, (gs_font_base *)font, pdfont);
@@ -1066,7 +1084,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	    if (str.data != strbuf) {
 		if (str.size > sizeof(strbuf))
 		    goto dflt;
-		memcpy(strbuf, str.data, str.size);
+		memcpy(strbuf + index, str.data + index, str.size - index);
 		str.data = strbuf;
 	    }
 	    strbuf[i] = (byte)code;
@@ -1079,7 +1097,7 @@ pdf_text_process(gs_text_enum_t *pte)
      * The following check is necessary, because pdf_set_text_matrix
      * assumes that a string-showing operator will follow.
      */
-    if (pte->index < str.size) {
+    if (index < str.size) {
 	code = pdf_write_text_process_state(pdev, &text_state, &str);
 	if (code < 0)
 	    goto dflt;
@@ -1091,10 +1109,12 @@ pdf_text_process(gs_text_enum_t *pte)
 
 	w.x = w.y = 0;
 	tmat = text_state.text_matrix;
-	for (; pte->index < str.size; pte->index++, pte->xy_index++) {
+	for (; index < str.size; index++, pte->index += bytes_per_char,
+		 pte->xy_index++
+	     ) {
 	    gs_point d, dpt;
 
-	    code = pdf_append_chars(pdev, str.data + pte->index, 1);
+	    code = pdf_append_chars(pdev, str.data + index, 1);
 	    if (code < 0)
 		return code;
 	    gs_text_replaced_width(&pte->text, pte->xy_index, &d);
@@ -1102,25 +1122,25 @@ pdf_text_process(gs_text_enum_t *pte)
 	    gs_distance_transform(d.x, d.y, &ctm_only(pte->pis), &dpt);
 	    tmat.tx += dpt.x;
 	    tmat.ty += dpt.y;
-	    if (pte->index + 1 < str.size) {
+	    if (index + 1 < str.size) {
 		code = pdf_set_text_matrix(pdev, &tmat);
 		if (code < 0)
 		    return code;
 	    }
 	}
 	pte->returned.total_width = w;
-	return
-	    (text->operation & TEXT_RETURN_WIDTH ?
-	     gx_path_add_point(pte->path, float2fixed(tmat.tx),
-			       float2fixed(tmat.ty)) :
-	     0);
+	if (text->operation & TEXT_RETURN_WIDTH) {
+	    code = gx_path_add_point(pte->path, float2fixed(tmat.tx),
+				     float2fixed(tmat.ty));
+	    if (code < 0)
+		return code;
+	}
+	goto ok;
     }
 
     /* Write out the characters, unless we have to emulate ADD_TO_WIDTH. */
     if (mask == 0) {
-	code = pdf_append_chars(pdev, str.data + pte->index,
-				str.size - pte->index);
-	pte->index = 0;
+	code = pdf_append_chars(pdev, str.data + index, str.size - index);
 	if (code < 0)
 	    goto dflt;
     }
@@ -1143,24 +1163,29 @@ pdf_text_process(gs_text_enum_t *pte)
 	    code = pdf_write_text_process_state(pdev, &text_state, &str);
 	    if (code < 0)
 		goto dflt;
-	    code = process_text_add_width(pte, font, &text_state, &str, &dpt);
+	    code = process_text_add_width(pte, font, &text_state, &str,
+					  &index, &dpt);
+	    pte->index = index * bytes_per_char;
 	    if (code < 0)
 		goto dflt;
 	    if (!(text->operation & TEXT_RETURN_WIDTH))
-		return 0;
+		goto ok;
 	} else if (!(text->operation & TEXT_RETURN_WIDTH))
-	    return 0;
+	    goto ok;
 	else {
 	    code = process_text_return_width(pte, font, text_state.pdfont,
-					     &str, &dpt);
+					     &str, &index, &dpt);
 	    if (code < 0)
 		goto dflt_w;
 	}
 	pte->returned.total_width = dpt;
 	gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &dpt);
-	return gx_path_add_point(pte->path,
+	code = gx_path_add_point(pte->path,
 				 penum->origin.x + float2fixed(dpt.x),
 				 penum->origin.y + float2fixed(dpt.y));
+	if (code < 0)
+	    return code;
+	goto ok;
     }
  dflt_w:
     alt_text = *text;
@@ -1175,12 +1200,15 @@ pdf_text_process(gs_text_enum_t *pte)
     pte_default = penum->pte_default;
     gs_text_enum_copy_dynamic(pte_default, pte, false);
     goto top;
+ ok:
+    pte->index = str.size * bytes_per_char;
+    return ok_code;
 }
 /* Compute the total text width (in user space). */
 private int
 process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
 			  pdf_font_t *pdfont, const gs_const_string *pstr,
-			  gs_point *pdpt)
+			  int *pindex, gs_point *pdpt)
 {
     int i, w;
     double scale = (font->FontType == ft_TrueType ? 0.001 : 1.0);
@@ -1190,7 +1218,7 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
 	(pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH ?
 	 pte->text.space.s_char : -1);
 
-    for (i = pte->index, w = 0; i < pstr->size; ++i) {
+    for (i = *pindex, w = 0; i < pstr->size; ++i) {
 	int cw;
 	int code = pdf_char_width(pdfont, pstr->data[i], font, &cw);
 
@@ -1221,7 +1249,8 @@ process_text_return_width(const gs_text_enum_t *pte, gs_font *font,
 private int
 process_text_add_width(gs_text_enum_t *pte, gs_font *font,
 		       const pdf_text_process_state_t *ppts,
-		       const gs_const_string *pstr, gs_point *pdpt)
+		       const gs_const_string *pstr,
+		       int *pindex, gs_point *pdpt)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
     int i, w;
@@ -1236,7 +1265,7 @@ process_text_add_width(gs_text_enum_t *pte, gs_font *font,
 
     dpt.x = dpt.y = 0;
     tmat = ppts->text_matrix;
-    for (i = pte->index, w = 0; i < pstr->size; ++i) {
+    for (i = *pindex, w = 0; i < pstr->size; ++i) {
 	int cw;
 	int code = pdf_char_width(ppts->pdfont, pstr->data[i], font, &cw);
 	gs_point wpt;
@@ -1268,7 +1297,7 @@ process_text_add_width(gs_text_enum_t *pte, gs_font *font,
 	    move = true;
 	}
     }
-    pte->index = i;		/* only do the part we haven't done yet */
+    *pindex = i;		/* only do the part we haven't done yet */
     *pdpt = dpt;
     return code;
 }
