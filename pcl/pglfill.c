@@ -359,7 +359,7 @@ hpgl_MC(
 )
 {	
     int             mode = 0, opcode;
-
+    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     if (hpgl_arg_c_int(pargs, &mode) && ((mode & ~1) != 0))
 	return e_Range;
     opcode = mode ? 168 : 252;
@@ -369,7 +369,6 @@ hpgl_MC(
 	    return e_Range;
 	}
     }
-    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     pgls->logical_op = opcode;
     return 0;
 }
