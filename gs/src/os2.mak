@@ -664,3 +664,29 @@ $(BINDIR)\gspmdrv.exe: $(GLOBJ)gspmdrv.o $(GLOBJ)gspmdrv.res $(GLSRC)gspmdrv.def
 	$(COMPDIR)\$(COMP) $(CGDB) $(CO) -o $(GLOBJ)gspmdrv $(GLOBJ)gspmdrv.o 
 	$(COMPDIR)\emxbind -p -r$(GLOBJ)gspmdrv.res -d$(GLSRC)gspmdrv.def $(COMPDIR)\emxl.exe $(GLOBJ)gspmdrv $(BINDIR)\gspmdrv.exe
 	del $(GLOBJ)gspmdrv
+
+# Create a ZIP archive
+# This assumes that the current directory is named gs#.## relative to its
+# parent, where #.## is the Ghostscript version.
+
+ZIP_XE=zip
+ZIPPROGFILE1=gs$(GS_DOT_VERSION)\bin\gsos2.exe
+ZIPPROGFILE2=gs$(GS_DOT_VERSION)\bin\gsdll2.dll
+ZIPPROGFILE3=gs$(GS_DOT_VERSION)\bin\gspmdrv.exe
+ZIPPROGFILE4=gs$(GS_DOT_VERSION)\doc
+ZIPPROGFILE5=gs$(GS_DOT_VERSION)\examples
+ZIPPROGFILE6=gs$(GS_DOT_VERSION)\lib
+ZIPFONTDIR=fonts
+
+# Make the zip archive.
+zip:
+	cd ..
+	-del gs$(GS_VERSION)os2.zip
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPFONTDIR)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE1)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE2)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE3)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE4)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE5)
+	$(ZIP_XE) -9 -r gs$(GS_VERSION)os2.zip $(ZIPPROGFILE6)
+	cd gs$(GS_DOT_VERSION)

@@ -566,6 +566,25 @@ int display_open(void *handle, void *device)
     fprintf(stdout, "display_open(0x%x, 0x%x)\n", handle, device);
 #endif
 
+    if (first_image) {
+	/* gsos2.exe is a console application, and displays using
+	 * gspmdrv.exe which is a PM application.  To start 
+	 * gspmdrv.exe, DosStartSession is used with SSF_RELATED_CHILD.  
+	 * A process can have only one child session marked SSF_RELATED_CHILD.  
+	 * When we call DosStopSession for the second session, it will 
+	 * close, but it will not write to the termination queue.  
+	 * When we wait for the session to end by reading the 
+	 * termination queue, we wait forever.
+	 * For this reason, multiple image windows are disabled
+	 * for OS/2.
+	 * To get around this, we would need to replace the current
+	 * method of one gspmdrv.exe session per window, to having
+	 * a new PM application which can display multiple windows
+	 * within a single session.
+	 */
+	return e_limitcheck;
+    }
+
     img = (IMAGE *)malloc(sizeof(IMAGE));
     if (img == NULL)
 	return e_limitcheck;
