@@ -138,7 +138,7 @@ JVERSION=6
 # incompatible with the JPEG standard.  See Make.htm for more details.
 
 # DON'T SET THIS TO 1!  See the comment just above.
-SHARE_JPEG=1
+SHARE_JPEG=0
 JPEG_NAME=jpeg
 
 # Define the directory where the PNG library sources are stored,

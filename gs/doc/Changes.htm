@@ -1,5 +1,5 @@
 <html><head>
-<title>Ghostscript 6.01 change history as of 2000-03-13</title>
+<title>Ghostscript 6.01 change history as of 2000-03-16</title>
 </head><body>
 
 <blockquote><ul>
@@ -22,6 +22,13 @@ Fixes problems:
 	- When converting PostScript to PDF, selecting /Bicubic as an image
 DownsampleType caused an error instead of defaulting to /Average.
 (doc/Ps2pdf.htm [1.2]: 2000/03/10 04:16:09 lpd)
+	- The gs###src.zip and gs###lib.zip files weren't mentioned as being
+included in distributions; News.htm and Changes.htm weren't mentioned at
+all. (doc/Release.htm [1.5]: 2000/03/15 07:23:52 lpd)
+	- Fixes a problem producing too much black in the output; also adds
+support for 5 new printers (H-P Color DeskJet 690, H-P DesignJet 750, and
+Epson Stylus Color 200). Note that this is user-contributed code.
+(doc/Devices.htm [1.2]: 2000/03/16 02:01:36 lpd)
 
 In ansi2knr, adds user-contributed support for concatenated string literals
 and character constants, and fixes for a couple of minor bugs.
@@ -63,6 +70,32 @@ doc/README [1.2], doc/Readme.htm [1.2]: 2000/03/14 06:14:43 lpd)
 
 Partially updates the release procedure documentation to reflect the use of
 SourceForge and CVS. (doc/Release.htm [1.3]: 2000/03/14 06:39:23 lpd)
+
+Adds a change log generated mechanically from the CVS logs. Future releases
+may omit this file (doc/Changes.htm) from their change log.
+(doc/Changes.htm [1.1], doc/News.htm [1.3]: 2000/03/14 06:48:44 lpd)
+
+Revises the release procedures to reflect use of SourceForge, and to
+separate out the procedures for building Windows executables.
+(doc/Release.htm [1.4]: 2000/03/15 02:24:58 lpd)
+
+Adds information on uninstalling Ghostscript on Windows.
+(doc/Install.htm [1.4]: 2000/03/15 07:29:53 lpd)
+
+Adds the ability to set the ProcessColorModel of the pdfwrite device to
+/DeviceGray, /DeviceRGB, or /DeviceCMYK. This affects the color space used
+for fill, stroke, text, and imagemask, and for images that (for whatever
+reason) can't be written in their specified color space. Note that this is a
+short-term fix: pdfwrite should output colors in the color space in which
+they were specified. However, a proper fix will require more significant
+architectural changes. (doc/News.htm [1.4]: 2000/03/16 01:21:23 lpd)
+
+Adds a reference to a third-party Fontmap for the Computer Modern fonts.
+(doc/Fonts.htm [1.2]: 2000/03/16 04:05:07 lpd)
+
+Adds documentation and a makefile entry for Matthew Gelhaus' cdj880 driver.
+The code will eventually be included in gdevcd8.c, but it is not yet mature
+enough. (doc/Devices.htm [1.3]: 2000/03/16 08:09:42 lpd)
 
 </pre><h2><a name="6.01 Procedures"></a>Procedures</h2><pre>
 
@@ -128,6 +161,21 @@ for versions 6.n; redefines News.htm as containing only news for the current
 release; adds (a link to) Changes.htm for the mechanically generated change
 log. (unixinst.mak [1.4], version.mak [1.3]: 2000/03/14 06:14:44 lpd)
 
+Adds entries for ibm-rs6000-aix-4.3, sgi-mips-irix6.5-64bit, and
+sun-sparc-solaris-64bit. (all-arch.mak [1.3]: 2000/03/15 18:38:29 lpd)
+
+Adds the ability to set the ProcessColorModel of the pdfwrite device to
+/DeviceGray, /DeviceRGB, or /DeviceCMYK. This affects the color space used
+for fill, stroke, text, and imagemask, and for images that (for whatever
+reason) can't be written in their specified color space. Note that this is a
+short-term fix: pdfwrite should output colors in the color space in which
+they were specified. However, a proper fix will require more significant
+architectural changes. (version.mak [1.4]: 2000/03/16 01:21:24 lpd)
+
+Adds documentation and a makefile entry for Matthew Gelhaus' cdj880 driver.
+The code will eventually be included in gdevcd8.c, but it is not yet mature
+enough. (contrib.mak [1.5]: 2000/03/16 08:09:42 lpd)
+
 </pre><h2><a name="6.01 Utilities"></a>Utilities</h2><pre>
 
 Fixes problems:
@@ -151,6 +199,12 @@ lib/eps2eps.bat [1.1]: 2000/03/10 07:51:55 lpd)
 Removes a temporary file that was included in the fileset by mistake.
 (lib/history [1.2]: 2000/03/10 08:18:36 lpd)
 
+Changes the ps2pdf MS Windows / MS-DOS scripts to use temporary files to
+avoid the absurdly low limits on the length of a command line and the total
+size of environment variable definitions. (lib/ps2pdf.bat [1.2],
+lib/ps2pdf12.bat [1.3], lib/ps2pdf13.bat [1.3], lib/ps2pdfwr.bat [1.2],
+lib/ps2pdfxx.bat [1.1]: 2000/03/14 20:20:20 lpd)
+
 </pre><h2><a name="6.01 Drivers"></a>Drivers</h2><pre>
 
 Fixes problems:
@@ -168,6 +222,23 @@ sometimes failed to copy all of the updated area to the screen.
 	- The [e]pswrite driver produced invalid output if the input file
 didn't end with a showpage. Also cleans up some formatting and removes a
 redundant test. (gdevps.c [1.2]: 2000/03/10 07:44:27 lpd)
+	- Fixes a problem producing too much black in the output; also adds
+support for 5 new printers (H-P Color DeskJet 690, H-P DesignJet 750, and
+Epson Stylus Color 200). Note that this is user-contributed code.
+(gdevupd.c [1.2], lib/bjc610a0.upp [1.2], lib/bjc610a1.upp [1.2],
+lib/bjc610a2.upp [1.2], lib/bjc610a3.upp [1.2], lib/bjc610a4.upp [1.2],
+lib/bjc610a5.upp [1.2], lib/bjc610a6.upp [1.2], lib/bjc610a7.upp [1.2],
+lib/bjc610a8.upp [1.2], lib/bjc610b1.upp [1.2], lib/bjc610b2.upp [1.2],
+lib/bjc610b3.upp [1.2], lib/bjc610b4.upp [1.2], lib/bjc610b6.upp [1.2],
+lib/bjc610b7.upp [1.2], lib/bjc610b8.upp [1.2], lib/cdj550.upp [1.2],
+lib/cdj690.upp [1.1], lib/cdj690ec.upp [1.1], lib/dnj750c.upp [1.1],
+lib/dnj750m.upp [1.1], lib/ras32.upp [1.2], lib/stc.upp [1.2],
+lib/stc1520h.upp [1.2], lib/stc2.upp [1.2], lib/stc200_h.upp [1.1],
+lib/stc2_h.upp [1.2], lib/stc2s_h.upp [1.2], lib/stc500p.upp [1.2],
+lib/stc500ph.upp [1.2], lib/stc600ih.upp [1.2], lib/stc600p.upp [1.2],
+lib/stc600pl.upp [1.2], lib/stc800ih.upp [1.2], lib/stc800p.upp [1.2],
+lib/stc800pl.upp [1.2], lib/stc_h.upp [1.2], lib/stc_l.upp [1.2],
+lib/stcany.upp [1.2]: 2000/03/16 02:01:36 lpd)
 
 Updates the Brother HL7xx drivers with a new user-contributed version, plus
 a couple of minor fixes. (gdevhl7x.c [1.2]: 2000/03/10 07:33:44 lpd)
@@ -175,6 +246,20 @@ a couple of minor fixes. (gdevhl7x.c [1.2]: 2000/03/10 07:33:44 lpd)
 Enhances the [e]pswrite driver to handle Indexed color spaces over Device
 color spaces, only with the standard Decode. (gdevps.c [1.3]: 2000/03/10
 07:45:50 lpd)
+
+Adds the ability to set the ProcessColorModel of the pdfwrite device to
+/DeviceGray, /DeviceRGB, or /DeviceCMYK. This affects the color space used
+for fill, stroke, text, and imagemask, and for images that (for whatever
+reason) can't be written in their specified color space. Note that this is a
+short-term fix: pdfwrite should output colors in the color space in which
+they were specified. However, a proper fix will require more significant
+architectural changes. (gdevpsdf.c [1.2], gdevpsdf.h [1.3]: 2000/03/16
+01:21:24 lpd)
+
+Adds two more user-contributed 'uniprint' printer parameter sets: Epson
+Stylus Color 640, and a generic Epson Stylus Color in high resolution mode
+(720x720 dpi). (lib/stc640p.upp [1.1], lib/stcany_h.upp [1.1]: 2000/03/16
+02:03:40 lpd)
 
 </pre><h2><a name="6.01 PDF writer"></a>PDF writer</h2><pre>
 
@@ -192,6 +277,16 @@ causes such fonts to be converted to bitmaps: the correct fix (to delay
 determining the range of valid characters until the font is written) is too
 large a change to make in a bug fix release. (gdevpdft.c [1.2]: 2000/03/10
 03:48:48 lpd)
+
+Adds the ability to set the ProcessColorModel of the pdfwrite device to
+/DeviceGray, /DeviceRGB, or /DeviceCMYK. This affects the color space used
+for fill, stroke, text, and imagemask, and for images that (for whatever
+reason) can't be written in their specified color space. Note that this is a
+short-term fix: pdfwrite should output colors in the color space in which
+they were specified. However, a proper fix will require more significant
+architectural changes. (gdevpdf.c [1.2], gdevpdfd.c [1.3], gdevpdfi.c [1.3],
+gdevpdfp.c [1.2], gdevpdft.c [1.3], gdevpdfu.c [1.2], gdevpdfx.h [1.2]:
+2000/03/16 01:21:24 lpd)
 
 </pre><h2><a name="6.01 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
 
@@ -257,6 +352,10 @@ glyphpath, in order to support correct handling of widths for CID fonts.
 RAM-based file system, which Ghostscript does not provide). Fix: The type of
 the %null% IODevice was /FileSystem rather than /Special. (ziodev2.c [1.2]:
 2000/03/10 07:02:07 lpd)
+	- Directly-loaded TrueType fonts (including embedded TrueType fonts
+in PDF files) could get confused with each other in the cache, because their
+XUIDs were based on the font checksum field, which some fonts don't have set
+correctly. (lib/gs_ttf.ps [1.3]: 2000/03/16 07:38:07 lpd)
 
 Adds a new example file, a 3-D synthetic image. (examples/doretree.ps [1.1]:
 2000/03/10 04:00:45 lpd)
@@ -316,6 +415,10 @@ glyphpath, in order to support correct handling of widths for CID fonts.
 	- The description of the value returned by code_map_decode_next in
 *pchr was incorrect. (documentation bug only) (gsfcmap.c [1.2]: 2000/03/10
 07:03:09 lpd)
+	- Fixes a problem producing too much black in the output; also adds
+support for 5 new printers (H-P Color DeskJet 690, H-P DesignJet 750, and
+Epson Stylus Color 200). Note that this is user-contributed code.
+(gsargs.h [1.2]: 2000/03/16 02:01:36 lpd)
 
 Clears the glyf and loca offsets in TrueType fonts that lack these tables,
 so that clients who care can tell whether the font is being downloaded
