@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -77,8 +77,8 @@ ifelse
    DISKFONTS { end } if
    cleartomark
  } bind def
-/.loadfont1		% <file> .loadfont1 <errorflag>
- {	% We would like to use `false /PFBDecode filter',
+/.loadfont1 {		% <file> .loadfont1 <errorflag>
+  {	% We would like to use `false /PFBDecode filter',
 	% but this occasionally produces a whitespace character as
 	% the first of an eexec section, so we can't do it.
 	% Also, since the real input file never reaches EOF if we are using
@@ -86,8 +86,8 @@ ifelse
 	% character), we must explicitly close the real file in this case.
 	% Since the file might leave garbage on the operand stack,
 	% we have to create a procedure to close the file reliably.
-    { dup read not { -1 } if
-      2 copy unread 16#80 eq {
+    dup read not { -1 } if
+    2 copy unread 16#80 eq {
 	dup true /PFBDecode filter cvx
 	exch .currentresourcefile eq {
 	  dup /.execasresource .systemvar
@@ -98,11 +98,9 @@ ifelse
 	/closefile .systemvar 3 .execn
       } {
 	cvx exec
-      } ifelse
-    } stopped
-   $error /newerror get and dup { .clearerror } if
- } bind def
-
+    } ifelse
+  } stopped
+} bind def
 
 % Here are the BuildChar and BuildGlyph implementation for Type 1 fonts.
 % The names %Type1BuildChar and %Type1BuildGlyph are known to the interpreter.
