@@ -1123,8 +1123,11 @@ s_init_filter(stream *fs, stream_state *fss, byte *buf, uint bsize,
     s_std_init(fs, buf, bsize, &s_filter_write_procs, s_mode_write);
     fs->procs.process = template->process;
     fs->state = fss;
-    if (template->init)
-	(template->init)(fss);
+    if (template->init) {
+	fs->end_status = (template->init)(fss);
+	if (fs->end_status < 0)
+	    return fs->end_status;
+    }
     fs->strm = target;
     return 0;
 }
@@ -1160,7 +1163,8 @@ s_add_filter(stream **ps, const stream_template *template,
     ess->template = template;
     ess->memory = mem;
     es->memory = mem;
-    s_init_filter(es, ess, buf, bsize, *ps);
+    if (s_init_filter(es, ess, buf, bsize, *ps) < 0)
+	return 0;
     *ps = es;
     return es;
 }

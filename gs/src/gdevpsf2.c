@@ -199,6 +199,13 @@ put_bytes(stream * s, const byte *ptr, uint count)
     sputs(s, ptr, count, &used);
     return (int)used;
 }
+private int
+check_ioerror(stream * s)
+{
+    uint used;
+
+    return sputs(s, (byte *)&used, 0, &used);
+}
 
 /* ------ Data types ------ */
 
@@ -1349,6 +1356,8 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     Subrs_offset = Private_size;  /* relative to Private Dict */
 
  write:
+    if(check_ioerror(writer.strm))
+	return_error(gs_error_ioerror);
     start_pos = stell(writer.strm);
     /* Write the header, setting offset_size. */
     cff_write_header(&writer, End_offset);
@@ -1369,6 +1378,8 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 
     /* Write the strings Index. */
     cff_put_Index(&writer, &writer.strings);
+    if(check_ioerror(writer.strm))
+	return_error(gs_error_ioerror);
 
     /* Write the GSubrs Index, if any, checking the offset. */
     offset = stell(writer.strm) - start_pos;
@@ -1394,6 +1405,8 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
     CharStrings_offset = offset;
     cff_write_CharStrings(&writer, &genum, charstrings_count,
 			  charstrings_size);
+    if(check_ioerror(writer.strm))
+	return_error(gs_error_ioerror);
 
     /* Write the Private Dict, checking the offset. */
     offset = stell(writer.strm) - start_pos;
@@ -1414,6 +1427,8 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 	cff_write_Subrs(&writer, subrs_count, subrs_size, pfont, false);
 
     /* Check the final offset. */
+    if(check_ioerror(writer.strm))
+	return_error(gs_error_ioerror);
     offset = stell(writer.strm) - start_pos;
     if (offset > End_offset)
 	return_error(gs_error_rangecheck);

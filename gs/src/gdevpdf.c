@@ -413,7 +413,7 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
             gx_color_value cv[4];
             cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
             cv[3] = frac2cv(frac_1);
-            color = dev_proc(pdev, map_cmyk_color)(pdev, cv);
+            color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
         }
 	break;
     default:			/* can't happen */
@@ -814,6 +814,7 @@ pdf_close(gx_device * dev)
 	Pages_id = pdev->Pages->id;
     long Threads_id = 0;
     bool partial_page = (pdev->contents_id != 0 && pdev->next_page != 0);
+    int code = 0, code1;
 
     /*
      * If this is an EPS file, or if the file didn't end with a showpage for
@@ -838,9 +839,15 @@ pdf_close(gx_device * dev)
 
     /* Write the font resources and related resources. */
 
-    pdf_close_text_document(pdev);
-    pdf_write_resource_objects(pdev, resourceCMap);
-    pdf_free_resource_objects(pdev, resourceCMap);
+    code1 = pdf_close_text_document(pdev);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_write_resource_objects(pdev, resourceCMap);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_free_resource_objects(pdev, resourceCMap);
+    if (code >= 0)
+	code = code1;
 
     /* Create the Pages tree. */
 
@@ -1028,9 +1035,6 @@ pdf_close(gx_device * dev)
     pdev->pages = 0;
     pdev->num_pages = 0;
 
-    {
-	int code = gdev_vector_close_file((gx_device_vector *) pdev);
-
-	return pdf_close_files(pdev, code);
-    }
+    code1 = gdev_vector_close_file((gx_device_vector *) pdev);
+    return pdf_close_files(pdev, code1);
 }
