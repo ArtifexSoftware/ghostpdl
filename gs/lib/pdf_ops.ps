@@ -449,6 +449,11 @@ end readonly def
 % ---------------- Font control ---------------- %
 
 /Tf {		% <font> <scale> Tf -
+  dup 0 eq {
+    (\n   **** Warning: Invalid 0.0 font scale given for Tf ****\n)
+    pdfformaterror
+    pop 0.00000001	% handle invalid scale by using a really small value
+  } if
   dup 1 eq { pop } { scalefont } ifelse
   /TextFont gput settextstate
 } bdef
