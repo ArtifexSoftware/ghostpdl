@@ -32,6 +32,7 @@
 <li><a href="#Preparing_source">Preparing the source code</a>
 <li><a href="#Testing">Testing</a>
 <li><a href="#Testing_on_Windows">Testing on Windows</a>
+<li><a href="#Windows_distribution">Building the Windows distribution</a>
 <li><a href="#Finishing_up">Finishing up</a>
 <li><a href="#Beta_distributions">Beta distributions</a>
 <li><a href="#Public_releases">Public releases</a>
@@ -497,6 +498,60 @@ wmake -u > watc.log
 Boot back into Linux.  If testing in Windows revealed problems, edit the
 source files as necessary, and go back to <a
 href="#Preparing_source">"Preparing the source code."</a>
+
+<h3><a name="Windows_distribution"></a>Building the Windows distribution</h3>
+<p>
+Extract the sources from <b><tt>ghostscript-N.NN.tar.gz</tt></b>
+then repackage in a zip file as follows:
+<blockquote>
+<b><tt>zip -r temp.zip gsN.NN/doc gsN.NN/examples gsN.NN/icclib 
+  gsN.NN/ijs gsN.NN/lib gsN.NN/src</tt></b>
+</blockquote>
+Unzip converting the line endings to CRLF:
+<blockquote>
+<b><tt>unzip -a temp.zip<br>
+del temp.zip</tt></b>
+</blockquote>
+Then finally zip up the sources to the distribution file:
+<blockquote>
+<b><tt>zip -9 -r gsNNNsrc.zip gsN.NN</tt></b>
+</blockquote>
+This method is reasonably portable, and does not convert binary
+files such as
+<b><tt><a href="../examples/annots.pdf">examples/annots.pdf</a></tt></b>.
+<p>
+Unzip <b><tt>gsNNNsrc.zip</tt></b>.  
+The directory must be named <b><tt>gsN.NN</tt></b>.
+<p>
+Extract the AFPL fonts <b><tt>ghostscript-fonts-std-6.0.tar.gz</tt></b>
+or GNU fonts <b><tt>gnu-gs-fonts-std-6.0.tar.gz</tt></b>
+into a directory <b><tt>fonts</tt></b> adjacent to the 
+<b><tt>gsN.NN</tt></b> directory.  
+The fonts are needed in this location for building 
+the distribution archive later.
+<p>
+You will need the command line Info-Zip zip program available from
+<a href="http://www.info-zip.org/pub/infozip/">
+http://www.info-zip.org/pub/infozip/</a> 
+Alternatively, the command line version of WinZip 
+(<b><tt>wzzip.exe</tt></b>) can be used by replacing the 
+Info-Zip command line options <b><tt>-9 -r</tt></b>
+with <b><tt>-ex -P</tt></b> in
+<b><tt><a href="../src/winint.mak">winint.mak</a></tt></b>.
+<p>
+You will need WinZip Self-Extractor for building the
+self extracting archive.  This is commercial software.
+You may need to update the path <b><tt>WINZIPSE_XE</tt></b> in 
+<b><tt><a href="../src/winint.mak">winint.mak</a></tt></b>.
+<p>
+Unzip the jpeg, libpng and zlib libraries, then make ghostscript
+as documented in <a href="Make.htm">Make.htm</a>.
+<p>
+Run the command <b><tt>nmake archive</tt></b>.  This builds the distribution
+archive <b><tt>gsNNNw32.exe</tt></b> and an ordinary zip file
+<b><tt>gsNNNw32.zip</tt></b> in the parent directory.
+If you do not have WinZip Self-Extractor, you can use
+<b><tt>nmake zip</tt></b> to make <b><tt>gsNNNw32.zip</tt></b> only. 
 
 <h3><a name="Finishing_up"></a>Finishing up</h3>
 
