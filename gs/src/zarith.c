@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1992, 1993, 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,7 +34,7 @@
 /* Define max and min values for what will fit in value.intval. */
 #define MIN_INTVAL min_long
 #define MAX_INTVAL max_long
-#define MAX_HALF_INTVAL ((1 << (size_of(long) / 2 - 1)) - 1)
+#define MAX_HALF_INTVAL ((1 << (size_of(long) * 4 - 1)) - 1)
 
 /* <num1> <num2> add <sum> */
 /* We make this into a separate procedure because */
