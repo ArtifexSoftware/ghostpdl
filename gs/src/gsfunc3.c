@@ -351,38 +351,24 @@ fn_1ItSg_is_monotonic(const gs_function_t * pfn_common,
 	float w0, w1;
 	int code;
 
-	if (v0 >= b1 || v1 <= b0)
+	if (v0 >= b1)
 	    continue;
+	if (v0 < b1 && v1 > b1)
+	    return 0;
 	e0 = pfn->params.Encode[2 * i];
 	e1 = pfn->params.Encode[2 * i + 1];
 	w0 = (max(v0, b0) - b0) * (e1 - e0) / (b1 - b0) + e0;
 	w1 = (min(v1, b1) - b0) * (e1 - e0) / (b1 - b0) + e0;
 	/* Note that w0 > w1 is now possible if e0 > e1. */
-	if (w0 > w1) {
-	    code = gs_function_is_monotonic(pfn->params.Functions[i],
+	if (w0 > w1)
+	    return gs_function_is_monotonic(pfn->params.Functions[i],
 					    &w1, &w0, effort);
-	    if (code <= 0)
-		return code;
-	    /* Swap the INCREASING and DECREASING flags. */
-	    code = ((code & MASK1) << 1) | ((code & (MASK1 << 1)) >> 1);
-	} else {
-	    code = gs_function_is_monotonic(pfn->params.Functions[i],
+	else
+	    return gs_function_is_monotonic(pfn->params.Functions[i],
 					    &w0, &w1, effort);
-	    if (code <= 0)
-		return code;
-	}
-	if (result == 0)
-	    result = code;
-	else {
-	    result &= code;
-	    /* Check that result is still monotonic in every position. */
-	    code = result | ((result & MASK1) << 1) |
-		((result & (MASK1 << 1)) >> 1);
-	    if (code != (1 << (2 * pfn->params.n)) - 1)
-		return 0;
-	}
     }
-    return result;
+    /* v0 is equal to the range end. */
+    return 1; 
 }
 
 /* Return 1-Input Stitching function information. */
