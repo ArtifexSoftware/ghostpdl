@@ -143,8 +143,6 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 	    )
 	    pet->is_difference = true;
 	pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
-	/* Cache the width if possible. */
-	DISCARD(pdf_char_widths(pdev, pdfont, ch, (gs_font_base *)font, NULL));
     }
     *ppdfont = pdfont;
     return 0;
@@ -462,7 +460,7 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 	int code = pdf_char_widths((gx_device_pdf *)pte->dev,
 	                           ppts->values.pdfont, pstr->data[i], font,
 				   &cw);
-	gs_point did, wanted;	/* user space */
+	gs_point did, wanted, tpt;	/* user space */
 	gs_point v; /* design space */
 
 	if (code < 0)
@@ -485,6 +483,18 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 	    gs_distance_transform(cw.Width.xy.x * scale,
 				  cw.Width.xy.y * scale,
 				  &ppts->values.matrix, &did);
+	    gs_distance_transform((font->WMode ? 0 : ppts->values.character_spacing),
+				  (font->WMode ? ppts->values.character_spacing : 0),
+				  &ppts->values.matrix, &tpt);
+	    did.x += tpt.x;
+	    did.y += tpt.y;
+	    if (pstr->data[i] == space_char) {
+		gs_distance_transform((font->WMode ? 0 : ppts->values.word_spacing),
+				      (font->WMode ? ppts->values.word_spacing : 0),
+				      &ppts->values.matrix, &tpt);
+		did.x += tpt.x;
+		did.y += tpt.y;
+	    }
 	    code = pdf_append_chars(pdev, &pstr->data[i], 1, did.x, did.y);
 	    if (code < 0)
 		break;
@@ -500,8 +510,6 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 				  cw.real_width.xy.y * scale,
 				  &ppts->values.matrix, &wanted);
 	    if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
-		gs_point tpt;
-
 		gs_distance_transform(pte->text.delta_all.x,
 				      pte->text.delta_all.y,
 				      &ctm_only(pte->pis), &tpt);
@@ -509,8 +517,6 @@ process_text_modify_width(gs_text_enum_t *pte, gs_font_base *font,
 		wanted.y += tpt.y;
 	    }
 	    if (pstr->data[i] == space_char) {
-		gs_point tpt;
-
 		gs_distance_transform(pte->text.delta_space.x,
 				      pte->text.delta_space.y,
 				      &ctm_only(pte->pis), &tpt);

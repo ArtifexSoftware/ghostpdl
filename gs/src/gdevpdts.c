@@ -185,8 +185,6 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
 	    dw = dist.y, dnotw = dist.x;
 	else
 	    dw = dist.x, dnotw = dist.y;
-	if (dnotw == 0 && any_abs(dw - pts->in.character_spacing) < precis)
-	    goto finish;
 	if (dnotw == 0 && pts->buffer.count_chars > 0 &&
 	    /*
 	     * Acrobat Reader limits the magnitude of user-space
