@@ -1,14 +1,14 @@
 /*
     jbig2dec
     
-    Copyright (c) 2001 artofcode LLC.
+    Copyright (C) 2001 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.11 2002/02/10 01:17:26 giles Exp $
+    $Id: jbig2dec.c,v 1.12 2002/02/12 02:19:36 giles Exp $
 */
 
 #include <stdio.h>
@@ -66,8 +66,8 @@ get_bytes (Jbig2Ctx *ctx, byte *buf, int size, int off)
 {
   int n_bytes;
 
-  fseek (ctx->f, off, SEEK_SET);
-  n_bytes = fread (buf, 1, size, ctx->f);
+  fseek(ctx->f, off, SEEK_SET);
+  n_bytes = fread(buf, 1, size, ctx->f);
   if (n_bytes < size)
     ctx->eof = TRUE;
   return n_bytes;
@@ -78,7 +78,7 @@ get_int16 (Jbig2Ctx *ctx, int off)
 {
   byte buf[2];
 
-  get_bytes (ctx, buf, 2, off);
+  get_bytes(ctx, buf, 2, off);
   return (buf[0] << 8) | buf[1];
 }
 
@@ -87,7 +87,7 @@ get_byte (Jbig2Ctx *ctx, int off)
 {
   byte buf;
   
-  get_bytes (ctx, &buf, 1, off);
+  get_bytes(ctx, &buf, 1, off);
   return buf;
 }
 
@@ -96,7 +96,7 @@ get_int32 (Jbig2Ctx *ctx, int off)
 {
   byte buf[4];
 
-  get_bytes (ctx, buf, 4, off);
+  get_bytes(ctx, buf, 4, off);
   return (buf[0] << 24) | (buf[1] << 16) | (buf[2] << 8) | buf[3];
 }
 
@@ -108,13 +108,13 @@ jbig2_open (FILE *f)
   Jbig2Ctx *ctx;
 
   /* Annex D.4 */
-  ctx = (Jbig2Ctx *)malloc (sizeof(Jbig2Ctx));
+  ctx = (Jbig2Ctx *)malloc(sizeof(Jbig2Ctx));
   ctx->f = f;
   ctx->eof = FALSE;
-  get_bytes (ctx, buf, 9, 0);
-  if (memcmp (buf, header, 8))
+  get_bytes(ctx, buf, 9, 0);
+  if (memcmp(buf, header, 8))
     {
-      printf ("not a JBIG2 file\n");
+      printf("not a JBIG2 file\n");
       return NULL;
     }
   ctx->flags = buf[8];
@@ -126,7 +126,7 @@ jbig2_open (FILE *f)
   else
     {
       ctx->offset = 13;
-      ctx->n_pages = get_int32 (ctx, 9);
+      ctx->n_pages = get_int32(ctx, 9);
     }
 
   if(!(ctx->flags & JBIG2_FILE_FLAGS_SEQUENTIAL_ACCESS)) {
@@ -144,7 +144,7 @@ jbig2_open_embedded (FILE *f_globals, FILE *f_page)
 {
   Jbig2Ctx *ctx;
 
-  ctx = (Jbig2Ctx *)malloc (sizeof(Jbig2Ctx));
+  ctx = (Jbig2Ctx *)malloc(sizeof(Jbig2Ctx));
   ctx->f = f_globals;
   ctx->eof = 0;
   ctx->offset = 0;
@@ -161,19 +161,19 @@ jbig2_read_segment_header (Jbig2Ctx *ctx)
   int	referred_to_segment_count;
 
   /* 7.2.2 */
-  result->segment_number = get_int32 (ctx, offset);
+  result->segment_number = get_int32(ctx, offset);
 
   if (ctx->eof)
     {
-      free (result);
+      free(result);
       return NULL;
     }
 
   /* 7.2.3 */
-  get_bytes (ctx, &result->flags, 1, offset + 4);
+  get_bytes(ctx, &result->flags, 1, offset + 4);
 
   /* 7.2.4 */
-  get_bytes (ctx, &rtscarf, 1, offset + 5);
+  get_bytes(ctx, &rtscarf, 1, offset + 5);
   if ((rtscarf & 0xe0) == 0xe0)
     {
 		/* FIXME: we break on non-seekable streams with this,
@@ -196,7 +196,7 @@ jbig2_read_segment_header (Jbig2Ctx *ctx)
 	offset += 4;
   } else {
 	byte spa;
-	get_bytes (ctx, &spa, 1, offset);
+	get_bytes(ctx, &spa, 1, offset);
 	result->page_association = spa;
 	offset += 1;
   }
@@ -224,7 +224,7 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
   int sdat_bytes;
 
   /* 7.4.2.1.1 */
-  result->flags = get_int16 (ctx, offset);
+  result->flags = get_int16(ctx, offset);
   offset += 2;
 
   SDHUFF = result->flags & 1;
@@ -251,22 +251,22 @@ jbig2_read_symbol_dictionary (Jbig2Ctx *ctx)
     }
   else
     sdat_bytes = 0;
-  get_bytes (ctx, result->SDAT_flags, sdat_bytes, offset);
-  memset (&result->SDAT_flags + sdat_bytes, 0, 8 - sdat_bytes);
+  get_bytes(ctx, result->SDAT_flags, sdat_bytes, offset);
+  memset(&result->SDAT_flags + sdat_bytes, 0, 8 - sdat_bytes);
   offset += sdat_bytes;
 
   /* 7.4.2.1.3 - Symbol dictionary refinement AT flags */
   if (SDREFAGG && !SDRTEMPLATE)
     {
-      get_bytes (ctx, result->SDRAT_flags, 4, offset);
+      get_bytes(ctx, result->SDRAT_flags, 4, offset);
       offset += 4;
     }
 
   /* 7.4.2.1.4 */
-  result->SDNUMEXSYMS = get_int32 (ctx, offset);
+  result->SDNUMEXSYMS = get_int32(ctx, offset);
 
   /* 7.4.2.1.5 */
-  result->SDNUMNEWSYMS = get_int32 (ctx, offset + 4);
+  result->SDNUMNEWSYMS = get_int32(ctx, offset + 4);
   offset += 8;
 
   /* hardwire for the first annex-h example */
@@ -486,13 +486,13 @@ main (int argc, char **argv)
       ctx = jbig2_open (f);
       if (ctx != NULL)
 	dump_jbig2(ctx);
-      fclose (f);
+      fclose(f);
     }
   else if (argc == 3)
     {
       char *fn = argv[1], *fn_page = argv[2];
 
-      f = fopen (fn, "rb");
+      f = fopen(fn, "rb");
       if (f == NULL)
 	{
 	  fprintf(stderr, "error opening %s\n", fn);
@@ -502,7 +502,7 @@ main (int argc, char **argv)
       f_page = fopen(fn_page, "rb");
       if (f_page == NULL)
 	{
-	  fprintf (stderr, "error opening %s\n", fn_page);
+	  fprintf(stderr, "error opening %s\n", fn_page);
 	  return 1;
 	}
       ctx = jbig2_open_embedded(f, f_page);
