@@ -217,6 +217,28 @@ ZSRCDIR=zlib
 JBIG2SRCDIR=jbig2dec
 !endif
 
+# Define the jasper library source location.
+# See jasper.mak for more information.
+
+# *** this is currently unsupported under MSVC ***
+# Support for JPEG 2000 images in PDF is not
+# part of the standard windows build in this
+# release.
+
+# If you want to compile in jasper, uncomment
+# the following, generate a jas_config.h from
+# the template in jasper/src/libjasper/include
+# and define JAS_WIN_MSVC_BUILD in the CFLAGS
+# You'll also need to add '$(PSD)jpx.dev' to
+# the list in FEATURE_DEVS to activate it.
+
+# alternatively, you can build a separate DLL
+# and define SHARE_JASPER=1
+
+#!ifndef JASPERSRCDIR
+#JASPERSRCDIR=jasper
+#!endif
+
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
