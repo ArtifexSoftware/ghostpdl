@@ -20,9 +20,15 @@
 /* 'echo'-like utility */
 #include "stdpre.h"
 #include <stdio.h>
-/* Some brain-damaged environments (e.g. Sun) don't include */
-/* prototypes for fputc/fputs in stdio.h! */
+
+#if defined(__sun__) && !defined(const)
+/* Apparently, there are archaic Sun platforms which don't include
+ * prototypes for fputc/fputs in stdio.h. The following prototype can
+ * cause type mismatches if const has been defined (usually with
+ * -Dconst=), so it's only included if const is undefined.
+ */
 extern int fputc(P2(int, FILE *)), fputs(P2(const char *, FILE *));
+#endif
 
 /* Some systems have time_t in sys/types.h rather than time.h. */
 #include <sys/types.h>
