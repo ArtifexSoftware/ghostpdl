@@ -44,7 +44,7 @@ install-scripts: $(PSLIBDIR)/gsnd
 	$(SH) -c 'for f in \
 gsbj gsdj gsdj500 gslj gslp gsnd \
 bdftops dvipdf eps2eps font2c \
-pdf2dsc pdf2ps pf2afm pfbtopfa printafm \
+pdf2dsc pdf2ps pdfopt pf2afm pfbtopfa printafm \
 ps2ascii ps2epsi ps2pdf ps2pdf12 ps2pdf13 ps2pdfwr ps2ps wftopfa \
 fixmswrd.pl lprsetup.sh pj-gs.sh pv.sh sysvlp.sh unix-lpr.sh ;\
 	do if ( test -f $(PSLIBDIR)/$$f ); then $(INSTALL_PROGRAM) $(PSLIBDIR)/$$f $(scriptdir); fi;\
@@ -54,7 +54,7 @@ PSDOCDIR=$(PSLIBDIR)/../doc
 PSEXDIR=$(PSLIBDIR)/../examples
 PSMANDIR=$(PSLIBDIR)/../man
 
-MAN1_PAGES=gs gslp gsnd dvipdf eps2eps font2c pdf2dsc pdf2ps \
+MAN1_PAGES=gs gslp gsnd dvipdf eps2eps font2c pdf2dsc pdf2ps pdfopt \
 	   pf2afm pfbtopfa printafm ps2ascii ps2epsi \
 	   ps2pdf ps2pdfwr ps2ps wftopfa
 MAN1_PS2PDF_LINKS=ps2pdf12 ps2pdf13

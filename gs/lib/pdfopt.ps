@@ -1035,3 +1035,20 @@ userdict /clostreams 20 dict put	% stream -> [data endproc]
 
 end			% pdfoptdict
 .setglobal
+
+% Check for command line arguments.
+[ shellarguments {
+  ] dup length 2 eq {
+	% Load the pdfwrite utilities if necessary.
+    /omapinit where { pop } { (pdfwrite.ps) runlibfile } ifelse
+    save exch
+    aload pop exch (r) file exch (w) file
+    3000000 setvmthreshold
+    pdfoptdict begin pdfOptimize end
+    restore
+  } {
+    (Usage: gs -dNODISPLAY -- pdfopt.ps input.pdf output.pdf) = flush quit
+  } ifelse
+} {
+  pop
+} ifelse

@@ -1,0 +1,20 @@
+#!/bin/sh
+# $Id$
+# Convert PDF to "optimized" form.
+
+OPTIONS=""
+while true
+do
+	case "$1" in
+	-*) OPTIONS="$OPTIONS $1" ;;
+	*)  break ;;
+	esac
+	shift
+done
+
+if [ $# -ne 2 ]; then
+	echo "Usage: `basename $0` input.pdf output.pdf" 1>&2
+	exit 1
+fi
+
+exec gs -q -dNODISPLAY $OPTIONS -- pdfopt.ps $1 $2
