@@ -246,7 +246,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 #endif
     if ((x < penum->ibox.p.x || x + w > penum->ibox.q.x ||
 	 y < penum->ibox.p.y || y + h > penum->ibox.q.y) &&
-	dev != (gx_device *) & cdev	/* might be 2nd time around */
+	imaging_dev != (gx_device *) & cdev	/* might be 2nd time around */
 	) {			/* Check for the character falling entirely outside */
 	/* the clipping region. */
 	gx_clip_path *pcpath;
@@ -260,8 +260,8 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	    return code;
 	gx_make_clip_device(&cdev, gx_cpath_list(pcpath));
 	cdev.target = imaging_dev;
-	dev = (gx_device *) & cdev;
-	(*dev_proc(dev, open_device)) (dev);
+	imaging_dev = (gx_device *) & cdev;
+	(*dev_proc(imaging_dev, open_device)) (imaging_dev);
 	if_debug0('K', "[K](clipping)\n");
     }
     /* If an xfont can render this character, use it. */
