@@ -344,11 +344,7 @@ struct pcl_state_s {
        the margins on A4 paper to support 80 10 pitch characters but
        it appears to affect letter paper as well */
     bool              wide_a4;
-    /* We store away the target device in the pcl state, since the gs
-       library expects put_params to be applied to the real device and
-       not pcl forwarding devices */
-    gx_device *ptarget_device;
-    
+
     /* the current language personality */
     pcl_personality_t personality;
     
