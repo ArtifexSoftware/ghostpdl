@@ -133,7 +133,7 @@ DEVICE_DEVS=$(DEVICES_DEVS)
 else
 SYNC=posync
 STDLIBS=-lm -lpthread
-DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev
+DEVICE_DEVS=$(DD)x11alpha.dev $(DD)x11.dev $(DD)x11mono.dev $(DD)x11cmyk.dev $(DEVICES_DEVS) $(DD)bmpamono.dev
 endif
 
 # Generic makefile
