@@ -34,36 +34,40 @@ comparefiles = os.listdir(gsconf.comparefiledir)
 suite = unittest.TestSuite()
 
 # add compare tests
+def add_compare_test(suite, f, device, dpi, band):
+        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs,
+                                               file=gsconf.comparefiledir + f,
+                                          device=device, dpi=dpi, band=band))
+
 for f in comparefiles:
     if f[-3:] == '.ps' or f[-4:] == '.pdf' or f[-4:] == '.eps':
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pbmraw', dpi=72, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pbmraw', dpi=72, band=1))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pbmraw', dpi=300, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pbmraw', dpi=300, band=1))
-#    suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pbmraw', dpi=600, band=0))
-#    suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pbmraw', dpi=600, band=1))
+        add_compare_test(suite, f, 'pbmraw', 72, 0))
+        add_compare_test(suite, f, 'pbmraw', 72, 1))
+        add_compare_test(suite, f, 'pbmraw', 300, 0))
+        add_compare_test(suite, f, 'pbmraw', 300, 1))
+        #add_compare_test(suite, f, 'pbmraw', 600, 0))
+        #add_compare_test(suite, f, 'pbmraw', 600, 1))
 
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pgmraw', dpi=72, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pgmraw', dpi=72, band=1))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pgmraw', dpi=300, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pgmraw', dpi=300, band=1))
-#    suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pgmraw', dpi=600, band=0))
-#    suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pgmraw', dpi=600, band=1))
+        add_compare_test(suite, f, 'pgmraw', 72, 0))
+        add_compare_test(suite, f, 'pgmraw', 72, 1))
+        add_compare_test(suite, f, 'pgmraw', 300, 0))
+        add_compare_test(suite, f, 'pgmraw', 300, 1))
+        #add_compare_test(suite, f, 'pgmraw', 600, 0))
+        #add_compare_test(suite, f, 'pgmraw', 600, 1))
 
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='ppmraw', dpi=72, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='ppmraw', dpi=72, band=1))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='ppmraw', dpi=300, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='ppmraw', dpi=300, band=1))
-#    suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='ppmraw', dpi=600, band=0))
-#    suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='ppmraw', dpi=600, band=1))
+        add_compare_test(suite, f, 'ppmraw', 72, 0))
+        add_compare_test(suite, f, 'ppmraw', 72, 1))
+        add_compare_test(suite, f, 'ppmraw', 300, 0))
+        add_compare_test(suite, f, 'ppmraw', 300, 1))
+        #add_compare_test(suite, f, 'ppmraw', 600, 0))
+        #add_compare_test(suite, f, 'ppmraw', 600, 1))
 
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pkmraw', dpi=72, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pkmraw', dpi=72, band=1))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pkmraw', dpi=300, band=0))
-        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pkmraw', dpi=300, band=1))
-#        suite.addTest(gstest.GSCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device='pkmraw', dpi=600, band=0))
-
-
+        add_compare_test(suite, f, 'pkmraw', 72, 0))
+        add_compare_test(suite, f, 'pkmraw', 72, 1))
+        add_compare_test(suite, f, 'pkmraw', 300, 0))
+        add_compare_test(suite, f, 'pkmraw', 300, 1))
+        #add_compare_test(suite, f, 'pkmraw', 600, 0))
+        #add_compare_test(suite, f, 'pkmraw', 600, 1))
 
 # run all the tests
 runner = gstest.GSTestRunner(verbosity=2)
