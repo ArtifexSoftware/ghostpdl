@@ -132,7 +132,7 @@ const char *gp_getenv_display(P0());
  * Note that this is the size of the buffer, not the maximum number of
  * characters: the latter is one less, because of the terminating \0.
  */
-#define gp_file_name_sizeof 128
+#define gp_file_name_sizeof 260 /* == MAX_PATH on Windows */
 
 /* Define the character used for separating file names in a list. */
 extern const char gp_file_name_list_separator;
