@@ -950,7 +950,7 @@ s_compr_chooser__unpack_and_recognize(stream_compr_chooser_state *const ss,
 
 /* Process a buffer. */
 private int
-s_compr_chooser_process(stream_state * st, stream_cursor_read * pr,
+s_compr_chooser_process(gs_memory_t *mem, stream_state * st, stream_cursor_read * pr,
 	     stream_cursor_write * pw, bool last)
 {
     stream_compr_chooser_state *const ss = (stream_compr_chooser_state *) st;
