@@ -277,9 +277,9 @@ on:	      switch ( (dbyte = sbyte = *++sp) ) {
 /* Image a bitmap character, with or without bolding. */
 private int
 image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
-  const byte *bitmap_data, uint sraster, int bold, byte *bold_lines,
+  const byte *bitmap_data, uint sraster, uint pitch, bool use_pitch, int bold, byte *bold_lines,
   gs_state *pgs)
-{	uint dest_bytes = (pim->Width + 7) >> 3;
+{	uint dest_bytes = use_pitch ? pitch : (pim->Width + 7) >> 3;
 	gx_device *dev = pgs->device;
 	void *iinfo;
 	const byte *planes[1];
@@ -466,8 +466,8 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  }
 #endif
 	  code = image_bitmap_char(ienum, &image, bitmap_data,
-				   (image.Width - bold + 7) >> 3, bold,
-				   bold_lines, pgs);
+				   (image.Width - bold + 7) >> 3, 0, false,
+                                   bold, bold_lines, pgs);
 out:	  gs_free_object(pgs->memory, bold_lines,
 			 "pl_bitmap_build_char(bold_lines)");
 	  gs_free_object(pgs->memory, ienum, "pl_bitmap_build_char");
@@ -908,6 +908,8 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                                           &image,
                                           (byte *)ftb->buffer,
                                           ftb->width,
+                                          ftb->pitch,
+                                          true,
                                           0,
                                           NULL,
                                           pgs );
@@ -1546,9 +1548,9 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	  if ( code < 0 )
 	    goto out;
 	  code = image_bitmap_char(ienum, &image, mdev.base,
-				   bitmap_raster(mdev.width), bold_added,
-				   bold_lines, pgs);
-out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)");
+				   bitmap_raster(mdev.width), 0, false,
+                                   bold_added, bold_lines, pgs);
+out:	  gs_free_object(pgs->memory, bold_lines, "pl_tt_build_char(bold_lines)")
 	  gs_free_object(pgs->memory, ienum, "pl_tt_build_char(image enum)");
 	  gs_free_object(pgs->memory, mdev.base, "pl_tt_build_char(bitmap)");
 	}
