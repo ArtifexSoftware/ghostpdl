@@ -1,5 +1,5 @@
 .\" $Id$
-.TH PDF2DSC 1 "3. Februar 2000" 6.0 "Ghostscript-Werkzeuge" \" -*- nroff -*-
+.TH PDF2DSC 1 "8.Juli 2002" 7.21 "Ghostscript-Werkzeuge" \" -*- nroff -*-
 .SH NAME
 pdf2dsc \- erzeugt eine PostScript-Seitenliste aus einem PDF-Dokument
 .SH SYNTAX
@@ -10,13 +10,17 @@ Format\fR (PDF) Dokument "Eingabe.pdf" zu lesen, und erstellt ein
 \fBPostScript\fR(tm)-Dokument "Ausgabe.dsc", das Adobes \fBDocument
 Structuring Conventions\fR (DSC) Anforderungen entspricht.
 .PP
-Das neue Dokument sagt Ghostscript einfach nur, die PDF-Datei zu lesen und Seite-für-Seite darzustellen. Das erzeugte Dokument kann angezeigt werden mit jedem PostScript Anzeigprogramm, das auf Ghostscipt basiert, wie \fBghostview\fR(1)
+Das neue Dokument sagt Ghostscript einfach nur, die PDF-Datei zu lesen und Seite-für-Seite 
+darzustellen. Das erzeugte Dokument kann mit jedem PostScript-Anzeigprogramm, das auf Ghostscipt 
+basiert dargestellt werden, wie \fBghostview\fR(1)
 unter Unix oder \fBGSview\fR unter Windows, mit dem der Benutzer sich das
 PDF-Dokument in beliebiger Reihenfolge ansehen kann.
 .PP
-Falls keine Ausgabedatei in der Befehlszeile angegeben ist, wird der Name der Eingangsdatei benutzt, wobei die Dateiendung entfernt und durch "\.dsc" ersetzt wird.
+Falls keine Ausgabedatei in der Befehlszeile angegeben ist, wird der Name der Eingangsdatei benutzt, 
+wobei die Dateiendung entfernt und durch "\.dsc" ersetzt wird.
 .SH VORBEHALTE
-Das DSC-dokument benutz Ghostscript-spezifische Proceduren.  Zudem muß das orginal PDF-Document verfügbar sein, während das DSC-Document verarbeitet wird.
+Das DSC-Dokument benutzt Ghostscript-spezifische Prozeduren.  Zudem muß das orginal PDF-Document 
+verfügbar sein, während das DSC-Document verarbeitet wird.
 .PP
 Sie benötigen die Datei "pdf2dsc.ps" (ursprünglich von Russell Lang), die seit
 Version 3.53 bei Ghostscript enthalten ist.
