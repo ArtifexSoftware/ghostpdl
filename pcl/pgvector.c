@@ -259,9 +259,9 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  hpgl_call(hpgl_draw_arc(pgls));
 	/* move back to the center */
 	hpgl_call(hpgl_add_point_to_path(pgls, pos.x, pos.y,
-					 hpgl_plot_move_absolute, true));
-	/* restore the ctm - i.e. the ctm with picture frame scaling */
-	hpgl_set_ctm(pgls);
+					 hpgl_plot_move_absolute, reset_ctm));
+	if ( !pgls->g.polygon_mode )
+	    hpgl_call(hpgl_clear_current_path(pgls));
 	return 0;
 
 }
