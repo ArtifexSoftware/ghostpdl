@@ -627,7 +627,7 @@ pl_tt_get_outline(gs_font_type42 *pfont, uint index, gs_glyph_data_t *pdata)
 /* Find a table in a TrueType font. */
 /* Return the data offset of the table; store the length in *plen. */
 /* If the table is missing, return 0. */
-private ulong
+ulong
 tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen)
 {	const byte *OffsetTable;
 	uint numTables;

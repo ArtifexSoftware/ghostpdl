@@ -343,12 +343,24 @@ const char *pl_mac_names[258] = {
 extern ulong tt_find_table(gs_font_type42 *pfont, const char *tname, uint *plen);
 
 private int
-pl_glyph_name(gs_font_type42 *pfont, gs_glyph glyph, gs_const_string *pstr)
+pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
 {	
     uint table_length;
-    // should check for overflow on bounds of name array.
     ulong table_offset;
-    table_offset = tt_find_table(pfont, "post", &table_length);
+    /* guess if the font type is not truetype */
+    if ( pfont->FontType != ft_TrueType ) {
+        glyph -= 29;
+        if ( glyph >= 0 || glyph < 258 ) {
+            pstr->data = pl_mac_names[glyph];
+            pstr->size = strlen(pstr->data);
+            return 0;
+        } else {
+            dprintf1( pfont->memory, "glyph index out of range", glyph);
+            return -1;
+        }
+    }
+        
+    table_offset = tt_find_table((gs_font_type42 *)pfont, "post", &table_length);
     /* no post table */
     if ( table_offset == 0 )
         return -1;
@@ -362,10 +374,8 @@ pl_glyph_name(gs_font_type42 *pfont, gs_glyph glyph, gs_const_string *pstr)
         uint glyph_name_index;
         const byte *postp; /* post table pointer */
         
-        pfont->data.string_proc(pfont,
-                                table_offset,
-                                table_length,
-                                &postp);
+        ((gs_font_type42 *)pfont)->data.string_proc((gs_font_type42 *)pfont,
+                table_offset, table_length, &postp);
         format = u32(postp);
         if ( format != 0x20000 ) {
             /* format 1.0 (mac encoding) is a simple table see the TT
@@ -377,7 +387,7 @@ pl_glyph_name(gs_font_type42 *pfont, gs_glyph glyph, gs_const_string *pstr)
         /* skip over the post header */
         numGlyphs = u16(postp + 32);
         if ( glyph < 0 || glyph > numGlyphs - 1) {
-            dprintf1( pfont->memory, "glyph index out of range", format);
+            dprintf1( pfont->memory, "glyph index out of range", glyph);
             return -1;
         }
         /* glyph name index starts at post + 34 each entry is 2 bytes */
