@@ -890,10 +890,6 @@ private int fapi_finish_render_aux(i_ctx_t *i_ctx_p, gs_font_base *pbfont, FAPI_
 {   gs_text_enum_t *penum = op_show_find(i_ctx_p);
     gs_show_enum *penum_s = (gs_show_enum *)penum;
     gs_state *pgs = penum_s->pgs;
-    /*  fixme: PDF reader sometimes sets pdf14 device,
-        which uses pdf14_text_enum instead gs_show_enum.
-        In this case this code crashes with access violation accessing penum_s->pgs.
-    */
     gx_device *dev1 = gs_currentdevice_inline(pgs); /* Possibly changed by zchar_set_cache. */
     gx_device *dev = penum_s->dev;
     const int import_shift_v = _fixed_shift - I->frac_shift;
