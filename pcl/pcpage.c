@@ -381,8 +381,10 @@ new_logical_page(
 {
     pcl_xfm_state_t *           pxfmst = &(pcs->xfm_state);
 
-    pcs->hmi_cp = HMI_DEFAULT;
-    pcs->vmi_cp = VMI_DEFAULT;
+    if (reset_initial) { 
+      pcs->hmi_cp = HMI_DEFAULT;
+      pcs->vmi_cp = VMI_DEFAULT;
+    }
     pxfmst->lp_orient = lp_orient;
     pxfmst->print_dir = 0;
     new_page_size(pcs, psize, reset_initial);
