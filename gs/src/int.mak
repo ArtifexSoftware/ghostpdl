@@ -1305,6 +1305,21 @@ $(PSOBJ)zfjbig2.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
  $(store_h) $(stream_h) $(strimpl_h) $(sjbig2_h)
 	$(PSJBIG2CC) $(PSO_)zfjbig2.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
 
+# JPX (jpeg 2000) compression filter
+# this can be turned on and off with a FEATURE_DEV
+
+fjpx_=$(PSOBJ)zfjpx.$(OBJ)
+$(PSD)jpx.dev : $(INT_MAK) $(ECHOGS_XE) $(fjpx_) $(GLD)sjpx.dev
+	$(SETMOD) $(PSD)jpx $(fjpx_)
+	$(ADDMOD) $(PSD)jpx -include $(GLD)sjpx
+	$(ADDMOD) $(PSD)jpx -include $(GLD)libjasper
+	$(ADDMOD) $(PSD)jpx -oper zfjpx
+
+$(PSOBJ)zfjpx.$(OBJ) : $(PSSRC)zfjpx.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(store_h) $(stream_h) $(strimpl_h) $(sjpx_h)
+	$(PSCC) $(PSO_)zfjpx.$(OBJ) $(C_) $(PSSRC)zfjpx.c
+
 
 # ---------------- Binary tokens ---------------- #
 

@@ -289,6 +289,39 @@ AC_SUBST(JBIG2DIR)
 AC_SUBST(SHARE_JBIG2)
 AC_SUBST(JBIG2DEVS)
 
+dnl look for the jasper JPEG 2000 library
+AC_ARG_WITH(jasper, AC_HELP_STRING([--with-jasper],[link to the JasPer library for JPEG 2000]))
+JASPERDIR=src
+SHARE_JASPER=0
+JPXDEVS=''
+if test x$with_jasper != xno; then
+  AC_MSG_CHECKING([for local jasper library source])
+  for d in jasper jasper-1.7*; do
+    test -d "$d" && JBIG2DIR=$d && break
+  done
+  if test "x$JASPERDIR" != xsrc; then
+    AC_MSG_RESULT([$JASPER])
+    AC_MSG_WARN([Direct compilation of jasper into ghostscript is not 
+supported. You'll need to compile the source yourself and install the 
+library.])
+  else
+    AC_MSG_RESULT([no])
+    AC_CHECK_LIB([jasper], [jas_image_create], [
+	SHARE_JASPER=1
+    ], [
+	AC_MSG_WARN([disabling support for JPEG 2000 images])
+        with_jasper=no
+    ])
+  fi
+fi
+if test x$with_jasper != xno; then
+  JPXDEVS='$(PSD)jpx.dev'
+fi
+
+AC_SUBST(JASPERDIR)
+AC_SUBST(SHARE_JASPER)
+AC_SUBST(JPXDEVS)
+
 dnl optional X11 for display devices
 AC_PATH_XTRA
 XLIBS=''

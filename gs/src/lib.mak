@@ -1,4 +1,4 @@
-#    Copyright (C) 1995-2002 artofcode LLC. All rights reserved.
+#    Copyright (C) 1995-2003 artofcode LLC. All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -469,6 +469,7 @@ slzwx_h=$(GLSRC)slzwx.h
 smd5_h=$(GLSRC)smd5.h $(md5_h)
 sarc4_h=$(GLSRC)sarc4.h $(scommon_h)
 sjbig2_h=$(GLSRC)sjbig2.h $(stdint__h) $(scommon_h)
+sjpx_h=$(GLSRC)sjpx.h $(scommon_h)
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1364,6 +1365,21 @@ $(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
  $(stdint__h) $(memory__h) $(stdio__h) $(gserror_h) $(gserrors_h) $(gdebug_h) \
  $(sjbig2_h) $(strimpl_h)
 	$(GLJBIG2CC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
+
+# ---------------- JPEG 2000 compression filter ---------------- #
+
+sjpx_=$(GLOBJ)sjpx.$(OBJ)
+$(GLD)sjpx.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLD)libjasper.dev $(sjpx_)
+	$(SETMOD) $(GLD)sjpx $(sjpx_)
+	$(ADDMOD) $(GLD)sjpx -include $(GLD)libjasper.dev
+
+$(GLOBJ)sjpx.$(OBJ) : $(GLSRC)sjpx.c $(AK) \
+ $(memory__h) $(stdio__h) $(gsmalloc_h) $(gserror_h) $(gserrors_h) \
+ $(gdebug_h) $(strimpl_h) $(sjpx_h)
+	$(GLCC) $(GLO_)sjpx.$(OBJ) $(C_) $(GLSRC)sjpx.c
+
+$(GLOBJ)libjasper.dev : $(TOP_MAKEFILES) $(ECHOGS_XE)
+	$(SETMOD) $(GLOBJ)libjasper -lib jasper
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.
