@@ -131,7 +131,7 @@ gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
     }
     gx_cpath_set_outer_box(&apath);
     apath.path_valid = false;
-    apath.id = gs_next_ids(1);	/* path changed => change id */
+    apath.id = gs_next_id();	/* path changed => change id */
     gx_cpath_assign_free(pcpath, &apath);
     return 0;
 }

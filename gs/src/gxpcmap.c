@@ -11,7 +11,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gxcspace.h"		/* for gscolor2.h */
@@ -517,7 +517,7 @@ gx_pattern_cache_add_entry(gs_imager_state * pis,
     ctile->bbox = pinst->bbox;
     ctile->is_simple = pinst->is_simple;
     if (mbits != 0) {
-	make_bitmap(&ctile->tbits, mbits, gs_next_ids(1));
+	make_bitmap(&ctile->tbits, mbits, gs_next_id());
 	mbits->bitmap_memory = 0;	/* don't free the bits */
     } else
 	ctile->tbits.data = 0;

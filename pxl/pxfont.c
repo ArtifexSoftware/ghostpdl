@@ -619,7 +619,7 @@ pxEndFontHeader(px_args_t *par, px_state_t *pxs)
 {	px_font_t *pxfont = pxs->download_font;
 	int code = px_define_font(pxfont, pxs->download_bytes.data,
 				  (ulong)pxs->download_bytes.size,
-				  gs_next_ids(1), pxs);
+				  gs_next_id(), pxs);
 
 	/****** HOW TO DETERMINE FONT TYPE? ******/
 	pxfont->font_type = plft_16bit;

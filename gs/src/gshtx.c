@@ -10,7 +10,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxfmap.h"
 #include "gzstate.h"
 #include "gzht.h"
@@ -308,7 +308,7 @@ alloc_ht_order(
 	    return 0;
 	}
 	pmap->proc = gs_mapped_transfer;
-	pmap->id = gs_next_ids(1);
+	pmap->id = gs_next_id();
 	if (phtc->cname == gs_ht_separation_Default) {
 	    pocs->corder.levels = 0;
 	    pocs->corder.bit_data = 0;

@@ -77,7 +77,7 @@ gx_image_enum_common_init(gx_image_enum_common_t * piec,
     piec->image_type = pic->type;
     piec->procs = piep;
     piec->dev = dev;
-    piec->id = gs_next_ids(1);
+    piec->id = gs_next_id();
     switch (format) {
 	case gs_image_format_chunky:
 	    piec->num_planes = 1;

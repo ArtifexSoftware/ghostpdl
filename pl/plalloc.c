@@ -9,11 +9,12 @@
 #include "malloc_.h"
 #include "memory_.h"
 #include "gdebug.h"
-#include "gsmemory.h" /* for gs_memory_type_ptr_t */
+#include "gsmemret.h" /* for gs_memory_type_ptr_t */
+#include "gsmalloc.h"
 #include "gsstype.h"
 
 
-/* it is easier to do this then lug in the gsstruct.h include file */
+/* an screwed up mess, we try to make it manageable here */
 extern const gs_memory_struct_type_t st_bytes;
 
 /* assume doubles are the largest primitive types and malloc alignment
@@ -94,6 +95,10 @@ pl_alloc(gs_memory_t * mem, uint size, gs_memory_type_ptr_t type, client_name_t 
 	/* set the type and size */
 	set_type(ptr, type);
 	set_size(ptr, size);
+	/* initialize for debugging */
+	if ( gs_debug_c('@') )
+	    memset(&ptr[minsize * 2], 0xff, get_size(&ptr[minsize * 2]));
+
 	/* return the memory after the size and type words. */
 	return &ptr[minsize * 2];
     }
@@ -272,10 +277,18 @@ pl_unregister_root(gs_memory_t * mem, gs_gc_root_t * rp, client_name_t cname)
     return;
 }
 
+/* Define a vacuous recovery procedure. */
+private gs_memory_recover_status_t
+no_recover_proc(gs_memory_retrying_t *rmem, void *proc_data)
+{
+    return RECOVER_STATUS_NO_RETRY;
+}
+
 /* forward decl */
 private gs_memory_t * pl_stable(P1(gs_memory_t *mem));
 
-const gs_memory_t pl_mem = {
+
+const gs_memory_retrying_t pl_mem = {
     0, /* stable_memory */
     { pl_alloc_bytes_immovable, /* alloc_bytes_immovable */
       pl_resize_object, /* resize_object */
@@ -300,7 +313,10 @@ const gs_memory_t pl_mem = {
       pl_register_root, /* register_root */ 
       pl_unregister_root, /* unregister_root */
       pl_enable_free /* enable_free */ 
-    } 
+    },
+    NULL,            /* target */
+    no_recover_proc, /* recovery procedure */
+    NULL             /* recovery data */
 };
 
 private gs_memory_t *
@@ -309,8 +325,54 @@ pl_stable(gs_memory_t *mem)
     return &pl_mem;
 }
 
-gs_memory_t *
-pl_get_allocator()
+const gs_malloc_memory_t pl_malloc_memory = {
+    0, /* stable */
+    { pl_alloc_bytes_immovable, /* alloc_bytes_immovable */
+      pl_resize_object, /* resize_object */
+      pl_free_object, /* free_object */
+      pl_stable, /* stable */
+      pl_status, /* status */
+      pl_free_all, /* free_all */
+      pl_consolidate_free, /* consolidate_free */
+      pl_alloc_bytes, /* alloc_bytes */ 
+      pl_alloc_struct, /* alloc_struct */
+      pl_alloc_struct_immovable, /* alloc_struct_immovable */
+      pl_alloc_byte_array, /* alloc_byte_array */
+      pl_alloc_byte_array_immovable, /* alloc_byte_array_immovable */
+      pl_alloc_struct_array, /* alloc_struct_array */
+      pl_alloc_struct_array_immovable, /* alloc_struct_array_immovable */
+      pl_object_size, /* object_size */
+      pl_object_type, /* object_type */
+      pl_alloc_string, /* alloc_string */
+      pl_alloc_string_immovable, /* alloc_string_immovable */
+      pl_resize_string, /* resize_string */
+      pl_free_string, /* free_string */
+      pl_register_root, /* register_root */ 
+      pl_unregister_root, /* unregister_root */
+      pl_enable_free /* enable_free */ 
+    },
+    0, /* allocated */
+    0, /* limit */
+    0  /* max used */
+};
+
+/* retrun the c-heap manager set the global default as well. */
+private gs_memory_t *
+pl_malloc_init(void)
 {
+    return gs_malloc_memory_default;
+}
+
+gs_memory_t *
+pl_alloc_init(void)
+{
+    if ( pl_malloc_init() == NULL )
+	return NULL;
     return &pl_mem;
 }
+
+/* Define the default allocator. */
+    
+gs_malloc_memory_t *gs_malloc_memory_default = &pl_malloc_memory;
+gs_memory_t *gs_memory_t_default = &pl_mem;
+

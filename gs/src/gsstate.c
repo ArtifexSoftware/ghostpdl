@@ -10,7 +10,7 @@
 #include "memory_.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gzstate.h"
 #include "gxcspace.h"		/* here for gscolor2.h */
 #include "gsalpha.h"
@@ -241,18 +241,12 @@ gs_state_alloc(gs_memory_t * mem)
     pgs->ht_cache = gx_ht_alloc_cache(mem,
 				      gx_ht_cache_default_tiles(),
 				      gx_ht_cache_default_bits());
-
     /* Initialize other things not covered by initgraphics */
-
-    pgs->path = gx_path_alloc(gstate_path_memory(mem), "gs_state_alloc(path)");
-    pgs->clip_path = gx_cpath_alloc(mem, "gs_state_alloc(clip_path)");
     pgs->clip_stack = 0;
     pgs->view_clip = gx_cpath_alloc(mem, "gs_state_alloc(view_clip)");
     pgs->view_clip->rule = 0;	/* no clipping */
     pgs->effective_clip_id = pgs->clip_path->id;
     pgs->effective_view_clip_id = gs_no_id;
-    pgs->effective_clip_path = pgs->clip_path;
-    pgs->effective_clip_shared = true;
     /* Initialize things so that gx_remap_color won't crash. */
     gs_cspace_init_DeviceGray(pgs->color_space);
     {

@@ -8,6 +8,7 @@
 /* Utilities for Ghostscript library */
 #include "string_.h"
 #include "memory_.h"
+#include "gp.h"
 #include "gstypes.h"
 #include "gconfigv.h"		/* for USE_ASM */
 #include "gsmemory.h"		/* for init procedure */
@@ -17,23 +18,28 @@
 
 /* ------ Unique IDs ------ */
 
-/* Generate a block of unique IDs. */
-static ulong gs_next_id;
-
-init_proc(gs_gsutil_init);	/* check prototype */
-int
-gs_gsutil_init(gs_memory_t *mem)
+gs_id
+gs_next_id()
 {
-    gs_next_id = 1;
-    return 0;
-}
+    INTEGER64 id;
+    long secs_ns_array[2]; /* the oblgatory confusion */
+    long secs_ns;
+    long rnd;
+    INTEGER64 sec64;
+    INTEGER64 rnd64;
 
-ulong
-gs_next_ids(uint count)
-{
-    ulong id = gs_next_id;
-
-    gs_next_id += count;
+    /* combine random and time in a 64 bit value */
+    gp_get_realtime(secs_ns_array);
+    secs_ns = secs_ns_array[0] * 1000 + secs_ns_array[1] / 1000000;
+    rnd = rand();
+    sec64 = secs_ns;
+    rnd64 = rnd;
+    id = ((rnd64 << 32) + (sec64));
+    /* shouldn't get a negative here but... */
+    if (id < 0) {
+	dprintf("Warning unexpected negative unique id\n");
+	id = -id;
+    }
     return id;
 }
 

@@ -73,7 +73,7 @@ pxerrors_init(px_state_t *pxs)
 	    code =
 	      px_define_font(pxfont, px_bitmap_font_header,
 			     px_bitmap_font_header_size,
-			     gs_next_ids(1),
+			     gs_next_id(),
 			     pxs);
 	    { const byte *cdata = px_bitmap_font_char_data;
 	      while ( *cdata && code >= 0 )

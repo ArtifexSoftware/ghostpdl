@@ -123,6 +123,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     }
     fprintf(f, "%%%%Creator: %s %ld (%s)\n", gs_product, (long)gs_revision,
 	    dev->dname);
+#ifdef COMMENt
     {
 	time_t t;
 	struct tm tms;
@@ -133,6 +134,7 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
 		tms.tm_year + 1900, tms.tm_mon + 1, tms.tm_mday,
 		tms.tm_hour, tms.tm_min, tms.tm_sec);
     }
+#endif
     if (ascii)
 	fputs("%%DocumentData: Clean7Bit\n", f);
     if (pdpc->LanguageLevel >= 2.0)

@@ -18,7 +18,10 @@
 #include "gstypes.h"
 #include "gsmemory.h"
 #include "gsstruct.h"
+#include "scommon.h"
+#include "pxparse.h"
 #include "pxstate.h"
+#include "pxfont.h"
 
 /* Import the initialization procedure table from pxtop.c. */
 typedef int (*px_init_proc)(P1(px_state_t *));
@@ -122,6 +125,7 @@ px_state_init(px_state_t *pxs, gs_state *pgs)
 	pxs->end_page = px_default_end_page;
 	pxs->data_source_open = false;
 	px_dict_init(&pxs->stream_dict, pxs->memory, NULL);
+	px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
 	pxs->warning_length = 0;
 }
 

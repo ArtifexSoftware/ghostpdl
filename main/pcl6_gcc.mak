@@ -99,7 +99,7 @@ DEVICE_DEVS=$(DD)x11.dev $(DD)x11mono.dev $(DD)x11alpha.dev $(DD)x11cmyk.dev\
  $(DD)djet500.dev $(DD)ljet4.dev $(DD)cljet5pr.dev $(DD)cljet5c.dev\
  $(DD)pcxmono.dev $(DD)pcxgray.dev $(DD)pcxcmyk.dev $(DD)pswrite.dev $(DD)pdfwrite2.dev\
  $(DD)pxlmono.dev $(DD)pxlcolor.dev\
- $(DD)bmpmono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
+ $(DD)bmpmono.dev $(DD)bmpamono.dev $(DD)pbmraw.dev $(DD)pgmraw.dev $(DD)ppmraw.dev $(DD)jpeg.dev
 
 FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev\
@@ -108,7 +108,8 @@ FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev\
 	     $(DD)psl3lib.dev $(DD)seprlib.dev $(DD)translib.dev\
 	     $(DD)cidlib.dev $(DD)psf1lib.dev 
 
-STDLIBS=-lm
+SYNC=posync
+STDLIBS=-lm -lpthread
 
 # Generic makefile
 include $(COMMONDIR)/ugcc_top.mak

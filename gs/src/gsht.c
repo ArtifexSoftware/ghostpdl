@@ -11,7 +11,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxarith.h"		/* for igcd */
 #include "gzstate.h"
 #include "gxdevice.h"		/* for gzht.h */
@@ -537,7 +537,7 @@ gx_imager_dev_ht_install(gs_imager_state * pis,
 	*pgdht = *pdht;
 	pgdht->rc = rc;
     }
-    pgdht->id = gs_next_ids(1);
+    pgdht->id = gs_next_id();
     pgdht->type = type;
     /* Clear the cache, to avoid confusion in case the address of */
     /* a new order vector matches that of a (deallocated) old one. */

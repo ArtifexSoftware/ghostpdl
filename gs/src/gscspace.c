@@ -11,7 +11,7 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsccolor.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxcmap.h"
 #include "gxcspace.h"
 #include "gxistate.h"
@@ -82,7 +82,7 @@ gs_cspace_init(gs_color_space *pcs, const gs_color_space_type * pcstype,
 {
     pcs->type = pcstype;
     pcs->pmem = mem;
-    pcs->id = gs_next_ids(1);
+    pcs->id = gs_next_id();
 }
 
 int

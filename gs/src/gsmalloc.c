@@ -471,10 +471,6 @@ gs_malloc_unwrap(gs_memory_t *wrapped)
 
 /* ------ Historical single-instance artifacts ------ */
 
-/* Define the default allocator. */
-gs_malloc_memory_t *gs_malloc_memory_default;
-gs_memory_t *gs_memory_t_default;
-
 /* Create the default allocator. */
 gs_memory_t *
 gs_malloc_init(void)

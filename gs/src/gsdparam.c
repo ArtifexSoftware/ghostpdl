@@ -137,7 +137,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 		 dev->NumCopies_set ?
 		 param_write_int(plist, "NumCopies", &dev->NumCopies) :
 		 param_write_null(plist, "NumCopies"))) < 0 ||
-	(code = param_write_name_array(plist, "SeparationColorNames", &scna)) < 0 ||
 	(code = param_write_bool(plist, "Separations", &seprs)) < 0 ||
 	(code = param_write_bool(plist, "UseCIEColor", &dev->UseCIEColor)) < 0 ||
 

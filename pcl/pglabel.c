@@ -207,9 +207,9 @@ hpgl_select_stick_font(hpgl_state_t *pgls)
 	    if ( code < 0 )
 	      return code;
 	    if ( pfs->params.proportional_spacing )
-	      hpgl_fill_in_arc_font(pfont, gs_next_ids(1));
+	      hpgl_fill_in_arc_font(pfont, gs_next_id());
 	    else
-	      hpgl_fill_in_stick_font(pfont, gs_next_ids(1));
+	      hpgl_fill_in_stick_font(pfont, gs_next_id());
 	    font->pfont = (gs_font *)pfont;
 	    font->scaling_technology = plfst_TrueType;/****** WRONG ******/
 	    font->font_type = plft_Unicode;

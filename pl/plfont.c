@@ -192,7 +192,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	      if ( pfont == 0 )
 		return 0;
 	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
-	      pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
+	      pl_fill_in_bitmap_font(pfont, gs_next_id());
 	      break;
 	    }
 	  case plfst_Intellifont:
@@ -202,7 +202,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	      if ( pfont == 0 )
 		return 0;
 	      pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
-	      pl_fill_in_intelli_font(pfont, gs_next_ids(1));
+	      pl_fill_in_intelli_font(pfont, gs_next_id());
 	      break;
 	    }
 	  case plfst_TrueType:
@@ -217,7 +217,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 		if ( pfont == 0 )
 		  return 0;
 		pl_fill_in_font((gs_font *)pfont, plfont, src->pfont->dir, mem, "nameless_font");
-		pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_ids(1));
+		pl_fill_in_tt_font(pfont, downloaded ? NULL : src->header, gs_next_id());
 	      }
 	      break;
 	    }
@@ -318,7 +318,7 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
 	pfont->procs.font_info = gs_default_font_info;
-	pfont->id = gs_next_ids(1);
+	pfont->id = gs_next_id();
 	strncpy(pfont->font_name.chars, font_name, sizeof(pfont->font_name.chars));
 	pfont->font_name.size = strlen(font_name);
 	/* replace spaces with '-', seems acrobat doesn't like spaces. */

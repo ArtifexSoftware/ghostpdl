@@ -8,7 +8,7 @@
 /* RasterOp-compositing implementation */
 #include "gx.h"
 #include "gserrors.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxdcolor.h"
 #include "gxdevice.h"
 #include "gxdevmem.h"
@@ -44,7 +44,7 @@ gs_create_composite_rop(gs_composite_t ** ppcte,
 		      mem, return_error(gs_error_VMerror),
 		      "gs_create_composite_rop");
     pcte->type = &gs_composite_rop_type;
-    pcte->id = gs_next_ids(1);
+    pcte->id = gs_next_id(1);
     pcte->params = *params;
     *ppcte = (gs_composite_t *) pcte;
     return 0;

@@ -100,7 +100,7 @@ cpath_init_rectangle(gx_clip_path * pcpath, gs_fixed_rect * pbox)
     pcpath->path_valid = false;
     pcpath->path.bbox = *pbox;
     gx_cpath_set_outer_box(pcpath);
-    pcpath->id = gs_next_ids(1);	/* path changed => change id */
+    pcpath->id = gs_next_id();	/* path changed => change id */
 }
 private void
 cpath_init_own_contents(gx_clip_path * pcpath)
@@ -180,6 +180,7 @@ gx_cpath_alloc_shared(const gx_clip_path * shared, gs_memory_t * mem,
     }
     pcpath->path.allocation = path_allocated_on_heap;
     return pcpath;
+
 }
 
 /* Initialize a stack-allocated clipping path. */
@@ -593,7 +594,7 @@ gx_cpath_scale_exp2_shared(gx_clip_path * pcpath, int log2_scale_x,
 #undef SCALE_V
 	    }
     }
-    pcpath->id = gs_next_ids(1);	/* path changed => change id */
+    pcpath->id = gs_next_id();	/* path changed => change id */
     return 0;
 }
 

@@ -67,6 +67,7 @@ private dev_proc_put_params(bmpa_put_params);
 private dev_proc_get_hardware_params(bmpa_get_hardware_params);
 private prn_dev_proc_start_render_thread(bmpa_reader_start_render_thread);
 private prn_dev_proc_get_space_params(bmpa_get_space_params);
+private dev_proc_finish_copydevice(bmpa_finish_copydevice);
 #define default_print_page 0	/* not needed becoz print_page_copies def'd */
 
 /* Monochrome. */
@@ -193,6 +194,7 @@ bmpa_open_writer(gx_device *pdev  /* Driver instance to open */,
     set_dev_proc(pdev, put_params, bmpa_put_params);	/* ibid. */
     set_dev_proc(pdev, get_hardware_params, bmpa_get_hardware_params);
     set_dev_proc(pdev, output_page, bmpa_reader_output_page);	/* hack */
+    set_dev_proc(pdev, finish_copydevice, bmpa_finish_copydevice);
     pwdev->printer_procs.get_space_params = bmpa_get_space_params;
     pwdev->printer_procs.open_render_device =
 	bmpa_reader_open_render_device;	/* Included for tutorial value */
@@ -701,4 +703,11 @@ bmpa_get_hardware_params(gx_device *dev, gs_param_list *plist)
 	code = param_write_string(plist, test_name, &param_str);
     }
     return code;
+}
+
+/* redefine finish_copydevice to allow copying of an non-prototype device */
+int
+bmpa_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+{
+    return 0;
 }

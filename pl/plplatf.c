@@ -29,15 +29,21 @@ void
 pl_platform_init(FILE *debug_out)
 {
     gp_init();
-    gs_lib_init(gs_stderr);
+    /* debug flags we reset this out of gs_lib_init0 which sets these
+         and the allocator we want the debug setting but we do our own
+         allocator */
+    gs_debug_out = debug_out;
+    memset(gs_debug, 0, 128);
+    gs_log_errors = 0;
 }
 
 void
 pl_platform_dnit(int exit_status)
 {
-    gs_lib_finit(exit_status, 0);
+    fflush(gs_stderr);		/* in case of error exit */
+    /* Do platform-specific cleanup. */
+    gp_exit(exit_status, 0);
 }
-
 
 /* ---------------- Stubs ---------------- */
 

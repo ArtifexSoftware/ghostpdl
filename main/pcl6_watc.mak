@@ -105,7 +105,7 @@ DEVICE_DEVS=$(DD)ljet4.dev\
  $(DD)tiffcrle.dev $(DD)tiffg3.dev $(DD)tiffg32d.dev $(DD)tiffg4.dev\
  $(DD)tifflzw.dev $(DD)tiffpack.dev\
  $(DD)tiff12nc.dev $(DD)tiff24nc.dev \
- $(DD)pdfwrite.dev $(DD)pswrite.dev
+ $(DD)pdfwrite2.dev $(DD)pswrite.dev
 
 FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev \
 	     $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev \

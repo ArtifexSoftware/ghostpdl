@@ -11,7 +11,7 @@
 #include "gscspace.h"
 #include "gscie.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxbitmap.h"
 #include "gxcmap.h"
 #include "gxdht.h"
@@ -156,7 +156,7 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 		      mem, return_error(gs_error_VMerror),
 		      "gs_imager_state_init(transfer)", 4);
     pis->set_transfer.colored.gray->proc = imager_null_transfer;
-    pis->set_transfer.colored.gray->id = gs_next_ids(1);
+    pis->set_transfer.colored.gray->id = gs_next_id();
     pis->set_transfer.colored.gray->values[0] = frac_0;
     pis->set_transfer.colored.red =
 	pis->set_transfer.colored.green =

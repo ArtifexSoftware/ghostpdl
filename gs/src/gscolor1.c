@@ -9,7 +9,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gsccolor.h"
 #include "gscssub.h"
 #include "gxcspace.h"
@@ -131,7 +131,7 @@ gs_setblackgeneration_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 		      return_error(gs_error_VMerror),
 		      "gs_setblackgeneration");
     pgs->black_generation->proc = proc;
-    pgs->black_generation->id = gs_next_ids(1);
+    pgs->black_generation->id = gs_next_id();
     if (remap) {
 	load_transfer_map(pgs, pgs->black_generation, 0.0);
 	gx_unset_dev_color(pgs);
@@ -161,7 +161,7 @@ gs_setundercolorremoval_remap(gs_state * pgs, gs_mapping_proc proc, bool remap)
 		      return_error(gs_error_VMerror),
 		      "gs_setundercolorremoval");
     pgs->undercolor_removal->proc = proc;
-    pgs->undercolor_removal->id = gs_next_ids(1);
+    pgs->undercolor_removal->id = gs_next_id();
     if (remap) {
 	load_transfer_map(pgs, pgs->undercolor_removal, -1.0);
 	gx_unset_dev_color(pgs);
@@ -186,7 +186,6 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
 {
     gx_transfer_colored *ptran = &pgs->set_transfer.colored;
     gx_transfer_colored old;
-    gs_id new_ids = gs_next_ids(4);
 
     old = *ptran;
     rc_unshare_struct(ptran->gray, gx_transfer_map, &st_transfer_map,
@@ -198,13 +197,13 @@ gs_setcolortransfer_remap(gs_state * pgs, gs_mapping_proc red_proc,
     rc_unshare_struct(ptran->blue, gx_transfer_map, &st_transfer_map,
 		      pgs->memory, goto fblue, "gs_setcolortransfer");
     ptran->gray->proc = gray_proc;
-    ptran->gray->id = new_ids;
+    ptran->gray->id = gs_next_id();
     ptran->red->proc = red_proc;
-    ptran->red->id = new_ids + 1;
+    ptran->red->id = gs_next_id();
     ptran->green->proc = green_proc;
-    ptran->green->id = new_ids + 2;
+    ptran->green->id = gs_next_id();
     ptran->blue->proc = blue_proc;
-    ptran->blue->id = new_ids + 3;
+    ptran->blue->id = gs_next_id();
     if (remap) {
 	load_transfer_map(pgs, ptran->red, 0.0);
 	load_transfer_map(pgs, ptran->green, 0.0);

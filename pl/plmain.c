@@ -216,10 +216,6 @@ close_job(pl_main_universe_t *universe)
     if ( high_level_device(universe->curr_device) ) {
 	 if (gs_closedevice(universe->curr_device) < 0)
 	     return -1;
-	 /* Don't reopen the device before pdfwrite has finished 
-	 if (gs_opendevice(universe->curr_device) < 0)
-	     return -1;
-	 */
     }
     return pl_dnit_job(universe->curr_instance);
 }
@@ -229,7 +225,7 @@ close_job(pl_main_universe_t *universe)
  * Here is the real main program.
  */
   int
-main(
+plmain(
     int                 argc,
     char **             argv
 )
@@ -239,24 +235,19 @@ main(
     arg_list                args;
     const char *             arg;
     char                    err_buf[256];
-    pl_main_universe_t      universe;
     pl_interp_t *           pjl_interp;
     pl_interp_instance_t *  pjl_instance;
+    pl_main_universe_t      universe;
     pl_interp_instance_t *  curr_instance = 0;
     gs_c_param_list         params;
 
     /* Init std io: set up in, our err - not much we can do here if this fails */
     pl_get_real_stdio(&gs_stdin, &gs_stdout, &gs_stderr);
 
-    /* Initialize the platform. */
-    pl_platform_init(gs_stderr);
-
-    /* set debug options up front.   */
-#ifdef DEBUG
-    gs_debug_out = gs_stdout;
-#endif
+    pl_platform_init(gs_stdout);
+    mem = pl_alloc_init();
+    gs_lib_init1(mem);
     /* Create a memory allocator to allocate various states from */
-    mem = pl_get_allocator();
     {
 	/*
 	 * gs_iodev_init has to be called here (late), rather than
@@ -713,194 +704,199 @@ pl_main_arg_fopen(const char *fname, void *ignore_data)
 #define arg_heap_copy(str) arg_copy(str, &gs_memory_default)
 int
 pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
- gs_c_param_list *params, pl_interp_implementation_t const * const impl_array[])
-{	
-	int code = 0;
-	bool help = false;
-	const char *arg;
-#define plist ((gs_param_list *)params)
+	    gs_c_param_list *params,
+	    pl_interp_implementation_t const * const impl_array[])
+{
+    int code = 0;
+    bool help = false;
+    const char *arg;
 
-	gs_c_param_list_write_more(params);
-	while ( (arg = arg_next(pal)) != 0 && *arg == '-' )
-	  { /* just - read from stdin */
-	    if ( arg[1] == NULL )
-	      break;
-	    arg += 2;
-	    switch ( arg[-1] )
-	      {
-	      default:
-		fprintf(gs_stderr, "Unrecognized switch: %s\n", arg);
-		return -1;
-	      case '\0':
-		  /* read from stdin - must be last arg */
-		  continue;
-	      case 'c':
-	      case 'C':
-		  pmi->print_page_count = true;
-		  break;
-	      case 'd':
-	      case 'D':
-		if ( !strcmp(arg, "BATCH") )
-		  continue;
-		if ( !strcmp(arg, "NOPAUSE") )
-		  { pmi->pause = false;
-		    continue;
-		  }
-		{ /* We're setting a device parameter to a non-string value. */
-		  /* Currently we only support integer values; */
-		  /* in the future we may support Booleans and floats. */
-		  char *eqp = strchr(arg, '=');
-		  char eqchar;
-		  const char *value;
-		  int vi;
+    gs_c_param_list_write_more(params);
+    while ( (arg = arg_next(pal)) != 0 && *arg == '-' ) { /* just - read from stdin */
+	if ( arg[1] == '\0' )
+	    break;
+	arg += 2;
+	switch ( arg[-1] ) {
+	default:
+	    fprintf(gs_stderr, "Unrecognized switch: %s\n", arg);
+	    return -1;
+	case '\0':
+	    /* read from stdin - must be last arg */
+	    continue;
+	case 'c':
+	case 'C':
+	    pmi->print_page_count = true;
+	    break;
+	case 'd':
+	case 'D':
+	    if ( !strcmp(arg, "BATCH") )
+		continue;
+	    if ( !strcmp(arg, "NOPAUSE") ) { 
+		pmi->pause = false;
+		continue;
+	    }
+	    { 
+		/* We're setting a device parameter to a non-string value. */
+		/* Currently we only support integer values; */
+		/* in the future we may support Booleans and floats. */
+		char *eqp = strchr(arg, '=');
+		const char *value;
+		int vi;
 		  
-		  if ( eqp || (eqp = strchr(arg, '#')) )
-		    eqchar = *eqp, *eqp = 0, value = eqp + 1;
-		  else
-		    value = "true";
-		  if ( sscanf(value, "%d", &vi) != 1 )
-		    { 
-			fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
-			continue;
-		    }
-		  if ( !strcmp(arg, "FirstPage") )
-		    pmi->first_page = max(vi, 1);
-		  else if ( !strcmp(arg, "LastPage") )
-		    pmi->last_page = vi;
-		  else
-		    code = param_write_int(plist, arg_heap_copy(arg), &vi);
-		}
-		break;
-	      case 'E':
-		if ( *arg == 0 )
-		  gs_debug['#'] = 1;
+		if ( eqp || (eqp = strchr(arg, '#')) )
+		    value = eqp + 1;
 		else
-		  sscanf(arg, "%d", &pmi->error_report);
-		break;
-	      case 'g':
-		{ int geom[2];
-		  gs_param_int_array ia;
+		    value = "true";
+		if ( sscanf(value, "%d", &vi) != 1 ) {
+		    fputs("Usage for -d is -d<option>=<integer>\n", gs_stderr);
+		    continue;
+		}
+		if ( !strncmp(arg, "FirstPage", 9) )
+		    pmi->first_page = max(vi, 1);
+		else if ( !strncmp(arg, "LastPage", 8) )
+		    pmi->last_page = vi;
+		else {
+		    /* create a null terminated string */
+		    char buffer[128];
+		    strncpy(buffer, arg, eqp - arg);
+		    buffer[eqp - arg] = '\0';
+		    dprintf1( "%s\n", buffer );
+		    code = param_write_int((gs_param_list *)params, arg_heap_copy(buffer), &vi);
+		}
+	    }
+	    break;
+	case 'E':
+	    if ( *arg == 0 )
+		gs_debug['#'] = 1;
+	    else
+		sscanf(arg, "%d", &pmi->error_report);
+	    break;
+	case 'g':
+	    {
+		int geom[2];
+		gs_param_int_array ia;
 
-		  if ( sscanf(arg, "%ux%u", &geom[0], &geom[1]) != 2 )
-		  { fputs("-g must be followed by <width>x<height>\n",
+		if ( sscanf(arg, "%ux%u", &geom[0], &geom[1]) != 2 ) { 
+		    fputs("-g must be followed by <width>x<height>\n", gs_stderr);
+		    return -1;
+		}
+		ia.data = geom;
+		ia.size = 2;
+		ia.persistent = false;
+		code = param_write_int_array((gs_param_list *)params, "HWSize", &ia);
+	    }
+	    break;
+	case 'h':
+	    help = true;
+	    goto out;
+	case 'K':		/* max memory in K */
+	    {
+		int maxk;
+
+		if ( sscanf(arg, "%d", &maxk) != 1 ) { 
+		    fputs("-K must be followed by a number\n", gs_stderr);
+		    return -1;
+		}
+		gs_malloc_limit = (long)maxk << 10;
+	    }
+	    break;
+	case 'p':
+	case 'P': 
+	    {
+		if ( !strcmp(arg, "RTL") || !strcmp(arg, "PCL5E") ||
+		     !strcmp(arg, "PCL5C") )
+		    strcpy(pmi->pcl_personality, arg);
+		else 
+		    dprintf("PCL personality must be RTL, PCL5E or PCL5C\n");
+	    }
+	    break;
+	case 'r':
+	    { 
+		float res[2];
+		gs_param_float_array fa;
+
+		switch ( sscanf(arg, "%fx%f", &res[0], &res[1]) ) {
+		default:
+		    fputs("-r must be followed by <res> or <xres>x<yres>\n",
 			  gs_stderr);
 		    return -1;
-		  }
-		  ia.data = geom;
-		  ia.size = 2;
-		  ia.persistent = false;
-		  code = param_write_int_array(plist, "HWSize", &ia);
+		case 1:	/* -r<res> */
+		    res[1] = res[0];
+		case 2:	/* -r<xres>x<yres> */
+		    ;
 		}
-		break;
-	      case 'h':
-		help = true;
-		goto out;
-	      case 'K':		/* max memory in K */
-		{ int maxk;
-
-		  if ( sscanf(arg, "%d", &maxk) != 1 )
-		    { fputs("-K must be followed by a number\n", gs_stderr);
-		      return -1;
-		    }
-		  gs_malloc_limit = (long)maxk << 10;
+		fa.data = res;
+		fa.size = 2;
+		fa.persistent = false;
+		code = param_write_float_array((gs_param_list *)params, "HWResolution", &fa);
+	    }
+	    break;
+	case 's':
+	case 'S':
+	    { /* We're setting a device parameter to a string. */
+		char *eqp;
+		const char *value;
+		gs_param_string str;
+		eqp = strchr(arg, '=');
+		if ( !(eqp || (eqp = strchr(arg, '#'))) ) { 
+		    fputs("Usage for -s is -s<option>=<string>\n", gs_stderr);
+		    return -1;
 		}
-		break;
-	      case 'p':
-	      case 'P':
-		  {
-		      if ( !strcmp(arg, "RTL") || !strcmp(arg, "PCL5E") ||
-			   !strcmp(arg, "PCL5C") )
-			  strcpy(pmi->pcl_personality, arg);
-		      else 
-			  dprintf("PCL personality must be RTL, PCL5E or PCL5C\n");
-		  }
-		  break;
-	      case 'r':
-		{ float res[2];
-		  gs_param_float_array fa;
-
-		  switch ( sscanf(arg, "%fx%f", &res[0], &res[1]) )
-		    {
-		    default:
-		      fputs("-r must be followed by <res> or <xres>x<yres>\n",
-			    gs_stderr);
-		      return -1;
-		    case 1:	/* -r<res> */
-		      res[1] = res[0];
-		    case 2:	/* -r<xres>x<yres> */
-		      ;
-		    }
-		  fa.data = res;
-		  fa.size = 2;
-		  fa.persistent = false;
-		  code = param_write_float_array(plist, "HWResolution", &fa);
+		value = eqp + 1;
+		if ( !strncmp(arg, "DEVICE", 6) ) { 
+		    int code = 
+			pl_top_create_device(pmi, get_device_index(value), false);
+		    if ( code < 0 ) return code;
 		}
-		break;
-	      case 's':
-	      case 'S':
-		{ /* We're setting a device parameter to a string. */
-		  char *eqp = strchr(arg, '=');
-		  char eqchar;
-		  const char *value;
-		  gs_param_string str;
-
-		  if ( !(eqp || (eqp = strchr(arg, '#'))) )
-		    { fputs("Usage for -s is -s<option>=<string>\n", gs_stderr);
-		      return -1;
-		    }
-		  eqchar = *eqp, *eqp = 0, value = eqp + 1;
-		  if ( !strcmp(arg, "DEVICE") ) { 
-		      int code = 
-			  pl_top_create_device(pmi, get_device_index(value), false);
-		      if ( code < 0 ) return code;
-		  }
-		  else
-		    { param_string_from_string(str, value);
-		      code = param_write_string(plist, arg_heap_copy(arg),
-						&str);
-		    }
+		else { 
+		    char buffer[128];
+		    strncpy(buffer, arg, eqp - arg);
+		    buffer[eqp - arg] = '\0';
+		    param_string_from_string(str, value);
+		    code = param_write_string((gs_param_list *)params, arg_heap_copy(buffer),
+					      &str);
 		}
-		break;
-	      case 'Z':
-		{ const char *p = arg;
-		  for ( ; *p; ++p )
+	    }
+	    break;
+	case 'Z':
+	    { 
+		const char *p = arg;
+		for ( ; *p; ++p )
 		    gs_debug[(int)*p] = 1;
-		}
-	        break;
-	      case 'L': /* language */
-	        {
-	          int index;
-	          for (index = 0; impl_array[index] != 0; ++index)
+	    }
+	    break;
+	case 'L': /* language */
+	    {
+		int index;
+		for (index = 0; impl_array[index] != 0; ++index)
 	            if (!strcmp(arg,
-	             pl_characteristics(impl_array[index])->language))
-	              break;
-	          if (impl_array[index] != 0)
+				pl_characteristics(impl_array[index])->language))
+			break;
+		if (impl_array[index] != 0)
 	            pmi->implementation = impl_array[index];
-	          else {
+		else {
 	            fputs("Choose language in -L<language> from: ", gs_stderr);
 	            for (index = 0; impl_array[index] != 0; ++index)
-	              fprintf(gs_stderr, "%s ",
-	               pl_characteristics(impl_array[index])->language);
+			fprintf(gs_stderr, "%s ",
+				pl_characteristics(impl_array[index])->language);
 	            fputs("\n", gs_stderr);
 	            return -1;
-	          }
-	          break;
-	        }
-	      }
-	  }
-out:	if ( help )
-	  { 
-	    arg_finit(pal);
-	    gs_c_param_list_release(params);
-	    return -1;
-	  }
-	gs_c_param_list_read(params);
-	pl_top_create_device(pmi, 0, true); /* create default device if needed */
-#undef plist
-	/* The last argument wasn't a switch, so push it back. */
-	if (arg)
-	  arg_push_string(pal, arg);
-	return 0;
+		}
+		break;
+	    }
+	}
+    }
+ out:	if ( help ) { 
+        arg_finit(pal);
+        gs_c_param_list_release(params);
+        return -1;
+    }
+    gs_c_param_list_read(params);
+    pl_top_create_device(pmi, 0, true); /* create default device if needed */
+    /* The last argument wasn't a switch, so push it back. */
+    if (arg)
+	arg_push_string(pal, arg);
+    return 0;
 }
 
 /* either the (1) implementation has been selected on the command line or
@@ -991,7 +987,7 @@ pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
 	++(pti->page_count);
 	/* print the page number to stderr */
 	if ( pti->print_page_count )
-	    fprintf(gs_stderr, "Printing page %d\n", pti->page_count);
+	    fprintf(gs_stdout, "Printing page %d\n", pti->page_count);
 	if ( pti->page_count >= pti->first_page &&
 	     pti->page_count <= pti->last_page
 	   )
@@ -1085,3 +1081,7 @@ pl_main_cursor_close(
 	fclose(cursor->strm);
 }
 
+int
+main(int argc, char **argv) {
+    return plmain(argc, argv);
+}

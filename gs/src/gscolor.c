@@ -9,7 +9,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gsccolor.h"
 #include "gscssub.h"
 #include "gxcspace.h"
@@ -276,7 +276,7 @@ gs_settransfer_remap(gs_state * pgs, gs_mapping_proc tproc, bool remap)
     rc_unshare_struct(ptran->gray, gx_transfer_map, &st_transfer_map,
 		      pgs->memory, goto fail, "gs_settransfer");
     ptran->gray->proc = tproc;
-    ptran->gray->id = gs_next_ids(1);
+    ptran->gray->id = gs_next_id();
     ptran->red = ptran->gray;
     ptran->green = ptran->gray;
     ptran->blue = ptran->gray;

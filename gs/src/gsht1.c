@@ -10,7 +10,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gzstate.h"
 #include "gxdevice.h"		/* for gzht.h */
 #include "gzht.h"
@@ -361,7 +361,7 @@ process_transfer(gx_ht_order * porder, gs_state * pgs,
 	return_error(gs_error_VMerror);
     pmap->proc = proc;		/* 0 => use closure */
     pmap->closure = *pmc;
-    pmap->id = gs_next_ids(1);
+    pmap->id = gs_next_id();
     load_transfer_map(pgs, pmap, 0.0);
     porder->transfer = pmap;
     return 0;

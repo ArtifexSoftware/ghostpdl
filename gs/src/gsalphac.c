@@ -11,7 +11,7 @@
 #include "gserrors.h"
 #include "gsalphac.h"
 #include "gsiparam.h"		/* for gs_image_alpha_t */
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxalpha.h"
 #include "gxcomp.h"
 #include "gxdevice.h"
@@ -113,7 +113,7 @@ gs_create_composite_alpha(gs_composite_t ** ppcte,
 		      mem, return_error(gs_error_VMerror),
 		      "gs_create_composite_alpha");
     pcte->type = &gs_composite_alpha_type;
-    pcte->id = gs_next_ids(1);
+    pcte->id = gs_next_id();
     pcte->params = *params;
     *ppcte = (gs_composite_t *) pcte;
     return 0;

@@ -236,7 +236,7 @@ bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 				   mem, "nameless_font");
 	    if ( code < 0 )
 	      return code;
-	    pl_fill_in_bitmap_font(pfont, gs_next_ids(1));
+	    pl_fill_in_bitmap_font(pfont, gs_next_id());
 	    /* Extract parameters from the font header. */
 	    if ( pfh->HeaderFormat == pcfh_resolution_bitmap )
 	      {
@@ -308,7 +308,7 @@ bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 				   mem, "nameless_font");
 	    if ( code < 0 )
 	      return code;
-	    pl_fill_in_tt_font(pfont, NULL, gs_next_ids(1));
+	    pl_fill_in_tt_font(pfont, NULL, gs_next_id());
 	    /* pfh->Pitch is design unit width for scalable fonts. */
 	    { uint pitch_cp =
 		pl_get_uint16(pfh->Pitch) * 100 / pfont->data.unitsPerEm;
@@ -328,7 +328,7 @@ bitmap:	    pfont = gs_alloc_struct(mem, gs_font_base, &st_gs_font_base,
 				   mem, "nameless_font");
 	    if ( code < 0 )
 	      return code;
-	    pl_fill_in_intelli_font(pfont, gs_next_ids(1));
+	    pl_fill_in_intelli_font(pfont, gs_next_id());
  	    if ( pfh->HeaderFormat == pcfh_intellifont_unbound ) {
 		bool zero_complement = true;
 		int i;

@@ -11,7 +11,7 @@
 #include "gserrors.h"
 #include "gsrop.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
@@ -214,7 +214,7 @@ gs_pattern1_make_pattern(gs_client_color * pcc,
     code = gx_clip_to_rectangle(saved, &cbox);
     if (code < 0)
 	goto fsaved;
-    inst.id = gs_next_ids(1);
+    inst.id = gs_next_id();
     *pinst = inst;
     return 0;
 #undef mat
@@ -494,7 +494,7 @@ gs_makepixmappattern(
 
     /* set up the client pattern structure */
     gs_pattern1_init(&pat);
-    uid_set_UniqueID(&pat.uid, (id == no_UniqueID) ? gs_next_ids(1) : id);
+    uid_set_UniqueID(&pat.uid, (id == no_UniqueID) ? gs_next_id() : id);
     pat.PaintType = (mask ? 2 : 1);
     pat.TilingType = 1;
     pat.BBox.p.x = 0;

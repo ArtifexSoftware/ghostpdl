@@ -109,9 +109,6 @@
  * 0/1" message that we want to suppress because it gets in the way of
  * meaningful warnings.
  */
-#ifdef __WATCOMC__
-#  pragma disable_message(124);
-#endif
 
 /*
  * Some versions of gcc have a bug such that after
@@ -250,6 +247,7 @@ typedef unsigned long ptr_ord_t;
 #else
 typedef const char *ptr_ord_t;
 #endif
+
 /* Define all the pointer comparison operations. */
 #define _PTR_CMP(p1, rel, p2)  ((ptr_ord_t)(p1) rel (ptr_ord_t)(p2))
 #define PTR_LE(p1, p2) _PTR_CMP(p1, <=, p2)
@@ -258,6 +256,14 @@ typedef const char *ptr_ord_t;
 #define PTR_GT(p1, p2) _PTR_CMP(p1, >, p2)
 #define PTR_BETWEEN(ptr, lo, hi)\
   (PTR_GE(ptr, lo) && PTR_LT(ptr, hi))
+
+#if defined (_MSC_VER)
+#define INTEGER64 __int64
+#elif defined (__GNUC__)
+#define INTEGER64 long long
+#else
+#error "Don't know how to define 64 bit integer."
+#endif
 
 /* Define  min and max, but make sure to use the identical definition */
 /* to the one that all the compilers seem to have.... */

@@ -245,7 +245,7 @@ gdev_vector_reset(gx_device_vector * vdev)
     color_unset(&vdev->fill_color);
     color_unset(&vdev->stroke_color);
     vdev->clip_path_id =
-	vdev->no_clip_path_id = gs_next_ids(1);
+	vdev->no_clip_path_id = gs_next_id();
 }
 
 /* Open the output file and stream. */

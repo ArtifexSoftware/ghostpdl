@@ -348,6 +348,7 @@ px_gstate_reset(px_gstate_t *pxgs)
 	gs_make_identity(&pxgs->text_ctm);
 	pxgs->char_matrix_set = false;
 	pxgs->symbol_map = 0;
+	pxgs->writing_mode = eHorizontal;
 }
 
 /* initial clip region note, we don't use gs_initclip() because we

@@ -1155,7 +1155,7 @@ context_create(gs_scheduler_t * psched, gs_context_t ** ppctx,
 	    return code;
 	}
     }
-    ctx_index = gs_next_ids(1);
+    ctx_index = gs_next_id();
     pctx->scheduler = psched;
     pctx->status = cs_active;
     pctx->index = ctx_index;

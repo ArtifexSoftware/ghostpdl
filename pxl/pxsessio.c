@@ -248,7 +248,6 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	    pxs->copies = pjl_copies;
 	    pxs->media_destination = eDefaultDestination;
 	    pxs->media_type = eDefaultType;
-	    px_dict_init(&pxs->font_dict, pxs->memory, px_free_font);
 	    /* install the built in fonts */
 	    if ( pl_load_built_in_fonts(pjl_proc_fontsource_to_path(pxs->pjls, "I"),
 					pxs->memory,

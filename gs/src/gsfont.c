@@ -272,7 +272,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->dir = dir;
     pfont->is_resource = false;
     gs_notify_init(&pfont->notify_list, gs_memory_stable(mem));
-    pfont->id = gs_next_ids(1);
+    pfont->id = gs_next_id();
     pfont->base = pfont;
     pfont->client_data = 0;
     /* not FontMatrix, FontType */

@@ -425,7 +425,7 @@ test3(gs_state * pgs, gs_memory_t * mem)
     tile.data = pbytes;
     tile.raster = align_bitmap_mod;
     tile.size.x = tile.size.y = 4;
-    tile.id = gs_next_ids(1);
+    tile.id = gs_next_id();
     tile.rep_width = tile.rep_height = 4;
     (*dev_proc(dev, copy_rop))
 	(dev, NULL, 0, 0, gx_no_bitmap_id, black2,

@@ -285,8 +285,7 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 	device_color = (*pcst->concrete_space) (pcs, pis) == pcs;
 	image_init_colors(penum, bps, spp, format, decode, pis, dev,
 			  pcs, &device_color);
-	/* Try to transform non-default RasterOps to something */
-	/* that we implement less expensively. */
+
 	if (!pim->CombineWithColor)
 	    lop = rop3_know_T_0(lop) & ~lop_T_transparent;
 	else {
@@ -301,53 +300,6 @@ gx_image_enum_begin(gx_device * dev, const gs_imager_state * pis,
 		    default:
 			;
 		}
-	}
-	if (lop != rop3_S &&	/* if best case, no more work needed */
-	    !rop3_uses_T(lop) && bps == 1 && spp == 1 &&
-	    (b_w_color =
-	     color_draws_b_w(dev, &penum->icolor0)) >= 0 &&
-	    color_draws_b_w(dev, &penum->icolor1) == (b_w_color ^ 1)
-	    ) {
-	    if (b_w_color) {	/* Swap the colors and invert the RasterOp source. */
-		gx_device_color dcolor;
-
-		dcolor = penum->icolor0;
-		penum->icolor0 = penum->icolor1;
-		penum->icolor1 = dcolor;
-		lop = rop3_invert_S(lop);
-	    }
-	    /*
-	     * At this point, we know that the source pixels
-	     * correspond directly to the S input for the raster op,
-	     * i.e., icolor0 is black and icolor1 is white.
-	     */
-	    switch (lop) {
-		case rop3_D & rop3_S:
-		    /* Implement this as an inverted mask writing 0s. */
-		    penum->icolor1 = penum->icolor0;
-		    /* (falls through) */
-		case rop3_D | rop3_not(rop3_S):
-		    /* Implement this as an inverted mask writing 1s. */
-		    memcpy(&penum->map[0].table.lookup4x1to32[0],
-			   lookup4x1to32_inverted, 16 * 4);
-		  rmask:	/* Fill in the remaining parameters for a mask. */
-		    penum->masked = masked = true;
-		    color_set_pure(&penum->icolor0, gx_no_color_index);
-		    penum->map[0].decoding = sd_none;
-		    lop = rop3_T;
-		    break;
-		case rop3_D & rop3_not(rop3_S):
-		    /* Implement this as a mask writing 0s. */
-		    penum->icolor1 = penum->icolor0;
-		    /* (falls through) */
-		case rop3_D | rop3_S:
-		    /* Implement this as a mask writing 1s. */
-		    memcpy(&penum->map[0].table.lookup4x1to32[0],
-			   lookup4x1to32_identity, 16 * 4);
-		    goto rmask;
-		default:
-		    ;
-	    }
 	}
     }
     penum->device_color = device_color;

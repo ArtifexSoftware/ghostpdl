@@ -11,7 +11,7 @@
 #include "gserrors.h"
 #include "gsrop.h"
 #include "gsstruct.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"

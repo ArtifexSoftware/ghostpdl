@@ -967,7 +967,7 @@ $(GLD)libs.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBs) $(LIB_O) $(GLD)gsiodevs.dev
 	$(ADDMOD) $(GLD)libs $(LIB10s)
 	$(ADDMOD) $(GLD)libs $(LIB11s)
 	$(ADDMOD) $(GLD)libs $(LIB12s)
-	$(ADDMOD) $(GLD)libs -init gshtscr gsutil
+	$(ADDMOD) $(GLD)libs -init gshtscr
 	$(ADDMOD) $(GLD)libs -include $(GLD)gsiodevs
 
 $(GLD)libx.dev : $(LIB_MAK) $(ECHOGS_XE) $(LIBx)

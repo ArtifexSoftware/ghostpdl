@@ -12,4 +12,4 @@
 /*$Id$*/
 
 /* A simple memory allocator for use by pcl and pxl */
-gs_memory_t *pl_get_allocator(void);
+gs_memory_t *pl_alloc_init(void);

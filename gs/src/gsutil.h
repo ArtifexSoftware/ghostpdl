@@ -12,8 +12,8 @@
 
 /* ------ Unique IDs ------ */
 
-/* Generate a block of unique IDs. */
-gs_id gs_next_ids(P1(uint count));
+/* Generate a unique ID. */
+gs_id gs_next_id(P0());
 
 /* ------ Memory utilities ------ */
 

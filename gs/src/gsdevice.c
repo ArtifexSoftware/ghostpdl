@@ -673,12 +673,13 @@ gx_parse_output_file_name(gs_parsed_file_name_t *pfn, const char **pfmt,
 	    return code;
     }
     if (!pfn->iodev) {
-	if (!strcmp(pfn->fname, "-")) {
+	if ( (pfn->len == 1) && (pfn->fname[0] == '-') ) {
 	    pfn->iodev = gs_findiodevice((const byte *)"%stdout", 7);
 	    pfn->fname = NULL;
 	} else if (pfn->fname[0] == '|') {
 	    pfn->iodev = gs_findiodevice((const byte *)"%pipe", 5);
-	    pfn->fname++, pfn->len--;
+	    pfn->fname++;
+	    pfn->len--;
 	} else
 	    pfn->iodev = iodev_default;
 	if (!pfn->iodev)

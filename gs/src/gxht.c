@@ -11,7 +11,7 @@
 #include "gserrors.h"
 #include "gsstruct.h"
 #include "gsbitops.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxdcolor.h"
 #include "gxfixed.h"
 #include "gxdevice.h"		/* for gzht.h */
@@ -144,6 +144,11 @@ gx_ht_alloc_cache(gs_memory_t * mem, uint max_tiles, uint max_bits)
     pcache->num_tiles = max_tiles;
     pcache->order.cache = pcache;
     pcache->order.transfer = 0;
+    /* This gets resized when initializing the halftone cache.  Only
+         allocate one element table here. */
+    pcache->id_table = 	gs_alloc_bytes(mem,
+				       (1 * sizeof(gx_bitmap_id)),
+				       "alloc_ht_cache(id_table)");
     gx_ht_clear_cache(pcache);
     return pcache;
 }
@@ -154,6 +159,7 @@ gx_ht_free_cache(gs_memory_t * mem, gx_ht_cache * pcache)
 {
     gs_free_object(mem, pcache->ht_tiles, "free_ht_cache(ht_tiles)");
     gs_free_object(mem, pcache->bits, "free_ht_cache(bits)");
+    gs_free_object(mem, pcache->id_table, "free_ht_cache(id_table)"); 
     gs_free_object(mem, pcache, "free_ht_cache(struct)");
 }
 
@@ -240,7 +246,7 @@ gx_render_ht_default(gx_ht_cache * pcache, int b_level)
     gx_ht_tile *bt = &pcache->ht_tiles[level / pcache->levels_per_tile];
 
     if (bt->level != level) {
-	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+	int code = render_ht(bt, level, porder, pcache->id_table[b_level]);
 
 	if (code < 0)
 	    return 0;
@@ -256,7 +262,7 @@ gx_render_ht_1_tile(gx_ht_cache * pcache, int b_level)
     gx_ht_tile *bt = &pcache->ht_tiles[0];
 
     if (bt->level != level) {
-	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+	int code = render_ht(bt, level, porder, pcache->id_table[b_level]);
 
 	if (code < 0)
 	    return 0;
@@ -272,7 +278,7 @@ gx_render_ht_1_level(gx_ht_cache * pcache, int b_level)
     gx_ht_tile *bt = &pcache->ht_tiles[level];
 
     if (bt->level != level) {
-	int code = render_ht(bt, level, porder, pcache->base_id + b_level);
+	int code = render_ht(bt, level, porder, pcache->id_table[b_level]);
 
 	if (code < 0)
 	    return 0;
@@ -303,7 +309,7 @@ gx_dc_ht_binary_load(gx_device_color * pdevc, const gs_imager_state * pis,
 
 	if (bt->level != level) {
 	    int code = render_ht(bt, level, porder,
-				 pcache->base_id + b_level);
+				 pcache->id_table[b_level]);
 
 	    if (code < 0)
 		return_error(gs_error_Fatal);
@@ -421,7 +427,19 @@ gx_ht_init_cache(gx_ht_cache * pcache, const gx_ht_order * porder)
 	raster = bitmap_raster(width_unit);
 	tile_bytes = raster * height;
     }
-    pcache->base_id = gs_next_ids(porder->num_levels + 1);
+    pcache->id_table = (gx_bitmap_id *)gs_resize_object(porder->data_memory,
+			pcache->id_table,
+			sizeof(gx_bitmap_id) * porder->num_levels,
+			"gx_ht_init_cache id table");
+    if ( pcache->id_table == NULL )
+	/* NB no error returned yet */
+	;
+    else {
+	int i;
+	for (i = 0; i < porder->num_levels; i++ )
+	    pcache->id_table[i] = gs_next_id();
+    }
+	
     pcache->order = *porder;
     /* The transfer function is irrelevant, and might become dangling. */
     pcache->order.transfer = 0;

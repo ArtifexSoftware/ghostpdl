@@ -245,7 +245,7 @@ gs_cie_render1_build(gs_cie_render ** ppcrd, gs_memory_t * mem,
 
     rc_alloc_struct_1(pcrd, gs_cie_render, &st_cie_render1, mem,
 		      return_error(gs_error_VMerror), cname);
-    pcrd->id = gs_next_ids(1);
+    pcrd->id = gs_next_id();
     /* Initialize pointers for the GC. */
     pcrd->client_data = 0;
     pcrd->RenderTable.lookup.table = 0;
@@ -284,7 +284,7 @@ gs_cie_render1_init_from(gs_cie_render * pcrd, void *client_data,
 			 const gs_range3 * RangeABC,
 			 const gs_cie_render_table_t * RenderTable)
 {
-    pcrd->id = gs_next_ids(1);
+    pcrd->id = gs_next_id();
     pcrd->client_data = client_data;
     pcrd->points.WhitePoint = *WhitePoint;
     pcrd->points.BlackPoint =

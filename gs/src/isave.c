@@ -20,7 +20,7 @@
 #include "isstate.h"
 #include "store.h"		/* for ref_assign */
 #include "ivmspace.h"
-#include "gsutil.h"		/* gs_next_ids prototype */
+#include "gsutil.h"		/* gs_next_id prototype */
 
 /* Imported save/restore routines */
 extern void font_restore(P1(const alloc_save_t *));
@@ -299,13 +299,14 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 {
     gs_ref_memory_t *lmem = dmem->space_local;
     gs_ref_memory_t *gmem = dmem->space_global;
-    ulong sid = gs_next_ids(2);
+    ulong sid0 = gs_next_id();
+    ulong sid1 = gs_next_id();
     bool global =
 	lmem->save_level == 0 && gmem != lmem &&
 	gmem->num_contexts == 1;
     alloc_save_t *gsave =
-	(global ? alloc_save_space(gmem, dmem, sid + 1) : (alloc_save_t *) 0);
-    alloc_save_t *lsave = alloc_save_space(lmem, dmem, sid);
+	(global ? alloc_save_space(gmem, dmem, sid1) : (alloc_save_t *) 0);
+    alloc_save_t *lsave = alloc_save_space(lmem, dmem, sid0);
 
     if (lsave == 0 || (global &&gsave == 0)) {
 	if (lsave != 0)
@@ -323,7 +324,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 	lsave->restore_names = gsave->restore_names;
 	gsave->restore_names = false;
     }
-    lsave->id = sid;
+    lsave->id = sid0;
     lsave->client_data = cdata;
     print_save("save", lmem->space, lsave);
     /* Reset the l_new attribute in all slots.  The only slots that */
@@ -354,7 +355,7 @@ alloc_save_state(gs_dual_memory_t * dmem, void *cdata)
 	}
     }
     alloc_set_in_save(dmem);
-    return sid;
+    return sid0;
 }
 /* Save the state of one space (global or local). */
 private alloc_save_t *

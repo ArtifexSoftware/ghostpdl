@@ -8,7 +8,7 @@
 /* Rectangle-oriented command writing for command list */
 #include "gx.h"
 #include "gserrors.h"
-#include "gsutil.h"		/* for gs_next_ids */
+#include "gsutil.h"		/* for gs_next_id */
 #include "gxdevice.h"
 #include "gxdevmem.h"		/* must precede gxcldev.h */
 #include "gxcldev.h"
@@ -580,7 +580,7 @@ clist_strip_copy_rop(gx_device * dev,
 		    /* Change tile.  If there is no id, generate one. */
 		    if (tiles->id == gx_no_bitmap_id) {
 			tile_with_id = *tiles;
-			tile_with_id.id = gs_next_ids(1);
+			tile_with_id.id = gs_next_id();
 			tiles = &tile_with_id;
 		    }
 		    TRY_RECT {
@@ -607,18 +607,13 @@ clist_strip_copy_rop(gx_device * dev,
 			    tiles->rep_shift != 0
 			    )
 			    return code;
-			/*
-			 * Allocate enough fake IDs, since the inner call on
-			 * clist_strip_copy_rop will need them anyway.
-			 */
-			ids = gs_next_ids(min(height, rep_height));
 			line_tile = *tiles;
 			line_tile.size.y = 1;
 			line_tile.rep_height = 1;
 			for (iy = 0; iy < height; ++iy) {
 			    line_tile.data = tiles->data + line_tile.raster *
 				((y + iy + phase_y) % rep_height);
-			    line_tile.id = ids + (iy % rep_height);
+			    line_tile.id = gs_next_id();
 			    /*
 			     * Note that since we're only transferring
 			     * a single scan line, phase_y is irrelevant;
