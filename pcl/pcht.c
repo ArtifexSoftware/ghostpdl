@@ -1999,6 +1999,13 @@ dflt_transfer_proc(
     return val;
 }
 
+/* Define a transfer function without gamma correction. */
+private float
+identity_transfer(floatp tint, const gx_transfer_map *ignore_map)
+{	return tint;
+}
+
+
 /*
  * Get the rendering information corresponding to a given rendering method.
  * This takes into account the restriction that certain rendering methods may
@@ -2241,6 +2248,18 @@ pcl_ht_set_halftone(
     int                  ncomps = 0;
     gs_ht *              pgsht = 0;
     int                  code = 0;
+
+
+    gs_const_string thresh;
+    thresh.data = ordered_dither_data;
+    thresh.size = 256;
+    return pl_set_pcl_halftone(pcs->pgs,
+                               /* set transfer */ identity_transfer,
+                               /* width */ 16, /*height */ 16,
+                               /* dither data */ thresh,
+                               /* x phase */ 0,
+                               /* y phase */ 0);
+
 
     dprintf( "NB halftone installation\n" );
     return 0;

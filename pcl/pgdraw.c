@@ -1543,9 +1543,7 @@ hpgl_copy_current_path_to_polygon_buffer(
 )
 {
     gx_path *       ppath = gx_current_path(pgls->pgs);
-
-    gx_path_new(&pgls->g.polygon.buffer.path);
-    gx_path_copy(ppath, &pgls->g.polygon.buffer.path);
+    gx_path_assign_preserve(&pgls->g.polygon.buffer.path, ppath);
     return 0;
 }
 
@@ -1555,7 +1553,6 @@ hpgl_copy_polygon_buffer_to_current_path(
 )
 {
     gx_path *       ppath = gx_current_path(pgls->pgs);
-
-    gx_path_copy(&pgls->g.polygon.buffer.path, ppath);
+    gx_path_assign_preserve(ppath, &pgls->g.polygon.buffer.path);
     return 0;
 }
