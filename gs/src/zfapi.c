@@ -550,7 +550,22 @@ private bool sfnt_get_glyph_offset(ref *pdr, gs_font_type42 *pfont42, int index,
 }
 
 private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort buf_length)
-{   /* note : 2-step request */
+{   /* 
+     * We assume that renderer requests glyph data with multiple consequtive
+     * calls to this function. 
+     *
+     * For a simple glyph it calls this
+     * function exactly twice : first with buf == NULL for requesting
+     * the necessary buffer length, and second with
+     * buf != NULL for requesting the data (the second call may be skept
+     * if the renderer discontinues the rendering on an exception).
+     *
+     * For a composite glyph it calls this function 2 * (N + 1)
+     * times : 2 calls for the main glyph (same as above) followed with 
+     * 2 * N calls for subglyphs, where N is less or equal to the number of
+     * subglyphs ( N may be less if the renderer caches glyph data,
+     * or discontinues the rendering on an exception).
+     */
     ref *pdr = (ref *)ff->client_font_data2;
     ushort glyph_length;
 
@@ -568,8 +583,14 @@ private ushort FAPI_FF_get_glyph(FAPI_font *ff, int char_code, byte *buf, ushort
 		 */
                 if (name_ref(ff->char_data, ff->char_data_len, &char_name, -1) < 0)
 		    return -1;
-		if (buf != NULL)
-		    ff->char_data = NULL; /* Hack : next fime fall into 'seac' below. */
+		if (buf != NULL) {
+		    /* 
+		     * Trigger the next call to the 'seac' case below. 
+		     * Here we use the assumption about call sequence
+		     * being documented above.
+		     */
+		    ff->char_data = NULL; 
+		}
 	    }  else { /* seac */
 		i_ctx_t *i_ctx_p = (i_ctx_t *)ff->client_ctx_p;
 		ref *StandardEncoding;
