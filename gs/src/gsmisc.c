@@ -209,15 +209,16 @@ gs_log_error(int err, const char *file, int line)
 }
 
 #ifdef DEBUG 
+#undef assert
+#include <assert.h>
 void
 gs_assert(long line, const char *file, const char *exp)
 {
     dprintf3("ASSERT FAILURE: file %s line %d :%s\n", file, line, exp);
 
-#undef assert
-#include <assert.h>
-   assert(0);
+    assert(0);
 }
+#define assert #error
 #endif
 
 /* Check for interrupts before a return. */
