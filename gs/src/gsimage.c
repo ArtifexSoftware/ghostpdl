@@ -516,6 +516,7 @@ gs_image_next_planes(gs_image_enum * penum,
 	    if_debug2('b', "[b]used %d, code=%d\n", h, code);
 	    penum->error = code < 0;
 	}
+	penum->y += h;
 	/* Update positions and sizes. */
 	if (h == 0)
 	    break;
