@@ -38,16 +38,6 @@
 #include "gxpath.h"
 #include "gzstate.h"
 
-/*
- * There appears to be a combination of undocumented behavior and
- * firmware bugs in the H-P printers that make it difficult to determine
- * the proper interaction of character and page transformations.
- * The following two conditionals probably should not be enabled,
- * but we leave them here just in case this turns out to be wrong.
- */
-/*#define TRANSFORM_TEXT_AS_OBJECTS*/
-/*#define POST_TRANSFORM_CHARS*/
-
 /* ---------------- Initialization ---------------- */
 
 int
@@ -121,10 +111,10 @@ px_set_char_matrix(px_state_t *pxs)
 	       )
 	      return_error(pxs->memory, errorIllegalFontData);
 	    gs_defaultmatrix(pxs->pgs, &mat);
-	    gs_make_scaling(
-	      adjust_scale(fabs(mat.xx + mat.yx) * 72 / pxfont->resolution.x),
-	      adjust_scale(fabs(mat.yy + mat.xy) * 72 / pxfont->resolution.y),
-	      &mat);
+	    
+	    /* remove negative scale component */
+	    gs_make_scaling( 1, 1, &mat );
+	    
 	    /*
 	     * Rotate the bitmap to undo the effect of its built-in
 	     * orientation and add the page orientation rotation
@@ -386,44 +376,8 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 	return code;
     }
     gs_currentmatrix(pgs, &save_ctm);
-
-    if ( pxgs->base_font->scaling_technology == plfst_bitmap )
-    { /*
-       * Bitmap fonts don't scale or rotate: the char_matrix is the
-       * actual matrix to use, aside from translation.
-       */
-	gs_matrix mat;
-	mat = pxgs->char_matrix;
-	mat.tx = save_ctm.tx;
-	mat.ty = save_ctm.ty;
-	gs_setmatrix(pgs, &mat);
-    }
-    else
-#ifdef TRANSFORM_TEXT_AS_OBJECTS
-	/* Keep the current translation, but post-scale and rotate. */
-    { 
-	gs_matrix tmat, rmat;
-	tmat = pxs->initial_matrix;
-	gs_matrix_rotate(&tmat, 90 * (int)pxs->orientation, &tmat);
-	gs_matrix_multiply(&tmat, &pxgs->text_ctm, &tmat);
-	gs_make_rotation(-90 * (int)pxs->orientation, &rmat);
-	gs_matrix_multiply(&tmat, &rmat, &tmat);
-	tmat.tx = save_ctm.tx;
-	tmat.ty = save_ctm.ty;
-	gs_setmatrix(pgs, &tmat);
-    }
-#endif
-#ifdef POST_TRANSFORM_CHARS
-    {
-	gs_matrix cmat, mat;
-	gs_currentmatrix(pgs, &cmat);
-	gs_matrix_multiply(&cmat, &pxgs->char_matrix, &mat);
-	gs_setmatrix(pgs, &mat);
-    }
-#else
-
     gs_concat(pgs, &pxgs->char_matrix);
-#endif
+
     /* set the writing mode */
 	
     /* NB
@@ -626,6 +580,7 @@ px_text(px_args_t *par, px_state_t *pxs, bool to_path)
 					      &font_distance);
 		fvals[i*2] = font_distance.x;
 		fvals[i*2 +1] = font_distance.y;  
+
 
 	    }
 	    // NB: this looks correct but pdfwrite isn't generating 
