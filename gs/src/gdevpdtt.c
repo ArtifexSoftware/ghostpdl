@@ -922,7 +922,7 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	{
 	    const gs_font_base *bfont = (const gs_font_base *)font;
 
-	    code = font_resource_encoded_alloc(pdev, &pdfont, gs_no_id, 
+	    code = font_resource_encoded_alloc(pdev, &pdfont, bfont->id, 
 			    ft_user_defined, pdf_write_contents_bitmap);
 	    if (code < 0)
 		return code;

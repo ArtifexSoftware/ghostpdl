@@ -117,6 +117,53 @@ pdf_add_ToUnicode(gx_device_pdf *pdev, gs_font *font, pdf_font_resource_t *pdfon
 }
 
 /*
+ * If the current substream is a charproc, register a font used in it.
+ */
+private int
+pdf_register_charproc_font(gx_device_pdf *pdev, gs_id id) 
+{
+    if (pdev->font3 != 0) {
+	pdf_font_resource_t *pdfont = (pdf_font_resource_t *)pdev->font3;
+	gs_id *used_fonts = pdfont->u.simple.s.type3.used_fonts;
+	int i, used_fonts_count = pdfont->u.simple.s.type3.used_fonts_count;
+
+	for (i = 0; i < used_fonts_count; i++)
+	    if (used_fonts[i] == id)
+		return 0;
+	if (used_fonts_count >= count_of(pdfont->u.simple.s.type3.used_fonts))
+	    return_error(gs_error_limitcheck);
+	used_fonts[used_fonts_count] = id;
+	pdfont->u.simple.s.type3.used_fonts_count = used_fonts_count + 1;
+    }
+    return 0;
+}
+
+/*
+ * Register charproc fonts with the page or substream.
+ */
+int
+pdf_used_charproc_fonts(gx_device_pdf *pdev, pdf_font_resource_t *pdfont) 
+{
+    if (pdfont->where_used & pdev->used_mask)
+	return 0;
+    pdfont->where_used |= pdev->used_mask;
+    if (pdfont->FontType == ft_user_defined) {
+	gs_id *used_fonts = pdfont->u.simple.s.type3.used_fonts;
+	int i, used_fonts_count = pdfont->u.simple.s.type3.used_fonts_count;
+
+	for (i = 0; i < used_fonts_count; i++) {
+	    pdf_font_resource_t *pdfont1 = 
+		    (pdf_font_resource_t *)pdf_find_resource_by_gs_id(pdev, 
+			    resourceFont, used_fonts[i]);
+	    if (pdfont1 == NULL)
+		return_error(gs_error_unregistered); /* Must not happen. */
+	    pdfont1->where_used |= pdev->used_mask;
+	}
+    }
+    return 0;
+}
+
+/*
  * Given a text string and a simple gs_font, return a font resource suitable
  * for the text string, possibly re-encoding the string.  This
  * may involve creating a font resource and/or adding glyphs and/or Encoding
@@ -144,7 +191,9 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
     code = pdf_add_resource(pdev, pdev->substream_Resources, "/Font", (pdf_resource_t *)pdfont);
     if (code < 0)
 	return code;
-
+    code = pdf_register_charproc_font(pdev, pdfont->rid);
+    if (code < 0)
+	return code;
     cfont = pdf_font_resource_font(pdfont, false);
     ccfont = pdf_font_resource_font(pdfont, true);
     for (i = 0; i < pstr->size; ++i) {
@@ -207,7 +256,7 @@ pdf_encode_string(gx_device_pdf *pdev, const pdf_text_enum_t *penum,
 		)
 		pet->is_difference = true;
 	    pdfont->used[ch >> 3] |= 0x80 >> (ch & 7);
-	}
+	} 
 	/*
 	 * We always generate ToUnicode for simple fonts, because
 	 * we can't detemine in advance, which glyphs the font actually uses.

@@ -226,6 +226,10 @@ struct pdf_font_resource_s {
 		    pdf_char_proc_t *char_procs;
 		    int max_y_offset;
 		    bool bitmap_font;
+		    gs_id used_fonts[10]; /* IDs of fonts uzed in charproc streams.
+					     For a while restrict with 10 fonts.
+					     Should be enough for known cases (251-01.ps) */
+		    int used_fonts_count;
 		} type3;
 
 	    } s;

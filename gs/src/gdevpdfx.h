@@ -347,12 +347,14 @@ typedef struct pdf_substream_save_s {
     cos_dict_t		*substream_Resources;
     pdf_procset_t	procsets;
     bool		skip_colors;
+    pdf_resource_t      *font3;
 } pdf_substream_save;
 
 #define private_st_pdf_substream_save()\
-    gs_private_st_ptrs4(st_pdf_substream_save, pdf_substream_save,\
+    gs_private_st_ptrs5(st_pdf_substream_save, pdf_substream_save,\
 	"pdf_substream_save", pdf_substream_save_enum,\
-	pdf_substream_save_reloc, text_state, clip_path, strm, substream_Resources);
+	pdf_substream_save_reloc, text_state, clip_path, strm, \
+	substream_Resources, font3);
 #define private_st_pdf_substream_save_element()\
   gs_private_st_element(st_pdf_substream_save_element, pdf_substream_save,\
     "pdf_substream_save[]", pdf_substream_save_elt_enum_ptrs,\
@@ -519,14 +521,18 @@ struct gx_device_pdf_s {
     int vgstack_bottom;		 /* Stack bottom for the current substream. */
     pdf_viewer_state vg_initial; /* Initial values for viewer's graphic state */
     bool vg_initial_set;
+
     /* The substream context stack. */
     int sbstack_size;
     int sbstack_depth;
     pdf_substream_save *sbstack;
+
+    /* Accessories */
     cos_dict_t *substream_Resources;     /* Substream resources */
     int pcm_color_info_index;    /* Index to pcm_color_info. */
     bool skip_colors; /* Skip colors while a pattern/charproc accumulation. */
     bool AR4_save_bug; /* See pdf_put_uncolored_pattern */
+    pdf_resource_t *font3; /* The owner of the accumulated charstring. */
 };
 
 #define is_in_page(pdev)\
@@ -548,8 +554,8 @@ struct gx_device_pdf_s {
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
  m(24,font_cache) m(25,clip_path)\
  m(26,PageLabels) m(27,PageLabels_current_label)\
- m(28,sbstack) m(29,substream_Resources)
-#define gx_device_pdf_num_ptrs 30
+ m(28,sbstack) m(29,substream_Resources) m(30,font3)
+#define gx_device_pdf_num_ptrs 31
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\

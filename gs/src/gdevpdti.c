@@ -434,6 +434,7 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 	    (float)pw[0], (float)pw[1], (float)pw[2], 
 	    (float)pw[3], (float)pw[4], (float)pw[5]);
     }
+    pdev->font3 = (pdf_resource_t *)pdfont;
     return 0;
 }
 
@@ -495,6 +496,7 @@ pdf_enter_substream(gx_device_pdf *pdev, pdf_resource_type_t rtype,
     pdev->sbstack[sbstack_ptr].procsets = pdev->procsets;
     pdev->sbstack[sbstack_ptr].substream_Resources = pdev->substream_Resources;
     pdev->sbstack[sbstack_ptr].skip_colors = pdev->skip_colors;
+    pdev->sbstack[sbstack_ptr].font3 = pdev->font3;
     pdev->skip_colors = false;
     pdev->sbstack_depth++;
     pdev->procsets = 0;
@@ -550,6 +552,7 @@ pdf_exit_substream(gx_device_pdf *pdev)
     pdev->substream_Resources = pdev->sbstack[sbstack_ptr].substream_Resources;
     pdev->sbstack[sbstack_ptr].substream_Resources = 0;
     pdev->skip_colors = pdev->sbstack[sbstack_ptr].skip_colors;
+    pdev->font3 = pdev->sbstack[sbstack_ptr].font3;
     pdev->sbstack_depth = sbstack_ptr;
     return code;
 }

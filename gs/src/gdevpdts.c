@@ -429,7 +429,9 @@ sync_text_state(gx_device_pdf *pdev)
 	pts->wmode =
 	    (pdfont->FontType == ft_composite ?
 	     pdfont->u.type0.WMode : 0);
-	((pdf_resource_t *)pdfont)->where_used |= pdev->used_mask;
+	code = pdf_used_charproc_fonts(pdev, pdfont);
+	if (code < 0)
+	    return code;
     }
 
     if (memcmp(&pts->in.matrix, &pts->out.matrix, sizeof(pts->in.matrix)) ||

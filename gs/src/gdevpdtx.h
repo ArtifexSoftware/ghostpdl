@@ -91,5 +91,7 @@ typedef struct pdf_font_resource_s pdf_font_resource_t;
 
 /* Get the object ID of a font resource. */
 long pdf_font_id(const pdf_font_resource_t *pdfont);
+/* Register charproc fonts with the page or substream. */
+int pdf_used_charproc_fonts(gx_device_pdf *pdev, pdf_font_resource_t *pdfont);
 
 #endif /* gdevpdtx_INCLUDED */
