@@ -2,7 +2,7 @@
    reserved.  Unauthorized use, copying, and/or distribution
    prohibited.  */
 
-/* pcdraw.h - PCL5 drawing utilities */
+/* pcdraw.c - PCL5 drawing utilities */
 
 #include "gx.h"
 #include "gsmatrix.h"
