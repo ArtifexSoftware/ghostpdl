@@ -333,6 +333,12 @@ hpgl_set_graphics_line_attribute_state(
     const float *           widths = pcl_palette_get_pen_widths(pgls->ppalet);
     floatp                  pen_wid = widths[hpgl_get_selected_pen(pgls)];
 
+    /* fatten 0 width lines */
+    if ( pen_wid == 0 ) 
+	gs_setfilladjust(pgls->pgs, 0.5, 0.5);
+    else
+	gs_setfilladjust(pgls->pgs, 0.0, 0.0);
+	    
     /*
      * HP appears to use default line attributes if the the pen
      * width is less than or equal to .35mm or 14.0 plu.  This
@@ -946,7 +952,6 @@ fill:
     if (code >= 0) {
         /* PCL and GL/2 no longer use graphic library transparency */
         gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
-	gs_setfilladjust(pgls->pgs, 0, 0);
     }
     return code;
 }
