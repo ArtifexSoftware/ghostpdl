@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.8 2002/07/03 00:08:40 giles Exp $
+    $Id: jbig2_text.c,v 1.9 2002/07/04 12:08:03 giles Exp $
 */
 
 #include <stddef.h>
@@ -264,10 +264,12 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    }
         
 	    /* (3c.ix) */
+#ifdef DEBUG
 	    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 			"composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", 
 			ID, IB->width, IB->height, x, y, NINSTANCES + 1,
 			params->SBNUMINSTANCES);
+#endif
 	    jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
         
 	    /* (3c.x) */
