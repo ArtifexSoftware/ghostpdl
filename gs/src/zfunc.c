@@ -42,8 +42,6 @@ gs_private_st_element(st_function_ptr_element, gs_function_t *,
 
 /* ------ Operators ------ */
 
-private int zexecfunction(P1(i_ctx_t *));
-
 /* <dict> .buildfunction <function_struct> */
 private int
 zbuildfunction(i_ctx_t *i_ctx_p)
@@ -69,7 +67,7 @@ zbuildfunction(i_ctx_t *i_ctx_p)
 }
 
 /* <in1> ... <function_struct> %execfunction <out1> ... */
-private int
+int
 zexecfunction(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;

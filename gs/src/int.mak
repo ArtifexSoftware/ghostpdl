@@ -1491,11 +1491,12 @@ $(PSOBJ)zpcolor.$(OBJ) : $(PSSRC)zpcolor.c $(OP)\
 
 # ---------------- Separation color ---------------- #
 
-seprread_=$(PSOBJ)zcssepr.$(OBJ)
+seprread_=$(PSOBJ)zcssepr.$(OBJ) $(PSOBJ)zccube.$(OBJ)
 $(PSD)sepr.dev : $(INT_MAK) $(ECHOGS_XE) $(seprread_)\
  $(PSD)func4.dev $(GLD)seprlib.dev
 	$(SETMOD) $(PSD)sepr $(seprread_)
 	$(ADDMOD) $(PSD)sepr -oper zcssepr_l2
+	$(ADDMOD) $(PSD)sepr -oper zccube
 	$(ADDMOD) $(PSD)sepr -include $(PSD)func4 $(GLD)seprlib
 
 $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
@@ -1503,6 +1504,10 @@ $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
  $(gxcolor2_h) $(gxcspace_h) $(gxfixed_h)\
  $(estack_h) $(ialloc_h) $(icsmap_h) $(ifunc_h) $(igstate_h) $(iname_h) $(ivmspace_h) $(store_h)
 	$(PSCC) $(PSO_)zcssepr.$(OBJ) $(C_) $(PSSRC)zcssepr.c
+
+$(PSOBJ)zccube.$(OBJ) : $(PSSRC)zccube.c $(OP) $(memory__h)\
+ $(gxcspace_h) $(estack_h) $(ialloc_h) $(ifunc_h) $(ostack_h) $(gsfunc0_h)
+	$(PSCC) $(PSO_)zccube.$(OBJ) $(C_) $(PSSRC)zccube.c
 
 # ---------------- DCT filters ---------------- #
 # The definitions for jpeg*.dev are in jpeg.mak.
@@ -1603,8 +1608,7 @@ $(PSD)psl3.dev : $(INT_MAK) $(ECHOGS_XE)\
 
 $(PSOBJ)zcsdevn.$(OBJ) : $(PSSRC)zcsdevn.c $(OP) $(memory__h)\
  $(gscolor2_h) $(gscdevn_h) $(gxcdevn_h) $(gxcspace_h)\
- $(estack_h) $(ialloc_h) $(icremap_h) $(ifunc_h) $(igstate_h) $(iname_h) $(ostack_h)\
- $(store_h)
+ $(estack_h) $(ialloc_h) $(icremap_h) $(ifunc_h) $(igstate_h) $(iname_h)
 	$(PSCC) $(PSO_)zcsdevn.$(OBJ) $(C_) $(PSSRC)zcsdevn.c
 
 $(PSOBJ)zfunc3.$(OBJ) : $(PSSRC)zfunc3.c $(memory__h) $(OP)\
@@ -1648,7 +1652,7 @@ $(PSOBJ)zshade.$(OBJ) : $(PSSRC)zshade.c $(memory__h) $(OP)\
  $(store_h)
 	$(PSCC) $(PSO_)zshade.$(OBJ) $(C_) $(PSSRC)zshade.c
 
-psl3read_1=$(PSOBJ)zcsdevn.$(OBJ) $(PSOBJ)zfunc3.$(OBJ)
+psl3read_1=$(PSOBJ)zcsdevn.$(OBJ) $(PSOBJ)zfunc3.$(OBJ) $(PSOBJ)zccube.$(OBJ)
 psl3read_2=$(PSOBJ)zimage3.$(OBJ) $(PSOBJ)zmisc3.$(OBJ) $(PSOBJ)zshade.$(OBJ)
 psl3read_=$(psl3read_1) $(psl3read_2)
 
@@ -1658,6 +1662,7 @@ $(PSD)psl3read.dev : $(INT_MAK) $(ECHOGS_XE) $(psl3read_)\
 	$(SETMOD) $(PSD)psl3read $(psl3read_1)
 	$(ADDMOD) $(PSD)psl3read $(psl3read_2)
 	$(ADDMOD) $(PSD)psl3read -oper zcsdevn
+	$(ADDMOD) $(PSD)psl3read -oper zccube
 	$(ADDMOD) $(PSD)psl3read -oper zimage3 zmisc3 zshade
 	$(ADDMOD) $(PSD)psl3read -functiontype 2 3
 	$(ADDMOD) $(PSD)psl3read -ps gs_ll3

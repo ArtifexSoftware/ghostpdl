@@ -64,4 +64,10 @@ int fn_build_float_array(P6(const ref * op, const char *kstr, bool required,
  */
 gs_function_t *ref_function(P1(const ref *op));
 
+/*
+ * Operator to execute a function.
+ * <in1> ... <function_struct> %execfunction <out1> ...
+ */
+int zexecfunction(P1(i_ctx_t *));
+
 #endif /* ifunc_INCLUDED */

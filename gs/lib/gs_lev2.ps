@@ -574,24 +574,43 @@ currentdict end
 
 % ------ Color spaces ------ %
 
-% Attempt to convert a tint transformation procedure to a Function.
-% The current color space defines the number of output values.
+% Attempt to convert a tint transformation procedure to a type 4 Function.
+% The value <m> is the number  of function inputs
+% The current color space defines the number of function output values.
+% The current color space will be the alternate color space for the function.
+% If the conversion fails then build a color cube function.
+
 /.converttinttransform {	% [.. .. .. proc ] <m>
 				%   .converttinttransform [.. .. .. proc']
-  .currentglobal 2 index gcheck .setglobal
-  4 dict
-    dup /FunctionType 4 put
-    dup /Function 5 index 3 get put
+  .currentglobal			% Save current global memory state
+  2 index gcheck .setglobal		% Set gobal mode to match the array's mode
+  4 dict				% Build a dictionary for our type 4 function
+    dup /FunctionType 4 put		% Set FunctionType
+    dup /Function 5 index 3 get put	% Set function expression
 		% Stack: orig m global func
-    dup /Domain [ 6 -1 roll {0 1} repeat ] put
-    dup /Range [
-      mark currentcolor counttomark
-      dup 2 add 1 roll cleartomark	% # of components in alternate space
-    {0 1} repeat ] put
-  { .buildfunction } .internalstopped {
-    pop .setglobal
-  } {
-		% Stack: orig global func
+    dup /Domain
+    [ 5 index {0 1} repeat ] put	% set Domain values
+    dup /Range
+    [ mark currentcolor counttomark
+    dup 2 add 1 roll cleartomark	% # of components in alternate space
+    {0 1} repeat ] put			% Set Range values
+  { .buildfunction } .internalstopped	% Try to build a type 4 function
+  dup
+  {				% type 4 function failed - Collect data for a color cube
+    pop					% Remove duplicate copy of stopped status
+    pop					% Remove invalid type 4 function
+    1 index				% Get number of inputs
+    mark currentcolor counttomark	% Count number of output colors
+    dup 2 add 1 roll cleartomark	% # of components in alternate space
+    4 index 3 get			% Get tint transform function
+    { .buildcolorcube } .internalstopped 
+  } if
+  {					% Color cube build failed
+    pop pop pop exch pop exch pop	% Remove unused parameters
+    .setglobal				% Restore global state
+  } {					% Function build succeeded - install function
+					% Stack: orig m global func
+    3 -1 roll pop			% Stack: orig global func
     2 index 4 array copy dup 3 4 -1 roll put
     exch .setglobal exch pop
   } ifelse
