@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_text.c,v 1.22 2003/03/05 14:29:35 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -254,7 +254,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    }
         
 	    /* (3c.ix) */
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 	    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
 			"composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", 
 			ID, IB->width, IB->height, x, y, NINSTANCES + 1,

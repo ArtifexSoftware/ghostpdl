@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_symbol_dict.c,v 1.20 2003/03/05 12:25:54 giles Exp $
+    $Id$
     
     symbol dictionary segment decode and support
 */
@@ -135,7 +135,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 			   "Invalid HCHEIGHT value");
           return NULL;
         }
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
       jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
         "HCHEIGHT = %d", HCHEIGHT);
 #endif        
@@ -161,7 +161,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
                 "Invalid SYMWIDTH value (%d) at symbol %d", SYMWIDTH, NSYMSDECODED+1);
               return NULL;
             }
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "SYMWIDTH = %d", SYMWIDTH);
 #endif
@@ -199,7 +199,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 
 	  /* 6.5.5 (4c.iv) */
 	  NSYMSDECODED = NSYMSDECODED + 1;
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 	  jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "%d of %d decoded", NSYMSDECODED, params->SDNUMNEWSYMS);
 #endif

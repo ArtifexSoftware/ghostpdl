@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_image.c,v 1.21 2003/02/07 05:06:46 raph Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -93,7 +93,7 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     if (y < 0) { h += y; y = 0; } 
     w = (x + w < dst->width) ? w : dst->width - x;
     h = (y + h < dst->height) ? h : dst->height - y;
-#ifdef DEBUG    
+#ifdef JBIG2_DEBUG    
     fprintf(stderr, "composting %dx%d at (%d, %d) afer clipping\n",
         w, h, x, y);
 #endif

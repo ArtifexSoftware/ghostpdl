@@ -16,7 +16,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_arith.c,v 1.13 2002/08/14 10:25:59 giles Exp $
+    $Id$
 */
 
 #ifdef HAVE_CONFIG_H
@@ -31,7 +31,7 @@
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
 
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 #include <stdio.h>
 #endif
 
@@ -84,7 +84,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	  B1 = (byte)((as->next_word >> 24) & 0xFF);
 	  if (B1 > 0x8F)
 	    {
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 	      printf ("read %02x (aa)\n", B);
 #endif
 #ifndef SOFTWARE_CONVENTION
@@ -96,7 +96,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	    }
 	  else
 	    {
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 	      printf ("read %02x (a)\n", B);
 #endif
 #ifdef SOFTWARE_CONVENTION
@@ -113,7 +113,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	  B1 = (byte)((as->next_word >> 16) & 0xFF);
 	  if (B1 > 0x8F)
 	    {
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 	      printf ("read %02x (ba)\n", B);
 #endif
 #ifndef SOFTWARE_CONVENTION
@@ -125,7 +125,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	    {
 	      as->next_word_bytes--;
 	      as->next_word <<= 8;
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 	      printf ("read %02x (b)\n", B);
 #endif
 
@@ -140,7 +140,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
     }
   else
     {
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
       printf ("read %02x\n", B);
 #endif
       as->CT = 8;
@@ -163,7 +163,7 @@ jbig2_arith_bytein (Jbig2ArithState *as)
     }
 }
 
-#ifdef DEBUG
+#ifdef JBIG2_DEBUG
 #include <stdio.h>
 
 static void
