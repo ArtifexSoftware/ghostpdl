@@ -278,11 +278,7 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
      * which will never embed the base 14 fonts, and 4.0 (PDF 1.3), which
      * doesn't treat them any differently from any other fonts.
      */
-#if 0	/**************** DOESN'T WORK ****************/
     if (pdev->CompatibilityLevel < 1.3) {
-#else
-    {
-#endif
 	/* Check whether the font is in the base 14. */
 	int index = pdf_find_standard_font(chars, size);
 
@@ -350,15 +346,19 @@ pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat)
 }
 
 /*
- * Allocate a font resource.  If descriptor_id is gs_no_id, no
- * FontDescriptor is allocated.
+ * Allocate a font resource.  If pfd != 0, a FontDescriptor is allocated,
+ * with its id, values, and chars_used.size taken from *pfd.
+ * If font != 0, its FontType is used to determine whether the resource
+ * is of type Font or of (pseudo-)type CIDFont; in this case, pfres->font
+ * and pfres->FontType are also set.
  */
 int
 pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
-	       const pdf_font_descriptor_t *pfd_in)
+	       const pdf_font_descriptor_t *pfd_in, gs_font *font)
 {
     gs_memory_t *mem = pdev->v_memory;
     pdf_font_descriptor_t *pfd = 0;
+    pdf_resource_type_t rtype = resourceFont;
     gs_string chars_used, glyphs_used;
     int code;
     pdf_font_t *pfres;
@@ -385,14 +385,27 @@ pdf_alloc_font(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
 	pfd->notified = false;
 	pfd->written = false;
     }
-    code = pdf_alloc_resource(pdev, resourceFont, rid,
-			      (pdf_resource_t **)ppfres, 0L);
+    if (font) {
+	switch (font->FontType) {
+	case ft_CID_encrypted:		/* CIDFontType 0 */
+	case ft_CID_user_defined:	/* CIDFontType 1 */
+	case ft_CID_TrueType:		/* CIDFontType 2 */
+	case ft_CID_bitmap:		/* CIDFontType 4 */
+	    rtype = resourceCIDFont;
+	default:
+	    break;
+	}
+    }
+    code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)ppfres, 0L);
     if (code < 0)
 	goto fail;
     pfres = *ppfres;
     memset((byte *)pfres + sizeof(pdf_resource_t), 0,
 	   sizeof(*pfres) - sizeof(pdf_resource_t));
     sprintf(pfres->frname, "R%ld", pfres->object->id);
+    pfres->font = font;
+    if (font)
+	pfres->FontType = font->FontType;
     pfres->index = -1;
     pfres->is_MM_instance = false;
     pfres->BaseEncoding = ENCODING_INDEX_UNKNOWN;
@@ -564,7 +577,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	have_widths = true;
     }
     if (pfd) {
-	code = pdf_alloc_font(pdev, font->id, &ppf, NULL);
+	code = pdf_alloc_font(pdev, font->id, &ppf, NULL, font);
 	if (code < 0)
 	    return code;
 	if_debug4('_',
@@ -590,7 +603,7 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 	default:
 	    fdesc.chars_used.size = 256/8; /* Encoding size */
 	}
-	code = pdf_alloc_font(pdev, font->id, &ppf, &fdesc);
+	code = pdf_alloc_font(pdev, font->id, &ppf, &fdesc, font);
 	if (code < 0)
 	    return code;
 	pfd = ppf->FontDescriptor;
@@ -626,7 +639,6 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
 		return code;
 	}
     } /* end else (!pfd) */
-    ppf->FontType = font->FontType;
     ppf->index = index;
     switch (font->FontType) {
     case ft_encrypted:
@@ -638,7 +650,6 @@ pdf_create_pdf_font(gx_device_pdf *pdev, gs_font *font, const gs_matrix *pomat,
     }
     ppf->BaseEncoding = BaseEncoding;
     ppf->fname = pfd->FontName;
-    ppf->font = font;
     if (~same & FONT_SAME_METRICS) {
 	/*
 	 * Contrary to the PDF 1.3 documentation, FirstChar and
@@ -791,10 +802,18 @@ pdf_adjust_font_name(const gx_device_pdf *pdev, pdf_font_descriptor_t *pfd,
 /* Add an encoding difference to a font. */
 int
 pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
-			    const gs_font_base *bfont, gs_glyph glyph)
+			    gs_font_base *bfont, gs_glyph glyph)
 {
     pdf_encoding_element_t *pdiff = ppf->Differences;
+    /*
+     * Since the font Widths are indexed by character code, changing the
+     * encoding also changes the Widths.
+     */
+    int width;
+    int code = pdf_glyph_width(ppf, glyph, (gs_font *)bfont, &width);
 
+    if (code < 0)
+	return code;
     if (pdiff == 0) {
 	pdiff = gs_alloc_struct_array(pdev->pdf_memory, 256,
 				      pdf_encoding_element_t,
@@ -808,10 +827,18 @@ pdf_add_encoding_difference(gx_device_pdf *pdev, pdf_font_t *ppf, int chr,
     pdiff[chr].glyph = glyph;
     pdiff[chr].str.data = (const byte *)
 	bfont->procs.callbacks.glyph_name(glyph, &pdiff[chr].str.size);
+    ppf->Widths[chr] = width;
+    if (code == 0)
+	ppf->widths_known[chr >> 3] |= 1 << (chr & 7);
+    else
+	ppf->widths_known[chr >> 3] &= ~(1 << (chr & 7));
     return 0;
 }
 
-/* Get the width of a given character in a (base) font. */
+/*
+ * Get the width of a given character in a (base) font.  May add the width
+ * to the widths cache (ppf->Widths).
+ */
 int
 pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 	       int *pwidth /* may be NULL */)
@@ -822,61 +849,79 @@ pdf_char_width(pdf_font_t *ppf, int ch, gs_font *font,
 	gs_font_base *bfont = (gs_font_base *)font;
 	gs_glyph glyph = bfont->procs.encode_char(font, (gs_char)ch,
 						  GLYPH_SPACE_INDEX);
-	int wmode = font->WMode;
-	gs_glyph_info_t info;
-	double w, v;
-	int code;
+	int width;
+	int code = pdf_glyph_width(ppf, glyph, font, &width);
 
-	if (glyph != gs_no_glyph &&
-	    (code = font->procs.glyph_info(font, glyph, NULL,
-					   GLYPH_INFO_WIDTH0 << wmode,
-					   &info)) >= 0
-	    ) {
-	    gs_const_string gnstr;
-
-	    if (wmode && (w = info.width[wmode].y) != 0)
-		v = info.width[wmode].x;
-	    else
-		w = info.width[wmode].x, v = info.width[wmode].y;
-	    if (v != 0)
-		return_error(gs_error_rangecheck);
-	    if (font->FontType == ft_TrueType) {
-		/* TrueType fonts have 1 unit per em, we want 1000. */
-		w *= 1000;
-	    }
-	    ppf->Widths[ch] = (int)w;
-	    /*
-	     * If the character is .notdef, don't mark the width as known,
-	     * just in case this is an incrementally defined font.
-	     */
-	    gnstr.data = (const byte *)
-		bfont->procs.callbacks.glyph_name(glyph, &gnstr.size);
-	    if (gnstr.size != 7 || memcmp(gnstr.data, ".notdef", 7))
-		ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
-	} else {
-	    /* Try for MissingWidth. */
-	    static const gs_point tt_scale = {1000, 1000};
-	    const gs_point *pscale = 0;
-	    gs_font_info_t finfo;
-
-	    if (font->FontType == ft_TrueType) {
-		/* TrueType fonts have 1 unit per em, we want 1000. */
-		pscale = &tt_scale;
-	    }
-	    code = font->procs.font_info(font, pscale, FONT_INFO_MISSING_WIDTH,
-					 &finfo);
-	    if (code < 0)
-		return code;
-	    ppf->Widths[ch] = finfo.MissingWidth;
-	    /*
-	     * Don't mark the width as known, just in case this is an
-	     * incrementally defined font.
-	     */
-	}
+	if (code < 0)
+	    return code;
+	ppf->Widths[ch] = width;
+	if (code == 0)
+	    ppf->widths_known[ch >> 3] |= 1 << (ch & 7);
     }
     if (pwidth)
 	*pwidth = ppf->Widths[ch];
     return 0;
+}
+
+/*
+ * Get the width of a glyph in a (base) font.  Return 1 if the width was
+ * defaulted to MissingWidth.
+ */
+int
+pdf_glyph_width(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
+		int *pwidth /* must not be NULL */)
+{
+    int wmode = font->WMode;
+    gs_glyph_info_t info;
+    int code;
+
+    if (glyph != gs_no_glyph &&
+	(code = font->procs.glyph_info(font, glyph, NULL,
+				       GLYPH_INFO_WIDTH0 << wmode,
+				       &info)) >= 0
+	) {
+	double w, v;
+	gs_const_string gnstr;
+
+	if (wmode && (w = info.width[wmode].y) != 0)
+	    v = info.width[wmode].x;
+	else
+	    w = info.width[wmode].x, v = info.width[wmode].y;
+	if (v != 0)
+	    return_error(gs_error_rangecheck);
+	if (font->FontType == ft_TrueType) {
+	    /* TrueType fonts have 1 unit per em, we want 1000. */
+	    w *= 1000;
+	}
+	*pwidth = (int)w;
+	/*
+	 * If the character is .notdef, don't cache the width,
+	 * just in case this is an incrementally defined font.
+	 */
+	gnstr.data = (const byte *)
+	    font->procs.callbacks.glyph_name(glyph, &gnstr.size);
+	return (gnstr.size == 7 && !memcmp(gnstr.data, ".notdef", 7));
+    } else {
+	/* Try for MissingWidth. */
+	static const gs_point tt_scale = {1000, 1000};
+	const gs_point *pscale = 0;
+	gs_font_info_t finfo;
+
+	if (font->FontType == ft_TrueType) {
+	    /* TrueType fonts have 1 unit per em, we want 1000. */
+	    pscale = &tt_scale;
+	}
+	code = font->procs.font_info(font, pscale, FONT_INFO_MISSING_WIDTH,
+				     &finfo);
+	if (code < 0)
+	    return code;
+	*pwidth = finfo.MissingWidth;
+	/*
+	 * Don't mark the width as known, just in case this is an
+	 * incrementally defined font.
+	 */
+	return 1;
+    }
 }
 
 /*

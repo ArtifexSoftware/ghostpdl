@@ -83,6 +83,7 @@ typedef enum {
      * Internally used (pseudo-)resources.
      */
     resourceCharProc,
+    resourceCIDFont,
     resourceFontDescriptor,
     resourceFunction,
     NUM_RESOURCE_TYPES
@@ -90,7 +91,7 @@ typedef enum {
 
 #define pdf_resource_type_names\
   "ColorSpace", "ExtGState", "Pattern", "Shading", "XObject", "Font",\
-  0, 0, 0
+  0, "Font", "FontDescriptor", 0
 #define pdf_resource_type_structs\
   &st_pdf_resource,		/* see below */\
   &st_pdf_resource,\
@@ -99,6 +100,7 @@ typedef enum {
   &st_pdf_x_object,		/* see below */\
   &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_font,			/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource
 

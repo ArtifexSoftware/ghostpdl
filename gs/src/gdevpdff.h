@@ -294,9 +294,13 @@ pdf_font_embed_t pdf_font_embed_status(P4(gx_device_pdf *pdev, gs_font *font,
 /*
  * Allocate a font resource.  If pfd != 0, a FontDescriptor is allocated,
  * with its id, values, and chars_used.size taken from *pfd.
+ * If font != 0, its FontType is used to determine whether the resource
+ * is of type Font or of (pseudo-)type CIDFont; in this case, pfres->font
+ * and pfres->FontType are also set.
  */
-int pdf_alloc_font(P4(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
-		      const pdf_font_descriptor_t *pfd));
+int pdf_alloc_font(P5(gx_device_pdf *pdev, gs_id rid, pdf_font_t **ppfres,
+		      const pdf_font_descriptor_t *pfd,
+		      gs_font *font));
 
 /*
  * Create a new pdf_font for a gs_font.  This procedure is only intended
@@ -325,12 +329,22 @@ int pdf_adjust_font_name(P3(const gx_device_pdf *pdev,
 
 /* Add an encoding difference to a font. */
 int pdf_add_encoding_difference(P5(gx_device_pdf *pdev, pdf_font_t *ppf,
-				   int chr, const gs_font_base *bfont,
+				   int chr, gs_font_base *bfont,
 				   gs_glyph glyph));
 
-/* Get the width of a given character in a (base) font. */
+/*
+ * Get the width of a given character in a (base) font.  May add the width
+ * to the widths cache (ppf->Widths).
+ */
 int pdf_char_width(P4(pdf_font_t *ppf, int ch, gs_font *font,
 		      int *pwidth /* may be NULL */));
+
+/*
+ * Get the width of a glyph in a (base) font.  Return 1 if the width should
+ * not be cached.
+ */
+int pdf_glyph_width(P4(pdf_font_t *ppf, gs_glyph glyph, gs_font *font,
+		       int *pwidth /* must not be NULL */));
 
 /*
  * Find the range of character codes that includes all the defined
