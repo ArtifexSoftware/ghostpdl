@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -21,7 +21,8 @@
 % but everything defined here goes into level2dict.
 
 % Define whether or not to allow writing dictionaries.
-/WRITEDICTS true def
+% This is a non-standard feature!
+/WRITEDICTS false def
 
 languagelevel 1 .setlanguagelevel
 level2dict begin
@@ -153,32 +154,35 @@ dup /SystemNames exch def .installsystemnames
 % Define procedures for accumulating the space required to represent
 % an object in binary form.
 /cntdict mark		% <#refs> <#chars> <obj> -proc- <#refs> <#chars>
-	/integertype /pop load
-	/realtype 1 index
-	/marktype 1 index
-	/nulltype 1 index
-	/booleantype 1 index
-	/nametype { length add } bind
-	/stringtype 1 index
-	/arraytype null
-	WRITEDICTS { /dicttype null } if
+  /integertype /pop load
+  /realtype 1 index
+  /marktype 1 index
+  /nulltype 1 index
+  /booleantype 1 index
+  /nametype { length add } bind
+  /stringtype 1 index
+  /arraytype null
+  /dicttype null
 .dicttomark def
-cntdict /arraytype
- { dup dup length 5 -1 roll add 4 2 roll
-    { dup type //cntdict exch get exec } forall
- } bind put
-WRITEDICTS
- { cntdict /dicttype
-    { dup dup length 2 mul 5 -1 roll add 4 2 roll
-       { 4 1 roll dup type //cntdict exch get exec
-	 3 -1 roll dup type //cntdict exch get exec
-       } forall
-    } bind put
- } if
+cntdict /arraytype {
+  dup dup length 5 -1 roll add 4 2 roll {
+    dup type //cntdict exch get exec
+  } forall
+} bind put
+cntdict /dicttype {
+  WRITEDICTS {
+    dup dup length 2 mul 5 -1 roll add 4 2 roll {
+      4 1 roll dup type //cntdict exch get exec
+      3 -1 roll dup type //cntdict exch get exec
+    } forall
+  } {
+    /writeobject load /typecheck signalerror
+  } ifelse
+} bind put
 
 /w2dict mark
-	/nametype { 2 copy .writecvs pop } bind
-	/stringtype 1 index
+  /nametype { 2 copy .writecvs pop } bind
+  /stringtype 1 index
 .dicttomark def
 
 /.bosheader {		% <top_length> <total_length> <string8> .bosheader
@@ -202,79 +206,73 @@ WRITEDICTS
   1 index 2 3 -1 roll put
 } .bind def
 
-/.writeobjects		% <file> <tag> <array> .writeobjects -
- {
-	mark exch
+/.writeobjects {	% <file> <tag> <array> .writeobjects -
+  mark exch
 
 	% Count the space required for refs and strings.
-	dup length 0 3 -1 roll
-	% Stack: <file> <tag> -mark- <#refs> <#chars> <array>
 
-	dup 4 1 roll
-	 { dup type //cntdict exch get exec
-	 } forall
+  dup length 0 3 -1 roll
+	% Stack: file tag -mark- #refs #chars array
+  dup 4 1 roll {
+    dup type //cntdict exch get exec
+   } forall
 
 	% Write the header.
-	% Stack: <file> <tag> -mark- <array1> ... <array|dictN> <#refs> <#chars>
-	counttomark 3 add -2 roll 4 1 roll
-	% Stack: -mark- <array1> ... <array|dictN> <tag> <#refs> <#chars> <file>
-	dup counttomark 1 sub index length
-	4 index 3 bitshift 4 index add
-	(xxxxxxxx) .bosheader writestring
+
+	% Stack: file tag -mark- array1 ... array|dictN #refs #chars
+  counttomark 3 add -2 roll 4 1 roll
+	% Stack: -mark- array1 ... array|dictN tag #refs #chars file
+  dup counttomark 1 sub index length
+  4 index 3 bitshift 4 index add
+  (xxxxxxxx) .bosheader writestring
 
 	% Write the objects per se.
-	3 1 roll pop
-	counttomark 1 sub index length 3 bitshift exch
-	3 bitshift
-	% Stack: -mark- <array1> ... <array|dictN> <tag> <file> <ref#> <char#>
 
-	counttomark 4 sub
-	 { counttomark -1 roll dup 6 1 roll
-	   dup type /dicttype eq		% can't be first object
-	    {  { 5 1 roll (xxxxxxxx) .bosobject
-		 3 index exch writestring
-		 4 -1 roll (xxxxxxxx) .bosobject
-		 3 index exch writestring
-	       } forall
-	    }
-	    {  { (xxxxxxxx) .bosobject
-		 dup 1 6 index put
-		 3 index exch writestring
-		 4 -1 roll pop 0 4 1 roll	% clear tag
-	       } forall
-	    }
-	   ifelse
-	 }
-	repeat
+  3 1 roll pop
+  counttomark 1 sub index length 3 bitshift exch
+  3 bitshift
+	% Stack: -mark- array1 ... array|dictN tag file ref# char#
+  counttomark 4 sub {
+    counttomark -1 roll dup 6 1 roll
+    dup type /dicttype eq {		% can't be first object
+      { 5 1 roll (xxxxxxxx) .bosobject
+	3 index exch writestring
+	4 -1 roll (xxxxxxxx) .bosobject
+	3 index exch writestring
+      } forall
+    } {
+      { (xxxxxxxx) .bosobject
+	dup 1 6 index put
+	3 index exch writestring
+	4 -1 roll pop 0 4 1 roll	% clear tag
+      } forall
+    } ifelse
+  } repeat
 
 	% Write the strings and names.
-	pop pop exch pop
-	% Stack: -mark- <array1> ... <array|dictN> <file>
 
- 	counttomark 1 sub
-	 { counttomark -1 roll
-	    {		% The counting pass ensured that the keys and values
-			% of any dictionary must be writable objects.
-			% Hence, we are processing a dictionary iff
-			% the next-to-top stack element is not a file.
-	      1 index type /filetype ne
-	       { exch 2 index exch dup type //w2dict exch .knownget
-		  { exec } { pop } ifelse pop
-	       }
-	      if
-              dup type //w2dict exch .knownget { exec } { pop } ifelse
-	    } forall
-	 }
-	repeat
+  pop pop exch pop
+	% Stack: -mark- array1 ... array|dictN file
+  counttomark 1 sub {
+    counttomark -1 roll {
+		% The counting pass ensured that the keys and values
+		% of any dictionary must be writable objects.
+		% Hence, we are processing a dictionary iff
+		% the next-to-top stack element is not a file.
+      1 index type /filetype ne {
+	exch 2 index exch dup type //w2dict exch .knownget
+	 { exec } { pop } ifelse pop
+      } if
+      dup type //w2dict exch .knownget { exec } { pop } ifelse
+    } forall
+  } repeat
 
 	% Clean up.
-	% Stack: -mark- <file>
 
-	pop pop
+	% Stack: -mark- file
+  pop pop
 
- } odef
-currentdict /cntdict .undef
-currentdict /w2dict .undef
+} odef
 
 /printobject {		% <obj> <tag> printobject -
   (%stdout) (w) file 2 index 2 index writeobject pop pop
@@ -288,18 +286,30 @@ currentdict /w2dict .undef
 } odef
 
 % Implement binary error message output.
-  /.printerror
-   { $error /binary get .languagelevel 2 ge and
-      { currentobjectformat 0 ne
-         { [ /Error $error /errorname get $error /command get false
-	   ] 250 printobject
-	 }
-	 //.printerror
-	ifelse
-      }
-      //.printerror
-     ifelse
-   } bind def
+/.objectprinttest {		% <obj> .objectprinttest -
+		% This is a pseudo-operator so it will restore the stack
+		% if it gets an error.
+  0 0 2 index dup type //cntdict exch get exec pop pop
+} bind odef
+/.printerror {
+  $error /binary get .languagelevel 2 ge and {
+    currentobjectformat 0 ne {
+      [ /Error $error /errorname get $error /command get
+		% Convert the object with cvs if it isn't printable.
+      dup { .objectprinttest } .internalstopped {
+	pop 100 string cvs
+      } if
+      false ] 250 printobject
+    }
+    //.printerror	% known to be a procedure
+    ifelse
+  }
+  //.printerror		% known to be a procedure
+  ifelse
+} bind def
+
+currentdict /cntdict .undef
+currentdict /w2dict .undef
 
 % End of level2dict
 
