@@ -42,9 +42,6 @@ font_proc_glyph_outline(zcharstring_glyph_outline);
 private font_proc_font_info(z1_font_info);
 private font_proc_same_font(z1_same_font);
 
-/* Default value of lenIV */
-#define DEFAULT_LENIV_1 4
-
 /* ------ Private utilities ------ */
 
 private void
@@ -74,7 +71,7 @@ z1_enumerate_glyph(gs_font * pfont, int *pindex, gs_glyph_space_t ignored,
 
 /* Extract pointers to internal structures. */
 int
-charstring_font_get_refs(os_ptr op, charstring_font_refs_t *pfr)
+charstring_font_get_refs(const_os_ptr op, charstring_font_refs_t *pfr)
 {
     check_type(*op, t_dictionary);
     if (dict_find_string(op, "Private", &pfr->Private) <= 0 ||
@@ -96,15 +93,12 @@ charstring_font_get_refs(os_ptr op, charstring_font_refs_t *pfr)
     return 0;
 }
 
-/* Build a Type 1, Type 2, or Type 4 font. */
+/* Get the parameters of a CharString-based font or a FDArray entry. */
 int
-build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
-		      font_type ftype, charstring_font_refs_t *pfr,
-		      gs_type1_data *pdata1, build_font_options_t options)
+charstring_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
+		       gs_type1_data *pdata1)
 {
     const ref *pprivate = pfr->Private;
-    gs_font_type1 *pfont;
-    font_data *pdata;
     int code;
 
     /* Get the rest of the information from the Private dictionary. */
@@ -181,12 +175,16 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
 	if (pdata1->BlueScale * max_zone_height > 1.0)
 	    pdata1->BlueScale = 1.0 / max_zone_height;
     }
-    /* Do the work common to primitive font types. */
-    code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)&pfont, ftype,
-				   &st_gs_font_type1, pbuild, options);
-    if (code != 0)
-	return code;
-    /* This is a new font, fill it in. */
+    return 0;
+}
+
+/* Fill in a newly built CharString-based font or FDArray entry. */
+int
+charstring_font_init(gs_font_type1 *pfont, const charstring_font_refs_t *pfr,
+		     const gs_type1_data *pdata1)
+{
+    font_data *pdata;
+
     pdata = pfont_data(pfont);
     pfont->data = *pdata1;
     ref_assign(&pdata->u.type1.OtherSubrs, pfr->OtherSubrs);
@@ -199,6 +197,26 @@ build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
     pfont->procs.glyph_info = z1_glyph_info;
     pfont->procs.enumerate_glyph = z1_enumerate_glyph;
     pfont->procs.glyph_outline = zcharstring_glyph_outline;
+    return 0;
+}
+
+/* Build a Type 1, Type 2, or Type 4 font. */
+int
+build_charstring_font(i_ctx_t *i_ctx_p, os_ptr op, build_proc_refs *pbuild,
+		      font_type ftype, charstring_font_refs_t *pfr,
+		      gs_type1_data *pdata1, build_font_options_t options)
+{
+    int code = charstring_font_params(op, pfr, pdata1);
+    gs_font_type1 *pfont;
+
+    if (code < 0)
+	return code;
+    code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)&pfont, ftype,
+				   &st_gs_font_type1, pbuild, options);
+    if (code != 0)
+	return code;
+    /* This is a new font, fill it in. */
+    charstring_font_init(pfont, pfr, pdata1);
     return define_gs_font((gs_font *)pfont);
 }
 
