@@ -125,10 +125,9 @@ GSDLL_OBJ=$(GLOBJ)$(GSDLL)
 
 # -------------------------- Auxiliary files --------------------------- #
 
-# No special gconfig_.h is needed.
-# Assume `make' supports output redirection.
+# No special gconfig_.h is needed.	/* This file deliberately left blank. */
 $(gconfig__h): $(TOP_MAKEFILES)
-	echo /* This file deliberately left blank. */ >$(gconfig__h)
+	$(ECHOGS_XE) -w $(gconfig__h) -x2f2a20 This file deliberately left blank. -x 202a2f
 
 $(gconfigv_h): $(TOP_MAKEFILES) $(ECHOGS_XE)
 	$(ECHOGS_XE) -w $(gconfigv_h) -x 23 define USE_ASM -x 2028 -q $(USE_ASM)-0 -x 29
