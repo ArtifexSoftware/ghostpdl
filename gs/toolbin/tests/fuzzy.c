@@ -28,6 +28,7 @@ struct _Image {
   int (*seek) (Image *self, int y);
   int width;
   int height;
+  int maxval;
   int n_chan;
   int raster;
   int bpp; /* bits per pixel */
@@ -252,8 +253,15 @@ image_pnm_get_scan_line (Image *self, uchar *buf)
   ImagePnm *pnm = (ImagePnm *)self;
   int n_bytes = self->raster;
   int code;
+  int bppval = (1 << self->bpp) -1;
+  int maxval = self->maxval;
 
   code = fread (buf, 1, n_bytes, pnm->f);
+  if (maxval < bppval) {
+      int i;
+      for(i = 0; i<n_bytes; i++)
+        buf[i] = buf[i] * bppval / maxval;
+  }
   return (code < n_bytes) ? -1 : 0;
 }
 
@@ -262,6 +270,7 @@ open_pnm_image (const char *fn)
 {
   FILE *f = fopen (fn, "rb");
   int width, height;
+  int maxval = 0;
   int n_chan, bpp;
   char linebuf[256];
   ImagePnm *image;
@@ -273,15 +282,13 @@ open_pnm_image (const char *fn)
   image->f = f;
   if (fgets (linebuf, sizeof(linebuf), f) == NULL ||
       linebuf[0] != 'P' || linebuf[1] < '4' || linebuf[1] > '6')
-    {
-      fclose (f);
-      return NULL;
-    }
+    goto punt;
   switch (linebuf[1])
     {
     case '4':
       n_chan = 1;
       bpp = 1;
+      maxval = 1;
       break;
     case '5':
       n_chan = 1;
@@ -292,44 +299,38 @@ open_pnm_image (const char *fn)
       bpp = 8;
       break;
     default:
-      fclose (f);
-      return NULL;
+      goto punt;
     }
   do
     {
       if (fgets (linebuf, sizeof(linebuf), f) == NULL)
-	{
-	  fclose (f);
-	  return NULL;
-	}
+	  goto punt;
     }
   while (linebuf[0] == '#');
   if (sscanf (linebuf, "%d %d", &width, &height) != 2)
+      goto punt;    
+  while (!maxval)
     {
-      fclose (f);
-      return NULL;
-    }
-  if (bpp == 8)
-    {
-      do
-	{
-	  if (fgets (linebuf, sizeof(linebuf), f) == NULL)
-	    {
-	      fclose (f);
-	      return NULL;
-	    }
-	}
-      while (linebuf[0] == '#');
+      if (fgets (linebuf, sizeof(linebuf), f) == NULL)
+	  goto punt;
+      if (linebuf[0] == '#')
+          continue; 
+      if (sscanf(linebuf, "%d", &maxval) != 1 || maxval <= 0 || maxval > 255)
+	  goto punt;
     }
   image->super.close = image_pnm_close;
   image->super.get_scan_line = image_pnm_get_scan_line;
   image->super.seek = no_seek;
   image->super.width = width;
   image->super.height = height;
+  image->super.maxval = maxval;
   image->super.raster = n_chan * ((width * bpp + 7) >> 3);
   image->super.n_chan = n_chan;
   image->super.bpp = bpp;
   return &image->super;
+punt:;
+  fclose (f);
+  return NULL;
 }
 
 Image *
