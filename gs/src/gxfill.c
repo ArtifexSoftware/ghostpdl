@@ -1907,8 +1907,12 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    /* Check for intersecting lines. */
 	    if (nx >= x)
 		x = nx;
-	    else if
-		    (draw >= 0 &&	/* don't bother if no pixels */
+	    else if (
+#	    if PSEUDO_RASTERIZATION
+		     (pseudo_rasterization || draw >= 0) &&	/* don't bother if no pixels with no pseudo_rasterization */
+#	    else
+		     draw >= 0 &&	/* don't bother if no pixels */
+#	    endif
 		     (dx_old = alp->x_current - endp->x_current) >= 0 &&
 		     (dx_den = dx_old + endp->x_next - nx) > dx_old
 		) {		/* Make a good guess at the intersection */
