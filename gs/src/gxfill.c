@@ -2112,22 +2112,38 @@ merge_ranges(coord_range_list_t *pcrl, const line_list *ll, fixed y_min, fixed y
 	nlp = alp->next;
 	if (alp->start.y < y_min)
 	    continue;
-	if (alp->end.y < y_top)
-	    x1 = alp->end.x;
 #	if !SCANLINE_USES_ITERATOR
+	    if (alp->end.y < y_top)
+		x1 = alp->end.x;
 	    else if (alp->curve_k < 0)
 		x1 = AL_X_AT_Y(alp, y_top);
 	    else
 		x1 = gx_curve_x_at_y(&alp->cursor, y_top);
+	    if (x0 > x1)
+		xt = x0, x0 = x1, x1 = xt;
 #	else
+	    x1 = x0;
+step:
+	    if (alp->end.y < y_top)
+		xt = alp->end.x;
 	    else
-		x1 = AL_X_AT_Y(alp, y_top);
+		xt = AL_X_AT_Y(alp, y_top);
+	    x0 = min(x0, xt);
+	    x1 = max(x1, xt);
 #	endif
-	if (x0 > x1)
-	    xt = x0, x0 = x1, x1 = xt;
 	code = range_list_add(pcrl,
 			      fixed2int_pixround(x0 - ll->fo->adjust_left),
 			      fixed2int_rounded(x1 + ll->fo->adjust_right));
+#	if SCANLINE_USES_ITERATOR
+	if (alp->more_flattened && alp->end.y < y_top) {
+	    step_al(alp, true);
+	    if (alp->end.y < alp->start.y)
+		remove_al(ll, alp); /* End of a monotonic part of a curve. */
+	    else
+		goto step;
+	}
+#	endif
+
     }
     return code;
 }

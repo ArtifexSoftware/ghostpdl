@@ -83,8 +83,14 @@ FILL_PROC_NAME (line_list *ll, fixed band_mask)
 	    for (alp = ll->x_list; alp != 0; alp = alp->next)
 #		if !SCANLINE_USES_ITERATOR
 		if (!end_x_line(alp, ll, false))
-#		endif
 		    y = min(y, alp->end.y);
+#		else
+		{   fixed yy = max(alp->fi.y3, alp->fi.y0);
+		    
+		    yy = max(yy, alp->end.y); /* Non-monotonic curves may have an inner extreme. */
+		    y = min(y, yy);
+		}
+#		endif
 	}
 
 	/* Move newly active lines from y to x list. */
