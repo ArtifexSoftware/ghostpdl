@@ -511,7 +511,10 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
 	    return FONT_EMBED_STANDARD;
     }
     /* Check the Embed lists. */
-    if (!embed_list_includes(&pdev->params.NeverEmbed, chars, size)) {
+    if (!embed_list_includes(&pdev->params.NeverEmbed, chars, size) ||
+ 	(index >= 0 && !embed_as_standard(pdev, font, index, psame))
+ 	/* Ignore NeverEmbed for a non-standard font with a standard name */
+ 	) {
 	if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
 	    embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
 	    return FONT_EMBED_YES;
