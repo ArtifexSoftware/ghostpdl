@@ -110,6 +110,16 @@ setglobal
   load exec end
 } bind def
 
+% .getvminstance treats instances on disk as undefined.
+/.getvminstance {	% <key> .getvminstance <instance> -true-
+			% <key> .getvminstance -false-
+  .GetInstance {
+    dup 1 get 2 ne { true } { pop false } ifelse
+  } {
+    false
+  } ifelse
+} bind def
+
 20 dict begin
 
 		% Standard entries
@@ -343,12 +353,12 @@ end
 % other, the default FindResource must not call ResourceStatus if there is
 % an instance of the desired name already defined in VM.
 /FindResource {
-	dup .GetInstance {
+	dup .getvminstance {
 	  exch pop 0 get
 	} {
 	  dup ResourceStatus {
 	    pop 1 gt {
-	      .DoLoadResource .GetInstance not {
+	      .DoLoadResource .getvminstance not {
 		/findresource load /undefinedresource signalerror
 	      } if 0 get
 	    } {
@@ -446,7 +456,7 @@ end
 	{.LoadResource} 4 1 roll 4 .execn
 		% Stack: ... count key memused
 	vmstatus pop exch pop exch sub
-	1 index .GetInstance not {
+	1 index .getvminstance not {
 	  pop dup /undefinedresource signalerror	% didn't load
 	} if
 	dup 1 1 put
@@ -756,7 +766,7 @@ setglobal
 	  /Generic /Category findresource /UndefineResource get exec
 	} bind
 /FindResource {
-	dup .GetInstance {
+	dup .getvminstance {
 	  exch pop 0 get
 	} {
 	  dup ResourceStatus {
@@ -783,7 +793,7 @@ setglobal
 		% stack: name font vmused
 		% findfont has the prerogative of not calling definefont
 		% in certain obscure cases of font substitution.
-	2 index .GetInstance {
+	2 index .getvminstance {
 	  dup 1 1 put
 	  2 3 -1 roll put
 	} {
