@@ -1815,7 +1815,7 @@ ttcalc_h=$(GLSRC)ttcalc.h $(ttcommon_h) $(tttypes_h)
 ttinterp_h=$(GLSRC)ttinterp.h $(ttcommon_h) $(ttobjs_h)
 ttload_h=$(GLSRC)ttload.h $(ttcommon_h)
 
-$(GLOBJ)ttcalc.$(OBJ) : $(GLSRC)ttcalc.c $(GXERR) $(ttmisc_h) $(ttcacl_h)
+$(GLOBJ)ttcalc.$(OBJ) : $(GLSRC)ttcalc.c $(GXERR) $(ttmisc_h) $(ttcalc_h)
 	$(GLCC) $(GLO_)ttcalc.$(OBJ) $(C_) $(GLSRC)ttcalc.c
 
 $(GLOBJ)ttfinp.$(OBJ) : $(GLSRC)ttfinp.c $(GXERR) $(ttmisc_h)\
@@ -1839,7 +1839,7 @@ $(GLOBJ)ttload.$(OBJ) : $(GLSRC)ttload.c $(GXERR) $(ttmisc_h)\
 	$(GLCC) $(GLO_)ttload.$(OBJ) $(C_) $(GLSRC)ttload.c
 
 $(GLOBJ)ttobjs.$(OBJ) : $(GLSRC)ttobjs.c $(GXERR) $(ttmisc_h)\
- $(ttfoutl_h) $(ttobjs_h) $(ttcacl_h) $(ttload_h) $(ttinterp_h)
+ $(ttfoutl_h) $(ttobjs_h) $(ttcalc_h) $(ttload_h) $(ttinterp_h)
 	$(GLCC) $(GLO_)ttobjs.$(OBJ) $(C_) $(GLSRC)ttobjs.c
 
 $(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(GXERR) \
