@@ -201,6 +201,22 @@ Adds documentation and a makefile entry for Matthew Gelhaus' cdj880 driver.
 The code will eventually be included in gdevcd8.c, but it is not yet mature
 enough. (doc/Devices.htm [1.3]: 2000/03/16 08:09:42 lpd)
 
+Updates the version number reference in the troff header.
+(man/ps2pdf.1 [1.3], man/ps2ps.1 [1.3]: 2000/03/17 00:47:08 lpd)
+
+Removes the attempted documentation on building Windows executable
+distributions: it was never correct, and Aladdin will no longer be creating
+such distributions. Also reorganizes the document slightly and brings the
+rest of it fully into line with reality. (doc/Release.htm [1.6]: 2000/03/17
+04:40:47 lpd)
+
+Adds information on building with the Intel C/C++ optimizing compiler
+(requires the Microsoft Visual C++ environment), and fixes a typo in the
+link to ftp.cdrom.com. (doc/Make.htm [1.7]: 2000/03/17 17:42:59 lpd)
+
+Checks in the first wrap-up for the 6.01 release. (doc/Changes.htm [1.2],
+doc/History6.htm [1.2], doc/News.htm [1.5]: 2000/03/18 04:13:40 lpd)
+
 </pre><h2><a name="6.01 Procedures"></a>Procedures</h2><pre>
 
 Fixes problems:
@@ -280,6 +296,16 @@ Adds documentation and a makefile entry for Matthew Gelhaus' cdj880 driver.
 The code will eventually be included in gdevcd8.c, but it is not yet mature
 enough. (contrib.mak [1.5]: 2000/03/16 08:09:42 lpd)
 
+Adds a missing dependency of gdevpdft.o on gxfont42.h. (devs.mak [1.2]:
+2000/03/17 02:59:26 lpd)
+
+Adds a disclaimer of responsibility for the makefile section for creating
+distribution archives, which Aladdin is no longer maintaining.
+(winint.mak [1.3]: 2000/03/17 03:01:58 lpd)
+
+Checks in the first wrap-up for the 6.01 release. (unix-gcc.mak [1.4],
+version.mak [1.5]: 2000/03/18 04:13:40 lpd)
+
 </pre><h2><a name="6.01 Utilities"></a>Utilities</h2><pre>
 
 Fixes problems:
@@ -289,6 +315,12 @@ error. (lib/stocht.ps [1.2]: 2000/03/10 03:34:44 lpd)
 	- The ps2pdf*.bat scripts didn't set PS2PDFSW to the empty string if
 there were no arguments, causing the same file to be processed again.
 (lib/ps2pdf12.bat [1.2], lib/ps2pdf13.bat [1.2]: 2000/03/10 07:40:00 lpd)
+	- Fixes a typo in the fix for putting stdout in binary mode.
+(gp_ntfs.c [1.3]: 2000/03/18 01:15:16 lpd)
+	- For printer devices, a non-null definition for OutputFile was
+required even on platforms that had a default printer (as implemented by
+gp_open_printer for that platform). (gp_os9.c [1.2], gp_unix.c [1.2],
+gp_vms.c [1.2]: 2000/03/18 01:45:16 lpd)
 
 In ansi2knr, adds user-contributed support for concatenated string literals
 and character constants, and fixes for a couple of minor bugs.
@@ -308,6 +340,10 @@ avoid the absurdly low limits on the length of a command line and the total
 size of environment variable definitions. (lib/ps2pdf.bat [1.2],
 lib/ps2pdf12.bat [1.3], lib/ps2pdf13.bat [1.3], lib/ps2pdfwr.bat [1.2],
 lib/ps2pdfxx.bat [1.1]: 2000/03/14 20:20:20 lpd)
+
+On Windows, puts stdout into binary mode as well as stdin, to allow piping
+printer output through stdout (not a good idea, but it should be supported
+as well as on other platforms). (gp_ntfs.c [1.2]: 2000/03/17 06:22:59 lpd)
 
 </pre><h2><a name="6.01 Drivers"></a>Drivers</h2><pre>
 
@@ -343,6 +379,15 @@ lib/stc500ph.upp [1.2], lib/stc600ih.upp [1.2], lib/stc600p.upp [1.2],
 lib/stc600pl.upp [1.2], lib/stc800ih.upp [1.2], lib/stc800p.upp [1.2],
 lib/stc800pl.upp [1.2], lib/stc_h.upp [1.2], lib/stc_l.upp [1.2],
 lib/stcany.upp [1.2]: 2000/03/16 02:01:36 lpd)
+	- The X driver's algorithm for deciding when to update the screen
+was changed several times between 5.50 and 6.0, and one of the more recent
+changes caused it to copy many more pixels to the screen than necessary if
+the file was making marks on the page in widely separated places.
+(gdevx.c [1.3]: 2000/03/17 07:35:43 lpd)
+	- In the X driver, the full-page buffer controlled by -dMaxBitmap=
+wasn't allocated with a stable allocator, possibly leading to memory access
+errors if save/restore were used. (gdevxini.c [1.3]: 2000/03/18 04:11:59
+lpd)
 
 Updates the Brother HL7xx drivers with a new user-contributed version, plus
 a couple of minor fixes. (gdevhl7x.c [1.2]: 2000/03/10 07:33:44 lpd)
@@ -482,6 +527,10 @@ from f(k) = k to f(k) = 0. This fixes some, but not all, of the reported
 problems with color inkjet output in 6.0. (lib/gs_init.ps [1.3]: 2000/03/10
 18:47:31 lpd)
 
+On Windows, puts stdout into binary mode as well as stdin, to allow piping
+printer output through stdout (not a good idea, but it should be supported
+as well as on other platforms). (dwmainc.cpp [1.2]: 2000/03/17 06:22:59 lpd)
+
 </pre><h2><a name="6.01 Streams"></a>Streams</h2><pre>
 
 Changes the sbuf_min_left macro to a procedure for readability and in
@@ -523,6 +572,14 @@ glyphpath, in order to support correct handling of widths for CID fonts.
 support for 5 new printers (H-P Color DeskJet 690, H-P DesignJet 750, and
 Epson Stylus Color 200). Note that this is user-contributed code.
 (gsargs.h [1.2]: 2000/03/16 02:01:36 lpd)
+	- The code for Axial shadings incorrectly assumed that if the
+shading axis was horizontal or vertical in user space, it was also
+horizontal or vertical in device space: this caused incorrect results when
+the CTM wasn't orthogonal. (gxshade1.c [1.2]: 2000/03/17 08:17:55 lpd)
+	- For printer devices, a non-null definition for OutputFile was
+required even on platforms that had a default printer (as implemented by
+gp_open_printer for that platform). (gp.h [1.2], gsdevice.c [1.2]:
+2000/03/18 01:45:16 lpd)
 
 Clears the glyf and loca offsets in TrueType fonts that lack these tables,
 so that clients who care can tell whether the font is being downloaded
