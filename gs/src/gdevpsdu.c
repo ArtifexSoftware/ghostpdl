@@ -408,9 +408,9 @@ psdf_CFE_binary(psdf_binary_writer * pbw, int w, int h, bool invert)
 int
 psdf_end_binary(psdf_binary_writer * pbw)
 {
-    int code = s_close_filters(&pbw->strm, pbw->target);
+    int status = s_close_filters(&pbw->strm, pbw->target);
 
     /* s_close_filters freed the A85E stream, if any. */
     pbw->A85E = 0;		/* for GC */
-    return code;
+    return (status >= 0 ? 0 : gs_note_error(gs_error_ioerror));
 }
