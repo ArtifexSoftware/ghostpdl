@@ -52,7 +52,6 @@ public class Gview
      */
     protected boolean enableRTL = false;
 
-
     // Non configurable members below 
 
     protected int pageNumber = 1;
@@ -86,8 +85,23 @@ public class Gview
     private java.awt.CheckboxMenuItem   menuOptRTLMode;
     private java.awt.MenuItem         menuDPI;
     private java.awt.MenuItem         menuZoomIn;
-    private java.awt.MenuItem         menuZoom600;
     private java.awt.MenuItem         menuZoomOut;
+    private java.awt.Menu             menuZoom;
+    private java.awt.MenuItem           menuZoom1_8;
+    private java.awt.MenuItem           menuZoom1_4;
+    private java.awt.MenuItem           menuZoom1_2;
+    private java.awt.MenuItem           menuZoom1_1;
+    private java.awt.MenuItem           menuZoom2_1;
+    private java.awt.MenuItem           menuZoom4_1;
+    private java.awt.MenuItem           menuZoom8_1;
+    private java.awt.Menu             menuZoomToDPI;
+    private java.awt.MenuItem           menuZoom25;
+    private java.awt.MenuItem           menuZoom72;
+    private java.awt.MenuItem           menuZoom100;
+    private java.awt.MenuItem           menuZoom300;
+    private java.awt.MenuItem           menuZoom600;
+    private java.awt.MenuItem           menuZoom1200;
+    private java.awt.MenuItem           menuZoom2400;
     private java.awt.MenuItem         menuPageNum;
     private java.awt.MenuItem         menuPageDwn;
     private java.awt.MenuItem         menuPageUp;
@@ -219,28 +233,18 @@ public class Gview
 	popup.add(menuDPI);
 
         menuZoomIn = new java.awt.MenuItem();
-	menuZoomIn.setLabel("Zoom IN");
+	menuZoomIn.setLabel("Zoom In");
 	menuZoomIn.addActionListener(new java.awt.event.ActionListener() {
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
 		    origX = 0;
 		    origY = 0;
 		    zoomIn(0,0);     
 		    menuDPI.setLabel("dpi: " + desiredRes);
+		    System.out.println("menuZoomIn");
                 }
             }
 				     );
 	popup.add(menuZoomIn);
-
-        menuZoom600 = new java.awt.MenuItem();
-	menuZoom600.setLabel("Zoom to 600dpi");
-	menuZoom600.addActionListener(new java.awt.event.ActionListener() {
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
-		    zoomToRes(600.0f);
-		    menuDPI.setLabel("dpi: " + desiredRes);
-                }
-            }
-				     );
-	popup.add(menuZoom600);
 
         menuZoomOut = new java.awt.MenuItem();
 	menuZoomOut.setLabel("Zoom Out");
@@ -254,6 +258,170 @@ public class Gview
             }
 				     );
 	popup.add(menuZoomOut);
+
+	menuZoom = new java.awt.Menu();
+	menuZoom.setLabel("Zoom");
+	
+        menuZoom1_8 = new java.awt.MenuItem();
+	menuZoom1_8.setLabel("1:8");
+	menuZoom1_8.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomFactor(1/8.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoom.add(menuZoom1_8);
+
+        menuZoom1_4 = new java.awt.MenuItem();
+	menuZoom1_4.setLabel("1:4");
+	menuZoom1_4.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomFactor(1/4.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoom.add(menuZoom1_4);
+
+        menuZoom1_2 = new java.awt.MenuItem();
+	menuZoom1_2.setLabel("1:2");
+	menuZoom1_2.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomFactor(1/2.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoom.add(menuZoom1_2);
+
+        menuZoom1_1 = new java.awt.MenuItem();
+	menuZoom1_1.setLabel("1:1");
+	menuZoom1_1.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(startingRes);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoom.add(menuZoom1_1);
+
+        menuZoom2_1 = new java.awt.MenuItem();
+	menuZoom2_1.setLabel("2:1");
+	menuZoom2_1.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomFactor(2.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoom.add(menuZoom2_1);
+
+        menuZoom4_1 = new java.awt.MenuItem();
+	menuZoom4_1.setLabel("4:1");
+	menuZoom4_1.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomFactor(4.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoom.add(menuZoom4_1);
+
+        menuZoom8_1 = new java.awt.MenuItem();
+	menuZoom8_1.setLabel("8:1");
+	menuZoom8_1.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomFactor(8.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoom.add(menuZoom8_1);
+
+	popup.add(menuZoom);
+
+	menuZoomToDPI = new java.awt.Menu();
+	menuZoomToDPI.setLabel("Zoom DPI");
+
+        menuZoom25 = new java.awt.MenuItem();
+	menuZoom25.setLabel("25 dpi");
+	menuZoom25.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(25.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom25);
+
+        menuZoom72 = new java.awt.MenuItem();
+	menuZoom72.setLabel("72 dpi");
+	menuZoom72.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(72.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom72);
+
+        menuZoom100 = new java.awt.MenuItem();
+	menuZoom100.setLabel("100 dpi");
+	menuZoom100.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(100.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom100);
+
+        menuZoom300 = new java.awt.MenuItem();
+	menuZoom300.setLabel("300 dpi");
+	menuZoom300.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(300.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom300);
+
+        menuZoom600 = new java.awt.MenuItem();
+	menuZoom600.setLabel("600 dpi");
+	menuZoom600.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(600.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom600);
+
+        menuZoom1200 = new java.awt.MenuItem();
+	menuZoom1200.setLabel("1200 dpi");
+	menuZoom1200.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(1200.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom1200);
+
+        menuZoom2400 = new java.awt.MenuItem();
+	menuZoom2400.setLabel("2400 dpi");
+	menuZoom2400.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(2400.0);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	menuZoomToDPI.add(menuZoom2400);
+
+	popup.add(menuZoomToDPI);
 
 	popup.addSeparator();
 
@@ -323,21 +491,33 @@ public class Gview
             origX = 0;
             origY = 0;
 	    zoomIn(0,0);
+	    return;
 	}
 	else if ( key == KeyEvent.VK_X ) {
             origX = 0;
             origY = 0;
 	    zoomOut(0,0);
+	    return;
 	}
         else if ( key == KeyEvent.VK_R ) {
+	    // hack a smaller resolution and zoom ratio for rtl
+	    // missing undo.
+	    startingRes = 50;
+	    zoomWindowRatio = 4;
             pickle.setRTL(!pickle.getRTL());  // toggle
         }
         else if ( key == KeyEvent.VK_O ) {
 	    fileOpen();
+	    return;
 	}
-	else
+        else if ( key == KeyEvent.VK_M ) {
+	    popup.show(this, 50, 50);
+	    return;
+	}
+	else {
+	   popup.show(this, 50, 50);
            return;
-
+	}
 	pickle.startProduction( pageNumber );
     }
 
@@ -396,6 +576,8 @@ public class Gview
 			this);
 	}
 	else {
+	    // setSize is the frame, not the contentpane :(
+	    // g.drawImage(currentPage, 5, 20, this);
 	    g.drawImage(currentPage, 0, 0, this);
 	}
     }	
@@ -407,14 +589,13 @@ public class Gview
 	// update menu status 
 	menuDPI.setLabel("dpi: " + desiredRes);
 	menuPageNum.setLabel("page# " + pageNumber + " of " + totalPageCount);
-
+	setTitle("GhostPickle " + pageNumber + " of " + totalPageCount);
 	repaint();
     }
 
     /** starts drag translation, or popup menu
      */ 
     public void mousePressed(MouseEvent e) {
-
 
 	if ( (e.getModifiers() & (e.BUTTON2_MASK | e.BUTTON3_MASK)) != 0 ) {
 	    if ( !popupMenuAllowed ) {
@@ -425,6 +606,10 @@ public class Gview
 		else {
 		    zoomIn(e.getX(), e.getY());
 		}
+	    }    
+	    else {
+		return;
+		//popup.show(this, e.getX(), e.getY());
 	    }
 	}
 	else {
@@ -501,10 +686,12 @@ public class Gview
     /** Increase resolution by factor of 2 */
     protected void zoomIn( int x, int y ) {
 
-        double x1 = origX = origX + (x * desiredRes / origRes);
-        double y1 = origY = origY + (y * desiredRes / origRes);
-	
-        desiredRes *= 2.0f;
+	double x1 = origX = origX + (x * desiredRes / origRes);
+	double y1 = origY = origY + (y * desiredRes / origRes);
+	if ( debug ) System.out.println( "zoomIn " + desiredRes );	
+        desiredRes *= 2.0;
+	if ( debug ) System.out.println( "zoomIn " + desiredRes );	
+
 
         double sfx = desiredRes / origRes;
         double sfy = desiredRes / origRes;
@@ -514,10 +701,18 @@ public class Gview
 
     /** decrease resolution by factor of 2 */
     protected void zoomOut( int x, int y ) {
-        double x1 = origX = origX + (x * desiredRes / origRes);
+
+	/*
+	if ( desiredRes / 2.0 < startingRes) {
+	    origRes = desiredRes/2.0;
+	    createViewPort( 0.0, 0.0, 1.0, 1.0, origRes, origRes );
+	    return;
+	}
+        */
+	double x1 = origX = origX + (x * desiredRes / origRes);
         double y1 = origY = origY + (y * desiredRes / origRes);
 	
-        desiredRes /= 2.0f;
+        desiredRes /= 2.0;
 
         double sfx = desiredRes / origRes;
         double sfy = desiredRes / origRes;
@@ -527,13 +722,34 @@ public class Gview
 
     /** Set zoom resolution to asked for resolution at 0,0
      */
-    protected void zoomToRes( float res ) {		   
-	origX = 0;
-	origY = 0;
-	desiredRes = res / 2.0; 
-	zoomIn(0,0);  // internal multiply by 2 gets back to asked for res    
+    protected void zoomToRes( double res ) {		   
+	if ( res < startingRes) {
+	    desiredRes = res;
+	    origRes = desiredRes;
+	    createViewPort( 0.0, 0.0, 1.0, 1.0, origRes, origRes );
+	}
+	else if ( origRes < startingRes ) 
+	{
+	    origRes = startingRes;
+	    origX = 0;
+	    origY = 0;
+	    desiredRes = res / 2.0; 
+	    zoomIn(0,0);  // internal multiply by 2 gets back to asked for res    
+	}
+	else {
+	    origX = 0;
+	    origY = 0;
+	    desiredRes = res / 2.0; 
+	    zoomIn(0,0);  // internal multiply by 2 gets back to asked for res    
+	}
+	return;
     }
 
+    /** Set zoom resolution to asked for resolution at 0,0
+     */
+    protected void zoomFactor( double factor ) {	
+	zoomToRes(desiredRes*factor);
+    }	   
 
     /** Generate a new page with  translation, scale, resolution  */
     private void createViewPort( double tx,   double ty,
@@ -630,7 +846,8 @@ public class Gview
 	currentPage = pickle.getPrinterOutputPage();
 	setSize(pickle.getImgWidth(), pickle.getImgHeight());
 	origW = pickle.getImgWidth();
-	origH = pickle.getImgHeight();    
+	origH = pickle.getImgHeight();    	
+	//setTitle("GhostPickle " + pageNumber + " of " + totalPageCount);
 	show();
 	repaint();
     }

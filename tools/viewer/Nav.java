@@ -78,7 +78,7 @@ public class Nav extends Gview  {
     public void imageIsReady( BufferedImage newImage ) {
 	super.imageIsReady(newImage);
 
-	if (pickle.busy() == false) {
+	if (pickle.busy() == false && pageView.pickle.busy() == false) {
 	    pageView.pickle.startProduction(pageNumber);
 	}
     }
@@ -148,8 +148,16 @@ public class Nav extends Gview  {
     /** pageView gets regenerated at requested resolution,
      * repaint updates zoomin box.
      */
-    protected void zoomToRes( float res ) {		   
+    protected void zoomToRes( double res ) {		   
 	pageView.zoomToRes(res);  
+	repaint();
+    }
+
+    /** pageView gets regenerated with the request scalefactor,
+     * repaint updates zoomin box. 
+     */
+    protected void zoomFactor( double factor ) {		   
+	pageView.zoomFactor(factor);  
 	repaint();
     }
 
