@@ -225,7 +225,7 @@ pcl_set_cap_y(
     max_y = (use_margins ? max_y : lim_y);
     if (y < 0L)
         pcs->cap.y = 0L;
-    if (y <= max_y)
+    else if (y <= max_y)
         pcs->cap.y = y;
     else if (!page_eject)
         pcs->cap.y = (y <= lim_y ? y : lim_y);
