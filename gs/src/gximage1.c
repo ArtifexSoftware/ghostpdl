@@ -141,7 +141,7 @@ gx_image1_mask_sput(const gs_image_common_t *pic, stream *s,
 {
     const gs_image_t *pim = (const gs_image_t *)pic;
     byte b =
-	(gx_image_matrix_is_default((const gs_data_image_t *)pim) ? 0x80 : 0) |
+	(gx_image_matrix_is_default((const gs_data_image_t *)pim) ? 0 : 0x80) |
 	(pim->Decode[0] != 0 ? 0x40 : 0) |
 	(pim->Interpolate ? 0x20 : 0) |
 	(pim->adjust ? 0x10 : 0) |
