@@ -433,6 +433,64 @@ cie_tpqr_finish(i_ctx_t *i_ctx_p)
     return code;
 }
 
+/* Ws Bs Wd Bd Ps .transformPQR_scale_wb[012] Pd
+
+   The default TransformPQR procedure is implemented in C, rather than
+   PostScript, as a speed optimization.
+
+   This TransformPQR implements a relative colorimetric intent by scaling
+   the XYZ values relative to the white and black points.
+*/
+private int
+ztpqr_scale_wb_common(i_ctx_t *i_ctx_p, int idx)
+{
+    os_ptr op = osp;
+    double a[4], Ps; /* a[0] = ws, a[1] = bs, a[2] = wd, a[3] = bd */
+    double result;
+    int code;
+    int i;
+
+    code = real_param(op, &Ps);
+    if (code < 0) return code;
+
+    for (i = 0; i < 4; i++) {
+	ref tmp;
+
+	code = array_get(op - 4 + i, idx, &tmp);
+	if (code >= 0)
+	    code = real_param(&tmp, &a[i]);
+	if (code < 0) return code;
+    }
+
+    if (a[0] == a[1])
+	return_error(e_undefinedresult);
+    result = a[3] + (a[2] - a[3]) * (Ps - a[1]) / (a[0] - a[1]);
+    make_real(op - 4, result);
+    pop(4);
+    return 0;
+}
+
+/* Ws Bs Wd Bd Ps .TransformPQR_scale_wb0 Pd */
+private int
+ztpqr_scale_wb0(i_ctx_t *i_ctx_p)
+{
+    return ztpqr_scale_wb_common(i_ctx_p, 3);
+}
+
+/* Ws Bs Wd Bd Ps .TransformPQR_scale_wb2 Pd */
+private int
+ztpqr_scale_wb1(i_ctx_t *i_ctx_p)
+{
+    return ztpqr_scale_wb_common(i_ctx_p, 4);
+}
+
+/* Ws Bs Wd Bd Ps .TransformPQR_scale_wb2 Pd */
+private int
+ztpqr_scale_wb2(i_ctx_t *i_ctx_p)
+{
+    return ztpqr_scale_wb_common(i_ctx_p, 5);
+}
+
 /* ------ Initialization procedure ------ */
 
 const op_def zcrd_l2_op_defs[] =
@@ -448,5 +506,8 @@ const op_def zcrd_l2_op_defs[] =
     {"3%cie_exec_tpqr", cie_exec_tpqr},
     {"2%cie_post_exec_tpqr", cie_post_exec_tpqr},
     {"1%cie_tpqr_finish", cie_tpqr_finish},
+    {"5.TransformPQR_scale_WB0", ztpqr_scale_wb0},
+    {"5.TransformPQR_scale_WB1", ztpqr_scale_wb1},
+    {"5.TransformPQR_scale_WB2", ztpqr_scale_wb2},
     op_def_end(0)
 };
