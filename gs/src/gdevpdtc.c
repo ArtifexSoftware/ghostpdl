@@ -107,11 +107,9 @@ process_composite_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    const gs_matrix *psmat =
 		&curr.fstack.items[curr.fstack.depth - 1].font->FontMatrix;
 	    gs_matrix fmat;
-	    int used = 0;
 
 	    gs_matrix_multiply(&curr.current_font->FontMatrix, psmat, &fmat);
-	    code = pdf_encode_process_string(&curr, &str, &fmat, &text_state,
-					     &used);
+	    code = pdf_encode_process_string(&curr, &str, &fmat, &text_state);
 	    if (code < 0)
 		return code;
 	    gs_text_enum_copy_dynamic(pte, (gs_text_enum_t *)&curr, true);
@@ -189,7 +187,10 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
     pdf_font_descriptor_t *pfd = pdsubf->FontDescriptor;
     gs_text_enum_t scan = *pte;
     gs_point w;
+    pdf_font_resource_t *pdfont;
 
+    pdf_attached_font_resource((gx_device_pdf *)pte->dev, (gs_font *)font, &pdfont, 
+				NULL, NULL, NULL);
     w.x = w.y = 0;
     for ( ; ; ) {
 	gs_char chr;
@@ -202,10 +203,18 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 	    return code;
 	if (glyph >= GS_MIN_CID_GLYPH) {
 	    uint cid = glyph - GS_MIN_CID_GLYPH;
+	    gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
+	    pdf_font_resource_t *pdsubf1;
+	    byte *glyph_usage;
+	    int *real_widths, char_cache_size;
 
+	    pdf_attached_font_resource(pdev, (gs_font *)subfont, &pdsubf1, 
+				       &glyph_usage, &real_widths, &char_cache_size);
 	    code = pdf_font_used_glyph(pfd, glyph, subfont);
 	    if (code < 0)
 		return code;
+	    if (cid > char_cache_size)
+		return_error(gs_error_unregistered); /* Must not happen */
 	    if (cid >= pdsubf->count)
 		cid = 0, code = 1; /* undefined CID */
 	    if (code == 0 /* just copied */ || pdsubf->Widths[cid] == 0) {
@@ -216,7 +225,7 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 		    return code;
 		if (code == 0) { /* OK to cache */
 		    pdsubf->Widths[cid] = widths.Width.w;
-		    pdsubf->real_widths[cid] = widths.real_width.w;
+		    real_widths[cid] = widths.real_width.w;
 		}
 		w.x += widths.real_width.xy.x;
 		w.y += widths.real_width.xy.y;
@@ -228,9 +237,9 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
 		}
 	    } else {
 		if (font->WMode)
-		    w.y += pdsubf->real_widths[cid];
+		    w.y += real_widths[cid];
 		else
-		    w.x += pdsubf->real_widths[cid];
+		    w.x += real_widths[cid];
 	    }
 	    pdsubf->used[cid >> 3] |= 0x80 >> (cid & 7);
 	}
@@ -239,11 +248,8 @@ scan_cmap_text(gs_text_enum_t *pte, gs_font_type0 *font /*fmap_CMap*/,
     return 0;
 }
 
-private int
-process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
-			 uint size,
-			 pdf_font_resource_t *pdfont, /* Type 0, fmap_CMap */
-			 pdf_font_resource_t *pdsubf /* CIDFont */)
+int
+process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf, uint size)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
     pdf_text_enum_t *const penum = (pdf_text_enum_t *)pte;
@@ -254,11 +260,16 @@ process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     const char *const *pcmn =
 	standard_cmap_names +
 	(pdev->CompatibilityLevel < 1.4 ? END_PDF14_CMAP_NAMES_INDEX : 0);
+    pdf_font_resource_t *pdfont, *pdsubf;
     pdf_resource_t *pcmres = 0;	/* CMap */
     pdf_text_process_state_t text_state;
     gs_point wxy;
     int code;
 
+    code = pdf_obtain_font_resource(pte, NULL, &pdfont);
+    if (code < 0)
+	return code;
+    pdsubf = pdfont->u.type0.DescendantFont;
     if (pte->text.operation &
 	(TEXT_FROM_ANY - (TEXT_FROM_STRING | TEXT_FROM_BYTES))
 	)
@@ -400,20 +411,6 @@ process_cmap_text_common(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	return code;
     }	
 }
-int
-process_cmap_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
-		  uint size)
-{
-    gx_device_pdf *const pdev = (gx_device_pdf *)pte->dev;
-    pdf_font_resource_t *pdfont; /* Type 0, fmap_CMap */
-    /* Create a pdf font resource for the composite font and the subfont. */
-    int code = pdf_make_font_resource(pdev, pte->current_font, &pdfont);
-
-    if (code < 0)
-	return code;
-    return process_cmap_text_common(pte, vdata, vbuf, size, pdfont,
-				    pdfont->u.type0.DescendantFont);
-}
 
 /* ---------------- CIDFont ---------------- */
 
@@ -428,12 +425,10 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     gs_text_enum_t save;
     gs_font *scaled_font = pte->current_font; /* CIDFont */
     gs_font *font;		/* unscaled font (CIDFont) */
-    gx_device_pdf *pdev = (gx_device_pdf *)pte->dev;
     const gs_glyph *glyphs = (const gs_glyph *)vdata;
     gs_matrix scale_matrix;
-    pdf_font_resource_t *pdfont; /* CIDFont */
+    pdf_font_resource_t *pdsubf; /* CIDFont */
     gs_font_type0 *font0 = NULL;
-    pdf_font_resource_t *pdgsf; /* Type 0 */
     int code;
 
     if (!(operation & (TEXT_FROM_GLYPHS | TEXT_FROM_SINGLE_GLYPH)))
@@ -469,30 +464,21 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 
     /* Find or create the CIDFont resource. */
 
-    code = pdf_make_font_resource(pdev, font, &pdfont);
+    code = pdf_obtain_font_resource(pte, NULL, &pdsubf);
     if (code < 0)
 	return code;
 
     /* Create the CMap and Type 0 font if they don't exist already. */
 
-    if (pdfont->u.cidfont.glyphshow_font_id != 0)
-	font0 = (gs_font_type0 *)gs_find_font_by_id(font->dir, 
-		    pdfont->u.cidfont.glyphshow_font_id);
-    if (font0 != NULL) {
-	/* We could store this instead of looking it up.... */
-	pdgsf = (pdf_font_resource_t *)
-	    pdf_find_resource_by_gs_id(pdev, resourceFont, font0->id);
-	if (pdgsf == 0 || pdgsf->FontType != ft_composite)
-	    return_error(gs_error_Fatal);
-    } else {
-	code = gs_font_type0_from_cidfont(&font0, font, font->WMode,
-					  &scale_matrix, font->memory);
+    if (pdsubf->u.cidfont.glyphshow_font_id != 0)
+ 	font0 = (gs_font_type0 *)gs_find_font_by_id(font->dir, 
+ 		    pdsubf->u.cidfont.glyphshow_font_id);
+    if (font0 == NULL) {
+  	code = gs_font_type0_from_cidfont(&font0, font, font->WMode,
+ 					  &scale_matrix, font->memory);
 	if (code < 0)
 	    return code;
-	code = pdf_font_type0_alloc(pdev, &pdgsf, font0->id, pdfont);
-	if (code < 0)
-	    return code;
-	pdfont->u.cidfont.glyphshow_font_id = font0->id;
+ 	pdsubf->u.cidfont.glyphshow_font_id = font0->id;
     }
 
     /* Now handle the glyphshow as a show in the Type 0 font. */
@@ -506,8 +492,7 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     pte->text.size = size / sizeof(gs_glyph) * 2;
     pte->index = 0;
     gs_type0_init_fstack(pte, pte->current_font);
-    code = process_cmap_text_common(pte, vbuf, vbuf, pte->text.size, pdgsf,
-				    pdfont);
+    code = process_cmap_text(pte, vbuf, vbuf, pte->text.size);
     pte->current_font = scaled_font;
     pte->text = save.text;
     pte->index = save.index + pte->index / 2;

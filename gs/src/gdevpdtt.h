@@ -141,11 +141,27 @@ typedef struct pdf_glyph_widths_s {
 int pdf_font_orig_matrix(const gs_font *font, gs_matrix *pmat);
 
 /*
- * Find or create the font resource for a gs_font.  Return 1 if the font
- * was newly created.
+ * Create or find a font resource object for a text.
  */
-int pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
-			   pdf_font_resource_t **ppdfont);
+int
+pdf_obtain_font_resource(const gs_text_enum_t *penum, 
+		const gs_string *pstr, pdf_font_resource_t **ppdfont);
+
+/*
+ * Retrive font resource attached to a font.
+ * allocating glyph_usage and real_widths on request.
+ */
+int
+pdf_attached_font_resource(gx_device_pdf *pdev, gs_font *font,  
+			   pdf_font_resource_t **pdfont, byte **glyph_usage,
+			   int **real_widths, int *num_chars);
+
+/*
+ * Attach font resource to a font.
+ */
+int
+pdf_attach_font_resource(gx_device_pdf *pdev, gs_font *font, 
+			 pdf_font_resource_t *pdfont); 
 
 /*
  * Compute the cached values in the text processing state from the text
@@ -183,6 +199,16 @@ int pdf_glyph_widths(pdf_font_resource_t *pdfont, gs_glyph glyph,
 int pdf_default_text_begin(gs_text_enum_t *pte, const gs_text_params_t *text,
 			   gs_text_enum_t **ppte);
 
+/*
+ * Check for simple font.
+ */
+bool pdf_is_simple_font(gs_font *font);
+
+/*
+ * Check for CID font.
+ */
+bool pdf_is_CID_font(gs_font *font);
+
 /* ------ gdevpdtc.c ------ */
 
 PROCESS_TEXT_PROC(process_composite_text);
@@ -194,11 +220,10 @@ PROCESS_TEXT_PROC(process_cid_text);
 PROCESS_TEXT_PROC(process_plain_text);
 
 /*
- * Given a text string and a simple gs_font, process it in chunks
- * as needed to parcel it out using multiple font resources.
+ * Encode and process a string with a simple gs_font.
  */
 int pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 			      const gs_matrix *pfmat,
-			      pdf_text_process_state_t *ppts, int *pindex);
+			      pdf_text_process_state_t *ppts);
 
 #endif /* gdevpdtt_INCLUDED */

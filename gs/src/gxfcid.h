@@ -160,4 +160,10 @@ const gs_cid_system_info_t *gs_font_cid_system_info(const gs_font *);
  */
 font_proc_enumerate_glyph(gs_font_cid0_enumerate_glyph);
 
+/*
+ * Check CIDSystemInfo compatibility.
+ */
+bool gs_is_CIDSystemInfo_compatible(const gs_cid_system_info_t *info0, 
+				    const gs_cid_system_info_t *info1);
+
 #endif /* gxfcid_INCLUDED */

@@ -103,7 +103,8 @@ int pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
  * font is subsetted, this procedure modifies the copied font by adding the
  * XXXXXX+ font name prefix and clearing the UID.
  */
-bool pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
+bool pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, 
+			gs_id rid);
 
 /*
  * Write the FontFile entry for an embedded font, /FontFile<n> # # R.
@@ -114,7 +115,7 @@ int pdf_write_FontFile_entry(gx_device_pdf *pdev, pdf_base_font_t *pbfont);
  * Write an embedded font, possibly subsetted.
  */
 int pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
-			    gs_int_rect *FontBBox);
+			    gs_int_rect *FontBBox, gs_id rid);
 
 /*
  * Write the CharSet data for a subsetted font, as a PDF string.

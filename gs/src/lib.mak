@@ -1827,7 +1827,7 @@ $(GLD)fcopy.dev : $(DEVS_MAK) $(ECHOGS_MAK) $(fcopy_)
 	$(SETMOD) $(GLD)fcopy $(fcopy_)
 
 $(GLOBJ)gxfcopy.$(OBJ) : $(GLSRC)gxfcopy.c $(memory__h) $(GXERR)\
- $(gsline_h) $(gspaint_h) $(gspath_h) $(gsstruct_h)\
+ $(gscencs_h) $(gsline_h) $(gspaint_h) $(gspath_h) $(gsstruct_h) $(gsutil_h)\
  $(gxfont_h) $(gxfont1_h) $(gxfont42_h) $(gxfcid_h) $(gxfcopy_h)\
  $(gxistate_h) $(gxtext_h) $(gxtype1_h)\
  $(gzstate_h)\

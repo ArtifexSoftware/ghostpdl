@@ -24,6 +24,7 @@
 #include "gspaint.h"		/* for BuildChar */
 #include "gspath.h"		/* for gs_moveto in BuildChar */
 #include "gsstruct.h"
+#include "gsutil.h"
 #include "stream.h"
 #include "gxfont.h"
 #include "gxfont1.h"
@@ -667,6 +668,137 @@ copied_build_char(gs_text_enum_t *pte, gs_state *pgs, gs_font *font,
     }
 }
 
+private inline bool 
+compare_arrays(const float *v0, int l0, const float *v1, int l1)
+{
+    if (l0 != l1)
+	return false;
+    if (memcmp(v0, v1, l0 * sizeof(v0[0])))
+	return false;
+    return true;	
+}
+
+#define compare_tables(a, b) compare_arrays(a.values, a.count, b.values, b.count)
+
+private int
+compare_glyphs(const gs_font *cfont, const gs_font *ofont, gs_glyph *glyphs, 
+			   int num_glyphs, int level)
+{
+    /* 
+     * Checking widths because we can synthesize fonts from random fonts 
+     * having same FontName and FontType. 
+     * We must request width explicitely because Type 42 stores widths 
+     * separately from outline data. We could skip it for Type 1, which doesn't.
+     */
+    int members = GLYPH_INFO_WIDTHS | GLYPH_INFO_OUTLINE_WIDTHS | GLYPH_INFO_NUM_PIECES;
+    int i, WMode = ofont->WMode, code;
+    gs_matrix mat;
+
+    /*
+     *	We don't care of Metrics, Metrics2 because copied font never has them.
+     * 	Perhaps we request and compare widths because True Type 
+     *	stores them separately from glyph data.
+     */
+    gs_make_identity(&mat);
+    for (i = 0; i < num_glyphs; i++) {
+	gs_glyph glyph = glyphs[i], pieces0[40], *pieces = pieces0;
+	gs_glyph_info_t info0, info1;
+	int code0 = ofont->procs.glyph_info((gs_font *)ofont, glyph, &mat, members, &info0);
+	int code1 = cfont->procs.glyph_info((gs_font *)cfont, glyph, &mat, members, &info1);
+	int code2;
+
+	if (code0 == gs_error_undefined || code1 == gs_error_undefined)
+	    continue;
+	if (code0 < 0)
+	    return code0;
+	if (code1 < 0)
+	    return code1;
+	if (info0.num_pieces != info1.num_pieces)
+	    return 0;
+	if (info0.width[WMode].x != info1.width[WMode].x ||
+	    info0.width[WMode].y != info1.width[WMode].y)
+	    return 0;
+	if (WMode && (info0.v.x != info1.v.x || info0.v.y != info1.v.y))
+	    return 0;
+	if (info0.num_pieces > 0) {
+	    if(level > 5)
+		return_error(gs_error_rangecheck); /* abnormal glyph recursion */
+	    if (info0.num_pieces > countof(pieces0) / 2) {
+		pieces = (gs_glyph *)gs_alloc_bytes(cfont->memory, 
+		    sizeof(glyphs) * info0.num_pieces * 2, "compare_glyphs");
+		if (pieces == 0)
+		    return_error(gs_error_VMerror);
+	    }
+	    info0.pieces = pieces;
+	    info1.pieces = pieces + info0.num_pieces;
+	    code0 = ofont->procs.glyph_info((gs_font *)ofont, glyph, &mat, 
+				    GLYPH_INFO_NUM_PIECES, &info0);
+	    code1 = cfont->procs.glyph_info((gs_font *)cfont, glyph, &mat, 
+				    GLYPH_INFO_NUM_PIECES, &info1);
+	    if (code0 >= 0 && code1 >= 0) {
+		code2 = memcmp(info0.pieces, info1.pieces, info0.num_pieces * sizeof(*pieces));
+		if (!code2)
+		    code = compare_glyphs(cfont, ofont, pieces, info0.num_pieces, level + 1);
+	    }
+	    if (pieces != pieces0)
+		gs_free_object(cfont->memory, pieces, "compare_glyphs");
+	    if (code0 == gs_error_undefined || code1 == gs_error_undefined)
+		continue;
+	    if (code0 < 0)
+		return code0;
+	    if (code1 < 0)
+		return code1;
+	    if (code2 || code == 0) {
+		return 0;
+	    }
+	} else {
+	    gs_glyph_data_t gdata0, gdata1;
+	    
+	    switch(cfont->FontType) {
+		case ft_encrypted: {
+		    gs_font_type1 *font0 = (gs_font_type1 *)cfont;
+		    gs_font_type1 *font1 = (gs_font_type1 *)ofont;
+
+		    code0 = font0->data.procs.glyph_data(font0, glyph, &gdata0);
+		    code1 = font1->data.procs.glyph_data(font1, glyph, &gdata1);
+		    break;
+		}
+		case ft_TrueType:
+		    return_error(gs_error_unregistered); /* unimplemented */
+		case ft_CID_encrypted: {
+		    gs_font_cid0 *font0 = (gs_font_cid0 *)cfont;
+		    gs_font_cid0 *font1 = (gs_font_cid0 *)ofont;
+		    int fidx0, fidx1;
+
+		    code0 = font0->cidata.glyph_data((gs_font_base *)font0, glyph, &gdata0, &fidx0);
+		    code1 = font1->cidata.glyph_data((gs_font_base *)font1, glyph, &gdata1, &fidx1);
+		    break;
+		}
+		case ft_CID_TrueType:
+		default:
+		    return_error(gs_error_unregistered); /* unimplemented */
+	    }
+	    if (code0 < 0) {
+		if (code1 >= 0)
+		    gs_glyph_data_free(&gdata1, "compare_glyphs");
+		return code0;
+	    }
+	    if (code1 < 0) {
+		if (code0 >= 0)
+		    gs_glyph_data_free(&gdata0, "compare_glyphs");
+		return code1;
+	    }
+	    if (gdata0.bits.size != gdata1.bits.size)
+		return 0;
+	    if (memcmp(gdata0.bits.data, gdata0.bits.data, gdata0.bits.size))
+		return 0;
+	    gs_glyph_data_free(&gdata0, "compare_glyphs");
+	    gs_glyph_data_free(&gdata1, "compare_glyphs");
+	}
+    }
+    return 1;
+}
+
 /* ---------------- Individual FontTypes ---------------- */
 
 /* ------ Type 1 ------ */
@@ -846,6 +978,94 @@ private const gs_copied_font_procs_t copied_procs_type1 = {
     named_glyph_slot_hashed,
     copied_encode_char, gs_type1_glyph_info, copied_type1_glyph_outline
 };
+
+private bool 
+same_type1_subrs(const gs_font_type1 *cfont, const gs_font_type1 *ofont, 
+		 bool global)
+{
+    gs_glyph_data_t gdata0, gdata1;
+    int i, code = 0;
+    bool exit = false;
+
+    /* Scan the font to determine the size of the subrs. */
+    for (i = 0; !exit; i++) {
+	int code0 = cfont->data.procs.subr_data((gs_font_type1 *)cfont, 
+						i, global, &gdata0);
+	int code1 = ofont->data.procs.subr_data((gs_font_type1 *)ofont, 
+						i, global, &gdata1);
+	
+	if (code0 == gs_error_rangecheck && code1 == gs_error_rangecheck)
+	    return 1;
+	if ((code0 == gs_error_rangecheck) != (code1 == gs_error_rangecheck))
+	    exit = true;
+	else if (code0 < 0)
+	    code = code0, exit = true;
+	else if (code1 < 0)
+	    code = code1, exit = true;
+	else if (gdata0.bits.size != gdata1.bits.size)
+	    exit = true;
+	else if (memcmp(gdata0.bits.data, gdata1.bits.data, gdata0.bits.size))
+	    exit = true;
+	if (code0 > 0)
+	    gs_glyph_data_free(&gdata0, "same_type1_subrs");
+	if (code1 > 0)
+	    gs_glyph_data_free(&gdata1, "same_type1_subrs");
+    }
+    return code;
+}
+
+private bool 
+same_type1_hinting(const gs_font_type1 *cfont, const gs_font_type1 *ofont)
+{
+    const gs_type1_data *d0 = &cfont->data, *d1 = &ofont->data;
+
+    if (d0->lenIV != d1->lenIV)
+	return false;
+    /*
+    if (d0->defaultWidthX != d1->defaultWidthX)
+	return false;
+    if (d0->nominalWidthX != d1->nominalWidthX)
+	return false;
+    */
+    if (d0->BlueFuzz != d1->BlueFuzz)
+	return false;
+    if (d0->BlueScale != d1->BlueScale)
+	return false;
+    if (d0->BlueShift != d1->BlueShift)
+	return false;
+    if (d0->ExpansionFactor != d1->ExpansionFactor)
+	return false;
+    if (d0->ForceBold != d1->ForceBold)
+	return false;
+    if (!compare_tables(d0->FamilyBlues, d1->FamilyBlues))
+	return false;
+    if (!compare_tables(d0->FamilyOtherBlues, d1->FamilyOtherBlues))
+	return false;
+    if (d0->LanguageGroup != d1->LanguageGroup)
+	return false;
+    if (!compare_tables(d0->OtherBlues, d1->OtherBlues))
+	return false;
+    if (d0->RndStemUp != d1->RndStemUp)
+	return false;
+    if (!compare_tables(d0->StdHW, d1->StdHW))
+	return false;
+    if (!compare_tables(d0->StemSnapH, d1->StemSnapH))
+	return false;
+    if (!compare_tables(d0->StemSnapV, d1->StemSnapV))
+	return false;
+    if (!compare_tables(d0->WeightVector, d1->WeightVector))
+	return false;
+    if (!same_type1_subrs(cfont, ofont, false))
+	return false;
+    if (!same_type1_subrs(cfont, ofont, true))
+	return false;
+    /*
+     *	We ignore differences in OtherSubrs because pdfwrite
+     *	must build without PS interpreter and therefore copied font
+     *	have no storage for them.
+     */
+    return true;
+}
 
 /* ------ Type 42 ------ */
 
@@ -1036,6 +1256,80 @@ private const gs_copied_font_procs_t copied_procs_type42 = {
     copied_type42_encode_char, gs_type42_glyph_info, gs_type42_glyph_outline
 };
 
+private inline int
+access_type42_data(gs_font_type42 *pfont, ulong base, ulong length, 
+		   const byte **vptr)
+{
+    /* See ACCESS macro in gstype42.c */
+    return pfont->data.string_proc(pfont, base, length, vptr);
+}
+
+private inline uint
+U16(const byte *p)
+{
+    return ((uint)p[0] << 8) + p[1];
+}
+
+private int
+same_type42_hinting(gs_font_type42 *font0, gs_font_type42 *font1)
+{
+    gs_type42_data *d0 = &font0->data, *d1 = &font1->data;
+    gs_font_type42 *font[2];
+    uint pos[2][3], len[2][3];
+    int i, j, code;
+
+    if (d0->unitsPerEm != d1->unitsPerEm)
+	return 0;
+    font[0] = font0;
+    font[1] = font1;
+    memset(pos, 0, sizeof(pos));
+    for (j = 0; j < 2; j++) {
+	const byte *OffsetTable;
+	uint numTables;
+
+	code = access_type42_data(font[j], 0, 12, &OffsetTable);
+	if (code < 0)
+	    return code;
+	numTables = U16(OffsetTable + 4);
+	for (i = 0; i < numTables; ++i) {
+	    const byte *tab;
+	    ulong start;
+	    uint length;
+
+	    code = access_type42_data(font[j], 12 + i * 16, 16, &tab);
+	    if (code < 0)
+		return code;
+	    start = get_u32_msb(tab + 8);
+	    length = get_u32_msb(tab + 12);
+	    if (!memcmp("prep", tab, 4))
+		pos[j][0] = start, len[j][0] = length;
+	    else if (!memcmp("cvt ", tab, 4))
+		pos[j][1] = start, len[j][1] = length;
+	    else if (!memcmp("fpgm", tab, 4))
+		pos[j][2] = start, len[j][2] = length;
+	}
+    }
+    for (i = 0; i < 3; i++) {
+	if (len[0][i] != len[1][i])
+	    return 0;
+    }
+    for (i = 0; i < 3; i++) {
+	const byte *data0, *data1;
+
+	code = access_type42_data(font0, pos[0][i], len[0][i], &data0);
+	if (code < 0)
+	    return code;
+	code = access_type42_data(font1, pos[1][i], len[1][i], &data1);
+	if (code < 0)
+	    return code;
+	if (memcmp(data0, data1, len[1][i]))
+	    return 0;
+    }
+    return 1;
+}
+
+#undef ACCESS
+
 /* ------ CIDFont shared ------ */
 
 private int
@@ -1091,8 +1385,13 @@ cid0_subfont(gs_font *copied, gs_glyph glyph, gs_font_type1 **pfont1)
     int code = copied_cid0_glyph_data((gs_font_base *)copied, glyph, NULL,
 				      &fidx);
 
-    if (code >= 0)
-	*pfont1 = ((gs_font_cid0 *)copied)->cidata.FDArray[fidx];
+    if (code >= 0) {
+	gs_font_cid0 *font0 = (gs_font_cid0 *)copied;
+
+	if (fidx >= font0->cidata.FDArray_size)
+	    return_error(gs_error_unregistered); /* Must not happen. */
+	*pfont1 = font0->cidata.FDArray[fidx];
+    }
     return code;
 }
 
@@ -1219,6 +1518,26 @@ private const gs_copied_font_procs_t copied_procs_cid0 = {
     gs_no_encode_char, copied_cid0_glyph_info, copied_cid0_glyph_outline
 };
 
+private int
+same_cid0_hinting(const gs_font_cid0 *cfont, const gs_font_cid0 *ofont)
+{
+    int i;
+
+    if (cfont->cidata.FDBytes != ofont->cidata.FDBytes)
+	return 0;
+
+    if (cfont->cidata.FDArray_size != ofont->cidata.FDArray_size)
+	return 0;
+
+    for (i = 0; i < cfont->cidata.FDArray_size; i++) {
+	gs_font_type1 *subfont0 = cfont->cidata.FDArray[i];
+	gs_font_type1 *subfont1 = ofont->cidata.FDArray[i];
+	if (!same_type1_hinting(subfont0, subfont1))
+	    return 0;
+    }
+    return 1;
+}
+
 /* ------ CIDFontType 2 ------ */
 
 private int
@@ -1287,6 +1606,12 @@ private const gs_copied_font_procs_t copied_procs_cid2 = {
     named_glyph_slot_none,
     gs_no_encode_char, gs_type42_glyph_info, gs_type42_glyph_outline
 };
+
+private int
+same_cid2_hinting(const gs_font_cid2 *cfont, const gs_font_cid2 *ofont)
+{
+    return same_type42_hinting((gs_font_type42 *)cfont, (gs_font_type42 *)ofont);
+}
 
 /* ---------------- Public ---------------- */
 
@@ -1616,3 +1941,69 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
     }
     return code;
 }
+
+/*
+ * Check whether specified glyphs can be copied from another font.
+ * It means that (1) fonts have same hinting parameters and 
+ * (2) font subsets for the specified glyph set don't include different 
+ * outlines or metrics. Possible returned values : 
+ * 0 (incompatible), 1 (compatible), < 0 (error)
+ */
+int
+gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
+			  gs_glyph *glyphs, int num_glyphs, bool check_hinting)
+{   
+    int code = 0;
+
+    if (cfont == ofont)
+	return 1;
+    if (cfont->FontType != ofont->FontType)
+	return 0;
+    if (cfont->WMode != ofont->WMode)
+	return 0;
+    if (cfont->font_name.size != ofont->font_name.size ||
+	memcmp(cfont->font_name.chars, ofont->font_name.chars, 
+			cfont->font_name.size))
+	return 0; /* Don't allow to merge random fonts. */
+    if (cfont->font_name.size == 0)
+	if (cfont->key_name.size != ofont->key_name.size ||
+	    memcmp(cfont->key_name.chars, ofont->key_name.chars, 
+			cfont->font_name.size))
+    	    return 0; /* Don't allow to merge random fonts. */
+    if (check_hinting) {
+	switch(cfont->FontType) {
+	    case ft_encrypted:
+	    case ft_encrypted2:
+		if (!same_type1_hinting((const gs_font_type1 *)cfont, 
+					(const gs_font_type1 *)ofont))
+		    return 0;
+		break;
+	    case ft_TrueType:
+		code = same_type42_hinting((gs_font_type42 *)cfont, 
+					(gs_font_type42 *)ofont);
+		break;
+	    case ft_CID_encrypted:
+		if (!gs_is_CIDSystemInfo_compatible(
+				gs_font_cid_system_info(cfont), 
+				gs_font_cid_system_info(ofont)))
+		    return 0;
+		code = same_cid0_hinting((const gs_font_cid0 *)cfont, 
+					 (const gs_font_cid0 *)ofont);
+		break;
+	    case ft_CID_TrueType:
+		if (!gs_is_CIDSystemInfo_compatible(
+				gs_font_cid_system_info(cfont), 
+				gs_font_cid_system_info(ofont)))
+		    return 0;
+		code = same_cid2_hinting((const gs_font_cid2 *)cfont, 
+					 (const gs_font_cid2 *)ofont);
+		break;
+	    default:
+		return_error(gs_error_unregistered); /* Must not happen. */
+	}
+	if (code <= 0) /* an error or false */
+	    return code; 
+    }
+    return compare_glyphs(cfont, ofont, glyphs, num_glyphs, 0);
+}
+

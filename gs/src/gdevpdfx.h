@@ -298,11 +298,31 @@ typedef struct pdf_temp_file_s {
     stream *save_strm;		/* save pdev->strm while writing here */
 } pdf_temp_file_t;
 
-/* Define the device structure. */
 #ifndef gx_device_pdf_DEFINED
 #  define gx_device_pdf_DEFINED
 typedef struct gx_device_pdf_s gx_device_pdf;
 #endif
+
+/*
+ * Define the structure for PDF font cache element.
+ */
+typedef struct pdf_font_cache_elem_s {
+    struct pdf_font_cache_elem_s *next;
+    gs_id font_id;
+    int num_chars;		/* safety purpose only */
+    struct pdf_font_resource_s *pdfont;
+    byte *glyph_usage;
+    int *real_widths;		/* [count] (not used for Type 0) */
+    gx_device_pdf *pdev;	/* For pdf_remove_font_cache_elem */
+} pdf_font_cache_elem_t;
+
+#define private_st_pdf_font_cache_elem()\
+    gs_private_st_ptrs5(st_pdf_font_cache_elem, pdf_font_cache_elem_t,\
+	"pdf_font_cache_elem_t", pdf_font_cache_elem_enum,\
+	pdf_font_cache_elem_reloc, next, pdfont,\
+	glyph_usage, real_widths, pdev);\
+
+/* Define the device structure. */
 struct gx_device_pdf_s {
     gx_device_psdf_common;
     /* PDF-specific distiller parameters */
@@ -429,6 +449,7 @@ struct gx_device_pdf_s {
      */
     cos_array_t *Namespace_stack;
     pdf_graphics_save_t *open_graphics;
+    pdf_font_cache_elem_t *font_cache;
 };
 
 #define is_in_page(pdev)\
@@ -448,8 +469,8 @@ struct gx_device_pdf_s {
  m(17,last_resource)\
  m(18,articles) m(19,Dests) m(20,global_named_objects)\
  m(21, local_named_objects) m(22,NI_stack) m(23,Namespace_stack)\
- m(24,open_graphics)
-#define gx_device_pdf_num_ptrs 25
+ m(24,open_graphics) m(25,font_cache)
+#define gx_device_pdf_num_ptrs 26
 #define gx_device_pdf_do_strings(m) /* do nothing */
 #define gx_device_pdf_num_strings 0
 #define st_device_pdf_max_ptrs\

@@ -159,7 +159,6 @@ struct pdf_font_resource_s {
     gs_font_base *copied_font;	/* == base_font->copied */
     uint count;			/* # of chars/CIDs */
     int *Widths;		/* [count] (not used for Type 0) */
-    int *real_widths;		/* [count] (not used for Type 0) */
     byte *used;			/* [ceil(count/8)] bitmap of chars/CIDs used */
 				/* (not used for Type 0 or Type 3) */
     pdf_resource_t *ToUnicode;	/* CMap (not used for CIDFonts) */
@@ -190,7 +189,7 @@ struct pdf_font_resource_s {
 	    /* [D]W[2] is Widths. */
 	    long CIDSystemInfo_id; /* (written when font is allocated) */
 	    ushort *CIDToGIDMap; /* (CIDFontType 2 only) [count] */
-	    gs_id glyphshow_font_id;
+ 	    gs_id glyphshow_font_id;
 
 	} cidfont;
 
@@ -335,7 +334,8 @@ gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont);
  * (pindex and/or psame may be NULL.)
  */
 pdf_font_embed_t pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font,
-				       int *pindex, int *psame);
+				       int *pindex,
+				       gs_glyph *glyphs, int num_glyphs);
 
 /*
  * Compute the BaseFont of a font according to the algorithm described
@@ -355,7 +355,7 @@ int pdf_close_text_document(gx_device_pdf *pdev); /* in gdevpdtw.c */
  * Allocate a CMap resource.
  */
 int pdf_cmap_alloc(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
-		   pdf_resource_t **ppres);
+		   pdf_resource_t **ppres /* CMap */);
 
 /*
  * Add a CID-to-GID mapping to a CIDFontType 2 font resource.

@@ -366,8 +366,15 @@ pdf_compute_font_descriptor(pdf_font_descriptor_t *pfd)
 	gs_const_string gname;
 
 	code = bfont->procs.glyph_info((gs_font *)bfont, glyph, pmat, members, &info);
-	if (code < 0)
-	    return code;
+	if (code < 0) {
+	    /*
+	     * Since this function may be indirtectly called from gx_device_finalize,
+	     * we are unable to propagate error code to the interpreter.
+	     * Therefore we skip it here hoping that few errors can be
+	     * recovered by the integration through entire glyph set.
+	     */
+	    continue;
+	}
 	rect_merge(desc.FontBBox, info.bbox);
 	if (!info.num_pieces)
 	    desc.Ascent = max(desc.Ascent, info.bbox.q.y);
@@ -505,7 +512,7 @@ pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	(code = pdf_compute_font_descriptor(pfd)) >= 0 &&
 	(!pfd->embed ||
 	 (code = pdf_write_embedded_font(pdev, pfd->base_font, 
-				&pfd->common.values.FontBBox)) >= 0)
+				&pfd->common.values.FontBBox, pfd->common.rid)) >= 0)
 	)
 	DO_NOTHING;
     return code;
@@ -527,7 +534,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     switch (ftype) {
     case ft_CID_encrypted:
     case ft_CID_TrueType:
-	if (pdf_do_subset_font(pdev, pfd->base_font)) {
+	if (pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)) {
 	    code = pdf_write_CIDSet(pdev, pfd->base_font, &cidset_id);
 	    if (code < 0)
 		return code;
@@ -545,7 +552,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 
 	fd = pfd->common;
 	if (pfd->embed && pfd->FontType == ft_TrueType &&
-	    pdf_do_subset_font(pdev, pfd->base_font)
+	    pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid)
 	    )
 	    fd.values.Flags =
 		(fd.values.Flags & ~(FONT_IS_ADOBE_ROMAN)) | FONT_IS_SYMBOLIC;
@@ -556,7 +563,7 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     s = pdev->strm;
     if (cidset_id != 0)
 	pprintld1(s, "/CIDSet %ld 0 R\n", cidset_id);
-    else if (pdf_do_subset_font(pdev, pfd->base_font) &&
+    else if (pdf_do_subset_font(pdev, pfd->base_font, pfd->common.rid) &&
 	     (ftype == ft_encrypted || ftype == ft_encrypted2)
 	     ) {
 	stream_puts(s, "/CharSet");

@@ -125,6 +125,28 @@ gs_font_cid_system_info(const gs_font *pfont)
 }
 
 /*
+ * Check CIDSystemInfo compatibility.
+ */
+bool 
+gs_is_CIDSystemInfo_compatible(const gs_cid_system_info_t *info0, 
+			       const gs_cid_system_info_t *info1)
+{
+    if (info0 == NULL || info1 == NULL)
+	return false;
+    if (info0->Registry.size != info1->Registry.size)
+	return false;
+    if (info0->Ordering.size !=	info1->Ordering.size)
+	return false;
+    if (memcmp(info0->Registry.data, info1->Registry.data, 
+	       info0->Registry.size))
+	return false;
+    if (memcmp(info0->Ordering.data, info1->Ordering.data,
+	       info0->Ordering.size))
+	return false;
+    return true;
+}
+
+/*
  * Provide a default enumerate_glyph procedure for CIDFontType 0 fonts.
  * Built for simplicity, not for speed.
  */

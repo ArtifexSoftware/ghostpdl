@@ -17,8 +17,7 @@
 /* $Id$ */
 /* BaseFont implementation for pdfwrite */
 #include "memory_.h"
-#include "ctype_.h"		/* for isxdigit() */
-#include <stdlib.h>		/* for rand() */
+#include "ctype_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for bytes_compare */
@@ -60,7 +59,7 @@ struct pdf_base_font_s {
 	DO_SUBSET_NO,
 	DO_SUBSET_YES
     } do_subset;
-    bool is_complete;
+    bool is_standard;
     /*
      * For CIDFonts, which are always subsetted, num_glyphs is CIDCount.
      * For optionally subsetted fonts, num_glyphs is the count of glyphs
@@ -106,13 +105,14 @@ pdf_has_subset_prefix(const byte *str, uint size)
  * Add the XXXXXX+ prefix for a subset font.
  */
 private int
-pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr)
+pdf_add_subset_prefix(const gx_device_pdf *pdev, gs_string *pstr, gs_id rid)
 {
     uint size = pstr->size;
     byte *data = gs_resize_string(pdev->pdf_memory, pstr->data, size,
 				  size + SUBSET_PREFIX_SIZE,
 				  "pdf_add_subset_prefix");
-    ulong v = (ulong)(pdev->random_offset + rand());
+    /* ulong v = (ulong)(pdev->random_offset + rand()); */
+    ulong v = rid;
     int i;
 
     if (data == 0)
@@ -157,12 +157,12 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
 /*
  * Allocate and initialize a base font structure, making the required
  * stable copy/ies of the gs_font.  Note that this removes any XXXXXX+
- * font name prefix from the copy.  If do_complete is true, the copy is
+ * font name prefix from the copy.  If is_standard is true, the copy is
  * a complete one, and adding glyphs or Encoding entries is not allowed.
  */
 int
 pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
-		    gs_font_base *font, bool do_complete)
+		    gs_font_base *font, bool is_standard)
 {
     gs_memory_t *mem = pdev->pdf_memory;
     gs_font *copied;
@@ -185,7 +185,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     switch (font->FontType) {
     case ft_encrypted:
     case ft_encrypted2:
-	pbfont->do_subset = (do_complete ? DO_SUBSET_NO : DO_SUBSET_UNKNOWN);
+	pbfont->do_subset = (is_standard ? DO_SUBSET_NO : DO_SUBSET_UNKNOWN);
 	/* We will count the number of glyphs below. */
 	pbfont->num_glyphs = -1;
 	break;
@@ -217,7 +217,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
     }
     if (pbfont->do_subset != DO_SUBSET_YES) {
 	/* The only possibly non-subsetted fonts are Type 1/2 and Type 42. */
-	if (do_complete)
+	if (is_standard)
 	    complete = copied, code = 0;
 	else
 	    code = gs_copy_font((gs_font *)font, mem, &complete);
@@ -239,7 +239,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	complete = copied;
     pbfont->copied = (gs_font_base *)copied;
     pbfont->complete = (gs_font_base *)complete;
-    pbfont->is_complete = do_complete;
+    pbfont->is_standard = is_standard;
     if (pfname->size > 0) {
 	font_name.data = pfname->chars;
 	font_name.size = pfname->size;
@@ -300,7 +300,7 @@ pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
     int code =
 	gs_copy_glyph_options((gs_font *)font, glyph,
 			      (gs_font *)pbfont->copied,
-			      (pbfont->is_complete ? COPY_GLYPH_NO_NEW : 0));
+			      (pbfont->is_standard ? COPY_GLYPH_NO_NEW : 0));
 
     if (code < 0)
 	return code;
@@ -320,7 +320,7 @@ pdf_base_font_copy_glyph(pdf_base_font_t *pbfont, gs_glyph glyph,
  * font name prefix and clearing the UID.
  */
 bool
-pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
+pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont, gs_id rid)
 {
     gs_font_base *copied = pbfont->copied;
 
@@ -365,7 +365,7 @@ pdf_do_subset_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont)
 	 * doesn't have enough room to add the subset prefix, but the
 	 * output is still OK if this happens.
 	 */
-	DISCARD(pdf_add_subset_prefix(pdev, &pbfont->font_name));
+	DISCARD(pdf_add_subset_prefix(pdev, &pbfont->font_name, rid));
 	/* Don't write a UID for subset fonts. */
 	uid_set_invalid(&copied->UID);
     }
@@ -451,9 +451,9 @@ pdf_adjust_font_name(gx_device_pdf *pdev, long id, pdf_base_font_t *pbfont)
  */
 int
 pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
-			gs_int_rect *FontBBox)
+			gs_int_rect *FontBBox, gs_id rid)
 {
-    bool do_subset = pdf_do_subset_font(pdev, pbfont);
+    bool do_subset = pdf_do_subset_font(pdev, pbfont, rid);
     gs_font_base *out_font =
 	(do_subset ? pbfont->copied : pbfont->complete);
     long FontFile_id;
@@ -467,12 +467,12 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	pbfont->FontFile_id = pdf_obj_ref(pdev);
     FontFile_id = pbfont->FontFile_id;
     if (pdev->CompatibilityLevel == 1.2 &&
-	!do_subset && !pbfont->is_complete ) {
+	!do_subset && !pbfont->is_standard ) {
 	/*
 	 * Due to a bug in Acrobat Reader 3, we need to generate
 	 * unique font names, except base 14 fonts being not embedded.
 	 * To recognize base 14 fonts here we used the knowledge 
-	 * that pbfont->is_complete is true for base 14 fonts only.
+	 * that pbfont->is_standard is true for base 14 fonts only.
 	 * Note that subsetted fonts already have an unique name
 	 * due to subset prefix.
 	 */
@@ -555,7 +555,7 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 				   (gs_font_cid2 *)out_font,
 				   CID2_OPTIONS, NULL, 0, &fnstr);
     finish:
-	pdf_end_fontfile(pdev, &writer);
+	code = pdf_end_fontfile(pdev, &writer);
 	break;
 
     default:

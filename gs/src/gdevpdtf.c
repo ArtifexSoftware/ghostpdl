@@ -43,16 +43,15 @@ private_st_pdf_outline_fonts();
 
 private
 ENUM_PTRS_WITH(pdf_font_resource_enum_ptrs, pdf_font_resource_t *pdfont)
-ENUM_PREFIX(st_pdf_resource, 11);
+ENUM_PREFIX(st_pdf_resource, 10);
 case 0: return ENUM_STRING(&pdfont->BaseFont);
 case 1: ENUM_RETURN(pdfont->FontDescriptor);
 case 2: ENUM_RETURN(pdfont->base_font);
 case 3: ENUM_RETURN(pdfont->copied_font);
 case 4: ENUM_RETURN(pdfont->Widths);
-case 5: ENUM_RETURN(pdfont->real_widths);
-case 6: ENUM_RETURN(pdfont->used);
-case 7: ENUM_RETURN(pdfont->ToUnicode);
-case 8: switch (pdfont->FontType) {
+case 5: ENUM_RETURN(pdfont->used);
+case 6: ENUM_RETURN(pdfont->ToUnicode);
+case 7: switch (pdfont->FontType) {
  case ft_composite:
      ENUM_RETURN(pdfont->u.type0.DescendantFont);
  case ft_CID_encrypted:
@@ -62,7 +61,7 @@ case 8: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(pdfont->u.simple.Encoding);
 }
-case 9: switch (pdfont->FontType) {
+case 8: switch (pdfont->FontType) {
  case ft_composite:
      return (pdfont->u.type0.cmap_is_standard ? ENUM_OBJ(0) :
 	     ENUM_CONST_STRING(&pdfont->u.type0.CMapName));
@@ -74,7 +73,7 @@ case 9: switch (pdfont->FontType) {
  default:
      ENUM_RETURN(0);
 }
-case 10: switch (pdfont->FontType) {
+case 9: switch (pdfont->FontType) {
  case ft_user_defined:
      ENUM_RETURN(pdfont->u.simple.s.type3.char_procs);
  default:
@@ -90,7 +89,6 @@ RELOC_PTRS_WITH(pdf_font_resource_reloc_ptrs, pdf_font_resource_t *pdfont)
     RELOC_VAR(pdfont->base_font);
     RELOC_VAR(pdfont->copied_font);
     RELOC_VAR(pdfont->Widths);
-    RELOC_VAR(pdfont->real_widths);
     RELOC_VAR(pdfont->used);
     RELOC_VAR(pdfont->ToUnicode);
     switch (pdfont->FontType) {
@@ -164,7 +162,7 @@ pdf_find_standard_font_name(const byte *str, uint size)
  */
 private int
 find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
-		    int mask, int *psame)
+		    int mask, gs_glyph *glyphs, int num_glyphs)
 {
     bool has_uid = uid_is_UniqueID(&bfont->UID) && bfont->UID.id != 0;
     const pdf_standard_font_t *psf = pdf_standard_fonts(pdev);
@@ -176,13 +174,13 @@ find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
     case ft_TrueType:
 	break;
     default:
-	*psame = 0;
 	return -1;
     }
 
     mask |= FONT_SAME_OUTLINES;
     for (i = 0; i < PDF_NUM_STANDARD_FONTS; ++psf, ++i) {
 	gs_font_base *cfont;
+	int code;
 
 	if (!psf->pdfont)
 	    continue;
@@ -194,42 +192,19 @@ find_std_appearance(const gx_device_pdf *pdev, gs_font_base *bfont,
 	     */
 	    if (!uid_equal(&bfont->UID, &cfont->UID))
 		continue;
-	} else {
-	    /*
-	     * Require the actual outlines to match.  We can't rely on
-	     * same_font to check this, because it is allowed to be
-	     * conservative (and not try hard for a match).
-	     */
-	    int index;
-	    gs_glyph glyph;
-
-	    if (cfont->FontType != bfont->FontType)
-		continue;
-	    for (index = 0;
-		 (bfont->procs.enumerate_glyph((gs_font *)bfont, &index,
-					       GLYPH_SPACE_NAME, &glyph),
-		  index != 0);
-		 ) {
-		/*
-		 * Require that every glyph in bfont be present, with the
-		 * same definition, in cfont.  ****** METRICS? ******
-		 */
-		int code = gs_copy_glyph_options((gs_font *)bfont, glyph,
-						 (gs_font *)cfont,
-						 COPY_GLYPH_NO_NEW);
-
-		if (code != 1)
-		    break;
-	    }
-	    if (index != 0)
-		continue;
 	}
-	*psame = bfont->procs.same_font((const gs_font *)bfont,
-					(const gs_font *)cfont,
-					mask) | FONT_SAME_OUTLINES;
-	return i;
+	/*
+	 * Require the actual outlines to match (within the given subset).
+	 */
+	code = gs_copied_can_copy_glyphs((const gs_font *)cfont,
+					 (const gs_font *)bfont,
+					 glyphs, num_glyphs, true);
+	if (code == gs_error_unregistered) /* Debug purpose only. */
+	    return code;
+	/* Note: code < 0 means an error. Skip it here. */
+	if (code > 0)
+	    return i;
     }
-    *psame = 0;
     return -1;
 }
 
@@ -319,7 +294,6 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     gs_memory_t *mem = pdev->pdf_memory;
     pdf_font_resource_t *pfres;
     int *widths = 0;
-    int *real_widths = 0;
     byte *used = 0;
     int code;
 
@@ -328,16 +302,12 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 
 	widths = (void *)gs_alloc_byte_array(mem, chars_count, sizeof(int),
 					     "font_resource_alloc(Widths)");
-	real_widths =
-	    (void *)gs_alloc_byte_array(mem, chars_count, sizeof(int),
-					"font_resource_alloc(real_widths)");
 	used = gs_alloc_bytes(mem, size, "font_resource_alloc(used)");
-	if (widths == 0 || real_widths == 0 || used == 0) {
+	if (widths == 0 || used == 0) {
 	    code = gs_note_error(gs_error_VMerror);
 	    goto fail;
 	}
 	memset(widths, 0, chars_count * sizeof(*widths));
-	memset(real_widths, 0, chars_count * sizeof(*real_widths));
 	memset(used, 0, size);
     }
     code = pdf_alloc_resource(pdev, rtype, rid, (pdf_resource_t **)&pfres, 0L);
@@ -348,14 +318,12 @@ font_resource_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
     pfres->FontType = ftype;
     pfres->count = chars_count;
     pfres->Widths = widths;
-    pfres->real_widths = real_widths;
     pfres->used = used;
     pfres->write_contents = write_contents;
     *ppfres = pfres;
     return 0;
  fail:
     gs_free_object(mem, used, "font_resource_alloc(used)");
-    gs_free_object(mem, real_widths, "font_resource_alloc(real_widths)");
     gs_free_object(mem, widths, "font_resource_alloc(Widths)");
     return code;
 }
@@ -385,22 +353,37 @@ font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 	gs_alloc_struct_array(pdev->pdf_memory, 256, pdf_encoding_element_t,
 			      &st_pdf_encoding_element,
 			      "font_resource_encoded_alloc");
+    gs_point *v = (gs_point *)gs_alloc_byte_array(pdev->pdf_memory, 
+		    256, sizeof(gs_point), "pdf_font_simple_alloc");
     pdf_font_resource_t *pdfont;
     int code, i;
 
-    if (Encoding == 0)
+
+    if (v == 0 || Encoding == 0) {
+	gs_free_object(pdev->pdf_memory, Encoding, 
+		       "font_resource_encoded_alloc");
+	gs_free_object(pdev->pdf_memory, v, 
+	               "font_resource_encoded_alloc");
 	return_error(gs_error_VMerror);
+    }
     code = font_resource_simple_alloc(pdev, &pdfont, rid, ftype,
 				      256, write_contents);
     if (code < 0) {
-	gs_free_object(pdev->pdf_memory, Encoding,
-		       "font_resource_encoded_alloc");
+	gs_free_object(pdev->pdf_memory, Encoding, 
+	               "font_resource_encoded_alloc");
+	gs_free_object(pdev->pdf_memory, v, 
+	               "font_resource_encoded_alloc");
+	return_error(gs_error_VMerror);
+    }
+    if (code < 0) {
 	return code;
     }
+    memset(v, 0, 256 * sizeof(*v));
     memset(Encoding, 0, 256 * sizeof(*Encoding));
     for (i = 0; i < 256; ++i)
 	Encoding[i].glyph = GS_NO_GLYPH;
     pdfont->u.simple.Encoding = Encoding;
+    pdfont->u.simple.v = v;
     *ppfres = pdfont;
     return 0;
 }
@@ -476,28 +459,28 @@ embed_list_includes(const gs_param_string_array *psa, const byte *chars,
     return false;
 }
 private bool
-embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index, int *psame)
+embed_as_standard(gx_device_pdf *pdev, gs_font *font, int index,
+		  gs_glyph *glyphs, int num_glyphs)
 {
     if (font->is_resource) {
-	*psame = ~0;
 	return true;
     }
     if (find_std_appearance(pdev, (gs_font_base *)font, -1,
-			    psame) == index)
+			    glyphs, num_glyphs) == index)
 	return true;
     if (!scan_for_standard_fonts(pdev, font->dir))
 	return false;
     return (find_std_appearance(pdev, (gs_font_base *)font, -1,
-				psame) == index);
+				glyphs, num_glyphs) == index);
 }
 pdf_font_embed_t
 pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
-		      int *psame)
+		      gs_glyph *glyphs, int num_glyphs)
 {
     const byte *chars = font->font_name.chars;
     uint size = font->font_name.size;
     int index = pdf_find_standard_font_name(chars, size);
-    int discard_same;
+    bool embed_as_standard_called = false, do_embed_as_standard;
 
     /*
      * The behavior of Acrobat Distiller changed between 3.0 (PDF 1.2),
@@ -508,23 +491,27 @@ pdf_font_embed_status(gx_device_pdf *pdev, gs_font *font, int *pindex,
      */
     if (pindex)
 	*pindex = index;
-    if (psame == 0)
-	psame = &discard_same;
-    *psame = 0;
     if (pdev->CompatibilityLevel < 1.3) {
-	if (index >= 0 && embed_as_standard(pdev, font, index, psame))
+	if (index >= 0 && 
+	    (embed_as_standard_called = true,
+	     do_embed_as_standard = embed_as_standard(pdev, font, index, glyphs, num_glyphs)))
 	    return FONT_EMBED_STANDARD;
     }
     /* Check the Embed lists. */
     if (!embed_list_includes(&pdev->params.NeverEmbed, chars, size) ||
- 	(index >= 0 && !embed_as_standard(pdev, font, index, psame))
+ 	(index >= 0 && 
+	    !(embed_as_standard_called ? do_embed_as_standard :
+	     (embed_as_standard_called = true,
+	      (do_embed_as_standard = embed_as_standard(pdev, font, index, glyphs, num_glyphs)))))
  	/* Ignore NeverEmbed for a non-standard font with a standard name */
  	) {
 	if (pdev->params.EmbedAllFonts || font_is_symbolic(font) ||
 	    embed_list_includes(&pdev->params.AlwaysEmbed, chars, size))
 	    return FONT_EMBED_YES;
     }
-    if (index >= 0 && embed_as_standard(pdev, font, index, psame))
+    if (index >= 0 && 
+	(embed_as_standard_called ? do_embed_as_standard :
+	 embed_as_standard(pdev, font, index, glyphs, num_glyphs)))
 	return FONT_EMBED_STANDARD;
     return FONT_EMBED_NO;
 }
@@ -669,28 +656,13 @@ pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 		      gs_id rid, pdf_font_descriptor_t *pfd)
 {
     pdf_font_resource_t *pdfont;
-    gs_font_base *pfont = pdf_font_descriptor_font(pfd);
-    gs_point *v = NULL;
     int code;
 
-    if (pfont->WMode) {
-	v = (gs_point *)gs_alloc_byte_array(pdev->pdf_memory, 
-			256, sizeof(gs_point), "pdf_font_simple_alloc");
-	if (v == 0)
-	    return_error(gs_error_VMerror);
-	memset(v, 0, 256 * sizeof(*v));
-    }
     code = font_resource_encoded_alloc(pdev, &pdfont, rid,
 					   pdf_font_descriptor_FontType(pfd),
 					   pdf_write_contents_simple);
 
-    if (code < 0) {
-	gs_free_object(pdev->pdf_memory, v,
-		       "pdf_font_simple_alloc");
-	return code;
-    }
     pdfont->FontDescriptor = pfd;
-    pdfont->u.simple.v = v;
     set_is_MM_instance(pdfont, pdf_font_descriptor_font(pfd));
     *ppfres = pdfont;
     return pdf_compute_BaseFont(pdev, pdfont);

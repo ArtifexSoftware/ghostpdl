@@ -139,4 +139,15 @@ int gs_copied_font_add_encoding(gs_font *copied, gs_char chr, gs_glyph glyph);
  */
 int gs_copy_font_complete(gs_font *font, gs_font *copied);
 
+
+/*
+ * Check whether specified glyphs can be copied from another font.
+ * It means that (1) fonts have same hinting parameters and 
+ * (2) font subsets for the specified glyph set don't include different 
+ * outlines or metrics. Possible returned values : 
+ * 0 (incompatible), 1 (compatible), < 0 (error)
+ */
+int gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
+		    gs_glyph *glyphs, int num_glyphs, bool check_hinting);
+
 #endif /* gxfcopy_INCLUDED */
