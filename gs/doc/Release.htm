@@ -371,6 +371,25 @@ cvs commit
 again to check in the Changes and history files.
 
 <p>
+For the unix source distributions only, generate the configure
+scripts. From the top level directory, run 
+
+<blockquote><pre>./autogen.sh
+make clean
+</pre></blockquote>
+
+This should create links to <tt>configure.ac</tt> and
+<tt>Makefile.in</tt> in the top level directory and
+invoke autoconf to create the <tt>configure</tt> script.
+
+<p>
+You should then verify that only autogen.sh, configure,
+Makefile.in exist as files at the top level. Running ./configure
+will create a number of files that should not be distributed.
+'make clean' may or may not remove these depending on the
+version.
+
+<p>
 Make the source archives with
 
 <blockquote><pre>
@@ -383,7 +402,6 @@ This creates the files
 <blockquote><pre>
 <b><tt>ghostscript-#.##.tar.gz</tt></b> (main archive)
 <b><tt>ghostscript-#.##.tar.bz2</tt></b> (main archive)
-<b><tt>ghostscript-#.##gnu.tar.gz</tt></b> (GPL'ed files)
 </pre></blockquote>
 
 <h3><a name="Testing_on_Windows"></a>Testing on Windows</h3>
