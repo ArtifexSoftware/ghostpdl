@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_image.h,v 1.5 2002/06/18 13:40:29 giles Exp $
+    $Id$
 */
 
 
@@ -32,5 +32,10 @@ Jbig2Image *jbig2_image_read_pbm(Jbig2Ctx *ctx, FILE *in);
 int jbig2_image_write_png_file(Jbig2Image *image, char *filename);
 int jbig2_image_write_png(Jbig2Image *image, FILE *out);
 #endif
+
+int jbig2_image_get_pixel(Jbig2Image *image, int x, int y);
+int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, int value);
+
+
 
 #endif /* _JBIG2_IMAGE_H */

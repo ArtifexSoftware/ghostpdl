@@ -167,3 +167,47 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
             
     return 0;
 }
+
+/* look up a pixel value in an image.
+   returns 0 outside the image frame for the convenience of
+   the template code
+*/
+int jbig2_image_get_pixel(Jbig2Image *image, int x, int y)
+{
+  const int w = image->width;
+  const int h = image->height;
+  const int byte = (x >> 3) + y*image->stride;
+  const int bit = 7 - (x & 7);
+
+  if ((x < 0) || (x > w)) return 0;
+  if ((y < 0) || (y > h)) return 0;
+  
+  return ((image->data[byte]>>bit) & 1);
+}
+
+/* set an individual pixel value in an image */
+int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
+{
+  const int w = image->width;
+  const int h = image->height;
+  int i, scratch, mask;
+  int bit, byte;
+
+  if ((x < 0) || (x > w)) return 0;
+  if ((y < 0) || (y > h)) return 0;
+
+  fprintf(stderr, "set pixel called for image 0x%x (%d x %d) stride %d\n",
+    image, w, h, image->stride);
+
+  byte = (x >> 3) + y*image->stride;
+  bit = 7 - (x & 7);
+  mask = (1 << bit) ^ 0xff;
+
+  fprintf(stderr, "set pixel mask for bit %d of byte %d (%d,%d) is 0x%02x\n", 
+    bit, byte, x, y, mask);
+
+  scratch = image->data[byte] & mask;
+  image->data[byte] = scratch | (value << bit);
+
+  return 1;
+}
