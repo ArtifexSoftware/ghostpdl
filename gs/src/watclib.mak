@@ -16,28 +16,28 @@ SEARCH_HERE_FIRST=1
 GS_INIT=gs_init.ps
 
 !ifndef DEBUG
-DEBUG=1
+DEBUG=0
 !endif
 !ifndef TDEBUG
-TDEBUG=1
+TDEBUG=0
 !endif
 !ifndef NOPRIVATE
-NOPRIVATE=1
+NOPRIVATE=0
 !endif
 
 GS=gslib
 
 !ifndef BINDIR
-BINDIR=.\debugobj
+BINDIR=.\obj
 !endif
 !ifndef GLSRCDIR
 GLSRCDIR=.\src
 !endif
 !ifndef GLGENDIR
-GLGENDIR=.\debugobj
+GLGENDIR=.\obj
 !endif
 !ifndef GLOBJDIR
-GLOBJDIR=.\debugobj
+GLOBJDIR=.\obj
 !endif
 
 # Do not edit the next group of lines.
