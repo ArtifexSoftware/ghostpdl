@@ -434,6 +434,31 @@ currentdict end readonly def
   ] cvx 0 () /SubFileDecode filter
 } bind def
 
+/AppendFilters  % <file> <dict> AppendFilters <file>
+{
+  dup 3 1 roll					    % d f
+  /Filter //knownget exec {			    % d f n
+    dup type /nametype eq {
+      2 index /DecodeParms //knownget exec {
+        exch
+      } if
+      filter
+    } {
+      dup 0 exch 1 exch length 1 sub {		    % d [] i
+        2 index /DecodeParms //knownget exec {	    % d [] i DP
+          1 index get				    % d [] i dp
+        } if
+	exch 2 index exch get			    % d [] dp fn
+        filter
+      } for
+    } ifelse
+    //PDFR_DEBUG {
+      //MakeStreamDumper exec
+    } if
+  } if
+  exch pop
+} bind def
+
 /MakeStreamReader % <obj> MakeStreamReader <file>
 { dup
   [ 
@@ -479,17 +504,7 @@ currentdict end readonly def
     (Stream reader ) print dup ==
   } if
   0 () /SubFileDecode filter
-  exch /Filter //knownget exec {
-    dup type /nametype eq {
-      filter
-    } {
-      { filter
-      } forall
-    } ifelse
-    //PDFR_DEBUG {
-      //MakeStreamDumper exec
-    } if
-  } if
+  exch //AppendFilters exec
 } bind def
 
 /RunDelayedStream % <stream_obj> RunStream -
@@ -1289,7 +1304,7 @@ currentdict end readonly def
   /BPC /BitsPerComponent def
   /CS /ColorSpace def
   /D /Decode def
-  /DP /DecodeParams def
+  /DP /DecodeParms def
   /F /Filter def
   /H /Height def
   /IM /ImageMask def
@@ -1352,6 +1367,11 @@ currentdict end readonly def
   } if
   dup /ImageMatrix [2 index /Width get 0 0 5 index /Height get neg 
 					0 7 index /Height get] put % Not sure why upside down ?
+  dup /Filter known {
+    dup dup dup /DataSource get
+    exch //AppendFilters exec
+    /DataSource exch put
+  } if
   //DebugImagePrinting exec
 } bind def
 
