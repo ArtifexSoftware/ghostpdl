@@ -153,8 +153,7 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const uint8_t *segm
             "failed to allocate buffer for page image");
     } else {
 	/* 8.2 (3) fill the page with the default pixel value */
-	memset(page->image->data, (page->flags & 4) ? 0xFF : 0x00,
-	    page->image->stride*page->image->height);
+	jbig2_image_clear(ctx, page->image, (page->flags & 4));
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
             "allocated %dx%d page image (%d bytes)",
             page->image->width, page->image->height,

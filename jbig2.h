@@ -63,7 +63,7 @@ Jbig2Image*     jbig2_image_new(Jbig2Ctx *ctx, int width, int height);
 Jbig2Image*	jbig2_image_clone(Jbig2Ctx *ctx, Jbig2Image *image);
 void		jbig2_image_release(Jbig2Ctx *ctx, Jbig2Image *image);
 void            jbig2_image_free(Jbig2Ctx *ctx, Jbig2Image *image);
-
+void		jbig2_image_clear(Jbig2Ctx *ctx, Jbig2Image *image, int value);
 
 /* errors are returned from the library via a callback. If no callback
    is provided (a NULL argument is passed ot jbig2_ctx_new) a default

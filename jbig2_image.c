@@ -56,7 +56,7 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 	image->height = height;
 	image->stride = stride;
 	image->refcount = 1;
-	
+
 	return image;
 }
 
@@ -167,6 +167,15 @@ int jbig2_image_compose(Jbig2Ctx *ctx, Jbig2Image *dst, Jbig2Image *src,
     }
             
     return 0;
+}
+
+
+/* initialize an image bitmap to a constant value */
+void jbig2_image_clear(Jbig2Ctx *ctx, Jbig2Image *image, int value)
+{
+    const uint8_t fill = value ? 0xFF : 0x00;
+
+    memset(image->data, fill, image->stride*image->height);
 }
 
 /* look up a pixel value in an image.
