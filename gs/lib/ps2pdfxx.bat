@@ -2,9 +2,6 @@
 @rem $Id$
 rem Internal batch file for calling pdfwrite driver.
 
-rem	NOTE: for questions about using this file on Windows NT,
-rem	please contact Matt Sergeant (sergeant@geocities.com).
-
 rem The files that call this one (ps2pdf*.bat) write the command-line
 rem options into _.at, and then pass the last 2 (or fewer) arguments
 rem to this file.
