@@ -29,8 +29,6 @@
 #   define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. 
                                                The implementation of 0 is not completed yet. */
 #   define FLATTENED_ITERATOR_SELFTEST 0 /* Temporarily used for a debug purpose. */
-#   define FLATTENED_ITERATOR_HEAVY_SELFTEST 0 /* Temporarily used for a debug purpose. */
-
 
 /* ---------------- Curve flattening ---------------- */
 
@@ -458,7 +456,6 @@ bool
 gx_flattened_iterator__next_filtered(gx_flattened_iterator *this)
 {
     fixed x0 = this->lx1, y0 = this->ly1;
-    bool end = (this->i == 1 << this->k);
 
     this->gx0 = x0;
     this->gy0 = y0;
@@ -466,20 +463,7 @@ gx_flattened_iterator__next_filtered(gx_flattened_iterator *this)
     for (;;) {
 	bool more = gx_flattened_iterator__next(this);
 
-#	if CURVED_TRAPEZOID_FILL0_COMPATIBLE
-	    if (!more) {
-		this->filtered1_i = this->i;
-		if (end)
-		    this->last_filtered1_i = this->i;
-		this->gx0 = x0;
-		this->gy0 = y0;
-		this->gx1 = this->lx1;
-		this->gy1 = this->ly1;
-		return false;
-	    }
-#	endif
-	if (!coord_near(x0, this->lx1) || !coord_near(y0, this->ly1)) {
-	    this->last_filtered1_i = this->i;
+	if (!more || !coord_near(x0, this->lx1) || !coord_near(y0, this->ly1)) {
 	    this->filtered1_i = this->i;
 	    this->gx0 = x0;
 	    this->gy0 = y0;
@@ -713,10 +697,9 @@ gx_flattened_iterator__test_filtered(gx_flattened_iterator *this)
 	    assert(ppp->x == fi.gx1 && ppp->y == fi.gy1);
 	    ppp++;
 	}
-	if (FLATTENED_ITERATOR_HEAVY_SELFTEST || !more)
-	    gx_flattened_iterator__test_backscan2(&fi, 
-		(ppt < ppe ? points : NULL), ppp, skip_points, 
-		sizeof(skip_points), single_segment, !more);
+	gx_flattened_iterator__test_backscan2(&fi, 
+	    (ppt < ppe ? points : NULL), ppp, skip_points, 
+	    sizeof(skip_points), single_segment, !more);
 	single_segment &= !more;
     } while(more);
     if (ppt < ppe)
