@@ -183,11 +183,14 @@ psw_begin_file_header(FILE *f, const gx_device *dev, const gs_rect *pbbox,
     psw_print_lines(f, psw_begin_prolog);
     fprintf(f, "%% %s\n", gs_copyright);
     fputs("%%BeginResource: procset ", f);
+    fflush(f);
     psw_print_procset_name(f, dev, pdpc);
     fputs("\n/", f);
+    fflush(f);
     psw_print_procset_name(f, dev, pdpc);
     fputs(" 80 dict dup begin\n", f);
     psw_print_lines(f, psw_ps_procset);
+    fflush(f);
 }
 
 /*
@@ -292,4 +295,5 @@ psw_write_page_trailer(FILE *f, int num_copies, int flush)
 	fprintf(f, "userdict /#copies %d put\n", num_copies);
     fprintf(f, "cleartomark end end pagesave restore %s\n%%%%PageTrailer\n",
 	    (flush ? "showpage" : "copypage"));
+    fflush(f);
 }

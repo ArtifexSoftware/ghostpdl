@@ -343,6 +343,7 @@ psw_begin_file(gx_device_pswrite *pdev, const gs_rect *pbbox)
 	psw_print_lines(f, psw_1_5_procset);
     }
     psw_end_file_header(f);
+    fflush(f);
     return 0;
 }
 
