@@ -711,7 +711,7 @@ pdf14_put_image(pdf14_device *pdev, gs_state *pgs, gx_device *target)
     info->procs->end_image(info, true);
 
     /* Restore device in graphics state.*/
-    gs_setdevice_no_init(pgs, pdev);
+    gs_setdevice_no_init(pgs, (gx_device*) pdev);
 
     return code;
 }
