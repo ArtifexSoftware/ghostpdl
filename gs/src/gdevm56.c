@@ -381,21 +381,21 @@ mem_true56_copy_mono(gx_device * dev,
 		    if (sbyte & 0x80)
 			put7(pptr, a1, b1, c1, d1, e1, f1, g1);
 		    if (sbyte & 0x40)
-			put7(pptr + 5, a1, b1, c1, d1, e1, f1, g1);
+			put7(pptr + 7, a1, b1, c1, d1, e1, f1, g1);
 		    if (sbyte & 0x20)
-			put7(pptr + 10, a1, b1, c1, d1, e1, f1, g1);
+			put7(pptr + 14, a1, b1, c1, d1, e1, f1, g1);
 		    if (sbyte & 0x10)
-			put7(pptr + 15, a1, b1, c1, d1, e1, f1, g1);
+			put7(pptr + 21, a1, b1, c1, d1, e1, f1, g1);
 		}
 		if (sbyte & 0xf) {
 		    if (sbyte & 8)
-			put7(pptr + 20, a1, b1, c1, d1, e1, f1, g1);
+			put7(pptr + 28, a1, b1, c1, d1, e1, f1, g1);
 		    if (sbyte & 4)
-			put7(pptr + 25, a1, b1, c1, d1, e1, f1, g1);
-		    if (sbyte & 2)
-			put7(pptr + 30, a1, b1, c1, d1, e1, f1, g1);
-		    if (sbyte & 1)
 			put7(pptr + 35, a1, b1, c1, d1, e1, f1, g1);
+		    if (sbyte & 2)
+			put7(pptr + 42, a1, b1, c1, d1, e1, f1, g1);
+		    if (sbyte & 1)
+			put7(pptr + 49, a1, b1, c1, d1, e1, f1, g1);
 		}
 		pptr += 8 * PIXEL_SIZE;
 		count -= 8;
