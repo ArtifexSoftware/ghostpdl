@@ -500,7 +500,7 @@ hpgl_print_char(
     {
         gs_font *       pfont = pgls->g.font->pfont;
         const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
-        float           save_width = widths[pgls->g.pen.selected];
+        float           save_width = widths[hpgl_get_selected_pen(pgls)];
         bool            save_relative = pgls->g.pen.width_relative;
         gs_point        scale;
         bool            bitmaps_allowed = pgls->g.bitmap_fonts_allowed;
@@ -651,7 +651,7 @@ hpgl_print_char(
 	 */
 	if (pfont->PaintType != 0) {
             int     code = 0;
-            int     pen = pgls->g.pen.selected;
+            int     pen = hpgl_get_selected_pen(pgls);
             floatp  nwidth;
 
             if (weight == 9999)
@@ -803,7 +803,7 @@ hpgl_print_char(
 	gs_currentpoint(pgs, &end_pt);
 	if (!use_show)
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));
-        (void )pcl_palette_PW(pgls, pgls->g.pen.selected, save_width);
+        (void )pcl_palette_PW(pgls, hpgl_get_selected_pen(pgls), save_width);
 
 	pgls->g.pen.width_relative = save_relative;
 	hpgl_call( hpgl_add_point_to_path( pgls,

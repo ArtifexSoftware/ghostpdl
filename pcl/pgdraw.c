@@ -257,6 +257,23 @@ hpgl_set_graphics_dash_state(hpgl_state_t *pgls)
 	return 0;
 }
 
+/* catch pen not being in the palette */
+ int
+hpgl_get_selected_pen(hpgl_state_t *pgls)
+{
+    /* get the current pen */
+    int pen = pgls->g.pen.selected;
+    /* 0 is the first pen */
+    int max_pen = pcl_palette_get_num_entries(pgls->ppalet) - 1;
+    /* this is bad */
+    if ( pen < 0 )
+	pen = -pen;
+    /* try to recover if necessary */
+    while ( pen > max_pen )
+	pen = pen - max_pen;
+    return pen;
+}
+
 /*
  * set up joins, caps, miter limit, and line width
  */
@@ -282,7 +299,7 @@ hpgl_set_graphics_line_attribute_state(
 					   gs_join_none     /* 6 no join */
                                            };
     const float *           widths = pcl_palette_get_pen_widths(pgls->ppalet);
-    floatp                  pen_wid = widths[pgls->g.pen.selected];
+    floatp                  pen_wid = widths[hpgl_get_selected_pen(pgls)];
 
     /*
      * HP appears to use default line attributes if the the pen
@@ -345,7 +362,7 @@ hpgl_polyfill_bbox(
 )
 {
     const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
-    hpgl_real_t     half_width = widths[pgls->g.pen.selected] / 2.0;
+    hpgl_real_t     half_width = widths[hpgl_get_selected_pen(pgls)] / 2.0;
 
     /* get the bounding box for the current path / polygon */
     hpgl_call(gs_pathbbox(pgls->pgs, bbox));
@@ -540,7 +557,7 @@ hpgl_polyfill(
     {
 	gs_matrix       mat;
         const float *   widths = pcl_palette_get_pen_widths(pgls->ppalet);
-        hpgl_real_t     line_width = widths[pgls->g.pen.selected];
+        hpgl_real_t     line_width = widths[hpgl_get_selected_pen(pgls)];
 
         hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
         line_width /= min(fabs(mat.xx), fabs(mat.yy));
@@ -699,7 +716,7 @@ hpgl_set_drawing_color(
 	  case hpgl_char_solid_edge:    /* fall through */
 	  case hpgl_char_edge:
             set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-            code = set_proc(pgls, pgls->g.pen.selected, false);
+            code = set_proc(pgls, hpgl_get_selected_pen(pgls), false);
 	    break;
 
 	  case hpgl_char_fill:
@@ -735,33 +752,33 @@ fill:
              * set to the value of the current pen - (i.e pen 0 is
              * solid white
              */
-	    code = set_proc(pgls, pgls->g.pen.selected, false);
+	    code = set_proc(pgls, hpgl_get_selected_pen(pgls), false);
 	    break;
 
           case hpgl_FT_pattern_one_line:
 	  case hpgl_FT_pattern_two_lines:
 	    set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-            code = set_proc(pgls, pgls->g.pen.selected, false);
+            code = set_proc(pgls, hpgl_get_selected_pen(pgls), false);
 	    break;
 
 	  case hpgl_FT_pattern_cross_hatch:
             code = set_proc( pgls,
                              pgls->g.fill.param.pattern_type,
-                             pgls->g.pen.selected
+                             hpgl_get_selected_pen(pgls)
                              );
 	    break;
 
 	  case hpgl_FT_pattern_shading:
             code = set_proc( pgls,
                              pgls->g.fill.param.shading,
-                             pgls->g.pen.selected
+                             hpgl_get_selected_pen(pgls)
                              );
 	    break;
 
 	  case hpgl_FT_pattern_user_defined:
             code = set_proc( pgls,
                              pgls->g.fill.param.pattern_id,
-                             pgls->g.pen.selected
+                             hpgl_get_selected_pen(pgls)
                              );
             break;
 
@@ -769,8 +786,8 @@ fill:
             code = set_proc( pgls,
                              pgls->g.fill.param.user_defined.pattern_index,
                              (pgls->g.fill.param.user_defined.use_current_pen
-                                  ? pgls->g.pen.selected
-			          : -pgls->g.pen.selected)
+                                  ? hpgl_get_selected_pen(pgls)
+			          : -hpgl_get_selected_pen(pgls))
                              );
             break;
 
@@ -786,20 +803,20 @@ fill:
 	switch(pgls->g.screen.type) {
 
 	  case hpgl_SV_pattern_solid_pen:
-	    code = set_proc(pgls, pgls->g.pen.selected, false);
+	    code = set_proc(pgls, hpgl_get_selected_pen(pgls), false);
 	    break;
 
 	  case hpgl_SV_pattern_shade:
             code = set_proc( pgls,
                              pgls->g.screen.param.shading,
-                             pgls->g.pen.selected
+                             hpgl_get_selected_pen(pgls)
                              );
 	    break;
 
           case hpgl_SV_pattern_cross_hatch:
             code = set_proc( pgls,
                              pgls->g.screen.param.pattern_type,
-                             pgls->g.pen.selected
+                             hpgl_get_selected_pen(pgls)
                              );
 	    break;
 
@@ -807,15 +824,15 @@ fill:
             code = set_proc( pgls,
                              pgls->g.screen.param.user_defined.pattern_index,
                              (pgls->g.screen.param.user_defined.use_current_pen
-                                  ? pgls->g.pen.selected
-			          : -pgls->g.pen.selected)
+                                  ? hpgl_get_selected_pen(pgls)
+			          : -hpgl_get_selected_pen(pgls))
                              );
             break;
 
 	  case hpgl_SV_pattern_user_defined:
             code = set_proc( pgls,
                              pgls->g.screen.param.pattern_id,
-                             pgls->g.pen.selected
+                             hpgl_get_selected_pen(pgls)
                              );
             break;
 
@@ -1225,7 +1242,7 @@ hpgl_draw_current_path(
 
 	    case hpgl_char_solid_edge:
                 set_proc = pcl_pattern_get_proc_FT(hpgl_FT_pattern_solid_pen1);
-                if ((code = set_proc(pgls, pgls->g.pen.selected, false)) < 0)
+                if ((code = set_proc(pgls, hpgl_get_selected_pen(pgls), false)) < 0)
                     return code;
 		hpgl_call((*fill)(pgs));
 		/* falls through */
@@ -1290,7 +1307,7 @@ hpgl_draw_current_path(
          * hpgl_set_drawing_color() handles this case by drawing
          * the lines that comprise the vector fill
          */
-	if (pgls->g.pen.selected == 0)
+	if (hpgl_get_selected_pen(pgls) == 0)
 	    hpgl_call(gs_fill(pgls->pgs));
 	hpgl_call(hpgl_clear_current_path(pgls));
 	break;

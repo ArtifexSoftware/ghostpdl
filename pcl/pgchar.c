@@ -197,7 +197,7 @@ hpgl_get_character_edge_pen(
        current pen number, otherwise the state value as set in the CF
        command is used.  (see hpgl_CF) */
     return (pgls->g.character.edge_pen == CHAR_EDGE_PEN_UNSET ? 
-	    pgls->g.pen.selected :
+	    hpgl_get_selected_pen(pgls) :
 	    pgls->g.character.edge_pen);
 
 }

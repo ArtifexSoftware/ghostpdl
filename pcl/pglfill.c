@@ -392,8 +392,7 @@ hpgl_PW(
 
     /*
      * we maintain the line widths in plotter units, irrespective
-     * of current units (WU).  They width argument to PW are mm
-     * (I suspect this is incorrect - jan)
+     * of current units (WU).
      */
     if (hpgl_arg_c_real(pargs, &param)) {
         if (hpgl_arg_c_int(pargs, &pmin)) {
@@ -621,13 +620,15 @@ hpgl_SP(
 )
 {
     int             pen = 0;
-    int             npen = pcl_palette_get_num_entries(pgls->ppalet);
+    /* palette pen numbers are always consecutive integers starting
+       with 0 */
+    int             max_pen = pcl_palette_get_num_entries(pgls->ppalet) - 1;
 
     if (hpgl_arg_c_int(pargs, &pen)) {
         if (pen < 0)
             return e_Range;
-        else if (pen > npen)
-            pen = (pen % (npen - 1)) + 1;
+	while ( pen > max_pen )
+	    pen = pen - max_pen;
     }
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
     pgls->g.pen.selected = pen;
