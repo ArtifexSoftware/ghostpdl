@@ -74,7 +74,6 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	const fixed	/* partial pixel offset to first line to sample */
 	    ysl = ymin - left->start.y, ysr = ymin - right->start.y;
 	fixed fxl;
-	int max_rect_height = 1;  /* max height to do fill as rectangle */
 	int code;
 #if CONTIGUOUS_FILL
 	const bool peak0 = ((flags & 1) != 0);
@@ -82,6 +81,9 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 	int peak_y0 = ybot + fixed_half;
 	int peak_y1 = ytop - fixed_half;
 #endif
+	gx_color_index cindex = pdevc->colors.pure;
+	dev_proc_fill_rectangle((*fill_rect)) =
+	    dev_proc(dev, fill_rectangle);
 
 	if_debug2('z', "[z]y=[%d,%d]\n", iy, iy1);
 
@@ -125,69 +127,6 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
   (ys < fixed_1 && tl.df < YMULT_LIMIT ? ys * tl.df / tl.h :\
    fixed_mult_quo(ys, tl.df, tl.h))
 
-	/*
-	 * It's worth checking for dxl == dxr, since this is the case
-	 * for parallelograms (including stroked lines).
-	 * Also check for left or right vertical edges.
-	 */
-	if (fixed_floor(l.x) == fixed_pixround(x1l)) {
-	    /* Left edge is vertical, we don't need to increment. */
-	    l.di = 0, l.df = 0;
-	    fxl = 0;
-	} else {
-	    compute_dx(&l, dxl, ysl);
-	    fxl = YMULT_QUO(ysl, l);
-	    l.x += fxl;
-	}
-	if (fixed_floor(r.x) == fixed_pixround(x1r)) {
-	    /* Right edge is vertical.  If both are vertical, */
-	    /* we have a rectangle. */
-	    if (l.di == 0 && l.df == 0)
-		max_rect_height = max_int;
-	    else
-		r.di = 0, r.df = 0;
-	}
-	/*
-	 * The test for fxl != 0 is required because the right edge might
-	 * cross some pixel centers even if the left edge doesn't.
-	 */
-	else if (dxr == dxl && fxl != 0) {
-	    if (l.di == 0)
-		r.di = 0, r.df = l.df;
-	    else		/* too hard to do adjustments right */
-		compute_dx(&r, dxr, ysr);
-	    if (ysr == ysl && r.h == l.h)
-		r.x += fxl;
-	    else
-		r.x += YMULT_QUO(ysr, r);
-	} else {
-	    compute_dx(&r, dxr, ysr);
-	    r.x += YMULT_QUO(ysr, r);
-	}
-	rxl = fixed2int_var(l.x);
-	rxr = fixed2int_var(r.x);
-
-	/*
-	 * Take a shortcut if we're only sampling a single scan line,
-	 * or if we have a rectangle.
-	 */
-	if (iy1 - iy <= max_rect_height) {
-	    iy = iy1 - 1;
-	    if_debug2('z', "[z]rectangle, x=[%d,%d]\n", rxl, rxr);
-	} else {
-	    /* Compute one line's worth of dx/dy. */
-	    compute_ldx(&l, ysl);
-	    if (dxr == dxl && ysr == ysl && r.h == l.h)
-		r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
-	    else
-		compute_ldx(&r, ysr);
-	}
-
-#define STEP_LINE(ix, tl)\
-  tl.x += tl.ldi;\
-  if ( (tl.xf += tl.ldf) >= 0 ) tl.xf -= tl.h, tl.x++;\
-  ix = fixed2int_var(tl.x)
-
 #if CONTIGUOUS_FILL
 /*
  * If left and right boundary round to same pixel index,
@@ -222,31 +161,82 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 #define SET_MINIMAL_WIDTH(ixl, ixr, l, r) DO_NOTHING
 #define CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, adj1, adj2, fill) DO_NOTHING
 #endif
-	{
-	    gx_color_index cindex = pdevc->colors.pure;
-	    dev_proc_fill_rectangle((*fill_rect)) =
-		dev_proc(dev, fill_rectangle);
-
-	    SET_MINIMAL_WIDTH(rxl, rxr, l, r);
-	    while (++iy != iy1) {
-		register int ixl, ixr;
-
-		STEP_LINE(ixl, l);
-		STEP_LINE(ixr, r);
-		SET_MINIMAL_WIDTH(ixl, ixr, l, r);
-		if (ixl != rxl || ixr != rxr) {
-		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT);
-		    CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT);
-		    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
-		    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
-		    if (code < 0)
-			goto xit;
-		    rxl = ixl, rxr = ixr, ry = iy;
-		}
+	/*
+	 * It's worth checking for dxl == dxr, since this is the case
+	 * for parallelograms (including stroked lines).
+	 * Also check for left or right vertical edges.
+	 */
+	if (fixed_floor(l.x) == fixed_pixround(x1l)) {
+	    /* Left edge is vertical, we don't need to increment. */
+	    l.di = 0, l.df = 0;
+	    fxl = 0;
+	} else {
+	    compute_dx(&l, dxl, ysl);
+	    fxl = YMULT_QUO(ysl, l);
+	    l.x += fxl;
+	}
+	if (fixed_floor(r.x) == fixed_pixround(x1r)) {
+	    /* Right edge is vertical.  If both are vertical, */
+	    /* we have a rectangle. */
+	    if (l.di == 0 && l.df == 0) {
+		rxl = fixed2int_var(l.x);
+		rxr = fixed2int_var(r.x);
+		SET_MINIMAL_WIDTH(rxl, rxr, l, r);
+		code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy1 - ry);
+		goto xit;
 	    }
-	    VD_RECT_SWAPPED(rxl, ry, rxr, iy);
-	    code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
-	} 
+	    r.di = 0, r.df = 0;
+	}
+	/*
+	 * The test for fxl != 0 is required because the right edge might
+	 * cross some pixel centers even if the left edge doesn't.
+	 */
+	else if (dxr == dxl && fxl != 0) {
+	    if (l.di == 0)
+		r.di = 0, r.df = l.df;
+	    else
+		compute_dx(&r, dxr, ysr);
+	    if (ysr == ysl && r.h == l.h)
+		r.x += fxl;
+	    else
+		r.x += YMULT_QUO(ysr, r);
+	} else {
+	    compute_dx(&r, dxr, ysr);
+	    r.x += YMULT_QUO(ysr, r);
+	}
+	rxl = fixed2int_var(l.x);
+	rxr = fixed2int_var(r.x);
+	/* Compute one line's worth of dx/dy. */
+	compute_ldx(&l, ysl);
+	if (dxr == dxl && ysr == ysl && r.h == l.h)
+	    r.ldi = l.ldi, r.ldf = l.ldf, r.xf = l.xf;
+	else
+	    compute_ldx(&r, ysr);
+
+#define STEP_LINE(ix, tl)\
+  tl.x += tl.ldi;\
+  if ( (tl.xf += tl.ldf) >= 0 ) tl.xf -= tl.h, tl.x++;\
+  ix = fixed2int_var(tl.x)
+
+	SET_MINIMAL_WIDTH(rxl, rxr, l, r);
+	while (++iy != iy1) {
+	    register int ixl, ixr;
+
+	    STEP_LINE(ixl, l);
+	    STEP_LINE(ixr, r);
+	    SET_MINIMAL_WIDTH(ixl, ixr, l, r);
+	    if (ixl != rxl || ixr != rxr) {
+		CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, rxr, ixl, FILL_TRAP_RECT);
+		CONNECT_RECTANGLES(ixl, ixr, rxl, rxr, iy, ry, ixr, rxl, FILL_TRAP_RECT);
+		VD_RECT_SWAPPED(rxl, ry, rxr, iy);
+		code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
+		if (code < 0)
+		    goto xit;
+		rxl = ixl, rxr = ixr, ry = iy;
+	    }
+	}
+	VD_RECT_SWAPPED(rxl, ry, rxr, iy);
+	code = FILL_TRAP_RECT(rxl, ry, rxr - rxl, iy - ry);
 #undef STEP_LINE
 #undef SET_MINIMAL_WIDTH
 #undef CONNECT_RECTANGLES
