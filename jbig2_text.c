@@ -209,7 +209,7 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
 	    if (params->SBHUFF) {
 		/* todo */
 	    } else {
-		code = jbig2_arith_iaid_decode(IAID, as, &ID);
+		code = jbig2_arith_iaid_decode(IAID, as, (int *)&ID);
 	    }
 	    if (ID >= max_id) {
 		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
