@@ -31,8 +31,6 @@
 #define TT_GRID_FITTING (NEW_TT_INTERPRETER && 0) /* old code = 0, new code = 1. */
 #define CURVED_TRAPEZOID_FILL0_COMPATIBLE 1 /* Temporarily used for a backward compatibility. */
 #define CURVED_TRAPEZOID_FILL 0 /* old code = 0, new code = 1. */
-#define CURVED_TRAPEZOID_FILL_SCANS_BACK /* Temporarily used for a backward compatibility. */\
-	(CURVED_TRAPEZOID_FILL & CURVED_TRAPEZOID_FILL0_COMPATIBLE & 1)
 
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */

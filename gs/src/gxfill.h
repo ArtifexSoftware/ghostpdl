@@ -83,14 +83,12 @@ struct active_line_s {
     bool more_flattened;
 #if CURVED_TRAPEZOID_FILL0_COMPATIBLE
     bool first_flattened;
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
     byte skip_points[128];  /* This huge thing is for testing purpose only. 
 			       The length should be (1 << k_sample_max) bits.
 			       128 sholuld be fine.
 			       With a smaller value the code is working,
 			       but the result is not guaranteed to be 
 			       equal to the old code. */
-#endif
 #endif
 #endif
 /*

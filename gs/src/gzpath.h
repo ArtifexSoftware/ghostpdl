@@ -412,9 +412,7 @@ struct gx_flattened_iterator_s {
     segment_notes notes;
     /* public : */
 #if CURVED_TRAPEZOID_FILL
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
     bool curve;
-#endif
 #endif
     fixed lx0, ly0, lx1, ly1;
     /* public data for filtered2 : */
@@ -427,10 +425,8 @@ bool gx_flattened_iterator__init(gx_flattened_iterator *this,
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1, segment_notes notes);
 bool gx_flattened_iterator__next(gx_flattened_iterator *this);
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
 bool gx_flattened_iterator__prev(gx_flattened_iterator *this);
 bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);
-#endif
 
 bool curve_coeffs_ranged(fixed x0, fixed x1, fixed x2, fixed x3, 
 		    fixed y0, fixed y1, fixed y2, fixed y3, 

@@ -234,9 +234,7 @@ gx_flattened_iterator__init(gx_flattened_iterator *this,
 	this->y3 = y0;
     }
 #   if CURVED_TRAPEZOID_FILL
-#	if CURVED_TRAPEZOID_FILL_SCANS_BACK
-	    this->curve = true;
-#	endif
+	this->curve = true;
 #   endif
     vd_curve(this->x0, this->y0, x1, y1, x2, y2, this->x3, this->y3, 0, RGB(255, 255, 255));
     this->k = k;
@@ -320,9 +318,7 @@ gx_flattened_iterator__init_line(gx_flattened_iterator *this,
     this->k = 0;
     this->i = 1;
 #   if CURVED_TRAPEZOID_FILL
-#	if CURVED_TRAPEZOID_FILL_SCANS_BACK
-	    this->curve = false;
-#	endif
+	this->curve = false;
 #   endif
     return true;
 }
@@ -462,7 +458,7 @@ last:
  *	  due to the small segment uniting.
  * Note : It can generate nearly collinear segments. 
  */
-bool
+private bool
 gx_flattened_iterator__next_filtered1(gx_flattened_iterator *this)
 {
     fixed x0 = this->lx1, y0 = this->ly1;
@@ -509,7 +505,7 @@ gx_check_nearly_collinear_inline(fixed x0, fixed y0, fixed x1, fixed y1, fixed x
  * Note : The number of generated segments can be samller than 2^k 
  *	  due to the segment uniting.
  */
-bool
+private bool
 gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
 {
     /* fixme: CURVED_TRAPEZOID_FILL0_COMPATIBLE 0 is not implemented yet. */
@@ -567,7 +563,6 @@ gx_flattened_iterator__next_filtered2(gx_flattened_iterator *this)
     return this->ahead || this->i != 0;
 }
 
-#if CURVED_TRAPEZOID_FILL_SCANS_BACK
 /* Move back to the previous segment and store it to this->lx0, this->ly0, this->lx1, this->ly1 .
  * This only works for states reached with gx_flattened_iterator__next.
  * Return true iff there exist more segments.
@@ -641,7 +636,6 @@ gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1)
     return coord_near(x0, x1) && coord_near(y0, y1);
 }
 #endif
-#endif /* CURVED_TRAPEZOID_FILL_SCANS_BACK */
 
 #define max_points 50		/* arbitrary */
 
