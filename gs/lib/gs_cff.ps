@@ -57,7 +57,7 @@
       pop pop /.loadottofontfile cvx /invalidfont signalerror
     } if
     f 4 string readstring pop (CFF ) eq { sub exit } if
-    1 sub
+    f 12 string readstring pop pop 1 sub	% skip to next table
   } loop
 		% Stack: tablesread
   card32 pop card32 card32
@@ -501,12 +501,15 @@ def
 { [ exch charstringcount pop { card8 } repeat ] } bind
 { /FDSelect cvx /invalidfont signalerror } bind
 dup
-{ pop [ card16 card16 exch {
-		% Stack: previndex
-    card8 card16 dup 4 1 roll 3 -1 roll sub 1 sub {
-      exch 1 index
-    } repeat exch
-  } repeat pop ]
+{ pop 65535 array card16 card16 exch
+  { % Stack: array previndex
+    card8 card16 
+    exch 1 index 4 -1 roll
+    exch 1 exch 1 sub
+    { 3 index exch 2 index put } for pop
+  } repeat
+  % now resize the array to the final index.
+  0 exch getinterval
 } bind
 ] readonly def
 
