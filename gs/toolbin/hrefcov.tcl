@@ -19,34 +19,39 @@
 
 # $Id$
 
-# hrefcov.tcl - check that the hrefs in an HTML document cover all the
-# files in one or more directories.  Usage:
+# hrefcov.tcl - check that the hrefs in an HTML document mention all of a
+# set of files.  The requirement is that the union of all the docfiles
+# must somewhere reference all the files directories.  Usage:
 set USAGE {Usage:
-    hrefcov ([+-]d <directory> | [+-]f <docfile>)*
+    hrefcov ([+-]from (<docfile> | -) | [+-]to (<directory> | <file> | -))*
 }
-# +d or +f adds to the defaults; -d or -f cancels the defaults and then adds.
-# The requirement is that the union of all the docfiles must somewhere
-# reference all the files in all the directories, other than CVS control files.
+# +from or +to adds files; -from or -to removes them.
+# After -from or -to, "-" removes ALL directories or files:
+# this is the only way to remove the defaults.
 
 # Define the defaults.  These are Ghostscript-specific.
-set DEFAULT_DIRS {lib src}
-set DEFAULT_DOCS {doc/Develop.htm}
+set DEFAULTS [list\
+	+from doc/Develop.htm\
+	+to lib src\
+	-to lib/CVS src/CVS\
+	-to src/*.mak.tcl
+]
 
 # Global variables:
-#   DEFINED(file) is defined for every file in the directories
-#   MENTIONED(file) is defined for every file mentioned in a docfile
+#   TO(file) is defined for every file in the "to" list
+#   TO_DIR(dir) is defined for every directory in the "to" list
+#   FROM(file) is defined for every file mentioned in a "from" document
 # In both cases, path names are normalized by removing ./ and/or ../
 # whenever possible, to produce file names relative to the directory where
 # this program is being run.
 
 # Initialize the internal data base.
 proc init {} {
-    global DEFINED MENTIONED
+    global FROM TO TO_DIR
 
-    catch {unset DEFINED}
-    catch {unset MENTIONED}
-    set DEFINED() 1
-    set MENTIONED() 1
+    catch {unset FROM}
+    catch {unset TO}
+    catch {unset TO_DIR}
 }
 
 # Normalize a file name by removing all occurrences of ./ and
@@ -66,22 +71,31 @@ proc normalize_fname {fname} {
     return $name
 }
 
-# Add all the files in a directory to DEFINED.
-proc add_dir {dir} {
-    global DEFINED
+# Add or remove a file, or all the files in a directory, to/from TO.
+proc add_to {to} {
+    global TO TO_DIR
 
-    foreach f [glob $dir/*] {
-	if {[file isfile $f]} {
-	    set DEFINED($f) 1
-	}
+    if {[file isfile $to]} {
+	set TO($to) 1
+    } elseif {[file isdirectory $to]} {
+	set TO_DIR($to) 1
+	foreach f [glob $to/*] {add_to $f}
+    }
+}
+proc remove_to {to} {
+    global TO TO_DIR
+
+    if {[file isfile $to]} {
+	catch {unset TO($to)}
+    } elseif {[file isdirectory $to]} {
+	catch {unset TO_DIR($to)}
+	foreach f [glob $to/*] {remove_to $f}
     }
 }
 
-# Add all the files mentioned in a document to MENTIONED.
-# Note that we only add files mentioned as a whole, i.e., without #.
-proc add_doc {doc} {
-    global MENTIONED
-
+# Add or remove all the files mentioned in a document to/from FROM.
+# Note that we only add/remove files mentioned as a whole, i.e., without #.
+proc for_from {doc proc} {
     set lines ""
     set prefix ""
     regexp {^(.*/)[^/]+$} $doc skip prefix
@@ -89,47 +103,54 @@ proc add_doc {doc} {
     set href_exp {href="([^"#]*)"(.*)$}
     foreach line $lines {
 	while {[regexp -nocase $href_exp $line skip ref line]} {
-	    set MENTIONED([normalize_fname $prefix$ref]) 1
+	    $proc [normalize_fname $prefix$ref]
 	}
     }
 }
+proc add1_from {from} {global FROM; set FROM($from) 1}
+proc add_from {doc} {for_from $doc add1_from}
+proc remove1_from {from} {global FROM; catch {unset FROM($from)}}
+proc remove_from {doc} {for_from $doc remove1_from}
 
-proc main {argv} {
-    global DEFAULT_DIRS DEFAULT_DOCS DEFINED MENTIONED
-
-    set default_dirs 1
-    set default_docs 1
-    set dirs {}
-    set docs {}
-    foreach arg $argv {
+# Main program.
+proc main_args {arglist} {
+    foreach arg $arglist {
 	switch -- $arg {
-	    +d {set which dirs}
-	    -d {set default_dirs 0; set which dirs}
-	    +f {set which docs}
-	    -f {set default_docs 0; set which docs}
-	    default {lappend $which $arg}
+	    +from {set do add_from}
+	    -from {set do remove_from}
+	    +to {set do add_to}
+	    -to {set do remove_to}
+	    default {
+		if {[regexp {[*]} $arg]} {
+		    foreach a [glob -nocomplain $arg] {$do $a}
+		} else {
+		    $do $arg
+		}
+	    }
 	}
     }
-    if {$default_dirs} {set dirs [concat $dirs $DEFAULT_DIRS]}
-    if {$default_docs} {set docs [concat $docs $DEFAULT_DOCS]}
+}
+proc main {argv} {
+    global DEFAULTS FROM TO TO_DIR
+
     init
+    main_args $DEFAULTS
+    main_args $argv
     set dirs_exp {^$}
-    foreach dir $dirs {
-	add_dir $dir
+    foreach dir [array names TO_DIR] {
 	append dirs_exp "|$dir/"
     }
-    foreach doc $docs {add_doc $doc}
     set list {}
-    foreach f [array names DEFINED] {
-	if {![info exists MENTIONED($f)]} {lappend list $f}
+    foreach f [array names TO] {
+	if {![info exists FROM($f)]} {lappend list $f}
     }
     if {$list != {}} {
-	puts "Files defined but not mentioned:"
+	puts "Files defined but not referenced:"
 	foreach f [lsort $list] {puts "    $f"}
     }
     set list {}
-    foreach f [array names MENTIONED] {
-	if {![info exists DEFINED($f)]} {
+    foreach f [array names FROM] {
+	if {![info exists TO($f)]} {
 	    # Only report files that should be in a scanned directory.
 	    if {[regexp "(${dirs_exp})\[^/\]+$" $f]} {
 		lappend list $f
@@ -137,7 +158,7 @@ proc main {argv} {
 	}
     }
     if {$list != {}} {
-	puts "Files mentioned but not defined:"
+	puts "Files referenced but not defined:"
 	foreach f [lsort $list] {puts "    $f"}
     }
 }
