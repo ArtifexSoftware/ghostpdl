@@ -13,7 +13,7 @@ install:
 	install main/obj/pcl6 /usr/local/bin
 
 test: 
-	cd tools; ../main/obj/pcl6 -sDEVICE=x11alpha owl.pcl frs96.pxl # test with PCL and PXL test file 
+	cd tools; ../main/obj/pcl6 -dTextAlphaBits=4 owl.pcl tiger.px3 # test with PCL and PXL test file 
 
 # NB - this does not remove the fonts.  blowing away /windows/fonts
 # might be unexpected on some systems and we don't enumerate the font
