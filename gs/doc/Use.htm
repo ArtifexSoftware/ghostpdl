@@ -496,6 +496,20 @@ Ghostscript is normally built to interpret both PostScript and PDF files, examin
 <dd>Stops interpreting after the designated page of the document.
 </dl>
 
+ <dl>
+<dt><b><tt>-dPDFFitPage</tt></b>
+<dd>Rather than selecting a PageSize given by the PDF MediaBox or
+CropBox (see -dUseCropBox), the PDF file will be scaled to fit
+the current device page size (usually the default page size).
+<p>
+This is useful to avoid clipping information on a PDF document when
+sending to a printer that may have unprintable areas at the edge of
+the media larger than allowed for in the document.
+<p>
+This is also useful for creating fixed size images of PDF files
+that may have a variety of page sizes, for example thumbnail images.
+</dl>
+
 <dl>
 <dt><b><tt>-dPrinted</tt></b>
 <dt><b><tt>-dPrinted=false</tt></b>
@@ -1721,11 +1735,11 @@ Allowed values are 1, 2 or 4.
 
 <dl>
 <dt><b><tt>-dAlignToPixels=</tt></b><em>n</em>
-<dd>Chooses glyph alignent to integral pixels (the value 1)
-or to subpixels (the value 0). Subpixels are a smaller raster grid,
+<dd>Chooses glyph alignent to integral pixel boundaries (if set to the value 1)
+or to subpixels (value 0). Subpixels are a smaller raster grid
 which is used internally for text antialiasing.
-The number of subpixels in a pixel usually is <b><tt>2 ^ TextAlphaBits</tt></b>,
-but it may be automatically reduced for big characters to save space
+The number of subpixels in a pixel usually is <tt>2^TextAlphaBits</tt>,
+but this may be automatically reduced for big characters to save space
 in character cache.
 
 <p>
@@ -1733,8 +1747,8 @@ The parameter has no effect if <b><tt>-dTextAlphaBits=1</tt></b>.
 Default value is 1.
 
 <p>
-With <b><tt>-dAlignToPixels=0</tt></b> poolrly hinted fonts may render
-better, but perfectly hinted fonts may render worse.
+Setting <b><tt>-dAlignToPixels=0</tt></b> can improve rendering
+of poorly hinted fonts, but may impair the appearance of well-hinted fonts.
 </dl>
 
 <dl>

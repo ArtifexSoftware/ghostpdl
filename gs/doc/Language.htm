@@ -1914,10 +1914,14 @@ version 7.10) and GPL versions 6.53 (up to and not including 6.60).
 
 <dl>
 <dt><b><tt>AlignToPixels &lt;integer&gt;</tt></b>
-<dd>The value 1 specifies alignment of text characters to pixels,
-0 - to subpixels, which are induced with the device parameter <b><tt>TextAlphaBits</tt></b>.
-If the latter is 1, both values performs same rendering.
-Initial value is specified with the command line argument <b><tt>TextAlphaBits</tt></b>.
+<dd>Control sub-pixel positioning of character glyphs (where
+applicable). A value of 1 specifies alignment of text characters to
+pixels boundaries. A value of 0 to subpixels where the division factor
+is set by the device parameter <b><tt>TextAlphaBits</tt></b>. If the
+latter is 1, the same rendering results regardless of the value of
+<b><tt>AlignToPixels</tt></b>. The initial value defaults to 1, but this
+may be overridden by the command line argument
+<b><tt>-dAlignToPixels</tt></b>.
 </dl>
 
 <hr>
@@ -1934,7 +1938,7 @@ errors just as for the string case.
 <hr>
 
 <p>
-<small>Copyright &copy; 1996, 2000 Aladdin Enterprises.  All rights
+<small>Copyright &copy; 1996-2003 artofcode LLC.  All rights
 reserved.</small>
 
 <p>
