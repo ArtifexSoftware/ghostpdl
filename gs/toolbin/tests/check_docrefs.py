@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-#    Copyright (C) 2002 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 2002-2004 Aladdin Enterprises.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -29,7 +29,7 @@
 SRC_LIST = [
     '+from', 'doc/Develop.htm',
     '+to', 'lib', 'src',
-    '-to', 'lib/CVS', 'src/CVS',
+    '-to', '*/CVS', 'src/rinkj/CVS',
     '-to', 'src/*.mak.tcl',
     '-to', 'lib/*.upp',
     '-to', 'lib/*.ps',
