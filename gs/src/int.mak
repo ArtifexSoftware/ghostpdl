@@ -1141,7 +1141,7 @@ $(PSOBJ)zcsindex.$(OBJ) : $(PSSRC)zcsindex.c $(OP) $(memory__h)\
 $(PSOBJ)zht2.$(OBJ) : $(PSSRC)zht2.c $(OP)\
  $(gsstruct_h) $(gxdevice_h) $(gzht_h)\
  $(estack_h) $(ialloc_h) $(icolor_h) $(iddict_h) $(idparam_h) $(igstate_h)\
- $(iht_h) $(store_h)
+ $(iht_h) $(store_h) $(iname) $(zht2_h)
 	$(PSCC) $(PSO_)zht2.$(OBJ) $(C_) $(PSSRC)zht2.c
 
 $(PSOBJ)zimage2.$(OBJ) : $(PSSRC)zimage2.c $(OP) $(math__h) $(memory__h)\

@@ -30,6 +30,7 @@
 #include "iht.h"
 #include "store.h"
 #include "iname.h"
+#include "zht2.h"
 
 /* Forward references */
 private int dict_spot_params(const ref *, gs_spot_halftone *, ref *, ref *);
