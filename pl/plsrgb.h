@@ -14,6 +14,9 @@
 /* plsrgb.h - interface for controlling srgb colorspace */
 
 /* initialize srgb color space */
+#ifndef plsrgb_INCLUDED
+#  define plsrgb_INCLUDED
+
 int pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs);
 
 /* set an srgb color */
@@ -22,3 +25,8 @@ int pl_setSRGB(gs_state *pgs, float r, float g, float b);
 /* build a color rendering dictionary to be used with the srgb color
    space */
 int pl_build_crd(gs_state *pgs);
+
+/* free the crd */
+void pl_free_crd(gs_state *pgs);
+
+#endif /* plsrgb_INCLUDED */

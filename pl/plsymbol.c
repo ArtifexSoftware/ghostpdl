@@ -15,6 +15,7 @@
 /* Built-in PCL symbol sets */
 
 #include "stdpre.h"
+#include "plvalue.h"
 #include "plsymbol.h"
 
 /* Define the MSL code for unmapped characters. */

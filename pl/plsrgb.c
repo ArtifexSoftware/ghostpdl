@@ -19,6 +19,7 @@
 #include "gscspace.h"
 #include "gsstate.h"
 #include "gscie.h"
+#include "gscolor2.h"
 #include "gscrdp.h"
 #include "gscrd.h"
 #include "gsparam.h"
@@ -343,7 +344,6 @@ int
 pl_cspace_init_SRGB(gs_color_space **ppcs, const gs_state *pgs)
 {
 
-    int code = 0;
     if ( pl_pcs2_built == false ) {
         int code = gs_cspace_build_CIEABC(&pl_pcs2, NULL, gs_state_memory(pgs));
         if ( code < 0 )
