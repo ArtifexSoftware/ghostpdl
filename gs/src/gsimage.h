@@ -53,12 +53,10 @@ int gs_image_enum_init(P4(gs_image_enum * penum,
 			  const gs_data_image_t * pim, gs_state *pgs));
 int gs_image_init(P4(gs_image_enum * penum, const gs_image_t * pim,
 		     bool MultipleDataSources, gs_state * pgs));
-int gs_image_next(P4(gs_image_enum * penum, const byte * dbytes,
-		     uint dsize, uint * pused));
 
 /*
  * Return the number of bytes of data per row
- * (per plane, if MultipleDataSources is true).
+ * (per plane, if there are multiple data sources).
  */
 uint gs_image_bytes_per_plane_row(P2(const gs_image_enum * penum, int plane));
 
@@ -73,5 +71,30 @@ const byte *gs_image_planes_wanted(P1(const gs_image_enum *penum));
 
 /* Clean up after processing an image. */
 void gs_image_cleanup(P1(gs_image_enum * penum));
+
+/*
+ * Pass multiple or selected planes of data for an image.
+ *   *plane_data  is an array of size num_planes of gs_const_string type
+ *                which contains the pointer and the length for each.
+ *   *used        is also of size num_planes and will be set to the number of
+ *                bytes consumed for each plane.
+ * The amount of data available for planes can be 0 in order to provide
+ * data for a single plane or only some of the planes.
+ *
+ * Returns 1 if end of image, < 0 error code, otherwise 0.
+ *
+ * ****** NEEDS DOC FROM RAY ABOUT RETENTION OF SOURCE DATA ******
+ */
+int gs_image_next_planes(P3(gs_image_enum *penum,
+			    gs_const_string *plane_data,
+			    uint *used));
+
+/*
+ * Pass the next plane of data for an image.  This procedure should no
+ * longer be used: use gs_image_next_planes instead.
+ */
+int gs_image_next(P4(gs_image_enum * penum, const byte * dbytes,
+		     uint dsize, uint * pused));
+
 
 #endif /* gsimage_INCLUDED */

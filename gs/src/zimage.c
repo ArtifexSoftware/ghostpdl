@@ -276,8 +276,11 @@ image_proc_continue(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
-    uint size, used;
-    int code;
+    int px = ETOP_PLANE_INDEX(esp)->value.intval;
+    int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
+    uint size, used[gs_image_max_planes];
+    gs_const_string plane_data[gs_image_max_planes];
+    int i, code;
 
     if (!r_has_type_attrs(op, t_string, a_read)) {
 	check_op(1);
@@ -290,9 +293,14 @@ image_proc_continue(i_ctx_t *i_ctx_p)
     if (size == 0)
 	code = 1;
     else {
-	code = gs_image_next(penum, op->value.bytes, size, &used);
+	for (i = 0; i < num_sources; i++)
+	    plane_data[i].size = 0;
+	plane_data[px].data = op->value.bytes;
+	plane_data[px].size = size;
+	code = gs_image_next_planes(penum, plane_data, used);
 	if (code == e_RemapColor)
 	    return code;
+        size -= used[px];	/* how much unused in this string */
     }
     if (code) {			/* Stop now. */
 	esp = zimage_pop_estack(esp);
@@ -301,6 +309,11 @@ image_proc_continue(i_ctx_t *i_ctx_p)
 	return (code < 0 ? code : o_pop_estack);
     }
     pop(1);
+    if (size != 0) {	/* need a different plane of data */
+	if (++px == num_sources)
+	    px = 0;
+	ETOP_PLANE_INDEX(esp)->value.intval = px;
+    }
     return image_proc_process(i_ctx_p);
 }
 private int
@@ -310,20 +323,17 @@ image_proc_process(i_ctx_t *i_ctx_p)
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
     const byte *wanted = gs_image_planes_wanted(penum);
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
+    const ref *pp;
 
-    for (;;) {
-	const ref *pp = ETOP_SOURCE(esp, px);
-	bool xmit = wanted[px];
-
+    while (!wanted[px]) {
 	if (++px == num_sources)
 	    px = 0;
-	if (xmit) {
-	    ETOP_PLANE_INDEX(esp)->value.intval = px;
-	    push_op_estack(image_proc_continue);
-	    *++esp = *pp;
-	    return o_push_estack;
-	}
+	ETOP_PLANE_INDEX(esp)->value.intval = px;
     }
+    pp = ETOP_SOURCE(esp, px);
+    push_op_estack(image_proc_continue);
+    *++esp = *pp;
+    return o_push_estack;
 }
 /* Continue processing data from an image with file data sources. */
 private int
@@ -333,15 +343,15 @@ image_file_continue(i_ctx_t *i_ctx_p)
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
 
     for (;;) {
-	uint size = max_uint;
+	uint min_avail = max_int;
+	gs_const_string plane_data[gs_image_max_planes];
 	int code;
 	int px;
 	const ref *pp;
 
 	/*
-	 * Do a first pass through the files to ensure that they all
-	 * have data available in their buffers, and compute the min
-	 * of the available amounts.
+	 * Do a first pass through the files to ensure that at least
+	 * one has data available in its buffer.
 	 */
 
 	for (px = 0, pp = ETOP_SOURCE(esp, 0); px < num_sources;
@@ -376,38 +386,30 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    }
 	    /* Note that in the EOF case, we can get here with */
 	    /* avail < min_left. */
-	    if (avail >= min_left) {
+	    if (avail >= min_left)
 		avail = (avail - min_left) / num_aliases;
-		if (avail < size)
-		    size = avail;
-	    } else
-		size = 0;
+	    if (avail < min_avail)
+		min_avail = avail;
+	    plane_data[px].data = sbufptr(s);
+	    plane_data[px].size = avail;
 	}
 
-	/* Now pass the min of the available buffered data to */
-	/* the image processor. */
+	/* Now pass the available buffered data to the image processor. */
 
-	if (size == 0)
+	if (min_avail == 0)
 	    code = 1;
 	else {
 	    int pi;
-	    uint used;		/* only set for the last plane */
+	    uint used[gs_image_max_planes];
 
-	    /****** WRONG IF ALIASING ******/
-	    /****** CHECK wanted ******/
-	    for (px = 0, pp = ETOP_SOURCE(esp, 0), code = 0;
-		 px < num_sources && !code;
-		 ++px, pp -= 2
-		)
-		code = gs_image_next(penum, sbufptr(pp->value.pfile),
-				     size, &used);
+	    code = gs_image_next_planes(penum, plane_data, used);
 	    if (code == e_RemapColor)
 		return code;
 	    /* Now that used has been set, update the streams. */
 	    for (pi = 0, pp = ETOP_SOURCE(esp, 0); pi < num_sources;
 		 ++pi, pp -= 2
 		 )
-		sbufskip(pp->value.pfile, used);
+		sbufskip(pp->value.pfile, used[pi]);
 	}
 	if (code) {
 	    esp = zimage_pop_estack(esp);

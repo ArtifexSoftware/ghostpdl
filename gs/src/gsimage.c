@@ -23,7 +23,7 @@
 typedef struct image_enum_plane_s {
     /* Change dynamically */
     uint pos;			/* byte position within the scan line */
-    gs_const_string source;	/* source data, [0 .. plane_index - 1] */
+    gs_const_string source;	/* source data, [0 .. num_planes - 1] */
     gs_string row;		/* row buffers, [0 .. num_planes - 1] */
 } image_enum_plane_t;
 struct gs_image_enum_s {
@@ -35,7 +35,8 @@ struct gs_image_enum_s {
     int height;
     bool wanted_varies;
     /* The following are updated dynamically. */
-    int plane_index;		/* index of next plane of data */
+    int plane_index;		/* index of next plane of data, */
+				/* only needed for gs_image_next */
     int y;
     bool error;
     byte wanted[gs_image_max_planes];
@@ -188,6 +189,7 @@ gs_image_common_init(gs_image_enum * penum, gx_image_enum_common_t * pie,
     penum->height = pim->Height;
     for (i = 0; i < pie->num_planes; ++i) {
 	penum->planes[i].pos = 0;
+	penum->planes[i].source.size = 0;	/* for gs_image_next_planes */
 	penum->planes[i].row.data = 0; /* for GC */
 	penum->planes[i].row.size = 0; /* ditto */
     }
@@ -253,11 +255,11 @@ int
 gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 	      uint * pused)
 {
-    const gx_image_enum_common_t *pie = penum->info;
     int px = penum->plane_index;
-    gx_device *dev;
     int num_planes = penum->num_planes;
-    int code;
+    int i, code;
+    uint used[gs_image_max_planes];
+    gs_const_string plane_data[gs_image_max_planes];
 
     /*
      * Handle the following differences between gs_image_next and
@@ -266,52 +268,80 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
      *      - image_data requires an array of planes; gs_image_next
      *      expects planes in successive calls.
      *
-     *      - image_data requires that each call pass entire rows;
-     *      gs_image_next allows arbitrary amounts of data.
+     * This function is now deprecated -- gs_image_next_planes does
+     * the real work of buffering.
      */
-    if (penum->error) {
-	/*
-	 * We were interrupted by an error.  The current data are the
-	 * same as the data presented at the last call.
-	 */
-	penum->error = false;
-    } else {
-	if (px != 0 && dsize != penum->planes[0].source.size &&
-	    pie->plane_depths[px] == pie->plane_depths[0] &&
-	    pie->plane_widths[px] == pie->plane_widths[0])
-	    return_error(gs_error_rangecheck);
-	penum->planes[px].source.data = dbytes;
-	penum->planes[px].source.size = dsize;
-	while (++px < num_planes && !penum->wanted[px])
-	    DO_NOTHING;
-	if (px < num_planes) {
-	    /* We need more planes. */
-	    penum->plane_index = px;
-	    return 0;
-	}
+    for (i = 0; i < num_planes; i++)
+	plane_data[i].size = 0;
+    plane_data[px].data = dbytes;
+    plane_data[px].size = dsize;
+    penum->error = false;
+    code = gs_image_next_planes(penum, plane_data, used);
+    if (code >= 0) {
+	/* Advance px to the next plane that needs data. */
+	do {
+	    if (++px == num_planes)
+		px = 0;
+	} while (!penum->wanted[px]);
+	penum->plane_index = px;
     }
-    /* We have a full set of planes. */
-    dev = penum->dev;
-    code = 0;
-    /****** HOW TO STOP IN TIME IF TOO MUCH DATA? ******/
-    while (!code) {
-	gx_image_plane_t planes[gs_image_max_planes];
-	int i;
-	int direct = max_int;
-	bool filled = true;
+    *pused = used[px];
+    return code;
+}
 
-	for (i = 0; i < num_planes; ++i) {
-	    if (!penum->wanted[i])
-		planes[i].data = 0;
-	    else {
+int
+gs_image_next_planes(gs_image_enum * penum, gs_const_string *plane_data,
+		     uint * used)
+{
+    gx_image_plane_t planes[gs_image_max_planes];
+    gx_device *dev = penum->dev;
+    int num_planes = penum->num_planes;
+    int i;
+    int code = 0;
+    bool need_planes = false;
+
+    /*
+     * Handle the following differences between gs_image_next_planes and
+     * the device image_data procedure:
+     *
+     *      - image_data requires an array of planes; not all of the
+     *      planes may be available on any given call.
+     *
+     *      - image_data requires that each call pass entire rows;
+     *      gs_image_next_planes allows arbitrary amounts of data.
+     */
+    for (i = 0; i < num_planes; ++i) {
+        used[i] = 0;
+	if (!penum->wanted[i])
+	    planes[i].data = 0;
+	else {
+	    if (plane_data[i].size != 0) {
+		penum->planes[i].source.size = plane_data[i].size;
+		penum->planes[i].source.data = plane_data[i].data;
 		planes[i].data_x = 0;
 		planes[i].raster = gs_image_bytes_per_plane_row(penum, i);
-		if (penum->planes[i].pos == 0)
-		    direct = min(direct, penum->planes[i].source.size /
-				 planes[i].raster);
-		else
-		    direct = 0;
 	    }
+	    if (penum->planes[i].source.size == 0)
+		need_planes = true;	/* can't proceed until we have all planes */
+	}
+    }
+    if (need_planes) 
+	return 0;	/* exit for more data, nothing used */
+    while (!code) {
+	int direct = max_int;
+	bool filled = true;
+	bool empty = false;
+
+	/* see if we can do some rows without buffering (i.e., direct) */
+	for (i = 0; i < num_planes; ++i) {
+	    /* need to reset planes[].raster if wanted_varies */
+	    if (penum->wanted_varies)
+		planes[i].raster = gs_image_bytes_per_plane_row(penum, i);
+	    if (penum->planes[i].pos == 0)  /* nothing buffered for this row */
+		direct = min(direct,
+			     penum->planes[i].source.size / planes[i].raster);
+	    else
+		direct = 0;
 	}
 	if (direct) {
 	    /*
@@ -324,26 +354,30 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 		if (penum->wanted[i])
 		    planes[i].data = penum->planes[i].source.data;
 	    code = copy_planes(dev, penum, planes, direct, &direct);
+	    if (code < 0)
+		return code;	/* don't update */
 	    for (i = 0; i < num_planes; ++i)
 		if (planes[i].data) {
-		    uint used = direct * planes[i].raster;
+		    uint direct_used = direct * planes[i].raster;
 
-		    penum->planes[i].source.data += used;
-		    penum->planes[i].source.size -= used;
+		    used[i] += direct_used;
+		    penum->planes[i].source.data += direct_used;
+		    penum->planes[i].source.size -= direct_used;
+		    if (penum->planes[i].source.size == 0)
+		        empty = true;
 		}
 	    penum->y += direct;
 	    if (code < 0)
 		break;
 	} else {		/* Buffer a partial row. */
-	    bool empty = false;
 	    uint count[gs_image_max_planes];
 
-	    /* Make sure the row buffers are allocated. */
-	    for (i = 0; i < num_planes; ++i)
-		if (penum->wanted[i]) {
+	    for (i = 0; i < num_planes; ++i) {
+		if (penum->planes[i].source.size != 0) {
 		    uint raster = planes[i].raster;
 		    uint old_size = penum->planes[i].row.size;
 
+		    /* Make sure the row buffers are allocated. */
 		    if (raster > old_size) {
 			byte *old_data = penum->planes[i].row.data;
 			byte *row =
@@ -362,15 +396,15 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 			penum->planes[i].row.data = row;
 			penum->planes[i].row.size = raster;
 		    }
-		    count[i] = min(raster - penum->planes[i].pos,
-				   penum->planes[i].source.size);
-		    memcpy(penum->planes[i].row.data + penum->planes[i].pos,
+		    if ((count[i] = min(raster - penum->planes[i].pos,
+				        penum->planes[i].source.size)) > 0) {
+			memcpy(penum->planes[i].row.data + penum->planes[i].pos,
 			   penum->planes[i].source.data, count[i]);
-		    if ((penum->planes[i].pos += count[i]) < raster) {
-			filled = false;
-			empty |= count[i] == 0;
+			if ((penum->planes[i].pos += count[i]) < raster)
+			    filled = false;
 		    }
 		}
+	    }
 	    if (code < 0)
 		break;
 	    if (filled) {
@@ -385,26 +419,25 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 			    penum->planes[i].pos -= count[i];
 		    break;
 		}
-		for (i = 0; i < num_planes; ++i)
+		for (i = 0; i < num_planes; ++i) {
 		    penum->planes[i].pos = 0;
+		}
 		penum->y++;
 	    }
-	    for (i = 0; i < num_planes; ++i)
+	    for (i = 0; i < num_planes; ++i) {
 		if (penum->wanted[i]) {
+		    used[i] += count[i];
 		    penum->planes[i].source.data += count[i];
-		    penum->planes[i].source.size -= count[i];
+		    if ((penum->planes[i].source.size -= count[i]) == 0)
+			empty = true;
 		}
-	    if (empty)
-		break;
+	    }
 	}
 	if (filled & !code)
 	    begin_planes(penum);
+	if (empty)
+	    break;
     }
-    /*
-     * We only set *pused for the last plane of a group.  We will have to
-     * rethink this in order to handle varying-size planes.
-     */
-    *pused = penum->planes[penum->plane_index].source.data - dbytes;
     return code;
 }
 
