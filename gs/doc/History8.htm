@@ -29,21 +29,11 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version8.30">Version 8.30 (2004-05-29)</a>
 <li><a href="#Version8.12">Version 8.12 (2003-12-08)</a>
 <li><a href="#Version8.11">Version 8.11 (2003-08-16)</a>
 <li><a href="#Version8.10">Version 8.10 (2003-05-21)</a>
 <li><a href="#Version8.00">Version 8.00 (2002-11-21)</a>
-<ul>
-<li><a href="#8.00_Incompatible_changes">Incompatible changes</a>,
-    <a href="#8.00-Documentation">Documentation</a>,
-    <a href="#8.00-Procedures">Procedures</a>,
-    <a href="#8.00-Utilities">Utilities</a>,
-    <a href="#8.00-Drivers">Drivers</a>,
-    <a href="#8.00-PDF_writer">PDF writer</a>,
-    <a href="#8.00-PDF_Interpreter">PDF Interpreter</a>,
-    <a href="#8.00-Interpreter">Interpreter</a>,
-    <a href="#8.00-Library">Library</a>
-</ul>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -74,6 +64,5242 @@ overview</a>.
 <!-- [1.0 end visible header] ============================================== -->
 
 <!-- [2.0 begin contents] ================================================== -->
+
+<h2><a name="Version8.30"></a>Version 8.30 (2004-05-29)</h2>
+
+<p>
+This is an beta release of the development tree. It contains numerous
+new features and is made available for those interested in testing out
+the new version before it becomes the next stable release.
+
+<p> 
+New features in this version :
+
+<ul>
+<li><p>
+Topological grid fitting,
+an original method developed for Ghostscript by Dr. Igor V. Melichev, improves 
+the rendering of True Type fonts at small resolutions.
+See the documentation for <a href="Language.htm#GridFitTT">GridFitTT</a> for information on this
+feature.
+
+<li><p>
+The PDF writer now implements PDF 1.4 encryption.
+See the <a href="Ps2pdf.htm#Encryption">encryption parameter</a> documentation for more
+information.
+
+<li><p>
+A new rendering method for shadings, developed for Ghostscript by 
+Dr. Igor V. Melichev, improves the quality and performance of 
+rasterization on continuous tone devices.
+The new method allows hardware or software acceleration with help of
+customizable routines for filling areas with a linearly varying color.
+functions.
+
+<li><p>
+This version contains the first release of Rinkj, an
+experimental new driver for some inkjet printers using ETS screening.
+See the <a href="Devices.htm#Rinkj">Rinkj</a> section for more information.
+
+<li><p>
+We now support PDF 1.5 files, including the new compression
+and encryption modes.
+
+<li><p>
+We have beta support for Jpeg2000 compressed images, using the JasPer
+compression library. This is only enabled as part of the default build
+in the autoconf (POSIX) build system in this release.
+
+</ul>
+
+<p>
+The following <a href="http://bugs.ghostscript.com/">bug</a> numbers were open at
+the time of the last release:
+<blockquote>
+405501,
+414947,
+430175,
+446344,
+456692,
+458780,
+463688,
+465936,
+487460,
+487953,
+493348,
+509829,
+513731,
+514194,
+526099,
+526491,
+530011,
+535366,
+535932,
+542629,
+555072,
+558151,
+572865,
+578865,
+592160,
+592837,
+601336,
+602263,
+603934,
+605830,
+607850,
+610478,
+611898,
+614298,
+617523,
+626295,
+634036,
+634358,
+645316,
+651644,
+667301,
+669654,
+674417,
+674418,
+677324,
+677430,
+680301,
+681469,
+685335,
+686747,
+686750,
+686752,
+686816,
+686819,
+686824,
+686833,
+686834,
+686841,
+686842,
+686843,
+686853,
+686860,
+686863,
+686865,
+686867,
+686873,
+686889,
+686896,
+686897,
+686902,
+686904,
+686919,
+686930,
+686936,
+686937,
+686954,
+686956,
+686958,
+686963,
+686980,
+686996,
+686999,
+687011,
+687012,
+687013,
+687020,
+687021,
+687029,
+687038,
+687039,
+687050,
+687063,
+687066,
+687072,
+687079,
+687084,
+687085,
+687086,
+687093,
+687095,
+687102,
+687105,
+687108,
+687110,
+687122,
+687123,
+687125,
+687137,
+687145,
+687146,
+687155,
+687157,
+687163,
+687168,
+687171,
+687174,
+687179,
+687181,
+687193,
+687196,
+687197,
+687203,
+687211,
+687214,
+687219,
+687221,
+687229,
+687230,
+687231,
+687243,
+687251,
+687257,
+687259,
+687271,
+687275,
+687280,
+687289,
+687295,
+687297,
+687298,
+687303,
+687304,
+687314,
+687316,
+687322,
+687324,
+687325,
+687327,
+687331,
+687341,
+687342,
+687345,
+687346,
+687355,
+687360,
+687364,
+687369,
+687373,
+687375,
+687380,
+687386,
+687388,
+687392,
+687394,
+687395,
+687397,
+687398,
+687399,
+687401,
+687403,
+687406,
+687407,
+687410,
+687411,
+687412,
+687414,
+687419,
+687421,
+687424,
+687426,
+687428,
+687434,
+687435,
+687436,
+687437,
+687438,
+687440,
+687441,
+687442,
+687444,
+687445,
+687446,
+687448,
+687451,
+687452,
+687454,
+687458,
+687459,
+687460,
+687461,
+687463,
+687465,
+687466,
+687467,
+687468,
+687470,
+687471,
+687473,
+687474,
+687475,
+687476,
+687477,
+687479,
+687480,
+687481,
+687484,
+687485,
+687486,
+687487,
+687489,
+687490,
+687491.
+</blockquote>
+
+<h3><a name="8.30_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>
+No known incompatible changes at this point.
+
+<h3><a name="8.30_changelog"></a>Changelog</h3>
+
+<!-- generated from: cvs2cl --utc -T --follow trunk --delta gs8_12:HEAD -U AUTHORS --xml -f doc/changelog.xml -->
+
+<p><strong><a name="2004-05-31_0534"></a>
+2004-05-31 05:34 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+JPXDecode support is only enabled for the autoconf build. Mention this
+in the release notes, and add some brief notes to the MSVC makefile
+about how to make it build.</pre>
+<p>[doc/News.htm 1.149, src/msvc32.mak 1.57]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-31_0508"></a>
+2004-05-31 05:08 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update the open bug list in the release notes.</pre>
+<p>[doc/News.htm 1.148]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-30_0950"></a>
+2004-05-30 09:50 Russell Lang</strong> (<a href="Details8.htm#2004-05-30_0950">details</a>)</p>
+<blockquote>
+<pre>
+Enable separable_and_linear and separable for the display device.
+Fixes bug #687442.
+
+</pre>
+<p>[src/gdevdsp.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-29_2107"></a>
+2004-05-29 21:07 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Added more news items, in preparation for 8.30 release.</pre>
+<p>[doc/News.htm 1.147]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-29_0219"></a>
+2004-05-29 02:19 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Relocate the gxhldevc_h macro out of order so all its dependencies are
+available.</pre>
+<p>[src/lib.mak 1.184]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-29_0210"></a>
+2004-05-29 02:10 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a dependency typo.</pre>
+<p>[src/lib.mak 1.183]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-29_0121"></a>
+2004-05-29 01:21 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update documenation dates and version category for release.</pre>
+<p>[doc/API.htm 1.42, doc/Bug-form.htm 1.40, doc/Bug-info.htm 1.39, doc/C-style.htm 1.46, doc/Commprod.htm 1.31, doc/Copying.htm 1.30, doc/DLL.htm 1.34, doc/Deprecated.htm 1.11, doc/Details8.htm 1.6, doc/Develop.htm 1.134, doc/Devices.htm 1.77, doc/Drivers.htm 1.46, doc/Fonts.htm 1.41, doc/Helpers.htm 1.34, doc/History1.htm 1.30, doc/History2.htm 1.30, doc/History3.htm 1.30, doc/History4.htm 1.30, doc/History5.htm 1.32, doc/History6.htm 1.47, doc/History7.htm 1.35, doc/History8.htm 1.10, doc/Htmstyle.htm 1.35, doc/Install.htm 1.45, doc/Issues.htm 1.40, doc/Language.htm 1.86, doc/Lib.htm 1.33, doc/Maintain.htm 1.41, doc/Make.htm 1.75, doc/New-user.htm 1.50, doc/News.htm 1.146, doc/Projects.htm 1.57, doc/Ps-style.htm 1.28, doc/Ps2epsi.htm 1.32, doc/Ps2pdf.htm 1.68, doc/Psfiles.htm 1.51, doc/Readme.htm 1.55, doc/Release.htm 1.85, doc/Source.htm 1.30, doc/Tester.htm 1.30, doc/Testing.htm 1.25, doc/Unix-lpr.htm 1.30, doc/Use.htm 1.109, doc/Xfonts.htm 1.30, man/dvipdf.1 1.28, man/font2c.1 1.28, man/gs.1 1.29, man/gslp.1 1.28, man/gsnd.1 1.28, man/pdf2dsc.1 1.27, man/pdf2ps.1 1.29, man/pdfopt.1 1.27, man/pf2afm.1 1.28, man/pfbtopfa.1 1.29, man/printafm.1 1.28, man/ps2ascii.1 1.27, man/ps2epsi.1 1.26, man/ps2pdf.1 1.33, man/ps2pdfwr.1 1.32, man/ps2ps.1 1.35, man/wftopfa.1 1.28, src/gscdef.c 1.43, src/version.mak 1.70]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-29_0111"></a>
+2004-05-29 01:11 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add new rinkj driver files to the index in Develop.htm.</pre>
+<p>[doc/Develop.htm 1.133]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-28_2358"></a>
+2004-05-28 23:58 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Add sample setup file for Rinkj driver, more documentation.</pre>
+<p>[doc/Devices.htm 1.76, lib/rinkj-2200-setup 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-28_2350"></a>
+2004-05-28 23:50 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Adds basic documentation for Rinkj driver, update copyright banners.</pre>
+<p>[doc/Devices.htm 1.75, src/rinkj/evenbetter-rll.c 1.2, src/rinkj/evenbetter-rll.h 1.2, src/rinkj/rinkj-byte-stream.c 1.2, src/rinkj/rinkj-byte-stream.h 1.2, src/rinkj/rinkj-config.c 1.2, src/rinkj/rinkj-config.h 1.2, src/rinkj/rinkj-device.c 1.2, src/rinkj/rinkj-device.h 1.2, src/rinkj/rinkj-dither.c 1.2, src/rinkj/rinkj-dither.h 1.2, src/rinkj/rinkj-epson870.c 1.2, src/rinkj/rinkj-epson870.h 1.2, src/rinkj/rinkj-screen-eb.c 1.2, src/rinkj/rinkj-screen-eb.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-28_2326"></a>
+2004-05-28 23:26 Dan Coby</strong> (<a href="Details8.htm#2004-05-28_2326">details</a>)</p>
+<blockquote>
+<pre>
+This change implements "687431 Add determining equivalent CMYK
+colors for spot colors".  This change currently only affects the
+psdcmyk device.
+
+</pre>
+<p>[src/devs.mak 1.114, src/gdevdevn.c 1.18, src/gdevdevn.h 1.6, src/gdevprn.c 1.16, src/gdevpsd.c 1.12, src/gsequivc.c 1.1, src/gsequivc.h 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-28_2309"></a>
+2004-05-28 23:09 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Use ST_MTIME instead of the ctime to determine the date of the last
+baseline update. Partial fix for bug 687481.</pre>
+<p>[toolbin/tests/gscheck_raster.py 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-28_2302"></a>
+2004-05-28 23:02 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Initial commit of rinkj (resplendent inkjet) drivers, using ETS screening.</pre>
+<p>[src/devs.mak 1.113, src/gdevrinkj.c 1.1, src/rinkj/evenbetter-rll.c 1.1, src/rinkj/evenbetter-rll.h 1.1, src/rinkj/rinkj-byte-stream.c 1.1, src/rinkj/rinkj-byte-stream.h 1.1, src/rinkj/rinkj-config.c 1.1, src/rinkj/rinkj-config.h 1.1, src/rinkj/rinkj-device.c 1.1, src/rinkj/rinkj-device.h 1.1, src/rinkj/rinkj-dither.c 1.1, src/rinkj/rinkj-dither.h 1.1, src/rinkj/rinkj-epson870.c 1.1, src/rinkj/rinkj-epson870.h 1.1, src/rinkj/rinkj-screen-eb.c 1.1, src/rinkj/rinkj-screen-eb.h 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-28_0708"></a>
+2004-05-28 07:08 Igor Melichev</strong> (<a href="Details8.htm#2004-05-28_0708">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : Wrong processing of a big CIDToGIDMap.
+
+</pre>
+<p>[lib/pdf_font.ps 1.66]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-27_1905"></a>
+2004-05-27 19:05 Igor Melichev</strong> (<a href="Details8.htm#2004-05-27_1905">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : 1. Implementing a dynamic recongnition for Type 3 charproc variations;
+2. Bug : Viewer state could desynchronize when entering a charproc accumulation.
+
+</pre>
+<p>[src/gdevpdf.c 1.94, src/gdevpdfg.c 1.50, src/devs.mak 1.112, src/gdevpdfg.h 1.30, src/gdevpdfj.c 1.31, src/gdevpdfu.c 1.52, src/gdevpdfx.h 1.89, src/gdevpdte.c 1.59, src/gdevpdtf.c 1.36, src/gdevpdtf.h 1.22, src/gdevpdti.c 1.29, src/gdevpdtt.c 1.79, src/gdevpdtt.h 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-27_1028"></a>
+2004-05-27 10:28 Igor Melichev</strong> (<a href="Details8.htm#2004-05-27_1028">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Delaying the charproc insertion until it is accumulated.
+
+</pre>
+<p>[src/gdevpdtt.c 1.78, src/gdevpdfx.h 1.88]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-27_1025"></a>
+2004-05-27 10:25 Igor Melichev</strong> (<a href="Details8.htm#2004-05-27_1025">details</a>)</p>
+<blockquote>
+<pre>
+(pdfwrite) : Delaying the charproc insertion until it is accumulated.
+
+</pre>
+<p>[src/gdevpdf.c 1.93, src/gdevpdti.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-27_0322"></a>
+2004-05-27 03:22 Ralph Giles</strong> (<a href="Details8.htm#2004-05-27_0322">details</a>)</p>
+<blockquote>
+<pre>
+Handle some errors that could halt the regression run.
+
+</pre>
+<p>[toolbin/tests/gscheck_raster.py 1.11, toolbin/tests/gssum.py 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-26_1549"></a>
+2004-05-26 15:49 Ray Johnston</strong> (<a href="Details8.htm#2004-05-26_1549">details</a>)</p>
+<blockquote>
+<pre>
+Fix reference count of overprint compositor so that it doesn't get freed
+too early. Fixes SEGV of bug #687425 for customer #1110.
+
+</pre>
+<p>[src/gxclrast.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-26_0844"></a>
+2004-05-26 08:44 Igor Melichev</strong> (<a href="Details8.htm#2004-05-26_0844">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Wrong /Matrix from /BP pdfmark.
+
+</pre>
+<p>[src/gdevpdfm.c 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-26_0410"></a>
+2004-05-26 04:10 Dan Coby</strong> (<a href="Details8.htm#2004-05-26_0410">details</a>)</p>
+<blockquote>
+<pre>
+Log message:
+
+Revised fix for 687418 WTS does not work with bitcmyk driver.
+
+</pre>
+<p>[src/gdevcdj.c 1.14, src/gdevcljc.c 1.7, src/gdevcmap.c 1.6, src/gdevdevn.c 1.17, src/gdevdevn.h 1.5, src/gdevdflt.c 1.23, src/gdevdsp.c 1.21, src/gdevmem.c 1.8, src/gdevp14.c 1.23, src/gdevp2up.c 1.6, src/gdevpbm.c 1.11, src/gdevpcx.c 1.7, src/gdevplnx.c 1.9, src/gdevpnga.c 1.9, src/gdevprn.c 1.15, src/gdevpsd.c 1.11, src/gdevrops.c 1.11, src/gdevupd.c 1.15, src/gdevxalt.c 1.11, src/gdevxcf.c 1.7, src/gdevxini.c 1.14, src/gsdevice.c 1.21, src/gslib.c 1.13, src/gxcmap.c 1.20, src/gxdevcli.h 1.32, src/gximag3x.c 1.16, src/gximage3.c 1.13, src/gxpcmap.c 1.12, src/zcolor.c 1.18, doc/Language.htm 1.85]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-25_1041"></a>
+2004-05-25 10:41 Igor Melichev</strong> (<a href="Details8.htm#2004-05-25_1041">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Form XObject`s /BBox could contain reals in exponential format.
+
+</pre>
+<p>[src/gdevpdfm.c 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-25_0920"></a>
+2004-05-25 09:20 Igor Melichev</strong> (<a href="Details8.htm#2004-05-25_0920">details</a>)</p>
+<blockquote>
+<pre>
+Fix an MSVC compiler warning.
+
+</pre>
+<p>[src/gdevpdte.c 1.58]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-24_2335"></a>
+2004-05-24 23:35 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a missing header include for gsutil.h which provides the prototype  for bytes_compare(). Corrects a gcc warning.</pre>
+<p>[src/devs.mak 1.111, src/gdevpdte.c 1.57]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-24_1756"></a>
+2004-05-24 17:56 Dan Coby</strong> (<a href="Details8.htm#2004-05-24_1756">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687453 Problem with overprinting and shading.
+
+</pre>
+<p>[lib/pdf_draw.ps 1.81]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-24_1221"></a>
+2004-05-24 12:21 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Add /WhiteIsOpaque page device parameter to provide user interface to the
+corresponding bbox device flag. Fix a bug introduced in gdevbbox.c v.1.9
+(for bug 645531) that left bdev->white and bdev->black uninitialized,
+resulting in black objects skipped as white.
+Fix bugs 687410, 687478</pre>
+<p>[src/gdevbbox.c 1.17, doc/Devices.htm 1.74]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-20_1706"></a>
+2004-05-20 17:06 Igor Melichev</strong> (<a href="Details8.htm#2004-05-20_1706">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Add Encoding element even if the font has no glyph.
+
+</pre>
+<p>[src/gdevpdte.c 1.56]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-20_0741"></a>
+2004-05-20 07:41 Ralph Giles</strong> (<a href="Details8.htm#2004-05-20_0741">details</a>)</p>
+<blockquote>
+<pre>
+Apply a recursive 'configure' step to the autoconf build to generate
+required code for the jasper library.
+
+</pre>
+<p>[src/configure.ac 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-20_0734"></a>
+2004-05-20 07:34 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add the jasper include path when compiling the JPXDecode filter so the
+headers can be found if they're not already installed on the system.
+Required to compile in the jasper library source from a fresh distribution
+of the third-party library.</pre>
+<p>[src/int.mak 1.126, src/lib.mak 1.182]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-19_1109"></a>
+2004-05-19 11:09 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Documenting the new implementation of shadings.</pre>
+<p>[doc/News.htm 1.145]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-18_1342"></a>
+2004-05-18 13:42 Igor Melichev</strong> (<a href="Details8.htm#2004-05-18_1342">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 79.
+
+</pre>
+<p>[src/gxshade6.c 1.74]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-18_1107"></a>
+2004-05-18 11:07 Igor Melichev</strong> (<a href="Details8.htm#2004-05-18_1107">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 78.
+
+</pre>
+<p>[src/gdevp14.c 1.22, src/gdevplnx.c 1.8, src/gxcmap.c 1.19, src/gxcmap.h 1.8, src/gxshade6.c 1.73]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-18_1036"></a>
+2004-05-18 10:36 Igor Melichev</strong> (<a href="Details8.htm#2004-05-18_1036">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 78.
+
+</pre>
+<p>[src/gdevp14.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-18_0957"></a>
+2004-05-18 09:57 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Documenting the new implementation of shadings.</pre>
+<p>[doc/Drivers.htm 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-17_1727"></a>
+2004-05-17 17:27 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Reword the description of the new shading implementation.</pre>
+<p>[doc/News.htm 1.144]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-17_1224"></a>
+2004-05-17 12:24 Igor Melichev</strong> (<a href="Details8.htm#2004-05-17_1224">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 77 (release candidate).
+
+</pre>
+<p>[src/gxshade6.c 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-13_1524"></a>
+2004-05-13 15:24 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Remove unused label.
+Partial fix for bug 687441.</pre>
+<p>[src/gdevwpr2.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-13_1303"></a>
+2004-05-13 13:03 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Documenting the new implementation of shadings, step 76.</pre>
+<p>[doc/News.htm 1.143]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-13_1252"></a>
+2004-05-13 12:52 Igor Melichev</strong> (<a href="Details8.htm#2004-05-13_1252">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 76.
+Switching new radial shadings on.
+Radial shadings render in 3...10 times faster.
+Radial shadings are not longer restricted with 8bpc.
+
+</pre>
+<p>[src/gxshade4.h 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-13_1246"></a>
+2004-05-13 12:46 Igor Melichev</strong> (<a href="Details8.htm#2004-05-13_1246">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 75.
+
+</pre>
+<p>[src/gxshade6.c 1.71]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-13_1140"></a>
+2004-05-13 11:40 Igor Melichev</strong> (<a href="Details8.htm#2004-05-13_1140">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 74.
+
+</pre>
+<p>[src/gxshade1.c 1.31, src/gxshade4.h 1.34, src/gxshade6.c 1.70]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-12_2133"></a>
+2004-05-12 21:33 Igor Melichev</strong> (<a href="Details8.htm#2004-05-12_2133">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 73.
+
+</pre>
+<p>[src/gxshade1.c 1.30, src/gxshade4.h 1.33, src/gxshade6.c 1.69]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-12_2012"></a>
+2004-05-12 20:12 Igor Melichev</strong> (<a href="Details8.htm#2004-05-12_2012">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 72.
+
+</pre>
+<p>[src/gxdtfill.h 1.26, src/gxshade4.h 1.32, src/gxshade6.c 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-12_1808"></a>
+2004-05-12 18:08 Jack Moffitt</strong></p>
+<blockquote>
+<pre>
+Fix regression reports (the previous commit accidentally did the exact
+opposite of what we wanted).  Also, cleaned up the way the report is built
+so that it is much less confusing.</pre>
+<p>[toolbin/tests/run_nightly 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-12_1537"></a>
+2004-05-12 15:37 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Avoid a numeric exception; throw /rangecheck when .getbitsrect operator is
+invoked with raster width = 0.
+Fix bug 687223.</pre>
+<p>[src/zdevice.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-12_1133"></a>
+2004-05-12 11:33 Igor Melichev</strong> (<a href="Details8.htm#2004-05-12_1133">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 72.
+
+</pre>
+<p>[src/gxshade6.c 1.67]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-12_0004"></a>
+2004-05-12 00:04 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Fix some warnings about unused variables and undeclared functions
+generated by MSVC with warning level 3. Move the definition of WARNOPT
+and add ifdef's.
+Partial fix for bug 687441.
+
+[DETAILS]
+Although nmake overrides internal definitions when called from command line,
+it doesn't do so when the makefile is invoked from Development Studio.</pre>
+<p>[src/dwimg.c 1.11, src/dwimg.h 1.8, src/dwmain.c 1.16, src/dwmainc.c 1.18, src/dwtrace.h 1.6, src/gdevm64.c 1.2, src/gdevwdib.c 1.8, src/msvc32.mak 1.56, src/msvccmd.mak 1.19, src/unistd_.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-11_2048"></a>
+2004-05-11 20:48 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+GCC with -ffast-math compiles ang/90. as ang*(1/90.), losing precission.
+This doesn't happen when the numeral is replaced with a non-const variable.
+So we define the variable to work around the GCC problem.
+Fix bug 687420.</pre>
+<p>[src/gsmisc.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-11_2026"></a>
+2004-05-11 20:26 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Ignore 0-length tables that occur in PDF files generated by Crystal.
+Fix bug 687457.</pre>
+<p>[lib/gs_ttf.ps 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-11_1113"></a>
+2004-05-11 11:13 Igor Melichev</strong> (<a href="Details8.htm#2004-05-11_1113">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 70.
+
+</pre>
+<p>[src/gxshade4.h 1.31, src/gxshade6.c 1.66]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-11_1041"></a>
+2004-05-11 10:41 Igor Melichev</strong> (<a href="Details8.htm#2004-05-11_1041">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 69.
+
+</pre>
+<p>[src/gspath.h 1.7, src/gspath1.c 1.9, src/gxshade1.c 1.29, src/gxshade4.h 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_1906"></a>
+2004-05-06 19:06 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Correct a problem in the fix for 687418 detected by Russell Lang.  Also
+make the routine check_device_separable public for use by the display
+device.  The prototype is in gxdevice.h.</pre>
+<p>[src/gdevdflt.c 1.22, src/gxdevice.h 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_1719"></a>
+2004-05-06 17:19 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Disable the fix for 687418.  This is causing many errors in the regression
+tests.  These need to be investigated.</pre>
+<p>[src/gdevdflt.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_1626"></a>
+2004-05-06 16:26 Jack Moffitt</strong></p>
+<blockquote>
+<pre>
+Repress the full report except on Mondays.</pre>
+<p>[toolbin/tests/run_nightly 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_1401"></a>
+2004-05-06 14:01 Igor Melichev</strong> (<a href="Details8.htm#2004-05-06_1401">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 68.
+Switching linear color device fucntions on.
+
+</pre>
+<p>[src/gxshade4.h 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_1325"></a>
+2004-05-06 13:25 Igor Melichev</strong> (<a href="Details8.htm#2004-05-06_1325">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 67.
+
+</pre>
+<p>[src/gxshade6.c 1.65]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_1303"></a>
+2004-05-06 13:03 Igor Melichev</strong> (<a href="Details8.htm#2004-05-06_1303">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 66.
+
+</pre>
+<p>[src/gxshade6.c 1.64]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_1234"></a>
+2004-05-06 12:34 Igor Melichev</strong> (<a href="Details8.htm#2004-05-06_1234">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 65.
+
+</pre>
+<p>[src/gxshade6.c 1.63, src/gxshade4.h 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_0841"></a>
+2004-05-06 08:41 Igor Melichev</strong> (<a href="Details8.htm#2004-05-06_0841">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 64.
+
+</pre>
+<p>[src/gdevdsha.c 1.9, src/gxclip.c 1.14, src/gxshade6.c 1.62]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_0746"></a>
+2004-05-06 07:46 Ralph Giles</strong> (<a href="Details8.htm#2004-05-06_0746">details</a>)</p>
+<blockquote>
+<pre>
+Limit the number of timing runs we're willing to do to detect the cache
+size, preventing an infinite loop if the os timing calls never measure
+appreciable elapsed time. After a patch from Patrick TJ McPhee. Bug 687095.
+
+</pre>
+<p>[src/genarch.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_0620"></a>
+2004-05-06 06:20 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Make check_device_separable private to avoid a warning from gcc.</pre>
+<p>[src/gdevdflt.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_0549"></a>
+2004-05-06 05:49 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687455.  The overprint logic creates a temporary device which is
+used to initialize a set of procedures.  This temp device is only paritally
+initialized.  The partially initialized device is being set up as a
+forwarding device but the target device is not yet present.  This created
+a problem when check_device_separable executed.  This change sets the temp
+device to 'not separable' so check_device_separable does not try to do
+anything.</pre>
+<p>[src/gsovrc.c 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_0519"></a>
+2004-05-06 05:19 Igor Melichev</strong> (<a href="Details8.htm#2004-05-06_0519">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 63.
+
+</pre>
+<p>[src/gdevddrw.c 1.24, src/gdevdsha.c 1.8, src/gdevnfwd.c 1.22, src/gxdevcli.h 1.31, src/gxdtfill.h 1.25, src/gxshade1.c 1.28, src/gxshade6.c 1.61]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-06_0517"></a>
+2004-05-06 05:17 Igor Melichev</strong> (<a href="Details8.htm#2004-05-06_0517">details</a>)</p>
+<blockquote>
+<pre>
+Implementing is_monotonic for cubic interpolation functions (continued 2).
+
+</pre>
+<p>[src/gsfunc0.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-05_2355"></a>
+2004-05-05 23:55 Dan Coby</strong> (<a href="Details8.htm#2004-05-05_2355">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687418 WTS does not work with bitcmyk driver.  This fix
+is applicable to most devices.
+
+</pre>
+<p>[src/gdevdflt.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-05_2252"></a>
+2004-05-05 22:52 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Document that we no longer support loading truetype CJK fonts directly from
+/Resources/CIDFont as worked in 7.0x for Japanese fonts. This has been replaced
+by the more general, if less convenience, cidfmap mechanism. Closes bug 686949.</pre>
+<p>[doc/Fonts.htm 1.40, doc/Use.htm 1.108]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-05_0945"></a>
+2004-05-05 09:45 Igor Melichev</strong> (<a href="Details8.htm#2004-05-05_0945">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 62.
+
+</pre>
+<p>[src/gscspace.c 1.15, src/gxshade4.h 1.27, src/gxshade6.c 1.60]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-05_0902"></a>
+2004-05-05 09:02 Igor Melichev</strong> (<a href="Details8.htm#2004-05-05_0902">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 61.
+
+</pre>
+<p>[src/gxshade6.c 1.59]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-05_0901"></a>
+2004-05-05 09:01 Igor Melichev</strong> (<a href="Details8.htm#2004-05-05_0901">details</a>)</p>
+<blockquote>
+<pre>
+Implementing is_monotonic for cubic interpolation functions (continued 1).
+
+</pre>
+<p>[src/gsfunc0.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-05_0635"></a>
+2004-05-05 06:35 Igor Melichev</strong> (<a href="Details8.htm#2004-05-05_0635">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 60.
+
+</pre>
+<p>[src/gxdevcli.h 1.30, src/lib.mak 1.181]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-04_2131"></a>
+2004-05-04 21:31 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Replace locally-defined (u)int32 typedefs with the stdint_.h types now
+that they're universally available. This avoids conflict with typedefs
+that are pulled in from sys/types.h on some systems. Bug 687404.</pre>
+<p>[src/gdevupd.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-04_1814"></a>
+2004-05-04 18:14 Igor Melichev</strong> (<a href="Details8.htm#2004-05-04_1814">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 59.
+
+</pre>
+<p>[src/gdevddrw.c 1.23, src/gdevdsha.c 1.7, src/gdevnfwd.c 1.21, src/gxdevcli.h 1.29, src/gxdtfill.h 1.24, src/gxshade6.c 1.58]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-04_1753"></a>
+2004-05-04 17:53 Igor Melichev</strong> (<a href="Details8.htm#2004-05-04_1753">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 58.
+
+</pre>
+<p>[src/gdevddrw.c 1.22, src/gdevdsha.c 1.6, src/gdevnfwd.c 1.20, src/gxdevcli.h 1.28, src/gxdtfill.h 1.23, src/gxshade6.c 1.57]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-02_2124"></a>
+2004-05-02 21:24 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add recent new files to the listing in the developer documentation.</pre>
+<p>[doc/Develop.htm 1.132]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-02_2030"></a>
+2004-05-02 20:30 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add the JPXDecode implementation to the list of files in the documentation.</pre>
+<p>[doc/Develop.htm 1.131]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-02_1937"></a>
+2004-05-02 19:37 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a missing file to the testsuite documentation.</pre>
+<p>[doc/Testing.htm 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-02_1926"></a>
+2004-05-02 19:26 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Return the number of failures on exit so an external program can take action on the results. Previously, our tests always returned 0.
+----------------------------------------------------------------------</pre>
+<p>[toolbin/tests/gstestutils.py 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-02_1923"></a>
+2004-05-02 19:23 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Remove dependency on python2.2. Tested with python 2.3.3. Primary problem
+was that calendar module no longer has a localtime member, used time instead.</pre>
+<p>[toolbin/tests/check_all.py 1.6, toolbin/tests/check_comments.py 1.4, toolbin/tests/check_dirs.py 1.9, toolbin/tests/check_docrefs.py 1.10, toolbin/tests/check_source.py 1.10, toolbin/tests/dump_testdb 1.6, toolbin/tests/get_baselines 1.3, toolbin/tests/gscheck_all.py 1.6, toolbin/tests/gscheck_fuzzypdf.py 1.8, toolbin/tests/gscheck_pdfwrite.py 1.20, toolbin/tests/gscheck_raster.py 1.10, toolbin/tests/make_testdb 1.12, toolbin/tests/make_two_pdfversions 1.8, toolbin/tests/make_two_versions 1.13, toolbin/tests/revert_baseline 1.12, toolbin/tests/revert_pdfbaseline 1.10, toolbin/tests/run_nightly 1.24, toolbin/tests/run_regression 1.13, toolbin/tests/testdiff 1.5, toolbin/tests/update_baseline 1.13, toolbin/tests/update_pdfbaseline 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-05-02_1900"></a>
+2004-05-02 19:00 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Avoid failing when testing.cfg isn't available. This allows check_all.py to be run on a fresh checkout just by passing --gsroot=. on the commandline. Previously this option could only be used to override a required version in testing.cfg</pre>
+<p>[toolbin/tests/gstestutils.py 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-30_2231"></a>
+2004-04-30 22:31 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Provide a dummy 'make check' target in the autoconf build. Some users have requested this,
+and it's available on the GPL 7.0x releases.</pre>
+<p>[src/Makefile.in 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-29_1851"></a>
+2004-04-29 18:51 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Remove some more compiler warnings.  Found by Igor.  687441.</pre>
+<p>[src/gdevpsd.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-29_1618"></a>
+2004-04-29 16:18 Igor Melichev</strong> (<a href="Details8.htm#2004-04-29_1618">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 57.
+
+</pre>
+<p>[src/gxdevcli.h 1.27, src/gxshade4.h 1.26, src/gxshade6.c 1.56]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-29_1347"></a>
+2004-04-29 13:47 Igor Melichev</strong> (<a href="Details8.htm#2004-04-29_1347">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 56.
+
+</pre>
+<p>[src/gxshade4.h 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-29_1340"></a>
+2004-04-29 13:40 Igor Melichev</strong> (<a href="Details8.htm#2004-04-29_1340">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 55.
+
+</pre>
+<p>[src/gxshade6.c 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-29_1238"></a>
+2004-04-29 12:38 Igor Melichev</strong> (<a href="Details8.htm#2004-04-29_1238">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 54.
+
+</pre>
+<p>[src/gdevddrw.c 1.21, src/gdevdsha.c 1.5, src/gdevnfwd.c 1.19, src/gxclist.c 1.13, src/gxdevcli.h 1.26, src/gxdtfill.h 1.22, src/gxshade1.c 1.27, src/gxshade4.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-29_0614"></a>
+2004-04-29 06:14 Igor Melichev</strong> (<a href="Details8.htm#2004-04-29_0614">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 53.
+
+</pre>
+<p>[src/gdevddrw.c 1.20, src/gxdtfill.h 1.21, src/gxshade6.c 1.54]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-29_0437"></a>
+2004-04-29 04:37 Igor Melichev</strong> (<a href="Details8.htm#2004-04-29_0437">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 52.
+
+</pre>
+<p>[src/gdevddrw.c 1.19, src/gdevdsha.c 1.4, src/gscspace.c 1.14, src/gxdtfill.h 1.20, src/gxshade6.c 1.53, src/lib.mak 1.180]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-28_1641"></a>
+2004-04-28 16:41 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687441 New: MSVC warnings.  Correct some warning messages from
+MSVC.</pre>
+<p>[src/devs.mak 1.110, src/gdevpsd.c 1.9, src/gdevdevn.c 1.16, src/gdevdevn.h 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-28_1524"></a>
+2004-04-28 15:24 Igor Melichev</strong> (<a href="Details8.htm#2004-04-28_1524">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 51.
+
+</pre>
+<p>[src/gxshade6.c 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-28_0939"></a>
+2004-04-28 09:39 Igor Melichev</strong> (<a href="Details8.htm#2004-04-28_0939">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 50.
+
+</pre>
+<p>[src/gdevddrw.c 1.18, src/gdevrops.c 1.10, src/gscspace.c 1.13, src/gxclip.c 1.13, src/gxclip2.c 1.10, src/gxclipm.c 1.12, src/gxcspace.h 1.12, src/gxdtfill.h 1.19, src/gxshade4.h 1.24, src/gxshade6.c 1.51]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-28_0539"></a>
+2004-04-28 05:39 Dan Coby</strong> (<a href="Details8.htm#2004-04-28_0539">details</a>)</p>
+<blockquote>
+<pre>
+Implement 687423  Implement SeparationOrder for psdcmyk device.
+
+</pre>
+<p>[src/gdevdevn.c 1.15, src/gdevdevn.h 1.3, src/gdevdflt.c 1.18, src/gdevpsd.c 1.8, src/gsdparam.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-28_0406"></a>
+2004-04-28 04:06 Igor Melichev</strong> (<a href="Details8.htm#2004-04-28_0406">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 49.
+
+</pre>
+<p>[src/gdevddrw.c 1.17, src/gxdtfill.h 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-28_0235"></a>
+2004-04-28 02:35 Igor Melichev</strong> (<a href="Details8.htm#2004-04-28_0235">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 48a.
+
+</pre>
+<p>[src/gdevdsha.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-28_0226"></a>
+2004-04-28 02:26 Igor Melichev</strong> (<a href="Details8.htm#2004-04-28_0226">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 48.
+
+</pre>
+<p>[src/gxshade4.h 1.23, src/gxshade6.c 1.50]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-27_0826"></a>
+2004-04-27 08:26 Igor Melichev</strong> (<a href="Details8.htm#2004-04-27_0826">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 47.
+
+</pre>
+<p>[src/gdevddrw.c 1.16, src/gxdevcli.h 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-27_0812"></a>
+2004-04-27 08:12 Igor Melichev</strong> (<a href="Details8.htm#2004-04-27_0812">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 46.
+
+</pre>
+<p>[src/gdevddrw.c 1.15, src/gxdevcli.h 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-27_0604"></a>
+2004-04-27 06:04 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add makefile support for compiling in the jasper JPEG 2000 library,
+needed to support the JPXDecode filter in PDF 1.5. Currently only
+enabled in the autoconf build, but porting the changes to other top-level
+makefiles should now work.</pre>
+<p>[src/Makefile.in 1.34, src/configure.ac 1.45, src/gs.mak 1.26, src/jasper.mak 1.1, src/lib.mak 1.179]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-27_0601"></a>
+2004-04-27 06:01 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct two typos in the jasper local source directory detection. It was
+erroneously resetting the jbig2dec local source directory and not reporting
+the found location correctly.</pre>
+<p>[src/configure.ac 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-27_0543"></a>
+2004-04-27 05:43 Igor Melichev</strong> (<a href="Details8.htm#2004-04-27_0543">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 45.
+
+</pre>
+<p>[src/gdevddrw.c 1.14, src/gdevdsha.c 1.3, src/gdevnfwd.c 1.18, src/gxdevcli.h 1.23, src/gxdtfill.h 1.17, src/lib.mak 1.178]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-23_1230"></a>
+2004-04-23 12:30 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Keep calculation in signed types to avoid conversion of the negative
+int to the big positive long, which caused infinite loop on Alpha in
+t1_hinter__adjust_matrix_precision() inline function.
+Fix bug 687417.</pre>
+<p>[src/gxhintn.c 1.48]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-22_0638"></a>
+2004-04-22 06:38 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Document the use of .setpdfwrite and the relation of vmthreshold to the
+accumulation of shared object data in the pdfwrite device. Closes bug
+687409.</pre>
+<p>[doc/Language.htm 1.84, doc/Ps2pdf.htm 1.67, doc/Use.htm 1.107]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-17_1830"></a>
+2004-04-17 18:30 Igor Melichev</strong> (<a href="Details8.htm#2004-04-17_1830">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 44.
+
+</pre>
+<p>[src/gdevdflt.c 1.17, src/gdevdsha.c 1.2, src/gdevnfwd.c 1.17, src/gxdevcli.h 1.22, src/gxdevice.h 1.16, src/lib.mak 1.177]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-15_2250"></a>
+2004-04-15 22:50 Igor Melichev</strong> (<a href="Details8.htm#2004-04-15_2250">details</a>)</p>
+<blockquote>
+<pre>
+Implementing color mapping linearity checks, step 2.
+
+</pre>
+<p>[src/gscspace.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-15_1726"></a>
+2004-04-15 17:26 Ray Johnston</strong> (<a href="Details8.htm#2004-04-15_1726">details</a>)</p>
+<blockquote>
+<pre>
+Fix to make sure that both stroke (CA) and non-stroke (ca) opacity is set.
+Support for customer #32 that wants to create transparent effects in PDF
+from PostScript input.
+
+</pre>
+<p>[src/gdevpdfg.c 1.49]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-15_1647"></a>
+2004-04-15 16:47 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Correction to previous commit that caused Subtype value to be consumed
+if it was not a null name. Valid files would fail.</pre>
+<p>[lib/pdf_font.ps 1.65]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-14_0002"></a>
+2004-04-14 00:02 Dan Coby</strong> (<a href="Details8.htm#2004-04-14_0002">details</a>)</p>
+<blockquote>
+<pre>
+Fix 687189 for bbox_forward_add_rect infinite recursion.
+This problem caused segment faults or apparent hangs with
+the x11alpha device.  This fix also works for 656414
+segfault when using x11alpha
+
+</pre>
+<p>[src/gdevbbox.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-13_2325"></a>
+2004-04-13 23:25 Dan Coby</strong> (<a href="Details8.htm#2004-04-13_2325">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687402 Missing color on annots.pdf.  This is actually
+not an error.  Instead it is due to some confusion about the
+displaying of link annotations.
+
+</pre>
+<p>[examples/annots.pdf 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-13_1632"></a>
+2004-04-13 16:32 Ray Johnston</strong> (<a href="Details8.htm#2004-04-13_1632">details</a>)</p>
+<blockquote>
+<pre>
+Handle (yet another) invalid PDF that Adobe Acrobat can open. If the
+Font /Subtype is / then assume Type1. Also issue a **** WARNING message.
+Bug #687422 for Artifex customer #670.
+
+</pre>
+<p>[lib/pdf_font.ps 1.64]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-10_1714"></a>
+2004-04-10 17:14 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Use ld_length instead of length because RMap is a long dictionary.
+Fix bug 687363.</pre>
+<p>[toolbin/pdfinflt.ps 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-09_0620"></a>
+2004-04-09 06:20 Igor Melichev</strong> (<a href="Details8.htm#2004-04-09_0620">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 44.
+
+</pre>
+<p>[src/gxshade6.c 1.49]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-08_1618"></a>
+2004-04-08 16:18 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct DOS line endings accidentally committed to the repository.
+Bug 687415.</pre>
+<p>[lib/dumphint.ps 1.2, src/dwdll.c 1.7, src/dwimg.c 1.10, src/dwnodll.c 1.6, src/errors.h 1.10, src/gp_dosfs.c 1.17, src/gp_vms.c 1.38, src/gscolor.c 1.13, src/gscolor1.c 1.10, src/math_.h 1.7, src/windows_.h 1.6, src/zfont42.c 1.19, toolbin/tests/fuzzy.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-08_0759"></a>
+2004-04-08 07:59 Igor Melichev</strong> (<a href="Details8.htm#2004-04-08_0759">details</a>)</p>
+<blockquote>
+<pre>
+Implementing color mapping linearity checks, step 1.
+
+</pre>
+<p>[src/gscdevn.c 1.16, src/gscolor2.c 1.20, src/gscpixel.c 1.11, src/gscscie.c 1.11, src/gscsepr.c 1.23, src/gscspace.c 1.11, src/gsicc.c 1.13, src/gspcolor.c 1.13, src/gxcspace.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-07_1510"></a>
+2004-04-07 15:10 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Fix: Disables platfonts when antialiasing is in effect. Improves rendering
+quality, and fixes bug 687368.</pre>
+<p>[src/gxchar.c 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-02_1421"></a>
+2004-04-02 14:21 Igor Melichev</strong> (<a href="Details8.htm#2004-04-02_1421">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : /XObject <<-1 0 R>> was written to a pattern dictionary.
+
+</pre>
+<p>[src/gdevpdfj.c 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-02_0706"></a>
+2004-04-02 07:06 Igor Melichev</strong> (<a href="Details8.htm#2004-04-02_0706">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Restoring the non-cache-device constraint in setcolor.
+
+</pre>
+<p>[src/gscolor2.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-02_0219"></a>
+2004-04-02 02:19 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Dump output from 'attrib -H dosdefault' to the bit bucket (nul:) to
+eliminate a potentially confusing warning.</pre>
+<p>[src/msvccmd.mak 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_2039"></a>
+2004-04-01 20:39 Igor Melichev</strong> (<a href="Details8.htm#2004-04-01_2039">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Type 1 hinter) : Skip empty hint ranges, improved.
+
+</pre>
+<p>[src/gxhintn.c 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_1958"></a>
+2004-04-01 19:58 Igor Melichev</strong> (<a href="Details8.htm#2004-04-01_1958">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Type 1 hinter) : Skip empty hint ranges.
+
+</pre>
+<p>[src/gxhintn.c 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_1335"></a>
+2004-04-01 13:35 Igor Melichev</strong> (<a href="Details8.htm#2004-04-01_1335">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Cygwin/gcc compiler warnings.
+
+</pre>
+<p>[src/gstext.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_1323"></a>
+2004-04-01 13:23 Igor Melichev</strong> (<a href="Details8.htm#2004-04-01_1323">details</a>)</p>
+<blockquote>
+<pre>
+Fix : MSVC6 compiler warnings.
+
+</pre>
+<p>[src/gdevpdfo.c 1.29, src/isave.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_1143"></a>
+2004-04-01 11:43 Igor Melichev</strong> (<a href="Details8.htm#2004-04-01_1143">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 43.
+
+</pre>
+<p>[src/gdevdflt.c 1.16, src/gdevdsha.c 1.1, src/gdevdsha.h 1.1, src/gdevnfwd.c 1.16, src/gxdevcli.h 1.21, src/gxdevice.h 1.15, src/lib.mak 1.176]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_1130"></a>
+2004-04-01 11:30 Igor Melichev</strong> (<a href="Details8.htm#2004-04-01_1130">details</a>)</p>
+<blockquote>
+<pre>
+Fix : setcachedevice must not depend on a BuildChar color and on gx_show_text_retry.
+
+</pre>
+<p>[src/gscolor2.c 1.18, src/gxccache.c 1.30, src/gxccman.c 1.25, src/gxchar.c 1.41, src/gxtext.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_0646"></a>
+2004-04-01 06:46 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix for premature freeing of a 'image' device (makeimagedevice or the
+similar makewordimagedevice). Bug #687227. Thanks to Alex Cherepanov for
+the patch.</pre>
+<p>[src/gsdevmem.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_0614"></a>
+2004-04-01 06:14 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix for inherited MediaBox for the page Group dictionary (transparency).
+Bug #687293. Thanks to Felix Pahl for the analysis and fix.</pre>
+<p>[lib/pdf_main.ps 1.86]</p>
+</blockquote>
+
+<p><strong><a name="2004-04-01_0451"></a>
+2004-04-01 04:51 Dan Coby</strong> (<a href="Details8.htm#2004-04-01_0451">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687390 GhostScript 8.11 inserts rendering artifacts
+with GIFs as source.  The actual problem is an error which
+resulted in a pale yellow being shown as a pale pink.  This
+occurs when dithering on devices which use a 256 color palette.
+
+</pre>
+<p>[src/gdevbmp.c 1.9, src/gdevcgm.c 1.10, src/gdevp2up.c 1.5, src/gdevpccm.c 1.6, src/gdevpccm.h 1.7, src/gdevpcx.c 1.6, src/gdevpng.c 1.10, src/gdevsvga.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-25_1735"></a>
+2004-03-25 17:35 Igor Melichev</strong> (<a href="Details8.htm#2004-03-25_1735">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : Stack balance was broken when a CID font is not embedded.
+
+</pre>
+<p>[lib/pdf_font.ps 1.63]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-25_1446"></a>
+2004-03-25 14:46 Igor Melichev</strong> (<a href="Details8.htm#2004-03-25_1446">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Type 1 hinter) : Use a weaker condition for horizontal stem recognition.
+
+</pre>
+<p>[src/gxhintn.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-24_2346"></a>
+2004-03-24 23:46 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove an empty '#' line. Closes bug 687377.</pre>
+<p>[src/stdint_.h 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-24_0856"></a>
+2004-03-24 08:56 Ray Johnston</strong> (<a href="Details8.htm#2004-03-24_0856">details</a>)</p>
+<blockquote>
+<pre>
+Fix for unnecessary re-link when building on Windows. Bug #687059.
+
+</pre>
+<p>[src/msvccmd.mak 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-24_0730"></a>
+2004-03-24 07:30 Igor Melichev</strong> (<a href="Details8.htm#2004-03-24_0730">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : TK was written into a charproc.
+
+</pre>
+<p>[src/gdevpdfg.c 1.48]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-24_0729"></a>
+2004-03-24 07:29 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Make use of the SYS_TYPES_HAS_STDINT_TYPES define we set in the configure script. After a patch
+from Alex Cherepanov. Bug 687377.
+
+Also, adopt elif, since we've been using it elsewhere to no ill effect.</pre>
+<p>[src/stdint_.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-24_0638"></a>
+2004-03-24 06:38 Ray Johnston</strong> (<a href="Details8.htm#2004-03-24_0638">details</a>)</p>
+<blockquote>
+<pre>
+Fix for incorrect Annotation scaling when an Appearance (/AP) had
+scaling that was not unity (1) and the Subtype was not /Stamp.
+Fixes Bug #687288 for customer #32.
+
+</pre>
+<p>[lib/pdf_draw.ps 1.80]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-24_0620"></a>
+2004-03-24 06:20 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Adobe no longer provides a public link to DistillerParameters.pdf. Link to a hopefully somewhat
+stable directory from which the inspired user can register and download the documentation.</pre>
+<p>[doc/Ps2pdf.htm 1.66]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-24_0612"></a>
+2004-03-24 06:12 Dan Coby</strong> (<a href="Details8.htm#2004-03-24_0612">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687364 rangecheck in buildshading2 from Quark XPress PS file.
+This fix involves the creation of the findcmykcustomcolor and
+setcustomcolor functions.
+
+</pre>
+<p>[lib/gs_lev2.ps 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-23_1230"></a>
+2004-03-23 12:30 Igor Melichev</strong> (<a href="Details8.htm#2004-03-23_1230">details</a>)</p>
+<blockquote>
+<pre>
+Fix : GenericResourceDir was not listed in PermitFileReading.
+
+</pre>
+<p>[lib/gs_init.ps 1.106]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-23_0659"></a>
+2004-03-23 06:59 Ralph Giles</strong> (<a href="Details8.htm#2004-03-23_0659">details</a>)</p>
+<blockquote>
+<pre>
+Correct a number of warnings.
+
+</pre>
+<p>[src/sjpx.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-22_0123"></a>
+2004-03-22 01:23 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+SunOS 5.9 does not properly replace files with ln -sf. Unlink the
+existing files instead. Closes bug 687378.</pre>
+<p>[autogen.sh 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-21_2235"></a>
+2004-03-21 22:35 Ray Johnston</strong> (<a href="Details8.htm#2004-03-21_2235">details</a>)</p>
+<blockquote>
+<pre>
+Fix for a long standing problem that could cause characters to be dropped
+when reading a file with the 'read' operator. Bug #687374 for customer #310.
+
+</pre>
+<p>[src/zfileio.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-19_1008"></a>
+2004-03-19 10:08 Igor Melichev</strong> (<a href="Details8.htm#2004-03-19_1008">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT interpreter) : Subglyphs could be placed to wrong coordinates.
+
+</pre>
+<p>[src/ttfmain.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-19_0952"></a>
+2004-03-19 09:52 Igor Melichev</strong> (<a href="Details8.htm#2004-03-19_0952">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Zero text length caused an access to an uninitialized data.
+
+</pre>
+<p>[src/gdevpdte.c 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-19_0830"></a>
+2004-03-19 08:30 Ray Johnston</strong> (<a href="Details8.htm#2004-03-19_0830">details</a>)</p>
+<blockquote>
+<pre>
+Fix to implement PDF specification for '/' as a valid name as opposed to
+the PS token scanning. Previously //name would be incorrectly scanned as
+an immediately evaluated name rather than two names '/' and '/name' which
+is correct. Fixes Bug #687277 for customer #440.
+
+</pre>
+<p>[lib/pdf_base.ps 1.42, lib/pdf_main.ps 1.85, src/iscan.c 1.17, src/iscan.h 1.9, src/iscannum.c 1.8, src/ztoken.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-19_0537"></a>
+2004-03-19 05:37 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Rename the DEBUG_JPX symbol to JPX_DEBUG to match the others we've
+defined for the JPXDecode source.</pre>
+<p>[src/sjpx.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-19_0536"></a>
+2004-03-19 05:36 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct our YCrCb to RGB conversion code. Subtract the proper bias to
+center the chromaticity channels around zero if they are returned
+unsigned. Move the clamp routines to after the conversion to RGB where
+it does some good. Thanks to Raph Levien for his help with this code.
+
+We now use our conversion code by default, since there are some problems
+with the jasper library's conversion on big-endian platforms. The jasper
+conversion can be reenabled by defining JPX_USE_JASPER_CM in the
+preprocessor.</pre>
+<p>[src/sjpx.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-18_1756"></a>
+2004-03-18 17:56 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix name of file in raster directory so that update_pdfbaseline will be
+run when needed (when new files are added).</pre>
+<p>[toolbin/tests/gscheck_pdfwrite.py 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-18_1659"></a>
+2004-03-18 16:59 Igor Melichev</strong> (<a href="Details8.htm#2004-03-18_1659">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 43.
+
+</pre>
+<p>[src/gxshade4.h 1.22, src/gxshade6.c 1.48]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-18_1233"></a>
+2004-03-18 12:33 Igor Melichev</strong> (<a href="Details8.htm#2004-03-18_1233">details</a>)</p>
+<blockquote>
+<pre>
+Implementing is_monotonic for cubic interpolation functions.
+
+</pre>
+<p>[src/gsfunc0.c 1.18, src/gsfunc0.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-17_2306"></a>
+2004-03-17 23:06 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Clamp and origin shift the chromaticity values in our JPXDecode filter's
+YUV to RGB conversion code. This still does not produce correct output
+with libjasper's output, but is an improvement. This change affects
+disabled code only.</pre>
+<p>[src/sjpx.c 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-16_1139"></a>
+2004-03-16 11:39 Igor Melichev</strong> (<a href="Details8.htm#2004-03-16_1139">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A floating point interrupt.
+
+</pre>
+<p>[src/gdevvec.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-16_0300"></a>
+2004-03-16 03:00 Ralph Giles</strong> (<a href="Details8.htm#2004-03-16_0300">details</a>)</p>
+<blockquote>
+<pre>
+Use the jasper library's internal color conversion function to convert
+non-rgb multicomponent images to sRGB.
+
+</pre>
+<p>[src/sjpx.c 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-16_0216"></a>
+2004-03-16 02:16 Dan Coby</strong> (<a href="Details8.htm#2004-03-16_0216">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687337 Zerodivide in cie_cache_mult.  Note:  There
+was a typo in the previous fix.
+
+</pre>
+<p>[src/gscie.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-16_0207"></a>
+2004-03-16 02:07 Dan Coby</strong> (<a href="Details8.htm#2004-03-16_0207">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687337 Zerodivide in cie_cache_mult.
+
+</pre>
+<p>[src/gscie.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-16_0125"></a>
+2004-03-16 01:25 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687349 A wrong comment for gx_device_color_s.  This change
+modifies the comment on ccolor and the related variable ccolor_valid.</pre>
+<p>[src/gsdcolor.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-15_2047"></a>
+2004-03-15 20:47 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correctly calculate row offsets for copying JPXDecode filter results so
+multi-component images are indexed correctly. Also split the jpxd
+process code into several helper functions for readability.
+
+Support subsampled YUV images properly. Subsampled pixels are
+replicated, not interpolated. Colorspace conversion from YCrCb to RGB is
+still incorrect.</pre>
+<p>[src/sjpx.c 1.3, src/sjpx.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-15_0954"></a>
+2004-03-15 09:54 Igor Melichev</strong> (<a href="Details8.htm#2004-03-15_0954">details</a>)</p>
+<blockquote>
+<pre>
+MSVC compiler: allowing Precompiled Headers, Incremental Compilation, Edit & Continue.
+
+</pre>
+<p>[src/msvccmd.mak 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-14_2210"></a>
+2004-03-14 22:10 Igor Melichev</strong> (<a href="Details8.htm#2004-03-14_2210">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A Cygwin/gcc warning.
+
+</pre>
+<p>[src/zpcolor.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-14_2202"></a>
+2004-03-14 22:02 Igor Melichev</strong> (<a href="Details8.htm#2004-03-14_2202">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : CIDMap was wrongly created from CIDToGIDMap.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.37, lib/pdf_font.ps 1.62]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-14_2201"></a>
+2004-03-14 22:01 Igor Melichev</strong> (<a href="Details8.htm#2004-03-14_2201">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Crash after adding a glyph over a preallocated limit of a CIDFontType 2.
+
+</pre>
+<p>[src/gdevpdtc.c 1.35, src/gdevpdtf.c 1.35, src/gdevpdtt.c 1.77, src/gstype42.c 1.44, src/gxfcopy.c 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-14_1126"></a>
+2004-03-14 11:26 Igor Melichev</strong> (<a href="Details8.htm#2004-03-14_1126">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : XObject's resources were placed wrongly.
+
+</pre>
+<p>[src/gdevpdfm.c 1.36]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-13_2231"></a>
+2004-03-13 22:31 Ray Johnston</strong> (<a href="Details8.htm#2004-03-13_2231">details</a>)</p>
+<blockquote>
+<pre>
+Add support for 16 bit deep images that is part of PDF 1.5.
+
+</pre>
+<p>[src/gxi16bit.c 1.1, src/gximage.h 1.7, src/gxino16b.c 1.1, src/gxipixel.c 1.10, src/int.mak 1.125, src/lib.mak 1.175, src/spdiff.c 1.6, src/spdiffx.h 1.5, src/zfdecode.c 1.6, src/zimage.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-13_1828"></a>
+2004-03-13 18:28 Igor Melichev</strong> (<a href="Details8.htm#2004-03-13_1828">details</a>)</p>
+<blockquote>
+<pre>
+Implementing current point with double precision.
+
+</pre>
+<p>[src/gdevpdtc.c 1.34, src/gdevpdte.c 1.54, src/gdevpdtt.h 1.22, src/gscoord.c 1.9, src/gspaint.c 1.9, src/gspath.c 1.9, src/gspath.h 1.6, src/gspath1.c 1.8, src/gstype1.c 1.31, src/gstype2.c 1.35, src/gstype42.c 1.43, src/gxchar.c 1.40, src/gxistate.h 1.21, src/gxmatrix.h 1.8, src/gxpath.c 1.10, src/gxpath.h 1.13, src/gxstate.h 1.10, src/gzpath.h 1.37, src/gzstate.h 1.10, src/lib.mak 1.174, src/zupath.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-13_0033"></a>
+2004-03-13 00:33 Igor Melichev</strong> (<a href="Details8.htm#2004-03-13_0033">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT grid fitting) : Hints could be lost.
+
+</pre>
+<p>[src/gxttfb.c 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-12_0653"></a>
+2004-03-12 06:53 Igor Melichev</strong> (<a href="Details8.htm#2004-03-12_0653">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Fall back to the default implementation when the output document can't handle current color.
+
+</pre>
+<p>[src/gdevpdfd.c 1.38, src/gdevpdtt.c 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-12_0158"></a>
+2004-03-12 01:58 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687349 A wrong comment for gx_device_color_s.  This change
+modifies the comment on ccolor and the related variable ccolor_valid.</pre>
+<p>[src/gsdcolor.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-12_0155"></a>
+2004-03-12 01:55 Dan Coby</strong> (<a href="Details8.htm#2004-03-12_0155">details</a>)</p>
+<blockquote>
+<pre>
+Log message:
+
+Implement 687347: Implementation of the PDF encryption feature:
+EncryptMetadata.  Past versions of the PDF encryption have always
+encrypted metadata.  With this feature it is possible to NOT encrypt
+metadata streams.  I.e. By adding '/EncryptMetadata false' to the
+encryption dictionary.
+
+</pre>
+<p>[lib/pdf_sec.ps 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-11_1458"></a>
+2004-03-11 14:58 Igor Melichev</strong> (<a href="Details8.htm#2004-03-11_1458">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Some Cygwin/gcc warnings.
+
+</pre>
+<p>[src/devs.mak 1.109, src/gdevpdfi.c 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-11_1450"></a>
+2004-03-11 14:50 Igor Melichev</strong> (<a href="Details8.htm#2004-03-11_1450">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Some Sun ONE Studio 7 compiler warnings (Solaris 8).
+
+</pre>
+<p>[src/gdevdevn.c 1.14, src/gdevijs.c 1.8, src/gdevnfwd.c 1.15, src/gdevpdfx.h 1.87, src/gdevpng.c 1.9, src/gdevpsd.c 1.7, src/gdevpsdu.c 1.21, src/gdevpsu.c 1.17, src/gdevxcf.c 1.6, src/gscpixel.c 1.10, src/gsdfilt.c 1.9, src/gximag3x.c 1.15, src/szlibd.c 1.7, src/ttfmain.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-11_0701"></a>
+2004-03-11 07:01 Igor Melichev</strong> (<a href="Details8.htm#2004-03-11_0701">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Changing the default value of AlignToPixels to 0.
+THIS IS INCOMPATIBLE CHANGE.
+
+</pre>
+<p>[doc/Use.htm 1.106, src/gsfont.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-11_0536"></a>
+2004-03-11 05:36 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Some systems require a longer link line with the default static jasper.</pre>
+<p>[toolbin/jpxtopdf.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-11_0522"></a>
+2004-03-11 05:22 Ralph Giles</strong> (<a href="Details8.htm#2004-03-11_0522">details</a>)</p>
+<blockquote>
+<pre>
+Add a simple C program that uses the jasper library to parse JPX (jpeg2k) image files and embed
+them in a PDF 1.5 document. Useful for testing as there are few producers available at the moment.
+
+</pre>
+<p>[toolbin/jpxtopdf.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-10_1906"></a>
+2004-03-10 19:06 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Revert documentation change. Apparenlty the problem was that the user
+specified an ICC colorspace and it does have an effect with pswrite if
+one uses the usual RGB, etc. colorspaces. Bug 687357.</pre>
+<p>[doc/Use.htm 1.105]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-10_1901"></a>
+2004-03-10 19:01 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Clarify that -dNOSUBSTDEVICECOLORS has no effect on the pswrite device.
+Bug 687357.</pre>
+<p>[doc/Use.htm 1.104]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-10_0549"></a>
+2004-03-10 05:49 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct yet another typo that was preventing the regression from
+running.</pre>
+<p>[toolbin/tests/run_nightly 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-10_0452"></a>
+2004-03-10 04:52 Raph Levien</strong></p>
+<blockquote>
+<pre>
+Fix problem with dci.max_components introduced with DeviceN changes.
+Closes bug #677383.</pre>
+<p>[src/gdevijs.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-09_2131"></a>
+2004-03-09 21:31 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Check for jpeg, zlib, and libpng headers as well as libraries before
+using the shared versions. Bug 687261.</pre>
+<p>[src/configure.ac 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-09_1330"></a>
+2004-03-09 13:30 Igor Melichev</strong> (<a href="Details8.htm#2004-03-09_1330">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : Wrong metrics when 2 font resources for same embeded font.
+
+</pre>
+<p>[lib/pdf_font.ps 1.61]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-09_1038"></a>
+2004-03-09 10:38 Igor Melichev</strong> (<a href="Details8.htm#2004-03-09_1038">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Annotations encrypted with a wrong object id.
+
+</pre>
+<p>[src/gdevpdfm.c 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-09_0931"></a>
+2004-03-09 09:31 Igor Melichev</strong> (<a href="Details8.htm#2004-03-09_0931">details</a>)</p>
+<blockquote>
+<pre>
+Fix (Type 2 charstrings) : More tolerance and conformity.
+
+</pre>
+<p>[src/gstype2.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-09_0542"></a>
+2004-03-09 05:42 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Remove some extra carriage returns (^M) at the ends of lines.  These
+keep sneaking into the sources.  Presumably the cause has to do with
+copying files from unix to windows or vice versa.</pre>
+<p>[lib/pdf_base.ps 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-08_1645"></a>
+2004-03-08 16:45 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo in the whitelist keyword changes.</pre>
+<p>[toolbin/tests/run_nightly 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-07_1226"></a>
+2004-03-07 12:26 Igor Melichev</strong> (<a href="Details8.htm#2004-03-07_1226">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_function_is_monotonic computed an unused auxiliary result (continued 3).
+
+</pre>
+<p>[src/gsfunc3.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-07_1206"></a>
+2004-03-07 12:06 Igor Melichev</strong> (<a href="Details8.htm#2004-03-07_1206">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_function_is_monotonic computed an unused auxiliary result (continued 2).
+
+</pre>
+<p>[src/gsfunc.c 1.10, src/gsfunc.h 1.11, src/gsfunc0.c 1.17, src/gsfunc3.c 1.20, src/gsfunc4.c 1.15, src/gxfunc.h 1.9, src/gxshade1.c 1.26, src/gxshade6.c 1.47]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-07_1204"></a>
+2004-03-07 12:04 Igor Melichev</strong> (<a href="Details8.htm#2004-03-07_1204">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_function_is_monotonic computed an unused auxiliary result (continued).
+
+</pre>
+<p>[src/gsfunc3.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-07_0002"></a>
+2004-03-07 00:02 Igor Melichev</strong> (<a href="Details8.htm#2004-03-07_0002">details</a>)</p>
+<blockquote>
+<pre>
+Fix (dropout prevention) : extra pixels at small serifs.
+
+</pre>
+<p>[src/gxfdrop.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-06_1515"></a>
+2004-03-06 15:15 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Immediately return the success for 0-length read from a string array.
+Don't seek to the offset because it may be invalid in some broken fonts.
+Fix bug 687340</pre>
+<p>[src/zfont42.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_2325"></a>
+2004-03-05 23:25 Igor Melichev</strong> (<a href="Details8.htm#2004-03-05_2325">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Cygwin/gcc warnings.
+
+</pre>
+<p>[src/devs.mak 1.108, src/gdevpdfv.c 1.35, src/gdevpdtt.c 1.75, src/gsfunc0.c 1.16, src/gsfunc3.c 1.18, src/ttfmain.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_2226"></a>
+2004-03-05 22:26 Igor Melichev</strong> (<a href="Details8.htm#2004-03-05_2226">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Raster depended on bands, step 4, final.
+
+</pre>
+<p>[src/gxfill.c 1.117, src/gxfillsl.h 1.4, src/gxfilltr.h 1.6, src/gxfillts.h 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_1535"></a>
+2004-03-05 15:35 Igor Melichev</strong> (<a href="Details8.htm#2004-03-05_1535">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Raster depended on bands, step 3.
+
+</pre>
+<p>[src/gxfill.c 1.116]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_1439"></a>
+2004-03-05 14:39 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+correct a typo in the recent comment revision</pre>
+<p>[doc/Make.htm 1.74]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_1436"></a>
+2004-03-05 14:36 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+add a missing '.' to a comment</pre>
+<p>[src/msvc32.mak 1.55]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_1416"></a>
+2004-03-05 14:16 Igor Melichev</strong> (<a href="Details8.htm#2004-03-05_1416">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Raster depended on bands, step 2.
+
+</pre>
+<p>[src/gxfilltr.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_1317"></a>
+2004-03-05 13:17 Igor Melichev</strong> (<a href="Details8.htm#2004-03-05_1317">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Raster depended on bands, step 1.
+
+</pre>
+<p>[src/gxfill.c 1.115, src/gxfilltr.h 1.4, src/gxfillts.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-05_0537"></a>
+2004-03-05 05:37 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove a debug tracing message.</pre>
+<p>[src/sjpx.c 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_2250"></a>
+2004-03-04 22:50 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add support for our whitelist keyword filter to the regression run.</pre>
+<p>[toolbin/tests/run_nightly 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_2234"></a>
+2004-03-04 22:34 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Improve wording in the MSVC debug flag descriptions.</pre>
+<p>[doc/Make.htm 1.73]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_2228"></a>
+2004-03-04 22:28 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Improve wording in a comment.</pre>
+<p>[src/msvc32.mak 1.54]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_1641"></a>
+2004-03-04 16:41 Igor Melichev</strong> (<a href="Details8.htm#2004-03-04_1641">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gs_function_is_monotonic computed an unused auxiliary result.
+
+</pre>
+<p>[src/gsfunc.h 1.10, src/gsfunc0.c 1.15, src/gsfunc3.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_1627"></a>
+2004-03-04 16:27 Igor Melichev</strong> (<a href="Details8.htm#2004-03-04_1627">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Reject encryption options if no password is specified, improved.
+
+</pre>
+<p>[src/gdevpdf.c 1.92]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_1613"></a>
+2004-03-04 16:13 Igor Melichev</strong> (<a href="Details8.htm#2004-03-04_1613">details</a>)</p>
+<blockquote>
+<pre>
+Fix : "KeyLength" option name was misspelled in the documentation.
+
+</pre>
+<p>[doc/Ps2pdf.htm 1.65]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_1613"></a>
+2004-03-04 16:13 Igor Melichev</strong> (<a href="Details8.htm#2004-03-04_1613">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Reject encryption options if no password is specified.
+
+</pre>
+<p>[src/gdevpdf.c 1.91]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_1550"></a>
+2004-03-04 15:50 Igor Melichev</strong> (<a href="Details8.htm#2004-03-04_1550">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Floating point aritmetic applied to uninitialized data.
+
+</pre>
+<p>[src/gdevpdte.c 1.53, src/gdevpdtt.c 1.74]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_1434"></a>
+2004-03-04 14:34 Igor Melichev</strong> (<a href="Details8.htm#2004-03-04_1434">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT grid fitting) : The glyph trailing moveto got wrong coordinates.
+
+</pre>
+<p>[src/gxttfb.c 1.32, src/ttfmain.c 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-04_0506"></a>
+2004-03-04 05:06 Dan Coby</strong> (<a href="Details8.htm#2004-03-04_0506">details</a>)</p>
+<blockquote>
+<pre>
+Implementation of 687326 Enhancement: Handling of PDF 1.5encryption.
+
+</pre>
+<p>[lib/pdf_sec.ps 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-03_1353"></a>
+2004-03-03 13:53 Igor Melichev</strong> (<a href="Details8.htm#2004-03-03_1353">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Shading could cause a floating point exception.
+
+</pre>
+<p>[src/gxshade1.c 1.25, src/gxshade6.c 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-03_1010"></a>
+2004-03-03 10:10 Igor Melichev</strong> (<a href="Details8.htm#2004-03-03_1010">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT grid fitting) : AlignToPixels=0 aligned to pixels.
+
+</pre>
+<p>[src/gxttfb.c 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-03_0816"></a>
+2004-03-03 08:16 Igor Melichev</strong> (<a href="Details8.htm#2004-03-03_0816">details</a>)</p>
+<blockquote>
+<pre>
+Fix (type 1 hinter) : small resolutions caused a rangecheck.
+
+</pre>
+<p>[src/gxhintn.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-03_0514"></a>
+2004-03-03 05:14 Dan Coby</strong> (<a href="Details8.htm#2004-03-03_0514">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687274 White areas appear shaded.
+
+</pre>
+<p>[lib/gs_init.ps 1.105]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-02_1147"></a>
+2004-03-02 11:47 Igor Melichev</strong> (<a href="Details8.htm#2004-03-02_1147">details</a>)</p>
+<blockquote>
+<pre>
+Improving the MSVC debug build options.
+
+</pre>
+<p>[src/msvc32.mak 1.53, src/msvccmd.mak 1.15, doc/Make.htm 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-02_1014"></a>
+2004-03-02 10:14 Igor Melichev</strong> (<a href="Details8.htm#2004-03-02_1014">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Errors were missed processing a shading data stream.
+
+</pre>
+<p>[src/gdevpdfd.c 1.37, src/gdevpdfg.c 1.47, src/gdevpdfv.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-02_0834"></a>
+2004-03-02 08:34 Igor Melichev</strong> (<a href="Details8.htm#2004-03-02_0834">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Errors were missed processing a shading data stream.
+
+</pre>
+<p>[src/gxshade.c 1.21, src/gxshade4.c 1.25, src/gxshade6.c 1.45, src/gxshade.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-01_2359"></a>
+2004-03-01 23:59 Igor Melichev</strong> (<a href="Details8.htm#2004-03-01_2359">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 42.
+
+</pre>
+<p>[src/gxshade6.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-01_1239"></a>
+2004-03-01 12:39 Igor Melichev</strong> (<a href="Details8.htm#2004-03-01_1239">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 41, release candidate 2.
+
+</pre>
+<p>[src/gxshade6.c 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2004-03-01_1044"></a>
+2004-03-01 10:44 Igor Melichev</strong> (<a href="Details8.htm#2004-03-01_1044">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 40.
+
+</pre>
+<p>[src/gxshade4.h 1.21, src/gxshade6.c 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-29_1659"></a>
+2004-02-29 16:59 Igor Melichev</strong> (<a href="Details8.htm#2004-02-29_1659">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 39.
+
+</pre>
+<p>[src/gxshade1.c 1.24, src/gxshade6.c 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-29_1447"></a>
+2004-02-29 14:47 Igor Melichev</strong> (<a href="Details8.htm#2004-02-29_1447">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 38.
+
+</pre>
+<p>[src/gxshade6.c 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-29_1303"></a>
+2004-02-29 13:03 Igor Melichev</strong> (<a href="Details8.htm#2004-02-29_1303">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 37.
+
+</pre>
+<p>[src/gxshade6.c 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-28_1230"></a>
+2004-02-28 12:30 Igor Melichev</strong> (<a href="Details8.htm#2004-02-28_1230">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 36.
+
+</pre>
+<p>[src/gxshade1.c 1.23, src/gxshade4.c 1.24, src/gxshade6.c 1.38, src/gxshade4.h 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-27_0924"></a>
+2004-02-27 09:24 Igor Melichev</strong> (<a href="Details8.htm#2004-02-27_0924">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 35.
+
+</pre>
+<p>[src/gxshade6.c 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-26_2055"></a>
+2004-02-26 20:55 Igor Melichev</strong> (<a href="Details8.htm#2004-02-26_2055">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 34.
+
+</pre>
+<p>[src/gxshade.c 1.20, src/gxshade1.c 1.22, src/gxshade4.c 1.23, src/gxshade4.h 1.19, src/gxshade6.c 1.36, src/lib.mak 1.173]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-26_2010"></a>
+2004-02-26 20:10 Ray Johnston</strong> (<a href="Details8.htm#2004-02-26_2010">details</a>)</p>
+<blockquote>
+<pre>
+Revert to the correct version of gs_setpd.ps and Use.htm.
+
+</pre>
+<p>[doc/Use.htm 1.103, lib/gs_setpd.ps 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-26_1955"></a>
+2004-02-26 19:55 Igor Melichev</strong> (<a href="Details8.htm#2004-02-26_1955">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A bug in fn_Sd_is_monotonic.
+
+</pre>
+<p>[src/gsfunc0.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-26_0718"></a>
+2004-02-26 07:18 Igor Melichev</strong> (<a href="Details8.htm#2004-02-26_0718">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 33.
+
+</pre>
+<p>[src/gxshade.c 1.19, src/gxshade.h 1.10, src/gxshade1.c 1.21, src/gxshade4.c 1.22, src/gxshade4.h 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-25_2038"></a>
+2004-02-25 20:38 Russell Lang</strong> (<a href="Details8.htm#2004-02-25_2038">details</a>)</p>
+<blockquote>
+<pre>
+Fixes bug 687317.
+Fix pdfwrite allowable Permissions for EncryptionR=2.
+Fix default Permissions.
+
+</pre>
+<p>[src/gdevpdf.c 1.90]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-25_2037"></a>
+2004-02-25 20:37 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Clean up dict stack after loading an embedded Type1 font from a PDF file.
+While the font is buggy, Adobe doesn't complain. Bug #687315.</pre>
+<p>[lib/pdf_font.ps 1.60]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-25_2035"></a>
+2004-02-25 20:35 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add an option to prevent the 'range' type PageSize from being added to the
+InputAttribute dictionary. This option is useful for printers that want the
+requested pages to be rotated to fit one of the available page sizes.
+Option is -dNORANGEPAGESIZE. Fix for bug #629335.</pre>
+<p>[lib/gs_setpd.ps 1.22, doc/Use.htm 1.102]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-25_1621"></a>
+2004-02-25 16:21 Igor Melichev</strong> (<a href="Details8.htm#2004-02-25_1621">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 32.
+
+</pre>
+<p>[src/gxshade1.c 1.20, src/gxshade4.h 1.17, src/gxshade6.c 1.35, src/lib.mak 1.172]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_2227"></a>
+2004-02-24 22:27 Jack Moffitt</strong></p>
+<blockquote>
+<pre>
+Add support for specifying CVS repository location, which requires a
+new configuration key, 'gsconf.repodir'.</pre>
+<p>[toolbin/tests/testing.cfg.example 1.5, toolbin/tests/update_specific 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_2220"></a>
+2004-02-24 22:20 Jack Moffitt</strong></p>
+<blockquote>
+<pre>
+Script to update baselines for a specific CVS version of Ghostscript.
+
+The script requires a new configuration key, 'gsconf.fontdir'.</pre>
+<p>[toolbin/tests/testing.cfg.example 1.4, toolbin/tests/update_specific 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_1907"></a>
+2004-02-24 19:07 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_1907">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 31.
+
+</pre>
+<p>[src/gxshade4.c 1.21, src/gxshade4.h 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_1857"></a>
+2004-02-24 18:57 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_1857">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 30.
+
+</pre>
+<p>[src/gxshade4.c 1.20, src/gxshade4.h 1.15, src/gxshade6.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_1212"></a>
+2004-02-24 12:12 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_1212">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 29 - release candidate 1.
+
+</pre>
+<p>[src/gxshade4.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_1157"></a>
+2004-02-24 11:57 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_1157">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 28.
+
+</pre>
+<p>[src/gxshade4.c 1.19, src/gxshade4.h 1.13, src/gxshade6.c 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_1150"></a>
+2004-02-24 11:50 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_1150">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 27.
+
+</pre>
+<p>[src/gxshade4.c 1.18, src/gxshade6.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_1143"></a>
+2004-02-24 11:43 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_1143">details</a>)</p>
+<blockquote>
+<pre>
+Improving the visual trace macros.
+
+</pre>
+<p>[src/vdtrace.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_1108"></a>
+2004-02-24 11:08 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_1108">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 26.
+
+</pre>
+<p>[src/gxshade6.c 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_0957"></a>
+2004-02-24 09:57 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_0957">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 25.
+
+</pre>
+<p>[src/gxshade6.c 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_0928"></a>
+2004-02-24 09:28 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_0928">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 24.
+
+</pre>
+<p>[src/gxshade4.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_0908"></a>
+2004-02-24 09:08 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_0908">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 23.
+
+</pre>
+<p>[src/gxshade4.c 1.17, src/gxshade6.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_0814"></a>
+2004-02-24 08:14 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_0814">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 22.
+
+</pre>
+<p>[src/gxshade6.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-24_0758"></a>
+2004-02-24 07:58 Igor Melichev</strong> (<a href="Details8.htm#2004-02-24_0758">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 21.
+
+</pre>
+<p>[src/gxshade4.h 1.11, src/gxshade6.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-23_2041"></a>
+2004-02-23 20:41 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Check for local jpeg library source by looking for the jpeglib.h header
+rather than just the jpeg directory. Also try looking for jpeg-6b if the
+jpeg fails; this lets us find the source as it unpacks from the upstream
+tarball. Patch from ESP Ghostscript.</pre>
+<p>[src/configure.ac 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-23_0307"></a>
+2004-02-23 03:07 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add a parameter which prevents the non-standard four element PageSize
+entry in the InputAttributes from being included. This prevents problems
+with PostScript programs that examine the InputAttributes entries in an
+attempt to pick the 'best fit' rather than relying on the setpagedevice
+logic. Also most 'real' printer devices don't support arbitrary page
+sizes, so automatic rotation is defeated if the range type page size
+in included. The option is -dNORANGEPAGESIZE. Bug #629335.</pre>
+<p>[doc/Use.htm 1.101, lib/gs_setpd.ps 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-23_0144"></a>
+2004-02-23 01:44 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add the path to the code directory (gsconf.codedir) for invocation of the
+update_baseline/update_pdfbaseline.</pre>
+<p>[toolbin/tests/gscheck_pdfwrite.py 1.18, toolbin/tests/gscheck_raster.py 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-22_2354"></a>
+2004-02-22 23:54 Ralph Giles</strong> (<a href="Details8.htm#2004-02-22_2354">details</a>)</p>
+<blockquote>
+<pre>
+Initial implementation of the JPXDecode filter using the JasPer library
+for decoding the JPEG 2000 data. This version only implements a
+postscript-level filter; PDF support will follow in another commit.
+
+</pre>
+<p>[src/Makefile.in 1.33, src/configure.ac 1.41, src/int.mak 1.124, src/lib.mak 1.171, src/sjpx.c 1.1, src/sjpx.h 1.1, src/zfjpx.c 1.1]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-22_1511"></a>
+2004-02-22 15:11 Igor Melichev</strong> (<a href="Details8.htm#2004-02-22_1511">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 20.
+
+</pre>
+<p>[src/gxshade4.c 1.16, src/gxshade6.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-22_1414"></a>
+2004-02-22 14:14 Igor Melichev</strong> (<a href="Details8.htm#2004-02-22_1414">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 19.
+
+</pre>
+<p>[src/gxshade6.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-22_1306"></a>
+2004-02-22 13:06 Igor Melichev</strong> (<a href="Details8.htm#2004-02-22_1306">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 18.
+
+</pre>
+<p>[src/gxshade6.c 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-22_1059"></a>
+2004-02-22 10:59 Igor Melichev</strong> (<a href="Details8.htm#2004-02-22_1059">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 17.
+
+</pre>
+<p>[src/gxshade4.c 1.15, src/gxshade4.h 1.10, src/gxshade6.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-22_0943"></a>
+2004-02-22 09:43 Igor Melichev</strong> (<a href="Details8.htm#2004-02-22_0943">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 16.
+
+</pre>
+<p>[src/gxshade.c 1.18, src/gxshade.h 1.9, src/gxshade4.c 1.14, src/gxshade4.h 1.9, src/gxshade6.c 1.22, src/lib.mak 1.170]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-21_1825"></a>
+2004-02-21 18:25 Igor Melichev</strong> (<a href="Details8.htm#2004-02-21_1825">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 15.
+
+</pre>
+<p>[src/gxshade4.c 1.13, src/gxshade4.h 1.8, src/gxshade6.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-20_1504"></a>
+2004-02-20 15:04 Igor Melichev</strong> (<a href="Details8.htm#2004-02-20_1504">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 14.
+
+</pre>
+<p>[src/gxshade4.c 1.12, src/gxshade4.h 1.7, src/gxshade6.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-20_1358"></a>
+2004-02-20 13:58 Igor Melichev</strong> (<a href="Details8.htm#2004-02-20_1358">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 13.
+
+</pre>
+<p>[src/gxshade4.c 1.11, src/gxshade4.h 1.6, src/gxshade6.c 1.19, src/lib.mak 1.169]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-20_1053"></a>
+2004-02-20 10:53 Igor Melichev</strong> (<a href="Details8.htm#2004-02-20_1053">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Cygwin/gcc warnings.
+
+</pre>
+<p>[src/gxfill.c 1.114]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-20_1051"></a>
+2004-02-20 10:51 Igor Melichev</strong> (<a href="Details8.htm#2004-02-20_1051">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 12.
+
+</pre>
+<p>[src/gxshade6.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-20_0646"></a>
+2004-02-20 06:46 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687279 Linker warnings with Visual Studio 6 and .NET 2003.
+The changes consist of removing the keyword INITINSTANCE from the def
+files.  The DESCRIPTION lines are changed to a comment and put at the
+beginning of the files.</pre>
+<p>[src/dw32c.def 1.4, src/dwmain16.def 1.2, src/dwmain32.def 1.4, src/dwsetup.def 1.5, src/dwuninst.def 1.5, src/gsdll32.def 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-20_0004"></a>
+2004-02-20 00:04 Igor Melichev</strong> (<a href="Details8.htm#2004-02-20_0004">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 11.
+
+</pre>
+<p>[src/gxshade6.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-19_2005"></a>
+2004-02-19 20:05 Igor Melichev</strong> (<a href="Details8.htm#2004-02-19_2005">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 10.
+
+</pre>
+<p>[src/gxshade6.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-19_1132"></a>
+2004-02-19 11:32 Igor Melichev</strong> (<a href="Details8.htm#2004-02-19_1132">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 9.
+
+</pre>
+<p>[src/gxshade6.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-19_1121"></a>
+2004-02-19 11:21 Igor Melichev</strong> (<a href="Details8.htm#2004-02-19_1121">details</a>)</p>
+<blockquote>
+<pre>
+Improving visual trace macros.
+
+</pre>
+<p>[src/gxfill.c 1.113, src/vdtrace.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-19_0744"></a>
+2004-02-19 07:44 Igor Melichev</strong> (<a href="Details8.htm#2004-02-19_0744">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C22.
+
+</pre>
+<p>[src/gxfill.c 1.112]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-18_1505"></a>
+2004-02-18 15:05 Igor Melichev</strong> (<a href="Details8.htm#2004-02-18_1505">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 8.
+
+</pre>
+<p>[src/gxshade6.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-18_1500"></a>
+2004-02-18 15:00 Igor Melichev</strong> (<a href="Details8.htm#2004-02-18_1500">details</a>)</p>
+<blockquote>
+<pre>
+Improving the filling algorithm, step D8.
+
+</pre>
+<p>[src/gxfill.c 1.111, src/lib.mak 1.168]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-18_1441"></a>
+2004-02-18 14:41 Igor Melichev</strong> (<a href="Details8.htm#2004-02-18_1441">details</a>)</p>
+<blockquote>
+<pre>
+Fix: Documented rounding formulas in the character processing.
+
+</pre>
+<p>[src/fapiufst.c 1.24, src/gxhintn.c 1.43, src/ttfmain.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-18_0954"></a>
+2004-02-18 09:54 Igor Melichev</strong> (<a href="Details8.htm#2004-02-18_0954">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Converting an image type 4 into imagemask, a wrong color was written.
+
+</pre>
+<p>[src/gdevpdfi.c 1.51]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-18_0535"></a>
+2004-02-18 05:35 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Add '!ifndef'/'endif' around varaious parameters in the makefile for the
+Borland compiler (bcwin32.mak).  This allows the parameters to be specified
+on the command line without editting the makefile.</pre>
+<p>[src/bcwin32.mak 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-17_1512"></a>
+2004-02-17 15:12 Igor Melichev</strong> (<a href="Details8.htm#2004-02-17_1512">details</a>)</p>
+<blockquote>
+<pre>
+Fix : MSVC7 wrongly optimizes zpcolor.c .
+
+</pre>
+<p>[src/int.mak 1.123, src/zpcolor.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_1629"></a>
+2004-02-16 16:29 Igor Melichev</strong> (<a href="Details8.htm#2004-02-16_1629">details</a>)</p>
+<blockquote>
+<pre>
+Improving the filling algorithm, step D7.
+
+</pre>
+<p>[src/gxdtfill.h 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_1526"></a>
+2004-02-16 15:26 Igor Melichev</strong> (<a href="Details8.htm#2004-02-16_1526">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 7.
+
+</pre>
+<p>[src/gxshade6.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_1506"></a>
+2004-02-16 15:06 Ralph Giles</strong> (<a href="Details8.htm#2004-02-16_1506">details</a>)</p>
+<blockquote>
+<pre>
+Adapt makefile support for compiling in zlib to support v1.2.x rather
+than 1.1.x. Linking to a shared version is unaffected.
+
+</pre>
+<p>[doc/Make.htm 1.71, src/zlib.mak 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_1351"></a>
+2004-02-16 13:51 Igor Melichev</strong> (<a href="Details8.htm#2004-02-16_1351">details</a>)</p>
+<blockquote>
+<pre>
+Improving the filling algorithm, step D6.
+
+</pre>
+<p>[src/gxdtfill.h 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_0947"></a>
+2004-02-16 09:47 Igor Melichev</strong> (<a href="Details8.htm#2004-02-16_0947">details</a>)</p>
+<blockquote>
+<pre>
+Improving the filling algorithm, step D5.
+
+</pre>
+<p>[src/gxdtfill.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_0913"></a>
+2004-02-16 09:13 Igor Melichev</strong> (<a href="Details8.htm#2004-02-16_0913">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 6.
+
+</pre>
+<p>[src/gxshade6.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_0910"></a>
+2004-02-16 09:10 Igor Melichev</strong> (<a href="Details8.htm#2004-02-16_0910">details</a>)</p>
+<blockquote>
+<pre>
+Improving the filling algorithm, step D4.
+
+</pre>
+<p>[src/gxdtfill.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_0821"></a>
+2004-02-16 08:21 Igor Melichev</strong> (<a href="Details8.htm#2004-02-16_0821">details</a>)</p>
+<blockquote>
+<pre>
+Improving the filling algorithm, step D2.
+
+</pre>
+<p>[src/gxdtfill.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-16_0601"></a>
+2004-02-16 06:01 Dan Coby</strong></p>
+<blockquote>
+<pre>
+Fix for 687294 psdcmyk device does not write resolution correctly to PSD
+files.  This change adds a 'ResolutionInfo structure' into the 'Image
+Resources' section of the output file.  This structure specifies the
+horizontal and vertical resolution of the image.  (Note:  Adobe's support
+of asymetric resolutions is poor.)</pre>
+<p>[src/gdevpsd.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-15_1451"></a>
+2004-02-15 14:51 Igor Melichev</strong> (<a href="Details8.htm#2004-02-15_1451">details</a>)</p>
+<blockquote>
+<pre>
+Fix: Improving the documentation (comments) about the filling algorithm, improved.
+
+</pre>
+<p>[src/gdevddrw.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-15_1131"></a>
+2004-02-15 11:31 Igor Melichev</strong> (<a href="Details8.htm#2004-02-15_1131">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 5.
+
+</pre>
+<p>[src/gxshade6.c 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-15_1128"></a>
+2004-02-15 11:28 Igor Melichev</strong> (<a href="Details8.htm#2004-02-15_1128">details</a>)</p>
+<blockquote>
+<pre>
+Fix: Improving the documentation (comments) about the filling algorithm.
+
+</pre>
+<p>[src/gdevddrw.c 1.12, src/gxdtfill.h 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-14_1157"></a>
+2004-02-14 11:57 Igor Melichev</strong> (<a href="Details8.htm#2004-02-14_1157">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 4.
+
+</pre>
+<p>[src/gxshade6.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-14_0904"></a>
+2004-02-14 09:04 Igor Melichev</strong> (<a href="Details8.htm#2004-02-14_0904">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 3.
+
+</pre>
+<p>[src/gxshade6.c 1.9, src/lib.mak 1.167]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-14_0844"></a>
+2004-02-14 08:44 Igor Melichev</strong> (<a href="Details8.htm#2004-02-14_0844">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Visual trace could miss the current color when reinitialized.
+
+</pre>
+<p>[src/dwtrace.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-13_1751"></a>
+2004-02-13 17:51 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Propagate a change from the GS_8_1X branch. AC_CHECK_TYPES takes a
+comma-sparated list.</pre>
+<p>[src/configure.ac 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-13_1643"></a>
+2004-02-13 16:43 Igor Melichev</strong> (<a href="Details8.htm#2004-02-13_1643">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 2.
+
+</pre>
+<p>[src/gxshade6.c 1.8, src/lib.mak 1.166]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-13_0815"></a>
+2004-02-13 08:15 Igor Melichev</strong> (<a href="Details8.htm#2004-02-13_0815">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : NoEncrypt option by a special customer request, improved.
+
+</pre>
+<p>[src/gdevpdfo.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-13_0808"></a>
+2004-02-13 08:08 Igor Melichev</strong> (<a href="Details8.htm#2004-02-13_0808">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : NoEncrypt option by a special customer request.
+
+</pre>
+<p>[src/gdevpdf.c 1.89, src/gdevpdfo.c 1.27, src/gdevpdfp.c 1.37, src/gdevpdfu.c 1.51, src/gdevpdfx.h 1.86]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-12_1629"></a>
+2004-02-12 16:29 Igor Melichev</strong> (<a href="Details8.htm#2004-02-12_1629">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Intel C and Cygwin/gcc compiler warnings.
+
+</pre>
+<p>[src/gdevpdtc.c 1.33, src/gxcht.c 1.12, src/gxdhtserial.c 1.4, src/gxht.c 1.15, src/gxttfb.c 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-12_1519"></a>
+2004-02-12 15:19 Igor Melichev</strong> (<a href="Details8.htm#2004-02-12_1519">details</a>)</p>
+<blockquote>
+<pre>
+Improving the filling algorithm, step D1.
+
+</pre>
+<p>[src/gxfill.c 1.110, src/gxfilltr.h 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-12_1205"></a>
+2004-02-12 12:05 Igor Melichev</strong> (<a href="Details8.htm#2004-02-12_1205">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Some Intel C compiler warnings.
+
+</pre>
+<p>[src/gxfcopy.c 1.41]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-12_1028"></a>
+2004-02-12 10:28 Igor Melichev</strong> (<a href="Details8.htm#2004-02-12_1028">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Charproc can change scale before calling setcachedevice.
+
+</pre>
+<p>[src/gdevpdf.c 1.88, src/gdevpdfx.h 1.85, src/gdevpdtt.c 1.73]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-11_1120"></a>
+2004-02-11 11:20 Igor Melichev</strong> (<a href="Details8.htm#2004-02-11_1120">details</a>)</p>
+<blockquote>
+<pre>
+Fix : GS_LIB_DEFAULT was wrong on OpenVMS.
+
+</pre>
+<p>[src/openvms.mak 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-11_1100"></a>
+2004-02-11 11:00 Igor Melichev</strong> (<a href="Details8.htm#2004-02-11_1100">details</a>)</p>
+<blockquote>
+<pre>
+A new implementation of shadings, step 1.
+
+</pre>
+<p>[src/gxshade6.c 1.7, src/lib.mak 1.165]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-10_2231"></a>
+2004-02-10 22:31 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Update our copy of the ijs source to the latest cvs source, which
+includes libtool support for building a shared library version. Closes
+bug 687278.</pre>
+<p>[ijs/Makefile.am 1.1, ijs/Makefile.in 1.3, ijs/README 1.2, ijs/autogen.sh 1.1, ijs/configure.ac 1.1, ijs/configure.in 1.2, ijs/ijs.c 1.2, ijs/ijs.h 1.2, ijs/ijs.pc.in 1.1, ijs/ijs_client.c 1.2, ijs/ijs_client.h 1.2, ijs/ijs_client_example.c 1.2, ijs/ijs_exec_unix.c 1.2, ijs/ijs_exec_win.c 1.2, ijs/ijs_server.c 1.2, ijs/ijs_server.h 1.2, ijs/ijs_server_example.c 1.2, ijs/ijs_spec.sgml 1.2, ijs/install-sh 1.2, ijs/unistd_.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-08_1735"></a>
+2004-02-08 17:35 Igor Melichev</strong> (<a href="Details8.htm#2004-02-08_1735">details</a>)</p>
+<blockquote>
+<pre>
+Fix: Improving the decision whether the dropout prevention to be applied.
+
+</pre>
+<p>[src/gxfill.c 1.109, src/gxistate.h 1.20, src/gxtype1.c 1.36, src/zchar42.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-08_1129"></a>
+2004-02-08 11:29 Igor Melichev</strong> (<a href="Details8.htm#2004-02-08_1129">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C21.
+
+</pre>
+<p>[src/gx.h 1.42, src/gxfill.c 1.108, src/gxfill.h 1.22, src/gxpflat.c 1.40, src/gzpath.h 1.36]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-08_1023"></a>
+2004-02-08 10:23 Igor Melichev</strong> (<a href="Details8.htm#2004-02-08_1023">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C20.
+
+</pre>
+<p>[src/gx.h 1.41, src/gxfill.c 1.107, src/gxfill.h 1.21, src/gxfillsl.h 1.3, src/gxpcopy.c 1.22, src/gzpath.h 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-08_0146"></a>
+2004-02-08 01:46 Igor Melichev</strong> (<a href="Details8.htm#2004-02-08_0146">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C19a.
+
+</pre>
+<p>[src/gxdtfill.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-08_0141"></a>
+2004-02-08 01:41 Igor Melichev</strong> (<a href="Details8.htm#2004-02-08_0141">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C19.
+
+</pre>
+<p>[src/gdevddrw.c 1.11, src/gdevddrw.h 1.4, src/gxdtfill.h 1.9, src/gxfilltr.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-06_1105"></a>
+2004-02-06 11:05 Igor Melichev</strong> (<a href="Details8.htm#2004-02-06_1105">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C18.
+
+</pre>
+<p>[src/gxfill.c 1.106, src/gxfill.h 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-05_1759"></a>
+2004-02-05 17:59 Igor Melichev</strong> (<a href="Details8.htm#2004-02-05_1759">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C17.
+
+</pre>
+<p>[src/gx.h 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-05_1608"></a>
+2004-02-05 16:08 Igor Melichev</strong> (<a href="Details8.htm#2004-02-05_1608">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C16.
+
+</pre>
+<p>[src/gx.h 1.39]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-05_1439"></a>
+2004-02-05 14:39 Igor Melichev</strong> (<a href="Details8.htm#2004-02-05_1439">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C15.
+
+</pre>
+<p>[src/gxfill.c 1.105, src/gxfillsl.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-04_1142"></a>
+2004-02-04 11:42 Igor Melichev</strong> (<a href="Details8.htm#2004-02-04_1142">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C14.
+
+</pre>
+<p>[src/gdevddrw.c 1.10, src/gxdtfill.h 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-04_1133"></a>
+2004-02-04 11:33 Igor Melichev</strong> (<a href="Details8.htm#2004-02-04_1133">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C13.
+
+</pre>
+<p>[src/gdevddrw.c 1.9, src/gdevpdtc.c 1.32, src/gxdtfill.h 1.7, src/gxfdrop.c 1.13, src/gxfill.c 1.104, src/gxfill.h 1.19, src/gxfillsl.h 1.1, src/gxfilltr.h 1.1, src/gxfillts.h 1.1, src/lib.mak 1.164]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-04_1009"></a>
+2004-02-04 10:09 Igor Melichev</strong> (<a href="Details8.htm#2004-02-04_1009">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : provide a compatibility of TEXT_FROM_CHARS to GhostPCL.
+
+</pre>
+<p>[src/gdevpdtt.c 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_2117"></a>
+2004-02-02 21:17 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_2117">details</a>)</p>
+<blockquote>
+<pre>
+Allow auto-inline optimization with MSVC.
+
+</pre>
+<p>[src/msvccmd.mak 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_2024"></a>
+2004-02-02 20:24 Alex Cherepanov</strong> (<a href="Details8.htm#2004-02-02_2024">details</a>)</p>
+<blockquote>
+<pre>
+Perform sign extension on 64-bit platforms.
+Partial fix for bug 687029.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.36]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_2014"></a>
+2004-02-02 20:14 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_2014">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C12.
+
+</pre>
+<p>[src/gxfill.c 1.103]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_1625"></a>
+2004-02-02 16:25 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_1625">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C11.
+
+</pre>
+<p>[src/gxfill.c 1.102]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_1409"></a>
+2004-02-02 14:09 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_1409">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C10.
+
+</pre>
+<p>[src/gxfill.c 1.101]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_1353"></a>
+2004-02-02 13:53 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_1353">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C9.
+
+</pre>
+<p>[src/gxfill.c 1.100]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_1229"></a>
+2004-02-02 12:29 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_1229">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C8.
+
+</pre>
+<p>[src/gxfill.c 1.99]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_1148"></a>
+2004-02-02 11:48 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_1148">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C7.
+
+</pre>
+<p>[src/gx.h 1.38, src/gxfill.c 1.98, src/gxfill.h 1.18, src/gxpflat.c 1.39, src/gzpath.h 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-02-02_0844"></a>
+2004-02-02 08:44 Igor Melichev</strong> (<a href="Details8.htm#2004-02-02_0844">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 14.
+
+</pre>
+<p>[src/gdevpdfu.c 1.50]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-31_0048"></a>
+2004-01-31 00:48 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+[no log message]</pre>
+<p>[doc/Release.htm 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-30_2312"></a>
+2004-01-30 23:12 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Replace the license header of some of the test scripts with the generic version.</pre>
+<p>[toolbin/tests/check_all.py 1.5, toolbin/tests/check_comments.py 1.3, toolbin/tests/check_dirs.py 1.8, toolbin/tests/check_docrefs.py 1.9, toolbin/tests/check_source.py 1.9, toolbin/tests/gscheck_all.py 1.5, toolbin/tests/gscheck_fuzzypdf.py 1.7, toolbin/tests/gscheck_pdfwrite.py 1.17, toolbin/tests/gscheck_raster.py 1.8, toolbin/tests/gsconf.py 1.10, toolbin/tests/gssum.py 1.6, toolbin/tests/gstestgs.py 1.22, toolbin/tests/gstestutils.py 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-30_0851"></a>
+2004-01-30 08:51 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Document that the copyright year needs to be updated in some
+Windows files for each release.</pre>
+<p>[doc/Release.htm 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-30_0840"></a>
+2004-01-30 08:40 Russell Lang</strong></p>
+<blockquote>
+<pre>
+Update copyright date for Windows release to 2004.</pre>
+<p>[src/dwsetup.rc 1.11, src/winint.mak 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-30_0732"></a>
+2004-01-30 07:32 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct the link to History8.htm.</pre>
+<p>[doc/Readme.htm 1.54]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-30_0405"></a>
+2004-01-30 04:05 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix typo.</pre>
+<p>[doc/Use.htm 1.100]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-29_1840"></a>
+2004-01-29 18:40 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Change notice in some headers that had been missed during original update
+to the unified notice.</pre>
+<p>[src/gdevdljm.h 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-29_1819"></a>
+2004-01-29 18:19 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Change notice in some headers that had been missed during original update
+to the unified notice.</pre>
+<p>[src/gdevatx.c 1.9, src/gdevdjet.c 1.11, src/gdevdljm.c 1.11, src/gsovrc.c 1.4, src/gsovrc.h 1.3, src/gxoprect.c 1.5, src/gxoprect.h 1.2]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-29_0934"></a>
+2004-01-29 09:34 Igor Melichev</strong> (<a href="Details8.htm#2004-01-29_0934">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 13.
+
+</pre>
+<p>[src/gdevpdf.c 1.87]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-28_1654"></a>
+2004-01-28 16:54 Igor Melichev</strong> (<a href="Details8.htm#2004-01-28_1654">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C6.
+
+</pre>
+<p>[src/gxfdrop.c 1.12, src/gxfill.c 1.97, src/gxfill.h 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-28_1508"></a>
+2004-01-28 15:08 Igor Melichev</strong> (<a href="Details8.htm#2004-01-28_1508">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C5.
+
+</pre>
+<p>[src/gxfdrop.c 1.11, src/gxfill.c 1.96, src/gxfill.h 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-28_0905"></a>
+2004-01-28 09:05 Igor Melichev</strong> (<a href="Details8.htm#2004-01-28_0905">details</a>)</p>
+<blockquote>
+<pre>
+Fix (the new TT interpreter) : A bad pointer enumerated relocating gx_ttfReader.
+
+</pre>
+<p>[src/gstype42.c 1.42, src/gxccman.c 1.24, src/gxttfb.c 1.29, src/gxttfb.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-27_1607"></a>
+2004-01-27 16:07 Igor Melichev</strong> (<a href="Details8.htm#2004-01-27_1607">details</a>)</p>
+<blockquote>
+<pre>
+Fix (TT grid fitting) : A garbager descriptor was wrong.
+
+</pre>
+<p>[src/gzspotan.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-27_1605"></a>
+2004-01-27 16:05 Igor Melichev</strong> (<a href="Details8.htm#2004-01-27_1605">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Partially restoring the old behavior of the filling algorithm.
+
+</pre>
+<p>[src/gxpflat.c 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-27_0510"></a>
+2004-01-27 05:10 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Pass on the CPPFLAGS settings from the configure script into GCFLAGS. Some users expect to be able
+to add include paths through the environment this way. Suggestion from Len Makin.</pre>
+<p>[src/Makefile.in 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_2351"></a>
+2004-01-26 23:51 Igor Melichev</strong> (<a href="Details8.htm#2004-01-26_2351">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C4.
+
+</pre>
+<p>[src/gxfill.c 1.95, src/gxfill.h 1.15, src/gxpflat.c 1.37, src/gzpath.h 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_2235"></a>
+2004-01-26 22:35 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Updating the ps2pdf documentation.</pre>
+<p>[doc/Ps2pdf.htm 1.64]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_2216"></a>
+2004-01-26 22:16 Igor Melichev</strong> (<a href="Details8.htm#2004-01-26_2216">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C3.
+
+</pre>
+<p>[src/gxfill.c 1.94]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_2054"></a>
+2004-01-26 20:54 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Correct typo -- position of " in example command. Thanks to Ulf-Dietrich
+Braumann of Leipzig University for this.</pre>
+<p>[doc/Ps2pdf.htm 1.63]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_1527"></a>
+2004-01-26 15:27 Igor Melichev</strong> (<a href="Details8.htm#2004-01-26_1527">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C2.
+
+</pre>
+<p>[src/gxfill.c 1.93]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_1320"></a>
+2004-01-26 13:20 Igor Melichev</strong> (<a href="Details8.htm#2004-01-26_1320">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step C1.
+
+</pre>
+<p>[src/gx.h 1.37, src/gxfill.c 1.92, src/gxfill.h 1.14, src/gxpcopy.c 1.21, src/gzpath.h 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_1313"></a>
+2004-01-26 13:13 Igor Melichev</strong> (<a href="Details8.htm#2004-01-26_1313">details</a>)</p>
+<blockquote>
+<pre>
+Fix : gx_flattened_iterator::last_filtered1_i could left uninitialized.
+
+</pre>
+<p>[src/gxfill.c 1.91, src/gxpflat.c 1.36, src/gzpath.h 1.31]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-26_1115"></a>
+2004-01-26 11:15 Igor Melichev</strong> (<a href="Details8.htm#2004-01-26_1115">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B10, final in this series.
+
+</pre>
+<p>[src/gxpcopy.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-25_1423"></a>
+2004-01-25 14:23 Igor Melichev</strong> (<a href="Details8.htm#2004-01-25_1423">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B9, final in this series.
+
+</pre>
+<p>[src/gxpflat.c 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-25_1355"></a>
+2004-01-25 13:55 Igor Melichev</strong> (<a href="Details8.htm#2004-01-25_1355">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B8.
+
+</pre>
+<p>[src/gxpflat.c 1.34]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-25_1149"></a>
+2004-01-25 11:49 Igor Melichev</strong> (<a href="Details8.htm#2004-01-25_1149">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B7.
+
+</pre>
+<p>[src/gxpflat.c 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-25_1121"></a>
+2004-01-25 11:21 Igor Melichev</strong> (<a href="Details8.htm#2004-01-25_1121">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B6.
+
+</pre>
+<p>[src/gxpflat.c 1.32]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-24_2349"></a>
+2004-01-24 23:49 Dan Coby</strong> (<a href="Details8.htm#2004-01-24_2349">details</a>)</p>
+<blockquote>
+<pre>
+Fix for Bug 687255  pcl output shifted to bottom of page.  Correct
+the order of the PCL commands at the start of page for the ljet devices.
+
+</pre>
+<p>[src/gdevdljm.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-24_1045"></a>
+2004-01-24 10:45 Igor Melichev</strong> (<a href="Details8.htm#2004-01-24_1045">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B5.
+
+</pre>
+<p>[src/gx.h 1.36, src/gxfill.c 1.90, src/gxpflat.c 1.31, src/gzpath.h 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1735"></a>
+2004-01-23 17:35 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add check for missing raster image before getting the date of the raster.
+If raster is missing, run update_***baseline script to generate it since
+the file must be new since the last regression run. Bug 687245.</pre>
+<p>[toolbin/tests/gscheck_pdfwrite.py 1.16, toolbin/tests/gscheck_raster.py 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1646"></a>
+2004-01-23 16:46 Igor Melichev</strong> (<a href="Details8.htm#2004-01-23_1646">details</a>)</p>
+<blockquote>
+<pre>
+Removed the obsolete configuration switches NEW_TT_INTERPRETER and TT_GRID_FITTING.
+
+</pre>
+<p>[src/gsfont.c 1.31, src/gsfont.h 1.10, src/gstext.c 1.16, src/gstype42.c 1.41, src/gx.h 1.35, src/gxccache.c 1.29, src/gxccman.c 1.23, src/gxchar.c 1.39, src/gxfcache.h 1.25, src/gxfont42.h 1.19, src/gxtext.h 1.14, src/gxttfb.c 1.28, src/zchar42.c 1.14, src/zusparam.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1641"></a>
+2004-01-23 16:41 Igor Melichev</strong> (<a href="Details8.htm#2004-01-23_1641">details</a>)</p>
+<blockquote>
+<pre>
+Fix (the new TT interpreter) : st_gs_text_enum_max_ptrs was wrong.
+
+</pre>
+<p>[src/gxtext.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1635"></a>
+2004-01-23 16:35 Igor Melichev</strong> (<a href="Details8.htm#2004-01-23_1635">details</a>)</p>
+<blockquote>
+<pre>
+Fix (the new TT interpreter) : A bad pointer enumerated relocating gs_text_enum_s.
+
+</pre>
+<p>[src/gstext.c 1.15, src/gxfcache.h 1.24, src/lib.mak 1.163]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1405"></a>
+2004-01-23 14:05 Igor Melichev</strong> (<a href="Details8.htm#2004-01-23_1405">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B4.
+
+</pre>
+<p>[src/gxfill.c 1.89]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1325"></a>
+2004-01-23 13:25 Igor Melichev</strong> (<a href="Details8.htm#2004-01-23_1325">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B3.
+
+</pre>
+<p>[src/gx.h 1.34, src/gxfdrop.c 1.10, src/gxfill.c 1.88, src/gxfill.h 1.13, src/gxpath.h 1.12, src/gxpcopy.c 1.19, src/gxpflat.c 1.30, src/gzpath.h 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1235"></a>
+2004-01-23 12:35 Igor Melichev</strong> (<a href="Details8.htm#2004-01-23_1235">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B2.
+
+</pre>
+<p>[src/gx.h 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-23_1005"></a>
+2004-01-23 10:05 Igor Melichev</strong> (<a href="Details8.htm#2004-01-23_1005">details</a>)</p>
+<blockquote>
+<pre>
+Simplifying the filling algorithm, step B1.
+
+</pre>
+<p>[src/gx.h 1.32, src/gxfill.c 1.87, src/gxpflat.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-22_1136"></a>
+2004-01-22 11:36 Igor Melichev</strong> (<a href="Details8.htm#2004-01-22_1136">details</a>)</p>
+<blockquote>
+<pre>
+Fix : A bug in ttfmain.c caused a heap damage.
+
+</pre>
+<p>[src/ttfmain.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-22_0922"></a>
+2004-01-22 09:22 Igor Melichev</strong> (<a href="Details8.htm#2004-01-22_0922">details</a>)</p>
+<blockquote>
+<pre>
+Fix : pco_accurate didn't work for curves with zero derivative.
+
+</pre>
+<p>[src/gxpcopy.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-22_0916"></a>
+2004-01-22 09:16 Ralph Giles</strong> (<a href="Details8.htm#2004-01-22_0916">details</a>)</p>
+<blockquote>
+<pre>
+Create a new dynamic header 'gconfigd.h' for non-platform-specific defines. Variables like
+GS_LIB_DEFAULT which were previously tacked onto the end of gconfig.h have been moved to the new
+header. This change is necessary to pass the default path for the persistent cache from the
+makefile.
+
+</pre>
+<p>[src/gp_unix_cache.c 1.2, src/gs.mak 1.25, src/gscdef.c 1.42, src/iconf.c 1.7, src/int.mak 1.122, src/lib.mak 1.162, src/unix-aux.mak 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-21_1355"></a>
+2004-01-21 13:55 Igor Melichev</strong> (<a href="Details8.htm#2004-01-21_1355">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Don't apply pco_accurate when filling a path.
+
+</pre>
+<p>[src/gxfill.c 1.86]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-21_1338"></a>
+2004-01-21 13:38 Igor Melichev</strong> (<a href="Details8.htm#2004-01-21_1338">details</a>)</p>
+<blockquote>
+<pre>
+Fix : The dropout prevetion did not work with "true .setaccuratecurves".
+
+</pre>
+<p>[src/gxpcopy.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-21_1017"></a>
+2004-01-21 10:17 Igor Melichev</strong> (<a href="Details8.htm#2004-01-21_1017">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Type 3 characters were missed in the Widths array.
+
+</pre>
+<p>[src/gdevpdte.c 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-20_1911"></a>
+2004-01-20 19:11 Ralph Giles</strong> (<a href="Details8.htm#2004-01-20_1911">details</a>)</p>
+<blockquote>
+<pre>
+Replace a fixed-filename tempfile fopen with gp_open_scratch_file() for improved robustness in the
+pnga device. Part of the fix for bug 687243.
+
+</pre>
+<p>[src/gdevpnga.c 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-20_1905"></a>
+2004-01-20 19:05 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Some additional clarification on the new pdfwrite encryption user parameters.</pre>
+<p>[doc/Ps2pdf.htm 1.62]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-20_1900"></a>
+2004-01-20 19:00 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Improve wording and html formatting of recent documentation additions.</pre>
+<p>[doc/News.htm 1.142, doc/Ps2pdf.htm 1.61]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-20_1508"></a>
+2004-01-20 15:08 Igor Melichev</strong> (<a href="Details8.htm#2004-01-20_1508">details</a>)</p>
+<blockquote>
+<pre>
+Fix : The PCL interpreter doesn't provide pattern streams (continued).
+
+</pre>
+<p>[src/gdevpdfg.c 1.46, src/gdevpdfg.h 1.29, src/gdevpdfv.c 1.33, src/int.mak 1.121, src/zpcolor.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-20_0139"></a>
+2004-01-20 01:39 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo in the previous commit.</pre>
+<p>[src/gp_unifs.c 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-20_0124"></a>
+2004-01-20 01:24 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Save the original filename template for use in the error message when mkstemp() fails. According
+to the man page mkstemp() can clobber the contents of fname if it does not succeed. Part of the
+fix for bug 687243.</pre>
+<p>[src/gp_unifs.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-19_2319"></a>
+2004-01-19 23:19 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove some very old scripts which contain /tmp races, a security risk should
+someone actually try to use them. Part of the fix for bug 687243.</pre>
+<p>[lib/pj-gs.sh 1.4, lib/sysvlp.sh 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-19_2015"></a>
+2004-01-19 20:15 Igor Melichev</strong> (<a href="Details8.htm#2004-01-19_2015">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 12.
+
+</pre>
+<p>[src/gdevpdfu.c 1.49]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-19_1652"></a>
+2004-01-19 16:52 Igor Melichev</strong> (<a href="Details8.htm#2004-01-19_1652">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) : CropBox computed wrongly.
+
+</pre>
+<p>[lib/pdf_main.ps 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-19_1232"></a>
+2004-01-19 12:32 Igor Melichev</strong> (<a href="Details8.htm#2004-01-19_1232">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Merge redundant images (continued).
+
+</pre>
+<p>[src/gdevpdfo.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-19_0941"></a>
+2004-01-19 09:41 Igor Melichev</strong> (<a href="Details8.htm#2004-01-19_0941">details</a>)</p>
+<blockquote>
+<pre>
+Fix : The PCL interpreter doesn't provide pattern streams.
+
+</pre>
+<p>[src/gsistate.c 1.9, src/gsptype1.c 1.18, src/gsstate.c 1.23, src/gxistate.h 1.19, src/gxstate.h 1.9, src/zgstate.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-17_2046"></a>
+2004-01-17 20:46 Dan Coby</strong> (<a href="Details8.htm#2004-01-17_2046">details</a>)</p>
+<blockquote>
+<pre>
+Fix for "687252 subfiledecode errors on includes greater than the
+size of a uint".  In spite of the bug name, the problem is not
+related to the actual size of the subfile or to the size of a uint.
+The actual problem is a missing required parameter:  EODCount.
+However Adobe once again ignores the missing parameter and what is
+specified in the PRLM-3rd.
+
+</pre>
+<p>[src/zfilter.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-16_1236"></a>
+2004-01-16 12:36 Igor Melichev</strong> (<a href="Details8.htm#2004-01-16_1236">details</a>)</p>
+<blockquote>
+<pre>
+Fix (type 1 hinter) : Wrong outline with a huge scale.
+
+</pre>
+<p>[src/gxhintn.c 1.42]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-16_0947"></a>
+2004-01-16 09:47 Igor Melichev</strong> (<a href="Details8.htm#2004-01-16_0947">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 11.
+
+</pre>
+<p>[src/gdevpdf.c 1.86]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-16_0924"></a>
+2004-01-16 09:24 Igor Melichev</strong> (<a href="Details8.htm#2004-01-16_0924">details</a>)</p>
+<blockquote>
+<pre>
+Documenting new features of gs8.30 .
+
+</pre>
+<p>[doc/Language.htm 1.83, doc/News.htm 1.141, doc/Ps2pdf.htm 1.60, doc/Use.htm 1.99]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-16_0636"></a>
+2004-01-16 06:36 Dan Coby</strong> (<a href="Details8.htm#2004-01-16_0636">details</a>)</p>
+<blockquote>
+<pre>
+Fix for 687247 x11 device fails with CMYK on 8bit display.
+
+</pre>
+<p>[src/gxcmap.c 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-16_0231"></a>
+2004-01-16 02:31 Igor Melichev</strong> (<a href="Details8.htm#2004-01-16_0231">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 10 - beta release.
+
+</pre>
+<p>[doc/Ps2pdf.htm 1.59]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-16_0211"></a>
+2004-01-16 02:11 Igor Melichev</strong> (<a href="Details8.htm#2004-01-16_0211">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 9.
+
+</pre>
+<p>[src/gdevpdf.c 1.85]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-16_0202"></a>
+2004-01-16 02:02 Igor Melichev</strong> (<a href="Details8.htm#2004-01-16_0202">details</a>)</p>
+<blockquote>
+<pre>
+Fix (PDF interpreter) Bug in encryption revision 3.
+
+</pre>
+<p>[lib/pdf_sec.ps 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_2144"></a>
+2004-01-15 21:44 Igor Melichev</strong> (<a href="Details8.htm#2004-01-15_2144">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 8.
+
+</pre>
+<p>[src/gdevpdf.c 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_1745"></a>
+2004-01-15 17:45 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add an RCS Id line to the documentation stylesheet. There's no reason to exempt it.</pre>
+<p>[doc/gs.css 1.3, toolbin/tests/check_source.py 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_1741"></a>
+2004-01-15 17:41 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add the Freetype Licence text to the exemptions list for RCS Id lines.</pre>
+<p>[toolbin/tests/check_source.py 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_1735"></a>
+2004-01-15 17:35 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add gp_unix_cache.c to the developer documentation's file listing.</pre>
+<p>[doc/Develop.htm 1.130]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_1608"></a>
+2004-01-15 16:08 Igor Melichev</strong> (<a href="Details8.htm#2004-01-15_1608">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 7.
+
+</pre>
+<p>[src/gdevpdf.c 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_1502"></a>
+2004-01-15 15:02 Igor Melichev</strong> (<a href="Details8.htm#2004-01-15_1502">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 6.
+
+</pre>
+<p>[src/gdevpdf.c 1.82, src/gdevpdfp.c 1.36, src/gdevpdfx.h 1.84]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_1009"></a>
+2004-01-15 10:09 Igor Melichev</strong> (<a href="Details8.htm#2004-01-15_1009">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 5.
+
+</pre>
+<p>[src/devs.mak 1.107, src/gdevpdf.c 1.81, src/gdevpdfc.c 1.46, src/gdevpdfo.c 1.25, src/gdevpdfo.h 1.18, src/gdevpdfu.c 1.48, src/gdevpdfx.h 1.83, src/gdevpdtf.c 1.34, src/gdevpdti.c 1.27, src/gdevpdtw.c 1.27, src/gdevpdtw.h 1.4]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-15_0927"></a>
+2004-01-15 09:27 Ralph Giles</strong> (<a href="Details8.htm#2004-01-15_0927">details</a>)</p>
+<blockquote>
+<pre>
+Initial commit of the persistent cache implementation. This version supports only the *nix
+platform and does not include any eviction logic. Also currently the cache directory and
+empty 'gs_cache' index file must be created manually.
+
+</pre>
+<p>[src/Makefile.in 1.31, src/gp.h 1.27, src/gp_dvx.c 1.11, src/gp_iwatc.c 1.17, src/gp_mac.c 1.15, src/gp_mswin.c 1.23, src/gp_os2.c 1.30, src/gp_os9.c 1.12, src/gp_unix.c 1.13, src/gp_unix_cache.c 1.1, src/gp_vms.c 1.37, src/gs.mak 1.24, src/unix-aux.mak 1.11, src/zmisc.c 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-14_1805"></a>
+2004-01-14 18:05 Igor Melichev</strong> (<a href="Details8.htm#2004-01-14_1805">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 4.
+
+</pre>
+<p>[src/devs.mak 1.106, src/gdevpdfc.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-14_1604"></a>
+2004-01-14 16:04 Igor Melichev</strong> (<a href="Details8.htm#2004-01-14_1604">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 3.
+
+</pre>
+<p>[src/gdevpdfj.c 1.29, src/gdevpdfu.c 1.47, src/gdevpdfx.h 1.82, src/gdevpdtb.c 1.23, src/gdevpdti.c 1.26, src/gdevpdtw.c 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-14_1407"></a>
+2004-01-14 14:07 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Check for hypot() availability on the configure step, fix the hypot()
+replacement macro, and deal with MSVC specially.
+Fix bug 687238.</pre>
+<p>[src/Makefile.in 1.30, src/configure.ac 1.39, src/math_.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-14_1345"></a>
+2004-01-14 13:45 Igor Melichev</strong> (<a href="Details8.htm#2004-01-14_1345">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 2.
+
+</pre>
+<p>[src/devs.mak 1.105, src/gdevpdf.c 1.80, src/gdevpdfo.c 1.24, src/gdevpdfu.c 1.46, src/gdevpdfx.h 1.81, src/gdevpdti.c 1.25, src/sarc4.c 1.10, src/sarc4.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-14_0750"></a>
+2004-01-14 07:50 Igor Melichev</strong> (<a href="Details8.htm#2004-01-14_0750">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the PDF 1.4 encryption, step 1.
+
+</pre>
+<p>[src/devs.mak 1.104, src/gdevpdf.c 1.79, src/gdevpdfp.c 1.35, src/gdevpdfx.h 1.80, src/sarc4.c 1.9, src/sarc4.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-14_0638"></a>
+2004-01-14 06:38 Ray Johnston</strong> (<a href="Details8.htm#2004-01-14_0638">details</a>)</p>
+<blockquote>
+<pre>
+Fix to prevent setdistillerparams from erasing the page device or reset
+the page device parameters. Fixes bugs 563287 and 607425.
+
+</pre>
+<p>[lib/gs_pdfwr.ps 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-13_1403"></a>
+2004-01-13 14:03 Igor Melichev</strong> (<a href="Details8.htm#2004-01-13_1403">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Implementing the file ID.
+
+</pre>
+<p>[src/devs.mak 1.103, src/gdevpdf.c 1.78, src/gdevpdfx.h 1.79, src/lib.mak 1.161, src/smd5.c 1.6, src/smd5.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-13_0728"></a>
+2004-01-13 07:28 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Cygwin/gcc compiler warnings.</pre>
+<p>[src/gdevpdfd.c 1.36, src/gdevpdfo.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-13_0728"></a>
+2004-01-13 07:28 Igor Melichev</strong> (<a href="Details8.htm#2004-01-13_0728">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Adobe glitches with a small FontMatrix.
+
+</pre>
+<p>[src/gdevpdte.c 1.51, src/gdevpdtt.c 1.71, src/gdevpdtt.h 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-13_0532"></a>
+2004-01-13 05:32 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fixing a punctuation inaccuracy in documentation.</pre>
+<p>[doc/Language.htm 1.82, doc/Use.htm 1.98]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-13_0206"></a>
+2004-01-13 02:06 Ray Johnston</strong> (<a href="Details8.htm#2004-01-13_0206">details</a>)</p>
+<blockquote>
+<pre>
+Fix problems with the "image" device when the palette is an 8-bit gray
+palette (uses the image8 device with num_components == 1). Since the
+DeviceN changes, changing num_components requires also setting the
+gray_index value appropriately. Also the rgb to color mapping function
+did not allow for num_components == 1 and used uninitialized values for
+the green and blue comonents. Fixes bugs 458261, 686909 and 687204.
+
+</pre>
+<p>[src/gdevmem.c 1.7, src/gsdevmem.c 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-12_2316"></a>
+2004-01-12 23:16 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Clarify wording in the updated GridFitTT documentation.</pre>
+<p>[doc/Language.htm 1.81, doc/Use.htm 1.97]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-12_2304"></a>
+2004-01-12 23:04 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Clarify wording and correct some spelling errors in a recent documentation change.</pre>
+<p>[doc/Ps2pdf.htm 1.58]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-12_1435"></a>
+2004-01-12 14:35 Igor Melichev</strong> (<a href="Details8.htm#2004-01-12_1435">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A misprint in the previous patch.
+
+</pre>
+<p>[src/gdevpdf.c 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-12_1428"></a>
+2004-01-12 14:28 Igor Melichev</strong> (<a href="Details8.htm#2004-01-12_1428">details</a>)</p>
+<blockquote>
+<pre>
+pdfwrite : Merge redundant images.
+
+</pre>
+<p>[doc/Ps2pdf.htm 1.57, src/gdevpdf.c 1.76, src/gdevpdfb.c 1.21, src/gdevpdfg.h 1.28, src/gdevpdfi.c 1.50, src/gdevpdfj.c 1.28, src/gdevpdfo.c 1.22, src/gdevpdfo.h 1.17, src/gdevpdfp.c 1.34, src/gdevpdfu.c 1.45, src/gdevpdfx.h 1.78]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-11_1353"></a>
+2004-01-11 13:53 Igor Melichev</strong> (<a href="Details8.htm#2004-01-11_1353">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A mangled CFF was written when an Encoding uses 256 glyphs.
+
+</pre>
+<p>[src/gdevpsf2.c 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-11_1121"></a>
+2004-01-11 11:21 Igor Melichev</strong> (<a href="Details8.htm#2004-01-11_1121">details</a>)</p>
+<blockquote>
+<pre>
+Fix : removed dependence on bands in the filling algorithm.
+
+</pre>
+<p>[src/gxfill.c 1.85, src/gxfill.h 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-10_1800"></a>
+2004-01-10 18:00 Igor Melichev</strong> (<a href="Details8.htm#2004-01-10_1800">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Mark copied font's glyph names when reclaiming memory.
+
+</pre>
+<p>[src/gxfcopy.c 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-10_1224"></a>
+2004-01-10 12:24 Igor Melichev</strong> (<a href="Details8.htm#2004-01-10_1224">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Improving heuristics in the compression chooser.
+
+</pre>
+<p>[src/gdevpdfj.c 1.27, src/gdevpsds.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-10_1212"></a>
+2004-01-10 12:12 Igor Melichev</strong> (<a href="Details8.htm#2004-01-10_1212">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A big stack consumption writing a CFF with many glyphs.
+
+</pre>
+<p>[src/gdevpsf.h 1.26, src/gdevpsf2.c 1.29]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-09_1427"></a>
+2004-01-09 14:27 Igor Melichev</strong> (<a href="Details8.htm#2004-01-09_1427">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Improving vdtrace macros.
+
+</pre>
+<p>[src/dwtrace.c 1.5, src/vdtrace.h 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-09_1340"></a>
+2004-01-09 13:40 Igor Melichev</strong> (<a href="Details8.htm#2004-01-09_1340">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Some of Sun ONE Studio 7 and Cygwin/gcc compiler warnings.
+
+</pre>
+<p>[src/devs.mak 1.102, src/gdevpdtc.c 1.31, src/gdevpdtt.c 1.70, src/gxpcopy.c 1.16, src/zfapi.c 1.51]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-09_1302"></a>
+2004-01-09 13:02 Igor Melichev</strong> (<a href="Details8.htm#2004-01-09_1302">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Empty clip was written into a charproc.
+
+</pre>
+<p>[src/gdevpdti.c 1.24, src/gdevpdtt.c 1.69]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-08_1402"></a>
+2004-01-08 14:02 Igor Melichev</strong> (<a href="Details8.htm#2004-01-08_1402">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 12, final.
+
+</pre>
+<p>[src/gx.h 1.31, src/gzspotan.c 1.8, doc/Language.htm 1.80, doc/Use.htm 1.96]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-07_1950"></a>
+2004-01-07 19:50 Ralph Giles</strong> (<a href="Details8.htm#2004-01-07_1950">details</a>)</p>
+<blockquote>
+<pre>
+Unequivocally include stdlib.h in echogs.c to avoid a warning on the Sun ONE Studio 7 compiler as
+reported in bug 687234.
+
+</pre>
+<p>[src/echogs.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-07_1112"></a>
+2004-01-07 11:12 Igor Melichev</strong> (<a href="Details8.htm#2004-01-07_1112">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 11.
+
+</pre>
+<p>[src/gxhintn.c 1.41, src/gxhintn.h 1.19, src/gxttfb.c 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-06_2036"></a>
+2004-01-06 20:36 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix a typo in the 64-bit type selection logic. Bug 687237.</pre>
+<p>[src/configure.ac 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-06_1332"></a>
+2004-01-06 13:32 Igor Melichev</strong> (<a href="Details8.htm#2004-01-06_1332">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 10.
+
+</pre>
+<p>[src/gsfont.c 1.30, src/gxhintn.c 1.40, src/gxhintn.h 1.18, src/gxttfb.c 1.26, src/gzspotan.c 1.7, src/gzspotan.h 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_2334"></a>
+2004-01-05 23:34 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Fix some warnings reported by the Sun One Studio 7 compiler (and others). Bug 687228.</pre>
+<p>[src/devs.mak 1.101, src/gdevdevn.c 1.13, src/gdevpdfc.c 1.44, src/gdevpdtb.c 1.22, src/gdevpsu.c 1.16, src/gp_unifn.c 1.16, src/gsht.c 1.18, src/gxcmap.c 1.17, src/int.mak 1.120, src/lib.mak 1.160, src/zfapi.c 1.50, src/zfile.c 1.40]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_2306"></a>
+2004-01-05 23:06 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo in the checks for stdint fixed-size types. This did not materially affect the
+behavior of the configure script. Bug 687235.</pre>
+<p>[src/configure.ac 1.37]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_2213"></a>
+2004-01-05 22:13 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump the development branch version to 8.30 now that the stable branch has been released as 8.13
+and update the date stamp.</pre>
+<p>[doc/News.htm 1.140, lib/gs_init.ps 1.104, src/gscdef.c 1.41, src/version.mak 1.69]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_1915"></a>
+2004-01-05 19:15 Alex Cherepanov</strong> (<a href="Details8.htm#2004-01-05_1915">details</a>)</p>
+<blockquote>
+<pre>
+Transliterate '\0' character in PDF names to "BnZr" instead of
+'?' to reduce the chance of name collision.
+
+</pre>
+<p>[src/gdevpdfu.c 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_1511"></a>
+2004-01-05 15:11 Igor Melichev</strong> (<a href="Details8.htm#2004-01-05_1511">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 9.
+
+</pre>
+<p>[src/gxttfb.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_1305"></a>
+2004-01-05 13:05 Igor Melichev</strong> (<a href="Details8.htm#2004-01-05_1305">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Removed gx_curve_split due to inprecise implementation.
+
+</pre>
+<p>[src/gxpcopy.c 1.15, src/gzpath.h 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_1252"></a>
+2004-01-05 12:52 Igor Melichev</strong> (<a href="Details8.htm#2004-01-05_1252">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 8.
+
+</pre>
+<p>[src/gxfill.c 1.84, src/gxpcopy.c 1.14, src/gxttfb.c 1.24, src/gzpath.h 1.27]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-05_0611"></a>
+2004-01-05 06:11 Ray Johnston</strong> (<a href="Details8.htm#2004-01-05_0611">details</a>)</p>
+<blockquote>
+<pre>
+Fix for fonts being displayed using .notdef character (empty boxes or other
+appearance). While the test file doesn't follow the PDF 1.3 or later manual
+recommendations for providing a [1,0] cmap for an embedded symbolic TT font,
+Adobe Acrobat Reader can display these characters. When the 'post' table
+doesn't provide the glyphs required by the /Differences list, try another
+cmap [3,0] to get the correct glyph (names and glyph #'s). Bug #686959 for
+customer #1060.
+
+</pre>
+<p>[lib/gs_ttf.ps 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-04_1959"></a>
+2004-01-04 19:59 Igor Melichev</strong> (<a href="Details8.htm#2004-01-04_1959">details</a>)</p>
+<blockquote>
+<pre>
+Fix : monotonize_internal didn't work properly.
+
+</pre>
+<p>[src/gxpcopy.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-04_0612"></a>
+2004-01-04 06:12 Igor Melichev</strong> (<a href="Details8.htm#2004-01-04_0612">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Trapezoid algorithm could cause topology distortions (continued 2).
+
+</pre>
+<p>[src/gxfdrop.c 1.9, src/gxfill.c 1.83]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-04_0537"></a>
+2004-01-04 05:37 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Remove spurious stack adjustment that caused /unmatchedmark
+when the font was loaded from Resource/Fonts/ .
+Fix bug 687220.</pre>
+<p>[lib/gs_fonts.ps 1.46]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-03_1814"></a>
+2004-01-03 18:14 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a line ending problem.</pre>
+<p>[src/gp_macio.c 1.33]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-03_1750"></a>
+2004-01-03 17:50 Igor Melichev</strong> (<a href="Details8.htm#2004-01-03_1750">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Trapezoid algorithm could cause topology distortions (continued).
+
+</pre>
+<p>[src/gxfill.c 1.82]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-03_1234"></a>
+2004-01-03 12:34 Igor Melichev</strong> (<a href="Details8.htm#2004-01-03_1234">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 7.
+
+</pre>
+<p>[src/gsfont.c 1.29, src/gxfcache.h 1.23, src/gxttfb.c 1.23, src/zusparam.c 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-03_1038"></a>
+2004-01-03 10:38 Igor Melichev</strong> (<a href="Details8.htm#2004-01-03_1038">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Trapezoid algorithm could cause topology distortions.
+
+</pre>
+<p>[src/gxfill.c 1.81]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-02_2105"></a>
+2004-01-02 21:05 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix: The (more or less undocumented) superexec operator is supposed to
+allow "readonly" directories to be amended. Bug #674421.</pre>
+<p>[src/zgeneric.c 1.7]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-02_2053"></a>
+2004-01-02 20:53 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Remove spurious ^M (ctrl-M == <cr>) characters from the source -- probably
+caused by a Windows user performing an update from a file that was not
+correctly recognized as DOS vs. UNIX line endings by cvs.</pre>
+<p>[src/idict.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-02_1802"></a>
+2004-01-02 18:02 Igor Melichev</strong> (<a href="Details8.htm#2004-01-02_1802">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 6.
+
+</pre>
+<p>[src/gxfill.c 1.80, src/gxpath.h 1.11, src/gxpcopy.c 1.12, src/gxttfb.c 1.22, src/ttfmain.c 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-02_1315"></a>
+2004-01-02 13:15 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Fix : A GCC compiler error.</pre>
+<p>[src/gxfont42.h 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-02_1302"></a>
+2004-01-02 13:02 Igor Melichev</strong> (<a href="Details8.htm#2004-01-02_1302">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 5.
+
+</pre>
+<p>[src/gxfill.c 1.79, src/gxhintn.c 1.39, src/gxttfb.c 1.21, src/gzspotan.c 1.6, src/gzspotan.h 1.4, src/ttfmain.c 1.20, src/ttfoutl.h 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2004-01-01_1701"></a>
+2004-01-01 17:01 Igor Melichev</strong> (<a href="Details8.htm#2004-01-01_1701">details</a>)</p>
+<blockquote>
+<pre>
+Implementing a True Type grid fitting, step 4.
+
+</pre>
+<p>[src/gxhintn.c 1.38, src/gxhintn.h 1.17, src/gxttfb.c 1.20, src/gzspotan.c 1.5, src/gzspotan.h 1.3, src/lib.mak 1.159]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-31_1807"></a>
+2003-12-31 18:07 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a paragraph to the license statement listing the additional requirements of
+the Freetype License.</pre>
+<p>[LICENSE 1.3]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-31_1753"></a>
+2003-12-31 17:53 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add the text of the Freetype license and references to the freetype project to clarify our
+compilance. The new truetype bytecode interpreter is based in part of code made available as part
+of Freetype 1.</pre>
+<p>[doc/Develop.htm 1.129, doc/FTL.txt 1.2, doc/Language.htm 1.79]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-31_1112"></a>
+2003-12-31 11:12 Igor Melichev</strong> (<a href="Details8.htm#2003-12-31_1112">details</a>)</p>
+<blockquote>
+<pre>
+Fix : The character oversampling condition was wrong.
+
+</pre>
+<p>[src/gxchar.c 1.38]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-31_0613"></a>
+2003-12-31 06:13 Igor Melichev</strong> (<a href="Details8.htm#2003-12-31_0613">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Write a smaller Widths array.
+
+</pre>
+<p>[src/gdevpdtf.c 1.33, src/gdevpdti.c 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-31_0520"></a>
+2003-12-31 05:20 Igor Melichev</strong> (<a href="Details8.htm#2003-12-31_0520">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Pattern resource was not added to Resources of a pattern object.
+
+</pre>
+<p>[src/gdevpdfg.c 1.45]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-30_1755"></a>
+2003-12-30 17:55 Igor Melichev</strong> (<a href="Details8.htm#2003-12-30_1755">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Color space resource was not added to Resources of a pattern object.
+
+</pre>
+<p>[src/gdevpdfc.c 1.43]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-30_1753"></a>
+2003-12-30 17:53 Igor Melichev</strong> (<a href="Details8.htm#2003-12-30_1753">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Wrote an invalid text matrix.
+
+</pre>
+<p>[src/gdevpdte.c 1.50]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-30_1150"></a>
+2003-12-30 11:50 Igor Melichev</strong> (<a href="Details8.htm#2003-12-30_1150">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 24, final.
+
+</pre>
+<p>[src/gx.h 1.30]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-30_0825"></a>
+2003-12-30 08:25 Igor Melichev</strong> (<a href="Details8.htm#2003-12-30_0825">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 23.
+
+</pre>
+<p>[src/gx.h 1.29, src/gxfill.c 1.78, src/gxpflat.c 1.28, src/gzpath.h 1.26]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-29_1556"></a>
+2003-12-29 15:56 Igor Melichev</strong> (<a href="Details8.htm#2003-12-29_1556">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 22.
+
+</pre>
+<p>[src/gxfill.c 1.77]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-29_0435"></a>
+2003-12-29 04:35 Igor Melichev</strong> (<a href="Details8.htm#2003-12-29_0435">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 21.
+
+</pre>
+<p>[src/gx.h 1.28, src/gxfill.c 1.76]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-29_0418"></a>
+2003-12-29 04:18 Igor Melichev</strong> (<a href="Details8.htm#2003-12-29_0418">details</a>)</p>
+<blockquote>
+<pre>
+Raster depended on the band size (a partial fix).
+
+</pre>
+<p>[src/gxfill.c 1.75]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-28_1337"></a>
+2003-12-28 13:37 Igor Melichev</strong> (<a href="Details8.htm#2003-12-28_1337">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 20.
+
+</pre>
+<p>[src/gxfill.c 1.74]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-28_1257"></a>
+2003-12-28 12:57 Igor Melichev</strong> (<a href="Details8.htm#2003-12-28_1257">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 19.
+
+</pre>
+<p>[src/gxfill.c 1.73]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-28_1223"></a>
+2003-12-28 12:23 Igor Melichev</strong> (<a href="Details8.htm#2003-12-28_1223">details</a>)</p>
+<blockquote>
+<pre>
+Fix : The dropout prevention code could render an occasional raster.
+
+</pre>
+<p>[src/gxfill.c 1.72]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-28_0815"></a>
+2003-12-28 08:15 Igor Melichev</strong> (<a href="Details8.htm#2003-12-28_0815">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 17.
+
+</pre>
+<p>[src/gxfill.c 1.71]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-27_1658"></a>
+2003-12-27 16:58 Igor Melichev</strong> (<a href="Details8.htm#2003-12-27_1658">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 16.
+
+</pre>
+<p>[src/gxfill.c 1.70]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-27_1524"></a>
+2003-12-27 15:24 Ray Johnston</strong> (<a href="Details8.htm#2003-12-27_1524">details</a>)</p>
+<blockquote>
+<pre>
+Fix missing semicolons inserted by previous commit that prevented
+compilation.
+
+</pre>
+<p>[src/gxfill.c 1.69]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-27_0914"></a>
+2003-12-27 09:14 Igor Melichev</strong> (<a href="Details8.htm#2003-12-27_0914">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 15.
+
+</pre>
+<p>[src/gx.h 1.27, src/gxfill.c 1.68, src/gxpflat.c 1.27, src/gxfill.h 1.11, src/gzpath.h 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-24_0332"></a>
+2003-12-24 03:32 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Correct a typo in the maintainer-clean target in the legacy unix makefiles.
+Thanks to William Bader for catching this.</pre>
+<p>[src/unix-gcc.mak 1.44, src/unixansi.mak 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-23_1536"></a>
+2003-12-23 15:36 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Move the documentation on handling Unicode high level text into Drivers.htm
+which is a developer document instead of Devices.htm which is intended for
+users.</pre>
+<p>[doc/Devices.htm 1.73, doc/Drivers.htm 1.44]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-22_2005"></a>
+2003-12-22 20:05 Ray Johnston</strong> (<a href="Details8.htm#2003-12-22_2005">details</a>)</p>
+<blockquote>
+<pre>
+Still more regressions that produced incorrect (different than 8.12)
+rotations. Regressions include 541_623.pdf and others that had Rotate != 0.
+
+</pre>
+<p>[src/zmedia2.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-21_2056"></a>
+2003-12-21 20:56 Ray Johnston</strong> (<a href="Details8.htm#2003-12-21_2056">details</a>)</p>
+<blockquote>
+<pre>
+Resolve regression differences caused by rotated page sizes being picked
+instead of non-rotated in some cases. Seen with 1_pct_50_bang.pdf and
+others.
+
+</pre>
+<p>[src/zmedia2.c 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-20_1709"></a>
+2003-12-20 17:09 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a newline at the end of a file. Remove a duplicate semicolon at the end of statement.</pre>
+<p>[src/gxistate.h 1.18, src/zchar1.c 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-20_0928"></a>
+2003-12-20 09:28 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Fix yet another long standing bug in 'match_page_size' logic that could
+result in the wrong (too small) media being selected due to comparison
+of signed difference versus absolute difference.</pre>
+<p>[src/zmedia2.c 1.13]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-19_0834"></a>
+2003-12-19 08:34 Dan Coby</strong></p>
+<blockquote>
+<pre>
+A pair of fixes to the PDF rebuild logic.  The fix in pdf_main.ps corrects
+a problem that ws creatd with the PDF 1.5 parser changes.  The fix in
+pdf_rbld.ps corrects an unbalanced stack.  This was not fatal but did
+leave the string (trailer) on the stack after rebuilding some PDF files.</pre>
+<p>[lib/pdf_main.ps 1.83, lib/pdf_rbld.ps 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-19_0542"></a>
+2003-12-19 05:42 Ray Johnston</strong> (<a href="Details8.htm#2003-12-19_0542">details</a>)</p>
+<blockquote>
+<pre>
+Fix setpagedevice problems introduced with previous commit detected by the
+regression tests, including 070-01.ps and many others. Also give priority
+to lower value slots (match_key.value.intval)
+
+</pre>
+<p>[src/zmedia2.c 1.12]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-18_1458"></a>
+2003-12-18 14:58 Igor Melichev</strong> (<a href="Details8.htm#2003-12-18_1458">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : A temporary workaround for limitcheck writing a CFF with many glyphs.
+
+</pre>
+<p>[src/gdevpsf.h 1.25, src/gdevpsf2.c 1.28]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-18_1323"></a>
+2003-12-18 13:23 Igor Melichev</strong> (<a href="Details8.htm#2003-12-18_1323">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 14.
+
+</pre>
+<p>[src/gx.h 1.26, src/gxfill.c 1.67, src/gxpflat.c 1.26, src/gzpath.h 1.24]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-17_1536"></a>
+2003-12-17 15:36 Igor Melichev</strong> (<a href="Details8.htm#2003-12-17_1536">details</a>)</p>
+<blockquote>
+<pre>
+Fix : Fixed a comment syntax and removed unused variables.
+
+</pre>
+<p>[src/gxpflat.c 1.25]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-17_1527"></a>
+2003-12-17 15:27 Igor Melichev</strong> (<a href="Details8.htm#2003-12-17_1527">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 13.
+
+</pre>
+<p>[src/gxpflat.c 1.24, src/gzpath.h 1.23]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-17_0945"></a>
+2003-12-17 09:45 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Add "pa4" page size requested by a user. This is the intersection of
+a4 and letter page size, i.e., a4 width and letter length. Bug #553187.</pre>
+<p>[lib/gs_statd.ps 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-17_0919"></a>
+2003-12-17 09:19 Ray Johnston</strong></p>
+<blockquote>
+<pre>
+Remove warnings and reversion to 'int' which could cause wrong decision
+for PageSize match.</pre>
+<p>[src/zmedia2.c 1.11]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-17_0912"></a>
+2003-12-17 09:12 Ray Johnston</strong> (<a href="Details8.htm#2003-12-17_0912">details</a>)</p>
+<blockquote>
+<pre>
+Fix InputAttributes initialization to have the default page size in slot
+0, and all page sizes known in statusdict/.pagetypenames included with
+the 'fit any' pagesize range last. Fixes bug #617077 and other files
+that expect slot 0 to be a valid 2 element PageSize corresponding to the
+default.
+
+</pre>
+<p>[lib/gs_setpd.ps 1.20, lib/gs_statd.ps 1.13, src/zmedia2.c 1.10]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-17_0229"></a>
+2003-12-17 02:29 Igor Melichev</strong> (<a href="Details8.htm#2003-12-17_0229">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 12.
+
+</pre>
+<p>[src/gxfill.c 1.66]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-16_2229"></a>
+2003-12-16 22:29 Igor Melichev</strong> (<a href="Details8.htm#2003-12-16_2229">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 11.
+
+</pre>
+<p>[src/gx.h 1.25, src/gxfill.c 1.65, src/gxfill.h 1.10, src/gxpflat.c 1.23, src/gzpath.h 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-14_2232"></a>
+2003-12-14 22:32 Igor Melichev</strong> (<a href="Details8.htm#2003-12-14_2232">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 10.
+
+</pre>
+<p>[src/gx.h 1.24, src/gxfill.c 1.64, src/gxfill.h 1.9, src/gxpflat.c 1.22, src/gzpath.h 1.21]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-14_0451"></a>
+2003-12-14 04:51 Dan Coby</strong> (<a href="Details8.htm#2003-12-14_0451">details</a>)</p>
+<blockquote>
+<pre>
+This is the first pass at the changes to support the PDF 1.5 revisions
+to the PDF format.
+
+</pre>
+<p>[lib/pdf_rbld.ps 1.5]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-14_0441"></a>
+2003-12-14 04:41 Dan Coby</strong> (<a href="Details8.htm#2003-12-14_0441">details</a>)</p>
+<blockquote>
+<pre>
+This is the first pass at the changes to support the PDF 1.5 revisions
+to the PDF format.
+
+</pre>
+<p>[lib/pdf_base.ps 1.40, lib/pdf_main.ps 1.82]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-14_0107"></a>
+2003-12-14 01:07 Alex Cherepanov</strong> (<a href="Details8.htm#2003-12-14_0107">details</a>)</p>
+<blockquote>
+<pre>
+Fix MSVC debug targets: add explicit makefile specification.
+Fix bug 687205.
+
+</pre>
+<p>[src/msvc32.mak 1.52]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-13_1807"></a>
+2003-12-13 18:07 Ray Johnston</strong> (<a href="Details8.htm#2003-12-13_1807">details</a>)</p>
+<blockquote>
+<pre>
+Fix a premature closedevice leading to a SEGV when a setpagedevice follows
+a setdevice with the only reference to the device in the graphics state.
+Bug #687204 detected with ps2epsi.ps.
+
+</pre>
+<p>[src/gsdevice.c 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-12_1803"></a>
+2003-12-12 18:03 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Link to History8.htm in the list of history files. Patch from Alexei Podtelez.</pre>
+<p>[doc/Readme.htm 1.53]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-12_0216"></a>
+2003-12-12 02:16 Alex Cherepanov</strong></p>
+<blockquote>
+<pre>
+Split an expression in two because MSVC 6.00.8168.0 cannot compile it
+in -O2 mode, enabled in GS 8.12 by default. MSVC 6 with
+Service Pack 3 doesn't require this work around.</pre>
+<p>[src/idict.c 1.9]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-12_0144"></a>
+2003-12-12 01:44 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Properly remove jbig2.dev from the FEATURE_DEVS list in the autoconf build when
+stdint_h is not available. Works around bug 687007.</pre>
+<p>[src/configure.ac 1.36]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-11_1944"></a>
+2003-12-11 19:44 Ray Johnston</strong> (<a href="Details8.htm#2003-12-11_1944">details</a>)</p>
+<blockquote>
+<pre>
+Fix .gethalftone to prevent /undefinedresource or other error from being
+left in the $error dict. Seen with UnusualFontMatrix.ps when running under
+startjob encapsulation.
+
+</pre>
+<p>[lib/gs_init.ps 1.103]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-11_1815"></a>
+2003-12-11 18:15 Igor Melichev</strong> (<a href="Details8.htm#2003-12-11_1815">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 9.
+
+</pre>
+<p>[src/gxpflat.c 1.21, src/gzpath.h 1.20]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-11_1348"></a>
+2003-12-11 13:48 Igor Melichev</strong> (<a href="Details8.htm#2003-12-11_1348">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 8.
+
+</pre>
+<p>[src/gxfill.c 1.63, src/gx.h 1.23, src/gxfill.h 1.8, src/gxpflat.c 1.20, src/gzpath.h 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-11_1333"></a>
+2003-12-11 13:33 Igor Melichev</strong> (<a href="Details8.htm#2003-12-11_1333">details</a>)</p>
+<blockquote>
+<pre>
+Fix : The flattening algorithm inaccurately filtered points.
+Bug 687154 "Bugs in gx_flatten_sample".
+
+</pre>
+<p>[src/gxpflat.c 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-11_0953"></a>
+2003-12-11 09:53 Igor Melichev</strong> (<a href="Details8.htm#2003-12-11_0953">details</a>)</p>
+<blockquote>
+<pre>
+Removed an obsolete code FLATTENED_CURVE_ITERATOR 0.
+
+</pre>
+<p>[src/gx.h 1.22, src/gxpflat.c 1.18, src/gzpath.h 1.18]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-11_0259"></a>
+2003-12-11 02:59 Ray Johnston</strong> (<a href="Details8.htm#2003-12-11_0259">details</a>)</p>
+<blockquote>
+<pre>
+Fix setpagedevice so that the Default Halftone is used. Fixes bug #687199.
+
+</pre>
+<p>[lib/gs_setpd.ps 1.19]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-11_0222"></a>
+2003-12-11 02:22 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Remove the CC_LEAF alternate compiler definition. This basically exists to pass
+-fomit-frame-pointer (or equivalent) on a few (two) files where it's unequivocably safe. This
+strikes us as premature optimization.
+
+It was also causing problems with the profile build under gcc because of a quoting problems with
+the argument list the makefile passes to itself through this define. Closes bug 687182.</pre>
+<p>[src/Makefile.in 1.29, src/bcwin32.mak 1.31, src/dvx-gcc.mak 1.25, src/gs.mak 1.23, src/int.mak 1.119, src/lib.mak 1.158, src/macos-mcp.mak 1.24, src/macosx.mak 1.22, src/msvccmd.mak 1.13, src/openvms.mak 1.34, src/openvms.mmk 1.28, src/os2.mak 1.36, src/ugcclib.mak 1.27, src/unix-end.mak 1.6, src/unix-gcc.mak 1.43, src/unixansi.mak 1.34, src/watcw32.mak 1.28, src/wccommon.mak 1.8]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-10_2342"></a>
+2003-12-10 23:42 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+In the autoconf build, only pass -O2 if the compiler is detected to be gcc. Fall back to trying
+the POSIX -O in other cases. The trial compile was not detecting that this option does not work
+correctly on the Solaris compilers. Problem report from Nelson Beebe, closes bug 687198.</pre>
+<p>[src/configure.ac 1.35]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-10_2307"></a>
+2003-12-10 23:07 Ray Johnston</strong> (<a href="Details8.htm#2003-12-10_2307">details</a>)</p>
+<blockquote>
+<pre>
+Fix incorrect handling of the '\' escape character in the filenameforall
+implementation on Windwows. Fixes bug #687151. Also fix logic in the
+.scanfontdir that relied on the incorrect filenameforall implementation.
+
+</pre>
+<p>[lib/gs_fonts.ps 1.45, src/gp_ntfs.c 1.22]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-10_1427"></a>
+2003-12-10 14:27 Igor Melichev</strong> (<a href="Details8.htm#2003-12-10_1427">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 7.
+
+</pre>
+<p>[src/gxfill.c 1.62, src/gxpflat.c 1.17, src/gzpath.h 1.17]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-10_1423"></a>
+2003-12-10 14:23 Igor Melichev</strong> (<a href="Details8.htm#2003-12-10_1423">details</a>)</p>
+<blockquote>
+<pre>
+Fix: A prototype for memcpy was missed.
+
+</pre>
+<p>[src/gxpflat.c 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-10_1341"></a>
+2003-12-10 13:41 Igor Melichev</strong> (<a href="Details8.htm#2003-12-10_1341">details</a>)</p>
+<blockquote>
+<pre>
+Simplify the filtering of points while flattening a curve.
+
+</pre>
+<p>[src/gxpflat.c 1.15]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_2118"></a>
+2003-12-09 21:18 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add the new stdint_.h compatibitily header to the file roadmap.</pre>
+<p>[doc/Develop.htm 1.128]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_2117"></a>
+2003-12-09 21:17 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Add a new compatibility header, stdint_.h. All the code previously in std.h and stdpre.h that
+tried to make these types universally available has been moved to the new compatibility header
+as per policy.</pre>
+<p>[src/lib.mak 1.157, src/sjbig2.c 1.5, src/sjbig2.h 1.4, src/std.h 1.11, src/stdint_.h 1.1, src/stdpre.h 1.22, src/ttfsfnt.h 1.6]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_2111"></a>
+2003-12-09 21:11 Ralph Giles</strong></p>
+<blockquote>
+<pre>
+Bump version numbers after the 8.12 release.</pre>
+<p>[doc/News.htm 1.139, lib/gs_init.ps 1.102, src/gscdef.c 1.40, src/version.mak 1.68]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_1725"></a>
+2003-12-09 17:25 Igor Melichev</strong> (<a href="Details8.htm#2003-12-09_1725">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 6.
+
+</pre>
+<p>[src/gxfill.c 1.61, src/gxpflat.c 1.14, src/gzpath.h 1.16]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_1723"></a>
+2003-12-09 17:23 Igor Melichev</strong> (<a href="Details8.htm#2003-12-09_1723">details</a>)</p>
+<blockquote>
+<pre>
+Generalize the trapezoid filling algorithm for curves, step 5.
+
+</pre>
+<p>[src/gx.h 1.21, src/gxfdrop.c 1.8, src/gxfill.c 1.60, src/gxfill.h 1.7, src/gxpflat.c 1.13, src/gzpath.h 1.15, src/lib.mak 1.156]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_1721"></a>
+2003-12-09 17:21 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+Unwinding the last patch because it was committed with a wrong log message.</pre>
+<p>[src/gx.h 1.20, src/gxfdrop.c 1.7, src/gxfill.c 1.59, src/gxfill.h 1.6, src/gxpflat.c 1.12, src/gzpath.h 1.14]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_1648"></a>
+2003-12-09 16:48 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ERRONEUS COMMITMENT - do not use this revision.</pre>
+<p>[src/lib.mak 1.155]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_1642"></a>
+2003-12-09 16:42 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ERRONEUS COMMITMENT - do not use this revision.</pre>
+<p>[src/lib.mak 1.154]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_1612"></a>
+2003-12-09 16:12 Igor Melichev</strong></p>
+<blockquote>
+<pre>
+ERRONEUS COMMITMENT - do not use this revision.</pre>
+<p>[src/gx.h 1.19, src/gxfdrop.c 1.6, src/gxfill.c 1.58, src/gxfill.h 1.5, src/gxpflat.c 1.11, src/gzpath.h 1.13, src/lib.mak 1.153]</p>
+</blockquote>
+
+<p><strong><a name="2003-12-09_1559"></a>
+2003-12-09 15:59 Igor Melichev</strong> (<a href="Details8.htm#2003-12-09_1559">details</a>)</p>
+<blockquote>
+<pre>
+Fix (pdfwrite) : Type 1,2 composite glyphs could point to wrong subglyphs.
+
+</pre>
+<p>[src/gsfont.c 1.28, src/gxfcache.h 1.22, src/gxfcopy.c 1.39, src/lib.mak 1.152, src/zfont.c 1.10]</p>
+</blockquote>
+
+<hr>
 
 <h2><a name="Version8.12"></a>Version 8.12 (2003-12-08)</h2>
 
