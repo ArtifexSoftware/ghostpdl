@@ -1407,7 +1407,7 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
        based on fn_is_monotonic_proc_t is_monotonic, 
        which applies to intervals. */
     patch_interpolate_color(&c, c0, c1, pfs, 0.5);
-    if (ytop - ybot < pfs->fixed_flat && pfs->unlinear) /* Prevent an infinite color decomposition. */
+    if (ytop - ybot < fixed_1 / 2) /* Prevent an infinite color decomposition. */
 	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
     else {  
 	bool monotonic_color_save = pfs->monotonic_color;
