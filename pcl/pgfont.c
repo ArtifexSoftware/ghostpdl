@@ -71,8 +71,11 @@ private int
 hpgl_arc_char_width(const pl_font_t *plfont, const void *pgs, uint uni_code, gs_point *pwidth)
 {	
     /* NB need an interface function call to verify the character exists */
-    if ( (uni_code >= 0x20)  && (uni_code <= 0xff) )
-	pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_ARC_FONT);
+    if ( (uni_code >= 0x20)  && (uni_code <= 0xff) ) {
+        pwidth->x = hpgl_stick_arc_width(uni_code, HPGL_ARC_FONT)
+	  / 1024.0  /* convert to ratio of cell size to be multiplied by point size */
+	  * 0.667;   /* TRM 23-18 cell is 2/3 of point size */
+    }      
     else
 	/* doesn't exist */
 	return 1;
@@ -106,12 +109,13 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 
     /* we assert the font is present at this point */
     width = hpgl_stick_arc_width(uni_code, font_type);
+
     /* *** incorrect comment The TRM says the stick font is based on a
        32x32 unit cell, */
     /* but the font we're using here is only 15x15. */
     /* Also, per TRM 23-18, the character cell is only 2/3 the */
     /* point size. */
-    gs_setcharwidth(penum, pgs, width / 1024.0 * .667, 0.0);
+    gs_setcharwidth(penum, pgs, width / 1024.0 * 0.667, 0.0);
     gs_currentmatrix(pgs, &save_ctm);
     gs_scale(pgs, 1.0 / 1024.0 * .667, 1.0 / 1024.0 * .667);
 #undef scale
