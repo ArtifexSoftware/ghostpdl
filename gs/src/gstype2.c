@@ -118,6 +118,7 @@ type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
     return 0;
 }
 
+#if !NEW_TYPE1_HINTER
 /* Enable only the hints selected by a mask. */
 private void
 enable_hints(stem_hint_table * psht, const byte * mask)
@@ -133,6 +134,7 @@ enable_hints(stem_hint_table * psht, const byte * mask)
 		  fixed2float(ph->v1), fixed2float(ph->dv1));
     }
 }
+#endif
 
 /* ------ Main interpreter ------ */
 

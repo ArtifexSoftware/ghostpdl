@@ -20,10 +20,10 @@
 #ifndef gxhintn_INCLUDED
 #  define gxhintn_INCLUDED
 
-#ifndef gs_type1_data_s_DEFINED
-struct gs_type1_data_s;
-#endif
+#ifndef gs_type1_data_DEFINED
+#define gs_type1_data_DEFINED
 typedef struct gs_type1_data_s gs_type1_data;
+#endif
 
 #define T1_MAX_STEM_SNAPS 12
 #define T1_MAX_ALIGNMENT_ZONES 6
@@ -75,7 +75,7 @@ typedef struct t1_hint_s
 {   enum t1_hint_type type;
     t1_glyph_space_coord g0, g1; /* starting and ending transversal coord of the stem */
     t1_glyph_space_coord ag0, ag1; /* starting and ending transversal aligned coord of the stem */
-    enum t1_alignment_type aligned0, aligned1; /* ag0, ag1 is aligned */
+    enum t1_align_type aligned0, aligned1; /* ag0, ag1 is aligned */
     short start_pole; /* outline pole to search for stem the stem from */
     short beg_pole, end_pole; /* outline interval of the stem */
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */

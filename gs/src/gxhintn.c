@@ -615,7 +615,7 @@ private int t1_hinter__set_alignment_zones(t1_hinter * this, float * blues, int 
     if (!family) {
         /* Store zones : */
         if (count2 + this->zone_count >= this->max_zone_count)
-	    if(t1_hinter__realloc_array(this->memory, &this->zone, this->zone0, &this->max_zone_count, 
+	    if(t1_hinter__realloc_array(this->memory, (void **)&this->zone, this->zone0, &this->max_zone_count, 
 	                                sizeof(this->zone0) / count_of(this->zone0), T1_MAX_ALIGNMENT_ZONES, s_zone_array))
     		return_error(gs_error_VMerror);
         for (i = 0; i < count2; i++)
@@ -709,7 +709,7 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
 
 private inline int t1_hinter__can_add_pole(t1_hinter * this, t1_pole **pole)
 {   if (this->pole_count >= T1_MAX_POLES)
-        if(t1_hinter__realloc_array(this->memory, &this->pole, this->pole0, &this->max_pole_count, 
+        if(t1_hinter__realloc_array(this->memory, (void **)&this->pole, this->pole0, &this->max_pole_count, 
 				    sizeof(this->pole0) / count_of(this->pole0), T1_MAX_POLES, s_pole_array))
 	    return_error(gs_error_VMerror);
     *pole = &this->pole[this->pole_count];
@@ -837,7 +837,7 @@ int t1_hinter__closepath(t1_hinter * this)
     }
     this->contour_count++;
     if (this->contour_count >= this->max_contour_count)
-        if(t1_hinter__realloc_array(this->memory, &this->contour, this->contour0, &this->max_contour_count, 
+        if(t1_hinter__realloc_array(this->memory, (void **)&this->contour, this->contour0, &this->max_contour_count, 
 				    sizeof(this->contour0) / count_of(this->contour0), T1_MAX_CONTOURS, s_contour_array))
 	    return_error(gs_error_VMerror);
     this->contour[this->contour_count] = this->pole_count;
@@ -846,7 +846,7 @@ int t1_hinter__closepath(t1_hinter * this)
 
 private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
 {   if (this->hint_count >= this->max_hint_count)
-        if(t1_hinter__realloc_array(this->memory, &this->hint, this->hint0, &this->max_hint_count, 
+        if(t1_hinter__realloc_array(this->memory, (void **)&this->hint, this->hint0, &this->max_hint_count, 
 				    sizeof(this->hint0) / count_of(this->hint0), T1_MAX_HINTS, s_hint_array))
 	    return_error(gs_error_VMerror);
     *hint = &this->hint[this->hint_count];
@@ -855,7 +855,7 @@ private inline int t1_hinter__can_add_hint(t1_hinter * this, t1_hint **hint)
 
 private inline int t1_hinter__can_add_hint_range(t1_hinter * this, t1_hint_range **hint_range)
 {   if (this->hint_range_count >= this->max_hint_range_count)
-        if(t1_hinter__realloc_array(this->memory, &this->hint_range, this->hint_range0, &this->max_hint_range_count, 
+        if(t1_hinter__realloc_array(this->memory, (void **)&this->hint_range, this->hint_range0, &this->max_hint_range_count, 
 				    sizeof(this->hint_range0) / count_of(this->hint_range0), T1_MAX_HINTS, s_hint_range_array))
 	    return_error(gs_error_VMerror);
     *hint_range = &this->hint_range[this->hint_range_count];
@@ -1022,15 +1022,16 @@ private void t1_hinter__simplify_representation(t1_hinter * this)
     /* Remove hints which are disabled with !grid_fit_x, !grid_fit_y.
      * We can't do before import is completed due to hint mask commands.
      */
-    if (!this->grid_fit_x || !this->grid_fit_y)
+    if (!this->grid_fit_x || !this->grid_fit_y) {
 	for (i = j = 0; i < this->contour_count; i++)
 	    if ((this->hint[i].type == vstem && !this->grid_fit_x) ||
-		(this->hint[i].type == hstem && !this->grid_fit_y))
+		(this->hint[i].type == hstem && !this->grid_fit_y)) {
 		continue; /* skip it. */
-	    else {
+	    } else {
 		this->hint[j] = this->hint[i];
 		j++;
 	    }
+    }
     if (this->FontType == 1) {
 	/*  After the decoding, hint commands refer to the last pole before HR occures.
 	    Move pointers to the beginning segment pole, so as they
@@ -1683,7 +1684,7 @@ private void t1_hinter__interpolate_other_poles(t1_hinter * this)
     for (k = 0; k<2; k++) { /* X, Y */
         t1_glyph_space_coord *p_gc = (!k ? &this->pole[0].gx : &this->pole[0].gy);
         t1_glyph_space_coord *p_ac = (!k ? &this->pole[0].ax : &this->pole[0].ay);
-        bool *p_f = (!k ? &this->pole[0].aligned_x : &this->pole[0].aligned_y);
+        enum t1_align_type *p_f = (!k ? &this->pole[0].aligned_x : &this->pole[0].aligned_y);
         int offset_gc = (char *)p_gc - (char *)&this->pole[0];
         int offset_ac = (char *)p_ac - (char *)&this->pole[0];
         int offset_f  = (char *)p_f -  (char *)&this->pole[0];
