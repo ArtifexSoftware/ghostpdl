@@ -493,10 +493,38 @@ far they haven't been.
 <h3><a name="TIFF"></a>TIFF file formats</h3>
 
 <p>
-There are two unrelated sets of TIFF drivers: <b><tt>tiff12nc</tt></b> and
-<b><tt>tiff24nc</tt></b>, which produce uncompressed color output, and all
-the other <b><tt>tiff*</tt></b> drivers, which produce black-and-white
-output with different compression modes.
+There are two unrelated sets of TIFF drivers.  There are two color TIFF
+drivers that produce uncompressed output:
+
+<blockquote>
+<dl>
+<dt><b><tt>tiff12nc</tt></b>
+<dd>Produces 12-bit RGB output (4 bits per component).
+<dt><b><tt>tiff24nc</tt></b>
+<dd>Produces 24-bit RGB output (8 bits per component).
+</dl>
+</blockquote>
+
+<p>
+The remaining TIFF drivers all produce black-and-white output with different
+compression modes:
+
+<blockquote>
+<dl>
+<dt><b><tt>tiffcrle</tt></b>
+<dd>G3 fax encoding with no EOLs
+<dt><b><tt>tiffg3</tt></b>
+<dd>G3 fax encoding with EOLs
+<dt><b><tt>tiffg32d</tt></b>
+<dd>2-D G3 fax encoding
+<dt><b><tt>tiffg4</tt></b>
+<dd>G4 fax encoding
+<dt><b><tt>tifflzw</tt></b>
+<dd>LZW-compatible (tag = 5) compression
+<dt><b><tt>tiffpack</tt></b>
+<dd>PackBits (tag = 32773) compression
+</dl>
+</blockquote>
 
 <p>
 The black-and-white TIFF drivers support creation of files that are
