@@ -818,7 +818,7 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
 	    int code = gs_closedevice(pdev);
 	    
 	    if (code < 0)
-		eprintf2("ERROR %d closing the device.\n", code, i_ctx_p->pgs->device->dname);
+		eprintf2("ERROR %d closing the device. See gs/src/errors.h for code explanation.\n", code, i_ctx_p->pgs->device->dname);
 	    if (exit_status == 0)
 		exit_status = code;
 	}
