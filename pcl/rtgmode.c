@@ -296,22 +296,18 @@ pcl_enter_graphics_mode(
 	gs_matrix mat;
 	gs_rect page_bbox;
 	gs_rect rast_bbox;
-	gs_point rast_p;
-	gs_point rast_q;
 	gs_point initial_pt;
 	
 	code = pcl_current_bounding_box(pcs, &page_bbox);
 	if ( code < 0 )
 	    return code; /* a shouldn't happen */
 	/* get the bounding box for the raster and convert the box to
-           device space and check if the two rectangles overlap */
-	rast_bbox.p.x = cur_pt.x;
-	rast_bbox.p.y = cur_pt.y;
-	rast_bbox.q.x = cur_pt.x + src_wid;
-	rast_bbox.q.y = cur_pt.y + src_hgt;
-	gs_bbox_transform(&rast_bbox, &rst2dev, &rast_bbox);
-	rect_intersect(rast_bbox, page_bbox);
-	if ((rast_bbox.p.x >= rast_bbox.q.x) || (rast_bbox.p.y >= rast_bbox.q.y))
+           device space and check if the two rectangles overlap.  */
+	print_rect.q.x = print_rect.p.x + src_wid;
+	print_rect.q.y = print_rect.p.y + src_hgt;
+	gs_bbox_transform(&print_rect, &rst2dev, &print_rect);
+	rect_intersect(print_rect, page_bbox);
+	if ((print_rect.p.x >= print_rect.q.x) || (print_rect.p.y >= print_rect.q.y))
 	    marked = false;
     }
     if ((code = pcl_start_raster(src_wid, src_hgt, marked, pcs)) >= 0)
