@@ -182,9 +182,6 @@ int pdf_put_image_filters(cos_dict_t *pcd, gx_device_pdf *pdev,
 
 /* ------ Image writing ------ */
 
-/* Define the maximum size of an in-line image. */
-#define MAX_INLINE_IMAGE_BYTES 4000
-
 /*
  * Fill in the image parameters for a device space bitmap.
  * PDF images are always specified top-to-bottom.
@@ -275,14 +272,15 @@ int pdf_store_pattern1_params(gx_device_pdf *pdev, pdf_resource_t *pres,
 
 /* Write a colored Pattern color. */
 int pdf_put_colored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
+			const gs_color_space *pcs,
 			const psdf_set_color_commands_t *ppscc,
-			pdf_resource_t **ppres);
+			bool have_pattern_streams, pdf_resource_t **ppres);
 
 /* Write an uncolored Pattern color. */
 int pdf_put_uncolored_pattern(gx_device_pdf *pdev, const gx_drawing_color *pdc,
 			  const gs_color_space *pcs,
 			  const psdf_set_color_commands_t *ppscc,
-			  pdf_resource_t **ppres);
+			  bool have_pattern_streams, pdf_resource_t **ppres);
 
 /* Write a PatternType 2 (shading pattern) color. */
 int pdf_put_pattern2(gx_device_pdf *pdev, const gx_drawing_color *pdc,

@@ -378,7 +378,8 @@ struct gx_device_pdf_s {
     bool ReAssignCharacters;
     bool ReEncodeCharacters;
     long FirstObjectNumber;
-    bool CompressFonts;
+    bool CompressFonts; 
+    long MaxInlineImageSize;
     /* End of parameters */
     /* Values derived from DSC comments */
     bool is_EPS;
