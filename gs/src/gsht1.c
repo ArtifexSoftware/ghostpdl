@@ -568,7 +568,7 @@ process_client_order(gx_ht_order * porder, gs_state * pgs,
 			    &phcop->transfer_closure, mem);
 }
 
-private const gx_ht_order_procs_t wts_order_procs = {
+private const gx_ht_order_procs_t wts_order_procs = { 0
 };
 
 /**
