@@ -583,9 +583,13 @@ end readonly def
  { dup /Page exch store
    pdfshowpage_init 
    pdfshowpage_setpage 
-   save /PDFSave exch store
+   dup save /PDFSave exch store
+   /PDFdictstackcount countdictstack store
    (before exec) VMDEBUG
      pdfshowpage_finish
+   % Some PDF files don't have matching q/Q (gsave/grestore) so we need
+   % to clean up any left over dicts from the dictstack
+   countdictstack PDFdictstackcount sub { end } repeat
    (after exec) VMDEBUG
    PDFSave restore
  } bind def
