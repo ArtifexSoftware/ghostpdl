@@ -259,23 +259,23 @@ patch_fill(const patch_fill_state_t * pfs, const patch_curve_t curve[4],
 	   const gs_fixed_point interior[4],
 	   void (*transform) (P5(gs_fixed_point *, const patch_curve_t[4],
 				 const gs_fixed_point[4], floatp, floatp)))
-{				/*
-				 * The specification says the output must appear to be produced in
-				 * order of increasing values of v, and for equal v, in order of
-				 * increasing u.  However, all we actually have to do is follow this
-				 * order with respect to sub-patches that might overlap, which can
-				 * only occur as a result of non-monotonic curves; we can render
-				 * each monotonic sub-patch in any order we want.  Therefore, we
-				 * begin by breaking up the patch into pieces that are monotonic
-				 * with respect to all 4 edges.  Since each edge has no more than
-				 * 2 X and 2 Y split points (for a total of 4), taking both edges
-				 * together we have a maximum of 8 split points for each axis.
-				 *
-				 * The current documentation doesn't say how the 4 curves
-				 * correspond to the 'u' or 'v' edges.  Pending clarification from
-				 * Adobe, we assume the 1st and 3rd are the 'u' edges and the
-				 * 2nd and 4th are the 'v' edges.
-				 */
+{	/*
+	 * The specification says the output must appear to be produced in
+	 * order of increasing values of v, and for equal v, in order of
+	 * increasing u.  However, all we actually have to do is follow this
+	 * order with respect to sub-patches that might overlap, which can
+	 * only occur as a result of non-monotonic curves; we can render
+	 * each monotonic sub-patch in any order we want.  Therefore, we
+	 * begin by breaking up the patch into pieces that are monotonic
+	 * with respect to all 4 edges.  Since each edge has no more than
+	 * 2 X and 2 Y split points (for a total of 4), taking both edges
+	 * together we have a maximum of 8 split points for each axis.
+	 *
+	 * The current documentation doesn't say how the 4 curves
+	 * correspond to the 'u' or 'v' edges.  Pending clarification from
+	 * Adobe, we assume the 1st and 3rd are the 'u' edges and the
+	 * 2nd and 4th are the 'v' edges.
+	 */
     double u[9], v[9];
     int nu = split2_xy(u, &curve[0], &curve[1].vertex.p,
 		       &curve[2], &curve[3].vertex.p);

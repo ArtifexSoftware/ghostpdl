@@ -241,7 +241,7 @@ private void
 rc_free_imager_shared(gs_memory_t * mem, void *data, client_name_t cname)
 {
     gs_imager_state_shared_t * const shared =
-	((gs_imager_state *)data)->shared;
+	(gs_imager_state_shared_t *)data;
 
     if (shared->cs_DeviceCMYK) {
 	gs_cspace_release(shared->cs_DeviceCMYK);

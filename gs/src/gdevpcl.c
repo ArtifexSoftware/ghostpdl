@@ -52,7 +52,7 @@ gx_color_index
 gdev_pcl_3bit_map_rgb_color(gx_device * dev,
 		       gx_color_value r, gx_color_value g, gx_color_value b)
 {
-    return (((b >> cv_shift) << 2) + ((g >> cv_shift) << 1) + (r >> cv_shift));
+    return (((b >> cv_shift) << 2) + ((g >> cv_shift) << 1) + (r >> cv_shift)) ^ 7;
 }
 
 /* Map the printer color back to RGB. */
@@ -60,7 +60,7 @@ int
 gdev_pcl_3bit_map_color_rgb(gx_device * dev, gx_color_index color,
 			    gx_color_value prgb[3])
 {
-    ushort cc = (ushort) color;
+    ushort cc = (ushort) color ^ 7;
 
     prgb[0] = -(cc & 1);
     prgb[1] = -((cc >> 1) & 1);

@@ -211,6 +211,7 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
 {
     gs_matrix imat;
     ulong max_size = pgs->ht_cache->bits_size;
+    uint num_levels;
     int code;
 
     if (phsp->frequency < 0.1)
@@ -222,8 +223,12 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
     if (code < 0)
 	return code;
     gx_compute_cell_values(&porder->params);
+    num_levels = porder->params.W * porder->params.D;
 #if !FORCE_STRIP_HALFTONES
-    if (porder->params.W1 <= max_size / bitmap_raster(porder->params.W)) {
+    if (((ulong)porder->params.W1 * bitmap_raster(porder->params.W) +
+	 num_levels * sizeof(*porder->levels) +
+	 porder->params.W * porder->params.W1 * sizeof(*porder->bits)) <=
+	max_size) {
 	/*
 	 * Allocate an order for the entire tile, but only sample one
 	 * strip.  Note that this causes the order parameters to be
@@ -232,17 +237,15 @@ gs_screen_order_init_memory(gx_ht_order * porder, const gs_state * pgs,
 	 */
 	code = gx_ht_alloc_order(porder, porder->params.W,
 				 porder->params.W1, 0,
-				 porder->params.W * porder->params.D,
-				 mem);
+				 num_levels, mem);
 	porder->height = porder->orig_height = porder->params.D;
 	porder->shift = porder->orig_shift = porder->params.S;
     } else
 #endif
-    {				/* Just allocate the order for a single strip. */
+    {	/* Just allocate the order for a single strip. */
 	code = gx_ht_alloc_order(porder, porder->params.W,
 				 porder->params.D, porder->params.S,
-				 porder->params.W * porder->params.D,
-				 mem);
+				 num_levels, mem);
     }
     if (code < 0)
 	return code;

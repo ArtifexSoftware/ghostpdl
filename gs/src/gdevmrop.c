@@ -463,13 +463,15 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 	(lop & lop_S_transparent ? all_ones : gx_no_color_index);
     gx_color_index ttrans =
 	(lop & lop_T_transparent ? all_ones : gx_no_color_index);
+    gx_color_index black = gx_device_black(dev);
+    gx_color_index white = gx_device_white(dev);
 
     /* Check for constant source. */
     if (scolors != 0 && scolors[0] == scolors[1]) {	/* Constant source */
 	const_source = scolors[0];
-	if (const_source == 0)
+	if (const_source == black)
 	    rop = rop3_know_S_0(rop);
-	else if (const_source == all_ones)
+	else if (const_source == white)
 	    rop = rop3_know_S_1(rop);
     } else if (!rop3_uses_S(rop))
 	const_source = 0;	/* arbitrary */
@@ -477,13 +479,16 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
     /* Check for constant texture. */
     if (tcolors != 0 && tcolors[0] == tcolors[1]) {	/* Constant texture */
 	const_texture = tcolors[0];
-	if (const_texture == 0)
+	if (const_texture == black)
 	    rop = rop3_know_T_0(rop);
-	else if (const_texture == all_ones)
+	else if (const_texture == white)
 	    rop = rop3_know_T_1(rop);
     } else if (!rop3_uses_T(rop))
 	const_texture = 0;	/* arbitrary */
-    if (bpp == 1 && gx_device_has_color(dev)) {
+
+    if (bpp == 1 &&
+	(black != 0 || white != all_ones || gx_device_has_color(dev))
+	) {
 	/*
 	 * This is an 8-bit device but not gray-scale.  Except in a few
 	 * simple cases, we have to use the slow algorithm that converts
@@ -493,10 +498,10 @@ mem_gray8_rgb24_strip_copy_rop(gx_device * dev,
 
 	switch (rop) {
 	case rop3_0:
-	    bw_pixel = gx_device_black(dev);
+	    bw_pixel = black;
 	    goto bw;
 	case rop3_1:
-	    bw_pixel = gx_device_white(dev);
+	    bw_pixel = white;
 bw:	    switch (bw_pixel) {
 	    case 0x00:
 		rop = rop3_0;
@@ -525,6 +530,7 @@ df:	    return gx_default_strip_copy_rop(dev,
 				phase_x, phase_y, lop);
 	}
     }
+
     /* Adjust coordinates to be in bounds. */
     if (const_source == gx_no_color_index) {
 	fit_copy(dev, sdata, sourcex, sraster, id,

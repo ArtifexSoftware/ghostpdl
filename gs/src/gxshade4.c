@@ -138,6 +138,7 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
 #undef midpoint_fast
 	gs_client_color rcc[5];
 	int i;
+	int code;
 
 	for (i = 0; i < pfs->num_components; ++i) {
 	    float
@@ -150,16 +151,21 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
 	}
 	/* Do the "A" triangle. */
 	rcc[0].paint = cc[0].paint;	/* rcc: a,ab,ac,bc,- */
-	mesh_fill_region(pfs, xa, ya, xab, yab, xac, yac, rcc, check);
+	code = mesh_fill_region(pfs, xa, ya, xab, yab, xac, yac, rcc, check);
+	if (code < 0)
+	    return code;
 	/* Do the central triangle. */
-	mesh_fill_region(pfs, xab, yab, xac, yac, xbc, ybc, rcc + 1, check);
+	code = mesh_fill_region(pfs, xab, yab, xac, yac, xbc, ybc, rcc + 1, check);
+	if (code < 0)
+	    return code;
 	/* Do the "C" triangle. */
 	rcc[4].paint = cc[2].paint;	/* rcc: a,ab,ac,bc,c */
-	mesh_fill_region(pfs, xac, yac, xbc, ybc, xc, yc, rcc + 2, check);
+	code = mesh_fill_region(pfs, xac, yac, xbc, ybc, xc, yc, rcc + 2, check);
+	if (code < 0)
+	    return code;
 	/* Do the "B" triangle. */
 	rcc[2].paint = cc[1].paint;	/* rcc: a,ab,b,bc,c */
-	mesh_fill_region(pfs, xab, yab, xb, yb, xbc, ybc, rcc + 1, check);
-	return 0;
+	return mesh_fill_region(pfs, xab, yab, xb, yb, xbc, ybc, rcc + 1, check);
     }
 }
 
@@ -187,7 +193,7 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 
     if (code >= 0 && psh->params.Function) {
 	/* Decode the color with the function. */
-	gs_function_evaluate(psh->params.Function, vertex->cc, vertex->cc);
+	code = gs_function_evaluate(psh->params.Function, vertex->cc, vertex->cc);
     }
     return code;
 }

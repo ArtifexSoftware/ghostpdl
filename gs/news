@@ -29,6 +29,45 @@ Procedures, Utilities, Drivers, Platforms, Fonts, Interpreter, Streams
 (included under Interpreter through release 2.9.9), Library.  Changes marked
 with a * were made available as patches to a previous release.
 
+Version 5.39(beta) (9/8/98)
+===========================
+
+Another rushed fileset produced primarily to fix problems for a project
+unrelated to Aladdin's principal interests.
+
+Drivers
+-------
+
+Fixes problems:
+	- The pkm[raw] drivers didn't work with 32-bit pixels.  (gdevpbm.c)
+
+Adds (fake) 8-, 16-, and 32-bit X11 CMYK devices, for debugging.
+Unfortunately, none of them work.  The 16- and 32-bit devices consume the
+hardware color map and then no longer behave reasonably; the 8-bit device
+produces output with completely garbled colors, we don't know why.
+(devs.mak, gdevxalt.c)
+
+Library
+-------
+
+Fixes bugs:
+	- All banded devices caused a memory access error.  (bug introduced
+in 5.38)  (gsstate.c)
+	- The special color mapping device didn't update its state after
+put_params.  (gdevcmap.c)
+	- RasterOp on 8-bit non-gray-scale devices didn't handle filling
+with constant 0 or 1 properly.  (gdevmrop.c)
+	- The halftone machinery didn't switch from full-size to strip
+halftones early enough, possibly allocating very large halftone data
+structures.  (gshtscr.c)
+	- If an ioerror (such as a disk- or memory-full condition) occurred
+while writing out the band list, the bookkeeping structures were left in an
+inconsistent state, causing further problems.  (gxclutil.c)
+	- Some shaded fills didn't check for errors when filling
+sub-regions.  (gxshade1.c, gxshade4.c)
+
+Cleans up some formatting.  (gxshade6.c)
+
 Version 5.38(beta) (9/3/98)
 ===========================
 

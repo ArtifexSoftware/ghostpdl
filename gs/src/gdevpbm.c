@@ -421,7 +421,7 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
 		{1, 2, 0, 4, 0, 0, 0, 8, 0, 0, 0, 0, 0, 0, 0, 16},
 		{0},
 		{4, 8, 0, 16, 16, 0, 0, 24},
-		{4, 8, 0, 16, 0, 0, 0, 24},
+		{4, 8, 0, 16, 0, 0, 0, 32},
 	    };
 
 	    pdev->color_info.depth = depths[ncomps - 1][bpc - 1];

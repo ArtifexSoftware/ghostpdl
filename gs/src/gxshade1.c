@@ -175,6 +175,7 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	gs_client_color cc[4];
 	gs_function_t *pfn = psh->params.Function;
 	float v[2];
+	int code;
 
 	if (y1 - y0 > x1 - x0) {
 	    /* Subdivide in Y. */
@@ -183,14 +184,18 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	    if_debug1('|', "[|]dividing at y=%g\n", ym);
 	    v[1] = ym;
 	    v[0] = x0;
-	    gs_function_evaluate(pfn, v, cc[0].paint.values);
+	    code = gs_function_evaluate(pfn, v, cc[0].paint.values);
+	    if (code < 0)
+		return code;
 	    v[0] = x1;
-	    gs_function_evaluate(pfn, v, cc[1].paint.values);
+	    code = gs_function_evaluate(pfn, v, cc[1].paint.values);
+	    if (code < 0)
+		return code;
 	    cc[2].paint = pfs->cc[2].paint;
 	    cc[3].paint = pfs->cc[3].paint;
 	    pfs->cc[2].paint = cc[0].paint;
 	    pfs->cc[3].paint = cc[1].paint;
-	    Fb_fill_region(pfs, x0, y0, x1, ym);
+	    code = Fb_fill_region(pfs, x0, y0, x1, ym);
 	    y0 = ym;
 	} else {
 	    /* Subdivide in X. */
@@ -199,20 +204,26 @@ Fb_fill_region(Fb_fill_state_t * pfs, floatp x0, floatp y0, floatp x1,
 	    if_debug1('|', "[|]dividing at x=%g\n", xm);
 	    v[0] = xm;
 	    v[1] = y0;
-	    gs_function_evaluate(pfn, v, cc[0].paint.values);
+	    code = gs_function_evaluate(pfn, v, cc[0].paint.values);
+	    if (code < 0)
+		return code;
 	    v[1] = y1;
-	    gs_function_evaluate(pfn, v, cc[2].paint.values);
+	    code = gs_function_evaluate(pfn, v, cc[2].paint.values);
+	    if (code < 0)
+		return code;
 	    cc[1].paint = pfs->cc[1].paint;
 	    cc[3].paint = pfs->cc[3].paint;
 	    pfs->cc[1].paint = cc[0].paint;
 	    pfs->cc[3].paint = cc[2].paint;
-	    Fb_fill_region(pfs, x0, y0, xm, y1);
+	    code = Fb_fill_region(pfs, x0, y0, xm, y1);
 	    x0 = xm;
 	}
 	pfs->cc[0].paint = cc[0].paint;
 	pfs->cc[1].paint = cc[1].paint;
 	pfs->cc[2].paint = cc[2].paint;
 	pfs->cc[3].paint = cc[3].paint;
+	if (code < 0)
+	    return code;
     }
     goto top;
 }

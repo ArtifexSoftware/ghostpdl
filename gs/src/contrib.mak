@@ -455,17 +455,6 @@ paintjet.dev: $(PJET) page.dev
 pjetxl.dev: $(PJET) page.dev
 	$(SETPDEV) pjetxl $(PJET)
 
-### ---------------- The H-P Color LaserJet 5/5M device ----------------- ###
-### Elementary drive to output to the HP Color LaserJet 5/5M              ###
-
-CLJET   = $(GLOBJ)gdevclj.$(OBJ) $(HPPCL)
-
-$(GLOBJ)gdevclj.$(OBJ): $(GLSRC)gdevclj.c $(math__h) $(PDEVH) $(gdevpcl_h)
-	$(GLCC) $(GLO_)gdevclj.$(OBJ) $(C_) $(GLSRC)gdevclj.c
-
-cljet.dev: $(CLJET) page.dev
-	$(SETPDEV) cljet $(CLJET)
-
 ###--------------------- The Brother HL 7x0 printer --------------------- ### 
 ###                    This driver was contributed by a user :            ###
 ###  Please contact Pierre-Olivier Gaillard (pierre.gaillard@hol.fr)      ###

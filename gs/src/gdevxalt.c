@@ -32,7 +32,7 @@ extern gx_device_X gs_x11_device;
 /*
  * Define a forwarding device with a cache for the first 16 colors,
  * which avoids all of the time-consuming color mapping calls for
- * the black-and-white, 2-bit gray, and CMYK devices defined here.
+ * the black-and-white, 2-bit gray, and 1-bit CMYK devices defined here.
  */
 typedef struct {
     gx_device_forward_common;
@@ -428,15 +428,22 @@ x_alt_map_color(gx_device * dev, gx_color_index color)
 	case 3:		/* RGB, this is the real thing (possibly + alpha) */
 	    return color & 0xffffff;
 	case 4:		/* CMYK */
-	    if (color & 1)
-		r = g = b = 0;
-	    else {
-		r = (color & 8 ? 0 : gx_max_color_value);
-		g = (color & 4 ? 0 : gx_max_color_value);
-		b = (color & 2 ? 0 : gx_max_color_value);
+	    {
+		int shift = dev->color_info.depth >> 2;
+		int mask = (1 << shift) - 1;
+		/* The following division is guaranteed exact. */
+		gx_color_value scale = gx_max_color_value / mask;
+		int cw = ~color & mask;
+		int cb = cw - ((color >> shift) & mask);
+		int cg = cw - ((color >> (shift * 2)) & mask);
+		int cr = cw - ((color >> (shift * 3)) & mask);
+
+		r = max(cr, 0) * scale;
+		g = max(cg, 0) * scale;
+		b = max(cb, 0) * scale;
 	    }
 	    break;
-	default /*case 1 */ :
+	default /*case 1*/:
 	    if (dev->color_info.depth == 1) {	/* 0 = white, 1 = black */
 		r = g = b = (color ? 0 : gx_max_color_value);
 	    } else {
@@ -484,13 +491,36 @@ private const gx_device_procs x_cmyk_procs =
     NULL			/* copy_alpha */
 };
 
-/* The instance is public. */
-const gx_device_X_wrapper gs_x11cmyk_device =
-{
+/* The instances are public. */
+const gx_device_X_wrapper gs_x11cmyk_device = {
     std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk",
-			FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
-			FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-			4, 4, 1, 1, 2, 2),
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	4, 4, 1, 1, 2, 2),
+    {0},			/* std_procs */
+    0				/* target */
+};
+const gx_device_X_wrapper gs_x11cmyk2_device = {
+    std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk2",
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	4, 8, 3, 3, 4, 4),
+    {0},			/* std_procs */
+    0				/* target */
+};
+const gx_device_X_wrapper gs_x11cmyk4_device = {
+    std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk4",
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	4, 16, 15, 15, 16, 16),
+    {0},			/* std_procs */
+    0				/* target */
+};
+const gx_device_X_wrapper gs_x11cmyk8_device = {
+    std_device_dci_body(gx_device_X_wrapper, &x_cmyk_procs, "x11cmyk8",
+	FAKE_RES * 85 / 10, FAKE_RES * 11,	/* x and y extent (nominal) */
+	FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+	4, 32, 255, 255, 256, 256),
     {0},			/* std_procs */
     0				/* target */
 };
@@ -500,10 +530,10 @@ const gx_device_X_wrapper gs_x11cmyk_device =
 private gx_color_index
 x_cmyk_map_rgb_color(gx_device * dev,
 		     gx_color_value r, gx_color_value g, gx_color_value b)
-{				/*
-				 * Under normal circumstances, this is never called, but it may be
-				 * called from x_wrap_get_bits.
-				 */
+{	/*
+	 * Under normal circumstances, this is never called, but it may be
+	 * called from x_wrap_get_bits.
+	 */
     gx_color_value c = gx_max_color_value - r;
     gx_color_value m = gx_max_color_value - g;
     gx_color_value y = gx_max_color_value - b;
@@ -517,12 +547,12 @@ x_cmyk_map_cmyk_color(gx_device * dev,
 		      gx_color_value c, gx_color_value m, gx_color_value y,
 		      gx_color_value k)
 {
-    return
-	(gx_color_index)
-	(((c >> (gx_color_value_bits - 4)) & 8) |
-	 ((m >> (gx_color_value_bits - 3)) & 4) |
-	 ((y >> (gx_color_value_bits - 2)) & 2) |
-	 ((k >> (gx_color_value_bits - 1)) & 1));
+    int shift = dev->color_info.depth >> 2;
+    gx_color_index pixel = c >> (gx_color_value_bits - shift);
+
+    pixel = (pixel << shift) | (m >> (gx_color_value_bits - shift));
+    pixel = (pixel << shift) | (y >> (gx_color_value_bits - shift));
+    return (pixel << shift) | (k >> (gx_color_value_bits - shift));
 }
 
 /* ---------------- Black-and-white procedures ---------------- */

@@ -198,9 +198,11 @@ cmd_write_buffer(gx_device_clist_writer * cldev, byte cmd_end)
 	code = cmd_write_band(cldev, band, band, &pcls->list, cmd_end);
 	warning |= code;
     }
+    /* If an error occurred, finish cleaning up the pointers. */
+    for (; band < nbands; band++, pcls++)
+	pcls->list.head = pcls->list.tail = 0;
     cldev->cnext = cldev->cbuf;
     cldev->ccl = 0;
-    cldev->band_range_list.head = cldev->band_range_list.tail = 0;
 #ifdef DEBUG
     if (gs_debug_c('l'))
 	cmd_print_stats();
