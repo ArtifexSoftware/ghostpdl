@@ -390,7 +390,7 @@ pl_alloc_init(void)
 # endif
 
     if (gs_malloc_init(&local_memory_t_default))
-	return_error(e_VMerror);
+	return 0;
     return local_memory_t_default;
 #endif
 }
@@ -398,6 +398,11 @@ pl_alloc_init(void)
 #ifndef PSI_INCLUDED
 /* Define the default allocator. */
     
+# ifndef NO_WRAPPED_MEMORY_BIND
+gs_malloc_memory_t *gs_malloc_memory_default = &pl_malloc_memory;
+# endif
+
 gs_memory_t *gs_memory_t_default = &pl_mem;
+
 
 #endif
