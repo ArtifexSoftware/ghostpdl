@@ -939,6 +939,7 @@ end
    { ColorSpace setgcolorspace currentdict end setfillblend /image }
   ifelse
   .systemvar stopped {
+    pop
     $error /errorname get dup /ioerror eq {
       pop (\n   **** Warning: File has insufficient data for an image.\n)
       pdfformaterror
