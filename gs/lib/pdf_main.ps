@@ -798,7 +798,7 @@ end readonly def
   count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
-  PDFversion 1.4 lt NOTRANSPARENCY or {
+  PDFversion PDFtransparencyversion lt NOTRANSPARENCY or {
     showpagecontents
   } {
     dup pageusestransparency {
@@ -870,6 +870,11 @@ end readonly def
 
 % ------ Transparency support ------ %
 
+% Define minimum PDF version for checking for transparency features.
+% Transparency is a 1.4 feature however we have seen files that claimed
+% to be PDF 1.3 with transparency features.
+/PDFtransparencyversion 1.3 def
+
 % Determine whether a page might invoke any transparency features:
 %	- Non-default BM, ca, CA, or SMask in an ExtGState
 %	- Image XObject with SMask
@@ -879,7 +884,7 @@ end readonly def
 % Ignoring the presence of Group is justified because, in the absence
 % of any other transparency features, they have no effect.
 /pageusestransparency {		% <pagedict> pageusestransparency <bool>
-  PDFversion 1.4 lt NOTRANSPARENCY or {
+  PDFversion PDFtransparencyversion lt NOTRANSPARENCY or {
     pop false
   } {
     false exch {

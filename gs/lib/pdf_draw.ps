@@ -886,7 +886,7 @@ end
 /doimage {	% <imagemask> doimage -
 		% imagedict is currentdict, gets popped from dstack
   DataSource exch
-  PDFversion 1.4 ge NOTRANSPARENCY not and {
+  PDFversion PDFtransparencyversion ge NOTRANSPARENCY not and {
     currentdict /SMask knownoget
   } {
     false
