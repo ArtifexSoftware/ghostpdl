@@ -1502,7 +1502,16 @@ private int
 pdfmark_APPEND(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	       const gs_matrix * pctm, const gs_param_string * objname)
 {
-    return 0;			/****** NOT IMPLEMENTED YET ******/
+    cos_object_t *pco;
+    cos_value_t value;
+    int code;
+
+    if (count != 2)
+	return_error(gs_error_rangecheck);
+    if ((code = pdf_get_named(pdev, &pairs[0], cos_type_array, &pco)) < 0)
+	return code;
+    return cos_array_add((cos_array_t *)pco,
+		cos_string_value(&value, pairs[1].data, pairs[1].size));
 }
 
 /* [ {array} index value ... /.PUTINTERVAL pdfmark */
