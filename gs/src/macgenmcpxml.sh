@@ -129,6 +129,7 @@ WritePathSetting()
 WriteSETTINGLIST()
 {
     TARGETNAME=$1
+    OUTPUTNAME=$2
     
     echo "<SETTINGLIST>"
         
@@ -169,7 +170,7 @@ WriteSETTINGLIST()
         
 	echo "<!-- Settings for "PPC Project" panel -->"
 	WriteValueSetting MWProject_PPC_type SharedLibrary
-	WriteValueSetting MWProject_PPC_outfile "GhostscriptLib PPC"
+	WriteValueSetting MWProject_PPC_outfile "$OUTPUTNAME"
 	WriteValueSetting MWProject_PPC_filecreator 1061109567
 	WriteValueSetting MWProject_PPC_filetype 1936223330
 	WriteValueSetting MWProject_PPC_size 0
@@ -281,13 +282,14 @@ WriteSETTINGLIST()
 WriteTARGET()
 {
     TARGETNAME=$1
-    shift
+    OUTPUTNAME=$2
+    shift 2
     
     echo "<TARGET>"
         
         echo "<NAME>$TARGETNAME</NAME>"
         
-        WriteSETTINGLIST "$TARGETNAME"
+        WriteSETTINGLIST "$TARGETNAME" "$OUTPUTNAME"
         
         echo "<FILELIST>"
             for file in "$@"; do
@@ -357,20 +359,24 @@ CLASSICLIBS="$CLASSICLIBS TextCommon UnicodeConverter UTCUtils"
 # 
 #####
 
-CLASSICDEBUGTARGETNAME="GhostscriptLib PPC (Debug)"
-CLASSICFINALTARGETNAME="GhostscriptLib PPC (Final)"
-CARBONDEBUGTARGETNAME="GhostscriptLib Carbon (Debug)"
-CARBONFINALTARGETNAME="GhostscriptLib Carbon (Final)"
+GSNAME="GhostscriptLib"
+CLASSICGSNAME="$GSNAME PPC"
+CARBONGSNAME="$GSNAME Carbon"
+CLASSICDEBUGTARGETNAME="$CLASSICGSNAME (Debug)"
+CLASSICFINALTARGETNAME="$CLASSICGSNAME (Final)"
+CARBONDEBUGTARGETNAME="$CARBONGSNAME (Debug)"
+CARBONFINALTARGETNAME="$CARBONGSNAME (Final)"
+
+echo "target '$CLASSICDEBUGTARGETNAME' output '$CLASSICGSNAME'"
+echo "target '$CARBONDEBUGTARGETNAME' output '$CARBONGSNAME'"
 
 WriteXMLHeader
 
 echo "<PROJECT>"
     
     echo "<TARGETLIST>"
-    WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES $LIBS $CARBONLIBS
-#    WriteTARGET "$CARBONDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.Carbon.Lib" "CarbonLib"
-    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES $LIBS $CLASSICLIBS
-#    WriteTARGET "$CLASSICDEBUGTARGETNAME" $CFILES "console.stubs.c" "MSL ShLibRuntime.Lib" "MSL RuntimePPC.Lib" "MSL C.PPC.Lib" "InterfaceLib" "FontManager" "MathLib"
+    WriteTARGET "$CARBONDEBUGTARGETNAME" "$CARBONGSNAME" $CFILES $LIBS $CARBONLIBS
+    WriteTARGET "$CLASSICDEBUGTARGETNAME" "$CLASSICGSNAME" $CFILES $LIBS $CLASSICLIBS
     echo "</TARGETLIST>"
     
     echo "<TARGETORDER>"
