@@ -428,7 +428,7 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
     uint name_size;
     gs_devicen_color_map * pcolor_component_map
 	= &pgs->color_component_map;
-    const gx_device * dev = pgs->device;
+    gx_device * dev = pgs->device;
     const char none_str[] = "None";
     const uint none_size = strlen(none_str);
     bool non_match = false;

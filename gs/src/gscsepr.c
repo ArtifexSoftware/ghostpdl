@@ -419,7 +419,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs)
     uint name_size;
     gs_devicen_color_map * pcolor_component_map
 	= &pgs->color_component_map;
-    const gx_device * dev = pgs->device;
+    gx_device * dev = pgs->device;
 
     pcolor_component_map->num_components = 1;
     pcolor_component_map->cspace_id = pcs->id;
