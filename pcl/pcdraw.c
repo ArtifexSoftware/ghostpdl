@@ -165,3 +165,10 @@ pcl_init_gstate_stk(
     }
     pcs->pids = pids;
 }
+
+void
+pcl_free_gstate_stk(pcl_state_t *pcs)
+{
+    gs_free_object(pcs->memory, pcs->pids, "PCL grestore");
+}
+		    
