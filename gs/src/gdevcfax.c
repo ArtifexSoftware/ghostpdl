@@ -25,8 +25,18 @@
  
 /* The device descriptor */
 private dev_proc_print_page(cfax_print_page);
+private dev_proc_close_device(cfax_prn_close);
+
+/* Define procedures for cfax. For sff multipage documents  */
+/* a special close procedure is required because sff needs  */
+/* an additional "end of document" signature after the last */ 
+/* "end page" signature */
+private const gx_device_procs gdev_cfax_std_procs =
+    prn_params_procs(gdev_prn_open, gdev_prn_output_page, cfax_prn_close,
+		     gdev_fax_get_params, gdev_fax_put_params);
+
 const gx_device_fax gs_cfax_device = {
-    FAX_DEVICE_BODY(gx_device_fax, gdev_fax_std_procs, "cfax", cfax_print_page)
+    FAX_DEVICE_BODY(gx_device_fax, gdev_cfax_std_procs, "cfax", cfax_print_page)
 };
 
 /* ---------------- SFF output ----------------- */
@@ -93,66 +103,81 @@ cfax_doc_end(FILE * file)
 
 /* Send the page to the printer. */
 private int
-cfax_stream_print_page(gx_device_printer * pdev, FILE * prn_stream,
-		       const stream_template * temp, stream_state * ss)
+cfax_stream_print_page_width(gx_device_printer * pdev, FILE * prn_stream,
+			     const stream_template * temp, stream_state * ss, 
+               		     int width)
 {
-    gs_memory_t *mem = &gs_memory_default;
+    gs_memory_t *mem = pdev->memory;
+    int code = 0;
     stream_cursor_read r;
     stream_cursor_write w;
-    int in_size = gdev_mem_bytes_per_scan_line((gx_device *) pdev);
-    int code = 0, lnum, nbytes, i;
+    int in_size = gdev_prn_raster((gx_device *) pdev);
+    /*
+     * Because of the width adjustment for fax systems, width may
+     * be different from (either greater than or less than) pdev->width.
+     * Allocate a large enough buffer to account for this.
+     */
+    int col_size = (width * pdev->color_info.depth + 7) >> 3;
+    int max_size = max(in_size, col_size);
+    int lnum, nbytes, i;
     byte *in;
     byte *out;
-    byte *actual_data;
-
     /* If the file is 'nul', don't even do the writes. */
     bool nul = !strcmp(pdev->fname, "nul");
-
-#undef OUT_SIZE
-#define OUT_SIZE 1000
 
     /* Initialize the common part of the encoder state. */
     ss->template = temp;
     ss->memory = mem;
 
     /* Allocate the buffers. */
-    in = gs_alloc_bytes(mem, temp->min_in_size + in_size + 1, "cfax_stream_print_page(in)");
+    in = gs_alloc_bytes(mem, temp->min_in_size + max_size + 1, 
+    	"cfax_stream_print_page(in)");
+
+#define OUT_SIZE 1000
     out = gs_alloc_bytes(mem, OUT_SIZE, "cfax_stream_print_page(out)");
     if (in == 0 || out == 0) {
 	code = gs_note_error(gs_error_VMerror);
 	goto done;
     }
-    /* Process the image. */
+
+    /* Process the image */ 
     for (lnum = 0; lnum < pdev->height; lnum++) {
+	/* Initialize read and write pointer each time, because they're getting modified */
+	r.ptr = in - 1;
+    	r.limit = in + col_size;
+    	w.ptr = out - 1;
+    	w.limit = w.ptr + OUT_SIZE;
+	/* Decoder must encode line for line, so init it for each line */
 	code = (*temp->init) (ss);
 	if (code < 0)
 	    return_error(gs_error_limitcheck);
-	gdev_prn_get_bits(pdev, lnum, in, &actual_data);
-	r.ptr = actual_data - 1;
-	r.limit = actual_data + in_size;
-	w.ptr = out - 1;
-	w.limit = w.ptr + OUT_SIZE - 1;
-	(*temp->process) (ss, &r, &w, 1 /* always last line */ );
-	nbytes = w.ptr + 1 - out;
+	/* Now, get the bits and encode them */
+	gdev_prn_copy_scan_lines(pdev, lnum, in, in_size);
+	if (col_size > in_size) {
+	    memset(in + in_size , 0, col_size - in_size);
+        }
+	code = (*temp->process) (ss, &r, &w, 1 /* always last line */);
+	nbytes = w.ptr - out + 1;
 	if (!nul) {
 	    if (nbytes > 0) {
 		if (nbytes < 217) {
 		    cfax_byte(nbytes, prn_stream);
 		    for (i = 0; i < nbytes; i++)
-			cfax_byte(out[i], prn_stream);
+			  cfax_byte(out[i], prn_stream);
 		} else {
 		    cfax_byte(0, prn_stream);
 		    cfax_word(nbytes, prn_stream);
 		    for (i = 0; i < nbytes; i++)
-			cfax_byte(out[i], prn_stream);
+			  cfax_byte(out[i], prn_stream);
 		}
 	    } else {
 		cfax_byte(218, prn_stream);
 	    }
-	}
+	} 
 	if (temp->release != 0)
 	    (*temp->release) (ss);
     }
+#undef OUT_SIZE
 
   done:
     gs_free_object(mem, out, "cfax_stream_print_page(out)");
@@ -177,14 +202,6 @@ cfax_begin_page(gx_device_printer * pdev, FILE * fp, int width)
     return 0;
 }
 
-/* End a capi fax page. */
-private int
-cfax_end_page(gx_device_printer * pdev, FILE * fp)
-{
-    cfax_doc_end(fp);
-    return 0;
-}
-
 /* Print an capi fax (sff-encoded) page. */
 private int
 cfax_print_page(gx_device_printer * pdev, FILE * prn_stream)
@@ -198,9 +215,21 @@ cfax_print_page(gx_device_printer * pdev, FILE * prn_stream)
     state.EncodedByteAlign = true;
     state.FirstBitLowOrder = true;
     state.K = 0;
+
     cfax_begin_page(pdev, prn_stream, state.Columns);
-    code = cfax_stream_print_page(pdev, prn_stream, &s_CFE_template,
-				  (stream_state *) & state);
-    cfax_end_page(pdev, prn_stream);
+    code = cfax_stream_print_page_width(pdev, prn_stream, 
+      &s_CFE_template, (stream_state *) &state, state.Columns);
     return code;
+}
+
+/* Close an capi fax (sff-encoded) document. */
+private int
+cfax_prn_close(gx_device * pdev)
+{
+    gx_device_printer * const ppdev = (gx_device_printer *)pdev;
+
+    if (ppdev->file != NULL) {
+      cfax_doc_end(ppdev->file);
+    }
+    return gdev_prn_close(pdev);
 }
