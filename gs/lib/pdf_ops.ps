@@ -515,7 +515,18 @@ end readonly def
     dict copy dup begin             % map font font cstr'
     /CharStrings exch put           % map font
     exch {                          % font /new /old
-      load def
+      currentdict exch .knownget {
+        def
+      } {
+        currentdict /.notdef .knownget {
+          def
+        } {
+          pop
+          % The font has no .notdef.
+          % Could not resolve the conflict,
+          % but either the font is invalid or the glyph name is never used.
+        } ifelse
+      } ifelse
     } forall
     end //true
   } {

@@ -189,37 +189,47 @@ pdfdict begin
 		% Work around a bug in pdfTeX, which can generate Encoding
 		% vectors containing nulls :
 	   1 index //null eq { exit } if
-		% There is a hack here to deal with encodings where the
-		% same character appears more than once, because the Metrics
-		% dictionary works by character name, not by character code.
-		% We prefer to take (1) non-zero width, and (2) width for 
-		% the character name which appears in Differences. If the
-		% character name appears in Differences, use the Width that
-		% corresponds to the index in differences.
-	   dup 0 eq { exit } if
-	   Metrics 2 index .knownget not { 0 } if 0 ne {
-	     5 index /Encoding knownoget not { exit } if
-	     dup type /dicttype ne { pop exit } if
-	     /Differences knownoget not { exit } if
-	     3 index 3 index //match_in_diff exec not { exit } if
-	   } if
-                % Create a new glyph for a character that maps to an existing glyph
-                % with a different width and passes all the tests above.
            Metrics 2 index .knownget {
              1 index ne
            } {
              //false
            } ifelse {
+             % Two or more Encoding elements refer same glyph name,
+             % and Widths specify different wihts for it.
+             % Since a Postscript font can't have different 
+             % Metrics for same glyph name, 
+             % we generate an unique name, and create a new 
+             % Charstrings entry with same glyph value.
              GlyphMap //null eq {
                /Encoding Encoding dup length array copy def
                /GlyphMap 4 dict def
              } if
-             Metrics 2 index //unique_name exec
-                % Stack: font font-res mscale first-char index charname width new_name
-             Encoding 4 index 2 index put
-             GlyphMap 1 index 5 -1 roll put
-             exch
-                % Stack: font font-res mscale first-char index new_name width
+             % To prevent too many new names, check whether
+             % we can use one already created for same glyph.
+             //true
+             GlyphMap {                           % f r s c i n w b n1 n2
+               4 index eq {                       % f r s c i n w b n1
+                 dup Metrics exch get             % f r s c i n w b n1 w1
+                 3 index eq {                     % f r s c i n w b n1
+                   4 3 roll pop                   % f r s c i w b n1
+                   3 1 roll pop                   % f r s c i n1 w
+                   Encoding 3 index 3 index put
+                   //false                        % f r s c i n1 w b
+                   exit
+                 } {
+                   pop
+                 } ifelse
+               } {                                % f r s c i n w b n1
+                 pop
+               } ifelse
+             } forall                             % f r s c i n w b
+             { % Do create a new name.
+               Metrics 2 index //unique_name exec % f r s c i n w nn
+               Encoding 4 index 2 index put
+               GlyphMap 1 index 5 -1 roll put     % f r s c i w nn
+               exch
+                  % Stack: font font-res mscale first-char index new_name width
+             } if
            } if
            2 copy Metrics 3 1 roll put
 	   exit
