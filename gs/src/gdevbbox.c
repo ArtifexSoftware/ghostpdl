@@ -245,6 +245,7 @@ gx_device_bbox_init(gx_device_bbox * dev, gx_device * target)
 	set_dev_proc(dev, map_cmyk_color, gx_forward_map_cmyk_color);
 	set_dev_proc(dev, map_rgb_alpha_color, gx_forward_map_rgb_alpha_color);
 	set_dev_proc(dev, map_color_rgb_alpha, gx_forward_map_color_rgb_alpha);
+	set_dev_proc(dev, get_initial_matrix, gx_forward_get_initial_matrix);
 	gx_device_set_target((gx_device_forward *)dev, target);
     }
     dev->box_procs = box_procs_default;
