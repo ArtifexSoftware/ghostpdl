@@ -1,14 +1,14 @@
 /*
     jbig2dec
     
-    Copyright (C) 2001 artofcode LLC.
+    Copyright (C) 2002 artofcode LLC.
     
     This program is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.14 2002/02/16 07:25:36 raph Exp $
+    $Id: jbig2dec.c,v 1.15 2002/02/19 07:09:16 giles Exp $
 */
 
 #include <stdio.h>
@@ -17,9 +17,10 @@
 #include <stdint.h>
 
 #include "jbig2.h"
-#include "jbig2dec.h"
 
 #ifdef DEAD_CODE
+#include "jbig2dec.h"
+
 typedef struct _Jbig2SymbolDictionary Jbig2SymbolDictionary;
 typedef struct _Jbig2PageInfo Jbig2PageInfo;
 
@@ -444,7 +445,7 @@ dump_jbig2 (Jbig2Ctx_foo *ctx)
 	break;
     }
 }
-#endif
+#endif	/* DEAD_CODE */
 
 static int
 usage (void)

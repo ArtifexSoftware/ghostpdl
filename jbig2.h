@@ -1,8 +1,22 @@
+/*
+    jbig2dec
+    
+    Copyright (c) 2002 artofcode LLC.
+    
+    This program is free software; you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation; either version 2 of the License, or
+    (at your option) any later version.
+        
+    $Id: jbig2.h,v 1.4 2002/02/19 07:09:16 giles Exp $
+*/
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 typedef enum {
+  JBIG2_SEVERITY_DEBUG,
   JBIG2_SEVERITY_INFO,
   JBIG2_SEVERITY_WARNING,
   JBIG2_SEVERITY_FATAL
