@@ -973,10 +973,11 @@ pdf_image_end_image(gx_image_enum_common_t * info, bool draw_last)
     default:
 	return code;	/* error */
     case 1:
-	return 0;
-    case 0:;
+	code = 0;
+	break;
+    case 0:
+	code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
     }
-    code = pdf_do_image(pdev, pie->writer.pres, &pie->mat, true);
     gs_free_object(pie->memory, pie, "pdf_end_image");
     return code;
 }

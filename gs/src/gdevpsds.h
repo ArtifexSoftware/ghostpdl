@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -24,6 +24,8 @@
 
 #include "strimpl.h"
 
+/* ---------------- Depth conversion ---------------- */
+
 /* Convert between 1/2/4/12 bits and 8 bits. */
 typedef struct stream_1248_state_s {
     stream_state_common;
@@ -47,9 +49,9 @@ extern const stream_template s_8_2_template;
 extern const stream_template s_8_4_template;
 
 /* Initialize an expansion or reduction stream. */
-#define s_1248_init(ss, Columns, samples_per_pixel)\
-  ((ss)->samples_per_row = (Columns) * (samples_per_pixel),\
-   (*(ss)->template->init)((stream_state *)(ss)))
+int s_1248_init(P3(stream_1248_state *ss, int Columns, int samples_per_pixel));
+
+/* ---------------- Color space conversion ---------------- */
 
 /* Convert (8-bit) CMYK to RGB. */
 typedef struct stream_C2R_state_s {
@@ -63,15 +65,17 @@ typedef struct stream_C2R_state_s {
     c2r_enum_ptrs, c2r_reloc_ptrs, pis)
 extern const stream_template s_C2R_template;
 
-#define s_C2R_init(ss, pisv)\
-  ((ss)->pis = (pisv), 0)
+/* Initialize a CMYK => RGB conversion stream. */
+int s_C2R_init(P2(stream_C2R_state *ss, const gs_imager_state *pis));
+
+/* ---------------- Downsampling ---------------- */
 
 /* Downsample, possibly with anti-aliasing. */
 #define stream_Downsample_state_common\
 	stream_state_common;\
 		/* The client sets the following before initialization. */\
 	int Colors;\
-	int Columns;		/* # of input columns */\
+	int WidthIn, HeightIn;\
 	int XFactor, YFactor;\
 	bool AntiAlias;\
 	bool padX, padY;	/* keep excess samples */\
@@ -83,8 +87,10 @@ typedef struct stream_Downsample_state_s {
     stream_Downsample_state_common;
 } stream_Downsample_state;
 
+/* Return the number of samples after downsampling. */
+int s_Downsample_size_out(P3(int size_in, int factor, bool pad));
+
 /* Subsample */
-/****** Subsample DOESN'T IMPLEMENT padY YET ******/
 typedef struct stream_Subsample_state_s {
     stream_Downsample_state_common;
 } stream_Subsample_state;

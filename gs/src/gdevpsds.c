@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -27,6 +27,14 @@
 /* ---------------- Convert between 1/2/4/12 and 8 bits ---------------- */
 
 gs_private_st_simple(st_1248_state, stream_1248_state, "stream_1248_state");
+
+/* Initialize an expansion or reduction stream. */
+int
+s_1248_init(stream_1248_state *ss, int Columns, int samples_per_pixel)
+{
+    ss->samples_per_row = Columns * samples_per_pixel;
+    return ss->template->init((stream_state *)ss);
+}
 
 /* Initialize the state. */
 private int
@@ -302,6 +310,14 @@ const stream_template s_8_4_template = {
 
 private_st_C2R_state();
 
+/* Initialize a CMYK => RGB conversion stream. */
+int
+s_C2R_init(stream_C2R_state *ss, const gs_imager_state *pis)
+{
+    ss->pis = pis;
+    return 0;
+}
+
 /* Set default parameter values (actually, just clear pointers). */
 private void
 s_C2R_set_defaults(stream_state * st)
@@ -344,17 +360,22 @@ const stream_template s_C2R_template =
 
 /* ---------------- Downsampling ---------------- */
 
+/* Return the number of samples after downsampling. */
+int
+s_Downsample_size_out(int size_in, int factor, bool pad)
+{
+    return ((pad ? size_in + factor - 1 : size_in) / factor);
+}
+
 private void
 s_Downsample_set_defaults(register stream_state * st)
 {
-    stream_Downsample_state *const ss =
-	(stream_Downsample_state *) st;
+    stream_Downsample_state *const ss = (stream_Downsample_state *)st;
 
     s_Downsample_set_defaults_inline(ss);
 }
 
 /* Subsample */
-/****** DOESN'T IMPLEMENT padY YET ******/
 
 gs_private_st_simple(st_Subsample_state, stream_Subsample_state,
 		     "stream_Subsample_state");
@@ -380,16 +401,23 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
     byte *q = pw->ptr;
     byte *wlimit = pw->limit;
     int spp = ss->Colors;
-    int width = ss->Columns;
+    int width = ss->WidthIn, height = ss->HeightIn;
     int xf = ss->XFactor, yf = ss->YFactor;
     int xf2 = xf / 2, yf2 = yf / 2;
-    int xlimit = (width / xf) * xf;
-    int xlast = (ss->padX && xlimit < width ? xlimit + (width % xf) / 2 : -1);
+    int xlimit = (width / xf) * xf, ylimit = (height / yf) * yf;
+    int xlast =
+	(ss->padX && xlimit < width ? xlimit + (width % xf) / 2 : -1);
+    int ylast =
+	(ss->padY && ylimit < height ? ylimit + (height % yf) / 2 : -1);
     int x = ss->x, y = ss->y;
     int status = 0;
 
+    if_debug4('w', "[w]subsample: x=%d, y=%d, rcount=%ld, wcount=%ld\n",
+	      x, y, (long)(rlimit - p), (long)(wlimit - q));
     for (; rlimit - p >= spp; p += spp) {
-	if (y == yf2 && ((x % xf == xf2 && x < xlimit) || x == xlast)) {
+	if (((y % yf == yf2 && y < ylimit) || y == ylast) &&
+	    ((x % xf == xf2 && x < xlimit) || x == xlast)
+	    ) {
 	    if (wlimit - q < spp) {
 		status = 1;
 		break;
@@ -397,13 +425,12 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
 	    memcpy(q + 1, p + 1, spp);
 	    q += spp;
 	}
-	if (++x == width) {
-	    x = 0;
-	    if (++y == yf) {
-		y = 0;
-	    }
-	}
+	if (++x == width)
+	    x = 0, ++y;
     }
+    if_debug5('w',
+	      "[w]subsample: x'=%d, y'=%d, read %ld, wrote %ld, status = %d\n",
+	      x, y, (long)(p - pr->ptr), (long)(q - pw->ptr), status);
     pr->ptr = p;
     pw->ptr = q;
     ss->x = x, ss->y = y;
@@ -438,9 +465,9 @@ s_Average_init(stream_state * st)
     stream_Average_state *const ss = (stream_Average_state *) st;
 
     ss->sum_size =
-	ss->Colors * ((ss->Columns + ss->XFactor - 1) / ss->XFactor);
+	ss->Colors * ((ss->WidthIn + ss->XFactor - 1) / ss->XFactor);
     ss->copy_size = ss->sum_size -
-	(ss->padX || (ss->Columns % ss->XFactor == 0) ? 0 : ss->Colors);
+	(ss->padX || (ss->WidthIn % ss->XFactor == 0) ? 0 : ss->Colors);
     ss->sums =
 	(uint *)gs_alloc_byte_array(st->memory, ss->sum_size,
 				    sizeof(uint), "Average sums");
@@ -470,7 +497,7 @@ s_Average_process(stream_state * st, stream_cursor_read * pr,
     byte *q = pw->ptr;
     byte *wlimit = pw->limit;
     int spp = ss->Colors;
-    int width = ss->Columns;
+    int width = ss->WidthIn;
     int xf = ss->XFactor, yf = ss->YFactor;
     int x = ss->x, y = ss->y;
     uint *sums = ss->sums;

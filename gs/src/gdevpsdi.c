@@ -224,18 +224,20 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
     if (st == 0)
 	return_error(gs_error_VMerror);
     if (template->set_defaults)
-	(*template->set_defaults) (st);
+	template->set_defaults(st);
     {
 	stream_Downsample_state *const ss = (stream_Downsample_state *) st;
 
 	ss->Colors = gs_color_space_num_components(pim->ColorSpace);
-	ss->Columns = pim->Width;
+	ss->WidthIn = pim->Width;
+	ss->HeightIn = pim->Height;
 	ss->XFactor = ss->YFactor = factor;
 	ss->AntiAlias = pdip->AntiAlias;
+	ss->padX = ss->padY = false; /* should be true */
 	if (template->init)
-	    (*template->init) (st);
-	pim->Width /= factor;
-	pim->Height /= factor;
+	    template->init(st);
+	pim->Width = s_Downsample_size_out(pim->Width, factor, ss->padX);
+	pim->Height = s_Downsample_size_out(pim->Height, factor, ss->padY);
 	pim->BitsPerComponent = pdip->Depth;
 	gs_matrix_scale(&pim->ImageMatrix, (double)pim->Width / orig_width,
 			(double)pim->Height / orig_height,

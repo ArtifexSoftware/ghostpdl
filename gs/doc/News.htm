@@ -67,18 +67,19 @@ greatly improves the space usage and loading time for CMaps.
 <p>
 All problems registered on SourceForge numbered 104118 or lower are closed,
 except for the following: 101549, 101814, 101829, 101905, 101955, 102046,
-102047, 102132, 102146, 102735, 103016, 103528, 104095, 104118.
+102047, 102132, 102146, 102735, 103016, 103528, 104118.
 
 <p>
 The following projects are in a partially completed state in the PDF writer:
 
 <ul>
 
-<li>Pattern colors (gdevpdf[ci].c) -- these DO NOT WORK.
+<li>Pattern colors (gdevpdf[ci].c) -- working except for patterns that
+require masking.
 
-<li>CID-keyed fonts (gdevpdf[eftw].c);
+<li>CID-keyed fonts (gdevpdf[eftw].c) -- barely started.
 
-<li>ImageType 3 images (gdevpdf[ij].c).
+<li>ImageType 3 images (gdevpdf[ij].c) -- started.
 
 </ul>
 
@@ -86,6 +87,9 @@ The following projects are in a partially completed state in the PDF writer:
 
 <h2><a name="6.21_Incompatible_changes"></a>Incompatible changes</h2>
 
+(Drivers)
+	- The downsampling filters now require WidthIn and HeightIn,
+replacing Columns.
 (PDF writer)
 	- The last argument of pdf_alloc_font has changed.
 	- pdf_set_color is renamed pdf_set_pure_color.
