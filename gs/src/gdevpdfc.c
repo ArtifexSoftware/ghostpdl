@@ -392,6 +392,17 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     /* PDF doesn't support Indexed color spaces with more than 256 entries. */
     if (num_entries > 256)
 	return_error(gs_error_rangecheck);
+    if (pdev->CompatibilityLevel < 1.3) {
+	switch (gs_color_space_get_index(pcs)) {
+	    case gs_color_space_index_Pattern:
+	    case gs_color_space_index_Separation:
+	    case gs_color_space_index_Indexed:
+	    case gs_color_space_index_DeviceN:
+		return_error(gs_error_rangecheck);
+	    default: DO_NOTHING; 
+	}
+
+    }
     table = gs_alloc_string(mem, string_size, "pdf_color_space(table)");
     palette = gs_alloc_string(mem, table_size, "pdf_color_space(palette)");
     if (table == 0 || palette == 0) {
