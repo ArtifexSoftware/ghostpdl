@@ -1,5 +1,5 @@
-LIBRARY		GSDLL32 INITINSTANCE
-DESCRIPTION	'Ghostscript Interpreter DLL'
+;	'Ghostscript Interpreter DLL'
+LIBRARY		GSDLL32
 EXPORTS	
 		DllEntryPoint
 		DllMain
