@@ -259,10 +259,12 @@ write_Private(stream *s, gs_font_type1 *pfont,
 	    if ((code = pdata->procs.subr_data(pfont, i, false, &gdata)) >= 0) {
 		char buf[50];
 
-		sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
-		stream_puts(s, buf);
-		write_CharString(s, gdata.bits.data, gdata.bits.size);
-		stream_puts(s, " |\n");
+		if (gdata.bits.size) {
+		    sprintf(buf, "dup %d %u -| ", i, gdata.bits.size);
+		    stream_puts(s, buf);
+		    write_CharString(s, gdata.bits.data, gdata.bits.size);
+		    stream_puts(s, " |\n");
+		}
 		gs_glyph_data_free(&gdata, "write_Private(Subrs)");
 	    }
 	stream_puts(s, "|-\n");
