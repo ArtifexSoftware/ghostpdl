@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.3 2002/06/18 13:40:29 giles Exp $
+    $Id: jbig2_page.c,v 1.4 2002/06/20 15:40:36 giles Exp $
 */
 
 #include <stdio.h>
@@ -56,8 +56,8 @@ jbig2_read_page_info (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh, const byte *segment
 
     /* a new page info segment implies the previous page is finished */
     page = &(ctx->pages[ctx->current_page]);
-    if ((page->number != 0) && 
-            (page->state == JBIG2_PAGE_NEW) || (page->state == JBIG2_PAGE_FREE)) {
+    if ((page->number != 0) &&
+            ((page->state == JBIG2_PAGE_NEW) || (page->state == JBIG2_PAGE_FREE))) {
         page->state = JBIG2_PAGE_COMPLETE;
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, sh->segment_number,
             "unexpected page info segment, marking previous page finished");
