@@ -275,9 +275,6 @@ main(
             exit(1);
         }
 
-        /* reinit per-job instance vars */
-        pl_main_reinit_instance(&inst);
-
         if ( pl_init_job(pjl_instance) < 0 ) {
             fprintf(gs_stderr, "Unable to init PJL job.\n");
             exit(1);
@@ -613,13 +610,6 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 	pti->device = 0;
 	pti->implementation = 0;
 	gp_get_usertime(pti->base_time);
-	pl_main_reinit_instance(pti);
-}
-
-/* Re-initialize the instance parameters after each job. */
-void
-pl_main_reinit_instance(pl_main_instance_t *pti)
-{
 	pti->first_page = 1;
 	pti->last_page = max_int;
 	pti->page_count = 0;
