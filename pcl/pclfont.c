@@ -185,8 +185,11 @@ pcl_load_built_in_fonts(pcl_state_t *pcs, const char *pathname)
 	    char fname[150];
 	    FILE *fnp;
 	    pl_font_t *plfont;
-	    strcpy(fname, pathname);
-	    strcat(fname, residentp->ext_name);
+	    if ( pathname != NULL ) {
+		strcpy(fname, pathname);
+		strcat(fname, residentp->ext_name);
+	    } else
+		strcpy(fname, residentp->ext_name);
 	    strcat(fname, ".ttf");
 	    if ( (fnp=fopen(fname, gp_fmode_rb)) == NULL )
 		continue;
