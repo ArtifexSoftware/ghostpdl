@@ -79,6 +79,19 @@ pl_known_encode(gs_char chr, int encoding_index)
 
 /* ---------------- Public procedures ---------------- */
 
+/* character width */
+int pl_font_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+{
+    return (*(plfont)->char_width)(plfont, char_code, pwidth);
+}
+
+/* character width */
+int pl_font_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+{
+    return (*(plfont)->char_metrics)(plfont, char_code, metrics);
+}
+
+
 /* Allocate a font. */
 pl_font_t *
 pl_alloc_font(gs_memory_t *mem, client_name_t cname)
@@ -269,8 +282,10 @@ pl_fill_in_font(gs_font *pfont, pl_font_t *plfont, gs_font_dir *pdir,
 	pfont->procs.callbacks.known_encode = pl_known_encode;
 	pfont->procs.define_font = gs_no_define_font;
 	pfont->procs.make_font = gs_no_make_font;
+	pfont->procs.font_info = gs_default_font_info;
 	pfont->key_name.size = 0;
 	pfont->font_name.size = 0;
+	pfont->id = gs_next_ids(1);
 	return 0;
 }
 

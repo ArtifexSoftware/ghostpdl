@@ -91,7 +91,7 @@ pl_font_lookup_glyph(const pl_font_t *plfont, gs_glyph glyph)
 	      result = pfg;
 	    index = (index >= skip ? index : index + size) - skip;
 	  }
-	return (result ? result : pfg);
+	return (!pfg->data && result) ? result : pfg;
 }
 
 /* ---------------- Bitmap font support ---------------- */
@@ -106,29 +106,50 @@ pl_bitmap_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
 /* Get character existence and escapement for a bitmap font. */
 /* This is simple for the same reason. */
 private int
-pl_bitmap_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
-  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
-{	const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+pl_bitmap_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+{	
+    const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
 
-	if ( !pwidth )
-	  return (cdata == 0 ? 1 : 0);
-	if ( cdata == 0 )
-	  { pwidth->x = pwidth->y = 0;
-	    return 1;
-	  }
-	if ( cdata[0] == 0 )
-	  { /* PCL XL characters don't have an escapement. */
+    pwidth->x = pwidth->y = 0;
+    if ( !pwidth ) {
+	return (cdata == 0 ? 1 : 0);
+	dprintf( "Warning should not call width function without width\n" );
+    }
+    if ( cdata == 0 ) { 
+	return 1;
+    }
+    if ( cdata[0] == 0 ) { /* PCL XL characters don't have an escapement. */
 	    pwidth->x = pwidth->y = 0;
 	    return 0;
-	  }
-	{ const byte *params = cdata + 6;
-	  floatp wx =
-	    (plfont->header[13] ? /* variable pitch */
-	     s16(params + 8) * 0.25 :
-	     s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+    }
 
-	  return gs_distance_transform(wx, 0.0, pmat, pwidth);
-	}
+    { 
+	const byte *params = cdata + 6;
+	pwidth->x = (plfont->header[13] ? /* variable pitch */
+		     s16(params + 8) * 0.25 :
+		     s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+    }
+    return 0;
+}
+
+private int
+pl_bitmap_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+{
+    gs_point width;
+    const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+    /* never a vertical substitute */
+    metrics[0] = metrics[1] = metrics[2] = metrics[3] = 0;
+    /* no data - character not found */
+    if ( cdata == 0 )
+	return 1;
+    /* We are not concerned about PCL XL characters */
+    if ( cdata[0] == 0 )
+	return 0;
+    
+    metrics[0] = s16(cdata + 6);
+    pl_bitmap_char_width(plfont, char_code, &width);
+    metrics[2] = width.x;
+    return 0;
 }
 
 /*
@@ -339,6 +360,7 @@ image_bitmap_char(gs_image_enum *ienum, const gs_image_t *pim,
 	(*dev_proc(dev, end_image))(dev, iinfo, code >= 0);
 	return code;
 }
+
 
 /* Render a character for a bitmap font. */
 /* This handles both format 0 (PCL XL) and format 4 (PCL5 bitmap). */
@@ -753,48 +775,49 @@ pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont)
 	return gs_no_glyph;
 }
 
+/* Get metrics */
+private int
+pl_tt_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+{
+    gs_glyph unused_glyph = gs_no_glyph;
+    gs_glyph glyph = pl_tt_encode_char(plfont->pfont, char_code, unused_glyph);
+    if ( glyph == 0xffff ) {
+	dprintf("warning tt font glyph not found\n");
+	return 1;
+    }
+    return gs_type42_get_metrics((gs_font_type42 *)plfont->pfont,
+				  glyph, metrics);
+}
+    
 /* Get character existence and escapement for a TrueType font. */
 private int
-pl_tt_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
-  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
+pl_tt_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
 {	gs_font *pfont = plfont->pfont;
 	gs_char chr = char_code;
 	gs_glyph unused_glyph = gs_no_glyph;
 	gs_glyph glyph = pl_tt_encode_char(pfont, chr, unused_glyph);
 	int code;
 	float sbw[4];
+	
+	pwidth->x = pwidth->y = 0;
 
 	/* Check for a vertical substitute. */
-	if ( pfont->WMode & 1 )
-	  { gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
-
+	if ( pfont->WMode & 1 ) {
+	    gs_glyph vertical = pl_font_vertical_glyph(glyph, plfont);
 	    if ( vertical != gs_no_glyph )
 	      glyph = vertical;
-	  }
-	/****** WHAT UNITS FOR WIDTH? ******/
-	/* Recognize 0 as the undefined glyph. */
-	if ( /* glyph == 0 || */ glyph == 0xffff || glyph == gs_no_glyph )
-	  { /* Use the width of glyph 0, if it exists. */
-	    code = gs_type42_get_metrics((gs_font_type42 *)pfont,
-					 (gs_glyph)0, sbw);
-	    if ( code < 0 )
-	      return code;
-	    if ( pwidth )
-	      pwidth->x = pwidth->y = 0;
-	    code = 1;
-	  }
-	else
-	  { code = gs_type42_get_metrics((gs_font_type42 *)pfont, glyph, sbw);
-	    if ( code < 0 )
-	      return code;
-	    code = 0;
-	  }
-	if ( pwidth )
-	  { int tcode = gs_distance_transform(sbw[2], sbw[3], pmat, pwidth);
-	    if ( tcode < 0 )
-	      return tcode;
-	  }
-	return code;
+	}
+
+	/* undefined character */
+	if ( glyph == 0xffff || glyph == gs_no_glyph )
+	    return 1;
+
+	code = gs_type42_get_metrics((gs_font_type42 *)pfont, glyph, sbw);
+	if ( code < 0 )
+	    return code;
+	/* character exists */
+	pwidth->x = sbw[2];
+	return 0;
 }
 
 /* Render a TrueType character. */
@@ -1105,6 +1128,67 @@ pl_intelli_show_char(gs_state *pgs, const pl_font_t *plfont, gs_glyph glyph)
 	return 0;
 }
 
+/* Get character existence and escapement for an Intellifont. */
+ private int
+pl_intelli_char_width(const pl_font_t *plfont, uint char_code, gs_point *pwidth)
+{	const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+	int wx;
+
+	if ( !pwidth )
+	  return (cdata == 0 ? 1 : 0);
+	if ( cdata == 0 )
+	  { pwidth->x = pwidth->y = 0;
+	    return 1;
+	  }
+	switch ( cdata[3] )
+	  {
+	  case 3:		/* non-compound character */
+	    cdata += 4;		/* skip PCL character header */
+	    { const intelli_metrics_t *metrics =
+		(const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
+	      wx =
+		pl_get_int16(metrics->charEscapementBox[2]) -
+		pl_get_int16(metrics->charEscapementBox[0]);
+	    }
+	    break;
+	  case 4:		/* compound character */
+	    wx = pl_get_int16(cdata + 4);
+	    break;
+	  default:		/* shouldn't happen */
+	    pwidth->x = pwidth->y = 0;
+	    return 0;
+	  }
+	pwidth->x = (floatp)wx / 8782.0;
+	return 0;
+}
+
+private int
+pl_intelli_char_metrics(const pl_font_t *plfont, uint char_code, float metrics[4])
+
+{
+    gs_point width;
+    const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
+    if ( cdata == 0 ) { 
+	metrics[1] = metrics[3] = 0;
+	metrics[0] = metrics[1] = 0;
+	dprintf( "warning intellifont glyph not found\n" );
+	return 1;
+    }
+
+    {
+	const intelli_metrics_t *intelli_metrics =
+	    (const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
+
+	/* NB probably not right */
+	/* never a vertical substitute */
+	metrics[1] = metrics[3] = 0;
+	metrics[0] = (float)pl_get_int16(intelli_metrics->charSymbolBox[0]);
+	pl_intelli_char_width(plfont, char_code, &width);
+	metrics[2] = width.x;
+	return 0;
+    }
+}
+
 /* Render a character for an Intellifont. */
 private int
 pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
@@ -1133,40 +1217,6 @@ pl_intelli_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 }
 
 
-/* Get character existence and escapement for an Intellifont. */
-int
-pl_intelli_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
-  const gs_matrix *pmat, uint char_code, gs_point *pwidth)
-{	const byte *cdata = pl_font_lookup_glyph(plfont, char_code)->data;
-	int wx;
-
-	if ( !pwidth )
-	  return (cdata == 0 ? 1 : 0);
-	if ( cdata == 0 )
-	  { pwidth->x = pwidth->y = 0;
-	    return 1;
-	  }
-	switch ( cdata[3] )
-	  {
-	  case 3:		/* non-compound character */
-	    cdata += 4;		/* skip PCL character header */
-	    { const intelli_metrics_t *metrics =
-		(const intelli_metrics_t *)(cdata + pl_get_uint16(cdata + 2));
-	      wx =
-		pl_get_int16(metrics->charEscapementBox[2]) -
-		pl_get_int16(metrics->charEscapementBox[0]);
-	    }
-	    break;
-	  case 4:		/* compound character */
-	    wx = pl_get_int16(cdata + 4);
-	    break;
-	  default:		/* shouldn't happen */
-	    pwidth->x = pwidth->y = 0;
-	    return 0;
-	  }
-	return gs_distance_transform(((floatp)wx / 8782.0), 0.0, pmat, pwidth);
-}
-
 /* ---------------- Internal initialization ---------------- */
 
 /* Initialize the procedures for a bitmap font. */
@@ -1176,6 +1226,7 @@ pl_bitmap_init_procs(gs_font_base *pfont)
 	pfont->procs.build_char = (void *)pl_bitmap_build_char; /* FIX ME (void *) */
 #define plfont ((pl_font_t *)pfont->client_data)
 	plfont->char_width = pl_bitmap_char_width;
+	plfont->char_metrics = pl_bitmap_char_metrics;
 #undef plfont
 }
 
@@ -1187,6 +1238,7 @@ pl_tt_init_procs(gs_font_type42 *pfont)
 	pfont->data.string_proc = pl_tt_string_proc;
 #define plfont ((pl_font_t *)pfont->client_data)
 	plfont->char_width = pl_tt_char_width;
+	plfont->char_metrics = pl_tt_char_metrics;
 #undef plfont
 }
 
@@ -1231,6 +1283,7 @@ pl_intelli_init_procs(gs_font_base *pfont)
 	pfont->procs.build_char = (void *)pl_intelli_build_char; /* FIX ME (void *) */
 #define plfont ((pl_font_t *)pfont->client_data)
 	plfont->char_width = pl_intelli_char_width;
+	plfont->char_metrics = pl_intelli_char_metrics;
 #undef plfont
 }
 /* ---------------- Public procedures ---------------- */

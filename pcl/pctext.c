@@ -219,11 +219,8 @@ get_next_char(
 
     /* check if the character is in the font and get the character
        width at the same time */
-    {
-	const gs_matrix identity_matrix = { 1.0, 0.0, 0.0, 1.0, 0.0, 0.0 };
-	if (pl_font_char_width(pcs->font, pcs->map, &identity_matrix, chr, pwidth) == 0)
-	    return 0;
-    }
+    if ( pl_font_char_width(pcs->font, chr, pwidth) == 0 )
+	return 0;
     /*
      * The character is not in the font.
      */
@@ -352,7 +349,7 @@ show_char_background(
 	gs_moveto(pgs, pt.x, pt.y);
 
         /* get the character path */
-	gs_charpath_begin(pgs, pbuff, 2, true, pcs->memory, &penum);
+	gs_charpath_begin(pgs, pbuff, 1, true, pcs->memory, &penum);
 	if ((code = gs_text_process(penum)) >= 0) {
 
 	    /* append the characters bounding box and use eofill */

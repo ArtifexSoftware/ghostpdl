@@ -246,12 +246,9 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 	&pgls->g.font_selection[pgls->g.font_selected];
     int code = 0;
     gs_point gs_width;
-    gs_matrix mat;
     if ( pgls->g.character.size_mode == hpgl_size_not_set ) {
 	if ( pfs->params.proportional_spacing ) {
-	    gs_make_identity(&mat);
-	    code = pl_font_char_width(pfs->font, pfs->map, &mat, glyph,
-				      &gs_width);
+	    code = pl_font_char_width(pfs->font, glyph, &gs_width);
 	    if ( code >= 0 ) {
 		*width = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
 		goto add;
@@ -272,8 +269,7 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 	if ( pfs->params.proportional_spacing && ch != ' ' ) {
 	    /* Get the width of the space character. */
 	    int scode =
-		pl_font_char_width(pfs->font, pfs->map, &mat,
-				   hpgl_map_symbol(' ', pgls), &gs_width);
+		pl_font_char_width(pfs->font, hpgl_map_symbol(' ', pgls), &gs_width);
 	    hpgl_real_t extra;
 
 	    if ( scode >= 0 )
@@ -604,7 +600,15 @@ hpgl_print_char(
 	hpgl_real_t     space_width;
 	int             space_code;
 	hpgl_real_t     width;
+	hpgl_real_t     lsb;
 
+	/* get the left side bearing, gl/2 left justifies everything in
+           the character cell */
+	{
+	    float metrics[4];
+	    pl_font_char_metrics(font, ch, metrics);
+	    lsb = metrics[0];
+	}
 	/* Handle size. */
 	if (pgls->g.character.size_mode == hpgl_size_not_set) {
 
@@ -646,8 +650,8 @@ hpgl_print_char(
 	    if (bitmaps_allowed)    /* no mirroring */
 		scale.x = fabs(scale.x), scale.y = fabs(scale.y);
 	}
-	gs_scale(pgs, scale.x, scale.y);
 
+	gs_scale(pgs, scale.x, scale.y);
 	/* Handle rotation. */
 	{
             double  run = pgls->g.character.direction.x,
@@ -706,7 +710,8 @@ hpgl_print_char(
 
 	/*
 	 * Adjust the initial position of the character according to
-	 * the text path.
+	 * the text path.  And the left side bearing.  It appears
+	 * HPGL/2 renders all characters without a left side bearing.  
 	 */
 	hpgl_call(gs_currentpoint(pgs, &start_pt));
 	if (text_path == hpgl_text_left) {
@@ -716,6 +721,10 @@ hpgl_print_char(
 					     hpgl_plot_move_absolute, false));
 
 	}
+
+	/* the plu ctm should be in effect */
+	hpgl_call(hpgl_add_point_to_path( pgls, -lsb, 0,
+		hpgl_plot_move_relative, false));
 
 	/*
 	 * Reset the rotation if we're using a bitmap font.
@@ -855,7 +864,11 @@ hpgl_print_char(
 	    break;
 	}
 
-	gs_setmatrix(pgs, &save_ctm); 
+	hpgl_call(hpgl_add_point_to_path( pgls, lsb, 0,
+		hpgl_plot_move_relative, false));
+
+
+	gs_setmatrix(pgs, &save_ctm);
 	hpgl_call(gs_currentpoint(pgs, &end_pt));
 	if (!use_show)
 	    hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_character));

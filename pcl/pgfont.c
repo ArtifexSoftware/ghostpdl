@@ -32,29 +32,50 @@ hpgl_stick_arc_encode_char(gs_font *pfont, gs_char chr, gs_glyph not_used)
 
 /* The stick font is fixed-pitch. */
 private int
-hpgl_stick_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
-  const gs_matrix *pmat, uint uni_code, gs_point *pwidth)
-{	bool in_range = hpgl_unicode_stick_index(uni_code) != 0;
-
-	if ( pwidth ) {
-	  gs_distance_transform(0.667, 0.0, pmat, pwidth);
-	}
-	return in_range;
+hpgl_stick_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
+{	
+    bool in_range = hpgl_unicode_stick_index(uni_code) != 0;
+    pwidth->x = 0.667;
+    return in_range;
 }
+
+private int
+hpgl_stick_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4])
+{
+    gs_point width;
+    /* never a vertical substitute */
+    metrics[1] = metrics[3] = 0;
+    /* no lsb */
+    metrics[0] = 0;
+    /* just get the width */
+    hpgl_stick_char_width(plfont, uni_code, &width);
+    metrics[2] = width.x;
+    return 0;
+}    
+
 /* The arc font is proportionally spaced. */
 private int
-hpgl_arc_char_width(const pl_font_t *plfont, const pl_symbol_map_t *map,
-  const gs_matrix *pmat, uint uni_code, gs_point *pwidth)
-{	uint char_code = hpgl_unicode_stick_index(uni_code);
-	bool in_range = char_code != 0;
-
-	if ( pwidth ) {
-	  gs_distance_transform(hpgl_stick_arc_width(char_code) / 15.0
-				  * 0.667 * hpgl_arc_font_condensation,
-				0.0, pmat, pwidth);
-	}
-	return in_range;
+hpgl_arc_char_width(const pl_font_t *plfont, uint uni_code, gs_point *pwidth)
+{	
+    uint char_code = hpgl_unicode_stick_index(uni_code);
+    bool in_range = char_code != 0;
+    pwidth->x = hpgl_stick_arc_width(char_code) / 15.0 * 0.667 * hpgl_arc_font_condensation;
+    return in_range;
 }
+
+private int
+hpgl_arc_char_metrics(const pl_font_t *plfont, uint uni_code, float metrics[4])
+{
+    gs_point width;
+    /* never a vertical substitute */
+    metrics[1] = metrics[3] = 0;
+    /* no lsb */
+    metrics[0] = 0;
+    /* just get the width */
+    hpgl_arc_char_width(plfont, uni_code, &width);
+    metrics[2] = width.x;
+    return 0;
+}    
 
 /* Forward procedure declarations */
 private int hpgl_arc_rmoveto(P3(void *data, int dx, int dy));
@@ -198,6 +219,7 @@ hpgl_fill_in_stick_font(gs_font_base *pfont, long unique_id)
 #define plfont ((pl_font_t *)pfont->client_data)
 	pfont->procs.build_char = (void *)hpgl_stick_build_char; /* FIX ME (void *) */
 	plfont->char_width = hpgl_stick_char_width;
+	plfont->char_metrics = hpgl_stick_char_metrics;
 #undef plfont
 }
 void
@@ -207,5 +229,6 @@ hpgl_fill_in_arc_font(gs_font_base *pfont, long unique_id)
 #define plfont ((pl_font_t *)pfont->client_data)
 	pfont->procs.build_char = (void *)hpgl_arc_build_char; /* FIX ME (void *) */
 	plfont->char_width = hpgl_arc_char_width;
+	plfont->char_metrics = hpgl_arc_char_metrics;
 #undef plfont
 }
