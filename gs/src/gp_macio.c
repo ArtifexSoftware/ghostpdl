@@ -321,43 +321,6 @@ mac_std_available(register stream * s, long *pl)
     return 0;		// OK
 }
 
-/* ====== Substitute for stdio ====== */
-
-/* These are used instead of the stdio version. */
-/* The declarations must be identical to that in <stdio.h>. */
-int
-fprintf(FILE *file, const char *fmt, ...)
-{
-	int		count;
-	va_list	args;
-	char	buf[1024];
-	
-	va_start(args,fmt);
-	
-	if (file != stdout  &&  file != stderr) {
-		count = vfprintf(file, fmt, args);
-	}
-	else {
-		count = vsprintf(buf, fmt, args);
-		return fwrite(buf, strlen(buf), 1, file);
-	}
-	
-	va_end(args);
-	return count;
-}
-
-int
-fputs(const char *string, FILE *file)
-{
-	if (file != stdout  &&  file != stderr) {
-		return fwrite(string, strlen(string), 1, file);
-	}
-	else {
-		return fwrite(string, strlen(string), 1, file);
-	}
-}
-
-
 /* ------ Printer accessing ------ */
 
 /* These should NEVER be called. */
@@ -370,12 +333,10 @@ fputs(const char *string, FILE *file)
 FILE *
 gp_open_printer (char *fname, int binary_mode)
 {
-	if (strlen(fname) == 1  &&  fname[0] == '-')
-		return stdout;
-	else if (strlen(fname) == 0)
-		return gp_open_scratch_file(gp_scratch_file_name_prefix, fname, binary_mode ? "wb" : "w");
-	else
-		return gp_fopen(fname, binary_mode ? "wb" : "b");
+    if (strlen(fname) == 0)
+        return gp_open_scratch_file(gp_scratch_file_name_prefix, fname, binary_mode ? "wb" : "w");
+    else
+        return gp_fopen(fname, binary_mode ? "wb" : "b");
 }
 
 /* Close the connection to the printer. */
@@ -383,9 +344,8 @@ gp_open_printer (char *fname, int binary_mode)
 void
 gp_close_printer (FILE *pfile, const char *fname)
 {
-	fclose(pfile);
+    fclose(pfile);
 }
-
 
 
 /* Define whether case is insignificant in file names. */
@@ -441,7 +401,7 @@ gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const
 		myErr = FindFolder(kOnSystemDisk,kTemporaryFolderType,kCreateFolder,
 			&foundVRefNum, &foundDirID);
 		if ( myErr != noErr ) {
-			fprintf(stderr,"Can't find temp folder.\n");
+			eprintf("Can't find temp folder.\n");
 			return (NULL);
 		}
 		FSMakeFSSpec(foundVRefNum, foundDirID,thepfname, &fSpec);
