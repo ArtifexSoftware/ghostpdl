@@ -196,4 +196,11 @@ times = times + "CVS checkout ended at " + time.strftime("%a, %d %b %Y %H:%M:%S 
 
 msg = times + msg
 
-sendmail(gsconf.report_from, gsconf.report_to, 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)
+retry = 1
+while retry:
+    try:
+        sendmail(gsconf.report_from, gsconf.report_to, 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)
+	time.sleep(5)
+	retry = 0
+    except:
+        pass
