@@ -203,5 +203,6 @@ out:	ss->prev_code = code;
 
 /* Stream template */
 const stream_template s_LZWE_template =
-{	&st_LZW_state, s_LZWE_init, s_LZWE_process, 1, 4, s_LZW_release
+{	&st_LZW_state, s_LZWE_init, s_LZWE_process, 1, 4, s_LZW_release,
+	s_LZW_set_defaults
 };
