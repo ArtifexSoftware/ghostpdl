@@ -487,7 +487,7 @@ pdf_dsc_process(gx_device_pdf * pdev, const gs_param_string_array * pma)
 		gs_rect box;
 
 		if (pdf_key_eq(pkey, "EPSF")) {
-		    pdev->is_EPS = (pkey->size >= 1 && pkey->data[0] != '0');
+		    pdev->is_EPS = (pvalue->size >= 1 && pvalue->data[0] != '0');
 		    continue;
 		}
 		/*
