@@ -354,12 +354,14 @@ extern const gx_device_procs prn_std_procs;
  * also specify the displacement of the device (0,0) point from the
  * upper left corner.  We should provide macros that allow specifying
  * all 6 values independently, but we don't yet.
+ *
+ * Note that print_page and print_page_copies must not both be defaulted.
  */
-#define prn_device_body_rest_(print_page)\
+#define prn_device_body_rest2_(print_page, print_page_copies)\
 	 { 0 },		/* std_procs */\
 	 { 0 },		/* skip */\
 	 { print_page,\
-	   gx_default_print_page_copies,\
+	   print_page_copies,\
 	   { gx_default_create_buf_device,\
 	     gx_default_size_buf_device,\
 	     gx_default_setup_buf_device,\
@@ -383,6 +385,10 @@ extern const gx_device_procs prn_std_procs;
 	0/*false*/, 0, 0, 0, /* file_is_new ... buf */\
 	0, 0, 0, 0, 0/*false*/, 0, 0, /* buffer_memory ... clist_dis'_mask */\
 	{ 0 }	/* ... orig_procs */
+#define prn_device_body_rest_(print_page)\
+  prn_device_body_rest2_(print_page, gx_default_print_page_copies)
+#define prn_device_body_copies_rest_(print_page_copies)\
+  prn_device_body_rest2_(gx_print_page_single_copy, print_page_copies)
 
 /* The Sun cc compiler won't allow \ within a macro argument list. */
 /* This accounts for the short parameter names here and below. */
@@ -417,6 +423,23 @@ extern const gx_device_procs prn_std_procs;
   prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi,\
     lm, tm, lm, bm, rm, tm, color_bits, print_page)
 
+#define prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
+	std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
+	  (int)((long)(w10) * (xdpi) / 10),\
+	  (int)((long)(h10) * (ydpi) / 10),\
+	  xdpi, ydpi, color_bits,\
+	  -(lo) * (xdpi), -(to) * (ydpi),\
+	  (lm) * 72.0, (bm) * 72.0,\
+	  (rm) * 72.0, (tm) * 72.0\
+	),\
+	prn_device_body_copies_rest_(print_page_copies)
+
+#define prn_device_std_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
+  prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi,\
+    lm, tm, lm, bm, rm, tm, color_bits, print_page_copies)
+
+     /* Note that the following macros add { } around the data. */
+
 #define prn_device_margins(procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
 { prn_device_std_margins_body(gx_device_printer, procs, dname,\
     w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
@@ -424,7 +447,16 @@ extern const gx_device_procs prn_std_procs;
 
 #define prn_device(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page)\
   prn_device_margins(procs, dname, w10, h10, xdpi, ydpi,\
-    lm, tm, lm, bm, rm, tm, color_bits, print_page)\
+    lm, tm, lm, bm, rm, tm, color_bits, print_page)
+
+#define prn_device_margins_copies(procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
+{ prn_device_std_margins_body_copies(gx_device_printer, procs, dname,\
+    w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
+}
+
+#define prn_device_copies(procs, dname, w10, h10, xdpi, ydpi, lm, bm, rm, tm, color_bits, print_page_copies)\
+  prn_device_margins_copies(procs, dname, w10, h10, xdpi, ydpi,\
+    lm, tm, lm, bm, rm, tm, color_bits, print_page_copies)
 
 /* ------ Utilities ------ */
 /* These are defined in gdevprn.c. */
@@ -555,6 +587,9 @@ void gdev_prn_clear_trailing_bits(P4(byte *data, uint raster, int height,
  * Close the printer's output file.
  */
 int gdev_prn_close_printer(P1(gx_device *));
+
+/* Print a single copy of a page by calling print_page_copies. */
+prn_dev_proc_print_page(gx_print_page_single_copy);
 
 /*
  * Define a default print_page_copies procedure just calls print_page

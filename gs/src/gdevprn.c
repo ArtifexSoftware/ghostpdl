@@ -725,6 +725,13 @@ gdev_prn_output_page(gx_device * pdev, int num_copies, int flush)
     return (endcode < 0 ? endcode : upgraded_copypage ? 1 : 0);
 }
 
+/* Print a single copy of a page by calling print_page_copies. */
+int
+gx_print_page_single_copy(gx_device_printer * pdev, FILE * prn_stream)
+{
+    return pdev->printer_procs.print_page_copies(pdev, prn_stream, 1);
+}
+
 /* Print multiple copies of a page by calling print_page multiple times. */
 int
 gx_default_print_page_copies(gx_device_printer * pdev, FILE * prn_stream,
