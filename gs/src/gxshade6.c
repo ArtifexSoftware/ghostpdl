@@ -16,6 +16,10 @@
 
 /* $Id$ */
 /* Rendering for Coons and tensor patch shadings */
+/*
+   A contiguous non-overlapping decomposition 
+   of a tensor shading into linear color triangles.
+ */
 #include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"

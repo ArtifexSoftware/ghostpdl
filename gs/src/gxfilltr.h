@@ -15,7 +15,7 @@
 */
 
 /* $Id$ */
-/* Configurable algorithm for decompozing a spot into trapezoids. */
+/* Configurable algorithm for decomposing a spot into trapezoids. */
 
 /*
  * Since we need several statically defined variants of this algorithm,

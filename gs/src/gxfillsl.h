@@ -15,7 +15,7 @@
 */
 
 /* $Id$ */
-/* Configurable algorithm for fill a path by scanlines. */
+/* Configurable algorithm for filling a path by scanlines. */
 
 /*
  * Since we need several statically defined variants of this agorithm,

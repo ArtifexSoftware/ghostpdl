@@ -15,7 +15,21 @@
 */
 
 /* $Id$ */
-/* Lower-level path filling procedures */
+/* A topological spot decomposition algorithm with dropout prevention. */
+/* 
+   This is a dramaticly reorganized and improved revision of the 
+   filling algorithm, iwhich was nitially coded by Henry Stiles. 
+   The main improvements are: 
+	1. A dropout prevention for character fill.
+	2. The spot topology analysys support
+	   for True Type grid fitting.
+	3. Fixed the contiguty of a spot covering 
+	   for shading fills with no dropouts.
+*/
+/* See PSEUDO_RASTERISATION and "pseudo_rasterization".
+   about the dropout previntion logics. */
+/* See is_spotan about the spot topology analyzis support. */
+/* Also defining lower-level path filling procedures */
 
 #include "gx.h"
 #include "gserrors.h"

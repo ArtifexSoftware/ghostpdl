@@ -16,6 +16,10 @@
 
 /*$Id$ */
 /* A spot analyzer device implementation. */
+/*
+    This implements a spot topology analyzis and 
+    stem recognition for True Type grid fitting.
+*/
 #include "gx.h"
 #include "gserrors.h"
 #include "gsdevice.h"
