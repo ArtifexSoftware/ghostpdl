@@ -43,8 +43,8 @@
 
 
 #include <Time.h>
-#include <sys/time.h>
 #include <sys/types.h>
+#include "time_.h"
 #include "memory_.h"
 #include "string_.h"
 #include "gx.h"

@@ -22,7 +22,6 @@
 #include <MacTypes.h>
 #include <unix.h>
 #define CHECK_INTERRUPTS
-#define SYSTIME_H
 #define HAVE_SYS_TIME_H
 
 #define main gs_main
