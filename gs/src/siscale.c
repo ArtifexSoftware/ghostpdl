@@ -60,6 +60,7 @@ typedef int AccumTmp;
 #define fixedScaleFactor  ((int) (1 << numScaleBits))
 #define scale_PixelWeight(factor) ((int)((factor) * (1 << num_weight_bits)))
 #define unscale_AccumTmp(atemp, fraction_bits) arith_rshift(atemp, fraction_bits)
+#define NEED_FRACTION_BITS
 
 #else /* USE_FPU > 0 */
 
@@ -72,6 +73,7 @@ typedef double AccumTmp;
 #define fixedScaleFactor 1		/* Straight scaling for floating point */
 #define scale_PixelWeight(factor) (factor)
 #define unscale_AccumTmp(atemp, fraction_bits) ((int)(atemp))
+/*#undef NEED_FRACTION_BITS*/
 
 #endif /* USE_FPU */
 
@@ -300,8 +302,10 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
        const CONTRIB * items)
 {
     int c, i;
-#define fraction_bits\
-  ((maxSizeofPixel - sizeof(PixelTmp)) * 8 + num_weight_bits)
+#ifdef NEED_FRACTION_BITS
+    const int fraction_bits =
+	(sizeofPixelIn - sizeof(PixelTmp)) * 8 + num_weight_bits;
+#endif
 
     for (c = 0; c < Colors; ++c) {
 	PixelTmp *tp = tmp + c;
@@ -349,7 +353,6 @@ zoom_x(PixelTmp * tmp, const void /*PixelIn */ *src, int sizeofPixelIn,
 	}
 	if_debug0('W', "\n");
     }
-#undef fraction_bits
 }
 
 
@@ -369,8 +372,10 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
     const CONTRIB *cbp = items + contrib->index;
     int kc;
     PixelTmp2 max_weight = MaxValueOut;
-#define fraction_bits\
-  ((sizeof(PixelTmp) - sizeofPixelOut) * 8 + num_weight_bits)
+#ifdef NEED_FRACTION_BITS
+    const int fraction_bits =
+	(sizeof(PixelTmp) - sizeofPixelOut) * 8 + num_weight_bits;
+#endif
 
     if_debug0('W', "[W]zoom_y: ");
 
@@ -396,7 +401,6 @@ zoom_y(void /*PixelOut */ *dst, int sizeofPixelOut, uint MaxValueOut,
 	zoom_y_loop(bits16)
     }
     if_debug0('W', "\n");
-#undef fraction_bits
 }
 
 /* ------ Stream implementation ------ */
