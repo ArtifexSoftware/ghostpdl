@@ -216,9 +216,6 @@ add_text_delta_move(gx_device_pdf *pdev, const gs_matrix *pmat)
  * matrix differ from the current ones, write a Tm command; if there is only
  * a Y translation, set use_leading so the next text string will be written
  * with ' rather than Tj; otherwise, write a Td command.
- *
- * NOTE: This procedure assumes that pts->out.{pdfont,size} ==
- * pts->in.{pdfont,size}, and that the output is in text context.
  */
 private int
 pdf_set_text_matrix(gx_device_pdf * pdev)
@@ -338,10 +335,6 @@ sync_text_state(gx_device_pdf *pdev)
 	pts->out.character_spacing = pts->in.character_spacing;
     }
 
-    /*
-     * NOTE: we must update the font before the matrix, because
-     * pdf_set_text_matrix assumes out.pdfont == in.pdfont.
-     */
     if (pts->out.pdfont != pts->in.pdfont || pts->out.size != pts->in.size) {
 	pdf_font_resource_t *pdfont = pts->in.pdfont;
 
@@ -359,13 +352,7 @@ sync_text_state(gx_device_pdf *pdev)
 	((pdf_resource_t *)pdfont)->where_used |= pdev->used_mask;
     }
 
-    /*
-     * NOTE: pdf_set_text_matrix may add characters to the buffer.
-     */
-    if (pts->in.matrix.xx != pts->out.matrix.xx ||
-	pts->in.matrix.xy != pts->out.matrix.xy ||
-	pts->in.matrix.yx != pts->out.matrix.yx ||
-	pts->in.matrix.yy != pts->out.matrix.yy ||
+    if (memcmp(&pts->in.matrix, &pts->out.matrix.xx, sizeof(pts->in.matrix)) ||
 	pts->start.x != pts->out_pos.x ||
 	pts->start.y != pts->out_pos.y) {
 	/* pdf_set_text_matrix sets out.matrix = in.matrix */
