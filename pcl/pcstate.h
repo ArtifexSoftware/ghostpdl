@@ -247,10 +247,6 @@ struct pcl_state_s {
     pcl_hpgl_state_t    g;	/* see pgstate.h */
     /* ---------------- PJL state -------------------- */
     pjl_parser_state *pjls;
-    /* ---------------- font directory locations ----- */
-    /* This is the pcl state variable associated with FONTSOURCE - see
-       pjltrm 6-22 */
-    char**            current_font_directories;
     /* yet another poorly documented pjl variable - this should widen
        the margins on A4 paper to support 80 10 pitch characters but
        it appears to affect letter paper as well */
@@ -265,5 +261,9 @@ struct pcl_state_s {
    pcmain.c for now */
 void pcl_set_target_device(P2(pcl_state_t *pcs, gx_device *pdev));
 gx_device *pcl_get_target_device(P1(pcl_state_t *pcs));
+int pcl_load_cartridge_fonts(P2(pcl_state_t *pcls, const char *pathname));
+int pcl_load_simm_fonts(P2(pcl_state_t *pcls, const char *pathname));
+int pcl_load_built_in_fonts(P2(pcl_state_t *pcls, const char *pathname));
+int pcl_set_current_font_environment(P1(pcl_state_t *pcls));
 
 #endif 						/* pcstate_INCLUDED */

@@ -698,7 +698,8 @@ $(PCLOBJ)pcjob.$(OBJ): $(PCLSRC)pcjob.c \
                        $(pcstate_h)     \
                        $(pcparam_h)     \
                        $(pcdraw_h)      \
-                       $(pcpage_h)
+                       $(pcpage_h)      \
+		       $(pjparse_h)
 	$(PCLCCC) $(PCLSRC)pcjob.c $(PCLO_)pcjob.$(OBJ)
 
 # Chapter 5
@@ -715,6 +716,7 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
                         $(pcpage_h)         \
                         $(pgmand_h)         \
                         $(pginit_h)         \
+			$(pjparse_h)        \
                         $(gsmatrix_h)       \
                         $(gscoord_h)        \
                         $(gsdevice_h)       \
@@ -735,6 +737,7 @@ $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c \
                          $(pcfont_h)        \
                          $(pcursor_h)       \
                          $(pcpage_h)        \
+			 $(pjparse_h)       \
                          $(gscoord_h)
 	$(PCLCCC) $(PCLSRC)pcursor.c $(PCLO_)pcursor.$(OBJ)
 
@@ -751,7 +754,8 @@ $(PCLOBJ)pcfont.$(OBJ): $(PCLSRC)pcfont.c   \
                         $(pcstate_h)        \
                         $(pcursor_h)        \
                         $(pcfont_h)         \
-                        $(pcfsel_h)
+                        $(pcfsel_h)         \
+			$(pjparse_h)
 	$(PCLCCC) $(PCLSRC)pcfont.c $(PCLO_)pcfont.$(OBJ)
 
 $(PCLOBJ)pclfont.$(OBJ): $(PCLSRC)pclfont.c \

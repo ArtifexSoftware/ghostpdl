@@ -55,9 +55,6 @@ const pcl_init_t *    pcl_init_table[] = {
     0
 };
 
-/* Interim font initialization procedure */
-extern  bool    pcl_load_built_in_fonts( pcl_state_t * );
-
 /* Built-in symbol set initialization procedure */
 extern  bool    pcl_load_built_in_symbol_sets( pcl_state_t * );
 
@@ -231,14 +228,6 @@ main(
 
     pcl_set_end_page(pause_end_page);
 
-    /*
-     * Intermediate initialization: after state is initialized, may
-     * allocate memory, but we won't re-run this level of init.
-     */
-    if (!pcl_load_built_in_fonts(pcls)) {
-        lprintf("No built-in fonts found during initialization\n");
-        exit(1);
-    }
     pcl_load_built_in_symbol_sets(pcls);
 
 #ifdef DEBUG

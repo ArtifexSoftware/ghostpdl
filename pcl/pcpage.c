@@ -904,7 +904,7 @@ get_default_paper(
 )
 {
     int i;
-    char *psize = pjl_get_envvar(pcs->pjls, "paper");
+    pjl_envvar_t *psize = pjl_get_envvar(pcs->pjls, "paper");
     pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
         if (!pjl_compare(psize, paper_sizes[i].pname)) {
@@ -913,8 +913,7 @@ get_default_paper(
 		pcs->wide_a4 = true;
 	    return &(paper_sizes[i].psize);
 	}
-    dprintf2("pcl does not support system requested %s paper setting %s\n",
-	     psize, paper_sizes[1].pname);
+    dprintf("system does not support requested paper setting\n");
     return &(paper_sizes[1].psize);
 }
     

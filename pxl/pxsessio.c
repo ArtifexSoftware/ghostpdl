@@ -164,7 +164,7 @@ pxBeginSession(px_args_t *par, px_state_t *pxs)
 	/* This is obviously device-dependent. */
 	/* get the pjl state */
 	{
-	    char* pjl_psize = pjl_get_envvar(pxs->pjls, "paper");
+	    pjl_envvar_t *pjl_psize = pjl_get_envvar(pxs->pjls, "paper");
 	    /* NB.  We are not sure about the interaction of pjl's
                wide a4 commands so we don't attempt to implement
                it. */

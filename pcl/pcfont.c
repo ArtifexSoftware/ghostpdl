@@ -429,46 +429,151 @@ pcfont_do_init(gs_memory_t *mem)
 	return 0;
 }
 
-private char *    built_in_font_prefixes[] = {
-    "",
-    "fonts/",
-    "/windows/system/",
-    "/windows/fonts/",
-    "/win95/fonts/",
-    "/winnt/fonts/",
-    0
-};
+/* look up pjl font number with data storage type.  Return 0 on
+   success, 1 if we cannot find the font number and -1 if the data
+   storage type does not exist.  Return the font parameters for the
+   requested font number or the font parameters of the first found
+   font for the active resource. */
+ private int
+pcl_lookup_pjl_font(pcl_state_t *pcls, int pjl_font_number,
+		    pcl_data_storage_t pcl_data_storage, pl_font_params_t *params)
+{
+    pl_dict_enum_t dictp;
+    gs_const_string key;
+    void *value;
+    bool found_resource = false;
+
+    pl_dict_enum_begin(&pcls->soft_fonts, &dictp);
+    while ( pl_dict_enum_next(&dictp, &key, &value) ) {
+	pl_font_t *fp = (pl_font_t *)value;
+	int ds = fp->storage;
+	if ( (int)pcl_data_storage == ds ) {
+	    found_resource = true;
+	    *params = fp->params;
+	    if ( fp->params.pjl_font_number == pjl_font_number ) {
+		return 0;
+	    }
+	}
+    }
+    return (found_resource ? 1 : -1);
+}
+
+/* inherit the current pjl font environment */
+ int
+pcl_set_current_font_environment(pcl_state_t *pcls)
+{
+    /* Loop through font resources until we find some fonts.  Set up
+       pcl's storage identifier to mirror pjl's */
+    pcl_data_storage_t pcl_data_storage;
+    while( 1 ) {
+	/* get current font source */
+	pjl_envvar_t *fontsource = pjl_get_envvar(pcls->pjls, "fontsource");
+	switch (fontsource[0]) {
+	case 'I':
+	    if (!pcl_load_built_in_fonts(pcls, 
+					 pjl_fontsource_to_path(pcls->pjls, fontsource))) {
+		dprintf("No built-in fonts found during initialization\n");
+		return -1;
+	    }
+	    pcl_data_storage = pcds_internal;
+	    break;
+	case 'S':
+	    /* nothing to load */
+	    pcl_data_storage = pcds_permanent;
+	    break;
+	    /* NB we incorrectly treat C, C1, C2... as one collective resource */
+	case 'C':
+	    if ( !pcl_load_cartridge_fonts(pcls,
+					   pjl_fontsource_to_path(pcls->pjls, fontsource)) ) {
+		pjl_set_next_fontsource(pcls->pjls);
+		continue; /* try next resource */
+	    }
+	    pcl_data_storage = pcds_all_cartridges;
+	    break;
+	    /* NB we incorrectly treat M, M1, M2... as one collective resource */
+	case 'M':
+	    if ( !pcl_load_simm_fonts(pcls,
+				      pjl_fontsource_to_path(pcls->pjls, fontsource)) ) {
+		pjl_set_next_fontsource(pcls->pjls);
+		continue; /* try next resource */
+	    }
+	    pcl_data_storage = pcds_all_simms;
+	    break;
+	default:
+	    dprintf("pcfont.c: unknown pjl resource\n");
+	    return -1;
+	}
+	{
+	    int code;
+	    pl_font_params_t params;
+	    code =  pcl_lookup_pjl_font(pcls, pjl_vartoi(pjl_get_envvar(pcls->pjls, "fontnumber")),
+					pcl_data_storage, &params);
+	    /* resource found, but if code is 1 we did not match the
+               font number.  NB unsure what to do when code == 1. */
+	    if ( code >= 0 ) {
+		/* copy parameters to the requested font and
+		   apply the other pjl settings to construct the
+		   initial font request from pjltrm: "The recommended
+		   order for setting FONTNUMBER, FONTSOURCE, and
+		   SYMSET is SYMSET first, then FONTSOURCE, then
+		   FONTNUMBER".  Perhaps this is a clue as to how
+		   these interact.  We search for the font number in
+		   the fontsource and apply pjl's SYMSET, PTSIZE and
+		   PITCH to the font we found.  That in turn becomes
+		   the default requested font */
+		pcls->font_selection[0].params = params;
+		pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set;
+		/* NB: The fontsource and fontnumber selection
+                   parameters would be stepped on if we allowed pcl to
+                   use the default pjl values for symbol set, pitch,
+                   and ptsize.  PJL updates these values as a side
+                   effect of changing font source and font number.
+                   Our pjl interpreter does not have that capability.
+                   As a workaround, We only set these if font source
+                   and font number have not been set.  This should be
+                   unnecessary for a fully functional pjl interpreter.  */
+		if ( (pjl_vartoi(pjl_get_envvar(pcls->pjls, "fontnumber")) == 0) &&
+		     (pjl_get_envvar(pcls->pjls, "fontsource")[0] == 'I') ) {
+		    pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set =
+		    pjl_map_pjl_sym_to_pcl_sym(pjl_get_envvar(pcls->pjls, "symset"));
+		    pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params,
+					     pjl_vartof(pjl_get_envvar(pcls->pjls, "pitch")));
+		    pcls->font_selection[0].params.height_4ths = pjl_vartof(pjl_get_envvar(pcls->pjls, "ptsize")) * 4.0;
+		    pcls->font_selection[1] = pcls->font_selection[0];
+		    pcls->font_selected = primary;
+		    pcls->font = 0;
+		}
+	    }
+	    else {
+		/* no resouce found - Note for everything but 'S' this
+		   is a double check, since we should have failed when
+		   checking for the resource Note this is fatal for
+		   internal resources but should be caught above. */
+		pjl_set_next_fontsource(pcls->pjls);
+		continue; /* try next resource */
+		
+	    }
+	}
+	return 0; 	/* done */
+    }
+}
+
 
 private void
 pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	
+    if ((type & pcl_reset_initial) != 0) {
+	pcls->font_dir = gs_font_dir_alloc(pcls->memory);
+	pl_dict_init(&pcls->built_in_fonts, pcls->memory, pl_free_font);
+	pl_dict_init(&pcls->soft_fonts, pcls->memory, pl_free_font);
+	pl_dict_set_parent(&pcls->soft_fonts, &pcls->built_in_fonts);
+    }
     if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) {
-	pcls->default_symbol_set_value = pcls->font_selection[0].params.symbol_set =
-	    pjl_map_pjl_sym_to_pcl_sym(pjl_get_envvar(pcls->pjls, "symset"));
-	pl_fp_set_pitch_per_inch(&pcls->font_selection[0].params,
-				 pjl_vartof(pjl_get_envvar(pcls->pjls, "pitch")));
-	pcls->font_selection[0].params.height_4ths = 
-	    pjl_vartof(pjl_get_envvar(pcls->pjls, "ptsize")) * 4.0;
-	/* NB this needs to be filled in more completely with
-           information specific to the os and the implemented font
-           tables */
-	if (!pjl_compare(pjl_get_envvar(pcls->pjls, "fontsource"), "I"))
-	    pcls->current_font_directories = built_in_font_prefixes;
-	else
-	    /* NB - HANDLE other cases M1, M2, M3, M4, C, C1, S pjltrm
-               6-22 */
-	    pcls->current_font_directories = built_in_font_prefixes;
-	/* NB again this must be handled by the printer manufacturer
-           since it is specific to the printer architecture */
-	/* fontnumber = pjl_get_envvar(pcls->pjls, "fontnumber", envvar) */
-	pcls->font_selection[0].params.proportional_spacing = false;
-	pcls->font_selection[0].params.style = 0;
-	pcls->font_selection[0].params.stroke_weight = 0;
-	pcls->font_selection[0].params.typeface_family = 3;	/* Courier */
-	pcls->font_selection[0].font = 0;		/* not looked up yet */
-	pcls->font_selection[1] = pcls->font_selection[0];
-	pcls->font_selected = primary;
-	pcls->font = 0;
+	int code;
+	code = pcl_set_current_font_environment(pcls);
+	/* corrupt configuration */
+	if ( code != 0 )
+	    exit( 1 );
     }
 }
 

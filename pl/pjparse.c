@@ -3,40 +3,51 @@
    prohibited.  
 */
 
-/* NB change this to pjl.c and pjl.h and remove the parsing stuff. */
-/* NB procedures should be in the same order as the header file */
-/* NB need error checking for NULLS */
-/* NB should use dictionaries - this implementation was used for faster debugging */
-/* NB should define a lookup procedure */
-
 /* pjparse.c */
 /* PJL parser */
 #include "memory_.h"
 #include "scommon.h"
+#include "gdebug.h"
+#include "gp.h"
 #include "pjparse.h"
 #include <ctype.h> 		/* for toupper() */
 #include <stdlib.h>             /* for atoi() */
 
-/* ------ Parser state ------ */
+/* ------ pjl state definitions ------ */
 
 #define PJL_STRING_LENGTH (15)
+#define PJL_PATH_NAME_LENGTH (150)
 
-/* for simplicity we define both variable names and values as strings.
-   The client must do the appropriate conversions. */
+/* definitions for fontsource and font number table entries */
+typedef struct pjl_fontsource {
+    char designator[2];  
+    char pathname[PJL_PATH_NAME_LENGTH+1];
+    char fontnumber[PJL_STRING_LENGTH+1];
+} pjl_fontsource_t;
+
+/* definitions for variable names and values */
 typedef struct pjl_envir_var_s {
     char var[PJL_STRING_LENGTH+1];
     char value[PJL_STRING_LENGTH+1];
 } pjl_envir_var_t;
 
+/* the pjl current environment and the default user environment.  Note
+   the default environment should be stored in NVRAM on embedded print
+   systems. */
 typedef struct pjl_parser_state_s {
     char line[81];		/* buffered command line */
     int pos;			/* current position in line */
     pjl_envir_var_t *defaults;  /* the default environment (i.e. set default) */
     pjl_envir_var_t *envir;     /* the pjl environment */
+    /* these are seperated out from the default and environmnet for no good reason */
+    pjl_fontsource_t *font_defaults;
+    pjl_fontsource_t *font_envir;
+    gs_memory_t *mem;
 } pjl_parser_state_t;
 
 /* provide factory defaults for pjl commands.  Note these are not pjl
-   defaults but initial values set in the printer when shipped */
+   defaults but initial values set in the printer when shipped.  In an
+   embedded system these would be defined in ROM */
 private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"formlines", "60"},
     {"widea4", "no"},
@@ -53,76 +64,33 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"duplex", "off"},
     {"binding", "longedge"},
     {"manualfeed", "off"},
+    {"fontsource", "I"},
+    {"fontnumber", "0"},
     {"", ""}
 };
 
-/* case insensitive comparison of two null terminated strings. */
- int
-pjl_compare(const char *s1, const char *s2)
-{
-    for (; toupper(*s1) == toupper(*s2); ++s1, ++s2)
-	if (*s1 == '\0')
-	    return(0);
-    return 1;
-}
+/* FONTS I (Internal Fonts) C, C1, C2 (Cartridge Fonts) S (Permanent
+   Soft Fonts) M1, M2, M3, M4 (fonts stored in one of the printer's
+   ROM SIMM slots).  Simulate cartridge, permanent soft fonts, and
+   printer ROM SIMMS with sub directories.  See table below.  Also
+   resources can be set up as lists of resources which is useful for
+   host based systems.  Entries are seperated with a colon.  Note
+   there is some unnecessary overlap in the factory default and font
+   source table. */
+private const pjl_fontsource_t pjl_fontsource_table[] = {
+    { "I", "fonts/:/windows/system/:/windows/fonts/:/win95/fonts/:/winnt/fonts/" },
+    { "C", "CART0/", "" },
+    { "C1", "CART1/", "" },
+    { "C2", "CART2/", "" },
+    { "S", "MEM0/", ""  },
+    { "M1", "MEM1/", ""  },
+    { "M2", "MEM2/", ""  },
+    { "M3", "MEM3/", ""  },
+    { "M4", "MEM4/", ""  },
+    { "", "", "" }
+};
 
-/* set a pjl environment or default variable.  NB handle side effects
-   on other variable of each command */
- private int
-pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
-{
-    pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
-    int i;
-
-    for (i = 0; table[i].var[0]; i++)
-	if (!pjl_compare(table[i].var, variable)) {
-	    strcpy(table[i].value, value);
-	    return 1;
-	}
-    /* didn't find variable */
-    return 0;
-}
-    
-/* Create and initialize a new state. */
- pjl_parser_state *
-pjl_process_init(gs_memory_t *mem)
-{
-    pjl_parser_state_t *pjlstate =
-	(pjl_parser_state *)gs_alloc_bytes(mem, 
-	     sizeof(pjl_parser_state_t), "pjl_process_init()" );
-    pjl_envir_var_t *pjl_env =
-	(pjl_envir_var_t *)gs_alloc_bytes(mem, 
-             sizeof(pjl_factory_defaults), "pjl_process_init()" );
-    pjl_envir_var_t *pjl_def =
-    	(pjl_envir_var_t *)gs_alloc_bytes(mem, 
-             sizeof(pjl_factory_defaults), "pjl_process_init()" );
-    if ( pjlstate == NULL || pjl_env == NULL || pjl_def == NULL )
-	return NULL; /* should be fatal so we don't bother piecemeal frees */
-
-    pjlstate->defaults = pjl_def;
-    pjlstate->envir = pjl_env;
-    /* initialize the default and initial pjl environment.  We assume
-       that these are the same layout as the factory defaults. */
-    memcpy(pjlstate->defaults, pjl_factory_defaults, sizeof(pjl_factory_defaults));
-    memcpy(pjlstate->envir, pjlstate->defaults, sizeof(pjl_factory_defaults));
-    /* initialize the current position in the line array */
-    pjlstate->pos = 0;
-    return (pjl_parser_state *)pjlstate;
-}
-
-/* Create and initialize a new state. */
- void
-pjl_process_destroy(pjl_parser_state *pst,gs_memory_t *mem)
-{
-    gs_free_object(mem, pst->defaults, "pjl_process_destroy()");
-    gs_free_object(mem, pst->envir, "pjl_process_destroy()");
-    gs_free_object(mem, pst, "pjl_process_destroy()");
-}
-
-/* a tokenizer to return what we are interested in - set, default, =,
-   and our variables variable and possible values.  Returns null when
-   finished with the line.  NB It will also skip over lparm : pcl etc. */
-
+/* pjl tokens parsed */
 typedef enum {
     DONE,
     SET,
@@ -139,6 +107,46 @@ typedef enum {
     DINQUIRE,
 } pjl_token_type_t;
 
+/* lookup table to map strings to pjl tokens */
+typedef struct pjl_lookup_table_s {
+    char pjl_string[PJL_STRING_LENGTH+1];
+    pjl_token_type_t pjl_token;
+} pjl_lookup_table_t;
+
+private const pjl_lookup_table_t pjl_table[] = {
+    { "@PJL", PREFIX },
+    { "SET", SET },
+    { "DEFAULT", DEFAULT },
+    { "INITIALIZE", INITIALIZE },
+    { "=", EQUAL },
+    { "DINQUIRE", DINQUIRE },
+    { "INQUIRE", INQUIRE },
+    { "", (pjl_token_type_t)0 /* don't care */ }
+};
+
+/* permenant soft font slots - bit n is the n'th font number. */
+#define MAX_PERMANENT_FONTS 256  /* multiple of 8 */
+unsigned char pjl_permanent_soft_fonts[MAX_PERMANENT_FONTS / 8];
+
+/* ----- private functions and definitions ------------ */
+
+/* set a pjl environment or default variable. */
+ private int
+pjl_set(pjl_parser_state_t *pst, char *variable, char *value, bool defaults)
+{
+    pjl_envir_var_t *table = (defaults ? pst->defaults : pst->envir);
+    int i;
+
+    for (i = 0; table[i].var[0]; i++)
+	if (!pjl_compare(table[i].var, variable)) {
+	    strcpy(table[i].value, value);
+	    return 1;
+	}
+    /* didn't find variable */
+    return 0;
+}
+    
+/* get next token from the command line buffer */
  private pjl_token_type_t
 pjl_get_token(pjl_parser_state_t *pst, char token[])
 {
@@ -175,14 +183,11 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
 	strncpy(token, &pst->line[start_pos], slength);
 	token[slength] = '\0';
 
-	/* check for known tokens NB should use a table here. */
-	if (!pjl_compare(token, "@PJL")) return PREFIX;
-	if (!pjl_compare(token, "SET")) return SET;
-	if (!pjl_compare(token, "DEFAULT")) return DEFAULT;
-	if (!pjl_compare(token, "INITIALIZE")) return INITIALIZE;
-	if (!pjl_compare(token, "=")) return EQUAL;
-	if (!pjl_compare(token, "DINQUIRE")) return DINQUIRE;
-	if (!pjl_compare(token, "INQUIRE")) return INQUIRE;
+	/* for known tokens */
+	for (i = 0; pjl_table[i].pjl_string[0]; i++)
+	    if (!pjl_compare(pjl_table[i].pjl_string, token))
+	       return pjl_table[i].pjl_token;
+
 	/* NB add other cases here */
 	/* check for variables that we support */
 	for (i = 0; pst->envir[i].var[0]; i++)
@@ -196,6 +201,65 @@ pjl_get_token(pjl_parser_state_t *pst, char token[])
     return DONE;
 }
 
+/* check if fonts exist in the current font source path */
+ private char *
+pjl_check_font_path(char *path_list, gs_memory_t *mem)
+{
+    /* lookup a font path and check if any files (presumably fonts are
+       present) */
+    char tmp_path[PJL_PATH_NAME_LENGTH+1];
+    char *tmp_pathp = tmp_path;
+    const char pattern[] = "*";
+    char tmp_path_and_pattern[PJL_PATH_NAME_LENGTH+1+1]; /* pattern + null */
+    char *dirname;
+#define MAXPATHLEN 1024
+	    char fontfilename[MAXPATHLEN+1];
+#undef MAXPATHLEN
+
+    /* make a tmp copy of the colon delimited path */
+    strcpy(tmp_path, path_list);
+    /* for each path search for fonts.  If we find them return we only
+       check if the directory resource has files without checking if
+       the files are indeed fonts. */
+    while ( (dirname = strtok(tmp_pathp, ":")) != NULL ) {
+	file_enum *fe;
+	strcpy(tmp_path_and_pattern, dirname);
+	strcat(tmp_path_and_pattern, pattern);
+	fe = gp_enumerate_files_init(tmp_path_and_pattern, strlen(tmp_path_and_pattern), mem);
+	if ( (gp_enumerate_files_next(fe, fontfilename, 0 /*??*/) ) == -1 ) {
+	    tmp_pathp = NULL;
+	} else {
+	    gp_enumerate_files_close(fe);
+	    /* NB fix me - replace : separated path with real path.
+               We should do this elsewhere */
+	    strcpy(path_list, dirname);
+	    return path_list;
+	}
+    }
+    return NULL;
+}
+
+/* initilize both pjl state and default environment to default font
+   number if font resources are present.  Note we depend on the PDL
+   (pcl) to provide information about 'S' permanent soft fonts.  For
+   all other resources we check for filenames which should correspond
+   to fonts. */
+ private void
+pjl_reset_fontsource_fontnumbers(pjl_parser_state_t* pst)
+{
+    char default_font_number[] = "0"; /* default number if resources are present */
+    gs_memory_t *mem = pst->mem;
+
+    int i;
+    for (i = 0; pst->font_defaults[i].designator[0]; i++) {
+	if ( pjl_check_font_path(pst->font_defaults[i].pathname, mem) )
+	    strcpy(pst->font_defaults[i].fontnumber, default_font_number);
+	if ( pjl_check_font_path(pst->font_envir[i].pathname, mem) )
+	    strcpy(pst->font_envir[i].fontnumber, default_font_number);
+    }
+}
+
+/* parse and set up state for one line of pjl commands */
  private int
 pjl_parse_and_process_line(pjl_parser_state_t *pst)
 {
@@ -230,10 +294,15 @@ pjl_parse_and_process_line(pjl_parser_state_t *pst)
 		return 0;
 	    }
 	case INITIALIZE:
-	    memcpy(pst->envir, &pjl_factory_defaults, sizeof(pjl_factory_defaults));
+	    /* set the user default environment to the factory default environment */
+	    memcpy(pst->defaults, &pjl_factory_defaults, sizeof(pjl_factory_defaults));
+	    memcpy(pst->font_defaults, &pjl_fontsource_table, sizeof(pjl_fontsource_table));
+	    pjl_reset_fontsource_fontnumbers(pst);
 	    return 0;
+	    /* set the current environment to the user default environment */
 	case RESET:
-	    memcpy(pst->envir, &pjl_factory_defaults, sizeof(pjl_factory_defaults));
+	    memcpy(pst->envir, pst->defaults, sizeof(pjl_factory_defaults));
+	    memcpy(pst->font_envir, pst->font_defaults, sizeof(pjl_fontsource_table));
 	    return 0;
 	default:
 	    return -1;
@@ -242,7 +311,37 @@ pjl_parse_and_process_line(pjl_parser_state_t *pst)
     return (tok == DONE ? 0 : -1);
 }
 
- char *
+/* sets fontsource to the next priority resource containing fonts */
+ void
+pjl_set_next_fontsource(pjl_parser_state_t* pst)
+{
+    int current_source;
+    pjl_envvar_t *current_font_source = pjl_get_envvar(pst, "fontsource");
+
+    /* find the index of the current resource then work backwards
+       until we find font resources.  We assume the internal source
+       will have fonts */
+    for (current_source = 0; pst->font_envir[current_source].designator[0]; current_source++ )
+	if (!pjl_compare(pst->font_envir[current_source].designator, current_font_source))
+	    break;
+
+    /* next resource is not internal 'I' */
+    if ( current_source != 0 ) {
+	while( current_source > 0 ) {
+	    /* valid font number found */
+	    if ( pst->font_envir[current_source].fontnumber[0] )
+		break;
+	    current_source--;
+	}
+    }
+    /* set both default and environment font source, the spec is not clear about this */
+    pjl_set(pst, "fontsource", pst->font_envir[current_source].designator, true);
+    pjl_set(pst, "fontsource", pst->font_defaults[current_source].designator, false);
+}
+
+/* get a pjl environment variable from the current environment - not
+   the user default environment */
+ pjl_envvar_t *
 pjl_get_envvar(pjl_parser_state *pst, const char *pjl_var)
 {
     int i;
@@ -254,9 +353,11 @@ pjl_get_envvar(pjl_parser_state *pst, const char *pjl_var)
 	}
     return NULL;
 }
-    
+
+/* -- public functions - see pjparse.h for interface documentation -- */
+
 /* Process a buffer of PJL commands. */
-int
+ int
 pjl_process(pjl_parser_state* pst, void *pstate, stream_cursor_read * pr)
 {
     const byte *p = pr->ptr;
@@ -304,7 +405,7 @@ pjl_process(pjl_parser_state* pst, void *pstate, stream_cursor_read * pr)
 
 /* Discard the remainder of a job.  Return true when we reach a UEL. */
 /* The input buffer must be at least large enough to hold an entire UEL. */
-bool
+ bool
 pjl_skip_to_uel(stream_cursor_read * pr)
 {
     const byte *p = pr->ptr;
@@ -325,7 +426,8 @@ pjl_skip_to_uel(stream_cursor_read * pr)
     return false;
 }
 
-/* PJL symbol set environment variable -> pcl symbol set numbers */
+/* PJL symbol set environment variable -> pcl symbol set numbers.
+   This probably should not be defined here :-( */
 private const struct {
     const char *symname;
     const char *pcl_selectcode;
@@ -366,7 +468,7 @@ private const struct {
     { NULL, NULL        }
 };
 
-/* NB the nulls will crash the table */
+/* map a pjl symbol table name to a pcl symbol table name */
  int
 pjl_map_pjl_sym_to_pcl_sym(const char *symname)
 {
@@ -386,16 +488,231 @@ pjl_map_pjl_sym_to_pcl_sym(const char *symname)
     return -1;
 }
 
-/* utilities */
-
-int pjl_vartoi(const char *s)
+/* environment variable to integer */
+ int 
+pjl_vartoi(const pjl_envvar_t *s)
 {
     return atoi(s);
 }
 
-/* envioronment variable to float */
-floatp pjl_vartof(const char *s)
+/* environment variable to float */
+ floatp 
+pjl_vartof(const pjl_envvar_t *s)
 {
     return atof(s);
 }
 
+/* convert a pjl font source to a pathname */
+ char *
+pjl_fontsource_to_path(const pjl_parser_state *pjls, const pjl_envvar_t *fontsource)
+{
+    int i;
+    for (i = 0; pjls->font_envir[i].designator[0]; i++)
+	if (!pjl_compare(pjls->font_envir[i].designator, fontsource))
+	    return pjl_check_font_path(pjls->font_envir[i].pathname, pjls->mem);
+    return NULL;
+}
+
+/* Create and initialize a new state. */
+ pjl_parser_state *
+pjl_process_init(gs_memory_t *mem)
+{
+    pjl_parser_state_t *pjlstate =
+	(pjl_parser_state *)gs_alloc_bytes(mem, 
+	     sizeof(pjl_parser_state_t), "pjl_state" );
+    pjl_envir_var_t *pjl_env =
+	(pjl_envir_var_t *)gs_alloc_bytes(mem, 
+             sizeof(pjl_factory_defaults), "pjl_envir" );
+    pjl_envir_var_t *pjl_def =
+    	(pjl_envir_var_t *)gs_alloc_bytes(mem, 
+             sizeof(pjl_factory_defaults), "pjl_defaults" );
+    pjl_fontsource_t *pjl_fontenv =
+	(pjl_fontsource_t *)gs_alloc_bytes(mem,
+             sizeof(pjl_fontsource_table), "pjl_font_envir" );
+    pjl_fontsource_t *pjl_fontdef =
+	(pjl_fontsource_t *)gs_alloc_bytes(mem,
+             sizeof(pjl_fontsource_table), "pjl_font_defaults" );
+
+    if ( pjlstate == NULL || pjl_env == NULL || pjl_def == NULL )
+	return NULL; /* should be fatal so we don't bother piecemeal frees */
+
+    pjlstate->defaults = pjl_def;
+    pjlstate->envir = pjl_env;
+    pjlstate->font_envir = pjl_fontenv;
+    pjlstate->font_defaults = pjl_fontdef;
+    /* initialize the default and initial pjl environment.  We assume
+       that these are the same layout as the factory defaults. */
+    memcpy(pjlstate->defaults, pjl_factory_defaults, sizeof(pjl_factory_defaults));
+    memcpy(pjlstate->envir, pjlstate->defaults, sizeof(pjl_factory_defaults));
+    /* initialize the font repository data as well */
+    memcpy(pjlstate->font_defaults, pjl_fontsource_table, sizeof(pjl_fontsource_table));
+    memcpy(pjlstate->font_envir, pjl_fontsource_table, sizeof(pjl_fontsource_table));
+    /* initialize the current position in the line array */
+    pjlstate->pos = 0;
+    pjlstate->mem = mem;
+    /* initialize available font sources */
+    pjl_reset_fontsource_fontnumbers(pjlstate);
+    {
+	int i;
+	for (i = 0; i < countof(pjl_permanent_soft_fonts); i++)
+	    pjl_permanent_soft_fonts[i] = 0;
+    }
+     return (pjl_parser_state *)pjlstate;
+}
+
+/* case insensitive comparison of two null terminated strings. */
+ int
+pjl_compare(const pjl_envvar_t *s1, const char *s2)
+{
+    for (; toupper(*s1) == toupper(*s2); ++s1, ++s2)
+	if (*s1 == '\0')
+	    return(0);
+    return 1;
+}
+
+/* free all memory associated with the PJL state */
+ void
+pjl_process_destroy(pjl_parser_state *pst, gs_memory_t *mem)
+{
+    gs_free_object(mem, pst->font_envir, "pjl_font_envir");
+    gs_free_object(mem, pst->font_defaults, "pjl_font_defaults");
+    gs_free_object(mem, pst->defaults, "pjl_defaults");
+    gs_free_object(mem, pst->envir, "pjl_envir");
+    gs_free_object(mem, pst, "pjl_state");
+}
+
+/* Convert font file name to fontnumber.  This table is hardwired here
+   so that PJL can have a numbering for the fonts.  Presumably these
+   font files would be burned into ROM in PJL font number order, PJL
+   would enumerate the fonts and hand them to pcl.  The table entries
+   and their order are device dependant and vary on different HP
+   devices.  This is the setup on an LJ4 modulo a few new fonts that
+   are not supported on that device. */
+ int
+pjl_get_pcl_internal_font_number(const char *filename)
+{
+    /* font file names - indices are the pjl font numbers */
+    static const char *font_table[] = {
+	"cour",                             /* 0 */
+	"cgti",                   	    /* 1 */
+	"cgtib",			    /* 2 */
+	"cgtii",			    /* 3 */
+	"cgtibi",			    /* 4 */
+	"cgom",                   	    /* 5 */
+	"cgomb",                  	    /* 6 */
+	"cgomi",                  	    /* 7 */
+	"cgombi",                 	    /* 8 */
+	"coro",                   	    /* 9 */
+	"clarbc",                 	    /* 10 */
+	"univm",                  	    /* 11 */
+	"univb",                  	    /* 12 */
+	"univmi",                 	    /* 13 */
+	"univbi",                 	    /* 14 */
+	"univmc",                 	    /* 15 */
+	"univcb",                 	    /* 16 */
+	"univmci",                	    /* 17 */
+	"univcbi",                	    /* 18 */
+	"anto",                   	    /* 19 */
+	"antob",                  	    /* 20 */
+	"antoi",                  	    /* 21 */
+	"garaa",                  	    /* 22 */
+	"garrah",                 	    /* 23 */
+	"garak",                  	    /* 24 */
+	"garrkh",                 	    /* 25 */
+	"mari",                   	    /* 26 */
+	"albrmd",                 	    /* 27 */
+	"albrxb",                 	    /* 28 */
+	"albrmdi",                	    /* 29 */
+	"arial",                  	    /* 30 */
+	"arialbd",                	    /* 31 */
+	"ariali",                 	    /* 32 */
+	"arialbi",                	    /* 33 */
+	"times",                  	    /* 34 */
+	"timesbd",                	    /* 35 */
+	"timesi",                 	    /* 36 */
+	"timesbi",                	    /* 37 */
+	"symbol",                 	    /* 38 */
+	"wingding",               	    /* 39 */
+	"courbd",                 	    /* 40 */
+	"couri",                  	    /* 41 */
+	"courbi",                 	    /* 42 */
+	"letr",                   	    /* 43 */
+	"letrb",                  	    /* 44 */
+	"letri",                  	    /* 45 */
+	"letrbi",                 	    /* 46 */
+	""
+    };
+    int i;
+    for ( i = 0; font_table[i]; i++ )
+	if ( !strcmp(font_table[i], filename) )
+	    return i;
+
+    dprintf1("pjparse.c:pjl_get_pcl_internal_font_number() font not found %s\n", filename);
+    return 0;
+}
+
+/* delete a permanent soft font */
+ int
+pjl_register_permanent_soft_font_deletion(pjl_parser_state *pst, int font_number)
+{
+    if ( (font_number > MAX_PERMANENT_FONTS - 1) || (font_number < 0) ) {
+	dprintf("pjparse.c:pjl_register_permanent_soft_font_deletion() bad font number\n");
+	return 0;
+    }
+    /* if the font is present. */
+    if ( (pjl_permanent_soft_fonts[font_number >> 3]) & (128 >> (font_number & 7)) ) {
+	/* set the bit to zero to indicate the fontnumber has been deleted */
+	pjl_permanent_soft_fonts[font_number >> 3] &= ~(128 >> (font_number & 7));
+	/* if the current font source is 'S' and the current font number
+	   is the highest number, and *any* soft font was deleted or if
+	   the last font has been removed, set the stage for changing to
+	   the next priority font source.  BLAME HP not me. */
+	{
+	    bool is_S = !pjl_compare(pjl_get_envvar(pst, "fontsource"), "S");
+	    bool empty = true;
+	    int highest_fontnumber = -1;
+	    int current_fontnumber = pjl_vartoi(pjl_get_envvar(pst, "fontnumber"));
+	    int i;
+	    /* check for no more fonts and the highest font number.
+	       NB should look at longs not bits in the loop */
+	    for ( i = 0; i < MAX_PERMANENT_FONTS; i++ )
+		if ( (pjl_permanent_soft_fonts[i >> 3]) & (128 >> (i & 7)) ) {
+		    empty = false;
+		    highest_fontnumber = i;
+		}
+	    if ( is_S && ((highest_fontnumber == current_fontnumber) || empty) ) {
+#define SINDEX 4
+		pst->font_defaults[SINDEX].fontnumber[0] = (char)NULL;
+		pst->font_envir[SINDEX].fontnumber[0] = (char)NULL;
+		return 1;
+#undef SINDEX
+	    }
+	}
+    }
+    return 0;
+}
+
+/* request that pjl add a soft font and return a pjl font number for
+   the font. */
+ int
+pjl_register_permanent_soft_font_addition(pjl_parser_state *pst)
+{
+    /* Find an empty slot in the table.  We have no HP documentation
+       that says how a soft font gets associated with a font number */
+    int font_num;
+    bool slot_found;
+    for ( font_num = 0; font_num < MAX_PERMANENT_FONTS; font_num++ )
+	if ( !((pjl_permanent_soft_fonts[font_num >> 3]) & (128 >> (font_num & 7))) ) {
+	    slot_found = true;
+	    break;
+	}
+    /* yikes, shouldn't happen */
+    if ( !slot_found ) {
+	dprintf("pjparse.c:pjl_register_permanent_soft_font_addition()\
+                 font table full recycling font number 0\n");
+	font_num = 0;
+    }
+    /* set the bit to 1 to indicate the fontnumber has been added */
+    pjl_permanent_soft_fonts[font_num >> 3] |= (128 >> (font_num & 7));
+    return font_num;
+}

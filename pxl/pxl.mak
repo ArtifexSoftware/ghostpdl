@@ -57,7 +57,7 @@ pxdict_h=$(PXLSRC)pxdict.h $(pldict_h) $(pxvalue_h)
 pxgstate_h=$(PXLSRC)pxgstate.h $(gsccolor_h) $(gsiparam_h) $(gsmatrix_h) $(gsrefct_h) $(gxbitmap_h) $(plsymbol_h) $(pxdict_h) $(pxenum_h)
 pxoper_h=$(PXLSRC)pxoper.h $(gserror_h) $(pxattr_h) $(pxerrors_h) $(pxvalue_h)
 pxparse_h=$(PXLSRC)pxparse.h $(pxoper_h)
-pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h)
+pxstate_h=$(PXLSRC)pxstate.h $(gsmemory_h) $(pxgstate_h) $(pjparse_h)
 
 # To avoid having to build the Ghostscript interpreter to generate pxbfont.c,
 # we normally ship a pre-constructed pxbfont.psc with the source code.
@@ -185,7 +185,7 @@ $(PXLOBJ)pxpaint.$(OBJ): $(PXLSRC)pxpaint.c $(AK) $(math__h) $(stdio__h)\
 
 $(PXLOBJ)pxsessio.$(OBJ): $(PXLSRC)pxsessio.c $(AK) $(math__h) $(stdio__h)\
  $(gschar_h) $(gscoord_h) $(gserrors_h) $(gspaint_h) $(gsparam_h) $(gsstate_h)\
- $(gxfcache_h) $(gxfixed_h)\
+ $(gxfcache_h) $(gxfixed_h) \
  $(pxfont_h) $(pxoper_h) $(pxstate_h)
 	$(PXLCCC) $(PXLSRC)pxsessio.c $(PXLO_)pxsessio.$(OBJ)
 

@@ -68,6 +68,9 @@ typedef struct pl_font_params_s {
   uint style;
   int stroke_weight;
   uint typeface_family;
+    /**** HACK, unfortunately there is not a better way to do this at
+          the current time. ****/
+  int pjl_font_number;
 } pl_font_params_t;
 
 /* ---------------- Internal structures ---------------- */
