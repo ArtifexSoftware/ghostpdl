@@ -154,7 +154,7 @@ const px_attr_value_type_t px_attr_value_types[] = {
   scub(),		/* MediaDestination -- NOT DOCUMENTED, THIS IS A GUESS */
   scub(),		/* MediaSize */
   scub(),		/* MediaSource */
-  scub(),		/* MediaType -- NOT DOCUMENTED, THIS IS A GUESS */
+  arr(ub),		/* MediaType -- NOT DOCUMENTED, THIS IS A GUESS */
   scub(),		/* Orientation -- illegal values only produce a warning! */
   scp(us|ss, checkPageAngle),		/* PageAngle */
   xy(ub|us|ss),		/* PageOrigin */
