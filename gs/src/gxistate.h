@@ -32,39 +32,46 @@
 #include "gxtmap.h"
 
 /*
- * Define the subset of the PostScript graphics state that the imager
- * library API needs.  The definition of this subset is subject to change
- * as we come to understand better the boundary between the imager and
- * the interpreter.  In particular, the imager state currently INCLUDES
- * the following:
- *      line parameters: cap, join, miter limit, dash pattern
- *      transformation matrix (CTM)
- *      logical operation: RasterOp, transparency
- *      color modification: alpha, rendering algorithm
- *	transparency information:
- *	    blend mode
- *	    (opacity + shape) (alpha + cached mask)
- *	    text knockout flag
- *	    rendering stack
- *      overprint control: overprint flag and mode
- *      rendering tweaks: flatness, fill adjustment, stroke adjust flag,
- *        accurate curves flag, shading smoothness
- *      color rendering information:
- *          halftone, halftone phases
- *          transfer functions
- *          black generation, undercolor removal
- *          CIE rendering tables
- *          halftone and pattern caches
- *	shared (constant) device color spaces
- * The imager state currently EXCLUDES the following:
- *      graphics state stack
- *      default CTM
- *      path
- *      clipping path and stack
- *      color specification: color, color space, substitute color spaces
- *      font
- *      device
- *      caches for many of the above
+  Define the subset of the PostScript graphics state that the imager library
+  API needs.  The intended division between the two state structures is that
+  the imager state contain only information that (1) is not part of the
+  parameters for individual drawing commands at the gx_ interface (i.e.,
+  will likely be different for each drawing call), and (2) is not an
+  artifact of the PostScript language (i.e., doesn't need to burden the
+  structure when it is being used for other imaging, specifically for
+  imaging a command list).  While this criterion is somewhat fuzzy, it leads
+  us to INCLUDE the following state elements:
+	line parameters: cap, join, miter limit, dash pattern
+	transformation matrix (CTM)
+	logical operation: RasterOp, transparency
+	color modification: alpha, rendering algorithm
+  	transparency information:
+  	    blend mode
+  	    (opacity + shape) (alpha + cached mask)
+  	    text knockout flag
+  	    rendering stack
+	overprint control: overprint flag and mode
+	rendering tweaks: flatness, fill adjustment, stroke adjust flag,
+	  accurate curves flag, shading smoothness
+	color rendering information:
+	    halftone, halftone phases
+	    transfer functions
+	    black generation, undercolor removal
+	    CIE rendering tables
+	    halftone and pattern caches
+  	shared (constant) device color spaces
+  We EXCLUDE the following for reason #1 (drawing command parameters):
+	path
+	clipping path and stack
+	color specification: color, color space, substitute color spaces
+	font
+	device
+  We EXCLUDE the following for reason #2 (specific to PostScript):
+	graphics state stack
+	default CTM
+	clipping path stack
+  In retrospect, perhaps the device should have been included in the
+  imager state, but we don't think this change is worth the trouble now.
  */
 
 /*
