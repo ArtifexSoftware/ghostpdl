@@ -200,6 +200,13 @@ zdefineusername(i_ctx_t *i_ctx_p)
 
     check_int_ltu(op[-1], max_array_size);
     check_type(*op, t_name);
+    if (user_names_p == 0) {
+	int code = create_names_array(&user_names_p, imemory_local,
+				      "defineusername");
+
+	if (code < 0)
+	    return code;
+    }
     if (array_get(user_names_p, op[-1].value.intval, &uname) >= 0) {
 	switch (r_type(&uname)) {
 	    case t_null:

@@ -131,6 +131,7 @@ typedef enum {
 #define SIZEOF_BIN_SEQ_OBJ ((uint)8)
 
 /* Forward references */
+private int scan_bin_get_name(P3(const ref *, int, ref *));
 private int scan_bin_num_array_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 private int scan_bin_string_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
 private int scan_bos_continue(P4(i_ctx_t *, stream *, ref *, scanner_state *));
@@ -301,13 +302,13 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 		return code;
 	    }
 	case BT_LITNAME_SYSTEM:
-	    code = array_get(system_names_p, p[1], pref);
+	    code = scan_bin_get_name(system_names_p, p[1], pref);
 	    goto lname;
 	case BT_EXECNAME_SYSTEM:
-	    code = array_get(system_names_p, p[1], pref);
+	    code = scan_bin_get_name(system_names_p, p[1], pref);
 	    goto xname;
 	case BT_LITNAME_USER:
-	    code = array_get(user_names_p, p[1], pref);
+	    code = scan_bin_get_name(user_names_p, p[1], pref);
 	  lname:
 	    if (code < 0)
 		return code;
@@ -316,7 +317,7 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    s_end_inline(s, p + 1, rlimit);
 	    return 0;
 	case BT_EXECNAME_USER:
-	    code = array_get(user_names_p, p[1], pref);
+	    code = scan_bin_get_name(user_names_p, p[1], pref);
 	  xname:
 	    if (code < 0)
 		return code;
@@ -348,6 +349,15 @@ scan_binary_token(i_ctx_t *i_ctx_p, stream *s, ref *pref,
 	    return code;
     }
     return_error(e_syntaxerror);
+}
+
+/* Get a system or user name. */
+private int
+scan_bin_get_name(const ref *pnames /*t_array*/, int index, ref *pref)
+{
+    if (pnames == 0)
+	return_error(e_rangecheck);
+    return array_get(pnames, (long)index, pref);
 }
 
 /* Continue collecting a binary string. */

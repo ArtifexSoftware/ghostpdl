@@ -37,25 +37,34 @@ typedef struct names_array_ref_s {
 gs_private_st_ref_struct(st_names_array_ref, names_array_ref_t,
 			 "names_array_ref_t");
 
+/* Create a system or user name table (in the stable memory of mem). */
+int
+create_names_array(ref **ppnames, gs_memory_t *mem, client_name_t cname)
+{
+    ref *pnames = (ref *)
+	gs_alloc_struct(gs_memory_stable(mem), names_array_ref_t,
+			&st_names_array_ref, cname);
+
+    if (pnames == 0)
+	return_error(e_VMerror);
+    make_empty_array(pnames, a_readonly);
+    *ppnames = pnames;
+    return 0;
+}
+
 /* Initialize the binary token machinery. */
 private int
 zbseq_init(i_ctx_t *i_ctx_p)
 {
-    /* Initialize fake system and user name tables. */
+    /* Initialize a fake system name table. */
     /* PostScript code will install the real system name table. */
-    ref *psystem_names = (ref *)
-	gs_alloc_struct(gs_memory_stable(imemory_global), names_array_ref_t,
-			&st_names_array_ref, "zbseq_init(system_names)");
-    ref *puser_names = (ref *)
-	gs_alloc_struct(gs_memory_stable(imemory_local), names_array_ref_t,
-			&st_names_array_ref, "zbseq_init(user_names)");
+    ref *psystem_names = 0;
+    int code = create_names_array(&psystem_names, imemory_global,
+				  "zbseq_init(system_names)");
 
-    if (psystem_names == 0 || puser_names == 0)
-	return_error(e_VMerror);
-    make_empty_array(psystem_names, a_readonly);
-    make_empty_array(puser_names, a_all);
+    if (code < 0)
+	return code;
     system_names_p = psystem_names;
-    user_names_p = puser_names;
     return 0;
 }
 
