@@ -1061,6 +1061,12 @@ gx_imager_dev_ht_install(
                 tile_bytes = porder->raster
                               * (porder->num_bits / porder->width);
                 num_tiles = 1 + max_tile_cache_bytes / tile_bytes;
+
+/* TEMPORARY HACK */
+if (num_tiles < porder->num_levels + 1)
+    num_tiles = porder->num_levels + 1;
+
+
                 pcache = gx_ht_alloc_cache( pis->memory,
                                             num_tiles,
                                             tile_bytes * num_tiles );

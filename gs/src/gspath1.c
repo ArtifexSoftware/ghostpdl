@@ -474,7 +474,7 @@ gs_upathbbox(gs_state * pgs, gs_rect * pbox, bool include_moveto)
 {
     gs_fixed_rect fbox;		/* box in device coordinates */
     gs_rect dbox;
-    int code = gx_path_bbox(pgs->path, &fbox);
+    int code = gx_path_bbox_set(pgs->path, &fbox);
 
     if (code < 0)
 	return code;

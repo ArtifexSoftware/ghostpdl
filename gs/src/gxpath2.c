@@ -126,6 +126,19 @@ gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
     return 0;
 }
 
+/* A variation of gs_path_bbox, to be used by the patbbox operator */
+int
+gx_path_bbox_set(gx_path * ppath, gs_fixed_rect * pbox)
+{
+    if (ppath->bbox_set) {
+	/* The bounding box was set by setbbox. */
+	*pbox = ppath->bbox;
+	return 0;
+    } else
+	return gx_path_bbox(ppath, pbox);
+}
+
+
 /* Test if a path has any curves. */
 #undef gx_path_has_curves
 bool
