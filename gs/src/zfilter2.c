@@ -1,4 +1,4 @@
-/* Copyright (C) 1991, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1991, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -96,18 +96,17 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
 	return filter_write(i_ctx_p, npop, template, st, 0);
     {
 	/* We need to cascade filters. */
-	ref rtarget, rdict, rfd;
+	ref rtarget, rdict;
 	int code;
 
 	/* Save the operands, just in case. */
 	ref_assign(&rtarget, op - 1);
 	ref_assign(&rdict, op);
-	code = filter_write(i_ctx_p, 1, template, st, 0);
+	code = filter_write(i_ctx_p, npop, template, st, 0);
 	if (code < 0)
 	    return code;
 	/* filter_write changed osp.... */
 	op = osp;
-	ref_assign(&rfd, op);
 	code =
 	    (predictor == 2 ?
 	     filter_write(i_ctx_p, 0, &s_PDiffE_template, (stream_state *)&pds, 0) :
@@ -120,7 +119,11 @@ filter_write_predictor(i_ctx_t *i_ctx_p, int npop,
 	    ref_assign(op, &rdict);
 	    return code;
 	}
-	filter_mark_temp(&rfd, 2);	/* Mark the compression stream as temporary. */
+	/*
+	 * Mark the compression stream as temporary, and propagate
+	 * CloseTarget from it to the predictor stream.
+	 */
+	filter_mark_strm_temp(op, 2);
 	return code;
     }
 }

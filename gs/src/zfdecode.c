@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -144,7 +144,7 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
 	return filter_read(i_ctx_p, npop, template, st, 0);
     {
 	/* We need to cascade filters. */
-	ref rsource, rdict, rfd;
+	ref rsource, rdict;
 	int code;
 
 	/* Save the operands, just in case. */
@@ -155,7 +155,6 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
 	    return code;
 	/* filter_read changed osp.... */
 	op = osp;
-	ref_assign(&rfd, op);
 	code =
 	    (predictor == 2 ?
 	 filter_read(i_ctx_p, 0, &s_PDiffD_template, (stream_state *) & pds, 0) :
@@ -168,7 +167,11 @@ filter_read_predictor(i_ctx_t *i_ctx_p, int npop,
 	    ref_assign(op, &rdict);
 	    return code;
 	}
-	filter_mark_temp(&rfd, 2);	/* Mark the decompression stream as temporary. */
+	/*
+	 * Mark the compression stream as temporary, and propagate
+	 * CloseSource from it to the predictor stream.
+	 */
+	filter_mark_strm_temp(op, 2);
 	return code;
     }
 }

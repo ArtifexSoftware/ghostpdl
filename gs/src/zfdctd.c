@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -45,7 +45,6 @@ zDCTD(i_ctx_t *i_ctx_p)
     dict_param_list list;
     jpeg_decompress_data *jddp;
     int code;
-    int npop;
     const ref *dop;
     uint dspace;
 
@@ -64,16 +63,16 @@ zDCTD(i_ctx_t *i_ctx_p)
 	goto fail;		/* correct to do jpeg_destroy here */
     /* Read parameters from dictionary */
     if (r_has_type(op, t_dictionary))
-	npop = 1, dop = op, dspace = r_space(op);
+	dop = op, dspace = r_space(op);
     else
-	npop = 0, dop = 0, dspace = 0;
+	dop = 0, dspace = 0;
     if ((code = dict_param_list_read(&list, dop, NULL, false, iimemory)) < 0)
 	goto fail;
     if ((code = s_DCTD_put_params((gs_param_list *) & list, &state)) < 0)
 	goto rel;
     /* Create the filter. */
     jddp->template = s_DCTD_template;
-    code = filter_read(i_ctx_p, npop, &jddp->template,
+    code = filter_read(i_ctx_p, 0, &jddp->template,
 		       (stream_state *) & state, dspace);
     if (code >= 0)		/* Success! */
 	return code;

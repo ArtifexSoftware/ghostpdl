@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -35,7 +35,8 @@ int filter_read(P5(
 	/* Operator arguments that were passed to zfxxx operator */
 		   i_ctx_t *i_ctx_p,
 	/* # of parameters to pop off o-stack, */
-	/* not counting the source/target */
+	/* not counting the source/target and also not counting any */
+	/* top dictionary operand (both of which will always be popped) */
 		   int npop,
 	/* Template for stream */
 		   const stream_template * template,
@@ -50,8 +51,8 @@ int filter_write(P5(i_ctx_t *i_ctx_p, int npop,
 		    stream_state * st, uint space));
 
 /*
- * Define a simplified interface for streams with no parameters or state.
- * These procedures also pop the top o-stack element if it is a dictionary.
+ * Define a simplified interface for streams with no parameters (except
+ * an optional dictionary) or state.
  */
 int filter_read_simple(P2(i_ctx_t *i_ctx_p,
 			  const stream_template * template));
@@ -61,6 +62,10 @@ int filter_write_simple(P2(i_ctx_t *i_ctx_p,
 /* Mark a filter stream as temporary. */
 /* See stream.h for the meaning of is_temp. */
 void filter_mark_temp(P2(const ref * fop, int is_temp));
+
+/* Mark the source or target of a filter as temporary, and propagate */
+/* close_strm from the temporary stream to the filter. */
+void filter_mark_strm_temp(P2(const ref * fop, int is_temp));
 
 /* Define a standard report_error procedure for filters, */
 /* that records the error message in $error.errorinfo. */
