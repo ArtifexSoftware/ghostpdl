@@ -48,7 +48,7 @@ pcl_select_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( i != pcls->pattern_type ||
 	     (i >= 2 &&
 	      id_value(pcls->current_pattern_id) != id_value(pcls->pattern_id))
-	   )
+	      )
 	  { pcls->pattern_type = i;
 	    pcls->current_pattern_id = pcls->pattern_id;
 	  }
@@ -182,6 +182,8 @@ pcl_set_pattern_reference_point(pcl_args_t *pargs, pcl_state_t *pcls)
 	  return 0;
 	pcls->shift_patterns = true;
 	pcls->rotate_patterns = rotate == 0;
+	pcls->pattern_reference_point.x = (float)pcls->cap.x;
+	pcls->pattern_reference_point.y = (float)pcls->cap.y;
 	return 0;
 }
 
@@ -266,19 +268,23 @@ pcprint_do_init(gs_memory_t *mem)
 }
 private void
 pcprint_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer) )
+{	
+	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { id_set_value(pcls->pattern_id, 0);
 	    pcls->pattern_type = pcpt_solid_black;
 	    pcls->pattern_transparent = true;
 	    pcls->shift_patterns = false;
 	    pcls->rotate_patterns = true;
-	    if ( type & pcl_reset_initial )
-	      pl_dict_init(&pcls->patterns, pcls->memory, NULL);
-	    else
-	      { pcl_args_t args;
-	        arg_set_uint(&args, 1);	/* delete temporary patterns */
-		pcl_pattern_control(&args, pcls);
-	      }
+	    pcls->pattern_reference_point.x = 0.0;
+	    pcls->pattern_reference_point.y = 0.0;
+	  }
+	if ( type & pcl_reset_initial )
+	  pl_dict_init(&pcls->patterns, pcls->memory, NULL);
+	else
+	  { 
+	    pcl_args_t args;
+	    arg_set_uint(&args, 1);	/* delete temporary patterns */
+	    pcl_pattern_control(&args, pcls);
 	  }
 }
 private int
@@ -289,8 +295,12 @@ pcprint_do_copy(pcl_state_t *psaved, const pcl_state_t *pcls,
 	    /**** WHAT IF CURRENT PATTERN WAS DELETED? ****/
 	    psaved->patterns = pcls->patterns;
 	    gs_settexturetransparent(pcls->pgs, psaved->pattern_transparent);
+#if 0
+	    /** HAS the copy operation needs review - it seems to have
+                gotten out of sync **/
 	    gs_sethalftonephase(pcls->pgs, psaved->pattern_reference_point.x,
 				psaved->pattern_reference_point.y);
+#endif
 	  }
 	return 0;
 }
