@@ -18,7 +18,7 @@ PXLGEN=$(PXLGENDIR)$(D)
 PXLOBJ=$(PXLOBJDIR)$(D)
 PXLO_=$(O_)$(PXLOBJ)
 
-PXLCCC=$(CC_) -I$(PXLSRCDIR) -I$(PXLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) -I$(GLGENDIR) $(C_)
+PXLCCC=$(CC_) $(I_)$(PXLSRCDIR)$(_I) $(I_)$(PXLGENDIR)$(_I) $(I_)$(PLSRCDIR)$(_I) $(I_)$(GLSRCDIR)$(_I) $(I_)$(GLGENDIR)$(_I) $(C_)
 
 # Define the name of this makefile.
 PXL_MAK=$(PXLSRC)pxl.mak
