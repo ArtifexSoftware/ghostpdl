@@ -306,9 +306,21 @@ struct gx_device_color_s {
 	} /*(colored) */ pattern;
     } colors;
     gs_int_point phase;
+    /*
+     * This flag indicates if the paint values in ccolor are valid.  They
+     * are valid for most cases.  However there are some special cases
+     * in which a device color is initialized to specific values (usually
+     * black or white) instead of being created from a color space and
+     * color values.
+     */
     bool ccolor_valid;
-    gs_client_color ccolor;	/* needed for remapping patterns, */
-				/* not set for non-pattern colors */
+    /*
+     * For non-pattern colors, ccolors contains the original paint values.
+     * For pattern colors, ccolors contains information required for remapping.
+     * the pattern.  See ccolor_valid.
+     */
+    gs_client_color ccolor;
+
     struct _mask {
 	struct mp_ {
 	    short x, y;
