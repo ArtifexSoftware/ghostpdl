@@ -1,4 +1,4 @@
-#    Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1989, 1996-9, 2002 artofcode LLC.  All rights reserved.
 # 
 # This file is part of AFPL Ghostscript.
 # 
@@ -56,6 +56,8 @@
 #	    and linking libgz/libz explicitly.
 #	ZLIB_NAME - the name of the shared zlib, either gz (for libgz, -lgz)
 #	    or z (for libz, -lz).
+#	ICCSRCDIR - the name of the ICC lib source dir, currently
+#	    always icclib (compiled in statically)
 #	DEVICE_DEVS - the devices to include in the executable.
 #	    See devs.mak for details.
 #	DEVICE_DEVS1...DEVICE_DEVS20 - additional devices, if the definition
