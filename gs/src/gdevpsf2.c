@@ -771,7 +771,6 @@ cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
     uint count;
     gs_const_string str;
     stream poss;
-    bool convert = cff_convert_charstrings(pcw, pfont);
     int code;
 
     psf_enumerate_glyphs_reset(penum);
@@ -785,7 +784,7 @@ cff_write_CharStrings_offsets(cff_writer_t *pcw, psf_glyph_enum_t *penum,
 	    pcw->glyph_data(pfont, glyph, &str, &pfd) >= 0 &&
 	    str.size >= (extra_lenIV = cff_extra_lenIV(pcw, pfd))
 	    ) {
-	    if (convert) {
+	    if (cff_convert_charstrings(pcw, (gs_font_base *)pfd)) {
 		swrite_position_only(&poss);
 		code = psf_convert_type1_to_type2(&poss, &str, pfd);
 		if (code < 0)
