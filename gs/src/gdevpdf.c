@@ -282,7 +282,8 @@ const gx_device_pdf gs_pdfwrite_device =
  1,				/* pcm_color_info_index == DeviceRGB */
  false,				/* skip_colors */
  false,				/* AR4_save_bug */
- 0				/* font3 */
+ 0,				/* font3 */
+ {0}				/* charproc_ctm */
 };
 
 /* ---------------- Device open/close ---------------- */

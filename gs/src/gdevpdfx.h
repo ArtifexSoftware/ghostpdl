@@ -552,6 +552,7 @@ struct gx_device_pdf_s {
     bool skip_colors; /* Skip colors while a pattern/charproc accumulation. */
     bool AR4_save_bug; /* See pdf_put_uncolored_pattern */
     pdf_resource_t *font3; /* The owner of the accumulated charstring. */
+    gs_matrix_fixed charproc_ctm;
 };
 
 #define is_in_page(pdev)\

@@ -119,7 +119,6 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	gs_char ch;
 	gs_glyph glyph;
 	gs_const_string gnstr;
-	gs_matrix m;
 
 	if (penum->text.operation & TEXT_FROM_SINGLE_GLYPH) {
 	    byte buf[1];
@@ -148,6 +147,9 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    gs_show_enum *penum_s;
 	    extern_st(st_gs_show_enum);
 	    gs_fixed_rect clip_box;
+	    double pw1[10];
+	    int narg = (control == TEXT_SET_CHAR_WIDTH ? 2 : 
+			control == TEXT_SET_CACHE_DEVICE ? 6 : 10), i;
 
 	    if (penum->pte_default == NULL)
 		return_error(gs_error_unregistered); /* Must not happen. */
@@ -161,13 +163,23 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = font->procs.glyph_name(font, glyph, &gnstr);
 	    if (code < 0)
 		return_error(gs_error_unregistered); /* Must not happen. */
-	    gs_make_identity(&m);
-	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+	    /* BuildChar could change the scale before calling setcachedevice (Bug 687290). 
+	       We must scale the setcachedevice arguments because we assumed
+	       identity scale before entering the charproc.
+	       For now we only handle scaling matrices.
+	    */
+	    for (i = 0; i < narg; i += 2) {
+		gs_point p;
+
+		gs_transform(penum_s->pgs, pw[i], pw[i + 1], &p);
+		pw1[i] = p.x;
+		pw1[i + 1] = p.y;
+	    }
 	    if (control != TEXT_SET_CHAR_WIDTH) {
-		clip_box.p.x = float2fixed(pw[2]);
-		clip_box.p.y = float2fixed(pw[3]);
-		clip_box.q.x = float2fixed(pw[4]);
-		clip_box.q.y = float2fixed(pw[5]);
+		clip_box.p.x = float2fixed(pw1[2]);
+		clip_box.p.y = float2fixed(pw1[3]);
+		clip_box.q.x = float2fixed(pw1[4]);
+		clip_box.q.y = float2fixed(pw1[5]);
 	    } else {
 		/*
 		 * We have no character bbox, but we need one to install the clipping
@@ -183,8 +195,8 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    code = gx_clip_to_rectangle(penum_s->pgs, &clip_box);
 	    if (code < 0)
 		return code;
-	    code = pdf_install_charproc_accum(pdev, pte->orig_font, 
-			pw, control, ch, &gnstr);
+	    code = pdf_install_charproc_accum(pdev, pte->current_font, 
+			pw1, control, ch, &gnstr);
 	    if (code < 0)
 		return code;
 	    if (control == TEXT_SET_CHAR_WIDTH) {
@@ -197,6 +209,16 @@ pdf_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    }
 	    penum->charproc_accum = true;
 	    return code;
+	} else {
+	    /* pdf_text_process had set an identity CTM for the
+	       charproc stream accumulation, but now we re-decided
+	       to go with the default implementation.
+	       Need to restore the correct CTM and add
+	       changes, which the charproc possibly did. */
+	    gs_matrix m;
+
+	    gs_matrix_multiply((gs_matrix *)&pdev->charproc_ctm, (gs_matrix *)&penum->pis->ctm, &m);
+	    gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
 	}
     }
     if (penum->pte_default) {
@@ -941,10 +963,10 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	    pdfont->u.simple.s.type3.bitmap_font = false;
 	    pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
 				bfont->nearest_encoding_index, true);
-	    pdfont->u.simple.s.type3.FontBBox.p.x = (int)bfont->FontBBox.p.x;
-	    pdfont->u.simple.s.type3.FontBBox.p.y = (int)bfont->FontBBox.p.y;
-	    pdfont->u.simple.s.type3.FontBBox.q.x = (int)bfont->FontBBox.q.x;
-	    pdfont->u.simple.s.type3.FontBBox.q.y = (int)bfont->FontBBox.q.y;
+	    pdfont->u.simple.s.type3.FontBBox.p.x = (int)floor(bfont->FontBBox.p.x);
+	    pdfont->u.simple.s.type3.FontBBox.p.y = (int)floor(bfont->FontBBox.p.y);
+	    pdfont->u.simple.s.type3.FontBBox.q.x = (int)ceil(bfont->FontBBox.q.x);
+	    pdfont->u.simple.s.type3.FontBBox.q.y = (int)ceil(bfont->FontBBox.q.y);
 	    pdfont->u.simple.s.type3.FontMatrix = bfont->FontMatrix;
 	    /* Adobe viewers have a precision problem with small font matrices : */
 	    while (any_abs(pdfont->u.simple.s.type3.FontMatrix.xx) < 0.001 &&
@@ -1928,11 +1950,28 @@ pdf_text_process(gs_text_enum_t *pte)
 	pdev->pte = pte_default; /* CAUTION: See comment in gdevpdfx.h . */
 	code = gs_text_process(pte_default);
 	pdev->pte = NULL;	 /* CAUTION: See comment in gdevpdfx.h . */
-	if (pte->current_font->FontType != ft_user_defined)
+	if (pte->orig_font->FontType != ft_user_defined)
 	    gs_text_enum_copy_dynamic(pte, pte_default, true);
 	else {
 	    penum->returned.current_char = pte_default->returned.current_char;
 	    penum->returned.current_glyph = pte_default->returned.current_glyph;
+	}
+	if (code == TEXT_PROCESS_RENDER) {
+	    pdev->charproc_ctm = penum->pis->ctm;
+	    if (penum->current_font->FontType == ft_user_defined && 
+		    !(penum->pte_default->text.operation & TEXT_DO_CHARWIDTH)) {
+		/* Must set an identity CTM for the charproc accumulation.
+		   The condition above must be consistent with one in pdf_text_set_cache,
+		   which decides to apply pdf_install_charproc_accum.
+		   The function show_proceed (called from gs_text_process above) 
+		   executed gsave, so we are safe to change CTM now.
+		   Note that BuildChar may change CTM before calling setcachedevice. */
+		gs_matrix m;
+
+		gs_make_identity(&m);
+		gs_matrix_fixed_from_matrix(&penum->pis->ctm, &m);
+		return code;
+	    }
 	}
 	if (code)
 	    return code;
