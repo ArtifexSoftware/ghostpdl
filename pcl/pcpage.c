@@ -467,6 +467,9 @@ pcl_end_page(
     }
     /* output the page */
     (*pcs->end_page)(pcs, pcs->num_copies, true);
+    /* allow the logical orientation command to be used again */
+    pcs->orientation_set = false;
+
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);
     code = gs_erasepage(pcs->pgs);
     /*
@@ -539,8 +542,15 @@ set_page_size(
             break;
         }
     }
-    if ((psize != 0) && ((code = pcl_end_page_if_marked(pcs)) >= 0))
-        new_page_size(pcs, psize, false);
+    if ((psize != 0) && ((code = pcl_end_page_if_marked(pcs)) >= 0)) {
+	/* if the orientation flag is not set for this page we select
+           a portrait page using the set paper size.  Otherwise select
+           the paper using the current orientation. */
+	if ( pcs->orientation_set == false )
+	    new_logical_page(pcs, 0, psize, false);
+	else
+	    new_page_size(pcs, psize, false);
+    }
     return code;
 }
 
@@ -620,11 +630,29 @@ set_logical_page_orientation(
 )
 {
     uint            i = uint_arg(pargs);
-    int             code = 0;
+    int             code;
 
-    if ( (i <= 3)                                   &&
-         ((code = pcl_end_page_if_marked(pcs)) >= 0)  )
-        new_logical_page(pcs, i, pcs->xfm_state.paper_size, false);
+    /* the command is ignored if it is value is out of range */
+    if ( i > 3 )
+	return 0;
+
+    /* Oddly the orientation is set, disabling the command, if the
+       requested value is current in the state. */
+    if ( i == pcs->xfm_state.lp_orient )
+	pcs->orientation_set = true;
+
+    /* the orientation has already been set for this logical page,
+       cannot execute the command. */
+    if ( pcs->orientation_set == true )
+	return 0;
+
+    /* ok to execute - clear the page, set up the transformations and
+       set the flag disabling the orientation command for this page. */
+    code = pcl_end_page_if_marked(pcs);
+    if ( code >= 0 ) {
+	new_logical_page(pcs, i, pcs->xfm_state.paper_size, false);
+	pcs->orientation_set = true;
+    }
     return code;
 }
 
@@ -962,6 +990,7 @@ pcpage_do_reset(
 )
 {
     if ((type & (pcl_reset_initial | pcl_reset_printer)) != 0) {
+	pcs->orientation_set = false;
 	pcs->paper_source = 0;		/* ??? */
         pcs->xfm_state.left_offset_cp = 0.0;
         pcs->xfm_state.top_offset_cp = 0.0;
