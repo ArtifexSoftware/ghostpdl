@@ -1388,6 +1388,12 @@ pattern_do_registration(
  
 }
 
+private bool
+pcl_pcache_remove_all_proc(gx_color_tile * ctile, void *proc_data)
+{
+    return true;
+}
+
   private void
 pattern_do_reset(
     pcl_state_t *       pcs,
@@ -1409,6 +1415,10 @@ pattern_do_reset(
         pcs->current_pattern_id = 0;
         pcs->pattern_type = pcl_pattern_solid_frgrnd;
     }
+    if ( type & pcl_reset_permanent || type & pcl_reset_printer )
+        gx_pattern_cache_winnow(gstate_pattern_cache(pcs->pgs),
+                                pcl_pcache_remove_all_proc,
+				NULL);
 }
 
 const pcl_init_t    pcl_pattern_init = { pattern_do_registration, pattern_do_reset, 0 };
