@@ -22,14 +22,17 @@ import re
 import time
 import string
 import gsconf
+import anydbm
 
 # configuration variables
 
+YESTERDAY = time.strftime("%Y%m%d", time.localtime(time.time() - (24*60*60)))
 MAIL_SERVER = 'localhost'
 REPORT_EMAIL = 'gs-regression@ghostscript.com'
 MAIL_FROM = 'regression@casper.ghostscript.com'
 HEAD_DIR = gsconf.gsroot
 REGRESSION_SCRIPT = 'run_regression 2>&1'
+DIFF_SCRIPT = 'testdiff %s 2>&1' $ (YESTERDAY,)
 LOG_STDOUT = gsconf.log_stdout
 LOG_STDERR = gsconf.log_stderr
 
@@ -72,6 +75,11 @@ def change_gsproduct(file):
     os.unlink(file)
     os.rename(tmpfile, file)
 
+def create_dailydb():
+    # create a new empty database
+    db = anydbm.open(gsconf.dailydb, "n")
+    db.close()
+
 def sendmail(frm, to, subject, text):
 	import smtplib
 
@@ -110,6 +118,9 @@ except:
     sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'The log files were not able to be restartd.')
     exit(0)
 
+# create the daily results database
+create_dailydb()
+
 p = os.popen(REGRESSION_SCRIPT)
 if p == None:
 	sendmail(MAIL_FROM, REPORT_EMAIL, 'error running regression', 'There was an error updating and building ghostscript from CVS.  Please investigate.')
@@ -123,5 +134,17 @@ for line in p.readlines():
 	msg = msg + line
 	
 p.close()
+
+# now do the daily diff
+diff = 'The following regression changes happened since yesterday\'s report:\n'
+
+p = os.popen(DIFF_SCRIPT)
+if p:
+	for line in p.readlines():
+		diff = diff + line
+	p.close()
+
+diff = diff + "\n\nThe complete list of regressions for today:\n"
+msg = diff + msg
 
 sendmail(MAIL_FROM, REPORT_EMAIL, 'gs regression report - %s' % (time.strftime('%Y-%m-%d'),), msg)

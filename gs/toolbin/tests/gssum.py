@@ -19,29 +19,27 @@
 #
 # this module contains routines for calculating sums and managing
 # the sum database
+import anydbm
+import gsconf
 
-def exists(file):
-    import anydbm
-    import gsconf
 
-    db = anydbm.open(gsconf.testdatadb)
+def exists(file, dbname=gsconf.testdatadb):
+    db = anydbm.open(dbname)
     exists = db.has_key(file)
     db.close()
 
     return exists
 
-def add_file(file):
-    import anydbm
-    import gsconf
-
-    db = anydbm.open(gsconf.testdatadb, 'w')
-    db[file] = make_sum(file)
+def add_file(file, dbname=gsconf.testdatadb, sum=''):
+    db = anydbm.open(dbname, 'w')
+    if len(sum) > 0:
+        db[file] = sum
+    else:
+        db[file] = make_sum(file)
     db.close()
 
-def get_sum(file):
-    import anydbm, gsconf
-
-    db = anydbm.open(gsconf.testdatadb)
+def get_sum(file, dbname=gsconf.testdatadb):
+    db = anydbm.open(dbname)
     sum = db[file]
     db.close()
 

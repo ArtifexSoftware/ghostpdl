@@ -72,12 +72,16 @@ class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
 		os.unlink(file1)
 		os.unlink(file2)
 
+		# add test result to daily database
+		if self.track_daily:
+			gssum.add_file(file2, dbname=gsconf.dailydb, sum=sum)
+
 		self.assertEqual(sum, gssum.get_sum(file2), "md5sum did not match baseline (" + file2 + ") for file: " + self.file)
 
 # Add the tests defined in this file to a suite
 
 def add_compare_test(suite, f, device, dpi, band):
-        suite.addTest(GSPDFWriteCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device=device, dpi=dpi, band=band))
+        suite.addTest(GSPDFWriteCompareTestCase(gs=gsconf.comparegs, file=gsconf.comparefiledir + f, device=device, dpi=dpi, band=band, track_daily=1))
 
 def addTests(suite, gsroot, **args):
 	# get a list of test files

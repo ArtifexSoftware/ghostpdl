@@ -1,0 +1,175 @@
+#!/usr/bin/env python2.1
+
+#    Copyright (C) 2001 Artifex Software Inc.
+#
+# This software is provided AS-IS with no warranty, either express or
+# implied.
+#
+# This software is distributed under license and may not be copied,
+# modified or distributed except as expressly authorized under the terms
+# of the license contained in the file LICENSE in this distribution.
+#
+# For more information about licensing, please refer to
+# http://www.ghostscript.com/licensing/. For information on
+# commercial licensing, go to http://www.artifex.com/licensing/ or
+# contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+# San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+
+# $Id$
+
+#
+# testdiff <start date> [<end date>]
+#
+# this script provides the difference between two sets of regression results.
+# if end date is omitted, the current date will be used.
+#
+# dates should be specified as YYYYMMDD
+
+import sys
+import re
+import time
+import anydbm
+import gsconf
+
+def usage():
+    print "testdiff <start date> [<end date>]"
+    print
+    print "dates should be specified in YYYYMMDD format. if the end date"
+    print "is omitted, the current date will be used."
+    print
+    sys.exit(1)
+
+def sort_list(a, b):
+    if a[0] < b[0]:
+        return 1
+    elif a[0] > b[0]:
+        return -1
+
+    if a[1] < b[1]:
+        return 1
+    elif a[1] > b[1]:
+        return -1
+
+    if a[2] < b[2]:
+        return 1
+    elif a[2] > b[2]:
+        return -1
+
+    if a[3] < b[3]:
+        return 1
+    elif a[3] > b[3]:
+        return -1
+
+    if a[4] < b[4]:
+        return 1
+    elif a[4] > b[4]:
+        return -1
+
+    return 0
+                    
+
+normal_re = re.compile("^(.*?)\.(p[bgpk]mraw)\.(\d+)\.(\d+)$")
+pdfwrite_re = re.compile("^(.*?)\.(ps|pdf)\.pdf\.(p[bgpk]mraw)\.(\d+)\.(\d+)$")
+
+start_date = ''
+end_date = ''
+
+# process arguments
+
+if len(sys.argv) == 2:
+    start_date = sys.argv[1]
+elif len(sys.argv) == 3:
+    start_date = sys.argv[1]
+    end_date = sys.argv[2]
+else:
+    usage()
+
+if not end_date:
+    end_date = time.strftime("%Y%m%d", time.localtime(time.time()))
+
+# check if databases for both dates exist
+
+start_dbname = gsconf.dailydir + start_date + '.db'
+start_db = None
+end_dbname = gsconf.dailydir + end_date + '.db'
+end_db = None
+baseline_db = None
+
+try:
+    start_db = anydbm.open(start_dbname, 'r')
+    end_db = anydbm.open(end_dbname, 'r')
+    baseline_db = anydbm.open(gsconf.testdatadb, 'r')
+except:
+    pass
+
+if not start_db:
+    print "Test results for %s were not found." % (start_date,)
+    sys.exit(1)
+if not end_db:
+    print "Test results for %s were not found." % (end_date,)
+    sys.exit(1)
+if not baseline_db:
+    print "Baseline database could not be opened."
+    sys.exit(1)
+    
+# now find the differences, ignoring updated baselines
+
+keys = []
+diffs = []
+
+# get a list of all keys
+for k in start_db.keys():
+    if k not in keys:
+        keys.append(k)
+for k in end_db.keys():
+    if k not in keys:
+        keys.append(k)
+
+for k in keys:
+    if k not in start_db.keys():
+        if end_db[k] != baseline_db[k]:
+            diffs.append(k)
+    elif k not in end_db.keys():
+        diffs.append(k)
+    elif start_db[k] != end_db[k] and end_db[k] != baseline_db[k]:
+        diffs.append(k)
+
+list = []
+
+for d in diffs:
+    type = ''
+    filename = ''
+    device = ''
+    dpi = 0
+    banded = 0
+    
+    m = pdfwrite_re.search(d)
+    if m:
+        type = 'pdfwrite'
+        filename = m.group(1) + "." + m.group(2)
+        device = m.group(3)
+        dpi = int(m.group(4))
+        banded = int(m.group(5))
+    else:
+        m = normal_re.search(d)
+        if m:
+            type = 'normal'
+            filename = m.group(1)
+            device = m.group(2)
+            dpi = int(m.group(3))
+            banded = int(m.group(4))
+
+    if not type:
+        print "WARNING: Got a key that didn't match expressions!"
+        continue
+
+    bandstr = "noband"
+    if banded:
+        bandstr = "banded"
+
+    list.append((type, filename, device, dpi, bandstr))
+
+    
+list.sort()
+for l in list:
+    print "%s %s (%s/%d/%s)" % (l[0], l[1], l[2], l[3], l[4])

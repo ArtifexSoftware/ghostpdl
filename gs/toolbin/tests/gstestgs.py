@@ -95,7 +95,7 @@ class Ghostscript:
 
 		
 class GhostscriptTestCase(GSTestCase):
-	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', gsoptions='', log_stdout='', log_stderr=''):
+	def __init__(self, gs='gs', dpi=72, band=0, file='test.ps', device='pdfwrite', gsoptions='', log_stdout='', log_stderr='', track_daily=0):
 		self.gs = gs
 		self.file = file
 		self.dpi = dpi
@@ -104,6 +104,7 @@ class GhostscriptTestCase(GSTestCase):
 		self.gsoptions = gsoptions
 		self.log_stdout = log_stdout
 		self.log_stderr = log_stderr
+		self.track_daily = track_daily
 		GSTestCase.__init__(self)
 
 
@@ -149,5 +150,9 @@ class GSCompareTestCase(GhostscriptTestCase):
 		gs.process()
 		sum = gssum.make_sum(file)
 		os.unlink(file)
+
+		# add test result to daily database
+		if self.track_daily:
+			gssum.add_file(file, dbname=gsconf.dailydb, sum=sum)
 		
 		self.assertEqual(sum, gssum.get_sum(file), 'md5sum did not match baseline (' + file + ') for file: ' + self.file)

@@ -20,6 +20,7 @@
 # configuration variables for regression testing
 
 import os
+import time
 
 if os.name == 'nt':
 
@@ -29,10 +30,13 @@ if os.name == 'nt':
 	gsroot = 'D:/path/to/current/gs/'
 	gsfontdir   = 'D:/path/to/fonts'
 
+	dailydir = testroot + 'daily/'
 	comparefiledir = testroot + 'comparefiles/'
 	crashfiledir   = testroot + 'crashfiles/'
 
 	testdatadb = testroot + 'testdata.db'
+	dailydb = dailydir + time.strftime("%Y%m%d", time.localtime(time.time())) + '.db'
+	
 	baselinegs = baselinedir + 'bin/gswin32c.exe'
 	comparegs  = comparedir  + 'bin/gswin32c.exe '
 	baselineoptions = ' -I' + baselinedir + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
@@ -51,10 +55,13 @@ else:
 	comparedir = '/path/to/compare/gs/'
 	gsroot = '/path/to/current/gs/'
 
+	dailydir = testroot + 'daily/'
 	comparefiledir = testroot + 'comparefiles/'
 	crashfiledir = testroot + 'crashfiles/'
 
 	testdatadb = testroot + 'testdata.db'
+	dailydb = dailydir + time.strftime("%Y%m%d", time.localtime(time.time())) + '.db'
+	
 	baselinegs = baselinedir + 'bin/gs'
 	comparegs = comparedir + 'bin/gs'
 	baselineoptions = ''
