@@ -120,6 +120,7 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	const gx_strip_bitmap *tile = gx_dc_binary_tile(pdcolor);
 	gx_color_index color0 = gx_dc_binary_color0(pdcolor);
 	gx_color_index color1 = gx_dc_binary_color1(pdcolor);
+	int code;
 
 	pcls->colors_used.or |= color0 | color1;
 	/* Set up tile and colors as for clist_tile_rectangle. */
@@ -129,17 +130,15 @@ cmd_put_drawing_color(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 	     color0 == gx_no_color_index ?
 	     cldev->color_info.depth : 1);
 
-	    if (tile->id == gx_no_bitmap_id ||
-		clist_change_tile(cldev, pcls, tile, depth) < 0
-		)
-		return_error(-1);	/* can't cache tile */
+	    if (tile->id == gx_no_bitmap_id )
+	        return_error(-1);	/* can't cache */
+	    if ((code = clist_change_tile(cldev, pcls, tile, depth)) < 0)
+		return code;	/* caching of tile unsuccesful */
 	}
 	if (color1 != pcls->tile_colors[1] ||
 	    color0 != pcls->tile_colors[0]
 	    ) {
-	    int code = cmd_set_tile_colors(cldev, pcls, color0, color1);
-
-	    if (code < 0)
+	    if ((code = cmd_set_tile_colors(cldev, pcls, color0, color1)) < 0)
 		return code;
 	}
 	type = cmd_dc_type_ht;
