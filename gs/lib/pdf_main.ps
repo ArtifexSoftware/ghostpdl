@@ -680,7 +680,7 @@ end readonly def
   } if
   dictbeginpage /DefaultMatrix 1 index store setmatrix
   dup		  % for showing annotations below
-  count /pdfemptycount exch store
+  count 1 sub /pdfemptycount exch store
 	% If the page uses any transparency features, show it within
 	% a transparency group.
   PDFversion 1.4 lt {
