@@ -1,4 +1,13 @@
+Makefile
+Makefile.in
+configure
+config.h
+config.h.in
+stamp-h
+stamp-h.in
+install-sh
 jbig2dec
 test_huffman
 test_arith
 test_png
+test_pbm
