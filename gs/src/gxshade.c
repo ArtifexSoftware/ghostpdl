@@ -314,6 +314,10 @@ top:
 	    /****** WRONG FOR MULTI-PLANE HALFTONES ******/
 	    num_colors *= pis->dev_ht->components[0].corder.num_levels;
     }
+    if (psh->head.type == 2 || psh->head.type == 3) {
+	max_error *= 0.25;
+	num_colors *= 2.0;
+    }
     if (max_error < 1.0 / num_colors)
 	max_error = 1.0 / num_colors;
     for (ci = 0; ci < pfs->num_components; ++ci)
