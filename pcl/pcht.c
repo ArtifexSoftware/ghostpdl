@@ -1281,6 +1281,9 @@ private const byte  rendering_remap_proto[20] = {
 
 private byte    rendering_remap[20];
 
+/* pointer to the default halftone */
+private pcl_ht_t *  pdflt_ht;
+
 
 /*
  * Initialize the default rendering information.
@@ -1309,6 +1312,9 @@ pcl_ht_init_render_methods(
     }
     for (i = 0; i < countof(rendering_remap_proto); i++)
         rendering_remap[i] = rendering_remap_proto[i];
+
+    /* handle possible non-initialization of BSS */
+    pdflt_ht = 0;
 }
 
 /*
@@ -1668,13 +1674,13 @@ pcl_ht_build_default_ht(
     gs_memory_t *       pmem
 )
 {
-    pcl_ht_t *          pht = *ppht;
+    int                 code = 0;
 
-    if (pht != 0)
-        rc_decrement(pht, "build default pcl halftone");
-    return alloc_pcl_ht(ppht, pmem);
+    if ((pdflt_ht == 0) && ((code = alloc_pcl_ht(&pdflt_ht, pmem)) < 0))
+        return code;
+    pcl_ht_copy_from(*ppht, pdflt_ht);
+    return 0;
 }
-
 
 /*
  * Procedure to be used for transfer functions.
@@ -1696,6 +1702,20 @@ transfer_proc(
         return pow(val, pdata->inv_gamma);
     ptbl = pcl_lookup_tbl_get_tbl(pdata->plktbl, pdata->comp_indx);
     return (float)(ptbl[(int)floor(255.0 * val + 0.5)]) / 255.0;
+}
+
+/*
+ * Special transfer function for use with the K component. We always want
+ * this component to have the default (identity) transfer function.
+ */
+  private float
+dflt_transfer_proc(
+    floatp                          val,
+    const gx_transfer_map *         pmap,   /* ignored */
+    const void *                    pvdata  /* ignored */
+)
+{ 
+    return val;
 }
 
 /*
@@ -1732,7 +1752,15 @@ get_rendering_info(
  * fit into the format required by the graphic library halftone machiner.
  *
  * For lack of a better alternative, the monochrome threshold is set to be the
- * same as the first component. The color lookup table is handled similarly.
+ * same as the first component.
+ *
+ * The separation names employed are not accurate, but the graphic library
+ * insists that 4-color spaces uses the subtractive names (there is a way
+ * around this, using the halftone type ht_typ_multiple_colorscreen, but that
+ * did not seem to work with normal CMYK devices). Providing only three color
+ * screens is not an option, as then the fourth component of a CMYK devices
+ * will use the transfer function provided by one of the other components. If
+ * this transfer function is inverting, the output will be very black.
  *
  * Returns 0 on success, < 0 in the event of an error.
  */
@@ -1749,11 +1777,12 @@ set_threshold_ht(
     byte *                  pb = 0;
     const byte *            pdata;
 
-    static const gs_ht_separation_name  sepnames[4] = { gs_ht_separation_Red,
-                                                        gs_ht_separation_Green,
-                                                        gs_ht_separation_Blue,
+    static const gs_ht_separation_name  sepnames[4] = { gs_ht_separation_Cyan,
+                                                        gs_ht_separation_Magenta,
+                                                        gs_ht_separation_Yellow,
                                                         gs_ht_separation_Default
                                                         };
+
 
     /* set the array threshold pointers */
     if ((pinfo->flags & HT_USERDEF) != 0) {
@@ -1795,7 +1824,8 @@ set_threshold_ht(
                                      height,
                                      (gs_const_string *)
                                          &(pht->thresholds[icomp]),
-                                     transfer_proc,
+                                     ( comp == 3 ? dflt_transfer_proc
+                                                 : transfer_proc     ),
                                      &(pht->client_data[icomp])
                                      );
 }
