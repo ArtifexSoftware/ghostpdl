@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+   <META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=iso-8859-1">
+   <META NAME="GENERATOR" CONTENT="Mozilla/4.07 [en] (X11; I; Linux 2.0.36 i686) [Netscape]">
+   <TITLE>GhostPCL5e, GhostPCL5c, and GhostPXL</TITLE>
+</HEAD>
+<BODY TEXT="#000000" BGCOLOR="#FFFFFF" LINK="#0000EF" VLINK="#51188E" ALINK="#FF0000">
+
+<H1>
+<IMG SRC="ghost64.gif" HEIGHT=64 WIDTH=56> GhostPCL5e, GhostPCL5c, and
+GhostPXL</H1>
+
+<HR>
+<BR>This page discusses configuration, compilation and running of the&nbsp;
+PCL family of products:&nbsp; GhostPCL5E, GhostPCL5c and GhostPXL.&nbsp;
+All of the PCL products use the Ghostscript Graphic Library for graphics,
+imaging and driver support.&nbsp; A brief tour of the <A HREF="http://www.cs.wisc.edu/~ghost/">Ghostscript
+documentation</A> will be helpful to understand this document.
+<H2>
+Supported development environments</H2>
+
+<UL>
+<LI>
+<A HREF="#MSVC Compile">Windows NT and '95 with Microsoft Visual C/C++</A></LI>
+
+<LI>
+<A HREF="#Linux GCC">Linux with gcc</A></LI>
+
+<LI>
+<A HREF="#Generic Unix">Unix environments without GCC</A></LI>
+</UL>
+
+<H2>
+<A NAME="UNPACKING"></A>Unpacking the source</H2>
+The source code will either be on CD-ROM (without any archiving or compression)
+or in a archived compressed format.&nbsp; Zip is used for Windows environments
+and compressed tar format for Unix environments.&nbsp; If you have a CD-ROM
+release you will want to replicate the directory structure from the CD-ROM
+to a development directory on a hard drive.&nbsp; The compile process does
+not require a special directory name.
+<P>For Windows use:
+<P>pkunzip -d &lt;archive_name>
+<P>For Unix use:
+<P>gunzip &lt;archive_name.gz>
+<BR>tar xvf &lt;archive_name>
+<P>or
+<P>Some versions of tar can uncompress the archive as well:
+<P>tar zxvf &lt;archive_name.gz>
+<P>After unpacking the resulting directory hierarchy should look like this:
+<BR>&nbsp;
+<BR>&nbsp;
+<TABLE BORDER COLS=2 WIDTH="100%" NOSAVE >
+<TR>
+<TD>pcl</TD>
+
+<TD>pcl interpreter</TD>
+</TR>
+
+<TR>
+<TD>pl</TD>
+
+<TD>pxl and pcl common library</TD>
+</TR>
+
+<TR>
+<TD>common</TD>
+
+<TD>pcl and pxl shared makefiles</TD>
+</TR>
+
+<TR>
+<TD>tools</TD>
+
+<TD>miscellaneous tools</TD>
+</TR>
+
+<TR>
+<TD>gs</TD>
+
+<TD>Ghostscript Graphics Library</TD>
+</TR>
+
+<TR>
+<TD>gs/jpeg</TD>
+
+<TD>JPEG library</TD>
+</TR>
+
+<TR>
+<TD>gs/libpng</TD>
+
+<TD>Portable network graphics library</TD>
+</TR>
+
+<TR>
+<TD>gs/zlib</TD>
+
+<TD>compression library</TD>
+</TR>
+
+<TR>
+<TD>pxl</TD>
+
+<TD>XL interpreter</TD>
+</TR>
+</TABLE>
+
+<P>This directory structure is the default, but the directories can be
+rearranged with minor modifications to the makefiles.
+<H2>
+<A NAME="MSVC Compile"></A>Building with Microsoft Visual C/C++</H2>
+The PCL tools are known to build with Visual C/C++ 4.0 and 5.0.&nbsp; There
+are 2 ways of building the PCL components with Microsoft Visual C/C++:&nbsp;
+Convert the current makefile environment to a Visual C/C++ project ; or
+compile the source directly using nmake.&nbsp; The following steps take
+you through converting the supplied makefile environment to a Visual C++
+project:
+<UL>
+<LI>
+Unpack the source code, see&nbsp; <A HREF="#UNPACKING">Unpacking the source</A>
+.</LI>
+
+<LI>
+Start MSVC++.</LI>
+
+<LI>
+Choose `New' under the `File' menu.</LI>
+
+<LI>
+Next MSVC++ will prompt for a project type, select `makefile'</LI>
+
+<LI>
+In the same window create a name for the project and specify the directory
+where the sources are located.</LI>
+
+<LI>
+After confirming your selections MSVC++ will ask if you want to go to `Project
+Settings`.&nbsp; Choose `yes'.</LI>
+
+<LI>
+Here you will specify how to run the build command, nmake.&nbsp; The simplest
+arrangement for PCL is:</LI>
+</UL>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+nmake /f pcl_msvc.mak
+<P>&nbsp;and for PXL:
+<P>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+nmake /f pxl_msvc.mak
+<P>Now PCL is set to be compiled, debugged and use other features of the
+MSVC++ IDE.
+<P>Dos hackers can start up a dos window, set the DEVSTUDIO environment
+variable, and use the same make commands as above (the DEVSTUDIO variable
+should be set to the top level of the Microsoft Developer Studio, e.g.
+set DEVSTUDIO=c:\progra~1\devstu~1").
+<H2>
+<A NAME="Linux GCC"></A>Building with Linux GCC</H2>
+The pcl tools have been compiled on Linux using GCC.&nbsp; The makefile
+should only require minor modification to work on other UNIX environments
+using the GCC compiler and supporting tools.
+<BR>&nbsp;
+<UL>
+<LI>
+Unpack the source code, see&nbsp; <A HREF="#UNPACKING">Unpacking the source</A>
+.</LI>
+
+<LI>
+Create a symbolic link to the makefile:</LI>
+</UL>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ln -s pcl_ugcc.mak makefile
+<UL>
+<LI>
+Configure makefile variables, see configuration</LI>
+
+<LI>
+Change to the desired directory pcl or pxl and use make to build the desired
+configuration.</LI>
+</UL>
+
+<H2>
+<A NAME="Generic Unix"></A>Building on a generic UNIX platform</H2>
+The PCL tools have been compiled on Solaris with the Sun Development Tools
+and SGI with the native SGI C compiler.&nbsp; We provide makefiles for
+the latter.&nbsp; There should be a trivial number of changes required
+to get PCL to compile on other UNIX platforms and Artifex will support
+efforts to port the code.
+<H1>
+<B>Customizing the build process</B></H1>
+The build process is completely configurable.&nbsp; Here is a list of things
+that are most likely to change:
+<UL>
+<LI>
+Directory location of source directories.</LI>
+
+<LI>
+Directory location of objects, executables, and other compile-time generated
+files.</LI>
+
+<LI>
+Selection of devices.</LI>
+</UL>
+All of these can be configured in the top level makefile or can be specified
+on the make command line.
+<P>The following make targets are available:
+<UL>
+<LI>
+debug - build tools with symbols and debugging information</LI>
+
+<LI>
+product - builds optimized code.</LI>
+
+<LI>
+pg-fp - builds profiling code for hardware with floating point.</LI>
+
+<LI>
+pg-nofp - builds profiling code for hardware with no floating point (i.e.
+with floating point emulation software).</LI>
+</UL>
+
+<H1>
+Running the products.</H1>
+<I>"Few things are harder to put up with than a good example"&nbsp; - Mark
+Twain</I>
+<P>All options supplied to the interpreter in the following examples are
+described in the&nbsp; <A HREF="http://www.cs.wisc.edu/~ghost/">Ghostscript
+documentation</A>
+<P><B>pcl5 -sDEVICE=x11 mypcl.pcl</B>
+<P>interpret a pcl file called mypcl.pcl and render to the x11 device.
+<P><B>pcl5 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl</B>
+<P>interpret mypcl.pcl and send the Laserjet 4 formatted output to the
+command lpr, lpr should then send it to a real printer.&nbsp; Note this
+is for unix systems.
+<P><B>pcl5 -sDEVICE=pcxcmyk -sOutputFile="pcxpage.%d" -dNOPAUSE mypcl.pcl</B>
+<P>interpret mypcl.pcl and generate CMYK output. Pages are to be put in
+files named pcxpage.1, pcxpage.2, pcxpage.3, etc.
+<P><B>pcl5</B>
+<P>simply running the interpreter should generate some useful information
+about the available options and devices.
+<H2>
+Fonts</H2>
+Customers should obtain fonts from a third-party vendor such as&nbsp; <A HREF="http://www.agfa.com">Agfa</A>&nbsp;
+or&nbsp; <A HREF="http://www.bitstream.com">Bitstream</A> .&nbsp; The software
+can use Hewlett Packard FONTSMART version 1.5.&nbsp; Also, Windows TrueType
+fonts can be used as well but minor <A HREF="#PCL Code modifications to use Windows TrueType fonts">PCL
+code modifications</A> are required and the Windows TrueType fonts are
+not exactly like the fonts used in HP Laserjet 4, 5, &amp; 6 products.
+<H1>
+<A NAME="PCL Code modifications to use Windows TrueType fonts"></A>PCL
+Code modifications to use Windows TrueType fonts</H1>
+The source file pclfont.c contains the names of the TrueType font files.&nbsp;
+These filenames will need to be modified to the filenames that Windows
+uses for the corresponding TrueType font filenames.&nbsp; Additionally,
+the font search path is set in pcfont.c and pxffont.c for pcl5 and pxl,
+respectively.&nbsp; The current search path is as follows (note: this is
+likely to change in the future):
+<P>&nbsp;&nbsp;&nbsp; "",
+<BR>&nbsp;&nbsp;&nbsp; "fonts/",
+<BR>&nbsp;&nbsp;&nbsp; "/windows/system/",
+<BR>&nbsp;&nbsp;&nbsp; "/windows/fonts/",
+<BR>&nbsp;&nbsp;&nbsp; "/win95/fonts/",
+<BR>&nbsp;&nbsp;&nbsp; "/winnt/fonts/"
+<H1>
+Reporting bugs</H1>
+Use the <A HREF="http://meerkat.dimensional.com/pcldocs/pclbug.html">bug
+reporting form</A> .
+<BR>&nbsp;
+<P>Please send comments about this documentation to <A HREF="mailto:henrys@artifex.com">Henry
+Stiles</A> .
+</BODY>
+</HTML>
