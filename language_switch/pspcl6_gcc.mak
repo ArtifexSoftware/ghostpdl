@@ -90,7 +90,7 @@ COMPILE_INITS=1
 # afs - artifex font scaler.
 # 3 mutually exclusive choices follow, pick one.
 
-PL_SCALER=afs
+PL_SCALER=fts
 PCL_FONT_SCALER=$(PL_SCALER)
 PXL_FONT_SCALER=$(PL_SCALER)
 
@@ -99,7 +99,7 @@ LDFLAGS=-Xlinker -L../pl/agfa/rts/lib/
 # agfa does not use normalized library names (ie we expect libif.a not
 # agfa's if_lib.a)
 EXTRALIBS=-lif -lfco -ltt
-AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/
+AGFA_INCLUDES=-I../pl/agfa/rts/inc/ -I../pl/agfa/sys/inc/ -I../pl/agfa/rts/fco/ -I../pl/agfa/rts/gray/ -DAGFA_FONT_TABLE
 endif
 
 ifeq ($(PL_SCALER), fts)
@@ -165,6 +165,7 @@ include $(PLSRCDIR)/plps.mak
 include $(PXLSRCDIR)/pxl.mak
 include $(PCLSRCDIR)/pcl.mak
 include $(PSISRCDIR)/psi.mak
+include $(PLSRCDIR)/pl.mak
 
 # Main program.
 
