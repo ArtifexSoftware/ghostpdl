@@ -188,7 +188,6 @@ main(
     pl_main_make_gstate(&inst, &pgs);
     pcl_init_state(pcls, mem);
     gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
-    gs_clippath(pgs);
 
     /* PCL no longer uses the graphic library transparency mechanism */
     gs_setsourcetransparent(pgs, false);
@@ -196,8 +195,6 @@ main(
 
     gs_gsave(pgs);
 
-    /* We want all gstates to share the same "client data".... */
-    gs_state_set_client(pgs, pcls, &pcl_gstate_procs);
     gs_erasepage(pgs);
     pcls->client_data = &inst;
     pcls->pgs = pgs;

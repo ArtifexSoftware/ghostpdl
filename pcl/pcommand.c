@@ -57,15 +57,11 @@ end_param1(
 )
 {
     int                 code;
-
     gs_c_param_list_read(alist);
     /* put the parameters using the target device, not the forwarding
        device */
-    code = gs_putdeviceparams(pcl_get_target_device(pcs),
-                              (gs_param_list *)alist
-                              );
+    code = gs_state_putdeviceparams(pcs->pgs, (gs_param_list *)alist);
     gs_c_param_list_release(alist);
-
     return code;
 }
 
