@@ -805,7 +805,8 @@ gdev_vector_close_file(gx_device_vector * vdev)
     vdev->file = 0;
     err = ferror(f);
     /* We prevented sclose from closing the file. */
-    if (fclose(f) != 0 || err != 0)
+    if (gx_device_close_output_file((gx_device *)vdev, vdev->fname, f) != 0 
+	|| err != 0)
 	return_error(gs_error_ioerror);
     return 0;
 }
