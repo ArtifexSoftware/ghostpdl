@@ -588,7 +588,7 @@ upattern_do_reset(
         pcs->plast_gl2_uptrn = 0;
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0) {
-        delete_all_pcl_ptrns(true, true, pcs);
+        delete_all_pcl_ptrns(true, false, pcs);
         pcl_pattern_clear_bi_patterns(pcs);
         /* GL's IN command takes care of the GL patterns */
     }
