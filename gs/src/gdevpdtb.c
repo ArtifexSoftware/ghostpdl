@@ -531,8 +531,10 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_base_font_t *pbfont,
 	const int options = TRUETYPE_OPTIONS |
 	    (pdev->CompatibilityLevel <= 1.2 ?
 	     WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0) |
-	    /* Generate a cmap only for incrementally downloaded fonts. */
-	    (pfont->data.numGlyphs != pfont->data.trueNumGlyphs ?
+	    /* Generate a cmap only for incrementally downloaded fonts
+	       and for subsetted fonts. */
+	    (pfont->data.numGlyphs != pfont->data.trueNumGlyphs || 
+	     pbfont->do_subset == DO_SUBSET_YES ?
 	     WRITE_TRUETYPE_CMAP : 0);
 	stream poss;
 
