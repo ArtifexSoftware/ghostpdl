@@ -139,6 +139,8 @@ private void set_gc_signal(P3(i_ctx_t *, int *, int));
 private int copy_stack(P3(i_ctx_t *, const ref_stack_t *, ref *));
 private int oparray_pop(P1(i_ctx_t *));
 private int oparray_cleanup(P1(i_ctx_t *));
+private int zsetstackprotect(P1(i_ctx_t *));
+private int zcurrentstackprotect(P1(i_ctx_t *));
 
 /* Stack sizes */
 
@@ -270,6 +272,8 @@ const op_def interp_op_defs[] = {
     /*
      * The remaining entries are internal operators.
      */
+    {"0.currentstackprotect", zcurrentstackprotect},
+    {"1.setstackprotect", zsetstackprotect},
     {"0%interp_exit", interp_exit},
     {"0%oparray_pop", oparray_pop},
     op_def_end(0)
@@ -1686,5 +1690,61 @@ oparray_cleanup(i_ctx_t *i_ctx_p)
 	ref_stack_pop(&d_stack, dcount - dcount_old);
 	dict_set_top();
     }
+    return 0;
+}
+
+/* Don't restore the stack pointers. */
+private int
+oparray_no_cleanup(i_ctx_t *i_ctx_p)
+{
+    return 0;
+}
+
+/* Find the innermost oparray. */
+private ref *
+oparray_find(i_ctx_t *i_ctx_p)
+{
+    long i;
+    ref *ep;
+
+    for (i = 0; (ep = ref_stack_index(&e_stack, i)) != 0; ++i) {
+	if (r_is_estack_mark(ep) &&
+	    (ep->value.opproc == oparray_cleanup ||
+	     ep->value.opproc == oparray_no_cleanup)
+	    )
+	    return ep;
+    }
+    return 0;
+}
+
+/* <bool> .setstackprotect - */
+/* Set whether to protect the stack for the innermost oparray. */
+private int
+zsetstackprotect(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref *ep = oparray_find(i_ctx_p);
+
+    check_type(*op, t_boolean);
+    if (ep == 0)
+	return_error(e_rangecheck);
+    ep->value.opproc =
+	(op->value.boolval ? oparray_cleanup : oparray_no_cleanup);
+    pop(1);
+    return 0;
+}
+
+/* - .currentstackprotect <bool> */
+/* Return the stack protection status. */
+private int
+zcurrentstackprotect(i_ctx_t *i_ctx_p)
+{
+    os_ptr op = osp;
+    ref *ep = oparray_find(i_ctx_p);
+
+    if (ep == 0)
+	return_error(e_rangecheck);
+    push(1);
+    make_bool(op, ep->value.opproc == oparray_cleanup);
     return 0;
 }

@@ -25,8 +25,8 @@ level2dict begin
 (BEGIN RESOURCES) VMDEBUG
 
 % We keep track of (global) instances with another entry in the resource
-% dictionary, an Instances dictionary.  For categories with implicit
-% instances, the values in Instances are the same as the keys;
+% dictionary, an .Instances dictionary.  For categories with implicit
+% instances, the values in .Instances are the same as the keys;
 % for other categories, the values are [instance status size].
 
 % Note that the dictionary that defines a resource category is stored
@@ -37,7 +37,7 @@ level2dict begin
 % the obvious place to keep track of the instances, can't be used to keep
 % track of local instances.  Instead, we define a dictionary in local VM
 % called localinstancedict, in which the key is the category name and
-% the value is the analogue of Instances for local instances.
+% the value is the analogue of .Instances for local instances.
 
 % We don't currently implement automatic resource unloading.
 % When and if we do, it should be hooked to the garbage collector.
@@ -70,7 +70,7 @@ setglobal
 %		*ResourceFileName
 %			<key> <scratch> ResourceFileName <filename>
 %	Additional, specific to our implementation:
-%		Instances (dictionary)
+%		.Instances (dictionary)
 %		.LocalInstances
 %			- .LocalInstances <dict>
 %		.GetInstance
@@ -120,26 +120,26 @@ setglobal
 		% We would like to make Category dictionaries read-only,
 		% and we used to do that here, but we can't do it,
 		% because we have to be able to replace the dummy, empty
-		% Instances dictionary with the real one later.
+		% .Instances dictionary with the real one later.
 	     dup [ exch 0 -1 ] exch
-	     Instances 4 2 roll put
+	     .Instances 4 2 roll put
 	   }
 	   { /defineresource load /typecheck signalerror
 	   }
 	  ifelse
 	} bind def
 /FindResource		% (redefined below)
-	{ Instances exch get 0 get
+	{ .Instances exch get 0 get
 	} bind def
 
 		% Additional entries
 
-/Instances 30 dict def
-Instances /Category [currentdict 0 -1] put
+/.Instances 30 dict def
+.Instances /Category [currentdict 0 -1] put
 
 /.LocalInstances 0 dict def
 /.GetInstance
-	{ Instances exch .knownget
+	{ .Instances exch .knownget
 	} bind def
 /.CheckResource
 	{ dup gcheck currentglobal and
@@ -151,7 +151,7 @@ Instances /Category [currentdict 0 -1] put
 	  true
 	} bind def
 
-Instances end begin	% for the base case of findresource
+.Instances end begin	% for the base case of findresource
 
 (END CATEGORY) VMDEBUG
 
@@ -163,7 +163,15 @@ Instances end begin	% for the base case of findresource
 % the operands of resourceforall on the stack, but we can make it work for
 % the others.
 
-mark
+% findresource is the only operator that needs to bind //Category.
+/findresource {		% <key> <category> findresource <instance>
+	2 copy dup /Category eq
+	  { pop //Category 0 get begin } { .findcategory } ifelse
+	/FindResource .resourceexec exch pop exch pop
+} bind
+end		% .Instances of Category
+odef
+
 /defineresource {	% <key> <instance> <category> defineresource <instance>
 	3 copy .findcategory
 	currentdict /InstanceType known {
@@ -174,41 +182,44 @@ mark
 	} if
 	/DefineResource .resourceexec
 	4 1 roll pop pop pop
-}
-/findresource {		% <key> <category> findresource <instance>
-	2 copy dup /Category eq
-	  { pop //Category 0 get begin } { .findcategory } ifelse
-	/FindResource .resourceexec exch pop exch pop
-}
+} bind odef
+% We must prevent resourceforall from automatically restoring the stacks,
+% because we don't want the stacks restored if proc causes an error.
 /resourceforall {	% <template> <proc> <scratch> <category> resourceforall -
 	dup /Category findresource begin
 	/ResourceForAll load
 		% Make sure we can recover the original operands.
+		% We must create the array in local VM, in case any of the
+		% operands are local.
 		% Stack: ...operands... proc
-	5 copy pop 4 packedarray count
+	5 copy pop .currentglobal false .setglobal 5 1 roll
+	4 packedarray exch .setglobal count
 		% Stack: ...operands... proc saved count
 	4 -1 roll pop		% pop the category
 	/stopped load 3 1 roll
 	3 .execn
 		% Stack: ... stopped saved count
 	3 -1 roll {
+	  .currentstackprotect {
 		% The count is the original stack depth + 2.
-	  count exch 4 sub sub { exch pop } repeat
-	  aload pop stop
+	    count exch 4 sub sub { exch pop } repeat
+	    aload pop end
+	  } {
+		% Don't restore the stacks.
+	    pop pop
+	  } ifelse stop
 	} {
-	  pop pop
-	} ifelse end
-}
+	  pop pop end
+	} ifelse
+} bind def
 /resourcestatus {	% <key> <category> resourcestatus <status> <size> true
 			% <key> <category> resourcestatus false
 	2 copy .findcategory /ResourceStatus .resourceexec
 	 { 4 2 roll pop pop true } { pop pop false } ifelse
-}
+} bind odef
 /undefineresource {	% <key> <category> undefineresource -
 	2 copy .findcategory /UndefineResource .resourceexec pop pop
-}
-end		% Instances of Category
-counttomark 2 idiv { bind odef } repeat pop
+} bind odef
 
 % Define the system parameters used for the Generic implementation of
 % ResourceFileName.
@@ -246,8 +257,8 @@ end
 	     currentglobal
 	      { false setglobal 2 index UndefineResource	% remove local def if any
 		true setglobal
-		Instances dup //.emptydict eq
-		 { pop 3 dict /Instances 1 index def
+		.Instances dup //.emptydict eq
+		 { pop 3 dict /.Instances 1 index def
 		 }
 		if
 	      }
@@ -279,7 +290,7 @@ end
 	     ifelse
 	   }
 	  currentglobal
-	   { 2 copy Instances exch exec
+	   { 2 copy .Instances exch exec
 	   }
 	  if .LocalInstances exch exec
 	} bind
@@ -321,7 +332,10 @@ end
 		}
 		{ 1 get
 		}
-	       ifelse exec
+	       ifelse
+		% Prevent the stacks from being restored if an error occurs
+		% during execution of proc.
+	       false .setstackprotect exec true .setstackprotect
 	     }
 	     { pop pop
 	     }
@@ -339,7 +353,7 @@ end
 	      currentdict end 3 .execn begin
 	    } if
 	  } ifelse
-	  Instances exch cvx
+	  .Instances exch cvx
 	  /forall cvx currentdict end 2 .execn begin
 	} bind
 /ResourceFileName
@@ -351,23 +365,23 @@ end
 
 		% Additional entries
 
-% Unfortunately, we can't create the real Instances dictionary now,
+% Unfortunately, we can't create the real .Instances dictionary now,
 % because if someone copies the Generic category (which pp. 95-96 of the
 % 2nd Edition Red Book says is legitimate), they'll wind up sharing
-% the Instances.  Instead, we have to create Instances on demand,
+% the .Instances.  Instead, we have to create .Instances on demand,
 % just like the entry in localinstancedict.
 % We also have to prevent anyone from creating instances of Generic itself.
-/Instances //.emptydict
+/.Instances //.emptydict
 
 /.LocalInstances
 	{ localinstancedict Category .knownget not { //.emptydict } if
 	} bind
 /.GetInstance
 	{ currentglobal
-	   { Instances exch .knownget }
+	   { .Instances exch .knownget }
 	   { .LocalInstances 1 index .knownget
 	      { exch pop true }
-	      { Instances exch .knownget }
+	      { .Instances exch .knownget }
 	     ifelse
 	   }
 	  ifelse
@@ -375,16 +389,19 @@ end
 /.CheckResource
 	{ true
 	} bind
-/.DoLoadResource
-	{ dup vmstatus pop exch pop exch
-	  .LoadResource
-	  vmstatus pop exch pop exch sub
-	  1 index .GetInstance not
-	   { pop dup /undefinedresource signalerror }	% didn't load
-	  if
-	  dup 1 1 put
-	  2 3 -1 roll put
-	} bind
+/.DoLoadResource {
+	dup vmstatus pop exch pop
+		% .LoadResource may push entries on the operand stack,
+		% so we must use .execn to preserve the values we need.
+		% Stack: key key memused
+	exch cvlit exch {.LoadResource} 3 1 roll 3 .execn
+	vmstatus pop exch pop exch sub
+	1 index .GetInstance not {
+	  pop dup /undefinedresource signalerror	% didn't load
+	} if
+	dup 1 1 put
+	2 3 -1 roll put
+} bind
 /.LoadResource
 	{ dup .ResourceFile
 	   { exch pop currentglobal
@@ -478,7 +495,7 @@ counttomark 2 idiv
 	   { /defineresource load /invalidaccess signalerror }
 	   { 2 copy ne
 	      { /defineresource load /rangecheck signalerror }
-	      { dup Instances 4 -2 roll .growput }
+	      { dup .Instances 4 -2 roll .growput }
 	     ifelse
 	   }
 	  ifelse
@@ -486,13 +503,13 @@ counttomark 2 idiv
    /UndefineResource
 	{ /undefineresource load /invalidaccess signalerror } bind
    /FindResource
-	{ Instances 1 index .knownget
+	{ .Instances 1 index .knownget
 	   { exch pop }
 	   { /findresource load /undefinedresource signalerror }
 	  ifelse
 	} bind
    /ResourceStatus
-	{ Instances exch known { 0 0 true } { false } ifelse } bind
+	{ .Instances exch known { 0 0 true } { false } ifelse } bind
    /ResourceForAll
 	/Generic /Category findresource /ResourceForAll get
 
@@ -500,9 +517,9 @@ counttomark 2 idiv
 
    counttomark 2 add -1 roll
    dup length dict dup begin exch { dup def } forall end
-		% We'd like to make the Instances readonly here,
+		% We'd like to make the .Instances readonly here,
 		% but because optional features may add entries, we can't.
-   /Instances exch
+   /.Instances exch
    /.LocalInstances	% used by ResourceForAll
 	0 dict def
 
@@ -514,7 +531,7 @@ counttomark 2 idiv
 % Define the other built-in categories.
 
 /.definecategory	% <name> -mark- <key1> ... <valuen> .definecategory -
- { counttomark 2 idiv 2 add		% Instances, Category
+ { counttomark 2 idiv 2 add		% .Instances, Category
    /Generic /Category findresource dup maxlength 3 -1 roll add
    dict .copydict begin
    counttomark 2 idiv { def } repeat pop	% pop the mark
@@ -609,7 +626,7 @@ setglobal
 % Handle already-registered encodings, including lazily loaded encodings
 % that aren't loaded yet.
 
-/Instances mark
+/.Instances mark
   EncodingDirectory
    { dup length 256 eq { [ exch readonly 0 -1 ] } { pop [null 2 -1] } ifelse
    } forall
@@ -722,13 +739,13 @@ setglobal
 	  ifelse exch pop
 	} bind
 
-/Instances FontDirectory length 2 mul dict
+/.Instances FontDirectory length 2 mul dict
 
 .definecategory			% Font
 
 % Redefine font "operators".
 /.definefontmap
- { /Font /Category findresource /Instances get
+ { /Font /Category findresource /.Instances get
    dup 3 index known
     { pop
     }
@@ -823,7 +840,7 @@ end				% level2dict
     /.shadingtypes where { pop /ShadingType } if
   ] {
     /Category findresource
-    dup /Instances get readonly pop
+    dup /.Instances get readonly pop
     .LocalInstances readonly pop
     readonly pop
   } forall

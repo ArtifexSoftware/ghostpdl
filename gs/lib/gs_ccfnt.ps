@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -87,7 +87,7 @@ currentdict /registerfont .undef
     {		% Level 2 system, Level 1 mode
       /Font /Category level2dict /findresource get exec begin
       .FontDirectory
-       { dup .gcheck { Instances } { LocalInstances } ifelse
+       { dup .gcheck { .Instances } { .LocalInstances } ifelse
 	 3 1 roll [exch 0 -1] .growput
        }
       forall end
