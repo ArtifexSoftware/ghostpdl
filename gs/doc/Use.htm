@@ -2245,6 +2245,15 @@ called.  Useful only for certain specialized packages like
 <b><tt>pstotext</tt></b> that redefine operators.
 </dl>
 
+<dl> 
+<dt><b><tt>-dDOPDFMARKS</tt></b> 
+<dd>Causes <b><tt>pdfmark</tt></b> to be called for bookmarks, 
+annotations, links and cropbox when processing PDF files. 
+Normally, <b><tt>pdfmark</tt></b> is only called for these types 
+for PostScript files or when the output device requests it 
+(e.g. pdfwrite device). 
+</dl> 
+
 <dl>
 <dt><b><tt>-dNOBIND</tt></b>
 <dd>Disables the <b><tt>bind</tt></b> operator.  Useful only for debugging.

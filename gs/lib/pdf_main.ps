@@ -32,6 +32,7 @@ pdfdict begin
 /.writepdfmarks {	% - .writepdfmarks <bool>
   currentdevice //.writepdfmarkdict .getdeviceparams
   mark eq { false } { pop pop true } ifelse
+  systemdict /DOPDFMARKS known or 
 } bind def
 
 % For simplicity, we use a single interpretation dictionary for all
