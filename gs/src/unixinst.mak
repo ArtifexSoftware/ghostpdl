@@ -96,9 +96,9 @@ DOC_PAGES=PUBLIC README Bug-form.htm Bug-info.htm \
 	   History1.htm History2.htm History3.htm History4.htm \
 	   History5.htm History6.htm \
 	   Htmstyle.htm Humor.htm Install.htm Language.htm \
-	   Lib.htm Make.htm New-user.htm \
-	   News.htm Projects.htm Ps2epsi.htm Ps2pdf.htm \
-	   Psfiles.htm Public.htm  Readme.htm Release.htm \
+	   Lib.htm Maintain.htm Make.htm New-user.htm \
+	   News.htm Projects.htm Ps-style.htm Ps2epsi.htm Ps2pdf.htm \
+	   Psfiles.htm Public.htm Readme.htm Release.htm \
 	   Source.htm Tester.htm Unix-lpr.htm Use.htm Xfonts.htm
 install-doc: $(PSDOCDIR)/News.htm
 	-mkdir $(docdir)
