@@ -133,9 +133,7 @@ typedef enum {
     pxaSymbolSet,
     pxaTextData,
     pxaCharSubModeArray,
-    /* BACKWARD INCOMPATIBILITY pxaWritingMode (2.0) and
-       pxlPCLSelectFont (3.0) == 173 */
-    pxaPCLSelectFont,           /* 3.0 */
+    pxaWritingMode,
     pxaXSpacingData = 175,
     pxaYSpacingData,
     pxaCharBoldValue,

@@ -496,7 +496,6 @@ pxSetCharAngle(px_args_t *par, px_state_t *pxs)
 
 /* confusion in the 3.0 spec - this argument identifier WritingMode
    173 is now being used by SelectPCLFont */
-#ifdef PXL21
 const byte apxSetCharAttributes[] = {
     pxaWritingMode, 0, 0
 };
@@ -506,7 +505,6 @@ pxSetCharAttributes(px_args_t *par, px_state_t *pxs)
     pxs->pxgs->writing_mode = par->pv[0]->value.i;
     return 0;
 }
-#endif
 
 const byte apxSetCharScale[] = {
   pxaCharScale, 0, 0
