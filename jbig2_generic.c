@@ -54,7 +54,6 @@ jbig2_decode_generic_template0(Jbig2Ctx *ctx,
   const int rowstride = image->stride;
   int x, y;
   byte *gbreg_line = (byte *)image->data;
-  bool LTP = 0;
 
   /* todo: currently we only handle the nominal gbat location */
 
@@ -123,7 +122,6 @@ jbig2_decode_generic_template1(Jbig2Ctx *ctx,
   const int rowstride = image->stride;
   int x, y;
   byte *gbreg_line = (byte *)image->data;
-  bool LTP = 0;
 
   /* todo: currently we only handle the nominal gbat location */
 
@@ -192,7 +190,6 @@ jbig2_decode_generic_template2(Jbig2Ctx *ctx,
   const int rowstride = image->stride;
   int x, y;
   byte *gbreg_line = (byte *)image->data;
-  bool LTP = 0;
 
   /* todo: currently we only handle the nominal gbat location */
 
@@ -261,7 +258,6 @@ jbig2_decode_generic_template2a(Jbig2Ctx *ctx,
   const int rowstride = image->stride;
   int x, y;
   byte *gbreg_line = (byte *)image->data;
-  bool LTP = 0;
 
   /* This is a special case for GBATX1 = 3, GBATY1 = -1 */
 
