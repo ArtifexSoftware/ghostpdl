@@ -2101,7 +2101,7 @@ fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	/* Start by finding the smallest y value */
 	/* at which any currently active line ends */
 	/* (or the next to-be-active line begins). */
-	y1 = (yll != 0 ? yll->start.y : y_limit);
+	y1 = (yll != 0 ? yll->start.y : max_fixed);
 	/* Make sure we don't exceed the maximum band height. */
 	{
 	    fixed y_band = y | ~band_mask;
