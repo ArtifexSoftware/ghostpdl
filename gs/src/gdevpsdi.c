@@ -274,96 +274,107 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
      */
     int code = 0;
     psdf_image_params params;
+    int bpc = pim->BitsPerComponent;
+    int bpc_out = pim->BitsPerComponent = min(bpc, 8);
+    int ncomp;
+    double resolution;
 
+    /*
+     * The Adobe documentation doesn't say this, but mask images are
+     * compressed on the same basis as 1-bit-deep monochrome images,
+     * except that anti-aliasing (resolution/depth tradeoff) is not
+     * allowed.
+     */
     if (pim->ColorSpace == NULL) { /* mask image */
 	params = pdev->params.MonoImage;
 	params.Depth = 1;
+	ncomp = 1;
     } else {
-	int ncomp = gs_color_space_num_components(pim->ColorSpace);
-	int bpc = pim->BitsPerComponent;
-	int bpc_out = pim->BitsPerComponent = min(bpc, 8);
-
-	/*
-	 * We can compute the image resolution by:
-	 *    W / (W * ImageMatrix^-1 * CTM / HWResolution).
-	 * We can replace W by 1 to simplify the computation.
-	 */
-	double resolution;
-
-	if (pctm == 0)
-	    resolution = -1;
-	else {
-	    gs_point pt;
-
-	    /* We could do both X and Y, but why bother? */
-	    gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
-	    gs_distance_transform(pt.x, pt.y, pctm, &pt);
-	    resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
-				     pt.y / pdev->HWResolution[1]);
-	}
+	ncomp = gs_color_space_num_components(pim->ColorSpace);
 	if (ncomp == 1) {
-	    /* Monochrome or gray */
 	    if (bpc == 1)
 		params = pdev->params.MonoImage;
 	    else
 		params = pdev->params.GrayImage;
 	    if (params.Depth == -1)
 		params.Depth = bpc;
-	    /* Check for downsampling. */
-	    if (do_downsample(&params, pim, resolution)) {
-		/* Use the downsampled depth, not the original data depth. */
-		if (params.Depth == 1) {
-		    params.Filter = pdev->params.MonoImage.Filter;
-		    params.filter_template = pdev->params.MonoImage.filter_template;
-		    params.Dict = pdev->params.MonoImage.Dict;
-		} else {
-		    params.Filter = pdev->params.GrayImage.Filter;
-		    params.filter_template = pdev->params.GrayImage.filter_template;
-		    params.Dict = pdev->params.GrayImage.Dict;
-		}
-		code = setup_downsampling(pbw, &params, pim, resolution);
+	} else {
+	    params = pdev->params.ColorImage;
+	    /* params.Depth is reset below */
+	}
+    }
+
+    /*
+     * We can compute the image resolution by:
+     *    W / (W * ImageMatrix^-1 * CTM / HWResolution).
+     * We can replace W by 1 to simplify the computation.
+     */
+    if (pctm == 0)
+	resolution = -1;
+    else {
+	gs_point pt;
+
+	/* We could do both X and Y, but why bother? */
+	gs_distance_transform_inverse(1.0, 0.0, &pim->ImageMatrix, &pt);
+	gs_distance_transform(pt.x, pt.y, pctm, &pt);
+	resolution = 1.0 / hypot(pt.x / pdev->HWResolution[0],
+				 pt.y / pdev->HWResolution[1]);
+    }
+    if (ncomp == 1) {
+	/* Monochrome, gray, or mask */
+	/* Check for downsampling. */
+	if (do_downsample(&params, pim, resolution)) {
+	    /* Use the downsampled depth, not the original data depth. */
+	    if (params.Depth == 1) {
+		params.Filter = pdev->params.MonoImage.Filter;
+		params.filter_template = pdev->params.MonoImage.filter_template;
+		params.Dict = pdev->params.MonoImage.Dict;
 	    } else {
-		code = setup_image_compression(pbw, &params, pim);
+		params.Filter = pdev->params.GrayImage.Filter;
+		params.filter_template = pdev->params.GrayImage.filter_template;
+		params.Dict = pdev->params.GrayImage.Dict;
 	    }
+	    code = setup_downsampling(pbw, &params, pim, resolution);
+	} else {
+	    code = setup_image_compression(pbw, &params, pim);
+	}
+	if (code < 0)
+	    return code;
+	code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
+    } else {
+	/* Color */
+	bool cmyk_to_rgb =
+	    pdev->params.ConvertCMYKImagesToRGB &&
+	    pis != 0 &&
+	    gs_color_space_get_index(pim->ColorSpace) ==
+	    gs_color_space_index_DeviceCMYK;
+
+	if (cmyk_to_rgb)
+	    pim->ColorSpace = gs_cspace_DeviceRGB(pis);
+	if (params.Depth == -1)
+	    params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
+	if (do_downsample(&params, pim, resolution)) {
+	    code = setup_downsampling(pbw, &params, pim, resolution);
+	} else {
+	    code = setup_image_compression(pbw, &params, pim);
+	}
+	if (cmyk_to_rgb) {
+	    gs_memory_t *mem = pdev->v_memory;
+	    stream_C2R_state *ss = (stream_C2R_state *)
+		s_alloc_state(mem, s_C2R_template.stype, "C2R state");
+	    int code = pixel_resize(pbw, pim->Width, 3, 8, bpc_out);
+		    
+	    if (code < 0 ||
+		(code = psdf_encode_binary(pbw, &s_C2R_template,
+					   (stream_state *) ss)) < 0 ||
+		(code = pixel_resize(pbw, pim->Width, 4, bpc, 8)) < 0
+		)
+		return code;
+	    s_C2R_init(ss, pis);
+	} else {
+	    code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
 	    if (code < 0)
 		return code;
-	    code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
-	} else {
-	    /* Color */
-	    bool cmyk_to_rgb =
-		pdev->params.ConvertCMYKImagesToRGB &&
-		pis != 0 &&
-		gs_color_space_get_index(pim->ColorSpace) ==
-		  gs_color_space_index_DeviceCMYK;
-
-	    if (cmyk_to_rgb)
-		pim->ColorSpace = gs_cspace_DeviceRGB(pis);
-	    params = pdev->params.ColorImage;
-	    if (params.Depth == -1)
-		params.Depth = (cmyk_to_rgb ? 8 : bpc_out);
-	    if (do_downsample(&params, pim, resolution)) {
-		code = setup_downsampling(pbw, &params, pim, resolution);
-	    } else {
-		code = setup_image_compression(pbw, &params, pim);
-	    }
-	    if (cmyk_to_rgb) {
-		gs_memory_t *mem = pdev->v_memory;
-		stream_C2R_state *ss = (stream_C2R_state *)
-		s_alloc_state(mem, s_C2R_template.stype, "C2R state");
-		int code = pixel_resize(pbw, pim->Width, 3, 8, bpc_out);
-		    
-		if (code < 0 ||
-		    (code = psdf_encode_binary(pbw, &s_C2R_template,
-					       (stream_state *) ss)) < 0 ||
-		    (code = pixel_resize(pbw, pim->Width, 4, bpc, 8)) < 0
-		    )
-		    return code;
-		s_C2R_init(ss, pis);
-	    } else {
-		code = pixel_resize(pbw, pim->Width, ncomp, bpc, bpc_out);
-		if (code < 0)
-		    return code;
-	    }
 	}
     }
     return code;
