@@ -1749,6 +1749,15 @@ dup /PageSize 7 put		% PageSize in Policies
 put				% Policies in pagedevice
 .setpagedevice
 %END MEDIA
+
+% Set up the interpreter context version of -dUSeCIEColor option
+% so that .getuseciecolor has the correct value (see gs_setpd.ps)
+/setpagedevice where {
+  pop systemdict /UseCIEColor known {
+    mark /UseCIEColor UseCIEColor .dicttomark setpagedevice
+  } if
+} if
+
 %END DISPLAYING
 
 (END DEVICE) VMDEBUG
