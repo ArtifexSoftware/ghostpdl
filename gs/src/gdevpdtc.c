@@ -367,6 +367,9 @@ scan_cmap_text(pdf_text_enum_t *pte)
 	    if (code < 0)
 		return code;
 	    pfd = pdsubf->FontDescriptor;
+	    code = pdf_resize_resource_arrays(pdev, pdsubf, cid);
+	    if (code < 0)
+		return code;
 	    code = pdf_obtain_cidfont_widths_arrays(pdev, pdsubf, wmode, &w, &v);
 	    if (code < 0)
 		return code;

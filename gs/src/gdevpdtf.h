@@ -320,6 +320,10 @@ int font_resource_encoded_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfre
 			    gs_id rid, font_type ftype,
 			    pdf_font_write_contents_proc_t write_contents);
 
+/* Resize font resource arrays. */
+int pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, 
+	int chars_count);
+
 /*
  * Return the (copied, subset or complete) font associated with a font resource.
  * If this font resource doesn't have a descriptor (Type 0, Type 3, or

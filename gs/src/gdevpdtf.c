@@ -300,6 +300,20 @@ pdf_standard_fonts(const gx_device_pdf *pdev)
 
 /* ------ Private ------ */
 
+
+private int pdf_resize_array(gs_memory_t *mem, void **p, int elem_size, int old_size, int new_size)
+{
+    void *q = gs_alloc_byte_array(mem, new_size, elem_size, "pdf_resize_array");
+
+    if (q == NULL)
+	return_error(gs_error_VMerror);
+    memset((char *)q + elem_size * old_size, 0, elem_size * (new_size - old_size));
+    memcpy(q, *p, elem_size * old_size);
+    gs_free_object(mem, *p, "pdf_resize_array");
+    *p = q;
+    return 0;
+}
+
 /*
  * Allocate and (minimally) initialize a font resource.
  */
@@ -431,6 +445,48 @@ set_is_MM_instance(pdf_font_resource_t *pdfont, const gs_font_base *pfont)
 }
 
 /* ------ Generic public ------ */
+
+/* Resize font resource arrays. */
+int 
+pdf_resize_resource_arrays(gx_device_pdf *pdev, pdf_font_resource_t *pfres, int chars_count)
+{
+    /* This function fixes CID fonts that provide a lesser CIDCount than
+       CIDs used in a document. Rather PS requires to print CID=0,
+       we need to provide a bigger CIDCount since we don't 
+       re-encode the text. The text should look fine if the 
+       viewer application substitutes the font. */
+    gs_memory_t *mem = pdev->pdf_memory;
+    int code;
+    
+    if (chars_count < pfres->count)
+	return 0;
+    if (pfres->Widths != NULL) {
+	code = pdf_resize_array(mem, (void **)&pfres->Widths, sizeof(*pfres->Widths), 
+		    pfres->count, chars_count);    
+	if (code < 0)
+	    return code;
+    }
+    code = pdf_resize_array(mem, (void **)&pfres->used, sizeof(*pfres->used), 
+		    (pfres->count + 7) / 8, (chars_count + 7) / 8);    
+    if (code < 0)
+	return code;
+    if (pfres->FontType == ft_CID_encrypted || pfres->FontType == ft_CID_TrueType) {
+	if (pfres->u.cidfont.v != NULL) {
+	    code = pdf_resize_array(mem, (void **)&pfres->u.cidfont.v, 
+		    sizeof(*pfres->u.cidfont.v), pfres->count * 2, chars_count * 2);    
+	    if (code < 0)
+		return code;
+	}
+	if (pfres->u.cidfont.Widths2 != NULL) {
+	    code = pdf_resize_array(mem, (void **)&pfres->u.cidfont.Widths2, 
+		    sizeof(*pfres->u.cidfont.Widths2), pfres->count, chars_count);    
+	    if (code < 0)
+		return code;
+	}
+    }
+    pfres->count = chars_count;
+    return 0;
+}
 
 /* Get the object ID of a font resource. */
 long
