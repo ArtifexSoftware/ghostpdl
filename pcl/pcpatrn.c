@@ -916,7 +916,7 @@ pattern_set_frgrnd(
     if ( for_image                          &&
          ((pfrgrnd->pht != ppalet->pht)  ||
           (pfrgrnd->pcrd != ppalet->pcrd)  )  ) {
-        code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(), true);
+        code = set_frgrnd_pattern(pcs, pcl_pattern_get_solid_pattern(pcs), true);
         if (code >= 0)
             code = set_ht_crd_from_palette(pcs);
     } else {
@@ -936,7 +936,7 @@ pattern_set_shade_pcl(
     int             for_image
 )
 {
-    pcl_pattern_t * pptrn = pcl_pattern_get_shade(inten);
+    pcl_pattern_t * pptrn = pcl_pattern_get_shade(pcs, inten);
 
     if (pptrn == 0)
         return ( inten > 0 ? pattern_set_frgrnd(pcs, 0, for_image)
@@ -960,11 +960,11 @@ pattern_set_shade_gl(
     int             pen     /* pen number for foreground */
 )
 {
-    pcl_pattern_t * pptrn = pcl_pattern_get_shade(inten);
+    pcl_pattern_t * pptrn = pcl_pattern_get_shade(pcs, inten);
 
     /* check if the current pen is white; if so, use the "unsolid" pattern */
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
-        pptrn = pcl_pattern_get_unsolid_pattern();
+        pptrn = pcl_pattern_get_unsolid_pattern(pcs);
     else if (pptrn == 0)
         return ( inten > 0 ? pattern_set_pen(pcs, pen, false)
                            : pattern_set_white(pcs, 0, 0)   );
@@ -980,7 +980,7 @@ pattern_set_hatch_pcl(
     int             for_image
 )
 {
-    pcl_pattern_t * pptrn = pcl_pattern_get_cross(indx);
+    pcl_pattern_t * pptrn = pcl_pattern_get_cross(pcs, indx);
 
     if (pptrn == 0)
         return pattern_set_frgrnd(pcs, 0, for_image);
@@ -1002,11 +1002,11 @@ pattern_set_hatch_gl(
     int             pen     /* pen number for foreground */
 )
 {
-    pcl_pattern_t * pptrn = pcl_pattern_get_cross(indx);
+    pcl_pattern_t * pptrn = pcl_pattern_get_cross(pcs, indx);
 
     /* check if the current pen is white; if so, use the "unsolid" pattern */
     if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
-        pptrn = pcl_pattern_get_unsolid_pattern();
+        pptrn = pcl_pattern_get_unsolid_pattern(pcs);
     else if (pptrn == 0)
         return pattern_set_pen(pcs, pen, false);
 
@@ -1056,7 +1056,7 @@ pattern_set_user_gl(
 
 	    /* check if the current pen is white */
             if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
-                pptrn = pcl_pattern_get_unsolid_pattern();
+                pptrn = pcl_pattern_get_unsolid_pattern(pcs);
             return set_uncolored_palette_pattern(pcs, pptrn, pen);
 
         } else
@@ -1089,7 +1089,7 @@ pattern_set_gl_RF(
 
             /* check if the current pen is white */
             if (pcl_cs_indexed_is_white(pcs->ppalet->pindexed, pen))
-                pptrn = pcl_pattern_get_unsolid_pattern();
+                pptrn = pcl_pattern_get_unsolid_pattern(pcs);
             return set_uncolored_palette_pattern(pcs, pptrn, pen);
 
         } else
@@ -1369,7 +1369,7 @@ pattern_do_reset(
 
     if ((type & mask) != 0) {
         if ((type  & pcl_reset_initial) != 0)
-            pcl_pattern_init_bi_patterns(pcs->memory);
+            pcl_pattern_init_bi_patterns(pcs);
         pcs->pcl_pattern_transparent = true;
         pcs->pattern_transparent = true;
         pcs->source_transparent = true;

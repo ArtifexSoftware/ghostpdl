@@ -557,7 +557,7 @@ upattern_do_reset(
                                  );
 
         delete_all_pcl_ptrns(true, true, pcs);
-        pcl_pattern_clear_bi_patterns();
+        pcl_pattern_clear_bi_patterns(pcs);
         /* GL's IN command takes care of the GL patterns */
     }
 }

@@ -4,15 +4,22 @@
 
 /* pcbiptrn.c - code for PCL built-in patterns */
 
+#include "math_.h"
 #include "string_.h"
+#include "gstypes.h"		/* for gsstate.h */
+#include "gsmatrix.h"		/* for gsstate.h */
+#include "gsmemory.h"		/* for gsstate.h */
+#include "gsstate.h"
+#include "gscoord.h"
 #include "pcpatrn.h"
 #include "pcuptrn.h"
 #include "pcbiptrn.h"
+#include "pcstate.h"
 
 /*
  * Bitmap arrays for the built-in patterns.
  */
-private const byte  bi_data_array[ (7 + 6) * 2 * 16 ] = {
+private const byte  bi_data_array[(PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_PATTERNS) * 2 * 16] = {
 
     /* shade 1% to 2% */
     0x80, 0x80,   0x00, 0x00,   0x00, 0x00,   0x00, 0x00,
@@ -97,7 +104,8 @@ private const byte  bi_data_array[ (7 + 6) * 2 * 16 ] = {
 #define make_pixmap(indx)                                           \
     { (byte *)(bi_data_array + indx * 2 * 16), 2, {16, 16}, 0, 1, 1 }
 
-private const gs_depth_bitmap   bi_pixmap_array[7 + 6] = {
+private const gs_depth_bitmap   bi_pixmap_array[PCL_NUM_CROSSHATCH_PATTERNS +
+					        PCL_NUM_SHADE_PATTERNS] = {
     make_pixmap(0),
     make_pixmap(1),
     make_pixmap(2),
@@ -112,8 +120,6 @@ private const gs_depth_bitmap   bi_pixmap_array[7 + 6] = {
     make_pixmap(11),
     make_pixmap(12)
 };
-
-private pcl_pattern_t * bi_pattern_array[countof(bi_pixmap_array)];
 
 #define bi_cross_offset 7
 
@@ -144,8 +150,6 @@ private const gs_depth_bitmap   solid_pattern_pixmap = {
     (byte *)&solid_pattern_data, 1, {1, 1}, 0, 1, 1
 };
 
-private pcl_pattern_t * psolid_pattern;
-
 /*
  * An "un-solid" pattern, similar to the solid pattern described above, but
  * with only background. This is used primarily to handle the case of an
@@ -159,34 +163,17 @@ private const gs_depth_bitmap   unsolid_pattern_pixmap = {
     (byte *)&unsolid_pattern_data, 1, {1, 1}, 0, 1, 1
 };
 
-private pcl_pattern_t * punsolid_pattern;
-
-
-/*
- * The following where originally local statics, but were moved to top level
- * so as to work on systems that do not re-initialize BSS at each startup.
- */
-private int             last_inten;
-private pcl_pattern_t * plast_shade;
-
-/* a pointer to the memory structure to be used for building built-in patterns */
-private gs_memory_t *   pbi_mem;
-
-
 /*
  * Initialize the built-in patterns
  */
   void
 pcl_pattern_init_bi_patterns(
-    gs_memory_t *   pmem
+    pcl_state_t *pcs
 )
 {
-    memset(bi_pattern_array, 0, sizeof(bi_pattern_array));
-    psolid_pattern = 0;
-    punsolid_pattern = 0;
-    last_inten = 0;
-    plast_shade = 0;
-    pbi_mem = pmem;
+    memset(pcs->bi_pattern_array, 0, sizeof(pcs->bi_pattern_array));
+    pcs->psolid_pattern = 0;
+    pcs->punsolid_pattern = 0;
 }
 
 /*
@@ -194,60 +181,86 @@ pcl_pattern_init_bi_patterns(
  * conserve memory.
  */
   void
-pcl_pattern_clear_bi_patterns(void)
+pcl_pattern_clear_bi_patterns(pcl_state_t *pcs)
 {
     int     i;
 
-    for (i = 0; i < countof(bi_pattern_array); i++) {
-        if (bi_pattern_array[i] != 0) {
-            pcl_pattern_free_pattern( pbi_mem,
-                                      bi_pattern_array[i],
+    for (i = 0; i < countof(pcs->bi_pattern_array); i++) {
+        if (pcs->bi_pattern_array[i] != 0) {
+            pcl_pattern_free_pattern( pcs->memory,
+                                      pcs->bi_pattern_array[i],
                                       "clear PCL built-in patterns"
                                       );
-            bi_pattern_array[i] = 0;
+            pcs->bi_pattern_array[i] = 0;
         }
     }
 
-    last_inten = 0;
-    plast_shade = 0;
-
-    if (psolid_pattern != 0) {
-        pcl_pattern_free_pattern( pbi_mem,
-                                  psolid_pattern,
+    if (pcs->psolid_pattern != 0) {
+        pcl_pattern_free_pattern( pcs->memory,
+                                  pcs->psolid_pattern,
                                   "clear PCL built-in patterns"
                                   );
 
-        psolid_pattern = 0;
+        pcs->psolid_pattern = 0;
     }
-    if (punsolid_pattern != 0) {
-        pcl_pattern_free_pattern( pbi_mem,
-                                  punsolid_pattern,
+    if (pcs->punsolid_pattern != 0) {
+        pcl_pattern_free_pattern( pcs->memory,
+                                  pcs->punsolid_pattern,
                                   "clear PCL built-in patterns"
                                   );
 
-        punsolid_pattern = 0;
+        pcs->punsolid_pattern = 0;
     }
 }
 
+/* 
+ * pcl patterns are always always 300 dpi but we use the device
+ * resolution on devices lower than 300 dpi so we can at least see the
+ * patterns on screen resolution devices.  NB this could probably be
+ * done once but it is not very expensive.  Currently, we set the
+ * resolution each time the pattern is built.  
+ */
+
+ private int
+pcl_get_pattern_resolution(pcl_state_t *pcs, gs_point *pattern_res)
+{
+    gs_matrix mat;
+    gs_point device_res;
+    /* default is 300 */
+    pattern_res->x = 300;
+    pattern_res->y = 300;
+    /* get the current resolutions based on the default centipoint
+       matrix */
+    gs_defaultmatrix(pcs->pgs, &mat);
+    /* if both are less than 300 dpi override the 300 dpi default */
+    device_res.x = fabs(mat.xx) * 7200;
+    device_res.y = fabs(mat.yy) * 7200;
+    if ( (device_res.x < 300) && (device_res.y < 300) ) {
+	pattern_res->x = device_res.x;
+	pattern_res->y = device_res.y;
+    }
+    return 0;
+}
+	 
 /*
  * Return the pointer to a built-in pattern, building it if inecessary.
  */
   private pcl_pattern_t *
-get_bi_pattern(
-    int             indx
-)
+get_bi_pattern(pcl_state_t *pcs, int indx)
 {
-    if (bi_pattern_array[indx] == 0) {
-        (void)pcl_pattern_build_pattern( &(bi_pattern_array[indx]),
+    if (pcs->bi_pattern_array[indx] == 0) {
+	gs_point pattern_res;
+	pcl_get_pattern_resolution(pcs, &pattern_res);
+        (void)pcl_pattern_build_pattern( &(pcs->bi_pattern_array[indx]),
                                          &(bi_pixmap_array[indx]),
                                          pcl_pattern_uncolored,
-                                         300,
-                                         300,
-                                         pbi_mem
+					 pattern_res.x,
+					 pattern_res.y,
+                                         pcs->memory
                                          );
-        bi_pattern_array[indx]->ppat_data->storage = pcds_internal;
+        pcs->bi_pattern_array[indx]->ppat_data->storage = pcds_internal;
     }
-    return bi_pattern_array[indx];
+    return pcs->bi_pattern_array[indx];
 }
 
 /*
@@ -256,32 +269,26 @@ get_bi_pattern(
  * must look at the intensity to determine if it is black or white.
  */
   pcl_pattern_t *
-pcl_pattern_get_shade(
-    int             inten
-)
+pcl_pattern_get_shade(pcl_state_t *pcs, int inten)
 {
-    if (inten != last_inten) {
-        last_inten = inten;
-        if (inten <= 0)
-            plast_shade = 0;
-        else if (inten <= 2)
-            plast_shade = get_bi_pattern(0);
-        else if (inten <= 10)
-            plast_shade = get_bi_pattern(1);
-        else if (inten <= 20)
-            plast_shade = get_bi_pattern(2);
-        else if (inten <= 35)
-            plast_shade = get_bi_pattern(3);
-        else if (inten <= 55)
-            plast_shade = get_bi_pattern(4);
-        else if (inten <= 80)
-            plast_shade = get_bi_pattern(5);
-        else if (inten <= 99)
-            plast_shade = get_bi_pattern(6);
-        else 
-            plast_shade = 0;
-    }
-    return plast_shade;
+    pcl_pattern_t *shade = 0;
+    if (inten <= 0)
+	shade = 0;
+    else if (inten <= 2)
+	shade = get_bi_pattern(pcs, 0);
+    else if (inten <= 10)
+	shade = get_bi_pattern(pcs, 1);
+    else if (inten <= 20)
+	shade = get_bi_pattern(pcs, 2);
+    else if (inten <= 35)
+	shade = get_bi_pattern(pcs, 3);
+    else if (inten <= 55)
+	shade = get_bi_pattern(pcs, 4);
+    else if (inten <= 80)
+	shade = get_bi_pattern(pcs, 5);
+    else if (inten <= 99)
+	shade = get_bi_pattern(pcs, 6);
+    return shade;
 }
 
 /*
@@ -290,50 +297,52 @@ pcl_pattern_get_shade(
  * determine what to do in this case.
  */
   pcl_pattern_t *
-pcl_pattern_get_cross(
-    int             indx
-)
+pcl_pattern_get_cross(pcl_state_t *pcs, int indx)
 {
     if ((indx < 1) || (indx > 6))
         return 0;
     else
-        return get_bi_pattern(indx + bi_cross_offset - 1);
+        return get_bi_pattern(pcs, indx + bi_cross_offset - 1);
 }
 
 /*
  * Return the solid uncolored pattern, to be used with rasters (see above).
  */
   pcl_pattern_t *
-pcl_pattern_get_solid_pattern(void)
+pcl_pattern_get_solid_pattern(pcl_state_t *pcs)
 {
-    if (psolid_pattern == 0) {
-        (void)pcl_pattern_build_pattern( &(psolid_pattern),
+    if (pcs->psolid_pattern == 0) {
+	gs_point pattern_res;
+	pcl_get_pattern_resolution(pcs, &pattern_res);
+        (void)pcl_pattern_build_pattern( &(pcs->psolid_pattern),
                                          &solid_pattern_pixmap,
                                          pcl_pattern_uncolored,
-                                         300,
-                                         300,
-                                         pbi_mem
+                                         pattern_res.x,
+                                         pattern_res.y,
+                                         pcs->memory
                                          );
-        psolid_pattern->ppat_data->storage = pcds_internal;
+        pcs->psolid_pattern->ppat_data->storage = pcds_internal;
     }
-    return psolid_pattern;
+    return pcs->psolid_pattern;
 }
 
 /*
  * Return the "unsolid" uncolored patterns, to be used with GL/2.
  */
   pcl_pattern_t *
-pcl_pattern_get_unsolid_pattern(void)
+pcl_pattern_get_unsolid_pattern(pcl_state_t *pcs)
 {
-    if (punsolid_pattern == 0) {
-        (void)pcl_pattern_build_pattern( &(punsolid_pattern),
+    if (pcs->punsolid_pattern == 0) {
+	gs_point pattern_res;
+	pcl_get_pattern_resolution(pcs, &pattern_res);
+        (void)pcl_pattern_build_pattern( &(pcs->punsolid_pattern),
                                          &unsolid_pattern_pixmap,
                                          pcl_pattern_uncolored,
-                                         300,
-                                         300,
-                                         pbi_mem
+                                         pattern_res.x,
+                                         pattern_res.y,
+                                         pcs->memory
                                          );
-        punsolid_pattern->ppat_data->storage = pcds_internal;
+        pcs->punsolid_pattern->ppat_data->storage = pcds_internal;
     }
-    return punsolid_pattern;
+    return pcs->punsolid_pattern;
 }

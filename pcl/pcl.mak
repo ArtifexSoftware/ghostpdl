@@ -421,7 +421,13 @@ $(PCLOBJ)rtlbase.dev: $(PCL_MAK) $(ECHOGS_XE) $(rtlbase_) $(PCLOBJ)pcl5base.dev
 # Chapter 2, 3, 4, 5
 $(PCLOBJ)pcbiptrn.$(OBJ): $(PCLSRC)pcbiptrn.c   \
 			  $(string__h)          \
+			  $(gstypes_h)		\
+			  $(gsmatrix_h)         \
+			  $(gsmemory_h)		\
+			  $(gsstate_h)		\
+			  $(gscoord_h)          \
                           $(pcpatrn_h)          \
+			  $(pcstate_h)		\
                           $(pcuptrn_h)          \
                           $(pcbiptrn_h)
 	$(PCLCCC) $(PCLSRC)pcbiptrn.c $(PCLO_)pcbiptrn.$(OBJ)

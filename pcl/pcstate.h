@@ -204,15 +204,16 @@ struct pcl_state_s {
     gs_point            pcl_pat_ref_pt; /* PCL's pattern reference point */
     pl_dict_t           pcl_patterns;   /* dictionaries to hold pcl and gl/2 patterns */
     pl_dict_t           gl_patterns;
+#define PCL_NUM_SHADE_PATTERNS (7)         /* pcl support 7 shades of gray */
+#define PCL_NUM_CROSSHATCH_PATTERNS (6)    /* and 6 cross hatch patterns */
+    pcl_pattern_s *     bi_pattern_array[PCL_NUM_SHADE_PATTERNS + PCL_NUM_CROSSHATCH_PATTERNS];
     int                 last_pcl_uptrn_id; /* optimizations for recording last patter */
     pcl_pattern_s *     plast_pcl_uptrn;   /* and pattern id */
     int                 last_gl2_RF_indx;
     pcl_pattern_s *     plast_gl2_uptrn;
-
-
-    bool                rotate_patterns;/* rotate patterns with print
-                                         * direction in PCL */
-
+    pcl_pattern_s *     psolid_pattern;    /* see documentation in pcbiptrn.c for these two */
+    pcl_pattern_s *	punsolid_pattern;
+    bool                rotate_patterns;    /* rotate patterns with print direction in PCL */
     bool                source_transparent; /* (also in graphics state) */
     bool                pattern_transparent;/* (also in graphics state);
                                              * PCL and GL/2 set this

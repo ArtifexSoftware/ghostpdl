@@ -190,7 +190,7 @@ pcl_fill_rect_area(
      *        patterns, and patterns >= 100% are considered white.
      */
     if (type == pcl_pattern_cross_hatch) {
-        if (pcl_pattern_get_cross(id) == 0)
+        if (pcl_pattern_get_cross(pcs, id) == 0)
             return 0;
     } else if (type == pcl_pattern_user_defined) {
         if (pcl_pattern_get_pcl_uptrn(pcs, id) == 0)
