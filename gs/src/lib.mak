@@ -872,7 +872,9 @@ $(GLOBJ)gdevplnx.$(OBJ) : $(GLSRC)gdevplnx.c $(GXERR)\
 # A tracing device, also an example of a high-level device.
 
 $(GLOBJ)gdevtrac.$(OBJ) : $(GLSRC)gdevtrac.c $(GXERR)\
- $(gxdevice_h)
+ $(gscspace_h)\
+ $(gxdevice_h) $(gxdht_h) $(gxfont_h) $(gxiparam_h) $(gxistate_h)\
+ $(gxpaint_h) $(gxtmap_h) $(gzcpath_h) $(gzpath_h) 
 	$(GLCC) $(GLO_)gdevtrac.$(OBJ) $(C_) $(GLSRC)gdevtrac.c
 
 $(GLD)tracedev.dev : $(ECHOGS_XE) $(LIB_MAK) $(GLOBJ)gdevtrac.$(OBJ)
@@ -1824,7 +1826,7 @@ $(GLOBJ)gdevpsfm.$(OBJ) : $(GLSRC)gdevpsfm.c $(GXERR)\
 	$(GLCC) $(GLO_)gdevpsfm.$(OBJ) $(C_) $(GLSRC)gdevpsfm.c
 
 $(GLOBJ)gdevpsft.$(OBJ) : $(GLSRC)gdevpsft.c $(GXERR) $(memory__h)\
- $(gsmatrix_h) $(gsutil_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
+ $(gsmatrix_h) $(gsutil_h) $(gxfcid_h) $(gxfont_h) $(gxfont42_h) $(gxttf_h)\
  $(spprint_h) $(stream_h)\
  $(gdevpsf_h)
 	$(GLCC) $(GLO_)gdevpsft.$(OBJ) $(C_) $(GLSRC)gdevpsft.c

@@ -1494,7 +1494,7 @@ $(PSOBJ)zdps.$(OBJ) : $(PSSRC)zdps.c $(OP)\
 	$(PSCC) $(PSO_)zdps.$(OBJ) $(C_) $(PSSRC)zdps.c
 
 $(PSOBJ)zcontext.$(OBJ) : $(PSSRC)zcontext.c $(OP) $(gp_h) $(memory__h)\
- $(gsexit_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxstate_h)\
+ $(gsexit_h) $(gsgc_h) $(gsstruct_h) $(gsutil_h) $(gxalloc_h) $(gxstate_h)\
  $(icontext_h) $(idict_h) $(igstate_h) $(interp_h) $(isave_h) $(istruct_h)\
  $(dstack_h) $(estack_h) $(files_h) $(ostack_h) $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)zcontext.$(OBJ) $(C_) $(PSSRC)zcontext.c
