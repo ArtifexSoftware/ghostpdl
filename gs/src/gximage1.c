@@ -60,6 +60,7 @@ gs_image_t_init_adjust(gs_image_t * pim, const gs_color_space * color_space,
     pim->adjust = adjust;
     pim->type = (pim->ImageMask ? &gs_image_type_mask1 : &gs_image_type_1);
     pim->Alpha = gs_image_alpha_none;
+    pim->has_Matte = false;
 }
 void
 gs_image_t_init_mask_adjust(gs_image_t * pim, bool write_1s, bool adjust)
@@ -100,14 +101,33 @@ gx_begin_image1(gx_device * dev,
 
 /* Serialization */
 
+/*
+ * We add bits BBA to the control word, where BB = Alpha and A = has_Matte.
+ * If has_Matte is true, we write and read the Matte values.
+ */
+
 private int
 gx_image1_sput(const gs_image_common_t *pic, stream *s,
 	       const gs_color_space **ppcs)
 {
     const gs_image_t *const pim = (const gs_image_t *)pic;
+    uint control = ((int)pim->Alpha << 1) + pim->has_Matte;
+    int code = gx_pixel_image_sput((const gs_pixel_image_t *)pic, s, ppcs,
+				   control);
 
-    return gx_pixel_image_sput((const gs_pixel_image_t *)pic, s, ppcs,
-			       (int)pim->Alpha);
+    if (code < 0)
+	return code;
+    if (pim->has_Matte) {
+	uint size =
+	    sizeof(pim->Matte[0]) *
+	    gs_color_space_num_components(pim->ColorSpace);
+	uint written;
+
+	code = sputs(s, (const byte *)pim->Matte, size, &written);
+	if (code < 0 || written != size)
+	    return_error(gs_error_ioerror);
+    }
+    return 0;
 }
 
 private int
@@ -121,7 +141,18 @@ gx_image1_sget(gs_image_common_t *pic, stream *s,
 	return code;
     pim->type = &gs_image_type_1;
     pim->ImageMask = false;
-    pim->Alpha = code;
+    pim->Alpha = code >> 1;
+    pim->has_Matte = code & 1;
+    if (pim->has_Matte) {
+	uint size =
+	    sizeof(pim->Matte[0]) *
+	    gs_color_space_num_components(pim->ColorSpace);
+	uint read;
+
+	code = sgets(s, (byte *)pim->Matte, size, &read);
+	if (code < 0 || read != size)
+	    return_error(gs_error_ioerror);
+    }
     return 0;
 }
 
