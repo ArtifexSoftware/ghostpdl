@@ -206,6 +206,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_stream_position_t ipos;
     pdf_resource_t *pres = 0;
     byte invert = 0;
+    bool in_line = false;
     long pos;
 
     /* Update clipping. */
@@ -312,8 +313,8 @@ pdf_copy_mono(gx_device_pdf *pdev,
     pdf_make_bitmap_image(&image, x, y, w, h);
     {
 	ulong nbytes = (ulong) ((w + 7) >> 3) * h;
-	bool in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
 
+	in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
 	if (in_line)
 	    pdf_put_image_matrix(pdev, &image.ImageMatrix, 1.0);
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
@@ -328,7 +329,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	pcsvalue = NULL;
     else {
 	code = pdf_color_space(pdev, &cs_value, &cs,
-			       &writer.pin->color_spaces, true);
+			       &writer.pin->color_spaces, in_line);
 	if (code < 0)
 	    return code;
 	pcsvalue = &cs_value;
@@ -466,7 +467,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
 	pputs(pdev->strm, "q ");
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
 	(code = pdf_color_space(pdev, &cs_value, &cs,
-				&piw->pin->color_spaces, true)) < 0 ||
+				&piw->pin->color_spaces, in_line)) < 0 ||
 	(code = psdf_setup_image_filters((gx_device_psdf *) pdev, &piw->binary,
 					 (gs_pixel_image_t *)pim, NULL, NULL)) < 0 ||
 	(code = pdf_begin_image_data(pdev, piw, (const gs_pixel_image_t *)pim,
@@ -711,6 +712,37 @@ private RELOC_PTRS_WITH(pdf_image_enum_reloc_ptrs, pdf_image_enum *pie)
 }
 RELOC_PTRS_END
 
+/*
+ * Test whether we can write an image in-line.  Before PDF 1.2, this is only
+ * allowed for masks, images in built-in color spaces, and images in Indexed
+ * color spaces based on these with a string lookup table.
+ */
+private bool
+can_write_image_in_line(const gx_device_pdf *pdev, const gs_image_t *pim)
+{
+    const gs_color_space *pcs;
+
+    if (pim->ImageMask)
+	return true;
+    if (pdev->CompatibilityLevel >= 1.2)
+	return true;
+    pcs = pim->ColorSpace;
+ cs:
+    switch (gs_color_space_get_index(pcs)) {
+    case gs_color_space_index_DeviceGray:
+    case gs_color_space_index_DeviceRGB:
+    case gs_color_space_index_DeviceCMYK:
+	return true;
+    case gs_color_space_index_Indexed:
+	if (pcs->params.indexed.use_proc)
+	    return false;
+	pcs = (const gs_color_space *)&pcs->params.indexed.base_space;
+	goto cs;
+    default:
+	return false;
+    }
+}
+
 /* Start processing an image. */
 int
 gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
@@ -752,7 +784,7 @@ gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 	if (pim1->Alpha != gs_image_alpha_none)
 	    goto nyi;
 	is_mask = pim1->ImageMask;
-	in_line = true;
+	in_line = can_write_image_in_line(pdev, pim1);
 	image.type1 = *pim1;
 	break;
     }
@@ -829,7 +861,7 @@ gdev_pdf_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
 	(is_mask ? pim->CombineWithColor :
 	 pdf_color_space(pdev, &cs_value, pcs,
 			 (in_line ? &pdf_color_space_names_short :
-			  &pdf_color_space_names), true) < 0)
+			  &pdf_color_space_names), in_line) < 0)
 	) {
 	gs_free_object(mem, pie, "pdf_begin_image");
 	goto nyi;
