@@ -299,10 +299,9 @@ gx_concrete_space_DeviceN(const gs_color_space * pcs,
 {
 #ifdef DEBUG
     /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
+     * Verify that the color space and imager state info match.
      */
-    if (pcs->id != pis->cspace_id)
+    if (pcs->id != pis->color_component_map.cspace_id)
 	dprintf("gx_concrete_space_DeviceN: color space id mismatch");
 #endif
 
@@ -334,11 +333,10 @@ gx_concretize_DeviceN(const gs_client_color * pc, const gs_color_space * pcs,
 
 #ifdef DEBUG
     /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
+     * Verify that the color space and imager state info match.
      */
-    if (pcs->id != pis->cspace_id)
-	dprintf("gx_concrete_space_DeviceN: color space id mismatch");
+    if (pcs->id != pis->color_component_map.cspace_id)
+	dprintf("gx_concretize_DeviceN: color space id mismatch");
 #endif
 
     /*
@@ -387,10 +385,9 @@ gx_remap_concrete_DeviceN(const frac * pconc, const gs_color_space * pcs,
 {
 #ifdef DEBUG
     /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
+     * Verify that the color space and imager state info match.
      */
-    if (pcs->id != pis->cspace_id)
+    if (pcs->id != pis->color_component_map.cspace_id)
 	dprintf("gx_remap_concrete_DeviceN: color space id mismatch");
 #endif
 
@@ -429,6 +426,7 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
     bool non_match = false;
 
     pcolor_component_map->num_components = num_comp;
+    pcolor_component_map->cspace_id = pcs->id;
     pcolor_component_map->num_colorants = dev->color_info.num_components;
     pcolor_component_map->sep_type = SEP_OTHER;
     /*

@@ -95,11 +95,10 @@ gx_concrete_space_Separation(const gs_color_space * pcs,
 {
 #ifdef DEBUG
     /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
+     * Verify that the color space and imager state info match.
      */
-    if (pcs->id != pis->cspace_id)
-	dprintf("gx_concrete_space_Separation: color space id mismatch");
+    if (pcs->id != pis->color_component_map.cspace_id)
+	dprintf("gx_concretze_space_Separation: color space id mismatch");
 #endif
 
     /*
@@ -334,10 +333,9 @@ gx_remap_concrete_Separation(const frac * pconc,  const gs_color_space * pcs,
 {
 #ifdef DEBUG
     /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
+     * Verify that the color space and imager state info match.
      */
-    if (pcs->id != pis->cspace_id)
+    if (pcs->id != pis->color_component_map.cspace_id)
 	dprintf("gx_remap_concrete_Separation: color space id mismatch");
 #endif
 
@@ -371,6 +369,7 @@ check_Separation_component_name(const gs_color_space * pcs, gs_state * pgs)
     const gx_device * dev = pgs->device;
 
     pcolor_component_map->num_components = 1;
+    pcolor_component_map->cspace_id = pcs->id;
     pcolor_component_map->num_colorants = dev->color_info.num_components;
     pcolor_component_map->sep_type = pcs->params.separation.sep_type;
     /*

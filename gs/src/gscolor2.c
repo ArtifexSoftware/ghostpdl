@@ -44,7 +44,6 @@ gs_setcolorspace(gs_state * pgs, const gs_color_space * pcs)
     if (pcs->id != pgs->color_space->id) {
         pcs->type->adjust_cspace_count(pcs, 1);
         *pgs->color_space = *pcs;
-	pgs->cspace_id = pcs->id;
         if ( (code = pcs->type->install_cspace(pcs, pgs)) < 0          ||
               (pgs->overprint && (code = gs_do_set_overprint(pgs)) < 0)  ) {
             *pgs->color_space = cs_old;
@@ -446,15 +445,6 @@ gx_concrete_space_Indexed(const gs_color_space * pcs,
     const gs_color_space *pbcs =
     (const gs_color_space *)&pcs->params.indexed.base_space;
 
-#ifdef DEBUG
-    /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
-     */
-    if (pcs->id != pis->cspace_id)
-	dprintf("gx_concrete_space_CIE: color space id mismatch");
-#endif
-
     return cs_concrete_space(pbcs, pis);
 }
 
@@ -471,15 +461,6 @@ gx_concretize_Indexed(const gs_client_color * pc, const gs_color_space * pcs,
 	(const gs_color_space *)&pcs->params.indexed.base_space;
     gs_client_color cc;
     int code = gs_cspace_indexed_lookup(&pcs->params.indexed, index, &cc);
-
-#ifdef DEBUG
-    /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
-     */
-    if (pcs->id != pis->cspace_id)
-	dprintf("gx_concrete_space_CIE: color space id mismatch");
-#endif
 
     if (code < 0)
 	return code;

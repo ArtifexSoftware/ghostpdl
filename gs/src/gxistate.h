@@ -142,12 +142,6 @@ typedef struct gx_transfer_s {
 \
 		/* Color caches: */\
 \
-		/* Id of color space for which cached information */\
-		/* applies. Note that this may differ from */\
-		/* cie_joint_caches->cspace_id, as the joint cache */\
-		/* is not rebuilt until needed */\
-	gs_id cspace_id;\
-\
 		/* cie_joint_caches depend on cie_render and */\
 		/* the color space. */\
 	struct gx_cie_joint_caches_s *cie_joint_caches;		/* (RC) */\
@@ -196,6 +190,7 @@ typedef struct gs_devicen_color_map_s {
     separation_type sep_type;
     uint num_components;	/* Input - Duplicate of value in gs_device_n_params */
     uint num_colorants;		/* Number of colorants - output */ 
+    gs_id cspace_id;		/* Used to verify color space and map match */
     int color_map[GS_CLIENT_COLOR_MAX_COMPONENTS];
 } gs_devicen_color_map;
 

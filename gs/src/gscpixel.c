@@ -84,15 +84,6 @@ private int
 gx_concretize_DevicePixel(const gs_client_color * pc, const gs_color_space * pcs,
 			  frac * pconc, const gs_imager_state * pis)
 {
-#ifdef DEBUG
-    /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
-     */
-    if (pcs->id != pis->cspace_id)
-	dprintf("gx_concrete_space_CIE: color space id mismatch");
-#endif
-
     /****** NOT ENOUGH BITS IN float OR frac ******/
     pconc[0] = (frac) (ulong) pc->paint.values[0];
     return 0;
@@ -103,15 +94,6 @@ gx_remap_concrete_DevicePixel(const frac * pconc, const gs_color_space * pcs,
 	gx_device_color * pdc, const gs_imager_state * pis, gx_device * dev,
 			      gs_color_select_t select)
 {
-#ifdef DEBUG
-    /* 
-     * Check that we are using the current color space, even though
-     * this is not required for this routine.
-     */
-    if (pcs->id != pis->cspace_id)
-	dprintf("gx_concrete_space_CIE: color space id mismatch");
-#endif
-
     color_set_pure(pdc, pconc[0] & ((1 << dev->color_info.depth) - 1));
     return 0;
 }
