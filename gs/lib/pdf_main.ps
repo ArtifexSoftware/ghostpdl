@@ -15,7 +15,6 @@
 % License requires that the copyright notice and this notice be preserved on
 % all copies.
 
-
 % pdf_main.ps
 % PDF file- and page-level operations.
 
@@ -197,9 +196,9 @@ pdfdict begin
    length /PDFoffset exch def pop cvr /PDFversion exch def
    PDFfile dup dup 0 setfileposition bytesavailable 
 	% Scan backwards over trailing control-character garbage
-	% (nulls, ^Zs, EOLs).
+	% (nulls, ^Zs, EOLs, blanks).
     { 1 sub 2 copy setfileposition 1 index read pop
-      32 ge {exit} if
+      32 gt {exit} if
     } loop
 	% Stack: PDFfile endpos
 	% The top of the stack is now the file position of the last
@@ -474,12 +473,11 @@ end readonly def
 	% Stack: pagedict setpagedict
    1 index /MediaBox pget
     {			% Set the page size.
-      boxrect [ 2 index 5 index sub 2 index 5 index sub ]
+      boxrect [ 2 index 2 index ]
 	% Stack: pagedict setpagedict llx lly urx ury pagesize
       5 index exch /PageSize exch put
 	% Stack: pagedict contents setpagedict llx lly urx ury
-      pop pop
-      neg exch neg exch
+      pop pop exch neg exch		% only negate Y offset
       [ 3 1 roll ]
 	% Stack: pagedict setpagedict pageoffset
       1 index exch /PageOffset exch put
