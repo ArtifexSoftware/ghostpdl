@@ -347,7 +347,7 @@ int main(int argc, char** argv)
     char output[80];
     char *c;
 
-    fprintf(stdout, "verifying SHA-1 implementation...");
+    fprintf(stdout, "verifying SHA-1 implementation... ");
     
     for (k = 0; k < 2; k++){ 
         SHA1_Init(&context);
