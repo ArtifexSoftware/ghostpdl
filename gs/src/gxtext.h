@@ -186,12 +186,21 @@ struct gs_text_enum_procs_s {
      * gstext.h.)
      *
      * Note that a default implementation of this procedure can't simply do
-     * nothing and return.  If TEXT_DO_CHARWIDTH or TEXT_DO_*PATH is set,
-     * the procedure must append the appropriate elements to the path.  If
-     * TEXT_INTERVENE is set, the procedure must return to the client after
-     * each character, setting returned.current_char and
-     * returned.current_glyph appropriately.  If TEXT_RETURN_WIDTH is set,
-     * the procedure must set returned.total_width when(ever) it returns.
+     * nothing and return:
+     *
+     *   - If TEXT_DO_CHARWIDTH or TEXT_DO_*PATH is set, the procedure must
+     *   append the appropriate elements to the path.
+     *
+     *   - If TEXT_INTERVENE is set, the procedure must return to the client
+     *   after each character except the last one in the string, setting
+     *   returned.current_char and returned.current_glyph appropriately;
+     *   also, it must reset the current font in the graphics state to its
+     *   original value each time each time (after the first) that the
+     *   procedure is called to process further characters of the string.
+     *
+     *   - If TEXT_RETURN_WIDTH is set, the procedure must set
+     *   returned.total_width when(ever) it returns.
+     *
      * We should provide a default implementation that makes all these
      * things simple, but currently we don't.
      */
