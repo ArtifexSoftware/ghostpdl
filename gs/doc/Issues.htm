@@ -130,6 +130,8 @@ When GS converts the source image to JPEG stream in PDF file and the
 source data end prematurely, it generates bad JPEG stream. 
 tiff2ps from libtiff distribution often generates such files.
 <p>
+SourceForge bug #228808, Jan 15, 2000.
+<p>
 <I>
 JPEG stream writes image dimensions in JPEG header when the stream is created.
 When the source data end the dimensions are not updated. There may be other
@@ -146,8 +148,80 @@ from pdfmark's.
 </I>
 <p>
 March 25, 2001.
-<h3>                                              </h3>
+<h3>ps2pdf ignores transfer functions in shaded fill</h3>
+ps2pdf ignores transfer functions in the shaded fill but 
+uses them for vector objects. The following sample program 
+has 2 shaded fills and 2 rectangles that should have the 
+same color as the left end of the shaded fill.
+<pre>
+
+      <</PageSize [612 200] /Policies<</PageSize 1>> >>setpagedevice 
+      612 1 scale 
+      /grad 
+      { gsave 
+	  0 0 1 100 rectclip 
+	  <<
+	      /ColorSpace [/DeviceCMYK] 
+	      /Domain [0 1] 
+	      /Coords [0 0 1 0] 
+	      /Extend [false false] 
+	      /Function 
+	      << /FunctionType 3 
+		  /Domain [ 0 1] 
+		  /Functions 
+		  [ <<
+		      /FunctionType 2 
+		      /N 1 
+		      /C0 [ 0 0.5 0 0 ] 
+		      /Domain [ 0 1] 
+		      /C1 [0.5 0 0 0] 
+		  >> ] 
+		  /Bounds [] 
+		  /Encode [0 1] 
+	      >> 
+	      /ShadingType 2 
+	  >> shfill 
+
+      0 0.5 0 0 setcmykcolor 
+      0 0 0.1 50 rectfill 
+      grestore 
+      } def 
+
+      grad 
+      {1 exch 2 div sub} settransfer 
+      0 100 translate 
+      grad 
+      showpage 
+</pre>
+SourceForge Bug #232334, Feb 14, 2001.
+
+<h3>ResourceFileName gives wrong result with Font category.</h3>
+The following sequence:
+
+<pre>
+	/Font /Category findresource begin 
+	/CharterBT-Roman 255 string ResourceFileName = 
+	end 
+</pre>
+
+Gives the results:
+<pre>
+        /Resource/Font/CharterBT-Roman 
+</pre>
+
+This should be a valid platform specific file name and path such as:
+<pre>
+        f:/afpl/fonts/bchr.pfa 
+</pre>
+SourceForge Bug #233403, Feb 21, 2001.
+<h3>GS doesn't handle names of separations with HalftoneType 5.</h3>
+PLRM3 says, that HalftoneType 5 may use user defined 
+names of separations. Neither zht2.c nor cmd_put_drawing_color in
+gxclpath.c can handle this. GS chooses default halftone component
+for any non-standard separation name. 
 <p>
+SourceForge Bug #406643, Mar 7, 2001.
+<h3>                                              </h3>
 
 <hr>
 
