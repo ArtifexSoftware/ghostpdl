@@ -325,7 +325,7 @@ gx_forward_get_page_device(gx_device * dev)
     if (tdev == 0)
 	return gx_default_get_page_device(dev);
     pdev = dev_proc(tdev, get_page_device)(tdev);
-    return (pdev == tdev ? dev : pdev);
+    return pdev;
 }
 
 int

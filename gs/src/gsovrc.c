@@ -785,11 +785,9 @@ overprint_put_params(gx_device * dev, gs_param_list * plist)
 }
 
 /*
- * The overprint device must never be confused with a page device. The
- * default procedure for forwarding devices, gx_forward_get_page_device,
- * will masquerade as a page device if its immediate target is a page
- * device. We are not certain why this is so, and it looks like an error
- * (see, for example, zcallinstall in zdevice2.c).
+ * The overprint device must never be confused with a page device.
+ * Thus, we always forward the request for the page device to the
+ * target, as should all forwarding devices.
  */
 private gx_device *
 overprint_get_page_device(gx_device * dev)
