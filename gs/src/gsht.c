@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* setscreen operator for Ghostscript library */
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */
@@ -973,10 +973,11 @@ gx_imager_dev_ht_install(
                 gx_ht_order *   p_d_order = &dht.components[comp_num].corder;
 
                 /* indicate that this order has been filled in */
-                dht.components[i].comp_number = comp_num;
+                dht.components[comp_num].comp_number = comp_num;
 
                 /* check if this is also the default component */
-                used_default = p_s_order->bit_data == pdht->order.bit_data;
+                used_default = used_default ||
+                               p_s_order->bit_data == pdht->order.bit_data;
 
                 gx_ht_move_ht_order(p_d_order, p_s_order);
             }
@@ -984,23 +985,8 @@ gx_imager_dev_ht_install(
     }
 
     /*
-     * Copy the default order to any remaining components. We have to delay
-     * clearing the default order until we are done.
-     */
-    for (i = 0; i < num_comps && code >= 0; i++) {
-        if (dht.components[i].comp_number != i) {
-            if (used_default)
-                code = gx_ht_copy_ht_order( &dht.components[i].corder,
-                                            &pdht->order,
-                                            pis->memory );
-            else {
-                gx_ht_move_ht_order(&dht.components[i].corder, &pdht->order);
-                used_default = true;
-            }
-        }
-    }
-
-    /*
+     * Copy the default order to any remaining components.
+     *
      * For well-tempered screens, generate the wts_screen_t structure
      * for each component that corresponds to the sample information
      * that has been gathered.
@@ -1037,9 +1023,9 @@ gx_imager_dev_ht_install(
                 code = gx_ht_copy_ht_order(porder, &pdht->order, pis->memory);
             else {
                 gx_ht_move_ht_order(porder, &pdht->order);
-                dht.components[i].comp_number = i;
                 used_default = true;
             }
+            dht.components[i].comp_number = i;
         }
         if ((wse = porder->wse) != 0) {
             wts_screen_t *  wts = 0;
