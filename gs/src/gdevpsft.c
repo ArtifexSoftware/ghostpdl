@@ -784,7 +784,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
      * Note that the existing directory is already sorted by tag.
      */
 
-    numTables_out = numTables + 3 /* head, glyf, loca */
+    numTables_out = numTables + 1 /* head */
+	+ !writing_stripped * 2	/* glyf, loca */
 	+ !no_generate		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
     if (numTables_out >= MAX_NUM_TABLES)
