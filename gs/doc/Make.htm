@@ -1422,13 +1422,13 @@ compiler from Intel's Software Performance Tools web site:
 <p>
 The Macintosh version of Ghostscript requires the <a href="http://www.metrowerks.com/"
 class="offsite">Metrowerks Codewarrior</a> development suite. Download the 
-<tt>macgs-700-src.sit</tt> source archive from the location listed
+<tt>macgs-7xx-src.sit</tt> source archive from the location listed
 below. This includes a Codewarrior .mcp project file than can be used to build both 
 Carbon and CFM versions of the ghostscript shared library component.
 
 <blockquote>
-<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/gs700/"
- class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/gs700/</a>
+<a href="ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/currenti/"
+ class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/current/</a>
 </blockquote>
 
 <p>
@@ -1451,16 +1451,24 @@ MacGSView, to actually view or convert postscript and pdf documents.
 
 <p>
 The unix source distribution (.tar.gz) builds fine on Darwin/MacOS X,
-albeit without a display device. You can generally follow the instructions
-for building on unix in the next section, using <tt>unixansi.mak</tt> as
-your top-level makefile. You must, however, remove the X11 devices from
-the DEVICE_DEVS define near the end of the file. This will allow you to 
-use Ghostscript from the command line as a BSD-layer tool to rasterize 
-postscript and pdf to image files, and convert between the formats 
-supported by Ghostscript.
+albeit without a display device. You can generally just use <tt>macosx.mak</tt>
+as your top-level makefile and get a reasonable default build. This will
+allow you to use Ghostscript from the command line as a BSD-layer tool
+to rasterize postscript and pdf to image files, and convert between the 
+high-level formats supported by Ghostscript. See the instructions for the
+unix build below for details of how to customize this build.
 
 <p>
-Additionally, there is a <tt>macos-mcp.mak</tt> makefile that can be
+There is also a support for building Ghostscript as a framework. This is
+a special encapsulated shared library format specific to MacOS X. To build
+the framework, copy <tt>macosx.mak</tt> to the top-level directory, rename it to
+<tt>makefile</tt> and issue 'make framework' from Terminal.app. This will result
+in a <tt>Ghostscript.framework</tt> in the <tt>sobin</tt> directory. It must be 
+manually copied to /Library/Frameworks/ before applications
+can use it. You may need to create the Frameworks/ directory on some systems.
+
+<p>
+Finally, there is a <tt>macos-mcp.mak</tt> makefile that can be
 used to set up the Codewarrior shared library component build described
 in the section on <a href="#MacOS">Classic MacOS</a> above. Currently
 this makefile is distributed only with the MacOS-specific <tt>.sit</tt>
