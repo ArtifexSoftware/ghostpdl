@@ -325,8 +325,9 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	    code = gx_path_bbox(ppath, &box1);
 	    if (code < 0)
 		return code;
-	    rect_intersect(box1, box);
-	    if (box1.p.x >= box1.q.x || box1.p.y >= box1.q.y)
+	    if (box1.q.x < box.p.x || box1.p.x > box1.q.x)
+		return 0;		/* outside the clipping path */
+	    if (box1.q.y < box.p.y || box1.p.y > box1.q.y)
 		return 0;		/* outside the clipping path */
 	}
 	if (params->flatness != pdev->state.flatness) {
