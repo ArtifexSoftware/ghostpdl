@@ -81,6 +81,7 @@ ps_impl_characteristics(
   return &ps_characteristics;
 }
 
+
 /* Don't need to do anything to PS interpreter */
 private int   /* ret 0 ok, else -ve error code */
 ps_impl_allocate_interp(
@@ -89,12 +90,15 @@ ps_impl_allocate_interp(
   gs_memory_t                      *mem            /* allocator to allocate interp from */
 )
 {
-	static pl_interp_t pi;	/* there's only one interpreter */
 
-	/* There's only one PS interp, so return the static */
-	*interp = &pi;
-	return 0;   /* success */
+    static pl_interp_t pi;	/* there's only one interpreter */
+    /* There's only one PS interp, so return the static */
+    *interp = &pi;
+    return 0;   /* success */
 }
+
+/* NB FIX ME fold into the instance like other languages. */
+ps_interp_instance_t *global_psi = NULL;
 
 /* Do per-instance interpreter allocation/init. No device is set yet */
 private int   /* ret 0 ok, else -ve error code */
@@ -117,7 +121,7 @@ ps_impl_allocate_interp_instance(
 	if (!psi) {
 	  return gs_error_VMerror;
 	}
-
+        global_psi = psi;
 	/* Setup pointer to mem used by PostScript */
 	psi->plmemory = mem;
 	psi->minst = gs_main_instance_default();
@@ -141,6 +145,8 @@ ps_impl_allocate_interp_instance(
 	return 0;
 }
 
+/* NB this pointer should be placed in the ps instance */
+
 /* Set a client language into an interperter instance */
 private int   /* ret 0 ok, else -ve error code */
 ps_impl_set_client_instance(
@@ -159,6 +165,9 @@ ps_impl_set_pre_page_action(
   void                   *closure       /* closure to call action with */
 )
 {
+    ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+    psi->pre_page_action = action;
+    psi->pre_page_closure = closure;
     return 0;
 }
 
@@ -170,6 +179,9 @@ ps_impl_set_post_page_action(
   void                   *closure       /* closure to call action with */
 )
 {
+	ps_interp_instance_t *psi = (ps_interp_instance_t *)instance;
+	psi->post_page_action = action;
+	psi->post_page_closure = closure;
 	return 0;
 }
 
@@ -256,10 +268,11 @@ ps_impl_init_job(
 	byte buf[81];
 	stream_cursor_read cursor;		
 
-	/* false (bad password) startjob 
-	 * encapsulate the job
+	/* false (bad password) startjob encapsulate the job.  We
+	 * never pause between pages in postscript this is handled by
+	 * the language swithching machinery so quiet and no pause is set.
 	 */
-	sprintf(buf, "false () startjob pop");
+	sprintf(buf, "false () startjob pop /QUIET true def /NOPAUSE true def");
 
 	cursor.ptr = buf - 1;
 	/* set the end of data pointer */
@@ -410,6 +423,41 @@ ps_impl_deallocate_interp(
 {
 	/* nothing to do */
 	return 0;
+}
+
+/* 
+ * End-of-page called back by PS
+ */
+int
+ps_end_page_top(int num_copies, bool flush)
+{
+    /* NB access instance through the global */
+    ps_interp_instance_t *psi = global_psi;
+    pl_interp_instance_t *instance = (pl_interp_instance_t *)psi;
+    int code = 0;
+
+    /* do pre-page action */
+    if (psi->pre_page_action) {
+        code = psi->pre_page_action(instance, psi->pre_page_closure);
+        if (code < 0)
+	    return code;
+        if (code != 0)
+	    return 0;    /* code > 0 means abort w/no error */
+    }
+
+    /* output the page */
+    code = gs_output_page(psi->minst->i_ctx_p->pgs, num_copies, flush);
+    if (code < 0)
+        return code;
+
+    /* do post-page action */
+    if (psi->post_page_action) {
+        code = psi->post_page_action(instance, psi->post_page_closure);
+        if (code < 0)
+	    return code;
+    }
+
+    return 0;
 }
 
 /* Parser implementation descriptor */
