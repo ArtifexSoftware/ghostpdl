@@ -313,7 +313,8 @@ int main(int argc, char *argv[])
     char buf[256];
     char dformat[64];
 
-    _setmode(fileno(stdin), _O_BINARY);
+    if (!_isatty(fileno(stdin)))
+        _setmode(fileno(stdin), _O_BINARY);
     _setmode(fileno(stdout), _O_BINARY);
     _setmode(fileno(stderr), _O_BINARY);
 
