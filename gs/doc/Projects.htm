@@ -166,6 +166,17 @@ form.  <I>We have already started to factor out code that
 should be common to these two drivers, specifically for writing embedded
 fonts and compressed data streams.</I>
 
+<p>
+There is one small part of this project that would be especially valuable
+and could be done independently (although it might have to be partly or
+entirely redone later): compressing images.  Currently the driver only
+compresses character bitmaps, and doesn't compress other images at all.
+<I>It should use the <b><tt>CCITTFaxEncode</tt></b> filter for 1-bit-deep
+images, and plane-separated <b><tt>LZWEncode</tt></b> compression for color
+images, using the <b><tt>miGIF</tt></b> algorithms that are believed to be
+free of the Welch patent for the latter.  Even better, it should try several
+methods on each image and use the one that works best.</I>
+
 <h3>DSC comment processing for PS to PDF conversion (Distiller).</h3>
 
 <p>
@@ -197,6 +208,15 @@ and metrics consistently returned incorrect information and provided no way
 to get the correct information; perhaps this has been fixed in 32-bit
 Windows.  We believe that H-P, Russell Lang, and perhaps others are working
 in this area, but we can always use more help.</I>
+
+<h3>SVG (XML Structured Vector Graphics) driver.</h3>
+
+<p>
+SVG is an emerging Web graphics standard that is actually more powerful than
+the PostScript graphics model, although structured differently.  Ghostscript
+should be able to produce high-level SVG output.  <I>We have heard that
+there is already a commercial SVG driver for Ghostscript, but we don't know
+anything about it.</I>
 
 <h3>PDF thumbnail generation.</h3>
 
@@ -385,6 +405,15 @@ Ghostscript interpreter instance by multiple threads: that is probably
 permanently out of the question.  <I>Almost all drivers, including all of
 Aladdin's own drivers, are already fully re-entrant; making the remaining
 ones re-entrant should really be up to the driver author.</I>
+
+<h3>SVG (XML Structured Vector Graphics) interpreter.</h3>
+
+<p>
+Ghostscript could be adapted with some work to read SVG.  This would be an
+interesting and challenging project because SVG's graphics model would
+require extending the library (see above).  <I>If SVG turns out to be an
+important standard, it is important that there be a good free implementation
+of it.</I>
 
 <!-- [2.0 end contents] ==================================================== -->
 
