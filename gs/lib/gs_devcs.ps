@@ -46,6 +46,35 @@
   }
 bind def
 
+% <color_space_name> ..includecolorspace -
+/..includecolorspace
+{ % Only includes ones explicitly defined by the document.
+  mark exch
+  { dup /ColorSpace resourcestatus {
+      pop 0 eq {
+        gsave
+        { /ColorSpace findresource setcolorspace .includecolorspace
+        } stopped pop
+        grestore
+      } if
+    } if
+  } stopped pop
+  cleartomark
+} bind def
+
+% <color_space> <color_space_name> ..includecolorspace <color_space1> <color_space2>
+/cs_substitute_generic
+{ .getuseciecolor
+    { NOSUBCOLORSPACES 
+        { //..includecolorspace exec dup }
+        { /ColorSpace findresource }
+      ifelse
+    }
+    { pop dup }
+  ifelse
+}
+bind def
+
 
 colorspacedict
 
@@ -65,11 +94,7 @@ dup
     /cs_validate {}
 
     /cs_substitute
-      {
-        .getuseciecolor NOSUBCOLORSPACES not and
-          { /DefaultGray /ColorSpace findresource }
-          { dup }
-        ifelse
+      { /DefaultGray //cs_substitute_generic exec
       }
     bind
 
@@ -128,11 +153,7 @@ put
     /cs_validate {}
 
     /cs_substitute
-      {
-        .getuseciecolor NOSUBCOLORSPACES not and
-          { /DefaultRGB /ColorSpace findresource }
-          { dup }
-        ifelse
+      { /DefaultRGB //cs_substitute_generic exec
       }
     bind
 
@@ -187,11 +208,7 @@ colorspacedict
     /cs_validate {}
 
     /cs_substitute
-      {
-        .getuseciecolor NOSUBCOLORSPACES not and
-          { /DefaultCMYK /ColorSpace findresource }
-          { dup }
-        ifelse
+      { /DefaultCMYK //cs_substitute_generic exec
       }
     bind
 
@@ -201,6 +218,9 @@ colorspacedict
     /cs_complete_setcolor //pop_1
   .dicttomark
 put
+
+currentdict /..includecolorspace .undef
+currentdict /cs_substitute_generic .undef
 
 end     % .cspace_util
 .setglobal
