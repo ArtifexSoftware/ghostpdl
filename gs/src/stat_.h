@@ -74,25 +74,25 @@
  * Microsoft C defines the O_ and S_ symbols with, and only with, a
  * leading underscore.
  */
-#ifndef O_APPEND
+#if !defined(O_APPEND) && defined(_O_APPEND)
 #  define O_APPEND _O_APPEND
 #endif
-#ifndef O_CREAT
+#if !defined(O_CREAT) && defined(_O_CREAT)
 #  define O_CREAT _O_CREAT
 #endif
-#ifndef O_EXCL
+#if !defined(O_EXCL) && defined(_O_EXCL)
 #  define O_EXCL _O_EXCL
 #endif
-#ifndef O_RDONLY
+#if !defined(O_RDONLY) && defined(_O_RDONLY)
 #  define O_RDONLY _O_RDONLY
 #endif
-#ifndef O_RDWR
+#if !defined(O_RDWR) && defined(_O_RDWR)
 #  define O_RDWR _O_RDWR
 #endif
-#ifndef O_TRUNC
+#if !defined(O_TRUNC) && defined(_O_TRUNC)
 #  define O_TRUNC _O_TRUNC
 #endif
-#ifndef O_WRONLY
+#if !defined(O_WRONLY) && defined(_O_WRONLY)
 #  define O_WRONLY _O_WRONLY
 #endif
 /*
