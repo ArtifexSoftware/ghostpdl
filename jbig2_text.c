@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_text.c,v 1.6 2002/06/27 14:02:08 giles Exp $
+    $Id: jbig2_text.c,v 1.7 2002/07/01 19:34:31 raph Exp $
 */
 
 #include <stddef.h>
@@ -24,6 +24,7 @@
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
+#include "jbig2_arith_iaid.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
@@ -97,7 +98,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     int32_t CURT;
     int S,T;
     int x,y;
-    bool first_symbol = TRUE;
+    bool first_symbol;
     uint32_t index, max_id;
     Jbig2Image *IB;
     Jbig2ArithState *as;
@@ -105,7 +106,7 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     Jbig2ArithIntCtx *IAFS = NULL;
     Jbig2ArithIntCtx *IADS = NULL;
     Jbig2ArithIntCtx *IAIT = NULL;
-    Jbig2ArithIntCtx *IAID = NULL;
+    Jbig2ArithIaidCtx *IAID = NULL;
     int code;
     
     max_id = 0;
@@ -121,13 +122,17 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     }
     
     if (!params->SBHUFF) {
+	int SBSYMCODELEN;
+
         Jbig2WordStream *ws = jbig2_word_stream_buf_new(ctx, data, size);
         as = jbig2_arith_new(ctx, ws);
         IADT = jbig2_arith_int_ctx_new(ctx);
         IAFS = jbig2_arith_int_ctx_new(ctx);
         IADS = jbig2_arith_int_ctx_new(ctx);
         IAIT = jbig2_arith_int_ctx_new(ctx);
-        IAID = jbig2_arith_int_ctx_new(ctx);
+	/* Table 31 */
+	for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < max_id; SBSYMCODELEN++);
+        IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
     }
     
     /* 6.4.5 (1) */
@@ -157,109 +162,113 @@ int jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
         STRIPT += DT;
         fprintf(stderr, "decoded DT = %d, STRIPT = %d\n", DT, STRIPT);
         
-        /* (3c) */
-        if (first_symbol) {
-            /* 6.4.7 */
-            if (params->SBHUFF) {
-                /* todo */
-            } else {
-                code = jbig2_arith_int_decode(IAFS, as, &DFS);
-            }
-            FIRSTS += DFS;
-            CURS = FIRSTS;
-            first_symbol = FALSE;
+	first_symbol = TRUE;
+	/* (3c) */
+	for (;;) {
+	    /* (3c.i) */
+	    if (first_symbol) {
+		/* 6.4.7 */
+		if (params->SBHUFF) {
+		    /* todo */
+		} else {
+		    code = jbig2_arith_int_decode(IAFS, as, &DFS);
+		}
+		FIRSTS += DFS;
+		CURS = FIRSTS;
+		first_symbol = FALSE;
             fprintf(stderr, "decoded DFS = %d (first symbol) CURS = %d\n", DFS, CURS);
-        } else {
-            /* 6.4.8 */
-            if (params->SBHUFF) {
-                /* todo */
-            } else {
-                code = jbig2_arith_int_decode(IADS, as, &IDS);
-            }
-            if (code) {
-                fprintf(stderr, "Symbol instance S coordinate OOB: End of Strip\n");
-                continue;
-            }
-            CURS += IDS + params->SBDSOFFSET;
-            fprintf(stderr, "decoded IDS = %d, CURS = %d\n", IDS, CURS);
-        }
+	    } else {
+		/* (3c.ii), 6.4.8 */
+		if (params->SBHUFF) {
+		    /* todo */
+		} else {
+		    code = jbig2_arith_int_decode(IADS, as, &IDS);
+		}
+		if (code) {
+		    fprintf(stderr, "Symbol instance S coordinate OOB: End of Strip\n");
+		    break;
+		}
+		CURS += IDS + params->SBDSOFFSET;
+		fprintf(stderr, "decoded IDS = %d, CURS = %d\n", IDS, CURS);
+	    }
 
-        /* 6.4.9 */
-        if (params->SBSTRIPS == 1) {
-            CURT = 0;
-        } else if (params->SBHUFF) {
-            /* todo */
-        } else {
-            code = jbig2_arith_int_decode(IAIT, as, &CURT);
-        }
-        T = STRIPT + CURT;
-        fprintf(stderr, "decoded CURT = %d, STRIPT = %d, T = %d\n", CURT, STRIPT, T);
-        
-        /* (3b.iv) / 6.4.10 decode the symbol id */
-        if (params->SBHUFF) {
-            /* todo */
-        } else {
-            code = jbig2_arith_int_decode(IAID, as, &ID);
-        }
-        if (ID < 0 || ID >= max_id) {
-            return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-                "symbol id out of range! (%d/%d)", ID, max_id);
-        }
-        fprintf(stderr, "decoded symbol id = %d (code = %d)\n", ID, code);
+	    /* (3c.iii), 6.4.9 */
+	    if (params->SBSTRIPS == 1) {
+		CURT = 0;
+	    } else if (params->SBHUFF) {
+		/* todo */
+	    } else {
+		code = jbig2_arith_int_decode(IAIT, as, &CURT);
+	    }
+	    T = STRIPT + CURT;
+	    fprintf(stderr, "decoded CURT = %d, STRIPT = %d, T = %d\n", CURT, STRIPT, T);
 
-        /* (3b.v) look up the symbol bitmap IB */
-        {
-            int id = ID;
-            
-            index = 0;
-            while (id >= dicts[index]->n_symbols)
-                id -= dicts[index++]->n_symbols;
-            IB = dicts[index]->glyphs[id];
-        }
+	    /* (3b.iv) / 6.4.10 decode the symbol id */
+	    if (params->SBHUFF) {
+		/* todo */
+	    } else {
+		code = jbig2_arith_iaid_decode(IAID, as, &ID);
+	    }
+	    if (ID < 0 || ID >= max_id) {
+		return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+                    "symbol id out of range! (%d/%d)", ID, max_id);
+	    }
+	    fprintf(stderr, "decoded symbol id = %d (code = %d)\n", ID, code);
+
+	    /* (3c.v) look up the symbol bitmap IB */
+	    {
+		int id = ID;
+
+		index = 0;
+		while (id >= dicts[index]->n_symbols)
+		    id -= dicts[index++]->n_symbols;
+		IB = dicts[index]->glyphs[id];
+	    }
         
-        /* (3b.vi) */
-        if ((!params->TRANSPOSED) && (params->REFCORNER > 1)) {
-            CURS += IB->width - 1;
-        } else if ((params->TRANSPOSED) && (params->REFCORNER < 2)) {
-            CURS += IB->height - 1;
-        }
+	    /* (3c.vi) */
+	    if ((!params->TRANSPOSED) && (params->REFCORNER > 1)) {
+		CURS += IB->width - 1;
+	    } else if ((params->TRANSPOSED) && !(params->REFCORNER & 1)) {
+		CURS += IB->height - 1;
+	    }
         
-        /* (3b.vii) */
-        S = CURS;
+	    /* (3c.vii) */
+	    S = CURS;
         
-         /* (3b.vii) */
-        if (!params->TRANSPOSED) {
-          switch (params->REFCORNER) {  // FIXME: double check offsets
-            case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
-            case JBIG2_CORNER_TOPRIGHT: x = S - IB->width; y = T; break;
-            case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height; break;
-            case JBIG2_CORNER_BOTTOMRIGHT: x = S - IB->width; y = T - IB->height; break;
-          }
-        } else { /* TRANSPOSED */
-          switch (params->REFCORNER) {
-            case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
-            case JBIG2_CORNER_TOPRIGHT: x = S - IB->width; y = T; break;
-            case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height; break;
-            case JBIG2_CORNER_BOTTOMRIGHT: x = S - IB->width; y = T - IB->height; break;
-          }
-        }
+	    /* (3c.viii) */
+	    if (!params->TRANSPOSED) {
+		switch (params->REFCORNER) {  // FIXME: double check offsets
+		case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
+		case JBIG2_CORNER_TOPRIGHT: x = S - IB->width + 1; y = T; break;
+		case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height + 1; break;
+		case JBIG2_CORNER_BOTTOMRIGHT: x = S - IB->width + 1; y = T - IB->height + 1; break;
+		}
+	    } else { /* TRANSPOSED */
+		switch (params->REFCORNER) {
+		case JBIG2_CORNER_TOPLEFT: x = S; y = T; break;
+		case JBIG2_CORNER_TOPRIGHT: x = S - IB->width + 1; y = T; break;
+		case JBIG2_CORNER_BOTTOMLEFT: x = S; y = T - IB->height + 1; break;
+		case JBIG2_CORNER_BOTTOMRIGHT: x = S - IB->width + 1; y = T - IB->height + 1; break;
+		}
+	    }
         
-        /* (3b.ix) */
-        jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
-            "composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", 
-            ID, IB->width, IB->height, x, y, NINSTANCES + 1,
-            params->SBNUMINSTANCES);
-        jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
+	    /* (3c.ix) */
+	    jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
+			"composing glyph id %d: %dx%d @ (%d,%d) symbol %d/%d", 
+			ID, IB->width, IB->height, x, y, NINSTANCES + 1,
+			params->SBNUMINSTANCES);
+	    jbig2_image_compose(ctx, image, IB, x, y, params->SBCOMBOP);
         
-        /* (3b.x) */
-        if ((!params->TRANSPOSED) && (params->REFCORNER < 2)) {
-            CURS += IB->width -1 ;
-        } else if ((params->TRANSPOSED) && (params->REFCORNER > 1)) {
-            CURS += IB->height - 1;
-        }
+	    /* (3c.x) */
+	    if ((!params->TRANSPOSED) && (params->REFCORNER < 2)) {
+		CURS += IB->width -1 ;
+	    } else if ((params->TRANSPOSED) && (params->REFCORNER & 1)) {
+		CURS += IB->height - 1;
+	    }
         
-        /* (3b.xi) */
-        NINSTANCES++;
+	    /* (3c.xi) */
+	    NINSTANCES++;
+	}
     }
     
     return 0;

@@ -1,10 +1,10 @@
-# $Id: Makefile.am,v 1.4 2002/06/20 15:42:47 giles Exp $
+# $Id: Makefile.am,v 1.5 2002/07/01 19:34:30 raph Exp $
 ## process this file with automake to generate Makefile.in
 
 lib_LIBRARIES = libjbig2dec.a
 
 libjbig2dec_a_SOURCES = jbig2.c \
-	jbig2_arith.c jbig2_arith_int.c jbig2_huffman.c \
+	jbig2_arith.c jbig2_arith_int.c jbig2_arith_iaid.c jbig2_huffman.c \
 	jbig2_segment.c jbig2_page.c \
 	jbig2_symbol_dict.c jbig2_text.c \
 	jbig2_generic.c jbig2_mmr.c \
