@@ -48,13 +48,14 @@ mrealloc(void *old_ptr, size_t old_size, size_t new_size)
  * (3) the VMS shell is radically different from all others.
  *
  * Usage:
- *      genconf [-Z] [-n [name_prefix | -]] [@]xxx.dev*
+ *      genconf [-Z] [-e escapechar] [-n [name_prefix | -]] [@]xxx.dev*
  *        [-f gconfigf.h] [-h gconfig.h]
  *        [-p[l|L][u][e] pattern] [-l|o|lo|ol out.tr]
- * & in the pattern acts as an escape character as follows:
+ * The default escape character is &.  When this character appears in the
+ * pattern, it acts as follows:
  *      &p produces a %;
  *      &s produces a space;
- *      && produces a \;
+ *	&& (i.e., the escape character twice) produces a \;
  *      &- produces a -;
  *      &x, for any other character x, is an error.
  */
@@ -165,6 +166,7 @@ main(int argc, char *argv[])
 {
     config conf;
     int i;
+    char escape = '&';
 
     /* Allocate string lists. */
     conf = init_config;
@@ -204,6 +206,10 @@ main(int argc, char *argv[])
 		    (argv[i + 1][0] == '-' ? "" : argv[i + 1]);
 		++i;
 		continue;
+ 	    case 'e':
+ 		escape = argv[i + 1][0];
+ 		++i;
+ 		continue;
 	    case 'n':
 		conf.name_prefix =
 		    (argv[i + 1][0] == '-' ? "" : argv[i + 1]);
@@ -234,7 +240,7 @@ main(int argc, char *argv[])
 			for (p = pat->pattern, q = argv[++i];
 			     (*p++ = *q++) != 0;
 			    )
-			    if (p[-1] == '&')
+			    if (p[-1] == escape)
 				switch (*q) {
 				    case 'p':
 					p[-1] = '%';
@@ -244,18 +250,19 @@ main(int argc, char *argv[])
 					p[-1] = ' ';
 					q++;
 					break;
-				    case '&':
-					p[-1] = '\\';
-					q++;
-					break;
 				    case '-':
 					p[-1] = '-';
 					q++;
 					break;
 				    default:
+					if (*q == escape ) {
+					    p[-1] = '\\';
+					    q++;
+					    break;
+					}
 					fprintf(stderr,
-					    "& not followed by ps&-: &%c\n",
-						*q);
+					  "%c not followed by p|s|%c|-: &%c\n",
+						escape, escape, *q);
 					exit(1);
 				}
 			p[-1] = '\n';
