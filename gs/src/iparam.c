@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -445,7 +445,7 @@ dict_param_enumerate(iparam_list * plist, gs_param_enumerator_t * penum,
     if (index < 0)
 	return 1;
     *type = r_type(&elt[1]);
-    code = ref_to_key(&elt[1], key, plist);
+    code = ref_to_key(&elt[0], key, plist);
     penum->intval = index;
     return code;
 }
