@@ -30,13 +30,16 @@
  * typically be allocated on the stack, and so has no memory
  * management associated.
  */
-typedef struct stream_arcfour_state_s {
-	stream_state_common;	/* a define from scommon.h */
-	unsigned int	x,y;
-	unsigned char	S[256];
-} stream_arcfour_state;
+typedef struct stream_arcfour_state_s
+{
+    stream_state_common;	/* a define from scommon.h */
+    unsigned int x, y;
+    unsigned char S[256];
+}
+stream_arcfour_state;
 
-int s_arcfour_set_key(stream_arcfour_state *state, const unsigned char *key, int keylength);
+int s_arcfour_set_key(stream_arcfour_state * state, const unsigned char *key,
+		      int keylength);
 
 #define private_st_arcfour_state()	/* used in sarc4.c */\
   gs_private_st_simple(st_arcfour_state, stream_arcfour_state,\
