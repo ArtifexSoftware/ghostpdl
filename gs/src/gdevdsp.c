@@ -950,7 +950,12 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
     
     ddev->mdev->width = param_dev->width;
     ddev->mdev->height = param_dev->height;
-    ddev->ulBitmapSize = gdev_mem_bitmap_size(ddev->mdev);
+    /* Tell the memory device to allocate the line pointers separately
+     * so we can place the bitmap in special memory.
+     */
+    ddev->mdev->line_pointer_memory = gs_memory_stable(ddev->memory); 
+    ddev->ulBitmapSize = gdev_mem_bits_size(ddev->mdev,
+	ddev->mdev->width, ddev->mdev->height);
 
     /* allocate bitmap */
     if (ddev->callback->display_memalloc 
