@@ -63,6 +63,14 @@ UNINSTALL_XE_NAME=uninstgs.exe
 UNINSTALL_XE=$(BINDIR)\$(UNINSTALL_XE_NAME)
 !endif
 
+# Define the RCOMP switch for including INCDIR.
+!if "$(INCDIR)"==""
+i_INCDIR=
+!else
+i_INCDIR=-i$(INCDIR)
+!endif
+
+
 # ----------------------------- Main program ------------------------------ #
 
 ICONS=$(GLGEN)gsgraph.ico $(GLGEN)gstext.ico
@@ -88,7 +96,7 @@ $(GS_OBJ).res: $(GLSRC)dwmain.rc $(dwmain_h) $(ICONS) $(WININT_MAK)
 	$(ECHOGS_XE) -w $(GLGEN)_exe.rc -x 23 define -s gstext_ico $(GLGENDIR)\gstext.ico
 	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gsgraph.ico
 	$(ECHOGS_XE) -a $(GLGEN)_exe.rc -R $(GLSRC)dwmain.rc
-	$(RCOMP) -I$(GLSRCDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GS_OBJ).res $(GLGEN)_exe.rc
+	$(RCOMP) -I$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GS_OBJ).res $(GLGEN)_exe.rc
 	del $(GLGEN)_exe.rc
 
 # resources for main program (includes dialogs)
@@ -96,7 +104,7 @@ $(GSDLL_OBJ).res: $(GLSRC)gsdll32.rc $(gp_mswin_h) $(ICONS) $(WININT_MAK)
 	$(ECHOGS_XE) -w $(GLGEN)_dll.rc -x 23 define -s gstext_ico $(GLGENDIR)\gstext.ico
 	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -x 23 define -s gsgraph_ico $(GLGENDIR)\gsgraph.ico
 	$(ECHOGS_XE) -a $(GLGEN)_dll.rc -R $(GLSRC)gsdll32.rc
-	$(RCOMP) -I$(GLSRCDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GSDLL_OBJ).res $(GLGEN)_dll.rc
+	$(RCOMP) -I$(GLSRCDIR) $(i_INCDIR) -r $(RO_)$(GSDLL_OBJ).res $(GLGEN)_dll.rc
 	del $(GLGEN)_dll.rc
 
 
@@ -156,7 +164,7 @@ $(GLOBJ)dwnodllc.obj: $(GLSRC)dwnodll.cpp $(AK) $(dwdll_h) $(gsdll_h)
 # don't hurt.
 
 $(GLOBJ)dwsetup.res: $(GLSRC)dwsetup.rc $(GLSRC)dwsetup.h $(GLGEN)gstext.ico
-	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GLOBJ)dwsetup.res $(GLSRC)dwsetup.rc
+	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) $(i_INCDIR) -r $(RO_)$(GLOBJ)dwsetup.res $(GLSRC)dwsetup.rc
 
 $(GLOBJ)dwsetup.obj: $(GLSRC)dwsetup.cpp $(GLSRC)dwsetup.h $(GLSRC)dwinst.h
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwsetup.obj $(C_) $(GLSRC)dwsetup.cpp
@@ -167,7 +175,7 @@ $(GLOBJ)dwinst.obj: $(GLSRC)dwinst.cpp $(GLSRC)dwinst.h
 # Modules for uninstall program
 
 $(GLOBJ)dwuninst.res: $(GLSRC)dwuninst.rc $(GLSRC)dwuninst.h $(GLGEN)gstext.ico
-	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) -i$(INCDIR)$(_I) -r $(RO_)$(GLOBJ)dwuninst.res $(GLSRC)dwuninst.rc
+	$(RCOMP) -I$(GLSRCDIR) -i$(GLOBJDIR) $(i_INCDIR) -r $(RO_)$(GLOBJ)dwuninst.res $(GLSRC)dwuninst.rc
 
 $(GLOBJ)dwuninst.obj: $(GLSRC)dwuninst.cpp $(GLSRC)dwuninst.h
 	$(GLCPP) $(COMPILE_FOR_EXE) $(GLO_)dwuninst.obj $(C_) $(GLSRC)dwuninst.cpp

@@ -203,16 +203,42 @@ COMPBASE=$(DEVSTUDIO)\VC98
 SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 !endif
 
+# Some environments don't want to specify the path names for the tools at all.
+# Typical definitions for such an environment would be:
+#   INCDIR= LIBDIR= COMP=cl COMPAUX=cl RCOMP=rc LINK=link
+# COMPDIR, LINKDIR, and RCDIR are irrelevant, since they are only used to
+# define COMP, LINK, and RCOMP respectively, but we allow them to be
+# overridden anyway for completeness.
+!ifndef COMPDIR
 COMPDIR=$(COMPBASE)\bin
+!endif
+!ifndef LINKDIR
 LINKDIR=$(COMPBASE)\bin
+!endif
+!ifndef RCDIR
 RCDIR=$(SHAREDBASE)\bin
+!endif
+!ifndef INCDIR
 INCDIR=$(COMPBASE)\include
+!endif
+!ifndef LIBDIR
 LIBDIR=$(COMPBASE)\lib
+!endif
+!ifndef COMP
 COMP=$(COMPDIR)\cl
+!endif
+!ifndef COMPCPP
 COMPCPP=$(COMP)
+!endif
+!ifndef COMPAUX
 COMPAUX=$(COMPDIR)\cl
+!endif
+!ifndef RCOMP
 RCOMP=$(RCDIR)\rc
+!endif
+!ifndef LINK
 LINK=$(LINKDIR)\link
+!endif
 
 # Define the processor architecture. (i386, ppc, alpha)
 

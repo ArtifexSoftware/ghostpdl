@@ -21,6 +21,7 @@
 # Created 1997-05-22 by L. Peter Deutsch from msvc4/5 makefiles.
 # edited 1997-06-xx by JD to factor out interpreter-specific sections
 # edited 2000-03-30 by lpd to make /FPi87 conditional on MSVC version
+# edited 2000-06-05 by lpd to treat empty INCDIR and LIBDIR specially.
 
 # Set up linker differently for MSVC 4 vs. later versions
 
@@ -31,13 +32,18 @@
 QI0f=
 
 # Set up LIB enviromnent variable to include LIBDIR. This is a hack for
-# MSVC4.x, which doesn't have compiler switches to do the deed
+# MSVC4.x, which doesn't have compiler switches to do the deed.
 
-!ifdef LIB
-LIB=$(LIBDIR);$(LIB)
+!if "$(LIBDIR)"==""
+LINK_SETUP=
+CCAUX_SETUP=
 !else
+! ifdef LIB
+LIB=$(LIBDIR);$(LIB)
+! else
 LINK_SETUP=set LIB=$(LIBDIR)
 CCAUX_SETUP=$(LINK_SETUP)
+! endif
 !endif
 
 !else
@@ -48,7 +54,11 @@ QI0f=/QI0f
 
 # Define linker switch that will select where MS libraries are.
 
+!if "$(LIBDIR)"==""
+LINK_LIB_SWITCH=
+!else
 LINK_LIB_SWITCH=/LIBPATH:$(LIBDIR)
+!endif
 
 # Define separate CCAUX command-line switch that must be at END of line.
 
@@ -195,7 +205,11 @@ CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
 
+!if "$(INCDIR)"==""
+CCAUX=$(COMPAUX) /O
+!else
 CCAUX=$(COMPAUX) /I$(INCDIR) /O
+!endif
 
 # Compiler for Windows programs.
 # /Ze enables MS-specific extensions (this is also the default).
