@@ -698,9 +698,28 @@ Difference in specific tests of the PCL 5c FTS
 
 2080:
 
-    The scaling of the rightmost imported image in this test is apparently
-    incorrect for the Artifex PCL 5c interpreter. This cause of this problem
-    has not been analyzed.
+    The scaling of the rightmost imported image in this test is
+    different than the HP printer.  The artifex interpreter complies
+    with the HP PCLTRM.  The following test shows that simply entering
+    and leaving HPGL/2 <ESC>%OB<ESC>%0A has the side effect of
+    resetting HPGL/2 scaling.  This should not happen according to
+    PCLTRM 18-17.
+
+    <ESC>E
+    <ESC>*c720X
+    <ESC>*c0T
+    <ESC>*c8.3K
+(1) <ESC>%0B   /* enter hpgl2/2 */
+(2) <ESC>%0A   /* enter pcl */
+    <ESC>*c420Y
+    <ESC>*c0T
+    <ESC>%1BSP2;PW0;IN;SP6;SC0,100,0,100;PA50,50;SC;SP7;CI450;
+    <ESC>%1A
+    <ESC>E
+
+    the two commands (1) and (2) change the behavior the HP scaling
+    but not Artifex Scaling.  If (1) and (2) are removed both HP and
+    Artifex produce the same results.
 
 2101, 2102:
 
