@@ -272,7 +272,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	/****** pctm IS WRONG ******/
 	(code = psdf_setup_image_filters((gx_device_psdf *) pdev,
 					 &pie->writer.binary, &image.pixel,
-					 pmat, pis)) < 
+					 pmat, pis)) < 0 ||
 	(code = pdf_begin_image_data(pdev, &pie->writer,
 				     (const gs_pixel_image_t *)&image,
 				     &cs_value)) < 0
