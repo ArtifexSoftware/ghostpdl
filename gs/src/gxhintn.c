@@ -1663,6 +1663,11 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 		int end_range_pole = this->hint_range[k].end_pole;
 		bool horiz = (this->hint[i].type == hstem);
 
+		if (this->pole[beg_range_pole].type == closepath) {
+		    /* A workaround for a buggy font from the Bug 687393,
+		       which defines a range with 'closepath' only. */
+		    continue;
+		}
 		for (j = beg_range_pole; j <= end_range_pole;) {
 		    if (t1_hinter__is_stem_hint_applicable(this, &this->hint[i], j)) {
 			fixed t; /* Type 1 spec implies that it is 0 for curves, 0.5 for bars */
