@@ -761,6 +761,7 @@ typedef struct contour_cursor_s {
     bool first_flattened;
     int dir;
     bool monotonic;
+    bool crossing;
 } contour_cursor;
 
 private int
@@ -825,7 +826,7 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
     do {
 	q->more_flattened = gx_flattened_iterator__next_filtered2(&q->fi);
 	dir = compute_dir(ll, q->fi.fy0, q->fi.fy1);
-	if (dir == DIR_UP && ll->main_dir == DIR_DOWN) {
+	if (dir == DIR_UP && ll->main_dir == DIR_DOWN && q->fi.fy0 >= ll->ymin) {
 	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, &fi, 
 			    !q->first_flattened, more_fi);
 	    if (code < 0) 
@@ -834,7 +835,16 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 			    q->more_flattened, q->more_flattened);
 	    if (code < 0) 
 		return code; 
-	    ll->main_dir = DIR_UP;
+	} else if (q->fi.fy0 < ll->ymin && q->fi.fy1 >= ll->ymin) {
+	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_UP, &q->fi, 
+			    q->more_flattened, q->more_flattened);
+	    if (code < 0) 
+		return code; 
+	} else if (q->fi.fy0 >= ll->ymin && q->fi.fy1 < ll->ymin) {
+	    code = add_y_curve_part(ll, q->prev, q->pseg, DIR_DOWN, &q->fi, 
+			    q->more_flattened, q->more_flattened);
+	    if (code < 0) 
+		return code; 
 	}
 	q->first_flattened = false;
         q->dir = dir;
@@ -858,9 +868,13 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 {
     if (q->pseg->type == s_curve) {
 	curve_segment *s = (curve_segment *)q->pseg;
-	
+	fixed ymin = min(min(q->prev->pt.y, s->p1.y), min(s->p2.y, s->pt.y));
+	fixed ymax = max(max(q->prev->pt.y, s->p1.y), max(s->p2.y, s->pt.y));
+	bool in_band = ymin <= ll->ymax && ymax >= ll->ymin;
+	q->crossing = ymin < ll->ymin && ymax >= ll->ymin;
 	q->monotonic = !CURVED_TRAPEZOID_FILL || !ll->fill_by_trapezoids ||
-	    (!CURVED_TRAPEZOID_FILL_HEAVY_TEST &&
+	    !in_band ||
+	    (!CURVED_TRAPEZOID_FILL_HEAVY_TEST && !q->crossing &&
 	    ((q->prev->pt.y <= s->p1.y && s->p1.y <= s->p2.y && s->p2.y <= s->pt.y) ||
 	     (q->prev->pt.y >= s->p1.y && s->p1.y >= s->p2.y && s->p2.y >= s->pt.y)));
     } else 
@@ -892,16 +906,14 @@ scan_contour(line_list *ll, contour_cursor *q)
     ll->main_dir = DIR_HORIZONTAL;
     for (; q->prev != q->pfirst; q->pseg = q->prev, q->prev = q->prev->prev) {
 	init_contour_cursor(ll, q);
-	if (!q->monotonic) {
-	    while(gx_flattened_iterator__next_filtered2(&q->fi)) {
-		q->first_flattened = false;
-		q->dir = compute_dir(ll, q->fi.fy0, q->fi.fy1);
-		ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
-				q->dir == DIR_UP ? DIR_UP : ll->main_dir);
-	    }
+	while(gx_flattened_iterator__next_filtered2(&q->fi)) {
+	    q->first_flattened = false;
 	    q->dir = compute_dir(ll, q->fi.fy0, q->fi.fy1);
-	    q->more_flattened = false;
+	    ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
+			    q->dir == DIR_UP ? DIR_UP : ll->main_dir);
 	}
+	q->dir = compute_dir(ll, q->fi.fy0, q->fi.fy1);
+	q->more_flattened = false;
 	ll->main_dir = (q->dir == DIR_DOWN ? DIR_DOWN : 
 			q->dir == DIR_UP ? DIR_UP : ll->main_dir);
 	if (!CURVED_TRAPEZOID_FILL || !ll->fill_by_trapezoids || 
@@ -936,26 +948,36 @@ scan_contour(line_list *ll, contour_cursor *q)
 		    return code;
 	    } 
 	    if (CURVED_TRAPEZOID_FILL && ll->fill_by_trapezoids && 
-		    p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
+		    p.fi.fy0 >= ll->ymin && p.dir == DIR_UP && ll->main_dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
 	    if ((!CURVED_TRAPEZOID_FILL || !ll->fill_by_trapezoids) && 
-		    p.dir == DIR_UP && q->dir == DIR_DOWN) {
+		    p.fi.fy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_DOWN) {
 		code = start_al_pair(ll, q, &p);
 		if (code < 0)
 		    return code;
 	    }
 	    if ((!CURVED_TRAPEZOID_FILL || !ll->fill_by_trapezoids) && 
-		    p.dir == DIR_UP && q->dir == DIR_HORIZONTAL) {
+		    p.fi.fy0 >= ll->ymin && p.dir == DIR_UP && q->dir == DIR_HORIZONTAL) {
 		code = add_y_line(p.prev, p.pseg, p.dir, ll);
 		if (code < 0)
 		    return code;
 	    }
 	    if ((!CURVED_TRAPEZOID_FILL || !ll->fill_by_trapezoids) && 
-		    q->dir == DIR_DOWN && p.dir == DIR_HORIZONTAL) {
+		    q->fi.fy1 >= ll->ymin && q->dir == DIR_DOWN && p.dir == DIR_HORIZONTAL) {
 		code = add_y_line(q->prev, q->pseg, q->dir, ll);
+		if (code < 0)
+		    return code;
+	    }	    
+	    if (p.fi.fy0 < ll->ymin && p.fi.fy1 >= ll->ymin) {
+		code = add_y_line(p.prev, p.pseg, DIR_UP, ll);
+		if (code < 0)
+		    return code;
+	    }	    
+	    if (p.fi.fy0 >= ll->ymin && p.fi.fy1 < ll->ymin) {
+		code = add_y_line(p.prev, p.pseg, DIR_DOWN, ll);
 		if (code < 0)
 		    return code;
 	    }	    
