@@ -286,6 +286,16 @@ typedef const char *ptr_ord_t;
     ((value) + ((modulus) - 1)) / (modulus) * (modulus) :\
     ((value) + ((modulus) - 1)) & -(modulus) )
 
+/* Define UPPERCASE macros for the rounding operations. */
+#define ROUND_DOWN(value, modulus)\
+  ( (modulus) & ((modulus) - 1) ?	/* not a power of 2 */\
+    (value) - (value) % (modulus) :\
+    (value) & -(modulus) )
+#define ROUND_UP(value, modulus)\
+  ( (modulus) & ((modulus) - 1) ?	/* not a power of 2 */\
+    ((value) + ((modulus) - 1)) / (modulus) * (modulus) :\
+    ((value) + ((modulus) - 1)) & -(modulus) )
+
 /*
  * In pre-ANSI C, float parameters get converted to double.
  * However, if we pass a float to a function that has been declared
