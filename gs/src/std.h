@@ -313,7 +313,8 @@ typedef struct gs_memory_s gs_memory_t;
 /* disable decorators to gsmalloc.h memory definition of "heap"
  * the decorators/wrappers implement retry and locking
  */
-#define NO_WRAPPED_MEMORY_BIND
+/* #define NO_WRAPPED_MEMORY_BIND
+ */
 
 /* define a xxx_BIND mechanism used only to test the mechanism.
  */
