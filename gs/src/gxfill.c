@@ -2474,7 +2474,8 @@ fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 		    set_scan_line_points(alp, ll->fixed_flat);
 #		else
 		    if (alp->more_flattened)
-			step_al(alp, true);
+			if (alp->end.y <= y || alp->start.y == alp->end.y)
+			    step_al(alp, true);
 #		endif
 		goto e;
 	    }
