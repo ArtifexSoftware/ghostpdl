@@ -1174,7 +1174,7 @@ void
 test(int index)
 {
     char buf[1024];
-    sprintf(buf, "gs -dDisplayFormat=%d examples/colorcir.ps -c quit", test_modes[index].format);
+    sprintf(buf, "gs -dDisplayFormat=16#%x examples/colorcir.ps -c quit", test_modes[index].format);
     system(buf);
 }
 
@@ -1191,8 +1191,8 @@ int main(int argc, char *argv[])
 	}
     }
     for (i=0; i < sizeof(test_modes)/sizeof(test_mode); i++) {
-	fprintf(stdout, "%d: %s\n", test_modes[i].format,
-		test_modes[i].name);
+	fprintf(stdout, "16#%x or %d: %s\n", test_modes[i].format,
+		test_modes[i].format, test_modes[i].name);
 	if (dotest)
 	    test(i);
     }
