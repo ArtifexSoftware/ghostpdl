@@ -690,52 +690,81 @@ currentdict end readonly def
   } if
 } bind def
 
+/SubstitutePDFColorSpace % <array> SubstitutePDFColorSpace <array>
+{ { 
+    dup 0 get /Pattern eq {
+	  exit
+	} if
+	dup 0 get /Indexed eq {
+	  exit
+	} if
+	dup 0 get /Separation eq {
+	  exit
+	} if
+	dup 0 get /CalGray eq {
+	  1 get													% n dict
+	  dup /Gamma //knownget exec {
+	    [ exch /exp load ] cvx
+	    1 index exch /DecodeLMN exch put
+	  } if				
+	  [ exch /CIEBasedA exch ]							    % n []
+	  exit
+	} if
+	dup 0 get /CalRGB eq {
+	  1 get													% n dict
+	  dup /Matrix //knownget exec { 
+	    1 index exch /MatrixLMN exch put
+	  } if
+	  dup /Gamma //knownget exec {
+	    aload pop
+	    [ exch /exp load ] cvx
+	    3 1 roll
+	    [ exch /exp load ] cvx
+	    3 1 roll
+	    [ exch /exp load ] cvx
+	    3 1 roll
+	    3 array astore
+	    1 index exch /DecodeLMN exch put
+	  } if				
+	  [ exch /CIEBasedABC exch ]							% n []
+	  exit
+	} if
+    mark exch (Unimplemented color space ) exch //error exec
+  } loop
+} bind def
+
+/ResolveColorSpaceArray  % <color_space> ResolveColorSpaceArray <color_space>
+{
+  dup 0 get /Indexed eq {
+    % The first element mat be a reference.
+    dup 1 get dup xcheck {
+	  exec
+	  1 index exch 1 exch put
+	} {
+	  pop	  
+	} ifelse
+	dup 1 get dup type /arraytype eq {
+	  //SubstitutePDFColorSpace exec
+	  1 index exch 1 exch put
+	} {
+	  pop
+	} ifelse
+  } if
+} bind def
+
 /ResolveColorSpace  % <name> ResolveColorSpace <color_space>
-{ dup //PDFColorSpaces exch //knownget exec {
+{ 
+  dup //PDFColorSpaces exch //knownget exec {
     exch pop
   } {
     dup															% n n
     //PDFReader /CurrentObject get /Context get /Resources get 
     /ColorSpace //DoNothing //ResolveD exec
     exch //CheckColorSpace //ResolveD exec						% n cs
-	{ dup type /arraytype eq {
-	    dup 0 get /Pattern eq {
-		  exch pop
-		  exit
-	    } if
-	    dup 0 get /CalGray eq {
-	      1 get													% n dict
-		  dup /Gamma //knownget exec {
-		    [ exch /exp load ] cvx
-		    1 index exch /DecodeLMN exch put
-		  } if				
-		  [ exch /CIEBasedA exch ] dup							% n [] []
-		  //PDFColorSpaces 4 2 roll put							% []
-		  exit
-	    } if
-	    dup 0 get /CalRGB eq {
-	      1 get													% n dict
-		  dup /Matrix //knownget exec { 
-		    1 index exch /MatrixLMN exch put
-		  } if
-		  dup /Gamma //knownget exec {
-		    aload pop
-		    [ exch /exp load ] cvx
-		    3 1 roll
-		    [ exch /exp load ] cvx
-		    3 1 roll
-		    [ exch /exp load ] cvx
-		    3 1 roll
-		    3 array astore
-		    1 index exch /DecodeLMN exch put
-		  } if				
-		  [ exch /CIEBasedABC exch ] dup						% n [] []
-		  //PDFColorSpaces 4 2 roll put							% []
-		  exit
-	    } if
-      } if
-	  mark exch (Unimplemented color space ) exch //error exec
- 	} loop
+	dup type /arraytype eq {
+	  //SubstitutePDFColorSpace exec
+	  dup //PDFColorSpaces 4 2 roll put						    % []
+	} if
   } ifelse
 } bind def
 
@@ -823,7 +852,8 @@ currentdict end def
   /DeviceGray { [0 1] } def
   /DeviceRGB { [0 1 0 1 0 1] } def
   /DeviceCMYK { [0 1 0 1 0 1 0 1] } def 
-  /Indexed { MakeIndexedDecode } def
+  /Indexed { dup /ColorSpace get 2 get [ exch 0 exch ] } def
+  /Separation { [0 1] } def
   /CIEBasedA { [0 1] } def
   /CIEBasedABC { [0 1 0 1 0 1] } def
 currentdict end def
@@ -890,6 +920,15 @@ currentdict end def
 { 
   dup /ImageType known not {
 	dup /ImageType 1 put
+	dup /ColorSpace known {
+	  dup /ColorSpace //CheckColorSpace //ResolveD exec
+	  dup type /arraytype eq {
+	    //ResolveColorSpaceArray exec
+	    1 index exch /ColorSpace exch put
+	  } {
+	    pop
+	  } ifelse
+	} if
     //CompleteImage exec
   } if
   dup dup //MakeStreamReader exec /DataSource exch put
