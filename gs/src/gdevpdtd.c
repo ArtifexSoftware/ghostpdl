@@ -552,7 +552,7 @@ int
 pdf_finish_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 {
     int code = 0;
-    cos_dict_t *pcd;
+    cos_dict_t *pcd = 0;
 
     if (!pfd->common.object->written &&
 	(code = pdf_compute_font_descriptor(pfd)) >= 0 &&
@@ -645,9 +645,13 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
     pdf_end_separate(pdev);
     pfd->common.object->written = true;
 #   if PDFW_DELAYED_STREAMS
-	code = COS_WRITE_OBJECT(pdf_get_FontFile_object(pfd->base_font), pdev);
-	if (code < 0)
-	    return code;
+    {	cos_object_t *pco = pdf_get_FontFile_object(pfd->base_font);
+	if (pco != NULL) {
+	    code = COS_WRITE_OBJECT(pco, pdev);
+	    if (code < 0)
+		return code;
+	}
+    }
 #   endif
     return 0;
 }
