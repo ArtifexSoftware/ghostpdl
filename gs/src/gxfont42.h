@@ -25,6 +25,11 @@
 typedef struct gs_glyph_cache_s gs_glyph_cache;
 #endif
 
+#ifndef cached_fm_pair_DEFINED
+#  define cached_fm_pair_DEFINED
+typedef struct cached_fm_pair_s cached_fm_pair;
+#endif
+
 /* This is the type-specific information for a Type 42 (TrueType) font. */
 typedef struct gs_type42_data_s gs_type42_data;
 #ifndef gs_font_type42_DEFINED
@@ -95,10 +100,16 @@ extern_st(st_gs_font_type42);
 int gs_type42_font_init(gs_font_type42 *);
 
 /* Append the outline of a TrueType character to a path. */
+#if NEW_TT_INTERPRETER
+int gs_type42_append(uint glyph_index, gs_imager_state * pis,
+		 gx_path * ppath, const gs_log2_scale_point * pscale,
+		 bool charpath_flag, int paint_type, cached_fm_pair *pair);
+#else
 int gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		     gx_path * ppath, const gs_log2_scale_point * pscale,
 		     bool charpath_flag, int paint_type,
 		     gs_font_type42 * pfont);
+#endif
 
 /* Get the metrics of a TrueType character. */
 int gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,

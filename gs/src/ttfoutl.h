@@ -80,7 +80,10 @@ typedef struct {
     int nPos, nLen;
 } ttfPtrElem;
 
+#ifndef ttfFont_DEFINED
+#  define ttfFont_DEFINED
 typedef struct ttfFont_s ttfFont;
+#endif
 struct ttfFont_s {
     ttfPtrElem t_cvt_;
     ttfPtrElem t_fpgm;
@@ -115,10 +118,10 @@ struct ttfFont_s {
     void (*DebugPrint)(ttfFont *, const char *s, ...);
 };
 
-void ttfFont__init(ttfFont *, ttfMemory *, 
+void ttfFont__init(ttfFont *this, ttfMemory *mem, 
 		    void (*DebugRepaint)(ttfFont *),
 		    void (*DebugPrint)(ttfFont *, const char *s, ...));
-void ttfFont__finit(ttfFont *);
+void ttfFont__finit(ttfFont *this);
 FontError ttfFont__Open(ttfFont *, ttfReader *r, unsigned int nTTC);
 
 typedef struct ttfExport_s ttfExport;

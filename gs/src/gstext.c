@@ -79,7 +79,11 @@ RELOC_PTRS_END
 
 private ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
 {
+#if NEW_TT_INTERPRETER
+    index -= 9;
+#else
     index -= 8;
+#endif
     if (index <= eptr->fstack.depth)
 	ENUM_RETURN(eptr->fstack.items[index].font);
     index -= eptr->fstack.depth + 1;
@@ -89,6 +93,9 @@ case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
 case 1: return ENUM_OBJ(gx_device_enum_ptr(eptr->imaging_dev));
 ENUM_PTR3(2, gs_text_enum_t, pis, orig_font, path);
 ENUM_PTR3(5, gs_text_enum_t, pdcolor, pcpath, current_font);
+#if NEW_TT_INTERPRETER
+    ENUM_PTR(8, gs_text_enum_t, pair);
+#endif
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
@@ -100,6 +107,9 @@ private RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
     eptr->imaging_dev = gx_device_reloc_ptr(eptr->imaging_dev, gcst);
     RELOC_PTR3(gs_text_enum_t, pis, orig_font, path);
     RELOC_PTR3(gs_text_enum_t, pdcolor, pcpath, current_font);
+#if NEW_TT_INTERPRETER
+    RELOC_PTR(gs_text_enum_t, pair);
+#endif
     for (i = 0; i <= eptr->fstack.depth; i++)
 	RELOC_PTR(gs_text_enum_t, fstack.items[i].font);
 }
@@ -140,6 +150,7 @@ gs_text_enum_init_dynamic(gs_text_enum_t *pte, gs_font *font)
     pte->index = 0;
     pte->xy_index = 0;
     pte->FontBBox_as_Metrics2.x = pte->FontBBox_as_Metrics2.y = 0;
+    pte->pair = 0;
     return font->procs.init_fstack(pte, font);
 }
 int
@@ -187,6 +198,7 @@ gs_text_enum_copy_dynamic(gs_text_enum_t *pto, const gs_text_enum_t *pfrom,
     pto->xy_index = pfrom->xy_index;
     pto->fstack.depth = depth;
     pto->FontBBox_as_Metrics2 = pfrom->FontBBox_as_Metrics2;
+    pto->pair = pfrom->pair;
     if (depth >= 0)
 	memcpy(pto->fstack.items, pfrom->fstack.items,
 	       (depth + 1) * sizeof(pto->fstack.items[0]));

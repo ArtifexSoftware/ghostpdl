@@ -30,6 +30,7 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxttf.h"
+#include "gxfcache.h"
 #include "gxistate.h"
 #include "stream.h"
 
@@ -39,6 +40,11 @@ public_st_gs_font_type42();
 /* Forward references */
 private int append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 			   gx_path * ppath, gs_font_type42 * pfont);
+#if NEW_TT_INTERPRETER
+private int append_outline_fitted(uint glyph_index, const gs_matrix_fixed * pmat,
+	       gx_path * ppath, cached_fm_pair * pair, 
+	       const gs_log2_scale_point * pscale, bool grid_fit);
+#endif
 private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
 private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
 				gs_glyph_data_t *pgd);
@@ -466,12 +472,27 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
     gs_glyph_info_t info;
     gs_matrix_fixed fmat;
     static const gs_matrix imat = { identity_matrix_body };
+#if NEW_TT_INTERPRETER
+    bool grid_fit = false;
+    const gs_log2_scale_point log2_scale = {0, 0}; 
+    /* fixme : The subpixel numbers doesn't pass through the font_proc_glyph_outline interface.
+       High level devices can't get a proper grid fitting with AlignToPixels = 1.
+       Currently font_proc_glyph_outline is only used by pdfwrite for computing a
+       character bbox, which doesn't need a grid fitting.
+     */
+    cached_fm_pair *pair = gx_lookup_fm_pair(font, pmat, &log2_scale);
+#endif
 
     if (pmat == 0)
 	pmat = &imat;
     if ((code = gs_matrix_fixed_from_matrix(&fmat, pmat)) < 0 ||
 	(code = gx_path_current_point(ppath, &origin)) < 0 ||
+#if NEW_TT_INTERPRETER
+	(code = append_outline_fitted(glyph_index, &fmat, ppath, pair, 
+					&log2_scale, grid_fit)) < 0 ||
+#else
 	(code = append_outline(glyph_index, &fmat, ppath, pfont)) < 0 ||
+#endif
 	(code = font->procs.glyph_info(font, glyph, pmat,
 				       GLYPH_INFO_WIDTH0 << WMode, &info)) < 0
 	)
@@ -685,6 +706,22 @@ gs_type42_get_metrics(gs_font_type42 * pfont, uint glyph_index,
 
 /* Append a TrueType outline to a path. */
 /* Note that this does not append the final moveto for the width. */
+#if NEW_TT_INTERPRETER
+int
+gs_type42_append(uint glyph_index, gs_imager_state * pis,
+		 gx_path * ppath, const gs_log2_scale_point * pscale,
+		 bool charpath_flag, int paint_type, cached_fm_pair *pair)
+{
+    int code = append_outline_fitted(glyph_index, &pis->ctm, ppath, 
+			pair, pscale, !charpath_flag);
+
+    if (code < 0)
+	return code;
+    /* Set the flatness for curve rendering. */
+    return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
+}
+
+#else
 int
 gs_type42_append(uint glyph_index, gs_imager_state * pis,
 		 gx_path * ppath, const gs_log2_scale_point * pscale,
@@ -697,6 +734,8 @@ gs_type42_append(uint glyph_index, gs_imager_state * pis,
     /* Set the flatness for curve rendering. */
     return gs_imager_setflat(pis, gs_char_flatness(pis, 1.0));
 }
+#endif
+
 
 /* Add 2nd degree Bezier to the path */
 private int
@@ -993,6 +1032,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
     gs_glyph_data_free(&glyph_data, "append_component");
     return code;
 }
+
 private int
 append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	       gx_path * ppath, gs_font_type42 * pfont)
@@ -1036,3 +1076,17 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
     gs_glyph_data_free(&glyph_data, "append_outline");
     return code;
 }
+
+#if NEW_TT_INTERPRETER
+private int
+append_outline_fitted(uint glyph_index, const gs_matrix_fixed * pmat,
+	       gx_path * ppath, cached_fm_pair * pair, 
+	       const gs_log2_scale_point * pscale, bool grid_fit)
+{
+    gs_font_type42 *pfont = (gs_font_type42 *)pair->font;
+    /* fixme : it's a stub with the old code. */
+
+    return append_outline(glyph_index, pmat, ppath, pfont);
+}
+#endif
+

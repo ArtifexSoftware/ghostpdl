@@ -25,5 +25,6 @@
 extern_st(st_TFace);
 extern_st(st_TInstance);
 extern_st(st_TExecution_Context);
+extern_st(st_ttfFont);
 
 #endif /* !defined(ttfmemd_INCLUDED) */

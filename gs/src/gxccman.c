@@ -34,6 +34,11 @@
 #include "gxfcache.h"
 #include "gxxfont.h"
 
+#if NEW_TT_INTERPRETER
+#include "gxttfb.h"
+#include <assert.h>
+#endif
+
 /* Define the descriptors for the cache structures. */
 private_st_cached_fm_pair();
 private_st_cached_fm_pair_elt();
@@ -158,7 +163,7 @@ gx_purge_selected_cached_chars(gs_font_dir * dir,
 /* (This is only exported for gxccache.c.) */
 cached_fm_pair *
 gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
-	       const gs_matrix * char_tm, gs_log2_scale_point *log2_scale)
+	       const gs_matrix * char_tm, const gs_log2_scale_point *log2_scale)
 {
     int scale_x = 1 << log2_scale->x;
     int scale_y = 1 << log2_scale->y;
@@ -198,6 +203,29 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->num_chars = 0;
     pair->xfont_tried = false;
     pair->xfont = 0;
+#if NEW_TT_INTERPRETER
+    if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
+	int code; 
+
+	/*  fixme : We're unclear in which memory does 'pair' is allocated.
+	    Do we here create pointers from global to local memory ?
+	    Maybe we should pass another allocator to the calls below.
+	 */
+	pair->ttr = gx_ttfReader__create(font->memory, (gs_font_type42 *)font);
+	if (!pair->ttr)
+	    return 0; /* fixme : propagate error. */
+	pair->ttf = ttfFont__create(font->memory);
+	if (!pair->ttf)
+	    return 0; /* fixme : propagate error. */
+	code = ttfFont__Open_aux(pair->ttf, &pair->ttr->super, 0 /* fixme */);
+	if (code < 0)
+	    return 0; /* fixme : propagate error. */
+    } else {
+	pair->ttf = 0;
+	pair->ttr = 0;
+    }
+#endif
+    pair->memory = 0;
     if_debug8('k', "[k]adding pair 0x%lx: font=0x%lx [%g %g %g %g] UID %ld, 0x%lx\n",
 	      (ulong) pair, (ulong) font,
 	      pair->mxx, pair->mxy, pair->myx, pair->myy,
@@ -300,6 +328,14 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 				   (xfont_only ? purge_fm_pair_char_xfont :
 				    purge_fm_pair_char),
 				   pair);
+#if NEW_TT_INTERPRETER
+    if (pair->ttr)
+	gx_ttfReader__destroy(pair->ttr);
+    pair->ttr = 0;
+    if (pair->ttf)
+	ttfFont__destroy(pair->ttf);
+    pair->ttf = 0;
+#endif
     if (!xfont_only) {
 #ifdef DEBUG
 	if (pair->num_chars != 0) {
@@ -516,6 +552,9 @@ cached_char * cc, cached_fm_pair * pair, const gs_log2_scale_point * pscale)
 	while (dir->ccache.table[chi &= dir->ccache.table_mask] != 0)
 	    chi++;
 	dir->ccache.table[chi] = cc;
+#if NEW_TT_INTERPRETER
+	assert(cc->pair == pair);
+#endif
 	cc_set_pair(cc, pair);
 	pair->num_chars++;
     }

@@ -27,6 +27,8 @@
 #include "gsmemory.h"
 #include "gdebug.h"
 
+#define NEW_TT_INTERPRETER 0
+
 /* Define opaque types for the graphics state. */
 /* This is used so pervasively that we define it here, */
 /* rather than at a higher level as perhaps would be more appropriate. */

@@ -578,6 +578,9 @@ set_cache_device(gs_show_enum * penum, gs_state * pgs, floatp llx, floatp lly,
 	cc->wmode = gs_rootfont(pgs)->WMode;
 	cc->wxy = penum->wxy;
 	cc->subpix_origin = subpix_origin;
+#	if NEW_TT_INTERPRETER
+	    cc->pair = penum->pair;
+#	endif
 	/* Install the device */
 	gx_set_device_only(pgs, (gx_device *) penum->dev_cache);
 	pgs->ctm_default_set = false;
@@ -896,6 +899,9 @@ show_proceed(gs_show_enum * penum)
 		    pgs->char_tm_valid = false;
 		    show_state_setup(penum);
 		    pair = 0;
+#		    if NEW_TT_INTERPRETER
+			penum->pair = 0;
+#		    endif
 		    /* falls through */
 		case 0:	/* plain char */
 		    /*
@@ -929,6 +935,9 @@ show_proceed(gs_show_enum * penum)
 			    return code;
 			if (pair == 0)
 			    pair = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale);
+#			if NEW_TT_INTERPRETER
+			    penum->pair = pair;
+#			endif
 			cc = gx_lookup_cached_char(pfont, pair, glyph, wmode,
 						   depth, &subpix_origin);
 		    }
@@ -1035,7 +1044,24 @@ show_proceed(gs_show_enum * penum)
 		pfont = penum->fstack.items[penum->fstack.depth].font;
 		penum->current_font = pfont;
 		show_state_setup(penum);
+#		if NEW_TT_INTERPRETER
+		    pair = 0;
+#		endif
 	    case 0:
+#		if NEW_TT_INTERPRETER
+		    {
+			int alpha_bits, depth;
+			gs_log2_scale_point log2_scale;
+			gs_fixed_point subpix_origin;
+
+			code = compute_glyph_raster_params(penum, false, &alpha_bits, &depth, &subpix_origin, &log2_scale);
+			if (code < 0)
+			    return code;
+			if (pair == 0)
+			    pair = gx_lookup_fm_pair(pfont, &char_tm_only(pgs), &log2_scale);
+			penum->pair = pair;
+		    }
+#		endif
 		;
 	}
 	SET_CURRENT_CHAR(penum, chr);

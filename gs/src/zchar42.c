@@ -204,10 +204,17 @@ type42_finish(i_ctx_t *i_ctx_p, int (*cont) (gs_state *))
      * the current gstate and path.  This is a design bug that we will
      * have to address someday!
      */
+#if NEW_TT_INTERPRETER
+    code = gs_type42_append((uint)opc->value.intval, (gs_imager_state *)igs,
+			    igs->path, &penum->log2_scale,
+			    (penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
+			    pfont->PaintType, penum->pair);
+#else
     code = gs_type42_append((uint)opc->value.intval, (gs_imager_state *)igs,
 			    igs->path, &penum->log2_scale,
 			    (penum->text.operation & TEXT_DO_ANY_CHARPATH) != 0,
 			    pfont->PaintType, (gs_font_type42 *)pfont);
+#endif
     if (code < 0)
 	return code;
     pop((psbpt == 0 ? 4 : 6));

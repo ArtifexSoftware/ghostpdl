@@ -46,7 +46,8 @@ static const gs_log2_scale_point scale_log2_1 =
 
 /* Look up, and if necessary add, a font/matrix pair in the cache */
 cached_fm_pair *
-gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm, gs_log2_scale_point *log2_scale)
+gx_lookup_fm_pair(gs_font * pfont, const gs_matrix *char_tm, 
+    const gs_log2_scale_point *log2_scale)
 {
     int scale_x = 1 << log2_scale->x;
     int scale_y = 1 << log2_scale->y;

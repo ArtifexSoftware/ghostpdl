@@ -26,6 +26,11 @@
 /* Define the abstract type for the object procedures. */
 typedef struct gs_text_enum_procs_s gs_text_enum_procs_t;
 
+#ifndef cached_fm_pair_DEFINED
+#  define cached_fm_pair_DEFINED
+typedef struct cached_fm_pair_s cached_fm_pair;
+#endif
+
 /*
  * Define values returned by text_process to the client.
  */
@@ -91,6 +96,7 @@ rc_free_proc(rc_free_text_enum);
     rc_header rc;\
     gs_font *current_font; /* changes for composite fonts */\
     gs_log2_scale_point log2_scale;	/* for oversampling */\
+    cached_fm_pair *pair; /* corresponds to the current_font and CTM*(1<<log2_scale) */\
     uint index;			/* index within string */\
     uint xy_index;		/* index within X/Y widths */\
     gx_font_stack_t fstack;\
@@ -103,6 +109,11 @@ rc_free_proc(rc_free_text_enum);
 /*typedef*/ struct gs_text_enum_s {
     gs_text_enum_common;
 } /*gs_text_enum_t*/;
+
+#if NEW_TT_INTERPRETER
+    /* The 'pair' field is added to the macro above. */
+    /* A definition of cached_fm_pair is added above */
+#endif
 
 /*
  * Notes on the imaging_dev field of device enumeration structures:

@@ -123,3 +123,31 @@ private RELOC_PTRS_WITH(TExecution_Context_reloc_ptrs, TExecution_Context *mptr)
     DISCARD(mptr);
 }
 RELOC_PTRS_END
+
+gs_public_st_composite(st_ttfFont, ttfFont,
+    "ttfFont", ttfFont_enum_ptrs, ttfFont_reloc_ptrs);
+
+private 
+ENUM_PTRS_BEGIN(ttfFont_enum_ptrs) return 0;
+    ENUM_PTR(0, ttfFont, onCurve);
+    ENUM_PTR(1, ttfFont, x);         
+    ENUM_PTR(2, ttfFont, y);
+    ENUM_PTR(3, ttfFont, endPoints);
+    ENUM_PTR(4, ttfFont, face);
+    ENUM_PTR(5, ttfFont, inst);
+    ENUM_PTR(6, ttfFont, exec);
+    ENUM_PTR(7, ttfFont, memory);
+ENUM_PTRS_END
+
+private RELOC_PTRS_WITH(ttfFont_reloc_ptrs, ttfFont *mptr)
+    RELOC_PTR(ttfFont, onCurve);
+    RELOC_PTR(ttfFont, x);         
+    RELOC_PTR(ttfFont, y);
+    RELOC_PTR(ttfFont, endPoints);
+    RELOC_PTR(ttfFont, face);
+    RELOC_PTR(ttfFont, inst);
+    RELOC_PTR(ttfFont, exec);
+    RELOC_PTR(ttfFont, memory);
+    DISCARD(mptr);
+RELOC_PTRS_END
+

@@ -492,6 +492,9 @@ gsptype2_h=$(GLSRC)gsptype2.h $(gspcolor_h) $(gxhldevc_h) $(gxfixed_h)
 gdevddrw_h=$(GLSRC)gdevddrw.h
 gxdtfill_h=$(GLSRC)gxdtfill.h
 
+ttfoutl_h=$(GLSRC)ttfoutl.h
+gxttfb_h = $(GLSRC)gxttfb.h $(ttfoutl_h)
+
 ### Executable code
 
 # gconfig and gscdefs are handled specially.  Currently they go in psbase
@@ -534,7 +537,7 @@ $(GLOBJ)gxccache.$(OBJ) : $(GLSRC)gxccache.c $(GXERR) $(memory__h)\
 $(GLOBJ)gxccman.$(OBJ) : $(GLSRC)gxccman.c $(GXERR) $(memory__h) $(gpcheck_h)\
  $(gsbitops_h) $(gsstruct_h) $(gsutil_h) $(gxfixed_h) $(gxmatrix_h)\
  $(gxdevice_h) $(gxdevmem_h) $(gxfont_h) $(gxfcache_h) $(gxchar_h)\
- $(gxpath_h) $(gxxfont_h) $(gzstate_h)
+ $(gxpath_h) $(gxxfont_h) $(gzstate_h) $(gxttfb_h) $(gxttfb_h)
 	$(GLCC) $(GLO_)gxccman.$(OBJ) $(C_) $(GLSRC)gxccman.c
 
 $(GLOBJ)gxchar.$(OBJ) : $(GLSRC)gxchar.c $(GXERR) $(memory__h) $(string__h)\
@@ -1775,7 +1778,8 @@ $(GLOBJ)gxpageq.$(OBJ) : $(GLSRC)gxpageq.c $(GXERR)\
 
 ttflib_=$(GLOBJ)gstype42.$(OBJ) $(GLOBJ)gxchrout.$(OBJ) \
  $(GLOBJ)ttcalc.$(OBJ) $(GLOBJ)ttfinp.$(OBJ) $(GLOBJ)ttfmain.$(OBJ) $(GLOBJ)ttfmemd.$(OBJ) \
- $(GLOBJ)ttinterp.$(OBJ) $(GLOBJ)ttload.$(OBJ) $(GLOBJ)ttobjs.$(OBJ)
+ $(GLOBJ)ttinterp.$(OBJ) $(GLOBJ)ttload.$(OBJ) $(GLOBJ)ttobjs.$(OBJ) \
+ $(GLOBJ)gxttfb.$(OBJ)
 
 $(GLD)ttflib.dev : $(LIB_MAK) $(ECHOGS_XE) $(ttflib_)
 	$(SETMOD) $(GLD)ttflib $(ttflib_)
@@ -1786,15 +1790,14 @@ gxttf_h=$(GLSRC)gxttf.h
 $(GLOBJ)gstype42.$(OBJ) : $(GLSRC)gstype42.c $(GXERR) $(memory__h)\
  $(gsccode_h) $(gsline_h) $(gsmatrix_h) $(gsstruct_h) $(gsutil_h)\
  $(gxchrout_h) $(gxfixed_h) $(gxfont_h) $(gxfont42_h) $(gxistate_h)\
- $(gxpath_h) $(gxttf_h) $(stream_h)
+ $(gxpath_h) $(gxttf_h) $(gxfcache_h) $(stream_h)
 	$(GLCC) $(GLO_)gstype42.$(OBJ) $(C_) $(GLSRC)gstype42.c
 
+ttfsfnt_h=$(GLSRC)ttfsfnt.h
 ttcommon_h=$(GLSRC)ttcommon.h
 ttconf_h=$(GLSRC)ttconf.h
 ttfinp_h=$(GLSRC)ttfinp.h
 ttfmemd_h=$(GLSRC)ttfmemd.h $(gsstype_h)
-ttfsfnt_h=$(GLSRC)ttfsfnt.h
-ttfoutl_h=$(GLSRC)ttfoutl.h $(ttfsfnt_h)
 tttype_h=$(GLSRC)tttype.h
 ttconfig_h=$(GLSRC)ttconfig.h $(ttconf_h)
 tttypes_h=$(GLSRC)tttypes.h $(ttconfig_h) $(tttype_h)
@@ -1832,6 +1835,10 @@ $(GLOBJ)ttobjs.$(OBJ) : $(GLSRC)ttobjs.c $(GXERR) $(ttmisc_h)\
  $(ttfoutl_h) $(ttobjs_h) $(ttcacl_h) $(ttload_h) $(ttinterp_h)
 	$(GLCC) $(GLO_)ttobjs.$(OBJ) $(C_) $(GLSRC)ttobjs.c
 
+$(GLOBJ)gxttfb.$(OBJ) : $(GLSRC)gxttfb.c $(GXERR) \
+ $(gx_h) $(gxfont_h) $(gxfont42_h) $(gxttfb_h) $(ttfmemd_h)\
+  $(gsstruct_h) $(gserrors_h)
+	$(GLCC) $(GLO_)gxttfb.$(OBJ) $(C_) $(GLSRC)gxttfb.c
 
 # -------- Composite (PostScript Type 0) font support -------- #
 

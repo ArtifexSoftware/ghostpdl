@@ -42,6 +42,14 @@ typedef struct cached_fm_pair_s cached_fm_pair;
 #  define gs_matrix_DEFINED
 typedef struct gs_matrix_s gs_matrix;
 #endif
+#ifndef ttfFont_DEFINED
+#  define ttfFont_DEFINED
+typedef struct ttfFont_s ttfFont;
+#endif
+#ifndef gx_ttfReader_DEFINED
+#  define gx_ttfReader_DEFINED
+typedef struct gx_ttfReader_s gx_ttfReader;
+#endif
 
 /*
  * Define the entry for a cached (font,matrix) pair.  If the UID
@@ -66,6 +74,10 @@ struct cached_fm_pair_s {
     gx_xfont *xfont;		/* the xfont (if any) */
     gs_memory_t *memory;	/* the allocator for the xfont */
     uint index;			/* index of this pair in mdata */
+#if NEW_TT_INTERPRETER
+    ttfFont *ttf;		/* True Type interpreter data. */
+    gx_ttfReader *ttr;		/* True Type interpreter data. */
+#endif
 };
 
 #define private_st_cached_fm_pair() /* in gxccman.c */\
@@ -276,10 +288,10 @@ int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
 void gx_char_cache_init(gs_font_dir *);
 void gx_purge_selected_cached_chars(gs_font_dir *, bool(*)(cached_char *, void *), void *);
 cached_fm_pair *
-               gx_lookup_fm_pair(gs_font *, const gs_matrix *, gs_log2_scale_point *);
+               gx_lookup_fm_pair(gs_font *, const gs_matrix *, const gs_log2_scale_point *);
 cached_fm_pair *
                gx_add_fm_pair(gs_font_dir *, gs_font *, const gs_uid *, const gs_matrix *, 
-	       gs_log2_scale_point *);
+	       const gs_log2_scale_point *);
 void gx_lookup_xfont(const gs_state *, cached_fm_pair *, int);
 void gs_purge_fm_pair(gs_font_dir *, cached_fm_pair *, int);
 void gs_purge_font_from_char_caches(gs_font_dir *, const gs_font *);
