@@ -56,16 +56,28 @@ int build_proc_name_refs(P3(build_proc_refs * pbuild,
 			    const char *bcstr,
 			    const char *bgstr));
 int build_gs_font_procs(P2(os_ptr, build_proc_refs *));
-int build_gs_primitive_font(P7(i_ctx_t *, os_ptr, gs_font_base **, font_type,
-			       gs_memory_type_ptr_t, const build_proc_refs *,
-			       build_font_options_t));
-int build_gs_simple_font(P7(i_ctx_t *, os_ptr, gs_font_base **, font_type,
-			    gs_memory_type_ptr_t, const build_proc_refs *,
-			    build_font_options_t));
+#define BUILD_BASE_FONT_PROC(proc)\
+  int proc(P7(i_ctx_t *, os_ptr, gs_font_base **, font_type,\
+	      gs_memory_type_ptr_t, const build_proc_refs *,\
+	      build_font_options_t))
+typedef BUILD_BASE_FONT_PROC((*build_base_font_proc_t));
+BUILD_BASE_FONT_PROC(build_gs_primitive_font);
+int build_gs_FDArray_font(P6(i_ctx_t *, /*const*/ ref *, gs_font_base **,
+			     font_type, gs_memory_type_ptr_t,
+			     const build_proc_refs *));
+int build_gs_outline_font(P8(i_ctx_t *, os_ptr, gs_font_base **, font_type,
+			     gs_memory_type_ptr_t, const build_proc_refs *,
+			     build_font_options_t, build_base_font_proc_t));
+BUILD_BASE_FONT_PROC(build_gs_simple_font);
+void init_gs_simple_font(P3(gs_font_base *pfont, const double bbox[4],
+			    const gs_uid *puid));
 void lookup_gs_simple_font_encoding(P1(gs_font_base *));
 int build_gs_font(P7(i_ctx_t *, os_ptr, gs_font **, font_type,
 		     gs_memory_type_ptr_t, const build_proc_refs *,
 		     build_font_options_t));
+int build_gs_sub_font(P8(i_ctx_t *, const ref *, gs_font **,
+			 font_type, gs_memory_type_ptr_t,
+			 const build_proc_refs *, const ref *, ref *));
 int define_gs_font(P1(gs_font *));
 gs_glyph zfont_encode_char(P3(gs_font *pfont, gs_char chr, gs_glyph_space_t ignored));
 
