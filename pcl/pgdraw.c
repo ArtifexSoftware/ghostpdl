@@ -109,7 +109,7 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 	{
 	    gs_matrix mat;
 	    gs_currentmatrix(pgls->pgs, &mat);
-	    mat.ty = round(mat.ty); mat.tx = round(mat.tx);
+	    mat.ty = floor(mat.ty); mat.tx = floor(mat.tx);
 	    gs_setmatrix(pgls->pgs, &mat);
 	}
 	hpgl_call(gs_setdotorientation(pgls->pgs));
@@ -379,8 +379,7 @@ vector:
 
 /*
  * A bounding box for the current polygon -- used for HPGL/2 vector
- * fills.  We expand the bounding box by 1/2 the current line width to
- *  avoid overhanging lines.
+ * fills.
  */
  private int
 hpgl_polyfill_bbox(
@@ -393,12 +392,6 @@ hpgl_polyfill_bbox(
 
     /* get the bounding box for the current path / polygon */
     hpgl_call(gs_pathbbox(pgls->pgs, bbox));
-
-    /* expand the box. */
-    bbox->p.x -= half_width;
-    bbox->p.y -= half_width;
-    bbox->q.x += half_width;
-    bbox->q.y += half_width;
     return 0;
 }
 
@@ -470,10 +463,10 @@ hpgl_set_clipping_region(hpgl_state_t *pgls, hpgl_rendering_mode_t render_mode)
 		}
 	    }
 	    /* convert intersection box to fixed point and clip */
-	    fixed_box.p.x = float2fixed(round(dev_clip_box.p.x));
-	    fixed_box.p.y = float2fixed(round(dev_clip_box.p.y));
-	    fixed_box.q.x = float2fixed(round(dev_clip_box.q.x));
-	    fixed_box.q.y = float2fixed(round(dev_clip_box.q.y));
+	    fixed_box.p.x = float2fixed(floor(dev_clip_box.p.x));
+	    fixed_box.p.y = float2fixed(floor(dev_clip_box.p.y));
+	    fixed_box.q.x = float2fixed(ceil(dev_clip_box.q.x));
+	    fixed_box.q.y = float2fixed(ceil(dev_clip_box.q.y));
 	    /* intersect with pcl clipping region */
 	    fixed_box.p.x = max(fixed_box.p.x, pgls->xfm_state.dev_print_rect.p.x);
 	    fixed_box.p.y = max(fixed_box.p.y, pgls->xfm_state.dev_print_rect.p.y);
@@ -941,12 +934,11 @@ fill:
     if (code >= 0) {
         /* PCL and GL/2 no longer use graphic library transparency */
         gs_setrasterop(pgls->pgs, (gs_rop3_t)pgls->logical_op);
-        if (pixel_placement_mode == 0)
-            gs_setfilladjust(pgls->pgs, 0.5, 0.5);
-        else
-            gs_setfilladjust(pgls->pgs, 0, 0);
+         if (pixel_placement_mode == 0)
+             gs_setfilladjust(pgls->pgs, 0.5, 0.5);
+         else
+             gs_setfilladjust(pgls->pgs, 0, 0);
     }
-
     return code;
 }
 
