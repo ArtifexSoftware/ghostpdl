@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 2001 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2001 artofcode, LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -46,6 +46,11 @@
 
 #include "gsdll.h"	/* old DLL public interface */
 
+/* MacGSView still requires that hwnd be exported
+   through the old dll interface. We do that here,
+   but expect to remove it when that client has been
+   ported to do the gsapi interface. */
+extern HWND hwndtext;
 
 /****** SINGLE-INSTANCE HACK ******/
 /* GLOBAL WARNING */
@@ -82,6 +87,9 @@ gsdll_init(GSDLL_CALLBACK callback, HWND hwnd, int argc, char * argv[])
     gsapi_set_poll(minst, gsdll_old_poll);
     /* ignore hwnd */
 
+/* rest of MacGSView compatibilty hack */
+	hwndtext=hwnd;
+	
 /****** SINGLE-INSTANCE HACK ******/
     pgsdll_callback = callback;
 /****** SINGLE-INSTANCE HACK ******/
