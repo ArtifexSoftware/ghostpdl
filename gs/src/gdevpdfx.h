@@ -36,7 +36,7 @@
 
 /* Define the maximum depth of an outline tree. */
 /* Note that there is no limit on the breadth of the tree. */
-#define MAX_OUTLINE_DEPTH 8
+#define MAX_OUTLINE_DEPTH 32
 
 /* Define the maximum size of a destination array string. */
 #define MAX_DEST_STRING 80
