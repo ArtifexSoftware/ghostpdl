@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995-2003 artofcode LLC.  All rights reserved.
 # 
 # This software is provided AS-IS with no warranty, either express or
 # implied.
@@ -1290,8 +1290,8 @@ $(PSD)jbig2.dev : $(INT_MAK) $(ECHOGS_XE) $(fjbig2_) $(GLD)sjbig2.dev
 	$(ADDMOD) $(PSD)jbig2 -oper zfjbig2
 
 $(PSOBJ)zfjbig2.$(OBJ) : $(PSSRC)zfjbig2.c $(OP) $(memory__h)\
- $(gsstruct_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
- $(sarc4_h) $(stream_h) $(strimpl_h)
+ $(gsstruct_h) $(gstypes_h) $(ialloc_h) $(idict_h) $(ifilter_h)\
+ $(store_h) $(stream_h) $(strimpl_h) $(sjbig2_h)
 	$(PSCC) $(PSO_)zfjbig2.$(OBJ) $(C_) $(PSSRC)zfjbig2.c
 
 

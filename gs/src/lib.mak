@@ -1343,8 +1343,8 @@ $(GLD)sjbig2.dev : $(LIB_MAK) $(ECHOGS_XE) $(sjbig2_)
 	$(SETMOD) $(GLD)sjbig2 $(sjbig2_)
 	$(ADDMOD) $(GLD)sjbig2 -lib jbig2dec
 
-$(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) $(memory__h)\
- $(gserror_h) $(gserrors_h) $(sarc4_h) $(strimpl_h)
+$(GLOBJ)sjbig2.$(OBJ) : $(GLSRC)sjbig2.c $(AK) \
+ $(gserror_h) $(gserrors_h) $(gdebug_h) $(sjbig2_h) $(strimpl_h)
 	$(GLCC) $(GLO_)sjbig2.$(OBJ) $(C_) $(GLSRC)sjbig2.c
 
 # ---------------- Pixel-difference filters ---------------- #

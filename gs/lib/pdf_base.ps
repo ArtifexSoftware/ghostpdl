@@ -1,4 +1,4 @@
-%    Copyright (C) 1994, 1996, 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1994-2003 artofcode LLC.  All rights reserved.
 % 
 % This software is provided AS-IS with no warranty, either express or
 % implied.
@@ -602,11 +602,31 @@ pdfdict begin
   2 index null eq {
     { filtername filter }
   } {
-    {		% Stack: parms stream filtername
-      2 index 0 oget dup null eq { pop } { exch } ifelse filtername filter
+    {		% Stack: parms source filtername
+      2 index 0 oget dup null eq { pop } {
+        exch dup /JBIG2Decode eq { exch jbig2cachectx exch } if
+      } ifelse filtername filter
       exch dup length 1 sub 1 exch getinterval exch
     }
   } ifelse forall exch pop
+} bind def
+
+% JBIG2 streams have an optional 'globals' stream obj for
+% sharing redundant data between page images. Here we resolve
+% that  stream reference (if any) and run it through the decoder,
+% creating a special -jbig2globalctx- postscript object our
+% JBIG2Decode filter implementation looks for in the parm dict.
+/jbig2cachectx { % <parmdict> jbig2cachectx <parmdict>
+  dup /JBIG2Globals knownoget {
+    dup /Length oget
+    % make global ctx
+    PDFfile fileposition 3 1 roll % resolvestream is not reentrant
+    exch true resolvestream exch .bytestring
+    .readbytestring pop .jbig2makeglobalctx
+    PDFfile 3 -1 roll setfileposition
+    1 index exch
+    /.jbig2globalctx exch put
+  } if
 } bind def
 
 % Resolve a stream dictionary to a PostScript stream.

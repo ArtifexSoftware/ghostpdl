@@ -42,7 +42,9 @@ stream_jbig2decode_state;
 
 /* call in to process the JBIG2Globals parameter */
 public int
-s_jbig2decode_make_global_ctx(gs_bytestring *data, Jbig2GlobalCtx **global_ctx);
+s_jbig2decode_make_global_ctx(byte *data, uint length, Jbig2GlobalCtx **global_ctx);
+public int
+s_jbig2decode_set_global_ctx(stream_state *ss, Jbig2GlobalCtx *global_ctx);
 
 #define private_st_jbig2decode_state()	\
   gs_private_st_simple(st_jbig2decode_state, stream_jbig2decode_state,\
