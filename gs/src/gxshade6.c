@@ -614,8 +614,10 @@ gs_shading_Cp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     patch_curve_t curve[4];
     int code;
 
-    mesh_init_fill_state((mesh_fill_state_t *) &state,
+    code = mesh_init_fill_state((mesh_fill_state_t *) &state,
 			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
+    if (code < 0)
+	return code;
     state.Function = psh->params.Function;
 #   if NEW_SHADINGS
 	code = init_patch_fill_state(&state);
@@ -708,8 +710,10 @@ gs_shading_Tpp_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     gs_fixed_point interior[4];
     int code;
 
-    mesh_init_fill_state((mesh_fill_state_t *) & state,
+    code = mesh_init_fill_state((mesh_fill_state_t *) & state,
 			 (const gs_shading_mesh_t *)psh0, rect, dev, pis);
+    if (code < 0)
+	return code;
     state.Function = psh->params.Function;
 #   if NEW_SHADINGS
 	code = init_patch_fill_state(&state);

@@ -139,7 +139,7 @@ typedef struct patch_curve_s {
 } patch_curve_t;
 
 /* Initialize the fill state for triangle shading. */
-void mesh_init_fill_state(mesh_fill_state_t * pfs,
+int mesh_init_fill_state(mesh_fill_state_t * pfs,
 			  const gs_shading_mesh_t * psh,
 			  const gs_rect * rect,
 			  gx_device * dev, gs_imager_state * pis);

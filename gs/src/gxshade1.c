@@ -391,7 +391,9 @@ Fb_fill_region(Fb_fill_state_t * pfs, const gs_rect *rect)
 	return code;
     pfs1.maybe_self_intersecting = false;
     pfs1.n_color_args = 2;
-    shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
+    code = shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
+    if (code < 0)
+	return code;
     gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &curve[0].vertex.p);
     gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.p.y, &curve[1].vertex.p);
     gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.q.y, &curve[2].vertex.p);
@@ -635,7 +637,9 @@ A_fill_region(A_fill_state_t * pfs, const gs_rect *rect)
     code = init_patch_fill_state(&pfs1);
     if (code < 0)
 	return code;
-    shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
+    code = shade_bbox_transform2fixed(rect, pfs->pis, &pfs1.rect);
+    if (code < 0)
+	return code;
     pfs1.maybe_self_intersecting = false;
     gs_point_transform2fixed(&pfs->pis->ctm, x0 + pfs->delta.y * h0, y0 - pfs->delta.x * h0, &curve[0].vertex.p);
     gs_point_transform2fixed(&pfs->pis->ctm, x1 + pfs->delta.y * h0, y1 - pfs->delta.x * h0, &curve[1].vertex.p);
@@ -1437,7 +1441,9 @@ gs_shading_R_fill_rectangle_aux(const gs_shading_t * psh0, const gs_rect * rect,
 	code = init_patch_fill_state(&pfs1);
 	if (code < 0)
 	    return code;
-	shade_bbox_transform2fixed(rect, pis, &pfs1.rect);
+	code = shade_bbox_transform2fixed(rect, pis, &pfs1.rect);
+	if (code < 0)
+	    return code;
 	pfs1.maybe_self_intersecting = false;
 
 	code = R_extensions(&pfs1, psh, rect, t[0], t[1], psh->params.Extend[0], false);

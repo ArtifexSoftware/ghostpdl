@@ -44,7 +44,7 @@ patch_set_color_values(const mesh_fill_state_t * pfs, float *cc, const patch_col
 #endif
 
 /* Initialize the fill state for triangle shading. */
-void
+int
 mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
 		     const gs_rect * rect, gx_device * dev,
 		     gs_imager_state * pis)
@@ -52,7 +52,7 @@ mesh_init_fill_state(mesh_fill_state_t * pfs, const gs_shading_mesh_t * psh,
     shade_init_fill_state((shading_fill_state_t *) pfs,
 			  (const gs_shading_t *)psh, dev, pis);
     pfs->pshm = psh;
-    shade_bbox_transform2fixed(rect, pis, &pfs->rect);
+    return shade_bbox_transform2fixed(rect, pis, &pfs->rect);
 }
 
 /* Initialize the recursion state for filling one triangle. */
@@ -400,6 +400,7 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     int num_bits = psh->params.BitsPerFlag;
     int flag;
     shading_vertex_t va, vb, vc;
+    int code;
 
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
 	vd_get_dc('s');
@@ -407,13 +408,13 @@ gs_shading_FfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
     }
-    mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
+    code = mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
 			 dev, pis);
+    if (code < 0)
+	return code;
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     while ((flag = shade_next_flag(&cs, num_bits)) >= 0) {
-	int code;
-
 	switch (flag) {
 	    default:
 		return_error(gs_error_rangecheck);
@@ -452,7 +453,7 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     shading_vertex_t *vertex;
     shading_vertex_t next;
     int per_row = psh->params.VerticesPerRow;
-    int i, code = 0;
+    int i, code;
 
     if (VD_TRACE_TRIANGLE_PATCH && vd_allowed('s')) {
 	vd_get_dc('s');
@@ -460,8 +461,10 @@ gs_shading_LfGt_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 	vd_set_scale(0.01);
 	vd_set_origin(0, 0);
     }
-    mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
+    code = mesh_init_fill_state(&state, (const gs_shading_mesh_t *)psh, rect,
 			 dev, pis);
+    if (code < 0)
+	return code;
     shade_next_init(&cs, (const gs_shading_mesh_params_t *)&psh->params,
 		    pis);
     vertex = (shading_vertex_t *)
