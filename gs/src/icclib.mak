@@ -31,15 +31,9 @@
 # Color Consortium's web site at
 #   http://www.color.org
 #
-# The library as provided requires two minor modifications to be useable:
-#   1. In icc.c, replace "#include <stdio.h>" with "#include "gs_stdio.h"
-#   2. In icc.h, add the following two lines:
-#      /* macro to allow updating the file pointer on systems with memory relocation */
-#      #define icc_update_fp(icc, nfp)  ((icc)->fp = (nfp))
-#
-# This makefile has been tested with version 1.23 of the icclib code. If you
+# This makefile has been tested with version 2.0 of the icclib code. If you
 # are working with a later version, you may need to update the ICC profile
-# version number macro ICCPROFVER
+# version number macro ICCPROFVER.
 
 ICCPROFVER=9809
 
@@ -79,7 +73,7 @@ $(ICCGEN)icclib.dev : $(ICCLIB_MAK) $(ECHOGS_XE) $(icclib_)
 
 icc_h=$(ICCSRC)$(D)icc.h $(ICCSRC)$(D)icc$(ICCPROFVER).h
 
-$(ICCOBJ)icc.$(OBJ) : $(ICCSRC)icc.c $(ICCDEP)  $(gs_stdio_h) $(icc_h)
+$(ICCOBJ)icc.$(OBJ) : $(ICCSRC)icc.c $(ICCDEP) $(icc_h)
 #	echo $(ICC_CCFLAGS)
 	$(EXP)$(ECHOGS_XE) $(ICC_CCFLAGS)
 	$(ICC_CC) $(ICCO_)icc.$(OBJ) $(C_) $(ICCSRC)icc.c

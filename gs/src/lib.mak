@@ -31,6 +31,7 @@ GLI_=$(GLGENDIR) $(II)$(GLSRCDIR)
 GLF_=
 GLCCFLAGS=$(I_)$(GLI_)$(_I) $(GLF_)
 GLCC=$(CC_) $(GLCCFLAGS)
+GLICCCC=$(CC_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(ICCCF_) $(GLF_)
 GLJCC=$(CC_) $(I_)$(GLI_) $(II)$(JI_)$(_I) $(JCF_) $(GLF_)
 GLZCC=$(CC_) $(I_)$(GLI_) $(II)$(ZI_)$(_I) $(ZCF_) $(GLF_)
 GLCCLEAF=$(CC_LEAF) $(I_)$(GLI_)$(_I) $(GLF_)
@@ -2100,16 +2101,20 @@ $(GLOBJ)gxctable.$(OBJ) : $(GLSRC)gxctable.c $(GX)\
 	$(GLCC) $(GLO_)gxctable.$(OBJ) $(C_) $(GLSRC)gxctable.c
 
 # ---------------- ICCBased color ---------------- #
+
 sicclib_=$(GLOBJ)gsicc.$(OBJ)
 $(GLD)sicclib.dev : $(LIB_MAK) $(ECHOGS_XE) $(sicclib_) $(GLD)cielib.dev\
  $(ICCGENDIR)$(D)icclib.dev
 	$(SETMOD) $(GLD)sicclib $(sicclib_)
 	$(ADDMOD) $(GLD)sicclib -include $(ICCGENDIR)$(D)icclib.dev
 
+# icc_h is defined in icclib.mak, which is included after lib.mak, so we
+# can't make gsicc.$(OBJ) depend on it.  Instead, we make it depend on
+# the compilation of icc.$(OBJ).
 $(GLOBJ)gsicc.$(OBJ) : $(GLSRC)gsicc.c $(GXERR) $(math__h) $(memory__h)\
  $(gsstruct_h) $(stream_h) $(gxcspace_h) $(gxarith_h) $(gxcie_h)\
- $(gzstate_h) $(icc_h) $(gsicc_h)
-	$(GLCC) $(GLO_)gsicc.$(OBJ) $(C_) $(I_)$(GLI_) $(II)$(ICCI_)$(_I) $(GLSRC)gsicc.c
+ $(gzstate_h) $(gsicc_h) $(ICCOBJDIR)$(D)icc.$(OBJ)
+	$(GLICCCC) $(GLO_)gsicc.$(OBJ) $(C_) $(GLSRC)gsicc.c
 
 # ---------------- Separation colors ---------------- #
 

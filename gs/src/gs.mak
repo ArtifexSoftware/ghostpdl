@@ -299,6 +299,10 @@ ADDMOD=$(EXP)$(ECHOGS_XE) -e .dev -a- $(NULL)
 # The search lists must be enclosed in $(I_) and $(_I).
 # Note that we can't define the entire compilation command,
 # because this must include $(GLSRCDIR), which isn't defined yet.
+ICCI_=$(ICCSRCDIR)
+ICCF_=
+# Currently there is no option for sharing icclib.
+ICCCF_=
 JI_=$(JSRCDIR)
 JF_=
 JCF_=$(D_)SHARE_JPEG=$(SHARE_JPEG)$(_D)
@@ -309,8 +313,6 @@ PF_=
 PCF_=$(D_)SHARE_LIBPNG=$(SHARE_LIBPNG)$(_D)
 ZI_=$(ZSRCDIR)
 ZF_=
-ICCI_=$(ICCSRCDIR)
-ICCF_=
 ZCF_=$(D_)SHARE_ZLIB=$(SHARE_ZLIB)$(_D)
 
 ######################## How to define new 'features' #######################
