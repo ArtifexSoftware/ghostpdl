@@ -167,7 +167,6 @@ gx_ht_free_cache(gs_memory_t * mem, gx_ht_cache * pcache)
     	"free_ht_cache(id_table)"); 
     gs_free_object(mem, pcache->ht_tiles, "free_ht_cache(ht_tiles)");
     gs_free_object(mem, pcache->bits, "free_ht_cache(bits)");
-    gs_free_object(mem, pcache->id_table, "free_ht_cache(id_table)"); 
     gs_free_object(mem, pcache, "free_ht_cache(struct)");
 }
 
