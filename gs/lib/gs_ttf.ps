@@ -534,7 +534,7 @@ def
 
 % Read a table as a single string.
 % <file> <length> .skiptable <string>
-/.readtable {
+/.skiptable {
   pop pop ()
 } bind def
 
@@ -655,28 +655,29 @@ mark
     dup 0 4 getinterval /tname exch def
     dup 8 getu32 /tpos exch def
     dup 12 getu32 /tlen exch def
-    load_stripped { 
-      //.file_table_pos_names tname known {
+    load_stripped //.file_table_pos_names tname known and {
+        pop
         file_table_pos tname [tpos tlen] put
-      } if
-    } if
-    8 sfpos putu32
-	% Skip data between the end of the previous table and
+        tabdict tname () put
+    } {
+      8 sfpos putu32
+  	% Skip data between the end of the previous table and
 	% the beginning of this one, if any.
-    tpos fpos gt {
-      load_stripped {
-        % 'setfileposition' is faster for skipping a big data.
-        f tpos setfileposition
-      } {
-        f tpos fpos sub () /SubFileDecode filter dup flushfile closefile
-        /fpos tpos def
-      } ifelse
-    } if
-    f tlen readtables tname get exec
-    tabdict tname 3 -1 roll put
-    /fpos fpos tlen add def
+      tpos fpos gt {
+        load_stripped {
+          % 'setfileposition' is faster for skipping a big data.
+          f tpos setfileposition
+        } {
+          f tpos fpos sub () /SubFileDecode filter dup flushfile closefile
+          /fpos tpos def
+        } ifelse
+      } if
+      f tlen readtables_ tname get exec
+      tabdict tname 3 -1 roll put
 	% Round up the table length to an even value.
-    /sfpos sfpos tlen dup 1 and add add def
+      /sfpos sfpos tlen dup 1 and add add def
+    } ifelse
+    /fpos fpos tlen add def
   } forall
 } bind def
 
@@ -904,7 +905,7 @@ mark
     TTFDEBUG {
       (Seeking a cmap for platform=) print 1 index =only ( encoding=) print dup =
     } if
-    tabdict /cmap get                                    % bool [] i PlatID SpecID (cmap)
+    tabdict /cmap get                                   % bool [] i PlatID SpecID (cmap)
     dup /cmaptab exch def % temporary
     0 1 2 index 2 getu16 1 sub {                         % bool [] i PlatID SpecID (cmap) j
       8 mul 4 add 1 index exch 8 getinterval             % bool [] i PlatID SpecID (cmap) (cmapsub)
