@@ -423,13 +423,13 @@ gp_open_scratch_file (const char *prefix, char fname[gp_file_name_sizeof], const
     FILE *f;
     int prefix_length = strlen(prefix);
 
-    if (prefix_length > fp_file_name_sizeof) return NULL;
+    if (prefix_length > gp_file_name_sizeof) return NULL;
     strcpy (fname, (char *) prefix);
       {
 	char newName[50];
 
 	tmpnam (newName);
-	if ( prefix_length + strlen(newName) > fp_file_name_sizeof ) return NULL;
+	if ( prefix_length + strlen(newName) > gp_file_name_sizeof ) return NULL;
 	strcat (fname, newName);
       }
 
