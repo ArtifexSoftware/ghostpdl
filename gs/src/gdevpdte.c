@@ -358,7 +358,7 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 	    return code;
     }
     
-    if (penum->pis->text_rendering_mode != 3) {
+    if (penum->pis->text_rendering_mode != 3 && !(text->operation & TEXT_DO_NONE)) {
 	/*
 	 * Acrobat Reader can't handle text with huge coordinates,
 	 * so skip the text if it is outside the clip bbox
@@ -430,7 +430,8 @@ pdf_process_string(pdf_text_enum_t *penum, gs_string *pstr,
 		    return code;
 		adjust_first_last_char(pdfont, pstr->data + penum->index, accepted);
 		penum->index += accepted;
-	    }
+	    } else if (text->operation & TEXT_DO_NONE)
+		penum->index += accepted;
 	} else {
 	    /* Use the slow case.  Set mask to any non-zero value. */
 	    mask = TEXT_RETURN_WIDTH;
@@ -469,7 +470,15 @@ finish:
     /* Finally, return the total width if requested. */
     if (!(text->operation & TEXT_RETURN_WIDTH))
 	return 0;
-    penum->returned.total_width = width_pt;
+    if (text->operation & TEXT_DO_NONE) {
+	/* stringwidth needs to transform to user space. */
+	gs_point p;
+
+	gs_distance_transform_inverse(width_pt.x, width_pt.y, &ctm_only(penum->pis), &p);
+	penum->returned.total_width.x += p.x;
+	penum->returned.total_width.y += p.y;
+    } else
+	penum->returned.total_width = width_pt;
     return gx_path_add_point(penum->path,
 			     penum->origin.x + float2fixed(width_pt.x),
 			     penum->origin.y + float2fixed(width_pt.y));

@@ -211,11 +211,12 @@ private const gs_text_enum_procs_t pdf_text_procs = {
 int
 gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 		    const gs_text_params_t *text, gs_font * font,
-		    gx_path * path, const gx_device_color * pdcolor,
+		    gx_path * path0, const gx_device_color * pdcolor,
 		    const gx_clip_path * pcpath,
 		    gs_memory_t * mem, gs_text_enum_t ** ppte)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)dev;
+    gx_path *path = path0;
     pdf_text_enum_t *penum;
     gs_fixed_point cpt;
     bool new_clip;
@@ -236,24 +237,36 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	pdf_current_page(pdev)->text_rotation.counts[i] += text->size;
     }
 
-    if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3) 
-	    || path == 0 || gx_path_current_point(path, &cpt) < 0
-	)
+    if (font->FontType == ft_user_defined &&
+	(text->operation & TEXT_DO_NONE) && (text->operation & TEXT_RETURN_WIDTH)) {
+	/* This is stringwidth, see gx_default_text_begin.
+	 * We need to prevent writing characters to PS cache,
+	 * otherwise the font converts to bitmaps.
+	 * So pass through even with stringwidth.
+	 */
+	code = gx_hld_stringwidth_begin(pis, &path);
+	if (code < 0)
+	    return code;
+    } else if ((!(text->operation & TEXT_DO_DRAW) && pis->text_rendering_mode != 3) 
+		|| path == 0 || gx_path_current_point(path, &cpt) < 0
+	    )
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
-				     pcpath, mem, ppte);
+					 pcpath, mem, ppte);
 
-    new_clip = pdf_must_put_clip_path(pdev, pcpath);
-    if (new_clip)
-	code = pdf_unclip(pdev);
-    else if (pdev->context == PDF_IN_NONE)
-	code = pdf_open_page(pdev, PDF_IN_STREAM);
-    else
-	code = 0;
-    if (code < 0)
-	return code;
-    code = pdf_prepare_fill(pdev, pis);
-    if (code < 0)
-	return code;
+    if (!(text->operation & TEXT_DO_NONE)) {
+	new_clip = pdf_must_put_clip_path(pdev, pcpath);
+	if (new_clip)
+	    code = pdf_unclip(pdev);
+	else if (pdev->context == PDF_IN_NONE)
+	    code = pdf_open_page(pdev, PDF_IN_STREAM);
+	else
+	    code = 0;
+	if (code < 0)
+	    return code;
+	code = pdf_prepare_fill(pdev, pis);
+	if (code < 0)
+	    return code;
+    }
     if (text->operation & TEXT_DO_DRAW) {
 	/*
 	 * Set the clipping path and drawing color.  We set both the fill
@@ -286,6 +299,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     penum->rc.free = rc_free_text_enum;
     penum->pte_default = 0; 
     penum->charproc_accum = false;
+    penum->returned.total_width.x = penum->returned.total_width.y = 0;
     code = gs_text_enum_init((gs_text_enum_t *)penum, &pdf_text_procs,
 			     dev, pis, text, font, path, pdcolor, pcpath, mem);
     if (code < 0) {
@@ -1567,7 +1581,14 @@ int
 pdf_default_text_begin(gs_text_enum_t *pte, const gs_text_params_t *text,
 		       gs_text_enum_t **ppte)
 {
-    return gx_default_text_begin(pte->dev, pte->pis, text, pte->current_font,
+    gs_text_params_t text1 = *text;
+
+    if(pte->current_font->FontType == 3 && (text1.operation & TEXT_DO_NONE)) {
+	/* We need a real drawing to accumulate charproc. */
+	text1.operation &= ~TEXT_DO_NONE;
+	text1.operation |= TEXT_DO_DRAW;
+    }
+    return gx_default_text_begin(pte->dev, pte->pis, &text1, pte->current_font,
 				 pte->path, pte->pdcolor, pte->pcpath,
 				 pte->memory, ppte);
 }

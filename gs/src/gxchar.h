@@ -136,5 +136,6 @@ void gx_compute_text_oversampling(const gs_show_enum * penum, const gs_font *pfo
 				  int alpha_bits, gs_log2_scale_point *p_log2_scale);
 int set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy);
 int gx_default_text_restore_state(gs_text_enum_t *pte);
+int gx_hld_stringwidth_begin(gs_imager_state * pis, gx_path **path);
 
 #endif /* gxchar_INCLUDED */
