@@ -330,16 +330,22 @@ gs_nogc_reclaim(vm_spaces * pspaces, bool global)
 private void
 use_string_freelists(gs_ref_memory_t *rmem)
 {
-    gs_memory_t *mem = (gs_memory_t *)rmem;
     /*
-     * Change the allocator to use string freelists in the future.
+     * ANSI made an incompatible change to the C language standard that
+     * caused the following to generate aliasing warnings:
+	gs_memory_t *mem = (gs_memory_t *)rmem;
+     * Consequently, we now use rmem rather than mem in the assignments
+     * below, even though this degrades code readability by obscuring the
+     * fact that they are only manipulating fields of the more abstract
+     * superclass.
      */
-    mem->procs.alloc_string = sf_alloc_string;
-    if (mem->procs.free_string != gs_ignore_free_string)
-	mem->procs.free_string = sf_free_string;
-    mem->procs.enable_free = sf_enable_free;
-    mem->procs.consolidate_free = sf_consolidate_free;
+    /* Change the allocator to use string freelists in the future.  */
+    rmem->procs.alloc_string = sf_alloc_string;
+    if (rmem->procs.free_string != gs_ignore_free_string)
+	rmem->procs.free_string = sf_free_string;
+    rmem->procs.enable_free = sf_enable_free;
+    rmem->procs.consolidate_free = sf_consolidate_free;
 
     /* Merge free objects, detecting entirely free chunks. */
-    gs_consolidate_free(mem);
+    gs_consolidate_free((gs_memory_t *)rmem);
 }
