@@ -305,7 +305,7 @@ FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev imasklib.dev patlib.dev htxlib.de
 # Choose whether to compile the .ps initialization files into the executable.
 # See gs.mak for details.
 
-!ifndef COMPILED_INITS
+!ifndef COMPILE_INITS
 COMPILE_INITS=0
 !endif
 
