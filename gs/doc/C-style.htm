@@ -635,6 +635,30 @@ script in the Ghostscript fileset contains the necessary workarounds.
 Put indentation points every 4 spaces, with 8 spaces = 1 tab stop.
 
 <p>
+For assignments (including chain assignments), put the entire statement on
+one line if it will fit; if not, break it after a <b><tt>=</tt></b> and
+indent all the following lines.  I.e., format like this:
+
+<blockquote>
+var1&nbsp;<b><tt>=</tt></b>&nbsp;value<b><tt>;</tt></b><br>
+var1&nbsp;<b><tt>=</tt></b>&nbsp;var2&nbsp;<b><tt>=</tt></b>&nbsp;value<b><tt>;</tt></b><br>
+var1&nbsp;<b><tt>=</tt></b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;value<b><tt>;</tt></b><br>
+var1&nbsp;<b><tt>=</tt></b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;var2&nbsp;<b><tt>=</tt></b>&nbsp;value<b><tt>;</tt></b><br>
+var1&nbsp;<b><tt>=</tt></b>&nbsp;var2&nbsp;<b><tt>=</tt></b><br>
+&nbsp;&nbsp;&nbsp;&nbsp;value<b><tt>;</tt></b>
+</blockquote>
+
+<p>
+But not like this:
+
+<blockquote>
+var1&nbsp;<b><tt>=</tt></b><br>
+var2&nbsp;<b><tt>=</tt></b> value<b><tt>;</tt></b>
+</blockquote>
+
+<p>
 Indent in-line blocks thus:
 
 <blockquote>
