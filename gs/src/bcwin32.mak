@@ -43,7 +43,9 @@ PSOBJDIR=obj
 AROOTDIR=c:/gs
 !endif
 
+!ifndef GSROOTDIR
 GSROOTDIR=$(AROOTDIR)/gs$(GS_DOT_VERSION)
+!endif
 
 # Define the directory that will hold documentation at runtime.
 
@@ -53,7 +55,9 @@ GS_DOCDIR=$(GSROOTDIR)/doc
 # initialization, resource and font files.  Separate multiple directories with \;.
 # Use / to indicate directories, not a single \.
 
+!ifndef GS_LIB_DEFAULT
 GS_LIB_DEFAULT=$(GSROOTDIR)/lib\;$(GSROOTDIR)/Resource\;$(AROOTDIR)/fonts
+!endif
 
 # Define whether or not searching for initialization files should always
 # look in the current directory first.  This leads to well-known security
@@ -69,7 +73,9 @@ SEARCH_HERE_FIRST=1
 # Define the name of the interpreter initialization file.
 # (There is no reason to change this.)
 
+!ifndef GS_INIT
 GS_INIT=gs_init.ps
+!endif
 
 # Choose generic configuration options.
 
@@ -133,33 +139,43 @@ MULTITHREAD=1
 # You may need to change this if the IJG library version changes.
 # See jpeg.mak for more information.
 
+!ifndef JSRCDIR
 JSRCDIR=jpeg
 JVERSION=6
+!endif
 
 # Define the directory where the PNG library sources are stored,
 # and the version of the library that is stored there.
 # You may need to change this if the libpng version changes.
 # See libpng.mak for more information.
 
+!ifndef PSRCDIR
 PSRCDIR=libpng
 PVERSION=10205
+!endif
 
 # Define the directory where the zlib sources are stored.
 # See zlib.mak for more information.
 
+!ifndef ZSRCDIR
 ZSRCDIR=zlib
+!endif
 
 # Define the directory where the icclib source are stored.
 # See icclib.mak for more information
 
+!ifndef ICCSRCDIR
 ICCSRCDIR=icclib
+!endif
 
 # Define the directory where the ijs source is stored,
 # and the process forking method to use for the server.
 # See ijs.mak for more information.
 
+!ifndef IJSSRCDIR
 IJSSRCDIR=ijs
 IJSEXECTYPE=win
+!endif
 
 # Define any other compilation flags.
 
@@ -202,7 +218,9 @@ PSD=$(PSGENDIR)\$(NUL)
 # C++Builder 4 and above all use Make Version 5.2 so point we can no 
 # longer tell the Compiler version from the __MAKE__ version number.
 
+!ifndef BUILDER_VERSION
 BUILDER_VERSION=5
+!endif
 
 !ifndef BUILDER_VERSION
 !if $(__MAKE__) >= 0x520
