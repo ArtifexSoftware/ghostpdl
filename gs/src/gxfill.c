@@ -788,6 +788,7 @@ init_line_list(ll_ptr ll, gs_memory_t * mem)
     ll->h_list0 = ll->h_list1 = 0;
     ll->margin_set0.margin_list = ll->margin_set1.margin_list = 0;
     ll->margin_set0.margin_touched = ll->margin_set1.margin_touched = 0;
+    ll->margin_set0.y = ll->margin_set1.y = 0;
     ll->free_margin_list = 0;
     ll->local_margin_alloc_count = 0;
     ll->margin_set0.sect = ll->local_section0;
