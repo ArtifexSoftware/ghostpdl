@@ -86,5 +86,13 @@ main(int argc, char *argv[])
 
     gs_to_exit_with_code(exit_status, code);
 
+    switch (exit_status) {
+	case 0:
+	    exit_status =  exit_OK;
+	    break;
+	case 1:
+	    exit_status =  exit_FAILED;
+	    break;
+    }
     return exit_status;
 }

@@ -441,9 +441,13 @@ typedef const char *client_name_t;
  * command line.
  */
 /*#define OLD_VMS_C*/
-#if defined(VMS) && (defined(OLD_VMS_C) || !defined(__DECC))
-#  define exit_OK 1
+#if defined(VMS)
 #  define exit_FAILED 18
+#  if (defined(OLD_VMS_C) || !defined(__DECC))
+#    define exit_OK 1
+#  else
+#    define exit_OK 0
+#  endif
 #else
 #  define exit_OK 0
 #  define exit_FAILED 1
