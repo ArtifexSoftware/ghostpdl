@@ -79,6 +79,10 @@ ifelse
    DISKFONTS { end } if
    cleartomark
  } bind def
+ % container for CloseSource flag (default true to prevent buildup of file handles)
+ /closesourcedict mark
+   /CloseSource true
+ .dicttomark readonly def
 /.loadfont1 {		% <file> .loadfont1 <errorflag>
   {	% We would like to use `false /PFBDecode filter',
 	% but this occasionally produces a whitespace character as
@@ -90,7 +94,7 @@ ifelse
 	% we have to create a procedure to close the file reliably.
     dup read not { -1 } if
     2 copy unread 16#80 eq {
-	dup true /PFBDecode filter cvx
+	dup //closesourcedict //true /PFBDecode filter cvx
 	exch .currentresourcefile eq {
 	  dup /.execasresource .systemvar
 	} {
@@ -103,6 +107,8 @@ ifelse
     } ifelse
   } stopped
 } bind def
+% undefine a dict that is only used internally, and is immediately bound
+currentdict /closesourcedict .undef
 
 % Here are the BuildChar and BuildGlyph implementation for Type 1 fonts.
 % The names %Type1BuildChar and %Type1BuildGlyph are known to the interpreter.
