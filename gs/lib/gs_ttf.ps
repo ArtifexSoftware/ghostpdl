@@ -944,82 +944,155 @@ end readonly def                % .loadttfontdict
   pop pop
 } bind def
 
-% <subcmap> <chartoglyphmap> .pdfmapchars
-%   /CharStrings <charstrings> /Encoding <encoding>
-% Uses encoding
-/.pdfmapchars {
-  exch cmaparray /cmapencoding exch def
-	% Invert glyphencoding (post).
-  /inversepost glyphencoding length dict def
-  0 1 glyphencoding length 1 sub {
-    glyphencoding 1 index get exch inversepost 3 1 roll put
+% Build .symbol_list for .pdfcharkeys .
+% It is a dictionary containing all SymbolEncoding glyph names
+% and random names for filling gaps in the character code range.
+/.symbol_list 256 dict def
+{
+  =string 0 (x) 0 get put
+  /SymbolEncoding .findencoding
+  0 1 255 {
+    dup 2 index exch get
+    dup /.notdef eq {
+      pop dup
+      =string 1 3 getinterval cvs length 1 add
+      =string exch 0 exch getinterval cvn
+    } if
+    exch //.symbol_list 3 1 roll put
   } for
-  /CharStrings mark 3 -1 roll
-  % Make sure that all of the glyphs in 'encoding' will be defined in
-  % CharStrings. Ignore .notdef since we fill that in last.
-  %		stack: /CharStrings mark <chartoglyphmap>
-  0 1 encoding length 1 sub {
-    encoding 1 index get dup /.notdef eq exch
-    counttomark 1 sub index exch known or {
-      pop 
-    } {
-      encoding exch get .pdfaddpost
-    } ifelse
-  } for
-  % stack: /CharStrings mark <chartoglyphmap> /name1 glyph#1 /name2 glyph#2 ... /namen glyph#n
-  counttomark -1 roll {
-    dup type /arraytype eq {
-      exch /ch exch def { ch exch .pdfaddchar } forall
-    } {
-      .pdfaddchar
-    } ifelse
+  pop
+} bind exec
+
+% Create .GS_extended_SymbolEncoding as inverse of .symbol_list .
+{
+  /.GS_extended_SymbolEncoding 256 array
+  //.symbol_list {
+    exch 2 index 3 1 roll put  
   } forall
-	% Add a .notdef => 0 entry if needed.  Per Adobe's spec,
-	% .dicttomark (>>) adds pairs in top-to-bottom order.
-  /.notdef 0
-  .dicttomark
-  /Encoding encoding
-} bind def
-% <charname> <charcode> .pdfaddchar <charname> <glyph#>
-% <charname> <charcode> .pdfaddchar -
-/.pdfaddchar {
+  .defineencoding
+} bind exec
+
+/.addglyph    % <name> <glyph#> .addglyph <name> <glyph#> 
+              % <name> <glyph#> .addglyph -
+{
   dup cmapencoding length lt {
     cmapencoding exch get dup 0 eq {
-      pop .pdfaddpost
+      pop pop
     } if
   } {
-    pop .pdfaddpost
+    pop pop
   } ifelse
 } bind def
-% <charname> .pdfaddpost <charname> <glyph#>
-% <charname> .pdfaddpost -
-/.pdfaddpost {
-  inversepost 1 index .knownget not { pop } if
+
+% <subcmap> <chartoglyphmap> .pdfmapchars
+%   /CharStrings <charstrings>
+/.pdfmapchars {
+  exch cmaparray /cmapencoding exch def
+  /CharStrings mark 
+
+  % Add glyphs of <chartoglyphmap>*<subcmap> :
+  3 2 roll {
+    dup type /arraytype eq {
+      exch /.name exch def
+      { .name exch //.addglyph exec
+      } forall
+      currentdict /.name undef
+    } {
+      //.addglyph exec
+    } ifelse
+  } forall
+
+        % stack: /CharStrings mark /name1 glyph#1 /name2 glyph#2 ... /namen glyph#n
+        % Stack depth is restricted with AdobeGlyphList size.
+
+  % Add glyphs of 'post' (with lower priority, see .dicttomark) :
+  0 1 glyphencoding length 1 sub {
+    dup glyphencoding exch get exch
+    dup 0 eq {
+      pop pop
+    } if
+  } for
+
+  /.notdef 0
+  .dicttomark
 } bind def
 
 % - .pdfcharkeys /CharStrings <charstrings> /Encoding <encoding>
 /.pdfcharkeys {
 	% The following algorithms are per the PDF Reference, Second Edition
 	% (PDF 1.3 reference manual).
-  encoding null eq {
-    .charkeys		% use default algorithm
+
+  is_symbolic {
+    <00030001> .findcmap {
+      %
+      % Adobe PDF spec says that symbolic fonts should contain exactly one 
+      % cmap subtable for Platform=1, Encoding=0.
+      % Perhaps "Adobe Acrobat PDFWriter 4.0 for Windows" sometimes embeds
+      % fonts with both subtables 3.1 and 1.0 (see comparefiles/159.pdf,
+      % the font "Arial,Bold" with the character "registered"),
+      % and both Acrobat Reader 4.0 and 5.0 choose 3.1.
+      % Therefore we try 3.1 first.
+      %
+      (   **** Warning: Embedded symbolic TT fonts should not contain a cmap for Platform=3 Encoding=1.\n)
+        pdfformaterror
+      AdobeGlyphList .pdfmapchars 
+      /Encoding /WinAnsiEncoding .findencoding
+    } {
+      %
+      % Adobe PDF spec says that in this case PDF interpreter should
+      % map character codes directly to glyphs using
+      % the cmap <00010000>. But we use PS interpreter to emulate
+      % a PDF interpreter. Therefore we need to construct
+      % a type 42 font, which requires an Encoding and a Charstrings.
+      % We construct them with symbol_list, which
+      % includes all glyphs from SymbolEncoding and additional
+      % random names for 1-to-1 mapping.
+      %
+      % A real TT font may use a different characters than
+      % the Symbol charaster set. Perhaps our code
+      % will give a correct printing, because glyph names are not
+      % important for symbolic fonts in PDF.
+      %
+      <00010000> .findcmap {
+        .symbol_list .pdfmapchars
+        /Encoding /.GS_extended_SymbolEncoding .findencoding
+      } {
+        % This is illegal with PDF spec.
+        (   **** Warning: Embedded symbolic TT fonts must contain a cmap for Platform=1 Encoding=0.\n)
+          pdfformaterror
+        % Try to map Unicode to SymbolEncoding
+        <00030001> .findcmap {
+          AdobeGlyphList .pdfmapchars
+          /Encoding /SymbolEncoding .findencoding
+        } {
+          % Apply the default algorithm. Hopely it has 'post'.
+          .charkeys
+        } ifelse
+      } ifelse
+    } ifelse
   } {
     <00030001> .findcmap {
-      AdobeGlyphList .pdfmapchars
+      AdobeGlyphList .pdfmapchars 
+      /Encoding /WinAnsiEncoding .findencoding
+        % WinAnsiEncoding is just a stub here. 
+        % It will be replaced with one from font resource,
+        % because PDF spec requires it.
     } {
       <00010000> .findcmap {
-	.romanmacdict .pdfmapchars
+	.romanmacdict .pdfmapchars 
+        /Encoding /MacRomanEncoding .findencoding
       } {
-	.charkeys	% use default algorithm
+        % Apply the default algorithm for using the 'post'.
+	.charkeys
       } ifelse
     } ifelse
   } ifelse
 } bind def
 
-% <file> <encoding|null> .loadpdfttfont <type42font>
+% <file> <is_symbolic> .loadpdfttfont <type42font>
 /.loadpdfttfont {
-  exch .loadttfonttables
-  /encoding exch def
+  /is_symbolic exch def
+  .loadttfonttables
   .makesfnts
   .getpost
   .pickcmap

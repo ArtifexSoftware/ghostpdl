@@ -337,7 +337,8 @@ currentdict /match_in_diff undef
 		% No descriptor available, use the default algorithm.
       findfont
     } ifelse
-  } ifelse adjustfont
+  } ifelse
+  exch pop
 } bdef
 
 % ---------------- Type 1 fonts ---------------- %
@@ -421,7 +422,7 @@ end readonly def
    count exch sub { pop } repeat
    PDFfile 3 -1 roll setfileposition
    /BaseFont oget findfont
-   adjustfont
+   exch pop
  } bdef
 
 % Execute the appropriate reading procedure.
@@ -636,19 +637,14 @@ readonly def
 
 /buildTrueType {	% <TrueType-font-resource> buildTrueType <font>
   dup /BaseFont oget
+  (   **** Warning: Fonts with Subtype = /TrueType should be embedded.\n) pdfformaterror
+  (                 But ) pdfformaterror dup =string cvs pdfformaterror ( is not embedded.\n) pdfformaterror
   dup TTfonts exch .knownget {
+    QUIET not {
+      (Substituting font ) print dup =only
+      ( for ) print 1 index =only (.) = flush
+    } if
     exch pop
-		% Hack required by the PDF specification: if the
-		% font resource has Subtype = /TrueType but the actual
-		% (installed) font is not a TrueType font, ignore the
-		% Encoding in the font resource.  However, all current
-		% versions of Acrobat Reader have the 14 base TrueType
-		% fonts built in, so this produces incorrect output for
-		% badly designed PDF files that specify these file names
-		% with /Subtype = /TrueType but no embedded definition.
-		% Compensate for this by removing the /Subtype key when
-		% looking up the font.
-    exch dup length dict copy dup /Subtype null put exch
   } if pdffindfont
 } bdef
 
@@ -693,7 +689,8 @@ readonly def
       } ifelse
     } if
   } {
-    null 2 index getencoding .loadpdfttfont
+    1 index /FontDescriptor oget /Flags get 4 and 0 ne % is_symbolic
+    .loadpdfttfont
   } ifelse
   exch pop
   PDFfile 3 -1 roll setfileposition
@@ -1108,7 +1105,7 @@ readonly def
   closefile closefile pop
   PDFfile 3 -1 roll setfileposition
   /FontDescriptor oget /FontName oget findfont
-  adjustfont
+  exch pop
 } bdef
 
 % Read an embedded CFF CIDFont.
@@ -1140,6 +1137,12 @@ readonly def
   /CIDFontType2 /buildCIDType2 cvx
 .dicttomark readonly def
 
+/adjustfonttypes mark
+  /Type1 true
+  /MMType1 true
+  /TrueType true
+.dicttomark readonly def
+
 /resourcefont			% <font-resource> resourcefont <font>
 { dup /PSFont .knownget
   { /FID knownoget { type /fonttype eq } { false } ifelse }
@@ -1163,12 +1166,7 @@ readonly def
 	}
 	ifelse
 	2 index /FontDescriptor oget
-	2 index /FontObject exch
-
-	% Disable saving a pointer to the font, because the current
-	% implementation causes a regression (SF #533467)
-	pop pop pop
-	% put			% Save pointer to the font
+	2 index /FontObject exch put	    % Save pointer to the font
       }
       ifelse
     }
@@ -1177,8 +1175,10 @@ readonly def
 	% Stack: font-res font-res false
 	%  -or-: font-res font true
     not { dup /Subtype get fonttypeprocs exch get exec } if
-    2 copy /PSFont exch put
-    exch pop
+    1 index 3 1 roll
+    1 index /Subtype get
+    //adjustfonttypes exch known { adjustfont } { exch pop } ifelse
+    dup 3 1 roll /PSFont exch put
   }
   ifelse
 } bdef
