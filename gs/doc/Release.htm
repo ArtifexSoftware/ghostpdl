@@ -27,6 +27,7 @@
 <li><a href="#Development_files">Development sources and bug reports</a>
 <li><a href="#Distribution">Distribution</a>
 </ul>
+<li><a href="#Release_numbering">Release numbering</a>
 <li><a href="#Making_distributions">Making distributions</a>
 <ul>
 <li><a href="#Preparing_source">Preparing the source code</a>
@@ -80,7 +81,7 @@ be sure to specify all command lines, file names, etc. in explicit
 detail.
 
 <p>
-The release process for the GNU and AFPL versions are similar, though
+The release process for the GPL and AFPL branches are similar, though
 there are some differences in terms of policy and release locations. See
 the section on <a href="#GNU_releases">GNU releases</a> below for
 information specific to GNU Ghostscript.
@@ -107,10 +108,9 @@ notice that is there).
 <li>You will almost certainly want to edit <b><tt>version.mak</tt></b> to
 change the revision date, <b><tt>GS_REVISIONDATE</tt></b>.
 
-<li>If you want to change the version number, you must change it in both
-<b><tt>version.mak</tt></b> (<b><tt>GS_VERSION_</tt></b>*) and
-<b><tt>lib/gs_init.ps</tt></b> (the integer on a line by itself near the
-beginning of the file).
+<li>If you want to change the release number, you must change it in all the
+places listed under <a href="#Release_numbering">"Release numbering"</a>
+below.
 
 </ul>
 
@@ -120,7 +120,7 @@ beginning of the file).
 The GNU and AFPL Ghostscript files are maintained on sites accessible to
 the public.  One specific site hosts the active CVS repository for code,
 data, and documentation, and the bug report data base; several sites
-offer distributions with version numbers, intended for wider
+offer distributions with release numbers, intended for wider
 distribution.
 
 <h3><a name="Development_files"></a>Development sources and bug reports</h3>
@@ -173,6 +173,64 @@ Development releases are also distributed from
 class="offsite">ftp://mirror.cs.wisc.edu/pub/mirrors/ghost/AFPL/test/</a>
 </blockquote>
 
+<h2><a name="Release_numbering"></a>Release numbering</h2>
+
+<p>
+Ghostscript uses a two-part (major.minor) release number. The second part
+of the release number is a 2-digit decimal fraction: it counts 00,
+01, 02, and so on through 99.
+
+<ul>
+
+<li>Release numbers N.0x and N.5x indicate stable versions.
+<li>Successive increments generally indicate bug fixes and minor enhancements. 
+<li>Development testing and beta releases generally begin with a minor release number that is
+a multiple of ten and increment from there.
+</ul>
+
+<p>
+Release numbers appear in the following places in the Ghostscript files:
+
+<ul>
+
+<li>In <b><tt>lib/gs_init.ps</tt></b>, as an integer (release number x100) at the beginning of the
+file just after the initial comment blocks.
+
+<li>In <b><tt>src/version.mak</tt></b>, split into 3 lines.
+
+<li>In <b><tt>doc/News.htm</tt></b>, in the two headers and their labels and at the very end in
+the copyright footer.
+
+<li>At the foot of most documenation files. However, these are updated mechanically from the value
+in <b><tt>News.htm</tt></b> as part of the release process and do not need to be maintained
+directly.
+</ul>
+
+<h3>Before a release</h3>
+
+<p>
+The current release number in the development code must be set to the desired value. The increment
+from just after the previous release (see below) is sufficient for minor updates. In the case of
+major changes or a new stable release, the number will need to be bumped; this is generally done
+as the first step of preparing a new release.
+
+<h3>After a release</h3>
+
+<p>
+After making a release the release number in CVS is incremented. Thus versions built
+from cvs are always marked with a future (or unused) release number to avoid confusion.
+
+<p>
+Additionally, After an N.00 or N.50 stable release, a branch is made in cvs so that development 
+can continue independently of changes to the stable series. When this happens, the minor release
+number is incremented by 10 (or 20) on the development branch (and by 1 on the new stable branch,
+as above) to avoid collisions.
+
+<p>
+While incrementing the release number after making a release may seem
+counter-intuitive, it ensures that the History files will always accurately
+describe all numbered releases other than the one currently in CVS.
+
 <h2><a name="Making_distributions"></a>Making distributions</h2>
 
 <p>
@@ -180,7 +238,7 @@ This document only discusses source distributions.  Source distributions
 currently can only be made on Linux systems (but it probably wouldn't take
 much work to support other Unix systems).  Ghostscript as distributed also
 often includes executables or other packages for the Windows and MacOS
-environments, but artofcode does not produce these, and this document does not
+environments, but artofcode does not always produce these, and this document does not
 discuss them.  For more information about Windows packages, please contact
 <a href="mailto:bug-gswin@ghostscript.com"><tt>bug-gswin@ghostscript.com</tt></a>;
 for more information about MacOS packages, please contact <a
@@ -211,6 +269,10 @@ environment.
 <h3><a name="Preparing_source"></a>Preparing the source code</h3>
 
 <p>
+If necessary, update the release number by incrementing it as described in
+<a href="#Release_numbering">Release numbering</a> above.
+
+<p>
 Update references to the date for release:
 
 <ul>
@@ -223,6 +285,7 @@ and in the copyright footer both the year and the release date.
 
 </ul>
 
+<p>
 We recommend using a UTC release date to avoid timezone skew.
 
 <p>
@@ -261,7 +324,7 @@ important one is the check file,
 that the
 right information is in the following places:
 <ul>
-<li>version number in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
+<li>release number in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
 <b><tt>version.mak</tt></b>, <b><tt>doc/gs-vms.hlp</tt></b>,
 <b><tt>lib/gs_init.ps</tt></b>
 <li>revision date in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
@@ -665,7 +728,7 @@ announcing the new release.
 <h3><a name="Public_releases"></a>Public releases</h3>
 
 <p>
-Update the title (current version #), first heading (previous version #),
+Update the title (current release #), first heading (previous release #),
 and "new features" and "known problems" lists in
 <b><tt>doc/Current.htm</tt></b>.
 
@@ -725,7 +788,7 @@ number of the fonts:
 <p>
 (Note that the link names are somewhat inconsistent: some of them retain the
 version number of the file being referenced, and some of them use the
-Ghostscript version number.  This is a historical artifact that might be
+Ghostscript release number.  This is a historical artifact that might be
 changed someday.)
 
 <p>
@@ -741,17 +804,8 @@ The Wisconsin server should update automatically.
 <h2><a name="After_releasing"></a>After releasing</h2>
 
 <p>
-Update the version number by incrementing it:
-
-<ul>
-
-<li>In <b><tt>lib/gs_init.ps</tt></b>, at the very beginning of the file.
-
-<li>In <b><tt>version.mak</tt></b>, in 3 definitions.
-
-<li>In <b><tt>doc/News.htm</tt></b>, in 4 places.
-
-</ul>
+Update the release number by incrementing it as described in <a
+href="#Release_numbering">Release numbering</a> above.
 
 <p>
 In <b><tt>gscdef.c</tt></b>, edit the definition of
@@ -764,9 +818,9 @@ Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
 <h2><a name="GNU_releases"></a>GNU Ghostscript releases</h2>
 
 <p>
-artofcode LLC re-releases each tested AFPL Ghostscript version under
+artofcode LLC re-releases each stable AFPL Ghostscript branch under
 the GPL--as GNU Ghostscript--when the next major stable AFPL 
-version comes out, or after one calendar year, whichever comes first.
+release comes out, or after one calendar year, whichever comes first.
 
 <h3><a name="GNU_code"></a>GNU code</h3>
 
