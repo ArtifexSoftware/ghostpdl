@@ -127,20 +127,19 @@ setglobal
 /Category /Category def
 /InstanceType /dicttype def
 
-/DefineResource
-	{ .CheckResource
-	   { dup /Category 3 index cvlit .growput
-		% We would like to make Category dictionaries read-only,
-		% and we used to do that here, but we can't do it,
-		% because we have to be able to replace the dummy, empty
-		% .Instances dictionary with the real one later.
-	     dup [ exch 0 -1 ] exch
-	     .Instances 4 2 roll put
-	   }
-	   { /defineresource load /typecheck signalerror
-	   }
-	  ifelse
-	} bind def
+/DefineResource {
+	.CheckResource {
+	  dup /Category 3 index cvlit .growput
+	  dup [ exch 0 -1 ] exch
+	  .Instances 4 2 roll put
+		% Make the Category dictionary read-only.  We will have to
+		% use .forceput / .forcedef later to replace the dummy,
+		% empty .Instances dictionary with the real one later.
+	  readonly
+	} {
+	  /defineresource load /typecheck signalerror
+	} ifelse
+} bind def
 /FindResource		% (redefined below)
 	{ .Instances exch get 0 get
 	} bind def
@@ -304,17 +303,19 @@ end
   } ifelse
 } bind def
 
-/DefineResource
-	{ .CheckResource
+/DefineResource {
+	.CheckResource
 	   { dup [ exch 0 -1 ]
 			% Stack: key value instance
 	     currentglobal
 	      { false setglobal 2 index UndefineResource	% remove local def if any
 		true setglobal
-		.Instances dup //.emptydict eq
-		 { pop 3 dict /.Instances 1 index def
-		 }
-		if
+		.Instances dup //.emptydict eq {
+		  pop 3 dict
+			% As noted above, Category dictionaries are read-only,
+			% so we have to use .forcedef here.
+		  /.Instances 1 index .forcedef	% Category dict is read-only
+		} if
 	      }
 	      { .LocalInstances dup //.emptydict eq
 	         { pop 3 dict localinstancedict Category 2 index put
@@ -330,8 +331,8 @@ end
 	   }
 	   { /defineresource load /typecheck signalerror
 	   }
-	  ifelse
-	} bind
+	ifelse
+} bind executeonly		% executeonly to prevent access to .forcedef
 /UndefineResource
 	{  { dup 2 index .knownget
 	      { dup 1 get 1 ge
