@@ -2,6 +2,10 @@
 # $Id$
 # Convert PDF to "optimized" form.
 
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
 OPTIONS="-dSAFER -dDELAYSAFER"
 while true
 do
@@ -17,4 +21,4 @@ if [ $# -ne 2 ]; then
 	exit 1
 fi
 
-exec gs -q -dNODISPLAY $OPTIONS -- pdfopt.ps "$1" "$2"
+exec $GS_EXECUTABLE -q -dNODISPLAY $OPTIONS -- pdfopt.ps "$1" "$2"

@@ -2,6 +2,11 @@
 # $Id$
 # Linearized PDF hint formatting utility.
 
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
+
 OPTIONS="-dSAFER -dDELAYSAFER"
 while true
 do
@@ -17,4 +22,4 @@ if [ $# -ne 1 ]; then
 	exit 1
 fi
 
-exec gs -q -dNODISPLAY $OPTIONS -- dumphint.ps "$1"
+exec $GS_EXECUTABLE -q -dNODISPLAY $OPTIONS -- dumphint.ps "$1"

@@ -16,6 +16,10 @@
 # 'gsoutput' and uncommenting the lines referring to 'gspipe'.
 #
 
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
 PBMPLUSPATH=/usr/local/bin
 PSFILTERPATH=/usr/local/lib/ghostscript
 LOCALPATH=/usr/local/bin
@@ -149,7 +153,8 @@ echo "\
     } { pop } ifelse
   } if
 quit"
-) | gs -q -dNOPAUSE -sDEVICE=${device} -dBitsPerPixel=${bpp} $colorspec \
+) | $GS_EXECUTABLE -q -dNOPAUSE -sDEVICE=${device} \
+		-dBitsPerPixel=${bpp} $colorspec \
 		-sOutputFile=\|"${gsoutput}" -
 #		-sOutputFile=${gspipe} -
 

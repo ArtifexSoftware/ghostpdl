@@ -1,3 +1,8 @@
 #!/bin/sh
 # $Id$
-exec gs -q -dNODISPLAY -- wftopfa.ps "$@"
+
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
+exec $GS_EXECUTABLE -q -dNODISPLAY -- wftopfa.ps "$@"

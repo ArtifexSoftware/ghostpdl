@@ -4,4 +4,8 @@
 #	pphs filename.pdf
 # Output goes to stdout.
 
-exec gs -q -dNODISPLAY -- pphs.ps "$@"
+# This definition is changed on install to match the
+# executable name set in the makefile
+GS_EXECUTABLE=gs
+
+exec $GS_EXECUTABLE -q -dNODISPLAY -- pphs.ps "$@"
