@@ -876,7 +876,7 @@ $(GLOBJ)gdevpdft.$(OBJ) : $(GLSRC)gdevpdft.c\
 $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(jpeglib__h) $(memory__h) $(string__h)\
  $(gdevpdfo_h) $(gdevpdfx_h) $(gscdefs_h)\
- $(gsdsrc_h) $(gsfunc_h)\
+ $(gsdsrc_h) $(gsfunc_h) $(gsfunc3_h)\
  $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)
 	$(GLCC) $(GLO_)gdevpdfu.$(OBJ) $(C_) $(GLSRC)gdevpdfu.c
