@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -181,9 +181,5 @@ int gx_remap_color(P1(gs_state *));
   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, (pgs)->device, lop)
 #define gx_fill_rectangle(x, y, w, h, pdevc, pgs)\
   gx_fill_rectangle_rop(x, y, w, h, pdevc, (pgs)->log_op, pgs)
-
-/* Test device colors for equality. */
-#define gx_device_color_equal(pdevc1, pdevc2)\
-  (((pdevc1)->type->equal)(pdevc1, pdevc2))
 
 #endif /* gxdcolor_INCLUDED */
