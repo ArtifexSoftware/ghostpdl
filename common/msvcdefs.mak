@@ -29,32 +29,118 @@ SHAREDBASE=$(DEVSTUDIO)
 
 !if $(MSVC_VERSION) == 5
 ! ifndef DEVSTUDIO
-#DEVSTUDIO=c:\program files\devstudio
-DEVSTUDIO=c:\progra~1\devstu~1
+DEVSTUDIO=C:\Program Files\Devstudio
 ! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
 COMPBASE=$(DEVSTUDIO)\VC
 SHAREDBASE=$(DEVSTUDIO)\SharedIDE
+!endif
 !endif
 
 !if $(MSVC_VERSION) == 6
 ! ifndef DEVSTUDIO
-#DEVSTUDIO=c:\program files\microsoft visual studio
-DEVSTUDIO=c:\progra~1\micros~2
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio
 ! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
 COMPBASE=$(DEVSTUDIO)\VC98
 SHAREDBASE=$(DEVSTUDIO)\Common\MSDev98
 !endif
+!endif
 
+!if $(MSVC_VERSION) == 7
+! ifndef DEVSTUDIO
+DEVSTUDIO=C:\Program Files\Microsoft Visual Studio .NET
+! endif
+!if "$(DEVSTUDIO)"==""
+COMPBASE=
+SHAREDBASE=
+!else
+COMPBASE=$(DEVSTUDIO)\Vc7
+SHAREDBASE=$(DEVSTUDIO)\Vc7\
+!endif
+!endif
+
+# Some environments don't want to specify the path names for the tools at all.
+# Typical definitions for such an environment would be:
+#   MSINCDIR= LIBDIR= COMP=cl COMPAUX=cl RCOMP=rc LINK=link
+# COMPDIR, LINKDIR, and RCDIR are irrelevant, since they are only used to
+# define COMP, LINK, and RCOMP respectively, but we allow them to be
+# overridden anyway for completeness.
+!ifndef COMPDIR
+!if "$(COMPBASE)"==""
+COMPDIR=
+!else
 COMPDIR=$(COMPBASE)\bin
+!endif
+!endif
+
+!ifndef LINKDIR
+!if "$(COMPBASE)"==""
+LINKDIR=
+!else
 LINKDIR=$(COMPBASE)\bin
+!endif
+!endif
+
+!ifndef RCDIR
+!if "$(SHAREDBASE)"==""
+RCDIR=
+!else
 RCDIR=$(SHAREDBASE)\bin
-INCDIR=$(COMPBASE)\include
+!endif
+!endif
+
+!ifndef MSINCDIR
+!if "$(COMPBASE)"==""
+MSINCDIR=
+!else
+MSINCDIR=$(COMPBASE)\include
+!endif
+!endif
+
+!ifndef LIBDIR
+!if "$(COMPBASE)"==""
+LIBDIR=
+!else
 LIBDIR=$(COMPBASE)\lib
-COMP=$(COMPDIR)\cl
+!endif
+!endif
+
+!ifndef COMP
+!if "$(COMPDIR)"==""
+COMP=cl
+!else
+COMP="$(COMPDIR)\cl"
+!endif
+!endif
+!ifndef COMPCPP
 COMPCPP=$(COMP)
-COMPAUX=$(COMPDIR)\cl
-RCOMP=$(RCDIR)\rc
-LINK=$(LINKDIR)\link
+!endif
+!ifndef COMPAUX
+COMPAUX=$(COMP)
+!endif
+
+!ifndef RCOMP
+!if "$(RCDIR)"==""
+RCOMP=rc
+!else
+RCOMP="$(RCDIR)\rc"
+!endif
+!endif
+
+!ifndef LINK
+!if "$(LINKDIR)"==""
+LINK=link
+!else
+LINK="$(LINKDIR)\link"
+!endif
+!endif
 
 #CC_ is defined ..\gs\msvccom.mak
 #CCAUX is defined in ..\gs\msvc*.mak
