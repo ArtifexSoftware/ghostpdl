@@ -242,7 +242,14 @@ pdfdict begin
 } bdef
 
 /resolvehalftone {	% <dict> resolvehalftone <halftone>
-  dup /HalftoneType get //htrdict exch get exec
+  dup /HalftoneType get
+  dup //htrdict exch .knownget {
+    exch pop exec
+  } {
+    (\n\n   **** Unsupported HalftoneType ) pdfformaterror
+    =string cvs pdfformaterror (. ***\n\n) pdfformaterror
+    /resolvehalftone cvx /unregistered signalerror
+  } ifelse
 } bdef
 
 % ---------------- Graphics state management ---------------- %
