@@ -669,11 +669,13 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	have_name = !(options & WRITE_TRUETYPE_NAME),
 	have_OS_2 = no_generate,
 	have_post = no_generate;
+    int have_hvhea[2];
     uint cmap_length;
     ulong OS_2_start;
     uint OS_2_length = OS_2_LENGTH;
     int code;
 
+    have_hvhea[0] = have_hvhea[1] = 0;
     if (alt_font_name)
 	font_name = *alt_font_name;
     else
@@ -744,6 +746,12 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	case W('p','o','s','t'):
 	    have_post = true;
 	    break;
+	case W('h','h','e','a'):
+	    have_hvhea[0] = 1;
+	    break;
+	case W('v','h','e','a'):
+	    have_hvhea[1] = 1;
+	    break;
 	case W('h','m','t','x'):
 	case W('v','m','t','x'):
 	    if (generate_mtx)
@@ -752,10 +760,8 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	case W('c','v','t',' '):
 	case W('f','p','g','m'):
 	case W('g','a','s','p'):
-	case W('h','h','e','a'):
 	case W('k','e','r','n'):
 	case W('p','r','e','p'):
-	case W('v','h','e','a'):
 	    break;		/* always copy these if present */
 	default:
 	    if (writing_cid)
@@ -839,7 +845,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
     numTables_out = numTables + 1 /* head */
 	+ !writing_stripped * 2	/* glyf, loca */
-	+ generate_mtx * 2	/* hmtx, vmtx */
+	+ generate_mtx * (have_hvhea[0] + have_hvhea[1]) /* hmtx, vmtx */
 	+ !no_generate		/* OS/2 */
 	+ !have_cmap + !have_name + !have_post;
     if (numTables_out >= MAX_NUM_TABLES)
@@ -887,14 +893,15 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    tab += 16;
 	}
 
-	if (generate_mtx) {
-	    offset = put_table(tab, "hmtx", 0L /****** NO CHECKSUM ******/,
-			       offset, size_mtx(pfont, &mtx[0], max_glyph, 0));
-	    tab += 16;
-	    offset = put_table(tab, "vmtx", 0L /****** NO CHECKSUM ******/,
-			       offset, size_mtx(pfont, &mtx[1], max_glyph, 1));
-	    tab += 16;
-	}
+	if (generate_mtx)
+	    for (i = 0; i < 2; ++i)
+		if (have_hvhea[i]) {
+		    offset = put_table(tab, (i ? "vmtx" : "hmtx"),
+				       0L /****** NO CHECKSUM ******/,
+				       offset,
+				       size_mtx(pfont, &mtx[i], max_glyph, i));
+		    tab += 16;
+		}
 
 	if (!have_post) {
 	    offset = put_table(tab, "post", 0L /****** NO CHECKSUM ******/,
@@ -1056,12 +1063,12 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 
 	/* If necessary, write [hv]mtx. */
 
-	if (generate_mtx) {
-	    for (i = 0; i < 2; ++i) {
-		write_mtx(s, pfont, &mtx[i], i);
-		put_pad(s, mtx[i].length);
-	    }
-	}
+	if (generate_mtx)
+	    for (i = 0; i < 2; ++i)
+		if (have_hvhea[i]) {
+		    write_mtx(s, pfont, &mtx[i], i);
+		    put_pad(s, mtx[i].length);
+		}
 
 	/* If necessary, write post. */
 
