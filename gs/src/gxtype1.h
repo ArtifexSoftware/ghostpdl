@@ -50,90 +50,13 @@ typedef struct point_scale_s {
 #define scaled_rounded(v, pps)\
   (((v) + (pps)->half) & -(pps)->unit)
 
-/* ------ Font level hints ------ */
-
-#ifdef KEEP_OLD_HINTER
-
-/* Define the standard stem width tables. */
-/* Each table is sorted, since the StemSnap arrays are sorted. */
-#define max_snaps (1 + max_StemSnap)
-typedef struct {
-    int count;
-    fixed data[max_snaps];
-} stem_snap_table;
-
-/* Define the alignment zone structure. */
-/* These are in device coordinates also. */
-#define max_a_zones (max_BlueValues + max_OtherBlues)
-typedef struct {
-    int is_top_zone;
-    fixed v0, v1;		/* range for testing */
-    fixed flat;			/* flat position */
-} alignment_zone;
-
-/* Define the structure for hints that depend only on the font and CTM, */
-/* not on the individual character.  Eventually these should be cached */
-/* with the font/matrix pair. */
-typedef struct font_hints_s {
-    bool axes_swapped;		/* true if x & y axes interchanged */
-    /* (only set if using hints) */
-    bool x_inverted, y_inverted;	/* true if axis is inverted */
-    bool use_x_hints;		/* true if we should use hints */
-    /* for char space x coords (vstem) */
-    bool use_y_hints;		/* true if we should use hints */
-    /* for char space y coords (hstem) */
-    point_scale scale;		/* oversampling scale */
-    stem_snap_table snap_h;	/* StdHW, StemSnapH */
-    stem_snap_table snap_v;	/* StdVW, StemSnapV */
-    fixed blue_fuzz, blue_shift;	/* alignment zone parameters */
-    /* in device pixels */
-    bool suppress_overshoot;	/* (computed from BlueScale) */
-    int a_zone_count;		/* # of alignment zones */
-    alignment_zone a_zones[max_a_zones];	/* the alignment zones */
-} font_hints;
-
-#endif
-
-/* ------ Character level hints ------ */
 
 /*
- * Define the stem hint tables.  Each stem hint table is kept sorted.
- * Stem hints are in device coordinates.  We have to retain replaced hints
- * so that we can make consistent rounding choices for stem edges.
- * This is clunky, but I don't see any other way to do it.
- *
  * The Type 2 charstring documentation says that the total number of hints
- * is limited to 96, but since we store horizontal and vertical hints
- * separately, we must set max_stems large enough to allow either one to
- * get this big.
+ * is limited to 96.
  */
 
 #define max_total_stem_hints 96
-
-#ifdef KEEP_OLD_HINTER
-
-#define max_stems 96
-
-typedef struct {
-    fixed v0, v1;		/* coordinates (widened a little) */
-    fixed dv0, dv1;		/* adjustment values */
-    ushort index;		/* sequential index of hint, */
-    /* needed for implementing hintmask */
-    ushort active;		/* true if hint is active (hintmask) */
-} stem_hint;
-typedef struct {
-    int count;
-    int current;		/* cache cursor for search */
-    /*
-     * For dotsection and Type 1 Charstring hint replacement,
-     * we store active hints at the bottom of the table, and
-     * replaced hints at the top.
-     */
-    int replaced_count;		/* # of replaced hints at top */
-    stem_hint data[max_stems];
-} stem_hint_table;
-
-#endif
 
 /* ------ Interpreter state ------ */
 
@@ -183,9 +106,6 @@ struct gs_type1_state_s {
     float flatness;		/* flatness for character curves */
     point_scale scale;		/* oversampling scale */
     gs_log2_scale_point log2_subpixels;	/* log2 of the number of subpixels */
-#ifdef KEEP_OLD_HINTER
-    font_hints fh;		/* font-level hints */
-#endif
     gs_fixed_point origin;	/* character origin */
     /* The following are updated dynamically */
     fixed ostack[ostack_size];	/* the Type 1 operand stack */
@@ -196,9 +116,6 @@ struct gs_type1_state_s {
 				/* 0 if not done & needed, 1 if done */
     bool sb_set;		/* true if lsb is preset */
     bool width_set;		/* true if width is set (for seac parts) */
-#ifdef KEEP_OLD_HINTER
-    bool have_hintmask;		/* true if using a hint mask */
-#endif
     /* (Type 2 charstrings only) */
     int num_hints;		/* number of hints (Type 2 only) */
     gs_fixed_point lsb;		/* left side bearing (char coords) */
@@ -216,9 +133,6 @@ struct gs_type1_state_s {
     int flex_path_state_flags;	/* record whether path was open */
 				/* at start of Flex section */
 #define flex_max 8
-#ifdef KEEP_OLD_HINTER
-    gs_fixed_point flex_points[flex_max];	/* points for Flex */
-#endif
     int flex_count;
     int ignore_pops;		/* # of pops to ignore (after */
 				/* a known othersubr call) */
@@ -229,21 +143,8 @@ struct gs_type1_state_s {
     /* -1 if outside */
     bool vstem3_set;		/* true if vstem3 seen */
     gs_fixed_point vs_offset;	/* device space offset for centering */
-    /* middle stem of vstem3 */
-#ifdef KEEP_OLD_HINTER
-    int hints_initial;		/* hints applied to initial point */
-#endif
-    /* of subpath */
-    gs_fixed_point unmoved_start;	/* original initial point of subpath */
-#ifdef KEEP_OLD_HINTER
-    segment *hint_next;		/* last segment where hints have */
-    /* been applied, 0 means none of */
-    /* current subpath has been hinted */
-    int hints_pending;		/* hints applied to end of hint_next */
-    gs_fixed_point unmoved_end;	/* original hint_next->pt */
-    stem_hint_table hstem_hints;	/* horizontal stem hints */
-    stem_hint_table vstem_hints;	/* vertical stem hints */
-#endif
+				/* middle stem of vstem3 */
+				/* of subpath */
     fixed transient_array[32];	/* Type 2 transient array, */
     /* will be variable-size someday */
 };
@@ -356,26 +257,4 @@ int gs_type1_endchar(gs_type1_state * pcis);
 
 /* ----- Interface between main Type 1 interpreter and hint routines ----- */
 
-#ifdef KEEP_OLD_HINTER
-
-/* Font level hints */
-void reset_font_hints(font_hints *, const gs_log2_scale_point *);
-void compute_font_hints(font_hints *, const gs_matrix_fixed *,
-			const gs_log2_scale_point *,
-			const gs_type1_data *);
-
-/* Character level hints */
-void
-    reset_stem_hints(gs_type1_state *),
-    update_stem_hints(gs_type1_state *),
-    type1_replace_stem_hints(gs_type1_state *),
-    type1_apply_path_hints(gs_type1_state *, bool, gx_path *),
-    type1_do_hstem(gs_type1_state *, fixed, fixed, bool,
-		   const gs_matrix_fixed *),
-    type1_do_vstem(gs_type1_state *, fixed, fixed, bool,
-		   const gs_matrix_fixed *),
-    type1_do_center_vstem(gs_type1_state *, fixed, fixed,
-			  const gs_matrix_fixed *);
-
-#endif
 #endif /* gxtype1_INCLUDED */

@@ -132,9 +132,6 @@ gs_type1_interp_init(register gs_type1_state * pcis, gs_imager_state * pis,
     pcis->init_done = -1;
     pcis->sb_set = false;
     pcis->width_set = false;
-#ifdef KEEP_OLD_HINTER
-    pcis->have_hintmask = false;
-#endif
     pcis->num_hints = 0;
     pcis->seac_accent = -1;
     pcis->log2_subpixels = *plog2_subpixels;
@@ -196,29 +193,6 @@ gs_type1_finish_init(gs_type1_state * pcis, gs_op1_state * ps)
     pcis->dotsection_flag = dotsection_out;
     pcis->vstem3_set = false;
     pcis->vs_offset.x = pcis->vs_offset.y = 0;
-#ifdef KEEP_OLD_HINTER
-    pcis->hints_initial = 0;	/* probably not needed */
-    pcis->hint_next = 0;
-    pcis->hints_pending = 0;
-#endif
-
-    /* Assimilate the hints proper. */
-    {
-	gs_log2_scale_point log2_scale;
-
-	log2_scale.x = pcis->scale.x.log2_unit;
-	log2_scale.y = pcis->scale.y.log2_unit;
-#ifdef KEEP_OLD_HINTER
-	if (pcis->charpath_flag)
-	    reset_font_hints(&pcis->fh, &log2_scale);
-	else
-	    compute_font_hints(&pcis->fh, &pis->ctm, &log2_scale,
-			       &pcis->pfont->data);
-#endif
-    }
-#ifdef KEEP_OLD_HINTER
-    reset_stem_hints(pcis);
-#endif
 
     /* Compute the flatness needed for accurate rendering. */
     pcis->flatness = gs_char_flatness(pis, 0.001);
@@ -409,10 +383,6 @@ gs_type1_endchar(gs_type1_state * pcis)
 	/* Clear the ipstack, in case the base character */
 	/* ended inside a subroutine. */
 	pcis->ips_count = 1;
-#ifdef KEEP_OLD_HINTER
- 	/* Remove any base character hints. */
- 	reset_stem_hints(pcis);
-#endif
 	/* Ask the caller to provide the accent's CharString. */
 	code = pfont->data.procs.seac_data(pfont, achar, NULL, &agdata);
 	if (code < 0)

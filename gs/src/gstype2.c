@@ -428,9 +428,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		}
 		cnext;
 	    case c2_hstemhm:
-#ifdef KEEP_OLD_HINTER
-		pcis->have_hintmask = true;
-#endif
 	      hstem:check_first_operator(!((csp - cstack) & 1));
 		{
 		    fixed x = 0;
@@ -453,9 +450,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 * it appears that the same holds true for cntrmask.
 		 */
 	    case c2_cntrmask:
-#ifdef KEEP_OLD_HINTER
-		pcis->have_hintmask = true;
-#endif
 		check_first_operator(!((csp - cstack) & 1));
 		type2_vstem(pcis, csp, cstack);
 		/*
@@ -469,10 +463,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    byte mask[max_total_stem_hints / 8];
 		    int i;
 
-#ifdef KEEP_OLD_HINTER
- 		    if_debug3('1', "[1]mask[%d:%dh,%dv]", pcis->num_hints,
- 			  pcis->hstem_hints.count, pcis->vstem_hints.count);
-#endif
 		    for (i = 0; i < pcis->num_hints; ++cip, i += 8) {
 			charstring_next(*cip, state, mask[i >> 3], encrypted);
 			if_debug1('1', " 0x%02x", mask[i >> 3]);
@@ -492,9 +482,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		}
 		break;
 	    case c2_vstemhm:
-#ifdef KEEP_OLD_HINTER
-		pcis->have_hintmask = true;
-#endif
 	      vstem:check_first_operator(!((csp - cstack) & 1));
 		type2_vstem(pcis, csp, cstack);
 		cnext;
