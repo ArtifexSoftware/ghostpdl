@@ -382,28 +382,27 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcs, stream_cursor_read *pr)
 			    code = pcl_adjust_arg(&pst->args, cdefn);
 			    if ( code < 0 )
 			      goto x;
-			    if ( cdefn->actions & pca_byte_data )
-			      { uint count = uint_arg(&pst->args);
-			        if ( rlimit - p <= count )
-				  { /* Allocate a buffer for the data. */
+			    if ( cdefn->actions & pca_byte_data ) {
+				uint count = uint_arg(&pst->args);
+			        if ( (count > 0 ) && (rlimit - p <= count) ) { 
 				    pst->args.data =
-				      gs_alloc_bytes(pcs->memory, count,
-						     "command data");
+ 				      gs_alloc_bytes(pcs->memory, count,
+ 						     "command data");
 				    if ( pst->args.data == 0 )
-				      { --p;
+					{ --p;
 				        code = gs_note_error(e_Memory);
 					goto x;
-				      }
+					}
 				    pst->args.data_on_heap = true;
 				    pst->args.command = chr;
 				    pst->data_pos = 0;
 				    pst->scan_type = scanning_data;
 				    continue;
-				  }
+				}
 			        pst->args.data = (byte *)(p + 1);
 				pst->args.data_on_heap = false;
 				p += count;
-			      }
+			    }
 			    break;
 			  }
 			param_init();
