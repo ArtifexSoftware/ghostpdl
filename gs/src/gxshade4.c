@@ -349,10 +349,11 @@ Gt_next_vertex(const gs_shading_mesh_t * psh, shade_coord_stream_t * cs,
 
     if (code >= 0 && psh->params.Function) {
 #	if NEW_SHADINGS
-	    vertex->c.t = vertex->c.cc.paint.values[0];
+	    vertex->c.t[0] = vertex->c.cc.paint.values[0];
+	    vertex->c.t[1] = 0;
 #	endif
 	/* Decode the color with the function. */
-	code = gs_function_evaluate(psh->params.Function, &vertex->c.t,
+	code = gs_function_evaluate(psh->params.Function, vertex->c.t,
 				    vertex->c.cc.paint.values);
     }
     return code;

@@ -35,6 +35,7 @@
 #include "vdtrace.h"
 
 #define VD_TRACE_AXIAL_PATCH 1
+#define VD_TRACE_FUNCTIONAL_PATCH 1
 
 
 /* ================ Utilities ================ */
@@ -120,6 +121,8 @@ typedef struct Fb_fill_state_s {
 
 #define CheckRET(a) { int code = a; if (code < 0) return code; }
 #define Exch(t,a,b) { t x; x = a; a = b; b = x; }
+
+#if !NEW_SHADINGS 
 
 private bool
 Fb_build_color_range(const Fb_fill_state_t * pfs, const Fb_frame_t * fp, 
@@ -346,6 +349,56 @@ Fb_fill_region(Fb_fill_state_t * pfs)
 	CheckRET(Fb_fill_region_with_constant_color(pfs, &pfs->frames[0], &pfs->c_min, &pfs->c_max));
     return 0;
 }
+#endif
+
+#if NEW_SHADINGS 
+private inline void
+make_other_poles(patch_curve_t curve[4])
+{
+    int i, j;
+
+    for (i = 0; i < 4; i++) {
+	j = (i + 1) % 4;
+	curve[i].control[0].x = (curve[i].vertex.p.x * 2 + curve[j].vertex.p.x) / 3;
+	curve[i].control[0].y = (curve[i].vertex.p.y * 2 + curve[j].vertex.p.y) / 3;
+	curve[i].control[1].x = (curve[i].vertex.p.x + curve[j].vertex.p.x * 2) / 3;
+	curve[i].control[1].y = (curve[i].vertex.p.y + curve[j].vertex.p.y * 2) / 3;
+    }
+}
+
+Fb_fill_region(Fb_fill_state_t * pfs)
+{
+    patch_fill_state_t pfs1;
+    patch_curve_t curve[4];
+    Fb_frame_t * fp = &pfs->frames[0];
+    int code;
+
+    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s')) {
+	vd_get_dc('s');
+	vd_set_shift(0, 0);
+	vd_set_scale(0.01);
+	vd_set_origin(0, 0);
+    }
+    memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
+    pfs1.Function = pfs->psh->params.Function;
+    init_patch_fill_state(&pfs1);
+    pfs1.maybe_self_intersecting = false;
+    pfs1.n_color_args = 2;
+    gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.p.y, &curve[0].vertex.p);
+    gs_point_transform2fixed(&pfs->ptm, fp->region.p.x, fp->region.q.y, &curve[1].vertex.p);
+    gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.q.y, &curve[2].vertex.p);
+    gs_point_transform2fixed(&pfs->ptm, fp->region.q.x, fp->region.p.y, &curve[3].vertex.p);
+    make_other_poles(curve);
+    curve[0].vertex.cc[0] = fp->region.p.x;   curve[0].vertex.cc[1] = fp->region.p.y;
+    curve[1].vertex.cc[0] = fp->region.p.x;   curve[1].vertex.cc[1] = fp->region.q.y;
+    curve[2].vertex.cc[0] = fp->region.q.x;   curve[2].vertex.cc[1] = fp->region.q.y;
+    curve[3].vertex.cc[0] = fp->region.q.x;   curve[3].vertex.cc[1] = fp->region.p.y;
+    code = patch_fill(&pfs1, curve, NULL, NULL);
+    if (VD_TRACE_FUNCTIONAL_PATCH && vd_allowed('s'))
+	vd_release_dc;
+    return code;
+}
+#endif
 
 int
 gs_shading_Fb_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
@@ -566,7 +619,6 @@ A_fill_region(A_fill_state_t * pfs)
     double h0 = pfs->u0, h1 = pfs->u1;
     patch_curve_t curve[4];
     patch_fill_state_t pfs1;
-    int i, j;
 
     memcpy(&pfs1, (shading_fill_state_t *)pfs, sizeof(shading_fill_state_t));
     pfs1.Function = pfn;
@@ -580,13 +632,7 @@ A_fill_region(A_fill_state_t * pfs)
     curve[1].vertex.cc[0] = pfs->t0;
     curve[2].vertex.cc[0] = pfs->t1;
     curve[3].vertex.cc[0] = pfs->t1;
-    for (i = 0; i < 4; i++) {
-	j = (i + 1) % 4;
-	curve[i].control[0].x = (curve[i].vertex.p.x * 2 + curve[j].vertex.p.x) / 3;
-	curve[i].control[0].y = (curve[i].vertex.p.y * 2 + curve[j].vertex.p.y) / 3;
-	curve[i].control[1].x = (curve[i].vertex.p.x + curve[j].vertex.p.x * 2) / 3;
-	curve[i].control[1].y = (curve[i].vertex.p.y + curve[j].vertex.p.y * 2) / 3;
-    }
+    make_other_poles(curve);
     return patch_fill(&pfs1, curve, NULL, NULL);
 }
 #endif

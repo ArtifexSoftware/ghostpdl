@@ -27,6 +27,7 @@
 #include "gxshade.h"
 #include "gxshade4.h"
 #include "gxdevcli.h"
+#include "gxarith.h"
 #include "gzpath.h"
 #include "stdint_.h"
 #include "math_.h"
@@ -46,8 +47,10 @@ shade_next_colors(shade_coord_stream_t * cs, patch_curve_t * curves,
 {
     int i, code = 0;
 
-    for (i = 0; i < num_vertices && code >= 0; ++i)
+    for (i = 0; i < num_vertices && code >= 0; ++i) {
+        curves[i].vertex.cc[1] = 0; /* safety. (patch_fill may assume 2 arguments) */
 	code = shade_next_color(cs, curves[i].vertex.cc);
+    }
     return code;
 }
 
@@ -134,6 +137,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
 	pfs->color_domain.paint.values[i] = max(fcc1.paint.values[i] - fcc0.paint.values[i], 1);
     pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
     pfs->maybe_self_intersecting = true;
+    pfs->n_color_args = 1;
 #   if POLYGONAL_WEDGES
 	pfs->wedge_buf = NULL;
 #   endif
@@ -147,7 +151,7 @@ inline private void
 patch_resolve_color(patch_color_t * ppcr, const patch_fill_state_t * pfs)
 {
     if (pfs->Function) {
-	gs_function_evaluate(pfs->Function, &ppcr->t, ppcr->cc.paint.values);
+	gs_function_evaluate(pfs->Function, ppcr->t, ppcr->cc.paint.values);
 #	if NEW_SHADINGS
 	{   const gs_color_space *pcs = pfs->direct_space;
 
@@ -170,7 +174,8 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 #if NEW_SHADINGS
     /* The old code gives -IND on Intel. */
     if (pfs->Function) {
-	ppcr->t = ppc0->t * (1 - t) + t * ppc1->t;
+	ppcr->t[0] = ppc0->t[0] * (1 - t) + t * ppc1->t[0];
+	ppcr->t[1] = ppc0->t[1] * (1 - t) + t * ppc1->t[1];
 	patch_resolve_color(ppcr, pfs);
     } else {
 	int ci;
@@ -180,9 +185,10 @@ patch_interpolate_color(patch_color_t * ppcr, const patch_color_t * ppc0,
 		ppc0->cc.paint.values[ci] * (1 - t) + t * ppc1->cc.paint.values[ci];
     }
 #else
-    if (pfs->Function)
-	ppcr->t = ppc0->t + t * (ppc1->t - ppc0->t);
-    else {
+    if (pfs->Function) {
+	ppcr->t[0] = ppc0->t[0] + t * (ppc1->t[0] - ppc0->t[0]);
+	ppcr->t[1] = 0;
+    } else {
 	int ci;
 
 	for (ci = pfs->num_components - 1; ci >= 0; --ci)
@@ -403,7 +409,7 @@ patch_fill(patch_fill_state_t * pfs, const patch_curve_t curve[4],
     /* Precompute the colors at the corners. */
 
 #define PATCH_SET_COLOR(c, v)\
-  if ( pfs->Function ) c.t = v.cc[0];\
+  if ( pfs->Function ) c.t[0] = v.cc[0];\
   else memcpy(c.cc.paint.values, v.cc, sizeof(c.cc.paint.values))
 
     PATCH_SET_COLOR(c00, curve[D1START].vertex); /* = C1START */
@@ -825,6 +831,8 @@ private inline int
 curve_samples(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
 {
     curve_segment s;
+    int k1, k2 = 0;
+    fixed L;
 
     s.p1.x = pole[pole_step].x;
     s.p1.y = pole[pole_step].y;
@@ -832,7 +840,15 @@ curve_samples(const gs_fixed_point *pole, int pole_step, fixed fixed_flat)
     s.p2.y = pole[pole_step * 2].y;
     s.pt.x = pole[pole_step * 3].x;
     s.pt.y = pole[pole_step * 3].y;
-    return 1 << gx_curve_log2_samples(pole[0].x, pole[0].y, &s, fixed_flat);
+    k1 = gx_curve_log2_samples(pole[0].x, pole[0].y, &s, fixed_flat);
+#   if 0
+	/* Divide long curves and lines : */
+	L = any_abs(pole[1].x - pole[0].x) + any_abs(pole[1].y - pole[0].y) +
+	    any_abs(pole[2].x - pole[1].x) + any_abs(pole[2].y - pole[1].y) +
+	    any_abs(pole[3].x - pole[2].x) + any_abs(pole[3].y - pole[2].y);
+	k2 = ilog2(L / fixed_1 / 64);
+#   endif
+    return 1 << max(k1, k2);
 }
 
 private bool 
@@ -1033,8 +1049,8 @@ is_color_monotonic(const patch_fill_state_t * pfs, const patch_color_t *c0, cons
 {
     if (!pfs->Function)
 	return true;
-    return c0->t == c1->t || 
-	   gs_function_is_monotonic(pfs->Function, &c0->t, &c1->t, EFFORT_MODERATE);
+    return c0->t[0] == c1->t[0] && (pfs->n_color_args == 1 || c0->t[1] == c1->t[1]) ||
+	   gs_function_is_monotonic(pfs->Function, c0->t, c1->t, EFFORT_MODERATE) > 0;
 }
 
 private inline bool
@@ -1862,14 +1878,21 @@ private inline bool
 is_quadrangle_color_monotonic(const patch_fill_state_t * pfs, const quadrangle_patch *p, bool *uv) 
 {
     if (!is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[0][1]->c)) {
-	*uv = true;
+        *uv = true;
 	return false;
     }
-    *uv = false;
-    if (!is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[1][0]->c))
+    if (!is_color_monotonic(pfs, &p->p[1][0]->c, &p->p[1][1]->c)) {
+        *uv = true;
 	return false;
-    if (!is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[1][1]->c))
+    }
+    if (!is_color_monotonic(pfs, &p->p[0][0]->c, &p->p[1][0]->c)) {
+	*uv = false;
 	return false;
+    }
+    if (!is_color_monotonic(pfs, &p->p[0][1]->c, &p->p[1][1]->c)) {
+	*uv = false;
+	return false;
+    }
     return true;
 }
 
@@ -1910,7 +1933,7 @@ triangle_by_4(patch_fill_state_t *pfs,
     shading_vertex_t p01, p12, p20;
     int code;
         
-    if (sd < fixed_1)
+    if (sd < fixed_1 * 4)
 	return constant_color_triangle(pfs, p2, p0, p1);
     if (pfs->Function != NULL) {
 	double d01 = color_span(pfs, &p1->c, &p0->c);
@@ -2574,9 +2597,10 @@ lcp2(fixed p0, fixed p3)
 private void
 patch_set_color(const patch_fill_state_t * pfs, patch_color_t *c, const float *cc)
 {
-    if (pfs->Function) 
-	c->t = cc[0];
-    else 
+    if (pfs->Function) {
+	c->t[0] = cc[0];
+	c->t[1] = cc[1];
+    } else 
 	memcpy(c->cc.paint.values, cc, sizeof(c->cc.paint.values[0]) * pfs->num_components);
 }
 

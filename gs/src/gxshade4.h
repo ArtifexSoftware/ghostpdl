@@ -30,7 +30,7 @@
    We don't use it because the color approximation looks
    worse than with triangles, and works some slower.
  */
-#define DIVIDE_BY_PARALLELS 1 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
+#define DIVIDE_BY_PARALLELS 0 /* 1 - divide a triangle by parallels, 0 - in 4 triangles.  */
 /* The code DIVIDE_BY_PARALLELS 1 appears faster due to a smaller decomposition,
    because it is optimized for constant color areas.
    When smoothness is smaller than the device color resolution,
@@ -92,6 +92,7 @@ typedef struct patch_fill_state_s {
     const gs_function_t *Function;
 #if NEW_SHADINGS
     bool vectorization;
+    int n_color_args;
 #   if POLYGONAL_WEDGES
     gs_fixed_point *wedge_buf;
 #   endif
@@ -106,7 +107,7 @@ typedef struct patch_fill_state_s {
 /* Define a color to be used in curve rendering. */
 /* This may be a real client color, or a parametric function argument. */
 typedef struct patch_color_s {
-    float t;			/* parametric value */
+    float t[2];			/* parametric value */
     gs_client_color cc;
 } patch_color_t;
 

@@ -256,6 +256,7 @@ shade_next_vertex(shade_coord_stream_t * cs, shading_vertex_t * vertex)
 {
     int code = shade_next_coords(cs, &vertex->p, 1);
 
+    vertex->c.cc.paint.values[1] = 0; /* safety. (patch_fill may assume 2 arguments) */
     if (code >= 0)
 	code = shade_next_color(cs, vertex->c.cc.paint.values);
     return code;
