@@ -57,32 +57,31 @@ z_fontenum(i_ctx_t *i_ctx_p)
 	
     enum_state = gp_enumerate_fonts_init(imemory);
     if (enum_state == NULL) {
-      // put false on the stack and return
+      /* put false on the stack and return */
       push(1);
       make_bool(op, false);
       return code;
     }
 
-	r = results = gs_malloc(1, sizeof(fontenum_t), "fontenum list");
-	//r = results = gs_malloc(sizeof(fontenum_t));
-	elements = 0;
+    r = results = gs_malloc(1, sizeof(fontenum_t), "fontenum list");
+    elements = 0;
     while((code = gp_enumerate_fonts_next(enum_state, &name, &path )) > 0) {
-		if (name == NULL || path == NULL) {
-		    gp_enumerate_fonts_free(enum_state);
-		    return_error(e_ioerror);
-		}
+	if (name == NULL || path == NULL) {
+	    gp_enumerate_fonts_free(enum_state);
+	    return_error(e_ioerror);
+	}
 
-		length = strlen(name) + 1;
-		r->name = gs_malloc(length, 1, "native font name");
-		memcpy(r->name, name, length);
+	length = strlen(name) + 1;
+	r->name = gs_malloc(length, 1, "native font name");
+	memcpy(r->name, name, length);
 
-		length = strlen(path) + 1;
-		r->path = gs_malloc(length, 1, "native font path");
-		memcpy(r->path, path, length);
+	length = strlen(path) + 1;
+	    r->path = gs_malloc(length, 1, "native font path");
+	    memcpy(r->path, path, length);
 
-		r->next = gs_malloc(1, sizeof(fontenum_t), "fontenum list");
-		r = r->next;
-		elements += 1;
+	    r->next = gs_malloc(1, sizeof(fontenum_t), "fontenum list");
+	    r = r->next;
+	    elements += 1;
 	}
 	
 	gp_enumerate_fonts_free(enum_state);
@@ -91,34 +90,34 @@ z_fontenum(i_ctx_t *i_ctx_p)
 
 	r = results;
 	for (e = 0; e < elements; e++) {
-		ref mapping;
+	    ref mapping;
+	
+	    code = ialloc_ref_array(&mapping, a_all | icurrent_space, 2, "native font mapping");
 		
-		code = ialloc_ref_array(&mapping, a_all | icurrent_space, 2, "native font mapping");
-		
-	 	length = strlen(r->name);
-	 	string = ialloc_string(length, "native font name");
-		if (string == NULL)
-		    return_error(e_VMerror);
-	 	memcpy(string, r->name, length);
-	 	make_string(&(mapping.value.refs[0]), a_all | icurrent_space, length, string);
+	    length = strlen(r->name);
+	    string = ialloc_string(length, "native font name");
+	    if (string == NULL)
+		return_error(e_VMerror);
+	    memcpy(string, r->name, length);
+	    make_string(&(mapping.value.refs[0]), a_all | icurrent_space, length, string);
 	 	
-	 	length = strlen(r->path);
-	 	string = ialloc_string(length, "native font path");
-		if (string == NULL)
-		    return_error(e_VMerror);
-	 	memcpy(string, r->path, length);
-	 	make_string(&(mapping.value.refs[1]), a_all | icurrent_space, length, string);
+	    length = strlen(r->path);
+	    string = ialloc_string(length, "native font path");
+	    if (string == NULL)
+		return_error(e_VMerror);
+	    memcpy(string, r->path, length);
+	    make_string(&(mapping.value.refs[1]), a_all | icurrent_space, length, string);
 	 	
-	 	ref_assign(&(array.value.refs[e]), &mapping);
-	 	results = r;
-	 	r = r->next;
+	    ref_assign(&(array.value.refs[e]), &mapping);
+	    results = r;
+	    r = r->next;
 
-	 	gs_free(results->name, strlen(results->name) + 1, 1, "native font name");
-	 	gs_free(results->path, strlen(results->path) + 1, 1, "native font path");
-	 	gs_free(results, 1, sizeof(fontenum_t), "fontenum list");
- 	}
+	    gs_free(results->name, strlen(results->name) + 1, 1, "native font name");
+	    gs_free(results->path, strlen(results->path) + 1, 1, "native font path");
+	    gs_free(results, 1, sizeof(fontenum_t), "fontenum list");
+	}
 
-	push(2);   
+    push(2);   
     ref_assign(op-1, &array);
     make_bool(op, true);
 	
