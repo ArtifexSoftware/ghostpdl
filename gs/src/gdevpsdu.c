@@ -207,7 +207,7 @@ psdf_adjust_color_index(gx_device_vector *vdev, gx_color_index color)
 private double
 round_byte_color(int cv)
 {
-    return (int)(cv * (1000.0 / 255.0)) / 1000.0;
+    return (int)(cv * (1000.0 / 255.0) + 0.5) / 1000.0;
 }
 int
 psdf_set_color(gx_device_vector * vdev, const gx_drawing_color * pdc,
