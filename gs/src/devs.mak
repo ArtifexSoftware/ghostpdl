@@ -849,28 +849,28 @@ $(GLOBJ)gdevbmpc.$(OBJ) : $(GLSRC)gdevbmpc.c $(PDEVH) $(gdevbmp_h)
 	$(GLCC) $(GLO_)gdevbmpc.$(OBJ) $(C_) $(GLSRC)gdevbmpc.c
 
 $(DD)bmpmono.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmpmono $(bmp_)
+	$(SETPDEV2) $(DD)bmpmono $(bmp_)
 
 $(DD)bmpgray.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmpgray $(bmp_)
+	$(SETPDEV2) $(DD)bmpgray $(bmp_)
 
 $(DD)bmpsep1.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmpsep1 $(bmp_)
+	$(SETPDEV2) $(DD)bmpsep1 $(bmp_)
 
 $(DD)bmpsep8.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmpsep8 $(bmp_)
+	$(SETPDEV2) $(DD)bmpsep8 $(bmp_)
 
 $(DD)bmp16.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmp16 $(bmp_)
+	$(SETPDEV2) $(DD)bmp16 $(bmp_)
 
 $(DD)bmp256.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmp256 $(bmp_)
+	$(SETPDEV2) $(DD)bmp256 $(bmp_)
 
 $(DD)bmp16m.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmp16m $(bmp_)
+	$(SETPDEV2) $(DD)bmp16m $(bmp_)
 
 $(DD)bmp32b.dev : $(DEVS_MAK) $(bmp_) $(GLD)page.dev
-	$(SETPDEV) $(DD)bmp32b $(bmp_)
+	$(SETPDEV2) $(DD)bmp32b $(bmp_)
 
 ### ------------- BMP driver that serves as demo of async rendering ---- ###
 
@@ -882,31 +882,31 @@ $(GLOBJ)gdevbmpa.$(OBJ) : $(GLSRC)gdevbmpa.c $(AK) $(stdio__h)\
 	$(GLCC) $(GLO_)gdevbmpa.$(OBJ) $(C_) $(GLSRC)gdevbmpa.c
 
 $(DD)bmpamono.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
-	$(SETPDEV) $(DD)bmpamono $(bmpa_)
+	$(SETPDEV2) $(DD)bmpamono $(bmpa_)
 	$(ADDMOD) $(DD)bmpamono -include $(GLD)async
 
 $(DD)bmpasep1.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
-	$(SETPDEV) $(DD)bmpasep1 $(bmpa_)
+	$(SETPDEV2) $(DD)bmpasep1 $(bmpa_)
 	$(ADDMOD) $(DD)bmpasep1 -include $(GLD)async
 
 $(DD)bmpasep8.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
-	$(SETPDEV) $(DD)bmpasep8 $(bmpa_)
+	$(SETPDEV2) $(DD)bmpasep8 $(bmpa_)
 	$(ADDMOD) $(DD)bmpasep8 -include $(GLD)async
 
 $(DD)bmpa16.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
-	$(SETPDEV) $(DD)bmpa16 $(bmpa_)
+	$(SETPDEV2) $(DD)bmpa16 $(bmpa_)
 	$(ADDMOD) $(DD)bmpa16 -include $(GLD)async
 
 $(DD)bmpa256.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
-	$(SETPDEV) $(DD)bmpa256 $(bmpa_)
+	$(SETPDEV2) $(DD)bmpa256 $(bmpa_)
 	$(ADDMOD) $(DD)bmpa256 -include $(GLD)async
 
 $(DD)bmpa16m.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
-	$(SETPDEV) $(DD)bmpa16m $(bmpa_)
+	$(SETPDEV2) $(DD)bmpa16m $(bmpa_)
 	$(ADDMOD) $(DD)bmpa16m -include $(GLD)async
 
 $(DD)bmpa32b.dev : $(DEVS_MAK) $(bmpa_) $(GLD)page.dev $(GLD)async.dev
-	$(SETPDEV) $(DD)bmpa32b $(bmpa_)
+	$(SETPDEV2) $(DD)bmpa32b $(bmpa_)
 	$(ADDMOD) $(DD)bmpa32b -include $(GLD)async
 
 ### -------------------------- CGM file format ------------------------- ###
