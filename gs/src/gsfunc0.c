@@ -406,8 +406,6 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
 {
     const gs_function_Sd_t *const pfn =
 	(const gs_function_Sd_t *)pfn_common;
-    float d0 = pfn->params.Domain[0], d1 = pfn->params.Domain[1];
-    float v0 = lower[0], v1 = upper[0];
     float e0, e1, w0, w1;
     float r0[max_Sd_n], r1[max_Sd_n];
     int code, i, result;
@@ -415,33 +413,34 @@ fn_Sd_is_monotonic(const gs_function_t * pfn_common,
     /*
      * Testing this in general is very time-consuming, so we don't bother.
      * However, we do implement it correctly for one special case that is
-     * important in practice: for 1-input functions when the lower and
+     * important in practice: along a line in the domain, when the lower and
      * upper values are in the same sample cell.
      */
-    if (pfn->params.m > 1)
-	return gs_error_undefined;
-    if (lower[0] > pfn->params.Domain[1] ||
-	upper[0] < pfn->params.Domain[0]
-	)
-	return gs_error_rangecheck;
     if (pfn->params.n > sizeof(int) * 4 - 1)
 	return 0;		/* can't represent result */
-    if (pfn->params.Encode)
-	e0 = pfn->params.Encode[0], e1 = pfn->params.Encode[1];
-    else
-	e0 = 0, e1 = (float)pfn->params.Size[0];
-    w0 = (v0 - d0) * (e1 - e0) / (d1 - d0) + e0;
-    if (w0 < 0)
-	w0 = 0;
-    else if (w0 >= pfn->params.Size[0] - 1)
-	w0 = (float)pfn->params.Size[0] - 1;
-    w1 = (v1 - d0) * (e1 - e0) / (d1 - d0) + e0;
-    if (w1 < 0)
-	w1 = 0;
-    else if (w1 >= pfn->params.Size[0] - 1)
-	w1 = (float)pfn->params.Size[0] - 1;
-    if ((int)w0 != (int)w1)
-	return gs_error_undefined; /* not in the same sample */
+    for (i = 0; i < pfn->params.m; i++) {
+	float d0 = pfn->params.Domain[i * 2 + 0], d1 = pfn->params.Domain[i * 2 + 1];
+	float v0 = lower[i], v1 = upper[i];
+
+	if (v0 < d0 || v0 > d1)
+	    return gs_error_rangecheck;
+	if (pfn->params.Encode)
+	    e0 = pfn->params.Encode[i * 2 + 0], e1 = pfn->params.Encode[i * 2 + 1];
+	else
+	    e0 = 0, e1 = (float)pfn->params.Size[i] - 1;
+	w0 = (v0 - d0) * (e1 - e0) / (d1 - d0) + e0;
+	if (w0 < 0)
+	    w0 = 0;
+	else if (w0 >= pfn->params.Size[i] - 1)
+	    w0 = (float)pfn->params.Size[i] - 1;
+	w1 = (v1 - d0) * (e1 - e0) / (d1 - d0) + e0;
+	if (w1 < 0)
+	    w1 = 0;
+	else if (w1 >= pfn->params.Size[i] - 1)
+	    w1 = (float)pfn->params.Size[i] - 1;
+	if ((int)w0 != (int)w1 && ((int)w1 != w1 || (int)w0 + 1 != w1))
+	    return gs_error_undefined; /* not in the same sample */
+    }
     code = gs_function_evaluate(pfn_common, lower, r0);
     if (code < 0)
 	return code;
