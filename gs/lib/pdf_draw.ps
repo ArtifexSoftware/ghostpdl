@@ -250,10 +250,20 @@ end
 
 % Each entry in this dictionary is
 %	<gsres> <value> -proc- <gsres>
-/gsbg { /BGDefault load resolvedefaultfnproc setblackgeneration } bdef
-/gsucr { /UCRDefault load resolvedefaultfnproc setundercolorremoval } bdef
-	%****** DOESN'T IMPLEMENT THE ARRAY (colortransfer) CASE YET ******
-/gstr { /TRDefault load resolvedefaultfnproc settransfer } bdef
+/gsbg {
+  /BGDefault load resolvedefaultfnproc setblackgeneration
+} bdef
+/gsucr {
+  /UCRDefault load resolvedefaultfnproc setundercolorremoval
+} bdef
+/gstr {
+  dup type /arraytype eq {
+    { oforce /TRDefault load resolvedefaultfnproc } forall
+    setcolortransfer
+  } {
+    /TRDefault load resolvedefaultfnproc settransfer
+  } ifelse
+} bdef
 /gsparamdict mark
   /SA { setstrokeadjust }
   /op {
