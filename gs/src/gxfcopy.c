@@ -1939,6 +1939,11 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
     default:
 	return 0;
     }
+#if 0 /* No need to add subglyphs to the Encoding because they always are 
+	 taken from StandardEncoding (See the Type 1 spec about 'seac').
+	 Attempt to add them to the encoding can cause a conflict,
+	 if the encoding specifies different glyphs for these char codes
+	 (See the bug #687172). */
     {
 	gs_copied_glyph_t *pcg;
 	gs_glyph_data_t gdata;
@@ -1955,6 +1960,7 @@ gs_copy_glyph_options(gs_font *font, gs_glyph glyph, gs_font *copied,
 	    )
 	    return code;
     }
+#endif
     return 0;
 #undef MAX_GLYPH_PIECES
 }
