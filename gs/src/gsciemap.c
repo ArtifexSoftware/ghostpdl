@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -105,17 +105,23 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
      * the Table dimensions.
      */
     for (i = 0; i < 4; ++i) {
-	int tmax = pcie->Table.dims[i] - 1;
-	float value = (pc->paint.values[i] - pcie->RangeDEFG.ranges[i].rmin) *
-	    tmax /
-	    (pcie->RangeDEFG.ranges[i].rmax - pcie->RangeDEFG.ranges[i].rmin);
+	int tdim = pcie->Table.dims[i] - 1;
+	double factor = pcie->caches_defg.DecodeDEFG[i].floats.params.factor;
+	double v0 = pc->paint.values[i];
+	const gs_range *const rangeDEFG = &pcie->RangeDEFG.ranges[i];
+	double value =
+	    (v0 < rangeDEFG->rmin ? 0.0 :
+	     v0 > rangeDEFG->rmax ? factor :
+	     (v0 - rangeDEFG->rmin) * factor /
+	       (rangeDEFG->rmax - rangeDEFG->rmin));
 	int vi = (int)value;
-	float vf = value - vi;
-	float v = pcie->caches_defg.DecodeDEFG[i].floats.values[vi];
+	double vf = value - vi;
+	double v = pcie->caches_defg.DecodeDEFG[i].floats.values[vi];
 
-	if (vf != 0 && vi < tmax)
+	if (vf != 0 && vi < factor)
 	    v += vf *
 		(pcie->caches_defg.DecodeDEFG[i].floats.values[vi + 1] - v);
+	v = (v < 0 ? 0 : v > tdim ? tdim : v);
 	hijk[i] = float2fixed(v);
     }
     /* Apply Table. */
@@ -152,17 +158,23 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
      * the Table dimensions.
      */
     for (i = 0; i < 3; ++i) {
-	int tmax = pcie->Table.dims[i] - 1;
-	float value = (pc->paint.values[i] - pcie->RangeDEF.ranges[i].rmin) *
-	    tmax /
-	    (pcie->RangeDEF.ranges[i].rmax - pcie->RangeDEF.ranges[i].rmin);
+	int tdim = pcie->Table.dims[i] - 1;
+	double factor = pcie->caches_def.DecodeDEF[i].floats.params.factor;
+	double v0 = pc->paint.values[i];
+	const gs_range *const rangeDEF = &pcie->RangeDEF.ranges[i];
+	double value =
+	    (v0 < rangeDEF->rmin ? 0.0 :
+	     v0 > rangeDEF->rmax ? factor :
+	     (v0 - rangeDEF->rmin) * factor /
+	       (rangeDEF->rmax - rangeDEF->rmin));
 	int vi = (int)value;
-	float vf = value - vi;
-	float v = pcie->caches_def.DecodeDEF[i].floats.values[vi];
+	double vf = value - vi;
+	double v = pcie->caches_def.DecodeDEF[i].floats.values[vi];
 
-	if (vf != 0 && vi < tmax)
+	if (vf != 0 && vi < factor)
 	    v += vf *
 		(pcie->caches_def.DecodeDEF[i].floats.values[vi + 1] - v);
+	v = (v < 0 ? 0 : v > tdim ? tdim : v);
 	hij[i] = float2fixed(v);
     }
     /* Apply Table. */
