@@ -439,6 +439,7 @@ sisparam_h=$(GLSRC)sisparam.h
 sjpeg_h=$(GLSRC)sjpeg.h
 slzwx_h=$(GLSRC)slzwx.h
 smd5_h=$(GLSRC)smd5.h $(md5_h)
+sarc4_h=$(GLSRC)sarc4.h
 spdiffx_h=$(GLSRC)spdiffx.h
 spngpx_h=$(GLSRC)spngpx.h
 spprint_h=$(GLSRC)spprint.h
@@ -1232,6 +1233,16 @@ $(GLD)smd5.dev : $(LIB_MAK) $(ECHOGS_XE) $(smd5_) $(md5_)
 $(GLOBJ)smd5.$(OBJ) : $(GLSRC)smd5.c $(AK) $(memory__h)\
  $(smd5_h) $(strimpl_h)
 	$(GLCC) $(GLO_)smd5.$(OBJ) $(C_) $(GLSRC)smd5.c
+
+# -------------- Arcfour cipher filter --------------- #
+
+sarc4_=$(GLOBJ)sarc4.$(OBJ)
+$(GLD)sarc4.dev : $(LIB_MAK) $(ECHOGS_XE) $(sarc4_)
+	$(SETMOD) $(GLD)sarc4 $(sarc4_)
+
+$(GLOBJ)sarc4.$(OBJ) : $(GLSRC)sarc4.c $(AK) $(memory__h)\
+ $(sarc4_h) $(strimpl_h)
+	$(GLCC) $(GLO_)sarc4.$(OBJ) $(C_) $(GLSRC)sarc4.c
 
 # ---------------- Pixel-difference filters ---------------- #
 # The Predictor facility of the LZW and Flate filters uses these.

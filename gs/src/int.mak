@@ -1261,6 +1261,18 @@ $(PSOBJ)zfmd5.$(OBJ) : $(PSSRC)zfmd5.c $(OP) $(memory__h)\
  $(smd5_h) $(stream_h) $(strimpl_h)
 	$(PSCC) $(PSO_)zfmd5.$(OBJ) $(C_) $(PSSRC)zfmd5.c
 
+# Arcfour cipher filter
+farc4_=$(GLOBJ)zfarc4.$(OBJ)
+$(PSD)farc4.dev : $(INT_MAK) $(ECHOGS_XE) $(farc4_) $(GLD)sarc4.dev
+	$(SETMOD) $(PSD)farc4 $(farc4_)
+	$(ADDMOD) $(PSD)farc4 -include $(GLD)sarc4
+	$(ADDMOD) $(PSD)farc4 -oper zfarc4
+
+$(PSOBJ)zfarc4.$(OBJ) : $(PSSRC)zfarc4.c $(OP) $(memory__h)\
+ $(gsstruct_h) $(ialloc_h) $(ifilter_h)\
+ $(sarc4_h) $(stream_h) $(strimpl_h)
+	$(PSCC) $(PSO_)zfarc4.$(OBJ) $(C_) $(PSSRC)zfarc4.c
+
 # ---------------- Binary tokens ---------------- #
 
 nobtoken_=$(PSOBJ)inobtokn.$(OBJ)
@@ -1709,11 +1721,11 @@ $(PSOBJ)zicc.$(OBJ) : $(PSSRC)zicc.c  $(OP) $(math__h) $(memory__h)\
 $(PSD)pdf.dev : $(INT_MAK) $(ECHOGS_XE)\
  $(PSD)psbase.dev $(GLD)dps2lib.dev $(PSD)dps2read.dev\
  $(PSD)pdffonts.dev $(PSD)psl3.dev $(PSD)pdfread.dev $(PSD)cff.dev\
- $(PSD)fmd5.dev $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev
+ $(PSD)fmd5.dev $(PSD)farc4.dev $(PSD)ttfont.dev $(PSD)type2.dev $(PSD)icc.dev
 	$(SETMOD) $(PSD)pdf -include $(PSD)psbase $(GLD)dps2lib
 	$(ADDMOD) $(PSD)pdf -include $(PSD)dps2read $(PSD)pdffonts $(PSD)psl3
 	$(ADDMOD) $(PSD)pdf -include $(GLD)psl2lib $(PSD)pdfread $(PSD)cff
-	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)ttfont $(PSD)type2
+	$(ADDMOD) $(PSD)pdf -include $(PSD)fmd5 $(PSD)farc4 $(PSD)ttfont $(PSD)type2
 	$(ADDMOD) $(PSD)pdf -include $(PSD)icc
 	$(ADDMOD) $(PSD)pdf -functiontype 4
 	$(ADDMOD) $(PSD)pdf -emulator PDF
