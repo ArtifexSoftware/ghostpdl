@@ -175,7 +175,7 @@ check_psc_function(i_ctx_t *i_ctx_p, const ref *pref, int depth, byte *ops, int 
 	case t_name:
 	    if (!r_has_attr(&elt, a_executable))
 		return_error(imemory, e_rangecheck);
-	    name_string_ref(&elt, &elt);
+	    name_string_ref(imemory, &elt, &elt);
 	    if (!bytes_compare(elt.value.bytes, r_size(&elt),
 			       (const byte *)"true", 4)) {
 		*p = PtCr_true;

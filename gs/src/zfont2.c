@@ -89,7 +89,7 @@ zbuildfont2(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     charstring_font_refs_t refs;
     build_proc_refs build;
-    int code = build_proc_name_refs(&build,
+    int code = build_proc_name_refs(imemory, &build,
 				    "%Type2BuildChar", "%Type2BuildGlyph");
     gs_type1_data data1;
 

@@ -40,7 +40,7 @@ glyph_show_setup(i_ctx_t *i_ctx_p, gs_glyph *pglyph)
 	    break;
 	default:
 	    check_type(imemory, *op, t_name);
-	    *pglyph = name_index(op);
+	    *pglyph = name_index(imemory, op);
     }
     return op_show_enum_setup(i_ctx_p);
 }

@@ -414,7 +414,7 @@ alloc_save_space(gs_ref_memory_t * mem, gs_dual_memory_t * dmem, ulong sid)
     }
     save->state = save_mem;
     save->spaces = dmem->spaces;
-    save->restore_names = (name_memory() == (gs_memory_t *) mem);
+    save->restore_names = (name_memory(mem) == (gs_memory_t *) mem);
     save->is_current = (dmem->current == mem);
     save->id = sid;
     mem->saved = save;
@@ -453,7 +453,7 @@ alloc_save_change_in(gs_ref_memory_t *mem, const ref * pcont,
     else {
 	lprintf3((const gs_memory_t *)mem, "Bad type %u for save!  pcont = 0x%lx, where = 0x%lx\n",
 		 r_type(pcont), (ulong) pcont, (ulong) where);
-	gs_abort();
+	gs_abort((const gs_memory_t *)mem);
     }
     if (r_is_packed(where))
 	*(ref_packed *)&cp->contents = *where;
@@ -567,24 +567,26 @@ alloc_is_since_save(const void *vptr, const alloc_save_t * save)
 
 /* Test whether a name would be invalidated by a restore. */
 bool
-alloc_name_is_since_save(const ref * pnref, const alloc_save_t * save)
+alloc_name_is_since_save(const gs_memory_t *mem,
+			 const ref * pnref, const alloc_save_t * save)
 {
     const name_string_t *pnstr;
 
     if (!save->restore_names)
 	return false;
-    pnstr = names_string_inline(the_gs_name_table, pnref);
+    pnstr = names_string_inline(mem->gs_lib_ctx->gs_name_table, pnref);
     if (pnstr->foreign_string)
 	return false;
     return alloc_is_since_save(pnstr->string_bytes, save);
 }
 bool
-alloc_name_index_is_since_save(uint nidx, const alloc_save_t * save)
+alloc_name_index_is_since_save(const gs_memory_t *mem,
+			       uint nidx, const alloc_save_t * save)
 {
     ref nref;
 
-    nref.value.pname = name_index_ptr(nidx);
-    return alloc_name_is_since_save(&nref, save);
+    nref.value.pname = name_index_ptr(mem, nidx);
+    return alloc_name_is_since_save(mem, &nref, save);
 }
 
 /* Check whether any names have been created since a given save */
@@ -842,7 +844,7 @@ restore_resources(alloc_save_t * sprev, gs_ref_memory_t * mem)
 
     /* Adjust the name table. */
     if (sprev->restore_names)
-	names_restore(the_gs_name_table, sprev);
+	names_restore(mem->gs_lib_ctx->gs_name_table, sprev);
 }
 
 /* Release memory for a restore. */

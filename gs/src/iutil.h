@@ -34,11 +34,11 @@ void refset_null_new(ref * to, uint size, uint new_mask);
 #define refset_null(to, size) refset_null_new(to, size, ialloc_new_mask)
 
 /* Compare two objects for equality. */
-bool obj_eq(const ref *, const ref *);
+bool obj_eq(const gs_memory_t *mem, const ref *, const ref *);
 
 /* Compare two objects for identity. */
 /* (This is not a standard PostScript concept.) */
-bool obj_ident_eq(const ref *, const ref *);
+bool obj_ident_eq(const gs_memory_t *mem, const ref *, const ref *);
 
 /*
  * Set *pchars and *plen to point to the data of a name or string, and
@@ -86,7 +86,7 @@ int array_get(const gs_memory_t *mem, const ref *, long, ref *);
 /* (This works for ordinary arrays too.) */
 /* Source and destination are allowed to overlap if the source is packed, */
 /* or if they are identical. */
-void packed_get(const ref_packed *, ref *);
+void packed_get(const gs_memory_t *mem, const ref_packed *, ref *);
 
 /* Check to make sure an interval contains no object references */
 /* to a space younger than a given one. */

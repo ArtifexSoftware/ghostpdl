@@ -76,7 +76,7 @@ ztype(i_ctx_t *i_ctx_p)
 	    const char *sname =
 		gs_struct_type_name_string(gs_object_type(imemory,
 							  op[-1].value.pstruct));
-	    int code = name_ref((const byte *)sname, strlen(sname),
+	    int code = name_ref(imemory, (const byte *)sname, strlen(sname),
 				(ref *) (op - 1), 0);
 
 	    if (code < 0)
@@ -105,7 +105,7 @@ ztypenames(i_ctx_t *i_ctx_p)
 	if (i >= countof(tnames) || tnames[i] == 0)
 	    make_null(rtnp);
 	else {
-	    int code = name_enter_string(tnames[i], rtnp);
+	    int code = name_enter_string(imemory, tnames[i], rtnp);
 
 	    if (code < 0)
 		return code;
@@ -280,7 +280,7 @@ zcvn(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
 
     check_read_type(imemory, *op, t_string);
-    return name_from_string(op, op);
+    return name_from_string(imemory, op, op);
 }
 
 /* <num> cvr <real> */

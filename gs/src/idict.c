@@ -86,7 +86,7 @@ dict_find(const ref *pdref, const ref *pkey, ref **ppvalue)
 
     stats_dict.lookups++;
     if (r_has_type(pkey, t_name) && dict_is_packed(pdict)) {
-	uint nidx = name_index(pkey);
+	uint nidx = name_index(dict_mem(pdict), pkey);
 	uint hash =
 	dict_hash_mod(dict_name_index_hash(nidx), npairs(pdict)) + 1;
 
@@ -250,7 +250,7 @@ dict_unpack(ref * pdref, dict_stack_t *pds)
 	    return code;
 	for (nkp = pdict->keys.value.refs; count--; okp++, nkp++)
 	    if (r_packed_is_name(okp)) {
-		packed_get(okp, nkp);
+		packed_get(mem, okp, nkp);
 		ref_mark_new_in(mem, nkp);
 	    } else if (*okp == packed_key_deleted)
 		r_set_attrs(nkp, a_executable);
@@ -286,7 +286,7 @@ dict_find(const ref * pdref, const ref * pkey,
     /* names, and (unlikely, but worth checking for) integers. */
     switch (r_type(pkey)) {
     case t_name:
-	nidx = name_index(pkey);
+	nidx = name_index(mem, pkey);
     nh:
 	hash = dict_name_index_hash(nidx);
 	kpack = packed_name_key(nidx);
@@ -299,10 +299,10 @@ dict_find(const ref * pdref, const ref * pkey,
 
 	    if (!r_has_attr(pkey, a_read))
 		return_error(mem, e_invalidaccess);
-	    code = name_ref(pkey->value.bytes, r_size(pkey), &nref, 1);
+	    code = name_ref(mem, pkey->value.bytes, r_size(pkey), &nref, 1);
 	    if (code < 0)
 		return code;
-	    nidx = name_index(&nref);
+	    nidx = name_index(mem, &nref);
 	}
 	goto nh;
     case t_real:
@@ -375,7 +375,7 @@ dict_find(const ref * pdref, const ref * pkey,
 	for (kp = kbot + dict_hash_mod(hash, size) + 2;;) {
 	    --kp;
 	    if ((etype = r_type(kp)) == ktype) {	/* Fast comparison if both keys are names */
-		if (name_index(kp) == nidx) {
+		if (name_index(mem, kp) == nidx) {
 		    *ppvalue = pdict->values.value.refs + (kp - kbot);
 		    return 1;
 		}
@@ -394,7 +394,7 @@ dict_find(const ref * pdref, const ref * pkey,
 		} else		/* key not found */
 		    break;
 	    } else {
-		if (obj_eq(kp, pkey)) {
+		if (obj_eq(mem, kp, pkey)) {
 		    *ppvalue = pdict->values.value.refs + (kp - kbot);
 		    return 1;
 		}
@@ -417,12 +417,26 @@ dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue)
 {
     int code;
     ref kname;
+    dict *pdict = pdref->value.pdict;
 
-    if ((code = name_ref((const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
+    if ((code = name_ref(dict_mem(pdict), 
+			 (const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
 	return code;
     return dict_find(pdref, &kname, ppvalue);
 }
 
+int
+dict_find_string_mem(const gs_memory_t *mem,
+		 const ref * pdref, const char *kstr, ref ** ppvalue)
+{
+    int code;
+    ref kname;
+
+    if ((code = name_ref(mem, 
+			 (const byte *)kstr, strlen(kstr), &kname, -1)) < 0)
+	return code;
+    return dict_find(pdref, &kname, ppvalue);
+}
 /*
  * Enter a key-value pair in a dictionary.
  * See idict.h for the possible return values.
@@ -465,7 +479,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 
 	    if (!r_has_attr(pkey, a_read))
 		return_error(pmem, e_invalidaccess);
-	    code = name_from_string(pkey, &kname);
+	    code = name_from_string(pmem, pkey, &kname);
 	    if (code < 0)
 		return code;
 	    pkey = &kname;
@@ -474,7 +488,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 	    ref_packed *kp;
 
 	    if (!r_has_type(pkey, t_name) ||
-		name_index(pkey) > packed_name_max_index
+		name_index(pmem, pkey) > packed_name_max_index
 		) {		/* Change to unpacked representation. */
 		int code = dict_unpack(pdref, pds);
 
@@ -488,7 +502,7 @@ dict_put(ref * pdref /* t_dictionary */ , const ref * pkey, const ref * pvalue,
 		/* array itself is new. */
 		ref_do_save_in(mem, &pdict->keys, kp, "dict_put(key)");
 	    }
-	    *kp = pt_tag(pt_literal_name) + name_index(pkey);
+	    *kp = pt_tag(pt_literal_name) + name_index(pmem, pkey);
 	} else {
 	    ref *kp = pdict->keys.value.refs + index;
 
@@ -537,8 +551,10 @@ dict_put_string(ref * pdref, const char *kstr, const ref * pvalue,
 {
     int code;
     ref kname;
+    dict *pdict = pdref->value.pdict;
 
-    if ((code = name_ref((const byte *)kstr, strlen(kstr), &kname, 0)) < 0)
+    if ((code = name_ref(dict_mem(pdict),
+			 (const byte *)kstr, strlen(kstr), &kname, 0)) < 0)
 	return code;
     return dict_put(pdref, &kname, pvalue, pds);
 }

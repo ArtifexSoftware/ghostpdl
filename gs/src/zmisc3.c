@@ -84,7 +84,7 @@ zeqproc(i_ctx_t *i_ctx_p)
 	    )
 	    break;
 #endif
-	if (obj_eq(&top->proc1, &top->proc2)) {
+	if (obj_eq(imemory, &top->proc1, &top->proc2)) {
 	    /* Names don't match strings. */
 	    if (r_type(&top->proc1) != r_type(&top->proc2) &&
 		(r_type(&top->proc1) == t_name ||

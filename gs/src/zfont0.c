@@ -161,7 +161,7 @@ zbuildfont0(i_ctx_t *i_ctx_p)
     {
 	build_proc_refs build;
 
-	code = build_proc_name_refs(&build,
+	code = build_proc_name_refs(imemory, &build,
 				    "%Type0BuildChar", "%Type0BuildGlyph");
 	if (code < 0)
 	    return code;
@@ -235,7 +235,7 @@ fail:
     if (r_has_type(&save_FID, t_null)) {
 	ref rnfid;
 
-	name_enter_string("FID", &rnfid);
+	name_enter_string(pfont->memory, "FID", &rnfid);
 	idict_undef(op, &rnfid);
     } else
 	idict_put_string(op, "FID", &save_FID);

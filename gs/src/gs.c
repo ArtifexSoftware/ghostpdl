@@ -81,7 +81,7 @@ main(int argc, char *argv[])
 	    exit_status = 255;
     }
 
-    gs_to_exit_with_code(exit_status, code);
+    gs_to_exit_with_code(minst->heap, exit_status, code);
 
     switch (exit_status) {
 	case 0:

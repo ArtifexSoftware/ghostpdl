@@ -26,6 +26,8 @@
 # define GSDLLCALL
 #endif
 
+typedef struct name_table_s *name_table_ptr;
+
 typedef struct gs_lib_ctx_s
 {  
     FILE *fstdin;
@@ -44,6 +46,9 @@ typedef struct gs_lib_ctx_s
     void *top_of_system;  /* use accessor functions to walk down the system 
 			   * to the desired structure gs_lib_ctx_get_*()
 			   */
+    name_table_ptr gs_name_table;  /* hack this is the ps interpreters name table 
+				    * doesn't belong here 
+				    */
 } gs_lib_ctx_t;
 
 /** initializes and stores itself in the given gs_memory_t pointer.

@@ -97,7 +97,7 @@ zcheckpassword(i_ctx_t *i_ctx_p)
     array_param_list list;
     gs_param_list *const plist = (gs_param_list *)&list;
     int result = 0;
-    int code = name_ref((const byte *)"Password", 8, &params[0], 0);
+    int code = name_ref(imemory, (const byte *)"Password", 8, &params[0], 0);
     password pass;
 
     if (code < 0)
@@ -681,7 +681,7 @@ currentparam1(i_ctx_t *i_ctx_p, const param_set * pset)
 
     check_type(imemory, *op, t_name);
     check_ostack(imemory, 2);
-    name_string_ref((const ref *)op, &sref);
+    name_string_ref(imemory, (const ref *)op, &sref);
     code = current_param_list(i_ctx_p, pset, &sref);
     if (code < 0)
 	return code;

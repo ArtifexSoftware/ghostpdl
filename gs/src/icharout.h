@@ -61,6 +61,7 @@ int zchar_charstring_data(gs_font *font, const ref *pgref,
  * wrapper around dict_first/dict_next to implement the enumerate_glyph
  * font procedure.
  */
-int zchar_enumerate_glyph(const ref *prdict, int *pindex, gs_glyph *pglyph);
+int zchar_enumerate_glyph(const gs_memory_t *mem,
+			  const ref *prdict, int *pindex, gs_glyph *pglyph);
 
 #endif /* icharout_INCLUDED */

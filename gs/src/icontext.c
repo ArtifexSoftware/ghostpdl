@@ -196,7 +196,7 @@ context_state_load(gs_context_state_t * i_ctx_p)
 			    dstack->userdict_index);
 	ref *plocaldicts;
 
-	if (dict_find_string(puserdict, "localdicts", &plocaldicts) > 0 &&
+	if (dict_find_string_mem(imemory, puserdict, "localdicts", &plocaldicts) > 0 &&
 	    r_has_type(plocaldicts, t_dictionary)
 	    ) {
 	    dict_copy(plocaldicts, system_dict, dstack);

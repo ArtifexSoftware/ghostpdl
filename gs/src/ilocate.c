@@ -336,7 +336,8 @@ ialloc_validate_ref_packed(const ref_packed * rp, gc_state_t * gcst)
     if (r_is_packed(rp)) {
 	ref unpacked;
 
-	packed_get(rp, &unpacked);
+	packed_get(gcst->spaces.memories.named.system->stable_memory,
+		   rp, &unpacked);
 	ialloc_validate_ref(&unpacked, gcst);
     } else {
 	ialloc_validate_ref((const ref *)rp, gcst);
@@ -370,15 +371,15 @@ cks:	    if (optr != 0)
 		ialloc_validate_object(cmem, optr, NULL, gcst);
 	    break;
 	case t_name:
-	    if (name_index_ptr(name_index(pref)) != pref->value.pname) {
+	    if (name_index_ptr(cmem, name_index(cmem, pref)) != pref->value.pname) {
 		lprintf3(cmem, "At 0x%lx, bad name %u, pname = 0x%lx\n",
-			 (ulong) pref, (uint)name_index(pref),
+			 (ulong) pref, (uint)name_index(cmem, pref),
 			 (ulong) pref->value.pname);
 		break;
 	    } {
 		ref sref;
 
-		name_string_ref(pref, &sref);
+		name_string_ref(cmem, pref, &sref);
 		if (r_space(&sref) != avm_foreign &&
 		    !gc_locate(sref.value.const_bytes, gcst)
 		    ) {
@@ -470,7 +471,7 @@ ialloc_validate_object(const gs_memory_t *cmem, const obj_header_t * ptr, const 
     if (otype == &st_free) {
 	lprintf3(cmem, "Reference to free object 0x%lx(%lu), in chunk 0x%lx!\n",
 		 (ulong) ptr, (ulong) size, (ulong) cp);
-	gs_abort();
+	gs_abort(cmem);
     }
     if ((cp != 0 && !object_size_valid(pre, size, cp)) ||
 	otype->ssize == 0 ||
@@ -482,7 +483,7 @@ ialloc_validate_object(const gs_memory_t *cmem, const obj_header_t * ptr, const 
 		 (ulong) ptr, (ulong) size);
 	dprintf2(cmem, " ssize = %u, in chunk 0x%lx!\n",
 		 otype->ssize, (ulong) cp);
-	gs_abort();
+	gs_abort(cmem);
     }
 }
 

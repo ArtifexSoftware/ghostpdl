@@ -356,10 +356,10 @@ const op_def zchar_op_defs[] =
 
 /* Convert a glyph to a ref. */
 void
-glyph_ref(gs_glyph glyph, ref * gref)
+glyph_ref(const gs_memory_t *mem, gs_glyph glyph, ref * gref)
 {
     if (glyph < gs_min_cid_glyph)
-	name_index_ref(glyph, gref);
+	name_index_ref(mem, glyph, gref);
     else
 	make_int(gref, glyph - gs_min_cid_glyph);
 }
@@ -510,7 +510,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		    !r_has_type(&pfdata->BuildGlyph, t_null) &&
 		    glyph != gs_no_glyph
 		    ) {
-		    glyph_ref(glyph, op);
+		    glyph_ref(imemory, glyph, op);
 		    esp[2] = pfdata->BuildGlyph;
 		} else if (r_has_type(&pfdata->BuildChar, t_null))
 		    goto err;
@@ -520,11 +520,11 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		    ref gref;
 		    const ref *pencoding = &pfdata->Encoding;
 
-		    glyph_ref(glyph, &gref);
+		    glyph_ref(imemory, glyph, &gref);
 		    if (!map_glyph_to_char(imemory, &gref, pencoding,
 					   (ref *) op)
 			) {	/* Not found, try .notdef */
-			name_enter_string(".notdef", &gref);
+			name_enter_string(imemory, ".notdef", &gref);
 			if (!map_glyph_to_char(imemory, &gref,
 					       pencoding,
 					       (ref *) op)
@@ -549,7 +549,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		    !r_has_type(&pfdata->BuildChar, t_null) &&
 		    (glyph == gs_no_glyph ||
 		     (array_get(imemory, &pfdata->Encoding, (long)(chr & 0xff), &eref) >= 0 &&
-		      (glyph_ref(glyph, &gref), obj_eq(&gref, &eref))))
+		      (glyph_ref(imemory, glyph, &gref), obj_eq(imemory, &gref, &eref))))
 		    ) {
 		    make_int(op, chr & 0xff);
 		    esp[2] = pfdata->BuildChar;
@@ -558,7 +558,7 @@ op_show_continue_dispatch(i_ctx_t *i_ctx_p, int npop, int code)
 		    if (glyph == gs_no_glyph)
 			make_int(op, 0);
 		    else
-			glyph_ref(glyph, op);
+			glyph_ref(imemory, glyph, op);
 		    esp[2] = pfdata->BuildGlyph;
 		}
 	    }
@@ -586,7 +586,7 @@ map_glyph_to_char(const gs_memory_t *mem, const ref * pgref, const ref * pencodi
 
     for (ch = 0; ch < esize; ch++) {
 	array_get(mem, pencoding, (long)ch, &eref);
-	if (obj_eq(pgref, &eref)) {
+	if (obj_eq(mem, pgref, &eref)) {
 	    make_int(pch, ch);
 	    return true;
 	}
@@ -777,7 +777,7 @@ font_bbox_param(const gs_memory_t *mem, const ref * pfdict, double bbox[4])
 	    float dx, dy, ratio;
 
 	    for (i = 0; i < 4; i++) {
-		packed_get(pbe, rbe + i);
+		packed_get(mem, pbe, rbe + i);
 		pbe = packed_next(pbe);
 	    }
 	    if ((code = num_params(mem, rbe + 3, 4, bbox)) < 0)

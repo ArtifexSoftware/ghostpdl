@@ -779,7 +779,7 @@ interp(i_ctx_t **pi_ctx_p /* context for execution, updated if resched */,
      * Get a pointer to the name table so that we can use the
      * inline version of name_index_ref.
      */
-    const name_table *const int_nt = the_name_table();
+    const name_table *const int_nt = imemory->gs_lib_ctx->gs_name_table;
 
 #define set_error(ecode)\
   { ierror.code = ecode; ierror.line = __LINE__; }
@@ -1147,7 +1147,7 @@ remap:		    if (iesp + 2 >= estop) {
 			    return_with_error_iref(code);
 			iesp = esp;
 		    }
-		    packed_get(iref_packed, iesp + 1);
+		    packed_get(imemory, iref_packed, iesp + 1);
 		    make_oper(iesp + 2, 0,
 			      r_ptr(&istate->remap_color_info,
 				    int_remap_color_info_t)->proc);
@@ -1666,7 +1666,7 @@ res:
 	 * We need a real object to return as the error object.
 	 * (It only has to last long enough to store in *perror_object.)
 	 */
-	packed_get((const ref_packed *)ierror.obj, &ierror.full);
+	packed_get(imemory, (const ref_packed *)ierror.obj, &ierror.full);
 	store_state_short(iesp);
 	if (IREF == ierror.obj)
 	    SET_IREF(&ierror.full);

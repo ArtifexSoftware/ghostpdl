@@ -274,7 +274,7 @@ context_reclaim(vm_spaces * pspaces, bool global)
 #ifdef DEBUG
     if (!psched->current->visible) {
 	lprintf((const gs_memory_t *)lmem, "Current context is invisible!\n");
-	gs_abort();
+	gs_abort((const gs_memory_t *)lmem);
     }
 #endif
 
@@ -368,7 +368,7 @@ ctx_initialize(i_ctx_t **pi_ctx_p)
     /* Create an initial context. */
     if (context_create(psched, &psched->current, &gs_imemory, *pi_ctx_p, true) < 0) {
 	lprintf(imemory, "Can't create initial context!");
-	gs_abort();
+	gs_abort(imemory);
     }
     psched->current->scheduler = psched;
     /* Hook into the interpreter. */
@@ -696,7 +696,7 @@ do_fork(i_ctx_t *i_ctx_p, os_ptr op, const ref * pstdin, const ref * pstdout,
 	    for (i = 0; i < copy; ++i) {
 		ref *pdref = ref_stack_index(dstack, i);
 
-		if (obj_eq(pdref, &old_userdict))
+		if (obj_eq(imemory, pdref, &old_userdict))
 		    *pdref = new_userdict;
 	    }
 	}

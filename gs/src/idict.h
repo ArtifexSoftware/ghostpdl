@@ -93,6 +93,8 @@ int dict_find(const ref * pdref, const ref * key, ref ** ppvalue);
  * Return 1 if found, <= 0 if not.
  */
 int dict_find_string(const ref * pdref, const char *kstr, ref ** ppvalue);
+int dict_find_string_mem(const gs_memory_t *mem,
+			 const ref * pdref, const char *kstr, ref ** ppvalue);
 
 /*
  * Enter a key-value pair in a dictionary.

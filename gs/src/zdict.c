@@ -100,7 +100,7 @@ zop_def(i_ctx_t *i_ctx_p)
     switch (r_type(op1)) {
 	case t_name: {
 	    /* We can use the fast single-probe lookup here. */
-	    uint nidx = name_index(op1);
+	    uint nidx = name_index(imemory, op1);
 	    uint htemp;
 
 	    if_dict_find_name_by_index_top(nidx, htemp, pvslot) {

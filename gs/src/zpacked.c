@@ -22,6 +22,7 @@
 #include "ivmspace.h"
 #include "oper.h"
 #include "store.h"
+#include "gxalloc.h"
 
 /* - currentpacking <bool> */
 private int
@@ -100,7 +101,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 	pref = ref_stack_index(pstack, i - 1);
 	switch (r_btype(pref)) {	/* not r_type, opers are special */
 	    case t_name:
-		if (name_index(pref) >= packed_name_max_index)
+		if (name_index(imem, pref) >= packed_name_max_index)
 		    break;	/* can't pack */
 		idest++;
 		continue;
@@ -169,7 +170,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 	switch (r_btype(pref)) {	/* not r_type, opers are special */
 	    case t_name:
 		{
-		    uint nidx = name_index(pref);
+		    uint nidx = name_index(imem, pref);
 
 		    if (nidx >= packed_name_max_index)
 			break;	/* can't pack */
@@ -216,7 +217,7 @@ make_packed_array(ref * parr, ref_stack_t * pstack, uint size,
 	    while (--i >= 0) {
 		--psrc;
 		--pmove;
-		packed_get(psrc, pmove);
+		packed_get(imem, psrc, pmove);
 	    }
 	}
 	pshort = pdest += packed_per_ref;

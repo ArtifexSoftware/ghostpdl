@@ -443,7 +443,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
     /* Construct the path. */
     next = rupath->value.refs;
     if (with_ucache) {
-	if ((code = name_enter_string("ucache", next)) < 0)
+	if ((code = name_enter_string(imemory, "ucache", next)) < 0)
 	    return code;
 	r_set_attrs(next, a_executable | l_new);
 	++next;
@@ -465,7 +465,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 	make_real_new(next + 2, bbox.q.x);
 	make_real_new(next + 3, bbox.q.y);
 	next += 4;
-	if ((code = name_enter_string("setbbox", next)) < 0)
+	if ((code = name_enter_string(imemory, "setbbox", next)) < 0)
 	    return code;
 	r_set_attrs(next, a_executable | l_new);
 	++next;
@@ -508,7 +508,7 @@ make_upath(i_ctx_t *i_ctx_p, ref *rupath, gs_state *pgs, gx_path *ppath,
 		default:
 		    return_error(imemory, e_unregistered);
 	    }
-	    if ((code = name_enter_string(opstr, next)) < 0)
+	    if ((code = name_enter_string(imemory, opstr, next)) < 0)
 		return code;
 	    r_set_attrs(next, a_executable);
 	    ++next;

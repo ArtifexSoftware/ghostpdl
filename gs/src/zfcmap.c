@@ -187,7 +187,7 @@ acquire_code_map(gx_code_map_t *pcmap, const ref *pref, gs_cmap_adobe1_t *root,
 		array_get(mem, &rvalues, k, &rvalue);
 		if (!r_has_type(&rvalue, t_name))
 		    return_error(mem, e_rangecheck);
-		value = name_index(&rvalue);
+		value = name_index(mem, &rvalue);
 		/*
 		 * We need a special check here because some CPUs cannot
 		 * shift by the full size of an int or long.
@@ -334,15 +334,16 @@ ztype0_get_cmap(const gs_cmap_t **ppcmap, const ref *pfdepvector,
  * For details, see lib/gs_cmap.ps and the Adobe documentation.
  */
 private int
-zfcmap_glyph_name(gs_glyph glyph, gs_const_string *pstr, void *proc_data)
+zfcmap_glyph_name(const gs_memory_t *mem, 
+		  gs_glyph glyph, gs_const_string *pstr, void *proc_data)
 {
     ref nref, nsref;
     int code = 0;
 
-    /*code = */name_index_ref((uint)glyph, &nref);
+    /*code = */name_index_ref(mem, (uint)glyph, &nref);
     if (code < 0)
 	return code;
-    name_string_ref(&nref, &nsref);
+    name_string_ref(mem, &nref, &nsref);
     pstr->data = nsref.value.const_bytes;
     pstr->size = r_size(&nsref);
     return 0;
@@ -371,7 +372,7 @@ zbuildcmap(i_ctx_t *i_ctx_p)
 	code = gs_note_error(imemory, e_typecheck);
 	goto fail;
     }
-    name_string_ref(pcmapname, &rname);
+    name_string_ref(imemory, pcmapname, &rname);
     if (dict_find_string(op, ".CodeMapData", &pcodemapdata) <= 0 ||
 	!r_has_type(pcodemapdata, t_array) ||
 	r_size(pcodemapdata) != 3 ||

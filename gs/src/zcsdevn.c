@@ -88,7 +88,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 	    array_get(imemory, pcsa, (long)i, &sname);
 	    switch (r_type(&sname)) {
 		case t_string:
-		    code = name_from_string(&sname, &sname);
+		    code = name_from_string(imemory, &sname, &sname);
 		    if (code < 0) {
 			ifree_object(names, ".setdevicenspace(names)");
 			ifree_object(pmap, ".setdevicenspace(map)");
@@ -96,7 +96,7 @@ zsetdevicenspace(i_ctx_t *i_ctx_p)
 		    }
 		    /* falls through */
 		case t_name:
-		    names[i] = name_index(&sname);
+		    names[i] = name_index(imemory, &sname);
 		    break;
 		default:
 		    ifree_object(names, ".setdevicenspace(names)");

@@ -65,7 +65,7 @@ enum_param(const gs_memory_t *mem, const ref *pnref, const char *const names[])
     const char *const *p;
     ref nsref;
 
-    name_string_ref(pnref, &nsref);
+    name_string_ref(mem, pnref, &nsref);
     for (p = names; *p; ++p)
 	if (r_size(&nsref) == strlen(*p) &&
 	    !memcmp(*p, nsref.value.const_bytes, r_size(&nsref))
@@ -103,7 +103,7 @@ zcurrentblendmode(i_ctx_t *i_ctx_p)
     os_ptr op = osp;
     const char *mode_name = blend_mode_names[gs_currentblendmode(igs)];
     ref nref;
-    int code = name_enter_string(mode_name, &nref);
+    int code = name_enter_string(imemory, mode_name, &nref);
 
     if (code < 0)
 	return code;

@@ -58,7 +58,7 @@ z1_enumerate_glyph(gs_font * pfont, int *pindex, gs_glyph_space_t ignored,
     const gs_font_type1 *const pfont1 = (gs_font_type1 *)pfont;
     const ref *pcsdict = &pfont_data(pfont1)->CharStrings;
 
-    return zchar_enumerate_glyph(pcsdict, pindex, pglyph);
+    return zchar_enumerate_glyph(pfont->memory, pcsdict, pindex, pglyph);
 }
 
 /* ------ Public procedures ------ */
@@ -256,7 +256,7 @@ zbuildfont1(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     build_proc_refs build;
-    int code = build_proc_name_refs(&build,
+    int code = build_proc_name_refs(imemory, &build,
 				    "%Type1BuildChar", "%Type1BuildGlyph");
 
     if (code < 0)
@@ -299,9 +299,10 @@ same_font_dict(const font_data *pdata, const font_data *podata,
     bool present = dict_find_string(&pdata->dict, key, &pvalue) > 0;
     ref *povalue;
     bool opresent = dict_find_string(&podata->dict, key, &povalue) > 0;
+    dict *pdict = (&(podata->dict))->value.pdict;
 
     return (present == opresent &&
-	    (present <= 0 || obj_eq(pvalue, povalue)));
+	    (present <= 0 || obj_eq(dict_mem(pdict), pvalue, povalue)));
 }
 private int
 z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
@@ -324,7 +325,7 @@ z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
 
 	if ((check & (FONT_SAME_OUTLINES | FONT_SAME_METRICS)) &&
 	    !memcmp(&pofont1->data.procs, &z1_data_procs, sizeof(z1_data_procs)) &&
-	    obj_eq(&pdata->CharStrings, &podata->CharStrings) &&
+	    obj_eq(font->memory, &pdata->CharStrings, &podata->CharStrings) &&
 	    /*
 	     * We use same_font_dict for convenience: we know that
 	     * both fonts do have Private dictionaries.
@@ -344,7 +345,7 @@ z1_same_font(const gs_font *font, const gs_font *ofont, int mask)
 
 	if ((check & FONT_SAME_ENCODING) &&
 	    pofont1->procs.same_font == z1_same_font &&
-	    obj_eq(&pdata->Encoding, &podata->Encoding)
+	    obj_eq(font->memory, &pdata->Encoding, &podata->Encoding)
 	    )
 	    same |= FONT_SAME_ENCODING;
 

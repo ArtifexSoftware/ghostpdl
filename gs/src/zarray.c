@@ -60,7 +60,7 @@ zaload(i_ctx_t *i_ctx_p)
 	if (code < 0)
 	    return code;
 	for (i = asize; i > 0; i--, packed = packed_next(packed))
-	    packed_get(packed, ref_stack_index(&o_stack, i));
+	    packed_get(imemory, packed, ref_stack_index(&o_stack, i));
 	*osp = aref;
 	return 0;
     }
@@ -72,7 +72,7 @@ zaload(i_ctx_t *i_ctx_p)
 	os_ptr pdest = op;
 
 	for (i = 0; i < asize; i++, pdest++, packed = packed_next(packed))
-	    packed_get(packed, pdest);
+	    packed_get(imemory, packed, pdest);
     }
     push(imemory, asize);
     ref_assign(op, &aref);

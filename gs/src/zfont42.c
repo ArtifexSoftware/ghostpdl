@@ -51,7 +51,7 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     font_data *pdata;
     int code;
 
-    code = build_proc_name_refs(&build, bcstr, bgstr);
+    code = build_proc_name_refs(imemory, &build, bcstr, bgstr);
     if (code < 0)
 	return code;
     check_type(imemory, *op, t_dictionary);
@@ -211,7 +211,7 @@ glyph_to_index(const gs_font *font, gs_glyph glyph)
 
     if (glyph >= gs_min_cid_glyph)
 	return glyph;
-    name_index_ref(glyph, &gref);
+    name_index_ref(font->memory, glyph, &gref);
     if (dict_find(&pfont_data(font)->CharStrings, &gref, &pcstr) > 0 &&
 	r_has_type(pcstr, t_integer)
 	) {
@@ -279,7 +279,7 @@ z42_enumerate_glyph(gs_font *font, int *pindex, gs_glyph_space_t glyph_space,
     else {
 	const ref *pcsdict = &pfont_data(font)->CharStrings;
 
-	return zchar_enumerate_glyph(pcsdict, pindex, pglyph);
+	return zchar_enumerate_glyph(font->memory, pcsdict, pindex, pglyph);
     }
 }
 
@@ -308,7 +308,7 @@ z42_gdir_enumerate_glyph(gs_font *font, int *pindex,
 	}
     } else
 	pgdict = &pfont_data(font)->CharStrings;
-    return zchar_enumerate_glyph(pgdict, pindex, pglyph);
+    return zchar_enumerate_glyph(font->memory, pgdict, pindex, pglyph);
 }
 
 /*

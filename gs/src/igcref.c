@@ -510,7 +510,7 @@ igc_reloc_refs(ref_packed * from, ref_packed * to, gc_state_t * gcst)
 		    break;
 		case t_name:
 		    {
-			void *psub = name_ref_sub_table(pref);
+			void *psub = name_ref_sub_table(cmem, pref);
 			void *rsub = RELOC_OBJ(psub); /* gcst implicit */
 
 			SET_RELOC(pref->value.pname,
@@ -711,7 +711,7 @@ refs_compact(const gs_memory_t *cmem,
 	lprintf3(cmem, "Reloc error for refs 0x%lx: reloc = %lu, stored = %u\n",
 		 (ulong) dpre, (ulong) ((byte *) src - (byte *) dest),
 		 (uint) r_size((ref *) src - 1));
-	gs_abort();
+	gs_abort(cmem);
     }
 #endif
     /* Pad to a multiple of sizeof(ref). */

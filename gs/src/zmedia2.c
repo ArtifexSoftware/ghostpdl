@@ -158,7 +158,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 	 * below.
 	 */
 		if (r_has_type(&key, t_name) &&
-		    (name_string_ref(&key, &kstr),
+		    (name_string_ref(imemory, &key, &kstr),
 		     r_size(&kstr) == 8 &&
 		     !memcmp(kstr.value.bytes, "PageSize", 8))
 		    ) {
@@ -172,7 +172,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 					 &ignore_msize)
 			<= 0)
 			goto no;
-		} else if (!obj_eq(prvalue, pmvalue))
+		} else if (!obj_eq(imemory, prvalue, pmvalue))
 		    goto no;
 	    }
 	    /* We have a match.  If it is a better match */
@@ -189,7 +189,7 @@ zmatchmedia(i_ctx_t *i_ctx_p)
 
 		pi--;
 		array_get(imemory, ppriority, pi, &pri);
-		if (obj_eq(&aelt.key, &pri)) {	/* Yes, higher priority. */
+		if (obj_eq(imemory, &aelt.key, &pri)) {	/* Yes, higher priority. */
 		    match.best_key = aelt.key;
 		    match.priority = pi;
 		    break;

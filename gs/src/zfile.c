@@ -354,7 +354,7 @@ file_is_tempfile(i_ctx_t *i_ctx_p, const ref *op)
     if (dict_find_string(systemdict, "SAFETY", &SAFETY) <= 0 ||
 	    dict_find_string(SAFETY, "tempfiles", &tempfiles) <= 0)
 	return false;
-    if (name_ref(op->value.bytes, r_size(op), &kname, -1) < 0 ||
+    if (name_ref(imemory, op->value.bytes, r_size(op), &kname, -1) < 0 ||
 	    dict_find(tempfiles, &kname, &SAFETY) <= 0)
 	return false;
     return true;

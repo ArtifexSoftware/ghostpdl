@@ -79,7 +79,7 @@ zbind(i_ctx_t *i_ctx_p)
 		    ref nref;
 		    ref *pvalue;
 
-		    name_index_ref(packed_name_index(&elt),
+		    name_index_ref(imemory, packed_name_index(&elt),
 				   &nref);
 		    if ((pvalue = dict_find_name(&nref)) != 0 &&
 			r_is_ex_oper(pvalue)
@@ -274,7 +274,7 @@ zmakeoperator(i_ctx_t *i_ctx_p)
     if (count == r_size(&opt->table))
 	return_error(imemory, e_limitcheck);
     ref_assign_old(&opt->table, &tab[count], op, "makeoperator");
-    opt->nx_table[count] = name_index(op - 1);
+    opt->nx_table[count] = name_index(imemory, op - 1);
     op_index_ref(opt->base_index + count, op - 1);
     opt->count = count + 1;
     pop(1);

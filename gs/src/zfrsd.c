@@ -77,7 +77,7 @@ zrsdparams(i_ctx_t *i_ctx_p)
 	array_get(imemory, pFilter, (long)i, &f);
 	if (!r_has_type(&f, t_name))
 	    return_error(imemory, e_typecheck);
-	name_string_ref(&f, &fname);
+	name_string_ref(imemory, &f, &fname);
 	if (r_size(&fname) < 6 ||
 	    memcmp(fname.value.bytes + r_size(&fname) - 6, "Decode", 6)
 	    )

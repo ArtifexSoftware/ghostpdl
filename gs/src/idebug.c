@@ -41,7 +41,7 @@ debug_print_name(const gs_memory_t *mem, const ref * pnref)
 {
     ref sref;
 
-    name_string_ref(pnref, &sref);
+    name_string_ref(mem, pnref, &sref);
     debug_print_string(mem, sref.value.const_bytes, r_size(&sref));
 }
 void
@@ -49,7 +49,7 @@ debug_print_name_index(const gs_memory_t *mem, name_index_t nidx)
 {
     ref nref;
 
-    name_index_ref(nidx, &nref);
+    name_index_ref(mem, nidx, &nref);
     debug_print_name(mem, &nref);
 }
 
@@ -95,7 +95,7 @@ debug_print_full_ref(const gs_memory_t *mem, const ref * pref)
 	    break;
 	case t_name:
 	    dprintf2(mem, "name(0x%lx#%u)", (ulong) pref->value.pname,
-		     name_index(pref));
+		     name_index(mem, pref));
 	    debug_print_name(mem, pref);
 	    break;
 	case t_null:
@@ -106,7 +106,7 @@ debug_print_full_ref(const gs_memory_t *mem, const ref * pref)
 	    {
 		const op_array_table *opt = op_index_op_array_table(size);
 
-		name_index_ref(opt->nx_table[size - opt->base_index], &nref);
+		name_index_ref(mem, opt->nx_table[size - opt->base_index], &nref);
 	    }
 	    debug_print_name(mem, &nref);
 	    break;
@@ -166,7 +166,7 @@ debug_print_packed_ref(const gs_memory_t *mem, const ref_packed *pref)
 	    goto ptn;
 	case pt_executable_name:
 	    dprintf(mem, "<exec_name>");
-	  ptn:name_index_ref(elt, &nref);
+	  ptn:name_index_ref(mem, elt, &nref);
 	    dprintf2(mem, "(0x%lx#%u)", (ulong) nref.value.pname, elt);
 	    debug_print_name(mem, &nref);
 	    break;
@@ -300,7 +300,7 @@ debug_dump_array(const gs_memory_t *mem, const ref *array)
 	 len--, pp = packed_next(pp)) {
 	ref temp;
 
-	packed_get(pp, &temp);
+	packed_get(mem, pp, &temp);
 	if (r_is_packed(pp)) {
 	    dprintf2(mem, "0x%lx* 0x%04x ", (ulong)pp, (uint)*pp);
 	    print_ref_data(mem, &temp);

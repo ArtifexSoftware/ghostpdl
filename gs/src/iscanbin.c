@@ -647,7 +647,7 @@ scan_bos_string_continue(i_ctx_t *i_ctx_p, register stream * s, ref * pref,
 		    uint attrs =
 		    (r_has_attr(op, a_executable) ? a_executable : 0);
 
-		    code = name_ref(op->value.bytes, r_size(op), op, 1);
+		    code = name_ref(imemory, op->value.bytes, r_size(op), op, 1);
 		    if (code < 0)
 			return code;
 		    r_set_attrs(op, attrs);
@@ -791,7 +791,7 @@ nos:
 	    break;
 	case t_name:
 	    type = BS_TYPE_NAME;
-	    name_string_ref(obj, &nstr);
+	    name_string_ref(imemory, obj, &nstr);
 	    r_copy_attrs(&nstr, a_executable, obj);
 	    obj = &nstr;
 	    goto nos;

@@ -562,7 +562,7 @@ run_stdin:
 					     a_executable)) {
 			    ref nsref;
 
-			    name_string_ref(&value, &nsref);
+			    name_string_ref(imemory, &value, &nsref);
 #define string_is(nsref, str, len)\
   (r_size(&(nsref)) == (len) &&\
    !strncmp((const char *)(nsref).value.const_bytes, str, (len)))

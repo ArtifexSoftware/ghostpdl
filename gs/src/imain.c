@@ -48,16 +48,6 @@
 
 /* ------ Exported data ------ */
 
-/* Define the default instance of the interpreter. */
-/* Currently, this is the *only possible* instance, because most of */
-/* the places that need to take an explicit instance argument don't. */
-
-// globals 
-/* Define the interpreter's name table.  We'll move it somewhere better */
-/* eventually.... */
-name_table *the_gs_name_table;
-
-
 /** using backpointers retrieve minst from any memory pointer 
  * 
  */
@@ -164,9 +154,9 @@ gs_main_init1(gs_main_instance * minst)
 
 	    if (nt == 0)
 		return_error(mem, e_VMerror);
-	    the_gs_name_table = nt;
+	    mem->gs_lib_ctx->gs_name_table = nt;
 	    code = gs_register_struct_root(mem, NULL,
-					   (void **)&the_gs_name_table,
+					   (void **)&mem->gs_lib_ctx->gs_name_table,
 					   "the_gs_name_table");
 	    if (code < 0)
 		return code;
@@ -743,7 +733,7 @@ gs_pop_string(gs_main_instance * minst, gs_string * result)
 	return code;
     switch (r_type(&vref)) {
 	case t_name:
-	    name_string_ref(&vref, &vref);
+	    name_string_ref(imemory, &vref, &vref);
 	    code = 1;
 	    goto rstr;
 	case t_string:
@@ -816,6 +806,9 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     int exit_code;
     ref error_object;
     char *tempnames;
+
+    // NB need to free gs_name_table
+
     /*
      * Previous versions of this code closed the devices in the
      * device list here.  Since these devices are now prototypes,
@@ -877,20 +870,19 @@ gs_main_finit(gs_main_instance * minst, int exit_status, int code)
     gs_lib_finit(exit_status, code, minst->heap);
 }
 void
-gs_to_exit_with_code(int exit_status, int code)
+gs_to_exit_with_code(const gs_memory_t *mem, int exit_status, int code)
 {
-    // hack 
-    // gs_finit(exit_status, code);
+    gs_main_finit(get_minst_from_memory(mem), exit_status, code);
 }
 void
-gs_to_exit(int exit_status)
+gs_to_exit(const gs_memory_t *mem, int exit_status)
 {
-    gs_to_exit_with_code(exit_status, 0);
+    gs_to_exit_with_code(mem, exit_status, 0);
 }
 void
-gs_abort(void)
+gs_abort(const gs_memory_t *mem)
 {
-    gs_to_exit(1);
+    gs_to_exit(mem, 1);
     /* it's fatal calling OS independent exit() */
     gp_do_exit(1);	
 }

@@ -37,7 +37,7 @@ private const bool I_FORCE_GLOBAL_GC = false;
 private const bool I_BYPASS_GC = false;
 
 /* Avoid including all of iname.h. */
-extern name_table *the_gs_name_table;
+//extern name_table *the_gs_name_table;
 
 /* Define an entry on the mark stack. */
 typedef struct {
@@ -227,7 +227,7 @@ gs_gc_reclaim(vm_spaces * pspaces, bool global)
     state.min_collect = min_collect_vm_space << r_space_shift;
     state.relocating_untraced = false;
     state.heap = state.loc.memory->non_gc_memory;
-    state.ntable = the_gs_name_table;
+    state.ntable = cmem->gs_lib_ctx->gs_name_table;
 
     /* Register the allocators themselves as roots, */
     /* so we mark and relocate the change and save lists properly. */
@@ -1034,7 +1034,7 @@ gc_extend_stack(const gs_memory_t *mem, gc_mark_stack * pms, gc_state_t * pstate
 		lprintf1(mem, 
 			 "mark stack overflowed while outside collectible space at 0x%lx!\n",
 			 (ulong) cptr);
-		gs_abort();
+		gs_abort(mem);
 	    }
 	    if (cptr < cp->rescan_bot)
 		cp->rescan_bot = cptr, new = -1;
@@ -1250,7 +1250,7 @@ igc_reloc_struct_ptr(const void /*obj_header_t */ *obj, gc_state_t * gcst)
 	    if (back > gcst->space_local->chunk_size >> obj_back_shift) {
 		lprintf2(cmem, "Invalid back pointer %u at 0x%lx!\n",
 			 back, (ulong) obj);
-		gs_abort();
+		gs_abort(cmem);
 	    }
 #endif
 	    {

@@ -127,7 +127,7 @@ zlength(i_ctx_t *i_ctx_p)
 	case t_name: {
 	    ref str;
 
-	    name_string_ref(op, &str);
+	    name_string_ref(imemory, op, &str);
 	    make_int(op, r_size(&str));
 	    return 0;
 	}
@@ -511,7 +511,7 @@ packedarray_continue(i_ctx_t *i_ctx_p)
 
 	r_dec_size(obj, 1);
 	push(imemory, 1);
-	packed_get(packed, op);
+	packed_get(imemory, packed, op);
 	obj->value.packed = packed_next(packed);
 	esp += 2;
 	*esp = obj[1];
@@ -595,7 +595,7 @@ copy_interval(i_ctx_t *i_ctx_p /* for ref_assign_old */, os_ptr prto,
 		ref elt;
 
 		for (i = 0; i < fromsize; i++, pdest++) {
-		    packed_get(packed, &elt);
+		    packed_get(imemory, packed, &elt);
 		    ref_assign_old(prto, pdest, &elt, cname);
 		    packed = packed_next(packed);
 		}

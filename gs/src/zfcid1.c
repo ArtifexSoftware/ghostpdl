@@ -249,7 +249,7 @@ zbuildfont11(i_ctx_t *i_ctx_p)
     pfcid->cidata.MetricsCount = MetricsCount;
     ref_assign(&pfont_data(pfont)->u.type42.CIDMap, &rcidmap);
     pfcid->cidata.CIDMap_proc = z11_CIDMap_proc;
-    get_font_name(&cfnstr, CIDFontName);
+    get_font_name(imemory, &cfnstr, CIDFontName);
     copy_font_name(&pfcid->font_name, &cfnstr);
     if (MetricsCount) {
 	/* "Wrap" the glyph accessor procedures. */

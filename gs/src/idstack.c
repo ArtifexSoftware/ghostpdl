@@ -112,7 +112,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	if (gs_debug_c('D')) {
 	    ref dnref;
 
-	    name_index_ref(nidx, &dnref);
+	    name_index_ref(mem, nidx, &dnref);
 	    dlputs(mem, "[D]lookup ");
 	    debug_print_name(mem, &dnref);
 	    dprintf3(mem, " in 0x%lx(%u/%u)\n",
@@ -141,7 +141,7 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	    for (kp = kbot + dict_hash_mod(hash, size) + 2;;) {
 		--kp;
 		if (r_has_type(kp, t_name)) {
-		    if (name_index(kp) == nidx) {
+		    if (name_index(mem, kp) == nidx) {
 			INCR_DEPTH(pdref);
 			return pdict->values.value.refs + (kp - kbot);
 		    }
@@ -169,9 +169,12 @@ dstack_find_name_by_index(dict_stack_t * pds, uint nidx)
 	ref key;
 	uint i = pds->stack.p + 1 - pds->stack.bot;
 	uint size = ref_stack_count(&pds->stack);
-	ref *pvalue;
+	ref *pvalue;	
+	
+	dict *pdict = pdref->value.pdict;
+	const gs_memory_t *mem = dict_mem(pdict);
 
-	name_index_ref(nidx, &key);
+	name_index_ref(mem, nidx, &key);
 	for (; i < size; i++) {
 	    if (dict_find(ref_stack_index(&pds->stack, i),
 			  &key, &pvalue) > 0

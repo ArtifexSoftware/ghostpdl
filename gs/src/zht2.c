@@ -47,8 +47,8 @@ gs_get_colorname_string(const gs_memory_t *mem, gs_separation_name colorname_ind
 {
     ref nref;
 
-    name_index_ref(colorname_index, &nref);
-    name_string_ref(&nref, &nref);
+    name_index_ref(mem, colorname_index, &nref);
+    name_string_ref(mem, &nref, &nref);
     return obj_string_data(mem, &nref, (const unsigned char**) ppstr, pname_size);
 }
 
@@ -118,7 +118,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 	    continue;
 
 	/* Get the name of the component  verify that we will use it. */
-	cname = name_index(&rvalue[0]);
+	cname = name_index(imemory, &rvalue[0]);
 	code = gs_get_colorname_string(imemory, cname, &pname, &name_size);
 	if (code < 0)
 	    break;
@@ -173,7 +173,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 		continue;
 
 	    /* Get the name of the component */
-	    cname = name_index(&rvalue[0]);
+	    cname = name_index(imemory, &rvalue[0]);
 	    code = gs_get_colorname_string(imemory, cname, &pname, &name_size);
 	    if (code < 0)
 	        break;
@@ -239,7 +239,7 @@ zsethalftone5(i_ctx_t *i_ctx_p)
 		continue;
 
 	    /* Get the name of the component and verify that we will use it. */
-	    cname = name_index(&rvalue[0]);
+	    cname = name_index(imemory, &rvalue[0]);
 	    code = gs_get_colorname_string(imemory, cname, &pname, &name_size);
 	    if (code < 0)
 	        break;

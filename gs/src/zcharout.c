@@ -316,9 +316,9 @@ charstring_is_notdef_proc(const gs_memory_t *mem, const ref *pcstr)
 	    ) {
 	    ref nref;
 
-	    name_enter_string("pop", &nref);
+	    name_enter_string(mem, "pop", &nref);
 	    if (name_eq(&elts[0], &nref)) {
-		name_enter_string("setcharwidth", &nref);
+		name_enter_string(mem, "setcharwidth", &nref);
 		if (name_eq(&elts[3], &nref))
 		    return true;
 	    }
@@ -362,7 +362,8 @@ charstring_make_notdef(gs_glyph_data_t *pgd, gs_font *font)
  * CIDFontType 0 CIDFont.
  */
 int
-zchar_enumerate_glyph(const ref *prdict, int *pindex, gs_glyph *pglyph)
+zchar_enumerate_glyph(const gs_memory_t *mem,
+		      const ref *prdict, int *pindex, gs_glyph *pglyph)
 {
     int index = *pindex - 1;
     ref elt[2];
@@ -380,7 +381,7 @@ next:
 		*pglyph = gs_min_cid_glyph + elt[0].value.intval;
 		break;
 	    case t_name:
-		*pglyph = name_index(elt);
+		*pglyph = name_index(mem, elt);
 		break;
 	    default:		/* can't handle it */
 		goto next;

@@ -83,7 +83,7 @@ refset_null_new(ref * to, uint size, uint new_mask)
 
 /* Compare two objects for equality. */
 bool
-obj_eq(const ref * pref1, const ref * pref2)
+obj_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 {
     ref nref;
 
@@ -103,13 +103,13 @@ obj_eq(const ref * pref1, const ref * pref2)
 	    case t_name:
 		if (!r_has_type(pref2, t_string))
 		    return false;
-		name_string_ref(pref1, &nref);
+		name_string_ref(mem, pref1, &nref);
 		pref1 = &nref;
 		break;
 	    case t_string:
 		if (!r_has_type(pref2, t_name))
 		    return false;
-		name_string_ref(pref2, &nref);
+		name_string_ref(mem, pref2, &nref);
 		pref2 = &nref;
 		break;
 
@@ -187,14 +187,14 @@ obj_eq(const ref * pref1, const ref * pref2)
 
 /* Compare two objects for identity. */
 bool
-obj_ident_eq(const ref * pref1, const ref * pref2)
+obj_ident_eq(const gs_memory_t *mem, const ref * pref1, const ref * pref2)
 {
     if (r_type(pref1) != r_type(pref2))
 	return false;
     if (r_has_type(pref1, t_string))
 	return (pref1->value.bytes == pref2->value.bytes &&
 		r_size(pref1) == r_size(pref2));
-    return obj_eq(pref1, pref2);
+    return obj_eq(mem, pref1, pref2);
 }
 
 /*
@@ -209,7 +209,7 @@ obj_string_data(const gs_memory_t *mem, const ref *op, const byte **pchars, uint
     case t_name: {
 	ref nref;
 
-	name_string_ref(op, &nref);
+	name_string_ref(mem, op, &nref);
 	*pchars = nref.value.bytes;
 	*plen = r_size(&nref);
 	return 0;
@@ -445,8 +445,8 @@ other:
 	uint index = op_index(op);
 	const op_array_table *opt = op_index_op_array_table(index);
 
-	name_index_ref(opt->nx_table[index - opt->base_index], &nref);
-	name_string_ref(&nref, &nref);
+	name_index_ref(mem, opt->nx_table[index - opt->base_index], &nref);
+	name_string_ref(mem, &nref, &nref);
 	code = obj_string_data(mem, &nref, &data, &size);
 	if (code < 0)
 	    return code;
@@ -519,7 +519,7 @@ int
 obj_cvs(const gs_memory_t *mem, const ref * op, byte * str, uint len, uint * prlen,
 	const byte ** pchars)
 {
-    int code = obj_cvp(op, str, len, prlen, 0, 0, NULL);
+    int code = obj_cvp(op, str, len, prlen, 0, 0, mem);
 
     if (code != 1 && pchars) {
 	*pchars = str;
@@ -591,14 +591,14 @@ array_get(const gs_memory_t *mem, const ref * aref, long index_long, ref * pref)
 
 		for (; index--;)
 		    packed = packed_next(packed);
-		packed_get(packed, pref);
+		packed_get(mem, packed, pref);
 	    }
 	    break;
 	case t_shortarray:
 	    {
 		const ref_packed *packed = aref->value.packed + index_long;
 
-		packed_get(packed, pref);
+		packed_get(mem, packed, pref);
 	    }
 	    break;
 	default:
@@ -612,7 +612,7 @@ array_get(const gs_memory_t *mem, const ref * aref, long index_long, ref * pref)
 /* Source and destination are allowed to overlap if the source is packed, */
 /* or if they are identical. */
 void
-packed_get(const ref_packed * packed, ref * pref)
+packed_get(const gs_memory_t *mem, const ref_packed * packed, ref * pref)
 {
     const ref_packed elt = *packed;
     uint value = elt & packed_value_mask;
@@ -628,10 +628,10 @@ packed_get(const ref_packed * packed, ref * pref)
 	    make_int(pref, (int)value + packed_min_intval);
 	    break;
 	case pt_literal_name:
-	    name_index_ref(value, pref);
+	    name_index_ref(mem, value, pref);
 	    break;
 	case pt_executable_name:
-	    name_index_ref(value, pref);
+	    name_index_ref(mem, value, pref);
 	    r_set_attrs(pref, a_executable);
 	    break;
 	case pt_full_ref:

@@ -227,7 +227,8 @@ restore_check_stack(const ref_stack_t * pstack, const alloc_save_t * asave,
 		    break;
 		case t_name:
 		    /* Names are special because of how they are allocated. */
-		    if (alloc_name_is_since_save(stkp, asave))
+		    if (alloc_name_is_since_save((const gs_memory_t *)pstack->memory,
+						 stkp, asave))
 			return_error((const gs_memory_t *)pstack->memory, e_invalidrestore);
 		    continue;
 		case t_string:

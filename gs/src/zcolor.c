@@ -127,7 +127,7 @@ zcurrentcolorspace(i_ctx_t * i_ctx_p)
 	int code = ialloc_ref_array(op, a_all, 1, "currentcolorspace");
 	if (code < 0)
 	    return code;
-	return name_enter_string("DeviceGray", op->value.refs);
+	return name_enter_string(imemory, "DeviceGray", op->value.refs);
     } else {
         *op = istate->colorspace.array;
         return 0;

@@ -38,10 +38,10 @@ gs_font_dir *ifont_dir = 0;	/* needed for buildfont */
 
 /* Mark a glyph as a PostScript name (if it isn't a CID). */
 bool
-zfont_mark_glyph_name(gs_glyph glyph, void *ignore_data)
+zfont_mark_glyph_name(const gs_memory_t *mem, gs_glyph glyph, void *ignore_data)
 {
     return (glyph >= gs_min_cid_glyph || glyph == gs_no_glyph ? false :
-	    name_mark_index((uint) glyph));
+	    name_mark_index(mem, (uint) glyph));
 }
 
 /* Initialize the font operators */
@@ -247,7 +247,7 @@ font_param(const gs_memory_t *mem, const ref * pfdict, gs_font ** ppfont)
 	return_error(mem, e_invalidfont);
     pfont = r_ptr(pid, gs_font);
     pdata = pfont->client_data;
-    if (!obj_eq(&pdata->dict, pfdict))
+    if (!obj_eq(mem, &pdata->dict, pfdict))
 	return_error(mem, e_invalidfont);
     *ppfont = pfont;
     if (pfont == 0)
@@ -313,7 +313,7 @@ make_font(i_ctx_t *i_ctx_p, const gs_matrix * pmat)
      * font_data of the new font was simply copied from the old one.
      */
     if (pencoding != 0 &&
-	!obj_eq(pencoding, &pfont_data(newfont)->Encoding)
+	!obj_eq(imemory, pencoding, &pfont_data(newfont)->Encoding)
 	) {
 	if (newfont->FontType == ft_composite)
 	    return_error(imemory, e_rangecheck);
@@ -426,9 +426,9 @@ make_uint_array(register os_ptr op, const uint * intp, int count)
 /* Remove scaled font and character cache entries that would be */
 /* invalidated by a restore. */
 private bool
-purge_if_name_removed(cached_char * cc, void *vsave)
+purge_if_name_removed(const gs_memory_t *mem, cached_char * cc, void *vsave)
 {
-    return alloc_name_index_is_since_save(cc->code, vsave);
+    return alloc_name_index_is_since_save(mem, cc->code, vsave);
 }
 void
 font_restore(const alloc_save_t * save)
