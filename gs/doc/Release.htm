@@ -133,7 +133,7 @@ class="offsite"><tt>http://sourceforge.net/cvs/?group_id=1897</tt></a>.
 <h3><a name="Distributions"></a>Distributions</h3>
 
 <p>
-Both stable and development releases are available from
+Stable, beta, and development releases are all available from
 <blockquote><pre>
 <a
 href="http://sourceforge.net/project/filelist.php?group_id=1897" 
@@ -266,6 +266,7 @@ right information is in the following places:
 <li>revision date in <b><tt>man/*.1</tt></b>, <b><tt>doc/*.htm</tt></b>,
 <b><tt>version.mak</tt></b>, <b><tt>doc/gs-vms.hlp</tt></b>
 <li>copyright year (if necessary) in <b><tt>gscdef.c</tt></b>
+<li>third-party library version number in <b><tt>*.mak</tt></b>
 </ul>
 
 <p>
@@ -552,6 +553,58 @@ and "new features" and "known problems" lists in
 
 <p>
 Do the steps for distributions in general.
+
+<p>
+Create a directory at
+<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/gs###/</tt></b>.  In that
+directory, store the following files:
+
+<ul>
+
+<li>Standard distribution files:
+
+<blockquote><pre>
+<b><tt>ghostscript-#.##.tar.gz</tt></b>
+<b><tt>ghostscript-#.##.tar.bz2</tt></b>
+</pre></blockquote>
+
+<li>MS Windows source and executables:
+
+<blockquote><pre>
+<b><tt>gs###src.zip</tt></b>
+<b><tt>gs###w32.exe</tt></b>
+<b><tt>gs###w32.zip</tt></b>
+</pre></blockquote>
+
+<li>Third-party libraries, as links (upload these if not installed), where
+<b><tt>$$$</tt></b> et al refer to the version number of the library (which
+must be consistent with the values of <b><tt>JVERSION</tt></b> and
+<b><tt>PVERSION</tt></b> in the makefiles):
+
+<blockquote><pre>
+<b><tt>ghostscript-#.##jpeg.tar.gz</tt></b> -> <b><tt>../../3rdparty/jpegsrc.v$$.tar.gz</tt></b>
+<b><tt>ghostscript-#.##libpng.tar.gz</tt></b> -> <b><tt>../../3rdparty/libpng-$.$.$.tar.gz</tt></b>
+<b><tt>ghostscript-#.##zlib.tar.gz</tt></b> -> <b><tt>../../3rdparty/zlib-$.$.$.tar.gz</tt></b>
+<b><tt>jpegsr$$.zip</tt></b> -> <b><tt>../../3rdparty/jpegsr$$.zip</tt></b>
+<b><tt>lpng$$$.zip</tt></b> -> <b><tt>../../3rdparty/lpng$$$.zip</tt></b>
+<b><tt>zlib$$$.zip</tt></b> -> <b><tt>../../3rdparty/zlib$$$.zip</tt></b>
+</pre></blockquote>
+
+<li>Fonts, where <b><tt>$.$$</tt></b> refers to the most recent version
+number of the fonts:
+
+<blockquote><pre>
+<b><tt>ghostscript-fonts-other-$.$.tar.gz</tt></b> -> <b><tt>../fonts/ghostscript-fonts-other-$.$.tar.gz</tt></b>
+<b><tt>ghostscript-fonts-std-$.$.tar.gz</tt></b> -> <b><tt>../fonts/ghostscript-fonts-std-$.$.tar.gz</tt></b>
+</pre></blockquote>
+
+</ul>
+
+<p>
+(Note that the link names are somewhat inconsistent: some of them retain the
+version number of the file being referenced, and some of them use the
+Ghostscript version number.  This is a historical artifact that might be
+changed someday.)
 
 <p>
 E-mail the release announcement using:
