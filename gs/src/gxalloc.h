@@ -219,7 +219,6 @@ extern_st(st_chunk);
 		if ( pre != end )\
 		{	lprintf2("Chunk parsing error, 0x%lx != 0x%lx\n",\
 				 (ulong)pre, (ulong)end);\
-			gs_abort();\
 		}\
 	}
 #else
