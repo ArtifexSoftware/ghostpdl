@@ -462,7 +462,10 @@ gx_no_adjust_cspace_count(const gs_color_space * pcs, int delta)
 /* A stub for a color mapping linearity check, when it is inapplicable. */
 int
 gx_cspace_no_linear(gs_direct_color_space *cs, const gs_imager_state * pis,
-		gx_device * dev, const gs_client_color *c, int nc, float smoothness)
+		gx_device * dev, 
+		const gs_client_color *c0, const gs_client_color *c1,
+		const gs_client_color *c2, const gs_client_color *c3,
+		float smoothness)
 {
     return_error(gs_error_rangecheck);
 }
@@ -518,7 +521,9 @@ is_dc_nearly_linear(const gx_device *dev, const gx_device_color *c,
 /* Default color mapping linearity check, a triangle case. */
 private int
 gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, const gs_client_color *c, float smoothness)
+		gx_device *dev, 
+		const gs_client_color *c0, const gs_client_color *c1,
+		const gs_client_color *c2, float smoothness)
 {
     /* We check 4 points - the median center, and middle points of 3 sides. 
        Hopely this is enough for reasonable color spaces and color renderings. 
@@ -528,38 +533,38 @@ gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state
     int n = cs->type->num_components((const gs_color_space *)cs);
     int code;
 
-    code = cc2dc(cs, pis, dev, &d[0], &c[0]);
+    code = cc2dc(cs, pis, dev, &d[0], c0);
     if (code < 0)
 	return code;
-    code = cc2dc(cs, pis, dev, &d[1], &c[1]);
+    code = cc2dc(cs, pis, dev, &d[1], c1);
     if (code < 0)
 	return code;
-    code = cc2dc(cs, pis, dev, &d[2], &c[2]);
+    code = cc2dc(cs, pis, dev, &d[2], c2);
     if (code < 0)
 	return code;
 
-    interpolate_cc(&c01, &c[0], &c[1], 0.5, n);
+    interpolate_cc(&c01, c0, c1, 0.5, n);
     code = cc2dc(cs, pis, dev, &d01, &c01);
     if (code < 0)
 	return code;
     if (!is_dc_nearly_linear(dev, &d01, &d[0], &d[1], 0.5, n, smoothness))
 	return 0;
 
-    interpolate_cc(&c012, &c[2], &c01, 2.0 / 3, n);
+    interpolate_cc(&c012, c2, &c01, 2.0 / 3, n);
     code = cc2dc(cs, pis, dev, &d012, &c012);
     if (code < 0)
 	return code;
     if (!is_dc_nearly_linear(dev, &d012, &d[2], &d01, 2.0 / 3, n, smoothness))
 	return 0;
 
-    interpolate_cc(&c12, &c[1], &c[2], 0.5, n);
+    interpolate_cc(&c12, c1, c2, 0.5, n);
     code = cc2dc(cs, pis, dev, &d12, &c12);
     if (code < 0)
 	return code;
     if (!is_dc_nearly_linear(dev, &d12, &d[1], &d[2], 0.5, n, smoothness))
 	return 0;
 
-    interpolate_cc(&c20, &c[2], &c[0], 0.5, n);
+    interpolate_cc(&c20, c2, c0, 0.5, n);
     code = cc2dc(cs, pis, dev, &d20, &c20);
     if (code < 0)
 	return code;
@@ -571,22 +576,25 @@ gx_cspace_is_linear_in_triangle(gs_direct_color_space *cs, const gs_imager_state
 /* Default color mapping linearity check. */
 int
 gx_cspace_is_linear_default(gs_direct_color_space *cs, const gs_imager_state * pis,
-		gx_device *dev, const gs_client_color *c, int nc, float smoothness)
+		gx_device *dev, 
+		const gs_client_color *c0, const gs_client_color *c1,
+		const gs_client_color *c2, const gs_client_color *c3,
+		float smoothness)
 {
     /* Assuming 3 <= nc <= 4. We don't need other cases. */
     /* With nc == 4 assuming a convex plain quadrangle in the client color space. */
     int code;
 
-    if (c[0].pattern != 0)
+    if (c0->pattern != 0)
 	return_error(gs_error_rangecheck);
     if (dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN)
 	return_error(gs_error_rangecheck);
-    code = gx_cspace_is_linear_in_triangle(cs, pis, dev, c, smoothness);
+    code = gx_cspace_is_linear_in_triangle(cs, pis, dev, c0, c1, c2, smoothness);
     if (code < 0)
 	return code;
-    if (nc == 3)
+    if (c3 == NULL)
 	return 0;
-    return gx_cspace_is_linear_in_triangle(cs, pis, dev, c + 1, smoothness);
+    return gx_cspace_is_linear_in_triangle(cs, pis, dev, c1, c2, c3, smoothness);
 }
 
 /* Serialization. */

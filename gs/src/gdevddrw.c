@@ -166,17 +166,18 @@ compute_ldx(trap_line *tl, fixed ys)
 }
 
 private inline void
-init_gradient(trap_gradient *g, const gs_linear_color_edge *e, const trap_line *l, 
-		fixed ybot, int num_components)
+init_gradient(trap_gradient *g, const gs_linear_color_edge *e, const gs_linear_color_edge *e1, 
+		const trap_line *l, fixed ybot, int num_components)
 {
     int i;
     int64_t c;
     int32_t d;
+    const frac32 *c1 = (e->c1 != NULL ? e->c1 : /* a wedge */e1->c1);
 
     g->den = (uint32_t)(e->end.y - e->start.y);
     assert(g->den == l->h);
     for (i = 0; i < num_components; i++) {
-	g->num[i] = (int32_t)(e->c1[i] - e->c0[i]);
+	g->num[i] = (int32_t)(c1[i] - e->c0[i]);
 	c = (int64_t)g->num[i] * (uint32_t)(ybot - e->start.y);
 	d = (int32_t)(c / g->den);
 	g->c[i] = e->c0[i] + d;
@@ -207,13 +208,14 @@ step_gradient(trap_gradient *g, int num_components)
 }
 
 private inline bool
-check_gradient_overflow(const trap_line *l, const trap_line *r, 
-		const gs_linear_color_edge *le, const gs_linear_color_edge *re,
+check_gradient_overflow(const gs_linear_color_edge *le, const gs_linear_color_edge *re,
 		int num_components)
 {
     /* Check whether set_x_gradient can overflow. */
-    const int32_t mul_limit = (int32_t)((uint64_t)1 << 32) - 1 - 2;
-    int32_t h = max(l->h, r->h);
+    const int32_t mul_limit = (int32_t)(((uint64_t)1 << 31) - 1 - 2);
+    int32_t hl = le->end.y - le->start.y;
+    int32_t hr = re->end.y - re->start.y;
+    int32_t h = max(hl, hr);
     int64_t xl1 = ((uint64_t)le->start.x * h);
     int64_t xl2 = ((uint64_t)le->end.x * h);
     int64_t xl = min(xl1, xl2);
@@ -246,7 +248,7 @@ private inline int
 set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
 	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
 {
-    const int32_t mul_limit = (int32_t)((uint64_t)1 << 32) - 1;
+    const int32_t mul_limit = (int32_t)(((uint64_t)1 << 31) - 1 - 2);
     int32_t h = max(l->h, r->h);
     /* Approximatively convert coordinates to a common denominator : */
     uint32_t fxl = (uint32_t)((uint64_t)l->xf * h / l->h);
@@ -421,6 +423,21 @@ middle_frac32_color(frac32 *c, const frac32 *c0, const frac32 *c2, int num_compo
 	c[i] = (c0[i] >> 1) + (c2[i] >> 1) + (1 & c0[i] & c2[i]);
 }
 
+private inline int
+fill_linear_color_trapezoid_nocheck(const gs_fill_attributes *fa,
+	const gs_linear_color_edge *le, const gs_linear_color_edge *re)
+{
+    fixed y02 = max(le->start.y, re->start.y), ymin = max(y02, fa->clip->p.y);
+    fixed y13 = min(le->end.y, re->end.y), ymax = min(y13, fa->clip->q.y);
+    int code;
+
+    code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
+	    le, re, ymin, ymax, 0, NULL, 0);
+    if (code < 0)
+	return code;
+    return !code;
+}
+
 
 /*  Fill a trapezoid with a linear color.
     [p0 : p1] - left edge, from bottom to top.
@@ -445,9 +462,8 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
 	const frac32 *c2, const frac32 *c3)
 {
     gs_linear_color_edge le, re;
+    int num_components = fa->pdev->color_info.num_components;
     int code;
-    fixed y02 = max(p0->y, p2->y), ymin = max(y02, fa->clip->p.y);
-    fixed y13 = min(p1->y, p3->y), ymax = min(y13, fa->clip->q.y);
 
     le.start = *p0;
     le.end = *p1;
@@ -459,11 +475,9 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
     re.c0 = c2;
     re.c1 = c3;
     re.clip_x = fa->clip->q.x;
-    code = (fa->swap_axes ? gx_fill_trapezoid_as_lc : gx_fill_trapezoid_ns_lc)(fa->pdev, 
-	    &le, &re, ymin, ymax, 0, NULL, 0);
-    if (code < 0)
-	return code;
-    return !code;
+    if (check_gradient_overflow(&le, &re, num_components))
+        return 0;
+    return fill_linear_color_trapezoid_nocheck(fa, &le, &re);
 }
 
 private inline int 
@@ -473,21 +487,51 @@ fill_linear_color_triangle(const gs_fill_attributes *fa,
 	const frac32 *c0, const frac32 *c1, const frac32 *c2)
 {   /* p0 must be the lowest vertex. */
     int code;
+    gs_linear_color_edge e0, e1, e2;
+    int num_components = fa->pdev->color_info.num_components;
 
     if (p0->y == p1->y)
 	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p1, p2, c0, c2, c1, c2);
     if (p1->y == p2->y)
 	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p0, p1, c0, c2, c0, c1);
+    e0.start = *p0;
+    e0.end = *p2;
+    e0.c0 = c0;
+    e0.c1 = c2;
+    e0.clip_x = fa->clip->p.x;
+    e1.start = *p0;
+    e1.end = *p1;
+    e1.c0 = c0;
+    e1.c1 = c1;
+    e1.clip_x = fa->clip->q.x;
     if (p0->y < p1->y && p1->y < p2->y) {
-	code = gx_default_fill_linear_color_trapezoid(fa, p0, p2, p0, p1, c0, c2, c0, c1);
-	if (code < 0)
+	e2.start = *p1;
+	e2.end = *p2;
+	e2.c0 = c1;
+	e2.c1 = c2;
+	e2.clip_x = fa->clip->q.x;
+	if (check_gradient_overflow(&e0, &e1, num_components))
+	    return 0;
+	if (check_gradient_overflow(&e0, &e2, num_components))
+	    return 0;
+	code = fill_linear_color_trapezoid_nocheck(fa, &e0, &e1);
+	if (code <= 0) /* Sic! */
 	    return code;
-	return gx_default_fill_linear_color_trapezoid(fa, p0, p2, p1, p2, c0, c2, c1, c2);
+	return fill_linear_color_trapezoid_nocheck(fa, &e0, &e2);
     } else { /* p0->y < p2->y && p2->y < p1->y */
-	code = gx_default_fill_linear_color_trapezoid(fa, p0, p2, p0, p1, c0, c2, c0, c1);
-	if (code < 0)
+	e2.start = *p2;
+	e2.end = *p1;
+	e2.c0 = c2;
+	e2.c1 = c1;
+	e2.clip_x = fa->clip->q.x;
+	if (check_gradient_overflow(&e0, &e1, num_components))
+	    return 0;
+	if (check_gradient_overflow(&e2, &e1, num_components))
+	    return 0;
+	code = fill_linear_color_trapezoid_nocheck(fa, &e0, &e1);
+	if (code <= 0) /* Sic! */
 	    return code;
-	return gx_default_fill_linear_color_trapezoid(fa, p2, p1, p0, p1, c2, c1, c0, c1);
+	return fill_linear_color_trapezoid_nocheck(fa, &e2, &e1);
     }
 }
 

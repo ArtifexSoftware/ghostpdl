@@ -2315,6 +2315,18 @@ divide_bar(patch_fill_state_t *pfs,
     patch_interpolate_color(&p->c, &p0->c, &p1->c, pfs, (double)(radix - 1) / radix);
 }
 
+private inline void
+cc2fc(const patch_fill_state_t *pfs, const gs_client_color *c, 
+	    frac32 fc[GX_DEVICE_COLOR_MAX_COMPONENTS])
+{
+    int j;
+    const frac32 frac32_1 = ~0;
+
+    for (j = 0; j < pfs->num_components; j++)
+	fc[j] = (frac32)((double)frac32_1 * c->paint.values[j] 
+			/ pfs->color_domain.paint.values[j]);
+}
+
 private int 
 triangle_by_4(patch_fill_state_t *pfs, 
 	const shading_vertex_t *p0, const shading_vertex_t *p1, const shading_vertex_t *p2, 
@@ -2324,9 +2336,39 @@ triangle_by_4(patch_fill_state_t *pfs,
     shading_vertex_t p01, p12, p20;
     wedge_vertex_list_t L01, L12, L20, L[3];
     int code;
+#   if USE_LINEAR_COLOR_PROCS
+	gx_device *pdev = pfs->dev;
+	frac32 fc[3][GX_DEVICE_COLOR_MAX_COMPONENTS];
+	gs_fill_attributes fa;
+	gs_direct_color_space *cs = 
+		(gs_direct_color_space *)pfs->direct_space; /* break 'const'. */
+#   endif
     
     if (sd < fixed_1 * 4)
 	return constant_color_triangle(pfs, p2, p0, p1);
+#   if USE_LINEAR_COLOR_PROCS
+	if (1 /* fixme: pfs->dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN) 
+		    doesn't work with 'display'. */
+		&& 1 /* fixme: pfs->pis->halftone->type == ht_type_none
+		    doesn't work: with display it appears ht_type_screen. */
+		&& cs_is_linear(cs, pfs->pis, pfs->dev, &p0->c.cc, 
+			    &p1->c.cc, &p2->c.cc, NULL, pfs->smoothness)) {
+	    fa.pdev = pdev;
+	    fa.clip = &pfs->rect;
+	    fa.ht = NULL; /* fixme */
+	    fa.swap_axes = false;
+	    fa.lop = 0; /* fixme */
+	    cc2fc(pfs, &p0->c.cc, fc[0]);
+	    cc2fc(pfs, &p1->c.cc, fc[1]);
+	    cc2fc(pfs, &p2->c.cc, fc[2]);
+	    code = dev_proc(pdev, fill_linear_color_triangle)(&fa, 
+			    &p0->p, &p1->p, &p2->p, fc[0], fc[1], fc[2]);
+	    if (code == 1)
+		return 0;
+	    if (code < 0)
+		return code;
+	} else
+#   endif
     if (pfs->Function != NULL) {
 	double d01 = color_span(pfs, &p1->c, &p0->c);
 	double d12 = color_span(pfs, &p2->c, &p1->c);

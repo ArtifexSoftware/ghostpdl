@@ -217,9 +217,12 @@ struct gs_color_space_type_s {
 
 #define cs_proc_is_linear(proc)\
   int proc(gs_direct_color_space *cs, const gs_imager_state * pis,\
-		gx_device *dev, const gs_client_color *c, int nc, float smoothness)
-#define cs_is_linear(pcs, s)\
-  (*(pcs)->type->is_linear)(pcs, s)
+		gx_device *dev,\
+		const gs_client_color *c0, const gs_client_color *c1,\
+		const gs_client_color *c2, const gs_client_color *c3,\
+		float smoothness)
+#define cs_is_linear(pcs, pis, dev, c0, c1, c2, c3, smoothness)\
+  (*(pcs)->type->is_linear)(pcs, pis, dev, c0, c1, c2, c3, smoothness)
 	cs_proc_is_linear((*is_linear));
 };
 

@@ -160,6 +160,12 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 #	endif
 #	if LINEAR_COLOR
 	    int num_components = dev->color_info.num_components;
+	    frac32 lgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    long lgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    long lgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    frac32 rgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    long rgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
+	    long rgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    frac32 xgc[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    long xgf[GX_DEVICE_COLOR_MAX_COMPONENTS];
 	    long xgnum[GX_DEVICE_COLOR_MAX_COMPONENTS];
@@ -301,13 +307,24 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 	l.x += fixed_epsilon;
 	r.x += fixed_epsilon;
 #	if LINEAR_COLOR
-	    if (check_gradient_overflow(&l, &r, left, right, num_components))
-		return 1;
+#	    ifdef DEBUG
+		if (check_gradient_overflow(left, right, num_components)) {
+		    /* The caller must care of. 
+		       Checking it here looses some performance with triangles. */
+		    return_error(gs_error_unregistered);
+		}
+#	    endif
+	    lg.c = lgc;
+	    lg.f = lgf;
+	    lg.num = lgnum;
+	    rg.c = rgc;
+	    rg.f = rgf;
+	    rg.num = rgnum;
 	    xg.c = xgc;
 	    xg.f = xgf;
 	    xg.num = xgnum;
-	    init_gradient(&lg, left, &l, ymin, num_components);
-	    init_gradient(&rg, right, &r, ymin, num_components);
+	    init_gradient(&lg, left, right, &l, ymin, num_components);
+	    init_gradient(&rg, right, left, &r, ymin, num_components);
 
 #	endif
 
