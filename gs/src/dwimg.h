@@ -51,8 +51,12 @@ struct IMAGE_S {
     IMAGE_DEVICEN devicen[IMAGE_DEVICEN_MAX];
 
     /* periodic redrawing */
-    SYSTEMTIME update_time;
-    int update_interval;
+    UINT update_timer;		/* identifier */
+    int update_tick;		/* timer duration in milliseconds */
+    int update_count;		/* Number of WM_TIMER messages received */
+    int update_interval;	/* Number of WM_TIMER until refresh */
+    int pending_update;		/* We have asked for periodic updates */
+    int pending_sync;		/* We have asked for a SYNC */
 
     /* Window scrolling stuff */
     int cxClient, cyClient;

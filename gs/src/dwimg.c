@@ -123,8 +123,9 @@ image_new(void *handle, void *device)
 	img->handle = handle;
 	img->device = device;
 
-	img->update_interval = 1;
-	memset(&img->update_time, 0, sizeof(img->update_time));
+	img->update_tick = 100;		/* milliseconds */
+	img->update_interval = 1;	/* 1 tick */
+	img->update_count = 0;
 
         img->hmutex = INVALID_HANDLE_VALUE;
 
@@ -528,50 +529,61 @@ create_window(IMAGE *img)
 void
 image_poll(IMAGE *img)
 {
-    /* Update the display periodically while Ghostscript is drawing */
-    SYSTEMTIME t1;
-    SYSTEMTIME t2;
-    int delta;
     if ((img->bmih.biWidth == 0) || (img->bmih.biHeight == 0))
 	return;
-
-    GetSystemTime(&t1);
-    delta = (t1.wSecond - img->update_time.wSecond) +
-		(t1.wMinute - img->update_time.wMinute) * 60 +
-		(t1.wHour - img->update_time.wHour) * 3600;
-    if (img->update_interval < 1)
-	img->update_interval = 1;	/* seconds */
-    if (delta < 0)
-        img->update_time = t1;
-    else if (delta > img->update_interval) {
-	/* redraw window */
-	image_sync(img);
-
-	/* Make sure the update interval is at least 10 times
-	 * what it takes to paint the window
-	 */
-	GetSystemTime(&t2);
-	delta = (t2.wSecond - t1.wSecond)*1000 + 
-		(t2.wMilliseconds - t1.wMilliseconds);
-	if (delta < 0)
-	    delta += 60000;	/* delta = time to redraw */
-	if (delta > img->update_interval * 100)
-	    img->update_interval = delta/100;
-        img->update_time = t2;
+    img->pending_update = 1;
+    if (img->update_timer == 0) {
+	img->update_timer = 1;
+	img->update_count = 0;
+	SetTimer(img->hwnd, img->update_timer, img->update_tick, NULL);
     }
 }
 
+/* Redraw the window, making sure that periodic updates don't take too long. */
 void
-image_sync(IMAGE *img)
+image_update_now(IMAGE *img)
 {
+    SYSTEMTIME t1;
+    SYSTEMTIME t2;
+    int delta;
     if ( !IsWindow(img->hwnd) )	/* some clod closed the window */
 	create_window(img);
 
     if ( !IsIconic(img->hwnd) ) {  /* redraw window */
+	GetSystemTime(&t1);
 	InvalidateRect(img->hwnd, NULL, 1);
 	UpdateWindow(img->hwnd);
+	GetSystemTime(&t2);
+	/* Make sure the update interval is at least 10 times
+	 * what it takes to paint the window
+	 */
+	delta = (t2.wSecond - t1.wSecond)*1000 + 
+		(t2.wMilliseconds - t1.wMilliseconds);
+	if (delta < 0)
+	    delta += 60000;
+	delta = 10 * delta / img->update_tick + 1;
+	if (delta > img->update_interval)
+	    img->update_interval = delta;
+	else if ((delta >= 2) &&
+		 (delta < img->update_interval / 4))
+	    img->update_interval = delta/2;
     }
+    img->update_count = 0;
+}
+
+
+void
+image_sync(IMAGE *img)
+{
+    if (img->update_timer) {
+	/* stop timer when nothing is happening */
+	KillTimer(img->hwnd, img->update_timer);
+        img->update_timer = 0;
+    }
+    img->pending_sync = 0;
+    image_update_now(img);
     image_separations(img);
+    img->pending_update = 0;
 }
 
 
@@ -1299,6 +1311,11 @@ WndImg2Proc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 		if (hStdin != INVALID_HANDLE_VALUE)
 		    WriteConsoleInput(hStdin, &ir, 1, &dwWritten); 
 	    }
+	    return 0;
+	case WM_TIMER:
+	    img->update_count++;
+	    if (img->update_count >= img->update_interval)
+		image_update_now(img);
 	    return 0;
 	case WM_PAINT:
 	    {

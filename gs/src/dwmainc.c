@@ -90,6 +90,7 @@ gsdll_stderr(void *instance, const char *str, int len)
 #define DISPLAY_SIZE WM_USER+103
 #define DISPLAY_SYNC WM_USER+104
 #define DISPLAY_PAGE WM_USER+105
+#define DISPLAY_UPDATE WM_USER+106
 
 /*
 #define DISPLAY_DEBUG
@@ -123,6 +124,9 @@ static void winthread(void *arg)
 		break;
 	    case DISPLAY_PAGE:
 		image_page((IMAGE *)msg.lParam);
+		break;
+	    case DISPLAY_UPDATE:
+		image_poll((IMAGE *)msg.lParam);
 		break;
 	    default:
 		TranslateMessage(&msg);
@@ -220,8 +224,10 @@ int display_sync(void *handle, void *device)
     fprintf(stdout, "display_sync(0x%x, 0x%x)\n", handle, device);
 #endif
     img = image_find(handle, device);
-    if (img)
+    if (img && !img->pending_sync) {
+	img->pending_sync = 1;
 	PostThreadMessage(thread_id, DISPLAY_SYNC, 0, (LPARAM)img);
+    }
     return 0;
 }
 
@@ -241,10 +247,12 @@ int display_page(void *handle, void *device, int copies, int flush)
 int display_update(void *handle, void *device, 
     int x, int y, int w, int h)
 {
-    /* Unneeded for polling - we are running Windows on another thread. */
-    /* Eventually we will add code here which provides progressive 
-     * update of the display during rendering.
-     */
+    IMAGE *img;
+    img = image_find(handle, device);
+    if (img && !img->pending_update && !img->pending_sync) {
+	img->pending_update = 1;
+	PostThreadMessage(thread_id, DISPLAY_UPDATE, 0, (LPARAM)img);
+    }
     return 0;
 }
 
