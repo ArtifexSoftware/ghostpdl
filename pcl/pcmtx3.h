@@ -7,7 +7,7 @@
 #ifndef pcmtx3_INCLUDED
 #define pcmtx3_INCLUDED
 
-#include "math_h"
+#include "math_.h"
 #include "gx.h"
 #include "gsmatrix.h"
 #include "gscspace.h"
