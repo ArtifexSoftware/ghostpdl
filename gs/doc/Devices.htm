@@ -45,6 +45,7 @@
 <li><a href="#x11_devices">X Window System</a>
 </ul>
 <li><a href="#IJS">IJS - Inkjet and other raster devices</a>
+<li><a href="#Rinkj">Rinkj - Resplendent inkjet driver</a>
 <li><a href="#HP_ijs">HP Deskjet official drivers</a>
 <li><a href="#gimp-print">Gimp-Print driver collection</a>
 <li><a href="#Win">MS Windows printers</a>
@@ -682,6 +683,93 @@ It should be present right after the include of icclib.mak.
 in taking patches from people who have ported it to non-mainstream
 platforms. And once it's built, you won't have to recompile Ghostscript
 to support new drivers!
+
+<h2><a name="Rinkj"></a>Rinkj - Resplendent inkjet driver
+
+<p>The Rinkj driver is an experimental new driver, capable of driving
+some Epson printers at a very high level of quality. It is not
+currently recommended for the faint of heart.</p>
+
+<p>Most of the configuration parameters, including resolution, choice
+of printer model, and linearization curves, are in a separate setup
+file. In addition, we rely heavily on an ICC profile for </p>
+
+<p>
+Individual Rinkj command line parameters are as follows:
+</p>
+
+<dl>
+<dt><b><tt>-sSetupFile=</tt></b><em>{path}</em>
+<dd>Specifies the path for the setup file.
+
+<dt><b><tt>-sProfileOut=</tt></b><em>{path}</em>
+<dd>Specifies the path for the output ICC profile. This profile should
+be a <i>link</i> profile, mapping the ProcessColorModel (DeviceCMYK by
+default) to the device color space.
+</dl>
+
+<p>For 6- and 7-color devices, the target color space for the output
+profile is currently a 4-component space. The conversion from this
+into the 6- or 7-color space (the "ink split") is done by lookup
+tables in the setup file.</p>
+
+<p>Setup files are in a simple "Key: value" text format. Relevant keys
+are:</p>
+
+<dl>
+<dt><b><tt>Manufacturer:</tt></b><em>{name}</em>
+<dt><b><tt>Model:</tt></b><em>{name}</em>
+<dd>The manufacturer and model of the individual device, using the
+same syntax as IEEE printer identification strings. Currently, the
+only supported manufacturer string is "EPSON", and the only supported
+model strings are "Stylus Photo 2200" and "Stylus Photo 7600".
+
+<dt><b><tt>Resolution:</tt></b><em>{x-dpi}</em>x<em>{y-dpi}</em>
+<dd>The resolution in dpi. Usually, this should match the
+Ghostscript resolution set with the <tt>-r</tt> switch. Otherwise,
+the page image will be scaled.
+
+<dt><b><tt>Dither:</tt></b><em>{int}</em>
+<dd>Selects among variant dither options. Currently, the choices are
+<tt>1</tt> for one-bit dither, and <tt>2</tt>, for a 2-bit variable
+dot dither.
+
+<dt><b><tt>Aspect:</tt></b><em>{int}</em>
+<dd>Controls the aspect ratio for highlight dot placement. Valid
+values are <tt>1</tt>, <tt>2</tt>, and <tt>4</tt>. For best results,
+choose a value near the x resolution divided by the y resolution. For
+example, if resolution is 1440x720, aspect should be 2.
+
+<dt><b><tt>Microdot:</tt></b><em>{int}</em>
+<dd>Chooses a microdot size. On EPSON devices, this value is passed
+directly through to the "ESC ( e" command. See EPSON documentation
+for further details (see, I <em>told</em> you this wasn't for the
+faint of heart).
+
+<dt><b><tt>Unidirectional:</tt></b><em>{int}</em>
+<dd>Enables (1) or disables (0) unidirectional printing, which is
+slower but possibly higher quality.
+
+<dt><b><tt>AddLut:</tt></b><em>{plane}</em>
+<dd>Adds a linearization look-up table. The plane is one of
+"CcMmYKk". The lookup table data follows. The line immediately
+following AddLut is the number of data points. Then, for each data
+point is a line consisting of two space-separated floats - the output
+value and the input value. If more than one LUT is specified for a
+single plane, they are applied in sequence.
+</dl>
+
+<p>A typical setup file is supplied in <tt>lib/rinkj-2200-setup</tt>.
+It is configured for the 2200, but can be adapted to the 7600 just by
+changing the "Model" line.
+
+<p>In addition, sample profiles are available at <a href="http://artofcode.com/rinkj/profiles/">artofcode.com/rinkj/profiles/</a>.
+
+<p>A known issue with this driver is poor support for margins and
+page size. In some cases, this will cause an additional page to be
+ejected at the end of a job. You may be able to work around this by
+supplying a cut-down value for <tt>-dDEVICEHEIGHTPOINTS</tt>, for
+example 755 for an 8.5x11 inch page on the EPSON 2200.</p>
 
 <h2><a name="HP_ijs"></a>HP Deskjet official drivers</h2>
 

@@ -1,20 +1,21 @@
-/*
- * Rinkj inkjet driver, utility functions for manipulating rinkj
- * config strings.
- *
- * Copyright 2000 Raph Levien <raph@acm.org>
- *
- * This module is distributed in the hope that it will be useful, but
- * WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
- * General Public License for more details.
- *
- * You should have received a copy of the GNU General Public License
- * along with this module; if not, write to the Free Software
- * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA
- * 02111-1307, USA.
- */
+/* Copyright (C) 2000-2004 artofcode LLC.  All rights reserved.
+  
+  This software is provided AS-IS with no warranty, either express or
+  implied.
+  
+  This software is distributed under license and may not be copied,
+  modified or distributed except as expressly authorized under the terms
+  of the license contained in the file LICENSE in this distribution.
+  
+  For more information about licensing, please refer to
+  http://www.ghostscript.com/licensing/. For information on
+  commercial licensing, go to http://www.artifex.com/licensing/ or
+  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+  San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+*/
 
+/*$Id$ */
+/* Support for reading Rinkj config files. */
 
 #include <stdlib.h>
 #include <string.h>
