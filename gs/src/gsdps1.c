@@ -191,11 +191,12 @@ gs_rectfill(gs_state * pgs, const gs_rect * pr, uint count)
 	    if (hl_color) {
 		rect_intersect(draw_rect, clip_rect);
 		if (draw_rect.p.x < draw_rect.q.x &&
-		    draw_rect.p.y < draw_rect.q.y)
+		    draw_rect.p.y < draw_rect.q.y) {
 		    code = dev_proc(pdev, fill_rectangle_hl_color)(pdev,
 			     &draw_rect, pis, pdc, pcpath);
 		    if (code < 0)
 			return code;
+		}
 	    } else {
 		int x, y, w, h;
 
