@@ -1,19 +1,36 @@
 /* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
-   This file is part of Aladdin Ghostscript.
+   This program may be distributed as part of Aladdin Ghostscript, under the
+   terms of the Aladdin Free Public License (the "License").
 
-   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-   or distributor accepts any responsibility for the consequences of using it,
-   or for whether it serves any particular purpose or works at all, unless he
-   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-   License (the "License") for full details.
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No
+   author or distributor accepts any responsibility for the consequences of
+   using it, or for whether it serves any particular purpose or works at
+   all, unless he or she says so in writing.  Refer to the License for full
+   details.
 
    Every copy of Aladdin Ghostscript must include a copy of the License,
    normally in a plain ASCII text file named PUBLIC.  The License grants you
    the right to copy, modify and redistribute Aladdin Ghostscript, but only
-   under certain conditions described in the License.  Among other things, the
-   License requires that the copyright notice and this notice be preserved on
-   all copies.
+   under certain conditions described in the License.  Among other things,
+   the License requires that the copyright notice and this notice be
+   preserved on all copies.
+
+   This program may also be distributed and/or modified under the terms of
+   the GNU General Public License as published by the Free Software
+   Foundation (the "GPL"); either version 2 of the GPL, or (at your option)
+   any later version.
+
+   When distributed under the terms of the GPL, this program is distributed
+   in the hope that it will be useful, but WITHOUT ANY WARRANTY; without
+   even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR
+   PURPOSE.  See the GPL for more details.
+
+   If this program is being distributed under the terms of the GPL, you
+   should have received a copy of the GPL along with this program, normally
+   in a plain ASCII text file named COPYING; if not, write to the Free
+   Software Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111
+   U.S.A.
  */
 
 /*$Id$ */
