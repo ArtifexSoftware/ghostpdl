@@ -26,6 +26,7 @@
 #include "pcht.h"
 #include "pcpalet.h"
 #include "pcindxed.h"
+#include "plht.h"
 
 /*
  * GC routines
@@ -2251,8 +2252,8 @@ pcl_ht_set_halftone(
     gs_ht *              pgsht = 0;
     int                  code = 0;
 
-    gs_const_string thresh;
-    thresh.data = ordered_dither_data;
+    gs_string thresh;
+    thresh.data = (byte *)ordered_dither_data;
     thresh.size = 256;
     return pl_set_pcl_halftone(pcs->pgs,
                                /* set transfer */ identity_transfer,
