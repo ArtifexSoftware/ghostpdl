@@ -1939,23 +1939,21 @@ pl_mt_char_width(
     gs_point *              pwidth )
 {
     FONTCONTEXT             fc;
-
-    /* FIXME inconsitant error code return values follow */
-    if (pl_set_mt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
-        return 0;
-    else {
-        int code;
-        if ( list_size > MAX_LIST_SIZE )
-            pl_glyph_width_list_remove(plfont->pfont->memory);
-        code = pl_glyph_width_cache_node_search(plfont->pfont->id, char_code, pwidth);
-        if ( code < 0 ) /* not found */ {
-            code = pl_ufst_char_width(char_code, pgs, pwidth, &fc);
-            if ( code < 0 ) return 1;
-            code = pl_glyph_width_cache_node_add(plfont->pfont->memory, plfont->pfont->id, char_code, pwidth);
-            if ( code < 0 ) return 1;
-        }
-        return 0;
+    int code;
+    if ( list_size > MAX_LIST_SIZE )
+        pl_glyph_width_list_remove(plfont->pfont->memory);
+    code = pl_glyph_width_cache_node_search(plfont->pfont->id, char_code, pwidth);
+    if ( code < 0 ) /* not found */ {
+        /* FIXME inconsitant error code return values follow */
+        if (pl_set_mt_font(NULL /* graphics state */, plfont, false, &fc) != 0)
+            return 0;
+        code = pl_ufst_char_width(char_code, pgs, pwidth, &fc);
+        if ( code < 0 ) return 1;
+        code = pl_glyph_width_cache_node_add(plfont->pfont->memory, 
+                                             plfont->pfont->id,
+                                             char_code, pwidth);
     }
+    return code;
 }
 
 private int

@@ -47,13 +47,16 @@ PIF_STATE pIFS = &IFS;
  * via the CGIFfco_Plugin procedure.
  */
 #ifdef MSVC
+/* plugins for downloaded objects */
 private const UB8           fcNmPl[] =    "\\mtfonts\\pcl45\\mt1\\plug___g.fco";
-private const UB8 *const    fcNmAry[] = { "\\mtfonts\\pcl45\\mt1\\pcl____g.fco",
+/* pcl fco */
+private const UB8 *const    fcNmAry[] = { "\\mtfonts\\pclps3\\mt1\\pclp3__g.fco",
+                                          /* wingding fco */
                                           "\\mtfonts\\pcl45\\mt1\\wd_____g.fco" };
 #else
 
 private const UB8           fcNmPl[] =    "mtfonts/pcl45/mt1/plug___g.fco";
-private const UB8 *const    fcNmAry[] = { "mtfonts/pcl45/mt1/pcl____g.fco",
+private const UB8 *const    fcNmAry[] = { "mtfonts/pclps3/mt1/pclp3__g.fco",
                                           "mtfonts/pcl45/mt1/wd_____g.fco" };
 #endif
 
@@ -179,12 +182,6 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                 LPSB8               pname = pBuffer + pfDesc->tfName;
                 int                 j;
 
-                /* ignore PostScript-specific fonts */
-                if (pfDesc->scaleFactor == 1000) {
-                    gs_free_object(mem, pBuffer, "TTFONTINFO buffer");
-                    continue;
-                }
-
                 for ( j = 0;
                       strlen(resident_table[j].full_font_name) &&
                       strcmp(resident_table[j].full_font_name, pname) != 0;
@@ -202,6 +199,7 @@ pl_load_built_in_fonts(const char *pathname, gs_memory_t *mem, pl_dict_t *pfontd
                                   err_cd,
                                   pname );
                     else {
+                        dprintf1( "Loading %s\n", pname );
                         uint    pitch_cp = (pfDesc->spaceBand * 100.0)
                                             / pfDesc->scaleFactor + 0.5;
 
