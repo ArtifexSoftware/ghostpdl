@@ -1,0 +1,46 @@
+% xlatmap - the map of translation tables for various kinds of fonts.
+%
+% It specifies Deconings to be used with FAPI-handled fonts.
+% If a font contain multiple character mapping tables,
+% this gives priorities for choosing a specific table from the font -
+% just using the order of entries of this map.
+
+% This file is allowed to customize by users without special agrement.
+% Please keep obvious format of this file.
+% Stings and manes must not contain zero bytes and must not be empty.
+
+% The map contains entries for each kind of fonts, being handled by
+% any font rendering plugin. The key of the entry is
+% the kind of fonts. The value is array of pairs.
+% The first element of pair is a string which encodes identifier of
+% character mapping table. The format of the first element 
+% depends on the kind of fonts, and should be recognized by
+% font rendering plugins. The second element is name of
+% Decoding resource. If resource is not available,
+% definefont will fail. Note that currently we supply insufficient
+% decoding resources, as well as insufficient entries in this map.
+
+/TrueType
+[ % Each entry is pair :
+  % a string PlatformID.SpecificID and a name of Decoding resource.
+  (3.1) /Latin1 %/Unicode
+  (3.2) /ShiftJIS % Japanese
+  (3.3) /GB2312   % Simplified Chinese
+  (3.4) /Big5     % Traditional Chinese
+  (3.5) /Wansung  % Korean
+  (3.6) /Johab    % Korean
+  % todo : add more entries
+]
+
+/PostScript
+[ % Since PostScript fonts were designed especially for PostScript,
+  % there is no need to specify additional information here.
+]
+
+/Intellifont
+[ % todo
+]
+
+/Microtype
+[ % todo
+]
