@@ -2371,6 +2371,21 @@ end
   exec
 } bind def
 
+/DetachPatternSpace % - DetachPatternSpace -
+{
+  PDFR_DEBUG {
+    (DetachPatternSpace beg) =
+  } if
+  currentcolorspace dup type /arraytype eq {
+    dup 0 get /Pattern eq {
+      dup 1 get setrcolorspace
+    } if
+  } if
+  pop
+  PDFR_DEBUG {
+    (DetachPatternSpace end) =
+  } if
+} bind def
 
 /ResolveColorSpaceArray  % <color_space> ResolveColorSpaceArray <color_space>
 {
@@ -2488,7 +2503,7 @@ end
     } ifelse
   } ifelse
   //PDFR_DEBUG {
-    (SetColor beg) =
+    (SetColor end) =
   } if
 } bind def
 
@@ -2937,17 +2952,15 @@ currentdict end readonly def
   /g /setgray load def
   /rg /setrgbcolor load def
   /k /setcmykcolor load def
-  /cs { % Assuming a dup of CS since we don't distinguish stroke and non-stroke colors.
-        % Can't apply twice due to pattern can't be applied over a pattern.
-        % //ResolveColorSpace exec setcolorspace 
-        pop
+  /cs { //DetachPatternSpace exec
+        //ResolveColorSpace exec setcolorspace 
       } bind def
   /sc /setcolor load def
   /scn { //SetColor exec } bind def
   /G /setgray load def
   /RG /setrgbcolor load def
   /K /setcmykcolor load def
-  /CS { //ResolveColorSpace exec setcolorspace } bind def
+  /CS //cs def
   /ri { SetColorRenderingIntent } bind def
   /SC /setcolor load def
   /SCN { //SetColor exec } bind def
