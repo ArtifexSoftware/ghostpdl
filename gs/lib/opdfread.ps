@@ -421,6 +421,18 @@ currentdict end readonly def
   } bind
 >> def
 
+/StreamDumperBuffer //PDFR_DEBUG { 1024 } { 1 } ifelse string def
+
+/MakeStreamDumper % <file> MakeStreamDumper <file>
+{ % Debug purpose only.
+  [ exch
+    { //StreamDumperBuffer 
+      readstring pop
+      (StreamDumper <) print dup print (>\n) print
+    } /exec load    
+  ] cvx 0 () /SubFileDecode filter
+} bind def
+
 /MakeStreamReader % <obj> MakeStreamReader <file>
 { dup
   [ 
@@ -473,6 +485,9 @@ currentdict end readonly def
       { filter
       } forall
     } ifelse
+    //PDFR_DEBUG {
+      //MakeStreamDumper exec
+    } if
   } if
 } bind def
 
@@ -1014,12 +1029,10 @@ currentdict end readonly def
 } bind def
 
 /FunctionToProc4 % <function_dict> FunctionToProc4 <proc>
-{ [ exch
-    //MakeStreamReader
-    /exec load
-    /cvx load
-    /exec load
-  ] cvx
+{ //MakeStreamReader exec cvx run
+  //PDFR_DEBUG {
+    (FunctionType4Proc : ) print dup == 
+  } if
 } bind def
 
 /FunctionToProc1 % <function_dict> FunctionToProc <proc>
