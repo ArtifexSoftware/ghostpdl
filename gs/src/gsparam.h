@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -80,8 +80,9 @@ typedef _param_array_struct(gs_param_float_array_s, float) gs_param_float_array;
 typedef _param_array_struct(gs_param_string_array_s, gs_param_string) gs_param_string_array;
 
 #define param_string_from_string(ps, str)\
-  (ps).data = (const byte *)(str), (ps).size = strlen((const char *)(ps).data),\
-  (ps).persistent = true
+  ((ps).data = (const byte *)(str),\
+   (ps).size = strlen((const char *)(ps).data),\
+   (ps).persistent = true)
 
 /*
  * Define the structure for heterogenous collection values (dictionaries
@@ -455,33 +456,46 @@ param_proc_requested(gs_param_requested_default);  /* always returns true */
 /*
  * Define a default implementation, intended to be usable easily
  * from C code.  The intended usage pattern is:
- gs_c_param_list list;
- [... other code here ...]
- gs_c_param_list_write(&list, mem);
- [As many as needed:]
- code = param_write_XXX(&list, "ParamName", &param_value);
- [Check code for <0]
- gs_c_param_list_read(&list);
- code = gs_putdeviceparams(dev, &list);
- gs_c_param_list_release(&list);
- [Check code for <0]
- if ( code == 1 )
- { code = (*dev_proc(dev, open_device))(dev);
- [Check code for <0]
- }
+	gs_c_param_list list;
+
+	[... other code here ...]
+
+	gs_c_param_list_write(&list, mem);
+	[As many as needed:]
+	code = param_write_XXX(&list, "ParamName", &param_value);
+	[Check code for <0]
+	gs_c_param_list_read(&list);
+	code = gs_putdeviceparams(dev, &list);
+	gs_c_param_list_release(&list);
+	[Check code for <0]
+	if ( code == 1 )
+	{
+	    code = (*dev_proc(dev, open_device))(dev);
+	    [Check code for <0]
+	}
+  *
+  * The default implementation also has the special property that it can
+  * forward unrecognized param_read_ calls to another parameter list,
+  * called the target.  This allows constructing incrementally modified
+  * parameter lists.
  */
 
 typedef struct gs_c_param_s gs_c_param;	/* opaque here */
 typedef struct gs_c_param_list_s {
     gs_param_list_common;
     gs_c_param *head;
+    gs_param_list *target;
     uint count;
     bool any_requested;
     gs_param_collection_type_t coll_type;
 } gs_c_param_list;
 #define private_st_c_param_list()	/* in gsparam.c */\
-  gs_private_st_ptrs1(st_c_param_list, gs_c_param_list, "c_param_list",\
-    c_param_list_enum_ptrs, c_param_list_reloc_ptrs, head)
+  gs_private_st_ptrs2(st_c_param_list, gs_c_param_list, "c_param_list",\
+    c_param_list_enum_ptrs, c_param_list_reloc_ptrs, head, target)
+
+/* Set the target of a C parameter list. */
+void gs_c_param_list_set_target(P2(gs_c_param_list *, gs_param_list *));
+
 
 /* Clients normally allocate the gs_c_param_list on the stack. */
 void gs_c_param_list_write(P2(gs_c_param_list *, gs_memory_t *));
