@@ -113,14 +113,24 @@ private int
 append_text_move(pdf_text_state_t *pts, floatp dw)
 {
     int count = pts->buffer.count_moves;
+    int pos = pts->buffer.count_chars;
+    double rounded;
 
     if (dw == 0)
 	return 0;
     if (count == MAX_TEXT_BUFFER_MOVES)
 	return -1;
-    pts->buffer.moves[count].index = pts->buffer.count_chars;
-    pts->buffer.moves[count].amount = dw;
-    pts->buffer.count_moves = count + 1;
+    /* Round dw if it's very close to an integer. */
+    if (fabs(dw - (rounded = floor(dw + 0.5))) < fabs(dw * 0.001))
+	dw = rounded;
+    if (count > 0 && pts->buffer.moves[count - 1].index == pos) {
+	/* Merge adjacent moves. */
+	pts->buffer.moves[count - 1].amount += dw;
+    } else {
+	pts->buffer.moves[count].index = pos;
+	pts->buffer.moves[count].amount = dw;
+	pts->buffer.count_moves = count + 1;
+    }
     return 0;
 }
 
@@ -418,6 +428,7 @@ sync_text_state(gx_device_pdf *pdev)
     }
     pts->buffer.count_chars = 0;
     pts->buffer.count_moves = 0;
+    pts->use_leading = false;
     return 0;
 }
 int

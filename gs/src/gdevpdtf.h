@@ -257,23 +257,6 @@ typedef enum {
 
 /* ---------------- Global structures ---------------- */
 
-/* Define the standard fonts. */
-#define PDF_NUM_STANDARD_FONTS 14
-#define pdf_do_standard_fonts(m)\
-  m("Courier", ENCODING_INDEX_STANDARD)\
-  m("Courier-Bold", ENCODING_INDEX_STANDARD)\
-  m("Courier-Oblique", ENCODING_INDEX_STANDARD)\
-  m("Courier-BoldOblique", ENCODING_INDEX_STANDARD)\
-  m("Helvetica", ENCODING_INDEX_STANDARD)\
-  m("Helvetica-Bold", ENCODING_INDEX_STANDARD)\
-  m("Helvetica-Oblique", ENCODING_INDEX_STANDARD)\
-  m("Helvetica-BoldOblique", ENCODING_INDEX_STANDARD)\
-  m("Symbol", ENCODING_INDEX_SYMBOL)\
-  m("Times-Roman", ENCODING_INDEX_STANDARD)\
-  m("Times-Bold", ENCODING_INDEX_STANDARD)\
-  m("Times-Italic", ENCODING_INDEX_STANDARD)\
-  m("Times-BoldItalic", ENCODING_INDEX_STANDARD)\
-  m("ZapfDingbats", ENCODING_INDEX_DINGBATS)
 /*
  * Define a structure for keeping track of the (unique) resource for
  * each standard font.  Note that standard fonts do not have descriptors:
@@ -283,12 +266,6 @@ typedef enum {
 typedef struct pdf_standard_font_s {
     pdf_font_resource_t *pdfont;
     gs_matrix orig_matrix;	/* ****** do we need this? */
-    /*
-     * Standard fonts have a UniqueID, not a XUID.  However, we store this
-     * as a gs_uid, rather than just the UniqueID value, so that we can
-     * use uid_equal for comparing it to the uid of other fonts.
-     */
-    gs_uid uid;
 } pdf_standard_font_t;
 #define private_st_pdf_standard_font() /* gdevpdtf.c */\
   gs_private_st_ptrs1(st_pdf_standard_font, pdf_standard_font_t,\
@@ -349,12 +326,6 @@ int pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
  * standard 14), return 0.
  */
 gs_font_base *pdf_font_resource_font(const pdf_font_resource_t *pdfont);
-
-/*
- * Find the original (unscaled) standard font corresponding to an
- * arbitrary font, if any.  Return its index in standard_fonts, or -1.
- */
-int pdf_find_orig_font(gx_device_pdf *pdev, gs_font *font, gs_matrix *pfmat);
 
 /*
  * Determine the embedding status of a font.  If the font is in the base

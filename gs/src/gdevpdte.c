@@ -87,10 +87,10 @@ pdf_encode_process_string(pdf_text_enum_t *penum, gs_string *pstr,
  * may involve creating a font resource and/or adding glyphs and/or Encoding
  * entries to it.
  *
- * Note that this procedure is not guaranteed to handle the entire string,
- * because a single string in a single gs_font may require the use of
- * several different font resources to represent it if all the characters
- * cannot be encoded using a single font resource.
+ * Note that this procedure may not handle the entire string, because a
+ * single string in a single gs_font may require the use of several
+ * different font resources to represent it if all the characters cannot be
+ * encoded using a single font resource.
  *
  * Reads and sets *pindex; reads and may modify pstr->data[*pindex ..
  * pstr->size - 1]; sets *ppdfont.
@@ -102,7 +102,7 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
 {
     gs_font *bfont = (gs_font *)font;
     pdf_font_resource_t *pdfont;
-    gs_font_base *base_font;
+    gs_font_base *cfont;
     int code, i;
 
     /*
@@ -112,7 +112,7 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
     code = pdf_make_font_resource(pdev, bfont, &pdfont);
     if (code < 0)
 	return code;
-    base_font = pdf_font_resource_font(pdfont);
+    cfont = pdf_font_resource_font(pdfont);
 
     for (i = *pindex; i < pstr->size; ++i) {
 	int ch = pstr->data[i];
@@ -123,6 +123,10 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
 
 	if (glyph == GS_NO_GLYPH || glyph == pet->glyph)
 	    continue;
+	if (pet->glyph != GS_NO_GLYPH) { /* encoding conflict */
+	    code = gs_note_error(gs_error_rangecheck);
+	    break;
+	}
 	code = font->procs.glyph_name((gs_font *)font, glyph, &gnstr);
 	if (code < 0)
 	    break;		/* can't get name of glyph */
@@ -134,13 +138,15 @@ pdf_encode_string(gx_device_pdf *pdev, gs_font_base *font,
 	    break;		/* can't copy the glyph */
 	pet->glyph = glyph;
 	pet->str = gnstr;
-	/****** SET is_difference CORRECTLY ******/
-	if (pdfont->FontDescriptor != 0)
-	    pet->is_difference = true;
+	pet->is_difference =
+	    glyph != cfont->procs.encode_char((gs_font *)cfont, ch,
+					      GLYPH_SPACE_NAME);
     }
+    if (i > *pindex)
+	code = 0;
     *pindex = i;
     *ppdfont = pdfont;
-    return 0;
+    return code;
 }
 
 /*
@@ -413,58 +419,68 @@ process_text_add_width(gs_text_enum_t *pte, gs_font_base *font,
     int i, w;
     gs_matrix smat;
     double scale;
-    gs_point dpt;
     int space_char =
 	(pte->text.operation & TEXT_ADD_TO_SPACE_WIDTH ?
 	 pte->text.space.s_char : -1);
     int code = 0;
-    bool move = false;
+    gs_point start, total;
 
     pdf_font_orig_matrix((gs_font *)font, &smat);
     scale = 0.001 / smat.xx;
-    dpt.x = dpt.y = 0;
+    start.x = ppts->values.matrix.tx;
+    start.y = ppts->values.matrix.ty;
+    total.x = total.y = 0;	/* user space */
+    /*
+     * Note that character widths are in design space, but text.delta*
+     * values and the width value returned in *pdpt are in user space
+     * (design space scaled by *pfmat), and the width values for
+     * pdf_append_chars are in device space.
+     */
     for (i = *pindex, w = 0; i < pstr->size; ++i) {
-	pdf_glyph_widths_t cw;
+	pdf_glyph_widths_t cw;	/* design space */
 	int code = pdf_char_widths(ppts->values.pdfont, pstr->data[i], font,
 				   &cw);
-	gs_point wpt;
+	gs_point dpt, wpt;	/* user space */
 
 	if (code < 0)
 	    break;
-	if (move) {
+	gs_distance_transform(cw.Width * scale, 0.0, pfmat, &wpt);
+	if (pte->text.operation & TEXT_DO_DRAW) {
 	    gs_point mpt;
 
-	    gs_distance_transform(dpt.x, dpt.y, &ctm_only(pte->pis), &mpt);
-	    ppts->values.matrix.tx += mpt.x;
-	    ppts->values.matrix.ty += mpt.y;
-	    code = pdf_set_text_state_values(pdev, &ppts->values,
-					     TEXT_STATE_SET_MATRIX);
-	    if (code < 0)
-		break;
-	    move = false;
-	}
-	gs_distance_transform(cw.real_width * scale, 0.0, pfmat, &wpt);
-	if (pte->text.operation & TEXT_DO_DRAW) {
-	    code = pdf_append_chars(pdev, &pstr->data[i], 1, wpt.x, wpt.y);
+	    gs_distance_transform(wpt.x, wpt.y, &ctm_only(pte->pis), &mpt);
+	    code = pdf_append_chars(pdev, &pstr->data[i], 1, mpt.x, mpt.y);
 	    if (code < 0)
 		break;
 	}
-	dpt.x += wpt.x, dpt.y += wpt.y;
-	if (cw.real_width != cw.Width)
-	    move = true;
+	total.x += wpt.x;
+	total.y += wpt.y;
+	gs_distance_transform((cw.real_width - cw.Width) * scale, 0.0,
+			      pfmat, &dpt);
 	if (pte->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	    dpt.x += pte->text.delta_all.x;
 	    dpt.y += pte->text.delta_all.y;
-	    move = true;
 	}
 	if (pstr->data[i] == space_char) {
 	    dpt.x += pte->text.delta_space.x;
 	    dpt.y += pte->text.delta_space.y;
-	    move = true;
+	}
+	if (dpt.x != 0 || dpt.y != 0 || i == pstr->size - 1) {
+	    gs_point mpt;
+
+	    total.x += dpt.x;
+	    total.y += dpt.y;
+	    gs_distance_transform(total.x, total.y, &ctm_only(pte->pis), &mpt);
+	    ppts->values.matrix.tx = start.x + mpt.x;
+	    ppts->values.matrix.ty = start.y + mpt.y;
+	    code = pdf_set_text_state_values(pdev, &ppts->values,
+					     TEXT_STATE_SET_MATRIX);
+	    if (code < 0)
+		break;
 	}
     }
     *pindex = i;		/* only do the part we haven't done yet */
-    *pdpt = dpt;
+    *pdpt = total;
     return code;
 }
 
@@ -552,13 +568,3 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     pte->index += index;
     return code;
 }
-
-/****************************************************************
-./src/gdevpdte.c: In function `process_plain_text':
-./src/gdevpdte.c:413: warning: passing arg 3 of `pdf_update_text_state' from incompatible pointer type
-./src/gdevpdte.c:413: too few arguments to function `pdf_update_text_state'
-./src/gdevpdte.c:418: warning: implicit declaration of function `pdf_encode_glyph'
-./src/gdevpdte.c:433: parse error before `,'
-./src/gdevpdte.c:441: parse error before `,'
-./src/gdevpdte.c:380: warning: `code' might be used uninitialized in this function
- ****************************************************************/

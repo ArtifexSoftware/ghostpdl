@@ -440,7 +440,9 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	return code;
     code = 1;
 
-    pdfont->u.simple.BaseEncoding = BaseEncoding;
+    if (rtype == resourceFont)	/* i.e. not CIDFont */
+	pdfont->u.simple.BaseEncoding = BaseEncoding;
+
     if (~same & FONT_SAME_METRICS) {
 	/*
 	 * Contrary to the PDF 1.3 documentation, FirstChar and
@@ -522,11 +524,16 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     if (code < 0)
 	return code;
 
-    ppts->members = TEXT_STATE_SET_FONT_AND_SIZE |
-	TEXT_STATE_SET_MATRIX | TEXT_STATE_SET_RENDER_MODE;
+    /* Get the original matrix from the base font, if available. */
 
-    pdf_font_orig_matrix(font, &orig_matrix);
-    DISCARD(pdf_find_orig_font(pdev, font, &orig_matrix));
+    {
+	gs_font_base *cfont = pdf_font_resource_font(pdfont);
+
+	if (cfont != 0)
+	    pdf_font_orig_matrix((gs_font *)font, &orig_matrix);
+	else
+	    pdf_font_orig_matrix(font, &orig_matrix);
+    }
 
     /* Compute the scaling matrix and combined matrix. */
 
@@ -546,6 +553,9 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
 	size = 1;
 
     /* Check for spacing parameters we can handle, and transform them. */
+
+    ppts->members = TEXT_STATE_SET_FONT_AND_SIZE |
+	TEXT_STATE_SET_MATRIX | TEXT_STATE_SET_RENDER_MODE;
 
     if (penum->text.operation & TEXT_ADD_TO_ALL_WIDTHS) {
 	gs_point pt;

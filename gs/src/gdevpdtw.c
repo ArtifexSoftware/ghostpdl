@@ -423,7 +423,7 @@ pdf_write_cmap(gx_device_pdf *pdev, const gs_cmap_t *pcmap,
 	return 0;
     pdf_open_separate(pdev, pres->object->id);
     s = pdev->strm;
-    pprintd1(s, "/WMode %d/CMapName", pcmap->WMode);
+    pprintd1(s, "<</WMode %d/CMapName", pcmap->WMode);
     pdf_put_name(pdev, pcmap->CMapName.data, pcmap->CMapName.size);
     stream_puts(s, "/CIDSystemInfo");
     code = pdf_write_cid_system_info(pdev, pcmap->CIDSystemInfo);
