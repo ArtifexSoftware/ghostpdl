@@ -51,7 +51,7 @@ XEAUX=.exe
 
 # We have to use a batch file for the equivalent of cp,
 # because the DOS COPY command copies the file write time, like cp -p.
-CP_=copy /B
+CP_=call cp.bat
 RM_=erase
 RMN_=call rm.bat
 

@@ -1,20 +1,20 @@
 /* Copyright (C) 1995, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
 
 /* gdevstc3.c */
 /* Epson Stylus-Color Printer-Driver */
@@ -43,12 +43,12 @@
  * the routine required.
  */
 
-/*ARGSUSED*/
-int 
-stc_gsrgb(stcolor_device *sdev,int npixel,byte *ip,byte *buf,byte *out)
+/*ARGSUSED */
+int
+stc_gsrgb(stcolor_device * sdev, int npixel, byte * ip, byte * buf, byte * out)
 {
 
-   int   error = 0;
+    int error = 0;
 
 /*
  * There are basically 3 Types of calls:
@@ -61,26 +61,29 @@ stc_gsrgb(stcolor_device *sdev,int npixel,byte *ip,byte *buf,byte *out)
  */
 
 /* ============================================================= */
-   if(npixel > 0) {  /* npixel >  0 -> scanline-processing       */
+    if (npixel > 0) {		/* npixel >  0 -> scanline-processing       */
 /* ============================================================= */
 
-      int p;
+	int p;
 
 /*
  *    simply merge the color-values into a single byte 
  *    (RED, GREEN, BLUE are defined in gdevstc.h)
  */
-      for(p = 0; p < npixel; ++p,++out) { /* loop over pixels */
+	for (p = 0; p < npixel; ++p, ++out) {	/* loop over pixels */
 
-         *out = 0;
-         if(*ip++) *out |= RED;
-         if(*ip++) *out |= GREEN;
-         if(*ip++) *out |= BLUE;
+	    *out = 0;
+	    if (*ip++)
+		*out |= RED;
+	    if (*ip++)
+		*out |= GREEN;
+	    if (*ip++)
+		*out |= BLUE;
 
-      }                                   /* loop over pixels */
+	}			/* loop over pixels */
 
 /* ============================================================= */
-   } else {          /* npixel <= 0 -> initialisation            */
+    } else {			/* npixel <= 0 -> initialisation            */
 /* ============================================================= */
 /*
  * besides buffer-Initialisation, one may check the parameters in
@@ -88,20 +91,24 @@ stc_gsrgb(stcolor_device *sdev,int npixel,byte *ip,byte *buf,byte *out)
  */
 
 /*    we didn't check for the white-calls above, so they would cause errors */
-      if(sdev->stc.dither->flags & STC_WHITE)              error = -1;
+	if (sdev->stc.dither->flags & STC_WHITE)
+	    error = -1;
 
 /*    if we're not setup for bytes, this is an error too */
-      if((sdev->stc.dither->flags & STC_TYPE) != STC_BYTE) error = -2;
+	if ((sdev->stc.dither->flags & STC_TYPE) != STC_BYTE)
+	    error = -2;
 
 /*    and rgb-mode is the only supported mode */
-      if(sdev->color_info.num_components != 3)             error = -3;
+	if (sdev->color_info.num_components != 3)
+	    error = -3;
 
 /*    we can't deal with ghostscript-data directly. */
-      if(sdev->stc.dither->flags & STC_DIRECT)             error = -4;
+	if (sdev->stc.dither->flags & STC_DIRECT)
+	    error = -4;
 
 /* ============================================================= */
-   } /* scanline-processing or initialisation */
+    }				/* scanline-processing or initialisation */
 /* ============================================================= */
 
-   return error;
+    return error;
 }

@@ -24,6 +24,7 @@
 #include "strimpl.h"		/* for siscale.h */
 #include "siscale.h"
 #include "gxdda.h"
+#include "gxiparam.h"
 #include "gxsample.h"
 
 /* Define the abstract type for the image enumerator state. */
@@ -161,6 +162,7 @@ typedef struct gx_device_rop_texture_s gx_device_rop_texture;
 #endif
 
 struct gx_image_enum_s {
+	gx_image_enum_common;
 	/* We really want the map structure to be long-aligned, */
 	/* so we choose shorter types for some flags. */
 		/* Following are set at structure initialization */
@@ -175,8 +177,6 @@ struct gx_image_enum_s {
 				/* (1, 2, 3, 4, or 5 if alpha is allowed) */
 	bool has_alpha;			/* true if HasAlpha */
 #endif
-	byte num_planes;		/* spp if colors are separated, */
-					/* 1 otherwise */
 	byte spread;			/* num_planes << log2_xbytes */
 	byte masked;			/* 0 = [color]image, 1 = imagemask */
 	byte interpolate;		/* true if Interpolate requested */
@@ -190,7 +190,6 @@ struct gx_image_enum_s {
 	const gs_imager_state *pis;
 	const gs_color_space *pcs;	/* color space of image */
 	gs_memory_t *memory;
-	gx_device *dev;
 	byte *buffer;			/* for expanding samples to a */
 					/* byte or frac */
 	uint buffer_size;

@@ -29,6 +29,29 @@ Procedures, Utilities, Drivers, Platforms, Fonts, Interpreter, Streams
 (included under Interpreter through release 2.9.9), Library.  Changes marked
 with a * were made available as patches to a previous release.
 
+Version 5.14 patches
+====================
+
+Patch 3, 6/22/98: adds "color snapping" devices.  (51x.mak, gdevcmap.h,
+gxdevcli.h, gxdevice.h, gximage.h, gxiparam.h, gdevbbox.c, gdevcmap.c,
+gslib.c, gx51x.c, gxclimag.c, gximage.c, gxitype3.c, gxitype4.c)
+
+Patch 2, 6/21/98: makes clients of the obsolete image_data procedure work
+properly; changes the default device to x11cmyk.
+	****** DON'T FORGET TO RUN tar_cat. ******
+(gdevdflt.c, gdevnfwd.c, gslib.c)
+
+Patch 1, 6/18/98: fixes problems in the bbox device's begin_image
+implementation.  Note that these fixes break all high-level output drivers
+(PDF, PS, PCL XL).  (51x.mak, gdevbbox.h, gdevbbox.c, gslib.c, gx51x.c,
+gxclimag.c)
+
+Version 5.14 (6/16/98)
+======================
+
+5.14 is the merge of the two code branches 5.12+ and 5.13.  5.12+
+includes the enhancements needed for pcl5c.
+
 Version 5.13 (4/27/98)
 ======================
 

@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -16,34 +16,116 @@
   all copies.
 */
 
-/* gsiparam.h */
+/*Id: gsiparam.h */
 /* Image parameter definition */
-/* Requires gsmatrix.h */
 
 #ifndef gsiparam_INCLUDED
 #  define gsiparam_INCLUDED
 
+#include "gsmatrix.h"
+
 /* ---------------- Image parameters ---------------- */
 
-/* Define an opaque type for a color space. */
-#ifndef gs_color_space_DEFINED
-#  define gs_color_space_DEFINED
-typedef struct gs_color_space_s gs_color_space;
-#endif
+/*
+ * Unfortunately, we defined the gs_image_t type as designating an ImageType
+ * 1 image or mask before we realized that there were going to be other
+ * ImageTypes.  We could redefine this type to include a type field without
+ * perturbing clients, but it would break implementations of driver
+ * begin_image procedures, since they are currently only prepared to handle
+ * ImageType 1 images and would have to be modified to check the ImageType.
+ * Therefore, we use gs_image_common_t for an abstract image type, and
+ * gs_image<n>_t for the various ImageTypes.
+ */
 
 /*
- * Define the structure for specifying image data.  It follows closely
- * the discussion on pp. 219-223 of the PostScript Language Reference Manual,
- * Second Edition, with the following exceptions:
- *
- *	ColorSpace and ImageMask are added members from PDF.
+ * Define the data common to all image types.  The type structure is
+ * opaque here, defined in gxiparam.h.
+ */
+#ifndef gx_image_type_DEFINED
+#  define gx_image_type_DEFINED
+typedef struct gx_image_type_s gx_image_type_t;
+#endif
+#define gs_image_common\
+	const gx_image_type_t *type;\
+		/*\
+		 * Define the transformation from user space to image space.\
+		 */\
+	gs_matrix ImageMatrix
+typedef struct gs_image_common_s {
+  gs_image_common;
+} gs_image_common_t;
+#define public_st_gs_image_common() /* in gxiinit.c */\
+  gs_public_st_simple(st_gs_image_common, gs_image_common_t,\
+    "gs_image_common_t")
+
+/*
+ * Define the maximum number of components in image data.  When we
+ * support DeviceN color spaces, we will have to rethink this.
+ * 5 is either CMYK + alpha or mask + CMYK.
+ */
+#define gs_image_max_components 5
+
+/*
+ * Define the structure for defining data common to ImageType 1 images,
+ * ImageType 3 DataDicts and MaskDicts, and ImageType 4 images -- i.e.,
+ * all the image types that use explicitly supplied data.  It follows
+ * closely the discussion on pp. 219-223 of the PostScript Language
+ * Reference Manual, Second Edition, with the following exceptions:
  *
  *	DataSource and MultipleDataSources are not members of this
- *	structure, but are arguments of gs_image_init.
+ *	structure, since the structure doesn't take a position on
+ *	how the data are actually supplied.
+ */
+#define gs_data_image_common\
+	gs_image_common;\
+		/*\
+		 * Define the width of source image in pixels.\
+		 */\
+	int Width;\
+		/*\
+		 * Define the height of source image in pixels.\
+		 */\
+	int Height;\
+		/*\
+		 * Define B, the number of bits per pixel component.\
+		 * Currently this must be 1 for masks.\
+		 */\
+	int BitsPerComponent;\
+		/*\
+		 * Define the linear remapping of the input values.\
+		 * For the I'th pixel component, we start by treating\
+		 * the B bits of component data as a fraction F between\
+		 * 0 and 1; the actual component value is then\
+		 * Decode[I*2] + F * (Decode[I*2+1] - Decode[I*2]).\
+		 * For masks, only the first two entries are used;\
+		 * they must be 1,0 for write-0s masks, 0,1 for write-1s.\
+		 */\
+	float Decode[gs_image_max_components * 2];\
+		/*\
+		 * Define whether to smooth the image.\
+		 */\
+	bool Interpolate
+typedef struct gs_data_image_s {
+  gs_data_image_common;
+} gs_data_image_t;
+#define public_st_gs_data_image() /* in gxiinit.c */\
+  gs_public_st_simple(st_gs_data_image, gs_data_image_t,\
+    "gs_data_image_t")
+
+/*
+ * Define the data common to ImageType 1 images, ImageType 3 DataDicts,
+ * and ImageType 4 images -- i.e., all the image types that provide pixel
+ * (as opposed to mask) data.  The following are added to the PostScript
+ * image parameters:
  *
- *	adjust, CombineWithColor, and HasAlpha are not PostScript or
- *	PDF standard (see the RasterOp section of language.doc for a
- *	discussion of CombineWithColor).
+ *	format is not PostScript or PDF standard: it is normally derived
+ *	from MultipleDataSources.
+ *
+ *	ColorSpace is added from PDF.
+ *
+ *	CombineWithColor is not PostScript or PDF standard: see the
+ *	RasterOp section of language.doc for a discussion of
+ *	CombineWithColor.
  */
 typedef enum {
 		/* Single plane, chunky pixels. */
@@ -55,84 +137,106 @@ typedef enum {
 	gs_image_format_bit_planar = 2
 } gs_image_format_t;
 
-typedef struct gs_image_s {
-		/*
-		 * Define the width of source image in pixels.
-		 */
-	int Width;
-		/*
-		 * Define the height of source image in pixels.
-		 */
-	int Height;
-		/*
-		 * Define the transformation from user space to image space.
-		 */
-	gs_matrix ImageMatrix;
-		/*
-		 * Define B, the number of bits per pixel component.
-		 * Currently this must be 1 for masks.
-		 */
-	int BitsPerComponent;
-		/*
-		 * Define the source color space (must be NULL for masks).
-		 */
-	const gs_color_space *ColorSpace;
-		/*
-		 * Define the linear remapping of the input values.
-		 * For the I'th pixel component, we start by treating
-		 * the B bits of component data as a fraction F between
-		 * 0 and 1; the actual component value is then
-		 * Decode[I*2] + F * (Decode[I*2+1] - Decode[I*2]).
-		 * For masks, only the first two entries are used;
-		 * they must be 1,0 for write-0s masks, 0,1 for write-1s.
-		 */
-#ifdef DPNEXT
-	float Decode[10];	/* 4 colors + alpha */
-#else
-	float Decode[8];
+/* Define an opaque type for a color space. */
+#ifndef gs_color_space_DEFINED
+#  define gs_color_space_DEFINED
+typedef struct gs_color_space_s gs_color_space;
 #endif
-		/*
-		 * Define whether to smooth the image.
-		 */
-	bool Interpolate;
+
+#define gs_pixel_image_common\
+	gs_data_image_common;\
+		/*\
+		 * Define how the pixels are divided up into planes.\
+		 */\
+	gs_image_format_t format;\
+		/*\
+		 * Define the source color space (must be NULL for masks).\
+		 */\
+	const gs_color_space *ColorSpace;\
+		/*\
+		 * Define whether to use the drawing color as the\
+		 * "texture" for RasterOp.  For more information,\
+		 * see the discussion of RasterOp in language.doc.\
+		 */\
+	bool CombineWithColor
+typedef struct gs_pixel_image_s {
+  gs_pixel_image_common;
+} gs_pixel_image_t;
+#define public_st_gs_pixel_image() /* in gxiinit.c */\
+  gs_public_st_ptrs1(st_gs_pixel_image, gs_pixel_image_t,\
+    "gs_data_image_t", pixel_image_enum_ptrs, pixel_image_reloc_ptrs,\
+    ColorSpace)
+
+/*
+ * Define an ImageType 1 image.  ImageMask is an added member from PDF.
+ * adjust and Alpha are not PostScript or PDF standard.
+ */
+typedef enum {
+		/* No alpha.  This must be 0 for true-false tests. */
+	gs_image_alpha_none = 0,
+		/* Alpha precedes color components. */
+	gs_image_alpha_first,
+		/* Alpha follows color components. */
+	gs_image_alpha_last
+} gs_image_alpha_t;
+
+typedef struct gs_image1_s {
+	gs_pixel_image_common;
 		/*
 		 * Define whether this is a mask or a solid image.
+		 * For masks, Alpha must be 'none'.
 		 */
 	bool ImageMask;
-		/***
-		 *** The following are not PostScript standard.
-		 ***/
 		/*
 		 * Define whether to expand each destination pixel, to make
-		 * masked characters look better (only used for masks).
+		 * masked characters look better.  Only used for masks.
 		 */
 	bool adjust;
 		/*
-		 * Define whether to use the drawing color as the
-		 * "texture" for RasterOp.  For more information,
-		 * see the discussion of RasterOp in language.doc.
-		 */
-	bool CombineWithColor;
-#ifdef DPNEXT
-		/*
 		 * Define whether there is an additional component providing
-		 * alpha information for each pixel, in addition to (and
-		 * following) the components implied by the color space.
-		 * For masks, HasAlpha must be false.
+		 * alpha information for each pixel, in addition to the
+		 * components implied by the color space.
 		 */
-	bool HasAlpha;
-#endif
-} gs_image_t;
+	gs_image_alpha_t Alpha;
+} gs_image1_t;
+/*
+ * In standard PostScript Level 1 and 2, this is the only defined ImageType.
+ */
+typedef gs_image1_t gs_image_t;
 
 /*
- * Define procedures for initializing a gs_image_t to default values.
- * For masks, write_1s = false paints 0s, write_1s = true paints 1s.
- * This is consistent with the "polarity" operand of the PostScript
- * imagemask operator.
- *
- * Note that because gs_image_t may add more members in the future, all
- * clients constructing gs_image_t values *must* start by initializing
- * the value by calling one of the following procedures.
+ * Define procedures for initializing the standard forms of image structures
+ * to default values.  Note that because these structures may add more
+ * members in the future, all clients constructing gs_*image*_t values
+ * *must* start by initializing the value by calling one of the following
+ * procedures.  Note also that these procedures do not set the image type.
+ */
+void
+  /*
+   * Sets ImageMatrix to the identity matrix.
+   */
+  gs_image_common_t_init(P1(gs_image_common_t *pic)),
+  /*
+   * Also sets Width = Height = 0, BitsPerComponent = 1,
+   * format = chunky, Interpolate = false.
+   * If num_components = N > 0, sets the first N elements of Decode to (0, 1);
+   * if num_components = N < 0, sets the first -N elements of Decode to (1, 0);
+   * if num_components = 0, doesn't set Decode.
+   */
+  gs_data_image_t_init(P2(gs_data_image_t *pim, int num_components)),
+  /*
+   * Also sets CombineWithColor = false, ColorSpace = color_space, Alpha =
+   * none.  num_components is obtained from ColorSpace; if ColorSpace =
+   * NULL or ColorSpace is a Pattern space, num_components is taken as 0
+   * (Decode is not initialized).
+   */
+  gs_pixel_image_t_init(P2(gs_pixel_image_t *pim,
+			   const gs_color_space *color_space));
+/*
+ * Initialize an ImageType 1 image (or imagemask).  Also sets ImageMask,
+ * adjust, and Alpha, and the image type.  For masks, write_1s = false
+ * paints 0s, write_1s = true paints 1s.  This is consistent with the
+ * "polarity" operand of the PostScript imagemask operator.
  */
 void
   gs_image_t_init_gray(P1(gs_image_t *pim)),

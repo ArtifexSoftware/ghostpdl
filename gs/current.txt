@@ -18,7 +18,7 @@
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
 This file, current.txt, describes problems and new features in the current
-release of Ghostscript.  This file describes version 5.13 of Ghostscript.
+release of Ghostscript.  This file describes version 5.14 of Ghostscript.
 
 For an overview of Ghostscript and a list of the documentation files, see
 README.

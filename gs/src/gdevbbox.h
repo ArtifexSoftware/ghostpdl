@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -16,16 +16,24 @@
   all copies.
 */
 
-/* gdevbbox.h */
+/*Id: gdevbbox.h */
 /* Interface to bounding box device */
 /* Requires gxdevice.h */
 
 /*
- * This device keeps track of the per-page bounding box, and also forwards
- * all drawing commands to a target.  It isn't normally a free-standing
- * device, but it's used as a component (e.g., by the EPS writer).
+ * This device keeps track of the per-page bounding box, and also optionally
+ * forwards all drawing commands to a target.  It can be used either as a
+ * free-standing device or as a component (e.g., by the EPS writer).
  *
- * To set up a bounding box device that doesn't do any drawing:
+ * One way to use a bounding box device is simply to include bbox.dev in the
+ * value of DEVICE_DEVSn in the makefile.  This produces a free-standing
+ * device named 'bbox' that can be selected in the usual way (-sDEVICE=bbox)
+ * and that prints out the bounding box at each showpage or copypage without
+ * doing any drawing.
+ *
+ * The other way to use a bounding box device is from C code as a component
+ * in a device pipeline.  To set up a bounding box device that doesn't do
+ * any drawing:
  *	gx_device_bbox *bdev =
  *	  gs_alloc_struct_immovable(some_memory,
  *				    gx_device_bbox, &st_device_bbox,
@@ -42,9 +50,11 @@
  * Bounding box devices that draw to a real device appear to have the
  * same page size as that device.
  *
- * To intercept the end-of-page to call a routine eop of your own:
+ * To intercept the end-of-page to call a routine eop of your own, after
+ * setting up the device:
  *	dev_proc_output_page(eop);	-- declare a prototype for eop
- *	bdev.std_procs.output_page = eop;
+ *	...
+ *	set_dev_proc(bdev, output_page, eop);
  *	...
  *	int eop(gx_device *dev, int num_copies, int flush)
  *	{	gs_rect bbox;
@@ -55,17 +65,22 @@
  */
 #define gx_device_bbox_common\
 	gx_device_forward_common;\
+	bool free_standing;\
+	/* In order to handle compositors, we provide a separate pointer */\
+	/* to the bbox device instance that holds the actual box. */\
+	gx_device_bbox *box_device;\
 	/* The following are updated dynamically. */\
 	gs_fixed_rect bbox;\
 	gx_color_index white
-typedef struct gx_device_bbox_s {
+typedef struct gx_device_bbox_s gx_device_bbox;
+struct gx_device_bbox_s {
 	gx_device_bbox_common;
-} gx_device_bbox;
+};
 extern_st(st_device_bbox);
 #define public_st_device_bbox()	/* in gdevbbox.c */\
-  gs_public_st_suffix_add0_final(st_device_bbox, gx_device_bbox,\
+  gs_public_st_suffix_add1_final(st_device_bbox, gx_device_bbox,\
     "gx_device_bbox", device_bbox_enum_ptrs, device_bbox_reloc_ptrs,\
-    gx_device_finalize, st_device_forward)
+    gx_device_finalize, st_device_forward, box_device)
 
 /* Initialize a bounding box device. */
 void gx_device_bbox_init(P2(gx_device_bbox *dev, gx_device *target));

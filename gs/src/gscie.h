@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -16,11 +16,18 @@
   all copies.
 */
 
-/* gscie.h */
+/*Id: gscie.h */
 /* Structures for CIE color algorithms */
 /* (requires gscspace.h, gscolor2.h) */
+
+#ifndef gscie_INCLUDED
+#  define gscie_INCLUDED
+
 #include "gsrefct.h"
+#include "gsstruct.h"		/* for extern_st */
 #include "gxctable.h"
+
+/* ---------------- Structures ---------------- */
 
 /* Define the size of the Encode/Decode/Transform procedure value caches. */
 /* With the current design, these caches must all have the same size. */
@@ -55,10 +62,6 @@
 #ifdef CIE_RENDER_TABLE_INTERPOLATE
 #  define CIE_CACHE_INTERPOLATE
 #endif
-
-/* Mark code intended for later use. */
-/****** NOTE: this is also used in zcie.c. ******/
-/*#define NEW_CIE*/
 
 #define float_lshift(v, nb) ((v) * (1L << (nb)))
 #define float_rshift(v, nb) ((v) * (1.0 / (1L << (nb))))
@@ -161,11 +164,6 @@ typedef struct gs_range4_s {
 
 /* Client-supplied transformation procedures. */
 typedef struct gs_cie_common_s gs_cie_common;
-#ifdef NEW_CIE
-typedef struct gs_cie_abc_common_s gs_cie_abc_common;
-#else
-typedef struct gs_cie_abc_s gs_cie_abc_common;
-#endif
 typedef struct gs_cie_wbsd_s gs_cie_wbsd;
 
 typedef float (*gs_cie_a_proc)(P2(floatp, const gs_cie_a *));
@@ -287,22 +285,48 @@ typedef union gx_cie_vector_cache_s {
 
 /* ------ Color space dictionaries ------ */
 
-/* Elements common to all CIE dictionaries. */
+/* Elements common to all CIE color space dictionaries. */
 struct gs_cie_common_s {
+	int (*install_cspace)(P2(gs_color_space *, gs_state *));
 	gs_range3 RangeLMN;
 	gs_cie_common_proc3 DecodeLMN;
 	gs_matrix3 MatrixLMN;
 	gs_cie_wb points;
+	void *client_data;
 		/* Following are computed when structure is initialized. */
 	struct {
 		gx_cie_scalar_cache DecodeLMN[3];
 	} caches;
 };
 
+#define private_st_cie_common()     /* in gscscie.c */  \
+  gs_private_st_ptrs1( st_cie_common,                   \
+                       gs_cie_common,                   \
+                       "gs_cie_common",                 \
+                       cie_common_enum_ptrs,            \
+                       cie_common_reloc_ptrs,           \
+                       client_data                      \
+                       )
+
+#define gs_cie_common_elements\
+	gs_cie_common common;		/* must be first */\
+	rc_header rc
+typedef struct gs_cie_common_elements_s {
+	gs_cie_common_elements;
+} gs_cie_common_elements_t;
+
+#define private_st_cie_common_elements() /* in gscscie.c */ \
+  gs_private_st_suffix_add0_local( st_cie_common_elements_t,      \
+				   gs_cie_common_elements_t,      \
+				   "gs_cie_common_elements_t",    \
+				   cie_common_enum_ptrs, \
+				   cie_common_reloc_ptrs,\
+				   st_cie_common                  \
+				   )
+
 /* A CIEBasedA dictionary. */
 struct gs_cie_a_s {
-	gs_cie_common common;		/* must be first */
-	rc_header rc;
+	gs_cie_common_elements;		/* must be first */
 	gs_range RangeA;
 	gs_cie_a_proc DecodeA;
 	gs_vector3 MatrixA;
@@ -311,76 +335,90 @@ struct gs_cie_a_s {
 		gx_cie_vector_cache DecodeA;  /* mult. by MatrixA */
 	} caches;
 };
-#define private_st_cie_a()	/* in zcie.c */\
-  gs_private_st_simple(st_cie_a, gs_cie_a, "gs_cie_a")
+
+#define private_st_cie_a()	/* in gscscie.c */      \
+  gs_private_st_suffix_add0_local( st_cie_a,                  \
+				   gs_cie_a,                  \
+				   "gs_cie_a",                \
+				   cie_common_enum_ptrs,           \
+				   cie_common_reloc_ptrs,          \
+				   st_cie_common_elements_t   \
+                             )
+
+
+/* Common elements for CIEBasedABC, DEF, and DEFG dictionaries. */
+#define gs_cie_abc_elements\
+	gs_cie_common_elements;		/* must be first */\
+	gs_range3 RangeABC;\
+	gs_cie_abc_proc3 DecodeABC;\
+	gs_matrix3 MatrixABC;\
+		/* Following are computed when structure is initialized. */\
+	struct {\
+		bool skipABC;\
+		gx_cie_vector_cache DecodeABC[3];  /* mult. by MatrixABC */\
+	} caches
 
 /* A CIEBasedABC dictionary. */
-#ifdef NEW_CIE
-struct gs_cie_abc_common_s {
-	gs_cie_common common;		/* must be first */
-#else
 struct gs_cie_abc_s {
-	gs_cie_common common;		/* must be first */
-	rc_header rc;
-#endif
-	gs_range3 RangeABC;
-	gs_cie_abc_proc3 DecodeABC;
-	gs_matrix3 MatrixABC;
-		/* Following are computed when structure is initialized. */
-	struct {
-		bool skipABC;
-		gx_cie_vector_cache DecodeABC[3];  /* mult. by MatrixABC */
-	} caches;
+	gs_cie_abc_elements;
 };
-#ifdef NEW_CIE
-/* A CIEBasedABC dictionary. */
-struct gs_cie_abc_s {
-	gs_cie_abc_common abc;		/* must be first */
-	rc_header rc;
-};
-#endif
-#define private_st_cie_abc()	/* in zcie.c */\
-  gs_private_st_simple(st_cie_abc, gs_cie_abc, "gs_cie_abc")
+#define private_st_cie_abc()	/* in gscscie.c */      \
+  gs_private_st_suffix_add0_local( st_cie_abc,                \
+				   gs_cie_abc,                \
+				   "gs_cie_abc",              \
+				   cie_common_enum_ptrs,         \
+				   cie_common_reloc_ptrs,        \
+				   st_cie_common_elements_t   \
+				   )
 
 /* A CIEBasedDEF dictionary. */
-/****** NOT IMPLEMENTED YET ******/
 struct gs_cie_def_s {
-	gs_cie_abc_common abc;			/* must be first */
-#ifndef NEW_CIE
-	rc_header rc;
-#endif
+	gs_cie_abc_elements;			/* must be first */
 	gs_range3 RangeDEF;
 	gs_cie_def_proc3 DecodeDEF;
 	gs_range3 RangeHIJ;
 	gx_color_lookup_table Table;		/* [NH][NI * NJ * 3] */
 	struct {
-		gx_cie_scalar_cache DecodeDEF[3];
-	} caches;
+	  gx_cie_scalar_cache DecodeDEF[3];
+	} caches_def;
 };
-#define private_st_cie_def()	/* in zcie.c */\
-  gs_private_st_ptrs1(st_cie_def, gs_cie_def, "gs_cie_def",\
-    cie_def_enum_ptrs, cie_def_reloc_ptrs, Table.table)
-
+#define private_st_cie_def()	/* in gscscie.c */  \
+  gs_private_st_suffix_add1( st_cie_def,            \
+                            gs_cie_def,             \
+                            "gs_cie_def",           \
+                            cie_def_enum_ptrs,      \
+                            cie_def_reloc_ptrs,     \
+                            st_cie_abc,             \
+                            Table.table             \
+                            )
+                            
 /* A CIEBasedDEFG dictionary. */
-/****** NOT IMPLEMENTED YET ******/
 struct gs_cie_defg_s {
-	gs_cie_abc_common abc;			/* must be first */
-#ifndef NEW_CIE
-	rc_header rc;
-#endif
+	gs_cie_abc_elements;
 	gs_range4 RangeDEFG;
 	gs_cie_defg_proc4 DecodeDEFG;
 	gs_range4 RangeHIJK;
 	gx_color_lookup_table Table;		/* [NH * NI][NJ * NK * 3] */
 	struct {
-		gx_cie_scalar_cache DecodeDEFG[4];
-	} caches;
+	  gx_cie_scalar_cache DecodeDEFG[4];
+	} caches_defg;
 };
-#define private_st_cie_defg()	/* in zcie.c */\
-  gs_private_st_ptrs1(st_cie_defg, gs_cie_defg, "gs_cie_defg",\
-    cie_defg_enum_ptrs, cie_defg_reloc_ptrs, Table.table)
+#define private_st_cie_defg()	/* in gscscie.c */  \
+  gs_private_st_suffix_add1( st_cie_defg,           \
+                             gs_cie_defg,           \
+                             "gs_cie_defg",         \
+                             cie_defg_enum_ptrs,    \
+                             cie_defg_reloc_ptrs,   \
+                             st_cie_abc,            \
+                             Table.table            \
+                             )
 
-/* Default values for components */
+/*
+ * Default values for components.  Note that for some components, there are
+ * two sets of default procedures: _default (identity procedures) and
+ * _from_cache (procedures that just return the cached values).  Currently
+ * we only provide the latter for the Encode elements of the CRD.
+ */
 extern const gs_range3 Range3_default;
 extern const gs_range4 Range4_default;
 extern const gs_cie_defg_proc4 DecodeDEFG_default;
@@ -393,6 +431,8 @@ extern const gs_cie_a_proc DecodeA_default;
 extern const gs_vector3 MatrixA_default;
 extern const gs_vector3 BlackPoint_default;
 extern const gs_cie_render_proc3 Encode_default;
+extern const gs_cie_render_proc3 EncodeLMN_from_cache;
+extern const gs_cie_render_proc3 EncodeABC_from_cache;
 extern const gs_cie_transform_proc3 TransformPQR_default;
 extern const gs_cie_render_table_procs RenderTableT_default;
 
@@ -433,8 +473,9 @@ struct gs_cie_render_s {
 		bool RenderTableT_is_identity;
 	} caches;
 };
-#define private_st_cie_render()	/* in zcrd.c */\
-  gs_private_st_ptrs1(st_cie_render, gs_cie_render, "gs_cie_render",\
+extern_st(st_cie_render1);
+#define public_st_cie_render1()	/* in gscie.c */\
+  gs_public_st_ptrs1(st_cie_render1, gs_cie_render, "gs_cie_render",\
     cie_render_enum_ptrs, cie_render_reloc_ptrs, RenderTable.lookup.table)
 /* RenderTable.lookup.table points to an array of st_const_string_elements. */
 
@@ -456,7 +497,8 @@ typedef struct gx_cie_joint_caches_s {
   gs_private_st_simple(st_joint_caches, gx_cie_joint_caches,\
     "gx_cie_joint_caches")
 
-/* Internal routines */
+/* ------ Internal procedures ------ */
+
 typedef struct gs_for_loop_params_s {
 	float init, step, limit;
 } gs_for_loop_params;
@@ -470,3 +512,85 @@ int gs_cie_render_complete(P1(gs_cie_render *));
 gx_cie_joint_caches *gx_currentciecaches(P1(gs_state *));
 const gs_cie_common *gs_cie_cs_common(P1(gs_state *));
 void gs_cie_cs_complete(P2(gs_state *, bool));
+
+/* ---------------- Procedures ---------------- */
+
+/*
+ * ------ Constructors ------
+ *
+ * These procedure take a client infor structure pointer as an operand. The
+ * client is responsible for allocating and deleting this information; the
+ * color space machinery does not take ownership of it.
+ */
+extern int
+  gs_cspace_build_CIEA(P3(gs_color_space **ppcspace, void *client_data,
+                          gs_memory_t *pmem)),
+  gs_cspace_build_CIEABC(P3(gs_color_space **ppcspace, void *client_data,
+                            gs_memory_t *pmem)),
+  gs_cspace_build_CIEDEF(P3(gs_color_space **ppcspace, void *client_data,
+                            gs_memory_t *pmem)),
+  gs_cspace_build_CIEDEFG(P3(gs_color_space **ppcspace, void *client_data,
+                             gs_memory_t *pmem));
+
+/* ------ Accessors ------ */
+
+/*
+ * Note that the accessors depend heavily on "puns" between the variants
+ * of pcspace->params.{a,abc,def,defg}.
+ */
+
+/* Generic CIE based color space parameters */
+#define gs_cie_RangeLMN(pcspace)  (&(pcspace)->params.a->common.RangeLMN)
+#define gs_cie_DecodeLMN(pcspace) (&(pcspace)->params.a->common.DecodeLMN)
+#define gs_cie_MatrixLMN(pcspace) (&(pcspace)->params.a->common.MatrixLMN)
+#define gs_cie_WhitePoint(pcspace)\
+  ((pcspace)->params.a->common.points.WhitePoint)
+#define gs_cie_BlackPoint(pcspace)\
+  ((pcspace)->params.a->common.points.BlackPoint)
+
+/* CIEBasedA color space */
+#define gs_cie_a_RangeA(pcspace)      (&(pcspace)->params.a->RangeA)
+#define gs_cie_a_DecodeA(pcspace)     (&(pcspace)->params.a->DecodeA)
+#define gs_cie_a_MatrixA(pcspace)     (&(pcspace)->params.a->MatrixA)
+#define gs_cie_a_RangeA(pcspace)      (&(pcspace)->params.a->RangeA)
+
+/* CIEBasedABC color space */
+/* Note that these also work for CIEBasedDEF[G] spaces. */
+#define gs_cie_abc_RangeABC(pcspace)    (&(pcspace)->params.abc->RangeABC)
+#define gs_cie_abc_DecodeABC(pcspace)   (&(pcspace)->params.abc->DecodeABC)
+#define gs_cie_abc_MatrixABC(pcspace)   (&(pcspace)->params.abc->MatrixABC)
+
+/* CIDBasedDEF color space */
+#define gs_cie_def_RangeDEF(pcspace)    (&(pcspace)->params.def->RangeDEF)
+#define gs_cie_def_DecodeDEF(pcspace)   (&(pcspace)->params.def->DecodeDEF)
+#define gs_cie_def_RangeHIJ(pcspace)    (&(pcspace)->params.def->RangeHIJ)
+
+/* CIDBasedDEFG color space */
+#define gs_cie_defg_RangeDEFG(pcspace)  (&(pcspace)->params.defg->RangeDEFG)
+#define gs_cie_defg_DecodeDEFG(pcspace) (&(pcspace)->params.defg->DecodeDEFG)
+#define gs_cie_defg_RangeHIJK(pcspace)  (&(pcspace)->params.defg->RangeHIJK)
+
+/*
+ * The following routine is provided so as to avoid explicitly exporting the
+ * CIEBasedDEF[G] color lookup table structure. It is doubtful any
+ * high-level clients will ever need to get this information.
+ *
+ * The caller must make sure the numder of dimensions and strings provided
+ * are the number expected given the number of components in the color space.
+ * The procedure gs_color_space_num_components is available for this purpose.
+ *
+ * For a 3 component color space (CIEBasedDEF), ptable points to an array of
+ * pdims[0] gs_const_string structures, each of which is of length
+ * 3 * pdims[1] * pdims[2].
+ *
+ * For a 4 component color space (CIEBasedDEFG), ptable points to an array of
+ * pdims[0] * pdims[1] strings, each of which is of length 
+ * 3 * pdims[2] * pdims[3].
+ *
+ * NB: the caller is responsible for deallocating the color table data
+ *     when no longer needed.  */
+extern int
+  gs_cie_defx_set_lookup_table(P3(gs_color_space *pcspace, int *pdims,
+				  const gs_const_string *ptable));
+
+#endif					/* gscie_INCLUDED */

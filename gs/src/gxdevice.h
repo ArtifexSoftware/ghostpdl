@@ -654,10 +654,22 @@ typedef struct gs_param_list_s gs_param_list;
   dev_t_proc_get_clipping_box(proc, gx_device)
 
 		/* Added in release 5.2x */
+
 #define dev_t_proc_get_hardware_params(proc, dev_t)\
   int proc(P2(dev_t *dev, gs_param_list *plist))
 #define dev_proc_get_hardware_params(proc)\
   dev_t_proc_get_hardware_params(proc, gx_device)
+
+     /* Patched into release 5.14+ */
+
+#define dev_t_proc_begin_typed_image(proc, dev_t)\
+  int proc(P9(dev_t *dev,\
+    const gs_imager_state *pis, const gs_matrix *pmat,\
+    const gs_image_common_t *pim, const gs_int_rect *prect,\
+    const gx_drawing_color *pdcolor, const gx_clip_path *pcpath,\
+    gs_memory_t *memory, void /*gx_image_enum_common_t*/ **pinfo))
+#define dev_proc_begin_typed_image(proc)\
+  dev_t_proc_begin_typed_image(proc, gx_device)
 
 /* Define the device procedure vector template proper. */
 
@@ -700,6 +712,7 @@ typedef struct gs_param_list_s gs_param_list;
 	dev_t_proc_strip_copy_rop((*strip_copy_rop), dev_t);\
 	dev_t_proc_get_clipping_box((*get_clipping_box), dev_t);\
 	dev_t_proc_get_hardware_params((*get_hardware_params), dev_t);\
+	dev_t_proc_begin_typed_image((*begin_typed_image), dev_t);\
 }
 
 /* A generic device procedure record. */
@@ -918,6 +931,7 @@ dev_proc_strip_copy_rop(gx_default_strip_copy_rop);	/* calls ...proc */
 dev_proc_get_clipping_box(gx_default_get_clipping_box);
 dev_proc_get_clipping_box(gx_get_largest_clipping_box);
 dev_proc_get_hardware_params(gx_default_get_hardware_params);
+#define gx_default_begin_typed_image gx_device_begin_typed_image
 
 /* Color mapping routines for black-on-white, gray scale, true RGB, */
 /* and true CMYK color. */
@@ -935,7 +949,10 @@ dev_proc_sync_output(gx_forward_sync_output);
 dev_proc_output_page(gx_forward_output_page);
 dev_proc_map_rgb_color(gx_forward_map_rgb_color);
 dev_proc_map_color_rgb(gx_forward_map_color_rgb);
+dev_proc_fill_rectangle(gx_forward_fill_rectangle);
 dev_proc_tile_rectangle(gx_forward_tile_rectangle);
+dev_proc_copy_mono(gx_forward_copy_mono);
+dev_proc_copy_color(gx_forward_copy_color);
 dev_proc_get_bits(gx_forward_get_bits);
 dev_proc_get_params(gx_forward_get_params);
 dev_proc_put_params(gx_forward_put_params);

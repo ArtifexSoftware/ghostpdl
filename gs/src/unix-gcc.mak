@@ -23,10 +23,10 @@ VERSION_MAK=version.mak
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
 GS_VERSION_MAJOR=5
-GS_VERSION_MINOR=13
-GS_VERSION_MINOR0=13
+GS_VERSION_MINOR=14
+GS_VERSION_MINOR0=14
 # Revision date: year x 10000 + month x 100 + day.
-GS_REVISIONDATE=19980427
+GS_REVISIONDATE=19980616
 
 # Derived values
 GS_VERSION=$(GS_VERSION_MAJOR)$(GS_VERSION_MINOR0)
@@ -1323,12 +1323,13 @@ libd.dev: $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
 	$(EXP)echogs -a libd.dev $(LIB2d)
 	$(EXP)echogs -a libd.dev $(LIB3d)
 
-# roplib shouldn't be required....
-libcore.dev: $(LIB_MAK) $(ECHOGS_XE)\
-  libs.dev libx.dev libd.dev iscale.dev roplib.dev
+include 51x.mak
+# roplib and 51xlib shouldn't be required....
+libcore.dev: $(LIB_MAK) $(ECHOGS_XE) 51x.mak \
+  libs.dev libx.dev libd.dev iscale.dev roplib.dev 51xlib.dev
 	$(SETMOD) libcore
 	$(ADDMOD) libcore -dev nullpage
-	$(ADDMOD) libcore -include libs libx libd iscale roplib
+	$(ADDMOD) libcore -include libs libx libd iscale roplib 51xlib
 
 # ---------------- Stream support ---------------- #
 # Currently the only things in the library that use this are clists
@@ -5669,7 +5670,7 @@ $(GS_XE): ld.tr echogs $(XE_ALL)
 
 # Define a rule for building profiling configurations.
 pg:
-	make GENOPT='' CFLAGS='-pg -O2 $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11' CCLEAF='$(CCC)'
+	make GENOPT='' CFLAGS='-pg -O $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' XLIBS='Xt SM ICE Xext X11' CCLEAF='$(CCC)'
 
 # Define a rule for building debugging configurations.
 debug:

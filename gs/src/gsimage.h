@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -16,11 +16,24 @@
   all copies.
 */
 
-/* gsimage.h */
+/*Id: gsimage.h */
 /* Client interface to image painting */
 /* Requires gsstate.h */
 #include "gsiparam.h"
 
+/*
+ * Create an image enumerator given image parameters and a graphics state.
+ * This calls the device's begin_typed_image procedure with appropriate
+ * parameters.  Note that this is an enumerator that requires entire
+ * rows of data, not the buffered enumerator used by the procedures below:
+ * for this reason, we may move the prototype elsewhere in the future.
+ */
+#ifndef gx_image_enum_common_t_DEFINED
+#  define gx_image_enum_common_t_DEFINED
+typedef struct gx_image_enum_common_s gx_image_enum_common_t;
+#endif
+int gs_image_begin_typed(P4(const gs_image_common_t *pic, gs_state *pgs,
+			    bool uses_color, gx_image_enum_common_t **ppie));
 /*
  * The image painting interface uses an enumeration style:
  * the client initializes an enumerator, then supplies data incrementally.
@@ -32,6 +45,13 @@ gs_image_enum *gs_image_enum_alloc(P2(gs_memory_t *, client_name_t));
  * Note that image_init serves for both image and imagemask,
  * depending on the value of ImageMask in the image structure.
  */
+#ifndef gx_device_DEFINED
+#  define gx_device_DEFINED
+typedef struct gx_device_s gx_device;
+#endif
+int gs_image_common_init(P5(gs_image_enum *penum, gx_image_enum_common_t *pie,
+			    const gs_data_image_t *pim,
+			    gs_memory_t *mem, gx_device *dev));
 int gs_image_init(P4(gs_image_enum *penum, const gs_image_t *pim,
 		     bool MultipleDataSources, gs_state *pgs));
 int gs_image_next(P4(gs_image_enum *penum, const byte *dbytes,
@@ -40,6 +60,8 @@ int gs_image_next(P4(gs_image_enum *penum, const byte *dbytes,
  * Return the number of bytes of data per row
  * (per plane, if MultipleDataSources is true).
  */
-uint gs_image_bytes_per_row(P1(const gs_image_enum *penum));
+uint gs_image_bytes_per_plane_row(P2(const gs_image_enum *penum, int plane));
+#define gs_image_bytes_per_row(penum)\
+  gs_image_bytes_per_plane_row(penum, 0)
 /* Clean up after processing an image. */
 void gs_image_cleanup(P1(gs_image_enum *penum));

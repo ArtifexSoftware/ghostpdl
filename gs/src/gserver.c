@@ -1,20 +1,20 @@
 /* Copyright (C) 1992, 1994, 1996 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
 
 /* gserver.c */
 /* Server front end for Ghostscript, replacing gs.c. */
@@ -63,13 +63,13 @@ int gs_server_initialize(P4(int fno_stdin, int fno_stdout, int fno_stderr,
  * Execute a string containing PostScript code.  The effects of this code
  * do modify the baseline state for future calls of ...run_string and
  * ...run_files.  There are four cases of return values:
- *	value = 0: normal return.
- *	value = e_Quit: the PostScript code executed a `quit'.
- *	value = e_Fatal: the PostScript code encountered a fatal error.
- *		*exit_code_ptr holds the C exit code.
- *	other value: the PostScript code encountered a PostScript error
- *		while processing another error, or some other fatal
- *		PostScript error.
+ *      value = 0: normal return.
+ *      value = e_Quit: the PostScript code executed a `quit'.
+ *      value = e_Fatal: the PostScript code encountered a fatal error.
+ *              *exit_code_ptr holds the C exit code.
+ *      other value: the PostScript code encountered a PostScript error
+ *              while processing another error, or some other fatal
+ *              PostScript error.
  *
  * errstr points to a string area of length errstr_max_len for reporting
  * the PostScript object causing the error.  In the case of an error return,
@@ -120,45 +120,52 @@ int gs_server_terminate(P0());
 #include <sys/stat.h>
 int
 main(int argc, char *argv[])
-{	int code, exit_code;
+{
+    int code, exit_code;
+
 #define emax 50
-	char errstr[emax+1];
-	int errlen;
-	static const char *fnames[] = { "golfer.ps", 0 };
-	FILE *cin = fopen("stdin.tmp", "w+");
-	int sout = open("stdout.tmp", O_WRONLY|O_CREAT|O_TRUNC,
-			S_IREAD|S_IWRITE);
-	int serr = open("stderr.tmp", O_WRONLY|O_CREAT|O_TRUNC,
-			S_IREAD|S_IWRITE);
-	code = gs_server_initialize(fileno(cin), sout, serr,
-				    "/fubar 42 def");
-	fprintf(stdout, "init: code %d\n", code);
-	if ( code < 0 ) goto x;
-	code = gs_server_run_string("fubar == flush", &exit_code,
-				    errstr, emax, &errlen);
-	fprintf(stdout, "print: code %d\n", code);
-	if ( code < 0 ) goto x;
-	code = gs_server_run_files(fnames, 0, &exit_code,
-				   errstr, emax, &errlen);
-	fprintf(stdout, "golfer: code %d\n", code);
-	if ( code < 0 ) goto x;
-	errlen = 0;
-	code = gs_server_run_string("fubar 0 div", &exit_code,
-				    errstr, emax, &errlen);
-	errstr[errlen] = 0;
-	fprintf(stdout, "0 div: code %d object %s\n", code, errstr);
-	errlen = 0;
-	code = gs_server_run_string("xxx", &exit_code,
-				    errstr, emax, &errlen);
-	errstr[errlen] = 0;
-	fprintf(stdout, "undef: code %d object %s\n", code, errstr);
-x:	code = gs_server_terminate();
-	fprintf(stdout, "end: code %d\n", code);
-	fflush(stdout);
-	close(serr);
-	close(sout);
-	fclose(cin);
-	return code;
+    char errstr[emax + 1];
+    int errlen;
+    static const char *fnames[] =
+    {"golfer.ps", 0};
+    FILE *cin = fopen("stdin.tmp", "w+");
+    int sout = open("stdout.tmp", O_WRONLY | O_CREAT | O_TRUNC,
+		    S_IREAD | S_IWRITE);
+    int serr = open("stderr.tmp", O_WRONLY | O_CREAT | O_TRUNC,
+		    S_IREAD | S_IWRITE);
+
+    code = gs_server_initialize(fileno(cin), sout, serr,
+				"/fubar 42 def");
+    fprintf(stdout, "init: code %d\n", code);
+    if (code < 0)
+	goto x;
+    code = gs_server_run_string("fubar == flush", &exit_code,
+				errstr, emax, &errlen);
+    fprintf(stdout, "print: code %d\n", code);
+    if (code < 0)
+	goto x;
+    code = gs_server_run_files(fnames, 0, &exit_code,
+			       errstr, emax, &errlen);
+    fprintf(stdout, "golfer: code %d\n", code);
+    if (code < 0)
+	goto x;
+    errlen = 0;
+    code = gs_server_run_string("fubar 0 div", &exit_code,
+				errstr, emax, &errlen);
+    errstr[errlen] = 0;
+    fprintf(stdout, "0 div: code %d object %s\n", code, errstr);
+    errlen = 0;
+    code = gs_server_run_string("xxx", &exit_code,
+				errstr, emax, &errlen);
+    errstr[errlen] = 0;
+    fprintf(stdout, "undef: code %d object %s\n", code, errstr);
+  x:code = gs_server_terminate();
+    fprintf(stdout, "end: code %d\n", code);
+    fflush(stdout);
+    close(serr);
+    close(sout);
+    fclose(cin);
+    return code;
 }
 
 #endif
@@ -176,43 +183,51 @@ private void errstr_report(P4(ref *, char *, int, int *));
 
 int
 gs_server_initialize(int fno_stdin, int fno_stdout, int fno_stderr,
-  const char *init_str)
-{	int code, exit_code;		/* discard exit_code for now */
-	int errstr_len;			/* discard */
-	FILE *c_stdin, *c_stdout, *c_stderr;
-	/* Establish C-compatible files for stdout and stderr. */
-	c_stdin = fdopen(fno_stdin, "r");
-	if ( c_stdin == NULL ) return -1;
-	c_stdout = fdopen(fno_stdout, "w");
-	if ( c_stdout == NULL ) return -1;
-	c_stderr = fdopen(fno_stderr, "w");
-	if ( c_stderr == NULL ) return -1;
-	/* Initialize the Ghostscript interpreter. */
-	gs_init0(c_stdin, c_stdout, c_stderr, 0);
-	gs_init1();
-	gs_init2();
-	code = gs_server_run_string("/QUIET true def /NOPAUSE true def",
-				    &exit_code,
-				    (char *)0, 0, &errstr_len);
-	if ( code < 0 ) return code;
-	return (init_str == NULL ? 0 :
-		gs_server_run_string(init_str, &exit_code,
-				     (char *)0, 0, &errstr_len));
+		     const char *init_str)
+{
+    int code, exit_code;	/* discard exit_code for now */
+    int errstr_len;		/* discard */
+    FILE *c_stdin, *c_stdout, *c_stderr;
+
+    /* Establish C-compatible files for stdout and stderr. */
+    c_stdin = fdopen(fno_stdin, "r");
+    if (c_stdin == NULL)
+	return -1;
+    c_stdout = fdopen(fno_stdout, "w");
+    if (c_stdout == NULL)
+	return -1;
+    c_stderr = fdopen(fno_stderr, "w");
+    if (c_stderr == NULL)
+	return -1;
+    /* Initialize the Ghostscript interpreter. */
+    gs_init0(c_stdin, c_stdout, c_stderr, 0);
+    gs_init1();
+    gs_init2();
+    code = gs_server_run_string("/QUIET true def /NOPAUSE true def",
+				&exit_code,
+				(char *)0, 0, &errstr_len);
+    if (code < 0)
+	return code;
+    return (init_str == NULL ? 0 :
+	    gs_server_run_string(init_str, &exit_code,
+				 (char *)0, 0, &errstr_len));
 }
 
 /* Run a string. */
 
 int
 gs_server_run_string(const char *str, int *exit_code_ptr,
-  char *errstr, int errstr_max_len, int *errstr_len_ptr)
-{	ref error_object;
-	int code;
-	make_tasv(&error_object, t_string, 0, 0, bytes, 0);
-	code = gs_run_string(str, 0, exit_code_ptr, &error_object);
-	if ( code < 0 )
-	  errstr_report(&error_object, errstr, errstr_max_len,
-			errstr_len_ptr);
-	return code;
+		     char *errstr, int errstr_max_len, int *errstr_len_ptr)
+{
+    ref error_object;
+    int code;
+
+    make_tasv(&error_object, t_string, 0, 0, bytes, 0);
+    code = gs_run_string(str, 0, exit_code_ptr, &error_object);
+    if (code < 0)
+	errstr_report(&error_object, errstr, errstr_max_len,
+		      errstr_len_ptr);
+    return code;
 }
 
 /* Run files. */
@@ -220,26 +235,31 @@ gs_server_run_string(const char *str, int *exit_code_ptr,
 int
 gs_server_run_files(const char **file_names, int permanent,
   int *exit_code_ptr, char *errstr, int errstr_max_len, int *errstr_len_ptr)
-{	int code = 0;
-	ref error_object;
-	const char **pfn;
-	if ( !permanent ) job_begin();
-	make_tasv(&error_object, t_string, 0, 0, bytes, 0);
-	for ( pfn = file_names; *pfn != NULL && code == 0; pfn++ )
-	  code = gs_run_file(*pfn, 0, exit_code_ptr, &error_object);
-	if ( !permanent ) job_end();
-	if ( code < 0 )
-	  errstr_report(&error_object, errstr, errstr_max_len,
-			errstr_len_ptr);
-	return code;
+{
+    int code = 0;
+    ref error_object;
+    const char **pfn;
+
+    if (!permanent)
+	job_begin();
+    make_tasv(&error_object, t_string, 0, 0, bytes, 0);
+    for (pfn = file_names; *pfn != NULL && code == 0; pfn++)
+	code = gs_run_file(*pfn, 0, exit_code_ptr, &error_object);
+    if (!permanent)
+	job_end();
+    if (code < 0)
+	errstr_report(&error_object, errstr, errstr_max_len,
+		      errstr_len_ptr);
+    return code;
 }
 
 /* Terminate Ghostscript. */
 
 int
 gs_server_terminate()
-{	gs_finit(0, 0);
-	return 0;
+{
+    gs_finit(0, 0);
+    return 0;
 }
 
 /* ------ Private routines ------ */
@@ -252,39 +272,46 @@ extern int zsave(P1(os_ptr)), zrestore(P1(os_ptr));
 
 private int
 job_begin()
-{	int code;
-	/* Aladdin Ghostscript doesn't provide erasepage as an operator. */
-	/* However, we can get the same effect by calling gs_erasepage. */
-	extern gs_state *igs;
-	if ( (code = gs_erasepage(igs)) < 0 )
-	  return code;
-	code = zsave(osp);
-	if ( code == 0 )
-	  job_save = *osp--;
+{
+    int code;
+
+    /* Aladdin Ghostscript doesn't provide erasepage as an operator. */
+    /* However, we can get the same effect by calling gs_erasepage. */
+    extern gs_state *igs;
+
+    if ((code = gs_erasepage(igs)) < 0)
 	return code;
+    code = zsave(osp);
+    if (code == 0)
+	job_save = *osp--;
+    return code;
 }
 
 /* End a 'job'. */
 
 private int
 job_end()
-{	gs_interp_reset();
-	*++osp = job_save;
-	return zrestore(osp);
+{
+    gs_interp_reset();
+    *++osp = job_save;
+    return zrestore(osp);
 }
 
 /* Produce a printable representation of an error object. */
 
 private void
-errstr_report(ref *perror_object, char *errstr, int errstr_max_len,
-  int *errstr_len_ptr)
-{	int code = obj_cvs(perror_object, (byte *)errstr,
-			   (uint)errstr_max_len, (uint *)errstr_len_ptr,
-			   false);
-	if ( code < 0 )
-	{	const char *ustr = "[unprintable]";
-		int len = min(strlen(ustr), errstr_max_len);
-		memcpy(errstr, ustr, len);
-		*errstr_len_ptr = len;
-	}
+errstr_report(ref * perror_object, char *errstr, int errstr_max_len,
+	      int *errstr_len_ptr)
+{
+    int code = obj_cvs(perror_object, (byte *) errstr,
+		       (uint) errstr_max_len, (uint *) errstr_len_ptr,
+		       false);
+
+    if (code < 0) {
+	const char *ustr = "[unprintable]";
+	int len = min(strlen(ustr), errstr_max_len);
+
+	memcpy(errstr, ustr, len);
+	*errstr_len_ptr = len;
+    }
 }

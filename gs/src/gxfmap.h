@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1996, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* gxfmap.h */
+/*Id: gxfmap.h */
 /* Fraction map representation for Ghostscript */
 
 #ifndef gxfmap_INCLUDED
@@ -31,6 +31,10 @@
  * for the transfer function; level 2 also uses it for black generation
  * and undercolor removal.  Note that reference counting macros must
  * be used to allocate, free, and assign references to gx_transfer_maps.
+ *
+ * NOTE: proc and closure are redundant.  Eventually closure will replace
+ * proc.  For now, things are in an uneasy intermediate state where
+ * proc = 0 means use closure.
  */
 /* log2... must not be greater than frac_bits, and must be least 8. */
 #define log2_transfer_map_size 8
@@ -39,14 +43,15 @@
 struct gx_transfer_map_s {
 	rc_header rc;
 	gs_mapping_proc proc;		/* typedef is in gxtmap.h */
+	gs_mapping_closure_t closure;	/* SEE ABOVE */
 		/* The id changes whenever the map or function changes. */
 	gs_id id;
 	frac values[transfer_map_size];
 };
-/* We export st_transfer_map for gscolor.c. */
 extern_st(st_transfer_map);
-#define public_st_transfer_map() /* in gsstate.c */\
-  gs_public_st_simple(st_transfer_map, gx_transfer_map, "gx_transfer_map")
+#define public_st_transfer_map() /* in gscolor.c */\
+  gs_public_st_composite(st_transfer_map, gx_transfer_map, "gx_transfer_map",\
+    transfer_map_enum_ptrs, transfer_map_reloc_ptrs)
 
 /*
  * Map a color fraction through a transfer map.  If the map is small,

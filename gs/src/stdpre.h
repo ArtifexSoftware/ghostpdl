@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1994, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1994, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* stdpre.h */
+/*Id: stdpre.h */
 /* Standard definitions for Aladdin Enterprises code not needing arch.h */
 
 #ifndef stdpre_INCLUDED
@@ -272,14 +272,24 @@ typedef const char *ptr_ord_t;
 typedef double floatp;
 
 /*
+ * Because of C's strange insistence that ; is a terminator and not a
+ * separator, compound statements {...} are not syntactically equivalent to
+ * single statements.  Therefore, we define here a compound-statement
+ * construct that *is* syntactically equivalent to a single statement.
+ * Usage is
+ *	BEGIN
+ *	  ...statements...
+ *	END
+ */
+#define BEGIN	do {
+#define END	} while (0)
+
+/*
  * Define a handy macro for a statement that does nothing.
- * We can't just use an empty body, since this upsets some compilers.
- * We can't use the obvious
- *	if (0)
- * since that could "capture" a following statement if used incorrectly.
+ * We can't just use an empty statement, since this upsets some compilers.
  */
 #ifndef DO_NOTHING
-#  define DO_NOTHING do {} while (0)
+#  define DO_NOTHING BEGIN END
 #endif
 
 /*

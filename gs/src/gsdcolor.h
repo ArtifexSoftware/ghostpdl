@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
   
   This file is part of Aladdin Ghostscript.
   
@@ -209,7 +209,7 @@ typedef struct gx_color_tile_s gx_color_tile;
  *
  * The phase element is used for all colors except pure ones.  It holds
  * the negative of the graphics state halftone phase, modulo the halftone
- * tile or colored pattern size.
+ * tile size.
  *
  * The mask elements of a device color are only used for patterns:
  *	Non-pattern:
@@ -218,6 +218,8 @@ typedef struct gx_color_tile_s gx_color_tile;
  *		mask.ccolor gives the original Pattern color (needed for
  *		  reloading the pattern cache);
  *		mask.id gives the ID of the pattern (and its mask);
+ *		mask.m_phase holds the negative of the graphics state
+ *		  halftone phase;
  *	@	mask.m_tile points to a gx_color_tile in the pattern cache,
  *		  or is NULL for a pattern that doesn't require a mask.
  *		  (The 'bits' of the tile are not accessed.)
@@ -265,6 +267,7 @@ struct gx_device_color_s {
 	gs_int_point phase;
 	struct _mask {
 	  gs_client_color ccolor;	/* needed for remapping pattern */
+	  struct mp_ { short x, y; } m_phase;
 	  gx_bitmap_id id;
 	  gx_color_tile *m_tile;
 	} mask;

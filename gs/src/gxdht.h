@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* gxdht.h */
+/*Id: gxdht.h */
 /* Definition of device halftones */
 
 #ifndef gxdht_INCLUDED
@@ -143,7 +143,11 @@ typedef ht_mask_t ht_sample_t;
  * See gxbitmap.h for more details about strip halftones.
  */
 typedef struct gx_ht_cache_s gx_ht_cache;
-typedef struct gx_ht_order_s {
+#ifndef gx_ht_order_DEFINED
+#  define gx_ht_order_DEFINED
+typedef struct gx_ht_order_s gx_ht_order;
+#endif
+struct gx_ht_order_s {
 	gx_ht_cell_params_t params;	/* parameters defining the cells */
 	ushort width;
 	ushort height;
@@ -158,7 +162,7 @@ typedef struct gx_ht_order_s {
 	gx_ht_bit *bits;
 	gx_ht_cache *cache;		/* cache to use */
 	gx_transfer_map *transfer;	/* TransferFunction or 0 */
-} gx_ht_order;
+};
 #define ht_order_is_complete(porder)\
   ((porder)->shift == 0)
 #define ht_order_full_height(porder)\
@@ -224,11 +228,11 @@ struct gx_device_halftone_s {
 	gx_ht_order order;		/* must be first, for subclassing */
 	rc_header rc;
 	gs_id id;		/* the id changes whenever the data change */
-#ifdef FUTURE
-	/* We have to keep the halftone type so that we can pass it */
-	/* through the band list for gx_imager_dev_ht_install. */
+	/*
+	 * We have to keep the halftone type so that we can pass it
+	 * through the band list for gx_imager_dev_ht_install.
+	 */
 	gs_halftone_type type;
-#endif
 	gx_ht_order_component *components;
 	uint num_comp;
 		/* The following are computed from the above. */

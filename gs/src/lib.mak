@@ -579,12 +579,13 @@ libd.dev: $(LIB_MAK) $(ECHOGS_XE) $(LIBd)
 	$(EXP)echogs -a libd.dev $(LIB2d)
 	$(EXP)echogs -a libd.dev $(LIB3d)
 
-# roplib shouldn't be required....
-libcore.dev: $(LIB_MAK) $(ECHOGS_XE)\
-  libs.dev libx.dev libd.dev iscale.dev roplib.dev
+include 51x.mak
+# roplib and 51xlib shouldn't be required....
+libcore.dev: $(LIB_MAK) $(ECHOGS_XE) 51x.mak \
+  libs.dev libx.dev libd.dev iscale.dev roplib.dev 51xlib.dev
 	$(SETMOD) libcore
 	$(ADDMOD) libcore -dev nullpage
-	$(ADDMOD) libcore -include libs libx libd iscale roplib
+	$(ADDMOD) libcore -include libs libx libd iscale roplib 51xlib
 
 # ---------------- Stream support ---------------- #
 # Currently the only things in the library that use this are clists

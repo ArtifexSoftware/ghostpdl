@@ -1,20 +1,20 @@
 /* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
 
 /* gdevx.c */
 /* X Windows driver for Ghostscript library */
@@ -41,6 +41,7 @@ private int max_temp_pixmap = 20000;
 /* Forward references */
 private int set_tile(P2(gx_device *, const gx_strip_bitmap *));
 private void free_cp(P1(gx_device *));
+
 /* Screen updating machinery */
 #define update_init(dev)\
   ((gx_device_X *)(dev))->up_area = 0,\
@@ -65,128 +66,132 @@ private dev_proc_copy_mono(x_copy_mono);
 private dev_proc_copy_color(x_copy_color);
 private dev_proc_get_bits(x_get_bits);
 private dev_proc_put_params(x_put_params);
+
 dev_proc_get_xfont_procs(x_get_xfont_procs);
 private dev_proc_get_page_device(x_get_page_device);
 private dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
 
 /* The device descriptor */
-private gx_device_procs x_procs = {
-	x_open,
-	x_get_initial_matrix,
-	x_sync,
-	x_output_page,
-	x_close,
-	x_map_rgb_color,
-	x_map_color_rgb,
-	x_fill_rectangle,
-	NULL,			/* tile_rectangle */
-	x_copy_mono,
-	x_copy_color,
-	NULL,			/* draw_line */
-	x_get_bits,
-	NULL,			/* get_params */
-	x_put_params,
-	NULL,			/* map_cmyk_color */
-	x_get_xfont_procs,
-	NULL,			/* get_xfont_device */
-	NULL,			/* map_rgb_alpha_color */
-	x_get_page_device,
-	NULL,			/* get_alpha_bits */
-	NULL,			/* copy_alpha */
-	NULL,			/* get_band */
-	NULL,			/* copy_rop */
-	NULL,			/* fill_path */
-	NULL,			/* stroke_path */
-	NULL,			/* fill_mask */
-	NULL,			/* fill_trapezoid */
-	NULL,			/* fill_parallelogram */
-	NULL,			/* fill_triangle */
-	NULL,			/* draw_thin_line */
-	NULL,			/* begin_image */
-	NULL,			/* image_data */
-	NULL,			/* end_image */
-	x_strip_tile_rectangle
+private gx_device_procs x_procs =
+{
+    x_open,
+    x_get_initial_matrix,
+    x_sync,
+    x_output_page,
+    x_close,
+    x_map_rgb_color,
+    x_map_color_rgb,
+    x_fill_rectangle,
+    NULL,			/* tile_rectangle */
+    x_copy_mono,
+    x_copy_color,
+    NULL,			/* draw_line */
+    x_get_bits,
+    NULL,			/* get_params */
+    x_put_params,
+    NULL,			/* map_cmyk_color */
+    x_get_xfont_procs,
+    NULL,			/* get_xfont_device */
+    NULL,			/* map_rgb_alpha_color */
+    x_get_page_device,
+    NULL,			/* get_alpha_bits */
+    NULL,			/* copy_alpha */
+    NULL,			/* get_band */
+    NULL,			/* copy_rop */
+    NULL,			/* fill_path */
+    NULL,			/* stroke_path */
+    NULL,			/* fill_mask */
+    NULL,			/* fill_trapezoid */
+    NULL,			/* fill_parallelogram */
+    NULL,			/* fill_triangle */
+    NULL,			/* draw_thin_line */
+    NULL,			/* begin_image */
+    NULL,			/* image_data */
+    NULL,			/* end_image */
+    x_strip_tile_rectangle
 };
 
 /* The instance is public. */
-gx_device_X far_data gs_x11_device = {
-	std_device_color_body(gx_device_X, &x_procs, "x11",
-	  FAKE_RES*DEFAULT_WIDTH_10THS/10, FAKE_RES*DEFAULT_HEIGHT_10THS/10, /* x and y extent (nominal) */
-	  FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
-	  /*dci_color(*/24, 255, 256/*)*/),
-	{ 0 },			/* std_procs */
-	1 /*true*/,		/* IsPageDevice */
-	{ /* image */
-	  0, 0,			/* width, height */
-	  0, XYBitmap, NULL,	/* xoffset, format, data */
-	  LSBFirst, 8,    	/* byte-order, bitmap-unit */
-	  MSBFirst, 8, 1,	/* bitmap-bit-order, bitmap-pad, depth */
-	  0, 1,			/* bytes_per_line, bits_per_pixel */
-	  0, 0, 0,		/* red_mask, green_mask, blue_mask */
-	  NULL,			/* *obdata */
-	   { NULL,			/* *(*create_image)() */
-	     NULL,			/* (*destroy_image)() */
-	     NULL,			/* (*get_pixel)() */
-	     NULL,			/* (*put_pixel)() */
-	     NULL,			/* *(*sub_image)() */
-	     NULL			/* (*add_pixel)() */
-	   },
+gx_device_X far_data gs_x11_device =
+{
+    std_device_color_body(gx_device_X, &x_procs, "x11",
+  FAKE_RES * DEFAULT_WIDTH_10THS / 10, FAKE_RES * DEFAULT_HEIGHT_10THS / 10,	/* x and y extent (nominal) */
+			  FAKE_RES, FAKE_RES,	/* x and y density (nominal) */
+			  /*dci_color( */ 24, 255, 256 /*) */ ),
+    {0},			/* std_procs */
+    1 /*true */ ,		/* IsPageDevice */
+    {				/* image */
+	0, 0,			/* width, height */
+	0, XYBitmap, NULL,	/* xoffset, format, data */
+	LSBFirst, 8,		/* byte-order, bitmap-unit */
+	MSBFirst, 8, 1,		/* bitmap-bit-order, bitmap-pad, depth */
+	0, 1,			/* bytes_per_line, bits_per_pixel */
+	0, 0, 0,		/* red_mask, green_mask, blue_mask */
+	NULL,			/* *obdata */
+	{NULL,			/* *(*create_image)() */
+	 NULL,			/* (*destroy_image)() */
+	 NULL,			/* (*get_pixel)() */
+	 NULL,			/* (*put_pixel)() */
+	 NULL,			/* *(*sub_image)() */
+	 NULL			/* (*add_pixel)() */
 	},
-	NULL, NULL,		/* dpy, scr */
+    },
+    NULL, NULL,			/* dpy, scr */
 				/* (connection not initialized) */
-	NULL,			/* vinfo */
-	(Colormap)None,		/* cmap */
-	(Window)None,		/* win */
-	NULL,			/* gc */
-	(Window)None,		/* pwin */
-	(Pixmap)0,		/* bpixmap */
-	0,			/* ghostview */
-	(Window)None,		/* mwin */
+    NULL,			/* vinfo */
+    (Colormap) None,		/* cmap */
+    (Window) None,		/* win */
+    NULL,			/* gc */
+    (Window) None,		/* pwin */
+    (Pixmap) 0,			/* bpixmap */
+    0,				/* ghostview */
+    (Window) None,		/* mwin */
 #if HaveStdCMap
-	NULL,			/* std_cmap */
+    NULL,			/* std_cmap */
 #endif
-	{ identity_matrix_body },	/* initial matrix (filled in) */
-	(Atom)0, (Atom)0, (Atom)0,	/* Atoms: NEXT, PAGE, DONE */
-	 { 0, 0, 0, 0 }, 0, 0,	/* update, up_area, up_count */
-	(Pixmap)0,		/* dest */
-	0L, (ulong)~0L,		/* colors_or, colors_and */
-	 { /* cp */
-	   (Pixmap)0,		/* pixmap */
-	   NULL,		/* gc */
-	   -1, -1		/* raster, height */
-	 },
-	 { /* ht */
-	   (Pixmap)None,		/* pixmap */
-	   (Pixmap)None,		/* no_pixmap */
-	   gx_no_bitmap_id,		/* id */
-	   0, 0, 0,			/* width, height, raster */
-	   0, 0				/* fore_c, back_c */
-	 },
-	GXcopy,			/* function */
-	FillSolid,		/* fill_style */
-	0,			/* font */
-	0, 0,			/* back_color, fore_color */
-	0, 0,			/* background, foreground */
-	NULL,			/* dither_colors */
-	0, 0,			/* color_mask, num_rgb */
-	NULL, 0,		/* dynamic_colors, max_dynamic_colors */
-	0, 0,			/* dynamic_size, dynamic_allocs */
-	0, 0,			/* borderColor, borderWidth */
-	NULL,			/* geometry */
-	128, 5,			/* maxGrayRamp, maxRGBRamp */
-	NULL,			/* palette */
-	NULL, NULL, NULL,	/* regularFonts, symbolFonts, dingbatFonts */
-	NULL, NULL, NULL,	/* regular_fonts, symbol_fonts, dingbat_fonts */
-	1, 1,			/* useXFonts, useFontExtensions */
-	1, 0,			/* useScalableFonts, logXFonts */
-	0.0, 0.0,		/* xResolution, yResolution */
-	1,			/* useBackingPixmap */
-	1, 1,			/* useXPutImage, useXSetTile */
+    {identity_matrix_body},	/* initial matrix (filled in) */
+    (Atom) 0, (Atom) 0, (Atom) 0,	/* Atoms: NEXT, PAGE, DONE */
+    {0, 0, 0, 0}, 0, 0,		/* update, up_area, up_count */
+    (Pixmap) 0,			/* dest */
+    0L, (ulong) ~ 0L,		/* colors_or, colors_and */
+    {				/* cp */
+	(Pixmap) 0,		/* pixmap */
+	NULL,			/* gc */
+	-1, -1			/* raster, height */
+    },
+    {				/* ht */
+	(Pixmap) None,		/* pixmap */
+	(Pixmap) None,		/* no_pixmap */
+	gx_no_bitmap_id,	/* id */
+	0, 0, 0,		/* width, height, raster */
+	0, 0			/* fore_c, back_c */
+    },
+    GXcopy,			/* function */
+    FillSolid,			/* fill_style */
+    0,				/* font */
+    0, 0,			/* back_color, fore_color */
+    0, 0,			/* background, foreground */
+    NULL,			/* dither_colors */
+    0, 0,			/* color_mask, num_rgb */
+    NULL, 0,			/* dynamic_colors, max_dynamic_colors */
+    0, 0,			/* dynamic_size, dynamic_allocs */
+    0, 0,			/* borderColor, borderWidth */
+    NULL,			/* geometry */
+    128, 5,			/* maxGrayRamp, maxRGBRamp */
+    NULL,			/* palette */
+    NULL, NULL, NULL,		/* regularFonts, symbolFonts, dingbatFonts */
+    NULL, NULL, NULL,		/* regular_fonts, symbol_fonts, dingbat_fonts */
+    1, 1,			/* useXFonts, useFontExtensions */
+    1, 0,			/* useScalableFonts, logXFonts */
+    0.0, 0.0,			/* xResolution, yResolution */
+    1,				/* useBackingPixmap */
+    1, 1,			/* useXPutImage, useXSetTile */
 };
 
 /* If XPutImage doesn't work, do it ourselves. */
-private int alt_put_image(P11(gx_device *dev, Display *dpy, Drawable win,
-  GC gc, XImage *pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h));
+private int alt_put_image(P11(gx_device * dev, Display * dpy, Drawable win,
+GC gc, XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h));
+
 #define put_image(dpy,win,gc,im,sx,sy,x,y,w,h)\
   do {\
     if ( xdev->useXPutImage ) {\
@@ -199,23 +204,25 @@ private int alt_put_image(P11(gx_device *dev, Display *dpy, Drawable win,
 
 /* Open the device.  Most of the code is in gdevxini.c. */
 private int
-x_open(gx_device *dev)
+x_open(gx_device * dev)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
     int code = gdev_x_open(xdev);
 
-    if (code < 0) return code;
+    if (code < 0)
+	return code;
     update_init(dev);
     return 0;
 }
 
 /* Close the device. */
 private int
-x_close(gx_device *dev)
+x_close(gx_device * dev)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
-    if (xdev->ghostview) x_send_event(dev, xdev->DONE);
+    if (xdev->ghostview)
+	x_send_event(dev, xdev->DONE);
     if (xdev->vinfo) {
 	XFree((char *)xdev->vinfo);
 	xdev->vinfo = NULL;
@@ -233,9 +240,11 @@ x_close(gx_device *dev)
     }
     if (xdev->dynamic_colors) {
 	int i;
+
 	for (i = 0; i < xdev->dynamic_size; i++) {
 	    x11color *xcp = (*xdev->dynamic_colors)[i];
 	    x11color *next;
+
 	    while (xcp) {
 		next = xcp->next;
 		gs_free((char *)xcp, sizeof(x11color), 1, "x11_dynamic_color");
@@ -248,35 +257,47 @@ x_close(gx_device *dev)
     }
     while (xdev->regular_fonts) {
 	x11fontmap *font = xdev->regular_fonts;
+
 	xdev->regular_fonts = font->next;
-	if (font->std_names) XFreeFontNames(font->std_names);
-	if (font->iso_names) XFreeFontNames(font->iso_names);
-	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name)+1,
+	if (font->std_names)
+	    XFreeFontNames(font->std_names);
+	if (font->iso_names)
+	    XFreeFontNames(font->iso_names);
+	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name) + 1,
 		"x11_font_x11name");
-	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name)+1,
+	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
 		"x11_font_psname");
+
 	gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
     }
     while (xdev->symbol_fonts) {
 	x11fontmap *font = xdev->symbol_fonts;
+
 	xdev->symbol_fonts = font->next;
-	if (font->std_names) XFreeFontNames(font->std_names);
-	if (font->iso_names) XFreeFontNames(font->iso_names);
-	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name)+1,
+	if (font->std_names)
+	    XFreeFontNames(font->std_names);
+	if (font->iso_names)
+	    XFreeFontNames(font->iso_names);
+	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name) + 1,
 		"x11_font_x11name");
-	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name)+1,
+	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
 		"x11_font_psname");
+
 	gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
     }
     while (xdev->dingbat_fonts) {
 	x11fontmap *font = xdev->dingbat_fonts;
+
 	xdev->dingbat_fonts = font->next;
-	if (font->std_names) XFreeFontNames(font->std_names);
-	if (font->iso_names) XFreeFontNames(font->iso_names);
-	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name)+1,
+	if (font->std_names)
+	    XFreeFontNames(font->std_names);
+	if (font->iso_names)
+	    XFreeFontNames(font->iso_names);
+	gs_free(font->x11_name, sizeof(char), strlen(font->x11_name) + 1,
 		"x11_font_x11name");
-	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name)+1,
+	gs_free(font->ps_name, sizeof(char), strlen(font->ps_name) + 1,
 		"x11_font_psname");
+
 	gs_free((char *)font, sizeof(x11fontmap), 1, "x11_fontmap");
     }
     XCloseDisplay(xdev->dpy);
@@ -289,37 +310,46 @@ x_close(gx_device *dev)
 /* integer multiply and divide are slow on all platforms. */
 #define cv_fraction(n, d) ((ushort)(X_max_color_value * (n) / (d)))
 #define nd(n, d) cv_fraction(n, d)
-private const ushort cv_tab1[] = {
-  nd(0,1), nd(1,1)
+private const ushort cv_tab1[] =
+{
+    nd(0, 1), nd(1, 1)
 };
-private const ushort cv_tab2[] = {
-  nd(0,2), nd(1,2), nd(2,2)
+private const ushort cv_tab2[] =
+{
+    nd(0, 2), nd(1, 2), nd(2, 2)
 };
-private const ushort cv_tab3[] = {
-  nd(0,3), nd(1,3), nd(2,3), nd(3,3)
+private const ushort cv_tab3[] =
+{
+    nd(0, 3), nd(1, 3), nd(2, 3), nd(3, 3)
 };
-private const ushort cv_tab4[] = {
-  nd(0,4), nd(1,4), nd(2,4), nd(3,4), nd(4,4)
+private const ushort cv_tab4[] =
+{
+    nd(0, 4), nd(1, 4), nd(2, 4), nd(3, 4), nd(4, 4)
 };
-private const ushort cv_tab5[] = {
-  nd(0,5), nd(1,5), nd(2,5), nd(3,5), nd(4,5), nd(5,5)
+private const ushort cv_tab5[] =
+{
+    nd(0, 5), nd(1, 5), nd(2, 5), nd(3, 5), nd(4, 5), nd(5, 5)
 };
-private const ushort cv_tab6[] = {
-  nd(0,6), nd(1,6), nd(2,6), nd(3,6), nd(4,6), nd(5,6), nd(6,6)
+private const ushort cv_tab6[] =
+{
+    nd(0, 6), nd(1, 6), nd(2, 6), nd(3, 6), nd(4, 6), nd(5, 6), nd(6, 6)
 };
-private const ushort cv_tab7[] = {
-  nd(0,7), nd(1,7), nd(2,7), nd(3,7), nd(4,7), nd(5,7), nd(6,7), nd(7,7)
+private const ushort cv_tab7[] =
+{
+    nd(0, 7), nd(1, 7), nd(2, 7), nd(3, 7), nd(4, 7), nd(5, 7), nd(6, 7), nd(7, 7)
 };
-private const ushort _ds *cv_tables[] = {
-  0, cv_tab1, cv_tab2, cv_tab3, cv_tab4, cv_tab5, cv_tab6, cv_tab7
+private const ushort _ds *cv_tables[] =
+{
+    0, cv_tab1, cv_tab2, cv_tab3, cv_tab4, cv_tab5, cv_tab6, cv_tab7
 };
 
 /* Map a color.  The "device colors" are just r,g,b packed together. */
 private gx_color_index
-x_map_rgb_color(register gx_device *dev,
+x_map_rgb_color(register gx_device * dev,
 		gx_color_value r, gx_color_value g, gx_color_value b)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
+
     /* X and ghostscript both use shorts for color values */
     unsigned short dr = r & xdev->color_mask;	/* Nearest color that */
     unsigned short dg = g & xdev->color_mask;	/* the X device can   */
@@ -329,10 +359,10 @@ x_map_rgb_color(register gx_device *dev,
 
     /* Foreground and background get special treatment: */
     /* They may be mapped to other colors. */
-    if ( (dr | dg | db) == 0 ) {	/* i.e., all 0 */
+    if ((dr | dg | db) == 0) {	/* i.e., all 0 */
 	return xdev->foreground;
     }
-    if ( (dr & dg & db) == cv_max ) {	/* i.e., all max value */
+    if ((dr & dg & db) == cv_max) {	/* i.e., all max value */
 	return xdev->background;
     }
 #if HaveStdCMap
@@ -341,7 +371,7 @@ x_map_rgb_color(register gx_device *dev,
 	XStandardColormap *cmap = xdev->std_cmap;
 
 	if (gx_device_has_color(xdev)) {
-	    unsigned short cr, cg, cb;		/* rgb cube indices */
+	    unsigned short cr, cg, cb;	/* rgb cube indices */
 	    unsigned short cvr, cvg, cvb;	/* color value on cube */
 
 	    cr = r * (cmap->red_max + 1) / cv_denom;
@@ -354,7 +384,7 @@ x_map_rgb_color(register gx_device *dev,
 		(abs((int)g - (int)cvg) & xdev->color_mask) == 0 &&
 		(abs((int)b - (int)cvb) & xdev->color_mask) == 0)
 		return cr * cmap->red_mult + cg * cmap->green_mult +
-		       cb * cmap->blue_mult + cmap->base_pixel;
+		    cb * cmap->blue_mult + cmap->base_pixel;
 	} else {
 	    unsigned short cr;
 	    unsigned short cvr;
@@ -367,10 +397,10 @@ x_map_rgb_color(register gx_device *dev,
 	}
     } else
 #endif
-    /* If there is no standard colormap, check the dither cube/ramp */
+	/* If there is no standard colormap, check the dither cube/ramp */
     if (xdev->dither_colors) {
 	if (gx_device_has_color(xdev)) {
-	    unsigned short cr, cg, cb;		/* rgb cube indices */
+	    unsigned short cr, cg, cb;	/* rgb cube indices */
 	    unsigned short cvr, cvg, cvb;	/* color value on cube */
 	    int dither_rgb = xdev->color_info.dither_colors;
 	    unsigned short max_rgb = dither_rgb - 1;
@@ -378,17 +408,17 @@ x_map_rgb_color(register gx_device *dev,
 	    cr = r * dither_rgb / cv_denom;
 	    cg = g * dither_rgb / cv_denom;
 	    cb = b * dither_rgb / cv_denom;
-	    if ( max_rgb < countof(cv_tables) )
-	      { const ushort *cv_tab = cv_tables[max_rgb];
+	    if (max_rgb < countof(cv_tables)) {
+		const ushort *cv_tab = cv_tables[max_rgb];
+
 		cvr = cv_tab[cr];
 		cvg = cv_tab[cg];
 		cvb = cv_tab[cb];
-	      }
-	    else
-	      { cvr = cv_fraction(cr, max_rgb);
+	    } else {
+		cvr = cv_fraction(cr, max_rgb);
 		cvg = cv_fraction(cg, max_rgb);
 		cvb = cv_fraction(cb, max_rgb);
-	      }
+	    }
 	    if ((abs((int)r - (int)cvr) & xdev->color_mask) == 0 &&
 		(abs((int)g - (int)cvg) & xdev->color_mask) == 0 &&
 		(abs((int)b - (int)cvb) & xdev->color_mask) == 0) {
@@ -421,8 +451,10 @@ x_map_rgb_color(register gx_device *dev,
 		    xcp->next = (*xdev->dynamic_colors)[i];
 		    (*xdev->dynamic_colors)[i] = xcp;
 		}
-		if (xcp->color.pad) return xcp->color.pixel;
-		else return gx_no_color_index;
+		if (xcp->color.pad)
+		    return xcp->color.pixel;
+		else
+		    return gx_no_color_index;
 	    }
 	    last = xcp;
 	    xcp = xcp->next;
@@ -434,10 +466,11 @@ x_map_rgb_color(register gx_device *dev,
 	if (xdev->dynamic_allocs > xdev->max_dynamic_colors)
 	    return gx_no_color_index;
 	xcp = (x11color *) gs_malloc(sizeof(x11color), 1, "x11_dynamic_color");
-	if (!xcp) return gx_no_color_index;
-	xc.red   = xcp->color.red   = dr;
+	if (!xcp)
+	    return gx_no_color_index;
+	xc.red = xcp->color.red = dr;
 	xc.green = xcp->color.green = dg;
-	xc.blue  = xcp->color.blue  = db;
+	xc.blue = xcp->color.blue = db;
 	xcp->next = (*xdev->dynamic_colors)[i];
 	(*xdev->dynamic_colors)[i] = xcp;
 	xdev->dynamic_allocs++;
@@ -459,10 +492,10 @@ x_map_rgb_color(register gx_device *dev,
 /* Foreground and background may be mapped to other colors, so */
 /* they are handled specially. */
 private int
-x_map_color_rgb(register gx_device *dev, gx_color_index color,
+x_map_color_rgb(register gx_device * dev, gx_color_index color,
 		gx_color_value prgb[3])
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
     if (color == xdev->foreground)
 	prgb[0] = prgb[1] = prgb[2] = 0;
@@ -484,14 +517,14 @@ x_map_color_rgb(register gx_device *dev, gx_color_index color,
 /* This conflicts seriously with the code for page devices; */
 /* we only do it if Ghostview is active. */
 private void
-x_get_initial_matrix(register gx_device *dev, register gs_matrix *pmat)
+x_get_initial_matrix(register gx_device * dev, register gs_matrix * pmat)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
-    if ( !xdev->ghostview )
-      { gx_default_get_initial_matrix(dev, pmat);
+    if (!xdev->ghostview) {
+	gx_default_get_initial_matrix(dev, pmat);
 	return;
-      }
+    }
     pmat->xx = xdev->initial_matrix.xx;
     pmat->xy = xdev->initial_matrix.xy;
     pmat->yx = xdev->initial_matrix.yx;
@@ -502,9 +535,9 @@ x_get_initial_matrix(register gx_device *dev, register gs_matrix *pmat)
 
 /* Synchronize the display with the commands already given */
 private int
-x_sync(register gx_device *dev)
+x_sync(register gx_device * dev)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
     update_flush(dev);
     XFlush(xdev->dpy);
@@ -513,9 +546,9 @@ x_sync(register gx_device *dev)
 
 /* Send event to ghostview process */
 private void
-x_send_event(gx_device *dev, Atom msg)
+x_send_event(gx_device * dev, Atom msg)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
     XEvent event;
 
     event.xclient.type = ClientMessage;
@@ -530,9 +563,9 @@ x_send_event(gx_device *dev, Atom msg)
 
 /* Output "page" */
 private int
-x_output_page(gx_device *dev, int num_copies, int flush)
+x_output_page(gx_device * dev, int num_copies, int flush)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
     x_sync(dev);
 
@@ -553,10 +586,10 @@ x_output_page(gx_device *dev, int num_copies, int flush)
 
 /* Fill a rectangle with a color. */
 private int
-x_fill_rectangle(register gx_device *dev,
+x_fill_rectangle(register gx_device * dev,
 		 int x, int y, int w, int h, gx_color_index color)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
     fit_fill(dev, x, y, w, h);
     set_fill_style(FillSolid);
@@ -571,9 +604,11 @@ x_fill_rectangle(register gx_device *dev,
 	if (color == xdev->foreground || color == xdev->background) {
 	    if (xdev->dynamic_colors) {
 		int i;
+
 		for (i = 0; i < xdev->dynamic_size; i++) {
 		    x11color *xcp = (*xdev->dynamic_colors)[i];
 		    x11color *next;
+
 		    while (xcp) {
 			next = xcp->next;
 			if (xcp->color.pad) {
@@ -604,33 +639,33 @@ x_fill_rectangle(register gx_device *dev,
 
 /* Copy a monochrome bitmap. */
 private int
-x_copy_mono(register gx_device *dev,
-	    const byte *base, int sourcex, int raster, gx_bitmap_id id,
+x_copy_mono(register gx_device * dev,
+	    const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	    int x, int y, int w, int h,
 	    gx_color_index zero, gx_color_index one)
 /*
  * X doesn't directly support the simple operation of writing a color
  * through a mask specified by an image.  The plot is the following:
  *  If neither color is gx_no_color_index ("transparent"),
- *	use XPutImage with the "copy" function as usual.
+ *      use XPutImage with the "copy" function as usual.
  *  If the color either bitwise-includes or is bitwise-included-in
- *	every color written to date
- *	(a special optimization for writing black/white on color displays),
- *	use XPutImage with an appropriate Boolean function.
+ *      every color written to date
+ *      (a special optimization for writing black/white on color displays),
+ *      use XPutImage with an appropriate Boolean function.
  *  Otherwise, do the following complicated stuff:
- *	Create pixmap of depth 1 if necessary.
- *	If foreground color is "transparent" then
- *	  invert the raster data.
- *	Use XPutImage to copy the raster image to the newly
- *	  created Pixmap.
- *	Install the Pixmap as the clip_mask in the X GC and
- *	  tweak the clip origin.
- *	Do an XFillRectangle, fill style=solid, specifying a
- *	  rectangle the same size as the original raster data.
- *	De-install the clip_mask.
+ *      Create pixmap of depth 1 if necessary.
+ *      If foreground color is "transparent" then
+ *        invert the raster data.
+ *      Use XPutImage to copy the raster image to the newly
+ *        created Pixmap.
+ *      Install the Pixmap as the clip_mask in the X GC and
+ *        tweak the clip origin.
+ *      Do an XFillRectangle, fill style=solid, specifying a
+ *        rectangle the same size as the original raster data.
+ *      De-install the clip_mask.
  */
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
     int function = GXcopy;
 
     x_pixel
@@ -660,7 +695,7 @@ x_copy_mono(register gx_device *dev,
 	    goto hard;
 	}
     } else {
-	if (one == gx_no_color_index) {	/* no-op */
+	if (one == gx_no_color_index) {		/* no-op */
 	    return 0;
 	} else if (!(~xdev->colors_and & fc)) {
 	    function = GXand;
@@ -689,7 +724,7 @@ x_copy_mono(register gx_device *dev,
 
     goto out;
 
-hard:	/* Handle the hard 1-color case. */
+  hard:			/* Handle the hard 1-color case. */
     if (raster > xdev->cp.raster || h > xdev->cp.height) {
 	/* Must allocate a new pixmap and GC. */
 	/* Release the old ones first. */
@@ -742,7 +777,7 @@ hard:	/* Handle the hard 1-color case. */
     if (raster * h > max_temp_pixmap)
 	free_cp(dev);
 
-out:if (xdev->bpixmap != (Pixmap) 0) {
+  out:if (xdev->bpixmap != (Pixmap) 0) {
 	/* We wrote to the pixmap, so update the display now. */
 	x_update_add(dev, x, y, w, h);
     }
@@ -751,9 +786,9 @@ out:if (xdev->bpixmap != (Pixmap) 0) {
 
 /* Internal routine to free the GC and pixmap used for copying. */
 private void
-free_cp(register gx_device *dev)
+free_cp(register gx_device * dev)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
     if (xdev->cp.gc != NULL) {
 	XFreeGC(xdev->dpy, xdev->cp.gc);
@@ -768,246 +803,240 @@ free_cp(register gx_device *dev)
 
 /* Copy a color bitmap. */
 private int
-x_copy_color(register gx_device *dev,
-	     const byte *base, int sourcex, int raster, gx_bitmap_id id,
+x_copy_color(register gx_device * dev,
+	     const byte * base, int sourcex, int raster, gx_bitmap_id id,
 	     int x, int y, int w, int h)
-{	gx_device_X *xdev = (gx_device_X *)dev;
-	int depth = dev->color_info.depth;
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+    int depth = dev->color_info.depth;
 
-	fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
-	set_fill_style(FillSolid);
-	set_function(GXcopy);
+    fit_copy(dev, base, sourcex, raster, id, x, y, w, h);
+    set_fill_style(FillSolid);
+    set_function(GXcopy);
 
-	/* Filling with a colored halftone often gives rise to */
-	/* copy_color calls for a single pixel.  Check for this now. */
+    /* Filling with a colored halftone often gives rise to */
+    /* copy_color calls for a single pixel.  Check for this now. */
 
-	if ( h == 1 && w == 1 )
-	  {	uint sbit = sourcex * depth;
-		const byte *ptr = base + (sbit >> 3);
-		x_pixel pixel;
-		if ( depth < 8 )
-		  pixel = (byte)(*ptr << (sbit & 7)) >> (8 - depth);
-		else
-		  { pixel = *ptr++;
-		    while ( (depth -= 8) > 0 )
-		      pixel = (pixel << 8) + *ptr++;
-		  }
-		set_fore_color(pixel);
-		XDrawPoint(xdev->dpy, xdev->dest, xdev->gc, x, y);
-	  }
-	else
-	  {	xdev->image.width = sourcex + w;
-		xdev->image.height = h;
-		xdev->image.format = ZPixmap;
-		xdev->image.data = (char *)base;
-		xdev->image.depth = depth;
-		xdev->image.bytes_per_line = raster;
-		xdev->image.bits_per_pixel = depth;
-		XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
-			  sourcex, 0, x, y, w, h);
-		xdev->image.depth = xdev->image.bits_per_pixel = 1;
-	  }
-	if (xdev->bpixmap != (Pixmap) 0)
-	  x_update_add(dev, x, y, w, h);
+    if (h == 1 && w == 1) {
+	uint sbit = sourcex * depth;
+	const byte *ptr = base + (sbit >> 3);
+	x_pixel pixel;
+
+	if (depth < 8)
+	    pixel = (byte) (*ptr << (sbit & 7)) >> (8 - depth);
+	else {
+	    pixel = *ptr++;
+	    while ((depth -= 8) > 0)
+		pixel = (pixel << 8) + *ptr++;
+	}
+	set_fore_color(pixel);
+	XDrawPoint(xdev->dpy, xdev->dest, xdev->gc, x, y);
+    } else {
+	xdev->image.width = sourcex + w;
+	xdev->image.height = h;
+	xdev->image.format = ZPixmap;
+	xdev->image.data = (char *)base;
+	xdev->image.depth = depth;
+	xdev->image.bytes_per_line = raster;
+	xdev->image.bits_per_pixel = depth;
+	XPutImage(xdev->dpy, xdev->dest, xdev->gc, &xdev->image,
+		  sourcex, 0, x, y, w, h);
+	xdev->image.depth = xdev->image.bits_per_pixel = 1;
+    }
+    if (xdev->bpixmap != (Pixmap) 0)
+	x_update_add(dev, x, y, w, h);
 #ifdef DEBUG
-	if (gs_debug['F'])
-	  dprintf4("[F] copy_color (%d,%d):(%d,%d)\n",
-		   x, y, w, h);
+    if (gs_debug['F'])
+	dprintf4("[F] copy_color (%d,%d):(%d,%d)\n",
+		 x, y, w, h);
 #endif
-	return 0;
+    return 0;
 }
 
 private int
-x_get_bits(gx_device *dev, int y, byte *str, byte **actual_data)
-{	gx_device_X *xdev = (gx_device_X *)dev;
-	int depth = dev->color_info.depth;
-	uint width_bytes = gx_device_raster(dev, false);
-	XImage *image;
+x_get_bits(gx_device * dev, int y, byte * str, byte ** actual_data)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+    int depth = dev->color_info.depth;
+    uint width_bytes = gx_device_raster(dev, false);
+    XImage *image;
 
-	/* Make sure the frame buffer is up to date. */
-	if ( xdev->up_area != 0 &&
-	     y >= xdev->update.yo && y < xdev->update.ye
-	   )
-	  update_do_flush(dev);
-	/*
-	 * The X library doesn't provide any way to specify the desired
-	 * bit or byte ordering for the result, so we just hope for the best
-	 * (big-endian).
-	 */
-	image = XGetImage(xdev->dpy, xdev->dest, 0, y, dev->width, 1,
-			  (1L << depth) - 1, ZPixmap);
-	memcpy(str, image->data, width_bytes);
-	XDestroyImage(image);
-	*actual_data = str;
-	return 0;
+    /* Make sure the frame buffer is up to date. */
+    if (xdev->up_area != 0 &&
+	y >= xdev->update.yo && y < xdev->update.ye
+	)
+	update_do_flush(dev);
+    /*
+     * The X library doesn't provide any way to specify the desired
+     * bit or byte ordering for the result, so we just hope for the best
+     * (big-endian).
+     */
+    image = XGetImage(xdev->dpy, xdev->dest, 0, y, dev->width, 1,
+		      (1L << depth) - 1, ZPixmap);
+    memcpy(str, image->data, width_bytes);
+    XDestroyImage(image);
+    *actual_data = str;
+    return 0;
 }
 
 /* Set the device parameters.  We reimplement this so we can resize */
 /* the window and avoid closing and reopening the device, and to add */
 /* .IsPageDevice. */
 private int
-x_put_params(gx_device *dev, gs_param_list *plist)
-{	gx_device_X *xdev = (gx_device_X *)dev;
-	bool is_open = dev->is_open;
-	int width = dev->width;
-	int height = dev->height;
-	float xres = dev->HWResolution[0];
-	float yres = dev->HWResolution[1];
-	long pwin = (long)xdev->pwin;
-	bool is_page = xdev->IsPageDevice;
-	bool save_is_page = xdev->IsPageDevice;
-	int ecode = 0, code;
+x_put_params(gx_device * dev, gs_param_list * plist)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+    bool is_open = dev->is_open;
+    int width = dev->width;
+    int height = dev->height;
+    float xres = dev->HWResolution[0];
+    float yres = dev->HWResolution[1];
+    long pwin = (long)xdev->pwin;
+    bool is_page = xdev->IsPageDevice;
+    bool save_is_page = xdev->IsPageDevice;
+    int ecode = 0, code;
 
-	/* Handle extra parameters */
-	switch ( code = param_read_long(plist, "WindowID", &pwin) )
-	{
+    /* Handle extra parameters */
+    switch (code = param_read_long(plist, "WindowID", &pwin)) {
 	case 0:
 	case 1:
-		break;
+	    break;
 	default:
-		ecode = code;
-		param_signal_error(plist, "GSVIEW", ecode);
+	    ecode = code;
+	    param_signal_error(plist, "GSVIEW", ecode);
+    }
+
+    switch (code = param_read_bool(plist, ".IsPageDevice", &is_page)) {
+	case 0:
+	case 1:
+	    break;
+	default:
+	    ecode = code;
+	    param_signal_error(plist, "GSVIEW", ecode);
+    }
+
+    if (ecode < 0)
+	return ecode;
+
+    /* Unless we specified a new window ID, */
+    /* prevent gx_default_put_params from closing the device. */
+    if (pwin == (long)xdev->pwin)
+	dev->is_open = false;
+    xdev->IsPageDevice = is_page;
+    code = gx_default_put_params(dev, plist);
+    dev->is_open = is_open;
+    if (code < 0) {		/* Undo setting of .IsPageDevice */
+	xdev->IsPageDevice = save_is_page;
+	return code;
+    }
+    if (pwin != (long)xdev->pwin) {
+	if (xdev->is_open)
+	    gs_closedevice(dev);
+	xdev->pwin = (Window) pwin;
+    }
+    /* If the device is open, resize the window. */
+    /* Don't do this if Ghostview is active. */
+    if (xdev->is_open && !xdev->ghostview &&
+	(dev->width != width || dev->height != height ||
+	 dev->HWResolution[0] != xres || dev->HWResolution[1] != yres)
+	) {
+	int dw = dev->width - width;
+	int dh = dev->height - height;
+	double qx = dev->HWResolution[0] / xres;
+	double qy = dev->HWResolution[1] / xres;
+
+	if (dw != 0 || dh != 0) {
+	    XResizeWindow(xdev->dpy, xdev->win,
+			  dev->width, dev->height);
+	    if (xdev->bpixmap != (Pixmap) 0) {
+		XFreePixmap(xdev->dpy, xdev->bpixmap);
+		xdev->bpixmap = (Pixmap) 0;
+	    }
+	    xdev->dest = 0;
+	    gdev_x_clear_window(xdev);
 	}
-
-	switch ( code = param_read_bool(plist, ".IsPageDevice", &is_page) )
-	  {
-	  case 0:
-	  case 1:
-		break;
-	  default:
-		ecode = code;
-		param_signal_error(plist, "GSVIEW", ecode);
-	  }
-
-	if ( ecode < 0 )
-	  return ecode;
-
-	/* Unless we specified a new window ID, */
-	/* prevent gx_default_put_params from closing the device. */
-	if ( pwin == (long)xdev->pwin )
-	  dev->is_open = false;
-	xdev->IsPageDevice = is_page;
-	code = gx_default_put_params(dev, plist);
-	dev->is_open = is_open;
-	if ( code < 0 )
-	  {	/* Undo setting of .IsPageDevice */
-		xdev->IsPageDevice = save_is_page;
-		return code;
-	  }
-
-	if ( pwin != (long)xdev->pwin )
-	  {	if ( xdev->is_open )
-		  gs_closedevice(dev);
-		xdev->pwin = (Window)pwin;
-	  }
-
-	/* If the device is open, resize the window. */
-	/* Don't do this if Ghostview is active. */
-	if ( xdev->is_open && !xdev->ghostview &&
-	      (dev->width != width || dev->height != height ||
-	       dev->HWResolution[0] != xres || dev->HWResolution[1] != yres)
-	   )
-	  {	int dw = dev->width - width;
-		int dh = dev->height - height;
-		double qx = dev->HWResolution[0] / xres;
-		double qy = dev->HWResolution[1] / xres;
-		if ( dw != 0 || dh != 0 )
-		  {	XResizeWindow(xdev->dpy, xdev->win,
-				      dev->width, dev->height);
-			if (xdev->bpixmap != (Pixmap) 0)
-			  {	XFreePixmap(xdev->dpy, xdev->bpixmap);
-				xdev->bpixmap = (Pixmap) 0;
-			  }
-			xdev->dest = 0;
-			gdev_x_clear_window(xdev);
-		  }
-		/* Attempt to update the initial matrix in a sensible way. */
-		/* The whole handling of the initial matrix is a hack! */
-		if ( xdev->initial_matrix.xy == 0 )
-		  {	if ( xdev->initial_matrix.xx < 0 )
-			  {	/* 180 degree rotation */
-				xdev->initial_matrix.tx += dw;
-			  }
-			else
-			  {	/* no rotation */
-				xdev->initial_matrix.ty += dh;
-			  }
-		  }
-		else
-		  {	if ( xdev->initial_matrix.xy < 0 )
-			  {	/* 90 degree rotation */
-				xdev->initial_matrix.tx += dh;
-				xdev->initial_matrix.ty += dw;
-			  }
-			else
-			  {	/* 270 degree rotation */
-			  }
-		  }
-		xdev->initial_matrix.xx *= qx;
-		xdev->initial_matrix.xy *= qx;
-		xdev->initial_matrix.yx *= qy;
-		xdev->initial_matrix.yy *= qy;
-	  }
-
-	return 0;
+	/* Attempt to update the initial matrix in a sensible way. */
+	/* The whole handling of the initial matrix is a hack! */
+	if (xdev->initial_matrix.xy == 0) {
+	    if (xdev->initial_matrix.xx < 0) {	/* 180 degree rotation */
+		xdev->initial_matrix.tx += dw;
+	    } else {		/* no rotation */
+		xdev->initial_matrix.ty += dh;
+	    }
+	} else {
+	    if (xdev->initial_matrix.xy < 0) {	/* 90 degree rotation */
+		xdev->initial_matrix.tx += dh;
+		xdev->initial_matrix.ty += dw;
+	    } else {		/* 270 degree rotation */
+	    }
+	}
+	xdev->initial_matrix.xx *= qx;
+	xdev->initial_matrix.xy *= qx;
+	xdev->initial_matrix.yx *= qy;
+	xdev->initial_matrix.yy *= qy;
+    }
+    return 0;
 }
 
 /* Get the page device.  We reimplement this so that we can make this */
 /* device be a page device conditionally. */
 private gx_device *
-x_get_page_device(gx_device *dev)
-{	return (((gx_device_X *)dev)->IsPageDevice ? dev : (gx_device *)0);
+x_get_page_device(gx_device * dev)
+{
+    return (((gx_device_X *) dev)->IsPageDevice ? dev : (gx_device *) 0);
 }
 
 /* Tile a rectangle. */
 private int
-x_strip_tile_rectangle(register gx_device *dev, const gx_strip_bitmap *tiles,
+x_strip_tile_rectangle(register gx_device * dev, const gx_strip_bitmap * tiles,
 		       int x, int y, int w, int h,
 		       gx_color_index zero, gx_color_index one,
 		       int px, int py)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
     /* Give up if one color is transparent, or if the tile is colored. */
     /* We should implement the latter someday, since X can handle it. */
 
     if (one == gx_no_color_index || zero == gx_no_color_index)
-      return gx_default_strip_tile_rectangle(dev, tiles, x, y, w, h,
-					     zero, one, px, py);
+	return gx_default_strip_tile_rectangle(dev, tiles, x, y, w, h,
+					       zero, one, px, py);
 
     /* For the moment, give up if the phase or shift is non-zero. */
     if (tiles->shift | px | py)
-      return gx_default_strip_tile_rectangle(dev, tiles, x, y, w, h,
-					     zero, one, px, py);
+	return gx_default_strip_tile_rectangle(dev, tiles, x, y, w, h,
+					       zero, one, px, py);
 
     fit_fill(dev, x, y, w, h);
 
     /* Imaging with a halftone often gives rise to very small */
     /* tile_rectangle calls.  Check for this now. */
 
-    if ( h <= 2 && w <= 2 )
-      {	int j;
+    if (h <= 2 && w <= 2) {
+	int j;
+
 	set_fill_style(FillSolid);
 	set_function(GXcopy);
-	for ( j = 0; j < h; j++ )
-	  { const byte *ptr =
-	      tiles->data + ((y + j) % tiles->rep_height) * tiles->raster;
+	for (j = 0; j < h; j++) {
+	    const byte *ptr =
+	    tiles->data + ((y + j) % tiles->rep_height) * tiles->raster;
 	    int i;
-	    for ( i = 0; i < w; i++ )
-	      {	uint tx = (x + i) % tiles->rep_width;
+
+	    for (i = 0; i < w; i++) {
+		uint tx = (x + i) % tiles->rep_width;
 		byte mask = 0x80 >> (tx & 7);
 		x_pixel pixel = (ptr[tx >> 3] & mask ? one : zero);
+
 		set_fore_color(pixel);
 		XDrawPoint(xdev->dpy, xdev->dest, xdev->gc,
 			   x + i, y + j);
-	      }
-	  }
+	    }
+	}
 	if (xdev->bpixmap != (Pixmap) 0) {
-	  x_update_add(dev, x, y, w, h);
+	    x_update_add(dev, x, y, w, h);
 	}
 	return 0;
-      }
-
+    }
     /*
      * Remember, an X tile is already filled with particular
      * pixel values (i.e., colors).  Therefore if we are changing
@@ -1021,17 +1050,16 @@ x_strip_tile_rectangle(register gx_device *dev, const gx_strip_bitmap *tiles,
 
     set_back_color(zero);
     set_fore_color(one);
-    if (!set_tile(dev, tiles))
-      {	/* Bad news.  Fall back to the default algorithm. */
+    if (!set_tile(dev, tiles)) {	/* Bad news.  Fall back to the default algorithm. */
 	return gx_default_strip_tile_rectangle(dev, tiles, x, y, w, h,
 					       zero, one, px, py);
-      }
+    }
     /* Use the tile to fill the rectangle */
     set_fill_style(FillTiled);
     set_function(GXcopy);
     XFillRectangle(xdev->dpy, xdev->dest, xdev->gc, x, y, w, h);
     if (xdev->bpixmap != (Pixmap) 0) {
-      x_update_add(dev, x, y, w, h);
+	x_update_add(dev, x, y, w, h);
     }
 #ifdef DEBUG
     if (gs_debug['F'])
@@ -1044,9 +1072,9 @@ x_strip_tile_rectangle(register gx_device *dev, const gx_strip_bitmap *tiles,
 /* Set up with a specified tile. */
 /* Return false if we can't do it for some reason. */
 private int
-set_tile(register gx_device *dev, register const gx_strip_bitmap *tile)
+set_tile(register gx_device * dev, register const gx_strip_bitmap * tile)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
 
 #ifdef DEBUG
     if (gs_debug['T'])
@@ -1082,7 +1110,7 @@ set_tile(register gx_device *dev, register const gx_strip_bitmap *tile)
 	int i;
 
 	dprintf4("[H] 0x%lx: width=%d height=%d raster=%d\n",
-		 (ulong)tile->data, tile->size.x, tile->size.y, tile->raster);
+	      (ulong) tile->data, tile->size.x, tile->size.y, tile->raster);
 	for (i = 0; i < tile->raster * tile->size.y; i++)
 	    dprintf1(" %02x", tile->data[i]);
 	dputc('\n');
@@ -1102,9 +1130,9 @@ set_tile(register gx_device *dev, register const gx_strip_bitmap *tile)
 
 /* Flush updates to the screen if needed. */
 private void
-update_do_flush(register gx_device *dev)
+update_do_flush(register gx_device * dev)
 {
-    gx_device_X *xdev = (gx_device_X *)dev;
+    gx_device_X *xdev = (gx_device_X *) dev;
     int xo = xdev->update.xo, yo = xdev->update.yo;
 
     set_function(GXcopy);
@@ -1117,59 +1145,54 @@ update_do_flush(register gx_device *dev)
 /* Add a region to be updated. */
 /* This is only called if xdev->bpixmap != 0. */
 void
-x_update_add(gx_device *dev, int xo, int yo, int w, int h)
+x_update_add(gx_device * dev, int xo, int yo, int w, int h)
 {
-	register gx_device_X *xdev = (gx_device_X *)dev;
-	int xe = xo + w, ye = yo + h;
-	long new_area;
+    register gx_device_X *xdev = (gx_device_X *) dev;
+    int xe = xo + w, ye = yo + h;
+    long new_area;
 
-	if ( always_update )
-	  { /* Update the screen now. */
-	    update_do_flush(dev);
-	    new_area = (long)w * h;
-	  }
-	else
-	  { /* Only update the screen if it's worthwhile. */
-	    if ( (++xdev->up_count >= 200 && xdev->up_area > 1000) ||
-		 xdev->up_area == 0
-		 )
-	      { if ( xdev->up_area != 0 )
-		  update_do_flush(dev);
-		new_area = (long)w * h;
-	      }
-	    else
-	      { /* See whether adding this rectangle */
-		/* would result in too much being copied unnecessarily. */
-		long old_area = xdev->up_area;
-		long new_up_area;
-		rect u;
+    if (always_update) {	/* Update the screen now. */
+	update_do_flush(dev);
+	new_area = (long)w *h;
+    } else {			/* Only update the screen if it's worthwhile. */
+	if ((++xdev->up_count >= 200 && xdev->up_area > 1000) ||
+	    xdev->up_area == 0
+	    ) {
+	    if (xdev->up_area != 0)
+		update_do_flush(dev);
+	    new_area = (long)w *h;
+	} else {		/* See whether adding this rectangle */
+	    /* would result in too much being copied unnecessarily. */
+	    long old_area = xdev->up_area;
+	    long new_up_area;
+	    rect u;
 
-		u.xo = min(xo, xdev->update.xo);
-		u.yo = min(yo, xdev->update.yo);
-		u.xe = max(xe, xdev->update.xe);
-		u.ye = max(ye, xdev->update.ye);
-		new_up_area = (long)(u.xe - u.xo) * (u.ye - u.yo);
-		/* The fraction of new_up_area used in the following test */
-		/* is not particularly critical; using a denominator */
-		/* that is a power of 2 eliminates a divide. */
-		if ( u.xe - u.xo >= 10 && u.ye - u.yo >= 10 &&
-		     old_area + (new_area = (long)w * h) <
-		      new_up_area - (new_up_area >> 2)
-		   )
-		  update_do_flush(dev);
-		else
-		  {	xdev->update = u;
-			xdev->up_area = new_up_area;
-			return;
-		  }
-	      }
-	  }
+	    u.xo = min(xo, xdev->update.xo);
+	    u.yo = min(yo, xdev->update.yo);
+	    u.xe = max(xe, xdev->update.xe);
+	    u.ye = max(ye, xdev->update.ye);
+	    new_up_area = (long)(u.xe - u.xo) * (u.ye - u.yo);
+	    /* The fraction of new_up_area used in the following test */
+	    /* is not particularly critical; using a denominator */
+	    /* that is a power of 2 eliminates a divide. */
+	    if (u.xe - u.xo >= 10 && u.ye - u.yo >= 10 &&
+		old_area + (new_area = (long)w * h) <
+		new_up_area - (new_up_area >> 2)
+		)
+		update_do_flush(dev);
+	    else {
+		xdev->update = u;
+		xdev->up_area = new_up_area;
+		return;
+	    }
+	}
+    }
 
-	xdev->update.xo = xo;
-	xdev->update.yo = yo;
-	xdev->update.xe = xe;
-	xdev->update.ye = ye;
-	xdev->up_area = new_area;
+    xdev->update.xo = xo;
+    xdev->update.yo = yo;
+    xdev->update.xe = xe;
+    xdev->update.ye = ye;
+    xdev->up_area = new_area;
 }
 
 /* ------ Internal procedures ------ */
@@ -1179,8 +1202,8 @@ x_update_add(gx_device *dev, int xo, int yo, int w, int h)
 /* in some X servers.  It only works with the specific */
 /* parameters (bit/byte order, padding) used above. */
 private int
-alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc,
-	  XImage *pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h)
+alt_put_image(gx_device * dev, Display * dpy, Drawable win, GC gc,
+	XImage * pi, int sx, int sy, int dx, int dy, unsigned w, unsigned h)
 {
     int raster = pi->bytes_per_line;
     byte *data = (byte *) pi->data + sy * raster + (sx >> 3);
@@ -1225,8 +1248,8 @@ alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc,
 		int xleft = xi;
 
 		if (rp == &rects[nrects]) {
-		  XFillRectangles(dpy, win, gc, rects, nrects);
-		  rp = rects;
+		    XFillRectangles(dpy, win, gc, rects, nrects);
+		    rp = rects;
 		}
 		/* Scan over a run of 1-bits */
 		rp->x = dx + xi, rp->y = dy + yi;
@@ -1245,6 +1268,7 @@ alt_put_image(gx_device *dev, Display *dpy, Drawable win, GC gc,
 	}
     }
     XFillRectangles(dpy, win, gc, rects, rp - rects);
-    if (invert) XSetForeground(dpy, gc, gcv.foreground);
+    if (invert)
+	XSetForeground(dpy, gc, gcv.foreground);
     return 0;
 }

@@ -1,4 +1,4 @@
-#    Copyright (C) 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+#    Copyright (C) 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 # 
 # This file is part of Aladdin Ghostscript.
 # 
@@ -48,7 +48,7 @@ CCLD=$(CC)
 
 #GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
 GCFLAGS=-Dconst= -Wall -Wpointer-arith -Wstrict-prototypes
-CFLAGS=-g -O $(GCFLAGS) $(XCFLAGS)
+CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
 LDFLAGS=$(XLDFLAGS)
 EXTRALIBS=
 XINCLUDE=-I/usr/local/X/include
@@ -58,12 +58,12 @@ XLIBS=Xt Xext X11
 
 FPU_TYPE=1
 
-FEATURE_DEVS=patlib.dev path1lib.dev hsblib.dev
+FEATURE_DEVS=dps2lib.dev psl2cs.dev cielib.dev patlib.dev
 COMPILE_INITS=0
 BAND_LIST_STORAGE=file
 BAND_LIST_COMPRESSOR=zlib
 FILE_IMPLEMENTATION=stdio
-DEVICE_DEVS=x11.dev x11mono.dev x11alpha.dev x11cmyk.dev\
+DEVICE_DEVS=x11cmyk.dev x11.dev x11alpha.dev x11mono.dev\
  djet500.dev\
  pbmraw.dev pgmraw.dev ppmraw.dev
 DEVICE_DEVS1=

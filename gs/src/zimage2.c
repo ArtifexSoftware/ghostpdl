@@ -1,20 +1,20 @@
 /* Copyright (C) 1992, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
-  
-  This file is part of Aladdin Ghostscript.
-  
-  Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
-  or distributor accepts any responsibility for the consequences of using it,
-  or for whether it serves any particular purpose or works at all, unless he
-  or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
-  License (the "License") for full details.
-  
-  Every copy of Aladdin Ghostscript must include a copy of the License,
-  normally in a plain ASCII text file named PUBLIC.  The License grants you
-  the right to copy, modify and redistribute Aladdin Ghostscript, but only
-  under certain conditions described in the License.  Among other things, the
-  License requires that the copyright notice and this notice be preserved on
-  all copies.
-*/
+
+   This file is part of Aladdin Ghostscript.
+
+   Aladdin Ghostscript is distributed with NO WARRANTY OF ANY KIND.  No author
+   or distributor accepts any responsibility for the consequences of using it,
+   or for whether it serves any particular purpose or works at all, unless he
+   or she says so in writing.  Refer to the Aladdin Ghostscript Free Public
+   License (the "License") for full details.
+
+   Every copy of Aladdin Ghostscript must include a copy of the License,
+   normally in a plain ASCII text file named PUBLIC.  The License grants you
+   the right to copy, modify and redistribute Aladdin Ghostscript, but only
+   under certain conditions described in the License.  Among other things, the
+   License requires that the copyright notice and this notice be preserved on
+   all copies.
+ */
 
 /* zimage2.c */
 /* image operator extensions for Level 2 PostScript */
@@ -36,123 +36,127 @@
 
 /* Define a structure for acquiring image parameters. */
 typedef struct image_params_s {
-	gs_image_t image;
-	bool MultipleDataSources;
-	ref DataSource[4];
-	const float *pDecode;
+    gs_image_t image;
+    bool MultipleDataSources;
+    ref DataSource[4];
+    const float *pDecode;
 } image_params;
 
 /* Common code for unpacking an image dictionary. */
 /* Assume *op is a dictionary. */
 private int
-image_dict_unpack(os_ptr op, image_params *pip, int max_bits_per_component)
-{	int code;
-	int num_components;
-	int decode_size;
-	ref *pds;
+image_dict_unpack(os_ptr op, image_params * pip, int max_bits_per_component)
+{
+    int code;
+    int num_components;
+    int decode_size;
+    ref *pds;
 
-	check_dict_read(*op);
-	num_components =
-	  gs_color_space_num_components(gs_currentcolorspace(igs));
-	if ( num_components < 1 )
-	  return_error(e_rangecheck);		/* Pattern space not allowed */
-	if ( max_bits_per_component == 1 )	/* imagemask */
-	  num_components = 1;			/* for Decode */
+    check_dict_read(*op);
+    num_components =
+	gs_color_space_num_components(gs_currentcolorspace(igs));
+    if (num_components < 1)
+	return_error(e_rangecheck);	/* Pattern space not allowed */
+    if (max_bits_per_component == 1)	/* imagemask */
+	num_components = 1;	/* for Decode */
 #define pim (&pip->image)
-	if ( (code = dict_int_param(op, "ImageType", 1, 1, 1,
-				    &code)) < 0 ||
-	     (code = dict_int_param(op, "Width", 0, 0x7fff, -1,
-				    &pim->Width)) < 0 ||
-	     (code = dict_int_param(op, "Height", 0, 0x7fff, -1,
-				    &pim->Height)) < 0 ||
-	     (code = dict_matrix_param(op, "ImageMatrix",
-				    &pim->ImageMatrix)) < 0 ||
-	     (code = dict_bool_param(op, "MultipleDataSources", false,
-				    &pip->MultipleDataSources)) < 0 ||
-	     (code = dict_int_param(op, "BitsPerComponent", 0,
-				    max_bits_per_component, -1,
-				    &pim->BitsPerComponent)) < 0 ||
-	     (code = decode_size = dict_float_array_param(op, "Decode",
-				    num_components * 2,
-				    &pim->Decode[0], NULL)) < 0 ||
-	     (code = dict_bool_param(op, "Interpolate", false,
-				    &pim->Interpolate)) < 0 ||
-	     (code = dict_bool_param(op, "CombineWithColor", false,
-				    &pim->CombineWithColor)) < 0
-	   )
-	  return code;
-	if ( decode_size != num_components * 2 )
-	  return_error(e_rangecheck);
-	pip->pDecode = &pim->Decode[0];
-	/* Extract and check the data sources. */
-	if ( (code = dict_find_string(op, "DataSource", &pds)) < 0 )
-	  return code;
-	if ( pip->MultipleDataSources )
-	{	check_type_only(*pds, t_array);
-		if ( r_size(pds) != num_components )
-		  return_error(e_rangecheck);
-		memcpy(&pip->DataSource[0], pds->value.refs, sizeof(ref) * num_components);
-	}
-	else
-	  pip->DataSource[0] = *pds;
+    if ((code = dict_int_param(op, "ImageType", 1, 1, 1,
+			       &code)) < 0 ||
+	(code = dict_int_param(op, "Width", 0, 0x7fff, -1,
+			       &pim->Width)) < 0 ||
+	(code = dict_int_param(op, "Height", 0, 0x7fff, -1,
+			       &pim->Height)) < 0 ||
+	(code = dict_matrix_param(op, "ImageMatrix",
+				  &pim->ImageMatrix)) < 0 ||
+	(code = dict_bool_param(op, "MultipleDataSources", false,
+				&pip->MultipleDataSources)) < 0 ||
+	(code = dict_int_param(op, "BitsPerComponent", 0,
+			       max_bits_per_component, -1,
+			       &pim->BitsPerComponent)) < 0 ||
+	(code = decode_size = dict_float_array_param(op, "Decode",
+						     num_components * 2,
+					      &pim->Decode[0], NULL)) < 0 ||
+	(code = dict_bool_param(op, "Interpolate", false,
+				&pim->Interpolate)) < 0 ||
+	(code = dict_bool_param(op, "CombineWithColor", false,
+				&pim->CombineWithColor)) < 0
+	)
+	return code;
+    if (decode_size != num_components * 2)
+	return_error(e_rangecheck);
+    pip->pDecode = &pim->Decode[0];
+    /* Extract and check the data sources. */
+    if ((code = dict_find_string(op, "DataSource", &pds)) < 0)
+	return code;
+    if (pip->MultipleDataSources) {
+	check_type_only(*pds, t_array);
+	if (r_size(pds) != num_components)
+	    return_error(e_rangecheck);
+	memcpy(&pip->DataSource[0], pds->value.refs, sizeof(ref) * num_components);
+    } else
+	pip->DataSource[0] = *pds;
 #undef pim
-	return 0;
+    return 0;
 }
 
 /* (<width> <height> <bits/sample> <matrix> <datasrc> image -) */
 /* <dict> image - */
 private int
 z2image(register os_ptr op)
-{	if ( level2_enabled )
-	{	check_op(1);
-		if ( r_has_type(op, t_dictionary) )
-		  {	image_params ip;
-			int code;
+{
+    if (level2_enabled) {
+	check_op(1);
+	if (r_has_type(op, t_dictionary)) {
+	    image_params ip;
+	    int code;
 
-			gs_image_t_init_color(&ip.image);
-			code = image_dict_unpack(op, &ip, 12);
-			if ( code < 0 )
-			  return code;
-			ip.image.ColorSpace = gs_currentcolorspace(igs);
-			return zimage_setup(&ip.image, ip.MultipleDataSources,
-					    &ip.DataSource[0], 1);
-		  }
+	    gs_image_t_init_color(&ip.image);
+	    code = image_dict_unpack(op, &ip, 12);
+	    if (code < 0)
+		return code;
+	    ip.image.ColorSpace = gs_currentcolorspace(igs);
+	    return zimage_setup(&ip.image, ip.MultipleDataSources,
+				&ip.DataSource[0], 1);
 	}
-	/* Level 1 image operator */
-	check_op(5);
-	return zimage(op);
+    }
+    /* Level 1 image operator */
+    check_op(5);
+    return zimage(op);
 }
 
 /* (<width> <height> <paint_1s> <matrix> <datasrc> imagemask -) */
 /* <dict> imagemask - */
 private int
 z2imagemask(register os_ptr op)
-{	if ( level2_enabled )
-	{	check_op(1);
-		if ( r_has_type(op, t_dictionary) )
-		  {	image_params ip;
-			int code;
+{
+    if (level2_enabled) {
+	check_op(1);
+	if (r_has_type(op, t_dictionary)) {
+	    image_params ip;
+	    int code;
 
-			gs_image_t_init_mask(&ip.image, false);
-			code = image_dict_unpack(op, &ip, 1);
-			if ( code < 0 )
-			  return code;
-			if ( ip.MultipleDataSources )
-			  return_error(e_rangecheck);
-			return zimage_setup(&ip.image, false,
-					    &ip.DataSource[0], 1);
-		  }
+	    gs_image_t_init_mask(&ip.image, false);
+	    code = image_dict_unpack(op, &ip, 1);
+	    if (code < 0)
+		return code;
+	    if (ip.MultipleDataSources)
+		return_error(e_rangecheck);
+	    return zimage_setup(&ip.image, false,
+				&ip.DataSource[0], 1);
 	}
-	/* Level 1 imagemask operator */
-	check_op(5);
-	return zimagemask(op);
+    }
+    /* Level 1 imagemask operator */
+    check_op(5);
+    return zimagemask(op);
 }
 
 /* ------ Initialization procedure ------ */
 
 /* Note that these override the definitions in zpaint.c. */
-BEGIN_OP_DEFS(zimage2_l2_op_defs) {
-		op_def_begin_level2(),
-	{"1image", z2image},
-	{"1imagemask", z2imagemask},
-END_OP_DEFS(0) }
+const op_def zimage2_l2_op_defs[] =
+{
+    op_def_begin_level2(),
+    {"1image", z2image},
+    {"1imagemask", z2imagemask},
+    op_def_end(0)
+};

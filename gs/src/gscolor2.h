@@ -16,22 +16,25 @@
   all copies.
 */
 
-/* gscolor2.h */
+/*Id: gscolor2.h */
 /* Client interface to Level 2 color facilities */
 /* (requires gscspace.h, gsmatrix.h) */
-#include "gsccolor.h"
-#include "gsuid.h"		/* for pattern template */
-#include "gxbitmap.h"		/* for makebitmappattern */
+
+#ifndef gscolor2_INCLUDED
+#  define gscolor2_INCLUDED
+
+#include "gsptype1.h"
 
 /* Note: clients should use rc_alloc_struct_0 (in gsrefct.h) to allocate */
-/* CIE color spaces or rendering structures; makepattern uses */
-/* rc_alloc_struct_1 to allocate pattern instances. */
+/* CIE color spaces or rendering structures. */
+
+/* ---------------- Graphics state ---------------- */
 
 /* General color routines */
 const gs_color_space *gs_currentcolorspace(P1(const gs_state *));
-int	gs_setcolorspace(P2(gs_state *, gs_color_space *));
+int gs_setcolorspace(P2(gs_state *, gs_color_space *));
 const gs_client_color *gs_currentcolor(P1(const gs_state *));
-int	gs_setcolor(P2(gs_state *, const gs_client_color *));
+int gs_setcolor(P2(gs_state *, const gs_client_color *));
 
 /* CIE-specific routines */
 #ifndef gs_cie_render_DEFINED
@@ -39,89 +42,56 @@ int	gs_setcolor(P2(gs_state *, const gs_client_color *));
 typedef struct gs_cie_render_s gs_cie_render;
 #endif
 const gs_cie_render *gs_currentcolorrendering(P1(const gs_state *));
-int	gs_setcolorrendering(P2(gs_state *, gs_cie_render *));
+int gs_setcolorrendering(P2(gs_state *, gs_cie_render *));
 
-/* Pattern template */
-typedef struct gs_client_pattern_s {
-	gs_uid uid;
-	int PaintType;
-	int TilingType;
-	gs_rect BBox;
-	float XStep;
-	float YStep;
-	int (*PaintProc)(P2(const gs_client_color *, gs_state *));
-	void *client_data;		/* additional client data */
-} gs_client_pattern;
-#define private_st_client_pattern() /* in gspcolor.c */\
-  gs_private_st_ptrs1(st_client_pattern, gs_client_pattern,\
-    "client pattern", client_pattern_enum_ptrs, client_pattern_reloc_ptrs,\
-    client_data)
-#define st_client_pattern_max_ptrs 1
-
-/* Pattern-specific routines */
-/* The gs_memory_t argument for makepattern may be null, meaning use the */
-/* same allocator as for the gs_state argument. */
-int	gs_makepattern(P5(gs_client_color *, const gs_client_pattern *,
-			  const gs_matrix *, gs_state *, gs_memory_t *));
-int	gs_setpattern(P2(gs_state *, const gs_client_color *));
-int	gs_setpatternspace(P1(gs_state *));
-const gs_client_pattern	*gs_getpattern(P1(const gs_client_color *));
+/* ---------------- Indexed color space ---------------- */
 
 /*
- * Make a pattern from a bitmap or pixmap. The pattern may be colored or
- * uncolored, as determined by the mask operand. This code is intended
- * primarily for use by PCL.
+ * Indexed color spaces.
  *
- * By convention, if pmat is null the identity matrix will be used, and if
- * id is no_UniqueID the code will assign a unique id. Thes conventions allow
- * gs_makebitmappattern to be implemented as a macro. Also, if mem is a
- * null pointer, the memory allocator for the graphic state is used.
+ * If the color space will use a procedure rather than a byte table,
+ * ptbl should be set to 0.
  *
- * For mask patterns, pix_depth must be 1, while pcspace and white_index are
- * ignored; the polarity of the mask considers ones part of the mask, while
- * zeros are not. For colored patterns pspace must point to an indexed color
- * space and the image must used the canoncial Decode array for this color
- * space. For both cases no interpolation or adjustment is provided.
+ * Unlike most of the other color space constructors, this one initializes
+ * some of the fields of the colorspace. In the case in which a string table
+ * is used for mapping, it initializes the entire structure. Note that the
+ * client is responsible for the table memory in that case; the color space
+ * will not free it when the color space itself is released.
  *
- * For backwards compatibility, if mask is false, pcspace is null, and
- * pix_depth is 1, the pattern will be rendered with a color space that maps
- * 0 to white and 1 to black.
+ * For the case of an indexed color space based on a procedure, a default
+ * procedure will be provided that simply echoes the color values already in
+ * the palette; the client may override these procedures by use of
+ * gs_cspace_indexed_set_proc. If the client wishes to insert values into
+ * the palette, it should do so by using gs_cspace_indexed_value_array, and
+ * directly inserting the desired values into the array.
  *
- * The image must be described by a gx_tile_bitmap structure (this is actually
- * somewhat awkward, but the only option available at the moment), and the
- * pattern step will exactly match the image size. The client need not maintain
- * the gx_tile_bitmap structure after the completion of this call, but the
- * raw image data itself must be kept until the pattern is no longer needed.
- *
- * NB: For proper handling of transparency in PCL, there must be only a single
- *     white value accessed by the pattern image. If the palette contains
- *     multiple white values, the PCL component must remap the image data to
- *     ensure that all white indices are mapped to the single, given white
- *     index.
+ * If the client does insert values into the palette directly, the default
+ * procedures provided by the client are fairly efficient, and there are
+ * few instances in which the client would need to replace them.
  */
-extern  int     gs_makepixmappattern( gs_client_color *        pcc,
-                                      const gs_depth_bitmap *  pbitmap,
-                                      bool                     mask,
-                                      const gs_matrix *        pmat,
-                                      long                     id,
-                                      const gs_color_space *   pcspace,
-                                      uint                     white_index,
-                                      gs_state *               pgs,
-                                      gs_memory_t *            mem
-                                      );
+extern  int     gs_cspace_build_Indexed(
+    gs_color_space **       ppcspace,
+    const gs_color_space *  pbase_cspace,
+    uint                    num_entries,
+    const gs_const_string * ptbl,
+    gs_memory_t *           pmem
+);
 
-/*
- *  Backwards compatibility feature, to allow the existing
- *  gs_makebitmappattern operation to still function.
- */
-extern  int     gs_makebitmappattern_xform( gs_client_color *      pcc,
-                                            const gx_tile_bitmap * ptile,
-                                            bool                   mask,
-                                            const gs_matrix *      pmat,
-                                            long                   id,
-                                            gs_state *             pgs,
-                                            gs_memory_t *          mem
-                                            );
+/* Return the number of entries in the palette of an indexed color space. */
+extern int gs_cspace_indexed_num_entries(P1(
+    const gs_color_space *  pcspace
+));
 
-#define gs_makebitmappattern(pcc, tile, mask, pgs, mem)                 \
-    gs_makebitmappattern_xform(pcc, tile, mask, 0, (uint)-1, pgs, mem)
+/* In the case of a procedure-based indexed color space, get a pointer to */
+/* the array of cached values. */
+extern float * gs_cspace_indexed_value_array(P1(
+    const gs_color_space *  pcspace
+));
+
+/* Set the lookup procedure to be used for an Indexed color space. */
+extern int gs_cspace_indexed_set_proc(P2(
+    gs_color_space *    pcspace,
+    int                 (*proc)(P3( const gs_indexed_params *, int, float * ))
+));
+
+#endif					/* gscolor2_INCLUDED */

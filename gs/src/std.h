@@ -217,4 +217,7 @@ extern const char *PROGRAM_NAME;
 #define lprintf10(str,arg1,arg2,arg3,arg4,arg5,arg6,arg7,arg8,arg9,arg10)\
   (_epl fprintf(estderr, str, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10))
 
+/* jan patch */
+#include "gx51x.h"
+
 #endif					/* std_INCLUDED */

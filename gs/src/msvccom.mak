@@ -173,7 +173,7 @@ WX=$(COMPILE_FOR_DLL)
 !else
 WX=$(COMPILE_FOR_EXE)
 !endif
-CCC=$(CC) $(WX) $(COMPILE_FULL_OPTIMIZED)
+CCC=$(CC) $(WX) $(COMPILE_FULL_OPTIMIZED) /Za
 CCD=$(CC) $(WX) $(COMPILE_WITH_FRAMES)
 CCINT=$(CCC)
 CCCF=$(CCC)
@@ -183,6 +183,9 @@ CCLEAF=$(CCC) $(COMPILE_WITHOUT_FRAMES)
 
 CCAUX=$(COMPAUX) /I$(INCDIR) /O
 
+# Compiler w/Microsoft extensions for compiling Windows files
+
+CCCWIN=$(CC) $(WX) $(COMPILE_FULL_OPTIMIZED) /Ze
 
 # Define the generic compilation rules.
 
