@@ -127,7 +127,7 @@ s_LZWE_process(stream_state *st, stream_cursor_read *pr,
 	int status = 0;
 	int limit_code;
 #define set_limit_code()\
-  limit_code = (1 << ss->code_size) - 1;\
+  limit_code = (1 << ss->code_size) - ss->EarlyChange;\
   if ( limit_code > encode_max ) limit_code = encode_max
 	set_limit_code();
 	if ( ss->first )

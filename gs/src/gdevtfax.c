@@ -311,7 +311,7 @@ tifflzw_print_page(gx_device_printer * dev, FILE * prn_stream)
     state.InitialCodeLength = 8;
     state.FirstBitLowOrder = false;
     state.BlockData = false;
-    state.EarlyChange = 0;	/****** CHECK THIS ******/
+    state.EarlyChange = 1;	/* PLRM is sort of confusing, but this is correct */
     code = gdev_stream_print_page(dev, prn_stream, &s_LZWE_template,
 				  (stream_state *) & state);
     gdev_tiff_end_page(&tfdev->tiff, prn_stream);
