@@ -250,27 +250,30 @@ hpgl_get_char_width(const hpgl_state_t *pgls, uint ch, hpgl_real_t *width)
 	*width = pgls->g.character.size.x;
 	if (pgls->g.character.size_mode == hpgl_size_relative)
 	    *width *= pgls->g.P2.x - pgls->g.P1.x;
-    }
- add:	if ( pgls->g.character.extra_space.x != 0 ) {
-     /* Add extra space. */
-     if ( pfs->params.proportional_spacing && ch != ' ' ) {
-	 /* Get the width of the space character. */
-	 int scode =
-	     pl_font_char_width(pfs->font, pfs->map, &mat,
-				hpgl_map_symbol(' ', pgls), &gs_width);
-	 hpgl_real_t extra;
 
-	 if ( scode >= 0 )
-	     extra = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
-	 else
-	     extra = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
-	 *width += extra * pgls->g.character.extra_space.x;
-     } else {
-	 /* All characters have the same width, */
-	 /* or we're already getting the width of a space. */
-	 *width *= 1.0 + pgls->g.character.extra_space.x;
-     }
- }
+    }
+ add:	
+
+    if ( pgls->g.character.extra_space.x != 0 ) {
+	/* Add extra space. */
+	if ( pfs->params.proportional_spacing && ch != ' ' ) {
+	    /* Get the width of the space character. */
+	    int scode =
+		pl_font_char_width(pfs->font, pfs->map, &mat,
+				   hpgl_map_symbol(' ', pgls), &gs_width);
+	    hpgl_real_t extra;
+
+	    if ( scode >= 0 )
+		extra = gs_width.x * points_2_plu(pfs->params.height_4ths / 4.0);
+	    else
+		extra = points_2_plu(pl_fp_pitch_cp(&pfs->params) / 100.0);
+	    *width += extra * pgls->g.character.extra_space.x;
+	} else {
+	    /* All characters have the same width, */
+	    /* or we're already getting the width of a space. */
+	    *width *= 1.0 + pgls->g.character.extra_space.x;
+	}
+    }
     return code;
 }
 /* Get the cell height or character height in the current font, */
@@ -299,6 +302,40 @@ hpgl_get_current_cell_height(const hpgl_state_t *pgls, hpgl_real_t *height,
 	return 0;
 }
 
+/* distance tranformation for character slant */
+ private int
+hpgl_slant_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *s_dxy)
+{
+    if ( pgls->g.character.slant && !pgls->g.bitmap_fonts_allowed ) {
+	gs_matrix smat;
+	gs_point tmp_dxy = *dxy;
+	gs_make_identity(&smat);
+	smat.yx = pgls->g.character.slant;
+	hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &smat, s_dxy));
+    }
+    return 0;
+}
+
+/* distance tranformation for character direction */
+ private int
+hpgl_rotation_transform_distance(hpgl_state_t *pgls, gs_point *dxy, gs_point *r_dxy)
+{
+    double  run = pgls->g.character.direction.x;
+    double rise = pgls->g.character.direction.y;
+    if ( rise != 0 ) {
+	double  denom = hypot(run, rise);
+	gs_point tmp_dxy = *dxy;
+	gs_matrix rmat;
+	gs_make_identity(&rmat);
+	rmat.xx = run / denom;
+	rmat.xy = rise / denom;
+	rmat.yx = -rmat.xy;
+	rmat.yy = rmat.xx;
+	hpgl_call(gs_distance_transform(tmp_dxy.x, tmp_dxy.y, &rmat, r_dxy));
+    }
+    return 0;
+}
+
 /* Reposition the cursor.  This does all the work for CP, and is also */
 /* used to handle some control characters within LB. */
 /* If pwidth != 0, it points to a precomputed horizontal space width. */
@@ -306,71 +343,77 @@ private int
 hpgl_move_cursor_by_characters(hpgl_state_t *pgls, hpgl_real_t spaces,
   hpgl_real_t lines, const hpgl_real_t *pwidth)
 {
-	int nx, ny;
-	double dx = 0, dy = 0;
+    int nx, ny;
+    double dx = 0, dy = 0;
 
-	hpgl_ensure_font(pgls);
+    hpgl_ensure_font(pgls);
 
-	lines *= pgls->g.character.line_feed_direction;
-	/* For vertical text paths, we have to swap spaces and lines. */
-	  switch ( pgls->g.character.text_path )
-	    {
-	    case hpgl_text_right:
-	      nx = spaces, ny = lines; break;
-	    case hpgl_text_down:
-	      nx = lines, ny = -spaces; break;
-	    case hpgl_text_left:
-	      nx = -spaces, ny = -lines; break;
-	    case hpgl_text_up:
-	      nx = -lines, ny = spaces; break;
-	    }
-	  /* calculate the next label position in relative coordinates. */
-	  if ( nx ) {
-	    hpgl_real_t width;
-	    if ( pwidth != 0 )
-	      width = *pwidth;
-	    else
-	      hpgl_get_char_width(pgls, ' ', &width);
-	    dx = width * nx;
-	  }
-	  if ( ny ) {
-	    hpgl_real_t height;
-	    hpgl_call(hpgl_get_current_cell_height(pgls, &height, true));
-	    dy = height * ny;
-	    if ( pgls->g.character.size_mode != hpgl_size_not_set )
-		dy *= 2;
-	  }
+    lines *= pgls->g.character.line_feed_direction;
+    /* For vertical text paths, we have to swap spaces and lines. */
+    switch ( pgls->g.character.text_path )
+	{
+	case hpgl_text_right:
+	    nx = spaces, ny = lines; break;
+	case hpgl_text_down:
+	    nx = lines, ny = -spaces; break;
+	case hpgl_text_left:
+	    nx = -spaces, ny = -lines; break;
+	case hpgl_text_up:
+	    nx = -lines, ny = spaces; break;
+	}
+    /* calculate the next label position in relative coordinates. */
+    if ( nx ) {
+	hpgl_real_t width;
+	if ( pwidth != 0 )
+	    width = *pwidth;
+	else
+	    hpgl_get_char_width(pgls, ' ', &width);
+	dx = width * nx;
+    }
+    if ( ny ) {
+	hpgl_real_t height;
+	hpgl_call(hpgl_get_current_cell_height(pgls, &height, true));
+	dy = height * ny;
+	if ( pgls->g.character.size_mode != hpgl_size_not_set )
+	    dy *= 2;
+    }
 
-	  /*
-	   * We just computed the deltas in user units if characters are
-	   * using relative sizing, and in PLU otherwise.
-	   * If scaling is on but characters aren't using relative
-	   * sizing, we have to convert the deltas to user units.
-	   */
-	if ( pgls->g.scaling_type != hpgl_scaling_none &&
-	     pgls->g.character.size_mode != hpgl_size_relative
-	   )
-	  { gs_matrix mat;
+    /*
+     * We just computed the deltas in user units if characters are
+     * using relative sizing, and in PLU otherwise.
+     * If scaling is on but characters aren't using relative
+     * sizing, we have to convert the deltas to user units.
+     */
+    if ( pgls->g.scaling_type != hpgl_scaling_none &&
+	 pgls->g.character.size_mode != hpgl_size_relative
+	 )
+	{ 
+	    gs_matrix mat;
 	    gs_point user_dxy;
-
 	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
 	    hpgl_call(gs_distance_transform_inverse(dx, dy, &mat, &user_dxy));
 	    dx = user_dxy.x;
 	    dy = user_dxy.y;
-	  }
+	}
 
-	  /* a relative move to the new position */
-	  hpgl_call(hpgl_add_point_to_path(pgls, dx, dy,
-					   hpgl_plot_move_relative, true));
+    {
+	gs_point dxy;
+	dxy.x = dx;
+	dxy.y = dy;
+	hpgl_rotation_transform_distance(pgls, &dxy, &dxy);
+	dx = dxy.x;
+	dy = dxy.y;
+    }
+    /* a relative move to the new position */
+    hpgl_call(hpgl_add_point_to_path(pgls, dx, dy,
+				     hpgl_plot_move_relative, true));
 
-	  if ( lines != 0 )
-	    { /* update the position of the carriage return point */
-	      if ( hpgl_text_is_vertical(pgls->g.character.text_path) )
-		pgls->g.carriage_return_pos.x += dx;
-	      else
-		pgls->g.carriage_return_pos.y += dy;
-	    }
-	return 0;
+    if ( lines != 0 ) { 
+	/* update the position of the carriage return point */
+	pgls->g.carriage_return_pos.x += dx;
+	pgls->g.carriage_return_pos.y += dy;
+    }
+    return 0;
 }
 
 /* Execute a CR for CP or LB. */
@@ -852,88 +895,93 @@ hpgl_get_character_origin_offset(hpgl_state_t *pgls, int origin,
 				 hpgl_real_t width, hpgl_real_t height,
 				 gs_point *offset)
 {
-	double pos_x = 0.0, pos_y = 0.0;
-	double off_x, off_y;
-	/* stickfonts are offset by 16 grid units or .33 times the
-           point size.  HAS need to support other font types. */
-	if ( origin > 10 )
-	  off_x = off_y = 0.33 * height;
-	switch ( origin )
-	  {
-	  case 11:
+    double pos_x = 0.0, pos_y = 0.0;
+    double off_x, off_y;
+    /* stickfonts are offset by 16 grid units or .33 times the
+       point size.  HAS need to support other font types. */
+    if ( origin > 10 )
+	off_x = off_y = 0.33 * height;
+    switch ( origin )
+	{
+	case 11:
 	    pos_x = -off_x;
 	    pos_y = -off_y;
-	  case 1:
+	case 1:
 	    break;
-	  case 12:
+	case 12:
 	    pos_x = -off_x;
-	  case 2:
+	case 2:
 	    pos_y = .5 * height;
 	    break;
-	  case 13:
+	case 13:
 	    pos_x = -off_x;
 	    pos_y = off_y;
-	  case 3:
+	case 3:
 	    pos_y += height;
 	    break;
-	  case 14:
+	case 14:
 	    pos_y = -off_y;
-	  case 4:
+	case 4:
 	    pos_x = .5 * width;
 	    break;
-	  case 15:
-	  case 5:
+	case 15:
+	case 5:
 	    pos_x = .5 * width;
 	    pos_y = .5 * height;
 	    break;
-	  case 16:
+	case 16:
 	    pos_y = off_y;
-	  case 6:
+	case 6:
 	    pos_x = .5 * width;
 	    pos_y += height;
 	    break;
-	  case 17:
+	case 17:
 	    pos_x = off_x;
 	    pos_y = -off_y;
-	  case 7:
+	case 7:
 	    pos_x += width;
 	    break;
-	  case 18:
+	case 18:
 	    pos_x = off_x;
-	  case 8:
+	case 8:
 	    pos_x += width;
 	    pos_y = .5 * height;
 	    break;
-	  case 19:
+	case 19:
 	    pos_x = off_x;
 	    pos_y = off_y;
-	  case 9:
+	case 9:
 	    pos_x += width;
 	    pos_y += height;
 	    break;
-	  case 21:
+	case 21:
 	    {
-	      gs_matrix save_ctm;
-	      gs_point pcl_pos_dev, label_origin;
+		gs_matrix save_ctm;
+		gs_point pcl_pos_dev, label_origin;
 
-	      gs_currentmatrix(pgls->pgs, &save_ctm);
-	      pcl_set_ctm(pgls, false);
-	      hpgl_call(gs_transform(pgls->pgs, (floatp)pcl_cap.x,
-				     (floatp)pcl_cap.y, &pcl_pos_dev));
-	      gs_setmatrix(pgls->pgs, &save_ctm);
-	      hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
-				      (floatp)pcl_pos_dev.y, &label_origin));
-	      pos_x = -(pgls->g.pos.x - label_origin.x);
-	      pos_y = (pgls->g.pos.y - label_origin.y);
+		gs_currentmatrix(pgls->pgs, &save_ctm);
+		pcl_set_ctm(pgls, false);
+		hpgl_call(gs_transform(pgls->pgs, (floatp)pcl_cap.x,
+				       (floatp)pcl_cap.y, &pcl_pos_dev));
+		gs_setmatrix(pgls->pgs, &save_ctm);
+		hpgl_call(gs_itransform(pgls->pgs, (floatp)pcl_pos_dev.x,
+					(floatp)pcl_pos_dev.y, &label_origin));
+		pos_x = -(pgls->g.pos.x - label_origin.x);
+		pos_y = (pgls->g.pos.y - label_origin.y);
 	    }
 	    break;
-	  default:
+	default:
 	    dprintf("unknown label parameter");
 
-	  }
-	offset->x = pos_x;
-	offset->y = pos_y;
-	return 0;
+	}
+    /* a relative move to the new position */
+    offset->x = pos_x;
+    offset->y = pos_y;
+
+    /* account for character direction and slant */
+    hpgl_rotation_transform_distance(pgls, offset, offset);
+    hpgl_slant_transform_distance(pgls, offset, offset);
+    return 0;
 }
 			  
 /* Prints a buffered line of characters. */
@@ -944,7 +992,6 @@ hpgl_process_buffer(hpgl_state_t *pgls)
 	gs_point offset;
 	hpgl_real_t label_length = 0.0, label_height = 0.0;
 	bool vertical = hpgl_text_is_vertical(pgls->g.character.text_path);
-
 	/*
 	 * NOTE: the two loops below must be consistent with each other!
 	 */
@@ -1034,16 +1081,15 @@ acc_ht:	      hpgl_call(hpgl_get_current_cell_height(pgls, &height, vertical));
 	  }
 	
 	/* these units should be strictly plu except for LO 21 */
-	if ( pgls->g.label.origin != 21 )
-	  {  gs_matrix mat;
-	     hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
-	
-	     offset.x /= mat.xx;
-	     offset.y /= mat.yy;
-	  }
+	if ( pgls->g.label.origin != 21 ) {  
+	    gs_matrix mat;
+	    hpgl_compute_user_units_to_plu_ctm(pgls, &mat);
+	    offset.x /= mat.xx;
+	    offset.y /= mat.yy;
+	}
+	/* now add the offsets in relative plu coordinates */
 	hpgl_call(hpgl_add_point_to_path(pgls, -offset.x, -offset.y,
-					 hpgl_plot_move_relative, true));
-	
+					 hpgl_plot_move_relative, false));
 	{
 	  int i;
 	  for ( i = 0; i < pgls->g.label.char_count; ++i )

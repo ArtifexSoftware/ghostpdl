@@ -991,7 +991,6 @@ hpgl_add_point_to_path(
 	    hpgl_call(hpgl_set_current_position(pgls, &point));
 	}
     }
-
     return 0;
 }
 
