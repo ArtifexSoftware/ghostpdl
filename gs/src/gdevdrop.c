@@ -137,7 +137,7 @@ gx_default_strip_copy_rop(gx_device * dev,
     gs_make_mem_device(&mdev, mdproto, 0, -1, dev);
     mdev.width = width;
     mdev.height = block_height;
-    mdev.bitmap_memory = mem;
+    mdev.bitmap_memory = mdev.memory = mem;
     mdev.color_info = dev->color_info;
     code = (*dev_proc(&mdev, open_device))((gx_device *)&mdev);
     if (code < 0)
