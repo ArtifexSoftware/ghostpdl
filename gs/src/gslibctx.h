@@ -14,7 +14,7 @@
 #define GSLIBCTX_H 
 
 #include "std.h"
-#include <stdio.h>
+#include "stdio_.h"
 #include "gs_dll_call.h"
 
 
