@@ -419,7 +419,7 @@ $(ld_tr) $(GLGENDIR)$(D)lib.tr : $(gconfig_h)
 # The line above is an empty command; don't delete.
 
 # save our set of makefile variables that are defined in every build (paths, etc.)
-$(gconfigd_h) : $(ECHOGS_XE) $(GS_MAK) $(TOP_MAKEFILES)
+$(gconfigd_h) : $(ECHOGS_XE) $(GS_MAK) $(TOP_MAKEFILES) $(GLSRCDIR)/version.mak
 	$(EXP)$(ECHOGS_XE) -w $(gconfigd_h) -x 23 define -s -u GS_LIB_DEFAULT -x 2022 $(GS_LIB_DEFAULT) -x 22
 	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u GS_CACHE_DIR -x 2022 $(GS_CACHE_DIR) -x 22
 	$(EXP)$(ECHOGS_XE) -a $(gconfigd_h) -x 23 define -s -u SEARCH_HERE_FIRST -s $(SEARCH_HERE_FIRST)
