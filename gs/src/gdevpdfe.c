@@ -35,26 +35,34 @@
 
 /* Begin writing FontFile* data. */
 private int
-pdf_begin_fontfile(gx_device_pdf *pdev, long *plength_id)
+pdf_begin_fontfile(gx_device_pdf *pdev, long FontFile_id,
+		   long *plength_id, const char *entries,
+		   long len, long *pstart, psdf_binary_writer *pbw)
 {
     stream *s;
 
+    pdf_open_separate(pdev, FontFile_id);
     *plength_id = pdf_obj_ref(pdev);
     s = pdev->strm;
-    pputs(s, "<<");
+    pprintld1(s, "<</Length %ld 0 R", *plength_id);
     if (!pdev->binary_ok)
 	pputs(s, "/Filter/ASCII85Decode");
-    pprintld1(s, "/Length %ld 0 R", *plength_id);
-    return 0;
+    if (entries)
+	pputs(pdev->strm, entries);
+    pprintld1(pdev->strm, "/Length1 %ld>>stream\n", len);
+    *pstart = pdf_stell(pdev);
+    return psdf_begin_binary((gx_device_psdf *)pdev, pbw);
 }
 
 /* Finish writing FontFile* data. */
 private int
-pdf_end_fontfile(gx_device_pdf *pdev, long start, long length_id)
+pdf_end_fontfile(gx_device_pdf *pdev, long start, long length_id,
+		 psdf_binary_writer *pbw)
 {
     stream *s = pdev->strm;
     long length;
 
+    psdf_end_binary(pbw);
     pputs(s, "\n");
     length = pdf_stell(pdev) - start;
     pputs(s, "endstream\n");
@@ -88,6 +96,9 @@ pdf_embed_font_as_type1(gx_device_pdf *pdev, gs_font_type1 *font,
     long length_id;
     long start;
     psdf_binary_writer writer;
+#define MAX_INT_CHARS ((sizeof(int) * 8 + 2) / 3)
+    char lengths_str[9 + MAX_INT_CHARS + 11];  /* /Length2 %d/Length3 0\0 */
+#undef MAX_INT_CHARS
 
     swrite_position_only(&poss);
     /*
@@ -105,39 +116,15 @@ pdf_embed_font_as_type1(gx_device_pdf *pdev, gs_font_type1 *font,
 				 subset_glyphs, subset_size, pfname, lengths);
     if (code < 0)
 	return code;
-    pdf_open_separate(pdev, FontFile_id);
-    pdf_begin_fontfile(pdev, &length_id);
-    pprintd2(pdev->strm, "/Length1 %d/Length2 %d/Length3 0>>stream\n",
-	     lengths[0], lengths[1]);
-    start = pdf_stell(pdev);
-    code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
+    sprintf(lengths_str, "/Length2 %d/Length3 0", lengths[1]);
+    code = pdf_begin_fontfile(pdev, FontFile_id, &length_id,
+			      lengths_str, lengths[0], &start, &writer);
     if (code < 0)
 	return code;
-#ifdef DEBUG
-    {
-	int check_lengths[3];
-
-	psf_write_type1_font(writer.strm, font, TYPE1_OPTIONS,
-			      subset_glyphs, subset_size, pfname,
-			      check_lengths);
-	if (writer.strm == pdev->strm &&
-	    (check_lengths[0] != lengths[0] ||
-	     check_lengths[1] != lengths[1] ||
-	     check_lengths[2] != lengths[2])
-	    ) {
-	    lprintf7("Type 1 font id %ld, lengths mismatch: (%d,%d,%d) != (%d,%d,%d)\n",
-		     ((gs_font *)font)->id, lengths[0], lengths[1], lengths[2],
-		     check_lengths[0], check_lengths[1], check_lengths[2]);
-	}
-    }
-#else
-    psf_write_type1_font(writer.strm, font, TYPE1_OPTIONS,
-			  subset_glyphs, subset_size, pfname,
-			  lengths /*ignored*/);
-#endif
+    psf_write_type1_font(writer.strm, font, TYPE1_OPTIONS, subset_glyphs,
+			 subset_size, pfname, lengths /*ignored*/);
 #undef TYPE1_OPTIONS
-    psdf_end_binary(&writer);
-    pdf_end_fontfile(pdev, start, length_id);
+    pdf_end_fontfile(pdev, start, length_id, &writer);
     return 0;
 }
 
@@ -157,21 +144,17 @@ pdf_embed_font_as_type2(gx_device_pdf *pdev, gs_font_type1 *font,
 
     swrite_position_only(&poss);
     code = psf_write_type2_font(&poss, font, options,
-				 subset_glyphs, subset_size, pfname);
+				subset_glyphs, subset_size, pfname);
     if (code < 0)
 	return code;
-    pdf_open_separate(pdev, FontFile_id);
-    pdf_begin_fontfile(pdev, &length_id);
-    pprintld1(pdev->strm, "/Length1 %ld/Subtype/Type1C>>stream\n",
-	      (long)stell(&poss));
-    start = pdf_stell(pdev);
-    code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
+    code = pdf_begin_fontfile(pdev, FontFile_id, &length_id,
+			      "/Subtype/Type1C", stell(&poss),
+			      &start, &writer);
     if (code < 0)
 	return code;
     code = psf_write_type2_font(writer.strm, font, options,
-				 subset_glyphs, subset_size, pfname);
-    psdf_end_binary(&writer);
-    pdf_end_fontfile(pdev, start, length_id);
+				subset_glyphs, subset_size, pfname);
+    pdf_end_fontfile(pdev, start, length_id, &writer);
     return 0;
 }
 
@@ -218,56 +201,18 @@ pdf_embed_font_cid0(gx_device_pdf *pdev, gs_font_cid0 *font,
 			       subset_cids, subset_size, pfname);
     if (code < 0)
 	return code;
-    pdf_open_separate(pdev, FontFile_id);
-    pdf_begin_fontfile(pdev, &length_id);
-    pprintld1(pdev->strm, "/Length1 %ld/Subtype/CIDFontType0C>>stream\n",
-	      (long)stell(&poss));
-    start = pdf_stell(pdev);
-    code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
+    code = pdf_begin_fontfile(pdev, FontFile_id, &length_id,
+			      "/Subtype/CIDFontType0C", stell(&poss),
+			      &start, &writer);
     if (code < 0)
 	return code;
     code = psf_write_cid0_font(writer.strm, font, TYPE2_OPTIONS,
 			       subset_cids, subset_size, pfname);
-    psdf_end_binary(&writer);
-    pdf_end_fontfile(pdev, start, length_id);
+    pdf_end_fontfile(pdev, start, length_id, &writer);
     return 0;
 }
 
 /* ------ TrueType family ------ */
-
-/* Write the FontFile2 data for an embedded TrueType or CIDFontType 2 font. */
-private int
-pdf_embed_TrueType(gx_device_pdf *pdev, gs_font_type42 *font,
-		   long FontFile_id, gs_glyph subset_glyphs[256],
-		   uint subset_size, const gs_const_string *pfname,
-		   int options)
-{
-    stream poss;
-    int length;
-    int code;
-    long length_id;
-    long start;
-    psdf_binary_writer writer;
-
-    swrite_position_only(&poss);
-    code = psf_write_truetype_font(&poss, font, options,
-				    subset_glyphs, subset_size, pfname);
-    if (code < 0)
-	return code;
-    length = stell(&poss);
-    pdf_open_separate(pdev, FontFile_id);
-    pdf_begin_fontfile(pdev, &length_id);
-    pprintd1(pdev->strm, "/Length1 %d>>stream\n", length);
-    start = pdf_stell(pdev);
-    code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
-    if (code < 0)
-	return code;
-    psf_write_truetype_font(writer.strm, font, options,
-			     subset_glyphs, subset_size, pfname);
-    psdf_end_binary(&writer);
-    pdf_end_fontfile(pdev, start, length_id);
-    return 0;
-}
 
 /* Embed a TrueType font. */
 private int
@@ -279,21 +224,55 @@ pdf_embed_font_type42(gx_device_pdf *pdev, gs_font_type42 *font,
     const int options = WRITE_TRUETYPE_CMAP | WRITE_TRUETYPE_NAME |
 	(pdev->CompatibilityLevel <= 1.2 ?
 	 WRITE_TRUETYPE_NO_TRIMMED_TABLE : 0);
+    stream poss;
+    int code;
+    long length_id;
+    long start;
+    psdf_binary_writer writer;
 
-    return pdf_embed_TrueType(pdev, font, FontFile_id, subset_glyphs,
-			      subset_size, pfname, options);
+    swrite_position_only(&poss);
+    code = psf_write_truetype_font(&poss, font, options,
+				   subset_glyphs, subset_size, pfname);
+    if (code < 0)
+	return code;
+    code = pdf_begin_fontfile(pdev, FontFile_id, &length_id, NULL,
+			      stell(&poss), &start, &writer);
+    if (code < 0)
+	return code;
+    psf_write_truetype_font(writer.strm, font, options,
+			    subset_glyphs, subset_size, pfname);
+    pdf_end_fontfile(pdev, start, length_id, &writer);
+    return 0;
 }
 
 /* Embed a CIDFontType2 font. */
 private int
 pdf_embed_font_cid2(gx_device_pdf *pdev, gs_font_cid2 *font,
-		    long FontFile_id, gs_glyph subset_glyphs[256],
+		    long FontFile_id, const byte *subset_bits,
 		    uint subset_size, const gs_const_string *pfname)
 {
     /* CIDFontType 2 fonts don't use cmap, name, OS/2, or post. */
+#define OPTIONS 0
+    stream poss;
+    int code;
+    long length_id;
+    long start;
+    psdf_binary_writer writer;
 
-    return pdf_embed_TrueType(pdev, (gs_font_type42 *)font, FontFile_id,
-			      subset_glyphs, subset_size, pfname, 0);
+    swrite_position_only(&poss);
+    code = psf_write_cid2_font(&poss, font, OPTIONS,
+			       subset_bits, subset_size, pfname);
+    if (code < 0)
+	return code;
+    code = pdf_begin_fontfile(pdev, FontFile_id, &length_id, NULL,
+			      stell(&poss), &start, &writer);
+    if (code < 0)
+	return code;
+    psf_write_cid2_font(writer.strm, font, OPTIONS,
+			subset_bits, subset_size, pfname);
+#undef OPTIONS
+    pdf_end_fontfile(pdev, start, length_id, &writer);
+    return 0;
 }
 
 /* ---------------- Entry point ---------------- */
@@ -313,7 +292,8 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	pdev->params.MaxSubsetPct > 0;
     long FontFile_id = pfd->FontFile_id;
     gs_glyph subset_glyphs[256];
-    gs_glyph *glyph_subset = 0;
+    gs_glyph *subset_list = 0;	/* for non-CID fonts */
+    byte *subset_bits = 0;	/* for CID fonts */
     uint subset_size = 0;
     gs_matrix save_mat;
     int code;
@@ -332,11 +312,6 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	    ++total;
 	if ((double)used / total > pdev->params.MaxSubsetPct / 100.0)
 	    do_subset = false;
-	else {
-	    subset_size = psf_subset_glyphs(subset_glyphs, font,
-					    pfd->chars_used.data);
-	    glyph_subset = subset_glyphs;
-	}
     }
 
     /* Generate an appropriate font name. */
@@ -368,25 +343,42 @@ pdf_write_embedded_font(gx_device_pdf *pdev, pdf_font_descriptor_t *pfd)
 	    break;
 	case ft_encrypted:
 	case ft_encrypted2:
+	    if (do_subset) {
+		subset_size = psf_subset_glyphs(subset_glyphs, font,
+						pfd->chars_used.data);
+		subset_list = subset_glyphs;
+	    }
 	    code = pdf_embed_font_type1(pdev, (gs_font_type1 *)font,
-					FontFile_id, glyph_subset,
+					FontFile_id, subset_list,
 					subset_size, &font_name);
 	    break;
-	case ft_CID_encrypted:
-	    code = pdf_embed_font_cid0(pdev, (gs_font_cid0 *)font,
-				       FontFile_id, pfd->chars_used.data,
-				       pfd->chars_used.size, &font_name);
+	case ft_TrueType:
+	    if (do_subset) {
+		subset_size = psf_subset_glyphs(subset_glyphs, font,
+						pfd->chars_used.data);
+		subset_list = subset_glyphs;
+	    }
+	    code = pdf_embed_font_type42(pdev, (gs_font_type42 *)font,
+					 FontFile_id, subset_list,
+					 subset_size, &font_name);
 	    break;
-	case ft_CID_TrueType:
-	    /****** WRONG, SUBSET IS DEFINED BY BIT VECTOR ******/
-	    code = pdf_embed_font_cid2(pdev, (gs_font_cid2 *)font,
-				       FontFile_id, glyph_subset,
+	case ft_CID_encrypted:
+	    if (do_subset) {
+		subset_size = pfd->chars_used.size << 3;
+		subset_bits = pfd->chars_used.data;
+	    }
+	    code = pdf_embed_font_cid0(pdev, (gs_font_cid0 *)font,
+				       FontFile_id, subset_bits,
 				       subset_size, &font_name);
 	    break;
-	case ft_TrueType:
-	    code = pdf_embed_font_type42(pdev, (gs_font_type42 *)font,
-					 FontFile_id, glyph_subset,
-					 subset_size, &font_name);
+	case ft_CID_TrueType:
+	    if (do_subset) {
+		subset_size = pfd->chars_used.size << 3;
+		subset_bits = pfd->chars_used.data;
+	    }
+	    code = pdf_embed_font_cid2(pdev, (gs_font_cid2 *)font,
+				       FontFile_id, subset_bits,
+				       subset_size, &font_name);
 	    break;
 	default:
 	    code = gs_note_error(gs_error_rangecheck);
