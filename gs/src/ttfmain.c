@@ -828,7 +828,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	    else if (code == TT_Err_Invalid_Engine)
 		error = fPatented;
 	    else
-		error = fBadFontData;
+		error = fBadInstruction;
 	    gOutline->sideBearing = subglyph.bbox.xMin - subglyph.pp1.x;
 	    gOutline->advance.x = subglyph.pp2.x - subglyph.pp1.x;
         }

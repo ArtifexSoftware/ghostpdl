@@ -81,6 +81,7 @@ struct gs_type42_data_s {
     uint trueNumGlyphs;		/* from maxp */
     gs_glyph_cache *gdcache;
     bool warning_patented;
+    bool warning_bad_instruction;
 };
 #define gs_font_type42_common\
     gs_font_base_common;\

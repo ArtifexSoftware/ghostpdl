@@ -89,7 +89,8 @@ typedef enum {
     fCMapNotFound,
     fGlyphNotFound,
     fBadFontData,
-    fPatented
+    fPatented,
+    fBadInstruction
 } FontError;
 
 /* Define an abstract class for accessing TT data from the TT interpreter. */

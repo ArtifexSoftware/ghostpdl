@@ -163,6 +163,7 @@ gs_type42_font_init(gs_font_type42 * pfont)
 	pfont->FontBBox.q.y = S16(head_box + 6) / upem;
     }
     pfont->data.warning_patented = false;
+    pfont->data.warning_bad_instruction = false;
     pfont->data.get_glyph_index = default_get_glyph_index;
     pfont->data.get_outline = default_get_outline;
     pfont->data.get_metrics = gs_type42_default_get_metrics;

@@ -221,6 +221,30 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
     }
 }
 
+private void WarnBadInstruction(gs_font_type42 *pfont, int glyph_index)
+{
+    char buf[gs_font_name_max + 1];
+    int l;
+    gs_font_type42 *base_font = pfont;
+
+    while ((gs_font_type42 *)base_font->base != base_font)
+	base_font = (gs_font_type42 *)base_font->base;
+    if (!base_font->data.warning_bad_instruction) {
+	l = min(sizeof(buf) - 1, base_font->font_name.size);
+	memcpy(buf, base_font->font_name.chars, l);
+	buf[l] = 0;
+	if (glyph_index >= 0)
+	    eprintf2("Failed to interpret TT instructions of fhe glyph index %d of the font %s. "
+			"Continue ignoring instructions of the font.\n", 
+			glyph_index, buf);
+	else
+	    eprintf1("Failed to interpret TT instructions of the font %s. "
+			"Continue ignoring instructions of the font.\n", 	    
+			buf);
+	base_font->data.warning_bad_instruction = true;
+    }
+}
+
 private void WarnPatented(gs_font_type42 *pfont, ttfFont *ttf, const char *txt)
 {
     if (!ttf->design_grid) {
@@ -372,8 +396,12 @@ int ttfFont__Open_aux(ttfFont *this, ttfInterpreter *tti, gx_ttfReader *r, gs_fo
 	    return_error(gs_error_VMerror);
 	case fUnimplemented:
 	    return_error(gs_error_unregistered);
+	case fBadInstruction:
+	    WarnBadInstruction(pfont, -1);
+	    goto recover;
 	case fPatented:
 	    WarnPatented(pfont, this, "The font");
+	recover:
 	    this->patented = true;
 	    return 0;
 	default:
@@ -701,10 +729,14 @@ int gx_ttf_outline(ttfFont *ttf, gx_ttfReader *r, gs_font_type42 *pfont, int gly
     gx_ttfReader__Reset(r);
     ttfOutliner__init(&o, ttf, &r->super, &e.super, true, false, pfont->WMode != 0);
     switch(ttfOutliner__Outline(&o, glyph_index, subpix_origin.x, subpix_origin.y, &m1)) {
+	case fBadInstruction:
+	    WarnBadInstruction(pfont, glyph_index);
+	    goto recover;
 	case fPatented:
 	    /* The returned outline did not apply a bytecode (it is not grid-fitted). */
 	    if (!auth)
 		WarnPatented(pfont, ttf, "Some glyphs of the font");
+	recover :
 	    if (!design_grid && auth)
 		return grid_fit(pfont->dir->san, path, pfont, pscale, &e, &o);
 	    /* Falls through. */
