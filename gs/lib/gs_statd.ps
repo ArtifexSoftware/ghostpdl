@@ -118,7 +118,7 @@ statusdict begin
 % Define the pagetype values for the known page formats.
 % The values for all but letter and note are arbitrary.
 /.pagetypenames
- { /letter /note	%do not change this line, needed by 'setpagetype'
+ [ /letter /note	%do not change this line, needed by 'setpagetype'
    /legal /lettersmall
    /11x17 /ledger
    /a4small /a3 /a4
@@ -131,7 +131,7 @@ STRICT { (%END SIZES) .skipeof } if
    /isob0 /isob1 /isob2 /isob3 /isob4 /isob5 /isob6
    /jisb0 /jisb1 /jisb2 /jisb3 /jisb4 /jisb5 /jisb6
 %END SIZES
- } cvlit readonly def
+ ] cvlit readonly def
 
 %%%%%% The following items were suggested by a user as useful.
 
@@ -258,7 +258,7 @@ STRICT { (%END SIZES) .skipeof } if
 		% The Adobe documentation only defines setpagetype
 		% (a Level 1 operator) as accepting the values 0 and 1,
 		% so we do too.
-      dup .pagetypenames 0 2 getinterval exch get //systemdict exch get exec
+      dup .pagetypenames 0 2 getinterval exch get //userdict exch get exec
       /pagetype exch def
     end
   } bind def
