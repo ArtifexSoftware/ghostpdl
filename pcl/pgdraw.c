@@ -70,17 +70,28 @@ hpgl_set_picture_frame_scaling(hpgl_state_t *pgls)
  int
 hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 {
+	hpgl_real_t swap_temp;
+	hpgl_real_t fw_plu = (coord_2_plu(pgls->g.picture_frame_width));
+ 	hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
+
 	hpgl_call(pcl_set_ctm(pgls, false));
 	if ( pgls->personality == rtl ) {
-	    /* for plot length >= width, y increases across the short
+	    /* If plot length >= width, y increases across the short
                edge and x increases down the plot.  Rotate the pcl
-               coordinate system -90, scale and flip the x axis.  If
-               the plot width > length the origin is in the upper
+               coordinate system -90, scale and flip the x axis.  Else
+               for plot width > length the origin is in the upper
                right and x increases going to the left and y increases
-               going down.  Translate the pcl coordinate system by the
+               going down, translate the pcl coordinate system by the
                picture frame width, scale and flip x. */
-	    if ( pgls->g.picture_frame_height >= pgls->g.picture_frame_width )
+	    if ( pgls->g.picture_frame_height >= pgls->g.picture_frame_width ) {
 		hpgl_call(gs_rotate(pgls->pgs, -90));
+		/* swap picture frame height and width 
+		 * for the translation portion of the next RO cmd rotation.
+		 */
+		swap_temp = fw_plu;
+		fw_plu  = fh_plu;
+		fh_plu = swap_temp;
+	    }
 	    else
 		hpgl_call(gs_translate(pgls->pgs, pgls->g.picture_frame_width, 0));
 	    hpgl_call(gs_scale(pgls->pgs, -(7200.0/1016.0), (7200.0/1016.0)));
@@ -96,8 +107,6 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
 	}
 	hpgl_call(gs_rotate(pgls->pgs, pgls->g.rotation));
 	{
-	  hpgl_real_t fw_plu = (coord_2_plu(pgls->g.picture_frame_width));
-	  hpgl_real_t fh_plu = (coord_2_plu(pgls->g.picture_frame_height));
 	  switch (pgls->g.rotation)
 	    {
 	    case 0 :
