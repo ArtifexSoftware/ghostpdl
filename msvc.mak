@@ -11,12 +11,79 @@ CFLAGS=-nologo -W4 -Zi -DHAVE_STRING_H=1 -I$(LIBPNGDIR) -I$(ZLIBDIR)
 CC=cl
 FE=-Fe
 
+OBJS=getopt$(OBJ) getopt1$(OBJ) jbig2$(OBJ) jbig2_arith$(OBJ) \
+ jbig2_arith_iaid$(OBJ) jbig2_arith_int$(OBJ) jbig2_generic$(OBJ) \
+ jbig2_huffman$(OBJ) jbig2_image$(OBJ) jbig2_image_pbm$(OBJ) \
+ jbig2_image_png$(OBJ) jbig2_mmr$(OBJ) jbig2_page$(OBJ) \
+ jbig2_segment$(OBJ) jbig2_symbol_dict$(OBJ) jbig2_text$(OBJ) \
+ jbig2_metadata$(OBJ) jbig2dec$(OBJ) sha1$(OBJ)
+
+HDRS=getopt.h jbig2.h jbig2_arith.h jbig2_arith_iaid.h jbig2_arith_int.h \
+ jbig2_generic.h jbig2_huffman.h jbig2_hufftab.h jbig2_image.h \
+ jbig2_mmr.h jbig2_priv.h jbig2_symbol_dict.h jbig2_metadata.h \
+ config_win32.h sha1.h
+
 all: jbig2dec$(EXE)
 
-jbig2dec$(EXE): $(libjbig2_OBJS) $(jbig2dec_OBJS)
-	$(CC) $(CFLAGS) $(FE)jbig2dec$(EXE) $(libjbig2_OBJS) $(jbig2dec_OBJS) $(LIBPNGDIR)/libpng.lib $(ZLIBDIR)/zlib.lib
+jbig2dec$(EXE): $(OBJS)
+	$(CC) $(CFLAGS) $(FE)jbig2dec$(EXE) $(OBJS) $(LIBPNGDIR)/libpng.lib $(ZLIBDIR)/zlib.lib
 
-!include common.mak
+getopt$(OBJ): getopt.c getopt.h
+	$(CC) $(CFLAGS) -c getopt.c
+
+getopt1$(OBJ): getopt1.c getopt.h
+	$(CC) $(CFLAGS) -c getopt1.c
+
+jbig2$(OBJ): jbig2.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2.c
+
+jbig2_arith$(OBJ): jbig2_arith.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_arith.c
+
+jbig2_arith_iaid$(OBJ): jbig2_arith_iaid.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_arith_iaid.c
+
+jbig2_arith_int$(OBJ): jbig2_arith_int.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_arith_int.c
+
+jbig2_generic$(OBJ): jbig2_generic.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_generic.c
+
+jbig2_huffman$(OBJ): jbig2_huffman.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_huffman.c
+
+jbig2_image$(OBJ): jbig2_image.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_image.c
+
+jbig2_image_pbm$(OBJ): jbig2_image_pbm.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_image_pbm.c
+
+jbig2_image_png$(OBJ): jbig2_image_png.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_image_png.c
+
+jbig2_mmr$(OBJ): jbig2_mmr.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_mmr.c
+
+jbig2_page$(OBJ): jbig2_page.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_page.c
+
+jbig2_segment$(OBJ): jbig2_segment.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_segment.c
+
+jbig2_symbol_dict$(OBJ): jbig2_symbol_dict.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_symbol_dict.c
+
+jbig2_text$(OBJ): jbig2_text.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_text.c
+
+jbig2_metadata$(OBJ): jbig2_metadata.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2_metadata.c
+
+jbig2dec$(OBJ): jbig2dec.c $(HDRS)
+	$(CC) $(CFLAGS) -c jbig2dec.c
+
+sha1$(OBJ): sha1.c $(HDRS)
+	$(CC) $(CFLAGS) -c sha1.c
 
 clean:
 	-del $(OBJS)
