@@ -247,7 +247,7 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 # XLDFLAGS can be set from the command line.
 XLDFLAGS=
 
-LDFLAGS=$(XLDFLAGS) -fno-common
+LDFLAGS=$(XLDFLAGS)
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
