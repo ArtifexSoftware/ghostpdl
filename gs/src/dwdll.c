@@ -189,6 +189,7 @@ void unload_dll(GSDLL *gsdll)
     gsdll->set_stdio = NULL;
     gsdll->set_poll = NULL;
     gsdll->set_display_callback = NULL;
+    gsdll->set_visual_tracer = NULL;
 
     if (gsdll->hmodule != (HINSTANCE)NULL)
 	    FreeLibrary(gsdll->hmodule);

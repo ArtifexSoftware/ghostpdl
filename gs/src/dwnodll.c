@@ -40,6 +40,7 @@ int load_dll(GSDLL *gsdll, char *last_error, int len)
     gsdll->init_with_args = &gsapi_init_with_args;
     gsdll->run_string = &gsapi_run_string;
     gsdll->exit = &gsapi_exit;
+    gsdll->set_visual_tracer = &gsapi_set_visual_tracer;
     return 0;
 }
 

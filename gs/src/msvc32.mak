@@ -609,8 +609,8 @@ $(GS_XE): $(GSCONSOLE_XE) $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(DWOBJNO) $(GSDLL
 	echo $(PSOBJ)dwmain.obj >> $(PSGEN)gswin32.tr
 	echo $(GLOBJ)dwtext.obj >> $(PSGEN)gswin32.tr
 	echo $(GLOBJ)dwreg.obj >> $(PSGEN)gswin32.tr
-	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(PSGEN)gswin32.rsp
-	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GSDLL_OBJ).res
+       	echo /DEF:$(PSSRCDIR)\dwmain32.def /OUT:$(GS_XE) > $(PSGEN)gswin32.rsp
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GSDLL_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin32.tr
 	del $(PSGEN)gswin32.rsp
 
@@ -623,7 +623,7 @@ $(GSCONSOLE_XE): $(GS_ALL) $(DEVS_ALL) $(GSDLL_OBJS) $(OBJCNO) $(GS_OBJ).res $(P
 	echo $(PSOBJ)dwreg.obj >> $(PSGEN)gswin32c.tr
 	echo /SUBSYSTEM:CONSOLE > $(PSGEN)gswin32.rsp
 	echo /DEF:$(PSSRCDIR)\dw32c.def /OUT:$(GSCONSOLE_XE) >> $(PSGEN)gswin32.rsp
-	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GS_OBJ).res
+	$(LINK) $(LCT) @$(PSGEN)gswin32.rsp $(GLOBJ)gsdll @$(PSGEN)gswin32c.tr @$(LIBCTR) $(INTASM) @$(GLGEN)lib.tr @$(PSGEN)lib32.rsp $(GS_OBJ).res $(DWTRACE)
 	del $(PSGEN)gswin32.rsp
 	del $(PSGEN)gswin32c.tr
 !endif
