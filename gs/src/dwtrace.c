@@ -58,6 +58,7 @@ struct vd_trace_host_s {
 
 static struct vd_trace_host_s host = {false, NULL, NULL};
 vd_trace_interface visual_tracer = { &host, 1, 1, 0, 0, 0, 0 };
+static const char *vdtrace_ini = "gs_vdtrace.ini";
 
 private void get_window()
 {   if (!host.inited) {
@@ -295,6 +296,29 @@ private void dw_gt_wait(vd_trace_interface *I)
     /* fixme : not implemented yet. */
 }
 
+private void dw_gt_set_scale(vd_trace_interface *I)
+{   get_window(); 
+    if (host.tw == NULL) 
+        return;
+    I->scale_x *= GetPrivateProfileInt("VDTRACE", "ScaleX", 1000, vdtrace_ini) / 1000.0;
+    I->scale_y *= GetPrivateProfileInt("VDTRACE", "ScaleY", 1000, vdtrace_ini) / 1000.0;
+}
+
+private void dw_gt_set_shift(vd_trace_interface *I)
+{   get_window(); 
+    if (host.tw == NULL) 
+        return;
+    I->shift_x += (int)GetPrivateProfileInt("VDTRACE", "ShiftX", 0, vdtrace_ini);
+    I->shift_y += (int)GetPrivateProfileInt("VDTRACE", "ShiftY", 0, vdtrace_ini);
+}
+
+private void dw_gt_set_origin(vd_trace_interface *I)
+{   get_window(); 
+    if (host.tw == NULL) 
+        return;
+    I->orig_x += (int)GetPrivateProfileInt("VDTRACE", "OrigX", 0, vdtrace_ini);
+    I->orig_y += (int)GetPrivateProfileInt("VDTRACE", "OrigY", 0, vdtrace_ini);
+}
 
 #ifdef __WIN32__
 #    define SET_CALLBACK(I,a) I.a = dw_gt_##a
@@ -323,6 +347,9 @@ void visual_tracer_init(void)
     SET_CALLBACK(visual_tracer, setlinewidth);
     SET_CALLBACK(visual_tracer, text);
     SET_CALLBACK(visual_tracer, wait);
+    SET_CALLBACK(visual_tracer, set_scale);
+    SET_CALLBACK(visual_tracer, set_shift);
+    SET_CALLBACK(visual_tracer, set_origin);
 }
         
 void visual_tracer_close(void)
