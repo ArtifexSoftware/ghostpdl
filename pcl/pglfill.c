@@ -462,7 +462,7 @@ hpgl_RF(
 	    return e_Range;
 
 	if (!hpgl_arg_c_int(pargs, (int *)&width)) {
-	    pcl_pattern_RF(index, NULL, pgls->memory);
+	    pcl_pattern_RF(index, NULL, pgls);
             return 0;
 	}
 	if ( (width < 1)                            ||
@@ -515,7 +515,7 @@ hpgl_RF(
     pixmap.pix_depth = 8;
     pixmap.num_comps = 1;
 
-    if ((code = pcl_pattern_RF(index, &pixmap, pgls->memory)) < 0)
+    if ((code = pcl_pattern_RF(index, &pixmap, pgls)) < 0)
         gs_free_object(pgls->memory, data, "hpgl raster fill");
     pgls->g.raster_fill.data = 0;
     return code;;

@@ -7,22 +7,29 @@
 # Define the name of this makefile.
 MAKEFILE=../pcl/pcl_ugcc.mak
 
-# Directories
-GSDIR=/home/henrys/gs5.14
-GSSRCDIR=/home/henrys/gs5.14
+# The build process will put all of its output in this directory:
+GENDIR=./obj
+
+# The sources are taken from these directories:
+GLSRCDIR=../gs
 PLSRCDIR=../pl
-PLGENDIR=../pl
-PLOBJDIR=../pl
 PCLSRCDIR=../pcl
-PCLGENDIR=../pcl
-PCLOBJDIR=../pcl
 COMMONDIR=../common
+
+# If you want to build the individual packages in their own directories,
+# you can define this here, although normally you won't need to do this:
+GLGENDIR=$(GENDIR)
+GLOBJDIR=$(GENDIR)
+PLGENDIR=$(GENDIR)
+PLOBJDIR=$(GENDIR)
+PCLGENDIR=$(GENDIR)
+PCLOBJDIR=$(GENDIR)
 
 # Language and configuration.  These are actually platform-independent,
 # but we define them here just to keep all parameters in one place.
 CONFIG=5
 TARGET_DEVS=$(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
-TARGET_XE=pcl5
+TARGET_XE=$(PCLOBJDIR)/pcl5
 MAIN_OBJ=$(PCLOBJDIR)/pcmain.$(OBJ)
 
 # Assorted definitions.  Some of these should probably be factored out....

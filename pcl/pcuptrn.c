@@ -151,16 +151,23 @@ define_pcl_ptrn(
 /*
  * Delete all temporary patterns or all patterns, based on the value of
  * the operand.
+ *
+ * Because the current color in the graphic state will contain an "uncounted"
+ * reference to the current patter in the event that a patterned color space
+ * is being used, routines that delete the current patter will always set
+ * the color space to be DeviceGray before proceeding.
  */
   private void
 delete_all_pcl_ptrns(
-    bool            tmp_only
+    bool            tmp_only,
+    pcl_state_t *   pcs
 )
 {
     pcl_pattern_t * pptrn;
     pl_dict_enum_t  denum;
     gs_const_string plkey;
 
+    (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
     pl_dict_enum_begin(&pcl_patterns, &denum);
     while (pl_dict_enum_next(&denum, &plkey, (void **)&pptrn)) {
         if (!tmp_only || (pptrn->storage == pcds_temporary)) {
@@ -252,13 +259,18 @@ allocate_pattern(
  * control like facility provided for GL/2. To undefine patterns, use null
  * as the second operand. See pcpatrn.h for further information.
  *
+ * Because the current color in the graphic state will contain an "uncounted"
+ * reference to the current patter in the event that a patterned color space
+ * is being used, routines that delete the current patter will always set
+ * the color space to be DeviceGray before proceeding.
+ *
  * Returns 0 on success, < 0 in the event of an error.
  */
   int
 pcl_pattern_RF(
     int                     indx,
     const gs_depth_bitmap * ppixmap,
-    gs_memory_t *           pmem
+    pcl_state_t *           pcs
 )
 {
     pcl_id_t                key;
@@ -266,8 +278,9 @@ pcl_pattern_RF(
 
     id_set_value(key, indx);
 
+    (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
     if (ppixmap != 0) {
-        int     code = allocate_pattern(&pptrn, pmem);
+        int     code = allocate_pattern(&pptrn, pcs->memory);
 
         if (code < 0)
             return code;
@@ -275,7 +288,7 @@ pcl_pattern_RF(
         pptrn->pixinfo = *ppixmap;
         pptrn->type = pcl_pattern_colored;
         if (pl_dict_put(&gl_patterns, id_key(key), 2, pptrn) < 0) {
-            gs_free_object(pmem, pptrn, "create GL/2 RF pattern");
+            gs_free_object(pcs->memory, pptrn, "create GL/2 RF pattern");
             return e_Memory;
         }
 
@@ -383,13 +396,15 @@ download_pcl_pattern(
         pptrn->yres = (((uint)puptrn1->yres[0]) << 8) + puptrn1->yres[1];
         memcpy(pb, puptrn1->data, rsize);
     } else {
-        uint    tmp_cnt = (count - 8, rsize);
+        uint    tmp_cnt = min(count - 8, rsize);
 
         memcpy(pb, puptrn0->data, tmp_cnt);
         if (tmp_cnt < rsize)
             memset(pb, 0, rsize - tmp_cnt);
     }
 
+    /* this may release a pattern: clear current color in gstate */
+    (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
     return define_pcl_ptrn(pcs->pattern_id, pptrn);
 }
 
@@ -410,16 +425,18 @@ pattern_control(
 
         /* delete all patterns */
       case 0:
-        delete_all_pcl_ptrns(false);
+        delete_all_pcl_ptrns(false, pcs);
         break;
 
         /* delete all temporary patterns */
       case 1:
-        delete_all_pcl_ptrns(true);
+        delete_all_pcl_ptrns(true, pcs);
         break;
 
         /* delete last specified pattern */
       case 2:
+        /* this may release a pattern: clear current color in gstate */
+        (pcl_pattern_get_proc_PCL(pcl_pattern_solid_white))(pcs, 0, 0);
         define_pcl_ptrn(pcs->pattern_id, NULL);
 
         /* make last specified pattern temporary */
@@ -482,7 +499,7 @@ upattern_do_reset(
         plast_gl2_uptrn = 0;
     }
     else if ((type & (pcl_reset_cold | pcl_reset_printer)) != 0)
-        delete_all_pcl_ptrns(true);
+        delete_all_pcl_ptrns(true, pcs);
         /* GL's IN command takes care of the GL patterns */
 }
 

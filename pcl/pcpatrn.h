@@ -170,7 +170,7 @@ typedef struct pcl_pattern_s {
 extern int     pcl_pattern_RF(
     int                     ptrn_indx,    /* pattern index */
     const gs_depth_bitmap * ppixmap,      /* pixmap */
-    gs_memory_t *           pcs
+    pcl_state_t *           pcs
 );
 
 /*
