@@ -1165,7 +1165,7 @@ gs_private_st_composite(st_pdf_image_enum, pdf_image_enum, "pdf_image_enum",
   pdf_image_enum_enum_ptrs, pdf_image_enum_reloc_ptrs);
 /* GC procedures */
 private ENUM_PTRS_WITH(pdf_image_enum_enum_ptrs, pdf_image_enum *pie)
-    if (index < psdf_binary_writer_max_ptrs) {
+    if (index < pdf_image_writer_max_ptrs) {
 	gs_ptr_type_t ret =
 	    ENUM_USING(st_pdf_image_writer, &pie->writer, sizeof(pie->writer),
 		       index);
@@ -1175,7 +1175,7 @@ private ENUM_PTRS_WITH(pdf_image_enum_enum_ptrs, pdf_image_enum *pie)
 	return ret;
     }
     return ENUM_USING_PREFIX(st_gx_image_enum_common,
-			     psdf_binary_writer_max_ptrs);
+			     pdf_image_writer_max_ptrs);
 ENUM_PTRS_END
 private RELOC_PTRS_WITH(pdf_image_enum_reloc_ptrs, pdf_image_enum *pie)
 {
