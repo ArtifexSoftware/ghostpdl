@@ -169,7 +169,9 @@ main(int argc, char *argv[])
     define_int(f, "ARCH_LOG2_SIZEOF_SHORT", ilog2(size_of(short)));
     define_int(f, "ARCH_LOG2_SIZEOF_INT", ilog2(size_of(int)));
     define_int(f, "ARCH_LOG2_SIZEOF_LONG", ilog2(size_of(long)));
+#ifdef HAVE_LONG_LONG
     define_int(f, "ARCH_LOG2_SIZEOF_LONG_LONG", ilog2(size_of(long long)));
+#endif
     define_int(f, "ARCH_SIZEOF_PTR", size_of(char *));
     define_int(f, "ARCH_SIZEOF_FLOAT", size_of(float));
     define_int(f, "ARCH_SIZEOF_DOUBLE", size_of(double));

@@ -1,4 +1,4 @@
-/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2003-2004 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -117,9 +117,11 @@ typedef unsigned int uint64_t;
 typedef signed long int64_t;
 typedef unsigned long uint64_t;
 #  else
-#   if ARCH_SIZEOF_LONG_LONG == 8
+#   ifdef ARCH_SIZEOF_LONG_LONG
+#    if ARCH_SIZEOF_LONG_LONG == 8
 typedef signed long long int64_t;
 typedef unsigned long long uint64_t;
+#    endif
 #   endif
 #  endif
 # endif
