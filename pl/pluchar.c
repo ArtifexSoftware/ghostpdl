@@ -361,11 +361,8 @@ pl_init_fc(
     }
 
     /* handle artificial emboldening */
-    if ((pfont->WMode >> 1) != 0) {
-        floatp  ftmp = (floatp)(pfont->WMode >> 1) / (10e5 * 1.625);
-
-        pfc->pcl6bold = 32768.0 * ftmp + 0.5;
-    }
+    if (plfont->bold_fraction)
+        pfc->pcl6bold = 32768 * plfont->bold_fraction + 0.5;
 
     if ( fabs(pctm->xx) >= 256.0 ||
          fabs(pctm->xy) >= 256.0 ||
