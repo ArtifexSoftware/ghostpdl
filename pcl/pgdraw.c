@@ -183,27 +183,23 @@ hpgl_compute_user_units_to_plu_ctm(const hpgl_state_t *pgls, gs_matrix *pmat)
 	return 0;
 
 }
- int
-hpgl_set_user_units_to_plu_ctm(const hpgl_state_t *pgls)
-{
-	if ( pgls->g.scaling_type != hpgl_scaling_none )
-	  {
-	    gs_matrix mat;
-
-	    hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
-	    hpgl_call(gs_concat(pgls->pgs, &mat));
-	  }
-	return 0;
-}
 
 /* set up ctm's.  Uses the current render mode to figure out which ctm
    is appropriate */
  int
 hpgl_set_ctm(hpgl_state_t *pgls)
 {
-	hpgl_call(hpgl_set_plu_ctm(pgls));
-	hpgl_call(hpgl_set_user_units_to_plu_ctm(pgls));
-	return 0;
+    hpgl_call(hpgl_set_plu_ctm(pgls));
+    if ( pgls->g.scaling_type != hpgl_scaling_none ) {
+	gs_matrix mat;
+	hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &mat));
+	hpgl_call(gs_concat(pgls->pgs, &mat));
+	hpgl_call(gs_currentmatrix(pgls->pgs, &mat));
+	mat.tx = round(mat.tx);
+	mat.ty = round(mat.ty);
+	hpgl_call(gs_setmatrix(pgls->pgs, &mat));
+    }
+    return 0;
 }
 
 /* Compute the pattern length.  Normally, if the pattern length is
@@ -211,7 +207,7 @@ hpgl_set_ctm(hpgl_state_t *pgls)
    isotropic scaling we need 4% of the distance of the plotter unit
    equivalent of the scaling SC coordinates xmin, xmax, ymin, and
    ymax.. */
- private int
+ private floatp
 hpgl_get_line_pattern_length(hpgl_state_t *pgls)
 {
     /* dispense with the unusual "isotropic relative" case first.  The
@@ -629,33 +625,33 @@ hpgl_polyfill(
     hpgl_real_t                 direction = params->angle;
     float saved_line_pattern_offset = pgls->g.line.current.pattern_offset;
     int lines_filled;
-    /* initilialize spacing between fill line vector */
+
+    /* spacing is always relevant to the scaling of the x-axis.  It
+       can be specified in user space if provided to FT or by default
+       it is 1% of the distance from P1 to P2 */
     spacing.x = spacing.y = params->spacing;
     /* save the pen position */
     hpgl_save_pen_state(pgls, &saved_pen_state, hpgl_pen_pos);
     hpgl_call(hpgl_compute_user_units_to_plu_ctm(pgls, &user_to_plu_mat));
     if (params->spacing == 0) {
         /* Per TRM 22-12, use 1% of the P1/P2 distance. */
+	
 	spacing.x = spacing.y = 0.01 * hpgl_compute_distance( pgls->g.P1.x,
 							      pgls->g.P1.y,
 							      pgls->g.P2.x,
 							      pgls->g.P2.y
                                                 );
 	spacing.x /= fabs(user_to_plu_mat.xx);
-	spacing.y /= fabs(user_to_plu_mat.yy);
     }
 
-    /* For fill type 3 (hatch) we take the max spacing value for fill
-       type 4 (crosshatch) we fill asymetrically. */
-    if ( !cross )
-	/* odd behavior NB we probably don't completely understand all
-           of the problems we are emulating here.  Orthogonal fills
-           appear to use the maximum spacing value for assymmetric
-           scaling, non-orthogonal fills use the average */
-	if ( !equal(fmod( direction, 90 ), 0 ) )
-	    spacing.x = spacing.y = (spacing.x + spacing.y) / 2.0;
-	else
-	    spacing.x = spacing.y = max(spacing.x, spacing.y);
+    /* the spacing is now in user units, convert to plu using only the
+       x axis scaling then convert back the plu result to y units.  In
+       the case of using 1% of the P1/P2 we simply end up with what we
+       originally had as the distance between P1 and P2 */
+    spacing.x *= fabs(user_to_plu_mat.xx);
+    spacing.y = spacing.x / fabs(user_to_plu_mat.yy);
+    spacing.x /= fabs(user_to_plu_mat.xx);
+
     /* get the bounding box */
     hpgl_call(hpgl_polyfill_bbox(pgls, &bbox));
     /*
