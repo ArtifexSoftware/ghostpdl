@@ -29,6 +29,20 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version7.33">Version 7.33 (2002-11-18)</a>
+<ul>
+<li><a href="#7.33_Incompatible_changes">Incompatible changes</a>,
+    <a href="#7.33-Documentation">Documentation</a>,
+    <a href="#7.33-Procedures">Procedures</a>,
+    <a href="#7.33-Utilities">Utilities</a>,
+    <a href="#7.33-Drivers">Drivers</a>,
+    <a href="#7.33-PDF_writer">PDF writer</a>,
+    <a href="#7.33-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#7.33-Interpreter">Interpreter</a>,
+    <a href="#7.33-Streams">Streams</a>,
+    <a href="#7.33-Library">Library</a>,
+    <a href="#7.33-Other">Other</a>
+</ul>
 <li><a href="#Version7.32">Version 7.32 (2002-11-02)</a>
 <ul>
 <li><a href="#7.32_Incompatible_changes">Incompatible changes</a>,
@@ -189,6 +203,401 @@ Streams (included under Interpreter through release 2.9.9), Library.
 Changes marked with a * were made available as patches to a previous
 release.
 
+<hr>
+
+<h1><a name="Version7.33"></a>Version 7.33 (2002-11-18)</h1>
+
+<p>
+The 7.33 release is the third, and hopefully final, beta in the series
+leading up to 8.0. This version contains a fix to the filename permissions
+logic.
+
+<p>
+The following SourceForge bug numbers were open at the time of this release:
+405342,
+407342,
+414947,
+414985,
+446344,
+458261,
+458775,
+458780,
+459647,
+465936,
+484752,
+484753,
+487953,
+493348,
+505429,
+510808,
+526099,
+526491,
+530011,
+535366,
+535752,
+535836,
+538033,
+539239,
+546823,
+554076,
+558151,
+558435,
+563287,
+569573,
+570772,
+573744,
+578838,
+578865,
+584990,
+592160,
+592837,
+592841,
+592925,
+592930,
+595760,
+596009,
+598014,
+600288,
+601255,
+601336,
+601694,
+602995,
+603934,
+605830,
+607425,
+607850,
+610356,
+610478,
+610727,
+611694,
+611701,
+611727,
+611898,
+612801,
+614298,
+615165,
+616970,
+616976,
+617077,
+617523,
+621243,
+621246,
+623122,
+623292,
+623989,
+624515,
+625085,
+626059,
+626295,
+626358,
+626419,
+2002-1,
+626464,
+627545,
+628110,
+629335,
+631974,
+633299,
+634036,
+634080,
+634358,
+634514,
+636210,
+637424,
+637954,
+638850,
+640159.
+
+<h3><a name="7.33_Incompatible_changes"></a>Incompatible changes</h3>
+
+<p>No incompatible changes in this release.
+
+<pre>
+</pre>
+
+
+<h2><a name="7.33-Documentation"></a>Documentation</h2><pre>
+
+Fixes problems:
+	- we don't actually include unicode cmaps. Thanks to Jack for
+noticing this. (doc/Fonts.htm [1.33]: 2002/11/12 22:32:35 giles)
+	- Change gp_file_name_is_absolute to gp_pathstring_not_bare in the
+doc's. (doc/Make.htm [1.60]: 2002/11/17 22:52:57 ray)
+
+Correct the documented paper sizes in Use.htm to match gs_statd.ps after fix
+for SF bug # 536877. Change cm units to the more common mm.
+(doc/Use.htm [1.69]: 2002/11/04 22:49:27 ghostgum)
+
+Post-release cleanup for 7.32: increment version number to 7.33.
+(doc/News.htm [1.119]: 2002/11/05 08:31:56 raph)
+
+Some manpage cleanup and simplification. (man/gs.1 [1.21]: 2002/11/11
+16:31:22 giles)
+
+First commit of 7.33 beta release: update dates and version numbers, edits
+to News.htm. (doc/API.htm [1.28], doc/Bug-form.htm [1.32],
+doc/Bug-info.htm [1.31], doc/C-style.htm [1.38], doc/Commprod.htm [1.25],
+doc/Copying.htm [1.24], doc/DLL.htm [1.26], doc/Deprecated.htm [1.5],
+doc/Develop.htm [1.100], doc/Devices.htm [1.57], doc/Drivers.htm [1.36],
+doc/Fonts.htm [1.34], doc/Helpers.htm [1.28], doc/History1.htm [1.24],
+doc/History2.htm [1.24], doc/History3.htm [1.24], doc/History4.htm [1.24],
+doc/History5.htm [1.26], doc/History6.htm [1.41], doc/History7.htm [1.27],
+doc/Htmstyle.htm [1.29], doc/Install.htm [1.38], doc/Issues.htm [1.32],
+doc/Language.htm [1.57], doc/Lib.htm [1.26], doc/Maintain.htm [1.35],
+doc/Make.htm [1.61], doc/New-user.htm [1.43], doc/News.htm [1.120],
+doc/Projects.htm [1.48], doc/Ps-style.htm [1.22], doc/Ps2epsi.htm [1.26],
+doc/Ps2pdf.htm [1.48], doc/Psfiles.htm [1.39], doc/Readme.htm [1.46],
+doc/Release.htm [1.73], doc/Source.htm [1.24], doc/Tester.htm [1.23],
+doc/Testing.htm [1.13], doc/Unix-lpr.htm [1.24], doc/Use.htm [1.70],
+doc/Xfonts.htm [1.24], doc/gs-vms.hlp [1.23], man/dvipdf.1 [1.21],
+man/font2c.1 [1.21], man/gs.1 [1.22], man/gslp.1 [1.21], man/gsnd.1 [1.21],
+man/pdf2dsc.1 [1.20], man/pdf2ps.1 [1.22], man/pdfopt.1 [1.20],
+man/pf2afm.1 [1.21], man/pfbtopfa.1 [1.22], man/printafm.1 [1.21],
+man/ps2ascii.1 [1.20], man/ps2epsi.1 [1.19], man/ps2pdf.1 [1.26],
+man/ps2pdfwr.1 [1.25], man/ps2ps.1 [1.28], man/wftopfa.1 [1.21]: 2002/11/18
+21:41:49 raph)
+
+</pre><h2><a name="7.33-Procedures"></a>Procedures</h2><pre>
+
+Fixes problems:
+	- The '-r' option works differently between Info-Zip ans Winzip
+"wzzip" Removal of this option allows wzzip to be used as well.
+(winint.mak [1.17]: 2002/11/04 22:54:47 ray)
+
+Post-release cleanup for 7.32: increment version number to 7.33.
+(version.mak [1.56]: 2002/11/05 08:31:56 raph)
+
+Add a revision 'id' line to the drawafm script. (toolbin/drawafm.ps [1.2]:
+2002/11/05 16:59:55 giles)
+
+Add a simple script for comparing font metric files. Currently it's only
+useful for sorting the font info and character metric data.
+(toolbin/afmutil.py [1.1]: 2002/11/07 14:10:13 giles)
+
+Skip blank lines in parsing afm files. (toolbin/afmutil.py [1.2]: 2002/11/14
+17:01:38 giles)
+
+First commit of 7.33 beta release: update dates and version numbers, edits
+to News.htm. (version.mak [1.57]: 2002/11/18 21:41:51 raph)
+
+</pre><h2><a name="7.33-Utilities"></a>Utilities</h2><pre>
+
+Fixes problems:
+	- Fix (FAPI) : Improving terminology in header comment to
+lib/xlatmap . (lib/xlatmap [1.7]: 2002/11/02 18:03:06 igor)
+	- remove the unused SYSTIME_H from the mac headers. Prefer "time_.h"
+to &lt;sys/time.h&gt;. Although the Metroworks Standard Library doesn't have
+a sys/time.h, keep the definition of HAVE_SYS_TIME_H for now to avoid a
+multiple definition problem with struct timeval. (gp_mac.c [1.10]:
+2002/11/14 16:55:21 giles)
+	- correct an unitialized variable in the mac stream process.
+(gp_macio.c [1.9]: 2002/11/14 17:12:53 giles)
+	- Replace the previous gp_file_name_is_absolute with
+gp_patshtring_not_bare which generally has the same sense, but is more
+consistently implemented on platforms and indicates whether or not a
+pathstring can be prefixed by a directory and the path_separator string.
+Also, fix check_file_permissions to handle the 'bare' pathstring case when
+the current directory is one of the permitted paths. Fixes SourceForge bug
+#637751. (gp_iwatc.c [1.11], gp_macio.c [1.10], gp_mswin.c [1.14],
+gp_ntfs.c [1.11], gp_os2.c [1.16], gp_vms.c [1.14]: 2002/11/17 22:50:32 ray)
+
+</pre><h2><a name="7.33-Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- Make gdev_t4693d_map_color_rgb a functinal routine. Previously it
+returned a constant maximum color value. This would cause problems with
+overprint and anti-aliasing. (gdev4693.c [1.8]: 2002/11/13 19:34:56 dan)
+	- Update the encode/decode color procedures when the device is
+openned. This is required since the device can modify its model settings
+inside the open procedure. (gdevstc.c [1.8]: 2002/11/13 19:39:12 dan)
+	- Converted from old map_rgb and map_cmyk to new encode_color
+routines. (gdevbit.c [1.6]: 2002/11/13 20:24:12 dan)
+	- Define a decode_color proc for the cmyk devices.
+(gdevcdj.c [1.13]: 2002/11/13 23:33:05 dan)
+	- Convert old map_color_rgb routines to decode_color routines for
+the stcolor device. Change required due to device API change.
+(gdevstc.c [1.9]: 2002/11/14 20:48:47 dan)
+
+Correct some display device map_color_rgb functions, needed for
+anti-aliasing. (gdevdsp.c [1.13]: 2002/11/13 07:05:43 ghostgum)
+
+Recorrect display device 4-bit native mode after a correction was reversed
+by DeviceN. (gdevdsp.c [1.14]: 2002/11/13 07:24:03 ghostgum)
+
+Remove duplicate call to GlobalLock in Windows printer device.
+(gdevwpr2.c [1.14]: 2002/11/16 22:16:49 ghostgum)
+
+</pre><h2><a name="7.33-PDF_writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- Fix (pdfwrite) : Implement a special check for CMaps which appear
+to be identity, and replace them with a standard CMap name. Source Forge bug
+"[ 615994 ] CMAP is corrupted". (gdevpdtc.c [1.11]: 2002/11/02 19:16:44
+igor)
+	- Fix (pdfwrite) : Removing gx_device_pdf_s::random_offset because
+it is not longer in use. (gdevpdfx.h [1.55], gdevpdtb.c [1.10]: 2002/11/17
+22:18:15 igor)
+	- Fix (pdfwrite) : Removing gx_device_pdf_s::random_offset because
+it is not longer in use. (gdevpdf.c [1.56]: 2002/11/17 22:27:53 igor)
+	- Fix (pdfwrite) : Improving the condition about skipping paths
+outside the clipping path. SourceForge bug "[ 628542 ] (pdfwrite) wrong
+gs5.98-dragon.pdf". (gdevpdfd.c [1.21]: 2002/11/18 02:53:44 igor)
+	- Fix (pdfwrite) : (1) FontMatrix.ty was ignored while computing
+glyph positions. (2) Working around AR4,5 bug which ignores FontMatrix.ty .
+SourceForge bug "[ 629961 ] (PDF interpeter) 'Ghost' text appears again".
+(gdevpdtb.c [1.11], gdevpdtt.c [1.23]: 2002/11/18 03:05:22 igor)
+	- Fix (pdfwrite) : Skipping text outside clip path. SourceForge bug
+"[ 608520 ] PDFWrite failed for PS File". (gdevpdfd.c [1.22],
+gdevpdte.c [1.20]: 2002/11/18 14:29:54 igor)
+
+</pre><h2><a name="7.33-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+
+Fixes problems:
+	- Fix for #609488 Problems in DeviceN test file. This resolves
+problems that can occur if the transfer function are dependent upon the
+halftone. (Which is true for the default hi res transfer function.) We were
+getting variable (unpredictable) results due to the undefined ordering in
+enumerating graphic state dictionaries via the 'forall' operator.
+(lib/pdf_draw.ps [1.62]: 2002/11/05 00:48:01 dan)
+	- resourcefont procedure didn't handle correctly font descriptor
+without font stream. Bug #633714 (lib/pdf_font.ps [1.51]: 2002/11/14
+21:22:22 alexcher)
+
+Move code from pdfshowpage to pdfshowpage_finish for the benefit of GSview
+which calls pdfshowpage_init and pdfshowpage_finish, but not
+pdfshowpage_setpage. (lib/pdf_main.ps [1.63]: 2002/11/05 20:56:02 ghostgum)
+
+</pre><h2><a name="7.33-Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- Eliminate possible negative discontinuity in default hi resolution
+transfer function. (lib/gs_init.ps [1.71]: 2002/11/05 00:30:59 dan)
+	- The 'bind def' was dropped from the previous commit: Fix:
+Eliminate possible negative discontinuity in default hi resolution transfer
+function. (lib/gs_init.ps [1.72]: 2002/11/05 08:02:17 dan)
+	- When processing an EPS file, remove any left over items on the
+operand and dictionary stacks. (lib/gs_epsf.ps [1.8]: 2002/11/12 20:31:30
+ghostgum)
+	- Use immediate evaluation for forcesetcolorspace operator because
+its definition goes out of scope when bind is delayed or disabled. Bug
+#635747 (lib/gs_devn.ps [1.3], lib/gs_indxd.ps [1.2], lib/gs_patrn.ps [1.2],
+lib/gs_sepr.ps [1.2]: 2002/11/13 20:23:10 alexcher)
+	- Skip /ColorValues processing for devices where it is not defined
+(typically grayscale devices). Fixes SF bug #636213. (lib/gs_dps.ps [1.8]:
+2002/11/14 17:24:00 raph)
+	- Restore silent clip of sethsbcolor values to range [0..1].
+(lib/gs_cspace.ps [1.4]: 2002/11/15 18:10:24 raph)
+	- Replace the previous gp_file_name_is_absolute with
+gp_patshtring_not_bare which generally has the same sense, but is more
+consistently implemented on platforms and indicates whether or not a
+pathstring can be prefixed by a directory and the path_separator string.
+Also, fix check_file_permissions to handle the 'bare' pathstring case when
+the current directory is one of the permitted paths. Fixes SourceForge bug
+#637751. (lib/gs_fapi.ps [1.17], zfile.c [1.23]: 2002/11/17 22:50:32 ray)
+	- check_file_permissions did not handle the case where no path
+separator is needed after the current_directory_name. PostScript code in
+.locksafe (in gs_init.ps) was already correct. Problem would happen on Mac
+&amp; VMS. (zfile.c [1.24]: 2002/11/18 17:17:20 ray)
+	- Correcting mixed DOS/UNIX line ends introduced in the previous
+version. (zcolor.c [1.14]: 2002/11/18 19:14:57 alexcher)
+	- FrameMaker produces PS file that assumes that the presence of
+/pdfmark in systemdict implies availability of /currentdistillerparams. The
+fix hides /pdfmark for all devices except pdfwrite following
+set/currentdistillerparams pattern. Bug #638982 (lib/gs_pdfwr.ps [1.21]:
+2002/11/18 19:36:57 alexcher)
+
+Modified the setdevice procedure to reset the current halftone (if possible)
+when changing devices. This is necessary in the DeviceN code because the
+number of device halftone components must be the same as the number of
+device color model components. It is also generally a good idea.
+(lib/gs_init.ps [1.70]: 2002/11/05 00:10:37 dan)
+
+Post-release cleanup for 7.32: increment version number to 7.33.
+(lib/gs_init.ps [1.73]: 2002/11/05 08:31:56 raph)
+
+Correct -dEPSFitPage when the device has non-zero margins.
+(lib/gs_epsf.ps [1.7]: 2002/11/07 07:14:28 ghostgum)
+
+Correct some display device map_color_rgb functions, needed for
+anti-aliasing. (gdevdsp.h [1.6]: 2002/11/13 07:05:43 ghostgum)
+
+Prevent access to .forceput and friends. Patch by Alex Cherepanov and
+Russell Lang. (lib/gs_diskn.ps [1.4], lib/gs_epsf.ps [1.9],
+lib/gs_fonts.ps [1.23], lib/gs_res.ps [1.26], lib/gs_resmp.ps [1.6],
+lib/gs_type1.ps [1.13]: 2002/11/18 20:23:18 ghostgum)
+
+</pre><h2><a name="7.33-Streams"></a>Streams</h2><pre>
+
+Fixes problems:
+	- Make init method for ASCII85Encode return 0. Fixes SF #634519.
+(sa85x.h [1.6]: 2002/11/13 08:23:13 raph)
+
+</pre><h2><a name="7.33-Library"></a>Library</h2><pre>
+
+Fixes problems:
+	- param_check_string now checks is_valid before trying to calculate
+the length of the string in question. We now handle a null
+color_info.cm_name in all cases. (gsdparam.c [1.12]: 2002/11/02 17:22:29
+giles)
+	- Fix (pdfwrite) : Implement a special check for CMaps which appear
+to be identity, and replace them with a standard CMap name. Source Forge bug
+"[ 615994 ] CMAP is corrupted". (gdevpsf.h [1.21], gdevpsfm.c [1.11]:
+2002/11/02 19:16:44 igor)
+	- Fixing the "members" logic in gs_type1_glyph_info. Arithmetic
+operations were erroneously used instead logic ones, sometimes causing a
+request of undefined features. Source Forge bug "[ 629116 ] Bad font in
+re-distilled PDF". (gxtype1.c [1.20]: 2002/11/02 20:07:46 igor)
+	- These are a set of fixes required to make the 2 bit memory device
+functional. They are being lumped together since they are all required. The
+fix in gdevm2.c was found by customer #760 and is reported as bug #600281
+mem_mapped2_copy_mono() incorrect. (gdevm2.c [1.5], gxcht.c [1.11]:
+2002/11/05 01:03:14 dan)
+	- Make some debug warning messages only occur for DEBUG build. The
+most common offender seen was "No encode_color proc defined for device."
+(gxcmap.c [1.12]: 2002/11/05 19:13:52 dan)
+	- Define color encode/decode procedures for the nullpage and null
+devices. This eliminates a "No encode color proc defined" message for these
+devices. (gdevnfwd.c [1.8]: 2002/11/13 06:00:29 dan)
+	- Change the substitution logic for the decode_color procedure. This
+change gives preference to the map_color_rgb proc (if it exists) and the
+device is an RGB device. The previous logic gave preference to
+gx_default_decode_color if the device was linear and separable.
+(gdevdflt.c [1.10]: 2002/11/13 19:31:28 dan)
+	- Fix uninitialized memory read; gx_set_device_color_1(pgs) depends
+on the value of pg-&gt;in_cachedevice, so move up initialization of the
+latter. (gsstate.c [1.19]: 2002/11/13 21:51:34 raph)
+	- Replace the previous gp_file_name_is_absolute with
+gp_patshtring_not_bare which generally has the same sense, but is more
+consistently implemented on platforms and indicates whether or not a
+pathstring can be prefixed by a directory and the path_separator string.
+Also, fix check_file_permissions to handle the 'bare' pathstring case when
+the current directory is one of the permitted paths. Fixes SourceForge bug
+#637751. (gp.h [1.13], gp_dosfs.c [1.6], gp_unifn.c [1.6],
+gp_unifs.c [1.10]: 2002/11/17 22:50:32 ray)
+
+Post-release cleanup for 7.32: increment version number to 7.33.
+(gscdef.c [1.30]: 2002/11/05 08:31:56 raph)
+
+Suppress the "No encode color proc" warning for the "null" device (a
+forwarding device) where it is expected and acceptable. (gxcmap.c [1.13]:
+2002/11/06 23:11:17 ray)
+
+First commit of 7.33 beta release: update dates and version numbers, edits
+to News.htm. (gscdef.c [1.31]: 2002/11/18 21:41:51 raph)
+
+</pre><h2><a name="7.33-Other"></a>Other</h2><pre>
+
+Fixes problems:
+	- remove the unused SYSTIME_H from the mac headers. Prefer "time_.h"
+to &lt;sys/time.h&gt;. Although the Metroworks Standard Library doesn't have
+a sys/time.h, keep the definition of HAVE_SYS_TIME_H for now to avoid a
+multiple definition problem with struct timeval. (macsystypes.h [1.5]:
+2002/11/14 16:55:21 giles)
+
+Turn on 64 bit color indexes in the MacOS build. (macsystypes.h [1.6]:
+2002/11/14 17:36:21 giles)
+
+</pre>
 <hr>
 
 <h1><a name="Version7.32"></a>Version 7.32 (2002-11-02)</h1>
@@ -4607,7 +5016,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             Also fixed a parity bug in the creation of the retain_mask.
         
           src/gsovrc.h
-            Fixed typo (/* $Id$Id: History7.htm,v 1.26 2002/11/02 08:17:07 raph Exp $ */).
+            Fixed typo (/* $Id$Id: History7.htm,v 1.27 2002/11/18 21:41:50 raph Exp $ */).
         
           src/gxdcconv.c
             Modified color_rgb_to_cmyk to work if the imager state pointer
@@ -7220,7 +7629,7 @@ Tue Jun  4 05:00:00 2002 GMT        Henry Stiles    henrys@meerkat
             Also fixed a parity bug in the creation of the retain_mask.
         
           src/gsovrc.h
-            Fixed typo (/* $Id$Id: History7.htm,v 1.26 2002/11/02 08:17:07 raph Exp $ */).
+            Fixed typo (/* $Id$Id: History7.htm,v 1.27 2002/11/18 21:41:50 raph Exp $ */).
         
           src/gxdcconv.c
             Modified color_rgb_to_cmyk to work if the imager state pointer
