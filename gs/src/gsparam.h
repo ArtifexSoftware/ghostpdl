@@ -506,7 +506,11 @@ typedef struct gs_c_param_list_s {
 /* Set the target of a C parameter list. */
 void gs_c_param_list_set_target(P2(gs_c_param_list *, gs_param_list *));
 
-/* Clients normally allocate the gs_c_param_list on the stack. */
+/*
+ * Clients normally allocate the gs_c_param_list on the stack, but we
+ * provide a procedure for allocating one in memory.
+ */
+gs_c_param_list *gs_c_param_list_alloc(P2(gs_memory_t *, client_name_t));
 void gs_c_param_list_write(P2(gs_c_param_list *, gs_memory_t *));
 void gs_c_param_list_write_more(P1(gs_c_param_list *)); /* switch back to writing, no init */
 void gs_c_param_list_read(P1(gs_c_param_list *));	/* switch to reading */

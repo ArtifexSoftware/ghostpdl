@@ -64,13 +64,20 @@ gs_private_st_ptrs2(st_c_param, gs_c_param, "gs_c_param",
 
 /* ---------------- Utilities ---------------- */
 
+gs_c_param_list *
+gs_c_param_list_alloc(gs_memory_t *mem, client_name_t cname)
+{
+    return gs_alloc_struct(mem, gs_c_param_list, &st_c_param_list, cname);
+}
+
 private gs_c_param *
 c_param_find(const gs_c_param_list *plist, gs_param_name pkey, bool any)
 {
     gs_c_param *pparam = plist->head;
+    uint len = strlen(pkey);
 
     for (; pparam != 0; pparam = pparam->next)
-	if (!strcmp(pparam->key, pkey))
+	if (pparam->key.size == len && !memcmp(pparam->key.data, pkey, len))
 	    return (pparam->type != gs_param_type_any || any ? pparam : 0);
     return 0;
 }
