@@ -462,11 +462,12 @@ scan_token(i_ctx_t *i_ctx_p, stream * s, ref * pref, scanner_state * pstate)
 	sstate = *pstate;
 	if (!da.is_dynamic && da.base != da.buf) {	/* The da contains some self-referencing pointers. */
 	    /* Fix them up now. */
-	    uint size = da.next - da.base;
+	    uint next = da.next - da.base;
+	    uint limit = da.limit - da.base;
 
 	    da.base = da.buf;
-	    da.next = da.buf + size;
-	    da.limit = da.buf + da_buf_size;
+	    da.next = da.buf + next;
+	    da.limit = da.buf + limit;
 	}
 	daptr = da.next;
 	switch (scan_type) {
