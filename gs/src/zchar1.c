@@ -1063,8 +1063,13 @@ z1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
 	    modified_widths = true;
 	    info->width[wmode].x = sbw[2];
 	    info->width[wmode].y = sbw[3];
-	    info->v.x = 0;
-	    info->v.y = 0;
+	    if (code == metricsSideBearingAndWidth) {
+		info->v.x = sbw[0];
+		info->v.y = sbw[1];
+	    } else {
+		info->v.x = 0;
+		info->v.y = 0;
+	    }
 	    done_members = width_members;
 	    width_members = 0;
 	}
