@@ -425,6 +425,7 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
   uchar **buf1 = alloc_window (row_bytes, window_size);
   uchar **buf2 = alloc_window (row_bytes, window_size);
   uchar *out_buf = NULL;
+  int x0 = -2, y0 = -2, mc = 0, mmax = 10;
   int y;
 
   if (image_out != NULL)
@@ -480,6 +481,17 @@ fuzzy_diff_images (Image *image1, Image *image2, const FuzzyParams *fparams,
 		      out_buf[x * 3 + 0] = abs(rowmid1[x * 3 + 0]- rowmid2[x * 3 + 0]);
 		      out_buf[x * 3 + 1] = abs(rowmid1[x * 3 + 1]- rowmid2[x * 3 + 1]);
 		      out_buf[x * 3 + 2] = abs(rowmid1[x * 3 + 2]- rowmid2[x * 3 + 2]);
+		    }
+		    if (abs(x - x0) > 1 && y == y0 || y - y0 > 1) {
+		        /* fixme : a contiguity test wanted. */
+			x0 = x; y0 = y;
+			mc++;
+			if (mc < mmax) {
+			    printf("diff: x=%d y=%d c1=%02X%02X%02X c2=%02X%02X%02X\n", x, y,
+				    rowmid1[x * 3], rowmid1[x * 3 + 1], rowmid1[x * 3 + 2],
+				    rowmid2[x * 3], rowmid2[x * 3 + 1], rowmid2[x * 3 + 2]);
+			} else if (mc == mmax)
+			    printf("Won't report more differences.\n");
 		    }
 		  }
 		}
