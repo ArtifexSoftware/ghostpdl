@@ -1037,9 +1037,15 @@ pdf_text_process(gs_text_enum_t *pte)
 
     /* Bring the text-related parameters in the output up to date. */
 
-    code = pdf_write_text_process_state(pdev, &text_state, &str);
-    if (code < 0)
-	goto dflt;
+    /*
+     * The following check is necessary, because pdf_set_text_matrix
+     * assumes that a string-showing operator will follow.
+     */
+    if (pte->index < str.size) {
+	code = pdf_write_text_process_state(pdev, &text_state, &str);
+	if (code < 0)
+	    goto dflt;
+    }
 
     if (text->operation & TEXT_REPLACE_WIDTHS) {
 	gs_point w;
