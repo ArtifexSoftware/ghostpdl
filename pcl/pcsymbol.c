@@ -46,8 +46,7 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	pcl_symbol_set_t *symsetp;
 	pl_glyph_vocabulary_t gv;
 
-	/* argh */
-#define psm_header_size offset_of(pl_symbol_map_t, mapping_type)
+#define psm_header_size 18
 	if ( count < psm_header_size )
 	  return e_Range;
 	header_size = pl_get_uint16(psm->header_size);
@@ -75,12 +74,16 @@ pcl_define_symbol_set(pcl_args_t *pargs, pcl_state_t *pcls)
 	    return e_Range;
 	  header =
 	    (pl_symbol_map_t *)gs_alloc_bytes(mem,
-					      psm_header_size +
+					      sizeof(pl_symbol_map_t) +
 					        num_codes * sizeof(ushort),
 					      "pcl_font_header(header)");
 	  if ( header == 0 )
 	    return_error(e_Memory);
+	  /* copy in the data that is the same between the structures (HACK) */
 	  memcpy((void *)header, (void *)psm, psm_header_size);
+	  /* specify that we do not allow these sets to map to and fro
+             msl and unicode */
+	  header->mapping_type = PLGV_NO_MAPPING;
 	  /*
 	   * Byte swap the codes now, so that we don't have to byte swap
 	   * them every time we access them.
