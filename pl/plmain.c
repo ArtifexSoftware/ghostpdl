@@ -342,10 +342,20 @@ main(
 			fprintf(gs_stderr, "Unable to init PJL job.\n");
 			exit(1);
                     }
+		} else if ( code < 0 ) { /* error and not exit language */
+		    dprintf1( "Warning interpreter exited with error code %d\n", code );
+		    dprintf( "Flushing to end of job\n" );
+		    /* flush eoj may require more data */
+		    while ((pl_flush_to_eoj(curr_instance, &r.cursor)) == 0)
+			if (pl_main_cursor_next(&r) <= 0)
+			    goto next;
+		    code = 0;
+		    new_job = true;
 		}
+
 	    }
 	}
-	if (code < 0)
+next:	if (code < 0)
 	    /* Error: Print PDL status if applicable, dnit PDL job, & skip to eoj */
 	    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
 			     inst.error_report > 0, gs_stdout);
