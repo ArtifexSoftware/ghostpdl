@@ -690,6 +690,22 @@ win_pr2_set_bpp(gx_device * dev, int depth)
     }
     
     ((gx_device_win_pr2 *)dev)->selected_bpp = depth;
+
+    /* copy encode/decode procedures */
+    dev->procs.encode_color = dev->procs.map_rgb_color;
+    dev->procs.decode_color = dev->procs.map_color_rgb;
+    if (depth == 1) {
+	dev->procs.get_color_mapping_procs = 
+	    gx_default_DevGray_get_color_mapping_procs;
+	dev->procs.get_color_comp_index = 
+	    gx_default_DevGray_get_color_comp_index;
+    }
+    else {
+	dev->procs.get_color_mapping_procs = 
+	    gx_default_DevRGB_get_color_mapping_procs;
+	dev->procs.get_color_comp_index = 
+	    gx_default_DevRGB_get_color_comp_index;
+    }
 }
 
 /********************************************************************************/

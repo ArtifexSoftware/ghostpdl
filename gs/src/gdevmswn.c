@@ -480,6 +480,23 @@ win_set_bits_per_pixel(gx_device_win * wdev, int bpp)
 	gs_free(wdev->mapped_color_flags, 4096, 1, "win_set_bits_per_pixel");
 	wdev->mapped_color_flags = 0;
     }
+
+    /* copy encode/decode procedures */
+    wdev->procs.encode_color = wdev->procs.map_rgb_color;
+    wdev->procs.decode_color = wdev->procs.map_color_rgb;
+    if (bpp == 1) {
+	wdev->procs.get_color_mapping_procs = 
+	    gx_default_DevGray_get_color_mapping_procs;
+	wdev->procs.get_color_comp_index = 
+	    gx_default_DevGray_get_color_comp_index;
+    }
+    else {
+	wdev->procs.get_color_mapping_procs = 
+	    gx_default_DevRGB_get_color_mapping_procs;
+	wdev->procs.get_color_comp_index = 
+	    gx_default_DevRGB_get_color_comp_index;
+    }
+
     /* restore old anti_alias info */
     wdev->color_info.anti_alias = anti_alias;
     return 0;

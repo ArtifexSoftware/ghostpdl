@@ -21,6 +21,9 @@
  * Original version by Russell Lang and
  * L. Peter Deutsch, Aladdin Enterprises.
  */
+
+/* This driver is very slow and as of 2002-09-14 it does not work. */
+
 #include "gdevmswn.h"
 #include "gp.h"
 #include "gpcheck.h"
@@ -203,6 +206,22 @@ win_prn_open(gx_device * dev)
 	wdev->nColors = 16;
     } else {			/* default is black_and_white */
 	wdev->nColors = 2;
+    }
+
+    /* copy encode/decode procedures */
+    wdev->procs.encode_color = wdev->procs.map_rgb_color;
+    wdev->procs.decode_color = wdev->procs.map_color_rgb;
+    if (dev->color_info.depth == 1) {
+	wdev->procs.get_color_mapping_procs = 
+	    gx_default_DevGray_get_color_mapping_procs;
+	wdev->procs.get_color_comp_index = 
+	    gx_default_DevGray_get_color_comp_index;
+    }
+    else {
+	wdev->procs.get_color_mapping_procs = 
+	    gx_default_DevRGB_get_color_mapping_procs;
+	wdev->procs.get_color_comp_index = 
+	    gx_default_DevRGB_get_color_comp_index;
     }
 
     /* create palette for display */
