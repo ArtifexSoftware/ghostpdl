@@ -1364,6 +1364,7 @@ private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
     int i0 = ii0, i1 = ii1;
     margin *m0 = set->margin_touched, *m1;
 
+    assert(ii0 >= 0 && ii1 <= ll->bbox_width);
     set->margin_touched = 0; /* safety */
     /* Find contacting elements. */
     if (m0 != 0) {
@@ -1557,26 +1558,32 @@ private inline int continue_margin_common(line_list * ll, margin_set * set, acti
     section *sect = set->sect;
     fixed yy0 = max(max(y0, alp->start.y), set->y);
     fixed yy1 = min(min(y1, alp->end.y), set->y + fixed_1);
-    fixed x00 = AL_X_AT_Y(flp, yy0), x10 = AL_X_AT_Y(alp, yy0);
-    fixed x01 = AL_X_AT_Y(flp, yy1), x11 = AL_X_AT_Y(alp, yy1);
-    fixed xmin = min(x00, x01), xmax = max(x10, x11);
 
-    int i0 = fixed2int(xmin) - ll->bbox_left, i;
-    int i1 = fixed2int_ceiling(xmax) - ll->bbox_left;
+    if (yy0 <= yy1) {
+	fixed x00 = AL_X_AT_Y(flp, yy0), x10 = AL_X_AT_Y(alp, yy0);
+	fixed x01 = AL_X_AT_Y(flp, yy1), x11 = AL_X_AT_Y(alp, yy1);
+	fixed xmin = min(x00, x01), xmax = max(x10, x11);
+
+	int i0 = fixed2int(xmin) - ll->bbox_left, i;
+	int i1 = fixed2int_ceiling(xmax) - ll->bbox_left;
    
-    for (i = i0; i < i1; i++) {
-	section *s = &sect[i];
-        int x_pixel = int2fixed(i + ll->bbox_left);
-	int xl = max(xmin - x_pixel, 0);
-	int xu = min(xmax - x_pixel, fixed_1);
+	for (i = i0; i < i1; i++) {
+	    section *s = &sect[i];
+	    int x_pixel = int2fixed(i + ll->bbox_left);
+	    int xl = max(xmin - x_pixel, 0);
+	    int xu = min(xmax - x_pixel, fixed_1);
 
-	s->x0 = min(s->x0, xl);
-	s->x1 = max(s->x1, xu);
-	x_pixel+=0; /* Just a place for breakpoint */
+	    s->x0 = min(s->x0, xl);
+	    s->x1 = max(s->x1, xu);
+	    x_pixel+=0; /* Just a place for breakpoint */
+	}
+	code = store_margin(ll, &ll->margin_set1, i0, i1);
+	if (code < 0)
+	    return code;
+	/* fixme : after ADJUST_SERIF becames permanent,
+	 * don't call margin_boundary if yy0 > yy1.
+	 */
     }
-    code = store_margin(ll, &ll->margin_set1, i0, i1);
-    if (code < 0)
-	return code;
 #   endif
 
     code = margin_boundary(ll, set, flp, yy0, yy1, 1);
