@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.5 2002/06/15 16:02:53 giles Exp $
+    $Id: jbig2.h,v 1.6 2002/06/17 21:11:51 giles Exp $
 */
 
 #ifdef __cplusplus
@@ -78,8 +78,11 @@ Jbig2GlobalCtx *jbig2_make_global_ctx (Jbig2Ctx *ctx);
 
 void jbig2_global_ctx_free (Jbig2GlobalCtx *global_ctx);
 
+Jbig2SegmentHeader *jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
+			    size_t *p_header_size);
 int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh,
 			 const uint8_t *segment_data);
+void jbig2_free_segment_header (Jbig2Ctx *ctx, Jbig2SegmentHeader *sh);
 
 #ifdef __cplusplus
 }
