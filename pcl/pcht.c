@@ -20,7 +20,6 @@
 #include "gsdevice.h"
 #include "gsparam.h"
 #include "gxdevice.h"
-#include "gdevcmap.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcdither.h"
@@ -1204,7 +1203,7 @@ static  const byte  monochrome_remap[20] = {  5,  5,  2,  5,
  * only the K plane.  This is a work around for PCL not having a gray colorspace.
  * Should match the behavior of hp clj 4500, 4550 printers.
  */
-static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = false;
+static const bool ENABLE_AUTO_GRAY_RENDER_METHODS = true;
 
 /*
  * Update built-in rendering information. Attempts to changed fixed rendering
@@ -1338,16 +1337,6 @@ read_remap_array(
     pcl_ht_update_rendering_remap(pcs, dstring.data);
 }
 
-private void
-pcl_cmap_free(gs_memory_t *mem, void *pcmap, client_name_t cname)
-{
-#ifdef DEBUG
-    dprintf("cmap is static and retained, it should not be freed\n");
-    dprintf("restoring cmap reference count to 1\n");
-#endif
-    ((gx_device *)pcmap)->rc.ref_count = 1;
-}
-
 /*
  * Initialize the default rendering information.
  */
@@ -1370,106 +1359,82 @@ pcl_ht_init_render_methods(
 
     /* 0 */
     pcs->rendering_info[0].flags     = HT_NONE;
-    pcs->rendering_info[0].pdev      = &pcs->cmap_device_identity;
+
     pcs->rendering_info[0].pbidither = &pcs->ordered_dither;
-    /* rather much... */
-    pcs->cmap_device_identity.mapping_method = device_cmap_identity;
-    pcs->cmap_device_snap_to_primaries.mapping_method = device_cmap_snap_to_primaries;
-    pcs->cmap_device_color_to_black_over_white.mapping_method = device_cmap_color_to_black_over_white;
-    pcs->cmap_device_monochrome.mapping_method = device_cmap_monochrome;
 
     /* 1 - dither doesn't matter */                                       
     pcs->rendering_info[1].flags     = HT_FIXED | HT_DEVCSPACE;
-    pcs->rendering_info[1].pdev      = &pcs->cmap_device_snap_to_primaries;
     pcs->rendering_info[1].pbidither = &pcs->ordered_dither;
 
     /* 2 - dither doesn't matter */
     pcs->rendering_info[2].flags     = HT_FIXED | HT_DEVCSPACE;
-    pcs->rendering_info[2].pdev      = &pcs->cmap_device_color_to_black_over_white;
     pcs->rendering_info[2].pbidither = &pcs->ordered_dither;
 
     /* 3 - the default */
     pcs->rendering_info[3].flags     = HT_NONE;
-    pcs->rendering_info[3].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[3].pbidither = &pcs->ordered_dither;
 
     /* 4 - currently not supported */
     pcs->rendering_info[4].flags     = HT_FIXED | HT_IMONLY;
-    pcs->rendering_info[4].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[4].pbidither = 0;
 
     /* 5 - monochrome version of 3 */
     pcs->rendering_info[5].flags     = HT_NONE;
-    pcs->rendering_info[5].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[5].pbidither = &pcs->ordered_dither;
 
     /* 6 - currently not supported */
     pcs->rendering_info[6].flags     = HT_FIXED | HT_IMONLY;
-    pcs->rendering_info[6].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[6].pbidither = 0;
 
     /* 7 */
     pcs->rendering_info[7].flags     = HT_FIXED;
-    pcs->rendering_info[7].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[7].pbidither = &pcs->clustered_dither;
 
     /* 8 */
     pcs->rendering_info[8].flags     = HT_FIXED;
-    pcs->rendering_info[8].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[8].pbidither = &pcs->clustered_dither;
 
     /* 9 - dither comes from user */
     pcs->rendering_info[9].flags     = HT_FIXED | HT_USERDEF | HT_DEVCSPACE;
-    pcs->rendering_info[9].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[9].pbidither = 0;
 
     pcs->rendering_info[10].flags     = HT_FIXED | HT_USERDEF | HT_DEVCSPACE;
-    pcs->rendering_info[10].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[10].pbidither = 0;
 
     /* 11 */
     pcs->rendering_info[11].flags     = HT_FIXED | HT_USERDEF | HT_DEVCSPACE;
-    pcs->rendering_info[11].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[11].pbidither = &pcs->ordered_dither;
 
     /* 12 */
     pcs->rendering_info[12].flags     = HT_FIXED;
-    pcs->rendering_info[12].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[12].pbidither = &pcs->ordered_dither;
     
     /* 13 - device should override */
     pcs->rendering_info[13].flags     = HT_NONE;
-    pcs->rendering_info[13].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[13].pbidither = &pcs->noise_dither;
 
     /* 14 - device should override */
     pcs->rendering_info[14].flags     = HT_NONE;
-    pcs->rendering_info[14].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[14].pbidither = &pcs->noise_dither;
     
     /* 15 - device should override */
     pcs->rendering_info[15].flags     = HT_NONE;
-    pcs->rendering_info[15].pdev      = &pcs->cmap_device_identity;
     pcs->rendering_info[15].pbidither = &pcs->ordered_dither;
 
     /* 16 - device should override */
     pcs->rendering_info[16].flags     = HT_NONE;
-    pcs->rendering_info[16].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[16].pbidither = &pcs->ordered_dither;
 
     /* 17 - device should override */
     pcs->rendering_info[17].flags     = HT_NONE;
-    pcs->rendering_info[17].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[17].pbidither = &pcs->ordered_dither;
 
     /* 18 - device should override */
     pcs->rendering_info[18].flags     = HT_NONE;
-    pcs->rendering_info[18].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[18].pbidither = &pcs->ordered_dither;
 
     /* 19 - device should override */
     pcs->rendering_info[19].flags     = HT_NONE;
-    pcs->rendering_info[19].pdev      = &pcs->cmap_device_monochrome;
     pcs->rendering_info[19].pbidither = &pcs->ordered_dither;
 
     { 
@@ -1526,13 +1491,6 @@ pcl_ht_init_render_methods(
     }
     gs_c_param_list_release(&list);
 
-    /* initialize and install the default color mapping device */
-    gdev_cmap_init(&pcs->cmap_device_identity, pcur_dev, device_cmap_identity);
-    gx_device_retain((gx_device *)&pcs->cmap_device_identity, true);
-    /* HACK redefine referecence counting free */
-    pcs->cmap_device_identity.rc.free = pcl_cmap_free;
-    gs_setdevice_no_init(pcs->pgs, (gx_device *)&pcs->cmap_device_identity);
-
     /* initialize default halftone */
     pcs->pdflt_ht = 0;
 }
@@ -1573,9 +1531,7 @@ is_monochrome(
     int             method
 )
 {
-    pcl_rend_info_t *   pinfo = &pcs->rendering_info[method];
-
-    return pinfo->pdev == &pcs->cmap_device_monochrome;
+    return (method > 4 && !(method & 1) ); /* greater than 4 and even */
 }
 
 
@@ -1756,13 +1712,16 @@ unshare_pcl_ht(
 bool 
 pcl_ht_is_all_gray_palette(pcl_state_t *pcs)
 {
-    bool is_gray = true;    
-    const char *pb = 0;
-    pcl_palette_t *     ppalet = pcs->ppalet;
-    pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
-    int i;
-
+    if ( pcs->monochrome_mode ) 
+        return true;
     if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
+
+        bool is_gray = true;    
+	const char *pb = 0;
+	pcl_palette_t *     ppalet = pcs->ppalet;
+	pcl_cs_indexed_t *  pindexed = ppalet->pindexed;
+	int i;
+
 	for ( i = 0; i < pindexed->num_entries; i++ ) {
 	    pb = pindexed->palette.data + (3 * i);
 	    if (  pb[0] == pb[1] && pb[0] == pb[2] ) {
@@ -1826,19 +1785,32 @@ pcl_ht_remap_render_method(
     bool          is_gray
     )
 {
-    uint render_method = (*ppht)->orig_render_method;
-    int code = 0;
-
     if ( ENABLE_AUTO_GRAY_RENDER_METHODS ) {
+        uint render_method = (*ppht)->orig_render_method;
+	int code = 0;
+        gx_device *     pdev = pcl_get_target_device(pcs);
+	
 	if (is_gray != (*ppht)->is_gray_render_method ) {
-	    (*ppht)->is_gray_render_method = is_gray;
-	    if( is_gray ) 
-		render_method = monochrome_remap[pcs->rendering_remap[render_method]];
-	    else 
+
+	    /* gray may be forced, -dForceMono=1 */ 
+	    is_gray = gx_set_cmap_procs_to_gray(pcs->pgs, 
+						pcl_get_target_device(pcs), 
+						is_gray);
+
+	    if( is_gray ) {
+	        render_method = monochrome_remap[pcs->rendering_remap[render_method]];
+		(*ppht)->is_gray_render_method = is_gray; 	        
+		/* What's desired is K only gray dithering vs 
+		 * cmy+k which looks good in color images containing gray. 
+		 */ 
+	    }
+	    else {
 		render_method = (*ppht)->orig_render_method;
+	    }
 	    
 	    if ((code = unshare_pcl_ht(ppht)) < 0)
-		return code;
+		return code;     
+	    
 	    (*ppht)->render_method = render_method;
 	}
     }
@@ -2269,12 +2241,9 @@ pcl_ht_set_halftone(
 )
 {
     pcl_ht_t *           pht = *ppht;
-    gx_device_cmap *     pdev = 0;
-    gx_device_cmap *     old_pdev = 0;
     int                  ncomps = 0;
     gs_ht *              pgsht = 0;
     int                  code = 0;
-    const pcl_rend_info_t *pinfo_new = 0;
 
     /* if no halftone yet, create one */
     if (pht == 0) {
@@ -2301,20 +2270,9 @@ pcl_ht_set_halftone(
                                         cstype,     /* irrelevant */
                                         for_image   /* irrelevant */
                                         );
-      old_pdev = pinfo_old->pdev;
     }
-    pinfo_new = get_rendering_info(pcs, pht->render_method, cstype, for_image);
-    if ((pdev = pinfo_new->pdev) != old_pdev) {
-        gdev_cmap_init(pdev,
-		       ((gx_device_cmap *)gs_currentdevice(pcs->pgs))->target,
-		       pdev->mapping_method);
-	pdev->rc.free = pcl_cmap_free;
-	gx_device_retain(pdev, true);
-	/* no need to set it if the reference is the same */
-	if ( ((gx_device_cmap *)gs_currentdevice(pcs->pgs)) != pdev )
-	    gs_setdevice_no_init(pcs->pgs, (gx_device *)pdev);
-    }
-    ncomps = pdev->color_info.num_components;
+
+    ncomps = pcl_get_target_device(pcs)->color_info.num_components;
 
     /* see if we need to create a halftone object */
     if ( ((pgsht = (for_image ? pht->pim_ht : pht->pfg_ht)) == 0) &&

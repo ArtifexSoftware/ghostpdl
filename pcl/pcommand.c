@@ -224,7 +224,7 @@ pcl_init_state(
 
     pcs->logical_op = 252;
 
-    pcs->monochrome_mode = false;
+    pcs->monochrome_mode = 0;
     pcs->render_mode = 3;
 
     pcs->next_id = 8UL;

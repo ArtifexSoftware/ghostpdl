@@ -153,7 +153,6 @@ typedef struct pcl_ht_builtin_dither_s {
 
 typedef struct rend_info_s {
     uint                                flags;
-    gx_device_cmap *                    pdev;
     const pcl_ht_builtin_dither_t *     pbidither;
 } pcl_rend_info_t;
 

@@ -18,7 +18,6 @@
 
 #include "gx.h"
 #include "gxdevice.h"
-#include "gdevcmap.h"
 #include "scommon.h"
 #include "gscspace.h"
 #include "gscolor2.h"
@@ -291,7 +290,7 @@ struct pcl_state_s {
     /* Chapter C2/C3/C4 (pcpalet.c/pcindexed.c/pccsbase.c/etc.) */
     int                 sel_palette_id;
     int                 ctrl_palette_id;
-    bool                monochrome_mode;/* true ==> monochrome print mode */
+    int                 monochrome_mode;/* -1 locked mono, 0 off, 1 mono page */
     int                 render_mode;    /* raw (unmapped) render algorithm */
     pcl_palette_t *     ppalet;
     pcl_gsid_t          next_id; /* id's for palette's and foreground
@@ -322,10 +321,6 @@ struct pcl_state_s {
      * foreground may not be the same as that used by the current palette.
      */
     gs_cie_transform_proc3 dflt_TransformPQR;  /* default transform PQR */
-    gx_device_cmap  cmap_device_identity;
-    gx_device_cmap  cmap_device_snap_to_primaries;
-    gx_device_cmap  cmap_device_color_to_black_over_white;
-    gx_device_cmap  cmap_device_monochrome;
     pcl_rend_info_t rendering_info[20];       /* rendering methods */
     byte            dflt_rendering_remap[20]; /* NB not convinced this is necessary (review) */
     byte            rendering_remap[20];      /* remap the table of rendering methods */

@@ -34,7 +34,6 @@
 #include "gspaint.h"
 #include "gxdevice.h"
 #include "gdevbbox.h"
-#include "gdevcmap.h"
 #include "pjtop.h"
 
 /*
@@ -393,7 +392,7 @@ new_logical_page(
 pcl_current_bounding_box(pcl_state_t *           pcs,
 			 gs_rect *               pbbox)
 {
-    gx_device * dev = ((gx_device_cmap *)gs_currentdevice(pcs->pgs))->target;
+    gx_device * dev = gs_currentdevice(pcs->pgs);
     /* Check whether we're working with a bbox device. */
     if (strcmp(gs_devicename(dev), "bbox") == 0) {
 	gs_matrix mat;

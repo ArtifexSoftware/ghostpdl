@@ -19,6 +19,8 @@
 #include "pcursor.h"
 #include "pcpalet.h"
 #include "pcfrgrnd.h"
+#include "gsparam.h"
+#include "gsdevice.h"
 
 /* GC routines */
 private_st_palette_t();
@@ -480,27 +482,29 @@ pcl_palette_set_color(
                                                  comps
                                                  );
     
-    was_gray = pcs->ppalet->pht->is_gray_render_method;
+    if ( pcs->monochrome_mode == 0 ) {
+        was_gray = pcs->ppalet->pht->is_gray_render_method;
     
-    now_gray = ((pcs->ppalet->pindexed->palette.data[indx + 0] == 
-                 pcs->ppalet->pindexed->palette.data[indx + 1]) &&
-                (pcs->ppalet->pindexed->palette.data[indx + 1] == 
-                 pcs->ppalet->pindexed->palette.data[indx + 2]) );
-    
-    if ( !was_gray && now_gray ) {
-	/* change one entry from color to gray,
-	 * check entire palette for grey
-	 */
-	code = pcl_ht_remap_render_method(pcs, 
-					  &(pcs->ppalet->pht), 
-					  pcl_ht_is_all_gray_palette(pcs));
-    }
-    else if ( was_gray && !now_gray ) {
-	/* one color entry in gray palette makes it color 
-	 */ 
-	code = pcl_ht_remap_render_method(pcs, 
-					  &(pcs->ppalet->pht), 
-					  false);
+	now_gray = ((pcs->ppalet->pindexed->palette.data[indx*3 + 0] == 
+		     pcs->ppalet->pindexed->palette.data[indx*3 + 1]) &&
+		    (pcs->ppalet->pindexed->palette.data[indx*3 + 1] == 
+		     pcs->ppalet->pindexed->palette.data[indx*3 + 2]) );
+
+	if ( !was_gray && now_gray ) {
+	    /* change one entry from color to gray,
+	     * check entire palette for grey
+	     */
+	    code = pcl_ht_remap_render_method(pcs, 
+					      &(pcs->ppalet->pht), 
+					      pcl_ht_is_all_gray_palette(pcs));
+	}
+	else if ( was_gray && !now_gray ) {
+	    /* one color entry in gray palette makes it color 
+	     */ 
+	    code = pcl_ht_remap_render_method(pcs, 
+					      &(pcs->ppalet->pht), 
+					      false);
+	}
     }
     
     return code;
@@ -880,8 +884,8 @@ set_render_algorithm(
 /*
  * ESC & b # M
  *
- * Set monochrome or normal print mode. Note that, for a change in the print
- * mode to take effect, the current rendering mode must be reset.
+ * Set monochrome or normal print mode. 
+ * Note  ForceMono=1 is similar to monochrome mode locked on. 
  *
  * NB: Unlike certain other commands, a monochrome print command always ejects
  *     the current page if it has been marked, even if no change in the print
@@ -895,6 +899,7 @@ set_print_mode(
 {
     uint            mode = uint_arg(pargs);
     int             code = 0;
+    gx_device *     pdev = pcl_get_target_device(pcs);
 
     if ( pcs->personality == pcl5e )
 	return 0;
@@ -906,7 +911,8 @@ set_print_mode(
         return code;
     pcl_home_cursor(pcs);
 
-    pcs->monochrome_mode = (mode == 1);
+    pcs->monochrome_mode = gx_set_cmap_procs_to_gray(pcs->pgs, 
+						     pcl_get_target_device(pcs), mode);
     pcl_ht_set_print_mode(pcs, pcs->monochrome_mode);
     return pcl_palette_set_render_method(pcs, pcs->render_mode);
 }
@@ -985,6 +991,8 @@ palette_do_reset(
                                  | pcl_reset_overlay
 				 | pcl_reset_permanent);
 
+
+
     if ((type & mask) == 0)
         return;
 
@@ -1005,7 +1013,9 @@ palette_do_reset(
         pcl_cs_indexed_init(pcs);
 
     } else if ((type & (pcl_reset_cold | pcl_reset_printer | pcl_reset_permanent)) != 0) {
-        /* clear the palette stack and store */
+       pcs->monochrome_mode = 0; 
+
+       /* clear the palette stack and store */
         clear_palette_stack(pcs, pcs->memory);
 	clear_palette_store(pcs);
     }
