@@ -49,11 +49,12 @@ fi
 AC_HEADER_STDC
 AC_CHECK_HEADERS([libintl.h stddef.h unistd.h strings.h])
 
-dnl We assume the fixed-size types from stdint.h. If that header is are not available,
-dnl look for the same types in a few other headers. We also attempt to define them
-dnl ourselves, but only use those is the native versions aren't available.
-dnl The substitutions happen in a file config_types.h, whose template is
-dnl created by autogen.sh
+dnl We assume the fixed-size types from stdint.h. If that header is
+dnl not available, look for the same types in a few other headers. 
+dnl We also attempt to define them ourselves, but only use those if
+dnl the native versions aren't available. The substitutions happen 
+dnl in a file config_types.h, whose template is created by autogen.sh
+
 stdint_types_in="no_replacement_found"
 stdint_types_discovered="yes"
 AC_CHECK_SIZEOF(char)
@@ -101,13 +102,14 @@ if test "x$ac_cv_header_stdint_h" != "xyes"; then
   elif test "x$stdint_types_discovered" = "xno"; then
     AC_MSG_ERROR([
 Unable to find suitable definitions of the stdint.h types (uint32_t and friends)
-You will have to define these yourself in a separate header
+You will have to define these yourself in a separate header. 
+See config_win32.h for an example.
     ])
   fi
 fi
 AC_SUBST(JBIG2_INT32_T, [$int32_type])
 AC_SUBST(JBIG2_INT16_T, [$int16_type])
-AC_SUBST(JBIG2_INT8_T, [$int8_type])
+AC_SUBST(JBIG2_INT8_T,  [$int8_type])
 AC_SUBST(JBIG2_STDINT_H, [$stdint_types_in])
 
 # Checks for typedefs, structures, and compiler characteristics.
@@ -125,7 +127,9 @@ AC_CHECK_FUNCS([memset strdup])
 
 dnl use our included getopt if the system doesn't have getopt_long()
 AC_CHECK_FUNC(getopt_long, 
-	[AC_DEFINE(HAVE_GETOPT_LONG,,[Define if the local libc includes getopt_long()])],
+	AC_DEFINE(HAVE_GETOPT_LONG,,
+	  [Define if the local libc includes getopt_long()]
+	),
 	AC_LIBOBJ([getopt])
 	AC_LIBOBJ([getopt1])
 )
