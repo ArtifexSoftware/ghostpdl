@@ -10,6 +10,27 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.02 (10/05/98)
+=====================
+
+Mon Oct  5 02:12:39 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pcstate.h, pcsymbol.h, pcmain.c, pcommand.c, pcpage.c,
+	pcfsel.c, pcjob.c, pclfont.c, pcfont.c:
+	Updates for getting intitial state from the pjl environment.
+
+	* pcl_ugcc.mak: adds contone color laserjet device for 
+	testing purposes
+
+Sun Oct  4 06:50:52 1998  Red Hat Linux User  <henrys@warthog>
+
+	* pgpoly.c, pgdraw.c, pctext.c:
+	a more conservative approach to page ejecting.  The have_page
+	boolean was being updated to true unnecessarily
+
+	* pcfsel.c: Did not score symbol set correctly during font selection.
+
+
 Version 1.01 (9/26/98)
 =====================
 
