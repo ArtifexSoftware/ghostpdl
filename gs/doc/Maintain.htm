@@ -25,7 +25,8 @@
 <ul>
 <li><a href="#Uploading_test_data">Uploading test data</a>
 </ul>
-<li><a href="#CVS">Rules of CVS commits</a>
+<li><a href="#CVS">Rules for CVS commits</a>
+<li><a href="#Adding_or_removing_files">Adding or Removing Files</a>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -195,6 +196,42 @@ we need a copyright assignment form so we can incorporate your
 changes. Please email Raph Levien &lt;<a
 href="mailto:raph@artofcode.com">raph@artofcode.com</a>&gt; and
 include your snailmail address for a hardcopy assignment form.
+
+<h2><a name="Adding_or_removing_files"></a>Adding or removing files</h2>
+
+<p>
+When adding or removing files, don't forget to invoke <b><tt>cvs
+add</tt></b> or <b><tt>cvs rm</tt></b>.
+
+<p>
+When adding files, update the file roadmap in
+<b><tt>doc/Develop.htm</tt></b>.
+
+<p>
+When adding or removing files other than .c or .h: If the files will be
+used at runtime, check the install list in <b><tt>unixinst.mak</tt></b>.
+
+<p>
+When adding .c files, update the relevant <b><tt>.mak</tt></b> file
+(usually <b><tt>devs.mak</tt></b>, <b><tt>int.mak</tt></b>, or
+<b><tt>lib.mak</tt></b>).
+
+<p>
+When adding new documentation, add a link to <tt>doc/Readme.htm</tt> and
+a short blurb describing the contents of the file.
+
+<p>
+When adding or changing fonts, update <b><tt>lib/Fontmap.GS</tt></b>,
+<b><tt>fonts.mak</tt></b>, and possibly the compiled fonts in
+<b><tt>gs.mak</tt></b> and the examples in
+<b><tt>doc/Fonts.htm</tt></b>.
+
+<p>
+When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
+
+<p>
+Likewise, you will want to delete any references for a file you
+remove from Ghostscript.
 
 <!-- [2.0 end contents] ==================================================== -->
 

@@ -25,9 +25,8 @@
 <li><a href="#Servers">Servers</a>
 <ul>
 <li><a href="#Development_files">Development sources and bug reports</a>
-<li><a href="#Distributions">Distributions</a>
+<li><a href="#Distribution">Distribution</a>
 </ul>
-<li><a href="#Adding_or_removing_files">Adding or removing files</a>
 <li><a href="#Making_distributions">Making distributions</a>
 <ul>
 <li><a href="#Preparing_source">Preparing the source code</a>
@@ -131,7 +130,7 @@ first.  CVS access information is available at <a
 href="http://sourceforge.net/cvs/?group_id=1897" 
 class="offsite"><tt>http://sourceforge.net/cvs/?group_id=1897</tt></a>.
 
-<h3><a name="Distributions"></a>Distributions</h3>
+<h3><a name="Distribution"></a>Distribution</h3>
 
 <p>
 Stable, beta, and development releases are all available from
@@ -155,41 +154,6 @@ Development releases are also distributed from
 <a href="ftp://ftp.cs.wisc.edu/ghost/aladdin/test/" 
 class="offsite">ftp://ftp.cs.wisc.edu/ghost/aladdin/test/</a>
 </pre></blockquote>
-
-<h2><a name="Adding_or_removing_files"></a>Adding or removing files</h2>
-
-<p>
-When adding or removing files, don't forget to invoke <b><tt>cvs
-add</tt></b> or <b><tt>cvs rm</tt></b>.
-
-<p>
-When adding files, update the file roadmap in
-<b><tt>doc/Develop.htm</tt></b>.
-
-<p>
-When adding or removing files other than .c or .h: If the files will be used
-at runtime, check the install list in <b><tt>unixinst.mak</tt></b>.
-
-<p>
-When adding .c files, update the relevant <b><tt>.mak</tt></b> file (usually
-<b><tt>devs.mak</tt></b>, <b><tt>int.mak</tt></b>, or
-<b><tt>lib.mak</tt></b>).
-
-<p>
-When adding operators, or adding or changing filters, update
-<b><tt>doc/Language.htm</tt></b> if desired.
-
-<p>
-When adding .h files, add a _h definition in the appropriate
-<b><tt>.mak</tt></b> file.
-
-<p>
-When adding or changing fonts, update <b><tt>lib/Fontmap.GS</tt></b>,
-<b><tt>fonts.mak</tt></b>, and possibly the compiled fonts in
-<b><tt>gs.mak</tt></b> and the examples in <b><tt>doc/Fonts.htm</tt></b>.
-
-<p>
-When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
 
 <h2><a name="Making_distributions"></a>Making distributions</h2>
 
