@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,6 +29,7 @@
 #include "gxfont.h"
 #include "gxfont0.h"
 #include "gxfont1.h"
+#include "gxfont42.h"
 #include "gxfcache.h"		/* for orig_fonts list */
 #include "gxpath.h"		/* for getting current point */
 #include "gdevpdfx.h"
@@ -518,6 +519,21 @@ pdf_update_text_state(pdf_text_process_state_t *ppts,
     /* PDF always uses 1000 units per em for font metrics. */
     switch (font->FontType) {
     case ft_TrueType:
+	/*
+	 * ****** HACK ALERT ******
+	 *
+	 * The code above that calls pdf_find_char_range does so the first
+	 * time the font is used.  This causes an incorrect (too small)
+	 * Widths array to be written if the font is downloaded
+	 * incrementally.  In practice, this appears only to be a problem
+	 * for TrueType fonts written by certain Windows drivers
+	 * (including AdobePS5 for Windows NT).  Fortunately, it is easy
+	 * to determine whether the font is an incremental one: this is
+	 * the case iff the font doesn't have glyf and loca entries.
+	 * In this case, we punt and treat the font as bitmaps.
+	 */
+	if (((const gs_font_type42 *)font)->data.glyf == 0)
+	    return_error(gs_error_rangecheck); /* incremental */
 	/* The TrueType FontMatrix is 1 unit per em, which is what we want. */
 	gs_make_identity(&orig_matrix);
 	break;
