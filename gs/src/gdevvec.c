@@ -252,8 +252,8 @@ gdev_vector_reset(gx_device_vector * vdev)
     {gs_imager_state_initial(1)};
 
     vdev->state = state_initial;
-    color_unset(&vdev->fill_color);
-    color_unset(&vdev->stroke_color);
+    color_unset(&vdev->saved_fill_color);
+    color_unset(&vdev->saved_stroke_color);
     vdev->clip_path_id =
 	vdev->no_clip_path_id = gs_next_ids(1);
 }
@@ -342,19 +342,6 @@ gdev_vector_stream(gx_device_vector * vdev)
     return vdev->strm;
 }
 
-/* Compare two drawing colors. */
-/* Right now we don't attempt to handle non-pure colors. */
-private bool
-drawing_color_eq(const gx_drawing_color * pdc1, const gx_drawing_color * pdc2)
-{
-    return (gx_dc_is_pure(pdc1) ?
-	    gx_dc_is_pure(pdc2) &&
-	    gx_dc_pure_color(pdc1) == gx_dc_pure_color(pdc2) :
-	    gx_dc_is_null(pdc1) ?
-	    gx_dc_is_null(pdc2) :
-	    false);
-}
-
 /* Update the logical operation. */
 int
 gdev_vector_update_log_op(gx_device_vector * vdev, gs_logical_operation_t lop)
@@ -376,13 +363,15 @@ int
 gdev_vector_update_fill_color(gx_device_vector * vdev,
 			      const gx_drawing_color * pdcolor)
 {
-    if (!drawing_color_eq(pdcolor, &vdev->fill_color)) {
-	int code = (*vdev_proc(vdev, setfillcolor)) (vdev, pdcolor);
+    gx_device_color_saved temp = vdev->saved_fill_color;
+    int code;
 
-	if (code < 0)
-	    return code;
-	vdev->fill_color = *pdcolor;
-    }
+    if (!gx_saved_color_update(&temp, pdcolor))
+	return 0;
+    code = (*vdev_proc(vdev, setfillcolor)) (vdev, pdcolor);
+    if (code < 0)
+	return code;
+    vdev->saved_fill_color = temp;
     return 0;
 }
 
@@ -509,12 +498,14 @@ gdev_vector_prepare_stroke(gx_device_vector * vdev,
 	}
     }
     if (pdcolor) {
-	if (!drawing_color_eq(pdcolor, &vdev->stroke_color)) {
+	gx_device_color_saved temp = vdev->saved_stroke_color;
+
+	if (gx_saved_color_update(&temp, pdcolor)) {
 	    int code = (*vdev_proc(vdev, setstrokecolor)) (vdev, pdcolor);
 
 	    if (code < 0)
 		return code;
-	    vdev->stroke_color = *pdcolor;
+	    vdev->saved_stroke_color = temp;
 	}
     }
     return 0;

@@ -351,10 +351,10 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pcs = pim->ColorSpace;
     num_components = (is_mask ? 1 : gs_color_space_num_components(pcs));
 
-    code = pdf_open_page(pdev, PDF_IN_STREAM);
-    if (code < 0)
-	return code;
-    code = pdf_put_clip_path(pdev, pcpath);
+    if (pdf_must_put_clip_path(pdev, pcpath))
+	code = pdf_unclip(pdev);
+    else 
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
     if (context == PDF_IMAGE_TYPE3_MASK) {
@@ -371,6 +371,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	code = pdf_prepare_image(pdev, pis);
     if (code < 0)
 	goto nyi;
+    code = pdf_put_clip_path(pdev, pcpath);
+    if (code < 0)
+	return code;
     if (prect)
 	rect = *prect;
     else {

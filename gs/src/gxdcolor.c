@@ -17,6 +17,7 @@
 /*$Id$ */
 /* Pure and null device color implementation */
 #include "gx.h"
+#include "memory_.h"
 #include "gserrors.h"
 #include "gsbittab.h"
 #include "gxdcolor.h"
@@ -164,6 +165,30 @@ gx_device_color_equal(const gx_device_color *pdevc1,
 		      const gx_device_color *pdevc2)
 {
     return pdevc1->type->equal(pdevc1, pdevc2);
+}
+
+/*
+ * Saves a device color and replies whether the saved one was up to date.
+ * This doesn't save the halftone or pattern body.
+ */
+bool
+gx_saved_color_update(gx_device_color_saved *psc,
+		      const gx_device_color *pdevc)
+{
+    gx_device_color_saved sc;
+
+    /* Currently we have no generic compare function for saved colors.
+     * It would be nice to have one.
+     * To work around we assume that saving to a zeroed buffer works
+     * good enough for the comparizon. Note that it spends
+     * processor time for cleaning and comparing a number of unimportant bytes.
+     */
+    memset(&sc, 0, sizeof(sc));
+    pdevc->type->save_dc(pdevc, &sc);
+    if (!memcmp(&sc, psc, sizeof(sc)))
+	return false;
+    *psc = sc;
+    return true;
 }
 
 /*

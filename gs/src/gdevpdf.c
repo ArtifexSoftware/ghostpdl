@@ -237,7 +237,12 @@ const gx_device_pdf gs_pdfwrite_device =
  0,				/* clip_path */
  0,                             /* PageLabels */
  -1,                            /* PageLabels_current_page */
- 0                              /* PageLabels_current_label */
+ 0,                             /* PageLabels_current_label */
+ 0,				/* */
+ {				/* vgstack[2] */
+    {0}, {0}
+ },
+ 0,				/* vgstack_depth */
 };
 
 /* ---------------- Device open/close ---------------- */
@@ -445,6 +450,7 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
 	gx_color_index color;
 	frac gray = frac_0;	/* Black */
 	const gx_cm_color_map_procs *procs;
+	gx_device_color temp_color;
 
 	/* map Black to color model components */
 	procs = dev_proc(pdev, get_color_mapping_procs)((gx_device *)pdev);
@@ -454,8 +460,11 @@ pdf_set_process_color_model(gx_device_pdf * pdev)
 	/* Encode as a color index */
 	color = dev_proc(pdev, encode_color)((gx_device *)pdev, cv);
 	/* Now set it. */
-	color_set_pure(&pdev->fill_color, color);
-	color_set_pure(&pdev->stroke_color, color);
+	color_set_pure(&temp_color, color);
+	memset(&pdev->saved_fill_color, 0, sizeof(pdev->saved_fill_color));
+	memset(&pdev->saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
+	gx_saved_color_update(&pdev->saved_fill_color, &temp_color);
+	gx_saved_color_update(&pdev->saved_stroke_color, &temp_color);
     }
 }
 #ifdef __DECC

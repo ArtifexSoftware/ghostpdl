@@ -115,6 +115,7 @@ gs_make_pattern_common(gs_client_color *pcc,
     gs_newpath(saved);
     pinst->saved = saved;
     pcc->pattern = pinst;
+    pcc->pattern->pattern_id = gs_next_ids(1);
     return 0;
 }
 

@@ -27,6 +27,7 @@
 #include "gsfunc3.h"
 #include "gdevpdfx.h"
 #include "gdevpdfo.h"
+#include "gdevpdfg.h"
 #include "scanchar.h"
 #include "strimpl.h"
 #include "sa85x.h"
@@ -243,8 +244,7 @@ none_to_stream(gx_device_pdf * pdev)
 		     ri_names[(int)pdev->params.DefaultRenderingIntent]);
 	}
     }
-    /* Do a level of gsave for the clipping path. */
-    stream_puts(s, "q\n");
+    pdev->vgstack_depth = 0;
     return PDF_IN_STREAM;
 }
 /* Enter text context from stream context. */
@@ -261,7 +261,10 @@ stream_to_text(gx_device_pdf * pdev)
      * anti-alias characters.  Therefore, we have to temporarily patch
      * the CTM so that the scale factors are unity.  What a nuisance!
      */
-    pprintg2(pdev->strm, "q %g 0 0 %g 0 0 cm BT\n",
+    code = pdf_save_viewer_state(pdev, pdev->strm);
+    if (code < 0)
+	return 0;
+    pprintg2(pdev->strm, "%g 0 0 %g 0 0 cm BT\n",
 	     pdev->HWResolution[0] / 72.0, pdev->HWResolution[1] / 72.0);
     pdev->procsets |= Text;
     code = pdf_from_stream_to_text(pdev);
@@ -279,7 +282,12 @@ string_to_text(gx_device_pdf * pdev)
 private int
 text_to_stream(gx_device_pdf * pdev)
 {
-    stream_puts(pdev->strm, "ET Q\n");
+    int code;
+
+    stream_puts(pdev->strm, "ET\n");
+    code = pdf_restore_viewer_state(pdev, pdev->strm);
+    if (code < 0)
+	return 0;
     pdf_reset_text(pdev);	/* because of Q */
     return PDF_IN_STREAM;
 }
@@ -290,8 +298,8 @@ stream_to_none(gx_device_pdf * pdev)
     stream *s = pdev->strm;
     long length;
 
-    /* Close the extra q/Q for poorly designed PDF tools. */
-    stream_puts(s, "Q\n");
+    if (pdev->vgstack_depth)
+	pdf_restore_viewer_state(pdev, s);
     if (pdev->compression == pdf_compress_Flate) {	/* Terminate the Flate filter. */
 	stream *fs = s->strm;
 
@@ -688,6 +696,28 @@ pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
     /* Note that context may be PDF_IN_NONE here. */
     return pdf_open_contents(pdev, context);
 }
+
+
+/*  Go to the unclipped stream context. */
+int
+pdf_unclip(gx_device_pdf * pdev)
+{
+    int code = pdf_open_page(pdev, PDF_IN_STREAM);
+
+    if (code < 0)
+	return code;
+    if (pdev->vgstack_depth > 0) {
+	code = pdf_restore_viewer_state(pdev, pdev->strm);
+	if (code < 0)
+	    return code;
+	code = pdf_remember_clip_path(pdev, NULL);
+	if (code < 0)
+	    return code;
+	pdev->clip_path_id = pdev->no_clip_path_id;
+    }
+    return 0;
+}
+
 
 /* ------ Miscellaneous output ------ */
 

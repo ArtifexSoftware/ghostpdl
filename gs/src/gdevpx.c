@@ -280,14 +280,14 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
     gx_path_type_t rule = type & gx_path_type_rule;
 
     if (!(type & gx_path_type_fill) &&
-	!gx_dc_is_null(&xdev->fill_color)
+	!gx_dc_is_null(&xdev->saved_fill_color)
 	) {
 	static const byte nac_[] = {
 	    DUB(0), DA(pxaNullBrush), pxtSetBrushSource
 	};
 
 	PX_PUT_LIT(s, nac_);
-	color_set_null(&xdev->fill_color);
+	color_set_null(&xdev->saved_fill_color);
 	if (rule != xdev->fill_rule) {
 	    px_put_ub(s, (byte)(rule == gx_path_type_even_odd ? eEvenOdd :
 		       eNonZeroWinding));
@@ -296,14 +296,14 @@ pclxl_set_paints(gx_device_pclxl * xdev, gx_path_type_t type)
 	}
     }
     if (!(type & gx_path_type_stroke) &&
-	!gx_dc_is_null(&xdev->stroke_color)
+	!gx_dc_is_null(&xdev->saved_stroke_color)
 	) {
 	static const byte nac_[] = {
 	    DUB(0), DA(pxaNullPen), pxtSetPenSource
 	};
 
 	PX_PUT_LIT(s, nac_);
-	color_set_null(&xdev->stroke_color);
+	color_set_null(&xdev->saved_stroke_color);
     }
 }
 

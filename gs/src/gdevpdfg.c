@@ -18,6 +18,7 @@
 /* Graphics state management for pdfwrite driver */
 #include "math_.h"
 #include "string_.h"
+#include "memory_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gsfunc0.h"
@@ -41,14 +42,19 @@ void
 pdf_reset_graphics(gx_device_pdf * pdev)
 {
     gx_color_index color = 0; /* black on DeviceGray and DeviceRGB */
+    gx_device_color temp_color;
+
     if(pdev->color_info.num_components == 4) {
         gx_color_value cv[4];
         cv[0] = cv[1] = cv[2] = frac2cv(frac_0);
         cv[3] = frac2cv(frac_1);
         color = dev_proc(pdev, map_cmyk_color)((gx_device *)pdev, cv);
     }
-    color_set_pure(&pdev->fill_color, color);
-    color_set_pure(&pdev->stroke_color, color);
+    color_set_pure(&temp_color, color);
+    memset(&pdev->saved_fill_color, 0, sizeof(pdev->saved_fill_color));
+    memset(&pdev->saved_stroke_color, 0, sizeof(pdev->saved_stroke_color));
+    gx_saved_color_update(&pdev->saved_fill_color, &temp_color);
+    gx_saved_color_update(&pdev->saved_stroke_color, &temp_color);
     pdev->state.flatness = -1;
     {
 	static const gx_line_params lp_initial = {
@@ -65,11 +71,18 @@ pdf_reset_graphics(gx_device_pdf * pdev)
 /* Set the fill or stroke color. */
 private int
 pdf_reset_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
-		gx_drawing_color * pdcolor,
+		gx_device_color_saved * psc,
 		const psdf_set_color_commands_t *ppscc)
 {
     int code;
+    gx_device_color_saved temp = *psc;
 
+    /* Since pdfwrite never applies halftones and patterns, but monitors
+     * halftone/pattern IDs separately, we don't need to compare
+     * halftone/pattern bodies here.
+     */
+    if (!gx_saved_color_update(&temp, pdc))
+	return 0;
     /*
      * In principle, we can set colors in either stream or text
      * context.  However, since we currently enclose all text
@@ -77,49 +90,31 @@ pdf_reset_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
      * track of the color when we leave text context.  Therefore,
      * we require stream context for setting colors.
      */
-#if 0
-    switch (pdev->context) {
-    case PDF_IN_STREAM:
-    case PDF_IN_TEXT:
-	break;
-    case PDF_IN_NONE:
-	code = pdf_open_page(pdev, PDF_IN_STREAM);
-	goto open;
-    case PDF_IN_STRING:
-	code = pdf_open_page(pdev, PDF_IN_TEXT);
-    open:if (code < 0)
-	    return code;
-    }
-#else
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
-#endif
     code = pdf_put_drawing_color(pdev, pdc, ppscc);
-    if (code >= 0)
-	*pdcolor = *pdc;
-    return code;
+    if (code < 0)
+	return code;
+    *psc = temp;
+    return 0;
 }
 int
 pdf_set_drawing_color(gx_device_pdf * pdev, const gx_drawing_color *pdc,
-		      gx_drawing_color * pdcolor,
+		      gx_device_color_saved * psc,
 		      const psdf_set_color_commands_t *ppscc)
 {
-    if (gx_device_color_equal(pdcolor, pdc))
-	return 0;
-    return pdf_reset_color(pdev, pdc, pdcolor, ppscc);
+    return pdf_reset_color(pdev, pdc, psc, ppscc);
 }
 int
 pdf_set_pure_color(gx_device_pdf * pdev, gx_color_index color,
-		   gx_drawing_color * pdcolor,
+		   gx_device_color_saved * psc,
 		   const psdf_set_color_commands_t *ppscc)
 {
     gx_drawing_color dcolor;
 
-    if (gx_dc_is_pure(pdcolor) && gx_dc_pure_color(pdcolor) == color)
-	return 0;
     color_set_pure(&dcolor, color);
-    return pdf_reset_color(pdev, &dcolor, pdcolor, ppscc);
+    return pdf_reset_color(pdev, &dcolor, psc, ppscc);
 }
 
 /*
@@ -797,6 +792,15 @@ pdf_open_gstate(gx_device_pdf *pdev, pdf_resource_t **ppres)
 {
     if (*ppres)
 	return 0;
+    /*
+     * We write gs command only in stream context.
+     * If we are clipped, and the clip path is about to change,
+     * the old clipping must be undone before writing gs.
+     */
+    if (pdev->context != PDF_IN_STREAM) {
+	/* We apparently use gs_error_interrupt as a request to change context. */
+	return gs_error_interrupt;
+    }
     return pdf_begin_resource(pdev, resourceExtGState, gs_no_id, ppres);
 }
 
@@ -1035,8 +1039,8 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
 }
 
 /* Update the graphics state for filling. */
-int
-pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
+private int
+pdf_try_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
     int code = pdf_prepare_drawing(pdev, pis, "/ca %g", &pres);
@@ -1061,10 +1065,25 @@ pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
     }
     return pdf_end_gstate(pdev, pres);
 }
+int
+pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
+{
+    int code;
+
+    if (pdev->context != PDF_IN_STREAM) {
+	code = pdf_try_prepare_fill(pdev, pis);
+	if (code != gs_error_interrupt) /* See pdf_open_gstate */
+	    return code;
+	code = pdf_open_contents(pdev, PDF_IN_STREAM);
+	if (code < 0)
+	    return code;
+    }
+    return pdf_try_prepare_fill(pdev, pis);
+}
 
 /* Update the graphics state for stroking. */
-int
-pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
+private int
+pdf_try_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
 {
     pdf_resource_t *pres = 0;
     int code = pdf_prepare_drawing(pdev, pis, "/CA %g", &pres);
@@ -1093,6 +1112,21 @@ pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
     }
     return pdf_end_gstate(pdev, pres);
 }
+int
+pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
+{
+    int code;
+
+    if (pdev->context != PDF_IN_STREAM) {
+	code = pdf_try_prepare_stroke(pdev, pis);
+	if (code != gs_error_interrupt) /* See pdf_open_gstate */
+	    return code;
+	code = pdf_open_contents(pdev, PDF_IN_STREAM);
+	if (code < 0)
+	    return code;
+    }
+    return pdf_try_prepare_stroke(pdev, pis);
+}
 
 /* Update the graphics state for an image other than an ImageType 1 mask. */
 int
@@ -1114,6 +1148,75 @@ pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 
     if (code < 0)
 	return code;
-    return pdf_set_drawing_color(pdev, pdcolor, &pdev->fill_color,
+    return pdf_set_drawing_color(pdev, pdcolor, &pdev->saved_fill_color,
 				 &psdf_set_fill_color_commands);
+}
+
+/* Save the viewer's graphic state. */
+int
+pdf_save_viewer_state(gx_device_pdf *pdev, stream *s)
+{
+    const int i = pdev->vgstack_depth;
+
+    if (pdev->vgstack_depth >= count_of(pdev->vgstack))
+	return_error(gs_error_unregistered); /* Must not happen. */
+    pdev->vgstack[i].transfer_ids[0] = pdev->transfer_ids[0];
+    pdev->vgstack[i].transfer_ids[1] = pdev->transfer_ids[1];
+    pdev->vgstack[i].transfer_ids[2] = pdev->transfer_ids[2];
+    pdev->vgstack[i].transfer_ids[3] = pdev->transfer_ids[3];
+    pdev->vgstack[i].transfer_not_identity = pdev->transfer_not_identity;
+    pdev->vgstack[i].opacity_alpha = pdev->state.opacity.alpha;
+    pdev->vgstack[i].shape_alpha = pdev->state.shape.alpha;
+    pdev->vgstack[i].blend_mode = pdev->state.blend_mode;
+    pdev->vgstack[i].halftone_id = pdev->halftone_id;
+    pdev->vgstack[i].black_generation_id = pdev->black_generation_id;
+    pdev->vgstack[i].undercolor_removal_id = pdev->undercolor_removal_id;
+    pdev->vgstack[i].overprint_mode = pdev->overprint_mode;
+    pdev->vgstack[i].smoothness = pdev->state.smoothness;
+    pdev->vgstack[i].text_knockout = pdev->state.text_knockout;
+    pdev->vgstack[i].fill_overprint = pdev->fill_overprint;
+    pdev->vgstack[i].stroke_overprint = pdev->stroke_overprint;
+    pdev->vgstack[i].stroke_adjust = pdev->state.stroke_adjust;
+    pdev->vgstack[i].saved_fill_color = pdev->saved_fill_color;
+    pdev->vgstack[i].saved_stroke_color = pdev->saved_stroke_color;
+    pdev->vgstack[i].line_params = pdev->state.line_params;
+    pdev->vgstack[i].line_params.dash.pattern = 0; /* Use pdev->dash_pattern instead. */
+    memcpy(pdev->vgstack[i].dash_pattern, pdev->dash_pattern, 
+		sizeof(pdev->vgstack[i].dash_pattern));
+    pdev->vgstack_depth++;
+    stream_puts(s, "q\n");
+    return 0;
+}
+
+/* Restore the viewer's graphic state. */
+int
+pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s)
+{   const int i = --pdev->vgstack_depth;
+
+    if (i < 0)
+	return_error(gs_error_unregistered); /* Must not happen. */
+    stream_puts(s, "Q\n");
+    pdev->transfer_ids[0] = pdev->vgstack[i].transfer_ids[0];
+    pdev->transfer_ids[1] = pdev->vgstack[i].transfer_ids[1];
+    pdev->transfer_ids[2] = pdev->vgstack[i].transfer_ids[2];
+    pdev->transfer_ids[3] = pdev->vgstack[i].transfer_ids[3];
+    pdev->transfer_not_identity = pdev->vgstack[i].transfer_not_identity;
+    pdev->state.opacity.alpha = pdev->vgstack[i].opacity_alpha;
+    pdev->state.shape.alpha = pdev->vgstack[i].shape_alpha;
+    pdev->state.blend_mode = pdev->vgstack[i].blend_mode;
+    pdev->halftone_id = pdev->vgstack[i].halftone_id;
+    pdev->black_generation_id = pdev->vgstack[i].black_generation_id;
+    pdev->undercolor_removal_id = pdev->vgstack[i].undercolor_removal_id;
+    pdev->overprint_mode = pdev->vgstack[i].overprint_mode;
+    pdev->state.smoothness = pdev->vgstack[i].smoothness;
+    pdev->state.text_knockout = pdev->vgstack[i].text_knockout;
+    pdev->fill_overprint = pdev->vgstack[i].fill_overprint;
+    pdev->stroke_overprint = pdev->vgstack[i].stroke_overprint;
+    pdev->state.stroke_adjust = pdev->vgstack[i].stroke_adjust;
+    pdev->saved_fill_color = pdev->vgstack[i].saved_fill_color;
+    pdev->saved_stroke_color = pdev->vgstack[i].saved_stroke_color;
+    pdev->state.line_params = pdev->vgstack[i].line_params;
+    memcpy(pdev->dash_pattern, pdev->vgstack[i].dash_pattern,
+		sizeof(pdev->vgstack[i].dash_pattern));
+    return 0;
 }

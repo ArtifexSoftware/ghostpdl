@@ -80,7 +80,8 @@ typedef struct gs_pattern_instance_s gs_pattern_instance_t;
     rc_header rc;\
     /* Following are set by makepattern */\
     const gs_pattern_type_t *type;  /* from template */\
-    gs_state *saved
+    gs_state *saved;\
+    gs_id pattern_id
 struct gs_pattern_instance_s {
     gs_pattern_instance_common;
 };

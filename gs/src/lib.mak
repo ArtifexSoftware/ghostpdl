@@ -573,7 +573,7 @@ $(GLOBJ)gxdcconv.$(OBJ) : $(GLSRC)gxdcconv.c $(GX)\
 	$(GLCC) $(GLO_)gxdcconv.$(OBJ) $(C_) $(GLSRC)gxdcconv.c
 
 $(GLOBJ)gxdcolor.$(OBJ) : $(GLSRC)gxdcolor.c $(GX)\
- $(gsbittab_h) $(gserrors_h) $(gxdcolor_h) $(gxdevice_h)
+ $(memory__h) $(gsbittab_h) $(gserrors_h) $(gxdcolor_h) $(gxdevice_h)
 	$(GLCC) $(GLO_)gxdcolor.$(OBJ) $(C_) $(GLSRC)gxdcolor.c
 
 $(GLOBJ)gxfill.$(OBJ) : $(GLSRC)gxfill.c $(GXERR)\

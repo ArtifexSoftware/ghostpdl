@@ -320,6 +320,32 @@ struct pdf_font_cache_elem_s {
 	pdf_font_cache_elem_reloc, next, pdfont,\
 	glyph_usage, real_widths, pdev);\
 
+/*
+ * pdf_viewer_state tracks the graphic state of a viewer,
+ * which would interpret the generated PDF file
+ * immediately when it is generated.
+ */
+typedef struct pdf_viewer_state_s {
+    int transfer_not_identity;	/* bitmask */
+    gs_id transfer_ids[4];
+    float opacity_alpha; /* state.opacity.alpha */
+    float shape_alpha; /* state.shape.alpha */
+    gs_blend_mode_t blend_mode; /* state.blend_mode */
+    gs_id halftone_id;
+    gs_id black_generation_id;
+    gs_id undercolor_removal_id;
+    int overprint_mode;
+    float smoothness; /* state.smoothness */
+    bool text_knockout; /* state.text_knockout */
+    bool fill_overprint;
+    bool stroke_overprint;
+    bool stroke_adjust; /* state.stroke_adjust */
+    gx_device_color_saved saved_fill_color;
+    gx_device_color_saved saved_stroke_color;
+    gx_line_params line_params;
+    float dash_pattern[max_dash];
+} pdf_viewer_state;
+
 /* Define the device structure. */
 struct gx_device_pdf_s {
     gx_device_psdf_common;
@@ -472,6 +498,13 @@ struct gx_device_pdf_s {
      * It's life time terminates on garbager invocation.
      */
     gs_text_enum_t *pte;
+    /* 
+     * The viewer's graphic state stack.
+     * We need only 2 elements : one for stream context, 
+     * and another one for text context.
+     */
+    pdf_viewer_state vgstack[2];
+    int vgstack_depth;
 };
 
 #define is_in_page(pdev)\
@@ -656,10 +689,16 @@ cos_dict_t *pdf_current_page_dict(gx_device_pdf *pdev);
 /* Open a page for writing. */
 int pdf_open_page(gx_device_pdf * pdev, pdf_context_t context);
 
+/*  Go to the unclipped stream context. */
+int pdf_unclip(gx_device_pdf * pdev);
+
 /* Write saved page- or document-level information. */
 int pdf_write_saved_string(gx_device_pdf * pdev, gs_string * pstr);
 
 /* ------ Path drawing ------ */
+
+/* Store a copy of clipping path. */
+int pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);
 
 /* Test whether the clip path needs updating. */
 bool pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath);

@@ -135,7 +135,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    return 0;
 	/* If a mask has an id, assume it's a character. */
 	if (id != gx_no_bitmap_id && sourcex == 0) {
-	    pdf_set_pure_color(pdev, one, &pdev->fill_color,
+	    pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
 			       &psdf_set_fill_color_commands);
 	    pres = pdf_find_resource_by_gs_id(pdev, resourceCharProc, id);
 	    if (pres == 0) {	/* Define the character in an embedded font. */
@@ -168,13 +168,13 @@ pdf_copy_mono(gx_device_pdf *pdev,
 	    pdf_make_bitmap_matrix(&image.ImageMatrix, x, y, w, h, h);
 	    goto rx;
 	}
-	pdf_set_pure_color(pdev, one, &pdev->fill_color,
+	pdf_set_pure_color(pdev, one, &pdev->saved_fill_color,
 			   &psdf_set_fill_color_commands);
 	gs_image_t_init_mask(&image, false);
 	invert = 0xff;
     } else if (one == gx_no_color_index) {
 	gs_image_t_init_mask(&image, false);
-	pdf_set_pure_color(pdev, zero, &pdev->fill_color,
+	pdf_set_pure_color(pdev, zero, &pdev->saved_fill_color,
 			   &psdf_set_fill_color_commands);
     } else if (zero == pdev->black && one == pdev->white) {
 	gs_cspace_init_DeviceGray(&cs);

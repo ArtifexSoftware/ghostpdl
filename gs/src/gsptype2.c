@@ -119,13 +119,14 @@ private dev_color_proc_get_dev_halftone(gx_dc_pattern2_get_dev_halftone);
 private dev_color_proc_load(gx_dc_pattern2_load);
 private dev_color_proc_fill_rectangle(gx_dc_pattern2_fill_rectangle);
 private dev_color_proc_equal(gx_dc_pattern2_equal);
+private dev_color_proc_save_dc(gx_dc_pattern2_save_dc);
 /*
  * Define the PatternType 2 Pattern device color type.  This is public only
  * for testing when writing PDF or PostScript.
  */
 const gx_device_color_type_t gx_dc_pattern2 = {
     &st_dc_pattern2,
-    gx_dc_pattern_save_dc, gx_dc_pattern2_get_dev_halftone,
+    gx_dc_pattern2_save_dc, gx_dc_pattern2_get_dev_halftone,
     gx_dc_ht_get_phase,
     gx_dc_pattern2_load, gx_dc_pattern2_fill_rectangle,
     gx_dc_default_fill_masked, gx_dc_pattern2_equal,
@@ -245,3 +246,24 @@ gx_dc_pattern2_equal(const gx_device_color * pdevc1,
     return pdevc2->type == pdevc1->type &&
         pdevc1->ccolor.pattern == pdevc2->ccolor.pattern;
 }
+
+/*
+ * Currently patterns cannot be passed through the command list,
+ * however vector devices need to save a color for comparing
+ * it with another color, which appears later.
+ * We provide a minimal support, which is necessary
+ * for the current implementation of pdfwrite.
+ * It is not sufficient for restoring the pattern from the saved color.
+ */
+private void
+gx_dc_pattern2_save_dc(
+    const gx_device_color * pdevc, 
+    gx_device_color_saved * psdc )
+{
+    gs_pattern2_instance_t * pinst = (gs_pattern2_instance_t *)pdevc->ccolor.pattern;
+
+    psdc->type = pdevc->type;
+    psdc->colors.pattern2.id = pinst->pattern_id;
+}
+
+

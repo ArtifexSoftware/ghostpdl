@@ -90,6 +90,13 @@ typedef struct gx_device_halftone_s gx_device_halftone;
 bool gx_device_color_equal(const gx_device_color *pdevc1,
 			   const gx_device_color *pdevc2);
 
+/*
+ * Saves a device color and replies whether the saved one was up to date.
+ * This doesn't save the halftone or pattern body.
+ */
+bool gx_saved_color_update(gx_device_color_saved *psc,
+		      const gx_device_color *pdevc);
+
 /* * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * *
  * The definitions in the following section of the file, plus the ones
  * just above, are the only ones that should be used by clients that
@@ -340,8 +347,12 @@ struct gx_device_color_s {
  * be passed a null pointer for the saved color operand; this will
  * ensure the the full device color information is written.
  *
- * Currently patterns cannot be passed through the command list, so
- * pattern information is not included in this structure.
+ * Currently patterns cannot be passed through the command list,
+ * however vector devices need to save a color for comparing
+ * it with another color, which appears later.
+ * We provide a minimal support, which is necessary
+ * for the current implementation of pdfwrite.
+ * It is not sufficient for restoring the pattern from the saved color.
  */
 
 struct gx_device_color_saved_s {
@@ -361,6 +372,13 @@ struct gx_device_color_saved_s {
         struct _swts {
             wts_screen_sample_t levels[GX_DEVICE_COLOR_MAX_COMPONENTS];
         }               wts;
+	struct _pattern {
+	    gs_id id;
+	    gs_int_point phase;
+	}		pattern;
+	struct _pattern2 {
+	    gs_id id;
+	}		pattern2;
     }                       colors;
     gs_int_point            phase;
 };

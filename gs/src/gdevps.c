@@ -688,8 +688,8 @@ psw_setcolors(gx_device_vector * vdev, const gx_drawing_color * pdc)
     if (!gx_dc_is_pure(pdc))
 	return_error(gs_error_rangecheck);
     /* PostScript only keeps track of a single color. */
-    vdev->fill_color = *pdc;
-    vdev->stroke_color = *pdc;
+    gx_saved_color_update(&vdev->saved_fill_color, pdc);
+    gx_saved_color_update(&vdev->saved_stroke_color, pdc);
     {
 	stream *s = gdev_vector_stream(vdev);
 	gx_color_index color = gx_dc_pure_color(pdc);

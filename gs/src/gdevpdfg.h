@@ -105,11 +105,11 @@ void pdf_reset_graphics(gx_device_pdf *pdev);
 /* Set the fill or stroke color. */
 /* pdecolor is &pdev->fill_color or &pdev->stroke_color. */
 int pdf_set_pure_color(gx_device_pdf *pdev, gx_color_index color,
-		       gx_drawing_color *pdcolor,
+		       gx_device_color_saved * psc,
 		       const psdf_set_color_commands_t *ppscc);
 int pdf_set_drawing_color(gx_device_pdf *pdev,
 			  const gx_drawing_color *pdc,
-			  gx_drawing_color *pdcolor,
+			  gx_device_color_saved * psc,
 			  const psdf_set_color_commands_t *ppscc);
 
 /*
@@ -121,6 +121,8 @@ int pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_image(gx_device_pdf *pdev, const gs_imager_state *pis);
 int pdf_prepare_imagemask(gx_device_pdf *pdev, const gs_imager_state *pis,
 			  const gx_drawing_color *pdcolor);
+int pdf_save_viewer_state(gx_device_pdf *pdev, stream *s);
+int pdf_restore_viewer_state(gx_device_pdf *pdev, stream *s);
 
 /*
  * Convert a string into cos name.

@@ -793,7 +793,7 @@ $(GLOBJ)gdevpdfd.$(OBJ) : $(GLSRC)gdevpdfd.c $(math__h)\
 	$(GLCC) $(GLO_)gdevpdfd.$(OBJ) $(C_) $(GLSRC)gdevpdfd.c
 
 $(GLOBJ)gdevpdfg.$(OBJ) : $(GLSRC)gdevpdfg.c $(GXERR) $(math__h) $(string__h)\
- $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
+ $(memory__h) $(gdevpdfg_h) $(gdevpdfo_h) $(gdevpdfx_h)\
  $(gsfunc0_h) $(gsstate_h)\
  $(gxbitmap_h) $(gxdht_h) $(gxfarith_h) $(gxfmap_h) $(gxht_h) $(gxistate_h)\
  $(gzht_h)\
@@ -843,7 +843,7 @@ $(GLOBJ)gdevpdfr.$(OBJ) : $(GLSRC)gdevpdfr.c $(memory__h) $(string__h)\
 
 $(GLOBJ)gdevpdfu.$(OBJ) : $(GLSRC)gdevpdfu.c $(GXERR)\
  $(jpeglib__h) $(memory__h) $(string__h)\
- $(gdevpdfo_h) $(gdevpdfx_h) $(gscdefs_h)\
+ $(gdevpdfo_h) $(gdevpdfx_h) $(gdevpdfg_h) $(gscdefs_h)\
  $(gsdsrc_h) $(gsfunc_h) $(gsfunc3_h)\
  $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(slzwx_h) $(spngpx_h)\
  $(srlx_h) $(sstring_h) $(strimpl_h) $(szlibx_h)

@@ -49,7 +49,7 @@ gdev_pdf_fill_rectangle(gx_device * dev, int x, int y, int w, int h,
     code = pdf_put_clip_path(pdev, NULL);
     if (code < 0)
 	return code;
-    pdf_set_pure_color(pdev, color, &pdev->fill_color,
+    pdf_set_pure_color(pdev, color, &pdev->saved_fill_color,
 		       &psdf_set_fill_color_commands);
     pprintd4(pdev->strm, "%d %d %d %d re f\n", x, y, w, h);
     return 0;
@@ -71,7 +71,7 @@ pdf_setfillcolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
 
-    return pdf_set_drawing_color(pdev, pdc, &pdev->fill_color,
+    return pdf_set_drawing_color(pdev, pdc, &pdev->saved_fill_color,
 				 &psdf_set_fill_color_commands);
 }
 
@@ -80,7 +80,7 @@ pdf_setstrokecolor(gx_device_vector * vdev, const gx_drawing_color * pdc)
 {
     gx_device_pdf *const pdev = (gx_device_pdf *)vdev;
 
-    return pdf_set_drawing_color(pdev, pdc, &pdev->stroke_color,
+    return pdf_set_drawing_color(pdev, pdc, &pdev->saved_stroke_color,
 				 &psdf_set_stroke_color_commands);
 }
 
@@ -159,7 +159,7 @@ const gx_device_vector_procs pdf_vector_procs = {
 /* ------ Utilities ------ */
 
 /* Store a copy of clipping path. */
-private int
+int
 pdf_remember_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 {
     /* Used for skipping redundant clip paths. SF bug #624168. */
@@ -223,15 +223,22 @@ pdf_is_same_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 bool
 pdf_must_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 {
-    if (pcpath == NULL)
-	return pdev->clip_path_id != pdev->no_clip_path_id;
-    if (pdev->clip_path_id == pcpath->id)
-	return false;
-    if (gx_cpath_includes_rectangle(pcpath, fixed_0, fixed_0,
-				    int2fixed(pdev->width),
-				    int2fixed(pdev->height))
-	)
-	return pdev->clip_path_id != pdev->no_clip_path_id;
+    if (pcpath == NULL) {
+	if (pdev->clip_path_id == pdev->no_clip_path_id)
+	    return false;
+    } else { 
+	if (pdev->clip_path_id == pcpath->id)
+	    return false;
+	if (gx_cpath_includes_rectangle(pcpath, fixed_0, fixed_0,
+					int2fixed(pdev->width),
+					int2fixed(pdev->height)))
+	    if (pdev->clip_path_id == pdev->no_clip_path_id)
+		return false;
+	if (pdf_is_same_clip_path(pdev, pcpath) > 0) {
+	    pdev->clip_path_id = pcpath->id;
+	    return 0;
+	}
+    }
     return true;
 }
 
@@ -275,13 +282,22 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
     code = pdf_open_contents(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return 0;
-    stream_puts(s, "Q\nq\n");
+    /* Use Q to unwind the old clipping path. */
+    if (pdev->vgstack_depth > 0) {
+	code = pdf_restore_viewer_state(pdev, s);
+	if (code < 0)
+	    return 0;
+    }
     if (new_id != pdev->no_clip_path_id) {
 	gdev_vector_dopath_state_t state;
 	gs_cpath_enum cenum;
 	gs_fixed_point vs[3];
 	int pe_op;
 
+	/* Use q to allow the new clipping path to unwind.  */
+	code = pdf_save_viewer_state(pdev, s);
+	if (code < 0)
+	    return 0;
 	gdev_vector_dopath_init(&state, (gx_device_vector *)pdev,
 				gx_path_type_fill, NULL);
 	/*
@@ -298,7 +314,6 @@ pdf_put_clip_path(gx_device_pdf * pdev, const gx_clip_path * pcpath)
 	    return pe_op;
     }
     pdev->clip_path_id = new_id;
-    pdf_reset_graphics(pdev);
     return pdf_remember_clip_path(pdev, 
 	    (pdev->clip_path_id == pdev->no_clip_path_id ? NULL : pcpath));
 }
@@ -342,6 +357,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	      const gx_drawing_color * pdcolor, const gx_clip_path * pcpath)
 {
     gx_device_pdf *pdev = (gx_device_pdf *) dev;
+    bool new_clip;
     int code;
     /*
      * HACK: we fill an empty path in order to set the clipping path
@@ -362,9 +378,6 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	if (box.p.x >= box.q.x || box.p.y >= box.q.y)
 	    return 0;		/* empty clipping path */
     }
-    code = pdf_prepare_fill(pdev, pis);
-    if (code < 0)
-	return code;
     if (gx_dc_is_pure(pdcolor)) {
 	/*
 	 * Make a special check for the initial fill with white,
@@ -373,14 +386,19 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	if (gx_dc_pure_color(pdcolor) == pdev->white && !is_in_page(pdev))
 	    return 0;
     }
+    new_clip = pdf_must_put_clip_path(pdev, pcpath);
     have_path = !gx_path_is_void(ppath);
-    if (have_path || pdev->context == PDF_IN_NONE ||
-	pdf_must_put_clip_path(pdev, pcpath)
-	) {
-	code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (have_path || pdev->context == PDF_IN_NONE || new_clip) {
+        if (new_clip)
+	    code = pdf_unclip(pdev);
+	else
+	    code = pdf_open_page(pdev, PDF_IN_STREAM);
 	if (code < 0)
 	    return code;
     }
+    code = pdf_prepare_fill(pdev, pis);
+    if (code < 0)
+	return code;
     code = pdf_put_clip_path(pdev, pcpath);
     if (code < 0)
 	return code;
@@ -439,10 +457,16 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 
     if (gx_path_is_void(ppath))
 	return 0;		/* won't mark the page */
+    if (pdf_must_put_clip_path(pdev, pcpath))
+	code = pdf_unclip(pdev);
+    else 
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (code < 0)
+	return code;
     code = pdf_prepare_stroke(pdev, pis);
     if (code < 0)
 	return code;
-    code = pdf_open_page(pdev, PDF_IN_STREAM);
+    code = pdf_put_clip_path(pdev, pcpath);
     if (code < 0)
 	return code;
     /*
@@ -480,9 +504,6 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
 	    set_ctm = true;
 	}
     }
-    code = pdf_put_clip_path(pdev, pcpath);
-    if (code < 0)
-	return code;
     code = gdev_vector_prepare_stroke((gx_device_vector *)pdev, pis, params,
 				      pdcolor, scale);
     if (code < 0)

@@ -159,7 +159,8 @@ int gdev_vector_dorect(gx_device_vector * vdev, fixed x0, fixed y0,
 		/* Graphics state */\
 	gs_imager_state state;\
 	float dash_pattern[max_dash];\
-	gx_drawing_color fill_color, stroke_color;\
+	gx_device_color_saved saved_fill_color;\
+	gx_device_color_saved saved_stroke_color;\
 	gs_id no_clip_path_id;	/* indicates no clipping */\
 	gs_id clip_path_id;\
 		/* Other state */\

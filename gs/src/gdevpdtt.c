@@ -149,6 +149,7 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
     gx_device_pdf *const pdev = (gx_device_pdf *)dev;
     pdf_text_enum_t *penum;
     gs_fixed_point cpt;
+    bool new_clip;
     int code;
 
     /* Track the dominant text rotation. */
@@ -172,10 +173,18 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				     pcpath, mem, ppte);
 
+    new_clip = pdf_must_put_clip_path(pdev, pcpath);
+    if (new_clip)
+	code = pdf_unclip(pdev);
+    else if (pdev->context == PDF_IN_NONE)
+	code = pdf_open_page(pdev, PDF_IN_STREAM);
+    else
+	code = 0;
+    if (code < 0)
+	return code;
     code = pdf_prepare_fill(pdev, pis);
     if (code < 0)
 	return code;
-
     if (text->operation & TEXT_DO_DRAW) {
 	/*
 	 * Set the clipping path and drawing color.  We set both the fill
@@ -185,21 +194,17 @@ gdev_pdf_text_begin(gx_device * dev, gs_imager_state * pis,
 	 * limitation of PDF.)
 	 */
 
-	if (pdf_must_put_clip_path(pdev, pcpath)) {
-	    int code = pdf_open_page(pdev, PDF_IN_STREAM);
-
-	    if (code < 0)
-		return code;
+	if (new_clip) {
 	    code = pdf_put_clip_path(pdev, pcpath);
 	    if (code < 0)
 		return code;
 	}
 
 	if ((code =
-	     pdf_set_drawing_color(pdev, pdcolor, &pdev->stroke_color,
+	     pdf_set_drawing_color(pdev, pdcolor, &pdev->saved_stroke_color,
 				   &psdf_set_stroke_color_commands)) < 0 ||
 	    (code =
-	     pdf_set_drawing_color(pdev, pdcolor, &pdev->fill_color,
+	     pdf_set_drawing_color(pdev, pdcolor, &pdev->saved_fill_color,
 				   &psdf_set_fill_color_commands)) < 0
 	    )
 	    return code;

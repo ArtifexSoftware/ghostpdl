@@ -813,16 +813,21 @@ RELOC_PTRS_END
 
 
 /*
- * Currently, patterns cannot be passed through the command list, so
- * there is little reason to save them. We keep this as a distinct
- * procedure for potential future enhancements.
+ * Currently patterns cannot be passed through the command list,
+ * however vector devices need to save a color for comparing
+ * it with another color, which appears later.
+ * We provide a minimal support, which is necessary
+ * for the current implementation of pdfwrite.
+ * It is not sufficient for restoring the pattern from the saved color.
  */
 void
 gx_dc_pattern_save_dc(
     const gx_device_color * pdevc, 
     gx_device_color_saved * psdc )
 {
-    return;
+    psdc->type = pdevc->type;
+    psdc->colors.pattern.id = pdevc->ccolor.pattern->pattern_id;
+    psdc->colors.pattern.phase = pdevc->phase;
 }
 
 /*
