@@ -657,6 +657,36 @@ R_fill_annulus(const R_fill_state_t * pfs, gs_client_color *pcc,
 }
 
 private int
+R_fill_triangle(const R_fill_state_t * pfs, gs_client_color *pcc,
+	       floatp x0, floatp y0, floatp x1, floatp y1, floatp x2, floatp y2)
+{
+    const gs_shading_R_t * const psh = pfs->psh;
+    gx_device_color dev_color;
+    const gs_color_space *pcs = psh->params.ColorSpace;
+    gs_imager_state *pis = pfs->pis;
+    gs_fixed_point pts[3];
+    int code;
+    gx_path *ppath = gx_path_alloc(pis->memory, "R_fill");
+
+    (*pcs->type->restrict_color)(pcc, pcs);
+    (*pcs->type->remap_color)(pcc, pcs, &dev_color, pis,
+			      pfs->dev, gs_color_select_texture);
+
+    gs_point_transform2fixed(&pfs->pis->ctm, x0, y0, &pts[0]);
+    gs_point_transform2fixed(&pfs->pis->ctm, x1, y1, &pts[1]);
+    gs_point_transform2fixed(&pfs->pis->ctm, x2, y2, &pts[2]);
+
+    gx_path_add_point(ppath, pts[0].x, pts[0].y);
+    gx_path_add_lines(ppath, pts+1, 2);
+
+    code = shade_fill_path((const shading_fill_state_t *)pfs,
+			   ppath, &dev_color);
+
+    gx_path_free(ppath, "R_fill");
+    return code;
+}
+
+private int
 R_fill_region(R_fill_state_t * pfs)
 {
     const gs_shading_R_t * const psh = pfs->psh;
@@ -714,6 +744,74 @@ R_compute_radius(floatp x, floatp y, const gs_rect *rect)
     return max(rm0, rm1);
 }
 
+/*
+ * For differnt radii, compute the coords for /Extend
+ * r0 must be greater than r1 
+ */
+private void
+R_compute_extension_cone(floatp x0, floatp y0, floatp r0, 
+			 floatp x1, floatp y1, floatp r1, 
+			 floatp max_ext, floatp coord[7][2])
+{
+    floatp isecx, isecy;
+    floatp dis;
+    floatp cir_dis;
+    floatp k;
+    floatp cost, sint;
+    floatp l;
+    floatp dx0, dy0, dx1, dy1;
+
+    coord[0][0] = isecx = (x1-x0)*r0 / (r0-r1) + x0;
+    coord[0][1] = isecy = (y1-y0)*r0 / (r0-r1) + y0;
+
+    dis = sqrt((x1-isecx)*(x1-isecx)+(y1-isecy)*(y1-isecy));
+    k = sqrt(dis*dis-r1*r1);
+    cost = k / dis;
+    sint = r1 / dis;
+
+    cir_dis = sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0));
+    l = sqrt(cir_dis*cir_dis - (r0-r1)*(r0-r1));
+
+    dx0 = ((x1-isecx)*cost - (y1-isecy)*sint) / dis;
+    dy0 = ((x1-isecx)*sint + (y1-isecy)*cost) / dis;
+    sint = -sint;
+    dx1 = ((x1-isecx)*cost - (y1-isecy)*sint) / dis;
+    dy1 = ((x1-isecx)*sint + (y1-isecy)*cost) / dis;
+
+    coord[1][0] = isecx + dx0 * k;
+    coord[1][1] = isecy + dy0 * k;
+    coord[2][0] = isecx + dx1 * k;
+    coord[2][1] = isecy + dy1 * k;
+
+    coord[3][0] = isecx + dx0 * (l+k);
+    coord[3][1] = isecy + dy0 * (l+k);
+    coord[4][0] = isecx + dx0 * max_ext;
+    coord[4][1] = isecy + dy0 * max_ext;
+    coord[5][0] = isecx + dx1 * (l+k);
+    coord[5][1] = isecy + dy1 * (l+k);
+    coord[6][0] = isecx + dx1 * max_ext;
+    coord[6][1] = isecy + dy1 * max_ext;
+}
+
+/* for same radii, compute the coords for one side extension */
+private void
+R_compute_extension_bar(floatp x0, floatp y0, floatp x1, 
+			floatp y1, floatp radius, 
+			floatp max_ext, floatp coord[4][2])
+{
+    floatp dis;
+
+    dis = sqrt((x1-x0)*(x1-x0)+(y1-y0)*(y1-y0));
+    coord[0][0] = x0 + (y0-y1) / dis * radius;
+    coord[0][1] = y0 - (x0-x1) / dis * radius;
+    coord[1][0] = coord[0][0] + (x0-x1) / dis * max_ext;
+    coord[1][1] = coord[0][1] + (y0-y1) / dis * max_ext;
+    coord[2][0] = x0 - (y0-y1) / dis * radius;
+    coord[2][1] = y0 + (x0-x1) / dis * radius;
+    coord[3][0] = coord[2][0] + (x0-x1) / dis * max_ext;
+    coord[3][1] = coord[2][1] + (y0-y1) / dis * max_ext;
+}
+
 int
 gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
 			    gx_device * dev, gs_imager_state * pis)
@@ -730,6 +828,7 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     float t[2];
     int i;
     int code;
+    float dist_between_circles;
 
     shade_init_fill_state((shading_fill_state_t *)&state, psh0, dev, pis);
     state.psh = psh;
@@ -744,36 +843,129 @@ gs_shading_R_fill_rectangle(const gs_shading_t * psh0, const gs_rect * rect,
     state.delta.x = x1 - x0;
     state.delta.y = y1 - y0;
     state.dr = r1 - r0;
-    /*
-     * Compute the annulus width in its thickest direction.  This is
-     * only used for a conservative check, so it can be pretty crude
-     * (and it is!).
+
+    dist_between_circles = sqrt((x1-x0)*(x1-x0) + (y1-y0)*(y1-y0));
+    /* Now the annulus width is distance between two circles.
+     * This is just used for a conservative check and
+     * also pretty crude but now it works for circles
+     * with same or not so different radii.
      */
-    state.width =
-	(fabs(pis->ctm.xx) + fabs(pis->ctm.xy) + fabs(pis->ctm.yx) +
-	 fabs(pis->ctm.yy)) * fabs(state.dr);
+    state.width = dist_between_circles;
+
     state.dd = dd;
+
     if (psh->params.Extend[0]) {
-	if (r0 < r1)
-	    code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, 0.0, r0);
-	else
-	    code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, r0,
-				  R_compute_radius(x0, y0, rect));
+	floatp max_extension;
+	gs_point p, q;
+	p = psh->params.BBox.p; q = psh->params.BBox.q;
+	max_extension = sqrt((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y))*2;
+
+	if (r0 < r1) {
+	    if ( (r1-r0) < dist_between_circles) {
+		floatp coord[7][2];
+		R_compute_extension_cone(x1, y1, r1, x0, y0, r0, 
+					 max_extension, coord);
+		code = R_fill_triangle(&state, &rcc[0], x1, y1, 
+					coord[0][0], coord[0][1], 
+					coord[1][0], coord[1][1]);
+		code = R_fill_triangle(&state, &rcc[0], x1, y1, 
+					coord[0][0], coord[0][1], 
+					coord[2][0], coord[2][1]);
+	    } else {
+		code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, 0.0, r0);
+	    }
+	}
+	else if (r0 > r1) {
+	    if ( (r0-r1) < dist_between_circles) {
+		floatp coord[7][2];
+		R_compute_extension_cone(x0, y0, r0, x1, y1, r1, 
+					 max_extension, coord);
+		code = R_fill_triangle(&state, &rcc[0], 
+					coord[3][0], coord[3][1], 
+					coord[4][0], coord[4][1], 
+					coord[6][0], coord[6][1]);
+		code = R_fill_triangle(&state, &rcc[0], 
+					coord[3][0], coord[3][1], 
+					coord[5][0], coord[5][1], 
+					coord[6][0], coord[6][1]);
+	    } else {
+		code = R_fill_annulus(&state, &rcc[0], 0.0, 0.0, r0,
+				      R_compute_radius(x0, y0, rect));
+	    }
+	} else { /* equal radii */
+	    floatp coord[4][2];
+	    R_compute_extension_bar(x0, y0, x1, y1, r0, max_extension, coord);
+	    code = R_fill_triangle(&state, &rcc[0], 
+				    coord[0][0], coord[0][1], 
+				    coord[1][0], coord[1][1], 
+				    coord[2][0], coord[2][1]);
+	    code = R_fill_triangle(&state, &rcc[0], 
+				    coord[2][0], coord[2][1], 
+				    coord[3][0], coord[3][1], 
+				    coord[1][0], coord[1][1]);
+	}
 	if (code < 0)
 	    return code;
     }
+
     state.depth = 1;
     state.frames[0].t0 = (t[0] - d0) / dd;
     state.frames[0].t1 = (t[1] - d0) / dd;
     code = R_fill_region(&state);
     if (psh->params.Extend[1]) {
+	floatp max_extension;
+	gs_point p, q;
+	p = psh->params.BBox.p; q = psh->params.BBox.q;
+	max_extension = sqrt((p.x-q.x)*(p.x-q.x) + (p.y-q.y)*(p.y-q.y))*2;
+
 	if (code < 0)
 	    return code;
-	if (r0 < r1)
-	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, r1,
-				  R_compute_radius(x1, y1, rect));
-	else
+	if (r0 < r1) {
+	    if ( (r1-r0) < dist_between_circles) {
+		floatp coord[7][2];
+		R_compute_extension_cone(x1, y1, r1, x0, y0, r0, 
+					 max_extension, coord);
+		code = R_fill_triangle(&state, &rcc[1], 
+					coord[3][0], coord[3][1], 
+					coord[4][0], coord[4][1], 
+					coord[6][0], coord[6][1]);
+		code = R_fill_triangle(&state, &rcc[1], 
+					coord[3][0], coord[3][1], 
+					coord[5][0], coord[5][1], 
+					coord[6][0], coord[6][1]);
+		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1);
+	    } else {
+		code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, r1,
+				      R_compute_radius(x1, y1, rect));
+	    }
+	}
+	else if (r0 > r1)
+	{
+	    if ( (r0-r1) < dist_between_circles) {
+		floatp coord[7][2];
+		R_compute_extension_cone(x0, y0, r0, x1, y1, r1, 
+					 max_extension, coord);
+		code = R_fill_triangle(&state, &rcc[1], x1, y1, 
+					coord[0][0], coord[0][1], 
+					coord[1][0], coord[1][1]);
+		code = R_fill_triangle(&state, &rcc[1], x1, y1, 
+					coord[0][0], coord[0][1], 
+					coord[2][0], coord[2][1]);
+	    }
 	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1);
+	} else { /* equal radii */
+	    floatp coord[4][2];
+	    R_compute_extension_bar(x1, y1, x0, y0, r0, max_extension, coord);
+	    code = R_fill_triangle(&state, &rcc[1], 
+				    coord[0][0], coord[0][1], 
+				    coord[1][0], coord[1][1], 
+				    coord[2][0], coord[2][1]);
+	    code = R_fill_triangle(&state, &rcc[1], 
+				    coord[2][0], coord[2][1], 
+				    coord[3][0], coord[3][1], 
+				    coord[1][0], coord[1][1]);
+	    code = R_fill_annulus(&state, &rcc[1], 1.0, 1.0, 0.0, r1);
+	}
     }
     return code;
 }
