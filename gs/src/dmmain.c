@@ -1,4 +1,4 @@
-/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+/* Copyright (C) 2003-2004 artofcode LLC.  All rights reserved.
   
   This software is provided AS-IS with no warranty, either express or
   implied.
@@ -109,7 +109,7 @@ void    doUpdate                  (EventRecord *);
 void    doUpdateWindow            (EventRecord *);
 void    doOSEvent                 (EventRecord *);
 void    doInContent               (EventRecord *,WindowRef);
-void    actionFunctionScroll      (ControlRef,ControlPartCode);
+pascal void    actionFunctionScroll      (ControlRef,ControlPartCode);
 
 /*********************************************************************/
 /* stdio functions */
@@ -259,7 +259,7 @@ static int display_size(void *handle, void *device, int width, int height,
         img->pixmapHdl = NewPixMap();
 
     pixmap = *(img->pixmapHdl);
-    pixmap->baseAddr = pimage;
+    pixmap->baseAddr = (char*)pimage;
     pixmap->rowBytes = (((SInt16)raster) & 0x3fff) | 0x8000;
     pixmap->bounds.right = width;
     pixmap->bounds.bottom = height;
@@ -347,7 +347,8 @@ display_callback display = {
     display_page,
     display_update,
     NULL,    /* memalloc */
-    NULL    /* memfree */
+    NULL,    /* memfree */
+    NULL	 /* display_separation */
 };
 
 static IMAGE * image_find(void *handle, void *device)
@@ -608,7 +609,7 @@ void main(void)
                               0L,false) != noErr)
         ExitToShell();
 
-    gActionFunctionScrollUPP  = NewControlActionUPP(actionFunctionScroll);
+	gActionFunctionScrollUPP = NewControlActionUPP(&actionFunctionScroll);
 
     Gestalt(gestaltMenuMgrAttr,&response);
     if(response & gestaltMenuMgrAquaLayoutMask)
@@ -925,7 +926,7 @@ void doInContent(EventRecord *eventStrucPtr,WindowRef windowRef)
     }
 }
 
-void actionFunctionScroll(ControlRef controlRef,ControlPartCode controlPartCode)
+pascal void actionFunctionScroll(ControlRef controlRef,ControlPartCode controlPartCode)
 {
     SInt32 scrollDistance, controlValue, oldControlValue, controlMax;
 

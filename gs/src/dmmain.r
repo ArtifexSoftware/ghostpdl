@@ -21,6 +21,8 @@
    contributed by Nigel Hathaway. See dmmain.c for rest of this code.
  */
 
+#include "Types.r"
+
 resource 'BNDL' (128) {
 	'MCGS',
 	0,
