@@ -95,8 +95,8 @@ struct ttfReader_s {
     void   (*Seek)(ttfReader *, int nPos);
     int    (*Tell)(ttfReader *);
     bool   (*Error)(ttfReader *);
-    int    (*SeekExtraGlyph)(ttfReader *, int nIndex);
-    void   (*ReleaseExtraGlyph)(ttfReader *, int nIndex);
+    int    (*LoadGlyph)(ttfReader *, int nIndex, const byte **, int *);
+    void   (*ReleaseGlyph)(ttfReader *, int nIndex);
 };
 
 /* Define an auxiliary structure for ttfFont. */

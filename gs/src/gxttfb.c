@@ -117,7 +117,7 @@ private bool gx_ttfReader__Error(ttfReader *this)
     return r->error;
 }
 
-private int gx_ttfReader__SeekExtraGlyph(ttfReader *this, int glyph_index)
+private int gx_ttfReader__LoadGlyph(ttfReader *this, int glyph_index, const byte **p, int *size)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
     gs_font_type42 *pfont = r->pfont;
@@ -136,11 +136,14 @@ private int gx_ttfReader__SeekExtraGlyph(ttfReader *this, int glyph_index)
     else if (code > 0) {
 	/* Should not happen. */
 	r->error = gs_note_error(gs_error_unregistered);
+    } else {
+	*p = r->glyph_data.bits.data;
+	*size = r->glyph_data.bits.size;
     }
     return 2; /* found */
 }
 
-private void gx_ttfReader__ReleaseExtraGlyph(ttfReader *this, int glyph_index)
+private void gx_ttfReader__ReleaseGlyph(ttfReader *this, int glyph_index)
 {
     gx_ttfReader *r = (gx_ttfReader *)this;
 
@@ -170,8 +173,8 @@ gx_ttfReader *gx_ttfReader__create(gs_memory_t *mem, gs_font_type42 *pfont)
 	r->super.Seek = gx_ttfReader__Seek;
 	r->super.Tell = gx_ttfReader__Tell;
 	r->super.Error = gx_ttfReader__Error;
-	r->super.SeekExtraGlyph = gx_ttfReader__SeekExtraGlyph;
-	r->super.ReleaseExtraGlyph = gx_ttfReader__ReleaseExtraGlyph;
+	r->super.LoadGlyph = gx_ttfReader__LoadGlyph;
+	r->super.ReleaseGlyph = gx_ttfReader__ReleaseGlyph;
 	r->pos = 0;
 	r->error = false;
 	r->extra_glyph_index = -1;

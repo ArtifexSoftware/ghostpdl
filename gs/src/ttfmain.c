@@ -28,15 +28,7 @@
 #include "ttinterp.h"
 #include "ttcalc.h"
 
-/*
-#ifdef DEBUG
-void  Message( const char*  fmt, ... ) 
-{   va_list ap;
-    va_start(ap,fmt);
-    vprintf(fmt,ap);
-}
-#endif
-*/
+private const bool skip_instructions = 0; /* Debug purpose only. */
 
 typedef struct { 
     F26Dot6 x;
@@ -543,6 +535,8 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
     TGlyph_Zone *pts = &exec->pts;
     TSubglyph_Record  subglyph;
     ttfSubGlyphUsage *usage = tti->usage + tti->usage_top;
+    byte *glyph = NULL;
+    int glyph_size;
 
     if(this->bVertical && pFont->t_vhea.nPos && pFont->t_vmtx.nPos) {
 	nLongMetrics = pFont->nLongMetricsVert;
@@ -579,15 +573,10 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 
     if (!this->bOutline)
 	return fNoError;
-    if (!r->SeekExtraGlyph(r, glyphIndex)) /* Incremental font support. */
-	switch (ttfOutliner__SeekGlyph(this, glyphIndex, &nNextGlyphPtr)) {
-	    case 0:
-		return fGlyphNotFound;
-	    case 1:
-		return fNoError;
-	}
+    if (!r->LoadGlyph(r, glyphIndex, &glyph, &glyph_size))
+	return fGlyphNotFound;
     if (r->Eof(r)) {
-	r->ReleaseExtraGlyph(r, glyphIndex);
+	r->ReleaseGlyph(r, glyphIndex);
 	return fNoError;
     }
     if (r->Error(r))
@@ -677,7 +666,8 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	nPos = r->Tell(r);
 	n_ins = ((!r->Eof(r) && (bHaveInstructions || nPos < nNextGlyphPtr)) ? ttfReader__UShort(r) : 0);
 	nPos = r->Tell(r);
-	r->ReleaseExtraGlyph(r, glyphIndex);
+	r->ReleaseGlyph(r, glyphIndex);
+	glyph = NULL;
 	for (i = 0; i < nUsage; i++) {
 	    ttfGlyphOutline out;
 	    ttfSubGlyphUsage *e = &usage[i];
@@ -726,17 +716,16 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 		gOutline->sideBearing = out.sideBearing;
             }
         }
-	if (n_ins && n_ins <= exec->current_face->maxProfile.maxSizeOfInstructions && 
+	if (!skip_instructions && n_ins &&
 		!(pFont->inst->GS.instruct_control & 1)) {
 	    TT_Error code;
 
-	    exec->glyphSize = n_ins;
-	    r->SeekExtraGlyph(r, glyphIndex); /* incremental font support */
-	    r->Seek(r, nPos);
-	    r->Read(r, exec->glyphIns, n_ins);
+	    r->LoadGlyph(r, glyphIndex, &glyph, &glyph_size);
 	    if (r->Error(r))
 		goto errex;
-	    code = Set_CodeRange(exec, TT_CodeRange_Glyph, exec->glyphIns, exec->glyphSize);
+	    if (nPos + n_ins > glyph_size)
+		goto errex;
+	    code = Set_CodeRange(exec, TT_CodeRange_Glyph, glyph + nPos, n_ins);
 	    if (!code) {
 		int nPoints = gOutline->pointCount + 2;
 		int k;
@@ -783,6 +772,8 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	bool bInsOK;
 	byte *onCurve, *stop, flag;
 	short *endPoints;
+	unsigned int nPos;
+	unsigned int n_ins;
 
 	if (this->nContoursTotal + gOutline->contourCount > exec->n_contours) {
 	    error = fBadFontData; goto ex;
@@ -798,14 +789,12 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 	if (this->nPointsTotal + nPoints + 2 > exec->n_points) {
 	    error = fBadFontData; goto ex;
 	}
-	exec->glyphSize = ttfReader__Short(r);
-	if (exec->glyphSize > pFont->face->maxProfile.maxSizeOfInstructions) {
-	    error = fMemoryError; goto ex;
-        }
-	r->Read(r, exec->glyphIns, exec->glyphSize);
+	n_ins = ttfReader__Short(r);
+	nPos = r->Tell(r);
+	r->Seek(r, nPos + n_ins);
 	if (r->Error(r))
 	    goto errex;
-	bInsOK = !Set_CodeRange(exec, TT_CodeRange_Glyph, exec->glyphIns, exec->glyphSize);
+	bInsOK = !Set_CodeRange(exec, TT_CodeRange_Glyph, glyph + nPos, n_ins);
 	onCurve = pts->touch;
 	stop = onCurve + gOutline->pointCount;
 
@@ -853,7 +842,8 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
         MoveGlyphOutline(pts, 0, gOutline, m_orig);
 	this->nContoursTotal += gOutline->contourCount;
 	this->nPointsTotal += nPoints;
-	if (!r->Error(r) && exec->glyphSize && bInsOK && !(pFont->inst->GS.instruct_control & 1)) {
+	if (!skip_instructions &&
+		!r->Error(r) && n_ins && bInsOK && !(pFont->inst->GS.instruct_control & 1)) {
 	    TGlyph_Zone *pts = &exec->pts;
 	    int k;
 	    F26Dot6 x;
@@ -901,7 +891,7 @@ private FontError ttfOutliner__BuildGlyphOutlineAux(ttfOutliner *this, int glyph
 errex:;
     error = fBadFontData;
 ex:;
-    r->ReleaseExtraGlyph(r, glyphIndex);
+    r->ReleaseGlyph(r, glyphIndex);
     return error;
 }
 

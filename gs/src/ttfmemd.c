@@ -61,41 +61,41 @@ gs_public_st_composite(st_TExecution_Context, TExecution_Context,
 private 
 ENUM_PTRS_BEGIN(TExecution_Context_enum_ptrs) return 0;
     ENUM_PTR(0, TExecution_Context, current_face);
-    ENUM_PTR(1, TExecution_Context, code);
-    ENUM_PTR(2, TExecution_Context, FDefs);
-    ENUM_PTR(3, TExecution_Context, IDefs);
-    ENUM_PTR(4, TExecution_Context, glyphIns);
-    ENUM_PTR(5, TExecution_Context, callStack);
-    ENUM_PTR(6, TExecution_Context, codeRangeTable[0].Base);
-    ENUM_PTR(7, TExecution_Context, codeRangeTable[1].Base);
-    ENUM_PTR(8, TExecution_Context, codeRangeTable[2].Base);
-    ENUM_PTR(9, TExecution_Context, storage);
-    ENUM_PTR(10, TExecution_Context, stack);
+    /* ENUM_PTR(1, TExecution_Context, code); // local, no gc invocations */
+    ENUM_PTR(1, TExecution_Context, FDefs);
+    ENUM_PTR(2, TExecution_Context, IDefs);
+    /* ENUM_PTR(4, TExecution_Context, glyphIns); // local, no gc invocations */
+    ENUM_PTR(3, TExecution_Context, callStack);
+    ENUM_PTR(4, TExecution_Context, codeRangeTable[0].Base);
+    ENUM_PTR(5, TExecution_Context, codeRangeTable[1].Base);
+    ENUM_PTR(6, TExecution_Context, codeRangeTable[2].Base);
+    ENUM_PTR(7, TExecution_Context, storage);
+    ENUM_PTR(8, TExecution_Context, stack);
     /* zp0, // local, no gc invocations */
     /* zp1, // local, no gc invocations */
     /* zp2, // local, no gc invocations */
-    ENUM_PTR(11, TExecution_Context, pts.org_x);
-    ENUM_PTR(12, TExecution_Context, pts.org_y);
-    ENUM_PTR(13, TExecution_Context, pts.cur_x);
-    ENUM_PTR(14, TExecution_Context, pts.cur_y);
-    ENUM_PTR(15, TExecution_Context, pts.touch);
-    ENUM_PTR(16, TExecution_Context, pts.contours);
-    ENUM_PTR(17, TExecution_Context, twilight.org_x);
-    ENUM_PTR(18, TExecution_Context, twilight.org_y);
-    ENUM_PTR(19, TExecution_Context, twilight.cur_x);
-    ENUM_PTR(20, TExecution_Context, twilight.cur_y);
-    ENUM_PTR(21, TExecution_Context, twilight.touch);
-    ENUM_PTR(22, TExecution_Context, twilight.contours);
-    ENUM_PTR(23, TExecution_Context, cvt);
+    ENUM_PTR(9, TExecution_Context, pts.org_x);
+    ENUM_PTR(10, TExecution_Context, pts.org_y);
+    ENUM_PTR(11, TExecution_Context, pts.cur_x);
+    ENUM_PTR(12, TExecution_Context, pts.cur_y);
+    ENUM_PTR(13, TExecution_Context, pts.touch);
+    ENUM_PTR(14, TExecution_Context, pts.contours);
+    ENUM_PTR(15, TExecution_Context, twilight.org_x);
+    ENUM_PTR(16, TExecution_Context, twilight.org_y);
+    ENUM_PTR(17, TExecution_Context, twilight.cur_x);
+    ENUM_PTR(18, TExecution_Context, twilight.cur_y);
+    ENUM_PTR(19, TExecution_Context, twilight.touch);
+    ENUM_PTR(20, TExecution_Context, twilight.contours);
+    ENUM_PTR(21, TExecution_Context, cvt);
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(TExecution_Context_reloc_ptrs, TExecution_Context *mptr)
 {
     RELOC_PTR(TExecution_Context, current_face);
-    RELOC_PTR(TExecution_Context, code);
+    /* RELOC_PTR(TExecution_Context, code);  // local, no gc invocations */
     RELOC_PTR(TExecution_Context, FDefs);
     RELOC_PTR(TExecution_Context, IDefs);
-    RELOC_PTR(TExecution_Context, glyphIns);
+    /* RELOC_PTR(TExecution_Context, glyphIns);  // local, no gc invocations */
     RELOC_PTR(TExecution_Context, callStack);
     RELOC_PTR(TExecution_Context, codeRangeTable[0].Base);
     RELOC_PTR(TExecution_Context, codeRangeTable[1].Base);
