@@ -214,6 +214,13 @@ DEVICE_DEVS15=pdfwrite.dev
 
 # -------------------------------- Library -------------------------------- #
 
+# make sure the target directories exist - use special Watcom .BEFORE
+.BEFORE
+	@if not exist $(GLGENDIR) mkdir $(GLGENDIR)
+	@if not exist $(GLOBJDIR) mkdir $(GLOBJDIR)
+	@if not exist $(PSGENDIR) mkdir $(PSGENDIR)
+	@if not exist $(PSOBJDIR) mkdir $(PSOBJDIR)
+
 $(GLOBJ)gp_ntfs.$(OBJ): $(GLSRC)gp_ntfs.c $(AK)\
  $(dos__h) $(memory__h) $(stdio__h) $(string__h) $(windows__h)\
  $(gp_h) $(gsmemory_h) $(gsstruct_h) $(gstypes_h) $(gsutil_h)
@@ -257,7 +264,7 @@ LIBDOS=$(LIB_ALL) $(watc__) $(ld_tr)
 
 GS_ALL=$(GLOBJ)gs.$(OBJ) $(INT_ALL) $(INTASM) $(LIBDOS)
 
-ll_tr=ll$(CONFIG).tr
+ll_tr=$(GLGENDIR)ll$(CONFIG).tr
 $(ll_tr): $(MAKEFILE)
 !ifeq WAT32 0
 	echo SYSTEM DOS4G >$(ll_tr)
