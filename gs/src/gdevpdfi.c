@@ -421,6 +421,11 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    gs_free_object(mem, pie, "pdf_begin_image");
 	    return code;
 	}
+	/* AR3,AR4 show no image when CTM is singular; AR5 reports an error */
+	if (pie->mat.xx * pie->mat.yy == pie->mat.xy * pie->mat.yx) {
+	    gs_free_object(mem, pie, "pdf_begin_image");
+	    goto nyi;
+	}
     }
     alt_writer_count = (in_line || 
 				    (pim->Width <= 64 && pim->Height <= 64) ||
