@@ -274,7 +274,7 @@ typedef unsigned long ulong;
    typedef unsigned char           uint8_t;
    typedef unsigned short int      uint16_t;
    typedef unsigned int            uint32_t;
-   /* no uint64_t */
+   typedef unsigned __int64        uint64_t;
 #  define STDINT_TYPES_DEFINED
 # endif
 # if defined(__VMS) /* OpenVMS provides these types in inttypes.h */
