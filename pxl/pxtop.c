@@ -494,8 +494,7 @@ pxl_impl_report_errors(
 	pl_interp_instance_t *instance,         /* interp instance to wrap up job in */
    int                  code,              /* prev termination status */
    long                 file_position,     /* file position of error, -1 if unknown */
-   bool                 force_to_cout,     /* force errors to cout */
-   FILE                 *cout              /* stream for back-channel reports */
+   bool                 force_to_cout      /* force errors to cout */
 )
 {
 	pxl_interp_instance_t *pxli = (pxl_interp_instance_t *)instance;
@@ -516,14 +515,12 @@ pxl_impl_report_errors(
 	   code, st, pxs)) >= 0
 	)
 	  { if ( (report & eBackChannel) || force_to_cout )
-	      fputs(message, cout);
+	      errprintf(pxli->memory, message);
 	    if ( report & eErrorPage )
 	      y = px_error_page_show(message, y, pxs);
 	  }
 	if ( ((report & pxeErrorReport_next) && file_position != -1L) || force_to_cout )
-	  fprintf(cout, "file position of error = %ld\n", file_position);
-	if ( (report & eBackChannel) || force_to_cout )
-	  fflush(cout);
+	  errprintf(pxli->memory, "file position of error = %ld\n", file_position);
 	if ( report & eErrorPage )
 	  { px_args_t args;
 	    args.pv[0] = 0;
