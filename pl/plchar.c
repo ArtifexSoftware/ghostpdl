@@ -1039,7 +1039,7 @@ pl_tt_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
           }
         code = gs_type42_append(glyph,
                                 (gs_imager_state *)pgs, pgs->path,
-                                &penum->log2_current_scale,
+                                &penum->log2_scale,
                                 gs_show_in_charpath(penum) != cpm_show,
                                 pfont->PaintType, pfont42);
         if ( code >= 0 )
