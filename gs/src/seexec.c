@@ -111,15 +111,17 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 
         if (ss->pfb_state == 0) {
 	    /*
-	     * Skip witespace at the beginning of the input stream,
-	     * because Adobe interpreters do this.
+	     * Skip '\t', '\r', '\n', ' ' at the beginning of the input stream,
+	     * because Adobe interpreters do this. Don't skip '\0' or '\f'.
 	     */
-            for (; rcount; rcount--, p++)
-                if (decoder[p[1]] != ctype_space)
-                    break;
-            pr->ptr = p;
-            count = min(wcount, rcount);
-        }
+	    for (; rcount; rcount--, p++) {
+		byte c = p[1];
+		if(c != '\t' && c != char_CR && c != char_EOL && c != ' ')
+		    break;
+	    }
+	    pr->ptr = p;
+	    count = min(wcount, rcount);
+	}
 
 	/*
 	 * Determine whether this is ASCII or hex encoding.
