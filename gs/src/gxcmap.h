@@ -71,6 +71,15 @@ const gx_color_map_procs *
  */
 void gx_set_cmap_procs(P2(gs_imager_state *, const gx_device *));
 
+/* 
+ * Set or unset the color mapping to gray, 1 component.
+ * Returns gray or not gray since the unset may not be possible.
+ * -dForceMono= !0 will prevent the unset operation.  
+ * The return can be used to match the halftoning scheme to the color mapping.
+ */
+bool gx_set_cmap_procs_to_gray(gs_imager_state * pis, gx_device * dev, bool gray);
+
+
 /* Remap a concrete (frac) gray, RGB or CMYK color. */
 /* These cannot fail, and do not return a value. */
 #define gx_remap_concrete_gray(cgray, pdc, pis, dev, select)\
