@@ -454,9 +454,9 @@ class pxl_asm:
         return 0
 
     def consume_to_char_plus_one(self, chr):
-        while (self.data[self.index] != chr):
+        while (self.data[self.index:self.index+len(chr)] != chr):
             self.index = self.index + 1
-        self.index = self.index + 1
+        self.index = self.index + len(chr)
             
     def Tag_ubyte_array(self):
         if ( self.getTag( 'ubyte_array' ) ):
@@ -719,7 +719,7 @@ class pxl_asm:
                 else:
                     n = self.next_num()
                 self.pack(self.pack_string, n)
-            self.consume_to_char_plus_one(']')
+            self.consume_to_char_plus_one('\n]')
             return 1
         return 0
 
