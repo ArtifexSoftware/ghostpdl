@@ -234,13 +234,15 @@ pcmacros_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 	      }
 	  }
 
-	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
+	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay | pcl_reset_permanent) )
           {
 	    pcs->alpha_macro_id.size = 0;
 	    pcs->macro_id_type = numeric_id;
 	    id_set_value(pcs->macro_id, 0);
 	    pcs->alpha_macro_id.id = 0;
           }
+	if ( type & pcl_reset_permanent )
+	    pl_dict_release(&pcs->macros);
 }
 private int
 pcmacros_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
