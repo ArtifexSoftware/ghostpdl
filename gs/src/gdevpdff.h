@@ -318,6 +318,12 @@ int pdf_do_char_image(P3(gx_device_pdf * pdev, const pdf_char_proc_t * pcp,
 
 /* ---------------- Exported by gdevpdfs.c for gdevpdft.c ---------------- */
 
+/*
+ * Continue processing text.  This is the 'process' procedure in the text
+ * enumerator.
+ */
+text_enum_proc_process(pdf_text_process);
+
 /* ---------------- Exported by gdevpdff.c ---------------- */
 
 typedef enum {

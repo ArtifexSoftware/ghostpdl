@@ -100,7 +100,7 @@ pdf_text_release(gs_text_enum_t *pte, client_name_t cname)
 }
 
 /* Begin processing text. */
-extern text_enum_proc_process(pdf_text_process); /* in gdevpdfs.c */
+/* pdf_text_process is in gdevpdfs.c. */
 private const gs_text_enum_procs_t pdf_text_procs = {
     pdf_text_resync, pdf_text_process,
     pdf_text_is_width_only, pdf_text_current_width,
