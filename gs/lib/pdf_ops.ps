@@ -94,10 +94,13 @@ nodict readonly pop
 % Restore graphics state, but do not modify path. Paths are not part
 % of the PDF graphics state; see 4.4.1 of PDF reference 3rd ed.
 /grestore_nopath {
-  { false upath } stopped {
+  % Collect the upath with an identity CTM
+  { matrix setmatrix //false upath } stopped {
     pop grestore newpath
   } {
-    grestore newpath uappend
+    % Save the CTM, set identity during the uappend, then set the CTM
+    grestore matrix currentmatrix matrix setmatrix
+    exch newpath uappend setmatrix
   } ifelse
 } bdef
 
@@ -123,10 +126,12 @@ nodict readonly pop
 
 % Set PDF gstate
 /setqstate {    % <qstate> setqstate -
-  { //false upath } stopped {
+  { matrix setmatrix //false upath } stopped {
     pop setgstate newpath
   } {
-    exch setgstate newpath uappend
+    % Save the CTM, set identity during the uappend, then set the CTM
+    exch setgstate matrix currentmatrix matrix setmatrix
+    exch newpath uappend setmatrix
   } ifelse
 } bdef
 
