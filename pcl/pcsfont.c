@@ -372,13 +372,18 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	    /* NB we only enable this for uncompressed bitmap
                characters for now, since we don't have real world
                examples for the other font file formats.  */
-	    if ( data[0] != pccd_bitmap && data[3] != 1 ) return e_Unimplemented;
+	    if ( data[0] != pccd_bitmap && data[3] != 1 ) {
+		dprintf("continuation not implemented for this font type\n");
+		return e_Unimplemented;
+	    }
 	    /* append the new data to the new object */
 	    memcpy(pcs->soft_font_char_data + pcs->soft_font_count, data + 2, count - 2);
-	    /* update the count - NB only one continuation is permitted at the present time */
+	    /* update the continuation count */
+	    pcs->soft_font_count += (count -2);
+	    return 0;
+	} else {
 	    pcs->soft_font_count = 0;
 	    pcs->soft_font_char_data = 0;
-	    return 0;
 	}
 	format = (pcl_font_header_format_t)
                  ((const pcl_font_header_t *)plfont->header)->HeaderFormat;
