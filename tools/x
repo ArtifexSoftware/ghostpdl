@@ -1,5 +1,5 @@
 Test file of just RCS tags
 
-/* $RCSfile$ ver $Revision$   fileset: $Name$ */
+/* $RCSfile$ $Revision$   $Name$ */
 
 This line is to check for diffs.
