@@ -19,7 +19,7 @@
 /*
    indirection layer for build and platform-specific definitions
 
-   in general, this header should insure that the stdint types are
+   in general, this header should ensure that the stdint types are
    available, and that any optional compile flags are defined if
    the build system doesn't pass them directly.
 */
@@ -27,11 +27,12 @@
 #ifndef _JBIG2_OS_TYPES_H
 #define _JBIG2_OS_TYPES_H
 
-#ifdef __CYGWIN__
+#if defined(__CYGWIN__) && !defined(HAVE_STDINT_H)
 # include <sys/types.h>
   /*
-   * Cygwin has no stdint.h but defines "MS types". Some of them conflict with
-   * a standard type emulation provided by config_types.h .
+   * Old versions of Cygwin have no stdint.h but define "MS types". Some of
+   * them conflict with a standard type emulation provided by config_types.h
+   * so we do a fixup here.
    */
    typedef u_int8_t uint8_t;
    typedef u_int16_t uint16_t;
