@@ -163,6 +163,9 @@ void gx_ht_free_cache(P2(gs_memory_t *, gx_ht_cache *));
 /* Initialize a halftone cache with a given order. */
 void gx_ht_init_cache(P2(gx_ht_cache *, const gx_ht_order *));
 
+/* Check whether the tile cache corresponds to the current order */
+bool gx_check_tile_cache_current(P1(const gs_imager_state * pis));
+
 /* Make the cache order current, and return whether */
 /* there is room for all possible tiles in the cache. */
 bool gx_check_tile_cache(P1(const gs_imager_state *));

@@ -463,7 +463,6 @@ gs_grestoreall_for_restore(gs_state * pgs, gs_state * saved)
 	    return code;
     }
     /* Make sure we don't leave dangling pointers in the caches. */
-    gx_ht_clear_cache(pgs->ht_cache);
     if (pgs->pattern_cache)
 	(*pgs->pattern_cache->free_all) (pgs->pattern_cache);
     pgs->saved->saved = saved;
@@ -471,6 +470,10 @@ gs_grestoreall_for_restore(gs_state * pgs, gs_state * saved)
     code = gs_grestore(pgs);
     if (code < 0)
 	return code;
+    if (pgs->ht_cache->order.bit_data != pgs->dev_ht->order.bit_data ||
+	pgs->ht_cache->order.levels != pgs->dev_ht->order.levels
+	)
+	gx_ht_clear_cache(pgs->ht_cache);
     gx_device_color_spaces_free(&freed_spaces, pgs->memory,
 				"gs_grestoreall_for_restore");
     if (pgs->view_clip) {

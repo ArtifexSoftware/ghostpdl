@@ -620,28 +620,20 @@ color_draws_b_w(gx_device * dev, const gx_drawing_color * pdcolor)
     return -1;
 }
 
-/* Initialize the color mapping tables for a non-mask image. */
-private void
-image_init_colors(gx_image_enum * penum, int bps, int spp,
-		  gs_image_format_t format, const float *decode /*[spp*2] */ ,
-		  const gs_imager_state * pis, gx_device * dev,
-		  const gs_color_space * pcs, bool * pdcb)
+/* Export this for use by image_render_ functions */
+void
+image_init_clues(gx_image_enum * penum, int bps, int spp)
 {
-    int ci;
-    static const float default_decode[] = {
-	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
-    };
-
     /* Initialize the color table */
-
 #define ictype(i)\
   penum->clues[i].dev_color.type
+
     switch ((spp == 1 ? bps : 8)) {
 	case 8:		/* includes all color images */
 	    {
 		register gx_image_clue *pcht = &penum->clues[0];
-		register int n = 64;
-
+		register int n = 64;	/* 8 bits means 256 clues, do	*/
+					/* 4 at a time for efficiency	*/
 		do {
 		    pcht[0].dev_color.type =
 			pcht[1].dev_color.type =
@@ -667,9 +659,23 @@ image_init_colors(gx_image_enum * penum, int bps, int spp,
 	    ictype(5 * 17) = ictype(10 * 17) = gx_dc_type_none;
 #undef ictype
     }
+}
+
+/* Initialize the color mapping tables for a non-mask image. */
+private void
+image_init_colors(gx_image_enum * penum, int bps, int spp,
+		  gs_image_format_t format, const float *decode /*[spp*2] */ ,
+		  const gs_imager_state * pis, gx_device * dev,
+		  const gs_color_space * pcs, bool * pdcb)
+{
+    int ci;
+    static const float default_decode[] = {
+	0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0
+    };
+
+    image_init_clues(penum, bps, spp);
 
     /* Initialize the maps from samples to intensities. */
-
     for (ci = 0; ci < spp; ci++) {
 	sample_map *pmap = &penum->map[ci];
 

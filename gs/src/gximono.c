@@ -108,13 +108,7 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
     cs_proc_remap_color((*remap_color));	/* ditto */
     gs_client_color cc;
     gx_device_color *pdevc = &penum->icolor1;	/* color for masking */
-    /*
-     * Make sure the cache setup matches the graphics state.  Also determine
-     * whether all tiles fit in the cache.  We may bypass the latter check
-     * for masked images with a pure color.
-     */
-    bool tiles_fit =
-	(pis && penum->device_color ? gx_check_tile_cache(pis) : false);
+    bool tiles_fit;
     uint mask_base = penum->mask_color.values[0];
     uint mask_limit =
 	(penum->use_mask_color ?
@@ -160,6 +154,15 @@ image_render_mono(gx_image_enum * penum, const byte * buffer, int data_x,
 
     if (h == 0)
 	return 0;
+    /*
+     * Make sure the cache setup matches the graphics state.  Also determine
+     * whether all tiles fit in the cache.  We may bypass the latter check
+     * for masked images with a pure color.
+     */
+    if (!gx_check_tile_cache_current(pis)) {
+        image_init_clues(penum, penum->bps, penum->spp);
+    }
+    tiles_fit = (pis && penum->device_color ? gx_check_tile_cache(pis) : false);
     next = penum->dda.pixel0;
     xrun = dda_current(next.x);
     if (!masked) {

@@ -169,6 +169,20 @@ gx_ht_free_cache(gs_memory_t * mem, gx_ht_cache * pcache)
     gs_free_object(mem, pcache, "free_ht_cache(struct)");
 }
 
+/* Check whether the tile cache corresponds to the current order */
+bool
+gx_check_tile_cache_current(const gs_imager_state * pis)
+{
+    const gx_ht_order *porder = &pis->dev_ht->order;
+    gx_ht_cache *pcache = pis->ht_cache;
+
+    if (pcache == 0 || pis->dev_ht == 0 ||	/* no halftone or cache */
+        pcache->order.bit_data != porder->bit_data)	/* not current */
+	return false;
+    /* else */
+    return true;
+}
+
 /* Make the cache order current, and return whether */
 /* there is room for all possible tiles in the cache. */
 bool

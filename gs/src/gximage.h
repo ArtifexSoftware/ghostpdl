@@ -300,4 +300,11 @@ gx_image_enum_begin(P8(gx_device * dev, const gs_imager_state * pis,
 		       const gx_clip_path * pcpath,
 		       gs_memory_t * mem, gx_image_enum *penum));
 
+/*
+ * Clear the relevant clues. Exported for use by image_render_*
+ * when ht_tile cache is invalidated.
+ */
+void
+image_init_clues(P3(gx_image_enum * penum, int bps, int spp));
+
 #endif /* gximage_INCLUDED */
