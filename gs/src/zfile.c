@@ -902,72 +902,143 @@ make_stream_file(ref * pfile, stream * s, const char *access)
     }
 }
 
-/* Open an OS-level file (like fopen), using the search paths if necessary. */
-/* Note that it does not automatically look in the current */
-/* directory first (or at all): this is like Unix, and unlike MS-DOS. */
-private int
-lib_file_fopen(gx_io_device * iodev, const char *bname,
-	       const char *ignore_access, FILE ** pfile,
-	       char *rfname, uint rnamelen)
+/*******PATCH*BEG*********************/
+
+/* This code will be moved to gpmisc.h : */
+typedef enum {
+    gp_combine_small_buffer = -1,
+    gp_combine_cant_handle = 0,
+    gp_combine_success = 1
+} gp_file_name_combine_result;
+
+
+/* This code will be moved to gp.h : */
+gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen);
+
+
+/* This code will be moved to gpmisc.c : */
+
+gp_file_name_combine_result gp_file_name_combine_generic(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen)
 {
-    char fmode[3];		/* r, [b], null */
-    int len = strlen(bname);
-    const gs_file_path *pfpath = &gs_lib_path;
-    uint pi;
+    /* This is a stub. */
+    /* It will be replaced with a more intelligent code. */
+    const char *sep = gp_file_name_concat_string(prefix, plen);
+    uint slen = strlen(sep);
 
-    strcpy(fmode, "r");
-    strcat(fmode, gp_fmode_binary_suffix);
-    if (gp_pathstring_not_bare(bname, len))
-	return (*iodev->procs.fopen)(iodev, bname, fmode, pfile,
-				     rfname, rnamelen);
-    /* Go through the list of search paths */
-    for (pi = 0; pi < r_size(&pfpath->list); ++pi) {
-	const ref *prdir = pfpath->list.value.refs + pi;
-	const char *pstr = (const char *)prdir->value.const_bytes;
-	uint plen = r_size(prdir);
-	const char *cstr =
-	gp_file_name_concat_string(pstr, plen);
-	int up, i;
-	int code;
-
-	/* Concatenate the prefix, combiner, and file name. */
-	/* Do this carefully in case rfname is the same */
-	/* as fname.  (We don't worry about the case */
-	/* where rfname only overlaps fname.) */
-	up = plen + strlen(cstr);
-	if (up + len + 1 > rnamelen)
-	    return_error(e_limitcheck);
-	for (i = len + 1; --i >= 0;)
-	    rfname[i + up] = bname[i];
-	memcpy(rfname, pstr, plen);
-	memcpy(rfname + plen, cstr, strlen(cstr));
-	code = (*iodev->procs.fopen)(iodev, rfname, fmode,
-				     pfile, rfname, rnamelen);
-	if (code >= 0)
-	    return code;
-	/* strcpy isn't guaranteed to work for overlapping */
-	/* source and destination, so: */
-	if (rfname == bname)
-	    for (i = 0; (rfname[i] = rfname[i + up]) != 0; i++);
-    }
-    return_error(e_undefinedfilename);
+    if (plen + flen + slen + 1 > *blen)
+	return gp_combine_small_buffer;
+    memcpy(buffer, prefix, plen);
+    memcpy(buffer + plen, sep, slen);
+    memcpy(buffer + plen + slen, fname, flen);
+    *blen = plen + slen + flen;
+    buffer[*blen] = 0;
+    return gp_combine_success;
 }
+
+/* This code will be moved to platform dependent modules : */
+
+gp_file_name_combine_result gp_file_name_combine(const char *prefix, uint plen, 
+	    const char *fname, uint flen, char *buffer, uint *blen)
+{
+    /* Specific platforms may use a different implementation. */
+    return gp_file_name_combine_generic(prefix, plen, fname, flen, buffer, blen);
+}
+
+/*******PATCH*END*********************/
+
+
+/* Prepare a stream with a file name. */
+/* Return 0 if successful, error code if not. */
+/* On a successful return, the C file name is in the stream buffer. */
+/* If fname==0, set up stream, and buffer. */
+private int
+file_prepare_stream(const char *fname, uint len, const char *file_access, 
+		 uint buffer_size, stream ** ps, char fmode[4], 
+		 gx_io_device *iodev, gs_memory_t *mem)
+{
+    byte *buffer;
+    register stream *s;
+
+    /* Open the file, always in binary mode. */
+    strcpy(fmode, file_access);
+    strcat(fmode, gp_fmode_binary_suffix);
+    if (buffer_size == 0)
+	buffer_size = file_default_buffer_size;
+    if (len >= buffer_size)    /* we copy the file name into the buffer */
+	return_error(e_limitcheck);
+    /* Allocate the stream first, since it persists */
+    /* even after the file has been closed. */
+    s = file_alloc_stream(mem, "file_prepare_stream");
+    if (s == 0)
+	return_error(e_VMerror);
+    /* Allocate the buffer. */
+    buffer = gs_alloc_bytes(mem, buffer_size, "file_prepare_stream(buffer)");
+    if (buffer == 0)
+	return_error(e_VMerror);
+    if (fname != 0) {
+	memcpy(buffer, fname, len);
+	buffer[len] = 0;	/* terminate string */
+    } else
+	buffer[0] = 0;	/* safety */
+    s->cbuf = buffer;
+    s->bsize = s->cbsize = buffer_size;
+    *ps = s;
+    return 0;
+}
+
 /* The startup code calls this to open @-files. */
-FILE *
-lib_fopen(const char *bname)
+private FILE *
+lib_fopen_with_libpath(gx_io_device *iodev, const char *fname, uint flen, char fmode[4], 
+		char *buffer, int blen)
 {
     FILE *file = NULL;
+
+    if (gp_pathstring_not_bare(fname, flen)) {
+	if (flen + 1 > blen)
+	    return 0;
+	memcpy(buffer, fname, flen);
+	buffer[flen] = 0;
+	if (iodev->procs.fopen(iodev, buffer, fmode, &file,
+				     buffer, blen) == 0)
+	    return file;
+    } else {
+	const gs_file_path *pfpath = &gs_lib_path;
+	uint pi;
+
+	for (pi = 0; pi < r_size(&pfpath->list); ++pi) {
+	    const ref *prdir = pfpath->list.value.refs + pi;
+	    const char *pstr = (const char *)prdir->value.const_bytes;
+	    uint plen = r_size(prdir), blen1 = blen;
+
+	    gp_file_name_combine_result r = gp_file_name_combine(pstr, plen, 
+		    fname, flen, buffer, &blen1);
+	    if (r != gp_combine_success)
+		continue;
+	    if (iodev->procs.fopen(iodev, buffer, fmode, &file,
+					 buffer, blen) == 0)
+		return file;
+	    file = NULL; /* safety */
+	}
+    }
+    return 0;
+}
+
+/* The startup code calls this to open @-files. */
+FILE *
+lib_fopen(const char *fname)
+{
     /* We need a buffer to hold the expanded file name. */
     char buffer[gp_file_name_sizeof];
     /* We can't count on the IODevice table to have been initialized yet. */
     /* Allocate a copy of the default IODevice. */
-    gx_io_device iodev_default_copy;
-    int code;
+    gx_io_device iodev_default_copy = *gx_io_device_table[0];
+    char fmode[3] = "r";
 
-    iodev_default_copy = *gx_io_device_table[0];
-    code = lib_file_fopen(&iodev_default_copy, bname, "r", &file,
-			  buffer, gp_file_name_sizeof);
-    return (code < 0 ? NULL : file);
+    strcat(fmode, gp_fmode_binary_suffix);
+    return lib_fopen_with_libpath(&iodev_default_copy, fname, strlen(fname), 
+			    fmode, buffer, sizeof(buffer));
 }
 
 /* Open a file stream on an OS file and create a file object, */
@@ -978,21 +1049,35 @@ lib_file_open(const char *fname, uint len, byte * cname, uint max_clen,
 	      uint * pclen, ref * pfile, gs_memory_t *mem)
 {
     stream *s;
-    int code = file_open_stream(fname, len, "r", file_default_buffer_size,
-				&s, (gx_io_device *)0, lib_file_fopen, mem);
-    char *bname;
+    int code;
+    char fmode[4];  /* r/w/a, [+], [b], null */
+    char *buffer;
     uint blen;
+    gx_io_device *iodev = iodev_default;
+    FILE *file;
 
+    code = file_prepare_stream(fname, len, "r", file_default_buffer_size, 
+			    &s, fmode, iodev, mem);
     if (code < 0)
 	return code;
+    if (fname == 0)
+	return 0;
+    buffer = (char *)s->cbuf;
+    file = lib_fopen_with_libpath(iodev, fname, len, fmode, buffer, s->bsize);
+    if (file == NULL) {
+	s->cbuf = NULL;
+	s->bsize = s->cbsize = 0;
+	gs_free_object(mem, buffer, "lib_file_open");
+        return_error(e_undefinedfilename);
+    }
+    file_init_stream(s, file, fmode, (byte *)buffer, s->bsize);
     /* Get the name from the stream buffer. */
-    bname = (char *)s->cbuf;
-    blen = strlen(bname);
+    blen = strlen(buffer);
     if (blen > max_clen) {
 	sclose(s);
-	return_error(e_limitcheck);
+        return_error(e_limitcheck);
     }
-    memcpy(cname, bname, blen);
+    memcpy(cname, buffer, blen);
     *pclen = blen;
     make_stream_file(pfile, s, "r");
     return 0;
@@ -1058,49 +1143,23 @@ file_open_stream(const char *fname, uint len, const char *file_access,
 		 uint buffer_size, stream ** ps, gx_io_device *iodev,
 		 iodev_proc_fopen_t fopen_proc, gs_memory_t *mem)
 {
-    byte *buffer;
-    register stream *s;
+    int code;
+    FILE *file;
+    char fmode[4];  /* r/w/a, [+], [b], null */
 
-    if (buffer_size == 0)
-	buffer_size = file_default_buffer_size;
-    if (len >= buffer_size)    /* we copy the file name into the buffer */
-	return_error(e_limitcheck);
-    /* Allocate the stream first, since it persists */
-    /* even after the file has been closed. */
-    s = file_alloc_stream(mem, "file_open_stream");
-    if (s == 0)
-	return_error(e_VMerror);
-    /* Allocate the buffer. */
-    buffer = gs_alloc_bytes(mem, buffer_size, "file_open_stream(buffer)");
-    if (buffer == 0)
-	return_error(e_VMerror);
-    if (fname != 0) {
-	/* Copy the name (so we can terminate it with a zero byte.) */
-	char *file_name = (char *)buffer;
-	char fmode[4];		/* r/w/a, [+], [b], null */
-	FILE *file;
-	int code;
-
-	memcpy(file_name, fname, len);
-	file_name[len] = 0;	/* terminate string */
-	/* Open the file, always in binary mode. */
-	strcpy(fmode, file_access);
-	strcat(fmode, gp_fmode_binary_suffix);
-	if (!iodev)
-	    iodev = iodev_default;
-	code = (*fopen_proc)(iodev, file_name, fmode, &file,
-			     (char *)buffer, buffer_size);
-	if (code < 0) {
-	    gs_free_object(mem, buffer, "file_open_stream(buffer)");
-	    return code;
-	}
-	/* Set up the stream. */
-	file_init_stream(s, file, fmode, buffer, buffer_size);
-    } else {			/* just save the buffer and size */
-	s->cbuf = buffer;
-	s->bsize = s->cbsize = buffer_size;
-    }
-    *ps = s;
+    if (!iodev)
+	iodev = iodev_default;
+    code = file_prepare_stream(fname, len, file_access, buffer_size, ps, fmode, 
+			    (!iodev ? iodev_default : iodev), mem);
+    if (code < 0)
+	return code;
+    if (fname == 0)
+	return 0;
+    code = (*fopen_proc)(iodev, (char *)(*ps)->cbuf, fmode, &file,
+			 (char *)(*ps)->cbuf, (*ps)->bsize);
+    if (code < 0)
+	return code;
+    file_init_stream(*ps, file, fmode, (*ps)->cbuf, (*ps)->bsize);
     return 0;
 }
 
