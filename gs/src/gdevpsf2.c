@@ -434,6 +434,18 @@ cff_put_Index(cff_writer_t *pcw, const cff_string_table_t *pcst)
 
 /* ---------------- Main code ---------------- */
 
+/* ------ Header ------ */
+
+/* Write the header, setting offset_size. */
+private int
+cff_write_header(cff_writer_t *pcw, uint end_offset)
+{
+    pcw->offset_size = (end_offset > 0x7fff ? 3 : 2);
+    put_bytes(pcw->strm, (const byte *)"\001\000\004", 3);
+    sputc(pcw->strm, pcw->offset_size);
+    return 0;
+}
+
 /* ------ Top Dict ------ */
 
 /*
@@ -1114,14 +1126,14 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
      * (see below).
      */
     uint
-	Top_size = 0xffff,
-	Encoding_offset = 0xffff,
-	charset_offset = 0xffff,
-	CharStrings_offset = 0xffff,
-	Private_offset = 0xffff,
-	Private_size = 0xffff,
-	Subrs_offset = 0xffff,
-	End_offset = 0xffff;
+	Top_size = 0x7fffff,
+	Encoding_offset,
+	charset_offset,
+	CharStrings_offset,
+	Private_offset,
+	Private_size = 0x7fffff,
+	Subrs_offset,
+	End_offset = 0x7fffff;
     int j;
     psf_glyph_enum_t genum;
     gs_glyph glyph;
@@ -1325,8 +1337,8 @@ psf_write_type2_font(stream *s, gs_font_type1 *pfont, int options,
 
  write:
     start_pos = stell(writer.strm);
-    /* Write the header. */
-    put_bytes(writer.strm, (const byte *)"\001\000\004\002", 4);
+    /* Write the header, setting offset_size. */
+    cff_write_header(&writer, End_offset);
 
     /* Write the names Index. */
     cff_put_Index_header(&writer, 1, font_name.size);
@@ -1595,10 +1607,8 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
  write:
     start_pos = stell(writer.strm);
     if_debug1('l', "[l]start_pos = %ld\n", start_pos);
-    writer.offset_size = (End_offset > 0x7fff ? 3 : 2);
-    /* Write the header. */
-    put_bytes(writer.strm, (const byte *)"\001\000\004", 3);
-    sputc(writer.strm, writer.offset_size);
+    /* Write the header, setting offset_size. */
+    cff_write_header(&writer, End_offset);
 
     /* Write the names Index. */
     cff_put_Index_header(&writer, 1, font_name.size);
