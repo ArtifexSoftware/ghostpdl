@@ -61,29 +61,22 @@ AC_CHECK_SIZEOF(char)
 AC_CHECK_SIZEOF(short)
 AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
-if test $ac_cv_sizeof_char = 1; then
-  int8_type="char"
-else
-  stdint_types_discovered="no"
-fi
-if test $ac_cv_sizeof_short = 2; then
-  int16_type="short"
-elif test $ac_cv_sizeof_char = 2; then
-  int16_type="char"
-elif test $ac_cv_sizeof_int = 2; then
-  int16_type="char"
-else
-  stdint_types_discovered="no"
-fi
-if test $ac_cv_sizeof_int = 4; then
-  int32_type="int"
-elif test $ac_cv_sizeof_long = 4; then
-  int32_type="long"
-elif test $ac_cv_sizeof_short = 4; then
-  int32_type="short"
-else
-  stdint_types_discovered="no"
-fi
+case 1 in
+  $ac_cv_sizeof_char) int8_type="char";;
+  *) stdint_types_discovered="no"
+esac
+case 2 in
+  $ac_cv_sizeof_short) int16_type="short";;
+  $ac_cv_sizeof_char)  int16_type="char";;
+  $ac_cv_sizeof_int)   int16_type="char";;
+  *) stdint_types_discovered="no";;
+esac
+case 4 in
+  $ac_cv_sizeof_int)   int32_type="int";;
+  $ac_cv_sizeof_long)  int32_type="long";;
+  $ac_cv_sizeof_short) int32_type="short";;
+  *) stdint_types_discovered="no";;
+esac
 AC_CHECK_HEADER([stdint.h])
 if test "x$ac_cv_header_stdint_h" != "xyes"; then
   for include in sys/types.h inttypes.h sys/inttypes.h sys/int_types.h ; do
