@@ -74,9 +74,9 @@ private const pjl_envir_var_t pjl_factory_defaults[] = {
     {"fontnumber", "0"},
     {"pitch", "10.00"},
     {"ptsize", "12.00"},
-    /* NB this is for the 6mp roman8 is used on most other HP devices
+    /* NB pc8 is for the 6mp roman8 is used on most other HP devices
        other devices */
-    {"symset", "pc8"},
+    {"symset", "roman8"},
     {"copies", "1"},
     {"paper", "letter"},
     {"orientation", "portrait"},
