@@ -723,9 +723,17 @@ end readonly def                % .loadttfontdict
   } if
 		% If necessary, fabricate additional glyphencoding entries
 		% to cover all of loca, or truncate glyphencoding.
-  glyphencoding length numloca lt {
-    /glyphencoding [ glyphencoding aload pop
-    counttomark 1 numloca 1 sub { .nname } for ] def
+  glyphencoding length numloca dup lt {
+    /glyphencoding numloca array
+      glyphencoding length dup 1 sub 0 1 3 2 roll {
+        dup glyphencoding exch get
+        3 index 3 1 roll put
+      } for
+      % /glyphencoding <newarray> <glyphencoding length>
+      1 numloca 1 sub {
+        1 index exch dup .nname put
+      } for
+    def
   } {
     /glyphencoding glyphencoding 0 numloca getinterval def
   } ifelse
