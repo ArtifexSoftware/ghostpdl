@@ -279,62 +279,6 @@ jbig2_decode_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
     return 0;
 }
 
-/* count the number of dictionary segments referred to by the given segment */
-static int
-count_referred_dicts(Jbig2Ctx *ctx, Jbig2Segment *segment)
-{
-    int index;
-    Jbig2Segment *rsegment;
-    int n_dicts = 0;
-
-    for (index = 0; index < segment->referred_to_segment_count; index++) {
-        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
-        if (rsegment && ((rsegment->flags & 63) == 0)) {
-            n_dicts++;
-            n_dicts+= count_referred_dicts(ctx, rsegment);
-        }
-    }
-    
-    return (n_dicts);
-}
-
-/* return an array of pointers to symbol dictionaries referred to by the given segment */
-static Jbig2SymbolDict **
-list_referred_dicts(Jbig2Ctx *ctx, Jbig2Segment *segment)
-{
-    int index;
-    Jbig2Segment *rsegment;
-    Jbig2SymbolDict **dicts, **rdicts;
-    int n_dicts = count_referred_dicts(ctx, segment);
-    int dindex = 0;
-    
-    dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
-    for (index = 0; index < segment->referred_to_segment_count; index++) {
-        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
-        if (rsegment && ((rsegment->flags & 63) == 0)) {
-            /* recurse for imported symbols */
-            int j, n_rdicts = count_referred_dicts(ctx, rsegment);
-            if (n_rdicts > 0) {
-                rdicts = list_referred_dicts(ctx, rsegment);
-                for (j = 0; j < n_rdicts; j++)
-                    dicts[dindex++] = rdicts[j];
-                jbig2_free(ctx->allocator, rdicts);
-            }
-            /* add this referred to symbol dictionary */
-            dicts[dindex++] = (Jbig2SymbolDict *)rsegment->result;
-        }
-    }
-    
-    if (dindex != n_dicts) {
-        /* should never happen */
-        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
-    	    "counted %d symbol dictionaries but build a list with %d.\n",
-    	    n_dicts, dindex);
-    }
-    
-    return (dicts);
-}
-
 /**
  * jbig2_read_text_info: read a text region segment header
  **/
@@ -427,9 +371,9 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     }
     
     /* compose the list of symbol dictionaries */
-    n_dicts = count_referred_dicts(ctx, segment);
+    n_dicts = jbig2_sd_count_referred(ctx, segment);
     if (n_dicts != 0) {
-        dicts = list_referred_dicts(ctx, segment);
+        dicts = jbig2_sd_list_referred(ctx, segment);
     } else {
         return jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
                 "text region refers to no symbol dictionaries!");

@@ -13,7 +13,7 @@
     Artifex Software, Inc.,  101 Lucas Valley Road #110,
     San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
-    $Id: jbig2_symbol_dict.h,v 1.4 2002/06/22 21:20:38 giles Exp $
+    $Id$
 
     symbol dictionary header
  */
@@ -28,3 +28,20 @@ typedef struct {
 int
 jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
 			const byte *segment_data);
+
+/* generate a new symbol dictionary by concatenating a list of
+   existing dictionaries */
+Jbig2SymbolDict *
+jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts,
+			Jbig2SymbolDict **dicts);
+
+/* count the number of dictionary segments referred 
+   to by the given segment */
+int
+jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment);
+
+/* return an array of pointers to symbol dictionaries referred 
+   to by a segment */
+Jbig2SymbolDict **
+jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment);
+

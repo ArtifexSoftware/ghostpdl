@@ -211,6 +211,88 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   return SDNEWSYMS;
 }
 
+/* count the number of dictionary segments referred to by the given segment */
+int
+jbig2_sd_count_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
+{
+    int index;
+    Jbig2Segment *rsegment;
+    int n_dicts = 0;
+ 
+    for (index = 0; index < segment->referred_to_segment_count; index++) {
+        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
+        if (rsegment && ((rsegment->flags & 63) == 0)) {
+            n_dicts++;
+            n_dicts+= jbig2_sd_count_referred(ctx, rsegment);
+        }
+    }
+                                                                                
+    return (n_dicts);
+}
+
+/* return an array of pointers to symbol dictionaries referred to by the given segment */
+Jbig2SymbolDict **
+jbig2_sd_list_referred(Jbig2Ctx *ctx, Jbig2Segment *segment)
+{
+    int index;
+    Jbig2Segment *rsegment;
+    Jbig2SymbolDict **dicts, **rdicts;
+    int n_dicts = jbig2_sd_count_referred(ctx, segment);
+    int dindex = 0;
+                                                     
+    dicts = jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict *) * n_dicts);
+    for (index = 0; index < segment->referred_to_segment_count; index++) {
+        rsegment = jbig2_find_segment(ctx, segment->referred_to_segments[index]);
+        if (rsegment && ((rsegment->flags & 63) == 0)) {
+            /* recurse for imported symbols */
+            int j, n_rdicts = jbig2_sd_count_referred(ctx, rsegment);
+            if (n_rdicts > 0) {
+                rdicts = jbig2_sd_list_referred(ctx, rsegment);
+                for (j = 0; j < n_rdicts; j++)
+                    dicts[dindex++] = rdicts[j];
+                jbig2_free(ctx->allocator, rdicts);
+            }
+            /* add this referred to symbol dictionary */
+            dicts[dindex++] = (Jbig2SymbolDict *)rsegment->result;
+        }
+    }
+                                                                                
+    if (dindex != n_dicts) {
+        /* should never happen */
+        jbig2_error(ctx, JBIG2_SEVERITY_FATAL, segment->number,
+            "counted %d symbol dictionaries but build a list with %d.\n",
+            n_dicts, dindex);
+    }
+                                                                                
+    return (dicts);
+}
+
+/* generate a new symbol dictionary by concatenating a list of 
+   existing dictionaries */
+Jbig2SymbolDict *
+jbig2_sd_cat(Jbig2Ctx *ctx, int n_dicts, Jbig2SymbolDict **dicts)
+{
+  int i,j,k, symbols;
+  Jbig2SymbolDict *new = NULL;
+  
+  new = (Jbig2SymbolDict *)jbig2_alloc(ctx->allocator, sizeof(Jbig2SymbolDict));
+
+  if (new != NULL) {
+    /* count the imported symbols and allocate a new array */
+    symbols = 0;
+    for(i = 0; i < n_dicts; i++)
+      symbols += dicts[i]->n_symbols;
+    new->glyphs = (Jbig2Image **)jbig2_alloc(ctx->allocator, symbols);
+    /* fill the new array with cloned glyph pointers */
+    k = 0;
+    for (i = 0; i < n_dicts; i++)
+      for (j = 0; j < dicts[i]->n_symbols; j++)
+        new->glyphs[k++] = jbig2_image_clone(ctx, dicts[i]->glyphs[j]);
+  }
+  
+  return new;
+}
+
 /* 7.4.2 */
 int
 jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
@@ -221,6 +303,7 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
   int sdat_bytes;
   int offset;
   Jbig2ArithCx *GB_stats = NULL;
+  Jbig2SymbolDict *SDNEWSYMS;
 
   if (segment->data_length < 10)
     goto too_short;
@@ -299,14 +382,17 @@ jbig2_symbol_dictionary(Jbig2Ctx *ctx, Jbig2Segment *segment,
         "segment marks bitmap coding context as retained (NYI)");
     }
 
-  segment->result = (void *)jbig2_decode_symbol_dict(ctx, segment,
+  SDNEWSYMS = jbig2_decode_symbol_dict(ctx, segment,
 				  &params,
 				  segment_data + offset,
 				  segment->data_length - offset,
 				  GB_stats);
 #ifdef DUMP_SYMDICT
-  if (segment->result) jbig2_dump_symbol_dict(segment->result);
+  if (segment->result) jbig2_dump_symbol_dict(SDNEWSYMS);
 #endif
+
+  /* FIXME: assume for now everything is exported */
+  segment->result = (void *)SDNEWSYMS;
 
   return (segment->result != NULL) ? 0 : -1;
 
