@@ -354,13 +354,7 @@ pdfdict begin
      search_objects
      count /pdfemptycount exch def
      search_trailer
-     Trailer /Encrypt known {
-       pdf_process_Encrypt	% signal error
-     } if
    } { /Trailer exch def
-     Trailer /Encrypt known {
-       pdf_process_Encrypt	% signal error
-     } if
 	% Read any previous cross-reference tables.
      Trailer
      { /Prev knownoget not { exit } if
@@ -372,6 +366,9 @@ pdfdict begin
        } if
      } loop
    } ifelse
+   Trailer /Encrypt known {
+     pdf_process_Encrypt	% signal error
+   } if
    currentdict end
  } bind def
 
