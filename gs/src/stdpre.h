@@ -250,6 +250,15 @@ typedef unsigned short ushort;
 typedef unsigned int uint;
 typedef unsigned long ulong;
 
+/* Some systems are guaranteed to have stdint.h
+ * but don't use the autoconf detection
+ */
+#ifndef HAVE_STDINT_H
+# ifdef __MACOS__
+#   define HAVE_STDINT_H
+# endif
+#endif
+
 /* Define some stdint.h types. The jbig2dec headers require these and 
  * they're generally useful to have around now that there's a standard.
  */
