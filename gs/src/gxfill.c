@@ -179,8 +179,6 @@ is_spotan_device(gx_device * dev)
 
 
 /* Forward declarations */
-private void init_line_list(line_list *, gs_memory_t *);
-private void unclose_path(gx_path *, int);
 private void free_line_list(line_list *);
 private int add_y_list(gx_path *, line_list *);
 private int add_y_line(const segment *, const segment *, int, line_list *);
@@ -200,7 +198,8 @@ private FILL_LOOP_PROC(fill_loop_by_trapezoids);
 
 /*
  * This is the general path filling algorithm.
- * It uses the center-of-pixel rule for filling.
+ * It uses the center-of-pixel rule for filling
+ * (except for pseudo_rasterization - see below).
  * We can implement Microsoft's upper-left-corner-of-pixel rule
  * by subtracting (0.5, 0.5) from all the coordinates in the path.
  *
@@ -212,6 +211,51 @@ private FILL_LOOP_PROC(fill_loop_by_trapezoids);
  * closed/open interval rule for regions.  We detect this as a special case
  * and do the slightly ugly things necessary to make it work.
  */
+
+/* Initialize the line list for a path. */
+private inline void
+init_line_list(line_list *ll, gs_memory_t * mem)
+{
+    ll->memory = mem;
+    ll->active_area = 0;
+    ll->next_active = ll->local_active;
+    ll->limit = ll->next_active + MAX_LOCAL_ACTIVE;
+    ll->close_count = 0;
+    ll->y_list = 0;
+    ll->y_line = 0;
+    ll->h_list0 = ll->h_list1 = 0;
+    ll->margin_set0.margin_list = ll->margin_set1.margin_list = 0;
+    ll->margin_set0.margin_touched = ll->margin_set1.margin_touched = 0;
+    ll->margin_set0.y = ll->margin_set1.y = 0; /* A stub against indeterminism. Don't use it. */
+    ll->free_margin_list = 0;
+    ll->local_margin_alloc_count = 0;
+    ll->margin_set0.sect = ll->local_section0;
+    ll->margin_set1.sect = ll->local_section1;
+    ll->pseudo_rasterization = false;
+    /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
+    INCR(fill);
+}
+
+
+/* Unlink any line_close segments added temporarily. */
+private inline void
+unclose_path(gx_path * ppath, int count)
+{
+    subpath *psub;
+
+    for (psub = ppath->first_subpath; count != 0;
+	 psub = (subpath *) psub->last->next
+	)
+	if (psub->last == (segment *) & psub->closer) {
+	    segment *prev = psub->closer.prev, *next = psub->closer.next;
+
+	    prev->next = next;
+	    if (next)
+		next->prev = prev;
+	    psub->last = prev;
+	    count--;
+	}
+}
 
 /*
  * Tweak the fill adjustment if necessary so that (nearly) empty
@@ -624,50 +668,6 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	vd_release_dc;
     }
     return code;
-}
-
-/* Initialize the line list for a path. */
-private inline void
-init_line_list(line_list *ll, gs_memory_t * mem)
-{
-    ll->memory = mem;
-    ll->active_area = 0;
-    ll->next_active = ll->local_active;
-    ll->limit = ll->next_active + MAX_LOCAL_ACTIVE;
-    ll->close_count = 0;
-    ll->y_list = 0;
-    ll->y_line = 0;
-    ll->h_list0 = ll->h_list1 = 0;
-    ll->margin_set0.margin_list = ll->margin_set1.margin_list = 0;
-    ll->margin_set0.margin_touched = ll->margin_set1.margin_touched = 0;
-    ll->margin_set0.y = ll->margin_set1.y = 0; /* A stub against indeterminism. Don't use it. */
-    ll->free_margin_list = 0;
-    ll->local_margin_alloc_count = 0;
-    ll->margin_set0.sect = ll->local_section0;
-    ll->margin_set1.sect = ll->local_section1;
-    ll->pseudo_rasterization = false;
-    /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
-    INCR(fill);
-}
-
-/* Unlink any line_close segments added temporarily. */
-private inline void
-unclose_path(gx_path * ppath, int count)
-{
-    subpath *psub;
-
-    for (psub = ppath->first_subpath; count != 0;
-	 psub = (subpath *) psub->last->next
-	)
-	if (psub->last == (segment *) & psub->closer) {
-	    segment *prev = psub->closer.prev, *next = psub->closer.next;
-
-	    prev->next = next;
-	    if (next)
-		next->prev = prev;
-	    psub->last = prev;
-	    count--;
-	}
 }
 
 /* Free the line list. */
@@ -1207,17 +1207,17 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 
     if (curve) {
 	if (alp->direction == DIR_UP) {
-	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (curve_segment *)s1, fixed_flat);
+	    int k = gx_curve_log2_samples(s0->pt.x, s0->pt.y, (const curve_segment *)s1, fixed_flat);
 
 	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s0->pt.x, s0->pt.y, (curve_segment *)s1, k, false));
+		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, false));
 	    step_al(alp, true);
 	} else {
-	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (curve_segment *)s0, fixed_flat);
+	    int k = gx_curve_log2_samples(s1->pt.x, s1->pt.y, (const curve_segment *)s0, fixed_flat);
 	    bool more;
 
 	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s1->pt.x, s1->pt.y, (curve_segment *)s0, k, false));
+		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, false));
 	    alp->more_flattened = false;
 	    do {
 		more = gx_flattened_iterator__next_filtered2(&alp->fi);
@@ -1949,6 +1949,16 @@ intersect(active_line *endp, active_line *alp, fixed y, fixed y1, fixed *p_y_new
     return true;
 }
 
+private inline void
+set_x_next(active_line *endp, active_line *alp, fixed x)
+{
+    while(endp != alp) {
+	endp->x_next = x;
+	endp = endp->next;
+    }
+}
+
+
 /* Find intersections of active lines within the band. 
    Intersect and reorder them, and correct the bund top. */
 private void
@@ -1978,7 +1988,8 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 	     INCR_EXPR(find_y), alp != 0;
 	     endp = alp, alp = alp->next
 	    ) {
-	    fixed nx = AL_X_AT_Y(alp, y1), y_new;
+	    fixed nx = AL_X_AT_Y(alp, y1);
+	    fixed y_new;
 
 	    alp->x_next = nx;
 	    /* Check for intersecting lines. */
@@ -1986,23 +1997,92 @@ intersect_al(line_list *ll, fixed y, fixed *y_top, int draw)
 		x = nx;
 	    else if (alp->x_current >= endp->x_current &&
 		     intersect(endp, alp, y, y1, &y_new)) {
-		if (y_new < y1) {
+		if (y_new <= y1) {
 #		    if CURVED_TRAPEZOID_FILL
 			assert(y_new >= y);
 #		    endif
-		    stopx = alp;
+		    stopx = endp;
 		    y1 = y_new;
-		    alp->x_next = nx = AL_X_AT_Y(alp, y1);
+		    if (endp->diff.x == 0)
+			nx = endp->start.x;
+		    else if (alp->diff.x == 0)
+			nx = alp->start.x;
+		    else {
+			fixed nx1 = AL_X_AT_Y(endp, y1);
+
+			nx = AL_X_AT_Y(alp, y1);
+			nx = (nx + nx1) / 2; /* Ensure same X. */
+		    }
+		    endp->x_next = alp->x_next = nx;
 		    draw = 0;
+		    /* Can't guarantee same x for triple intersections here. 
+		       Will take care below */
 		}
 		if (nx > x)
 		    x = nx;
 	    }
 	}
+	/* Recompute next_x for lines before the intersection. */
+	for (alp = ll->x_list; alp != stopx; alp = alp->next)
+	    alp->x_next = AL_X_AT_Y(alp, y1);
+	/* Ensure X monotonity (particularly imporoves triple intersections). */
+	if (ll->x_list != NULL) {
+	    for (;;) {
+		fixed x1;
+		double sx; /* 'fixed' can overflow. */
+		int k, n;
+
+		endp = ll->x_list;
+		x1 = endp->x_next;
+		for (alp = endp->next; alp != NULL; x1 = alp->x_next, alp = alp->next)
+		    if (alp->x_next < x1)
+			break;
+		if (alp == NULL)
+		    break;
+		x1 = endp->x_next;
+		sx = x1;
+		n = 1;
+		k = (endp->start.x == endp->end.x ? -1 : 1);
+		for (alp = endp->next; alp != NULL; alp = alp->next) {
+		     x = alp->x_next;
+		     if (x < x1) {
+			n++;
+			if (alp->start.x == alp->end.x) {
+			    /* Vertical lines have a higher priority. */
+			    if (k <= -1) {
+				sx += x;
+				k--;
+			    } else {
+				k = -1;
+				sx = x;
+			    }
+			} else if (k > 0) {
+			    sx += x;
+			    k++;
+			}
+		     } else {
+			if (n > 1) { 
+			    k = any_abs(k);
+			    set_x_next(endp, alp, (fixed)((sx + k / 2) / k));
+			}
+			x1 = alp->x_next;
+			sx = x1;
+			k = 1;
+			n = 1;
+			endp = alp;
+		     }
+		}
+		if (n > 1) {
+		    k = any_abs(k);
+    		    set_x_next(endp, alp, (fixed)((sx + k / 2) / k));
+		}
+	    }
+	}
+    } else {
+	/* Recompute next_x for lines before the intersection. */
+	for (alp = ll->x_list; alp != stopx; alp = alp->next)
+	    alp->x_next = AL_X_AT_Y(alp, y1);
     }
-    /* Recompute next_x for lines before the intersection. */
-    for (alp = ll->x_list; alp != stopx; alp = alp->next)
-	alp->x_next = AL_X_AT_Y(alp, y1);
 #ifdef DEBUG
     if (gs_debug_c('F')) {
 	dlprintf1("[F]after loop: y1=%f\n", fixed2float(y1));
