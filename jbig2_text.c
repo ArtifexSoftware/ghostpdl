@@ -328,7 +328,7 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
     int offset = 0;
     Jbig2RegionSegmentInfo region_info;
     Jbig2TextRegionParams params;
-    Jbig2Image *image, *page_image;
+    Jbig2Image *image;
     Jbig2SymbolDict **dicts;
     int n_dicts;
     uint16_t flags;
@@ -444,7 +444,6 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
 	}
     }
 
-    page_image = ctx->pages[ctx->current_page].image;
     image = jbig2_image_new(ctx, region_info.width, region_info.height);
 
     code = jbig2_decode_text_region(ctx, segment, &params,
@@ -459,12 +458,12 @@ jbig2_parse_text_region(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segmen
         segment->result = image;
     } else {
         /* otherwise composite onto the page */
+	Jbig2Image *page_image = ctx->pages[ctx->current_page].image;
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number, 
             "composing %dx%d decoded text region onto page at (%d, %d)",
             region_info.width, region_info.height, region_info.x, region_info.y);
         jbig2_image_compose(ctx, page_image, image, region_info.x, region_info.y, JBIG2_COMPOSE_OR);
-        if (image != page_image)
-            jbig2_image_release(ctx, image);
+        jbig2_image_release(ctx, image);
     }
     
     /* success */            
