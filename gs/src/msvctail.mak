@@ -38,8 +38,14 @@ $(ECHOGS_XE): $(GLSRC)echogs.c
 
 # Don't create genarch if it's not needed
 !ifdef GENARCH_XE
+!ifdef WIN64
+$(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
+	$(CC) @$(GLGENDIR)\ccf32.tr /Fo$(GLOBJ)genarch.obj $(GLSRC)genarch.c
+	$(LINK) $(LCT) $(LINKLIBPATH) $(GLOBJ)genarch.obj /OUT:$(GENARCH_XE)
+!else
 $(GENARCH_XE): $(GLSRC)genarch.c $(GENARCH_DEPS) $(GLGENDIR)\ccf32.tr
 	$(CCAUX) @$(GLGENDIR)\ccf32.tr /Fo$(GLOBJ)genarch.obj /Fe$(GENARCH_XE) $(GLSRC)genarch.c $(CCAUX_TAIL)
+!endif
 !endif
 
 $(GENCONF_XE): $(GLSRC)genconf.c $(GENCONF_DEPS)

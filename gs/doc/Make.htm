@@ -51,6 +51,7 @@
 <ul>
 <li><a href="#Borland_build">Borland/Inprise environment</a>
 <li><a href="#Microsoft_build">Microsoft environment</a>
+<li><a href="#Microsoft_build_64">Microsoft environment 64-bit</a>
 <li><a href="#Self-extracting_executables">Making self-extracting executables</a>
 <li><a href="#Watcom_build">Watcom environment</a>
 <li><a href="#Cygwin32_build">Cygwin32 gcc</a>
@@ -1339,6 +1340,69 @@ without <b><tt>/O2</tt></b>.
   without stack checking. Don't change the setting <b><tt>TDEBUG=1</tt></b> in 
   <b><tt>msvc32.mak</tt></b>. 
 
+<h3><a name="Microsoft_build_64"></a>Microsoft Environment for 64-bit</h3>
+
+Building Ghostscript for 64-bit Windows (AMD64 processor) requires
+Microsoft Visual Studio .NET 2005 beta on 64-bit Windows,
+or Microsoft Visual Studio .NET 2003 and Windows Server 2003 DDK
+on 32-bit Windows (cross-compile).
+<p>
+Compiling for 64-bit is similar to the 
+<a href="#Microsoft_build">Microsoft Environment</a> instructions above,
+but with the addition of a WIN64 define.
+
+<h4><a name="Microsoft_64on32"></a>Cross compile on 32-bit Windows XP</h4>
+Microsoft Visual Studio .NET 2003 is used for 32-bit compilation
+of auxiliary programs used by the compile process, 
+while Windows Server 2003 Device Driver Kit (DDK)
+is used for 64-bit compilation.
+The DDK cross compilers for the IA64 and AMD64 processors,
+however only AMD64 is supported by the makefile.
+The DDK is not installed correctly by the setup program.
+You need to copy <b><tt>msobj10.dll</tt></b> to the compiler
+directory from a nearby directory.
+<p>
+To make ghostscript use
+<blockquote><b><tt>
+  nmake -f src/msvc32.mak WIN64=
+</tt></b></blockquote>
+This will fail when it tries to run genconf.exe.
+Move <b><tt>./obj/genconf.exe</tt></b> to 64-bit Windows, then run it
+<blockquote><b><tt>
+  genconf arch.h
+</tt></b></blockquote>
+Move <b><tt>arch.h</tt></b> back to <b><tt>./obj/arch.h</tt></b>.
+(Alternatively, use arch.h created by a 32-bit build and change 
+ARCH_ALIGN_PTR_MOD to 8, 
+ARCH_ALIGN_STRUCT_MOD to 16,
+ARCH_SIZEOF_PTR to 8, 
+and ARCH_CACHE1_SIZE to 4194304).
+Then restart the build
+<blockquote><b><tt>
+  nmake -f src/msvc32.mak WIN64=
+</tt></b></blockquote>
+
+<p>
+You can also use Microsoft Visual Studio .NET 2005 beta
+to do a similar cross compile, but you will need to 
+change the DEVSTUDIO path.
+
+<h4><a name="Microsoft_64on64"></a>Compile on 64-bit Windows XP</h4>
+To make ghostscript use
+<blockquote><b><tt>
+  nmake -f src/msvc32.mak WIN64=
+</tt></b></blockquote>
+The Microsoft Visual Studio .NET 2005 beta does not have 
+a "go live" licence.  You are not permitted to distribute
+executables created by this compiler.
+<p>
+The makefile currently uses the cross compiler (x86_amd64) 
+rather than the native compiler (amd64).
+<p>
+You can install Microsoft Visual Studio .NET 2003 on
+64-bit Windows, but you can't install Windows Server 2003 DDK.
+You may be able to copy the DDK directory <b><tt>c:\winddk</tt></b>
+from a 32-bit system to a 64-bit system and compile GS.
 
 <h4><a name="Self-extracting_executables"></a>Making self-extracting executables</h4>
 

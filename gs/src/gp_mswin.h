@@ -50,6 +50,12 @@ extern const LPSTR szAppName;
 extern BOOL is_win32s;
 extern int is_spool(const char *queue);
 
+#ifdef _WIN64
+#define DLGRETURN INT_PTR
+#else
+#define DLGRETURN BOOL
+#endif
+
 #endif /* !defined(RC_INVOKED) */
 
 #endif /* gp_mswin_INCLUDED */

@@ -149,7 +149,7 @@ gp_close_printer(FILE * pfile, const char *fname)
 
 
 /* Dialog box to select printer port */
-BOOL CALLBACK
+DLGRETURN CALLBACK
 SpoolDlgProc(HWND hDlg, UINT message, WPARAM wParam, LPARAM lParam)
 {
     LPSTR entry;

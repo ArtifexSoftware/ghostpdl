@@ -37,7 +37,11 @@ WININT_MAK=$(PSSRC)winint.mak
 
 # Define the location of the WinZip self-extracting-archive-maker.
 !ifndef WINZIPSE_XE
+!ifdef WIN64
+WINZIPSE_XE="C:\Program Files (x86)\WinZip Self-Extractor\WZIPSE32.EXE"
+!else
 WINZIPSE_XE="C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE"
+!endif
 !endif
 
 # Define the name and location of the zip archive maker.
@@ -234,6 +238,11 @@ ZIPFONTFILES=$(ZIPFONTDIR)\*.*
 # Make the zip archive.
 FILELIST_TXT=filelist.txt
 FONTLIST_TXT=fontlist.txt
+!ifdef WIN64
+ZIPTARGET=gs$(GS_VERSION)w64
+!else
+ZIPTARGET=gs$(GS_VERSION)w32
+!endif
 zip: $(SETUP_XE) $(UNINSTALL_XE)
 	cd ..
 	copy gs$(GS_DOT_VERSION)\$(SETUP_XE) .
@@ -249,22 +258,22 @@ zip: $(SETUP_XE) $(UNINSTALL_XE)
 	echo $(ZIPPROGFILE9) >> $(ZIPTEMPFILE)
 	$(SETUP_XE_NAME) -title "AFPL Ghostscript $(GS_DOT_VERSION)" -dir "gs$(GS_DOT_VERSION)" -list "$(FILELIST_TXT)" @$(ZIPTEMPFILE)
 	$(SETUP_XE_NAME) -title "AFPL Ghostscript Fonts" -dir "fonts" -list "$(FONTLIST_TXT)" $(ZIPFONTFILES)
-	-del gs$(GS_VERSION)w32.zip
-	$(ZIP_XE) -9 gs$(GS_VERSION)w32.zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT) $(FONTLIST_TXT)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPFONTDIR)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE1)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE2)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE3)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE4)
+	-del $(ZIPTARGET).zip
+	$(ZIP_XE) -9 $(ZIPTARGET).zip $(SETUP_XE_NAME) $(UNINSTALL_XE_NAME) $(FILELIST_TXT) $(FONTLIST_TXT)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPFONTDIR)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE1)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE2)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE3)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE4)
 	rem
 	rem	Don't flag error if Win32s spooler file is missing.
 	rem	This occurs when using MSVC++.
 	rem
-	-$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE5)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE6)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE7)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE8)
-	$(ZIP_XE) -9 -r gs$(GS_VERSION)w32.zip $(ZIPPROGFILE9)
+	-$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE5)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE6)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE7)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE8)
+	$(ZIP_XE) -9 -r $(ZIPTARGET).zip $(ZIPPROGFILE9)
 	-del $(ZIPTEMPFILE)
 	-del $(SETUP_XE_NAME)
 	-del $(UNINSTALL_XE_NAME)
@@ -291,7 +300,7 @@ archive: zip $(PSOBJ)gswin16.ico $(ECHOGS_XE)
 	$(ECHOGS_XE) -a $(PSOBJ)about.txt See gs$(GS_DOT_VERSION)\doc\Commprod.htm regarding commercial distribution.
 	$(ECHOGS_XE) -w $(PSOBJ)dialog.txt This installs AFPL Ghostscript $(GS_DOT_VERSION).
 	$(ECHOGS_XE) -a $(PSOBJ)dialog.txt AFPL Ghostscript displays, prints and converts PostScript and PDF files.
-	$(WINZIPSE_XE) ..\gs$(GS_VERSION)w32 @$(PSOBJ)setupgs.rsp
+	$(WINZIPSE_XE) ..\$(ZIPTARGET) @$(PSOBJ)setupgs.rsp
 # Don't delete temporary files, because make continues
 # before these files are used.
 #	-del $(ZIP_RSP)

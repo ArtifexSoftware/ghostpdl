@@ -38,6 +38,13 @@
 #define MAXSTR 256
 #define UNINSTALLKEY TEXT("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Uninstall")
 
+#ifdef _WIN64
+#define DLGRETURN INT_PTR
+#else
+#define DLGRETURN BOOL
+#endif
+
+
 HWND hDlgModeless;
 HWND hText1;
 HWND hText2;
@@ -673,7 +680,7 @@ BOOL shell_old(void)
 #ifdef __BORLANDC__
 #pragma argsused
 #endif
-BOOL CALLBACK _export
+DLGRETURN CALLBACK _export
 RemoveDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
   switch(message) {

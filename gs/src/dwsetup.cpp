@@ -80,6 +80,21 @@
 #include "dwsetup.h"
 #include "dwinst.h"
 
+extern "C" {
+typedef HRESULT (WINAPI *PFN_SHGetFolderPath)(
+  HWND hwndOwner,
+  int nFolder,
+  HANDLE hToken,
+  DWORD dwFlags,
+  LPSTR pszPath);
+
+typedef BOOL (WINAPI *PFN_SHGetSpecialFolderPath)(
+  HWND hwndOwner,
+  LPTSTR lpszPath,
+  int nFolder,
+  BOOL fCreate);
+}
+
 //#define DEBUG
 
 #define UNINSTALLPROG "uninstgs.exe"
@@ -129,9 +144,14 @@ BOOL g_bQuit = FALSE;	// TRUE = Get out of message loop.
 BOOL g_bError = FALSE;	// TRUE = Install was not successful
 BOOL is_winnt = FALSE;	// Disable "All Users" if not NT.
 
+#ifdef _WIN64
+#define DLGRETURN INT_PTR
+#else
+#define DLGRETURN BOOL
+#endif
 
 // Prototypes
-BOOL CALLBACK MainDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
+DLGRETURN CALLBACK MainDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam);
 void gs_addmess_count(const char *str, int count);
 void gs_addmess(const char *str);
 void gs_addmess_update(void);
@@ -142,6 +162,7 @@ BOOL install_fonts();
 BOOL make_filelist(int argc, char *argv[]);
 int get_font_path(char *path, unsigned int pathlen);
 BOOL write_cidfmap(const char *gspath, const char *cidpath);
+BOOL GetProgramFiles(LPTSTR path);
 
 
 //////////////////////////////////////////////////////////////////////
@@ -190,7 +211,7 @@ char twbuf[TWLENGTH];
 int twend;
 
 // Modeless Dialog Box
-BOOL CALLBACK 
+DLGRETURN CALLBACK 
 TextWinDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
     switch(message) {
@@ -338,7 +359,7 @@ gs_addmess_update(void)
 char szFolderName[MAXSTR];
 char szDirName[MAXSTR];
 
-BOOL CALLBACK 
+DLGRETURN CALLBACK 
 DirDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	WORD notify_message;
@@ -489,8 +510,12 @@ init()
 	}
 	
 	// Interactive setup
+	if (!GetProgramFiles(g_szTargetDir))
+	    strcpy(g_szTargetDir, "C:\\Program Files");
+	strcat(g_szTargetDir, "\\");
 	LoadString(g_hInstance, IDS_TARGET_DIR, 
-		g_szTargetDir, sizeof(g_szTargetDir));
+	    g_szTargetDir+strlen(g_szTargetDir), 
+	    sizeof(g_szTargetDir)-strlen(g_szTargetDir));
 	
 	// main dialog box
 	g_hMain = CreateDialogParam(g_hInstance, MAKEINTRESOURCE(IDD_MAIN), (HWND)NULL, MainDlgProc, (LPARAM)NULL);
@@ -520,7 +545,7 @@ init()
 
 
 // Main Modeless Dialog Box
-BOOL CALLBACK 
+DLGRETURN CALLBACK 
 MainDlgProc(HWND hwnd, UINT message, WPARAM wParam, LPARAM lParam)
 {
 	switch(message) {
@@ -700,6 +725,8 @@ install_prog()
 	char szArguments[MAXSTR];
 	char szDescription[MAXSTR];
 	char szDotVersion[MAXSTR];
+	char szPlatformSuffix[MAXSTR];
+	const char *pSuffix = "";
 	
 	if (g_bQuit)
 		return FALSE;
@@ -778,6 +805,22 @@ install_prog()
 	
 	// Add Start Menu items
 	gs_addmess("Adding Start Menu items\n");
+
+        memset(szPlatformSuffix, 0, sizeof(szPlatformSuffix));
+	if (GetProgramFiles(szPlatformSuffix)) {
+	    /* If ProgramFiles has a suffix like " (x86)" then use
+	     * it for Start menu entries to distinguish between
+	     * 32-bit and 64-bit programs.
+	     */
+	    for (pSuffix = szPlatformSuffix; *pSuffix; pSuffix++)
+		if ((pSuffix[0] == ' ') && (pSuffix[1] == '('))
+		    break;
+	}
+	else {
+	    pSuffix = "";
+	}
+
+
 	if (!cinst.StartMenuBegin()) {
 		gs_addmess("Failed to begin Start Menu update\n");
 		return FALSE;
@@ -789,7 +832,7 @@ install_prog()
 	strcpy(szArguments, "\042-I");
 	strcat(szArguments, szLIB);
 	strcat(szArguments, "\042");
-	sprintf(szDescription, "Ghostscript %s", szDotVersion);
+	sprintf(szDescription, "Ghostscript %s%s", szDotVersion, pSuffix);
 	if (!cinst.StartMenuAdd(szDescription, szProgram, szArguments)) {
 		gs_addmess("Failed to add Start Menu item\n");
 		return FALSE;
@@ -798,7 +841,8 @@ install_prog()
 	strcat(szProgram, "\\");
 	strcat(szProgram, cinst.GetMainDir());
 	strcat(szProgram, "\\doc\\Readme.htm");
-	sprintf(szDescription, "Ghostscript Readme %s", szDotVersion);
+	sprintf(szDescription, "Ghostscript Readme %s%s", 
+		szDotVersion, pSuffix);
 	if (!cinst.StartMenuAdd(szDescription, szProgram, NULL)) {
 		gs_addmess("Failed to add Start Menu item\n");
 		return FALSE;
@@ -1187,5 +1231,79 @@ BOOL make_filelist(int argc, char *argv[])
     }
     return TRUE;
 }
+
+//////////////////////////////////////////////////////////////////////
+
+#ifndef CSIDL_PROGRAM_FILES
+#define CSIDL_PROGRAM_FILES 0x0026
+#endif
+#ifndef CSIDL_FLAG_CREATE
+#define CSIDL_FLAG_CREATE 0x8000
+#endif
+#ifndef SHGFP_TYPE_CURRENT
+#define SHGFP_TYPE_CURRENT 0
+#endif
+
+BOOL 
+GetProgramFiles(LPTSTR path) 
+{
+    PFN_SHGetSpecialFolderPath PSHGetSpecialFolderPath = NULL;
+    PFN_SHGetFolderPath PSHGetFolderPath = NULL;
+    HMODULE hModuleShell32 = NULL;
+    HMODULE hModuleShfolder = NULL;
+    BOOL fOk = FALSE;
+    hModuleShfolder = LoadLibrary("shfolder.dll");
+    hModuleShell32 = LoadLibrary("shell32.dll");
+
+    if (hModuleShfolder) {
+	PSHGetFolderPath = (PFN_SHGetFolderPath)
+	    GetProcAddress(hModuleShfolder, "SHGetFolderPathA");
+	if (PSHGetFolderPath) {
+	    fOk = (PSHGetFolderPath(HWND_DESKTOP, 
+		CSIDL_PROGRAM_FILES | CSIDL_FLAG_CREATE, 
+		NULL, SHGFP_TYPE_CURRENT, path) == S_OK);
+	}
+    }
+
+    if (!fOk && hModuleShell32) {
+	PSHGetFolderPath = (PFN_SHGetFolderPath)
+	    GetProcAddress(hModuleShell32, "SHGetFolderPathA");
+	if (PSHGetFolderPath) {
+	    fOk = (PSHGetFolderPath(HWND_DESKTOP, 
+		CSIDL_PROGRAM_FILES | CSIDL_FLAG_CREATE, 
+		NULL, SHGFP_TYPE_CURRENT, path) == S_OK);
+	}
+    }
+
+    if (!fOk && hModuleShell32) {
+	PSHGetSpecialFolderPath = (PFN_SHGetSpecialFolderPath)
+	    GetProcAddress(hModuleShell32, "SHGetSpecialFolderPathA");
+	if (PSHGetSpecialFolderPath) {
+	    fOk = PSHGetSpecialFolderPath(HWND_DESKTOP, path,
+		CSIDL_PROGRAM_FILES, TRUE);
+	}
+    }
+
+    if (!fOk) {
+	/* If all else fails (probably Win95), try the registry */
+	LONG rc;
+	HKEY hkey;
+	DWORD cbData;
+	DWORD keytype;
+	rc = RegOpenKeyEx(HKEY_LOCAL_MACHINE, 
+	    "SOFTWARE\\Microsoft\\Windows\\CurrentVersion", 0, KEY_READ, &hkey);
+	if (rc == ERROR_SUCCESS) {
+	    cbData = MAX_PATH;
+	    keytype =  REG_SZ;
+	    if (rc == ERROR_SUCCESS)
+		rc = RegQueryValueEx(hkey, "ProgramFilesDir", 0, &keytype, 
+		    (LPBYTE)path, &cbData);
+	    RegCloseKey(hkey);
+	}
+	fOk = (rc == ERROR_SUCCESS);
+    }
+    return fOk;
+}
+
 
 //////////////////////////////////////////////////////////////////////

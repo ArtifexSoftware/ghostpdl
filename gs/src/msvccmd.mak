@@ -77,15 +77,18 @@ dosdefault: default
 # Define the compilation flags.
 
 # MSVC 8 (2005) warns about deprecated unsafe common functions like strcpy.
-!if $(MSVC_VERSION) == 8
+# MSVC 8 does not support debug compile and continue /Gi /ZI.
+!if ($(MSVC_VERSION) == 8) || defined(WIN64)
 VC8WARN=/wd4996 /wd4224
+CDCC=
 !else
 VC8WARN=
+CDCC=/Gi /ZI
 !endif
 
 !if "$(CPU_FAMILY)"=="i386"
 
-!if $(MSVC_VERSION) >= 8
+!if ($(MSVC_VERSION) >= 8) || defined(WIN64)
 # MSVC 8 (2005) attempts to produce code good for all processors.
 # and doesn't used /G5 or /GB.
 # MSVC 8 (2005) avoids buggy 0F instructions.
@@ -152,7 +155,7 @@ CPCH=/YX /Fp$(GLOBJDIR)\gs.pch
 !if $(TDEBUG)!=0
 # /Fd designates the directory for the .pdb file.
 # Note that it must be followed by a space.
-CT=/ZI /Od /Fd$(GLOBJDIR) $(NULL) /Gi $(CPCH)
+CT=/Od /Fd$(GLOBJDIR) $(NULL) $(CDCC) $(CPCH)
 LCT=/DEBUG /INCREMENTAL:YES
 COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
@@ -190,6 +193,13 @@ CS=/Gs
 !endif
 !endif
 
+!if ($(MSVC_VERSION) == 7) && defined(WIN64)
+# Need to specify DDK include directories before .NET 2003 directories.
+MSINCFLAGS=-I"$(INCDIR64A)" -I"$(INCDIR64B)"
+!else
+MSINCFLAGS=
+!endif
+
 # Specify output object name
 CCOBJNAME=-Fo
 
@@ -202,7 +212,7 @@ COMPILE_FOR_CONSOLE_EXE=
 # but it's too much work right now.
 GENOPT=$(CP) $(CD) $(CT) $(CS) $(WARNOPT) $(VC8WARN) /nologo $(CMT)
 
-CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
+CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS) $(MSINCFLAGS)
 CC=$(COMP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 CPP=$(COMPCPP) /c $(CCFLAGS) @$(GLGENDIR)\ccf32.tr
 !if $(MAKEDLL)
