@@ -1403,6 +1403,14 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
     gs_glyph_space_t space = GLYPH_SPACE_NAME;
     gs_glyph glyph;
 
+    /*
+     * For Type 1 fonts and CIDFonts, enumerating the glyphs using
+     * GLYPH_SPACE_NAME will cover all the glyphs.  (The "names" of glyphs
+     * in CIDFonts are CIDs, but that is not a problem.)  For Type 42 fonts,
+     * however, we have to copy by name once, so that we also copy the
+     * name-to-GID mapping (the CharStrings dictionary in PostScript), and
+     * then copy again by GID, to cover glyphs that don't have names.
+     */
     for (;;) {
 	for (index = 0;
 	     code >= 0 &&
@@ -1410,9 +1418,7 @@ gs_copy_font_complete(gs_font *font, gs_font *copied)
 		  index != 0);
 	     )
 	    code = gs_copy_glyph(font, glyph, copied);
-	/*
-	 * For Type 42 fonts, if we copied by name, now copy again by index.
-	 */
+	/* For Type 42 fonts, if we copied by name, now copy again by index. */
 	if (space == GLYPH_SPACE_NAME && font->FontType == ft_TrueType)
 	    space = GLYPH_SPACE_INDEX;
 	else
