@@ -34,7 +34,6 @@
 
 /* The device descriptor */
 private dev_proc_map_rgb_color(bit_mono_map_color);
-private dev_proc_map_rgb_color(bit_forcemono_map_rgb_color);
 private dev_proc_map_color_rgb(bit_map_color_rgb);
 private dev_proc_map_cmyk_color(bit_map_cmyk_color);
 private dev_proc_get_params(bit_get_params);
@@ -148,28 +147,6 @@ bit_mono_map_color(gx_device * dev, const gx_color_value cv[])
     gx_color_value gray = cv[0];
 
     return (bpc == 1 ? gx_max_color_value - gray : gray) >> drop;
-}
-
-/* Map RGB to gray shade. */
-/* Only used in CMYK mode when put_params has set ForceMono=1 */
-private gx_color_index
-bit_forcemono_map_rgb_color(gx_device * dev, const gx_color_value cv[])
-{
-    gx_color_value color;
-    int bpc = dev->color_info.depth / 4;	/* This function is used in CMYK mode */
-    int drop = sizeof(gx_color_value) * 8 - bpc;
-    gx_color_value gray, red, green, blue;
-    red = cv[0]; green = cv[1]; blue = cv[2];
-    gray = red;
-    if ((red != green) || (green != blue))
-	gray = (red * (unsigned long)lum_red_weight +
-	     green * (unsigned long)lum_green_weight +
-	     blue * (unsigned long)lum_blue_weight +
-	     (lum_all_weights / 2))
-		/ lum_all_weights;
-
-    color = (gx_max_color_value - gray) >> drop;	/* color is in K channel */
-    return color;
 }
 
 /* Map color to RGB.  This has 3 separate cases, but since it is rarely */
