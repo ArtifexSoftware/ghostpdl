@@ -20,7 +20,8 @@ const pl_interp_characteristics_t * /* always returns a descriptor */
 pl_characteristics(
   const pl_interp_implementation_t *impl     /* implementation of interpereter to alloc */
 )
-{	return impl->proc_characteristics(impl);
+{	
+    return impl->proc_characteristics(impl);
 }
 
 /* Do init of interp */

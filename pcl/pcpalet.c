@@ -65,7 +65,6 @@ alloc_palette(
 )
 {
     pcl_palette_t *     ppalet = 0;
-
     rc_alloc_struct_1( ppalet,
                        pcl_palette_t,
                        &st_palette_t,
@@ -185,7 +184,7 @@ build_default_palette(
     code = pl_dict_put(&pcs->palette_store, id_key(key), 2, ppalet);
     if (code < 0)
         return e_Memory;
-
+    rc_increment(ppalet);
     /* the graphic state pointer does not (yet) amount to a reference */
     pcs->ppalet = ppalet;
     return 0;
@@ -947,8 +946,11 @@ palette_do_reset(
 	clear_palette_store(pcs);
     }
     if ( type & pcl_reset_permanent ) {
-	pcl_palette_release(pcs->pdflt_palette);
-	pcl_palette_release(pcs->ppalet);
+	pl_dict_release(&pcs->palette_store);
+	gs_free_object(pcs->memory, pcs->ppalet->pindexed,  "palette cs indexed released permanent reset");
+	gs_free_object(pcs->memory, pcs->ppalet->pht,  "palette ht released permanent reset");
+	gs_free_object(pcs->memory, pcs->ppalet->pcrd,  "palette ht released permanent reset");
+	gs_free_object(pcs->memory, pcs->ppalet,  "palette released permanent reset");
     }
     /* select and control palette ID's must be set back to 0 */
     pcs->sel_palette_id = 0;

@@ -46,7 +46,6 @@ alloc_foreground(
 )
 {
     pcl_frgrnd_t *  pfrgrnd = 0;
-
     rc_alloc_struct_1( pfrgrnd,
                        pcl_frgrnd_t,
                        &st_frgrnd_t,
@@ -213,14 +212,12 @@ private void
 frgrnd_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 {
     if ( type & (pcl_reset_permanent) ) {
-	/* Release foreground, NB these releases should be moved to
-	 * their corresponding modules. */
-	pcl_ht_release(pcs->pdflt_ht);
-	pcl_cs_base_release(pcs->pdflt_cs_indexed);
-	pcl_cs_base_release(pcs->pwhite_cs);
-	pcl_crd_release(pcs->pcl_default_crd);
-	pcl_frgrnd_release(pcs->pdflt_frgrnd);
-	pcl_frgrnd_release(pcs->pfrgrnd);
+	gs_free_object(pcs->memory, pcs->pfrgrnd->pbase,  "foreground base color space reset");
+	/*	gs_free_object(pcs->memory, pcs->pfrgrnd->pht,  "palette ht released permanent reset");
+		gs_free_object(pcs->memory, pcs->pfrgrnd->pcrd,  "palette ht released permanent reset"); */
+	gs_free_object(pcs->memory, pcs->pfrgrnd,  "foreground reset");
+	gs_free_object(pcs->memory, pcs->pwhite_cs, "pure white color space reset");
+
     }
 }
 

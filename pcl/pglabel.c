@@ -123,7 +123,7 @@ private int hpgl_recompute_font(P1(hpgl_state_t *pgls));
 private int
 hpgl_ensure_font(hpgl_state_t *pgls) 
 {
-    if ( pgls->g.font == 0 ) 
+    if ( ( pgls->g.font == 0 ) || ( pgls->g.font->pfont == 0 ) )
 	hpgl_call(hpgl_recompute_font(pgls));
     return 0;
 }
@@ -1241,6 +1241,10 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		       carriage returns and linefeeds will leave
 		       "moveto's" in the path */
  		    hpgl_call(hpgl_clear_current_path(pgls));
+		    /* also clean up stick fonts - they are likely to
+                       become dangling references in the current font
+                       scheme since they don't have a dictionary entry */
+		    hpgl_free_stick_fonts(pgls);
 		    return 0;
 		  }
 		/*
@@ -1266,6 +1270,23 @@ hpgl_LB(hpgl_args_t *pargs, hpgl_state_t *pgls)
 	  }
 	pargs->source.ptr = p;
 	return e_NeedData;
+}
+
+ void
+hpgl_free_stick_fonts(hpgl_state_t *pgls)
+{
+    pcl_font_selection_t *pfs =
+	&pgls->g.font_selection[pgls->g.font_selected];
+    pl_font_t *font = &pgls->g.stick_font[pgls->g.font_selected]
+	[pfs->params.proportional_spacing];
+
+    /* no stick fonts - nothing to do */
+    if ( font->pfont == 0 )
+	return;
+
+    gs_free_object(pgls->memory, font->pfont, "stick/arc font");
+    font->pfont = 0;
+    return;
 }
 
  int
@@ -1306,6 +1327,7 @@ pglabel_do_registration(
 	END_HPGL_COMMANDS
 	return 0;
 }
+
 const pcl_init_t pglabel_init = {
   pglabel_do_registration, 0
 };

@@ -11,8 +11,11 @@
 #include "gx.h"
 #include "gsccode.h"
 #include "gsmatrix.h"
+#include "gxfixed.h"
+#include "gxchar.h"
 #include "gxfont.h"
 #include "gxfont42.h"
+#include "gxchar.h"
 #include "pcommand.h"
 #include "pcstate.h"
 #include "pcursor.h"
@@ -176,8 +179,6 @@ pcl_height(pcl_args_t *pargs, pcl_state_t *pcs, int set)
 {	uint height_4ths = (uint)(float_arg(pargs) * 4 + 0.5);
 	pcl_font_selection_t *pfs = &pcs->font_selection[set];
 
-	if ( height_4ths >= 4000 )
-	  return e_Range;
 	if ( height_4ths != pfs->params.height_4ths )
 	  {
 	    pfs->params.height_4ths = height_4ths;
@@ -571,6 +572,13 @@ pcl_set_current_font_environment(pcl_state_t *pcs)
     }
 }
 
+private bool
+purge_all(cached_char * cc, void *dummy)
+{
+    return true;
+}
+
+
 
 private void
 pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
@@ -592,6 +600,9 @@ pcfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
     if ( type & pcl_reset_permanent ) {
 	pl_dict_release(&pcs->soft_fonts);
 	pl_dict_release(&pcs->built_in_fonts);
+	gx_purge_selected_cached_chars(pcs->font_dir,
+				       purge_all,
+				       (void *)NULL);
 	gs_free_object(pcs->memory, pcs->font_dir, "pcfont_do_reset");
     }
 }

@@ -2,57 +2,7 @@
    reserved.  Unauthorized use, copying, and/or distribution
    prohibited.  */
 
-/* pctop.c - PCL5c top-level API */
-
-/* 
-   NOTICE from JD: There is still some work to do pending improved PCL
-   de/init. Those places are commented and flagged with @@@. The
-   following documents some of those limitations:
-
-   The remaining de-init issues fall into 3 categories, in order of urgency:
-   i) parser state cleanup after unexpected input stream termination
-   ii) de-init to enable device-specific re-init when switching devices
-   iii) complete de-init to recover all memory allocated to PCL
-
-   Issue (i): There is currently no way to reset the state of PCL in
-   mid-flight, say if there's an unexpected EOF and the interpreter is
-   currently defining a macro or a font (this is not an exhaustive list
-   of trouble spots). What is needed is a new PCL function which specifically
-   does the appropriate resets to "reasonably" start processing a new stream
-   of data. HP does not document just how far such implied resets 
-   go -- probably not as far as an <esc>E reset does -- so some experiments 
-   with HP hardware will be necessary.
-
-   Issue (ii), There is a class of resets which are currently done by calling 
-   pcl_do_resets(pcs, pcl_reset_initial).  A device must have been selected into
-   the associated gstate before those resets are invoked, since some of the reset 
-   actions are device-specific. The upshot of this arrangement is that some reset 
-   actions must be carried out again when a new device is selected into the 
-   interpreter. Unfortunately, the two above functions can only be called once 
-   at the beginning of the interpreter's lifetime, and there are no functions 
-   to terminate the interpreter. 
-
-   There are 4 possible ways modify PCL to fix the problem: a) make the functions 
-   in question callable multiple times, b) create special re-init functions that 
-   are callable multiple times, c) create de-init functions that are a mirror 
-   image of the initial resets; to re-init, one would de-init, then do initial 
-   resets again, d) make it possible to de-init the entire interpreter; one would 
-   destroy the interpreter, then start another. According to Henry at Artifex, 
-   c & d would have some performance hits, though probably acceptable when 
-   switching devices. Options a & b are interchangeable and don't suffer from the 
-   same performance hits, but don't help with issue (iii), below.
-
-   Issue (iii): PCL does two layers of 1-time init at startup, both of
-   which allocate memory: I) the "static" inits called by the various
-   pcl_init_table[]->do_init's, II) the above-mentioned pcl_do_resets
-   (pcs, pcl_reset_initial).  In both cases, no corresponding function
-   exists to free the allocated memory, so reallocation functions are
-   needed. If resolution (c) to issue (ii) is adopted, you only need a
-   function to undo (I). Otherwise, you need a complete de-init
-   function(s).  My initial feeling is that it'd be quickest to
-   implement resolution (c) to issue (ii), and resolve issue (iii) by
-   implementing a function to undo (I).  
-*/
+/* pctop.c - PCL5c and pcl5e top-level API */
 
 #include "malloc_.h"
 #include "math_.h"
@@ -76,23 +26,83 @@
 #include "pltop.h"
 #include "pctop.h"
 
-/* Define the table of pointers to initialization data. */
-#define init_(init) extern const pcl_init_t init;
-#include "pconfig.h"
-#undef init_
+
+/* Configuration table for modules */
+extern const pcl_init_t  pcparse_init; 
+extern const pcl_init_t  rtmisc_init; 
+extern const pcl_init_t  rtraster_init; 
+extern const pcl_init_t  pcjob_init; 
+extern const pcl_init_t  pcpage_init; 
+extern const pcl_init_t  pcfont_init; 
+extern const pcl_init_t  pctext_init; 
+extern const pcl_init_t  pcsymbol_init; 
+extern const pcl_init_t  pcsfont_init; 
+extern const pcl_init_t  pcmacros_init; 
+extern const pcl_init_t  pcrect_init; 
+extern const pcl_init_t  pcstatus_init; 
+extern const pcl_init_t  pcmisc_init; 
+extern const pcl_init_t  pcursor_init; 
+extern const pcl_init_t  pcl_cid_init; 
+extern const pcl_init_t  pcl_color_init; 
+extern const pcl_init_t  pcl_udither_init; 
+extern const pcl_init_t  pcl_frgrnd_init; 
+extern const pcl_init_t  pcl_lookup_tbl_init; 
+extern const pcl_init_t  pcl_palette_init; 
+extern const pcl_init_t  pcl_pattern_init; 
+extern const pcl_init_t  pcl_xfm_init; 
+extern const pcl_init_t  pcl_upattern_init; 
+extern const pcl_init_t  rtgmode_init; 
+extern const pcl_init_t  pccprint_init; 
+extern const pcl_init_t  pginit_init; 
+extern const pcl_init_t  pgframe_init; 
+extern const pcl_init_t  pgconfig_init; 
+extern const pcl_init_t  pgvector_init; 
+extern const pcl_init_t  pgpoly_init; 
+extern const pcl_init_t  pglfill_init; 
+extern const pcl_init_t  pgchar_init; 
+extern const pcl_init_t  pglabel_init; 
+extern const pcl_init_t  pgcolor_init; 
 
 const pcl_init_t *    pcl_init_table[] = {
-#define init_(init) &init,
-#include "pconfig.h"
-#undef init_
+    &pcparse_init,
+    &rtmisc_init,
+    &rtraster_init,
+    &pcjob_init,
+    &pcpage_init,
+    &pcfont_init,
+    &pctext_init,
+    &pcsymbol_init,
+    &pcsfont_init,
+    &pcmacros_init,
+    &pcrect_init,
+    &pcstatus_init,
+    &pcmisc_init,
+    &pcursor_init,
+    &pcl_cid_init,
+    &pcl_color_init,
+    &pcl_udither_init,
+    &pcl_frgrnd_init,
+    &pcl_lookup_tbl_init,
+    &pcl_palette_init,
+    &pcl_pattern_init,
+    &pcl_xfm_init,
+    &pcl_upattern_init,
+    &rtgmode_init,
+    &pccprint_init,
+    &pginit_init,
+    &pgframe_init,
+    &pgconfig_init,
+    &pgvector_init,
+    &pgpoly_init,
+    &pglfill_init,
+    &pgchar_init,
+    &pglabel_init,
+    &pgcolor_init,
     0
 };
 
-
-
 /* Built-in symbol set initialization procedure */
 private int pcl_end_page_top(P3(pcl_state_t *pcs, int num_copies, int flush));
-
 
 /*
  * Define the gstate client procedures.
@@ -186,6 +196,7 @@ pcl_impl_characteristics(
 {
   static pl_interp_characteristics_t pcl_characteristics = {
     "PCL5",
+    "\033E",
     "Artifex",
     PCLVERSION,
     PCLBUILDDATE,
@@ -203,7 +214,6 @@ pcl_impl_allocate_interp(
 )
 {
     static pcl_interp_t pi;	/* there's only one interpreter possible, so static */
-
     /* There's only one possible PCL interp, so return the static */
     pi.memory = mem;
     *interp = (pl_interp_t *)&pi;
@@ -231,8 +241,8 @@ pcl_impl_allocate_interp_instance(
 						     "pcl_allocate_interp_intance(bbox device)"
 						     );
     gs_state *pgs = gs_state_alloc(mem);
-
     /* If allocation error, deallocate & return */
+    /* HS freeing null, perhaps if one of these is null the others should be freed.  Was that the intent? */
     if (!pcli || !bbox || !pgs) {
 	if (!pcli)
 	    gs_free_object(mem, pcli, "pcl_allocate_interp_instance(pcl_interp_instance_t)");
@@ -354,14 +364,10 @@ pcl_impl_set_device(
 	gs_setaccuratecurves(pcli->pcs.pgs, true);	/* All H-P languages want accurate curves. */
 
 	/* Do device-dependent pcl inits */
-	/* These resets will not clear any "permanent" storage (fonts, macros) */
 	/* One of these resets will also install an extra color-mapper device */
-/*@@@there is a potential problem because mem from resets is not dealloc'd */
 	stage = Sreset;
-	/*@@@remove color mapper in dnit (think should be in PCL d/nit code)? */
 	if ((code = pcl_do_resets(&pcli->pcs, pcl_reset_initial)) < 0 )
 	  goto pisdEnd;
-/*@@@ possibly remove sload - loading symbol set should be part of reset process. */
 	stage = Sload;
 
 	/* provide a PCL graphic state we can return to */
@@ -415,7 +421,6 @@ pcl_impl_init_job(
 {
 	int code = 0;
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
-
 	pcl_process_init(&pcli->pst);
 	return code;
 }
@@ -512,27 +517,23 @@ pcl_impl_remove_device(
 	int code = 0;	/* first error status encountered */
 	int error;
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
-
-	/* to help with memory leak detection, issue a reset */
-	code = pcl_do_resets(&pcli->pcs, pcl_reset_printer);
-
+	/* prevent freeing the color mapper which is static */
+	rc_increment(gs_currentdevice(pcli->pcs.pgs));
 	/* return to the original graphic state w/color mapper, bbox, target */
 	error = pcl_grestore(&pcli->pcs);
-	/* free the pcl's gstate that mirrors the gs gstate */
-	pcl_free_gstate_stk(&pcli->pcs);
 	if (code >= 0)
 	  code = error;
+	/* prevent freeing the color mapper which is static */
+	rc_increment(gs_currentdevice(pcli->pcs.pgs));
 	/* return to original gstate w/bbox, target */
 	gs_grestore_only(pcli->pcs.pgs);	/* destroys gs_save stack */
 	/* Deselect bbox. Bbox has been prevented from auto-closing/deleting */
+	if ( pcl_do_resets(&pcli->pcs, pcl_reset_permanent) < 0 )
+	    return -1;
 	error = gs_nulldevice(pcli->pcs.pgs);
 	if (code >= 0)
 	    code = error;
-	error = gs_closedevice((gx_device *)pcli->bbox_device);
-	if (code >= 0)
-	  code = error;
 	gx_device_bbox_release(pcli->bbox_device);	/* also removes target from bbox */
-
 	return code;
 }
 
@@ -544,13 +545,9 @@ pcl_impl_deallocate_interp_instance(
 {
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	gs_memory_t *mem = pcli->memory;
-
-	/* Get rid of permanent and internal objects */
-	if ( pcl_do_resets(&pcli->pcs, pcl_reset_permanent) < 0 )
-	    return -1;
-	/* Unwind allocation */ 
 	gs_state_free(pcli->pcs.pgs);
-	gs_free_object(mem, pcli->bbox_device, "pcl_deallocate_interp_intance(bbox device)");
+	gs_closedevice((gx_device *)(pcli->bbox_device));
+	gx_device_bbox_release(pcli->bbox_device);	/* also removes target from bbox */
 	gs_free_object(mem, pcli, "pcl_deallocate_interp_instance(pcl_interp_instance_t)");
 
 	return 0;
@@ -563,7 +560,6 @@ pcl_impl_deallocate_interp(
 )
 {
 	pcl_interp_t *pi = (pcl_interp_t *)interp;
-
 	/* Deinit interp */
 	/*@@@ free memory */
 
@@ -583,7 +579,6 @@ pcl_end_page_top(
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)(pcs->client_data);
 	pl_interp_instance_t *instance = (pl_interp_instance_t *)pcli;
 	int code = 0;
-
 	/* do pre-page action */
 	if (pcli->pre_page_action)
 	  {

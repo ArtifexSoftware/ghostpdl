@@ -353,3 +353,5 @@ pcl_pattern_get_unsolid_pattern(pcl_state_t *pcs)
     }
     return pcs->punsolid_pattern;
 }
+
+

@@ -106,7 +106,6 @@ pcl_gsave(
                                                 &st_gstate_ids_t,
                                                 "PCL gsave"
                                                 );
-
     if (pids == 0)
         return e_Memory;
 
@@ -129,7 +128,6 @@ pcl_grestore(
 {
     pcl_gstate_ids_t *  pids = pcs->pids->prev;
     int                 code = 0;
-
     /* check for bottom of graphic state stack */
     if (pids == 0)
         return e_Range;

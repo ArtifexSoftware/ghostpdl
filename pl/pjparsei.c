@@ -33,6 +33,7 @@ pjl_impl_characteristics(
 {
   static pl_interp_characteristics_t pjl_characteristics = {
     "PJL",
+    "",
     "Artifex",
     PJLVERSION,
     PJLBUILDDATE,
@@ -146,7 +147,6 @@ pjl_impl_init_job(
 {
 	int code = 0;
 	pjl_interp_instance_t *pjli = (pjl_interp_instance_t *)instance;
-	pjli->state = pjl_process_init(pjli->memory);
 	if (pjli->state == 0)
 	  code = gs_error_VMerror;
 	return code;

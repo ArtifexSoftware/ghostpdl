@@ -37,6 +37,7 @@ typedef int (*pl_page_action_t)(P2(pl_interp_instance_t *, void *));
  */
 typedef struct pl_interp_characteristics_s {
   const char*                 language;          /* generic language e.g. "PCL5c" */
+  const char*                 auto_sense_string;  /* string used to detect language */
   const char*                 manufacturer;      /* manuf str */
   const char*                 version;           /* version str */
   const char*                 build_date;        /* build date str */
@@ -68,7 +69,7 @@ typedef struct pl_interp_characteristics_s {
  *        if (error || (end of input stream && pl_process didn't end normally yet))
  *          while (!pl_flush_to_eoj(instance, cursor))
  *            ; // positions cursor at eof or 1 past EOD marker
- *        if (end of input stream && pl_process didnt' end normally yet)
+ *        if (end of input stream &&n pl_process didnt' end normally yet)
  *          pl_process_eof(instance);  // will reset instance's parser state
  *        if (errors)
  *          pl_report_errors(instance, ...);

@@ -158,8 +158,11 @@ hpgl_do_reset(
 	dprintf("PCL reset plot received\n");
     }
 
-    if ((type & (pcl_reset_permanent)) != 0 )
+    if ((type & (pcl_reset_permanent)) != 0 ) {
 	gx_path_free(&pcs->g.polygon.buffer.path, "hpgl_do_reset polygon buffer");
+	/* if we have allocated memory for a stick font free the memory */
+	hpgl_free_stick_fonts(pcs);
+    }
     return;
 }
 

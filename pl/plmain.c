@@ -1,7 +1,3 @@
-/* Copyright (C) 1996, 1997 Aladdin Enterprises.  All rights reserved.
-   Unauthorized use, copying, and/or distribution prohibited.
- */
-
 /* plmain.c */
 /* Main program command-line interpreter for PCL interpreters */
 #include "stdio_.h"
@@ -112,6 +108,20 @@ pl_main_universe_select(P5(
 	gs_param_list                    *params                 /* device params to use */
 ));
 
+private pl_interp_implementation_t const *
+pl_auto_sense(P3(
+   const char*                      name,         /* stream  */
+   int                              buffer_length, /* length of stream */
+   pl_interp_implementation_t const * const impl_array[] /* implementations to choose from */
+));
+
+private pl_interp_implementation_t const *
+pl_select_implementation(P2(
+  pl_main_instance_t *pmi, 
+  pl_top_cursor_t r
+));
+
+
 /* Process the options on the command line. */
 private FILE *pl_main_arg_fopen(P2(const char *fname, void *ignore_data));
 
@@ -133,8 +143,7 @@ int pl_main_process_options(P4(pl_main_instance_t *pmi, arg_list *pal,
 
 /* Find default language implementation */
 pl_interp_implementation_t const *
-pl_default_implementation_for_file(P2(const char* name,
-   pl_interp_implementation_t const * const impl_array[]));
+pl_auto_sense(P3(const char* buf, int buf_len, pl_interp_implementation_t const * const impl_array[]));
 
 /* Pre-page portion of page finishing routine */
 int	/* ret 0 if page should be printed, 1 if no print, else -ve error */
@@ -236,10 +245,11 @@ main(
 	/* Process one input file. */
 	byte                buf[10000];
 	pl_top_cursor_t     r;
+	pl_interp_implementation_t const *desired_implementation;
 	int                 code = 0;
 	bool                in_pjl = true;
+	bool                new_job = false;
 	bool                skipping = false;
-	pl_interp_implementation_t const *desired_implementation;
 
 	/* Process any new options. May request new device. */
 	if (argc==1 || pl_main_process_options(&inst, &args, &params, pdl_implementation) < 0) {
@@ -268,32 +278,16 @@ main(
 	if ((arg = arg_next(&args)) == 0)
 	    break;  /* no nore files to process */
 
-	/* Determine language of file to interpret. We're making the incorrect */
-	/* assumption that any file only contains jobs in one PDL. The correct */
-	/* way to implement this would be to have a language auto-detector. */
-	if (inst.implementation)
-	    desired_implementation = inst.implementation;  /* was specified as cmd opt */
-	else
-	    desired_implementation
-		= pl_default_implementation_for_file(arg, pdl_implementation);
-
-	/* Select desired language & device */
-	if ( (curr_instance = pl_main_universe_select(&universe, err_buf,
-						      desired_implementation, inst.device, (gs_param_list *)&params)) == 0) {
-	    fputs(err_buf, gs_stderr);
-	    exit(1);
-	}
-
-#ifdef DEBUG
-        if (gs_debug_c(':'))
-            dprintf1("%% Reading %s:\n", arg);
-#endif
-
 	/* open file for reading */
         if (pl_main_cursor_open(&r, arg, buf, sizeof(buf)) < 0) {
             fprintf(gs_stderr, "Unable to open %s for reading.\n", arg);
             exit(1);
         }
+
+#ifdef DEBUG
+        if (gs_debug_c(':'))
+            dprintf1("%% Reading %s:\n", arg);
+#endif
 
         if ( pl_init_job(pjl_instance) < 0 ) {
             fprintf(gs_stderr, "Unable to init PJL job.\n");
@@ -301,65 +295,50 @@ main(
         }
 
 	/* pump data thru PJL/PDL until EOD or error */
+	new_job = false;
         in_pjl = true;
-        skipping = false;
         for (;;) {
             if_debug1('i', "[i][file pos=%ld]\n", pl_main_cursor_position(&r));
             if (pl_main_cursor_next(&r) <= 0)
     	        break;
-	process:
-            if (in_pjl) {
-                if (skipping) {
-		    code = pl_flush_to_eoj(pjl_instance, &r.cursor);
-		    if (code < 0)
-			break;   /* flushing error, blow away the remaining file */
-		    else {
-			skipping = !code;
-			if (!skipping)
-			    code = e_ExitLanguage;
-		    }
-                } else
-		    code = pl_process(pjl_instance, &r.cursor);
-                if (code == e_ExitLanguage) {
+            if ( in_pjl ) {
+		code = pl_process(pjl_instance, &r.cursor);
+		if (code == e_ExitLanguage) {
 		    in_pjl = false;
-		    if ( pl_init_job(curr_instance) < 0 ) {
-			fprintf(gs_stderr, "Unable to init PDL job.\n");
+		    new_job = true;
+		}
+    	    } else {
+		if ( new_job ) {
+		    if ( (curr_instance = pl_main_universe_select(&universe, err_buf,
+							      pl_select_implementation(&inst, r),
+							      inst.device, (gs_param_list *)&params)) == 0) {
+			fputs(err_buf, gs_stderr);
 			exit(1);
 		    }
-		    goto process;
-    	        } else if (code < 0) {
-		    skipping = 1;   /* PJL error */
-		    goto process;
-                }
-    	    } else {
-                if (skipping) {
-		    code = pl_flush_to_eoj(curr_instance, &r.cursor);
-		    if (code < 0)
-			break;   /* flushing error, blow away the remaining file */
-		    else {
-			skipping = !code;
-			if (!skipping)
-			    code = e_ExitLanguage;
+
+		    if ( pl_init_job(curr_instance) < 0 ) {
+			fprintf(gs_stderr, "Unable to init PJL job.\n");
+			exit(1);
 		    }
-                } else
-		    code = pl_process(curr_instance, &r.cursor);
+		    new_job = false;
+		}
+		code = pl_process(curr_instance, &r.cursor);
     	        if (code == e_ExitLanguage) {
     	            in_pjl = true;
                     /* Really should switch back to language auto-sense,*/
 		    /* but don't have one...*/
+		    /* Select desired language & device */
                     if ( pl_dnit_job(curr_instance) < 0 ) {
 			fprintf(gs_stderr, "Unable to deinit PDL job.\n");
 			exit(1);
                     }
-                } else if (code < 0) {
-		    /* Error: Print PDL status if applicable, dnit PDL job, & skip to eoj */
-		    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
-				     inst.error_report > 0, gs_stdout);
-		    skipping = 1;
-		    goto process;
-                }
-    	    }
-        }
+		}
+	    }
+	}
+	if (code < 0)
+	    /* Error: Print PDL status if applicable, dnit PDL job, & skip to eoj */
+	    pl_report_errors(curr_instance, code, pl_main_cursor_position(&r),
+			     inst.error_report > 0, gs_stdout);
         /* Print PDL status if applicable, then dnit PDL job */
         if (!in_pjl) {
 	    pl_process_eof(curr_instance);
@@ -376,7 +355,6 @@ main(
 		exit(1);
 	    }
         }
-
         /* close input file */
         pl_dnit_job(pjl_instance);
         pl_main_cursor_close(&r);
@@ -400,6 +378,7 @@ main(
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
         pl_print_usage(mem, &inst, "Final");
+        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
     }
     if (gs_debug_c('!'))
         debug_dump_memory(imem, &dump_control_default);
@@ -409,7 +388,7 @@ main(
     gs_c_param_list_release(&params);
     arg_finit(&args);
 
-    pl_platform_dnit(0);
+    /* pl_platform_dnit(0); */
     return 0;
 #undef mem
 }
@@ -826,40 +805,38 @@ out:	if ( help )
 	return 0;
 }
 
+/* either the implementation has been selected on the command line or
+   we need to auto-sense from the stream */
+private pl_interp_implementation_t const *
+pl_select_implementation(pl_main_instance_t *pmi, pl_top_cursor_t r)
+{
+    /* Determine language of file to interpret. We're making the incorrect */
+    /* assumption that any file only contains jobs in one PDL. The correct */
+    /* way to implement this would be to have a language auto-detector. */
+    if (pmi->implementation)
+	return pmi->implementation;  /* was specified as cmd opt */
+    return pl_auto_sense(r.cursor.ptr + 1, (r.cursor.limit - r.cursor.ptr), pdl_implementation);
+}
+
 /* Find default language implementation */
-pl_interp_implementation_t const *
-pl_default_implementation_for_file(
-   const char*                      name,         /* filename (hint) */
+private pl_interp_implementation_t const *
+pl_auto_sense(
+   const char*                      name,         /* stream  */
+   int                              buffer_length, /* length of stream */
    pl_interp_implementation_t const * const impl_array[] /* implementations to choose from */
 )
 {
-	/* known filename extension-->language name mappings: 0-terminated */
-	static const char* extension_to_language[] = {
-	  "pcl", "PCL5",
-	  "pxl", "PCL/XL",
-	  0
-	};
-
-	/* Try to get filename's extension & look it up in database */
-	const char* extension = strrchr(name, '.');
-	if (extension) {
-	  const char** lookup;
-	  pl_interp_implementation_t const * const * impl;
-	  ++extension;
-
-	  for (lookup = extension_to_language; *lookup; lookup += 2)
-	    if (!strcmp(extension, *lookup)) {
-	      /* Found match, lookup language name */
-	      for (impl = impl_array; *impl != 0; ++impl)
-	        if (!strcmp(*(lookup + 1),
-	         pl_characteristics(*impl)->language))
-	          return *impl;
-	      break;  /* filename extension matched, but that language not avail */
-	    }
-	}
-
-	/* Filename mapping doesn't work. Use first interpreter in list */
-	return impl_array[0];
+    /* Lookup this string in the auto sense field for each implementation */
+    pl_interp_implementation_t const * const * impl;
+    for (impl = impl_array; *impl != 0; ++impl) {
+	if (buffer_length >= (strlen(pl_characteristics(*impl)->auto_sense_string) - 1) )
+	    if ( !strncmp(pl_characteristics(*impl)->auto_sense_string,
+			  name,
+			  (strlen(pl_characteristics(*impl)->auto_sense_string) - 1)) )
+		return *impl;
+    }
+    /* Defaults to PCL */
+    return impl_array[0];
 }
 
 /* Print memory and time usage. */
@@ -875,7 +852,7 @@ pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pti,
 		 msg, utime[0] - pti->base_time[0] +
 		 (utime[1] - pti->base_time[1]) / 1000000000.0,
 		 pti->page_count, status.allocated, status.used);
-        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
+	dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
 }
 
 /* Log a string to console, optionally wait for input */

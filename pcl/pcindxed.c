@@ -105,7 +105,6 @@ alloc_indexed_cspace(
     pcl_cs_indexed_t *  pindexed = 0;
     int                 code = 0;
     byte *              bp = 0;
-
     rc_alloc_struct_1( pindexed,
                        pcl_cs_indexed_t,
                        &st_cs_indexed_t,

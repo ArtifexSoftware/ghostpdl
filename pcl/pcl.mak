@@ -260,7 +260,7 @@ rtrstcmp_h  = $(PCLSRC)rtrstcmp.h \
               $(gsstruct_h)
 
 
-$(PCLSRC)pclver.h: $(PCLSRC)pcl_top.mak
+$(PCLSRC)pclver.h:
 	$(PCLGEN)echogs$(XE) -e .h -w $(PCLSRC)pclver -n -x 23 "define PCLVERSION"
 	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -s -x 22 $(PCLVERSION) -x 22
 	$(PCLGEN)echogs$(XE) -e .h -a $(PCLSRC)pclver -n -x 23 "define PCLBUILDDATE"
@@ -635,7 +635,7 @@ $(PCLOBJ)pcfsel.$(OBJ): $(PCLSRC)pcfsel.c   \
                         $(pcsymbol_h)
 	$(PCLCCC) $(PCLSRC)pcfsel.c $(PCLO_)pcfsel.$(OBJ)
 
-$(TOP_OBJ):             $(PCLSRC)pctop.c            \
+$(PCL_TOP_OBJ):         $(PCLSRC)pctop.c            \
                         $(AK)                       \
                         $(malloc__h)                \
                         $(math__h)                  \

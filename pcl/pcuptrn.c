@@ -521,6 +521,19 @@ delete_cached_patterns_stub(
     return true;
 }
 
+upattern_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
+  pcl_copy_operation_t operation)
+{	
+    int i;
+    /* copy back any patterns created during macro invocation.  NB
+       this should be incorporated in a built in pattern reset and
+       copy function in pcbiptrn.c along with
+       pcl_pattern_clear_bi_patterns() below */
+    for(i = 0; i < countof(pcs->bi_pattern_array); i++)
+	psaved->bi_pattern_array[i] = pcs->bi_pattern_array[i];
+    return 0;
+}
+
 /*
  * Initialization and reset routines.
  */ 
@@ -574,4 +587,4 @@ upattern_do_reset(
     }
 }
 
-const pcl_init_t    pcl_upattern_init = { upattern_do_registration, upattern_do_reset };
+const pcl_init_t    pcl_upattern_init = { upattern_do_registration, upattern_do_reset, upattern_do_copy };
