@@ -140,11 +140,13 @@ charstring_font_params(const_os_ptr op, charstring_font_refs_t *pfr,
 	(code = dict_bool_param(pprivate, "RndStemUp", true,
 				&pdata1->RndStemUp)) < 0 ||
 	(code = pdata1->StdHW.count =
-	 dict_float_array_param(pprivate, "StdHW", 1,
-				&pdata1->StdHW.values[0], NULL)) < 0 ||
+	 dict_float_array_check_param(pprivate, "StdHW", 1,
+				      &pdata1->StdHW.values[0], NULL,
+				      0, e_rangecheck)) < 0 ||
 	(code = pdata1->StdVW.count =
-	 dict_float_array_param(pprivate, "StdVW", 1,
-				&pdata1->StdVW.values[0], NULL)) < 0 ||
+	 dict_float_array_check_param(pprivate, "StdVW", 1,
+				      &pdata1->StdVW.values[0], NULL,
+				      0, e_rangecheck)) < 0 ||
 	(code = pdata1->StemSnapH.count =
 	 dict_float_array_param(pprivate, "StemSnapH", max_StemSnap,
 				&pdata1->StemSnapH.values[0], NULL)) < 0 ||

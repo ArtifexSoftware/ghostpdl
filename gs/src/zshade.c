@@ -189,16 +189,16 @@ build_shading(i_ctx_t *i_ctx_p, build_shading_proc_t proc)
 	    }
 	    pcc->pattern = 0;
 	    params.Background = pcc;
-	    code = dict_float_array_param(op, "Background",
-					  countof(pcc->paint.values),
-					  pcc->paint.values, NULL);
-	    if (code != gs_color_space_num_components(pcs))
+	    code = dict_floats_param(op, "Background",
+				     gs_color_space_num_components(pcs),
+				     pcc->paint.values, NULL);
+	    if (code < 0)
 		goto fail;
 	}
     }
     if (dict_find_string(op, "BBox", &pvalue) <= 0)
 	params.have_BBox = false;
-    else if ((code = dict_float_array_param(op, "BBox", 4, box, NULL)) == 4) {
+    else if ((code = dict_floats_param(op, "BBox", 4, box, NULL)) == 4) {
 	params.BBox.p.x = box[0];
 	params.BBox.p.y = box[1];
 	params.BBox.q.x = box[2];
@@ -283,14 +283,14 @@ build_shading_1(const ref * op, const gs_shading_params_t * pcommon,
     *(gs_shading_params_t *)&params = *pcommon;
     gs_make_identity(&params.Matrix);
     params.Function = 0;
-    if ((code = dict_float_array_param(op, "Domain", 4, params.Domain,
-				       default_Domain)) != 4 ||
+    if ((code = dict_floats_param(op, "Domain", 4, params.Domain,
+				  default_Domain)) < 0 ||
 	(code = dict_matrix_param(op, "Matrix", &params.Matrix)) < 0 ||
 	(code = build_shading_function(op, &params.Function, 2, mem)) < 0 ||
 	(code = gs_shading_Fb_init(ppsh, &params, mem)) < 0
 	) {
 	gs_free_object(mem, params.Function, "Function");
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+	return code;
     }
     return 0;
 }
@@ -307,18 +307,17 @@ build_directional_shading(const ref * op, float *Coords, int num_Coords,
 			  float Domain[2], gs_function_t ** pFunction,
 			  bool Extend[2], gs_memory_t *mem)
 {
-    int code =
-	dict_float_array_param(op, "Coords", num_Coords, Coords, NULL);
+    int code = dict_floats_param(op, "Coords", num_Coords, Coords, NULL);
     static const float default_Domain[2] = {0, 1};
     ref *pExtend;
 
     *pFunction = 0;
-    if (code != num_Coords ||
-	(code = dict_float_array_param(op, "Domain", 2, Domain,
-				       default_Domain)) != 2 ||
+    if (code < 0 ||
+	(code = dict_floats_param(op, "Domain", 2, Domain,
+				  default_Domain)) < 0 ||
 	(code = build_shading_function(op, pFunction, 1, mem)) < 0
 	)
-	return (code < 0 ? code : gs_note_error(e_rangecheck));
+	return code;
     if (dict_find_string(op, "Extend", &pExtend) <= 0)
 	Extend[0] = Extend[1] = false;
     else {
@@ -452,12 +451,11 @@ build_mesh_shading(const ref * op, gs_shading_mesh_params_t * params,
 				"build_mesh_shading");
 	if (*pDecode == 0)
 	    return_error(e_VMerror);
-	code = dict_float_array_param(op, "Decode", num_decode, *pDecode,
-				      NULL);
-	if (code != num_decode) {
+	code = dict_floats_param(op, "Decode", num_decode, *pDecode, NULL);
+	if (code < 0) {
 	    gs_free_object(mem, *pDecode, "build_mesh_shading");
 	    *pDecode = 0;
-	    return (code < 0 ? code : gs_note_error(e_rangecheck));
+	    return code;
 	}
     }
     code = build_shading_function(op, pFunction, 1, mem);

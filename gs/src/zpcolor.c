@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -97,7 +97,7 @@ zbuildpattern1(i_ctx_t *i_ctx_p)
 	(code = dict_uid_param(op1, &template.uid, 1, imemory, i_ctx_p)) != 1 ||
 	(code = dict_int_param(op1, "PaintType", 1, 2, 0, &template.PaintType)) < 0 ||
 	(code = dict_int_param(op1, "TilingType", 1, 3, 0, &template.TilingType)) < 0 ||
-	(code = dict_float_array_param(op1, "BBox", 4, BBox, NULL)) != 4 ||
+	(code = dict_floats_param(op1, "BBox", 4, BBox, NULL)) < 0 ||
 	(code = dict_float_param(op1, "XStep", 0.0, &template.XStep)) != 0 ||
 	(code = dict_float_param(op1, "YStep", 0.0, &template.YStep)) != 0 ||
 	(code = dict_find_string(op1, "PaintProc", &pPaintProc)) <= 0

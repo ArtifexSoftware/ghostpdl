@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -102,8 +102,8 @@ zimage4(i_ctx_t *i_ctx_p)
 			      12);
     if (code < 0)
 	return code;
-    code = dict_int_array_param(op, "MaskColor", num_components * 2,
-				colors);
+    code = dict_int_array_check_param(op, "MaskColor", num_components * 2,
+				      colors, 0, e_rangecheck);
     /* Clamp the color values to the unsigned range. */
     if (code == num_components) {
 	image.MaskColor_is_range = false;

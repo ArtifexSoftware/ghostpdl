@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -84,7 +84,7 @@ gs_build_function_0(const ref *op, const gs_function_params_t * mnDR,
 	    goto fail;
 	}
 	params.Size = ptr;
-	code = dict_int_array_param(op, "Size", params.m, ptr);
+	code = dict_ints_param(op, "Size", params.m, ptr);
 	if (code != params.m)
 	    goto fail;
     }

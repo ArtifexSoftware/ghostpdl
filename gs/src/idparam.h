@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1993, 1994, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -57,11 +57,41 @@ int dict_uint_param(P6(const ref * pdict, const char *kstr,
 		       uint * pvalue));
 int dict_float_param(P4(const ref * pdict, const char *kstr,
 			floatp defaultval, float *pvalue));
+/*
+ * There are 3 variants of the procedures for getting array parameters.
+ * All return the element count if the parameter is present and of the
+ * correct size, 0 if the key is missing.
+ *	_xxx_check_param return over_error if the array size > len,
+ *	  (under_error < 0 ? under_error : the element count) if the array
+ *	  size < len.
+ *	_xxx_param return limitcheck if the array size > maxlen.
+ *	  Equivalent to _xxx_check_param(..., 0, limitcheck).
+ *	_xxxs return rangecheck if the array size != len.
+ *	  Equivalent to _xxx_check_param(..., rangecheck, rangecheck).
+ * All can return other error codes (e.g., typecheck).
+ */
+int dict_int_array_check_param(P6(const ref * pdict, const char *kstr,
+				  uint len, int *ivec,
+				  int under_error, int over_error));
 int dict_int_array_param(P4(const ref * pdict, const char *kstr,
 			    uint maxlen, int *ivec));
+int dict_ints_param(P4(const ref * pdict, const char *kstr,
+		       uint len, int *ivec));
+/*
+ * For _float_array_param, if the parameter is missing and defaultvec is
+ * not NULL, copy (max)len elements from defaultvec to fvec and return
+ * (max)len.
+ */
+int dict_float_array_check_param(P7(const ref * pdict, const char *kstr,
+				    uint len, float *fvec,
+				    const float *defaultvec,
+				    int under_error, int over_error));
 int dict_float_array_param(P5(const ref * pdict, const char *kstr,
 			      uint maxlen, float *fvec,
 			      const float *defaultvec));
+int dict_floats_param(P5(const ref * pdict, const char *kstr,
+			 uint len, float *fvec,
+			 const float *defaultvec));
 
 /*
  * For dict_proc_param,
