@@ -478,23 +478,6 @@ and the original CID font name is used when it is not embedded.
 <h2><a name="Limitations"></a>Limitations</h2>
 
 <p>
-<b><tt>ps2pdf</tt></b> will sometimes convert text to high-resolution
-bitmapped fonts rather than to embedded outline fonts.  This will occur when
-the PostScript file uses Type 3, CIDFontType 1, or CIDFontType 4 fonts, or
-Type 0 fonts that reference any of these; it may also occur in some cases if
-the input file uses fonts with non-standard encodings, or in some other rare
-cases.
-
-<p>
-The PDF output always represents the colors of text and graphics in
-DeviceGray or DeviceRGB color space (or DeviceCMYK if the
-<b><tt>ProcessColorModel</tt></b> parameter has been set to
-<b><tt>/DeviceCMYK</tt></b>); all other color spaces are converted to these.
-However, for images, it will retain the original color space for DeviceGray,
-DeviceRGB, DeviceCMYK, certain CIEBased spaces, and Indexed spaces based on
-these.
-
-<p>
 <b><tt>ps2pdf</tt></b> will sometimes convert PostScript constructs to
 lower-level ones, even if a higher-level construct is available.  For
 example, if the PostScript file uses <b><tt>charpath</tt></b> to set a
