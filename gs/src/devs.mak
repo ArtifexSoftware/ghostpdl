@@ -742,6 +742,10 @@ bmpamono.dev: $(bmpa_) page.dev async.dev
 	$(SETPDEV) bmpamono $(bmpa_)
 	$(ADDMOD) bmpamono -include async
 
+bmpa16m.dev: $(bmpa_) page.dev async.dev
+	$(SETPDEV) bmpa16m $(bmpa_)
+	$(ADDMOD) bmpa16m -include async
+
 ### -------------------------- CGM file format ------------------------- ###
 ### This driver is under development.  Use at your own risk.             ###
 ### The output is very low-level, consisting only of rectangles and      ###
