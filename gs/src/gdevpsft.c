@@ -664,6 +664,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 				     "psf_write_truetype_data");
 	}
     }
+    /* Acrobat Reader won't accept fonts with empty glyfs. */
+    if (glyf_length == 0)
+	glyf_length = 1;
     if_debug2('l', "[l]max_glyph = %lu, glyf_length = %lu\n",
 	      (ulong)max_glyph, (ulong)glyf_length);
     /*
@@ -839,6 +842,9 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	}
     }
     if_debug1('l', "[l]glyf final offset = %lu\n", offset);
+    /* Add a dummy byte if necessary to make glyf non-empty. */
+    while (offset < glyf_length)
+	stream_putc(s, 0), ++offset;
     put_pad(s, (uint)offset);
 
     /* Write loca. */
