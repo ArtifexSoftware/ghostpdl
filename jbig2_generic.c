@@ -488,9 +488,9 @@ jbig2_decode_generic_region(Jbig2Ctx *ctx,
 
   if (!params->MMR && params->GBTEMPLATE == 0) {
     if (gbat[0] == +3 && gbat[1] == -1 &&
-        gbat[2] == -3 && gbat[4] == -1 &&
+        gbat[2] == -3 && gbat[3] == -1 &&
         gbat[4] == +2 && gbat[5] == -2 &&
-        gbat[6] == +2 && gbat[7] == -2)
+        gbat[6] == -2 && gbat[7] == -2)
       return jbig2_decode_generic_template0(ctx, segment, params,
                                           as, image, GB_stats);
     else
