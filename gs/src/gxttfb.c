@@ -560,9 +560,14 @@ stem_hint_handler(void *client_data, gx_san_sect *ss)
 {
     t1_hinter_aux *h = (t1_hinter_aux *)client_data;
 
-    return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
-		(&h->super, ss->xl, ss->xr);
+    if (ss->side_mask == 3)
+	return (h->transpose ? t1_hinter__hstem : t1_hinter__vstem)
+		    (&h->super, ss->xl, ss->xr - ss->xl);
+    else
+	return t1_hinter__overall_hstem(&h->super, ss->xl, ss->xr - ss->xl, ss->side_mask);
 }
+
+#define OVERALL_HINT 0 /* fixme : This stuff appers unuseful. */
 
 private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path, 
 	gs_font_type42 *pfont, const gs_log2_scale_point *pscale, gx_ttfExport *e, ttfOutliner *o)
@@ -614,6 +619,10 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 	code = t1_hinter__set_font42_data(&h.super, FontType, &pfont->data, false);
 	if (code < 0)
 	    return code;
+	code = t1_hinter__sbw(&h.super, 0/* o->out.sideBearing already in the path */, 0, 
+				o->out.advance.x, o->out.advance.y);
+	if (code < 0)
+	    return code;
 	gx_path_bbox(path, &bbox);
 	if (code < 0)
 	    return code;
@@ -632,7 +641,8 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
 			    &is_stub, path, &params, &devc_stub, NULL);
 	    gx_san_end(padev);
 	    if (code >= 0)
-		code = gx_san_generate_stems(padev, &h, stem_hint_handler);
+		code = gx_san_generate_stems(padev, OVERALL_HINT && h.transpose, 
+				&h, stem_hint_handler);
 	    if (h.transpose)
 		transpose_path(path);
 	    if (code < 0)

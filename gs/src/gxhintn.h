@@ -89,6 +89,7 @@ typedef struct t1_hint_s
     enum t1_align_type aligned0, aligned1; /* ag0, ag1 is aligned */
     unsigned int stem3_index; /* 1,2,3 for stem3 (not used yet), 0 for other types */
     int range_index; /* type 2 only */
+    int side_mask;
 } t1_hint;
 
 typedef struct t1_hint_range_s
@@ -188,6 +189,7 @@ int  t1_hinter__drop_hints(t1_hinter * this);
 int  t1_hinter__dotsection(t1_hinter * this);
 int  t1_hinter__hstem(t1_hinter * this, fixed x0, fixed x1);
 int  t1_hinter__vstem(t1_hinter * this, fixed y0, fixed y1);
+int  t1_hinter__overall_hstem(t1_hinter * this, fixed x0, fixed x1, int side_mask);
 int  t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed y1, fixed x2, fixed y3, fixed x4, fixed y5);
 int  t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, fixed y4, fixed y5);
 

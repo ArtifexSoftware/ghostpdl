@@ -1162,7 +1162,7 @@ int t1_hinter__drop_hints(t1_hinter * this)
 }
 
 private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, unsigned short stem3_index
-                                                  , fixed v0, fixed v1)
+                                                  , fixed v0, fixed v1, int side_mask)
 {   t1_hint *hint;
     t1_glyph_space_coord s = (type == hstem ? this->subglyph_orig_gy : this->subglyph_orig_gx);
     t1_glyph_space_coord g0 = s + v0;
@@ -1170,11 +1170,12 @@ private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, uns
     t1_hint_range *range;
     int i, code;
 
-    t1_hinter__adjust_matrix_precision(this, g0, g1);
+    t1_hinter__adjust_matrix_precision(this, (side_mask & 1 ? g0 : g1), (side_mask & 2 ? g1 : g0));
     for (i = 0; i < this->hint_count; i++)
 	if (this->hint[i].type == type && 
-	    this->hint[i].g0 == g0 && this->hint[i].g1 == g1)
-		break;
+		this->hint[i].g0 == g0 && this->hint[i].g1 == g1 && 
+		this->hint[i].side_mask == side_mask)
+	    break;
     if (i < this->hint_count)
 	hint = &this->hint[i];
     else {
@@ -1187,6 +1188,7 @@ private inline int t1_hinter__stem(t1_hinter * this, enum t1_hint_type type, uns
 	hint->aligned0 = hint->aligned1 = unaligned;
 	hint->stem3_index = stem3_index;
 	hint->range_index = -1;
+	hint->side_mask = side_mask;
     }
     code = t1_hinter__can_add_hint_range(this, &range);
     if (code < 0)
@@ -1207,20 +1209,27 @@ int t1_hinter__dotsection(t1_hinter * this)
         return 0; /* We store beginning dotsection hints only. */
     if (this->disable_hinting)
 	return 0;
-    return t1_hinter__stem(this, dot, 0, 0, 0);
+    return t1_hinter__stem(this, dot, 0, 0, 0, 0);
 }
 
 
 int t1_hinter__hstem(t1_hinter * this, fixed x0, fixed x1)
 {   if (this->disable_hinting)
 	return 0;
-    return t1_hinter__stem(this, hstem, 0, x0, x1);
+    return t1_hinter__stem(this, hstem, 0, x0, x1, 3);
+}
+
+int t1_hinter__overall_hstem(t1_hinter * this, fixed x0, fixed x1, int side_mask)
+{   /* True Type autohinting only. */
+    if (this->disable_hinting)
+	return 0;
+    return t1_hinter__stem(this, hstem, 0, x0, x1, side_mask);
 }
 
 int t1_hinter__vstem(t1_hinter * this, fixed y0, fixed y1)
 {   if (this->disable_hinting)
 	return 0;
-    return t1_hinter__stem(this, vstem, 0, y0, y1);
+    return t1_hinter__stem(this, vstem, 0, y0, y1, 3);
 }
 
 int t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed x1, fixed x2, fixed x3, fixed x4, fixed x5)
@@ -1228,13 +1237,13 @@ int t1_hinter__hstem3(t1_hinter * this, fixed x0, fixed x1, fixed x2, fixed x3, 
 
     if (this->disable_hinting)
 	return 0;
-    code = t1_hinter__stem(this, hstem, 1, x0, x1);
+    code = t1_hinter__stem(this, hstem, 1, x0, x1, 3);
     if (code < 0)
 	return code;
-    code = t1_hinter__stem(this, hstem, 2, x2, x3);
+    code = t1_hinter__stem(this, hstem, 2, x2, x3, 3);
     if (code < 0)
 	return code;
-    return t1_hinter__stem(this, hstem, 3, x4, x5);
+    return t1_hinter__stem(this, hstem, 3, x4, x5, 3);
 }
 
 int t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, fixed y4, fixed y5)
@@ -1242,13 +1251,13 @@ int t1_hinter__vstem3(t1_hinter * this, fixed y0, fixed y1, fixed y2, fixed y3, 
 
     if (this->disable_hinting)
 	return 0;
-    code = t1_hinter__stem(this, vstem, 1, y0, y1);
+    code = t1_hinter__stem(this, vstem, 1, y0, y1, 3);
     if (code < 0)
 	return code;
-    code = t1_hinter__stem(this, vstem, 2, y2, y3);
+    code = t1_hinter__stem(this, vstem, 2, y2, y3, 3);
     if (code < 0)
 	return code;
-    return t1_hinter__stem(this, vstem, 3, y4, y5);
+    return t1_hinter__stem(this, vstem, 3, y4, y5, 3);
 }
 
 int t1_hinter__endchar(t1_hinter * this, bool seac_flag)
@@ -1408,7 +1417,8 @@ private void t1_hinter__compute_type2_stem_ranges(t1_hinter * this)
 
 
 private bool t1_hinter__is_stem_hint_applicable(t1_hinter * this, t1_hint *hint, int pole_index)
-{   if (hint->type == hstem 
+{   /* We don't check hint->side_mask because the unused coord should be outside the design bbox. */
+    if (hint->type == hstem 
             && (this->pole[pole_index].gy == hint->g0 || this->pole[pole_index].gy == hint->g1)
             && t1_hinter__is_good_tangent(this, pole_index, 1, 0))
         return true;
@@ -1624,6 +1634,10 @@ private void t1_hinter__align_stem_commands(t1_hinter * this)
 			t1_glyph_space_coord gc;
 			enum t1_align_type align = t1_hinter__compute_aligned_coord(this, &gc, segment_index, t, horiz);
 
+			if (this->hint[i].side_mask != 3) {
+			    /* An overal hint from the True Type autohinter. */
+			    align = (this->hint[i].side_mask & 2 ? topzn : botzn);
+			}
 			vd_square(this->pole[segment_index].gx, this->pole[segment_index].gy, 
 				    (horiz ? 7 : 9), (i < this->primary_hint_count ? RGB(0,0,255) : RGB(0,255,0)));
 			/* todo: optimize: primary commands don't need to align, if suppressed by secondary ones. */
