@@ -135,6 +135,7 @@ typedef struct patch_fill_state_s {
 int
 init_patch_fill_state(patch_fill_state_t *pfs)
 {
+    /* Warning : pfs->Function must be set in advance. */
     const gs_color_space *pcs = pfs->direct_space;
     gs_client_color fcc0, fcc1;
     int i, code;
@@ -149,6 +150,7 @@ init_patch_fill_state(patch_fill_state_t *pfs)
 	pfs->color_domain.paint.values[i] = max(fcc1.paint.values[i] - fcc0.paint.values[i], 1);
     pfs->vectorization = false; /* A stub for a while. Will use with pclwrite. */
     pfs->maybe_self_intersecting = true;
+    pfs->monotonic_color = (pfs->Function == NULL);
     pfs->n_color_args = 1;
 #   if POLYGONAL_WEDGES
 	pfs->wedge_buf = NULL;
@@ -1276,10 +1278,11 @@ color_norm(const patch_fill_state_t *pfs, const patch_color_t *c)
 private inline bool
 is_color_monotonic(const patch_fill_state_t *pfs, const patch_color_t *c0, const patch_color_t *c1)
 {
-    if (!pfs->Function)
-	return true;
-    return (c0->t[0] == c1->t[0] && (pfs->n_color_args == 1 || c0->t[1] == c1->t[1])) ||
-	   gs_function_is_monotonic(pfs->Function, c0->t, c1->t) > 0;
+    /* When pfs->Function is not set, the color is monotonic.
+       Do not call this function because it doesn't check whether pfs->Function is set. 
+       Actually pfs->monotonic_color prevents that.
+     */
+    return gs_function_is_monotonic(pfs->Function, c0->t, c1->t) > 0;
 }
 
 private inline bool
@@ -1312,7 +1315,8 @@ constant_color_trapezoid(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_ed
 
 private int
 decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge *re, 
-	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, const patch_color_t *c1)
+	fixed ybot, fixed ytop, bool swap_axes, const patch_color_t *c0, 
+	const patch_color_t *c1)
 {
     /* Assuming a very narrow trapezoid - ignore the transversal color variation. */
     /* Assuming the XY span is restricted with curve_samples. 
@@ -1326,17 +1330,24 @@ decompose_linear_color(patch_fill_state_t *pfs, gs_fixed_edge *le, gs_fixed_edge
     patch_interpolate_color(&c, c0, c1, pfs, 0.5);
     if (ytop - ybot < pfs->fixed_flat) /* Prevent an infinite color decomposition. */
 	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
-    else if (!is_color_monotonic(pfs, c0, c1) || 
+    else {  
+	bool monotonic_color_save = pfs->monotonic_color;
+
+	if (!pfs->monotonic_color)
+	    pfs->monotonic_color = is_color_monotonic(pfs, c0, c1);
+	if (!pfs->monotonic_color || 
 		color_span(pfs, c0, c1) > pfs->smoothness || 
 		(POLYGONAL_WEDGES && ytop - ybot >= pfs->max_small_coord)) {
-	fixed y = (ybot + ytop) / 2;
-    
-	code = decompose_linear_color(pfs, le, re, ybot, y, swap_axes, c0, &c);
-	if (code < 0)
-	    return code;
-	return decompose_linear_color(pfs, le, re, y, ytop, swap_axes, &c, c1);
-    } else
-	return constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
+	    fixed y = (ybot + ytop) / 2;
+
+	    code = decompose_linear_color(pfs, le, re, ybot, y, swap_axes, c0, &c);
+	    if (code >= 0)
+		code = decompose_linear_color(pfs, le, re, y, ytop, swap_axes, &c, c1);
+	} else
+	    code = constant_color_trapezoid(pfs, le, re, ybot, ytop, swap_axes, &c);
+	pfs->monotonic_color = monotonic_color_save;
+	return code;
+    }
 }
 
 private inline int 
@@ -2928,6 +2939,9 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
     int code;
     bool divide_u = false, divide_v = false, big1 = big;
     shading_vertex_t q[2];
+    bool monotonic_color_save = pfs->monotonic_color;
+    /* Warning : pfs->monotonic_color is not restored on error. */
+
     if (big) {
 	/* Likely 'big' is an unuseful rudiment due to curve_samples
 	   restricts lengthes. We keep it for a while because its implementation 
@@ -2973,8 +2987,9 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    return (QUADRANGLES || !pfs->maybe_self_intersecting ? 
 			constant_color_quadrangle : triangles)(pfs, p, 
 			    pfs->maybe_self_intersecting);
-
-	if (!is_quadrangle_color_monotonic(pfs, p, &color_u)) {
+	if (!pfs->monotonic_color)
+	    pfs->monotonic_color = is_quadrangle_color_monotonic(pfs, p, &color_u);
+	if (!pfs->monotonic_color) {
 	    /* go to divide. */
 	} else switch(quadrangle_color_change(pfs, p, &color_u)) {
 	    case color_change_small: 
@@ -3017,7 +3032,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    if (code < 0)
 		return code;
 	}
-	code = fill_quadrangle(pfs, &s0, big1);
+	code = fill_quadrangle(pfs, &s0, big);
 	if (code < 0)
 	    return code;
 	if (LAZY_WEDGES) {
@@ -3076,6 +3091,7 @@ fill_quadrangle(patch_fill_state_t *pfs, const quadrangle_patch *p, bool big)
 	    code = terminate_wedge_vertex_list(pfs, &l0, &s0.p[0][1]->c, &s0.p[1][1]->c);
 	}
     }
+    pfs->monotonic_color = monotonic_color_save;
     return code;
 }
 
@@ -3318,7 +3334,7 @@ private int
 fill_patch(patch_fill_state_t *pfs, const tensor_patch *p, int kv)
 {
     if (kv <= 1 && (is_patch_narrow(pfs, p) || 
-	    (is_color_monotonic_by_v(pfs, p) && 
+	    ((pfs->monotonic_color || is_color_monotonic_by_v(pfs, p)) && 
 	     !is_color_span_v_big(pfs, p) &&
 	    !is_bended(p)))) { /* The order of calls is improtant for performance. */
 	draw_patch(p, true, RGB(0, 128, 0));

@@ -144,6 +144,7 @@ typedef struct patch_fill_state_s {
     fixed fixed_flat;
     double smoothness;
     bool maybe_self_intersecting;
+    bool monotonic_color;
 #endif
 } patch_fill_state_t;
 #endif
