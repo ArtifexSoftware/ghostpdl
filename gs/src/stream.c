@@ -515,6 +515,8 @@ sgets(stream * s, byte * buf, uint nmax, uint * pn)
 		cw.limit -= min_left;
 		status = sreadbuf(s, &cw);
 		cw.limit += min_left;
+		/* Compact the stream so stell will return the right result. */
+		stream_compact(s, true);
 		/*
 		 * We know the stream buffer is empty, so it's safe to
 		 * update position.  However, we need to reset the read
@@ -792,9 +794,9 @@ sreadbuf(stream * s, stream_cursor_write * pbuf)
 	    oldpos = pw->ptr;
 	    status = (*curr->procs.process) (curr->state, pr, pw, eof);
 	    pr->limit += left;
-	    if_debug4('s', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d\n",
+	    if_debug5('s', "[s]after read 0x%lx, nr=%u, nw=%u, status=%d, position=%d\n",
 		      (ulong) curr, (uint) (pr->limit - pr->ptr),
-		      (uint) (pw->limit - pw->ptr), status);
+		      (uint) (pw->limit - pw->ptr), status, s->position);
 	    if (strm == 0 || status != 0)
 		break;
 	    if (strm->end_status < 0) {
