@@ -337,7 +337,7 @@ gx_image_cached_char(register gs_show_enum * penum, register cached_char * cc)
 	if (!cc_has_bits(cc)) {
 	    gx_device_memory mdev;
 
-	    gs_make_mem_mono_device(&mdev, 0, imaging_dev);
+	    gs_make_mem_mono_device(&mdev, dev->memory, imaging_dev);
 	    gx_open_cache_device(&mdev, cc);
 	    code = (*xf->common.procs->render_char) (xf, xg,
 				       (gx_device *) & mdev, cx - x, cy - y,
