@@ -28,7 +28,6 @@
 #include "gxcldev.h"
 #include "gxgetbit.h"
 #include "gxhttile.h"
-#include "gdevht.h"
 #include "gdevplnx.h"
 /*
  * We really don't like the fact that gdevprn.h is included here, since
