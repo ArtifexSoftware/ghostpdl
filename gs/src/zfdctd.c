@@ -43,6 +43,7 @@ zDCTD(i_ctx_t *i_ctx_p)
     const ref *dop;
     uint dspace;
 
+    s_stack_init(&state, mem);
     /* First allocate space for IJG parameters. */
     jddp = gs_alloc_struct_immovable(mem,jpeg_decompress_data,
       &st_jpeg_decompress_data, "zDCTD");
