@@ -73,9 +73,9 @@
 
 
 #ifdef DEBUG
-  #define DBG_PAINT    CUR.owner->font->DebugRepaint(CUR.owner->font);
+  #define DBG_PAINT    CUR.current_face->font->DebugRepaint(CUR.current_face->font);
 
-  #define DBG_PRT CUR.owner->font->DebugPrint(CUR.owner->font
+  #define DBG_PRT CUR.current_face->font->DebugPrint(CUR.current_face->font
   #define DBG_PRINT(fmt) DBG_PRT, fmt);
   #define DBG_PRINT1(fmt, a) DBG_PRT, fmt, a);
   #define DBG_PRINT3(fmt, a, b, c) DBG_PRT, fmt, a, b, c);
@@ -5021,7 +5021,7 @@ static int nInstrCount=0;
     PCallRecord  WITH1;
     bool bFirst = true;
 #   ifdef DEBUG
-	ttfMemory *mem = exc->owner->font->ttf_memory;
+	ttfMemory *mem = exc->current_face->font->ttf_memory;
 	F26Dot6 *save_ox, *save_oy, *save_cx, *save_cy;
 
 	DBG_PRINT("\n%% *** Entering RunIns ***");

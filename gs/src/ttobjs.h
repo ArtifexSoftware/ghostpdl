@@ -566,7 +566,7 @@ typedef struct _TExecution_Context TExecution_Context;
 
   struct  _TInstance
   {
-    PFace            owner;     /* face object */
+    PFace            face;     /* face object */
 
     Bool             valid;
 
@@ -600,8 +600,7 @@ typedef struct _TExecution_Context TExecution_Context;
 
   struct  _TExecution_Context 
   {
-    PFace           owner;
-    PInstance       instance;
+    PFace           current_face;
 
     /* instructions state */
  
@@ -690,7 +689,11 @@ typedef struct _TExecution_Context TExecution_Context;
     TSet_CVT_Function  func_write_cvt; /* write a cvt entry (in pixels) */
     TSet_CVT_Function  func_move_cvt;  /* incr a cvt entry (in pixels)  */
     /* GS extension */
-    jmp_buf             trap;           /* Error throw trap. */ 
+    jmp_buf            trap;           /* Error throw trap. */ 
+    Int                n_contours;
+    Int                n_points;
+    Int                maxGlyphSize;
+    Int                lock;
   };
 
 
@@ -704,6 +707,8 @@ typedef struct _TExecution_Context TExecution_Context;
   TT_Error  Goto_CodeRange( PExecution_Context  exec, Int  range, Int  IP );
   /* Unset the coderange */
   void  Unset_CodeRange( PExecution_Context  exec );
+  /* Reset the coderange */
+  void Reset_CodeRange( PExecution_Context  exec, Int  range );
  
   /* Return a pointer to a given coderange record. */
   /* Used only by the debugger.                    */

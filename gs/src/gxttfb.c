@@ -23,6 +23,7 @@
 #include "gxttfb.h"
 #include "gxfixed.h"
 #include "gxpath.h"
+#include "gxfcache.h"
 #include "ttfmemd.h"
 #include "gsstruct.h"
 #include "gserrors.h"
@@ -187,6 +188,7 @@ void gx_ttfReader__destroy(gx_ttfReader *this)
 
 /*----------------------------------------------*/
 
+#if NEW_TT_INTERPRETER
 private void DebugRepaint(ttfFont *ttf)
 {
 }
@@ -204,6 +206,7 @@ private void DebugPrint(ttfFont *ttf, const char *fmt, ...)
 	va_end(args);
     }
 }
+#endif
 
 private void WarnPatented(gs_font_type42 *pfont, const char *txt)
 {
@@ -234,6 +237,7 @@ typedef struct gx_ttfMemory_s {
 gs_private_st_simple(st_gx_ttfMemory, gx_ttfMemory, "gx_ttfMemory");
 /* st_gx_ttfMemory::memory points to a root. */
 
+#if NEW_TT_INTERPRETER 
 private void *gx_ttfMemory__alloc_bytes(ttfMemory *this, int size,  const char *cname)
 {
     gs_memory_t *mem = ((gx_ttfMemory *)this)->memory;
@@ -254,11 +258,14 @@ private void gx_ttfMemory__free(ttfMemory *this, void *p,  const char *cname)
 
     gs_free_object(mem, p, cname);
 }
+#endif
 
 /*----------------------------------------------*/
 
-ttfFont *ttfFont__create(gs_memory_t *mem)
+ttfFont *ttfFont__create(gs_font_dir *dir)
 {
+#if NEW_TT_INTERPRETER 
+    gs_memory_t *mem = dir->memory;
     gx_ttfMemory *m = gs_alloc_struct(mem, gx_ttfMemory, &st_gx_ttfMemory, "ttfFont__create");
     ttfFont *ttf;
 
@@ -268,28 +275,36 @@ ttfFont *ttfFont__create(gs_memory_t *mem)
     m->super.alloc_bytes = gx_ttfMemory__alloc_bytes;
     m->super.free = gx_ttfMemory__free;
     m->memory = mem;
+    if(ttfInterpreter__obtain(&m->super, &dir->tti))
+	return 0;
     ttf = gs_alloc_struct(mem, ttfFont, &st_ttfFont, "ttfFont__create");
     if (ttf == NULL)
 	return 0;
     ttfFont__init(ttf, &m->super, DebugRepaint, DebugPrint);
     return ttf;
+#else
+    return 0;
+#endif
 }
 
-void ttfFont__destroy(ttfFont *this)
-{   ttfMemory *mem = this->ttf_memory;
+void ttfFont__destroy(ttfFont *this, gs_font_dir *dir)
+{   
+#if NEW_TT_INTERPRETER 
+    ttfMemory *mem = this->ttf_memory;
 
     ttfFont__finit(this);
     mem->free(mem, this, "ttfFont__destroy");
-    mem->free(mem, mem, "ttfFont__destroy");
+    ttfInterpreter__release(&dir->tti);
+#endif
 }
 
-int ttfFont__Open_aux(ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont)
+int ttfFont__Open_aux(ttfInterpreter *tti, ttfFont *this, gx_ttfReader *r, gs_font_type42 *pfont)
 {
     /* Ghostscript proceses a TTC index in gs/lib/gs_ttf.ps, */
     /* so that TTC never comes here. */
     unsigned int nTTC = 0; 
 
-    switch(ttfFont__Open(this, &r->super, nTTC)) {
+    switch(ttfFont__Open(tti, this, &r->super, nTTC)) {
 	case fNoError:
 	    return 0;
 	case fMemoryError:

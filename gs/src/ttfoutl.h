@@ -35,6 +35,11 @@ typedef struct _TInstance TInstance;
 typedef struct _TExecution_Context TExecution_Context;
 #endif
 
+#ifndef ttfInterpreter_DEFINED
+#  define ttfInterpreter_DEFINED
+typedef struct ttfInterpreter_s ttfInterpreter;
+#endif
+
 typedef struct ttfMemoryDescriptor_s ttfMemoryDescriptor;
 
 typedef signed long F26Dot6;
@@ -108,10 +113,6 @@ struct ttfFont_s {
     unsigned int nLongMetricsHorz;
     unsigned int nIndexToLocFormat;
     bool    patented;
-    byte  *onCurve;   
-    F26Dot6 *x;         
-    F26Dot6 *y;
-    short *endPoints;
     TFace *face;
     TInstance *inst;
     TExecution_Context  *exec;
@@ -124,7 +125,7 @@ void ttfFont__init(ttfFont *this, ttfMemory *mem,
 		    void (*DebugRepaint)(ttfFont *),
 		    void (*DebugPrint)(ttfFont *, const char *s, ...));
 void ttfFont__finit(ttfFont *this);
-FontError ttfFont__Open(ttfFont *, ttfReader *r, unsigned int nTTC);
+FontError ttfFont__Open(ttfInterpreter *, ttfFont *, ttfReader *r, unsigned int nTTC);
 
 typedef struct ttfExport_s ttfExport;
 struct ttfExport_s {
@@ -137,6 +138,15 @@ struct ttfExport_s {
     void (*SetWidth)(ttfExport *, FloatPoint*);
     void (*DebugPaint)(ttfExport *);
 };
+
+struct ttfInterpreter_s {
+    TExecution_Context *exec;
+    int lock;
+    ttfMemory *ttf_memory;
+};
+
+int ttfInterpreter__obtain(ttfMemory *mem, ttfInterpreter **ptti);
+void ttfInterpreter__release(ttfInterpreter **ptti);
 
 typedef struct {
     bool bOutline;

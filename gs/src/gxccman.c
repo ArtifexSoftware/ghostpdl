@@ -213,18 +213,15 @@ gx_add_fm_pair(register gs_font_dir * dir, gs_font * font, const gs_uid * puid,
     pair->ttr = 0;
     if (font->FontType == ft_TrueType || font->FontType == ft_CID_TrueType) {
 	int code; 
-
-	/*  fixme : We're unclear in which memory does 'pair' is allocated.
-	    Do we here create pointers from global to local memory ?
-	    Maybe we should pass another allocator to the calls below.
-	 */
+	
 	pair->ttr = gx_ttfReader__create(dir->memory, (gs_font_type42 *)font);
 	if (!pair->ttr)
 	    return_error(gs_error_VMerror);
-	pair->ttf = ttfFont__create(dir->memory);
+	/*  We could use a single the reader instance for all fonts ... */
+	pair->ttf = ttfFont__create(dir);
 	if (!pair->ttf)
 	    return_error(gs_error_VMerror);
-	code = ttfFont__Open_aux(pair->ttf, pair->ttr, (gs_font_type42 *)font);
+	code = ttfFont__Open_aux(dir->tti, pair->ttf, pair->ttr, (gs_font_type42 *)font);
 	if (code < 0)
 	    return code; /* fixme : propagate error. */
     }
@@ -338,7 +335,7 @@ gs_purge_fm_pair(gs_font_dir * dir, cached_fm_pair * pair, int xfont_only)
 	gx_ttfReader__destroy(pair->ttr);
     pair->ttr = 0;
     if (pair->ttf)
-	ttfFont__destroy(pair->ttf);
+	ttfFont__destroy(pair->ttf, dir);
     pair->ttf = 0;
 #endif
     if (!xfont_only) {

@@ -118,6 +118,28 @@
     exec->code = 0;
     exec->codeSize = 0;
   }
+  
+/*******************************************************************
+ *
+ *  Function    :  Reset_CodeRange
+ *
+ *  Description :  Resets a code range.
+ *
+ *  Input  :  exec    target execution context
+ *            range   execution code range       
+ *
+ *  Output :  
+ *
+ *  Note   : The pointer must be reset after used to avoid pending pointers
+ *           while a garbager invokation.
+ *
+ *****************************************************************/
+
+  void Reset_CodeRange( PExecution_Context  exec, Int  range )
+  {
+    exec->codeRangeTable[range - 1].Base = 0;
+    exec->codeRangeTable[range - 1].Size = 0;
+  }
 
 /*******************************************************************
  *
@@ -208,8 +230,19 @@
  *                                                                 *
  *******************************************************************/
 
+
 #define FREE(ptr) { mem->free(mem, ptr, "ttobjs.c"); ptr = NULL; }
-#define ALLOC_ARRAY(ptr, count, type) !(ptr = mem->alloc_bytes(mem, (count) * sizeof(type), "ttobjs.c"))
+#define ALLOC_ARRAY(ptr, old_count, count, type) \
+	(old_count >= count ? 0 : \
+	  !(free_aux(mem, ptr),   \
+	    ptr = mem->alloc_bytes(mem, (count) * sizeof(type), "ttobjs.c"))) 
+#define SETMAX(a, b) a = (a > b ? a : b)
+
+static int free_aux(ttfMemory *mem, void *ptr)
+{
+    mem->free(mem, ptr, "ttobjs.c");
+    return 0;
+}
 
 /*******************************************************************
  *
@@ -224,18 +257,24 @@
 
    if ( !exec )
      return TT_Err_Ok;
-   if ( !exec->owner ) {
+   if ( !exec->current_face ) {
      /* This may happen while closing a high level device, when allocator runs out of memory. 
         A test case is 01_001.pdf with pdfwrite and a small vmthreshold.
      */
      return TT_Err_Out_Of_Memory;
    }
+   if (--exec->lock)
+     return TT_Err_Ok; /* Still in use */
 
-   mem = exec->owner->font->ttf_memory;
+   mem = exec->current_face->font->ttf_memory;
 
    /* points zone */
    FREE( exec->pts.cur_y );
    FREE( exec->pts.cur_x );
+   FREE( exec->pts.org_y );
+   FREE( exec->pts.org_x );
+   FREE( exec->pts.touch );
+   FREE( exec->pts.contours );
    exec->pts.n_points   = 0;
    exec->pts.n_contours = 0;
 
@@ -245,6 +284,7 @@
    FREE( exec->twilight.cur_x );
    FREE( exec->twilight.org_y );
    FREE( exec->twilight.org_x );
+   FREE( exec->twilight.contours );
    exec->twilight.n_points   = 0;
    exec->twilight.n_contours = 0;
 
@@ -260,9 +300,9 @@
    /* free glyph code range */
    FREE( exec->glyphIns );
    exec->glyphSize = 0;
+   exec->maxGlyphSize = 0;
 
-   exec->instance = (PInstance)NULL;
-   exec->owner    = (PFace)NULL;
+   exec->current_face    = (PFace)NULL;
 
    return TT_Err_Ok;
  }
@@ -275,79 +315,68 @@
 
  TT_Error  Context_Create( void*  _context, void*  _face )
  {
+   /* Note : The function name is a kind of misleading due to our improvement.
+    * Now it adjusts (enhances) the context for the specified face.
+    * We keep the old Free Type's name for easier localization of our changes.
+    * The context must be initialized with zeros before the first call.
+    * (igorm).
+    */
    PExecution_Context  exec = (PExecution_Context)_context;
 
    PFace        face = (PFace)_face;
    ttfMemory   *mem = face->font->ttf_memory;
    TMaxProfile *maxp = &face->maxProfile;
    Int          n_points, n_twilight;
+   Int          callSize, stackSize;
 
-   exec->owner    = face;
-
-   exec->glyphIns=NULL;
-   exec->callStack=NULL;
-   exec->stack=NULL;
-   exec->pts.org_x=NULL;
-   exec->pts.org_y=NULL;
-   exec->pts.cur_x=NULL;
-   exec->pts.cur_y=NULL;
-   exec->pts.touch=NULL;
-   exec->twilight.org_x=NULL;
-   exec->twilight.org_y=NULL;
-   exec->twilight.cur_x=NULL;
-   exec->twilight.cur_y=NULL;
-   exec->twilight.touch=NULL;
-
-
-   exec->callSize  = 32;
-   exec->storeSize = maxp->maxStorage;
+   callSize  = 32;
 
    /* reserve a little extra for broken fonts like courbs or timesbs */
-   exec->stackSize = maxp->maxStackElements + 32;
+   stackSize = maxp->maxStackElements + 32;
 
    n_points        = face->maxPoints + 2;
    n_twilight      = maxp->maxTwilightPoints;
 
-   if ( ALLOC_ARRAY( exec->glyphIns, maxp->maxSizeOfInstructions, Byte )        ||
+   if ( ALLOC_ARRAY( exec->glyphIns, exec->maxGlyphSize, maxp->maxSizeOfInstructions, Byte )        ||
         /* reserve glyph code range */
 
-        ALLOC_ARRAY( exec->callStack, exec->callSize, TCallRecord ) ||
+        ALLOC_ARRAY( exec->callStack, exec->callSize, callSize, TCallRecord ) ||
         /* reserve interpreter call stack */
 
-        ALLOC_ARRAY( exec->stack, exec->stackSize, Long )           ||
+        ALLOC_ARRAY( exec->stack, exec->stackSize, stackSize, Long )           ||
         /* reserve interpreter stack */
 
-        ALLOC_ARRAY( exec->pts.org_x, n_points, TT_F26Dot6 )        ||
-        ALLOC_ARRAY( exec->pts.org_y, n_points, TT_F26Dot6 )        ||
-        ALLOC_ARRAY( exec->pts.cur_x, n_points, TT_F26Dot6 )        ||
-        ALLOC_ARRAY( exec->pts.cur_y, n_points, TT_F26Dot6 )        ||
-
-        ALLOC_ARRAY( exec->pts.touch, n_points, Byte )                          ||
+        ALLOC_ARRAY( exec->pts.org_x, exec->n_points, n_points, TT_F26Dot6 )        ||
+        ALLOC_ARRAY( exec->pts.org_y, exec->n_points, n_points, TT_F26Dot6 )        ||
+        ALLOC_ARRAY( exec->pts.cur_x, exec->n_points, n_points, TT_F26Dot6 )        ||
+        ALLOC_ARRAY( exec->pts.cur_y, exec->n_points, n_points, TT_F26Dot6 )        ||
+        ALLOC_ARRAY( exec->pts.touch, exec->n_points, n_points, Byte )                          ||
         /* reserve points zone */
 
-        ALLOC_ARRAY( exec->twilight.org_x, n_twilight, TT_F26Dot6 ) ||
-        ALLOC_ARRAY( exec->twilight.org_y, n_twilight, TT_F26Dot6 ) ||
-        ALLOC_ARRAY( exec->twilight.cur_x, n_twilight, TT_F26Dot6 ) ||
-        ALLOC_ARRAY( exec->twilight.cur_y, n_twilight, TT_F26Dot6 ) ||
-
-        ALLOC_ARRAY( exec->twilight.touch, n_twilight, Byte )                   ||
+        ALLOC_ARRAY( exec->twilight.org_x, exec->twilight.n_points, n_twilight, TT_F26Dot6 ) ||
+        ALLOC_ARRAY( exec->twilight.org_y, exec->twilight.n_points, n_twilight, TT_F26Dot6 ) ||
+        ALLOC_ARRAY( exec->twilight.cur_x, exec->twilight.n_points, n_twilight, TT_F26Dot6 ) ||
+        ALLOC_ARRAY( exec->twilight.cur_y, exec->twilight.n_points, n_twilight, TT_F26Dot6 ) ||
+        ALLOC_ARRAY( exec->twilight.touch, exec->twilight.n_points, n_twilight, Byte )                   ||
         /* reserve twilight zone */
 
-        ALLOC_ARRAY( exec->pts.contours, face->maxContours, UShort ) 
+        ALLOC_ARRAY( exec->pts.contours, exec->n_contours, face->maxContours, UShort ) 
         /* reserve contours array */
-
       )
-
      goto Fail_Memory;
 
-     exec->twilight.n_points = n_twilight;
-
-     exec->instance = (PInstance)NULL;
+     SETMAX(exec->callSize, callSize);
+     SETMAX(exec->stackSize, stackSize);
+     SETMAX(exec->twilight.n_points, n_twilight);
+     SETMAX(exec->maxGlyphSize, maxp->maxSizeOfInstructions);
+     SETMAX(exec->n_contours, face->maxContours);
+     SETMAX(exec->n_points, n_points);
+     exec->lock++;
 
      return TT_Err_Ok;
 
   Fail_Memory:
-    Context_Destroy( exec );
+    /* Context_Destroy( exec ); Don't release buffers because the context is shared. */
     return TT_Err_Out_Of_Memory;
  }
 
@@ -364,7 +393,7 @@
    Int  i;
 
 
-   exec->instance = ins;
+   exec->current_face = ins->face;
 
    exec->numFDefs = ins->numFDefs;
    exec->numIDefs = ins->numIDefs;
@@ -405,6 +434,8 @@
  {
    Int  i;
 
+    if(exec->codeRangeTable[2].Base)
+	__asm int 3;
 
    for ( i = 0; i < MAX_CODE_RANGES; i++ ) {
      ins->codeRangeTable[i] = exec->codeRangeTable[i];
@@ -419,6 +450,7 @@
    exec->cvt     = 0;
    exec->storeSize = 0;
    exec->storage   = 0;
+   exec->current_face = 0;
 
    return TT_Err_Ok;
  }
@@ -509,13 +541,13 @@
 
     if ( !_instance )
       return TT_Err_Ok;
-    if ( !ins->owner ) {
+    if ( !ins->face ) {
       /* This may happen while closing a high level device, when allocator runs out of memory. 
          A test case is 01_001.pdf with pdfwrite and a small vmthreshold.
       */
       return TT_Err_Out_Of_Memory;
     }
-    mem = ins->owner->font->ttf_memory;
+    mem = ins->face->font->ttf_memory;
 
     FREE( ins->cvt );
     ins->cvtSize = 0;
@@ -526,7 +558,7 @@
     ins->numFDefs = 0;
     ins->numIDefs = 0;
 
-    ins->owner = (PFace)NULL;
+    ins->face = (PFace)NULL;
     ins->valid = FALSE;
 
     return TT_Err_Ok;
@@ -561,7 +593,7 @@
     ins->cvt=NULL;
     ins->storage=NULL;
 
-    ins->owner = face;
+    ins->face = face;
     ins->valid = FALSE;
 
     ins->numFDefs = maxp->maxFunctionDefs;
@@ -584,10 +616,10 @@
     for ( i = 0; i < 4; i++ )
       ins->metrics.compensations[i] = 0;     /* Default compensations */
 
-    if ( ALLOC_ARRAY( ins->FDefs, ins->numFDefs, TDefRecord )  ||
-         ALLOC_ARRAY( ins->IDefs, ins->numIDefs, TDefRecord )  ||
-         ALLOC_ARRAY( ins->cvt, ins->cvtSize, Long )           ||
-         ALLOC_ARRAY( ins->storage, ins->storeSize, Long )     )
+    if ( ALLOC_ARRAY( ins->FDefs, 0, ins->numFDefs, TDefRecord )  ||
+         ALLOC_ARRAY( ins->IDefs, 0, ins->numIDefs, TDefRecord )  ||
+         ALLOC_ARRAY( ins->cvt, 0, ins->cvtSize, Long )           ||
+         ALLOC_ARRAY( ins->storage, 0, ins->storeSize, Long )     )
       goto Fail_Memory;
 
     memset (ins->FDefs, 0, ins->numFDefs * sizeof(TDefRecord));
@@ -620,9 +652,9 @@
     PExecution_Context  exec;
 
     TT_Error  error;
-    PFace     face = ins->owner;
+    PFace     face = ins->face;
 
-    exec=ins->owner->font->exec;
+    exec = ins->face->font->exec;
     /* debugging instances have their own context */
 
     ins->GS = Default_GraphicsState;
@@ -705,8 +737,8 @@
   {
     TT_Error  error;
     Int       i;
-    PFace     face = ins->owner;
-    PExecution_Context exec = ins->owner->font->exec;
+    PFace     face = ins->face;
+    PExecution_Context exec = ins->face->font->exec;
 
     if ( !ins )
       return TT_Err_Invalid_Instance_Handle;

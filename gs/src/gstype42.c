@@ -30,6 +30,7 @@
 #include "gxfont.h"
 #include "gxfont42.h"
 #include "gxttf.h"
+#include "gxttfb.h"
 #include "gxfcache.h"
 #include "gxistate.h"
 #include "stream.h"
@@ -38,12 +39,13 @@
 public_st_gs_font_type42();
 
 /* Forward references */
-private int append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
-			   gx_path * ppath, gs_font_type42 * pfont);
 #if NEW_TT_INTERPRETER
 private int append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 	       gx_path * ppath, cached_fm_pair * pair, 
 	       const gs_log2_scale_point * pscale, bool grid_fit);
+#else
+private int append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
+			   gx_path * ppath, gs_font_type42 * pfont);
 #endif
 private uint default_get_glyph_index(gs_font_type42 *pfont, gs_glyph glyph);
 private int default_get_outline(gs_font_type42 *pfont, uint glyph_index,
@@ -473,7 +475,9 @@ gs_type42_glyph_outline(gs_font *font, int WMode, gs_glyph glyph, const gs_matri
     gs_fixed_point origin;
     int code;
     gs_glyph_info_t info;
+#if !NEW_TT_INTERPRETER
     gs_matrix_fixed fmat;
+#endif
     static const gs_matrix imat = { identity_matrix_body };
 #if NEW_TT_INTERPRETER
     bool grid_fit = false;
@@ -1041,6 +1045,7 @@ append_component(uint glyph_index, const gs_matrix_fixed * pmat,
     return code;
 }
 
+#if !NEW_TT_INTERPRETER
 private int
 append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
 	       gx_path * ppath, gs_font_type42 * pfont)
@@ -1084,8 +1089,7 @@ append_outline(uint glyph_index, const gs_matrix_fixed * pmat,
     gs_glyph_data_free(&glyph_data, "append_outline");
     return code;
 }
-
-#if NEW_TT_INTERPRETER
+#else
 private int
 append_outline_fitted(uint glyph_index, const gs_matrix * pmat,
 	       gx_path * ppath, cached_fm_pair * pair, 

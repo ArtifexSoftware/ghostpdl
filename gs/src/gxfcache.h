@@ -50,6 +50,10 @@ typedef struct ttfFont_s ttfFont;
 #  define gx_ttfReader_DEFINED
 typedef struct gx_ttfReader_s gx_ttfReader;
 #endif
+#ifndef ttfInterpreter_DEFINED
+#  define ttfInterpreter_DEFINED
+typedef struct ttfInterpreter_s ttfInterpreter;
+#endif
 
 /*
  * Define the entry for a cached (font,matrix) pair.  If the UID
@@ -282,6 +286,7 @@ struct gs_font_dir_s {
 #if NEW_TT_INTERPRETER
     /* An allocator for extension structures */
     gs_memory_t *memory;
+    ttfInterpreter *tti;
 #endif
 };
 
@@ -290,11 +295,19 @@ struct gs_font_dir_s {
     font_dir_enum_ptrs, font_dir_reloc_ptrs)
 
 /* Enumerate the pointers in a font directory, except for orig_fonts. */
+#if NEW_TT_INTERPRETER
 #define font_dir_do_ptrs(m)\
   /*m(-,orig_fonts)*/ m(0,scaled_fonts) m(1,fmcache.mdata)\
   m(2,ccache.table) m(3,ccache.mark_glyph_data)\
-  m(4,glyph_to_unicode_table)
+  m(4,glyph_to_unicode_table) m(5,tti)
+#define st_font_dir_max_ptrs 6
+#else
+#define font_dir_do_ptrs(m)\
+  /*m(-,orig_fonts)*/ m(0,scaled_fonts) m(1,fmcache.mdata)\
+  m(2,ccache.table) m(3,ccache.mark_glyph_data)\
+  m(4,glyph_to_unicode_table) 
 #define st_font_dir_max_ptrs 5
+#endif
 
 /* Character cache procedures (in gxccache.c and gxccman.c) */
 int gx_char_cache_alloc(gs_memory_t * struct_mem, gs_memory_t * bits_mem,
