@@ -620,17 +620,22 @@ currentdict /.pdf_hook_DSC_Creator undef
   } ifelse
 } .bind odef
 
-% Set a predefined configuration if PDFSETTINGS is defined.
-/PDFSETTINGS where { pop /PDFSETTINGS load } { /default } ifelse
-.distillersettings exch get
-% Don't override parameters defined on the command line.
-dup length .distillercommon length add dict begin
-.distillercommon 2 {
-  {
-    systemdict 2 index known { pop pop } { def } ifelse
-  } forall
-} repeat
-currentdict end .setdistillerparams
+1010 % priority
+{
+  currentdevice .devicename /pdfwrite eq systemdict /PDFSETTINGS known or {
+    % Set a predefined configuration if PDFSETTINGS is defined.
+    /PDFSETTINGS where { pop /PDFSETTINGS load } { /default } ifelse
+    .distillersettings exch get
+    % Don't override parameters defined on the command line.
+    dup length .distillercommon length add dict begin
+    .distillercommon 2 {
+      {
+        systemdict 2 index known { pop pop } { def } ifelse
+      } forall
+    } repeat
+    currentdict end .setdistillerparams
+  } if
+} bind .schedule_init
 
 1000 % priority
 { currentdevice .devicename /pdfwrite eq {
