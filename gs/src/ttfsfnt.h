@@ -1,3 +1,21 @@
+/* Copyright (C) 2003 artofcode LLC.  All rights reserved.
+  
+  This software is provided AS-IS with no warranty, either express or
+  implied.
+  
+  This software is distributed under license and may not be copied,
+  modified or distributed except as expressly authorized under the terms
+  of the license contained in the file LICENSE in this distribution.
+  
+  For more information about licensing, please refer to
+  http://www.ghostscript.com/licensing/. For information on
+  commercial licensing, go to http://www.artifex.com/licensing/ or
+  contact Artifex Software, Inc., 101 Lucas Valley Road #110,
+  San Rafael, CA  94903, U.S.A., +1(415)492-9861.
+*/
+/* $Id$ */
+/* Changes after Apple: replaced non-portable types with ISO/IEC 988:1999 exact-size types */
+
 /*
 	File 'sfnt.h'
 	
@@ -9,27 +27,27 @@
 
 #ifndef sfntIncludes
 #define sfntIncludes
-
-typedef unsigned       char   uint8; /* 8-bit unsigned integer */
-typedef   signed       char    int8; /* 8-bit signed integer */
-typedef unsigned short  int  uint16; /* 16-bit unsigned integer */
-typedef   signed short  int   int16; /* 16-bit signed integer */
-typedef unsigned  long  int  uint32; /* 32-bit unsigned integer */
-typedef   signed  long  int   int32; /* 32-bit signed integer */
+                            
+typedef   uint8_t    uint8; /* 8-bit unsigned integer */
+typedef    int8_t     int8; /* 8-bit signed integer */
+typedef  uint16_t   uint16; /* 16-bit unsigned integer */
+typedef   int16_t    int16; /* 16-bit signed integer */
+typedef  uint32_t   uint32; /* 32-bit unsigned integer */
+typedef   int32_t    int32; /* 32-bit signed integer */
 #if 0
-typedef   signed  long  int   Fixed; /* 16.16 32-bit signed fixed-point number */
+typedef   int32_t    Fixed; /* 16.16 32-bit signed fixed-point number */
 #endif
-typedef   signed short  int   FUnit; /* Smallest measurable distance in em space (16-bit signed integer) */
-typedef   signed short  int   FWord; /* 16-bit signed integer that describes a quantity in FUnits */
-typedef unsigned short  int  uFWord; /* 16-bit unsigned integer that describes a quantity in FUnits */
-typedef   signed short  int F2Dot14; /* 2.14 16-bit signed fixed-point number */
+typedef   int16_t    FUnit; /* Smallest measurable distance in em space (16-bit signed integer) */
+typedef   int16_t    FWord; /* 16-bit signed integer that describes a quantity in FUnits */
+typedef  uint16_t   uFWord; /* 16-bit unsigned integer that describes a quantity in FUnits */
+typedef   int16_t  F2Dot14; /* 2.14 16-bit signed fixed-point number */
 #if 0
-typedef   signed  long  int F26Dot6; /* 26.6 32-bit signed fixed-point number */
+typedef   int32_t  F26Dot6; /* 26.6 32-bit signed fixed-point number */
 #endif
 
 typedef struct {
-	unsigned long bc;
-	unsigned long ad;
+	uint32 bc;
+	uint32 ad;
 } BigDate;
 
 typedef struct {
@@ -72,54 +90,54 @@ typedef enum sfntHeaderFlagBits {
 #define FONT_HEADER_VERSION			0x10000
 
 typedef struct {
-	Fixed		version;			/* for this table, set to 1.0 */
-	Fixed		fontRevision;		/* For Font Manufacturer */
-	unsigned long	checkSumAdjustment;
-	unsigned long	magicNumber; 		/* signature, should always be 0x5F0F3CF5  == MAGIC */
-	unsigned short	flags;
-	unsigned short	unitsPerEm;		/* Specifies how many in Font Units we have per EM */
+	Fixed	version;		/* for this table, set to 1.0 */
+	Fixed	fontRevision;		/* For Font Manufacturer */
+	uint32	checkSumAdjustment;
+	uint32	magicNumber; 		/* signature, should always be 0x5F0F3CF5  == MAGIC */
+	uint16	flags;
+	uint16	unitsPerEm;		/* Specifies how many in Font Units we have per EM */
 
 	BigDate		created;
 	BigDate		modified;
 
 	/** This is the font wide bounding box in ideal space
 	(baselines and metrics are NOT worked into these numbers) **/
-	short		xMin;
-	short		yMin;
-	short		xMax;
-	short		yMax;
+	int16		xMin;
+	int16		yMin;
+	int16		xMax;
+	int16		yMax;
 
-	unsigned short		macStyle;			/* macintosh style word */
-	unsigned short		lowestRecPPEM; 	/* lowest recommended pixels per Em */
+	uint16	macStyle;	/* macintosh style word */
+	uint16	lowestRecPPEM; 	/* lowest recommended pixels per Em */
 
 	/* 0: fully mixed directional glyphs, 1: only strongly L->R or T->B glyphs, 
 	   -1: only strongly R->L or B->T glyphs, 2: like 1 but also contains neutrals,
 	   -2: like -1 but also contains neutrals */
-	short		fontDirectionHint;
+	int16		fontDirectionHint;
 
-	short		indexToLocFormat;
-	short		glyphDataFormat;
+	int16		indexToLocFormat;
+	int16		glyphDataFormat;
 } sfnt_FontHeader;
 
 #define METRIC_HEADER_FORMAT		0x10000
 
 typedef struct {
-	Fixed		version;				/* for this table, set to 1.0 */
-	short		ascender;
-	short		descender;
-	short		lineGap;				/* linespacing = ascender - descender + linegap */
-	unsigned short	advanceMax;	
-	short		sideBearingMin;		/* left or top */
-	short		otherSideBearingMin;	/* right or bottom */
-	short		extentMax; 			/* Max of ( SB[i] + bounds[i] ), i loops through all glyphs */
-	short		caretSlopeNumerator;
-	short		caretSlopeDenominator;
-	short		caretOffset;
+	Fixed	version;				/* for this table, set to 1.0 */
+	int16		ascender;
+	int16		descender;
+	int16		lineGap;				/* linespacing = ascender - descender + linegap */
+	uint16	advanceMax;	
+	int16		sideBearingMin;		/* left or top */
+	int16		otherSideBearingMin;	/* right or bottom */
+	int16		extentMax; 			/* Max of ( SB[i] + bounds[i] ), i loops through all glyphs */
+	int16		caretSlopeNumerator;
+	int16		caretSlopeDenominator;
+	int16		caretOffset;
 
-	unsigned long	reserved1, reserved2;	/* set to 0 */
+	uint32	reserved1, reserved2;	/* set to 0 */
 
-	short		metricDataFormat;		/* set to 0 for current format */
-	unsigned short	numberLongMetrics;		/* if format == 0 */
+	int16		metricDataFormat;		/* set to 0 for current format */
+	uint16	numberLongMetrics;		/* if format == 0 */
 } sfnt_MetricsHeader;
 
 typedef sfnt_MetricsHeader sfnt_HorizontalHeader;
@@ -129,68 +147,68 @@ typedef sfnt_MetricsHeader sfnt_VerticalHeader;
 
 typedef struct {
 	Fixed			version;				/* for this table, set to 1.0 */
-	unsigned short		numGlyphs;
-	unsigned short		maxPoints;			/* in an individual glyph */
-	unsigned short		maxContours;			/* in an individual glyph */
-	unsigned short		maxCompositePoints;	/* in an composite glyph */
-	unsigned short		maxCompositeContours;	/* in an composite glyph */
-	unsigned short		maxElements;			/* set to 2, or 1 if no twilightzone points */
-	unsigned short		maxTwilightPoints;		/* max points in element zero */
-	unsigned short		maxStorage;			/* max number of storage locations */
-	unsigned short		maxFunctionDefs;		/* max number of FDEFs in any preprogram */
-	unsigned short		maxInstructionDefs;		/* max number of IDEFs in any preprogram */
-	unsigned short		maxStackElements;		/* max number of stack elements for any individual glyph */
-	unsigned short		maxSizeOfInstructions;	/* max size in bytes for any individual glyph */
-	unsigned short		maxComponentElements;	/* number of glyphs referenced at top level */
-	unsigned short		maxComponentDepth;	/* levels of recursion, 1 for simple components */
+	uint16		numGlyphs;
+	uint16		maxPoints;			/* in an individual glyph */
+	uint16		maxContours;			/* in an individual glyph */
+	uint16		maxCompositePoints;	/* in an composite glyph */
+	uint16		maxCompositeContours;	/* in an composite glyph */
+	uint16		maxElements;			/* set to 2, or 1 if no twilightzone points */
+	uint16		maxTwilightPoints;		/* max points in element zero */
+	uint16		maxStorage;			/* max number of storage locations */
+	uint16		maxFunctionDefs;		/* max number of FDEFs in any preprogram */
+	uint16		maxInstructionDefs;		/* max number of IDEFs in any preprogram */
+	uint16		maxStackElements;		/* max number of stack elements for any individual glyph */
+	uint16		maxSizeOfInstructions;	/* max size in bytes for any individual glyph */
+	uint16		maxComponentElements;	/* number of glyphs referenced at top level */
+	uint16		maxComponentDepth;	/* levels of recursion, 1 for simple components */
 } sfnt_maxProfileTable;
 
 
 typedef struct {
-	unsigned short	advance;
-	short 	sideBearing;
+	uint16	advance;
+	int16 	sideBearing;
 } sfnt_GlyphMetrics;
 
 typedef sfnt_GlyphMetrics sfnt_HorizontalMetrics;
 typedef sfnt_GlyphMetrics sfnt_VerticalMetrics;
 
-typedef short sfnt_ControlValue;
+typedef int16 sfnt_ControlValue;
 
 /*
  *	Char2Index structures, including platform IDs
  */
 typedef struct {
-	unsigned short	format;
-	unsigned short	length;
-	unsigned short	version;
+	uint16	format;
+	uint16	length;
+	uint16	version;
 } sfnt_mappingTable;
 
 typedef struct {
-	unsigned short	platformID;
-	unsigned short	specificID;
-	unsigned long	offset;
+	uint16	platformID;
+	uint16	specificID;
+	uint32	offset;
 } sfnt_platformEntry;
 
 typedef struct {
-	unsigned short	version;
-	unsigned short	numTables;
+	uint16	version;
+	uint16	numTables;
 	sfnt_platformEntry platform[1];	/* platform[numTables] */
 } sfnt_char2IndexDirectory;
 #define SIZEOFCHAR2INDEXDIR		4
 
 typedef struct {
-	unsigned short platformID;
-	unsigned short specificID;
-	unsigned short languageID;
-	unsigned short nameID;
-	unsigned short length;
-	unsigned short offset;
+	uint16 platformID;
+	uint16 specificID;
+	uint16 languageID;
+	uint16 nameID;
+	uint16 length;
+	uint16 offset;
 } sfnt_NameRecord;
 
 typedef struct {
-	unsigned short format;
-	unsigned short count;
-	unsigned short stringOffset;
+	uint16 format;
+	uint16 count;
+	uint16 stringOffset;
 /*	sfnt_NameRecord[count]	*/
 } sfnt_NamingTable;
 
@@ -200,9 +218,9 @@ typedef struct {
  *	First byte is ppem, second is maxWidth, rest are widths for each glyph
  */
 typedef struct {
-	short				version;
-	short				numRecords;
-	long				recordSize;
+	int16				version;
+	int16				numRecords;
+	int32				recordSize;
 	/* Byte widths[numGlyphs+DEVWIDTHEXTRA] * numRecords */
 } sfnt_DeviceMetrics;
 
@@ -214,14 +232,14 @@ typedef struct {
 typedef struct {
 	Fixed	version;
 	Fixed	italicAngle;
-	short	underlinePosition;
-	short	underlineThickness;
-	short	isFixedPitch;
-	short	pad;
-	unsigned long	minMemType42;
-	unsigned long	maxMemType42;
-	unsigned long	minMemType1;
-	unsigned long	maxMemType1;
+	int16	underlinePosition;
+	int16	underlineThickness;
+	int16	isFixedPitch;
+	int16	pad;
+	uint32	minMemType42;
+	uint32	maxMemType42;
+	uint32	minMemType1;
+	uint32	maxMemType1;
 /* if version == 2.0
 	{
 		numberGlyphs;
@@ -268,17 +286,17 @@ typedef enum componentPacking {
 } componentPacking;
 
 typedef struct {
-	unsigned short firstCode;
-	unsigned short entryCount;
-	short idDelta;
-	unsigned short idRangeOffset;
+	uint16 firstCode;
+	uint16 entryCount;
+	int16 idDelta;
+	uint16 idRangeOffset;
 } sfnt_subheader;
 
 typedef struct {
-	unsigned short segCountX2;
-	unsigned short searchRange;
-	unsigned short entrySelector;
-	unsigned short rangeShift;
+	uint16 segCountX2;
+	uint16 searchRange;
+	uint16 entrySelector;
+	uint16 rangeShift;
 } sfnt_4_subheader;
 
 /* sfnt_enum.h */
@@ -318,13 +336,13 @@ typedef enum {
 #define fCMapNotFound		-5
 #define fGlyphNotFound		-6
 
-typedef long FontError;
+typedef int32 FontError;
 #endif
 
 typedef struct FontTableInfo {
-	long		offset;			/* from beginning of sfnt to beginning of the table */
-	long		length;			/* length of the table */
-	long		checkSum;		/* checkSum of the table */
+	int32		offset;			/* from beginning of sfnt to beginning of the table */
+	int32		length;			/* length of the table */
+	int32		checkSum;		/* checkSum of the table */
 } FontTableInfo;
 
 #define RAW_TRUE_TYPE_SIZE 512
