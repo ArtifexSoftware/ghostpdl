@@ -377,14 +377,14 @@ match_page_size(const gs_point * request, const gs_rect * medium, int policy,
 	    make_adjustment_matrix(request, medium, pmat, false, (rotate + 1) & 2);
 	    *best_mismatch = fabs((medium->p.x - rx) * (medium->q.x - rx)) +
 	    			fabs((medium->p.y - ry) * (medium->q.y - ry)) + 
-            			    (pmat->xx == 0.0 ? 0.01 : 0);	/* rotated */
+            			    (pmat->xx == 0.0 || (rotate & 1) == 1 ? 0.01 : 0);	/* rotated */
         } else if ( fit_rotated ) {
             int rotate = (orient < 0 ? 1 : orient);
 
 	    make_adjustment_matrix(request, medium, pmat, false, rotate | 1);
 	    *best_mismatch = fabs((medium->p.y - rx) * (medium->q.y - rx)) +
 	    			fabs((medium->p.x - ry) * (medium->q.x - ry)) + 
-            			    (pmat->xx == 0.0 ? 0.01 : 0);	/* rotated */
+            			    (pmat->xx == 0.0 || (rotate & 1) == 1 ? 0.01 : 0);	/* rotated */
         } else {
 	    int rotate =
 		(orient >= 0 ? orient :
