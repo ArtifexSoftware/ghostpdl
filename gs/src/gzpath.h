@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -311,17 +311,22 @@ struct gx_path_s {
     gx_path_segments *segments;
     gs_fixed_rect bbox;		/* bounding box (in device space) */
     segment *box_last;		/* bbox incorporates segments */
-    /* up to & including this one */
+				/* up to & including this one */
 #define first_subpath segments->contents.subpath_first	/* (hack) */
 #define current_subpath segments->contents.subpath_current	/* (ditto) */
+    /*
+     * Note: because of bugs in the AIX 4.3.1 xlc compiler, the byte-valued
+     * members must not be the last ones in the structure.
+     */
+    byte /*gx_path_state_flags*/ start_flags;		/* flags of moveto */
+    byte /*gx_path_state_flags*/ state_flags;		/* (see above) */
+    byte /*bool*/ bbox_set;	/* true if setbbox is in effect */
+    byte _pad;			/* just in case the compiler doesn't do it */
     int subpath_count;
     int curve_count;
     gs_fixed_point position;	/* current position */
     gs_point outside_position;	/* position if outside_range is set */
     gs_point outside_start;	/* outside_position of last moveto */
-             byte /*gx_path_state_flags */ start_flags;		/* flags of moveto */
-             byte /*gx_path_state_flags */ state_flags;		/* (see above) */
-             byte /*bool */ bbox_set;	/* true if setbbox is in effect */
 };
 
 /* st_path should be private, but it's needed for the clip_path subclass. */
