@@ -80,6 +80,12 @@ gs_ignore_free_string(gs_memory_t * mem, byte * data, uint nbytes,
 {
 }
 
+/* No-op consolidation procedure */
+void
+gs_ignore_consolidate_free(gs_memory_t *mem)
+{
+}
+
 /* No-op pointer enumeration procedure */
 ENUM_PTRS_BEGIN_PROC(gs_no_struct_enum_ptrs)
 {

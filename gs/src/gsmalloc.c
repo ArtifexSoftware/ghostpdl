@@ -60,6 +60,7 @@ private const gs_memory_procs_t gs_malloc_memory_procs =
     gs_heap_free_object,
     gs_heap_status,
     gs_heap_free_all,
+    gs_ignore_consolidate_free,
     /* Object memory procedures */
     gs_heap_alloc_bytes,
     gs_heap_alloc_struct,

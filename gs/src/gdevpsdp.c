@@ -124,17 +124,32 @@ typedef stream_state_proc_get_params((*ss_get_params_t), stream_state);
 private int
 psdf_CF_get_params(gs_param_list * plist, const stream_state * ss, bool all)
 {
-    return s_CF_get_params(plist, (const stream_CF_state *)ss, all);
+    return (ss == 0 ? 0 :
+	    s_CF_get_params(plist, (const stream_CF_state *)ss, all));
 }
 private int
 psdf_DCT_get_params(gs_param_list * plist, const stream_state * ss, bool all)
 {
-    return s_DCTE_get_params(plist, (const stream_DCT_state *)ss, all);
+    int code = (ss == 0 ? 0 :
+		s_DCTE_get_params(plist, (const stream_DCT_state *)ss, all));
+    /*
+     * Add dummy Columns, Rows, and Colors parameters so that put_params
+     * won't complain.
+     */
+    int dummy_size = 8, dummy_colors = 3;
+
+    if (code < 0 ||
+	(code = param_write_int(plist, "Columns", &dummy_size)) < 0 ||
+	(code = param_write_int(plist, "Rows", &dummy_size)) < 0 ||
+	(code = param_write_int(plist, "Colors", &dummy_colors)) < 0
+	)
+	return code;
+    return 0;
 }
 
 /*
- * Get an image Dict parameter.  Note that we return an empty dictionary if
- * the parameter has never been set.
+ * Get an image Dict parameter.  Note that we return a default (usually
+ * empty) dictionary if the parameter has never been set.
  */
 private int
 psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
@@ -148,8 +163,7 @@ psdf_get_image_dict_param(gs_param_list * plist, const gs_param_name pname,
     dict.size = 12;		/* enough for all param dicts we know about */
     if ((code = param_begin_write_dict(plist, pname, &dict, false)) < 0)
 	return code;
-    if (ss != 0)
-	code = (*get_params) (dict.list, ss, false);
+    code = (*get_params)(dict.list, ss, false);
     param_end_write_dict(plist, pname, &dict);
     return code;
 }
@@ -410,13 +424,20 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 	    ss = 0;
 	    break;
 	case 0:{
+	    /******
+	     ****** THIS CAUSES A SEGV FOR DCT FILTERS, BECAUSE
+	     ****** THEY DON'T INTIALIZE PROPERLY.
+	     ******/
+	    if (template != &s_DCTE_template) {
 		stream_state *ss_new =
-		s_alloc_state(mem, template->stype, pname);
+		    s_alloc_state(mem, template->stype, pname);
 
 		if (ss_new == 0)
 		    return_error(gs_error_VMerror);
 		ss_new->template = template;
-		code = (*put_params) (dict.list, ss_new);
+		if (template->set_defaults)
+		    (*template->set_defaults)(ss_new);
+		code = (*put_params)(dict.list, ss_new);
 		if (code < 0) {
 		    param_signal_error(plist, pname, code);
 		    /* Make sure we free the new state. */
@@ -424,11 +445,12 @@ psdf_put_image_dict_param(gs_param_list * plist, const gs_param_name pname,
 		} else
 		    ss = ss_new;
 	    }
+	    }
 	    param_end_read_dict(plist, pname, &dict);
     }
     if (*pss != ss) {
 	if (ss) {
-/****** FREE SUBSIDIARY OBJECTS -- HOW? ******/
+	    /****** FREE SUBSIDIARY OBJECTS -- HOW? ******/
 	    gs_free_object(mem, *pss, pname);
 	}
 	*pss = ss;

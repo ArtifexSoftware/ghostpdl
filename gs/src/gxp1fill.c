@@ -102,6 +102,8 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
     {
 	gs_rect bbox;		/* bounding box in device space */
 	gs_rect ibbox;		/* bounding box in stepping space */
+	double bbw = ptile->bbox.q.x - ptile->bbox.p.x;
+	double bbh = ptile->bbox.q.y - ptile->bbox.p.y;
 
 	bbox.p.x = x0, bbox.p.y = y0;
 	bbox.q.x = x1, bbox.q.y = y1;
@@ -111,14 +113,14 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 		   x0, y0, w0, h0,
 		   ibbox.p.x, ibbox.p.y, ibbox.q.x, ibbox.q.y,
 		   step_matrix.tx, step_matrix.ty);
-	i0 = (int)floor(ibbox.p.x - ptile->bbox.q.x + 0.000001);
-	i1 = (int)ceil(ibbox.q.x - ptile->bbox.p.x - 0.000001);
-	j0 = (int)floor(ibbox.p.y - ptile->bbox.q.y + 0.000001);
-	j1 = (int)ceil(ibbox.q.y - ptile->bbox.p.y - 0.000001);
+	i0 = (int)ceil(ibbox.p.x - bbw - 0.000001);
+	i1 = (int)floor(ibbox.q.x + 0.000001);
+	j0 = (int)ceil(ibbox.p.y - bbh - 0.000001);
+	j1 = (int)floor(ibbox.q.y + 0.000001);
     }
     if_debug4('T', "[T]i=(%d,%d) j=(%d,%d)\n", i0, i1, j0, j1);
-    for (i = i0; i < i1; i++)
-	for (j = j0; j < j1; j++) {
+    for (i = i0; i <= i1; i++)
+	for (j = j0; j <= j1; j++) {
 	    int x = (int)(step_matrix.xx * i +
 			  step_matrix.yx * j + step_matrix.tx);
 	    int y = (int)(step_matrix.xy * i +
@@ -140,13 +142,13 @@ tile_by_steps(tile_fill_state_t * ptfs, int x0, int y0, int w0, int h0,
 		w = x1 - x;
 	    if (y + h > y1)
 		h = y1 - y;
-	    if_debug4('T', "=>(%d,%d) w,h=(%d,%d)\n",
-		      x, y, w, h);
+	    if_debug6('T', "=>(%d,%d) w,h=(%d,%d) x/yoff=(%d,%d)\n",
+		      x, y, w, h, xoff, yoff);
 	    if (w > 0 && h > 0) {
 		if (ptfs->pcdev == (gx_device *) & ptfs->cdev)
 		    tile_clip_set_phase(&ptfs->cdev,
-				     imod(xoff - x, ptfs->tmask->rep_width),
-				   imod(yoff - y, ptfs->tmask->rep_height));
+				imod(xoff - x, ptfs->tmask->rep_width),
+				imod(yoff - y, ptfs->tmask->rep_height));
 		/* Set the offsets for colored pattern fills */
 		ptfs->xoff = xoff;
 		ptfs->yoff = yoff;

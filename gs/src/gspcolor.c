@@ -80,12 +80,15 @@ gs_cspace_build_Pattern1(gs_color_space ** ppcspace,
 		    const gs_color_space * pbase_cspace, gs_memory_t * pmem)
 {
     gs_color_space *pcspace = 0;
+    int code;
 
     if (pbase_cspace != 0) {
 	if (gs_color_space_num_components(pcspace) < 0)		/* Pattern space */
 	    return_error(gs_error_rangecheck);
     }
-    cs_alloc(pcspace, &gs_color_space_type_Pattern, pmem);
+    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Pattern, pmem);
+    if (code < 0)
+	return code;
     if (pbase_cspace != 0) {
 	pcspace->params.pattern.has_base_space = true;
 	gs_cspace_init_from((gs_color_space *) & (pcspace->params.pattern.base_space),

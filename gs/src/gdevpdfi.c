@@ -979,7 +979,6 @@ gdev_pdf_begin_image(gx_device * dev,
     if (pim->ImageMask)
 	pdf_set_color(pdev, gx_dc_pure_color(pdcolor), &pdev->fill_color,
 		      "rg");
-/****** DOESN'T DO COMPRESSION YET ******/
     {
 	gs_matrix mat;
 	gs_matrix bmat;
@@ -1041,19 +1040,21 @@ pdf_image_plane_data(gx_device * dev, gx_image_enum_common_t * info,
     for (y = 0; y < h; ++y) {
 	if (nplanes > 1) {
 	    /* Flip the data in blocks before writing. */
+	    int pi;
 	    uint count = bcount;
+	    uint offset = 0;
+	    const byte *bit_planes[gs_image_max_components];
 
+	    for (pi = 0; pi < nplanes; ++pi)
+		bit_planes[pi] = planes[pi].data + planes[pi].raster * y;
 	    while (count) {
 		uint flip_count = min(count, row_bytes / nplanes);
-		const byte *bit_planes[gs_image_max_components];
-		int pi;
 
-		for (pi = 0; pi < nplanes; ++pi)
-		    bit_planes[pi] = planes[pi].data + planes[pi].raster * y;
-		image_flip_planes(row, bit_planes, 0, flip_count, nplanes,
-				  pie->plane_depths[0]);
+		image_flip_planes(row, bit_planes, offset, flip_count,
+				  nplanes, pie->plane_depths[0]);
 		sputs(pie->writer.binary.strm, row, flip_count * nplanes,
 		      &ignore);
+		offset += flip_count;
 		count -= flip_count;
 	    }
 	} else {

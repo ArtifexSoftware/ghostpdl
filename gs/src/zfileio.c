@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1995, 1996, 1997 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -813,7 +813,7 @@ handle_read_status(int ch, const ref * fop, const uint * pindex,
 /* Handle an exceptional status return from a write stream. */
 /* fop points to the ref for the stream. */
 /* ch may be any stream exceptional value. */
-/* Return 0, o_push_estack, or an error. */
+/* Return 0, 1 (EOF), o_push_estack, or an error. */
 private int
 handle_write_status(int ch, const ref * fop, const uint * pindex,
 		    int (*cont) (P1(os_ptr)))
@@ -821,6 +821,8 @@ handle_write_status(int ch, const ref * fop, const uint * pindex,
     switch (ch) {
 	default:		/* error */
 	    return_error(e_ioerror);
+	case EOFC:
+	    return 1;
 	case INTC:
 	case CALLC:
 	    if (pindex) {

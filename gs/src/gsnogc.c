@@ -228,6 +228,24 @@ sf_merge_strings(chunk_t * cp)
     }
 }
 
+/* Consolidate free space. */
+private void
+sf_consolidate_free(gs_memory_t *mem)
+{
+    gs_ref_memory_t *imem = (gs_ref_memory_t *)mem;
+    chunk_t *cp;
+
+    for (cp = imem->clast; cp != 0; cp = cp->cprev) {
+	byte *top = cp->ctop;
+
+	sf_merge_strings(cp);
+	imem->lost.strings -= cp->ctop - top;
+    }
+
+    /* Merge free objects, detecting entirely free chunks. */
+    ialloc_consolidate_free(imem);
+}
+
 /*
  * This procedure has the same API as the garbage collector used by the
  * PostScript interpreter, but it is designed to be used in environments
@@ -245,20 +263,10 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 
     for (space = 0; space < countof(pspaces->indexed); ++space) {
 	gs_ref_memory_t *mem = pspaces->indexed[space];
-	chunk_t *cp;
-	chunk_t *cprev;
-
-	/*
-	 * We're going to recompute lost.objects, by subtracting the
-	 * amount of space reclaimed minus the amount of that space that
-	 * was on free lists.
-	 */
-	ulong found = 0;
 
 	if (mem == 0 || mem == mem_prev)
 	    continue;
 	mem_prev = mem;
-	alloc_close_chunk(mem);
 
 	/*
 	 * Change the allocator to use string freelists in the future.
@@ -267,69 +275,9 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	if (mem->procs.free_string != gs_ignore_free_string)
 	    mem->procs.free_string = sf_free_string;
 	mem->procs.enable_free = sf_enable_free;
+	mem->procs.consolidate_free = sf_consolidate_free;
 
-	/* Visit chunks in reverse order to encourage LIFO behavior. */
-	for (cp = mem->clast; cp != 0; cp = cprev) {
-	    obj_header_t *begin_free = (obj_header_t *) cp->cbase;
-
-	    cprev = cp->cprev;
-	    SCAN_CHUNK_OBJECTS(cp)
-		DO_ALL
-		if (pre->o_type == &st_free) {
-		if (begin_free == 0)
-		    begin_free = pre;
-	    } else
-		begin_free = 0;
-	    END_OBJECTS_SCAN
-		if (!begin_free)
-		continue;
-	    /* We found free objects at the top of the object area. */
-	    found += (byte *) cp->cbot - (byte *) begin_free;
-	    /* Remove the free objects from the freelists. */
-	    {
-		int i;
-
-		for (i = 0; i < num_freelists; i++) {
-		    obj_header_t *pfree;
-		    obj_header_t **ppfprev = &mem->freelists[i];
-		    uint free_size =
-		    (i << log2_obj_align_mod) + sizeof(obj_header_t);
-
-		    while ((pfree = *ppfprev) != 0)
-			if (ptr_ge(pfree, begin_free) &&
-			    ptr_lt(pfree, cp->cbot)
-			    ) {	/* We're removing an object. */
-			    *ppfprev = *(obj_header_t **) pfree;
-			    found -= free_size;
-			} else
-			    ppfprev = (obj_header_t **) pfree;
-		}
-	    }
-	    {
-		byte *top = cp->ctop;
-
-		sf_merge_strings(cp);
-		mem->lost.strings -= cp->ctop - top;
-	    }
-	    if (begin_free == (obj_header_t *) cp->cbase &&
-		cp->ctop == cp->climit
-		) {		/* The entire chunk is free. */
-		chunk_t *cnext = cp->cnext;
-
-		alloc_free_chunk(cp, mem);
-		if (mem->pcc == cp)
-		    mem->pcc =
-			(cnext == 0 ? cprev : cprev == 0 ? cnext :
-		     cprev->cbot - cprev->ctop > cnext->cbot - cnext->ctop ?
-			 cprev : cnext);
-	    } else {
-		if_debug4('a', "[a]resetting chunk 0x%lx cbot from 0x%lx to 0x%lx (%lu free)\n",
-			  (ulong) cp, (ulong) cp->cbot, (ulong) begin_free,
-			  (ulong) ((byte *) cp->cbot - (byte *) begin_free));
-		cp->cbot = (byte *) begin_free;
-	    }
-	}
-	mem->lost.objects -= found;
-	alloc_open_chunk(mem);
+	/* Merge free objects, detecting entirely free chunks. */
+	gs_consolidate_free((gs_memory_t *)mem);
     }
 }

@@ -228,22 +228,12 @@ extern const gs_color_space_type
 extern_st(st_color_space);
 
 /*
- * Macros for allocating, initializing, and freeing color spaces.
- * These are only used by color space implementations.
+ * Allocate a color space and initialize its type and memory fields.
+ * This is only used by color space implementations.
  */
 
-#define cs_alloc(pcspace, pcstype, pmemory)\
-  BEGIN\
-    (pcspace) = gs_alloc_struct(pmemory, gs_color_space, &st_color_space,\
-				"cs_alloc");\
-    if ((pcspace) == 0)\
-      return_error(gs_error_VMerror);\
-    (pcspace)->pmem = (pmemory);\
-    (pcspace)->type = (pcstype);\
-  END
-
-#define cs_undo_alloc(pcspace)\
-  (gs_free_object((pcspace)->pmem, pcspace, "cs_undo_alloc"),\
-   gs_note_error(gs_error_VMerror))
+int gs_cspace_alloc(P3(gs_color_space **ppcspace,
+		       const gs_color_space_type *pcstype,
+		       gs_memory_t *mem));
 
 #endif /* gxcspace_INCLUDED */

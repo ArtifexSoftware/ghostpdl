@@ -688,8 +688,10 @@ ref_param_read_typed(gs_param_list * plist, gs_param_name pkey,
 	    iparam_check_read(loc);
 	    if (r_size(loc.pvalue) <= 0) {
 		/* 0-length array; can't get type info */
-		pvalue->type = gs_param_type_int_array;
-		return ref_param_read_int_array(plist, pkey, &pvalue->value.ia);
+		pvalue->type = gs_param_type_array;
+		pvalue->value.d.list = 0;
+		pvalue->value.d.size = 0;
+		return 0;
 	    }
 	    /* Get array type based on type of 1st element of array */
 	    array_get(loc.pvalue, 0, &elt);

@@ -221,7 +221,8 @@ tile_clip_copy_mono(gx_device * dev,
 	    tx1 = tx;\
 	    do {\
 	      t_next(tx);\
-	    } while ( tx < x + w && (*tp & tbit) != 0 );
+	    } while ( tx < x + w && (*tp & tbit) != 0 );\
+	    if_debug3('T', "[T]run x=(%d,%d), y=%d\n", tx1, tx, ty);
 /* (body goes here) */
 #define END_FOR_RUNS()\
 	  }\

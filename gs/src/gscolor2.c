@@ -308,11 +308,14 @@ gs_cspace_build_Indexed(
 {
     gs_color_space *pcspace = 0;
     gs_indexed_params *pindexed = 0;
+    int code;
 
     if ((pbase_cspace == 0) || !pbase_cspace->type->can_be_base_space)
 	return_error(gs_error_rangecheck);
 
-    cs_alloc(pcspace, &gs_color_space_type_Indexed, pmem);
+    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Indexed, pmem);
+    if (code < 0)
+	return code;
     pindexed = &(pcspace->params.indexed);
     if (ptbl == 0) {
 	pindexed->lookup.map =

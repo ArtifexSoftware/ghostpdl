@@ -317,31 +317,33 @@ struct gs_ref_memory_s {
     gs_raw_memory_t *parent;	/* for allocating chunks */
     uint chunk_size;
     uint large_size;		/* min size to give large object */
-    /* its own chunk: must be */
-    /* 1 mod obj_align_mod */
+				/* its own chunk: must be */
+				/* 1 mod obj_align_mod */
     gs_ref_memory_t *global;	/* global VM for this allocator */
-    /* (may point to itself) */
+				/* (may point to itself) */
     uint space;			/* a_local, a_global, a_system */
     /* Callers can change the following dynamically */
     /* (through a procedural interface). */
     gs_memory_gc_status_t gc_status;
     /* The following are updated dynamically. */
+    bool is_controlled;		/* if true, this allocator doesn't manage */
+				/* its own chunks */
     ulong limit;		/* signal a VMerror when total */
-    /* allocated exceeds this */
+				/* allocated exceeds this */
     chunk_t *cfirst;		/* head of chunk list */
     chunk_t *clast;		/* tail of chunk list */
     chunk_t cc;			/* current chunk */
     chunk_t *pcc;		/* where to store cc */
     chunk_locator_t cfreed;	/* chunk where last object freed */
     ulong allocated;		/* total size of all chunks */
-    /* allocated at this save level */
+				/* allocated at this save level */
     long inherited;		/* chunks allocated at outer save */
-    /* levels that should be counted */
-    /* towards the GC threshold */
-    /* (may be negative, but allocated + */
-    /* inherited >= 0 always) */
+				/* levels that should be counted */
+				/* towards the GC threshold */
+				/* (may be negative, but allocated + */
+				/* inherited >= 0 always) */
     ulong gc_allocated;		/* value of (allocated + */
-    /* previous_status.allocated) after last GC */
+				/* previous_status.allocated) after last GC */
     struct lost_ {		/* space freed and 'lost' */
 	ulong objects;
 	ulong refs;
@@ -360,9 +362,9 @@ struct gs_ref_memory_s {
     struct alloc_save_s *saved;
     struct alloc_save_s *reloc_saved;	/* for GC */
     gs_memory_status_t previous_status;		/* total allocated & used */
-    /* in outer save levels */
-    /* We put the freelists last to keep the scalar */
-    /* offsets small. */
+				/* in outer save levels */
+				/* We put the freelists last to keep the */
+                                /* scalar offsets small. */
     obj_header_t *freelists[num_freelists];
 };
 

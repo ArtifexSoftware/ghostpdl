@@ -30,8 +30,8 @@ New features (since release 5.10)
 (This is not a complete list of new features: see NEWS for details.)
 
 A number of PostScript LanguageLevel 3 features are implemented: ImageType 4
-images, CIEBasedDEF[G] color spaces, idiom recognition, shfill (partial
-support), CloseSource/CloseTarget.
+images, Type 32 fonts / CIDFontType 4 fonts, CIEBasedDEF[G] color spaces,
+idiom recognition, shfill (partial support), CloseSource/CloseTarget.
 
 More of Display PostScript is implemented: view clipping, DevicePixel color
 space, context creation with private local VM, ImageType 2 images,

@@ -133,10 +133,22 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
   void proc(P3(mem_t *mem, uint free_mask, client_name_t cname))
 
 #define gs_memory_free_all(mem, free_mask, cname)\
-  (*(mem)->procs.free_all)(mem, free_mask, cname)
+  ((mem)->procs.free_all(mem, free_mask, cname))
 /* Backward compatibility */
 #define gs_free_all(mem)\
   gs_memory_free_all(mem, FREE_ALL_DATA, "(free_all)")
+
+		/*
+		 * Consolidate free space.  This may be used as part of (or
+		 * as an alternative to) garbage collection, or before
+		 * giving up on an attempt to allocate.
+		 */
+
+#define gs_memory_t_proc_consolidate_free(proc, mem_t)\
+  void proc(P1(mem_t *mem))
+
+#define gs_consolidate_free(mem)\
+  ((mem)->procs.consolidate_free(mem))
 
 /* Define the members of the procedure structure. */
 #define gs_raw_memory_procs(mem_t)\
@@ -144,7 +156,8 @@ typedef struct gs_raw_memory_s gs_raw_memory_t;
     gs_memory_t_proc_resize_object((*resize_object), mem_t);\
     gs_memory_t_proc_free_object((*free_object), mem_t);\
     gs_memory_t_proc_status((*status), mem_t);\
-    gs_memory_t_proc_free_all((*free_all), mem_t)
+    gs_memory_t_proc_free_all((*free_all), mem_t);\
+    gs_memory_t_proc_consolidate_free((*consolidate_free), mem_t)
 
 /* Define the procedure vector for a raw memory allocator. */
 typedef struct gs_raw_memory_procs_s {

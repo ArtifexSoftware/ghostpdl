@@ -33,6 +33,7 @@ private gs_memory_proc_resize_object(gs_locked_resize_object);
 private gs_memory_proc_free_object(gs_locked_free_object);
 private gs_memory_proc_status(gs_locked_status);
 private gs_memory_proc_free_all(gs_locked_free_all);
+private gs_memory_proc_consolidate_free(gs_locked_consolidate_free);
 
 /* Object memory procedures */
 private gs_memory_proc_alloc_bytes(gs_locked_alloc_bytes);
@@ -59,6 +60,7 @@ private gs_memory_procs_t locked_procs =
     gs_locked_free_object,
     gs_locked_status,
     gs_locked_free_all,
+    gs_locked_consolidate_free,
     /* Object memory procedures */
     gs_locked_alloc_bytes,
     gs_locked_alloc_struct,
@@ -148,6 +150,13 @@ gs_locked_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
     }
     if (free_mask & FREE_ALL_ALLOCATOR)
 	gs_free_object(target, lmem, cname);
+}
+private void
+gs_locked_consolidate_free(gs_memory_t * mem)
+{
+    DO_MONITORED(
+		 (*lmem->target->procs.consolidate_free)(lmem->target)
+		 );
 }
 private byte *
 gs_locked_alloc_bytes(gs_memory_t * mem, uint size, client_name_t cname)

@@ -237,6 +237,27 @@ null_transfer(floatp gray, const gx_transfer_map * pmap)
 {
     return gray;
 }
+private void
+rc_free_imager_shared(gs_memory_t * mem, void *data, client_name_t cname)
+{
+    gs_imager_state_shared_t * const shared =
+	((gs_imager_state *)data)->shared;
+
+    if (shared->cs_DeviceCMYK) {
+	gs_cspace_release(shared->cs_DeviceCMYK);
+	gs_free_object(mem, shared->cs_DeviceCMYK, "shared DeviceCMYK");
+    }
+    if (shared->cs_DeviceRGB) {
+	gs_cspace_release(shared->cs_DeviceRGB);
+	gs_free_object(mem, shared->cs_DeviceRGB, "shared DeviceRGB");
+    }
+    if (shared->cs_DeviceGray) {
+	gs_cspace_release(shared->cs_DeviceGray);
+	gs_free_object(mem, shared->cs_DeviceGray, "shared DeviceGray");
+    }
+    rc_free_struct_only(mem, data, cname);
+}
+
 int
 gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 {
@@ -250,12 +271,17 @@ gs_imager_state_initialize(gs_imager_state * pis, gs_memory_t * mem)
 			  &st_imager_state_shared, mem,
 			  return_error(gs_error_VMerror),
 			  "gs_imager_state_init(shared)");
-	pis->shared = shared;
+	shared->cs_DeviceGray = shared->cs_DeviceRGB =
+	    shared->cs_DeviceCMYK = 0; /* in case we bail out */
+	shared->rc.free = rc_free_imager_shared;
 	if ((code = gs_cspace_build_DeviceGray(&shared->cs_DeviceGray, mem)) < 0 ||
-	(code = gs_cspace_build_DeviceRGB(&shared->cs_DeviceRGB, mem)) < 0 ||
-	(code = gs_cspace_build_DeviceCMYK(&shared->cs_DeviceCMYK, mem)) < 0
-	    )
+	    (code = gs_cspace_build_DeviceRGB(&shared->cs_DeviceRGB, mem)) < 0 ||
+	    (code = gs_cspace_build_DeviceCMYK(&shared->cs_DeviceCMYK, mem)) < 0
+	    ) {
+	    rc_free_imager_shared(mem, shared, "gs_imager_state_init(shared)");
 	    return code;
+	}
+	pis->shared = shared;
     }
     /* Skip halftone */
     {

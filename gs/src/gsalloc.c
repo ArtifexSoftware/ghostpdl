@@ -104,6 +104,7 @@ private gs_memory_proc_resize_object(i_resize_object);
 private gs_memory_proc_free_object(i_free_object);
 private gs_memory_proc_status(i_status);
 private gs_memory_proc_free_all(i_free_all);
+private gs_memory_proc_consolidate_free(i_consolidate_free);
 
 /* Object memory procedures */
 private gs_memory_proc_alloc_bytes(i_alloc_bytes);
@@ -132,6 +133,7 @@ const gs_memory_procs_t gs_ref_memory_procs =
     i_free_object,
     i_status,
     i_free_all,
+    i_consolidate_free,
     /* Object memory procedures */
     i_alloc_bytes,
     i_alloc_struct,
@@ -169,6 +171,7 @@ ialloc_alloc_state(gs_raw_memory_t * parent, uint chunk_size)
     iimem->parent = parent;
     iimem->chunk_size = chunk_size;
     iimem->large_size = ((chunk_size / 4) & -obj_align_mod) + 1;
+    iimem->is_controlled = false;
     iimem->gc_status.vm_threshold = chunk_size * 3L;
     iimem->gc_status.max_vm = max_long;
     iimem->gc_status.psignal = NULL;
@@ -230,6 +233,7 @@ ialloc_add_chunk(gs_ref_memory_t *imem, ulong space, client_name_t cname)
     chunk_t *cp;
 
     /* Allow acquisition of this chunk. */
+    imem->is_controlled = false;
     imem->large_size = imem->chunk_size;
     imem->limit = max_long;
     imem->gc_status.max_vm = max_long;
@@ -250,6 +254,7 @@ ialloc_add_chunk(gs_ref_memory_t *imem, ulong space, client_name_t cname)
     imem->procs.alloc_string_immovable = imem->procs.alloc_string;
 
     /* Disable acquisition of additional chunks. */
+    imem->is_controlled = true;
     imem->limit = 0;
 
     return (cp ? 0 : gs_note_error(gs_error_VMerror));
@@ -305,12 +310,12 @@ ialloc_reset_free(gs_ref_memory_t * mem)
 /* vm_threshold, max_vm, or enabled, or after a GC. */
 void
 ialloc_set_limit(register gs_ref_memory_t * mem)
-{				/*
-				 * The following code is intended to set the limit so that
-				 * we stop allocating when allocated + previous_status.allocated
-				 * exceeds the lesser of max_vm or (if GC is enabled)
-				 * gc_allocated + vm_threshold.
-				 */
+{	/*
+	 * The following code is intended to set the limit so that
+	 * we stop allocating when allocated + previous_status.allocated
+	 * exceeds the lesser of max_vm or (if GC is enabled)
+	 * gc_allocated + vm_threshold.
+	 */
     ulong max_allocated =
     (mem->gc_status.max_vm > mem->previous_status.allocated ?
      mem->gc_status.max_vm - mem->previous_status.allocated :
@@ -359,16 +364,14 @@ i_free_all(gs_memory_t * mem, uint free_mask, client_name_t cname)
 		alloc_free_chunk(cp, imem);
 	}
     }
-    if (free_mask & FREE_ALL_STRUCTURES) {
-	/* Note that the allocator is unusable after doing this. */
+    if (free_mask & FREE_ALL_ALLOCATOR) {
+	/* Free the chunk holding the allocator itself. */
 	for (cp = imem->clast; cp != 0; cp = cp->cprev)
 	    if (cp->cbase + sizeof(obj_header_t) == (byte *)mem) {
-		gs_free_object(imem->parent, cp, cname);
+		alloc_free_chunk(cp, imem);
 		break;
 	    }
     }
-    if (free_mask & FREE_ALL_ALLOCATOR)
-	gs_free_object(imem->parent, imem, cname);
 }
 
 /* ================ Accessors ================ */
@@ -577,12 +580,14 @@ i_resize_object(gs_memory_t * mem, void *obj, uint new_num_elements,
     gs_memory_type_ptr_t pstype = pp->o_type;
     ulong old_size = pre_obj_contents_size(pp);
     ulong new_size = (ulong) pstype->ssize * new_num_elements;
+    ulong new_size_rounded;
     void *new_obj;
 
-    if ((byte *) obj + obj_align_round(old_size) == imem->cc.cbot &&
-	imem->cc.ctop - imem->cc.cbot > new_size + obj_align_mod
+    if ((byte *)obj + obj_align_round(old_size) == imem->cc.cbot &&
+	imem->cc.ctop - (byte *)obj >=
+	  (new_size_rounded = obj_align_round(new_size))
 	) {
-	imem->cc.cbot = (byte *) obj + obj_align_round(new_size);
+	imem->cc.cbot = (byte *)obj + new_size_rounded;
 	pp->o_size = new_size;
 	if_debug8('A', "[a%d:%c%c ]%s %s(%lu=>%lu) 0x%lx\n",
 		  imem->space,
@@ -691,7 +696,8 @@ i_free_object(gs_memory_t * mem, void *ptr, client_name_t cname)
 	cl.memory = imem;
 	cl.cp = 0;
 	if (chunk_locate_ptr(ptr, &cl)) {
-	    alloc_free_chunk(cl.cp, imem);
+	    if (!imem->is_controlled)
+		alloc_free_chunk(cl.cp, imem);
 	    return;
 	}
 	/* Don't overwrite even if gs_alloc_debug is set. */
@@ -899,10 +905,13 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
     obj_header_t *ptr;
 
     if (lsize >= mem->large_size || immovable) {
+	/*
+	 * Give the object a chunk all its own.  Note that this case does
+	 * not occur if is_controlled is true.
+	 */
 	ulong asize =
 	    ((lsize + obj_align_mask) & -obj_align_mod) +
 	    sizeof(obj_header_t);
-	/* Give it a chunk all its own. */
 	chunk_t *cp =
 	    alloc_acquire_chunk(mem, asize + sizeof(chunk_head_t), false,
 				"large object chunk");
@@ -915,16 +924,24 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
 	pre_obj_set_large_size(ptr, lsize);
     } else {
 	uint asize = obj_size_round((uint) lsize);
+	bool consolidate = mem->is_controlled;
 
 	while (mem->cc.ctop -
 	       (byte *) (ptr = (obj_header_t *) mem->cc.cbot)
 	       <= asize + sizeof(obj_header_t)) {
-	    /* Add another chunk. */
-	    chunk_t *cp =
-		alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
+	    if (consolidate) {
+		/* Try consolidating free space. */
+		gs_consolidate_free((gs_memory_t *)mem);
+		consolidate = false;
+		continue;
+	    } else {
+		/* Add another chunk. */
+		chunk_t *cp =
+		    alloc_add_chunk(mem, (ulong)mem->chunk_size, "chunk");
 
-	    if (cp == 0)
-		return 0;
+		if (cp == 0)
+		    return 0;
+	    }
 	}
 	mem->cc.cbot = (byte *) ptr + asize;
 	ptr->o_large = 0;
@@ -934,6 +951,86 @@ alloc_obj(gs_ref_memory_t * mem, ulong lsize, gs_memory_type_ptr_t pstype,
     ptr++;
     gs_alloc_fill(ptr, gs_alloc_fill_alloc, lsize);
     return ptr;
+}
+
+/* Consolidate free objects. */
+void
+ialloc_consolidate_free(gs_ref_memory_t *mem)
+{
+	chunk_t *cp;
+	chunk_t *cprev;
+	/*
+	 * We're going to recompute lost.objects, by subtracting the
+	 * amount of space reclaimed minus the amount of that space that
+	 * was on free lists.
+	 */
+	ulong found = 0;
+
+	alloc_close_chunk(mem);
+
+	/* Visit chunks in reverse order to encourage LIFO behavior. */
+	for (cp = mem->clast; cp != 0; cp = cprev) {
+	    obj_header_t *begin_free = 0;
+
+	    cprev = cp->cprev;
+	    SCAN_CHUNK_OBJECTS(cp)
+	    DO_ALL
+		if (pre->o_type == &st_free) {
+		    if (begin_free == 0)
+			begin_free = pre;
+		} else
+		    begin_free = 0;
+	    END_OBJECTS_SCAN
+	    if (begin_free) {
+		/* We found free objects at the top of the object area. */
+		int i;
+
+		found += (byte *)cp->cbot - (byte *)begin_free;
+		/* Remove the free objects from the freelists. */
+		for (i = 0; i < num_freelists; i++) {
+		    obj_header_t *pfree;
+		    obj_header_t **ppfprev = &mem->freelists[i];
+		    uint free_size =
+			(i << log2_obj_align_mod) + sizeof(obj_header_t);
+
+		    while ((pfree = *ppfprev) != 0)
+			if (ptr_ge(pfree, begin_free) &&
+			    ptr_lt(pfree, cp->cbot)
+			    ) {	/* We're removing an object. */
+			    *ppfprev = *(obj_header_t **) pfree;
+			    found -= free_size;
+			} else
+			    ppfprev = (obj_header_t **) pfree;
+		}
+	    } else
+		begin_free = (obj_header_t *)cp->cbot;
+	    if (begin_free == (obj_header_t *) cp->cbase &&
+		cp->ctop == cp->climit
+		) {		/* The entire chunk is free. */
+		chunk_t *cnext = cp->cnext;
+
+		if (!mem->is_controlled)
+		    alloc_free_chunk(cp, mem);
+		if (mem->pcc == cp)
+		    mem->pcc =
+			(cnext == 0 ? cprev : cprev == 0 ? cnext :
+			 cprev->cbot - cprev->ctop >
+			   cnext->cbot - cnext->ctop ? cprev :
+			 cnext);
+	    } else if (begin_free != (obj_header_t *)cp->cbot) {
+		if_debug4('a', "[a]resetting chunk 0x%lx cbot from 0x%lx to 0x%lx (%lu free)\n",
+			  (ulong) cp, (ulong) cp->cbot, (ulong) begin_free,
+			  (ulong) ((byte *) cp->cbot - (byte *) begin_free));
+		cp->cbot = (byte *) begin_free;
+	    }
+	}
+	mem->lost.objects -= found;
+	alloc_open_chunk(mem);
+}
+private void
+i_consolidate_free(gs_memory_t *mem)
+{
+    ialloc_consolidate_free((gs_ref_memory_t *)mem);
 }
 
 /* ================ Roots ================ */
@@ -1192,13 +1289,19 @@ alloc_unlink_chunk(chunk_t * cp, gs_ref_memory_t * mem)
     }
 }
 
-/* Free a chunk.  This is exported for the GC. */
+/*
+ * Free a chunk.  This is exported for the GC.  Since we eventually use
+ * this to free the chunk containing the allocator itself, we must be
+ * careful not to reference anything in the allocator after freeing the
+ * chunk data.
+ */
 void
 alloc_free_chunk(chunk_t * cp, gs_ref_memory_t * mem)
 {
     gs_raw_memory_t *parent = mem->parent;
 
     alloc_unlink_chunk(cp, mem);
+    mem->allocated -= st_chunk.ssize;
     if (mem->cfreed.cp == cp)
 	mem->cfreed.cp = 0;
     if (cp->outer == 0) {
@@ -1208,7 +1311,6 @@ alloc_free_chunk(chunk_t * cp, gs_ref_memory_t * mem)
 	gs_free_object(parent, cdata, "alloc_free_chunk(data)");
     } else
 	cp->outer->inner_count--;
-    mem->allocated -= st_chunk.ssize;
     gs_free_object(parent, cp, "alloc_free_chunk(chunk struct)");
 }
 

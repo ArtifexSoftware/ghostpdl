@@ -33,8 +33,9 @@ param_init_enumerator(gs_param_enumerator_t * enumerator)
 }
 
 /* Transfer a collection of parameters. */
-private const byte xfer_item_sizes[] =
-{GS_PARAM_TYPE_SIZES(0)};
+private const byte xfer_item_sizes[] = {
+    GS_PARAM_TYPE_SIZES(0)
+};
 int
 gs_param_read_items(gs_param_list * plist, void *obj,
 		    const gs_param_item_t * items)
@@ -103,7 +104,8 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
     /*
      * Look for coercion opportunities.  It would be wonderful if we
      * could convert int/float arrays and name/string arrays, but
-     * right now we can't.
+     * right now we can't.  However, a 0-length heterogenous array
+     * will satisfy a request for any specific type.
      */
     switch (pvalue->type /* actual type */ ) {
 	case gs_param_type_int:
@@ -172,6 +174,15 @@ param_coerce_typed(gs_param_typed_value * pvalue, gs_param_type req_type,
 	    break;
 	case gs_param_type_name_array:
 	    if (req_type == gs_param_type_string_array)
+		goto ok;
+	    break;
+	case gs_param_type_array:
+	    if (pvalue->value.d.size == 0 &&
+		(req_type == gs_param_type_int_array ||
+		 req_type == gs_param_type_float_array ||
+		 req_type == gs_param_type_string_array ||
+		 req_type == gs_param_type_name_array)
+		)
 		goto ok;
 	    break;
 	default:

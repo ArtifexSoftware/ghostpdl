@@ -29,6 +29,65 @@ Procedures, Utilities, Drivers, Platforms, Fonts, Interpreter, Streams
 (included under Interpreter through release 2.9.9), Library.  Changes marked
 with a * were made available as patches to a previous release.
 
+Version 5.38(beta) (9/3/98)
+===========================
+
+The sole purpose of this release was to fix some obscure bugs detected by
+the Genoa tests and by another Aladdin project.
+
+Documentation
+-------------
+
+Updates the list of implemented PostScript LanguageLevel 3 features.
+(current.txt)
+
+Drivers
+-------
+
+Fixes problems:
+	- The PDF writer did the wrong thing for multi-source images with
+more than 180 bytes of data (total) per scan line.  (gdevpdfi.c)
+	- If one used setdistillerparams, [g]restore caused a rangecheck in
+.setpagedevice.  ****** DISABLED FOR DCT DICTS, SINCE THIS CAUSES A SEGV
+****** (gdevpsdp.c)
+
+Interpreter
+-----------
+
+Fixes problems:
+	- 0-length parameter arrays were given an arbitrary type, confusing
+clients.  (iparam.c)
+	- EOD on a write stream caused an error.  (zfileio.c)
+
+Library
+-------
+
+Fixes problems:
+	- 0-length parameter arrays confused clients that wanted arrays of a
+particular type.  (gsparam.c)
+	- Patterns with XStep or YStep smaller than the bounding box didn't
+work properly.  (gxp1fill.c)
+	- Resizing an object sometimes copied it unnecessarily.  (gsalloc.c)
+	- Freeing the shared part of a graphics state didn't free its
+sub-objects.  (gsstate.c)
+	- The standard allocator didn't free its initial (self-containing)
+chunk when asked to free itself.  (gsalloc.c)
+	- The standard allocator didn't attempt to merge free blocks before
+giving up.  We implemented this by adding another virtual procedure to
+allocators, consolidate_free.  (gsmemory.h, gsmemraw.h, gsalloc.c,
+gsmalloc.c, gsmemlok.c, gsmemory.c)
+	- The free object merging algorithm thought there were free objects
+even when there weren't.  (Small performance bug only.)  (gsalloc.c)
+
+Adds some more tracing to pattern filling.  (gxclip2.c, gxp1fill.c)
+
+Replaces the cs_alloc, cs_copy, and cs_undo_alloc macros with procedures.
+(gxcspace.h, gscolor2.c, gscsepr.c, gscspace.c, gspcolor.c)
+
+Moves the free-object merging code from gsnogc.c to gsalloc.c, so it can be
+used even in systems that have a garbage collector.  (gsalloc.h, gxalloc.h,
+gsalloc.c, gsnogc.c)
+
 Version 5.37(beta) (8/31/98)
 ============================
 

@@ -207,11 +207,14 @@ gs_cspace_build_Separation(
 {
     gs_color_space *pcspace = 0;
     gs_separation_params *pcssepr = 0;
+    int code;
 
     if (palt_cspace == 0 || !palt_cspace->type->can_be_alt_space)
 	return_error(gs_error_rangecheck);
 
-    cs_alloc(pcspace, &gs_color_space_type_Separation, pmem);
+    code = gs_cspace_alloc(&pcspace, &gs_color_space_type_Separation, pmem);
+    if (code < 0)
+	return code;
     pcssepr = &pcspace->params.separation;
     pcssepr->map = alloc_separation_map(palt_cspace, cache_size, pmem);
     if (pcssepr->map == 0) {

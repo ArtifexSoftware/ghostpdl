@@ -84,6 +84,8 @@ typedef struct gs_memory_procs_s {
   gs_memory_t_proc_status(proc, gs_memory_t)
 #define gs_memory_proc_free_all(proc)\
   gs_memory_t_proc_free_all(proc, gs_memory_t)
+#define gs_memory_proc_consolidate_free(proc)\
+  gs_memory_t_proc_consolidate_free(proc, gs_memory_t)
 
     /*
      * Allocate possibly movable bytes.  (We inherit allocating immovable
@@ -242,6 +244,9 @@ int gs_register_struct_root(P4(gs_memory_t *mem, gs_gc_root_t *root,
 /* Define no-op freeing procedures for use by enable_free. */
 gs_memory_proc_free_object(gs_ignore_free_object);
 gs_memory_proc_free_string(gs_ignore_free_string);
+
+/* Define a no-op consolidation procedure. */
+gs_memory_proc_consolidate_free(gs_ignore_consolidate_free);
 
 /*
  * Allocate a structure using a "raw memory" allocator.  Note that this does

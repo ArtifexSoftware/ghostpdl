@@ -77,28 +77,37 @@ gs_cspace_DeviceCMYK(const gs_imager_state * pis)
 
 /* ------ Create/copy/destroy ------ */
 
-private int
-cspace_build(gs_color_space ** ppcspace, const gs_color_space_type * pcstype,
-	     gs_memory_t * pmem)
+int
+gs_cspace_alloc(gs_color_space ** ppcspace,
+		const gs_color_space_type * pcstype,
+		gs_memory_t * mem)
 {
-    cs_alloc(*ppcspace, pcstype, pmem);
+    gs_color_space *pcspace =
+	gs_alloc_struct(mem, gs_color_space, &st_color_space,
+			"gs_cspace_alloc");
+
+    if (pcspace == 0)
+	return_error(gs_error_VMerror);
+    pcspace->pmem = mem;
+    pcspace->type = pcstype;
+    *ppcspace = pcspace;
     return 0;
 }
 
 int
 gs_cspace_build_DeviceGray(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
-    return cspace_build(ppcspace, &gs_color_space_type_DeviceGray, pmem);
+    return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceGray, pmem);
 }
 int
 gs_cspace_build_DeviceRGB(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
-    return cspace_build(ppcspace, &gs_color_space_type_DeviceRGB, pmem);
+    return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceRGB, pmem);
 }
 int
 gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)
 {
-    return cspace_build(ppcspace, &gs_color_space_type_DeviceCMYK, pmem);
+    return gs_cspace_alloc(ppcspace, &gs_color_space_type_DeviceCMYK, pmem);
 }
 
 /*
@@ -107,8 +116,11 @@ gs_cspace_build_DeviceCMYK(gs_color_space ** ppcspace, gs_memory_t * pmem)
  * compound color space when legal, but it can't check that the operation is
  * actually legal.
  */
-#define cs_copy(pcsto, pcsfrom)\
-  memcpy(pcsto, pcsfrom, (pcsfrom)->type->stype->ssize)
+inline private void
+cs_copy(gs_color_space *pcsto, const gs_color_space *pcsfrom)
+{
+    memcpy(pcsto, pcsfrom, pcsfrom->type->stype->ssize);
+}
 
 /* Copy a color space into one newly allocated by the caller. */
 void
