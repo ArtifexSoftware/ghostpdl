@@ -7,7 +7,8 @@
 # This file must be preceded by pxl.mak.
 
 #DEVICE_DEVS is defined in the platform-specific file.
-FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev $(DD)ttflib.dev
+DD='$(GLGENDIR)$(D)'
+FEATURE_DEVS=$(DD)colimlib.dev $(DD)dps2lib.dev $(DD)path1lib.dev $(DD)patlib.dev $(DD)psl2cs.dev $(DD)rld.dev $(DD)roplib.dev $(DD)ttflib.dev  $(DD)cielib.dev
 
 default: $(TARGET_XE)$(XE)
 	echo Done.
