@@ -34,7 +34,10 @@ import gsconf, gstestgs, gsparamsets, gssum
 class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
     def shortDescription(self):
         file = "%s.%s.%d.%d" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
-	ct = calendar.localtime(os.stat(gsconf.rasterdbdir + file + ".gz")[9])
+	rasterfilename = gsconf.rasterdbdir + file + ".gz"
+	if not os.access(rasterfilename, os.F_OK):
+		os.system("./update_pdfbaseline " + os.path.basename(self.file))	
+	ct = calendar.localtime(os.stat(rasterfilename)[9])
 	baseline_date = "%s %d, %4d %02d:%02d" % ( calendar.month_abbr[ct[1]], ct[2], ct[0], ct[3], ct[4] )
 
 	if self.band:
