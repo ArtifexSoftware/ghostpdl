@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
     
-    $Id: jbig2_huffman.c,v 1.6 2001/06/26 00:30:00 giles Exp $
+    $Id: jbig2_huffman.c,v 1.7 2001/07/05 22:37:44 giles Exp $
 */
 
 /* Huffman table decoding procedures 
@@ -18,7 +18,6 @@
 
 #include "jbig2dec.h"
 #include "jbig2_huffman.h"
-#include "jbig2_hufftab.h"
 
 #define JBIG2_HUFFMAN_FLAGS_ISOOB 1
 #define JBIG2_HUFFMAN_FLAGS_ISLOW 2
@@ -157,18 +156,18 @@ jbig2_build_huffman_table (const Jbig2HuffmanParams *params)
       int lts;
 
       if (PREFLEN > LENMAX)
-	{
-	  for (j = LENMAX + 1; j < PREFLEN + 1; j++)
-	    LENCOUNT[j] = 0;
-	  LENMAX = PREFLEN;
-	}
+		{
+			for (j = LENMAX + 1; j < PREFLEN + 1; j++)
+				LENCOUNT[j] = 0;
+			LENMAX = PREFLEN;
+		}
       LENCOUNT[PREFLEN]++;
 
       lts = PREFLEN + lines[i].RANGELEN;
       if (lts > LOG_TABLE_SIZE_MAX)
-	lts = PREFLEN;
+		lts = PREFLEN;
       if (lts <= LOG_TABLE_SIZE_MAX && log_table_size < lts)
-	log_table_size = lts;
+		log_table_size = lts;
     }
   result = (Jbig2HuffmanTable *)malloc (sizeof(Jbig2HuffmanTable));
   result->log_table_size = log_table_size;
@@ -238,56 +237,56 @@ jbig2_build_huffman_table (const Jbig2HuffmanParams *params)
 #ifdef TEST
 #include <stdio.h>
 
+/* a test bitstream, and a list of the table indicies
+   to use in decoding it. 1 = table B.1 (A), 2 = table B.2 (B), and so on */
+/* this test stream should decode to { 8, 5, oob, 8 } */
+
+const byte	test_stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
+const byte	test_tabindex[] = { 4, 2, 2, 1 };
+
 static uint32
 test_get_word (Jbig2WordStream *self, int offset)
 {
-	byte	stream[] = { 0xe9, 0xcb, 0xf4, 0x00 };
-	
-	/* assume stream[] is at least 4 bytes */
-	if (offset+3 > sizeof(stream))
+	/* assume test_stream[] is at least 4 bytes */
+	if (offset+3 > sizeof(test_stream))
 		return 0;
 	else
-		return ( (stream[offset] << 24) |
-				 (stream[offset+1] << 16) |
-				 (stream[offset+2] << 8) |
-				 (stream[offset+3]) );
+		return ( (test_stream[offset] << 24) |
+				 (test_stream[offset+1] << 16) |
+				 (test_stream[offset+2] << 8) |
+				 (test_stream[offset+3]) );
 }
 
 int
 main (int argc, char **argv)
 {
-  Jbig2HuffmanTable *b1;
-  Jbig2HuffmanTable *b2;
-  Jbig2HuffmanTable *b4;
+  Jbig2HuffmanTable *tables[5];
   Jbig2HuffmanState *hs;
   Jbig2WordStream ws;
   bool oob;
   int32 code;
   
-  b1 = jbig2_build_huffman_table (&jbig_huffman_params_A);
-  b2 = jbig2_build_huffman_table (&jbig_huffman_params_B);
-  b4 = jbig2_build_huffman_table (&jbig_huffman_params_D);
+  tables[0] = NULL;
+  tables[1] = jbig2_build_huffman_table (&jbig_huffman_params_A);
+  tables[2] = jbig2_build_huffman_table (&jbig_huffman_params_B);
+  tables[3] = NULL;
+  tables[4] = jbig2_build_huffman_table (&jbig_huffman_params_D);
   ws.get_next_word = test_get_word;
   hs = jbig2_huffman_new (&ws);
 
   printf("testing jbig2 huffmann decoding...");
   printf("\t(should be 8 5 (oob) 8)\n");
   
-  code = jbig2_huffman_get (hs, b4, &oob);
-  if (oob) printf("(oob) ");
-    else printf("%d ", code);
-  
-  code = jbig2_huffman_get (hs, b2, &oob);
-  if (oob) printf("(oob) ");
-    else printf("%d ", code);
-  
-  code = jbig2_huffman_get (hs, b2, &oob);
-  if (oob) printf("(oob) ");
-    else printf("%d ", code);
-  
-    code = jbig2_huffman_get (hs, b1, &oob);
-  if (oob) printf("(oob) ");
-    else printf("%d ", code);
+  {
+	int i;
+	int sequence_length = sizeof(test_tabindex);
+	
+	for (i = 0; i < sequence_length; i++) {
+		code = jbig2_huffman_get (hs, tables[test_tabindex[i]], &oob);
+		if (oob) printf("(oob) ");
+		else printf("%d ", code);
+	}
+  }
   
   printf("\n");
   
