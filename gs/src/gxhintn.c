@@ -738,8 +738,8 @@ int t1_hinter__set_font_data(t1_hinter * this, int FontType, gs_type1_data *pdat
     this->BlueScale = pdata->BlueScale;
     this->blue_shift = float2fixed(pdata->BlueShift);
     this->blue_fuzz  = import_shift(float2fixed(pdata->BlueFuzz), this->import_shift);
-    this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / (1 << this->import_shift) - 0.00020417);
-    this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half / this->heigt_transform_coef) : 0);
+    this->suppress_overshoots = (this->BlueScale > this->heigt_transform_coef / this->subpixels_y / (1 << this->import_shift) - 0.00020417);
+    this->overshoot_threshold = (this->heigt_transform_coef != 0 ? (t1_glyph_space_coord)(fixed_half * this->subpixels_y / this->heigt_transform_coef) : 0);
     this->blue_rounding = (t1_hinter_space_coord)((this->BlueScale * 240) * (this->resolution * this->base_font_scale) * this->g2o_fraction);
     this->ForceBold = pdata->ForceBold;
     this->disable_hinting |= charpath_flag;
