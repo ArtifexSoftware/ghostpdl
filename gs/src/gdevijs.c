@@ -1075,6 +1075,7 @@ gsijs_set_color_format(gx_device_ijs *ijsdev)
     }
 
     maxvalue = (1 << bpc) - 1;
+    dci.max_components = components;
     dci.num_components = components;
     dci.depth = bpc * components;
     dci.max_gray = maxvalue;
