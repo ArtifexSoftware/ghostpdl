@@ -68,10 +68,11 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
 	(code = font_GlyphDirectory_param(op, &GlyphDirectory)) < 0
 	)
 	return code;
-    code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)&pfont,
+    code = build_gs_primitive_font(i_ctx_p, op, (gs_font_base **)ppfont,
 				   ftype, pstype, &build, options);
     if (code != 0)
 	return code;
+    pfont = *ppfont;
     pdata = pfont_data(pfont);
     ref_assign(&pdata->u.type42.sfnts, &sfnts);
     make_null_new(&pdata->u.type42.CIDMap);
@@ -98,7 +99,6 @@ build_gs_TrueType_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_type42 **ppfont,
     pfont->procs.encode_char = z42_encode_char;
     pfont->procs.glyph_info = z42_glyph_info;
     pfont->procs.glyph_outline = z42_glyph_outline;
-    *ppfont = pfont;
     return 0;
 }
 private int

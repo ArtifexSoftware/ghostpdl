@@ -234,10 +234,11 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	 */
 	CharStrings = *pcharstrings;
     }
-    code = build_gs_outline_font(i_ctx_p, op, &pfont, ftype, pstype, pbuild,
+    code = build_gs_outline_font(i_ctx_p, op, ppfont, ftype, pstype, pbuild,
 				 options, build_gs_simple_font);
     if (code != 0)
 	return code;
+    pfont = *ppfont;
     pdata = pfont_data(pfont);
     if (pcharstrings)
 	ref_assign(&pdata->CharStrings, &CharStrings);
@@ -249,7 +250,6 @@ build_gs_primitive_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
 	!dict_check_uid_param(op, &pfont->UID)
 	)
 	uid_set_invalid(&pfont->UID);
-    *ppfont = pfont;
     return 0;
 }
 
@@ -321,13 +321,13 @@ build_gs_outline_font(i_ctx_t *i_ctx_p, os_ptr op, gs_font_base ** ppfont,
     code = dict_float_param(op, "StrokeWidth", 0.0, &strokewidth);
     if (code < 0)
 	return code;
-    code = build_base_font(i_ctx_p, op, &pfont, ftype, pstype, pbuild,
+    code = build_base_font(i_ctx_p, op, ppfont, ftype, pstype, pbuild,
 			   options);
     if (code != 0)
 	return code;
+    pfont = *ppfont;
     pfont->PaintType = painttype;
     pfont->StrokeWidth = strokewidth;
-    *ppfont = pfont;
     return 0;
 }
 
