@@ -1811,11 +1811,15 @@ set_threshold_ht(
                               : pbi->u.thresh.pdata + icomp * size );
     }
 
-    if ((pb = gs_alloc_string(pht->rc.memory, size, "set_threshold_ht")) == 0)
-        return e_Memory;
-    memcpy(pb, pdata, size);
-    pht->thresholds[icomp].size = size;
-    pht->thresholds[icomp].data = pb;
+    /* don't create a separate threshold array for the K component */
+    if (comp != 3) {
+        pb = gs_alloc_string(pht->rc.memory, size, "set_threshold_ht");
+        if (pb == 0)
+            return e_Memory;
+        memcpy(pb, pdata, size);
+        pht->thresholds[comp].size = size;
+        pht->thresholds[comp].data = pb;
+    }
 
     return gs_ht_set_threshold_comp( pgsht,
                                      comp,

@@ -31,6 +31,11 @@
  * This implies that color components may not be converted until the set
  * color index command is executed, as it is not possible to predict for
  * which palette they will be used.
+ *
+ * NB: contrary to the documentation, all of the set color component commands
+ *     and the assign color index command are allowed but ignored in graphics
+ *     mode (i.e.: they do NOT end graphics mode, as one would expect from the
+ *     documentation).
  */
 private float   color_comps[3];
 
@@ -40,10 +45,11 @@ private float   color_comps[3];
   private int
 set_color_comp_1(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
-    color_comps[0] = float_arg(pargs);
+    if (!pcs->raster_state.graphics_mode)
+        color_comps[0] = float_arg(pargs);
     return 0;
 }
 
@@ -53,10 +59,11 @@ set_color_comp_1(
   private int
 set_color_comp_2(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
-    color_comps[1] = float_arg(pargs);
+    if (!pcs->raster_state.graphics_mode)
+        color_comps[1] = float_arg(pargs);
     return 0;
 }
 
@@ -66,10 +73,11 @@ set_color_comp_2(
   private int
 set_color_comp_3(
     pcl_args_t *    pargs,
-    pcl_state_t *   pcls
+    pcl_state_t *   pcs
 )
 {
-    color_comps[2] = float_arg(pargs);
+    if (!pcs->raster_state.graphics_mode)
+        color_comps[2] = float_arg(pargs);
     return 0;
 }
 
@@ -93,11 +101,13 @@ assign_color_index(
 {
     int             indx = int_arg(pargs);
 
-    if ((indx >= 0) && (indx < pcl_palette_get_num_entries(pcs->ppalet)))
-        pcl_palette_set_color(pcs, indx, color_comps);
-    color_comps[0] = 0.0;
-    color_comps[1] = 0.0;
-    color_comps[2] = 0.0;
+    if (!pcs->raster_state.graphics_mode) {
+        if ((indx >= 0) && (indx < pcl_palette_get_num_entries(pcs->ppalet)))
+            pcl_palette_set_color(pcs, indx, color_comps);
+        color_comps[0] = 0.0;
+        color_comps[1] = 0.0;
+        color_comps[2] = 0.0;
+    }
     return 0;
 }
 
@@ -115,28 +125,28 @@ color_do_init(
         'v', 'A',
 	PCL_COMMAND( "Color Component 1",
                      set_color_comp_1,
-		     pca_neg_ok | pca_big_error
+		     pca_neg_ok | pca_big_error | pca_raster_graphics
                      )
     },
     {
         'v', 'B',
 	PCL_COMMAND( "Color Component 2",
                      set_color_comp_2,
-		     pca_neg_ok | pca_big_error
+		     pca_neg_ok | pca_big_error | pca_raster_graphics
                      )
     },
     {
         'v', 'C',
         PCL_COMMAND( "Color Component 3",
                      set_color_comp_3,
-		     pca_neg_ok | pca_big_error
+		     pca_neg_ok | pca_big_error | pca_raster_graphics
                      )
     },
     {
         'v', 'I',
         PCL_COMMAND( "Assign Color Index",
                      assign_color_index,
-		     pca_neg_ok | pca_big_ignore
+		     pca_neg_ok | pca_big_ignore | pca_raster_graphics
                      )
     },
     END_CLASS
@@ -148,7 +158,7 @@ color_do_init(
  */
   private void
 color_do_reset(
-    pcl_state_t *        pcls,
+    pcl_state_t *        pcs,
     pcl_reset_type_t    type
 )
 {

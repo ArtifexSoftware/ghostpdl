@@ -242,6 +242,7 @@ main(
         }
         pcl_do_resets(pcls, pcl_reset_initial);
     }
+
     pcl_set_end_page(pause_end_page);
 
     /*
@@ -253,6 +254,12 @@ main(
         exit(1);
     }
     pcl_load_built_in_symbol_sets(pcls);
+
+    if (gs_debug_c(':'))
+        pl_print_usage(mem, &inst, "Start");
+
+    /* provide a graphic state we can return to */
+    pcl_gsave(pcls);
 
     while ((arg = arg_next(&args)) != 0) {
         /* Process one input file. */
@@ -266,10 +273,9 @@ main(
         stream_cursor_read  r;
         bool                in_pjl = true;
 
-        if (gs_debug_c(':')) {
+        if (gs_debug_c(':'))
             dprintf1("%% Reading %s:\n", arg);
-            pl_print_usage(mem, &inst, "Start");
-        }
+
         if (in == 0) {
             fprintf(stderr, "Unable to open %s for reading.\n", arg);
             exit(1);
@@ -308,12 +314,14 @@ process:
     	        memmove(buf, r.ptr + 1, len);
             r.limit = buf + (len - 1);
         }
+#if 0
         if (gs_debug_c(':'))
             dprintf3( "Final file position = %ld, exit code = %d, mode = %s\n",
     	              (long)ftell(in) - (r.limit - r.ptr),
                       code,
     	              (in_pjl ? "PJL" : pcls->parse_other ? "HP-GL/2" : "PCL")
                       );
+#endif
         fclose(in);
 
         /* Read out any status responses. */
@@ -328,6 +336,13 @@ process:
 
         gs_reclaim(&inst.spaces, true);
     }
+
+    /* to help with memory leak detection, issue a reset */
+    pcl_do_resets(pcls, pcl_reset_printer);
+
+    /* return to the original graphic state, reclaim memory once more */
+    pcl_grestore(pcls);
+    gs_reclaim(&inst.spaces, true);
 
     if ( gs_debug_c(':') ) {
         pl_print_usage(mem, &inst, "Final");

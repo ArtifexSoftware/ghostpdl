@@ -764,6 +764,7 @@ pcl_cs_indexed_update_lookup_tbl(
     /* make a unique copy of the indexed color space */
     if ((code = unshare_indexed_cspace(ppindexed)) < 0)
         return code;
+    pindexed = *ppindexed;
 
     /* update the base color space, if appropriate */
     code = pcl_cs_base_update_lookup_tbl(&(pindexed->pbase), plktbl);

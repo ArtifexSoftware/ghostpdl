@@ -394,6 +394,7 @@ $(PCLOBJ)rtraster.$(OBJ): $(PCLSRC)rtraster.c   \
                           $(pcpalet_h)          \
                           $(pcindexed_h)        \
                           $(pcwhtindx_h)        \
+                          $(pcdraw_h)           \
                           $(rtgmode_h)          \
                           $(rtrstcmp_h)         \
                           $(rtraster_h)
@@ -521,6 +522,7 @@ $(PCLOBJ)pcmtx3.$(OBJ): $(PCLSRC)pcmtx3.c   \
 $(PCLOBJ)pcpalet.$(OBJ): $(PCLSRC)pcpalet.c \
                          $(gx_h)            \
                          $(pldict_h)        \
+                         $(pcdraw_h)        \
                          $(pcpalet_h)       \
                          $(pcfrgrnd_h)
 	$(PCLCCC) $(PCLSRC)pcpalet.c $(PCLO_)pcpalet.$(OBJ)
@@ -552,6 +554,9 @@ $(PCLOBJ)pcpatxfm.$(OBJ): $(PCLSRC)pcpatxfm.c   \
 
 $(PCLOBJ)pcuptrn.$(OBJ): $(PCLSRC)pcuptrn.c \
                          $(gx_h)            \
+                         $(gscsel.h)        \
+                         $(gxdevice.h)      \
+                         $(gxpcolor.h)      \
                          $(pldict_h)        \
                          $(pcindexed_h)     \
                          $(pcpatrn_h)       \
@@ -741,6 +746,7 @@ $(PCLOBJ)pctext.$(OBJ): $(PCLSRC)pctext.c   \
                         $(gx_h)             \
                         $(gsimage_h)        \
                         $(plvalue_h)        \
+                        $(plvocab_h)        \
                         $(pcommand_h)       \
                         $(pcstate_h)        \
                         $(pcdraw_h)         \
