@@ -309,6 +309,7 @@ currentdict /.pdfmarkparams .undef
   20 .localvmdict 1 index { 3 copy put pop pop } forall
   3 -1 roll .parse_dsc_comments	% <dsc dict> <dict> <type>
   dup /NOP ne 2 index length 1 gt or {	% Skip unparsed comments
+    DEBUG { (**** DSC comment: ) print dup == 1 index === flush } if
     exch mark 4 1 roll {
 		% mark <key1> <value1> ... <dsc dict> <type> <key> <value>
       3 index 2 index known {	% Skip the DSC_struct entry
