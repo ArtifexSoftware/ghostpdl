@@ -194,9 +194,9 @@ struct gs_copied_font_data_s {
     gs_font_cid0 *parent;	/* (Type 1 subfont) => parent CIDFontType 0 */
 };
 extern_st(st_gs_font_info);
-gs_private_st_suffix_add10(st_gs_copied_font_data, gs_copied_font_data_t,
+gs_private_st_suffix_add11(st_gs_copied_font_data, gs_copied_font_data_t,
   "gs_copied_font_data_t", gs_copied_font_data_enum_ptrs,
-  gs_copied_font_data_reloc_ptrs, st_gs_font_info, glyphs, names,
+  gs_copied_font_data_reloc_ptrs, st_gs_font_info, glyphs, names, extra_names,
   data, Encoding, CIDMap, subrs.data, subrs.starts, global_subrs.data,
   global_subrs.starts, parent);
 
