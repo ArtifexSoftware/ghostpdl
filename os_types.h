@@ -27,16 +27,25 @@
 #ifndef _JBIG2_OS_TYPES_H
 #define _JBIG2_OS_TYPES_H
 
-#ifdef HAVE_CONFIG_H
-#include "config_types.h"
+#ifdef __CYGWIN__
+# include <sys/types.h>
+  /*
+   * Cygwin has no stdint.h but defines "MS types". Some of them conflict with
+   * a standard type emulation provided by config_types.h .
+   */
+   typedef u_int8_t uint8_t;
+   typedef u_int16_t uint16_t;
+   typedef u_int32_t uint32_t;
+#elif HAVE_CONFIG_H
+# include "config_types.h"
 #elif defined(_WIN32)
-#include "config_win32.h"
+# include "config_win32.h"
 #endif
 
 #if defined(HAVE_STDINT_H) || defined(__MACOS__)
-#include <stdint.h>
+# include <stdint.h>
 #elif defined(__VMS)
-#include <inttypes.h>
+# include <inttypes.h>
 #endif
 
 #endif /* _JBIG2_OS_TYPES_H */
