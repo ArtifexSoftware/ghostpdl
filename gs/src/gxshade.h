@@ -1,4 +1,4 @@
-/* Copyright (C) 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1998, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -70,43 +70,43 @@ typedef struct gs_shading_Fb_s {
     gs_shading_head_t head;
     gs_shading_Fb_params_t params;
 } gs_shading_Fb_t;
-shading_fill_rectangle_proc(gs_shading_Fb_fill_rectangle);
+SHADING_FILL_RECTANGLE_PROC(gs_shading_Fb_fill_rectangle);
 
 typedef struct gs_shading_A_s {
     gs_shading_head_t head;
     gs_shading_A_params_t params;
 } gs_shading_A_t;
-shading_fill_rectangle_proc(gs_shading_A_fill_rectangle);
+SHADING_FILL_RECTANGLE_PROC(gs_shading_A_fill_rectangle);
 
 typedef struct gs_shading_R_s {
     gs_shading_head_t head;
     gs_shading_R_params_t params;
 } gs_shading_R_t;
-shading_fill_rectangle_proc(gs_shading_R_fill_rectangle);
+SHADING_FILL_RECTANGLE_PROC(gs_shading_R_fill_rectangle);
 
 typedef struct gs_shading_FfGt_s {
     gs_shading_head_t head;
     gs_shading_FfGt_params_t params;
 } gs_shading_FfGt_t;
-shading_fill_rectangle_proc(gs_shading_FfGt_fill_rectangle);
+SHADING_FILL_RECTANGLE_PROC(gs_shading_FfGt_fill_rectangle);
 
 typedef struct gs_shading_LfGt_s {
     gs_shading_head_t head;
     gs_shading_LfGt_params_t params;
 } gs_shading_LfGt_t;
-shading_fill_rectangle_proc(gs_shading_LfGt_fill_rectangle);
+SHADING_FILL_RECTANGLE_PROC(gs_shading_LfGt_fill_rectangle);
 
 typedef struct gs_shading_Cp_s {
     gs_shading_head_t head;
     gs_shading_Cp_params_t params;
 } gs_shading_Cp_t;
-shading_fill_rectangle_proc(gs_shading_Cp_fill_rectangle);
+SHADING_FILL_RECTANGLE_PROC(gs_shading_Cp_fill_rectangle);
 
 typedef struct gs_shading_Tpp_s {
     gs_shading_head_t head;
     gs_shading_Tpp_params_t params;
 } gs_shading_Tpp_t;
-shading_fill_rectangle_proc(gs_shading_Tpp_fill_rectangle);
+SHADING_FILL_RECTANGLE_PROC(gs_shading_Tpp_fill_rectangle);
 
 /* Define a stream for decoding packed coordinate values. */
 typedef struct shade_coord_stream_s shade_coord_stream_t;

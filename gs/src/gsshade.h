@@ -1,4 +1,4 @@
-/* Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1997, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -67,6 +67,7 @@ typedef struct gs_shading_s gs_shading_t;
 #  define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
 #endif
+
 /*
  * Fill a user space rectangle.  This will paint every pixel that is in the
  * intersection of the rectangle and the shading's geometry, but it may
@@ -74,13 +75,20 @@ typedef struct gx_device_s gx_device;
  * outside the rectangle: the caller is responsible for setting up a
  * clipping device if necessary.
  */
-#define shading_fill_rectangle_proc(proc)\
-  int proc(P4(const gs_shading_t *psh, const gs_rect *rect, gx_device *dev,\
+#define SHADING_FILL_RECTANGLE_PROC(proc)\
+  int proc(P4(const gs_shading_t *psh, const gs_rect *prect, gx_device *dev,\
 	      gs_imager_state *pis))
-typedef shading_fill_rectangle_proc((*shading_fill_rectangle_proc_t));
+typedef SHADING_FILL_RECTANGLE_PROC((*shading_fill_rectangle_proc_t));
+#define gs_shading_fill_rectangle(psh, prect, dev, pis)\
+  ((psh)->head.procs.fill_rectangle(psh, prect, dev, pis))
+
+/* Define the generic shading structures. */
+typedef struct gs_shading_procs_s {
+    shading_fill_rectangle_proc_t fill_rectangle;
+} gs_shading_procs_t;
 typedef struct gs_shading_head_s {
     gs_shading_type_t type;
-    shading_fill_rectangle_proc_t fill_rectangle;
+    gs_shading_procs_t procs;
 } gs_shading_head_t;
 
 /* Define a generic shading, for use as the target type of pointers. */
