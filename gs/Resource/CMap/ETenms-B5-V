@@ -1,13 +1,13 @@
 %!PS-Adobe-3.0 Resource-CMap
 %%DocumentNeededResources: ProcSet (CIDInit)
-%%DocumentNeededResources: CMap (ETen-B5-H)
+%%DocumentNeededResources: CMap (ETenms-B5-H)
 %%IncludeResource: ProcSet (CIDInit)
-%%IncludeResource: CMap (ETen-B5-H)
-%%BeginResource: CMap (ETen-B5-V)
-%%Title: (ETen-B5-V Adobe CNS1 0)
-%%Version: 10.001
+%%IncludeResource: CMap (ETenms-B5-H)
+%%BeginResource: CMap (ETenms-B5-V)
+%%Title: (ETenms-B5-V Adobe CNS1 0)
+%%Version: 7.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1999 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-1997 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -32,7 +32,7 @@
 
 begincmap
 
-/ETen-B5-H usecmap
+/ETenms-B5-H usecmap
 
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
@@ -40,17 +40,17 @@ begincmap
   /Supplement 0 def
 end def
 
-/CMapName /ETen-B5-V def
-/CMapVersion 10.001 def
+/CMapName /ETenms-B5-V def
+/CMapVersion 7.001 def
 /CMapType 1 def
-
-/UIDOffset 920 def
-/XUID [1 10 25391] def
-
 /WMode 1 def
 
-13 begincidrange
+
+18 begincidrange
 <a14b> <a14b> 13646
+<a14c> <a14c> 109
+<a156> <a156> 312
+<a158> <a158> 122
 <a15a> <a15a> 13743
 <a15c> <a15c> 13745
 <a15d> <a15e> 130
@@ -61,13 +61,15 @@ end def
 <a171> <a172> 150
 <a175> <a176> 154
 <a179> <a17a> 158
-<a1e3> <a1e3> 13647
+<a17d> <a17e> 130
+<a1a1> <a1a2> 134
+<a1a3> <a1a4> 138
 <c6e4> <c6e5> 14097
 endcidrange
+
 endcmap
 CMapName currentdict /CMap defineresource pop
 end
 end
-
 %%EndResource
 %%EOF

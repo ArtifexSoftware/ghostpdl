@@ -1,13 +1,13 @@
 %!PS-Adobe-3.0 Resource-CMap
 %%DocumentNeededResources: ProcSet (CIDInit)
-%%DocumentNeededResources: CMap (ETen-B5-H)
+%%DocumentNeededResources: CMap (ETHK-B5-H)
 %%IncludeResource: ProcSet (CIDInit)
-%%IncludeResource: CMap (ETen-B5-H)
-%%BeginResource: CMap (ETen-B5-V)
-%%Title: (ETen-B5-V Adobe CNS1 0)
-%%Version: 10.001
+%%IncludeResource: CMap (ETHK-B5-H)
+%%BeginResource: CMap (ETHK-B5-V)
+%%Title: (ETHK-B5-V Adobe CNS1 0)
+%%Version: 1.001
 %%Copyright: -----------------------------------------------------------
-%%Copyright: Copyright 1990-1999 Adobe Systems Incorporated.
+%%Copyright: Copyright 1990-2000 Adobe Systems Incorporated.
 %%Copyright: All Rights Reserved.
 %%Copyright:
 %%Copyright: Patents Pending
@@ -32,7 +32,7 @@
 
 begincmap
 
-/ETen-B5-H usecmap
+/ETHK-B5-H usecmap
 
 /CIDSystemInfo 3 dict dup begin
   /Registry (Adobe) def
@@ -40,12 +40,11 @@ begincmap
   /Supplement 0 def
 end def
 
-/CMapName /ETen-B5-V def
-/CMapVersion 10.001 def
+/CMapName /ETHK-B5-V def
+/CMapVersion 1.001 def
 /CMapType 1 def
 
-/UIDOffset 920 def
-/XUID [1 10 25391] def
+/XUID [1 10 25583] def
 
 /WMode 1 def
 
