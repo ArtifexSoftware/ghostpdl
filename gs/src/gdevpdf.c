@@ -1092,6 +1092,14 @@ pdf_close(gx_device * dev)
     code1 = pdf_free_resource_objects(pdev, resourceCMap);
     if (code >= 0)
 	code = code1;
+#if PS2WRITE
+    code1 = pdf_write_resource_objects(pdev, resourcePage);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_free_resource_objects(pdev, resourcePage);
+    if (code >= 0)
+	code = code1;
+#endif
 
     /* Create the Pages tree. */
 

@@ -105,9 +105,13 @@ typedef enum {
     resourceCMap,
     resourceFontDescriptor,
     resourceFunction,
+#if PS2WRITE
+    resourcePage,
+#endif
     NUM_RESOURCE_TYPES
 } pdf_resource_type_t;
 
+#if PS2WRITE
 #define PDF_RESOURCE_TYPE_NAMES\
   "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", "/Font",\
   0, "/Font", "/CMap", "/FontDescriptor", 0
@@ -122,7 +126,25 @@ typedef enum {
   &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
   &st_pdf_resource,\
   &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_resource,\
   &st_pdf_resource
+#else
+#define PDF_RESOURCE_TYPE_NAMES\
+  "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", "/Font",\
+  0, "/Font", "/CMap", "/FontDescriptor", 0, 0
+#define PDF_RESOURCE_TYPE_STRUCTS\
+  &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
+  &st_pdf_resource,		/* see below */\
+  &st_pdf_resource,\
+  &st_pdf_resource,\
+  &st_pdf_x_object,		/* see below */\
+  &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_char_proc,		/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_font_resource,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_resource,\
+  &st_pdf_font_descriptor,	/* gdevpdff.h / gdevpdff.c */\
+  &st_pdf_resource
+#endif
 
 /*
  * rname is currently R<id> for all resources other than synthesized fonts;

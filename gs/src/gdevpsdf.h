@@ -129,9 +129,6 @@ typedef struct psdf_distiller_params_s {
 	"sRGB"
     bool PreserveHalftoneInfo;
     bool PreserveOverprintSettings;
-#if PS2WRITE
-    bool OrderResources;
-#endif
     enum psdf_transfer_function_info {
 	tfi_Preserve,
 	tfi_Apply,
@@ -146,17 +143,6 @@ typedef struct psdf_distiller_params_s {
 #define psdf_ucrbg_names\
 	"Preserve", "Remove"
 
-#if PS2WRITE
-#define psdf_general_param_defaults(ascii)\
-  ascii, arp_None, binding_Left, 1/*true*/,\
-  ri_Default, 1 /*true*/, 0 /*false*/,\
-  500000, 0 /*false*/, 0/*false*/, 1,\
-  0 /*false*/, 1 /*true*/,\
-	/* Color processing parameters */\
-  {0}, {0}, {0}, {0},\
-  ccs_LeaveColorUnchanged, 0/*false*/, 0/*false*/, 0/*false*/,\
-  tfi_Preserve, ucrbg_Remove
-#else
 #define psdf_general_param_defaults(ascii)\
   ascii, arp_None, binding_Left, 1/*true*/,\
   ri_Default, 1 /*true*/, 0 /*false*/,\
@@ -165,7 +151,6 @@ typedef struct psdf_distiller_params_s {
 	/* Color processing parameters */\
   {0}, {0}, {0}, {0},\
   ccs_LeaveColorUnchanged, 0/*false*/, 0/*false*/, tfi_Preserve, ucrbg_Remove
-#endif
 
     /* Color sampled image parameters */
 
@@ -221,15 +206,38 @@ typedef enum {
 } psdf_version;
 
 /* Define the extended device structure. */
+#if PS2WRITE
+#define gx_device_psdf_common\
+	gx_device_vector_common;\
+	psdf_version version;\
+	bool binary_ok;		/* derived from ASCII85EncodePages */\
+	bool OrderResources;\
+	psdf_distiller_params params
+#else
 #define gx_device_psdf_common\
 	gx_device_vector_common;\
 	psdf_version version;\
 	bool binary_ok;		/* derived from ASCII85EncodePages */\
 	psdf_distiller_params params
+#endif
+
 typedef struct gx_device_psdf_s {
     gx_device_psdf_common;
 } gx_device_psdf;
 
+#if PS2WRITE
+#define psdf_initial_values(version, ascii)\
+	vector_initial_values,\
+	version,\
+	!(ascii),\
+	false,\
+	 { psdf_general_param_defaults(ascii),\
+	   psdf_color_image_param_defaults,\
+	   psdf_gray_image_param_defaults,\
+	   psdf_mono_image_param_defaults,\
+	   psdf_font_param_defaults\
+	 }
+#else
 #define psdf_initial_values(version, ascii)\
 	vector_initial_values,\
 	version,\
@@ -240,6 +248,7 @@ typedef struct gx_device_psdf_s {
 	   psdf_mono_image_param_defaults,\
 	   psdf_font_param_defaults\
 	 }
+#endif
 
 /* st_device_psdf is never instantiated per se, but we still need to */
 /* extern its descriptor for the sake of subclasses. */

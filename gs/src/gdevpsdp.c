@@ -205,9 +205,6 @@ private const gs_param_item_t psdf_param_items[] = {
     pi("PreserveHalftoneInfo", gs_param_type_bool, PreserveHalftoneInfo),
     pi("PreserveOPIComments", gs_param_type_bool, PreserveOPIComments),
     pi("PreserveOverprintSettings", gs_param_type_bool, PreserveOverprintSettings),
-#if PS2WRITE
-    pi("OrderResources", gs_param_type_bool, OrderResources), /* A temporary development purpose. */
-#endif
     /* (TransferFunctionInfo) */
     /* (UCRandBGInfo) */
     pi("UseFlateCompression", gs_param_type_bool, UseFlateCompression),

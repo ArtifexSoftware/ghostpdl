@@ -275,39 +275,53 @@ none_to_stream(gx_device_pdf * pdev)
 
     if (pdev->contents_id != 0)
 	return_error(gs_error_Fatal);	/* only 1 contents per page */
-    pdev->contents_id = pdf_begin_obj(pdev);
-    pdev->contents_length_id = pdf_obj_ref(pdev);
-    s = pdev->strm;
-    pprintld1(s, "<</Length %ld 0 R", pdev->contents_length_id);
-    if (pdev->compression == pdf_compress_Flate)
-	pprints1(s, "/Filter /%s", compression_filter_name);
-    stream_puts(s, ">>\nstream\n");
-    pdev->contents_pos = pdf_stell(pdev);
-    code = pdf_begin_encrypt(pdev, &s, pdev->contents_id);
-    if (code < 0)
-	return code;
-    pdev->strm = s;
-    if (pdev->compression == pdf_compress_Flate) {	/* Set up the Flate filter. */
-	const stream_template *template = &compression_filter_template;
-	stream *es = s_alloc(pdev->pdf_memory, "PDF compression stream");
-	byte *buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
-				   "PDF compression buffer");
-	compression_filter_state *st =
-	    gs_alloc_struct(pdev->pdf_memory, compression_filter_state,
-			    template->stype, "PDF compression state");
+#if PS2WRITE
+    if (pdev->OrderResources) {
+	pdf_resource_t *pres;
 
-	if (es == 0 || st == 0 || buf == 0)
-	    return_error(gs_error_VMerror);
-	s_std_init(es, buf, sbuf_size, &s_filter_write_procs,
-		   s_mode_write);
-	st->memory = pdev->pdf_memory;
-	st->template = template;
-	es->state = (stream_state *) st;
-	es->procs.process = template->process;
-	es->strm = s;
-	(*template->set_defaults) ((stream_state *) st);
-	(*template->init) ((stream_state *) st);
-	pdev->strm = s = es;
+	code = pdf_enter_substream(pdev, resourcePage, gs_no_id, &pres, true);
+	if (code < 0)
+	    return code;
+	pdev->contents_id = pres->object->id;
+	pdev->contents_length_id = gs_no_id; /* inapplicable */
+	pdev->contents_pos = -1; /* inapplicable */
+	s = pdev->strm;
+    } else 
+#endif
+    {
+    	pdev->contents_id = pdf_begin_obj(pdev);
+	pdev->contents_length_id = pdf_obj_ref(pdev);
+	s = pdev->strm;
+	pprintld1(s, "<</Length %ld 0 R", pdev->contents_length_id);
+	if (pdev->compression == pdf_compress_Flate)
+	    pprints1(s, "/Filter /%s", compression_filter_name);
+	stream_puts(s, ">>\nstream\n");
+	pdev->contents_pos = pdf_stell(pdev);
+	code = pdf_begin_encrypt(pdev, &s, pdev->contents_id);
+	if (code < 0)
+	    return code;
+	if (pdev->compression == pdf_compress_Flate) {	/* Set up the Flate filter. */
+	    const stream_template *template = &compression_filter_template;
+	    stream *es = s_alloc(pdev->pdf_memory, "PDF compression stream");
+	    byte *buf = gs_alloc_bytes(pdev->pdf_memory, sbuf_size,
+				       "PDF compression buffer");
+	    compression_filter_state *st =
+		gs_alloc_struct(pdev->pdf_memory, compression_filter_state,
+				template->stype, "PDF compression state");
+
+	    if (es == 0 || st == 0 || buf == 0)
+		return_error(gs_error_VMerror);
+	    s_std_init(es, buf, sbuf_size, &s_filter_write_procs,
+		       s_mode_write);
+	    st->memory = pdev->pdf_memory;
+	    st->template = template;
+	    es->state = (stream_state *) st;
+	    es->procs.process = template->process;
+	    es->strm = s;
+	    (*template->set_defaults) ((stream_state *) st);
+	    (*template->init) ((stream_state *) st);
+	    pdev->strm = s = es;
+	}
     }
     /*
      * Scale the coordinate system.  Use an extra level of q/Q for the
@@ -325,7 +339,9 @@ none_to_stream(gx_device_pdf * pdev)
 		     ri_names[(int)pdev->params.DefaultRenderingIntent]);
 	}
     }
+#if !PS2WRITE
     pdev->vgstack_depth = 0;
+#endif
     pdev->AR4_save_bug = false;
     return PDF_IN_STREAM;
 }
@@ -380,24 +396,34 @@ stream_to_none(gx_device_pdf * pdev)
     stream *s = pdev->strm;
     long length;
 
-    if (pdev->vgstack_depth)
-	pdf_restore_viewer_state(pdev, s);
-    if (pdev->compression == pdf_compress_Flate) {	/* Terminate the Flate filter. */
-	stream *fs = s->strm;
+#if PS2WRITE
+    if (pdev->OrderResources) {
+	int code = pdf_exit_substream(pdev);
 
-	sclose(s);
-	gs_free_object(pdev->pdf_memory, s->cbuf, "zlib buffer");
-	gs_free_object(pdev->pdf_memory, s, "zlib stream");
-	pdev->strm = s = fs;
+	if (code < 0)
+	    return code;
+    } else 
+#endif
+    {
+	if (pdev->vgstack_depth)
+	    pdf_restore_viewer_state(pdev, s);
+	if (pdev->compression == pdf_compress_Flate) {	/* Terminate the Flate filter. */
+	    stream *fs = s->strm;
+
+	    sclose(s);
+	    gs_free_object(pdev->pdf_memory, s->cbuf, "zlib buffer");
+	    gs_free_object(pdev->pdf_memory, s, "zlib stream");
+	    pdev->strm = s = fs;
+	}
+	pdf_end_encrypt(pdev);
+    	s = pdev->strm;
+	length = pdf_stell(pdev) - pdev->contents_pos;
+	stream_puts(s, "endstream\n");
+	pdf_end_obj(pdev);
+	pdf_open_obj(pdev, pdev->contents_length_id);
+	pprintld1(s, "%ld\n", length);
+	pdf_end_obj(pdev);
     }
-    pdf_end_encrypt(pdev);
-    s = pdev->strm;
-    length = pdf_stell(pdev) - pdev->contents_pos;
-    stream_puts(s, "endstream\n");
-    pdf_end_obj(pdev);
-    pdf_open_obj(pdev, pdev->contents_length_id);
-    pprintld1(s, "%ld\n", length);
-    pdf_end_obj(pdev);
     return PDF_IN_NONE;
 }
 
