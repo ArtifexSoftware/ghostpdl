@@ -170,6 +170,8 @@ set_foreground(
 {
     int                 code;
 
+    if ( pcs->personality == pcl5e )
+	return 0;
     pcl_break_underline(pcs);
 
     /* check that the palette is complete */
@@ -197,14 +199,12 @@ frgrnd_do_registration(
     gs_memory_t *mem
 )
 {
-#ifndef PCL5EMONO
     DEFINE_CLASS('*')
     {
         'v', 'S', 
         PCL_COMMAND("Set Foreground", set_foreground, pca_neg_ok)
     },
     END_CLASS
-#endif
     return 0;
 }
 

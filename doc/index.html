@@ -37,8 +37,8 @@ Quick Start For Unix environment with GCC.</h2>
 <br><tt><font size=+0>make -f pcl6_gcc.mak&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 # build PCL and PCLXL.</font></tt>
 <br><tt><font size=+0>cd obj;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-# move to the executable's directory.</font></tt><tt><font size=+0></font></tt>
-<p><tt><font size=+0># finally test samples PCL and XL samples</font></tt><tt><font size=+0></font></tt>
+# move to the executable's directory.</font></tt>
+<p><tt><font size=+0># finally test samples PCL and XL samples</font></tt>
 <p><tt><font size=+0>pcl6 ../../tools/owl.pcl&nbsp; ../../tools/frs96.pxl</font></tt>
 <h2>
 Supported development environments</h2>
@@ -277,7 +277,7 @@ Running the products.</h1>
 Twain</i>
 <p>All options supplied to the interpreter in the following examples are
 described in the&nbsp; <a href="http://www.cs.wisc.edu/~ghost/">Ghostscript
-documentation</a>
+documentation.</a>
 <p><b>pcl5 -sDEVICE=x11 mypcl.pcl</b>
 <p>interpret a pcl file called mypcl.pcl and render to the x11 device.
 <p><b>pcl5 -sDEVICE=ljet4 -sOutputFile="| lpr" -dNOPAUSE mypcl.pcl</b>
@@ -290,6 +290,27 @@ files named pcxpage.1, pcxpage.2, pcxpage.3, etc.
 <p><b>pcl5</b>
 <p>simply running the interpreter should generate some useful information
 about the available options and devices.
+<br>&nbsp;
+<h1>
+PCL Personality</h1>
+The following option is private to GhostPCL.
+<p>The PCL emulation comes in three flavors: PCL5E, PCL5C, and RTL.&nbsp;
+The PCL5E personality thresholds colors to black and white irrespective
+of the color parameters of the output device.&nbsp; PCL5C is the color
+personality, used with a monochrome device it will grayscale colors.&nbsp;
+The RTL personality can be used to print HPGL/2 RTL plot files.
+<p><b>pcl5 -PRTL myrtl.rtl</b>
+<p>run the interpreter with the rtl personality.
+<p><b>pcl5 -PPCL5E -sDEVICE=ljet4 mypcl.pcl</b>
+<p>run the interpreter with the pcl5e personality.&nbsp; This will threshold
+colors to black and white (ljet4 is a 1 bit device).
+<p><b>pcl5 -PPCL5C -sDEVICE=ljet4 mypcl.pcl</b>
+<p>run the interpreter with the pcl5c personality.&nbsp; This will grayscale
+colors on the 1 bit output device.
+<p>If not set on the command line the pcl interpreter personality will
+be set to PCL5E if the output device is 1 bit per pixel otherwise it is
+set to PCL5C.&nbsp; RTL must be explicitly set on the command line.&nbsp;
+RTL always grayscales and never thresholds colors to black and white.
 <h2>
 Fonts</h2>
 Customers should obtain fonts from a third-party vendor such as&nbsp; <a href="http://www.agfa.com">Agfa</a>&nbsp;

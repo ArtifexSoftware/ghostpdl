@@ -257,11 +257,6 @@ pcl_impl_allocate_interp_instance(
     pcli->bbox_device = bbox;
     pcli->memory = mem;
 
-    /* initialize personality here - NB this needs to be associated
-       with the language option. */
-    pcli->pcs.personality = pcl5e;
-    /* pcli->pcs.personality = rtl; */
-
     /* zero-init pre/post page actions for now */
     pcli->pre_page_action = 0;
     pcli->post_page_action = 0;
@@ -326,6 +321,23 @@ pcl_impl_set_post_page_action(
 	return 0;
 }
 
+/* if the device option string PCL is not given, the default
+   arrangement is 1 bit devices use pcl5e other devices use pcl5c. */
+private pcl_personality_t
+pcl_set_personality(pl_interp_instance_t *instance, gx_device *device)
+{
+    if ( !strcmp(instance->pcl_personality, "PCL5C" ) )
+	return pcl5c;
+    else if ( !strcmp(instance->pcl_personality, "PCL5E" ) )
+	return pcl5e;
+    else if ( !strcmp(instance->pcl_personality, "RTL" ) )
+	return rtl;
+    else if ( device->color_info.depth == 1 )
+	return pcl5e;
+    else
+	return pcl5c;
+}
+
 /* Set a device into an interperter instance */
 private int   /* ret 0 ok, else -ve error code */
 pcl_impl_set_device(
@@ -342,6 +354,8 @@ pcl_impl_set_device(
 	gx_device_bbox_init(pcli->bbox_device, device);
 	rc_increment(pcli->bbox_device);	/* prevent refcnt-delete from deleting this */
 
+	/* set personality - pcl5c, pcl5e, or rtl */
+	pcli->pcs.personality = pcl_set_personality(instance, device);
 	/* Set the device into the pcl_state & gstate */
 	stage = Ssetdevice;
 	pcl_set_target_device(&pcli->pcs, device);

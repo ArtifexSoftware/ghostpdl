@@ -226,6 +226,9 @@ push_pop_palette(
 {
     int             action = uint_arg(pargs);
 
+    if ( pcs->personality == pcl5e )
+	return 0;
+
     if (action == 0) {
         pstack_entry_t *    pentry;
         int                 code;
@@ -683,6 +686,9 @@ set_sel_palette_id(
     uint            id = uint_arg(pargs);
     pcl_id_t        key;
 
+    if ( pcs->personality == pcl5e )
+	return 0;
+
     /* ignore attempts to select non-existent palettes */
     id_set_value(key, id);
     if ( pl_dict_lookup( &pcs->palette_store,
@@ -707,6 +713,9 @@ set_ctrl_palette_id(
     pcl_state_t *   pcs
 )
 {
+    if ( pcs->personality == pcl5e )
+	return 0;
+
     pcs->ctrl_palette_id = uint_arg(pargs);
     return 0;
 }
@@ -753,6 +762,9 @@ palette_control(
 )
 {
     uint            action = uint_arg(pargs);
+
+    if ( pcs->personality == pcl5e )
+	return 0;
 
     switch (action) {
 
@@ -811,6 +823,9 @@ set_render_algorithm(
     pcl_state_t *   pcs
 )
 {
+    if ( pcs->personality == pcl5e )
+	return 0;
+
     return pcl_palette_set_render_method(pcs, uint_arg(pargs));
 }
 
@@ -833,6 +848,9 @@ set_print_mode(
     uint            mode = uint_arg(pargs);
     int             code = 0;
 
+    if ( pcs->personality == pcl5e )
+	return 0;
+
     if (mode > 1)
         return 0;
 
@@ -854,7 +872,6 @@ palette_do_registration(
     gs_memory_t *    pmem
 )
 {
-#ifndef PCL5EMONO
     DEFINE_CLASS('*')
     {
         'p', 'P',
@@ -902,7 +919,6 @@ palette_do_registration(
                      )
     },
     END_CLASS
-#endif
     return 0;
 }
 

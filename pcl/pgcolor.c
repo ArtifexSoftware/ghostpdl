@@ -27,6 +27,9 @@ hpgl_PC(
     int32           pen;
     int32           npen = pcl_palette_get_num_entries(pgls->ppalet);
 
+    if ( pgls->personality == pcl5e )
+	return 0;
+
     /* output any current path */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
@@ -72,6 +75,9 @@ hpgl_NP(
 {
     int32           n = 8;
 
+    if ( pgls->personality == pcl5e )
+	return 0;
+
     /* output any current path */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
 
@@ -91,6 +97,9 @@ hpgl_CR(
 {
     hpgl_real_t     range[6];
     int             i;
+
+    if ( pgls->personality == pcl5e )
+	return 0;
 
     /* output any current path */
     hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
@@ -123,7 +132,6 @@ pgcolor_do_registration(
     gs_memory_t *mem
 )
 {
-#ifndef PCL5EMONO
     /* Register commands */
     DEFINE_HPGL_COMMANDS
     HPGL_COMMAND('C', 'R', hpgl_CR, hpgl_cdf_pcl_rtl_both),
@@ -131,7 +139,6 @@ pgcolor_do_registration(
     HPGL_COMMAND('P', 'C', hpgl_PC, hpgl_cdf_pcl_rtl_both),
     END_HPGL_COMMANDS
     return 0;
-#endif
 }
 
 const pcl_init_t    pgcolor_init = { pgcolor_do_registration, 0, 0 };

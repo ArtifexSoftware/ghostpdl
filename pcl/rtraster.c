@@ -358,7 +358,7 @@ create_mask_enumerator(
 {
     gs_image4_t                 image;
     gs_image_enum *             pen = gs_image_enum_alloc( prast->pmem,
-                                                 "Create image for PCL raster" );
+							   "Create image for PCL raster" );
     int                         code = 0;
     const byte *                pcolor = 0;
     gx_image_enum_common_t *    pie = 0;
@@ -387,22 +387,22 @@ create_mask_enumerator(
         gs_image4_t_init(&image, prast->mask_pindexed->pcspace);
         image.Width = prast->src_width;
         image.Height = prast->src_height;
-#ifdef PCL5EMONO
-        image.CombineWithColor = false;
-#else
-        image.CombineWithColor = true;
-#endif
-        image.format = gs_image_format_chunky;
-        image.BitsPerComponent = 1;
-        image.Decode[0] = 0.0;
-        image.Decode[1] = 1.0;
-        image.MaskColor[0] = 0.0;
 
-        code = gs_image_begin_typed( (const gs_image_common_t *)&image,
-                                     pcs->pgs,
-                                     true,
-                                     &pie
-                                     );
+	if ( pcs->personality == pcl5e )
+	    image.CombineWithColor = false;
+	else
+	    image.CombineWithColor = true;
+	image.format = gs_image_format_chunky;
+	image.BitsPerComponent = 1;
+	image.Decode[0] = 0.0;
+	image.Decode[1] = 1.0;
+	image.MaskColor[0] = 0.0;
+    
+	code = gs_image_begin_typed( (const gs_image_common_t *)&image,
+				     pcs->pgs,
+				     true,
+				     &pie
+				     );
 
         if (code >= 0)
             code = gs_image_common_init( pen,

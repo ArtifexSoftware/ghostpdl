@@ -31,6 +31,8 @@ set_color_comp_1(
     pcl_state_t *   pcs
 )
 {
+    if ( pcs->personality == pcl5e )
+	return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[0] = float_arg(pargs);
     return 0;
@@ -45,6 +47,8 @@ set_color_comp_2(
     pcl_state_t *   pcs
 )
 {
+    if ( pcs->personality == pcl5e )
+	return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[1] = float_arg(pargs);
     return 0;
@@ -59,6 +63,8 @@ set_color_comp_3(
     pcl_state_t *   pcs
 )
 {
+    if ( pcs->personality == pcl5e )
+	return 0;
     if (!pcs->raster_state.graphics_mode)
         pcs->color_comps[2] = float_arg(pargs);
     return 0;
@@ -84,6 +90,8 @@ assign_color_index(
 {
     int             indx = int_arg(pargs);
 
+    if ( pcs->personality == pcl5e )
+	return 0;
     if (!pcs->raster_state.graphics_mode) {
         if ((indx >= 0) && (indx < pcl_palette_get_num_entries(pcs->ppalet)))
             pcl_palette_set_color(pcs, indx, pcs->color_comps);
@@ -103,7 +111,6 @@ color_do_registration(
     gs_memory_t *   pmem
 )
 {
-#ifndef PCL5EMONO
     /* Register commands */
     DEFINE_CLASS('*')
     {
@@ -135,7 +142,6 @@ color_do_registration(
                      )
     },
     END_CLASS
-#endif
     return 0;
 }
 

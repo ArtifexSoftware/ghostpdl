@@ -436,7 +436,6 @@ pcl_end_page(
 )
 {	
     int                     code = 0;
-    pl_main_instance_t	    *pmi = pcs->client_data;
 
     pcl_break_underline(pcs);	/* (could mark page) */
 
@@ -466,7 +465,6 @@ pcl_end_page(
 	    pcs->overlay_enabled = true; /**** IN copy_after ****/
 	}
     }
-    gs_nogc_reclaim(&(pmi->spaces), true);
     /* output the page */
     (*pcs->end_page)(pcs, pcs->num_copies, true);
     pcl_set_drawing_color(pcs, pcl_pattern_solid_white, 0, false);

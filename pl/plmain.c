@@ -27,25 +27,9 @@ pl_get_real_stdio(FILE **in, FILE **out, FILE **err)
 #include "pjtop.h"
 #include "plparse.h"
 #include "plplatf.h"
+#include "plmain.h"
 #include "pltop.h"
 #include "pltoputl.h"
-
-/*
- * Define the parameters for running the interpreter.
- */
-typedef struct pl_main_instance_s {
-	/* The following are set at initialization time. */
-  gs_memory_t *memory;
-  long base_time[2];		/* starting usertime */
-  int error_report;		/* -E# */
-  bool pause;			/* -dNOPAUSE => false */
-  int first_page;		/* -dFirstPage= */
-  int last_page;		/* -dLastPage= */
-  gx_device *device;
-  pl_interp_implementation_t const *implementation; /*-L<Language>*/
-	/* The following are updated dynamically. */
-  int page_count;		/* # of pages printed */
-} pl_main_instance_t;
 
 /*
  * Define bookeeping for interperters and devices 
@@ -76,7 +60,7 @@ extern pl_interp_implementation_t const * const pdl_implementation[];	/* zero-te
 /* Define the usage message. */
 private const char *pl_usage = "\
 Usage: %s [option* file]+...\n\
-Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -Z...\n\
+Options: -dNOPAUSE -E[#] -h -L<PCL|PCLXL> -K<maxK> -P<PCL5C|PCL5E|PCLXL> -Z...\n\
          -sDEVICE=<dev> -g<W>x<H> -r<X>[x<Y>] -d{First|Last}Page=<#>\n\
 	 -sOutputFile=<file> (-s<option>=<string> | -d<option>[=<value>])*\n\
 ";
@@ -101,12 +85,14 @@ pl_main_universe_dnit(P2(
 	char                   *err_str              /* RETRUNS errmsg if error return */
 ));
 pl_interp_instance_t *    /* rets current interp_instance, 0 if err */
-pl_main_universe_select(P5(
+pl_main_universe_select(P6(
 	pl_main_universe_t               *universe,              /* universe to select from */
 	char                             *err_str,               /* RETURNS error str if error */
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
 	gx_device                        *desired_device,        /* device to select */
-	gs_param_list                    *params                 /* device params to use */
+	gs_param_list                    *params,                 /* device params to use */
+	char *                           pcl_personality         /* an additional parameter
+                                                                    for selecting pcl personality */
 ));
 
 private pl_interp_implementation_t const *
@@ -252,11 +238,9 @@ main(
 	/* Process one input file. */
 	byte                buf[10000];
 	pl_top_cursor_t     r;
-	pl_interp_implementation_t const *desired_implementation;
 	int                 code = 0;
 	bool                in_pjl = true;
 	bool                new_job = false;
-	bool                skipping = false;
 
 	/* Process any new options. May request new device. */
 	if (argc==1 || pl_main_process_options(&inst, &args, &params, pdl_implementation) < 0) {
@@ -320,7 +304,7 @@ main(
 		if ( new_job ) {
 		    if ( (curr_instance = pl_main_universe_select(&universe, err_buf,
 								  pl_select_implementation(pjl_instance, &inst, r),
-								  inst.device, (gs_param_list *)&params)) == 0) {
+								  inst.device, (gs_param_list *)&params, inst.pcl_personality) ) == 0) {
 			fputs(err_buf, gs_stderr);
 			exit(1);
 		    }
@@ -520,7 +504,9 @@ pl_main_universe_select(
 	char                             *err_str,               /* RETURNS error str if error */
 	pl_interp_implementation_t const *desired_implementation,/* impl to select */
 	gx_device                        *desired_device,        /* device to select */
-	gs_param_list                    *params                 /* device params to set */
+	gs_param_list                    *params,                /* device params to set */
+	char *                           pcl_personality         /* an additional parameter
+                                                                    for selecting pcl personality */
 )
 {	
     int params_are_set = 0;
@@ -597,6 +583,8 @@ pl_main_universe_select(
 		universe->curr_device = desired_device;
 	}
 
+	/* NB fix me this parameter should not be passed this way */
+	universe->curr_instance->pcl_personality = pcl_personality;
 	/* Select curr/new device into PDL instance */
 	if ( pl_set_device(universe->curr_instance, universe->curr_device) < 0 ) {
 	    if (err_str)
@@ -611,7 +599,6 @@ pl_main_universe_select(
 	strcpy(err_str, "Unable to set params into device\n");
 	return 0;
     }
-
     return universe->curr_instance;
 }
 
@@ -629,6 +616,7 @@ pl_main_init_instance(pl_main_instance_t *pti, gs_memory_t *mem)
 	pti->first_page = 1;
 	pti->last_page = max_int;
 	pti->page_count = 0;
+	strcpy(&pti->pcl_personality, "PCL");
 }
 
 /* -------- Command-line processing ------ */
@@ -743,6 +731,16 @@ pl_main_process_options(pl_main_instance_t *pmi, arg_list *pal,
 		  gs_malloc_limit = (long)maxk << 10;
 		}
 		break;
+	      case 'p':
+	      case 'P':
+		  {
+		      if ( !strcmp(arg, "RTL") || !strcmp(arg, "PCL5E") ||
+			   !strcmp(arg, "PCL5C") )
+			  strcpy(pmi->pcl_personality, arg);
+		      else 
+			  dprintf("PCL personality must be RTL, PCL5E or PCL5C\n");
+		  }
+		  break;
 	      case 'r':
 		{ float res[2];
 		  gs_param_float_array fa;

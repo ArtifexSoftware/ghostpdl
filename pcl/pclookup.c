@@ -43,6 +43,9 @@ set_lookup_tbl(
     pcl__lookup_tbl_t * ptbl = 0;
     int                 code = 0;
 
+    if ( pcs->personality == pcl5e )
+	return 0;
+
     /* check for clearing of lookup tables, and for incorrect size */
     if (len == 0)
         return pcl_palette_set_lookup_tbl(pcs, NULL);
@@ -109,6 +112,8 @@ set_gamma_correction(
 {
     float               gamma = float_arg(pargs);
 
+    if ( pcs->personality == pcl5e )
+	return 0;
     if ((gamma < 0.0) || (gamma > (float)((1L << 15) - 1)))
         return 0;
     else
@@ -125,7 +130,6 @@ lookup_do_registration(
     gs_memory_t *   pmem
 )
 {
-#ifndef PCL5EMONO
     DEFINE_CLASS('*')
     {
         'l', 'W',
@@ -139,7 +143,6 @@ lookup_do_registration(
                      )
     },
     END_CLASS
-#endif
     return 0;
 }
 

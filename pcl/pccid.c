@@ -196,14 +196,12 @@ private int (*const build_cid_longform[])( pcl_cid_data_t *, const byte * ) = {
  */
   private int
 check_cid_hdr(
-    pcl_cid_hdr_t * pcid
+      pcl_state_t *pcs,
+      pcl_cid_hdr_t * pcid
 )
 {
     int             i;
 
-#ifdef PCL5EMONO
-    pcid->bits_per_index = 1;
-#endif
     if ((pcid->cspace >= pcl_cspace_num) || (pcid->encoding >= pcl_penc_num))
         return -1;
 
@@ -216,7 +214,11 @@ check_cid_hdr(
     for (i = 0; i < countof(pcid->bits_per_primary); i++) {
         if (pcid->bits_per_primary[i] == 0)
             pcid->bits_per_primary[i] = 8;
+	if ( pcs->personality == pcl5e && pcid->bits_per_primary[i] != 1 )
+	    dprintf( "pcl5e personality with color primaries\n" );
     }
+
+
 
     switch (pcid->encoding) {
 
@@ -284,7 +286,7 @@ install_cid_data(
     if ((cid.len = len) < 6)
         return e_Range;
     memcpy(&(cid.u.hdr), pbuff, sizeof(pcl_cid_hdr_t));
-    if ( ((code = check_cid_hdr(&(cid.u.hdr))) >= 0) && (len > 6) )
+    if ( ((code = check_cid_hdr(pcs, &(cid.u.hdr))) >= 0) && (len > 6) )
         code = build_cid_longform[pbuff[0]](&cid, pbuff);
     if (code < 0) {
         if (code == -1)
@@ -342,9 +344,8 @@ pcl_configure_image_data(
     pcl_state_t *       pcs
 )
 {
-#ifdef PCL5EMONO
-    return 0;
-#endif
+    if ( pcs->personality == pcl5e )
+	return 0;
     return install_cid_data( uint_arg(pargs),
                              arg_data(pargs),
                              pcs,
@@ -365,6 +366,8 @@ pcl_simple_color_space(
     pcl_state_t *       pcs
 )
 {
+    if ( pcs->personality == pcl5e )
+	return 0;
     return set_simple_color_mode(int_arg(pargs), pcs);
 }
 
@@ -389,6 +392,9 @@ set_view_illuminant(
     const byte *        pbuff = arg_data(pargs);
     float               x, y;
     gs_vector3          wht_pt;
+
+    if ( pcs->personality == pcl5e )
+	return 0;
 
     if (len != 8)
         return e_Range;
@@ -422,11 +428,17 @@ pcl_cid_IN(
     pcl_state_t *       pcs
 )
 {
-    static const byte   cid_GL2[6] = { (byte)pcl_cspace_RGB,
-                                       (byte)pcl_penc_indexed_by_plane,
-                                        3, 8, 8, 8 };
+    static const byte   cid_GL2_Color[6] = { (byte)pcl_cspace_RGB,
+					     (byte)pcl_penc_indexed_by_plane,
+					     3, 8, 8, 8 };
 
-    return install_cid_data(6, cid_GL2, pcs, false, true);
+    static const byte   cid_GL2_Mono[6] =  { (byte)pcl_cspace_RGB,
+					     (byte)pcl_penc_indexed_by_plane,
+					     3, 1, 1, 1 };
+
+    return install_cid_data(6,
+			    pcs->personality == pcl5e ? cid_GL2_Mono : cid_GL2_Color,
+			    pcs, false, true);
 }
 
 /*
@@ -445,7 +457,6 @@ pcl_cid_do_registration(
         'v', 'W',
         PCL_COMMAND("Configure Image Data", pcl_configure_image_data, pca_bytes | pca_in_rtl)
     },
-#ifndef PCL5EMONO
     {
         'r', 'U',
         PCL_COMMAND("Simple Color Mode", pcl_simple_color_space, pca_neg_ok | pca_in_rtl)
@@ -454,7 +465,6 @@ pcl_cid_do_registration(
         'i', 'W',
         PCL_COMMAND("Set Viewing Illuminant", set_view_illuminant, pca_bytes | pca_in_rtl)
     },
-#endif
     END_CLASS
     return 0;
 }

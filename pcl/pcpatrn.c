@@ -1266,6 +1266,9 @@ set_driver_configuration(
     uint count = uint_arg(pargs);
     driver_configuration_t *driver = (driver_configuration_t *)arg_data(pargs);
 
+    if ( pcs->personality == pcl5e )
+	return 0;
+
     if ( count != sizeof(driver_configuration_t) )
 	return e_Range;
 
@@ -1346,7 +1349,6 @@ pattern_do_registration(
                      pca_neg_ignore | pca_big_ignore | pca_in_rtl
                      )
     },
-#ifndef PCL5EMONO
     {
         'o', 'W',
         PCL_COMMAND( "Driver Configuration Command",
@@ -1354,7 +1356,6 @@ pattern_do_registration(
                      pca_bytes | pca_in_rtl
                      )
     },
-#endif
     END_CLASS
     return 0;
  
