@@ -51,9 +51,16 @@
  * The interface should be identical to that of sfxstdio.c.  However, in
  * order to allow both implementations to exist in the same executable, we
  * optionally use different names for sread_file, swrite_file, and
- * sappend_file (the public procedures).  See sfxboth.c.
+ * sappend_file, and omit sread_subfile (the public procedures).
+ * See sfxboth.c.
  */
-#ifndef KEEP_FILENO_API
+#ifdef KEEP_FILENO_API
+/* Provide prototypes to avoid compiler warnings. */
+void
+    sread_fileno(P4(stream *, FILE *, byte *, uint)),
+    swrite_fileno(P4(stream *, FILE *, byte *, uint)),
+    sappend_fileno(P4(stream *, FILE *, byte *, uint));
+#else
 #  define sread_fileno sread_file
 #  define swrite_fileno swrite_file
 #  define sappend_fileno sappend_file
@@ -139,6 +146,11 @@ sread_fileno(register stream * s, FILE * file, byte * buf, uint len)
 }
 
 /* Confine reading to a subfile.  This is primarily for reusable streams. */
+/*
+ * We omit this procedure if we are also include sfxstdio.c, which has an
+ * identical definition.
+ */
+#ifndef KEEP_FILENO_API
 int
 sread_subfile(stream *s, long start, long length)
 {
@@ -153,6 +165,7 @@ sread_subfile(stream *s, long start, long length)
     s->file_limit = length;
     return 0;
 }
+#endif
 
 /* Procedures for reading from a file */
 private int
