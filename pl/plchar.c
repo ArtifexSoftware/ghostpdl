@@ -390,20 +390,11 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	    { /* PCL5 format */
 	      params = cdata + 6;
 	      bitmap_data = cdata + 16;
-	      if ( !landscape ) {
-		  delta_x = (plfont->header[13] ? /* variable pitch */
-			     s16(params + 8) * 0.25 :
-			     s16(params) /*lsb*/ + u16(params + 4) /*width*/);
-		  lsb = s16(params);
-		  ascent = s16(params + 2);
-
-	      } else {
-		  delta_x = (plfont->header[13] ?     /* variable pitch */
-			     s16(params + 8) * 0.25 :
-			     s16(params + 2) );       /* ascent */
-		  lsb = s16(params + 2) /* ascent top offset */ - u16(params + 6); /* Height */
-		  ascent = -s16(params);
-	      }
+	      delta_x = (plfont->header[13] ? /* variable pitch */
+			 s16(params + 8) * 0.25 :
+			 s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+	      lsb = s16(params);
+	      ascent = s16(params + 2);
 	    }
 	  ienum = gs_image_enum_alloc(pgs->memory, "pl_bitmap_build_char");
 	  if ( ienum == 0 )
@@ -428,15 +419,41 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	    bold = 0;
 	  gs_make_identity(&image.ImageMatrix);
 	  if ( landscape ) {
+	      /* note that we don't even use the font metrics for lsb.
+                 It appears in landscape mode the bitmaps account for
+                 this, very peculiar */
 	      gs_matrix_rotate(&image.ImageMatrix, -90, &image.ImageMatrix);
-	      gs_matrix_translate(&image.ImageMatrix, image.Height, 0, &image.ImageMatrix);
+	      gs_matrix_translate(&image.ImageMatrix, -image.Height, image.Width, &image.ImageMatrix);
+	      /* for the landscape case apparently we adjust by the
+                 width + left offset and height - top offset.  Note
+                 the landscape left offset is always negative in pcl's
+                 coordinate system. */
+	      image.ImageMatrix.tx -= (image.Width + s16(params)) /* left offset */;
+	      image.ImageMatrix.ty += (s16(params+2) - image.Height);
 	  }
-	  image.ImageMatrix.tx -= lsb;
-	  image.ImageMatrix.ty += ascent;
+	  else {
+	      image.ImageMatrix.tx -= lsb;
+	      image.ImageMatrix.ty += ascent;
+	  }
+
 	  image.adjust = true;
 	  code = gs_setcharwidth(penum, pgs, delta_x, 0);
 	  if ( code < 0 )
 	    return code;
+#ifdef DEBUG	      
+	  if ( gs_debug_c('B') ) {
+	      int i;
+	      int pixels = round_up(image.Width,8) * image.Height;
+	      dprintf7("bitmap font data chr=%ld, width=%d, height=%d, lsb=%d, ascent=%d, top offset=%d left offset=%d\n",
+		       chr, image.Width, image.Height, lsb, ascent, s16(params + 2), s16(params));
+	      for ( i = 0; i < pixels; i++ ) {
+		  if ( i % round_up(image.Width, 8) == 0 )
+		      dprintf("\n");
+		  dprintf1( "%d", bitmap_data[i >> 3] & (128 >> (i & 7)) ? 1 : 0);
+	      }
+	      dprintf("\n");
+	  }
+#endif
 	  code = image_bitmap_char(ienum, &image, bitmap_data,
 				   (image.Width - bold + 7) >> 3, bold,
 				   bold_lines, pgs);
