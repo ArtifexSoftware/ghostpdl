@@ -2342,7 +2342,7 @@ UFST_INC_=$(UFST_INC_1) $(I_)$(UFST_ROOT)$(D)rts$(D)fco$(_I) $(I_)$(UFST_ROOT)$(
 
 gxfapi_h=$(GLSRC)gxfapi.h
 
-$(PSD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ)
+$(GLD)gxfapiu1.dev : $(LIB_MAK) $(ECHOGS_XE) $(GLOBJ)gxfapi.$(OBJ)
 	$(SETMOD) $(GLD)gxfapiu1 $(GLOBJ)gxfapi.$(OBJ)
 
 $(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c \
@@ -2355,8 +2355,8 @@ $(GLOBJ)gxfapi.$(OBJ) : $(GLSRC)gxfapi.c \
 
 # stub for UFST bridge support	:
 
-$(PSD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
-	$(SETMOD) $(PSD)gxfapiu
+$(GLD)gxfapiu.dev : $(LIB_MAK) $(ECHOGS_XE)
+	$(SETMOD) $(GLD)gxfapiu
 
 
 # ================ Platform-specific modules ================ #
