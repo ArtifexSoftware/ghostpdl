@@ -51,7 +51,21 @@ pdfdict begin
 /getencoding		% <base-encoding> <font-resource> getencoding <enc>
  { /Encoding knownoget
     { dup type /nametype eq
-       { exch pop findencoding
+       {
+         % The published PDF specification says the Encoding name
+         % "must be" one of the 3 predefined Encodings, implying
+         % that an error should occur if it isn't.  However, Acrobat
+         % Reader simply ignores unknown names, and since there are
+         % some buggy applications that rely on this, we do the same.
+
+         dup dup dup /MacRomanEncoding eq
+         exch /MacExpertEncoding eq or 
+         exch /WinAnsiEncoding eq or
+           { exch pop findencoding
+           }
+           { pop
+           }
+         ifelse
        }
        { dup /BaseEncoding knownoget
 	  { findencoding 3 -1 roll pop exch
