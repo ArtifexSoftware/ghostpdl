@@ -65,8 +65,6 @@ pcl_assign_font_id(pcl_args_t *pargs, pcl_state_t *pcs)
 	id_set_value(pcs->font_id, id);
 	/* set state to use id's not strings */
 	pcs->font_id_type = numeric_id;
-	/* decache the currently selected font */
-	pcl_decache_font(pcs, -1);
 	return 0;
 }
 
@@ -352,6 +350,7 @@ pcl_character_code(pcl_args_t *pargs, pcl_state_t *pcs)
 private int /* ESC ( s <count> W */
 pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 {	uint count = uint_arg(pargs);
+        uint font_data_size = count;
 	const byte *data = arg_data(pargs);
 	void *value;
 #define plfont ((pl_font_t *)value)
@@ -363,11 +362,24 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	  return 0;		/* font not found */
 	if ( count < 4 || data[2] > count - 2 )
 	  return e_Range;
-	if ( data[1] )
-	  { /**** HANDLE CONTINUATION ****/
-	      if_debug0('1', "continuation not implemented\n");
-	      return e_Unimplemented;
-	  }
+	if ( data[1] ) /* continuation */ {
+	    /* Check that we are continuing data - we know this is the
+               case if the previous download character command byte
+               count is smaller than the data indicated calculating
+               the space for the glyph */
+	    if ( (pcs->soft_font_char_data == 0) )
+		return e_Range;
+	    /* NB we only enable this for uncompressed bitmap
+               characters for now, since we don't have real world
+               examples for the other font file formats.  */
+	    if ( data[0] != pccd_bitmap && data[3] != 1 ) return e_Unimplemented;
+	    /* append the new data to the new object */
+	    memcpy(pcs->soft_font_char_data + pcs->soft_font_count, data + 2, count - 2);
+	    /* update the count - NB only one continuation is permitted at the present time */
+	    pcs->soft_font_count = 0;
+	    pcs->soft_font_char_data = 0;
+	    return 0;
+	}
 	format = (pcl_font_header_format_t)
                  ((const pcl_font_header_t *)plfont->header)->HeaderFormat;
 	switch ( data[0] )
@@ -384,8 +396,9 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	      switch ( data[3] )
 		{
 		case 1:		/* uncompressed bitmap */
-		  if ( count != 16 + ((width + 7) >> 3) * height )
-		    return e_Range;
+		    font_data_size = 16 + (((width + 7) >> 3) * height);
+		    if ( count > font_data_size )
+			return e_Range;
 		  break;
 		case 2:		/* compressed bitmap */
 		  { uint y = 0;
@@ -501,11 +514,23 @@ pcl_character_data(pcl_args_t *pargs, pcl_state_t *pcs)
 	/* Compressed bitmaps have already allocated and filled in */
 	/* the character data structure. */
 	if ( char_data == 0 )
-	  { char_data = gs_alloc_bytes(pcs->memory, count,
+	  { 
+	      char_data = gs_alloc_bytes(pcs->memory, font_data_size,
 				       "pcl_character_data");
-	    if ( char_data == 0 )
-	      return_error(e_Memory);
-	    memcpy(char_data, data, count);
+	      if ( char_data == 0 )
+		  return_error(e_Memory);
+	      memcpy(char_data, data, count);
+	      /* NB we only handle continuation for uncompressed bitmap characters */
+	      if ( data[0] == pccd_bitmap && 
+		   data[3] == 1 &&
+		   font_data_size > count /* expecting continuation */
+		   ) {
+		  pcs->soft_font_char_data = char_data;
+		  pcs->soft_font_count = count;
+	      } else {
+		  pcs->soft_font_char_data = 0;
+		  pcs->soft_font_count = 0;
+	      }
 	  }
 	return pl_font_add_glyph(plfont, pcs->character_code, char_data);
 #undef plfont
@@ -682,13 +707,15 @@ pcsfont_do_registration(
 }
 private void
 pcsfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
-{	if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) )
-	  { 
+{	
+    if ( type & (pcl_reset_initial | pcl_reset_printer | pcl_reset_overlay) ) { 
+            pcs->soft_font_char_data = 0;
+	    pcs->soft_font_count = 0;
 	    id_set_value(pcs->font_id, 0);
 	    pcs->character_code = 0;
 	    pcs->font_id_type = numeric_id;
-	    if ( (type & pcl_reset_printer) != 0 )
-	      { pcl_args_t args;
+	    if ( (type & pcl_reset_printer) != 0 ) { 
+		pcl_args_t args;
 	        arg_set_uint(&args, 1); /* delete temporary fonts */
 		pcl_font_control(&args, pcs);
 		if ( pcs->alpha_font_id.id != 0 )
@@ -697,7 +724,7 @@ pcsfont_do_reset(pcl_state_t *pcs, pcl_reset_type_t type)
 				 "pcsfont_do_reset");
 	      }
 	    pcs->alpha_font_id.id = 0;
-	  }
+    }
 }
 private int
 pcsfont_do_copy(pcl_state_t *psaved, const pcl_state_t *pcs,
