@@ -64,10 +64,12 @@ typedef struct gs_pattern2_instance_s {
     pattern2_instance_reloc_ptrs)
 
 #ifndef gx_path_DEFINED
+#define gx_path_DEFINED
 typedef struct gx_path_s gx_path;
 #endif
 
 #ifndef gx_device_DEFINED
+#define gx_device_DEFINED
 typedef struct gx_device_s gx_device;
 #endif
 
