@@ -4,5 +4,5 @@
 # sgidefs.mak
 # Definitions for compilation with the Silicon Graphics C compiler
 
-CCC         = $(CCLD) $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
+CC_         = $(CCLD) $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
 CCLEAFFLAGS = 

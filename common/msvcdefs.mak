@@ -46,7 +46,7 @@ RCOMP=$(RCDIR)\rc
 LINK=$(LINKDIR)\link
 MAKE=$(MAKEDIR)\nmake
 
-#CCC is defined ..\gs\msvccom.mak
+#CC_ is defined ..\gs\msvccom.mak
 #CCLEAFFLAGS is defined in msvc_top.mak, but more importantly CCLEAF is 
 # correctly redefined in msvccom.mak
 

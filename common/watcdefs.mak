@@ -7,5 +7,5 @@
 C_=
 O_=-fo=
 
-#CCC is defined elsewhere
+#CC_ is defined elsewhere
 CCLEAFFLAGS=-s

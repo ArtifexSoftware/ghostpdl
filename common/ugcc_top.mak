@@ -23,17 +23,17 @@ debug:
 
 # Configure for profiling
 pg-fp:
-	make GENOPT='' CFLAGS='-pg -O $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' CCLEAF='$(CCC)'
+	make GENOPT='' CFLAGS='-pg -O $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' CCLEAF='$(CC_)'
 pg-nofp:
-	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-pg -O -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 CCLEAF='$(CCC)' XOBJS='$(GLOBJDIR)/gsfemu.o'
+	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-pg -O -msoft-float $(GCFLAGS) $(XCFLAGS)' LDFLAGS='$(XLDFLAGS) -pg' FPU_TYPE=-1 CCLEAF='$(CC_)' XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for debugging and no FPU (crude timing configuration)
 nofp:
-	make GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 CCLEAF='$(CCC)' XOBJS='$(GLOBJDIR)/gsfemu.o'
+	make GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-g -O0 -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 CCLEAF='$(CC_)' XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Configure for optimization and no FPU (product configuration)
 product:
-	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-O -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 CCLEAF='$(CCC)' XOBJS='$(GLOBJDIR)/gsfemu.o'
+	make GENOPT='' GCFLAGS='-msoft-float $(GCFLAGS)' CFLAGS='-O -msoft-float $(GCFLAGS) $(XCFLAGS)' FPU_TYPE=-1 CCLEAF='$(CC_)' XOBJS='$(GLOBJDIR)/gsfemu.o'
 
 # Build the required GS library files.
 # It's simplest always to build the floating point emulator,

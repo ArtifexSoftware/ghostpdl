@@ -4,5 +4,5 @@
 # gccdefs.mak
 # Definitions for compilation with gcc.
 
-CCC=gcc $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
+CC_=gcc $(GENOPT) $(CFLAGS) $(XCFLAGS) -c
 CCLEAFFLAGS=-fomit-frame-pointer

@@ -47,7 +47,7 @@
 #
 #   1	MAKEFILE, <subsys>DIR for each subsystem, TARGET_XE
 #   2	(rule for building executable)
-#   3	CCC, CCLEAFFLAGS
+#   3	CC_, CCLEAFFLAGS
 #   4	D, OBJ, C_, I_, II, _I, O_, XE, CP_, RM_, RMN_
 #   5	CCLEAF, GS_XE, ECHOGS_XE, SETMOD, ADDMOD
 #   6	<subsys>_MAK
@@ -65,7 +65,7 @@
 #   7	pcl/pcl_top.mak
 
 # Define the C compiler invocation for leaf files.
-CCLEAF=$(CCC) $(CCLEAFFLAGS)
+CCLEAF=$(CC_) $(CCLEAFFLAGS)
 
 # Define the Ghostscript executable.
 # Currently it always lives in the GLOBJ directory.

@@ -36,7 +36,20 @@ WCVERSION=10.0
 DEVICE_DEVS=vga.dev djet500.dev ljet4.dev pcxmono.dev pcxgray.dev
 
 # Generic makefile
-!include $(PCLSRCDIR)\pcl_conf.mak
+
+# GS options
+#DEVICE_DEVS is defined in the platform-specific file.
+FEATURE_DEVS    = dps2lib.dev   \
+                  path1lib.dev  \
+                  patlib.dev    \
+                  rld.dev       \
+                  roplib.dev    \
+                  ttflib.dev    \
+                  colimlib.dev  \
+                  cielib.dev    \
+                  htxlib.dev    \
+                  devcmap.dev
+
 !include $(COMMONDIR)\watc_top.mak
 
 # Subsystems

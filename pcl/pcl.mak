@@ -45,7 +45,7 @@ PCLGEN      = $(PCLGENDIR)$(D)
 PCLOBJ      = $(PCLOBJDIR)$(D)
 PCLO_       = $(O_)$(PCLOBJ)
 
-PCLCCC  = $(CCC) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) $(C_)
+PCLCCC  = $(CC_) -I$(PCLSRCDIR) -I$(PCLGENDIR) -I$(PLSRCDIR) -I$(GLSRCDIR) $(C_)
 
 # Define the name of this makefile.
 PCL_MAK     = $(PCLSRC)pcl.mak
@@ -61,7 +61,7 @@ pcl.clean-not-config-clean:
 pcl.config-clean:
 	$(RM_) $(PCLOBJ)*.dev
 	$(RM_) $(PCLOBJ)devs.tr5
-	make -f $(GLSRCDIR)$(D)ugcclib.mak \
+	$(MAKE) -f $(GLSRCDIR)$(D)ugcclib.mak \
 	GLSRCDIR='$(GLSRCDIR)' GLGENDIR='$(GLGENDIR)' \
 	GLOBJDIR='$(GLOBJDIR)' clean
 
@@ -463,7 +463,7 @@ $(PCLOBJ)pccrd.$(OBJ): $(PCLSRC)pccrd.c \
 
 $(PCLOBJ)pccsbase.$(OBJ): $(PCLSRC)pccsbase.c   \
                           $(gx_h)               \
-                          $(math__h)             \
+                          $(math__h)            \
                           $(gstypes_h)          \
                           $(gsmatrix_h)         \
                           $(gsstruct_h)         \
@@ -490,7 +490,7 @@ $(PCLOBJ)pcfrgrnd.$(OBJ): $(PCLSRC)pcfrgrnd.c   \
 
 $(PCLOBJ)pcht.$(OBJ): $(PCLSRC)pcht.c   \
                       $(gx_h)           \
-                      $(math__h)         \
+                      $(math__h)        \
                       $(gsmemory_h)     \
                       $(gsstruct_h)     \
                       $(gsrefct_h)      \
@@ -512,7 +512,7 @@ $(PCLOBJ)pcident.$(OBJ): $(PCLSRC)pcident.c \
 
 $(PCLOBJ)pcindexed.$(OBJ): $(PCLSRC)pcindexed.c \
                            $(gx_h)              \
-                           $(math__h)            \
+                           $(math__h)           \
                            $(pcmtx3_h)          \
                            $(pccid_h)           \
                            $(pccsbase_h)        \
@@ -527,7 +527,7 @@ $(PCLOBJ)pclookup.$(OBJ): $(PCLSRC)pclookup.c   \
 
 $(PCLOBJ)pcmtx3.$(OBJ): $(PCLSRC)pcmtx3.c   \
                         $(gx_h)             \
-                        $(math__h)           \
+                        $(math__h)          \
                         $(gstypes_h)        \
                         $(pcommand_h)       \
                         $(pcmtx3_h)
@@ -562,7 +562,7 @@ $(PCLOBJ)pcpatrn.$(OBJ): $(PCLSRC)pcpatrn.c \
 
 $(PCLOBJ)pcpatxfm.$(OBJ): $(PCLSRC)pcpatxfm.c   \
                           $(gx_h)               \
-                          $(math__h)             \
+                          $(math__h)            \
                           $(pcpatrn_h)          \
                           $(pcfont_h)           \
                           $(pcpatxfm_h)
@@ -590,7 +590,7 @@ $(PCLOBJ)pcwhtindx.$(OBJ): $(PCLSRC)pcwhtindx.c \
 # Chapter 6
 $(PCLOBJ)rtgmode.$(OBJ):  $(PCLSRC)rtgmode.c    \
                           $(gx_h)               \
-                          $(math___h)            \
+                          $(math__h)            \
                           $(gsmatrix_h)         \
                           $(gscoord_h)          \
                           $(gsstate_h)          \
@@ -719,7 +719,7 @@ $(PCLOBJ)pcpage.$(OBJ): $(PCLSRC)pcpage.c   \
 # Some of these replace implementations in rtcursor.c.
 $(PCLOBJ)pcursor.$(OBJ): $(PCLSRC)pcursor.c \
                          $(std_h)           \
-                         $(math___h)         \
+                         $(math__h)         \
                          $(pcommand_h)      \
                          $(pcstate_h)       \
                          $(pcdraw_h)        \
