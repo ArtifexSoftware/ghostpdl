@@ -902,8 +902,9 @@ $error begin
   /position null def
 end
 % Define errordict similarly.  It has one entry per error name,
-%   plus handleerror.
-/errordict ErrorNames length 1 add dict
+%   plus handleerror.  However, some astonishingly badly written PostScript
+%   files require it to have at least one empty slot.
+/errordict ErrorNames length 2 add dict
 .forcedef		% errordict is local, systemdict is global
 .setglobal		% contents of errordict are global
 errordict begin
