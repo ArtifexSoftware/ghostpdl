@@ -34,10 +34,6 @@
 /* Structure descriptors */
 private_st_pl_font();
 
-/* Imported procedures */
-int gs_type42_get_metrics(gs_font_type42 *pfont, uint glyph_index,
-  float psbw[4]);
-
 /* Define accessors for unaligned, big-endian quantities. */
 #define u16(bptr) pl_get_uint16(bptr)
 #define s16(bptr) pl_get_int16(bptr)
@@ -55,7 +51,7 @@ pl_free_font(gs_memory_t *mem, void *plf, client_name_t cname)
 	  { if ( plfont->glyphs.table )
 	     { uint i;
 	       for ( i = plfont->glyphs.size; i > 0; )
-	         { void *data = plfont->glyphs.table[--i].data;
+                 { void *data = (void *)plfont->glyphs.table[--i].data;
 	           if ( data )
 		     gs_free_object(mem, data, cname);
 	         }  
@@ -405,7 +401,7 @@ pl_glyph_name(gs_font *pfont, gs_glyph glyph, gs_const_string *pstr)
         } else {
             char *mydata;
             /* and here's the tricky part */
-            byte *pascal_stringp = 
+            const byte *pascal_stringp = 
                 postp + 34 + (numGlyphs * 2);
             /* 0 - 257 lives in the mac table above */
             glyph_name_index -= 258;
@@ -450,12 +446,6 @@ pl_decode_glyph(gs_font *font,  gs_glyph glyph)
     return last_char;
 }
 
-/* Get a glyph from a known encoding.  We don't support this either. */
-private gs_glyph
-pl_known_encode(gs_char chr, int encoding_index)
-{	return gs_no_glyph;
-}
-
 /* ---------------- Public procedures ---------------- */
 
 /* character width */
@@ -469,7 +459,6 @@ int pl_font_char_metrics(const pl_font_t *plfont, const void *pgs, uint char_cod
 {
     return (*(plfont)->char_metrics)(plfont, pgs, char_code, metrics);
 }
-
 
 /* Allocate a font. */
 pl_font_t *
@@ -491,6 +480,7 @@ pl_alloc_font(gs_memory_t *mem, client_name_t cname)
 	    plfont->params.proportional_spacing = true;
 	    memset(plfont->character_complement, 0xff, 8);
 	    plfont->offsets.GC = plfont->offsets.GT = plfont->offsets.VT = -1;
+	    plfont->pts_per_inch = 72.0;   /* normal value */
 	  }
 	return plfont;
 }
@@ -586,6 +576,8 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	      }
 	      break;
 	    }
+          default:
+              return 0;
 	  }
 	if ( src->char_glyphs.table != 0 )
 	  {
@@ -620,7 +612,7 @@ pl_clone_font(const pl_font_t *src, gs_memory_t *mem, client_name_t cname)
 	    plfont->glyphs.skip = src->glyphs.skip;
 	    for ( i = 0; i < src->glyphs.size; i++ )
 	      {
-		byte *data = src->glyphs.table[i].data;
+		const byte *data = src->glyphs.table[i].data;
 		byte *char_data;
 		plfont->glyphs.table[i].glyph =
 		  src->glyphs.table[i].glyph;
