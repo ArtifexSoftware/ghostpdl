@@ -237,7 +237,8 @@ gx_device_make_struct_type(gs_memory_struct_type_t *st,
 
 /* Clone an existing device. */
 int
-gs_copydevice(gx_device ** pnew_dev, const gx_device * dev, gs_memory_t * mem)
+gs_copydevice2(gx_device ** pnew_dev, const gx_device * dev, bool keep_open,
+	       gs_memory_t * mem)
 {
     gx_device *new_dev;
     const gs_memory_struct_type_t *std = dev->stype;
@@ -281,9 +282,22 @@ gs_copydevice(gx_device ** pnew_dev, const gx_device * dev, gs_memory_t * mem)
     gx_device_init(new_dev, dev, mem, false);
     new_dev->stype = new_std;
     new_dev->stype_is_dynamic = new_std != std;
-    new_dev->is_open = false;
+    /*
+     * keep_open is very dangerous.  On the other hand, so is copydevice at
+     * present, since it just copies the bits without any regard to pointers
+     * (including self-pointers) that they may contain.  We will take care
+     * of this shortly, by forbidding copying of anything other than the
+     * device prototype unless the device is prepared to deal with the
+     * consequences.
+     */
+    new_dev->is_open = dev->is_open && keep_open;
     *pnew_dev = new_dev;
     return 0;
+}
+int
+gs_copydevice(gx_device ** pnew_dev, const gx_device * dev, gs_memory_t * mem)
+{
+    return gs_copydevice2(pnew_dev, dev, false, mem);
 }
 
 /* Open a device if not open already.  Return 0 if the device was open, */

@@ -560,6 +560,9 @@ currentdict /superexec .knownget {
 /== /= load def
 
 % The following procedures are documented.
+/copydevice {		% <device> copydevice <newdevice>
+  false .copydevice2
+} bind odef
 /finddevice {		% <devicename> finddevice <device>
   /devicedict .systemvar exch get
   dup 1 get null eq {

@@ -1,4 +1,4 @@
-/* Copyright (C) 1989, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1989, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -34,20 +34,23 @@
 #include "gxgetbit.h"
 #include "store.h"
 
-/* <device> copydevice <newdevice> */
+/* <device> <keep_open> .copydevice2 <newdevice> */
 private int
-zcopydevice(i_ctx_t *i_ctx_p)
+zcopydevice2(i_ctx_t *i_ctx_p)
 {
     os_ptr op = osp;
     gx_device *new_dev;
     int code;
 
-    check_read_type(*op, t_device);
-    code = gs_copydevice(&new_dev, op->value.pdevice, imemory);
+    check_read_type(op[-1], t_device);
+    check_type(*op, t_boolean);
+    code = gs_copydevice2(&new_dev, op[-1].value.pdevice, op->value.boolval,
+			  imemory);
     if (code < 0)
 	return code;
     new_dev->memory = imemory;
-    make_tav(op, t_device, icurrent_space | a_all, pdevice, new_dev);
+    make_tav(op - 1, t_device, icurrent_space | a_all, pdevice, new_dev);
+    pop(1);
     return 0;
 }
 
@@ -426,7 +429,7 @@ zsetdevice(i_ctx_t *i_ctx_p)
 
 const op_def zdevice_op_defs[] =
 {
-    {"1copydevice", zcopydevice},
+    {"1.copydevice2", zcopydevice2},
     {"0currentdevice", zcurrentdevice},
     {"1.devicename", zdevicename},
     {"0.doneshowpage", zdoneshowpage},
