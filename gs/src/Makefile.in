@@ -196,7 +196,7 @@ CC=@CC@
 CCLD=$(CC)
 
 # Define the default gcc flags.
-GCFLAGS=@GCFLAGS@
+GCFLAGS=@GCFLAGS@ @CFLAGS@
 
 # Define the added flags for standard, debugging, profiling 
 # and shared object builds.
@@ -233,7 +233,7 @@ CFLAGS=$(CFLAGS_STANDARD) $(GCFLAGS) $(XCFLAGS)
 # XLDFLAGS can be set from the command line.
 XLDFLAGS=
 
-LDFLAGS=$(XLDFLAGS)
+LDFLAGS=@LDFLAGS@ $(XLDFLAGS)
 
 # Define any extra libraries to link into the executable.
 # ISC Unix 2.2 wants -linet.
