@@ -817,18 +817,20 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
     if (embed == FONT_EMBED_STANDARD) {
 	pdf_standard_font_t *psf = &psfa[index];
 
-	if (!psf->pdfont ||
-	    !pdf_is_compatible_encoding(pdev, psf->pdfont, font,
+	if (psf->pdfont == NULL ||
+		!pdf_is_compatible_encoding(pdev, psf->pdfont, font,
 			glyphs, chars, num_chars)) {
-	    code = pdf_font_std_alloc(pdev, &psf->pdfont, base_font->id,
+	    code = pdf_font_std_alloc(pdev, ppdfont, (psf->pdfont == NULL), base_font->id,
 				      (gs_font_base *)base_font, index);
 	    if (code < 0)
 		return code;
-	    psf->pdfont->u.simple.BaseEncoding = pdf_refine_encoding_index(
+	    if (psf->pdfont == NULL)
+		psf->pdfont = *ppdfont;
+	    (*ppdfont)->u.simple.BaseEncoding = pdf_refine_encoding_index(
 		((const gs_font_base *)base_font)->nearest_encoding_index, true);
 	    code = 1;
-	}
-	*ppdfont = psf->pdfont;
+	} else
+	    *ppdfont = psf->pdfont;
 	return code;
     } 
 
@@ -911,7 +913,6 @@ pdf_make_font_resource(gx_device_pdf *pdev, gs_font *font,
 	 */
 	BaseEncoding = pdf_refine_encoding_index(
 	    ((const gs_font_base *)base_font)->nearest_encoding_index, false);
-    } else {
     }
     if ((code = pdf_font_descriptor_alloc(pdev, &pfd,
 					  (gs_font_base *)base_font,

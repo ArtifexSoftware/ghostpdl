@@ -177,7 +177,8 @@ pdf_end_fontfile(gx_device_pdf *pdev, pdf_data_writer_t *pdw)
  */
 int
 pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
-		    gs_font_base *font, bool is_standard, bool orig_name)
+		    gs_font_base *font, const gs_matrix *orig_matrix, 
+		    bool is_standard, bool orig_name)
 {
     gs_memory_t *mem = pdev->pdf_memory;
     gs_font *copied;
@@ -192,7 +193,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 
     if (pbfont == 0)
 	return_error(gs_error_VMerror);
-    code = gs_copy_font((gs_font *)font, mem, &copied);
+    code = gs_copy_font((gs_font *)font, orig_matrix, mem, &copied);
     if (code < 0)
 	goto fail;
     memset(pbfont, 0, sizeof(*pbfont));
@@ -249,7 +250,7 @@ pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
 	if (is_standard)
 	    complete = copied, code = 0;
 	else
-	    code = gs_copy_font((gs_font *)font, mem, &complete);
+	    code = gs_copy_font((gs_font *)font, &font->FontMatrix, mem, &complete);
 	if (code >= 0)
 	    code = gs_copy_font_complete((gs_font *)font, complete);
 	if (pbfont->num_glyphs < 0) { /* Type 1 */

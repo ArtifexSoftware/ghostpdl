@@ -74,7 +74,8 @@ typedef struct pdf_base_font_s pdf_base_font_t;
  * a complete one, and adding glyphs or Encoding entries is not allowed.
  */
 int pdf_base_font_alloc(gx_device_pdf *pdev, pdf_base_font_t **ppbfont,
-			gs_font_base *font, bool complete, bool orig_name);
+		    gs_font_base *font, const gs_matrix *orig_matrix, 
+		    bool is_standard, bool orig_name);
 
 /*
  * Return a reference to the name of a base font.  This name is guaranteed

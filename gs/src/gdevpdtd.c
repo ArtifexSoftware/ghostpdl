@@ -216,7 +216,7 @@ pdf_font_descriptor_alloc(gx_device_pdf *pdev, pdf_font_descriptor_t **ppfd,
 {
     pdf_font_descriptor_t *pfd;
     pdf_base_font_t *pbfont;
-    int code = pdf_base_font_alloc(pdev, &pbfont, font, false, !embed);
+    int code = pdf_base_font_alloc(pdev, &pbfont, font, &font->FontMatrix, false, !embed);
 
     if (code < 0)
 	return code;

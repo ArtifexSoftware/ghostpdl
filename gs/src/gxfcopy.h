@@ -27,6 +27,11 @@
 typedef struct gs_font_s gs_font;
 #endif
 
+#ifndef gs_matrix_DEFINED
+#  define gs_matrix_DEFINED
+typedef struct gs_matrix_s gs_matrix;
+#endif
+
 /*
  * Copy a font, aside from its glyphs.  Note that PostScript-specific data
  * -- that is, data that do not appear in the C structure that is the
@@ -60,7 +65,8 @@ typedef struct gs_font_s gs_font;
  * The resulting font supports querying (font_info, glyph_info, etc.) and
  * rendering (glyph_outline, etc.), but it does not support make_font.
  */
-int gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new);
+int gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, 
+		    gs_memory_t *mem, gs_font **pfont_new);
 
 /*
  * Copy a glyph, including any sub-glyphs.  The destination font ("copied"

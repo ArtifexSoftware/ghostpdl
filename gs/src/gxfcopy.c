@@ -1502,7 +1502,7 @@ copy_font_cid0(gs_font *font, gs_font *copied)
 	    if (code < 0)
 		goto fail;
 	}
-	code = gs_copy_font(subfont, copied->memory, &subcopy);
+	code = gs_copy_font(subfont, &subfont->FontMatrix, copied->memory, &subcopy);
 	if (code < 0)
 	    goto fail;
 	subcopy1 = (gs_font_type1 *)subcopy;
@@ -1716,7 +1716,7 @@ private const gs_font_procs copied_font_procs = {
  * Copy a font, aside from its glyphs.
  */
 int
-gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
+gs_copy_font(gs_font *font, const gs_matrix *orig_matrix, gs_memory_t *mem, gs_font **pfont_new)
 {
     gs_memory_type_ptr_t fstype = gs_object_type(font->memory, font);
     uint fssize = gs_struct_type_size(fstype);
@@ -1827,6 +1827,7 @@ gs_copy_font(gs_font *font, gs_memory_t *mem, gs_font **pfont_new)
     copied->is_resource = false;
     gs_notify_init(&copied->notify_list, mem);
     copied->base = copied;
+    copied->FontMatrix = *orig_matrix;
     copied->client_data = cfdata;
     copied->procs = copied_font_procs;
     copied->procs.encode_char = procs->encode_char;

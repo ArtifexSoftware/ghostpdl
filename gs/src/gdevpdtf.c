@@ -250,7 +250,7 @@ scan_for_standard_fonts(gx_device_pdf *pdev, const gs_font_dir *dir)
 
 	    if (i >= 0 && pdf_standard_fonts(pdev)[i].pdfont == 0) {
 		pdf_font_resource_t *pdfont;
-		int code = pdf_font_std_alloc(pdev, &pdfont, orig->id, obfont,
+		int code = pdf_font_std_alloc(pdev, &pdfont, true, orig->id, obfont,
 					      i);
 
 		if (code < 0)
@@ -678,23 +678,26 @@ pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 /* Allocate a standard (base 14) font resource. */
 int
 pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		   gs_id rid, gs_font_base *pfont, int index)
+		   bool is_original, gs_id rid, gs_font_base *pfont, int index)
 {
     pdf_font_resource_t *pdfont;
     int code = font_resource_encoded_alloc(pdev, &pdfont, rid, pfont->FontType,
 					   pdf_write_contents_std);
     const pdf_standard_font_info_t *psfi = &standard_font_info[index];
     pdf_standard_font_t *psf = &pdf_standard_fonts(pdev)[index];
+    gs_matrix *orig_matrix = (is_original ? &pfont->FontMatrix : &psf->orig_matrix);
 
     if (code < 0 ||
-	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, true, true)) < 0
+	(code = pdf_base_font_alloc(pdev, &pdfont->base_font, pfont, orig_matrix, true, true)) < 0
 	)
 	return code;
     pdfont->BaseFont.data = (byte *)psfi->fname; /* break const */
     pdfont->BaseFont.size = strlen(psfi->fname);
     set_is_MM_instance(pdfont, pfont);
-    psf->pdfont = pdfont;
-    psf->orig_matrix = pfont->FontMatrix;
+    if (is_original) {
+	psf->pdfont = pdfont;
+	psf->orig_matrix = pfont->FontMatrix;
+    }
     *ppfres = pdfont;
     return 0;
 }

@@ -309,7 +309,7 @@ int pdf_font_type0_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 int pdf_font_type3_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			 pdf_font_write_contents_proc_t write_contents);
 int pdf_font_std_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
-		       gs_id rid, gs_font_base *pfont, int index);
+		   bool is_original, gs_id rid, gs_font_base *pfont, int index);
 int pdf_font_simple_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
 			  gs_id rid, pdf_font_descriptor_t *pfd);
 int pdf_font_cidfont_alloc(gx_device_pdf *pdev, pdf_font_resource_t **ppfres,
