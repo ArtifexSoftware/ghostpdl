@@ -826,6 +826,12 @@ def
   } if setcolor
 } odef
 
+/endjob { % - endjob -
+  clear cleardictstack
+  serverdict /.jobsave get dup null eq { pop } { restore } ifelse
+  serverdict /.jobsave null put
+} odef
+
 % Extend image and imagemask to accept dictionaries.
 % We must create .imagetypes and .imagemasktypes outside level2dict,
 % and leave some extra space because we're still in Level 1 mode.
