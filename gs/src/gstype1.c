@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -44,9 +44,6 @@
 
 /* ------ Main interpreter ------ */
 
-/* Define a pointer to the charstring interpreter stack. */
-typedef fixed *cs_ptr;
-
 /*
  * Continue interpreting a Type 1 charstring.  If str != 0, it is taken as
  * the byte string to interpret.  Return 0 on successful completion, <0 on
@@ -76,8 +73,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
 #define cs5 cstack[5]
 #define ics5 fixed2int_var(cs5)
     cs_ptr csp;
-
-#define clear csp = cstack - 1
+#define clear CLEAR_CSTACK(cstack, csp)
     ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     register const byte *cip;
     register crypt_state state;
@@ -99,7 +95,7 @@ gs_type1_interpret(gs_type1_state * pcis, const gs_const_string * str,
     }
     sppath = pcis->path;
     s.pcis = pcis;
-    init_cstack(cstack, csp, pcis);
+    INIT_CSTACK(cstack, csp, pcis);
 
     if (str == 0)
 	goto cont;

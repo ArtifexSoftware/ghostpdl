@@ -1,4 +1,4 @@
-/* Copyright (C) 1996, 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -38,9 +38,6 @@
  *	Counter masks (but they are parsed correctly)
  *	'random' operator
  */
-
-/* Define a pointer to the charstring interpreter stack. */
-typedef fixed *cs_ptr;
 
 /* ------ Internal routines ------ */
 
@@ -133,8 +130,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
     gs_op1_state s;
     fixed cstack[ostack_size];
     cs_ptr csp;
-
-#define clear csp = cstack - 1
+#define clear CLEAR_CSTACK(cstack, csp)
     ip_state *ipsp = &pcis->ipstack[pcis->ips_count - 1];
     register const byte *cip;
     register crypt_state state;
@@ -164,7 +160,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_const_string * str,
     }
     sppath = pcis->path;
     s.pcis = pcis;
-    init_cstack(cstack, csp, pcis);
+    INIT_CSTACK(cstack, csp, pcis);
 
     if (str == 0)
 	goto cont;

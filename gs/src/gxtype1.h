@@ -1,4 +1,4 @@
-/* Copyright (C) 1990, 1995, 1996, 1997, 1998 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1990, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -232,15 +232,23 @@ extern_st(st_gs_type1_state);
 
 /* ------ Shared Type 1 / Type 2 interpreter fragments ------ */
 
+/* Define a pointer to the charstring interpreter stack. */
+typedef fixed *cs_ptr;
+
+/* Clear the operand stack. */
+/* The cast avoids compiler warning about a "negative subscript." */
+#define CLEAR_CSTACK(cstack, csp)\
+  (csp = (cs_ptr)(cstack) - 1)
+
 /* Copy the operand stack out of the saved state. */
-#define init_cstack(cstack, csp, pcis)\
+#define INIT_CSTACK(cstack, csp, pcis)\
   BEGIN\
     if ( pcis->os_count == 0 )\
-      csp = cstack - 1;\
-    else\
-      { memcpy(cstack, pcis->ostack, pcis->os_count * sizeof(fixed));\
-        csp = &cstack[pcis->os_count - 1];\
-      }\
+      CLEAR_CSTACK(cstack, csp);\
+    else {\
+      memcpy(cstack, pcis->ostack, pcis->os_count * sizeof(fixed));\
+      csp = &cstack[pcis->os_count - 1];\
+    }\
   END
 
 /* Decode a 1-byte number. */
