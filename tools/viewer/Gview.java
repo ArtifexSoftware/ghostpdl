@@ -832,7 +832,7 @@ public class Gview
 
     /** setting page count so that multiple views can share the same page count result
      */
-    protected void setPageCount( int pageCount ) {
+    protected synchronized void setPageCount( int pageCount ) {
 	totalPageCount = pageCount;
 	if ( totalPageCount < 0 ) {
 	    menuPageNum.setLabel("page# " + pageNumber + " of ?");
@@ -862,12 +862,14 @@ public class Gview
 	pickle.setRes(desiredRes, desiredRes);
 
 	// set the total page count as unknown for now 
-	setPageCount(-1);
 	if (getPageCount == true) {
+	    setPageCount(-1);
 	    // get the total page count for the job
 	    pageCounter.setJob(args[0]);  
 	    pageCounter.startCountingPages();
 	}
+	else
+	    setPageCount(totalPageCount);
 
 	pageNumber = 1;
 	pickle.setPageNumber(pageNumber);
