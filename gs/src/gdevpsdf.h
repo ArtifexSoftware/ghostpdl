@@ -231,7 +231,7 @@ typedef struct gx_device_psdf_s {
 /* st_device_psdf is never instantiated per se, but we still need to */
 /* extern its descriptor for the sake of subclasses. */
 extern_st(st_device_psdf);
-#define public_st_device_psdf()	/* in gdevpsdf.c */\
+#define public_st_device_psdf()	/* in gdevpsdu.c */\
   BASIC_PTRS(device_psdf_ptrs) {\
     GC_OBJ_ELT2(gx_device_psdf, params.ColorImage.ACSDict,\
 		params.ColorImage.Dict),\
@@ -298,7 +298,7 @@ typedef struct psdf_binary_writer_s {
     gx_device_psdf *dev;	/* may be unused */
 } psdf_binary_writer;
 extern_st(st_psdf_binary_writer);
-#define public_st_psdf_binary_writer() /* in gdevpsdf.c */\
+#define public_st_psdf_binary_writer() /* in gdevpsdu.c */\
   gs_public_st_ptrs4(st_psdf_binary_writer, psdf_binary_writer,\
     "psdf_binary_writer", psdf_binary_writer_enum_ptrs,\
     psdf_binary_writer_reloc_ptrs, A85E, target, strm, dev)
