@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.7 2002/07/04 13:34:29 giles Exp $
+    $Id: jbig2_page.c,v 1.8 2002/07/04 16:33:44 giles Exp $
 */
 
 #include <stdlib.h>
@@ -190,7 +190,7 @@ jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_d
  * return an image structure pointer, even though the function
  * name refers to a page; the page structure is private.
  **/
-Jbig2Image *jbig2_get_page(Jbig2Ctx *ctx)
+Jbig2Image *jbig2_page_out(Jbig2Ctx *ctx)
 {
     int index;
 

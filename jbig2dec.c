@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.25 2002/06/22 10:08:43 giles Exp $
+    $Id: jbig2dec.c,v 1.26 2002/07/04 16:33:44 giles Exp $
 */
 
 #include <stdio.h>
@@ -228,7 +228,7 @@ main (int argc, char **argv)
       int n_bytes = fread(buf, 1, sizeof(buf), f);
       if (n_bytes <= 0)
 	break;
-      jbig2_write(ctx, buf, n_bytes);
+      jbig2_data_in(ctx, buf, n_bytes);
     }
   fclose(f);
 
@@ -243,7 +243,7 @@ main (int argc, char **argv)
 	  int n_bytes = fread(buf, 1, sizeof(buf), f_page);
 	  if (n_bytes <= 0)
 	    break;
-	  jbig2_write(ctx, buf, n_bytes);
+	  jbig2_data_in(ctx, buf, n_bytes);
 	}
       fclose(f_page);
       jbig2_global_ctx_free(global_ctx);
@@ -253,7 +253,7 @@ main (int argc, char **argv)
   {
     Jbig2Image *image;
     
-    while ((image = jbig2_get_page(ctx)) != NULL) {
+    while ((image = jbig2_page_out(ctx)) != NULL) {
       write_page_image(&params, image);
       jbig2_release_page(ctx, image);
     }

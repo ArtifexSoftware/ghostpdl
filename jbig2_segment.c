@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.10 2002/07/04 13:34:29 giles Exp $
+    $Id: jbig2_segment.c,v 1.11 2002/07/04 16:33:44 giles Exp $
 */
 
 #include <stdlib.h> /* size_t */
@@ -127,7 +127,7 @@ jbig2_get_region_segment_info(Jbig2RegionSegmentInfo *info,
   info->flags = segment_data[16];
 }
 
-int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
+int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
 			 const uint8_t *segment_data)
 {
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,

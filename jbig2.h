@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.11 2002/07/03 19:43:21 giles Exp $
+    $Id: jbig2.h,v 1.12 2002/07/04 16:33:44 giles Exp $
 */
 
 #ifdef __cplusplus
@@ -81,12 +81,12 @@ Jbig2GlobalCtx *jbig2_make_global_ctx (Jbig2Ctx *ctx);
 void jbig2_global_ctx_free (Jbig2GlobalCtx *global_ctx);
 
 /* submit data to the decoder */
-int jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size);
+int jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size);
 
 /* get the next available decoded page image */
-Jbig2Image *jbig2_get_page(Jbig2Ctx *ctx);
+Jbig2Image *jbig2_page_out (Jbig2Ctx *ctx);
 /* mark a returned page image as read */
-int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image);
+int jbig2_release_page (Jbig2Ctx *ctx, Jbig2Image *image);
 
 /* segment header routines */
 
@@ -94,15 +94,15 @@ struct _Jbig2Segment {
   uint32_t number;
   uint8_t flags;
   uint32_t page_association;
-  int data_length;
+  size_t data_length;
   int referred_to_segment_count;
-  int32_t *referred_to_segments;
+  uint32_t *referred_to_segments;
   void *result;
 };
 
 Jbig2Segment *jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
 			    size_t *p_header_size);
-int jbig2_write_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
+int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
 			 const uint8_t *segment_data);
 void jbig2_free_segment (Jbig2Ctx *ctx, Jbig2Segment *segment);
 

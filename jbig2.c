@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.c,v 1.11 2002/07/04 13:34:29 giles Exp $
+    $Id: jbig2.c,v 1.12 2002/07/04 16:33:44 giles Exp $
 */
 
 #include <stdint.h>
@@ -66,7 +66,7 @@ jbig2_realloc (Jbig2Allocator *allocator, void *p, size_t size)
 }
 
 int
-jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int seg_idx,
+jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int segment_number,
 	     const char *fmt, ...)
 {
   char buf[1024];
@@ -79,7 +79,7 @@ jbig2_error (Jbig2Ctx *ctx, Jbig2Severity severity, int seg_idx,
   va_end (ap);
   if (n < 0 || n == sizeof(buf))
     strcpy (buf, "jbig2_error: error in generating error string");
-  code = ctx->error_callback (ctx->error_callback_data, buf, severity, seg_idx);
+  code = ctx->error_callback (ctx->error_callback_data, buf, severity, segment_number);
   if (severity == JBIG2_SEVERITY_FATAL)
     code = -1;
   return code;
@@ -144,7 +144,7 @@ jbig2_get_int16 (const byte *buf)
 
 
 /**
- * jbig2_write: submit data for decoding
+ * jbig2_data_in: submit data for decoding
  * @ctx: The jbig2dec decoder context
  * @data: a pointer to the data buffer
  * @size: the size of the data buffer in bytes
@@ -155,7 +155,7 @@ jbig2_get_int16 (const byte *buf)
  * Return code: 0 on success
  **/
 int
-jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
+jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 {
   const size_t initial_buf_size = 1024;
 
@@ -274,7 +274,7 @@ jbig2_write (Jbig2Ctx *ctx, const unsigned char *data, size_t size)
 	  segment = ctx->segments[ctx->segment_index];
 	  if (segment->data_length > ctx->buf_wr_ix - ctx->buf_rd_ix)
 	    return 0;
-	  code = jbig2_write_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
+	  code = jbig2_parse_segment(ctx, segment, ctx->buf + ctx->buf_rd_ix);
 	  ctx->buf_rd_ix += segment->data_length;
 //	  jbig2_free_segment(ctx, segment);
 //	  ctx->segments[ctx->segment_index] = NULL;
