@@ -54,7 +54,7 @@ extern HWND hwndtext;
 
 /****** SINGLE-INSTANCE HACK ******/
 /* GLOBAL WARNING */
-GSDLL_CALLBACK pgsdll_callback;	/* callback for messages and stdio to caller */
+GSDLL_CALLBACK pgsdll_callback = NULL;	/* callback for messages and stdio to caller */
 /****** SINGLE-INSTANCE HACK ******/
 
 
