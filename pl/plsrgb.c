@@ -262,16 +262,12 @@ pl_read_device_CRD(gs_cie_render *pcrd, gs_state *pgs)
     return (code == 0);
 }
 
-void
-pl_free_crd(gs_state *pgs)
-{
-    return;
-}
 
 /* statics to see if the crd has been built, in practice the crd is a
    singleton. */
 gs_cie_render *pl_pcrd;
 bool pl_pcrd_built = false; /* the crd has been built */
+
 
 int
 pl_build_crd(gs_state *pgs)
@@ -384,3 +380,22 @@ pl_setSRGB(gs_state *pgs, float r, float g, float b)
 }
     
         
+void
+pl_free_srgb(gs_state *pgs)
+{
+    if (pl_pcrd_built) {
+        gs_free_object(gs_state_memory(pgs), pl_pcrd, "pl_free_srgb");
+        pl_pcrd_built = false;
+    }
+    if (pl_pcs_built) {
+        gs_free_object(gs_state_memory(pgs), pl_pcs->params.abc, "pl_free_srgb");
+        gs_free_object(gs_state_memory(pgs), pl_pcs, "pl_free_srgb");
+        pl_pcs_built = false;
+    }
+    if (pl_pcs2_built) {
+        gs_free_object(gs_state_memory(pgs), pl_pcs2->params.abc, "pl_free_srgb");
+        gs_free_object(gs_state_memory(pgs), pl_pcs2, "pl_free_srgb");
+        pl_pcs2_built = false;
+    }
+    return;
+}

@@ -318,29 +318,38 @@ px_image_color_space(gs_color_space *pcs, gs_image_t *pim,
 {	
 
     int depth = params->depth;
+    gs_color_space base_pcs;
+    gs_color_space *pbase_pcs;
+    bool cie_space = false;
     switch ( params->color_space ) {
     case eGray:
-	gs_cspace_init_DeviceGray(pgs->memory, pcs);
+	gs_cspace_init_DeviceGray(pgs->memory, &base_pcs);
 	break;
     case eRGB:
-        gs_cspace_init_DeviceRGB(pgs->memory, pcs);
+        gs_cspace_init_DeviceRGB(pgs->memory, &base_pcs);
         break;
     case eSRGB:
     case eCRGB:
-        if ( pl_cspace_init_SRGB(&pcs, pgs) < 0 )
+        if ( pl_cspace_init_SRGB(&pbase_pcs, pgs) < 0 )
             /* should not happen */
             return_error(pgs->memory, errorInsufficientMemory);
+        cie_space = true;
 	break;
     default:
 	return_error(pgs->memory, errorIllegalAttributeValue);
     }
+
     if ( params->indexed ) { 
-	pcs->params.indexed.base_space.type = pcs->type;
+        memmove(&pcs->params.indexed.base_space, 
+                (cie_space ? pbase_pcs : &base_pcs),
+                sizeof(pcs->params.indexed.base_space));
+	gs_cspace_init(pcs, &gs_color_space_type_Indexed, pgs->memory);
 	pcs->params.indexed.hival = (1 << depth) - 1;
 	pcs->params.indexed.lookup.table.data = palette->data;
 	pcs->params.indexed.lookup.table.size = palette->size;
 	pcs->params.indexed.use_proc = 0;
-	pcs->type = &gs_color_space_type_Indexed;
+    } else {
+        *pcs = (cie_space ? *pbase_pcs : base_pcs);
     }
     gs_image_t_init(pim, pcs);
     pim->ColorSpace = pcs;

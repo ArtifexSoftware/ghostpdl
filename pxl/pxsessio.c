@@ -33,6 +33,7 @@
 #include "gxpcolor.h"
 #include "gxfcache.h"
 #include "gxdevice.h"
+#include "gxstate.h"
 #include "pjtop.h"
 #include "pllfont.h"
 #include "plsrgb.h"
@@ -195,13 +196,20 @@ px_end_session_cleanup(px_state_t *pxs)
             (gstate_pattern_cache(pxs->pgs)->free_all)(gstate_pattern_cache(pxs->pgs));
             gs_free_object(pxs->memory, gstate_pattern_cache(pxs->pgs)->tiles, "px_end_session_cleanup(tiles)");
             gs_free_object(pxs->memory, gstate_pattern_cache(pxs->pgs), "px_end_session_cleanup(struct)");
-            gstate_set_pattern_cache(pxs->pgs, 0);
+            {
+                gs_state *pgs = pxs->pgs;
+                while (pgs) {
+                    gstate_set_pattern_cache(pgs, 0);
+                    pgs = gs_state_saved(pgs);
+                }
+            }
         }
 	/* We believe that streams do *not* persist across sessions.... */
 	px_dict_release(&pxs->stream_dict);
 	/* delete downloaded fonts on end of session */
 	px_dict_release(&pxs->font_dict);
-        pl_free_crd(pxs->pgs);
+        pl_free_srgb(pxs->pgs);
+        pxpcl_release();
 }
 
 /* ---------------- Non-operator procedures ---------------- */

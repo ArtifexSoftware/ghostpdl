@@ -64,3 +64,15 @@ pxPassthrough(px_args_t *par, px_state_t *pxs)
         return code;
     return pxPassThrough;
 }
+
+void
+pxpcl_release(void)
+{
+    if (global_pcs) {
+        pcl_grestore(global_pcs);
+        gs_grestore_only(global_pcs->pgs);
+	gs_nulldevice(global_pcs->pgs);
+        pcl_do_resets(global_pcs, pcl_reset_permanent);
+        global_pcs = NULL;
+    }
+}
