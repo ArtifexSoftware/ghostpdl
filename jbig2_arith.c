@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_arith.c,v 1.7 2002/02/16 07:25:36 raph Exp $
+    $Id: jbig2_arith.c,v 1.8 2002/06/05 00:15:57 raph Exp $
 */
 
 #include <stdio.h>
@@ -41,25 +41,14 @@ struct _Jbig2ArithState {
 /*
   A note on the "software conventions".
 
-  The spec (in both draft and final versions) gives a "software
-  conventions" version of the arithmetic decoding procedure. It is not
-  normative, which is good, because it's wrong.
-
-  The value of C in the "software conventions" is nominally equal to
-  -C + (0x10000 >> CT) + (A << 16). However, the leftmost branch of
-  Figure G.3 gives a very wrong value for C, based on this equation.
-  Changing the (B << 9) to (B << 8) restores the invariant, and gives
-  correct decoding of the H.2 test sequence. However, the decoding of
-  the 042_4.jb2 test bitstream is incorrect, even with this change.
-  Changing the "Chigh < A?" predicate in Figure G.2 to "C < (A << 16)"
-  restores correct decoding for bitstream, but I'm not sure this is
-  100% correct.
+  Previously, I had misinterpreted the spec, and had thought that the
+  spec's description of the "software convention" was wrong. Now I
+  believe that this code is both correct and matches the spec, with
+  SOFTWARE_CONVENTION defined or not. Thanks to William Rucklidge for
+  the clarification.
 
   In any case, my benchmarking indicates no speed difference at all.
-  Therefore, for now we will just use the normative version. If
-  somebody wants to figure out how to do the software conventions
-  version correctly, and can establish that it really does improve
-  performance, it might be worthwhile to revisit.
+  Therefore, for now we will just use the normative version.
 
  */
 
@@ -68,13 +57,8 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 {
   byte B;
 
-  if (as->next_word_bytes == 0)
-    {
-      Jbig2WordStream *ws = as->ws;
-      as->next_word = ws->get_next_word (ws, as->offset);
-      as->offset += 4;
-      as->next_word_bytes = 4;
-    }
+  /* invariant: as->next_word_bytes > 0 */
+
   /* Figure G.3 */
   B = (as->next_word >> 24) & 0xFF;
   if (B == 0xFF)
@@ -104,10 +88,9 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 	      printf ("read %02x (a)\n", B);
 #endif
 #ifdef SOFTWARE_CONVENTION
-	      /* Note: this is what the spec says. The spec is wrong. */
-	      as->C += 0xFE00 - (B << 9);
+	      as->C += 0xFE00 - (B1 << 9);
 #else
-	      as->C += 0xFF00;
+	      as->C += B1 << 9;
 #endif
 	      as->CT = 7;
 	      as->next_word_bytes = 4;
@@ -135,10 +118,9 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 #endif
 
 #ifdef SOFTWARE_CONVENTION
-	      /* Note: this is what the spec says. The spec is wrong. */
-	      as->C += 0xFE00 - (B << 9);
+	      as->C += 0xFE00 - (B1 << 9);
 #else
-	      as->C += 0xFF00;
+	      as->C += (B1 << 9);
 #endif
 	      as->CT = 7;
 	    }
@@ -149,14 +131,23 @@ jbig2_arith_bytein (Jbig2ArithState *as)
 #ifdef DEBUG
       printf ("read %02x\n", B);
 #endif
+      as->CT = 8;
+      as->next_word <<= 8;
+      as->next_word_bytes--;
+      if (as->next_word_bytes == 0)
+	{
+	  Jbig2WordStream *ws = as->ws;
+
+	  as->next_word = ws->get_next_word (ws, as->offset);
+	  as->offset += 4;
+	  as->next_word_bytes = 4;
+	}
+      B = (as->next_word >> 24) & 0xFF;
 #ifdef SOFTWARE_CONVENTION
       as->C += 0xFF00 - (B << 8);
 #else
       as->C += (B << 8);
 #endif
-      as->CT = 8;
-      as->next_word <<= 8;
-      as->next_word_bytes--;
     }
 }
 
@@ -188,8 +179,6 @@ jbig2_arith_new (Jbig2Ctx *ctx, Jbig2WordStream *ws)
 #else
   result->C = (result->next_word >> 8) & 0xFF0000;
 #endif
-  result->next_word <<= 8;
-  result->next_word_bytes--;
 
   jbig2_arith_bytein (result);
   result->C <<= 7;
