@@ -222,7 +222,21 @@ level2dict begin
   .currentglobal exch dup gcheck .setglobal
   .requiredattrs {
     2 index 2 index known {
-      pop pop
+      1 index /Policies eq {
+	% Merge policies from the device driver with defaults
+	2 index             % <<>> /key value <<>>
+	3 2 roll get        % <<>> value <<policies>>
+	exch {                
+	  2 index 2 index known { 
+	    pop pop
+	  } { 
+	    2 index 3 1 roll put
+	  } ifelse
+	} forall
+	pop
+      } {
+	pop pop
+      } ifelse
     } {
       exec 2 index 3 1 roll put
     } ifelse
