@@ -69,6 +69,7 @@ typedef enum {
   pxpNull,
   pxpGray,
   pxpRGB,
+  pxpSRGB,
   pxpPattern
 } px_paint_type_t;
 typedef struct px_paint_s {
@@ -81,8 +82,6 @@ typedef struct px_paint_s {
       gs_client_color color;
     } pattern;
   } value;
-  /* Cached values */
-  bool needs_halftone;
 } px_paint_t;
 #define private_st_px_paint()		/* in pxgstate.c */\
   gs_private_st_composite(st_px_paint, px_paint_t, "px_paint_t",\
@@ -120,6 +119,7 @@ typedef struct px_gstate_s {
   pxeWritingMode_t writing_mode;
   pxeClipMode_t clip_mode;
   pxeColorSpace_t color_space;
+  gs_color_space *cie_color_space;
   gs_const_string palette;
   bool palette_is_shared;	/* with next higher gstate */
   float char_size;
