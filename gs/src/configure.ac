@@ -149,6 +149,15 @@ else
 fi
 AC_SUBST(SHARE_LIBJPEG)
 AC_SUBST(LIBJPEGDIR)
+dnl check for the internal jpeg memory header
+AC_MSG_CHECKING([for jmemsys.h])
+if test -r $LIBJPEGDIR/jmemsys.h; then
+  AC_MSG_RESULT([yes])
+else
+  AC_MSG_RESULT([no])
+  AC_DEFINE([DONT_HAVE_JMEMSYS_H], 1, 
+    [define if the libjpeg memory system prototypes aren't available])
+fi
 
 dnl these are technically optional
 
