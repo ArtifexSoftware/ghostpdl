@@ -169,14 +169,7 @@ pdfdict begin
 		% This section might be adding new objects:
 		% ensure that Objects and Generations are big enough.
 		% Stack: count obj#
-      2 copy add
-      dup Objects llength gt
-       { dup Objects exch lgrowto /Objects exch def }
-      if
-      dup Generations llength gt
-       { dup Generations exch lgrowto /Generations exch def }
-      if
-      pop
+      2 copy add growPDFobjects
       PDFfile fileposition 3 -1 roll
        { Objects 2 index lget null eq	% later update might have set it
 	  { Objects 2 index 2 index cvx lput }
@@ -221,8 +214,7 @@ pdfdict begin
    prevline (startxref) linene { /pdfopen cvx /syntaxerror signalerror } if
    pop
 		% Stack: xrefpos
-   /Objects larray def
-   /Generations lstring def
+   initPDFobjects
 	% Read the last cross-reference table.
    readxref /Trailer exch def
    Trailer /Encrypt known

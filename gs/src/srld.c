@@ -58,8 +58,12 @@ s_RLD_process(stream_state * st, stream_cursor_read * pr,
     int left;
     int status = 0;
 
-  top:if ((left = ss->copy_left) > 0) {/* We suspended because the output buffer was full; */
-	/* try again now. */
+top:
+    if ((left = ss->copy_left) > 0) {
+	/*
+	 * We suspended because the output buffer was full:;
+	 * try again now.
+	 */
 	uint avail = wlimit - q;
 	int copy_status = 1;
 
@@ -111,13 +115,13 @@ s_RLD_process(stream_state * st, stream_cursor_read * pr,
 	    q += b;
 	}
     }
-  x:pr->ptr = p;
+x:  pr->ptr = p;
     pw->ptr = q;
     return status;
 }
 
 /* Stream template */
-const stream_template s_RLD_template =
-{&st_RLD_state, s_RLD_init, s_RLD_process, 1, 1, NULL,
- s_RLD_set_defaults
+const stream_template s_RLD_template = {
+    &st_RLD_state, s_RLD_init, s_RLD_process, 1, 1, NULL,
+    s_RLD_set_defaults
 };

@@ -227,6 +227,7 @@ dosdefault: default gspmdrv.exe
 # Define the extensions for command, object, and executable files.
 
 CMD=.cmd
+C_=-c
 I_=-I
 II=-I
 _I=
@@ -417,7 +418,7 @@ DEVICE_DEVS11=bmpmono.dev bmp16.dev bmp256.dev bmp16m.dev tiff12nc.dev tiff24nc.
 DEVICE_DEVS12=psmono.dev psgray.dev bit.dev bitrgb.dev bitcmyk.dev
 DEVICE_DEVS13=pngmono.dev pnggray.dev png16.dev png256.dev png16m.dev
 DEVICE_DEVS14=jpeg.dev jpeggray.dev
-DEVICE_DEVS15=pdfwrite.dev
+DEVICE_DEVS15=pdfwrite.dev pswrite.dev epswrite.dev pxlmono.dev pxlcolor.dev
 
 # Include the generic makefiles.
 !include "version.mak"
@@ -537,7 +538,7 @@ $(GS_XE): $(GSDLL).dll dpmainc.c $(gsdll_h) gsos2.rc gscdefs.$(OBJ)
 !endif
 	rc gsos2.res $(GS_XE)
 
-$(GLOBJ)gsdll.$(OBJ): $(GLSRC)gsdll.c $(gsdll_h) $(ghost_h)
+$(GLOBJ)gsdll.$(OBJ): $(GLSRC)gsdll.c $(gsdll_h) $(ghost_h) $(gscdefs_h)
 	$(PSCC) $(GLO_)gsdll.$(OBJ) $(C_) $(GLSRC)gsdll.c
 
 $(GSDLL).dll: $(GS_ALL) $(ALL_DEVS) $(GLOBJ)gsdll.$(OBJ)

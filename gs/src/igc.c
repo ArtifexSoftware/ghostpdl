@@ -334,12 +334,12 @@ gs_reclaim(vm_spaces * pspaces, bool global)
 	    pms = pms->next;
 	while (pms) {
 	    gc_mark_stack *prev = pms->prev;
-	    uint size = sizeof(*pms) + sizeof(ms_entry) * pms->count;
 
 	    if (pms->on_heap)
 		gs_free_object(state.heap, pms, "gc mark stack");
 	    else
-		gs_alloc_fill(pms, gs_alloc_fill_free, size);
+		gs_alloc_fill(pms, gs_alloc_fill_free,
+			      sizeof(*pms) + sizeof(ms_entry) * pms->count);
 	    pms = prev;
 	}
     }

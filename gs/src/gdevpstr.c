@@ -93,7 +93,7 @@ pprintd3(stream * s, const char *format, int v1, int v2, int v3)
 const char *
 pprintd4(stream * s, const char *format, int v1, int v2, int v3, int v4)
 {
-    return pprintd2(s, pprintd2(s, format, v1, v3), v3, v4);
+    return pprintd2(s, pprintd2(s, format, v1, v2), v3, v4);
 }
 
 /* Print (a) floating point number(s) using a format. */

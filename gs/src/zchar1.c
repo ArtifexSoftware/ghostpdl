@@ -44,8 +44,12 @@
 #include "store.h"
 
 /* Test whether a font is Type 1 compatible. */
-#define font_is_type1_compatible(pfont)\
-  ((pfont)->FontType == ft_encrypted || (pfont)->FontType == ft_disk_based)
+inline private bool
+font_is_type1_compatible(const gs_font *pfont)
+{
+    return (pfont->FontType == ft_encrypted ||
+	    pfont->FontType == ft_disk_based);
+}
 
 /* ---------------- .type1execchar ---------------- */
 
@@ -64,6 +68,13 @@ typedef struct gs_type1exec_state_s {
     double sbw[4];
     int /*metrics_present */ present;
     gs_rect char_bbox;
+    /*
+     * The following elements are only used locally to make the stack clean
+     * for OtherSubrs: they don't need to be declared for the garbage
+     * collector.
+     */
+    ref save_args[6];
+    int num_args;
 } gs_type1exec_state;
 
 gs_private_st_suffix_add0(st_gs_type1exec_state, gs_type1exec_state,
@@ -75,8 +86,8 @@ private int bbox_continue(P1(os_ptr));
 private int nobbox_continue(P1(os_ptr));
 private int type1_call_OtherSubr(P3(const gs_type1exec_state *,
 				    int (*)(P1(os_ptr)), const ref *));
-private int type1_continue_dispatch(P3(gs_type1_state *, const ref *, ref *));
-private int type1_callout_dispatch(P2(os_ptr, int (*)(P1(os_ptr))));
+private int type1_continue_dispatch(P4(gs_type1exec_state *, const ref *,
+				       ref *, int));
 private int op_type1_cleanup(P1(os_ptr));
 private void op_type1_free(P1(os_ptr));
 private void
@@ -175,7 +186,8 @@ ztype1execchar(register os_ptr op)
 	}
 	/* Continue interpreting. */
       icont:
-	code = type1_continue_dispatch(pcis, opstr, &other_subr);
+	code = type1_continue_dispatch(&cxs, opstr, &other_subr, 4);
+	op = osp;		/* OtherSubrs might change it */
 	switch (code) {
 	    case 0:		/* all done */
 		return nobbox_finish(op, &cxs);
@@ -215,7 +227,8 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 	/* Since an OtherSubr callout might change osp, */
 	/* save the character name now. */
 	ref_assign(&cnref, op - 1);
-	code = type1_continue_dispatch(pcis, op, &other_subr);
+	code = type1_continue_dispatch(pcxs, op, &other_subr, 4);
+	op = osp;		/* OtherSubrs might change it */
 	switch (code) {
 	    default:		/* code < 0 or done, error */
 		return ((code < 0 ? code :
@@ -228,7 +241,7 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 		break;
 	}
 	type1_cis_get_metrics(pcis, pcxs->sbw);
-	return zchar_set_cache(osp, pbfont, &cnref,
+	return zchar_set_cache(op, pbfont, &cnref,
 			       NULL, pcxs->sbw + 2,
 			       &pcxs->char_bbox,
 			       bbox_fill, bbox_stroke);
@@ -249,7 +262,8 @@ type1exec_bbox(os_ptr op, gs_type1exec_state * pcxs, gs_font * pfont)
 /* Handle the results of gs_type1_interpret. */
 /* pcref points to a t_string ref. */
 private int
-type1_continue_dispatch(gs_type1_state * pcis, const ref * pcref, ref * pos)
+type1_continue_dispatch(gs_type1exec_state *pcxs, const ref * pcref,
+			ref *pos, int num_args)
 {
     int value;
     int code;
@@ -263,31 +277,69 @@ type1_continue_dispatch(gs_type1_state * pcis, const ref * pcref, ref * pos)
 	charstring.size = r_size(pcref);
 	pchars = &charstring;
     }
-    code = gs_type1_interpret(pcis, pchars, &value);
+    /*
+     * Since OtherSubrs may push or pop values on the PostScript operand
+     * stack, remove the arguments of .type1execchar before calling the
+     * Type 1 interpreter, and put them back afterwards unless we're
+     * about to execute an OtherSubr procedure.
+     */
+    pcxs->num_args = num_args;
+    memcpy(pcxs->save_args, osp - (num_args - 1), num_args * sizeof(ref));
+    osp -= num_args;
+    code = gs_type1_interpret(&pcxs->cis, pchars, &value);
     switch (code) {
 	case type1_result_callothersubr: {
-		/* The Type 1 interpreter handles all known OtherSubrs, */
-		/* so this must be an unknown one. */
-		const font_data *pfdata = pfont_data(gs_currentfont(igs));
+	    /*
+	     * The Type 1 interpreter handles all known OtherSubrs,
+	     * so this must be an unknown one.
+	     */
+	    const font_data *pfdata = pfont_data(gs_currentfont(igs));
 
-		code = array_get(&pfdata->u.type1.OtherSubrs,
-				 (long)value, pos);
-		return (code < 0 ? code : type1_result_callothersubr);
+	    code = array_get(&pfdata->u.type1.OtherSubrs, (long)value, pos);
+	    if (code >= 0)
+		return type1_result_callothersubr;
 	}
     }
+    /* Put back the arguments removed above. */
+    memcpy(osp + 1, pcxs->save_args, num_args * sizeof(ref));
+    osp += num_args;
     return code;
 }
 
+/*
+ * Push a continuation, the arguments removed for the OtherSubr, and
+ * the OtherSubr procedure.
+ */
+private int
+type1_push_OtherSubr(const gs_type1exec_state *pcxs, int (*cont)(P1(os_ptr)),
+		     const ref *pos)
+{
+    int i, n = pcxs->num_args;
+
+    push_op_estack(cont);
+    /*
+     * Push the saved arguments (in reverse order, so they will get put
+     * back on the operand stack in the correct order) on the e-stack.
+     */
+    for (i = n; --i >= 0; ) {
+	*++esp = pcxs->save_args[i];
+	r_clear_attrs(esp, a_executable);  /* just in case */
+    }
+    ++esp;
+    *esp = *pos;
+    return o_push_estack;
+}
+
 /* Do a callout to an OtherSubr implemented in PostScript. */
-/* The caller must have done a check_estack(4). */
+/* The caller must have done a check_estack(4 + num_args). */
 private int
 type1_call_OtherSubr(const gs_type1exec_state * pcxs, int (*cont) (P1(os_ptr)),
 		     const ref * pos)
 {
     /* Move the Type 1 interpreter state to the heap. */
-    gs_type1exec_state *hpcxs = ialloc_struct(gs_type1exec_state,
-					      &st_gs_type1exec_state,
-					      "type1_call_OtherSubr");
+    gs_type1exec_state *hpcxs =
+	ialloc_struct(gs_type1exec_state, &st_gs_type1exec_state,
+		      "type1_call_OtherSubr");
 
     if (hpcxs == 0)
 	return_error(e_VMerror);
@@ -295,10 +347,7 @@ type1_call_OtherSubr(const gs_type1exec_state * pcxs, int (*cont) (P1(os_ptr)),
     push_mark_estack(es_show, op_type1_cleanup);
     ++esp;
     make_istruct(esp, 0, hpcxs);
-    push_op_estack(cont);
-    ++esp;
-    *esp = *pos;
-    return o_push_estack;
+    return type1_push_OtherSubr(pcxs, cont, pos);
 }
 
 /* Continue from an OtherSubr callout while getting metrics. */
@@ -310,17 +359,15 @@ bbox_getsbw_continue(os_ptr op)
     gs_type1_state *const pcis = &pcxs->cis;
     int code;
 
-    code = type1_continue_dispatch(pcis, NULL, &other_subr);
+    code = type1_continue_dispatch(pcxs, NULL, &other_subr, 4);
     op = osp;			/* in case z1_push/pop_proc was called */
     switch (code) {
 	default:		/* code < 0 or done, error */
 	    op_type1_free(op);
 	    return ((code < 0 ? code : gs_note_error(e_invalidfont)));
 	case type1_result_callothersubr:	/* unknown OtherSubr */
-	    push_op_estack(bbox_getsbw_continue);
-	    ++esp;
-	    *esp = other_subr;
-	    return o_push_estack;
+	    return type1_push_OtherSubr(pcxs, bbox_getsbw_continue,
+					&other_subr);
 	case type1_result_sbw: {	/* [h]sbw, done */
 	    double sbw[4];
 	    const gs_font_base *const pbfont =
@@ -396,7 +443,8 @@ bbox_finish(os_ptr op, int (*cont) (P1(os_ptr)))
     }
     opstr = opc;
   icont:
-    code = type1_continue_dispatch(pcis, opstr, &other_subr);
+    code = type1_continue_dispatch(&cxs, opstr, &other_subr, (psbpt ? 6 : 4));
+    op = osp;		/* OtherSubrs might have altered it */
     switch (code) {
 	case 0:		/* all done */
 	    /* Call the continuation now. */
@@ -416,15 +464,14 @@ bbox_finish(os_ptr op, int (*cont) (P1(os_ptr)))
 
 /* Continue from an OtherSubr callout while building the path. */
 private int
-type1_callout_dispatch(os_ptr op, int (*cont) (P1(os_ptr)))
+type1_callout_dispatch(os_ptr op, int (*cont)(P1(os_ptr)), int num_args)
 {
     ref other_subr;
     gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
-    gs_type1_state *const pcis = &pcxs->cis;
     int code;
 
   icont:
-    code = type1_continue_dispatch(pcis, NULL, &other_subr);
+    code = type1_continue_dispatch(pcxs, NULL, &other_subr, num_args);
     op = osp;			/* in case z1_push/pop_proc was called */
     switch (code) {
 	case 0:		/* callout done, cont is on e-stack */
@@ -433,24 +480,20 @@ type1_callout_dispatch(os_ptr op, int (*cont) (P1(os_ptr)))
 	    op_type1_free(op);
 	    return ((code < 0 ? code : gs_note_error(e_invalidfont)));
 	case type1_result_callothersubr:	/* unknown OtherSubr */
-	    push_op_estack(cont);
-	    ++esp;
-	    *esp = other_subr;
-	    return o_push_estack;
+	    return type1_push_OtherSubr(pcxs, cont, &other_subr);
 	case type1_result_sbw:	/* [h]sbw, just continue */
 	    goto icont;
     }
-#undef pcis
 }
 private int
 bbox_continue(os_ptr op)
 {
-    int code = type1_callout_dispatch(op, bbox_continue);
+    int npop = (r_has_type(op, t_string) ? 4 : 6);
+    int code = type1_callout_dispatch(op, bbox_continue, npop);
 
     if (code == 0) {
-	/* Assume the OtherSubr(s) didn't mess with the o-stack.... */
-	int npop = (r_has_type(op, t_string) ? 4 : 6);
-
+	op = osp;		/* OtherSubrs might have altered it */
+	npop -= 4;		/* nobbox_fill/stroke handles the rest */
 	pop(npop);
 	op -= npop;
 	op_type1_free(op);
@@ -460,7 +503,7 @@ bbox_continue(os_ptr op)
 private int
 nobbox_continue(os_ptr op)
 {
-    int code = type1_callout_dispatch(op, nobbox_continue);
+    int code = type1_callout_dispatch(op, nobbox_continue, 4);
 
     if (code)
 	return code;
@@ -468,6 +511,7 @@ nobbox_continue(os_ptr op)
 	gs_type1exec_state cxs;
 	gs_type1exec_state *pcxs = r_ptr(esp, gs_type1exec_state);
 
+	op = osp;		/* OtherSubrs might have altered it */
 	cxs = *pcxs;
 	op_type1_free(op);
 	return nobbox_finish(op, &cxs);

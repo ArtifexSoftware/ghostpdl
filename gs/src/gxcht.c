@@ -22,6 +22,7 @@
 #include "gx.h"
 #include "gserrors.h"
 #include "gsutil.h"		/* for id generation */
+#include "gxarith.h"
 #include "gxfixed.h"
 #include "gxmatrix.h"
 #include "gxdevice.h"
@@ -48,28 +49,26 @@ gs_private_st_ptrs1(st_dc_ht_colored, gx_device_color, "dc_ht_colored",
 private dev_color_proc_load(gx_dc_ht_colored_load);
 private dev_color_proc_fill_rectangle(gx_dc_ht_colored_fill_rectangle);
 private dev_color_proc_equal(gx_dc_ht_colored_equal);
-const gx_device_color_type_t
-      gx_dc_type_data_ht_colored =
-{&st_dc_ht_colored,
- gx_dc_ht_colored_load, gx_dc_ht_colored_fill_rectangle,
- gx_dc_default_fill_masked, gx_dc_ht_colored_equal
+const gx_device_color_type_t gx_dc_type_data_ht_colored = {
+    &st_dc_ht_colored,
+    gx_dc_ht_colored_load, gx_dc_ht_colored_fill_rectangle,
+    gx_dc_default_fill_masked, gx_dc_ht_colored_equal
 };
-
 #undef gx_dc_type_ht_colored
 const gx_device_color_type_t *const gx_dc_type_ht_colored =
-&gx_dc_type_data_ht_colored;
-
+    &gx_dc_type_data_ht_colored;
 #define gx_dc_type_ht_colored (&gx_dc_type_data_ht_colored)
 
 /* Forward references. */
-private void set_ht_colors(P6(gx_color_index[16], gx_strip_bitmap *[4],
-	      const gx_device_color *, gx_device *, gx_ht_cache *[4], int));
+private void set_ht_colors(P7(gx_color_index[16], gx_strip_bitmap *[4],
+			      const gx_device_color *, gx_device *,
+			      gx_ht_cache *[4], int, int *));
 private void set_color_ht(P9(gx_strip_bitmap *, int, int, int, int, int, int,
-		     const gx_color_index[16], const gx_strip_bitmap *[4]));
+			     const gx_color_index[16],
+			     const gx_strip_bitmap *[4]));
 
 /* Define a table for expanding 8x1 bits to 8x4. */
-private const bits32 expand_8x1_to_8x4[256] =
-{
+private const bits32 expand_8x1_to_8x4[256] = {
 #define x16(c)\
   c+0, c+1, c+0x10, c+0x11, c+0x100, c+0x101, c+0x110, c+0x111,\
   c+0x1000, c+0x1001, c+0x1010, c+0x1011, c+0x1100, c+0x1101, c+0x1110, c+0x1111
@@ -99,8 +98,9 @@ gx_dc_ht_colored_load(gx_device_color * pdevc, const gs_imager_state * pis,
 /* Fill a rectangle with a colored halftone. */
 /* Note that we treat this as "texture" for RasterOp. */
 private int
-gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
-		  int w, int h, gx_device * dev, gs_logical_operation_t lop,
+gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc,
+				int x, int y, int w, int h,
+				gx_device * dev, gs_logical_operation_t lop,
 				const gx_rop_source_t * source)
 {
     ulong tbits[tile_longs_allocated];
@@ -118,6 +118,8 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     uint size_x;
     int dw, dh;
     int lw = pdht->lcm_width, lh = pdht->lcm_height;
+    int plane_mask;
+    bool no_rop;
 
     if (w <= 0 || h <= 0)
 	return 0;
@@ -134,10 +136,35 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	caches[2] = pocs[pdht->color_indices[2]].corder.cache;
 	caches[3] = pocs[pdht->color_indices[3]].corder.cache;
     }
-    set_ht_colors(colors, sbits, pdevc, dev, caches, nplanes);
-    /* If the LCM of the plane cell sizes is smaller than */
-    /* the rectangle being filled, compute a single tile and */
-    /* let tile_rectangle do the replication. */
+    set_ht_colors(colors, sbits, pdevc, dev, caches, nplanes, &plane_mask);
+    if (!(plane_mask & (plane_mask - 1))) {
+	/*
+	 * At most one plane is not solid-color: we can treat this as a
+	 * binary halftone (or, anomalously, a pure color).
+	 */
+	gx_device_color devc;
+
+	if (plane_mask == 0 ) {
+	    color_set_pure(&devc, colors[0]);
+	} else {
+	    int plane = small_exact_log2(plane_mask);
+	    gx_ht_tile tile;
+
+	    tile.tiles = *sbits[plane];	 /* already rendered */
+	    tile.level = pdevc->colors.colored.c_level[plane];
+	    color_set_binary_tile(&devc, colors[0], colors[plane_mask], &tile);
+	    devc.phase = pdevc->phase;
+	}
+	return gx_device_color_fill_rectangle(&devc, x, y, w, h, dev, lop,
+					      source);
+    }
+
+    no_rop = source == NULL && lop_no_S_is_T(lop);
+    /*
+     * If the LCM of the plane cell sizes is smaller than the rectangle
+     * being filled, compute a single tile and let tile_rectangle do the
+     * replication.
+     */
     if ((w > lw || h > lh) &&
 	(raster = bitmap_raster(lw * depth)) <= tile_bytes / lh
 	) {
@@ -157,9 +184,9 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	    tiles.rep_shift = tiles.shift = 0;
 	    /* See below for why we need to cast bits. */
 	    set_color_ht(&tiles, 0, 0, lw, lh,
-			 depth, nplanes, colors,
+			 depth, plane_mask, colors,
 			 (const gx_strip_bitmap **)sbits);
-	    if (source == NULL && lop_no_S_is_T(lop))
+	    if (no_rop)
 		return (*dev_proc(dev, strip_tile_rectangle)) (dev, &tiles,
 							       x, y, w, h,
 				       gx_no_color_index, gx_no_color_index,
@@ -192,6 +219,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	size_x = w * depth;
 	raster = bitmap_raster(size_x);
 	if (raster > tile_bytes) {
+	    /* We'll have to do a partial line. */
 	    dw = tile_bytes * 8 / depth;
 	    size_x = dw * depth;
 	    raster = bitmap_raster(size_x);
@@ -204,7 +232,7 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
     dh = tile_bytes / raster;
     if (dh > h)
 	dh = h;
-  fit:				/* Now the tile will definitely fit. */
+fit:				/* Now the tile will definitely fit. */
     tiles.raster = raster;
     tiles.rep_width = tiles.size.x = size_x / depth;
     tiles.rep_shift = tiles.shift = 0;
@@ -219,22 +247,20 @@ gx_dc_ht_colored_fill_rectangle(const gx_device_color * pdevc, int x, int y,
 	     * and won't accept the ** type without a cast.
 	     */
 	    set_color_ht(&tiles, x + pdevc->phase.x, cy + pdevc->phase.y,
-			 dw, ch, depth, nplanes, colors,
+			 dw, ch, depth, plane_mask, colors,
 			 (const gx_strip_bitmap **)sbits);
-	    if (source == NULL && lop_no_S_is_T(lop)) {
-		code = (*dev_proc(dev, copy_color)) (dev,
-						     tiles.data, 0, raster,
-					    gx_no_bitmap_id, x, cy, dw, ch);
+	    if (no_rop) {
+		code = (*dev_proc(dev, copy_color))
+		    (dev, tiles.data, 0, raster, gx_no_bitmap_id,
+		     x, cy, dw, ch);
 	    } else {
                 if (source == NULL)
                     set_rop_no_source(source, no_source, dev);
-
-	        return (*dev_proc(dev, strip_copy_rop)) (dev, source->sdata,
-			       source->sourcex, source->sraster, source->id,
-			     (source->use_scolors ? source->scolors : NULL),
-						     &tiles, NULL,
-						     x, cy, dw, ch,
-							 0, 0, lop);
+	        return (*dev_proc(dev, strip_copy_rop))
+		    (dev, source->sdata, source->sourcex, source->sraster,
+		     source->id,
+		     (source->use_scolors ? source->scolors : NULL),
+		     &tiles, NULL, x, cy, dw, ch, 0, 0, lop);
 	    }
 	    if (code < 0)
 		return code;
@@ -278,18 +304,16 @@ gs_gxcht_init(gs_memory_t *mem)
 /* Set up the colors and the individual plane halftone bitmaps. */
 private void
 set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
-      const gx_device_color * pdc, gx_device * dev, gx_ht_cache * caches[4],
-	      int nplanes)
+	      const gx_device_color * pdc, gx_device * dev,
+	      gx_ht_cache * caches[4], int nplanes, int *pmask)
 {
     gx_color_value v[2][4];
     gx_color_value max_color = dev->color_info.dither_colors - 1;
     int plane_mask = 0;
 
-#define cb(i) pdc->colors.colored.c_base[i]
-#define cl(i) pdc->colors.colored.c_level[i]
 #define set_plane_color(i)\
-{	uint q = cb(i);\
-	uint r = cl(i);\
+{	uint q = pdc->colors.colored.c_base[i];\
+	uint r = pdc->colors.colored.c_level[i];\
 	v[0][i] = fractional_color(q, max_color);\
 	if ( r == 0 )\
 	  v[1][i] = v[0][i], sbits[i] = &ht_no_bitmap;\
@@ -346,61 +370,91 @@ set_ht_colors(gx_color_index colors[16], gx_strip_bitmap * sbits[4],
 	 * Each zero component can cut the cost of color mapping in
 	 * half, so it's worth doing a little checking here.
 	 */
-#define m1(i) map_cmyk(i)
-#define m2(i,d) m1(i), m1(i+d)
-#define m4(i,d1,d2) m2(i, d1), m2(i + d2, d1)
+#define m(i) map_cmyk(i)
 	switch (plane_mask) {
 	    case 15:
-		m4(8, 1, 2);
-		m4(12, 1, 2);
+		m(15); m(14); m(13); m(12);
+		m(11); m(10); m(9); m(8);
 	    case 7:
-		m4(4, 1, 2);
-	    c3: case 3:
-		m2(2, 1);
-	    c1: case 1:
-		m1(1);
+		m(7); m(6); m(5); m(4);
+c3:	    case 3:
+		m(3); m(2);
+c1:	    case 1:
+		m(1);
 		break;
 	    case 14:
-		m4(8, 2, 4);
+		m(14); m(12); m(10); m(8);
 	    case 6:
-		m2(4, 2);
-	    c2: case 2:
-		m1(2);
+		m(6); m(4);
+c2:	    case 2:
+		m(2);
 		break;
 	    case 13:
-		m4(8, 1, 4);
+		m(13); m(12); m(9); m(8);
 	    case 5:
-		m2(4, 1);
+		m(5); m(4);
 		goto c1;
 	    case 12:
-		m2(8, 4);
+		m(12); m(8);
 	    case 4:
-		m1(4);
+		m(4);
 		break;
 	    case 11:
-		m4(8, 1, 2);
+		m(11); m(10); m(9); m(8);
 		goto c3;
 	    case 10:
-		m2(8, 2);
+		m(10); m(8);
 		goto c2;
 	    case 9:
-		m2(8, 1);
+		m(9); m(8);
 		goto c1;
 	    case 8:
-		m1(8);
+		m(8);
 		break;
 	    case 0:;
 	}
-	m1(0);
-#undef m1
-#undef m2
-#undef m4
+	m(0);
+#undef m
 #undef map1cmyk
     }
 #undef map8
 #undef set_plane_color
-#undef cb
-#undef cl
+    *pmask = plane_mask;
+}
+
+/* Define the bookkeeping structure for each plane of halftone rendering. */
+typedef struct tile_cursor_s {
+    int tile_shift;		/* X shift per copy of tile */
+    int xoffset;
+    int xshift;
+    uint xbytes;
+    int xbits;
+    const byte *row;
+    const byte *tdata;
+    uint raster;
+    const byte *data;
+    int bit_shift;
+} tile_cursor_t;
+
+/* Initialize one plane cursor. */
+private void
+init_tile_cursor(int i, tile_cursor_t *ptc, const gx_strip_bitmap *btile,
+		 int endx, int lasty)
+{
+    int tw = btile->size.x;
+    int bx = ((ptc->tile_shift = btile->shift) == 0 ? endx :
+	      endx + lasty / btile->size.y * ptc->tile_shift) % tw;
+    int by = lasty % btile->size.y;
+
+    ptc->xoffset = bx >> 3;
+    ptc->xshift = 8 - (bx & 7);
+    ptc->xbytes = (tw - 1) >> 3;
+    ptc->xbits = ((tw - 1) & 7) + 1;
+    ptc->tdata = btile->data;
+    ptc->raster = btile->raster;
+    ptc->row = ptc->tdata + by * ptc->raster;
+    if_debug5('h', "[h]plane %d: size=%d,%d bx=%d by=%dn",
+	      i, tw, btile->size.y, bx, by);
 }
 
 /* Render the combined halftone. */
@@ -412,79 +466,56 @@ private void
 		     int w,	/* how much of the tile to set */
 		     int h,
 		     int depth,	/* depth of tile (4, 8, 16, 24, 32) */
-		     int nplanes,	/* # of source planes, 3 or 4 */
+		     int plane_mask,	/* which planes are halftoned */
 		     const gx_color_index colors[16],	/* the actual colors for the tile, */
 				/* actually [1 << nplanes] */
 		     const gx_strip_bitmap * sbits[4]	/* the bitmaps for the planes, */
-
-/* actually [nplanes] */
-) {				/* Note that the planes are specified in the order RGB or CMYK, but */
+				/* actually [nplanes] */
+) {
+    /* Note that the planes are specified in the order RGB or CMYK, but */
     /* the indices used for the internal colors array are BGR or KYMC. */
 
     int x, y;
-    struct tile_cursor_s {
-	int tile_shift;		/* X shift per copy of tile */
-	int xoffset;
-	int xshift;
-	uint xbytes;
-	int xbits;
-	const byte *row;
-	const byte *tdata;
-	uint raster;
-	const byte *data;
-	int bit_shift;
-    } cursor[4];
+    tile_cursor_t cursor[4];
     int dbytes = depth >> 3;
     uint dest_raster = ctiles->raster;
     byte *dest_row =
-    ctiles->data + dest_raster * (h - 1) + (w * depth) / 8;
-    int endx = w + px;
+	ctiles->data + dest_raster * (h - 1) + (w * depth) / 8;
 
     if_debug6('h',
-	      "[h]color_ht: x=%d y=%d w=%d h=%d nplanes=%d depth=%d\n",
-	      px, py, w, h, nplanes, depth);
+	      "[h]color_ht: x=%d y=%d w=%d h=%d plane_mask=%d depth=%d\n",
+	      px, py, w, h, plane_mask, depth);
 
     /* Do one-time cursor initialization. */
     {
+	int endx = w + px;
 	int lasty = h - 1 + py;
 
-#define set_start(i, c, btile)\
-{ int tw = btile->size.x;\
-  int bx = ((c.tile_shift = btile->shift) == 0 ? endx :\
-	    endx + lasty / btile->size.y * c.tile_shift) % tw;\
-  int by = lasty % btile->size.y;\
-  c.xoffset = bx >> 3;\
-  c.xshift = 8 - (bx & 7);\
-  c.xbytes = (tw - 1) >> 3;\
-  c.xbits = ((tw - 1) & 7) + 1;\
-  c.tdata = btile->data;\
-  c.raster = btile->raster;\
-  c.row = c.tdata + by * c.raster;\
-  if_debug5('h', "[h]plane %d: size=%d,%d bx=%d by=%d\n",\
-	    i, tw, btile->size.y, bx, by);\
-}
-	set_start(0, cursor[0], sbits[0]);
-	set_start(1, cursor[1], sbits[1]);
-	set_start(2, cursor[2], sbits[2]);
-	if (nplanes == 4)
-	    set_start(3, cursor[3], sbits[3]);
-#undef set_start
+	if (plane_mask & 1)
+	    init_tile_cursor(0, &cursor[0], sbits[0], endx, lasty);
+	if (plane_mask & 2)
+	    init_tile_cursor(1, &cursor[1], sbits[1], endx, lasty);
+	if (plane_mask & 4)
+	    init_tile_cursor(2, &cursor[2], sbits[2], endx, lasty);
+	if (plane_mask & 8)
+	    init_tile_cursor(3, &cursor[3], sbits[3], endx, lasty);
     }
 
     /* Now compute the actual tile. */
-    for (y = h;; dest_row -= dest_raster) {
+    for (y = h; ; dest_row -= dest_raster) {
 	byte *dest = dest_row;
 
 #define set_row(c)\
-  {	c.data = c.row + c.xoffset;\
-	c.bit_shift = c.xshift;\
-  }
-	set_row(cursor[0]);
-	set_row(cursor[1]);
-	set_row(cursor[2]);
-	if (nplanes == 4) {
+    (c.data = c.row + c.xoffset,\
+     c.bit_shift = c.xshift)
+	if (plane_mask & 1)
+	    set_row(cursor[0]);
+	if (plane_mask & 2)
+	    set_row(cursor[1]);
+	if (plane_mask & 4)
+	    set_row(cursor[2]);
+	if (plane_mask & 8)
 	    set_row(cursor[3]);
-	}
 #undef set_row
 	--y;
 	for (x = w; x > 0;) {
@@ -512,77 +543,81 @@ private void
 		}\
 	}\
 }
-	    if (nplanes == 4) {
-		next_bits(cursor[3]);
-		indices = expand_8x1_to_8x4[bits & 0xff] << 1;
+	    if (plane_mask & 1) {
+		next_bits(cursor[0]);
+		indices = expand_8x1_to_8x4[bits & 0xff];
 	    } else
 		indices = 0;
-	    next_bits(cursor[2]);
-	    indices = (indices | expand_8x1_to_8x4[bits & 0xff]) << 1;
-	    next_bits(cursor[1]);
-	    indices = (indices | expand_8x1_to_8x4[bits & 0xff]) << 1;
-	    next_bits(cursor[0]);
-	    indices |= expand_8x1_to_8x4[bits & 0xff];
+	    if (plane_mask & 2) {
+		next_bits(cursor[1]);
+		indices |= expand_8x1_to_8x4[bits & 0xff] << 1;
+	    }
+	    if (plane_mask & 4) {
+		next_bits(cursor[2]);
+		indices |= expand_8x1_to_8x4[bits & 0xff] << 2;
+	    }
+	    if (plane_mask & 8) {
+		next_bits(cursor[3]);
+		indices |= expand_8x1_to_8x4[bits & 0xff] << 3;
+	    }
 #undef next_bits
 	    nx = min(x, 8);	/* 1 <= nx <= 8 */
 	    x -= nx;
 	    switch (dbytes) {
 		case 0:	/* 4 */
 		    i = nx;
-		    if ((x + nx) & 1) {		/* First pixel is even nibble. */
+		    if ((x + nx) & 1) {
+			/* First pixel is even nibble. */
 			*dest = (*dest & 0xf) +
-			    ((byte) colors[(uint) indices & 0xf] << 4);
+			    ((byte)colors[indices & 0xf] << 4);
 			indices >>= 4;
 			--i;
 		    }
 		    /* Now 0 <= i <= 8. */
 		    for (; (i -= 2) >= 0; indices >>= 8)
 			*--dest =
-			    (byte) colors[(uint) indices & 0xf] +
-			    ((byte) colors[((uint) indices >> 4) & 0xf]
+			    (byte)colors[indices & 0xf] +
+			    ((byte)colors[(indices >> 4) & 0xf]
 			     << 4);
 		    /* Check for final odd nibble. */
 		    if (i & 1)
-			*--dest = (byte) colors[(uint) indices & 0xf];
+			*--dest = (byte)colors[indices & 0xf];
 		    break;
 		case 4:	/* 32 */
 		    for (i = nx; --i >= 0; indices >>= 4) {
-			gx_color_index tcolor =
-			colors[(uint) indices & 0xf];
+			bits32 tcolor = (bits32)colors[indices & 0xf];
 
 			dest -= 4;
-			dest[3] = (byte) tcolor;
-			dest[2] = (byte) (tcolor >> 8);
+			dest[3] = (byte)tcolor;
+			dest[2] = (byte)(tcolor >> 8);
 			tcolor >>= 16;
-			dest[1] = (byte) tcolor;
-			dest[0] = (byte) ((uint) tcolor >> 8);
+			dest[1] = (byte)tcolor;
+			dest[0] = (byte)(tcolor >> 8);
 		    }
 		    break;
 		case 3:	/* 24 */
 		    for (i = nx; --i >= 0; indices >>= 4) {
-			gx_color_index tcolor =
-			colors[(uint) indices & 0xf];
+			bits32 tcolor = (bits32)colors[indices & 0xf];
 
 			dest -= 3;
 			dest[2] = (byte) tcolor;
-			dest[1] = (byte) ((uint) tcolor >> 8);
-			tcolor >>= 16;
-			dest[0] = (byte) ((uint) tcolor >> 8);
+			dest[1] = (byte)(tcolor >> 8);
+			dest[0] = (byte)(tcolor >> 16);
 		    }
 		    break;
 		case 2:	/* 16 */
 		    for (i = nx; --i >= 0; indices >>= 4) {
 			uint tcolor =
-			(uint) colors[(uint) indices & 0xf];
+			    (uint)colors[indices & 0xf];
 
 			dest -= 2;
-			dest[1] = (byte) tcolor;
-			dest[0] = (byte) (tcolor >> 8);
+			dest[1] = (byte)tcolor;
+			dest[0] = (byte)(tcolor >> 8);
 		    }
 		    break;
 		case 1:	/* 8 */
 		    for (i = nx; --i >= 0; indices >>= 4)
-			*--dest = (byte) colors[(uint) indices & 0xf];
+			*--dest = (byte)colors[indices & 0xf];
 		    break;
 	    }
 	}
@@ -590,6 +625,7 @@ private void
 	    break;
 
 #define step_row(c, i)\
+  BEGIN\
   if ( c.row > c.tdata )\
     c.row -= c.raster;\
   else	/* wrap around to end of tile, taking shift into account */\
@@ -607,12 +643,16 @@ private void
 		c.xshift &= 7;\
 	    }\
 	}\
-    }
+    }\
+    END
 
-	step_row(cursor[0], 0);
-	step_row(cursor[1], 1);
-	step_row(cursor[2], 2);
-	if (nplanes == 4)
+	if (plane_mask & 1)
+	    step_row(cursor[0], 0);
+	if (plane_mask & 2)
+	    step_row(cursor[1], 1);
+	if (plane_mask & 4)
+	    step_row(cursor[2], 2);
+	if (plane_mask & 8)
 	    step_row(cursor[3], 3);
 #undef step_row
     }

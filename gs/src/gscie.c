@@ -728,7 +728,8 @@ gs_cie_cs_common(gs_state * pgs)
 {
     const gs_color_space *pcs = pgs->color_space;
 
-  sw:switch (pcs->type->index) {
+    do {
+        switch (pcs->type->index) {
 	case gs_color_space_index_CIEDEF:
 	    return &pcs->params.def->common;
 	case gs_color_space_index_CIEDEFG:
@@ -737,20 +738,13 @@ gs_cie_cs_common(gs_state * pgs)
 	    return &pcs->params.abc->common;
 	case gs_color_space_index_CIEA:
 	    return &pcs->params.a->common;
-	case gs_color_space_index_Separation:
-	    pcs = (const gs_color_space *)&pcs->params.separation.alt_space;
-	    goto sw;
-	case gs_color_space_index_DeviceN:
-	    pcs = (const gs_color_space *)&pcs->params.device_n.alt_space;
-	    goto sw;
-	case gs_color_space_index_Indexed:
-	    pcs = gs_color_space_indexed_base_space(pcs);
-	    goto sw;
-	case gs_color_space_index_Pattern:
-	    /****** WHAT? ******/
 	default:
-	    return 0;
-    }
+            pcs = gs_cspace_base_space(pcs);
+            break;
+        }
+    } while (pcs != 0);
+
+    return 0;
 }
 
 /* Finish loading the joint caches for the current color space. */

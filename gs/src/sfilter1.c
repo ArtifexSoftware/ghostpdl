@@ -35,8 +35,11 @@ s_Null_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_Null_template =
-{&st_stream_state, NULL, s_Null_process, 1, 1
+const stream_template s_NullE_template = {
+    &st_stream_state, NULL, s_Null_process, 1, 1
+};
+const stream_template s_NullD_template = {
+    &st_stream_state, NULL, s_Null_process, 1, 1
 };
 
 /* ------ PFBDecode ------ */
@@ -65,7 +68,8 @@ s_PFBD_process(stream_state * st, stream_cursor_read * pr,
     int c;
     int status = 0;
 
-  top:rcount = pr->limit - p;
+top:
+    rcount = pr->limit - p;
     wcount = pw->limit - q;
     switch (ss->record_type) {
 	case -1:		/* new record */
@@ -110,7 +114,8 @@ s_PFBD_process(stream_state * st, stream_cursor_read * pr,
 	    }
 	    break;
 	case 2:		/* binary data */
-	    if (ss->binary_to_hex) {	/* Translate binary to hex. */
+	    if (ss->binary_to_hex) {
+		/* Translate binary to hex. */
 		int count;
 		const char *const hex_digits = "0123456789abcdef";
 
@@ -143,17 +148,19 @@ s_PFBD_process(stream_state * st, stream_cursor_read * pr,
 	ss->record_type = -1;
 	goto top;
     }
-  out:pr->ptr = p;
+out:
+    pr->ptr = p;
     pw->ptr = q;
     return status;
-  err:pr->ptr = p;
+err:
+    pr->ptr = p;
     pw->ptr = q;
     return ERRC;
 }
 
 /* Stream template */
-const stream_template s_PFBD_template =
-{&st_PFBD_state, s_PFBD_init, s_PFBD_process, 6, 2
+const stream_template s_PFBD_template = {
+    &st_PFBD_state, s_PFBD_init, s_PFBD_process, 6, 2
 };
 
 /* ------ SubFileDecode ------ */
@@ -204,7 +211,8 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
 	const byte *pattern = ss->eod.data;
 	uint match = ss->match;
 
-      cp:			/* Check whether we're still copying a partial match. */
+cp:
+	/* Check whether we're still copying a partial match. */
 	if (ss->copy_count) {
 	    int count = min(wlimit - q, ss->copy_count);
 
@@ -242,9 +250,11 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
 		}
 		continue;
 	    }
-	    /* No match here, back up to find the longest one. */
-	    /* This may be quadratic in string_size, but */
-	    /* we don't expect this to be a real problem. */
+	    /*
+	     * No match here, back up to find the longest one.
+	     * This may be quadratic in string_size, but
+	     * we don't expect this to be a real problem.
+	     */
 	    if (match > 0) {
 		int end = match;
 
@@ -256,8 +266,10 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
 			)
 			break;
 		}
-		/* Copy the unmatched initial portion of */
-		/* the EOD string to the output. */
+		/*
+		 * Copy the unmatched initial portion of
+		 * the EOD string to the output.
+		 */
 		p--;
 		ss->copy_ptr = 0;
 		ss->copy_count = end - match;
@@ -270,7 +282,7 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
 	    }
 	    *++q = c;
 	}
-      xit:pr->ptr = p;
+xit:	pr->ptr = p;
 	pw->ptr = q;
 	ss->match = match;
     }
@@ -278,6 +290,6 @@ s_SFD_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_SFD_template =
-{&st_SFD_state, s_SFD_init, s_SFD_process, 1, 1
+const stream_template s_SFD_template = {
+    &st_SFD_state, s_SFD_init, s_SFD_process, 1, 1
 };

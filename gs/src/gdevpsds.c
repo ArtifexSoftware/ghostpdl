@@ -57,7 +57,7 @@ s_4_init(stream_state * st)
 }
 
 /* Process one buffer. */
-#define begin_1248\
+#define BEGIN_1248\
 	stream_1248_state * const ss = (stream_1248_state *)st;\
 	const byte *p = pr->ptr;\
 	const byte *rlimit = pr->limit;\
@@ -66,14 +66,14 @@ s_4_init(stream_state * st)
 	uint left = ss->left;\
 	int status;\
 	int n
-#define end_1248\
+#define END_1248\
 	pr->ptr = p;\
 	pw->ptr = q;\
 	ss->left = left;\
 	return status
 
 /* N-to-8 expansion */
-#define foreach_N_8(in, nout)\
+#define FOREACH_N_8(in, nout)\
 	status = 0;\
 	for ( ; p < rlimit; left -= n, q += n, ++p ) {\
 	  byte in = p[1];\
@@ -83,20 +83,20 @@ s_4_init(stream_state * st)
 	    break;\
 	  }\
 	  switch ( n ) {\
-	    case 0: left = ss->samples_per_row; continue;
-#define end_foreach\
+	    case 0: left = ss->samples_per_row; --p; continue;
+#define END_FOREACH_N_8\
 	  }\
 	}
 private int
 s_N_8_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
-    begin_1248;
+    BEGIN_1248;
 
     switch (ss->bits_per_sample) {
 
 	case 1:{
-		foreach_N_8(in, 8)
+		FOREACH_N_8(in, 8)
 	case 8:
 		q[8] = (byte) - (in & 1);
 	case 7:
@@ -113,7 +113,7 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 		q[2] = (byte) - ((in >> 6) & 1);
 	case 1:
 		q[1] = (byte) - (in >> 7);
-		end_foreach;
+		END_FOREACH_N_8;
 	    }
 	    break;
 
@@ -121,7 +121,7 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 		static const byte b2[4] =
 		{0x00, 0x55, 0xaa, 0xff};
 
-		foreach_N_8(in, 4)
+		FOREACH_N_8(in, 4)
 	case 4:
 		q[4] = b2[in & 3];
 	case 3:
@@ -130,7 +130,7 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 		q[2] = b2[(in >> 4) & 3];
 	case 1:
 		q[1] = b2[in >> 6];
-		end_foreach;
+		END_FOREACH_N_8;
 	    }
 	    break;
 
@@ -141,12 +141,12 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 		    0x88, 0x99, 0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff
 		};
 
-		foreach_N_8(in, 2)
+		FOREACH_N_8(in, 2)
 	case 2:
 		q[2] = b4[in & 0xf];
 	case 1:
 		q[1] = b4[in >> 4];
-		end_foreach;
+		END_FOREACH_N_8;
 	    }
 	    break;
 
@@ -154,14 +154,14 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 	    return ERRC;
     }
 
-    end_1248;
+    END_1248;
 }
 
 /* 8-to-N reduction */
-#define foreach_8_N(out, nin)\
+#define FOREACH_8_N(out, nin)\
 	byte out;\
 	status = 1;\
-	for ( ; q < wlimit; left -= n, p += n, *++q = out ) {\
+	for ( ; q < wlimit; left -= n, p += n, ++q ) {\
 	  n = min(left, nin);\
 	  if ( rlimit - p < n ) {\
 	    status = 0;\
@@ -169,17 +169,21 @@ s_N_8_process(stream_state * st, stream_cursor_read * pr,
 	  }\
 	  out = 0;\
 	  switch ( n ) {\
-	    case 0: left = ss->samples_per_row; continue;
+	    case 0: left = ss->samples_per_row; --q; continue;
+#define END_FOREACH_8_N\
+	    q[1] = out;\
+	  }\
+	}
 private int
 s_8_N_process(stream_state * st, stream_cursor_read * pr,
 	      stream_cursor_write * pw, bool last)
 {
-    begin_1248;
+    BEGIN_1248;
 
     switch (ss->bits_per_sample) {
 
 	case 1:{
-		foreach_8_N(out, 8)
+		FOREACH_8_N(out, 8)
 	case 8:
 		out = p[8] >> 7;
 	case 7:
@@ -196,12 +200,12 @@ s_8_N_process(stream_state * st, stream_cursor_read * pr,
 		out |= (p[2] >> 7) << 6;
 	case 1:
 		out |= p[1] & 0x80;
-		end_foreach;
+		END_FOREACH_8_N;
 	    }
 	    break;
 
 	case 2:{
-		foreach_8_N(out, 4)
+		FOREACH_8_N(out, 4)
 	case 4:
 		out |= p[4] >> 6;
 	case 3:
@@ -210,17 +214,17 @@ s_8_N_process(stream_state * st, stream_cursor_read * pr,
 		out |= (p[2] >> 6) << 4;
 	case 1:
 		out |= p[1] & 0xc0;
-		end_foreach;
+		END_FOREACH_8_N;
 	    }
 	    break;
 
 	case 4:{
-		foreach_8_N(out, 2)
+		FOREACH_8_N(out, 2)
 	case 2:
 		out |= p[2] >> 4;
 	case 1:
 		out |= p[1] & 0xf0;
-		end_foreach;
+		END_FOREACH_8_N;
 	    }
 	    break;
 
@@ -228,7 +232,7 @@ s_8_N_process(stream_state * st, stream_cursor_read * pr,
 	    return ERRC;
     }
 
-    end_1248;
+    END_1248;
 }
 
 const stream_template s_1_8_template =
@@ -294,7 +298,17 @@ const stream_template s_C2R_template =
 
 /* ---------------- Downsampling ---------------- */
 
+private void
+s_Downsample_set_defaults(register stream_state * st)
+{
+    stream_Downsample_state *const ss =
+	(stream_Downsample_state *) st;
+
+    s_Downsample_set_defaults_inline(ss);
+}
+
 /* Subsample */
+/****** DOESN'T IMPLEMENT padY YET ******/
 
 gs_private_st_simple(st_Subsample_state, stream_Subsample_state,
 		     "stream_Subsample_state");
@@ -324,11 +338,12 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
     int xf = ss->XFactor, yf = ss->YFactor;
     int xf2 = xf / 2, yf2 = yf / 2;
     int xlimit = (width / xf) * xf;
+    int xlast = (ss->padX && xlimit < width ? xlimit + (width % xf) / 2 : -1);
     int x = ss->x, y = ss->y;
     int status = 0;
 
     for (; rlimit - p >= spp; p += spp) {
-	if (y == yf2 && x % xf == xf2 && x < xlimit) {
+	if (y == yf2 && ((x % xf == xf2 && x < xlimit) || x == xlast)) {
 	    if (wlimit - q < spp) {
 		status = 1;
 		break;
@@ -351,7 +366,8 @@ s_Subsample_process(stream_state * st, stream_cursor_read * pr,
 
 const stream_template s_Subsample_template =
 {
-    &st_Subsample_state, s_Subsample_init, s_Subsample_process, 4, 4
+    &st_Subsample_state, s_Subsample_init, s_Subsample_process, 4, 4,
+    0 /* NULL */, s_Downsample_set_defaults
 };
 
 /* Average */
@@ -364,18 +380,15 @@ s_Average_init(stream_state * st)
 {
     stream_Average_state *const ss = (stream_Average_state *) st;
 
-    ss->sum_size = ss->Colors * (ss->Columns / ss->XFactor);
-    /*
-     * We allocate an extra element of sums to avoid treating the extra
-     * samples of each input scan line as a special case, but we never
-     * do anything with it (except accumulate into it).
-     */
+    ss->sum_size =
+	ss->Colors * ((ss->Columns + ss->XFactor - 1) / ss->XFactor);
+    ss->copy_size = ss->sum_size -
+	(ss->padX || (ss->Columns % ss->XFactor == 0) ? 0 : ss->Colors);
     ss->sums =
-	(uint *) gs_alloc_byte_array(st->memory, ss->sum_size + 1,
-				     sizeof(uint), "Average sums");
+	(uint *)gs_alloc_byte_array(st->memory, ss->sum_size,
+				    sizeof(uint), "Average sums");
     if (ss->sums == 0)
-	return ERRC;
-/****** WRONG ******/
+	return ERRC;	/****** WRONG ******/
     memset(ss->sums, 0, ss->sum_size * sizeof(uint));
     return s_Subsample_init(st);
 }
@@ -406,25 +419,24 @@ s_Average_process(stream_state * st, stream_cursor_read * pr,
     uint *sums = ss->sums;
     int status = 0;
 
-  top:while (y == yf) {
+top:
+    if (y == yf || (last && p >= rlimit && ss->padY && y != 0)) {
 	/* We're copying averaged values to the output. */
-	int ncopy = min(ss->sum_size - x, wlimit - q);
+	int ncopy = min(ss->copy_size - x, wlimit - q);
 
 	if (ncopy) {
-	    int scale = xf * yf;
+	    int scale = xf * y;
 
 	    while (--ncopy >= 0)
 		*++q = (byte) (sums[x++] / scale);
-	    continue;
 	}
-	if (x < ss->sum_size) {
+	if (x < ss->copy_size) {
 	    status = 1;
 	    goto out;
 	}
 	/* Done copying. */
 	x = y = 0;
 	memset(sums, 0, ss->sum_size * sizeof(uint));
-	break;
     }
     while (rlimit - p >= spp) {
 	uint *bp = sums + x / xf * spp;
@@ -438,7 +450,8 @@ s_Average_process(stream_state * st, stream_cursor_read * pr,
 	    goto top;
 	}
     }
-  out:pr->ptr = p;
+out:
+    pr->ptr = p;
     pw->ptr = q;
     ss->x = x, ss->y = y;
     return status;
@@ -447,5 +460,5 @@ s_Average_process(stream_state * st, stream_cursor_read * pr,
 const stream_template s_Average_template =
 {
     &st_Average_state, s_Average_init, s_Average_process, 4, 4,
-    s_Average_release
+    s_Average_release, s_Downsample_set_defaults
 };

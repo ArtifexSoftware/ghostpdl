@@ -113,6 +113,8 @@ image_render_color(gx_image_enum * penum, const byte * buffer, int data_x,
 	    vci = penum->xci, vdi = penum->wci;
 	    irun = fixed2int_var_rounded(yrun);
 	    break;
+	default:
+	    break;
     }
 
     if_debug4('b', "[b]y=%d w=%d xt=%f yt=%f\n",

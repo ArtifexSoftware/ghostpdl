@@ -323,7 +323,6 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count, byte *data_in,
     gx_device *target = crdev->target;
     uint raster = gx_device_raster(target, true);
     byte *mdata = crdev->data + crdev->page_tile_cache_size;
-    gx_device_ht hdev;
     gx_device *tdev = (gx_device *)mdev;
     int code;
 
@@ -336,6 +335,8 @@ clist_rasterize_lines(gx_device *dev, int y, int line_count, byte *data_in,
 	if ( code < 0 )
 	    return code;
 #if 0				/* **************** */
+    gx_device_ht hdev;
+
 	code = clist_render_init((gx_device_clist *) dev, &hdev);
 	if (code < 0)
 	    return code;

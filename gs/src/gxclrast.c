@@ -1003,16 +1003,20 @@ in:				/* Initialize for a new page. */
 				    goto bad_op;	/* others are NYI */
 			    }
 			    if (b & 8) {
+#if 0	/****************/
 				int num_comp =
-				gs_color_space_num_components(pcs);
+				    gs_color_space_num_components(pcs);
 
-				color_space.type = &gs_color_space_type_Indexed;
-				color_space.params.indexed.base_space.type = pcs->type;
+				/****** SET map ******/
+#endif	/****************/
+				color_space.type =
+				    &gs_color_space_type_Indexed;
+				color_space.params.indexed.base_space.type =
+				    pcs->type;
 				cmd_getw(color_space.params.indexed.hival,
 					 cbp);
 				color_space.params.indexed.use_proc =
 				    (b & 4) != 0;
-/****** SET map ******/
 				pcs = &color_space;
 			    }
 			}

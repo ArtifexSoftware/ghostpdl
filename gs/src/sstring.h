@@ -58,7 +58,8 @@ typedef struct stream_PSSD_state_s {
 } stream_PSSD_state;
 
 #define private_st_PSSD_state()	/* in sstring.c */\
-  gs_private_st_simple(st_PSSD_state, stream_PSSD_state, "PSStringDecode state")
+  gs_private_st_simple(st_PSSD_state, stream_PSSD_state,\
+    "PSStringDecode state")
 /* We define the initialization procedure here, so that the scanner */
 /* can avoid a procedure call. */
 #define s_PSSD_init_inline(ss)\
@@ -68,6 +69,5 @@ extern const stream_template s_PSSD_template;
 /* PSStringEncode */
 /* (no state) */
 extern const stream_template s_PSSE_template;
-
 
 #endif /* sstring_INCLUDED */

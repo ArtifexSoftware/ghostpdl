@@ -185,9 +185,12 @@ ialloc_function_array(uint count, gs_function_t *** pFunctions)
     return 0;
 }
 
-/* Collect a heap-allocated array of floats. */
-/* If the key is missing, set *pparray = 0 and return 0; */
-/* otherwise set *pparray and return the number of elements. */
+/*
+ * Collect a heap-allocated array of floats.  If the key is missing, set
+ * *pparray = 0 and return 0; otherwise set *pparray and return the number
+ * of elements.  Note that 0-length arrays are acceptable, so if the value
+ * returned is 0, the caller must check whether *pparray == 0.
+ */
 int
 fn_build_float_array(const ref * op, const char *kstr, bool required,
 		     bool even, const float **pparray)
@@ -207,9 +210,9 @@ fn_build_float_array(const ref * op, const char *kstr, bool required,
 	if (ptr == 0)
 	    return_error(e_VMerror);
 	code = dict_float_array_param(op, kstr, size, ptr, NULL);
-	if (code <= 0 || (even && (code & 1) != 0)) {
+	if (code < 0 || (even && (code & 1) != 0)) {
 	    ifree_object(ptr, kstr);
-	    return_error(code < 0 ? code : e_rangecheck);
+	    return(code < 0 ? code : gs_note_error(e_rangecheck));
 	}
 	*pparray = ptr;
     }

@@ -63,9 +63,7 @@ s_PCXD_process(stream_state * st, stream_cursor_read * pr,
     return status;
 }
 
-#undef ss
-
 /* Stream template */
-const stream_template s_PCXD_template =
-{&st_stream_state, NULL, s_PCXD_process, 2, 63
+const stream_template s_PCXD_template = {
+    &st_stream_state, NULL, s_PCXD_process, 2, 63
 };

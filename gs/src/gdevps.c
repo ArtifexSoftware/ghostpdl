@@ -227,24 +227,42 @@ private const char *const psw_prolog[] =
     "%%BeginResource: procset GS_pswrite_ProcSet",
     "/GS_pswrite_ProcSet 40 dict dup begin",
     "/!{bind def}bind def/#{load def}!",
+	/* <rbyte> <gbyte> <bbyte> rG - */
+	/* <graybyte> G - */
  "/rG{3{3 -1 roll 255 div}repeat setrgbcolor}!/G{255 div setgray}!/K{0 G}!",
+	/* <bbyte> <rgbyte> r6 - */
+	/* <gbyte> <rbbyte> r5 - */
+	/* <rbyte> <gbbyte> r3 - */
     "/r6{dup 3 -1 roll rG}!/r5{dup 3 1 roll rG}!/r3{dup rG}!",
     "/w/setlinewidth #/J/setlinecap #",
     "/j/setlinejoin #/M/setmiterlimit #/d/setdash #/i/setflat #",
     "/m/moveto #/l/lineto #/c/rcurveto #/h{p closepath}!/H{P closepath}!",
+	/* <dx> lx - */
+	/* <dy> ly - */
+	/* <dx2> <dy2> <dx3> <dy3> v - */
+	/* <dx1> <dy1> <dx2> <dy2> y - */
     "/lx{0 rlineto}!/ly{0 exch rlineto}!/v{0 0 6 2 roll c}!/y{2 copy c}!",
+	/* <x> <y> <dx> <dy> re - */
     "/re{4 -2 roll m exch dup lx exch ly neg lx h}!",
+	/* <x> <y> <a> <b> ^ <x> <y> <a> <b> <-a> <-y> */
     "/^{3 index neg 3 index neg}!",
+	/* <x> <y> <dx1> <dy1> ... <dxn> <dyn> P - */
     "/P{count 0 gt{count -2 roll moveto p}if}!",
+	/* <dx1> <dy1> ... <dxn> <dyn> p - */
     "/p{count 2 idiv{count -2 roll rlineto}repeat}!",
 "/f{P fill}!/f*{P eofill}!/S{P stroke}!/q/gsave #/Q/grestore #/rf{re fill}!",
     "/Y{initclip P clip newpath}!/Y*{initclip P eoclip newpath}!/rY{re Y}!",
-	/* <w> <h> <name> <src> <length> | <w> <h> <data> */
+	/* <w> <h> <name> <length> <src> | <w> <h> <data> */
     "/|{exch string readstring pop exch 4 1 roll 3 packedarray cvx exch 1 index def exec}!",
+	/* <w> <?> <name> (<length>|) + <w> <?> <name> <length> */
     "/+{dup type/nametype eq{2 index 7 add -3 bitshift 2 index mul}if}!",
+	/* <w> <h> <name> (<length>|) $ <w> <h> <data> */
     "/@/currentfile #/${+ @ |}!",
 	/* <x> <y> <w> <h> <bpc/inv> <src> Ix <w> <h> <bps/inv> <mtx> <src> */
     "/Ix{[1 0 0 1 11 -2 roll exch neg exch neg]exch}!",
+	/* <x> <y> <h> <src> , - */
+	/* <x> <y> <h> <src> If - */
+	/* <x> <y> <h> <src> I - */
 "/,{true exch Ix imagemask}!/If{false exch Ix imagemask}!/I{exch Ix image}!",
     0
 };
@@ -262,8 +280,19 @@ private const char *const psw_1_5_prolog[] =
 
 private const char *const psw_2_prolog[] =
 {
+	/* <src> <w> <h> F <g4src> */
     "/F{<</Columns 4 2 roll/Rows exch/K -1/BlackIs1 true >>/CCITTFaxDecode filter}!",
+	/* <src> X <a85src> */
+	/* - @X <a85src> */
+	/* <w> <h> <src> +F <w> <h> <g4src> */
+	/* <w> <h> +F <w> <h> <g4src> */
+	/* <w> <h> @F <w> <h> <g4src> */
+	/* <w> <h> @C <w> <h> <g4a85src> */
     "/X{/ASCII85Decode filter}!/@X{@ X}!/+F{2 index 2 index F}!/@F{@ +F}!/@C{@X +F}!",
+	/* <w> <h> <name> (<length>|) $X <w> <h> <data> */
+	/* <w> <h> <?> <?> <src> -F <w> <h> <?> <?> <g4src> */
+	/* <w> <h> <name> (<length>|) $F <w> <h> <data> */
+	/* <w> <h> <name> (<length>|) $C <w> <h> <data> */
     "/$X{+ @X |}!/-F{4 index 4 index F}!/$F{+ @ -F |}!/$C{+ @X -F |}!",
     0
 };
@@ -453,8 +482,10 @@ psw_beginpage(gx_device_vector * vdev)
 	if (ftell(vdev->file) < 0) {	/* File is not seekable. */
 	    pdev->bbox_position = -1;
 	    pputs(s, "%%BoundingBox: (atend)\n");
+	    pputs(s, "%%HiResBoundingBox: (atend)\n");
 	} else {		/* File is seekable, leave room to rewrite bbox. */
 	    pdev->bbox_position = stell(s);
+	    pputs(s, "%...............................................................\n");
 	    pputs(s, "%...............................................................\n");
 	}
 	pprints1(s, "%%%%Creator: %s ", gs_product);
@@ -751,6 +782,8 @@ psw_close(gx_device * dev)
 	fprintf(f, "%%%%BoundingBox: %d %d %d %d\n",
 		(int)floor(bbox.p.x), (int)floor(bbox.p.y),
 		(int)ceil(bbox.q.x), (int)ceil(bbox.q.y));
+	fprintf(f, "%%%%HiResBoundingBox: %f %f %f %f\n",
+		bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
 	if (pdev->bbox_position >= 0) {
 	    fputc('%', f);
 	    fseek(f, save_pos, SEEK_SET);

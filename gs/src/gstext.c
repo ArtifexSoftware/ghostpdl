@@ -41,13 +41,15 @@ private
 ENUM_PTRS_BEGIN(text_params_enum_ptrs) return 0;
 
 case 0:
-if (tptr->operation & TEXT_FROM_STRING)
-{
-gs_const_string str;
-
-str.data = tptr->data.bytes;
-str.size = tptr->size;
-return ENUM_CONST_STRING(&str);
+if (tptr->operation & TEXT_FROM_STRING) {
+    /*
+     * We only need the string descriptor temporarily, but we can't
+     * put it in a local variable, because that would create a dangling
+     * pointer as soon as we return.
+     */
+    tptr->gc_string.data = tptr->data.bytes;
+    tptr->gc_string.size = tptr->size;
+    return ENUM_CONST_STRING(&tptr->gc_string);
 }
 if (tptr->operation & TEXT_FROM_BYTES)
     return ENUM_OBJ(tptr->data.bytes);
@@ -117,14 +119,14 @@ gx_device_text_begin(gx_device * dev, gs_imager_state * pis,
 	return_error(gs_error_rangecheck);
     {
 	gx_path *tpath =
-	((text->operation & TEXT_DO_NONE) &&
-	 !(text->operation & TEXT_RETURN_WIDTH) ? 0 : path);
+	    ((text->operation & TEXT_DO_NONE) &&
+	     !(text->operation & TEXT_RETURN_WIDTH) ? 0 : path);
 	int code =
-	(*dev_proc(dev, text_begin))
-	(dev, pis, text, font, tpath,
-	 (text->operation & TEXT_DO_DRAW ? pdcolor : 0),
-	 (text->operation & TEXT_DO_DRAW ? pcpath : 0),
-	 mem, ppte);
+	    (*dev_proc(dev, text_begin))
+	    (dev, pis, text, font, tpath,
+	     (text->operation & TEXT_DO_DRAW ? pdcolor : 0),
+	     (text->operation & TEXT_DO_DRAW ? pcpath : 0),
+	     mem, ppte);
 	gs_text_enum_t *pte = *ppte;
 
 	if (code < 0)
@@ -244,7 +246,7 @@ gs_glyphshow_begin(gs_state * pgs, gs_glyph glyph,
 {
     gs_text_params_t text;
 
-/****** SET glyphs ******/
+    /****** SET glyphs ******/
     text.size = 1;
     text.operation = TEXT_FROM_GLYPHS | TEXT_DO_DRAW | TEXT_RETURN_WIDTH;
     return gs_text_begin(pgs, &text, mem, ppte);
@@ -299,7 +301,7 @@ gs_glyphpath_begin(gs_state * pgs, gs_glyph glyph, bool stroke_path,
 
     text.operation = TEXT_FROM_GLYPHS | TEXT_RETURN_WIDTH |
 	(stroke_path ? TEXT_DO_TRUE_CHARPATH : TEXT_DO_FALSE_CHARPATH);
-/****** SET glyphs ******/
+    /****** SET glyphs ******/
     text.size = 1;
     return gs_text_begin(pgs, &text, mem, ppte);
 }

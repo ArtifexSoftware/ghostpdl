@@ -748,7 +748,7 @@ $(GLOBJ)gdevifno.$(OBJ): $(GLSRC)gdevifno.c $(PDEVH) $(gxlum_h)
 
 ### --------------------------- MGR devices ---------------------------- ###
 ### Note: these drivers were contributed by a user: please contact       ###
-###       Carsten Emde (carsten@ce.pr.net.ch) if you have questions.     ###
+###       Carsten Emde (ce@ceag.ch) if you have questions.               ###
 
 MGR=$(GLOBJ)gdevmgr.$(OBJ) $(GLOBJ)gdevpccm.$(OBJ)
 

@@ -50,8 +50,7 @@ s_MTFE_process(stream_state * st, stream_cursor_read * pr,
     uint count = rlimit - p;
     uint wcount = pw->limit - q;
     int status =
-    (count < wcount ? 0 :
-     (rlimit = p + wcount, 1));
+	(count < wcount ? 0 : (rlimit = p + wcount, 1));
 
     while (p < rlimit) {
 	byte b = *++p;
@@ -69,8 +68,8 @@ s_MTFE_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_MTFE_template =
-{&st_MTF_state, s_MTF_init, s_MTFE_process, 1, 1
+const stream_template s_MTFE_template = {
+    &st_MTF_state, s_MTF_init, s_MTFE_process, 1, 1
 };
 
 /* Decode a buffer */
@@ -134,24 +133,24 @@ s_MTFD_process(stream_state * st, stream_cursor_read * pr,
 		goto m7;
 	    case 7:
 		*++q = first = ss->prev.b[7];
-	      m7:ss->prev.b[7] = ss->prev.b[6];
+m7:		ss->prev.b[7] = ss->prev.b[6];
 		goto m6;
 	    case 6:
 		*++q = first = ss->prev.b[6];
-	      m6:ss->prev.b[6] = ss->prev.b[5];
+m6:		ss->prev.b[6] = ss->prev.b[5];
 		goto m5;
 	    case 5:
 		*++q = first = ss->prev.b[5];
-	      m5:ss->prev.b[5] = ss->prev.b[4];
+m5:		ss->prev.b[5] = ss->prev.b[4];
 		goto m4;
 	    case 4:
 		*++q = first = ss->prev.b[4];
-	      m4:ss->prev.b[4] = v3;
+m4:		ss->prev.b[4] = v3;
 #endif
 		goto m3;
 	    case 3:
 		*++q = first = v3;
-	      m3:v3 = v2, v2 = v1, v1 = v0, v0 = first;
+m3:		v3 = v2, v2 = v1, v1 = v0, v0 = first;
 		break;
 	    case 2:
 		*++q = first = v2;
@@ -173,7 +172,7 @@ s_MTFD_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_MTFD_template =
-{&st_MTF_state, s_MTF_init, s_MTFD_process, 1, 1,
- NULL, NULL, s_MTF_init
+const stream_template s_MTFD_template = {
+    &st_MTF_state, s_MTF_init, s_MTFD_process, 1, 1,
+    NULL, NULL, s_MTF_init
 };

@@ -415,8 +415,8 @@ $(GLOBJ)gxccman.$(OBJ): $(GLSRC)gxccman.c $(GXERR) $(memory__h) $(gpcheck_h)\
 
 $(GLOBJ)gxcht.$(OBJ): $(GLSRC)gxcht.c $(GXERR) $(memory__h)\
  $(gsutil_h)\
- $(gxcmap_h) $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h) $(gxistate_h)\
- $(gxmatrix_h) $(gzht_h)
+ $(gxarith_h) $(gxcmap_h) $(gxdcolor_h) $(gxdevice_h) $(gxfixed_h)\
+ $(gxistate_h) $(gxmatrix_h) $(gzht_h)
 	$(GLCC) $(GLO_)gxcht.$(OBJ) $(C_) $(GLSRC)gxcht.c
 
 $(GLOBJ)gxclip.$(OBJ): $(GLSRC)gxclip.c $(GX)\

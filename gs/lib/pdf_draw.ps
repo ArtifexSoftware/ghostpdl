@@ -377,10 +377,14 @@ end
       dup /FilePosition undef
     }
    if
-   dup /PaintProc
-    { false resolvestream pdfopdict .pdfrun
-    }
-   put
+   dup /PaintProc {
+     DEBUG { (%Begin PaintProc) = flush } if
+     false resolvestream pdfopdict .pdfrun
+     DEBUG { (%End PaintProc) = flush } if
+   } put
+   DEBUG {
+     (%Pattern: ) print dup === flush
+   } if
  } bdef
 
 drawopdict begin

@@ -51,20 +51,20 @@ GS_INIT=gs_init.ps
 
 # Choose generic configuration options.
 
-# Setting DEBUG=1 includes debugging features (-Z switch) in the code.
-# Code runs substantially slower even if no debugging switches are set,
-# and also takes about another 25K of memory.
+# Setting DEBUG=1 includes debugging features (-Z switch) in the code.  The
+# compiled code is substantially slower and larger.
 
 DEBUG=0
 
-# Setting TDEBUG=1 includes symbol table information for the debugger,
-# and also enables stack checking.  Code is substantially slower and larger.
+# Setting TDEBUG=1 includes symbol table information for the debugger, and
+# also enables stack checking.  The compiled code is substantially slower
+# and larger.
 
 TDEBUG=0
 
-# Setting NOPRIVATE=1 makes private (static) procedures and variables public,
-# so they are visible to the debugger and profiler.
-# No execution time or space penalty, just larger .OBJ and .EXE files.
+# Setting NOPRIVATE=1 makes private (static) procedures and variables
+# public, so they are visible to the debugger and profiler.  There is no
+# execution time or space penalty, just larger .OBJ and .EXE files.
 
 NOPRIVATE=0
 
@@ -74,10 +74,17 @@ GS=gswin32
 GSCONSOLE=gswin32c
 GSDLL=gsdll32
 
-# To build two small executables and a large DLL use MAKEDLL=1.
-# To build two large executables use MAKEDLL=0.
+# To build two small executables and a large DLL, use MAKEDLL=1.
+# To build two large executables, use MAKEDLL=0.
 
 MAKEDLL=1
+
+# If you want multi-thread-safe compilation, set MULTITHREAD=1; if not, set
+# MULTITHREAD=0.  MULTITHREAD=0 produces slightly smaller and faster code,
+# but MULTITHREAD=1 is required if you use any "asynchronous" output
+# drivers.
+
+MULTITHREAD=1
 
 # Define the source, generated intermediate file, and object directories
 # for the graphics library (GL) and the PostScript/PDF interpreter (PS).
@@ -305,12 +312,21 @@ CS=-N
 CS=
 !endif
 
+!if $(MULTITHREAD)!=0
+CMT=-tWM
+CLIB=cw32mt.lib
+!else
+CMT=
+CLIB=cw32.lib
+!endif
+
 # Specify function prolog type
 COMPILE_FOR_DLL=-WDE
 COMPILE_FOR_EXE=-WE
 COMPILE_FOR_CONSOLE_EXE=-WC
 
-GENOPT=$(CP) $(CD) $(CT) $(CS)
+# The -tWM is for multi-thread-safe compilation.
+GENOPT=$(CP) $(CD) $(CT) $(CS) $(CMT)
 
 CCFLAGS0=$(GENOPT) $(PLATOPT) $(CPFLAGS) $(FPFLAGS) $(CFLAGS) $(XCFLAGS)
 CCFLAGS=$(CCFLAGS0)
@@ -334,7 +350,8 @@ CCWINFLAGS=
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=$(GLOBJDIR)\gs16spl.exe
+# ****** HACK ****** *.tr and *.map are still created in the current directory.
+BEGINFILES2=$(GLOBJDIR)\gs16spl.exe *.tr *.map
 
 # Include the generic makefiles.
 
@@ -371,7 +388,7 @@ LIBCTR=libc32.tr
 GSCONSOLE_XE=$(GLOBJ)$(GSCONSOLE).exe
 
 $(LIBCTR): $(MAKEFILE) $(ECHOGS_XE)
-	echo $(LIBDIR)\import32.lib $(LIBDIR)\cw32.lib >$(LIBCTR)
+	echo $(LIBDIR)\import32.lib $(LIBDIR)\$(CLIB) >$(LIBCTR)
 
 !if $(MAKEDLL)
 # The graphical small EXE loader

@@ -491,13 +491,16 @@ name_alloc_sub(name_table * nt)
 	return_error(e_VMerror);
     memset(sub, 0, sizeof(name_sub_table));
     /* The following code is only used if EXTEND_NAMES is non-zero. */
-    if (sub_index >= 0x10000L >> nt_log2_sub_size) {	/* Fill in my_extension in all the newly created names. */
+#if name_extension_bits > 0
+    if (sub_index >= 0x10000L >> nt_log2_sub_size) {
+	/* Fill in my_extension in all the newly created names. */
 	uint extn = sub_index >> (16 - nt_log2_sub_size);
 	int i;
 
 	for (i = 0; i < nt_sub_size; ++i)
 	    set_name_extension(&sub->names[i], extn);
     }
+#endif
     nt->sub_tables[sub_index] = sub;
     /* Add the newly allocated entries to the free list. */
     /* Note that the free list will only be properly sorted if */

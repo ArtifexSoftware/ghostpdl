@@ -93,7 +93,7 @@ About the Kanji fonts
 
 Mr. Tetsurou Tanaka of the Department of Engineering, University of Tokyo,
 has created a set of free Kanji fonts that is freely available on the
-Internet for anonymous FTP from moe.ipl.t.u-tokyo.ac.jp:/Font and is
+Internet for anonymous FTP from ftp.ipl.t.u-tokyo.ac.jp:/Font and is
 distributed with Ghostscript.  Anyone can use these fonts as they are or
 with some format translation, and redistribute them without reporting.  If
 you redistribute them, you must inform the recipient that he can get the
@@ -134,6 +134,13 @@ original font files as follows:
 	min08-4.taz	wadalab-mincho-0-8.4.tar.gz
 	min18.taz	wadalab-mincho-1-8.tar.gz
 	sym-4.taz	wadalab-sym.4.tar.gz
+
+Unicode CMaps
+-------------
+
+The Unicode CMaps distributed with Ghostscript are freely downloadable from
+
+	ftp://ftp.oreilly.com/pub/examples/nutshell/ujip/adobe/
 
 Platform fonts
 ==============

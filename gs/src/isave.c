@@ -191,7 +191,7 @@ ENUM_RETURN_REF(&ptr->contents);
 ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(change_reloc_ptrs)
 {
-    RELOC_PTR(alloc_change_t, next);
+    RELOC_VAR(ptr->next);
     switch (ptr->offset) {
 	case ac_offset_static:
 	    break;

@@ -1,4 +1,4 @@
-/* Copyright (C) 1993, 1995 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1993, 1995, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -28,6 +28,10 @@ typedef struct stream_LZW_state_s {
     stream_state_common;
     /* The following are set before initialization. */
     int InitialCodeLength;	/* decoding only */
+    /*
+     * Adobe calls FirstBitLowOrder LowBitFirst.  Either one will work
+     * in PostScript code.
+     */
     bool FirstBitLowOrder;	/* decoding only */
     bool BlockData;		/* decoding only */
     int EarlyChange;		/* decoding only */
@@ -35,18 +39,17 @@ typedef struct stream_LZW_state_s {
     uint bits;			/* buffer for input bits */
     int bits_left;		/* # of valid low bits left */
     int bytes_left;		/* # of bytes left in current block */
-    /* (arbitrary large # if not GIF) */
+				/* (arbitrary large # if not GIF) */
     union _lzt {
 	lzw_decode *decode;
 	lzw_encode_table *encode;
     } table;
     uint next_code;		/* next code to be assigned */
     int code_size;		/* current # of bits per code */
-    int prev_code;		/* previous code recognized */
-    /* or assigned */
+    int prev_code;		/* previous code recognized or assigned */
     uint prev_len;		/* length of prev_code */
     int copy_code;		/* code whose string is being */
-    /* copied, -1 if none */
+				/* copied, -1 if none */
     uint copy_len;		/* length of copy_code */
     int copy_left;		/* amount of string left to copy */
     bool first;			/* true if no output yet */

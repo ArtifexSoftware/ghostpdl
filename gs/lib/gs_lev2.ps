@@ -67,6 +67,19 @@ level2dict begin
   } forall pop pop
 } .bind def	% not odef, shouldn't reset stacks
 
+% currentuser/systemparams creates and returns a dictionary in the
+% current VM.  The easiest way to make this work is to copy any composite
+% PostScript-level parameters to global VM.  Currently, the only such
+% parameters are strings.  In fact, we always copy string parameters,
+% so that we can be sure the contents won't be changed.
+/.copyparam {			% <value> .copyparam <value'>
+  dup type /stringtype eq {
+    .currentglobal true .setglobal
+    1 index length string exch .setglobal
+    copy readonly
+  } if
+} .bind def
+
 % Some user parameters are managed entirely at the PostScript level.
 % We take care of that here.
 systemdict begin
@@ -85,8 +98,7 @@ counttomark 2 idiv {
 } .bind def
 end
 /currentuserparams {		% - currentuserparams <dict>
-  /userparams .systemvar dup length
-  .currentglobal false .setglobal exch dict exch .setglobal .copydict
+  /userparams .systemvar dup length dict .copydict
 } odef
 /setuserparams {		% <dict> setuserparams -
 	% Check that we will be able to set the PostScript-level
@@ -103,6 +115,7 @@ end
       psuserparams 2 index known not {
 	pop dup .getuserparam
       } if
+      .copyparam
       /userparams .systemvar 3 1 roll .forceput  % userparams is read-only
     } {
       pop pop
@@ -148,14 +161,8 @@ end
    dup
     { //pssystemparams 2 index known
        {		% Stack: key newvalue
-	 dup gcheck not
-	  {		% The only composite objects that can have passed
-			% the type check are strings.
-	    .currentglobal true .setglobal
-	    1 index length string exch .setglobal
-	    copy readonly
-	  }
-	 if //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
+	 .copyparam
+	 //pssystemparams 3 1 roll .forceput	% pssystemparams is read-only
        }
        { pop pop
        }

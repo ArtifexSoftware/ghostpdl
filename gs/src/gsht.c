@@ -330,7 +330,6 @@ void
 gx_ht_construct_spot_order(gx_ht_order * porder)
 {
     uint width = porder->width;
-    uint height = porder->orig_height;
     uint num_levels = porder->num_levels;	/* = width x strip */
     uint strip = num_levels / width;
     gx_ht_bit *bits = porder->bits;
@@ -345,7 +344,7 @@ gx_ht_construct_spot_order(gx_ht_order * porder)
     gx_sort_ht_order(bits, num_levels);
     if_debug5('h',
 	      "[h]spot order: num_levels=%u w=%u h=%u strip=%u shift=%u\n",
-	      num_levels, width, height, strip, shift);
+	      num_levels, width, porder->orig_height, strip, shift);
     /* Fill in the levels array, replicating the bits vertically */
     /* if needed. */
     for (i = num_levels; i > 0;) {

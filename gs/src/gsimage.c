@@ -309,7 +309,6 @@ gs_image_next(gs_image_enum * penum, const byte * dbytes, uint dsize,
 void
 gs_image_cleanup(gs_image_enum * penum)
 {
-    gx_device *dev = penum->dev;
     int i;
 
     for (i = 0; i < penum->num_planes; ++i)

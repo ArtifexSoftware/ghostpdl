@@ -29,6 +29,173 @@ Procedures, Utilities, Drivers, Platforms, Fonts, Interpreter, Streams
 (included under Interpreter through release 2.9.9), Library.  Changes marked
 with a * were made available as patches to a previous release.
 
+Version 5.36(beta) (8/25/98)
+============================
+
+Another set of fixes.  The free-standing bbox device now produces convenient
+%%BoundingBox messages.  This fileset also includes support for double-byte
+TrueType fonts.
+
+Documentation
+-------------
+
+Fixes problems:
+	- There was a minor spacing glitch in one man page.  (gs.1)
+	- The page printed by align.ps didn't make it clear enough what to
+do with the numbers it asks users to calculate.  (align.ps)
+	- The sample code for adding gamma adjustment didn't work most of
+the time.  (devices.txt)
+	- The prolog produced by pswrite was completely uncommented.
+(gdevps.c)
+	- The documentation didn't note that the string block freelist
+(sfree) is sorted in address order.  (gxalloc.h)
+
+Notes that FirstBitLowOrder and LowBitFirst are equivalent.  (slzwx.h)
+
+Notes a change in the FTP site of the free Kanji ("Wadalab") fonts.
+(fonts.txt)
+
+Adds a pointer to the freely available Unicode CMaps.  (fonts.txt)
+
+Changes an obsolete e-mail address for Carsten Emde.  (contrib.mak)
+
+Utilities
+---------
+
+Fixes problems:
+	- The viewgif utility sometimes left 1-scan-line gaps when rendering
+interlaced images.  (viewgif.ps)
+
+Drivers
+-------
+
+Fixes problems:
+	- In the PDF writer, downsampled images were always written with 8
+bits per sample, not the requested depth.  (gdevpsdi.c)
+	- The 8-to-N-bit compression filter produced an extra byte at the
+end of each row, and the N-to-8-bit expansion filter skipped an input byte
+at the end of each row.  (gdevpsds.c)
+	- In the PDF writer, the size of downsampled images for changing the
+pixel width was set incorrectly, leading to inconsistent image parameters in
+the output.  (gdevpsdi.c)
+	- The subsampling filters didn't take a clear position about what to
+do with excess input samples beyond a multiple of the reduction factor,
+leading to inconsistent image parameters.  We added a Boolean to indicate
+whether they should discard the samples or use them to create an additional
+output sample.  (gdevpsds.h, gdevpsdi.c, gdevpsds.c)
+	- The subsampling filters didn't provide the necessary set_defaults
+procedures.  (gdevpsds.h, gdevpsds.c)
+	- Because of a typo, pdfwrite and pswrite printed sequences of 4
+decimal values wrong. (bug introduced during macro removal in 5.25)
+(gdevpstr.c)
+
+Makes the PS writer produce a %%HiResBoundingBox as well as a %%BoundingBox.
+(gdevps.c)
+
+Platforms
+---------
+
+Fixes problems:
+	- The Borland makefile didn't include the MT libraries.  We added a
+MULTITHREAD option to this makefile.  (bcwin32.mak)
+	- The MSVC makefile didn't include the MT switches in the right
+place.  (msvccmd.mak)
+	- 'make clean' in the Windows makefiles didn't clean up quite
+enough.  (bcwin32.mak, msvc32.mak, msvccmd.mak)
+	- The OS/2 makefile had gotten slightly out of date.  (os2.mak)
+
+Cleans up some formatting.  (gp_win32.c)
+
+Fonts
+-----
+
+Fixes problems:
+	- Loading large TrueType fonts caused excessive garbage collection.
+(gs_ttf.ps)
+
+Finishes implementing support for turning double-byte TrueType fonts into
+CIDFontType 2 fonts.  (gs_ttf.ps)
+
+Interpreter
+-----------
+
+Fixes problems:
+	- We thought the dictionary returned by currentuserparams should
+always be allocated in local VM, but in fact the correct definition is that
+it should be allocated in the current VM.  The simplest way to make this
+work is for setuserparams to copy any string values into global VM.
+(gs_lev2.ps)
+	- 1-input stitching functions didn't allow k = 0.  (ifunc.h,
+zfunc.c)
+	- OtherSubrs defined in PostScript no longer worked.  (bug probably
+introduced when we rewrote the Type 1 code in C) (zchar1.c)
+
+Cleans up a few compiler warnings (missing empty 'default' cases, unused
+variables).  (igc.c, iname.c)
+
+Replaces some uses of RELOC_*_PTR (now deprecated) with RELOC_*_VAR.
+(isave.c, iscan.c)
+
+Interpreter (PDF)
+-----------------
+
+Fixes problems:
+	- Resources were re-created on each page, causing (sometimes a lot
+of) unnecessary computation.  We implemented most of the machinery for
+avoiding this, but not the mechanism for actually storing resources in
+global VM.  (pdf_base.ps, pdf_main.ps)
+
+Adds a little more debugging code.  (pdf_draw.ps)
+
+Streams
+-------
+
+Cleans up formatting in a few more files.  (sbtx.h, sfilter.h, slzwx.h,
+spngpx.h, srlx.h, sstring.h, seexec.c, sfilter1.c, sfilter2.c, smtf.c,
+spcxd.c, srld.c, srle.c)
+
+Replaces a couple of #defines with duplicated (small) structures.  (sbtx.h,
+sfilter.h, sfilter1.c, sfilter2.c)
+
+Replaces all uses of RELOC_*_PTR (now deprecated) with RELOC_*_VAR.
+(stream.c)
+
+Library
+-------
+
+Fixes problems:
+	- If a garbage collection occurred during a string show operation,
+memory could be corrupted. (bug introduced in 5.24) (gstext.h, gstext.c)
+	- A debugging check incorrectly indicated an error when
+miter-checking lines with a 0 degree angle between them.  (gxstroke.c)
+	- A structure created for bitmap/pixmap patterns was never freed.
+(gspcolor.c)
+	- Colored halftones didn't work with 24-bit devices.  (This case was
+never actually used.)  (gxcht.c)
+	- CIE colors didn't remap properly if the current color space was a
+Pattern space.  (gscie.c)
+	- In a non-garbage-collected environment, freeing a string in the
+current chunk made an unnecessary test.  (Minor performance impact only.)
+(gsnogc.c)
+
+Cleans up a few compiler warnings (missing empty 'default' cases, unused
+variables).  (gsht.c, gsht1.c, gshtscr.c, gsimage.c, gxacpath.c, gxclread.c,
+gxicolor.c, gxshade4.c)
+
+Replaces some uses of RELOC_*_PTR with RELOC_*_VAR.  (gsht1.c)
+
+Changes the printed output of the free-standing bbox device so it produces
+%%BoundingBox and %%HiResBoundingBox lines that can be dropped directly into
+a DSC header.  (gdevbbox.c)
+
+Speeds up the 4-bit case of copy_mono by about 30%.  (gdevm4.c)
+
+Expands some macros and cleans up formatting, for easier reading and
+debugging.  Speeds up the color halftone generation algorithm substantially
+(up to 40%), by skipping the halftone computation for planes that are known
+to be solid-color, and using copy_mono directly if only one plane is not
+solid-color.  (gxcht.c)
+
 Version 5.35(beta) (8/18/98)
 ============================
 
@@ -1816,7 +1983,7 @@ Version 5.23(limited) (5/14/98)
 This fileset adds a number of PostScript LanguageLevel 3 features: library
 support for ImageType 3 and 4 (masked) images, PostScript-level support for
 ImageType 4, and the shfill operator for smooth shading.  It also adds RCS
-$Id$ lines to all the files we maintain.  It also changes the Unix makefiles
+
 so that they create debugging or profiling binaries in separate directories.
 
 This fileset includes an unusually large number of non-backward-compatible

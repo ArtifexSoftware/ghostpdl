@@ -207,12 +207,12 @@ accum_open(register gx_device * dev)
 private int
 accum_close(gx_device * dev)
 {
+#ifdef DEBUG
     gx_device_cpath_accum * const adev = (gx_device_cpath_accum *)dev;
 
-#ifdef DEBUG
     if (gs_debug_c('q')) {
 	gx_clip_rect *rp =
-	(adev->list.count <= 1 ? &adev->list.single : adev->list.head);
+	    (adev->list.count <= 1 ? &adev->list.single : adev->list.head);
 
 	dlprintf4("[q]list at 0x%lx, count=%d, head=0x%lx, tail=0x%lx:\n",
 		  (ulong) & adev->list, adev->list.count,

@@ -18,7 +18,8 @@
 
 
 /* Common platform-specific routines for MS-Windows WIN32 */
-/* hacked from gp_msdos.c by Russell Lang */
+/* originally hacked from gp_msdos.c by Russell Lang */
+/* original multi-threading code by John Desrosiers */
 #include "stdio_.h"
 #include "string_.h"		/* for strerror */
 #include "dos_.h"
@@ -133,9 +134,9 @@ gp_semaphore_sizeof(void)
     return sizeof(win32_semaphore);
 }
 
-int				/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
+int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
 gp_semaphore_open(
-		     gp_semaphore * sema	/* create semaphore here */
+		  gp_semaphore * sema	/* create semaphore here */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
@@ -151,7 +152,7 @@ gp_semaphore_open(
 
 void
 gp_semaphore_close(
-		      gp_semaphore * sema	/* semaphore to affect */
+		   gp_semaphore * sema	/* semaphore to affect */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
@@ -163,7 +164,7 @@ gp_semaphore_close(
 
 int				/* rets 0 ok, -ve error */
 gp_semaphore_wait(
-		     gp_semaphore * sema	/* semaphore to affect */
+		  gp_semaphore * sema	/* semaphore to affect */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
@@ -175,7 +176,7 @@ gp_semaphore_wait(
 
 int				/* rets 0 ok, -ve error */
 gp_semaphore_signal(
-		       gp_semaphore * sema	/* semaphore to affect */
+		    gp_semaphore * sema	/* semaphore to affect */
 )
 {
     win32_semaphore *const winSema = (win32_semaphore *)sema;
@@ -198,9 +199,9 @@ gp_monitor_sizeof(void)
     return sizeof(win32_monitor);
 }
 
-int				/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
+int	/* if sema <> 0 rets -ve error, 0 ok; if sema == 0, 0 movable, 1 fixed */
 gp_monitor_open(
-		   gp_monitor * mon	/* create monitor here */
+		gp_monitor * mon	/* create monitor here */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
@@ -214,7 +215,7 @@ gp_monitor_open(
 
 void
 gp_monitor_close(
-		    gp_monitor * mon	/* monitor to affect */
+		 gp_monitor * mon	/* monitor to affect */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
@@ -224,7 +225,7 @@ gp_monitor_close(
 
 int				/* rets 0 ok, -ve error */
 gp_monitor_enter(
-		    gp_monitor * mon	/* monitor to affect */
+		 gp_monitor * mon	/* monitor to affect */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
@@ -235,7 +236,7 @@ gp_monitor_enter(
 
 int				/* rets 0 ok, -ve error */
 gp_monitor_leave(
-		    gp_monitor * mon	/* monitor to affect */
+		 gp_monitor * mon	/* monitor to affect */
 )
 {
     win32_monitor *const winMon = (win32_monitor *)mon;
@@ -254,7 +255,7 @@ typedef struct gp_thread_creation_closure_s {
 /* Origin of new threads started by gp_create_thread */
 private DWORD WINAPI
 gp_thread_begin_wrapper(
-			   void *thread_data	/* gp_thread_creation_closure passed as magic data */
+			void *thread_data	/* gp_thread_creation_closure passed as magic data */
 )
 {
     gp_thread_creation_closure closure =
@@ -269,8 +270,8 @@ gp_thread_begin_wrapper(
 /* Call a function on a brand new thread */
 int				/* 0 ok, -ve error */
 gp_create_thread(
-		    gp_thread_creation_callback_t function,	/* function to start */
-		    void *data	/* magic data to pass to thread fn */
+		 gp_thread_creation_callback_t function,	/* function to start */
+		 void *data	/* magic data to pass to thread fn */
 )
 {
     /* Create the magic closure that thread_wrapper gets passed */
@@ -282,8 +283,14 @@ gp_create_thread(
     closure->function = function;
     closure->data = data;
 
-    /* Start thread_wrapper */
-    return
-	(_beginthread(gp_thread_begin_wrapper, 0, closure)
-	 ? 0 : gs_note_error(gs_error_unknownerror));
+    /*
+     * Start thread_wrapper.  The Microsoft _beginthread returns -1
+     * (according to the doc, even though the return type is "unsigned long"
+     * !!!) if the call fails; we aren't sure what the Borland _beginthread
+     * returns.  The hack with ~ avoids a source code commitment as to
+     * whether the return type is [u]int or [u]long.
+     */
+    if (~_beginthread(gp_thread_begin_wrapper, 0, closure) != 0)
+	return 0;
+    return_error(gs_error_unknownerror);
 }

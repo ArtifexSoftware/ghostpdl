@@ -285,8 +285,11 @@ bbox_output_page(gx_device * dev, int num_copies, int flush)
 	gs_rect bbox;
 
 	gx_device_bbox_bbox(bdev, &bbox);
-	dlprintf2("[gdevbbox] lower left  = %f %f\n", bbox.p.x, bbox.p.y);
-	dlprintf2("[gdevbbox] upper right = %f %f\n", bbox.q.x, bbox.q.y);
+	dlprintf4("%%%%BoundingBox: %d %d %d %d\n",
+		  (int)floor(bbox.p.x), (int)floor(bbox.p.y),
+		  (int)ceil(bbox.q.x), (int)ceil(bbox.q.y));
+	dlprintf4("%%%%HiResBoundingBox: %f %f %f %f\n",
+		  bbox.p.x, bbox.p.y, bbox.q.x, bbox.q.y);
     }
     /*
      * Propagate the PageCount to the target,

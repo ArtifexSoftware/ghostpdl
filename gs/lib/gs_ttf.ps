@@ -94,7 +94,8 @@
 
 /.loadttfontdict mark
 /orgXUID 107 def        % Aladdin Enterprises organization XUID
-/maxstring 32000 def    % a half of the maximum length of a PostScript string
+/maxstring 32000 def    % half the maximum length of a PostScript string,
+			% must be a multiple of 4 (for hmtx / loca / vmtx)
 
 % Define the Macintosh standard mapping from characters to glyph indices.
 /MacRomanEncoding dup .findencoding def
@@ -233,13 +234,24 @@ ifelse def
       nseg2 add /idroff etab 2 index nseg2 getinterval def
 		% The following hack allows us to properly handle
 		% idiosyncratic fonts that start at 0xf000:
-      /firstcode startc 0 getu16 16#ff00 and def
-      pop 0 2 nseg2 3 sub
+      /firstcode startc 0 getu16 dup 16#ff00 and 16#f000 ne { pop 0 } if def
+      pop /numcodes counttomark 1 sub def
+      0 2 nseg2 3 sub
        { /i2 exch def
 	 /scode startc i2 getu16 def
-	 counttomark scode firstcode sub 256 min exch sub 0 max { 0 } repeat
 	 /ecode endc i2 getu16 def
-	 /delta iddelta i2 getu16 def
+	 numcodes scode firstcode sub
+		% Hack for fonts that have only 0x0000 and 0xf000 ranges
+	 dup 16#e000 ge { 255 and } if
+	 exch sub 0 max dup { 0 exch } repeat
+	 ecode scode sub 1 add add numcodes add /numcodes exch def
+	 /delta iddelta i2 gets16 def
+	 DEBUG {
+	   (scode=) print scode =only
+	   ( ecode=) print ecode =only
+	   ( delta=) print delta =only
+	   ( droff=) print idroff i2 getu16 =
+	 } if
 	 idroff i2 getu16 dup 0 eq
 	  { pop scode 1 ecode { delta add 65535 and } for
 	  }
@@ -271,6 +283,9 @@ ifelse def
     (Can't handle format ) print 0 getu16 = flush
     0 1 255 { } for
   } ifelse
+  DEBUG {
+    ([) print counttomark 1 sub -1 0 { index =only ( ) print } for (]) =
+  } if
 } bind def
 
 % Each procedure in this dictionary is called as follows:
@@ -304,29 +319,48 @@ ifelse def
 
 % Each procedure in this dictionary is called as follows:
 %	<file> <length> -proc- <string|array_of_strings>
+% Note that each table must have an even length, because of a strange
+% Adobe requirement that each sfnts entry have even length.
+/readtables mark
+	% Ordinary tables
+  (cmap) { .readtable }
+  (head) 1 index
+  (hhea) 1 index
+  (name) 1 index
+  (post) 1 index
+  (vhea) 1 index
+	% Big tables
+  (glyf) { .readbigtable }
+  (loca) 1 index
+  (hmtx) 1 index
+  (vmtx) 1 index
+.dicttomark readonly def                % readtables
+
+% Read a table as a single string.
+% <file> <length> .readtable <string>
 /.readtable {
-	% Each table must have an even length, because of a strange
-	% Adobe requirement that each sfnts entry have even length.
   dup dup 1 and add string
 		% Stack: f len str
   dup 0 4 -1 roll getinterval
 		% Stack: f str str1
   3 -1 roll exch readstring pop pop
 } bind def
-/readtables mark
-	% Ordinary tables
-  (cmap) { .readtable }
-  (head) 1 index
-  (hhea) 1 index
-  (hmtx) 1 index
-  (loca) 1 index
-  (name) 1 index
-  (post) 1 index
-  (vhea) 1 index
-  (vmtx) 1 index
-	% Special tables
-  (glyf) { .readglyfs }
-.dicttomark readonly def                % readtables
+
+% Read a big table (one that may exceed 64K).
+% <file> <length> .readbigtable <string[s]>
+/.readbigtable {
+  dup 65400 lt {
+    .readtable
+  } {
+    currentuserparams /VMReclaim get -2 vmreclaim
+    [ 4 2 roll {
+		% Stack: mark ... f left
+      dup maxstring le { exit } if
+      1 index maxstring string readstring pop 3 1 roll maxstring sub
+    } loop .readtable ]
+    exch vmreclaim
+  } ifelse
+} bind def
 
 .dicttomark readonly def                % .loadttfontdict
 
@@ -361,20 +395,6 @@ ifelse def
   } sort def
 } bind def
 
-% <file> <length> .readglyfs <strings>
-% Read the glyfs data.  This is special because glyfs may exceed 64K.
-/.readglyfs {
-  dup 65400 lt {
-    .readtable
-  } {
-    [ 3 1 roll {
-		% Stack: mark ... f left
-      dup maxstring le { exit } if
-      1 index maxstring string readstring pop 3 1 roll maxstring sub
-    } loop .readtable ]
-  } ifelse
-} bind def
-
 % - .readttdata -
 % Read data.  Updates offsets, tabs; stores data in tabdict.
 /.readttdata {
@@ -400,6 +420,15 @@ ifelse def
   } forall
 } bind def
 
+% Find the string in a list of strings that includes a given index.
+% <strings> <index> .findseg <string> <index'>
+/.findseg {
+  exch {
+    dup length 2 index gt { exch exit } if
+    length sub
+  } forall
+} bind def
+
 % - .makesfnts -
 % Defines checksum, getloca, head, locatable, numglyphs, post, sfnts, upem
 /.makesfnts {
@@ -407,17 +436,28 @@ ifelse def
   /head tabdict /head get def
    /checksum head 8 getu32 def
   /locatable tabdict /loca get def
-  /numglyphs locatable length /getloca
   /post tabdict /post .knownget not { null } if def
-  head 50 getu16 0 ne {
-    {
-      2 bitshift locatable exch getu32
-    } def 4
+  /numglyphs
+    locatable dup type /stringtype eq
+     { length }
+     { 0 exch { length add } forall }
+    ifelse	% no def yet
+  locatable type /stringtype eq {
+    /.indexloca {} def
   } {
-    {
-      dup add locatable exch getu16 dup add
-    } def 2
-  } ifelse idiv 1 sub def
+    /.indexloca /.findseg load def
+  } ifelse
+  head 50 getu16 0 ne {
+    /getloca {
+      2 bitshift locatable exch .indexloca getu32
+    } def
+    4 idiv 1 sub
+  } {
+    /getloca {
+      dup add locatable exch .indexloca getu16 dup add
+    } def
+    2 idiv 1 sub
+  } ifelse def		% numglyphs
 	% If necessary, re-partition the glyfs.
   tabdict /glyf get dup type /stringtype ne {
     .dividesfnts tabdict /glyf 3 -1 roll put
@@ -474,36 +514,44 @@ ifelse def
       } for
       len1 prevsplit sub
     ] def
+    currentuserparams /VMReclaim get -2 vmreclaim
     [
 		% Re-split the sfnts glyfs strings according to splitarray.
-      glyfs 0 get
-      /split_idx 0 def
-      /sfnt_idx 1 def {
-		% Stack: [ ...strings... current_string
-        dup length splitarray split_idx get ge {
-		% The next split falls within the current string.
-	  dup 0 splitarray split_idx get getinterval exch
-	  1 index length dup 2 index length exch sub getinterval
-	  split_idx splitarray length 1 sub lt {
-	    /split_idx split_idx 1 add def
-	  } {
-	    length 0 ne {
-	      (Shouldn't happen1 -- malformed splitarray\n) print quit
-	    } if
-	    exit
-	  } ifelse
-	} {
-		% The next split falls beyond the current string.
-		% Concatenate another sfnts string onto the current one.
-	  sfnt_idx glyfs length lt {
-	    glyfs sfnt_idx get concatstrings
-	    /sfnt_idx sfnt_idx 1 add def
-	  } {
-	    (Shouldn't happen2 -- malformed splitarray\n) print quit
-	  } ifelse
-	} ifelse
-      } loop
+		% We do this by iterating over the final segments defined
+		% by splitarray, and constructing them from pieces of the
+		% current glyfs strings.  We recycle the current strings
+		% when possible, to avoid stressing the allocator.
+      /sfnt_idx 0 def
+      /strpos 0 def
+      /avail () def
+      splitarray {
+	/seglen exch def
+	/segpos 0 def
+	avail length seglen ge
+	  { avail 0 seglen getinterval /avail () def } { seglen string }
+	ifelse
+	{
+	  /str glyfs sfnt_idx get def
+	  /strlen str length def
+	  /strleft strlen strpos sub def
+	  seglen segpos sub strleft lt { exit } if
+		% Copy the (rest of the) string into the new segment.
+		% We know strleft <= segleft.
+	  dup segpos str strpos strleft getinterval putinterval
+	  /segpos segpos strleft add def
+	  /avail str def
+	  /sfnt_idx sfnt_idx 1 add def
+	  /strpos 0 def
+	  segpos seglen eq { exit } if
+	} loop
+		% Fill up the segment with an initial piece of the next
+		% existing glyfs string.  We know strleft > segleft.
+	/segleft seglen segpos sub def
+	dup segpos str strpos segleft getinterval putinterval
+	/strpos strpos segleft add def
+      } forall
     ]
+    exch vmreclaim
 } bind def
 
 % - .ttkeys <key> <value> ...
@@ -584,6 +632,15 @@ ifelse def
   end end dup /FontName get exch definefont
 } bind def
 
+% Create a string with N CIDs from the top of the stack.
+% <cid1> ... <cidN> <N> .makecidmap <string>
+/.makecidmap {
+  dup 2 mul string exch 1 sub 2 mul -2 0 {
+		% Stack: cids str i2
+    2 copy 5 -1 roll putu16 pop
+  } for
+} bind def
+
 % -mark- <key> <value> ... .definettcidfont <font>
 /.definettcidfont {
   /CIDFontName fontname
@@ -596,15 +653,14 @@ ifelse def
   /CharStrings mark /.notdef 0 .dicttomark
   cmaptab cmaparray
   counttomark /cidcount exch def
-		% This algorithm only works up to 32K character codes.
-		% We'll extend it later if we need to.
-    cidcount 2 mul string
-    0 1 cidcount 1 sub {
-      2 copy dup 2 mul exch
-		% Stack: mark gid0 ... cidmap i cidmap 2*i i
-      cidcount 3 add exch sub index putu16 pop
-    } for
-    counttomark 1 add 1 roll cleartomark
+  cidcount maxstring le {
+		% Use a single string.
+    cidcount .makecidmap exch pop
+  } {
+		% We must use 2 strings.
+    maxstring .makecidmap counttomark 1 add 1 roll
+    counttomark .makecidmap exch pop exch 2 array astore
+  } ifelse
   /CIDMap exch
   /CIDCount cidcount
   /GDBytes 2

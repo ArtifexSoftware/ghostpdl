@@ -1,4 +1,4 @@
-/* Copyright (C) 1996 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1996, 1998 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -29,10 +29,8 @@
  * in non-garbage-collected environments.
  */
 
-#define get2(ptr) (((ptr)[0] << 8) + (ptr)[1])
-#define put2(ptr, val) ((ptr)[0] = (val) >> 8, (ptr)[1] = (byte)(val))
-
-#define imem ((gs_ref_memory_t *)mem)
+#define GET2(ptr) (((ptr)[0] << 8) + (ptr)[1])
+#define PUT2(ptr, val) ((ptr)[0] = (val) >> 8, (ptr)[1] = (byte)(val))
 
 /* Allocate a string. */
 /* Scan the current chunk's free list if the request is large enough. */
@@ -40,6 +38,8 @@
 private byte *
 sf_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
+
     if (nbytes >= 40 && nbytes < imem->large_size) {
 	byte *base = csbase(&imem->cc);
 	byte *prev = 0;
@@ -49,14 +49,14 @@ sf_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 
 	for (; offset != 0; prev = ptr, offset = next) {
 	    ptr = base + offset;
-	    next = get2(ptr + 2);
-	    if (get2(ptr) != nbytes)
+	    next = GET2(ptr + 2);
+	    if (GET2(ptr) != nbytes)
 		continue;
 	    /* Take this block. */
 	    if (prev == 0)
 		imem->cc.sfree = next;
 	    else
-		put2(prev + 2, next);
+		PUT2(prev + 2, next);
 	    if_debug4('A', "[a%d:+>F]%s(%u) = 0x%lx\n", imem->space,
 		      client_name_string(cname), nbytes, (ulong) ptr);
 	    gs_alloc_fill(ptr, gs_alloc_fill_alloc, nbytes);
@@ -71,6 +71,7 @@ sf_alloc_string(gs_memory_t * mem, uint nbytes, client_name_t cname)
 private void
 sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 {
+    gs_ref_memory_t * const imem = (gs_ref_memory_t *)mem;
     chunk_t *cp;
     uint str_offset;
 
@@ -84,9 +85,10 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
     if_debug4('A', "[a%d:->#]%s(%u) 0x%lx\n", imem->space,
 	      client_name_string(cname), size, (ulong) str);
     imem->lost.strings += size;
-    if (ptr_is_in_chunk(str, &imem->cc))
+    if (ptr_is_in_chunk(str, &imem->cc)) {
 	cp = &imem->cc;
-    else {
+	/* We already tested for the string being at ctop. */
+    } else {
 	chunk_locator_t loc;
 
 	loc.memory = imem;
@@ -94,19 +96,20 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 	if (!chunk_locate_ptr(str, &loc))
 	    return;		/* something is probably wrong.... */
 	cp = loc.cp;
-    }
-    if (str == cp->ctop) {
-	cp->ctop += size;
-	return;
+	if (str == cp->ctop) {
+	    cp->ctop += size;
+	    return;
+	}
     }
     str_offset = str - csbase(cp);
     if (size >= 4) {
 	byte *prev;
 	uint next;
 
-	put2(str, size);
-	if (cp->sfree == 0 || str_offset < cp->sfree) {		/* Put the string at the head of the free list. */
-	    put2(str + 2, cp->sfree);
+	PUT2(str, size);
+	if (cp->sfree == 0 || str_offset < cp->sfree) {
+	    /* Put the string at the head of the free list. */
+	    PUT2(str + 2, cp->sfree);
 	    cp->sfree = str_offset;
 	    return;
 	}
@@ -114,22 +117,22 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 	prev = csbase(cp) + cp->sfree;
 #ifdef DEBUG
 	if (gs_debug_c('?')) {
-	    if (prev < str + size && prev + get2(prev) > str) {
+	    if (prev < str + size && prev + GET2(prev) > str) {
 		lprintf4("freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
-			 (ulong) str, size, (ulong) prev, get2(prev));
+			 (ulong) str, size, (ulong) prev, GET2(prev));
 		return;
 	    }
 	}
 #endif
 	for (;;) {
-	    next = get2(prev + 2);
+	    next = GET2(prev + 2);
 #ifdef DEBUG
 	    if (gs_debug_c('?') && next != 0) {
 		byte *pnext = csbase(cp) + next;
 
-		if (pnext < str + size && pnext + get2(pnext) > str) {
+		if (pnext < str + size && pnext + GET2(pnext) > str) {
 		    lprintf4("freeing string 0x%lx(%u), overlaps 0x%lx(%u)!\n",
-			     (ulong) str, size, (ulong) pnext, get2(pnext));
+			     (ulong) str, size, (ulong) pnext, GET2(pnext));
 		    return;
 		}
 	    }
@@ -138,11 +141,14 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 		break;
 	    prev = csbase(cp) + next;
 	}
-	put2(str + 2, next);
-	put2(prev + 2, str_offset);
+	PUT2(str + 2, next);
+	PUT2(prev + 2, str_offset);
 	gs_alloc_fill(str + 4, gs_alloc_fill_free, size - 4);
-    } else {			/* Insert the string in the 1-byte free list(s).  Note that */
-	/* if it straddles a 256-byte block, we need to do this twice. */
+    } else {
+	/*
+	 * Insert the string in the 1-byte free list(s).  Note that
+	 * if it straddles a 256-byte block, we need to do this twice.
+	 */
 	ushort *pfree1 = &cp->sfree1[str_offset >> 8];
 	uint count = size;
 	byte *prev;
@@ -163,17 +169,19 @@ sf_free_string(gs_memory_t * mem, byte * str, uint size, client_name_t cname)
 	    while (prev + (next = *prev) < str)
 		prev += next;
 	}
-	for (;;) {		/*
-				 * Invariants:
-				 *      prev < sfbase + str_offset
-				 *      *prev == 0 || prev + *prev > sfbase + str_offset
-				 */
+	for (;;) {
+	    /*
+	     * Invariants:
+	     *      prev < sfbase + str_offset
+	     *      *prev == 0 || prev + *prev > sfbase + str_offset
+	     */
 	    *ptr = (*prev == 0 ? 0 : prev + *prev - ptr);
 	    *prev = ptr - prev;
 	    if (!--count)
 		break;
 	    prev = ptr++;
-	    if (!(++str_offset & 255)) {	/* Move to the next block of 256 bytes. */
+	    if (!(++str_offset & 255)) {
+		/* Move to the next block of 256 bytes. */
 		++pfree1;
 		*ptr = (byte) * pfree1;
 		*pfree1 = str_offset;
@@ -195,8 +203,6 @@ sf_enable_free(gs_memory_t * mem, bool enable)
 	mem->procs.free_string = sf_free_string;
 }
 
-#undef imem
-
 /* Merge free strings at the bottom of a chunk's string storage. */
 private void
 sf_merge_strings(chunk_t * cp)
@@ -207,8 +213,8 @@ sf_merge_strings(chunk_t * cp)
 	ushort *pfree1;
 
 	if (cp->sfree == top_offset) {	/* Merge a large free block. */
-	    cp->sfree = get2(ctop + 2);
-	    cp->ctop += get2(ctop);
+	    cp->sfree = GET2(ctop + 2);
+	    cp->ctop += GET2(ctop);
 	    continue;
 	}
 	if (!cp->sfree1)

@@ -43,8 +43,8 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
 
     for (; (count = rlimit - p) >= 4; p += 4) {
 	ulong word =
-	((ulong) (((uint) p[1] << 8) + p[2]) << 16) +
-	(((uint) p[3] << 8) + p[4]);
+	    ((ulong) (((uint) p[1] << 8) + p[2]) << 16) +
+	    (((uint) p[3] << 8) + p[4]);
 
 	if (word == 0) {
 	    if (wlimit - q < 2) {
@@ -58,7 +58,7 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
 	    uint v2 = v3 / 85;	/* max 85^2 */
 	    uint v1 = v2 / 85;	/* max 85 */
 
-	  put:if (wlimit - q < 6) {
+put:	    if (wlimit - q < 6) {
 		status = 1;
 		break;
 	    }
@@ -159,8 +159,8 @@ s_A85E_process(stream_state * st, stream_cursor_read * pr,
 #undef LINE_LIMIT
 
 /* Stream template */
-const stream_template s_A85E_template =
-{&st_stream_state, NULL, s_A85E_process, 4, 6
+const stream_template s_A85E_template = {
+    &st_stream_state, NULL, s_A85E_process, 4, 6
 };
 
 /* ------ ASCII85Decode ------ */
@@ -219,8 +219,10 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 	    }
 	    q[1] = q[2] = q[3] = q[4] = 0,
 		q += 4;
-	} else if (scan_char_decoder[ch] == ctype_space);
-	else if (ch == '~') {	/* Handle odd bytes. */
+	} else if (scan_char_decoder[ch] == ctype_space)
+	    DO_NOTHING;
+	else if (ch == '~') {
+	    /* Handle odd bytes. */
 	    if (p == rlimit) {
 		if (last)
 		    status = ERRC;
@@ -261,7 +263,8 @@ s_A85D_process(stream_state * st, stream_cursor_read * pr,
 /* Handle the end of input data. */
 private int
 a85d_finish(int ccount, ulong word, stream_cursor_write * pw)
-{				/* Assume there is enough room in the output buffer! */
+{
+    /* Assume there is enough room in the output buffer! */
     byte *q = pw->ptr;
     int status = EOFC;
 
@@ -280,8 +283,8 @@ a85d_finish(int ccount, ulong word, stream_cursor_write * pw)
 	case 4:		/* 3 odd bytes */
 	    word = word * 85 + 0xffL;
 	    q[3] = (byte) (word >> 8);
-	  o2:q[2] = (byte) (word >> 16);
-	  o1:q[1] = (byte) (word >> 24);
+o2:	    q[2] = (byte) (word >> 16);
+o1:	    q[1] = (byte) (word >> 24);
 	    q += ccount - 1;
 	    pw->ptr = q;
     }
@@ -289,8 +292,8 @@ a85d_finish(int ccount, ulong word, stream_cursor_write * pw)
 }
 
 /* Stream template */
-const stream_template s_A85D_template =
-{&st_A85D_state, s_A85D_init, s_A85D_process, 2, 4
+const stream_template s_A85D_template = {
+    &st_A85D_state, s_A85D_init, s_A85D_process, 2, 4
 };
 
 /* ------ ByteTranslateEncode/Decode ------ */
@@ -314,17 +317,17 @@ s_BT_process(stream_state * st, stream_cursor_read * pr,
 	count = rcount, status = 0;
     else
 	count = wcount, status = 1;
-
     while (count--)
 	*++q = ss->table[*++p];
-
     pr->ptr = p;
     pw->ptr = q;
     return status;
 }
 
 /* Stream template */
-
-const stream_template s_BT_template =
-{&st_BT_state, NULL, s_BT_process, 1, 1
+const stream_template s_BTE_template = {
+    &st_BT_state, NULL, s_BT_process, 1, 1
+};
+const stream_template s_BTD_template = {
+    &st_BT_state, NULL, s_BT_process, 1, 1
 };

@@ -49,15 +49,15 @@ s_exE_process(stream_state * st, stream_cursor_read * pr,
 	count = rcount, status = 0;
     else
 	count = wcount, status = 1;
-    gs_type1_encrypt(q + 1, p + 1, count, (crypt_state *) & ss->cstate);
+    gs_type1_encrypt(q + 1, p + 1, count, (crypt_state *)&ss->cstate);
     pr->ptr += count;
     pw->ptr += count;
     return status;
 }
 
 /* Stream template */
-const stream_template s_exE_template =
-{&st_exE_state, NULL, s_exE_process, 1, 2
+const stream_template s_exE_template = {
+    &st_exE_state, NULL, s_exE_process, 1, 2
 };
 
 /* ------ eexecDecode ------ */
@@ -101,24 +101,30 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
     int status = 0;
     int count = (wcount < rcount ? (status = 1, wcount) : rcount);
 
-    if (ss->binary < 0) {	/* This is the very first time we're filling the buffer. */
-	/* Determine whether this is ASCII or hex encoding. */
+    if (ss->binary < 0) {
+	/*
+	 * This is the very first time we're filling the buffer.
+	 * Determine whether this is ASCII or hex encoding.
+	 */
 	const byte *const decoder = scan_char_decoder;
 	int i;
 
 	if (rcount < 8)
 	    return 0;
-	/* Adobe's documentation doesn't actually specify the test */
-	/* that eexec should use, but we believe the following */
-	/* gives correct answers even on certain non-conforming */
-	/* PostScript files encountered in practice: */
+	/*
+	 * Adobe's documentation doesn't actually specify the test
+	 * that eexec should use, but we believe the following
+	 * gives correct answers even on certain non-conforming
+	 * PostScript files encountered in practice:
+	 */
 	ss->binary = 0;
 	for (i = 1; i <= 8; i++)
 	    if (!(decoder[p[i]] <= 0xf ||
 		  decoder[p[i]] == ctype_space)
 		) {
 		ss->binary = 1;
-		if (ss->pfb_state != 0) {	/* Stop at the end of the .PFB binary data. */
+		if (ss->pfb_state != 0) {
+		    /* Stop at the end of the .PFB binary data. */
 		    ss->record_left = ss->pfb_state->record_left;
 		}
 		break;
@@ -129,14 +135,19 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
 	    count = ss->record_left;
 	    status = 0;
 	}
-	/* We pause at the end of the .PFB binary data, */
-	/* in an attempt to keep from reading beyond the end of */
-	/* the encrypted data. */
+	/*
+	 * We pause at the end of the .PFB binary data,
+	 * in an attempt to keep from reading beyond the end of
+	 * the encrypted data.
+	 */
 	if ((ss->record_left -= count) == 0)
 	    ss->record_left = max_long;
 	pr->ptr = p + count;
-    } else {			/* We only ignore leading whitespace, in an attempt to */
-	/* keep from reading beyond the end of the encrypted data. */
+    } else {
+	/*
+	 * We only ignore leading whitespace, in an attempt to
+	 * keep from reading beyond the end of the encrypted data.
+	 */
 	status = s_hex_process(pr, pw, &ss->odd,
 			       hex_ignore_leading_whitespace);
 	p = q;
@@ -169,7 +180,7 @@ s_exD_process(stream_state * st, stream_cursor_read * pr,
  * for a subsequent filter in a pipeline.  Note that we have to specify
  * a size of at least 128 so that filter_read won't round it up.
  */
-const stream_template s_exD_template =
-{&st_exD_state, s_exD_init, s_exD_process, 8, 200,
- NULL, s_exD_set_defaults
+const stream_template s_exD_template = {
+    &st_exD_state, s_exD_init, s_exD_process, 8, 200,
+    NULL, s_exD_set_defaults
 };

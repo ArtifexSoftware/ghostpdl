@@ -92,16 +92,18 @@ private RELOC_PTRS_BEGIN(halftone_component_reloc_ptrs)
     switch (hptr->type) {
 	case ht_type_spot:
 	    if (hptr->params.spot.transfer == 0)
-		RELOC_PTR(gs_halftone_component, params.spot.transfer_closure.data);
+		RELOC_VAR(hptr->params.spot.transfer_closure.data);
 	    break;
 	case ht_type_threshold:
-	    RELOC_CONST_STRING_PTR(gs_halftone_component, params.threshold.thresholds);
+	    RELOC_CONST_STRING_VAR(hptr->params.threshold.thresholds);
 	    if (hptr->params.threshold.transfer == 0)
-		RELOC_PTR(gs_halftone_component, params.threshold.transfer_closure.data);
+		RELOC_VAR(hptr->params.threshold.transfer_closure.data);
 	    break;
 	case ht_type_client_order:
-	    RELOC_PTR(gs_halftone_component, params.client_order.client_data);
-	    RELOC_PTR(gs_halftone_component, params.client_order.transfer_closure.data);
+	    RELOC_VAR(hptr->params.client_order.client_data);
+	    RELOC_VAR(hptr->params.client_order.transfer_closure.data);
+	    break;
+	default:
 	    break;
     }
 }

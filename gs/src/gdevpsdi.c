@@ -86,7 +86,7 @@ setup_image_compression(psdf_binary_writer * pbw, const psdf_image_params * pdip
     stream_state *st;
 
     if (pdip->AutoFilter) {
-/****** AutoFilter IS NYI ******/
+	/****** AutoFilter IS NYI ******/
 	/*
 	 * Even though this isn't obvious from the Adobe Tech Note,
 	 * it appears that if UseFlateCompression is true, the default
@@ -153,7 +153,7 @@ setup_image_compression(psdf_binary_writer * pbw, const psdf_image_params * pdip
 	    ss->Columns = pim->Width;
 	}
     } else if (template == &s_DCTE_template) {
-/****** ADD PARAMETERS FROM pdip->Dict ******/
+	/****** ADD PARAMETERS FROM pdip->Dict ******/
     } {
 	int code = psdf_encode_binary(pbw, template, st);
 
@@ -173,14 +173,16 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 {
     gx_device_psdf *pdev = pbw->dev;
     const stream_template *template =
-    (pdip->DownsampleType == ds_Average ?
-     &s_Average_template : &s_Subsample_template);
+	(pdip->DownsampleType == ds_Average ?
+	 &s_Average_template : &s_Subsample_template);
     int factor = (int)(resolution / pdip->Resolution);
     int orig_bpc = pim->BitsPerComponent;
+    int orig_width = pim->Width;
+    int orig_height = pim->Height;
     stream_state *st;
     int code;
 
-    if (factor <= 1)
+    if (factor <= 1 || pim->Width < factor || pim->Height < factor)
 	return setup_image_compression(pbw, pdip, pim);		/* no downsampling */
     st = s_alloc_state(pdev->v_memory, template->stype,
 		       "setup_downsampling");
@@ -199,14 +201,17 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 	    (*template->init) (st);
 	pim->Width /= factor;
 	pim->Height /= factor;
-	pim->BitsPerComponent = 8;
-	gs_matrix_scale(&pim->ImageMatrix, 1.0 / factor, 1.0 / factor,
+	pim->BitsPerComponent = pdip->Depth;
+	gs_matrix_scale(&pim->ImageMatrix, (double)pim->Width / orig_width,
+			(double)pim->Height / orig_height,
 			&pim->ImageMatrix);
-/****** NO ANTI-ALIASING YET ******/
+	/****** NO ANTI-ALIASING YET ******/
 	if ((code = setup_image_compression(pbw, pdip, pim)) < 0 ||
-	    (code = psdf_encode_binary(pbw, template, st)) < 0 ||
 	    (code = pixel_resize(pbw, pim->Width, ss->Colors,
-				 orig_bpc, pim->BitsPerComponent)) < 0
+				 8, pdip->Depth)) < 0 ||
+	    (code = psdf_encode_binary(pbw, template, st)) < 0 ||
+	    (code = pixel_resize(pbw, orig_width, ss->Colors,
+				 orig_bpc, 8)) < 0
 	    ) {
 	    gs_free_object(pdev->v_memory, st, "setup_image_compression");
 	    return code;
@@ -219,15 +224,16 @@ setup_downsampling(psdf_binary_writer * pbw, const psdf_image_params * pdip,
 /* Note that this may modify the image parameters. */
 int
 psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
-      gs_image_t * pim, const gs_matrix * pctm, const gs_imager_state * pis)
-{				/*
-				 * The following algorithms are per Adobe Tech Note # 5151,
-				 * "Acrobat Distiller Parameters", revised 16 September 1996
-				 * for Acrobat(TM) Distiller(TM) 3.0.
-				 *
-				 * The control structure is a little tricky, because filter
-				 * pipelines must be constructed back-to-front.
-				 */
+			 gs_image_t * pim, const gs_matrix * pctm,
+			 const gs_imager_state * pis)
+{	/*
+	 * The following algorithms are per Adobe Tech Note # 5151,
+	 * "Acrobat Distiller Parameters", revised 16 September 1996
+	 * for Acrobat(TM) Distiller(TM) 3.0.
+	 *
+	 * The control structure is a little tricky, because filter
+	 * pipelines must be constructed back-to-front.
+	 */
     int code = 0;
     psdf_image_params params;
 
@@ -282,10 +288,11 @@ psdf_setup_image_filters(gx_device_psdf * pdev, psdf_binary_writer * pbw,
 	    }
 	} else {
 	    /* Color */
-	    bool cmyk_to_rgb = pdev->params.ConvertCMYKImagesToRGB &&
-	    pis != 0 &&
-	    gs_color_space_get_index(pim->ColorSpace) ==
-	    gs_color_space_index_DeviceCMYK;
+	    bool cmyk_to_rgb =
+		pdev->params.ConvertCMYKImagesToRGB &&
+		pis != 0 &&
+		gs_color_space_get_index(pim->ColorSpace) ==
+		  gs_color_space_index_DeviceCMYK;
 
 	    if (cmyk_to_rgb)
 		pim->ColorSpace = gs_cspace_DeviceRGB(pis);

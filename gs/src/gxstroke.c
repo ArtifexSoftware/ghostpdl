@@ -1169,7 +1169,7 @@ line_join_points(const gx_line_params * pgs_lp, pl_ptr plp, pl_ptr nplp,
 		    dif += 2 * M_PI;
 		else if (dif >= 2 * M_PI)
 		    dif -= 2 * M_PI;
-		if ((dif < M_PI) != ccw)
+		if (dif != 0 && (dif < M_PI) != ccw)
 		    lprintf8("ccw wrong: tan(a1=%g)=%g/%g, tan(a2=%g)=%g,%g, dif=%g, ccw=%d\n",
 			     a1, u1, v1, a2, u2, v2, dif, ccw);
 	    }

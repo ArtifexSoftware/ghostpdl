@@ -58,20 +58,20 @@ private RELOC_PTRS_BEGIN(stream_reloc_ptrs)
 	long reloc;
 
 	if (st->cbuf_string.data != 0) {
-	    RELOC_STRING_PTR(stream, cbuf_string);
+	    RELOC_STRING_VAR(st->cbuf_string);
 	    st->cbuf = st->cbuf_string.data;
 	} else
-	    RELOC_PTR(stream, cbuf);
+	    RELOC_VAR(st->cbuf);
 	reloc = cbuf_old - st->cbuf;
 	/* Relocate the other buffer pointers. */
 	st->srptr -= reloc;
 	st->srlimit -= reloc;	/* same as swptr */
 	st->swlimit -= reloc;
     }
-    RELOC_PTR(stream, strm);
-    RELOC_PTR(stream, prev);
-    RELOC_PTR(stream, next);
-    RELOC_PTR(stream, state);
+    RELOC_VAR(st->strm);
+    RELOC_VAR(st->prev);
+    RELOC_VAR(st->next);
+    RELOC_VAR(st->state);
 }
 RELOC_PTRS_END
 /* Finalize a stream by closing it. */

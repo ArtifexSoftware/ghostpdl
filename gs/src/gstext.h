@@ -113,6 +113,8 @@ typedef struct gs_text_params_s {
     /* Either one may be NULL, meaning widths = 0. */
     const float *x_widths;	/* REPLACE_X_WIDTHS */
     const float *y_widths;	/* REPLACE_Y_WIDTHS */
+    /* The following are for internal use only, not by clients. */
+    gs_const_string gc_string;	/* for use only during GC */
 } gs_text_params_t;
 
 #define st_gs_text_params_max_ptrs 3

@@ -48,7 +48,7 @@ clippath pathbbox newpath
 % Print the text in the middle of the page.
 
 /S 80 string def
-108 360 moveto
+108 480 moveto
 /Helvetica 12 selectfont
  { currentfile S readline pop dup (%END) eq { pop exit } if
    gsave show grestore 0 -15 rmoveto
@@ -58,12 +58,15 @@ the vertical line be H, and from the bottom edge to the
 horizontal line be V; let the lengths of the gaps at the top
 and bottom of the vertical line be T and B respectively, and
 the gaps at the left and right of the horizontal line be L
-and R.  For measurements in inches, the proper page device
-parameters for this printer are set by
-        << /.HWMargins [ml mb mr mt] /Margins [x y]
-        >> setpagedevice
+and R.  For correct alignment of pages, put the following line
+in a file named (for example) margins.ps, and then mention
+margins.ps on the gs command line when printing any of your
+own files:
+
+    <<  /.HWMargins [ml mb mr mt] /Margins [x y]  >>  setpagedevice
+
 where
-        ml = L * 72, mb = B * 72, mr = R * 72, mt = T * 72
+        ml = L * 72, mb = B * 72, mr = R * 72, mt = T * 72,
 %END
 /res currentpagedevice /.MarginsHWResolution get def
 (        x = (1 - H) * ) show res 0 get =string cvs show

@@ -328,7 +328,7 @@ MAKEFILE=msvc32.mak msvccmd.mak msvctail.mak winlib.mak winint.mak
 # nmake expands macros when encountered, not when used,
 # so this must precede the !include statements.
 
-BEGINFILES2=gs*32*.exp gs*32*.ilk gs*32*.pdb gs*32*.lib
+BEGINFILES2=gs*32*.exp gs*32*.ilk gs*32*.pdb gs*32*.lib lib32.rsp
 
 !include msvccmd.mak
 !include winlib.mak
@@ -336,6 +336,10 @@ BEGINFILES2=gs*32*.exp gs*32*.ilk gs*32*.pdb gs*32*.lib
 !include winint.mak
 
 # ----------------------------- Main program ------------------------------ #
+
+lib32.rsp: MAKEFILE
+	echo /NODEFAULTLIB:LIBC.lib > lib32.rsp
+	echo $(LIBDIR)\libcmt.lib >> lib32.rsp
 
 !if $(MAKEDLL)
 # The graphical small EXE loader
@@ -354,15 +358,15 @@ $(GSCONSOLE).exe: $(OBJC) $(GS).res dw32c.def
 	del gswin32.rsp
 
 # The big DLL
-$(GSDLL).dll: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(GSDLL).res
+$(GSDLL).dll: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(GSDLL).res lib32.rsp
 	echo /DLL /DEF:gsdll32.def /OUT:$(GSDLL).dll > gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gswin32.rsp gsdll @$(ld_tr) $(INTASM) @lib.tr @$(LIBCTR) $(GSDLL).res
+        $(LINK) $(LCT) @gswin32.rsp gsdll @$(ld_tr) $(INTASM) @lib.tr @lib32.rsp @$(LIBCTR) $(GSDLL).res
 	del gswin32.rsp
 
 !else
 # The big graphical EXE
-$(GS_XE):   $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res dwmain32.def
+$(GS_XE): $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS).res dwmain32.def lib32.rsp
 	copy $(ld_tr) gswin32.tr
 	echo $(GLOBJ)dwnodll.obj >> gswin32.tr
 	echo $(GLOBJ)dwimg.obj >> gswin32.tr
@@ -370,19 +374,19 @@ $(GS_XE):   $(GSCONSOLE).exe $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(DWOBJNO) $(GS)
 	echo $(GLOBJ)dwtext.obj >> gswin32.tr
 	echo /DEF:dwmain32.def /OUT:$(GS_XE) > gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gswin32.rsp gsdll @gswin32.tr @$(LIBCTR) $(INTASM) @lib.tr $(GSDLL).res
+        $(LINK) $(LCT) @gswin32.rsp gsdll @gswin32.tr @$(LIBCTR) $(INTASM) @lib.tr @lib32.rsp $(GSDLL).res
 	del gswin32.tr
 	del gswin32.rsp
 
 # The big console mode EXE
-$(GSCONSOLE).exe:  $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res dw32c.def
+$(GSCONSOLE).exe: $(GS_ALL) $(DEVS_ALL) gsdll.$(OBJ) $(OBJCNO) $(GS).res dw32c.def lib32.rsp
 	copy $(ld_tr) gswin32c.tr
 	echo $(GLOBJ)dwnodllc.obj >> gswin32c.tr
 	echo $(GLOBJ)dwmainc.obj >> gswin32c.tr
 	echo  /SUBSYSTEM:CONSOLE > gswin32.rsp
 	echo  /DEF:dw32c.def /OUT:$(GSCONSOLE).exe  >> gswin32.rsp
 	$(LINK_SETUP)
-        $(LINK) $(LCT) @gswin32.rsp gsdll @gswin32c.tr @$(LIBCTR) $(INTASM) @lib.tr $(GS).res
+        $(LINK) $(LCT) @gswin32.rsp gsdll @gswin32c.tr @$(LIBCTR) $(INTASM) @lib.tr @lib32.rsp $(GS).res
 	del gswin32.rsp
 	del gswin32c.tr
 !endif

@@ -72,15 +72,17 @@ extern const stream_template s_C2R_template;
 	int Columns;		/* # of input columns */\
 	int XFactor, YFactor;\
 	bool AntiAlias;\
+	bool padX, padY;	/* keep excess samples */\
 		/* The following are updated dynamically. */\
 	int x, y		/* position within input image */
-#define s_Downsample_set_defaults(ss)\
-  ((ss)->AntiAlias = false)
+#define s_Downsample_set_defaults_inline(ss)\
+  ((ss)->AntiAlias = (ss)->padX = (ss)->padY = false)
 typedef struct stream_Downsample_state_s {
     stream_Downsample_state_common;
 } stream_Downsample_state;
 
 /* Subsample */
+/****** Subsample DOESN'T IMPLEMENT padY YET ******/
 typedef struct stream_Subsample_state_s {
     stream_Downsample_state_common;
 } stream_Subsample_state;
@@ -90,6 +92,7 @@ extern const stream_template s_Subsample_template;
 typedef struct stream_Average_state_s {
     stream_Downsample_state_common;
     uint sum_size;
+    uint copy_size;
     uint *sums;			/* accumulated sums for average */
 } stream_Average_state;
 

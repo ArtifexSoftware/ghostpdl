@@ -216,7 +216,7 @@ ENUM_PTRS_END
 private RELOC_PTRS_BEGIN(scanner_reloc_ptrs)
 {
     if (ssptr->s_scan_type != scanning_none && ssptr->s_da.is_dynamic) {
-	RELOC_STRING_PTR(scanner_state, s_da.str);
+	RELOC_STRING_VAR(ssptr->s_da.str);
 	ssptr->s_da.limit = ssptr->s_da.str.data + ssptr->s_da.str.size;
 	ssptr->s_da.next = ssptr->s_da.str.data + (ssptr->s_da.next - ssptr->s_da.base);
 	ssptr->s_da.base = ssptr->s_da.str.data;

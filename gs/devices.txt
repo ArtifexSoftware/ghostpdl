@@ -293,8 +293,34 @@ GAMMA CORRECTION:
 
  where gamma.ps is
 
-%!
-{0.333 exp} dup dup currenttransfer setcolortransfer
+
+	%!
+	/.fixtransfer {
+	  currentcolortransfer 4 {
+	    mark exch
+	    dup type dup /arraytype eq exch /packedarraytype eq or
+	    1 index xcheck and { /exec load } if
+	    0.333 /exp load
+	    ] cvx 4 1 roll
+	  } repeat setcolortransfer
+	} bind odef
+	.fixtransfer
+	/setpagedevice { setpagedevice .fixtransfer } bind odef
+
+This does the gamma correction *after* whatever correction the device might
+be doing already.  To do the correction *before* the current correction,
+
+	%!
+	/.fixtransfer {
+	  currentcolortransfer 4 {
+	    mark 0.333 /exp load 4 -1 roll
+	    dup type dup /arraytype eq exch /packedarraytype eq or
+	    1 index xcheck and { /exec load } if
+	    ] cvx 4 1 roll
+	  } repeat setcolortransfer
+	} bind odef
+	.fixtransfer
+	/setpagedevice { setpagedevice .fixtransfer } bind odef
 
  This example sets the gamma for r, g, and b to 3, which seems to work
  reasonably well in practice.

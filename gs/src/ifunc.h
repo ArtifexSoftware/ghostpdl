@@ -40,9 +40,12 @@ int fn_build_sub_function(P3(const ref * op, gs_function_t ** ppfn, int depth));
 /* Allocate an array of function objects. */
 int ialloc_function_array(P2(uint count, gs_function_t *** pFunctions));
 
-/* Collect a heap-allocated array of floats. */
-/* If the key is missing, set *pparray = 0 and return 0; */
-/* otherwise set *pparray and return the number of elements. */
+/*
+ * Collect a heap-allocated array of floats.  If the key is missing, set
+ * *pparray = 0 and return 0; otherwise set *pparray and return the number
+ * of elements.  Note that 0-length arrays are acceptable, so if the value
+ * returned is 0, the caller must check whether *pparray == 0.
+ */
 int fn_build_float_array(P5(const ref * op, const char *kstr, bool required,
 			    bool even, const float **pparray));
 

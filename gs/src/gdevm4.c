@@ -93,12 +93,13 @@ mem_mapped4_copy_mono(gx_device * dev,
 	bb = ((byte) one << 4) | (byte) one;
     } else {
 	/* Opaque case. */
-	bits32 oz = (zero << 4) | zero;
 	int shift = ~(sourcex ^ x) & 1;
+	byte oz[4];
 
-	/* Set oz = o.o.o.z.z.o.z.z. */
-	oz = (((((((((one << 4) | one) << 4) | one) << 8) | oz) << 4) | one)
-	      << 8) | oz;
+	oz[0] = (byte)((zero << 4) | zero);
+	oz[1] = (byte)((zero << 4) | one);
+	oz[2] = (byte)((one << 4) | zero);
+	oz[3] = (byte)((one << 4) | one);
 	do {
 	    register byte *dptr = (byte *) dest;
 	    const byte *sptr = line;
@@ -135,7 +136,7 @@ mem_mapped4_copy_mono(gx_device * dev,
 	     * Continue processing pairs of bits in the first source byte.
 	     */
 	    while (count >= 2 && sbit >= 0) {
-		*dptr++ = (byte) (oz >> (((sbyte >> sbit) << 3) & 24));
+		*dptr++ = oz[(sbyte >> sbit) & 3];
 		sbit -= 2, count -= 2;
 	    }
 	    /*
@@ -144,14 +145,24 @@ mem_mapped4_copy_mono(gx_device * dev,
 	     *
 	     * Process full source bytes.
 	     */
-	    while (count >= 8) {
-		sbyte = (sbyte << 8) | (*sptr++ << shift);
-		dptr[0] = (byte) (oz >> ((sbyte >> 4) & 24));
-		dptr[1] = (byte) (oz >> ((sbyte >> 2) & 24));
-		dptr[2] = (byte) (oz >> (sbyte & 24));
-		dptr[3] = (byte) (oz >> ((sbyte << 2) & 24));
-		dptr += 4;
-		count -= 8;
+	    if (shift) {
+		sbyte >>= 1;	/* in case count < 8 */
+		for (; count >= 8; dptr += 4, count -= 8) {
+		    sbyte = *sptr++;
+		    dptr[0] = oz[sbyte >> 6];
+		    dptr[1] = oz[(sbyte >> 4) & 3];
+		    dptr[2] = oz[(sbyte >> 2) & 3];
+		    dptr[3] = oz[sbyte & 3];
+		}
+		sbyte <<= 1;
+	    } else {
+		for (; count >= 8; dptr += 4, count -= 8) {
+		    sbyte = (sbyte << 8) | *sptr++;
+		    dptr[0] = oz[(sbyte >> 7) & 3];
+		    dptr[1] = oz[(sbyte >> 5) & 3];
+		    dptr[2] = oz[(sbyte >> 3) & 3];
+		    dptr[3] = oz[(sbyte >> 1) & 3];
+		}
 	    }
 	    if (!count)
 		continue;
@@ -165,7 +176,7 @@ mem_mapped4_copy_mono(gx_device * dev,
 		sbit = 7;
 	    }
 	    while (count >= 2) {
-		*dptr++ = (byte) (oz >> (((sbyte >> sbit) << 3) & 24));
+		*dptr++ = oz[(sbyte >> sbit) & 3];
 		sbit -= 2, count -= 2;
 	    }
 	    /*

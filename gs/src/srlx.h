@@ -44,9 +44,9 @@ typedef struct stream_RLE_state_s {
 #define s_RLE_set_defaults_inline(ss)\
   ((ss)->EndOfData = true, (ss)->record_size = 0)
 #define s_RLE_init_inline(ss)\
-  ((ss)->record_left = ((ss)->record_size == 0 ?\
-			((ss)->record_size = max_uint) :\
-			(ss)->record_size),\
+  ((ss)->record_left =\
+   ((ss)->record_size == 0 ? ((ss)->record_size = max_uint) :\
+    (ss)->record_size),\
    (ss)->copy_left = 0)
 extern const stream_template s_RLE_template;
 

@@ -71,7 +71,8 @@ s_RLE_process(stream_state * st, stream_cursor_read * pr,
      */
 
     /* Check for leftover output. */
-  copy:if (ss->copy_left) {
+copy:
+    if (ss->copy_left) {
 	uint rcount = rlimit - p;
 	uint wcount = wlimit - q;
 	uint count = ss->copy_left;
@@ -190,7 +191,7 @@ s_RLE_process(stream_state * st, stream_cursor_read * pr,
 }
 
 /* Stream template */
-const stream_template s_RLE_template =
-{&st_RLE_state, s_RLE_init, s_RLE_process, 129, 2, NULL,
- s_RLE_set_defaults, s_RLE_init
+const stream_template s_RLE_template = {
+    &st_RLE_state, s_RLE_init, s_RLE_process, 129, 2, NULL,
+    s_RLE_set_defaults, s_RLE_init
 };

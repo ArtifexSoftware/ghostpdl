@@ -97,7 +97,6 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
 	gx_device_color dev_color;
 	const gs_color_space *pcs = psh->params.ColorSpace;
 	gs_imager_state *pis = pfs->pis;
-	gx_path *ppath;
 	gs_client_color fcc;
 	int code;
 
@@ -107,13 +106,16 @@ mesh_fill_region(const mesh_fill_state_t * pfs, fixed xa, fixed ya, fixed xb,
 				   pfs->dev, gs_color_select_texture);
 /****** SHOULD ADD adjust ON ANY OUTSIDE EDGES ******/
 #if 0
-	ppath = gx_path_alloc(pis->memory, "Gt_fill");
-	gx_path_add_point(ppath, xa, ya);
-	gx_path_add_line(ppath, xb, yb);
-	gx_path_add_line(ppath, xc, yc);
-	code = shade_fill_path((const shading_fill_state_t *)pfs,
-			       ppath, &dev_color);
-	gx_path_free(ppath, "Gt_fill");
+	{
+	    gx_path *ppath = gx_path_alloc(pis->memory, "Gt_fill");
+
+	    gx_path_add_point(ppath, xa, ya);
+	    gx_path_add_line(ppath, xb, yb);
+	    gx_path_add_line(ppath, xc, yc);
+	    code = shade_fill_path((const shading_fill_state_t *)pfs,
+				   ppath, &dev_color);
+	    gx_path_free(ppath, "Gt_fill");
+	}
 #else
 	code = (*dev_proc(pfs->dev, fill_triangle))
 	    (pfs->dev, xa, ya, xb - xa, yb - ya, xc - xa, yc - ya,

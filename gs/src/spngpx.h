@@ -36,7 +36,7 @@ typedef struct stream_PNGP_state_s {
     int bpp;			/* bytes per pixel */
     byte *prev_row;		/* previous row */
     int case_index;		/* switch index for case dispatch, */
-    /* set dynamically when decoding */
+				/* set dynamically when decoding */
     /* The following are updated dynamically. */
     long row_left;		/* # of bytes left in row */
     byte prev[32];		/* previous samples */

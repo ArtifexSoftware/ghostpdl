@@ -16,7 +16,7 @@
   all copies.
 */
 
-/* gdevupd.c $Revision$ */
+
 /* "uniprint" -- Ugly Printer Driver by Gunther Hess (gunther@elmos.de) */
 
 /* Revision-History:
@@ -881,7 +881,7 @@ Here are several Macros, named "UPD_MM_*" to deal with that.
 
 /** Version-String */
 
-static const char rcsid[] = "$Revision$";
+
 
 /** Default-Transfer-curve */
 

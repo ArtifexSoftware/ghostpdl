@@ -131,10 +131,9 @@ gx_compute_cell_values(gx_ht_cell_params_t * phcp)
     const ulong C = phcp->C = (ulong) m * m1 + (ulong) n * n1;
     const int D = igcd(m1, n);
     const int D1 = igcd(m, n1);
-    const uint W = phcp->W = C / D;
-    const uint W1 = phcp->W1 = C / D1;
 
     phcp->D = D, phcp->D1 = D1;
+    phcp->W = C / D, phcp->W1 = C / D1;
     /* Compute the shift value. */
     /* If M1 or N is zero, the shift is zero. */
     if (M1 && N) {
@@ -163,12 +162,12 @@ gx_compute_cell_values(gx_ht_cell_params_t * phcp)
 	shift = h * M + k * N1;
 	/* We just computed what amounts to a right shift; */
 	/* what we want is a left shift. */
-	phcp->S = imod(-shift, W);
+	phcp->S = imod(-shift, phcp->W);
     } else
 	phcp->S = 0;
     if_debug12('h', "[h]MNR=(%d,%d)/%d, M'N'R'=(%d,%d)/%d => C=%lu, D=%d, D'=%d, W=%u, W'=%u, S=%d\n",
 	       M, N, phcp->R, M1, N1, phcp->R1,
-	       C, D, D1, W, W1, phcp->S);
+	       C, D, D1, phcp->W, phcp->W1, phcp->S);
 }
 
 /* Forward references */

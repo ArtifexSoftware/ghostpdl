@@ -234,6 +234,51 @@ pdfdict begin
   get 5 -1 roll growto put
 } bind def
 
+% We keep track of PDF objects using the following PostScript variables:
+%
+%	Generations (lstring): Generations[N] holds 1+ the current
+%	    generation number for object number N.  (As far as we can tell,
+%	    this is needed only for error checking.)  For free objects,
+%	    Generations[N] is 0.
+%
+%	Objects (larray): If object N is loaded, Objects[N] is the actual
+%	    object; otherwise, Objects[N] is an executable integer giving
+%	    the file offset of the object's entry in the cross-reference
+%	    table.
+%
+%	GlobalObjects (dictionary): If object N has been resolved in
+%	    global VM, GlobalObjects[N] is the same as Objects[N]
+%	    (except that GlobalObjects itself is stored in global VM,
+%	    so the entry will not be deleted at the end of the page).
+%
+%	IsGlobal (lstring): IsGlobal[N] = 1 iff object N was resolved in
+%	    global VM.  This is an accelerator to avoid having to do a
+%	    dictionary lookup in GlobalObjects when resolving every object.
+
+% Initialize the PDF object tables.
+/initPDFobjects {		% - initPDFobjects -
+  /Objects larray def
+  /Generations lstring def
+  .currentglobal true .setglobal
+  /GlobalObjects 20 dict def
+  .setglobal
+  /IsGlobal lstring def
+} bind def
+
+% Grow the tables to a specified size.
+/growPDFobjects {		% <minsize> growPDFobjects -
+  dup Objects llength gt {
+    dup Objects exch lgrowto /Objects exch def
+  } if
+  dup Generations llength gt {
+    dup Generations exch lgrowto /Generations exch def
+  } if
+  dup IsGlobal llength gt {
+    dup IsGlobal exch lgrowto /IsGlobal exch def
+  } if
+  pop
+} bind def
+
 % We represent an unresolved object reference by a procedure of the form
 % {obj# gen# resolveR}.  This is not a possible PDF object, because PDF has
 % no way to represent procedures.  Since PDF in fact has no way to represent
@@ -242,9 +287,19 @@ pdfdict begin
 % Note that since we represent streams by executable dictionaries
 % (see below), we need both an xcheck and a type check to determine
 % whether an object has been resolved.
-/unresolved?		% <object#> unresolved? <bool>
- { Objects exch lget dup xcheck exch type /integertype eq and
- } bind def
+/unresolved? {		% <object#> unresolved? <bool>
+  Objects 1 index lget dup xcheck exch type /integertype eq and {
+    IsGlobal 1 index lget 0 eq {
+      pop true
+    } {
+		% Update Objects from GlobalObjects
+      DEBUG { (%Global=>local: ) print dup == } if
+      Objects exch GlobalObjects 1 index get lput false
+    } ifelse
+  } {
+    pop false
+  } ifelse
+} bind def
 /oforce /exec load def
 /oget		% <array> <index> oget <object>
 		% <dict> <key> oget <object>
@@ -269,13 +324,6 @@ pdfdict begin
    count 3 lt { f } { pop pop pop null } ifelse
  } bind def
 
-% We keep track of objects in a pair of arrays, Objects and Generations.
-% Generations[N] is 1+ the current generation number for object number N.
-% (As far as we can tell, this is needed only for error checking.)
-% If object N is loaded, Objects[N] is the actual object;
-% otherwise, Objects[N] is an executable integer giving the file offset
-% of the object's entry in the cross-reference table.
-% For free objects, Generations[N] is 0.
 /checkgeneration {  % <object#> <generation#> checkgeneration <object#> <OK>
   Generations 2 index lget 1 sub 1 index eq {
     pop true
@@ -300,20 +348,31 @@ pdfdict begin
   valueopdict { } forall
   /endobj dup cvx
 .dicttomark readonly def
-/obj			% <object#> <generation#> obj <object>
- { PDFfile objopdict .pdfrun
- } bind def
-/endobj			% <object#> <generation#> <object> endobj <object>
- { 3 1 roll
+/obj {			% <object#> <generation#> obj <object>
+  PDFfile objopdict .pdfrun
+} bind def
+/endobj {		% <object#> <generation#> <object> endobj <object>
+  3 1 roll
 		% Read the xref entry if we haven't yet done so.
 		% This is only needed for generation # checking.
-   1 index unresolved?
-    { PDFfile fileposition
-      2 index readxrefentry pop
-      PDFoffset add PDFfile exch setfileposition
+  1 index unresolved? {
+    PDFfile fileposition
+    2 index readxrefentry pop
+    PDFoffset add PDFfile exch setfileposition
+  } if
+  checkgeneration {
+		% The only global objects we bother to save are
+		% (resource) dictionaries.
+    1 index dup gcheck exch type /dicttype eq and {
+      DEBUG { (%Local=>global: ) print dup == } if
+      GlobalObjects 1 index 3 index put
+      IsGlobal 1 index 1 put
     } if
-   checkgeneration { Objects exch 2 index lput } { pop pop null } ifelse
- } bind def
+    Objects exch 2 index lput
+  } {
+    pop pop null
+  } ifelse
+} bind def
 
 % When resolving an object reference, we stop at the endobj.
 /resolveopdict mark

@@ -162,7 +162,7 @@ struct chunk_s {
     /*
      * Free list for blocks of >= 4 bytes.  Each block begins
      * with a 2-byte size and a 2-byte next block pointer,
-     * both big-endian.
+     * both big-endian.  This too is sorted in increasing address order.
      */
     ushort sfree;
     /* The remaining members are for the GC. */

@@ -165,7 +165,9 @@ COMPILE_FOR_EXE=
 COMPILE_FOR_CONSOLE_EXE=
 
 
-GENOPT=$(CP) $(CD) $(CT) $(CS) /W2 /nologo
+# The /MT is for multi-threading.  We would like to make this an option,
+# but it's too much work right now.
+GENOPT=$(CP) $(CD) $(CT) $(CS) /W2 /nologo /MT
 
 CCFLAGS=$(PLATOPT) $(FPFLAGS) $(CPFLAGS) $(CFLAGS) $(XCFLAGS)
 CC=$(COMP) /c $(CCFLAGS) @ccf32.tr
