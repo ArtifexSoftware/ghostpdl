@@ -5,3 +5,4 @@ Version 0.1
  * decodes arithmetic symbol dictionaries
  * decodes artithmetic text regions
  * successfully decodes ubc test streams 042_1,2,4,5 and 10.
+ * successfully decodes CVision embedded bitstream str-p39
