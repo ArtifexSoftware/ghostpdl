@@ -71,7 +71,7 @@ $(ICCGEN)icclib.dev : $(ICCLIB_MAK) $(ECHOGS_XE) $(icclib_)
 
 icc_h=$(ICCSRC)$(D)icc.h $(ICCSRC)$(D)icc$(ICCPROFVER).h
 
-$(ICCOBJ)icc.$(OBJ) : $(ICCSRC)icc.c $(ICCDEP) $(icc_h)
+$(ICCOBJ)icc.$(OBJ) : $(ICCSRC)icc.c $(ICCDEP) $(ECHOGS_XE) $(icc_h)
 #	echo $(ICC_CCFLAGS)
 	$(EXP)$(ECHOGS_XE) $(ICC_CCFLAGS)
 	$(ICC_CC) $(ICCO_)icc.$(OBJ) $(C_) $(ICCSRC)icc.c
