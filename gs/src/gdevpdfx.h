@@ -580,12 +580,14 @@ int pdf_end_aside(P1(gx_device_pdf * pdev));
 int pdf_end_resource(P1(gx_device_pdf * pdev));
 
 /*
- * Write and release the Cos objects for resources local to a content stream.
- * We must write all the objects before freeing any of them, because
- * they might refer to each other.
+ * Write the Cos objects for resources local to a content stream.
  */
-int pdf_write_resource_objects(P2(gx_device_pdf *pdev,
-				  pdf_resource_type_t rtype));
+int pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype);
+
+/*
+ * Free unnamed Cos objects for resources local to a content stream.
+ */
+int pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype);
 
 /*
  * Store the resource sets for a content stream (page or XObject).

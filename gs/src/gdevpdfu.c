@@ -502,16 +502,15 @@ pdf_end_resource(gx_device_pdf * pdev)
 }
 
 /*
- * Write and release the Cos objects for resources local to a content stream.
- * We must write all the objects before freeing any of them, because
- * they might refer to each other.
+ * Write the Cos objects for resources local to a content stream.  Formerly,
+ * this procedure also freed such objects, but this doesn't work, because
+ * resources of one type might refer to resources of another type.
  */
 int
 pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 {
     int j;
 
-    /* Write objects. */
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
 	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
 
@@ -519,8 +518,18 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 	    if (!pres->named && !pres->object->written)
 		cos_write_object(pres->object, pdev);
     }
+    return 0;
+}
 
-    /* Free unnamed objects, which can't be used again. */
+/*
+ * Free unnamed Cos objects for resources local to a content stream,
+ * since they can't be used again.
+ */
+int
+pdf_free_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
+{
+    int j;
+
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
 	pdf_resource_t **prev = &pdev->resources[rtype].chains[j];
 	pdf_resource_t *pres;
@@ -529,13 +538,12 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 	    if (pres->named) {	/* named, don't free */
 		prev = &pres->next;
 	    } else {
-		cos_free(pres->object, "pdf_write_resource_objects");
+		cos_free(pres->object, "pdf_free_resource_objects");
 		pres->object = 0;
 		*prev = pres->next;
 	    }
 	}
     }
-
     return 0;
 }
 
@@ -546,43 +554,45 @@ pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 int
 pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 {
+    int i;
 
     /* Write out any resource dictionaries. */
 
-    {
-	int i;
+    for (i = 0; i <= resourceFont; ++i) {
+	stream *s = 0;
+	int j;
 
-	for (i = 0; i <= resourceFont; ++i) {
-	    stream *s = 0;
-	    int j;
+	page->resource_ids[i] = 0;
+	for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+	    pdf_resource_t *pres = pdev->resources[i].chains[j];
 
-	    page->resource_ids[i] = 0;
-	    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
-		pdf_resource_t *pres = pdev->resources[i].chains[j];
+	    for (; pres != 0; pres = pres->next) {
+		if (pres->where_used & pdev->used_mask) {
+		    long id = pres->object->id;
 
-		for (; pres != 0; pres = pres->next) {
-		    if (pres->where_used & pdev->used_mask) {
-			long id = pres->object->id;
-
-			if (s == 0) {
-			    page->resource_ids[i] = pdf_begin_separate(pdev);
-			    s = pdev->strm;
-			    stream_puts(s, "<<");
-			}
-			pprints1(s, "/%s\n", pres->rname);
-			pprintld1(s, "%ld 0 R", id);
-			pres->where_used -= pdev->used_mask;
+		    if (s == 0) {
+			page->resource_ids[i] = pdf_begin_separate(pdev);
+			s = pdev->strm;
+			stream_puts(s, "<<");
 		    }
+		    pprints1(s, "/%s\n", pres->rname);
+		    pprintld1(s, "%ld 0 R", id);
+		    pres->where_used -= pdev->used_mask;
 		}
 	    }
-	    if (s) {
-		stream_puts(s, ">>\n");
-		pdf_end_separate(pdev);
-		if (i != resourceFont)
-		    pdf_write_resource_objects(pdev, i);
-	    }
+	}
+	if (s) {
+	    stream_puts(s, ">>\n");
+	    pdf_end_separate(pdev);
+	    if (i != resourceFont)
+		pdf_write_resource_objects(pdev, i);
 	}
     }
+
+    /* Free unnamed resource objects, which can't be referenced again. */
+
+    for (i = 0; i < resourceFont; ++i)
+	pdf_free_resource_objects(pdev, i);
 
     page->procsets = pdev->procsets;
     return 0;

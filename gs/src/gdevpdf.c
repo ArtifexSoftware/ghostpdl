@@ -658,6 +658,7 @@ pdf_close_page(gx_device_pdf * pdev)
     /* Write out Functions. */
 
     pdf_write_resource_objects(pdev, resourceFunction);
+    pdf_free_resource_objects(pdev, resourceFunction);
 
     /* Close use of text on the page. */
 
@@ -816,6 +817,7 @@ pdf_close(gx_device * dev)
 
     pdf_write_font_resources(pdev);
     pdf_write_resource_objects(pdev, resourceCMap);
+    pdf_free_resource_objects(pdev, resourceCMap);
 
     /* Create the Pages tree. */
 
