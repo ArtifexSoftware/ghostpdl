@@ -194,7 +194,7 @@ ialloc_alloc_state(gs_memory_t * parent, uint chunk_size)
 	return 0;
     iimem->stable_memory = (gs_memory_t *)iimem;
     iimem->procs = gs_ref_memory_procs;
-    iimem->pl_stdio = parent->pl_stdio;
+    iimem->gs_lib_ctx = parent->gs_lib_ctx;
     iimem->parent = parent;
     iimem->chunk_size = chunk_size;
     iimem->large_size = ((chunk_size / 4) & -obj_align_mod) + 1;
@@ -1648,17 +1648,21 @@ alloc_acquire_chunk(gs_ref_memory_t * mem, ulong csize, bool has_strings,
 	return 0;
 #endif
     cp = gs_raw_alloc_struct_immovable(parent, &st_chunk, cname);
-    if ((ulong) (mem->allocated + mem->inherited) >= mem->limit) {
-	mem->gc_status.requested += csize;
-	if (mem->limit >= mem->gc_status.max_vm ||
-	    mem->gc_status.psignal == 0
-	    )
-	    return 0;
-	if_debug4((const gs_memory_t *)mem, 
-		  '0', "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
-		  mem->space, (long)mem->allocated,
-		  (long)mem->limit, (long)mem->gc_status.requested);
-	*mem->gc_status.psignal = mem->gc_status.signal_value;
+
+    if( mem->gc_status.psignal != 0) {  
+	/* we have a garbage collector */
+	if ((ulong) (mem->allocated + mem->inherited) >= mem->limit) {
+	    mem->gc_status.requested += csize;
+	    if (mem->limit >= mem->gc_status.max_vm) {
+		gs_free_object(parent, cp, cname);
+		return 0;
+	    }
+	    if_debug4((const gs_memory_t *)mem, 
+		      '0', "[0]signaling space=%d, allocated=%ld, limit=%ld, requested=%ld\n",
+		      mem->space, (long)mem->allocated,
+		      (long)mem->limit, (long)mem->gc_status.requested);
+	    *mem->gc_status.psignal = mem->gc_status.signal_value;
+	}
     }
     cdata = gs_alloc_bytes_immovable(parent, csize, cname);
     if (cp == 0 || cdata == 0) {
