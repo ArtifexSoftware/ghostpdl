@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Default device bitmap copying implementation */
 #include "gx.h"
 #include "gpcheck.h"
@@ -300,19 +300,7 @@ gx_default_fill_mask(gx_device * orig_dev,
 {
     gx_device *dev;
     gx_device_clip cdev;
-    gx_color_index colors[2];
-    gx_strip_bitmap *tile;
 
-    if (gx_dc_is_pure(pdcolor)) {
-	tile = 0;
-	colors[0] = gx_no_color_index;
-	colors[1] = gx_dc_pure_color(pdcolor);
-    } else if (gx_dc_is_binary_halftone(pdcolor)) {
-	tile = gx_dc_binary_tile(pdcolor);
-	colors[0] = gx_dc_binary_color0(pdcolor);
-	colors[1] = gx_dc_binary_color1(pdcolor);
-    } else
-	return_error(gs_error_unknownerror);	/* not implemented */
     if (pcpath != 0) {
 	gx_make_clip_path_device(&cdev, pcpath);
 	cdev.target = orig_dev;
@@ -323,88 +311,11 @@ gx_default_fill_mask(gx_device * orig_dev,
     if (depth > 1) {
 	/****** CAN'T DO ROP OR HALFTONE WITH ALPHA ******/
 	return (*dev_proc(dev, copy_alpha))
-	    (dev, data, dx, raster, id, x, y, w, h, colors[1], depth);
-    }
-    if (lop != lop_default) {
-	gx_color_index scolors[2];
-
-	scolors[0] = gx_device_white(dev);
-	scolors[1] = gx_device_black(dev);
-	if (tile == 0)
-	    colors[0] = colors[1];	/* pure color */
-	/*
-	 * We want to write only where the mask is a 1, so enable source
-	 * transparency.  We have to include S in the operation,
-	 * otherwise S_transparent will be ignored.
-	 */
-	return (*dev_proc(dev, strip_copy_rop))
-	    (dev, data, dx, raster, id, scolors, tile, colors,
-	     x, y, w, h,
-	     gx_dc_phase(pdcolor).x, gx_dc_phase(pdcolor).y,
-	     lop | (rop3_S | lop_S_transparent));
-    }
-    if (tile == 0) {
-	return (*dev_proc(dev, copy_mono))
 	    (dev, data, dx, raster, id, x, y, w, h,
-	     gx_no_color_index, colors[1]);
-    }
-    /*
-     * Use the same approach as the default copy_mono (above).  We
-     * should really clip to the intersection of the bounding boxes of
-     * the device and the clipping path, but it's too much work.
-     */
-    fit_copy(orig_dev, data, dx, raster, id, x, y, w, h);
-    {
-	dev_proc_strip_tile_rectangle((*tile_proc)) =
-	    dev_proc(dev, strip_tile_rectangle);
-	const byte *row = data + (dx >> 3);
-	int dx_bit = dx & 7;
-	int wdx = w + dx_bit;
-	int iy;
-
-	for (row = data, iy = 0; iy < h; row += raster, iy++) {
-	    int ix;
-
-	    for (ix = dx_bit; ix < wdx;) {
-		int i0;
-		uint b;
-		uint len;
-		int code;
-
-		/* Skip 0-bits. */
-		b = row[ix >> 3];
-		len = byte_bit_run_length[ix & 7][b ^ 0xff];
-		if (len) {
-		    ix += ((len - 1) & 7) + 1;
-		    continue;
-		}
-		/* Scan 1-bits. */
-		i0 = ix;
-		for (;;) {
-		    b = row[ix >> 3];
-		    len = byte_bit_run_length[ix & 7][b];
-		    if (!len)
-			break;
-		    ix += ((len - 1) & 7) + 1;
-		    if (ix >= wdx) {
-			ix = wdx;
-			break;
-		    }
-		    if (len < 8)
-			break;
-		}
-		/* Now color the run from i0 to ix. */
-		code = (*tile_proc)
-		    (dev, tile, i0 - dx_bit + x, iy + y, ix - i0, 1,
-		     colors[0], colors[1],
-		     gx_dc_phase(pdcolor).x, gx_dc_phase(pdcolor).y);
-		if (code < 0)
-		    return code;
-#undef row_bit
-	    }
-	}
-    }
-    return 0;
+	     gx_dc_pure_color(pdcolor), depth);
+    } else
+        return pdcolor->type->fill_masked(pdcolor, data, dx, raster, id,
+				          x, y, w, h, dev, lop, false);
 }
 
 /* Default implementation of strip_tile_rectangle */

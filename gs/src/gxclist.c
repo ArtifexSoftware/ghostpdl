@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Command list document- and page-level code. */
 #include "memory_.h"
 #include "string_.h"
@@ -27,6 +27,7 @@
 #include "gxcldev.h"
 #include "gxclpath.h"
 #include "gsparams.h"
+#include "gxdcolor.h"
 
 /* GC information */
 #define CLIST_IS_WRITER(cdev) ((cdev)->common.ymin < 0)

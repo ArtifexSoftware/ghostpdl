@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Structure and internal procedure definitions for paths */
 /* Requires gxfixed.h */
 
@@ -319,6 +319,7 @@ struct gx_path_s {
     byte /*gx_path_state_flags*/ start_flags;		/* flags of moveto */
     byte /*gx_path_state_flags*/ state_flags;		/* (see above) */
     byte /*bool*/ bbox_set;	/* true if setbbox is in effect */
+    byte /*bool*/ bbox_accurate;/* true if bbox is accurate */
     byte _pad;			/* just in case the compiler doesn't do it */
     int subpath_count;
     int curve_count;

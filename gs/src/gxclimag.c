@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Higher-level image operations for band lists */
 #include "math_.h"
 #include "memory_.h"
@@ -35,6 +35,8 @@
 #include "strimpl.h"		/* for sisparam.h */
 #include "sisparam.h"
 #include "gxcomp.h"
+#include "gsserial.h"
+#include "gxdhtserial.h"
 
 extern_gx_image_type_table();
 
@@ -74,19 +76,23 @@ clist_fill_mask(gx_device * dev,
     int data_x_bit;
     byte copy_op =
 	(depth > 1 ? cmd_op_copy_color_alpha :
-	 gx_dc_is_pure(pdcolor) ? cmd_op_copy_mono :
 	 cmd_op_copy_mono + cmd_copy_ht_color);
     bool slow_rop =
 	cmd_slow_rop(dev, lop_know_S_0(lop), pdcolor) ||
 	cmd_slow_rop(dev, lop_know_S_1(lop), pdcolor);
+
     fit_copy(dev, data, data_x, raster, id, x, y, width, height);
     y0 = y;			/* must do after fit_copy */
 
     /* If non-trivial clipping & complex clipping disabled, default */
+    /* Also default for uncached bitmap or non-defaul lop; */
+    /* We could handle more RasterOp cases here directly, but it */
+    /* doesn't seem worth the trouble right now. */
     if (((cdev->disable_mask & clist_disable_complex_clip) &&
 	 !check_rect_for_trivial_clip(pcpath, x, y, x + width, y + height)) ||
-	gs_debug_c('`')
+	gs_debug_c('`') || id == gx_no_bitmap_id || lop != lop_default
 	)
+  copy:
 	return gx_default_fill_mask(dev, data, data_x, raster, id,
 				    x, y, width, height, pdcolor, depth,
 				    lop, pcpath);
@@ -94,9 +100,8 @@ clist_fill_mask(gx_device * dev,
 	cmd_clear_known(cdev, clip_path_known);
     data_x_bit = data_x << log2_depth;
     FOR_RECTS {
-	int dx = (data_x_bit & 7) >> log2_depth;
-	const byte *row = data + (y - y0) * raster + (data_x_bit >> 3);
 	int code;
+        ulong offset_temp;
 
 	TRY_RECT {
 	    code = cmd_update_lop(cdev, pcls, lop);
@@ -119,87 +124,60 @@ clist_fill_mask(gx_device * dev,
 	    code = cmd_put_drawing_color(cdev, pcls, pdcolor);
 	} HANDLE_RECT(code);
 	pcls->colors_used.slow_rop |= slow_rop;
-	/*
-	 * Unfortunately, painting a character with a halftone requires the
-	 * use of two bitmaps, a situation that we can neither represent in
-	 * the band list nor guarantee will both be present in the tile
-	 * cache; in this case, we always write the bits of the character.
-	 *
-	 * We could handle more RasterOp cases here directly, but it
-	 * doesn't seem worth the trouble right now.
-	 */
-	if (id != gx_no_bitmap_id && gx_dc_is_pure(pdcolor) &&
-	    lop == lop_default
-	    ) {			/* This is a character.  ****** WRONG IF HALFTONE CELL. ***** */
-	    /* Put it in the cache if possible. */
-	    ulong offset_temp;
 
-	    if (!cls_has_tile_id(cdev, pcls, id, offset_temp)) {
-		gx_strip_bitmap tile;
+	/* Put it in the cache if possible. */
+	if (!cls_has_tile_id(cdev, pcls, id, offset_temp)) {
+	    gx_strip_bitmap tile;
 
-		tile.data = (byte *) orig_data;	/* actually const */
-		tile.raster = raster;
-		tile.size.x = tile.rep_width = orig_width;
-		tile.size.y = tile.rep_height = orig_height;
-		tile.rep_shift = tile.shift = 0;
-		tile.id = id;
-		TRY_RECT {
-		    code = clist_change_bits(cdev, pcls, &tile, depth);
-		} HANDLE_RECT_UNLESS(code,
-		    (code != gs_error_VMerror || !cdev->error_is_retryable) );
-		if (code < 0) {
-		    /* Something went wrong; just copy the bits. */
-		    goto copy;
-		}
-	    } {
-		gx_cmd_rect rect;
-		int rsize;
-		byte op = copy_op + cmd_copy_use_tile;
-
-		/* Output a command to copy the entire character. */
-		/* It will be truncated properly per band. */
-		rect.x = orig_x, rect.y = y0;
-		rect.width = orig_width, rect.height = yend - y0;
-		rsize = 1 + cmd_sizexy(rect);
-		TRY_RECT {
-		    code = (orig_data_x ?
-			    cmd_put_set_data_x(cdev, pcls, orig_data_x) : 0);
-		    if (code >= 0) {
-			byte *dp;
-
-			code = set_cmd_put_op(dp, cdev, pcls, op, rsize);
-			/*
-			 * The following conditional is unnecessary: the two
-			 * statements inside it should go outside the
-			 * HANDLE_RECT.  They are here solely to pacify
-			 * stupid compilers that don't understand that dp
-			 * will always be set if control gets past the
-			 * HANDLE_RECT.
-			 */
-			if (code >= 0) {
-			    dp++;
-			    cmd_putxy(rect, dp);
-			}
-		    }
-		} HANDLE_RECT(code);
-		pcls->rect = rect;
-		goto end;
+	    tile.data = (byte *) orig_data;	/* actually const */
+	    tile.raster = raster;
+	    tile.size.x = tile.rep_width = orig_width;
+	    tile.size.y = tile.rep_height = orig_height;
+	    tile.rep_shift = tile.shift = 0;
+	    tile.id = id;
+	    TRY_RECT {
+	        code = clist_change_bits(cdev, pcls, &tile, depth);
+	    } HANDLE_RECT_UNLESS(code,
+	        (code != gs_error_VMerror || !cdev->error_is_retryable) );
+	    if (code < 0) {
+	        /* Something went wrong; just copy the bits. */
+	        goto copy;
 	    }
 	}
-copy:	/*
-	 * The default fill_mask implementation uses strip_copy_rop;
-	 * this is exactly what we want.
-	 */
-	TRY_RECT {
-	    NEST_RECT {
-		code = gx_default_fill_mask(dev, row, dx, raster,
-					(y == y0 && height == orig_height &&
-					 dx == orig_data_x ? id :
-					 gx_no_bitmap_id),
-					    x, y, width, height, pdcolor,
-					    depth, lop, pcpath);
-	    } UNNEST_RECT;
-	} HANDLE_RECT(code);
+	{
+	    gx_cmd_rect rect;
+	    int rsize;
+	    byte op = copy_op + cmd_copy_use_tile;
+
+	    /* Output a command to copy the entire character. */
+	    /* It will be truncated properly per band. */
+	    rect.x = orig_x, rect.y = y0;
+	    rect.width = orig_width, rect.height = yend - y0;
+	    rsize = 1 + cmd_sizexy(rect);
+	    TRY_RECT {
+	        code = (orig_data_x ?
+	      		cmd_put_set_data_x(cdev, pcls, orig_data_x) : 0);
+		if (code >= 0) {
+		    byte *dp;
+
+		    code = set_cmd_put_op(dp, cdev, pcls, op, rsize);
+		    /*
+		     * The following conditional is unnecessary: the two
+		     * statements inside it should go outside the
+		     * HANDLE_RECT.  They are here solely to pacify
+		     * stupid compilers that don't understand that dp
+		     * will always be set if control gets past the
+		     * HANDLE_RECT.
+		     */
+		    if (code >= 0) {
+		        dp++;
+		        cmd_putxy(rect, dp);
+		    }
+		}
+	    } HANDLE_RECT(code);
+	    pcls->rect = rect;
+	    goto end;
+	}
 end:
 	;
     } END_RECTS;
@@ -833,10 +811,11 @@ clist_create_compositor(gx_device * dev,
     /* insert the command and compositor identifier */
     dp[1] = cmd_opv_ext_create_compositor;
     dp[2] = pcte->type->comp_id;
-    dp += 3;
 
     /* serialize the remainder of the compositor */
-    return pcte->type->procs.write(pcte, dp, &size);
+    if ((code = pcte->type->procs.write(pcte, dp + 3, &size)) < 0)
+        ((gx_device_clist_writer *)dev)->cnext = dp;
+    return code;
 }
 
 /* ------ Utilities ------ */
@@ -866,107 +845,120 @@ cmd_put_set_data_x(gx_device_clist_writer * cldev, gx_clist_state * pcls,
     return code;
 }
 
-/* Add commands to represent a halftone order. */
-private int
-cmd_put_ht_order(gx_device_clist_writer * cldev, const gx_ht_order * porder,
-		 int component /* -1 = default/gray/black screen */ )
-{
-    byte command[cmd_max_intsize(sizeof(long)) * 8];
-    byte *cp;
-    uint len;
-    byte *dp;
-    uint i, n;
-    int code;
-    int pi = porder->procs - ht_order_procs_table;
-    uint elt_size = porder->procs->bit_data_elt_size;
-    const uint nlevels = min((cbuf_size - 2) / sizeof(*porder->levels), 255);
-    const uint nbits = min((cbuf_size - 2) / elt_size, 255);
-
-    if (pi < 0 || pi > countof(ht_order_procs_table))
-	return_error(gs_error_unregistered);
-    /* Put out the order parameters. */
-    cp = cmd_put_w(component + 1, command);
-    cp = cmd_put_w(porder->width, cp);
-    cp = cmd_put_w(porder->height, cp);
-    cp = cmd_put_w(porder->raster, cp);
-    cp = cmd_put_w(porder->shift, cp);
-    cp = cmd_put_w(porder->num_levels, cp);
-    cp = cmd_put_w(porder->num_bits, cp);
-    *cp++ = (byte)pi;
-    len = cp - command;
-    code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_ht_order, len + 1);
-    if (code < 0)
-	return code;
-    memcpy(dp + 1, command, len);
-
-    /* Put out the transfer function, if any. */
-    code = cmd_put_color_map(cldev, cmd_map_ht_transfer, 0, porder->transfer,
-			     NULL);
-    if (code < 0)
-	return code;
-
-    /* Put out the levels array. */
-    for (i = 0; i < porder->num_levels; i += n) {
-	n = porder->num_levels - i;
-	if (n > nlevels)
-	    n = nlevels;
-	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_ht_data,
-				  2 + n * sizeof(*porder->levels));
-	if (code < 0)
-	    return code;
-	dp[1] = n;
-	memcpy(dp + 2, porder->levels + i, n * sizeof(*porder->levels));
-    }
-
-    /* Put out the bits array. */
-    for (i = 0; i < porder->num_bits; i += n) {
-	n = porder->num_bits - i;
-	if (n > nbits)
-	    n = nbits;
-	code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_ht_data,
-				  2 + n * elt_size);
-	if (code < 0)
-	    return code;
-	dp[1] = n;
-	memcpy(dp + 2, (const byte *)porder->bit_data + i * elt_size,
-	       n * elt_size);
-    }
-
-    return 0;
-}
-
 /* Add commands to represent a full (device) halftone. */
-/* We put out the default/gray/black screen last so that the reading */
-/* pass can recognize the end of the halftone. */
 int
-cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht,
-		 gs_halftone_type type)
+cmd_put_halftone(gx_device_clist_writer * cldev, const gx_device_halftone * pdht)
 {
-    uint num_comp = (pdht->components == 0 ? 0 : pdht->num_comp);
+    uint    ht_size = 0, req_size;
+    byte *  dp;
+    byte *  dp0 = 0;
+    byte *  pht_buff = 0;
+    int     code = gx_ht_write(pdht, (gx_device *)cldev, 0, &ht_size);
 
-    {
-	byte *dp;
-	int code = set_cmd_put_all_op(dp, cldev, cmd_opv_set_misc,
-				      2 + cmd_size_w(num_comp));
+    /*
+     * Determine the required size, and if necessary allocate a buffer.
+     *
+     * The full serialized representation consists of:
+     *  command code (2 bytes)
+     *  length of serialized halftone (enc_u_sizew(ht_size)
+     *  one or more halfton segments, which consist of:
+     *    command code (2 bytes)
+     *    segment size (enc_u_sizew(seg_size) (seg_size < cbuf_ht_seg_max_size)
+     *    the serialized halftone segment (seg_size)
+     *
+     * Serialized halftones may be larger than the command buffer, so it
+     * is sent in segments. The cmd_opv_extend/cmd_opv_ext_put_halftone
+     * combination indicates that a device halftone is being sent, and
+     * provides the length of the entire halftone. This is followed by
+     * one or more cmd_opv_extend/cmd_opv_ext_ht_seg commands, which
+     * convey the segments of the serialized hafltone. The reader can
+     * identify the final segment by adding segment lengths.
+     *
+     * This complexity is hidden from the serialization code. If the
+     * halftone is larger than a single halftone buffer, we allocate a
+     * buffer to hold the entire representation, and divided into
+     * segments in this routine.
+     */
+    if (code < 0 && code != gs_error_rangecheck)
+        return code;
+    req_size = 2 + enc_u_sizew(ht_size);
 
-	if (code < 0)
-	    return code;
-	dp[1] = cmd_set_misc_halftone + type;
-	cmd_put_w(num_comp, dp + 2);
+    /* output the "put halftone" command */
+    if ((code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, req_size)) < 0)
+        return code;
+    dp[1] = cmd_opv_ext_put_halftone;
+    dp += 2;
+    enc_u_putw(ht_size, dp);
+
+    /* see if a spearate allocated buffer is required */
+    if (ht_size > cbuf_ht_seg_max_size) {
+        pht_buff = gs_alloc_bytes( cldev->bandlist_memory,
+                                   ht_size,
+                                   "cmd_put_halftone" );
+        if (pht_buff == 0)
+            return_error(gs_error_VMerror);
+    } else {
+        /* send the only segment command */
+        req_size += ht_size;
+        code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, req_size);
+        if (code < 0)
+            return code;
+        dp0 = dp;
+        dp[1] = cmd_opv_ext_put_ht_seg;
+        dp += 2;
+        enc_u_putw(ht_size, dp);
+        pht_buff = dp;
     }
-    if (num_comp == 0)
-	return cmd_put_ht_order(cldev, &pdht->order, -1);
-    {
-	int i;
 
-	for (i = num_comp; --i >= 0;) {
-	    int code = cmd_put_ht_order(cldev, &pdht->components[i].corder, i);
-
-	    if (code < 0)
-		return code;
-	}
+    /* serialize the halftone */
+    code = gx_ht_write(pdht, (gx_device *)cldev, pht_buff, &ht_size);
+    if (code < 0) {
+        if (ht_size > cbuf_ht_seg_max_size)
+            gs_free_object( cldev->bandlist_memory,
+                            pht_buff,
+                            "cmd_put_halftone" );
+        else
+            cldev->cnext = dp0;
+        return code;
     }
-    return 0;
+
+    /*
+     * If the halftone fit into a single command buffer, we are done.
+     * Otherwise, process the individual segments.
+     *
+     * If bandlist memory is exhausted while processing the segments,
+     * we do not make any attempt to recover the partially submitted
+     * halftone. The reader will discard any partially sent hafltone
+     * when it receives the next cmd_opv_extend/
+     * cmd_opv_ext_put_halftone combination.
+     */
+    if (ht_size > cbuf_ht_seg_max_size) {
+        byte *  pbuff = pht_buff;
+
+        while (ht_size > 0 && code >= 0) {
+            int     seg_size, tmp_size;
+
+            seg_size = ( ht_size > cbuf_ht_seg_max_size ? cbuf_ht_seg_max_size
+                                                        : ht_size );
+            tmp_size = 2 + enc_u_sizew(seg_size) + seg_size;
+            code = set_cmd_put_all_op(dp, cldev, cmd_opv_extend, tmp_size);
+            if (code >= 0) {
+                dp[1] = cmd_opv_ext_put_ht_seg;
+                dp += 2;
+                enc_u_putw(seg_size, dp);
+                memcpy(dp, pbuff, seg_size);
+                ht_size -= seg_size;
+                pbuff += seg_size;
+            }
+        }
+        gs_free_object( cldev->bandlist_memory, pht_buff, "cmd_put_halftone");
+        pht_buff = 0;
+    }
+
+    if (code >= 0)
+        cldev->device_halftone_id = pdht->id;
+
+    return code;
 }
 
 /* Write out any necessary color mapping data. */
@@ -979,7 +971,7 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
 
     /* Put out the halftone. */
     if (pdht->id != cldev->device_halftone_id) {
-	code = cmd_put_halftone(cldev, pdht, pis->halftone->type);
+	code = cmd_put_halftone(cldev, pdht);
 	if (code < 0)
 	    return code;
 	cldev->device_halftone_id = pdht->id;
@@ -1008,7 +1000,7 @@ cmd_put_color_mapping(gx_device_clist_writer * cldev,
 	/*
 	 * Determine the ids for the transfer functions that we currently
 	 * have in the set_transfer structure.  The halftone xfer funcs
-	 * are sent in cmd_put_ht_order().
+	 * are sent in cmd_put_halftone.
 	 */
 #define get_id(pis, color, color_num) \
     ((pis->set_transfer.color != NULL && pis->set_transfer.color_num >= 0) \

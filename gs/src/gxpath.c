@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Internal path management routines for Ghostscript library */
 #include "gx.h"
 #include "gserrors.h"
@@ -70,6 +70,7 @@ gx_path_init_contents(gx_path * ppath)
     ppath->curve_count = 0;
     path_update_newpath(ppath);
     ppath->bbox_set = 0;
+    ppath->bbox_accurate = 0;
 }
 
 /*

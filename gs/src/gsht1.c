@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Extended halftone operators for Ghostscript library */
 #include "memory_.h"
 #include "gx.h"
@@ -569,7 +569,6 @@ process_client_order(gx_ht_order * porder, gs_state * pgs,
 }
 
 private const gx_ht_order_procs_t wts_order_procs = {
-    0, 0, 0, 0, 0
 };
 
 /**
@@ -588,6 +587,8 @@ gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
 		       gx_device_halftone *pdht)
 {
     gx_device *dev = pgs->device;
+    int num_comps = dev->color_info.num_components;
+    int depth = dev->color_info.depth;
 
     /* todo: we probably want to fail if AccurateScreens is false */
 
@@ -604,8 +605,14 @@ gs_sethalftone_try_wts(gs_halftone *pht, gs_state *pgs,
 #endif
 
     /* only work with bilevel (not multilevel) devices */
-    if (dev->color_info.num_components != dev->color_info.depth)
-	return 1;
+    if (depth > num_comps) {
+        if (depth >= 2 * num_comps)
+	    return 1;
+        if (dev->color_info.gray_index != GX_CINFO_COMP_NO_INDEX &&
+            (dev->color_info.max_gray > 1 || 
+	    (num_comps > 1 && dev->color_info.max_color > 1)))
+            return 1;
+    }
 
     if (pht->type == ht_type_multiple) {
 	gs_halftone_component *components = pht->params.multiple.components;

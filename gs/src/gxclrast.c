@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Command list interpreter/rasterizer */
 #include "memory_.h"
 #include "gx.h"
@@ -48,6 +48,8 @@
 #include "stream.h"
 #include "strimpl.h"
 #include "gxcomp.h"
+#include "gsserial.h"
+#include "gxdhtserial.h"
 
 extern_gx_device_halftone_list();
 extern_gx_image_type_table();
@@ -170,6 +172,18 @@ cmd_copy_value(void *pvar, int var_size, const byte *cbp)
 #define cmd_get_value(var, cbp)\
   cbp = cmd_copy_value(&var, sizeof(var), cbp)
 
+
+/*
+ * Define a buffer structure to hold a serialized halftone. This is
+ * used only if the serialized halftone is too large to fit into
+ * the command buffer.
+ */
+typedef struct ht_buff_s {
+    uint    ht_size, read_size;
+    byte *  pcurr;
+    byte *  pbuff;
+} ht_buff_t;
+
 /*
  * Render one band to a specified target device.  Note that if
  * action == setup, target may be 0.
@@ -179,15 +193,6 @@ private int read_set_bits(command_buf_t *pcb, tile_slot *bits,
                           int compress, gx_clist_state *pcls,
                           gx_strip_bitmap *tile, tile_slot **pslot,
                           gx_device_clist_reader *cdev, gs_memory_t *mem);
-private int read_set_ht_order(command_buf_t *pcb,
-                              gx_device_halftone **ppdht,
-                              gx_ht_order **pporder, gs_memory_t *mem);
-private int read_set_ht_data(command_buf_t *pcb, uint *pdata_index,
-                             gx_ht_order *porder,
-                             gs_halftone_type halftone_type,
-                             gs_imager_state *pis,
-                             gx_device_clist_reader *cdev,
-                             gs_memory_t *mem);
 private int read_set_misc2(command_buf_t *pcb, gs_imager_state *pis,
                            segment_notes *pnotes);
 private int read_set_color_space(command_buf_t *pcb, gs_imager_state *pis,
@@ -202,6 +207,9 @@ private int read_put_params(command_buf_t *pcb, gs_imager_state *pis,
 private int read_create_compositor(command_buf_t *pcb, gs_imager_state *pis,
                                    gx_device_clist_reader *cdev,
                                    gs_memory_t *mem, gx_device ** ptarget);
+private int read_alloc_ht_buff(ht_buff_t *, uint, gs_memory_t *);
+private int read_ht_segment(ht_buff_t *, command_buf_t *, gs_imager_state *,
+			    gx_device *, gs_memory_t *);
 
 private const byte *cmd_read_rect(int, gx_cmd_rect *, const byte *);
 private const byte *cmd_read_matrix(gs_matrix *, const byte *);
@@ -237,7 +245,6 @@ clist_playback_band(clist_playback_action playback_action,
     register const byte *cbp;
     int dev_depth = cdev->color_info.depth;
     int dev_depth_bytes = (dev_depth + 7) >> 3;
-    int delta_bytes = (dev_depth_bytes + 1) / 2;
     int odd_delta_shift = (dev_depth_bytes - 3) * 8;
     int num_zero_bytes;
     gx_color_index delta_offset = cmd_delta_offsets[dev_depth_bytes];
@@ -259,7 +266,9 @@ clist_playback_band(clist_playback_action playback_action,
     struct _cas {
 	bool lop_enabled;
 	gs_fixed_point fill_adjust;
+	gx_device_color dcolor;
     } clip_save;
+    bool in_clip = false;
     gs_imager_state imager_state;
     gx_device_color dev_color;
     float dash_pattern[cmd_max_dash];
@@ -267,7 +276,6 @@ clist_playback_band(clist_playback_action playback_action,
     gx_stroke_params stroke_params;
     gs_halftone_type halftone_type;
     gx_ht_order *porder;
-    uint ht_data_index;
     union im_ {
 	gs_image_common_t c;
 	gs_data_image_t d;
@@ -287,6 +295,7 @@ clist_playback_band(clist_playback_action playback_action,
     segment_notes notes;
     int data_x;
     int code = 0;
+    ht_buff_t  ht_buff;
 
     cbuf.data = (byte *)cbuf_storage;
     cbuf.size = cbuf_size;
@@ -294,6 +303,9 @@ clist_playback_band(clist_playback_action playback_action,
     cbuf.end_status = 0;
     set_cb_end(&cbuf, cbuf.data + cbuf.size);
     cbp = cbuf.end;
+
+    memset(&ht_buff, 0, sizeof(ht_buff));
+
 in:				/* Initialize for a new page. */
     tdev = target;
     set_colors = state.colors;
@@ -519,36 +531,6 @@ in:				/* Initialize for a new page. */
 			state.lop_enabled = false;
 			imager_state.log_op = lop_default;
 			if_debug0('L', "\n");
-			continue;
-		    case cmd_opv_set_ht_order:
-			cbuf.ptr = cbp;
-			code = read_set_ht_order(&cbuf, &imager_state.dev_ht,
-						 &porder, mem);
-			cbp = cbuf.ptr;
-			if (code < 0)
-			    goto out;
-			ht_data_index = 0;
-			/*
-			 * Free the relevant cache, because its sizes
-			 * are probably not correct any more.
-			 */
-			{
-			    gx_ht_cache *pcache = porder->cache;
-
-			    if (pcache) {
-				gx_ht_free_cache(mem, pcache);
-				porder->cache = 0;
-			    }
-			}
-			continue;
-		    case cmd_opv_set_ht_data:
-			cbuf.ptr = cbp;
-			code = read_set_ht_data(&cbuf, &ht_data_index, porder,
-						halftone_type,
-						&imager_state, cdev, mem);
-			cbp = cbuf.ptr;
-			if (code < 0)
-			    goto out;
 			continue;
 		    case cmd_opv_end_page:
 			if_debug0('L', "\n");
@@ -962,6 +944,7 @@ set_phase:	/*
 			break;
 		    case cmd_opv_begin_clip:
 			pcpath = NULL;
+			in_clip = true;
 			if_debug0('L', "\n");
 			code = gx_cpath_reset(&clip_path);
 			if (code < 0)
@@ -973,6 +956,9 @@ set_phase:	/*
 			clip_save.lop_enabled = state.lop_enabled;
 			clip_save.fill_adjust =
 			    imager_state.fill_adjust;
+			clip_save.dcolor = dev_color;
+			/* temporarily set a solid color */
+			color_set_pure(&dev_color, (gx_color_index)1);
 			state.lop_enabled = false;
 			imager_state.log_op = lop_default;
 			imager_state.fill_adjust.x =
@@ -1003,6 +989,8 @@ set_phase:	/*
 			     lop_default);
 			imager_state.fill_adjust =
 			    clip_save.fill_adjust;
+			dev_color = clip_save.dcolor;
+			in_clip = false;
 			break;
 		    case cmd_opv_set_color_space:
 			cbuf.ptr = cbp;
@@ -1049,13 +1037,10 @@ set_phase:	/*
 				  image.d.Width, image.d.Height);
 ibegin:			if_debug0('L', "\n");
 			{
-			    gx_drawing_color devc;
-
-			    color_set_pure(&devc, state.colors[1]);
 			    code = (*dev_proc(tdev, begin_typed_image))
 				(tdev, &imager_state, NULL,
 				 (const gs_image_common_t *)&image,
-				 &image_rect, &devc, pcpath, mem,
+				 &image_rect, &dev_color, pcpath, mem,
 				 &image_info);
 			}
 			if (code < 0)
@@ -1195,57 +1180,6 @@ idata:			data_size = 0;
 			if (code < 0)
 			    goto out;
 			continue;
-		    case cmd_opv_set_color:
-			cmd_getw(op, cbp);		/* Get flags value */
-#define dcb dev_color.colors.colored.c_base
-#define dcl dev_color.colors.colored.c_level
-			{
-			    int i;
-
-			    for (i = 0; i < cdev->color_info.num_components; ++i)
-				cmd_getw(dcb[i], cbp);
-			}
-			goto setcc;
-		    case cmd_opv_set_color_short:
-			if (cdev->color_info.num_components <= 4) {
-			    op = *cbp++;
-			    dcb[0] = (op >> 3) & 1;
-			    dcb[1] = (op >> 2) & 1;
-			    dcb[2] = (op >> 1) & 1;
-			    dcb[3] = op & 1;
-			    op >>= 4;
-			}
-			else {
-			    int bases;
-			    int i, test_bit = 1 << (cdev->color_info.num_components - 1);
-
-			    cmd_getw(op, cbp);		/* Get flags value */
-			    cmd_getw(bases, cbp);
-			    for (i = 0; i < cdev->color_info.num_components; ++i) {
-				dcb[i] = (bases & test_bit) ? 1 : 0;
-				test_bit >>= 1;
-			    }
-			}
-setcc:			{
-			    int i, test_bit = 1 << (cdev->color_info.num_components - 1);
-
-			    for (i = 0; i < cdev->color_info.num_components; ++i) {
-				if (op & test_bit)
-				    cmd_getw(dcl[i], cbp);
-				else
-				    dcl[i] = 0;
-			        test_bit >>= 1;
-			    }
-			    if_debug9('L', " num_comp=%d base=(%u,%u,%u,%u) level=(%u,%u,%u,%u)\n",
-				       imager_state.dev_ht->num_comp,
-				       dcb[0], dcb[1], dcb[2], dcb[3],
-				       dcl[0], dcl[1], dcl[2], dcl[3]);
-			    gx_complete_halftone(&dev_color, cdev->color_info.num_components,
-						    imager_state.dev_ht);
-#undef dcb
-#undef dcl
-			}
-			goto set_phase;
 		    case cmd_opv_extend:
 			switch (*cbp++) {
 			    case cmd_opv_ext_put_params:
@@ -1268,6 +1202,50 @@ setcc:			{
 				tdev = target;
 				if (code < 0)
 				    goto out;
+				break;
+			    case cmd_opv_ext_put_halftone:
+                                {
+                                    uint    ht_size;
+
+                                    enc_u_getw(ht_size, cbp);
+                                    code = read_alloc_ht_buff(&ht_buff, ht_size, mem);
+                                    if (code < 0)
+                                        goto out;
+                                }
+				break;
+			    case cmd_opv_ext_put_ht_seg:
+                                cbuf.ptr = cbp;
+                                code = read_ht_segment(&ht_buff, &cbuf,
+						       &imager_state, tdev,
+						       mem);
+				cbp = cbuf.ptr;
+				if (code < 0)
+				    goto out;
+				break;
+			    case cmd_opv_ext_put_drawing_color:
+				{
+				    uint    color_size;
+				    const gx_device_color_type_t *  pdct;
+
+				    pdct = gx_get_dc_type_from_index(*cbp++);
+				    if (pdct == 0) {
+					code = gs_note_error(gs_error_rangecheck);
+					goto out;
+				    }
+				    enc_u_getw(color_size, cbp);
+				    if (cbp + color_size > cbuf.limit)
+					cbp = top_up_cbuf(&cbuf, cbp);
+				    code = pdct->read(&dev_color, &imager_state,
+						      &dev_color, tdev, cbp,
+						      color_size, mem);
+				    if (code < 0)
+					goto out;
+				    cbp += color_size;
+				    code = gx_color_load(&dev_color,
+							 &imager_state, tdev);
+				    if (code < 0)
+					goto out;
+				}
 				break;
 			    default:
 				goto bad_op;
@@ -1350,102 +1328,50 @@ setcc:			{
 		continue;
 	    case cmd_op_path >> 4:
 		{
-		    gx_device_color devc;
-		    gx_device_color *pdevc;
-		    gx_ht_tile ht_tile;
+		    gx_path fpath;
+		    gx_path * ppath = &path;
 
 		    if_debug0('L', "\n");
+		    /* if in clip, flatten path first */
+		    if (in_clip) {
+			gx_path_init_local(&fpath, mem);
+			code = gx_path_add_flattened_accurate(&path, &fpath,
+					     gs_currentflat_inline(&imager_state),
+					     imager_state.accurate_curves);
+			if (code < 0)
+			    goto out;
+			ppath = &fpath;
+		    }
 		    switch (op) {
 			case cmd_opv_fill:
 			    fill_params.rule = gx_rule_winding_number;
-			    goto fill_pure;
+			    goto fill;
 			case cmd_opv_eofill:
 			    fill_params.rule = gx_rule_even_odd;
-			  fill_pure:color_set_pure(&devc, state.colors[1]);
-			    pdevc = &devc;
-			    goto fill;
-			case cmd_opv_htfill:
-			    fill_params.rule = gx_rule_winding_number;
-			    goto fill_ht;
-			case cmd_opv_hteofill:
-			    fill_params.rule = gx_rule_even_odd;
-			  fill_ht:ht_tile.tiles = state_tile;
-			    color_set_binary_tile(&devc,
-						  state.tile_colors[0],
-						  state.tile_colors[1],
-						  &ht_tile);
-			    pdevc = &devc;
-			    pdevc->phase = tile_phase;
-			    goto fill;
-			case cmd_opv_colorfill:
-			    fill_params.rule = gx_rule_winding_number;
-			    goto fill_color;
-			case cmd_opv_coloreofill:
-			    fill_params.rule = gx_rule_even_odd;
-			  fill_color:pdevc = &dev_color;
-			    pdevc->phase = color_phase;
-			    code =
-				gx_color_load(pdevc, &imager_state, tdev);
-			    if (code < 0)
-				break;
-			  fill:fill_params.adjust = imager_state.fill_adjust;
+			fill:
+			    fill_params.adjust = imager_state.fill_adjust;
 			    fill_params.flatness = imager_state.flatness;
-			    code = gx_fill_path_only(&path, tdev,
+			    code = gx_fill_path_only(ppath, tdev,
 						     &imager_state,
 						     &fill_params,
-						     pdevc, pcpath);
+						     &dev_color, pcpath);
 			    break;
 			case cmd_opv_stroke:
-			    color_set_pure(&devc, state.colors[1]);
-			    pdevc = &devc;
-			    goto stroke;
-			case cmd_opv_htstroke:
-			    ht_tile.tiles = state_tile;
-			    color_set_binary_tile(&devc,
-						  state.tile_colors[0],
-						  state.tile_colors[1],
-						  &ht_tile);
-			    pdevc = &devc;
-			    pdevc->phase = tile_phase;
-			    goto stroke;
-			case cmd_opv_colorstroke:
-			    pdevc = &dev_color;
-			    pdevc->phase = color_phase;
-			    code =
-				gx_color_load(pdevc, &imager_state, tdev);
-			    if (code < 0)
-				break;
-			  stroke:stroke_params.flatness = imager_state.flatness;
-			    code = gx_stroke_path_only(&path,
+			    stroke_params.flatness = imager_state.flatness;
+			    code = gx_stroke_path_only(ppath,
 						       (gx_path *) 0, tdev,
 					      &imager_state, &stroke_params,
-						       pdevc, pcpath);
+						       &dev_color, pcpath);
 			    break;
 			case cmd_opv_polyfill:
-			    color_set_pure(&devc, state.colors[1]);
-			    pdevc = &devc;
-			    goto poly;
-			case cmd_opv_htpolyfill:
-			    ht_tile.tiles = state_tile;
-			    color_set_binary_tile(&devc,
-						  state.tile_colors[0],
-						  state.tile_colors[1],
-						  &ht_tile);
-			    pdevc = &devc;
-			    pdevc->phase = tile_phase;
-			    goto poly;
-			case cmd_opv_colorpolyfill:
-			    pdevc = &dev_color;
-			    pdevc->phase = color_phase;
-			    code = gx_color_load(pdevc, &imager_state, tdev);
-			    if (code < 0)
-				break;
-poly:			    code = clist_do_polyfill(tdev, &path, pdevc,
+			    code = clist_do_polyfill(tdev, ppath, &dev_color,
 						     imager_state.log_op);
 			    break;
 			default:
 			    goto bad_op;
 		    }
+		    if (ppath != &path)
+			gx_path_free(ppath, "clist_render_band");
 		}
 		if (in_path) {	/* path might be empty! */
 		    state.rect.x = fixed2int_var(ppos.x);
@@ -1525,24 +1451,11 @@ poly:			    code = clist_do_polyfill(tdev, &path, pdevc,
 									 * This call of copy_mono originated as a call
 									 * of fill_mask.
 									 */
-		    gx_drawing_color dcolor;
-		    gx_ht_tile ht_tile;
-
-		    if (op & cmd_copy_ht_color) {	/* Screwy C assignment rules don't allow: */
-			/* dcolor.colors = state.tile_colors; */
-			ht_tile.tiles = state_tile;
-			color_set_binary_tile(&dcolor,
-					      state.tile_colors[0],
-					    state.tile_colors[1], &ht_tile);
-			dcolor.phase = tile_phase;
-		    } else {
-			color_set_pure(&dcolor, state.colors[1]);
-		    }
 		    code = (*dev_proc(tdev, fill_mask))
 			(tdev, source, data_x, raster, gx_no_bitmap_id,
 			 state.rect.x - x0, state.rect.y - y0,
 			 state.rect.width - data_x, state.rect.height,
-			 &dcolor, 1, imager_state.log_op, pcpath);
+			 &dev_color, 1, imager_state.log_op, pcpath);
 		} else
 		    code = (*dev_proc(tdev, copy_mono))
 			(tdev, source, data_x, raster, gx_no_bitmap_id,
@@ -1577,7 +1490,16 @@ poly:			    code = clist_do_polyfill(tdev, &path, pdevc,
 	}
     }
     /* Clean up before we exit. */
-  out:gx_cpath_free(&clip_path, "clist_render_band exit");
+  out:
+    if (ht_buff.pbuff != 0) {
+        gs_free_object(mem, ht_buff.pbuff, "clist_playback_band(ht_buff)");
+        ht_buff.pbuff = 0;
+        ht_buff.pcurr = 0;
+    }
+    ht_buff.ht_size = 0;
+    ht_buff.read_size = 0;
+
+    gx_cpath_free(&clip_path, "clist_render_band exit");
     gx_path_free(&path, "clist_render_band exit");
     gs_imager_state_release(&imager_state);
     gs_free_object(mem, data_bits, "clist_playback_band(data_bits)");
@@ -1754,214 +1676,84 @@ read_set_bits(command_buf_t *pcb, tile_slot *bits, int compress,
     return 0;
 }
 
+/* if necessary, allocate a buffer to hold a serialized halftone */
 private int
-read_set_ht_order(command_buf_t *pcb, gx_device_halftone **ppdht,
-		  gx_ht_order **pporder, gs_memory_t *mem)
+read_alloc_ht_buff(ht_buff_t * pht_buff, uint ht_size, gs_memory_t * mem)
 {
-    const byte *cbp = pcb->ptr;
-    gx_ht_order *porder;
-    uint old_num_levels;
-    uint *levels;
-    uint old_num_bits;
-    void *bit_data;
-    int index;
-    gx_ht_order new_order;
-    int code = cmd_create_dev_ht(ppdht, mem);
-    gx_device_halftone *pdht = *ppdht;
-
-    if (code < 0)
-	return code;
-    cmd_getw(index, cbp);
-    if (index == 0)
-	porder = &pdht->order;
-    else {
-	gx_ht_order_component *pcomp = &pdht->components[index - 1];
-	pcomp->comp_number = index - 1;
-	porder = &pcomp->corder;
+    /* free the existing buffer, if any (usually none) */
+    if (pht_buff->pbuff != 0) {
+        gs_free_object(mem, pht_buff->pbuff, "read_alloc_ht_buff");
+        pht_buff->pbuff = 0;
     }
-    *pporder = porder;
-    new_order = *porder;
-    cmd_getw(new_order.width, cbp);
-    cmd_getw(new_order.height, cbp);
-    cmd_getw(new_order.raster, cbp);
-    cmd_getw(new_order.shift, cbp);
-    cmd_getw(new_order.num_levels, cbp);
-    cmd_getw(new_order.num_bits, cbp);
-    new_order.procs = &ht_order_procs_table[*cbp++];
-    pcb->ptr = cbp;
-    if_debug8('L', " index=%d size=(%d,%d) raster=%d shift=%d num_levels=%d num_bits=%d procs=%d\n",
-	      index, new_order.width, new_order.height,
-	      new_order.raster, new_order.shift,
-	      new_order.num_levels, new_order.num_bits, cbp[-1]);
-    if (new_order.data_memory == 0) {
-	/* levels and bit_data point into ROM. */
-	old_num_levels = 0;
-	levels = 0;
-	old_num_bits = 0;
-	bit_data = 0;
+
+    /*
+     * If the serialized halftone fits in the command buffer, no
+     * additional buffer is required.
+     */
+    if (ht_size > cbuf_ht_seg_max_size) {
+        pht_buff->pbuff = gs_alloc_bytes(mem, ht_size, "read_alloc_ht_buff");
+        if (pht_buff->pbuff == 0)
+            return_error(gs_error_VMerror);
+    }
+    pht_buff->ht_size = ht_size;
+    pht_buff->read_size = 0;
+    pht_buff->pcurr = pht_buff->pbuff;
+    return 0;
+}
+
+/* read a halftone segment; if it is the final segment, build the halftone */
+private int
+read_ht_segment(
+    ht_buff_t *                 pht_buff,
+    command_buf_t *             pcb,
+    gs_imager_state *           pis,
+    gx_device *                 dev,
+    gs_memory_t *               mem )
+{
+    const byte *                cbp = pcb->ptr;
+    const byte *                pbuff = 0;
+    uint                        ht_size = pht_buff->ht_size, seg_size;
+    int                         code = 0;
+
+    /* get the segment size; refill command buffer if necessary */
+    enc_u_getw(seg_size, cbp);
+    if (cbp + seg_size > pcb->limit)
+        cbp = top_up_cbuf(pcb, cbp);
+
+    if (pht_buff->pbuff == 0) {
+        /* if not separate buffer, must be only one segment */
+        if (seg_size != ht_size)
+            return_error(gs_error_unknownerror);
+        pbuff = cbp;
     } else {
-	old_num_levels = porder->num_levels;
-	levels = porder->levels;
-	old_num_bits = porder->num_bits;
-	bit_data = porder->bit_data;
+        if (seg_size + pht_buff->read_size > pht_buff->ht_size)
+            return_error(gs_error_unknownerror);
+        memcpy(pht_buff->pcurr, cbp, seg_size);
+        pht_buff->pcurr += seg_size;
+        if ((pht_buff->read_size += seg_size) == ht_size)
+            pbuff = pht_buff->pbuff;
     }
-    new_order.data_memory = mem;
-    /*
-     * Note that for resizing a byte array, the element size is 1 byte,
-     * not the element size given to alloc_byte_array!
-     */
-    if (new_order.num_levels > old_num_levels) {
-	if (levels == 0)
-	    levels = (uint *) gs_alloc_byte_array(mem, new_order.num_levels,
-						  sizeof(*levels),
-						  "ht order(levels)");
-	else
-	    levels = gs_resize_object(mem, levels,
-				      new_order.num_levels * sizeof(*levels),
-				      "ht order(levels)");
-	if (levels == 0)
-	    return_error(gs_error_VMerror);
-	/* Update porder in case we bail out. */
-	porder->levels = levels;
-	porder->num_levels = new_order.num_levels;
+
+    /* if everything has be read, covert back to a halftone */
+    if (pbuff != 0) {
+        code = gx_ht_read_and_install(pis, dev, pbuff, ht_size, mem);
+
+        /* release any buffered information */
+        if (pht_buff->pbuff != 0) {
+            gs_free_object(mem, pht_buff->pbuff, "read_alloc_ht_buff");
+            pht_buff->pbuff = 0;
+            pht_buff->pcurr = 0;
+        }
+        pht_buff->ht_size = 0;
+        pht_buff->read_size = 0;
     }
-    if (new_order.num_bits != old_num_bits ||
-	new_order.procs != porder->procs
-	) {
-	if (bit_data == 0)
-	    bit_data = gs_alloc_byte_array(mem, new_order.num_bits,
-					   new_order.procs->bit_data_elt_size,
-					   "ht order(bit_data)");
-	else
-	    bit_data = gs_resize_object(mem, bit_data,
-					new_order.num_bits *
-					  new_order.procs->bit_data_elt_size,
-					"ht order(bit_data)");
-	if (bit_data == 0)
-	    return_error(gs_error_VMerror);
-    }
-    *porder = new_order;
-    porder->levels = levels;
-    porder->bit_data = bit_data;
-    porder->full_height = ht_order_full_height(porder);
-    return 0;
+
+    /* update the command buffer ponter */
+    pcb->ptr = cbp + seg_size;
+
+    return code;
 }
 
-private int
-read_set_ht_data(command_buf_t *pcb, uint *pdata_index, gx_ht_order *porder,
-		 gs_halftone_type halftone_type, gs_imager_state *pis,
-		 gx_device_clist_reader *cdev, gs_memory_t *mem)
-{
-    gx_device_halftone *pdht = pis->dev_ht;
-    uint elt_size = porder->procs->bit_data_elt_size;
-    const byte *cbp = pcb->ptr;
-    int n = *cbp++;
-
-    if (*pdata_index < porder->num_levels) {	/* Setting levels */
-	byte *lptr = (byte *)(porder->levels + *pdata_index);
-
-	cbp = cmd_read_data(pcb, lptr, n * sizeof(*porder->levels), cbp);
-#ifdef DEBUG
-	if (gs_debug_c('L')) {
-	    int i;
-
-	    dprintf1(" levels[%u]", *pdata_index);
-	    for (i = 0; i < n; ++i)
-		dprintf1(" %u",
-			 porder->levels[*pdata_index + i]);
-	    dputc('\n');
-	}
-#endif
-    } else {	/* Setting bits */
-	byte *bptr =
-	    (byte *)porder->bit_data +
-	      (*pdata_index - porder->num_levels) * elt_size;
-
-	cbp = cmd_read_data(pcb, bptr, n * elt_size, cbp);
-#ifdef DEBUG
-	if (gs_debug_c('L')) {
-	    int i;
-
-	    dprintf1(" bits[%u]", *pdata_index - porder->num_levels);
-	    for (i = 0; i < n; ++i) {
-		const byte *pb = (byte *)porder->bit_data +
-		    (*pdata_index - porder->num_levels + i) * elt_size;
-
-		if (porder->procs == &ht_order_procs_default) {
-		    const gx_ht_bit *pbit = (const gx_ht_bit *)pb;
-
-		    dprintf2(" (%u,0x%lx)", pbit->offset, (ulong)pbit->mask);
-		} else {
-		    debug_dump_bytes(pb, pb + elt_size, NULL);
-		}
-	    }
-	    dputc('\n');
-	}
-#endif
-    }
-    *pdata_index += n;
-    /*
-     * If this is the end of a component, check whether a copy of its data
-     * exists in ROM.
-     */
-    if (*pdata_index == porder->num_levels + porder->num_bits) {
-	const gx_dht_proc *phtrp = gx_device_halftone_list;
-
-	for (; *phtrp; ++phtrp) {
-	    const gx_device_halftone_resource_t *const *pphtr = (*phtrp)();
-	    const gx_device_halftone_resource_t *phtr;
-
-	    while ((phtr = *pphtr++) != 0) {
-		if (phtr->Width == porder->width &&
-		    phtr->Height == porder->height &&
-		    phtr->num_levels == porder->num_levels &&
-		    !memcmp(phtr->levels, porder->levels,
-			    phtr->num_levels * sizeof(*phtr->levels)) &&
-		    !memcmp(phtr->bit_data, porder->bit_data,
-			    phtr->Width * phtr->Height * elt_size)
-		    ) {
-		    /*
-		     * This is a predefined halftone.  Free the levels and
-		     * bit_data arrays, replacing them with the built-in ones.
-		     */
-		    if (porder->data_memory) {
-			gs_free_object(porder->data_memory, porder->bit_data,
-				       "construct_ht_order_short(bit_data)");
-			gs_free_object(porder->data_memory, porder->levels,
-				       "construct_ht_order_short(levels)");
-		    }
-		    porder->data_memory = 0;
-		    porder->levels = (uint *)phtr->levels; /* actually const */
-		    porder->bit_data = (void *)phtr->bit_data; /* actually const */
-		    goto out;
-		}
-	    }
-	}
-    out:
-	/*
-	 * If this is the end of the data, install the (device) halftone.
-	 */
-	if (porder ==
-	    (pdht->components != 0 ?
-	     &pdht->components[0].corder :
-	     &pdht->order)) {
-	    /*
-	     * gx_imager_dev_ht_install nominally expects pdht != pis->dev_ht,
-	     * but includes some special code to handle this case. We do,
-	     * however, need to release the components array as the procedure
-	     * does not take ownership of that structure (though it does take
-	     * ownership of sub-structures).
-	     */
-	    gx_ht_order_component * components = pdht->components;
-
-	    gx_imager_dev_ht_install(pis, pdht, halftone_type,
-				     (const gx_device *)cdev);
-	    gs_free_object(pis->memory, components, "read_set_ht_data");
-	}
-    }
-    pcb->ptr = cbp;
-    return 0;
-}
 
 private int
 read_set_misc2(command_buf_t *pcb, gs_imager_state *pis, segment_notes *pnotes)

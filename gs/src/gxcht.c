@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Color halftone rendering for Ghostscript imaging library */
 #include <assert.h>
 #include "memory_.h"
@@ -174,6 +174,7 @@ private const int   dc_ht_colored_has_phase = 0x10;
  *              the data required or actually used will be written here.
  *
  * Returns:
+ *  1, with *psize set to 0, if *psdc and *pdevc represent the same color
  *
  *  0, with *psize set to the amount of data written, if everything OK
  *
@@ -186,7 +187,7 @@ private const int   dc_ht_colored_has_phase = 0x10;
 private int
 gx_dc_ht_colored_write(
     const gx_device_color *         pdevc,
-    const gx_device_color_saved *   psdc,
+    const gx_device_color_saved *   psdc0,
     const gx_device *               dev,
     byte *                          pdata,
     uint *                          psize )
@@ -197,6 +198,7 @@ gx_dc_ht_colored_write(
     int                             depth = dev->color_info.depth;
     gx_color_index                  plane_mask = pdevc->colors.colored.plane_mask;
     gx_color_value                  alpha = pdevc->colors.colored.alpha;
+    const gx_device_color_saved *   psdc = psdc0;
     byte *                          pdata0 = pdata;
 
     /* sanity check */
@@ -225,28 +227,51 @@ gx_dc_ht_colored_write(
                  num_comps * sizeof(pdevc->colors.colored.c_level[0]) ) != 0  ) {
         gx_color_index  comp_bit;
         int             i;
+        uint            tmp_mask;
 
         flag_bits |= dc_ht_colored_has_level;
+        if (num_comps > 8 * sizeof(uint)) {
+            tmp_mask = (uint)plane_mask;
+            req_size += enc_u_sizew(tmp_mask);
+            tmp_mask = (uint)(plane_mask >> (8 * sizeof(uint)));
+            req_size += enc_u_sizew(tmp_mask);
+        } else {
+            tmp_mask = (uint)plane_mask;
+            req_size += enc_u_sizew(tmp_mask);
+        }
         for (i = 0, comp_bit = 0x1; i < num_comps; i++, comp_bit <<= 1) {
-            req_size += enc_u_sizew(plane_mask);
             if ((plane_mask & comp_bit) != 0)
                 req_size += enc_u_sizew(pdevc->colors.colored.c_level[i]);
         }
     }
 
-    if (alpha == gx_max_color_value)
-        flag_bits |= dc_ht_colored_alpha_is_max;
-    else if (psdc == 0 || alpha != psdc->colors.colored.alpha) {
-        flag_bits |= dc_ht_colored_has_alpha;
-        req_size += enc_u_sizew(alpha);
+    if (psdc == 0 || alpha != psdc->colors.colored.alpha) {
+        if (alpha == gx_max_color_value)
+            flag_bits |= dc_ht_colored_alpha_is_max;
+        else {
+            flag_bits |= dc_ht_colored_has_alpha;
+            req_size += enc_u_sizew(alpha);
+        }
     }
 
-    if ( psdc == 0                       ||
-         pdevc->phase.x != psdc->phase.x ||
-         pdevc->phase.y != psdc->phase.y   ) {
+    /*
+     * Moderate hack: the phase can be retrieved from either a binary or a
+     * colored halftone.
+     */
+    if ( psdc0 == 0                               ||
+         (psdc0->type != gx_dc_type_ht_binary &&
+          psdc0->type != gx_dc_type_ht_colored  ) ||
+         pdevc->phase.x != psdc0->phase.x         ||
+         pdevc->phase.y != psdc0->phase.y           ) {
         flag_bits |= dc_ht_colored_has_phase;
         /* the phases are known to be positive */
         req_size += enc_u_sizexy(pdevc->phase);
+    }
+
+    /* see if there is anything to do */
+    if (flag_bits == 0) {
+        *psize = 0;
+        return 1;
     }
 
     /* see if enough space is available */
@@ -269,7 +294,7 @@ gx_dc_ht_colored_write(
                 if (pdevc->colors.colored.c_base[i] != 0)
                     base_mask |= (gx_color_index)1 << i;
             }
-            for (i = 0; i < num_bytes; i++, base_mask >>= 1)
+            for (i = 0; i < num_bytes; i++, base_mask >>= 8)
                 *pdata++ = (byte)base_mask;
         } else {
             memcpy( pdata,
@@ -291,7 +316,7 @@ gx_dc_ht_colored_write(
             enc_u_putw(tmp_mask, pdata);
         } else {
             tmp_mask = (uint)plane_mask;
-            enc_u_putw((uint)plane_mask, pdata);
+            enc_u_putw(tmp_mask, pdata);
         }
         for (i = 0, code_bit = 0x1; i < num_comps; i++, code_bit <<= 1) {
             if ((plane_mask & code_bit) != 0)
@@ -356,12 +381,14 @@ gx_dc_ht_colored_read(
     int                     flag_bits;
 
     /* if prior information is available, use it */
-    if (prior_devc != 0 && prior_devc->type == gx_dc_type_ht_colored)
-        devc = *prior_devc;
-    else {
+    if (prior_devc != 0) {
+        if (prior_devc->type == gx_dc_type_ht_colored)
+            devc = *prior_devc;
+        else if (prior_devc->type == gx_dc_type_ht_binary)
+            devc.phase = prior_devc->phase;
+    } else
         memset(&devc, 0, sizeof(devc));   /* clear pointers */
-        devc.type = gx_dc_type_ht_binary;
-    }
+    devc.type = gx_dc_type_ht_colored;
 
     /* the number of components is determined by the color model */
     devc.colors.colored.num_components = num_comps;
@@ -430,7 +457,9 @@ gx_dc_ht_colored_read(
         size -= pdata - pdata_start;
     }
 
-    if ((flag_bits & dc_ht_colored_has_alpha) != 0) {
+    if ((flag_bits & dc_ht_colored_alpha_is_max) != 0)
+        devc.colors.colored.alpha = gx_max_color_value;
+    else if ((flag_bits & dc_ht_colored_has_alpha) != 0) {
         const byte *    pdata_start = pdata;
 
         if (size < 1)
@@ -442,9 +471,11 @@ gx_dc_ht_colored_read(
     if ((flag_bits & dc_ht_colored_has_phase) != 0) {
         if (size < 2)
             return_error(gs_error_rangecheck);
-        enc_u_getxy(pdevc->phase, pdata);
+        enc_u_getxy(devc.phase, pdata);
     }
 
+    /* everything looks OK */
+    *pdevc = devc;
     return pdata - pdata0;
 }
 

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Path tracing procedures for Ghostscript library */
 #include "math_.h"
 #include "gx.h"
@@ -59,7 +59,7 @@ gx_path_subpath_start_point(const gx_path * ppath, gs_fixed_point * ppt)
 int
 gx_path_bbox(gx_path * ppath, gs_fixed_rect * pbox)
 {
-    if (ppath->bbox_set) {
+    if (ppath->bbox_accurate) {
 	/* The bounding box was set by setbbox. */
 	*pbox = ppath->bbox;
 	return 0;

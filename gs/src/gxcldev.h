@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Internal definitions for Ghostscript command lists. */
 
 #ifndef gxcldev_INCLUDED
@@ -28,6 +28,7 @@
 #include "strimpl.h"		/* for compressed bitmaps */
 #include "scfx.h"		/* ditto */
 #include "srlx.h"		/* ditto */
+#include "gsdcolor.h"
 
 /* ---------------- Commands ---------------- */
 
@@ -78,11 +79,13 @@ typedef enum {
 #define cmd_set_misc_halftone (3 << 6)	/* 11: type(6), num_comp# */
     cmd_opv_enable_lop = 0x07,	/* (nothing) */
     cmd_opv_disable_lop = 0x08,	/* (nothing) */
-    cmd_opv_set_ht_order = 0x09,	/* component+1#[, cname#], */
+    /* obsolete */
+    /* cmd_opv_set_ht_order = 0x09, */	/* component+1#[, cname#], */
 				/* width#, height#, raster#, */
 				/* shift#, num_levels#, num_bits#, */
 				/* order_procs_index */
-    cmd_opv_set_ht_data = 0x0a,	/* n, n x (uint|gx_ht_bit|ushort) */
+    /* obsolete */
+    /* cmd_opv_set_ht_data = 0x0a, */	/* n, n x (uint|gx_ht_bit|ushort) */
     cmd_opv_end_page = 0x0b,	/* (nothing) */
     cmd_opv_delta_color0 = 0x0c,	/* See cmd_put_color in gxclutil.c */
     cmd_opv_delta_color1 = 0x0d,	/* <<same as color0>> */
@@ -207,6 +210,7 @@ typedef struct cmd_block_s {
 /* Remember the current state of one band when writing or reading. */
 struct gx_clist_state_s {
     gx_color_index colors[2];	/* most recent colors */
+    gx_device_color_saved sdc;  /* last device color for this band */
     uint tile_index;		/* most recent tile index */
     gx_bitmap_id tile_id;	/* most recent tile id */
 /* Since tile table entries may be deleted and/or moved at any time, */
@@ -243,6 +247,7 @@ struct gx_clist_state_s {
 /*static const gx_clist_state cls_initial */
 #define cls_initial_values\
 	 { gx_no_color_index, gx_no_color_index },\
+	{ gx_dc_type_none },\
 	0, gx_no_bitmap_id,\
 	 { 0, 0 }, { gx_no_color_index, gx_no_color_index },\
 	 { 0, 0, 0, 0 }, lop_default, 0, 0, 0, initial_known,\
@@ -690,11 +695,9 @@ int clist_change_bits(gx_device_clist_writer * cldev, gx_clist_state * pcls,
 /*
  * Add commands to represent a full (device) halftone.
  * (This routine should probably be in some other module.)
- * ****** Note: the type parameter is now unnecessary, because device
- * halftones record the type. ******
  */
 int cmd_put_halftone(gx_device_clist_writer * cldev,
-		     const gx_device_halftone * pdht, gs_halftone_type type);
+		     const gx_device_halftone * pdht);
 
 /* ------ Exported by gxclrast.c for gxclread.c ------ */
 

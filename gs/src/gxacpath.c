@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Accumulator for clipping paths */
 #include "gx.h"
 #include "gserrors.h"
@@ -133,10 +133,8 @@ gx_cpath_accum_end(const gx_device_cpath_accum * padev, gx_clip_path * pcpath)
     apath.path.bbox.p.y = int2fixed(padev->bbox.p.y);
     apath.path.bbox.q.x = int2fixed(padev->bbox.q.x);
     apath.path.bbox.q.y = int2fixed(padev->bbox.q.y);
-    /* Using the setbbox flag here is slightly bogus, */
-    /* but it's as good a way as any to indicate that */
-    /* the bbox is accurate. */
-    apath.path.bbox_set = 1;
+    /* indicate that the bbox is accurate */
+    apath.path.bbox_accurate = 1;
     /* Note that the result of the intersection might be */
     /* a single rectangle.  This will cause clip_path_is_rect.. */
     /* to return true.  This, in turn, requires that */

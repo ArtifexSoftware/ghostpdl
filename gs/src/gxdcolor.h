@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Device color representation for Ghostscript */
 
 #ifndef gxdcolor_INCLUDED
@@ -142,9 +142,11 @@ struct gx_device_color_type_s {
      *
      * The "write" routine converts a device color into a string for
      * writing to the command list. *psize is the amount of space
-     * available. If it is large enough, the procedure sets *psize to
-     * the amount actually used and returns 0; otherwise, if no other
-     * problem is detected, *psize is set to the amount required and
+     * available. If the saved color and the current color are the same,
+     * the routine sets *psize to 0 and returns 1. Otherwise, if *psize
+     * is large enough, the procedure sets *psize to the amount actually
+     * used and returns 0. If *psize is too small and no other problem
+     * is detected, *psize is set to the amount required and 
      * gs_error_rangecheck is returned. If some other error is detected,
      * *psize is left unchanged and the error code is returned.
      *
@@ -162,8 +164,9 @@ struct gx_device_color_type_s {
      * color previously stored for a particular band. When the band is
      * rendered this will be the current device color just before the
      * color being serialized is read. This information can be used to
-     * make encoding more efficient. To avoid any optimization, set
-     * psdc to be a null pointer.
+     * make encoding more efficient, and to discard unnecessary color
+     * setting operations. To avoid any optimization, set psdc to be a
+     * null pointer.
      *
      * Note that the caller is always responsible for serializing and
      * transmitting the device halftone, if this is required. Because
@@ -174,7 +177,7 @@ struct gx_device_color_type_s {
      * The first device color serialized after the halftone has been
      * changed should always contain complete information; i.e.: psdc
      * should be set to a null pointer. This is necessary as the command
-     * list reader will have reset its device color when the halftone is
+     * list reader may have reset its device color when the halftone is
      * changed, so informaition from the prior device color will no
      * longer be available.
      *

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Device color representation for drivers */
 
 #ifndef gsdcolor_INCLUDED
@@ -320,6 +320,17 @@ struct gx_device_color_s {
  * guarranteed not to contain pointers to allocated memory (and thus does
  * not interact with the GC code for containing structures).
  *
+ * The reason a structure distinct from the device color itself is used
+ * for this purpose is related to an anomally involving reference to
+ * device halftones. The gx_device_halftone structure is reference
+ * counted, but a long standing (and not easily removable) convention
+ * in the code states that only reference from imager (graphic) states
+ * to halftones are counted; reference from device colors are not. The
+ * pointer to a halftone in a saved device color may, therefore,
+ * become a dangling pointer. This does not occur in other uses of a
+ * device color, because a color can only be usable when the hafltone
+ * it references is the current halftone in some imager state.
+ *
  * Because halftones are large and seldom changed, they are always sent
  * as "all bands" commands. Individual device colors, by contrast, are
  * usually written just for the bands that make use of them. The
@@ -339,6 +350,7 @@ struct gx_device_color_saved_s {
         gx_color_index  pure;
         struct _svbin {
             gx_color_index  b_color[2];
+            uint            b_level;
             int             b_index;
         }               binary;
         struct _svcol {

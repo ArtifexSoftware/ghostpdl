@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Pure and null device color implementation */
 #include "gx.h"
 #include "gserrors.h"
@@ -50,11 +50,12 @@ private dev_color_proc_load(gx_dc_null_load);
 private dev_color_proc_fill_rectangle(gx_dc_null_fill_rectangle);
 private dev_color_proc_fill_masked(gx_dc_null_fill_masked);
 private dev_color_proc_equal(gx_dc_null_equal);
+private dev_color_proc_read(gx_dc_null_read);
 const gx_device_color_type_t gx_dc_type_data_null = {
     &st_bytes,
     gx_dc_no_save_dc, gx_dc_no_get_dev_halftone,
     gx_dc_null_load, gx_dc_null_fill_rectangle, gx_dc_null_fill_masked,
-    gx_dc_null_equal, gx_dc_no_write, gx_dc_no_read, gx_dc_no_get_nonzero_comps
+    gx_dc_null_equal, gx_dc_no_write, gx_dc_null_read, gx_dc_no_get_nonzero_comps
 };
 #undef gx_dc_type_null
 const gx_device_color_type_t *const gx_dc_type_null = &gx_dc_type_data_null;
@@ -271,7 +272,7 @@ gx_dc_no_write(
     uint *                          psize )
 {
     *psize = 0;
-    return 0;
+    return psdc != 0 && psdc->type == pdevc->type ? 1 : 0;
 }
 
 private int
@@ -328,6 +329,20 @@ private bool
 gx_dc_null_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
 {
     return pdevc2->type == pdevc1->type;
+}
+
+private int
+gx_dc_null_read(
+    gx_device_color *       pdevc,
+    const gs_imager_state * pis,                /* ignored */
+    const gx_device_color * prior_devc,         /* ignored */
+    const gx_device *       dev,                /* ignored */
+    const byte *            pdata,              /* ignored */
+    uint                    size,               /* ignored */
+    gs_memory_t *           mem )               /* ignored */
+{
+    pdevc->type = gx_dc_type_null;
+    return 0;
 }
 
 /* ------ Pure color ------ */
@@ -428,6 +443,8 @@ gx_dc_pure_equal(const gx_device_color * pdevc1, const gx_device_color * pdevc2)
  *
  * Returns:
  *
+ *  1, with *psize set to 0, if *pdevc and *psdc represent the same color
+ *
  *  0, with *psize set to the amount of data written, if everything OK
  *
  *  gs_error_rangecheck, with *psize set to the size of buffer required,
@@ -444,8 +461,13 @@ gx_dc_pure_write(
     byte *                          pdata,
     uint *                          psize )
 {
-    /* don't bother with optimizations based on psdc */
-    return gx_dc_write_color(pdevc->colors.pure, dev, pdata, psize);
+    if ( psdc != 0                              &&
+         psdc->type == pdevc->type              &&
+         psdc->colors.pure == pdevc->colors.pure  ) {
+        *psize = 0;
+        return 1;
+    } else
+        return gx_dc_write_color(pdevc->colors.pure, dev, pdata, psize);
 }
 
 /*
@@ -716,5 +738,6 @@ gx_dc_read_color(
     /* num_bytes > sizeof(gx_color_index), discard first byte */
     for (i = (num_bytes >= sizeof(gx_color_index) ? 1 : 0); i < num_bytes; i++)
         color = (color << 8) | pdata[i];
+    *pcolor = color;
     return num_bytes;
 }

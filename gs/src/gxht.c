@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Halftone rendering for imaging library */
 #include "memory_.h"
 #include "gx.h"
@@ -332,6 +332,7 @@ gx_dc_ht_binary_save_dc(const gx_device_color * pdevc,
     psdc->type = pdevc->type;
     psdc->colors.binary.b_color[0] = pdevc->colors.binary.color[0];
     psdc->colors.binary.b_color[1] = pdevc->colors.binary.color[1];
+    psdc->colors.binary.b_level = pdevc->colors.binary.b_level;
     psdc->colors.binary.b_index = pdevc->colors.binary.b_index;
     psdc->phase = pdevc->phase;
 }
@@ -433,17 +434,14 @@ gx_dc_ht_binary_equal(const gx_device_color * pdevc1,
  * in its string representation. The first byte of the string holds this
  * set of flags.
  *
- * It is unlikely that two successive binary halftones that are not equal
- * would have the same level, so that field is always included in the
- * string representation and therefore has no flag bit.
- *
  * The binary halftone tile is never transmitted as part of the string
  * representation, so there is also no flag bit for it.
  */
 private const int   dc_ht_binary_has_color0 = 0x01;
 private const int   dc_ht_binary_has_color1 = 0x02;
-private const int   dc_ht_binary_has_index = 0x04;
-private const int   dc_ht_binary_has_phase = 0x08;
+private const int   dc_ht_binary_has_level = 0x04;
+private const int   dc_ht_binary_has_index = 0x08;
+private const int   dc_ht_binary_has_phase = 0x10;
 
 
 /*
@@ -466,6 +464,7 @@ private const int   dc_ht_binary_has_phase = 0x08;
  *              the data required or actually used will be written here.
  *
  * Returns:
+ *  1, with *psize set to 0, if *psdc and *pdevc represent the same color
  *
  *  0, with *psize set to the amount of data written, if everything OK
  *
@@ -478,18 +477,19 @@ private const int   dc_ht_binary_has_phase = 0x08;
 private int
 gx_dc_ht_binary_write(
     const gx_device_color *         pdevc,
-    const gx_device_color_saved *   psdc,
+    const gx_device_color_saved *   psdc0,
     const gx_device *               dev,
     byte *                          pdata,
     uint *                          psize )
 {
-    int                             req_size = 2;   /* flag bits, b_level */
-    int                             flag_bits = 0;  /* just b_level */
+    int                             req_size = 1;   /* flag bits */
+    int                             flag_bits = 0;
     uint                            tmp_size;
     byte *                          pdata0 = pdata;
+    const gx_device_color_saved *   psdc = psdc0;
     int                             code;
 
-    /* check if saved color is of the same type */
+    /* check if operand and saved colors are the same type */
     if (psdc != 0 && psdc->type != pdevc->type)
         psdc = 0;
 
@@ -514,17 +514,37 @@ gx_dc_ht_binary_write(
                                  &tmp_size );
         req_size += tmp_size;
     }
+
+    if ( psdc == 0                                                  ||
+         pdevc->colors.binary.b_level != psdc->colors.binary.b_level  ) {
+        flag_bits |= dc_ht_binary_has_level;
+        req_size += enc_u_sizew(pdevc->colors.binary.b_level);
+    }
+
     if ( psdc == 0                                                  ||
          pdevc->colors.binary.b_index != psdc->colors.binary.b_index  ) {
         flag_bits |= dc_ht_binary_has_index;
         req_size += 1;
     }
-    if ( psdc == 0                       ||
-         pdevc->phase.x != psdc->phase.x ||
-         pdevc->phase.y != psdc->phase.y   ) {
+
+    /*
+     * Moderate hack: the phase can be retrieved from either a binary or a
+     * colored halftone.
+     */
+    if ( psdc0 == 0                               ||
+         (psdc0->type != gx_dc_type_ht_binary &&
+          psdc0->type != gx_dc_type_ht_colored  ) ||
+         pdevc->phase.x != psdc0->phase.x          ||
+         pdevc->phase.y != psdc0->phase.y            ) {
         flag_bits |= dc_ht_binary_has_phase;
         /* the phases are known to be positive */
         req_size += enc_u_sizexy(pdevc->phase);
+    }
+
+    /* check if there is anything to be done */
+    if (flag_bits == 0) {
+        *psize = 0;
+        return 1;
     }
 
     /* check if sufficient space has been provided */
@@ -533,9 +553,8 @@ gx_dc_ht_binary_write(
         return gs_error_rangecheck;
     }
 
-    /* write out the flag byte and b_level */
+    /* write out the flag byte */
     *pdata++ = (byte)flag_bits;
-    *pdata++ = (byte)pdevc->colors.binary.b_level;
 
     /* write out such other parts of the device color as are required */
     if ((flag_bits & dc_ht_binary_has_color0) != 0) {
@@ -558,6 +577,8 @@ gx_dc_ht_binary_write(
             return code;
         pdata += tmp_size;
     }
+    if ((flag_bits & dc_ht_binary_has_level) != 0)
+        enc_u_putw(pdevc->colors.binary.b_level, pdata);
     if ((flag_bits & dc_ht_binary_has_index) != 0)
         *pdata++ = pdevc->colors.binary.b_index;
     if ((flag_bits & dc_ht_binary_has_phase) != 0)
@@ -612,12 +633,14 @@ gx_dc_ht_binary_read(
     int                     code, flag_bits;
 
     /* if prior information is available, use it */
-    if (prior_devc != 0 && prior_devc->type == gx_dc_type_ht_binary)
-        devc = *prior_devc;
-    else {
+    if (prior_devc != 0) {
+        if (prior_devc->type == gx_dc_type_ht_binary)
+            devc = *prior_devc;
+        else if (prior_devc->type == gx_dc_type_ht_colored)
+            devc.phase = prior_devc->phase;
+    } else
         memset(&devc, 0, sizeof(devc));   /* clear pointers */
-        devc.type = gx_dc_type_ht_binary;
-    }
+    devc.type = gx_dc_type_ht_binary;
 
     /* the halftone is always taken from the imager state */
     devc.colors.binary.b_ht = pis->dev_ht;
@@ -626,10 +649,9 @@ gx_dc_ht_binary_read(
     devc.colors.binary.b_tile = 0;
 
     /* verify the minimum amount of information */
-    if ((size -= 2) < 0)
+    if ((size -= 1) < 0)
         return_error(gs_error_rangecheck);
     flag_bits = *pdata++;
-    devc.colors.binary.b_level = *pdata++;
 
     /* read the other information provided */
     if ((flag_bits & dc_ht_binary_has_color0) != 0) {
@@ -640,8 +662,9 @@ gx_dc_ht_binary_read(
         if (code < 0)
             return code;
         size -= code;
+        pdata += code;
     }
-    if ((flag_bits & dc_ht_binary_has_color0) != 0) {
+    if ((flag_bits & dc_ht_binary_has_color1) != 0) {
         code = gx_dc_read_color( &devc.colors.binary.color[1],
                                  dev,
                                  pdata,
@@ -649,6 +672,15 @@ gx_dc_ht_binary_read(
         if (code < 0)
             return code;
         size -= code;
+        pdata += code;
+    }
+    if ((flag_bits & dc_ht_binary_has_level) != 0) {
+        const byte *    pdata_start = pdata;
+
+        if (size < 1)
+            return_error(gs_error_rangecheck);
+        enc_u_getw(devc.colors.binary.b_level, pdata);
+        size -= pdata - pdata_start;
     }
     if ((flag_bits & dc_ht_binary_has_index) != 0) {
         if (--size < 0)
@@ -659,7 +691,7 @@ gx_dc_ht_binary_read(
         /* we know the phase contains at least two bytes */
         if (size < 2)
             return_error(gs_error_rangecheck);
-        enc_u_getxy(pdevc->phase, pdata);
+        enc_u_getxy(devc.phase, pdata);
     }
 
     /* everything looks good */

@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Definitions and support procedures for higher-level band list commands */
 /* Extends (requires) gxcldev.h */
 
@@ -59,10 +59,12 @@ typedef enum {
 /* Extend the command set.  See gxcldev.h for more information. */
 typedef enum {
     cmd_op_misc2 = 0xd0,	/* (see below) */
-    cmd_opv_set_color = 0xd0,	/* Used if base values do not fit into 1 bit */
+    /* obsolete */
+    /* cmd_opv_set_color = 0xd0, */	/* Used if base values do not fit into 1 bit */
     				/* #flags,#base[0],...#base[num_comp-1] if flags */
 				/* colored halftone with base colors a,b,c,d */
-    cmd_opv_set_color_short = 0xd1,	/* Used if base values fit into 1 bit */
+    /* obsolete */
+    /* cmd_opv_set_color_short = 0xd1, */ /* Used if base values fit into 1 bit */
     					/* If num_comp <= 4 then use: */
     					/* pqrsabcd, where a = base[0] */
 					/* b = base[1], c= base[2], d = base[3] */
@@ -134,21 +136,18 @@ typedef enum {
       cmd_opv_max_curveto = cmd_opv_scurveto,
     cmd_opv_closepath = 0xef,	/* (nothing) */
     cmd_op_path = 0xf0,		/* (see below) */
-    /* The path drawing commands come in groups: */
-    /* each group consists of a base command plus an offset */
-    /* which is a cmd_dc_type. */
     cmd_opv_fill = 0xf0,
-    cmd_opv_htfill = 0xf1,
-    cmd_opv_colorfill = 0xf2,
+    /* cmd_opv_htfill = 0xf1, */ /* obsolete */
+    /* cmd_opv_colorfill = 0xf2, */ /* obsolete */
     cmd_opv_eofill = 0xf3,
-    cmd_opv_hteofill = 0xf4,
-    cmd_opv_coloreofill = 0xf5,
+    /* cmd_opv_hteofill = 0xf4, */ /* obsolete */
+    /* cmd_opv_coloreofill = 0xf5, */ /* obsolete */
     cmd_opv_stroke = 0xf6,
-    cmd_opv_htstroke = 0xf7,
-    cmd_opv_colorstroke = 0xf8,
+    /* cmd_opv_htstroke = 0xf7, */ /* obsolete */
+    /* cmd_opv_colorstroke = 0xf8, */ /* obsolete */
     cmd_opv_polyfill = 0xf9,
-    cmd_opv_htpolyfill = 0xfa,
-    cmd_opv_colorpolyfill = 0xfb
+    /* cmd_opv_htpolyfill = 0xfa, */ /* obsolete */
+    /* cmd_opv_colorpolyfill = 0xfb */ /* obsolete */
 } gx_cmd_xop;
 
 /*
@@ -159,8 +158,10 @@ typedef enum {
     cmd_opv_ext_put_params = 0x00,          /* serialized parameter list */
     cmd_opv_ext_create_compositor = 0x01,   /* compositor id,
                                              * serialized compositor */
-    cmd_opv_ext_put_halftone = 0x02,        /* length, serialized halftone */
-    cmd_opv_ext_put_drawing_color = 0x03    /* length, color type id,
+    cmd_opv_ext_put_halftone = 0x02,        /* length of entire halftone */
+    cmd_opv_ext_put_ht_seg = 0x03,          /* segment length,
+                                             * halftone segment data */
+    cmd_opv_ext_put_drawing_color = 0x04    /* length, color type id,
                                              * serialized color */
 } gx_cmd_ext_op;
 
@@ -195,6 +196,12 @@ typedef enum {
  *      111----- (a full-size `fixed' value)
  */
 #define is_bits(d, n) !(((d) + ((fixed)1 << ((n) - 1))) & (-(fixed)1 << (n)))
+
+/*
+ * Maximum size of a halftone segment. This leaves enough headroom to
+ * accommodate any reasonable requirements of the command buffer.
+ */
+#define cbuf_ht_seg_max_size    (cbuf_size - 32)    /* leave some headroom */
 
 /* ---------------- Driver procedures ---------------- */
 
