@@ -18,8 +18,9 @@
 
 /*$Id$ */
 /* Image compression for PostScript and PDF writers */
-#include "math_.h"
+#include "stdio_.h"		/* for jpeglib.h */
 #include "jpeglib_.h"		/* for sdct.h */
+#include "math_.h"
 #include "gx.h"
 #include "gserrors.h"
 #include "gscspace.h"
@@ -36,7 +37,6 @@
 
 /* Define parameter-setting procedures. */
 extern stream_state_proc_put_params(s_CF_put_params, stream_CF_state);
-extern stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
 
 /* ---------------- Image compression ---------------- */
 
@@ -173,66 +173,11 @@ setup_image_compression(psdf_binary_writer *pbw, const psdf_image_params *pdip,
 	    ss->Columns = pim->Width;
 	}
     } else if (template == &s_DCTE_template) {
-	/*
-	 * The DCTEncode filter has complex setup requirements.
-	 * The code here is mostly copied from zfdcte.c: someday we should
-	 * factor it out for common use.
-	 */
-	stream_DCT_state *const ss = (stream_DCT_state *) st;
-	jpeg_compress_data *jcdp;
-	gs_c_param_list rcc_list;
-
-	/*
-	 * "Wrap" the actual Dict or ACSDict parameter list in one that
-	 * sets Rows, Columns, and Colors.
-	 */
-	gs_c_param_list_write(&rcc_list, pdev->v_memory);
-	if ((code = param_write_int((gs_param_list *)&rcc_list, "Rows",
-				    &pim->Height)) < 0 ||
-	    (code = param_write_int((gs_param_list *)&rcc_list, "Columns",
-				    &pim->Width)) < 0 ||
-	    (code = param_write_int((gs_param_list *)&rcc_list, "Colors",
-				    &Colors)) < 0
-	    ) {
-	    goto rcc_fail;
-	}
-	gs_c_param_list_read(&rcc_list);
-	if (dict != 0 && orig_template == template)
-	    gs_c_param_list_set_target(&rcc_list, (gs_param_list *)dict);
-	/* Allocate space for IJG parameters. */
-	jcdp = (jpeg_compress_data *)
-	    gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "zDCTE");
-	if (jcdp == 0) {
-	    code = gs_note_error(gs_error_VMerror);
+	code = psdf_DCT_filter((dict != 0 && orig_template == template ?
+				(gs_param_list *)dict : NULL),
+			       st, pim->Width, pim->Height, Colors, pbw);
+	if (code < 0)
 	    goto fail;
-	}
-	ss->data.compress = jcdp;
-	jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */
-	if ((code = gs_jpeg_create_compress(ss)) < 0)
-	    goto dcte_fail;	/* correct to do jpeg_destroy here */
-	/* Read parameters from dictionary */
-	s_DCTE_put_params((gs_param_list *)&rcc_list, ss); /* ignore errors */
-	/* Create the filter. */
-	jcdp->template = s_DCTE_template;
-	/* Make sure we get at least a full scan line of input. */
-	ss->scan_line_size = jcdp->cinfo.input_components *
-	    jcdp->cinfo.image_width;
-	jcdp->template.min_in_size =
-	    max(s_DCTE_template.min_in_size, ss->scan_line_size);
-	/* Make sure we can write the user markers in a single go. */
-	jcdp->template.min_out_size =
-	    max(s_DCTE_template.min_out_size, ss->Markers.size);
-	code = psdf_encode_binary(pbw, &jcdp->template, st);
-	if (code >= 0) {
-	    gs_c_param_list_release(&rcc_list);
-	    return 0;
-	}
-    dcte_fail:
-	gs_jpeg_destroy(ss);
-	gs_free_object(mem, jcdp, "setup_image_compression");
-    rcc_fail:
-	gs_c_param_list_release(&rcc_list);
-	goto fail;
     }
     code = psdf_encode_binary(pbw, template, st);
     if (code >= 0)

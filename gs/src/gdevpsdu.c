@@ -18,6 +18,8 @@
 
 /*$Id$ */
 /* Common utilities for PostScript and PDF writers */
+#include "stdio_.h"		/* for FILE for jpeglib.h */
+#include "jpeglib_.h"		/* for sdct.h */
 #include "memory_.h"
 #include <stdlib.h>		/* for qsort */
 #include "gx.h"
@@ -28,6 +30,8 @@
 #include "strimpl.h"
 #include "sa85x.h"
 #include "scfx.h"
+#include "sdct.h"
+#include "sjpeg.h"
 #include "spprint.h"
 #include "sstring.h"
 
@@ -42,6 +46,10 @@ const psdf_set_color_commands_t psdf_set_fill_color_commands = {
 const psdf_set_color_commands_t psdf_set_stroke_color_commands = {
     "G", "RG", "K", "CS", "SC", "SCN"
 };
+
+
+/* Define parameter-setting procedures. */
+extern stream_state_proc_put_params(s_DCTE_put_params, stream_DCT_state);
 
 /* ---------------- Vector implementation procedures ---------------- */
 
@@ -279,6 +287,76 @@ psdf_encode_binary(psdf_binary_writer * pbw, const stream_template * template,
 {
     return (s_add_filter(&pbw->strm, template, ss, pbw->memory) == 0 ?
 	    gs_note_error(gs_error_VMerror) : 0);
+}
+
+/*
+ * Acquire parameters, and optionally set up the filter for, a DCTEncode
+ * filter.  This is a separate procedure so it can be used to validate
+ * filter parameters when they are set, rather than waiting until they are
+ * used.  pbw = NULL means just set up the stream state.
+ */
+int
+psdf_DCT_filter(gs_param_list *plist /* may be NULL */,
+		stream_state /*stream_DCTE_state*/ *st,
+		int Columns, int Rows, int Colors,
+		psdf_binary_writer *pbw /* may be NULL */)
+{
+	stream_DCT_state *const ss = (stream_DCT_state *) st;
+	gs_memory_t *mem = st->memory;
+	jpeg_compress_data *jcdp;
+	gs_c_param_list rcc_list;
+	int code;
+
+	/*
+	 * "Wrap" the actual Dict or ACSDict parameter list in one that
+	 * sets Rows, Columns, and Colors.
+	 */
+	gs_c_param_list_write(&rcc_list, mem);
+	if ((code = param_write_int((gs_param_list *)&rcc_list, "Rows",
+				    &Rows)) < 0 ||
+	    (code = param_write_int((gs_param_list *)&rcc_list, "Columns",
+				    &Columns)) < 0 ||
+	    (code = param_write_int((gs_param_list *)&rcc_list, "Colors",
+				    &Colors)) < 0
+	    ) {
+	    goto rcc_fail;
+	}
+	gs_c_param_list_read(&rcc_list);
+	if (plist)
+	    gs_c_param_list_set_target(&rcc_list, plist);
+	/* Allocate space for IJG parameters. */
+	jcdp = (jpeg_compress_data *)
+	    gs_alloc_bytes_immovable(mem, sizeof(*jcdp), "zDCTE");
+	if (jcdp == 0)
+	    return_error(gs_error_VMerror);
+	ss->data.compress = jcdp;
+	jcdp->memory = ss->jpeg_memory = mem;	/* set now for allocation */
+	if ((code = gs_jpeg_create_compress(ss)) < 0)
+	    goto dcte_fail;	/* correct to do jpeg_destroy here */
+	/* Read parameters from dictionary */
+	s_DCTE_put_params((gs_param_list *)&rcc_list, ss); /* ignore errors */
+	/* Create the filter. */
+	jcdp->template = s_DCTE_template;
+	/* Make sure we get at least a full scan line of input. */
+	ss->scan_line_size = jcdp->cinfo.input_components *
+	    jcdp->cinfo.image_width;
+	jcdp->template.min_in_size =
+	    max(s_DCTE_template.min_in_size, ss->scan_line_size);
+	/* Make sure we can write the user markers in a single go. */
+	jcdp->template.min_out_size =
+	    max(s_DCTE_template.min_out_size, ss->Markers.size);
+	if (pbw)
+	    code = psdf_encode_binary(pbw, &jcdp->template, st);
+	if (code >= 0) {
+	    gs_c_param_list_release(&rcc_list);
+	    return 0;
+	}
+    dcte_fail:
+	gs_jpeg_destroy(ss);
+	gs_free_object(mem, jcdp, "setup_image_compression");
+    rcc_fail:
+	gs_c_param_list_release(&rcc_list);
+	return code;
 }
 
 /* Add a 2-D CCITTFax encoding filter. */

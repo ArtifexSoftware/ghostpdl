@@ -437,10 +437,12 @@ psdf_CF_put_params(gs_param_list * plist, stream_state * st)
     ss->BlackIs1 = true;
     return s_CF_put_params(plist, (stream_CF_state *) ss);
 }
+
 private int
-psdf_DCT_put_params(gs_param_list * plist, stream_state * ss)
+psdf_DCT_put_params(gs_param_list * plist, stream_state * st)
 {
-    return s_DCTE_put_params(plist, (stream_DCT_state *) ss);
+    return psdf_DCT_filter(plist, st, 8 /*nominal*/, 8 /*ibid.*/, 3 /*ibid.*/,
+			   NULL);
 }
 
 /* Put [~](Always|Never)Embed parameters. */

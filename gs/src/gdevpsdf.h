@@ -316,6 +316,17 @@ int psdf_encode_binary(P3(psdf_binary_writer * pbw,
 /* Set EndOfBlock iff the stream is not ASCII85 encoded. */
 int psdf_CFE_binary(P4(psdf_binary_writer * pbw, int w, int h, bool invert));
 
+/*
+ * Acquire parameters, and optionally set up the filter for, a DCTEncode
+ * filter.  This is a separate procedure so it can be used to validate
+ * filter parameters when they are set, rather than waiting until they are
+ * used.  pbw = NULL means just set up the stream state.
+ */
+int psdf_DCT_filter(P6(gs_param_list *plist /* may be NULL */,
+		       stream_state /*stream_DCTE_state*/ *st,
+		       int Columns, int Rows, int Colors,
+		       psdf_binary_writer *pbw /* may be NULL */));
+
 /* Set up compression and downsampling filters for an image. */
 /* Note that this may modify the image parameters. */
 /* If pctm is NULL, downsampling is not used. */

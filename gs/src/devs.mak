@@ -642,7 +642,7 @@ $(DD)psdf.dev : $(DEVS_MAK) $(ECHOGS_XE) $(psdf_) $(psdf_inc)
 	$(ADDMOD) $(DD)psdf -include $(psdf_inc2)
 
 $(GLOBJ)gdevpsdi.$(OBJ) : $(GLSRC)gdevpsdi.c $(GXERR)\
- $(math__h) $(jpeglib__h)\
+ $(jpeglib__h) $(math__h) $(stdio__h)\
  $(gscspace_h)\
  $(scfx_h) $(sdct_h) $(sjpeg_h) $(slzwx_h) $(srlx_h) $(spngpx_h)\
  $(strimpl_h) $(szlibx_h)\
@@ -659,11 +659,12 @@ $(GLOBJ)gdevpsds.$(OBJ) : $(GLSRC)gdevpsds.c $(GX) $(memory__h)\
  $(gdevpsds_h) $(gserrors_h) $(gxdcconv_h)
 	$(GLCC) $(GLO_)gdevpsds.$(OBJ) $(C_) $(GLSRC)gdevpsds.c
 
-$(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR) $(memory__h)\
+$(GLOBJ)gdevpsdu.$(OBJ) : $(GLSRC)gdevpsdu.c $(GXERR)\
+ $(jpeglib__h) $(memory__h) $(stdio__h)\
  $(gxfont_h)\
- $(sa85x_h) $(scanchar_h) $(scfx_h) $(sstring_h) $(strimpl_h)\
+ $(sa85x_h) $(scanchar_h) $(scfx_h) $(sdct_h) $(sjpeg_h) $(sstring_h) $(strimpl_h)\
  $(gdevpsdf_h) $(spprint_h)
-	$(GLCC) $(GLO_)gdevpsdu.$(OBJ) $(C_) $(GLSRC)gdevpsdu.c
+	$(GLJCC) $(GLO_)gdevpsdu.$(OBJ) $(C_) $(GLSRC)gdevpsdu.c
 
 # PostScript and EPS writers
 
