@@ -43,7 +43,7 @@
   dup /FDArray get mark exch {
 		% Add pro forma entries
     currentglobal exch dup gcheck setglobal
-    dup /FontType 1 put
+    dup /FontType known not { dup /FontType 1 put } if
     dup /CharStrings mark /.notdef () .dicttomark put
     dup /Encoding [] put
 		% Create a dummy Subrs array now, if there isn't one here
@@ -55,7 +55,8 @@
       } if readonly
     } if pop
     exch setglobal
-    dup /FontName .knownget not { () } if exch .buildfont1 exch pop
+    dup /FontName .knownget not { () } if exch
+    dup /FontType get //buildfontdict exch get exec exch pop
   } forall ] 1 index /FDepVector 3 -1 roll put
   3 -1 roll setglobal
   1 index exch .buildfont9 exch pop

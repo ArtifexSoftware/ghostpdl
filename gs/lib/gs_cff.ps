@@ -1,4 +1,4 @@
-%    Copyright (C) 1997, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+%    Copyright (C) 1997, 1998, 1999, 2000 Aladdin Enterprises.  All rights reserved.
 % 
 % This file is part of Aladdin Ghostscript.
 % 
@@ -21,11 +21,8 @@
 %	Deleted entries in the Name Index
 %	Embedded PostScript
 %	Multiple Master fonts
-%	CIDFonts
 %	Chameleon fonts
 %	Synthetic fonts
-% Also, Type 2 charstrings are converted into FontType 2 fonts,
-% which may or may not be supported.
 
 30 dict begin
 
@@ -301,6 +298,31 @@ def
   }
   17 { { readCharStrings } offput }
   18 { exch /readPrivate cvx 2 packedarray offput }
+	% CIDFont operators
+  62 {		% ROS, must be first in a CIDFont
+    currentdict /FontType undef
+    currentdict /Private undef
+    currentdict /Encoding undef
+    currentdict /FontMatrix undef
+    /CIDFontVersion 0 def
+    /CIDFontRevision 0 def
+    /CIDFontType 0 def
+    /CIDCount 8720 def
+    3 dict begin
+    /Supplement xdef
+    idstring /Ordering xdef
+    idstring /Registry xdef
+    /CIDSystemInfo currentdict end def
+  }
+  63 { /CIDFontVersion xdef }
+  64 { /CIDFontRevision xdef }
+  65 { /CIDFontType xdef }
+  66 { /CIDCount xdef }
+  67 { /UIDBase xdef }
+  68 { { readFDArray } offput }
+  69 { { readFDSelect } offput }
+	% This operator only appears in a FDArray element.
+  70 { idstring /FontName exch def }
 .dicttomark readonly def
 
 /readCharStrings {	% <font> readCharStrings -
@@ -360,6 +382,42 @@ def
   } if end
 } def
 
+% ------ FDArray and FDSelect ------ %
+
+/readFDArray {		% <font> readFDArray -
+  Index exch
+  2 dict begin /f null def begin
+  [ exch {
+    dup length subfilefilter /f exch store
+    10 dict begin
+    /FontType 2 def
+    /PaintType 0 def
+    /FontMatrix [0.001 0 0 0.001 0 0] def
+    /Private 20 dict def
+    //topdictops Dict currentdict end
+  } forall ] /FDArray xdef end end
+} def
+
+% Note: this implementation can overflow the operand stack.
+% We'll fix this if it ever becomes necessary.
+/fdselectformats [
+charsetformats 0 get
+{ /FDSelect cvx /invalidfont signalerror }
+dup
+{ [ card16 card16 exch {
+		% Stack: previndex
+    card8 card16 dup 4 1 roll 3 -1 roll sub 1 sub {
+      exch 1 index
+    } repeat exch
+  } repeat pop ]
+}
+] readonly def
+
+/readFDSelect {		% <font> readFDSelect -
+  begin fdselectformats next get exec /FDSelect exch def end
+} def
+
+
 % ------ Private dictionary ------ %
 
 /deltarray {		% -mark- <num1> ... deltarray <num1'> ...
@@ -386,7 +444,7 @@ def
   49 { /LanguageGroup xdef }
   50 { /ExpansionFactor xdef }
   51 { /initialRandomSeed xdef }
-  19 { { readSubrs } offput }
+  19 { PrivateStart add { readSubrs } offput }
   20 { /defaultWidthX xdef }
   21 { /nominalWidthX xdef }
 	% Multiple Master fonts only
@@ -396,12 +454,85 @@ def
 .dicttomark readonly def
 
 /readPrivate {		% <font> <size> readPrivate -
-  exch 1 index f exch subfilefilter /f exch def
-  /Private get begin //privatedictops Dict end
-  /f cff def advance
+  2 dict begin
+  /PrivateStart pos def
+  f 3 1 roll exch 1 index f exch subfilefilter /f exch store
+  dup /FontType get exch
+  /Private get begin
+		% Default lenIV to -1 even for Type 1 CharStrings.
+  2 ne { /lenIV -1 def } if
+  //privatedictops Dict end
+  exch /f exch store advance
+  end
+} def
+
+/readSubrs {		% <font> readSubrs -
+  /Subrs Index put
 } def
 
 % ------ Main program ------ %
+
+% Clean up after finishing a font.
+/cleanupFont {		% (currentdict) cleanupFont -
+		% Remove unwanted entries.
+  currentdict /charset undef
+  currentdict /CharStringArray undef
+} bind def
+
+% Update the Encoding and CharStrings for a real font.
+/finishFont {		% (currentdict) finishFont -
+		% Construct the real Encoding.
+		% The value of Encoding is either a number, for predefined
+		% encodings, or an array of mixed GIDs and names.
+  /Encoding mark Encoding
+  DEBUG { (Encoding: ) print dup === flush } if
+  dup type /integertype eq {
+    StandardEncodings exch get { idname } forall
+  } {
+    {
+      dup type /integertype eq { charset exch get idname } if
+    } forall
+  } ifelse .packtomark def
+		% Construct the CharStrings.
+		% Note that they may only correspond to an initial
+		% subset of the charset.
+  /CharStrings charset length CharStringArray length .min dict def
+  DEBUG {
+    charset length =only ( charset ) print
+    CharStringArray length =only ( CharStringArray) =
+    charset == flush
+  } if
+  0 1 CharStrings maxlength 1 sub {
+    dup CharStringArray exch get
+    exch charset exch get idstring CharStrings xxput
+  } for
+  cleanupFont
+} bind def
+
+% Replace CharStrings with GlyphDirectory for a CIDFont.
+/finishCIDFont {	% (currentdict) finishCIDFont -
+		% Construct the GlyphDirectory, similar to CharStrings.
+  /FDBytes FDArray length 1 gt { 1 } { 0 } ifelse def
+  /GlyphDirectory charset length CharStringArray length .min dict def
+  DEBUG {
+    charset length =only ( charset ) print
+    CharStringArray length =only ( CharStringArray) =
+    charset == flush
+  } if
+  0 1 GlyphDirectory maxlength 1 sub {
+    dup CharStringArray exch get
+		% If there is more than one FDArray entry, add the font
+		% index to the beginning of each charstring.
+    FDBytes 1 eq {
+      FDSelect 2 index get
+      1 string dup 0 4 -1 roll put exch concatstrings
+    } if
+    exch charset exch get GlyphDirectory xxput
+  } for
+		% Clean up.
+  currentdict /FDSelect undef
+  cleanupFont
+} bind def
 
 % We need to pass the file as a parameter for the sake of the PDF
 % interpreter.
@@ -464,7 +595,9 @@ def
   { /f cff def
     DEBUG { (pos=) print pos = } if
     offsets pos 2 copy .knownget not { pop pop exit } if
-    3 1 roll undef exec
+    3 1 roll undef
+    DEBUG { (exec queued: ) print dup == } if
+    exec
   } loop
   offsets length 0 ne {
     (Error: missing tables at ) print [ offsets { pop } forall ] ==
@@ -481,35 +614,7 @@ def
 
   fonts {
     begin
-		% Construct the real Encoding.
-		% The value of Encoding is either a number, for predefined
-		% encodings, or an array of mixed GIDs and names.
-      /Encoding mark Encoding
-      DEBUG { (Encoding: ) print dup === flush } if
-      dup type /integertype eq {
-	StandardEncodings exch get { idname } forall
-      } {
-	{
-	  dup type /integertype eq { charset exch get idname } if
-        } forall
-      } ifelse .packtomark def
-		% Construct the CharStrings.
-		% Note that they may only correspond to an initial
-		% subset of the charset.
-      /CharStrings charset length CharStringArray length .min dict def
-      DEBUG {
-	charset length =only ( charset ) print
-	CharStringArray length =only ( CharStringArray) =
-	charset == flush
-      } if
-      0 1 CharStrings maxlength 1 sub {
-	dup CharStringArray exch get
-	exch charset exch get idstring
-	CharStrings xxput
-      } for
-		% Remove unwanted entries.
-      currentdict /charset undef
-      currentdict /CharStringArray undef
+    currentdict /CIDFontType known { finishCIDFont } { finishFont } ifelse
     end
   } forall
 
@@ -520,8 +625,15 @@ def
     dup names exch get
     DEBUG { dup == flush } if
     exch fonts exch get
-    dup /FontName 3 index put
-    1 index exch definefont
+    dup /CIDFontType known {
+		% This is a CIDFont.
+      dup /CIDFontName 3 index put
+      1 index exch /CIDFont defineresource
+    } {
+		% This is a font.
+      dup /FontName 3 index put
+      1 index exch definefont
+    } ifelse
   } for .dicttomark
   end		% temporary dict
   end		% FontSetInit ProcSet
