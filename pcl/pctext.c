@@ -492,6 +492,7 @@ pcl_show_chars(
     bool                    opaque = !pcs->source_transparent;
     bool                    wrap = pcs->end_of_line_wrap;
     bool                    is_space = false;
+    bool                    use_limit1 = (pcl_cap.x <= limit1);
     gs_char                 chr;
     int                     code = 0;
     floatp                  width;
@@ -506,6 +507,7 @@ pcl_show_chars(
     cpt.y = pcl_cap.y;
     while (get_next_char(pcs, &str, &size, &chr, &is_space, literal) == 0) {
         floatp  tmp_x;
+        bool    last_char = false;
 
         /* check if a character was found */
         buff[0] = (chr >> 8);
@@ -533,17 +535,37 @@ pcl_show_chars(
          * disabled if the immediately preceding character was a back-space.
          * A move beyond the "right" logical page edge is also considered
          * a margin transition.
+         *
+         * A little-known feature of PCL is the effect of the line-wrap
+         * command on the interpretation of the right margin. If line
+         * wrap is in effect, a transition of the left margin will cause
+         * a <cr><lf> operation BEFORE the current character is printed. If
+         * line-wrap is not in effect, a transition of the right margin will
+         * stop printing AFTER the current character is printed.
+         *
+         * A special case occurs in the non-wrap situation when the current
+         * position exactly equals the current margin. In that case, no
+         * character is printed.
          */
-        if ( !pcs->last_was_BS                                   &&       
-             (((cpt.x <= limit1) && (cpt.x + width > limit1)) ||
-              (cpt.x + width > limit2)                          )  ) {
-            if (!wrap)
-                break;
-	    pcl_do_CR(pcs);
-            pcl_do_LF(pcs);
-            cpt.x = pcl_cap.x;
-            cpt.y = pcl_cap.y;
-        }
+        if (!pcs->last_was_BS) {
+            if (wrap) {
+                if ( (use_limit1 && (cpt.x + width > limit1)) ||
+                     (cpt.x + width > limit2)                   ) {
+	            pcl_do_CR(pcs);
+                    pcl_do_LF(pcs);
+                    cpt.x = pcl_cap.x;
+                    cpt.y = pcl_cap.y;
+                    use_limit1 = true;
+		}
+            } else {
+                if (use_limit1 && (cpt.x == limit1))
+                    break;
+                else if (cpt.x >= limit2) {
+                    cpt.x = limit2;
+                    break;
+                }
+            }
+	}
 
         /*
          * If the immediately preceding character was a BS, the code will
@@ -576,6 +598,17 @@ pcl_show_chars(
             pcs->last_was_BS = false;
         } else
             cpt.x += width;
+
+        /* check for going beyond the margin if not wrapping */
+        if (!wrap) {
+	    if (use_limit1 && (cpt.x > limit1)) {
+                cpt.x = limit1;
+                break;
+            } else if (cpt.x >= limit2) {
+                cpt.x = limit2;
+                break;
+	    }
+	}
 
         /* check if a font substitution occurred */
         if (saved_font.font != pcs->font) {
