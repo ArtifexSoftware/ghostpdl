@@ -2264,8 +2264,10 @@ Useful only for debugging.
 <dl>
 <dt><a name="Safer"></a><b><tt>-dSAFER</tt></b>
 <dd>Disables the <b><tt>deletefile</tt></b> and <b><tt>renamefile</tt></b>
-operators, and the ability to open files in any mode other than read-only.
-This may be desirable for spoolers or other sensitive environments.
+operators, the ability to open files other than <b><tt>%stdout</tt></b> and
+<b><tt>%stderr</tt></b> in any mode other than read-only, and the ability to
+open piped commands (<b><tt>%pipe%</tt></b><em>cmd</em>) at all.  This may
+be desirable for spoolers or other sensitive environments.
 </dl>
 
 <dl>
