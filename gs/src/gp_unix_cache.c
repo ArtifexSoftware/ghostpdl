@@ -21,7 +21,7 @@
 #include "string_.h"
 #include "time_.h"
 #include <stdlib.h> /* should use gs_malloc() instead */
-//#include "gconf.h"
+#include "gconfigd.h"
 #include "gp.h"
 #include "md5.h"
 

@@ -19,7 +19,7 @@
 
 #include "std.h"
 #include "gscdefs.h"		/* interface */
-#include "gconf.h"		/* for #defines */
+#include "gconfigd.h"		/* for #defines */
 
 /* ---------------- Miscellaneous system parameters ---------------- */
 

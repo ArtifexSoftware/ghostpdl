@@ -39,11 +39,8 @@ $(GLOBJ)gp_unix.$(OBJ): $(GLSRC)gp_unix.c $(AK)\
  $(gx_h) $(gsexit_h) $(gp_h)
 	$(GLCC) $(GLO_)gp_unix.$(OBJ) $(C_) $(GLSRC)gp_unix.c
 
-# gp_unix_cache depends on gconf.h for the default cache directory
-# location, but nothing in the lib target can depend on gconfig.h,
-# so we punt and just don't include it for now.
 $(GLOBJ)gp_unix_cache.$(OBJ): $(GLSRC)gp_unix_cache.c $(AK)\
- $(stdio__h) $(string__h) $(time__h) $(gp_h) $(md5_h)
+ $(stdio__h) $(string__h) $(time__h) $(gconfigd_h) $(gp_h) $(md5_h)
 	$(GLCC) $(GLO_)gp_unix_cache.$(OBJ) $(C_) $(GLSRC)gp_unix_cache.c
 
 # assume all Unix platforms support unbuffered read

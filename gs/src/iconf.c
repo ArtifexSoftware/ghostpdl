@@ -19,7 +19,7 @@
 #include "stdio_.h"		/* stdio for stream.h */
 #include "gstypes.h"
 #include "gsmemory.h"		/* for iminst.h */
-#include "gconf.h"
+#include "gconfigd.h"
 #include "iref.h"
 #include "ivmspace.h"
 #include "opdef.h"
