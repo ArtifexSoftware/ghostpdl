@@ -506,29 +506,41 @@ pdf_dominant_rotation(const pdf_text_rotation_t *ptr)
     return angles[imax];
 }
 
-/* Write and release the Cos objects for page-specific resources. */
+/*
+ * Write and release the Cos objects for page-specific resources.
+ * We must write all the objects before freeing any of them, because
+ * they might refer to each other.
+ */
 private int
 pdf_write_resource_objects(gx_device_pdf *pdev, pdf_resource_type_t rtype)
 {
     int j;
 
+    /* Write objects. */
+    for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
+	pdf_resource_t *pres = pdev->resources[rtype].chains[j];
+
+	for (; pres != 0; pres = pres->next)
+	    if (!pres->named && !pres->object->written)
+		cos_write_object(pres->object, pdev);
+    }
+
+    /* Free unnamed objects, which can't be used again. */
     for (j = 0; j < NUM_RESOURCE_CHAINS; ++j) {
 	pdf_resource_t **prev = &pdev->resources[rtype].chains[j];
 	pdf_resource_t *pres;
 
 	while ((pres = *prev) != 0) {
-	    if (pres->named) {
-		/* If named, might be used again. */
+	    if (pres->named) {	/* named, don't free */
 		prev = &pres->next;
 	    } else {
-		if (!pres->object->written)
-		    cos_write_object(pres->object, pdev);
 		cos_free(pres->object, "pdf_write_resource_objects");
 		pres->object = 0;
 		*prev = pres->next;
 	    }
 	}
     }
+
     return 0;
 }
 
