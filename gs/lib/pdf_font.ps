@@ -14,8 +14,21 @@
 % San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 % $Id$
-% pdf_font.ps
 % PDF font operations.
+
+% Finding a font by name can't give a proper result when PDF font names aren't unique.
+% But it is only the way to obtain a font in Postscript after a font file is executed.
+% Therefore using a FontName (and findfont) is allowed only
+% immediately after a font file is executed.
+% In all other cases the font to be found by a pointer through PDF structures.
+% 
+% This ideal logics can't work for documents,
+% which define a font resource with an embedded font,
+% and another font resource with same BaseFont but with no embedded font
+% (and possibly with no font descriptor).
+% Our testbase does contain such examples.
+% In this case we do find font by FontName (with findfont),
+% since there is no other way to get a reasonable result.
 
 /.setlanguagelevel where { pop 2 .setlanguagelevel } if
 .currentglobal true .setglobal
@@ -299,13 +312,14 @@ currentdict /match_in_diff undef
 
 % ---------------- Utilities ---------------- %
 
+
 /.pdforigfontcache_g 20 dict def
 currentglobal false setglobal
 systemdict /.pdforigfontcache_l 20 dict .forceput
 setglobal
 
-% Cache original fonts to prevent adjustfont to accumulate changes.
-/pdfcachefont {   % <font_name> pdfcachefont <font>
+% Find an original font, using cache to prevent adjustfont to accumulate changes.
+/pdffindcachedfont {   % <font_name> pdffindcachedfont <font>
   dup //.pdforigfontcache_g exch .knownget {
     exch pop
   } {
@@ -318,6 +332,14 @@ setglobal
       4 2 roll .growput
     } ifelse
   } ifelse
+} bind def
+
+% Add original font to cache to prevent adjustfont to accumulate changes.
+/pdfaddcachedfont {   % <font_name> pdfaddcachedfont <font>
+  dup findfont dup                   % name font font
+  dup gcheck { //.pdforigfontcache_g } {.pdforigfontcache_l} ifelse
+  4 2 roll                           % font d name font
+  put                                % font
 } bind def
 
 /.remove_font_name_prefix {  % <name>  .remove_font_name_prefix <name>
@@ -344,7 +366,7 @@ setglobal
 		% If the font isn't available, synthesize one based on
 		% its descriptor.
   dup /Font resourcestatus {
-    pop pop pdfcachefont
+    pop pop pdffindcachedfont
   } {
     1 index /FontDescriptor knownoget {
 		% Stack: font-res fontname fontdesc
@@ -383,7 +405,7 @@ setglobal
 	(Substituting font ) print dup =only
 	( for ) print 2 index =only (.) = flush
       } if
-      pdfcachefont
+      pdffindcachedfont
 		% Stack: font-res fontname fontdesc font
 		% If this is a small-caps font, replace the CharString
 		% entries for a..z.
@@ -415,7 +437,7 @@ setglobal
       definefont
     } {
 		% No descriptor available, use the default algorithm.
-      pdfcachefont
+      pdffindcachedfont
     } ifelse
   } ifelse
   exch pop
@@ -515,7 +537,7 @@ end readonly def
     { currentdict /topFontDict known not { end } { end end exit } ifelse } loop
    count exch sub { pop } repeat
    PDFfile 3 -1 roll setfileposition
-   /BaseFont oget pdfcachefont
+   /BaseFont oget pdfaddcachedfont
    exch pop
  } bdef
 
@@ -1225,7 +1247,7 @@ readonly def
   1 index FRD
   closefile closefile pop
   PDFfile 3 -1 roll setfileposition
-  /FontDescriptor oget /FontName oget pdfcachefont
+  /FontDescriptor oget /FontName oget pdfaddcachedfont
   exch pop
 } bdef
 
@@ -1282,7 +1304,8 @@ readonly def
 	  { exch pop readtype1 }
 	  ifelse
 	}
-	{ dup /FontFile2 knownoget
+	{
+	  dup /FontFile2 knownoget
 	  { exch pop readtruetype }
 	  { /FontFile3 knownoget
 	    { dup /Subtype get fontloadprocs exch get exec }
