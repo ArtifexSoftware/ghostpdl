@@ -176,10 +176,8 @@ pdf_put_image_values(cos_dict_t *pcd, gx_device_pdf *pdev,
 	int i;
     
 	/* Masked images are only supported starting in PDF 1.3. */
-	if (pdev->CompatibilityLevel < 1.3 && PS2WRITE && pdev->OrderResources)
-	    break; /* Will convert into an imagemask with a pattern color. */
 	if (pdev->CompatibilityLevel < 1.3)
-	    return_error(gs_error_rangecheck);
+	    break; /* Will convert into an imagemask with a pattern color. */
 	pca = cos_array_alloc(pdev, "pdf_put_image_values(mask)");
 	if (pca == 0)
 	    return_error(gs_error_VMerror);

@@ -203,7 +203,7 @@ running <b><tt>ps2pdf</tt></b>, and provide an equivalent way to set these
 parameters from within the PostScript input file.
 
 <p>
-<b><tt>ps2pdf</tt></b> also recognizes the following switches:
+<b><tt>ps2pdf</tt></b> also recognizes the following options:
 
 <dl>
 
@@ -243,6 +243,50 @@ Acrobat Distiller "eBook" setting.
 wide variety of uses, possibly at the expense of a larger output file.
 
 </ul>
+
+</dl>
+
+<p>
+The following options control a conversion into PDF 1.2:
+<p>
+
+<dl>
+
+<dt><b><tt>-dPatternImagemask=</tt></b><em>bool</em>
+<dd>With <b><tt>CompatibilityLevel &LT 1.3 </b></tt> it specifies whether the target viewer
+handles <b><tt>ImageMask</b></tt> with a pattern color. Some old viewers,
+such as Ghostscript 3.30 fail with such constructs.
+Seting this option to false, one can get more compatibility,
+but the mask interpolation is lost.
+With <b><tt>CompatibilityLevel &GT= 1.3 </b></tt> this option is being ignored.
+Default value is <b><tt>false</b></tt>.
+
+<dt><b><tt>-dMaxClipPathSize=</tt></b><em>integer</em>
+<dd>Specifies the maximum number of elements in the clipping path
+that the target viewer can handle. This option is used only with 
+<b><tt>CompatibilityLevel &LT 1.3 </b></tt> and <b><tt>PatternImagemask=false</tt></b>,
+and only when converting a mask into a clipping path.
+If the clipping path exceeds the specified size,
+the masked image and the clipping path is being decomposed into smaller images.
+The value of the option counts straight path segments
+(curved segments are not used for representing a mask).
+Default value is <b><tt>12000</b></tt>.
+
+<dt><b><tt>-dMaxShadingBitmapSize=</tt></b><em>integer</em>
+<dd>With <b><tt>CompatibilityLevel &LT 1.3 </b></tt> it specifies 
+the maximum number of bytes allowed for representing a shading as a bitmap.
+If a shading exceeds this value, the resolution of the output bitmap
+is being reduces to fit into the specified frame.
+Note that the number of bytes depends on the number of color components
+in <b><tt>ProcessColorModel</b></tt>, assumes 8 bits per sample,
+and doesn't account an image compression or filtering.
+Also note that reducing the resolution results unsmooth shading boundaries.
+
+With <b><tt>CompatibilityLevel &GT= 1.3 </b></tt> this option is being ignored.
+Default value is <b><tt>256000</b></tt>.
+For the best quality one can set the maximal integer value,
+but the output file size may dramatically increase.
+Therefore the user should choose a compromise value.
 
 </dl>
 

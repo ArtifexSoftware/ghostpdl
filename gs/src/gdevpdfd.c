@@ -1034,9 +1034,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
 	return 0; /* Nothing to paint. */
     code = pdf_setfillcolor((gx_device_vector *)pdev, pis, pdcolor);
     if (code == gs_error_rangecheck) {
-	const bool convert_to_image = (PS2WRITE &&
-		pdev->OrderResources /* temporary for backward compatibility */ &&
-		pdev->CompatibilityLevel <= 1.2 && 
+	const bool convert_to_image = (pdev->CompatibilityLevel <= 1.2 && 
 		gx_dc_is_pattern2_color(pdcolor));
 
 	if (!convert_to_image) {

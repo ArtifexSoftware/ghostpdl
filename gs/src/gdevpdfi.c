@@ -331,14 +331,13 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	gs_matrix m, mi;
 	const gs_matrix *pmat1 = pmat;
 
-	if (pdev->CompatibilityLevel < 1.2 || 
-		(pdev->CompatibilityLevel < 1.3 && (!PS2WRITE || !pdev->OrderResources)))
+	if (pdev->CompatibilityLevel < 1.2)
 	    goto nyi;
 	if (prect && !(prect->p.x == 0 && prect->p.y == 0 &&
 		       prect->q.x == pim3->Width &&
 		       prect->q.y == pim3->Height))
 	    goto nyi;
-	if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+	if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
 	    gs_make_identity(&m);
 	    pmat1 = &m;
 	    m.tx = floor(pis->ctm.tx + 0.5); /* Round the origin against the image size distorsions */
@@ -419,10 +418,9 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	    return gs_grestore(pgs);
 	}
 	/* No luck.  Masked images require PDF 1.3 or higher. */
-	if (pdev->CompatibilityLevel < 1.2 || 
-		(pdev->CompatibilityLevel < 1.3 && (!PS2WRITE || !pdev->OrderResources)))
+	if (pdev->CompatibilityLevel < 1.2)
 	    goto nyi;
-	if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+	if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
 	    gs_matrix m, m1, mi;
 	    gs_image4_t pi4 = *(const gs_image4_t *)pic;
 
@@ -510,7 +508,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     memset(pie, 0, sizeof(*pie)); /* cleanup entirely for GC to work in all cases. */
     *pinfo = (gx_image_enum_common_t *) pie;
     gx_image_enum_common_init(*pinfo, (const gs_data_image_t *) pim,
-		    ((!PS2WRITE || !pdev->OrderResources) ? 
+		    ((pdev->CompatibilityLevel >= 1.3) ? 
 			    (context == PDF_IMAGE_TYPE3_MASK ?
 			    &pdf_image_object_enum_procs :
 			    &pdf_image_enum_procs) :
@@ -584,8 +582,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	if (code < 0) {
 	    const char *sname;
 
-	    if (!PS2WRITE || !pdev->OrderResources)
-		goto fail;
 	    convert_to_process_colors = true;
 	    switch (pdev->pcm_color_info_index) {
 		case gs_color_space_index_DeviceGray: sname = names->DeviceGray; break;
@@ -662,8 +658,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     if (pic->type->index == 4 && pdev->CompatibilityLevel < 1.3) {
 	int i;
 
-	if (!PS2WRITE || !pdev->OrderResources)
-	    goto fail;
 	/* Create a stream for writing the mask. */
 	i = pie->writer.alt_writer_count;
 	gs_image_t_init_mask_adjust((gs_image_t *)&image[i].type1, true, false);
@@ -1036,7 +1030,7 @@ pdf_image3_make_mid(gx_device **pmidev, gx_device *dev, int width, int height,
 {
     gx_device_pdf *pdev = (gx_device_pdf *)dev;
 
-    if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+    if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
 	gs_matrix m;
 	pdf_lcvd_t *cvd = NULL;
 	int code;
@@ -1071,19 +1065,9 @@ pdf_mid_begin_typed_image(gx_device * dev, const gs_imager_state * pis,
     /* The target of the null device is the pdfwrite device. */
     gx_device_pdf *const pdev = (gx_device_pdf *)
 	((gx_device_null *)dev)->target;
-    int code = pdf_begin_typed_image
+    return pdf_begin_typed_image
 	(pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem, pinfo,
 	 PDF_IMAGE_TYPE3_MASK);
-
-    if (code < 0)
-	return code;
-    if (!PS2WRITE || !pdev->OrderResources)
-	if ((*pinfo)->procs != &pdf_image_object_enum_procs) {
-	    /* We couldn't handle the mask image.  Bail out. */
-	    /* (This is never supposed to happen.) */
-	    return_error(gs_error_rangecheck);
-    }
-    return code;
 }
 
 /* Implement the mask clip device. */
@@ -1100,7 +1084,7 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
     int code;
     gx_device_pdf *pdev = (gx_device_pdf *)dev;
 
-    if (PS2WRITE && pdev->OrderResources && !pdev->PatternImagemask) {
+    if (pdev->CompatibilityLevel < 1.3 && !pdev->PatternImagemask) {
 	/* pdf_image3_make_mid must set midev with a pdf_lcvd_t instance.*/
 	pdf_lcvd_t *cvd = (pdf_lcvd_t *)((gx_device_memory *)midev)->target; 
 
@@ -1119,13 +1103,6 @@ pdf_image3_make_mcde(gx_device *dev, const gs_imager_state *pis,
 	code = pdf_begin_typed_image
 	    ((gx_device_pdf *)dev, pis, pmat, pic, prect, pdcolor, pcpath, mem,
 	    pinfo, PDF_IMAGE_TYPE3_DATA);
-	if ((*pinfo)->procs != &pdf_image_enum_procs &&
-		(!PS2WRITE || !((gx_device_pdf *)dev)->OrderResources)) {
-	    /* We couldn't handle the image.  Bail out. */
-	    gx_image_end(*pinfo, false);
-	    gs_free_object(mem, *pmcdev, "pdf_image3_make_mcde");
-	    return_error(gs_error_rangecheck);
-	}
     }
     /* Due to equal image merging, we delay the adding of the "Mask" entry into 
        a type 3 image dictionary until the mask is completed. 
