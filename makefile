@@ -1,6 +1,6 @@
 CFLAGS=-Wall -g
 
-all:	jbig2
+all:	jbig2 test_arith test_huffman
 
 jbig2:	jbig2.o jbig2_huffman.o jbig2_arith.o
 
