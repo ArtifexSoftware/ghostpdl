@@ -637,7 +637,7 @@ gs_type1_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     int wmode = pfont->WMode;
     int piece_members = members & (GLYPH_INFO_NUM_PIECES | GLYPH_INFO_PIECES);
     int width_members = members & (GLYPH_INFO_WIDTH0 << wmode);
-    int default_members = members - (piece_members + width_members + 
+    int default_members = members & ~(piece_members | width_members |
 				     GLYPH_INFO_OUTLINE_WIDTHS);
     int code = 0;
     gs_glyph_data_t gdata;
