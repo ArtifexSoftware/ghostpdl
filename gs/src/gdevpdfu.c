@@ -23,6 +23,7 @@
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
+#include "gscdefs.h"
 #include "gsdsrc.h"
 #include "gsfunc.h"
 #include "gdevpdfx.h"
@@ -586,6 +587,14 @@ pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
 }
 
 /* ------ Miscellaneous output ------ */
+
+/* Generate the default Producer string. */
+void
+pdf_store_default_Producer(char buf[PDF_MAX_PRODUCER])
+{
+    sprintf(buf, ((gs_revision % 100) == 0 ? "(%s %1.1f)" : "(%s %1.2f)"),
+	    gs_product, gs_revision / 100.0);
+}
 
 /* Write matrix values. */
 void

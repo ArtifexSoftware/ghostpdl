@@ -598,6 +598,10 @@ int pdf_put_clip_path(P2(gx_device_pdf * pdev, const gx_clip_path * pcpath));
 
 /* ------ Miscellaneous output ------ */
 
+#define PDF_MAX_PRODUCER 200	/* adhoc */
+/* Generate the default Producer string. */
+void pdf_store_default_Producer(P1(char buf[PDF_MAX_PRODUCER]));
+
 /* Define the strings for filter names and parameters. */
 typedef struct pdf_filter_names_s {
     const char *ASCII85Decode;

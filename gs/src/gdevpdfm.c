@@ -1102,7 +1102,76 @@ private int
 pdfmark_DOCINFO(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 		const gs_matrix * pctm, const gs_param_string * no_objname)
 {
-    return pdfmark_put_pairs(pdev->Info, pairs, count);
+    /*
+     * We could use pdfmark_put_pairs(pdev->Info, pairs, count), except
+     * that we want to replace "Distiller" with our own name as the
+     * Producer.
+     */
+    cos_dict_t *const pcd = pdev->Info;
+    int code = 0, i;
+    gs_memory_t *mem = pdev->memory;
+
+    if (count & 1)
+	return_error(gs_error_rangecheck);
+    for (i = 0; code >= 0 && i < count; i += 2) {
+	const gs_param_string *pair = pairs + i;
+	gs_param_string alt_pair[2];
+#define VDATA alt_pair[1].data
+#define VSIZE alt_pair[1].size
+	byte *str = 0;
+
+	if (pdf_key_eq(pairs + i, "/Producer")) {
+	    /*
+	     * If the string "Distiller" appears anywhere in the Producer,
+	     * replace the Producer (or the part after a " + ") with our
+	     * own name.
+	     */
+	    string_match_params params;
+
+	    memcpy(alt_pair, pairs + i, sizeof(alt_pair));
+	    params = string_match_params_default;
+	    params.ignore_case = true;
+	    if (string_match(VDATA, VSIZE, (const byte *)"*Distiller*",
+			     11, &params) ||
+		string_match(VDATA, VSIZE,
+	     (const byte *)"*\000D\000i\000s\000t\000i\000l\000l\000e\000r*",
+			     20, &params)
+		) {
+		uint j;
+		char buf[PDF_MAX_PRODUCER];
+		int len;
+
+		for (j = VSIZE; j > 0 && VDATA[--j] != '+'; )
+		    DO_NOTHING;
+		if (VSIZE - j > 2 && VDATA[j] == '+') {
+		    ++j;
+		    while (j < VSIZE && VDATA[j] == ' ')
+			++j;
+		}
+		/*
+		 * Replace VDATA[j .. VSIZE) with our name.  Note that both
+		 * VDATA/VSTR and the default producer string are enclosed
+		 * in ().
+		 */
+		pdf_store_default_Producer(buf);
+		len = strlen(buf) - 1;
+		str = gs_alloc_string(mem, j + len, "Producer");
+		if (str == 0)
+		    return_error(gs_error_VMerror);
+		memcpy(str, VDATA, j);
+		memcpy(str + j, buf + 1, len);
+		VDATA = str;
+		VSIZE = j + len;
+		pair = alt_pair;
+	    }
+	}
+	code = pdfmark_put_pair(pcd, pair);
+	if (str)
+	    gs_free_string(mem, str, VSIZE, "Producer");
+#undef VDATA
+#undef VSIZE
+    }
+    return code;
 }
 
 /* DOCVIEW pdfmark */

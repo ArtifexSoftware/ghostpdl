@@ -22,7 +22,6 @@
 #include "string_.h"
 #include "gx.h"
 #include "gserrors.h"
-#include "gscdefs.h"
 #include "gxdevice.h"
 #include "gdevpdfx.h"
 #include "gdevpdff.h"
@@ -348,7 +347,7 @@ void
 pdf_initialize_ids(gx_device_pdf * pdev)
 {
     gs_param_string nstr;
-    char buf[200];
+    char buf[PDF_MAX_PRODUCER];
 
     pdev->next_id = pdev->FirstObjectNumber;
 
@@ -361,8 +360,7 @@ pdf_initialize_ids(gx_device_pdf * pdev)
 
     param_string_from_string(nstr, "{DocInfo}");
     pdf_create_named_dict(pdev, &nstr, &pdev->Info, 0L);
-    sprintf(buf, ((gs_revision % 100) == 0 ? "(%s %1.1f)" : "(%s %1.2f)"),
-	    gs_product, gs_revision / 100.0);
+    pdf_store_default_Producer(buf);
     cos_dict_put_c_key_string(pdev->Info, "/Producer", (byte *)buf,
 			      strlen(buf));
 
