@@ -102,8 +102,10 @@ What should I read if I'm not a new user?
 If you have already used Ghostscript, when you receive a new release you
 should begin by reading this file, then
 
-   * about problems, major changes, and new features in the current release
-   * the history of changes in the most recent Ghostscript releases
+   * News.htm, for changes and new features in the current release;
+   * Current.htm, for known problems in the current release;
+   * if you wish, History#.htm (currently History6.htm), for changes in
+     other releases.
 
   ------------------------------------------------------------------------
 
@@ -246,9 +248,10 @@ Hershey.htm
      Hershey fonts, giving the terms of use and describing their encoding.
 
 History*.htm
-     The history of changes in older Ghostscript releases:
+     The history of changes in all Ghostscript releases:
 
-          History5.htm for Ghostscript versions 5.0 through 5.50
+          History6.htm for Ghostscript versions 6.n
+          History5.htm for Ghostscript versions 5.n
           History4.htm for Ghostscript versions 4.n
           History3.htm for Ghostscript versions 3.n
           History2.htm for Ghostscript versions 2.n

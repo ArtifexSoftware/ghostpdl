@@ -1,0 +1,337 @@
+<html>
+<head>
+<title>History of Ghostscript versions 6.n</title>
+<!-- $Id$ -->
+<!--
+	WARNING: do not use Pete Kaiser's emacs function "gs-toc" alone to
+	re-create the table of contents here, because it will replace the
+	hand-edited TOC subheads with a separate subhead for each H2 in
+	the body of the file.  Or if you do, first look at the original
+	TOC to see how to edit it for visual conciseness.
+-->
+</head>
+
+<body>
+<!-- [1.0 begin visible header] ============================================ -->
+
+<!-- [1.1 begin headline] ================================================== -->
+
+<table width="100%" border="0">
+<tr><th align="center" bgcolor="#CCCC00"><font size=6>History of Ghostscript versions 6.n</font>
+</table>
+
+<!-- [1.1 end headline] ==================================================== -->
+
+<!-- [1.2 begin table of contents] ========================================= -->
+
+<h2>Table of contents</h2>
+
+<blockquote><ul>
+<li><a href="#Version6.0">Version 6.0 (2000-02-03)</a>
+<ul>
+<li><a href="#6.0_Documentation">Documentation</a>,
+    <a href="#6.0_Procedures">Procedures</a>,
+    <a href="#6.0_Utilities">Utilities</a>,
+    <a href="#6.0_Drivers">Drivers</a>,
+    <a href="#6.0_Platforms">Platforms</a>,
+    <a href="#6.0_Fonts">Fonts</a>,
+    <a href="#6.0_PDF_writer">PDF writer</a>,
+    <a href="#6.0_Interpreter_PDF">Interpreter (PDF)</a>,
+    <a href="#6.0_Interpreter">Interpreter</a>,
+    <a href="#6.0_Streams">Streams</a>,
+    <a href="#6.0_Library">Library</a>
+</ul>
+</ul></blockquote>
+
+<!-- [1.2 end table of contents] =========================================== -->
+
+<!-- [1.3 begin hint] ====================================================== -->
+
+<p>
+This document is a record of changes in Ghostscript releases numbered 6.n.
+For earlier versions, see the the history documents:
+
+<blockquote>
+<a href="History5.htm">History of Ghostscript versions 5.n</a><br>
+<a href="History4.htm">History of Ghostscript versions 4.n</a><br>
+<a href="History3.htm">History of Ghostscript versions 3.n</a><br>
+<a href="History2.htm">History of Ghostscript versions 2.n</a><br>
+<a href="History1.htm">History of Ghostscript versions 1.n</a>
+</blockquote>
+
+<p>For other information, see the <a href="Readme.htm">Ghostscript
+overview</a>.
+
+<!-- [1.3 end hint] ======================================================== -->
+
+<hr>
+
+<!-- [1.0 end visible header] ============================================== -->
+
+<!-- [2.0 begin contents] ================================================== -->
+
+<pre>
+Within each release, news appears in the following order: Incompatible
+changes, Documentation, Procedures, Utilities, Drivers, Platforms, Fonts,
+PDF writer (included under Drivers through fileset 5.88), Interpreter,
+Streams (included under Interpreter through release 2.9.9), Library.
+Changes marked with a * were made available as patches to a previous
+release.
+
+<hr>
+
+<h1><a name="Version6.0"></a>Version 6.0 (2000-02-03)</h1>
+
+This is the first public release since 5.50.  See <a href="Current.htm">the
+release summary</a> for information about new capabilities and known
+problems.
+
+<h2><a name="6.0_Documentation"></a>Documentation</h2>
+
+Documents the fact that the plane_depths of a gx_image_enum structure may
+vary, and that planes_wanted procedure of a gx_image_enum must return false
+if the depths *or* widths can change.  (gxiparam.h)
+
+Documents the fact that a wanted plane's wanted status, width, or depth can
+only be changed by a call of plane_data that provides data for that plane.
+(gxiparam.h)
+
+Documents the change in the handling of the pthreads library.
+(doc/Make.htm)
+
+Documents the fact that setting parameters for the DCTEncode filter in
+ps2pdf causes a crash.  (doc/Ps2pdf.htm)
+
+Documents another bug in the MIPSpro 7.x / IRIX 6.5.x compilers, with
+isave.c.  (doc/Make.htm)
+
+Corrects Russell Lang's e-mail address.  (doc/New-user.htm)
+
+Documents the new image operator test file and the pdfeof file.
+(doc/Psfiles.htm)
+
+Documents the 'w' argument for image_render procedures.  (gxiclass.h)
+
+Adds a little more checking to the release process.  (doc/Release.htm)
+
+Documents the return values from the font build_char procedure.  (gxfont.h)
+
+Documents the fact that the free 'zip' program is needed to build the
+self-extracting Windows executable, as well as WinZipSE.  (doc/Make.htm,
+msvc32.mak, winint.mak)
+
+Adds references to several new free fonts.  (doc/Fonts.htm)
+
+Documents an important invariant for streams.  (stream.h)
+
+Adds a reference for user-supported Watcom / GNU make makefiles.
+(doc/Make.htm, doc/New-user.htm)
+
+Documents the dependence of gs_ttf.ps on some of the gs_*_e.ps files.
+(lib/gs_ttf.ps)
+
+Documents how to make self-extracting Windows executables.
+(doc/Release.htm)
+
+Adds a number of new user-contributed man pages.  (unixinst.mak, man/gslp.1,
+man/wftopfa.1, man/printafm.1, man/pfbtopfa.1, man/font2c.1, man/dvipdf.1,
+man/ps2pdfwr.1, man/gsnd.1, man/pf2afm.1, man/ps2pdf.1)
+
+<h2><a name="6.0_Procedures"></a>Procedures</h2>
+
+Fixes problems:
+	- Building on BSDI didn't work.  The simplest way to fix this was to
+change the linking of the pthreads library on Unix platforms to be included
+in STDLIBS rather than the "sync" implementation. (fix contributed by a
+user) (lib.mak, unix-gcc.mak, unixansi.mak, unixtrad.mak)
+	- Once again, some runtime files weren't installed.  (unixinst.mak)
+	- Building the self-extracting executable didn't work.  (winint.mak)
+
+Updates the user-contributed all-architectures makefile.  (all-arch.mak)
+
+<h2><a name="6.0_Utilities"></a>Utilities</h2>
+
+Fixes problems:
+	- A needed #include was missing.  (geninit.c)
+	- There were signed/unsigned char mismatches.  (genht.c, geninit.c)
+	- The MacOS compiler imposes a 32K limit on the size of a stack
+frame: we changed the code to use malloc/free.  (geninit.c)
+
+Removes an unnecessary variable.  (echogs.c)
+
+Adds a file that attempts to test the image operators exhaustively.
+(lib/image-qa.ps, unixinst.mak)
+
+Enhances the prfont.ps utility to print CIDFonts.  (lib/prfont.ps)
+
+Adds a utility file that patches the PDF interpreter to allow garbage after
+the %%EOF (or the %%EOF to be missing completely).  (lib/pdfeof.ps)
+
+<h2><a name="6.0_Drivers"></a>Drivers</h2>
+
+Fixes problems:
+	- The X driver compared too many bits of color value, leading to
+unnecessary halftoning.  (bug introduced by a fix in 5.99) (gdevxcmp.c)
+	- Output from the pswrite driver got a dictfull error on Level 1
+printers.  (gdevps.c)
+	- Anti-aliasing had stopped working on MS Windows and OS/2. (bug
+probably introduced in 5.65) (gdevmswn.c, gdevpm.c)
+
+<h2><a name="6.0_Platforms"></a>Platforms</h2>
+
+Adds a conditional definition of PTHREAD_CREATE_DETACHED for old versions of
+the pthreads library.  (gp_psync.c)
+
+Updates the Microsoft Visual C++ library makefile for VC++ 6.  (msvclib.mak)
+
+Updates some copyright dates.  (winint.mak, dwsetup.rc)
+
+<h2><a name="6.0_Fonts"></a>Fonts</h2>
+
+Updates the URW fonts to include the expanded Adobe character set, including
+many Eastern European accented characters.  (doc/New-user.htm)
+
+Removes a 'readonly' that inconvenienced the authors of ttf2pf.
+(lib/gs_ttf.ps)
+
+<h2><a name="6.0_PDF_writer"></a>PDF writer</h2>
+
+Fixes problems:
+	- The Dest key was deleted from GoTo and GoToR link annotation
+pdfmarks.  (gdevpdfm.c)
+	- {name} references were substituted even in stream data for the
+/PUT pdfmark.  (gdevpdfm.c)
+	- The revision number was sometimes printed incorrectly if its
+fraction part was zero.  (gdevpdf.c)
+	- Embedded Multiple Master font instances weren't identified as
+MMType1 rather than Type1.  (gdevpdff.h, gdevpdff.c, gdevpdft.c, gdevpdfw.c)
+	- The test against MaxSubsetPct was incorrect when the percentages
+were equal.  (gdevpdfw.c)
+	- Font registrations weren't removed when the device was closed.
+(gdevpdff.h, gdevpdfx.h, gdevpdff.c, gdevpdfw.c)
+	- Multiple /OBJ pdfmarks with the same name caused an error.  For
+Distiller compatibility, we now allow this if the type is the same, even
+though the pdfmark specification doesn't say anything about this being
+legal.  (gdevpdfm.c)
+
+Removes an unnecessary variable.  (gdevpdff.c, gdevpdfr.c)
+
+Disables embedding Multiple Master font instances, since Acrobat Reader
+doesn't accept what appear to be correct output and we don't have time
+before the release to track down the problem.  (gdevpdft.c)
+
+<h2><a name="6.0_Interpreter_PDF"></a>Interpreter (PDF)</h2>
+
+Factors some code to allow patching the PDF reader to allow garbage after
+the %%EOF (or the %%EOF to be missing completely).  (lib/pdf_main.ps)
+
+<h2><a name="6.0_Interpreter"></a>Interpreter</h2>
+
+Fixes problems:
+	- Type 1 fonts with non-standard OtherSubrs had stopped working.
+(bug introduced since 5.60) (zchar1.c)
+	- usecmap didn't work.  (lib/gs_cmap.ps)
+	- The glyph_info procedure for Type 1 fonts didn't take Metrics[2]
+or CDevProc into account.  (zchar1.c, zfont1.c)
+	- The multiple-data-source case of images was broken. (bug
+introduced in 5.99) (zimage.c)
+	- If a page device Install procedure caused an error, things could
+be left in an inconsistent state.  (lib/gs_setpd.ps)
+	- Using a DeviceN color space could access uninitialized data in a
+color value.  (zcsdevn.c)
+	- DeviceN images with procedure data sources were broken.
+(zimage.c)
+	- Images with a procedure data source could terminate prematurely if
+their processing was interrupted.  (zimage.c)
+	- The garbage collector only marked half the name table sub-tables,
+and attempted to mark an equal number of invalid pointers, leading to
+invalid accesses or memory corruption.  (iname.c)
+
+Removes an unused variable.  (zmisc.c)
+
+<h2><a name="6.0_Streams"></a>Streams</h2>
+
+Fixes problems:
+	- sgets didn't reset the cursor pointers, so sgets into a client
+buffer followed by sseek (for some kinds of streams, including files) could
+get confused.  (stream.c)
+
+<h2><a name="6.0_Library"></a>Library</h2>
+
+Fixes problems:
+	- A 'const' qualifier was omitted, leading to a type mismatch.
+(gxclrast.c)
+	- The revision number was sometimes printed incorrectly if its
+fraction part was zero.  (gsmisc.c)
+	- gs_image_next returned the wrong value in *pused if it incremented
+the plane number.  (bug introduced in 5.99) (gsimage.c)
+	- Only the last of the data_x and raster values in the local
+'planes' array in gs_image_next_planes were initialized.  (bug introduced in
+5.99) (gsimage.c)
+	- The multiple-data-source case of images was broken. (bug
+introduced in 5.99) (gsimage.h, gsimage.c)
+	- ImageType 3 images with unequal scaling for the mask and data
+didn't work.  (We thought they once did, but it appears they never have.)
+(gximage3.c)
+	- Images with 12-bit samples treated a Decode entry of [1 0] the
+same as [0 1].  (Other, general Decode entries worked correctly.)
+(gxipixel.c)
+	- ImageType 3 images didn't work if processing was ever interrupted
+for remapping a color.  (gximage3.c)
+	- Images in DeviceN color spaces with 12-bit samples didn't work.
+(gxi12bit.c, gxidata.c)
+	- Images in DeviceN color spaces could fail to render properly
+because the interruption of rendering left a half-built entry in an internal
+cache.  (gxi12bit.c, gxicolor.c)
+	- Images with non-idempotent RasterOps in 1-component DeviceN color
+spaces didn't render properly, because the same pixel was rendered multiple
+times after a color remapping interruption.  (gximono.c)
+	- The fast case of masked images caused a crash if invoked without
+an imager state.  (gximono.c)
+	- Flushing buffered image data could cause coordinate bookkeeping
+to get out of sync.  (gxidata.c)
+	- ImageType 3, InterleaveType 2 images sometimes failed to render
+the last row.  (gximage3.c)
+	- The fix in 5.88 for resizing large objects had a bug itself.
+(gsalloc.c)
+	- Whan banding, if a client supplied more data than necessary for an
+image, the client was told (incorrectly) that all of the data was used.
+(fix from Artifex) (gxclimag.c)
+	- Null patterns caused a crash. (bug probably introduced by changes
+to support PatternType 2) (gspcolor.c)
+	- On hand-initialized memory devices where line_ptrs[0] != base,
+monobit RasterOps could cause invalid or stray memory accesses.  (gdevmr1.c)
+
+Removes an unnecessary variable.  (gdevppla.c, gsfont.c)
+
+Adds the ability to call a specified procedure when unregistering
+notification, needed for removing PDF font registrations.  (gsnotify.h,
+gsnotify.c)
+
+Updates the copyright year.  (gscdef.c)
+
+</pre>
+
+<!-- [2.0 end contents] ==================================================== -->
+
+<!-- [3.0 begin visible trailer] =========================================== -->
+<hr>
+
+<font size=2>
+
+<p>Copyright &copy; 2000 Aladdin Enterprises.  All rights reserved.
+
+<p>This file is part of Aladdin Ghostscript.  See the
+<a href="Public.htm">Aladdin Free Public License</a> (the "License") for
+full details of the terms of using, copying, modifying, and redistributing
+Aladdin Ghostscript.
+
+<p>
+Ghostscript version 6.0, 3 February 2000
+
+</font>
+
+<!-- [3.0 end visible trailer] ============================================= -->
+
+</body>
+</html>
