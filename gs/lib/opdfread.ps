@@ -660,7 +660,11 @@ currentdict end readonly def
   /MediaBox get aload pop                               % bx0 by0 bx1 by1
   3 index neg 3 index neg translate % Temporary move to origin
   3 -1 roll sub 3 1 roll exch sub exch                  % bw bh
-  currentpagedevice /.HWMargins get aload pop
+  currentpagedevice /.HWMargins //knownget exec {
+    aload pop
+  } {
+    0 0 0 0
+  } ifelse
   currentpagedevice /PageSize get aload pop
   3 -1 roll sub 3 1 roll exch sub exch                  % bw bh px0 py0 px1 py1
   exch 3 index sub exch 3 index sub                     % bw bh px0 py0 pw ph
