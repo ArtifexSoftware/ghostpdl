@@ -401,7 +401,12 @@ op_show_finish_setup(i_ctx_t *i_ctx_p, gs_text_enum_t * penum, int npop,
 		       TEXT_FROM_STRING | TEXT_DO_NONE | TEXT_INTERVENE) &&
 	SHOW_IS_ALL_OF(penum, TEXT_FROM_STRING | TEXT_RETURN_WIDTH) &&
 	(glyph = gs_text_current_glyph(osenum)) != gs_no_glyph &&
-	glyph >= gs_min_cid_glyph
+	glyph >= gs_min_cid_glyph &&
+
+        /* According to PLRM, we don't need to raise a rangecheck error,
+           if currentfont is changed in the proc of the operator 'cshow'. */
+	gs_default_same_font (gs_text_current_font(osenum), 
+			      gs_text_current_font(penum), true)
 	) {
 	gs_text_params_t text;
 
