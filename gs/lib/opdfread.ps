@@ -478,34 +478,38 @@ true setglobal
 } bind def
 
 /ObtainEncoding % <font_resource> ObtainEncoding <font_resource>
-{ dup dup /Encoding //CheckEncoding //ResolveD exec				% fr fr er|e|n
-  dup type dup /arraytype eq exch /packedarraytype eq or {
-    % Already resolved.
-	pop pop
-  } {
-    dup type /nametype eq {
-      /Encoding findresource									% fr fr e
+{ dup /Encoding known {
+    dup dup /Encoding //CheckEncoding //ResolveD exec			% fr fr er|e|n
+    dup type dup /arraytype eq exch /packedarraytype eq or {
+      % Already resolved.
+	  pop pop
     } {
-      dup /BaseEncoding //knownget exec not {
-	    /StandardEncoding
-	  } if
-	  /Encoding findresource									% fr fr er e
-	  exch														% fr fr e er
-	  /Differences //knownget exec {							% fr fr e d
-	    exch dup length array copy exch
-	    0 exch													% fr fr e 0 d
-	    {														% fr fr e i v
-	      dup type /integertype eq {
-		    exch pop
-	      } {
-		    3 copy put pop										% fr fr e i
-		    1 add
-	      } ifelse
-	    } forall
-	    pop														% fr fr e
-	  } if														% fr fr e
-    } ifelse													% fr fr e
-    /Encoding exch put											% fr
+      dup type /nametype eq {
+        /Encoding findresource									% fr fr e
+      } {
+        dup /BaseEncoding //knownget exec not {
+	      /StandardEncoding
+	    } if
+	    /Encoding findresource									% fr fr er e
+	    exch													% fr fr e er
+	    /Differences //knownget exec {							% fr fr e d
+	      exch dup length array copy exch
+	      0 exch												% fr fr e 0 d
+	      {														% fr fr e i v
+	        dup type /integertype eq {
+		      exch pop
+	        } {
+		      3 copy put pop									% fr fr e i
+		      1 add
+	        } ifelse
+	      } forall
+	      pop													% fr fr e
+	    } if													% fr fr e
+      } ifelse													% fr fr e
+      /Encoding exch put										% fr
+    } ifelse
+  } {
+	dup /Encoding /StandardEncoding /Encoding findresource put
   } ifelse
 } bind def
 
