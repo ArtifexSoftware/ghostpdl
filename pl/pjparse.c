@@ -29,6 +29,9 @@
 #define PJL_STRING_LENGTH (256)
 #define PJL_PATH_NAME_LENGTH (256)
 #define MAXPATHLEN 1024
+#define PJL_VOLUME_0 "0:"
+#define PJL_VOLUME_1 "1:"
+
 
 /* definitions for fontsource and font number table entries */
 typedef struct pjl_fontsource {
