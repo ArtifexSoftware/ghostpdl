@@ -675,7 +675,10 @@ esc_strcat(char *dest, const char *src)
 private int
 argproc(gs_main_instance * minst, const char *arg)
 {
-    gs_main_init1(minst);		/* need i_ctx_p to proceed */
+    int code = gs_main_init1(minst);		/* need i_ctx_p to proceed */
+
+    if (code < 0)
+        return code;
     minst->i_ctx_p->filearg = arg;	/* allow reading this file if SAFER set */
     if (minst->run_buffer_size) {
 	/* Run file with run_string. */
