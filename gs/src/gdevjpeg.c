@@ -37,7 +37,6 @@ typedef struct gx_device_jpeg_s {
      */
     gs_point ViewTrans;
 
-    int TrayOrientation;        /* 0 (default), 90, 180, 270 */
 } gx_device_jpeg;
 
 /* The device descriptor */
@@ -129,6 +128,7 @@ const gx_device_jpeg gs_jpeggray_device =
  { 1.0, 1.0 },                  /* ViewScale 1 to 1 */ 
  { 0.0, 0.0 }                   /* translation 0 */ 
 };
+
 
 /* Get parameters. */
 private int
@@ -244,33 +244,23 @@ jpeg_put_params(gx_device * dev, gs_param_list * plist)
 	ecode = code;
 	param_signal_error(plist, param_name, code);
     }  
-
-    /* set up resolution and page size before TrayOrientation */
-    code = gdev_prn_put_params(dev, plist);
-    if (code < 0)
-	return code;
-
     if ((code = param_read_int(plist, "TrayOrientation", &t)) != 1 ) {
-        if (code < 0)
+       /* gsdevice.c sets height/width and rotates for 90/270 case
+	* changes in height/width will reallocate the page buffer 
+	*/ 
+       if (code < 0)
             ecode = code;
         else if (t != 0 && t != 90 && t != 180 && t != 270)
             param_signal_error(plist, "TrayOrientation",
                                ecode = gs_error_rangecheck);
         else {
-            if ( t != jdev->TrayOrientation) {
-                if ( t == 90 || t == 270 ) {
-		    /* page sizes don't rotate, height and width do rotate 
-		     * HWResolution, HWSize, and MediaSize parameters interact, 
-		     * and must be set before TrayOrientation
-		     */
-                    floatp tmp = jdev->height;
-                    jdev->height = jdev->width;
-                    jdev->width = tmp;
-                }
-                jdev->TrayOrientation = t;
-            }
+	    jdev->TrayOrientation = t;
         }
     }
+    code = gdev_prn_put_params(dev, plist);
+    if (code < 0)
+	return code;
+
     if (ecode < 0)
 	return ecode;
 

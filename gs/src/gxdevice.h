@@ -89,10 +89,12 @@
  * unless we use the +/- workaround in the next macro.
  */
 #define std_device_part2_(width, height, x_dpi, y_dpi)\
-	{ gx_no_color_index, gx_no_color_index }, width, height,\
+	{ gx_no_color_index, gx_no_color_index },\
+        width, height, 0,\
 	{ (((width) * 72.0 + 0.5) - 0.5) / (x_dpi),\
 	  (((height) * 72.0 + 0.5) - 0.5) / (y_dpi) },\
 	{ 0, 0, 0, 0 }, 0/*false*/, { x_dpi, y_dpi }, { x_dpi, y_dpi }
+
 /* offsets and margins go here */
 #define std_device_part3_()\
 	0, 0, 1, 0/*false*/, 0/*false*/, 0/*false*/,\
