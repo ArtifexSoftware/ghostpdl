@@ -64,47 +64,18 @@ typedef struct {
 
 typedef struct {
 	unsigned int type;
-        unsigned int offset;
-        unsigned int length;
-        byte *data;
-        char *name;
-        unsigned short id;
-        byte flags;
+	unsigned int offset;
+	unsigned int length;
+	byte *data;
+	char *name;
+	unsigned short id;
+	byte flags;
 } resource;
 
 typedef struct {
     resource *resources;
     int n_resources;
 } resource_list;
-
-private
-void read_int32(FILE *in, void *p)
-{
-	*(unsigned int*)p = (fgetc(in)&0xFF) << 24 |
-		(fgetc(in)&0xFF) << 16 |
-		(fgetc(in)&0xFF) << 8 |
-		(fgetc(in)&0xFF);
-}
-
-private
-void read_int24(FILE *in, void *p)
-{
-	*(unsigned int*)p = (fgetc(in)&0xFF) << 16 |
-                (fgetc(in)&0xFF) << 8 |
-                (fgetc(in)&0xFF);
-}
-
-private
-void read_int16(FILE *in, void *p)
-{
-	*(unsigned short*)p = (fgetc(in)&0xFF) << 8 | (fgetc(in)&0xFF);
-}
-
-private
-void read_int8(FILE *in, void *p)
-{
-        *(byte*)p = (fgetc(in)&0xFF);
-}
 
 private
 int get_int32(byte *p) {
@@ -119,6 +90,52 @@ int get_int24(byte *p) {
 private
 int get_int16(byte *p) {
     return (p[0]&0xFF)<<8 | (p[1]&0xFF);
+}
+
+private
+int read_int32(FILE *in, void *p)
+{
+	byte w[4], err;
+
+	err = fread(w, 1, 4, in);
+	if (err != 4) return -1;
+
+	*(unsigned int*)p = get_int32(w);
+	return 0;
+}
+
+private
+int read_int24(FILE *in, void *p)
+{
+	byte w[3], err;
+	
+	err = fread(w, 1, 3, in);
+	if (err != 3) return -1;
+	
+	*(unsigned int*)p = get_int24(w);
+	return 0;
+}
+
+private
+int read_int16(FILE *in, void *p)
+{
+	byte w[2], err;
+	
+	err = fread(w, 1, 2, in);
+	if (err != 2) return -1;
+	
+	*(unsigned short*)p = get_int16(w);
+	return 0;
+}
+
+private
+int read_int8(FILE *in, void *p)
+{
+	byte c = fgetc(in);
+	if (c < 0) return -1;
+	
+    *(byte*)p = (c&0xFF);
+    return 0;
 }
 
 /* convert a 4-character typecode from C string to uint32 representation */
