@@ -1943,7 +1943,7 @@ $(PSOBJ)gs.$(OBJ) : $(PSSRC)gs.c $(GH)\
 
 $(PSOBJ)iapi.$(OBJ) : $(PSSRC)iapi.c $(AK)\
  $(string__h) $(ierrors_h) $(gscdefs_h) $(gstypes_h) $(iapi_h)\
- $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h)
+ $(iref_h) $(imain_h) $(imainarg_h) $(iminst_h) $(gslibctx_h)
 	$(PSCC) $(PSO_)iapi.$(OBJ) $(C_) $(PSSRC)iapi.c
 
 $(PSOBJ)icontext.$(OBJ) : $(PSSRC)icontext.c $(GH)\

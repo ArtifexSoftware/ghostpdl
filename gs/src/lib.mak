@@ -105,6 +105,7 @@ jpeglib__h=$(GLGEN)jpeglib_.h
 
 # Miscellaneous
 
+gslibctx_h=$(std_h)
 gdebug_h=$(GLSRC)gdebug.h
 gsalloc_h=$(GLSRC)gsalloc.h
 gsargs_h=$(GLSRC)gsargs.h
@@ -116,7 +117,7 @@ gsio_h=$(GLSRC)gsio.h
 gsmalloc_h=$(GLSRC)gsmalloc.h
 gsmdebug_h=$(GLSRC)gsmdebug.h
 gsmemraw_h=$(GLSRC)gsmemraw.h
-gsmemory_h=$(GLSRC)gsmemory.h $(gsmemraw_h) $(gstypes_h)
+gsmemory_h=$(GLSRC)gsmemory.h $(gsmemraw_h) $(gstypes_h) $(gslibctx_h)
 gsmemret_h=$(GLSRC)gsmemret.h $(gsmemory_h)
 gsnogc_h=$(GLSRC)gsnogc.h $(gsgc_h)
 gsrefct_h=$(GLSRC)gsrefct.h
@@ -252,8 +253,8 @@ $(GLOBJ)gsmisc.$(OBJ) : $(GLSRC)gsmisc.c $(GXERR)\
  $(gpcheck_h) $(gserror_h) $(gxfarith_h) $(gxfixed_h)
 	$(GLCC) $(GLO_)gsmisc.$(OBJ) $(C_) $(GLSRC)gsmisc.c
 
-$(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c $(GLSRC)gslibctx.h $(GXERR)\
-  $(std_h)  
+$(GLOBJ)gslibctx.$(OBJ) : $(GLSRC)gslibctx.c  $(GXERR)\
+  $(gslibctx_h)
 	$(GLCC) $(GLO_)gslibctx.$(OBJ) $(C_) $(GLSRC)gslibctx.c
   
 $(GLOBJ)gsnotify.$(OBJ) : $(GLSRC)gsnotify.c $(GXERR)\
