@@ -1,4 +1,4 @@
-/* Copyright (C) 1994, 1995, 1996, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1994, 2000 Aladdin Enterprises.  All rights reserved.
 
    This file is part of Aladdin Ghostscript.
 
@@ -21,14 +21,13 @@
 #include "gdevprn.h"
 
 /*
- * This driver does what the ps2image utility used to do:
- * It produces a bitmap in the form of a PostScript file that can be
- * fed to any PostScript printer.  It uses a run-length compression
+ * This driver produces a bitmap in the form of a PostScript file that can
+ * be fed to any PostScript printer.  It uses a run-length compression
  * method that executes quickly (unlike some produced by PostScript
  * drivers!).
  *
  * There are two drivers here, one for 1-bit black-and-white and one
- * for 8-bit gray.  In fact, the same code could also handles 2- and
+ * for 8-bit gray.  In fact, the same code could also handle 2- and
  * 4-bit gray output.
  */
 
@@ -69,31 +68,27 @@ const gx_device_printer gs_psgray_device =
  * a limit of 512 characters in a single token, so we make a virtue out of
  * necessity and make each line a separate string.
  */
-private const char *const psmono_setup[] =
-{
+private const char *const psmono_setup[] = {
     "%!PS",
-    "  /maxrep 255 def		% max repeat count",
-    "		% Initialize the strings for filling runs (lazily).",
-    "     /.ImageFill",
-    "      { maxrep string dup 0 1 maxrep 1 sub { 3 index put dup } for",
-    "	.ImageFills 4 2 roll put",
-    "      } bind def",
-    "     /.ImageFills [ 0 1 255 {",
-    "	/.ImageFill cvx 2 array astore cvx",
-    "     } for ] def",
+    "		% Initialize the strings for filling runs.",
+    "    /.ImageFills [ 0 1 255 {",
+    "      256 string dup 0 1 7 { 3 index put dup } for { 8 16 32 64 128 } {",
+    "        2 copy 0 exch getinterval putinterval dup",
+    "      } forall pop exch pop",
+    "    } bind for ] def",
     "		% Initialize the procedure table for input dispatching.",
     "     /.ImageProcs [",
     "		% Stack: <buffer> <file> <xdigits> <previous> <byte>",
     "     32 { { pop .ImageItem } } repeat",
     "     16 { {	% 0x20-0x2f: (N-0x20) data bytes follow",
-  "      32 sub 3 -1 roll add 3 index exch 0 exch getinterval 2 index exch",
+    "      32 sub 3 -1 roll add 3 index exch 0 exch getinterval 2 index exch",
     "      readhexstring pop exch pop 0 exch dup",
     "     } bind } repeat",
-  "     16 { {	% 0x30-0x3f: prefix hex digit (N-0x30) to next count",
+    "     16 { {	% 0x30-0x3f: prefix hex digit (N-0x30) to next count",
     "      48 sub 3 -1 roll add 4 bitshift exch .ImageItem",
     "     } bind } repeat",
     "     32 { {	% 0x40-0x5f: repeat last data byte (N-0x40) times",
-    "      64 sub 3 -1 roll add .ImageFills 2 index dup length 1 sub get get exec",
+    "      64 sub 3 -1 roll add .ImageFills 2 index dup length 1 sub get get",
     "      exch 0 exch getinterval 0 3 1 roll",
     "     } bind } repeat",
     "     160 { { pop .ImageItem } } repeat",
@@ -104,7 +99,7 @@ private const char *const psmono_setup[] =
     "   { 2 index read pop dup .ImageProcs exch get exec",
     "   } bind def",
     "		% Read and print an entire compressed image.",
-"  /.ImageRead		% <xres> <yres> <width> <height> <bpc> .ImageRead -",
+    "  /.ImageRead	% <xres> <yres> <width> <height> <bpc> .ImageRead -",
     "   { gsave [",
 	/* Stack: xres yres width height bpc -mark- */
     "     6 -2 roll exch 72 div 0 0 4 -1 roll -72 div 0 7 index",
@@ -146,11 +141,11 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
 	int i;
 
 	for (i = 0; i < countof(psmono_setup); i++)
-	    fprintf(prn_stream, "%s\r\n", psmono_setup[i]);
+	    fprintf(prn_stream, "%s\n", psmono_setup[i]);
     }
     /* Write the .ImageRead command. */
     fprintf(prn_stream,
-	    "%g %g %d %d %d .ImageRead\r\n",
+	    "%g %g %d %d %d .ImageRead\n",
 	    pdev->HWResolution[0], pdev->HWResolution[1],
 	    pdev->width, pdev->height, pdev->color_info.depth);
 
@@ -205,7 +200,7 @@ psmono_print_page(gx_device_printer * pdev, FILE * prn_stream)
     }
 
     /* Clean up and return. */
-    fputs("\r\n", prn_stream);
+    fputs("\n", prn_stream);
     gs_free_object(pdev->memory, line, "psmono_print_page");
     return 0;
 }
@@ -245,7 +240,6 @@ write_data_run(const byte * data, int count, FILE * f, byte invert)
 	    *q++ = hex_digits[b >> 4];
 	    *q++ = hex_digits[b & 0xf];
 	}
-	*q++ = '\r';
 	*q++ = '\n';
 	fwrite(line, 1, q - line, f);
 	q = line;
