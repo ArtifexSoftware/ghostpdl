@@ -63,6 +63,7 @@
 #include "scommon.h"			/* for pparse.h */
 #include "pcparse.h"
 #include "pcstate.h"
+#include "pldebug.h"
 #include "gdebug.h"
 #include "gsmatrix.h"		/* for gsstate.h */
 #include "gsrop.h"
@@ -524,16 +525,18 @@ pcl_impl_remove_device(
 
 	/* return to the original graphic state w/color mapper, bbox, target */
 	error = pcl_grestore(&pcli->pcs);
+#define DEVICE_NAME (gs_devicename(gs_currentdevice((pcli->pcs.pgs))))
+	PL_ASSERT(strcmp(DEVICE_NAME, "special color mapper") == 0);
 	if (code >= 0)
 	  code = error;
-
 	/* return to original gstate w/bbox, target */
 	gs_grestore_no_wraparound(pcli->pcs.pgs);	/* destroys gs_save stack */
-
+	PL_ASSERT(strcmp(DEVICE_NAME, "bbox") == 0);
+#undef DEVICE_NAME
 	/* Deselect bbox. Bbox has been prevented from auto-closing/deleting */
 	error = gs_nulldevice(pcli->pcs.pgs);
 	if (code >= 0)
-	  code = error;
+	    code = error;
 	error = gs_closedevice((gx_device *)pcli->bbox_device);
 	if (code >= 0)
 	  code = error;

@@ -54,6 +54,7 @@ $(PLOBJ)pjl.dev: $(PL_MAK) $(ECHOGS_XE) $(pjl_obj)
 
 ################ Shared libraries ################
 
+pldebug_h=$(PLSRC)pldebug.h
 pldict_h=$(PLSRC)pldict.h
 pldraw_h=$(PLSRC)pldraw.h $(gsiparam_h)
 plplatf_h=$(PLSRC)plplatf.h

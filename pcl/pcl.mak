@@ -644,6 +644,7 @@ $(TOP_OBJ):             $(PCLSRC)pctop.c            \
                         $(scommon_h)                \
                         $(pcparse_h)                \
                         $(pcstate_h)                \
+			$(pldebug_h)		    \
                         $(gdebug_h)                 \
                         $(gsmatrix_h)               \
                         $(gsstate_h)                \
