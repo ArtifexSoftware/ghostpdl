@@ -104,9 +104,15 @@ gx_concretize_CIEDEFG(const gs_client_color * pc, const gs_color_space * pcs,
     }
     /* Apply Table. */
     gx_color_interpolate_linear(hijk, &pcie->Table, abc);
-    vec3.u = float2cie_cached(frac2float(abc[0]));
-    vec3.v = float2cie_cached(frac2float(abc[1]));
-    vec3.w = float2cie_cached(frac2float(abc[2]));
+
+#define SCALE_TO_RANGE(range, frac) ( \
+       float2cie_cached(((range).rmax - (range).rmin) * frac2float(frac) + \
+	    (range).rmin) \
+    )
+    /* Scale the abc[] frac values to RangeABC cie_cached result */
+    vec3.u = SCALE_TO_RANGE(pcie->RangeABC.ranges[0], abc[0]); 
+    vec3.v = SCALE_TO_RANGE(pcie->RangeABC.ranges[1], abc[1]); 
+    vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
     /* Apply DecodeABC and MatrixABC. */
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
@@ -157,9 +163,10 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     }
     /* Apply Table. */
     gx_color_interpolate_linear(hij, &pcie->Table, abc);
-    vec3.u = float2cie_cached(frac2float(abc[0]));
-    vec3.v = float2cie_cached(frac2float(abc[1]));
-    vec3.w = float2cie_cached(frac2float(abc[2]));
+    /* Scale the abc[] frac values to RangeABC cie_cached result */
+    vec3.u = SCALE_TO_RANGE(pcie->RangeABC.ranges[0], abc[0]); 
+    vec3.v = SCALE_TO_RANGE(pcie->RangeABC.ranges[1], abc[1]); 
+    vec3.w = SCALE_TO_RANGE(pcie->RangeABC.ranges[2], abc[2]); 
     /* Apply DecodeABC and MatrixABC. */
     if (!pis->cie_joint_caches->skipDecodeABC)
 	cie_lookup_map3(&vec3 /* ABC => LMN */, &pcie->caches.DecodeABC[0],
@@ -167,6 +174,7 @@ gx_concretize_CIEDEF(const gs_client_color * pc, const gs_color_space * pcs,
     gx_cie_remap_finish(vec3, pconc, pis, pcs);
     return 0;
 }
+#undef SCALE_TO_RANGE
 
 /* Render a CIEBasedABC color. */
 /* We provide both remap and concretize, but only the former */
