@@ -422,7 +422,8 @@ prepare_fill_with_clip(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * Make a special check for the initial fill with white,
 	 * which shouldn't cause the page to be opened.
 	 */
-	if (gx_dc_pure_color(pdcolor) == pdev->white && !is_in_page(pdev))
+	if (gx_dc_pure_color(pdcolor) == pdev->white && 
+		!is_in_page(pdev) && pdev->sbstack_depth == 0)
 	    return 1;
     }
     new_clip = pdf_must_put_clip_path(pdev, pcpath);

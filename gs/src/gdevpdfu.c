@@ -994,12 +994,15 @@ pdf_open_page(gx_device_pdf * pdev, pdf_context_t context)
 int
 pdf_unclip(gx_device_pdf * pdev)
 {
-    int code = pdf_open_page(pdev, PDF_IN_STREAM);
+    if (pdev->sbstack_depth == 0) {
+	int code = pdf_open_page(pdev, PDF_IN_STREAM);
 
-    if (code < 0)
-	return code;
+	if (code < 0)
+	    return code;
+    }
     if (pdev->vgstack_depth > pdev->vgstack_bottom) {
-	code = pdf_restore_viewer_state(pdev, pdev->strm);
+	int code = pdf_restore_viewer_state(pdev, pdev->strm);
+
 	if (code < 0)
 	    return code;
 	code = pdf_remember_clip_path(pdev, NULL);
