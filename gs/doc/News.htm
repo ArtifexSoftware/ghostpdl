@@ -56,9 +56,8 @@ overview</a>.
 <h3><a name="Version7.03"></a>Version 7.03 (2001-10-20)</h3>
 
 <p>
-This is a prerelease of Ghostscript, in preparation for a forthcoming
-fully tested, supported 7.0x release. We are skipping the 7.01 release
-number because that number is now associated with CVS versions.
+This is a fully tested, stable release of Ghostscript. It fixes quite a
+few issues with 7.02.
 
 <p> Major changes include:
 
@@ -66,6 +65,12 @@ number because that number is now associated with CVS versions.
 <li>Integration of icclib 2.0.
 
 <li>There was at least one embarassing pdfwrite bug, now fixed.
+
+<li>Significant shading speedups, especially for worst-case files
+such as Coons01.ps.
+
+<li>The stdio logic is a lot more robust. 7.02 had some problems,
+especially with trying to set stdin to non-blocking.
 
 <li>The usual bug fixes. In particular, regression testing against
 7.00 shows only one serious regression (nonsepqxd2distiller.pdf),

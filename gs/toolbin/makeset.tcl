@@ -328,7 +328,7 @@ proc mergehist {news changes hist tmp} {
     puts $tmp <hr>
     puts $tmp ""
     puts $tmp $hline
-    while {[string first "Ghostscript version " [set l [gets $hist]]] != 0} {
+    while {[string first "<small>Ghostscript version " [set l [gets $hist]]] != 0} {
 	if {[eof $hist]} {
 	    puts stderr "EOF seeking History Ghostscript version"
 	    return 1
@@ -336,7 +336,7 @@ proc mergehist {news changes hist tmp} {
 	puts $tmp $l
     }
     
-    puts $tmp "Ghostscript version $nver, $nday $nmonthname $nyear"
+    puts $tmp "<small>Ghostscript version $nver, $nday $nmonthname $nyear"
     while {[gets $hist l] >= 0} {
 	puts $tmp $l
     }
