@@ -41,11 +41,6 @@ GSSOC_XENAME=$(GS)c$(XE)
 GSSOC_XE=$(BINDIR)/$(GSSOC_XENAME)
 GSSOC=$(BINDIR)/$(SOBINRELDIR)/$(GSSOC_XENAME)
 
-# loader suporting display device using Gtk+
-GSSOX_XENAME=$(GS)x$(XE)
-GSSOX_XE=$(BINDIR)/$(GSSOX_XENAME)
-GSSOX=$(BINDIR)/$(SOBINRELDIR)/$(GSSOX_XENAME)
-
 # shared library
 #SOPREF=.so
 #SOSUF=
