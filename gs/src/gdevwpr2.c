@@ -1097,7 +1097,7 @@ win_pr2_getdc(gx_device_win_pr2 * wdev)
     }
     
     if (wdev->win32_hdevmode) {
-	LPDEVMODE pdevmode = (LPDEVMODE) GlobalLock(GlobalLock(wdev->win32_hdevmode));
+	LPDEVMODE pdevmode = (LPDEVMODE) GlobalLock(wdev->win32_hdevmode);
 	if (pdevmode) {
 	    memcpy(pdevmode, podevmode, sizeof(DEVMODE));
 	    GlobalUnlock(wdev->win32_hdevmode);
