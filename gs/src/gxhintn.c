@@ -279,11 +279,24 @@ private inline int ranger_step_b(int i, int beg, int end)
 }
 
 private inline fixed o2d(const t1_hinter *h, t1_hinter_space_coord v)
-{   return ((v >> (h->g2o_fraction_bits - _fixed_shift - 1)) + 1) >> 1;
+{   
+    int s = h->g2o_fraction_bits - _fixed_shift;
+
+    if (s >= 1)
+	return ((v >> (h->g2o_fraction_bits - _fixed_shift - 1)) + 1) >> 1;
+    else if (s == 0)
+	return v;
+    else
+	return v << -s;
 }
 
 private inline fixed d2o(const t1_hinter *h, t1_hinter_space_coord v)
-{   return v << (h->g2o_fraction_bits - _fixed_shift);
+{   int s = h->g2o_fraction_bits - _fixed_shift;
+
+    if (s >= 0)
+	return v << s;
+    else
+	return v >> -s;
 }
 
 private inline void g2o(t1_hinter * h, t1_glyph_space_coord gx, t1_glyph_space_coord gy, t1_hinter_space_coord *ox, t1_hinter_space_coord *oy)
