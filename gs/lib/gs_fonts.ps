@@ -447,17 +447,20 @@ buildfontdict 3 /.buildfont3 cvx put
     cvx exec
   end
 } bind def
+/.setloadingfont {
+   //systemdict /.loadingfont 3 -1 roll .forceput
+} .bind odef % .forceput must be bound and hidden
 /.loadfont
  {		% Some buggy fonts leave extra junk on the stack,
 		% so we have to make a closure that records the stack depth
 		% in a fail-safe way.
-   //systemdict /.loadingfont true .forceput
+   true .setloadingfont
    { /FAPI_hook_disable pop % gs_fapi accesses this with execstack_lookup - don't remove !
      {{.loadfontfile} .execasresource} count 1 sub 2 .execn
      count exch sub { pop } repeat
      exit
    } loop % this loop is a pattern for execstack_lookup, don't remove !
-   //systemdict /.loadingfont false .forceput
+   false .setloadingfont
  } bind def
 
 % Find an alternate font to substitute for an unknown one.
@@ -817,6 +820,7 @@ $error /SubstituteFont { .stdsubstfont } put
    ifelse
  } bind def
 
+% any user of .putgstringcopy must use bind and executeonly
 /.putgstringcopy  %   <dict> <name> <string> .putgstringcopy -
 { 2 index gcheck currentglobal
   2 copy eq {
@@ -826,7 +830,7 @@ $error /SubstituteFont { .stdsubstfont } put
     dup length string copy
     .forceput setglobal
   } ifelse
-} bind def
+} .bind odef % must be bound and hidden for .forceput
 
 
 % Attempt to load a font from a file.
@@ -916,7 +920,7 @@ $error /SubstituteFont { .stdsubstfont } put
 
 		% Check to make sure the font was actually loaded.
 	dup 3 index .fontknownget
-	 { dup /PathLoad 4 index .putgstringcopy
+	 { dup /PathLoad 4 index //.putgstringcopy exec
            4 1 roll pop pop pop true exit 
          } if
 
@@ -928,7 +932,7 @@ $error /SubstituteFont { .stdsubstfont } put
 	 {            % Stack: origfontname fontdirectory path filefontname
 	   2 index 1 index .fontknownget
 	    {	% Yes.  Stack: origfontname fontdirectory path filefontname fontdict
-              dup 4 -1 roll /PathLoad exch .putgstringcopy
+              dup 4 -1 roll /PathLoad exch //.putgstringcopy exec
                       % Stack: origfontname fontdirectory filefontname fontdict
 	      3 -1 roll pop exch
 	              % Stack: origfontname fontdict filefontname
@@ -956,7 +960,9 @@ $error /SubstituteFont { .stdsubstfont } put
 
     } loop		% end of loop
 
- } bind def
+ } bind executeonly def % must be bound and hidden for .putgstringcopy
+
+currentdict /.putgstringcopy .undef
 
 % Define a procedure to load all known fonts.
 % This isn't likely to be very useful.

@@ -362,6 +362,11 @@ currentpacking false setpacking
 currentdict end def
 setpacking
 
+% .forceput must be bound and hidden
+/PutPreprocessRecord
+{ NewCategory exch /.PreprocessRecord exch .forceput
+} .bind executeonly def
+
 /Redefine     % <OptionsDict> Redefine -
 { % Before calling this proc, the OptionsDict must specify options for
   % the catregory to be redefined :
@@ -414,8 +419,7 @@ setpacking
     1 array
   } ifelse                                   % a1
   dup dup length 1 sub currentdict /PreprocessRecord get put
-  NewCategory exch /.PreprocessRecord exch .forceput
-  % fixme : remove .forceput, replacing the array with a dictionary.
+  //PutPreprocessRecord exec
 
   MapFileName .libfile {
     1 dict begin
@@ -477,7 +481,9 @@ setpacking
     CategoryName NewCategory /Category defineresource pop
   } ifelse
   end % OptionsDict
-} bind def
+} bind executeonly def
+
+currentdict /PutPreprocessRecord .undef
 
 currentdict end
 /ProcSet defineresource pop

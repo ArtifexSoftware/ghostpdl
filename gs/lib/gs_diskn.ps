@@ -23,7 +23,7 @@ systemdict begin
 % Efficiency here doesn't matter since we run this at the end
 % of gs_init and convert it to a static array.
 /.getsearchabledevs { % - .getsearchabledevs [ list_of_strings ]
-  systemdict /.searchabledevs .knownget not {
+  //systemdict /.searchabledevs .knownget not {
     .currentglobal true .setglobal
     mark (*) { 
       dup length string copy dup currentdevparams /Searchable
@@ -50,19 +50,19 @@ systemdict begin
     % We now have 4 arrays on the stack, SO=0 SO=1 SO=2 SO>2
     % make them into a single array
     mark 5 1 roll ] mark exch { { } forall } forall ]
-    systemdict /.searchabledevs 2 index .forceput
+    //systemdict /.searchabledevs 2 index .forceput
     exch .setglobal
   }
   if
-} bind def
+} .bind executeonly def % must be bound and hidden for .forceput
 
 % Modify .putdevparams to force regeneration of .searchabledevs list
 /.putdevparams {
   % We could be smarter and check for %disk* device, but this
   % doesn't get run enough to justify the complication
   //.putdevparams
-  systemdict /.searchabledevs .forceundef  
-} odef
+  //systemdict /.searchabledevs .forceundef  
+} .bind odef % must be bound and hidden for .forceundef
 
 % ------ extend filenameforall to handle wildcards in %dev% part of pattern -------%
 /filenameforall {

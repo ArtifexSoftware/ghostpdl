@@ -320,7 +320,7 @@ end
 	   { /defineresource load /typecheck signalerror
 	   }
 	ifelse
-} bind executeonly		% executeonly to prevent access to .forcedef
+} .bind executeonly		% executeonly to prevent access to .forcedef
 /UndefineResource
 	{  { dup 2 index .knownget
 	      { dup 1 get 1 ge

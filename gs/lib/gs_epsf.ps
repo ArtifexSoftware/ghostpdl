@@ -30,6 +30,9 @@
 % After %%HiResBoundingBox processed, state is 2.
 % After %%EndComments processed, state is 3.
 /EPSBoundingBoxState 3 def
+/EPSBoundingBoxSetState {
+  //systemdict /EPSBoundingBoxState 3 -1 roll .forceput
+} .bind odef % .forceput must be bound and hidden
 
 % Parse 4 numbers for a bounding box
 /EPSBoundingBoxParse { % (llx lly urx ury) -- llx lly urx ury true OR false
@@ -82,25 +85,24 @@
       } {
         //systemdict /EPSFitPage known {
           EPSBoundingBoxFitPage
-      } {
-        % Warn if some of the EPS file will be clipped
-        clippath pathbbox
-        { % context for exit
-          5 -1 roll lt { 6 { pop } repeat true exit } if
-          4 -1 roll lt { 4 { pop } repeat true exit } if
-          3 -1 roll gt { 2 { pop } repeat true exit } if
-          exch gt { true exit } if
-          false exit
-        } loop
-        QUIET not and {
-          (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
-          (                 Use -dEPSCrop or -dEPSFitPage to avoid clipping.\n) =
-	  flush
-        } if
-        % pop //systemdict /EPSBoundingBoxState get
+	} {
+	  % Warn if some of the EPS file will be clipped
+	  clippath pathbbox
+	  { % context for exit
+	    5 -1 roll lt { 6 { pop } repeat true exit } if
+	    4 -1 roll lt { 4 { pop } repeat true exit } if
+	    3 -1 roll gt { 2 { pop } repeat true exit } if
+	    exch gt { true exit } if
+	    false exit
+	  } loop
+	  QUIET not and {
+	    (\n   **** Warning: Some of the BoundingBox for the EPS file will be clipped.) =
+	    (                 Use -dEPSCrop or -dEPSFitPage to avoid clipping.\n) =
+	    flush
+	  } if
+	} ifelse
       } ifelse
-      } ifelse
-      //systemdict /EPSBoundingBoxState 3 -1 roll .forceput
+      EPSBoundingBoxSetState
     } {
       pop % state
     } ifelse
@@ -115,7 +117,7 @@
     (%%EndComments) anchorsearch {
       pop pop
       % ignore any following bounding boxes
-      //systemdict /EPSBoundingBoxState 3 .forceput
+      3 EPSBoundingBoxSetState
     } {
       (%%BoundingBox:) anchorsearch {
 	pop 
@@ -152,7 +154,7 @@
   /runEPS_save save def
   /runEPS_dict_count countdictstack def
   /runEPS_op_count count 2 sub def
-  //systemdict /EPSBoundingBoxState 0 .forceput
+  0 EPSBoundingBoxSetState
   .runNoEPS
   currentpagedevice /PageCount get 0 eq { showpage } if
   count runEPS_op_count sub {pop} repeat
