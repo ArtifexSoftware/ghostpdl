@@ -121,10 +121,10 @@ hpgl_next_char_proc(gs_show_enum *penum, gs_char *pchr)
  * The character complement for the stick font is puzzling: it doesn't seem
  * to correspond directly to any of the MSL *or* Unicode symbol set bits
  * described in the Comparison Guide.  We set the bits for MSL Basic Latin
- * (63) and for Unicode ASCII (31), Latin 1 (30), and Accents (26).
+ * (63) and for Unicode ASCII (31), and Latin 1 (30).
  */
 private const byte stick_character_complement[8] = {
-  0x7f, 0xff, 0xff, 0xff, 0x3b, 0xff, 0xff, 0xfe
+  0x7f, 0xff, 0xff, 0xff, 0x3f, 0xff, 0xff, 0xfe
 };
 
 /* Select the stick font, creating it if necessary. */
