@@ -30,6 +30,26 @@
 #include "gdevdevn.h"
 #include "gsequivc.h"
 
+private
+ENUM_PTRS_WITH(param_string_enum_ptrs, gs_param_string *pstr) return 0;
+case 0: return ENUM_CONST_STRING(pstr);
+ENUM_PTRS_END
+
+private
+RELOC_PTRS_WITH(param_string_reloc_ptrs, gs_param_string *pstr)
+{
+    gs_const_string str;
+
+    str.data = pstr->data, str.size = pstr->size;
+    RELOC_CONST_STRING_VAR(str);
+    pstr->data = str.data;
+}
+RELOC_PTRS_END
+
+/* Define a GC descriptor for gs_param_string. */
+/* This structure descriptor is only for non persistent gs_param_strings. */
+private_st_gs_param_string();
+
 /*
  * Utility routines for common DeviceN related parameters:
  *   SeparationColorNames, SeparationOrder, and MaxSeparations
@@ -269,9 +289,9 @@ devn_get_color_comp_index(const gx_device * dev, gs_devn_params * pdevn_params,
 	int sep_num = separations->num_separations++;
 
 	/* We have a new spot colorant */
-	pstr_param = (gs_param_string *)gs_alloc_bytes(dev->memory,
-			sizeof(gs_param_string), "devn_get_color_comp_index");
-	pseparation = (byte *)gs_alloc_bytes(dev->memory,
+	pstr_param = gs_alloc_struct(dev->memory, gs_param_string,
+			&st_gs_param_string, "devn_get_color_comp_index");
+	pseparation = gs_alloc_string(dev->memory,
 			name_size, "devn_get_color_comp_index");
 	memcpy(pseparation, pname, name_size);
 	pstr_param->data = pseparation;
@@ -571,6 +591,7 @@ typedef struct spotcmyk_device_s {
 } spotcmyk_device;
 
 /* GC procedures */
+
 private 
 ENUM_PTRS_WITH(spotcmyk_device_enum_ptrs, spotcmyk_device *pdev)
 {
