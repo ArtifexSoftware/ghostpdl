@@ -12,7 +12,6 @@
 #	most of devs.mak
 #     For fonts:
 #	cfonts.mak
-#	fonts.mak
 #	ccfonts option
 # The tools in this file can currently:
 #	Check the makefiles for consistency with the #include lists
@@ -25,24 +24,47 @@
 set KNOWN_DEPS(cc.tr) 1
 set KNOWN_DEPS(echogs) 1
 
+# ---------------- Environment-specific procedures ---------------- #
+
+# Return a list of the exported and imported symbols of an object module.
+proc obj_symbols {objfile} {
+    set export {}
+    set import {}
+    foreach line [split [exec nm -gp $objfile] "\n"] {
+	if {[regexp {([A-Z]) ([^ ]+)$} [string trim $line] skip type sym]} {
+	    if {$type == "U"} {
+		lappend import $sym
+	    } else {
+		lappend export $sym
+	    }
+	}
+    }
+    return [list $export $import]
+}
+
 # ---------------- Reading makefiles ---------------- #
 
 # The following procedures parse makefiles by reading them into an array
 # with the following components:
-#	files - a list of all the makefiles read in
-#	names - a list of all the defined names, in appearance order,
+# *	files - a list of all the makefiles read in
+# *	names - a list of all the defined names, in appearance order,
 #		in the form macro= or target:
-#	pos:M= - the file and position of the definition of macro M
-#	pos:T: - the file and position of the rule for T
+# *	pos:M= - the file and position of the definition of macro M
+# *	pos:T: - the file and position of the rule for T
 #	defn:M - definition of macro M
 #	deps:T - dependencies for target T
 #	body:T - rule body for T, a list of lines
+# File names in members marked with a * are normalized (see normalize_fname
+# below, as are target names (T); note that file names in dependencies
+# (value of deps:T) are not.
+
 # Global variables used: CWD
 
 # Initialize the tables.
 proc makefile_init {mfarray} {
     catch {uplevel 1 [list unset $mfarray]}
     upvar $mfarray mf
+
     set mf(files) ""
     set mf(names) ""
 }
@@ -50,6 +72,7 @@ proc makefile_init {mfarray} {
 # Set CWD to the current working directory name (as a list).
 proc setcwd {} {
     global CWD
+
     set CWD [split [exec pwd] /]
     if {[lindex $CWD 0] == ""} {
 	set CWD [lrange $CWD 1 end]
@@ -61,6 +84,7 @@ proc setcwd {} {
 # and any occurrences of ../<dir>/ that are vacuous relative to CWD.
 proc normalize_fname {fname} {
     global CWD
+
     set name $fname
 				# Remove a trailing /
     regsub {/$} $name "" name
@@ -104,6 +128,7 @@ proc always_subst {var} {
 }
 proc macro_expand {mfarray str {nosub always_subst} {defer {$(\1)}}} {
     upvar $mfarray mf
+
     set in $str
     set out ""
     while {[regexp {^([^$]*)\$\(([^)]+)\)(.*)$} $in skip first var rest]} {
@@ -121,6 +146,7 @@ proc macro_expand {mfarray str {nosub always_subst} {defer {$(\1)}}} {
 # Check the references to macros in a definition or rule line.
 proc check_refs {mfarray line ref} {
     upvar $mfarray mf
+
     foreach var [macro_refs $line] {
 	if ![info exists mf(defn:$var)] {
 	    puts "Warning: $ref refers to undefined macro $var"
@@ -130,39 +156,49 @@ proc check_refs {mfarray line ref} {
 }
 
 # Read a line from a makefile, recognizing a trailing \ for continuation.
-proc linegets {infile linevar} {
-    upvar $linevar line
+# source is an array with keys {file, lnum}.
+# Return -1 or the original value of source(lnum).
+proc linegets {sourcevar linevar} {
+    upvar $sourcevar source $linevar line
+
+    set infile $source(file)
     if {[gets $infile line] < 0} {return -1}
+    set lnum $source(lnum)
+    incr source(lnum)
     while {[regsub {\\$} $line {} line]} {
 	gets $infile l
 	append line $l
+	incr source(lnum)
     }
-    return [string length $line]
+    return $lnum
 }
 
 # Read a makefile, adding to the tables.
 proc read_makefile {mfarray inname} {
     global CWD
     upvar $mfarray mf
+
     setcwd
+    set inname [normalize_fname $inname]
     set infile [open $inname]
     lappend mf(files) $inname
-    set pos [tell $infile]
-    while {[linegets $infile line] >= 0} {
+    set source(file) $infile
+    set source(lnum) 1
+    while {[set pos [linegets source line]] >= 0} {
 	if [regexp {^([A-Za-z_$][^=:]*)([=:])(.*)$} $line skip lhs eq rhs] {
-	    define$eq mf $lhs $rhs $inname:$pos $infile
+	    define$eq mf $lhs $rhs $inname:$pos source
 	} elseif {[regsub {^(!|)include([ ]+)} $line {} file]} {
 	    regsub -all {"} $file {} file
 	    set file [macro_expand mf $file {string match {"}}]
 	    read_makefile mf $file
 	}
-	set pos [tell $infile]
     }
     close $infile
 }
 # Define a list (macro).
-proc define= {mfarray lhs rhs pos infile} {
+proc define= {mfarray lhs rhs pos sourcevar} {
     upvar $mfarray mf
+
     set var [string trim [macro_expand mf $lhs]]
     if [info exists mf(pos:$var=)] {
 	puts "Warning: $pos: macro $var redefined"
@@ -174,21 +210,26 @@ proc define= {mfarray lhs rhs pos infile} {
     lappend mf(names) $var=
 }
 # Define a rule.
-proc define: {mfarray lhs rhs pos infile} {
-    upvar $mfarray mf
+proc define: {mfarray lhs rhs pos sourcevar} {
+    upvar $mfarray mf $sourcevar source
+
+    set targets ""
+    foreach target [macro_expand mf $lhs] {
+	lappend targets [normalize_fname $target]
+    }
     set lines ""
-    while {[linegets $infile line] > 0} {
+    while {[set lnum [linegets source line]] >= 0 && $line != ""} {
 	if ![regexp {^#} $line] {
+	    regsub {[0-9]+$} $pos $lnum lpos
+	    check_refs mf $line "$lpos: Rule for $targets"
 	    lappend lines $line
 	}
     }
-    foreach target [macro_expand mf $lhs] {
-	set target [normalize_fname $target]
+    foreach target $targets {
 	set mf(pos:$target:) $pos
 	set mf(deps:$target) $rhs
 	set mf(body:$target) $lines
 	lappend mf(names) $target:
-	check_refs mf [join $lines] "$pos: Rule for $target"
     }
 }
 
@@ -200,6 +241,7 @@ proc define: {mfarray lhs rhs pos infile} {
 proc set_references {refarray files grepexp rexp} {
     catch {uplevel 1 [list unset $refarray]}
     upvar $refarray refs
+
     switch [llength $files] {
 	0 {return}
 	1 {			;# force grep to output file name
@@ -228,6 +270,7 @@ proc set_references {refarray files grepexp rexp} {
 # Set the array incarray to the (sorted) lists.
 proc set_includes {incarray files} {
     upvar $incarray incs
+
     set gre {^#[ 	]*include[ 	]+\"}
     set re {#[\ \	]*include[\ \	]+"([^"]*)"}
     set_references incs $files $gre $re
@@ -240,6 +283,7 @@ proc set_includes {incarray files} {
 # Set the array devarray to the lists.
 proc set_devices {devarray files} {
     upvar $devarray devs
+
     set gre {gs_[0-9a-zA-Z]+_device.=}
     set re {.*gs_([0-9a-zA-Z]+)_device.=}
     set_references devs $files $gre $re
@@ -251,18 +295,19 @@ proc set_devices {devarray files} {
 # references except _h macros.
 proc expand_deps {deps mfarray} {
     upvar $mfarray mf
+
     return [macro_expand mf $deps {regexp {_h$}}]
 }
 
 # Check the definition of one .h file.
 proc check_h {file incarray mfarray} {
     global KNOWN_DEPS
-
     upvar $incarray incs $mfarray mf
+
     set base [file tail $file]
     regsub {\.} $base {_} file_h
     if ![info exists mf(defn:$file_h)] {
-	puts "$file_h not defined"
+	puts "$file exists, $file_h not defined"
     } else {
 	set here {
 	    puts "In definition of $file_h at $mf(pos:$file_h=):"
@@ -303,8 +348,8 @@ proc check_h {file incarray mfarray} {
 # Check the definition of one .c or .cpp file.
 proc check_c {file incarray mfarray} {
     global KNOWN_DEPS
-
     upvar $incarray incs $mfarray mf
+
     set base [file tail $file]
     regsub {\.(c|cpp)$} $file {.$(OBJ)} file_obj
     set file_obj [macro_expand mf $file_obj]
@@ -362,16 +407,44 @@ proc check_c {file incarray mfarray} {
     }
 }
 
+# Check whether a given pattern occurs in a dependency tree.
+proc dep_search {target pattern mfarray} {
+    upvar $mfarray mf
+
+    set target [normalize_fname $target]
+    set deps [expand_deps $mf(deps:$target) mf]
+    if {[lsearch -glob $deps $pattern] >= 0} {
+	return 1
+    }
+    foreach d $deps {
+	if {[regexp {(.*)\.dev$} $d]} {
+	    if {[dep_search $d $pattern mf]} {
+		return 1
+	    }
+	}
+    }
+}
+
 # Check that makefiles agree with device definitions in a .c/.cpp file.
 proc check_c_devs {file mfarray devsarray} {
     upvar $mfarray mf $devsarray devs
-    set base [file tail $file]
-    regsub {\.[cC]([pP][pP]|)$} $file {.$(OBJ)} file_obj
+
     foreach d $devs($file) {
-	if ![info exists mf(pos:$d.dev:)] {
-	    puts "No rule for $d.dev, defined in $file"
-	} elseif {[lindex $file_obj $mf(deps:$d.dev)] < 0} {
-	    puts "$file_obj missing from dependencies of $d.dev"
+	set mfnames [array names mf "pos:*\[/\\\]$d.dev:"]
+	switch [llength $mfnames] {
+	    0 {
+		puts "No rule for $d.dev, defined in $file"
+	    }
+	    1 {
+		regexp {^pos:(.*):$} [lindex $mfnames 0] skip dev
+		set base [file rootname [file tail $file]]
+		if {![dep_search $dev "*\[/\\\]$base.*" mf]} {
+		    puts "$base missing from dependencies of $dev"
+		}
+	    }
+	    default {
+		puts "Multiple rules for $d.dev, defined in $file"
+	    }
 	}
     }
 }
@@ -379,63 +452,91 @@ proc check_c_devs {file mfarray devsarray} {
 # ---------------- Test code ---------------- #
 
 proc init_files {} {
-    global HFILES CFILES CPPFILES ALLFILES
+    global FILES
 
-    set HFILES {}
-    set CFILES {}
-    set CPPFILES {}
-    set ALLFILES {}
+    set FILES(h) {}
+    set FILES(c) {}
+    set FILES(cpp) {}
 }
 proc add_files {{dir .}} {
-    global HFILES CFILES CPPFILES ALLFILES
+    global FILES
 
     if {$dir == "."} {
 	set pre ""
     } else {
 	set pre $dir/
     }
-    set HFILES [concat $HFILES [lsort [glob ${pre}*.h]]]
-    set CFILES [concat $CFILES [lsort [glob ${pre}*.c]]]
-    set CPPFILES [concat $CPPFILES [lsort [glob -nocomplain ${pre}*.cpp]]]
-    llength [set ALLFILES [concat $HFILES $CFILES $CPPFILES]]
+    set total ""
+    foreach extn {h c cpp} {
+	lappend total\
+	    [llength [set FILES($extn) [concat $FILES($extn)\
+		[lsort [glob -nocomplain ${pre}*.$extn]]]]]
+    }
+    return $total
 }
-proc set_files {{dir .}} {
-    init_files
-    add_files $dir
+proc all_files {} {
+    global FILES
+
+    set all {}
+    foreach extn {h c cpp} {set all [concat $all $FILES($extn)]}
+    return $all
 }
 proc get_includes {} {
-    global ALLFILES INCS
+    global INCS
 
-    puts stdout [time {set_includes INCS $ALLFILES}]
+    puts [time {set_includes INCS [all_files]}]
 }
 proc get_gs_devices {} {
     global DEVS
 
-    puts stdout [time {set_devices DEVS [glob /gs/gdev*.c]}]
+    puts [time {set_devices DEVS [glob ./src/gdev*.c]}]
 }
 proc check_headers {} {
-    global HFILES INCS MF
+    global FILES INCS MF
 
-    foreach h $HFILES {
+    foreach h $FILES(h) {
 	check_h $h INCS MF
     }
 }
 proc check_code {} {
-    global CFILES CPPFILES INCS MF
+    global FILES INCS MF
 
-    foreach c [concat $CFILES $CPPFILES] {
+    foreach c [concat $FILES(c) $FILES(cpp)] {
 	check_c $c INCS MF
     }
 }
 proc check_devices {} {
-    global DEVS
+    global DEVS MF
 
     foreach c [array names DEVS] {
 	check_c_devs $c MF DEVS
     }
 }
+proc top_makefiles {dir} {
+    foreach f [glob $dir/*.mak] {
+	if {[regexp {lib.mak$} $f]} {continue}
+	set mak($f) 1
+    }
+    foreach f [array names mak] {
+	set maybe_top 0
+	if {![catch {set lines [exec egrep {^(!|)include } $f]}]} {
+	    foreach line [split $lines "\n"] {
+		if {[regsub {^(!|)include([ ]+)} $line {} file]} {
+		    set maybe_top 1
+		    regsub -all {^"|"$} $file {} file
+		    regsub {^\$\([A-Z]+\)([/\\]|)} $file {} file
+		    catch {unset mak($dir/$file)}
+		}
+	    }
+	}
+	if {!$maybe_top} {
+	    catch {unset mak($f)}
+	}
+    }
+    return [array names mak]
+}
 proc check_makefile {args} {
-    global MF INCS
+    global MF
 
     if {$args == ""} {set args {makefile}}
     init_files
@@ -447,25 +548,17 @@ proc check_makefile {args} {
 	if {![info exists dirs($dir)]} {
 	    set dirs($dir) 1
 	    puts "Scanning source directory $dir"
-	    add_files $dir
+	    puts "[add_files $dir] files"
 	}
 	read_makefile MF $f
     }
     get_includes
+    #get_gs_devices
     check_headers
     check_code
+    #check_devices
 }
 
-init_files
-#set_files
-#get_includes
-#get_gs_devices
-#check_headers
-#check_code
-#check_devices
-#make_gs_rules
-#check_makefile pcl_ugcc.mak
-#check_makefile makefile
 if {$argv == [list "check"]} {
     eval check_makefile [lreplace $argv 0 0]
 }
