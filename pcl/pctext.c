@@ -381,9 +381,6 @@ show_char_background(
     } else {
 	gs_rect     bbox;
 
-	/* Don't allow pixels to be processed twice. */
-	gs_setfilladjust(pgs, 0.0, 0.0);
-
         /* clear the path; start the new one from the current point */
 	gs_newpath(pgs);
 	gs_moveto(pgs, pt.x, pt.y);
@@ -967,7 +964,11 @@ pctext_do_reset(
     pcl_reset_type_t    type
 )
 {
-    if ((type & (pcl_reset_initial | pcl_reset_printer)) != 0) {
+    static  const uint  mask = (  pcl_reset_initial
+                                | pcl_reset_printer
+                                | pcl_reset_overlay );
+
+    if ((type & mask) != 0) {
         pcs->underline_enabled = false;
 	pcs->last_was_BS = false;
 	pcs->last_width = inch2coord(1.0 / 10.0);
