@@ -504,7 +504,7 @@ pdf_char_widths(gx_device_pdf *const pdev,
 	return_error(gs_error_unregistered); /* Must not happen. */
     if (pwidths == 0)
 	pwidths = &widths;
-    if (real_widths[ch] == 0 && font->FontType != ft_user_defined) {
+    if (font->FontType != ft_user_defined && real_widths[ch] == 0) {
 	/* Might be an unused char, or just not cached. */
 	gs_glyph glyph = pdfont->u.simple.Encoding[ch].glyph;
 
@@ -535,19 +535,21 @@ pdf_char_widths(gx_device_pdf *const pdev,
 		!(pdfont->used[ch >> 3] & 0x80 >> (ch & 7)))
 	    return gs_error_undefined;
 	pwidths->Width.w = pdfont->Widths[ch];
-	pwidths->real_width.w = real_widths[ch];
 	pwidths->Width.v = pdfont->u.simple.v[ch];
 	if (font->FontType == ft_user_defined) {
+	    pwidths->real_width.w = real_widths[ch * 2];
 	    pwidths->Width.xy.x = pwidths->Width.w;
 	    pwidths->Width.xy.y = 0;
 	    pwidths->real_width.xy.x = real_widths[ch * 2 + 0];
 	    pwidths->real_width.xy.y = real_widths[ch * 2 + 1];
 	} else if (font->WMode) {
+	    pwidths->real_width.w = real_widths[ch];
 	    pwidths->Width.xy.x = 0;
 	    pwidths->Width.xy.y = pwidths->Width.w;
 	    pwidths->real_width.xy.x = 0;
 	    pwidths->real_width.xy.y = pwidths->real_width.w;
 	} else {
+	    pwidths->real_width.w = real_widths[ch];
 	    pwidths->Width.xy.x = pwidths->Width.w;
 	    pwidths->Width.xy.y = 0;
 	    pwidths->real_width.xy.x = pwidths->real_width.w;
@@ -716,9 +718,13 @@ process_text_modify_width(pdf_text_enum_t *pte, gs_font *font,
 	    code = pdf_glyph_widths(pdsubf, font->WMode, glyph, subfont, &cw);
 	} else {/* must be a base font */
 	    FontType = font->FontType;
-	    code = pdf_char_widths((gx_device_pdf *)pte->dev,
-	                           ppts->values.pdfont, chr, (gs_font_base *)font,
-				   &cw);
+	    if (chr == GS_NO_CHAR && glyph != GS_NO_GLYPH) {
+		/* glyphshow, we have no char code. Bug 686988.*/
+		code = pdf_glyph_widths(ppts->values.pdfont, font->WMode, glyph, font, &cw);
+	    } else 
+		code = pdf_char_widths((gx_device_pdf *)pte->dev,
+				       ppts->values.pdfont, chr, (gs_font_base *)font,
+				       &cw);
 	}
 	if (code < 0) {
 	    if (index > 0)
