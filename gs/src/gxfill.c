@@ -852,7 +852,7 @@ start_al_pair_from_min(line_list *ll, contour_cursor *q)
 			dir == DIR_UP ? DIR_UP : ll->main_dir);
 	if (!q->more_flattened)
 	    break;
-	if (dir == DIR_DOWN) {
+	if (dir == DIR_DOWN || dir == DIR_HORIZONTAL) {
 	    fi = q->fi;
 	    more_fi = q->more_flattened;
 	}
@@ -938,10 +938,16 @@ scan_contour(line_list *ll, contour_cursor *q)
 	    p.more_flattened = gx_flattened_iterator__next_filtered2(&p.fi);
 	    p.dir = compute_dir(ll, p.fi.fy0, p.fi.fy1);
 	    if (p.monotonic && p.dir == DIR_HORIZONTAL && 
-		    (!ll->pseudo_rasterization || !CURVED_TRAPEZOID_FILL || 
-		     only_horizontal) &&
+		    !ll->pseudo_rasterization && 
 		    fixed2int_pixround(p.pseg->pt.y - ll->adjust_below) <
 		    fixed2int_pixround(p.pseg->pt.y + ll->adjust_above)) {
+		/* Add it here to avoid double processing in process_h_segments. */
+		code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
+		if (code < 0)
+		    return code;
+	    }
+	    if (p.monotonic && p.dir == DIR_HORIZONTAL && 
+		    ll->pseudo_rasterization && only_horizontal) {
 		/* Add it here to avoid double processing in process_h_segments. */
 		code = add_y_line(p.prev, p.pseg, DIR_HORIZONTAL, ll);
 		if (code < 0)
@@ -1622,6 +1628,39 @@ move_al_by_y(line_list *ll, fixed y1, fixed y)
 	}
     }
 #   endif
+    if (ll->x_list != 0 && ll->pseudo_rasterization) {
+	/* Ensure that contacting vertical stems are properly ordered.
+	   We don't want to unite contacting stems into
+	   a single margin, because it can cause a dropout :
+	   narrow stems are widened against a dropout, but 
+	   an united wide one may be left unwidened.
+	 */
+	for (alp = ll->x_list; alp->next != 0; ) {
+	    if (alp->start.x == alp->end.x &&
+		alp->next->start.x == alp->next->end.x &&
+		alp->start.x == alp->next->start.x &&
+		alp->direction > alp->next->direction) {
+		/* Exchange. */
+		active_line *prev = alp->prev;
+		active_line *next = alp->next;
+		active_line *next2 = next->next;
+
+		if (prev)
+		    prev->next = next;
+		else
+		    ll->x_list = next;
+		next->prev = prev;
+
+		alp->prev = next;
+		alp->next = next2;
+
+		next->next = alp;
+		if (next2)
+		    next2->prev = alp;
+	    } else
+		alp = alp->next;
+	}
+    }
 }
 
 #if CURVED_TRAPEZOID_FILL
