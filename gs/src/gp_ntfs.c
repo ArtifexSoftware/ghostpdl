@@ -182,16 +182,26 @@ gp_enumerate_files_next(file_enum * pfen, char *ptr, uint maxlen)
 {
     int code = 0;
     uint len;
-
-    if (pfen->first_time) {
-	pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
-	if (pfen->find_handle == INVALID_HANDLE_VALUE)
-	    code = -1;
-	pfen->first_time = 0;
-    } else {
-	if (!FindNextFile(pfen->find_handle, &(pfen->find_data)))
-	    code = -1;
-    }
+    for(;;) 
+      { if (pfen->first_time) 
+          { pfen->find_handle = FindFirstFile(pfen->pattern, &(pfen->find_data));
+	    if (pfen->find_handle == INVALID_HANDLE_VALUE)
+	      { code = -1;
+                break;
+              }
+	    pfen->first_time = 0;
+          } 
+        else 
+          { if (!FindNextFile(pfen->find_handle, &(pfen->find_data)))
+	      { code = -1;
+                break;
+              }
+          }
+        if ( strcmp(".",  pfen->find_data.cFileName)
+          && strcmp("..", pfen->find_data.cFileName))
+            break;
+      } 
+   
     if (code != 0) {		/* All done, clean up. */
 	gp_enumerate_files_close(pfen);
 	return ~(uint) 0;
