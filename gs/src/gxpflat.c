@@ -511,17 +511,19 @@ gx_flattened_iterator__prev(gx_flattened_iterator *this)
 
 /* Switching from the forward scanning to the backward scanning for the filtered1. */
 void
-gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this)
+gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this, bool not_first)
 {
     /*	When scanning forth, the accumulator stands on the end of a segment,
 	except for the last segment.
 	When scanning back, the accumulator should stand on the beginning of a segment.
 	Asuuming that at least one forward step is done.
     */
-    if (this->i > 0 && this->k != 1 /* This case doesn't use the accumulator. */)
-	gx_flattened_iterator__unaccum(this);
-    while (this->i < this->prev_filtered1_i) {
-	gx_flattened_iterator__prev(this);
+    if (not_first) {
+	if (this->i > 0 && this->k != 1 /* This case doesn't use the accumulator. */)
+	    gx_flattened_iterator__unaccum(this);
+	while (this->i < this->prev_filtered1_i) {
+	    gx_flattened_iterator__prev(this);
+	}
     }
     this->last_filtered1_i = this->i;
     this->filtered1_i = this->i;

@@ -426,7 +426,7 @@ bool gx_flattened_iterator__init(gx_flattened_iterator *this,
 	    fixed x0, fixed y0, const curve_segment *pc, int k, bool reverse);
 bool gx_flattened_iterator__init_line(gx_flattened_iterator *this, 
 	    fixed x0, fixed y0, fixed x1, fixed y1);
-void gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this);
+void gx_flattened_iterator__switch_to_backscan(gx_flattened_iterator *this, bool not_first);
 bool gx_flattened_iterator__next_filtered(gx_flattened_iterator *this);
 bool gx_flattened_iterator__prev_filtered(gx_flattened_iterator *this);
 bool gx_flattened_check_near(fixed x0, fixed y0, fixed x1, fixed y1);

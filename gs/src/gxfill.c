@@ -682,7 +682,7 @@ add_y_curve_part(line_list *ll, segment *s0, segment *s1, int dir,
     alp->fi = *fi;
     alp->more_flattened = more1;
     if (dir != DIR_UP && more1)
-	gx_flattened_iterator__switch_to_backscan(&alp->fi);
+	gx_flattened_iterator__switch_to_backscan(&alp->fi, more1);
     if (step_back) {
 	do {
 	    alp->more_flattened = gx_flattened_iterator__prev_filtered(&alp->fi);
@@ -1038,7 +1038,7 @@ init_al(active_line *alp, const segment *s0, const segment *s1, fixed fixed_flat
 		alp->more_flattened |= more;
 	    } while(more);
 	    if (alp->more_flattened)
-		gx_flattened_iterator__switch_to_backscan(&alp->fi);
+		gx_flattened_iterator__switch_to_backscan(&alp->fi, alp->more_flattened);
 	    step_al(alp, false);
 	}
     } else {
