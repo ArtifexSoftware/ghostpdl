@@ -1170,11 +1170,11 @@ $(PSOBJ)zmedia2.$(OBJ) : $(PSSRC)zmedia2.c $(OP) $(math__h) $(memory__h)\
 
 # ---------------- IODevices ---------------- #
 
-iodevice_=$(PSOBJ)ziodev2.$(OBJ) $(PSOBJ)zdevcal.$(OBJ)
+iodevice_=$(PSOBJ)ziodev2.$(OBJ) $(PSOBJ)zdevcal.$(OBJ) $(PSOBJ)ziodevst.$(OBJ)
 $(PSD)iodevice.dev : $(INT_MAK) $(ECHOGS_XE) $(iodevice_)
 	$(SETMOD) $(PSD)iodevice $(iodevice_)
-	$(ADDMOD) $(PSD)iodevice -oper ziodev2_l2
-	$(ADDMOD) $(PSD)iodevice -iodev null calendar
+	$(ADDMOD) $(PSD)iodevice -oper ziodev2_l2 ziodevst
+	$(ADDMOD) $(PSD)iodevice -iodev null calendar static
 
 $(PSOBJ)ziodev2.$(OBJ) : $(PSSRC)ziodev2.c $(OP) $(string__h) $(gp_h)\
  $(gxiodev_h) $(stream_h)\
@@ -1184,6 +1184,12 @@ $(PSOBJ)ziodev2.$(OBJ) : $(PSSRC)ziodev2.c $(OP) $(string__h) $(gp_h)\
 $(PSOBJ)zdevcal.$(OBJ) : $(PSSRC)zdevcal.c $(GH) $(time__h)\
  $(gxiodev_h) $(iparam_h) $(istack_h)
 	$(PSCC) $(PSO_)zdevcal.$(OBJ) $(C_) $(PSSRC)zdevcal.c
+
+$(PSOBJ)ziodevst.$(OBJ) : $(PSSRC)ziodevst.c $(GH)\
+  $(gserror_h) $(gsstruct_h) $(gxiodev_h) $(istruct_h) $(idict_h)\
+ $(iconf_h) $(oper_h) $(store_h) $(stream_h) $(files_h)\
+ $(string__h) $(memory_h)
+	$(PSCC) $(PSO_)ziodevst.$(OBJ) $(C_) $(PSSRC)ziodevst.c
 
 # ---------------- Filters other than the ones in sfilter.c ---------------- #
 

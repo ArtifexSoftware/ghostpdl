@@ -179,7 +179,7 @@ WX=$(COMPILE_FOR_EXE)
 !endif
 
 !if $(COMPILE_INITS)
-ZM=/Zm200
+ZM=/Zm600
 !else
 ZM=
 !endif

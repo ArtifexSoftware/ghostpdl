@@ -1055,6 +1055,35 @@ end
 /===only { (%stdout) (w) file exch write===only } bind def
 /=== { ===only (\n) print } bind def
 
+% Create the initialization queue.
+
+/.delayed_init_queue 10 dict def
+
+/.schedule_init   %   <priority> <proc> .schedule_init -
+{
+  //.delayed_init_queue 2 index known {
+    (.delayed_init_queue priority conflict with ) 1 index =
+    /unregistered /.schedule_init signalerror
+  } if
+  //.delayed_init_queue 3 1 roll .growput
+} bind def
+
+/.execute_schedulled_inits %   - .execute_schedulled_inits -
+{
+  { 0 //null //.delayed_init_queue {     % maxp {} p {}
+      3 index 2 index lt {
+        4 2 roll
+      } if
+      pop pop
+    } forall
+    exch //.delayed_init_queue exch undef
+    dup //null eq {
+      pop exit
+    } if
+    exec
+  } loop
+} bind def
+
 (END PROCS) VMDEBUG
 
 % Define the font directory.
@@ -1409,6 +1438,10 @@ if
 } if
 
 (END INITFILES) VMDEBUG
+
+%% Replace 1 (gs_stres.ps)
+(gs_stres.ps) dup runlibfile VMDEBUG
+(END STATIC RESOURCES) VMDEBUG
 
 % Create a null font.  This is the initial font.
 8 dict dup begin
@@ -1923,6 +1956,12 @@ $error /.nosetlocal false put
 	% defined, add the fake fonts to LocalFontDirectory.
   .definefakefonts	% current VM is local
 } ifelse
+
+% Execude schedilled inits :
+//.execute_schedulled_inits exec
+currentdict /.execute_schedulled_inits undef
+currentdict /.delayed_init_queue undef
+currentdict /.delayed_init_queue undef
 
 % Remove systemdict entries for things that have been bound in where used
 % and that shouldn't be accessible by name, and close up systemdict.

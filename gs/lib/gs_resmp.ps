@@ -434,31 +434,36 @@ setpacking
       } if
       pop 0 dict                               % <<map>>
     } ifelse
-    % Preprocess entries :
-    dup NewCategory /.PreprocessRecord get     % <<map>> <<map>> <<pr>>
-    3 1 roll {                                 % <<pr>> <<map>> /Name raw_record
-      false 3 1 roll                           % <<pr>> <<map>> false /Name raw_record 
-      4 index {                                % <<pr>> <<map>> false /Name raw_record i {pr}
-        exch pop                               % <<pr>> <<map>> false /Name raw_record {pr}
-        exec {                                 % <<pr>> <<map>> false /Name record
-          3 -1 roll pop true 3 1 roll          % <<pr>> <<map>> true /Name record
-          exit
-        } if                                   % <<pr>> <<map>> false /Name raw_record
-      } forall
-      3 2 roll {                               % <<pr>> <<map>> /Name record
-        2 index 3 1 roll put                   % <<pr>> <<map>>
-      } {
-        exch                                   % <<pr>> <<map>> raw_record /Name
-        (Incorrect record ) print =string cvs print ( of the map file ) print MapFileName =string cvs print (.) =
-        end % Pops OptionsDict from dstack.
-        pop pop pop                            %
-        /Redefine cvx /undefinedresource signalerror
-      } ifelse
-    } forall                                   % <<pr>> <<map>>
-    exch pop                                   % <<map>>
-  } { 
-    0 dict                                     % <<map>>
+  } {
+    currentdict /.map .knownget not { 
+      0 dict                                   % <<map>>
+    } if
   } ifelse
+
+  % Preprocess entries :
+  dup NewCategory /.PreprocessRecord get       % <<map>> <<map>> <<pr>>
+  3 1 roll {                                   % <<pr>> <<map>> /Name raw_record
+    false 3 1 roll                             % <<pr>> <<map>> false /Name raw_record 
+    4 index {                                  % <<pr>> <<map>> false /Name raw_record i {pr}
+      exch pop                                 % <<pr>> <<map>> false /Name raw_record {pr}
+      exec {                                   % <<pr>> <<map>> false /Name record
+        3 -1 roll pop true 3 1 roll            % <<pr>> <<map>> true /Name record
+        exit
+      } if                                     % <<pr>> <<map>> false /Name raw_record
+    } forall
+    3 2 roll {                                 % <<pr>> <<map>> /Name record
+      2 index 3 1 roll put                     % <<pr>> <<map>>
+    } {
+      exch                                     % <<pr>> <<map>> raw_record /Name
+      (Incorrect record ) print =string cvs print ( of the map file ) print MapFileName =string cvs print (.) =
+      end % Pops OptionsDict from dstack.
+      pop pop pop                              %
+      /Redefine cvx /undefinedresource signalerror
+    } ifelse
+  } forall                                     % <<pr>> <<map>>
+  exch pop                                     % <<map>>
+
+
   % Add the map :
   OldCategory /.IsRedefinedWithMap known {     % <<map>>
     % Just add to the old map :
@@ -480,7 +485,10 @@ setpacking
     //MethodsToRedefine {
       //BindWithCurrentdict exec NewCategory 3 1 roll put  
     } forall
-
+    CategoryName /CIDFont ne {
+      NewCategory /GetCIDSystemInfoFromMap undef
+      % This is some ugly, sorry.
+    } if
     % Redefine the category :
     NewCategory /.IsRedefinedWithMap true put
     CategoryName NewCategory /Category defineresource pop
