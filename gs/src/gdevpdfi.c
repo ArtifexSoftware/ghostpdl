@@ -239,6 +239,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     } image;
     ulong nbytes;
     int width, height;
+    const gs_range_t *pranges = 0;
 
     /* Check for the image types we can handle. */
     switch (pic->type->index) {
@@ -415,17 +416,33 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	 * we postpone the selection of the PDF color space to here:
 	 */
 	(!is_mask &&
-	 (code = pdf_color_space(pdev, &cs_value, image.pixel.ColorSpace,
+	 (code = pdf_color_space(pdev, &cs_value, &pranges,
+				 image.pixel.ColorSpace,
 				 (in_line ? &pdf_color_space_names_short :
-				  &pdf_color_space_names), in_line)) < 0) ||
-	(code = pdf_begin_image_data(pdev, &pie->writer,
-				     (const gs_pixel_image_t *)&image,
-				     &cs_value)) < 0
-	) {
-	/****** SHOULD FREE STRUCTURES AND CLEAN UP HERE ******/
-	goto nyi;		/* fall back to default implementation */
+				  &pdf_color_space_names), in_line)) < 0)
+	)
+	goto fail;
+    if (pranges) {
+	/* Rescale the Decode values for the image data. */
+	float *decode = image.pixel.Decode;
+	int i;
+
+	for (i = 0; i < num_components; ++i, ++pranges, decode += 2) {
+	    double vmin = decode[0], vmax = decode[1];
+	    double base = pranges->rmin, factor = pranges->rmax - base;
+
+	    decode[1] = (vmax - vmin) / factor + (vmin - base);
+	    decode[0] = vmin - base;
+	}
     }
+    if ((code = pdf_begin_image_data(pdev, &pie->writer,
+				     (const gs_pixel_image_t *)&image,
+				     &cs_value)) < 0)
+	goto fail;
     return 0;
+ fail:
+    /****** SHOULD FREE STRUCTURES AND CLEAN UP HERE ******/
+    /* Fall back to the default implementation. */
  nyi:
     return gx_default_begin_typed_image
 	((gx_device *)pdev, pis, pmat, pic, prect, pdcolor, pcpath, mem,

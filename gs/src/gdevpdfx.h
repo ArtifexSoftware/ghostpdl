@@ -102,8 +102,8 @@ typedef enum {
   "/ColorSpace", "/ExtGState", "/Pattern", "/Shading", "/XObject", "/Font",\
   0, "/Font", "/CMap", "/FontDescriptor", 0
 #define PDF_RESOURCE_TYPE_STRUCTS\
+  &st_pdf_color_space,		/* gdevpdfg.h / gdevpdfc.c */\
   &st_pdf_resource,		/* see below */\
-  &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_resource,\
   &st_pdf_x_object,		/* see below */\
@@ -722,16 +722,26 @@ int pdf_begin_data(P2(gx_device_pdf *pdev, pdf_data_writer_t *pdw));
 /* End a data stream. */
 int pdf_end_data(P1(pdf_data_writer_t *pdw));
 
+/* ------ Functions ------ */
+
 /* Define the maximum size of a Function reference. */
 #define MAX_REF_CHARS ((sizeof(long) * 8 + 2) / 3)
 
-/* Create a Function object. */
+/*
+ * Create a Function object with or without range scaling.  Scaling means
+ * that if x[i] is the i'th output value from the original Function,
+ * the i'th output value from the Function object will be (x[i] -
+ * ranges[i].rmin) / (ranges[i].rmax - ranges[i].rmin).  Note that this is
+ * the inverse of the scaling convention for Functions per se.
+ */
 #ifndef gs_function_DEFINED
 typedef struct gs_function_s gs_function_t;
 #  define gs_function_DEFINED
 #endif
 int pdf_function(P3(gx_device_pdf *pdev, const gs_function_t *pfn,
 		    cos_value_t *pvalue));
+int pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
+			const gs_range_t *pranges, cos_value_t *pvalue);
 
 /* Write a Function object, returning its object ID. */
 int pdf_write_function(P3(gx_device_pdf *pdev, const gs_function_t *pfn,

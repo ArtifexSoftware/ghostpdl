@@ -61,6 +61,7 @@ extern stream_state_proc_get_params(s_CF_get_params, stream_CF_state);
   BEGIN if ((code = (expr)) < 0) return code; END
 
 /* GC descriptors */
+extern_st(st_pdf_color_space);
 extern_st(st_pdf_font);
 extern_st(st_pdf_char_proc);
 extern_st(st_pdf_font_descriptor);
@@ -963,6 +964,44 @@ pdf_end_data(pdf_data_writer_t *pdw)
 /* Create a Function object. */
 private int pdf_function_array(gx_device_pdf *pdev, cos_array_t *pca,
 			       const gs_function_info_t *pinfo);
+int
+pdf_function_scaled(gx_device_pdf *pdev, const gs_function_t *pfn,
+		    const gs_range_t *pranges, cos_value_t *pvalue)
+{
+    if (pranges == NULL)
+	return pdf_function(pdev, pfn, pvalue);
+    {
+	/*
+	 * Create a temporary scaled function.  Note that the ranges
+	 * represent the inverse scaling from what gs_function_make_scaled
+	 * expects.
+	 */
+	gs_memory_t *mem = pdev->memory;
+	gs_function_t *psfn;
+	gs_range_t *ranges = (gs_range_t *)
+	    gs_alloc_byte_array(mem, pfn->params.n, sizeof(gs_range_t),
+				"pdf_function_scaled");
+	int i, code;
+
+	if (ranges == 0)
+	    return_error(gs_error_VMerror);
+	for (i = 0; i < pfn->params.n; ++i) {
+	    double rbase = pranges[i].rmin;
+	    double rdiff = pranges[i].rmax - rbase;
+	    double invbase = -rbase / rdiff;
+
+	    ranges[i].rmin = invbase;
+	    ranges[i].rmax = invbase + 1.0 / rdiff;
+	}
+	code = gs_function_make_scaled(pfn, &psfn, ranges, mem);
+	if (code >= 0) {
+	    code = pdf_function(pdev, psfn, pvalue);
+	    gs_function_free(psfn, true, mem);
+	}
+	gs_free_object(mem, ranges, "pdf_function_scaled");
+	return code;
+    }
+}
 int
 pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	     cos_value_t *pvalue)

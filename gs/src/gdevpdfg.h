@@ -51,6 +51,21 @@ typedef struct gs_color_space_s gs_color_space;
 #endif
 
 /*
+ * Define a ColorSpace resource.  We need to retain the range scaling
+ * information (if any).
+ */
+typedef struct pdf_color_space_s pdf_color_space_t;
+struct pdf_color_space_s {
+    pdf_resource_common(pdf_color_space_t);
+    const gs_range_t *ranges;
+};
+/* The descriptor is public because it is for a resource type. */
+#define public_st_pdf_color_space()  /* in gdevpdfc.c */\
+  gs_public_st_suffix_add1(st_pdf_color_space, pdf_color_space_t,\
+    "pdf_color_space_t", pdf_color_space_enum_ptrs,\
+    pdf_color_space_reloc_ptrs, st_pdf_resource, ranges)
+
+/*
  * Create a local Device{Gray,RGB,CMYK} color space corresponding to the
  * given number of components.
  */
@@ -63,11 +78,16 @@ int pdf_cspace_init_Device(P2(gs_color_space *pcs, int num_components));
  * necessary and set *pvalue to refer to it.  In the latter case, if
  * by_name is true, return a string /Rxxxx rather than a reference to
  * the actual object.
+ *
+ * If ppranges is not NULL, then if the domain of the color space had
+ * to be scaled (to convert a CIEBased space to ICCBased), store a pointer
+ * to the ranges in *ppranges, otherwise set *ppranges to 0.
  */
-int pdf_color_space(P5(gx_device_pdf *pdev, cos_value_t *pvalue,
-		       const gs_color_space *pcs,
-		       const pdf_color_space_names_t *pcsn,
-		       bool by_name));
+int pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
+		    const gs_range_t **ppranges,
+		    const gs_color_space *pcs,
+		    const pdf_color_space_names_t *pcsn,
+		    bool by_name);
 
 /* Create colored and uncolored Pattern color spaces. */
 int pdf_cs_Pattern_colored(P2(gx_device_pdf *pdev, cos_value_t *pvalue));

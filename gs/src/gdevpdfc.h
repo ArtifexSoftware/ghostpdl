@@ -51,7 +51,7 @@ int pdf_convert_cie_space(gx_device_pdf *pdev, cos_array_t *pca,
 			  const gs_color_space *pcs, const char *dcsname,
 			  const gs_cie_common *pciec, const gs_range *prange,
 			  cie_cache_one_step_t one_step,
-			  const gs_matrix3 *pmat);
+			  const gs_matrix3 *pmat, const gs_range_t **pprange);
 
 /*
  * Create a Lab color space object.

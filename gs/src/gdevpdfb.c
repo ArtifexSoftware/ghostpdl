@@ -244,7 +244,11 @@ pdf_copy_mono(gx_device_pdf *pdev,
     if (image.ImageMask)
 	pcsvalue = NULL;
     else {
-	code = pdf_color_space(pdev, &cs_value, &cs,
+	/*
+	 * We don't have to worry about color space scaling: the color
+	 * space is always a Device space.
+	 */
+	code = pdf_color_space(pdev, &cs_value, NULL, &cs,
 			       &writer.pin->color_spaces, in_line);
 	if (code < 0)
 	    return code;
@@ -389,8 +393,12 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
      */
     if (for_pattern < 0)
 	stream_puts(pdev->strm, "q ");
+    /*
+     * We don't have to worry about color space scaling: the color
+     * space is always a Device space.
+     */
     if ((code = pdf_begin_write_image(pdev, piw, id, w, h, NULL, in_line)) < 0 ||
-	(code = pdf_color_space(pdev, &cs_value, &cs,
+	(code = pdf_color_space(pdev, &cs_value, NULL, &cs,
 				&piw->pin->color_spaces, in_line)) < 0 ||
 	(code = psdf_setup_lossless_filters((gx_device_psdf *) pdev,
 					    &piw->binary,

@@ -58,6 +58,9 @@
  * this limitation would also require transforming image sample values.
  */
 
+/* GC descriptors */
+public_st_pdf_color_space();
+
 /* ------ CIE space testing ------ */
 
 /* Test whether a cached CIE procedure is the identity function. */
@@ -335,13 +338,14 @@ pdf_separation_color_space(gx_device_pdf *pdev,
 			   const pdf_color_space_names_t *pcsn)
 {
     cos_value_t v;
+    const gs_range_t *ranges;
     int code;
 
     if ((code = cos_array_add(pca, cos_c_string_value(&v, csname))) < 0 ||
 	(code = cos_array_add_no_copy(pca, snames)) < 0 ||
-	(code = pdf_color_space(pdev, &v, alt_space, pcsn, false)) < 0 ||
+	(code = pdf_color_space(pdev, &v, &ranges, alt_space, pcsn, false)) < 0 ||
 	(code = cos_array_add(pca, &v)) < 0 ||
-	(code = pdf_function(pdev, pfn, &v)) < 0 ||
+	(code = pdf_function_scaled(pdev, pfn, ranges, &v)) < 0 ||
 	(code = cos_array_add(pca, &v)) < 0
 	)
 	return code;
@@ -451,8 +455,12 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      * Since the array is always referenced by name as a resource
      * rather than being written as a value, even for in-line images,
      * always use the full name for the color space.
+     *
+     * We don't have to worry about the range of the base space:
+     * in PDF, unlike PostScript, the values from the lookup table are
+     * scaled automatically.
      */
-    if ((code = pdf_color_space(pdev, pvalue, base_space,
+    if ((code = pdf_color_space(pdev, pvalue, NULL, base_space,
 				&pdf_color_space_names, false)) < 0 ||
 	(code = cos_array_add(pca,
 			      cos_c_string_value(&v, 
@@ -471,11 +479,18 @@ pdf_indexed_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 /*
  * Create a PDF color space corresponding to a PostScript color space.
  * For parameterless color spaces, set *pvalue to a (literal) string with
- * the color space name; for other color spaces, create a cos_dict_t if
- * necessary and set *pvalue to refer to it.
+ * the color space name; for other color spaces, create a cos_array_t if
+ * necessary and set *pvalue to refer to it.  In the latter case, if
+ * by_name is true, return a string /Rxxxx rather than a reference to
+ * the actual object.
+ *
+ * If ppranges is not NULL, then if  the domain of the color space had
+ * to be scaled (to convert a CIEBased space to ICCBased), store a pointer
+ * to the ranges in *ppranges, otherwise set *ppranges to 0.
  */
 int
 pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
+		const gs_range_t **ppranges,
 		const gs_color_space *pcs,
 		const pdf_color_space_names_t *pcsn,
 		bool by_name)
@@ -486,8 +501,11 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
     cos_value_t v;
     const gs_cie_common *pciec;
     gs_function_t *pfn;
+    const gs_range_t *ranges = 0;
     int code;
 
+    if (ppranges)
+	*ppranges = 0;		/* default */
     switch (csi) {
     case gs_color_space_index_DeviceGray:
 	cos_c_string_value(pvalue, pcsn->DeviceGray);
@@ -512,7 +530,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
         if (pcs->params.icc.picc_info->picc == 0 ||
 	    pdev->CompatibilityLevel < 1.3
 	    )
-            return pdf_color_space( pdev, pvalue,
+            return pdf_color_space( pdev, pvalue, ppranges,
                                     (const gs_color_space *)
                                         &pcs->params.icc.alt_space,
                                     pcsn, by_name);
@@ -527,6 +545,11 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    pdf_find_resource_by_gs_id(pdev, resourceColorSpace, pcs->id);
 
 	if (pres) {
+	    const pdf_color_space_t *const ppcs =
+		(const pdf_color_space_t *)pres;
+
+	    if (ppranges != 0 && ppcs->ranges != 0)
+		*ppranges = ppcs->ranges;
 	    pca = (cos_array_t *)pres->object;
 	    goto ret;
 	}
@@ -567,7 +590,8 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    DO_NOTHING;
 	} else {
 	    code = pdf_convert_cie_space(pdev, pca, pcs, "GRAY", pciec,
-					 &pcie->RangeA, ONE_STEP_NOT, NULL);
+					 &pcie->RangeA, ONE_STEP_NOT, NULL,
+					 &ranges);
 	    break;
 	}
 	code = cos_array_add(pca, cos_c_string_value(&v, "/CalGray"));
@@ -622,7 +646,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	} else {
 	    code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ", pciec,
 					 pcie->RangeABC.ranges,
-					 one_step, pmat);
+					 one_step, pmat, &ranges);
 	    break;
 	}
     calrgb:
@@ -658,14 +682,14 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	code = pdf_convert_cie_space(pdev, pca, pcs, "RGB ",
 				     (const gs_cie_common *)pcs->params.def,
 				     pcs->params.def->RangeDEF.ranges,
-				     ONE_STEP_NOT, NULL);
+				     ONE_STEP_NOT, NULL, &ranges);
 	break;
 
     case gs_color_space_index_CIEDEFG:
 	code = pdf_convert_cie_space(pdev, pca, pcs, "CMYK",
 				     (const gs_cie_common *)pcs->params.defg,
 				     pcs->params.defg->RangeDEFG.ranges,
-				     ONE_STEP_NOT, NULL);
+				     ONE_STEP_NOT, NULL, &ranges);
 	break;
 
     case gs_color_space_index_Indexed:
@@ -715,7 +739,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	break;
 
     case gs_color_space_index_Pattern:
-	if ((code = pdf_color_space(pdev, pvalue,
+	if ((code = pdf_color_space(pdev, pvalue, ppranges,
 				    (const gs_color_space *)
 				    &pcs->params.pattern.base_space,
 				    &pdf_color_space_names, false)) < 0 ||
@@ -735,6 +759,7 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
      */
     {
 	pdf_resource_t *pres;
+	pdf_color_space_t *ppcs;
 
 	if (code < 0 ||
 	    (code = pdf_alloc_resource(pdev, resourceColorSpace, pcs->id,
@@ -743,6 +768,23 @@ pdf_color_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	    COS_FREE(pca, "pdf_color_space");
 	    return code;
 	}
+	ppcs = (pdf_color_space_t *)pres;
+	if (ranges) {
+	    int num_comp = gs_color_space_num_components(pcs);
+	    gs_range_t *copy_ranges = (gs_range_t *)
+		gs_alloc_byte_array(pdev->pdf_memory, num_comp,
+				    sizeof(gs_range_t), "pdf_color_space");
+
+	    if (copy_ranges == 0) {
+		COS_FREE(pca, "pdf_color_space");
+		return_error(gs_error_VMerror);
+	    }
+	    memcpy(copy_ranges, ranges, num_comp * sizeof(gs_range_t));
+	    ppcs->ranges = copy_ranges;
+	    if (ppranges)
+		*ppranges = copy_ranges;
+	} else
+	    ppcs->ranges = 0;
 	pca->id = pres->object->id;
 	COS_FREE(pres->object, "pdf_color_space");
 	pres->object = (cos_object_t *)pca;
@@ -773,6 +815,7 @@ pdf_pattern_space(gx_device_pdf *pdev, cos_value_t *pvalue,
 	pprints1(pdev->strm, "%s\n", cs_name);
 	pdf_end_resource(pdev);
 	(*ppres)->object->written = true; /* don't write at end */
+	((pdf_color_space_t *)*ppres)->ranges = 0;
     }
     cos_resource_value(pvalue, (*ppres)->object);
     return 0;
