@@ -5422,7 +5422,7 @@ static int icmMeasurement_read(
 	p->flare = read_U16Fixed16Number(bp + 28);
 
 	/* Read the encoded standard illuminant */
-	p->illuminant = (icMeasurementFlare)read_SInt32Number(bp + 32);
+	p->illuminant = (icIlluminant)read_SInt32Number(bp + 32);
 
 	icp->al->free(icp->al, buf);
 	return 0;
