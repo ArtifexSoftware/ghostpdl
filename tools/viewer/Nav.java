@@ -21,7 +21,7 @@ import javax.swing.filechooser.*;
  * @version $Revision$
  * @author Stefan Kemper
  */
-public class Nav extends Gview {
+public class Nav extends Gview  {
 
     public Nav() {
 	pageView = new Gview();
@@ -30,7 +30,7 @@ public class Nav extends Gview {
     protected void runMain(String[] args) {
 	// NB no error checking.
 	pickle.setJob(args[0]);
-	origRes = desiredRes = startingRes/2;
+	origRes = desiredRes = startingRes / zoomWindowRatio;
 	pickle.setRes(desiredRes, desiredRes);
 	pageNumber = 1;
 	pickle.setPageNumber(pageNumber);
@@ -47,8 +47,11 @@ public class Nav extends Gview {
     /** main program */
     public static void main( String[] args )
     {
-	// if (debug)
-	    System.out.print(usage());
+	if (args.length < 1) {
+	    System.out.println("Error: Missing input file\n" + usage());
+	    System.exit(1);
+	}
+	System.out.print(usage());
 	Nav view = new Nav();
         view.runMain(args);
     }
@@ -65,6 +68,10 @@ public class Nav extends Gview {
 	pageView.setPage(pageNumber);
     }
 
+    /** low res image is ready, 
+     * if we are not getting the next page 
+     * start generation of the high res image 
+     */
     public void imageIsReady( BufferedImage newImage ) {
 	super.imageIsReady(newImage);
 
@@ -73,6 +80,8 @@ public class Nav extends Gview {
 	}
     }
 
+    /** moves/drags zoomin box and causes regerenation of a new viewport
+     */
     protected void translate(int x, int y) {
 	origX -= x;
 	origY -= y;
@@ -90,15 +99,29 @@ public class Nav extends Gview {
 	repaint();
     }
 
+    /** Paint low res image with red zoom box
+     *  zoom box uses xor realtime drag.
+     */ 
     public void paint( Graphics g )
     {
-	g.drawImage(currentPage, 0, 0, this);
 	int h = (int)(origH * pageView.origRes / pageView.desiredRes);
-        int w = (int)(origW * pageView.origRes / pageView.desiredRes);
-        g.setColor(Color.red);  	
-	g.drawRect((int)origX, (int)origY, w, h);
+	int w = (int)(origW * pageView.origRes / pageView.desiredRes);
+	if (drag == true) {
+	    g.setXORMode(Color.cyan);
+	    g.drawRect((int)lastX, (int)lastY, w, h);
+	    g.drawRect((int)newX, (int)newY, w, h);
+	}
+	else {
+	    g.setPaintMode();	
+	    g.drawImage(currentPage, 0, 0, this);
+	    g.setColor(Color.red);  	
+	    g.drawRect((int)origX, (int)origY, w, h);
+	}
     }
 
+    /** pageView gets regenerated at higher resolution,
+     * repaint updates zoomin box.
+     */
     protected void zoomIn( int x, int y ) {
 
         double psfx = x / origW * pageView.origW / pageView.origRes * pageView.desiredRes;
@@ -108,11 +131,22 @@ public class Nav extends Gview {
 	repaint();
     }
 
+    /** pageView gets regenerated at lower resolution,
+     * repaint updates zoomin box.
+     */
     protected void zoomOut( int x, int y ) {
         double psfx = x / origW * pageView.origW / pageView.origRes * pageView.desiredRes;
         double psfy = y / origH * pageView.origH / pageView.origRes * pageView.desiredRes;
 	pageView.origX = pageView.origY = 0;
 	pageView.zoomOut(0,0);
+	repaint();
+    }
+
+    /** pageView gets regenerated at requested resolution,
+     * repaint updates zoomin box.
+     */
+    protected void zoomToRes( float res ) {		   
+	pageView.zoomToRes(res);  
 	repaint();
     }
 

@@ -17,7 +17,10 @@ import javax.swing.filechooser.*;
  * @version $Revision$
  * @author Henry Stiles, Stefan Kemper
  */
-public class Gview extends JFrame implements KeyListener, MouseListener,  GpickleObserver {
+public class Gview 
+    extends JFrame 
+    implements KeyListener, MouseListener, MouseMotionListener, GpickleObserver 
+{
 
     /** enables printfs */
     protected final static boolean debug = false;
@@ -27,7 +30,22 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
      *  100dpi gives a bigger starting window.
      *  50 or even 25 may be needed for a very large plot on a small memory machine.
      */
-    protected final static double startingRes = 75;
+    protected double startingRes = 100;
+
+    /** derived classes like: Nav will be 1/zoomWindowRatio in size
+     * startingRes = 100; zoomWindowRation = 2; 
+     * Nav window res is 50.
+     */
+    protected double zoomWindowRatio = 3;
+
+
+    /** enable RTL mode in menu
+     *  try with low startingRes = 25
+     */
+    protected boolean enableRTL = false;
+
+
+    // Non configurable members below 
 
     protected int pageNumber = 1;
     protected BufferedImage currentPage;
@@ -40,22 +58,30 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
     protected double origY = 0;
     protected int tx;
     protected int ty;
-    private boolean drag = false;
+    protected boolean drag = false;
 
+    /** File open, starts off in users home directory */
     private JFileChooser chooser = new JFileChooser();
 
-    /** lots of menu vars */
+    // lots of menu vars 
     private final static boolean popupMenuAllowed = true;
-    private java.awt.PopupMenu popup;
-    private java.awt.Menu menuFile;
-    private java.awt.MenuItem menuFileOpen;
-    private java.awt.MenuItem menuFileQuit;
-    private java.awt.MenuItem menuDPI;
-    private java.awt.MenuItem menuZoomIn;
-    private java.awt.MenuItem menuZoomOut;
-    private java.awt.MenuItem menuPageNum;
-    private java.awt.MenuItem menuPageDwn;
-    private java.awt.MenuItem menuPageUp;
+    private java.awt.PopupMenu      popup;
+    private java.awt.Menu             menuFile;
+    private java.awt.MenuItem           menuFileOpen;
+    private java.awt.MenuItem           menuFileQuit;
+    private java.awt.Menu             menuOpt;
+    private java.awt.Menu               menuOptRes;
+    private java.awt.MenuItem             menuOptResMinus;
+    private java.awt.MenuItem             menuOptResPlus;
+    private java.awt.CheckboxMenuItem   menuOptTextAntiAlias;
+    private java.awt.CheckboxMenuItem   menuOptRTLMode;
+    private java.awt.MenuItem         menuDPI;
+    private java.awt.MenuItem         menuZoomIn;
+    private java.awt.MenuItem         menuZoom600;
+    private java.awt.MenuItem         menuZoomOut;
+    private java.awt.MenuItem         menuPageNum;
+    private java.awt.MenuItem         menuPageDwn;
+    private java.awt.MenuItem         menuPageUp;
 
   
     /** constructor */
@@ -67,6 +93,7 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
 
 	addKeyListener(this);
 	addMouseListener(this);
+	addMouseMotionListener(this);
 
 	initPopupMenu();     
 	
@@ -108,6 +135,68 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
 
 	popup.add(menuFile);
 
+	menuOpt = new java.awt.Menu();
+	menuOpt.setLabel("Options");
+
+	menuOptRes = new java.awt.Menu();
+	menuOptRes.setLabel("Res: " + startingRes);
+        
+	menuOptResMinus = new java.awt.MenuItem();
+	menuOptResMinus.setLabel("Decrease Resolution");	
+	menuOptResMinus.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    if (startingRes > 25)
+			startingRes -= 10; 
+		    menuOptRes.setLabel("Res: " + startingRes);
+                }
+            }
+				  );
+	menuOptRes.add(menuOptResMinus);
+
+	menuOptResPlus = new java.awt.MenuItem();
+	menuOptResPlus.setLabel("Increase Resolution");	
+	menuOptResPlus.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    if (startingRes < 300)
+			startingRes += 10; 
+		    menuOptRes.setLabel("Res: " + startingRes);
+                }
+            }
+				  );
+	menuOptRes.add(menuOptResPlus);
+
+	menuOpt.add(menuOptRes);
+
+	menuOptTextAntiAlias = new java.awt.CheckboxMenuItem();
+	
+	menuOptTextAntiAlias.setState(pickle.getTextAlpha());
+	menuOptTextAntiAlias.setLabel("TextAntiAlias");
+        menuOptTextAntiAlias.addItemListener(new java.awt.event.ItemListener() {
+		public void itemStateChanged(java.awt.event.ItemEvent evt) {
+		    pickle.setTextAlpha( 
+					!menuOptTextAntiAlias.getState() );
+		}
+	    }
+				       );
+	menuOpt.add(menuOptTextAntiAlias);
+
+	if ( enableRTL ) {
+	    menuOptRTLMode = new java.awt.CheckboxMenuItem();
+	
+	    menuOptRTLMode.setState(pickle.getRTL());
+	    menuOptRTLMode.setLabel("RTL");
+	    menuOptRTLMode.addItemListener(new java.awt.event.ItemListener() {
+		    public void itemStateChanged(java.awt.event.ItemEvent evt) {
+			// toggle rtl mode state 
+			pickle.setRTL( ! pickle.getRTL() );
+			// menuOptRTLMode.setEnabled(pickle.getRTL());
+		    }
+		}
+					   );
+	    menuOpt.add(menuOptRTLMode);
+	}
+	popup.add(menuOpt);
+
 	popup.addSeparator();
 
         menuDPI = new java.awt.MenuItem();
@@ -126,12 +215,23 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
 		    origX = 0;
 		    origY = 0;
-		    zoomIn(0,0);    
+		    zoomIn(0,0);     
 		    menuDPI.setLabel("dpi: " + desiredRes);
                 }
             }
 				     );
 	popup.add(menuZoomIn);
+
+        menuZoom600 = new java.awt.MenuItem();
+	menuZoom600.setLabel("Zoom to 600dpi");
+	menuZoom600.addActionListener(new java.awt.event.ActionListener() {
+                public void actionPerformed(java.awt.event.ActionEvent evt) {
+		    zoomToRes(600.0f);
+		    menuDPI.setLabel("dpi: " + desiredRes);
+                }
+            }
+				     );
+	popup.add(menuZoom600);
 
         menuZoomOut = new java.awt.MenuItem();
 	menuZoomOut.setLabel("Zoom Out");
@@ -258,10 +358,37 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
     {
     }
 
+    /** used to drag translations in realtime
+     */
+    protected int lastX;
+    protected int lastY;
+    /** used to drag translations in realtime
+     */
+    protected int newX = 0;
+    protected int newY = 0;
+    public void mouseDragged(MouseEvent e) {
+	lastX = newX;
+	lastY = newY;
+	newX = e.getX() - tx + (int)origX;
+	newY = e.getY() - ty + (int)origY;
+	repaint();
+    }
+    public void mouseMoved(MouseEvent e) {
+    }
+
     /** paint frame contents */
     public void paint( Graphics g )
     {
-	g.drawImage(currentPage, 0, 0, this);
+	if (drag == true) {
+	    // ugly but gets the point across 
+	    g.drawImage(currentPage, 
+			newX - (int)origX, 
+			newY - (int)origY, 
+			this);
+	}
+	else {
+	    g.drawImage(currentPage, 0, 0, this);
+	}
     }	
 
     /** callback from PickleObserver occurs when Image is complete. */
@@ -275,6 +402,8 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
 	repaint();
     }
 
+    /** starts drag translation, or popup menu
+     */ 
     public void mousePressed(MouseEvent e) {
 
 
@@ -285,37 +414,42 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
 		popup.show(this, e.getX(), e.getY());
 		return;
 	    }
-
-	    if ( e.isControlDown() ) {
-		zoomOut(e.getX(), e.getY());
-	    }
 	    else {
-		zoomIn(e.getX(), e.getY());
+		// if menus are fixed then right mouse button zooms
+		if ( e.isControlDown() ) {
+		    zoomOut(e.getX(), e.getY());
+		}
+		else {
+		    zoomIn(e.getX(), e.getY());
+		}
 	    }
 	}
 	else {
 	    if ( e.isControlDown() ) {
+		// translate to origin
 	        desiredRes = origRes;
 		origX = 0;
 		origY = 0;
 	        translate(0,0);
 	    }
 	    else {
+		// drag translation BEGIN
 	        tx = e.getX();
 	        ty = e.getY();
 	        drag = true;
 	    }
 	}
-	
-	
     }
-    public void mouseClicked(MouseEvent e) {
-    }
+
+    /** ends drag translation */
     public void mouseReleased(MouseEvent e) {
         if (e.isControlDown() == false && drag) {
            translate(tx - e.getX(), ty - e.getY());
            drag = false;
 	}
+    }
+
+    public void mouseClicked(MouseEvent e) {
     }
     public void mouseEntered(MouseEvent e) {
     }
@@ -355,6 +489,7 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
         createViewPort( x1, y1, sfx, sfy, origRes, origRes);
    }
 
+    /** Increase resolution by factor of 2 */
     protected void zoomIn( int x, int y ) {
 
         double x1 = origX = origX + (x * desiredRes / origRes);
@@ -368,6 +503,7 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
         createViewPort( x1, y1, sfx, sfy, origRes, origRes);
     }
 
+    /** decrease resolution by factor of 2 */
     protected void zoomOut( int x, int y ) {
         double x1 = origX = origX + (x * desiredRes / origRes);
         double y1 = origY = origY + (y * desiredRes / origRes);
@@ -379,6 +515,16 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
 
         createViewPort( x1, y1, sfx, sfy, origRes, origRes );
     }
+
+    /** Set zoom resolution to asked for resolution at 0,0
+     */
+    protected void zoomToRes( float res ) {		   
+	origX = 0;
+	origY = 0;
+	desiredRes = res / 2.0; 
+	zoomIn(0,0);  // internal multiply by 2 gets back to asked for res    
+    }
+
 
     /** Generate a new page with  translation, scale, resolution  */
     private void createViewPort( double tx,   double ty,
@@ -418,8 +564,12 @@ public class Gview extends JFrame implements KeyListener, MouseListener,  Gpickl
     /** main program */
     public static void main( String[] args )
     {
-	// if (debug)
-	    System.out.print(usage());
+	if (args.length < 1) {
+	    System.out.println("Error: Missing input file\n" + usage());
+	    System.exit(1);
+	}
+
+	System.out.print(usage());
 	Gview view = new Gview();
         view.runMain(args);
     }
