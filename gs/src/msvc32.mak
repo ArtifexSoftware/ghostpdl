@@ -656,7 +656,8 @@ TOP_MAKEFILES=$(MAKEFILE) $(GLSRCDIR)\msvccmd.mak $(GLSRCDIR)\msvctail.mak $(GLS
 
 BEGINFILES2=$(GLGENDIR)\lib32.rsp\
  $(GLOBJDIR)\*.exp $(GLOBJDIR)\*.ilk $(GLOBJDIR)\*.pdb $(GLOBJDIR)\*.lib\
- $(BINDIR)\*.exp $(BINDIR)\*.ilk $(BINDIR)\*.pdb $(BINDIR)\*.lib obj.pdb
+ $(BINDIR)\*.exp $(BINDIR)\*.ilk $(BINDIR)\*.pdb $(BINDIR)\*.lib obj.pdb\
+ obj.idb $(GLOBJDIR)\gs.pch
 
 !include $(GLSRCDIR)\msvccmd.mak
 !include $(GLSRCDIR)\winlib.mak

@@ -142,10 +142,17 @@ CD=/DDEBUG
 CD=
 !endif
 
+# Precompiled headers
+!if $(MSVC_VERSION) >= 8
+CPCH=/Fp$(GLOBJDIR)\gs.pch
+!else
+CPCH=/YX /Fp$(GLOBJDIR)\gs.pch
+!endif
+
 !if $(TDEBUG)!=0
 # /Fd designates the directory for the .pdb file.
 # Note that it must be followed by a space.
-CT=/ZI /Od /Fd$(GLOBJDIR) $(NULL) /Gi /YX /Fp$(GLOBJDIR)\gs.pch
+CT=/ZI /Od /Fd$(GLOBJDIR) $(NULL) /Gi $(CPCH)
 LCT=/DEBUG /INCREMENTAL:YES
 COMPILE_FULL_OPTIMIZED=    # no optimization when debugging
 COMPILE_WITH_FRAMES=    # no optimization when debugging
@@ -217,7 +224,7 @@ CC_NO_WARN=$(CC_)
 
 # Compiler for auxiliary programs
 
-CCAUX=$(COMPAUX) $(VC8WARN) /O2
+CCAUX=$(COMPAUX) $(VC8WARN)
 
 # Compiler for Windows programs.
 CCWINFLAGS=$(COMPILE_FULL_OPTIMIZED)
