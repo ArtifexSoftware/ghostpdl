@@ -343,6 +343,9 @@ class pxl_dis:
 
         # the n'th operator in the stream
         self.operator_position = 0
+
+        # true if we get UEL
+        self.endjob = 0
         
     def big_endian_stream(self):
         return (self.binding == ')')
@@ -820,13 +823,17 @@ class pxl_dis:
         if ( self.data[self.index:self.index+9] == "\033%-12345X" ):
             print 'string* \\x1B%-12345X'
             self.index = self.index + 9
+            self.endjob = 1;
             return 1
         return 0
         
     def operatorSequences(self):
         while ( self.attributeLists() and self.operatorTag() ) or self.UEL():
             print
-            continue
+            if ( self.endjob == 1 ):
+                raise IndexError # hack see below
+            else:
+                continue
         
     def disassemble(self):
         try:
@@ -835,10 +842,10 @@ class pxl_dis:
         except IndexError:
             return
         else:
-            print "dissassemble failed at file position %d" % self.index
+            print >> sys.stderr, "dissassemble failed at file position %d" % self.index
             endpos = min(len(self.data), self.index + 25)
             for byte in self.data[self.index:endpos]:
-                print hex(ord(byte)),
+                print >> sys.stderr, hex(ord(byte)),
             print
 
 if __name__ == '__main__':
