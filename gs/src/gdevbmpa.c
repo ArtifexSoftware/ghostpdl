@@ -543,8 +543,8 @@ bmpa_reader_buffer_planes(gx_device_printer *pdev, FILE *file, int num_copies,
 			goto done;
 		    }
 		}
-		crdev->buf_procs.destroy_buf_device(bdev);
 	    }
+	    crdev->buf_procs.destroy_buf_device(bdev);
 	}
     }
 
