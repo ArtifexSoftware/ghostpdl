@@ -1379,6 +1379,12 @@ pdf_encode_glyph(gx_device_pdf *pdev, int chr, gs_glyph glyph,
 /*
  * Write out commands to make the output state match the processing state.
  */
+private double
+font_matrix_scaling(const gs_font *font)
+{
+    return fabs((font->FontMatrix.yy != 0 ? font->FontMatrix.yy :
+		 font->FontMatrix.yx));
+}
 private int
 pdf_write_text_process_state(gx_device_pdf *pdev,
 			     const gs_text_enum_t *pte,	/* for pdcolor, pis */
@@ -1422,8 +1428,20 @@ pdf_write_text_process_state(gx_device_pdf *pdev,
 	    /* Also write all the parameters for stroking. */
 	    gs_imager_state *pis = pte->pis;
 	    float save_width = pis->line_params.half_width;
+	    const gs_font *font = ppts->font;
+	    const gs_font *bfont = font;
+	    double scaled_width = font->StrokeWidth;
 
-	    pis->line_params.half_width = ppts->font->StrokeWidth / 2;
+	    /*
+	     * The font's StrokeWidth is in the character coordinate system,
+	     * which means that it should be scaled by the inverse of any
+	     * scaling in the FontMatrix.  Do the best we can with this.
+	     */
+	    while (bfont != bfont->base)
+		bfont = bfont->base;
+	    scaled_width *= font_matrix_scaling(bfont) /
+		font_matrix_scaling(font);
+	    pis->line_params.half_width = scaled_width / 2;
 	    code = pdf_prepare_stroke(pdev, pis);
 	    if (code >= 0) {
 		/*
