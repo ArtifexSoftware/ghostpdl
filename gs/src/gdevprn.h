@@ -393,13 +393,13 @@ extern const gx_device_procs prn_std_procs;
 /* This accounts for the short parameter names here and below. */
 #define prn_device_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, ncomp, depth, mg, mc, dg, dc, print_page)\
 	std_device_full_body_type(dtype, &procs, dname, &st_device_printer,\
-	  (int)((long)(w10) * (xdpi) / 10),\
-	  (int)((long)(h10) * (ydpi) / 10),\
+	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
 	  xdpi, ydpi,\
 	  ncomp, depth, mg, mc, dg, dc,\
-	  -(lo) * (xdpi), -(to) * (ydpi),\
-	  (lm) * 72.0, (bm) * 72.0,\
-	  (rm) * 72.0, (tm) * 72.0\
+	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
+	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
 	),\
 	prn_device_body_rest_(print_page)
 
@@ -409,12 +409,12 @@ extern const gx_device_procs prn_std_procs;
 
 #define prn_device_std_margins_body(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page)\
 	std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
-	  (int)((long)(w10) * (xdpi) / 10),\
-	  (int)((long)(h10) * (ydpi) / 10),\
+	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
 	  xdpi, ydpi, color_bits,\
-	  -(lo) * (xdpi), -(to) * (ydpi),\
-	  (lm) * 72.0, (bm) * 72.0,\
-	  (rm) * 72.0, (tm) * 72.0\
+	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
+	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
 	),\
 	prn_device_body_rest_(print_page)
 
@@ -424,12 +424,12 @@ extern const gx_device_procs prn_std_procs;
 
 #define prn_device_std_margins_body_copies(dtype, procs, dname, w10, h10, xdpi, ydpi, lo, to, lm, bm, rm, tm, color_bits, print_page_copies)\
 	std_device_std_color_full_body_type(dtype, &procs, dname, &st_device_printer,\
-	  (int)((long)(w10) * (xdpi) / 10),\
-	  (int)((long)(h10) * (ydpi) / 10),\
+	  (int)((float)(w10) * (xdpi) / 10 + 0.5),\
+	  (int)((float)(h10) * (ydpi) / 10 + 0.5),\
 	  xdpi, ydpi, color_bits,\
-	  -(lo) * (xdpi), -(to) * (ydpi),\
-	  (lm) * 72.0, (bm) * 72.0,\
-	  (rm) * 72.0, (tm) * 72.0\
+	  (float)(-(lo) * (xdpi)), (float)(-(to) * (ydpi)),\
+	  (float)((lm) * 72.0), (float)((bm) * 72.0),\
+	  (float)((rm) * 72.0), (float)((tm) * 72.0)\
 	),\
 	prn_device_body_copies_rest_(print_page_copies)
 

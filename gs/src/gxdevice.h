@@ -52,9 +52,9 @@
 /* U.S. letter paper (8.5" x 11"). */
 #define DEFAULT_WIDTH_10THS_US_LETTER 85
 #define DEFAULT_HEIGHT_10THS_US_LETTER 110
-/* A4 paper (210mm x 297mm).  The dimensions are off by a few mm.... */
-#define DEFAULT_WIDTH_10THS_A4 83
-#define DEFAULT_HEIGHT_10THS_A4 117
+/* A4 paper (210mm x 297mm), we use 595pt x 842pt. */
+#define DEFAULT_WIDTH_10THS_A4 82.6389
+#define DEFAULT_HEIGHT_10THS_A4 116.9444
 /* Choose a default.  A4 may be set in the makefile. */
 #ifdef A4
 #  define DEFAULT_WIDTH_10THS DEFAULT_WIDTH_10THS_A4
@@ -76,6 +76,7 @@
  * but some compilers (the Ultrix 3.X pcc compiler and the HPUX compiler)
  * can't cast a computed float to an int.  That's why we specify
  * the page width and height in inches/10 instead of inches.
+ * This has been now been changed to use floats.
  *
  * Note that the macro is broken up so as to be usable for devices that
  * add further initialized state to the generic device.
@@ -94,8 +95,8 @@
  */
 #define std_device_part2_(width, height, x_dpi, y_dpi)\
 	{ gx_no_color_index, gx_no_color_index }, width, height,\
-	{ (((width) * 72.0 + 0.5) - 0.5) / (x_dpi)/*MediaSize[0]*/,\
-	  (((height) * 72.0 + 0.5) - 0.5) / (y_dpi)/*MediaSize[1]*/},\
+	{ (float)((((width) * 72.0 + 0.5) - 0.5) / (x_dpi))/*MediaSize[0]*/,\
+	  (float)((((height) * 72.0 + 0.5) - 0.5) / (y_dpi))/*MediaSize[1]*/},\
 	{ 0, 0, 0, 0 }/*ImagingBBox*/, 0/*ImagingBBox_set*/,\
 	{ x_dpi, y_dpi }/*HWResolution*/, { x_dpi, y_dpi }/*MarginsHWResolution*/
 

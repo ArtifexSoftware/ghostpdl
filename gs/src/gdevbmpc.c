@@ -142,9 +142,9 @@ write_bmp_depth_header(gx_device_printer *pdev, FILE *file, int depth,
 	 */
 #define INCHES_PER_METER (100 /*cm/meter*/ / 2.54 /*cm/inch*/)
 	BMP_ASSIGN_DWORD(ihdr.xPelsPerMeter,
-			 (dword)(pdev->x_pixels_per_inch * INCHES_PER_METER));
+		 (dword)(pdev->x_pixels_per_inch * INCHES_PER_METER + 0.5));
 	BMP_ASSIGN_DWORD(ihdr.yPelsPerMeter,
-			 (dword)(pdev->y_pixels_per_inch * INCHES_PER_METER));
+		 (dword)(pdev->y_pixels_per_inch * INCHES_PER_METER + 0.5));
 #undef INCHES_PER_METER
 	BMP_ASSIGN_DWORD(ihdr.clrUsed, 0);
 	BMP_ASSIGN_DWORD(ihdr.clrImportant, 0);
