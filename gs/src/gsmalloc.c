@@ -27,7 +27,7 @@
 #include "gsmalloc.h"
 #include "gsmemlok.h"		/* locking (multithreading) wrapper */
 #include "gsmemret.h"		/* retrying wrapper */
-#include "gslibctx.h"
+
 
 /* ------ Heap allocator ------ */
 
