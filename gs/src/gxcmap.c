@@ -153,14 +153,35 @@ const gx_color_map_procs *
 gx_default_get_cmap_procs(const gs_imager_state *pis, const gx_device * dev)
 {
     return (gx_device_must_halftone(dev) ? cmap_few : cmap_many)
-	[dev->color_info.num_components];
+      [dev->color_info.num_cmap_components];
 }
 
-/* Set the color mapping procedures in the graphics state. */
+/* Set the color mapping procedures in the graphics state. 
+ */
 void
 gx_set_cmap_procs(gs_imager_state * pis, const gx_device * dev)
 {
     pis->cmap_procs = gx_get_cmap_procs(pis, dev);
+}
+
+/* Set Gray color maps or restore color cmaps 
+ * NB this can't be called at any time during rendering.
+ */
+bool
+gx_set_cmap_procs_to_gray(gs_imager_state * pis, const gx_device * dev, bool gray)
+{
+    if ( dev->color_info.force_mono != 1 ) {
+        if (gray && dev->color_info.num_components >= 3 ) {
+	    dev->color_info.num_cmap_components = 1;
+	    gx_set_cmap_procs(pis, dev);
+	} else if ( gray == false && (dev->color_info.num_components != 
+				      dev->color_info.num_cmap_components) ) {
+  	    dev->color_info.num_cmap_components = dev->color_info.num_components;
+	    gx_set_cmap_procs(pis, dev);
+	}
+	gx_unset_dev_color((gs_state*)pis);
+    }
+    return (dev->color_info.num_cmap_components == 1);
 }
 
 /* Remap the color in the graphics state. */

@@ -162,8 +162,9 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	(code = param_write_int(plist, "TextAlphaBits",
 				&dev->color_info.anti_alias.text_bits)) < 0 ||
 	(code = param_write_int(plist, "GraphicsAlphaBits",
-				&dev->color_info.anti_alias.graphics_bits)) < 0
-
+				&dev->color_info.anti_alias.graphics_bits)) < 0 ||
+	(code = param_write_int(plist, "ForceMono", 
+				&dev->color_info.force_mono)) < 0 
 	)
 	return code;
 
@@ -180,6 +181,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 	    )
 	    return code;
     }
+
     if (param_requested(plist, "HWColorMap")) {
 	byte palette[3 << 8];
 
@@ -431,7 +433,10 @@ gx_default_put_params(gx_device * dev, gs_param_list * plist)
     bool ignc = dev->IgnoreNumCopies;
     bool ucc = dev->UseCIEColor;
     gs_param_float_array ibba;
-    bool ibbnull = false;
+    bool ibbnull = false;    
+    bool force_mono;
+
+
     int colors = dev->color_info.num_components;
     int depth = dev->color_info.depth;
     int GrayValues = dev->color_info.max_gray + 1;
@@ -579,6 +584,25 @@ nce:
     if ((code = param_read_bool(plist, (param_name = "UseCIEColor"), &ucc)) < 0) {
 	ecode = code;
 	param_signal_error(plist, param_name, ecode);
+    }
+    switch (code = param_read_int(plist, (param_name = "ForceMono"), &force_mono)) {
+    case 0:
+	if (force_mono == 1) {
+	    dev->color_info.num_cmap_components = 1;
+	    dev->color_info.force_mono = 1;
+	    break;
+	}
+	else if (force_mono == 0) {
+	    dev->color_info.num_cmap_components = dev->color_info.num_components;
+    	    dev->color_info.force_mono = 0;
+	    break;
+	}
+	code = gs_error_rangecheck;
+    default:
+	ecode = code;
+	param_signal_error(plist, param_name, ecode);
+    case 1:
+	break;
     }
     if ((code = param_anti_alias_bits(plist, "TextAlphaBits", &tab)) < 0)
 	ecode = code;

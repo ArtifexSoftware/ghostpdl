@@ -176,6 +176,10 @@ typedef struct gx_device_color_info_s {
     int num_components;		/* doesn't include alpha: */
 				/* 0 = alpha only, 1 = gray only, */
 				/* 3 = RGB, 4 = CMYK */
+    int num_cmap_components;    /* num_components for color mapper */
+                                /* must be <= num_components default = */
+                                /* used to force gray or K on rgb or cmyk devices */ 
+    int force_mono;             /* Force gray on entire job */
     int depth;			/* # of bits per pixel */
     gx_color_value max_gray;	/* # of distinct gray levels -1 */
     gx_color_value max_color;	/* # of distinct color levels -1 */
@@ -187,7 +191,7 @@ typedef struct gx_device_color_info_s {
 } gx_device_color_info;
 
 #define dci_alpha_values(nc,depth,mg,mc,dg,dc,ta,ga)\
-  { nc, depth, mg, mc, dg, dc, { ta, ga } }
+  { nc, nc, 0, depth, mg, mc, dg, dc, { ta, ga } }
 #define dci_values(nc,depth,mg,mc,dg,dc)\
   dci_alpha_values(nc, depth, mg, mc, dg, dc, 1, 1)
 #define dci_std_color(color_bits)\
