@@ -14,7 +14,7 @@
   San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 */
 
-/* $Id$ */
+/*$Id$ */
 /* Device for tracking bounding box */
 #include "math_.h"
 #include "memory_.h"
@@ -1172,44 +1172,6 @@ bbox_create_compositor(gx_device * dev,
 
 /* ------ Text imaging ------ */
 
-extern_st(st_gs_text_enum);
-
-typedef struct bbox_text_enum_s {
-    gs_text_enum_common;
-    gs_text_enum_t *target_info;
-} bbox_text_enum;
-
-gs_private_st_suffix_add1(st_bbox_text_enum, bbox_text_enum, "bbox_text_enum",
-			bbox_text_enum_enum_ptrs, bbox_text_enum_reloc_ptrs,
-			  st_gs_text_enum, target_info);
-
-private text_enum_proc_resync(bbox_text_resync);
-private text_enum_proc_process(bbox_text_process);
-private text_enum_proc_is_width_only(bbox_text_is_width_only);
-private text_enum_proc_current_width(bbox_text_current_width);
-private text_enum_proc_set_cache(bbox_text_set_cache);
-private text_enum_proc_retry(bbox_text_retry);
-private text_enum_proc_release(bbox_text_release);
-private rc_free_proc(bbox_text_free);
-
-private const gs_text_enum_procs_t bbox_text_procs =
-{
-    bbox_text_resync, bbox_text_process, bbox_text_is_width_only,
-    bbox_text_current_width, bbox_text_set_cache, bbox_text_retry,
-    bbox_text_release
-};
-
-private void
-bbox_text_enum_copy(bbox_text_enum *pbte)
-{
-    rc_header rc_save;
-
-    rc_save = pbte->rc;
-    *(gs_text_enum_t *)pbte = *pbte->target_info;	/* copy common info */
-    pbte->rc = rc_save;
-    pbte->procs = &bbox_text_procs;
-}
-
 private int
 bbox_text_begin(gx_device * dev, gs_imager_state * pis,
 		const gs_text_params_t * text, gs_font * font,
@@ -1218,105 +1180,14 @@ bbox_text_begin(gx_device * dev, gs_imager_state * pis,
 		gs_memory_t * memory, gs_text_enum_t ** ppenum)
 {
     gx_device_bbox *const bdev = (gx_device_bbox *) dev;
-    gx_device *tdev = bdev->target;
-    bbox_text_enum *pbte;
-    int code;
-
-    if (tdev == 0)
-	return gx_default_text_begin(dev, pis, text, font, path, pdcolor,
+    int code = gx_default_text_begin(dev, pis, text, font, path, pdcolor,
 				     pcpath, memory, ppenum);
-    rc_alloc_struct_1(pbte, bbox_text_enum, &st_bbox_text_enum, memory,
-		      return_error(gs_error_VMerror),
-		      "bbox_text_begin");
-    pbte->rc.free = bbox_text_free;
-    code =
-	(*dev_proc(tdev, text_begin))
-	(tdev, pis, text, font, path, pdcolor, pcpath, memory,
-	 &pbte->target_info);
-    if (code < 0) {
-	gs_free_object(memory, pbte, "bbox_text_begin");
-	return code;
+
+    if (bdev->target != NULL) {
+        /* See note on imaging_dev in gxtext.h */
+        rc_assign((*ppenum)->imaging_dev, dev, "bbox_text_begin");
     }
-    bbox_text_enum_copy(pbte);
 
-    /* See note on imaging_dev in gxtext.h */
-    rc_assign(pbte->target_info->imaging_dev, dev, "bbox_text_begin");
-
-    *ppenum = (gs_text_enum_t *) pbte;
     return code;
 }
 
-private int
-bbox_text_resync(gs_text_enum_t *pte, const gs_text_enum_t *pfrom)
-{
-    bbox_text_enum *const pbte = (bbox_text_enum *) pte;
-    int code = gs_text_resync(pbte->target_info, pfrom);
-
-    if (code >= 0)
-	bbox_text_enum_copy(pbte);
-    return code;
-}
-
-private int
-bbox_text_process(gs_text_enum_t * pte)
-{
-    bbox_text_enum *const pbte = (bbox_text_enum *) pte;
-    int code = gs_text_process(pbte->target_info);
-
-    gs_text_enum_copy_dynamic(pte, pbte->target_info, true);
-    return code;
-}
-
-private bool
-bbox_text_is_width_only(const gs_text_enum_t *pte)
-{
-    const bbox_text_enum *const pbte = (const bbox_text_enum *)pte;
-
-    return gs_text_is_width_only(pbte->target_info);
-}
-
-private int
-bbox_text_current_width(const gs_text_enum_t *pte, gs_point *pwidth)
-{
-    const bbox_text_enum *const pbte = (const bbox_text_enum *)pte;
-
-    return gs_text_current_width(pbte->target_info, pwidth);
-}
-
-private int
-bbox_text_set_cache(gs_text_enum_t * pte, const double *values,
-		    gs_text_cache_control_t control)
-{
-    bbox_text_enum *const pbte = (bbox_text_enum *) pte;
-    gs_text_enum_t *tpte = pbte->target_info;
-    int code = gs_text_set_cache(tpte, values, control);
-
-    if (code < 0)
-	return code;
-    /* Copy back the dynamic information for the client. */
-    pte->index = tpte->index;
-    return code;
-}
-
-private int
-bbox_text_retry(gs_text_enum_t *pte)
-{
-    bbox_text_enum *const pbte = (bbox_text_enum *) pte;
-
-    return gs_text_retry(pbte->target_info);
-}
-
-private void
-bbox_text_release(gs_text_enum_t *pte, client_name_t cname)
-{
-    bbox_text_enum *const pbte = (bbox_text_enum *)pte;
-
-    gs_text_release(pbte->target_info, cname);
-}
-
-private void
-bbox_text_free(gs_memory_t * memory, void *vpte, client_name_t cname)
-{
-    bbox_text_release((gs_text_enum_t *)vpte, cname);
-    rc_free_struct_only(memory, vpte, cname);
-}
