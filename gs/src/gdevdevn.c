@@ -55,6 +55,43 @@ typedef struct spotcmyk_device_s {
     gs_devn_params devn_params;
 } spotcmyk_device;
 
+/* GC procedures */
+private 
+ENUM_PTRS_WITH(spotcmyk_device_enum_ptrs, spotcmyk_device *pdev)
+{
+    if (index < pdev->devn_params.separations.num_separations)
+	ENUM_RETURN(pdev->devn_params.separations.names[index]);
+    ENUM_PREFIX(st_device_printer,
+		    pdev->devn_params.separations.num_separations);
+}
+
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(spotcmyk_device_reloc_ptrs, spotcmyk_device *pdev)
+{
+    RELOC_PREFIX(st_device_printer);
+    {
+	int i;
+
+	for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
+	    RELOC_PTR(spotcmyk_device, devn_params.separations.names[i]);
+	}
+    }
+}
+RELOC_PTRS_END
+
+/* Even though spotcmyk_device_finalize is the same as gx_device_finalize, */
+/* we need to implement it separately because st_composite_final */
+/* declares all 3 procedures as private. */
+private void
+spotcmyk_device_finalize(void *vpdev)
+{
+    gx_device_finalize(vpdev);
+}
+
+gs_private_st_composite_final(st_spotcmyk_device, spotcmyk_device,
+    "spotcmyk_device", spotcmyk_device_enum_ptrs, spotcmyk_device_reloc_ptrs,
+    spotcmyk_device_finalize);
+
 /*
  * Macro definition for DeviceN procedures
  */
@@ -111,7 +148,9 @@ typedef struct spotcmyk_device_s {
 	get_color_mapping_procs,	/* get_color_mapping_procs */\
 	spotcmyk_get_color_comp_index,	/* get_color_comp_index */\
 	spotcmyk_encode_color,		/* encode_color */\
-	spotcmyk_decode_color		/* decode_color */\
+	spotcmyk_decode_color,		/* decode_color */\
+	NULL,				/* pattern_manage */\
+	NULL				/* fill_rectangle_hl_color */\
 }
 
 fixed_colorant_name DeviceCMYKComponents[] = {
@@ -123,6 +162,25 @@ fixed_colorant_name DeviceCMYKComponents[] = {
 };
 
 
+#define spotcmyk_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
+    std_device_full_body_type_extended(spotcmyk_device, &procs, dname,\
+	  &st_spotcmyk_device,\
+	  (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
+	  (int)((long)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10),\
+	  X_DPI, Y_DPI,\
+    	  GX_DEVICE_COLOR_MAX_COMPONENTS,	/* MaxComponents */\
+	  ncomp,		/* NumComp */\
+	  pol,			/* Polarity */\
+	  depth, 0,		/* Depth, GrayIndex */\
+	  mg, mc,		/* MaxGray, MaxColor */\
+	  mg + 1, mc + 1,	/* DitherGray, DitherColor */\
+	  GX_CINFO_SEP_LIN,	/* Linear & Separable */\
+	  cn,			/* Process color model name */\
+	  0, 0,			/* offsets */\
+	  0, 0, 0, 0		/* margins */\
+	),\
+	prn_device_body_rest_(spotcmyk_print_page)
+
 /*
  * Example device with CMYK and spot color support
  */
@@ -130,22 +188,12 @@ private const gx_device_procs spot_cmyk_procs = device_procs(get_spotcmyk_color_
 
 const spotcmyk_device gs_spotcmyk_device =
 {   
-    prn_device_body_extended(spotcmyk_device, spot_cmyk_procs, "spotcmyk",
-	 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	 X_DPI, Y_DPI,		/* X and Y hardware resolution */
-	 0, 0, 0, 0,		/* margins */
-    	 GX_DEVICE_COLOR_MAX_COMPONENTS, 4,	/* MaxComponents, NumComp */
-	 GX_CINFO_POLARITY_SUBTRACTIVE,		/* Polarity */
-	 4, 0,			/* Depth, Gray_index, */
-	 1, 1, 2, 2,		/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
-	 "DeviceCMYK",		/* Process color model name */
-	 spotcmyk_print_page),	/* Printer page print routine */
-
+    spotcmyk_device_body(spot_cmyk_procs, "spotcmyk", 4, GX_CINFO_POLARITY_ADDITIVE, 4, 1, 1, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 1,			/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -159,23 +207,12 @@ private const gx_device_procs devicen_procs = device_procs(get_devicen_color_map
 
 const spotcmyk_device gs_devicen_device =
 {   
-    prn_device_body_extended(spotcmyk_device, devicen_procs, "devicen",
-	 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	 X_DPI, Y_DPI,		/* X and Y hardware resolution */
-	 0, 0, 0, 0,		/* margins */
-	 GX_DEVICE_COLOR_MAX_COMPONENTS, 1,	/* MaxComponents, NumComp */
-				/* Note: We start with at least one component */
-	 GX_CINFO_POLARITY_SUBTRACTIVE,		/* Polarity */
-	 8, 0,			/* Depth, Gray_index, */
-	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
-	 "DeviceN",		/* Process color model name */
-				/* Note: We start with at least one component */
-	 spotcmyk_print_page),	/* Printer page print routine */
+    spotcmyk_device_body(devicen_procs, "devicen", 4, GX_CINFO_POLARITY_ADDITIVE, 32, 255, 255, "DeviceCMYK"),
     /* DeviceN device specific parameters */
     { 8,			/* Bits per color - must match ncomp, depth, etc. above */
       NULL,			/* No names for standard DeviceN color model */
-      0,			/* No standarad colorants for DeviceN */
+      0,			/* No standard colorants for DeviceN */
+      0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3 }		/* Initial component order */
@@ -609,7 +646,7 @@ spotcmyk_put_params(gx_device * pdev, gs_param_list * plist)
 }
 
 /*
- * devicen_pat_params_no_sep_order()
+ * devicen_put_params_no_sep_order()
  *
  * This routine handles most of the DeviceN related parameters.  It does
  * not handle the SeparationOrder parameter.  Some high level devices do
@@ -652,8 +689,23 @@ devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
 	        pparams->std_colorant_names;
 
 	    for (i = num_spot = 0; i < num_names; i++) {
-	        if (!check_process_color_names(pcomp_names, &scna.data[i]))
-	            pparams->separations.names[num_spot++] = &scna.data[i];
+		/* Verify that the name is not one of our process colorants */
+	        if (!check_process_color_names(pcomp_names, &scna.data[i])) {
+		    gs_param_string * pstr_param;
+		    byte * pseparation;
+		    int name_size = scna.data[i].size;
+
+		    /* We have a new separation */
+		    pstr_param = (gs_param_string *)gs_alloc_bytes(pdev->memory,
+			sizeof(gs_param_string), "tiffsep_get_color_comp_index");
+		    pseparation = (byte *)gs_alloc_bytes(pdev->memory,
+				name_size, "tiffsep_get_color_comp_index");
+		    memcpy(pseparation, scna.data[i].data, name_size);
+		    pstr_param->data = pseparation;
+		    pstr_param->size = name_size;
+		    pstr_param->persistent = false;
+	            pparams->separations.names[num_spot++] = pstr_param;
+		}
 	    }
 	    pparams->separations.num_separations = num_spot;
 	    for (i = 0; i < num_spot + npcmcolors; i++)
@@ -661,11 +713,14 @@ devicen_put_params_no_sep_order(gx_device * pdev, gs_devn_params * pparams,
         }
 	/*
 	 * If we have SeparationOrder specified then the number of components
-	 * is given by the number of names in the list.  Otherwise the number
-	 * of ProcessColorModel components and SeparationColorNames is used.
+	 * is given by the number of names in the list.  Otherwise check if
+	 * the MaxSeparations parameter has specified a value.  If so then use
+	 * that value, otherwise use the number of ProcessColorModel components
+	 * plus the number of SeparationColorNames is used.
 	 */
         pdev->color_info.num_components = (num_order) ? num_order 
-						      : npcmcolors + num_spot;
+		: (pparams->max_separations) ?  pparams->max_separations
+					    : npcmcolors + num_spot;
         /* 
          * The DeviceN device can have zero components if nothing has been
 	 * specified.  This causes some problems so force at least one component
@@ -733,6 +788,12 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
     if (sona.data != 0 && sona.size > GX_DEVICE_COLOR_MAX_COMPONENTS)
 	return_error(gs_error_rangecheck);
 
+    /*
+     * Process the remainder of the DeviceN and other printer related
+     * parameters.
+     */
+    ecode = devicen_put_params_no_sep_order(pdev, pparams, plist);
+
     /* Separations are only valid with a subrtractive color model */
     if (pdev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE) {
         /*
@@ -760,11 +821,14 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
         }
 	/*
 	 * If we have SeparationOrder specified then the number of components
-	 * is given by the number of names in the list.  Otherwise the number
-	 * of ProcessColorModel components and SeparationColorNames is used.
+	 * is given by the number of names in the list.  Otherwise check if
+	 * the MaxSeparations parameter has specified a value.  If so then use
+	 * that value, otherwise use the number of ProcessColorModel components
+	 * plus the number of SeparationColorNames is used.
 	 */
         pdev->color_info.num_components = (num_order) ? num_order 
-						      : npcmcolors + num_spot;
+		: (pparams->max_separations) ?  pparams->max_separations
+					    : npcmcolors + num_spot;
         /* 
          * The DeviceN device can have zero components if nothing has been
 	 * specified.  This causes some problems so force at least one component
@@ -775,13 +839,7 @@ devicen_put_params(gx_device * pdev, gs_devn_params * pparams,
         pdev->color_info.depth = bpc_to_depth(pdev->color_info.num_components, 
 						pparams->bitspercomponent);
     }
-    /*
-     * If no error (so far) then check for the remainder of the DeviceN
-     * and other printer related parameters.
-     */
-    if (ecode >= 0)
-        ecode = devicen_put_params_no_sep_order(pdev, pparams, plist);
-
+    
     /* If we have an error then restore original data. */
     if (ecode < 0) {
 	pdev->color_info = save_info;

@@ -645,10 +645,10 @@ gs_color_name_component_number(const gx_device * dev, const char * pname,
     int num_colorant;
 
 #define check_colorant_name(dev, name) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), 0))
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), NO_COMP_NAME_TYPE))
 
 #define check_colorant_name_length(dev, name, length) \
-    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, 0))
+    ((*dev_proc(dev, get_color_comp_index)) (dev, name, length, NO_COMP_NAME_TYPE))
 
 #define check_name(str, pname, length) \
     ((strlen(str) == length) && (strncmp(pname, str, length) == 0))
@@ -1250,7 +1250,7 @@ gx_ht_install(gs_state * pgs, const gs_halftone * pht,
  * A value of -1 indicates that the name is not valid.
  */
 #define check_colorant_name(name, dev) \
-   ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), 0))
+   ((*dev_proc(dev, get_color_comp_index)) (dev, name, strlen(name), NO_NAME_TYPE))
 
 /* Reestablish the effective transfer functions, taking into account */
 /* any overrides from halftone dictionaries. */

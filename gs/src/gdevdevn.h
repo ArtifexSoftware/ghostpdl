@@ -72,6 +72,7 @@ typedef struct gs_devn_params_s {
      */
     fixed_colorant_names_list std_colorant_names;
     int num_std_colorant_names;	/* Number of names in list */
+    int max_separations;	/* From MaxSeparation parameter */
 
     /*
     * Separation info (if any).

@@ -685,14 +685,16 @@ gx_forward_get_color_mapping_procs(const gx_device * dev)
 
 int
 gx_forward_get_color_comp_index(const gx_device * dev, const char * pname,
-						int name_size, int src_index)
+					int name_size, int component_type)
 {
     const gx_device_forward * fdev = (const gx_device_forward *)dev;
     gx_device *tdev = fdev->target;
 
     return (tdev == 0 
-	? gx_error_get_color_comp_index(dev, pname, name_size, src_index)
-	: dev_proc(tdev, get_color_comp_index)(tdev, pname, name_size, src_index));
+	? gx_error_get_color_comp_index(dev, pname,
+				name_size, component_type)
+	: dev_proc(tdev, get_color_comp_index)(tdev, pname,
+				name_size, component_type));
 }
 
 gx_color_index

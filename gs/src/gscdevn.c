@@ -479,7 +479,7 @@ check_DeviceN_component_names(const gs_color_space * pcs, gs_state * pgs)
 	     * SeparationOrder list.
 	     */
 	    colorant_number = (*dev_proc(dev, get_color_comp_index))
-				    (dev, (const char *)pname, name_size, i);
+		    (dev, (const char *)pname, name_size, SEPARATION_NAME);
 	    if (colorant_number >= 0) {		/* If valid colorant name */
 		pcolor_component_map->color_map[i] =
 		    (colorant_number == GX_DEVICE_COLOR_MAX_COMPONENTS) ? -1

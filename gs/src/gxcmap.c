@@ -337,7 +337,7 @@ gx_error_get_color_mapping_procs(const gx_device * dev)
 /* Default color component to index for a DeviceGray color model */
 int
 gx_default_DevGray_get_color_comp_index(const gx_device * dev, const char * pname,
-						int name_size, int src_index)
+						int name_size, int component_type)
 {
     if (compare_color_names(pname, name_size, "Gray") ||
 	compare_color_names(pname, name_size, "Grey")) 
@@ -349,7 +349,7 @@ gx_default_DevGray_get_color_comp_index(const gx_device * dev, const char * pnam
 /* Default color component to index for a DeviceRGB color model */
 int
 gx_default_DevRGB_get_color_comp_index(const gx_device * dev, const char * pname,
-						int name_size, int src_index)
+						int name_size, int component_type)
 {
     if (compare_color_names(pname, name_size, "Red"))
         return 0;
@@ -364,7 +364,7 @@ gx_default_DevRGB_get_color_comp_index(const gx_device * dev, const char * pname
 /* Default color component to index for a DeviceCMYK color model */
 int
 gx_default_DevCMYK_get_color_comp_index(const gx_device * dev, const char * pname,
-						int name_size, int src_index)
+						int name_size, int component_type)
 {
     if (compare_color_names(pname, name_size, "Cyan"))
         return 0;
@@ -381,7 +381,7 @@ gx_default_DevCMYK_get_color_comp_index(const gx_device * dev, const char * pnam
 /* Default color component to index for an unknown color model */
 int
 gx_error_get_color_comp_index(const gx_device * dev, const char * pname,
-						int name_size, int src_index)
+						int name_size, int component_type)
 {
     /*
      * We should never get here.  If we do then we do not have a "get_color_comp_index"

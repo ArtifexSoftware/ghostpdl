@@ -91,8 +91,45 @@ typedef struct psd_device_s {
     icmLuBase *lu_out;
 } psd_device;
 
+/* GC procedures */
+private 
+ENUM_PTRS_WITH(psd_device_enum_ptrs, psd_device *pdev)
+{
+    if (index < pdev->devn_params.separations.num_separations)
+	ENUM_RETURN(pdev->devn_params.separations.names[index]);
+    ENUM_PREFIX(st_device_printer,
+		    pdev->devn_params.separations.num_separations);
+}
+
+ENUM_PTRS_END
+private RELOC_PTRS_WITH(psd_device_reloc_ptrs, psd_device *pdev)
+{
+    RELOC_PREFIX(st_device_printer);
+    {
+	int i;
+
+	for (i = 0; i < pdev->devn_params.separations.num_separations; ++i) {
+	    RELOC_PTR(psd_device, devn_params.separations.names[i]);
+	}
+    }
+}
+RELOC_PTRS_END
+
+/* Even though psd_device_finalize is the same as gx_device_finalize, */
+/* we need to implement it separately because st_composite_final */
+/* declares all 3 procedures as private. */
+private void
+psd_device_finalize(void *vpdev)
+{
+    gx_device_finalize(vpdev);
+}
+
+gs_private_st_composite_final(st_psd_device, psd_device,
+    "psd_device", psd_device_enum_ptrs, psd_device_reloc_ptrs,
+    psd_device_finalize);
+
 /*
- * Macro definition for DeviceN procedures
+ * Macro definition for psd device procedures
  */
 #define device_procs(get_color_mapping_procs)\
 {	gdev_prn_open,\
@@ -165,28 +202,38 @@ private fixed_colorant_name DeviceRGBComponents[] = {
 	0		/* List terminator */
 };
 
+#define psd_device_body(procs, dname, ncomp, pol, depth, mg, mc, cn)\
+    std_device_full_body_type_extended(psd_device, &procs, dname,\
+	  &st_psd_device,\
+	  (int)((long)(DEFAULT_WIDTH_10THS) * (X_DPI) / 10),\
+	  (int)((long)(DEFAULT_HEIGHT_10THS) * (Y_DPI) / 10),\
+	  X_DPI, Y_DPI,\
+    	  GX_DEVICE_COLOR_MAX_COMPONENTS,	/* MaxComponents */\
+	  ncomp,		/* NumComp */\
+	  pol,			/* Polarity */\
+	  depth, 0,		/* Depth, GrayIndex */\
+	  mg, mc,		/* MaxGray, MaxColor */\
+	  mg + 1, mc + 1,	/* DitherGray, DitherColor */\
+	  GX_CINFO_SEP_LIN,	/* Linear & Separable */\
+	  cn,			/* Process color model name */\
+	  0, 0,			/* offsets */\
+	  0, 0, 0, 0		/* margins */\
+	),\
+	prn_device_body_rest_(psd_print_page)
+
 /*
- * Example device with RGB and spot color support
+ * PSD device with RGB process color model.
  */
 private const gx_device_procs spot_rgb_procs = device_procs(get_psdrgb_color_mapping_procs);
 
 const psd_device gs_psdrgb_device =
 {   
-    prn_device_body_extended(psd_device, spot_rgb_procs, "psdrgb",
-	 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	 X_DPI, Y_DPI,		/* X and Y hardware resolution */
-	 0, 0, 0, 0,		/* margins */
-    	 GX_DEVICE_COLOR_MAX_COMPONENTS, 3,	/* MaxComponents, NumComp */
-	 GX_CINFO_POLARITY_ADDITIVE,		/* Polarity */
-	 24, 0,			/* Depth, Gray_index, */
-	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Seperable */
-	 "DeviceRGB",		/* Process color model name */
-	 psd_print_page),	/* Printer page print routine */
+    psd_device_body(spot_rgb_procs, "psdrgb", 3, GX_CINFO_POLARITY_ADDITIVE, 24, 255, 255, "DeviceRGB"),
     /* devn_params specific parameters */
-    { 8,			/* Bits per color - must match ncomp, depth, etc. above */
+    { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceRGBComponents,	/* Names of color model colorants */
       3,			/* Number colorants for RGB */
+      0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -196,25 +243,20 @@ const psd_device gs_psdrgb_device =
     psd_DEVICE_RGB,		/* Color model */
 };
 
-private const gx_device_procs spot_cmyk_procs = device_procs(get_psd_color_mapping_procs);
+/*
+ * PSD device with CMYK process color model and spot color support.
+ */
+private const gx_device_procs spot_cmyk_procs
+		= device_procs(get_psd_color_mapping_procs);
 
 const psd_device gs_psdcmyk_device =
 {   
-    prn_device_body_extended(psd_device, spot_cmyk_procs, "psdcmyk",
-	 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
-	 X_DPI, Y_DPI,		/* X and Y hardware resolution */
-	 0, 0, 0, 0,		/* margins */
-    	 GX_DEVICE_COLOR_MAX_COMPONENTS, 4,	/* MaxComponents, NumComp */
-	 GX_CINFO_POLARITY_SUBTRACTIVE,		/* Polarity */
-	 32, 0,			/* Depth, Gray_index, */
-	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
-	 "DeviceCMYK",		/* Process color model name */
-	 psd_print_page),	/* Printer page print routine */
+    psd_device_body(spot_cmyk_procs, "psdcmyk", 4, GX_CINFO_POLARITY_SUBTRACTIVE, 32, 255, 255, "DeviceCMYK"),
     /* devn_params specific parameters */
-    { 8,			/* Bits per color - must match ncomp, depth, etc. above */
+    { 8,	/* Bits per color - must match ncomp, depth, etc. above */
       DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
+      0,			/* MaxSeparations has not been specified */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3, 4, 5, 6, 7 }	/* Initial component SeparationOrder */
@@ -719,16 +761,19 @@ private int
 psd_put_params(gx_device * pdev, gs_param_list * plist)
 {
     psd_device * const pdevn = (psd_device *) pdev;
-    gx_device_color_info save_info;
+    int num_spot = pdevn->devn_params.separations.num_separations;
     int ecode = 0;
     int code;
     gs_param_string po;
     gs_param_string prgb;
     gs_param_string pcmyk;
     gs_param_string pcm;
+    gs_param_name param_name;
     psd_color_model color_model = pdevn->color_model;
+    gx_device_color_info save_info = pdevn->color_info;
     gs_separations saved_separations = pdevn->devn_params.separations;
     gs_devn_params * pparams = &pdevn->devn_params;
+    int max_sep = pdevn->color_info.num_components;
 
     code = psd_param_read_fn(plist, "ProfileOut", &po,
 				 sizeof(pdevn->profile_out_fn));
@@ -759,9 +804,36 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 	ecode = code;
 
     /*
+     * Adobe says that MaxSeparations is supposed to be 'read only' however
+     * we use this to allow the specification of the maximum number of
+     * separations.  Memory is allocated for the specified number of
+     * separations.  This allows us to then accept separation colors in
+     * color spaces even if they we not specified at the start of the
+     * image file.
+     */
+    code = param_read_int(plist, param_name = "MaxSeparations", &max_sep);
+    switch (code) {
+        default:
+	    param_signal_error(plist, param_name, code);
+        case 0:
+        case 1:
+	    if (max_sep < 0 || max_sep > GX_DEVICE_COLOR_MAX_COMPONENTS)
+		return_error(gs_error_rangecheck);
+	    {
+		int depth = bpc_to_depth(max_sep, pparams->bitspercomponent);
+
+                if (depth > 8 * size_of(gx_color_index))
+		    return_error(gs_error_rangecheck);
+    	        pdevn->devn_params.max_separations =
+		    pdevn->color_info.max_components =
+    	            pdevn->color_info.num_components = max_sep;
+                pdev->color_info.depth = depth;
+	    }
+
+    }
+    /*
      * Save the color_info in case devicen_put_params fails.
      */
-    save_info = pdevn->color_info;
     ecode = psd_set_color_model(pdevn, color_model);
     if (ecode == 0)
 	ecode = devicen_put_params(pdev, pparams, plist);
@@ -782,9 +854,8 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 	    int i;
 
 	    pdevn->equiv_cmyk_colors.all_color_info_valid = false;
-	    for (i = 0;
-		i < pdevn->devn_params.separations.num_separations; i++)
-		    pdevn->equiv_cmyk_colors.color[i].color_info_valid = false;
+	    for (i = 0; i < num_spot; i++)
+		pdevn->equiv_cmyk_colors.color[i].color_info_valid = false;
 	}
     }
 
@@ -801,7 +872,9 @@ psd_put_params(gx_device * pdev, gs_param_list * plist)
 	memcpy(pdevn->profile_cmyk_fn, pcmyk.data, pcmyk.size);
 	pdevn->profile_cmyk_fn[pcmyk.size] = 0;
     }
-    code = psd_open_profiles(pdevn);
+    if (memcmp(&pdevn->color_info, &save_info,
+			    size_of(gx_device_color_info)) != 0)
+        code = psd_open_profiles(pdevn);
 
     return code;
 }
@@ -823,22 +896,53 @@ private int
 psd_get_color_comp_index(const gx_device * dev, const char * pname,
 					int name_size, int component_type)
 {
-    const gs_devn_params * pparams = &(((const psd_device *)dev)->devn_params);
-    int num_order = pparams->separation_order.num_names;
+    psd_device * pdev = (psd_device *) dev;
+    const gs_devn_params * pdevn_params =
+	    &(((const psd_device *)dev)->devn_params);
+    int num_order = pdevn_params->separation_order.num_names;
     int color_component_number = 0;
 
     /*
      * Check if the component is in either the process color model list
      * or in the SeparationNames list.
      */
-    color_component_number = check_pcm_and_separation_names(dev, pparams,
+    color_component_number = check_pcm_and_separation_names(dev, pdevn_params,
 					pname, name_size, component_type);
     /* Check if the component is in the separation order list. */
 
     if (color_component_number >= 0 && num_order) {
 	color_component_number = 
-		pparams->separation_order_map[color_component_number];
+		pdevn_params->separation_order_map[color_component_number];
         return color_component_number;
+    }
+    /*
+     * The given name does not match any of our current components or
+     * separations.  If this is a separation name and we have room
+     * for it then add it to our list of separations.
+     */
+    if (color_component_number < 0 && component_type == SEPARATION_NAME &&
+	pdev->color_info.num_components >
+	    pdev->devn_params.separations.num_separations +
+	    pdev->devn_params.num_std_colorant_names ) {
+	gs_param_string * pstr_param;
+	byte * pseparation;
+	gs_separations * separations = &pdev->devn_params.separations;
+	int sep_num = separations->num_separations++;
+
+	/* We have a new separation */
+	pstr_param = (gs_param_string *)gs_alloc_bytes(pdev->memory,
+			sizeof(gs_param_string), "psd_get_color_comp_index");
+	pseparation = (byte *)gs_alloc_bytes(pdev->memory,
+			name_size, "psd_get_color_comp_index");
+	memcpy(pseparation, pname, name_size);
+	pstr_param->data = pseparation;
+	pstr_param->size = name_size;
+	pstr_param->persistent = false;
+	separations->names[sep_num] = pstr_param;
+	color_component_number = sep_num + pdevn_params->num_std_colorant_names;
+	/* Indicate that we need to find equivalent CMYK color. */
+	pdev->equiv_cmyk_colors.color[sep_num].color_info_valid = false;
+	pdev->equiv_cmyk_colors.all_color_info_valid = false;
     }
 
     return color_component_number;

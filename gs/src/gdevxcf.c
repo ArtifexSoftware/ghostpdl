@@ -933,7 +933,8 @@ xcf_put_params(gx_device * pdev, gs_param_list * plist)
  * number if the name is found.  It returns a negative value if not found.
  */
 private int
-xcf_get_color_comp_index(const gx_device * dev, const char * pname, int name_size, int src_index)
+xcf_get_color_comp_index(const gx_device * dev, const char * pname, int name_size,
+					int component_type)
 {
 /* TO_DO_DEVICEN  This routine needs to include the effects of the SeparationOrder array */
     const fixed_colorant_names_list * list = ((const xcf_device *)dev)->std_colorant_names;

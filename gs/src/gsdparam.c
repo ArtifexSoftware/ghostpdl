@@ -73,7 +73,6 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
 
     /* Standard page device parameters: */
 
-    int mns = 1;
     bool seprs = false;
     gs_param_string dns, pcms;
     gs_param_float_array msa, ibba, hwra, ma;
@@ -85,6 +84,7 @@ gx_default_get_params(gx_device * dev, gs_param_list * plist)
     /* Non-standard parameters: */
 
     int colors = dev->color_info.num_components;
+    int mns = colors;
     int depth = dev->color_info.depth;
     int GrayValues = dev->color_info.max_gray + 1;
     int HWSize[2];
@@ -640,7 +640,7 @@ nce:
 	if ((code = param_check_string(plist, "ProcessColorModel", pcms, (pcms != NULL))) < 0)
 	    ecode = code;
     }
-    if ((code = param_check_int(plist, "MaxSeparations", 1, true)) < 0)
+    if ((code = param_check_int(plist, "MaxSeparations", colors, true)) < 0)
 	ecode = code;
     if ((code = param_check_bool(plist, "Separations", false, true)) < 0)
 	ecode = code;

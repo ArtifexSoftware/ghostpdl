@@ -195,10 +195,20 @@ extern cm_map_proc_cmyk(gx_error_cmyk_cs_to_cmyk_cm);
     dev_t_proc_get_color_mapping_procs(proc, gx_device)
 
 /*
+  Define the options for the component_type parameter to get_color_comp_index
+  routines.  Note:  This information is currently being used by the routines
+  for identifying when they are being given a separation name.  Some devices
+  automatically add separations to the device's components if the separation
+  is not previously known and there is room in the device.
+*/
+#define NO_COMP_NAME_TYPE	0
+#define SEPARATION_NAME		1
+
+/*
   Convert a color component name into a colorant index.
 */
 #define dev_t_proc_get_color_comp_index(proc, dev_t) \
-    int (proc)(const dev_t * dev, const char * pname, int name_size, int src_index)
+    int (proc)(const dev_t * dev, const char * pname, int name_size, int component_type)
 
 #define dev_proc_get_color_comp_index(proc) \
     dev_t_proc_get_color_comp_index(proc, gx_device)

@@ -354,25 +354,25 @@ check_cmyk_color_model_comps(gx_device * dev)
                        dev,
                        "Cyan",
                        sizeof("Cyan") - 1,
-                       -1 )) < 0                          ||
+                       NO_COMP_NAME_TYPE )) < 0           ||
          cyan_c == GX_DEVICE_COLOR_MAX_COMPONENTS         ||
          (magenta_c = dev_proc(dev, get_color_comp_index)(
                           dev,
                           "Magenta",
                           sizeof("Magenta") - 1,
-                          -1 )) < 0                       ||
+                          NO_COMP_NAME_TYPE )) < 0        ||
          magenta_c == GX_DEVICE_COLOR_MAX_COMPONENTS      ||
          (yellow_c = dev_proc(dev, get_color_comp_index)(
                         dev,
                         "Yellow",
                         sizeof("Yellow") - 1,
-                        -1 )) < 0                         ||
+                        NO_COMP_NAME_TYPE )) < 0               ||
          yellow_c == GX_DEVICE_COLOR_MAX_COMPONENTS       ||
          (black_c = dev_proc(dev, get_color_comp_index)(
                         dev,
                         "Black",
                         sizeof("Black") - 1,
-                        -1 )) < 0                         ||
+                        NO_COMP_NAME_TYPE )) < 0                         ||
          black_c == GX_DEVICE_COLOR_MAX_COMPONENTS          )
         return 0;
 
