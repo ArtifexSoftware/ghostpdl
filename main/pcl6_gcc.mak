@@ -40,6 +40,7 @@ PCLOBJDIR=$(GENDIR)
 # but we define them here just to keep all parameters in one place.
 TARGET_DEVS=$(PXLOBJDIR)/pxl.dev $(PCLOBJDIR)/pcl5c.dev $(PCLOBJDIR)/hpgl2c.dev
 TARGET_XE=$(GENDIR)/pcl6
+TARGET_LIB=$(GENDIR)/pcl6.a
 MAIN_OBJ=$(PLOBJDIR)/plmain.$(OBJ) $(PLOBJDIR)/plimpl.$(OBJ)
 PCL_TOP_OBJ=$(PCLOBJDIR)/pctop.$(OBJ)
 PXL_TOP_OBJ=$(PXLOBJDIR)/pxtop.$(OBJ)
@@ -135,6 +136,9 @@ clean-not-config-clean: pl.clean-not-config-clean pxl.clean-not-config-clean
 config-clean: pl.config-clean pxl.config-clean
 	$(RMN_) *.tr $(GD)devs.tr$(CONFIG) $(GD)ld.tr
 	$(RMN_) $(PXLGEN)pconf.h $(PXLGEN)pconfig.h
+
+lib: $(TARGET_LIB)
+	echo Done lib.
 
 #### Implementation stub
 $(PLOBJDIR)plimpl.$(OBJ): $(PLSRCDIR)plimpl.c \
