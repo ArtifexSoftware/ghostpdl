@@ -17,7 +17,6 @@
 /* $Id$ */
 /* Lower-level path filling procedures */
 
-#include <assert.h>
 #include "gx.h"
 #include "gserrors.h"
 #include "gsstruct.h"
@@ -29,20 +28,11 @@
 #include "gxhttile.h"
 #include "gxistate.h"
 #include "gxpaint.h"		/* for prototypes */
+#include "gxfdrop.h"
+#include "gxfill.h"
 #include "gsptype2.h"
 #include "gdevddrw.h"
 #include "vdtrace.h"
-
-#define VD_SCALE 0.004
-#define VD_TRAP_COLOR RGB(0, 255, 255)
-#define VD_MARG_COLOR RGB(255, 0, 0)
-#define VD_RECT(x, y, w, h, c) vd_rect(int2fixed(x), int2fixed(y), int2fixed(x + w), int2fixed(y + h), 1, c)
-
-/*
- * Configuration flags for the dropout prevention code.
- */
-#define ADJUST_SERIF 1 /* See comments near occurances. */
-#define CHECK_SPOT_CONTIGUITY 1 /* See comments near occurances. */
 
 /*
  * Define which fill algorithm(s) to use.  At least one of the following
@@ -59,91 +49,21 @@
  */
 #define FILL_CURVES
 
-/* ---------------- Statistics ---------------- */
-
 #ifdef DEBUG
-struct stats_fill_s {
-    long
-	fill, fill_alloc, y_up, y_down, horiz, x_step, slow_x, iter, find_y,
-	band, band_step, band_fill, afill, slant, slant_shallow, sfill,
-	mq_cross, cross_slow, cross_low, order, slow_order;
-} stats_fill;
-
-#  define INCR(x) (++(stats_fill.x))
-#  define INCR_EXPR(x) INCR(x)
-#  define INCR_BY(x,n) (stats_fill.x += (n))
-#else
-#  define INCR(x) DO_NOTHING
-#  define INCR_EXPR(x) discard(0)
-#  define INCR_BY(x,n) DO_NOTHING
+/* Define the statistics structure instance. */
+stats_fill_t stats_fill;
 #endif
+
+/* A predicate for spot insideness. */
+/* rule = -1 for winding number rule, i.e. */
+/* we are inside if the winding number is non-zero; */
+/* rule = 1 for even-odd rule, i.e. */
+/* we are inside if the winding number is odd. */
+#define INSIDE_PATH_P(inside, rule) ((inside & rule) != 0)
+
 
 /* ---------------- Active line management ---------------- */
 
-/* Define the structure for keeping track of active lines. */
-typedef struct active_line_s active_line;
-struct active_line_s {
-    gs_fixed_point start;	/* x,y where line starts */
-    gs_fixed_point end; 	/* x,y where line ends */
-    gs_fixed_point diff;	/* end - start */
-    fixed y_fast_max;		/* can do x_at_y in fixed point */
-				/* if y <= y_fast_max */
-    fixed num_adjust;		/* 0 if diff.x >= 0, -diff.y + epsilon if */
-				/* diff.x < 0 and division truncates */
-#if ARCH_DIV_NEG_POS_TRUNCATES
-    /* neg/pos truncates, we must bias the numberator. */
-#  define SET_NUM_ADJUST(alp) \
-    (alp)->num_adjust =\
-      ((alp)->diff.x >= 0 ? 0 : -(alp)->diff.y + fixed_epsilon)
-#  define ADD_NUM_ADJUST(num, alp) ((num) + (alp)->num_adjust)
-#  define MAX_MINUS_NUM_ADJUST(alp) ADD_NUM_ADJUST(max_fixed, alp)
-#else
-    /* neg/pos takes the floor, no special action is needed. */
-#  define SET_NUM_ADJUST(alp) DO_NOTHING
-#  define ADD_NUM_ADJUST(num, alp) (num)
-#  define MAX_MINUS_NUM_ADJUST(alp) max_fixed
-#endif
-#define SET_AL_POINTS(alp, startp, endp)\
-  BEGIN\
-    (alp)->diff.y = (endp).y - (startp).y;\
-    (alp)->diff.x = (endp).x - (startp).x;\
-    SET_NUM_ADJUST(alp);\
-    (alp)->y_fast_max = MAX_MINUS_NUM_ADJUST(alp) /\
-      (((alp)->diff.x >= 0 ? (alp)->diff.x : -(alp)->diff.x) | 1) +\
-      (startp).y;\
-    (alp)->start = startp, (alp)->end = endp;\
-  END
-    /*
-     * We know that alp->start.y <= yv <= alp->end.y, because the fill loop
-     * guarantees that the only lines being considered are those with this
-     * property.
-     */
-#define AL_X_AT_Y(alp, yv)\
-  ((yv) == (alp)->end.y ? (alp)->end.x :\
-   ((yv) <= (alp)->y_fast_max ?\
-    ADD_NUM_ADJUST(((yv) - (alp)->start.y) * (alp)->diff.x, alp) / (alp)->diff.y :\
-    (INCR_EXPR(slow_x),\
-     fixed_mult_quo((alp)->diff.x, (yv) - (alp)->start.y, (alp)->diff.y))) +\
-   (alp)->start.x)
-    fixed x_current;		/* current x position */
-    fixed x_next;		/* x position at end of band */
-    const segment *pseg;	/* endpoint of this line */
-    int direction;		/* direction of line segment */
-#define DIR_UP 1
-#define DIR_HORIZONTAL 0	/* (these are handled specially) */
-#define DIR_DOWN (-1)
-    int curve_k;		/* # of subdivisions for curves,-1 for lines */
-    curve_cursor cursor;	/* cursor for curves, unused for lines */
-/*
- * "Pending" lines (not reached in the Y ordering yet) use next and prev
- * to order lines by increasing starting Y.  "Active" lines (being scanned)
- * use next and prev to order lines by increasing current X, or if the
- * current Xs are equal, by increasing final X.
- */
-    active_line *prev, *next;
-/* Link together active_lines allocated individually */
-    active_line *alloc_next;
-};
 
 /*
  * Define the ordering criterion for active lines that overlap in Y.
@@ -242,132 +162,19 @@ print_al(const char *label, const active_line * alp)
 #define print_al(label,alp) DO_NOTHING
 #endif
 
-/*  The structure margin_set and related structures and functions are used for 
-    preventing dropouts rasterizing a character with zero fill adjustment. The purpose
-    is to paint something along thin quazi-horizontal stems,
-    which are composed of multiple small segments (such as a result of flattenpath).
-    We call it "pseudo-rasterization".
-    When fill adjustment takes place, this stuff is not required and is being skipped.
-
-    To prevent dropouts in thin quazi-horizontal stems we look at raster
-    through 1xN pixels window, where N is the width of the path bounding box.
-    This window moves from bottom to top synchronousely with the motion of
-    the filling loop, but its Y coordinate is always an integer plus one half
-    (actually it moves convulsively).
-    Through this window we can see an upper half of a pixel row,
-    and lower half of the next pixel row. Painted spots are visible through
-    this window as a set of "margins". To handle them we maintain
-    a list of margin_s structures (each of which describes an interval
-    to be painted), and array of "sections" (i-th section corresponds to
-    half-integer X-coordinate Xi = bbox_left + i + 0.5, and stores fraction
-    part of y-coordinate of intersection of the line x == Xi with margin
-    boudaries, being visible through window (only extremal coordinates are stored 
-    into a section)).
- 
-    The structure margin_set snaps what has been painted inside window.
-    We handle 2 instances of margin_set : margin_set0 is being prepared and margin_set1 is
-    being refinished. When the filling loop steps down over a pixel center,
-    the refinished window is closed and released, the prapared window becomes
-    the refinished one, and a new one starts to prepare.
-
-    fixme:
-    The current implementation is not optimised for very bold characters.
-    We could encrease performance for them with maintaining
-    a separate list of "exclusive" margins, which correspond
-    to intervals painted with regular trapezoids and made with
-    complete_margin. Using them we could skip access to 'sect' array elements
-    inside "exclusive" margins, so that the number of small steps
-    sensibly decreeses.
-
-    fixme:
-    Another optimization could be applied to the regular(old) trapezoid algorithm.
-    Currently it breaks stems at any step of the Y cycle,
-    generating big number of trapezoids.
-    Perhaps we could store trapeziod vertices to active_line,
-    and delay rendering a trapezoid until stem changes boundary segments.
-    This also would make calls to the margin staff less frequent.
-
-*/
-
-typedef struct margin_s
-{   int ibeg, iend; /* Pixel indices of an interval to paint. */
-    struct margin_s *prev, *next;
-} margin;
-
-typedef struct section_s
-{   short y0, y1; /* Fraction part of y coordinates of intersections of the margin with line x==i + bbox_left */
-#if ADJUST_SERIF && CHECK_SPOT_CONTIGUITY
-    short x0, x1; /* Pixel coverage by X for checking the contiguity. */
-#endif
-} section;
-
-typedef struct margin_set_s
-{   fixed y; 
-    margin *margin_list, *margin_touched;
-    section *sect;
-} margin_set;
-
-/*
- * Rather some margins are placed in virtual memory,
- * we never run garbager while some of them are allocated.
- * Therefore we use "st_simple" for margins and sections.
- */
-gs_private_st_simple(st_margin, margin, "margin");
-gs_private_st_simple(st_section, section, "section");
-
-/* Line list structure */
-struct line_list_s {
-    gs_memory_t *memory;
-    active_line *active_area;	/* allocated active_line list */
-    active_line *next_active;	/* next allocation slot */
-    active_line *limit; 	/* limit of local allocation */
-    int close_count;		/* # of added closing lines */
-    active_line *y_list;	/* Y-sorted list of pending lines */
-    active_line *y_line;	/* most recently inserted line */
-    active_line x_head; 	/* X-sorted list of active lines */
-#define x_list x_head.next
-    active_line *h_list0, *h_list1; /* lists of horizontal lines for y, y1 */
-    margin_set margin_set0, margin_set1;
-    margin *free_margin_list; 
-    int local_margin_alloc_count;
-    int bbox_left, bbox_width;
-    bool pseudo_rasterization;  /* See comment about "pseudo-rasterization". */
-    /* Put the arrays last so the scalars will have */
-    /* small displacements. */
-    /* Allocate a few active_lines locally */
-    /* to avoid round trips through the allocator. */
-#if arch_small_memory
-#  define MAX_LOCAL_ACTIVE 6	/* don't overburden the stack */
-#  define MAX_LOCAL_SECTION 50
-#else
-#  define MAX_LOCAL_ACTIVE 20
-#  define MAX_LOCAL_SECTION 100
-#endif
-    active_line local_active[MAX_LOCAL_ACTIVE];
-    margin local_margins[MAX_LOCAL_ACTIVE];
-    section local_section0[MAX_LOCAL_SECTION];
-    section local_section1[MAX_LOCAL_SECTION];
-    const gx_device_color * pdevc;
-    gs_logical_operation_t lop;
-    bool fill_direct;
-};
-typedef struct line_list_s line_list;
-typedef line_list *ll_ptr;
 
 /* Forward declarations */
-private void init_line_list(ll_ptr, gs_memory_t *);
+private void init_line_list(line_list *, gs_memory_t *);
 private void unclose_path(gx_path *, int);
-private void free_line_list(ll_ptr);
-private int add_y_list(gx_path *, ll_ptr, fixed, fixed,
+private void free_line_list(line_list *);
+private int add_y_list(gx_path *, line_list *, fixed, fixed,
 		       const gs_fixed_rect *);
-private int add_y_line(const segment *, const segment *, int, ll_ptr);
-private void insert_x_new(active_line *, ll_ptr);
+private int add_y_line(const segment *, const segment *, int, line_list *);
+private void insert_x_new(active_line *, line_list *);
 private bool end_x_line(active_line *, bool);
-private void free_all_margins(line_list * ll);
-private inline void init_section(section *sect, int i0, int i1);
 
 #define FILL_LOOP_PROC(proc)\
-int proc(ll_ptr, gx_device *,\
+int proc(line_list *, gx_device *,\
   const gx_fill_params *, const gx_device_color *, gs_logical_operation_t,\
   const gs_fixed_rect *, fixed, fixed, fixed, fixed, fixed)
 private FILL_LOOP_PROC(fill_loop_by_scan_lines);
@@ -757,7 +564,7 @@ gx_default_fill_path(gx_device * pdev, const gs_imager_state * pis,
 
 /* Initialize the line list for a path. */
 private void
-init_line_list(ll_ptr ll, gs_memory_t * mem)
+init_line_list(line_list *ll, gs_memory_t * mem)
 {
     ll->memory = mem;
     ll->active_area = 0;
@@ -801,7 +608,7 @@ unclose_path(gx_path * ppath, int count)
 
 /* Free the line list. */
 private void
-free_line_list(ll_ptr ll)
+free_line_list(line_list *ll)
 {
     /* Free any individually allocated active_lines. */
     gs_memory_t *mem = ll->memory;
@@ -823,7 +630,7 @@ free_line_list(ll_ptr ll)
  * lines that might color some additional pixels.
  */
 private int
-add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
+add_y_list(gx_path * ppath, line_list *ll, fixed adjust_below, fixed adjust_above,
 	   const gs_fixed_rect * pbox)
 {
     segment *pseg = (segment *) ppath->first_subpath;
@@ -923,7 +730,7 @@ add_y_list(gx_path * ppath, ll_ptr ll, fixed adjust_below, fixed adjust_above,
  * appropriate.
  */
 private int
-add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
+add_y_line(const segment * prev_lp, const segment * lp, int dir, line_list *ll)
 {
     gs_fixed_point this, prev;
     active_line *alp = ll->next_active;
@@ -1008,7 +815,7 @@ add_y_line(const segment * prev_lp, const segment * lp, int dir, ll_ptr ll)
 
 /* Insert a newly active line in the X ordering. */
 private void
-insert_x_new(active_line * alp, ll_ptr ll)
+insert_x_new(active_line * alp, line_list *ll)
 {
     active_line *next;
     active_line *prev = &ll->x_head;
@@ -1032,7 +839,7 @@ insert_x_new(active_line * alp, ll_ptr ll)
    Unite contacting inrevals, like we did in add_margin.
  */
 private inline void
-insert_h_new(active_line * alp, ll_ptr ll)
+insert_h_new(active_line * alp, line_list *ll)
 {
     alp->next = ll->h_list0;
     alp->prev = 0;
@@ -1099,320 +906,17 @@ end_x_line(active_line *alp, bool update)
     return false;
 }
 
-#define LOOP_FILL_RECTANGLE(x, y, w, h)\
-  gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop)
-#define LOOP_FILL_RECTANGLE_DIRECT(x, y, w, h)\
-  (fill_direct ?\
-   (*fill_rect)(dev, x, y, w, h, pdevc->colors.pure) :\
-   gx_fill_rectangle_device_rop(x, y, w, h, pdevc, dev, lop))
-
-private inline void init_section(section *sect, int i0, int i1)
-{   int i;
-
-    for (i = i0; i < i1; i++) {
-#	if ADJUST_SERIF && CHECK_SPOT_CONTIGUITY
-	sect[i].x0 = fixed_1;
-	sect[i].x1 = 0;
-#	endif
-	sect[i].y0 = sect[i].y1 = -1;
-    }
-}
-
-private margin * alloc_margin(line_list * ll)
-{   margin *m;
-
-    assert(ll->pseudo_rasterization);
-    if (ll->free_margin_list != 0) {
-	m = ll->free_margin_list;
-	ll->free_margin_list = ll->free_margin_list->next;
-    } else if (ll->local_margin_alloc_count < MAX_LOCAL_ACTIVE) {
-	m = ll->local_margins + ll->local_margin_alloc_count;
-	++ ll->local_margin_alloc_count;
-    } else {
-	m = gs_alloc_struct(ll->memory, margin, &st_margin, "filling contiguity margin");
-	/* The allocation happens only if ll->local_margins[MAX_LOCAL_ACTIVE] 
-	   is exceeded. We believe it does very seldom. */
-    }
-    return m;
-}
-
-private void release_margin_list(line_list * ll, margin_set *ms)
-{   margin * m1 = ms->margin_list;
-
-    if (m1 == 0)
-	return;
-    while (m1->next != 0)
-	m1 = m1->next;
-    m1->next = ll->free_margin_list;
-    ll->free_margin_list = ms->margin_list;
-    ms->margin_list = ms->margin_touched = 0;
-}
-
-private void free_all_margins(line_list * ll)
-{   margin * m = ll->free_margin_list;
-
-    ll->free_margin_list = 0;
-    while (m != 0)  {
-	margin * m1 = m->next;
-
-	if (m < ll->local_margins || m >= ll->local_margins + MAX_LOCAL_ACTIVE)
-	    gs_free_object(ll->memory, m, "filling contiguity margin");
-	m = m1;
-    }
-}
-
-private int store_margin(line_list * ll, margin_set * set, int ii0, int ii1)
-{
-    /*
-     * We need to add margin to the ordered margin list.
-     * Contacting margins to be united.
-     */
-    int i0 = ii0, i1 = ii1;
-    margin *m0 = set->margin_touched, *m1;
-
-    assert(ii0 >= 0 && ii1 <= ll->bbox_width);
-    set->margin_touched = 0; /* safety */
-    /* Find contacting elements. */
-    if (m0 != 0) {
-	margin  *m_last = m0, *mb, *me;
-
-	assert(set->margin_list != 0);
-	if (i1 < m0->ibeg) {
-	    do {
-		m0 = m0->prev;
-	    } while (m0 != 0 && i0 <= m0->iend);
-	    /* m0 points to a non-contacting at left. */
-	    m1 = (m0 == 0 ? set->margin_list : m0)->next;
-	    while (m1 != 0 && m1->ibeg <= i1) {
-		m_last = m1;
-		m1 = m1->next;
-	    }
-	    /* m1 points to a non-contacting at right. */
-	} else if (i0 > m0->iend) {
-	    m1 = m0;
-	    do {
-		m_last = m1;
-		m1 = m1->next;
-	    } while (m1 != 0 && i1 >= m1->ibeg);
-	    /* m0 points to a non-contacting at right. */
-	    m0 = (m1 == 0 ? m_last : m1->prev);
-	    while (m0 != 0 && m0->iend >= i0)
-		m0 = m0->prev;
-	    /* m1 points to a non-contacting at left. */
-	} else {
-	    m1 = m0;
-	    while (m1 != 0 && m1->ibeg <= i1) {
-		m_last = m1;
-		m1 = m1->next;
-	    }
-	    /* m1 points to a non-contacting at right. */
-	    while (m0 != 0 && m0->iend >= i0)
-		m0 = m0->prev;
-	    /* m1 points to a non-contacting at left. */
-	}
-	/* Remove elements from m0->next to m1->prev, excluding the latter.
-	   m0 may be NULL if we riched list start. 
-	   m1 may be NULL if we riched list end. */
-	mb = (m0 == 0 ? set->margin_list : m0->next);
-	if (mb != 0 && mb != m1) {
-	    me = (m1 == 0 ? m_last : m1->prev);
-	    /* Remove elements from mb to me, excluding the latter.
-	       me may be NULL if we riched list start. */
-	    if (me != 0) {
-		 if (mb != me && me->prev != 0) {
-		    margin *mf = me->prev;
-
-		    /* Remove elements from mb to mf. */
-		    if (mb->prev != 0)
-			mb->prev->next = mf->next;
-		    if (mf->next != 0)
-			mf->next->prev = mb->prev;
-		    if (set->margin_list == mb)
-			set->margin_list = mf->next;
-		    mf->next = ll->free_margin_list;
-		    ll->free_margin_list = mb;
-		    i0 = min(i0, mb->ibeg);
-		    i1 = max(i1, mf->iend);
-		    /* 'prev' links are not used in ll->free_margin_list. */
-		}
-	    }
-	} 
-	me = (m0 == 0 ? set->margin_list : m0->next);
-	if (me == 0)
-	    m0 = m0; /* Already set. */
-	else if (me->iend < i0)
-	    m0 = me; /* Insert after me. */
-	else if (me->ibeg > i1)
-	    m0 = me->prev; /* Insert before me. */
-	else if (me->iend >= i0 && me->ibeg <= i1) {
-	    /* Intersects with me. Replace me boundaries. */
-	    me->ibeg = min(i0, me->ibeg);
-	    me->iend = max(i1, me->iend);
-	    set->margin_touched = me;
-	    return 0;
-	}
-    }
-    /* Insert after m0 */
-    m1 = alloc_margin(ll);
-    if (m1 == 0)
-	return_error(gs_error_VMerror);
-    if (m0 != 0) {
-	m1->next = m0->next;
-	m1->prev = m0;
-	m0->next = m1;
-	if (m1->next!= 0)
-	    m1->next->prev = m1;
-    } else {
-	m1->next = set->margin_list;
-	m1->prev = 0;
-	if (set->margin_list != 0)
-	    set->margin_list->prev = m1;
-	set->margin_list = m1;
-    }
-    m1->ibeg = i0;
-    m1->iend = i1;
-    set->margin_touched = m1;
-    return 0;
-}
-
-private inline int to_interval(int x, int l, int u)
-{   return x < l ? l : x > u ? u : x;
-}
-
-private inline fixed Y_AT_X(active_line *alp, fixed xp)
-{   return alp->start.y + fixed_mult_quo(xp - alp->start.x,  alp->diff.y, alp->diff.x);
-}
-
-private int margin_boundary(line_list * ll, margin_set * set, active_line * alp, 
-			    fixed xx0, fixed xx1, fixed yy0, fixed yy1, int dir)
-{   section *sect = set->sect;
-    fixed x0, x1, xmin, xmax;
-    int xp0, xp;
-    int i0, i;
-#   if !CHECK_SPOT_CONTIGUITY
-    int i1;
-#   endif
-
-    if (yy0 > yy1)
-	return 0;
-    /* enumerate integral x's in [yy0,yy1] : */
-
-    if (alp == 0)
-	x0 = xx0, x1 = xx1;
-    else
-	x0 = AL_X_AT_Y(alp, yy0), x1 = AL_X_AT_Y(alp, yy1);
-    xmin = min(x0, x1);
-    xmax = max(x0, x1);
-#   if !CHECK_SPOT_CONTIGUITY
-	xp0 = fixed_floor(xmin) + fixed_half;
-	i0 = fixed2int(xp0) - ll->bbox_left;
-	if (xp0 < xmin) {
-	    xp0 += fixed_1;
-	    i0++;
-	}
-	assert(i0 >= 0);
-	for (i = i0, xp = xp0; xp < xmax && i < ll->bbox_width; xp += fixed_1, i++) {
-	    fixed y = (alp == 0 ? yy0 : Y_AT_X(alp, xp));
-	    fixed dy = y - set->y;
-	    bool ud;
-	    short *b, h;
-	    section *s = &sect[i];
-
-	    if (dy < 0)
-		dy = 0; /* fix rounding errors in AL_X_AT_Y */
-	    if (dy >= fixed_1)
-		dy = fixed_1; /* safety */
-	    vd_circle(xp, y, 2, 0);
-	    ud = (alp == 0 ? (dir > 0) : ((alp->start.x - alp->end.x) * dir > 0));
-	    b = (ud ? &s->y0 : &s->y1);
-	    h = (short)dy;
-	    if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
-		*b = h;
-	}
-#   else
-	xp0 = fixed_floor(xmin) + fixed_half;
-	i0 = fixed2int(xp0) - ll->bbox_left;
-	if (xp0 < xmin) {
-	    i0++;
-	    xp0 += fixed_1;
-	}
-	for (i = i0, xp = xp0; xp < xmax; xp += fixed_1, i++) {
-	    section *s = &sect[i];
-	    fixed y = (alp==0 ? yy0 : Y_AT_X(alp, xp));
-	    fixed dy = y - set->y;
-	    bool ud;
-	    short *b, h;
-
-	    if (dy < 0)
-		dy = 0; /* fix rounding errors in AL_X_AT_Y */
-	    if (dy >= fixed_1)
-		dy = fixed_1; /* safety */
-	    vd_circle(xp, y, 2, 0);
-	    ud = (alp == 0 ? (dir > 0) : ((alp->start.x - alp->end.x) * dir > 0));
-	    b = (ud ? &s->y0 : &s->y1);
-	    h = (short)dy;
-	    if (*b == -1 || (*b != -2 && ( ud ? *b > h : *b < h)))
-		*b = h;
-	}
-	assert(i0 >= 0 && i <= ll->bbox_width);
-#	endif
-    if (i > i0)
-	return store_margin(ll, set, i0, i);
-    return 0;
-}
-
-private inline int continue_margin_common(line_list * ll, margin_set * set, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{   int code;
-#   if ADJUST_SERIF
-    section *sect = set->sect;
-    fixed yy0 = max(max(y0, alp->start.y), set->y);
-    fixed yy1 = min(min(y1, alp->end.y), set->y + fixed_1);
-
-    if (yy0 <= yy1) {
-	fixed x00 = AL_X_AT_Y(flp, yy0), x10 = AL_X_AT_Y(alp, yy0);
-	fixed x01 = AL_X_AT_Y(flp, yy1), x11 = AL_X_AT_Y(alp, yy1);
-	fixed xmin = min(x00, x01), xmax = max(x10, x11);
-
-	int i0 = fixed2int(xmin) - ll->bbox_left, i;
-	int i1 = fixed2int_ceiling(xmax) - ll->bbox_left;
-   
-	for (i = i0; i < i1; i++) {
-	    section *s = &sect[i];
-	    int x_pixel = int2fixed(i + ll->bbox_left);
-	    int xl = max(xmin - x_pixel, 0);
-	    int xu = min(xmax - x_pixel, fixed_1);
-
-	    s->x0 = min(s->x0, xl);
-	    s->x1 = max(s->x1, xu);
-	    x_pixel+=0; /* Just a place for breakpoint */
-	}
-	code = store_margin(ll, &ll->margin_set1, i0, i1);
-	if (code < 0)
-	    return code;
-	/* fixme : after ADJUST_SERIF becames permanent,
-	 * don't call margin_boundary if yy0 > yy1.
-	 */
-    }
-#   endif
-
-    code = margin_boundary(ll, set, flp, 0, 0, yy0, yy1, 1);
-    if (code < 0)
-	return code;
-    return margin_boundary(ll, set, alp, 0, 0, yy0, yy1, -1);
-}
-
-private int add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
-    vd_bar(flp->start.x, flp->start.y, flp->end.x, flp->end.y, 1, RGB(255, 255, 255));
-    return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
-}
-
-
 private inline const segment * PrevSeg(const segment *pseg)
 {   return pseg->type == s_start ? ((const subpath *)pseg)->last->prev : pseg->prev;
 }
 private inline const segment * NextSeg(const segment *pseg)
 {   return pseg->type == s_line_close ? ((const line_close_segment *)pseg)->sub->next : pseg->next;
+}
+
+private inline int add_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
+{   vd_bar(alp->start.x, alp->start.y, alp->end.x, alp->end.y, 1, RGB(255, 255, 255));
+    vd_bar(flp->start.x, flp->start.y, flp->end.x, flp->end.y, 1, RGB(255, 255, 255));
+    return continue_margin_common(ll, &ll->margin_set0, flp, alp, y0, y1);
 }
 
 private inline int continue_margin(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
@@ -1425,257 +929,6 @@ private int complete_margin(line_list * ll, active_line * flp, active_line * alp
     return continue_margin_common(ll, &ll->margin_set1, flp, alp, y0, y1);
 }
 
-private inline int mark_margin_interior(line_list * ll, margin_set * set, active_line * flp, active_line * alp, fixed y)
-{
-    section *sect = set->sect;
-    fixed x0 = AL_X_AT_Y(flp, y), x1 = AL_X_AT_Y(alp, y);
-    int i0 = fixed2int(x0), ii0, ii1, i, code;
-
-    if (int2fixed(i0) + fixed_half < x0)
-	i0++;
-    ii0 = i0 - ll->bbox_left;
-    ii1 = fixed2int_var_pixround(x1) - ll->bbox_left;
-    if (ii0 < ii1) {
-	assert(ii0 >= 0 && ii1 <= ll->bbox_width);
-	for (i = ii0; i < ii1; i++) {
-	    sect[i].y0 = sect[i].y1 = -2;
-	    vd_circle(int2fixed(i + ll->bbox_left) + fixed_half, y, 3, RGB(255, 0, 0));
-	}
-	code = store_margin(ll, set, ii0, ii1);
-	if (code < 0)
-	    return code;
-    }
-    return 0;
-}
-
-private inline int margin_interior(line_list * ll, active_line * flp, active_line * alp, fixed y0, fixed y1)
-{   int code;
-    fixed yy0, yy1;
-
-    yy0 = ll->margin_set0.y;
-    if (y0 <= yy0 && yy0 <= y1) {
-	code = mark_margin_interior(ll, &ll->margin_set0, flp, alp, yy0);
-	if (code < 0)
-	    return code;
-    }
-    yy1 = ll->margin_set1.y + fixed_1;
-    if (y0 <= yy1 && yy1 <= y1) {
-	code = mark_margin_interior(ll, &ll->margin_set1, flp, alp, yy1);
-	if (code < 0)
-	    return code;
-    }
-    return 0;
-}
-
-private inline int process_h_sect(line_list * ll, margin_set * set, active_line * hlp0, active_line * plp, active_line * flp, int side)
-{
-    active_line *hlp = hlp0;
-    fixed y = hlp->start.y;
-    fixed x0 = (plp != 0 ? AL_X_AT_Y(plp, y) : int2fixed(ll->bbox_left));
-    fixed x1 = (flp != 0 ? AL_X_AT_Y(flp, y) : int2fixed(ll->bbox_left + ll->bbox_width));
-    int code;
-
-    for (; hlp != 0; hlp = hlp->next) {
-	fixed xx0 = max(x0, min(hlp->start.x, hlp->end.x));
-	fixed xx1 = min(x1, max(hlp->start.x, hlp->end.x));
-
-	if (xx0 < xx1) {
-	    vd_bar(xx0, y, xx1, y, 1, RGB(255, 0, 255));
-	    code =  margin_boundary(ll, set, 0, xx0, xx1, y, y, side);
-	    if (code < 0)
-		return code;
-	}
-    }
-    return 0;	
-}
-
-private inline int process_h_side(line_list * ll, margin_set * set, active_line * hlp, active_line * plp, active_line * flp, active_line * alp, int side)
-{   if (plp != 0 || flp != 0 || (plp == 0 && flp == 0 && alp == 0)) {
-	/* We don't know here, whether the opposite (-) side is painted with
-	 * a trapezoid. mark_margin_interior may rewrite it later.
-	 */
-	int code = process_h_sect(ll, set, hlp, plp, flp, -side);
-
-	if (code < 0)
-	    return code;
-    }
-    if (flp != 0 && alp != 0) {
-	int code = process_h_sect(ll, set, hlp, flp, alp, side);
-
-	if (code < 0)
-	    return code;
-    }
-    return 0;
-}
-
-private inline int process_h_list(line_list * ll, active_line * hlp, active_line * plp, active_line * flp, active_line * alp, int side)
-{   fixed y = hlp->start.y;
-
-    if (ll->margin_set0.y <= y && y <= ll->margin_set0.y + fixed_1) {
-	int code = process_h_side(ll, &ll->margin_set0, hlp, plp, flp, alp, side);
-
-	if (code < 0)
-	    return code;
-    }
-    if (ll->margin_set1.y <= y && y <= ll->margin_set1.y + fixed_1) {
-	int code = process_h_side(ll, &ll->margin_set1, hlp, plp, flp, alp, side);
-
-	if (code < 0)
-	    return code;
-    }
-    return 0;
-}
-
-private inline int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active_line * alp)
-{   if (ll->h_list0 != 0) {
-	int code = process_h_list(ll, ll->h_list0, plp, flp, alp, 1);
-
-	if (code < 0)
-	    return code;
-    }
-    if (ll->h_list1 != 0) {
-	int code = process_h_list(ll, ll->h_list1, plp, flp, alp, -1);
-
-	if (code < 0)
-	    return code;
-    }
-    return 0;
-}
-
-private inline int compute_padding(section *s)
-{
-    return (s->y0 < 0 || s->y1 < 0 ? -2 : /* contacts a trapezoid - don't paint */
-	    s->y1 < fixed_half ? 0 : 
-	    s->y0 > fixed_half ? 1 : 
-	    fixed_half - s->y0 < s->y1 - fixed_half ? 1 : 0);
-}
-
-private int fill_margin(gx_device * dev, line_list * ll, margin_set *ms, int i0, int i1)
-{   /* Returns the new index (positive) or return code (negative). */
-    section *sect = ms->sect;
-    int iy = fixed2int_var_pixround(ms->y);
-    int i, ir, h = -2, code;
-    dev_proc_fill_rectangle((*fill_rect)) = dev_proc(dev, fill_rectangle);
-    const gx_device_color * pdevc = ll->pdevc;
-    gs_logical_operation_t lop = ll->lop;
-    bool fill_direct = ll->fill_direct;
-
-    assert(i0 >= 0 && i1 <= ll->bbox_width);
-    ir = i0;
-    for (i = i0; i < i1; i++) {
-	int y0 = sect[i].y0, y1 = sect[i].y1, hh;
-
-	if (y0 == -1) 
-	    y0 = 0;
-	if (y1 == -1) 
-	    y1 = fixed_scale - 1;
-	hh = compute_padding(&sect[i]);
-#	if ADJUST_SERIF
-	    if (hh >= 0) {
-#		if !CHECK_SPOT_CONTIGUITY
-		    if (i == i0 && i + 1 < i1) {
-			int hhh = compute_padding(&sect[i + 1]);
-
-			hh = hhh;
-		    } else if (i == i1 - 1 && i > i0)
-			hh = h; 
-		    /* We could optimize it with moving outside the cycle.
-		     * Delaying the optimization until the code is well tested.
-		     */
-#		else
-		    if (sect[i].x0 > 0 && sect[i].x1 == fixed_1 && i + 1 < i1) {
-			hh = (i + 1 < i1 ? compute_padding(&sect[i + 1]) : -2);
-			/* We could cache hh.
-			 * Delaying the optimization until the code is well tested.
-			 */
-		    } else if (sect[i].x0 == 0 && sect[i].x1 < fixed_1)
-			hh = h;
-#		endif
-	    }
-#	endif
-	if (h != hh) {
-	    if (h >= 0) {
-		VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-		code = LOOP_FILL_RECTANGLE_DIRECT(ir + ll->bbox_left, iy + h, i - ir, 1);
-		if (code < 0)
-		    return code;
-	    }
-	    ir = i;
-	    h = hh;
-	}
-    }
-    if (h >= 0) {
-	VD_RECT(ir + ll->bbox_left, iy + h, i - ir, 1, VD_MARG_COLOR);
-	code = LOOP_FILL_RECTANGLE_DIRECT(ir + ll->bbox_left, iy + h, i - ir, 1);
-	if (code < 0)
-	    return code;
-    }
-    init_section(sect, i0, i1);
-    return 0;
-/*
- *  We added the ADJUST_SERIF feature for small fonts, which are poorly hinted.
- *  An example is 033-52-5873.pdf at 72 dpi.
- *  We either suppress a serif or move it up or down for 1 pixel.
- *  If we would paint it as an entire pixel where it occures, it looks too big
- *  relatively to the character size. Besides, a stem end may
- *  be placed a little bit below the baseline, and our dropout prevention 
- *  method desides to paint a pixel below baseline, so that it looks
- *  fallen down (or fallen up in the case of character top).
- *  
- *  We assume that contacting margins are merged in margin_list.
- *  This implies that areas outside a margin are not painted
- *  (Only useful without CHECK_SPOT_CONTIGUITY).
- *
- *  With no CHECK_SPOT_CONTIGUITY we can't perfectly handle the case when 2 serifs
- *  contact each another inside a margin interior (such as Serif 'n').
- *  Since we don't know the contiguty, we misrecognize them as a stem and 
- *  leave them as they are (possibly still fallen down or up).
- *
- *  CHECK_SPOT_CONTIGUITY computes the contiguity of the intersection of the spot
- *  and the section window. It allows to recognize contacting serifs properly.
- *
- *  If a serif isn't painted with regular trapezoids, 
- *  it appears a small one, so we don't need to measure its size.
- *  This heuristic isn't perfect, but it is very fast.
- *  Meanwhile with CHECK_SPOT_CONTIGUITY we actually have something
- *  like a bbox for a small serif, and a rough estimation is possible.
- * 
- *  We believe that in normal cases this stuff should work idle,
- *  because a perfect rendering should either use anti-aliasing 
- *  (so that the character isn't small in the subpixel grid),
- *  and/or the path must be well fitted into the grid. So please consider
- *  this code as an attempt to do our best for the case of a 
- *  non-well-setup rendering.
- */
-}
-
-private int close_margins(gx_device * dev, line_list * ll, margin_set *ms)
-{   margin *m = ms->margin_list;
-    int code;
-
-    for (; m != 0; m = m->next) {
-	code = fill_margin(dev, ll, ms, m->ibeg, m->iend);
-	if (code < 0)
-	    return code;
-    }
-    release_margin_list(ll, ms);
-    return 0;
-}
-
-private int start_margin_set(gx_device * dev, line_list * ll, fixed y0)
-{   int code;
-    fixed ym = fixed_pixround(y0) - fixed_half;
-    margin_set s;
-
-    if (ll->margin_set0.y == ym)
-	return 0;
-    s = ll->margin_set1;
-    ll->margin_set1 = ll->margin_set0;
-    ll->margin_set0 = s;
-    code = close_margins(dev, ll, &ll->margin_set0);
-    ll->margin_set0.y = ym;
-    return code;
-}
 
 /* ---------------- Trapezoid filling loop helpers ---------------- */
 
@@ -1821,7 +1074,7 @@ resort_x_line(active_line * alp)
 
 /* Move active lines by Y. */
 private void
-move_al_by_y(ll_ptr ll, fixed y1)
+move_al_by_y(line_list *ll, fixed y1)
 {
     fixed x;
     active_line *alp, *nlp;
@@ -1963,7 +1216,7 @@ fill_trap_slanted(gx_device * dev, const gs_fixed_rect * pbox,
 /* x_list as needed.  band_mask limits the size of each band, */
 /* by requiring that ((y1 - 1) & band_mask) == (y0 & band_mask). */
 private int
-fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
+fill_loop_by_trapezoids(line_list *ll, gx_device * dev,
 	       const gx_fill_params * params, const gx_device_color * pdevc,
 		     gs_logical_operation_t lop, const gs_fixed_rect * pbox,
 			fixed adjust_left, fixed adjust_right,
@@ -2181,7 +1434,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 	    if (code < 0)
 		return code;
 	}
-#define INSIDE_PATH_P() ((inside & rule) != 0)
 	/* Fill a multi-trapezoid band for the active lines. */
 	/* Don't bother if no pixel centers lie within the band. */
 	if (draw > 0 || (draw == 0 && HAVE_PIXELS())) {
@@ -2204,19 +1456,15 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 
 		print_al("step", alp);
 		INCR(band_step);
-		/* rule = -1 for winding number rule, i.e. */
-		/* we are inside if the winding number is non-zero; */
-		/* rule = 1 for even-odd rule, i.e. */
-		/* we are inside if the winding number is odd. */
-		if (!INSIDE_PATH_P()) { 	/* i.e., outside */
+		if (!INSIDE_PATH_P(inside, rule)) { 	/* i.e., outside */
 		    inside += alp->direction;
-		    if (INSIDE_PATH_P())	/* about to go in */
+		    if (INSIDE_PATH_P(inside, rule))	/* about to go in */
 			xlbot = xbot, xltop = xtop, flp = *alp;
 		    continue;
 		}
 		/* We're inside a region being filled. */
 		inside += alp->direction;
-		if (INSIDE_PATH_P())	/* not about to go out */
+		if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
 		    continue;
 		/* We just went from inside to outside, so fill the region. */
 		wtop = xtop - xltop;
@@ -2311,15 +1559,15 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		    alp->x_current = alp->x_next;
 
-		    if (!INSIDE_PATH_P()) {		/* i.e., outside */
+		    if (!INSIDE_PATH_P(inside, rule)) {		/* i.e., outside */
 			inside += alp->direction;
-			if (INSIDE_PATH_P())	/* about to go in */
+			if (INSIDE_PATH_P(inside, rule))	/* about to go in */
 			    flp = *alp;
 			continue;
 		    }
 		    /* We're inside a region being filled. */
 		    inside += alp->direction;
-		    if (INSIDE_PATH_P())	/* not about to go out */
+		    if (INSIDE_PATH_P(inside, rule))	/* not about to go out */
 			continue;
 		    code = continue_margin(ll, &flp, alp, y, y1);
 		    if (code < 0)
@@ -2331,7 +1579,6 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 		}
 	    }
 	}
-#undef INSIDE_PATH_P
 	if (plp != 0) {
 	    code = process_h_lists(ll, plp, 0, 0);
 	    if (code < 0)
@@ -2579,14 +1826,14 @@ range_list_add(coord_range_list_t *pcrl, coord_value_t rmin, coord_value_t rmax)
 /* ---------------- Scan line filling loop ---------------- */
 
 /* Forward references */
-private int merge_ranges(coord_range_list_t *pcrl, ll_ptr ll,
+private int merge_ranges(coord_range_list_t *pcrl, line_list *ll,
 			 fixed y_min, fixed y_top,
 			 fixed adjust_left, fixed adjust_right);
 private void set_scan_line_points(active_line *, fixed);
 
 /* Main filling loop. */
 private int
-fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
+fill_loop_by_scan_lines(line_list *ll, gx_device * dev,
 			const gx_fill_params * params,
 			const gx_device_color * pdevc,
 			gs_logical_operation_t lop, const gs_fixed_rect * pbox,
@@ -2750,15 +1997,8 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 	    fixed y_min;
 
 	    if (new_band) {
-		/*
-		 * rule = -1 for winding number rule, i.e.
-		 * we are inside if the winding number is non-zero;
-		 * rule = 1 for even-odd rule, i.e.
-		 * we are inside if the winding number is odd.
-		 */
 		int inside = 0;
 
-#define INSIDE_PATH_P() ((inside & rule) != 0)
 		INCR(band);
 		for (alp = ll->x_list; alp != 0; alp = alp->next) {
 		    int x0 = fixed2int_pixround(alp->x_current - adjust_left);
@@ -2768,7 +2008,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 			print_al("step", alp);
 			INCR(band_step);
 			inside += alp->direction;
-			if (!INSIDE_PATH_P())
+			if (!INSIDE_PATH_P(inside, rule))
 			    break;
 			/*
 			 * Since we're dealing with closed paths, the test
@@ -2779,7 +2019,6 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
 			if ((alp = alp->next) == 0)
 			    goto out;
 		    }
-#undef INSIDE_PATH_P
 		    /* We just went from inside to outside, so fill the region. */
 		    code = range_list_add(&rlist, x0,
 					  fixed2int_rounded(alp->x_current +
@@ -2806,7 +2045,7 @@ fill_loop_by_scan_lines(ll_ptr ll, gx_device * dev,
  * into the range list.
  */
 private int
-merge_ranges(coord_range_list_t *pcrl, ll_ptr ll, fixed y_min, fixed y_top,
+merge_ranges(coord_range_list_t *pcrl, line_list *ll, fixed y_min, fixed y_top,
 	     fixed adjust_left, fixed adjust_right)
 {
     active_line *alp, *nlp;
