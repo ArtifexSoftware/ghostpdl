@@ -70,7 +70,7 @@ jbig2_decode_refinement_template0_unopt(Jbig2Ctx *ctx,
   bool bit;
 
   for (y = 0; y < GBH; y++) {
-    for (x = 0; x < GBH; x++) {
+    for (x = 0; x < GBW; x++) {
       CONTEXT = 0;
       CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
       CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
@@ -119,7 +119,7 @@ jbig2_decode_refinement_template1_unopt(Jbig2Ctx *ctx,
   bool bit;
 
   for (y = 0; y < GBH; y++) {
-    for (x = 0; x < GBH; x++) {
+    for (x = 0; x < GBW; x++) {
       CONTEXT = 0;
       CONTEXT |= jbig2_image_get_pixel(image, x - 1, y + 0) << 0; 
       CONTEXT |= jbig2_image_get_pixel(image, x + 1, y - 1) << 1; 
@@ -178,7 +178,7 @@ jbig2_decode_refinement_template1(Jbig2Ctx *ctx,
     line_m1 = (y >= 1) ? grreg_line[-stride] : 0;
     refline_m1 = ((y-dy) >= 1) ? grref_line[(-1-dy)*stride] << 2: 0;
     refline_0  = (((y-dy) > 0) && ((y-dy) < GBH)) ? grref_line[(0-dy)*stride] << 4 : 0;
-    refline_1  = (y < GBW - 1) ? grref_line[(+1-dy)*stride] << 7 : 0;
+    refline_1  = (y < GBH - 1) ? grref_line[(+1-dy)*stride] << 7 : 0;
     CONTEXT = ((line_m1 >> 5) & 0x00e) |
 	      ((refline_1 >> 5) & 0x030) |
 	      ((refline_0 >> 5) & 0x1c0) |
@@ -260,11 +260,11 @@ jbig2_decode_refinement_region(Jbig2Ctx *ctx,
   {
     jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, segment->number,
       "decoding generic refinement region with offset %d,%x,\n"
-      "  GRTEMPLATE=%d, TPGDON=%d, RA1=(%d,%d) RA2=(%d,%d)\n",
-      params->DX, params->DY, params->GRTEMPLATE, params->TPGDON,
+      "  GRTEMPLATE=%d, TPGRON=%d, RA1=(%d,%d) RA2=(%d,%d)\n",
+      params->DX, params->DY, params->GRTEMPLATE, params->TPGRON,
       params->grat[0], params->grat[1], params->grat[2], params->grat[3]);
   }
-  if (params->TPGDON)
+  if (params->TPGRON)
     return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "decode_refinement_region: typical prediction coding NYI");
   if (params->GRTEMPLATE)
@@ -335,11 +335,11 @@ jbig2_refinement_region(Jbig2Ctx *ctx, Jbig2Segment *segment,
   /* 7.4.7.2 */
   seg_flags = segment_data[17];
   params.GRTEMPLATE = seg_flags & 0x01;
-  params.TPGDON = seg_flags & 0x02;
+  params.TPGRON = seg_flags & 0x02 ? 1 : 0;
   jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
               "segment flags = %02x %s%s", seg_flags,
               params.GRTEMPLATE ? " GRTEMPLATE" :"",
-              params.TPGDON ? " TPGON" : "" );
+              params.TPGRON ? " TPGRON" : "" );
   if (seg_flags & 0xFC)
     jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
                 "reserved segment flag bits are non-zero");

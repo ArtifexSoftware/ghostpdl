@@ -391,7 +391,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 					SDNEWSYMS->glyphs[ID-ninsyms];
 		      rparams.DX = RDX;
 		      rparams.DY = RDY;
-		      rparams.TPGDON = 0;
+		      rparams.TPGRON = 0;
 		      memcpy(rparams.grat, params->sdrat, 4);
 		      jbig2_decode_refinement_region(ctx, segment, 
 		          &rparams, as, image, GB_stats);

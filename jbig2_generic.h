@@ -48,7 +48,7 @@ typedef struct {
   bool GRTEMPLATE;
   Jbig2Image *reference;
   int32_t DX, DY;
-  bool TPGDON;
+  bool TPGRON;
   byte grat[4];
 } Jbig2RefinementRegionParams;
 
