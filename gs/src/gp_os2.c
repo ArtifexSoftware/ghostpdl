@@ -826,17 +826,36 @@ gp_fopen(const char *fname, const char *mode)
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
 uint gp_file_name_root(const char *fname, uint len)
-{   if (len > 0 && fname[0] == '/')
-	return 1;
-    return 0;
+{   int i = 0;
+    
+    if (len == 0)
+	return 0;
+    if (len > 1 && fname[0] == '\\' && fname[1] == '\\') {
+	/* A network path: "//server/share/" */
+	int k = 0;
+
+	for (i = 2; i < len; i++)
+	    if (fname[i] == '\\')
+		if (k++) {
+		    i++;
+		    break;
+		}
+    } else if (fname[0] == '/' || fname[0] == '\\') {
+	/* Absolute with no drive. */
+	i = 1;
+    } else if (len > 1 && fname[1] == ':') {
+	/* Absolute with a drive. */
+	i = (len > 2 && (fname[2] == '/' || fname[2] == '\\') ? 3 : 2);
+    }
+    return i;
 }
 
 uint gs_file_name_check_separator(const char *fname, int len, const char *item)
 {   if (len > 0) {
-	if (fname[0] == '/')
+	if (fname[0] == '/' || fname[0] == '\\')
 	    return 1;
     } else if (len < 0) {
-	if (fname[-1] == '/')
+	if (fname[-1] == '/' || fname[-1] == '\\')
 	    return 1;
     }
     return 0;
@@ -881,3 +900,4 @@ gp_file_name_combine(const char *prefix, uint plen, const char *fname, uint flen
     return gp_file_name_combine_generic(prefix, plen, 
 	    fname, flen, no_neighbour, buffer, blen);
 }
+
