@@ -38,6 +38,7 @@ GENARCH_XE=$(AUXGEN)genarch.exe
 GENCONF_XE=$(AUXGEN)genconf.exe
 GENDEV_XE=$(AUXGEN)gendev.exe
 GENINIT_XE=$(AUXGEN)geninit.exe
+GENHT_XE=$(AUXGEN)genht.exe
 
 
 # Platform specification
@@ -56,7 +57,6 @@ GLOBJ=$(GLOBJDIR)$(D)
 !include $(COMMONDIR)\pcdefs.mak
 !include $(COMMONDIR)\generic.mak
 !include $(GLSRCDIR)\msvccmd.mak
-!include $(GLSRCDIR)\version.mak
 !include $(GLSRCDIR)\lib.mak
 !include $(GLSRCDIR)\msvctail.mak
 
@@ -66,7 +66,7 @@ FORCE:
 # the floating point emulator, even though we don't always link it in.
 # HACK * HACK * HACK - we force this make to occur since we have no
 # way to determine if gs .c files are out of date.
-$(GENDIR)/ldl$(CONFIG).tr: FORCE
+$(GENDIR)/ldgs.tr: FORCE
 	-mkdir $(GLGENDIR)
 	-mkdir $(GLOBJDIR)
 	$(MAKE) /F $(GLSRCDIR)\msvclib.mak MSVC_VERSION="$(MSVC_VERSION)" \
@@ -79,36 +79,25 @@ $(GENDIR)/ldl$(CONFIG).tr: FORCE
 	BAND_LIST_STORAGE=memory BAND_LIST_COMPRESSOR=zlib \
 	FPU_TYPE="$(FPU_TYPE)" CPU_TYPE="$(CPU_TYPE)" CONFIG="$(CONFIG)" \
 	$(GLOBJDIR)\gsargs.$(OBJ) $(GLOBJDIR)\gsnogc.$(OBJ) $(GLOBJDIR)\echogs.exe \
-	$(GLOBJDIR)\ld$(CONFIG).tr $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) \
-	$(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ)
-	$(CP_) $(GENDIR)\ld$(CONFIG).tr >$(GENDIR)\ldl$(CONFIG).tr
+	$(GLOBJDIR)\ld.tr $(GLOBJDIR)\gconfig.$(OBJ) \
+	$(GLOBJDIR)\gscdefs.$(OBJ)
+	$(CP_) $(GENDIR)\ld.tr $(GENDIR)\ldgs.tr
 
 # Build the configuration file.
-$(GENDIR)\pconf$(CONFIG).h $(GENDIR)\ldconf$(CONFIG).tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
-	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf$(CONFIG).h -ol $(GENDIR)\ldconf$(CONFIG).tr
+$(GENDIR)\pconf.h $(GENDIR)\ldconf.tr: $(TARGET_DEVS) $(GLOBJDIR)\genconf$(XE)
+	$(GLOBJDIR)\genconf -n - $(TARGET_DEVS) -h $(GENDIR)\pconf.h -ol $(GENDIR)\ldconf.tr
 
 # Link an MS executable.
-$(GENDIR)\ldt$(CONFIG).tr: $(MAKEFILE) $(GENDIR)\ldl$(CONFIG).tr $(GENDIR)\ldconf$(CONFIG).tr
-	echo /SUBSYSTEM:CONSOLE >$(GENDIR)\ldt$(CONFIG).tr
-	$(CP_) $(GENDIR)\ldt$(CONFIG).tr+$(GENDIR)\ld$(CONFIG).tr $(GENDIR)\ldt$(CONFIG).tr
-	echo $(GLOBJDIR)\gsargs.$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
-	echo $(GLOBJDIR)\gsnogc.$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
-	echo $(GLOBJDIR)\gconfig$(CONFIG).$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
-	echo $(GLOBJDIR)\gscdefs$(CONFIG).$(OBJ) >>$(GENDIR)\ldt$(CONFIG).tr
-	$(CP_) $(GENDIR)\ldt$(CONFIG).tr+$(GENDIR)\ldconf$(CONFIG).tr $(GENDIR)\ldt$(CONFIG).tr
+$(GENDIR)\ldall.tr: $(MAKEFILE) $(GENDIR)\ldgs.tr $(GENDIR)\ldconf.tr
+	echo /SUBSYSTEM:CONSOLE >$(GENDIR)\ldall.tr
+	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldgs.tr $(GENDIR)\ldall.tr
+	echo $(GLOBJDIR)\gsargs.$(OBJ) >>$(GENDIR)\ldall.tr
+	echo $(GLOBJDIR)\gsnogc.$(OBJ) >>$(GENDIR)\ldall.tr
+	echo $(GLOBJDIR)\gconfig.$(OBJ) >>$(GENDIR)\ldall.tr
+	echo $(GLOBJDIR)\gscdefs.$(OBJ) >>$(GENDIR)\ldall.tr
+	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldconf.tr $(GENDIR)\ldall.tr
 
-# Link the executable. Force LIB to ref GS 'coz ld$(CONFIG).tr obj's have no pathname
-!ifdef LIB
-OLD_LIB=$(LIB)
-!endif
 
-$(TARGET_XE)$(XE): $(GENDIR)\ldt$(CONFIG).tr $(MAIN_OBJ) $(LIBCTR)
-	rem Set LIB env var to alloc linker to find GS object files
-	set LIB=$(GLGENDIR)
+$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(LIBCTR)
 	$(LINK_SETUP)
-	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) @$(GENDIR)\ldt$(CONFIG).tr @$(LIBCTR)
-	set LIB=$(OLD_LIB)
-
-!ifdef OLD_LIB
-! undef OLD_LIB
-!endif
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR)
