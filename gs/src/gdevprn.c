@@ -1054,7 +1054,16 @@ gx_default_setup_buf_device(gx_device *bdev, byte *buffer, int bytes_per_line,
     /****** HACK ******/
     if ((gx_device *)mdev == bdev && mdev->num_planes)
 	raster = bitmap_raster(mdev->planes[0].depth * mdev->width);
+
+    if (ptrs == 0 && mdev->line_ptrs) {
+        /* HACK covers up miss use of interface,
+	 * when mdev->line_ptrs are to be reused caller should set ptrs = line_ptrs
+	 * otherwise the line_ptrs will be reallocated causing a leak.
+	 */
+	ptrs = mdev->line_ptrs;
+    }
     if (ptrs == 0) {
+
 	/*
 	 * Allocate line pointers now; free them when we close the device.
 	 * Note that for multi-planar devices, we have to allocate using
