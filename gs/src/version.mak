@@ -8,9 +8,10 @@
 
 # Major and minor version numbers.
 # MINOR0 is different from MINOR only if MINOR is a single digit.
+# Artifex 6.12 derived from Aladdin 6.01
 GS_VERSION_MAJOR=6
-GS_VERSION_MINOR=01
-GS_VERSION_MINOR0=01
+GS_VERSION_MINOR=12
+GS_VERSION_MINOR0=12
 # Revision date: year x 10000 + month x 100 + day.
 GS_REVISIONDATE=20000317
 # Derived values
