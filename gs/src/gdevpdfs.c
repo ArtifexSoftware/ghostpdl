@@ -226,20 +226,30 @@ process_plain_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     bool encoded;
     pdf_text_process_state_t text_state;
     int i;
+    int cnt = 0;
 
     if (operation & (TEXT_FROM_STRING | TEXT_FROM_BYTES)) {
-	/* stefan foo: skip non-unicode safe pdf code 
-	 * text.size is num elements, element size is NOT stored.
-	 * This is only an issue with pdfwrite, other places use a correct int get_char(); 
-	 * how do I discover if non single byte encoding is being used? 
-	 */
-	if ( (((const char *)vdata) + pte->index)[0] == 0 ) {
+	if ( operation & TEXT_IS_UNICODE ) {
+	    /* unicode encoding, 16bit chars */
 	    for (i = 0; i < pte->text.size*2; i += 2) {
-		buf[i >> 1] = ( ((const char *)vdata) + pte->index)[i + 1];
-	    }	    
+
+	        if ( 0 != ( ((const char *)vdata) + pte->index)[i] ) {
+		    /* print all 16bit unicode as bitmaps for now.
+		     * NB need to write a ToUnicode CMap in pdf.
+		     */		
+		    return_error(gs_error_rangecheck);		
+		}
+		/* else 8bit incorrectly assume ENCODING_INDEX_WINANSI 
+		 * hiding in unicode least significant byte 
+		 */
+		buf[cnt++] = ( ((const char *)vdata) + pte->index)[i + 1];
+	    }
+	    buf[cnt] = 0;  
+	    size = cnt; 
 	}
-	else
-	    memcpy(buf, (const byte *)vdata + pte->index, size);
+	else {
+	  memcpy(buf, (const byte *)vdata + pte->index, size);
+	}
 	encoded = false;
     } else if (operation & (TEXT_FROM_CHARS | TEXT_FROM_SINGLE_CHAR)) {
 	/* Check that all chars fit in a single byte. */

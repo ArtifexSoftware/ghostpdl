@@ -86,6 +86,9 @@
 	/* Define whether to return the width. */
 #define TEXT_RETURN_WIDTH         0x20000
 
+/* 16bit char or string */
+#define TEXT_IS_UNICODE         0x100000
+
 /*
  * Define the structure of parameters passed in for text display.
  * Note that the implementation does not modify any of these; the client
@@ -192,6 +195,10 @@ typedef struct gs_state_s gs_state;
 #endif
 int gs_text_begin(P4(gs_state * pgs, const gs_text_params_t * text,
 		     gs_memory_t * mem, gs_text_enum_t ** ppenum));
+
+/* unicode show_begin */
+int gs_ushow_begin(gs_state *pgs, const byte *str, uint size,
+		   gs_memory_t *mem, gs_text_enum_t **ppte );
 
 /* Begin the PostScript-equivalent text operators. */
 int

@@ -279,7 +279,7 @@ show_char_foreground(
 )
 {
     gs_text_enum_t *   penum;
-    int                code = gs_show_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
+    int                code = gs_ushow_begin(pcs->pgs, pbuff, 1, pcs->memory, &penum);
 
     if (code >= 0)
         code = gs_text_process(penum);

@@ -214,6 +214,21 @@ gs_text_begin(gs_state * pgs, const gs_text_params_t * text,
 				pcpath, mem, ppte);
 }
 
+/** unicode show_begin
+ * str contains 16bit unicode characters 
+ * size is number of elements, NOT number of bytes!
+ */
+int
+gs_ushow_begin(gs_state * pgs, const byte * str, uint size,
+	      gs_memory_t * mem, gs_text_enum_t ** ppte)
+{
+    gs_text_params_t text;
+
+    text.operation = TEXT_FROM_STRING | TEXT_DO_DRAW | TEXT_RETURN_WIDTH | TEXT_IS_UNICODE;
+    text.data.bytes = str, text.size = size;
+    return gs_text_begin(pgs, &text, mem, ppte);
+}
+
 /* Begin PostScript-equivalent text operations. */
 int
 gs_show_begin(gs_state * pgs, const byte * str, uint size,

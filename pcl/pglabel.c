@@ -685,7 +685,7 @@ hpgl_print_char(
 		ch = ' ';
 		lsb = 0;
 	    } else
-		lsb = metrics[0];
+	        lsb = metrics[0];
 	}
 	/* Handle size. */
 	if (pgls->g.character.size_mode == hpgl_size_not_set) {
@@ -870,8 +870,12 @@ hpgl_print_char(
 	} else {
             if (use_show) {
 		hpgl_call(hpgl_set_drawing_color(pgls, hpgl_rm_character));
-	        code = gs_show_begin(pgs, (char *)str, 1, pgls->memory, &penum);
-	    } else
+
+		if ( pgls->g.label.double_byte ) /* tell pdfwrite about 16bit chars */
+		    code = gs_ushow_begin(pgs, (char *)str, 1, pgls->memory, &penum);
+		else
+		    code = gs_show_begin(pgs, (char *)str, 1, pgls->memory, &penum);
+	    } else 
 		code = gs_charpath_begin(pgs, (char *)str, 1, true, pgls->memory, &penum);
 	    if ( code >= 0 )
 		code = gs_text_process(penum);
