@@ -227,6 +227,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     code = pdf_open_page(pdev, PDF_IN_STREAM);
     if (code < 0)
 	return code;
+    pdf_put_clip_path(pdev, pcpath);
     if (context == PDF_IMAGE_TYPE3_MASK) {
 	/*
 	 * The soft mask for an ImageType 3x image uses a DevicePixel
@@ -277,7 +278,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	gs_free_object(mem, pie, "pdf_begin_image");
 	goto nyi;
     }
-    pdf_put_clip_path(pdev, pcpath);
     if (pmat == 0)
 	pmat = &ctm_only(pis);
     {
