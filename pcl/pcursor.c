@@ -394,7 +394,8 @@ set_horiz_motion_index(
     pcl_state_t *   pcs
 )
 {
-    pcs->hmi_cp = inch2coord(fabs(float_arg(pargs)) / 120.0);
+    /* HMI in 120 units converted to 7200 units with roundup */ 
+    pcs->hmi_cp = (coord)((fabs(float_arg(pargs)) * 60.0) + 0.5);
     return 0;
 }
 
