@@ -97,22 +97,23 @@ $(GENDIR)\ldall.tr: $(MAKEFILE) $(GENDIR)\ldgs.tr $(GENDIR)\ldconf.tr
 	echo $(GLOBJDIR)\gscdefs.$(OBJ) >>$(GENDIR)\ldall.tr
 	$(CP_) $(GENDIR)\ldall.tr+$(GENDIR)\ldconf.tr $(GENDIR)\ldall.tr
 
+# AGFA Workaround to add needed ufst font libraries.
 !IF "$(PL_FONT_SCALER)" == "ufst"
-# HACK in the AGFA STUFF here.
-
 FONTLIB=$(GENDIR)\fontlib.tr
-
-
 # I have no idea what NODEFAULTLIB means.
 $(FONTLIB): $(MAKEFILE)
 	echo /NODEFAULTLIB:LIBC.lib > $(FONTLIB)
         echo $(UFST_LIBDIR)\fco_lib.lib >>$(FONTLIB)
         echo $(UFST_LIBDIR)\if_lib.lib >>$(FONTLIB)
         echo $(UFST_LIBDIR)\tt_lib.lib >>$(FONTLIB)
-!ELSE
-FONTLIB=
-!ENDIF
 
 $(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR) $(FONTLIB)
 	$(LINK_SETUP)
 	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR) @$(FONTLIB)
+
+!ELSE
+$(TARGET_XE)$(XE): $(GENDIR)\ldall.tr $(MAIN_OBJ) $(TOP_OBJ) $(LIBCTR)
+	$(LINK_SETUP)
+	$(LINK) $(LCT) /OUT:$(TARGET_XE)$(XE) $(MAIN_OBJ) $(TOP_OBJ) @$(GENDIR)\ldall.tr @$(LIBCTR) @$(FONTLIB)
+
+!ENDIF
