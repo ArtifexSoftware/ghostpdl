@@ -11,6 +11,7 @@
 #include "stdio_.h"
 #include "scommon.h"			/* for pparse.h */
 #include "pcparse.h"
+#include "pcpage.h"
 #include "pcstate.h"
 #include "pldebug.h"
 #include "gdebug.h"
@@ -491,6 +492,9 @@ pcl_impl_process_eof(
         int code;
 	pcl_interp_instance_t *pcli = (pcl_interp_instance_t *)instance;
 	pcl_process_init(&pcli->pst);
+	code = pcl_end_page_if_marked(&pcli->pcs);
+	if ( code < 0 )
+	    return code;
         /* force restore & cleanup if unexpected data end was encountered */
 	return 0;
 }
