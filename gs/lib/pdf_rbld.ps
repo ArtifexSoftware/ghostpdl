@@ -224,9 +224,8 @@
 % an alternate version of the data in the xref tables.
 % Its purpose is to provide a basis for an xref fixing facility.
 /search_objects				% - search_objects -
-{ % Reset the Objects and Generations larrays
-  /Objects larray def
-  /Generations lstring def
+{ % Initialize the Objects, Generations, etc. larrays
+  initPDFobjects
   % reset duplicate object and generation numbers error flag
   /dup_obj_gen_num false def
   % Determine how many bytes are in the file after the final %%EOF

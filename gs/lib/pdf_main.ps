@@ -342,26 +342,24 @@ pdfdict begin
    not {/pdfopen cvx /syntaxerror signalerror} if
    (%PDF-) search not {/pdfopen cvx /syntaxerror signalerror} if
    length /PDFoffset exch def pop cvr /PDFversion exch def
-   findxref
-   initPDFobjects
-	% we currently have one object on stack.
-	% we doo not include it in pdfemptycount
-   count 1 sub /pdfemptycount exch def
 	% Read the last cross-reference table.
-   { readxref } .internalstopped {
+   /pdfemptycount count def
+   { initPDFobjects findxref readxref } .internalstopped {
+        % Read failed.  Attempt to recover xref data.
      print_xref_warning 
      count pdfemptycount sub { pop } repeat % remove anything left by readxref
      search_objects
-     count /pdfemptycount exch def
      search_trailer
    } { /Trailer exch def
 	% Read any previous cross-reference tables.
      Trailer
      { /Prev knownoget not { exit } if
        { readxref } .internalstopped {
+         % Read failed.  Attempt to recover xref data.
          print_xref_warning
          count pdfemptycount sub { pop } repeat	% remove anything left by readxref
 	 search_objects
+         search_trailer
 	 exit
        } if
      } loop
@@ -415,8 +413,21 @@ pdfdict begin
   prevline token not { null } if dup type /integertype eq {
     exch pop cvi		% xref start position
     exch PDFfile exch setfileposition
-    prevline (startxref) linene { /findxref cvx /syntaxerror signalerror } if
-    pop
+    prevline dup (startxref) linene {
+      % startxref not on a line by itself.  We have found PDF from
+      % www.verypdf.com in which the startxref was on the same line as
+      % the end of trailer dictionary.  Check for this.  Note:  This
+      % violates the spec.
+      dup (startxref) search {
+	% found startxref - print warning
+	pop pop pop 			% clear strings from search
+        (   **** Warning: format of the startxref line in this file is invalid.\n)
+        pdfformaterror
+      } {				% no startxref - we have a problem.
+        /findxref cvx /syntaxerror signalerror
+      } ifelse
+    } if
+    pop pop
   } {	% else, this file has 'startxref #####' format
     (startxref) ne { /findxref cvx /syntaxerror signalerror } if
     cvi		% xref start position
