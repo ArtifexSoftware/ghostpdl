@@ -171,11 +171,7 @@ write_Private(stream *s, gs_font_type1 *pfont,
 
     if (code < 0)
 	return 0;
-    /*
-     * Note: eexec encryption always writes/skips 4 initial bytes, not
-     * the number of initial bytes given by pdata->lenIV.
-     */
-    pputs(s, "****dup /Private 17 dict dup begin\n");
+    pputs(s, "dup /Private 17 dict dup begin\n");
     pputs(s, "/-|{string currentfile exch readstring pop}executeonly def\n");
     pputs(s, "/|-{noaccess def}executeonly def\n");
     pputs(s, "/|{noaccess put}executeonly def\n");
@@ -438,6 +434,11 @@ psf_write_type1_font(stream *s, gs_font_type1 *pfont, int options,
 	s_init_filter(&exE_stream, (stream_state *)&exE_state,
 		      exE_buf, sizeof(exE_buf), es);
 	es = &exE_stream;
+	/*
+	 * Note: eexec encryption always writes/skips 4 initial bytes, not
+	 * the number of initial bytes given by pdata->lenIV.
+	 */
+	pputs(es, "****");
     }
     code = write_Private(es, pfont, glyphs.subset_glyphs, glyphs.subset_size,
 			 glyphs.notdef, &ppp);
