@@ -197,9 +197,9 @@ pcjob_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { pcls->num_copies = atoi(pjl_get_envvar(pcls->pjls, "copies"));
 	    pcls->duplex =
-		!strcmp(pjl_get_envvar(pcls->pjls, "duplex"), "off") ? false : true;
+		!pjl_compare(pjl_get_envvar(pcls->pjls, "duplex"), "off") ? false : true;
 	    pcls->bind_short_edge =
-		!strcmp(pjl_get_envvar(pcls->pjls, "binding"), "longedge") ? false : true;
+		!pjl_compare(pjl_get_envvar(pcls->pjls, "binding"), "longedge") ? false : true;
 	    pcls->back_side = false;
 	    pcls->output_bin = 1;
           }

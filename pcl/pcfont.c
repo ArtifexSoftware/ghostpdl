@@ -452,7 +452,7 @@ pcfont_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	/* NB this needs to be filled in more completely with
            information specific to the os and the implemented font
            tables */
-	if (!strcmp(pjl_get_envvar(pcls->pjls, "fontsource"), "I"))
+	if (!pjl_compare(pjl_get_envvar(pcls->pjls, "fontsource"), "I"))
 	    pcls->current_font_directories = built_in_font_prefixes;
 	else
 	    /* NB - HANDLE other cases M1, M2, M3, M4, C, C1, S pjltrm

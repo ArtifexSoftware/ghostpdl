@@ -899,14 +899,15 @@ get_default_paper(
     char *psize = pjl_get_envvar(pcs->pjls, "paper");
     pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
-        if (!strcmp(psize, paper_sizes[i].pname)) {
+        if (!pjl_compare(psize, paper_sizes[i].pname)) {
 	    pcl_paper_size_t *ps = &(paper_sizes[i].psize);
 	    /* we are not sure if widea4 applies to all paper sizes */
-	    if (!strcmp(pjl_get_envvar(pcs->pjls, "widea4"), "YES"))
+	    if (!pjl_compare(pjl_get_envvar(pcs->pjls, "widea4"), "YES"))
 		pcs->wide_a4 = true;
 	    return &(paper_sizes[i].psize);
 	}
-    dprintf("pcl does not support system requested paper\n");
+    dprintf2("pcl does not support system requested %s paper setting %s\n",
+	     psize, paper_sizes[1].pname);
     return &(paper_sizes[1].psize);
 }
     
@@ -924,9 +925,9 @@ pcpage_do_reset(
         pcs->xfm_state.top_offset_cp = 0.0;
 	pcs->perforation_skip = 1;
         new_logical_page( pcs,
-			  !strcmp(pjl_get_envvar(pcs->pjls,
+			  !pjl_compare(pjl_get_envvar(pcs->pjls,
 						 "orientation"),
-				  "portrait") ? 0 : 1,
+				       "portrait") ? 0 : 1,
                           get_default_paper(pcs),
                           (type & pcl_reset_initial) != 0
                           );
