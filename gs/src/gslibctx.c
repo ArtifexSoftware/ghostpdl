@@ -16,7 +16,7 @@
  */
 
 /* Capture stdin/out/err before gs.h redefines them. */
-#include <stdio.h>
+#include "stdio_.h"
 
 static void
 gs_lib_ctx_get_real_stdio(FILE **in, FILE **out, FILE **err)
