@@ -103,7 +103,7 @@ AC_STRUCT_TM
 
 dnl see if we're on a system that puts the *int*_t types 
 dnl from stdint.h in sys/types.h
-if test "$ac_cv_header_stdint_h" != yes; then
+if test "x$ac_cv_header_stdint_h" != xyes; then
     AC_CHECK_TYPES([int8_t, int16_t, int32_t, uint8_t, uint16_t, uint32_t],,,[#include <sys/types.h>])
     if test "$ac_cv_type_uint8_t" = yes; then
         AC_DEFINE([SYS_TYPES_HAS_STDINT_TYPES])
@@ -116,7 +116,7 @@ dnl the flags we care about
 if test "$ac_cv_c_const" != yes; then
 	GCFLAGS="$GCFLAGS -Dconst="
 fi
-if test "$ac_cv_header_stdint_h" = yes; then
+if test "x$ac_cv_header_stdint_h" = xyes; then
 	GCFLAGS="$GCFLAGS -DHAVE_STDINT_H"
 fi
 
