@@ -191,10 +191,6 @@ bool gp_file_name_is_partent_allowed(void)
 {   return true;
 }
 
-uint gp_file_name_unclose(const char *fname, uint len)
-{   return 0;
-}
-
 bool gp_file_name_is_empty_item_meanful(void)
 {   return false;
 }

@@ -91,7 +91,7 @@ gp_file_name_concat_string(const char *prefix, unsigned plen)
 /* -------------- Helpers for gp_file_name_combine_generic ------------- */
 
 uint gp_file_name_root(const char *fname, uint len)
-{   if (len > 0 && fname[0] == '/') {
+{   if (len > 0 && fname[0] == '/')
 	return 1;
     return 0;
 }
@@ -125,10 +125,6 @@ char *gp_file_name_current(void)
 
 bool gp_file_name_is_partent_allowed(void)
 {   return true;
-}
-
-uint gp_file_name_unclose(const char *fname, uint len)
-{   return 0;
 }
 
 bool gp_file_name_is_empty_item_meanful(void)
