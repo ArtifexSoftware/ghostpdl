@@ -278,7 +278,7 @@ gs_font_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->memory = mem;
     pfont->dir = dir;
     pfont->is_resource = false;
-    gs_notify_init(&pfont->notify_list, gs_memory_stable(mem));
+    gs_font_notify_init(pfont);
     pfont->id = gs_next_ids(1);
     pfont->base = pfont;
     pfont->client_data = 0;
@@ -310,6 +310,30 @@ gs_font_base_alloc(gs_memory_t *mem, gs_memory_type_ptr_t pstype,
     pfont->encoding_index = pfont->nearest_encoding_index = -1;
     return pfont;
 }
+
+/* Initialize the notification list for a font. */
+void
+gs_font_notify_init(gs_font *font)
+{
+    /*
+     * The notification list for a font must be allocated in the font's
+     * stable memory, because of the following possible sequence of events:
+     *
+     *   - Allocate font X in local VM.
+     *   - Client A registers for notification when X is freed.
+     *   - 'save'
+     *   - Client B registers for notification when X is freed.
+     *   - 'restore'
+     *
+     * If the notification list element for client B is allocated in
+     * restorable local VM (i.e., the same VM as the font), then when the
+     * 'restore' occurs, either the list element will be deleted (not what
+     * client B wants, because font X hasn't been freed yet), or there will
+     * be a dangling pointer.
+     */
+    gs_notify_init(&font->notify_list, gs_memory_stable(font->memory));
+}
+
 
 /*
  * Register/unregister a client for notification by a font.  Currently
@@ -436,7 +460,7 @@ gs_makefont(gs_font_dir * pdir, const gs_font * pfont,
     if (!pf_out)
 	return_error(gs_error_VMerror);
     memcpy(pf_out, pfont, gs_object_size(mem, pfont));
-    gs_notify_init(&pf_out->notify_list, gs_memory_stable(mem));
+    gs_font_notify_init(pf_out);
     pf_out->FontMatrix = newmat;
     pf_out->client_data = 0;
     pf_out->dir = pdir;

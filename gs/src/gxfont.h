@@ -381,6 +381,9 @@ gs_font *
 		   const gs_font_procs *procs, gs_font_dir *dir,
 		   client_name_t cname));
 
+/* Initialize the notification list for a font. */
+void gs_font_notify_init(gs_font *font);
+
 /*
  * Register/unregister a client for notification by a font.  Currently
  * the clients are only notified when a font is freed.  Note that any

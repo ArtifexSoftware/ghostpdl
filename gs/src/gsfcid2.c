@@ -51,9 +51,10 @@ gs_font_cid2_from_type42(gs_font_cid2 **ppfcid, gs_font_type42 *pfont42,
 
     /* CIDFontType 2 is a subclass (extension) of FontType 42. */
     memcpy(pfcid, pfont42, sizeof(*pfont42));
+    pfcid->memory = mem;
     pfcid->next = pfcid->prev = 0; /* probably not necessary */
     pfcid->is_resource = 0;
-    gs_notify_init(&pfcid->notify_list, mem);
+    gs_font_notify_init((gs_font *)pfcid);
     pfcid->id = gs_next_ids(1);
     pfcid->base = (gs_font *)pfcid;
     pfcid->FontType = ft_CID_TrueType;
