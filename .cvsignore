@@ -4,8 +4,10 @@ configure
 config.log
 config.status
 aclocal.m4
+autom4te.cache
 compile
 depcomp
+.deps
 config.h
 config.h.in
 config_types.h
@@ -14,6 +16,8 @@ stamp-h
 stamp-h1
 stamp-h.in
 install-sh
+missing
+mkinstalldirs
 jbig2dec
 test_huffman
 test_arith
@@ -22,3 +26,4 @@ test_pbm
 test_sha1
 *.pyc
 pbm2png
+.DS_Store
