@@ -460,7 +460,6 @@ create_window(IMAGE *img)
     char winposbuf[256];
     char window_title[256];
     int len = sizeof(winposbuf);
-    int x, y, cx, cy;
 
     /* create background brush */
     lb.lbStyle = BS_SOLID;
@@ -479,6 +478,8 @@ create_window(IMAGE *img)
     img->nHscrollPos = img->nHscrollMax = 0;
     img->x = img->y = img->cx = img->cy = CW_USEDEFAULT;
     if (win_get_reg_value((img->device != NULL ? "Image" : "Tracer"), winposbuf, &len) == 0) {
+	int x, y, cx, cy;
+	
 	if (sscanf(winposbuf, "%d %d %d %d", &x, &y, &cx, &cy) == 4) {
 	    img->x = x;
 	    img->y = y;
@@ -521,7 +522,10 @@ create_window(IMAGE *img)
 	      WS_OVERLAPPEDWINDOW,
 	      img->x, img->y, img->cx, img->cy, 
 	      NULL, NULL, GetModuleHandle(NULL), (void *)img);
-    if (img->device == NULL)
+    if (img->device == NULL && img->x != CW_USEDEFAULT &&
+			       img->y != CW_USEDEFAULT &&
+			       img->cx != CW_USEDEFAULT &&
+			       img->cy != CW_USEDEFAULT)
         MoveWindow(img->hwnd, img->x, img->y, img->cx, img->cy, FALSE);
     ShowWindow(img->hwnd, (img->device != NULL ? SW_SHOWMINNOACTIVE : SW_SHOW));
 
