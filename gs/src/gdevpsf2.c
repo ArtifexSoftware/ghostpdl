@@ -1530,6 +1530,8 @@ psf_write_cid0_font(stream *s, gs_font_cid0 *pfont, int options,
     writer.glyph_data = cid0_glyph_data;
     writer.offset_size = 1;	/* arbitrary */
     writer.start_pos = stell(s);
+    writer.FontBBox.p.x = writer.FontBBox.p.y = 0;
+    writer.FontBBox.q.x = writer.FontBBox.q.y = 0;
 
     /* Set the font name. */
     if (alt_font_name)
