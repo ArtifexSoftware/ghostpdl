@@ -160,9 +160,7 @@ typedef struct segment_s segment;
 #define ostack_size 48		/* per Type 2 documentation */
 #define ipstack_size 10		/* per documentation */
 struct gs_type1_state_s {
-#if NEW_TYPE1_HINTER
     t1_hinter h;
-#endif
     /* The following are set at initialization */
     gs_font_type1 *pfont;	/* font-specific data */
     gs_imager_state *pis;	/* imager state */
@@ -355,17 +353,5 @@ void
 		   const gs_matrix_fixed *),
     type1_do_center_vstem(gs_type1_state *, fixed, fixed,
 			  const gs_matrix_fixed *);
-
-#define replace_stem_hints(pcis)\
-  (apply_path_hints(pcis, false),\
-   type1_replace_stem_hints(pcis))
-#define apply_path_hints(pcis, closing)\
-  type1_apply_path_hints(pcis, closing, pcis->path)
-#define type1_hstem(pcis, y, dy, add_lsb)\
-  type1_do_hstem(pcis, y, dy, add_lsb, &(pcis)->pis->ctm)
-#define type1_vstem(pcis, x, dx, add_lsb)\
-  type1_do_vstem(pcis, x, dx, add_lsb, &(pcis)->pis->ctm)
-#define type1_center_vstem(pcis, x0, dx)\
-  type1_do_center_vstem(pcis, x0, dx, &(pcis)->pis->ctm)
 
 #endif /* gxtype1_INCLUDED */

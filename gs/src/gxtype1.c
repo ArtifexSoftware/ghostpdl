@@ -412,59 +412,7 @@ gs_type1_endchar(gs_type1_state * pcis)
 	pcis->ipstack[0].cs_data = agdata;
 	return 1;
     }
-#   if !NEW_TYPE1_HINTER
-    if (pcis->hint_next != 0 || path_is_drawing(ppath))
-	apply_path_hints(pcis, true);
-    /* Set the current point to the character origin */
-    /* plus the width. */
-    {
-	gs_fixed_point pt;
-
-	gs_point_transform2fixed(&pis->ctm,
-				 fixed2float(pcis->width.x),
-				 fixed2float(pcis->width.y),
-				 &pt);
-	gx_path_add_point(ppath, pt.x, pt.y);
-    }
-#   if !DROPOUT_PREVENTION
-    if (pcis->scale.x.log2_unit + pcis->scale.y.log2_unit == 0) {	/*
-									 * Tweak up the fill adjustment.  This is a hack for when
-									 * we can't oversample.  The values here are based entirely
-									 * on experience, not theory, and are designed primarily
-									 * for displays and low-resolution fax.
-									 */
-	gs_fixed_rect bbox;
-	int dx, dy, dmax;
-
-	gx_path_bbox(ppath, &bbox);
-	dx = fixed2int_ceiling(bbox.q.x - bbox.p.x);
-	dy = fixed2int_ceiling(bbox.q.y - bbox.p.y);
-	dmax = max(dx, dy);
-	if (pcis->fh.snap_h.count || pcis->fh.snap_v.count ||
-	    pcis->fh.a_zone_count
-	    ) {			/* We have hints.  Only tweak up a little at */
-	    /* very small sizes, to help nearly-vertical */
-	    /* or nearly-horizontal diagonals. */
-	    pis->fill_adjust.x = pis->fill_adjust.y =
-		(dmax < 15 ? float2fixed(0.15) :
-		 dmax < 25 ? float2fixed(0.1) :
-		 fixed_0);
-	} else {		/* No hints.  Tweak a little more to compensate */
-	    /* for lack of snapping to pixel grid. */
-	    pis->fill_adjust.x = pis->fill_adjust.y =
-		(dmax < 10 ? float2fixed(0.2) :
-		 dmax < 25 ? float2fixed(0.1) :
-		 float2fixed(0.05));
-	}
-    } else {			/* Don't do any adjusting. */
-	pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
-    }
-#   else
     pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
-#   endif
-#   else
-    pis->fill_adjust.x = pis->fill_adjust.y = fixed_0;
-#   endif
     /* Set the flatness for curve rendering. */
     if (!pcis->charpath_flag)
 	gs_imager_setflat(pis, pcis->flatness);

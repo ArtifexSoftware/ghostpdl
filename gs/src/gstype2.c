@@ -32,14 +32,6 @@
 #include "gxtype1.h"
 #include "gxhintn.h"
 
-#if NEW_TYPE1_HINTER
-#   define OLD(a) DO_NOTHING
-#   define NEW(a) a
-#else
-#   define OLD(a) a
-#   define NEW(a) DO_NOTHING
-#endif
-
 /* NOTE: The following are not yet implemented:
  *	Registry items other than 0
  *	Counter masks (but they are parsed correctly)
@@ -66,10 +58,8 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	  bool explicit_width)
 {
     fixed wx;
-#   if NEW_TYPE1_HINTER
     t1_hinter *h = &pcis->h;
     int code;
-#   endif
 
     if (explicit_width) {
 	wx = cstack[0] + pcis->pfont->data.nominalWidthX;
@@ -77,11 +67,9 @@ type2_sbw(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack, ip_state_t * ipsp,
 	--csp;
     } else
 	wx = pcis->pfont->data.defaultWidthX;
-#   if NEW_TYPE1_HINTER
     code = t1_hinter__sbw(h, fixed_0, fixed_0, wx, fixed_0);
     if (code < 0)
 	return code;
-#   endif
     gs_type1_sbw(pcis, fixed_0, fixed_0, wx, fixed_0);
     /* Back up the interpretation pointer. */
     ipsp->ip--;
@@ -100,41 +88,17 @@ type2_vstem(gs_type1_state * pcis, cs_ptr csp, cs_ptr cstack)
 {
     fixed x = 0;
     cs_ptr ap;
-#   if NEW_TYPE1_HINTER
     t1_hinter *h = &pcis->h;
     int code;
-#   endif
 
-    OLD(apply_path_hints(pcis, false));
     for (ap = cstack; ap + 1 <= csp; x += ap[1], ap += 2) {
-	OLD(type1_vstem(pcis, x += ap[0], ap[1], false));
-#	if NEW_TYPE1_HINTER
         code = t1_hinter__vstem(h, x += ap[0], ap[1]);
 	if (code < 0)
 	    return code;
-#	endif
     }
     pcis->num_hints += (csp + 1 - cstack) >> 1;
     return 0;
 }
-
-#if !NEW_TYPE1_HINTER
-/* Enable only the hints selected by a mask. */
-private void
-enable_hints(stem_hint_table * psht, const byte * mask)
-{
-    stem_hint *table = &psht->data[0];
-    stem_hint *ph = table + psht->current;
-
-    for (ph = &table[psht->count]; --ph >= table;) {
-	ph->active = (mask[ph->index >> 3] & (0x80 >> (ph->index & 7))) != 0;
-	if_debug6('1', "[1]  %s %u: %g(%g),%g(%g)\n",
-		  (ph->active ? "enable" : "disable"), ph->index,
-		  fixed2float(ph->v0), fixed2float(ph->dv0),
-		  fixed2float(ph->v1), fixed2float(ph->dv1));
-    }
-}
-#endif
 
 /* ------ Main interpreter ------ */
 
@@ -150,9 +114,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 {
     gs_font_type1 *pfont = pcis->pfont;
     gs_type1_data *pdata = &pfont->data;
-#   if NEW_TYPE1_HINTER
     t1_hinter *h = &pcis->h;
-#   endif
     bool encrypted = pdata->lenIV >= 0;
     gs_op1_state s;
     fixed cstack[ostack_size];
@@ -176,11 +138,10 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 
     switch (pcis->init_done) {
 	case -1:
-	    NEW(t1_hinter__init(h, pcis->path));
+	    t1_hinter__init(h, pcis->path);
 	    break;
 	case 0:
 	    gs_type1_finish_init(pcis, &s);	/* sets sfc, ptx, pty, origin */
-#	    if NEW_TYPE1_HINTER
             code = t1_hinter__set_mapping(h, &pcis->pis->ctm, &pfont->FontBBox, 
 			    &pfont->FontMatrix, &pfont->base->FontMatrix,
 			    pcis->scale.x.log2_unit, pcis->scale.x.log2_unit,
@@ -193,7 +154,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    code = t1_hinter__set_font_data(h, 2, pdata, pcis->charpath_flag);
 	    if (code < 0)
 	    	return code;
-#	    endif
 	    break;
 	default /*case 1 */ :
 	    ptx = pcis->position.x;
@@ -315,15 +275,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		}
 		check_first_operator(csp > cstack);
 		accum_y(*csp);
-#	    if NEW_TYPE1_HINTER
                 code = t1_hinter__rmoveto(h, 0, *csp);
-#	    endif
 	      move:
-#	    if !NEW_TYPE1_HINTER
-		if ((pcis->hint_next != 0 || !gx_path_is_void(sppath)))
-		    apply_path_hints(pcis, true);
-		code = gx_path_add_point(sppath, ptx, pty);
-#	    endif
 	      cc:
 		if (code < 0)
 		    return code;
@@ -331,8 +284,7 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case cx_rlineto:
 		for (ap = cstack; ap + 1 <= csp; ap += 2) {
 		    accum_xy(ap[0], ap[1]);
-		    NEW(code = t1_hinter__rlineto(h, ap[0], ap[1]));
-		    OLD(code = gx_path_add_line(sppath, ptx, pty));
+		    code = t1_hinter__rlineto(h, ap[0], ap[1]);
 		    if (code < 0)
 			return code;
 		}
@@ -347,22 +299,19 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	      hvl:for (ap = cstack; ap <= csp; vertical = !vertical, ++ap) {
 		    if (vertical) {
 			accum_y(*ap);
-			NEW(code = t1_hinter__rlineto(h, 0, ap[0]));
+			code = t1_hinter__rlineto(h, 0, ap[0]);
 		    } else {
 			accum_x(*ap);
-			NEW(code = t1_hinter__rlineto(h, ap[0], 0));
+			code = t1_hinter__rlineto(h, ap[0], 0);
 		    }
-		    OLD(code = gx_path_add_line(sppath, ptx, pty));
 		    if (code < 0)
 			return code;
 		}
 		goto pp;
 	    case cx_rrcurveto:
 		for (ap = cstack; ap + 5 <= csp; ap += 6) {
-		    OLD(code = gs_op1_rrcurveto(&s, ap[0], ap[1], ap[2],
-					    ap[3], ap[4], ap[5]));
-		    NEW(code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2],
-					    ap[3], ap[4], ap[5]));
+		    code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2],
+					    ap[3], ap[4], ap[5]);
 		    if (code < 0)
 			return code;
 		}
@@ -372,14 +321,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 * See vmoveto above re closing the subpath.  Note that
 		 * sppath may be 0 if we are just getting the glyph info.
 		 */
-#		if !NEW_TYPE1_HINTER
-		if (pfont->PaintType != 1 && sppath != 0) {
-		    code = gx_path_close_subpath(sppath);
-		    if (code < 0)
-			return code;
-		    apply_path_hints(pcis, true);
-		}
-#		endif
   		/*
 		 * It is a feature of Type 2 CharStrings that if endchar is
 		 * invoked with 4 or 5 operands, it is equivalent to the
@@ -404,7 +345,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		 * In this case, there might be a width on the stack.
 		 */
 		check_first_operator(csp >= cstack);
-#	    if NEW_TYPE1_HINTER
 		code = t1_hinter__endchar(h, (pcis->seac_accent >= 0));
 		if (code < 0)
 		    return code;
@@ -414,7 +354,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			return code;
 		} else
 		    t1_hinter__setcurrentpoint(h, pcis->save_adxy.x, pcis->save_adxy.y);
-#	    endif
 		code = gs_type1_endchar(pcis);
 		if (code == 1) {
 		    /*
@@ -433,33 +372,15 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		return code;
 	    case cx_rmoveto:
 		/* See vmoveto above re closing the subpath. */
-#	    if !NEW_TYPE1_HINTER
-		if (pfont->PaintType != 1 && sppath != 0) {
-		    code = gx_path_close_subpath(sppath);
-		    if (code < 0)
-			return code;
-		}
-#	    endif
 		check_first_operator(csp > cstack + 1);
 		accum_xy(csp[-1], *csp);
-#	    if NEW_TYPE1_HINTER
                 code = t1_hinter__rmoveto(h, csp[-1], *csp);
-#	    endif
 		goto move;
 	    case cx_hmoveto:
 		/* See vmoveto above re closing the subpath. */
-#	    if !NEW_TYPE1_HINTER
-		if (pfont->PaintType != 1 && sppath != 0) {
-		    code = gx_path_close_subpath(sppath);
-		    if (code < 0)
-			return code;
-		}
-#	    endif
 		check_first_operator(csp > cstack);
 		accum_x(*csp);
-#	    if NEW_TYPE1_HINTER
                 code = t1_hinter__rmoveto(h, *csp, 0);
-#	    endif
 		goto move;
 	    case cx_vhcurveto:
 		vertical = true;
@@ -467,36 +388,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case cx_hvcurveto:
 		vertical = false;
 	      hvc:for (ap = cstack; ap + 3 <= csp; vertical = !vertical, ap += 4) {
-#	    if !NEW_TYPE1_HINTER
-		    gs_fixed_point pt1, pt2, p;
-		    fixed ax0, ay0;
-
-		    code = gx_path_current_point(sppath, &p);
-		    if (code < 0)
-			return code;
-		    ax0 = p.x - ptx;
-		    ay0 = p.y - pty;
-		    if (vertical)
-			accum_y(ap[0]);
-		    else
-			accum_x(ap[0]);
-		    pt1.x = ptx + ax0, pt1.y = pty + ay0;
-		    accum_xy(ap[1], ap[2]);
-		    pt2.x = ptx, pt2.y = pty;
-		    if (vertical) {
-			if (ap + 4 == csp)
-			    accum_xy(ap[3], ap[4]);
-			else
-			    accum_x(ap[3]);
-		    } else {
-			if (ap + 4 == csp)
-			    accum_xy(ap[4], ap[3]);
-			else
-			    accum_y(ap[3]);
-		    }
-		    code = gx_path_add_curve(sppath, pt1.x, pt1.y,
-					     pt2.x, pt2.y, ptx, pty);
-#		    else
 		    gs_fixed_point pt[2] = {{0, 0}, {0, 0}};
 		    if (vertical) {
 			pt[0].y = ap[0];
@@ -510,7 +401,6 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			pt[1].y = ap[3];
 		    }
 		    code = t1_hinter__rcurveto(h, pt[0].x, pt[0].y, ap[1], ap[2], pt[1].x, pt[1].y);
-#		    endif
 		    if (code < 0)
 			return code;
 		}
@@ -540,17 +430,13 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 	    case c2_hstemhm:
 		pcis->have_hintmask = true;
 	      hstem:check_first_operator(!((csp - cstack) & 1));
-		OLD(apply_path_hints(pcis, false));
 		{
 		    fixed x = 0;
 
 		    for (ap = cstack; ap + 1 <= csp; x += ap[1], ap += 2) {
-			OLD(type1_hstem(pcis, x += ap[0], ap[1], false));
-#			if NEW_TYPE1_HINTER
 			    code = t1_hinter__hstem(h, x += ap[0], ap[1]);
 			    if (code < 0)
 				return code;
-#			endif
 		    }
 		}
 		pcis->num_hints += (csp + 1 - cstack) >> 1;
@@ -592,14 +478,10 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 			/****** NYI ******/
 		    } else {	/* hintmask or equivalent */
 			if_debug0('1', "[1]hstem hints:\n");
-			OLD(enable_hints(&pcis->hstem_hints, mask));
 			if_debug0('1', "[1]vstem hints:\n");
-			OLD(enable_hints(&pcis->vstem_hints, mask));
-#			if NEW_TYPE1_HINTER
 			code = t1_hinter__hint_mask(h, mask);
 			if (code < 0)
 			    return code;
-#			endif
 		    }
 		}
 		break;
@@ -610,29 +492,23 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		cnext;
 	    case c2_rcurveline:
 		for (ap = cstack; ap + 5 <= csp; ap += 6) {
-		    OLD(code = gs_op1_rrcurveto(&s, ap[0], ap[1], ap[2], ap[3],
-					    ap[4], ap[5]));
-		    NEW(code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
-					    ap[4], ap[5]));
+		    code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
+					    ap[4], ap[5]);
 		    if (code < 0)
 			return code;
 		}
 		accum_xy(ap[0], ap[1]);
-		OLD(code = gx_path_add_line(sppath, ptx, pty));
-		NEW(code = t1_hinter__rlineto(h, ap[0], ap[1]));
+		code = t1_hinter__rlineto(h, ap[0], ap[1]);
 		goto cc;
 	    case c2_rlinecurve:
 		for (ap = cstack; ap + 7 <= csp; ap += 2) {
 		    accum_xy(ap[0], ap[1]);
-		    OLD(code = gx_path_add_line(sppath, ptx, pty));
-		    NEW(code = t1_hinter__rlineto(h, ap[0], ap[1]));
+		    code = t1_hinter__rlineto(h, ap[0], ap[1]);
 		    if (code < 0)
 			return code;
 		}
-		OLD(code = gs_op1_rrcurveto(&s, ap[0], ap[1], ap[2], ap[3],
-					ap[4], ap[5]));
-		NEW(code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
-					ap[4], ap[5]));
+		code = t1_hinter__rcurveto(h, ap[0], ap[1], ap[2], ap[3],
+					ap[4], ap[5]);
 		goto cc;
 	    case c2_vvcurveto:
 		ap = cstack;
@@ -641,10 +517,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    fixed dxa = (n & 1 ? *ap++ : 0);
 
 		    for (; ap + 3 <= csp; ap += 4) {
-			OLD(code = gs_op1_rrcurveto(&s, dxa, ap[0], ap[1], ap[2],
-						fixed_0, ap[3]));
-			NEW(code = t1_hinter__rcurveto(h, dxa, ap[0], ap[1], ap[2],
-						fixed_0, ap[3]));
+			code = t1_hinter__rcurveto(h, dxa, ap[0], ap[1], ap[2],
+						fixed_0, ap[3]);
 			if (code < 0)
 			    return code;
 			dxa = 0;
@@ -658,10 +532,8 @@ gs_type2_interpret(gs_type1_state * pcis, const gs_glyph_data_t *pgd,
 		    fixed dya = (n & 1 ? *ap++ : 0);
 
 		    for (; ap + 3 <= csp; ap += 4) {
-			OLD(code = gs_op1_rrcurveto(&s, ap[0], dya, ap[1], ap[2],
-						ap[3], fixed_0));
-			NEW(code = t1_hinter__rcurveto(h, ap[0], dya, ap[1], ap[2],
-						ap[3], fixed_0));
+			code = t1_hinter__rcurveto(h, ap[0], dya, ap[1], ap[2],
+						ap[3], fixed_0);
 			if (code < 0)
 			    return code;
 			dya = 0;
@@ -879,28 +751,21 @@ flex:			{
 			    if (fabs(flex_depth) < fixed2float(*csp)) {
 				/* Do flex as line. */
 				accum_xy(x_end, y_end);
-				OLD(code = gx_path_add_line(sppath, ptx, pty));
-				NEW(code = t1_hinter__rlineto(h, x_end, y_end));
+				code = t1_hinter__rlineto(h, x_end, y_end);
 			    } else {
 				/*
 				 * Do flex as curve.  We can't jump to rrc,
 				 * because the flex operators don't clear
 				 * the stack (!).
 				 */
-				OLD(code = gs_op1_rrcurveto(&s,
+				code = t1_hinter__rcurveto(h, 
 					csp[-12], csp[-11], csp[-10],
-					csp[-9], csp[-8], csp[-7]));
-				NEW(code = t1_hinter__rcurveto(h, 
-					csp[-12], csp[-11], csp[-10],
-					csp[-9], csp[-8], csp[-7]));
+					csp[-9], csp[-8], csp[-7]);
 				if (code < 0)
 				    return code;
-				OLD(code = gs_op1_rrcurveto(&s,
+				code = t1_hinter__rcurveto(h, 
 					csp[-6], csp[-5], csp[-4],
-					csp[-3], csp[-2], csp[-1]));
-				NEW(code = t1_hinter__rcurveto(h, 
-					csp[-6], csp[-5], csp[-4],
-					csp[-3], csp[-2], csp[-1]));
+					csp[-3], csp[-2], csp[-1]);
 			    }
 			    if (code < 0)
 				return code;
