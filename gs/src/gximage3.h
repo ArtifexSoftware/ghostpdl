@@ -39,6 +39,8 @@
 #define IMAGE3_MAKE_MID_PROC(proc)\
   int proc(P5(gx_device **pmidev, gx_device *dev, int width, int height,\
 	      gs_memory_t *mem))
+typedef IMAGE3_MAKE_MID_PROC((*image3_make_mid_proc_t));
+
 /*
  * Make the mask clip device -- the device that uses the mask image to
  * clip the (opaque) image data -- and its enumerator.
@@ -58,6 +60,8 @@
 	       gx_device **pmcdev, gx_device *midev,\
 	       gx_image_enum_common_t *pminfo,\
 	       const gs_int_point *origin))
+typedef IMAGE3_MAKE_MCDE_PROC((*image3_make_mcde_proc_t));
+
 /*
  * Begin processing an ImageType 3 image, with the mask device creation
  * procedures as additional parameters.
