@@ -162,6 +162,7 @@ zsetpatternspace(i_ctx_t *i_ctx_p)
 	ref_stack_pop_to(&e_stack, edepth);
 	return code;
     }
+    make_null(&istate->pattern); /* PLRM: initial color value is a null object */
     pop(1);
     return (ref_stack_count(&e_stack) == edepth ? 0 : o_push_estack);	/* installation will load the caches */
 }
