@@ -2228,8 +2228,9 @@ stc_map_cmyk_color(gx_device *pdev, const gx_color_value cv[])
    return rv;
 }
 
+/* Modified to be a "decode_color" routine */
 private int 
-stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
+stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value cv[4])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;
@@ -2242,15 +2243,12 @@ stc_map_color_cmyk(gx_device *pdev, gx_color_index color,gx_color_value prgb[3])
    m = stc_expand(sd,1, color & l); color >>= shift;
    c = stc_expand(sd,0, color & l);
 
-   if((c == m) && (m == y)) {
-      prgb[0] = gx_max_color_value-k;
-      prgb[1] = prgb[0];
-      prgb[2] = prgb[0];
-   } else {
-      prgb[0] = gx_max_color_value-c;
-      prgb[1] = gx_max_color_value-m;
-      prgb[2] = gx_max_color_value-y;
-   }
+   
+   cv[0] = c;
+   cv[1] = m;
+   cv[2] = y;
+   cv[3] = k;
+   
    return 0;
 }
 
@@ -2392,7 +2390,7 @@ stc_map_cmyk10_color(gx_device *pdev, const gx_color_value cv[])
 
 private int 
 stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
-                     gx_color_value prgb[3])
+                     gx_color_value cv[3])
 {
 
    stcolor_device *sd = (stcolor_device *) pdev;
@@ -2434,9 +2432,9 @@ stc_map_color_cmyk10(gx_device *pdev, gx_color_index color,
         break;
    }
 
-   prgb[0] = gx_max_color_value - c;
-   prgb[1] = gx_max_color_value - m;
-   prgb[2] = gx_max_color_value - y;
+   cv[0] = c;
+   cv[1] = m;
+   cv[2] = y;
 
    return 0;
 }
