@@ -408,7 +408,7 @@ ppm_get_params(gx_device * pdev, gs_param_list * plist)
     int ecode;
 
     if (code < 0) {
-        if ((ecode = param_write_int(plist, "TrayOrientation", 0 /* NB &bdev->TrayOrientation*/)) < 0) {
+        if ((ecode = param_write_int(plist, "TrayOrientation", &bdev->TrayOrientation)) < 0) {
 	   code = ecode;
 	}
     }
@@ -474,8 +474,7 @@ ppm_put_params(gx_device * pdev, gs_param_list * plist)
             param_signal_error(plist, "TrayOrientation",
                                ecode = gs_error_rangecheck);
         else 
-            ; /* NB fixme tray orientation broken */
-        /* 	    ((gx_device_pbm *)pdev)->TrayOrientation = t; */
+	    ((gx_device_pbm *)pdev)->TrayOrientation = t;
     }
     if ((code = ecode) < 0 ||
 	(code = gdev_prn_put_params_planar(pdev, plist, &bdev->UsePlanarBuffer)) < 0
@@ -552,8 +551,8 @@ private void pbm_get_initial_matrix( gx_device *pdev, gs_matrix *pmat)
     floatp ss_res = pdev->HWResolution[1] / 72.0;
     
     /* NB this device has no paper margins */
-    /* NB fixme tray orientation broken */
-    switch(0) { /* ((gx_device_pbm *)pdev)->TrayOrientation) { */
+
+    switch(((gx_device_pbm *)pdev)->TrayOrientation) {
     case 0:
         pmat->xx = fs_res;
         pmat->xy = 0;

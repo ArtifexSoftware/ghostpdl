@@ -537,6 +537,24 @@ gx_device_set_margins(gx_device * dev, const float *margins /*[4] */ ,
     }
 }
 
+
+/* Handle 90 and 270 degree rotation of the Tray
+ * Device must support TrayOrientation in its InitialMatrix and get/put params
+ */
+private void
+gx_device_TrayOrientationRotate(gx_device *dev)
+{
+  if ( dev->TrayOrientation == 90 || dev->TrayOrientation == 270) {
+    /* page sizes don't rotate, height and width do rotate 
+     * HWResolution, HWSize, and MediaSize parameters interact, 
+     * and must be set before TrayOrientation
+     */
+    floatp tmp = dev->height;
+    dev->height = dev->width;
+    dev->width = tmp;
+  }
+}
+
 /* Set the width and height, updating MediaSize to remain consistent. */
 void
 gx_device_set_width_height(gx_device * dev, int width, int height)
@@ -545,6 +563,7 @@ gx_device_set_width_height(gx_device * dev, int width, int height)
     dev->height = height;
     dev->MediaSize[0] = width * 72.0 / dev->HWResolution[0];
     dev->MediaSize[1] = height * 72.0 / dev->HWResolution[1];
+    gx_device_TrayOrientationRotate(dev);
 }
 
 /* Set the resolution, updating width and height to remain consistent. */
@@ -555,6 +574,7 @@ gx_device_set_resolution(gx_device * dev, floatp x_dpi, floatp y_dpi)
     dev->HWResolution[1] = y_dpi;
     dev->width = (int)(dev->MediaSize[0] * x_dpi / 72.0 + 0.5);
     dev->height = (int)(dev->MediaSize[1] * y_dpi / 72.0 + 0.5);
+    gx_device_TrayOrientationRotate(dev);
 }
 
 /* Set the MediaSize, updating width and height to remain consistent. */
@@ -565,6 +585,7 @@ gx_device_set_media_size(gx_device * dev, floatp media_width, floatp media_heigh
     dev->MediaSize[1] = media_height;
     dev->width = (int)(media_width * dev->HWResolution[0] / 72.0 + 0.499);
     dev->height = (int)(media_height * dev->HWResolution[1] / 72.0 + 0.499);
+    gx_device_TrayOrientationRotate(dev);
 }
 
 /*

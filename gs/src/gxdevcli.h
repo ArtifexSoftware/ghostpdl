@@ -658,6 +658,7 @@ typedef struct gx_device_cached_colors_s {
 	gx_device_cached_colors_t cached_colors;\
 	int width;			/* width in pixels */\
 	int height;			/* height in pixels */\
+        int TrayOrientation;            /* default 0 ( 90 180 270 ) if device supports */\
 	float MediaSize[2];		/* media dimensions in points */\
 	float ImagingBBox[4];		/* imageable region in points */\
 	  bool ImagingBBox_set;\
