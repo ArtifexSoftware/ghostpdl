@@ -58,6 +58,20 @@ def LineBrokenText(indent, line_length, items):
             pos = pos + 1 + len(item)
     return lines[1:] + '\n'  # delete the unwanted first space
 
+# 'Normalize' the text of a named anchor to comply with spec
+def NormalizeAnchor(name):
+    import regsub
+    return regsub.gsub('[^0-9a-zA-Z-_\.]', '_', name)
+
+# replace special characters with html entities
+# FIXME: isn't there a library call for this?
+def HTMLEncode(line):
+    import string
+    line = string.join(string.split(line,'&'),'&amp;')
+    line = string.join(string.split(line,'<'),'&lt;')
+    line = string.join(string.split(line,'>'),'&gt;')
+    return line
+
 # ---------------- CVS-specific code ---------------- #
 
 # Return the CVS repository root directory (the argument for -d in CVS
@@ -106,7 +120,7 @@ SourceGroupPatterns = map(lambda pair: (re.compile(pair[0]), pair[1]), [
     ["^examples/", "Interpreter"],
     ["^man/", "Documentation"],
     ["^toolbin/", "Procedures"],
-    ["^lib/pdf_.*[.]ps$", "Interpreter (PDF)"],
+    ["^lib/pdf_.*[.]ps$", "PDF Interpreter"],
     ["^lib/gs_.*[.]ps$", "Interpreter"],
     ["^lib/ht_.*[.]ps$", "Interpreter"],
     ["^lib/.*[.]upp$", "Drivers"],
@@ -128,7 +142,7 @@ SourceGroupPatterns = map(lambda pair: (re.compile(pair[0]), pair[1]), [
     ["^src/d[pw]", "Interpreter"],
     ["^src/.*[.]cpp$", "Interpreter"],
     ["^src/.*[.]c$", "Utilities"],
-    ["", "???Other???"]    # This pattern must appear at the end.
+    ["", "Other"]    # This pattern must appear at the end.
     ])
 def SourceFileGroup(filename, sources):
     if sources.has_key(filename):
@@ -139,17 +153,17 @@ def SourceFileGroup(filename, sources):
 
 # Create a version TOC.
 def VersionTOC(version, version_date, groups):
-    start = '<blockquote><ul>\n<li>'
+    start = '<ul>\n<li>'
     toc = ''
     for group in groups:
-        toc = toc + '    <a href="#' + version + ' ' + group + '">' + group + '</a>,\n'
-    return start + toc[4:-2] + '\n</ul>\n</ul></blockquote>'
+        toc = toc + '    <a href="#' + NormalizeAnchor(version + '-' + group) + '">' + group + '</a>,\n'
+    return start + toc[4:-2] + '\n</ul>\n'
 
 # Create a change log group header.
 def ChangeLogGroupHeader(group, previous_group, version):
     if version == None:
         return '\n****** ' + group + ' ******'
-    header = '\n<h2><a name="' + version + ' ' + group + '"></a>' + group + '</h2><pre>'
+    header = '\n<h2><a name="' + NormalizeAnchor(version + '-' + group) + '"></a>' + group + '</h2><pre>'
     if previous_group != None:
         header = '\n</pre>' + header[1:]
     return header
@@ -179,11 +193,12 @@ def BuildPatch(cvs_command, revision, rcs_file):
 # Create an individual history entry.
 def ChangeLogEntry(cvs_command, author, date, rev_files, description_lines, prefix, indent, line_length, patch):
     import string, time
+    import cgi
     # Add the description.
     description = ''
     for line in description_lines:
         description = description + line[:-1] + ' '  # drop trailing \n
-    entry = string.split(string.strip(description))
+    entry = string.split(string.strip(HTMLEncode(description)))
     entry[0] = prefix + entry[0]
     # Add the list of RCS files and revisions.
     items = []
@@ -258,6 +273,7 @@ def BuildLog(log_date_command):
 
 # ---------------- Main program ---------------- #
 
+# make sure the group names normalize to distinct anchors!
 GroupOrder = {
     "Documentation" : 1,
     "Procedures" : 2,
@@ -266,10 +282,11 @@ GroupOrder = {
     "Platforms" : 5,
     "Fonts" : 6,
     "PDF writer" : 7,
-    "Interpreter (PDF)" : 8,
+    "PDF Interpreter" : 8,
     "Interpreter" : 9,
     "Streams" : 10,
-    "Library" : 11
+    "Library" : 11,
+    "Other" : 12
     }
 
 # Parse command line options and build logs.
@@ -306,7 +323,7 @@ def main():
     length = 76
     merge = 0
     patches = 0
-    rlog_options  =  0
+    rlog_options = ""
     version = None
     # override defaults if specified on the command line
     for o, a in opts:
@@ -320,8 +337,11 @@ def main():
 	elif o == '-v' : version = a
 	else: print "getopt should have failed already"
 
+    # return only messages on the default branch, unless told otherwise
+    if rlog_options == "":
+	rlog_options = '-b'
     # set up the cvs log command arguments.
-    log_date_command = cvs_command + ' -d ' + cvs_repository + ' -Q log ' + date_option
+    log_date_command = cvs_command + ' -d ' + cvs_repository +' -Q log ' + date_option + ' ' + rlog_options
     # Acquire the log data.
     log = BuildLog(log_date_command)
     # By default, if no date option is specified, produce output for
@@ -381,9 +401,13 @@ def main():
     version_date = time.strftime('%Y-%m-%d', time_now)
     version_time = time.strftime('%Y-%m-%d %H:%M:%S', time_now)
     if version != None:
+	print "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" \"http://www.w3.org/TR/html4/loose.dtd\">"
         print "<html><head>"
         print "<title>Ghostscript " + version + " change history as of " + version_time + "</title>"
+	print "<link rel=stylesheet type=\"text/css\" href=\"gs.css\">"
         print "</head><body>\n"
+	print '<!-- cvs command: ' + log_date_command + ' -->\n'
+
         last_group = None
         groups = []
         for omit_group_order, section, date, group, description, author, rcs_file, revision, tags in log:

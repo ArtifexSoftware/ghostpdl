@@ -1,1145 +1,175 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html><head>
-<title>Ghostscript 6.30 change history as of 2000-10-03 22:26:50</title>
+<title>Ghostscript 6.60 change history as of 2000-11-09 17:39:33</title>
+<link rel=stylesheet type="text/css" href="gs.css">
 </head><body>
 
-<blockquote><ul>
-<li><a href="#6.30 Documentation">Documentation</a>,
-    <a href="#6.30 Procedures">Procedures</a>,
-    <a href="#6.30 Utilities">Utilities</a>,
-    <a href="#6.30 Drivers">Drivers</a>,
-    <a href="#6.30 PDF writer">PDF writer</a>,
-    <a href="#6.30 Interpreter (PDF)">Interpreter (PDF)</a>,
-    <a href="#6.30 Interpreter">Interpreter</a>,
-    <a href="#6.30 Streams">Streams</a>,
-    <a href="#6.30 Library">Library</a>,
-    <a href="#6.30 ???Other???">???Other???</a>
+<!-- cvs command: cvs -d giles@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript -Q log  -b -->
+
+<ul>
+<li><a href="#6.60-Documentation">Documentation</a>,
+    <a href="#6.60-Procedures">Procedures</a>,
+    <a href="#6.60-PDF_writer">PDF writer</a>,
+    <a href="#6.60-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#6.60-Interpreter">Interpreter</a>,
+    <a href="#6.60-Library">Library</a>
 </ul>
-</ul></blockquote>
 
-<h2><a name="6.30 Documentation"></a>Documentation</h2><pre>
 
-Fixes problems:
-	- the "User parameters" section was incorrectly titled "Device
-parameters". (doc/Language.htm [1.11]: 2000/08/17 17:00:42 lpd)
-
-Initializes files for the 6.24 fileset. (doc/News.htm [1.57]: 2000/08/09
-16:54:01 lpd)
-
-Adds Alex Cherepanov to the roster of helpers. (doc/Helpers.htm [1.2]:
-2000/08/09 16:54:39 lpd)
-
-Documents the -dDEVICE{WIDTH,HEIGHT}POINTS= switches. (doc/Use.htm [1.10]:
-2000/08/17 01:31:52 lpd)
-
-Notes the change in the return value of gdev_vector_dopath.
-(doc/News.htm [1.58]: 2000/08/20 00:20:42 lpd)
-
-Changes text to make it clear that Yves Arrouye no longer maintains the BJC
-drivers that he wrote. (doc/Devices.htm [1.11]: 2000/08/21 14:38:27 lpd)
-
-Puts the logic for detecting garbage after %%EOF (and some similar invalid
-constructs) back into the main code, making it produce a message on stderr.
-(doc/Psfiles.htm [1.6]: 2000/08/23 02:22:39 lpd)
-
-Documents the deletion of lib/pdfeof.ps. (doc/News.htm [1.59]: 2000/08/23
-02:23:54 lpd)
-
-Starts to implement the PDF 1.4 transparency features. All API and operator
-additions are now implemented (at least as stubs) and documented, as is
-bookkeeping for the new scalar graphics state members (but not for the soft
-masks or the transparency group stack). (doc/Language.htm [1.12]: 2000/08/23
-21:46:31 lpd)
-
-Adds a project to avoid DCT-decoding followed by DCT-encoding images when
-writing PDF files. (doc/Projects.htm [1.16]: 2000/08/24 03:43:12 lpd)
-
-Adds a new equality-testing virtual procedure for color spaces.
-(doc/News.htm [1.60]: 2000/08/24 05:42:30 lpd)
-
-Brings the (still mostly stubbed) transparency code to a more
-self-consistent state. (doc/Language.htm [1.13]: 2000/08/30 01:34:40 lpd)
-
-Completes the parsing of .{begin,end}transparency{group,mask}, except for
-the TransferFunction for masks. The specification is still subject to
-change. (doc/Language.htm [1.14]: 2000/08/30 15:03:36 lpd)
-
-Divides the list of documents according to whether the document is for
-users, for developers, or both. (doc/Readme.htm [1.11]: 2000/08/30 21:24:00
-lpd)
-
-Adds more documentation for the transparency rendering stack.
-(doc/Language.htm [1.15]: 2000/08/31 03:34:41 lpd)
-
-Adds a requirement to only use ANSI standard C library facilities.
-(doc/C-style.htm [1.2]: 2000/09/08 04:53:14 lpd)
-
-Changes the -Zv switch to trace alpha/transparency-related features.
-(doc/News.htm [1.61], doc/Use.htm [1.11]: 2000/09/10 05:23:10 lpd)
-
-Implements another chunk of the PDF 1.4 transparency features, fixing some
-bugs in the previous code. (doc/Language.htm [1.16]: 2000/09/10 05:26:27
-lpd)
-
-Documents the addition of (limited) PDF 1.4 output capabilities.
-(doc/Ps2pdf.htm [1.16]: 2000/09/11 02:08:58 lpd)
-
-Moves the Matte entry of soft mask images from the main structure to the
-mask structures, and changes Matted to has_Matte. (doc/Language.htm [1.17]:
-2000/09/11 04:08:13 lpd)
-
-Documents division of bug-gs mailbox into bug-gs, bug-gs-dev, and
-bug-gs-beta. (doc/Bug-form.htm [1.7], doc/Bug-info.htm [1.5]: 2000/09/15
-23:44:21 lpd)
-
-Adds a paragraph explaining why and how the AFPL is not an Open Source /
-Free Software license. (doc/PUBLIC [1.2], doc/Public.htm [1.2]: 2000/09/18
-22:26:32 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript; also updates many internal references from
-Aladdin Ghostscript to AFPL Ghostscript, and from Aladdin Enterprises to
-artofcode LLC. (doc/Bug-form.htm [1.8], doc/Bug-info.htm [1.6],
-doc/C-style.htm [1.3], doc/Changes.htm [1.17], doc/Commprod.htm [1.2],
-doc/Copying.htm [1.2], doc/Current.htm [1.2], doc/DLL.htm [1.2],
-doc/Devices.htm [1.12], doc/Drivers.htm [1.7], doc/Fonts.htm [1.7],
-doc/Helpers.htm [1.3], doc/History1.htm [1.2], doc/History2.htm [1.2],
-doc/History3.htm [1.2], doc/History4.htm [1.2], doc/History5.htm [1.4],
-doc/History6.htm [1.12], doc/Htmstyle.htm [1.5], doc/Install.htm [1.6],
-doc/Language.htm [1.18], doc/Lib.htm [1.2], doc/Maintain.htm [1.3],
-doc/Make.htm [1.14], doc/New-user.htm [1.11], doc/News.htm [1.62],
-doc/PUBLIC [1.3], doc/Projects.htm [1.17], doc/Ps2epsi.htm [1.3],
-doc/Ps2pdf.htm [1.17], doc/Psfiles.htm [1.7], doc/Public.htm [1.3],
-doc/Readme.htm [1.12], doc/Release.htm [1.18], doc/Source.htm [1.2],
-doc/Tester.htm [1.2], doc/Unix-lpr.htm [1.2], doc/Use.htm [1.12],
-doc/Xfonts.htm [1.2], doc/gs-vms.hlp [1.2]: 2000/09/19 21:37:50 lpd)
-
-Updates README from Readme.htm. (doc/README [1.3]: 2000/09/19 23:39:31 lpd)
-
-Changes the default Windows installation directory from c:\Aladdin to c:\gs.
-(doc/Install.htm [1.7], doc/News.htm [1.63]: 2000/09/22 05:32:17 lpd)
-
-Replaces the OpenVMS installation instructions with an improved set
-contributed by a user. (doc/Helpers.htm [1.4], doc/Install.htm [1.8]:
-2000/09/22 20:33:19 lpd)
-
-Adds a project for fixing PDF files that have gotten mangled by EOL
-conversion. (doc/Projects.htm [1.18]: 2000/09/25 14:40:37 lpd)
-
-Adds a reference to PreScript, another free text extraction program based on
-Ghostscript. (doc/New-user.htm [1.12]: 2000/09/26 01:04:40 lpd)
-
-Documentation changes in preparation for 6.30 release. Replaced some contact
-information, updated version numbers. (doc/Bug-form.htm [1.9],
-doc/Bug-info.htm [1.7], doc/Commprod.htm [1.3], doc/Copying.htm [1.3],
-doc/Current.htm [1.3], doc/DLL.htm [1.3], doc/Devices.htm [1.13],
-doc/Drivers.htm [1.8], doc/Fonts.htm [1.8], doc/Helpers.htm [1.5],
-doc/History1.htm [1.3], doc/History2.htm [1.3], doc/History3.htm [1.3],
-doc/History4.htm [1.3], doc/History5.htm [1.5], doc/History6.htm [1.13],
-doc/Htmstyle.htm [1.6], doc/Install.htm [1.9], doc/Language.htm [1.19],
-doc/Lib.htm [1.3], doc/Maintain.htm [1.4], doc/Make.htm [1.15],
-doc/New-user.htm [1.13], doc/News.htm [1.64], doc/Projects.htm [1.19],
-doc/Ps2epsi.htm [1.4], doc/Ps2pdf.htm [1.18], doc/Psfiles.htm [1.8],
-doc/README [1.4], doc/Readme.htm [1.13], doc/Release.htm [1.19],
-doc/Source.htm [1.3], doc/Tester.htm [1.3], doc/Unix-lpr.htm [1.3],
-doc/Use.htm [1.13], doc/Xfonts.htm [1.3], doc/gs-vms.hlp [1.3]: 2000/10/04
-04:33:27 raph)
-
-Bring version numbers and dates up to date. Small bug fix in toolbin/pre to
-make it able to handle months with leading zeros. (doc/C-style.htm [1.4],
-doc/Helpers.htm [1.6], man/ps2ps.1 [1.7]: 2000/10/04 05:18:54 raph)
-
-</pre><h2><a name="6.30 Procedures"></a>Procedures</h2><pre>
+<h2><a name="6.60-Documentation"></a>Documentation</h2><pre>
 
 Fixes problems:
-	- The PostScript image writing drivers (psmono/gray/rgb) didn't set
-the page size in the output, and didn't produce DSC-compliant output.
-(devs.mak [1.31]: 2000/08/09 06:55:45 lpd)
-	- The FlateEncode and zlibEncode filters didn't implement the
-"Effort" parameter. (fix from Alex Cherepanov) (int.mak [1.28]: 2000/08/09
-16:55:24 lpd)
-	- Because "-" as an OutputFile now references the %stdout IODevice,
-it no longer worked in configurations without a PostScript interpreter.
-Fixing this required factoring out the stdin/out/err IODevices and providing
-an implementation that didn't reference the PostScript interpreter.
-(int.mak [1.32], lib.mak [1.34], ugcclib.mak [1.3]: 2000/09/07 06:14:45 lpd)
-	- Configurations including PDF but not PostScript didn't include all
-the PostScript LL3 features needed to interpret PDF 1.3 et seq.
-(int.mak [1.33]: 2000/09/07 06:35:06 lpd)
-	- Cleans up some missing and incorrect dependencies.
-(devs.mak [1.33], int.mak [1.34], lib.mak [1.35]: 2000/09/11 04:43:09 lpd)
-	- The definition of PSRCDIR was inconsistent with the definition of
-PVERSION. (openvms.mak [1.5]: 2000/09/22 04:05:40 lpd)
-	- The pgnm and pnm drivers didn't properly detect the presence of
-gray shades or color in images, sometimes causing gray or color information
-to be lost in the output. (fix contributed by a user) (devs.mak [1.35]:
-2000/09/23 04:52:56 lpd)
+	- An isolated ampersand needed to be converted to the HTML form.
+(doc/Bug-form.htm [1.12]: 2000/11/04 17:53:57 lpd)
 
-Initializes files for the 6.24 fileset. (version.mak [1.19]: 2000/08/09
-16:54:02 lpd)
+Adds developer documentation on the color mapping pipeline.
+(doc/Develop.htm [1.16]: 2000/11/03 04:53:00 lpd)
 
-Adds a mention of the Color LaserJet 4500 as a color PCL XL printer.
-(devs.mak [1.32]: 2000/08/17 20:43:50 lpd)
+switch to Tobias Burnus' stylesheet for the B-D html documentation, along
+with some minor cleanups (doc/Bug-form.htm [1.10], doc/Bug-info.htm [1.8],
+doc/C-style.htm [1.6], doc/Commprod.htm [1.4], doc/Copying.htm [1.4],
+doc/Current.htm [1.4], doc/DLL.htm [1.4], doc/Develop.htm [1.17],
+doc/Devices.htm [1.14], doc/Drivers.htm [1.10], doc/gs.css [1.1]: 2000/11/03
+06:42:42 giles)
 
-Changes text to make it clear that Yves Arrouye no longer maintains the BJC
-drivers that he wrote. (contrib.mak [1.19]: 2000/08/21 14:38:28 lpd)
+update remaining file links in Develop.htm to &lt;dl&gt; format, plus
+additional cleanup (doc/Commprod.htm [1.5], doc/DLL.htm [1.5],
+doc/Develop.htm [1.18], doc/Devices.htm [1.15], doc/Drivers.htm [1.11]:
+2000/11/03 20:15:55 giles)
 
-Puts the logic for detecting garbage after %%EOF (and some similar invalid
-constructs) back into the main code, making it produce a message on stderr.
-(unixinst.mak [1.12]: 2000/08/23 02:22:39 lpd)
+Lists all the monochrome TIFF drivers individually, rather than as a class.
+(doc/Devices.htm [1.16]: 2000/11/03 23:33:18 lpd)
 
-Starts to implement the PDF 1.4 transparency features. All API and operator
-additions are now implemented (at least as stubs) and documented, as is
-bookkeeping for the new scalar graphics state members (but not for the soft
-masks or the transparency group stack). (int.mak [1.29], lib.mak [1.30]:
-2000/08/23 21:46:31 lpd)
+Switches the rest of the human-maintained html documentation to the new
+stylesheet. We now pass validator.w3.org for HTML 4.01 with the exception of
+an error I couldn't figure out in Bug-form.htm. (doc/Bug-form.htm [1.11],
+doc/Fonts.htm [1.9], doc/Helpers.htm [1.7], doc/Hershey.htm [1.3],
+doc/Htmstyle.htm [1.7], doc/Humor.htm [1.2], doc/Install.htm [1.10],
+doc/Language.htm [1.21], doc/Lib.htm [1.4], doc/Maintain.htm [1.7],
+doc/Make.htm [1.17], doc/New-user.htm [1.15], doc/Projects.htm [1.20],
+doc/Ps-style.htm [1.4], doc/Ps2epsi.htm [1.5], doc/Ps2pdf.htm [1.19],
+doc/Psfiles.htm [1.10], doc/Public.htm [1.4], doc/Readme.htm [1.15],
+doc/Release.htm [1.22], doc/Source.htm [1.4], doc/Tester.htm [1.4],
+doc/Unix-lpr.htm [1.4], doc/Use.htm [1.15], doc/Xfonts.htm [1.4],
+doc/index.html [1.2]: 2000/11/04 05:00:00 giles)
 
-Adds a new equality-testing virtual procedure for color spaces.
-(lib.mak [1.31]: 2000/08/24 05:42:30 lpd)
+updated News.htm to use gs.css (doc/News.htm [1.70]: 2000/11/04 21:59:35
+giles)
 
-Partly implements opacity and shape mask bookkeeping. gsave/grestore/etc.
-and banding don't do the right thing yet. (int.mak [1.30],
-version.mak [1.20]: 2000/08/25 01:46:48 lpd)
+Adds documentation on Ghostscript's object-oriented coding conventions, and
+more documentation on error generation. (doc/C-style.htm [1.7],
+doc/Develop.htm [1.19]: 2000/11/07 07:34:57 lpd)
 
-Brings the (still mostly stubbed) transparency code to a more
-self-consistent state. (lib.mak [1.32]: 2000/08/30 01:34:40 lpd)
+Expands the description of the color mapping process.
+(doc/Develop.htm [1.20]: 2000/11/09 05:41:46 lpd)
 
-Finishes the code for parsing ImageType 103 (soft-mask) images.
-(int.mak [1.31], lib.mak [1.33]: 2000/08/30 04:30:05 lpd)
+</pre><h2><a name="6.60-Procedures"></a>Procedures</h2><pre>
 
-*** empty log message *** (int.mak [1.35]: 2000/09/14 19:46:05 alexcher)
+Collect some stray configuration related externs into iconf.h
+(int.mak [1.40]: 2000/11/04 06:12:02 rayjj)
 
-Undoes uncommented and in some cases inappropriate changes. (int.mak [1.36]:
-2000/09/18 06:28:58 lpd)
+Adds DSC parsing capability to the PostScript interpreter, with an optional
+'feature' to use the DSC Orientation comments to compensate for sloppy
+PostScript producers that don't emit an appropriate setpagedevice command.
+(int.mak [1.41]: 2000/11/05 18:33:53 lpd)
 
-Updates license notices to reference the AFPL (like the rest of Ghostscript)
-rather than simply saying "All rights reserved". (toolbin/3way.tcl [1.2],
-toolbin/cvs2hist.py [1.2], toolbin/errlist.tcl [1.2],
-toolbin/gsindent [1.2], toolbin/gsmake.tcl [1.4], toolbin/headers.tcl [1.2],
-toolbin/leaks.tcl [1.2], toolbin/makegnu.tcl [1.2],
-toolbin/makeset.tcl [1.4], toolbin/pre [1.6], toolbin/precheck.tcl [1.2],
-toolbin/suite.tcl [1.2], toolbin/tmake.tcl [1.2]: 2000/09/19 17:30:25 lpd)
+Adds the 'hook' for passing DSC comments to the PDF writer, but doesn't
+actually process any of the comments. NOTE: Part of this code was
+accidentally included in the recent fix for local/global VM problems in the
+PostScript code for using the DSC parser. (devs.mak [1.36]: 2000/11/07
+18:54:26 lpd)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, and changes internal references in various
-scripts. (toolbin/3way.tcl [1.3], toolbin/cvs2hist.py [1.3],
-toolbin/errlist.tcl [1.3], toolbin/gsindent [1.3], toolbin/gsmake.tcl [1.5],
-toolbin/headers.tcl [1.3], toolbin/leaks.tcl [1.3],
-toolbin/makegnu.tcl [1.3], toolbin/makeset.tcl [1.5], toolbin/pre [1.7],
-toolbin/precheck.tcl [1.3], toolbin/suite.tcl [1.3],
-toolbin/tmake.tcl [1.3]: 2000/09/19 18:10:51 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (all-arch.mak [1.5], bcwin32.mak [1.3], cfonts.mak [1.2],
-contrib.mak [1.20], devs.mak [1.34], dvx-gcc.mak [1.4], dvx-head.mak [1.2],
-dvx-tail.mak [1.3], dwmain.rc [1.2], dwsetup.def [1.2], dwsetup.rc [1.2],
-dwuninst.def [1.2], dwuninst.rc [1.3]: 2000/09/19 19:00:08 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gs.mak [1.2], gs16spl.rc [1.2], gsdll2.rc [1.2],
-gsdll32.rc [1.2]: 2000/09/19 19:00:25 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gsos2.rc [1.2], gspmdrv.rc [1.2]: 2000/09/19 19:00:30 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gswin.rc [1.2]: 2000/09/19 19:00:33 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (int.mak [1.37], jpeg.mak [1.3], lib.mak [1.36],
-libpng.mak [1.2], msvc32.mak [1.5], msvccmd.mak [1.5], msvclib.mak [1.5],
-msvctail.mak [1.4], openvms.mak [1.4], openvms.mmk [1.5], os2.mak [1.7],
-pcwin.mak [1.2]: 2000/09/19 19:00:45 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (ugcclib.mak [1.4], unix-aux.mak [1.3], unix-end.mak [1.2],
-unix-gcc.mak [1.7], unixansi.mak [1.5], unixhead.mak [1.2],
-unixinst.mak [1.13], unixlink.mak [1.2], unixtrad.mak [1.5],
-version.mak [1.21], watc.mak [1.5], watclib.mak [1.5], watcw32.mak [1.4],
-wccommon.mak [1.3], wctail.mak [1.2], winint.mak [1.5], winlib.mak [1.4],
-winplat.mak [1.2], wmin.mak [1.2], zlib.mak [1.2]: 2000/09/19 19:00:52 lpd)
-
-Add commands to make the target GLGENDIR and BINDIR directories so that a
-clean build works automatically. (msvctail.mak [1.5]: 2000/09/21 15:14:37
-rayjj)
-
-Changes the default Windows installation directory from c:\Aladdin to c:\gs.
-(dwsetup.rc [1.3]: 2000/09/22 05:32:17 lpd)
-
-Changes the default Windows Start Menu Folder from "Aladdin" to
-"Ghostscript". (dwsetup.rc [1.4]: 2000/09/22 05:35:02 lpd)
-
-Updates the makefiles from libpng version 1.0.5 to 1.0.8.
-(all-arch.mak [1.6], bcwin32.mak [1.4], dvx-gcc.mak [1.5], libpng.mak [1.3],
-msvc32.mak [1.6], msvclib.mak [1.6], openvms.mak [1.6], openvms.mmk [1.6],
-os2.mak [1.8], ugcclib.mak [1.5], unix-gcc.mak [1.8], unixansi.mak [1.6],
-unixtrad.mak [1.6], watc.mak [1.6], watclib.mak [1.6], watcw32.mak [1.5]:
-2000/09/25 15:06:28 lpd)
-
-Documentation changes in preparation for 6.30 release. Replaced some contact
-information, updated version numbers. (version.mak [1.22]: 2000/10/04
-04:33:29 raph)
-
-Bring version numbers and dates up to date. Small bug fix in toolbin/pre to
-make it able to handle months with leading zeros. (toolbin/pre [1.8]:
-2000/10/04 05:18:54 raph)
-
-</pre><h2><a name="6.30 Utilities"></a>Utilities</h2><pre>
+</pre><h2><a name="6.60-PDF_writer"></a>PDF writer</h2><pre>
 
 Fixes problems:
-	- ps2pdf13.cmd set the output PDF version to 1.2 rather than 1.3.
-(lib/ps2pdf13.cmd [1.2]: 2000/09/10 19:32:44 lpd)
-	- The OpenVMS Fontmap had gotten badly out of date; specifically, it
-didn't reference the URW++ fonts distributed with Ghostscript.
-(lib/Fontmap.VMS [1.2]: 2000/09/22 03:30:21 lpd)
+	- kshow caused the PDF writer to revert to bitmapped fonts. Fixes
+SourceForge bug # 104118. (gdevpdft.c [1.21]: 2000/11/06 04:17:14 lpd)
 
-Puts the logic for detecting garbage after %%EOF (and some similar invalid
-constructs) back into the main code, making it produce a message on stderr.
-(lib/pdfeof.ps [1.2]: 2000/08/23 02:22:39 lpd)
+Adds the 'hook' for passing DSC comments to the PDF writer, but doesn't
+actually process any of the comments. NOTE: Part of this code was
+accidentally included in the recent fix for local/global VM problems in the
+PostScript code for using the DSC parser. (gdevpdfp.c [1.13]: 2000/11/07
+18:54:26 lpd)
 
-Adds script / batch / command files for producing PDF 1.4 output.
-(lib/ps2pdf14 [1.1], lib/ps2pdf14.bat [1.1], lib/ps2pdf14.cmd [1.1]:
-2000/09/10 19:33:47 lpd)
+</pre><h2><a name="6.60-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, and changes a few other internal
-references. (lib/Fontmap.ATB [1.2], lib/Fontmap.ATM [1.2],
-lib/Fontmap.GS [1.2], lib/Fontmap.OS2 [1.2], lib/Fontmap.SGI [1.2],
-lib/Fontmap.Sol [1.2], lib/Fontmap.Ult [1.2], lib/addxchar.ps [1.2],
-lib/afmdiff.awk [1.2], lib/align.ps [1.2], lib/bdftops.ps [1.2],
-lib/caption.ps [1.2], lib/cbjc600.ppd [1.2], lib/cbjc800.ppd [1.2],
-lib/cid2code.ps [1.2], lib/docie.ps [1.2], lib/errpage.ps [1.2],
-lib/font2c.ps [1.2], lib/font2pcl.ps [1.2], lib/gslp.ps [1.2],
-lib/gsnup.ps [1.2], lib/image-qa.ps [1.2], lib/impath.ps [1.2],
-lib/jispaper.ps [1.2], lib/lines.ps [1.2], lib/markhint.ps [1.2],
-lib/markpath.ps [1.2], lib/packfile.ps [1.2], lib/pcharstr.ps [1.2],
-lib/pdf2dsc.ps [1.2], lib/pdfopt.ps [1.3], lib/pdfwrite.ps [1.3],
-lib/pfbtopfa.ps [1.2], lib/ppath.ps [1.2], lib/ps2ai.ps [1.2],
-lib/ps2ascii.ps [1.2], lib/ps2epsi [1.4], lib/ps2epsi.ps [1.4],
-lib/showchar.ps [1.2], lib/stcinfo.ps [1.2], lib/stcolor.ps [1.2],
-lib/stocht.ps [1.3], lib/traceimg.ps [1.2], lib/traceop.ps [1.2],
-lib/type1enc.ps [1.2], lib/type1ops.ps [1.2], lib/uninfo.ps [1.2],
-lib/unprot.ps [1.2], lib/viewcmyk.ps [1.2], lib/viewgif.ps [1.2],
-lib/viewmiff.ps [1.2], lib/viewpbm.ps [1.2], lib/viewpcx.ps [1.2],
-lib/viewps2a.ps [1.2], lib/wftopfa.ps [1.2], lib/winmaps.ps [1.2],
-lib/wrfont.ps [1.2], lib/zeroline.ps [1.2]: 2000/09/19 18:29:11 lpd)
+Improves font substitution by taking the "Narrow" property into account.
+Fixes SourceForge bug 116460. Fix due to Leon Bottou.
+(lib/pdf_font.ps [1.13]: 2000/11/05 17:36:28 raph)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (bench.c [1.3], echogs.c [1.2]: 2000/09/19 19:00:08 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (genarch.c [1.2], genconf.c [1.3], gendev.c [1.2],
-genht.c [1.2], geninit.c [1.3], gp_dvx.c [1.2], gp_iwatc.c [1.4],
-gp_mktmp.c [1.2], gp_mshdl.c [1.2], gp_msio.c [1.2], gp_mslib.c [1.2],
-gp_mswin.c [1.3], gp_ntfs.c [1.4], gp_os2.c [1.4], gp_os9.c [1.3],
-gp_sysv.c [1.2], gp_unix.c [1.3], gp_vms.c [1.4], gp_wgetv.c [1.3],
-gp_win32.c [1.2], gp_wsync.c [1.2], gs16spl.c [1.2]: 2000/09/19 19:00:23
-lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gsdll.c [1.3], gserver.c [1.2]: 2000/09/19 19:00:27 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gspmdrv.c [1.2]: 2000/09/19 19:00:31 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (scfdgen.c [1.2]: 2000/09/19 19:00:48 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (zdosio.c [1.2]: 2000/09/19 19:00:53 lpd)
-
-When GSC environment variable is not set, gssetgs.bat fails to set it, which
-makes ps2pdf.bat and several other scripts fail on Windows NT 4.0 with the
-following misleading error message: "_.at" This file doesn't have a program
-associated with it ... This change fixes the problem.
-(lib/gssetgs.bat [1.2]: 2000/10/01 15:25:37 alexcher)
-
-</pre><h2><a name="6.30 Drivers"></a>Drivers</h2><pre>
+</pre><h2><a name="6.60-Interpreter"></a>Interpreter</h2><pre>
 
 Fixes problems:
-	- The PostScript image writing drivers (psmono/gray/rgb) didn't set
-the page size in the output, and didn't produce DSC-compliant output.
-(gdevps.c [1.11], gdevpsci.c [1.2], gdevpsim.c [1.3], gdevpsu.c [1.1],
-gdevpsu.h [1.1]: 2000/08/09 06:55:45 lpd)
-	- the user-contributed cfax driver didn't correctly handle page
-widths other than the standard fax widths, and didn't write the required
-end-of-document marker. (gdevcfax.c [1.2]: 2000/08/17 04:43:25 lpd)
-	- Setting parameters for the PS/PDF writer reset any unspecified
-*Dict parameter dictionaries to the empty dictionary, rather than leaving
-them alone. (gdevpsdp.c [1.6]: 2000/08/18 03:18:59 lpd)
-	- BJC printers with different X and Y resolution produced incorrect
-output. Also removes the comment asking users to report problems to Yves
-Arrouye, since he no longer maintains this code. (gdevcdj.c [1.3]:
-2000/08/21 14:43:17 lpd)
-	- The emulation of XPutImage (Ghostscript*useXPutImage: 0) was
-broken. (gdevx.c [1.6]: 2000/08/21 17:23:26 lpd)
-	- Dictionary-valued device parameters for high-level devices could
-be freed while the device still referred to them. (gdevpsdp.c [1.7]:
-2000/08/31 15:55:46 lpd)
-	- Cleans up some missing and incorrect dependencies.
-(gdevsco.c [1.2]: 2000/09/11 04:43:09 lpd)
-	- Works around a gcc code generation bug that sometimes caused gray
-colors to be written out as RGB in PDF files. (Minor performance issue
-only.) (gdevpsdu.c [1.6]: 2000/09/11 21:12:12 lpd)
-	- The pgnm and pnm drivers didn't properly detect the presence of
-gray shades or color in images, sometimes causing gray or color information
-to be lost in the output. (fix contributed by a user) (gdevpbm.c [1.3]:
-2000/09/23 04:52:57 lpd)
+	- The recently updated code for activating the DSC comment parser
+had several local/global VM problems, causing invalidaccess errors.
+(lib/gs_dps2.ps [1.3], lib/gs_init.ps [1.27], lib/gs_pdfwr.ps [1.7]:
+2000/11/07 18:51:24 lpd)
+	- There was still a bug in the code for passing DSC comments to the
+PDF writer, causing typecheck errors. (lib/gs_pdfwr.ps [1.8]: 2000/11/07
+19:27:14 lpd)
 
-In the X Windows driver, changes XFlush() to XSync(False) so that updates
-will actually complete before the command prompt appears. (gdevx.c [1.5],
-gdevxini.c [1.8]: 2000/08/19 03:31:44 lpd)
+Collect some stray configuration related externs into iconf.h
+(imain.c [1.3], imainarg.c [1.5]: 2000/11/04 06:12:02 rayjj)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdev3852.c [1.2], gdev3b1.c [1.2], gdev4081.c [1.2],
-gdev8510.c [1.2], gdev8bcm.c [1.2], gdev8bcm.h [1.2], gdevadmp.c [1.2],
-gdevatx.c [1.6], gdevbit.c [1.2], gdevbj10.c [1.3], gdevbjc.h [1.2],
-gdevbjcl.c [1.2], gdevbjcl.h [1.2], gdevbmp.c [1.3], gdevbmp.h [1.2],
-gdevbmpa.c [1.3], gdevbmpc.c [1.2], gdevccr.c [1.2], gdevcdj.c [1.4],
-gdevcfax.c [1.3], gdevcgm.c [1.2], gdevcgml.c [1.2], gdevcgml.h [1.2],
-gdevcgmx.h [1.2], gdevcif.c [1.2], gdevclj.c [1.2], gdevcljc.c [1.2],
-gdevcp50.c [1.2], gdevcslw.c [1.2], gdevdcrd.c [1.2], gdevdcrd.h [1.2],
-gdevdfax.c [1.3], gdevdjet.c [1.6], gdevdjtc.c [1.2], gdevdljm.c [1.4],
-gdevdljm.h [1.4], gdevdm24.c [1.2], gdevegaa.asm [1.2], gdevepsc.c [1.2],
-gdevepsn.c [1.2], gdevescp.c [1.2], gdevevga.c [1.2], gdevfax.c [1.2],
-gdevfax.h [1.2], gdevherc.c [1.2], gdevhl7x.c [1.3], gdevimgn.c [1.2],
-gdevjpeg.c [1.2], gdevl256.c [1.3], gdevl31s.c [1.2], gdevlbp8.c [1.2],
-gdevlj56.c [1.2], gdevlp8k.c [1.2], gdevlxm.c [1.2], gdevmeds.c [1.2]:
-2000/09/19 19:00:11 lpd)
+branches: 1.1.2; Collect some stray configuration related externs into
+iconf.h (iconf.h [1.1]: 2000/11/04 06:12:02 rayjj)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevmeds.h [1.2], gdevmgr.c [1.2], gdevmgr.h [1.2],
-gdevmiff.c [1.2], gdevmswn.c [1.2], gdevmswn.h [1.2], gdevmsxf.c [1.2],
-gdevn533.c [1.2], gdevo182.c [1.2], gdevokii.c [1.2], gdevos2p.c [1.3],
-gdevp2up.c [1.2], gdevpbm.c [1.2], gdevpccm.c [1.2], gdevpccm.h [1.3],
-gdevpcfb.c [1.2], gdevpcfb.h [1.2], gdevpcl.c [1.4]: 2000/09/19 19:00:14
-lpd)
+Add COMPILE_INITS information line to -h help output. (imainarg.c [1.6]:
+2000/11/04 06:13:42 rayjj)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevpcl.h [1.4], gdevpcx.c [1.2], gdevpe.c [1.2]: 2000/09/19
-19:00:17 lpd)
+Adds DSC parsing capability to the PostScript interpreter, with an optional
+'feature' to use the DSC Orientation comments to compensate for sloppy
+PostScript producers that don't emit an appropriate setpagedevice command.
+(lib/gs_dscp.ps [1.1], zdscpars.c [1.1]: 2000/11/05 18:33:52 lpd)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevphex.c [1.2], gdevpjet.c [1.2], gdevpm.c [1.2],
-gdevpm.h [1.2], gdevpng.c [1.3], gdevps.c [1.12], gdevpsdf.h [1.8],
-gdevpsdi.c [1.12], gdevpsdp.c [1.8], gdevpsds.c [1.4], gdevpsds.h [1.4],
-gdevpsdu.c [1.7], gdevpsim.c [1.4], gdevpsu.c [1.2], gdevpsu.h [1.2],
-gdevpx.c [1.4], gdevpxat.h [1.3], gdevpxen.h [1.3], gdevpxop.h [1.2],
-gdevpxut.c [1.2], gdevpxut.h [1.2], gdevs3ga.c [1.2], gdevsco.c [1.3],
-gdevsj48.c [1.2], gdevsnfb.c [1.2], gdevsppr.c [1.2], gdevstc.c [1.2],
-gdevstc.h [1.2], gdevstc1.c [1.2], gdevstc2.c [1.2], gdevstc3.c [1.2],
-gdevstc4.c [1.2], gdevsun.c [1.2]: 2000/09/19 19:00:20 lpd)
+branches: 1.1.2; Adds DSC parsing capability to the PostScript interpreter,
+with an optional 'feature' to use the DSC Orientation comments to compensate
+for sloppy PostScript producers that don't emit an appropriate setpagedevice
+command. (dscparse.c [1.1], dscparse.h [1.1]: 2000/11/05 18:33:53 lpd)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevsunr.c [1.2], gdevsvga.c [1.2], gdevsvga.h [1.2],
-gdevtfax.c [1.4], gdevtfax.h [1.4], gdevtfnx.c [1.3], gdevtifs.c [1.3],
-gdevtifs.h [1.3], gdevtknk.c [1.2], gdevupd.c [1.3], gdevvglb.c [1.3],
-gdevwddb.c [1.2], gdevwdib.c [1.2], gdevwpr2.c [1.5], gdevwprn.c [1.2],
-gdevx.c [1.7], gdevx.h [1.4], gdevxalt.c [1.2], gdevxcmp.c [1.2],
-gdevxcmp.h [1.2], gdevxini.c [1.9], gdevxres.c [1.3], gdevxxf.c [1.5]:
-2000/09/19 19:00:23 lpd)
+Polishes the DSC parser interface: improves comments and formatting, and
+fixes a couple of very minor glitches. (zdscpars.c [1.2]: 2000/11/06
+07:34:21 lpd)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (png_.h [1.2]: 2000/09/19 19:00:47 lpd)
+branches: 1.3.2; ... and fixes an overlooked const discrepancy.
+(zdscpars.c [1.3]: 2000/11/06 07:35:51 lpd)
 
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (x_.h [1.2]: 2000/09/19 19:00:52 lpd)
+branches: 1.2.2; Fix: The recently updated code for activating the DSC
+comment parser had several local/global VM problems, causing invalidaccess
+errors. (lib/gs_dscp.ps [1.2]: 2000/11/07 18:51:25 lpd)
 
-</pre><h2><a name="6.30 PDF writer"></a>PDF writer</h2><pre>
+Return code variables (code and comment_code) in zparse_dsc_comments(). need
+to be signed. (zdscpars.c [1.4]: 2000/11/08 00:54:48 dancoby)
+
+Rewrites .parse_dsc_comment to use the parameter list machinery, removing a
+little functionally duplicated code; changes two incorrect uints to ints
+(fix from dan@artifex.com); adds additional comment types (BoundingBox,
+PageBoundingBox, BeginDefaults, EndDefaults) to the interface.
+(zdscpars.c [1.5]: 2000/11/08 07:07:32 lpd)
+
+</pre><h2><a name="6.60-Library"></a>Library</h2><pre>
 
 Fixes problems:
-	- The SrcPg entry in ANN pdfmarks was (effectively) ignored. (bug
-introduced between 5.50 and 6.01.) (gdevpdfm.c [1.5]: 2000/08/31 18:49:59
-lpd)
-	- When CompatibilityLevel < 1.4, transparency was ignored rather
-than being rendered explicitly. (gdevpdfg.c [1.9]: 2000/09/11 21:13:49 lpd)
-
-Works around the bug in Acrobat Reader (all versions) that apparently treats
-stroked fonts as filled fonts, ignoring the PaintType. (gdevpdft.c [1.15]:
-2000/08/31 03:23:26 lpd)
-
-Adds the ability to write some PDF 1.4 constructs: graphics state parameters
-AIS, BM, ca/CA, and TK, and images with soft masks (except for Matte).
-(gdevpdfg.c [1.8], gdevpdfg.h [1.8], gdevpdfi.c [1.18]: 2000/09/11 02:14:09
-lpd)
-
-Adds the ability to write PDF 1.4 soft-masked images. (gdevpdfi.c [1.19],
-gdevpdfo.c [1.4], gdevpdfo.h [1.4], gdevpdfv.c [1.2]: 2000/09/11 04:10:42
-lpd)
-
-Replaces "Distiller" with our program name in the Info Producer string.
-(gdevpdf.c [1.20], gdevpdfm.c [1.6], gdevpdfu.c [1.11], gdevpdfx.h [1.21]:
-2000/09/12 02:03:35 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevpdf.c [1.21], gdevpdfb.c [1.2], gdevpdfc.c [1.12],
-gdevpdfd.c [1.10], gdevpdfe.c [1.4], gdevpdff.c [1.8], gdevpdff.h [1.4],
-gdevpdfg.c [1.10], gdevpdfg.h [1.9], gdevpdfi.c [1.20], gdevpdfj.c [1.5],
-gdevpdfm.c [1.7], gdevpdfo.c [1.5], gdevpdfo.h [1.5], gdevpdfp.c [1.10],
-gdevpdfr.c [1.4], gdevpdft.c [1.16], gdevpdfu.c [1.12], gdevpdfv.c [1.3],
-gdevpdfw.c [1.5], gdevpdfx.h [1.22]: 2000/09/19 19:00:17 lpd)
-
-</pre><h2><a name="6.30 Interpreter (PDF)"></a>Interpreter (PDF)</h2><pre>
-
-Fixes problems:
-	- PDF files with embedded CID fonts with FontName != BaseFont
-(prohibited by the PDF specification, but produced by some Adobe software)
-caused an error. (lib/pdf_font.ps [1.11], lib/pdf_ops.ps [1.8]: 2000/08/08
-22:29:12 lpd)
-	- Setting the color (fill or stroke) sometimes overwrote the color
-associated with an outer gsave level. (lib/pdf_ops.ps [1.9]: 2000/08/24
-01:55:37 lpd)
-	- The PDF text rendering modes that included clipping (modes 4-7)
-didn't work. The fix is a bit of a hack, but it's much closer to being
-right. (lib/pdf_ops.ps [1.12]: 2000/08/31 02:05:55 lpd)
-	- The new code for detecting whether a page used any transparency
-features could cause an error. (lib/pdf_main.ps [1.14]: 2000/09/10 18:48:26
-lpd)
-	- Filters with indirect object parameters caused an error. (Fix from
-Artifex.) (lib/pdf_base.ps [1.9]: 2000/09/14 00:38:05 lpd)
-	- The page dictionary was left on the operand stack while the page
-was being rendered, causing the sc[n]/SC[N] operators to give an error if
-the color consisted of only a single value. (bug introduced after 6.23)
-(lib/pdf_main.ps [1.18]: 2000/09/18 06:38:38 lpd)
-
-Puts the logic for detecting garbage after %%EOF (and some similar invalid
-constructs) back into the main code, making it produce a message on stderr.
-(lib/pdf_main.ps [1.11]: 2000/08/23 02:22:39 lpd)
-
-Implements the op, OP, and OPM (overprint control) elements of ExtGStates.
-(lib/pdf_draw.ps [1.17], lib/pdf_ops.ps [1.10]: 2000/08/24 02:26:52 lpd)
-
-Implements the new PDF 1.4 scalar graphics state parameters (ca, CA, SMask,
-AIS, BM, TK). The implementation of SMask is a stub.
-(lib/pdf_draw.ps [1.18], lib/pdf_ops.ps [1.11]: 2000/08/24 03:04:29 lpd)
-
-If a PDF file is invalid but repairable, prints out the Producer as part of
-the warning message. (lib/pdf_main.ps [1.12]: 2000/08/24 04:18:40 lpd)
-
-Adds most of the code needed to support PDF 1.4 transparency groups and soft
-masks in the graphics state. (lib/pdf_draw.ps [1.19], lib/pdf_ops.ps [1.13]:
-2000/09/08 04:54:10 lpd)
-
-Implements another chunk of the PDF 1.4 transparency features, fixing some
-bugs in the previous code. (lib/pdf_draw.ps [1.20], lib/pdf_main.ps [1.13],
-lib/pdf_ops.ps [1.14]: 2000/09/10 05:26:27 lpd)
-
-Moves the Matte entry of soft mask images from the main structure to the
-mask structures, and changes Matted to has_Matte. (lib/pdf_draw.ps [1.21]:
-2000/09/11 04:08:13 lpd)
-
-Renders pages that use any transparency features as transparency groups.
-(lib/pdf_main.ps [1.15]: 2000/09/12 20:36:23 lpd)
-
-*** empty log message *** (lib/pdf_main.ps [1.16]: 2000/09/15 03:51:54
-alexcher)
-
-Undoes uncommented and in some cases inappropriate changes.
-(lib/pdf_main.ps [1.17]: 2000/09/18 06:28:58 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, and changes a few other internal
-references. (lib/pdf_base.ps [1.10], lib/pdf_draw.ps [1.22],
-lib/pdf_font.ps [1.12], lib/pdf_main.ps [1.19], lib/pdf_ops.ps [1.15],
-lib/pdf_sec.ps [1.2]: 2000/09/19 18:29:11 lpd)
-
-</pre><h2><a name="6.30 Interpreter"></a>Interpreter</h2><pre>
-
-Fixes problems:
-	- The FlateEncode and zlibEncode filters didn't implement the
-"Effort" parameter. (fix from Alex Cherepanov) (zfzlib.c [1.2]: 2000/08/09
-16:55:25 lpd)
-	- The *ACSImageDict parameter dictionaries weren't being set for the
-/default configuration; the *ACSImageDict parameters were never recognized,
-because their names were spelled incorrectly as *ACSDict. (Two separate
-bugs.) (lib/gs_pdfwr.ps [1.5]: 2000/08/18 03:20:12 lpd)
-	- When given an array of the wrong size, a number of operators
-produced a limitcheck error rather than a rangecheck. (idparam.c [1.2],
-idparam.h [1.2], zcie.c [1.3], zfont1.c [1.7], zfunc.c [1.5],
-zfunc0.c [1.2], zimage2.c [1.2], zimage3.c [1.2], zpcolor.c [1.2],
-zshade.c [1.3]: 2000/08/23 01:45:08 lpd)
-	- The stub implementations of .{set,current}{opacity,shape}mask
-didn't {pop the argument}{push null}. (ztrans.c [1.2]: 2000/08/24 03:03:18
-lpd)
-	- The BeOS C compiler objected to some int/bool mismatches.
-(icontext.c [1.5]: 2000/08/31 03:51:29 lpd)
-	- If changing LanguageLevels caused a dictionary to grow, memory
-could be corrupted. (zmisc2.c [1.2]: 2000/08/31 14:43:58 lpd)
-	- Because "-" as an OutputFile now references the %stdout IODevice,
-it no longer worked in configurations without a PostScript interpreter.
-Fixing this required factoring out the stdin/out/err IODevices and providing
-an implementation that didn't reference the PostScript interpreter.
-(ziodev.c [1.2], ziodevs.c [1.1]: 2000/09/07 06:14:45 lpd)
-	- .LocalDefaults was stored in a local array in the (global)
-ColorSpace category dictionary, causing memory anomalies with multiple
-contexts. (lib/gs_ll3.ps [1.6], lib/gs_res.ps [1.13]: 2000/09/20 07:15:11
-lpd)
-	- A missing cast caused the picky OpenVMS compiler to complain.
-(zdevcal.c [1.3]: 2000/09/22 04:18:17 lpd)
-	- Attempting to show an undefined character code in a TrueType font
-with no .notdef entry caused an error. (lib/gs_ttf.ps [1.8]: 2000/09/23
-18:47:06 lpd)
-
-Initializes files for the 6.24 fileset. (lib/gs_init.ps [1.21]: 2000/08/09
-16:54:02 lpd)
-
-Adds the PDF "overprint mode" to the graphics state. THE ACTUAL
-FUNCTIONALITY IS NOT IMPLEMENTED YET. (zcssepr.c [1.4]: 2000/08/23 17:54:16
-lpd)
-
-Starts to implement the PDF 1.4 transparency features. All API and operator
-additions are now implemented (at least as stubs) and documented, as is
-bookkeeping for the new scalar graphics state members (but not for the soft
-masks or the transparency group stack). (ztrans.c [1.1]: 2000/08/23 21:46:31
-lpd)
-
-Partly implements opacity and shape mask bookkeeping. gsave/grestore/etc.
-and banding don't do the right thing yet. (igstate.h [1.2], ztrans.c [1.3]:
-2000/08/25 01:46:48 lpd)
-
-Implements some minor improvements to the freelist algorithms that can
-produce nearly a factor of 2 speedup in some allocation-intensive
-situations. (isave.c [1.2]: 2000/08/26 03:21:34 lpd)
-
-Brings the (still mostly stubbed) transparency code to a more
-self-consistent state. (ztrans.c [1.4]: 2000/08/30 01:34:40 lpd)
-
-Finishes the code for parsing ImageType 103 (soft-mask) images.
-(ztrans.c [1.5]: 2000/08/30 04:30:06 lpd)
-
-Completes the parsing of .{begin,end}transparency{group,mask}, except for
-the TransferFunction for masks. The specification is still subject to
-change. (ztrans.c [1.6]: 2000/08/30 15:03:36 lpd)
-
-*Really* finishes the transparency rendering stack operators (the previous
-version didn't even compile), except for TransferFunction. (ztrans.c [1.7]:
-2000/08/30 21:11:55 lpd)
-
-Implements another chunk of the PDF 1.4 transparency features, fixing some
-bugs in the previous code. (lib/gs_ll3.ps [1.4], ztrans.c [1.8]: 2000/09/10
-05:26:27 lpd)
-
-Checks that the TransferFunction of a soft mask is 1-in, 1-out; sets Matted
-correctly in the soft mask parameters passed to the graphics library.
-(ztrans.c [1.9]: 2000/09/11 02:10:28 lpd)
-
-Moves the Matte entry of soft mask images from the main structure to the
-mask structures, and changes Matted to has_Matte. (ztrans.c [1.10]:
-2000/09/11 04:08:13 lpd)
-
-Upgrades the proposed driver interface transparency extension from comments
-to macros, changing the name 'discard_transparency_level' to
-'discard_transparency_layer'. (ztrans.c [1.11]: 2000/09/11 20:13:31 lpd)
-
-*** empty log message *** (lib/gs_init.ps [1.22], zmatrix.c [1.2]:
-2000/09/14 19:46:05 alexcher)
-
-Undoes uncommented and in some cases inappropriate changes.
-(lib/gs_init.ps [1.23], zmatrix.c [1.3]: 2000/09/18 06:28:58 lpd)
-
-Updates the license notice to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript. (examples/waterfal.ps [1.2]: 2000/09/19
-18:03:40 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, and changes a few other internal
-references. (lib/gs_agl.ps [1.2], lib/gs_btokn.ps [1.3],
-lib/gs_ccfnt.ps [1.4], lib/gs_ce_e.ps [1.2], lib/gs_cff.ps [1.7],
-lib/gs_cidfn.ps [1.17], lib/gs_cmap.ps [1.6], lib/gs_cmdl.ps [1.2],
-lib/gs_css_e.ps [1.2], lib/gs_dbt_e.ps [1.2], lib/gs_diskf.ps [1.2],
-lib/gs_dpnxt.ps [1.2], lib/gs_dps.ps [1.4], lib/gs_dps1.ps [1.2],
-lib/gs_dps2.ps [1.2], lib/gs_epsf.ps [1.2], lib/gs_fform.ps [1.2],
-lib/gs_fonts.ps [1.9], lib/gs_frsd.ps [1.4], lib/gs_il1_e.ps [1.2],
-lib/gs_il2_e.ps [1.2], lib/gs_init.ps [1.24], lib/gs_kanji.ps [1.2],
-lib/gs_ksb_e.ps [1.2], lib/gs_l2img.ps [1.2], lib/gs_lev2.ps [1.6],
-lib/gs_lgo_e.ps [1.3], lib/gs_lgx_e.ps [1.2], lib/gs_ll3.ps [1.5],
-lib/gs_mex_e.ps [1.2], lib/gs_mgl_e.ps [1.3], lib/gs_mro_e.ps [1.2],
-lib/gs_pdf_e.ps [1.2], lib/gs_pdfwr.ps [1.6], lib/gs_pfile.ps [1.2],
-lib/gs_rdlin.ps [1.2], lib/gs_res.ps [1.12], lib/gs_setpd.ps [1.5],
-lib/gs_statd.ps [1.4], lib/gs_std_e.ps [1.2], lib/gs_sym_e.ps [1.2],
-lib/gs_trap.ps [1.3], lib/gs_ttf.ps [1.7], lib/gs_typ32.ps [1.2],
-lib/gs_typ42.ps [1.2], lib/gs_type1.ps [1.4], lib/gs_wan_e.ps [1.2],
-lib/gs_wl1_e.ps [1.2], lib/gs_wl2_e.ps [1.2], lib/gs_wl5_e.ps [1.2]:
-2000/09/19 18:29:11 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (bfont.h [1.3], btoken.h [1.4], ccfont.h [1.2],
-dpmainc.c [1.2], dstack.h [1.2], dwdll.cpp [1.2], dwdll.h [1.2],
-dwimg.cpp [1.2], dwimg.h [1.2], dwinst.cpp [1.2], dwinst.h [1.2],
-dwmain.cpp [1.2], dwmain.h [1.2], dwmainc.cpp [1.3], dwnodll.cpp [1.2],
-dwsetup.cpp [1.3], dwsetup.h [1.2], dwtext.cpp [1.2], dwtext.h [1.2],
-dwuninst.cpp [1.2], dwuninst.h [1.2], errors.h [1.2], estack.h [1.2],
-files.h [1.2]: 2000/09/19 19:00:09 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (ghost.h [1.2], gs.c [1.2]: 2000/09/19 19:00:23 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (ialloc.c [1.2], ialloc.h [1.2], iastate.h [1.2],
-iastruct.h [1.2], ibnum.c [1.2], ibnum.h [1.2], iccfont.c [1.2],
-iccinit0.c [1.2], icfontab.c [1.2], ichar.h [1.3], ichar1.h [1.3],
-icharout.h [1.2], icid.h [1.2], icie.h [1.2], icolor.h [1.2], iconf.c [1.2],
-icontext.c [1.6], icontext.h [1.2], icremap.h [1.2], icsmap.h [1.2],
-icstate.h [1.4], iddict.h [1.2], iddstack.h [1.2], idebug.c [1.2],
-idebug.h [1.2], idict.c [1.2], idict.h [1.2], idictdef.h [1.2],
-idosave.h [1.2], idparam.c [1.3], idparam.h [1.3], idsdata.h [1.2],
-idstack.c [1.2], idstack.h [1.2], iesdata.h [1.2], iestack.h [1.2],
-ifcid.h [1.2], ifilter.h [1.3], ifilter2.h [1.2], ifont.h [1.4],
-ifont1.h [1.3], ifont2.h [1.2], ifont42.h [1.3], ifrpred.h [1.2],
-ifunc.h [1.3], ifwpred.h [1.2], igc.c [1.2]: 2000/09/19 19:00:41 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (igc.h [1.2], igcref.c [1.2], igcstr.c [1.3], igcstr.h [1.2],
-igstate.h [1.3], iht.h [1.2], iimage.h [1.2], iimage2.h [1.2],
-iinit.c [1.2], iinit.h [1.2], ilevel.h [1.2], ilocate.c [1.3],
-imain.c [1.2], imain.h [1.2], imainarg.c [1.4], imainarg.h [1.2],
-imemory.h [1.2], iminst.h [1.2], iname.c [1.3], iname.h [1.2],
-inamedef.h [1.2], inameidx.h [1.2], inames.h [1.2], inamestr.h [1.2],
-inobtokn.c [1.2], inouparm.c [1.2], interp.c [1.6], interp.h [1.2],
-iosdata.h [1.2], iostack.h [1.2], ipacked.h [1.2], iparam.c [1.5],
-iparam.h [1.2], iparray.h [1.2], ipcolor.h [1.2], ireclaim.c [1.2],
-iref.h [1.3], isave.c [1.3], isave.h [1.2], iscan.c [1.5], iscan.h [1.4],
-iscanbin.c [1.5], iscanbin.h [1.2], iscannum.c [1.2], iscannum.h [1.2],
-isdata.h [1.2], isstate.h [1.2], istack.c [1.2], istack.h [1.2],
-istkparm.h [1.2], istream.h [1.2], istruct.h [1.2], itoken.h [1.2],
-iutil.c [1.2], iutil.h [1.2], iutil2.c [1.2], iutil2.h [1.2],
-ivmem2.h [1.2]: 2000/09/19 19:00:44 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (ivmspace.h [1.2], main.h [1.2], oparc.h [1.2],
-opcheck.h [1.2], opdef.h [1.2], oper.h [1.2], opextern.h [1.2],
-ostack.h [1.2], sbhc.c [1.2], sbhc.h [1.2], sbwbs.c [1.2], sbwbs.h [1.2],
-sfilter1.c [1.5]: 2000/09/19 19:00:47 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (shcgen.c [1.2], shcgen.h [1.2], smtf.c [1.2], smtf.h [1.2],
-store.h [1.2], zarith.c [1.4], zarray.c [1.2], zbfont.c [1.6],
-zbseq.c [1.4], zcfont.c [1.2], zchar.c [1.3], zchar1.c [1.5],
-zchar2.c [1.2], zchar32.c [1.2], zchar42.c [1.2], zcharout.c [1.2],
-zcharx.c [1.3], zcid.c [1.3], zcie.c [1.4], zcolor.c [1.4]: 2000/09/19
-19:00:50 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (zcolor1.c [1.3], zcolor2.c [1.3], zcontext.c [1.6],
-zcontrol.c [1.3], zcrd.c [1.2], zcsdevn.c [1.3], zcsindex.c [1.3],
-zcspixel.c [1.2], zcssepr.c [1.5], zdevcal.c [1.2], zdevice.c [1.3],
-zdevice2.c [1.3], zdict.c [1.3], zdouble.c [1.2], zdpnext.c [1.2],
-zdps.c [1.4], zdps1.c [1.2], zfbcp.c [1.3], zfcid.c [1.10], zfcid0.c [1.4],
-zfcid1.c [1.2], zfcmap.c [1.8], zfdctd.c [1.3], zfdcte.c [1.3],
-zfdecode.c [1.3], zfile.c [1.5], zfileio.c [1.9], zfilter.c [1.4],
-zfilter2.c [1.3], zfilterx.c [1.2], zfmd5.c [1.2], zfont.c [1.2],
-zfont0.c [1.3], zfont1.c [1.8], zfont2.c [1.3], zfont32.c [1.2],
-zfont42.c [1.5], zfproc.c [1.4], zfrsd.c [1.4], zfunc.c [1.6],
-zfunc0.c [1.3], zfunc3.c [1.2], zfunc4.c [1.5], zfzlib.c [1.3],
-zgeneric.c [1.3], zgstate.c [1.2], zhsb.c [1.2], zht.c [1.2], zht1.c [1.2],
-zht2.c [1.2], zimage.c [1.5], zimage2.c [1.3], zimage3.c [1.3],
-ziodev.c [1.3], ziodev2.c [1.3], ziodevs.c [1.2], zmath.c [1.3],
-zmatrix.c [1.4], zmedia2.c [1.2], zmisc.c [1.2], zmisc1.c [1.3],
-zmisc2.c [1.3], zmisc3.c [1.2], zpacked.c [1.2], zpaint.c [1.2],
-zpath.c [1.2], zpath1.c [1.2], zpcolor.c [1.3], zrelbit.c [1.2],
-zrop.c [1.2], zshade.c [1.4], zstack.c [1.2], zstring.c [1.2],
-zsysvm.c [1.2], ztoken.c [1.6], ztrans.c [1.12], ztrap.c [1.2],
-ztype.c [1.3], zupath.c [1.2], zusparam.c [1.3], zvmem.c [1.2],
-zvmem2.c [1.2]: 2000/09/19 19:00:53 lpd)
-
-Change to avoid multiply defined rect_param when NOPRIVATE is used. This
-module uses 4 element X/Y/width/Height, not a gs_rect so xywh_param is a
-better name. (zdpnext.c [1.3]: 2000/09/21 15:12:01 rayjj)
-
-Changes the default Windows installation directory from c:\Aladdin to c:\gs.
-(dwsetup.cpp [1.4]: 2000/09/22 05:32:17 lpd)
-
-Changes the default Windows Start Menu Folder from "Aladdin" to
-"Ghostscript". (dwsetup.cpp [1.5]: 2000/09/22 05:35:02 lpd)
-
-Documentation changes in preparation for 6.30 release. Replaced some contact
-information, updated version numbers. (lib/gs_init.ps [1.25]: 2000/10/04
-04:33:29 raph)
-
-</pre><h2><a name="6.30 Streams"></a>Streams</h2><pre>
-
-Fixes problems:
-	- s_add_filter used min_out_size rather than min_in_size for the
-minimum buffer size, which could cause an endless loop when writing to the
-filter. (This only affected filters allocated by C code, not by the
-PostScript filter operator.) (stream.c [1.7], stream.h [1.6]: 2000/08/16
-01:26:22 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (sa85d.c [1.2], sa85d.h [1.2], sa85x.h [1.3], sbcp.c [1.3],
-sbcp.h [1.2], sbtx.h [1.2], scanchar.h [1.2], scantab.c [1.2], scf.h [1.2],
-scfd.c [1.2], scfe.c [1.2], scfetab.c [1.2], scfparam.c [1.2], scfx.h [1.2],
-scommon.h [1.2], sdcparam.c [1.2], sdcparam.h [1.2], sdct.h [1.2],
-sdctc.c [1.2], sdctd.c [1.2], sdcte.c [1.2], sddparam.c [1.2],
-sdeparam.c [1.2], seexec.c [1.3], sfilter.h [1.6], sfilter2.c [1.3],
-sfxboth.c [1.2], sfxfd.c [1.5]: 2000/09/19 19:00:47 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (sfxstdio.c [1.4], shc.c [1.2], shc.h [1.2], siinterp.c [1.2],
-siinterp.h [1.2], siscale.c [1.4], siscale.h [1.2], sisparam.h [1.2],
-sjpeg.h [1.2], sjpegc.c [1.2], sjpegd.c [1.2], sjpege.c [1.2],
-slzwc.c [1.2], slzwce.c [1.2], slzwd.c [1.2], slzwx.h [1.2], smd5.c [1.3],
-smd5.h [1.2], spdiff.c [1.3], spdiffx.h [1.2], spngp.c [1.2],
-spngpx.h [1.2], spprint.c [1.2], spprint.h [1.2], spsdf.c [1.4],
-spsdf.h [1.2], srdline.h [1.2], srld.c [1.2], srle.c [1.2], srlx.h [1.2],
-sstring.c [1.2], sstring.h [1.2], stat_.h [1.5], std.h [1.3],
-stdio_.h [1.2], stdpre.h [1.2], stream.c [1.8], stream.h [1.7],
-strimpl.h [1.2], string_.h [1.2], szlibc.c [1.2], szlibd.c [1.2],
-szlibe.c [1.2], szlibx.h [1.2], szlibxx.h [1.2]: 2000/09/19 19:00:50 lpd)
-
-</pre><h2><a name="6.30 Library"></a>Library</h2><pre>
-
-Fixes problems:
-	- Parameter lists didn't have proper GC descriptors; garbage
-collection could mangle keys and collection values in non-transient
-parameter lists (such as distiller parameters). (gscparam.c [1.5]:
-2000/08/19 03:01:30 lpd)
-	- gdev_vector_dopath could return 1, which value was then propagated
-to callers that interpreted it differently. (gdevvec.c [1.5],
-gdevvec.h [1.3]: 2000/08/20 00:21:42 lpd)
-	- An AIX compiler could get confused if the last elements of a
-structure were individual bytes. (gzpath.h [1.2]: 2000/08/24 19:43:48 lpd)
-	- If the OutputFile of a high-level device was ever set, any
-subsequent execution of setpagedevice would cause a rangecheck in
-.installpagedevice. (gdevvec.c [1.6]: 2000/08/31 02:04:50 lpd)
-	- Type 2 CharStrings didn't insert an explicit closepath at the end
-of each subpath. (This matters for charpath followed by stroke.)
-(gstype2.c [1.5]: 2000/08/31 02:16:45 lpd)
-	- Type 2 fonts should insert an explicit closepath only if the
-font's PaintType != 1. (gstype2.c [1.6]: 2000/08/31 03:21:45 lpd)
-	- The BeOS C compiler objected to some int/bool mismatches.
-(gp.h [1.4], gxfill.c [1.4], gxtext.h [1.2]: 2000/08/31 03:51:29 lpd)
-	- Because "-" as an OutputFile now references the %stdout IODevice,
-it no longer worked in configurations without a PostScript interpreter.
-Fixing this required factoring out the stdin/out/err IODevices and providing
-an implementation that didn't reference the PostScript interpreter.
-(gsiodevs.c [1.1], gslib.c [1.2]: 2000/09/07 06:14:45 lpd)
-	- Fixes a type error caused by a change in the TransferFunction
-member of gs_transparency_mask_params_t. (gstrans.c [1.7]: 2000/09/10
-18:20:09 lpd)
-	- Several places in the code for ImageType 3x (soft-masked) images
-didn't correctly handle the case where only one of the two masks was
-supplied (which is always the case for PDF). (gximag3x.c [1.4]: 2000/09/11
-02:12:19 lpd)
-	- The -Zv tracing messages for gs_begin_transparency_{group,mask}
-were incorrect. (gstrans.c [1.10]: 2000/09/12 20:35:05 lpd)
-	- Printing the program name and version didn't use fprintf, so it
-didn't work properly with the stdout redirection on Windows. (fix from
-Artifex) (gsmisc.c [1.7]: 2000/09/18 06:22:35 lpd)
-	- Undefined characters in CID-keyed (FMapType 9) composite fonts
-caused an infinite loop, because the parsing index was never advanced past
-the character. (gsfcmap.c [1.7]: 2000/09/21 02:44:44 lpd)
-	- CID-keyed (FMapType 9) composite fonts didn't return the correct
-parsed character code, possibly causing widthshow or cshow to produce
-incorrect output. (gsfcmap.c [1.8], gsfcmap.h [1.4]: 2000/09/21 03:02:03
-lpd)
-	- Works around ANSI C's unreasonable new aliasing restrictions.
-(gsnogc.c [1.5]: 2000/09/22 04:17:52 lpd)
-	- The 'head' table in embedded TrueType fonts had a length of 56; it
-should have a length of 54 and be followed by 2 padding bytes.
-(gdevpsft.c [1.4]: 2000/09/26 06:42:05 lpd)
-
-Initializes files for the 6.24 fileset. (gscdef.c [1.7]: 2000/08/09 16:54:02
-lpd)
-
-Adds the PDF "overprint mode" to the graphics state. THE ACTUAL
-FUNCTIONALITY IS NOT IMPLEMENTED YET. (gscsepr.c [1.4], gscsepr.h [1.3],
-gsstate.c [1.2], gxclpath.c [1.3], gxclpath.h [1.2], gxclrast.c [1.4],
-gxistate.h [1.2]: 2000/08/23 17:54:14 lpd)
-
-Starts to implement the PDF 1.4 transparency features. All API and operator
-additions are now implemented (at least as stubs) and documented, as is
-bookkeeping for the new scalar graphics state members (but not for the soft
-masks or the transparency group stack). (gsistate.c [1.2], gsstate.c [1.3],
-gstparam.h [1.1], gstrans.c [1.1], gstrans.h [1.1], gxclpath.c [1.4],
-gxclpath.h [1.3], gxclrast.c [1.5], gxistate.h [1.3], gzstate.h [1.2]:
-2000/08/23 21:46:31 lpd)
-
-Adds a new equality-testing virtual procedure for color spaces.
-(gscdevn.c [1.4], gscolor2.c [1.5], gscpixel.c [1.2], gscscie.c [1.2],
-gscsepr.c [1.5], gscspace.c [1.3], gscspace.h [1.3], gspcolor.c [1.3],
-gxcspace.h [1.3]: 2000/08/24 05:42:30 lpd)
-
-Changes the band list representation of mask images to allow
-BitsPerComponent > 1 (for soft masks). (gximage1.c [1.2]: 2000/08/24
-17:58:18 lpd)
-
-Adds Matte and has_Matte members to ImageType 1 images. These are only used
-with the new transparency features. (gsiparam.h [1.2], gximage1.c [1.3]:
-2000/08/24 19:20:12 lpd)
-
-Partly implements opacity and shape mask bookkeeping. gsave/grestore/etc.
-and banding don't do the right thing yet. (gstparam.h [1.2],
-gstrans.c [1.2], gstrans.h [1.2], gxcldev.h [1.2], gxclpath.c [1.5],
-gxclpath.h [1.4]: 2000/08/25 01:46:48 lpd)
-
-Changes remove_range_from_freelist to only scan relevant freelists, rather
-than all of them. On some files, the speedup is dramatic. (gsalloc.c [1.6]:
-2000/08/26 01:18:33 lpd)
-
-Completes an edit that accidentally left the repository in an inconsistent
-state. (gxclpath.c [1.6], gxclrast.c [1.6]: 2000/08/26 03:19:56 lpd)
-
-Implements some minor improvements to the freelist algorithms that can
-produce nearly a factor of 2 speedup in some allocation-intensive
-situations. (gsalloc.c [1.7], gxalloc.h [1.4]: 2000/08/26 03:21:34 lpd)
-
-Brings the (still mostly stubbed) transparency code to a more
-self-consistent state. (gsipar3x.h [1.1], gsiparam.h [1.3],
-gsstruct.h [1.4], gstparam.h [1.3], gstrans.c [1.3], gstrans.h [1.3],
-gxclpath.c [1.7], gxclpath.h [1.5], gxclrast.c [1.7], gximag3x.c [1.1],
-gximag3x.h [1.1], gximage1.c [1.4], gxistate.h [1.4]: 2000/08/30 01:34:40
-lpd)
-
-Finishes the code for parsing ImageType 103 (soft-mask) images.
-(gximag3x.c [1.2]: 2000/08/30 04:29:56 lpd)
-
-Completes the parsing of .{begin,end}transparency{group,mask}, except for
-the TransferFunction for masks. The specification is still subject to
-change. (gstparam.h [1.4], gstrans.c [1.4], gstrans.h [1.4]: 2000/08/30
-15:03:36 lpd)
-
-Adds documentation on proposed driver interface additions for managing the
-transparency rendering stack. (gstrans.c [1.5]: 2000/08/31 20:22:47 lpd)
-
-Adds color space type names for tracing/debugging. (gscspace.h [1.4]:
-2000/09/10 05:21:44 lpd)
-
-Changes the -Zv switch to trace alpha/transparency-related features.
-(gdevabuf.c [1.2]: 2000/09/10 05:23:10 lpd)
-
-Implements another chunk of the PDF 1.4 transparency features, fixing some
-bugs in the previous code. (gstparam.h [1.5], gstrans.c [1.6],
-gximag3x.c [1.3]: 2000/09/10 05:26:27 lpd)
-
-Moves the Matte entry of soft mask images from the main structure to the
-mask structures, and changes Matted to has_Matte. (gsipar3x.h [1.2],
-gximag3x.c [1.5], gximag3x.h [1.2]: 2000/09/11 04:08:13 lpd)
-
-Adds a default implementation of soft-masked images that simply ignores the
-mask. (gximag3x.c [1.6]: 2000/09/11 04:38:01 lpd)
-
-Upgrades the proposed driver interface transparency extension from comments
-to macros, changing the name 'discard_transparency_level' to
-'discard_transparency_layer'. (gstrans.c [1.8], gstrans.h [1.5]: 2000/09/11
-20:13:31 lpd)
-
-Finishes the (dummy) implementation of the transparency layer stack in the
-graphics library. (gsistate.c [1.3], gsstate.c [1.4], gstparam.h [1.6],
-gstrans.c [1.9], gxistate.h [1.5]: 2000/09/11 22:20:05 lpd)
-
-Makes the default string matching parameters public. (gsutil.c [1.3],
-gsutil.h [1.2]: 2000/09/12 02:02:52 lpd)
-
-*** empty log message *** (gsmisc.c [1.6]: 2000/09/15 03:01:51 alexcher)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (close_.h [1.2], ctype_.h [1.2], dirent_.h [1.2],
-dos_.h [1.2], errno_.h [1.2], fcntl_.h [1.3], gconf.c [1.2], gconf.h [1.2],
-gdebug.h [1.2], gdevabuf.c [1.3], gdevalph.c [1.2], gdevbbox.c [1.3],
-gdevbbox.h [1.2]: 2000/09/19 19:00:09 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevcmap.c [1.2], gdevcmap.h [1.2], gdevdbit.c [1.2],
-gdevddrw.c [1.2], gdevdflt.c [1.3], gdevdgbr.c [1.2], gdevdrop.c [1.3],
-gdevemap.c [1.2], gdevhit.c [1.2], gdevht.c [1.3], gdevht.h [1.2],
-gdevm1.c [1.2], gdevm16.c [1.2], gdevm2.c [1.2], gdevm24.c [1.2],
-gdevm32.c [1.2], gdevm4.c [1.2], gdevm8.c [1.2], gdevmem.c [1.2],
-gdevmem.h [1.3], gdevmpla.c [1.2], gdevmpla.h [1.2], gdevmr1.c [1.2],
-gdevmr2n.c [1.2], gdevmr8n.c [1.2], gdevmrop.h [1.3], gdevmrun.c [1.2],
-gdevmrun.h [1.2], gdevnfwd.c [1.3]: 2000/09/19 19:00:12 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevpipe.c [1.3], gdevplnx.c [1.2], gdevplnx.h [1.2],
-gdevppla.c [1.2], gdevppla.h [1.2], gdevprn.c [1.5], gdevprn.h [1.6],
-gdevprna.c [1.2], gdevprna.h [1.2], gdevpsf.h [1.7], gdevpsf1.c [1.5],
-gdevpsf2.c [1.7], gdevpsfm.c [1.3], gdevpsft.c [1.3], gdevpsfu.c [1.4],
-gdevpsfx.c [1.5], gdevrops.c [1.3]: 2000/09/19 19:00:20 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gdevtrac.c [1.2], gdevvec.c [1.7], gdevvec.h [1.4],
-gp.h [1.5], gp_dosfe.c [1.2], gp_dosfs.c [1.2], gp_getnv.c [1.2],
-gp_msdos.c [1.2], gp_nsync.c [1.2], gp_psync.c [1.2], gp_strdl.c [1.2],
-gp_unifn.c [1.2], gp_unifs.c [1.3], gpcheck.h [1.2], gpgetenv.h [1.2],
-gpmisc.c [1.7], gpmisc.h [1.2], gpsync.h [1.2], gsalloc.c [1.8],
-gsalloc.h [1.2], gsalpha.c [1.2], gsalpha.h [1.2], gsalphac.c [1.2],
-gsalphac.h [1.2], gsargs.c [1.2], gsargs.h [1.3], gsbitmap.h [1.2],
-gsbitops.c [1.2], gsbitops.h [1.2], gsbittab.c [1.2], gsbittab.h [1.2]:
-2000/09/19 19:00:23 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gsccode.h [1.4], gsccolor.h [1.2], gscdef.c [1.8],
-gscdefs.h [1.2], gscdevn.c [1.5], gscdevn.h [1.3], gschar.c [1.3],
-gschar.h [1.3], gschar0.c [1.2], gscie.c [1.3], gscie.h [1.2],
-gsciemap.c [1.3], gscindex.h [1.2], gsclipsr.c [1.2], gsclipsr.h [1.2],
-gscolor.c [1.4], gscolor.h [1.3], gscolor1.c [1.3], gscolor1.h [1.2],
-gscolor2.c [1.6], gscolor2.h [1.3], gscolor3.c [1.4], gscolor3.h [1.2],
-gscompt.h [1.2], gscoord.c [1.5], gscoord.h [1.2], gscparam.c [1.6],
-gscpixel.c [1.3], gscpixel.h [1.2], gscpm.h [1.2], gscrd.c [1.2],
-gscrd.h [1.2], gscrdp.c [1.2], gscrdp.h [1.2], gscrypt1.c [1.2],
-gscrypt1.h [1.2], gscscie.c [1.3], gscsel.h [1.2], gscsepnm.h [1.2],
-gscsepr.c [1.6], gscsepr.h [1.4], gscspace.c [1.4], gscspace.h [1.5],
-gscssub.c [1.2], gscssub.h [1.2], gsdcolor.h [1.3], gsdevice.c [1.7],
-gsdevice.h [1.3], gsdevmem.c [1.2], gsdparam.c [1.4], gsdpnext.h [1.2],
-gsdps.c [1.2], gsdps.h [1.2], gsdps1.c [1.2], gsdsrc.c [1.2],
-gsdsrc.h [1.3], gserror.h [1.2], gserrors.h [1.2], gsexit.h [1.2],
-gsfcid.c [1.4], gsfcmap.c [1.6], gsfcmap.h [1.3], gsfemu.c [1.2],
-gsflip.c [1.2], gsflip.h [1.2], gsfname.c [1.2], gsfname.h [1.2],
-gsfont.c [1.2], gsfont.h [1.2], gsfont0.c [1.2], gsfunc.c [1.4],
-gsfunc.h [1.4], gsfunc0.c [1.3], gsfunc0.h [1.2], gsfunc3.c [1.4],
-gsfunc3.h [1.2], gsfunc4.c [1.3], gsfunc4.h [1.2], gsfuncv.c [1.2],
-gsfuncv.h [1.2]: 2000/09/19 19:00:26 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gsgc.h [1.2], gshsb.c [1.2], gshsb.h [1.2], gsht.c [1.2],
-gsht.h [1.2], gsht1.c [1.2], gsht1.h [1.2], gshtscr.c [1.3], gshtx.c [1.2],
-gshtx.h [1.2], gsimage.c [1.3], gsimage.h [1.2], gsimpath.c [1.2],
-gsinit.c [1.2], gsio.h [1.4], gsiodev.c [1.3], gsiodevs.c [1.2],
-gsipar3x.h [1.3], gsiparam.h [1.4], gsiparm2.h [1.2], gsiparm3.h [1.4],
-gsiparm4.h [1.2], gsistate.c [1.4], gsjconf.h [1.2], gslib.c [1.3],
-gslib.h [1.2], gsline.c [1.2], gsline.h [1.2], gslparam.h [1.2],
-gsmalloc.c [1.3], gsmalloc.h [1.2], gsmatrix.c [1.2], gsmatrix.h [1.2],
-gsmdebug.h [1.2], gsmemlok.c [1.3], gsmemlok.h [1.2], gsmemory.c [1.2],
-gsmemory.h [1.2], gsmemraw.h [1.2], gsmemret.c [1.2], gsmemret.h [1.2],
-gsmisc.c [1.8], gsnogc.c [1.4], gsnogc.h [1.2], gsnorop.c [1.2],
-gsnotify.c [1.2], gsnotify.h [1.2], gspaint.c [1.2], gspaint.h [1.2],
-gsparam.c [1.4], gsparam.h [1.7], gsparam2.c [1.2], gsparams.c [1.2],
-gsparams.h [1.2], gsparamx.c [1.3], gsparamx.h [1.3], gspath.c [1.2],
-gspath.h [1.2], gspath1.c [1.2], gspath2.h [1.2], gspcolor.c [1.4],
-gspcolor.h [1.2], gspenum.h [1.2], gsptype1.c [1.2], gsptype1.h [1.2]:
-2000/09/19 19:00:29 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gsptype2.c [1.3], gsptype2.h [1.2], gsrect.h [1.2],
-gsrefct.h [1.2], gsrop.c [1.2], gsrop.h [1.2], gsropc.c [1.2],
-gsropc.h [1.2], gsropt.h [1.3], gsroptab.c [1.2], gsshade.c [1.3],
-gsshade.h [1.3], gsstate.c [1.5], gsstate.h [1.2], gsstruct.h [1.5],
-gsstype.h [1.2], gstext.c [1.3], gstext.h [1.3], gstparam.h [1.7],
-gstrans.c [1.11], gstrans.h [1.6], gstrap.c [1.3], gstrap.h [1.3],
-gstype1.c [1.5], gstype1.h [1.2], gstype2.c [1.7], gstype42.c [1.7],
-gstypes.h [1.2], gsuid.h [1.2], gsutil.c [1.4], gsutil.h [1.3],
-gsxfont.h [1.2], gx.h [1.2], gxacpath.c [1.3], gxalloc.h [1.5],
-gxalpha.h [1.2], gxarith.h [1.2], gxband.h [1.2], gxbcache.c [1.2],
-gxbcache.h [1.2], gxbitfmt.h [1.2], gxbitmap.h [1.2], gxbitops.h [1.2],
-gxccache.c [1.2], gxccman.c [1.2], gxcdevn.h [1.2], gxchar.c [1.2],
-gxchar.h [1.2], gxchrout.c [1.2], gxchrout.h [1.2], gxcht.c [1.2],
-gxcid.h [1.3], gxcie.h [1.2], gxcindex.h [1.2], gxclbits.c [1.2],
-gxcldev.h [1.3], gxclfile.c [1.2], gxclimag.c [1.2], gxclio.h [1.2],
-gxclip.c [1.3], gxclip.h [1.2], gxclip2.c [1.3], gxclip2.h [1.2],
-gxclipm.c [1.3], gxclipm.h [1.2], gxclipsr.h [1.2], gxclist.c [1.3],
-gxclist.h [1.2], gxcllzw.c [1.2], gxclmem.c [1.2], gxclmem.h [1.2]:
-2000/09/19 19:00:32 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gxclpage.c [1.2], gxclpage.h [1.2], gxclpath.c [1.8],
-gxclpath.h [1.6], gxclrast.c [1.8], gxclread.c [1.2], gxclrect.c [1.2],
-gxclutil.c [1.2], gxclzlib.c [1.2], gxcmap.c [1.3], gxcmap.h [1.2],
-gxcolor2.h [1.4], gxcomp.h [1.2], gxcoord.h [1.2], gxcpath.c [1.3],
-gxcpath.h [1.2], gxcspace.h [1.4], gxctable.c [1.3], gxctable.h [1.2],
-gxcvalue.h [1.2], gxdcconv.c [1.3], gxdcconv.h [1.2], gxdcolor.c [1.3],
-gxdcolor.h [1.3], gxdda.h [1.2], gxdevbuf.h [1.2], gxdevcli.h [1.3],
-gxdevice.h [1.4], gxdevmem.h [1.2], gxdevrop.h [1.2], gxdht.h [1.4],
-gxdhtres.h [1.2], gxdither.c [1.2], gxdither.h [1.2], gxfarith.h [1.3],
-gxfcache.h [1.2], gxfcid.h [1.6], gxfcmap.h [1.5], gxfill.c [1.5],
-gxfixed.h [1.2], gxfmap.h [1.3], gxfont.h [1.2], gxfont0.h [1.3],
-gxfont1.h [1.4], gxfont42.h [1.4], gxfrac.h [1.2], gxftype.h [1.2],
-gxfunc.h [1.3], gxgetbit.h [1.2], gxhint1.c [1.2], gxhint2.c [1.2],
-gxhint3.c [1.2], gxht.c [1.2], gxht.h [1.2], gxhtbit.c [1.3],
-gxhttile.h [1.2], gxhttype.h [1.2], gxi12bit.c [1.2], gxiclass.h [1.2],
-gxicolor.c [1.2], gxidata.c [1.4], gxifast.c [1.2], gximag3x.c [1.7]:
-2000/09/19 19:00:35 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gximag3x.h [1.3], gximage.c [1.2], gximage.h [1.2],
-gximage1.c [1.5], gximage2.c [1.2], gximage3.c [1.6], gximage3.h [1.4],
-gximage4.c [1.3], gximono.c [1.2], gxino12b.c [1.2], gxiodev.h [1.2],
-gxiparam.h [1.2], gxipixel.c [1.2], gxiscale.c [1.2], gxistate.h [1.6],
-gxline.h [1.2], gxlum.h [1.2], gxmatrix.h [1.4], gxmclip.c [1.2],
-gxmclip.h [1.2], gxobj.h [1.2], gxop1.h [1.2], gxp1fill.c [1.2],
-gxp1impl.h [1.2], gxpageq.c [1.2], gxpageq.h [1.2], gxpaint.c [1.2],
-gxpaint.h [1.2], gxpath.c [1.2], gxpath.h [1.2], gxpath2.c [1.2],
-gxpcache.h [1.2], gxpcmap.c [1.3], gxpcolor.h [1.2], gxpcopy.c [1.3],
-gxpdash.c [1.2], gxpflat.c [1.2], gxropc.h [1.2], gxrplane.h [1.2],
-gxsample.c [1.2], gxsample.h [1.2], gxshade.c [1.4], gxshade.h [1.3],
-gxshade1.c [1.5], gxshade4.c [1.3], gxshade4.h [1.2], gxshade6.c [1.3],
-gxstate.h [1.2], gxstdio.h [1.2], gxstroke.c [1.2], gxsync.c [1.2],
-gxsync.h [1.2], gxtext.h [1.3], gxtmap.h [1.2], gxttf.h [1.2],
-gxtype1.c [1.6], gxtype1.h [1.4], gxxfont.h [1.2], gzacpath.h [1.2],
-gzcpath.h [1.2], gzht.h [1.3], gzline.h [1.2], gzpath.h [1.3]: 2000/09/19
-19:00:38 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gzstate.h [1.3]: 2000/09/19 19:00:41 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (jerror_.h [1.2], malloc_.h [1.2], math_.h [1.2],
-memory_.h [1.2], pipe_.h [1.2]: 2000/09/19 19:00:47 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (time_.h [1.2], vmsmath.h [1.2], windows_.h [1.2]: 2000/09/19
-19:00:51 lpd)
-
-Bring version numbers and dates up to date. Small bug fix in toolbin/pre to
-make it able to handle months with leading zeros. (gscdef.c [1.9]:
-2000/10/04 05:18:54 raph)
-
-</pre><h2><a name="6.30 ???Other???"></a>???Other???</h2><pre>
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gp_mswin.h [1.2]: 2000/09/19 19:00:24 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gsdll.h [1.2], gsdll32w.lnk [1.2], gsdllos2.h [1.2],
-gsdllwin.h [1.2], gsjmorec.h [1.2]: 2000/09/19 19:00:27 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (gspmdrv.h [1.2]: 2000/09/19 19:00:31 lpd)
-
-Updates the license notices to reflect the name change from Aladdin
-Ghostscript to AFPL Ghostscript, as well as some internal references to the
-program name. (iutilasm.asm [1.2]: 2000/09/19 19:00:46 lpd)
+	- Several places in the band list code didn't call s_init_state to
+initialize locally allocated stream states: this is now required (see the
+"Incompatible changes" section above). We suspect there are a few more
+places that will need this fix. (gxclbits.c [1.3], gxcldev.h [1.4],
+gxclread.c [1.3], gxclutil.c [1.3]: 2000/11/05 00:34:24 lpd)
+	- Fixes infinite loops when writing large bitmaps into clist. Now,
+cmd_put_bits never requests an allocation in the clist buffer larger than
+cbuf_size. (gxclbits.c [1.4]: 2000/11/05 18:44:57 raph)
+	- Works around an Acrobat Reader 4 bug that causes AR4 to draw a
+single pixel, rather than nothing, when filling a subpath consisting only of
+a moveto. (gdevvec.c [1.8]: 2000/11/07 16:42:28 lpd)
+
+Adds developer documentation on the color mapping pipeline. (gxfrac.h [1.3]:
+2000/11/03 04:53:00 lpd)
+
+Improves the documentation of the minimum responsibilities of the 'process'
+procedure in a text enumerator. (gxtext.h [1.6]: 2000/11/06 00:44:37 lpd)
+
+Adds a param_string_from_transient_string macro, to parallel
+param_string_from_string for non-permanent C strings. (gsparam.h [1.8]:
+2000/11/08 06:56:50 lpd)
 
 </pre></body></html>
