@@ -264,8 +264,7 @@ struct pcl_state_s {
 	int orientation;	/* 0..3 */
 	coord left_margin, right_margin;
 	coord top_margin;
-	float text_length;	/* needed to preserve accurate margin values */
-				/* when changing print direction */
+	coord text_length;
 	bool perforation_skip;
 	coord hmi, hmi_unrounded, vmi;
 	enum {
@@ -315,6 +314,11 @@ struct pcl_state_s {
 	coord_point last_width;		/* escapement of last char (for BS) */
 	coord_point underline_start;	/* start point of underline */
 	bool last_was_BS;		/* no printable chars since last BS */
+	bool within_text;		/* no cursor movement since */
+					/* last text character */
+	bool check_right_margin;	/* true iff we need to check for */
+					/* clipping or wrapping, only */
+					/* relevant if within_text is true */
 
 		/* Chapter 10 (pcsymbol.c) */
 
@@ -371,7 +375,7 @@ struct pcl_state_s {
 		/* 15 */
 	  bool graphics_mode;
 	  int (*end_graphics)(P1(pcl_state_t *)); /* for implicit end raster graphics */
-	  uint left_margin;
+	  int margin_setting;	/* last argument of Start Raster Graphics */
 	  int resolution;
 	  bool across_physical_page;
 	  uint height;

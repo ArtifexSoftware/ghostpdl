@@ -330,7 +330,8 @@ pcl_process(pcl_parser_state_t *pst, pcl_state_t *pcls, stream_cursor_read *pr)
 				  if ( code < 0 )
 				    goto x;
 				}
-			      chr = *++p;
+			      pst->args.command = chr = *++p;
+			      pcl_disable_display_functions(&pst->args, pcls);
 			      pst->scan_type = scanning_none;
 			    }
 			}

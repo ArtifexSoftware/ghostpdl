@@ -124,9 +124,8 @@ pcl_secondary_spacing(pcl_args_t *pargs, pcl_state_t *pcls)
 }
 
 private int
-pcl_pitch(pcl_args_t *pargs, pcl_state_t *pcls, int set)
-{	float cpi = float_arg(pargs) + 0.005;
-	uint pitch_cp;
+pcl_pitch(floatp cpi, pcl_state_t *pcls, int set)
+{	uint pitch_cp;
 	pcl_font_selection_t *pfs = &pcls->font_selection[set];
 
 	if ( cpi < 0.1 )
@@ -147,11 +146,11 @@ pcl_pitch(pcl_args_t *pargs, pcl_state_t *pcls, int set)
 }
 private int /* ESC ( s <pitch> H */
 pcl_primary_pitch(pcl_args_t *pargs, pcl_state_t *pcls)
-{	return pcl_pitch(pargs, pcls, 0);
+{	return pcl_pitch(float_arg(pargs) + 0.005, pcls, 0);
 }
 private int /* ESC ) s <pitch> H */
 pcl_secondary_pitch(pcl_args_t *pargs, pcl_state_t *pcls)
-{	return pcl_pitch(pargs, pcls, 1);
+{	return pcl_pitch(float_arg(pargs) + 0.005, pcls, 1);
 }
 
 private int
@@ -305,19 +304,30 @@ pcl_SI(pcl_args_t *pargs, pcl_state_t *pcls)
 	return 0;
 }
 
-/* This command is listed only on p. A-7 of the PCL5 comparison guide. */
-/* It is not referenced or documented anywhere! */
+/* This command is listed only on p. A-7 of the PCL5 Comparison Guide. */
 private int /* ESC & k <mode> S */
 pcl_set_pitch_mode(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int mode = int_arg(pargs);
+	floatp cpi;
+
+	/*
+	 * The specification in the PCL5 Comparison Guide is:
+	 *	0 => 10.0, 2 => 16.67, 4 => 12.0.
+	 */
 	switch ( mode )
 	  {
-	  case 0: case 2: case 4:
-	    break;
-	  default:
-	    return e_Range;
+	  case 0: cpi = 10.0; break;
+	  case 2: cpi = 16.67; break;
+	  case 4: cpi = 12.0; break;
+	  default: return e_Range;
 	  }
-	return e_Unimplemented;
+	/*
+	 * It's anybody's guess what this is supposed to do.
+	 * We're guessing that it sets the pitch of the currently
+	 * selected font parameter set (primary or secondary) to
+	 * the given pitch in characters per inch.
+	 */
+	return pcl_pitch(cpi, pcls, pcls->font_selected);
 }
 
 /* Initialization */
@@ -457,18 +467,26 @@ pcl_load_built_in_fonts(pcl_state_t *pcls, const char *prefixes[])
 #define cc_dingbats\
   { C(0), C(0), C(0), C(1), C(0), C(0), C(0), C(plgv_Unicode) }
 #define pitch_1 fp_pitch_value_cp(1)
-	    {"arial",	{0, 1, pitch_1, 0, 0, 0, 16602}, cc_alphabetic },
-	    {"arialbd",	{0, 1, pitch_1, 0, 0, 3, 16602}, cc_alphabetic },
-	    {"arialbi",	{0, 1, pitch_1, 0, 1, 3, 16602}, cc_alphabetic },
-	    {"ariali",	{0, 1, pitch_1, 0, 1, 0, 16602}, cc_alphabetic },
-	    {"cour",	{0, 0, pitch_1, 0, 0, 0,  4099}, cc_alphabetic },
-	    {"courbd",	{0, 0, pitch_1, 0, 0, 3,  4099}, cc_alphabetic },
-	    {"courbi",	{0, 0, pitch_1, 0, 1, 3,  4099}, cc_alphabetic },
-	    {"couri",	{0, 0, pitch_1, 0, 1, 0,  4099}, cc_alphabetic },
-	    {"times",	{0, 1, pitch_1, 0, 0, 0, 16901}, cc_alphabetic },
-	    {"timesbd",	{0, 1, pitch_1, 0, 0, 3, 16901}, cc_alphabetic },
-	    {"timesbi",	{0, 1, pitch_1, 0, 1, 3, 16901}, cc_alphabetic },
-	    {"timesi",	{0, 1, pitch_1, 0, 1, 0, 16901}, cc_alphabetic },
+	  /*
+	   * Per TRM 23-87, PCL5 printers are supposed to have Univers
+	   * and CG Times fonts.  Substitute Arial for Univers and
+	   * Times for CG Times.
+	   */
+#define tf_arial 4148		/* Univers; should be 16602 */
+#define tf_cour 4099
+#define tf_times 4101		/* CG Times; should be 16901 */
+	    {"arial",	{0, 1, pitch_1, 0, 0, 0, tf_arial}, cc_alphabetic },
+	    {"arialbd",	{0, 1, pitch_1, 0, 0, 3, tf_arial}, cc_alphabetic },
+	    {"arialbi",	{0, 1, pitch_1, 0, 1, 3, tf_arial}, cc_alphabetic },
+	    {"ariali",	{0, 1, pitch_1, 0, 1, 0, tf_arial}, cc_alphabetic },
+	    {"cour",	{0, 0, pitch_1, 0, 0, 0, tf_cour}, cc_alphabetic },
+	    {"courbd",	{0, 0, pitch_1, 0, 0, 3, tf_cour}, cc_alphabetic },
+	    {"courbi",	{0, 0, pitch_1, 0, 1, 3, tf_cour}, cc_alphabetic },
+	    {"couri",	{0, 0, pitch_1, 0, 1, 0, tf_cour}, cc_alphabetic },
+	    {"times",	{0, 1, pitch_1, 0, 0, 0, tf_times}, cc_alphabetic },
+	    {"timesbd",	{0, 1, pitch_1, 0, 0, 3, tf_times}, cc_alphabetic },
+	    {"timesbi",	{0, 1, pitch_1, 0, 1, 3, tf_times}, cc_alphabetic },
+	    {"timesi",	{0, 1, pitch_1, 0, 1, 0, tf_times}, cc_alphabetic },
 	    {"symbol",	{621,1,pitch_1, 0, 0, 0, 16686}, cc_symbol },
 	    {"wingding",{2730,1,pitch_1,0, 0, 0, 19114}, cc_dingbats },
 	    {NULL,	{0, 0, pitch_1, 0, 0, 0, 0} }

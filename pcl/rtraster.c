@@ -258,6 +258,7 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 {	bool across =
 	  pcls->raster.across_physical_page &&
 	  (pcls->orientation & 1);
+	coord left_margin;
 	int code = pcl_set_drawing_color(pcls, pcls->pattern_type,
 					 &pcls->current_pattern_id);
 
@@ -312,7 +313,8 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 	    pcls->raster.image.Decode[1] = 0;
 	    pcls->raster.image.CombineWithColor = true;
 	  }
-	pcls->raster.left_margin = pcls->cap.x;
+	left_margin = pcls->cap.x;
+	pcls->raster.margin_setting = setting;
 	if ( !pcls->raster.width_set )
 	  { /* Compute the default raster width per TRM 15-14. */
 	    int direction =
@@ -320,7 +322,7 @@ pcl_begin_raster_graphics(pcl_state_t *pcls, int setting)
 	      pcls->print_direction;
 	    coord width =
 	      (direction & 1 ? pcls->logical_page_size.y :
-	       pcls->logical_page_size.x) - pcls->raster.left_margin;
+	       pcls->logical_page_size.x) - left_margin;
 
 	    /* The width shouldn't be negative, but if it is.... */
 	    pcls->raster.width =
@@ -391,6 +393,21 @@ pcl_read_raster_data(pcl_args_t *pargs, pcl_state_t *pcls, int bits_per_pixel,
 	return code;
 }
 
+/* End the current raster image if we're in one. */
+private int
+end_raster_image(pcl_state_t *pcls)
+{	int code = 0;
+
+	if ( pcls->raster.image_info )
+	  { gx_device *dev = gs_currentdevice(pcls->pgs);
+
+	    code = (*dev_proc(dev, end_image))
+	      (dev, pcls->raster.image_info, true);
+	    pcls->raster.image_info = 0;
+	  }
+	return code;
+}
+
 /* Pass one row of raster data to an image. */
 /* Note that this may pad the row with zeros. */
 /* We export this for rtcrastr.c. */
@@ -404,13 +421,9 @@ pcl_image_row(pcl_state_t *pcls, pcl_raster_row_t *row)
 	/* start a new one. */
 	if ( pcls->raster.last_width != width )
 	  { /* End the current image. */
-	    if ( pcls->raster.image_info )
-	      { int code = (*dev_proc(dev, end_image))
-		  (dev, pcls->raster.image_info, true);
-	        pcls->raster.image_info = 0;
-		if ( code < 0 )
-		  return code;
-	      }
+	    int code = end_raster_image(pcls);
+	    if ( code < 0 )
+	      return code;
 	  }
 	if ( pcls->raster.image_info == 0 )
 	  { /* Start a new image. */
@@ -430,7 +443,9 @@ pcl_image_row(pcl_state_t *pcls, pcl_raster_row_t *row)
 	      -pcls->cap.x * pcls->raster.image.ImageMatrix.xx;
 	    pcls->raster.image.ImageMatrix.ty =
 	      -pcls->cap.y * pcls->raster.image.ImageMatrix.yy;
-	    if ( pcls->raster.image.ImageMask )
+	    if ( pcls->raster.image.ImageMask ||
+		 rop3_uses_T(lop_rop(pgs->log_op))
+	       )
 	      gx_set_dev_color(pgs);
 	    code = (*dev_proc(dev, begin_image))
 	      (dev, (gs_imager_state *)pgs, &pcls->raster.image,
@@ -567,10 +582,9 @@ pcl_raster_y_offset(pcl_args_t *pargs, pcl_state_t *pcls)
 	if ( pcls->raster.image.ImageMask )
 	  { /* Just skip the rows. */
 	    pcls->raster.y += dy;
-	    pcls->cap.y = (coord)(pcl_coord_scale * pcls->raster.resolution) *
+	    pcls->cap.y += (coord)(pcl_coord_scale / pcls->raster.resolution) *
 	      dy;
-	    pcls->raster.last_width = 0;	/* force a new image */
-	    return 0;
+	    return end_raster_image(pcls);	/* force a new image */
 	  }
 	/* Actually image blank rows. */
 	while ( --offset >= 0 &&
@@ -639,10 +653,11 @@ pcl_end_raster_graphics(pcl_args_t *pargs, pcl_state_t *pcls)
 private int /* ESC * r C */
 pcl_end_clear_raster_graphics(pcl_args_t *pargs, pcl_state_t *pcls)
 {	int code = end_raster_graphics(pcls);
+
 	if ( code < 0 )
 	  return code;
 	pcls->raster.compression = 0;
-	pcls->raster.left_margin = 0;
+	pcls->raster.margin_setting &= ~1;
 	return 0;
 }
 
@@ -686,7 +701,7 @@ rtraster_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 	  { pcls->raster.graphics_mode = false;
 	    if ( type & pcl_reset_initial )
 	      pcls->raster.end_graphics = end_raster_graphics;
-	    pcls->raster.left_margin = 0;
+	    pcls->raster.margin_setting = 0;
 	    pcls->raster.resolution = 75;
 	    pcls->raster.across_physical_page = true;
 	    pcls->raster.height_set = false;

@@ -94,7 +94,7 @@ hatch:	    { hpgl_real_t spacing = params->spacing;
 	      if ( hpgl_arg_c_int(pargs, &level) )
 		{ if ( level < 0 || level > 100 )
 		    return e_Range;
-		  pgls->g.fill.param.shading = level / 100.0;
+		  pgls->g.fill.param.shading = level;
 		}
 	    }
 	    break;
@@ -437,7 +437,7 @@ hpgl_SV(hpgl_args_t *pargs, hpgl_state_t *pgls)
 		     level < 0 || level > 100
 		   )
 		  return e_Range;
-		pgls->g.screen.param.shading = level / 100.0;
+		pgls->g.screen.param.shading = level;
 	      }
 	      break;
 	    case hpgl_screen_hpgl_user_defined:	/* 2 */

@@ -86,8 +86,12 @@ pcl_macro_control(pcl_args_t *pargs, pcl_state_t *pcls)
 	else if ( pcls->defining_macro )
 	  return 0;		/* don't execute other macro operations */
 	else if ( i == macro_execute || i == macro_call )
-	  { if ( pcls->macro_level >= 2 )
-	      return 0;		/* only 2 levels of call allowed */
+	  { /*
+	     * TRM 12-9 says that "two levels of nesting are allowed",
+	     * which means 3 levels of macros (1 non-nested, 2 nested).
+	     */
+	    if ( pcls->macro_level > 2 )
+	      return 0;
 	  }
 	else if ( pcls->macro_level )
 	  return e_Range;	/* macro operations not allowed inside macro */

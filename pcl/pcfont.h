@@ -21,11 +21,18 @@ int pcl_recompute_font(P1(pcl_state_t *pcls));
 
 /* Do any underlining just before a break in motion (vertical motion or
  * negative horizontal motion)... */
-#define	pcl_break_underline(pcls)	if ( pcls->underline_enabled ) \
-	pcl_do_underline(pcls)
+#define	pcl_break_underline(pcls)\
+	do {\
+	  if ( pcls->underline_enabled )\
+	    pcl_do_underline(pcls);\
+	  pcls->within_text = false;\
+	} while (0)
 /* ...and then, after repositioning, restart underlining if necessary... */
-#define	pcl_continue_underline(pcls)	if ( pcls->underline_enabled ) \
-	pcls->underline_start = pcls->cap
+#define	pcl_continue_underline(pcls)\
+	do {\
+	  if ( pcls->underline_enabled )\
+	    pcls->underline_start = pcls->cap;\
+	} while (0)
 
 void pcl_do_underline(P1(pcl_state_t *pcls));
 

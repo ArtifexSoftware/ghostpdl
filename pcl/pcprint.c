@@ -45,7 +45,10 @@ pcl_select_pattern(pcl_args_t *pargs, pcl_state_t *pcls)
 
 	if ( i > 4 )
 	  return 0;
-	if ( i != pcls->pattern_type )
+	if ( i != pcls->pattern_type ||
+	     (i >= 2 &&
+	      id_value(pcls->current_pattern_id) != id_value(pcls->pattern_id))
+	   )
 	  { pcls->pattern_type = i;
 	    pcls->current_pattern_id = pcls->pattern_id;
 	    pcls->pattern_set = false;

@@ -6,42 +6,47 @@
 This file, NEWS-PCL, describes the changes in the most recent releases of
 Aladdin's PCL5 code, in reverse chronological order.
 
-Version 0.31 (7/24/97)
+Version 0.32 (7/28/97)
 ======================
 
-This fixes many minor GL/2 problems uncovered by the Genoa FTS.  Here is the
-current bug list: bugs believed fixed are marked with a *.
+Fixes many more problems uncovered by the Genoa FTS.
 
-1. default font used for captions in all fts test is supposed to be
-universe typeface.  We do not have a univers typeface in our font repotoire. 
+Here is the current bug list: bugs believed fixed are marked with a *; bugs
+deliberately (or necessarily) not fixed at this time are marked with (*).
+
+*1. default font used for captions in all fts test is supposed to be
+univers typeface.  We do not have a univers typeface in our font repotoire. 
 *2. empty.
 *3. empty.
 *4. page rotation wrong - 70-78, 90-98, 580-585, 2130.
 *5. improper clipping - 1470.
 6. spacing or font selection - 284, 291-294, 300, 301 (lots more).
-7. right margin clipping - 121, 124.
-8. hmi problem - 140-145.
-9. vmi problem (extra pages) - 150-159, 2130, 2151, 2270.
-10. vertical row positioning decipoints - 192, 174.
-11. horizontal column position 216, 206, 226.
+(*)7. right margin clipping - 121, 124.  (same problem as #8, q.v.)
+(*)8. hmi problem - 141.  (requires fonts with the same metrics as H-P's
+fonts, including same space width)
+*9. vmi problem (extra pages) - 150-159, 2130, 2151, 2270.
+(*)10. missing crosshatch fill - 174, 184, 194, 204, 214, 224.  (only
+missing on display: printer is OK, so we won't bother tracking it down now)
+*11. horizontal column position - 206, 216, 226.
 12. missing glyphs - 260, 261, 270, 271, 420, 421, 1151, 1300-1470, 2330.
 13. symbol set selection side effect - 274, 2050, 2130, 2261.
-14. pitch mode - 720.
-15. floating underline - 412, 414
-16. raster y offset - 600, 602, 2250
-17. extra pages in raster mode - 600-
-18. extra raster row - 618
-19. glyph boxes in raster output - 622.
-20. missing raster pages - 618-641
-21. pattern/raster interaction - 661-663, 1851.
-22. pattern selection - 665
+*14. pitch mode - 320
+15. extra underlines - 412-415
+*16. raster y offset - 600, 602, 2250
+*17. extra pages in raster mode - 600-
+*18. extra raster row - 618
+19. unmapped chars print as boxes - 622 & many others.
+*20. missing raster pages - 618-641
+*21. pattern/raster interaction - 661-663, 1851.
+*22. pattern selection - 665
 23. transparency / bounding box of outline glyph - 670, 682, 683, 701, 790.
-24. pattern rotation text direction interaction - 742, 2011, 2021
-25. missing macro line 791.
-26. missing several pages, blows up when starting gl/2 characters - 820, 960, 1480, 1810, 2350.
+24. pattern rotation text direction interaction - 742, *2011, *2013
+*25. missing macro line 791.
+*26. missing several pages, blows up when starting gl/2 characters - 820, 960,
+1480, 1810, 2350.
 27. out of phase dashed line 1062, 1082, 1116, 1132.
 28. misplaced line - probably position error after hpgl/2 line fill - 1094
-29. wrong fill - 1113.
+*29. wrong fill - 1113.
 30. spacing/proportional font problem - 1161.
 31. font height - 1181.
 32. stroke weight - 1201.
@@ -50,14 +55,72 @@ universe typeface.  We do not have a univers typeface in our font repotoire.
 35. variable text path - 1270-1274.
 36. extra space - 1280-1282.
 *37. missing wedges 1472.
-38. raster graphics restoring X=0 position 1840, 1841
-39. extra black rectangles 1860, 1861-1890.
-40. captions misplaced 2013, 2020.
-41. text pattern overlay 2013,2020
+*38. raster graphics restoring X=0 position 1840, 1841
+*39. extra black rectangles 1860, 1861-1890.
+40. captions misplaced 2013, 2020
+41. text & bitmap transparency 2020, 2021
 42. hpgl/2 pcl user defined patterns unsupported - 2030-2042, 2290, 2291
 43. test pages rotated 180 degrees. 2221-
-44. si enhanced 2253
+*44. si enhanced 2253
 *45. bezier 2340-2330.
+
+(LPD) Fixes bugs:
+	- Macros could only be nested once rather than twice (TRM 12-9).
+Fixes #25.  (pcmacros.c)
+	- ESC Z didn't terminate Display Functions mode correctly: caused
+FTS frames 860 and 861 not to be printed.  (pcparse.c)
+	- Images sometimes didn't image at all, because they didn't fully
+set the drawing color by calling gx_set_dev_color: caused bitmap images to
+disappear from FTS 820-822.  (rtraster.c)
+	- The text length command doesn't set the number of lines in the
+text area: it sets the length of the text area to a given number of lines
+times the current VMI, unaffected by subsequent VMI or font changes.  (This
+is described very badly on TRM 5-20 and 24-4.)  Fixes #9.  (pcstate.h,
+pcdraw.c, pcpage.c, pctext.c, pcursor.c, pgframe.c, pginit.c)
+	- Text clipping does not occur at the left margin, and only occurs
+at the right margin if the initial cursor position is to the left of the
+right margin.  (This is described very badly on TRM 5-13.)  Similarly,
+end-of-line wrapping occurs only when *crossing* the right margin.  (This is
+described badly on TRM 24-13.)  Fixing this requires keeping track of
+whether the cursor has been moved since the last text character:
+fortunately, the underline tracking machinery already does almost exactly
+this.  Fixes #11.  (pcfont.h, pcstate.h, pcdraw.c, pctext.c)
+	- The Set Pitch Mode command, which is documented (using the word
+loosely) only on p. A-7 of the PCL5 Comparison Guide, wasn't implemented;
+also, fixed-width scalable fonts were scaled according to height and not
+pitch.  Fixes #14.  (pcfont.c, pctext.c)
+	- The Raster Y Position command didn't work when the image was a
+mask.  Fixes #16 for frames 600 and 602, #17, and #44.  Either this change
+or the next one also fixes #20.  (rtraster.c)
+	- The Start Raster Graphics commands didn't record whether they used
+the CAP or the default margin, which could cause improper placement if
+raster graphics mode was entered implicitly.  Fixes #16 for 2250, also #38.
+(pcstate.h, rtraster.h, rtraster.c)
+	- The Raster Y Position command didn't properly reset the
+bookkeeping for row width, causing confusion if it was followed by
+zero-width rows.  Fixes #18.  (rtraster.c)
+	- If the argument of Select Pattern was the same as the current
+pattern type, the Select Pattern command didn't actually select the pattern.
+Fixes #21 and #22.  (pcprint.c)
+	- Selecting a non-existent user-defined pattern substituted black,
+rather than not filling the region at all.  Fixes #39.  (pcdraw.c)
+	- The shading level for Fill Type 10 was inconsistently represented
+as a fraction (0..1) or a percentage (0..100): it's now always a percentage.
+Fixes #29.  (pgstate.h, pgdraw.c, pglfill.c)
+	- The Set Pattern Reference Point command didn't actually affect
+whether patterns were rotated with the print direction.  Fixes #24 for
+frames 2011 and 2013.  (pcdraw.h, pcdraw.c)
+
+Changes the preloaded fonts so that Arial claims to be Univers and Times
+claims to be CG Times.  Fixes #1.  (pcfont.c)
+
+Tidies up the comment in hpgl_select_font_by_id: Henry's fix in 0.31 is the
+correct one, and fixes #26.  (pgchar.c)
+
+Version 0.31 (7/24/97)
+======================
+
+This fixes many minor GL/2 problems uncovered by the Genoa FTS.
 
 (HAS) ChangeLog:
 

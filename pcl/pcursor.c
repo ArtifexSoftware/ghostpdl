@@ -39,7 +39,7 @@ private int
 move_down(pcl_state_t *pcls, coord dy)
 {	coord y = pcls->cap.y + pcls->vmi;
 	if ( pcls->perforation_skip &&
-	     y > pcls->top_margin + pcls->text_length * pcls->vmi
+	     y > pcls->top_margin + pcls->text_length
 	   )
 	  return pcl_do_FF(pcls);
 	pcl_set_cursor_y(pcls, y, false);

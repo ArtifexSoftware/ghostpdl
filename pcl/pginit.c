@@ -59,7 +59,7 @@ hpgl_default_coordinate_system(hpgl_state_t *pcls)
 	pcls->g.plot_width = pcls->g.picture_frame_width = 
 	  pcls->logical_page_width;
 	pcls->g.plot_height = pcls->g.picture_frame_height = 
-	  pcls->text_length * (pcls->vmi);
+	  pcls->text_length;
 	pcls->g.picture_frame.anchor_point.x = pcls->left_margin;
 	pcls->g.picture_frame.anchor_point.y = pcls->top_margin;
 	/* The default coordinate system is absolute with the origin at 0,0 */

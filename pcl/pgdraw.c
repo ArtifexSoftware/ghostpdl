@@ -615,7 +615,7 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 		return hpgl_setget_pcl_id(id, pgls->g.fill.param.pattern_type);
 	      case hpgl_fill_shaded: 
 		return
-		  hpgl_setget_pcl_id(id, (uint)((pgls->g.fill.param.shading) * 100.0));
+		  hpgl_setget_pcl_id(id, pgls->g.fill.param.shading);
 	      case hpgl_fill_pcl_user_defined : /* HAS - not supported */
 	      default: break;
 	      }
@@ -627,10 +627,11 @@ hpgl_map_id_type(hpgl_state_t *pgls, pcl_id_t *id, hpgl_rendering_mode_t render_
 	      case hpgl_screen_none: return NULL;
 	      case hpgl_screen_shaded_fill: 
 		return 
-		  hpgl_setget_pcl_id(id, (uint)((pgls->g.screen.param.shading) * 100.0));
+		  hpgl_setget_pcl_id(id, pgls->g.screen.param.shading);
 	      case hpgl_screen_hpgl_user_defined: break; /* unsupported */
 	      case hpgl_screen_crosshatch: 
-		return hpgl_setget_pcl_id(id, pgls->g.screen.param.pattern_type);
+		return
+		  hpgl_setget_pcl_id(id, pgls->g.screen.param.pattern_type);
 	      case hpgl_screen_pcl_user_defined: /* unsupported */
 	      default: break;
 	      }

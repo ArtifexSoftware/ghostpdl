@@ -14,12 +14,12 @@ int pcl_begin_raster_graphics(P2(pcl_state_t *pcls, int setting));
 /* enter graphics mode automatically. */
 #define enter_graphics_mode_if_needed(pcls)\
 do {\
-  	if ( !pcls->raster.graphics_mode )\
-	  { /* Enter raster graphics mode implicitly. */\
-	    int code = pcl_begin_raster_graphics(pcls, 1);\
-	    if ( code < 0 )\
-	      return code;\
-	  }\
+  if ( !pcls->raster.graphics_mode )\
+    { /* Enter raster graphics mode implicitly. */\
+      int code = pcl_begin_raster_graphics(pcls, pcls->raster.margin_setting);\
+      if ( code < 0 )\
+        return code;\
+    }\
 } while ( 0 )
 
 /* Resize (expand) a row buffer if needed. */

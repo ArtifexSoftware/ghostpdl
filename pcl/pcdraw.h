@@ -77,7 +77,15 @@ typedef struct pcl_pattern_s {
 #define pattern_data_offset round_up(sizeof(pcl_pattern_t), align_bitmap_mod)
 
 /* Set the color and pattern for drawing. */
-int pcl_set_drawing_color(P3(pcl_state_t *pcls, pcl_pattern_type_t type,
-			     const pcl_id_t *pid));
+/* We pass the pattern rotation explicitly, since it is different */
+/* for PCL and HP-GL.  The rotation is expressed as the multiple of */
+/* 90 degrees (i.e., 0..3) to be added to the page orientation. */
+int pcl_set_drawing_color_rotation(P4(pcl_state_t *pcls,
+				      pcl_pattern_type_t type,
+				      const pcl_id_t *pid, int rotation));
+#define pcl_set_drawing_color(pcls, type, pid)\
+  pcl_set_drawing_color_rotation(pcls, type, pid,\
+				 ((pcls)->rotate_patterns ?\
+				  (pcls)->print_direction : 0))
 
 #endif				/* pcdraw_INCLUDED */

@@ -53,9 +53,8 @@ pcl_vert_pic_frame_size_decipoints(pcl_args_t *pargs, pcl_state_t *pcls)
 	float size = float_arg(pargs) * 10.0; /* --> centipoints */
 	
 	/* default to pcl logical page */
-	if ( (coord)size == 0.0 )
-	  pcls->g.picture_frame_height = 
-	    (coord)(pcls->text_length * (float)(pcls->vmi));
+	if ( size == 0.0 )
+	  pcls->g.picture_frame_height = pcls->text_length;
 	else
 	  pcls->g.picture_frame_height = (coord)size;
 

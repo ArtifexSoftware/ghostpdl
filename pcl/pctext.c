@@ -107,6 +107,7 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	int code;
 	floatp scaled_hmi = pcl_hmi(pcls) / pscale->x;
 	floatp diff;
+	floatp limit = (pcls->right_margin + 0.5) / pscale->x;
 
 	/* Compute any width adjustment. */
 	switch ( adjust )
@@ -137,7 +138,13 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 	    }
 	    break;
 	  }
-	if ( pcls->end_of_line_wrap )
+	/*
+	 * Note that TRM 24-13 states (badly) that wrapping only
+	 * occurs when *crossing* the right margin: if the cursor
+	 * is initially to the right of the margin, wrapping does
+	 * not occur.
+	 */
+	if ( pcls->end_of_line_wrap && pcls->check_right_margin )
 	  { /*
 	     * If end-of-line wrap is enabled, we must render one character
 	     * at a time.  (It's a good thing this is used primarily for
@@ -153,8 +160,9 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 		  !pcl_next_char(&gstr, &i, pcls->text_parsing_method, &chr);
 		  ci = i
 		)
-	      { gs_point width, pt;
+	      { gs_point width;
 		floatp move;
+		gs_point pt;
 
 	        if ( adjust == char_adjust_all ||
 		     (chr == ' ' && adjust == char_adjust_space)
@@ -172,9 +180,10 @@ pcl_show_chars(gs_show_enum *penum, pcl_state_t *pcls, const gs_point *pscale,
 		 * We should really handle this by scaling the font....
 		 * We need a little fuzz to handle rounding inaccuracies.
 		 */
-		if ( (pt.x + width.x) * pscale->x - pcls->right_margin >= 0.5 )
+		if ( pt.x + width.x >= limit )
 		  { pcl_do_CR(pcls);
 		    pcl_do_LF(pcls);
+		    pcls->check_right_margin = true; /* CR/LF reset this */
 		    gs_moveto(pgs, pcls->cap.x / pscale->x,
 			      pcls->cap.y / pscale->y);
 		  }
@@ -234,11 +243,28 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	/* Clip to the margins. */
 	{ gs_rect text_clip;
 
-	  text_clip.p.x = pcls->left_margin;
+	  /*
+	   * TRM 5-13 describes text clipping very badly.  Text is only
+	   * clipped if it crosses the right margin in the course of
+	   * display: it isn't clipped to the left margin, and it isn't
+	   * clipped to the right margin if it starts to the right of
+	   * the right margin.
+	   */
+	  if ( !pcls->within_text )
+	    {
+	      /* Decide now whether to clip and wrap. */
+	      pcls->check_right_margin = pcls->cap.x < pcls->right_margin;
+	      pcls->within_text = true;
+	    }
+	  gs_initclip(pgs);
+	  gs_clippath(pgs);
+	  gs_pathbbox(pgs, &text_clip);
+	  gs_newpath(pgs);
 	  text_clip.p.y = pcls->top_margin;
-	  text_clip.q.x = pcls->right_margin;
-	  text_clip.q.y = pcls->top_margin + pcls->text_length * pcls->vmi;
-	  code = gs_rectclip(pcls->pgs, &text_clip, 1);
+	  if ( pcls->check_right_margin )
+	    text_clip.q.x = pcls->right_margin;
+	  text_clip.q.y = pcls->top_margin + pcls->text_length;
+	  code = gs_rectclip(pgs, &text_clip, 1);
 	  if ( code < 0 )
 	    return code;
 	}
@@ -270,10 +296,17 @@ pcl_text(const byte *str, uint size, pcl_state_t *pcls)
 	  {
 	    /*
 	     * Outline fonts are 1-point; the font height is given in
-	     * (quarter-)points.
+	     * (quarter-)points.  However, if the font is fixed-width,
+	     * it must be scaled by pitch, not by height, relative to
+	     * the nominal pitch of the outline.
 	     */
-	    scale.x = scale.y = pfp->params.height_4ths * 0.25
-	      * inch2coord(1.0/72);
+	    if ( pfp->params.proportional_spacing )
+	      scale.x = scale.y = pfp->params.height_4ths * 0.25
+		* inch2coord(1.0/72);
+	    else
+	      scale.x = scale.y = pl_fp_pitch_cp(&pfp->params)
+	        * (100.0 / pl_fp_pitch_cp(&pfp->font->params))
+	        * inch2coord(1.0/7200);
 	    /*
 	     * Scalable fonts use an upright coordinate system,
 	     * the opposite from the usual PCL system.
@@ -570,6 +603,7 @@ pctext_do_reset(pcl_state_t *pcls, pcl_reset_type_t type)
 {	if ( type & (pcl_reset_initial | pcl_reset_printer) )
 	  { pcls->underline_enabled = false;
 	    pcls->last_was_BS = false;
+	    pcls->within_text = false;
 	    pcls->last_width.x = pcls->hmi;
 	    pcls->last_width.y = 0;
 	    pcls->text_parsing_method = &pcl_tpm_0;

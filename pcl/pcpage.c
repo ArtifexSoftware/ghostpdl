@@ -91,10 +91,11 @@ reset_margins(pcl_state_t *pcls)
 private void
 reset_text_length(pcl_state_t *pcls)
 {	if ( pcls->vmi != 0 )
-	  { int len = (int)((pcls->rotated_page_height - pcls->top_margin -
-			     inch2coord(0.5)) / pcls->vmi);
-	    /* We suppose that the minimum text length is 1.... */
-	    pcls->text_length = max(len, 1);
+	  { coord len =
+	      pcls->rotated_page_height - pcls->top_margin - inch2coord(0.5);
+
+	    /* We suppose that the minimum text length is 1 line.... */
+	    pcls->text_length = max(len, pcls->vmi);
 	  }
 }
 
@@ -266,11 +267,15 @@ pcl_top_margin(pcl_args_t *pargs, pcl_state_t *pcls)
 
 private int /* ESC & l <lines> F */
 pcl_text_length(pcl_args_t *pargs, pcl_state_t *pcls)
-{	int len = int_arg(pargs);
+{	int num_lines = int_arg(pargs);
+
 	if ( pcls->vmi == 0 )
 	  return 0;
-	if ( pcls->top_margin + len * pcls->vmi <= pcls->rotated_page_height )
-	  pcls->text_length = len;
+	{ coord len = num_lines * pcls->vmi;
+
+	  if ( pcls->top_margin + len <= pcls->rotated_page_height )
+	    pcls->text_length = len;
+	}
 	return 0;
 }
 

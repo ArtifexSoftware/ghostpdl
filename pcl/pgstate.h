@@ -206,7 +206,7 @@ typedef struct pcl_hpgl_state_s {
 	  struct fp_ {
 	    hpgl_hatch_params_t hatch;
 	    hpgl_hatch_params_t crosshatch;
-	    float shading;
+	    int shading;	/* 0..100 */
 	    int pattern_index;
 	    int pattern_type;
 	    uint pattern_id;

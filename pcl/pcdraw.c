@@ -18,6 +18,7 @@
 #include "gsutil.h"
 #include "gxfixed.h"
 #include "gxstate.h"
+#include "gzstate.h"		/* for dev_color for color_set_null */
 #include "plvalue.h"
 #include "pcommand.h"
 #include "pcstate.h"
@@ -145,8 +146,7 @@ pcl_set_print_direction(pcl_state_t *pcls, int print_direction)
 	    gs_transform(pgs, (floatp)pcls->left_margin,
 			 (floatp)pcls->top_margin, &mp);
 	    gs_transform(pgs, (floatp)pcls->right_margin,
-			 (floatp)(pcls->top_margin +
-				  pcls->text_length * pcls->vmi),
+			 (floatp)(pcls->top_margin + pcls->text_length),
 			 &mq);
 	    /* Now we can reset the print direction. */
 	    pcls->print_direction = print_direction;
@@ -173,7 +173,7 @@ pcl_set_print_direction(pcl_state_t *pcls, int print_direction)
 	    pcls->left_margin = mp.x;
 	    pcls->top_margin = mp.y;
 	    pcls->right_margin = mq.x;
-	    pcls->text_length = (mq.y - pcls->top_margin) / pcls->vmi;
+	    pcls->text_length = mq.y - pcls->top_margin;
 	  }
 	return 0;
 }
@@ -215,7 +215,10 @@ pcl_set_cursor_x(pcl_state_t *pcls, coord cx, bool to_margins)
 	    pcl_continue_underline(pcls);
 	  }
 	else
-	  pcls->cap.x = cx;
+	  {
+	    /**** SHOULD THIS RESET within_text? ****/
+	    pcls->cap.x = cx;
+	  }
 }
 void
 pcl_set_cursor_y(pcl_state_t *pcls, coord cy, bool to_margins)
@@ -406,9 +409,10 @@ pcl_bitmap_PaintProc(const gs_client_color *pcolor, gs_state *pgs)
 }
 
 /* Set the color and pattern for drawing. */
+/* Note that we pass the pattern rotation explicitly. */
 int
-pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
-  const pcl_id_t *pid)
+pcl_set_drawing_color_rotation(pcl_state_t *pcls, pcl_pattern_type_t type,
+  const pcl_id_t *pid, int rotation)
 {	gs_state *pgs = pcls->pgs;
 	gs_pattern_instance **ppi;
 	gs_pattern_instance *pi[4];	/* for user-defined pattern hack */
@@ -486,12 +490,13 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 
 	      if ( !pl_dict_find(&pcls->patterns, id_key(*pid), 2, &value) )
 		{ /*
-		   * No pattern with this ID exists.  We think the correct
-		   * action is to default to black, but it's possible that
-		   * if the pattern was current, it stays around until a
-		   * reference count goes to zero.
+		   * No pattern with this ID exists.  Apparently the correct
+		   * action is to set a null color (one which doesn't draw
+		   * at all).  It may be that if the pattern was current,
+		   * it stays around until a reference count goes to zero;
+		   * we don't have any evidence for this.
 		   */
-		  gs_setgray(pgs, 0.0);
+		  color_set_null(pgs->dev_color);
 		  return 0;
 		}
 #define ppt ((pcl_pattern_t *)value)
@@ -523,12 +528,11 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 	tile.id = gx_no_bitmap_id;
 	/* 
 	 * Create a bitmap pattern if one doesn't already exist.
-	 * We should track changes in orientation, but we don't yet.
 	 */
 	{ gs_client_color ccolor;
-	  int rotation = (pcls->orientation + pcls->print_direction) & 3;
+	  int rotate = (pcls->orientation + rotation) & 3;
 
-	  ppi += rotation;
+	  ppi += rotate;
 	  ccolor.pattern = *ppi;
 	  if ( ccolor.pattern == 0 )
 	    { /*
@@ -548,7 +552,7 @@ pcl_set_drawing_color(pcl_state_t *pcls, pcl_pattern_type_t type,
 	      adjust_scale(scale_y);
 #undef adjust_scale
 	      code = pcl_makebitmappattern(&ccolor, &tile, pgs, scale_x,
-					   scale_y, rotation);
+					   scale_y, rotate);
 
 	      if ( code < 0 )
 		return code;
