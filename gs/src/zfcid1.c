@@ -194,13 +194,18 @@ zbuildfont11(i_ctx_t *i_ctx_p)
 	return_error(e_rangecheck);
     code = font_string_array_param(op, "CIDMap", &rcidmap);
     switch (code) {
-    case 0:
+    case 0:			/* in PLRM3 */
+    gdb:
+	/* GDBytes is required for indexing a string or string array. */
+	if (common.GDBytes == 0)
+	    return_error(e_rangecheck);
 	break;
     default:
 	return code;
     case e_typecheck:
 	switch (r_type(&rcidmap)) {
 	case t_string:		/* in PLRM3 */
+	    goto gdb;
 	case t_dictionary:	/* added in 3011 */
 	case t_integer:		/* added in 3011 */
 	    break;

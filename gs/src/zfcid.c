@@ -53,6 +53,11 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 			       &pdata->CIDCount)) < 0
 	)
 	return code;
+    /*
+     * If the font doesn't have a GlyphDirectory, GDBytes is required.
+     * If it does have a GlyphDirectory, GDBytes may still be needed for
+     * CIDMap: it's up to the client to check this.
+     */
     if (dict_find_string(op, "GlyphDirectory", &pgdir) <= 0) {
 	/* Standard CIDFont, require GDBytes. */
 	make_null(pGlyphDirectory);
@@ -60,10 +65,15 @@ cid_font_data_param(os_ptr op, gs_font_cid_data *pdata, ref *pGlyphDirectory)
 			      &pdata->GDBytes);
     }
     if (r_has_type(pgdir, t_dictionary) || r_is_array(pgdir)) {
-	/* GlyphDirectory, no GDBytes. */
+	/* GlyphDirectory, GDBytes is optional. */
 	*pGlyphDirectory = *pgdir;
-	pdata->GDBytes = 0;
-	return 0;
+	code = dict_int_param(op, "GDBytes", 1, MAX_GDBytes, 1,
+			      &pdata->GDBytes);
+	if (code == 1) {
+	    pdata->GDBytes = 0;
+	    code = 0;
+	}
+	return code;
     } else {
 	return_error(e_typecheck);
     }
