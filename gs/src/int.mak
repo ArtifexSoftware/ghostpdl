@@ -1322,10 +1322,11 @@ $(PSOBJ)zpcolor.$(OBJ) : $(PSSRC)zpcolor.c $(OP)\
 # ---------------- Separation color ---------------- #
 
 seprread_=$(PSOBJ)zcssepr.$(OBJ)
-$(PSD)sepr.dev : $(INT_MAK) $(ECHOGS_XE) $(seprread_) $(GLD)seprlib.dev
+$(PSD)sepr.dev : $(INT_MAK) $(ECHOGS_XE) $(seprread_)\
+ $(PSD)func4.dev $(GLD)seprlib.dev
 	$(SETMOD) $(PSD)sepr $(seprread_)
 	$(ADDMOD) $(PSD)sepr -oper zcssepr_l2
-	$(ADDMOD) $(PSD)sepr -include $(GLD)seprlib
+	$(ADDMOD) $(PSD)sepr -include $(PSD)func4 $(GLD)seprlib
 
 $(PSOBJ)zcssepr.$(OBJ) : $(PSSRC)zcssepr.c $(OP) $(memory__h)\
  $(gscolor_h) $(gscsepr_h) $(gsmatrix_h) $(gsstruct_h)\
@@ -1482,14 +1483,20 @@ $(PSOBJ)zfunc3.$(OBJ) : $(PSSRC)zfunc3.c $(memory__h) $(OP)\
  $(store_h) $(stream_h)
 	$(PSCC) $(PSO_)zfunc3.$(OBJ) $(C_) $(PSSRC)zfunc3.c
 
-# Note: FunctionType 4 functions are currently used only by PDF:
-# they are not included in PostScript LanguageLevel 3.
+# FunctionType 4 functions are not a PostScript feature, but they
+# are used in the implementation of Separation and DeviceN color spaces.
+
+func4read_=$(PSOBJ)zfunc4.$(OBJ)
+$(PSD)func4.dev : $(INT_MAK) $(ECHOGS_XE) $(func4read_)\
+ $(PSD)func.dev $(GLD)func4lib.dev
+	$(SETMOD) $(PSD)func4 $(func4read_)
+	$(ADDMOD) $(PSD)func4 -functiontype 4
+	$(ADDMOD) $(PSD)func4 -include $(PSD)func $(GLD)func4lib
 
 $(PSOBJ)zfunc4.$(OBJ) : $(PSSRC)zfunc4.c $(memory__h) $(OP)\
- $(gsfunc_h)\
- $(files_h)\
- $(ialloc_h) $(idict_h) $(idparam_h) $(ifunc_h) $(istkparm_h) $(istruct_h)\
- $(opextern_h) $(store_h) $(stream_h)
+ $(gsfunc_h) $(gsfunc4_h) $(gsutil_h)\
+ $(idict_h) $(ifunc_h) $(iname_h)\
+ $(opextern_h)
 	$(PSCC) $(PSO_)zfunc4.$(OBJ) $(C_) $(PSSRC)zfunc4.c
 
 $(PSOBJ)zimage3.$(OBJ) : $(PSSRC)zimage3.c $(OP) $(memory__h)\
@@ -1568,10 +1575,8 @@ $(PSD)pdffonts.dev : $(INT_MAK) $(ECHOGS_XE)
 	$(SETMOD) $(PSD)pdffonts -ps gs_mex_e gs_mro_e gs_pdf_e gs_wan_e
 
 $(PSD)pdfread.dev : $(INT_MAK) $(ECHOGS_XE)\
- $(PSD)fzlib.dev $(PSOBJ)zfunc4.$(OBJ)
-	$(SETMOD) $(PSD)pdfread -include $(PSD)fzlib
-	$(ADDMOD) $(PSD)pdfread -obj $(PSOBJ)zfunc4.$(OBJ)
-	$(ADDMOD) $(PSD)pdfread -oper zfunc4
+ $(PSD)func4.dev $(PSD)fzlib.dev
+	$(SETMOD) $(PSD)pdfread -include $(PSD)fzlib $(PSD)func4
 	$(ADDMOD) $(PSD)pdfread -ps pdf_ops gs_l2img
 	$(ADDMOD) $(PSD)pdfread -ps pdf_base pdf_draw pdf_font pdf_main pdf_sec
 
