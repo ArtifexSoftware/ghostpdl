@@ -85,15 +85,16 @@ pdfdict begin
 } bdef
 
 % Get the metrics of a font, if specified.
-/getfontmetrics		% <font-resource> <font> <Encoding|null> getfontmetrics
+/getfontmetrics {	% <font-resource> <font> <Encoding|null> getfontmetrics
 			%   <font-resource> <font> <Encoding|null>
 			%   <Metrics|null>
- { 2 index /Widths known
-    { dup null eq { pop dup /Encoding get } if
-      2 dict begin
+  2 index /Widths known {
+    dup null eq { pop dup /Encoding get } if
+    4 dict begin
       /Encoding exch def
       /Metrics Encoding length dict def
       exch
+      dup /Widths oget /Widths exch def
 		% Stack: font font-res
 		% Note that widths are always based on a 1000-unit
 		% character space, but the FontMatrix may specify
@@ -104,7 +105,7 @@ pdfdict begin
       1 index /FirstChar oget dup 1 4 index /LastChar oget
        {	% Stack: font font-res mscale first-char index
 	 Encoding 1 index get
-	 4 index /Widths oget 2 index 4 index sub get
+	 Widths 2 index 4 index sub get
 	 	% Stack: font font-res mscale first-char index charname width
 	 4 index mul
 		% There is a hack here to deal with encodings where the
@@ -147,12 +148,11 @@ pdfdict begin
       } {
 	pop
       } ifelse
-      exch Encoding Metrics end
-    }
-    { null
-    }
-   ifelse
- } bdef
+    exch Encoding Metrics end
+  } {
+    null
+  } ifelse
+} bdef
 
 % ---------------- Descriptors ---------------- %
 
@@ -259,6 +259,7 @@ pdfdict begin
 % has the following keys and values:
 %	data - stream (filter)
 %	buffer, buffer2 - string
+%	hexify - procedure to convert buffer to hex if needed
 %	leftstr - string containing (non-negative) integer
 %	sectionstr - string containing a character 0 .. 2
 %	stream - (stream) dictionary
@@ -297,7 +298,7 @@ end readonly def
 		% at the right times.
    1 index exch
    PDFfile fileposition 3 1 roll
-   7 dict begin
+   10 dict begin
      /leftstr (          ) 10 string copy def
        dup /Length1 oget leftstr cvs pop
      /sectionstr <00> 1 string copy def
@@ -305,6 +306,7 @@ end readonly def
      true resolvestream /data exch def
      /buffer 1000 string def		% arbitrary
      /buffer2 buffer length 2.1 div cvi 1 sub string def
+     /hexify /buf2hex load def
    currentdict end
    /type1read cvx 2 array astore cvx dup 0 get /proc 2 index put
    readfontfilter
@@ -351,16 +353,35 @@ end readonly def
  } bdef
 
 % Read the next block of the initial text portion.
-/type1read1		% <left> type1read1 <string> <left'>
- { DEBUG { (read1 ) print } if
-   dup 0 eq
-    { pop sectionstr 0 1 put
-      stream /Length2 oget type1read2
-    }
-    { buffer type1readdata
-    }
-   ifelse
- } bdef
+/type1read1 {		% <left> type1read1 <string> <left'>
+  DEBUG { (read1 ) print } if
+  dup 0 eq {
+    pop sectionstr 0 1 put
+    stream /Length2 oget
+			% Determine whether to hexify data for eexec.
+    dup 8 lt {
+      type1read2	% Hexify.
+    } {
+      DEBUG { (read2 ) print } if
+      buffer2 type1readdata exch
+			% The check doesn't have to be 100% accurate:
+			% hexifying is always OK.
+      dup 0 8 getinterval 0 exch { or } forall
+      128 ge {
+	/hexify { } store
+      } if hexify exch
+    } ifelse
+  } {
+    buffer type1readdata
+  } ifelse
+} bdef
+
+% Convert a string from binary to hex for eexec.
+% Free variables: buffer.
+/buf2hex {		% <string> buf2hex <hexstring>
+  buffer /ASCIIHexEncode filter dup 3 -1 roll writestring closefile
+  buffer (>) search pop exch pop exch pop
+} bdef
 
 % Read the next block of the encrypted portion.
 /type1trailer
@@ -374,8 +395,8 @@ end readonly def
 0000000000000000000000000000000000000000000000000000000000000000\n\
 cleartomark\n)
 readonly def
-/type1read2		% <left> type1read2 <string> <left'>
- { DEBUG { (read2 ) print } if
+/type1read2 {		% <left> type1read2 <string> <left'>
+  DEBUG { (read2 ) print } if
    dup 0 eq
     { pop sectionstr 0 2 put
       stream /Length3 oget
@@ -387,12 +408,10 @@ readonly def
        }
       ifelse
     }
-    { buffer2 type1readdata exch
-      buffer /ASCIIHexEncode filter dup 3 -1 roll writestring closefile
-      buffer (>) search pop exch pop exch pop exch
+    { buffer2 type1readdata exch hexify exch
     }
    ifelse
- } bdef
+} bdef
 
 % Read the next block of the final text portion.
 % When finished, this procedure returns an empty string.

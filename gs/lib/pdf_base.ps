@@ -296,17 +296,23 @@ pdfdict begin
 % Note that since we represent streams by executable dictionaries
 % (see below), we need both an xcheck and a type check to determine
 % whether an object has been resolved.
-/unresolved? {		% <object#> unresolved? <bool>
-  Objects 1 index lget dup xcheck exch type /integertype eq and {
-    IsGlobal 1 index lget 0 eq {
-      pop true
-    } {
+/resolved? {		% <object#> resolved? <value> true
+			% <object#> resolved? false
+  Objects 1 index lget dup xcheck {
+    dup type /integertype eq {
+		% Check whether the object is in GlobalObjects.
+      pop IsGlobal 1 index lget 0 eq {
+	pop false
+      } {
 		% Update Objects from GlobalObjects
-      DEBUG { (%Global=>local: ) print dup == } if
-      Objects exch GlobalObjects 1 index get lput false
+	DEBUG { (%Global=>local: ) print dup == } if
+	GlobalObjects 1 index get dup Objects 4 1 roll lput true
+      } ifelse
+    } {
+      exch pop true
     } ifelse
   } {
-    pop false
+    exch pop true
   } ifelse
 } bind def
 /oforce /exec load def
@@ -364,11 +370,13 @@ pdfdict begin
   3 1 roll
 		% Read the xref entry if we haven't yet done so.
 		% This is only needed for generation # checking.
-  1 index unresolved? {
+  1 index resolved? {
+    pop
+  } {
     PDFfile fileposition
     2 index readxrefentry pop
     PDFoffset add PDFfile exch setfileposition
-  } if
+  } ifelse
   checkgeneration {
 		% The only global objects we bother to save are
 		% (resource) dictionaries.
@@ -389,12 +397,14 @@ pdfdict begin
   /endobj { endobj exit } bind
 .dicttomark readonly def
 /resolveR {		% <object#> <generation#> resolveR <object>
-   DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
-   1 index unresolved?
-    { PDFfile fileposition 3 1 roll
-      1 index readxrefentry
-      3 1 roll checkgeneration
-       {		% Stack: savepos objpos obj#
+  DEBUG { (%Resolving: ) print 2 copy 2 array astore == } if
+  1 index resolved? {
+    exch pop exch pop
+  } {
+    PDFfile fileposition 3 1 roll
+    1 index readxrefentry
+    3 1 roll checkgeneration {
+			% Stack: savepos objpos obj#
 	 exch PDFoffset add PDFfile exch setfileposition
 	 PDFfile token pop 2 copy ne
 	  { (xref error!) = /resolveR cvx /rangecheck signalerror
@@ -405,16 +415,13 @@ pdfdict begin
 	  }
 	 if
 	 pdf_run_resolve	% PDFfile resolveopdict .pdfrun
-       }
-       {		% Don't cache if the generation # is wrong.
+    }
+    {		% Don't cache if the generation # is wrong.
 	 pop pop null
-       }
-      ifelse exch PDFfile exch setfileposition
-    }
-    { pop Objects exch lget
-    }
-   ifelse
- } bind def      
+    } ifelse
+    exch PDFfile exch setfileposition
+  } ifelse
+} bind def      
 
 % ================================ Streams ================================ %
 
