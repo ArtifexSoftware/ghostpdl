@@ -773,7 +773,10 @@ hpgl_polyfill_using_current_line_type(
      * Use the current path to set up a clipping path
      * beginning at the anchor corner replicate lines
      */
-    hpgl_call(gs_clip(pgls->pgs));
+    if (pgls->g.fill_type == hpgl_even_odd_rule)
+	hpgl_call(gs_eoclip(pgls->pgs));
+    else
+	hpgl_call(gs_clip(pgls->pgs));
     hpgl_call(hpgl_fill_polyfill_background(pgls));
     hpgl_call(hpgl_polyfill(pgls, render_mode));
     hpgl_call(hpgl_grestore(pgls));
