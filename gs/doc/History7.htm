@@ -29,6 +29,18 @@
 <h2>Table of contents</h2>
 
 <blockquote><ul>
+<li><a href="#Version7.22">Version 7.22 (2002-08-06)</a>
+<ul>
+<li><a href="#7.22_Incompatible_changes">Incompatible changes</a>,
+    <a href="#7.22-Documentation">Documentation</a>,
+    <a href="#7.22-Procedures">Procedures</a>,
+    <a href="#7.22-Utilities">Utilities</a>,
+    <a href="#7.22-Drivers">Drivers</a>,
+    <a href="#7.22-PDF_writer">PDF writer</a>,
+    <a href="#7.22-PDF_Interpreter">PDF Interpreter</a>,
+    <a href="#7.22-Interpreter">Interpreter</a>,
+    <a href="#7.22-Library">Library</a>
+</ul>
 <li><a href="#Version7.21">Version 7.21 (2002-07-08)</a>
 <ul>
 <li><a href="#7.21_Incompatible_changes">Incompatible changes</a>,
@@ -133,6 +145,370 @@ Streams (included under Interpreter through release 2.9.9), Library.
 Changes marked with a * were made available as patches to a previous
 release.
 
+<hr>
+
+<h1><a name="Version7.22"></a>Version 7.22 (2002-08-06)</h1>
+
+<p>
+This release integrates the rewritten pdfwrite font copying code,
+fixing a large class of pdfwrite bugs involving incremental font
+updating. This project was completed before the DeviceN merge was
+ready, so this release (rather than 7.21 as previously stated) is
+the final checkpoint prior to the DeviceN merge. 
+
+<p>
+Overall, pdfwrite is probably an improvement over previous releases,
+but there are still known issues. Testing of pdfwrite with real-world
+files is encouraged.
+
+<p>
+The following SourceForge bug numbers were open at the time of the last release:
+405342,
+407342,
+414947,
+414985,
+423838,
+427347,
+432040,
+434277,
+446344,
+446672,
+453969,
+458261,
+458775,
+458780,
+459647,
+465720,
+465936,
+468762,
+474745,
+482038,
+484752,
+484753,
+485510,
+487953,
+493348,
+495319,
+498595,
+505429,
+508081,
+509646,
+510808,
+511232,
+513905,
+514616,
+517349,
+521916,
+526099,
+526491,
+530011,
+530588,
+533467,
+535366,
+535752,
+535836,
+538033,
+539239,
+542848,
+543185,
+546823,
+551565,
+552989,
+554076,
+555496,
+557177,
+558151,
+558435,
+559614,
+560508,
+562103,
+563287,
+565790,
+567421,
+567487,
+567604,
+567773,
+569573,
+570181,
+570772,
+571980,
+572119,
+573744,
+576586,
+576591,
+578838,
+578865,
+580029,
+580873,
+581420,
+582471,
+583413,
+584713,
+584990,
+586178,
+586595,
+589244,
+590307,
+590979,
+591039,
+591326.
+
+<p>The nightly regression tests show many changes. However, most of
+the non-pdf regressions are tiny changes resulting in comparing a
+debug build against a non-debug baseline. The rendering really
+shouldn't be different at all, so we're leaving these regressions open
+until we can fix the discrepancy. On the pdfwrite side, most of the
+regressions are actually improvements, but there are some known
+issues.  Notably, the "same_font" function is incorrect, and deriving
+several fonts from a standard font, replacing Metrics or Metrics2
+only, pdfwrite incorrectly merges them into a single font. This causes
+a regression with 093-01.ps and probably other test files.
+
+<h3><a name="7.22_Incompatible_changes"></a>Incompatible changes</h3>
+
+<pre>
+</pre>
+
+
+<h2><a name="7.22-Documentation"></a>Documentation</h2><pre>
+
+Minor tweaks to release process, based on 7.21 experience.
+(doc/Release.htm [1.63]: 2002/07/09 07:23:07 raph)
+
+Bump version number to 7.22 as final commit in 7.21 process.
+(doc/News.htm [1.108]: 2002/07/09 07:42:10 raph)
+
+Remove Russell Lang's name from most man pages. Correct Russell Lang's email
+address. (man/dvipdf.1 [1.16], man/font2c.1 [1.16], man/gs.1 [1.16],
+man/gslp.1 [1.16], man/gsnd.1 [1.16], man/pdf2dsc.1 [1.16],
+man/pf2afm.1 [1.16], man/pfbtopfa.1 [1.17], man/printafm.1 [1.16],
+man/ps2pdf.1 [1.20], man/ps2pdfwr.1 [1.19], man/wftopfa.1 [1.16]: 2002/07/10
+12:19:44 ghostgum)
+
+Remove Russell Lang's name from most man pages. Correct Russell Lang's email
+address. (man/de/dvipdf.1 [1.2], man/de/font2c.1 [1.2], man/de/gsnd.1 [1.3],
+man/de/pdf2dsc.1 [1.2], man/de/printafm.1 [1.2], man/de/ps2pdf.1 [1.2],
+man/de/wftopfa.1 [1.2]: 2002/07/10 12:22:12 ghostgum)
+
+Changes all references to L. Peter Deutsch as the author of Ghostscript to
+refer to artofcode LLC and Artifex Software as the maintainers of
+Ghostscript. (doc/New-user.htm [1.39], doc/Use.htm [1.55],
+man/ansi2knr.1 [1.4], man/dvipdf.1 [1.17], man/eps2eps.1 [1.4],
+man/font2c.1 [1.17], man/gs.1 [1.17], man/gslp.1 [1.17], man/gsnd.1 [1.17],
+man/pdf2ps.1 [1.18], man/pdfopt.1 [1.16], man/pf2afm.1 [1.17],
+man/pfbtopfa.1 [1.18], man/printafm.1 [1.17], man/ps2ascii.1 [1.16],
+man/ps2pdf.1 [1.21], man/ps2pdfwr.1 [1.20], man/ps2ps.1 [1.23],
+man/wftopfa.1 [1.17]: 2002/07/11 02:54:22 lpd)
+
+Upgrading ps2pdf.htm about pdfwrite/pdxtext. (doc/Ps2pdf.htm [1.44]:
+2002/07/31 10:00:57 igor)
+
+First commit in 7.22 release process: date and News updates.
+(doc/News.htm [1.109]: 2002/08/06 23:10:40 raph)
+
+</pre><h2><a name="7.22-Procedures"></a>Procedures</h2><pre>
+
+Fixes problems:
+	- Renaming few variables in devs.mak for better clarity.
+(devs.mak [1.68]: 2002/07/18 18:03:15 igor)
+	- Changed make_two_versions to use the logging system.
+(toolbin/tests/make_two_versions [1.5]: 2002/07/23 16:37:51 jack)
+	- remove spurious build of the gtk client along with the macos
+framework. (macos-fw.mak [1.5]: 2002/08/05 16:21:12 giles)
+
+Bump version number to 7.22 as final commit in 7.21 process.
+(version.mak [1.48]: 2002/07/09 07:42:10 raph)
+
+Adds a procedure for testing whether a string was returned by
+gs_c_glyph_name. Allows the font copying code to share these strings,
+substantially reducing the load on the garbage collector.
+(toolbin/encs2c.ps [1.3]: 2002/07/09 14:04:19 lpd)
+
+Switching on the new pdfwrite/pdxtext code. (devs.mak [1.69]: 2002/07/26
+07:27:19 igor)
+
+First commit in 7.22 release process: date and News updates.
+(version.mak [1.49]: 2002/08/06 23:10:40 raph)
+
+</pre><h2><a name="7.22-Utilities"></a>Utilities</h2><pre>
+
+Changes all references to L. Peter Deutsch as the author of Ghostscript to
+refer to artofcode LLC and Artifex Software as the maintainers of
+Ghostscript. (lib/prfont.ps [1.6], lib/ps2epsi.ps [1.9]: 2002/07/11 02:54:22
+lpd)
+
+</pre><h2><a name="7.22-Drivers"></a>Drivers</h2><pre>
+
+Fixes problems:
+	- When compiled for A4 default page size, the initial page size is
+now 595x842pts. The initial printer page size in tenths of an inch now uses
+floating point. This may cause problems with old compilers that do not allow
+floating point calculations in initializers for integers. Add some casts to
+suppress warnings with the MS compiler. Fixes SourceForge bug #535997,
+"ps2pdf produces incorrect A4 page size". (gdevbmpc.c [1.5]: 2002/07/18
+11:01:44 ghostgum)
+
+</pre><h2><a name="7.22-PDF_writer"></a>PDF writer</h2><pre>
+
+Fixes problems:
+	- Fixes the last (?) major batch of problems in the new pdfwrite
+text code. We think this code is now good enough for general testing: search
+for PDTEXT in src/devs.mak for information on how to enable it.
+(gdevpdtc.c [1.6], gdevpdte.c [1.7], gdevpdtf.c [1.9], gdevpdti.c [1.4],
+gdevpdts.c [1.9], gdevpdts.h [1.5], gdevpdtt.c [1.6], gdevpdtt.h [1.4],
+gdevpdtw.c [1.5]: 2002/07/09 14:29:35 lpd)
+	- (pdfwrite) Enforce compression choice on end of image; do not
+choose with zero output length. (gdevpdfj.c [1.22]: 2002/07/15 19:25:11
+igor)
+	- (pdfwrite) Fixing the image dimensions for the alternative
+compression stream. Source Forge bug "[ 574865 ] ioerror only with
+PDFSETTINGS=/screen" (gdevpdfi.c [1.40]: 2002/07/15 19:34:17 igor)
+	- Always write FontBBox into CFF, even though the spec says it's
+optional, to work around a problem when printing the resulting file with
+Adobe Acrobat Reader 4 to HP PostScript printers. Source Forge bug "[ 578899
+] Missing /FontBBox when converting to ps?" (gdevpdfe.c [1.18],
+gdevpdtb.c [1.5], gdevpdtb.h [1.3], gdevpdtd.c [1.4]: 2002/07/19 13:35:59
+igor)
+	- (pdfwrite) Quiet Cygwin/gcc warnings. (gdevpdfe.c [1.19],
+gdevpdfs.c [1.23], gdevpdtc.c [1.7]: 2002/07/19 14:51:27 igor)
+	- Fixing an unbalanced '&gt;&gt;' in pdf_write_CIDSet().
+(gdevpdtb.c [1.6]: 2002/07/20 08:21:37 igor)
+	- (pdfwrite) Standard font names were erroneously suffixed. Source
+Forge bug "[ 557024 ] (pdfwrite) Font display incorrect" This changes old
+pdfwrite only. The new one was patched separately. (gdevpdff.c [1.31]:
+2002/07/31 09:23:32 igor)
+
+pdfwrite: implementing WMode 1 for simple fonts. (gdevpdte.c [1.8],
+gdevpdtf.c [1.10], gdevpdtf.h [1.4], gdevpdtt.c [1.7], gdevpdtt.h [1.5]:
+2002/07/24 07:45:28 igor)
+
+pdfwrite/pdxtext: fixing the decision about font embedding for the case when
+a source document uses both standard and non-standard fonts with same name.
+(gdevpdtf.c [1.11]: 2002/07/24 13:40:04 igor)
+
+pdfwrite/pdxtext: Generate uniquie font names for embedded fonts for
+compatibility with Acrobat Reader 3. (gdevpdtb.c [1.7]: 2002/07/24 16:18:48
+igor)
+
+pdfwrite/pdxtext: Fixing a possibly uninitialized variable.
+(gdevpdtf.c [1.12]: 2002/07/24 16:27:41 igor)
+
+pdfwrite/pdxtext: Fixing WMode 1 for simple fonts that have no Metrics2.
+(gdevpdte.c [1.9]: 2002/07/24 18:58:28 igor)
+
+pdfwrite/pdxtext: TJ arguments were computed without accounting Tc.
+(gdevpdts.c [1.10]: 2002/07/25 19:11:38 igor)
+
+pdfwrite/pdxtext: TJ arguments were inaccurately rounded.
+(gdevpdts.c [1.11]: 2002/07/29 08:42:39 igor)
+
+pdfwrite/pdxtext: (1) Widths were computed wrongly, (2) standard fonts
+missed Widths. (gdevpdtw.c [1.6]: 2002/07/29 11:47:19 igor)
+
+</pre><h2><a name="7.22-PDF_Interpreter"></a>PDF Interpreter</h2><pre>
+
+Fixes problems:
+	- When using -dUseCropBox, use an inherited CropBox. The previous
+fix would only use a CropBox on the page being displayed.
+(lib/pdf_main.ps [1.54]: 2002/07/18 10:46:06 ghostgum)
+	- If a 'stream' operator was followed by whitespace before the EOL,
+then the fileposition was not at the start of the data. Add logic to allow
+for this and also add a pdfformaterror if the EOL was a &lt;cr&gt; without a
+&lt;lf&gt;. Fixes SourceForge bug 567612 for Artifex customer #1.
+(lib/pdf_base.ps [1.27]: 2002/07/31 19:06:11 ray)
+
+</pre><h2><a name="7.22-Interpreter"></a>Interpreter</h2><pre>
+
+Fixes problems:
+	- (FAPI) server_font_data were prematurely reset in zFAPIpassfont.
+Thanks for Graham Asher for spotting this. Also fixes minor bugs in
+comments. (ifapi.h [1.12], zfapi.c [1.22]: 2002/07/09 14:55:03 igor)
+	- Avoid opstack overflow by explicit array construction, rather than
+unpacking and padding on the stack, for padding of glyphencoding array.
+Fixes SF bug #576651. (lib/gs_ttf.ps [1.16]: 2002/07/10 06:29:34 raph)
+	- Adobe renders marks outside the ImagingBBox and QuarkXPress relies
+on this. Maintain the ImagingBBox of the page device at the PostScript level
+independently from the device parameter. There is a slight incompatibility
+if programs that set the ImagingBBox incorrectly relied on this causing
+clipping, which is prohibited by the PLRM. Programs that wish to directly
+set the ImagingBBox device parameter can still do so from C or from PS using
+the .putdeviceprops GS private operator. Fixes SF bug 570829 for Artifex
+customer #411. (lib/gs_setpd.ps [1.12]: 2002/07/10 23:05:59 ray)
+	- Add a predefined ColorRendering Resource named
+/DefaultColorRendering since this is the name that GetSubstituteCRD will
+return and also is the name expected by some software. SourceForge bug
+#570217 for cust #150. (lib/gs_res.ps [1.24]: 2002/07/12 06:46:33 ray)
+	- Results of zchar_get_metrics2 were missinterpreted.
+(zchar1.c [1.20]: 2002/07/16 16:47:39 igor)
+	- correct the ISO paper sizes in gs_statd.ps to match those in the
+Adobe PPD specification, technical note 5003. Fixes SourceForge bug #536877,
+"Paper sizes wrong in gs_statd.ps". (lib/gs_statd.ps [1.9]: 2002/07/18
+10:41:53 ghostgum)
+	- The addition of the function sampling logic for DeviceN tint
+transforms (fix 474544) tripped over a bogus assumption in Adobe Procset for
+DuoTones generated by (at least) Photoshop. The assumption was that if the
+alternate color space of a DeviceN space was being used, that the procedure
+would run when 'setcolor' was executed and that the stack would be
+accessible during that procedure. This fixes several bug reports with
+'/stackunderflow in pop' errors including SF #549307, 576577 and 582385 for
+Artifex customers. Thanks to Dan Coby for the analysis and fix.
+(lib/gs_lev2.ps [1.20], lib/gs_ll3.ps [1.15], zcolor2.c [1.9]: 2002/07/31
+04:43:44 ray)
+
+Bump version number to 7.22 as final commit in 7.21 process.
+(lib/gs_init.ps [1.58]: 2002/07/09 07:42:10 raph)
+
+Previous commit was botched because of improperly removed debugging code.
+Second commit for fix of SF #576651. (lib/gs_ttf.ps [1.17]: 2002/07/10
+06:53:24 raph)
+
+pdfwrite: implementing WMode 1 for simple fonts. (zchar1.c [1.21]:
+2002/07/24 07:45:28 igor)
+
+FAPI project : WMode 1 was wrongly processed for base fonts.
+(zfapi.c [1.23]: 2002/08/03 15:50:51 igor)
+
+</pre><h2><a name="7.22-Library"></a>Library</h2><pre>
+
+Fixes problems:
+	- Fixes bugs in font copying (currently used only by the new
+pdfwrite text code): TrueType glyphs with multiple names in CharStrings only
+stored a single name; copied Encodings were initialized incorrectly to
+.notdef rather than GS_NO_GLYPH; some of the procedures of copied TrueType
+fonts weren't initialized correctly; 'seac' didn't copy the Encoding entries
+for the components. Also shares the known glyph names when possible, to
+reduce the load on the garbage collector. (gxfcopy.c [1.14],
+gxfcopy.h [1.6]: 2002/07/09 14:26:45 lpd)
+	- When compiled for A4 default page size, the initial page size is
+now 595x842pts. The initial printer page size in tenths of an inch now uses
+floating point. This may cause problems with old compilers that do not allow
+floating point calculations in initializers for integers. Add some casts to
+suppress warnings with the MS compiler. Fixes SourceForge bug #535997,
+"ps2pdf produces incorrect A4 page size". (gdevprn.h [1.11],
+gxdevice.h [1.9]: 2002/07/18 11:01:44 ghostgum)
+	- Always write FontBBox into CFF, even though the spec says it's
+optional, to work around a problem when printing the resulting file with
+Adobe Acrobat Reader 4 to HP PostScript printers. Source Forge bug "[ 578899
+] Missing /FontBBox when converting to ps?" (gdevpsf.h [1.20],
+gdevpsf2.c [1.23]: 2002/07/19 13:35:59 igor)
+	- (pdfwrite) Quiet Cygwin/gcc warnings. (gdevpsft.c [1.21]:
+2002/07/19 14:51:27 igor)
+
+Bump version number to 7.22 as final commit in 7.21 process.
+(gscdef.c [1.22]: 2002/07/09 07:42:10 raph)
+
+Adds a procedure for testing whether a string was returned by
+gs_c_glyph_name. Allows the font copying code to share these strings,
+substantially reducing the load on the garbage collector. (gscedata.c [1.4],
+gscedata.h [1.3], gscencs.c [1.6], gscencs.h [1.4]: 2002/07/09 14:04:19 lpd)
+
+pdfwrite: implementing WMode 1 for simple fonts. (gxfont.h [1.15]:
+2002/07/24 07:45:28 igor)
+
+First commit in 7.22 release process: date and News updates.
+(gscdef.c [1.23]: 2002/08/06 23:10:40 raph)
+
+</pre>
 <hr>
 
 <h1><a name="Version7.21"></a>Version 7.21 (2002-07-08)</h1>
@@ -261,7 +637,7 @@ gs/lib/cidfmap. TrueType font substition to CIDFont is not implemented yet.
 </ul>
 
 <pre>
-
+</pre>
 
 <h2><a name="7.21-Documentation"></a>Documentation</h2><pre>
 
@@ -2254,6 +2630,8 @@ Add a configure option for setting the name of the ghostscript executable.
 From a patch by Michael Sweet. (Makefile.in [1.15], configure.ac [1.18]:
 2002/05/03 07:34:19 giles)
 
+</pre>
+
 <hr>
 
 <h1><a name="Version7.20"></a>Version 7.20 (2002-04-03)</h1>
@@ -2451,7 +2829,7 @@ management information.  This is a NON-BACKWARD-COMPATIBLE change to both
 implementors and clients.  It corrects a significant design error: formerly
 these procedures encoded memory management information in their return code,
 which was obscure and error-prone.  See src/gsgdata.[hc].
-
+</pre>
 
 <h2><a name="7.20-Documentation"></a>Documentation</h2><pre>
 
@@ -5227,6 +5605,8 @@ generating spurious warnings with some other compilers.
 Returns the bbox device to the default build in response to user requests.
 (Makefile.in [1.13]: 2002/04/03 18:25:03 giles)
 
+</pre>
+
 <hr>
 
 <h1><a name="Version7.03"></a>Version 7.03 (2001-10-20)</h1>
@@ -5270,8 +5650,7 @@ The following SourceForge bug numbers are currently open:
 No incompatible changes have been recorded for this version.
 
 <pre>
-
-
+</pre>
 
 <h2><a name="7.03-Documentation"></a>Documentation</h2><pre>
 
@@ -5563,6 +5942,7 @@ icclib/NOTES [1.2], icclib/Readme.txt [1.1], icclib/icc.c [1.6],
 icclib/icc.h [1.4], icclib/icc9809.h [1.2]: 2001/10/19 21:52:50 raph)
 
 <hr>
+</pre>
 
 <h1><a name="Version7.02"></a>Version 7.02 (2001-09-22)</h1>
 
@@ -5621,7 +6001,7 @@ The following SourceForge bug numbers are currently open:
 No incompatible changes have been recorded for this version.
 
 <pre>
-
+</pre>
 
 
 <h2><a name="7.02-Documentation"></a>Documentation</h2><pre>
@@ -6873,6 +7253,7 @@ Adds generated macos build files to .cvsignore (.cvsignore [1.2]: 2001/07/31
 20:03:20 giles)
 
 <hr>
+</pre>
 
 <h1><a name="Version7.00"></a>Version 7.00 (2001-04-08)</h1>
 
@@ -7008,7 +7389,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 7.21, 8 July 2002
+<small>Ghostscript version 7.22, 6 August 2002
 
 <!-- [3.0 end visible trailer] ============================================= -->
 

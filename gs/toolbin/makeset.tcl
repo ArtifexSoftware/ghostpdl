@@ -218,6 +218,7 @@ proc mergehist {news changes hist tmp} {
 	}
 	lappend nlines $l
     }
+    lappend nlines </pre>
 
     # Copy the prefix of the existing History file.
     while {[string first <li> [set l [gets $hist]]] != 0} {
@@ -321,6 +322,7 @@ proc mergehist {news changes hist tmp} {
 	}
 	puts $tmp $l
     }
+    puts $tmp </pre>
 
     # Copy the rest of the History file, changing the date at the end.
     puts $tmp <hr>
