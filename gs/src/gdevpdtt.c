@@ -1469,7 +1469,7 @@ pdf_text_process(gs_text_enum_t *pte)
 	if (code < 0)
 	    return code;
 	penum->pte_default = pte_default;
-	gs_text_enum_copy_dynamic(pte_default, pte, false);
+	/* Restart the text from the beginning. */
     }
     /* The 'process' procedure might also have set pte_default itself. */
     if (penum->pte_default && !code)
