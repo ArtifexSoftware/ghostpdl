@@ -34,7 +34,7 @@ import gsconf, gstestgs, gsparamsets, gssum
 class GSPDFWriteCompareTestCase(gstestgs.GhostscriptTestCase):
     def shortDescription(self):
         if self.band:
-	    return "Checking pdfwrite of %s (%s/%ddpi/banded)" +
+	    return "Checking pdfwrite of %s (%s/%ddpi/banded)"\
 	           "against baseline" %
 		   (self.file[string.rindex(self.file, '/') + 1:],
 		    self.device, self.dpi)
