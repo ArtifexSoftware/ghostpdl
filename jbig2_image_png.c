@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image_png.c,v 1.2 2002/06/15 16:02:54 giles Exp $
+    $Id: jbig2_image_png.c,v 1.3 2002/07/03 00:30:20 giles Exp $
 */
 
 #include <stdio.h>
@@ -92,31 +92,3 @@ int jbig2_image_write_png(Jbig2Image *image, FILE *out)
 		
 	return 0;
 }
-
-
-#ifdef TEST
-int main(int argc, char *argv[])
-{
-	int	i,j;
-	Jbig2Image	*image;
-	uint32		*data;
-	char		*filename = "test.png";
-	
-	image = jbig2_image_new(400,400);
-	if (image == NULL) {
-		fprintf(stderr, "failed to create jbig2 image structure!\n");
-		exit(1);
-	}
-	
-	fprintf(stderr, "creating checkerboard test image '%s'\n", filename);
-	data = image->data;
-	for (j = 0; j < image->height; j++) {
-		for (i = 0; i < image->stride >> 2; i++) {
-			*data++ = ((j & 16) >> 4) ? 0x0000FFFF: 0xFFFF0000;
-		}
-	}
-	
-	return jbig2_image_write_png(image, filename);
-}
-
-#endif /* TEST */

@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_image.c,v 1.8 2002/07/03 00:10:07 giles Exp $
+    $Id: jbig2_image.c,v 1.9 2002/07/03 00:30:20 giles Exp $
 */
 
 #include <stdio.h>
@@ -33,7 +33,7 @@ Jbig2Image* jbig2_image_new(Jbig2Ctx *ctx, int width, int height)
 		return NULL;
 	}
 	
-	stride = ((width - 1) >> 5) + 1;	/* generate a word-aligned stride */
+	stride = (((width - 1) >> 5) + 1) << 2;	/* generate a word-aligned stride */
 	image->data = (uint32_t *)jbig2_alloc(ctx->allocator, stride*height);
 	if (image->data == NULL) {
                 jbig2_error(ctx, JBIG2_SEVERITY_FATAL, -1,
