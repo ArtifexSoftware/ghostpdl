@@ -96,10 +96,20 @@ int
 hpgl_bezier(hpgl_args_t *pargs, hpgl_state_t *pgls, bool relative)
 {	
 	hpgl_real_t x_start, y_start;
+
+	/* We must clear the current path since we cannot properly
+           join lines to curves with the current line drawing
+           machinery */
+	if ( pargs->phase == 0 ) {
+	    hpgl_call(hpgl_clear_current_path(pgls));
+	    pargs->phase = 1;
+	}
+	    
 	/*
 	 * Since these commands take an arbitrary number of arguments,
 	 * we reset the argument bookkeeping after each group.
 	 */
+
 	for ( ; ; )
 	  {
 	    hpgl_real_t coords[6];
