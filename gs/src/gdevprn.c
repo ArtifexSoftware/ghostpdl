@@ -944,6 +944,13 @@ gdev_create_buf_device(create_buf_device_proc_t cbd_proc, gx_device **pbdev,
 	return code;
     /* Retain this device -- it will be freed explicitly. */
     gx_device_retain(*pbdev, true);
+    /* a not-so-obvious check if this is a plane extraction device */
+    if (!gs_device_is_memory(*pbdev))
+	/* Like the buffer device the plane device is freed explicitly
+           so it also needs to be retained, see
+           gx_default_destroy_buf_device */
+	gx_device_retain(((gx_device_plane_extract *)*pbdev)->plane_dev, true);
+
     return code;
 }
 
