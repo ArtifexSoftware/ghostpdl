@@ -34,6 +34,7 @@
 #include "gxdevice.h"
 #include "gxht.h"
 #include "gxstate.h"
+#include "pldraw.h"
 
 /*
  * Contrary to the documentation, SetColorSpace apparently doesn't set the
@@ -595,7 +596,6 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
         type = pxpSRGB;
     else
         type = ppt->type;
-
     switch ( type ) {
     case pxpNull:
 	gs_setnullcolor(pgs);
@@ -609,12 +609,10 @@ px_set_paint(const px_paint_t *ppt, px_state_t *pxs)
 	return gs_setpattern(pgs, &ppt->value.pattern.color);
     case pxpSRGB:
         {
-            gs_client_color color;
-            pl_setSRGB(pgs);
-            color.paint.values[0] = ppt->value.rgb[0];
-            color.paint.values[1] = ppt->value.rgb[1];
-            color.paint.values[2] = ppt->value.rgb[2];
-            return gs_setcolor(pgs, &color);
+            return pl_setSRGB(pgs,
+                              ppt->value.rgb[0],
+                              ppt->value.rgb[1],
+                              ppt->value.rgb[2]);
         }
     default:		/* can't happen */
 	return_error(pxs->memory, errorIllegalAttributeValue);

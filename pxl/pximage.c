@@ -552,8 +552,12 @@ pxBeginImage(px_args_t *par, px_state_t *pxs)
 	 */
 	if ( pxs->pxgs->brush.type == pxpNull &&
 	     !rop3_uses_T(gs_currentrasterop(pgs))
-	   )
-	  code = gs_setgray(pgs, 0.0);
+             ) {
+            if ( pxs->useciecolor )
+                code = pl_setSRGB(pgs, 0.0, 0.0, 0.0);
+            else
+                code = gs_setgray(pgs, 0.0);
+        }
 	else
 	  code = px_set_paint(&pxgs->brush, pxs);
 	if ( code < 0 )
