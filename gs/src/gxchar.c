@@ -17,6 +17,7 @@
 /* $Id$ */
 /* Default implementation of text writing */
 #include "gx.h"
+#include "errors.h"
 #include "memory_.h"
 #include "string_.h"
 #include "gserrors.h"
@@ -245,11 +246,15 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
     }
     case TEXT_SET_CACHE_DEVICE2: {
 	int code;
+	bool retry = (penum->width_status == sws_retry);
 
 	if (gs_rootfont(pgs)->WMode) {
 	    float vx = pw[8], vy = pw[9];
 	    gs_fixed_point pvxy, dvxy;
 	    cached_char *cc;
+
+	    gs_fixed_point rewind_pvxy;
+	    int rewind_code;
 
 	    if ((code = gs_point_transform2fixed(&pgs->ctm, -vx, -vy, &pvxy)) < 0 ||
 		(code = gs_distance_transform2fixed(&pgs->ctm, vx, vy, &dvxy)) < 0
@@ -262,8 +267,18 @@ gx_show_text_set_cache(gs_text_enum_t *pte, const double *pw,
 	    /* Adjust the origin by (vx, vy). */
 	    gx_translate_to_fixed(pgs, pvxy.x, pvxy.y);
 	    code = set_cache_device(penum, pgs, pw[2], pw[3], pw[4], pw[5]);
-	    if (code != 1)
+	    if (code != 1) {
+	        if (retry) {
+		   rewind_code = gs_point_transform2fixed(&pgs->ctm, vx, vy, &rewind_pvxy);
+		   if (rewind_code < 0) {
+		       /* If the control passes here, something is wrong. */
+		       return_error(e_unregistered);
+		   }
+		   /* Rewind the origin by (-vx, -vy) if the cache is failed. */
+		   gx_translate_to_fixed(pgs, rewind_pvxy.x, rewind_pvxy.y);
+		}
 		return code;
+	    }
 	    /* Adjust the character origin too. */
 	    cc = penum->cc;
 	    cc->offset.x += dvxy.x;
@@ -291,7 +306,7 @@ set_char_width(gs_show_enum *penum, gs_state *pgs, floatp wx, floatp wy)
 {
     int code;
 
-    if (penum->width_status != sws_none)
+    if (penum->width_status != sws_none && penum->width_status != sws_retry)
 	return_error(gs_error_undefined);
     if ((code = gs_distance_transform2fixed(&pgs->ctm, wx, wy, &penum->wxy)) < 0)
 	return code;
@@ -614,6 +629,7 @@ show_update(gs_show_enum * penum)
     /* Update position for last character */
     switch (penum->width_status) {
 	case sws_none:
+        case sws_retry:	  
 	    /* Adobe interpreters assume a character width of 0, */
 	    /* even though the documentation says this is an error.... */
 	    penum->wxy.x = penum->wxy.y = 0;
@@ -1057,7 +1073,7 @@ gx_show_text_retry(gs_text_enum_t *pte)
 	penum->cc = 0;
     }
     gs_grestore(penum->pgs);
-    penum->width_status = sws_none;
+    penum->width_status = sws_retry;
     penum->log2_scale.x = penum->log2_scale.y = 0;
     return 0;
 }

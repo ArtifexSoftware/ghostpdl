@@ -57,7 +57,8 @@ typedef enum {
     sws_none,
     sws_cache,			/* setcachedevice[2] */
     sws_no_cache,		/* setcharwidth */
-    sws_cache_width_only	/* setcharwidth for xfont char */
+    sws_cache_width_only,	/* setcharwidth for xfont char */
+    sws_retry			/* retry setcachedevice[2] */
 } show_width_status;
 struct gs_show_enum_s {
     /* Put this first for subclassing. */
