@@ -18,12 +18,16 @@
 % $Id$
 %  Postscript interface routines to DSC parser
 
-
-/send_orientation {			% <orientation> send_orienation -
-  << /Orientation 2 index >> setpagedevice pop
+/send_orientation {			% <orientation> send_orientation -
+	% .parse_dsc_comments returns -1 for an Orientation key with an
+	% unrecognized value.
+  dup 0 ge {
+    << /Orientation 2 index >> setpagedevice
+  } if pop
 } bind def
 
-% This dictionary contains local handlers for DSC comments.  See header in zdscpars.c
+% This dictionary contains local handlers for DSC comments.
+% See header in zdscpars.c for more information.
 % <dsc_dict> handler <dsc_dict>
 /DSCparseprocs mark
    /Orientation { dup /Orientation get send_orientation } bind

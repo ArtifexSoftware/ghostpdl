@@ -275,7 +275,13 @@ dsc_page_bounding_box(gs_param_list *plist, const CDSC *pData)
 private int
 convert_orient(CDSC_ORIENTATION_ENUM orient)
 {
-    return (orient == CDSC_LANDSCAPE ? 1 : 0);
+    switch (orient) {
+    case CDSC_PORTRAIT: return 0;
+    case CDSC_LANDSCAPE: return 1;
+    case CDSC_UPSIDEDOWN: return 2;
+    case CDSC_SEASCAPE: return 3;
+    default: return -1;
+    }
 }
 
 private int
@@ -284,7 +290,7 @@ dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
     int page_num = pData->page_count;
 
     /*
-     * The pageOrientation comment might be either in the 'defaults'
+     * The PageOrientation comment might be either in the 'defaults'
      * section or in a page section.  If in the defaults then fhe value
      * will be in page_orientation.
      */
@@ -293,7 +299,7 @@ dsc_page_orientation(gs_param_list *plist, const CDSC *pData)
 			convert_orient(pData->page[page_num - 1].orientation));
     else
         return dsc_put_int(plist, "Orientation",
-			       convert_orient(pData->page_orientation));
+			   convert_orient(pData->page_orientation));
 }
 
 private int
