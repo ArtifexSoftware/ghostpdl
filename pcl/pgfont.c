@@ -120,7 +120,8 @@ hpgl_stick_arc_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	gs_setlinejoin(pgs, gs_join_round);
 	gs_setmiterlimit(pgs, 2.61); /* start beveling at 45 degrees */
 	gs_setlinecap(pgs, gs_cap_round);
-	return gs_stroke(pgs);
+	code = gs_stroke(pgs);
+	return (code < 0 ? code : 0);
 }
 
 /* Add a point or line. */
