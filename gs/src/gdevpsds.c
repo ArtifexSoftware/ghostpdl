@@ -801,13 +801,6 @@ s_compr_chooser_release(stream_state * st)
     gs_free_object(ss->memory, ss->sample, "s_compr_chooser_release");
 }
 
-/* An auxiliary proc for the choice. */
-private inline bool
-much_bigger__PLR(int n1, int n2)
-{
-    return n1 >= 10000 && n2 < n1 / 3 && n2 > 100; /* arbitrary */
-}
-
 /* Estimate a row for photo/lineart recognition. */
 private void
 s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
@@ -822,8 +815,9 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 	Note that we deal with horizontal frequencies only.
 	Dealing with vertical ones would be too expensive.
     */
-    const int delta = 256 / 16; /* about 1/16 of the range */
-    const int max_lineart_boundary_width = 3/* pixels */;
+    const int delta = 256 / 16; /* about 1/16 of the color range */
+    const int max_lineart_boundary_width = 3; /* pixels */
+    const int max_gradient_constant = 10; /* pixels */
     int i, j0 = 0, j1 = 0;
     int w0 = p[0], w1 = p[0], v;
     ulong plateau_count = 0, lower_plateaus = 0;
@@ -833,8 +827,13 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
     for (i = 1; i < ss->width; i++) {
 	v = p[i];
 	if (!lower) {
-	    if (w1 < v)
-		w1 = v, upper = true;
+	    if (w1 < v) {
+		if (!upper)
+		    j1 = i - 1;
+		w1 = v;
+		upper = true;
+	    } else if (w1 == v && j1 < i - max_gradient_constant)
+		j1 = i - max_gradient_constant; /* inner constant plateaw */
 	    else if (upper && w1 - delta > v) {
 		/* end of upper plateau at w1-delta...w1 */
 		for (j0 = i - 1; j0 > j1 && w1 - delta <= p[j0]; j0--) DO_NOTHING;
@@ -849,11 +848,18 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 		}
 		j1 = i;
 		upper = false;
+		w0 = w1;
+		continue;
 	    }
 	}
 	if (!upper) {
-	    if (w0 > v)
-		w0 = v, lower = true;
+	    if (w0 > v) {
+		if (!lower)
+		    j1 = i - 1;
+		w0 = v; 
+		lower = true;
+	    } else if (w0 == v && j1 < i - max_gradient_constant)
+		j1 = i - max_gradient_constant; /* inner constant plateaw */
 	    else if (lower && w0 + delta < v) {
 		/* end of lower plateau at w0...w0+delta */
 		for (j0 = i - 1; j0 > j1 && w0 + delta >= p[j0]; j0--) DO_NOTHING;
@@ -868,6 +874,7 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 		}
 		j1 = i;
 		lower = false;
+		w1 = w0;
 	    }
 	}
     }
@@ -884,10 +891,10 @@ s_compr_chooser__estimate_row(stream_compr_chooser_state *const ss, byte *p)
 	ss->upper_plateaus += upper_plateaus;
 	ss->gradients += gradients;
 	plateaus = min(ss->lower_plateaus, ss->upper_plateaus); /* (fore/back)ground */
-	if (much_bigger__PLR(plateaus, ss->gradients))
-	    ss->choice = 2; /* choice is made : lineart */
-	else if (much_bigger__PLR(ss->gradients, plateaus))
+	if (ss->gradients >= 10000 && ss->gradients > plateaus / 6)
 	    ss->choice = 1; /* choice is made : photo */
+	else if (plateaus >= 100000 && plateaus / 5000 >= ss->gradients)
+	    ss->choice = 2; /* choice is made : lineart */
     }
 }
 
@@ -977,12 +984,14 @@ s_compr_chooser__get_choice(stream_compr_chooser_state *ss, bool force)
 {
     ulong plateaus = min(ss->lower_plateaus, ss->upper_plateaus);
 
+    if (ss->choice)
+	return ss->choice;
     if (force) {
-	if (ss->gradients > plateaus / 3/* arbitrary */)
-	    return 2;
-	else if (plateaus > ss->gradients)
-	    return 1;
+	if (ss->gradients > plateaus / 12) /* messenger16.pdf, page 3. */
+	    return 1; /* photo */
+	else if (plateaus / 5000 >= ss->gradients)
+	    return 2; /* lineart */
     }
-    return ss->choice;
+    return 0;
 }
 
