@@ -315,6 +315,7 @@ hpgl_CI(hpgl_args_t *pargs, hpgl_state_t *pgls)
 					 hpgl_plot_move_absolute,
 					 true));  
 	pgls->g.have_drawn_in_path = false; /* prevent dot draw on close */
+	pgls->g.subpolygon_started = true;  /* CI :== CI;PM1 */
 	hpgl_call(hpgl_set_current_position(pgls, &pos));
 
 	if ( !pgls->g.polygon_mode )
