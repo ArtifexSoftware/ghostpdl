@@ -325,7 +325,12 @@ image_simple_expand(byte * line, int line_x, uint raster,
     dda_init(xl, xl0, x_extent, w);
     dxx4 = xl.step;
     dda_step_add(dxx4, xl.step);
-    dda_step_add(dxx4, dxx4);
+    /* egcc - 2.91.66 generates incorrect code for
+     * dda_step_add(dxx4, dxx4); 
+     * Using the temp variable.
+     */
+    dxx8 = dxx4;
+    dda_step_add(dxx4, dxx8);
     dxx8 = dxx4;
     dda_step_add(dxx8, dxx4);
     dxx16 = dxx8;
