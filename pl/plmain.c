@@ -360,16 +360,6 @@ main(
                 }
     	    }
         }
-#if 0
-#ifdef DEBUG
-        if (gs_debug_c(':'))
-            dprintf3( "Final file position = %ld, exit code = %d, mode = %s\n",
-    	              pl_main_cursor_position(&r),
-                      code,
-    	              (in_pjl ? "PJL" : "PDL")
-                      );
-#endif
-#endif
         /* Print PDL status if applicable, then dnit PDL job */
         if (!in_pjl) {
 	    pl_process_eof(curr_instance);
@@ -410,7 +400,6 @@ main(
 #ifdef DEBUG
     if ( gs_debug_c(':') ) {
         pl_print_usage(mem, &inst, "Final");
-        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
     }
     if (gs_debug_c('!'))
         debug_dump_memory(imem, &dump_control_default);
@@ -886,6 +875,7 @@ pl_print_usage(gs_memory_t *mem, const pl_main_instance_t *pti,
 		 msg, utime[0] - pti->base_time[0] +
 		 (utime[1] - pti->base_time[1]) / 1000000000.0,
 		 pti->page_count, status.allocated, status.used);
+        dprintf1("%% Max allocated = %ld\n", gs_malloc_max);
 }
 
 /* Log a string to console, optionally wait for input */
