@@ -86,11 +86,22 @@ LDFLAGS=
 EXTRALIBS=
 endif
 
+# a 64 bit type is needed for devicen color space/model support but
+# carries a performance burden.  Use this definition (uncomment) for
+# devicen support.
+
+# GX_COLOR_INDEX_DEFINE=-DGX_COLOR_INDEX_TYPE="unsigned long long"
+
+# and this definition if devicen support is not required
+
+GX_COLOR_INDEX_DEFINE=
+
 # Assorted definitions.  Some of these should probably be factored out....
 # We use -O0 for debugging, because optimization confuses gdb.
 # Note that the omission of -Dconst= rules out the use of gcc versions
 # between 2.7.0 and 2.7.2 inclusive.  (2.7.2.1 is OK.)
-GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings
+
+GCFLAGS=-Wall -Wpointer-arith -Wstrict-prototypes -Wwrite-strings $(GX_COLOR_INDEX_DEFINE)
 CFLAGS=-g -O0 $(GCFLAGS) $(XCFLAGS)
 
 XINCLUDE=-I/usr/local/X/include
