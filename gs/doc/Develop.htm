@@ -58,7 +58,12 @@
     <a href="#PostScript_code">PostScript code</a>
 </ul>
 <li><a href="#PDF_interpreter">PDF interpreter</a>
-<li><a href="#Build_support">Build support</a>
+<li><a href="#Build_process">Build process</a>
+<ul>
+<li><a href="#Makefile_structure">Makefile structure</a>,
+    <a href="#Generators">Generators</a>,
+    <a href="#Build_support">Support</a>
+</ul>
 <li><a href="#Utilities">Utilities</a>
 <ul>
 <li><a href="#Utilities_in_PostScript">Utilities in PostScript</a>
@@ -1405,7 +1410,9 @@ Microsoft Windows:
 OS/2 Presentation Manager:
 <dd>
 <a href="../src/gdevpm.c">src/gdevpm.c</a>,
-<a href="../src/gdevpm.h">src/gdevpm.h</a>.
+<a href="../src/gdevpm.h">src/gdevpm.h</a>,
+<a href="../src/gspmdrv.c">src/gspmdrv.c</a>,
+<a href="../src/gspmdrv.h">src/gspmdrv.h</a>.
 
 </dl>
 
@@ -1488,9 +1495,6 @@ Files:
 <p>
 Memory management (refs, GC, save/restore) -- see <a
 href="#PostScript_interpreter_extensions">below</a>.
-
-<p>
-Data structures (stacks, names, dicts, contexts)
 
 <dl>
 
@@ -1619,21 +1623,24 @@ Miscellaneous support:
 <dl>
 
 <dt>
-Files:
+Main scanner:
+<dd>
+<a href="../src/iscan.c">src/iscan.c</a>,
+<a href="../src/iscan.h">src/iscan.h</a>,
+<a href="../src/iscannum.c">src/iscannum.c</a>,
+<a href="../src/iscannum.h">src/iscannum.h</a>,
+<a href="../src/scanchar.h">src/scanchar.h</a>,
+<a href="../src/scantab.c">src/scantab.c</a>.
+
+<dt>
+Binary tokens:
 <dd>
 <a href="../src/btoken.h">src/btoken.h</a>,
 <a href="../src/ibnum.c">src/ibnum.c</a>,
 <a href="../src/ibnum.h">src/ibnum.h</a>,
 <a href="../src/inobtokn.c">src/inobtokn.c</a>,
-<a href="../src/iscan.c">src/iscan.c</a>,
-<a href="../src/iscan.h">src/iscan.h</a>,
 <a href="../src/iscanbin.c">src/iscanbin.c</a>,
-<a href="../src/iscanbin.h">src/iscanbin.h</a>,
-<a href="../src/iscannum.c">src/iscannum.c</a>,
-<a href="../src/iscannum.h">src/iscannum.h</a>,
-<a href="../src/itoken.h">src/itoken.h</a>,
-<a href="../src/scanchar.h">src/scanchar.h</a>,
-<a href="../src/scantab.c">src/scantab.c</a>.
+<a href="../src/iscanbin.h">src/iscanbin.h</a>.
 
 </dl>
 
@@ -1652,6 +1659,7 @@ Operator support:
 Non-output-related operators:
 <dd>
 <a href="../src/ifunc.h">src/ifunc.h</a>,
+<a href="../src/itoken.h">src/itoken.h</a>,
 <a href="../src/ivmem2.h">src/ivmem2.h</a>,
 <a href="../src/zarith.c">src/zarith.c</a>,
 <a href="../src/zarray.c">src/zarray.c</a>,
@@ -1659,8 +1667,6 @@ Non-output-related operators:
 <a href="../src/zcontext.c">src/zcontext.c</a>,
 <a href="../src/zcontrol.c">src/zcontrol.c</a>,
 <a href="../src/zdict.c">src/zdict.c</a>,
-<a href="../src/zdosio.c">src/zdosio.c</a>,
-<a href="../src/zdouble.c">src/zdouble.c</a>,
 <a href="../src/zfunc.c">src/zfunc.c</a>,
 <a href="../src/zfunc0.c">src/zfunc0.c</a>,
 <a href="../src/zfunc3.c">src/zfunc3.c</a>,
@@ -1676,7 +1682,6 @@ Non-output-related operators:
 <a href="../src/zrelbit.c">src/zrelbit.c</a>,
 <a href="../src/zstack.c">src/zstack.c</a>,
 <a href="../src/zstring.c">src/zstring.c</a>,
-<a href="../src/zsysvm.c">src/zsysvm.c</a>,
 <a href="../src/ztoken.c">src/ztoken.c</a>,
 <a href="../src/ztype.c">src/ztype.c</a>,
 <a href="../src/zusparam.c">src/zusparam.c</a>,
@@ -1796,6 +1801,22 @@ so you can find them all by executing the following (Unix) command:
 <blockquote><pre>
 egrep '    [{]["].[.]' src/z*.c
 </pre></blockquote>
+
+<p>
+There are several optional packages of non-standard operators.  As with
+other non-standard operators, the names of all the operators in these
+packages begin with '.'.  We list those packages here.
+
+<dl>
+
+<dt>
+Optional non-standard operator packages:
+<dd>
+<a href="../src/zdosio.c">src/zdosio.c</a>,
+<a href="../src/zdouble.c">src/zdouble.c</a>,
+<a href="../src/zsysvm.c">src/zsysvm.c</a>.
+
+</dl>
 
 <h4><a name="PostScript_code"></a>PostScript code</h4>
 
@@ -1987,31 +2008,166 @@ Files:
 
 </dl>
 
-<h3><a name="Build_support"></a>Build support</h3>
+<h3><a name="Build_process"></a>Build process</h3>
+
+<h4><a name="Makefile_structure"></a>Makefile structure</h4>
+
+<p>
+Ghostscript's makefiles embody a number of design decisions and assumptions
+that may not be obvious from a casual reading of the code.
+
+<ul>
+
+<li>All files are stored in subdirectories.  The names of all subdirectories
+used in the build process are defined in the top-level makefiles for the
+various platforms: there are no "hard wired" directory names in any makefile
+rule.  Subdirectory names in the makefiles are relative to the directory
+that is current at build time: normally this directory is the parent of the
+various subdirectories, and holds only a <b><tt>makefile</tt></b>, which in
+turn simply references the real top-level makefile in the source
+subdirectory.
+
+<li>All compiler and linker switches are likewise defined by macros, again
+preferably in the top-level platform makefile.
+
+<li>There is an absolute distinction between "source-like" subdirectories,
+which are read-only during the build process, and "object-like"
+subdirectories, all of whose contents are generated by the build process and
+which can be emptied (<b><tt>rm&nbsp;*</tt></b>) at any time with no bad
+effects.  The source subdirectories are defined by macros named
+<b><tt>xxxSRCDIR</tt></b>.
+
+<li>Object subdirectories may distinguish further between those that hold
+the results of the build process that are needed at run time (i.e., that
+should be included in a run-time distribution), defined by
+<b><tt>BINDIR</tt></b>, and those that are not needed at run time, defined
+by <b><tt>xxxGENDIR</tt></b> and <b><tt>xxxOBJDIR</tt></b>.  (The
+distinction between these is historical and probably no longer relevant.)
+
+<li>There may be multiple object subdirectories for different build
+configurations.  On Unix, the <b><tt>obj</tt></b> and <b><tt>bin</tt></b>
+directories are used for normal production builds, the
+<b><tt>debugobj</tt></b> directory for debugging builds, and the
+<b><tt>pgobj</tt></b> directory for profiling builds; other platforms may
+use different conventions.  The Unix makefiles support targets named
+<b><tt>debug</tt></b> and <b><tt>pg</tt></b> for debugging and profiling
+builds respectively; other platforms do not.
+
+<li>Makefiles will be maintained by hand.  This requires editing the
+following makefile elements whenever the relevant source files changes:
+
+<ul>
+
+<li>Every header (.h) file must have a corresponding macro definition in a
+makefile.  If <b><tt>abc.h</tt></b> #includes <b><tt>def.h</tt></b> and
+<b><tt>xyz.h</tt></b>, the definition must have the form
+
+<blockquote><pre>
+xyz_h=$(xxxSRCD)xyz.h $(def_h) $(xyz_h)
+</pre></blockquote>
+
+where <b><tt>xxxSRCD</tt></b> is the macro defining the relevant source
+directory (including a trailing '/').  Note that the '.' in the file name
+has been replaced by an underscore.  Note also that the definition must
+follow all definitions it references, since some <b><tt>make</tt></b>
+programs expand macros in definitions at the time of definition rather than
+at the time of use.
+
+<li>Every .c file must have a corresponding rule in a makefile.  If
+<b><tt>abc.c</tt></b> #includes <b><tt>def.h</tt></b> and
+<b><tt>lmn.h</tt></b>, the rule must have approximately the form
+
+<blockquote><pre>
+$(xxxOBJD)abc.$(OBJ) : $(xxxSRCD)abc.c $(def_h) $(lmn_h)
+    $(xxCC) $(xxO_)abc.$(OBJ) $(C_) $(xxxSRCD)abc.c
+</pre></blockquote>
+
+where <b><tt>xxxSRCD</tt></b> is as before; <b><tt>xxxOBJD</tt></b> is the
+relevant object directory; <b><tt>xxCC</tt></b> defines the name of the C
+compiler plus the relevant compilation switches; and <b><tt>xxO_</tt></b>
+and <b><tt>C_</tt></b> are macros used to bridge syntactic differences
+between different <b><tt>make</tt></b> programs.
+
+</ul>
+
+</ul>
+
+<p>
+The requirement to keep makefiles up to date by hand has been controversial.
+Two alternatives are generally proposed.
+
+<ul>
+
+<li>Programs like <b><tt>makedeps</tt></b>, which generate build rules
+automatically from the #include lists in C files.  We have found such
+programs useless: they "wire in" specific, concrete directory names, not
+only for our own code but even for the system header files; they have to be
+run manually whenever code files are added, renamed, or deleted, or whenever
+the list of #includes in any file changes; and they cannot deal with
+different source files requiring different compilation switches.
+
+<li>MSVC-style "project" files.  These are equally useless: they are not
+portable across different vendors' tools -- in fact, there may not even be a
+usable import/export facility to convert their data to or from text form --
+and they cannot combine configuration-independent data with
+configuration-specific data.
+
+</ul>
+
+<p>
+We have seriously considered writing our own build program in Tcl or Python
+that would eliminate these problems, or perhaps porting the tools developed
+in Digital's Vesta research project (if we can get access to them); however,
+either of these approaches would create potential portability problems of
+its own, not to mention difficulties in integrating with others' build
+systems.
+
+<p>
+Beyond the general assumptions of the makefiles, ****** STILL NEED TO
+DESCRIBE .dev FILES AND genconf.
+
+<p>
+For a detailed list of makefiles, and a discussion of makefile issues
+related to portability, see the <a href="#Makefiles">Makefiles</a> section
+below; for more detailed information about editing configuration information
+in makefiles, see <a
+href="Make.htm#Makefile_overview">doc/Make.htm#Makefile_overview</a>; and
+for a few more notes on makefile coding conventions, see <a
+href="C-style.htm#Makefiles">doc/C-style.htm#Makefiles</a>.
+
+<h4><a name="Generators"></a>Generators</h4>
 
 <p>
 Ghostscript's build procedure is somewhat unusual in that it compiles and
-then executes some support programs during the build process.  See the
-individual programs for information about what they do.
+then executes some support programs during the build process.  These
+programs then generate data or source code that is used later on in the
+build.  See the individual programs for information about what they do.
 
 <dl>
 
 <dt>
-Files:
+Source generators:
 <dd>
-<a href="../src/bench.c">src/bench.c</a>,
-<a href="../src/echogs.c">src/echogs.c</a>,
+<a href="../src/ansi2knr.c">src/ansi2knr.c</a>,
 <a href="../src/genarch.c">src/genarch.c</a>,
-<a href="../src/genconf.c">src/genconf.c</a>,
-<a href="../src/gendev.c">src/gendev.c</a> (not used),
+<a href="../src/genconf.c">src/genconf.c</a> (also generates non-source),
 <a href="../src/genht.c">src/genht.c</a>,
 <a href="../src/geninit.c">src/geninit.c</a>.
 
+<dt>
+Other generators:
+<dd>
+<a href="../src/echogs.c">src/echogs.c</a>,
+<a href="../src/genconf.c">src/genconf.c</a> (also generates source),
+<a href="../src/gendev.c">src/gendev.c</a> (not used).
+
 </dl>
 
+<h4><a name="Build_support"></a>Support</h4>
+
 <p>
-There are also a number of programs, scripts, and configuration files that
-exist only for the sake of the build process.
+There are a number of programs, scripts, and configuration files that exist
+only for the sake of the build process.
 
 <dl>
 
@@ -2031,21 +2187,15 @@ Files for PC environments:
 <a href="../src/dwuninst.rc">src/dwuninst.rc</a>,
 <a href="../src/gs16spl.def">src/gs16spl.def</a>,
 <a href="../src/gs16spl.rc">src/gs16spl.rc</a>,
-<a href="../src/gsdll.c">src/gsdll.c</a>,
-<a href="../src/gsdll.h">src/gsdll.h</a>,
 <a href="../src/gsdll2.def">src/gsdll2.def</a>,
 <a href="../src/gsdll2.rc">src/gsdll2.rc</a>,
 <a href="../src/gsdll32.def">src/gsdll32.def</a>,
 <a href="../src/gsdll32.rc">src/gsdll32.rc</a>,
 <a href="../src/gsdll32w.lnk">src/gsdll32w.lnk</a>,
-<a href="../src/gsdllos2.h">src/gsdllos2.h</a>,
-<a href="../src/gsdllwin.h">src/gsdllwin.h</a>,
 <a href="../src/gsgraph.icx">src/gsgraph.icx</a>,
 <a href="../src/gsos2.def">src/gsos2.def</a>,
 <a href="../src/gsos2.icx">src/gsos2.icx</a>,
 <a href="../src/gsos2.rc">src/gsos2.rc</a>,
-<a href="../src/gspmdrv.c">src/gspmdrv.c</a>,
-<a href="../src/gspmdrv.h">src/gspmdrv.h</a>,
 <a href="../src/gspmdrv.def">src/gspmdrv.def</a>,
 <a href="../src/gspmdrv.icx">src/gspmdrv.icx</a>,
 <a href="../src/gspmdrv.rc">src/gspmdrv.rc</a>,
@@ -2070,7 +2220,7 @@ Files for OpenVMS:
 <dt>
 Other files:
 <dd>
-<a href="../src/ansi2knr.c">src/ansi2knr.c</a>,
+<a href="../src/bench.c">src/bench.c</a>,
 <a href="../src/catmake">src/catmake</a>,
 <a href="../src/ccgs">src/ccgs</a>,
 <a href="../src/instcopy">src/instcopy</a>.
@@ -2837,12 +2987,12 @@ Files:
 </dl>
 
 <p>
-It has been suggested that the GNU 'configure' scripts do the above better,
-for Unix systems, than Ghostscript's current methods.  While this may be
-true, we have found configure scripts difficult to write, understand, and
-maintain; and the 'autoconf' tool for generating configure scripts, which we
-found easy to use, covers very little of the ground that Ghostscript
-requires.
+It has been suggested that the GNU <b><tt>configure</tt></b> scripts do the
+above better, for Unix systems, than Ghostscript's current methods.  While
+this may be true, we have found <b><tt>configure</tt></b> scripts difficult
+to write, understand, and maintain; and the <b><tt>autoconf</tt></b> tool
+for generating <b><tt>configure</tt></b> scripts, which we found easy to
+use, doesn't cover much of the ground that Ghostscript requires.
 
 <h4><a name="Cross_platform_APIs"></a>Cross-platform APIs</h4>
 
@@ -2850,9 +3000,10 @@ requires.
 For a few library facilities that are available on all platforms but are not
 well standardized, or that may need to be changed for special environments,
 Ghostscript defines its own APIs.  It is an architectural property of
-Ghostscript that the implementations of these APIs are the only .c files
-that are linked into an executable depending on the platform (as opposed to
-depending on choices of drivers or optional features).
+Ghostscript that the implementations of these APIs are the only .c files for
+which the choice of platform (as opposed to choices of drivers or optional
+features) determines whether they are compiled and linked into an
+executable.
 
 <dl>
 
@@ -2903,6 +3054,10 @@ Platform-specific implementation files:
 </dl>
 
 <h4><a name="Makefiles"></a>Makefiles</h4>
+
+<p>
+For information on the structure and conventions used within makefiles, see
+the <a href="#Makefile_structure">Makefile structure</a> section above.
 
 <p>
 Ghostscript's makefiles are structured very similarly to the cross-platform
@@ -3016,36 +3171,68 @@ Library test program:
 <dt>
 Platform-independent makefiles:
 <dd>
-<a href="../src/cfonts.mak">src/cfonts.mak</a>,
+
+<dl>
+
+<dt>
+Graphics library and support:
+<dd>
 <a href="../src/contrib.mak">src/contrib.mak</a>,
 <a href="../src/devs.mak">src/devs.mak</a>,
 <a href="../src/gs.mak">src/gs.mak</a>,
-<a href="../src/int.mak">src/int.mak</a>,
-<a href="../src/jpeg.mak">src/jpeg.mak</a>,
 <a href="../src/lib.mak">src/lib.mak</a>,
+<a href="../src/version.mak">src/version.mak</a>.
+
+<dt>
+PostScript interpreter and fonts:
+<dd>
+<a href="../src/cfonts.mak">src/cfonts.mak</a>,
+<a href="../src/int.mak">src/int.mak</a>,
+<a href="../src/wmin.mak">src/wmin.mak</a>.
+
+<dt>
+Third-party libraries:
+<dd>
+<a href="../src/jpeg.mak">src/jpeg.mak</a>,
 <a href="../src/libpng.mak">src/libpng.mak</a>,
-<a href="../src/version.mak">src/version.mak</a>,
-<a href="../src/wmin.mak">src/wmin.mak</a>,
 <a href="../src/zlib.mak">src/zlib.mak</a>.
+
+</dl>
 
 <dt>
 Shared platform-dependent makefiles:
 <dd>
-<a href="../src/dvx-head.mak">src/dvx-head.mak</a>,
-<a href="../src/dvx-tail.mak">src/dvx-tail.mak</a>,
-<a href="../src/msvccmd.mak">src/msvccmd.mak</a>,
-<a href="../src/msvctail.mak">src/msvctail.mak</a>,
-<a href="../src/pcwin.mak">src/pcwin.mak</a>,
+
+<dl>
+
+<dt>
+Unix:
+<dd>
 <a href="../src/unix-aux.mak">src/unix-aux.mak</a>,
 <a href="../src/unix-end.mak">src/unix-end.mak</a>,
 <a href="../src/unixhead.mak">src/unixhead.mak</a>,
 <a href="../src/unixinst.mak">src/unixinst.mak</a>,
-<a href="../src/unixlink.mak">src/unixlink.mak</a>,
+<a href="../src/unixlink.mak">src/unixlink.mak</a>.
+
+<dt>
+Microsoft Windows and MS-DOS:
+<dd>
+<a href="../src/msvccmd.mak">src/msvccmd.mak</a>,
+<a href="../src/msvctail.mak">src/msvctail.mak</a>,
+<a href="../src/pcwin.mak">src/pcwin.mak</a>,
 <a href="../src/wccommon.mak">src/wccommon.mak</a>,
 <a href="../src/wctail.mak">src/wctail.mak</a>,
 <a href="../src/winint.mak">src/winint.mak</a>,
 <a href="../src/winlib.mak">src/winlib.mak</a>,
 <a href="../src/winplat.mak">src/winplat.mak</a>.
+
+<dt>
+Other:
+<dd>
+<a href="../src/dvx-head.mak">src/dvx-head.mak</a>,
+<a href="../src/dvx-tail.mak">src/dvx-tail.mak</a>.
+
+</dl>
 
 </dl>
 
@@ -3127,12 +3314,18 @@ There are some features that are inherently platform-specific:
 <li>Microsoft Windows requires a lot of special top-level code, and also has
 an installer and uninstaller.
 
+<li>OS/2 requires a little special code.
+
 <li>MacOS also requires special top-level code (not distributed with the
 standard Ghostscript package).
+
+<li>All platforms supporting DLLs (currently all three of the above) share
+some special top-level code.
 
 </ul>
 
 <dl>
+
 <dt>
 MS Windows files:
 <dd>
@@ -3153,7 +3346,20 @@ MS Windows files:
 <a href="../src/dwtext.h">src/dwtext.h</a>,
 <a href="../src/dwuninst.cpp">src/dwuninst.cpp</a>,
 <a href="../src/dwuninst.h">src/dwuninst.h</a>,
-<a href="../src/gs16spl.c">src/gs16spl.c</a>.
+<a href="../src/gs16spl.c">src/gs16spl.c</a>,
+<a href="../src/gsdllwin.h">src/gsdllwin.h</a>.
+
+<dt>
+OS/2 files:
+<dd>
+<a href="../src/gsdllos2.h">src/gsdllos2.h</a>.
+
+<dt>
+DLL files:
+<dd>
+<a href="../src/gsdll.c">src/gsdll.c</a>,
+<a href="../src/gsdll.h">src/gsdll.h</a>.
+
 </dl>
 
 <hr>
