@@ -392,7 +392,7 @@ pl_bitmap_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	      bitmap_data = cdata + 16;
 	      delta_x = (plfont->header[13] ? /* variable pitch */
 			 s16(params + 8) * 0.25 :
-			 s16(params) /*lsb*/ + u16(params + 4) /*width*/);
+			 (short)(s16(params) /*lsb*/ + u16(params + 4)) /*width*/);
 	      lsb = s16(params);
 	      ascent = s16(params + 2);
 	    }
