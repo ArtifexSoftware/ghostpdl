@@ -33,7 +33,7 @@
 dup revision ne
  { (gs: Interpreter revision \() print revision 10 string cvs print
    (\) does not match gs_init.ps revision \() print 10 string cvs print
-   (\).\n) print flush null 1 .quit
+   (\).\n) print flush //null 1 .quit
  }
 if pop
 
@@ -262,18 +262,18 @@ DELAYBIND NOBIND not and
  } if
 
 %**************** BACKWARD COMPATIBILITY ****************
-/hwsizedict mark /HWSize null .dicttomark readonly def
+/hwsizedict mark /HWSize //null .dicttomark readonly def
 /copyscanlines {		% <device> <y> <string> copyscanlines <substr>
   0 3 1 roll 3 index //hwsizedict .getdeviceparams
   exch pop exch pop aload pop 3 2 roll
-  0 exch null exch .getbitsrect exch pop
+  0 exch //null exch .getbitsrect exch pop
 } bind odef
 currentdict /hwsizedict .undef
 /getdeviceprops
- { null .getdeviceparams
+ { //null .getdeviceparams
  } bind odef
 /.putdeviceprops
- { null true counttomark 1 add 3 roll .putdeviceparams
+ { //null true counttomark 1 add 3 roll .putdeviceparams
    dup type /booleantype ne
     { dup mark eq { /unknown /rangecheck } if
       counttomark 4 add 1 roll cleartomark pop pop pop
@@ -387,7 +387,7 @@ userdict /.echo.mode true put
 	     { (%statementedit) (r) file } stopped
 	     { pop pop $error /errorname get /undefinedfilename eq
 		{ .clearerror exit } if		% EOF
-	       handleerror null		% ioerror??
+	       handleerror //null		% ioerror??
 	     }
 	    if
 	    cvx { .runexec } execute
@@ -436,11 +436,11 @@ userdict /.echo.mode true put
 %	<lit-file|fileproc> .runexec1 <lit-file|fileproc> .runexec2
 /.runexec1 {		% <file|fileproc> .runexec1 -
   dup type /filetype ne { cvx exec } if
-  cvx null 2 .stopped
+  cvx //null 2 .stopped
 	% If we got back here from a startjob, just keep going.
 	% startjob replaces the null on the o-stack with a procedure
 	% to be executed when we get back here.
-  dup null ne { exec true } { pop false } ifelse
+  dup //null ne { exec true } { pop false } ifelse
 } bind def
 /.runexec2 {		% <continue> <file|fileproc> .runexec2 -
   exch {
@@ -485,10 +485,10 @@ userdict /.echo.mode true put
 % Code output by Adobe Illustrator relies on the fact that
 % `stack' is a procedure, not an operator!!!
 /stack	{ 0 1 count 3 sub { index = } for } bind def
-/start	{ BATCH { null 0 .quit } { executive } ifelse } def
+/start	{ BATCH { //null 0 .quit } { executive } ifelse } def
 % Internal uses of stopped that aren't going to do a stop if an error occurs
 % should use .internalstopped to avoid setting newerror et al.
-/.internalstopped { null 1 .stopped null ne } bind def
+/.internalstopped { //null 1 .stopped //null ne } bind def
 /store {	% Don't alter operands before completing.
 	1 index where { 2 index 2 index put pop pop } { def } ifelse
 } odef
@@ -514,7 +514,7 @@ currentdict /.typenames .undef
 /.makeinternaldict {
   .currentglobal true .setglobal
     [ /dup .systemvar 1183615869 /eq .systemvar
-	[ /pop .systemvar null ] cvx
+	[ /pop .systemvar //null ] cvx
 	false .setglobal
 	dup 1 10 dict .forceput	% proc is global, dict is local
 	true .setglobal
@@ -617,7 +617,7 @@ currentdict /superexec .knownget {
 } odef
 /finddevice {		% <devicename> finddevice <device>
   /devicedict .systemvar exch get
-  dup 1 get null eq {
+  dup 1 get //null eq {
 		% This is the first request for this type of device.
 		% Create a default instance now.
 		% Stack: [proto null]
@@ -632,7 +632,7 @@ currentdict /superexec .knownget {
 
 % Run a resource file.  This allows us to distinguish resource objects
 % from objects coming from input files.
-userdict /.currentresourcefile null put
+userdict /.currentresourcefile //null put
 /.execasresource {	% <file> <proc|runfile> .execasresource -
   /stopped .systemvar
   /.currentresourcefile .uservar
@@ -649,7 +649,7 @@ userdict /.currentresourcefile null put
 % Define procedures for getting and setting the current device resolution.
 
 /gsgetdeviceprop	% <device> <propname> gsgetdeviceprop <value>
- { 2 copy mark exch null .dicttomark .getdeviceparams
+ { 2 copy mark exch //null .dicttomark .getdeviceparams
    dup mark eq		% if true, not found
     { pop dup /undefined signalerror }
     { 5 1 roll pop pop pop pop }
@@ -667,7 +667,7 @@ userdict /.currentresourcefile null put
 /shellarguments		% -> shell_arguments true (or) false
 	{ /ARGUMENTS where
 	   { /ARGUMENTS get dup type /arraytype eq
-	      { aload pop /ARGUMENTS null store true }
+	      { aload pop /ARGUMENTS //null store true }
 	      { pop false }
 	     ifelse }
 	   { false } ifelse
@@ -781,7 +781,7 @@ userdict /.currentresourcefile null put
  } bind def
 /.errorhandler		% <command> <errorname> .errorhandler -
   {		% Detect an internal 'stopped'.
-    1 .instopped { null eq { pop pop stop } if } if
+    1 .instopped { //null eq { pop pop stop } if } if
     $error /.inerror get 1 .instopped { pop } { pop true } ifelse
      { .unstoppederrorhandler
      } if	% detect error recursion
@@ -803,13 +803,13 @@ userdict /.currentresourcefile null put
      }
     ifelse
     $error /position currentfile status
-     { currentfile { fileposition } .internalstopped { pop null } if
+     { currentfile { fileposition } .internalstopped { pop //null } if
      }
      {		% If this was a scanner error, the file is no longer current,
 		% but the command holds the file, which may still be open.
        $error /command get dup type /filetype eq
-        { { fileposition } .internalstopped { pop null } if }
-        { pop null }
+        { { fileposition } .internalstopped { pop //null } if }
+        { pop //null }
        ifelse
      }
     ifelse put
@@ -827,7 +827,7 @@ userdict /.currentresourcefile null put
        /command load errorname SHORTERRORS
 	{ (%%[ Error: ) print =only flush
 	  (; OffendingCommand: ) print =only
-	  errorinfo dup null eq {
+	  errorinfo dup //null eq {
 	    pop
 	  } {
 	    (;\nErrorInfo:) print
@@ -840,7 +840,7 @@ userdict /.currentresourcefile null put
 	}
 	{ (Error: ) print ==only flush
 	  ( in ) print ==only flush
-	  errorinfo dup null eq {
+	  errorinfo dup //null eq {
 	    pop
 	  } {
 	    (\nAdditional information: ) print ==only flush
@@ -924,7 +924,7 @@ userdict /.currentresourcefile null put
 	}
        ifelse
 
-       position null ne
+       position //null ne
 	{ (Current file position is ) print position = }
        if
 
@@ -932,8 +932,8 @@ userdict /.currentresourcefile null put
 % Define a procedure for clearing the error indication.
 /.clearerror
  { $error /newerror false put
-   $error /errorname null put
-   $error /errorinfo null put
+   $error /errorname //null put
+   $error /errorinfo //null put
    0 .setoserrno
  } bind def
 
@@ -952,7 +952,7 @@ $error begin
   /globalmode .currentglobal def
   /.inerror false def
   /.nosetlocal true def
-  /position null def
+  /position //null def
 end
 % Define errordict similarly.  It has one entry per error name,
 %   plus handleerror.  However, some astonishingly badly written PostScript
@@ -1103,7 +1103,7 @@ errordict /rangecheck { pop stop } put	% pop the command
   1 add dict  /devicedict 1 index def
   begin			% 2nd copy of count is on stack
    { dup .devicename exch
-     dup wcheck { dup } { null } ifelse 2 array astore def
+     dup wcheck { dup } { //null } ifelse 2 array astore def
    } repeat
   end
 put		% errordict /rangecheck
@@ -1200,7 +1200,7 @@ devicedict /Default devicedict .defaultdevicename get put
     { DITHERPPI
     }
     { dup cvi 100 idiv 15 .min
-       {null 46 46 60 60 60 106 106 106 106 133 133 133 133 133 150}
+       {//null 46 46 60 60 60 106 106 106 106 133 133 133 133 133 150}
       exch get
      }
    ifelse
@@ -1473,7 +1473,7 @@ if
 % It is possible to specify resolution, pixel size, and page size;
 % since any two of these determine the third, conflicts are possible.
 % We simply pass them to .setdeviceparams and let it sort things out.
-   mark /HWResolution null /HWSize null /PageSize null .dicttomark
+   mark /HWResolution //null /HWSize //null /PageSize //null .dicttomark
    .getdeviceparams .dicttomark begin
    mark
 	% Check for resolution.
@@ -1660,7 +1660,7 @@ readonly def
   if
   % Pretty much the same as "<< /.LockSafetyParams true >> setpagedevice"
   % but without some of the side effects.
-  mark currentdevice null true mark /.LockSafetyParams true .putdeviceparamsonly
+  mark currentdevice //null true mark /.LockSafetyParams true .putdeviceparamsonly
   counttomark 2 eq 
   { cleartomark }
   { cleartomark cleartomark pop pop pop
