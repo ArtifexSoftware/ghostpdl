@@ -30,6 +30,7 @@
 #include "jbig2_priv.h"
 #include "jbig2_arith.h"
 #include "jbig2_arith_int.h"
+#include "jbig2_arith_iaid.h"
 #include "jbig2_generic.h"
 #include "jbig2_symbol_dict.h"
 
@@ -220,7 +221,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
   Jbig2ArithIntCtx *IADW = NULL;
   Jbig2ArithIntCtx *IAEX = NULL;
   Jbig2ArithIntCtx *IAAI = NULL;
-  Jbig2ArithIntCtx *IAID = NULL;
+  Jbig2ArithIaidCtx *IAID = NULL;
   Jbig2ArithIntCtx *IARDX = NULL;
   Jbig2ArithIntCtx *IARDY = NULL;
   int code = 0;
@@ -236,7 +237,12 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
       IADW = jbig2_arith_int_ctx_new(ctx);
       IAEX = jbig2_arith_int_ctx_new(ctx);
       IAAI = jbig2_arith_int_ctx_new(ctx);
-      IAID = jbig2_arith_int_ctx_new(ctx);
+      if (params->SDREFAGG) {
+	  int tmp = params->SDINSYMS->n_symbols + params->SDNUMNEWSYMS;
+	  int SBSYMCODELEN;
+	  for (SBSYMCODELEN = 0; (1 << SBSYMCODELEN) < tmp; SBSYMCODELEN++);
+	  IAID = jbig2_arith_iaid_ctx_new(ctx, SBSYMCODELEN);
+      }
       IARDX = jbig2_arith_int_ctx_new(ctx);
       IARDY = jbig2_arith_int_ctx_new(ctx);
   } else {
@@ -376,7 +382,7 @@ jbig2_decode_symbol_dict(Jbig2Ctx *ctx,
 		      if (params->SDHUFF) {
 			  /* todo */
 		      } else {
-			  code = jbig2_arith_int_decode(IAID, as, &ID);
+			  code = jbig2_arith_iaid_decode(IAID, as, &ID);
 		          code = jbig2_arith_int_decode(IARDX, as, &RDX);
 		          code = jbig2_arith_int_decode(IARDY, as, &RDY);
 		      }

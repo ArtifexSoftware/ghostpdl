@@ -180,8 +180,8 @@ int jbig2_image_get_pixel(Jbig2Image *image, int x, int y)
   const int byte = (x >> 3) + y*image->stride;
   const int bit = 7 - (x & 7);
 
-  if ((x < 0) || (x > w)) return 0;
-  if ((y < 0) || (y > h)) return 0;
+  if ((x < 0) || (x >= w)) return 0;
+  if ((y < 0) || (y >= h)) return 0;
   
   return ((image->data[byte]>>bit) & 1);
 }
@@ -194,8 +194,8 @@ int jbig2_image_set_pixel(Jbig2Image *image, int x, int y, bool value)
   int i, scratch, mask;
   int bit, byte;
 
-  if ((x < 0) || (x > w)) return 0;
-  if ((y < 0) || (y > h)) return 0;
+  if ((x < 0) || (x >= w)) return 0;
+  if ((y < 0) || (y >= h)) return 0;
 
   byte = (x >> 3) + y*image->stride;
   bit = 7 - (x & 7);
