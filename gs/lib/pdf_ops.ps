@@ -44,9 +44,13 @@ userdict /GS_PDF_ProcSet 127 dict dup begin
 %	Show
 %	TextSaveMatrix		% matrix at time of BT (iff within BT/ET)
 % (The following correspond directly to PDF state parameters.)
+%	AlphaIsShape
+%	FillConstantAlpha
 %	FillColor
 %	FillColorSpace
 %	FillOverprint
+%	SoftMask
+%	StrokeConstantAlpha
 %	StrokeColor
 %	StrokeColorSpace
 %	StrokeOverprint
@@ -75,7 +79,8 @@ nodict readonly pop
 /graphicsbeginpage {
   initgraphics
   currentdict /ClipRect .knownget { aload pop rectclip } if
-  0 g  0 G  false op  false OP
+  0 g  0 G  false op  false OP  0 OPM
+  1 ca  1 CA  null SMask  false AIS  /Compatible BM  true TK
 } bdef
 
 /gput		% <value> <key> gput -
@@ -171,17 +176,52 @@ nodict readonly pop
     /StrokeColor load length array astore cvx /StrokeColor gput
   } ifelse
 } bdef
+
+% ---------------- Overprint/transparency setting ---------------- %
+
 /op { /FillOverprint gput } bdef
 /OP { /StrokeOverprint gput } bdef
+/OPM {
+  /.setoverprintmode where { pop .setoverprintmode } { pop } ifelse
+} bdef
+/ca { /FillConstantAlpha gput } bdef
+/CA { /StrokeConstantAlpha gput } bdef
+/SMask {
+	% ****** NYI ******
+  pop null /SoftMask gput
+} bdef
+/AIS { /AlphaIsShape gput } bdef
+/BM {
+  /.setblendmode where {
+    pop [ exch dup type /nametype ne { aload pop } if /Normal ] {
+      { .setblendmode } .internalstopped not { exit } if pop
+    } forall
+  } {
+    pop
+  } ifelse
+} bdef
+/TK {
+  /.settextknockout where { pop .settextknockout } { pop } ifelse
+} bdef
 
 % ---------------- Color installation ---------------- %
 
 % Establish a given color (and color space) as current.
+/.settransparencyparams {
+  /.setshapemask where {
+    pop 1 null AlphaIsShape { 4 2 roll } if
+    .setshapemask .setshapealpha .setopacitymask .setopacityalpha
+  } {
+    pop pop
+  } ifelse
+} bdef
 /setfillcolor {
   FillColor FillColorSpace setgcolor FillOverprint setoverprint
+  FillConstantAlpha SoftMask .settransparencyparams
 } def
 /setstrokecolor {
   StrokeColor StrokeColorSpace setgcolor StrokeOverprint setoverprint
+  StrokeConstantAlpha SoftMask .settransparencyparams
 } def
 /Cdict 15 dict dup begin	% <color...> <colorspace> -proc- -
   /DeviceGray { pop setgray } bdef
