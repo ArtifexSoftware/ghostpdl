@@ -381,16 +381,15 @@ gx_cie_real_remap_finish(cie_cached_vector3 vec3, frac * pconc,
 	 * ranges [0..dims[c]] as ints with interpolation bits.
 	 */
 	fixed rfix[3];
+	const int s = _fixed_shift - _cie_interpolate_bits;
 
 #define EABC(i)\
   cie_interpolate_fracs(pcrd->caches.EncodeABC[i].fixeds.ints.values, tabc[i])
-#define FABC(i)\
-  (_fixed_shift >= _cie_interpolate_bits) ? \
-  (EABC(i) <<  (_fixed_shift - _cie_interpolate_bits)) : \
-  (EABC(i) >> -(_fixed_shift - _cie_interpolate_bits))
-	rfix[0] = FABC(0);
-	rfix[1] = FABC(1);
-	rfix[2] = FABC(2);
+#define FABC(i, s)\
+  ((s) > 0) ? (EABC(i) << (s)) : (EABC(i) >> -(s))
+	rfix[0] = FABC(0, s);
+	rfix[1] = FABC(1, s);
+	rfix[2] = FABC(2, s);
 #undef FABC
 #undef EABC
 	if_debug6('c', "[c]ABC=%g,%g,%g => iabc=%g,%g,%g\n",
