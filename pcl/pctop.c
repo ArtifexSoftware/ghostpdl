@@ -433,19 +433,6 @@ pcl_impl_set_device(
     case Sbegin:	/* nothing left to undo */
 	break;
     }
-    {
-        pl_main_instance_t *pti = (pl_main_instance_t *)(pcli->pre_page_closure);
-        if ( (pti->page_count + 1) < pti->first_page || 
-             (pti->page_count + 1) > pti->last_page ) {
-            gx_device *pdev = pti->device;
-            if ( !pti->saved_hwres ) {
-                pti->saved_hwres = true;
-                pti->hwres[0] = pdev->HWResolution[0];
-                pti->hwres[1] = pdev->HWResolution[1];
-                gx_device_set_resolution(pdev, 10, 10);
-            }
-        }
-    }
     return code;
 }
 
@@ -613,41 +600,12 @@ pcl_end_page_top(
     int code = 0;
     /* do pre-page action */
     if (pcli->pre_page_action) {
-        pl_main_instance_t *pti = (pl_main_instance_t *)(pcli->pre_page_closure);
-        if ( pti->page_count == pti->last_page )
-            return -1;
         code = pcli->pre_page_action(instance, pcli->pre_page_closure);
-        if (code < 0)
+        if ( code < 0 )
             return code;
-        if (code != 0) {
-            /* HACK ALERT - we want to see if the next page is in
-               range after the page is incremented... then if it is
-               out of range we can downgrade resolution to a very
-               small arbitrary value for better performance on
-               no-print pages.  If we are past the last page we can
-               record 'an error that will cause the interpreter to
-               exit. */
-            /* all done */
-            if ( (pti->page_count + 1) < pti->first_page || 
-                 (pti->page_count + 1) > pti->last_page ) {
-                if ( !pti->saved_hwres ) {
-                    gx_device *pdev = pti->device;
-                    pti->saved_hwres = true;
-                    pti->hwres[0] = pdev->HWResolution[0];
-                    pti->hwres[1] = pdev->HWResolution[1];
-                    gx_device_set_resolution(pdev, 10, 10);
-                }
-            } else { /* next page is in range - restore the resolution */
-                if ( pti->saved_hwres ) {
-                    pti->saved_hwres = false;
-                    gx_device_set_resolution(pti->device, 
-                                             pti->hwres[0], pti->hwres[1]);
-                    new_logical_page(pcs, pcs->xfm_state.lp_orient,
-                                     pcs->xfm_state.paper_size, false);
-                }
-            }
-            return 0;    /* code > 0 means abort w/no error */
-        }
+        if ( code > 0 )
+            /* don't print case */
+            return 0;
     }
 
     /* output the page */
