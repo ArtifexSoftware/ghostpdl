@@ -110,7 +110,7 @@ pdfdict begin
       false 	% suppress any stack cleanup
     } {
       % error was non-recoverable with modified scanning rules
-      (\n) pdfformaterror
+      ('\n) pdfformaterror
       true
     } ifelse
   } {
