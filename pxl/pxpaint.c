@@ -344,8 +344,8 @@ paint_path(px_state_t *pxs, bool reset)
 	    if ( save_for_stroke )
 		gx_path_assign_preserve(ppath, save_path);
 	    else {
-		gs_currentpoint(pgs, &cursor);
 	        gx_path_assign_free(ppath, save_path);
+		gs_currentpoint(pgs, &cursor);
 	        save_path = 0;
 	      }
 	  }
@@ -428,7 +428,7 @@ paint_path(px_state_t *pxs, bool reset)
 	}
 rx:	if ( save_path )
 	    gx_path_assign_free(ppath, save_path);
-	else
+	else /* Iff save_path is NULL, set currentpoint back to original */
 	    gs_moveto(pgs, cursor.x, cursor.y);
 	return code;
 }
