@@ -591,8 +591,7 @@ private int grid_fit(gx_device_spot_analyzer *padev, gx_path *path,
     t1_hinter__init(&h.super, path); /* Will export to */
     code = t1_hinter__set_mapping(&h.super, &ctm_temp,
 			&fm, &fmb,
-			pscale->x, pscale->x,
-			atp ? 0 : pscale->x, atp ? 0 : pscale->y, /* Not sure */
+			pscale->x, pscale->x, 0, 0,
 			ctm_temp.tx_fixed, ctm_temp.ty_fixed, atp);
     if (code < 0)
 	return code;
