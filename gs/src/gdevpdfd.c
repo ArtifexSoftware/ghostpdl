@@ -370,12 +370,18 @@ gdev_pdf_stroke_path(gx_device * dev, const gs_imager_state * pis,
     set_ctm = (bool)gdev_vector_stroke_scaling((gx_device_vector *)pdev,
 					       pis, &scale, &mat);
     if (set_ctm) {
-	double mx = min(fabs(mat.xx), fabs(mat.xy));
-	double my = min(fabs(mat.yx), fabs(mat.yy));
+	/*
+	 * We want a scaling factor that will bring the largest reasonable
+	 * user coordinate within bounds.  We choose a factor based on the
+	 * minor axis of the transformation.  Thanks to Raph Levien for
+	 * the following formula.
+	 */
+	double a = mat.xx, b = mat.xy, c = mat.yx, d = mat.yy;
+	double u = fabs(a * d - b * c);
+	double v = a * a + b * b + c * c + d * d;
+	double minor = (sqrt(v + 2 * u) - sqrt(v - 2 * u)) * 0.5;
 
-	prescale = 1 / min(mx, my);
-	if (prescale < 1)
-	    prescale = 1;
+	prescale = (minor == 0 || minor > 1 ? 1 : 1 / minor);
     }
     if (make_path_scaling(pdev, ppath, prescale, &path_scale)) {
 	scale /= path_scale;
