@@ -472,6 +472,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      */
     gx_path_bbox(ppath, &ibox);
 #   define SMALL_CHARACTER 100
+    lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
+    lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     pseudo_rasterization = PSEUDO_RASTERIZATION && 
 			    ((adjust.x | adjust.y) == 0 && 
 			    ibox.q.y - ibox.p.y < SMALL_CHARACTER * fixed_scale &&
@@ -654,8 +656,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    fill_loop = fill_loop_by_trapezoids;
 	else
 	    fill_loop = fill_loop_by_scan_lines;
-	lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
-	lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
 	/* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
 #	if PSEUDO_RASTERIZATION
 	if (lst.bbox_width > MAX_LOCAL_SECTION && lst.pseudo_rasterization) {
@@ -793,7 +793,7 @@ init_line_list(ll_ptr ll, gs_memory_t * mem)
     ll->margin_set0.sect = ll->local_section0;
     ll->margin_set1.sect = ll->local_section1;
     ll->pseudo_rasterization = false;
-    ll->bbox_left =ll->bbox_width = 0;
+    /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
     INCR(fill);
 }
 
