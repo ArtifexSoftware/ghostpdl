@@ -342,7 +342,7 @@ coslw_=$(GLOBJ)gdevcslw.$(OBJ)
 $(DD)coslw2p.dev : $(coslw_) $(DD)page.dev
 	$(SETPDEV) $(DD)coslw2p $(coslw_)
 
-$(DD)coslwxl.dev : $(coslw_) page.dev
+$(DD)coslwxl.dev : $(coslw_) $(DD)page.dev
 	$(SETPDEV) ($DD)coslwxl $(coslw_)
 
 $(GLOBJ)gdevcslw.$(OBJ) : $(GLSRC)gdevcslw.c $(PDEVH)
