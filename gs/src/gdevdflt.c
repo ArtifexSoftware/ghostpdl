@@ -238,18 +238,23 @@ gx_default_cmyk_decode_color(
     gx_color_index  color,
     gx_color_value  cv[4] )
 {
-    int             i, code = dev_proc(dev, map_color_rgb)(dev, color, cv);
-    gx_color_value  min_val = gx_max_color_value;
+    /* The device may have been determined to be 'separable'. */
+    if (dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN)
+	return gx_default_decode_color(dev, color, cv);
+    else {
+        int i, code = dev_proc(dev, map_color_rgb)(dev, color, cv);
+        gx_color_value min_val = gx_max_color_value;
 
-    for (i = 0; i < 3; i++) {
-        if ((cv[i] = gx_max_color_value - cv[i]) < min_val)
-            min_val = cv[i];
+        for (i = 0; i < 3; i++) {
+            if ((cv[i] = gx_max_color_value - cv[i]) < min_val)
+                min_val = cv[i];
+        }
+        for (i = 0; i < 3; i++)
+            cv[i] -= min_val;
+        cv[3] = min_val;
+
+        return code;
     }
-    for (i = 0; i < 3; i++)
-        cv[i] -= min_val;
-    cv[3] = min_val;
-
-    return code;
 }
 
 /*
@@ -406,15 +411,18 @@ check_device_separable(gx_device * dev)
     if (pinfo->separable_and_linear != GX_CINFO_UNKNOWN_SEP_LIN)
 	return;
     /* If there is not an encode_color_routine then we cannot proceed. */
-    if (dev_proc(dev, encode_color == NULL))
+    if (dev_proc(dev, encode_color) == NULL)
 	return;
     /*
      * If these values do not check then we should have an error.  However
      * we do not know what to do so we are simply exitting and hoping that
      * the device will clean up its values.
      */
-    if (!pinfo->dither_grays || pinfo->dither_grays != (pinfo->max_gray + 1) ||
-	!pinfo->dither_colors || pinfo->dither_colors != (pinfo->max_color + 1))
+    if (pinfo->gray_index < num_components &&
+        (!pinfo->dither_grays || pinfo->dither_grays != (pinfo->max_gray + 1)))
+	    return;
+    if ((num_components > 1 || pinfo->gray_index != 0) &&
+	(!pinfo->dither_colors || pinfo->dither_colors != (pinfo->max_color + 1)))
 	return;
     /*
      * If dither_grays or dither_colors is not a power of two then we assume
@@ -432,23 +440,28 @@ check_device_separable(gx_device * dev)
     color_index = dev_proc(dev, encode_color)(dev, colorants);
     if (color_index != 0)
 	return;		/* Exit if zero colorants produce a non zero index */
-    for (i = 0; i < num_components; i ++) {
+    for (i = 0; i < num_components; i++) {
 	/* Check this colorant = max with all others = 0 */
-        for (j = 0; j < num_components; j ++)
+        for (j = 0; j < num_components; j++)
 	    colorants[j] = 0;
 	colorants[i] = gx_max_color_value;
 	color_index = dev_proc(dev, encode_color)(dev, colorants);
+	if (color_index == 0)	/* If no bits then we have a problem */
+	    return;
 	if (color_index & current_bits)	/* Check for overlapping bits */
 	    return;
 	current_bits |= color_index;
 	comp_mask[i] = color_index;
 	/* Determine the shift count for the colorant */
-	for (j = 0; (color_index & 1) == 0; j++)
+	for (j = 0; (color_index & 1) == 0 && color_index != 0; j++)
 	    color_index >>= 1;
 	comp_shift[i] = j;
 	/* Determine the bit count for the colorant */
-	for (j = 0; color_index != 0; j++)
+	for (j = 0; color_index != 0; j++) {
+	    if ((color_index & 1) == 0) /* check for non-consecutive bits */
+		return;
 	    color_index >>= 1;
+	}
 	comp_bits[i] = j;
 	/*
 	 * We could verify that the bit count matches the dither_grays or
@@ -456,7 +469,7 @@ check_device_separable(gx_device * dev)
 	 * are halftoning.  Thus we are allowing for non equal colorant sizes.
 	 */
 	/* Check for overlap with other colorant if they are all maxed */
-        for (j = 0; j < num_components; j ++)
+        for (j = 0; j < num_components; j++)
 	    colorants[j] = gx_max_color_value;
 	colorants[i] = 0;
 	color_index = dev_proc(dev, encode_color)(dev, colorants);
@@ -465,10 +478,25 @@ check_device_separable(gx_device * dev)
     }
     /* If we get to here then the device is very likely to be separable. */
     pinfo->separable_and_linear = GX_CINFO_SEP_LIN;
-    for (i = 0; i < num_components; i ++) {
+    for (i = 0; i < num_components; i++) {
 	pinfo->comp_shift[i] = comp_shift[i];
 	pinfo->comp_bits[i] = comp_bits[i];
 	pinfo->comp_mask[i] = comp_mask[i];
+    }
+    /*
+     * The 'gray_index' value allows one colorant to have a different number
+     * of shades from the remainder.  Since the default macros only guess at
+     * an appropriate value, we are setting its value based upon the data that
+     * we just determined.  Note:  In some cases the macros set max_gray to 0
+     * and dither_grays to 1.  This is not valid so ignore this case.
+     */
+    for (i = 0; i < num_components; i++) {
+	int dither = 1 << comp_bits[i];
+
+	if (pinfo->dither_grays != 1 && dither == pinfo->dither_grays) {
+	    pinfo->gray_index = i;
+	    break;
+        }
     }
 }
 #undef is_power_of_two
@@ -622,10 +650,6 @@ gx_device_fill_in_procs(register gx_device * dev)
     set_dev_proc(dev, decode_color, get_decode_color(dev));
     fill_dev_proc(dev, map_color_rgb, gx_default_map_color_rgb);
 
-    /* Initialize the separable status if not known. */
-    if ( dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN ) {
-	set_linear_color_bits_mask_shift(dev);
-    }
     /*
      * If the device is known not to support overprint mode, indicate this now.
      * Note that we do not insist that a device be use a strict DeviceCMYK
@@ -650,6 +674,8 @@ gx_device_fill_in_procs(register gx_device * dev)
 int
 gx_default_open_device(gx_device * dev)
 {
+    /* Initialize the separable status if not known. */
+    check_device_separable(dev);
     return 0;
 }
 

@@ -1332,6 +1332,21 @@ accumulating shared object data and to reduce the incidence of garbage
 collection as a performance improvement. Additional settings may be added in the future.
 </dl>
 
+<dl>
+<dt><b><tt>.color_test</tt></b> and <b><tt>.color_test_all</tt></b></dt>
+<dd>These operators are used for the verification of device encode_color and
+decode_color routines. They are for internal use only. Their function
+can, and probably will, change as Artifex's requirements change.
+<p>
+<dd>Currently these operators loop through a set of possible values for the inputs
+to the encode_color routine and then veify that the decode_color routines produce
+values that match the input set to within a tolerance which is based upon the number
+of bits used to encode a pixel. The operators also verify that if the device
+is 'separable' then that the values produced by gx_default_encode_color and
+gx_default_decode_color (the default encode/decode color handlers for a separable
+device) are consistent to within the same tolerance.
+</dl>
+
 <h4><a name="Device"></a>Device operators</h4>
 
 <dl>

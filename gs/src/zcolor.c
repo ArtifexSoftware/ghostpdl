@@ -475,6 +475,190 @@ zcolor_remap_color(i_ctx_t *i_ctx_p)
     return 0;
 }
 
+/* 
+ * <param1> ... <paramN> .color_test <param1> ... <paramN>
+ *
+ * encode and decode color to allow mapping to be tested.
+ */
+int zcolor_test(i_ctx_t *i_ctx_p)
+{
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_device *dev = gs_currentdevice(igs);
+    int ncomp = dev->color_info.num_components;
+    gx_color_index color;
+    int i;
+    if (ref_stack_count(&o_stack) < ncomp)
+	return_error(e_stackunderflow);
+    for (i=0; i<ncomp; i++) {
+	if (r_has_type(&osp[-i], t_real))
+	    cv[i] = (gx_color_value)
+		(osp[-i].value.realval * gx_max_color_value);
+	else if (r_has_type(&osp[-i], t_integer))
+	    cv[i] = (gx_color_value)
+		(osp[-i].value.intval * gx_max_color_value);
+	else
+	    return_error(e_typecheck);
+    }
+    color = (*dev_proc(dev, encode_color)) (dev, cv);
+    (*dev_proc(dev, decode_color)) (dev, color, cv);
+    for (i=0; i<ncomp; i++)
+        make_real(&osp[-i], (float)cv[i] / (float)gx_max_color_value);
+    return 0;
+}
+
+/* 
+ * <levels> .color_test_all <value0> ... <valueN>
+ *
+ * Test encode/decode color procedures for a range of values.
+ * Return value with the worst error in a single component.
+ */
+int zcolor_test_all(i_ctx_t *i_ctx_p)
+{
+    os_ptr                  op = osp;
+    gx_color_value cv[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cvout[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_color_value cvbad[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    int counter[GX_DEVICE_COLOR_MAX_COMPONENTS];
+    gx_device *dev = gs_currentdevice(igs);
+    int ncomp = dev->color_info.num_components;
+    int steps;
+    int maxerror = 0;
+    int err;
+    int acceptable_error;
+    int linsep = dev->color_info.separable_and_linear == GX_CINFO_SEP_LIN;
+    int linsepfailed = 0;
+    int lsmaxerror = 0;
+    gx_color_index color, lscolor;
+    int i, j, k;
+    int finished = 0;
+
+    if (ncomp == 1) 
+	acceptable_error = gx_max_color_value / dev->color_info.max_gray + 1;
+    else
+	acceptable_error = gx_max_color_value / dev->color_info.max_color + 1;
+
+    if (ref_stack_count(&o_stack) < 1)
+	return_error(e_stackunderflow);
+    if (!r_has_type(&osp[0], t_integer))
+        return_error(e_typecheck);
+    steps = osp[0].value.intval;
+    for (i=0; i<ncomp; i++) {
+        counter[i] = 0; 
+	cvbad[i] = 0;
+    }
+
+    dprintf1("Number of components = %d\n", ncomp);
+    dprintf1("Depth = %d\n", dev->color_info.depth);
+    dprintf2("max_gray = %d   dither_grays = %d\n", 
+	dev->color_info.max_gray, dev->color_info.dither_grays);
+    dprintf2("max_color = %d   dither_colors = %d\n", 
+ 	dev->color_info.max_color, dev->color_info.dither_colors);
+    dprintf1("polarity = %s\n", 
+      dev->color_info.polarity == GX_CINFO_POLARITY_ADDITIVE ? "Additive" :
+      dev->color_info.polarity == GX_CINFO_POLARITY_SUBTRACTIVE ?"Subtractive":
+      "Unknown");
+    /* Indicate color index value with all colorants = zero */
+    for (i=0; i<ncomp; i++)
+	cv[i] = 0;
+    color = (*dev_proc(dev, encode_color)) (dev, cv);
+    dprintf1("Zero color index:  %8x\n", color);
+
+    dprintf1("separable_and_linear = %s\n", 
+      linsep == GX_CINFO_SEP_LIN_NONE ? "No" :
+      linsep == GX_CINFO_SEP_LIN ? "Yes" :
+      "Unknown");
+    if (dev->color_info.gray_index == GX_CINFO_COMP_INDEX_UNKNOWN)
+        dprintf("gray_index is unknown\n");
+    else
+        dprintf1("gray_index = %d\n", dev->color_info.gray_index);
+    if (linsep) {
+        dprintf(" Shift     Mask  Bits\n");
+        for (i=0; i<ncomp; i++) {
+            dprintf3(" %5d %8x  %4d\n",
+		(int)(dev->color_info.comp_shift[i]),
+		(int)(dev->color_info.comp_mask[i]),
+		(int)(dev->color_info.comp_bits[i]));
+        }
+    }
+
+    while (!finished) {
+	for (j=0; j<=steps; j++) {
+	    for (i=0; i<ncomp; i++)
+		cv[i] = counter[i] * gx_max_color_value / steps;
+	    color = (*dev_proc(dev, encode_color)) (dev, cv);
+	    if (linsep) {
+		/* Derive it the other way */
+		lscolor = gx_default_encode_color(dev, cv);
+		if ((color != lscolor) && (linsepfailed < 5)) {
+		    linsepfailed++;
+		    dprintf("Failed separable_and_linear for");
+		    for (i=0; i<ncomp; i++)
+			dprintf1(" %d", cv[i]);
+		    dprintf("\n");
+		    dprintf2("encode_color=%x  gx_default_encode_color=%x\n",
+			(int)color, (int)lscolor);
+		}
+	    }
+	    (*dev_proc(dev, decode_color)) (dev, color, cvout);
+	    for (i=0; i<ncomp; i++) {
+		err = (int)cvout[i] - (int)cv[i];
+		if (err < 0)
+		    err = -err;
+		if (err > maxerror) {
+		    maxerror = err;
+		    for (k=0; k<ncomp; k++)
+			cvbad[k] = cv[k];
+		}
+	    }
+	    if (linsep) {
+	        gx_default_decode_color(dev, color, cvout);
+		for (i=0; i<ncomp; i++) {
+		    err = (int)cvout[i] - (int)cv[i];
+		    if (err < 0)
+			err = -err;
+		    if (err > lsmaxerror) {
+			lsmaxerror = err;
+		    }
+		}
+	    }
+	    counter[0] += 1;
+	}
+	counter[0] = 0;
+	i = 1;
+	while (i < ncomp) {
+	    counter[i] += 1;
+	    if (counter[i] > steps) {
+		counter[i] = 0;
+		i++;
+	    }
+	    else
+		break;
+	}
+	if (i >= ncomp)
+	    finished = 1;
+    }
+
+    dprintf2("Maximum error %g %s\n", 
+	(float)maxerror / (float)gx_max_color_value,
+	maxerror <= acceptable_error ? "is Ok" :
+	maxerror <= 3*acceptable_error/2 ? "is POOR" : "FAILED");
+
+    if (linsep)
+      dprintf2("Maximum linear_and_separable error %g %s\n", 
+	(float)lsmaxerror / (float)gx_max_color_value,
+	lsmaxerror <= acceptable_error ? "is Ok" :
+	lsmaxerror <= 3*acceptable_error/2 ? "is POOR" : "FAILED");
+
+    /* push worst value */
+    push(ncomp-1);
+    op -= ncomp - 1;
+    for (i=0; i<ncomp; i++)
+        make_real(op+i, (float)cvbad[i] / (float)gx_max_color_value);
+
+    return 0;
+}
+
+
 /* ------ Initialization procedure ------ */
 
 const op_def    zcolor_op_defs[] = 
@@ -496,6 +680,9 @@ const op_def    zcolor_op_defs[] =
     { "1%zcolor_remap_one_signed_finish", zcolor_remap_one_signed_finish },
     { "0%zcolor_reset_transfer", zcolor_reset_transfer },
     { "0%zcolor_remap_color", zcolor_remap_color },
+    { "0.color_test", zcolor_test },
+    { "1.color_test_all", zcolor_test_all },
+
 
     /* high level device support */
     { "0.includecolorspace", zincludecolorspace },

@@ -304,6 +304,9 @@ gdev_x_open(gx_device_X * xdev)
 	XCloseDisplay(xdev->dpy);
 	return code;
     }
+    /* Now that the color map is setup check if the device is separable. */
+    check_device_separable((gx_device *)xdev);
+
     gdev_x_setup_fontmap(xdev);
 
     if (!xdev->ghostview) {
@@ -606,11 +609,14 @@ x_set_buffer(gx_device_X * xdev)
 	COPY_PROC(text_begin);
 #undef COPY_PROC
 	if (xdev->is_buffered) {
+    	    check_device_separable((gx_device *)xdev);
 	    gx_device_forward_fill_in_procs((gx_device_forward *)xdev);
 	    xdev->box_procs = gdev_x_box_procs;
 	    xdev->box_proc_data = xdev;
-	} else
+	} else {
+    	    check_device_separable((gx_device *)xdev);
 	    gx_device_fill_in_procs((gx_device *)xdev);
+	}
     }
     return 0;
 }

@@ -50,8 +50,9 @@ gx_color_index
 gx_default_encode_color(gx_device * dev, const gx_color_value cv[])
 {
     int             ncomps = dev->color_info.num_components;
-    int             i, i_gray = dev->color_info.gray_index;
+    int             i;
     const byte *    comp_shift = dev->color_info.comp_shift;
+    const byte *    comp_bits = dev->color_info.comp_bits;
     gx_color_index  color = 0;
 
 #ifdef DEBUG
@@ -61,22 +62,26 @@ gx_default_encode_color(gx_device * dev, const gx_color_value cv[])
     }
 #endif
     for (i = 0; i < ncomps; i++) {
-        ulong   cbits = cv[i] * ((i == i_gray ?
-                                 dev->color_info.max_gray :
-                                 dev->color_info.max_color ) + 1);
+	color |= (gx_color_index)(cv[i] >> (gx_color_value_bits - comp_bits[i]))
+		<< comp_shift[i];
 
-        color |= (cbits / (gx_max_color_value + 1)) << comp_shift[i];
     }
     return color;
 }
 
+/* 
+ * This routine is only used if the device is 'separable'.  See
+ * separable_and_linear in gxdevcli.h for more information.
+ */
 int
 gx_default_decode_color(gx_device * dev, gx_color_index color, gx_color_value cv[])
 {
     int                     ncomps = dev->color_info.num_components;
     int                     i;
     const byte *            comp_shift = dev->color_info.comp_shift;
+    const byte *            comp_bits = dev->color_info.comp_bits;
     const gx_color_index *  comp_mask = dev->color_info.comp_mask;
+    uint shift, ivalue, nbits, scale;
 
 #ifdef DEBUG
     if ( dev->color_info.separable_and_linear != GX_CINFO_SEP_LIN ) {
@@ -86,12 +91,23 @@ gx_default_decode_color(gx_device * dev, gx_color_index color, gx_color_value cv
 #endif
 
     for (i = 0; i < ncomps; i++) {
-        gx_color_index  div = ( i == dev->color_info.gray_index ? 
-                                dev->color_info.max_gray : 
-                                dev->color_info.max_color ) + 1;
-
-        cv[i] = (gx_color_value)(((color & comp_mask[i]) >> comp_shift[i]) * 
-            (gx_max_color_value + 1) / div);
+	/*
+	 * Convert from the gx_color_index bits to a gx_color_value.
+	 * Split the conversion into an integer and a fraction calculation
+	 * so we can do integer arthmetic.  The calculation is equivalent
+	 * to floor(0xffff.fffff * ivalue / ((1 << nbits) - 1))
+	 */
+	nbits = comp_bits[i];
+	scale = gx_max_color_value / ((1 << nbits) - 1);
+	ivalue = (color & comp_mask[i]) >> comp_shift[i];
+	cv[i] = ivalue * scale;
+	/*
+	 * Since our scaling factor is an integer, we lost the fraction.
+	 * Determine what part of the ivalue that the faction would have 
+	 * added into the result.
+	 */
+	shift = nbits - (gx_color_value_bits % nbits);
+	cv[i] += ivalue >> shift;
     }
     return 0;
 }

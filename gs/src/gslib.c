@@ -153,6 +153,7 @@ main(int argc, const char *argv[])
 /****** WRONG ******/
     gs_lib_device_list(&list, NULL);
     gs_copydevice(&dev, list[0], mem);
+    check_device_separable(dev);
     gx_device_fill_in_procs(dev);
     bbdev =
 	gs_alloc_struct_immovable(mem, gx_device_bbox, &st_device_bbox,

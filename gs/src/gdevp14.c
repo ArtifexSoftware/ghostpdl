@@ -1006,6 +1006,7 @@ pdf14_get_marking_device(gx_device *dev, const gs_imager_state *pis)
     if (code < 0)
 	return NULL;
 
+    check_device_separable((gx_device *)mdev);
     gx_device_fill_in_procs((gx_device *)mdev);
     mdev->pdf14_dev = pdev;
     mdev->opacity = pis->opacity.alpha;
@@ -1597,6 +1598,7 @@ gs_pdf14_device_filter_push(gs_device_filter_t *self, gs_memory_t *mem,
     if (code < 0)
 	return code;
 
+    check_device_separable((gx_device *)p14dev);
     gx_device_fill_in_procs((gx_device *)p14dev);
 
     gs_pdf14_device_copy_params((gx_device *)p14dev, target);

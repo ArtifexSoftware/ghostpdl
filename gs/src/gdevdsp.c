@@ -933,6 +933,7 @@ display_alloc_bitmap(gx_device_display * ddev, gx_device * param_dev)
 
     gs_make_mem_device(ddev->mdev, mdproto, gs_memory_stable(ddev->memory), 
 	0, (gx_device *) NULL);
+    check_device_separable((gx_device *)(ddev->mdev));
     gx_device_fill_in_procs((gx_device *)(ddev->mdev));
     /* Mark the memory device as retained.  When the bitmap is closed,
      * we will clear this and the memory device will be then be freed.

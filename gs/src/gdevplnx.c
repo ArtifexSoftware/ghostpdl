@@ -395,6 +395,7 @@ plane_device_init(gx_device_plane_extract *edev, gx_device *target,
     gx_device_init((gx_device *)edev,
 		   (const gx_device *)&gs_plane_extract_device,
 		   edev->memory, true);
+    check_device_separable((gx_device *)edev);
     gx_device_forward_fill_in_procs((gx_device_forward *)edev);
     gx_device_set_target((gx_device_forward *)edev, target);
     gx_device_copy_params((gx_device *)edev, target);

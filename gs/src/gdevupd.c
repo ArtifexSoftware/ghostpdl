@@ -267,8 +267,8 @@ upd_device far_data gs_uniprint_device = { /** */
       1, /**  color_info.depth         1/2/4/8/16/24/32 */
       1, /**  color_info.max_gray      # of distinct gray levels -1 (255/1) */
       0, /**  color_info.max_color     # of distinct color levels -1 (255/1/0)*/
-      1, /**  color_info.dither_grays  size of gray ramp for dithering (5/2) */
-      0, /**  color_info.dither_colors size of color cube ditto (5/2/0) */
+      2, /**  color_info.dither_grays  size of gray ramp for dithering (256/2) */
+      0, /**  color_info.dither_colors size of color cube ditto (256/2/0) */
       upd_print_page),                     /** Print-procedure */
       { NULL, 0, true },                   /** Driver-Version */
       NULL                                 /** upd-field: Initially none */
@@ -2032,7 +2032,7 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
          nbits = 0;
          for(i = 0; i < ncomp; ++i) if(nbits < int_a[IA_COMPBITS].data[i])
             nbits = int_a[IA_COMPBITS].data[i];
-         if(2 < nbits) ip[4] = 5;
+         if(2 < nbits) ip[4] = 256;
          else          ip[4] = 2;
       }                /* Gray-Ramp */
 
@@ -2040,7 +2040,7 @@ In addition to that, Resolution & Margin-Parameters are tested & adjusted.
          nbits = 0;
          for(i = 0; i < ncomp; ++i) if(nbits < int_a[IA_COMPBITS].data[i])
             nbits = int_a[IA_COMPBITS].data[i];
-         if(2 < nbits) ip[5] = 5;
+         if(2 < nbits) ip[5] = 256;
          else          ip[5] = 2;
       }                             /* Color-Ramp */
 

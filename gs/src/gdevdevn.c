@@ -144,8 +144,7 @@ const spotcmyk_device gs_spotcmyk_device =
 
     /* DeviceN device specific parameters */
     { 1,			/* Bits per color - must match ncomp, depth, etc. above */
-    				/* Names of color model colorants */
-      (fixed_colorant_names_list *) &DeviceCMYKComponents,
+      &DeviceCMYKComponents,	/* Names of color model colorants */
       4,			/* Number colorants for CMYK */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
@@ -168,15 +167,15 @@ const spotcmyk_device gs_devicen_device =
 				/* Note: We start with at least one component */
 	 GX_CINFO_POLARITY_SUBTRACTIVE,		/* Polarity */
 	 8, 0,			/* Depth, Gray_index, */
-	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Seperable */
+	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
+	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
 	 "DeviceN",		/* Process color model name */
 				/* Note: We start with at least one component */
 	 spotcmyk_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
     { 8,			/* Bits per color - must match ncomp, depth, etc. above */
       NULL		,	/* No names for standard DeviceN color model */
-      0,				/* No standarad colorants for DeviceN */
+      0,			/* No standarad colorants for DeviceN */
       {0},			/* SeparationNames */
       {0},			/* SeparationOrder names */
       {0, 1, 2, 3 }		/* Initial component order */
@@ -363,7 +362,8 @@ repack_data(byte * source, byte * dest, int depth, int first_bit,
     }
     /* Return the number of bytes in the destination buffer. */
     if (out_byte_loc != out_bit_start) { 	/* If partially filled last byte */
-	*out++ = *out & ((~0) << out_byte_loc);	/* Mask unused part of last byte */
+	*out = *out & ((~0) << out_byte_loc);	/* Mask unused part of last byte */
+	out++;
     }
     length = out - dest;
     return length;
@@ -862,7 +862,7 @@ spotcmyk_get_color_comp_index(const gx_device * dev, const char * pname,
 					int name_size, int component_type)
 {
     return devicen_get_color_comp_index(dev,
-		&(((spotcmyk_device *)dev)->devn_params),
+		&(((const spotcmyk_device *)dev)->devn_params),
 		pname, name_size, component_type);
 }
 
@@ -879,7 +879,7 @@ spotcmyk_get_color_comp_index(const gx_device * dev, const char * pname,
  * number if the name is found.  It returns a negative value if not found.
  */
 int
-devicen_get_color_comp_index(const gx_device * dev, gs_devn_params * pparams,
+devicen_get_color_comp_index(const gx_device * dev, const gs_devn_params * pparams,
 		const char * pname, int name_size, int component_type)
 {
     int color_component_number = 0;

@@ -983,6 +983,7 @@ gx_default_create_buf_device(gx_device **pbdev, gx_device *target,
     if (target == (gx_device *)mdev) {
 	/* The following is a special hack for setting up printer devices. */
 	assign_dev_procs(mdev, mdproto);
+        check_device_separable((gx_device *)mdev);
 	gx_device_fill_in_procs((gx_device *)mdev);
     } else
 	gs_make_mem_device(mdev, mdproto, mem, (for_band ? 1 : 0),

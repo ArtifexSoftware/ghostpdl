@@ -153,6 +153,7 @@ gx_pattern_accum_alloc(gs_memory_t * mem, client_name_t cname)
     gx_device_init((gx_device *)adev,
 		   (const gx_device *)&gs_pattern_accum_device,
 		   mem, true);
+    check_device_separable((gx_device *)adev);
     gx_device_forward_fill_in_procs((gx_device_forward *)adev);
     return adev;
 }

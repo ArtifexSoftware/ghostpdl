@@ -79,7 +79,7 @@ typedef struct gs_devn_params_s {
      * names are those in this list plus those in the separation[i].info.name
      * list (below).
      */
-    fixed_colorant_names_list * std_colorant_names;
+    const fixed_colorant_names_list * std_colorant_names;
     int num_std_colorant_names;	/* Number of names in list */
 
     /*
@@ -158,8 +158,9 @@ int check_pcm_and_separation_names(const gx_device * dev,
  * This routine returns a positive value (0 to n) which is the device colorant
  * number if the name is found.  It returns a negative value if not found.
  */
-int devicen_get_color_comp_index(const gx_device * dev, gs_devn_params * pparams,
-		const char * pname, int name_size, int component_type);
+int devicen_get_color_comp_index(const gx_device * dev,
+		const gs_devn_params * pparams, const char * pname,
+		int name_size, int component_type);
 
 /*
  * This routine will extract a specified set of bits from a buffer and pack

@@ -149,6 +149,7 @@ gdev_cmap_init(gx_device_cmap * dev, gx_device * target,
 		   target->memory, true);
     gx_device_set_target((gx_device_forward *)dev, target);
     gx_device_copy_params((gx_device *)dev, target);
+    check_device_separable((gx_device *)dev);
     gx_device_forward_fill_in_procs((gx_device_forward *) dev);
     code = gdev_cmap_set_method(dev, method);
     if (code < 0)

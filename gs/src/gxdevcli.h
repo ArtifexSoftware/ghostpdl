@@ -328,31 +328,49 @@ typedef struct gx_device_color_info_s {
      * Index of the gray color component, if any. The max_gray and
      * dither_gray values apply to this component only; all other
      * components use the max_color and dither_color values.
+     * 
+     * Note:  This field refers to a 'gray' colorant because of the
+     * past use of the max_gray/color and dither_grays/colors fields.
+     * Prior to 8.00, the 'gray' values were used for monochrome
+     * devices and the 'color' values for RGB and CMYK devices.
+     * Ideally we would like to have the flexibiiity of allowing
+     * different numbers of intensity levels for each colorant.
+     * However this is not compatible with the pre 8.00 devices.
+     * With post 8.00 devices, we can have two different numbers of
+     * intensity levels.  For one colorant (which is specified by
+     * the gray_index) we will use the max_gray/dither_grays values.
+     * The remaining colorants will use the max_color/dither_colors
+     * values.  The colorant which is specified by the gray_index
+     * value does not have to be gray or black.  For example if we
+     * have an RGB device and we want 32 intensity levels for red and
+     * blue and 64 levels for green, then we can set gray_index to
+     * 1 (the green colorant), set max_gray to 63 and dither_grays to
+     * 64, and set max_color to 31 and dither_colors to 32.
      *
-     * This will be GX_CINFO_COMP_NO_INDEX if there is no gray 
+     * This will be GX_CINFO_COMP_NO_INDEX if there is no 'gray' 
      * component.
      */
     byte gray_index;
 
     /*
      * max_gray and max_color are the number of distinct native
-     * intensity levels, less 1, for the gray and all other color
+     * intensity levels, less 1, for the 'gray' and all other color
      * components, respectively. For nearly all current devices
-     * that support both gray and non-gray components, the two
-     * parameters have the same value.
+     * that support both 'gray' and non-'gray' components, the two
+     * parameters have the same value.  (See comment for gray_index.)
      *
      * dither_grays and dither_colors are the number of intensity
-     * levels between which halftoning can occur, for the gray and
+     * levels between which halftoning can occur, for the 'gra'y and
      * all other color components, respectively. This is
      * essentially redundant information: in all reasonable cases,
      * dither_grays = max_gray + 1 and dither_colors = max_color + 1.
      * These parameters are, however, extensively used in the
      * current code, and thus have been retained.
      *
-     * Note that the non-gray values may now be relevant even if
+     * Note that the non-'gray' values may now be relevant even if
      * num_components == 1. This simplifies the handling of devices
      * with configurable color models which may be set for a single
-     * non-gray color model.
+     * non-'gray' color model.
      */
     gx_color_value max_gray;	/* # of distinct color levels -1 */
     gx_color_value max_color;
@@ -491,14 +509,13 @@ typedef struct gx_device_color_info_s {
 #define dci_std_gray_index(nc)    \
     ((nc) == 3 ? GX_CINFO_COMP_NO_INDEX : (nc) - 1)
 
-#define dci_alpha_values(nc, depth, mg, mc, dg, dc, ta, ga)             \
-    dci_extended_alpha_values(nc, nc,			                \
-                              dci_std_polarity(nc),                     \
-                              depth,                                    \
-                              dci_std_gray_index(nc),                   \
-                              mg, mc, dg, dc, ta, ga,                   \
-                              (depth >= 16 ? GX_CINFO_SEP_LIN           \
-                                           : GX_CINFO_UNKNOWN_SEP_LIN), \
+#define dci_alpha_values(nc, depth, mg, mc, dg, dc, ta, ga) \
+    dci_extended_alpha_values(nc, nc,			    \
+                              dci_std_polarity(nc),         \
+                              depth,                        \
+                              dci_std_gray_index(nc),       \
+                              mg, mc, dg, dc, ta, ga,       \
+                              GX_CINFO_UNKNOWN_SEP_LIN,     \
 			      dci_std_cm_name(nc) )
 
 

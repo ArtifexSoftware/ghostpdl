@@ -217,8 +217,8 @@ const xcf_device gs_xcf_device =
     	 GX_DEVICE_COLOR_MAX_COMPONENTS, 3,	/* MaxComponents, NumComp */
 	 GX_CINFO_POLARITY_ADDITIVE,		/* Polarity */
 	 24, 0,			/* Depth, Gray_index, */
-	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Seperable */
+	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
+	 GX_CINFO_UNKNOWN_SEP_LIN, /* Let check_device_separable set up values */
 	 "DeviceN",		/* Process color model name */
 	 xcf_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */
@@ -241,8 +241,8 @@ const xcf_device gs_xcfcmyk_device =
     	 GX_DEVICE_COLOR_MAX_COMPONENTS, 4,	/* MaxComponents, NumComp */
 	 GX_CINFO_POLARITY_SUBTRACTIVE,		/* Polarity */
 	 32, 0,			/* Depth, Gray_index, */
-	 255, 255, 1, 1,	/* MaxGray, MaxColor, DitherGray, DitherColor */
-	 GX_CINFO_SEP_LIN,      /* Linear & Separable */
+	 255, 255, 256, 256,	/* MaxGray, MaxColor, DitherGray, DitherColor */
+	 GX_CINFO_UNKNOWN_SEP_LIN, /* Let check_device_separable set up values */
 	 "DeviceN",		/* Process color model name */
 	 xcf_print_page),	/* Printer page print routine */
     /* DeviceN device specific parameters */

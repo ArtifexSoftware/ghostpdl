@@ -116,6 +116,7 @@ pcx2up_print_page(gx_device_printer * pdev, FILE * file)
 	if (prdev == 0)
 	    return_error(gs_error_VMerror);
 	memcpy(prdev, prdev_template, prdev_size);
+        check_device_separable((gx_device *)rdev);
 	gx_device_fill_in_procs(rdev);
 	set_dev_proc(prdev, open_device,
 		     dev_proc(&gs_pcx256_device, open_device));

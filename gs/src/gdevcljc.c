@@ -96,6 +96,6 @@ const gx_device_printer gs_cljet5c_device =
 		    85, 110, X_DPI, Y_DPI,
 		    0.167, 0.167,
 		    0.167, 0.167,
-		    3, 24, 255, 255, 5, 5,
+		    3, 24, 255, 255, 256, 256,
 		    cljc_print_page)
 };

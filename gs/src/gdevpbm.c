@@ -325,14 +325,40 @@ pgm_map_color_rgb(gx_device * dev, gx_color_index color,
     return 0;
 }
 
+/*
+ * Pre gs8.00 version of RGB mapping for 24-bit true (RGB) color devices
+ * It is kept here for backwards comparibility since the gs8.00 version
+ * has changed in functionality.  The new one requires that the device be
+ * 'separable'.  This routine is logically separable but does not require
+ * the various color_info fields associated with separability (comp_shift,
+ * comp_bits, and comp_mask) be setup.
+ */
+
+private gx_color_index
+gx_old_default_rgb_map_rgb_color(gx_device * dev,
+		       gx_color_value r, gx_color_value g, gx_color_value b)
+{
+    if (dev->color_info.depth == 24)
+	return gx_color_value_to_byte(b) +
+	    ((uint) gx_color_value_to_byte(g) << 8) +
+	    ((ulong) gx_color_value_to_byte(r) << 16);
+    else {
+	int bpc = dev->color_info.depth / 3;
+	int drop = sizeof(gx_color_value) * 8 - bpc;
+
+	return ((((r >> drop) << bpc) + (g >> drop)) << bpc) + (b >> drop);
+    }
+}
+
 /* Map an RGB color to a PPM color tuple. */
 /* Keep track of whether the image is black-and-white, gray, or colored. */
 private gx_color_index
 ppm_map_rgb_color(gx_device * pdev, const gx_color_value cv[])
 {
     gx_device_pbm * const bdev = (gx_device_pbm *)pdev;
-    gx_color_index color = gx_default_encode_color(pdev, cv);
-    int bpc = pdev->color_info.depth / 3;
+    gx_color_index color = 
+	    gx_old_default_rgb_map_rgb_color(pdev, cv[0], cv[1], cv[2]);
+    uint bpc = pdev->color_info.depth / 3;
     gx_color_index mask =
 	((gx_color_index)1 << (pdev->color_info.depth - bpc)) - 1;
     if (!(((color >> bpc) ^ color) & mask)) { /* gray shade */

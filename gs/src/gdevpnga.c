@@ -764,6 +764,7 @@ pnga_get_marking_device(gx_device *dev, const gs_imager_state *pis)
     if (code < 0)
 	return NULL;
 
+    check_device_separable((gx_device *)mdev);
     gx_device_fill_in_procs((gx_device *)mdev);
     mdev->pnga_dev = pdev;
     mdev->opacity = pis->opacity.alpha;

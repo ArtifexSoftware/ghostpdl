@@ -558,33 +558,6 @@ psd_get_params(gx_device * pdev, gs_param_list * plist)
 }
 #undef set_param_array
 
-#define compare_color_names(name, name_size, str, str_size) \
-    (name_size == str_size && \
-	(strncmp((const char *)name, (const char *)str, name_size) == 0))
-
-/*
- * This routine will check if a name matches any item in a list of process model
- * color component names.
- */
-private bool
-check_process_color_names(const fixed_colorant_names_list * pcomp_list,
-			  const gs_param_string * pstring)
-{
-    if (pcomp_list) {
-        fixed_colorant_name * plist = 
-	    (fixed_colorant_name *) * pcomp_list;
-        uint size = pstring->size;
-    
-	while( *plist) {
-	    if (compare_color_names(*plist, strlen(*plist), pstring->data, size)) {
-		return true;
-	    }
-	    plist++;
-	}
-    }
-    return false;
-}
-
 #define BEGIN_ARRAY_PARAM(pread, pname, pa, psize, e)\
     BEGIN\
     switch (code = pread(plist, (param_name = pname), &(pa))) {\
@@ -631,26 +604,22 @@ psd_set_color_model(psd_device *xdev, psd_color_model color_model)
 {
     xdev->color_model = color_model;
     if (color_model == psd_DEVICE_GRAY) {
-	xdev->devn_params.std_colorant_names =
-	    (fixed_colorant_names_list *) &DeviceGrayComponents;
+	xdev->devn_params.std_colorant_names = &DeviceGrayComponents;
 	xdev->devn_params.num_std_colorant_names = 1;
 	xdev->color_info.cm_name = "DeviceGray";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_RGB) {
-	xdev->devn_params.std_colorant_names =
-	    (fixed_colorant_names_list *) &DeviceRGBComponents;
+	xdev->devn_params.std_colorant_names = &DeviceRGBComponents;
 	xdev->devn_params.num_std_colorant_names = 3;
 	xdev->color_info.cm_name = "DeviceRGB";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_ADDITIVE;
     } else if (color_model == psd_DEVICE_CMYK) {
-	xdev->devn_params.std_colorant_names =
-	    (fixed_colorant_names_list *) &DeviceCMYKComponents;
+	xdev->devn_params.std_colorant_names = &DeviceCMYKComponents;
 	xdev->devn_params.num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceCMYK";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
     } else if (color_model == psd_DEVICE_N) {
-	xdev->devn_params.std_colorant_names =
-	    (fixed_colorant_names_list *) &DeviceCMYKComponents;
+	xdev->devn_params.std_colorant_names = &DeviceCMYKComponents;
 	xdev->devn_params.num_std_colorant_names = 4;
 	xdev->color_info.cm_name = "DeviceN";
 	xdev->color_info.polarity = GX_CINFO_POLARITY_SUBTRACTIVE;
@@ -750,7 +719,7 @@ private int
 psd_get_color_comp_index(const gx_device * dev, const char * pname,
 					int name_size, int component_type)
 {
-    gs_devn_params * pparams = &(((psd_device *)dev)->devn_params);
+    const gs_devn_params * pparams = &(((const psd_device *)dev)->devn_params);
     int num_order = pparams->separation_order.num_names;
     int color_component_number = 0;
 

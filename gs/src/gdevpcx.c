@@ -58,7 +58,7 @@ const gx_device_printer gs_pcxgray_device =
 		 DEFAULT_WIDTH_10THS, DEFAULT_HEIGHT_10THS,
 		 X_DPI, Y_DPI,
 		 0, 0, 0, 0,	/* margins */
-		 1, 8, 255, 0, 256, 0, pcx256_print_page)
+		 1, 8, 255, 255, 256, 256, pcx256_print_page)
 };
 
 /* 4-bit planar (EGA/VGA-style) color. */
