@@ -16,6 +16,12 @@
 #ifndef gxfont42_INCLUDED
 #  define gxfont42_INCLUDED
 
+/* stefan foo: Peter is planing on changing interface this shortly.
+ * tri-state return code of FREE_ME indicates that memory should be freed
+ * used by some sub-classes of get_outline
+ */
+#define FREE_ME 1
+
 /* This is the type-specific information for a Type 42 (TrueType) font. */
 typedef struct gs_type42_data_s gs_type42_data;
 #ifndef gs_font_type42_DEFINED
@@ -33,7 +39,7 @@ struct gs_type42_data_s {
     void *proc_data;		/* data for procedures */
     /*
      * The following are initialized by ...font_init, but may be reset by
-     * the client.  get_outline returns 1 if the string is newly allocated
+     * the client.  get_outline returns FREE_ME if the string is newly allocated
      * (using the font's allocator) and can be freed by the client.
      */
     int (*get_outline)(P3(gs_font_type42 *pfont, uint glyph_index,

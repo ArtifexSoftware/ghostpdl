@@ -273,7 +273,7 @@ total_points(gs_font_type42 *pfont, uint glyph_index)
 	}
 	while (flags & cg_moreComponents);
     }
-    if (0 && code > 0) /* stefan foo */
+    if (code == FREE_ME) 
 	gs_free_const_string(pfont->memory, gdata, glyph_string.size,
 			     "total_points");
     return total;
@@ -344,7 +344,7 @@ parse_pieces(gs_font_type42 *pfont, gs_glyph glyph, gs_glyph *pieces,
 	*pnum_pieces = i;
     } else
 	*pnum_pieces = 0;
-    if (0 && code > 0) /* stefan foo */
+    if (code == FREE_ME) 
 	gs_free_const_string(pfont->memory, glyph_string.data,
 			     glyph_string.size, "parse_pieces");
     return 0;
@@ -396,7 +396,7 @@ gs_type42_glyph_info(gs_font *font, gs_glyph glyph, const gs_matrix *pmat,
     } else if ((code = pfont->data.get_outline(pfont, glyph_index, &outline)) < 0)
 	return code;		/* non-existent glyph */
     else {
-	if (0 && code > 0) /* stefan foo */
+	if (code == FREE_ME) 
 	    gs_free_const_string(pfont->memory, outline.data, outline.size,
 				 "gs_type42_glyph_info");
 	info->members = 0;
@@ -446,7 +446,7 @@ gs_type42_enumerate_glyph(gs_font *font, int *pindex,
 	if (outline.data == 0)
 	    continue;		/* empty (undefined) glyph */
 	*pglyph = glyph_index + gs_min_cid_glyph;
-	if (0 && code > 0) /* stefan foo */
+	if (code == FREE_ME) 
 	    gs_free_const_string(pfont->memory, outline.data, outline.size,
 				 "gs_type42_enumerate_glyph");
 	return 0;
@@ -534,7 +534,7 @@ gs_type42_default_get_metrics(gs_font_type42 * pfont, uint glyph_index, int wmod
     }
     result = simple_glyph_metrics(pfont, glyph_index, wmode, sbw);
  done:
-    if (0 && code > 0) /* stefan foo */
+    if (code == FREE_ME) 
 	gs_free_const_string(pfont->memory, glyph_string.data,
 			     glyph_string.size, "default_get_metrics");
     return result;
@@ -805,7 +805,7 @@ check_component(uint glyph_index, const gs_matrix_fixed *pmat,
     if (numContours >= 0) {
 	simple_glyph_metrics(pfont, glyph_index, pfont->WMode, sbw);
 	code = append_simple(gdata, sbw, pmat, ppath, ppts, pfont);
-	if (0 && code > 0) /* stefan foo */
+	if (code == FREE_ME) 
 	    gs_free_const_string(pfont->memory, gdata, glyph_string.size,
 				 "check_component");
 	return (code < 0 ? code : 0); /* simple */

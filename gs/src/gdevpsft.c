@@ -665,7 +665,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    max_glyph = max(max_glyph, glyph_index);
 	    glyf_length += glyph_string.size;
 	    if_debug1('L', "[L]  size %u\n", glyph_string.size);
-	    if (0 && code > 0) /* stefan foo */
+	    if (code == FREE_ME) 
 		gs_free_const_string(pfont->memory, glyph_string.data,
 				     glyph_string.size,
 				     "psf_write_truetype_data");
@@ -845,7 +845,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	    offset += glyph_string.size;
 	    if_debug2('L', "[L]glyf index = %u, size = %u\n",
 		      i, glyph_string.size);
-	    if (0 && code > 0) /* stefan foo */
+	    if (code == FREE_ME) 
 		gs_free_const_string(pfont->memory, glyph_string.data,
 				     glyph_string.size,
 				     "psf_write_truetype_data");
@@ -874,7 +874,7 @@ psf_write_truetype_data(stream *s, gs_font_type42 *pfont, int options,
 	if ((code = pfont->data.get_outline(pfont, pcl_mode ? glyph : glyph - gs_min_cid_glyph,
 					    &glyph_string)) >= 0) {
 	    offset += glyph_string.size;
-	    if (0 && code > 0) /* stefan foo */
+	    if (code == FREE_ME) 
 		gs_free_const_string(pfont->memory, glyph_string.data,
 				     glyph_string.size,
 				     "psf_write_truetype_data");
