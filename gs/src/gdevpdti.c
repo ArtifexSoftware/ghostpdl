@@ -402,7 +402,9 @@ pdf_install_charproc_accum(gx_device_pdf *pdev, gs_font *font, const double *pw,
 	    pdfont->u.simple.v[ch].y = pw[9];
 	}
 	for (i = 0; i < 256; i++) {
-	    gs_glyph glyph = font->procs.encode_char(font, i, GLYPH_SPACE_NAME);
+	    gs_glyph glyph = font->procs.encode_char(font, i, 
+			font->FontType == ft_user_defined ? GLYPH_SPACE_NOGEN
+							  : GLYPH_SPACE_NAME);
 
 	    if (glyph == glyph0) {
 		real_widths[i * 2    ] = real_widths[ch * 2    ];

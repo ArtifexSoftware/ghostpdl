@@ -125,7 +125,8 @@ typedef enum {
  */
 typedef enum gs_glyph_space_s {
     GLYPH_SPACE_NAME,		/* names (if available) */
-    GLYPH_SPACE_INDEX		/* indexes (if available) */
+    GLYPH_SPACE_INDEX,		/* indexes (if available) */
+    GLYPH_SPACE_NOGEN		/* don't generate new names (Type 3 only) */
 } gs_glyph_space_t;
 
 /*
