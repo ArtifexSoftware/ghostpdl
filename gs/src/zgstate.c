@@ -77,14 +77,11 @@ zcurrent_bool(i_ctx_t *i_ctx_p, bool (*current_proc)(const gs_state *))
 private void *gs_istate_alloc(gs_memory_t * mem);
 private int gs_istate_copy(void *to, const void *from);
 private void gs_istate_free(void *old, gs_memory_t * mem);
-private int gs_get_colorname_string(gs_separation_name colorname_index,
-			unsigned char **ppstr, unsigned int *pname_size);
 private const gs_state_client_procs istate_procs = {
     gs_istate_alloc,
     gs_istate_copy,
     gs_istate_free,
     0,			/* copy_for */
-    gs_get_colorname_string
 };
 
 /* Initialize the graphics stack. */
@@ -545,22 +542,4 @@ private void
 gs_istate_free(void *old, gs_memory_t * mem)
 {
     gs_free_object(mem, old, "int_grestore");
-}
-
-/*
- * This routine is used as an interpeter callback function for the
- * graphics library.  This routine translates a colorname_index value,
- * (which is how the separation and DeviceN colorant names are passed
- * to the graphics library) into a character string pointer and a
- * string length.
- */
-int
-gs_get_colorname_string(gs_separation_name colorname_index,
-			unsigned char **ppstr, unsigned int *pname_size)
-{
-    ref nref;
-
-    name_index_ref(colorname_index, &nref);
-    name_string_ref(&nref, &nref);
-    return obj_string_data(&nref, (const unsigned char**) ppstr, pname_size);
 }
