@@ -446,23 +446,13 @@ int process_h_lists(line_list * ll, active_line * plp, active_line * flp, active
 	    return 0;
 	}
 #   endif
-    if (ll->h_list0 != 0
-#	if CURVED_TRAPEZOID_FILL
-	    /* Likely a bug in the !CURVED_TRAPEZOID_FILL code. */
-	    && y0 <= ll->h_list0->start.y && ll->h_list0->start.y <= y1
-#	endif
-       ) {
+    if (ll->h_list0 != 0) {
 	int code = process_h_list(ll, ll->h_list0, plp, flp, alp, 1);
 
 	if (code < 0)
 	    return code;
     }
-    if (ll->h_list1 != 0
-#	if CURVED_TRAPEZOID_FILL
-	    /* Likely a bug in the !CURVED_TRAPEZOID_FILL code. */
-	    && y0 <= ll->h_list1->start.y && ll->h_list1->start.y <= y1
-#	endif
-       ) {
+    if (ll->h_list1 != 0) {
 	int code = process_h_list(ll, ll->h_list1, plp, flp, alp, -1);
 
 	if (code < 0)
