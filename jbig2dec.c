@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.6 2001/06/12 23:35:53 giles Exp $
+    $Id: jbig2dec.c,v 1.7 2001/06/14 08:25:01 giles Exp $
 */
 
 #include <stdio.h>
@@ -122,10 +122,10 @@ static Jbig2SegmentHeader *
 jbig2_read_segment_header (Jbig2Ctx *ctx)
 {
   Jbig2SegmentHeader *result = (Jbig2SegmentHeader *)malloc(sizeof(Jbig2SegmentHeader));
-  int offset = ctx->offset;
-  byte rtscarf;
-  int referred_to_segment_count;
-  byte spa;
+  int	offset = ctx->offset;
+  byte	rtscarf;
+  int32	rtscarf_long;
+  int	referred_to_segment_count;
 
   /* 7.2.2 */
   result->segment_number = get_int32 (ctx, offset);
@@ -137,8 +137,12 @@ jbig2_read_segment_header (Jbig2Ctx *ctx)
   get_bytes (ctx, &rtscarf, 1, offset + 5);
   if ((rtscarf & 0xe0) == 0xe0)
     {
-      printf ("long form of rtscarf, can't handle!\n");
-    }
+		/* FIXME: we break on non-seekable streams with this,
+		   but for now it's shorter */
+		rtscarf_long = get_int32(ctx, offset + 5);
+		referred_to_segment_count = (rtscarf_long & 0x1ffffffc) >> 2;
+		offset += 5 + 4 + (referred_to_segment_count + 1)/8;
+	}
   else
     {
       referred_to_segment_count = (rtscarf >> 5);
@@ -148,16 +152,19 @@ jbig2_read_segment_header (Jbig2Ctx *ctx)
   /* todo: read referred to segment numbers */
 
   /* 7.2.6 */
-  get_bytes (ctx, &spa, 1, offset);
-  if (result->flags & 64)
-    {
-      printf ("long form of spa, can't handle!\n");
-    }
-  result->page_association = spa;
-
+  if (result->flags & 0x40) {
+	result->page_association = get_int32(ctx, offset);
+	offset += 4;
+  } else {
+	byte spa;
+	get_bytes (ctx, &spa, 1, offset);
+	result->page_association = spa;
+	offset += 1;
+  }
+  
   /* 7.2.7 */
-  result->data_length = get_int32 (ctx, offset + 1);
-  ctx->offset = offset + 5;
+  result->data_length = get_int32 (ctx, offset);
+  ctx->offset = offset + 4;
 
   return result;
 }
