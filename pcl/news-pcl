@@ -10,6 +10,101 @@ generated from the revision control logs.  The dates provided for each
 entry are the dates the sources were committed to the source code
 repository.
 
+Version 1.07 (03/04/99)
+=======================
+
+Thu Mar  4 20:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pcl_top.mak [1.14]:
+        version number updated.
+        
+
+Thu Mar  4 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * Anomalies.txt [1.14]:
+        adds 2 new ats anomalies.
+        
+
+Thu Mar  4 03:00:00 1999        Jan Stoeckenius,,,,        jan@artifex.com
+
+        * rtraster.c [1.14], Anomalies.txt [1.13]:
+        Adds fts 765 and reverts adaptive compression fix.
+        
+
+Wed Mar  3 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * rtmisc.c [1.6]:
+        hpgl/2 does not free the polygon buffer when entering pcl.
+        
+        * pclfont.c [1.5]:
+        Albertus Medium was incorrectly identified with weight 0 instead of 1.
+        
+
+Tue Mar  2 07:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgdraw.c [1.31]:
+        new evidence from the ats test indicates the IW soft clip command
+        defines a half-closed clip box and the hpgl/2 picture frame defines an
+        closed clip box.  Also add more path and clip path debugging
+        information for hpgl/2.
+        
+
+Mon Mar  1 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgconfig.c [1.11]:
+        IW was not stroking the current path unless parameters were given.
+        
+
+Mon Mar  1 05:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgconfig.c [1.10]:
+        2 current ctm fixes: SC does not reset the ctm before deriving the
+        current user position in device space, and the routine to get the
+        default picture frame did not properly restore the ctm.
+        
+
+Sun Feb 28 07:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pglabel.c [1.15], pgdraw.c [1.30]:
+        corrects label offset calculation when SI and SR are enabled.
+        
+
+Fri Feb 26 05:00:00 1999        Jan Stoeckenius,,,,        jan@artifex.com
+
+        * pccid.c [1.7]:
+        HP ignores the bits-per-primary setting for device-independent color
+        spaces, and always uses [255, 0] as white and black reference points for these
+        spaces.
+        
+        We have modified the routine check_cid_hdr in pccid.c to set bits-per-primary
+        to 8 for all device-independent color spaces. The modified file is attached.
+        
+
+Thu Feb 25 09:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * pgvector.c [1.8]:
+        It is not necessary to return to the starting point of a circle when
+        drawing in polygon mode.
+        
+
+Thu Feb 25 08:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * rtgmode.c [1.7]:
+        rtgmode.c was truncated at the last checkin (not analyzed).
+        
+
+Thu Feb 25 04:00:00 1999        Jan Stoeckenius,,,,        jan@artifex.com
+
+        * rtgmode.c [1.6]:
+        Fixes ats file floating poing rounding and truncating error.  For the
+        particular transformation in effect, the initial horizontal position
+        of 7008 centi-points would come back as 7007.9994... centi-points,
+        which was converted to 7007 centipoints, which would come back as
+        7006.9994... centi-points, and so on. The process finally stopped at
+        about 6600 centi-points, due to a change in the least significant bit
+        of the tx field of transformation matrix.  Now we round the calculated
+        centipoint position before converting to an integer.
+
 Version 1.06 (02/24/99)
 ======================
 

@@ -6,6 +6,15 @@
 This file, NEWS-XL, describes the changes in the most recent releases of
 Aladdin's PCL XL code, in reverse chronological order.
 
+Version 1.22 (03/04/99)
+=======================
+
+Thu Mar  4 20:00:00 1999        Ray Johnston        ray@artifex.com
+
+        * pxpaint.c [1.4]:
+        Fix for partially degenerate arc cases when only one axis has zero size.
+        This fixes FTS 321-07 missing gray rectangle inside the ellipse.
+
 Version 1.21 (02/24/99)
 ======================
 

@@ -4,6 +4,29 @@ ported directly from the latest aladdin release it is not documented
 here.  We provide a reference aladdin release number and the files.
 Please see News.htm for a detailed explanation of these changes.
 
+Version 5.50f (03/04/99)
+========================
+
+Thu Mar  4 16:00:00 1999        Ray Johnston        ray@artifex.com
+
+        * gdevbit.c [1.4]:
+        Add support for -dForceMono=1 in bit_{get/put}_params to allow monochrome
+        output to be generated with RGB or CMYK devices. Implemented here as an
+        example for other device implementors.
+        
+
+Thu Mar  4 03:00:00 1999        Jan Stoeckenius,,,,        jan@artifex.com
+
+        * gxidata.c [1.5]:
+        Proper flushing of scanlines even if the number of scanlines is less
+        than what is specified when the image is initialized.
+        
+
+Wed Feb 24 12:00:00 1999        Henry Stiles        henrys@artifex.com
+
+        * NEWS-GS [1.6]:
+        hail news file check in.
+
 Version 5.50e (02/24/99)
 ========================
 
