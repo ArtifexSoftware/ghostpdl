@@ -883,8 +883,9 @@ pattern_set_pen(
     int                 code = 0;
 
     /* put the pen number in the proper range */
-    if (pen >= num_entries)
-        pen = (pen % (num_entries - 1)) + 1;
+    if ( (pen >= num_entries)                            &&
+	 ((pen = (pen % num_entries) + 1) == num_entries)  )
+	pen = 1;
 
     /* check if the current pen is white; if so, use the "unsolid" pattern */
     if (pcl_cs_indexed_is_white(pindexed, pen))
