@@ -2,7 +2,7 @@
 <html>
 <head>
    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
-   <meta name="GENERATOR" content="Mozilla/4.75 [en] (X11; U; Linux 2.2.17-21mdk i686) [Netscape]">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (Windows NT 5.0; U) [Netscape]">
    <title>GhostPCL5e, GhostPCL5c, and GhostPXL</title>
 </head>
 <body text="#000000" bgcolor="#FFFFFF" link="#0000EF" vlink="#51188E" alink="#FF0000">
@@ -167,33 +167,65 @@ Unpack the source code, see&nbsp; <a href="#UNPACKING">Unpacking the source</a>
 Start MSVC++.</li>
 
 <li>
-Choose `New' under the `File' menu.</li>
+Open pcl6_msvc.mak.&nbsp; `File` `Open`, combo box set to `Auto`;&nbsp;
+DevStudio will wrap the makefile.</li>
 
 <li>
-Next MSVC++ will prompt for a project type, select `makefile'</li>
+Change Project Settings.&nbsp; (Alt F7) `Project` `Settings`</li>
+
+<ul>
+<li>
+General Tab Build Command Line</li>
+
+<ul>
+<li>
+NMAKE /f pcl6_msvc.mak DEBUG=1 DEVSTUDIO=c:\progra~1\micros~3</li>
+
+<ul>
+<li>
+DEBUG=1/0 on/off will require you manually clean;&nbsp; del main\obj\*.*</li>
 
 <li>
-After confirming your selections MSVC++ will ask if you want to go to `Project
-Settings`.&nbsp; Choose `yes'.</li>
+DEVSTUDIO needs a dos mangled path to Microsoft Visual Studio</li>
+
+<ul>
+<li>
+dir /x can be used to find the mangled&nbsp; name.</li>
+</ul>
+</ul>
+</ul>
 
 <li>
-Here you will specify how to run the build command, nmake.&nbsp; The simplest
-debug arrangement for PCL is:</li>
+Debug Tab Executable for debug session:</li>
 
-<p><br>nmake /f pcl6_msvc.mak DEBUG=1</ul>
+<ul>
+<li>
+.\obj\pcl6.exe</li>
+</ul>
+
+<li>
+Debug Tab Program arguments:</li>
+
+<ul>
+<li>
+command line arguments for the file to debug</li>
+</ul>
+</ul>
+
+<li>
+Now PCL6 is set to be compiled, debugged and use other features of the
+MSVC++ IDE.</li>
+</ul>
 
 <p><br>This will build both the PCL and XL language and supporting language
 switching code.
 <p><b>Note:</b>
-<br>In MSVC 6.0 simply opening the file pcl6_msvc.mak in the IDE will create
-all the necessary project files.&nbsp; Then pcl6 can be built or run using
-menu options or keyboard shortcuts.
-<p>Now PCL6 is set to be compiled, debugged and use other features of the
-MSVC++ IDE.
 <p>Dos hackers can start up a dos window, set the DEVSTUDIO environment
 variable, and use the same make commands as above (the DEVSTUDIO variable
 should be set to the top level of the Microsoft Developer Studio, e.g.
-set DEVSTUDIO=c:\progra~1\devstu~1").
+set DEVSTUDIO=c:\progra~1\devstu~1")
+<br>&nbsp;&nbsp;&nbsp; or
+<br>NMAKE /f pcl6_msvc.mak DEBUG=1 DEVSTUDIO=c:\progra~1\micros~3
 <br>&nbsp;
 <h2>
 <a NAME="Linux GCC"></a>Building with Linux GCC</h2>
@@ -203,8 +235,7 @@ using the GCC compiler and supporting tools.
 <br>&nbsp;
 <ul>
 <li>
-Unpack the source code, see&nbsp; <a href="#UNPACKING">Unpacking the source</a>
-.</li>
+Unpack the source code, see&nbsp; <a href="#UNPACKING">Unpacking the source</a>.</li>
 
 <li>
 Create a symbolic link to the makefile:</li>
