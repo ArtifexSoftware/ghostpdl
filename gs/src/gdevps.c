@@ -223,6 +223,7 @@ private const char *const psw_header[] =
     "%%EndComments",
     "%%BeginProlog",
  "% This copyright applies to everything between here and the %%EndProlog:",
+    "/pagesave null def",	/* establish binding */
     0
 };
 
@@ -326,7 +327,7 @@ private const char *const psw_2_prolog[] =
 
 private const char *const psw_end_prolog[] =
 {
-    "end def",
+    "end readonly def",
     "%%EndResource",
     "%%EndProlog",
     0
@@ -582,7 +583,16 @@ psw_beginpage(gx_device_vector * vdev)
 	psw_put_lines(s, psw_end_prolog);
     }
     pprintld2(s, "%%%%Page: %ld %ld\n%%%%BeginPageSetup\n", page, page);
-    pputs(s, "/pagesave save def GS_pswrite_ProcSet begin\n");
+    /*
+     * Adobe's documentation says that page setup must be placed outside the
+     * save/restore that encapsulates the page contents, and that the
+     * showpage must be placed after the restore.  This means that to
+     * achieve page independence, *every* page's setup code must include a
+     * setpagedevice that sets *every* page device parameter that is changed
+     * on *any* page.  Currently, the only such parameter relevant to this
+     * driver is page size, but there might be more in the future.
+     */
+    pputs(s, "GS_pswrite_ProcSet begin\n");
     if (!pdev->ProduceEPS) {
 	int width = (int)(vdev->width * 72.0 / vdev->HWResolution[0] + 0.5);
 	int height = (int)(vdev->height * 72.0 / vdev->HWResolution[1] + 0.5);
@@ -614,6 +624,7 @@ psw_beginpage(gx_device_vector * vdev)
 	    pprints1(s, "%s PS\n", p->size_name);
 	}
     }
+    pputs(s, "/pagesave save store 100 dict begin\n");
     pprintg2(s, "%g %g scale\n%%%%EndPageSetup\nmark\n",
 	     72.0 / vdev->HWResolution[0], 72.0 / vdev->HWResolution[1]);
     return 0;
@@ -848,7 +859,7 @@ psw_write_page_trailer(gx_device *dev, int num_copies, int flush)
 
     if (num_copies != 1)
 	fprintf(f, "userdict /#copies %d put\n", num_copies);
-    fprintf(f, "cleartomark end %s pagesave restore\n%%%%PageTrailer\n",
+    fprintf(f, "cleartomark end end pagesave restore %s\n%%%%PageTrailer\n",
 	    (flush ? "showpage" : "copypage"));
 }
 
