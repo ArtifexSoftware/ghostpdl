@@ -24,6 +24,7 @@
 #include "gsmemory.h"
 #include "gsstruct.h"
 #include "gstypes.h"
+#include "gxfcache.h"
 #include "gxdevcli.h"
 #include "gxdcolor.h"		/* for gs_state_color_load */
 #include "gxfont.h"		/* for init_fstack */
@@ -80,6 +81,11 @@ RELOC_PTRS_END
 private ENUM_PTRS_WITH(text_enum_enum_ptrs, gs_text_enum_t *eptr)
 {
 #if NEW_TT_INTERPRETER
+    if (index == 8)
+	if (eptr->pair != 0)
+	    ENUM_RETURN(eptr->pair - eptr->pair->index);
+	else
+	    ENUM_RETURN(0);
     index -= 9;
 #else
     index -= 8;
@@ -93,9 +99,6 @@ case 0: return ENUM_OBJ(gx_device_enum_ptr(eptr->dev));
 case 1: return ENUM_OBJ(gx_device_enum_ptr(eptr->imaging_dev));
 ENUM_PTR3(2, gs_text_enum_t, pis, orig_font, path);
 ENUM_PTR3(5, gs_text_enum_t, pdcolor, pcpath, current_font);
-#if NEW_TT_INTERPRETER
-    ENUM_PTR(8, gs_text_enum_t, pair);
-#endif
 ENUM_PTRS_END
 
 private RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
@@ -108,7 +111,9 @@ private RELOC_PTRS_WITH(text_enum_reloc_ptrs, gs_text_enum_t *eptr)
     RELOC_PTR3(gs_text_enum_t, pis, orig_font, path);
     RELOC_PTR3(gs_text_enum_t, pdcolor, pcpath, current_font);
 #if NEW_TT_INTERPRETER
-    RELOC_PTR(gs_text_enum_t, pair);
+    if (eptr->pair != NULL)
+	eptr->pair = (cached_fm_pair *)RELOC_OBJ(eptr->pair - eptr->pair->index) +
+			     eptr->pair->index;
 #endif
     for (i = 0; i <= eptr->fstack.depth; i++)
 	RELOC_PTR(gs_text_enum_t, fstack.items[i].font);

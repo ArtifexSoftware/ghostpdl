@@ -64,6 +64,10 @@ typedef struct gx_device_spot_analyzer_s gx_device_spot_analyzer;
 #endif
 #endif /* TT_GRID_FITTING */
 #endif /* NEW_TT_INTERPRETER */
+#ifndef gs_state_DEFINED
+#  define gs_state_DEFINED
+typedef struct gs_state_s gs_state;
+#endif
 
 
 /*
