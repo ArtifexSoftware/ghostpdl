@@ -236,7 +236,13 @@ main(
     /* ------ Begin Main LOOP ------- */
     for (;;) {
 	/* Process one input file. */
-	byte                buf[10000];
+	/* for debugging we test the parser with a small 256 byte
+           buffer - for prodduction systems use 8192 bytes */
+#ifdef DEBUG
+	byte                buf[1<<9];
+#else
+	byte                bug[1<<13];
+#endif
 	pl_top_cursor_t     r;
 	int                 code = 0;
 	bool                in_pjl = true;
@@ -270,7 +276,9 @@ main(
 	if ((arg = arg_next(&args)) == 0)
 	    break;  /* no nore files to process */
 
-	/* open file for reading */
+	/* open file for reading - NB we should respec the minimum
+           requirements specified by each implementation in the
+           characteristics structure */
         if (pl_main_cursor_open(&r, arg, buf, sizeof(buf)) < 0) {
             fprintf(gs_stderr, "Unable to open %s for reading.\n", arg);
             exit(1);
