@@ -87,6 +87,8 @@ struct fapi_ufst_server_s {
     double tran_xx, tran_xy, tran_yx, tran_yy;
     fco_list_elem *fco_list;
     FAPI_retcode callback_error;
+    FAPI_metrics_type metrics_type;
+    FracInt sb_x, aw_x; /* replaced PS metrics. */
 };
 
 /* Type casts : */
@@ -226,18 +228,37 @@ private void choose_decoding(fapi_ufst_server *r, ufst_common_font_data *d, cons
         } 
 }
 
+private inline void store_word(byte **p, ushort w)
+{   *((*p)++) = w / 256;
+    *((*p)++) = w % 256;
+    
+}
+
 private LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
 {   pcleo_glyph_list_elem *g;
     PCLETTO_CHDR *h;
     ufst_common_font_data *d = (ufst_common_font_data *)r->fc.font_hdr - 1;
     LPUB8 q;
     ushort glyph_length = ff->get_glyph(ff, chId, 0, 0);
+    bool use_XL_format = ff->is_mtx_skipped;
+
+    /*
+     * The client must set ff->is_mtx_skipped iff
+     * it requests replaced lsb for True Type.
+     * If it is set, replaced width to be supplied.
+     * This constraing is derived from UFST restriction :
+     * the font header format must be compatible with
+     * glyph header format.
+     */
 
     if (glyph_length == (ushort)-1) {
         r->callback_error = e_invalidfont;
         return 0;
     }
-    g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem, sizeof(pcleo_glyph_list_elem) + sizeof(PCLETTO_CHDR) + glyph_length + 2, "PCLETTO char");
+    g = (pcleo_glyph_list_elem *)r->client_mem.alloc(&r->client_mem, 
+	    sizeof(pcleo_glyph_list_elem) + 
+	    (use_XL_format ? 12 : sizeof(PCLETTO_CHDR)) + glyph_length + 2, 
+	    "PCLETTO char");
     if (g == 0) {
         r->callback_error = e_VMerror;
         return 0;
@@ -247,24 +268,39 @@ private LPUB8 get_TT_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
     d->glyphs = g;
     h = (PCLETTO_CHDR *)(g + 1);
     h->h.format = 15;
-    h->h.continuation = 0;
-    h->h.descriptorsize = 4;
-    h->h.class = 15;
-    h->add_data = 0;
-    q = (LPUB8)&h->charDataSize;
-    q[0] = (glyph_length + 4) / 256; /* UFST wants '+4', not sure why. */
-    q[1] = (glyph_length + 4) % 256;
-    q = (LPUB8)&h->glyphID;
-    q[0] = chId / 256;
-    q[1] = chId % 256;
-    if (ff->get_glyph(ff, chId, (LPUB8)(h + 1), glyph_length) == (ushort)-1) {
+    if (use_XL_format) {
+	h->h.continuation = 2; 
+	q = (LPUB8)h + 2;
+	store_word(&q, (ushort)(glyph_length + 10));
+	store_word(&q, (ushort)(r->sb_x >> r->If.frac_shift)); /* see can_replace_metrics */
+	store_word(&q, (ushort)(r->aw_x >> r->If.frac_shift));
+	store_word(&q, 0);
+	store_word(&q, chId);
+    } else {
+	h->h.continuation = 0;
+	h->h.descriptorsize = 4;
+	h->h.class = 15;
+	h->add_data = 0;
+	q = (LPUB8)&h->charDataSize;
+	store_word(&q, (ushort)(glyph_length + 4));
+	store_word(&q, chId);
+    }
+    if (ff->get_glyph(ff, chId, (LPUB8)q, glyph_length) == (ushort)-1) {
         r->callback_error = e_invalidfont;
         return 0;
     }
-    q = (LPUB8)(h + 1) + glyph_length;
-    q[0] = 0;
-    q[1] = 0; /* checksum */
+    q += glyph_length;
+    store_word(&q, 0); /* checksum */
     return (LPUB8)h;
+    /*
+     * The metrics replacement here is done only for the case
+     * corresponding to non-disk TT fonts with MetricsCount != 0;
+     * Other cases are not supported because UFST cannot handle them.
+     * Here we don't take care of cases which can_replace_metrics rejects.
+     *
+     * We don't care of metrics for subglyphs, because
+     * it is ignored by TT interpreter.
+     */
 }
 
 private LPUB8 get_T1_glyph(fapi_ufst_server *r, FAPI_font *ff, UW16 chId)
@@ -518,6 +554,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
     LPUB8 buf;
     PCLETTO_FHDR *h;
     ufst_common_font_data *d;
+    bool use_XL_format = ff->is_mtx_skipped;
     int code;
 
     *return_data = 0;
@@ -534,7 +571,7 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
             tt_size  = ff->get_long(ff, FAPI_FONT_FEATURE_TT_size, 0);
             if (tt_size == 0)
                 return e_invalidfont;
-            area_length += tt_size + 4 + 4 + 2;
+            area_length += tt_size + (use_XL_format ? 6 : 4) + 4 + 2;
         }
     } else
         area_length += strlen(font_file_path) + 1;
@@ -617,13 +654,20 @@ private FAPI_retcode make_font_data(fapi_ufst_server *r, const char *font_file_p
             pack_pseo_fhdr(r, ff, fontdata);
         } else {
             LPUB8 pseg = (LPUB8)h + PCLETTOFONTHDRSIZE;
-            LPUB8 fontdata = pseg + 4;
+            LPUB8 fontdata = pseg + (use_XL_format ? 6 : 4);
             if (tt_size > 65000)
                 return e_unregistered; /* Must not happen because we skept 'glyp', 'loca' and 'cmap'. */
             pseg[0] = 'G';
             pseg[1] = 'T';
-            pseg[2] = tt_size / 256;
-            pseg[3] = tt_size % 256;
+	    if (use_XL_format) {
+		pseg[2] = tt_size >> 24;
+		pseg[3] = (tt_size >> 16) % 256;
+		pseg[4] = (tt_size >> 8) % 256;
+		pseg[5] = tt_size % 256;
+	    } else {
+		pseg[2] = tt_size / 256;
+		pseg[3] = tt_size % 256;
+	    }
             d->tt_font_body_offset = (LPUB8)fontdata - (LPUB8)d;
             if (ff->serialize_tt_font(ff, fontdata, tt_size))
                 return e_invalidfont;
@@ -659,6 +703,7 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     const double scale = F_ONE;
     double hx, hy, sx, sy;
     FAPI_retcode code;
+    bool use_XL_format = ff->is_mtx_skipped;
 
     ff->need_decrypt = 1;
     if (d == 0) {
@@ -709,7 +754,9 @@ private FAPI_retcode get_scaled_font(FAPI_server *server, FAPI_font *ff, int sub
     fc->format      |= FC_INCHES_TYPE;  /* output in units per inch */
     fc->user_platID = d->platformId;
     fc->user_specID = d->specificId;
-    fc->ExtndFlags |= EF_TT_CMAPTABL;
+    fc->ExtndFlags = EF_TT_CMAPTABL;
+    if (use_XL_format)
+	fc->ExtndFlags |= EF_XLFONT_TYPE;
     if (bVertical)
         fc->ExtndFlags |= EF_UFSTVERT_TYPE;
     fc->dl_ssnum = (d->specificId << 4) | d->platformId;
@@ -795,6 +842,12 @@ private FAPI_retcode can_retrieve_char_by_name(FAPI_server *server, FAPI_font *f
 #endif
             break;
     }
+    return 0;
+}
+
+private FAPI_retcode can_replace_metrics(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result)
+{   *result = (!ff->is_type1 && ff->font_file_path == NULL &&
+	       c->metrics_scale == 0 && c->metrics_type == FAPI_METRICS_REPLACE);
     return 0;
 }
 
@@ -898,6 +951,9 @@ private FAPI_retcode get_char(fapi_ufst_server *r, FAPI_font *ff, FAPI_char_ref 
     r->bRaster = false;
     r->ff = ff;
     r->callback_error = 0;
+    r->sb_x = c->sb_x;
+    r->aw_x = c->aw_x;
+    r->metrics_type = c->metrics_type;
     code = CGIFchar_with_design_bbox(&r->IFS, cc, &result, (SW16)0, design_bbox, &design_escapement);
     if (code == ERR_find_cgnum) {
         /* There is no such char in the font, try the glyph 0 (notdef) : */
@@ -1048,7 +1104,7 @@ private const FAPI_server If0 = {
     get_font_bbox,
     get_font_proportional_feature,
     can_retrieve_char_by_name,
-    //outline_char,
+    can_replace_metrics,
     get_char_width,
     get_char_raster_metrics,
     get_char_raster,

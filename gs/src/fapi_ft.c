@@ -634,6 +634,12 @@ The return value is a standard error return code.
 */
 static FAPI_retcode can_retrieve_char_by_name(FAPI_server* a_server,FAPI_font* a_font,FAPI_char_ref* a_char_ref,
 											   bool* a_result)
+
+    /*
+     * fixme :
+     * This function was not intended to do anything besides returning a bool.
+     * Should move the conversion to elswhere. (igorm)
+     */
 	{
 	FF_face* face = (FF_face*)a_font->server_font_data;
 	char name[128];
@@ -650,6 +656,14 @@ static FAPI_retcode can_retrieve_char_by_name(FAPI_server* a_server,FAPI_font* a
 		*a_result = false;
 	return 0;
 	}
+/**
+Say whether we can replace metrics. Actually we can't.
+*/
+private FAPI_retcode can_replace_metrics(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result)
+{   
+    *result = 0;
+    return 0;
+}
 
 /**
 Retrieve the metrics of a_char_ref and put them in a_metrics.
@@ -809,6 +823,7 @@ static const FAPI_server TheFreeTypeServer =
     get_font_bbox,
     get_font_proportional_feature,
     can_retrieve_char_by_name,
+    can_replace_metrics,
     get_char_width,
     get_char_raster_metrics,
     get_char_raster,

@@ -63,11 +63,22 @@ typedef enum {
     FAPI_FONT_FEATURE_TT_size
 } fapi_font_feature;
 
+typedef enum {
+  FAPI_METRICS_NOTDEF,
+  FAPI_METRICS_ADD, /* Add to native glyph width. */
+  FAPI_METRICS_REPLACE_WIDTH, /* Replace the native glyph width. */
+  FAPI_METRICS_REPLACE /* Replace the native glyph width and lsb. */
+} FAPI_metrics_type;
+
 typedef struct {
     int char_code;
     bool is_glyph_index; /* true if char_code contains glyph index */
     const unsigned char *char_name; /* to be used exclusively with char_code. */
     unsigned int char_name_length;
+    FAPI_metrics_type metrics_type;
+    FracInt sb_x, sb_y, aw_x, aw_y; /* replaced PS metrics. */
+    int metrics_scale; /* Scale for replaced PS metrics. 
+		          Zero means "em box size". */
 } FAPI_char_ref;
 
 typedef struct FAPI_font_s FAPI_font;
@@ -80,6 +91,7 @@ struct FAPI_font_s {
     int subfont;
     bool is_type1; /* Only for non-disk fonts; dirty for disk fonts. */
     bool is_cid;
+    bool is_mtx_skipped; /* Ugly. UFST needs only */
     void *client_ctx_p;
     void *client_font_data;
     void *client_font_data2;
@@ -129,6 +141,7 @@ struct FAPI_server_s {
     FAPI_retcode (*get_font_bbox)(FAPI_server *server, FAPI_font *ff, int BBox[4]);
     FAPI_retcode (*get_font_proportional_feature)(FAPI_server *server, FAPI_font *ff, int subfont, bool *bProportional);
     FAPI_retcode (*can_retrieve_char_by_name)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result);
+    FAPI_retcode (*can_replace_metrics)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, int *result);
     FAPI_retcode (*get_char_width)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics);
     FAPI_retcode (*get_char_raster_metrics)(FAPI_server *server, FAPI_font *ff, FAPI_char_ref *c, FAPI_metrics *metrics);
     FAPI_retcode (*get_char_raster)(FAPI_server *server, FAPI_raster *r);
