@@ -7,22 +7,43 @@ AC_CONFIG_SRCDIR([jbig2dec.c])
 AM_INIT_AUTOMAKE
 AM_CONFIG_HEADER(config.h)
 
-AC_REVISION([$Revision: 1.14 $])
+AC_REVISION([$Revision: 1.15 $])
 
 # Checks for programs.
 AC_PROG_CC
 AC_PROG_RANLIB
 
 # Checks for libraries.
-dnl libpng requires pow() which may be in libm
-AC_SEARCH_LIBS([pow], [m])
-AC_CHECK_LIB([png], [png_check_sig], [
-  AC_CHECK_LIB([z], [deflate], [
-    AC_DEFINE(HAVE_LIBPNG, 1, [Define if libpng is available (-lpng)])
-    LIBS="$LIBS -lpng -lz"
-    AC_LIBOBJ([jbig2_image_png])
+dnl by default we want png support if possible
+AC_ARG_WITH([libpng], 
+  AC_HELP_STRING([--with-libpng[=prefix]],
+    [include support for png output (if libpng is available)]),
+  [ac_cv_want_libpng="$withval"], [ac_cv_want_libpng="yes"])
+save_cflags="$CFLAGS"
+save_ldflags="$LDFLAGS"
+have_libpng="no"
+if test "x$ac_cv_want_libpng" != "xno"; then
+  if test "x$ac_cv_want_libpng" != "xyes"; then
+    dnl if it's not yes or no, treat as a prefix
+    CFLAGS="$CFLAGS -I$ac_cv_want_libpng/include"
+    LDFLAGS="$LDFLAGS -L$ac_cv_want_libpng/lib"
+  fi
+  AC_CHECK_LIB([png], [png_check_sig], [
+    dnl libpng requires pow() which may be in libm
+    AC_SEARCH_LIBS([pow], [m])
+    AC_CHECK_LIB([z], [deflate], [
+      AC_DEFINE(HAVE_LIBPNG, 1, [Define if libpng is available (-lpng)])
+      LIBS="$LIBS -lpng -lz"
+      AC_LIBOBJ([jbig2_image_png])
+      have_libpng="yes"
+    ])
   ])
-])
+fi
+dnl restore (possibly changed) flags if we didn't find working libpng
+if test "x$have_libpng" != "xyes"; then
+  CFLAGS="$save_cflags"
+  LDFLAGS="$save_ldflags"
+fi
 
 # Checks for header files.
 AC_HEADER_STDC
