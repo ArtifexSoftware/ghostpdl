@@ -373,10 +373,11 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
     file_enum *pfen;
     uint i, len;
     char *c, *newpat;
+    bool dot_in_filename = false;
 
     pfen = gs_alloc_struct(mem, file_enum, &st_file_enum,
 			   "GP_ENUM(file_enum)");
-    newpat = (char *)gs_alloc_bytes(mem, patlen, "GP_ENUM(pattern)");
+    newpat = (char *)gs_alloc_bytes(mem, patlen + 2, "GP_ENUM(pattern)");
     if (pfen == 0 || newpat == 0) {
 	gs_free_object(mem, newpat, "GP_ENUM(pattern)");
 	gs_free_object(mem, pfen, "GP_ENUM(file_enum)");
@@ -387,6 +388,11 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
      *  (VAX/VMS uses the wildcard '%' to represent exactly one character
      *  and '*' to represent zero or more characters.  Any combination and
      *  number of interspersed wildcards is permitted.)
+     *
+     *  Since VMS requires "*.*" to actually return all files, we add a
+     *  special check for a path ending in "*" and change it into "*.*"
+     *  if a "." wasn't part of the file spec. Thus "[P.A.T.H]*" becomes
+     *  "[P.A.T.H]*.*" but "[P.A.T.H]*.*" or "[P.A.T.H]*.X*" are unmodified.
      */
     c = newpat;
     for (i = 0; i < patlen; pat++, i++)
@@ -399,10 +405,18 @@ gp_enumerate_files_init(const char *pat, uint patlen, gs_memory_t * mem)
 		if (i < patlen)
 		    *c++ = *++pat;
 		break;
+	    case '.':
+	    case ']':
+		dot_in_filename = *pat == '.'; 
 	    default:
 		*c++ = *pat;
 		break;
 	}
+    /* Check for trailing "*" and see if we need to add ".*" */
+    if (pat[-1] == "*" && !dot_in_filename) {
+	*c++ = '.';
+	*c++ = '*";
+    }
     len = c - newpat;
 
     /* Pattern may not exceed 255 characters */
