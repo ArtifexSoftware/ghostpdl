@@ -83,7 +83,7 @@ check_support(const pcl_state_t *pcls, uint symbol_set, const pl_font_t *fp,
 	    id[0] = pcl_default_symbol_set_value >> 8;
 	    id[1] = (byte)pcl_default_symbol_set_value;
 	    *mapp = pcl_find_symbol_map(pcls, id, gv);
-	    return 2; /* worst */
+	    return 0; /* worst */
 	  }
 	if ( pcl_check_symbol_support((*mapp)->character_requirements,
 	    fp->character_complement) )
