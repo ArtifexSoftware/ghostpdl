@@ -731,9 +731,9 @@ gx_image3_end_image(gx_image_enum_common_t * info, bool draw_last)
     int mcode = gx_image_end(penum->mask_info, draw_last);
     gx_device *pcdev = penum->pcdev;
     int pcode = gx_image_end(penum->pixel_info, draw_last);
+    int code1 = gs_closedevice(pcdev);
+    int code2 = gs_closedevice(mdev);
 
-    gs_closedevice(pcdev);
-    gs_closedevice(mdev);
     gs_free_object(mem, penum->mask_data,
 		   "gx_image3_end_image(mask_data)");
     gs_free_object(mem, penum->pixel_data,
@@ -741,5 +741,5 @@ gx_image3_end_image(gx_image_enum_common_t * info, bool draw_last)
     gs_free_object(mem, pcdev, "gx_image3_end_image(pcdev)");
     gs_free_object(mem, mdev, "gx_image3_end_image(mdev)");
     gs_free_object(mem, penum, "gx_image3_end_image");
-    return (pcode < 0 ? pcode : mcode);
+    return (pcode < 0 ? pcode : mcode < 0 ? mcode : code1 < 0 ? code1 : code2);
 }
