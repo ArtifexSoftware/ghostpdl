@@ -105,16 +105,17 @@ supporting files that make up the regression test.
 <h4>Top-level scripts</h4>
 
 <dl>
+<dl>
 <dt><a href="../toolbin/tests/dump_testdb"><tt>dump_testdb</tt></a>
-<dd>This script creates an initial test database.  It uses gsconf.baselinegs
-to create raster data from the test files and computes their MD5 sums and
-stores them in the gsconf.testdatadb database.
+<dd>A debugging script that will print the contents of the database defined
+by gsconf.testdatadb.
 </dl>
 
 <dl>
 <dt><a href="../toolbin/tests/make_testdb"><tt>make_testdb</tt></a>
-<dd>A debugging script that will print the contents of the database defined
-by gsconf.testdatadb.
+<dd>This script creates an initial test database.  It uses gsconf.baselinegs
+to create raster data from the test files and computes their MD5 sums and
+stores them in the gsconf.testdatadb database.
 </dl>
 
 <dl>
@@ -133,13 +134,13 @@ generally the first investigative step.
 <dt><a href="../toolbin/tests/testdiff"><tt>testdiff</tt></a>
 <dd>this script provides the difference between two sets of regression results.
 if end date is omitted, the current date will be used.
-<dl>
+</dl>
 
+<dl>
 <dt><a href="../toolbin/tests/revert_baseline"><tt>revert_baseline</tt></a>
-<dd>This script is invoked to update the MD5 sum in the test database when a
-nightly regression is really a progression.  Generally after noticing that
-the output from make_two_versions is acceptable or better, this script is
-run to log the changes to the database.
+<dd>In cases where a baseline has been accidentally updated, this script
+will revert the database entry to the MD5 sum computed with
+gsconf.baselinegs.
 </dl>
 
 <dl>
@@ -149,9 +150,10 @@ run to log the changes to the database.
 
 <dl>
 <dt><a href="../toolbin/tests/run_nightly"><tt>run_nightly</tt></a>
-<dd>In cases where a baseline has been accidentally updated, this script
-will revert the database entry to the MD5 sum computed with
-gsconf.baselinegs.
+<dd>This is the control script (usually invoked by cron) that controls the
+nightly test run.  It's responsible for checking the latest code out of CVS,
+building a new Ghostscript to compare with and launching the test suite via
+run_regression.
 </dl>
 
 <dl>
@@ -163,19 +165,21 @@ tests get run and with what options.
 
 <dl>
 <dt><a href="../toolbin/tests/update_baseline"><tt>update_baseline</tt></a>
-<dd>This is the control script (usually invoked by cron) that controls the
-nightly test run.  It's responsible for checking the latest code out of CVS,
-building a new Ghostscript to compare with and launching the test suite via
-run_regression.
+<dd>This script is invoked to update the MD5 sum in the test database when a
+nightly regression is really a progression.  Generally after noticing that
+the output from make_two_versions is acceptable or better, this script is
+run to log the changes to the database.
 </dl>
 
 <dl>
 <dt><a href="../toolbin/tests/update_pdfbaseline"><tt>update_pdfbaseline</tt></a>
 <dd>Same as above, except for pdfwrite baselines.
 </dl>
+</dl>
 
 <h4>Support files</h4>
 
+<dl>
 <dl>
 <dt><a href="../toolbin/tests/fuzzy.c"><tt>fuzzy.c</tt></a>
 <dd>A fuzzy comparison tool appropriate for tests where exact binary matches
@@ -205,6 +209,7 @@ configurable testing parameters should be covered.
 <dl>
 <dt><a href="../toolbin/tests/gssum.py"><tt>gssum.py</tt></a>
 <dd>Helper functions that compute, compare and store MD5 sums.
+</dl>
 </dl>
 
 <h2><a name="Writing_new_tests"></a>Writing new tests</h2>
