@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_segment.c,v 1.16 2002/07/08 19:23:11 giles Exp $
+    $Id: jbig2_segment.c,v 1.17 2002/07/09 09:45:32 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -84,7 +84,8 @@ jbig2_parse_segment_header (Jbig2Ctx *ctx, uint8_t *buf, size_t buf_size,
             jbig2_get_int32(buf + offset);
         offset += referred_to_segment_size;
         jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, result->number,
-            "refers to segment %d", referred_to_segments[i]);
+            "segment %d refers to segment %d",
+            result->number, ctx->segments[referred_to_segments[i]]->number);
       }
       result->referred_to_segments = referred_to_segments;
     }
@@ -185,7 +186,7 @@ int jbig2_parse_segment (Jbig2Ctx *ctx, Jbig2Segment *segment,
     case 48:
       return jbig2_parse_page_info(ctx, segment, segment_data);
     case 49:
-      return jbig2_complete_page(ctx, segment, segment_data);
+      return jbig2_parse_end_of_page(ctx, segment, segment_data);
     case 50:
       return jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
         "unhandled segment type 'end of stripe'");

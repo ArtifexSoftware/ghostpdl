@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2_priv.h,v 1.13 2002/07/08 19:23:11 giles Exp $
+    $Id: jbig2_priv.h,v 1.14 2002/07/09 09:45:32 giles Exp $
     
     shared library internals
 */
@@ -111,7 +111,7 @@ struct _Jbig2Page {
 };
 
 int jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
-int jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
+int jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data);
 
 typedef enum {
     JBIG2_COMPOSE_OR = 0,

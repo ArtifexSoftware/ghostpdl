@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
         
-    $Id: jbig2.h,v 1.13 2002/07/08 14:26:02 giles Exp $
+    $Id: jbig2.h,v 1.14 2002/07/09 09:45:32 giles Exp $
 */
 
 #ifdef __cplusplus
@@ -85,6 +85,9 @@ int jbig2_data_in (Jbig2Ctx *ctx, const unsigned char *data, size_t size);
 Jbig2Image *jbig2_page_out (Jbig2Ctx *ctx);
 /* mark a returned page image as read */
 int jbig2_release_page (Jbig2Ctx *ctx, Jbig2Image *image);
+/* mark the current page as complete, regardless of decoder state (for broken streams) */
+int jbig2_complete_page (Jbig2Ctx *ctx);
+
 
 /* segment header routines */
 

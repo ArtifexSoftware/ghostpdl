@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2_page.c,v 1.11 2002/07/08 14:54:01 giles Exp $
+    $Id: jbig2_page.c,v 1.12 2002/07/09 09:45:32 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -167,20 +167,34 @@ jbig2_parse_page_info (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment
  * of the page image will also happen from here (NYI)
  **/
 int
-jbig2_complete_page (Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
+jbig2_complete_page (Jbig2Ctx *ctx)
 {
     uint32_t page_number = ctx->pages[ctx->current_page].number;
-    
+        
+    ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
+
+    return 0;
+}
+
+/**
+ * jbig2_parse_end_of_page: parse an end of page segment
+ **/
+int
+jbig2_parse_end_of_page(Jbig2Ctx *ctx, Jbig2Segment *segment, const byte *segment_data)
+{
+    uint32_t page_number = ctx->pages[ctx->current_page].number;
+
     if (segment->page_association != page_number) {
         jbig2_error(ctx, JBIG2_SEVERITY_WARNING, segment->number,
             "end of page marker for page %d doesn't match current page number %d",
             segment->page_association, page_number);
     }
     
-    ctx->pages[ctx->current_page].state = JBIG2_PAGE_COMPLETE;
     jbig2_error(ctx, JBIG2_SEVERITY_INFO, segment->number,
         "end of page %d", page_number);
 
+    jbig2_complete_page(ctx);
+    
 #ifdef OUTPUT_PBM
     jbig2_image_write_pbm(ctx->pages[ctx->current_page].image, stdout);
 #endif
@@ -228,6 +242,7 @@ int jbig2_release_page(Jbig2Ctx *ctx, Jbig2Image *image)
     /* find the matching page struct and mark it released */
     for (index = 0; index < ctx->max_page_index; index++) {
         if (ctx->pages[index].image == image) {
+            /* todo: free associated image */
             ctx->pages[index].state = JBIG2_PAGE_RELEASED;
             jbig2_error(ctx, JBIG2_SEVERITY_DEBUG, -1,
                 "page %d released by the client", ctx->pages[index].number);

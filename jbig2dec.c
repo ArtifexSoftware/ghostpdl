@@ -8,7 +8,7 @@
     the Free Software Foundation; either version 2 of the License, or
     (at your option) any later version.
 
-    $Id: jbig2dec.c,v 1.28 2002/07/08 14:54:02 giles Exp $
+    $Id: jbig2dec.c,v 1.29 2002/07/09 09:45:32 giles Exp $
 */
 
 #ifdef HAVE_CONFIG_H
@@ -259,6 +259,11 @@ main (int argc, char **argv)
   {
     Jbig2Image *image;
     
+    /* work around broken CVision embedded streams */
+    if (f_page != NULL)
+      jbig2_complete_page(ctx);
+    
+    /* retrieve and write out all the completed pages */
     while ((image = jbig2_page_out(ctx)) != NULL) {
       write_page_image(&params, image);
       jbig2_release_page(ctx, image);
