@@ -55,12 +55,10 @@ overview</a>.
 
 <!-- [2.0 begin contents] ================================================== -->
 
-<h3><a name="Version8.12"></a>Version 8.12 (2003-12-08)</h3>
+<h3><a name="Version8.13"></a>Version 8.13 (UNRELEASED SNAPSHOT)</h3>
 
 <p>
-This is the second stable release in the 8.1x series. It contains numerous bug 
-fixes; other highlights include improved font rendering and colorspace handling,
-and unicode text support for high-level devices.
+This is an unreleased development source version.
 
 <p>
 The following <a href="http://bugs.ghostscript.com/">bug</a> numbers were open at
@@ -229,16 +227,11 @@ the time of the last release:
 687191.
 </blockquote>
 
-<h3><a name="8.12_Incompatible_changes"></a>Incompatible changes</h3>
+<h3><a name="8.13_Incompatible_changes"></a>Incompatible changes</h3>
 
-<p>Type 1 font hints are no longer applied to charpaths. This is generally an improvement,
-but will generate a different outline from previously.
+<p>
+No known incompatible changes at this point
 
-<p>A new virtual functions <tt>can_handle_hl_color()</tt> is required for high-level 
-devices derived from <tt>gx_device_vector</tt>.
-
-<p>The library client api now propagates <tt>device_close</tt> errors to the return 
-value of <tt>gsapi_exit()</tt>.
 
 <!-- [2.0 end contents] ==================================================== -->
 
@@ -264,7 +257,7 @@ contact Artifex Software, Inc., 101 Lucas Valley Road #110,
 San Rafael, CA  94903, U.S.A., +1(415)492-9861.
 
 <p>
-<small>Ghostscript version 8.12, 8 December 2003
+<small>Ghostscript version 8.13, 9 December 2003
 
 <!-- [3.0 end visible trailer] ============================================= -->
 
