@@ -24,20 +24,29 @@ How to prepare an Aladdin Ghostscript release
 
 <blockquote><ul>
 <li><a href="#Introduction">Introduction</a>
-<li><a href="#Master_site">Master site</a>
+<li><a href="#Servers">Servers</a>
+<ul>
+<li><a href="#Development_files">Development sources and bug reports</a>
+<li><a href="#Distributions">Distributions</a>
+</ul>
 <li><a href="#Adding_or_deleting_files">Adding or deleting files</a>
 <li><a href="#Making_distributions">Making distributions</a>
 <ul>
-<li><a href="#General_procedure">General procedure</a>
+<li><a href="#Source_distributions">Source distributions</a>
 <ul>
 <li><a href="#Checking_source">Checking the source code</a>
-<li><a href="#Windows">Building for Windows</a>
-<li><a href="#Finishing_up">Finishing up</a>
 </ul>
+<li><a href="#Windows_executables">Windows executables</a>
+<ul>
+<li><a href="#Dual_boot_environments">Dual-boot environments</a>
+<li><a href="#Building_on_Windows">Building on Windows</a>
+</ul>
+<li><a href="#Finishing_up">Finishing up</a>
+<ul>
 <li><a href="#Tester_or_beta">Tester or beta distributions</a>
 <li><a href="#Public_releases">Public releases</a>
 </ul>
-<li><a href="#File_servers">File servers</a>
+</ul>
 </ul></blockquote>
 
 <!-- [1.2 end table of contents] =========================================== -->
@@ -62,7 +71,10 @@ Ghostscript</a>.
 This document is a rough set of internal notes that Aladdin Enterprises uses
 to manage the process of making new Ghostscript releases.  As time goes on,
 it will become a more suitable document for others wishing to prepare
-releases for distribution.
+releases for distribution.  The <a href="Public.htm">Aladdin Free Public
+License</a> allows anyone to prepare and distribute releases; however, this
+document is really meant only for developers working closely with Aladdin
+Enterprises.
 
 <p>
 This document refers to many script files that are not currently part of the
@@ -74,8 +86,8 @@ File names below that don't include an explicit subdirectory name are in the
 <b><tt>src</tt></b> subdirectory.
 
 <p>
-Anyone is welcome to prepare and distribute releases, but please be aware of
-some items you will want to change.
+If you do plan to make your own distribution, please be aware of some items
+you will want to change.
 
 <ul>
 
@@ -98,37 +110,48 @@ beginning of the file).
 
 </ul>
 
-<h1><a name="Master_site"></a>Master site</h1>
+<h1><a name="Servers"></a>Servers</h1>
 
 <p>
-The master site for Aladdin Ghostscript is on the <a
-href="http://sourceforge.net">SourceForge</a> service.  If you have a
-SourceForge account (they're free) and have gotten "project member" status
-for Aladdin Ghostscript from Aladdin Enterprises, you can access the master
-CVS repository for Aladdin Ghostscript on SourceForge by setting these
-environment variables:
+The Aladdin Ghostscript files are maintained on sites accessible to the
+public.  One specific site hosts the CVS repository for code, data, and
+documentation, and the bug report data base; tarballs or zip archives with
+version numbers, intended for wider distribution, are distributed from
+several sites.
 
-<blockquote><pre>
-CVSROOT=:ext:<em>youraccount</em>@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript
-CVS_RSH=ssh
-</pre></blockquote>
+<h2><a name="Development_files"></a>Development sources and bug reports</h2>
 
 <p>
-Otherwise, you need to use anonymous CVS:
+The development site for Aladdin Ghostscript is SourceForge (<a
+href="http://sourceforge.net">http://sourceforge.net</a>).  CVS access
+information is available at <a
+href="http://sourceforge.net/cvs/?group_id=1897">http://sourceforge.net/cvs/?group_id=1897</a>.
 
-<blockquote><pre>
-cvs -d:pserver:anonymous@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript login
-cvs -z3 -d:pserver:anonymous@cvs.ghostscript.sourceforge.net:/cvsroot/ghostscript co modulename
-</pre></blockquote>
+<h2><a name="Distributions"></a>Distributions</h2>
 
 <p>
-In either case, SourceForge recommends using the <b><tt>-z3</tt></b> switch
-with <b><tt>cvs</tt></b> to enable compression of transmitted data.
+Both public and tester releases are available from
+<blockquote>
+<a href="http://sourceforge.net/project/filelist.php?group_id=1897">http://sourceforge.net/project/filelist.php?group_id=1897</a>
+</blockquote>
+
+<p>
+Public (tested) releases are distributed from
+<blockquote>
+<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin/">ftp://ftp.cs.wisc.edu/ghost/aladdin/</a><br>
+</blockquote>
+
+<p>
+Tester releases are distributed from
+<blockquote>
+<a href="ftp://ftp.cs.wisc.edu/ghost/aladdin/test/">ftp://ftp.cs.wisc.edu/ghost/aladdin/test/</a><br>
+<a href="ftp://www.aladdin.com/ghost/aladdin/test/">ftp://www.aladdin.com/ghost/aladdin/test/</a>
+</blockquote>
 
 <h1><a name="Adding_or_deleting_files"></a>Adding files</h1>
 
 <p>
-When adding or removing any files, don't forget to invoke <b><tt>cvs
+When adding or removing files, don't forget to invoke <b><tt>cvs
 add</tt></b> or <b><tt>cvs rm</tt></b>.
 
 <p>
@@ -162,33 +185,34 @@ When adding .ps files, update <b><tt>doc/Psfiles.htm</tt></b>.
 <h1><a name="Making_distributions"></a>Making distributions</h1>
 
 <p>
-You will need the following tools:
-<blockquote>
-	<b><tt>../bin/precheck.tcl</tt></b> (Tcl script)<br>
-	<b><tt>master/pre</tt></b> (Tcl script)<br>
-	<b><tt>master/pre.chk</tt></b> (data file)<br>
-	<b><tt>master/gsmake.tcl</tt></b> (Tcl script)<br>
-	<b><tt>master/gsmake</tt></b> (link to <b><tt>gsmake.tcl</tt></b>)<br>
-	<b><tt>master/makeset.tcl</tt></b> (Tcl script)<br>
-	<b><tt>master/makefonts</tt></b> (link to <b><tt>makeset.tcl</tt></b>)<br>
-	<b><tt>master/maketars</tt></b> (ibid.)<br>
-	<b><tt>master/makezips</tt></b> (ibid.)<br>
-	<b><tt>master/makemaster</tt></b> (ibid.)<br>
-	<b><tt>master/smoke.ps</tt></b> (PostScript file)<br>
-	<b><tt>data/*/*.ps</tt></b> (PostScript files)<br>
-	<b><tt>beta.msg</tt></b>
-</blockquote>
+There are two different components of Aladdin Ghostscript distributions:
+source distributions, and Windows executables.  Source distributions
+currently can only be made on Linux systems (but it probably wouldn't take
+much work to support other Unix systems); Windows executables require
+Windows 95 or 98.  A few of the tools are designed specifically for
+dual-boot environments that normally run Linux but can mount and boot a
+Windows partition.
+
+<h2><a name="Source_distributions"></a>Source distributions</h2>
 
 <p>
-If you are going to make Windows releases, mount the Windows partition on
-<b><tt>/c</tt></b>, and be sure the following directories exist:
-
+To make a source distribution, you will need the following tools:
 <blockquote>
-	<b><tt>/c/work/fonts</tt></b><br>
-	<b><tt>/c/work/gs#.#[#]</tt></b><br>
+<b><tt>cvs2hist.py</tt></b> (Python script -- anywhere in the path)<br>
+<b><tt>cvs2hist</tt></b> (link to <b><tt>cvs2hist.py</tt></b>, ibid.)<br>
+<b><tt>../bin/precheck.tcl</tt></b> (Tcl script)<br>
+<b><tt>master/pre</tt></b> (Tcl script)<br>
+<b><tt>master/pre.chk</tt></b> (data file)<br>
+<b><tt>master/gsmake.tcl</tt></b> (Tcl script)<br>
+<b><tt>master/gsmake</tt></b> (link to <b><tt>gsmake.tcl</tt></b>)<br>
+<b><tt>master/makeset.tcl</tt></b> (Tcl script)<br>
+<b><tt>master/makefonts</tt></b> (link to <b><tt>makeset.tcl</tt></b>)<br>
+<b><tt>master/maketars</tt></b> (ibid.)<br>
+<b><tt>master/makemaster</tt></b> (ibid.)<br>
+<b><tt>master/smoke.ps</tt></b> (PostScript file)<br>
+<b><tt>data/*/*.ps</tt></b> (PostScript files)<br>
+<b><tt>beta.msg</tt></b>
 </blockquote>
-
-<h2><a name="General_procedure"></a>General procedure</h2>
 
 <p>
 Make sure the release date and version number are up to date in
@@ -197,7 +221,6 @@ Make sure the release date and version number are up to date in
 
 <p>
 Edit the makefile (presumably <b><tt>unix-gcc.mak</tt></b>) to set
-
 <blockquote><pre>
 FEATURE_DEVS=$(FEATURE_DEVS_ALL)
 COMPILE_INITS=1
@@ -237,12 +260,15 @@ Check in <b><tt>gscdef.c</tt></b> that the definition of
 "BETA RELEASE", or neither.
 
 <p>
-Check for patched configuration parameters, #define TESTs, version/date
-inconsistencies, and changed files with no News item by running:
+Check for patched configuration parameters, <b><tt>#define TEST</tt></b>s,
+version/date inconsistencies, and mismatches between the working directory
+and the CVS repository by running:
 
 <blockquote><pre>
 master/pre
 </pre></blockquote>
+
+****** SHOULD CHECK FOR FILES EXISTING IN ONE AND NOT THE OTHER ******
 
 <p>
 This program compares the result of various greps against a check file,
@@ -288,7 +314,7 @@ master/gsmake check
 </pre></blockquote>
 
 <p>
-If you have ever run <b><tt>patch</tt></b>, clean up the directories with
+Clean up the directories with
 
 <blockquote><pre>
 rm -f src/*~ src/*.bak src/*.orig src/*.mak.tcl doc/*~ doc/*.orig lib/*~ lib/*.orig man/*~ man/*.orig examples/*~ gnu/src/*~ gnu/src/*.bak gnu/src/*.orig
@@ -298,7 +324,18 @@ rm -f src/*~ src/*.bak src/*.orig src/*.mak.tcl doc/*~ doc/*.orig lib/*~ lib/*.o
 Run <b><tt>cvs commit</tt></b> to ensure the repository is up to date.
 
 <p>
-<b>****** INFORMATION BEYOND THIS POINT MAY BE OBSOLETE ******</b>
+Determine the date and time of the previous release, <em>{date}</em>, for
+input to the <b><tt>cvs2hist</tt></b> program.  (Currently this must be done
+manually, but the program could do it automatically, and a future version
+should do so.)  Execute
+
+<blockquote><pre>
+cvs2hist -d <em>{date}</em> -v #.#[#]
+</pre></blockquote>
+
+<p>
+This updates <b><tt>doc/Changes.htm</tt></b>.  Run <b><tt>cvs
+commit</tt></b> again.
 
 <p>
 Make the source archives with
@@ -353,49 +390,123 @@ crashes, unusual error messages, or anomalous displayed output.
 If you are not making a Windows release, skip the following section and
 proceed to <a href="#Finishing_up">"Finishing up"</a>.
 
-<h3><a name="Windows"></a>Building for Windows</h3>
+<h2><a name="Windows_executables"></a>Windows executables</h2>
 
 <p>
-Make the Windows zip files and copy them to the Windows partition:
+Building in the Windows environment requires overcoming a host of problems
+caused by the lack of symbolic links, inconsistent support for
+non-8.3-format file names, absurd limits on the length of a command line and
+the total space occupied by environment variable definitions, and the
+absence of any reasonable shell.
+
+<p>
+The instructions for building Windows executables assume the existence of a
+root working directory named <em>{work}</em>.  The source code will be
+stored in <em>{work}</em><b><tt>\gs#.##\src</tt></b>, etc.  In order to make
+the archives at the end of building, or to run Ghostscript for testing, you
+must arrange to put the Ghostscript fonts in
+<em>{work}</em><b><tt>\fonts</tt></b>.  In Aladdin's environment,
+<em>{work}</em> is <b><tt>c:\work</tt></b>, but nothing in the Ghostscript
+code or documentation (aside from this document) relies on this particular
+name.
+
+<h3><a name="Building_on_Windows"></a>Building on Windows</h3>
+
+<p>
+To build on Windows, you will need copies of all supported compilers
+(currently Microsoft Visual C++, Borland/Inprise C++Builder, Watcom C++, and
+probably soon the Intel optimizing compiler that runs in the MSVC++
+environment).  To make the final Windows zip archive and self-extracting
+executable, you will need the following programs, referenced from
+<b><tt>winint.mak</tt></b>:
 
 <blockquote><pre>
-master/makezips
-cp gs###*.zip /c/work
+<b><tt>C:\Program Files\WinZip Self-Extractor\WZIPSE32.EXE</tt></b>
+<b><tt>zip.exe</tt></b> (somewhere on the PATH)
 </pre></blockquote>
 
 <p>
-This creates and copies the files
-
-<blockquote>
-<b><tt>gs###src.zip</tt></b> (source files)<br>
-<b><tt>gs###lib.zip</tt></b> (runtime and font files)<br>
-</blockquote>
+Note that <b><tt>WZIPSE32.EXE</tt></b> must be the registered version of the
+WinZip Self-Extractor, not the freeware version.
 
 <p>
-Boot into Windows.  Unpack the archives:
+You will also need the following tools somewhere on the PATH:
 
 <blockquote><pre>
-cd \c\work
-unzip -oq gs###src.zip
-unzip -oq gs###lib.zip
-cd gs#.#[#]
+<b><tt>config.bat</tt></b>
+<b><tt>postboot.bat</tt></b>
+<b><tt>gs_setup.bat</tt></b>
+<b><tt>grep_.bat</tt></b>
+<b><tt>setmake.bat</tt></b>
+<b><tt>_bcwin32.bat</tt></b>
+<b><tt>_msvc32.bat</tt></b>
+<b><tt>_watcw32.bat</tt></b>
 </pre></blockquote>
+
+<p>
+These batch files are very specific to Aladdin's environment, and you will
+definitely need to understand and modify them.  (We'd be very happy if you
+could simplify them, too.)
+
+<p>
+Get the Ghostscript source code into the subdirectories of
+<em>{work}</em><b><tt>\gs#.#[#]</tt></b>.  If you normally run Windows, you
+can do this from the CVS repository or from a .tar.gz or .tar.bz2 file.  Be
+sure to unpack these archives in text mode, with EOL conversion.
+
+<p>
+Get the third-party libraries (jpeg, libpng, zlib) into the corresponding
+subdirectories of <em>{work}</em><b><tt>\gs#.#[#]</tt></b>.  The
+corresponding Ghostscript makefiles (<b><tt>src/jpeg.mak</tt></b>, etc.)
+will tell you where to find them.
+
+<p>
+Ensure that these build directories exist (they should be created
+automatically by the makefile, but they currently aren't):
+
+<blockquote><pre>
+<em>{work}</em><b><tt>\gs#.#[#]\bin</tt></b>
+<em>{work}</em><b><tt>\gs#.#[#]\obj</tt></b>
+</pre></blockquote>
+
+<p>
+In anticipation of testing, make sure that the PATH includes
+
+<blockquote><pre>
+<em>{work}</em><b><tt>\gs#.#[#]\bin</tt></b>
+<em>{work}</em><b><tt>\gs#.#[#]\lib</tt></b>
+</pre></blockquote>
+
+<p>
+and that the definition of the GS_LIB environment variable includes
+
+<blockquote><pre>
+<em>{work}</em><b><tt>\fonts</tt></b>
+<em>{work}</em><b><tt>\gs#.#[#]\lib</tt></b>
+</pre></blockquote>
+
+<p>
+All the remaining steps of building on Windows assume that the current
+directory is <em>{work}</em><b><tt>\gs#.#[#]</tt></b>.
 
 <p>
 Build with the Borland compiler:
 
 <blockquote><pre>
 config bcwin32
+copy /b ..\gs\makefile .
 erase obj\*.*
 make > bc.log
 </pre></blockquote>
 
 <p>
 Smoke test the executables (both <b><tt>gswin32</tt></b> and
-<b><tt>gswin32c</tt></b>).  Then build with the Microsoft compiler:
+<b><tt>gswin32c</tt></b>), as described above for source distributions.
+Then build with the Microsoft compiler:
 
 <blockquote><pre>
 config msvc32
+copy /b ..\gs\makefile .
 erase obj\*.*
 nmake > msvc.log
 </pre></blockquote>
@@ -410,15 +521,77 @@ However, if it did work, this is how to do it:
 
 <blockquote><pre>
 config watcw32
+copy /b ..\gs\makefile .
 erase obj\*.*
 wmake -u > watc.log
 </pre></blockquote>
 
+<p>
 If everything is OK, make the self-extracting executables:
 
 <blockquote><pre>
 nmake archive
 </pre></blockquote>
+
+<p>
+This creates
+
+<blockquote><pre>
+<em>{work}</em><b><tt>\gs###w32.zip</tt></b>
+<em>{work}</em><b><tt>\gs###w32.exe</tt></b>
+</pre></blockquote>
+
+<p>
+These two files are the output of this process, and are what should be
+uploaded to the distribution directories.
+
+<h3><a name="Dual_boot_environments"></a>Dual-boot environments</h3>
+
+<p>The following directions assume that <em>{work}</em> is
+<b><tt>c:\work</tt></b>, as noted above.
+
+<p>
+For a dual-boot environment, you will need, in addition to the files listed
+under <a href="Source_distributions">"Source distributions"</a> above:
+<blockquote><pre>
+<b><tt>master/makezips</tt></b> (link to <b><tt>makeset.tcl</tt></b>)
+</pre></blockquote>
+
+<p>
+Mount the Windows partition on <b><tt>/c</tt></b>, and create the
+<b><tt>/c/work</tt></b> directory if needed.
+
+<p>
+Make the Windows zip files and copy them to the Windows partition:
+
+<blockquote><pre>
+master/makezips
+cp gs###*.zip 3rdparty.zip /c/work
+</pre></blockquote>
+
+<p>
+This creates and copies the files
+
+<blockquote><pre>
+<b><tt>gs###src.zip</tt></b> (source files)
+<b><tt>gs###lib.zip</tt></b> (runtime and font files)
+<b><tt>3rdparty.zip</tt></b> (third-party libraries)
+</pre></blockquote>
+
+<p>
+Boot into Windows.  Unpack the archives:
+
+<blockquote><pre>
+cd \work
+unzip -oq gs###src.zip
+unzip -oq gs###lib.zip
+unzip -oq 3rdparty.zip
+cd gs#.#[#]
+</pre></blockquote>
+
+<p>
+Then carry out the steps described under <a
+href="Building_on_Windows">"Building on Windows"</a> above.
 
 <p>
 Boot back into Linux.  If testing in Windows revealed problems, edit the
@@ -427,7 +600,7 @@ the consistency of the source code."</a>
 
 <h3><a name="Finishing_up"></a>Finishing up</h3>
 
-Execute
+If you are maintaining local master copies, execute
 
 <blockquote><pre>
 master/makemaster
@@ -437,17 +610,21 @@ master/makemaster
 This creates <b><tt>master/###</tt></b> if necessary, and moves the archives
 to it.
 
+<p>
+Upload <b><tt>ghostscript-#.##.tar.*</tt></b> and <b><tt>gs###w32.*</tt></b>
+using the "Release files" facility on SourceForge.
+
 <h2><a name="Tester_or_beta"></a>Tester or beta distributions</h2>
 
 <p>
 Do the steps for distributions in general.
 
 <p>
-FTP <b><tt>ghostscript-#.##.tar.*</tt></b> and <b><tt>gs###*.zip</tt></b> to
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/test</tt></b>.
+Upload <b><tt>ghostscript-#.##.tar.*</tt></b> and <b><tt>gs###w32.*</tt></b>
+to <b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/test</tt></b>.
 
 <p>
-FTP the same files from there to
+Copy the same files from there to
 <b><tt>ftp://www.aladdin.com/pub/ftp/ghost/aladdin/test</tt></b>.
 
 <p>
@@ -462,7 +639,7 @@ If <b><tt>doc/C-style.htm</tt></b> has changed, put it on
 Construct the e-mail announcement by editing <b><tt>beta.msg</tt></b>;
 include the News section for this release.  Mail using:
 <blockquote>
-	To: gs-test
+To: gs-test
 </blockquote>
 
 <h2><a name="Public_releases"></a>Public releases</h2>
@@ -478,24 +655,11 @@ Do the steps for distributions in general.
 <p>
 E-mail the release announcement using:
 <blockquote>
-	To: gs-announce
+To: gs-announce
 </blockquote>
 
 <p>
 Edit the Web pages on the Wisconsin server to reflect the new release.
-
-<h1><a name="File_servers"></a>File servers</h1>
-
-<p>
-The public distribution point is
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/</tt></b>.
-
-<p>
-The tester release distribution points are
-<blockquote>
-<b><tt>ftp://ftp.cs.wisc.edu/ghost/aladdin/test/</tt></b><br>
-<b><tt>ftp://www.aladdin.com/ghost/aladdin/test/</tt></b>
-</blockquote>
 
 <!-- [2.0 end contents] ==================================================== -->
 
