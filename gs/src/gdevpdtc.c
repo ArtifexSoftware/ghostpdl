@@ -432,7 +432,7 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     const gs_glyph *glyphs = (const gs_glyph *)vdata;
     gs_matrix scale_matrix;
     pdf_font_resource_t *pdfont; /* CIDFont */
-    gs_font_type0 *font0;
+    gs_font_type0 *font0 = NULL;
     pdf_font_resource_t *pdgsf; /* Type 0 */
     int code;
 
@@ -475,8 +475,10 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 
     /* Create the CMap and Type 0 font if they don't exist already. */
 
-    font0 = pdfont->u.cidfont.glyphshow_font;
-    if (font0 != 0) {
+    if (pdfont->u.cidfont.glyphshow_font_id != 0)
+	font0 = (gs_font_type0 *)gs_find_font_by_id(font->dir, 
+		    pdfont->u.cidfont.glyphshow_font_id);
+    if (font0 != NULL) {
 	/* We could store this instead of looking it up.... */
 	pdgsf = (pdf_font_resource_t *)
 	    pdf_find_resource_by_gs_id(pdev, resourceFont, font0->id);
@@ -484,13 +486,13 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
 	    return_error(gs_error_Fatal);
     } else {
 	code = gs_font_type0_from_cidfont(&font0, font, font->WMode,
-					  &scale_matrix, pdev->pdf_memory);
+					  &scale_matrix, font->memory);
 	if (code < 0)
 	    return code;
 	code = pdf_font_type0_alloc(pdev, &pdgsf, font0->id, pdfont);
 	if (code < 0)
 	    return code;
-	pdfont->u.cidfont.glyphshow_font = font0;
+	pdfont->u.cidfont.glyphshow_font_id = font0->id;
     }
 
     /* Now handle the glyphshow as a show in the Type 0 font. */
@@ -506,11 +508,6 @@ process_cid_text(gs_text_enum_t *pte, const void *vdata, void *vbuf,
     gs_type0_init_fstack(pte, pte->current_font);
     code = process_cmap_text_common(pte, vbuf, vbuf, pte->text.size, pdgsf,
 				    pdfont);
-    /******
-     * font0->data.FDepVector[0] references the uncopied CIDFont, which
-     * may be freed any time after text processing completes.  How to
-     * clear this at the right time?
-     ******/
     pte->current_font = scaled_font;
     pte->text = save.text;
     pte->index = save.index + pte->index / 2;
