@@ -436,15 +436,15 @@ include $(GLSRCDIR)/unixinst.mak
 # configure.ac and Makefile.in are symlinks from a subdir 
 # (created by autogen.sh) and so are safe to remove
 distclean : clean config-clean
-	-$(RM) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
-	-$(RM) -r autom4te.cache
-	-$(RM) config.log config.status
-	-$(RM) Makefile
+	-$(RM_) -r $(BINDIR) $(GLOBJDIR) $(PSOBJDIR)
+	-$(RM_) -r autom4te.cache
+	-$(RM_) config.log config.status
+	-$(RM_) Makefile
 
 maintainer-clean : distclean
-	-$(RM) configure.ac
-	-$(RM) configure
-	-$(RM) Makefile.in
+	-$(RM_) configure.ac
+	-$(RM_) configure
+	-$(RM_) Makefile.in
 
 check : default
 	$(NO_OP)

@@ -227,7 +227,7 @@ dnl png for the png output device; it also requires zlib
 LIBPNGDIR=src
 PNGDEVS=''
 AC_MSG_CHECKING([for local png library source])
-if test -d libpng; then
+if test -f libpng/pngread.c; then
 	AC_MSG_RESULT([yes])
 	SHARE_LIBPNG=0
 	LIBPNGDIR=libpng
