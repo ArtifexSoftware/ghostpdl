@@ -383,6 +383,7 @@ struct gx_device_pdf_s {
     bool ReEncodeCharacters;
     long FirstObjectNumber;
     bool CompressFonts;
+    long MaxInlineImageSize;
     /* End of parameters */
     /* Values derived from DSC comments */
     bool is_EPS;
@@ -654,6 +655,9 @@ extern const gs_memory_struct_type_t *const pdf_resource_type_structs[];
 long pdf_open_separate(gx_device_pdf * pdev, long id);
 long pdf_begin_separate(gx_device_pdf * pdev);
 
+/* Reserve object id. */
+void pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *ppres, long id);
+
 /* Begin an aside (resource, annotation, ...). */
 int pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
 		const gs_memory_struct_type_t * pst, pdf_resource_t **ppres,
@@ -675,10 +679,18 @@ int pdf_begin_resource_body(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 int pdf_alloc_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype,
 		       gs_id rid, pdf_resource_t **ppres, long id);
 
+/* Find same resource. */
+int pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, 
+	pdf_resource_t **ppres);
+
 /* Find a resource of a given type by gs_id. */
 pdf_resource_t *pdf_find_resource_by_gs_id(gx_device_pdf * pdev,
 					   pdf_resource_type_t rtype,
 					   gs_id rid);
+
+/* Cancel a resource (do not write it into PDF). */
+int pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, 
+	pdf_resource_type_t rtype);
 
 /* Get the object id of a resource. */
 long pdf_resource_id(const pdf_resource_t *pres);

@@ -383,8 +383,9 @@ cos_uncopy_element_value(cos_value_t *pcv, gs_memory_t *mem, bool copy)
 
 private cos_proc_release(cos_generic_release);
 private cos_proc_write(cos_generic_write);
+private cos_proc_equal(cos_generic_equal);
 const cos_object_procs_t cos_generic_procs = {
-    cos_generic_release, cos_generic_write
+    cos_generic_release, cos_generic_write, cos_generic_equal
 };
 
 cos_object_t *
@@ -410,12 +411,18 @@ cos_generic_write(const cos_object_t *pco, gx_device_pdf *pdev)
     return_error(gs_error_Fatal);
 }
 
+private int
+cos_generic_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
+{
+    return_error(gs_error_Fatal);
+}
+
 /* ------ Arrays ------ */
 
 private cos_proc_release(cos_array_release);
 private cos_proc_write(cos_array_write);
 const cos_object_procs_t cos_array_procs = {
-    cos_array_release, cos_array_write
+    cos_array_release, cos_array_write, cos_generic_equal
 };
 
 cos_array_t *
@@ -640,8 +647,9 @@ cos_array_reorder(const cos_array_t *pca, cos_array_element_t *first)
 
 private cos_proc_release(cos_dict_release);
 private cos_proc_write(cos_dict_write);
+private cos_proc_equal(cos_dict_equal);
 const cos_object_procs_t cos_dict_procs = {
-    cos_dict_release, cos_dict_write
+    cos_dict_release, cos_dict_write, cos_dict_equal
 };
 
 cos_dict_t *
@@ -942,6 +950,36 @@ cos_dict_find_c_key(const cos_dict_t *pcd, const char *key)
     return cos_dict_find(pcd, (const byte *)key, strlen(key));
 }
 
+/* Compare two dictionaries. */
+int
+cos_dict_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
+{
+    const cos_dict_t *pcd0 = (const cos_dict_t *)pco0;
+    const cos_dict_t *pcd1 = (const cos_dict_t *)pco1;
+    cos_dict_element_t *pcde0 = pcd0->elements;
+
+    for (; pcde0; pcde0 = pcde0->next) {
+	const cos_value_t *v = cos_dict_find(pcd1, pcde0->key.data, pcde0->key.size);
+
+	if (v == NULL)
+	    return false;
+	switch (pcde0->value.value_type) {
+	    case COS_VALUE_SCALAR:
+	    case COS_VALUE_CONST:
+		if (bytes_compare(pcde0->value.contents.chars.data, pcde0->value.contents.chars.size, 
+				  v->contents.chars.data, v->contents.chars.size))
+		    return false;
+		break;
+	    case COS_VALUE_OBJECT:
+	    case COS_VALUE_RESOURCE:
+		if (pcde0->value.contents.object != v->contents.object)
+		    return false;
+		break;
+	}
+    }
+    return true;
+}
+
 /* Set up a parameter list that writes into a Cos dictionary. */
 
 /* We'll implement the other printers later if we have to. */
@@ -1048,8 +1086,9 @@ cos_param_list_writer_init(cos_param_list_writer_t *pclist, cos_dict_t *pcd,
 
 private cos_proc_release(cos_stream_release);
 private cos_proc_write(cos_stream_write);
+private cos_proc_equal(cos_stream_equal);
 const cos_object_procs_t cos_stream_procs = {
-    cos_stream_release, cos_stream_write
+    cos_stream_release, cos_stream_write, cos_stream_equal
 };
 
 cos_stream_t *
@@ -1077,6 +1116,57 @@ cos_stream_release(cos_object_t *pco, client_name_t cname)
     }
     pcs->pieces = 0;
     cos_dict_release(pco, cname);
+}
+
+private int
+cos_stream_equal(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
+{
+    const cos_stream_t *pcs0 = (const cos_stream_t *)pco0;
+    const cos_stream_t *pcs1 = (const cos_stream_t *)pco1;
+    bool result = false;
+
+    if (!cos_dict_equal(pco0, pco1, pdev))
+	return false;
+    {
+	/* fixme : this assumes same segmentation for both streams.
+	   In general it is not true. */
+	FILE *sfile = pdev->streams.file;
+	cos_stream_piece_t *pcsp0 = pcs0->pieces, *pcsp1 = pcs1->pieces;
+	long position_save = ftell(sfile);
+
+	for (; pcsp0 && pcsp1; pcsp0 = pcsp0->next, pcsp1 = pcsp1->next) {
+	    long position10 = pcsp1->position;
+	    long position0 = pcsp0->position;
+	    long position1 = pcsp1->position;
+	    uint size0 = pcsp0->size;
+	    uint size1 = pcsp1->size;
+	    byte buf0[512], buf1[sizeof(buf0)];
+
+	    if (size0 != size1)
+		goto notequal;
+	    for(; size0; position0 += size1, position1 += size1, size0 -= size1) {
+		size1 = min(sizeof(buf0), size0);
+		fseek(sfile, position0, SEEK_SET);
+		if (fread(buf0, 1, size1, sfile) != size1) {
+		    result = gs_note_error(gs_error_ioerror);
+		    goto notequal;
+		}
+		fseek(sfile, position1, SEEK_SET);
+		if (fread(buf1, 1, size1, sfile) != size1) {
+		    result = gs_note_error(gs_error_ioerror);
+		    goto notequal;
+		}
+		if (memcmp(buf0, buf1, size1))
+		    goto notequal;
+	    }
+	}
+	if (pcsp0 || pcsp1)
+	    goto notequal;
+	result = true;
+notequal:
+	fseek(sfile, position_save, SEEK_SET);
+	return result;
+    }
 }
 
 /* Find the total length of a stream. */
@@ -1221,6 +1311,30 @@ cos_stream_add_stream_contents(cos_stream_t *pcs, stream *s)
 	}
     } while ((code = cos_stream_add_bytes(pcs, sbuff, cnt)) >= 0);
     return code;
+}
+
+/* Release the last contents piece of a stream object. */
+/* Warning : this function can't release pieces if another stream is written after them. */
+int
+cos_stream_release_pieces(cos_stream_t *pcs)
+{
+    gx_device_pdf *pdev = pcs->pdev;
+    stream *s = pdev->streams.strm;
+    long position = stell(s), position0 = position;
+    gs_memory_t *mem = cos_object_memory((cos_object_t *)pcs);
+
+    while (pcs->pieces != NULL &&
+		position == pcs->pieces->position + pcs->pieces->size) {
+	cos_stream_piece_t *p = pcs->pieces;
+
+	position -= p->size;
+	pcs->pieces = p->next;
+	gs_free_object(mem, p, "cos_stream_release_pieces");
+    }
+    if (position0 != position)
+	if (sseek(s, position) < 0)
+	    return_error(gs_error_ioerror);
+    return 0;
 }
 
 /* Create a stream that writes into a Cos stream. */

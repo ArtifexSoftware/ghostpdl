@@ -70,7 +70,7 @@ pdf_copy_mask_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     } else {
 	row_base = base;
 	row_step = raster;
-	in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
+	in_line = nbytes < pdev->MaxInlineImageSize;
 	pdf_put_image_matrix(pdev, &pim->ImageMatrix, 1.0);
 	/*
 	 * Check whether we've already made an XObject resource for this
@@ -221,7 +221,7 @@ pdf_copy_mono(gx_device_pdf *pdev,
     {
 	ulong nbytes = (ulong) ((w + 7) >> 3) * h;
 
-	in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
+	in_line = nbytes < pdev->MaxInlineImageSize;
 	if (in_line)
 	    pdf_put_image_matrix(pdev, &image.ImageMatrix, 1.0);
 	code = pdf_open_page(pdev, PDF_IN_STREAM);
@@ -362,7 +362,7 @@ pdf_copy_color_data(gx_device_pdf * pdev, const byte * base, int sourcex,
     } else {
 	row_base = base;
 	row_step = raster;
-	in_line = nbytes <= MAX_INLINE_IMAGE_BYTES;
+	in_line = nbytes < pdev->MaxInlineImageSize;
 	pdf_put_image_matrix(pdev, &pim->ImageMatrix, 1.0);
 	/*
 	 * Check whether we've already made an XObject resource for this
@@ -501,7 +501,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 	gs_image_t image;
 	pdf_image_writer writer;
 	long image_bytes = ((long)tw * depth + 7) / 8 * th;
-	bool in_line = image_bytes <= MAX_INLINE_IMAGE_BYTES;
+	bool in_line = image_bytes < pdev->MaxInlineImageSize;
 	ulong tile_id =
 	    (tw == tiles->size.x && th == tiles->size.y ? tiles->id :
 	     gx_no_bitmap_id);

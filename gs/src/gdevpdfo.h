@@ -76,6 +76,10 @@ typedef struct cos_stream_piece_s cos_stream_piece_t;
   int proc(const cos_object_t *pco, gx_device_pdf *pdev)
 	cos_proc_write((*write));
 
+#define cos_proc_equal(proc)\
+  int proc(const cos_object_t *pco0, const cos_object_t *pco1, gx_device_pdf *pdev)
+	cos_proc_equal((*equal));
+
 } /*cos_object_procs_t*/;
 /*typedef const cos_object_procs_t *cos_type_t;*/
 #define cos_type(pco) ((pco)->cos_procs)
@@ -251,6 +255,7 @@ int cos_dict_move_all(cos_dict_t *, cos_dict_t *);
 int cos_stream_add(cos_stream_t *, uint);
 int cos_stream_add_bytes(cos_stream_t *, const byte *, uint);
 int cos_stream_add_stream_contents(cos_stream_t *, stream *);
+int cos_stream_release_pieces(cos_stream_t *pcs);
 cos_dict_t *cos_stream_dict(cos_stream_t *);
 
 /*

@@ -186,9 +186,6 @@ int pdf_put_image_filters(cos_dict_t *pcd, gx_device_pdf *pdev,
 
 /* ------ Image writing ------ */
 
-/* Define the maximum size of an in-line image. */
-#define MAX_INLINE_IMAGE_BYTES 4000
-
 /*
  * Fill in the image parameters for a device space bitmap.
  * PDF images are always specified top-to-bottom.

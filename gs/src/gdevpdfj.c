@@ -298,7 +298,7 @@ pdf_begin_write_image(gx_device_pdf * pdev, pdf_image_writer * piw,
 	 * while the image is being accumulated: named, and pres->object.
 	 */
 	code = pdf_alloc_resource(pdev, resourceXObject, id, &piw->pres,
-				  (named ? named->id : 0L));
+				  (named ? named->id : -1L));
 	if (code < 0)
 	    return code;
 	cos_become(piw->pres->object, cos_type_stream);
@@ -453,10 +453,22 @@ pdf_end_write_image(gx_device_pdf * pdev, pdf_image_writer * piw)
 	     */
 	    *(cos_object_t *)named = *pco;
 	    pres->object = COS_OBJECT(named);
-	}
-	else if (!pres->named) { /* named objects are written at the end */
-	    cos_write_object(pco, pdev);
-	    cos_release(pco, "pdf_end_write_image");
+	} else if (!pres->named) { /* named objects are written at the end */
+	    int code = pdf_find_same_resource(pdev, resourceXObject, &piw->pres);
+
+	    if (code < 0)
+		return code;
+	    if (code > 0) {
+		/*  Warning : if the image used alternate streams,
+		    its space in the pdev->streams.strm file
+		    won't be released.
+		 */
+		code = pdf_cancel_resource(pdev, pres, resourceXObject);
+		if (code < 0)
+		    return code;
+		piw->pres->where_used |= pdev->used_mask;
+	    } else if (pres->object->id < 0)
+		pdf_reserve_object_id(pdev, pres, 0);
 	}
 	return 0;
     } else {			/* in-line image */

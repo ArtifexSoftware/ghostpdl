@@ -242,7 +242,6 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 	gs_image3x_t type3x;
 	gs_image4_t type4;
     } image[2];
-    ulong nbytes;
     int width, height;
     const gs_range_t *pranges = 0;
     int alt_writer_count;
@@ -402,10 +401,14 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
     pie->bits_per_pixel =
 	pim->BitsPerComponent * num_components / pie->num_planes;
     pie->rows_left = height;
-    nbytes = (((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
-	pie->num_planes * pie->rows_left;
-    /* Don't in-line the image if it is named. */
-    in_line &= nbytes <= MAX_INLINE_IMAGE_BYTES && pnamed == 0;
+    if (pnamed != 0) /* Don't in-line the image if it is named. */
+	in_line = false;
+    else {
+        double nbytes = (double)(((ulong) pie->width * pie->bits_per_pixel + 7) >> 3) *
+	    pie->num_planes * pie->rows_left;
+	
+	in_line &= (nbytes < pdev->MaxInlineImageSize);
+    }
     if (rect.p.x != 0 || rect.p.y != 0 ||
 	rect.q.x != pim->Width || rect.q.y != pim->Height ||
 	(is_mask && pim->CombineWithColor)
@@ -441,7 +444,7 @@ pdf_begin_typed_image(gx_device_pdf *pdev, const gs_imager_state * pis,
 				    pdev->transfer_not_identity ? 1 : 2);
     image[1] = image[0];
     if ((code = pdf_begin_write_image(pdev, &pie->writer, gs_no_id, width,
-				      height, pnamed, in_line, alt_writer_count)) < 0 ||
+		    height, pnamed, in_line, alt_writer_count)) < 0 ||
 	/*
 	 * Some regrettable PostScript code (such as LanguageLevel 1 output
 	 * from Microsoft's PSCRIPT.DLL driver) misuses the transfer

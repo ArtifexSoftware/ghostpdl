@@ -197,6 +197,7 @@ const gx_device_pdf gs_pdfwrite_device =
  1 /*true*/,			/* ReEncodeCharacters */
  1,				/* FirstObjectNumber */
  1 /*true*/,			/* CompressFonts */
+ 4000,				/* MaxInlineImageSize */
  0 /*false*/,			/* is_EPS */
  {-1, -1},			/* doc_dsc_info */
  {-1, -1},			/* page_dsc_info */
@@ -871,7 +872,12 @@ pdf_close(gx_device * dev)
     }
 
     /* Write the font resources and related resources. */
-
+    code = pdf_write_resource_objects(pdev, resourceXObject);
+    if (code >= 0)
+	code = code1;
+    code1 = pdf_free_resource_objects(pdev, resourceXObject);
+    if (code >= 0)
+	code = code1;
     code1 = pdf_close_text_document(pdev);
     if (code >= 0)
 	code = code1;

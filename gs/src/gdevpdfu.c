@@ -359,6 +359,23 @@ const gs_memory_struct_type_t *const pdf_resource_type_structs[] = {
     PDF_RESOURCE_TYPE_STRUCTS
 };
 
+/* Cancel a resource (do not write it into PDF). */
+int
+pdf_cancel_resource(gx_device_pdf * pdev, pdf_resource_t *pres, pdf_resource_type_t rtype)
+{
+    /* fixme : remove *pres from resource chain. */
+    pres->where_used = 0;
+    pres->object->written = true;
+    if (rtype == resourceXObject) {
+	int code = cos_stream_release_pieces((cos_stream_t *)pres->object);
+
+	if (code < 0)
+	    return code;
+    }
+    cos_release(pres->object, "pdf_cancel_resource");
+    return 0;
+}
+
 /* Find a resource of a given type by gs_id. */
 pdf_resource_t *
 pdf_find_resource_by_gs_id(gx_device_pdf * pdev, pdf_resource_type_t rtype,
@@ -380,6 +397,33 @@ pdf_find_resource_by_gs_id(gx_device_pdf * pdev, pdf_resource_type_t rtype,
     return 0;
 }
 
+/* Find same resource. */
+int
+pdf_find_same_resource(gx_device_pdf * pdev, pdf_resource_type_t rtype, pdf_resource_t **ppres)
+{
+    pdf_resource_t **pchain = pdev->resources[rtype].chains;
+    pdf_resource_t *pres;
+    cos_object_t *pco0 = (*ppres)->object;
+    int i;
+    
+    for (i = 0; i < NUM_RESOURCE_CHAINS; i++) {
+	for (pres = pchain[i]; pres != 0; pres = pres->next) {
+	    if (!pres->named && *ppres != pres) {
+		cos_object_t *pco1 = pres->object;
+		int code = pco0->cos_procs->equal(pco0, pco1, pdev);
+
+		if (code < 0)
+		    return code;
+		if (code > 0) {
+		    *ppres = pres;
+		    return 1;
+		}
+	    }
+	}
+    }
+    return 0;
+}
+
 /* Begin an object logically separate from the contents. */
 long
 pdf_open_separate(gx_device_pdf * pdev, long id)
@@ -393,6 +437,13 @@ long
 pdf_begin_separate(gx_device_pdf * pdev)
 {
     return pdf_open_separate(pdev, 0L);
+}
+
+void
+pdf_reserve_object_id(gx_device_pdf * pdev, pdf_resource_t *pres, long id)
+{
+    pres->object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
+    sprintf(pres->rname, "R%ld", pres->object->id);
 }
 
 /* Begin an aside (resource, annotation, ...). */
@@ -412,20 +463,18 @@ pdf_alloc_aside(gx_device_pdf * pdev, pdf_resource_t ** plist,
     if (pres == 0 || object == 0) {
 	return_error(gs_error_VMerror);
     }
+    pres->object = object;
     if (id < 0) {
 	object->id = -1L;
 	pres->rname[0] = 0;
-    } else {
-	object->id = (id == 0 ? pdf_obj_ref(pdev) : id);
-	sprintf(pres->rname, "R%ld", object->id);
-    }
+    } else
+	pdf_reserve_object_id(pdev, pres, id);
     pres->next = *plist;
     *plist = pres;
     pres->prev = pdev->last_resource;
     pdev->last_resource = pres;
     pres->named = false;
     pres->where_used = pdev->used_mask;
-    pres->object = object;
     *ppres = pres;
     return 0;
 }
@@ -597,11 +646,6 @@ pdf_store_page_resources(gx_device_pdf *pdev, pdf_page_t *page)
 		pdf_write_resource_objects(pdev, i);
 	}
     }
-
-    /* Free unnamed resource objects, which can't be referenced again. */
-
-    pdf_free_resource_objects(pdev, resourceXObject);
-
     page->procsets = pdev->procsets;
     return 0;
 }
