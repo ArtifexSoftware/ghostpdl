@@ -38,6 +38,8 @@ if os.name == 'nt':
 	baselineoptions = ' -I' + baselinedir + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
 	compareoptions  = ' -I' + comparedir  + 'lib;' + gsfontdir + ' -dGS_FONTPATH:' + gsfontdir
 
+	fuzzy = 'D:/path/to/fuzzy.exe'
+
 else:
 
 	testroot = '/path/to/testbase/'
@@ -53,3 +55,5 @@ else:
 	comparegs = comparedir + 'bin/gs'
 	baselineoptions = ''
 	compareoptions  = ''
+
+	fuzzy = '/path/to/fuzzy'

@@ -21,6 +21,7 @@
 
 import os
 import string
+import gsconf
 from gstestutils import GSTestCase
 
 class Ghostscript:
@@ -114,3 +115,56 @@ class GSCompareTestCase(_GhostscriptTestCase):
 		os.unlink(file)
 		
 		self.assertEqual(sum, gssum.get_sum(file), 'md5sum did not match baseline (' + file + ') for file: ' + self.file)
+
+
+def fuzzy_compare(file1, file2, tolerance=2, windowsize=5):
+	cmd = gsconf.fuzzy + ' -w%d -t%d %s %s > /dev/null 2> /dev/null' % (windowsize, tolerance, file1, file2)
+
+	ret = os.system(cmd)
+	if ret == 0:
+		return 1
+	else:
+		return 0
+
+		
+class GSFuzzyCompareTestCase(_GhostscriptTestCase):
+	def shortDescription(self):
+		return "Doing pdfwrite fuzzy test of %s (%s/%d/%d)" % (self.file[string.rindex(self.file, '/') + 1:], self.device, self.dpi, self.band)
+	
+	def runTest(self):
+		file1 = '%s.%s.%d.%d' % (self.file, self.device, self.dpi, self.band)
+		file2 = '%s.%s.%d.%d.pdf' % (self.file, 'pdfwrite', self.dpi, self.band)
+		file3 = '%s.pdfwrite.%s.%d.%d' % (self.file, self.device, self.dpi, self.band)
+
+		gs = Ghostscript()
+		gs.command = self.gs
+		gs.dpi = self.dpi
+		gs.band = self.band
+		gs.infile = self.file
+		gs.device = self.device
+
+		# do PostScript->device (pbmraw, pgmraw, ppmraw, pkmraw)
+
+		gs.outfile = file1
+		gs.process()
+
+		# do PostScript->pdfwrite
+		
+		gs.device = 'pdfwrite'
+		gs.outfile = file2
+		gs.process()
+
+		# do PDF->device (pbmraw, pgmraw, ppmraw, pkmraw)
+		
+		gs.device = self.device
+		gs.infile = file2
+		gs.outfile = file3
+		gs.process()
+
+		# fuzzy compare PostScript->device with PostScript->PDF->device
+		
+		ret = fuzzy_compare(file1, file3)
+		os.unlink(file1)
+		os.unlink(file2)
+		os.unlink(file3)
+		self.assert_(ret, "fuzzy match failed")
