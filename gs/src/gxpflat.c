@@ -827,8 +827,11 @@ gx_flattened_iterator__switch_to_backscan2(gx_flattened_iterator *this,
 	}
 #   else
 	gx_flattened_iterator__switch_to_backscan1(this);
-	if (!last_segment)
-	    assert(gx_flattened_iterator__prev_filtered2_aux(this));
+	if (!last_segment) {
+	    int foo;
+	    foo = gx_flattened_iterator__prev_filtered2_aux(this);
+	    assert(foo);
+	}
 	gx_flattened_iterator__prev_filtered2_aux(this);
 #   endif
 }

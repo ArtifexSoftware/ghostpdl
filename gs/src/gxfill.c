@@ -870,8 +870,9 @@ init_contour_cursor(line_list *ll, contour_cursor *q)
 	curve_segment *s = (curve_segment *)q->pseg;
 	int k = gx_curve_log2_samples(ll->memory, q->prev->pt.x, q->prev->pt.y, s, ll->fixed_flat);
 
-	assert(gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, 
-					s, k, false));
+	int foo = gx_flattened_iterator__init(q->fi, q->prev->pt.x, q->prev->pt.y, 
+					      s, k, false);
+	assert(foo);
     } else {
 	q->dir = compute_dir(ll, q->prev->pt.y, q->pseg->pt.y);
 	gx_flattened_iterator__init_line(q->fi, 
@@ -1212,15 +1213,19 @@ init_al(const gs_memory_t *mem, active_line *alp, const segment *s0, const segme
 	if (alp->direction == DIR_UP) {
 	    int k = gx_curve_log2_samples(mem, s0->pt.x, s0->pt.y, (const curve_segment *)s1, fixed_flat);
 
-	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s0->pt.x, s0->pt.y, (const curve_segment *)s1, k, false));
+	    int foo = gx_flattened_iterator__init(&alp->fi, 
+						  s0->pt.x, s0->pt.y, 
+						  (const curve_segment *)s1, k, false);
+	    assert(foo);
 	    step_al(alp, true);
 	} else {
 	    int k = gx_curve_log2_samples(mem, s1->pt.x, s1->pt.y, (const curve_segment *)s0, fixed_flat);
 	    bool more;
 
-	    assert(gx_flattened_iterator__init(&alp->fi, 
-		s1->pt.x, s1->pt.y, (const curve_segment *)s0, k, false));
+	    int foo = gx_flattened_iterator__init(&alp->fi, 
+						  s1->pt.x, s1->pt.y, 
+						  (const curve_segment *)s0, k, false);
+	    assert(foo);
 	    alp->more_flattened = false;
 	    do {
 		more = gx_flattened_iterator__next_filtered2(&alp->fi);
@@ -1229,8 +1234,9 @@ init_al(const gs_memory_t *mem, active_line *alp, const segment *s0, const segme
 	    step_al(alp, false);
 	}
     } else {
-	assert(gx_flattened_iterator__init_line(&alp->fi, 
-		s0->pt.x, s0->pt.y, s1->pt.x, s1->pt.y));
+	int foo = gx_flattened_iterator__init_line(&alp->fi, s0->pt.x, 
+						   s0->pt.y, s1->pt.x, s1->pt.y);
+	assert(foo);
 	step_al(alp, true);
     }
     alp->pseg = s1;
