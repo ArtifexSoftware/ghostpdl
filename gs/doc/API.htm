@@ -65,8 +65,9 @@ is described here.
 
 <p>
 The Ghostscript interpreter can be built as a dynamic link library 
-(DLL) on the Windows or OS/2 platforms and as a shared object on the 
-Linux platform.  With some changes, it could be built as a static library.
+(DLL) on the Windows or OS/2 platforms, as a shared object on the 
+Linux platform and as a framework on MacOS X.
+With some changes, it could be built as a static library.
 This document describes the Application Programming Interface (API)
 for the Ghostscript interpreter library.  
 This should not be confused with the 
@@ -97,12 +98,25 @@ simultaneously.
 
 <li>The Linux shared object <b><tt>libgs.so</tt></b>
 can be used by multiple programs simultaneously.
+
+<li>The MacOS X <b><tt>Ghostscript.framework</tt></b> can also be used
+by multiple applications at once.
 </ul>
 
 <p>
 The source for the executable is in <b><tt>dw</tt></b>*.* (Windows),
 <b><tt>dp</tt></b>*.* (OS/2) and  <b><tt>dx</tt></b>*.* (Linux).  
 See these source files for examples of how to use the DLL.
+
+The source file <p><tt>dxmainc.c</tt> can serve as an example of how to use the 
+framework shared component on MacOS X. Just change the header includes to use 
+the Ghostscript namespace:
+<blockquote><pre><tt>#include &lt;Ghostscript/errors.h&gt;
+#include &lt;Ghostscript/iapi.h&gt;</tt></pre></blockquote>
+and link with:
+<blockquote><pre><tt>cc -o gsc dxmainc.c -framework Ghostscript</tt></pre></blockquote>
+To get a useable executable. <tt>Ghostscript.framework</tt> must be properly
+installed in the search path for this to work.
 
 <p>
 At this stage, Ghostscript does not support multiple instances
