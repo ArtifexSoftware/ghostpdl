@@ -306,8 +306,9 @@ typedef struct gx_device_pdf_s gx_device_pdf;
 /*
  * Define the structure for PDF font cache element.
  */
+typedef struct pdf_font_cache_elem_s pdf_font_cache_elem_t;
 typedef struct pdf_font_cache_elem_s {
-    struct pdf_font_cache_elem_s *next;
+    pdf_font_cache_elem_t *next;
     gs_id font_id;
     int num_chars;		/* safety purpose only */
     struct pdf_font_resource_s *pdfont;
