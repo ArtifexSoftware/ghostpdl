@@ -34,10 +34,10 @@
 public_st_pdf_image_writer();
 private ENUM_PTRS_WITH(pdf_image_writer_enum_ptrs, pdf_image_writer *piw)
      index -= 3;
-     if (index < psdf_binary_writer_max_ptrs * 3) {
+     if (index < psdf_binary_writer_max_ptrs * piw->alt_writer_count) {
 	 gs_ptr_type_t ret =
-	     ENUM_USING(st_psdf_binary_writer, &piw->binary[index % 3],
-			sizeof(psdf_binary_writer), index / 3);
+	     ENUM_USING(st_psdf_binary_writer, &piw->binary[index / psdf_binary_writer_max_ptrs],
+			sizeof(psdf_binary_writer), index % psdf_binary_writer_max_ptrs);
 
 	 if (ret == 0)		/* don't stop early */
 	     ENUM_RETURN(0);
