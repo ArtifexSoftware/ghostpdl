@@ -379,6 +379,11 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
      */
     const byte *p = pargs->source.ptr;
     const byte *rlimit = pargs->source.limit;
+    /* count points to allow medium size paths, performance optimization 
+     * point_count_max should be smaller than input buffer
+     */
+    int point_count = 0; 
+    static const int point_count_max = 100;
 
     if ( pargs->phase == 0 ) {
 	/* After PE is executed, the previous plotting mode (absolute or
@@ -480,12 +485,15 @@ hpgl_PE(hpgl_args_t *pargs, hpgl_state_t *pgls)
 				           pe_fixed2float(xy[1], fbits));
 		if ( pargs->phase & pe_pen_up ) {
 		    /* prevent paths from getting excessively large */
-		    if ( !pgls->g.polygon_mode )
+		    if ( !pgls->g.polygon_mode && point_count > point_count_max ) {
 			hpgl_call(hpgl_draw_current_path(pgls, hpgl_rm_vector));
+			point_count = 0;
+		    }
 		    hpgl_PU(&args, pgls);
 		}
 		else
 		    hpgl_PD(&args, pgls);
+		point_count++;
 	    }
 	    pargs->phase &= ~(pe_pen_up | pe_absolute);
 	    p = pargs->source.ptr;
