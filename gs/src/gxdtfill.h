@@ -194,7 +194,7 @@ GX_FILL_TRAPEZOID(gx_device * dev, const gs_fixed_edge * left,
 #define SET_MINIMAL_WIDTH(ixl, ixr, l, r) \
     if (ixl == ixr) \
 	if ((!peak0 || iy >= peak_y0) && (!peak1 || iy <= peak_y1)) {\
-	    fixed x = int2fixed(ixl) + fixed_half;\
+	    fixed x = int2fixed(ixl);\
 	    if (x - l.x < r.x - x)\
 		++ixr;\
 	    else\

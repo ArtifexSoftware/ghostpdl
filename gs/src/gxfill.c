@@ -2077,7 +2077,7 @@ fill_loop_by_trapezoids(ll_ptr ll, gx_device * dev,
 			 * against a dropout. Choose one of two pixels which 
 			 * is closer to the "axis".
 			 */
-			fixed x = int2fixed(xli) + fixed_half;
+			fixed x = int2fixed(xli);
 
 			if (x - xltop < xtop - x)
 			    ++xi;
