@@ -12,12 +12,13 @@
 # DIFFS between HP
 # Artifex reports the file offset of each operator HP does not.
 
+# for packing and unpacking binary data
+import re
+from struct import *
 import string 
-import regsub
+
 DEBUG = 0
 
-# for packing and unpacking binary data
-from struct import *
 
 # tags
 pxl_tags_dict = {
@@ -290,10 +291,11 @@ class pxl_asm:
         # pointer to data
         self.index = 0
 
-        self.data = regsub.gsub( '\/\/.*$', '', self.data )
-        self.data = regsub.gsub( '\012+', ' ', self.data )
+        self.data = re.sub( '\/\/.*\n', '', self.data )
+        self.data = re.sub( '\012+', ' ', self.data )
         # print out big endian protocol and revision.  NB should check
         # revisions are the same.
+        print "\033%-12345X@PJL ENTER LANGUAGE = PCLXL"
         print ") HP-PCL XL;2;0"
         # saved size of last array parsed
 
@@ -333,7 +335,6 @@ class pxl_asm:
         start = index
         while self.data[index] not in string.whitespace: index = index + 1
         end = index
-        self.debug_trace(  "found string %s\n", self.data[start:end])
         return self.data[start:end]
 
     def consume_next_string(self):
@@ -344,7 +345,6 @@ class pxl_asm:
 
     # redefine pack to handle endiannes
     def pack(self, format, *data):
-
         # prepend endian specifiers to stream if necessary.  NB we
         # don't handle ascii streams and the endian formatting does
         # not work properly right now:
@@ -355,31 +355,31 @@ class pxl_asm:
         # else:
         # format = '<' + format
         for args in data:
-            sys.stdout.write(pack(format, args))
+            try:
+                sys.stdout.write(pack(format, args))
+            except:
+
+                # shouldn't fail but if it does dump the remaining
+                # data into the stream and regenerate the failure.
+                sys.stdout.write(pack(format, args))
     
     # implicitly read when parsing the tag
     def attributeIDValue(self):
-        self.debug_trace("attributeIDValue")
         return 1
 
     # search for next expected tag "tag" and print its hex value.
     def getTag(self, tag):
-        self.debug_trace("getTag")
         new_tag = self.next_string()
-        self.debug_trace("getTag: found tag: %s", new_tag)
-        self.debug_trace("getTag: looking for: %s", tag)
-        self.debug_trace("%d", new_tag == tag)
         if ( new_tag == tag ):
             self.consume_next_string()
             self.debug_trace( "found tag: %s %x", tag, pxl_tags_dict[tag] )
             self.pack( "B", pxl_tags_dict[tag] )
             return 1
-        self.debug_trace( "tag not found: %s", tag )
+
         return 0
 
     # get the next operator
     def operatorTag(self):
-        self.debug_trace("operatorTag")
         self.operator_position = self.operator_position + 1
         tag = self.next_string()
         self.debug_trace( "searching for operator: %s", tag )
@@ -395,42 +395,36 @@ class pxl_asm:
         return 0
 
     def Tag_ubyte(self):
-        self.debug_trace("Tag_ubyte")
         if ( self.getTag( 'ubyte' ) ):
              self.pack_string = 'B'
              return 1
         return 0
 
     def Tag_sint16(self):
-        self.debug_trace("Tag_sint16")
         if ( self.getTag( 'sint16' ) ):
             self.pack_string = 'h'
             return 1
         return 0
 
     def Tag_uint16(self):
-        self.debug_trace("Tag_uint16")
         if ( self.getTag( 'uint16' ) ):
              self.pack_string = 'H'
              return 1
         return 0
 
     def Tag_sint32(self):
-        self.debug_trace("Tag_sint32")
         if ( self.getTag( 'sint32' ) ):
             self.pack_string = 'l'
             return 1
         return 0
 
     def Tag_uint32(self):
-        self.debug_trace("Tag_uint32")
         if ( self.getTag( 'uint32' ) ):
              self.pack_string = 'L'
              return 1
         return 0
 
     def Tag_real32(self):
-        self.debug_trace("Tag_real32")
         if ( self.getTag( 'real32' ) ):
             self.pack_string = 'f'
             return 1
@@ -442,7 +436,6 @@ class pxl_asm:
         self.index = self.index + 1
             
     def Tag_ubyte_array(self):
-        self.debug_trace("Tag_ubyte_array")
         if ( self.getTag( 'ubyte_array' ) ):
             self.consume_to_char_plus_one('[')
             self.pack_string = 'B'
@@ -450,7 +443,6 @@ class pxl_asm:
         return 0
 
     def Tag_uint16_array(self):
-        self.debug_trace("Tag_uint16_array")
         if ( self.getTag( 'uint16_array' ) ):
             self.pack_string = 'H'
             self.consume_to_char_plus_one('[')
@@ -458,7 +450,6 @@ class pxl_asm:
         return 0
 
     def Tag_sint16_array(self):
-        self.debug_trace("Tag_sint16_array")
         if ( self.getTag( 'sint16_array' ) ):
             self.pack_string = 'h'
             self.consume_to_char_plus_one('[')
@@ -466,7 +457,6 @@ class pxl_asm:
         return 0
 
     def Tag_uint32_array(self):
-        self.debug_trace("Tag_uint32_array")
         if ( self.getTag( 'uint32_array' ) ):
             self.pack_string = 'L'
             self.consume_to_char_plus_one('[')
@@ -474,7 +464,6 @@ class pxl_asm:
         return 0
 
     def Tag_sint32_array(self):
-        self.debug_trace("Tag_sint32_array")
         if ( self.getTag( 'sint32_array' ) ):
             self.pack_string = 'l'
             self.consume_to_char_plus_one('[')
@@ -482,7 +471,6 @@ class pxl_asm:
         return 0
 
     def Tag_real32_array(self):
-        self.debug_trace("Tag_real32_array")
         if ( self.getTag( 'real32_array' ) ):
             self.pack_string = 'f'
             self.consume_to_char_plus_one('[')
@@ -490,49 +478,42 @@ class pxl_asm:
         return 0
     
     def Tag_ubyte_xy(self):
-        self.debug_trace("Tag_ubyte_xy")
         if ( self.getTag( 'ubyte_xy' ) ):
             self.pack('B', self.next_num(), self.next_num())
             return 1
         return 0
 
     def Tag_uint16_xy(self):
-        self.debug_trace("Tag_uint16_xy")
         if ( self.getTag( 'uint16_xy' ) ):
             self.pack('H', self.next_num(), self.next_num())
             return 1
         return 0
 
     def Tag_sint16_xy(self):
-        self.debug_trace("Tag_sint16_xy")
         if ( self.getTag( 'sint16_xy' ) ):
             self.pack('h', self.next_num(), self.next_num())
             return 1
         return 0
 
     def Tag_uint32_xy(self):
-        self.debug_trace("Tag_uint32_xy")
         if ( self.getTag( 'uint32_xy' ) ):
             self.pack('L', self.next_num(), self.next_num())
             return 1
         return 0
 
     def Tag_sint32_xy(self):
-        self.debug_trace("Tag_sint32_xy")
         if ( self.getTag( 'sint32_xy' ) ):
             self.pack('l', self.next_num(), self.next_num())
             return 1
         return 0
 
     def Tag_real32_xy(self):
-        self.debug_trace("Tag_real32_xy")
         if ( self.getTag( 'real32_xy' ) ):
             self.pack('f', self.next_num(), self.next_num())
             return 1
         return 0
     
     def Tag_ubyte_box(self):
-        self.debug_trace("Tag_ubyte_box")
         if ( self.getTag( 'ubyte_box' ) ):
             self.pack('B', self.next_num(), self.next_num(),
                       self.next_num(), self.next_num())
@@ -540,7 +521,6 @@ class pxl_asm:
         return 0
 
     def Tag_uint16_box(self):
-        self.debug_trace("Tag_uint16_box")
         if ( self.getTag( 'uint16_box' ) ):
             self.pack('H', self.next_num(), self.next_num(),
                       self.next_num(), self.next_num())
@@ -548,7 +528,6 @@ class pxl_asm:
         return 0
 
     def Tag_sint16_box(self):
-        self.debug_trace("Tag_sint16_box")
         if ( self.getTag( 'sint16_box' ) ):
             self.pack('h', self.next_num(), self.next_num(),
                       self.next_num(), self.next_num())
@@ -556,7 +535,6 @@ class pxl_asm:
         return 0
 
     def Tag_uint32_box(self):
-        self.debug_trace("Tag_uint32_box")
         if ( self.getTag( 'uint32_box' ) ):
             self.pack('L', self.next_num(), self.next_num(),
                       self.next_num(), self.next_num())
@@ -564,7 +542,6 @@ class pxl_asm:
         return 0
 
     def Tag_sint32_box(self):
-        self.debug_trace("Tag_sint32_box")
         if ( self.getTag( 'sint32_box' ) ):
             self.pack('l', self.next_num(), self.next_num(),
                       self.next_num(), self.next_num())
@@ -572,7 +549,6 @@ class pxl_asm:
         return 0
 
     def Tag_real32_box(self):
-        self.debug_trace("Tag_real32_box")
         if ( self.getTag( 'real32_box' ) ):
             self.pack('f', self.next_num(), self.next_num(),
                       self.next_num(), self.next_num())
@@ -581,11 +557,9 @@ class pxl_asm:
     
     # check for embedded tags.
     def is_Embedded(self, name):
-        self.debug_trace("is_Embedded")
         return ( name == 'embedded_data' or name == 'embedded_data_byte' )
 
     def process_EmbeddedInfo(self, name):
-        self.debug_trace("process_EmbeddedInfo")
         # skip over the
         # finally write the list
         self.consume_to_char_plus_one( '[' )
@@ -608,9 +582,7 @@ class pxl_asm:
             self.pack( 'B', num )
 
     def Tag_attr_ubyte(self):
-        self.debug_trace("Tag_attr_ubyte")
         tag = self.next_string()
-        self.debug_trace( "searching for attribute %s", tag)
         if ( tag in pxl_attribute_name_to_attribute_number_dict.keys() ):
             self.pack( 'B', pxl_tags_dict['attr_ubyte'] )
             self.pack( 'B', pxl_attribute_name_to_attribute_number_dict[tag] )
@@ -624,7 +596,6 @@ class pxl_asm:
         return 0
 
     def Tag_attr_uint16(self):
-        self.debug_trace("Tag_attr_uint16")
         if ( self.getTag( 'attr_uint16' ) ):
             print "Attribute tag uint16 # NOT IMPLEMENTED #", self.pack('HH', self.data[self.index] )
             self.index = self.index + 2
@@ -632,28 +603,24 @@ class pxl_asm:
         return 0
 
     def attributeID(self):
-        self.debug_trace("attributeID")
         return (self.Tag_attr_ubyte() or self.Tag_attr_uint16()) and self.attributeIDValue()
 
     def next_num(self):
-        self.debug_trace("next_num")
         # no checking.
         while self.data[self.index] in string.whitespace: self.index = self.index + 1
         start = self.index
         while self.data[self.index] not in string.whitespace: self.index = self.index + 1
         end = self.index
-        self.debug_trace(  "found number %s\n", self.data[start:end])
         try:
             num = string.atoi(self.data[start:end])
         except ValueError:
             try:
                 num = string.atof(self.data[start:end])
             except:
-                num = None # shouldn't happen
+                num = None
         return num
     
     def singleValueType(self):
-        self.debug_trace("singleValueType")
         if ( self.Tag_ubyte() or self.Tag_uint16() or self.Tag_uint32() or \
              self.Tag_sint16() or self.Tag_sint32() or self.Tag_real32() ):
             self.pack(self.pack_string, self.next_num()),
@@ -661,29 +628,24 @@ class pxl_asm:
         return 0
 
     def xyValueType(self):
-        self.debug_trace("xyValueType")
         return self.Tag_ubyte_xy() or self.Tag_uint16_xy() or self.Tag_uint32_xy() or \
                self.Tag_sint16_xy() or self.Tag_sint32_xy() or self.Tag_real32_xy()
         
     def boxValueType(self):
-        self.debug_trace("boxValueType")
         return self.Tag_ubyte_box() or self.Tag_uint16_box() or self.Tag_uint32_box() or \
                self.Tag_sint16_box() or self.Tag_sint32_box() or self.Tag_real32_box()
         
     def valueType(self):
-        self.debug_trace("valueType")
 	return self.singleValueType() or self.xyValueType() or self.boxValueType()
 
     # don't confuse the size of the type with the size of the elements
     # in the array
     def arraySizeType(self):
-        self.debug_trace("arraySizeType")
         return (self.Tag_ubyte() or self.Tag_uint16())
 
     def arraySize(self):
         # save the old pack string for the type of the array, the data
         # type for the size will replace it.
-        self.debug_trace("arraySize")
         pack_string = self.pack_string
         if ( self.arraySizeType() ):
             self.size_of_array = self.next_num()
@@ -695,13 +657,11 @@ class pxl_asm:
         return 0
         
     def singleValueArrayType(self):
-        self.debug_trace("singleValueArrayType")
         return self.Tag_ubyte_array() or self.Tag_uint16_array() or \
                self.Tag_uint32_array() or self.Tag_sint16_array() or \
                self.Tag_sint32_array() or self.Tag_real32_array()
         
     def arrayType(self):
-        self.debug_trace("arrayType")
         if (self.singleValueArrayType() and self.arraySize()):
             for num in range(0, self.size_of_array):
                 n = self.next_num()
@@ -712,37 +672,29 @@ class pxl_asm:
         return 0
 
     def dataType(self):
-        self.debug_trace("dataType")
         return( self.valueType() or self.arrayType() or self.boxValueType() )
 
     # these get parsed when doing the tags
     def numericValue(self):
-        self.debug_trace("numericValue")
         return 1;
 
     def attributeValue(self):
-        self.debug_trace("attributeValue")
         return( self.dataType() and self.numericValue() )
 
     def singleAttributePair(self):
-        self.debug_trace("singleAttributePair")
         return( self.attributeValue() and self.attributeID() )
     
     def multiAttributeList(self):
-        self.debug_trace("multiAttributeList")
         # NB should be many 1+ not sure how this get handled yet
         return( self.singleAttributePair() )
     
     def nullAttributeList(self):
-        self.debug_trace("nullAttributeList")        # NB not sure
         return 0
     
     def attributeList(self):
-        self.debug_trace("attributeList")
         return (self.singleAttributePair() or self.multiAttributeList() or self.nullAttributeList())
 
     def attributeLists(self):
-        self.debug_trace("attributeLists")
         # save the beginning of the attribute list even if it is
         # empty.  So we can report the position of the command.
         self.begin_attribute_pos = self.index
@@ -752,7 +704,6 @@ class pxl_asm:
         return 1
 
     def UEL(self):
-        self.debug_trace("UEL")
         uel_string_1 = 'string*'
         uel_string_2 = '-12345X'
         tag = self.next_string()
@@ -768,7 +719,6 @@ class pxl_asm:
         return 0
         
     def operatorSequences(self):
-        self.debug_trace("operatorSequences")
         while ( self.attributeLists() and self.operatorTag() ) or self.UEL():
             continue
         
@@ -796,7 +746,7 @@ if __name__ == '__main__':
         # read the whole damn thing.  Removing comments and blank lines.
         pxl_code = fp.read()
         fp.close()
-    
+
         # initialize and assemble.
         pxl_stream = pxl_asm(pxl_code)
         pxl_stream.assemble()
