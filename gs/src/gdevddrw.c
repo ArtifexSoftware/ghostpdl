@@ -166,13 +166,15 @@ compute_ldx(trap_line *tl, fixed ys)
 }
 
 private inline void
-init_gradient(trap_gradient *g, const gs_linear_color_edge *e, fixed ybot, int num_components)
+init_gradient(trap_gradient *g, const gs_linear_color_edge *e, const trap_line *l, 
+		fixed ybot, int num_components)
 {
     int i;
     int64_t c;
     int32_t d;
 
     g->den = (uint32_t)(e->end.y - e->start.y);
+    assert(g->den == l->h);
     for (i = 0; i < num_components; i++) {
 	g->num[i] = (int32_t)(e->c1[i] - e->c0[i]);
 	c = (int64_t)g->num[i] * (uint32_t)(ybot - e->start.y);
@@ -204,46 +206,84 @@ step_gradient(trap_gradient *g, int num_components)
     }
 }
 
+private inline bool
+check_gradient_overflow(const trap_line *l, const trap_line *r, 
+		const gs_linear_color_edge *le, const gs_linear_color_edge *re,
+		int num_components)
+{
+    /* Check whether set_x_gradient can overflow. */
+    const int32_t mul_limit = (int32_t)((uint64_t)1 << 32) - 1 - 2;
+    int32_t h = max(l->h, r->h);
+    int64_t xl1 = ((uint64_t)le->start.x * h);
+    int64_t xl2 = ((uint64_t)le->end.x * h);
+    int64_t xl = min(xl1, xl2);
+    int64_t xr1 = ((uint64_t)re->start.x * h);
+    int64_t xr2 = ((uint64_t)re->end.x * h);
+    int64_t xr = max(xr1, xr2);
+    int i;
+
+    if (xr - xl >= mul_limit - 2)
+	return true;
+    for (i = 0; i < num_components; i++) {
+	int64_t c0 = (int64_t)le->c0[i] * h;
+	int64_t c1 = (int64_t)re->c0[i] * h;
+	int64_t c = c1 - c0;
+
+	if (c <= -mul_limit || c >= mul_limit)
+	    return true;
+	c0 = (int64_t)le->c1[i] * h;
+	c1 = (int64_t)re->c1[i] * h;
+	c = c1 - c0;
+
+	if (c <= -mul_limit || c >= mul_limit)
+	    return true;
+    }
+    return false;
+}
+
+
 private inline int
 set_x_gradient(trap_gradient *xg, const trap_gradient *lg, const trap_gradient *rg, 
 	     const trap_line *l, const trap_line *r, int il, int ir, int num_components)
 {
-    const int32_t x_prec = 1 << 12;
-    const int32_t c_prec = 1 << 12;
     const int32_t mul_limit = (int32_t)((uint64_t)1 << 32) - 1;
-    /* Approximatively convert fractions to a common denominator : */
-    uint32_t fxl = (uint32_t)((uint64_t)l->xf * x_prec / l->h);
-    uint32_t fxr = (uint32_t)((uint64_t)r->xf * x_prec / r->h);
-    /* Side coordinates in x_prec units : */
-    int64_t xl = (int64_t)l->x * x_prec + fxl;
-    int64_t xr = (int64_t)r->x * x_prec + fxr;
-    int64_t x0 = (int64_t)int2fixed(il) * x_prec + 0;
+    int32_t h = max(l->h, r->h);
+    /* Approximatively convert coordinates to a common denominator : */
+    uint32_t fxl = (uint32_t)((uint64_t)l->xf * h / l->h);
+    uint32_t fxr = (uint32_t)((uint64_t)r->xf * h / r->h);
+    int64_t xl = (int64_t)l->x * h + fxl;
+    int64_t xr = (int64_t)r->x * h + fxr;
+    int64_t x0 = (int64_t)int2fixed(il) * h + 0;
     int i;
 
-    if (r->x - l->x >= mul_limit - 2) {
-	/* Too wide. A fixed overflow may happen. The client must decompose the area. */
-	return_error(gs_error_rangecheck);
+    if (xr - xl >= mul_limit) {
+	/* check_gradient_overflow isn't consistent. */
+	/* Must not happen. */
+	return_error(gs_error_unregistered);
     }
-    xg->den = ir - il;
+    assert(lg->den == l->h);
+    assert(rg->den == r->h);
+    xg->den = max(lg->den, rg->den);
     for (i = 0; i < num_components; i++) {
 	/* Approximatively convert fractions to a common denominator : */
-	uint32_t fcl = (uint32_t)((uint64_t)lg->c[i] * c_prec / lg->den);
-	uint32_t fcr = (uint32_t)((uint64_t)rg->c[i] * c_prec / rg->den);
-	uint64_t cl = (int64_t)lg->c[i] * c_prec + fcl;
-	uint64_t cr = (int64_t)lg->c[i] * c_prec + fcr;
+	uint32_t fcl = (uint32_t)((uint64_t)lg->c[i] * xg->den / lg->den);
+	uint32_t fcr = (uint32_t)((uint64_t)rg->c[i] * xg->den / rg->den);
+	uint64_t cl = (int64_t)lg->c[i] * xg->den + fcl;
+	uint64_t cr = (int64_t)lg->c[i] * xg->den + fcr;
 	uint64_t cd, c0;
 
 	if (cr - cl <= mul_limit || cr - cl >= mul_limit) {
-	    /* The color span is too big. The client must decompose the area. */
-	    return_error(gs_error_rangecheck);
+	    /* check_gradient_overflow isn't consistent. */
+	    /* Must not happen. */
+	    return_error(gs_error_unregistered);
 	}
-	/* Initial color in c_prec units : */
-	cd = (cr - cl) * (x0 - xl) / (xr - xl) * xg->den / c_prec;
-	c0 = (int64_t)lg->c[i] * xg->den + (int64_t)fcl * xg->den / c_prec + cd;
+	/* Initial color in xg->den units : */
+	cd = (cr - cl) * (x0 - xl) / (xr - xl);
+	c0 = (int64_t)lg->c[i] * xg->den + (int64_t)fcl + cd;
 	/* Gradient parameters in xg->den units : */
-	xg->c[i] = (int32_t)(c0 / c_prec);
-	xg->f[i] = (uint32_t)((uint64_t)(c0 - (int64_t)xg->c[i] * c_prec) * xg->den / c_prec);
-	xg->num[i] = (int32_t)((cr - cl) / c_prec);
+	xg->c[i] = (int32_t)(c0 / xg->den);
+	xg->f[i] = (uint32_t)(c0 - (int64_t)xg->c[i] * xg->den);
+	xg->num[i] = (int32_t)((cr - cl) / xg->den);
     }
     return 0;
 }
@@ -391,6 +431,11 @@ middle_frac32_color(frac32 *c, const frac32 *c0, const frac32 *c2, int num_compo
     in which the generatrix keeps a parallelizm to the X axis.
     In general a bilinear function doesn't keep the generatrix parallelizm, 
     so the caller must decompose/approximate such functions.
+
+    Return values : 
+    1 - success;
+    0 - Too big. The area isn't filled. The client must decompose the area.
+    <0 - error.
  */
 int 
 gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
@@ -418,42 +463,7 @@ gx_default_fill_linear_color_trapezoid(const gs_fill_attributes *fa,
 	    &le, &re, ymin, ymax, 0, NULL, 0);
     if (code < 0)
 	return code;
-    if (code == 0)
-	return 1;
-    /* The device reported a too big area, decompose it now with no dropouts. */
-    /* No dropouts due to upper and lower sides are parallel to the X axis. */
-    {
-	gs_fixed_point p02, p13;
-	frac32 c02[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	frac32 c13[GX_DEVICE_COLOR_MAX_COMPONENTS];
-	/* Same as in GX_FILL_TRAPEZOID : */
-	const fixed ymin = fixed_pixround(fa->clip->p.y) + fixed_half; 
-	int iy = fixed2int_var(ymin);
-	/* Cut off scanlines already filled : */
-	int iy0 = iy + code;
-	gs_fixed_rect clip = *fa->clip;
-	gs_fill_attributes fa1 = *fa;
-
-	clip.p.y = max(fa->clip->p.y, int2fixed(iy0)); 
-	fa1.clip = &clip;
-	/* Subdivide the trapezoid into 2 ones. 
-	   We know that GX_FILL_TRAPEZOID doesn't like wide ones. */
-	p02.x = (p0->x + p2->x) / 2;
-	p02.y = (p0->y + p2->y) / 2;
-	p13.x = (p1->x + p3->x) / 2;
-	p13.y = (p1->y + p3->y) / 2;
-	middle_frac32_color(c02, c0, c2, fa->pdev->color_info.num_components);
-	middle_frac32_color(c13, c1, c3, fa->pdev->color_info.num_components);
-	code = gx_default_fill_linear_color_trapezoid(&fa1,
-		    p0, p1, &p02, &p13, c0, c1, c02, c13);
-	if (code < 0)
-	    return code;
-	code = gx_default_fill_linear_color_trapezoid(&fa1,
-		    &p02, &p13, p2, p3, c02, c13, c2, c3);
-	if (code < 0)
-	    return code;
-	return 1;
-    }
+    return !code;
 }
 
 private inline int 

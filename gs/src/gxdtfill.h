@@ -55,8 +55,7 @@
  * Particularly it may paint pixels on the right and on the top sides,
  * if they are necessary for the contiguity.
  *
- * With LINEAR_COLOR may return the number of unfilled scanlines. 
- * In such case the client must subdivide the unfilled part of the trapezoid.
+ * With LINEAR_COLOR returns 1 if the gradient arithmetics overflows.. 
  */
 
 /*
@@ -302,11 +301,14 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 	l.x += fixed_epsilon;
 	r.x += fixed_epsilon;
 #	if LINEAR_COLOR
+	    if (check_gradient_overflow(&l, &r, left, right, num_components))
+		return 1;
 	    xg.c = xgc;
 	    xg.f = xgf;
 	    xg.num = xgnum;
-	    init_gradient(&lg, left, ymin, num_components);
-	    init_gradient(&rg, right, ymin, num_components);
+	    init_gradient(&lg, left, &l, ymin, num_components);
+	    init_gradient(&rg, right, &r, ymin, num_components);
+
 #	endif
 
 #define rational_floor(tl)\
@@ -327,8 +329,9 @@ GX_FILL_TRAPEZOID (gx_device * dev, const EDGE_TYPE * left,
 	    SET_MINIMAL_WIDTH(ixl, ixr, l, r);
 #	    if LINEAR_COLOR
 		if (ixl != ixl) {
-		    if (set_x_gradient(&xg, &lg, &rg, &l, &r, ixl, ixr, num_components) < 0)
-			return iy1 - iy; /* Unfilled scanlines. */
+		    code = set_x_gradient(&xg, &lg, &rg, &l, &r, ixl, ixr, num_components);
+		    if (code < 0)
+			goto xit;
 		    VD_RECT_SWAPPED(ixl, ry, ixr, iy);
 		    code = FILL_TRAP_RECT(ixl, ry, ixr - ixl, iy - ry);
 		    if (code < 0)
