@@ -21,6 +21,12 @@
 #  define errors_INCLUDED
 
 /*
+ * DO NOT USE THIS FILE IN THE GRAPHICS LIBRARY.
+ * THIS FILE IS PART OF THE POSTSCRIPT INTERPRETER.
+ * USE gserrors.h IN THE LIBRARY.
+ */
+
+/*
  * A procedure that may return an error always returns
  * a non-negative value (zero, unless otherwise noted) for success,
  * or negative for failure.
