@@ -84,8 +84,6 @@ private dev_proc_copy_color(display_copy_color);
 private dev_proc_get_bits(display_get_bits);
 private dev_proc_get_params(display_get_params);
 private dev_proc_put_params(display_put_params);
-private dev_proc_map_rgb_alpha_color(display_map_rgb_alpha_color);
-private dev_proc_map_color_rgb_alpha(display_map_color_rgb_alpha);
 private dev_proc_finish_copydevice(display_finish_copydevice);
 
 private const gx_device_procs display_procs =
@@ -317,7 +315,7 @@ display_close(gx_device * dev)
 /*
  * This routine will encode a 1 Black on white color.
  */
-gx_color_index
+private gx_color_index
 gx_b_w_gray_encode(gx_device * dev, const gx_color_value cv[])
 {
     return 1 - (cv[0] >> (gx_color_value_bits - 1));
