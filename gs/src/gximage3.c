@@ -366,11 +366,16 @@ check_image3_extent(floatp mask_coeff, floatp data_coeff)
  * Return > 0 if we want more mask now, < 0 if we want more data now,
  * 0 if we want both.
  */
-inline private long
+private long
 planes_next(const gx_image3_enum_t *penum)
 {
-    return (penum->pixel_y * (long)penum->mask_full_height -
-	    penum->mask_y * (long)penum->pixel_full_height);
+    /*
+     * What we need to ensure is that we always have at least as much
+     * mask as pixel data, i.e., mask_y/mask_full_height >=
+     * pixel_y/pixel_full_height.
+     */
+    return (penum->pixel_y + 1) * (long)penum->mask_full_height -
+	(penum->mask_y + 1) * (long)penum->pixel_full_height;
 }
 
 /* Process the next piece of an ImageType 3 image. */

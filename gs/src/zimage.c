@@ -5,6 +5,7 @@
 
 /*$RCSfile$ $Revision$ */
 /* Image operators */
+#include "memory_.h"
 #include "ghost.h"
 #include "oper.h"
 #include "estack.h"		/* for image[mask] */
@@ -280,6 +281,7 @@ image_proc_continue(i_ctx_t *i_ctx_p)
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
     uint size, used[gs_image_max_planes];
     gs_const_string plane_data[gs_image_max_planes];
+    const byte *wanted;
     int i, code;
 
     if (!r_has_type_attrs(op, t_string, a_read)) {
@@ -309,11 +311,12 @@ image_proc_continue(i_ctx_t *i_ctx_p)
 	return (code < 0 ? code : o_pop_estack);
     }
     pop(1);
-    if (size != 0) {	/* need a different plane of data */
+    wanted = gs_image_planes_wanted(penum);
+    do {
 	if (++px == num_sources)
 	    px = 0;
+    } while (!wanted[px]);
 	ETOP_PLANE_INDEX(esp)->value.intval = px;
-    }
     return image_proc_process(i_ctx_p);
 }
 private int
@@ -403,13 +406,13 @@ image_file_continue(i_ctx_t *i_ctx_p)
 	    uint used[gs_image_max_planes];
 
 	    code = gs_image_next_planes(penum, plane_data, used);
-	    if (code == e_RemapColor)
-		return code;
 	    /* Now that used has been set, update the streams. */
 	    for (pi = 0, pp = ETOP_SOURCE(esp, 0); pi < num_sources;
 		 ++pi, pp -= 2
 		 )
 		sbufskip(pp->value.pfile, used[pi]);
+	    if (code == e_RemapColor)
+		return code;
 	}
 	if (code) {
 	    esp = zimage_pop_estack(esp);
@@ -424,35 +427,31 @@ image_file_continue(i_ctx_t *i_ctx_p)
 private int
 image_string_continue(i_ctx_t *i_ctx_p)
 {
-    int px = ETOP_PLANE_INDEX(esp)->value.intval;
     gs_image_enum *penum = r_ptr(esp, gs_image_enum);
-    const byte *wanted = gs_image_planes_wanted(penum);
     int num_sources = ETOP_NUM_SOURCES(esp)->value.intval;
+    gs_const_string sources[gs_image_max_planes];
+    uint used[gs_image_max_planes];
 
+    /* Pass no data initially, to find out how much is retained. */
+    memset(sources, 0, sizeof(sources[0]) * num_sources);
     for (;;) {
-	if (wanted[px]) {
-	    const ref *psrc = ETOP_SOURCE(esp, px);
-	    uint size = r_size(psrc);
-	    uint used;
-	    int code;
+	int px;
+	int code = gs_image_next_planes(penum, sources, used);
 
-	    if (size == 0)
-		code = 1;
-	    else {
-		code = gs_image_next(penum, psrc->value.bytes, size, &used);
-		if (code == e_RemapColor) {
-		    ETOP_PLANE_INDEX(esp)->value.intval = px;
+	if (code == e_RemapColor)
 		    return code;
-		}
-	    }
 	    if (code) {		/* Stop now. */
 		esp -= NUM_PUSH(num_sources);
 		image_cleanup(i_ctx_p);
 		return (code < 0 ? code : o_pop_estack);
 	    }
+	for (px = 0; px < num_sources; ++px)
+	    if (sources[px].size == 0) {
+		const ref *psrc = ETOP_SOURCE(esp, px);
+
+		sources[px].data = psrc->value.bytes;
+		sources[px].size = r_size(psrc);
 	}
-	if (++px == num_sources)
-	    px = 0;
     }
 }
 /* Clean up after enumerating an image */
