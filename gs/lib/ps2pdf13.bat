@@ -3,17 +3,13 @@
 
 rem Convert PostScript to PDF 1.3 (Acrobat 4-and-later compatible).
 
-rem Make sure an empty argument list stays empty.
-set PS2PDFSW=
-if "%1"=="" goto bot
-
-rem This clunky loop is the only way to ensure we pass the full
-rem argument list!
-set PS2PDFSW=-dCompatibilityLevel#1.3
+echo -dCompatibilityLevel#1.3 >_.at
 goto bot
+
+rem Pass arguments through a file to avoid overflowing the command line.
 :top
-set PS2PDFSW=%PS2PDFSW% %1
+echo %1 >>_.at
 shift
 :bot
-if not "%1"=="" goto top
-ps2pdfwr %PS2PDFSW%
+if not "%3"=="" goto top
+ps2pdfxx %1 %2
