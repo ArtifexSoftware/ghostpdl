@@ -288,7 +288,7 @@ typedef struct pl_mem_node_s pl_mem_node_t;
 #define gs_memory_common\
 	gs_memory_t *stable_memory;\
 	gs_memory_procs_t procs;\
-        pl_mem_node_t *head;
+        pl_mem_node_t *head
 
 struct gs_memory_s {
     gs_memory_common;
