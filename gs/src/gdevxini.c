@@ -790,20 +790,49 @@ scan_font_resource(const char *resource, x11fontmap **pmaps, gs_memory_t *mem)
 private void
 gdev_x_setup_fontmap(gx_device_X * xdev)
 {
-    /*
-     * If this device is a copy of another one, the *_fonts lists
-     * might be dangling references.  Clear them before scanning.
-     */
-    xdev->regular_fonts = 0;
-    xdev->symbol_fonts = 0;
-    xdev->dingbat_fonts = 0;
-
     if (!xdev->useXFonts)
 	return;			/* If no external fonts, don't bother */
 
     scan_font_resource(xdev->regularFonts, &xdev->regular_fonts, xdev->memory);
     scan_font_resource(xdev->symbolFonts, &xdev->symbol_fonts, xdev->memory);
     scan_font_resource(xdev->dingbatFonts, &xdev->dingbat_fonts, xdev->memory);
+}
+
+/* Clean up the instance after making a copy. */
+int
+gdev_x_finish_copydevice(gx_device *dev, const gx_device *from_dev)
+{
+    gx_device_X *xdev = (gx_device_X *) dev;
+
+    /* Mark the new instance as closed. */
+    xdev->is_open = false;
+
+    /* Prevent dangling references from the *_fonts lists. */
+    xdev->regular_fonts = 0;
+    xdev->symbol_fonts = 0;
+    xdev->dingbat_fonts = 0;
+
+    /* Clear all other pointers. */
+    xdev->target = 0;
+    xdev->buffer = 0;
+    xdev->dpy = 0;
+    xdev->scr = 0;
+    xdev->vinfo = 0;
+
+    /* Clear pointer-like parameters. */
+    xdev->win = (Window)None;
+    xdev->bpixmap = (Pixmap)0;
+    xdev->dest = (Pixmap)0;
+    xdev->cp.pixmap = (Pixmap)0;
+    xdev->ht.pixmap = (Pixmap)0;
+
+    /* Reset pointer-related parameters. */
+    xdev->is_buffered = false;
+    /* See x_set_buffer for why we do this: */
+    set_dev_proc(xdev, fill_rectangle,
+		 dev_proc(&gs_x11_device, fill_rectangle));
+
+    return 0;
 }
 
 /* ---------------- Get/put parameters ---------------- */

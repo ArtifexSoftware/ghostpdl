@@ -77,6 +77,7 @@ private dev_proc_get_page_device(x_get_page_device);
 private dev_proc_strip_tile_rectangle(x_strip_tile_rectangle);
 private dev_proc_begin_typed_image(x_begin_typed_image);
 private dev_proc_get_bits_rectangle(x_get_bits_rectangle);
+/*extern dev_proc_get_xfont_procs(gdev_x_finish_copydevice);*/
 
 /* The device descriptor */
 const gx_device_X gs_x11_device = {
@@ -124,7 +125,12 @@ const gx_device_X gs_x11_device = {
 	NULL,			/* strip_copy_rop */
 	NULL,			/* get_clipping_box */
 	x_begin_typed_image,
-	x_get_bits_rectangle
+	x_get_bits_rectangle,
+	NULL,			/* map_color_rgb_alpha */
+	NULL,			/* create_compositor */
+	NULL,			/* get_hardware_params */
+	NULL,			/* text_begin */
+	gdev_x_finish_copydevice
     },
     gx_device_bbox_common_initial(0 /*false*/, 1 /*true*/, 1 /*true*/),
     0 /*false*/,		/* is_buffered */
