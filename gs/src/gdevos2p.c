@@ -81,7 +81,7 @@ private dev_proc_put_params(os2prn_put_params);
 private dev_proc_get_params(os2prn_get_params);
 
 private void os2prn_set_bpp(gx_device * dev, int depth);
-private int os2prn_get_queue_list(OS2QL * ql);
+private int os2prn_get_queue_list(gs_memory_t *mem, OS2QL * ql);
 private void os2prn_free_queue_list(gs_memory_t *mem, OS2QL * ql);
 int os2prn_get_printer(OS2QL * ql);
 
@@ -158,7 +158,7 @@ os2prn_open(gx_device * dev)
     opdev->hab = WinQueryAnchorBlock(hwndtext);
     opdev->newframe = 0;
 
-    if (os2prn_get_queue_list(&opdev->ql))
+    if (os2prn_get_queue_list(dev->memory, &opdev->ql))
 	return gs_error_limitcheck;
 
     if (opdev->queue_name[0] == '\0') {

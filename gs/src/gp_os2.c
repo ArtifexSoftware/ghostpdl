@@ -153,7 +153,7 @@ gp_file_is_console(FILE * f)
 	return ((regs.h.dl & 0x80) != 0 && (regs.h.dl & 3) != 0);
     }
 #endif
-    if ((f == gs_stdin) || (f == gs_stdout) || (f == gs_stderr))
+    if (fileno(f) <= 2)
 	return true;
     return false;
 }

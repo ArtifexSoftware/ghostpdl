@@ -501,6 +501,7 @@ DEVICE_DEVS17=$(DD)ljet3.dev $(DD)ljet3d.dev $(DD)ljet4.dev $(DD)ljet4d.dev
 DEVICE_DEVS18=$(DD)pj.dev $(DD)pjxl.dev $(DD)pjxl300.dev $(DD)jetp3852.dev $(DD)r4081.dev
 DEVICE_DEVS19=$(DD)lbp8.dev $(DD)m8510.dev $(DD)necp6.dev $(DD)bjc600.dev $(DD)bjc800.dev
 DEVICE_DEVS20=$(DD)pnm.dev $(DD)pnmraw.dev $(DD)ppm.dev $(DD)ppmraw.dev
+DEVICE_DEVS21=$(DD)spotcmyk.dev $(DD)devicen.dev $(DD)bmpsep1.dev $(DD)bmpsep8.dev $(DD)bmp16m.dev $(DD)bmp32b.dev $(DD)psdcmyk.dev $(DD)psdrgb.dev
 
 # Include the generic makefiles.
 !include "$(GLSRCDIR)\version.mak"
@@ -568,7 +569,7 @@ $(GENARCH_XE): $(GLSRCDIR)\genarch.c $(GENARCH_DEPS)
 	-mkdir $(GLGENDIR)
 	-mkdir $(BINDIR)
 !if $(EMX)
-	$(CCAUX) -o $(AUXGEN)genarch $(GLSRCDIR)\genarch.c
+	$(CCAUX) -DHAVE_LONG_LONG -o $(AUXGEN)genarch $(GLSRCDIR)\genarch.c
 	$(COMPDIR)\emxbind $(EMXPATH)/bin/emxl.exe $(AUXGEN)genarch $(GENARCH_XE)
 	del $(AUXGEN)genarch
 !endif
