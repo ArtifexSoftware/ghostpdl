@@ -108,8 +108,12 @@ void pdf_color_space_procsets(gx_device_pdf *pdev,
 
 /* ---------------- Exported by gdevpdfg.c ---------------- */
 
+/* Copy viewer state from images state. */
+void pdf_viewer_state_from_imager_state(gx_device_pdf * pdev, 
+	const gs_imager_state *pis, const gx_device_color *pdevc);
+
 /* Prepare intitial values for viewer's graphics state parameters. */
-void pdf_prepare_initial_viewers_state(gx_device_pdf * pdev, const gs_imager_state *pis);
+void pdf_prepare_initial_viewer_state(gx_device_pdf * pdev, const gs_imager_state *pis);
 
 /* Reset the graphics state parameters to initial values. */
 void pdf_reset_graphics(gx_device_pdf *pdev);

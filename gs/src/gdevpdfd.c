@@ -461,7 +461,7 @@ gdev_pdf_fill_path(gx_device * dev, const gs_imager_state * pis, gx_path * ppath
     have_path = !gx_path_is_void(ppath);
     if (!have_path && !pdev->vg_initial_set) {
 	/* See lib/gs_pdfwr.ps about "initial graphic state". */
-	pdf_prepare_initial_viewers_state(pdev, pis);
+	pdf_prepare_initial_viewer_state(pdev, pis);
 	pdf_reset_graphics(pdev);
 	return 0;
     }

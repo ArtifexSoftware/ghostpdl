@@ -2003,7 +2003,6 @@ pdf_text_process(gs_text_enum_t *pte)
 	    penum->returned.current_glyph = pte_default->returned.current_glyph;
 	}
 	if (code == TEXT_PROCESS_RENDER) {
-
 	    pdev->charproc_ctm = penum->pis->ctm;
     	    pdev->charproc_just_accumulated = false;
 	    if (penum->current_font->FontType == ft_user_defined && 
@@ -2013,6 +2012,9 @@ pdf_text_process(gs_text_enum_t *pte)
 		gs_matrix m;
 
 		code = pdf_start_charproc_accum(pdev);
+		if (code < 0)
+		    return code;
+		pdf_viewer_state_from_imager_state(pdev, pte->pis, pte->pdcolor);
 		/* Must set an identity CTM for the charproc accumulation.
 		   The function show_proceed (called from gs_text_process above) 
 		   executed gsave, so we are safe to change CTM now.

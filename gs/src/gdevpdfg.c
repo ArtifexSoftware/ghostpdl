@@ -134,8 +134,59 @@ pdf_set_initial_color(gx_device_pdf * pdev, gx_hl_saved_color *saved_fill_color,
 }
 
 /* Prepare intitial values for viewer's graphics state parameters. */
+private void
+pdf_viewer_state_from_imager_state_aux(pdf_viewer_state *pvs, const gs_imager_state *pis)
+{
+    pvs->transfer_not_identity = 
+	    (pis->set_transfer.red   != NULL ? pis->set_transfer.red->proc   != gs_identity_transfer : 0) * 1 +
+	    (pis->set_transfer.green != NULL ? pis->set_transfer.green->proc != gs_identity_transfer : 0) * 2 +
+	    (pis->set_transfer.blue  != NULL ? pis->set_transfer.blue->proc  != gs_identity_transfer : 0) * 4 +
+	    (pis->set_transfer.gray  != NULL ? pis->set_transfer.gray->proc  != gs_identity_transfer : 0) * 8;
+    pvs->transfer_ids[0] = (pis->set_transfer.red != NULL ? pis->set_transfer.red->id : 0);
+    pvs->transfer_ids[1] = (pis->set_transfer.green != NULL ? pis->set_transfer.green->id : 0);
+    pvs->transfer_ids[2] = (pis->set_transfer.blue != NULL ? pis->set_transfer.blue->id : 0);
+    pvs->transfer_ids[3] = (pis->set_transfer.gray != NULL ? pis->set_transfer.gray->id : 0);
+    pvs->opacity_alpha = pis->opacity.alpha;
+    pvs->shape_alpha = pis->shape.alpha;
+    pvs->blend_mode = pis->blend_mode;
+    pvs->halftone_id = (pis->dev_ht != 0 ? pis->dev_ht->id : 0);
+    pvs->black_generation_id = (pis->black_generation != 0 ? pis->black_generation->id : 0);
+    pvs->undercolor_removal_id = (pis->undercolor_removal != 0 ? pis->undercolor_removal->id : 0);
+    pvs->overprint_mode = 0;
+    pvs->smoothness = pis->smoothness;
+    pvs->text_knockout = pis->text_knockout;
+    pvs->fill_overprint = false;
+    pvs->stroke_overprint = false;
+    pvs->stroke_adjust = false;
+    pvs->line_params.half_width = 0.5;
+    pvs->line_params.cap = 0;
+    pvs->line_params.join = 0;
+    pvs->line_params.curve_join = 0;
+    pvs->line_params.miter_limit = 10.0;
+    pvs->line_params.miter_check = 0;
+    pvs->line_params.dot_length = pis->line_params.dot_length;
+    pvs->line_params.dot_length_absolute = pis->line_params.dot_length_absolute;
+    pvs->line_params.dot_orientation = pis->line_params.dot_orientation;
+    memset(&pvs->line_params.dash, 0 , sizeof(pvs->line_params.dash));
+    memset(pvs->dash_pattern, 0, sizeof(pvs->dash_pattern));
+}
+
+/* Copy viewer state from images state. */
 void
-pdf_prepare_initial_viewers_state(gx_device_pdf * pdev, const gs_imager_state *pis)
+pdf_viewer_state_from_imager_state(gx_device_pdf * pdev, 
+	const gs_imager_state *pis, const gx_device_color *pdevc)
+{
+    pdf_viewer_state vs;
+
+    pdf_viewer_state_from_imager_state_aux(&vs, pis);
+    gx_hld_save_color(pis, pdevc, &vs.saved_fill_color);
+    gx_hld_save_color(pis, pdevc, &vs.saved_stroke_color);
+    pdf_load_viewer_state(pdev, &vs);
+}
+
+/* Prepare intitial values for viewer's graphics state parameters. */
+void
+pdf_prepare_initial_viewer_state(gx_device_pdf * pdev, const gs_imager_state *pis)
 {
     /* Parameter values, which are specified in PDF spec, are set here.
      * Parameter values, which are specified in PDF spec as "installation dependent",
@@ -145,49 +196,17 @@ pdf_prepare_initial_viewers_state(gx_device_pdf * pdev, const gs_imager_state *p
      */
 
     pdf_set_initial_color(pdev, &pdev->vg_initial.saved_fill_color, &pdev->vg_initial.saved_stroke_color);
-    pdev->vg_initial.transfer_not_identity = 
-	    (pis->set_transfer.red   != NULL ? pis->set_transfer.red->proc   != gs_identity_transfer : 0) * 1 +
-	    (pis->set_transfer.green != NULL ? pis->set_transfer.green->proc != gs_identity_transfer : 0) * 2 +
-	    (pis->set_transfer.blue  != NULL ? pis->set_transfer.blue->proc  != gs_identity_transfer : 0) * 4 +
-	    (pis->set_transfer.gray  != NULL ? pis->set_transfer.gray->proc  != gs_identity_transfer : 0) * 8;
-    pdev->vg_initial.transfer_ids[0] = (pis->set_transfer.red != NULL ? pis->set_transfer.red->id : 0);
-    pdev->vg_initial.transfer_ids[1] = (pis->set_transfer.green != NULL ? pis->set_transfer.green->id : 0);
-    pdev->vg_initial.transfer_ids[2] = (pis->set_transfer.blue != NULL ? pis->set_transfer.blue->id : 0);
-    pdev->vg_initial.transfer_ids[3] = (pis->set_transfer.gray != NULL ? pis->set_transfer.gray->id : 0);
-    pdev->vg_initial.opacity_alpha = pis->opacity.alpha;
-    pdev->vg_initial.shape_alpha = pis->shape.alpha;
-    pdev->vg_initial.blend_mode = pis->blend_mode;
-    pdev->vg_initial.halftone_id = (pis->dev_ht != 0 ? pis->dev_ht->id : 0);
-    pdev->vg_initial.black_generation_id = (pis->black_generation != 0 ? pis->black_generation->id : 0);
-    pdev->vg_initial.undercolor_removal_id = (pis->undercolor_removal != 0 ? pis->undercolor_removal->id : 0);
-    pdev->vg_initial.overprint_mode = 0;
-    pdev->vg_initial.smoothness = pis->smoothness;
-    pdev->vg_initial.text_knockout = pis->text_knockout;
-    pdev->vg_initial.fill_overprint = false;
-    pdev->vg_initial.stroke_overprint = false;
-    pdev->vg_initial.stroke_adjust = false;
-    pdev->vg_initial.line_params.half_width = 0.5;
-    pdev->vg_initial.line_params.cap = 0;
-    pdev->vg_initial.line_params.join = 0;
-    pdev->vg_initial.line_params.curve_join = 0;
-    pdev->vg_initial.line_params.miter_limit = 10.0;
-    pdev->vg_initial.line_params.miter_check = 0;
-    pdev->vg_initial.line_params.dot_length = pis->line_params.dot_length;
-    pdev->vg_initial.line_params.dot_length_absolute = pis->line_params.dot_length_absolute;
-    pdev->vg_initial.line_params.dot_orientation = pis->line_params.dot_orientation;
-    memset(&pdev->vg_initial.line_params.dash, 0 , sizeof(pdev->vg_initial.line_params.dash));
-    memset(pdev->vg_initial.dash_pattern, 0, sizeof(pdev->vg_initial.dash_pattern));
+    pdf_viewer_state_from_imager_state_aux(&pdev->vg_initial, pis);
     pdev->vg_initial_set = true;
     /*
      * Some parameters listed in PDF spec are missed here :
-     * color space - because we ever convert to output color model, except for images.
      * text state - it is initialized per page.
      * rendering intent - not sure why, fixme.
      */
 }
 
 /* Reset the graphics state parameters to initial values. */
-/* Used if pdf_prepare_initial_viewers_state was not callad. */
+/* Used if pdf_prepare_initial_viewer_state was not callad. */
 private void
 pdf_reset_graphics_old(gx_device_pdf * pdev)
 {
