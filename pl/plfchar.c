@@ -26,6 +26,7 @@
 #include "gsstate.h"
 #include "gschar.h"
 #include "gsimage.h"
+#include "gsiparm4.h"
 #include "gspaint.h"
 #include "gspath.h"
 #include "gsbittab.h"
@@ -855,7 +856,7 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 	{
             FT_Face face;
 	    gs_matrix mat;
-	    gs_image_t image;
+	    gs_image4_t image;
 	    FT_Error error;
 	    /* get the current glyph instance.  With point size and scaling */
 	    gs_currentmatrix(pgs, &mat);
@@ -869,7 +870,7 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
 		gs_matrix save_ctm, tmp_ctm;
                 gs_image_enum *ienum;
                 FT_Bitmap *ftb = &face->glyph->bitmap;
-                FT_Render_Glyph(face->glyph, ft_render_mode_mono);
+                FT_Render_Glyph(face->glyph, ft_render_mode_normal);
 
 		if ( error )
 		    return -1;
@@ -897,13 +898,17 @@ pl_ft_build_char(gs_show_enum *penum, gs_state *pgs, gs_font *pfont,
                     gs_setmatrix(pgs, &save_ctm);
                     return_error(gs_error_VMerror);
                 }
-                gs_image_t_init_mask(&image, true);
+                gs_image4_t_init(&image, gs_cspace_DeviceGray((const gs_imager_state *)pgs));
                 image.Width = ftb->width;
                 image.Height = ftb->rows;
+                image.BitsPerComponent = 8;
+                image.Decode[0] = 1.0;
+                image.Decode[1] = 0.0;
+                image.MaskColor[0] = 0.0;
+                image.CombineWithColor = true;
                 gs_make_identity(&image.ImageMatrix);
                 image.ImageMatrix.tx = -face->glyph->bitmap_left;
                 image.ImageMatrix.ty = face->glyph->bitmap_top;
-                image.adjust = true;
                 code = image_bitmap_char( ienum,
                                           &image,
                                           (byte *)ftb->buffer,
