@@ -1,4 +1,4 @@
-/* Copyright (C) 1992, 1995, 1998, 1999 Aladdin Enterprises.  All rights reserved.
+/* Copyright (C) 1992, 1995, 1998, 1999 artofcode LLC.  All rights reserved.
   
   This file is part of AFPL Ghostscript.
   
@@ -18,9 +18,12 @@
 
 /*$Id$ */
 /* Initialization support for compiled fonts */
+
 #include "string_.h"
 #include "ghost.h"
 #include "gsstruct.h"		/* for iscan.h */
+#include "gsmatrix.h"
+#include "gxfont.h"		/* for ifont.h */
 #include "ccfont.h"
 #include "errors.h"
 #include "ialloc.h"
