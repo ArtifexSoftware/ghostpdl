@@ -950,25 +950,19 @@ pdf_put_name(const gx_device_pdf *pdev, const byte *nstr, uint size)
     pdf_put_name_chars(pdev, nstr, size);
 }
 
-/* Write an encoded string with possible encryption. */
-private void
-pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
+/* Write an encoded string with encryption. */
+private int
+pdf_encrypt_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
 {
-
     stream sinp, sstr, sout;
     stream_PSSD_state st;
     stream_state so;
     byte buf[100], bufo[100];
     stream_arcfour_state sarc4;
-
-    if (!pdev->KeyLength) {
-	stream_write(pdev->strm, str, size);
-	return;
-    }
     if (pdf_encrypt_init(pdev, object_id, &sarc4) < 0) {
 	/* The interface can't pass an error. */
 	stream_write(pdev->strm, str, size);
-	return;
+	return size;
     }
     sread_string(&sinp, str + 1, size);
     s_init(&sstr, NULL);
@@ -994,6 +988,66 @@ pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs
 	}
     }
     sclose(&sout); /* Writes ')'. */
+    return stell(&sinp) + 1;
+}
+
+/* Write an encoded string with possible encryption. */
+private void
+pdf_put_encoded_string(const gx_device_pdf *pdev, const byte *str, uint size, gs_id object_id)
+{
+    if (!pdev->KeyLength)
+	stream_write(pdev->strm, str, size);
+    else
+	DISCARD(pdf_encrypt_encoded_string(pdev, str, size, object_id));
+}
+
+/*  Scan an item in a serialized array or dictionary.
+    This is a very simplified Postscript lexical scanner.
+    It assumes the serialization with pdf===only defined in gs/lib/gs_pdfwr.ps .
+    We only need to select strings and encrypt them.
+    Other items are passed identically.
+    Note we don't reconstruct the nesting of arrays|dictionaries.
+*/
+private int
+pdf_scan_item(const gx_device_pdf * pdev, const byte * p, uint l, gs_id object_id)
+{
+    const byte *q = p;
+    int n = l; 
+
+    if (*q == ' ' || *q == 't' || *q == '\r' || *q == '\n')
+	return (l > 0 ? 1 : 0);
+    for (q++, n--; n; q++, n--) {
+	if (*q == ' ' || *q == 't' || *q == '\r' || *q == '\n')
+	    return q - p;
+	if (*q == '/' || *q == '[' || *q == ']' || *q == '{' || *q == '}' || *q == '(' || *q == '<')
+	    return q - p;
+	/* Note : immediate names are not allowed in PDF. */
+    }
+    return l;
+}
+
+/* Write a serialized array or dictionary with possible encryption. */
+private void
+pdf_put_composite(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id object_id)
+{
+    if (!pdev->KeyLength) {
+	stream_write(pdev->strm, vstr, size);
+	return;
+    } else {
+	const byte *p = vstr;
+	int l = size, n;
+
+	for (;l > 0 ;) {
+	    if (*p == '(')
+		n = pdf_encrypt_encoded_string(pdev, p, l, object_id);
+	    else {
+		n = pdf_scan_item(pdev, p, l, object_id);
+		stream_write(pdev->strm, p, n);
+	    }
+	    l -= n;
+	    p += n;
+	}
+    }
 }
 
 /*
@@ -1018,6 +1072,10 @@ pdf_write_value(const gx_device_pdf * pdev, const byte * vstr, uint size, gs_id 
 	pdf_put_name(pdev, vstr + 3, size - 4);
     else if (size > 1 && vstr[0] == '(')
 	pdf_put_encoded_string(pdev, vstr, size, object_id);
+    else if (size > 1 && (vstr[0] == '[' || vstr[0] == '{'))
+	pdf_put_composite(pdev, vstr, size, object_id);
+    else if (size > 2 && vstr[0] == '<' && vstr[1] == '<')
+	pdf_put_composite(pdev, vstr, size, object_id);
     else
 	stream_write(pdev->strm, vstr, size);
 }
