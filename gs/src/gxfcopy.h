@@ -157,4 +157,10 @@ int gs_copy_font_complete(gs_font *font, gs_font *copied);
 int gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont, 
 		    gs_glyph *glyphs, int num_glyphs, bool check_hinting);
 
+/* Extension glyphs may be added to a font to resolve 
+   glyph name conflicts while conwerting a PDF Widths into Metrics.
+   This function drops them before writing out an embedded font. */
+int copied_drop_extension_glyphs(gs_font *cfont);
+
+
 #endif /* gxfcopy_INCLUDED */

@@ -128,15 +128,21 @@ pdfdict begin
 } bdef
 
 /unique_name {  % <dict> </root> unique_name </unique> 
+  %
+  %  Note : this function interacts with pdf_write_encoding in src/gdevpdtw.c
+  %  and with copied_drop_extension_glyphs in src\gxfcopy.c
+  %  by adding a reserved substring (~GS~).
+  %
   .namestring       % <<>> (root)
   0 1 65535 {
     5 string cvs    % <<>> (root) (0)
-    1 index exch    % <<>> (root) (root) (0)
-    concatstrings   % <<>> (root) (root0)
-    dup             % <<>> (root) (root0) (root0)
-    3 index exch    % <<>> (root) (root0) <<>> (root0)
+    (~GS~) exch concatstrings
+    1 index exch    % <<>> (root) (root) (~GS~0)
+    concatstrings   % <<>> (root) (root~GS~0)
+    dup             % <<>> (root) (root~GS~0) (root~GS~0)
+    3 index exch    % <<>> (root) (root~GS~0) <<>> (root~GS~0)
     known not {
-      exch pop exit % <<>> (root0)
+      exch pop exit % <<>> (root~GS~0)
     } if
     pop
   } for

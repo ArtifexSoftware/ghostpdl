@@ -474,6 +474,12 @@ gs_font_base *
 		     const gs_font_procs *procs, gs_font_dir *dir,
 		     client_name_t cname);
 
+/* Define a string to interact with unique_name in lib/pdf_font.ps .
+   The string is used to resolve glyph name conflict while
+   converting PDF Widths into Metrics.
+ */
+extern const char gx_extendeg_glyph_name_separator[];
+
 /*
  * Test whether a glyph is the notdef glyph for a base font.
  * The test is somewhat adhoc: perhaps this should be a virtual procedure.

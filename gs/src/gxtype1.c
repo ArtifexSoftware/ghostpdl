@@ -84,6 +84,13 @@ private RELOC_PTRS_WITH(gs_type1_state_reloc_ptrs, gs_type1_state *pcis)
     }
 } RELOC_PTRS_END
 
+/* Define a string to interact with unique_name in lib/pdf_font.ps .
+   The string is used to resolve glyph name conflict while
+   converting PDF Widths into Metrics.
+ */
+const char gx_extendeg_glyph_name_separator[] = "~GS~";
+
+
 /* ------ Interpreter services ------ */
 
 #define s (*ps)

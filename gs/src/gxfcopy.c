@@ -2181,3 +2181,58 @@ gs_copied_can_copy_glyphs(const gs_font *cfont, const gs_font *ofont,
     return compare_glyphs(cfont, ofont, glyphs, num_glyphs, 0);
 }
 
+/* Extension glyphs may be added to a font to resolve 
+   glyph name conflicts while conwerting a PDF Widths into Metrics.
+   This function drops them before writing out an embedded font. */
+int
+copied_drop_extension_glyphs(gs_font *copied)
+{
+    /* 	Note : This function drops 'used' flags for some glyphs
+	and truncates glyph names. Can't use the font
+	for outlining|rasterization|width after applying it.
+     */
+    gs_copied_font_data_t *const cfdata = cf_data(copied);
+    uint gsize = cfdata->glyphs_size, i;
+    const int sl = strlen(gx_extendeg_glyph_name_separator);
+
+    for (i = 0; i < gsize; i++) {
+	gs_copied_glyph_t *pslot = &cfdata->glyphs[i];
+	gs_copied_glyph_name_t *name;
+	int l, j, k, i0;
+
+	if (!pslot->used)
+	    continue;
+	name = &cfdata->names[i];
+	l = name->str.size - sl, j;
+
+	for (j = 0; j < l; j ++)
+	    if (!memcmp(gx_extendeg_glyph_name_separator, name->str.data + j, sl))
+		break;
+	if (j >= l)
+	    continue;
+	/* Found an extension name.
+	   Find the corresponding non-extended one. */
+	i0 = i;
+	for (k = 0; k < gsize; k++)
+	    if (cfdata->glyphs[k].used && 
+		    cfdata->names[k].str.size == j &&
+		    !memcmp(cfdata->names[k].str.data, name->str.data, j) &&
+		    !bytes_compare(pslot->gdata.data, pslot->gdata.size,
+			    cfdata->glyphs[k].gdata.data, cfdata->glyphs[k].gdata.size)) {
+		i0 = k;
+		break;
+	    }
+	/* Truncate the extended glyph name. */
+	cfdata->names[i0].str.size = j;
+	/* Drop others with same prefix. */
+	for (k = 0; k < gsize; k++)
+	    if (k != i0 && cfdata->glyphs[k].used && 
+		    cfdata->names[k].str.size >= j + sl &&
+		    !memcmp(cfdata->names[k].str.data, name->str.data, j) &&
+		    !memcmp(gx_extendeg_glyph_name_separator, name + j, sl) &&
+		    !bytes_compare(pslot->gdata.data, pslot->gdata.size,
+			    cfdata->glyphs[k].gdata.data, cfdata->glyphs[k].gdata.size))
+		cfdata->glyphs[k].used = false;
+    }
+    return 0;
+}
