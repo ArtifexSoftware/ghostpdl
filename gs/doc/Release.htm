@@ -149,9 +149,8 @@ When adding or removing files, don't forget to invoke <b><tt>cvs
 add</tt></b> or <b><tt>cvs rm</tt></b>.
 
 <p>
-When adding or removing files other than .c or .h: If the files are included
-in the fileset (i.e., not just support files), check the install list in
-<b><tt>unixinst.mak</tt></b>.
+When adding or removing files other than .c or .h: If the files will be used
+at runtime, check the install list in <b><tt>unixinst.mak</tt></b>.
 
 <p>
 When adding .c files, update the relevant <b><tt>.mak</tt></b> file (usually
@@ -167,7 +166,7 @@ When adding .h files, add a _h definition in the appropriate
 <b><tt>.mak</tt></b> file.
 
 <p>
-When adding or changing fonts, update <b><tt>Fontmap.GS</tt></b>,
+When adding or changing fonts, update <b><tt>lib/Fontmap.GS</tt></b>,
 <b><tt>fonts.mak</tt></b>, and possibly the compiled fonts in
 <b><tt>gs.mak</tt></b> and the examples in <b><tt>doc/Fonts.htm</tt></b>.
 
@@ -211,21 +210,13 @@ files for your environment.
 <h2><a name="Preparing_source"></a>Preparing the source code</h2>
 
 <p>
-Update files that reference the version number and date.  Starting with
-version 6.23, we use odd version numbers in the CVS repository between
-filesets, and even numbers for the filesets themselves.  (We got this
-slightly unusual convention from CVS.)
+Update references to the date:
 
 <ul>
 
-<li>In <b><tt>lib/gs_init.ps</tt></b>, update the version number by
-incrementing it from odd to even.
+<li>In <b><tt>version.mak</tt></b>, the numeric date.
 
-<li>In <b><tt>version.mak</tt></b>, update the version numbers (3
-definitions) and numeric date.
-
-<li>In <b><tt>doc/News.htm</tt></b>, update the version number (in 4 places)
-and the date (in 3 places, skipping the Id: line).
+<li>In <b><tt>doc/News.htm</tt></b>, in 3 places, skipping the Id: line.
 
 </ul>
 
@@ -236,7 +227,7 @@ closed bug and the list of open bugs.
 <p>
 Check in <b><tt>gscdef.c</tt></b> that the definition of
 <b><tt>GS_PRODUCT</tt></b> includes the appropriate one of "TESTER RELEASE",
-"BETA RELEASE", or neither.
+"BETA RELEASE", or neither, and does not include "CVS PRE-RELEASE".
 
 <p>
 Check for patched configuration parameters, <b><tt>#define TEST</tt></b>s,
@@ -554,8 +545,21 @@ Edit the Web pages on the Wisconsin server to reflect the new release.
 <h1><a name="After_releasing"></a>After releasing</h1>
 
 <p>
-Increment the version number from even to odd, as discussed <a
-href="#Preparing_source">above</a>.
+Update the version number by incrementing it:
+
+<ul>
+
+<li>In <b><tt>lib/gs_init.ps</tt></b>, at the very beginning of the file.
+
+<li>In <b><tt>version.mak</tt></b>, in 3 definitions.
+
+<li>In <b><tt>doc/News.htm</tt></b>, in 4 places.
+
+</ul>
+
+<p>
+In <b><tt>gscdef.c</tt></b>, edit the definition of
+<b><tt>GS_PRODUCT</tt></b> to include "CVS PRE-RELEASE".
 
 <p>
 Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
@@ -575,7 +579,7 @@ details of the terms of using, copying, modifying, and redistributing
 Aladdin Ghostscript.
 
 <p>
-Ghostscript version 6.21, 17 April 2000
+Ghostscript version 6.22, 5 July 2000
 
 </font>
 
