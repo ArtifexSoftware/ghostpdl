@@ -71,18 +71,18 @@ Ghostscript</a>.
 <h1><a name="Introduction"></a>Introduction</h1>
 
 <p>
-This document describes the process that Aladdin Enterprises uses to make
+This document describes the process that Aladdin Enterprises used to make
 new Ghostscript releases.  As time goes on, it will become a more suitable
 document for others wishing to prepare releases for distribution.  Please
 note that although the <a href="Public.htm">Aladdin Free Public License</a>
 allows anyone to prepare and distribute releases in accordance with its
 terms and conditions, this document is really meant only for developers
-working closely with Aladdin.
+working closely with artofcode LLC, the copyright holder of Ghostscript.
 
 <p>
-This document is primarily about Aladdin Ghostscript releases.  See the
+This document is primarily about AFPL Ghostscript releases.  See the
 section on <a href="#GNU_releases">GNU releases</a> below for information on
-making a GNU Ghostscript release from an existing Aladdin Ghostscript
+making a GNU Ghostscript release from an existing AFPL Ghostscript
 release, and the section on <a href="#Fonts">fonts</a> for information on
 releasing font packages.
 
@@ -98,12 +98,12 @@ you will want to change.
 
 <li>If you make any significant changes, please edit
 <b><tt>gscdef.c</tt></b> to change <b><tt>GS_PRODUCTFAMILY</tt></b> and
-<b><tt>GS_PRODUCT</tt></b> from "Aladdin Ghostscript" to something else, in
-order to avoid confusion with Aladdin's releases.
+<b><tt>GS_PRODUCT</tt></b> from "AFPL Ghostscript" to something else, in
+order to avoid confusion with artofcode's releases.
 
 <li>In the same file, you may also want to edit <b><tt>GS_COPYRIGHT</tt></b>
-to add your own copyright notice (although you must not remove Aladdin's
-notice).
+to add your own copyright notice (although you must not remove any
+notice that is there).
 
 <li>You will almost certainly want to edit <b><tt>version.mak</tt></b> to
 change the revision date, <b><tt>GS_REVISIONDATE</tt></b>.
@@ -118,7 +118,7 @@ beginning of the file).
 <h1><a name="Servers"></a>Servers</h1>
 
 <p>
-The Aladdin Ghostscript files are maintained on sites accessible to the
+The AFPL Ghostscript files are maintained on sites accessible to the
 public.  One specific site hosts the active CVS repository for code, data,
 and documentation, and the bug report data base; several sites offer
 distributions with version numbers, intended for wider distribution.
@@ -126,9 +126,9 @@ distributions with version numbers, intended for wider distribution.
 <h2><a name="Development_files"></a>Development sources and bug reports</h2>
 
 <p>
-The primary repository for Aladdin Ghostscript is SourceForge (<a
+The primary repository for AFPL Ghostscript is SourceForge (<a
 href="http://sourceforge.net"><tt>http://sourceforge.net</tt></a>).  Please
-read the SourceForge Aladdin Ghostscript home page (<a
+read the SourceForge AFPL Ghostscript home page (<a
 href=http://ghostscript.sourceforge.net><tt>http://ghostscript.sourceforge.net</tt></a>)
 first.  CVS access information is available at <a
 href="http://sourceforge.net/cvs/?group_id=1897"><tt>http://sourceforge.net/cvs/?group_id=1897</tt></a>.
@@ -136,21 +136,21 @@ href="http://sourceforge.net/cvs/?group_id=1897"><tt>http://sourceforge.net/cvs/
 <h2><a name="Distributions"></a>Distributions</h2>
 
 <p>
-Both tested and tester releases are available from
+Both stable and development releases are available from
 <blockquote><pre>
 <a
 href="http://sourceforge.net/project/filelist.php?group_id=1897">http://sourceforge.net/project/filelist.php?group_id=1897</a>
 </pre></blockquote>
 
 <p>
-Tested public releases are also distributed from
+Stable releases are also distributed from
 <blockquote><pre>
 <a
 href="ftp://ftp.cs.wisc.edu/ghost/aladdin/">ftp://ftp.cs.wisc.edu/ghost/aladdin/</a>
 </pre></blockquote>
 
 <p>
-Tester releases are also distributed from
+Development releases are also distributed from
 <blockquote><pre>
 <a href="ftp://ftp.cs.wisc.edu/ghost/aladdin/test/">ftp://ftp.cs.wisc.edu/ghost/aladdin/test/</a>
 </pre></blockquote>
@@ -193,7 +193,7 @@ This document only discusses source distributions.  Source distributions
 currently can only be made on Linux systems (but it probably wouldn't take
 much work to support other Unix systems).  Ghostscript as distributed also
 often includes executables or other packages for the Windows and MacOS
-environments, but Aladdin does not produce these, and this document does not
+environments, but artofcode does not produce these, and this document does not
 discuss them.  For more information about Windows packages, please contact
 <a href="mailto:bug-gswin@aladdin.com"><tt>bug-gswin@aladdin.com</tt></a>;
 for more information about MacOS packages, please contact <a
@@ -508,7 +508,7 @@ cvs tag gs#_#[#]
 Upload <b><tt>ghostscript-#.##.tar.*</tt></b> to SourceForge (by anonymous
 FTP to <b><tt>download.sourceforge.net</tt></b>, directory
 <b><tt>/incoming</tt></b>), and then post it using the "File Release"
-facility in the Aladdin Ghostscript project.  If this is a test release, put
+facility in the AFPL Ghostscript project.  If this is a test release, put
 it in the <b><tt>gs-test</tt></b> module, otherwise put it in the
 <b><tt>ghostscript</tt></b> module.  If you are adding Windows executables
 to an existing source release, please use the same release date as the
@@ -582,14 +582,14 @@ Edit <b><tt>doc/News.htm</tt></b> to remove all the content.
 <h1><a name="GNU_releases"></a>GNU Ghostscript releases</h1>
 
 <p>
-Aladdin Enterprises re-releases each tested Aladdin Ghostscript version with
-the GPL, as GNU Ghostscript, when the next tested Aladdin Ghostscript
+artofcode LLC re-releases each tested AFPL Ghostscript version with
+the GPL, as GNU Ghostscript, when the next tested AFPL Ghostscript
 version comes out.
 
 <h2><a name="GNU_code"></a>GNU code</h2>
 
 <p>
-To make a GNU Ghostscript release from Aladdin Ghostscript release #.##, run
+To make a GNU Ghostscript release from AFPL Ghostscript release #.##, run
 
 <blockquote><pre>
 toolbin/makegnu #.##
@@ -630,11 +630,11 @@ E-mail the full URL and the <b><tt>md5sum</tt></b> of the new archive(s) to
 <h1><a name="Fonts"></a>Fonts</h1>
 
 <p>
-Aladdin distributes a package of the base 35 PostScript fonts, and a package
-of other miscellaneous fonts.  As with the Ghostscript code, each package is
-released both with the Aladdin License and with the GPL; however, unlike the
-Ghostscript code, Aladdin releases these versions simultaneously rather than
-with a one-version delay.
+artofcode LLC distributes a package of the base 35 PostScript fonts, and a
+package of other miscellaneous fonts.  As with the Ghostscript code, each
+package is released both with the Aladdin License and with the GPL; however,
+unlike the Ghostscript code, artofcode releases these versions simultaneously
+rather than with a one-version delay.
 
 <p>
 To make the font packages, run the command
@@ -670,13 +670,13 @@ release, also see <a href="#GNU_after_releasing">"After releasing
 
 <p>Copyright &copy; 1999, 2000 Aladdin Enterprises.  All rights reserved.
 
-<p>This file is part of Aladdin Ghostscript.  See the <a
+<p>This file is part of AFPL Ghostscript.  See the <a
 href="Public.htm">Aladdin Free Public License</a> (the "License") for full
 details of the terms of using, copying, modifying, and redistributing
-Aladdin Ghostscript.
+AFPL Ghostscript.
 
 <p>
-Ghostscript version 6.23, 7 August 2000
+Ghostscript version 6.24, 19 September 2000
 
 </font>
 
