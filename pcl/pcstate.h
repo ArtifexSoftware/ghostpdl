@@ -253,6 +253,10 @@ struct pcl_state_s {
     /* This is the pcl state variable associated with FONTSOURCE - see
        pjltrm 6-22 */
     char**            current_font_directories;
+    /* yet another poorly documented pjl variable - this should widen
+       the margins on A4 paper to support 80 10 pitch characters but
+       it appears to affect letter paper as well */
+    bool              wide_a4;
 };
 
 #endif 						/* pcstate_INCLUDED */

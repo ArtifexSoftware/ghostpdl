@@ -141,7 +141,13 @@ update_xfm_state(
     pxfmst->lp2pg_mtx.tx += loff;
     pxfmst->lp2pg_mtx.ty += toff;
     offset = ( (pxfmst->lp_orient & 0x1) != 0 ? psize->offset_landscape
-                                              : psize->offset_portrait );
+	       : psize->offset_portrait );
+    /* we need an extra 1/10 inch on each side to support 80
+       characters vs. 78 at 10 cpi.  HP applies the change to Letter
+       and A4.  We apply it to all paper sizes */
+    if ( pcs->wide_a4 )
+	offset -= inch2coord(1.0/10.0);
+
     gs_matrix_translate( &(pxfmst->lp2pg_mtx),
                          (floatp)offset,
                          0.0,
@@ -265,7 +271,7 @@ reset_margins(
  * an initial reset. In that case, done't call HPGL's reset - the reset
  * will do that later.
  */
-  private void
+  void
 new_page_size(
     pcl_state_t *               pcs,
     const pcl_paper_size_t *    psize,
@@ -455,10 +461,10 @@ pcl_end_page(
 #define p_size(t, n, w, h, offp, offl)                                  \
     { (t), (n), { (w) * 24L, (h) * 24L, (offp) * 24L, (offl) * 24L } }
 
-private const struct {
+private struct {
     uint                    tag;
     const char *            pname;
-    const pcl_paper_size_t  psize;
+    pcl_paper_size_t        psize;
 } paper_sizes[] = {
     p_size(  1, "executive", 2175, 3150, 75, 60),
     p_size(  2, "letter",    2550, 3300, 75, 60),
@@ -884,16 +890,22 @@ pcpage_do_init(
     return 0;
 }
 
- private const pcl_paper_size_t *
+ private pcl_paper_size_t *
 get_default_paper(
     pcl_state_t *      pcs
 )
 {
     int i;
     char *psize = pjl_get_envvar(pcs->pjls, "paper");
+    pcs->wide_a4 = false;
     for (i = 0; i < countof(paper_sizes); i++)
-        if (!strcmp(psize, paper_sizes[i].pname))
+        if (!strcmp(psize, paper_sizes[i].pname)) {
+	    pcl_paper_size_t *ps = &(paper_sizes[i].psize);
+	    /* we are not sure if widea4 applies to all paper sizes */
+	    if (!strcmp(pjl_get_envvar(pcs->pjls, "widea4"), "YES"))
+		pcs->wide_a4 = true;
 	    return &(paper_sizes[i].psize);
+	}
     dprintf("pcl does not support system requested paper\n");
     return &(paper_sizes[1].psize);
 }
