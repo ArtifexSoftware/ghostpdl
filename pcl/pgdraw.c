@@ -82,8 +82,12 @@ hpgl_set_pcl_to_plu_ctm(hpgl_state_t *pgls)
                for plot width > length the origin is in the upper
                right and x increases going to the left and y increases
                going down, translate the pcl coordinate system by the
-               picture frame width, scale and flip x. */
-	    if ( pgls->g.picture_frame_height >= pgls->g.picture_frame_width ) {
+               picture frame width, scale and flip x. 
+	       PLOTSIZEROTATE==OFF forces -90 rotation, top/left 0,0 
+	       not legal pcl default is ON */
+	    if ( pgls->g.picture_frame_height >= pgls->g.picture_frame_width ||
+		 !pjl_proc_compare(pgls->pjls, 
+				   pjl_proc_get_envvar(pgls->pjls, "plotsizerotate"), "on")) {
 		hpgl_call(gs_rotate(pgls->pgs, -90));
 		/* swap picture frame height and width 
 		 * for the translation portion of the next RO cmd rotation.

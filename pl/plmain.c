@@ -673,7 +673,12 @@ pl_main_universe_select(
                 pti->saved_hwres = true;
                 pti->hwres[0] = pdev->HWResolution[0];
                 pti->hwres[1] = pdev->HWResolution[1];
-                gx_device_set_resolution(pdev, 10, 10);
+		/* stefan foo: pulled until new_logical_page works 
+		 * gx_device_set_resolution(pdev, 10, 10);
+		 */
+		gx_device_set_resolution(pti->device, 
+					 pti->hwres[0], pti->hwres[1]);
+
             }
         }
     }
@@ -1087,7 +1092,11 @@ pl_pre_finish_page(pl_interp_instance_t *interp, void *closure)
             pti->saved_hwres = true;
             pti->hwres[0] = pdev->HWResolution[0];
             pti->hwres[1] = pdev->HWResolution[1];
-            gx_device_set_resolution(pdev, 10, 10);
+            /* stefan foo: pulled until new_logical_page works 
+	     * gx_device_set_resolution(pdev, 10, 10);
+	     */
+            gx_device_set_resolution(pti->device, 
+                                     pti->hwres[0], pti->hwres[1]);
         }
     }
     /* out of range don't allow printing the page */

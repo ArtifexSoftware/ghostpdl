@@ -381,10 +381,9 @@ new_logical_page(
 {
     pcl_xfm_state_t *           pxfmst = &(pcs->xfm_state);
 
-    if (reset_initial) { 
-      pcs->hmi_cp = HMI_DEFAULT;
-      pcs->vmi_cp = VMI_DEFAULT;
-    }
+    pcs->hmi_cp = HMI_DEFAULT;
+    pcs->vmi_cp = VMI_DEFAULT;
+
     pxfmst->lp_orient = lp_orient;
     pxfmst->print_dir = 0;
     new_page_size(pcs, psize, reset_initial);
@@ -491,8 +490,14 @@ pcl_end_page(
      * see -dFirstPage -dLastPage 
      * NB would be faster if we didn't do this every page.
      */
-    new_logical_page(pcs, pcs->xfm_state.lp_orient,
-		     pcs->xfm_state.paper_size, false);
+
+    /* setting a new logical page defaults settings 
+     * that should carry over from the previous page
+     *
+     * new_logical_page(pcs, pcs->xfm_state.lp_orient,
+     *	     pcs->xfm_state.paper_size, false);
+     */
+
     /*
      * Advance of a page may move from a page front to a page back. This may
      * change the applicable transformations.
