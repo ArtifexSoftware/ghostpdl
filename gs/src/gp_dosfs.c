@@ -179,11 +179,11 @@ bool gp_file_name_is_current(const char *fname, uint len)
 {   return len == 1 && fname[0] == '.';
 }
 
-char *gp_file_name_separator(void)
+const char *gp_file_name_separator(void)
 {   return "/";
 }
 
-char *gp_file_name_current(void)
+const char *gp_file_name_current(void)
 {   return ".";
 }
 

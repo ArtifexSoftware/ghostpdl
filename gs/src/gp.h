@@ -259,13 +259,13 @@ bool gp_file_name_is_current(const char *fname, uint len);
 /*	unix, Win:  "."	    */
 /*	mac:	":"	    */
 /*	VMS:	""          */
-char *gp_file_name_current(void);
+const char *gp_file_name_current(void);
 
 /* Returns a string for separating file name items. */
 /*	unix, Win:  "/"	    */
 /*	mac:	":"	    */
 /*	VMS:	"."	    */
-char *gp_file_name_separator(void);
+const char *gp_file_name_separator(void);
 
 /* Answer whether the platform allows parent refenences. */
 /*	unix, Win, Mac: yes */
