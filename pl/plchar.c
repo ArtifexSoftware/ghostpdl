@@ -70,6 +70,9 @@ gs_private_st_element(st_pl_font_glyph_element, pl_font_glyph_t,
   "pl_font_glyph_t[]",
   pl_font_glyph_elt_enum_ptrs, pl_font_glyph_elt_reloc_ptrs, st_pl_font_glyph);
 
+private gs_glyph
+pl_font_vertical_glyph(gs_glyph glyph, const pl_font_t *plfont);
+
 /* Define accessors for unaligned, big-endian quantities. */
 #define u16(bptr) pl_get_uint16(bptr)
 #define s16(bptr) pl_get_int16(bptr)
