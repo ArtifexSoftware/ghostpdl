@@ -717,8 +717,9 @@ FAKEFONTS not { (%END FAKEFONTS) .skipeof } if
 	    ( for ) print 1 index =only (.)
 	  } ifelse = flush
 	} if
-			% Remove all the accumulated aliases.
-	counttomark 1 add 1 roll cleartomark mark exch
+	  % Remove excess accumulated aliases. Keep the requested font name.
+	counttomark 2 add dup 3 roll cleartomark 
+	mark exch 3 sub 1 roll
       } ifelse
   .dofindfont
 } bind def
@@ -739,7 +740,7 @@ $error /SubstituteFont { .stdsubstfont } put
 } bind def
 % Do the work of findfont, including substitution, defaulting, and
 % scanning of FONTPATH.
-/.dofindfont {		% <fontname> .dofindfont <font>
+/.dofindfont {		% mark <fontname> .dofindfont mark <alias1> ... <font>
   .tryfindfont not {
 			% We didn't find the font.  If we haven't scanned
 			% all the directories in FONTPATH, scan the next one
