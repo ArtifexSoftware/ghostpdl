@@ -259,11 +259,11 @@ pdf_write_FontDescriptor(gx_device_pdf *pdev, const pdf_font_descriptor_t *pfd)
 		code = gs_note_error(gs_error_rangecheck);
 		/* falls through */
 	    case ft_encrypted:
-		if (pdev->CompatibilityLevel < 1.2) {
-		    FontFile_key = "/FontFile";
-		    break;
-		}
-		/* For PDF 1.2 and later, write Type 1 fonts as Type1C. */
+		/*
+		 * Since we only support PDF 1.2 and later, always write
+		 * Type 1 fonts as Type1C.
+		 */
+		/* falls through */
 	    case ft_encrypted2:
 	    case ft_CID_encrypted:
 		FontFile_key = "/FontFile3";

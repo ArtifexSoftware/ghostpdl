@@ -82,34 +82,13 @@ private RELOC_PTRS_WITH(pdf_image_enum_reloc_ptrs, pdf_image_enum *pie)
 RELOC_PTRS_END
 
 /*
- * Test whether we can write an image in-line.  Before PDF 1.2, this is only
- * allowed for masks, images in built-in color spaces, and images in Indexed
- * color spaces based on these with a string lookup table.
+ * Test whether we can write an image in-line.  This is always true,
+ * because we only support PDF 1.2 and later.
  */
 private bool
 can_write_image_in_line(const gx_device_pdf *pdev, const gs_image_t *pim)
 {
-    const gs_color_space *pcs;
-
-    if (pim->ImageMask)
-	return true;
-    if (pdev->CompatibilityLevel >= 1.2)
-	return true;
-    pcs = pim->ColorSpace;
- cs:
-    switch (gs_color_space_get_index(pcs)) {
-    case gs_color_space_index_DeviceGray:
-    case gs_color_space_index_DeviceRGB:
-    case gs_color_space_index_DeviceCMYK:
-	return true;
-    case gs_color_space_index_Indexed:
-	if (pcs->params.indexed.use_proc)
-	    return false;
-	pcs = (const gs_color_space *)&pcs->params.indexed.base_space;
-	goto cs;
-    default:
-	return false;
-    }
+    return true;
 }
 
 /*

@@ -902,7 +902,7 @@ pdf_prepare_drawing(gx_device_pdf *pdev, const gs_imager_state *pis,
      * removal, halftone phase, overprint mode, smoothness, blend mode, text
      * knockout.
      */
-    if (pdev->CompatibilityLevel >= 1.2) {
+    {
 	gs_int_point phase, dev_phase;
 	char hts[5 + MAX_FN_CHARS + 1],
 	    trs[5 + MAX_FN_CHARS * 4 + 6 + 1],
@@ -996,22 +996,20 @@ pdf_prepare_fill(gx_device_pdf *pdev, const gs_imager_state *pis)
     if (code < 0)
 	return code;
     /* Update overprint. */
-    if (pdev->CompatibilityLevel >= 1.2) {
-	if (pdev->params.PreserveOverprintSettings &&
-	    pdev->fill_overprint != pis->overprint
-	    ) {
-	    code = pdf_open_gstate(pdev, &pres);
-	    if (code < 0)
-		return code;
-	    /* PDF 1.2 only has a single overprint setting. */
-	    if (pdev->CompatibilityLevel < 1.3) {
-		pprintb1(pdev->strm, "/OP %s", pis->overprint);
-		pdev->stroke_overprint = pis->overprint;
-	    } else {
-		pprintb1(pdev->strm, "/op %s", pis->overprint);
-	    }
-	    pdev->fill_overprint = pis->overprint;
+    if (pdev->params.PreserveOverprintSettings &&
+	pdev->fill_overprint != pis->overprint
+	) {
+	code = pdf_open_gstate(pdev, &pres);
+	if (code < 0)
+	    return code;
+	/* PDF 1.2 only has a single overprint setting. */
+	if (pdev->CompatibilityLevel < 1.3) {
+	    pprintb1(pdev->strm, "/OP %s", pis->overprint);
+	    pdev->stroke_overprint = pis->overprint;
+	} else {
+	    pprintb1(pdev->strm, "/op %s", pis->overprint);
 	}
+	pdev->fill_overprint = pis->overprint;
     }
     return pdf_end_gstate(pdev, pres);
 }
@@ -1026,26 +1024,24 @@ pdf_prepare_stroke(gx_device_pdf *pdev, const gs_imager_state *pis)
     if (code < 0)
 	return code;
     /* Update overprint, stroke adjustment. */
-    if (pdev->CompatibilityLevel >= 1.2) {
-	if (pdev->params.PreserveOverprintSettings &&
-	    pdev->stroke_overprint != pis->overprint
-	    ) {
-	    code = pdf_open_gstate(pdev, &pres);
-	    if (code < 0)
-		return code;
-	    pprintb1(pdev->strm, "/OP %s", pis->overprint);
-	    pdev->stroke_overprint = pis->overprint;
-	    /* PDF 1.2 only has a single overprint setting. */
-	    if (pdev->CompatibilityLevel < 1.3)
-		pdev->fill_overprint = pis->overprint;
-	}
-	if (pdev->state.stroke_adjust != pis->stroke_adjust) {
-	    code = pdf_open_gstate(pdev, &pres);
-	    if (code < 0)
-		return code;
-	    pprintb1(pdev->strm, "/SA %s", pis->stroke_adjust);
-	    pdev->state.stroke_adjust = pis->stroke_adjust;
-	}
+    if (pdev->params.PreserveOverprintSettings &&
+	pdev->stroke_overprint != pis->overprint
+	) {
+	code = pdf_open_gstate(pdev, &pres);
+	if (code < 0)
+	    return code;
+	pprintb1(pdev->strm, "/OP %s", pis->overprint);
+	pdev->stroke_overprint = pis->overprint;
+	/* PDF 1.2 only has a single overprint setting. */
+	if (pdev->CompatibilityLevel < 1.3)
+	    pdev->fill_overprint = pis->overprint;
+    }
+    if (pdev->state.stroke_adjust != pis->stroke_adjust) {
+	code = pdf_open_gstate(pdev, &pres);
+	if (code < 0)
+	    return code;
+	pprintb1(pdev->strm, "/SA %s", pis->stroke_adjust);
+	pdev->state.stroke_adjust = pis->stroke_adjust;
     }
     return pdf_end_gstate(pdev, pres);
 }

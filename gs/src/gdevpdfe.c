@@ -214,10 +214,11 @@ pdf_embed_font_type1(gx_device_pdf *pdev, gs_font_type1 *font,
 {
     switch (((const gs_font *)font)->FontType) {
     case ft_encrypted:
-	if (pdev->CompatibilityLevel < 1.2)
-	    return pdf_embed_font_as_type1(pdev, font, FontFile_id,
-					   subset_glyphs, subset_size, pfname);
-	/* For PDF 1.2 and later, write Type 1 fonts as Type1C. */
+	/*
+	 * Since we only support PDF 1.2 and later, always write Type 1
+	 * fonts as Type1C.
+	 */
+	/* falls through */
     case ft_encrypted2:
 	return pdf_embed_font_as_type2(pdev, font, FontFile_id,
 				       subset_glyphs, subset_size, pfname);
@@ -232,13 +233,10 @@ pdf_embed_font_cid0(gx_device_pdf *pdev, gs_font_cid0 *font,
 		    long FontFile_id, const byte *subset_cids,
 		    uint subset_size, const gs_const_string *pfname)
 {
-    int code;
     pdf_data_writer_t writer;
+    int code = pdf_begin_fontfile(pdev, FontFile_id, "/Subtype/CIDFontType0C",
+				  -1L, &writer);
 
-    if (pdev->CompatibilityLevel < 1.2)
-	return_error(gs_error_rangecheck);
-    code = pdf_begin_fontfile(pdev, FontFile_id, "/Subtype/CIDFontType0C", -1L,
-			      &writer);
     if (code < 0)
 	return code;
     code = psf_write_cid0_font(writer.binary.strm, font, TYPE2_OPTIONS,

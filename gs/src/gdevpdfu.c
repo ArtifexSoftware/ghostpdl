@@ -922,7 +922,7 @@ pdf_begin_data_stream(gx_device_pdf *pdev, pdf_data_writer_t *pdw,
     int filters = 0;
     int code;
 
-    if (pdev->CompatibilityLevel >= 1.2 && (options & DATA_STREAM_COMPRESS)) {
+    if (options & DATA_STREAM_COMPRESS) {
 	filters |= USE_FLATE;
 	options |= DATA_STREAM_BINARY;
     }
@@ -990,8 +990,7 @@ pdf_function(gx_device_pdf *pdev, const gs_function_t *pfn,
 	    return_error(gs_error_VMerror);
 	pdev->strm = s;
 	code = psdf_begin_binary((gx_device_psdf *)pdev, &writer);
-	if (code >= 0 && info.data_size > 30 &&	/* 30 is arbitrary */
-	    pdev->CompatibilityLevel >= 1.2
+	if (code >= 0 && info.data_size > 30	/* 30 is arbitrary */
 	    )
 	    code = pdf_flate_binary(pdev, &writer);
 	if (code >= 0) {

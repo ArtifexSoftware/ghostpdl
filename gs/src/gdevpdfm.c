@@ -1003,9 +1003,7 @@ pdfmark_PS(gx_device_pdf * pdev, gs_param_string * pairs, uint count,
 	 !ps_source_ok(&level1))
 	)
 	return_error(gs_error_rangecheck);
-    if (level1.data == 0 && source.size <= MAX_PS_INLINE &&
-	pdev->CompatibilityLevel >= 1.2 && objname == 0
-	) {
+    if (level1.data == 0 && source.size <= MAX_PS_INLINE && objname == 0) {
 	/* Insert the PostScript code in-line */
 	int code = pdf_open_contents(pdev, PDF_IN_STREAM);
 	stream *s;

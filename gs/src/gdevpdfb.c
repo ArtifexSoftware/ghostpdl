@@ -478,9 +478,7 @@ gdev_pdf_strip_tile_rectangle(gx_device * dev, const gx_strip_bitmap * tiles,
 
     if (tiles->id == gx_no_bitmap_id || tiles->shift != 0 ||
 	(w < tw && h < th) ||
-	color0 != gx_no_color_index ||
-	/* Pattern fills are only available starting in PDF 1.2. */
-	pdev->CompatibilityLevel < 1.2
+	color0 != gx_no_color_index
 	)
 	goto use_default;
     if (color1 != gx_no_color_index) {
