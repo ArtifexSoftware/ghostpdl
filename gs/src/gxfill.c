@@ -278,10 +278,8 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
      */
     gx_path_bbox(ppath, &ibox);
 #   define SMALL_CHARACTER 500
-#   if !CURVED_TRAPEZOID_FILL
-	lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
-	lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
-#   endif
+    lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
+    lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
     /* We assume (adjust.x | adjust.y) == 0 iff it's a character. */
     pseudo_rasterization = ((adjust.x | adjust.y) == 0 && 
 #			    if TT_GRID_FITTING
@@ -508,10 +506,6 @@ gx_general_fill_path(gx_device * pdev, const gs_imager_state * pis,
 	    fill_loop = fill_loop_by_trapezoids;
 	else
 	    fill_loop = fill_loop_by_scan_lines;
-#	if CURVED_TRAPEZOID_FILL
-	    lst.bbox_left = fixed2int(ibox.p.x - adjust.x - fixed_epsilon);
-	    lst.bbox_width = fixed2int(fixed_ceiling(ibox.q.x + adjust.x)) - lst.bbox_left;
-#	endif
 	if (lst.bbox_width > MAX_LOCAL_SECTION && lst.pseudo_rasterization) {
 	    /*
 	     * Note that execution pass here only for character size
@@ -647,12 +641,7 @@ init_line_list(line_list *ll, gs_memory_t * mem)
     ll->margin_set0.sect = ll->local_section0;
     ll->margin_set1.sect = ll->local_section1;
     ll->pseudo_rasterization = false;
-#   if CURVED_TRAPEZOID_FILL
-	ll->bbox_left = 0; /* stub */
-	ll->bbox_width = 0; /* stub */
-#   else
     /* Do not initialize ll->bbox_left, ll->bbox_width - they were set in advance. */
-#   endif
     INCR(fill);
 }
 
